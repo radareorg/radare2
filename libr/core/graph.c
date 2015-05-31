@@ -6,6 +6,14 @@ static int mousemode = 0;
 static int small_nodes = 0;
 static int simple_mode = 1;
 static void reloadNodes(RCore *core) ;
+
+#define BORDER 3
+#define BORDER_WIDTH 4
+#define BORDER_HEIGHT 3
+#define MARGIN_TEXT_X 2
+#define MARGIN_TEXT_Y 2
+#define MAX_NODE_WIDTH 18
+
 #define OS_SIZE 128
 struct {
 	int nodes[OS_SIZE];
@@ -57,81 +65,88 @@ static Edge edges[] = {
 #define L2(x,y,x2,y2) r_cons_canvas_line(can, x,y,x2,y2,2)
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(can, x,y,x2,y2,c,0)
 
-static void Node_print(RConsCanvas *can, Node *n, int cur) {
+static void ostack_init() {
+	ostack.size = 0;
+	ostack.nodes[0] = 0;
+}
+
+static void ostack_push(int el) {
+	if (ostack.size < OS_SIZE)
+		ostack.nodes[++ostack.size] = el;
+}
+
+static int ostack_pop() {
+	return ostack.size > 0 ? ostack.nodes[--ostack.size] : 0;
+}
+
+static void small_Node_print(RConsCanvas *can, Node *n, int cur) {
 	char title[128];
+
+	if (!G (n->x + 2, n->y - 1))
+		return;
+	if (cur) {
+		W("[_@@_]");
+		(void)G (-can->sx, -can->sy + 2);
+		snprintf (title, sizeof (title) - 1,
+				"0x%08"PFMT64x":", n->addr);
+		W (title);
+		(void)G (-can->sx, -can->sy + 3);
+		W (n->text);
+	} else {
+		W("[____]");
+	}
+	return;
+}
+
+static void normal_Node_print(RConsCanvas *can, Node *n, int cur) {
+	char title[128];
+	char *text;
 	int delta_x = 0;
 	int delta_y = 0;
+	int x, y;
 
-	if (small_nodes) {
-		if (!G (n->x+2, n->y-1))
-			return;
-		if (cur) {
-			W("[_@@_]");
-			(void)G (-can->sx, -can->sy+2);
-			snprintf (title, sizeof (title)-1,
-				"0x%08"PFMT64x":", n->addr);
-			W (title);
-			(void)G (-can->sx, -can->sy+3);
-			W (n->text);
-		} else {
-			W("[____]");
-		}
-		return;
-	}
-
-	if (!can)
-		return;
 	n->w = r_str_bounds (n->text, &n->h);
-	n->w += 4;
-	n->h += 3;
-	n->w = R_MAX (18, n->w);
+	n->w += BORDER_WIDTH;
+	n->h += BORDER_HEIGHT;
+	n->w = R_MAX (MAX_NODE_WIDTH, n->w);
 #if SHOW_OUT_OF_SCREEN_NODES
-	{
-		int x = n->x + can->sx;
-		int y = n->y + n->h + can->sy;
-		if (x<0 || x> can->w)
-			return;
-		if (y<0 || y> can->h)
-			return;
-	}
+	x = n->x + can->sx;
+	y = n->y + n->h + can->sy;
+	if (x < 0 || x > can->w)
+		return;
+	if (y < 0 || y > can->h)
+		return;
 #endif
-	{
-		int x = n->x + can->sx;
-		int y = n->y + can->sy;
-		if (x<-2) {
-			delta_x = -x-2;
-		}
-		if (x+n->w<-2)
-			return;
-		if (y<-1) {
-			delta_y = -y-2;
-		}
-	}
+	x = n->x + can->sx;
+	y = n->y + can->sy;
+	if (x < -MARGIN_TEXT_X)
+		delta_x = -x - MARGIN_TEXT_X;
+	if (x + n->w < -MARGIN_TEXT_X)
+		return;
+	if (y < -1)
+		delta_y = -y - MARGIN_TEXT_Y;
+
 	if (cur) {
 		//F (n->x,n->y, n->w, n->h, '.');
 		snprintf (title, sizeof (title)-1,
-			"-[ 0x%08"PFMT64x" ]-", n->addr);
+				"-[ 0x%08"PFMT64x" ]-", n->addr);
 	} else {
 		snprintf (title, sizeof (title)-1,
-			"   0x%08"PFMT64x"   ", n->addr);
+				"   0x%08"PFMT64x"   ", n->addr);
 	}
-	if (G (n->x+1, n->y+1))
-		W (title); // delta_x
-	(void)G (n->x+2+delta_x, n->y+2);
-	//if (
-// TODO: temporary crop depending on out of screen offsets
-	{
-		char *text = r_str_crop (n->text,
-			delta_x, delta_y, n->w, n->h);
-		if (text) {
-			W (text);
-			free (text);
-		} else {
-			W (n->text);
-		}
+	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1))
+		W(title + delta_x);
+
+	(void)G(n->x + MARGIN_TEXT_X + delta_x, n->y + MARGIN_TEXT_Y);
+	// TODO: temporary crop depending on out of screen offsets
+	text = r_str_crop (n->text, delta_x, delta_y, n->w - BORDER_WIDTH, n->h);
+	if (text) {
+		W (text);
+		free (text);
+	} else {
+		W (n->text);
 	}
-	if (G (n->x+1, n->y+1))
-		W (title);
+
 	// TODO: check if node is traced or not and hsow proper color
 	// This info must be stored inside Node* from RCore*
 	if (cur) {
@@ -139,6 +154,16 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	} else {
 		B (n->x, n->y, n->w, n->h);
 	}
+}
+
+static void Node_print(RConsCanvas *can, Node *n, int cur) {
+	if (!can)
+		return;
+
+	if (small_nodes)
+		small_Node_print(can, n, cur);
+	else
+		normal_Node_print(can, n, cur);
 }
 
 static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
@@ -397,6 +422,10 @@ static int n_edges = 0;
 static int callgraph = 0;
 static int instep = 0;
 
+static Node *get_current_node() {
+	 return &nodes[curnode];
+}
+
 static int edgesFrom (int n) {
 	int i, count = 0;
 	for (i=0; edges[i].nth != -1; i++) {
@@ -407,38 +436,37 @@ static int edgesFrom (int n) {
 	return count;
 }
 
-static void r_core_graph_refresh (RCore *core) {
+static void refresh_graph (RCore *core) {
 	char title[128];
 	int i, h, w = r_cons_get_size (&h);
 	if (instep && core->io->debug) {
+		RAnalFunction *f;
 		r_core_cmd0 (core, "sr pc");
-		{
-			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			if (f && f != fcn) {
-				fcn = f;
-				reloadNodes (core);
-			}
+		f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+		if (f && f != fcn) {
+			fcn = f;
+			reloadNodes (core);
 		}
 	}
 	r_cons_clear00 ();
-	if (!can) {
+	if (!can)
 		return;
-	}
+
 	r_cons_canvas_resize (can, w, h);
 	r_cons_canvas_clear (can);
 
 	if (edges)
-	for (i=0; edges[i].nth!=-1; i++) {
-		if (edges[i].from == -1 || edges[i].to == -1)
-			continue;
-		Node *a = &nodes[edges[i].from];
-		Node *b = &nodes[edges[i].to];
-		int nth = edges[i].nth;
-		if (edgesFrom (edges[i].from) == 1) {
-			nth = -1; // blue line
+		for (i=0; edges[i].nth!=-1; i++) {
+			if (edges[i].from == -1 || edges[i].to == -1)
+				continue;
+			Node *a = &nodes[edges[i].from];
+			Node *b = &nodes[edges[i].to];
+			int nth = edges[i].nth;
+			if (edgesFrom (edges[i].from) == 1) {
+				nth = -1; // blue line
+			}
+			Edge_print (can, a, b, nth);
 		}
-		Edge_print (can, a, b, nth);
-	}
 	for (i=0; i<n_nodes; i++) {
 		if (i != curnode) {
 			Node_print (can, &nodes[i], i==curnode);
@@ -458,13 +486,10 @@ static void r_core_graph_refresh (RCore *core) {
 	W (title);
 
 	r_cons_canvas_print (can);
-	if (1) {
-// if the command contains a
-		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
-		if (cmdv && *cmdv) {
-			r_cons_gotoxy (0,1);
-			r_core_cmd0 (core, cmdv);
-		}
+	const char *cmdv = r_config_get (core->config, "cmd.gprompt");
+	if (cmdv && *cmdv) {
+		r_cons_gotoxy (0,1);
+		r_core_cmd0 (core, cmdv);
 	}
 	r_cons_flush ();
 }
@@ -488,7 +513,6 @@ static void reloadNodes(RCore *core) {
 }
 
 static void updateSeek(RConsCanvas *can, Node *n, int w, int h, int force) {
-#define BORDER 3
 	int x, y;
 	int doscroll = 0;
 
@@ -506,28 +530,26 @@ static void updateSeek(RConsCanvas *can, Node *n, int w, int h, int force) {
 	}
 	if (doscroll) {
 		// top-left
-		can->sy = -n->y+BORDER;
-		can->sx = -n->x+BORDER;
+		can->sy = -n->y + BORDER;
+		can->sx = -n->x + BORDER;
 		// center
-		can->sy = -n->y+BORDER + (h/8);
-		can->sx = -n->x+BORDER + (w/4);
+		can->sy = -n->y + BORDER + (h/8);
+		can->sx = -n->x + BORDER + (w/4);
 	}
 }
 
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
-#define OS_INIT() ostack.size = 0; ostack.nodes[0] = 0;
-#define OS_PUSH(x) if (ostack.size<OS_SIZE) {ostack.nodes[++ostack.size]=x;}
-#define OS_POP() ((ostack.size>0)? ostack.nodes[--ostack.size]:0)
 	int wheelspeed;
 	int okey, key, cn, wheel;
 	int i, w, h;
+	int goto_beach = 0;
 	n_nodes = n_edges = 0;
 	nodes = NULL;
 	edges = NULL;
 	callgraph = 0;
 	mousemode = 0;
 
-	OS_INIT();
+	ostack_init();
 	fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
 		eprintf ("No function in current seek\n");
@@ -552,278 +574,276 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	}
 #endif
 
-#define N nodes[curnode]
 	reloadNodes (core);
-	updateSeek (can, &N, w, h, 1);
+	updateSeek (can, get_current_node(), w, h, 1);
 
-repeat:
-	w = r_cons_get_size (&h);
-	core->cons->event_data = core;
-	core->cons->event_resize = \
-		(RConsEvent)r_core_graph_refresh;
-	r_core_graph_refresh (core);
-	wheel = r_config_get_i (core->config, "scr.wheel");
-	if (wheel)
-		r_cons_enable_mouse (R_TRUE);
+	while (!goto_beach) {
+		w = r_cons_get_size (&h);
+		core->cons->event_data = core;
+		core->cons->event_resize = (RConsEvent)refresh_graph;
+		refresh_graph (core);
+		wheel = r_config_get_i (core->config, "scr.wheel");
+		if (wheel)
+			r_cons_enable_mouse (R_TRUE);
 
-	// r_core_graph_inputhandle()
-	okey = r_cons_readchar ();
-	key = r_cons_arrow_to_hjkl (okey);
-	if (r_cons_singleton()->mouse_event) {
-		wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
-	} else {
-		wheelspeed = 1;
-	}
-
-	switch (key) {
-	case '=':
-	case '|':
-		{ // TODO: edit
-		const char *buf = NULL;
-#define I core->cons
-		const char *cmd = r_config_get (core->config, "cmd.gprompt");
-		r_line_set_prompt ("cmd.gprompt> ");
-		I->line->contents = strdup (cmd);
-		buf = r_line_readline ();
-		I->line->contents = NULL;
-		r_config_set (core->config, "cmd.gprompt", buf);
+		// r_core_graph_inputhandle()
+		okey = r_cons_readchar ();
+		key = r_cons_arrow_to_hjkl (okey);
+		if (r_cons_singleton()->mouse_event) {
+			wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
+		} else {
+			wheelspeed = 1;
 		}
-		break;
-	case 'O':
-		// free nodes or leak
-		simple_mode = !!!simple_mode;
-		reloadNodes(core);
-		break;
-	case 'V':
-		callgraph = !!!callgraph;
-		if (callgraph) {
-			int y = 5, x = 20;
-			n_nodes = cgNodes (core, fcn, &nodes);
-			n_edges = cgEdges (fcn, nodes, &edges);
-			// callgraph layout
-			for (i=0; nodes[i].text; i++) {
-				// wrap to width 'w'
-				if (i>0) {
-					if (nodes[i].x < nodes[i-1].x) {
-						y += 10;
-						x = 0;
+
+		switch (key) {
+			case '=':
+			case '|':
+				{ // TODO: edit
+					const char *buf = NULL;
+					const char *cmd = r_config_get (core->config, "cmd.gprompt");
+					r_line_set_prompt ("cmd.gprompt> ");
+					core->cons->line->contents = strdup (cmd);
+					buf = r_line_readline ();
+					core->cons->line->contents = NULL;
+					r_config_set (core->config, "cmd.gprompt", buf);
+				}
+				break;
+			case 'O':
+				// free nodes or leak
+				simple_mode = !!!simple_mode;
+				reloadNodes(core);
+				break;
+			case 'V':
+				callgraph = !!!callgraph;
+				if (callgraph) {
+					int y = 5, x = 20;
+					n_nodes = cgNodes (core, fcn, &nodes);
+					n_edges = cgEdges (fcn, nodes, &edges);
+					// callgraph layout
+					for (i=0; nodes[i].text; i++) {
+						// wrap to width 'w'
+						if (i>0) {
+							if (nodes[i].x < nodes[i-1].x) {
+								y += 10;
+								x = 0;
+							}
+						}
+						nodes[i].x = x;
+						nodes[i].y = i? y: 2;
+						x += 30;
 					}
+				} else {
+					n_nodes = bbNodes (core, fcn, &nodes);
+					n_edges = bbEdges (fcn, nodes, &edges);
+					curnode = 0;
+					// hack to make the layout happy
+					for (i=0; nodes[i].text; i++) {
+						Node_print (can, &nodes[i], i==curnode);
+					}
+					Layout_depth (nodes, edges);
 				}
-				nodes[i].x = x;
-				nodes[i].y = i? y: 2;
-				x += 30;
-			}
-		} else {
-			n_nodes = bbNodes (core, fcn, &nodes);
-			n_edges = bbEdges (fcn, nodes, &edges);
-			curnode = 0;
-			// hack to make the layout happy
-			for (i=0; nodes[i].text; i++) {
-				Node_print (can, &nodes[i], i==curnode);
-			}
-			Layout_depth (nodes, edges);
-		}
-		break;
-	case 'z':
-		instep = 1;
-		if (r_config_get_i (core->config, "cfg.debug"))
-			r_core_cmd0 (core, "ds;.dr*");
-		else r_core_cmd0 (core, "aes;.dr*");
-		reloadNodes (core);
-		break;
-	case 'Z':
-		if (okey == 27) {
-			// shift tab
-			curnode--;
-			if (curnode < 0) {
-				for (curnode=0; nodes[curnode].text; curnode++) {
-					/* do nothing */
+				break;
+			case 'z':
+				instep = 1;
+				if (r_config_get_i (core->config, "cfg.debug"))
+					r_core_cmd0 (core, "ds;.dr*");
+				else r_core_cmd0 (core, "aes;.dr*");
+				reloadNodes (core);
+				break;
+			case 'Z':
+				if (okey == 27) {
+					// shift tab
+					curnode--;
+					if (curnode < 0) {
+						for (curnode=0; nodes[curnode].text; curnode++) {
+							/* do nothing */
+						}
+					}
+				} else {
+					// 'Z'
+					instep = 1;
+					if (r_config_get_i (core->config, "cfg.debug"))
+						r_core_cmd0 (core, "dso;.dr*");
+					else r_core_cmd0 (core, "aeso;.dr*");
+					reloadNodes (core);
 				}
-			}
-		} else {
-			// 'Z'
-			instep = 1;
-			if (r_config_get_i (core->config, "cfg.debug"))
-				r_core_cmd0 (core, "dso;.dr*");
-			else r_core_cmd0 (core, "aeso;.dr*");
-			reloadNodes (core);
+				break;
+			case 'x':
+				if (r_core_visual_xrefs_x (core))
+					goto_beach = 1;
+				break;
+			case 'X':
+				if (r_core_visual_xrefs_X (core))
+					goto_beach = 1;
+				break;
+			case 9: // tab
+				if (curnode+1<n_nodes) {
+					curnode++;
+					if (!nodes[curnode].text)
+						curnode = 0;
+					updateSeek (can, get_current_node(), w, h, 0);
+				}
+				break;
+			case '?':
+				r_cons_clear00 ();
+				r_cons_printf ("Visual Ascii Art graph keybindings:\n"
+						" .    - center graph to the current node\n"
+						" C    - toggle scr.color\n"
+						" hjkl - move node\n"
+						" asdw - scroll canvas\n"
+						" tab  - select next node\n"
+						" TAB  - select previous node\n"
+						" t/f  - follow true/false edges\n"
+						" e    - toggle edge-lines style (diagonal/square)\n"
+						" n    - toggle mini-graph\n"
+						" O    - toggle disasm mode\n"
+						" u    - select previous node\n"
+						" V    - toggle basicblock / call graphs\n"
+						" x/X  - jump to xref/ref\n"
+						" z/Z  - step / step over\n"
+						" R    - relayout\n");
+				r_cons_flush ();
+				r_cons_any_key (NULL);
+				break;
+			case 'R':
+			case 'r': Layout_depth (nodes, edges); break;
+			case 'j':
+					  if (r_cons_singleton()->mouse_event) {
+						  switch (mousemode) {
+							  case 0: // canvas-y
+								  can->sy += wheelspeed;
+								  break;
+							  case 1: // canvas-x
+								  can->sx += wheelspeed;
+								  break;
+							  case 2: // node-y
+								  get_current_node()->y += wheelspeed;
+								  break;
+							  case 3: // node-x
+								  get_current_node()->x += wheelspeed;
+								  break;
+						  }
+					  } else {
+						  get_current_node()->y++;
+					  }
+					  break;
+			case 'k':
+					  if (r_cons_singleton()->mouse_event) {
+						  switch (mousemode) {
+							  case 0: // canvas-y
+								  can->sy -= wheelspeed;
+								  break;
+							  case 1: // canvas-x
+								  can->sx -= wheelspeed;
+								  break;
+							  case 2: // node-y
+								  get_current_node()->y -= wheelspeed;
+								  break;
+							  case 3: // node-x
+								  get_current_node()->x -= wheelspeed;
+								  break;
+						  }
+					  } else {
+						  get_current_node()->y--;
+					  }
+					  break;
+			case 'm':
+					  mousemode++;
+					  if (!mousemodes[mousemode])
+						  mousemode = 0;
+					  break;
+			case 'M':
+					  mousemode--;
+					  if (mousemode<0)
+						  mousemode = 3;
+					  break;
+			case 'h': get_current_node()->x--; break;
+			case 'l': get_current_node()->x++; break;
+			case 'J': get_current_node()->y += 5; break;
+			case 'K': get_current_node()->y -= 5; break;
+			case 'H': get_current_node()->x -= 5; break;
+			case 'L': get_current_node()->x += 5; break;
+					  // scroll
+			case '0': can->sx = can->sy = 0; break;
+			case 'w': can->sy -= 1; break;
+			case 's': can->sy += 1; break;
+			case 'a': can->sx -= 1; break;
+			case 'd': can->sx += 1; break;
+			case 'W': can->sy -= 5; break;
+			case 'S': can->sy += 5; break;
+			case 'A': can->sx -= 5; break;
+			case 'D': can->sx += 5; break;
+					  break;
+			case 'e':
+					  can->linemode = !!!can->linemode;
+					  break;
+			case 'n':
+					  small_nodes = small_nodes ? 0: 1;
+					  reloadNodes (core);
+					  //Layout_depth (nodes, edges);
+					  break;
+			case 'u':
+					  curnode = ostack_pop(); // wtf double push ?
+					  updateSeek (can, get_current_node(), w, h, 0);
+					  break;
+			case '.':
+					  updateSeek (can, get_current_node(), w, h, 1);
+					  instep = 1;
+					  break;
+			case 't':
+					  cn = Edge_node (edges, curnode, 0);
+					  if (cn != -1) {
+						  curnode = cn;
+						  ostack_push (cn);
+					  }
+					  updateSeek (can, get_current_node(), w, h, 0);
+					  // select jump node
+					  break;
+			case 'f':
+					  cn = Edge_node (edges, curnode, 1);
+					  if (cn != -1) {
+						  curnode = cn;
+						  ostack_push (cn);
+					  }
+					  updateSeek (can, get_current_node(), w, h, 0);
+					  // select false node
+					  break;
+			case '/':
+					  r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
+					  break;
+			case ':':
+					  core->vmode = R_FALSE;
+					  r_core_visual_prompt_input (core);
+					  core->vmode = R_TRUE;
+					  break;
+			case 'C':
+					  can->color = !!!can->color; 
+					  //r_config_swap (core->config, "scr.color");
+					  // refresh graph
+					  //	reloadNodes (core);
+					  break;
+			case -1: // EOF
+			case 'q':
+					  goto_beach = 1;
+					  break;
+			case 27: // ESC
+					  if (r_cons_readchar () == 91) {
+						  if (r_cons_readchar () == 90) {
+							  if (curnode<1) {
+								  int i;
+								  for (i=0; nodes[i].text; i++) {};
+								  curnode = i-1;
+							  } else curnode--;
+						  }
+					  }
+					  break;
+			default:
+					  eprintf ("Key %d\n", key);
+					  //sleep (1);
+					  break;
 		}
-		break;
-	case 'x':
-		if (r_core_visual_xrefs_x (core))
-			goto beach;
-		break;
-	case 'X':
-		if (r_core_visual_xrefs_X (core))
-			goto beach;
-		break;
-	case 9: // tab
-		if (curnode+1<n_nodes) {
-			curnode++;
-			if (!nodes[curnode].text)
-				curnode = 0;
-			updateSeek (can, &N, w, h, 0);
-		}
-		break;
-	case '?':
-		r_cons_clear00 ();
-		r_cons_printf ("Visual Ascii Art graph keybindings:\n"
-		" .    - center graph to the current node\n"
-		" C    - toggle scr.color\n"
-		" hjkl - move node\n"
-		" asdw - scroll canvas\n"
-		" tab  - select next node\n"
-		" TAB  - select previous node\n"
-		" t/f  - follow true/false edges\n"
-		" e    - toggle edge-lines style (diagonal/square)\n"
-		" n    - toggle mini-graph\n"
-		" O    - toggle disasm mode\n"
-		" u    - select previous node\n"
-		" V    - toggle basicblock / call graphs\n"
-		" x/X  - jump to xref/ref\n"
-		" z/Z  - step / step over\n"
-		" R    - relayout\n");
-		r_cons_flush ();
-		r_cons_any_key (NULL);
-		break;
-	case 'R':
-	case 'r': Layout_depth (nodes, edges); break;
-	case 'j':
-		if (r_cons_singleton()->mouse_event) {
-			switch (mousemode) {
-			case 0: // canvas-y
-				can->sy += wheelspeed;
-				break;
-			case 1: // canvas-x
-				can->sx += wheelspeed;
-				break;
-			case 2: // node-y
-				N.y += wheelspeed;
-				break;
-			case 3: // node-x
-				N.x += wheelspeed;
-				break;
-			}
-		} else {
-			N.y++;
-		}
-		break;
-	case 'k':
-		if (r_cons_singleton()->mouse_event) {
-			switch (mousemode) {
-			case 0: // canvas-y
-				can->sy -= wheelspeed;
-				break;
-			case 1: // canvas-x
-				can->sx -= wheelspeed;
-				break;
-			case 2: // node-y
-				N.y -= wheelspeed;
-				break;
-			case 3: // node-x
-				N.x -= wheelspeed;
-				break;
-			}
-		} else {
-			N.y--;
-		}
-		break;
-	case 'm':
-		mousemode++;
-		if (!mousemodes[mousemode])
-			mousemode = 0;
-		break;
-	case 'M':
-		mousemode--;
-		if (mousemode<0)
-			mousemode = 3;
-		break;
-	case 'h': N.x--; break;
-	case 'l': N.x++; break;
-	case 'J': N.y+=5; break;
-	case 'K': N.y-=5; break;
-	case 'H': N.x-=5; break;
-	case 'L': N.x+=5; break;
-	// scroll
-	case '0': can->sx = can->sy = 0; break;
-	case 'w': can->sy -= 1; break;
-	case 's': can->sy += 1; break;
-	case 'a': can->sx -= 1; break;
-	case 'd': can->sx += 1; break;
-	case 'W': can->sy -= 5; break;
-	case 'S': can->sy += 5; break;
-	case 'A': can->sx -= 5; break;
-	case 'D': can->sx += 5; break;
-		break;
-	case 'e':
-		can->linemode = !!!can->linemode;
-		break;
-	case 'n':
-		small_nodes = small_nodes ? 0: 1;
-		reloadNodes (core);
-		//Layout_depth (nodes, edges);
-		break;
-	case 'u':
-		curnode = OS_POP(); // wtf double push ?
-		updateSeek (can, &N, w, h, 0);
-		break;
-	case '.':
-		updateSeek (can, &N, w, h, 1);
-		instep = 1;
-		break;
-	case 't':
-		cn = Edge_node (edges, curnode, 0);
-		if (cn != -1) {
-			curnode = cn;
-			OS_PUSH (cn);
-		}
-		updateSeek (can, &N, w, h, 0);
-		// select jump node
-		break;
-	case 'f':
-		cn = Edge_node (edges, curnode, 1);
-		if (cn != -1) {
-			curnode = cn;
-			OS_PUSH (cn);
-		}
-		updateSeek (can, &N, w, h, 0);
-		// select false node
-		break;
-	case '/':
-		r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
-		break;
-	case ':':
-		core->vmode = R_FALSE;
-		r_core_visual_prompt_input (core);
-		core->vmode = R_TRUE;
-		break;
-	case 'C':
-		can->color = !!!can->color; 
-		//r_config_swap (core->config, "scr.color");
-		// refresh graph
-	//	reloadNodes (core);
-		break;
-	case -1: // EOF
-	case 'q':
-		goto beach;
-	case 27: // ESC
-		if (r_cons_readchar () == 91) {
-			if (r_cons_readchar () == 90) {
-				if (curnode<1) {
-					int i;
-					for (i=0; nodes[i].text; i++) {};
-					curnode = i-1;
-				} else curnode--;
-			}
-		}
-		break;
-	default:
-		eprintf ("Key %d\n", key);
-		//sleep (1);
-		break;
 	}
-	goto repeat;
-beach:
+
 	free (nodes);
 	free (edges);
 	free (can);

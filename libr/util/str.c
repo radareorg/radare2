@@ -1745,38 +1745,32 @@ R_API char *r_str_crop(const char *str, int x, int y, int w, int h) {
 	r = ret = strdup (str);
 	while (*str) {
 		/* crop height */
-		if (ch>=h) {
+		if (ch >= h) {
 			r--;
 			break;
 		}
+
 		if (*str == '\n') {
-			if (ch>=y && ch<h)
-				if (cw>=x && cw<w)
-					*r++ = *str;
+			if (ch >= y && ch < h)
+				*r++ = *str;
+			str++;
 			ch++;
 			cw = 0;
 		} else {
+			if (ch >= y && ch < h && cw >= x && cw < w)
+				*r++ = *str;
+
 			/* crop width */
-			if (w>0 && cw>=w) {
-				*r++ = '\n';
-				/* skip str until newline */
-				while (*str && *str != '\n') {
+			/* skip until newline */
+			if (cw >= w) {
+				while (*str && *str != '\n')
 					str++;
-				}
-				if (!*str)break;
-				if (*str=='\n') {
-					str++;
-					if (!*str)break;
-				}
-				cw = 0;
-				ch++;
+			} else {
+				str++;
 			}
-			if (ch>=y && ch<h)
-				if (cw>=x && cw<w)
-					*r++ = *str;
+
+			cw++;
 		}
-		str++;
-		cw++;
 	}
 	*r = 0;
 	return ret;
