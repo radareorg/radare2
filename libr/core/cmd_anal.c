@@ -1498,7 +1498,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		if (input[1] == 'u' && input[2] == 'e')
 			until_expr = input + 3;
 		else if (input[1] == 'u')
-			until_addr = r_num_math(core->num, input + 2);
+			until_addr = r_num_math (core->num, input + 2);
 		else until_expr = "0";
 		esil_step (core, until_addr, until_expr);
 		break;

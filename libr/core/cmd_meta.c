@@ -239,6 +239,25 @@ error:
 static int cmd_meta_comment(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[1]) {
+	case '?': {
+		const char* help_msg[] = {
+			"Usage:", "CC[-+!*au] [base64:..|str] @ addr", "",
+			"CC", "", "list all comments in human friednly form",
+			"CC*", "", "list all comments in r2 commands",
+			"CC.", "", "show comment at current offset",
+			"CC", " or maybe not", "append comment at current address",
+			"CC!", "", "clear all meta information (remove comments, ...)",
+			"CC-", " @ cmt_addr", "remove comment at given address",
+			"CCu", " good boy @ addr", "add good boy comment at given address",
+			"CCu", " base64:AA== @ addr", "add comment in base64",
+			NULL};
+		r_core_cmd_help (core, help_msg);
+		} break;
+	case '.':
+		break;
+	case 0:
+		r_meta_list (core->anal, R_META_TYPE_COMMENT, 0);
+		break;
 	case '!':
 		{
 			char *out, *comment = r_meta_get_string (
@@ -286,15 +305,29 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case 'u':
 		//
 		{
-		const char* newcomment = input+2;
-		while (*newcomment==' ') newcomment++;
-		char *comment = r_meta_get_string (
-				core->anal, R_META_TYPE_COMMENT, addr);
-		if (!comment || (comment && !strstr (comment, newcomment))) {
-			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-					addr, newcomment);
+		char *newcomment;
+		char *arg = input+2;
+		while (*arg && *arg == ' ') arg++;
+		if (!strncmp (arg, "base64:", 7)) {
+			char *s = (char *)sdb_decode (arg+7, NULL);
+			if (s) {
+				newcomment = s;
+			} else {
+				newcomment = NULL;
+			}
+		} else {
+			newcomment = strdup (arg);
 		}
-		free (comment);
+		if (newcomment) {
+			char *comment = r_meta_get_string (
+					core->anal, R_META_TYPE_COMMENT, addr);
+			if (!comment || (comment && !strstr (comment, newcomment))) {
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
+						addr, newcomment);
+			}
+			free (comment);
+			free (newcomment);
+		}
 		}
 		break;
 	case 'a':
