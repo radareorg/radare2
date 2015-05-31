@@ -314,7 +314,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					var->name, var->kind=='v'?"var":"arg", var->type,
 					anal->reg->name[R_REG_NAME_BP],
 					(var->kind=='v')?"-":"+", var->delta);
-				if (iter->n) r_cons_printf (",");
+				if (iter->n) anal->printf (",");
 				break;
 			default:
 				anal->printf ("%s %s %s @ %s%s0x%x\n",
