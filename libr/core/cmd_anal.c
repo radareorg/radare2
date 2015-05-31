@@ -24,6 +24,7 @@ static void var_help(RCore *core, char ch) {
 	 const char* help_msg[] = {
 		 "Usage:", "af[aAv]", " [idx] [type] [name]",
 		 "afa", "", "list function arguments",
+		 "afa*", "", "list function arguments in commands",
 		 "afa", " [idx] [name] ([type])", "define argument N with name and type",
 		 "afan", " [old_name] [new_name]", "rename function argument",
 		 "afaj", "", "return list of function arguments in JSON format",
@@ -47,7 +48,6 @@ static void var_help(RCore *core, char ch) {
 
 static int var_cmd(RCore *core, const char *str) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	RList *list;
 	char *p, *ostr;
 	int delta, type = *str;
 
@@ -56,8 +56,8 @@ static int var_cmd(RCore *core, const char *str) {
 
 	switch (type) {
 	case 'V': // show vars in human readable format
-		r_anal_var_list_show (core->anal, fcn, 'v');
-		r_anal_var_list_show (core->anal, fcn, 'a');
+		r_anal_var_list_show (core->anal, fcn, 'v', 0);
+		r_anal_var_list_show (core->anal, fcn, 'a', 0);
 		break;
 	case '?':
 		var_help (core, 0);
@@ -69,13 +69,15 @@ static int var_cmd(RCore *core, const char *str) {
 		/* Variable access CFvs = set fun var */
 		switch (str[1]) {
 		case '\0':
-			r_anal_var_list_show (core->anal, fcn, type);
+		case '*':
+		case 'j':
+			r_anal_var_list_show (core->anal, fcn, type, str[1]);
 			goto end;
 		case '?':
 			var_help (core, *str);
 			goto end;
 		case '.':
-			r_anal_var_list_show (core->anal, fcn, core->offset);
+			r_anal_var_list_show (core->anal, fcn, core->offset, 0);
 			goto end;
 		case '-':
 			if (fcn) {
@@ -102,21 +104,6 @@ static int var_cmd(RCore *core, const char *str) {
 				old_name, new_name);
 			free (old_name);
 			goto end;
-		case 'j':
-			list = r_anal_var_list (core->anal, fcn, type);
-			RAnalVar *var;
-			RListIter *iter;
-			r_cons_printf ("[");
-			r_list_foreach (list, iter, var) {
-				r_cons_printf ("{\"name\":\"%s\","
-						"\"kind\":\"%s\",\"type\":\"%s\",\"ref\":\"%s%s%d\"}",
-						var->name, var->kind=='v'?"var":"arg", var->type,
-						core->anal->reg->name[R_REG_NAME_BP], (var->kind=='v')?"-":"+", var->delta);
-				if (iter->n) r_cons_printf (",");
-			}
-			r_cons_printf ("]\n");
-			r_list_free (list);
-			goto end;
 		case 's':
 		case 'g':
 			if (str[2]!='\0') {
@@ -128,7 +115,6 @@ static int var_cmd(RCore *core, const char *str) {
 						int scope = (str[1]=='g')?0: 1;
 						r_anal_var_access (core->anal, fcn->addr, (char)type,
 							scope, atoi (str+2), rw, core->offset);
-						//return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
 						r_anal_var_free (var);
 						goto end;
 					}
@@ -640,11 +626,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'l': // "afl"
 		switch (input[2]) {
-		case '?': eprintf ("Usage: afl[j*] <addr>\n"); break;
-		case 'j': r_core_anal_fcn_list (core, NULL, 'j'); break; // "aflj"
-		case '*': r_core_anal_fcn_list (core, NULL, '*'); break; // "afl*"
-		case 'a': r_core_anal_fcn_list (core, NULL, 'a'); break; // "afla"
-		default: r_core_anal_fcn_list (core, NULL, 'q'); break; // "afl"
+		case '?':
+			eprintf ("Usage: afl[ajq*] <addr>\n");
+			eprintf ("List all functions in quiet, commands or json format\n");
+			break;
+		case 'a':
+		case '*':
+		case 'j':
+		case 'q':
+			r_core_anal_fcn_list (core, NULL, input[2]);
+			break;
+		default:
+			r_core_anal_fcn_list (core, NULL, 'q');
+			break;
 		}
 		break;
 	case 's': { // "afs"

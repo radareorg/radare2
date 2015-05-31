@@ -1267,6 +1267,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 					r_cons_printf ("afC %s @ 0x%08"PFMT64x"\n",
 							r_anal_cc_type2str (fcn->call), fcn->addr);
 				fcn_list_bbs (fcn);
+				/* show variables  and arguments */
+				r_core_cmdf (core, "afa* @ 0x%"PFMT64x"\n", fcn->addr);
+				r_core_cmdf (core, "afv* @ 0x%"PFMT64x"\n", fcn->addr);
 			} else {
 				r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 						fcn->addr, fcn->name, (ut64)fcn->size);
