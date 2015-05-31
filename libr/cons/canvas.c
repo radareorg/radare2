@@ -305,8 +305,7 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 		memset (row+1, '-', w-2);
 	if (w>1)
 		row[w-1] = roundcorners?'.':corner;
-	if (w>=0)
-		row[w] = 0;
+	row[w] = 0;
 	if (G(x, y)) {
 		W(row);
 	}
