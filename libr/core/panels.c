@@ -355,6 +355,7 @@ R_API int r_core_visual_panels(RCore *core) {
 	}
 	n_panels = bbPanels (core, &panels);
 	if (!panels) {
+		r_config_set_i (core->config, "scr.color", can->color);
 		free (can);
 		return R_FALSE;
 	}
@@ -496,6 +497,7 @@ repeat:
 	goto repeat;
 beach:
 	free (panels);
+	r_config_set_i (core->config, "scr.color", can->color);
 	free (can);
 	r_config_set_i (core->config, "asm.comments", asm_comments);
 	r_config_set_i (core->config, "asm.bytes", asm_bytes);
