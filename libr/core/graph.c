@@ -137,14 +137,7 @@ static void normal_Node_print(RConsCanvas *can, Node *n, int cur) {
 	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1))
 		W(title + delta_x);
 
-	onscreen = G(n->x + MARGIN_TEXT_X + delta_x, n->y + MARGIN_TEXT_Y);
-	if (!onscreen) {
-		if ((n->y + can->sy + n->h) < n->h) {
-			onscreen = 1;
-		}
-	}
-	// TODO: temporary crop depending on out of screen offsets
-	if (onscreen) {
+	if (G(n->x + MARGIN_TEXT_X + delta_x, n->y + MARGIN_TEXT_Y + delta_y)) {
 		text = r_str_crop (n->text, delta_x, delta_y, n->w - BORDER_WIDTH, n->h);
 		if (text) {
 			W (text);
