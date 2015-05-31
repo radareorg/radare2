@@ -59,221 +59,200 @@ static ut8 get_ad(ut16 instr)
 	return (instr >> 7) & 1;
 }
 
-static int get_src (instr) {
+static int get_src(instr) {
 	return (instr >> 8) & 0xF;
 }
 
-static int get_dst (instr) {
+static int get_dst(instr) {
 	return instr & 0xF;
 }
 
-static void remove_first_operand (struct msp430_cmd *cmd)
+static void remove_first_operand(struct msp430_cmd *cmd)
 {
-	if (strchr (cmd->operands, ',')) {
-		memmove (cmd->operands, strchr (cmd->operands, ',') + 2,
-				strlen (strchr (cmd->operands, ',') + 2) + 1);
+	if (strchr(cmd->operands, ',')) {
+		memmove(cmd->operands, strchr(cmd->operands, ',') + 2,
+				strlen(strchr(cmd->operands, ',') + 2) + 1);
 	}
 }
 
-static void remove_second_operand (struct msp430_cmd *cmd)
+static void remove_second_operand(struct msp430_cmd *cmd)
 {
-	if (strchr (cmd->operands, ','))
-		*strchr (cmd->operands, ',') = '\0';
+	if (strchr(cmd->operands, ','))
+		*strchr(cmd->operands, ',') = '\0';
 }
 
 /* TODO: This is ugly as hell */
-static int decode_emulation (ut16 instr, ut16 op1, struct msp430_cmd *cmd)
+static int decode_emulation(ut16 instr, ut16 op1, struct msp430_cmd *cmd)
 {
 	int ret = -1;
-	ut8 as, ad, opcode;
+	ut8 as, ad, src, dst, bw, opcode;
 
-	as = get_as (instr);
-	ad = get_ad (instr);
-	opcode = get_twoop_opcode (instr);
+	as = get_as(instr);
+	ad = get_ad(instr);
+        src = get_src(instr);
+        dst = get_dst(instr);
+        bw = get_bw(instr);
+	opcode = get_twoop_opcode(instr);
 
-	if (as == 0 && get_src (instr) == MSP430_R3 && opcode == MSP430_ADDC) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "adc.b" : "adc");
-		snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1, "r%d",
-				get_dst (instr));
-	} else if (opcode == MSP430_MOV && as == 0 && get_src (instr) == MSP430_R3
-			&& get_dst (instr) != MSP430_R3 && get_ad (instr) == 0) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "clr.b" : "clr");
-		remove_first_operand (cmd);
-	} else if (opcode == MSP430_MOV && ad == 0 && get_dst (instr) == MSP430_PC
-			&& get_src (instr) != MSP430_SP) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "br");
-		remove_second_operand (cmd);
-	} else if (opcode == MSP430_BIC && as == 2 && get_src (instr) == MSP430_SR) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "clrn");
+	if (opcode == MSP430_ADDC && as == 0 && src == MSP430_R3) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "adc.b" : "adc");
+		snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "r%d", dst);
+	} else if (opcode == MSP430_MOV && as == 0 && src == MSP430_R3) {
+                if (ad == 0 && dst == MSP430_R3) {
+		        snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "nop");
+		        cmd->operands[0] = '\0';
+                } else {
+        		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "clr.b" : "clr");
+	        	remove_first_operand(cmd);
+                }
+	} else if (opcode == MSP430_MOV && as == 3 && src == MSP430_SP) {
+                if (dst == MSP430_PC) {
+                        snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "ret");
+       		        cmd->type = MSP430_ONEOP;
+        		cmd->opcode = MSP430_RETI;
+	        	cmd->operands[0] = '\0';
+                } else {
+                        snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "pop.b" : "pop");
+                	remove_first_operand(cmd);
+                }
+	} else if (opcode == MSP430_MOV && ad == 0 && dst == MSP430_PC) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "br");
+		remove_second_operand(cmd);
+	} else if (opcode == MSP430_BIC && as == 2 && src == MSP430_SR && dst == MSP430_SR) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "clrn");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIC && as == 2 && get_src (instr) == 3) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "clrz");
+	} else if (opcode == MSP430_BIC && as == 2 && src == MSP430_R3 && dst == MSP430_SR) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "clrz");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_DADD && as == 0 && get_src (instr) == MSP430_R3) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "dadc.b" : "dadc");
-		remove_first_operand (cmd);
-	} else if (opcode == MSP430_SUB && as == 1 && get_src (instr) == MSP430_R3) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "dec.b" : "dec");
-		remove_first_operand (cmd);
-	} else if (opcode == MSP430_SUB && as == 2 && get_src (instr) == MSP430_R3) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "decd.b" : "decd");
-		remove_first_operand (cmd);
-	} else if (opcode == MSP430_BIC && as == 3 && get_src (instr) == MSP430_SR
-			&& get_dst (instr) == MSP430_SR) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "dint");
+	} else if (opcode == MSP430_BIC && as == 3 && src == MSP430_SR && dst == MSP430_SR) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "dint");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIS && as == 3 && get_src (instr) == MSP430_SR
-			&& get_dst (instr) == MSP430_SR) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "eint");
+	} else if (opcode == MSP430_BIS && as == 3 && src == MSP430_SR && dst == MSP430_SR) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "eint");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_ADD && as == 1 && get_src (instr) == MSP430_R3) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "inc.b" : "inc");
-		remove_first_operand (cmd);
-	} else if (opcode == MSP430_ADD && as == 2 && get_src (instr) == MSP430_R3) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "incd.b" : "incd");
-		remove_first_operand (cmd);
-	} else if (opcode == MSP430_XOR && as == 3 && get_src (instr) != MSP430_R3
-			&& get_src (instr) != MSP430_SR && (op1 == 0xFFFF || op1 == 0xFF)) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "inv.b" : "inv");
-		remove_second_operand (cmd);
-	} else if (opcode == MSP430_MOV && as == 0 && get_src (instr) == MSP430_R3
-			&& get_ad (instr) == 0 && get_dst (instr) == 3) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "nop");
+	} else if (opcode == MSP430_DADD && as == 0 && src == MSP430_R3) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "dadc.b" : "dadc");
+		remove_first_operand(cmd);
+	} else if (opcode == MSP430_SUB && as == 1 && src == MSP430_R3) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "dec.b" : "dec");
+		remove_first_operand(cmd);
+	} else if (opcode == MSP430_SUB && as == 2 && src == MSP430_R3) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "decd.b" : "decd");
+		remove_first_operand(cmd);
+	} else if (opcode == MSP430_ADD && as == 1 && src == MSP430_R3) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "inc.b" : "inc");
+		remove_first_operand(cmd);
+	} else if (opcode == MSP430_ADD && as == 2 && src == MSP430_R3) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "incd.b" : "incd");
+		remove_first_operand(cmd);
+	} else if (opcode == MSP430_XOR && as == 3 && src == MSP430_R3) { 
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "inv.b" : "inv");
+		remove_first_operand(cmd);
+	} else if (opcode == MSP430_ADD && src == dst) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "rla.b" : "rla");
+		remove_second_operand(cmd);
+	} else if (opcode == MSP430_ADDC && src == dst) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "rlc.b" : "rlc");
+		remove_second_operand(cmd);
+	} else if (opcode == MSP430_SUBC && as == 0 && src == MSP430_R3) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "sbc.b" : "sbc");
+		remove_first_operand(cmd);
+	} else if (opcode == MSP430_BIS && as == 1 && src == MSP430_R3) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "setc");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_MOV && as == 3 && get_src (instr) == MSP430_SP
-			&& get_dst (instr) != MSP430_PC) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "pop.b" : "pop");
-		remove_first_operand (cmd);
-	} else if (opcode == MSP430_MOV && as == 3 && get_src (instr) == MSP430_SP
-			&& get_dst (instr) == MSP430_PC) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "ret");
-		cmd->type = MSP430_ONEOP;
-		cmd->opcode = MSP430_RETI;
+	} else if (opcode == MSP430_BIS && as == 2 && src == MSP430_SR) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "setn");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_ADD && get_src (instr) == get_dst (instr)) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "rla.b" : "rla");
-		remove_second_operand (cmd);
-	} else if (opcode == MSP430_ADDC && get_src (instr) == get_dst (instr)) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "rlc.b" : "rlc");
-		remove_second_operand (cmd);
-	} else if (opcode == MSP430_SUBC && as == 0 && get_src (instr) == MSP430_R3) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "sbc.b" : "sbc");
-		remove_first_operand (cmd);
-	} else if (opcode == MSP430_BIS && as == 1 && get_src (instr) == MSP430_R3) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "setc");
+	} else if (opcode == MSP430_BIS && as == 2 && src == MSP430_R3) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "setz");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIS && as == 2 && get_src (instr) == MSP430_SR) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "setn");
-		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIS && as == 2 && get_src (instr) == MSP430_R3) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "setz");
-		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_CMP && as == 0 && get_src (instr) == MSP430_SR) {
-		snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-				get_bw (instr) ? "tst.b" : "tst");
-		remove_first_operand (cmd);
+	} else if (opcode == MSP430_CMP && as == 0 && src == MSP430_R3) {
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "tst.b" : "tst");
+		remove_first_operand(cmd);
 	}
 
 	return ret;
 }
 
 /* return #byte of instruction */
-static int decode_addressing_mode (ut16 instr, ut16 op1, ut16 op2, struct msp430_cmd *cmd)
+static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_cmd *cmd)
 {
 	int ret, cg;
-	ut8 as, ad;
+	ut8 as, ad, src, dst;
         ut16 op;
 	char dstbuf[16];
 
-	memset (dstbuf, 0, sizeof (dstbuf));
+	memset(dstbuf, 0, sizeof(dstbuf));
 
-	as = get_as (instr);
-	ad = get_ad (instr);
+	as = get_as(instr);
+	ad = get_ad(instr);
+        src = get_src(instr);
+        dst = get_dst(instr);
         cg = 0;
 
         /* addressing mode of source operand */
 	switch (as) {
 	case 0:
-		switch (get_src (instr)) {
+		switch (src) {
 		case MSP430_R3: /* CG2 */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1, "#0");
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "#0");
                         cg = 1;
 			break;
 		default: /* register mode */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
-				"r%d", get_src (instr));
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "r%d", src);
 		}
 		ret = 2;
 		break;
 	case 1:
 		ret = 4;
-		switch (get_src (instr)) {
+		switch (src) {
 		case MSP430_PC: /* symbolic mode */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
-				"0x%04x", op1);
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "0x%04x", op1);
 			break;
 		case MSP430_R3: /* CG2 */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1, "%s", "#1");
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "%s", "#1");
                         cg = 1;
 			ret = 2;
 			break;
 		case MSP430_SR: /* absolute mode */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
-				"&0x%04x", op1);
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "&0x%04x", op1);
 			break;
 		default: /* indexed mode */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
-				"0x%x(r%d)", op1, get_src (instr));
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "0x%x(r%d)", op1, src);
 		}
 		break;
 	case 2:
-		switch (get_src (instr)) {
+		switch (src) {
 		case MSP430_SR: /* CG1 */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1, "#4");
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "#4");
                         cg = 1;
 			break;
 		case MSP430_R3: /* CG2 */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1, "#2");
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "#2");
                         cg = 1;
 			break;
 		default: /* indirect register mode */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
-					"@r%d", get_src (instr));
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "@r%d", src);
 		}
-
 		ret = 2;
 		break;
 	case 3:
 		ret = 2;
-		switch (get_src (instr)) {
+		switch (src) {
 		case MSP430_SR: /* CG1 */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1, "#8");
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "#8");
                         cg = 1;
 			break;
 		case MSP430_R3: /* CG2 */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1, "#-1");
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "#-1");
                         cg = 1;
 			break;
 		case MSP430_PC: /* immediate mode */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
-					"#0x%04x", op1);
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "#0x%04x", op1);
 			ret = 4;
 			break;
 		default: /* indirect autoincrement mode */
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
-					"@r%d+", get_src (instr));
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "@r%d+", src);
 		}
 		break;
 	default:
@@ -286,7 +265,7 @@ static int decode_addressing_mode (ut16 instr, ut16 op1, ut16 op2, struct msp430
         /* addressing mode of destination operand */
 	switch (ad) {
 	case 0: /* register mode */
-		snprintf (dstbuf, 15, ", r%d", get_dst (instr)); 
+		snprintf(dstbuf, 15, ", r%d", dst); 
 		break;
 	case 1:
                 /* check addr. mode of source operand */
@@ -299,24 +278,21 @@ static int decode_addressing_mode (ut16 instr, ut16 op1, ut16 op2, struct msp430
                 }
 		switch (get_dst(instr)) {
 		case MSP430_PC: /* symbolic mode */                
-                        snprintf (dstbuf, 15, ", 0x%04x", op);
+                        snprintf(dstbuf, 15, ", 0x%04x", op);
                         break;
 		case MSP430_SR: /* absolute mode */
-		    	snprintf (dstbuf, 15, ", &0x%04x", op);
+		    	snprintf(dstbuf, 15, ", &0x%04x", op);
 			break;
 		default: /* indexed mode */
-			snprintf (dstbuf, 15, ", 0x%x(r%d)", op, get_dst (instr));
+			snprintf(dstbuf, 15, ", 0x%x(r%d)", op, dst);
 		}
 		break;
 	default:
 		ret = -1;
 	}
 
-	strncat (cmd->operands, dstbuf, MSP430_INSTR_MAXLEN - 1
-			- strlen (cmd->operands));
-
-	decode_emulation (instr, op1, cmd);
-
+	strncat(cmd->operands, dstbuf, MSP430_INSTR_MAXLEN - 1 - strlen(cmd->operands));
+	decode_emulation(instr, op1, cmd);
 	return ret;
 }
 
@@ -325,15 +301,15 @@ static int decode_twoop_opcode(ut16 instr, ut16 op1, ut16 op2, struct msp430_cmd
 	int ret;
 	ut8 opcode;
 
-	opcode = get_twoop_opcode (instr);
+	opcode = get_twoop_opcode(instr);
 
-	snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", two_op_instrs[opcode]);
+	snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", two_op_instrs[opcode]);
 	if (get_bw(instr)) {
-		strncat (cmd->instr, ".b", MSP430_INSTR_MAXLEN - 1 - strlen (cmd->instr));
+		strncat(cmd->instr, ".b", MSP430_INSTR_MAXLEN - 1 - strlen(cmd->instr));
 	}
 
-	cmd->opcode = get_twoop_opcode (instr);
-	ret = decode_addressing_mode (instr, op1, op2, cmd);
+	cmd->opcode = get_twoop_opcode(instr);
+	ret = decode_addressing_mode(instr, op1, op2, cmd);
 
 	return ret;
 }
@@ -348,14 +324,13 @@ static ut8 get_jmp_cond(ut16 instr)
 	return (instr >> 10 ) & 7;
 }
 
-static int decode_jmp (ut16 instr, struct msp430_cmd *cmd)
+static int decode_jmp(ut16 instr, struct msp430_cmd *cmd)
 {
 	ut16 addr;
 	if (get_jmp_opcode(instr) != MSP430_JMP_OPC)
 		return -1;
 
-	snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
-			jmp_instrs[get_jmp_cond (instr)]);
+	snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", jmp_instrs[get_jmp_cond(instr)]);
 
 	addr = instr & 0x3FF;
 
@@ -364,8 +339,8 @@ static int decode_jmp (ut16 instr, struct msp430_cmd *cmd)
 			"$%c0x%04x", addr >= 0x300 ? '-' : '+',
 			addr >= 0x300 ? 0x400 - ((addr & 0x1FF) * 2 + 2) : (addr & 0x1FF) * 2 + 2);
 
-	cmd->jmp_cond = get_jmp_cond (instr);
-	cmd->opcode = get_jmp_opcode (instr);
+	cmd->jmp_cond = get_jmp_cond(instr);
+	cmd->opcode = get_jmp_opcode(instr);
 	cmd->type = MSP430_JUMP;
 
 	return 2;
@@ -385,14 +360,14 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 	if ((instr >> 10) != 4)
 		return -1;
 
-	opcode = get_oneop_opcode (instr);
+	opcode = get_oneop_opcode(instr);
 
-	ad = get_as (instr);
+	ad = get_as(instr);
 
-	snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
+	snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
 			one_op_instrs[opcode]);
 
-	cmd->opcode = get_oneop_opcode (instr);
+	cmd->opcode = get_oneop_opcode(instr);
 
 	switch (get_oneop_opcode(instr)) {
 	case MSP430_RCR:
@@ -403,50 +378,50 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 	case MSP430_CALL:
 		switch (ad) {
 		case 0:
-			switch (get_dst (instr)) {
+			switch (get_dst(instr)) {
 			case MSP430_R3:
-				snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1, "#0");
+				snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "#0");
 				break;
 			default:
-				snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
-						"r%d", get_dst (instr));
+				snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1,
+						"r%d", get_dst(instr));
 			}
 			ret = 2;
 			break;
 		case 1:
-			switch (get_dst (instr)) {
+			switch (get_dst(instr)) {
 			case MSP430_PC:
-				snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
+				snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1,
 						"0x%04x", op);
 				break;
 			case MSP430_SR:
-				snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
+				snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1,
 						"&0x%04x", op);
 				break;
 			default:
-				snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
-						"0x%x(r%d)", op, get_dst (instr));
+				snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1,
+						"0x%x(r%d)", op, get_dst(instr));
 			}
 
 			ret = 4;
 			break;
 		case 2:
-			switch (get_dst (instr)) {
+			switch (get_dst(instr)) {
 			case MSP430_SR:
-				snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1, "#4");
+				snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "#4");
 				break;
 			case MSP430_R3:
-				snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1, "#2");
+				snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "#2");
 				break;
 			default:
-				snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
+				snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1,
 						"@r%d", get_dst(instr));
 			}
 
 			ret = 2;
 			break;
 		case 3:
-			snprintf (cmd->operands, MSP430_INSTR_MAXLEN - 1,
+			snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1,
 					"#0x%04x", op);
 			ret = 4;
 			break;
@@ -471,9 +446,9 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 	ut16 operand1, operand2;
 	ut8 opcode;
 
-	r_mem_copyendian((ut8*)&instr, in, sizeof (ut16), LIL_ENDIAN);
+	r_mem_copyendian((ut8*)&instr, in, sizeof(ut16), LIL_ENDIAN);
 
-	opcode = get_twoop_opcode (instr);
+	opcode = get_twoop_opcode(instr);
 
 	switch (opcode) {
 	case MSP430_MOV:
@@ -489,8 +464,8 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 	case MSP430_XOR:
 	case MSP430_AND:
 		cmd->type = MSP430_TWOOP;
-		r_mem_copyendian((ut8*)&operand1, in + 2, sizeof (ut16), LIL_ENDIAN);
-		r_mem_copyendian((ut8*)&operand2, in + 4, sizeof (ut16), LIL_ENDIAN);
+		r_mem_copyendian((ut8*)&operand1, in + 2, sizeof(ut16), LIL_ENDIAN);
+		r_mem_copyendian((ut8*)&operand2, in + 4, sizeof(ut16), LIL_ENDIAN);
 		ret = decode_twoop_opcode(instr, operand1, operand2, cmd);
 	break;
 	}
@@ -499,13 +474,13 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 		return ret;
 	}
 
-	ret = decode_jmp (instr, cmd);
+	ret = decode_jmp(instr, cmd);
 
 	if (ret > 0)
 		return ret;
 
-	r_mem_copyendian((ut8*)&operand1, in + 2, sizeof (ut16), LIL_ENDIAN);
-	ret = decode_oneop_opcode (instr, operand1, cmd);
+	r_mem_copyendian((ut8*)&operand1, in + 2, sizeof(ut16), LIL_ENDIAN);
+	ret = decode_oneop_opcode(instr, operand1, cmd);
 
 	return ret;
 }
