@@ -334,6 +334,65 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->family = R_ANAL_OP_FAMILY_PRIV;
 			break;
 		// cmov
+		case X86_INS_SETNE:
+		case X86_INS_SETNO:
+		case X86_INS_SETNP:
+		case X86_INS_SETNS:
+		case X86_INS_SETO:
+		case X86_INS_SETP:
+		case X86_INS_SETS:
+		case X86_INS_SETL:
+		case X86_INS_SETLE:
+		case X86_INS_SETB:
+		case X86_INS_SETG:
+		case X86_INS_SETAE:
+		case X86_INS_SETA:
+		case X86_INS_SETBE:
+		case X86_INS_SETE:
+		case X86_INS_SETGE:
+			op->type = R_ANAL_OP_TYPE_CMOV;
+			op->family = 0;
+			if (a->decode) {
+				char *dst = getarg (handle, insn, 0, 0, NULL);
+				switch (insn->id) {
+				case X86_INS_SETE:  esilprintf (op, "zf,%s,=", dst); break;
+				case X86_INS_SETNE: esilprintf (op, "zf,!,%s,=", dst); break;
+				case X86_INS_SETO:  esilprintf (op, "of,%s,=", dst); break;
+				case X86_INS_SETNO: esilprintf (op, "of,!,%s,=", dst); break;
+				case X86_INS_SETP:  esilprintf (op, "pf,%s,=", dst); break;
+				case X86_INS_SETNP: esilprintf (op, "pf,!,%s,=", dst); break;
+				case X86_INS_SETS:  esilprintf (op, "sf,%s,=", dst); break;
+				case X86_INS_SETNS: esilprintf (op, "sf,!,%s,=", dst); break;
+
+				case X86_INS_SETB:  esilprintf (op, "cf,%s,=", dst); break;
+				case X86_INS_SETAE: esilprintf (op, "cf,!,%s,=", dst); break;
+
+				/* TODO */
+#if 0
+SETLE/SETNG
+	Sets the byte in the operand to 1 if the Zero Flag is set or the
+	Sign Flag is not equal to the Overflow Flag,  otherwise sets the
+	operand to 0.
+SETBE/SETNA
+	Sets the byte in the operand to 1 if the Carry Flag or the Zero
+        Flag is set, otherwise sets the operand to 0.
+SETL/SETNGE
+	Sets the byte in the operand to 1 if the Sign Flag is not equal
+        to the Overflow Flag, otherwise sets the operand to 0.
+
+				case X86_INS_SETL:  esilprintf (op, "pf,!,%s,=", dst); break;
+				case X86_INS_SETLE: esilprintf (op, "pf,!,%s,=", dst); break;
+				case X86_INS_SETG:  esilprintf (op, "pf,!,%s,=", dst); break;
+				case X86_INS_SETA:  esilprintf (op, "pf,!,%s,=", dst); break;
+				case X86_INS_SETBE: esilprintf (op, "pf,!,%s,=", dst); break;
+				case X86_INS_SETGE: esilprintf (op, "pf,!,%s,=", dst); break;
+						    break;
+#endif
+				}
+				free (dst);
+			}
+			break;
+		// cmov
 		case X86_INS_CMOVA:
 		case X86_INS_CMOVAE:
 		case X86_INS_CMOVB:
@@ -948,7 +1007,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0, NULL);
 				char *dst = getarg (handle, insn, 0, 1, "&");
-				esilprintf (op, "%s,%s", src, dst);
+				// TODO: update of = cf = 0
+				// TODO: update sf, zf and pf
+				// TODO: af is undefined
+				esilprintf (op, "0,of,=,0,cf,=," // set carry and overflow flags
+					"%s,%s," // set reg value
+					"%%z,zf,="  // update zero flag
+					"%%s,sf,="  // update sign flag
+					"%%o,pf,=", // update parity flag
+					// TODO: add sign and parity flags here
+					src, dst);
 				free (src);
 				free (dst);
 			}
