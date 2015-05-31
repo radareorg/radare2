@@ -60,8 +60,8 @@ R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	if (!c) return 0;
 	x += c->sx;
 	y += c->sy;
-	if (x>c->w*2) return 0;
-	if (y>c->h*2) return 0;
+	if (x > c->w * 2) return 0;
+	if (y > c->h * 2) return 0;
 	if (x >= c->w) {
 		c->x = c->w;
 		ret = R_FALSE;
@@ -70,16 +70,16 @@ R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 		c->y = c->h;
 		ret = R_FALSE;
 	}
-	if (x <0) {
+	if (x < 0) {
 		//c->x = 0;
 		ret = R_FALSE;
 	}
-	if (y <0) {
+	if (y < 0) {
 		c->y = 0;
 		ret = R_FALSE;
 	}
-	if (x<c->w && x>=0) c->x = x;
-	if (y<c->h && y>=0) c->y = y;
+	if (x < c->w && x >= 0) c->x = x;
+	if (y < c->h && y >= 0) c->y = y;
 	return ret;
 }
 
@@ -286,9 +286,9 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 }
 
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
-	int i;
+	int i, x_mod;
 	int roundcorners = 0;
-	char *row = NULL;
+	char *row = NULL, *row_ptr;
 	char corner = '=';
 
 	if (w < 1 || h<1) return;
@@ -306,13 +306,20 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	if (w>1)
 		row[w-1] = roundcorners?'.':corner;
 	row[w] = 0;
-	if (G(x, y)) {
-		W(row);
+
+	row_ptr = row;
+	x_mod = x;
+	if (x < -c->sx) {
+		x_mod = R_MIN(-c->sx, x_mod + w);
+		row_ptr += x_mod - x;
 	}
-	if (G(x, y+h-1)) {
+	if (G(x_mod, y)) {
+		W(row_ptr);
+	}
+	if (G(x_mod, y+h-1)) {
 		row[0] = roundcorners?'\'':corner;
 		row[w-1] = roundcorners?'\'':corner;
-		W(row);
+		W(row_ptr);
 	}
 
 	for (i=1;i<h-1;i++) {
