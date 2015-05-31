@@ -61,9 +61,9 @@ loop:
 		y+=sy;
 	}
 	if((e2<dy) && (e2>-dx)){
-		if(sy>0){
+		if (sy>0){
 			*chizzle=(sx>0)?'\\':'/';
-		}else{
+		} else {
 			*chizzle=(sx>0)?'/':'\\';
 		}
 	}
@@ -78,12 +78,12 @@ loop:
 
 R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
 	int i, onscreen;
-	apply_line_style(c,x,y,x2,y2,style);
-	if (x==x2) {
-		int min = R_MIN (y,y2)+1;
-		int max = R_MAX (y,y2);
+	apply_line_style (c, x, y, x2, y2, style);
+	if (x == x2) {
+		int min = R_MIN (y, y2)+1;
+		int max = R_MAX (y, y2);
 		for (i=min; i<max; i++) {
-			if (G (x,i))
+			if (G (x, i))
 				W ("|");
 		}
 	} else {
@@ -185,5 +185,5 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 			free (row);
 		}
 	}
-	c->attr=Color_RESET;
+	c->attr = Color_RESET;
 }

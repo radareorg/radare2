@@ -103,7 +103,7 @@ static void normal_Node_print(RConsCanvas *can, Node *n, int cur) {
 	char *text;
 	int delta_x = 0;
 	int delta_y = 0;
-	int x, y;
+	int x, y, onscreen;
 
 	n->w = r_str_bounds (n->text, &n->h);
 	n->w += BORDER_WIDTH;
@@ -137,14 +137,21 @@ static void normal_Node_print(RConsCanvas *can, Node *n, int cur) {
 	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1))
 		W(title + delta_x);
 
-	(void)G(n->x + MARGIN_TEXT_X + delta_x, n->y + MARGIN_TEXT_Y);
+	onscreen = G(n->x + MARGIN_TEXT_X + delta_x, n->y + MARGIN_TEXT_Y);
+	if (!onscreen) {
+		if ((n->y + can->sy + n->h) < n->h) {
+			onscreen = 1;
+		}
+	}
 	// TODO: temporary crop depending on out of screen offsets
-	text = r_str_crop (n->text, delta_x, delta_y, n->w - BORDER_WIDTH, n->h);
-	if (text) {
-		W (text);
-		free (text);
-	} else {
-		W (n->text);
+	if (onscreen) {
+		text = r_str_crop (n->text, delta_x, delta_y, n->w - BORDER_WIDTH, n->h);
+		if (text) {
+			W (text);
+			free (text);
+		} else {
+			W (n->text);
+		}
 	}
 
 	// TODO: check if node is traced or not and hsow proper color
