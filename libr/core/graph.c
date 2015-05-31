@@ -103,7 +103,7 @@ static void normal_Node_print(RConsCanvas *can, Node *n, int cur) {
 	char *text;
 	int delta_x = 0;
 	int delta_y = 0;
-	int x, y, onscreen;
+	int x, y;
 
 	n->w = r_str_bounds (n->text, &n->h);
 	n->w += BORDER_WIDTH;
