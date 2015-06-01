@@ -334,8 +334,6 @@ int main(int argc, char **argv) {
 			}
 			hashstr = (char *)out;
 			/* out memleaks here, hashstr can't be freed */
-		} else {
-			hashstr_len = strlen (hashstr);
 		}
 		if (from) {
 			if (from>=hashstr_len) {
