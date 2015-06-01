@@ -210,7 +210,17 @@ static const char *getSectionName (RCore *core, ut64 addr) {
 	s = r_io_section_vget (core->io, addr);
 	if (s) {
 		snprintf (section, sizeof (section)-1, "%10s ", s->name);
-	} else *section = 0;
+	} else {
+		RListIter *iter;
+		RDebugMap *map;
+		*section = 0;
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				strncpy (section, map->name, sizeof (section)-1);
+				break;
+			}
+		}
+	}
 	oaddr = addr;
 	return section;
 }
