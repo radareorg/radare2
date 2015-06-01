@@ -4,6 +4,7 @@
 #define R2_UTIL_H
 
 #include <r_types.h>
+#include <r_diff.h>
 #include <btree.h>
 #include <r_regex.h>
 #include <r_list.h> // radare linked list

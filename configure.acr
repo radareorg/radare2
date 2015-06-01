@@ -146,7 +146,6 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_anal.pc
 	pkgcfg/r_hash.pc
 	pkgcfg/r_cons.pc
-	pkgcfg/r_diff.pc
 	pkgcfg/r_core.pc
 	pkgcfg/r_lang.pc
 	pkgcfg/r_socket.pc

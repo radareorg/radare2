@@ -1,3 +1,0 @@
-OBJS = diff.c bdiff.c ;
-
-lib r_diff : $(OBJS) : <include>../include <library>../util ;
