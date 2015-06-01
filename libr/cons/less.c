@@ -105,18 +105,24 @@ static int all_matches(const char *s, RRegex *rx, RRegexMatch **ms,
 		num = 0;
 		m.rm_so = 0;
 		const char *loff = s + lines[l]; /* current line offset */
-		m.rm_eo = slen = strlen(loff);
+		char *clean = strdup(loff);
+		int *cpos;
+		r_str_ansi_filter(clean, NULL, &cpos, 0);
+		m.rm_eo = slen = strlen(clean);
 		memset(ms[l], 0, NMATCHES * sizeof(RRegexMatch));
 		while(num < NMATCHES){
-			fnd = r_regex_exec(rx, loff, 1, &m, R_REGEX_STARTEND);
+			fnd = r_regex_exec(rx, clean, 1, &m, R_REGEX_STARTEND);
 			if(!fnd) {
-				ms[l][num] = m;
+				ms[l][num].rm_so = cpos[m.rm_so];
+				ms[l][num].rm_eo = cpos[m.rm_eo];
 				m.rm_so = m.rm_eo;
 				m.rm_eo = slen;
 				f = R_TRUE;
 				num++;
 			} else break; /* no more on this line */
 		}
+		free(cpos);
+		free(clean);
 	}
 	return f;
 }
