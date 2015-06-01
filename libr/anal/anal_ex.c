@@ -183,6 +183,7 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 			int buf_len = r_anal_state_get_len( state, addr);
 			if (current_bb->op_sz <buf_len) {
 				eprintf ("Oops\n");
+				r_anal_bb_free (current_bb);
 				return NULL;
 			}
 			memcpy (current_bb->op_bytes, r_anal_state_get_buf_by_addr(state, addr), current_bb->op_sz);

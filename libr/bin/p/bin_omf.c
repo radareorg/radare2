@@ -15,7 +15,7 @@ static int load(RBinFile *arch) {
 	const ut8 *byte = arch ? r_buf_buffer(arch->buf) : NULL;
 	ut64 size = arch ? r_buf_size(arch->buf) : 0;
 
-	if (!arch || arch->o) {
+	if (!arch || !arch->o) {
 		return R_FALSE;
 	}
 	if (!(arch->o->bin_obj = load_bytes(arch, byte, \

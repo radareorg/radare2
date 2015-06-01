@@ -2509,7 +2509,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'r':
 			{
-			int ocols = core->print->cols;
+			const int ocols = core->print->cols;
 			core->print->cols = 1;
 			core->print->flags |= R_PRINT_FLAGS_REFS;
 			r_print_hexdump (core->print, core->offset, core->block, len,

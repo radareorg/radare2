@@ -71,7 +71,7 @@ static void ostack_init() {
 }
 
 static void ostack_push(int el) {
-	if (ostack.size < OS_SIZE)
+	if (ostack.size < OS_SIZE - 1)
 		ostack.nodes[++ostack.size] = el;
 }
 

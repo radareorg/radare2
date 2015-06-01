@@ -110,7 +110,6 @@ static int load_omf_lnames(OMF_record *record, const char *buf, ut64 buf_size) {
 
 		if (!(names[ct_name] = R_NEWS0 (char, buf[3 + tmp_size] + 1))) {
 			free_lname (ret);
-			R_FREE (ret);
 			return R_FALSE;
 		}
       
