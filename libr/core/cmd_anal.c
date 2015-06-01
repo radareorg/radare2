@@ -302,7 +302,7 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 			r_cons_printf ("\"cycles\":%d,", op.cycles);
 			if (op.failcycles)
 				r_cons_printf ("failcycles: %d\n", op.failcycles);
-			r_cons_printf ("\"stack\":%d,", r_anal_stackop_tostring (op.stackop));
+			r_cons_printf ("\"stack\":\"%s\",", r_anal_stackop_tostring (op.stackop));
 			r_cons_printf ("\"cond\":%d,",
 				(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
 			r_cons_printf ("\"family\":\"%s\"}", r_anal_op_family_to_string (op.family));
