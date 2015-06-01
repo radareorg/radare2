@@ -138,39 +138,30 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 
 	// --
 	// TODO: find if there's any collision in this line
-	if (y2 > (y + 1)) {
+	if (y2 - y > 1) {
 		int hl = diff_y / 2 - 1;
 		int hl2 = diff_y - hl;
 		int w = diff_x == 0 ? 0 : diff_x + 1;
+		int style = min_x == x ? APEX_DOT : DOT_APEX;
 
 		draw_vertical_line(c, x, y + 1, hl);
 		draw_vertical_line(c, x2, y + hl + 1, hl2);
-
-		if (min_x == x)
-			draw_horizontal_line(c, x, y + hl + 1, 0, APEX_DOT, w);
-		else
-			draw_horizontal_line(c, x2, y + hl + 1, 0, DOT_APEX, w);
+		draw_horizontal_line(c, min_x, y + hl + 1, w, style);
 	} else  {
 		int rl = diff_x / 2;
 		int rl2 = diff_x - rl + 1;
-		int vl = diff_y + 1;
-		int w;
+		int vl = y2 - y == 1 ? 1 : diff_y + 1;
+		int y_line, style;
 
-		if (y + 1 == y2)
-			vl--;
 		draw_vertical_line(c, min_x + rl, y2, vl);
 
-		w = rl + 1;
-		if (min_x == x)
-			draw_horizontal_line(c, x, y + 1, 0, REV_APEX_APEX, w);
-		else
-			draw_horizontal_line(c, x2, y2 - 1, 0, DOT_DOT, w);
+		y_line = min_x == x ? y + 1 : y2 - 1;
+		style = min_x == x ? REV_APEX_APEX : DOT_DOT;
+		draw_horizontal_line(c, min_x, y_line, rl + 1, style);
 
-		w = rl2;
-		if (min_x == x)
-			draw_horizontal_line(c, x, y2 - 1, rl, DOT_DOT, w);
-		else
-			draw_horizontal_line(c, x2, y + 1, rl, REV_APEX_APEX, w);
+		y_line = min_x == x ? y2 - 1 : y + 1;
+		style = min_x == x ? DOT_DOT : REV_APEX_APEX;
+		draw_horizontal_line(c, min_x + rl, y_line, rl2, style);
 	}
 
 	c->attr = Color_RESET;
