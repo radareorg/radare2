@@ -131,49 +131,47 @@ static void draw_vertical_line (RConsCanvas *c, int x, int y, int height) {
 
 R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
 	int min_x = R_MIN (x, x2);
+	int diff_x = R_ABS (x - x2);
+	int diff_y = R_ABS (y - y2);
 
 	apply_line_style (c, x, y, x2, y2, style);
-	if (x == x2) {
-		int min = R_MIN (y, y2) + 1;
-		int max = R_MAX (y, y2);
-		draw_vertical_line(c, x, min, max - min);
-	} else {
-		// --
-		// TODO: find if there's any collision in this line
-		if (y2 > (y + 1)) {
-			int hl = R_ABS (y - y2) / 2 - 1;
-			int hl2 = R_ABS (y - y2) - hl + 1;
 
-			draw_vertical_line(c, x, y + 1, hl);
-			draw_vertical_line(c, x2, y + hl + 1, hl2);
+	// --
+	// TODO: find if there's any collision in this line
+	if (y2 > (y + 1)) {
+		int hl = diff_y / 2 - 1;
+		int hl2 = diff_y - hl;
+		int w = diff_x == 0 ? 0 : diff_x + 1;
 
-			int w = R_ABS (x - x2) + 1;
-			if (min_x == x)
-				draw_horizontal_line(c, x, y + hl + 1, w, APEX_DOT);
-			else
-				draw_horizontal_line(c, x2, y + hl + 1, w, DOT_APEX);
-		} else  {
-			int rl = R_ABS (x - x2) / 2;
-			int rl2 = R_ABS (x - x2) - rl + 1;
-			int vl = R_ABS(y - y2) + 1;
-			int w;
-			if (y + 1 == y2)
-				vl--;
+		draw_vertical_line(c, x, y + 1, hl);
+		draw_vertical_line(c, x2, y + hl + 1, hl2);
 
-			draw_vertical_line(c, min_x + rl, y2, vl);
+		if (min_x == x)
+			draw_horizontal_line(c, x, y + hl + 1, 0, APEX_DOT, w);
+		else
+			draw_horizontal_line(c, x2, y + hl + 1, 0, DOT_APEX, w);
+	} else  {
+		int rl = diff_x / 2;
+		int rl2 = diff_x - rl + 1;
+		int vl = diff_y + 1;
+		int w;
 
-			w = rl + 1;
-			if (min_x == x)
-				draw_horizontal_line(c, x, y + 1, w, REV_APEX_APEX);
-			else
-				draw_horizontal_line(c, x2, y2 - 1, w, DOT_DOT);
+		if (y + 1 == y2)
+			vl--;
+		draw_vertical_line(c, min_x + rl, y2, vl);
 
-			w = rl2;
-			if (min_x == x)
-				draw_horizontal_line(c, x + rl, y2 - 1, w, DOT_DOT);
-			else
-				draw_horizontal_line(c, x2 + rl, y + 1, w, REV_APEX_APEX);
-		}
+		w = rl + 1;
+		if (min_x == x)
+			draw_horizontal_line(c, x, y + 1, 0, REV_APEX_APEX, w);
+		else
+			draw_horizontal_line(c, x2, y2 - 1, 0, DOT_DOT, w);
+
+		w = rl2;
+		if (min_x == x)
+			draw_horizontal_line(c, x, y2 - 1, rl, DOT_DOT, w);
+		else
+			draw_horizontal_line(c, x2, y + 1, rl, REV_APEX_APEX, w);
 	}
+
 	c->attr = Color_RESET;
 }
