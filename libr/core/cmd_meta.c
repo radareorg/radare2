@@ -287,22 +287,25 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case ' ':
 		{
 		const char* newcomment = input+2;
-		char *text;
+		char *text, *nc;
 		while (*newcomment==' ') newcomment++;
 		char *comment = r_meta_get_string (
 				core->anal, R_META_TYPE_COMMENT, addr);
+		nc = strdup (newcomment);
+		r_str_unescape (nc);
 		if (comment) {
 			text = malloc (strlen (comment)+strlen (newcomment)+2);
 			strcpy (text, comment);
 			strcat (text, "\n");
-			strcat (text, newcomment);
+			strcat (text, nc);
 			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
 					addr, text);
 			free (text);
 		} else {
 			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-					addr, newcomment);
+					addr, nc);
 		}
+		free (nc);
 		}
 		break;
 	case '*':
