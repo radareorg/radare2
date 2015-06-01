@@ -812,7 +812,7 @@ R_API void r_cons_highlight (const char *word) {
 	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
 	int l, *cpos;
 
-	if (word && *word) {
+	if (word && *word && I.buffer) {
 		int word_len = strlen (word);
 		char *orig;
 		clean = I.buffer;

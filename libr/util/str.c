@@ -739,36 +739,6 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	return str;
 }
 
-/*
- * this is different from old filter
- * filter out ansi CSI leaving at lease n 'clean' chars in string
- * str - string, len - max len of string
- */
-R_API int r_str_ansi_filter_atleast(char *str, int len, int n) {
-
-	int i, j;
-	char *tmp;
-
-	if (len < 1) len = strlen (str) + 1;
-	tmp = malloc (len);
-	if (!tmp) return -1;
-	memcpy (tmp, str, len);
-
-	for (i = j = 0; i < len && j < n; i++) {
-
-		if ((i + 1) < len && tmp[i] == 0x1b && tmp[i + 1] == '[') {
-			for (i += 2; i < len && str[i] != 'J'
-				     && str[i] != 'm' && str[i] != 'H'; i++);
-		} else {
-			str[j] = tmp[i];
-			j++;
-		}
-	}
-
-	free (tmp);
-	return i;
-}
-
 R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 				  const char *key, const char *val, int g) {
 
@@ -798,7 +768,8 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 			 * avoid color breakage and disable this particular
 			 * CSIs */
 
-			int newo = r_str_ansi_filter_atleast(str_p, 0, klen);
+			int newo = thunk[i + klen] - thunk[i];
+			r_str_ansi_filter(str_p, NULL, NULL, newo);
 			scnd = strdup (str_p + newo);
 			bias = vlen - newo;
 		} else {
