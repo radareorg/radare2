@@ -129,7 +129,10 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	BOOL bSuccess = FALSE;
 	SECURITY_ATTRIBUTES saAttr;
 	int res=0;
-	hPipeInOut = CreateNamedPipe("\\\\.\\pipe\\R2PIPE_IN",
+	sprintf(buf,"R2PIPE_IN%x",_getpid());
+	SetEnvironmentVariable("R2PIPE_PATH",buf);
+	sprintf(buf,"\\\\.\\pipe\\R2PIPE_IN%x",_getpid());
+	hPipeInOut = CreateNamedPipe(buf,
 		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
 		PIPE_READMODE_MESSAGE | \
 		PIPE_WAIT,PIPE_UNLIMITED_INSTANCES,
