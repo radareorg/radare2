@@ -21,12 +21,21 @@ static void color_line(const char *line, RStrpool *p, RRegexMatch *ms){
 			r_strpool_memcat (p, line + offset,
 					  ms[i].rm_so - offset);
 			r_strpool_memcat (p, inv[0], linv[0]);
-			r_strpool_memcat (p, line + ms[i].rm_so,
-					 ms[i].rm_eo - ms[i].rm_so);
+
+			int m_len = ms[i].rm_eo - ms[i].rm_so;
+			char *m_addr = strndup(line + ms[i].rm_so, m_len);
+			if(r_str_ansi_chrn(m_addr, m_len) - m_addr < m_len ){
+				/* there's a CSI in the middle of
+				 * this match*/
+				m_len = r_str_ansi_filter(m_addr,
+							  NULL, NULL, m_len);
+			}
+			r_strpool_memcat (p, m_addr, m_len);
 			r_strpool_memcat (p, inv[1], linv[1]);
 
 			offset = ms[i].rm_eo;
 
+			free(m_addr);
 		} else {
 			/* append final part of string w/o matches */
 			r_strpool_append(p, line + offset);
