@@ -979,7 +979,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 10: // ^J -- ignore
 			return I.buffer.data;
-		case 11: // ^K -- ignore
+		case 11: // ^K
+			I.buffer.data[I.buffer.index] = '\0';
+			I.buffer.length = I.buffer.index;
 			break;
 		case 6: // ^f // emacs right
 #if USE_UTF8
@@ -1080,6 +1082,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					 I.buffer.index = I.buffer.length;
 					 break;
 				case 'B':
+				case 'b':
 					 // previous word
 					 for (i = I.buffer.index - 2; i >= 0; i--) {
 						 if (I.buffer.data[i] == ' ' && I.buffer.data[i + 1] != ' ') {
@@ -1091,6 +1094,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						 I.buffer.index = 0;
 					 break;
 				case 'F':
+				case 'f':
 					 // next word
 					 for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
 						 if (I.buffer.data[i] != ' ' && I.buffer.data[i - 1] == ' ') {
