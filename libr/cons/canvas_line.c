@@ -4,6 +4,13 @@
 #define W(y) r_cons_canvas_write(c,y)
 #define G(x,y) r_cons_canvas_gotoxy(c,x,y)
 
+enum {
+	APEX_DOT = 0,
+	DOT_APEX,
+	REV_APEX_APEX,
+	DOT_DOT
+};
+
 static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2, int style){
 	switch (style) {
 	case 0: // Unconditional jump
@@ -76,113 +83,96 @@ loop:
 	c->attr=Color_RESET;
 }
 
+static void draw_horizontal_line (RConsCanvas *c,
+								  int x, int y,
+								  int width,
+								  int style) {
+	char *l_corner, *r_corner;
+	int i;
+
+	if (width <= 0) return;
+
+	switch (style) {
+	case APEX_DOT:
+		l_corner = "'";
+		r_corner = ".";
+		break;
+	case DOT_APEX:
+		l_corner = ".";
+		r_corner = "'";
+		break;
+	case REV_APEX_APEX:
+		l_corner = "`";
+		r_corner = "'";
+		break;
+	case DOT_DOT:
+	default:
+		l_corner = r_corner = ".";
+		break;
+	}
+
+	if (G (x, y))
+		W (l_corner);
+
+	for (i = x + 1; i < x + width - 1; i++)
+		if (G (i, y))
+			W ("-");
+
+	if (G (x + width - 1, y))
+		W (r_corner);
+}
+
+static void draw_vertical_line (RConsCanvas *c, int x, int y, int height) {
+	int i;
+	for (i = y; i < y + height; i++)
+		if (G (x, i))
+			W ("|");
+}
+
 R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
-	int i, onscreen;
+	int min_x = R_MIN (x, x2);
+
 	apply_line_style (c, x, y, x2, y2, style);
 	if (x == x2) {
 		int min = R_MIN (y, y2) + 1;
 		int max = R_MAX (y, y2);
-		for (i = min; i < max; i++) {
-			if (G (x, i))
-				W ("|");
-		}
+		draw_vertical_line(c, x, min, max - min);
 	} else {
 		// --
 		// TODO: find if there's any collision in this line
-		int hl = R_ABS (y - y2) / 2;
-		int hl2 = R_ABS (y - y2) - hl;
-		hl--;
 		if (y2 > (y + 1)) {
-			for (i = 0; i < hl; i++) {
-				if (G (x, y + i + 1))
-					W ("|");
-			}
-			for (i = 0; i < hl2; i++) {
-				if (G (x2, y + hl + i + 1))
-					W ("|");
-			}
-			int w = R_ABS (x - x2);
-			char *row = malloc (w + 2);
-			if (x > x2) {
-				w++;
-				row[0] = '.';
-				if (w > 2)
-					memset (row + 1, '-', w - 2);
-				row[w - 1] = '\'';
-				row[w] = 0;
-				onscreen = G (x2 + w,y + hl + 1);
-				i = G (x2, y + hl + 1);
-				if (!onscreen)
-					onscreen = i;
-			} else {
-				row[0] = '`';
-				row[0] = '\'';
-				if (w > 1)
-					memset (row + 1, '-', w - 1);
-				row[w] = '.';
-				row[w + 1] = 0;
-				onscreen = G (x + w, y + 1 + hl);
-				i = G (x, y + 1 + hl);
-				if (!onscreen)
-					onscreen = i;
-			}
-			if (onscreen)
-				W (row);
-			free (row);
+			int hl = R_ABS (y - y2) / 2 - 1;
+			int hl2 = R_ABS (y - y2) - hl + 1;
+
+			draw_vertical_line(c, x, y + 1, hl);
+			draw_vertical_line(c, x2, y + hl + 1, hl2);
+
+			int w = R_ABS (x - x2) + 1;
+			if (min_x == x)
+				draw_horizontal_line(c, x, y + hl + 1, w, APEX_DOT);
+			else
+				draw_horizontal_line(c, x2, y + hl + 1, w, DOT_APEX);
 		} else  {
-			int minx = R_MIN (x, x2);
-			//if (y >= y2)
 			int rl = R_ABS (x - x2) / 2;
 			int rl2 = R_ABS (x - x2) - rl + 1;
 			int vl = R_ABS(y - y2) + 1;
+			int w;
 			if (y + 1 == y2)
 				vl--;
 
-			for (i = 0; i < vl; i++) {
-				if (G (minx + rl, y2 + i))
-					W ("|");
-			}
+			draw_vertical_line(c, min_x + rl, y2, vl);
 
-			int w = rl;
-			char *row = malloc (w + 1);
-			if (x > x2) {
-				row[0] = '.';
-				if (w > 2)
-					memset (row + 1, '-', w - 2);
-				if (w > 0)
-					row[w - 1] = '.';
-				row[w] = 0;
-				onscreen = G (x2, y2 - 1);
-			} else {
-				row[0] = '`';
-				if (w > 2)
-					memset (row + 1, '-', w - 2);
-				if (w > 0)
-					row[w - 1] = '\'';
-				row[w] = 0;
-				onscreen = G (x + 1, y + 1);
-			}
-			if (onscreen)
-				W (row);
+			w = rl + 1;
+			if (min_x == x)
+				draw_horizontal_line(c, x, y + 1, w, REV_APEX_APEX);
+			else
+				draw_horizontal_line(c, x2, y2 - 1, w, DOT_DOT);
+
 			w = rl2;
-			free (row);
-			row = malloc (rl2 + 1);
-			if (x > x2) {
-				row[0] = '`';
-				memset (row + 1, '-', w - 2);
-				row[w - 1] = '\'';
-				row[w] = 0;
-				onscreen = G (x2 + rl, y + 1);
-			} else {
-				row[0] = '.';
-				memset (row + 1, '-', w - 2);
-				row[w - 1] = '.';
-				row[w] = 0;
-				onscreen = G (x + rl, y2 - 1);
-			}
-			if (onscreen)
-				W (row);
-			free (row);
+			if (min_x == x)
+				draw_horizontal_line(c, x + rl, y2 - 1, w, DOT_DOT);
+			else
+				draw_horizontal_line(c, x2 + rl, y + 1, w, REV_APEX_APEX);
 		}
 	}
 	c->attr = Color_RESET;
