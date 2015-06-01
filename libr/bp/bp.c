@@ -48,12 +48,17 @@ R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx
 	struct r_bp_arch_t *b;
 	if (bp->cur) {
 		// find matching size breakpoint
+repeat:
 		for (i=0; i<bp->cur->nbps; i++) {
 			b = &bp->cur->bps[i];
 			if (bp->cur->bps[i].length == len) {
 				memcpy (buf, b->bytes, b->length);
 				return b->length;
 			}
+		}
+		if (len != 4) {
+			len = 4;
+			goto repeat;
 		}
 		// TODO: this must be reworked to work better
 		/* if not found try to pad with the first one */
