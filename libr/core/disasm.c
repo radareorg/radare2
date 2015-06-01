@@ -51,6 +51,7 @@ typedef struct r_disam_options_t {
 	int linesright;
 	int tracespace;
 	int cyclespace;
+	int cmtfold;
 	int show_indent;
 	int show_dwarf;
 	int show_linescall;
@@ -306,6 +307,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	ds->show_xrefs = r_config_get_i (core->config, "asm.xrefs");
+	ds->cmtfold = r_config_get_i (core->config, "asm.cmtfold");
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->show_fcncalls = r_config_get_i (core->config, "asm.fcncalls");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
@@ -970,7 +972,19 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 		} else {
 			ds->comment = r_str_prefix_all (ds->comment, "   ;      ");
 		}
-		r_cons_strcat (ds->comment);
+		/* print multiline comment */
+		if (ds->cmtfold) {
+			char * p = strdup (ds->comment);
+			char *q = strchr(p,'\n');
+			if (q) {
+				*q = 0;
+				r_cons_strcat (p);
+				r_cons_strcat (" ; [z] unfold");
+			}
+			free (p);
+		} else {
+			r_cons_strcat (ds->comment);
+		}
 #endif
 		if (ds->show_color) handle_print_color_reset (core, ds);
 		r_cons_newline ();
@@ -2324,7 +2338,7 @@ toro:
 		if (ds->midflags) {
 			int i;
 			for (i=1;i<ds->oplen; i++) {
-				RFlagItem *fi = r_flag_get_i(core->flags, ds->at+i);
+				RFlagItem *fi = r_flag_get_i (core->flags, ds->at+i);
 				if (fi) {
 					inc = i;
 					break;

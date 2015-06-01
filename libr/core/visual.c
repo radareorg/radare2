@@ -179,7 +179,8 @@ static void visual_help() {
 	" wW       seek cursor to next/prev word\n"
 	" xX       show xrefs/refs of current function from/to data/code\n"
 	" yY       copy and paste selection\n"
-	" z        toggle zoom mode\n"
+	" z        fold/unfold comments in disassembly\n"
+	" Z        toggle zoom mode\n"
 	" Enter    follow address of jump/call\n"
 	"Function Keys: (See 'e key.'), defaults to:\n"
 	"  F2      toggle breakpoint\n"
@@ -766,11 +767,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				r_anal_op_free (op);
 			} while (--wheelspeed>0);
 		}
-		break;
-	case 90: // shift+tab
-		if (!strcmp (printfmt[0], "x"))
-			printfmt[0] = "pxa";
-		else printfmt[0] = "x";
 		break;
 	case 9: // tab
 		{ // XXX: unify diff mode detection
@@ -1470,6 +1466,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case 'z':
+		r_config_swap (core->config, "asm.cmtfold");
+		break;
+	case 'Z':
 		if (zoom && cursor) {
 			ut64 from = r_config_get_i (core->config, "zoom.from");
 			ut64 to = r_config_get_i (core->config, "zoom.to");
