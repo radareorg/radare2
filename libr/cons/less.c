@@ -6,43 +6,40 @@
 #define NMATCHES 10		/* max number of matches per line */
 
 static void color_line(const char *line, RStrpool *p, RRegexMatch *ms){
-
-	int i;
+	int i, m_len;
 	int offset = 0;
-
+	char *m_addr;
 	char *inv[2] = {R_CONS_INVERT(R_TRUE, R_TRUE),
 			R_CONS_INVERT(R_FALSE, R_TRUE)};
 	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
 
 	r_strpool_empty(p);
-	for (i = 0; i < NMATCHES; i++){
+	for (i = 0; i < NMATCHES; i++) {
 		if (ms[i].rm_eo && (i < NMATCHES - 1)) {
 			/* highlight a match */
 			r_strpool_memcat (p, line + offset,
 					  ms[i].rm_so - offset);
 			r_strpool_memcat (p, inv[0], linv[0]);
 
-			int m_len = ms[i].rm_eo - ms[i].rm_so;
-			char *m_addr = strndup(line + ms[i].rm_so, m_len);
-			if(r_str_ansi_chrn(m_addr, m_len) - m_addr < m_len ){
-				/* there's a CSI in the middle of
-				 * this match*/
-				m_len = r_str_ansi_filter(m_addr,
-							  NULL, NULL, m_len);
+			m_len = ms[i].rm_eo - ms[i].rm_so;
+			m_addr = r_str_ndup (line + ms[i].rm_so, m_len);
+			if (m_addr) {
+				if(r_str_ansi_chrn (m_addr, m_len) - m_addr < m_len ){
+					/* there's a CSI in the middle of this match*/
+					m_len = r_str_ansi_filter(m_addr,
+							NULL, NULL, m_len);
+				}
+				r_strpool_memcat (p, m_addr, m_len);
+				r_strpool_memcat (p, inv[1], linv[1]);
+				offset = ms[i].rm_eo;
+				free(m_addr);
 			}
-			r_strpool_memcat (p, m_addr, m_len);
-			r_strpool_memcat (p, inv[1], linv[1]);
-
-			offset = ms[i].rm_eo;
-
-			free(m_addr);
 		} else {
 			/* append final part of string w/o matches */
 			r_strpool_append(p, line + offset);
 			break;
 		}
 	}
-
 }
 
 static void printpage (const char *line, int *index, RRegexMatch **ms,
