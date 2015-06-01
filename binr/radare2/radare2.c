@@ -367,8 +367,14 @@ int main(int argc, char **argv, char **envp) {
 				return 1;
 		}
 	}
-	if (help>1) return main_help (2);
-	else if (help) return main_help (0);
+
+	if (help > 0) {
+		r_list_free (evals);
+		r_list_free (cmds);
+		if (help > 1)
+			return main_help (2);
+		return main_help (0);
+	}
 
 	if (r_config_get_i (r.config, "cfg.plugins")) {
 		r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
