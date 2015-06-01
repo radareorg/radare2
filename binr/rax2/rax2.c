@@ -155,7 +155,7 @@ static int rax (char *str, int len, int last) {
 	dotherax:
 	
 	if (flags & 1) { // -s
-		ut64 n = ((strlen (str))>>1)+1;
+		int n = ((strlen (str))>>1)+1;
 		buf = malloc (n);
 		if (buf) {
 			memset (buf, '\0', n);

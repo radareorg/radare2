@@ -205,27 +205,26 @@ SDB_API char *sdb_get_len (Sdb* s, const char *key, int *vlen, ut32 *cas) {
 	char *buf;
 
 	if (cas) *cas = 0;
+	if (vlen) *vlen = 0;
 	if (!s || !key) return NULL;
 	keylen = strlen (key)+1;
-	hash = sdb_hash (key);//keylen-1);
-	if (vlen) *vlen = 0;
+	hash = sdb_hash (key);
 
 	/* search in memory */
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
 	if (kv) {
-		if (*kv->value) {
-			if (kv->expire) {
-				if (!now) now = sdb_now ();
-				if (now > kv->expire) {
-					sdb_unset (s, key, 0);
-					return NULL;
-				}
+		if (!*kv->value)
+			return NULL;
+		if (kv->expire) {
+			if (!now) now = sdb_now ();
+			if (now > kv->expire) {
+				sdb_unset (s, key, 0);
+				return NULL;
 			}
-			if (cas) *cas = kv->cas;
-			if (vlen) *vlen = kv->value_len;
-			return strdup (kv->value);
 		}
-		return NULL;
+		if (cas) *cas = kv->cas;
+		if (vlen) *vlen = kv->value_len;
+		return strdup (kv->value);
 	}
 
 	/* search in disk */
@@ -234,7 +233,7 @@ SDB_API char *sdb_get_len (Sdb* s, const char *key, int *vlen, ut32 *cas) {
 	cdb_findstart (&s->db);
 	if (!cdb_findnext (&s->db, hash, key, keylen))
 		return NULL;
-	if ((len = cdb_datalen (&s->db))<1)
+	if ((len = cdb_datalen (&s->db)) >= SDB_MAX_VALUE)
 		return NULL;
 	if (vlen)
 		*vlen = len;

@@ -679,7 +679,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 			case 9: // tab
 				if (curnode+1<n_nodes) {
 					curnode++;
-					if (!nodes[curnode].text)
+					if (nodes && !nodes[curnode].text)
 						curnode = 0;
 					updateSeek (can, get_current_node(), w, h, 0);
 				}

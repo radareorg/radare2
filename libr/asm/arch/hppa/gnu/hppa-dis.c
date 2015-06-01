@@ -192,8 +192,7 @@ fput_fp_reg_r (unsigned reg, disassemble_info *info)
   if (reg < 4)
     (*info->fprintf_func) (info->stream, "fpe%d", reg * 2 + 1);
   else
-    (*info->fprintf_func) (info->stream, "%sR",
-			   reg ? fp_reg_names[reg] : "fr0");
+    (*info->fprintf_func) (info->stream, "%sR", fp_reg_names[reg]);
 }
 
 static void
