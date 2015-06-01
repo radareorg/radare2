@@ -216,7 +216,12 @@ static const char *getSectionName (RCore *core, ut64 addr) {
 		*section = 0;
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
-				strncpy (section, map->name, sizeof (section)-1);
+				const char *mn = r_str_lchr (map->name, '/');
+				if (mn) {
+					strncpy (section, mn+1, sizeof (section)-1);
+				} else {
+					strncpy (section, map->name, sizeof (section)-1);
+				}
 				break;
 			}
 		}
