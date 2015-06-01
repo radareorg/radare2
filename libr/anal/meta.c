@@ -368,12 +368,6 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 	}
 }
 
-typedef struct {
-	RAnal *anal;
-	int type;
-	int rad;
-} RAnalMetaUserItem;
-
 static int meta_print_item(void *user, const char *k, const char *v) {
 	RAnalMetaUserItem *ui = user;
 	RAnalMetaItem it;
@@ -393,13 +387,20 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-// TODO: Deprecate
-R_API int r_meta_list(RAnal *a, int type, int rad) {
-	RAnalMetaUserItem ui = { a, type, rad };
+R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user) {
+	RAnalMetaUserItem ui = { a, type, rad, cb, user };
 	if (rad=='j') a->printf ("[");
-	sdb_foreach (DB, meta_print_item, &ui);
+	if (cb) {
+		sdb_foreach (DB, cb, &ui);
+	} else {
+		sdb_foreach (DB, meta_print_item, &ui);
+	}
 	if (rad=='j') a->printf ("]\n");
 	return 0;
+}
+
+R_API int r_meta_list(RAnal *a, int type, int rad) {
+	return r_meta_list_cb (a, type, rad, NULL, NULL);
 }
 
 #if 0

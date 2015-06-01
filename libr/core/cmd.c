@@ -1550,7 +1550,13 @@ next_arroba:
 		}
 		if (ptr[1]=='@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
-			ret = r_core_cmd_foreach (core, cmd, ptr+2);
+			if (ptr[2] == '@') {
+				char *rule = ptr+3;
+				while (*rule && *rule==' ') rule++;
+				ret = r_core_cmd_foreach3 (core, cmd, rule);
+			} else {
+				ret = r_core_cmd_foreach (core, cmd, ptr+2);
+			}
 			//ret = -1; /* do not run out-of-foreach cmd */
 		} else {
 			if (usemyblock) {
@@ -1581,6 +1587,136 @@ next_arroba:
 	}
 
 	return cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): R_FALSE;
+}
+
+static int foreach_comment(void *user, const char *k, const char *v) {
+	RAnalMetaUserItem *ui = user;
+	RCore *core = ui->anal->user;
+	const char *cmd = ui->user;
+	if (!strncmp (k, "meta.C.", 7)) {
+		char *cmt = (char *)sdb_decode (v, 0);
+		if (!cmt) cmt = strdup ("");
+		//eprintf ("--> %s = %s\n", k+7, cmt);
+		r_core_cmdf (core, "s %s", k+7);
+		r_core_cmd0 (core, cmd);
+		free (cmt);
+	}
+	return 1;
+}
+
+R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
+	RDebug *dbg = core->dbg;
+	RList *list, *head;
+	RListIter *iter;
+	int i;
+
+	switch (each[0]) {
+	case '?':
+		r_cons_printf ("Usage: @@@ [type]     # types:\n");
+		r_cons_printf (" symbols\n");
+		r_cons_printf (" imports\n");
+		r_cons_printf (" regs\n");
+		r_cons_printf (" threads\n");
+		r_cons_printf (" comments\n");
+		r_cons_printf (" functions\n");
+		r_cons_printf (" flags\n");
+		break;
+	case 'c':
+		switch (each[1]) {
+		case 'a': // call
+			break;	
+		default:
+			r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, foreach_comment, (void*)cmd);
+			break;
+		}
+		break;
+	case 't':
+		// iterate over all threads
+		if (dbg && dbg->h && dbg->h->threads) {
+			int origpid = dbg->pid;
+			RDebugPid *p;
+			list = dbg->h->threads (dbg, dbg->pid);
+			if (list == NULL)
+				return R_FALSE;
+			r_list_foreach (list, iter, p) {
+				r_core_cmdf (core, "dp %d", p->pid);
+				r_cons_printf ("PID %d\n", p->pid);
+				r_core_cmd0 (core, cmd);
+			}
+			r_core_cmdf (core, "dp %d", origpid);
+		}
+		break;
+	case 'r':
+		// registers
+		{
+			ut64 offorig = core->offset;
+			for (i=0; i<128; i++) {
+				RRegItem *item;
+				ut64 value;
+				head = r_reg_get_list (dbg->reg, i);
+				if (!head) continue;
+				r_list_foreach (head, iter, item) {
+					if (item->size != core->anal->bits)
+						continue;
+					value = r_reg_get_value (dbg->reg, item);
+					r_core_seek (core, value, 1);
+					r_cons_printf ("%s: ", item->name);
+					r_core_cmd0 (core, cmd);
+				}
+			}
+			r_core_seek (core, offorig, 1);
+		}
+		break;
+	case 'i':
+		// imports
+		if (0) {
+			RBinImport *imp;
+			ut64 offorig = core->offset;
+			list = r_bin_get_imports (core->bin);
+			r_list_foreach (list, iter, imp) {
+				r_core_seek (core, 0, 1);
+				r_core_cmd0 (core, cmd);
+			}
+			r_core_seek (core, offorig, 1);
+		} else {
+			eprintf ("TODO @@@ imports ^^\n");
+		}
+		break;
+	case 's':
+		// symbols
+		{	
+			RBinSymbol *sym;
+			ut64 offorig = core->offset;
+			list = r_bin_get_symbols (core->bin);
+			r_list_foreach (list, iter, sym) {
+				r_core_seek (core, sym->vaddr, 1);
+				r_core_cmd0 (core, cmd);
+			}
+			r_core_seek (core, offorig, 1);
+		}
+		break;
+	case 'f':
+		switch (each[1]) {
+		case 'l': // flags
+			eprintf ("TODO @@@ flags ^^\n");
+			break;
+		case 'u': // functions
+			{
+				ut64 offorig = core->offset;
+				RAnalFunction *fcn;
+				list = core->anal->fcns;
+				r_list_foreach (list, iter, fcn) {
+					r_cons_printf ("[0x%08"PFMT64x"  %s\n", fcn->addr, fcn->name);
+					r_core_seek (core, fcn->addr, 1);
+					r_core_cmd0 (core, cmd);
+				}
+				r_core_seek (core, offorig, 1);
+			}
+			break;
+		}
+		break;
+	}
+	return 0;
 }
 
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {

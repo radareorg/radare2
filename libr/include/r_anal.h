@@ -51,6 +51,14 @@ typedef struct r_anal_meta_item_t {
 	char *str;
 } RAnalMetaItem;
 
+typedef struct {
+	struct r_anal_t *anal;
+	int type;
+	int rad;
+	SdbForeachCallback cb;
+	void *user;
+} RAnalMetaUserItem;
+
 typedef struct r_anal_range_t {
 	ut64 from;
 	ut64 to;
@@ -1347,6 +1355,7 @@ R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where);
 R_API int r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
 R_API int r_meta_list(RAnal *m, int type, int rad);
+R_API int r_meta_list_cb(RAnal *m, int type, int rad, SdbForeachCallback cb, void *user);
 R_API void r_meta_item_free(void *_item);
 R_API RAnalMetaItem *r_meta_item_new(int type);
 
