@@ -106,7 +106,7 @@ static int main_help(int line) {
 		" =            read file from stdin (use -i and -c to run cmds)\n"
 		" -0           print \\x00 after init and every command\n"
 		" -a [arch]    set asm.arch\n"
-		" -A           run 'aa' command to analyze all referenced code\n"
+		" -A           run 'aaa' command to analyze all referenced code\n"
 		" -b [bits]    set asm.bits\n"
 		" -B [baddr]   set base address for PIE binaries\n"
 		" -c 'cmd..'   execute radare command\n"
