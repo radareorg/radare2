@@ -557,15 +557,15 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	}
 	w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w-1, h-1);
+	if (!can) {
+		eprintf ("Cannot create RCons.canvas context\n");
+		return R_FALSE;
+	}
 	can->linemode = 1;
 	can->color = r_config_get_i (core->config, "scr.color");
 	// disable colors in disasm because canvas doesnt supports ansi text yet
 	r_config_set_i (core->config, "scr.color", 0);
 	//can->color = 0;
-	if (!can) {
-		eprintf ("Cannot create RCons.canvas context\n");
-		return R_FALSE;
-	}
 #if 0
 	n_nodes = bbNodes (core, fcn, &nodes);
 	if (!nodes) {
