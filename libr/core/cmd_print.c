@@ -3,7 +3,7 @@
 static char get_string_type (const ut8 *buf, ut64 len){
 	ut64 needle = 0;
 	int rc, i;
-	char str_type;
+	char str_type = 0;
 
 	if (!buf)
 		return '?';
@@ -1315,7 +1315,7 @@ static int cmd_print(void *data, const char *input) {
 		len = core->blocksize;
 
 	if (tmpseek != UT64_MAX) {
-		r_core_seek (core, off, SEEK_SET);
+		r_core_seek (core, tmpseek, SEEK_SET);
 	}
 	switch (*input) {
 	case 'w': //pw

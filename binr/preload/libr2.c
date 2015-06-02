@@ -9,15 +9,26 @@ static RCore *core = NULL;
 #if __UNIX__
 
 // XXX check if its already opened
+static RCoreFile *openself(void) {
+	RCoreFile *fd = NULL;
+	char *out = r_core_cmd_str (core, "o");
+	if (out) {
+		if (!strstr(out, "self://")) {
+			fd = r_core_file_open (core, "self://", R_IO_RW, 0);
+		}
+		free (out);
+	}
+	return fd;
+}
 
 static void sigusr1(int s) {
-	RCoreFile *fd = r_core_file_open (core, "self://", R_IO_RW, 0);
+	RCoreFile *fd = openself();
 	r_core_prompt_loop (core);
 	r_core_file_close (core, fd);
 }
 
 static void sigusr2(int s) {
-	RCoreFile *fd = r_core_file_open (core, "self://", R_IO_RW, 0);
+	(void)openself();
 	r_core_cmd0 (core, "=H&");
 }
 static void _libwrap_init() __attribute__ ((constructor));
