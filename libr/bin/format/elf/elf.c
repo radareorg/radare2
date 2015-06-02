@@ -1615,6 +1615,7 @@ if (
 			free (sym);
 			sym = NULL;
 			ret[ret_ctr].last = 1; // ugly dirty hack :D
+			R_FREE (strtab);
 
 			if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {
 				bin->imports_by_ord_size = nsym;
@@ -1625,7 +1626,6 @@ if (
 			} else break;
 		}
 	}
-	free (strtab);
 	// maybe it had some section header but not the symtab
 	if (!ret) return get_symbols_from_phdr (bin, type);
 	return ret;
