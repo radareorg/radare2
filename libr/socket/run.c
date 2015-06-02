@@ -242,6 +242,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	else if (!strcmp (b, "libpath")) p->_libpath = strdup (e);
 	else if (!strcmp (b, "preload")) p->_preload = strdup (e);
 	else if (!strcmp (b, "r2preload")) p->_r2preload = parseBool (e);
+	else if (!strcmp (b, "r2preweb")) r_sys_setenv ("RARUN2_WEB", "yes");
 	else if (!strcmp (b, "setuid")) p->_setuid = strdup (e);
 	else if (!strcmp (b, "seteuid")) p->_seteuid = strdup (e);
 	else if (!strcmp (b, "setgid")) p->_setgid = strdup (e);

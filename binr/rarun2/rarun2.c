@@ -1,4 +1,4 @@
-/* radare2 - Copyleft 2011-2014 - pancake */
+/* radare2 - Copyleft 2011-2015 - pancake */
 
 #include <r_util.h>
 #include <r_socket.h>
