@@ -1243,6 +1243,7 @@ static int cmd_print(void *data, const char *input) {
 	ut64 n, nbsz, obsz, fsz;
 	ut64 tmpseek = UT64_MAX;
 
+	off = UT64_MAX;
 	l = len = core->blocksize;
 	if (input[0] && input[1]) {
 		const char *p = strchr (input, ' ');
@@ -1314,8 +1315,8 @@ static int cmd_print(void *data, const char *input) {
 	if (len>core->blocksize)
 		len = core->blocksize;
 
-	if (tmpseek != UT64_MAX) {
-		r_core_seek (core, tmpseek, SEEK_SET);
+	if (off != UT64_MAX) {
+		r_core_seek (core, off, SEEK_SET);
 	}
 	switch (*input) {
 	case 'w': //pw
