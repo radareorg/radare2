@@ -1,4 +1,4 @@
-!/bin/sh
+#!/bin/sh
 
 if [ -z "${CPU}" ]; then
   export CPU=arm64
@@ -12,7 +12,7 @@ PREFIX="/usr"
 if [ ! -d sys/ios-include ]; then
 (
   cd sys && \
-  wget http://lolcathost.org/b/ios-include.tar.gz && \
+  curl -o ios-include.tar.gz http://lolcathost.org/b/ios-include.tar.gz && \
   tar xzvf ios-include.tar.gz
 )
 fi
