@@ -310,7 +310,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				break;
 			case 'j':
 				anal->printf ("{\"name\":\"%s\","
-					"\"kind\":\"%s\",\"type\":\"%s\",\"ref\":\"%s%s%d\"}",
+					"\"kind\":\"%s\",\"type\":\"%s\",\"ref\":\"%s%s0x%x\"}",
 					var->name, var->kind=='v'?"var":"arg", var->type,
 					anal->reg->name[R_REG_NAME_BP],
 					(var->kind=='v')?"-":"+", var->delta);
