@@ -462,7 +462,8 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 		buf += (strlen (filename) + 1);
 		ut64 dir_idx;
-		buf = r_uleb128 (buf, ST32_MAX, &dir_idx);
+		if (buf+1 < buf_end)
+			buf = r_uleb128 (buf, ST32_MAX, &dir_idx);
 		break;
 	case DW_LNE_set_discriminator:
 		buf = r_uleb128(buf, ST32_MAX, &addr);
@@ -1522,7 +1523,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 		if (len<1) {
 			return NULL;
 		}
-		buf = calloc (1, len);
+		buf = calloc (1, len+1);
 		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		if (!ret) {
 			free (buf);
