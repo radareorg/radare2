@@ -713,7 +713,7 @@ static int graph_refresh(struct graph *g) {
 		r_cons_gotoxy (0,1);
 		r_core_cmd0 (g->core, cmdv);
 	}
-	r_cons_flush ();
+	r_cons_flush_nonewline ();
 	return R_TRUE;
 }
 
@@ -792,6 +792,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 			break;
 		}
 
+		r_cons_show_cursor(R_FALSE);
 		wheel = r_config_get_i (core->config, "scr.wheel");
 		if (wheel)
 			r_cons_enable_mouse (R_TRUE);

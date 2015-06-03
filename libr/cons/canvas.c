@@ -199,19 +199,11 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 			continue;
 
 		p = prefixline (c, &left);
-		slen = R_MIN (left - 1, strlen (line));
+		slen = R_MIN (left, strlen (line));
 		if (slen < 1)
 			break;
 
-		if (!G (c->x - c->sx + slen, c->y - c->sy)) {
-			// TODO : chop slen
-			slen = (c->w - (c->x - c->sx));
-			if (slen < 1)
-				break;
-
-			continue;
-		}
-		x = c->x - c->sx - slen;
+		x = c->x - c->sx;
 		if (!G (x, c->y - c->sy))
 			continue;
 
@@ -229,12 +221,19 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	char *o;
 	const char* b;
 	const char**atr;
+	int is_first = R_TRUE;
+
 	if (!c) return NULL;
 	b = c->b;
 	o = calloc (sizeof(char),
 			  (c->w * (c->h + 1)) * (CONS_MAX_ATTR_SZ));
 	if (!o) return NULL;
 	for (y = 0; y < c->h; y++) {
+		if (!is_first) {
+			o[olen++] = '\n';
+		}
+		is_first = R_FALSE;
+
 		for (x = 0; x<c->w; x++) {
 			const int p = x + (y * c->w);
 			atr = attr_at (c,p);
@@ -246,7 +245,6 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 				break;
 			o[olen++] = b[p];
 		}
-		o[olen++] = '\n';
 	}
 	o[olen] = '\0';
 	return o;
