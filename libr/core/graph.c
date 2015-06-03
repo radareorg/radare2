@@ -49,6 +49,10 @@ struct graph {
 	unsigned int curnode;
 
 	struct ostack ostack;
+	int need_reload_nodes;
+	int need_update_seek;
+	int update_seek_on;
+	int force_update_seek;
 };
 
 #if 0
@@ -494,15 +498,7 @@ static int reload_nodes(struct graph *g) {
 	return R_TRUE;
 }
 
-static void graph_set_layout(struct graph *g) {
-	if (g->is_callgraph)
-		set_layout_callgraph(g);
-	else
-		set_layout_bb(g);
-}
-
-static void graph_update_seek(struct graph *g, Node *n, int force) {
-	RConsCanvas *can = g->can;
+static void update_seek(RConsCanvas *can, Node *n, int force) {
 	int x, y, w, h;
 	int doscroll = R_FALSE;
 
@@ -523,6 +519,19 @@ static void graph_update_seek(struct graph *g, Node *n, int force) {
 		can->sy = -n->y + BORDER + (h / 8);
 		can->sx = -n->x + BORDER + (w / 4);
 	}
+}
+
+static void graph_set_layout(struct graph *g) {
+	if (g->is_callgraph)
+		set_layout_callgraph(g);
+	else
+		set_layout_bb(g);
+}
+
+static void graph_update_seek(struct graph *g, int node_index, int force) {
+	g->need_update_seek = R_TRUE;
+	g->update_seek_on = node_index;
+	g->force_update_seek = force;
 }
 
 static void graph_free(struct graph *g) {
@@ -590,7 +599,17 @@ static void graph_print_edges(struct graph *g) {
 
 static void graph_toggle_small_nodes(struct graph *g) {
 	g->is_small_nodes = !g->is_small_nodes;
-	update_node_dimension(g->nodes, g->n_nodes, g->is_small_nodes);
+	g->need_reload_nodes = R_TRUE;
+}
+
+static void graph_toggle_simple_mode(struct graph *g) {
+	g->is_simple_mode = !g->is_simple_mode;
+	g->need_reload_nodes = R_TRUE;
+}
+
+static void graph_toggle_callgraph(struct graph *g) {
+	g->is_callgraph = !g->is_callgraph;
+	g->need_reload_nodes = R_TRUE;
 }
 
 static int graph_reload_nodes(struct graph *g) {
@@ -613,23 +632,23 @@ static void follow_nth(struct graph *g, int nth) {
 
 static void graph_follow_true(struct graph *g) {
 	follow_nth(g, 0);
-	graph_update_seek(g, get_current_node(g), R_FALSE);
+	graph_update_seek(g, g->curnode, R_FALSE);
 }
 
 static void graph_follow_false(struct graph *g) {
 	follow_nth(g, 1);
-	graph_update_seek(g, get_current_node(g), R_FALSE);
+	graph_update_seek(g, g->curnode, R_FALSE);
 }
 
 static void graph_undo_node(struct graph *g) {
 	g->curnode = ostack_pop(&g->ostack);
-	graph_update_seek (g, get_current_node(g), R_FALSE);
+	graph_update_seek (g, g->curnode, R_FALSE);
 }
 
 static void graph_next_node(struct graph *g) {
 	g->curnode = (g->curnode + 1) % g->n_nodes;
 	ostack_push (&g->ostack, g->curnode);
-	graph_update_seek (g, get_current_node(g), R_FALSE);
+	graph_update_seek (g, g->curnode, R_FALSE);
 }
 
 static void graph_prev_node(struct graph *g) {
@@ -638,26 +657,40 @@ static void graph_prev_node(struct graph *g) {
 	else
 		g->curnode = g->curnode - 1;
 	ostack_push (&g->ostack, g->curnode);
-	graph_update_seek (g, get_current_node(g), R_FALSE);
+	graph_update_seek (g, g->curnode, R_FALSE);
 }
 
 static int graph_refresh(struct graph *g) {
 	char title[128];
 	int h, w = r_cons_get_size (&h);
+	int ret;
 
 	if (g->is_instep && g->core->io->debug) {
 		RAnalFunction *f;
 		r_core_cmd0 (g->core, "sr pc");
 		f = r_anal_get_fcn_in (g->core->anal, g->core->offset, 0);
 		if (f && f != g->fcn) {
-			int ret;
-
 			g->fcn = f;
-			ret = graph_reload_nodes(g);
-			if (!ret)
-				return R_FALSE;
+			g->need_reload_nodes = R_TRUE;
 		}
 	}
+
+	/* look for any change in the state of the graph
+	 * and update what's necessary */
+	if (g->need_reload_nodes) {
+		ret = graph_reload_nodes(g);
+		if (!ret)
+			return R_FALSE;
+
+		g->need_reload_nodes = R_FALSE;
+	}
+	if (g->need_update_seek) {
+		update_seek(g->can, &g->nodes[g->update_seek_on], g->force_update_seek);
+		g->need_update_seek = R_FALSE;
+		g->update_seek_on = 0;
+		g->force_update_seek = R_FALSE;
+	}
+
 	r_cons_clear00 ();
 
 	r_cons_canvas_resize (g->can, w, h);
@@ -684,9 +717,7 @@ static int graph_refresh(struct graph *g) {
 	return R_TRUE;
 }
 
-static int graph_init(struct graph *g) {
-	int ret;
-
+static void graph_init(struct graph *g) {
 	g->nodes = NULL;
 	g->edges = NULL;
 
@@ -694,36 +725,28 @@ static int graph_init(struct graph *g) {
 	g->is_instep = R_FALSE;
 	g->is_simple_mode = R_TRUE;
 	g->is_small_nodes = R_FALSE;
+	g->need_reload_nodes = R_TRUE;
 	g->curnode = 0;
-	ostack_init(&g->ostack);
+	g->need_update_seek = R_TRUE;
+	g->update_seek_on = g->curnode;
+	g->force_update_seek = R_TRUE;
 
-	ret = graph_reload_nodes(g);
-	return ret;
+	ostack_init(&g->ostack);
 }
 
 static struct graph *graph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {
 	struct graph *g;
-	int ret;
 
 	g = (struct graph *)malloc(sizeof(struct graph));
 	if (!g)
-		goto error_malloc;
+		return NULL;
 
 	g->core = core;
 	g->can = can;
 	g->fcn = fcn;
 
-	ret = graph_init(g);
-	if (!ret)
-		goto error_init;
-
+	graph_init(g);
 	return g;
-
-error_init:
-	graph_free(g);
-	free(g);
-error_malloc:
-	return NULL;
 }
 
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
@@ -758,13 +781,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 		goto err_graph_new;
 	}
 
-	ret = graph_reload_nodes(g);
-	if (!ret) {
-		is_error = R_TRUE;
-		goto err_graph;
-	}
-
-	graph_update_seek (g, get_current_node(g), R_TRUE);
 	core->cons->event_data = g;
 	core->cons->event_resize = (RConsEvent)graph_refresh;
 
@@ -803,17 +819,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 				}
 				break;
 			case 'O':
-				// free nodes or leak
-				g->is_simple_mode = !!!g->is_simple_mode;
-				ret = graph_reload_nodes(g);
-				if (!ret)
-					is_error = R_TRUE;
+				graph_toggle_simple_mode(g);
 				break;
 			case 'V':
-				g->is_callgraph = !!!g->is_callgraph;
-				ret = graph_reload_nodes(g);
-				if (!ret)
-					goto err_graph;
+				graph_toggle_callgraph(g);
 				break;
 			case 'z':
 				g->is_instep = R_TRUE;
@@ -949,15 +958,12 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 				  break;
 			case 'n':
 				  graph_toggle_small_nodes(g);
-				  ret = graph_reload_nodes(g);
-				  if (!ret)
-					  is_error = R_TRUE;
 				  break;
 			case 'u':
 				  graph_undo_node(g);
 				  break;
 			case '.':
-				  graph_update_seek (g, get_current_node(g), R_TRUE);
+				  graph_update_seek (g, g->curnode, R_TRUE);
 				  g->is_instep = R_TRUE;
 				  break;
 			case 't':
@@ -1003,7 +1009,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 		}
 	}
 
-err_graph:
 	graph_free(g);
 err_graph_new:
 	free (can);
