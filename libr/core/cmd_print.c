@@ -1234,7 +1234,6 @@ static void printraw (RCore *core, int len, int mode) {
 
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	ut64 offset = core->offset;
 	int mode, w, p, i, l, len, total[10];
 	ut64 off, from, to, at, ate, piece;
 	ut32 tbs = core->blocksize;
@@ -1253,8 +1252,7 @@ static int cmd_print(void *data, const char *input) {
 			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' && input[0]!='a' && input[0]!='f') {
 				int n = (st32) r_num_math (core->num, input+1);
 				if (n<0) {
-					offset += n;
-					off = offset;
+					off = core->offset + n;
 					len = l = -n;
 					tmpseek = core->offset;
 				} else if (l>0) {
