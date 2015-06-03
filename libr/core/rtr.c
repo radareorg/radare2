@@ -292,6 +292,9 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 	const char *port;
 	const int timeout = 1; // 1 second
 	RCore *core = (RCore*)u;
+#if __WINDOWS__
+	r_socket_http_server_set_breaked(1);
+#endif
 	if (((size_t)u)>0xff) {
 		port = listenport? listenport: r_config_get (
 			core->config, "http.port");
