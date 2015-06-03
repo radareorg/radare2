@@ -46,7 +46,7 @@ struct graph {
 	int is_simple_mode;
 	int is_small_nodes;
 
-	int curnode;
+	unsigned int curnode;
 
 	struct ostack ostack;
 };
@@ -489,20 +489,45 @@ static int graph_get_cgedges(struct graph *g) {
 static int graph_reload_nodes(struct graph *g) {
 	int i, ret;
 
-	ret = graph_get_bbnodes(g);
-	if (!ret)
-		return R_FALSE;
+	if (g->is_callgraph) {
+		int y = 5, x = 20;
+		ret = graph_get_cgnodes(g);
+		if (!ret)
+			return R_FALSE;
+		ret = graph_get_cgedges(g);
+		if (!ret)
+			return R_FALSE;
 
-	ret = graph_get_bbedges(g);
-	if (!ret)
-		return R_FALSE;
+		// callgraph layout
+		for (i = 0; i < g->n_nodes; i++) {
+			// wrap to width 'w'
+			if (i > 0) {
+				if (g->nodes[i].x < g->nodes[i-1].x) {
+					y += 10;
+					x = 0;
+				}
+			}
+			g->nodes[i].x = x;
+			g->nodes[i].y = i? y: 2;
+			x += 30;
+		}
+	} else {
+		ret = graph_get_bbnodes(g);
+		if (!ret)
+			return R_FALSE;
 
-	// hack to make layout happy
-	for (i = 0; i < g->n_nodes; i++) {
-		graph_print_node(g, &g->nodes[i]);
+		ret = graph_get_bbedges(g);
+		if (!ret)
+			return R_FALSE;
+
+		// hack to make layout happy
+		for (i = 0; i < g->n_nodes; i++) {
+			graph_print_node(g, &g->nodes[i]);
+		}
+		graph_set_layout (g);
+		// update edges too maybe..
 	}
-	graph_set_layout (g);
-	// update edges too maybe..
+
 	return R_TRUE;
 }
 
@@ -526,6 +551,19 @@ static void graph_follow_false(struct graph *g) {
 
 static void graph_undo_node(struct graph *g) {
 	g->curnode = ostack_pop(&g->ostack);
+	graph_update_seek (g, get_current_node(g), R_FALSE);
+}
+
+static void graph_next_node(struct graph *g) {
+	g->curnode = (g->curnode + 1) % g->n_nodes;
+	graph_update_seek (g, get_current_node(g), R_FALSE);
+}
+
+static void graph_prev_node(struct graph *g) {
+	if (g->curnode == 0)
+		g->curnode = g->n_nodes - 1;
+	else
+		g->curnode = g->curnode - 1;
 	graph_update_seek (g, get_current_node(g), R_FALSE);
 }
 
@@ -729,50 +767,16 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 				break;
 			case 'V':
 				g->is_callgraph = !!!g->is_callgraph;
-				if (g->is_callgraph) {
-					int i, y = 5, x = 20;
-					ret = graph_get_cgnodes(g);
-					if (!ret)
-						goto err_graph;
-					ret = graph_get_cgedges(g);
-					if (!ret)
-						goto err_graph;
-
-					// callgraph layout
-					for (i=0; i < g->n_nodes; i++) {
-						// wrap to width 'w'
-						if (i>0) {
-							if (g->nodes[i].x < g->nodes[i-1].x) {
-								y += 10;
-								x = 0;
-							}
-						}
-						g->nodes[i].x = x;
-						g->nodes[i].y = i? y: 2;
-						x += 30;
-					}
-				} else {
-					int i;
-					ret = graph_get_bbnodes(g);
-					if (!ret)
-						goto err_graph;
-					ret = graph_get_bbedges(g);
-					if (!ret)
-						goto err_graph;
-
-					g->curnode = 0;
-					// hack to make the layout happy
-					for (i=0; i < g->n_nodes; i++) {
-						graph_print_node (g, &g->nodes[i]);
-					}
-					graph_set_layout (g);
-				}
+				ret = graph_reload_nodes(g);
+				if (!ret)
+					goto err_graph;
 				break;
 			case 'z':
 				g->is_instep = R_TRUE;
 				if (r_config_get_i (core->config, "cfg.debug"))
 					r_core_cmd0 (core, "ds;.dr*");
-				else r_core_cmd0 (core, "aes;.dr*");
+				else
+					r_core_cmd0 (core, "aes;.dr*");
 
 				ret = graph_reload_nodes(g);
 				if (!ret)
@@ -780,19 +784,14 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 				break;
 			case 'Z':
 				if (okey == 27) {
-					// shift tab
-					g->curnode--;
-					if (g->curnode < 0) {
-						for (g->curnode=0; g->nodes[g->curnode].text; g->curnode++) {
-							/* do nothing */
-						}
-					}
+					graph_prev_node(g);
 				} else {
 					// 'Z'
 					g->is_instep = R_TRUE;
 					if (r_config_get_i (core->config, "cfg.debug"))
 						r_core_cmd0 (core, "dso;.dr*");
-					else r_core_cmd0 (core, "aeso;.dr*");
+					else
+						r_core_cmd0 (core, "aeso;.dr*");
 
 					ret = graph_reload_nodes(g);
 					if (!ret)
@@ -808,12 +807,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 					exit_graph = R_TRUE;
 				break;
 			case 9: // tab
-				if (g->curnode + 1 < g->n_nodes) {
-					g->curnode++;
-					if (g->nodes && !g->nodes[g->curnode].text)
-						g->curnode = 0;
-					graph_update_seek (g, get_current_node(g), R_FALSE);
-				}
+				graph_next_node(g);
 				break;
 			case '?':
 				r_cons_clear00 ();
