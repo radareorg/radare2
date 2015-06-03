@@ -200,7 +200,7 @@ static void graph_print_edge(struct graph *g, Node *a, Node *b, int nth) {
 
 static int count_exit_edges(struct graph *g, int n) {
 	int i, count = 0;
-	for (i=0; g->edges[i].nth != -1; i++) {
+	for (i = 0; i < g->n_edges; i++) {
 		if (g->edges[i].from == n) {
 			count++;
 		}
@@ -211,7 +211,7 @@ static int count_exit_edges(struct graph *g, int n) {
 static int find_edge_node(struct graph *g, int cur, int nth) {
 	if (g->edges) {
 		int i;
-		for (i = 0; g->edges[i].nth != -1; i++) {
+		for (i = 0; i < g->n_edges; i++) {
 			if (g->edges[i].nth == nth)
 				if (g->edges[i].from == cur)
 					return g->edges[i].to;
@@ -279,7 +279,7 @@ static void graph_set_layout(struct graph *g) {
 	// vertical align // depe
 	for (i = 0; i < g->n_nodes; i++) {
 		g->nodes[i].y = 1;
-		for (j = 0; j < g->nodes[i].depth;j++)
+		for (j = 0; j < g->nodes[i].depth; j++)
 			g->nodes[i].y += rowheight[j] + v_spacing;
 	}
 	// horitzontal align
@@ -333,7 +333,7 @@ static int graph_get_bbnodes(struct graph *g) {
 	Node *nodes;
 	int i;
 
-	nodes = calloc(r_list_length (g->fcn->bbs) + 1, sizeof(Node));
+	nodes = calloc(r_list_length (g->fcn->bbs), sizeof(Node));
 	if (!nodes)
 		return R_FALSE;
 
@@ -357,7 +357,6 @@ static int graph_get_bbnodes(struct graph *g) {
 		nodes[i].h = 0;
 		i++;
 	}
-	nodes[i].text = NULL;
 
 	if (g->nodes)
 		free(g->nodes);
@@ -390,7 +389,7 @@ static int graph_get_cgnodes(struct graph *g) {
 	i++;
 	r_list_foreach (g->fcn->refs, iter, ref) {
 		/* avoid dups wtf */
-		for (j=0; j<i; j++) {
+		for (j = 0; j < i; j++) {
 			if (ref->addr == nodes[j].addr)
 				continue;
 		}
@@ -455,6 +454,7 @@ static int graph_get_bbedges(struct graph *g) {
 	if (g->edges)
 		free(g->edges);
 	g->edges = edges;
+	g->n_edges = i;
 	return R_TRUE;
 }
 
@@ -570,6 +570,7 @@ static void graph_prev_node(struct graph *g) {
 static int graph_refresh(struct graph *g) {
 	char title[128];
 	int i, h, w = r_cons_get_size (&h);
+
 	if (g->is_instep && g->core->io->debug) {
 		RAnalFunction *f;
 		r_core_cmd0 (g->core, "sr pc");
@@ -589,16 +590,16 @@ static int graph_refresh(struct graph *g) {
 	r_cons_canvas_clear (g->can);
 
 	if (g->edges) {
-		for (i = 0; g->edges[i].nth != -1; i++) {
+		for (i = 0; i < g->n_edges; i++) {
 			if (g->edges[i].from == -1 || g->edges[i].to == -1)
 				continue;
 
 			Node *a = &g->nodes[g->edges[i].from];
 			Node *b = &g->nodes[g->edges[i].to];
 			int nth = g->edges[i].nth;
-			if (count_exit_edges(g, g->edges[i].from) == 1) {
+			if (count_exit_edges(g, g->edges[i].from) == 1)
 				nth = -1; // blue line
-			}
+
 			graph_print_edge (g, a, b, nth);
 		}
 	}
@@ -607,10 +608,8 @@ static int graph_refresh(struct graph *g) {
 			graph_print_node (g, &g->nodes[i]);
 		}
 	}
-	// redraw current node to make it appear on top
-	if (g->curnode >= 0 && g->curnode < g->n_nodes) {
-		graph_print_node (g, &g->nodes[g->curnode]);
-	}
+	/* redraw current node to make it appear on top */
+	graph_print_node (g, &g->nodes[g->curnode]);
 
 	(void)G (-g->can->sx, -g->can->sy);
 	snprintf (title, sizeof (title)-1,
@@ -944,9 +943,11 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 					  if (r_cons_readchar () == 90) {
 						  if (g->curnode < 1) {
 							  int i;
-							  for (i=0; g->nodes[i].text; i++) {};
-							  g->curnode = i-1;
-						  } else g->curnode--;
+							  for (i = 0; i < g->n_nodes; i++) ;
+							  g->curnode = i - 1;
+						  } else {
+							  g->curnode--;
+						  }
 					  }
 				  }
 				  break;
