@@ -90,6 +90,26 @@ static int ostack_pop(struct ostack *os) {
 	return os->size > 0 ? os->nodes[--os->size] : 0;
 }
 
+static void update_node_dimension(Node nodes[], int nodes_size, int is_small) {
+	int i;
+	for (i = 0; i < nodes_size; ++i) {
+		Node *n = &nodes[i];
+		if (is_small) {
+			n->w = n->h = 0;
+		} else {
+			n->w = r_str_bounds (n->text, &n->h);
+			n->w += BORDER_WIDTH;
+			n->h += BORDER_HEIGHT;
+			n->w = R_MAX (MAX_NODE_WIDTH, n->w);
+		}
+	}
+}
+
+static void graph_toggle_small_nodes(struct graph *g) {
+	g->is_small_nodes = !g->is_small_nodes;
+	update_node_dimension(g->nodes, g->n_nodes, g->is_small_nodes);
+}
+
 static void small_Node_print(struct graph *g, Node *n, int cur) {
 	char title[128];
 
@@ -116,10 +136,6 @@ static void normal_Node_print(struct graph *g, Node *n, int cur) {
 	int delta_y = 0;
 	int x, y;
 
-	n->w = r_str_bounds (n->text, &n->h);
-	n->w += BORDER_WIDTH;
-	n->h += BORDER_HEIGHT;
-	n->w = R_MAX (MAX_NODE_WIDTH, n->w);
 #if SHOW_OUT_OF_SCREEN_NODES
 	x = n->x + g->can->sx;
 	y = n->y + n->h + g->can->sy;
@@ -540,6 +556,8 @@ static int graph_reload_nodes(struct graph *g) {
 		if (!ret)
 			return R_FALSE;
 
+		update_node_dimension(g->nodes, g->n_nodes, g->is_small_nodes);
+
 		// callgraph layout
 		for (i = 0; i < g->n_nodes; i++) {
 			// wrap to width 'w'
@@ -562,7 +580,7 @@ static int graph_reload_nodes(struct graph *g) {
 		if (!ret)
 			return R_FALSE;
 
-		graph_print_nodes(g);
+		update_node_dimension(g->nodes, g->n_nodes, g->is_small_nodes);
 		graph_set_layout (g);
 		// update edges too maybe..
 	}
@@ -669,7 +687,6 @@ static int graph_init(struct graph *g) {
 	g->is_instep = R_FALSE;
 	g->is_simple_mode = R_TRUE;
 	g->is_small_nodes = R_FALSE;
-
 	g->curnode = 0;
 
 	ostack_init(&g->ostack);
@@ -923,7 +940,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 				  can->linemode = !!!can->linemode;
 				  break;
 			case 'n':
-				  g->is_small_nodes = g->is_small_nodes ? R_FALSE: R_TRUE;
+				  graph_toggle_small_nodes(g);
 				  ret = graph_reload_nodes(g);
 				  if (!ret)
 					  is_error = R_TRUE;
