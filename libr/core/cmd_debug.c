@@ -1220,6 +1220,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				if(frame->name) {
 					r_cons_printf ("%d  0x%08"PFMT64x"  %d [%s]\n",
 						i++, frame->addr, frame->size, frame->name);
+					free(frame->name);
 				} else {
 					r_cons_printf ("%d  0x%08"PFMT64x"  %d\n",
 						i++, frame->addr, frame->size);
