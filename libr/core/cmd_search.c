@@ -1335,8 +1335,9 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			if (fd == -1 && core->io->desc) {
 				fd = core->io->desc->fd;
 			}
-			if (!json)
+			if (!json) {
 				eprintf ("# %d [0x%"PFMT64x"-0x%"PFMT64x"]\n", fd, param->from, param->to);
+			}
 
 			if (param->bckwrds) {
 				if (param->to < param->from + bufsz) {
@@ -1387,13 +1388,18 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					break;
 				}
 				if (param->bckwrds) {
-					if (!param->do_bckwrd_srch) break;
-					if (at > param->from + bufsz) at -= bufsz;
-					else {
+					if (!param->do_bckwrd_srch) {
+						break;
+					}
+					if (at > param->from + bufsz) {
+						at -= bufsz;
+					} else {
 						param->do_bckwrd_srch = R_FALSE;
 						at = param->from;
 					}
-				} else at += bufsz;
+				} else {
+					at += bufsz;
+				}
 			}
 			print_search_progress (at, param->to, searchhits);
 			r_cons_break_end ();
