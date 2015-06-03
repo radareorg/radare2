@@ -180,6 +180,16 @@ static void graph_print_node(struct graph *g, Node *n) {
 		normal_Node_print(g, n, cur);
 }
 
+static void graph_print_nodes(struct graph *g) {
+	int i;
+	for (i = 0; i < g->n_nodes; ++i)
+		if (i != g->curnode)
+			graph_print_node(g, &g->nodes[i]);
+
+	/* draw current node now to make it appear on top */
+	graph_print_node (g, &g->nodes[g->curnode]);
+}
+
 static void graph_print_edge(struct graph *g, Node *a, Node *b, int nth) {
 	int x, y, x2, y2;
 	int xinc = 3 + 2 * (nth + 1);
@@ -208,13 +218,30 @@ static int count_exit_edges(struct graph *g, int n) {
 	return count;
 }
 
+static void graph_print_edges(struct graph *g) {
+	int i;
+	if (g->edges) {
+		for (i = 0; i < g->n_edges; i++) {
+			if (g->edges[i].from == -1 || g->edges[i].to == -1)
+				continue;
+
+			Node *a = &g->nodes[g->edges[i].from];
+			Node *b = &g->nodes[g->edges[i].to];
+			int nth = g->edges[i].nth;
+			if (count_exit_edges(g, g->edges[i].from) == 1)
+				nth = -1; // blue line
+
+			graph_print_edge (g, a, b, nth);
+		}
+	}
+}
+
 static int find_edge_node(struct graph *g, int cur, int nth) {
 	if (g->edges) {
 		int i;
 		for (i = 0; i < g->n_edges; i++) {
-			if (g->edges[i].nth == nth)
-				if (g->edges[i].from == cur)
-					return g->edges[i].to;
+			if (g->edges[i].from == cur && g->edges[i].nth == nth)
+				return g->edges[i].to;
 		}
 	}
 	return -1;
@@ -535,10 +562,7 @@ static int graph_reload_nodes(struct graph *g) {
 		if (!ret)
 			return R_FALSE;
 
-		// hack to make layout happy
-		for (i = 0; i < g->n_nodes; i++) {
-			graph_print_node(g, &g->nodes[i]);
-		}
+		graph_print_nodes(g);
 		graph_set_layout (g);
 		// update edges too maybe..
 	}
@@ -584,7 +608,7 @@ static void graph_prev_node(struct graph *g) {
 
 static int graph_refresh(struct graph *g) {
 	char title[128];
-	int i, h, w = r_cons_get_size (&h);
+	int h, w = r_cons_get_size (&h);
 
 	if (g->is_instep && g->core->io->debug) {
 		RAnalFunction *f;
@@ -604,27 +628,8 @@ static int graph_refresh(struct graph *g) {
 	r_cons_canvas_resize (g->can, w, h);
 	r_cons_canvas_clear (g->can);
 
-	if (g->edges) {
-		for (i = 0; i < g->n_edges; i++) {
-			if (g->edges[i].from == -1 || g->edges[i].to == -1)
-				continue;
-
-			Node *a = &g->nodes[g->edges[i].from];
-			Node *b = &g->nodes[g->edges[i].to];
-			int nth = g->edges[i].nth;
-			if (count_exit_edges(g, g->edges[i].from) == 1)
-				nth = -1; // blue line
-
-			graph_print_edge (g, a, b, nth);
-		}
-	}
-	for (i = 0; i < g->n_nodes; i++) {
-		if (i != g->curnode) {
-			graph_print_node (g, &g->nodes[i]);
-		}
-	}
-	/* redraw current node to make it appear on top */
-	graph_print_node (g, &g->nodes[g->curnode]);
+	graph_print_edges(g);
+	graph_print_nodes(g);
 
 	(void)G (-g->can->sx, -g->can->sy);
 	snprintf (title, sizeof (title)-1,
