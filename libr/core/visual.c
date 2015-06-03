@@ -211,9 +211,11 @@ static void prompt_read (const char *p, char *buf, int buflen) {
 
 R_API void r_core_visual_prompt_input (RCore *core) {
 	int ret;
-	eprintf ("Press <enter> to return to Visual mode.\n");
 	ut64 addr = core->offset;
 	ut64 bsze = core->blocksize;
+
+	r_cons_reset_colors();
+	r_cons_printf("\nPress <enter> to return to Visual mode.\n");
 
 	r_cons_show_cursor (R_TRUE);
 	core->vmode = R_FALSE;

@@ -222,6 +222,7 @@ R_API RCons *r_cons_new () {
 	I.pager = NULL; /* no pager by default */
 	I.truecolor = 0;
 	I.mouse = 0;
+	I.newline = R_TRUE;
 	r_cons_pal_null ();
 	r_cons_pal_init (NULL);
 	r_cons_rgb_init ();
@@ -438,12 +439,25 @@ R_API void r_cons_flush() {
 	// is_html must be a filter, not a write endpoint
 	if (I.is_html) r_cons_html_print (I.buffer);
 	else r_cons_write (I.buffer, I.buffer_len);
+
+	// TODO: remove this newline in the future. Stuff without newline should have one.
+	//
 	// add newline if there's no one in buffer. this fixes the problem of printing
 	// stuff without newline to the console and the prompt hides it.
-	if (I.buffer_len>0)
+	if (I.newline && I.buffer_len>0)
 		if (I.buffer[I.buffer_len-1]!= '\n')
 			write (2, "\n", 1);
 	r_cons_reset ();
+}
+
+/* TODO: remove this function in the future, because cons
+ *       shouldn't at all print a newline. Commands that
+ *       need a newline should print it themselves. */
+R_API void r_cons_flush_nonewline() {
+	int old_newline = I.newline;
+	I.newline = R_FALSE;
+	r_cons_flush();
+	I.newline = old_newline;
 }
 
 R_API void r_cons_visual_flush() {
@@ -664,7 +678,7 @@ R_API int r_cons_get_size(int *rows) {
 			}
 		}
 		I.columns = win.ws_col;
-		I.rows = win.ws_row-1;
+		I.rows = win.ws_row;
 	} else {
 		I.columns = 80;
 		I.rows = 23;

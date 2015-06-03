@@ -320,7 +320,7 @@ static void r_core_panels_refresh (RCore *core) {
 	W (title);
 
 	r_cons_canvas_print (can);
-	r_cons_flush ();
+	r_cons_flush_nonewline ();
 }
 
 static void reloadPanels(RCore *core) {
