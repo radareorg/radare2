@@ -90,8 +90,7 @@ static void r_core_file_info (RCore *core, int mode) {
 			r_cons_printf (",\"size\":%"PFMT64d, r_io_desc_size (core->io, cf->desc));
 			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
 				cf->desc->flags & 7 ));
-			r_cons_printf (",\"blksz\":\"%s\"", sdb_fmt (0, "0x%"PFMT64x,
-				(ut64)core->io->desc->obsz));
+			r_cons_printf (",\"obsz\":%"PFMT64d, (ut64)core->io->desc->obsz);
 			if (cf->desc->referer && *cf->desc->referer)
 				r_cons_printf ("\"referer\":\"%s\"", cf->desc->referer);
 		}
