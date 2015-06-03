@@ -83,6 +83,7 @@ enum { // TODO: not yet used by r_debug
 typedef struct r_debug_frame_t {
 	ut64 addr;
 	int size;
+	char *name;
 } RDebugFrame;
 
 typedef struct r_debug_map_t {

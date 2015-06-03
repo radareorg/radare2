@@ -5,6 +5,7 @@
 #include <r_asm.h>
 #include <r_reg.h>
 #include <r_lib.h>
+#include <r_anal.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/param.h>
@@ -2180,17 +2181,33 @@ static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
 static RList *r_debug_native_frames_x86_32(RDebug *dbg, ut64 at) {
 	RRegItem *ri;
 	RReg *reg = dbg->reg;
-	ut32 i, _esp, esp, ebp2;
-	RList *list = r_list_new ();
+	ut32 i, _esp, esp, eip, ebp2;
+	RList *list;
 	RIOBind *bio = &dbg->iob;
+	RAnalFunction *fcn;
+	RDebugFrame *frame;
 	ut8 buf[4];
 
+	// TODO : frame->size by using esil to emulate first instructions
+	list = r_list_new ();
 	list->free = free;
+
 	ri = (at==UT64_MAX)? r_reg_get (reg, "ebp", R_REG_TYPE_GPR): NULL;
 	_esp = (ut32) ((ri)? r_reg_get_value (reg, ri): at);
 		// TODO: implement [stack] map uptrace method too
 	esp = _esp;
-	for (i=0; i<MAXBT; i++) {
+
+	eip = r_reg_get_value (reg, r_reg_get (reg, "eip", R_REG_TYPE_GPR));
+	fcn = r_anal_get_fcn_in (dbg->anal, eip, R_ANAL_FCN_TYPE_NULL);
+	if (fcn != NULL) {
+		frame = R_NEW (RDebugFrame);
+		frame->addr = fcn->addr;
+		frame->size = 0;
+		frame->name = (fcn && fcn->name) ? strdup(fcn->name) : NULL;
+		r_list_append (list, frame);
+	}
+
+	for (i=1; i<MAXBT; i++) {
 		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
 		if (ebp2 == UT32_MAX)
 			break;
@@ -2199,9 +2216,11 @@ static RList *r_debug_native_frames_x86_32(RDebug *dbg, ut64 at) {
 
 		// TODO: arch_is_call() here and this fun will be portable
 		if (buf[(ebp2-5)%4]==0xe8) {
-			RDebugFrame *frame = R_NEW (RDebugFrame);
+			fcn = r_anal_get_fcn_in (dbg->anal, ebp2, R_ANAL_FCN_TYPE_NULL);
+			frame = R_NEW (RDebugFrame);
 			frame->addr = ebp2;
 			frame->size = esp-_esp;
+			frame->name = (fcn && fcn->name) ? strdup (fcn->name) : NULL;
 			r_list_append (list, frame);
 		}
 		esp += 4;
@@ -2219,6 +2238,7 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 	RList *list;
 	RReg *reg = dbg->reg;
 	RIOBind *bio = &dbg->iob;
+	RAnalFunction *fcn;
 
 	_rip = r_reg_get_value (reg, r_reg_get (reg, "rip", R_REG_TYPE_GPR));
 	if (at == UT64_MAX) {
@@ -2231,20 +2251,15 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 	list = r_list_new ();
 	list->free = free;
 	bio->read_at (bio->io, _rip, (ut8*)&buf, 8);
-	/* %rbp=old rbp, %rbp+4 points to ret */
-	/* Plugin before function prelude: push %rbp ; mov %rsp, %rbp */
-	if (!memcmp (buf, "\x55\x89\xe5", 3) || !memcmp (buf, "\x89\xe5\x57", 3)) {
-		if (bio->read_at (bio->io, _rsp, (ut8*)&ptr, 8) != 8) {
-			eprintf ("read error at 0x%08"PFMT64x"\n", _rsp);
-			r_list_purge (list);
-			free (list);
-			return R_FALSE;
-		}
-		RDebugFrame *frame = R_NEW (RDebugFrame);
-		frame->addr = ptr;
-		frame->size = 0; // TODO ?
+
+	// TODO : frame->size by using esil to emulate first instructions
+	fcn = r_anal_get_fcn_in (dbg->anal, _rip, R_ANAL_FCN_TYPE_NULL);
+	if(fcn) {
+		frame = R_NEW (RDebugFrame);
+		frame->addr = fcn->addr;
+		frame->size = 0;
+		frame->name = (fcn->name) ? strdup (fcn->name) : NULL;
 		r_list_append (list, frame);
-		_rbp = ptr;
 	}
 
 	for (i=1; i<MAXBT; i++) {
@@ -2255,12 +2270,15 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 		bio->read_at (bio->io, _rbp+8, (ut8*)&ptr, 8);
 		if (!ptr || !_rbp)
 			break;
+		fcn = r_anal_get_fcn_in (dbg->anal, ptr, R_ANAL_FCN_TYPE_NULL);
 		frame = R_NEW (RDebugFrame);
 		frame->addr = ptr;
-		frame->size = 0; // TODO ?
+		frame->size = 0;
+		frame->name = (fcn && fcn->name) ? strdup (fcn->name) : NULL;
 		r_list_append (list, frame);
 		_rbp = ebp2;
 	}
+
 	return list;
 }
 
