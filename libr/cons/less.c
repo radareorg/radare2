@@ -14,6 +14,7 @@ static void color_line(const char *line, RStrpool *p, RList *ml){
 	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
 
 	r_strpool_empty(p);
+
 	r_list_foreach (ml, it, m) {
 		/* highlight a match */
 		r_strpool_memcat (p, line + offset,
@@ -21,11 +22,13 @@ static void color_line(const char *line, RStrpool *p, RList *ml){
 		r_strpool_memcat (p, inv[0], linv[0]);
 
 		m_len = m->rm_eo - m->rm_so;
+		if (m_len<0) m_len = 0;
 		m_addr = r_str_ndup (line + m->rm_so, m_len);
 		if (m_addr) {
 			/* in case there's a CSI in the middle of this match*/
 			m_len = r_str_ansi_filter(m_addr,
 						  NULL, NULL, m_len);
+			if (m_len<0) m_len = 0;
 			r_strpool_memcat (p, m_addr, m_len);
 			r_strpool_memcat (p, inv[1], linv[1]);
 			offset = m->rm_eo;
