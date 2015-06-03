@@ -3,46 +3,41 @@
 #include <r_cons.h>
 #include <r_regex.h>		/* less / regex search */
 #include <r_util.h>
-#define NMATCHES 10		/* max number of matches per line */
 
-static void color_line(const char *line, RStrpool *p, RRegexMatch *ms){
-	int i, m_len;
-	int offset = 0;
+static void color_line(const char *line, RStrpool *p, RList *ml){
+	int m_len, offset = 0;
 	char *m_addr;
+	RListIter *it;
+	RRegexMatch *m;
 	char *inv[2] = {R_CONS_INVERT(R_TRUE, R_TRUE),
 			R_CONS_INVERT(R_FALSE, R_TRUE)};
 	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
 
 	r_strpool_empty(p);
-	for (i = 0; i < NMATCHES; i++) {
-		if (ms[i].rm_eo && (i < NMATCHES - 1)) {
-			/* highlight a match */
-			r_strpool_memcat (p, line + offset,
-					  ms[i].rm_so - offset);
-			r_strpool_memcat (p, inv[0], linv[0]);
+	r_list_foreach (ml, it, m) {
+		/* highlight a match */
+		r_strpool_memcat (p, line + offset,
+				  m->rm_so - offset);
+		r_strpool_memcat (p, inv[0], linv[0]);
 
-			m_len = ms[i].rm_eo - ms[i].rm_so;
-			m_addr = r_str_ndup (line + ms[i].rm_so, m_len);
-			if (m_addr) {
-				if(r_str_ansi_chrn (m_addr, m_len) - m_addr < m_len ){
-					/* there's a CSI in the middle of this match*/
-					m_len = r_str_ansi_filter(m_addr,
-							NULL, NULL, m_len);
-				}
-				r_strpool_memcat (p, m_addr, m_len);
-				r_strpool_memcat (p, inv[1], linv[1]);
-				offset = ms[i].rm_eo;
-				free(m_addr);
-			}
-		} else {
-			/* append final part of string w/o matches */
-			r_strpool_append(p, line + offset);
-			break;
+		m_len = m->rm_eo - m->rm_so;
+		m_addr = r_str_ndup (line + m->rm_so, m_len);
+		if (m_addr) {
+			/* in case there's a CSI in the middle of this match*/
+			m_len = r_str_ansi_filter(m_addr,
+						  NULL, NULL, m_len);
+			r_strpool_memcat (p, m_addr, m_len);
+			r_strpool_memcat (p, inv[1], linv[1]);
+			offset = m->rm_eo;
+			free(m_addr);
 		}
+
 	}
+	/* append final part of string w/o matches */
+	r_strpool_append(p, line + offset);
 }
 
-static void printpage (const char *line, int *index, RRegexMatch **ms,
+static void printpage (const char *line, int *index, RList **mla,
 		       int from, int to, int w) {
 	int i;
 	RStrpool *p;
@@ -53,7 +48,7 @@ static void printpage (const char *line, int *index, RRegexMatch **ms,
 	}
 	p = r_strpool_new(0);
 	for (i=from; i<to; i++) {
-		color_line(line + index[i], p, ms[i]);
+		color_line(line + index[i], p, mla[i]);
 		r_strpool_ansi_chop(p, w);
 		r_cons_reset_colors();
 		r_cons_printf ("%s\n", p->str);
@@ -83,49 +78,46 @@ static int *splitlines (char *s, int *lines_count) {
 	return lines;
 }
 
-static int next_match(int from, RRegexMatch **ms, int lcount){
+static int next_match(int from, RList **mla, int lcount){
 	int l;
 	if(from > lcount - 2) return from;
 	for(l = from + 1; l < lcount; l++){
 		/* if there's at least one match on the line */
-		if(ms[l][0].rm_eo) return l;
+		if(r_list_first(mla[l])) return l;
 	}
 	return from;
 }
 
-static int prev_match(int from, RRegexMatch **ms){
+static int prev_match(int from, RList **mla){
 	int l;
 	if(from < 1) return from;
 	for(l = from - 1; l > 0; l--){
-		if(ms[l][0].rm_eo) return l;
+		if(r_list_first(mla[l])) return l;
 	}
 	return from;
 }
 
-static int all_matches(const char *s, RRegex *rx, RRegexMatch **ms,
+static int all_matches(const char *s, RRegex *rx, RList **mla,
 		       int *lines, int lcount){
-	int num, l, fnd, f = R_FALSE;
+	int l, f = R_FALSE;
 	RRegexMatch m;
 	int slen;
 	for(l = 0; l < lcount; l++){
-		num = 0;
 		m.rm_so = 0;
 		const char *loff = s + lines[l]; /* current line offset */
 		char *clean = strdup(loff);
 		int *cpos;
 		r_str_ansi_filter(clean, NULL, &cpos, 0);
 		m.rm_eo = slen = strlen(clean);
-		memset(ms[l], 0, NMATCHES * sizeof(RRegexMatch));
-		while(num < NMATCHES){
-			fnd = r_regex_exec(rx, clean, 1, &m, R_REGEX_STARTEND);
-			if(!fnd) {
-				ms[l][num].rm_so = cpos[m.rm_so];
-				ms[l][num].rm_eo = cpos[m.rm_eo];
-				m.rm_so = m.rm_eo;
-				m.rm_eo = slen;
-				f = R_TRUE;
-				num++;
-			} else break; /* no more on this line */
+		r_list_purge(mla[l]);
+		while(!r_regex_exec(rx, clean, 1, &m, R_REGEX_STARTEND)){
+			RRegexMatch *ms = malloc(sizeof(RRegexMatch));
+			ms->rm_so = cpos[m.rm_so];
+			ms->rm_eo = cpos[m.rm_eo];
+			r_list_append(mla[l], ms);
+			m.rm_so = m.rm_eo;
+			m.rm_eo = slen;
+			f = R_TRUE;
 		}
 		free(cpos);
 		free(clean);
@@ -143,9 +135,9 @@ R_API void r_cons_less_str(const char *str) {
 	char *p = strdup (str);
 	int *lines = splitlines (p, &lines_count);
 
-	RRegexMatch **ms = malloc(lines_count * sizeof(void *));
+	RList **mla = malloc(lines_count * sizeof(RList *));
 	for(i = 0; i < lines_count; i++)
-		ms[i] = calloc(NMATCHES, sizeof(RRegexMatch));
+		mla[i] = r_list_new();
 
 	r_cons_set_raw (R_TRUE);
 	r_cons_show_cursor (R_FALSE);
@@ -157,7 +149,7 @@ R_API void r_cons_less_str(const char *str) {
 		if (from+3>lines_count)
 			from = lines_count-3;
 		if (from<0) from = 0;
-		printpage (p, lines, ms, from, to, w);
+		printpage (p, lines, mla, from, to, w);
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
@@ -183,25 +175,25 @@ R_API void r_cons_less_str(const char *str) {
 				if(rx) r_regex_free(rx);
 				rx = r_regex_new(sreg, "");
 			} else { /* we got an empty string */
-				from = next_match(from, ms, lines_count);
+				from = next_match(from, mla, lines_count);
 				break;
 			}
 			if(!rx) break;
 			/* find all occurences */
-			if(all_matches(p, rx, ms, lines, lines_count))
-				from = next_match(from, ms, lines_count);
+			if(all_matches(p, rx, mla, lines, lines_count))
+				from = next_match(from, mla, lines_count);
 			break;
 		case 'n': 	/* next match */
 			/* search already performed */
-			if(rx) from = next_match(from, ms, lines_count);
+			if(rx) from = next_match(from, mla, lines_count);
 			break;
 		case 'p': 	/* previous match */
-			if(rx) from = prev_match(from, ms);
+			if(rx) from = prev_match(from, mla);
 			break;
 		}
 	}
-	for(i = 0; i < lines_count; i++) free(ms[i]);
-	free(ms);
+	for(i = 0; i < lines_count; i++) r_list_free(mla[i]);
+	free(mla);
 	if(rx) r_regex_free(rx);
 	free (lines);
 	free (p);
