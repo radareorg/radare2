@@ -105,11 +105,6 @@ static void update_node_dimension(Node nodes[], int nodes_size, int is_small) {
 	}
 }
 
-static void graph_toggle_small_nodes(struct graph *g) {
-	g->is_small_nodes = !g->is_small_nodes;
-	update_node_dimension(g->nodes, g->n_nodes, g->is_small_nodes);
-}
-
 static void small_Node_print(struct graph *g, Node *n, int cur) {
 	char title[128];
 
@@ -187,43 +182,6 @@ static Node *get_current_node(struct graph *g) {
 	 return &g->nodes[g->curnode];
 }
 
-static void graph_print_node(struct graph *g, Node *n) {
-	int cur = get_current_node(g) == n;
-
-	if (g->is_small_nodes)
-		small_Node_print(g, n, cur);
-	else
-		normal_Node_print(g, n, cur);
-}
-
-static void graph_print_nodes(struct graph *g) {
-	int i;
-	for (i = 0; i < g->n_nodes; ++i)
-		if (i != g->curnode)
-			graph_print_node(g, &g->nodes[i]);
-
-	/* draw current node now to make it appear on top */
-	graph_print_node (g, &g->nodes[g->curnode]);
-}
-
-static void graph_print_edge(struct graph *g, Node *a, Node *b, int nth) {
-	int x, y, x2, y2;
-	int xinc = 3 + 2 * (nth + 1);
-	x = a->x + xinc;
-	y = a->y + a->h;
-	x2 = b->x + xinc;
-	y2 = b->y;
-	if (a == b) {
-		x2 = a->x;
-		y2 = y - 3;
-	}
-	switch (nth) {
-	case 0: L1 (x, y, x2, y2); break;
-	case 1: L2 (x, y, x2, y2); break;
-	case -1: L (x, y, x2, y2); break;
-	}
-}
-
 static int count_exit_edges(struct graph *g, int n) {
 	int i, count = 0;
 	for (i = 0; i < g->n_edges; i++) {
@@ -232,24 +190,6 @@ static int count_exit_edges(struct graph *g, int n) {
 		}
 	}
 	return count;
-}
-
-static void graph_print_edges(struct graph *g) {
-	int i;
-	if (g->edges) {
-		for (i = 0; i < g->n_edges; i++) {
-			if (g->edges[i].from == -1 || g->edges[i].to == -1)
-				continue;
-
-			Node *a = &g->nodes[g->edges[i].from];
-			Node *b = &g->nodes[g->edges[i].to];
-			int nth = g->edges[i].nth;
-			if (count_exit_edges(g, g->edges[i].from) == 1)
-				nth = -1; // blue line
-
-			graph_print_edge (g, a, b, nth);
-		}
-	}
 }
 
 static int find_edge_node(struct graph *g, int cur, int nth) {
@@ -274,7 +214,7 @@ static int find_node_idx(struct graph *g, ut64 addr) {
 	return -1;
 }
 
-static void graph_set_layout2(struct graph *g, int nth, int depth) {
+static void set_layout_bb_depth(struct graph *g, int nth, int depth) {
 	int j, f, old_d;
 	if (nth >= g->n_nodes)
 		return;
@@ -286,10 +226,10 @@ static void graph_set_layout2(struct graph *g, int nth, int depth) {
 
 	j = find_edge_node (g, nth, 0);
 	if (j != -1)
-		graph_set_layout2 (g, j, depth + 1);
+		set_layout_bb_depth (g, j, depth + 1);
 	f = find_edge_node (g, nth, 1);
 	if (f != -1)
-		graph_set_layout2 (g, f, depth + 1);
+		set_layout_bb_depth (g, f, depth + 1);
 	// TODO: support more than two destination points (switch tables?)
 }
 
@@ -300,7 +240,7 @@ static void set_layout_bb(struct graph *g) {
 	const int h_spacing = 12;
 	const int v_spacing = 4;
 
-	graph_set_layout2 (g, 0, 0);
+	set_layout_bb_depth (g, 0, 0);
 
 	// identify max depth
 	for (i = 0; i < g->n_nodes; i++) {
@@ -356,46 +296,7 @@ static void set_layout_callgraph(struct graph *g) {
 	}
 }
 
-static void graph_set_layout(struct graph *g) {
-	if (g->is_callgraph)
-		set_layout_callgraph(g);
-	else
-		set_layout_bb(g);
-}
-
-static void graph_update_seek(struct graph *g, Node *n, int force) {
-	RConsCanvas *can = g->can;
-	int x, y, w, h;
-	int doscroll = R_FALSE;
-
-	if (!n) return;
-
-	x = n->x + can->sx;
-	y = n->y + can->sy;
-	w = can->w;
-	h = can->h;
-
-	doscroll = force || y < 0 || y + 5 > h || x + 5 > w || x + n->w + 5 < 0;
-
-	if (doscroll) {
-		// top-left
-		can->sy = -n->y + BORDER;
-		can->sx = -n->x + BORDER;
-		// center
-		can->sy = -n->y + BORDER + (h / 8);
-		can->sx = -n->x + BORDER + (w / 4);
-	}
-}
-
-static void graph_free(struct graph *g) {
-	if (g->nodes)
-		free(g->nodes);
-	if (g->edges)
-		free(g->edges);
-	free(g);
-}
-
-static int graph_get_bbnodes(struct graph *g) {
+static int get_bbnodes(struct graph *g) {
 	RAnalBlock *bb;
 	RListIter *iter;
 	Node *nodes;
@@ -433,7 +334,7 @@ static int graph_get_bbnodes(struct graph *g) {
 	return R_TRUE;
 }
 
-static int graph_get_cgnodes(struct graph *g) {
+static int get_cgnodes(struct graph *g) {
 	int i = 0;
 #if FCN_OLD
 	int j;
@@ -496,7 +397,7 @@ static int graph_get_cgnodes(struct graph *g) {
 	return R_TRUE;
 }
 
-static int graph_get_bbedges(struct graph *g) {
+static int get_bbedges(struct graph *g) {
 	Edge *edges = NULL;
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -538,7 +439,7 @@ static int graph_get_bbedges(struct graph *g) {
 	return R_TRUE;
 }
 
-static int graph_get_cgedges(struct graph *g) {
+static int get_cgedges(struct graph *g) {
 	int i = 0;
 #if FCN_OLD
 	Edge *edges = NULL;
@@ -573,24 +474,123 @@ static int reload_nodes(struct graph *g) {
 	int ret;
 
 	if (g->is_callgraph) {
-		ret = graph_get_cgnodes(g);
+		ret = get_cgnodes(g);
 		if (!ret)
 			return R_FALSE;
-		ret = graph_get_cgedges(g);
+		ret = get_cgedges(g);
 		if (!ret)
 			return R_FALSE;
 	} else {
-		ret = graph_get_bbnodes(g);
+		ret = get_bbnodes(g);
 		if (!ret)
 			return R_FALSE;
 
-		ret = graph_get_bbedges(g);
+		ret = get_bbedges(g);
 		if (!ret)
 			return R_FALSE;
 	}
 
 	update_node_dimension(g->nodes, g->n_nodes, g->is_small_nodes);
 	return R_TRUE;
+}
+
+static void graph_set_layout(struct graph *g) {
+	if (g->is_callgraph)
+		set_layout_callgraph(g);
+	else
+		set_layout_bb(g);
+}
+
+static void graph_update_seek(struct graph *g, Node *n, int force) {
+	RConsCanvas *can = g->can;
+	int x, y, w, h;
+	int doscroll = R_FALSE;
+
+	if (!n) return;
+
+	x = n->x + can->sx;
+	y = n->y + can->sy;
+	w = can->w;
+	h = can->h;
+
+	doscroll = force || y < 0 || y + 5 > h || x + 5 > w || x + n->w + 5 < 0;
+
+	if (doscroll) {
+		// top-left
+		can->sy = -n->y + BORDER;
+		can->sx = -n->x + BORDER;
+		// center
+		can->sy = -n->y + BORDER + (h / 8);
+		can->sx = -n->x + BORDER + (w / 4);
+	}
+}
+
+static void graph_free(struct graph *g) {
+	if (g->nodes)
+		free(g->nodes);
+	if (g->edges)
+		free(g->edges);
+	free(g);
+}
+
+static void graph_print_node(struct graph *g, Node *n) {
+	int cur = get_current_node(g) == n;
+
+	if (g->is_small_nodes)
+		small_Node_print(g, n, cur);
+	else
+		normal_Node_print(g, n, cur);
+}
+
+static void graph_print_nodes(struct graph *g) {
+	int i;
+	for (i = 0; i < g->n_nodes; ++i)
+		if (i != g->curnode)
+			graph_print_node(g, &g->nodes[i]);
+
+	/* draw current node now to make it appear on top */
+	graph_print_node (g, &g->nodes[g->curnode]);
+}
+
+static void graph_print_edge(struct graph *g, Node *a, Node *b, int nth) {
+	int x, y, x2, y2;
+	int xinc = 3 + 2 * (nth + 1);
+	x = a->x + xinc;
+	y = a->y + a->h;
+	x2 = b->x + xinc;
+	y2 = b->y;
+	if (a == b) {
+		x2 = a->x;
+		y2 = y - 3;
+	}
+	switch (nth) {
+	case 0: L1 (x, y, x2, y2); break;
+	case 1: L2 (x, y, x2, y2); break;
+	case -1: L (x, y, x2, y2); break;
+	}
+}
+
+static void graph_print_edges(struct graph *g) {
+	int i;
+	if (g->edges) {
+		for (i = 0; i < g->n_edges; i++) {
+			if (g->edges[i].from == -1 || g->edges[i].to == -1)
+				continue;
+
+			Node *a = &g->nodes[g->edges[i].from];
+			Node *b = &g->nodes[g->edges[i].to];
+			int nth = g->edges[i].nth;
+			if (count_exit_edges(g, g->edges[i].from) == 1)
+				nth = -1; // blue line
+
+			graph_print_edge (g, a, b, nth);
+		}
+	}
+}
+
+static void graph_toggle_small_nodes(struct graph *g) {
+	g->is_small_nodes = !g->is_small_nodes;
+	update_node_dimension(g->nodes, g->n_nodes, g->is_small_nodes);
 }
 
 static int graph_reload_nodes(struct graph *g) {
@@ -628,6 +628,7 @@ static void graph_undo_node(struct graph *g) {
 
 static void graph_next_node(struct graph *g) {
 	g->curnode = (g->curnode + 1) % g->n_nodes;
+	ostack_push (&g->ostack, g->curnode);
 	graph_update_seek (g, get_current_node(g), R_FALSE);
 }
 
@@ -636,6 +637,7 @@ static void graph_prev_node(struct graph *g) {
 		g->curnode = g->n_nodes - 1;
 	else
 		g->curnode = g->curnode - 1;
+	ostack_push (&g->ostack, g->curnode);
 	graph_update_seek (g, get_current_node(g), R_FALSE);
 }
 
@@ -688,25 +690,15 @@ static int graph_init(struct graph *g) {
 	g->nodes = NULL;
 	g->edges = NULL;
 
-	ret = graph_get_bbnodes(g);
-	if (!ret)
-		return R_FALSE;
-
-	ret = graph_get_bbedges(g);
-	if (!ret) {
-		free(g->nodes);
-		return R_FALSE;
-	}
-
 	g->is_callgraph = R_FALSE;
 	g->is_instep = R_FALSE;
 	g->is_simple_mode = R_TRUE;
 	g->is_small_nodes = R_FALSE;
 	g->curnode = 0;
-
 	ostack_init(&g->ostack);
 
-	return R_TRUE;
+	ret = graph_reload_nodes(g);
+	return ret;
 }
 
 static struct graph *graph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {
@@ -728,6 +720,7 @@ static struct graph *graph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn
 	return g;
 
 error_init:
+	graph_free(g);
 	free(g);
 error_malloc:
 	return NULL;
