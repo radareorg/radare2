@@ -293,7 +293,7 @@ static void graph_set_layout2(struct graph *g, int nth, int depth) {
 	// TODO: support more than two destination points (switch tables?)
 }
 
-static void graph_set_layout(struct graph *g) {
+static void set_layout_bb(struct graph *g) {
 	int i, j, rh, nx;
 	int *rowheight = NULL;
 	int maxdepth = 0;
@@ -336,6 +336,31 @@ static void graph_set_layout(struct graph *g) {
 		}
 	}
 	free (rowheight);
+}
+
+static void set_layout_callgraph(struct graph *g) {
+	int y = 5, x = 20;
+	int i;
+
+	for (i = 0; i < g->n_nodes; i++) {
+		// wrap to width 'w'
+		if (i > 0) {
+			if (g->nodes[i].x < g->nodes[i-1].x) {
+				y += 10;
+				x = 0;
+			}
+		}
+		g->nodes[i].x = x;
+		g->nodes[i].y = i? y: 2;
+		x += 30;
+	}
+}
+
+static void graph_set_layout(struct graph *g) {
+	if (g->is_callgraph)
+		set_layout_callgraph(g);
+	else
+		set_layout_bb(g);
 }
 
 static void graph_update_seek(struct graph *g, Node *n, int force) {
@@ -544,33 +569,16 @@ static int graph_get_cgedges(struct graph *g) {
 	return R_TRUE;
 }
 
-static int graph_reload_nodes(struct graph *g) {
-	int i, ret;
+static int reload_nodes(struct graph *g) {
+	int ret;
 
 	if (g->is_callgraph) {
-		int y = 5, x = 20;
 		ret = graph_get_cgnodes(g);
 		if (!ret)
 			return R_FALSE;
 		ret = graph_get_cgedges(g);
 		if (!ret)
 			return R_FALSE;
-
-		update_node_dimension(g->nodes, g->n_nodes, g->is_small_nodes);
-
-		// callgraph layout
-		for (i = 0; i < g->n_nodes; i++) {
-			// wrap to width 'w'
-			if (i > 0) {
-				if (g->nodes[i].x < g->nodes[i-1].x) {
-					y += 10;
-					x = 0;
-				}
-			}
-			g->nodes[i].x = x;
-			g->nodes[i].y = i? y: 2;
-			x += 30;
-		}
 	} else {
 		ret = graph_get_bbnodes(g);
 		if (!ret)
@@ -579,12 +587,19 @@ static int graph_reload_nodes(struct graph *g) {
 		ret = graph_get_bbedges(g);
 		if (!ret)
 			return R_FALSE;
-
-		update_node_dimension(g->nodes, g->n_nodes, g->is_small_nodes);
-		graph_set_layout (g);
-		// update edges too maybe..
 	}
 
+	update_node_dimension(g->nodes, g->n_nodes, g->is_small_nodes);
+	return R_TRUE;
+}
+
+static int graph_reload_nodes(struct graph *g) {
+	int ret;
+
+	ret = reload_nodes(g);
+	if (!ret)
+		return R_FALSE;
+	graph_set_layout(g);
 	return R_TRUE;
 }
 
