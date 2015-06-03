@@ -387,7 +387,10 @@ static int graph_get_cgnodes(struct graph *g) {
 	nodes[i].w = 0;
 	nodes[i].h = 0;
 	i++;
+
 	r_list_foreach (g->fcn->refs, iter, ref) {
+		/* XXX: something is broken, why there are duplicated
+		 *      nodes here?! goto check fcn->refs!! */
 		/* avoid dups wtf */
 		for (j = 0; j < i; j++) {
 			if (ref->addr == nodes[j].addr)
@@ -429,27 +432,36 @@ static int graph_get_bbedges(struct graph *g) {
 	Edge *edges = NULL;
 	RListIter *iter;
 	RAnalBlock *bb;
-	int i = 0;
+	int i, n_edges;
 
+	n_edges = 0;
+	r_list_foreach (g->fcn->bbs, iter, bb) {
+		if (bb->jump != UT64_MAX)
+			n_edges++;
+		if (bb->fail != UT64_MAX)
+			n_edges++;
+	}
+
+	edges = calloc(n_edges, sizeof(Edge));
+	if (!edges && n_edges != 0)
+		return R_FALSE;
+
+	i = 0;
 	r_list_foreach (g->fcn->bbs, iter, bb) {
 		// add edge from bb->addr to bb->jump / bb->fail
 		if (bb->jump != UT64_MAX) {
-			edges = realloc (edges, sizeof (Edge)*(i+2));
 			edges[i].nth = 0;
 			edges[i].from = find_node_idx (g, bb->addr);
 			edges[i].to = find_node_idx (g, bb->jump);
 			i++;
-			if (bb->fail != UT64_MAX) {
-				edges = realloc (edges, sizeof (Edge)*(i+2));
-				edges[i].nth = 1;
-				edges[i].from = find_node_idx (g, bb->addr);
-				edges[i].to = find_node_idx (g, bb->fail);
-				i++;
-			}
+		}
+		if (bb->fail != UT64_MAX) {
+			edges[i].nth = 1;
+			edges[i].from = find_node_idx (g, bb->addr);
+			edges[i].to = find_node_idx (g, bb->fail);
+			i++;
 		}
 	}
-	if (edges)
-		edges[i].nth = -1;
 
 	if (g->edges)
 		free(g->edges);
@@ -464,16 +476,19 @@ static int graph_get_cgedges(struct graph *g) {
 	Edge *edges = NULL;
 	RAnalRef *ref;
 	RListIter *iter;
+	int refs_length;
+
+	refs_length = r_list_length(g->fcn->refs);
+	edges = calloc(refs_length, sizeof(Edge));
+	if (!edges && refs_length != 0)
+		return R_FALSE;
 
 	r_list_foreach (g->fcn->refs, iter, ref) {
-		edges = realloc (edges, sizeof (Edge)*(i+2));
 		edges[i].nth = 0;
 		edges[i].from = find_node_idx (g, g->fcn->addr);
 		edges[i].to = find_node_idx (g, ref->addr);
 		i++;
 	}
-	if (edges)
-		edges[i].nth = -1;
 
 	if (g->edges)
 		free(g->edges);
