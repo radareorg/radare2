@@ -1217,8 +1217,14 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
 			r_list_foreach (list, iter, frame) {
-				r_cons_printf ("%d  0x%08"PFMT64x"  %d\n",
-					i++, frame->addr, frame->size);
+				if(frame->name) {
+					r_cons_printf ("%d  0x%08"PFMT64x"  %d [%s]\n",
+						i++, frame->addr, frame->size, frame->name);
+					free(frame->name);
+				} else {
+					r_cons_printf ("%d  0x%08"PFMT64x"  %d\n",
+						i++, frame->addr, frame->size);
+				}
 			}
 			r_list_purge (list);
 			break;
