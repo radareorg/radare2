@@ -1256,6 +1256,7 @@ static void printraw (RCore *core, int len, int mode) {
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int mode, w, p, i, l, len, total[10];
+	int ret = 0;
 	ut64 off, from, to, at, ate, piece;
 	ut32 tbs = core->blocksize;
 	ut8 *ptr = core->block;
@@ -1285,7 +1286,7 @@ static int cmd_print(void *data, const char *input) {
 						if (!r_core_block_size (core, l)) {
 							eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
 								*input, input+2);
-							return R_FALSE;
+							goto beach;
 						}
 						l = core->blocksize;
 					} else {
@@ -1306,7 +1307,7 @@ static int cmd_print(void *data, const char *input) {
 		if (i && l > i) {
 			eprintf ("This block size is too big (%d<%d). Did you mean 'p%c @ %s' instead?\n",
 					i, l, *input, input+2);
-			return R_FALSE;
+			goto beach;
 		}
 	}
 	if (input[0] == 'x' || input[0] == 'D'){
@@ -1314,7 +1315,7 @@ static int cmd_print(void *data, const char *input) {
 			if (!r_core_block_size (core,l)){
 				eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
 						*input, input+2);
-				return R_FALSE;
+				goto beach;
 			}
 		}
 	}
@@ -1326,7 +1327,7 @@ static int cmd_print(void *data, const char *input) {
 			len = f->size;
 		} else {
 			eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
-			return R_FALSE;
+			goto beach;
 		}
 	}
 	ptr = core->block;
@@ -1508,14 +1509,14 @@ static int cmd_print(void *data, const char *input) {
 			ptr = malloc (psz);
 			if (!ptr) {
 				eprintf ("Error: failed to malloc memory");
-				return R_FALSE;
+				goto beach;
 			}
 			eprintf ("block = %d * %d\n", (int)nbsz, psz);
 			p = malloc (core->blocksize);
 			if (!p) {
 				free (ptr);
 				eprintf ("Error: failed to malloc memory");
-				return R_FALSE;
+				goto beach;
 			}
 			for (i=0; i<psz; i++) {
 				r_core_read_at (core, i*nbsz, p, nbsz);
@@ -1537,14 +1538,14 @@ static int cmd_print(void *data, const char *input) {
 			ptr = malloc (psz);
 			if (!ptr) {
 				eprintf ("Error: failed to malloc memory");
-				return R_FALSE;
+				goto beach;
 			}
 			eprintf ("block = %d * %d\n", (int)nbsz, (int)psz);
 			p = malloc (core->blocksize);
 			if (!p) {
 				eprintf ("Error: failed to malloc memory");
-                                free(ptr);
-				return R_FALSE;
+                                free (ptr);
+				goto beach;
 			}
 			for (i=0; i<psz; i++) {
 				r_core_read_at (core, i*nbsz, p, nbsz);
@@ -1813,7 +1814,7 @@ static int cmd_print(void *data, const char *input) {
 			r_core_print_disasm_instructions (core, 0, l);
 			break;
 		}
-		return 0;
+		goto beach;
 	case 'D': // "pD"
 	case 'd': // "pd"
 		{
@@ -1848,7 +1849,7 @@ static int cmd_print(void *data, const char *input) {
 				(ut64)core->blocksize_max, (ut64)use_blocksize, input[0], (ut64) use_blocksize);
 			free (old_arch);
 			free (new_arch);
-			return R_FALSE;
+			goto beach;
 		} else if (core->blocksize_max < use_blocksize && (int)use_blocksize > -core->blocksize_max) {
 			bw_disassemble = R_TRUE;
 			use_blocksize = -use_blocksize;
@@ -2134,7 +2135,8 @@ static int cmd_print(void *data, const char *input) {
 		free (new_arch);
 
 		if (processed_cmd)
-			return pd_result;
+			ret = pd_result;
+			goto beach;
 		}
 		break;
 	case 's': //ps
@@ -2779,7 +2781,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'k':
 		if (input[1] == '?') {
-			r_cons_printf("|Usage: pk [len]       print key in randomart\n");
+			r_cons_printf ("|Usage: pk [len]       print key in randomart\n");
 		} else {
 			len = len > core->blocksize ? core->blocksize : len;
 			char *s = r_print_randomart (core->block, len, core->offset);
@@ -2789,7 +2791,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'K':
 		if (input[1] == '?') {
-			r_cons_printf("|Usage: pK [len]       print key in randomart mosaic\n");
+			r_cons_printf ("|Usage: pK [len]       print key in randomart mosaic\n");
 		} else {
 			len = len > core->blocksize ? core->blocksize : len;
 			int w, h;
@@ -2934,10 +2936,11 @@ static int cmd_print(void *data, const char *input) {
 	}
 	/*if (tbs != core->blocksize)*/
 		/*r_core_block_size (core, tbs);*/
+beach:
 	if (tmpseek != UT64_MAX) {
 		r_core_seek (core, tmpseek, SEEK_SET);
 	}
-	return 0;
+	return ret;
 }
 
 static int cmd_hexdump(void *data, const char *input) {

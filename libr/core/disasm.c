@@ -2565,7 +2565,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	RDisasmState *ds;
 	RAnalFunction *f;
 	int i, j, oplen, ret, line;
-	const ut64 old_offset = core->offset;
+	ut64 old_offset = core->offset;
 	ut64 at;
 	int dis_opcodes = 0;
 	r_cons_printf ("[");
@@ -2581,9 +2581,24 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			 * - We compute the new starting offset
 			 * - Read at the new offset */
 			nb_opcodes = -nb_opcodes;
+
+			if (nb_opcodes > 0xffff) {
+				eprintf ("Too many backward instructions\n");
+				return 0;
+			}
 			if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
-				r_cons_printf ("]");
-				return R_FALSE;
+				/* workaround to avoid empty arrays */
+#define BWRETRY 0
+#if BWRETRY
+				nb_opcodes+=1;
+				if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
+#endif
+					r_cons_printf ("]");
+					return R_FALSE;
+#if BWRETRY
+				}
+#endif
+				nb_opcodes-=1;
 			}
 			count = R_MIN (nb_bytes, nbytes);
 			if (count>0) {
