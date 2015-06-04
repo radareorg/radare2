@@ -600,6 +600,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 
 	if (*max_count == 0) {
 		r_list_free (localbadstart);
+		r_list_free (hitlist);
 		return NULL;
 	}
 	if (grep) {

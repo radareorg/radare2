@@ -679,6 +679,8 @@ static RList* entries(RBinFile *arch) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	RBinSymbol *m;
 	if (!arch || !bin) {
+		free (ret);
+		free (ptr);
 		return NULL;
 	}
 	if (!bin->methods_list)
