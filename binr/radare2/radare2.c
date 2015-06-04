@@ -37,7 +37,6 @@ static int verify_version(int show) {
 		{ "r_bp", &r_bp_version },
 		{ "r_debug", &r_debug_version },
 		{ "r_hash", &r_hash_version },
-		{ "r_diff", &r_diff_version },
 		{ "r_fs", &r_fs_version },
 		{ "r_io", &r_io_version },
 		{ "r_magic", &r_magic_version },
