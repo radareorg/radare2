@@ -34,7 +34,10 @@ LDFLAGS="-isysroot ${SDKROOT}"
 # -Wl, -syslibroot ${SDKROOT}"
 export PATH=${DEVROOT}/usr/bin:${SDKROOT}/Developer/usr/bin:${PATH}
 CC=${DEVROOT}/usr/bin/gcc
+CC="xcrun --sdk iphoneos gcc"
+CXX="xcrun --sdk iphoneos g++"
 LD=${CC}
+export CC CXX LD
 for a in ${CPU} ; do
 	CFLAGS="${CFLAGS} -arch ${a}"
 done

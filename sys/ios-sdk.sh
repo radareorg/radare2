@@ -27,6 +27,10 @@ export IOSINC=`pwd`/sys/ios-include
 export CFLAGS=-O2
 export USE_SIMULATOR=0
 
+if [ "$1" = -s ]; then
+	exec $SHELL
+fi
+
 if true ; then
 make clean
 cp -f plugins.tiny.cfg plugins.cfg
