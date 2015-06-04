@@ -1623,7 +1623,7 @@ static void r_core_visual_refresh (RCore *core) {
 	}
 
 	/* hack to blank last line. move prompt here? */
-	r_cons_fill_line ();
+	//r_cons_fill_line ();
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
 		r_cons_flush ();
