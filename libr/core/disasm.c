@@ -916,11 +916,11 @@ static void handle_print_pre (RCore *core, RDisasmState *ds) {
 }
 
 static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
-		int linelen, maxclen ;
+	int linelen, maxclen ;
 	RAnalFunction *f;
 	RFlagItem *item;
 	/* show comment at right? */
-	ds->show_comment_right = 0;
+	int scr = ds->show_comment_right;
 	if (!ds->show_comments)
 		return;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
@@ -1001,6 +1001,7 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 			if (ds->show_color) handle_print_color_reset (core, ds);
 		}
 	}
+	ds->show_comment_right = scr;
 }
 
 static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
@@ -1698,21 +1699,29 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 						else snprintf (tmp, sizeof (tmp)-1, " ; %s", flag->name);
 					}
 				}
+
+				if (ds->show_calls) {
+					const char *sn = ds->show_section? getSectionName (core, ds->at): "";
+					int cmtright = ds->show_comment_right;
+					// if doesnt fits in screen newline
+					if (cmtright) {
+						if (ds->show_color)
+							r_cons_printf (Color_RESET"%s%s%s"Color_RESET, ds->pal_comment, ccstr, tmp);
+						else r_cons_printf ("%s%s", ccstr, tmp);
+					} else {
+						if (ds->show_color)
+							r_cons_printf ("\n%s%s"Color_RESET"%s%s"Color_RESET"  ^- %s%s"Color_RESET,
+									ds->color_fline, ds->pre, ds->color_flow, ds->refline, ccstr, tmp);
+						else r_cons_printf ("\n%s%s  ^- %s%s", ds->pre, ds->refline, ccstr, tmp);
+					}
+				}
+				free (ccstr);
 				if (f) {
 					handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 					ds->pre = r_str_concat (ds->pre, " ");
 				} else {
 					handle_set_pre (ds, "  ");
 				}
-
-				if (ds->show_calls) {
-					const char *sn = ds->show_section? getSectionName (core, ds->at): "";
-					if (ds->show_color)
-						r_cons_printf ("\n%s%s"Color_RESET"%s%s%s"Color_RESET"   %s%s"Color_RESET,
-								ds->color_fline, ds->pre, ds->color_flow, sn, ds->refline, ccstr, tmp);
-					else r_cons_printf ("\n%s%s%s   %s%s", ds->pre, sn, ds->refline, ccstr, tmp);
-				}
-				free (ccstr);
 			}
 		}
 		r_anal_cc_reset (&cc);
@@ -1892,6 +1901,14 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
 			r_str_filter (msg, 0);
+			if (!ds->show_comment_right) {
+				handle_comment_align (core, ds);
+				if (ds->show_color) {
+					r_cons_printf ("\n%s%s%s   ^- ", ds->color_fline, ds->pre,ds->refline);
+				} else {
+					r_cons_printf ("\n%s%s   ^- ", ds->pre,ds->refline);
+				}
+			}
 			if (ds->show_color) {
 				DOALIGN();
 				r_cons_printf ("%s", ds->pal_comment);

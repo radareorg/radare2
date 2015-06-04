@@ -1592,7 +1592,7 @@ static void r_core_visual_refresh (RCore *core) {
 	core->cons->blankline = R_TRUE;
 
 	if (r_config_get_i (core->config, "scr.responsive")) {
-		if (w<78) {
+		if (w<110) {
 			r_config_set_i (core->config, "asm.cmtright", 0);
 		} else {
 			r_config_set_i (core->config, "asm.cmtright", 1);
@@ -1614,7 +1614,7 @@ static void r_core_visual_refresh (RCore *core) {
 		} else {
 			r_config_set_i (core->config, "asm.lineswidth", 7);
 		}
-		if (w<55) {
+		if (w<70) {
 			r_config_set_i (core->config, "asm.lineswidth", 1);
 			r_config_set_i (core->config, "asm.bytes", 0);
 		} else {
