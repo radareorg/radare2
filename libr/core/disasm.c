@@ -1840,6 +1840,20 @@ static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 
 	return ret;
 }
 #endif
+static void comment_newline (RCore *core, RDisasmState *ds) {
+	const char *sn;
+	if (ds->show_comment_right) {
+		return;
+	}
+	sn = ds->show_section? getSectionName (core, ds->at): "";
+	handle_comment_align (core, ds);
+	if (ds->show_color) {
+		r_cons_printf ("\n%s%s"Color_RESET"%s%s   ^- ",
+			ds->color_fline, ds->pre, sn, ds->refline);
+	} else {
+		r_cons_printf ("\n%s%s%s   ^- ", ds->pre, sn, ds->refline);
+	}
+}
 
 /* convert numeric value in opcode to ascii char or number */
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
@@ -1876,6 +1890,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				r_cons_printf (ds->pal_comment);
 			}
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
+				comment_newline (core, ds);
 				const char *flag = "";
 				f = r_flag_get_i (core->flags, p);
 				if (f) flag = f->name;
@@ -1904,15 +1919,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
 			r_str_filter (msg, 0);
-			if (!ds->show_comment_right) {
-				const char *sn = ds->show_section? getSectionName (core, ds->at): "";
-				handle_comment_align (core, ds);
-				if (ds->show_color) {
-					r_cons_printf ("\n%s%s"Color_RESET"%s%s   ^- ", ds->color_fline, ds->pre, sn, ds->refline);
-				} else {
-					r_cons_printf ("\n%s%s%s   ^- ", ds->pre, sn, ds->refline);
-				}
-			}
+			comment_newline (core, ds);
 			if (ds->show_color) {
 				DOALIGN();
 				r_cons_printf ("%s", ds->pal_comment);
