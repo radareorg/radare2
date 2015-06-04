@@ -1703,16 +1703,19 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 				if (ds->show_calls) {
 					const char *sn = ds->show_section? getSectionName (core, ds->at): "";
 					int cmtright = ds->show_comment_right;
+					if (core->cons->columns < 120) {
+						cmtright = 0;
+					}
 					// if doesnt fits in screen newline
 					if (cmtright) {
 						if (ds->show_color)
-							r_cons_printf (Color_RESET"%s%s%s"Color_RESET, ds->pal_comment, ccstr, tmp);
-						else r_cons_printf ("%s%s", ccstr, tmp);
+							r_cons_printf (" ;"Color_RESET"%s%s%s"Color_RESET, ds->pal_comment, ccstr, tmp);
+						else r_cons_printf (" ;%s%s", ccstr, tmp);
 					} else {
 						if (ds->show_color)
-							r_cons_printf ("\n%s%s"Color_RESET"%s%s"Color_RESET"  ^- %s%s"Color_RESET,
-									ds->color_fline, ds->pre, ds->color_flow, ds->refline, ccstr, tmp);
-						else r_cons_printf ("\n%s%s  ^- %s%s", ds->pre, ds->refline, ccstr, tmp);
+							r_cons_printf ("\n%s%s%s"Color_RESET"%s%s"Color_RESET"  ^- %s%s"Color_RESET,
+									ds->color_fline, ds->pre, ds->color_flow, sn, ds->refline, ccstr, tmp);
+						else r_cons_printf ("\n%s%s%s  ^- %s%s", ds->pre, ds->refline, sn, ccstr, tmp);
 					}
 				}
 				free (ccstr);
@@ -1902,11 +1905,12 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 		if (f) {
 			r_str_filter (msg, 0);
 			if (!ds->show_comment_right) {
+				const char *sn = ds->show_section? getSectionName (core, ds->at): "";
 				handle_comment_align (core, ds);
 				if (ds->show_color) {
-					r_cons_printf ("\n%s%s%s   ^- ", ds->color_fline, ds->pre,ds->refline);
+					r_cons_printf ("\n%s%s"Color_RESET"%s%s   ^- ", ds->color_fline, ds->pre, sn, ds->refline);
 				} else {
-					r_cons_printf ("\n%s%s   ^- ", ds->pre,ds->refline);
+					r_cons_printf ("\n%s%s%s   ^- ", ds->pre, sn, ds->refline);
 				}
 			}
 			if (ds->show_color) {
