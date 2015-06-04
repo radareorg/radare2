@@ -291,7 +291,7 @@ static int Elf_(r_bin_elf_init_dynamic_section) (struct Elf_(r_bin_elf_obj_t) *b
 		free (dyn);
 		return R_FALSE;
 	}
-	strtab = (char *)calloc (1, strsize);
+	strtab = (char *)calloc (1, strsize+1);
 	if (!strtab){
 		free (dyn);
 		return R_FALSE;
@@ -1180,7 +1180,7 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 	struct r_bin_elf_lib_t *ret = NULL;
 	int j, k;
 
-	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab || *bin->strtab == '0') 
+	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab || *(bin->strtab+1) == '0') 
 		return NULL;
 
 	for (j = 0, k = 0; j < bin->dyn_entries; j++)
