@@ -1490,7 +1490,7 @@ repeat_arroba:
 			case 'a': // "@a:"
 				if (ptr[1]==':') {
 					char *q = strchr (ptr+2, ':');
-					tmpasm = r_config_get (core->config, "asm.arch");
+					tmpasm = strdup (r_config_get (core->config, "asm.arch"));
 					if (q) {
 						*q++ = 0;
 						tmpbits = r_config_get (core->config, "asm.bits");

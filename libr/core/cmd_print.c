@@ -167,6 +167,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 	return result;
 }
 
+/* This function is not necessary anymore, but it's kept for discussion */
 static int process_input_pade(RCore *core, const char *input, char** hex, char **asm_arch, ut32 *bits) {
 	// input: start of the input string e.g. after the command symbols have been consumed
 	// size: hex if present, otherwise -1
@@ -188,6 +189,7 @@ static int process_input_pade(RCore *core, const char *input, char** hex, char *
 
 	input_one = trimmed_clone;
 
+#if 0
 	ptr_str_clone = strchr (trimmed_clone, ' ');
 	// terminate input_one
 	if (ptr_str_clone) {
@@ -208,6 +210,9 @@ static int process_input_pade(RCore *core, const char *input, char** hex, char *
 		*ptr_str_clone = '\0';
 		ptr_str_clone = strchr (input_three, ' ');
 	}
+#else
+	ptr_str_clone = NULL;
+#endif
 
 	// command formats
 	// <hex> <arch> <bits>
