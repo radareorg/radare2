@@ -286,16 +286,15 @@ static int bin_info (RCore *r, int mode) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RBinFile *binfile = r_core_bin_cur (r);
 	const char *compiled = NULL;
-	if (binfile) {
-		compiled = get_compile_time (binfile->sdb);
-	}
-	snprintf (size_str, sizeof (size_str), "%"PFMT64d,  r_bin_get_size (r->bin));
 
-	if (!info) {
+	if (!binfile || !info) {
 		if (mode & R_CORE_BIN_JSON)
 			r_cons_printf ("{}");
 		return R_FALSE;
 	}
+
+	compiled = get_compile_time (binfile->sdb);
+	snprintf (size_str, sizeof (size_str), "%"PFMT64d,  r_bin_get_size (r->bin));
 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("{\"bintype\":\"%s\","

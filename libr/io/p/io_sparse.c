@@ -79,10 +79,11 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 				eprintf ("Cannot allocate (%s) %d bytes\n",
 					pathname+9, size);
 				mal->offset = 0;
+			} else {
+				memset (data, 0x00, size);
+				r_buf_write_at (mal->buf, 0, data, size);
+				free (data);
 			}
-			memset (data, 0x00, size);
-			r_buf_write_at (mal->buf, 0, data, size);
-			free (data);
 		}
 		if (mal->buf) {
 			RETURN_IO_DESC_NEW (&r_io_plugin_sparse,
