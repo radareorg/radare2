@@ -2395,6 +2395,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 	RAnalFunction *f;
 	char *tmpopstr;
 	const ut64 old_offset = core->offset;
+	int hasanal = 0;
 
 	if (!nb_bytes) {
 		nb_bytes = core->blocksize;
@@ -2432,6 +2433,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 	r_cons_break (NULL, NULL);
 	for (i=j=0; i<bs && i<ds->len && j<ds->l; i+=ret, j++) {
 		ds->at = core->offset +i;
+		hasanal = 0;
 		r_core_seek_archbits (core, ds->at);
 		if (r_cons_singleton ()->breaked)
 			break;
@@ -2466,6 +2468,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 		}
 		ret = r_asm_disassemble (core->assembler,
 			&ds->asmop, core->block+i, core->blocksize-i);
+		if (ds->show_color && !hasanal) {
+			r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
+			hasanal = 1;
+		}
 		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ds->hint && ds->hint->size)
 			ret = ds->hint->size;
@@ -2474,7 +2480,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			ds->opstr = strdup (ds->hint->opcode);
 		} else {
 			if (ds->use_esil) {
-				r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
+				if (!hasanal) {
+					r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
+					hasanal = 1;
+				}
 				if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
 					free (ds->opstr);
 					ds->opstr = strdup (R_STRBUF_SAFEGET (&ds->analop.esil));
@@ -2510,7 +2519,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 #endif
 			} else if (ds->decode) {
 				free (ds->opstr);
-				r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
+				if (!hasanal) {
+					r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
+					hasanal = 1;
+				}
 				tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 				ds->opstr = (tmpopstr)? tmpopstr: strdup (ds->asmop.buf_asm);
 			} else {
@@ -2523,7 +2535,12 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			ret = 1;
 			r_cons_printf ("invalid\n");
 		} else {
-			r_cons_printf ("%s\n", ds->opstr);
+			const char *opcolor = NULL;
+			if (ds->show_color) {
+				opcolor = r_print_color_op_type (core->print, ds->analop.type);
+			}
+			if (!opcolor) opcolor = "";
+			r_cons_printf ("%s%s\n", opcolor, ds->opstr);
 			free (ds->opstr);
 			ds->opstr = NULL;
 		}

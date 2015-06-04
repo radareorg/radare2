@@ -887,6 +887,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	int show_offset = r_config_get_i (core->config, "asm.offset");
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int decode = r_config_get_i (core->config, "asm.decode");
+	int show_color = r_config_get_i (core->config, "scr.color");
 	int esil = r_config_get_i (core->config, "asm.esil");
 	int flags = r_config_get_i (core->config, "asm.flags");
 	int i=0, j, ret, err = 0;
@@ -942,8 +943,12 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 				r_cons_printf ("  %s:\n", item->name);
 			}
 		}
-		if (show_offset)
-			r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
+		if (show_offset) {
+			const int show_offseg = 0;
+			ut64 at = core->offset + i;
+			r_print_offset (core->print, at, 0, show_offseg, 0);
+		}
+		//			r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ret<1) {
 			err = 1;
 			ret = asmop.size;
@@ -981,9 +986,20 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 					}
 					r_cons_printf ("%s\n", opstr);
 				}
-			} else r_cons_printf ("%s\n", asmop.buf_asm);
+			} else {
+				if (show_color) {
+					RAnalOp aop;
+					r_anal_op (core->anal, &aop, core->offset+i,
+							core->block+i, core->blocksize-i);
+					r_cons_printf ("%s%s"Color_RESET"\n", 
+							r_print_color_op_type (core->print, aop.type),
+							asmop.buf_asm);
+				} else {
+					r_cons_printf ("%s\n", asmop.buf_asm);
+				}
+			}
 		}
-		i+=ret;
+		i += ret;
 		if (nb_bytes && (nb_bytes <= i))
 			break;
 	}
@@ -1744,18 +1760,23 @@ static int cmd_print(void *data, const char *input) {
 				}
 				r_cons_break (NULL, NULL);
 				for (i=0; i<l; i++) {
-					r_asm_set_pc (core->assembler, core->offset+i);
+					ut64 addr = core->offset+i;
+					r_asm_set_pc (core->assembler, addr);
 					if (r_cons_singleton ()->breaked)
 						break;
 					if (r_asm_disassemble (core->assembler, &asmop, buf+i, l-i) < 1) {
-						r_cons_printf ("???\n", core->offset+i);
+						r_cons_printf ("???\n");
 					} else {
 						r_parse_filter (core->parser, core->flags, asmop.buf_asm,
-								str, sizeof(str));
+								str, sizeof (str));
 						if (colors_on) {
+							RAnalOp aop;
+							r_anal_op (core->anal, &aop, addr, buf+i, l-i);
 							buf_asm = r_print_colorize_opcode (str,
 									core->cons->pal.reg, core->cons->pal.num);
-							r_cons_printf ("%s\n", buf_asm);
+							r_cons_printf ("%s%s\n", 
+									r_print_color_op_type (core->print, aop.type),
+									buf_asm);
 							free (buf_asm);
 						} else {
 							r_cons_printf ("%s\n", asmop.buf_asm);
