@@ -177,7 +177,6 @@ static int process_input_pade(RCore *core, const char *input, char** hex, char *
 	int result = R_FALSE;
 	char *input_one = NULL, *input_two = NULL, *input_three = NULL;
 	char *str_clone = NULL,
-		 *ptr_str_clone = NULL,
 		 *trimmed_clone = NULL;
 
 	if (input == NULL || hex == NULL || asm_arch == NULL || bits == NULL) {
@@ -190,6 +189,7 @@ static int process_input_pade(RCore *core, const char *input, char** hex, char *
 	input_one = trimmed_clone;
 
 #if 0
+	char *ptr_str_clone = NULL;
 	ptr_str_clone = strchr (trimmed_clone, ' ');
 	// terminate input_one
 	if (ptr_str_clone) {
@@ -210,8 +210,6 @@ static int process_input_pade(RCore *core, const char *input, char** hex, char *
 		*ptr_str_clone = '\0';
 		ptr_str_clone = strchr (input_three, ' ');
 	}
-#else
-	ptr_str_clone = NULL;
 #endif
 
 	// command formats
@@ -2438,7 +2436,7 @@ static int cmd_print(void *data, const char *input) {
 				"pxo", "", "show octal dump",
 				"pxq", "", "show hexadecimal quad-words dump (64bit)",
 				"pxQ", "", "same as above, but one per line",
-				"pxr", "", "show words with references to flags and code",
+				"pxr", "[j]", "show words with references to flags and code",
 				"pxs", "", "show hexadecimal in sparse mode",
 				"pxw", "", "show hexadecimal words dump (32bit)",
 				"pxW", "", "same as above, but one per line",
@@ -2534,15 +2532,45 @@ static int cmd_print(void *data, const char *input) {
 				free (fn);
 			}
 			break;
-		case 'r':
-			{
-			const int ocols = core->print->cols;
-			core->print->cols = 1;
-			core->print->flags |= R_PRINT_FLAGS_REFS;
-			r_print_hexdump (core->print, core->offset, core->block, len,
-				core->assembler->bits, core->assembler->bits/8);
-			core->print->flags &= ~R_PRINT_FLAGS_REFS;
-			core->print->cols = ocols;
+		case 'r': // "pxr"
+			if (input[2] == 'j') {
+				int base = core->anal->bits;
+				r_cons_printf ("[");
+				const char *comma = "";
+				const ut8 *buf = core->block;
+				int withref = 0;
+				for (i=0; i< core->blocksize; i+= (base/4)) {
+					ut64 addr = core->offset + i;
+					ut64 *foo = (ut64*)(buf+i);
+					ut64 val = *foo;
+					if (base==32) val &= UT32_MAX;
+					r_cons_printf ("%s{\"addr\":%"PFMT64d",\"value\":%"PFMT64d, comma, addr, val);
+					comma = ",";
+					// XXX: this only works in little endian
+					withref = 0;
+					if (core->print->hasrefs) {
+						const char *rstr = core->print->hasrefs (core->print->user, val);
+						if (rstr && *rstr) {
+							char *ns; //r_str_ansi_chop (ns, -1, 0);
+							ns = r_str_escape (rstr);
+							r_cons_printf (",\"ref\":\"%s\"}", *ns==' '?ns+1:ns);
+							free (ns);
+							withref = 1;
+						}
+					}
+					if (!withref) {
+						r_cons_printf ("}");
+					}
+				}
+				r_cons_printf ("]\n");
+			} else {
+				const int ocols = core->print->cols;
+				core->print->cols = 1;
+				core->print->flags |= R_PRINT_FLAGS_REFS;
+				r_print_hexdump (core->print, core->offset, core->block, len,
+					core->assembler->bits, core->assembler->bits/8);
+				core->print->flags &= ~R_PRINT_FLAGS_REFS;
+				core->print->cols = ocols;
 			}
 			break;
 		case 'h':

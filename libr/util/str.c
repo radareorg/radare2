@@ -988,8 +988,14 @@ R_API int r_str_ansi_chop(char *str, int str_len, int n) {
 	 * max length of n */
 	char ch, ch2;
 	int back, i = 0, len = 0;
+	if (!str) {
+		return 0;
+	}
 	/* simple case - no need to cut */
-	if (n >= str_len){
+	if (str_len<0) {
+		str_len = strlen (str);
+	}
+	if (n >= str_len) {
 		str[str_len - 1] = 0;
 		return str_len - 1;
 	}
