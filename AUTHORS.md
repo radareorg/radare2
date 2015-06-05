@@ -45,8 +45,10 @@ Participants from the previous Summer Of Code competition which keep contributin
  - Sushant
  - dkreuter
 
-Contributors: (sorted by strlen)
---------------------------------
+Contributors
+------------
+
+This release comes with contributions from the following people:
 
  - Aaron Puchert
  - Anton Devil
@@ -89,6 +91,8 @@ Contributors: (sorted by strlen)
 
 Previous contributors
 ---------------------
+
+Some people didn't contributed to the last release, but they did it for the past ones. Kudos for them too!
 
  - 0xroot
  - Alexander
