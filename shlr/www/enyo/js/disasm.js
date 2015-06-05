@@ -88,6 +88,80 @@ BBGraph.prototype.makeLink = function(v1, v2, color) {
       smooth: true
   }));
 };
+
+
+adjustVertices = function(graph, cell) {
+    // If the cell is a view, find its model.
+    cell = cell.model || cell;
+
+    if (cell instanceof joint.dia.Element) {
+
+        _.chain(graph.getConnectedLinks(cell)).groupBy(function(link) {
+            // the key of the group is the model id of the link's source or target, but not our cell id.
+            return _.omit([link.get('source').id, link.get('target').id], cell.id)[0];
+        }).each(function(group, key) {
+            // If the member of the group has both source and target model adjust vertices.
+            if (key !== 'undefined') adjustVertices(graph, _.first(group));
+        });
+
+        return;
+    }
+
+    var srcId = cell.get('source').id || cell.previous('source').id;
+    var trgId = cell.get('target').id || cell.previous('target').id;
+
+    var siblings = _.filter(graph.getLinks(), function(sibling) {
+            var _srcId = sibling.get('source').id;
+            var _trgId = sibling.get('target').id;
+
+            return (_srcId === srcId && _trgId === trgId) ||
+                (_srcId === trgId && _trgId === srcId);
+    });
+    // more than one link between two blocks
+    if (siblings.length > 1) {
+        var srcbox = r2ui.graph.getCell(srcId).getBBox();
+        var dstbox = r2ui.graph.getCell(trgId).getBBox();
+        src = srcbox.intersectionWithLineFromCenterToPoint(dstbox.center());
+        dst = dstbox.intersectionWithLineFromCenterToPoint(srcbox.center());
+
+        var midPoint = g.line(src, dst).midpoint();
+        var theta = src.theta(dst);
+        var gap = 30;
+        // if the vertex is in the rect : bug
+        // vertex doesn't seem to go to the right place
+
+        _.each(siblings, function(sibling, index) {
+            var offset = gap;
+            var sign = index % 2 ? 1 : -1;
+            var angle = g.toRad(theta + sign * 90);
+            var vertex = g.point.fromPolar(offset, angle, midPoint);
+
+            console.log(" sign ", sign,
+                    " theta ", theta,
+                    " angle ", angle,
+                    " midpoint ", midPoint,
+                    " vertex ", vertex);
+            // we tell the link deviate to the right or to the left
+            // from its path depending on sign
+            //     ^             ^
+            //     |           /   \
+            //     |     =>   x     x
+            //     |           \   /
+            //     v             v
+
+            // if the vertex is inside one of the box, don't do anything
+            // they are very close and this will result in a rendering bug
+            if (!srcbox.containsPoint(vertex) && !dstbox.containsPoint(vertex)) {
+                sibling.set('vertices', [{ x: vertex.x, y: vertex.y }]);
+            } else {
+                sibling.unset('vertices');
+            }
+        });
+
+    }
+
+};
+
 BBGraph.prototype.render = function() {
   var name = Object.keys(this.vertices).toString();
   var outergbox = document.createElement('div');
@@ -108,6 +182,8 @@ BBGraph.prototype.render = function() {
   for (var j = 0; j < this.edges.length; j++) {
     this.makeLink(this.edges[j].from, this.edges[j].to, this.edges[j].color);
   }
+
+
   $("#outergbox").remove();
 
   this.makeElement("minimap_area", 1, 1, "<div id='minimap_area'>");
@@ -116,11 +192,11 @@ BBGraph.prototype.render = function() {
   var width = $("#center_panel").width();
   var graph = new joint.dia.Graph();
   var paper = new joint.dia.Paper({
-      el: $('#canvas'),
-      gridSize: 1,
-      width: 2000,
-      height: 6000,
-      model: graph,
+    el: $('#canvas'),
+    gridSize: 1,
+    width: 2000,
+    height: 6000,
+    model: graph,
   });
 
   var minimap_width = 200;
@@ -144,6 +220,8 @@ BBGraph.prototype.render = function() {
 
   // reposition graph
   reposition_graph();
+
+  var myAdjustVertices = _.partial(adjustVertices, graph);
 
   // remove html mask in minimap since its not scaled
   $("#minimap .basicblock").remove();
@@ -194,6 +272,9 @@ BBGraph.prototype.render = function() {
       }
     }
   });
+
+  graph.getLinks().forEach(myAdjustVertices);
+  paper.on('cell:pointerup', myAdjustVertices);
 
   if (r2ui._dis.minimap) {
     update_minimap();
