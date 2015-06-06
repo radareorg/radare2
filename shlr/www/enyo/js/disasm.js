@@ -126,7 +126,7 @@ adjustVertices = function(graph, cell) {
 
     var midPoint = g.line(src, dst).midpoint();
     var theta = src.theta(dst);
-    var gap = 30;
+    var gap = 10;
     // if the vertex is in the rect : bug
     // vertex doesn't seem to go to the right place
 
