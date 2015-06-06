@@ -246,7 +246,7 @@ R_API RCons *r_cons_free () {
 	return NULL;
 }
 
-#define MOAR 4096*4
+#define MOAR 4096*8
 static void palloc(int moar) {
 	if (I.buffer == NULL) {
 		I.buffer_sz = moar+MOAR;
@@ -560,7 +560,7 @@ R_API void r_cons_printf(const char *format, ...) {
 
 	if (I.null) return;
 	if (strchr (format, '%')) {
-		palloc (MOAR);
+		palloc (MOAR + strlen (format)*20);
 		size = I.buffer_sz-I.buffer_len-1; /* remaining space in I.buffer */
 		va_start (ap, format);
 		written = vsnprintf (I.buffer+I.buffer_len, size, format, ap);

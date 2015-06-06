@@ -472,6 +472,7 @@ extern RIOPlugin r_io_plugin_self;
 extern RIOPlugin r_io_plugin_gzip;
 extern RIOPlugin r_io_plugin_windbg;
 extern RIOPlugin r_io_plugin_r2pipe;
+extern RIOPlugin r_io_plugin_r2web;
 #endif
 
 #ifdef __cplusplus
