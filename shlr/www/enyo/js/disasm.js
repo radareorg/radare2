@@ -136,11 +136,6 @@ adjustVertices = function(graph, cell) {
       var angle = g.toRad(theta + sign * 90);
       var vertex = g.point.fromPolar(offset, angle, midPoint);
 
-      console.log(" sign ", sign,
-          " theta ", theta,
-          " angle ", angle,
-          " midpoint ", midPoint,
-          " vertex ", vertex);
       // we tell the link deviate to the right or to the left
       // from its path depending on sign
       //     ^             ^
