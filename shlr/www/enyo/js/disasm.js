@@ -216,7 +216,6 @@ BBGraph.prototype.render = function() {
   // reposition graph
   reposition_graph();
 
-  var myAdjustVertices = _.partial(adjustVertices, graph);
 
   // remove html mask in minimap since its not scaled
   $("#minimap .basicblock").remove();
@@ -268,6 +267,7 @@ BBGraph.prototype.render = function() {
     }
   });
 
+  var myAdjustVertices = _.partial(adjustVertices, graph);
   graph.getLinks().forEach(myAdjustVertices);
   paper.on('cell:pointerup', myAdjustVertices);
 
