@@ -76,7 +76,7 @@ BBGraph.prototype.makeLink = function(v1, v2, color) {
     target: { id: String(v2) },
     attrs: {
       '.marker-target': {
-        d: 'M 4 0 L 0 2 L 4 4 z',
+        d: 'M 6 0 L 0 3 L 6 6 z',
         fill: color,
         stroke: color
       },
