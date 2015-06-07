@@ -33,7 +33,7 @@ var BBGraph = function () {
     updateBox: function(event) {
       // move the html mask when moving the svg rect
       var bbox = this.model.getBBox();
-      this.$box.css({ width: bbox.width + 2, height: bbox.height, left: bbox.x - 1, top: bbox.y + 7});
+      this.$box.css({ width: bbox.width + 2, height: bbox.height - 6, left: bbox.x - 1, top: bbox.y + 7});
     }
   });
 };
