@@ -762,20 +762,12 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 		/* as the original string changes size during replacement
 		 * we need delta to keep track of it*/
 		str_p = str + thunk[i] + delta;
-		if (r_str_ansi_chrn(str_p, klen) - str_p > klen) {
-			/* fuck, we're trying to highlight
-			 * a string with a CSI in the middle
-			 * avoid color breakage and disable this particular
-			 * CSIs */
 
-			int newo = thunk[i + klen] - thunk[i];
-			r_str_ansi_filter(str_p, NULL, NULL, newo);
-			scnd = strdup (str_p + newo);
-			bias = vlen - newo;
-		} else {
-			scnd = strdup (str_p + klen);
-			bias = vlen - klen;
-		}
+		int newo = thunk[i + klen] - thunk[i];
+		r_str_ansi_filter(str_p, NULL, NULL, newo);
+		scnd = strdup (str_p + newo);
+		bias = vlen - newo;
+
 		slen += bias;
 		// HACK: this 32 avoids overwrites wtf
 		newstr = realloc (str, slen + klen);
@@ -996,8 +988,14 @@ R_API int r_str_ansi_chop(char *str, int str_len, int n) {
 	 * max length of n */
 	char ch, ch2;
 	int back, i = 0, len = 0;
+	if (!str) {
+		return 0;
+	}
 	/* simple case - no need to cut */
-	if (n >= str_len){
+	if (str_len<0) {
+		str_len = strlen (str);
+	}
+	if (n >= str_len) {
 		str[str_len - 1] = 0;
 		return str_len - 1;
 	}

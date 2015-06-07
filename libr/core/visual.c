@@ -211,9 +211,11 @@ static void prompt_read (const char *p, char *buf, int buflen) {
 
 R_API void r_core_visual_prompt_input (RCore *core) {
 	int ret;
-	eprintf ("Press <enter> to return to Visual mode.\n");
 	ut64 addr = core->offset;
 	ut64 bsze = core->blocksize;
+
+	r_cons_reset_colors();
+	r_cons_printf("\nPress <enter> to return to Visual mode.\n");
 
 	r_cons_show_cursor (R_TRUE);
 	core->vmode = R_FALSE;
@@ -1590,7 +1592,7 @@ static void r_core_visual_refresh (RCore *core) {
 	core->cons->blankline = R_TRUE;
 
 	if (r_config_get_i (core->config, "scr.responsive")) {
-		if (w<78) {
+		if (w<110) {
 			r_config_set_i (core->config, "asm.cmtright", 0);
 		} else {
 			r_config_set_i (core->config, "asm.cmtright", 1);
@@ -1612,7 +1614,7 @@ static void r_core_visual_refresh (RCore *core) {
 		} else {
 			r_config_set_i (core->config, "asm.lineswidth", 7);
 		}
-		if (w<55) {
+		if (w<70) {
 			r_config_set_i (core->config, "asm.lineswidth", 1);
 			r_config_set_i (core->config, "asm.bytes", 0);
 		} else {
@@ -1621,7 +1623,7 @@ static void r_core_visual_refresh (RCore *core) {
 	}
 
 	/* hack to blank last line. move prompt here? */
-	r_cons_fill_line ();
+	//r_cons_fill_line ();
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
 		r_cons_flush ();

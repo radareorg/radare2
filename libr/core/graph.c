@@ -3,9 +3,6 @@
 #include <r_core.h>
 static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
 static int mousemode = 0;
-static int small_nodes = 0;
-static int simple_mode = 1;
-static void reloadNodes(RCore *core) ;
 
 #define BORDER 3
 #define BORDER_WIDTH 4
@@ -15,12 +12,10 @@ static void reloadNodes(RCore *core) ;
 #define MAX_NODE_WIDTH 18
 
 #define OS_SIZE 128
-struct {
+struct ostack {
 	int nodes[OS_SIZE];
 	int size;
-} ostack;
-
-// TODO: handle mouse wheel
+};
 
 typedef struct {
 	int x;
@@ -38,7 +33,27 @@ typedef struct {
 	int to;
 } Edge;
 
-static int curnode = 0;
+struct graph {
+	RCore *core;
+	RConsCanvas *can;
+	RAnalFunction *fcn;
+	Node *nodes;
+	Edge *edges;
+	int n_nodes;
+	int n_edges;
+	int is_callgraph;
+	int is_instep;
+	int is_simple_mode;
+	int is_small_nodes;
+
+	unsigned int curnode;
+
+	struct ostack ostack;
+	int need_reload_nodes;
+	int need_update_seek;
+	int update_seek_on;
+	int force_update_seek;
+};
 
 #if 0
 static Node nodes[] = {
@@ -55,42 +70,57 @@ static Edge edges[] = {
 };
 #endif
 
-#define G(x,y) r_cons_canvas_gotoxy (can, x, y)
-#define W(x) r_cons_canvas_write (can, x)
-#define B(x,y,w,h) r_cons_canvas_box(can, x,y,w,h,NULL)
-#define B1(x,y,w,h) r_cons_canvas_box(can, x,y,w,h,Color_BLUE)
-#define B2(x,y,w,h) r_cons_canvas_box(can, x,y,w,h,Color_MAGENTA)
-#define L(x,y,x2,y2) r_cons_canvas_line(can, x,y,x2,y2,0)
-#define L1(x,y,x2,y2) r_cons_canvas_line(can, x,y,x2,y2,1)
-#define L2(x,y,x2,y2) r_cons_canvas_line(can, x,y,x2,y2,2)
-#define F(x,y,x2,y2,c) r_cons_canvas_fill(can, x,y,x2,y2,c,0)
+#define G(x,y) r_cons_canvas_gotoxy (g->can, x, y)
+#define W(x) r_cons_canvas_write (g->can, x)
+#define B(x,y,w,h) r_cons_canvas_box(g->can, x,y,w,h,NULL)
+#define B1(x,y,w,h) r_cons_canvas_box(g->can, x,y,w,h,Color_BLUE)
+#define B2(x,y,w,h) r_cons_canvas_box(g->can, x,y,w,h,Color_MAGENTA)
+#define L(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,0)
+#define L1(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,1)
+#define L2(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,2)
+#define F(x,y,x2,y2,c) r_cons_canvas_fill(g->can, x,y,x2,y2,c,0)
 
-static void ostack_init() {
-	ostack.size = 0;
-	ostack.nodes[0] = 0;
+static void ostack_init(struct ostack *os) {
+	os->size = 0;
+	os->nodes[0] = 0;
 }
 
-static void ostack_push(int el) {
-	if (ostack.size < OS_SIZE - 1)
-		ostack.nodes[++ostack.size] = el;
+static void ostack_push(struct ostack *os, int el) {
+	if (os->size < OS_SIZE - 1)
+		os->nodes[++os->size] = el;
 }
 
-static int ostack_pop() {
-	return ostack.size > 0 ? ostack.nodes[--ostack.size] : 0;
+static int ostack_pop(struct ostack *os) {
+	return os->size > 0 ? os->nodes[--os->size] : 0;
 }
 
-static void small_Node_print(RConsCanvas *can, Node *n, int cur) {
+static void update_node_dimension(Node nodes[], int nodes_size, int is_small) {
+	int i;
+	for (i = 0; i < nodes_size; ++i) {
+		Node *n = &nodes[i];
+		if (is_small) {
+			n->w = n->h = 0;
+		} else {
+			n->w = r_str_bounds (n->text, &n->h);
+			n->w += BORDER_WIDTH;
+			n->h += BORDER_HEIGHT;
+			n->w = R_MAX (MAX_NODE_WIDTH, n->w);
+		}
+	}
+}
+
+static void small_Node_print(struct graph *g, Node *n, int cur) {
 	char title[128];
 
 	if (!G (n->x + 2, n->y - 1))
 		return;
 	if (cur) {
 		W("[_@@_]");
-		(void)G (-can->sx, -can->sy + 2);
+		(void)G (-g->can->sx, -g->can->sy + 2);
 		snprintf (title, sizeof (title) - 1,
 				"0x%08"PFMT64x":", n->addr);
 		W (title);
-		(void)G (-can->sx, -can->sy + 3);
+		(void)G (-g->can->sx, -g->can->sy + 3);
 		W (n->text);
 	} else {
 		W("[____]");
@@ -98,27 +128,23 @@ static void small_Node_print(RConsCanvas *can, Node *n, int cur) {
 	return;
 }
 
-static void normal_Node_print(RConsCanvas *can, Node *n, int cur) {
+static void normal_Node_print(struct graph *g, Node *n, int cur) {
 	char title[128];
 	char *text;
 	int delta_x = 0;
 	int delta_y = 0;
 	int x, y;
 
-	n->w = r_str_bounds (n->text, &n->h);
-	n->w += BORDER_WIDTH;
-	n->h += BORDER_HEIGHT;
-	n->w = R_MAX (MAX_NODE_WIDTH, n->w);
 #if SHOW_OUT_OF_SCREEN_NODES
-	x = n->x + can->sx;
-	y = n->y + n->h + can->sy;
-	if (x < 0 || x > can->w)
+	x = n->x + g->can->sx;
+	y = n->y + n->h + g->can->sy;
+	if (x < 0 || x > g->can->w)
 		return;
-	if (y < 0 || y > can->h)
+	if (y < 0 || y > g->can->h)
 		return;
 #endif
-	x = n->x + can->sx;
-	y = n->y + can->sy;
+	x = n->x + g->can->sx;
+	y = n->y + g->can->sy;
 	if (x < -MARGIN_TEXT_X)
 		delta_x = -x - MARGIN_TEXT_X;
 	if (x + n->w < -MARGIN_TEXT_X)
@@ -156,19 +182,388 @@ static void normal_Node_print(RConsCanvas *can, Node *n, int cur) {
 	}
 }
 
-static void Node_print(RConsCanvas *can, Node *n, int cur) {
-	if (!can)
-		return;
-
-	if (small_nodes)
-		small_Node_print(can, n, cur);
-	else
-		normal_Node_print(can, n, cur);
+static Node *get_current_node(struct graph *g) {
+	 return &g->nodes[g->curnode];
 }
 
-static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
+static int count_exit_edges(struct graph *g, int n) {
+	int i, count = 0;
+	for (i = 0; i < g->n_edges; i++) {
+		if (g->edges[i].from == n) {
+			count++;
+		}
+	}
+	return count;
+}
+
+static int find_edge_node(struct graph *g, int cur, int nth) {
+	if (g->edges) {
+		int i;
+		for (i = 0; i < g->n_edges; i++) {
+			if (g->edges[i].from == cur && g->edges[i].nth == nth)
+				return g->edges[i].to;
+		}
+	}
+	return -1;
+}
+
+static int find_node_idx(struct graph *g, ut64 addr) {
+	if (g->nodes) {
+		int i;
+		for (i = 0; i < g->n_nodes; i++) {
+			if (g->nodes[i].addr == addr)
+				return i;
+		}
+	}
+	return -1;
+}
+
+static void set_layout_bb_depth(struct graph *g, int nth, int depth) {
+	int j, f, old_d;
+	if (nth >= g->n_nodes)
+		return;
+
+	old_d = g->nodes[nth].depth;
+	g->nodes[nth].depth = depth;
+	if (old_d != -1)
+		return;
+
+	j = find_edge_node (g, nth, 0);
+	if (j != -1)
+		set_layout_bb_depth (g, j, depth + 1);
+	f = find_edge_node (g, nth, 1);
+	if (f != -1)
+		set_layout_bb_depth (g, f, depth + 1);
+	// TODO: support more than two destination points (switch tables?)
+}
+
+static void set_layout_bb(struct graph *g) {
+	int i, j, rh, nx;
+	int *rowheight = NULL;
+	int maxdepth = 0;
+	const int h_spacing = 12;
+	const int v_spacing = 4;
+
+	set_layout_bb_depth (g, 0, 0);
+
+	// identify max depth
+	for (i = 0; i < g->n_nodes; i++) {
+		if (g->nodes[i].depth > maxdepth)
+			maxdepth = g->nodes[i].depth;
+	}
+	// identify row height
+	rowheight = malloc (sizeof (int) * maxdepth);
+	for (i = 0; i < maxdepth; i++) {
+		rh = 0;
+		for (j = 0; j < g->n_nodes; j++) {
+			if (g->nodes[j].depth == i)
+				if (g->nodes[j].h > rh)
+					rh = g->nodes[j].h;
+		}
+		rowheight[i] = rh;
+	}
+
+	// vertical align // depe
+	for (i = 0; i < g->n_nodes; i++) {
+		g->nodes[i].y = 1;
+		for (j = 0; j < g->nodes[i].depth; j++)
+			g->nodes[i].y += rowheight[j] + v_spacing;
+	}
+	// horitzontal align
+	for (i = 0; i < maxdepth; i++) {
+		nx = (i % 2) * 10;
+		for (j = 0; j < g->n_nodes; j++) {
+			if (g->nodes[j].depth == i) {
+				g->nodes[j].x = nx;
+				nx += g->nodes[j].w + h_spacing;
+			}
+		}
+	}
+	free (rowheight);
+}
+
+static void set_layout_callgraph(struct graph *g) {
+	int y = 5, x = 20;
+	int i;
+
+	for (i = 0; i < g->n_nodes; i++) {
+		// wrap to width 'w'
+		if (i > 0) {
+			if (g->nodes[i].x < g->nodes[i-1].x) {
+				y += 10;
+				x = 0;
+			}
+		}
+		g->nodes[i].x = x;
+		g->nodes[i].y = i? y: 2;
+		x += 30;
+	}
+}
+
+static int get_bbnodes(struct graph *g) {
+	RAnalBlock *bb;
+	RListIter *iter;
+	Node *nodes;
+	int i;
+
+	nodes = calloc(r_list_length (g->fcn->bbs), sizeof(Node));
+	if (!nodes)
+		return R_FALSE;
+
+	i = 0;
+	r_list_foreach (g->fcn->bbs, iter, bb) {
+		if (bb->addr == UT64_MAX)
+			continue;
+
+		if (g->is_simple_mode) {
+			nodes[i].text = r_core_cmd_strf (g->core,
+					"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
+		}else {
+			nodes[i].text = r_core_cmd_strf (g->core,
+					"pDi %d @ 0x%08"PFMT64x, bb->size, bb->addr);
+		}
+		nodes[i].addr = bb->addr;
+		nodes[i].depth = -1;
+		nodes[i].x = 0;
+		nodes[i].y = 0;
+		nodes[i].w = 0;
+		nodes[i].h = 0;
+		i++;
+	}
+
+	if (g->nodes)
+		free(g->nodes);
+	g->nodes = nodes;
+	g->n_nodes = i;
+	return R_TRUE;
+}
+
+static int get_cgnodes(struct graph *g) {
+	int i = 0;
+#if FCN_OLD
+	int j;
+	char *code;
+	RAnalRef *ref;
+	RListIter *iter;
+	Node *nodes;
+
+	int fcn_refs_length = r_list_length (g->fcn->refs);
+	nodes = calloc (fcn_refs_length + 2, sizeof(Node));
+	if (!nodes)
+		return R_FALSE;
+
+	nodes[i].text = strdup ("");
+	nodes[i].addr = g->fcn->addr;
+	nodes[i].depth = -1;
+	nodes[i].x = 10;
+	nodes[i].y = 3;
+	nodes[i].w = 0;
+	nodes[i].h = 0;
+	i++;
+
+	r_list_foreach (g->fcn->refs, iter, ref) {
+		/* XXX: something is broken, why there are duplicated
+		 *      nodes here?! goto check fcn->refs!! */
+		/* avoid dups wtf */
+		for (j = 0; j < i; j++) {
+			if (ref->addr == nodes[j].addr)
+				continue;
+		}
+		RFlagItem *fi = r_flag_get_at (g->core->flags, ref->addr);
+		if (fi) {
+			nodes[i].text = strdup (fi->name);
+			nodes[i].text = r_str_concat (nodes[i].text, ":\n");
+		} else {
+			nodes[i].text = strdup ("");
+		}
+		code = r_core_cmd_strf (g->core,
+			"pi 4 @ 0x%08"PFMT64x, ref->addr);
+		nodes[i].text = r_str_concat (nodes[i].text, code);
+		free (code);
+		nodes[i].text = r_str_concat (nodes[i].text, "...\n");
+		nodes[i].addr = ref->addr;
+		nodes[i].depth = -1;
+		nodes[i].x = 10;
+		nodes[i].y = 10;
+		nodes[i].w = 0;
+		nodes[i].h = 0;
+		i++;
+	}
+
+	if (g->nodes)
+		free(g->nodes);
+	g->nodes = nodes;
+	g->n_nodes = i;
+#else
+	eprintf ("Must be sdbized\n");
+#endif
+
+	return R_TRUE;
+}
+
+static int get_bbedges(struct graph *g) {
+	Edge *edges = NULL;
+	RListIter *iter;
+	RAnalBlock *bb;
+	int i, n_edges;
+
+	n_edges = 0;
+	r_list_foreach (g->fcn->bbs, iter, bb) {
+		if (bb->jump != UT64_MAX)
+			n_edges++;
+		if (bb->fail != UT64_MAX)
+			n_edges++;
+	}
+
+	edges = calloc(n_edges, sizeof(Edge));
+	if (!edges && n_edges != 0)
+		return R_FALSE;
+
+	i = 0;
+	r_list_foreach (g->fcn->bbs, iter, bb) {
+		// add edge from bb->addr to bb->jump / bb->fail
+		if (bb->jump != UT64_MAX) {
+			edges[i].nth = 0;
+			edges[i].from = find_node_idx (g, bb->addr);
+			edges[i].to = find_node_idx (g, bb->jump);
+			i++;
+		}
+		if (bb->fail != UT64_MAX) {
+			edges[i].nth = 1;
+			edges[i].from = find_node_idx (g, bb->addr);
+			edges[i].to = find_node_idx (g, bb->fail);
+			i++;
+		}
+	}
+
+	if (g->edges)
+		free(g->edges);
+	g->edges = edges;
+	g->n_edges = i;
+	return R_TRUE;
+}
+
+static int get_cgedges(struct graph *g) {
+	int i = 0;
+#if FCN_OLD
+	Edge *edges = NULL;
+	RAnalRef *ref;
+	RListIter *iter;
+	int refs_length;
+
+	refs_length = r_list_length(g->fcn->refs);
+	edges = calloc(refs_length, sizeof(Edge));
+	if (!edges && refs_length != 0)
+		return R_FALSE;
+
+	r_list_foreach (g->fcn->refs, iter, ref) {
+		edges[i].nth = 0;
+		edges[i].from = find_node_idx (g, g->fcn->addr);
+		edges[i].to = find_node_idx (g, ref->addr);
+		i++;
+	}
+
+	if (g->edges)
+		free(g->edges);
+	g->edges = edges;
+	g->n_edges = i;
+#else
+	#warning cgEdges not sdbized for fcn refs
+#endif
+
+	return R_TRUE;
+}
+
+static int reload_nodes(struct graph *g) {
+	int ret;
+
+	if (g->is_callgraph) {
+		ret = get_cgnodes(g);
+		if (!ret)
+			return R_FALSE;
+		ret = get_cgedges(g);
+		if (!ret)
+			return R_FALSE;
+	} else {
+		ret = get_bbnodes(g);
+		if (!ret)
+			return R_FALSE;
+
+		ret = get_bbedges(g);
+		if (!ret)
+			return R_FALSE;
+	}
+
+	update_node_dimension(g->nodes, g->n_nodes, g->is_small_nodes);
+	return R_TRUE;
+}
+
+static void update_seek(RConsCanvas *can, Node *n, int force) {
+	int x, y, w, h;
+	int doscroll = R_FALSE;
+
+	if (!n) return;
+
+	x = n->x + can->sx;
+	y = n->y + can->sy;
+	w = can->w;
+	h = can->h;
+
+	doscroll = force || y < 0 || y + 5 > h || x + 5 > w || x + n->w + 5 < 0;
+
+	if (doscroll) {
+		// top-left
+		can->sy = -n->y + BORDER;
+		can->sx = -n->x + BORDER;
+		// center
+		can->sy = -n->y + BORDER + (h / 8);
+		can->sx = -n->x + BORDER + (w / 4);
+	}
+}
+
+static void graph_set_layout(struct graph *g) {
+	if (g->is_callgraph)
+		set_layout_callgraph(g);
+	else
+		set_layout_bb(g);
+}
+
+static void graph_update_seek(struct graph *g, int node_index, int force) {
+	g->need_update_seek = R_TRUE;
+	g->update_seek_on = node_index;
+	g->force_update_seek = force;
+}
+
+static void graph_free(struct graph *g) {
+	if (g->nodes)
+		free(g->nodes);
+	if (g->edges)
+		free(g->edges);
+	free(g);
+}
+
+static void graph_print_node(struct graph *g, Node *n) {
+	int cur = get_current_node(g) == n;
+
+	if (g->is_small_nodes)
+		small_Node_print(g, n, cur);
+	else
+		normal_Node_print(g, n, cur);
+}
+
+static void graph_print_nodes(struct graph *g) {
+	int i;
+	for (i = 0; i < g->n_nodes; ++i)
+		if (i != g->curnode)
+			graph_print_node(g, &g->nodes[i]);
+
+	/* draw current node now to make it appear on top */
+	graph_print_node (g, &g->nodes[g->curnode]);
+}
+
+static void graph_print_edge(struct graph *g, Node *a, Node *b, int nth) {
 	int x, y, x2, y2;
-	int xinc = 3+((nth+1)*2);
+	int xinc = 3 + 2 * (nth + 1);
 	x = a->x + xinc;
 	y = a->y + a->h;
 	x2 = b->x + xinc;
@@ -184,404 +579,220 @@ static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
 	}
 }
 
-static int Edge_node(Edge *edges, int cur, int nth) {
+static void graph_print_edges(struct graph *g) {
 	int i;
-	if (edges)
-	for (i=0; edges[i].nth!=-1; i++) {
-		if (edges[i].nth == nth)
-			if (edges[i].from == cur)
-				return edges[i].to;
-	}
-	return -1;
-}
-
-static int Node_find(const Node* nodes, ut64 addr) {
-	int i;
-	if (nodes)
-	for (i=0; nodes[i].text; i++) {
-		if (nodes[i].addr == addr)
-			return i;
-	}
-	return -1;
-}
-
-static void Layout_depth2(Node *nodes, Edge *edges, int nth, int depth) {
-	int j, f;
-	if (!nodes || !nodes[nth].text)
-		return;
-	if (nodes[nth].depth != -1) {
-		nodes[nth].depth = depth;
-		return;
-	} else nodes[nth].depth = depth;
-	j = Edge_node (edges, nth, 0);
-	if (j!=-1)
-		Layout_depth2 (nodes, edges, j, depth+1);
-	f = Edge_node (edges, nth, 1);
-	if (f!=-1)
-		Layout_depth2 (nodes, edges, f, depth+1);
-	// TODO: support more than two destination points (switch tables?)
-}
-
-static void Layout_depth(Node *nodes, Edge *edges) {
-	int i, j, rh, nx;
-	int *rowheight = NULL;
-	int maxdepth = 0;
-	const int h_spacing = 12;
-	const int v_spacing = 4;
-
-	Layout_depth2 (nodes, edges, 0, 0);
-
-	// identify max depth
-	for (i=0; nodes[i].text; i++) {
-		if (nodes[i].depth>maxdepth)
-			maxdepth = nodes[i].depth;
-	}
-	// identify row height
-	rowheight = malloc (sizeof (int)*maxdepth);
-	for (i=0; i<maxdepth; i++) {
-		rh = 0;
-		for (j=0; nodes[j].text; j++) {
-			if (nodes[j].depth == i)
-				if (nodes[j].h>rh)
-					rh = nodes[j].h;
-		}
-		rowheight[i] = rh;
-	}
-
-	// vertical align // depe
-	for (i=0; nodes[i].text; i++) {
-		nodes[i].y = 1;
-		for (j=0;j<nodes[i].depth;j++)
-			nodes[i].y += rowheight[j] + v_spacing;
-	}
-	// horitzontal align
-	for (i=0; i<maxdepth; i++) {
-		nx = (i%2)*10;
-		for (j=0; nodes[j].text; j++) {
-			if (nodes[j].depth == i) {
-				nodes[j].x = nx;
-				nx += nodes[j].w + h_spacing;
-			}
-		}
-	}
-	free (rowheight);
-}
-
-static int bbEdges (RAnalFunction *fcn, Node *nodes, Edge **e) {
-	Edge *edges = NULL;
-	RListIter *iter;
-	RAnalBlock *bb;
-	int i = 0;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		// add edge from bb->addr to bb->jump / bb->fail
-		if (bb->jump != UT64_MAX) {
-			edges = realloc (edges, sizeof (Edge)*(i+2));
-			edges[i].nth = 0;
-			edges[i].from = Node_find (nodes, bb->addr);
-			edges[i].to = Node_find (nodes, bb->jump);
-			i++;
-			if (bb->fail != UT64_MAX) {
-				edges = realloc (edges, sizeof (Edge)*(i+2));
-				edges[i].nth = 1;
-				edges[i].from = Node_find (nodes, bb->addr);
-				edges[i].to = Node_find (nodes, bb->fail);
-				i++;
-			}
-		}
-	}
-	if (edges)
-		edges[i].nth = -1;
-	free (*e);
-	*e = edges;
-	return i;
-}
-
-static int cgNodes (RCore *core, RAnalFunction *fcn, Node **n) {
-	int i = 0;
-#if FCN_OLD
-	int j;
-	char *code;
-	RAnalRef *ref;
-	RListIter *iter;
-	Node *nodes;
-
-	int fcn_refs_length = r_list_length (fcn->refs);
-	nodes = calloc (1, sizeof(Node)*(fcn_refs_length+2));
-	if (!nodes)
-		return R_FALSE;
-	nodes[i].text = strdup ("");
-	nodes[i].addr = fcn->addr;
-	nodes[i].depth = -1;
-	nodes[i].x = 10;
-	nodes[i].y = 3;
-	nodes[i].w = 0;
-	nodes[i].h = 0;
-	i++;
-	r_list_foreach (fcn->refs, iter, ref) {
-		/* avoid dups wtf */
-		for (j=0; j<i; j++) {
-			if (ref->addr == nodes[j].addr)
-				goto sin;
-		}
-		RFlagItem *fi = r_flag_get_at (core->flags, ref->addr);
-		if (fi) {
-			nodes[i].text = strdup (fi->name);
-			nodes[i].text = r_str_concat (nodes[i].text, ":\n");
-		} else {
-			nodes[i].text = strdup ("");
-		}
-		code = r_core_cmd_strf (core,
-			"pi 4 @ 0x%08"PFMT64x, ref->addr);
-		nodes[i].text = r_str_concat (nodes[i].text, code);
-		free (code);
-		nodes[i].text = r_str_concat (nodes[i].text, "...\n");
-		nodes[i].addr = ref->addr;
-		nodes[i].depth = -1;
-		nodes[i].x = 10;
-		nodes[i].y = 10;
-		nodes[i].w = 0;
-		nodes[i].h = 0;
-		i++;
-		sin:
-		continue;
-	}
-	free (*n);
-	*n = nodes;
-#else
-	eprintf ("Must be sdbized\n");
-#endif
-	return i;
-}
-
-static int cgEdges (RAnalFunction *fcn, Node *nodes, Edge **e) {
-	int i = 0;
-#if FCN_OLD
-	Edge *edges = NULL;
-	RAnalRef *ref;
-	RListIter *iter;
-	r_list_foreach (fcn->refs, iter, ref) {
-		edges = realloc (edges, sizeof (Edge)*(i+2));
-		edges[i].nth = 0;
-		edges[i].from = Node_find (nodes, fcn->addr);
-		edges[i].to = Node_find (nodes, ref->addr);
-		i++;
-	}
-	if (edges)
-		edges[i].nth = -1;
-	free (*e);
-	*e = edges;
-#else
-	#warning cgEdges not sdbized for fcn refs
-#endif
-	return i;
-}
-
-static int bbNodes (RCore *core, RAnalFunction *fcn, Node **n) {
-	int i;
-	RAnalBlock *bb;
-	RListIter *iter;
-	Node *nodes = calloc (sizeof(Node), (r_list_length (fcn->bbs)+1));
-	if (!nodes)
-		return 0;
-	i = 0;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		if (bb->addr == UT64_MAX)
-			continue;
-		if (simple_mode) {
-			nodes[i].text = r_core_cmd_strf (core,
-					"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
-		}else {
-			nodes[i].text = r_core_cmd_strf (core,
-					"pDi %d @ 0x%08"PFMT64x, bb->size, bb->addr);
-		}
-		nodes[i].addr = bb->addr;
-		nodes[i].depth = -1;
-		nodes[i].x = 10;
-		nodes[i].y = 3;
-		nodes[i].w = 0;
-		nodes[i].h = 0;
-		i++;
-	}
-	free (*n);
-	*n = nodes;
-	nodes[i].text = NULL;
-	return i;
-}
-
-// damn singletons.. there should be only one screen and therefor
-// only one visual instance of the graph view. refactoring this
-// into a struct makes the code to reference pointers unnecesarily
-// we can look for a non-global solution here in the future if
-// necessary
-static RConsCanvas *can;
-static RAnalFunction *fcn;
-static Node *nodes = NULL;
-static Edge *edges = NULL;
-static int n_nodes = 0;
-static int n_edges = 0;
-static int callgraph = 0;
-static int instep = 0;
-
-static Node *get_current_node() {
-	 return &nodes[curnode];
-}
-
-static int edgesFrom (int n) {
-	int i, count = 0;
-	for (i=0; edges[i].nth != -1; i++) {
-		if (edges[i].from == n) {
-			count++;
-		}
-	}
-	return count;
-}
-
-static void refresh_graph (RCore *core) {
-	char title[128];
-	int i, h, w = r_cons_get_size (&h);
-	if (instep && core->io->debug) {
-		RAnalFunction *f;
-		r_core_cmd0 (core, "sr pc");
-		f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-		if (f && f != fcn) {
-			fcn = f;
-			reloadNodes (core);
-		}
-	}
-	r_cons_clear00 ();
-	if (!can)
-		return;
-
-	r_cons_canvas_resize (can, w, h);
-	r_cons_canvas_clear (can);
-
-	if (edges)
-		for (i=0; edges[i].nth!=-1; i++) {
-			if (edges[i].from == -1 || edges[i].to == -1)
+	if (g->edges) {
+		for (i = 0; i < g->n_edges; i++) {
+			if (g->edges[i].from == -1 || g->edges[i].to == -1)
 				continue;
-			Node *a = &nodes[edges[i].from];
-			Node *b = &nodes[edges[i].to];
-			int nth = edges[i].nth;
-			if (edgesFrom (edges[i].from) == 1) {
+
+			Node *a = &g->nodes[g->edges[i].from];
+			Node *b = &g->nodes[g->edges[i].to];
+			int nth = g->edges[i].nth;
+			if (count_exit_edges(g, g->edges[i].from) == 1)
 				nth = -1; // blue line
-			}
-			Edge_print (can, a, b, nth);
-		}
-	for (i=0; i<n_nodes; i++) {
-		if (i != curnode) {
-			Node_print (can, &nodes[i], i==curnode);
+
+			graph_print_edge (g, a, b, nth);
 		}
 	}
-	// redraw current node to make it appear on top
-	if (curnode >= 0 && curnode < n_nodes) {
-		Node_print (can, &nodes[curnode], 1);
+}
+
+static void graph_toggle_small_nodes(struct graph *g) {
+	g->is_small_nodes = !g->is_small_nodes;
+	g->need_reload_nodes = R_TRUE;
+}
+
+static void graph_toggle_simple_mode(struct graph *g) {
+	g->is_simple_mode = !g->is_simple_mode;
+	g->need_reload_nodes = R_TRUE;
+}
+
+static void graph_toggle_callgraph(struct graph *g) {
+	g->is_callgraph = !g->is_callgraph;
+	g->need_reload_nodes = R_TRUE;
+}
+
+static int graph_reload_nodes(struct graph *g) {
+	int ret;
+
+	ret = reload_nodes(g);
+	if (!ret)
+		return R_FALSE;
+	graph_set_layout(g);
+	return R_TRUE;
+}
+
+static void follow_nth(struct graph *g, int nth) {
+	int cn = find_edge_node (g, g->curnode, nth);
+	if (cn != -1) {
+		g->curnode = cn;
+		ostack_push (&g->ostack, cn);
+	}
+}
+
+static void graph_follow_true(struct graph *g) {
+	follow_nth(g, 0);
+	graph_update_seek(g, g->curnode, R_FALSE);
+}
+
+static void graph_follow_false(struct graph *g) {
+	follow_nth(g, 1);
+	graph_update_seek(g, g->curnode, R_FALSE);
+}
+
+static void graph_undo_node(struct graph *g) {
+	g->curnode = ostack_pop(&g->ostack);
+	graph_update_seek (g, g->curnode, R_FALSE);
+}
+
+static void graph_next_node(struct graph *g) {
+	g->curnode = (g->curnode + 1) % g->n_nodes;
+	ostack_push (&g->ostack, g->curnode);
+	graph_update_seek (g, g->curnode, R_FALSE);
+}
+
+static void graph_prev_node(struct graph *g) {
+	if (g->curnode == 0)
+		g->curnode = g->n_nodes - 1;
+	else
+		g->curnode = g->curnode - 1;
+	ostack_push (&g->ostack, g->curnode);
+	graph_update_seek (g, g->curnode, R_FALSE);
+}
+
+static int graph_refresh(struct graph *g) {
+	char title[128];
+	int h, w = r_cons_get_size (&h);
+	int ret;
+
+	if (g->is_instep && g->core->io->debug) {
+		RAnalFunction *f;
+		r_core_cmd0 (g->core, "sr pc");
+		f = r_anal_get_fcn_in (g->core->anal, g->core->offset, 0);
+		if (f && f != g->fcn) {
+			g->fcn = f;
+			g->need_reload_nodes = R_TRUE;
+		}
 	}
 
-	(void)G (-can->sx, -can->sy);
+	/* look for any change in the state of the graph
+	 * and update what's necessary */
+	if (g->need_reload_nodes) {
+		ret = graph_reload_nodes(g);
+		if (!ret)
+			return R_FALSE;
+
+		g->need_reload_nodes = R_FALSE;
+	}
+	if (g->need_update_seek) {
+		update_seek(g->can, &g->nodes[g->update_seek_on], g->force_update_seek);
+		g->need_update_seek = R_FALSE;
+		g->update_seek_on = 0;
+		g->force_update_seek = R_FALSE;
+	}
+
+	r_cons_clear00 ();
+
+	r_cons_canvas_resize (g->can, w, h);
+	r_cons_canvas_clear (g->can);
+
+	graph_print_edges(g);
+	graph_print_nodes(g);
+
+	(void)G (-g->can->sx, -g->can->sy);
 	snprintf (title, sizeof (title)-1,
 		"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d) %s mouse:%s",
-		fcn->addr, ostack.size, fcn->name,
-		n_nodes, n_edges, callgraph?"CG":"BB",
+		g->fcn->addr, g->ostack.size, g->fcn->name,
+		g->n_nodes, g->n_edges, g->is_callgraph?"CG":"BB",
 		mousemodes[mousemode]);
 	W (title);
 
-	r_cons_canvas_print (can);
-	const char *cmdv = r_config_get (core->config, "cmd.gprompt");
+	r_cons_canvas_print (g->can);
+	const char *cmdv = r_config_get (g->core->config, "cmd.gprompt");
 	if (cmdv && *cmdv) {
 		r_cons_gotoxy (0,1);
-		r_core_cmd0 (core, cmdv);
+		r_core_cmd0 (g->core, cmdv);
 	}
-	r_cons_flush ();
+	r_cons_flush_nonewline ();
+	return R_TRUE;
 }
 
-static void reloadNodes(RCore *core) {
-	int i;
-	n_nodes = bbNodes (core, fcn, &nodes);
-	if (!nodes) {
-		free (can);
-		return;
-	}
-	n_edges = bbEdges (fcn, nodes, &edges);
-	if (!edges)
-		n_edges = 0;
-	// hack to make layout happy
-	for (i=0; nodes[i].text; i++) {
-		Node_print (can, &nodes[i], i==curnode);
-	}
-	Layout_depth (nodes, edges);
-	// update edges too maybe..
+static void graph_init(struct graph *g) {
+	g->nodes = NULL;
+	g->edges = NULL;
+
+	g->is_callgraph = R_FALSE;
+	g->is_instep = R_FALSE;
+	g->is_simple_mode = R_TRUE;
+	g->is_small_nodes = R_FALSE;
+	g->need_reload_nodes = R_TRUE;
+	g->curnode = 0;
+	g->need_update_seek = R_TRUE;
+	g->update_seek_on = g->curnode;
+	g->force_update_seek = R_TRUE;
+
+	ostack_init(&g->ostack);
 }
 
-static void updateSeek(RConsCanvas *can, Node *n, int w, int h, int force) {
-	int x, y;
-	int doscroll = 0;
+static struct graph *graph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {
+	struct graph *g;
 
-	if (!n) return;
+	g = (struct graph *)malloc(sizeof(struct graph));
+	if (!g)
+		return NULL;
 
-	x = n->x + can->sx;
-	y = n->y + can->sy;
-	if (force) {
-		doscroll = 1;
-	} else {
-		if (y<0) doscroll = 1;
-		if ((y+5)>h) doscroll = 1;
-		if ((x+5)>w) doscroll = 1;
-		if ((x+n->w+5)<0) doscroll = 1;
-	}
-	if (doscroll) {
-		// top-left
-		can->sy = -n->y + BORDER;
-		can->sx = -n->x + BORDER;
-		// center
-		can->sy = -n->y + BORDER + (h/8);
-		can->sx = -n->x + BORDER + (w/4);
-	}
+	g->core = core;
+	g->can = can;
+	g->fcn = fcn;
+
+	graph_init(g);
+	return g;
 }
 
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
+	RAnalFunction *fcn;
+	RConsCanvas *can;
+	struct graph *g;
+	int ret;
 	int wheelspeed;
-	int okey, key, cn, wheel;
-	int i, w, h;
-	int goto_beach = 0;
-	n_nodes = n_edges = 0;
-	nodes = NULL;
-	edges = NULL;
-	callgraph = 0;
-	mousemode = 0;
+	int okey, key, wheel;
+	int w, h;
+	int exit_graph = R_FALSE, is_error = R_FALSE;
 
-	ostack_init();
 	fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
 		eprintf ("No function in current seek\n");
 		return R_FALSE;
 	}
 	w = r_cons_get_size (&h);
-	can = r_cons_canvas_new (w-1, h-1);
-	can->linemode = 1;
-	can->color = r_config_get_i (core->config, "scr.color");
-	// disable colors in disasm because canvas doesnt supports ansi text yet
-	r_config_set_i (core->config, "scr.color", 0);
-	//can->color = 0;
+	can = r_cons_canvas_new (w - 1, h - 1);
 	if (!can) {
 		eprintf ("Cannot create RCons.canvas context\n");
 		return R_FALSE;
 	}
-#if 0
-	n_nodes = bbNodes (core, fcn, &nodes);
-	if (!nodes) {
-		free (can);
-		return R_FALSE;
+	can->linemode = 1;
+	can->color = r_config_get_i (core->config, "scr.color");
+	// disable colors in disasm because canvas doesnt supports ansi text yet
+	r_config_set_i (core->config, "scr.color", 0);
+
+	g = graph_new(core, can, fcn);
+	if (!g) {
+		is_error = R_TRUE;
+		goto err_graph_new;
 	}
-#endif
 
-	reloadNodes (core);
-	updateSeek (can, get_current_node(), w, h, 1);
+	core->cons->event_data = g;
+	core->cons->event_resize = (RConsEvent)graph_refresh;
 
-	while (!goto_beach) {
+	while (!exit_graph && !is_error) {
 		w = r_cons_get_size (&h);
-		core->cons->event_data = core;
-		core->cons->event_resize = (RConsEvent)refresh_graph;
-		refresh_graph (core);
+		ret = graph_refresh(g);
+		if (!ret) {
+			is_error = R_TRUE;
+			break;
+		}
+
+		r_cons_show_cursor(R_FALSE);
 		wheel = r_config_get_i (core->config, "scr.wheel");
 		if (wheel)
 			r_cons_enable_mouse (R_TRUE);
@@ -609,80 +820,48 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 				}
 				break;
 			case 'O':
-				// free nodes or leak
-				simple_mode = !!!simple_mode;
-				reloadNodes(core);
+				graph_toggle_simple_mode(g);
 				break;
 			case 'V':
-				callgraph = !!!callgraph;
-				if (callgraph) {
-					int y = 5, x = 20;
-					n_nodes = cgNodes (core, fcn, &nodes);
-					n_edges = cgEdges (fcn, nodes, &edges);
-					// callgraph layout
-					for (i=0; nodes[i].text; i++) {
-						// wrap to width 'w'
-						if (i>0) {
-							if (nodes[i].x < nodes[i-1].x) {
-								y += 10;
-								x = 0;
-							}
-						}
-						nodes[i].x = x;
-						nodes[i].y = i? y: 2;
-						x += 30;
-					}
-				} else {
-					n_nodes = bbNodes (core, fcn, &nodes);
-					n_edges = bbEdges (fcn, nodes, &edges);
-					curnode = 0;
-					// hack to make the layout happy
-					for (i=0; nodes[i].text; i++) {
-						Node_print (can, &nodes[i], i==curnode);
-					}
-					Layout_depth (nodes, edges);
-				}
+				graph_toggle_callgraph(g);
 				break;
 			case 'z':
-				instep = 1;
+				g->is_instep = R_TRUE;
 				if (r_config_get_i (core->config, "cfg.debug"))
 					r_core_cmd0 (core, "ds;.dr*");
-				else r_core_cmd0 (core, "aes;.dr*");
-				reloadNodes (core);
+				else
+					r_core_cmd0 (core, "aes;.dr*");
+
+				ret = graph_reload_nodes(g);
+				if (!ret)
+					is_error = R_TRUE;
 				break;
 			case 'Z':
 				if (okey == 27) {
-					// shift tab
-					curnode--;
-					if (curnode < 0) {
-						for (curnode=0; nodes[curnode].text; curnode++) {
-							/* do nothing */
-						}
-					}
+					graph_prev_node(g);
 				} else {
 					// 'Z'
-					instep = 1;
+					g->is_instep = R_TRUE;
 					if (r_config_get_i (core->config, "cfg.debug"))
 						r_core_cmd0 (core, "dso;.dr*");
-					else r_core_cmd0 (core, "aeso;.dr*");
-					reloadNodes (core);
+					else
+						r_core_cmd0 (core, "aeso;.dr*");
+
+					ret = graph_reload_nodes(g);
+					if (!ret)
+						is_error = R_TRUE;
 				}
 				break;
 			case 'x':
 				if (r_core_visual_xrefs_x (core))
-					goto_beach = 1;
+					exit_graph = R_TRUE;
 				break;
 			case 'X':
 				if (r_core_visual_xrefs_X (core))
-					goto_beach = 1;
+					exit_graph = R_TRUE;
 				break;
 			case 9: // tab
-				if (curnode+1<n_nodes) {
-					curnode++;
-					if (nodes && !nodes[curnode].text)
-						curnode = 0;
-					updateSeek (can, get_current_node(), w, h, 0);
-				}
+				graph_next_node(g);
 				break;
 			case '?':
 				r_cons_clear00 ();
@@ -706,63 +885,65 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 				r_cons_any_key (NULL);
 				break;
 			case 'R':
-			case 'r': Layout_depth (nodes, edges); break;
+			case 'r':
+				graph_set_layout (g);
+				break;
 			case 'j':
-					  if (r_cons_singleton()->mouse_event) {
-						  switch (mousemode) {
-							  case 0: // canvas-y
-								  can->sy += wheelspeed;
-								  break;
-							  case 1: // canvas-x
-								  can->sx += wheelspeed;
-								  break;
-							  case 2: // node-y
-								  get_current_node()->y += wheelspeed;
-								  break;
-							  case 3: // node-x
-								  get_current_node()->x += wheelspeed;
-								  break;
-						  }
-					  } else {
-						  get_current_node()->y++;
-					  }
-					  break;
+				if (r_cons_singleton()->mouse_event) {
+					switch (mousemode) {
+						case 0: // canvas-y
+							can->sy += wheelspeed;
+							break;
+						case 1: // canvas-x
+							can->sx += wheelspeed;
+							break;
+						case 2: // node-y
+							get_current_node(g)->y += wheelspeed;
+							break;
+						case 3: // node-x
+							get_current_node(g)->x += wheelspeed;
+							break;
+					}
+				} else {
+					get_current_node(g)->y++;
+				}
+				break;
 			case 'k':
-					  if (r_cons_singleton()->mouse_event) {
-						  switch (mousemode) {
-							  case 0: // canvas-y
-								  can->sy -= wheelspeed;
-								  break;
-							  case 1: // canvas-x
-								  can->sx -= wheelspeed;
-								  break;
-							  case 2: // node-y
-								  get_current_node()->y -= wheelspeed;
-								  break;
-							  case 3: // node-x
-								  get_current_node()->x -= wheelspeed;
-								  break;
-						  }
-					  } else {
-						  get_current_node()->y--;
-					  }
-					  break;
+				if (r_cons_singleton()->mouse_event) {
+					switch (mousemode) {
+						case 0: // canvas-y
+							can->sy -= wheelspeed;
+							break;
+						case 1: // canvas-x
+							can->sx -= wheelspeed;
+							break;
+						case 2: // node-y
+							get_current_node(g)->y -= wheelspeed;
+							break;
+						case 3: // node-x
+							get_current_node(g)->x -= wheelspeed;
+							break;
+					}
+				} else {
+					get_current_node(g)->y--;
+				}
+				break;
 			case 'm':
-					  mousemode++;
-					  if (!mousemodes[mousemode])
-						  mousemode = 0;
-					  break;
+				mousemode++;
+				if (!mousemodes[mousemode])
+					mousemode = 0;
+				break;
 			case 'M':
-					  mousemode--;
-					  if (mousemode<0)
-						  mousemode = 3;
-					  break;
-			case 'h': get_current_node()->x--; break;
-			case 'l': get_current_node()->x++; break;
-			case 'J': get_current_node()->y += 5; break;
-			case 'K': get_current_node()->y -= 5; break;
-			case 'H': get_current_node()->x -= 5; break;
-			case 'L': get_current_node()->x += 5; break;
+				mousemode--;
+				if (mousemode<0)
+					mousemode = 3;
+				break;
+			case 'h': get_current_node(g)->x--; break;
+			case 'l': get_current_node(g)->x++; break;
+			case 'J': get_current_node(g)->y += 5; break;
+			case 'K': get_current_node(g)->y -= 5; break;
+			case 'H': get_current_node(g)->x -= 5; break;
+			case 'L': get_current_node(g)->x += 5; break;
 					  // scroll
 			case '0': can->sx = can->sy = 0; break;
 			case 'w': can->sy -= 1; break;
@@ -773,79 +954,64 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 			case 'S': can->sy += 5; break;
 			case 'A': can->sx -= 5; break;
 			case 'D': can->sx += 5; break;
-					  break;
 			case 'e':
-					  can->linemode = !!!can->linemode;
-					  break;
+				  can->linemode = !!!can->linemode;
+				  break;
 			case 'n':
-					  small_nodes = small_nodes ? 0: 1;
-					  reloadNodes (core);
-					  //Layout_depth (nodes, edges);
-					  break;
+				  graph_toggle_small_nodes(g);
+				  break;
 			case 'u':
-					  curnode = ostack_pop(); // wtf double push ?
-					  updateSeek (can, get_current_node(), w, h, 0);
-					  break;
+				  graph_undo_node(g);
+				  break;
 			case '.':
-					  updateSeek (can, get_current_node(), w, h, 1);
-					  instep = 1;
-					  break;
+				  graph_update_seek (g, g->curnode, R_TRUE);
+				  g->is_instep = R_TRUE;
+				  break;
 			case 't':
-					  cn = Edge_node (edges, curnode, 0);
-					  if (cn != -1) {
-						  curnode = cn;
-						  ostack_push (cn);
-					  }
-					  updateSeek (can, get_current_node(), w, h, 0);
-					  // select jump node
-					  break;
+				  graph_follow_true(g);
+				  break;
 			case 'f':
-					  cn = Edge_node (edges, curnode, 1);
-					  if (cn != -1) {
-						  curnode = cn;
-						  ostack_push (cn);
-					  }
-					  updateSeek (can, get_current_node(), w, h, 0);
-					  // select false node
-					  break;
+				  graph_follow_false(g);
+				  break;
 			case '/':
-					  r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
-					  break;
+				  r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
+				  break;
 			case ':':
-					  core->vmode = R_FALSE;
-					  r_core_visual_prompt_input (core);
-					  core->vmode = R_TRUE;
-					  break;
+				  core->vmode = R_FALSE;
+				  r_core_visual_prompt_input (core);
+				  core->vmode = R_TRUE;
+				  break;
 			case 'C':
-					  can->color = !!!can->color; 
-					  //r_config_swap (core->config, "scr.color");
-					  // refresh graph
-					  //	reloadNodes (core);
-					  break;
+				  can->color = !!!can->color;
+				  //r_config_swap (core->config, "scr.color");
+				  // refresh graph
+				  break;
 			case -1: // EOF
 			case 'q':
-					  goto_beach = 1;
-					  break;
+				  exit_graph = R_TRUE;
+				  break;
 			case 27: // ESC
-					  if (r_cons_readchar () == 91) {
-						  if (r_cons_readchar () == 90) {
-							  if (curnode<1) {
-								  int i;
-								  for (i=0; nodes[i].text; i++) {};
-								  curnode = i-1;
-							  } else curnode--;
+				  if (r_cons_readchar () == 91) {
+					  if (r_cons_readchar () == 90) {
+						  if (g->curnode < 1) {
+							  int i;
+							  for (i = 0; i < g->n_nodes; i++) ;
+							  g->curnode = i - 1;
+						  } else {
+							  g->curnode--;
 						  }
 					  }
-					  break;
+				  }
+				  break;
 			default:
-					  eprintf ("Key %d\n", key);
-					  //sleep (1);
-					  break;
+				  eprintf ("Key %d\n", key);
+				  //sleep (1);
+				  break;
 		}
 	}
 
-	free (nodes);
-	free (edges);
+	graph_free(g);
+err_graph_new:
 	free (can);
-	return R_TRUE;
+	return !is_error;
 }

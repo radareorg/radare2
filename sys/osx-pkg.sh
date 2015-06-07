@@ -8,7 +8,7 @@
 
 SRC=/tmp/r2osx
 DST=`pwd`/sys/osx-pkg/radare2.unpkg
-VERSION=0.9.9git
+VERSION=0.9.9
 
 rm -rf "${SRC}"
 make mrproper

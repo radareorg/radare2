@@ -193,6 +193,8 @@ typedef struct r_cons_t {
 	const char **vline;
 	int refcnt;
 	RConsClickCallback onclick;
+
+	int newline;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -364,6 +366,7 @@ R_API void r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
+R_API void r_cons_flush_nonewline(void);
 R_API void r_cons_less_str(const char *str);
 R_API void r_cons_less(void);
 R_API void r_cons_2048(void);

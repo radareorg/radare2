@@ -16,7 +16,12 @@ R_API void r_strbuf_init(RStrBuf *sb) {
 
 R_API int r_strbuf_set(RStrBuf *sb, const char *s) {
 	int l;
-	if (!sb || !s) return R_FALSE;
+	if (!sb)
+		return R_FALSE;
+	if (!s) {
+		r_strbuf_init (sb);
+		return R_TRUE;
+	}
 	l = strlen (s);
 	if (l>=sizeof (sb->buf)) {
 		char *ptr = malloc (l+1);

@@ -1,6 +1,7 @@
 OBJ_CR16=asm_cr16.o
-OBJ_CR16+=../arch/cr16/cr16_disas.o
-CFLAGS+=-I./arch/cr16
+CR16_ROOT=$(LIBR)/asm/arch/cr16
+OBJ_CR16+=$(CR16_ROOT)/cr16_disas.o
+CFLAGS+=-I$(CR16_ROOT)
 
 
 STATIC_OBJ+=${OBJ_CR16}

@@ -223,6 +223,7 @@ static int maskHits(const ut8* buf, int len, RSearchKeyword *kw) {
 
 R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int len) {
 	RSearch *s = (RSearch*)_s;
+	RSearchKeyword *kw;
 	RListIter *iter;
 	int count = 0;
 
@@ -247,8 +248,25 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 	}
 #else
 	int i, j, hit;
+#if 0
+	int hasmask;
+	// XXX this shouldnt be necessary
+	/** remove unnecesary binmasks here */
+	r_list_foreach (s->kws, iter, kw) {
+		if (kw->binmask_length) {
+			hasmask = 1;
+			for (i=0;i<kw->binmask_length; i++) {
+				if (kw->bin_binmask[i] != 0xff) {
+					hasmask = 0;
+					break;
+				}
+			}
+			if (!hasmask)
+				kw->binmask_length = 0;
+		}
+	}
+#endif
 	for (i=0; i<len; i++) {
-		RSearchKeyword *kw;
 		r_list_foreach (s->kws, iter, kw) {
 			if (s->inverse && s->nhits>0) {
 				//eprintf ("nhits = %d\n", s->nhits);
