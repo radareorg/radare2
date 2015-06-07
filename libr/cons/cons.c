@@ -129,6 +129,7 @@ static HANDLE h;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		break_signal (2); // SIGINT
+		eprintf("{ctrl+c} pressed.\n");
 		return R_TRUE;
 	}
 	return R_FALSE;
@@ -221,6 +222,7 @@ R_API RCons *r_cons_new () {
 	I.pager = NULL; /* no pager by default */
 	I.truecolor = 0;
 	I.mouse = 0;
+	I.newline = R_TRUE;
 	r_cons_pal_null ();
 	r_cons_pal_init (NULL);
 	r_cons_rgb_init ();
@@ -244,7 +246,7 @@ R_API RCons *r_cons_free () {
 	return NULL;
 }
 
-#define MOAR 4096*4
+#define MOAR 4096*8
 static void palloc(int moar) {
 	if (I.buffer == NULL) {
 		I.buffer_sz = moar+MOAR;
@@ -437,12 +439,25 @@ R_API void r_cons_flush() {
 	// is_html must be a filter, not a write endpoint
 	if (I.is_html) r_cons_html_print (I.buffer);
 	else r_cons_write (I.buffer, I.buffer_len);
+
+	// TODO: remove this newline in the future. Stuff without newline should have one.
+	//
 	// add newline if there's no one in buffer. this fixes the problem of printing
 	// stuff without newline to the console and the prompt hides it.
-	if (I.buffer_len>0)
+	if (I.newline && I.buffer_len>0)
 		if (I.buffer[I.buffer_len-1]!= '\n')
 			write (2, "\n", 1);
 	r_cons_reset ();
+}
+
+/* TODO: remove this function in the future, because cons
+ *       shouldn't at all print a newline. Commands that
+ *       need a newline should print it themselves. */
+R_API void r_cons_flush_nonewline() {
+	int old_newline = I.newline;
+	I.newline = R_FALSE;
+	r_cons_flush();
+	I.newline = old_newline;
 }
 
 R_API void r_cons_visual_flush() {
@@ -545,7 +560,7 @@ R_API void r_cons_printf(const char *format, ...) {
 
 	if (I.null) return;
 	if (strchr (format, '%')) {
-		palloc (MOAR);
+		palloc (MOAR + strlen (format)*20);
 		size = I.buffer_sz-I.buffer_len-1; /* remaining space in I.buffer */
 		va_start (ap, format);
 		written = vsnprintf (I.buffer+I.buffer_len, size, format, ap);
@@ -663,7 +678,7 @@ R_API int r_cons_get_size(int *rows) {
 			}
 		}
 		I.columns = win.ws_col;
-		I.rows = win.ws_row-1;
+		I.rows = win.ws_row;
 	} else {
 		I.columns = 80;
 		I.rows = 23;
@@ -805,9 +820,18 @@ R_API void r_cons_zero() {
 }
 
 R_API void r_cons_highlight (const char *word) {
-	char *rword, *res;
-// that word str should ignore ansi scapes
-	if (word && *word) {
+	char *rword, *res, *clean;
+	char *inv[2] = {R_CONS_INVERT(R_TRUE, R_TRUE),
+			R_CONS_INVERT(R_FALSE, R_TRUE)};
+	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
+	int l, *cpos;
+
+	if (word && *word && I.buffer) {
+		int word_len = strlen (word);
+		char *orig;
+		clean = I.buffer;
+		l = r_str_ansi_filter (clean, &orig, &cpos, 0);
+		I.buffer = orig;
 		if (I.highlight) {
 			if (strcmp (word, I.highlight)) {
 				free (I.highlight);
@@ -816,16 +840,21 @@ R_API void r_cons_highlight (const char *word) {
 		} else {
 			I.highlight = strdup (word);
 		}
-		rword = malloc (strlen (word)+32);
-		strcpy (rword, "\x1b[0m\x1b[7m");
-		strcpy (rword+8, word);
-		strcpy (rword+8+strlen (word), "\x1b[0m");
-		res = r_str_replace (I.buffer, word, rword, 1);
+		rword = malloc (word_len + linv[0] + linv[1] + 1);
+		strcpy (rword, inv[0]);
+		strcpy (rword + linv[0], word);
+		strcpy (rword + linv[0] + word_len, inv[1]);
+		res = r_str_replace_thunked (I.buffer, clean, cpos,
+					     l, word, rword, 1);
 		if (res) {
 			I.buffer = res;
 			I.buffer_len = I.buffer_sz = strlen (res);
 		}
 		free (rword);
+		free (clean);
+		free (cpos);
+		/* don't free orig - it's assigned
+		 * to I.buffer and possibly realloc'd */
 	} else {
 		free (I.highlight);
 		I.highlight = NULL;

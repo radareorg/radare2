@@ -273,7 +273,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 			nc->string_value[i++] = ch;
 			if (ch == '[') {
 				while (cin_get (num, nc, &ch) && ch!=']') {
-					if (i>=R_NUMCALC_STRSZ) {
+					if (i > R_NUMCALC_STRSZ) {
 						error (num, nc, "string too long");
 						return 0;
 					}

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - pancake */
+/* radare - LGPL - Copyright 2013-2015 - pancake */
 
 #include <r_anal.h>
 
@@ -24,7 +24,7 @@ static void setHint (RAnal *a, const char *type, ut64 addr, const char *s, ut64 
 	char key[128], val[128], *nval = NULL;
 	setf (key, "hint.0x%"PFMT64x, addr);
 	idx = sdb_array_indexof (DB, key, type, 0);
-	if (s) nval = sdb_encode ((const ut8*)s, 0);
+	if (s) nval = sdb_encode ((const ut8*)s, -1);
 	else nval = sdb_itoa (ptr, val, 16);
 	if (idx != -1) {
 		if (!s) nval = sdb_itoa (ptr, val, 16);
@@ -52,6 +52,10 @@ R_API void r_anal_hint_set_arch (RAnal *a, ut64 addr, const char *arch) {
 	setHint (a, "arch:", addr, r_str_trim_const (arch), 0);
 }
 
+R_API void r_anal_hint_set_syntax (RAnal *a, ut64 addr, const char *syn) {
+	setHint (a, "Syntax:", addr, syn, 0);
+}
+
 R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, const char *opcode) {
 	setHint (a, "opcode:", addr, r_str_trim_const (opcode), 0);
 }
@@ -73,6 +77,7 @@ R_API void r_anal_hint_free (RAnalHint *h) {
 	free (h->arch);
 	free (h->esil);
 	free (h->opcode);
+	free (h->syntax);
 	free (h);
 }
 
@@ -91,6 +96,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 			case 'p': hint->ptr  = sdb_atoi (r); break;
 			case 'b': hint->bits = sdb_atoi (r); break;
 			case 's': hint->size = sdb_atoi (r); break;
+			case 'S': hint->syntax = (char*)sdb_decode (r, 0); break;
 			case 'o': hint->opcode = (char*)sdb_decode (r, 0); break;
 			case 'e': hint->esil = (char*)sdb_decode (r, 0); break;
 			case 'a': hint->arch = (char*)sdb_decode (r, 0); break;

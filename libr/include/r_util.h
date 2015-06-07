@@ -4,6 +4,7 @@
 #define R2_UTIL_H
 
 #include <r_types.h>
+#include <r_diff.h>
 #include <btree.h>
 #include <r_regex.h>
 #include <r_list.h> // radare linked list
@@ -416,7 +417,7 @@ R_API const char *r_str_bool(int b);
 R_API const char *r_str_ansi_chrn(const char *str, int n);
 R_API int r_str_ansi_len(const char *str);
 R_API int r_str_ansi_chop(char *str, int str_len, int n);
-R_API int r_str_ansi_filter(char *str, int len);
+R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len);
 R_API int r_str_word_count(const char *string);
 R_API int r_str_char_count(const char *string, char ch);
 R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen);
@@ -469,7 +470,8 @@ R_API void r_str_case(char *str, int up);
 R_API void r_str_chop_path (char *s);
 R_API ut8 r_str_contains_macro(const char *input_value);
 R_API void r_str_truncate_cmd(char *string);
-
+R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
+				  const char *key, const char *val, int g);
 R_API char *r_hex_from_c(const char *code);
 R_API int r_str_glob (const char *str, const char *glob);
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);
@@ -613,6 +615,8 @@ R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b);
 
 /* uleb */
 R_API const ut8 *r_uleb128 (const ut8 *data, int datalen, ut64 *v);
+R_API const ut8 *r_uleb128_decode (const ut8 *data, int *datalen, ut64 *v);
+R_API const ut8 *r_uleb128_encode (const ut64 s, int *len);
 R_API const ut8 *r_leb128 (const ut8 *data, st64 *v);
 #endif
 

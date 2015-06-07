@@ -88,7 +88,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	}
 	tokens[0] = NULL;
 	for (tokcount=0; tokcount<(sizeof (tokens) / sizeof (char*)) - 1; tokcount++) {
-		tok = strtok (tokcount? NULL: ptr, ",");
+		tok = strtok (tokcount? NULL: ptr, ";");
 		if (tok == NULL)
 			break;
 		tokens[tokcount] = r_str_trim_head_tail (tok);
@@ -112,7 +112,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				continue;
 			}
 			if (tokens[matchcount] && strstr (op.buf_asm, tokens[matchcount])) {
-				code = r_str_concatf (code, "%s", op.buf_asm);
+				code = r_str_concatf (code, "%s; ", op.buf_asm);
 				if (matchcount == tokcount-1) {
 					if (tokcount == 1)
 						tidx = idx;
@@ -128,6 +128,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						r_core_asm_hit_free (hit);
 						goto beach;
 					}
+					code[strlen (code)-2] = 0;
 					hit->code = strdup (code);
 					r_list_append (hits, hit);
 					R_FREE (code);

@@ -131,7 +131,10 @@ R_API int r_list_join (RList *list1, RList *list2) {
 		return 0;
 	if (r_list_empty (list2))
 		return 0;
-	if (list1->tail == NULL) {
+	if (r_list_empty (list1)) {
+		list1->head = list2->head;
+		list1->tail = list2->tail;
+	} else if (list1->tail == NULL) {
 		list1->tail = list2->head;
 	} else if (list2->head != NULL) {
 		list1->tail->n = list2->head;

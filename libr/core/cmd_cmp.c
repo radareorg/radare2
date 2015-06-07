@@ -483,6 +483,11 @@ static int cmd_cmp(void *data, const char *input) {
 				}
 			}
 
+			if (r_file_size (file2) <= 0) {
+				eprintf ("Cannot compare with file %s\n", file2);
+				return R_FALSE;
+			}
+
 			if (!(core2 = r_core_new ())) {
 				eprintf ("Cannot init diff core\n");
 				return R_FALSE;

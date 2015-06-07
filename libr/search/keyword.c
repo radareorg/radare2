@@ -1,6 +1,15 @@
-/* radare - LGPL - Copyright 2010-2014 - pancake */
+/* radare - LGPL - Copyright 2010-2015 - pancake */
 
 #include <r_search.h>
+
+static int ignoreMask(const ut8 *bm, int len) {
+	int i;
+	for (i=0; i<len; i++) {
+		if (bm[i] != 0xff)
+			return 0;
+	}
+	return 1;
+}
 
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut8 *bmbuf, int bmlen, const char *data) {
 	RSearchKeyword *kw;
@@ -12,7 +21,7 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut
 	kw->keyword_length = kwlen;
 	kw->bin_keyword = malloc (kwlen);
 	memcpy (kw->bin_keyword, kwbuf, kwlen);
-	if (bmbuf && bmlen > 0) {
+	if (bmbuf && bmlen > 0 && !ignoreMask (bmbuf, bmlen)) {
 		kw->bin_binmask = malloc (bmlen);
 		memcpy (kw->bin_binmask, bmbuf, bmlen);
 		kw->binmask_length = bmlen;
@@ -117,6 +126,7 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 		}
 		bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
+			bmlen = -bmlen;
 			free (bmbuf);
 			free (kwbuf);
 			return NULL;
@@ -139,9 +149,9 @@ R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char
 		if (kw != NULL && bm != NULL) {
 			len = r_hex_str2binmask (kwstr, (ut8*)kw, (ut8*)bm);
 			if (len<0)
-				len = -len+1;
+				len = -len -1;
 			if (len>0)
-				ks = r_search_keyword_new (kw, R_ABS (len), bm, len, data);
+				ks = r_search_keyword_new (kw, len, bm, len, data);
 		}
 		free (kw);
 		free (bm);

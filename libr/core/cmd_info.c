@@ -90,8 +90,7 @@ static void r_core_file_info (RCore *core, int mode) {
 			r_cons_printf (",\"size\":%"PFMT64d, r_io_desc_size (core->io, cf->desc));
 			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
 				cf->desc->flags & 7 ));
-			r_cons_printf (",\"blksz\":\"%s\"", sdb_fmt (0, "0x%"PFMT64x,
-				(ut64)core->io->desc->obsz));
+			r_cons_printf (",\"obsz\":%"PFMT64d, (ut64)core->io->desc->obsz);
 			if (cf->desc->referer && *cf->desc->referer)
 				r_cons_printf ("\"referer\":\"%s\"", cf->desc->referer);
 		}
@@ -248,7 +247,16 @@ static int cmd_info(void *data, const char *input) {
 		r_cons_printf ("\"%s\":",n); \
 	}\
 	r_core_bin_info (core,x,mode,va,NULL,offset,NULL);
-		case 'A': newline=0; r_bin_list_archs (core->bin, 1); break;
+		case 'A':
+			newline = 0;
+			if (input[1]=='j') {
+				r_cons_printf ("{");
+				r_bin_list_archs (core->bin, 'j');
+				r_cons_printf ("}\n");
+			} else {
+				r_bin_list_archs (core->bin, 1);
+			}
+			break;
 		case 'Z': RBININFO ("size",R_CORE_BIN_ACC_SIZE); break;
 		case 'S': RBININFO ("sections",R_CORE_BIN_ACC_SECTIONS); break;
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS); break;
@@ -260,6 +268,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'i': RBININFO ("imports",R_CORE_BIN_ACC_IMPORTS); break;
 		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO); break;
 		case 'e': RBININFO ("entries",R_CORE_BIN_ACC_ENTRIES); break;
+		case 'M': RBININFO ("main",R_CORE_BIN_ACC_MAIN); break;
 		case 'm': RBININFO ("memory",R_CORE_BIN_ACC_MEM); break;
 		case 'z':
 			if (input[1] == 'z') {
@@ -302,10 +311,10 @@ static int cmd_info(void *data, const char *input) {
 		case 'a':
 			{
 				switch (mode) {
-				case R_CORE_BIN_RADARE: cmd_info (core, "i*IiesSz"); break;
-				case R_CORE_BIN_JSON: cmd_info (core, "iIiesSzj"); break;
-				default:
-				case R_CORE_BIN_SIMPLE: cmd_info (core, "iIiesSmz"); break;
+				case R_CORE_BIN_RADARE: cmd_info (core, "i*IiesSmz"); break;
+				case R_CORE_BIN_JSON: cmd_info (core, "ijIiesSmz"); break;
+				case R_CORE_BIN_SIMPLE: cmd_info (core, "iqIiesSmz"); break;
+				default: cmd_info (core, "iIiesSmz"); break;
 				}
 			}
 			break;
@@ -331,6 +340,7 @@ static int cmd_info(void *data, const char *input) {
 				"ik", " [query]", "Key-value database from RBinObject",
 				"il", "", "Libraries",
 				"im", "", "Show info about predefined memory allocation",
+				"iM", "", "Show main address",
 				"io", " [file]", "Load info from file (or last opened) use bin.baddr",
 				"ir|iR", "", "Relocs",
 				"is", "", "Symbols",

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - LGPL - Copyright 2009-2015 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -8,10 +8,9 @@
 #include "../../shlr/java/class.h"
 #include "../../shlr/java/code.h"
 
-#define IFDBG_BIN_JAVA  if(0)
+#define IFDBG_BIN_JAVA if(0)
 
 static Sdb *DB = NULL;
-
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 static void add_bin_obj_to_sdb(RBinJavaObj *bin);
@@ -41,31 +40,33 @@ static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 }
 
 static void add_bin_obj_to_sdb(RBinJavaObj *bin) {
-	char * jvcname = NULL;
-	if (bin) {
-		jvcname = r_bin_java_build_obj_key (bin);
-		add_sdb_bin_obj (jvcname, bin);
-		bin->AllJavaBinObjs = DB;
-		free (jvcname);
-	}
+	if (!bin) return;
+	char *jvcname = r_bin_java_build_obj_key (bin);
+	add_sdb_bin_obj (jvcname, bin);
+	bin->AllJavaBinObjs = DB;
+	free (jvcname);
 }
 
 static Sdb* get_sdb (RBinObject *o) {
+	struct r_bin_java_obj_t *bin;
 	if (!o) return NULL;
-	struct r_bin_java_obj_t *bin = (struct r_bin_java_obj_t *) o->bin_obj;
+	bin = (struct r_bin_java_obj_t *) o->bin_obj;
 	if (bin->kv) return bin->kv;
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	void *res = NULL;
-	RBuffer *tbuf = NULL;
+static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct r_bin_java_obj_t* bin_obj = NULL;
+	RBuffer *tbuf = NULL;
+	void *res = NULL;
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
 	tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = bin_obj = r_bin_java_new_buf (tbuf, loadaddr, sdb);
 	add_bin_obj_to_sdb (bin_obj);
+	if (arch && arch->file) {
+		bin_obj->file = strdup (arch->file);
+	}
 	r_buf_free (tbuf);
 	return res;
 }
@@ -78,7 +79,7 @@ static int load(RBinFile *arch) {
 
  	if (!arch || !arch->o) return R_FALSE;
 
-	bin_obj = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+	bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 
 	if (bin_obj) {
 		if (!arch->o->kv) arch->o->kv = bin_obj->kv;
@@ -101,8 +102,9 @@ static int load(RBinFile *arch) {
 		// Now, the RAnal component of radare can get to each of the
 		// RBinJavaObjs for analysing functions and dependencies using an Sdb.
 		add_bin_obj_to_sdb (bin_obj);
-		if (arch->file)
+		if (arch->file) {
 			bin_obj->file = strdup (arch->file);
+		}
 		result = R_TRUE;
 	}
 	return result;
@@ -184,7 +186,7 @@ static int retdemangle(const char *str) {
 }
 
 static RBinAddr* binsym(RBinFile *arch, int sym) {
-	return r_bin_java_get_entrypoint(arch->o->bin_obj, sym);
+	return r_bin_java_get_entrypoint (arch->o->bin_obj, sym);
 }
 
 static RList* lines(RBinFile *arch) {

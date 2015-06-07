@@ -1,6 +1,6 @@
 OBJ_V850=asm_v850.o
-OBJ_V850+=../arch/v850/v850_disas.o
-CFLAGS+=-I./arch/v850
+OBJ_V850+=$(LIBR)/asm/arch/v850/v850_disas.o
+CFLAGS+=-I$(LIBR)/asm/arch/v850
 
 
 STATIC_OBJ+=${OBJ_V850}

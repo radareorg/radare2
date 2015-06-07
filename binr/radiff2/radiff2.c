@@ -4,6 +4,9 @@
 #include <r_core.h>
 #include <r_hash.h>
 
+#define RED     "\x1b[31m"
+#define GREEN   "\x1b[32m"
+
 enum {
 	MODE_DIFF,
 	MODE_DIST,
@@ -90,7 +93,7 @@ static RCore* opencore(const char *f) {
 }
 
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-abcCdrspOv] [-g sym] [-t %%] [file] [file]\n");
+	printf ("Usage: radiff2 [-abcCdjrspOv] [-g sym] [-t %%] [file] [file]\n");
 	if (v) printf (
 		"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
 		"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
@@ -98,8 +101,9 @@ static int show_help(int v) {
 		"  -C         graphdiff code (columns: off-A, match-ratio, off-B)\n"
 		"  -CC        same as above but run `aac` to find more functions\n"
 		"  -d         use delta diffing\n"
-		"  -f         print bare addresses only (diff.bare=1)\n"
 		"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
+		"  -j         output in json format\n"
+		"  -n         print bare addresses only (diff.bare=1)\n"
 		"  -O         code diffing with opcode bytes only\n"
 		"  -p         use physical addressing (io.va=0)\n"
 		"  -r         output in radare commands\n"
@@ -200,6 +204,7 @@ int main(int argc, char **argv) {
 			break;
 		case 't':
 			threshold = atoi (optarg);
+			printf ("%s\n", optarg);
 			break;
 		case 'd':
 			delta = 1;
@@ -261,20 +266,26 @@ int main(int argc, char **argv) {
 		r_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
 		r_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
 		if (mode == MODE_GRAPH) {
-			const char* second = strstr (addr, ",");
-			if (!second) {
-				r_core_gdiff (c, c2, gdiff_mode);
-				r_core_anal_graph (c, r_num_math (c->num, addr),
-					R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
-			} else {
-				const ut64 off = strtoull(addr, 0, 16);
+			char *words = strdup (addr);
+			char *second = strstr (words, ",");
+			if (second) {
+				ut64 off;
+				*second++ = 0;
+				off = r_num_math (c->num, words);
 				// define the same function at each offset
 				r_core_anal_fcn (c, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
-				r_core_anal_fcn (c2, strtoull (second+1, 0, 16),
+				r_core_anal_fcn (c2, r_num_math (c2->num, second),
 						UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
 				r_core_gdiff (c, c2, R_FALSE); // compute the diff
-				r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
+				r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
+			} else {
+				r_core_anal_fcn (c, r_num_math (c->num, words), UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+				r_core_anal_fcn (c2, r_num_math (c2->num, words), UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+				r_core_gdiff (c, c2, gdiff_mode);
+				r_core_anal_graph (c, r_num_math (c->num, addr),
+					R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
 			}
+			free (words);
 		} else {
 			r_core_gdiff (c, c2, gdiff_mode);
 			r_core_diff_show (c, c2);
@@ -316,7 +327,7 @@ int main(int argc, char **argv) {
 		r_diff_set_callback (d, &cb, 0);//(void *)(size_t)diffmode);
 		r_diff_buffers (d, bufa, sza, bufb, szb);
 		if (diffmode == 'j')
-			printf("]}\n");
+			printf("]\n");
 		r_diff_free (d);
 		break;
 	case MODE_DIST:
@@ -326,8 +337,12 @@ int main(int argc, char **argv) {
 		break;
 	}
 
-	if (showcount)
+	if (diffmode == 'j' && showcount)
+		printf (",\"count\":%d}\n",count);
+	else if (showcount && diffmode != 'j')
 		printf ("%d\n", count);
+	else if (!showcount && diffmode == 'j')
+		printf ("}\n");
 	free (bufa);
 	free (bufb);
 

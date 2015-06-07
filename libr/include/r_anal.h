@@ -51,6 +51,14 @@ typedef struct r_anal_meta_item_t {
 	char *str;
 } RAnalMetaItem;
 
+typedef struct {
+	struct r_anal_t *anal;
+	int type;
+	int rad;
+	SdbForeachCallback cb;
+	void *user;
+} RAnalMetaUserItem;
+
 typedef struct r_anal_range_t {
 	ut64 from;
 	ut64 to;
@@ -613,6 +621,7 @@ typedef struct r_anal_hint_t {
 	ut64 fail;
 	char *arch;
 	char *opcode;
+	char *syntax;
 	char *esil;
 	int size;
 	int bits;
@@ -1303,7 +1312,7 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
 R_API RAnalRefline *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn,
     int nlines, int linesout, int linescall);
 /* TODO move to r_core */
-R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind);
+R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
 
 // calling conventions API
@@ -1346,6 +1355,7 @@ R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where);
 R_API int r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
 R_API int r_meta_list(RAnal *m, int type, int rad);
+R_API int r_meta_list_cb(RAnal *m, int type, int rad, SdbForeachCallback cb, void *user);
 R_API void r_meta_item_free(void *_item);
 R_API RAnalMetaItem *r_meta_item_new(int type);
 
@@ -1361,6 +1371,7 @@ R_API RAnalHint *r_anal_hint_at (RAnal *a, ut64 from);
 R_API RAnalHint *r_anal_hint_add (RAnal *a, ut64 from, int size);
 R_API void r_anal_hint_free (RAnalHint *h);
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr);
+R_API void r_anal_hint_set_syntax (RAnal *a, ut64 addr, const char *syn);
 R_API void r_anal_hint_set_jump (RAnal *a, ut64 addr, ut64 ptr);
 R_API void r_anal_hint_set_fail (RAnal *a, ut64 addr, ut64 ptr);
 R_API void r_anal_hint_set_length (RAnal *a, ut64 addr, int length);

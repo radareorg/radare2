@@ -13,68 +13,81 @@
 static int replace(int argc, const char *argv[], char *newstr) {
 	int i,j,k;
 	struct {
+		int narg;
 		char *op;
 		char *str;
 	} ops[] = {
-		{ "abs",  "1 = abs(1)"},
-		{ "adc",  "1 = 2 + 3"},
-		{ "add",  "1 = 2 + 3"},
-		{ "adf",  "1 = 2 + 3"},
-		{ "adrp",  "1 = 2"},
-		{ "and",  "1 = 2 & 3"},
-		{ "asl",  "1 = 2 << 3"},
-		{ "asr",  "1 = 2 >> 3"},
-		{ "b",  "jmp 1"},
-		{ "b.gt",  "jmp ifgt 1"},
-		{ "b.le",  "jmp ifle 1"},
-		{ "beq lr",  "ifeq ret"},
-		{ "beq",  "je 1"},
-		{ "bl",  "call 1"},
-		{ "blx",  "call 1"},
-		{ "bx lr",  "ret"},
-		{ "bxeq",  "je 1"},
-		{ "cmf",  "cmp 1 2"},
-		{ "cmp",  "cmp 1 2"},
-		{ "dvf",  "1 = 2 / 3"},
-		{ "eor",  "1 = 2 ^ 3"},
-		{ "fdv",  "1 = 2 / 3"},
-		{ "fml",  "1 = 2 * 3"},
-		{ "ldr",  "1 = 2"},
-		{ "ldrb",  "1 = 2"},
-		{ "ldrsw",  "1 = 2 + 3"},
-		{ "lsl",  "1 = 2 << 3"},
-		{ "lsr",  "1 = 2 >> 3"},
-		{ "mov",  "1 = 2"},
-		{ "movz",  "1 = 2"},
-		{ "muf",  "1 = 2 * 3"},
-		{ "mul",  "1 = 2 * 3"},
-		{ "orr",  "1 = 2 | 3"},
-		{ "rmf",  "1 = 2 % 3"},
-		{ "sbc",  "1 = 2 - 3"},
-		{ "sqt",  "1 = sqrt(2)"},
-		{ "str",  "2 + 3 = 1"},
-		{ "strh.w",  "2 + 3 = 1"},
-		{ "sub",  "1 = 2 - 3"},
-		{ "sub",  "1 -= 2"}, // THUMB
-		{ "swp",  "swap(1, 2)"},
+		{ 0, "abs",  "1 = abs(1)"},
+		{ 0, "adc",  "1 = 2 + 3"},
+		{ 3, "add",  "1 = 2 + 3"},
+		{ 2, "add",  "1 += 2"},
+		{ 0, "adf",  "1 = 2 + 3"},
+		{ 0, "adrp",  "1 = 2"},
+		{ 0, "and",  "1 = 2 & 3"},
+		{ 0, "asl",  "1 = 2 << 3"},
+		{ 0, "asr",  "1 = 2 >> 3"},
+		{ 0, "b",  "jmp 1"},
+		{ 0, "cbz",  "if !1 jmp 2"},
+		{ 0, "cbnz",  "if 1 jmp 2"},
+		{ 0, "b.w",  "jmp 1"},
+		{ 0, "b.gt",  "jmp ifgt 1"},
+		{ 0, "b.le",  "jmp ifle 1"},
+		{ 0, "beq lr",  "ifeq ret"},
+		{ 0, "beq",  "je 1"},
+		{ 0, "bl",  "call 1"},
+		{ 0, "blx",  "call 1"},
+		{ 0, "bx lr",  "ret"},
+		{ 0, "bxeq",  "je 1"},
+		{ 0, "cmf",  "cmp 1 2"},
+		{ 0, "cmp",  "cmp 1 2"},
+		{ 0, "dvf",  "1 = 2 / 3"},
+		{ 0, "eor",  "1 = 2 ^ 3"},
+		{ 0, "fdv",  "1 = 2 / 3"},
+		{ 0, "fml",  "1 = 2 * 3"},
+		{ 0, "ldr",  "1 = 2"},
+		{ 0, "ldrb",  "1 = 2"},
+		{ 0, "ldr.w",  "1 = 2"},
+		{ 0, "ldrsw",  "1 = 2 + 3"},
+		{ 0, "lsl",  "1 = 2 << 3"},
+		{ 0, "lsr",  "1 = 2 >> 3"},
+		{ 0, "mov",  "1 = 2"},
+		{ 0, "movz",  "1 = 2"},
+		{ 0, "vmov.i32",  "1 = 2"},
+		{ 0, "muf",  "1 = 2 * 3"},
+		{ 0, "mul",  "1 = 2 * 3"},
+		{ 0, "orr",  "1 = 2 | 3"},
+		{ 0, "rmf",  "1 = 2 % 3"},
+		{ 0, "sbc",  "1 = 2 - 3"},
+		{ 0, "sqt",  "1 = sqrt(2)"},
+		{ 0, "str",  "2 + 3 = 1"},
+		{ 0, "strh.w",  "2 + 3 = 1"},
+		{ 3, "sub",  "1 = 2 - 3"},
+		{ 2, "sub",  "1 -= 2"}, // THUMB
+		{ 0, "swp",  "swap(1, 2)"},
 		/* arm thumb */
-		{ "movs",  "1 = 2"},
-		{ "movw",  "1 = 2"},
-		{ "movt",  "1 = 2"},
-		{ "vmov",  "1 = (float) 2 . 3"},
-		{ "vdiv.f64", "1 = (float) 2 / 3" },
-		{ "addw",  "1 = 2 + 3"},
-		{ "sub.w",  "1 = 2 - 3"},
-		{ "tst.w", "if (1 == 2)"},
-		{ "lsr.w", "1 = 2 >> 3"},
-		{ "lsl.w", "1 = 2 << 3"},
-		{ "pop.w",  "pop 1"},
-		{ "vpop",  "pop 1"},
-		{ "vpush",  "push 1"},
-		{ NULL }
+		{ 0, "movs",  "1 = 2"},
+		{ 0, "movw",  "1 = 2"},
+		{ 0, "movt",  "1 |= 2 << 16"},
+		{ 0, "vmov",  "1 = (float) 2 . 3"},
+		{ 0, "vdiv.f64", "1 = (float) 2 / 3" },
+		{ 0, "addw",  "1 = 2 + 3"},
+		{ 0, "sub.w",  "1 = 2 - 3"},
+		{ 0, "tst.w", "if (1 == 2)"},
+		{ 0, "lsr.w", "1 = 2 >> 3"},
+		{ 0, "lsl.w", "1 = 2 << 3"},
+		{ 0, "pop.w",  "pop 1"},
+		{ 0, "vpop",  "pop 1"},
+		{ 0, "vpush",  "push 1"},
+		{ 0, "push.w",  "push 1"},
+		{ 0, NULL }
 	};
 
 	for (i=0; ops[i].op != NULL; i++) {
+		if (ops[i].narg) {
+			if (argc-1 != ops[i].narg) {
+				continue;
+			}
+		}
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
 				for (j=k=0; ops[i].str[j]!='\0'; j++, k++) {
@@ -97,7 +110,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		newstr[0] = '\0';
 		for (i=0; i<argc; i++) {
 			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i== argc - 1)?" ":",");
+			strcat (newstr, (i == 0 || i == argc - 1)?" ":",");
 		}
 	}
 	return R_FALSE;
@@ -127,6 +140,13 @@ static int parse(RParse *p, const char *data, char *str) {
 			strncpy (w1, ptr, sizeof (w1) - 1);
 
 			optr = ptr;
+			if (*ptr == '(') { ptr = strchr (ptr+1, ')'); }
+			if (ptr && *ptr == '[') { ptr = strchr (ptr+1, ']'); }
+			if (ptr && *ptr == '{') { ptr = strchr (ptr+1, '}'); }
+			if (!ptr) {
+				eprintf ("Unbalanced bracket\n");
+				return R_FALSE;
+			}
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
@@ -147,11 +167,19 @@ static int parse(RParse *p, const char *data, char *str) {
 			const char *wa[] = { w0, w1, w2, w3 };
 			int nw = 0;
 			for (i=0; i<4; i++) {
-				if (wa[i][0] != '\0')
-				nw++;
+				if (wa[i][0]) {
+					nw++;
+				}
 			}
 			replace (nw, wa, str);
 		}
+	}
+	{
+		char *s = strdup (str);
+		s = r_str_replace (s, "+ -", "- ", 1);
+		s = r_str_replace (s, "- -", "+ ", 1);
+		strcpy (str, s);
+		free (s);
 	}
 	free (buf);
 	return R_TRUE;
@@ -165,7 +193,7 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	RList *vars, *args;
 
 	if (!p->varlist) {
-                free(tstr);
+                free (tstr);
 		return R_FALSE;
         }
 

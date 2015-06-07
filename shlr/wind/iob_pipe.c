@@ -44,6 +44,7 @@ static int iob_pipe_write (void *p, const uint8_t *buf, const uint64_t count, co
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <sys/un.h>
 #include "transport.h"
 
@@ -75,7 +76,24 @@ static int iob_pipe_close (void *p) {
 }
 
 static int iob_pipe_read (void *p, uint8_t *buf, const uint64_t count, const int timeout) {
-	return recv((int)(size_t)p, buf, count, 0);
+	//return recv((int)(size_t)p, buf, count, 0);
+	int result;
+	fd_set readset;
+	int fd=(int)(size_t)p;
+	for (;;) {
+		FD_ZERO(&readset);
+		FD_SET(fd, &readset);
+		result = select (fd + 1, &readset, NULL, NULL, NULL);
+		if (result <1) { // pipe closed
+			if (errno == EINTR)
+				continue;
+			return -1;
+		}
+		if (FD_ISSET(fd, &readset)) {
+			return  recv((int)(size_t)p, buf, count, 0);
+		}
+	}
+	return EINTR;
 }
 
 static int iob_pipe_write (void *p, const uint8_t *buf, const uint64_t count, const int timeout) {

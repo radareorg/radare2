@@ -34,7 +34,7 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct Elf_(r_bin_elf_obj_t) *res;
 	RBuffer *tbuf;
 	if (!buf || sz == 0 || sz == UT64_MAX)
@@ -52,7 +52,7 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
  	if (!arch || !arch->o) return R_FALSE;
-	arch->o->bin_obj = load_bytes (bytes, sz, 
+	arch->o->bin_obj = load_bytes (arch, bytes, sz, 
 		arch->o->loadaddr, arch->sdb);
 	if (!(arch->o->bin_obj))
 		return R_FALSE;
@@ -444,8 +444,8 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_X86_64_PLT32:	ADD(32,-P /* +L */);
 		case R_X86_64_GOT32:	ADD(32, GOT);
 		case R_X86_64_PC32:	ADD(32,-P);
-		case R_X86_64_GLOB_DAT:	SET(64);
-		case R_X86_64_JUMP_SLOT:SET(64);
+		case R_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
+		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
 		case R_X86_64_RELATIVE:	ADD(64, B);
 		case R_X86_64_32:	ADD(32, 0);
 		case R_X86_64_32S:	ADD(32, 0);

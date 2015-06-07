@@ -50,6 +50,9 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	static const char* lookup = "0123456789abcdef";
 	const int imax = 62;
 	int i = imax;
+	if (s) {
+		*s = 0;
+	}
 	if (base < 0)
 		base = -base;
 	if ((base > 16) || (base == 0))
@@ -57,6 +60,10 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	if (!s) {
 		s = calloc (64, sizeof(char));
 		if (!s) return NULL;
+	}
+	if (!n) {
+		strcpy (s, "0");
+		return s;
 	}
 	s[imax+1] = '\0';
 	if (base <= 10) {

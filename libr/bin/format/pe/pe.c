@@ -145,6 +145,8 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 	char *symname;
 	char *filename;
 	char *symdllname;
+	if (!dll_name || *dll_name == '0')
+		return 0;
 	if ((off = PE_(r_bin_pe_vaddr_to_paddr)(bin, OriginalFirstThunk)) == 0 &&
 		(off = PE_(r_bin_pe_vaddr_to_paddr)(bin, FirstThunk)) == 0)
 		return 0;
@@ -310,19 +312,19 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 	
 	// adding compile time to the SDB
 	{
-	       struct timezone tz;
-	       struct timeval tv;
-	       int gmtoff;
-	       char *timestr;
-	       time_t ts = (time_t)bin->nt_headers->file_header.TimeDateStamp;
-	       sdb_num_set (bin->kv, "image_file_header.TimeDateStamp",
-		       bin->nt_headers->file_header.TimeDateStamp, 0);
-	       gettimeofday (&tv, &tz);
-	       gmtoff = (int)(tz.tz_minuteswest*60); // in seconds
-	       ts += gmtoff;
-	       timestr = r_str_chop (strdup (ctime (&ts)));
-	       // gmt offset for pe date is t->tm_gmtoff
-	       sdb_set_owned (bin->kv,
+	    struct timezone tz;
+	    struct timeval tv;
+	    int gmtoff;
+	    char *timestr;
+	    time_t ts = (time_t)bin->nt_headers->file_header.TimeDateStamp;
+	    sdb_num_set (bin->kv, "image_file_header.TimeDateStamp",
+	    	bin->nt_headers->file_header.TimeDateStamp, 0);
+	    gettimeofday (&tv, &tz);
+	    gmtoff = (int)(tz.tz_minuteswest*60); // in seconds
+	    ts += gmtoff;
+	    timestr = r_str_chop (strdup (ctime (&ts)));
+	   // gmt offset for pe date is t->tm_gmtoff
+	    sdb_set_owned (bin->kv,
 			"image_file_header.TimeDateStamp_string",
 			timestr, 0);
 	}
@@ -411,8 +413,9 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 					} else {
 						char *longname, name[128];
 						ut32 *idx = (ut32 *) (buf+I+4)	;
-						if (r_buf_read_at (bin->b, off+ *idx+shsz, (ut8*)name, 128)) {
+						if (r_buf_read_at (bin->b, off+ *idx+shsz, (ut8*)name, 128)) {// == 128) {
 							longname = name;
+							name[sizeof(name)-1] = 0;
 							D printf ("0x%08"PFMT64x"  %s\n", text + sr->value, longname);
 							strncpy ((char*)exp[symctr].name, longname, PE_NAME_LENGTH-1);
 						} else {
@@ -521,7 +524,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	int dir_size = sizeof (PE_(image_import_directory));
 	int delay_import_size = sizeof (PE_(image_delay_import_directory));
 	int indx = 0;
-	int count = 0;
+	int rr, count = 0;
 	int import_dir_size = data_dir_import->Size;
 	int delay_import_dir_size = data_dir_delay_import->Size;
 	/// HACK to modify import size because of begin 0.. this may report wrong info con corkami tests
@@ -542,15 +545,15 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	bin->import_directory = NULL;
 	if (import_dir_paddr != 0) {
 		if (import_dir_size<1 || import_dir_size>maxidsz) {
-			eprintf ("Warning: Invalid import directory size: 0x%x\n",
-				import_dir_size);
+			eprintf ("Warning: Invalid import directory size: 0x%x is now 0x%x\n",
+				import_dir_size, maxidsz);
 			import_dir_size = maxidsz;
 		}
 		bin->import_directory_offset = import_dir_offset;
 		count = 0;
 		do {
 			indx++;
-			if ( ((2+indx)*dir_size) > import_dir_size) {
+			if (((2+indx)*dir_size) > import_dir_size) {
 				break; //goto fail;
 			}
 			new_import_dir = (PE_(image_import_directory) *)realloc (
@@ -583,10 +586,15 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	indx = 0;
 	if ((delay_import_dir_offset != 0) && (delay_import_dir_offset < bin->b->length)) {
+		ut64 off;
 		bin->delay_import_directory_offset = delay_import_dir_offset;
 		do {
 			indx++;
-
+			off = indx * delay_import_size;
+			if (off >= bin->b->length) {
+				eprintf ("Error: Cannot find end of import symbols\n");
+				break;
+			}
 			delay_import_dir = (PE_(image_delay_import_directory) *)realloc (
 				delay_import_dir, (indx * delay_import_size)+1);
 			if (delay_import_dir == 0) {
@@ -597,8 +605,9 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 			curr_delay_import_dir = delay_import_dir + (indx - 1);
 
-			if (r_buf_read_at (bin->b, delay_import_dir_offset + (indx - 1) * delay_import_size,
-					(ut8*)(curr_delay_import_dir), dir_size) == -1) {
+			rr = r_buf_read_at (bin->b, delay_import_dir_offset + (indx - 1) * delay_import_size,
+					(ut8*)(curr_delay_import_dir), dir_size);
+			if (rr != dir_size) {
 				eprintf("Error: read (delay import directory)\n");
 				goto fail;
 			}
@@ -1927,13 +1936,28 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	if (!bin)
 		return NULL;
 
+	if (bin->import_directory_offset+32 >= bin->size) {
+		return NULL;
+	}
 	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
+		void *last;
 		curr_import_dir = (PE_(image_import_directory)*)(bin->b->buf + bin->import_directory_offset);
 		dll_name_offset = curr_import_dir->Name;
-		void *last = curr_import_dir + bin->import_directory_size;
-		while (curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
+		if (bin->import_directory_offset<1) {
+			return NULL;
+		}
+		if (bin->import_directory_size<1) {
+			return NULL;
+		}
+		if (bin->import_directory_offset+bin->import_directory_size > bin->size) {
+			eprintf ("Error: read (import directory too big)\n");
+			bin->import_directory_size = bin->size - bin->import_directory_offset;
+		}
+		last = (char *)curr_import_dir + bin->import_directory_size;
+		while ((void*)(curr_import_dir+1) <= last && (
+				curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
-				curr_import_dir->ForwarderChain != 0) {
+				curr_import_dir->ForwarderChain != 0)) {
 			dll_name_offset = curr_import_dir->Name;
 			int rr = r_buf_read_at (bin->b,
 				PE_(r_bin_pe_vaddr_to_paddr)(bin, dll_name_offset),
@@ -1944,12 +1968,10 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 			}
 			if (!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
 					curr_import_dir->Characteristics,
-					curr_import_dir->FirstThunk))
-				break;
-			curr_import_dir++;
-			if ((void*)curr_import_dir>= last) { 
+					curr_import_dir->FirstThunk)) {
 				break;
 			}
+			curr_import_dir++;
 		}
 	}
 
@@ -2008,17 +2030,36 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 		return NULL;
 	}
 
+	if (bin->import_directory_offset + bin->import_directory_size > bin->b->length) {
+		eprintf ("import directory offset bigger than file\n");
+		bin->import_directory_size = bin->b->length - bin->import_directory_offset;
+		//return NULL;
+	}
 	RStrHT *lib_map = r_strht_new();
 	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
+		void *last = NULL;
 		// normal imports
 		curr_import_dir = (PE_(image_import_directory)*)(
 			bin->b->buf + bin->import_directory_offset);
-		while (curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
+		if (bin->import_directory_offset+bin->import_directory_size > bin->b->length) {
+			// chop
+			bin->import_directory_size = bin->b->length - bin->import_directory_offset;
+			eprintf ("Warning: read libs (import directory too big) %d %d size %d\n",
+				(int)bin->import_directory_offset, (int)bin->import_directory_size,
+				(int)bin->b->length);
+			//return NULL;
+		}
+		last = (char *)curr_import_dir + bin->import_directory_size;
+		while ((void*)(curr_import_dir+1) <= last && (
+				curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
-				curr_import_dir->ForwarderChain != 0) {
+				curr_import_dir->ForwarderChain != 0)) {
 			name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, curr_import_dir->Name);
 			len = r_buf_read_at (bin->b, name_off, (ut8*)libs[index].name, PE_STRING_LENGTH);
-			if (len <2) { // minimum string length
+			if (libs[index].name[0] == 0) { // minimum string length
+				goto next;
+			}
+			if (len <2 || libs[index].name[0] == 0) { // minimum string length
 				eprintf ("Error: read (libs - import dirs) %d\n", len);
 				break;
 			}
@@ -2037,6 +2078,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 					max_libs *= 2;
 				}
 			}
+next:
 			curr_import_dir++;
 		}
 	}
@@ -2067,6 +2109,9 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 				}
 			}
 			curr_delay_import_dir++;
+			if ((const ut8*)(curr_delay_import_dir+1) >= (const ut8*)(bin->b->buf+bin->size)) {
+				break;
+			}
 		}
 	}
 	r_strht_free (lib_map);

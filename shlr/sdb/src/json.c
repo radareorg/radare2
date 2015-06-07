@@ -197,6 +197,7 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 			if (beg[2][0]=='"')
 				beg[2]++;
 			beg[2]++;
+			len[2]--;
 		}
 		str = malloc (len[0]+len[2]+1);
 		if (!str)

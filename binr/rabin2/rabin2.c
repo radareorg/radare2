@@ -610,7 +610,7 @@ int main(int argc, char **argv) {
 	if (file && *file && action&ACTION_DLOPEN) {
 		void *addr = r_lib_dl_open (file);
 		if (addr) {
-			printf ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(addr));
+			printf ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(size_t)(addr));
 			r_lib_dl_close (addr);
 		} else
 			printf("Cannot open the '%s' library\n", file);
@@ -690,87 +690,94 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 
-	// XXX: TODO move this to libr/core/bin.c
-	if (action & ACTION_LISTARCHS || ((arch || bits || arch_name) &&
-		!r_bin_select (bin, arch, bits, arch_name))) {
-		if (rad == R_CORE_BIN_JSON) {
-			int i;
-			printf ("[");
-			for (i = 0; i < bin->narch; i++) {
-				if (r_bin_select_idx (bin, bin->file, i)) {
-					RBinObject *o = r_bin_cur_object (bin);
-					RBinInfo *info = o ? o->info : NULL;
-					printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-						"\"offset\":%"PFMT64d",\"machine\":\"%s\"}",
-						i?",":"",info->arch, info->bits,
-						bin->cur->offset, info->machine);
-				}
-			}
-			printf ("]");
-		} else r_bin_list_archs (bin, 1);
-		free (arch_name);
-	}
-
+#if 0
 	// ASLR WTF
 	if (laddr != 0LL) {
 		//r_bin_set_baddr (bin, laddr);
 		//bin->cur->o->baddr = laddr;
 	}
-	r_config_set_i (core.config, "bin.laddr", laddr);
-
-	core.bin = bin;
-	filter.offset = at;
-	filter.name = name;
-
-	r_cons_new ()->is_interactive = R_FALSE;
-
+#endif
 #define isradjson (rad==R_CORE_BIN_JSON&&actions>0)
 #define run_action(n,x,y) {\
 	if (action&x) {\
-		if (isradjson) r_cons_printf ("\"%s\":",n);\
+		if (isradjson) r_cons_printf ("%s\"%s\":",actions_done?",":"",n);\
 		if (!r_core_bin_info (&core, y, rad, va, &filter, laddr, chksum)) {\
 			if (isradjson) r_cons_printf ("false");\
 		};\
 		actions_done++;\
-		if (isradjson) r_cons_printf (actions==actions_done? "":",");\
 	}\
 }
+	r_config_set_i (core.config, "bin.laddr", laddr);
+	core.bin = bin;
+	bin->printf = r_cons_printf;
+	filter.offset = at;
+	filter.name = name;
+	r_cons_new ()->is_interactive = R_FALSE;
+
+	if (isradjson) r_cons_printf ("{");
+
+	// List fatmach0 sub-binaries, etc
+	if (action & ACTION_LISTARCHS || ((arch || bits || arch_name) &&
+		!r_bin_select (bin, arch, bits, arch_name))) {
+		r_bin_list_archs (bin, (rad == R_CORE_BIN_JSON)? 'j': 1);
+		actions_done++;
+		free (arch_name);
+	}
 	if (action & ACTION_PDB_DWNLD) {
 		int ret;
 		char *env_pdbserver = r_sys_getenv ("PDB_SERVER");
+		char *env_pdbextract = r_sys_getenv("PDB_EXTRACT");
+		char *env_useragent = r_sys_getenv("PDB_USER_AGENT");
 		SPDBDownloader pdb_downloader;
 		SPDBDownloaderOpt opt;
 		RBinInfo *info = r_bin_get_info (core.bin);
 		char *path;
+
+		if (!info || !info->debug_file_name) {
+			eprintf ("Can't find debug filename\n");
+			r_core_fini (&core);
+			return 1;
+		}
+
 		if (info->file) {
 			path = r_file_dirname (info->file);
 		} else {
 			path = strdup (".");
 		}
+
 		if (env_pdbserver && *env_pdbserver)
 			r_config_set (core.config, "pdb.server", env_pdbserver);
+		if (env_useragent && *env_useragent)
+			r_config_set (core.config, "pdb.user_agent", env_useragent);
+		if (env_pdbextract && *env_pdbextract)
+			r_config_set_i (core.config, "pdb.extract",
+				!(*env_pdbextract == '0'));
+		free (env_pdbextract);
+		free (env_useragent);
+
 		opt.dbg_file = info->debug_file_name;
 		opt.guid = info->guid;
 		opt.symbol_server = (char *)r_config_get (core.config, "pdb.server");
 		opt.user_agent = (char *)r_config_get (core.config, "pdb.user_agent");
 		opt.path = path;
+		opt.extract = r_config_get_i(core.config, "pdb.extract");
 
 		init_pdb_downloader (&opt, &pdb_downloader);
 		ret = pdb_downloader.download (&pdb_downloader);
 		if (isradjson) {
-			printf ("{\"pdb\":{\"file\":\"%s\",\"download\":%s}}\n",
-				opt.dbg_file, ret?"true":"false");
+			printf ("%s\"pdb\":{\"file\":\"%s\",\"download\":%s}",
+				actions_done?",":"", opt.dbg_file, ret?"true":"false");
 		} else {
 			printf ("PDB \"%s\" download %s\n",
 				opt.dbg_file, ret? "success": "failed");
 		}
+		actions_done++;
 		deinit_pdb_downloader (&pdb_downloader);
 
 		free (path);
 		r_core_fini (&core);
 		return 0;
 	}
-	if (isradjson) r_cons_printf ("{");
 	run_action ("sections", ACTION_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
 	run_action ("entries", ACTION_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
 	run_action ("main", ACTION_MAIN, R_CORE_BIN_ACC_MAIN);

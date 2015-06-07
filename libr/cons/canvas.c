@@ -60,8 +60,8 @@ R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	if (!c) return 0;
 	x += c->sx;
 	y += c->sy;
-	if (x>c->w*2) return 0;
-	if (y>c->h*2) return 0;
+	if (x > c->w * 2) return 0;
+	if (y > c->h * 2) return 0;
 	if (x >= c->w) {
 		c->x = c->w;
 		ret = R_FALSE;
@@ -70,16 +70,16 @@ R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 		c->y = c->h;
 		ret = R_FALSE;
 	}
-	if (x <0) {
+	if (x < 0) {
 		//c->x = 0;
 		ret = R_FALSE;
 	}
-	if (y <0) {
+	if (y < 0) {
 		c->y = 0;
 		ret = R_FALSE;
 	}
-	if (x<c->w && x>=0) c->x = x;
-	if (y<c->h && y>=0) c->y = y;
+	if (x < c->w && x >= 0) c->x = x;
+	if (y < c->h && y >= 0) c->y = y;
 	return ret;
 }
 
@@ -180,44 +180,39 @@ static void stamp_attr(RConsCanvas *c,int length){
 }
 
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
-	int left, slen, i, linenum = 0;
+	int left, slen;
 	char *p, *s, *str;
 	char *line, *n;
-	int x, delta;
+	int x;
 
 	if (!c || !_s || !*_s)
 		return;
-	str = s = strdup (_s);
-	for (i=0; ; i++) {
+	str = n = strdup (_s);
+
+	do {
+		s = n;
 		line = getrow (s, &n);
 		if (!line)
 			break;
-		p = prefixline (c, &left);
-		slen = R_MIN (left-1, strlen (line));
-		if (slen<1) {
-			break;
-		}
-		if (!G (c->x-c->sx+slen, c->y-c->sy)) {
-			// TODO : chop slen
-			slen = (c->w - (c->x-c->sx));
-			if (slen<1)
-				break;
-			s = n;
+
+		if (*line == '\0' && n)
 			continue;
-		}
-		delta = 0;
-		x = c->x - c->sx - slen;
-		// if (x<0) x = 0;
+
+		p = prefixline (c, &left);
+		slen = R_MIN (left, strlen (line));
+		if (slen < 1)
+			break;
+
+		x = c->x - c->sx;
 		if (!G (x, c->y - c->sy))
 			continue;
-		stamp_attr(c,slen);
-		memcpy (p, line+delta, slen-delta);
+
+		stamp_attr(c, slen);
+		memcpy (p, line, slen);
+
 		if (!n) break;
-		s = n;
-		if (!G (c->x-c->sx, c->y+1 - c->sy)) 
-			break;
-		linenum ++;
-	}
+	} while (G (c->x - c->sx, c->y + 1 - c->sy));
+
 	free (str);
 }
 
@@ -226,12 +221,19 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	char *o;
 	const char* b;
 	const char**atr;
+	int is_first = R_TRUE;
+
 	if (!c) return NULL;
 	b = c->b;
 	o = calloc (sizeof(char),
 			  (c->w * (c->h + 1)) * (CONS_MAX_ATTR_SZ));
 	if (!o) return NULL;
 	for (y = 0; y < c->h; y++) {
+		if (!is_first) {
+			o[olen++] = '\n';
+		}
+		is_first = R_FALSE;
+
 		for (x = 0; x<c->w; x++) {
 			const int p = x + (y * c->w);
 			atr = attr_at (c,p);
@@ -243,7 +245,6 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 				break;
 			o[olen++] = b[p];
 		}
-		o[olen++] = '\n';
 	}
 	o[olen] = '\0';
 	return o;
@@ -283,14 +284,14 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 }
 
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
-	int i;
+	int i, x_mod;
 	int roundcorners = 0;
-	char *row = NULL;
+	char *row = NULL, *row_ptr;
 	char corner = '=';
 
 	if (w < 1 || h<1) return;
-	if (x > c->w*2) return;
-	if (y > c->h*2) return;
+	//if (x > c->w*2) return;
+	//if (y > c->h*2) return;
 
 	if (color)
 		c->attr = color;
@@ -302,15 +303,21 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 		memset (row+1, '-', w-2);
 	if (w>1)
 		row[w-1] = roundcorners?'.':corner;
-	if (w>=0)
-		row[w] = 0;
-	if (G(x, y)) {
-		W(row);
+	row[w] = 0;
+
+	row_ptr = row;
+	x_mod = x;
+	if (x < -c->sx) {
+		x_mod = R_MIN(-c->sx, x_mod + w);
+		row_ptr += x_mod - x;
 	}
-	if (G(x, y+h-1)) {
+	if (G(x_mod, y)) {
+		W(row_ptr);
+	}
+	if (G(x_mod, y+h-1)) {
 		row[0] = roundcorners?'\'':corner;
 		row[w-1] = roundcorners?'\'':corner;
-		W(row);
+		W(row_ptr);
 	}
 
 	for (i=1;i<h-1;i++) {

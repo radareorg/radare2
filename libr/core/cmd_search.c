@@ -212,19 +212,17 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		int len, i, extra;
 		ut32 buf_sz = kw->keyword_length;
 		ut8 *buf = malloc (buf_sz);
-		char *str = NULL, *p = NULL;
+		char *s = NULL, *str = NULL, *p = NULL;
 		extra = (json) ? 3 : 1;
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
-			i = (json) ? 0 : 1;
 			str = malloc (kw->keyword_length + 20);
-			r_core_read_at (core, addr, (ut8*)str+i, kw->keyword_length);
-			if (json) {
-				r_str_filter_zeroline (str, kw->keyword_length);
-			} else {
-				*str = '"';
-				r_str_filter_zeroline (str, kw->keyword_length+1);
-				strcpy (str+kw->keyword_length+1, "\"");
+			r_core_read_at (core, addr, (ut8*)str, kw->keyword_length);
+			//r_str_filter_zeroline (str, kw->keyword_length+i);
+			{
+			char *ts = r_str_utf16_encode (str, kw->keyword_length);
+			s = r_str_newf ("\"%s\"", ts);
+			free (ts);
 			}
 			break;
 		default:
@@ -237,7 +235,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				r_core_read_at (core, addr, buf, kw->keyword_length);
 				if (json) {
 					strcpy (str, "0x");
-					p=str+2;
+					p = str+2;
 				}
 				for (i=0; i<len; i++) {
 					sprintf (p, "%02x", buf[i]);
@@ -247,17 +245,20 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			} else {
 				eprintf ("Cannot allocate %d\n", (len*2)+extra);
 			}
+			s = str;
+			str = NULL;
 			break;
 		}
 
 		if (json) {
-			if (!first_hit) r_cons_printf(",");
+			if (!first_hit) r_cons_printf (",");
 			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"data\":\"%s\"}",
-					base_addr + addr, kw->kwidx, str);
+					base_addr + addr, kw->kwidx, s);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x" %s%d_%d %s\n",
-				base_addr + addr, searchprefix, kw->kwidx, kw->count, str);
+				base_addr + addr, searchprefix, kw->kwidx, kw->count, s);
 		}
+		free (s);
 
 		free (buf);
 		free (str);
@@ -302,7 +303,7 @@ static inline void print_search_progress(ut64 at, ut64 to, int n) {
 			at, to, n, (c%2)?"[ #]":"[# ]");
 }
 
-R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to) {
+R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode, ut64 *from, ut64 *to) {
 	RList *list = NULL;
 	if (!strcmp (mode, "block")) {
 		*from = core->offset;
@@ -429,6 +430,10 @@ R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, u
 					map->to = s->vaddr + s->size;
 					map->flags = s->rwx;
 					map->delta = 0;
+					if (!(map->flags & protection)) {
+						R_FREE (map);
+						continue;
+					}
 					r_list_append (list, map);
 				}
 			}
@@ -518,6 +523,10 @@ R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, u
 	return list;
 }
 
+R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to) {
+	return r_core_get_boundaries_prot (core, R_IO_EXEC|R_IO_WRITE|R_IO_READ, mode, from, to);
+}
+
 static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {
 	ut8 i;
 	RAnalOp aop;
@@ -571,7 +580,7 @@ static boolt is_end_gadget(const RAnalOp* aop, const ut8 crop) {
 //TODO: follow unconditional jumps
 static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		const char* grep, int regex, RList* rx_list, struct endlist_pair *end_gadget,
-		RList* badstart) {
+		RList* badstart, int* max_count) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RAsmOp asmop;
@@ -589,6 +598,11 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 	void* p;
 	int count = 0;
 
+	if (*max_count == 0) {
+		r_list_free (localbadstart);
+		r_list_free (hitlist);
+		return NULL;
+	}
 	if (grep) {
 		start = grep;
 		end = strstr (grep, ";");
@@ -670,6 +684,7 @@ ret:
 		r_list_free(hitlist);
 		return NULL;
 	}
+	*max_count = *max_count - 1;
 	return hitlist;
 }
 
@@ -769,13 +784,21 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	boolt json_first = 1;
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
+	int max_count = r_config_get_i(core->config, "search.count");
+
 	RList/*<RRegex>*/ *rx_list = NULL;
 	RList/*<endlist_pair>*/ *end_list = r_list_newf(free);
-	RList /*<intptr_t>*/ *badstart = r_list_new();
+	RList/*<intptr_t>*/ *badstart = r_list_new();
 	RRegex* rx = NULL;
 	char* tok, *gregexp = NULL;
+	char* grep_arg = NULL;
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");	//decide if cjmp, cret, and ccall should be used too for the gadget-search
+	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
+	const ut8 prot = r_config_get_i (core->config, "rop.nx") ? R_IO_READ|R_IO_WRITE|R_IO_EXEC : R_IO_EXEC;
+	if (max_count == 0) {
+		max_count = -1;
+	}
 	if (max_instr <= 0) {
 		r_list_free (badstart);
 		r_list_free (end_list);
@@ -789,9 +812,15 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		increment = r_config_get_i(core->config, "asm.bits")==16?2:4;
 
 	//Options, like JSON, linear, ...
-	if (*grep && *grep != ' ') {
-		mode = *grep;
-		grep++;
+	grep_arg = strchr (grep, ' ');
+	if (*grep) {
+		if (grep_arg) {
+			mode = *(grep_arg - 1);
+		grep = grep_arg;
+		} else {
+			mode = *grep;
+			++grep;
+		}
 	}
 
 	if (*grep==' ') // grep mode
@@ -814,7 +843,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	smode = r_config_get (core->config, "search.in");
 	maxhits = r_config_get_i (core->config, "search.maxhits");
 	if (!strncmp (smode, "dbg.", 4) || !strncmp (smode, "io.sections", 11))
-		list = r_core_get_boundaries (core, smode, &from, &to);
+		list = r_core_get_boundaries_prot (core, prot, smode, &from, &to);
+	else if (prot == R_IO_EXEC)
+		list = r_core_get_boundaries_prot (core, prot, smode, &from, &to);
 	else
 		list = NULL;
 
@@ -879,7 +910,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					epair->instr_offset = i+increment;
 					epair->delay_size = end_gadget.delay;
 					r_list_append(end_list, (void*)(intptr_t)epair);
-					
 				}
 				else {
 					epair->instr_offset = (intptr_t)i;
@@ -909,7 +939,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			next = end_gadget->instr_offset;
 			prev = 0;
 			// Start at just before the first end gadget.
-			for (i = next - ropdepth; i < (delta - 15 /* max insn size */); i+=increment) {
+			for (i = next - ropdepth; i < (delta - 15 /* max insn size */) &&  max_count != 0; i+=increment) {
 				if (i <0) i = 0;
 				if (i < prev) i = prev;
 				if (r_cons_singleton()->breaked)
@@ -940,12 +970,17 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 					r_asm_set_pc (core->assembler, from+i);
 					hitlist = construct_rop_gadget (core,
 						from+i, buf, i, grep, regexp,
-						rx_list, end_gadget, badstart);
+						rx_list, end_gadget, badstart, &max_count);
 					if (!hitlist)
 						continue;
 
-					if (json) {
-						print_rop (core, hitlist, 'j', &json_first);
+					if (json) mode = 'j';
+
+					if ((mode == 'l') && subchain) {
+						do {
+							print_rop (core, hitlist, mode, &json_first);
+							hitlist->head = hitlist->head->n;
+						} while (hitlist->head->n);
 					} else {
 						print_rop (core, hitlist, mode, &json_first);
 					}
@@ -1202,8 +1237,12 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 
 		if (maxhits && count >= maxhits)
 			break;
-		if ((hits = r_core_asm_strsearch (core, input+2,
-				param->from, param->to, maxhits))) {
+
+		if (outmode == 0) hits = NULL;
+		else hits = r_core_asm_strsearch (core, input+2,
+				param->from, param->to, maxhits);
+
+		if (hits) {
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_singleton()->breaked)
 					break;
@@ -1297,8 +1336,9 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			if (fd == -1 && core->io->desc) {
 				fd = core->io->desc->fd;
 			}
-			if (!json)
+			if (!json) {
 				eprintf ("# %d [0x%"PFMT64x"-0x%"PFMT64x"]\n", fd, param->from, param->to);
+			}
 
 			if (param->bckwrds) {
 				if (param->to < param->from + bufsz) {
@@ -1349,13 +1389,18 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					break;
 				}
 				if (param->bckwrds) {
-					if (!param->do_bckwrd_srch) break;
-					if (at > param->from + bufsz) at -= bufsz;
-					else {
+					if (!param->do_bckwrd_srch) {
+						break;
+					}
+					if (at > param->from + bufsz) {
+						at -= bufsz;
+					} else {
 						param->do_bckwrd_srch = R_FALSE;
 						at = param->from;
 					}
-				} else at += bufsz;
+				} else {
+					at += bufsz;
+				}
 			}
 			print_search_progress (at, param->to, searchhits);
 			r_cons_break_end ();
@@ -1528,9 +1573,11 @@ static int cmd_search(void *data, const char *input) {
 			const char* help_msg[] = {
 				"Usage: /R", "", "Search for ROP gadgets",
 				"/R", " [filter-by-string]" , "Show gadgets",
-				"/R/", " [filter-by-string]" , "Show gadgets [regular expression]",
+				"/R/", " [filter-by-regexp]" , "Show gadgets [regular expression]",
 				"/Rl", " [filter-by-string]" , "Show gadgets in a linear manner",
+				"/R/l", " [filter-by-regexp]" , "Show gadgets in a linear manner [regular expression]",
 				"/Rj", " [filter-by-string]", "JSON output",
+				"/R/j", " [filter-by-regexp]", "JSON output [regular expression]",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		} else if (input[1] == '/') {
@@ -1737,6 +1784,7 @@ static int cmd_search(void *data, const char *input) {
 		ignorecase = R_TRUE;
 	case 'j':
 		if (input[0] =='j') json = R_TRUE;
+		/* pass-thru */
 	case ' ': /* search string */
 		inp = strdup (input+1+ignorecase+json);
 		len = r_str_unescape (inp);
@@ -1794,28 +1842,49 @@ static int cmd_search(void *data, const char *input) {
 		} else eprintf ("Missing delta\n");
 		break;
 	case 'x': /* search hex */
-		r_search_reset (core->search, R_SEARCH_KEYWORD);
-		r_search_set_distance (core->search, (int)
-			r_config_get_i (core->config, "search.distance"));
-		// TODO: add support for binmask here
-		{
+		if (input[1]=='?') {
+			const char* help_msg[] = {
+				"Usage:", "/x [hexpairs]:[binmask]", "Search in memory",
+				"/x ", "9090cd80", "search for those bytes",
+				"/x ", "9090cd80:ffff7ff0", "search with binary mask",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+		} else {
+			RSearchKeyword *kw;
 			char *s, *p = strdup (input+json+2);
-			s = strchr (p, ' ');
-			if (!s) s = strchr (p, ':');
+			r_search_reset (core->search, R_SEARCH_KEYWORD);
+			r_search_set_distance (core->search, (int)
+				r_config_get_i (core->config, "search.distance"));
+			s = strchr (p, ':');
 			if (s) {
 				*s++ = 0;
-				r_search_kw_add (core->search,
-						r_search_keyword_new_hex (p, s, NULL));
+				kw = r_search_keyword_new_hex (p, s, NULL);
 			} else {
-				r_search_kw_add (core->search,
-						r_search_keyword_new_hexmask (input+json+2, NULL));
+				kw = r_search_keyword_new_hexmask (p, NULL);
+			}
+			if (kw) {
+				r_search_kw_add (core->search, kw);
+				eprintf ("Searching %d bytes...\n",
+					kw->keyword_length);
+				r_search_begin (core->search);
+				dosearch = R_TRUE;
+			} else {
+				eprintf ("no keyword\n");
 			}
 			free (p);
 		}
-		r_search_begin (core->search);
-		dosearch = R_TRUE;
 		break;
 	case 'c': /* search asm */
+		if (input[1] == '?') {
+			const char* help_msg[] = {
+				"Usage:", "/c [inst]", "Search for asm",
+				"/c ", "instr", "search for instruction 'instr'",
+				"/c ", "instr1;instr2", "search for instruction 'instr1' followed by 'instr2'",
+				"/cj ", "instr", "json output",
+				"/c* ", "instr", "r2 command output",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+		}
 		do_asm_search (core, &param, input);
 		dosearch = 0;
 		break;
@@ -1934,7 +2003,8 @@ static int cmd_search(void *data, const char *input) {
 	if (dosearch)
 		do_string_search(core, &param);
 beach: 
+	core->num->value = searchhits;
 	core->in_search = R_FALSE;
-	r_flag_space_pop(core->flags);
+	r_flag_space_pop (core->flags);
 	return ret;
 }

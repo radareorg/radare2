@@ -172,7 +172,7 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 			}
 			/* Print the escape code */
 			else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\e", (char)r)) {
-				if ((i+32) < sizeof (tmp)) {
+				if ((i+32) < sizeof (tmp) && r < 28) {
 					tmp[i+0] = '\\';
 					tmp[i+1] = "       abtnvfr             e"[r];
 				} else {
@@ -418,9 +418,9 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (cp->entries) o->entries = cp->entries (binfile);
 	if (cp->fields) o->fields = cp->fields (binfile);
 	if (cp->imports) o->imports = cp->imports (binfile);
+	if (cp->symbols) o->symbols = cp->symbols (binfile);
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) o->libs = cp->libs (binfile);
-	if (cp->symbols) o->symbols = cp->symbols (binfile);
 	if (cp->relocs) o->relocs = cp->relocs (binfile);
 	if (cp->sections) o->sections = cp->sections (binfile);
 	if (cp->strings) o->strings = cp->strings (binfile);
@@ -901,17 +901,18 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	o->boffset = offset;
 	o->id = r_num_rand (0xfffff000);
 	o->kv = sdb_new0 ();
-
 	o->baddr = baseaddr;
 	// XXX more checking will be needed here
+	// only use LoadBytes if buffer offset != 0
+	//if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
 	if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
 		ut64 bsz = bytes_sz - offset;
 		if (sz<bsz) bsz = sz;
-		o->bin_obj = plugin->load_bytes (bytes+offset, sz, loadaddr, sdb);
+		o->bin_obj = plugin->load_bytes (binfile, bytes+offset, sz, loadaddr, sdb);
 		if (!o->bin_obj) {
 			eprintf("Error in r_bin_object_new: load_bytes failed for %s plugin\n",
 				plugin->name);
-			sdb_free(o->kv);
+			sdb_free (o->kv);
 			free (o);
 			return NULL;
 		}
@@ -923,7 +924,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 		binfile->o = o;
 		if (plugin->load (binfile)) {
 			binfile->sdb_info = o->kv;
-// mark as do not walk
+			// mark as do not walk
 			sdb_ns_set (binfile->sdb, "info", o->kv);
 		} else binfile->o = old_o;
 		o->obj_size = sz;
@@ -1511,7 +1512,6 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	const char *name = binfile ? binfile->file : NULL;
 	int narch = binfile ? binfile->narch : 0;
 
-
 	Sdb *binfile_sdb = binfile ? binfile->sdb : NULL;
 	if (!binfile_sdb) {
 		eprintf ("Cannot find SDB!\n");
@@ -1522,11 +1522,13 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	}
 	sdb_unset (binfile_sdb, ARCHS_KEY, 0);
 
+	if (mode =='j') {
+		bin->printf ("\"bins\":[");
+	}
 	RBinFile *nbinfile = r_bin_file_find_by_name_n (bin, name, i);
 	if (!nbinfile) return;
 	i = -1;
-	r_list_foreach (nbinfile->objs, iter, obj){
-
+	r_list_foreach (nbinfile->objs, iter, obj) {
 		RBinInfo *info = obj->info;
 		char bits = info ? info->bits : 0;
 		ut64 boffset = obj->boffset;
@@ -1534,36 +1536,57 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 		const char *arch = info ? info->arch : NULL;
 		const char *machine = info ? info->machine : "unknown_machine";
 
-		++i;
+		i++;
 		if (!arch) {
 			snprintf (unknown_, sizeof (unknown_), "unk_%d", i);
 			arch = unknown_;
 		}
 
 		if (info && narch > 1) {
-			if (mode)
-				printf ("%03i 0x%08"PFMT64x" %d %s_%i %s\n", i,
-					boffset, obj_size, arch, bits, machine);
-
+			if (mode) {
+				if (mode == 'j') {
+					bin->printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
+						"\"offset\":%"PFMT64d",\"machine\":\"%s\"}",
+						i?",":"",arch, bits,
+						boffset, machine);
+				} else {
+					bin->printf ("%03i 0x%08"PFMT64x" %d %s_%i %s\n", i,
+							boffset, obj_size, arch, bits, machine);
+				}
+			}
 			snprintf (archline, sizeof (archline)-1,
-				"0x%08"PFMT64x":%d:%s:%d:%s",
-				 boffset, obj_size, arch, bits, machine);
+					"0x%08"PFMT64x":%d:%s:%d:%s",
+					boffset, obj_size, arch, bits, machine);
 			/// xxx machine not exported?
 			//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
 		} else {
 			if (info) {
-				if (mode)
-					printf ("%03i 0x%08"PFMT64x" %d %s_%d\n", i,
-						boffset, obj_size, arch, bits);
-
+				if (mode) {
+					if (mode == 'j') {
+						bin->printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
+								"\"offset\":%"PFMT64d"}",
+								i?",":"",arch, bits,
+								boffset);
+					} else {
+						bin->printf ("%03i 0x%08"PFMT64x" %d %s_%d\n", i,
+								boffset, obj_size, arch, bits);
+					}
+				}
 				snprintf (archline, sizeof (archline),
 					"0x%08"PFMT64x":%d:%s:%d",
 					 boffset, obj_size, arch, bits);
 			} else if (nbinfile && mode) {
-				if (mode)
-					printf ("%03i 0x%08"PFMT64x" %d unk_0\n", i,
-					 boffset, obj_size);
-
+				if (mode) {
+					if (mode == 'j') {
+						bin->printf ("%s{\"arch\":\"unk_%d\",\"bits\":%d,"
+								"\"offset\":%"PFMT64d",\"size\":%d}",
+								i?",":"", i, bits,
+								boffset, obj_size);
+					} else {
+						bin->printf ("%03i 0x%08"PFMT64x" %d unk_0\n", i,
+								boffset, obj_size);
+					}
+				}
 				snprintf (archline, sizeof (archline),
 					"0x%08"PFMT64x":%d:%s:%d",
 					 boffset, obj_size, "unk", 0);
@@ -1572,6 +1595,9 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			}
 			//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
 		}
+	}
+	if (mode =='j') {
+		bin->printf ("]");
 	}
 }
 

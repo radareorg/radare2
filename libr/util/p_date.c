@@ -31,13 +31,13 @@ R_API int r_print_date_dos(RPrint *p, ut8 *buf, int len) {
 }
 
 R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
-	time_t t;
+	time_t t = 0;
 	char s[256];
 	int ret = 0;
 	const struct tm* time;
 
-	if (p != NULL && len >= sizeof(t)) {
-		r_mem_copyendian ((ut8*)&t, buf, sizeof(time_t), p->big_endian);
+	if (p != NULL && len >= sizeof(ut32)) {
+		r_mem_copyendian ((ut8*)&t, buf, sizeof(ut32), !p->big_endian);
 		// "%d:%m:%Y %H:%M:%S %z",
 		if (p->datefmt[0]) {
 			t += p->datezone * (60*60);
@@ -93,7 +93,7 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 	char datestr[256];
 
 	if (p && len >= sizeof (ut64)) {
-		r_mem_copyendian ((ut8*)&l, buf, sizeof (ut64), p->big_endian);
+		r_mem_copyendian ((ut8*)&l, buf, sizeof (ut64), !p->big_endian);
 		l /= 10000000; // 100ns to s
 		l = (l > L ? l-L : 0); // isValidUnixTime?
 		t = (time_t) l; // TODO limit above!

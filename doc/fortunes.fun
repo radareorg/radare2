@@ -145,7 +145,7 @@ Too old to crash
 Finnished a beer
 ESIL ruined my life
 ESIL: The Aftersleep
-Please insert coin
+Insert coin to continue..
 See you in shell
 Mess with the best, Die like the rest
 Sarah Connor?
@@ -159,3 +159,5 @@ Hello Mr. Anderson
 try pressing the pigeon-shaped button
 What has been executed cannot be unexecuted
 What about taking a break? Here, have this nice 0xCC.
+r2 is meant to be read by machines.
+prove you are a robot to continue...

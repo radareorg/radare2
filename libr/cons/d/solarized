@@ -32,4 +32,4 @@ ec creg rgb:de8
 ec flag rgb:c41
 
 # background of the terminal must be 134 o 033
-# xterm -fn 10x20 -bg rgb:00/30/30 -fg rgb:e0/e0/e0 -e "r2 -c 'ecf solarized' /bin/ls"
+# xterm -fn 10x20 -bg rgb:00/30/30 -fg rgb:e0/e0/e0 -e "r2 -c 'eco solarized' /bin/ls"

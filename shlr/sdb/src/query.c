@@ -151,7 +151,9 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *_cmd) {
 	StrBuf *out;
 	Sdb *s = r;
 	ut64 n;
-	if (!s || (!_cmd && !buf)) return NULL;
+	if (!s || (!_cmd && !buf)) {
+		return NULL;
+	}
 	out = strbuf_new ();
 	if (_cmd) {
 		cmd = newcmd = strdup (_cmd);
@@ -183,7 +185,7 @@ repeat:
 		p++;
 		next = strchr (p, ';');
 		if (next) *next = 0;
-		out_concat (sdb_fmt(0, "0x%08x\n", sdb_hash (p)));
+		out_concat (sdb_fmt (0, "0x%08x\n", sdb_hash (p)));
 		if (next) *next = ';';
 		goto runNext;
 	} else
@@ -716,7 +718,7 @@ fail:
 SDB_API int sdb_query (Sdb *s, const char *cmd) {
 	char buf[1024], *out;
 	int must_save = ((*cmd=='~') || strchr (cmd, '='));
-	out = sdb_querys (s, buf, sizeof (buf), cmd);
+	out = sdb_querys (s, buf, sizeof (buf)-1, cmd);
 	if (out) {
 		if (*out) puts (out);
 		if (out != buf)

@@ -1,6 +1,6 @@
 OBJ_MSP430=asm_msp430.o
-OBJ_MSP430+=../arch/msp430/msp430_disas.o
-CFLAGS+=-I./arch/msp430/
+OBJ_MSP430+=$(LIBR)/asm/arch/msp430/msp430_disas.o
+CFLAGS+=-I$(LIBR)/asm/arch/msp430/
 
 STATIC_OBJ+=${OBJ_MSP430}
 TARGET_MSP430=asm_msp430.${EXT_SO}

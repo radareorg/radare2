@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_diff.h>
 
-R_LIB_VERSION (r_diff);
+//R_LIB_VERSION (r_diff);
 
 R_API RDiff *r_diff_new(ut64 off_a, ut64 off_b) {
 	RDiff *d = R_NEW (RDiff);

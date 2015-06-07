@@ -428,7 +428,6 @@ static int cmd_help(void *data, const char *input) {
 		r_core_yank_hud_file (core, input+1);
 		break;
 	case 'i': // input num
-		r_cons_show_cursor (0);
 		r_cons_set_raw(0);
 		if (!r_config_get_i (core->config, "scr.interactive")) {
 			eprintf ("Not running in interactive mode\n");
@@ -472,6 +471,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			break;
 		}
+		r_cons_set_raw (0);
 		break;
 	case 't': {
 		struct r_prof_t prof;
@@ -555,6 +555,7 @@ static int cmd_help(void *data, const char *input) {
 		"/","", "Search for bytes, regexps, patterns, ..",
 		"!"," [cmd]", "Run given command as in system(3)",
 		"#"," [algo] [len]", "Calculate hash checksum of current block",
+		"#","!lang [..]", "Hashbang to run an rlang script",
 		"a","", "Perform analysis of code",
 		"b","", "Get or change block size",
 		"c"," [arg]", "Compare block with given data",

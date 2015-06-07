@@ -198,7 +198,7 @@ static void Layout_run(Panel *panels) {
 				int ph = ((h-1)/(n_panels-1));
 				panels[i].x = colpos;
 				panels[i].y = 1 + (ph*(j-1));
-				panels[i].w = w-colpos-1;
+				panels[i].w = w-colpos;
 				if (panels[i].w<0)
 					panels[i].w = 0;
 				panels[i].h = ph;
@@ -316,11 +316,11 @@ static void r_core_panels_refresh (RCore *core) {
 
 	snprintf (title, sizeof (title)-1,
 		"[0x%08"PFMT64x"]", core->offset);
-	(void)G (-can->sx + w-strlen (title)-1, -can->sy);
+	(void)G (-can->sx + w-strlen (title), -can->sy);
 	W (title);
 
 	r_cons_canvas_print (can);
-	r_cons_flush ();
+	r_cons_flush_nonewline ();
 }
 
 static void reloadPanels(RCore *core) {
@@ -343,7 +343,7 @@ R_API int r_core_visual_panels(RCore *core) {
 
 	OS_INIT();
 	w = r_cons_get_size (&h);
-	can = r_cons_canvas_new (w-1, h-1);
+	can = r_cons_canvas_new (w, h);
 	can->linemode = 1;
 	can->color = r_config_get_i (core->config, "scr.color");
 	// disable colors in disasm because canvas doesnt supports ansi text yet
@@ -355,6 +355,7 @@ R_API int r_core_visual_panels(RCore *core) {
 	}
 	n_panels = bbPanels (core, &panels);
 	if (!panels) {
+		r_config_set_i (core->config, "scr.color", can->color);
 		free (can);
 		return R_FALSE;
 	}
@@ -496,6 +497,7 @@ repeat:
 	goto repeat;
 beach:
 	free (panels);
+	r_config_set_i (core->config, "scr.color", can->color);
 	free (can);
 	r_config_set_i (core->config, "asm.comments", asm_comments);
 	r_config_set_i (core->config, "asm.bytes", asm_bytes);

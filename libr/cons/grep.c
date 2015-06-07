@@ -153,6 +153,10 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	char *tline, *tbuf, *p, *out, *in = buf;
 	int ret, buffer_len = 0, l = 0, tl = 0;
 
+	if((len == 0 || buf == NULL || buf[0] == '\0')
+	   && (cons->grep.json || cons->grep.less))
+		return 0;
+
 	if (cons->grep.json) {
 		char *out = sdb_json_indent (buf);
 		free (cons->buffer);
@@ -195,7 +199,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		l = p-in;
 		if (l > 0) {
 			memcpy (tline, in, l);
-			tl = r_str_ansi_filter (tline, l);
+			tl = r_str_ansi_filter (tline, NULL, NULL, l);
 			if (tl < 0)
 				ret = -1;
 			else ret = r_cons_grep_line (tline, tl);

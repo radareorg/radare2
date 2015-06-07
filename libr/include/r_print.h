@@ -111,6 +111,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int opti
 R_API int r_print_date_dos(RPrint *p, ut8 *buf, int len);
 R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len);
 R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len);
+R_API int r_print_date_get_now(RPrint *p, char *str);
 R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
 R_API void r_print_progressbar(RPrint *pr, int pc, int _cols);
 R_API char * r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);

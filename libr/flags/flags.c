@@ -7,6 +7,17 @@
 
 R_LIB_VERSION(r_flag);
 
+#define USE_SDB 0
+#if USE_SDB
+Sdb *db = NULL;
+#endif
+
+/* aim to fix a bug in hashtable64 , collisions happen */
+#define XORKEY 0x12345678
+#define XOROFF(x) (x^XORKEY)
+// offset needs to be xored to avoid some collisions !!! must switch to sdb
+//#define XOROFF(x) x
+
 static ut64 num_callback (RNum *user, const char *name, int *ok) {
 	RFlag *f = (RFlag*)user;
 	RList *list;
@@ -29,6 +40,9 @@ R_API RFlag * r_flag_new() {
 	int i;
 	RFlag *f = R_NEW (RFlag);
 	if (!f) return NULL;
+#if USE_SDB
+db = sdb_new0 ();
+#endif
 	f->num = r_num_new (&num_callback, f);
 	f->base = 0;
 	f->flags = r_list_new ();
@@ -44,6 +58,10 @@ R_API RFlag * r_flag_new() {
 }
 
 R_API void r_flag_item_free (RFlagItem *item) {
+#if USE_SDB
+sdb_free (db);
+db = NULL;
+#endif
 	free (item->cmd);
 	free (item->color);
 	free (item->comment);
@@ -74,11 +92,13 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	return NULL;
 }
 
-R_API void r_flag_list(RFlag *f, int rad) {
+R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 	int fs = -1;
 	RListIter *iter;
 	RFlagItem *flag;
 
+	if (pfx && !*pfx)
+		pfx = NULL;
 	switch (rad) {
 	case 'j': {
 		int first = 1;
@@ -117,10 +137,12 @@ R_API void r_flag_list(RFlag *f, int rad) {
 			 if (flag->alias) {
 				 r_cons_printf ("fa %s %s\n", flag->name, flag->alias);
 				 if (flag->comment && *flag->comment) 
-					 r_cons_printf ("\"fC %s %s\"\n", flag->name, flag->comment);
+					 r_cons_printf ("\"fC %s %s\"\n",
+						flag->name, flag->comment);
 			 } else {
-				 r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x" %s\n",
+				 r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x"%s%s %s\n",
 					 flag->name, flag->size, flag->offset,
+					 pfx?"+":"", pfx?pfx:"",
 					 flag->comment? flag->comment:"");
 			 }
 		 }
@@ -173,12 +195,21 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	return NULL;
 }
 
-
 R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 // TODO: this is buggy, do not use, must rewrite in sdb
 	RFlagItem *oitem = NULL;
 	RFlagItem *item = NULL;
-	RList *list = r_hashtable64_lookup (f->ht_off, off);
+	RList *list;
+#if USE_SDB
+	{
+		char buf[128];
+		char * foo = sdb_get(db, sdb_itoa(off, buf, 16), 0);
+		return r_flag_get (f, foo);
+	}
+#else
+list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
+
+//if (off == 0x4005c4) { eprintf ("FLAG GET IT %llx = %p\n", off, list); }
 	if (list) {
 		RListIter *iter;
 		r_list_foreach (list, iter, item) {
@@ -193,10 +224,11 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 		}
 	}
 	return oitem;
+#endif
 }
 
 R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off) {
-	return r_hashtable64_lookup (f->ht_off, off);
+	return r_hashtable64_lookup (f->ht_off, XOROFF(off));
 }
 
 R_API char *r_flag_get_liststr(RFlag *f, ut64 off) {
@@ -213,14 +245,15 @@ R_API char *r_flag_get_liststr(RFlag *f, ut64 off) {
 
 #define R_FLAG_TEST 0
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
-	RList *list = r_hashtable64_lookup (f->ht_off, off);
+	RList *list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
+//if (off == 0x4005c4) { eprintf ("FLAG GET IT %llx = %p\n", off, list); }
 	if (list) {
 		RFlagItem *item = r_list_get_top (list);
 #if R_FLAG_TEST
 		return item;
 #else
 		// XXX: hack, because some times the hashtable is poluted by ghost values
-		if (item->offset == off)
+		if (item && item->offset == off)
 			return item;
 #endif
 	}
@@ -229,10 +262,22 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 
 R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 	RFlagItem *item = NULL;
+#if 1
 	RListIter *iter2 = NULL;
+	RListIter *iter22 = NULL;
 	RFlagItem *item2 = NULL;
+#endif
 	RList *list2, *list;
 
+#if USE_SDB
+{
+char buf[128];
+sdb_num_set (db, name, off, 0);
+sdb_set (db, sdb_itoa (off, buf, 16), name, 0);
+}
+#endif
+
+//if (strstr(name, "str")) eprintf ("%d %s=0x%"PFMT64x"\n", dup, name, off);
 	dup = 0; // XXX: force nondup
 
 	/* contract fail */
@@ -259,7 +304,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int
 		}
 		r_list_append (list, item);
 
-		list2 = r_hashtable64_lookup (f->ht_off, off);
+		list2 = r_hashtable64_lookup (f->ht_off, XOROFF(off));
 		if (list2 == NULL) {
 			list2 = r_list_new ();
 			r_hashtable64_insert (f->ht_name, off, list2);
@@ -268,39 +313,49 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int
 	} else {
 		item = r_flag_get (f, name);
 		if (item) {
-			RList *list2, *lol;
-			if (item->offset == off)
+			if (item->offset == off) {
+				item->size = size;
 				return item;
+			}
 			/* remove old entry */
-			list2 = r_hashtable64_lookup (f->ht_off, item->offset);
-			if (list2)
-			/* No _safe loop necessary because we break immediately after the delete. */
-			r_list_foreach (list2, iter2, item2) {
-				if (item->namehash != item2->namehash)
-					continue;
-				if (item2->offset == item->offset) {
-					// r_list_delete (list2, iter2);
-					// delete without freeing contents
-					r_list_split_iter (list2, iter2);
-					free (iter2);
-					if (r_list_empty (list2)) {
-						r_list_free (list2);
-						r_hashtable64_remove (f->ht_off, item2->offset);
-						r_hashtable64_insert (f->ht_off, item2->offset, NULL);
+#if 1
+			RList *list2 = r_hashtable64_lookup (f->ht_off, XOROFF(item->offset));
+			if (list2) {
+				/* No _safe loop necessary because we break immediately after the delete. */
+				r_list_foreach_safe (list2, iter2, iter22, item2) {
+					if (item->namehash != item2->namehash)
+						continue;
+					if (item->offset == item2->offset) {
+						// r_list_delete (list2, iter2);
+						// delete without freeing contents
+						//list2->free = NULL;
+						r_list_split_iter (list2, iter2);
+						if (r_list_empty (list2)) {
+							r_hashtable64_remove (f->ht_off, item2->offset);
+							r_hashtable64_insert (f->ht_off, item2->offset, NULL);
+							//r_list_free (list2);
+							//list2 = NULL;
+						}
+						break;
 					}
-					break;
 				}
 			}
-
-			lol = r_hashtable64_lookup (f->ht_off, off);
-			if (lol == NULL) {
-				lol = r_list_new ();
-				r_hashtable64_insert (f->ht_off, off, lol);
-			}
-			r_list_append (lol, item);
+#endif
 			/* update new entry */
 			item->offset = off;
 			item->size = size;
+
+#if 1
+			RList *lol = r_hashtable64_lookup (f->ht_off, XOROFF(off));
+			if (!lol) {
+				lol = r_list_new ();
+				r_hashtable64_remove (f->ht_off, XOROFF(off));
+				r_hashtable64_insert (f->ht_off, XOROFF(off), lol);
+			}
+			if (lol) {
+				r_list_append (lol, item);
+			}
+#endif
 		} else {
 			item = R_NEW0 (RFlagItem);
 			if (!r_flag_item_set_name (item, name, NULL)) {
@@ -320,10 +375,11 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int
 			}
 			r_list_append (list, item);
 
-			list2 = r_hashtable64_lookup (f->ht_off, off);
+			list2 = r_hashtable64_lookup (f->ht_off, XOROFF(off));
 			if (list2 == NULL) {
 				list2 = r_list_new ();
-				r_hashtable64_insert (f->ht_off, off, list2);
+				r_hashtable64_insert (f->ht_off, XOROFF(off), list2);
+//if (off == 0x4005c4) { eprintf ("FLAG SET IT %llx = %p\n", off, list2); }
 			}
 			r_list_append (list2, item);
 		}
@@ -468,7 +524,7 @@ R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 		if (!item) return R_FALSE;
 		off = item->offset;
 
-		list2 = r_hashtable64_lookup (f->ht_off, off);
+		list2 = r_hashtable64_lookup (f->ht_off, XOROFF(off));
 		if (list2) {
 			/* delete flag by name */
 			/* No _safe loop necessary because we break immediately after the delete. */
@@ -480,7 +536,7 @@ R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 			}
 			if (list2 && r_list_empty (list2)) {
 				r_list_free (list2);
-				r_hashtable64_remove (f->ht_off, off);
+				r_hashtable64_remove (f->ht_off, XOROFF(off));
 			}
 		}
 		/* delete from f->flags list */

@@ -1143,6 +1143,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbs", " <addr>", "Toggle breakpoint",
 
 		"dbt", "", "Display backtrace",
+		"dbt=", "", "Display backtrace in one line",
 		"dbte", " <addr>", "Enable Breakpoint Trace",
 		"dbtd", " <addr>", "Disable Breakpoint Trace",
 		"dbts", " <addr>", "Swap Breakpoint Trace",
@@ -1157,6 +1158,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbits", " <index>", "Swap Nth breakpoint trace",
 		//
 		"dbh", " x86", "Set/list breakpoint plugin handlers",
+		"drx", " number addr len rwx", "Modify hardware breakpoint",
+		"drx-", "number", "Clear hardware breakpoint",
 		NULL};
 	int i, hwbp = r_config_get_i (core->config, "dbg.hwbp");
 	RDebugFrame *frame;
@@ -1191,6 +1194,21 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			} else {
 				eprintf ("Cannot unset tracepoint\n");
 			}
+			break;
+		case '=':
+			addr = UT64_MAX;
+			if (input[2]==' ' && input[3])
+				addr = r_num_math (core->num, input+2);
+			i = 0;
+			list = r_debug_frames (core->dbg, addr);
+			r_list_reverse (list);
+			r_list_foreach (list, iter, frame) {
+				r_cons_printf ("%s0x%08"PFMT64x,
+					(i?" > ":""), frame->addr);
+				i++;
+			}
+			r_cons_newline ();
+			r_list_purge (list);
 			break;
 		case 0:
 			addr = UT64_MAX;
@@ -1809,6 +1827,13 @@ static int cmd_debug(void *data, const char *input) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
 		return 0;
 	}
+	if (!strncmp (input, "ate", 3)) {
+		char str[128];
+		str[0] = 0;
+		r_print_date_get_now (core->print, str);
+		r_cons_printf ("%s\n", str);
+		return 0;
+	}
 
 	switch (input[0]) {
 	case 't':
@@ -1974,7 +1999,11 @@ static int cmd_debug(void *data, const char *input) {
 			if (input[2]==' ') {
 				ut8 bytes[4096];
 				int bytes_len = r_hex_str2bin (input+2, bytes);
-				r_debug_execute (core->dbg, bytes, bytes_len, 0);
+				if (bytes_len>0) {
+					r_debug_execute (core->dbg, bytes, bytes_len, 0);
+				} else {
+					eprintf ("Invalid hexpairs\n");
+				}
 			}
 			r_reg_arena_pop (core->dbg->reg);
 			break;

@@ -979,7 +979,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 10: // ^J -- ignore
 			return I.buffer.data;
-		case 11: // ^K -- ignore
+		case 11: // ^K
+			I.buffer.data[I.buffer.index] = '\0';
+			I.buffer.length = I.buffer.index;
 			break;
 		case 6: // ^f // emacs right
 #if USE_UTF8
@@ -1079,6 +1081,30 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				case 5: // end
 					 I.buffer.index = I.buffer.length;
 					 break;
+				case 'B':
+				case 'b':
+					 // previous word
+					 for (i = I.buffer.index - 2; i >= 0; i--) {
+						 if (I.buffer.data[i] == ' ' && I.buffer.data[i + 1] != ' ') {
+							 I.buffer.index = i + 1;
+							 break;
+						 }
+					 }
+					 if (i < 0)
+						 I.buffer.index = 0;
+					 break;
+				case 'F':
+				case 'f':
+					 // next word
+					 for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
+						 if (I.buffer.data[i] != ' ' && I.buffer.data[i - 1] == ' ') {
+							 I.buffer.index = i;
+							 break;
+						 }
+					 }
+					 if (i >= I.buffer.length)
+						 I.buffer.index = I.buffer.length;
+					 break;
 				default:
 					 buf[1] = r_line_readchar();
 					 if (buf[1] == -1)
@@ -1140,7 +1166,12 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 								 break;
 							 case 0x31: // control + arrow
-								 r_cons_readchar ();
+								 ch = r_cons_readchar ();
+								 if (ch == 0x7e) { // HOME in screen/tmux
+									 // corresponding END is 0x34 below (the 0x7e is ignored there)
+									 I.buffer.index = 0;
+									 break;
+								 }
 								 r_cons_readchar ();
 								 ch = r_cons_readchar ();
 								 switch (ch) {

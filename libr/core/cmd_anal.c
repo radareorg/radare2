@@ -24,6 +24,7 @@ static void var_help(RCore *core, char ch) {
 	 const char* help_msg[] = {
 		 "Usage:", "af[aAv]", " [idx] [type] [name]",
 		 "afa", "", "list function arguments",
+		 "afa*", "", "list function arguments in commands",
 		 "afa", " [idx] [name] ([type])", "define argument N with name and type",
 		 "afan", " [old_name] [new_name]", "rename function argument",
 		 "afaj", "", "return list of function arguments in JSON format",
@@ -47,7 +48,6 @@ static void var_help(RCore *core, char ch) {
 
 static int var_cmd(RCore *core, const char *str) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	RList *list;
 	char *p, *ostr;
 	int delta, type = *str;
 
@@ -56,8 +56,8 @@ static int var_cmd(RCore *core, const char *str) {
 
 	switch (type) {
 	case 'V': // show vars in human readable format
-		r_anal_var_list_show (core->anal, fcn, 'v');
-		r_anal_var_list_show (core->anal, fcn, 'a');
+		r_anal_var_list_show (core->anal, fcn, 'v', 0);
+		r_anal_var_list_show (core->anal, fcn, 'a', 0);
 		break;
 	case '?':
 		var_help (core, 0);
@@ -69,13 +69,15 @@ static int var_cmd(RCore *core, const char *str) {
 		/* Variable access CFvs = set fun var */
 		switch (str[1]) {
 		case '\0':
-			r_anal_var_list_show (core->anal, fcn, type);
+		case '*':
+		case 'j':
+			r_anal_var_list_show (core->anal, fcn, type, str[1]);
 			goto end;
 		case '?':
 			var_help (core, *str);
 			goto end;
 		case '.':
-			r_anal_var_list_show (core->anal, fcn, core->offset);
+			r_anal_var_list_show (core->anal, fcn, core->offset, 0);
 			goto end;
 		case '-':
 			if (fcn) {
@@ -102,21 +104,6 @@ static int var_cmd(RCore *core, const char *str) {
 				old_name, new_name);
 			free (old_name);
 			goto end;
-		case 'j':
-			list = r_anal_var_list (core->anal, fcn, type);
-			RAnalVar *var;
-			RListIter *iter;
-			r_cons_printf ("[");
-			r_list_foreach (list, iter, var) {
-				r_cons_printf ("{\"name\":\"%s\","
-						"\"kind\":\"%s\",\"type\":\"%s\",\"ref\":\"%s%s%d\"}",
-						var->name, var->kind=='v'?"var":"arg", var->type,
-						core->anal->reg->name[R_REG_NAME_BP], (var->kind=='v')?"-":"+", var->delta);
-				if (iter->n) r_cons_printf (",");
-			}
-			r_cons_printf ("]\n");
-			r_list_free (list);
-			goto end;
 		case 's':
 		case 'g':
 			if (str[2]!='\0') {
@@ -128,7 +115,6 @@ static int var_cmd(RCore *core, const char *str) {
 						int scope = (str[1]=='g')?0: 1;
 						r_anal_var_access (core->anal, fcn->addr, (char)type,
 							scope, atoi (str+2), rw, core->offset);
-						//return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
 						r_anal_var_free (var);
 						goto end;
 					}
@@ -316,7 +302,7 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 			r_cons_printf ("\"cycles\":%d,", op.cycles);
 			if (op.failcycles)
 				r_cons_printf ("failcycles: %d\n", op.failcycles);
-			r_cons_printf ("\"stack\":%d,", r_anal_stackop_tostring (op.stackop));
+			r_cons_printf ("\"stack\":\"%s\",", r_anal_stackop_tostring (op.stackop));
 			r_cons_printf ("\"cond\":%d,",
 				(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
 			r_cons_printf ("\"family\":\"%s\"}", r_anal_op_family_to_string (op.family));
@@ -580,7 +566,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			ut64 size = 0LL;
 			RAnalDiff *diff = NULL;
 			int type = R_ANAL_FCN_TYPE_FCN;
-
 			if (n > 2) {
 				switch(n) {
 				case 5:
@@ -641,11 +626,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'l': // "afl"
 		switch (input[2]) {
-		case '?': eprintf ("Usage: afl[j*] <addr>\n"); break;
-		case 'j': r_core_anal_fcn_list (core, NULL, 'j'); break; // "aflj"
-		case '*': r_core_anal_fcn_list (core, NULL, '*'); break; // "afl*"
-		case 'a': r_core_anal_fcn_list (core, NULL, 'a'); break; // "afla"
-		default: r_core_anal_fcn_list (core, NULL, 'q'); break; // "afl"
+		case '?':
+			eprintf ("Usage: afl[ajq*] <addr>\n");
+			eprintf ("List all functions in quiet, commands or json format\n");
+			break;
+		case 'a':
+		case '*':
+		case 'j':
+		case 'q':
+			r_core_anal_fcn_list (core, NULL, input[2]);
+			break;
+		default:
+			r_core_anal_fcn_list (core, NULL, 'q');
+			break;
 		}
 		break;
 	case 's': { // "afs"
@@ -963,6 +956,10 @@ static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 		use_color = NULL;
 	}
 	core->dbg->reg = core->anal->reg;
+	/* workaround for thumb */
+	if (core->anal->cur->arch == R_SYS_ARCH_ARM && bits==16) {
+		bits = 32;
+	}
 	r_debug_reg_list (core->dbg, type, bits, mode, use_color);
 	core->dbg->reg = hack;
 }
@@ -1501,7 +1498,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		if (input[1] == 'u' && input[2] == 'e')
 			until_expr = input + 3;
 		else if (input[1] == 'u')
-			until_addr = r_num_math(core->num, input + 2);
+			until_addr = r_num_math (core->num, input + 2);
 		else until_expr = "0";
 		esil_step (core, until_addr, until_expr);
 		break;
@@ -1680,13 +1677,14 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				"aos", " [esil]", "show sdb representation of esil expression (TODO)",
 				"aoe", " 4", "emulate 4 opcodes starting at current offset",
 				"ao", " 5", "display opcode analysis of 5 opcodes",
+				"ao*", "", "display opcode in r commands",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
 		break;
 	case 'j':
 		{
-			int count = 0;
+			int count = 1;
 			if (input[1] && input[2]) {
 				l = (int) r_num_get (core->num, input+1);
 				if (l>0) count = l;
@@ -1703,6 +1701,9 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		break;
 	case 'e':
 		eprintf ("TODO: See 'ae' command\n");
+		break;
+	case '*':
+		r_core_anal_hint_list (core->anal, input[0]);
 		break;
 	default:
 		{
@@ -1726,6 +1727,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 static void cmd_anal_calls(RCore *core, const char *input) {
 	int minop = 1; // 4
 	ut8 buf[32];
+	RBinFile *binfile;
 	RAnalOp op;
 	ut64 addr, addr_end;
 	ut64 len = r_num_math (core->num, input);
@@ -1735,6 +1737,15 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	}
 	if (len<1) {
 		len = r_num_math (core->num, "$SS-($$-$S)"); // section size
+	}
+	binfile = r_core_bin_cur (core);
+	if (!binfile){
+		eprintf ("cur binfile null\n");
+		return;
+	}
+	if (len > binfile->size){
+		eprintf ("section size greater than file size\n");
+		return;
 	}
 	addr = core->offset;
 	addr_end = addr + len;
@@ -2042,6 +2053,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		"ahc", " 0x804804", "override call/jump address",
 		"ahf", " 0x804840", "override fallback address for call",
 		"ahs", " 4", "set opcode size=4",
+		"ahS", " jz", "set asm.syntax=jz for this opcode",
 		"aho", " foo a0,33", "replace opcode string",
 		"ahe", " eax+=3", "set vm analysis string",
 		NULL };
@@ -2085,13 +2097,24 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				r_num_math (core->num, input+1));
 		break;
 	case 's': // set size (opcode length)
-		r_anal_hint_set_size (core->anal, core->offset, atoi (input+1));
+		if (input[1]) {
+			r_anal_hint_set_size (core->anal, core->offset, atoi (input+1));
+		} else eprintf ("Usage: ahs 16\n");
+		break;
+	case 'S': // set size (opcode length)
+		if (input[1]==' ') {
+			r_anal_hint_set_syntax (core->anal, core->offset, input+2);
+		} else eprintf ("Usage: ahS att\n");
 		break;
 	case 'o': // set opcode string
-		r_anal_hint_set_opcode (core->anal, core->offset, input+1);
+		if (input[1]==' ') {
+			r_anal_hint_set_opcode (core->anal, core->offset, input+2);
+		} else eprintf ("Usage: aho popall\n");
 		break;
 	case 'e': // set ESIL string
-		r_anal_hint_set_esil (core->anal, core->offset, input+1);
+		if (input[1]==' ') {
+			r_anal_hint_set_esil (core->anal, core->offset, input+2);
+		} else eprintf ("Usage: ahe r0,pc,=\n");
 		break;
 #if TODO
 	case 'e': // set endian

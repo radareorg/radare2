@@ -91,11 +91,16 @@ return (0);
 #endif
 
 //BOOL WINAPI DebugActiveProcessStop(DWORD dwProcessId);
+
+BOOL WINAPI DebugBreakProcess(
+  HANDLE Process
+  //_In_  HANDLE Process
+);
 static void (*gmbn)(HANDLE, HMODULE, LPTSTR, int) = NULL;
 static int (*gmi)(HANDLE, HMODULE, LPMODULEINFO, int) = NULL;
 static BOOL WINAPI (*w32_detach)(DWORD) = NULL;
 static HANDLE WINAPI (*w32_openthread)(DWORD, BOOL, DWORD) = NULL;
-static HANDLE WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
+static BOOL WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
 static DWORD WINAPI (*w32_getthreadid)(HANDLE) = NULL; // Vista
 static DWORD WINAPI (*w32_getprocessid)(HANDLE) = NULL; // XP
 static HANDLE WINAPI (*w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
@@ -182,9 +187,9 @@ static int w32_dbg_init() {
 				"DebugActiveProcessStop");
 	w32_openthread = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
 		GetProcAddress (GetModuleHandle ("kernel32"), "OpenThread");
-	w32_openprocess=(HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
+	w32_openprocess = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
 		GetProcAddress (GetModuleHandle ("kernel32"), "OpenProcess");
-	w32_dbgbreak = (HANDLE WINAPI (*)(HANDLE))
+	w32_dbgbreak = (BOOL WINAPI (*)(HANDLE))
 		GetProcAddress (GetModuleHandle ("kernel32"),
 				"DebugBreakProcess");
 	// only windows vista :(
@@ -217,8 +222,8 @@ static int w32_dbg_init() {
 	return R_TRUE;
 }
 
-static HANDLE w32_t2h(pid_t tid) {
 #if 0
+static HANDLE w32_t2h(pid_t tid) {
 	TH_INFO *th = get_th (tid);
 	if(th == NULL) {
 		/* refresh thread list */
@@ -229,9 +234,8 @@ static HANDLE w32_t2h(pid_t tid) {
 			return NULL;
 	}
 	return th->ht;
-#endif
-	return NULL;
 }
+#endif
 
 inline static int w32_h2t(HANDLE h) {
 	if (w32_getthreadid != NULL) // >= Windows Vista
@@ -328,23 +332,16 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		}
 		/* save thread id */
 		tid = de.dwThreadId;
+		//pid = de.dwProcessId;
+		dbg->tid=tid;
 		/* get exception code */
 		code = de.dwDebugEventCode;
+		//eprintf("code: %x pid=%08x tid=%08x\n",code,pid,tid);
 		/* Ctrl-C? */
-		//if (code == 0x2) {
-			// TODO: interrupted
-			//WS(event) = INT_EVENT;
-			//break;
-		//}
-		/* set state */
-		//WS(event) = UNKNOWN_EVENT;
 		/* get kind of event */
 		switch (code) {
 		case CREATE_PROCESS_DEBUG_EVENT:
-			eprintf ("(%d) created process (%d:%p)\n",
-				    pid, w32_h2t (de.u.CreateProcessInfo.
-					    hProcess),
-				 de.u.CreateProcessInfo.lpStartAddress);
+			eprintf ("(%d) created process (%d:%p)\n", pid, w32_h2t (de.u.CreateProcessInfo.hProcess), de.u.CreateProcessInfo.lpStartAddress);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_NEW_PID;
@@ -368,8 +365,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			ret = R_DBG_REASON_EXIT_TID;
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
-			eprintf ("(%d) Loading %s library at %p\n",
-				pid, "", de.u.LoadDll.lpBaseOfDll);
+			eprintf ("(%d) Loading %s library at %p\n",pid, "", de.u.LoadDll.lpBaseOfDll);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_NEW_LIB;
@@ -430,10 +426,9 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	MODULEENTRY32 me32;
 	RDebugMap *mr;
 	ut8 PeHeader[1024];
-	DWORD cbNeeded=0;
 	char *mapname = NULL;
 	int NumSections, i;
-	int tid = dbg->tid;
+	//int tid = dbg->tid;
 	int pid = dbg->pid;
 	RList *list = r_list_new ();
 

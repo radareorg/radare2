@@ -36,6 +36,7 @@ R_LIB_VERSION_HEADER(r_asm);
 #define R_ASM_ARCH_Z80 R_SYS_ARCH_Z80
 #define R_ASM_ARCH_I8080 R_SYS_ARCH_I8080
 #define R_ASM_ARCH_ARC R_SYS_ARCH_ARC
+#define R_ASM_ARCH_HPPA R_SYS_ARCH_HPPA
 
 #define R_ASM_GET_OFFSET(x,y,z) \
 	(x && x->binb.bin && x->binb.get_offset)? \
@@ -46,6 +47,7 @@ enum {
 	R_ASM_SYNTAX_INTEL,
 	R_ASM_SYNTAX_ATT,
 	R_ASM_SYNTAX_REGNUM, // alias for capstone's NOREGNAME
+	R_ASM_SYNTAX_JZ, // hack to use jz instead of je on x86
 };
 
 enum {
@@ -211,6 +213,7 @@ extern RAsmPlugin r_asm_plugin_i4004;
 extern RAsmPlugin r_asm_plugin_cris_gnu;
 extern RAsmPlugin r_asm_plugin_z80_cr;
 extern RAsmPlugin r_asm_plugin_lh5801;
+extern RAsmPlugin r_asm_plugin_hppa_gnu;
 #endif
 
 #ifdef __cplusplus

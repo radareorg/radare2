@@ -22,13 +22,13 @@ static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
 static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
+	if (!o || !o->bin_obj) return NULL;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) o->bin_obj;
 	if (bin->kv) return bin->kv;
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
@@ -44,7 +44,7 @@ static int load(RBinFile *arch) {
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
 	if (!arch || !arch->o) return R_FALSE;
-	arch->o->bin_obj = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return arch->o->bin_obj ? R_TRUE: R_FALSE;
 }
 
@@ -170,7 +170,7 @@ static RList* strings (RBinFile *arch) {
 	int i, len;
 	ut8 buf[6];
 
-	if (!bin->strings)
+	if (!bin || !bin->strings)
 		return NULL;
 	if (bin->header.strings_size>bin->size) {
 		bin->strings = NULL;
@@ -329,7 +329,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	const ut8 *p, *p_end;
 
 	// doublecheck??
-	if (bin->methods_list)
+	if (!bin || bin->methods_list)
 		return R_FALSE;
 	bin->code_from = UT64_MAX;
 	bin->code_to = 0;
@@ -536,7 +536,10 @@ encoded_catch_handler_list handlers
 
 static RList* imports (RBinFile *arch) {
 	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
-	if (bin->imports_list) {
+	if (!bin) {
+		return NULL;
+	}
+	if (bin && bin->imports_list) {
 		return bin->imports_list;
 	}
 	dex_loadcode (arch, bin);
@@ -587,7 +590,10 @@ free (methodname);
 #endif
 }
 static RList* methods (RBinFile *arch) {
-	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
+	RBinDexObj *bin;
+	if (!arch || !arch->o || !arch->o->bin_obj)
+		return NULL;
+	bin = (RBinDexObj*) arch->o->bin_obj;
 	if (!bin->methods_list)
 		dex_loadcode (arch, bin);
 	return bin->methods_list;
@@ -599,14 +605,17 @@ static void __r_bin_class_free(RBinClass *p) {
 }
 
 static RList* classes (RBinFile *arch) {
-	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->o->bin_obj;
+	struct r_bin_dex_obj_t *bin;
 	struct dex_class_t entry;
 	const int len = 100;
 	RList *ret = NULL;
 	char *name = NULL;
 	RBinClass *class;
 	int i;
+	if (!arch || !arch->o || !arch->o->bin_obj)
+		return NULL;
 
+	bin = (struct r_bin_dex_obj_t *) arch->o->bin_obj;
 	if (bin->header.class_size>bin->size) {
 		eprintf ("Too many classes %d\n", bin->header.class_size);
 		return NULL;
@@ -669,6 +678,11 @@ static RList* entries(RBinFile *arch) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	RBinSymbol *m;
+	if (!arch || !bin) {
+		free (ret);
+		free (ptr);
+		return NULL;
+	}
 	if (!bin->methods_list)
 		dex_loadcode (arch, bin);
 	// XXX: entry + main???

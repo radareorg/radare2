@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 #if 0
 static void filter_line(char *line) {
 	char *a;
@@ -239,6 +239,34 @@ error:
 static int cmd_meta_comment(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[1]) {
+	case '?': {
+		const char* help_msg[] = {
+			"Usage:", "CC[-+!*au] [base64:..|str] @ addr", "",
+			"CC", "", "list all comments in human friednly form",
+			"CC*", "", "list all comments in r2 commands",
+			"CC.", "", "show comment at current offset",
+			"CC", " or maybe not", "append comment at current address",
+			"CC+", " same as above", "append comment at current address",
+			"CC!", "", "edit comment using cfg.editor (vim, ..)",
+			"CC-", " @ cmt_addr", "remove comment at given address",
+			"CCu", " good boy @ addr", "add good boy comment at given address",
+			"CCu", " base64:AA== @ addr", "add comment in base64",
+			NULL};
+		r_core_cmd_help (core, help_msg);
+		} break;
+	case '.':
+		  {
+			  char *comment = r_meta_get_string (
+					  core->anal, R_META_TYPE_COMMENT, addr);
+			  if (comment) {
+				  r_cons_printf ("%s\n", comment);
+				  free (comment);
+			  }
+		  }
+		break;
+	case 0:
+		r_meta_list (core->anal, R_META_TYPE_COMMENT, 0);
+		break;
 	case '!':
 		{
 			char *out, *comment = r_meta_get_string (
@@ -259,22 +287,25 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case ' ':
 		{
 		const char* newcomment = input+2;
-		char *text;
+		char *text, *nc;
 		while (*newcomment==' ') newcomment++;
 		char *comment = r_meta_get_string (
 				core->anal, R_META_TYPE_COMMENT, addr);
+		nc = strdup (newcomment);
+		r_str_unescape (nc);
 		if (comment) {
 			text = malloc (strlen (comment)+strlen (newcomment)+2);
 			strcpy (text, comment);
 			strcat (text, "\n");
-			strcat (text, newcomment);
+			strcat (text, nc);
 			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
 					addr, text);
 			free (text);
 		} else {
 			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-					addr, newcomment);
+					addr, nc);
 		}
+		free (nc);
 		}
 		break;
 	case '*':
@@ -286,15 +317,29 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case 'u':
 		//
 		{
-		const char* newcomment = input+2;
-		while (*newcomment==' ') newcomment++;
-		char *comment = r_meta_get_string (
-				core->anal, R_META_TYPE_COMMENT, addr);
-		if (!comment || (comment && !strstr (comment, newcomment))) {
-			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-					addr, newcomment);
+		char *newcomment;
+		const char *arg = input+2;
+		while (*arg && *arg == ' ') arg++;
+		if (!strncmp (arg, "base64:", 7)) {
+			char *s = (char *)sdb_decode (arg+7, NULL);
+			if (s) {
+				newcomment = s;
+			} else {
+				newcomment = NULL;
+			}
+		} else {
+			newcomment = strdup (arg);
 		}
-		free (comment);
+		if (newcomment) {
+			char *comment = r_meta_get_string (
+					core->anal, R_META_TYPE_COMMENT, addr);
+			if (!comment || (comment && !strstr (comment, newcomment))) {
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
+						addr, newcomment);
+			}
+			free (comment);
+			free (newcomment);
+		}
 		}
 		break;
 	case 'a':

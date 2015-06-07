@@ -92,14 +92,15 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 
 static int cmd_alias(void *data, const char *input) {
 	int i;
-	char *p, *q, *buf;
+	char *def, *q, *desc, *buf;
 	RCore *core = (RCore *)data;
 	if (*input=='?') {
 		const char* help_msg[] = {
 			"Usage:", "$alias[=cmd] [args...]", "Alias commands",
 			"$", "", "list all defined aliases",
-			"$", "dis=af,pdf", "create command -analyze to show function",
 			"$*", "", "same as above, but using r2 commands",
+			"$", "dis='af;pdf'", "create command - analyze to show function",
+			"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
 			"$", "dis=", "undefine alias",
 			"$", "dis", "execute the previously defined alias",
 			"$", "dis?", "show commands aliased by 'analyze'",
@@ -112,39 +113,59 @@ static int cmd_alias(void *data, const char *input) {
 	if (!buf) return 0;
 	*buf = '$'; // prefix aliases with a dash
 	memcpy (buf+1, input, i+1);
-	p = strchr (buf, '=');
 	q = strchr (buf, ' ');
-	if (p) {
-		*p++ = 0;
-		if (!q || (q && q>p)) {
-			if (*p) r_cmd_alias_set (core->rcmd, buf, p);
+	def = strchr (buf, '=');
+	desc = strchr (buf, '?');
+
+	/* create alias */
+	if ((def && q && (def < q)) || (def && !q)) {
+		*def++ = 0;
+		size_t len = strlen(def);
+
+		/* Remove quotes */
+		if ((def[0] == '\'') && (def[len-1] == '\'')) {
+			def[len-1] = 0x00;
+			def++;
+		}
+
+		if (!q || (q && q>def)) {
+			if (*def) r_cmd_alias_set (core->rcmd, buf, def);
 			else r_cmd_alias_del (core->rcmd, buf);
 		}
-	} else
-	if (buf[1]=='*') {
+
+	/* Show command for alias */
+	} else if (desc && !q) {
+		char *v;
+		*desc = 0;
+		v = r_cmd_alias_get (core->rcmd, buf);
+		if (v) {
+			r_cons_printf ("%s\n", v);
+			free (buf);
+			return 1;
+		} else {
+			eprintf ("unknown key '%s'\n", buf);
+		}
+
+	/* Show aliases */
+	} else if (buf[1]=='*') {
 		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
 		for (i=0; i<count; i++) {
 			const char *v = r_cmd_alias_get (core->rcmd, keys[i]);
 			r_cons_printf ("%s=%s\n", keys[i], v);
 		}
-	} else
-	if (!buf[1]) {
+	} else if (!buf[1]) {
 		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
 		for (i=0; i<count; i++)
 			r_cons_printf ("%s\n", keys[i]);
+
+	/* Execute alias */
 	} else {
-		char *describe = strchr (buf, '?');
 		char *v;
 		if (q) *q = 0;
 		v = r_cmd_alias_get (core->rcmd, buf);
 		if (v) {
-			if (describe) {
-				r_cons_printf ("%s\n", v);
-				free (buf);
-				return 1;
-			}
 			if (q) {
 				char *out, *args = q+1;
 				out = malloc (strlen (v) + strlen (args) + 2);
@@ -152,17 +173,15 @@ static int cmd_alias(void *data, const char *input) {
 					strcpy (out, v);
 					strcat (out, " ");
 					strcat (out, args);
-					r_str_replace_char (out, ',', ';');
 					r_core_cmd0 (core, out);
-					r_str_replace_char (out, ';', ',');
 					free (out);
 				} else eprintf ("cannot malloc\n");
 			} else {
-				r_str_replace_char (v, ',', ';');
 				r_core_cmd0 (core, v);
-				r_str_replace_char (v, ';', ',');
 			}
-		} else eprintf ("unknown key '%s'\n", buf);
+		} else {
+			eprintf ("unknown key '%s'\n", buf);
+		}
 	}
 	free (buf);
 	return 0;
@@ -193,7 +212,7 @@ static int cmd_rap(void *data, const char *input) {
 	case '!': r_io_system (core->io, input+1); break;
 	default: r_core_rtr_cmd (core, input);
 	}
-	return R_TRUE;
+	return 0;
 }
 
 static int cmd_yank(void *data, const char *input) {
@@ -296,6 +315,16 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
+				} else if (!strcmp (ext, "exe")) {
+#if __UNIX__
+					char *cmd = r_str_newf ("%s", file);
+#else
+					char *cmd = r_str_newf ("wine %s", file);
+#endif
+					r_lang_use (core->lang, "pipe");
+					r_lang_run_file (core->lang, cmd);
+					free (cmd);
+					ret = 1;
 				} else if (!strcmp (ext, "d")) {
 					char *cmd = r_str_newf ("dmd -run '%s'", file);
 					r_lang_use (core->lang, "pipe");
@@ -316,6 +345,18 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 					ret = 1;
 				} else if (!strcmp (ext, "es6")) {
 					char *cmd = r_str_newf ("babel-node '%s'", file);
+					r_lang_use (core->lang, "pipe");
+					r_lang_run_file (core->lang, cmd);
+					free (cmd);
+					ret = 1;
+				} else if (!strcmp (ext, "rb")) {
+					char *cmd = r_str_newf ("ruby '%s'", file);
+					r_lang_use (core->lang, "pipe");
+					r_lang_run_file (core->lang, cmd);
+					free (cmd);
+					ret = 1;
+				} else if (!strcmp (ext, "pl")) {
+					char *cmd = r_str_newf ("perl '%s'", file);
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
@@ -1449,7 +1490,7 @@ repeat_arroba:
 			case 'a': // "@a:"
 				if (ptr[1]==':') {
 					char *q = strchr (ptr+2, ':');
-					tmpasm = r_config_get (core->config, "asm.arch");
+					tmpasm = strdup (r_config_get (core->config, "asm.arch"));
 					if (q) {
 						*q++ = 0;
 						tmpbits = r_config_get (core->config, "asm.bits");
@@ -1509,7 +1550,13 @@ next_arroba:
 		}
 		if (ptr[1]=='@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
-			ret = r_core_cmd_foreach (core, cmd, ptr+2);
+			if (ptr[2] == '@') {
+				char *rule = ptr+3;
+				while (*rule && *rule==' ') rule++;
+				ret = r_core_cmd_foreach3 (core, cmd, rule);
+			} else {
+				ret = r_core_cmd_foreach (core, cmd, ptr+2);
+			}
 			//ret = -1; /* do not run out-of-foreach cmd */
 		} else {
 			if (usemyblock) {
@@ -1540,6 +1587,136 @@ next_arroba:
 	}
 
 	return cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): R_FALSE;
+}
+
+static int foreach_comment(void *user, const char *k, const char *v) {
+	RAnalMetaUserItem *ui = user;
+	RCore *core = ui->anal->user;
+	const char *cmd = ui->user;
+	if (!strncmp (k, "meta.C.", 7)) {
+		char *cmt = (char *)sdb_decode (v, 0);
+		if (!cmt) cmt = strdup ("");
+		//eprintf ("--> %s = %s\n", k+7, cmt);
+		r_core_cmdf (core, "s %s", k+7);
+		r_core_cmd0 (core, cmd);
+		free (cmt);
+	}
+	return 1;
+}
+
+R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
+	RDebug *dbg = core->dbg;
+	RList *list, *head;
+	RListIter *iter;
+	int i;
+
+	switch (each[0]) {
+	case '?':
+		r_cons_printf ("Usage: @@@ [type]     # types:\n");
+		r_cons_printf (" symbols\n");
+		r_cons_printf (" imports\n");
+		r_cons_printf (" regs\n");
+		r_cons_printf (" threads\n");
+		r_cons_printf (" comments\n");
+		r_cons_printf (" functions\n");
+		r_cons_printf (" flags\n");
+		break;
+	case 'c':
+		switch (each[1]) {
+		case 'a': // call
+			break;	
+		default:
+			r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, foreach_comment, (void*)cmd);
+			break;
+		}
+		break;
+	case 't':
+		// iterate over all threads
+		if (dbg && dbg->h && dbg->h->threads) {
+			int origpid = dbg->pid;
+			RDebugPid *p;
+			list = dbg->h->threads (dbg, dbg->pid);
+			if (list == NULL)
+				return R_FALSE;
+			r_list_foreach (list, iter, p) {
+				r_core_cmdf (core, "dp %d", p->pid);
+				r_cons_printf ("PID %d\n", p->pid);
+				r_core_cmd0 (core, cmd);
+			}
+			r_core_cmdf (core, "dp %d", origpid);
+		}
+		break;
+	case 'r':
+		// registers
+		{
+			ut64 offorig = core->offset;
+			for (i=0; i<128; i++) {
+				RRegItem *item;
+				ut64 value;
+				head = r_reg_get_list (dbg->reg, i);
+				if (!head) continue;
+				r_list_foreach (head, iter, item) {
+					if (item->size != core->anal->bits)
+						continue;
+					value = r_reg_get_value (dbg->reg, item);
+					r_core_seek (core, value, 1);
+					r_cons_printf ("%s: ", item->name);
+					r_core_cmd0 (core, cmd);
+				}
+			}
+			r_core_seek (core, offorig, 1);
+		}
+		break;
+	case 'i':
+		// imports
+		if (0) {
+			RBinImport *imp;
+			ut64 offorig = core->offset;
+			list = r_bin_get_imports (core->bin);
+			r_list_foreach (list, iter, imp) {
+				r_core_seek (core, 0, 1);
+				r_core_cmd0 (core, cmd);
+			}
+			r_core_seek (core, offorig, 1);
+		} else {
+			eprintf ("TODO @@@ imports ^^\n");
+		}
+		break;
+	case 's':
+		// symbols
+		{	
+			RBinSymbol *sym;
+			ut64 offorig = core->offset;
+			list = r_bin_get_symbols (core->bin);
+			r_list_foreach (list, iter, sym) {
+				r_core_seek (core, sym->vaddr, 1);
+				r_core_cmd0 (core, cmd);
+			}
+			r_core_seek (core, offorig, 1);
+		}
+		break;
+	case 'f':
+		switch (each[1]) {
+		case 'l': // flags
+			eprintf ("TODO @@@ flags ^^\n");
+			break;
+		case 'u': // functions
+			{
+				ut64 offorig = core->offset;
+				RAnalFunction *fcn;
+				list = core->anal->fcns;
+				r_list_foreach (list, iter, fcn) {
+					r_cons_printf ("[0x%08"PFMT64x"  %s\n", fcn->addr, fcn->name);
+					r_core_seek (core, fcn->addr, 1);
+					r_core_cmd0 (core, cmd);
+				}
+				r_core_seek (core, offorig, 1);
+			}
+			break;
+		}
+		break;
+	}
+	return 0;
 }
 
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {

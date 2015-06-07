@@ -28,7 +28,7 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? R_TRUE : R_FALSE;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	return memcpy (&loaded_header, buf, sizeof(struct nds_hdr));
 }
 
@@ -37,7 +37,7 @@ static int load(RBinFile *arch) {
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	if (!arch || !arch->o)
 		return R_FALSE;
-	arch->o->bin_obj = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return check_bytes (bytes, sz);
 }
 

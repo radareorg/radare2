@@ -17,7 +17,7 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct PE_(r_bin_pe_obj_t) *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
@@ -40,7 +40,7 @@ static int load(RBinFile *arch) {
 
 	bytes = r_buf_buffer (arch->buf);
 	sz = r_buf_size (arch->buf);
-	res = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+	res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
  	arch->o->bin_obj = res;
 	return res? R_TRUE: R_FALSE;
 }

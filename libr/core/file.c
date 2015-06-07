@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_core.h>
 #include <stdlib.h>
@@ -244,6 +244,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	return ret;
 }
 
+#if !__linux__
 static ut64 get_base_from_maps(RCore *core, const char *file) {
 	RDebugMap *map;
 	RListIter *iter;
@@ -263,6 +264,7 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 	}
 	return b;
 }
+#endif
 
 R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	int result = 0;
@@ -292,11 +294,15 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 		int newpid = desc->fd;
 		r_debug_select (r->dbg, newpid, newpid);
 	}
+#if __linux__
+	baseaddr = loadaddr;
+#else
 	baseaddr = get_base_from_maps (r, filenameuri);
 	if (baseaddr != UT64_MAX) {
 		// eprintf ("LOADING AT 0x%08llx\n", baseaddr);
 		r_config_set_i (r->config, "bin.laddr", baseaddr);
 	}
+#endif
 
 	if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, desc->fd, treat_as_rawstr)) {
 		if (r_config_get_i (r->config, "bin.rawstr")) {
@@ -440,23 +446,25 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	RBinFile *binfile = NULL;
 	RIODesc *desc = cf ? cf->desc : NULL;
 	RBinPlugin *plugin = NULL;
-
 	int is_io_load = desc && desc->plugin;
 
 	if (cf) {
-		if ((filenameuri == NULL || !*filenameuri))
+		if ((filenameuri == NULL || !*filenameuri)) {
 			filenameuri = cf->desc->name;
-		else if (cf->desc->name && strcmp (filenameuri, cf->desc->name) ) {
+		} else if (cf->desc->name && strcmp (filenameuri, cf->desc->name)) {
 			// XXX - this needs to be handled appropriately
 			// if the cf does not match the filenameuri then
 			// either that RCoreFIle * needs to be loaded or a
 			// new RCoreFile * should be opened.
-			if (!strcmp (suppress_warning, "false"))
-				eprintf ("Error: The filenameuri %s is not the same as the current RCoreFile: %s\n",
+			if (!strcmp (suppress_warning, "false")) {
+				eprintf ("Error: The filenameuri '%s' is not the same as in RCoreFile: %s\n",
 				    filenameuri, cf->desc->name);
+			}
 		}
-		if (cf->map)	//XXX: a file can have more then 1 map
+		if (cf->map) {
+			//XXX: a file can have more then 1 map
 			loadaddr = cf->map->from;
+		}
 	}
 
 	if (!filenameuri) {
@@ -471,6 +479,9 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// Fix to select pid before trying to load the binary
 		if ( (desc->plugin && desc->plugin->isdbg) \
 				|| r_config_get_i (r->config, "cfg.debug")) {
+			if (!loadaddr) {
+				loadaddr = baddr;
+			}
 			r_core_file_do_load_for_debug (r, loadaddr, filenameuri);
 		} else {
 			r_core_file_do_load_for_io_plugin (r, baddr, loadaddr);
@@ -493,19 +504,18 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	} else if (binfile) {
 		RBinObject *obj = r_bin_get_object (r->bin);
 		RBinInfo * info = obj ? obj->info : NULL;
-		if (plugin && plugin->name)
-			if (strcmp (plugin->name, "any") && info)
+		if (plugin && plugin->name && info)
+			if (strcmp (plugin->name, "any"))
 				r_core_bin_set_arch_bits (r, binfile->file,
 					info->arch, info->bits);
 	}
-
 	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ;"
 			" wx `#adler32 $s-12 @12` @8)\"\n");
 	}
-
-	if (r_config_get_i (r->config, "file.analyze"))
+	if (r_config_get_i (r->config, "file.analyze")) {
 		r_core_cmd0 (r, "aa");
+	}
 	return R_TRUE;
 }
 

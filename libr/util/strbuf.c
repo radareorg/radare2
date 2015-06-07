@@ -16,7 +16,12 @@ R_API void r_strbuf_init(RStrBuf *sb) {
 
 R_API int r_strbuf_set(RStrBuf *sb, const char *s) {
 	int l;
-	if (!sb || !s) return R_FALSE;
+	if (!sb)
+		return R_FALSE;
+	if (!s) {
+		r_strbuf_init (sb);
+		return R_TRUE;
+	}
 	l = strlen (s);
 	if (l>=sizeof (sb->buf)) {
 		char *ptr = malloc (l+1);
@@ -55,7 +60,7 @@ R_API int r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 }
 
 R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
-	int l = strlen (s)+1;
+	int l = strlen (s);
 	if ((sb->len+l+1)<sizeof (sb->buf)) {
 		memcpy (sb->buf+sb->len, s, l);
 		sb->ptr = NULL;

@@ -123,8 +123,9 @@ static int cb_analarch(void *user, void *data) {
 		if (*node->value) {
 			if (!r_anal_use (core->anal, node->value)) {
 				const char *aa = r_config_get (core->config, "asm.arch");
-				if (!aa || strcmp (aa, node->value))
+				if (!aa || strcmp (aa, node->value)) {
 					eprintf ("anal.arch: cannot find '%s'\n", node->value);
+				}
 				return R_FALSE;
 			}
 		} else return R_FALSE;
@@ -230,16 +231,36 @@ static int cb_asmbits(void *user, void *data) {
 			ret = R_TRUE;
 		}
 	}
-	if (!r_anal_set_bits (core->anal, node->i_value))
+	if (!r_anal_set_bits (core->anal, node->i_value)) {
 		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", (int)node->i_value);
+	}
 	core->print->bits = node->i_value;
 	if (core->dbg  && core->anal && core->anal->cur) {
+		int load_from_debug = 0;
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, node->i_value);
-		if (core->dbg->h && core->dbg->h->reg_profile && !core->anal->cur->set_reg_profile) {
-			char *rp = core->dbg->h->reg_profile (core->dbg);
-			r_reg_set_profile_string (core->dbg->reg, rp);
-			r_reg_set_profile_string (core->anal->reg, rp);
-			free (rp);
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			if (core->dbg->h && core->dbg->h->reg_profile) {
+				char *rp = core->dbg->h->reg_profile (core->dbg);
+				r_reg_set_profile_string (core->dbg->reg, rp);
+				r_reg_set_profile_string (core->anal->reg, rp);
+				free (rp);
+			} else {
+				load_from_debug = 1;
+			}
+		} else {
+			if (core->anal->cur->set_reg_profile) {
+				core->anal->cur->set_reg_profile (core->anal);
+			} else {
+				load_from_debug = 1;
+			}
+		}
+		if (load_from_debug) {
+			if (core->dbg->h && core->dbg->h->reg_profile) {
+				char *rp = core->dbg->h->reg_profile (core->dbg);
+				r_reg_set_profile_string (core->dbg->reg, rp);
+				r_reg_set_profile_string (core->anal->reg, rp);
+				free (rp);
+			}
 		}
 	}
 
@@ -339,10 +360,12 @@ static int cb_asmsyntax(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		r_cons_printf ("att\nintel\nregnum\n");
+		r_cons_printf ("att\nintel\njz\nregnum\n");
 		return R_FALSE;
 	} else if (!strcmp (node->value, "regnum")) {
 		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_REGNUM);
+	} else if (!strcmp (node->value, "jz")) {
+		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_JZ);
 	} else if (!strcmp (node->value, "intel")) {
 		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
 	} else if (!strcmp (node->value, "att")) {
@@ -965,20 +988,21 @@ R_API int r_core_config_init(RCore *core) {
 	cfg->num = core->num;
 
 	/* pdb */
-	SETPREF("pdb.user_agent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsofr symbol server");
-	SETPREF("pdb.server", "http://msdl.microsoft.com/download/symbols", "Microsoft symbol server");
+	SETPREF("pdb.user_agent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
+	SETPREF("pdb.server", "http://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");
+	SETI("pdb.extract", 1, "Avoid extract of the pdb file, just download");
 
 	/* anal */
 	SETPREF("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
-	SETICB("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (mips)");
-	SETCB("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Obey anal.from and anal.to ranges");
-	SETICB("anal.from", -1, (RConfigCallback)&cb_anal_from, "Minimum address in the anal.limits range");
-	SETICB("anal.to", -1, (RConfigCallback)&cb_anal_from, "Last address to be analized (see anal.limits)");
+	SETICB("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
+	SETCB("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
+	SETICB("anal.from", -1, (RConfigCallback)&cb_anal_from, "Lower limit on the address range for analysis");
+	SETICB("anal.to", -1, (RConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
 
 	SETCB("anal.eobjmp", "false", &cb_analeobjmp, "jmp is end of block mode (option)");
-	SETCB("anal.afterjmp", "false", &cb_analafterjmp, "continue analysis after jmp/ujmp");
+	SETCB("anal.afterjmp", "false", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
 	SETI("anal.depth", 16, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
-	SETICB("anal.sleep", 0, &cb_analsleep, "Sleep some usecs before analyzing more. Avoid 100% cpu usage");
+	SETICB("anal.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
 	SETPREF("anal.hasnext", "true", "Continue analysis after each function");
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
 	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
@@ -986,14 +1010,14 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");
 	SETCB("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");
-	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis.");
-	SETCB("anal.recont", "false", &cb_analrecont, "Split functions into basic blocks in analysis.");
-	SETCB("anal.trace", "false", &cb_anal_trace, "Record esil trace in log database");
+	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis");
+	SETCB("anal.recont", "false", &cb_analrecont, "End block after splitting a basic block instead of error"); // testing
+	SETCB("anal.trace", "false", &cb_anal_trace, "Record ESIL trace in log database");
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
-	SETCB("esil.debug", "false", &cb_esildebug, "Show esil debug info");
-	SETICB("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per esil expression");
+	SETCB("esil.debug", "false", &cb_esildebug, "Show ESIL debug info");
+	SETICB("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
@@ -1001,7 +1025,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("asm.maxrefs", 5,  "Maximum number of xrefs to be displayed as list (use columns above)");
 	SETPREF("asm.bytes", "true",  "Display the bytes of each instruction");
 	SETPREF("asm.flagsinbytes", "false",  "Display flags inside the bytes space");
-	SETPREF("asm.cmtflgrefs", "true", "Show comment flags associated to branch referece");
+	SETPREF("asm.midflags", "true", "Realign disassembly if there is a flag in the middle of an instruction");
+	SETPREF("asm.cmtflgrefs", "true", "Show comment flags associated to branch refenrece");
 	SETPREF("asm.cmtright", "true", "Show comments at right of disassembly if they fit in screen");
 	SETI("asm.cmtcol", 70, "Align comments at column 60");
 	SETPREF("asm.calls", "true", "Show calling convention calls as comments in disasm");
@@ -1010,26 +1035,26 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.indent", "false", "Indent disassembly based on reflines depth");
 	SETPREF("asm.dwarf", "false", "Show dwarf comment at disassembly");
 	SETPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
-	SETPREF("asm.filter", "true", "Replace numbers in disassembly using flags containing a dot in the name in disassembly");
+	SETPREF("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF("asm.fcnlines", "true", "Show function boundary lines");
 	SETPREF("asm.flags", "true", "Show flags");
 	SETPREF("asm.lbytes", "true", "Align disasm bytes to left");
-	SETPREF("asm.lines", "true", "If enabled show ascii-art lines at disassembly");
+	SETPREF("asm.lines", "true", "Show ASCII-art lines at disassembly");
 	SETPREF("asm.linescall", "false", "Enable call lines");
-	SETPREF("asm.linesout", "true", "If enabled show out of block lines");
-	SETPREF("asm.linesright", "false", "If enabled show lines before opcode instead of offset");
-	SETPREF("asm.linesstyle", "false", "If enabled iterate the jump list backwards");
-	SETPREF("asm.lineswide", "false", "If enabled put an space between lines");
+	SETPREF("asm.linesout", "true", "Show out of block lines");
+	SETPREF("asm.linesright", "false", "Show lines before opcode instead of offset");
+	SETPREF("asm.linesstyle", "false", "Iterate the jump list backwards");
+	SETPREF("asm.lineswide", "false", "Put a space between lines");
 	SETICB("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETPREF("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF("asm.offset", "true", "Show offsets at disassembly");
-	SETPREF("asm.reloff", "false", "Show delta offsets instead of absolute address in disasm");
+	SETPREF("asm.reloff", "false", "Show relative offsets instead of absolute address in disasm");
 	SETPREF("asm.section", "false", "Show section name before offset");
-	SETPREF("asm.pseudo", "false", "Enable pseudo syntax"); // DEPRECATED ?
+	SETPREF("asm.pseudo", "false", "Enable pseudo syntax");
 	SETPREF("asm.size", "false", "Show size of opcodes in disassembly (pd)");
 	SETPREF("asm.stackptr", "false", "Show stack pointer at disassembly");
-	SETPREF("asm.cyclespace", "false", "Indent instructions depending on cpu-cycles");
-	SETPREF("asm.cycles", "false", "Show cpu-cycles taken by instruction at disassembly");
+	SETPREF("asm.cyclespace", "false", "Indent instructions depending on CPU-cycles");
+	SETPREF("asm.cycles", "false", "Show CPU-cycles taken by instruction at disassembly");
 	SETI("asm.tabs", 0, "Use tabs in disassembly");
 	SETPREF("asm.trace", "false", "Show execution traces for each opcode");
 	SETPREF("asm.tracespace", "false", "Indent disassembly with trace.count information");
@@ -1037,6 +1062,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.vars", "true", "Show local function variables in disassembly");
 	SETPREF("asm.varxs", "false", "Show accesses of local variables");
 	SETPREF("asm.varsub", "true", "Substitute variables in disassembly");
+	SETPREF("asm.cmtfold", "false", "Fold comments, toggle with Vz");
 	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be used by asm");
 	SETCB("asm.features", "", &cb_asmfeatures, "Specify supported features by the target CPU (=? for help)");
 	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");
@@ -1044,7 +1070,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
 	SETCB("asm.syntax", "intel", &cb_asmsyntax, "Select assembly syntax");
 	SETI("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
-	SETPREF("asm.bytespace", "false", "Separate hex bytes with a whitespace");
+	SETPREF("asm.bytespace", "false", "Separate hexadecimal bytes with a whitespace");
 	SETICB("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
 	SETPREF("asm.functions", "true", "Show functions in disassembly");
 	SETPREF("asm.fcncalls", "true", "Show functions calls");
@@ -1056,21 +1082,21 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("bin.demangle", "false", "Import demangled symbols from RBin");
 
 	/* bin */
-	SETI("bin.baddr", 0, "Base address where the bin isn loaded");
-	SETI("bin.laddr", 0, "Set base address for loading binaries ('o')");
+	SETI("bin.baddr", 0, "Base address of the binary");
+	SETI("bin.laddr", 0, "Base address for loading library ('*.so')");
 	SETPREF("bin.dwarf", "true", "Load dwarf information on startup if available");
 	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for r_bin");
-	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Minimum string length for r_bin");
+	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for r_bin");
 	SETCB("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETPREF("bin.strings", "true", "Load strings from rbin on startup");
 
 	/* cfg */
 	r_config_set_cb (cfg, "cfg.bigendian", CFG_BIGENDIAN, &cb_bigendian);
-	SETPREF("cfg.plugins", "true", "Load plugins at startup (set to false for faster startup)");
+	SETPREF("cfg.plugins", "true", "Load plugins at startup");
 	r_config_desc (cfg, "cfg.bigendian", "Use little (false) or big (true) endiannes");
 	SETCB("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
-	SETICB("time.zone", 0, &cb_timezone, "timezone shift in hours +2, -1,..");
-	SETCB("cfg.debug", "false", &cb_cfgdebug, "set/unset the debugger mode");
+	SETICB("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
+	SETCB("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");
 	p = r_sys_getenv ("EDITOR");
 #if __WINDOWS__ && !__CYGWIN__
 	r_config_set (cfg, "cfg.editor", p? p: "notepad");
@@ -1078,12 +1104,12 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "cfg.editor", p? p: "vi");
 #endif
 	free (p);
-	SETPREF("cfg.user", r_sys_whoami (buf), "Set current username/pid");
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
+	SETPREF("cfg.user", r_sys_whoami (buf), "Set current username/pid");
 	SETPREF("cfg.fortunes", "true", "If enabled show tips at start");
-	SETPREF("cfg.fortunetype", "tips,fun", "Type of fortunes to show tips,fun,nsfw");
-	SETI("cfg.hashlimit", SLURP_LIMIT, "If the file its bigger than hashlimit don't calculate the hash");
-	SETPREF("cfg.prefixdump", "dump", "Prefix for automated dump filenames");
+	SETPREF("cfg.fortunetype", "tips,fun", "Type of fortunes to show (tips, fun, nsfw)");
+	SETI("cfg.hashlimit", SLURP_LIMIT, "If the file is bigger than hashlimit, do not compute hashes");
+	SETPREF("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
 	SETCB("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF("cfg.wseek", "false", "Seek after write");
 
@@ -1102,10 +1128,10 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETPREF("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
 #endif
-	SETPREF("stack.bytes", "true", "Show bytes instead of values in stack");
+	SETPREF("stack.bytes", "true", "Show bytes instead of words in stack");
 	SETPREF("stack.anotated", "false", "Show anotated hexdump in visual debug");
-	SETI("stack.size", 64,  "Define size of anotated hexdump in visual debug");
-	SETI("stack.delta", 0,  "Define a delta for the stack dump");
+	SETI("stack.size", 64,  "Size of anotated hexdump in visual debug");
+	SETI("stack.delta", 0,  "Delta for the stack dump");
 
 	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
 	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
@@ -1120,18 +1146,18 @@ R_API int r_core_config_init(RCore *core) {
 		r_config_set_i (cfg, "dbg.follow", 64);
 	else r_config_set_i (cfg, "dbg.follow", 32);
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
-	SETCB("dbg.swstep", "false", &cb_swstep, "If enabled forces the use of software steps (code analysis+breakpoint)");
+	SETCB("dbg.swstep", "false", &cb_swstep, "Force use of software steps (code analysis+breakpoint)");
 
 	r_config_set_getter (cfg, "dbg.swstep", (RConfigCallback)__dbg_swstep_getter);
 
 // TODO: This should be specified at first by the debug backend when attaching
 #if __arm__ || __mips__
-	SETICB("dbg.bpsize", 4, &cb_dbgbpsize, "Specify size of software breakpoints");
+	SETICB("dbg.bpsize", 4, &cb_dbgbpsize, "Size of software breakpoints");
 #else
-	SETICB("dbg.bpsize", 1, &cb_dbgbpsize, "Specify size of software breakpoints");
+	SETICB("dbg.bpsize", 1, &cb_dbgbpsize, "Size of software breakpoints");
 #endif
 	SETCB("dbg.trace", "false", &cb_trace, "Trace program execution (see asm.trace)");
-	SETICB("dbg.trace.tag", 0, &cb_tracetag, "Set trace tag");
+	SETICB("dbg.trace.tag", 0, &cb_tracetag, "Trace tag");
 
 	/* cmd */
 	if (r_file_exists ("/usr/bin/xdot"))
@@ -1148,18 +1174,18 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	SETPREF("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETICB("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
-	SETPREF("cmd.bp", "", "Command to executed every breakpoint hit");
-	SETPREF("cmd.times", "", "Command to run on every repeated command (number prefix)");
+	SETPREF("cmd.bp", "", "Run when a breakpoint is hit");
+	SETPREF("cmd.times", "", "Run when a command is repeated (number prefix)");
 	SETPREF("cmd.stack", "", "Command to display the stack in visual debug mode");
 	SETPREF("cmd.cprompt", "", "Column visual prompt commands");
 	SETPREF("cmd.gprompt", "", "Graph visual prompt commands");
-	SETPREF("cmd.hit", "", "Command to execute on every search hit");
-	SETPREF("cmd.open", "", "Command executed when file its opened");
+	SETPREF("cmd.hit", "", "Run when a search hit is found");
+	SETPREF("cmd.open", "", "Run when file is opened");
 	SETPREF("cmd.prompt", "", "Prompt commands");
 	SETCB("cmd.repeat", "true", &cb_cmdrepeat, "Alias newline (empty command) as '..'");
-	SETPREF("cmd.fcn.new", "", "Run command when new function is analyzed");
-	SETPREF("cmd.fcn.delete", "", "Run command when a function is deleted");
-	SETPREF("cmd.fcn.rename", "", "Run command when a function is renamed");
+	SETPREF("cmd.fcn.new", "", "Run when new function is analyzed");
+	SETPREF("cmd.fcn.delete", "", "Run when a function is deleted");
+	SETPREF("cmd.fcn.rename", "", "Run when a function is renamed");
 	SETPREF("cmd.visual", "", "Replace current print mode");
 	SETPREF("cmd.vprompt", "", "Visual prompt commands");
 
@@ -1168,15 +1194,15 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* hexdump */
 	SETCB("hex.pairs", "true", &cb_hexpairs, "Show bytes paired in 'px' hexdump");
-	SETI("hex.flagsz", 0, "if != 0 overrides the flag size in pxa");
-	SETICB("hex.cols", 16, &cb_hexcols, "Configure the number of columns in hexdump");
-	SETPREF("hex.onechar", "false", "Configure the number of columns in hexdump");
-	SETICB("hex.stride", 0, &cb_hexstride, "Define the line stride in hexdump (default is 0)");
+	SETI("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");
+	SETICB("hex.cols", 16, &cb_hexcols, "Number of columns in hexdump");
+	SETPREF("hex.onechar", "false", "Number of columns in hexdump");
+	SETICB("hex.stride", 0, &cb_hexstride, "Line stride in hexdump (default is 0)");
 
 	/* http */
 	SETPREF("http.cors", "false", "Enable CORS");
 	SETPREF("http.dirlist", "false", "Enable directory listing");
-	SETPREF("http.allow", "", "http firewall. only accept clients from the comma separated IP list");
+	SETPREF("http.allow", "", "Only accept clients from the comma separated IP list");
 #if __WINDOWS__
 	r_config_set (cfg, "http.browser", "start");
 #else
@@ -1190,35 +1216,35 @@ R_API int r_core_config_init(RCore *core) {
 	else if (r_file_exists ("/usr/bin/open"))
 		r_config_set (cfg, "http.browser", "open");
 	else r_config_set (cfg, "http.browser", "firefox");
-	r_config_desc (cfg, "http.browser", "command to open http urls");
+	r_config_desc (cfg, "http.browser", "Command to open HTTP URLs");
 #endif
-	SETI("http.maxsize", 0, "Define maximum file size to upload");
-	SETPREF("http.bind", "localhost", "Host to listen for http connections");
+	SETI("http.maxsize", 0, "Maximum file size for upload");
+	SETPREF("http.bind", "localhost", "Server address");
 #if __WINDOWS__
-	SETPREF("http.root", "www", "Http root directory");
+	SETPREF("http.root", "www", "Root directory");
 #else
-	SETPREF("http.root", R2_WWWROOT, "HTTP root directory");
+	SETPREF("http.root", R2_WWWROOT, "Root directory");
 #endif
-	SETPREF("http.port", "9090", "Port to listen for http connections");
+	SETPREF("http.port", "9090", "Server port");
 #if __ANDROID__ || __IPHONE_2_0
-	SETPREF("http.ui", "enyo", "Select default webui (enyo, p, t)");
+	SETPREF("http.ui", "enyo", "Default webui (enyo, p, t)");
 #else
-	SETPREF("http.ui", "p", "Select default webui (enyo, p, t)");
+	SETPREF("http.ui", "p", "Default webui (enyo, p, t)");
 #endif
-	SETPREF("http.sandbox", "false", "Sandbox the http");
-	SETI("http.timeout", 3, "Disconnect clients after N seconds if no data sent");
-	SETI("http.dietime", 0, "Kill myself after N seconds after the last client connected");
-	SETPREF("http.verbose", "true", "Show http server logs to stdout");
-	SETPREF("http.upget", "false", "/up/ can be GET, not only POST");
-	SETPREF("http.upload", "false", "Dnable file POST uploads in /up/<filename>");
-	SETPREF("http.uri", "", "Base uri to remote host proxy host");
+	SETPREF("http.sandbox", "false", "Sandbox the HTTP server");
+	SETI("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
+	SETI("http.dietime", 0, "Kill server after N seconds with no client");
+	SETPREF("http.verbose", "true", "Output server logs to stdout");
+	SETPREF("http.upget", "false", "/up/ answers GET requests, in addition to POST");
+	SETPREF("http.upload", "false", "Enable file uploads to /up/<filename>");
+	SETPREF("http.uri", "", "Address of HTTP proxy");
 	tmpdir = r_file_tmpdir ();
 	r_config_set (cfg, "http.uproot", tmpdir);
 	free (tmpdir);
-	r_config_desc(cfg, "http.uproot", "Path to store uploaded files");
+	r_config_desc(cfg, "http.uproot", "Path where files are uploaded");
 
 	/* graph */
-	SETPREF("graph.font", "Courier", "Font to be used by the dot graphs");
+	SETPREF("graph.font", "Courier", "Font for dot graphs");
 	SETPREF("graph.offset", "false", "Show offsets in graphs");
 	SETPREF("graph.web", "false", "Display graph in web browser (VV)");
 	SETI("graph.from", UT64_MAX, "");
@@ -1227,8 +1253,8 @@ R_API int r_core_config_init(RCore *core) {
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");
 
-	SETPREF("esil.romem", "false", "If set to true memory cannot be writen from esil");
-	SETPREF("esil.stats", "false", "Statistics from esil emulation stored in sdb");
+	SETPREF("esil.romem", "false", "Set memory as read-only for ESIL");
+	SETPREF("esil.stats", "false", "Statistics from ESIL emulation stored in sdb");
 
 	/* scr */
 #if __EMSCRIPTEN__
@@ -1236,43 +1262,44 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	r_config_set_cb (cfg, "scr.fgets", "false", cb_scrfgets);
 #endif
-	r_config_desc (cfg, "scr.fgets", "Use fgets instead of dietline for prompt input");
+	r_config_desc (cfg, "scr.fgets", "Use fgets() instead of dietline for prompt input");
 	SETCB("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");
-	SETPREF("scr.colorops", "true", "Colorize in numbers/registers in opcodes");
+	SETPREF("scr.colorops", "true", "Colorize numbers and registers in opcodes");
 #if __ANDROID__
-	SETPREF("scr.responsive", "true", "Auto-adjust Visual depending on screen (disable asm.bytes and other)");
+	SETPREF("scr.responsive", "true", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
 #else
-	SETPREF("scr.responsive", "false", "Auto-adjust Visual depending on screen (disable asm.bytes and other)");
+	SETPREF("scr.responsive", "false", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
 #endif
-	SETPREF("scr.wheel", "true", "Enable the use of mouse wheel in visual mode");
-	SETI("scr.wheelspeed", 1, "mouse wheel speed");
+	SETPREF("scr.wheel", "true", "Mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
+	SETPREF("scr.atport", "false", "V@ starts a background http server and spawns an r2 -C");
+	SETI("scr.wheelspeed", 1, "Mouse wheel speed");
 	// DEPRECATED: USES hex.cols now SETI("scr.colpos", 80, "Column position of cmd.cprompt in visual");
-	SETICB("scr.columns", 0, &cb_scrcolumns, "Set the columns number");
-	SETICB("scr.rows", 0, &cb_rows, "Force specific console rows (height)");
-	SETCB("scr.fps", "false", &cb_fps, "Show FPS indicator in Visual");
+	SETICB("scr.columns", 0, &cb_scrcolumns, "Force console column count (width)");
+	SETCB("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");
+	SETICB("scr.rows", 0, &cb_rows, "Force console row count (height) (duplicate?)");
+	SETCB("scr.fps", "false", &cb_fps, "Show FPS in Visual");
 	SETICB("scr.fix_rows", 0, &cb_fixrows, "Workaround for Linux TTY");
-	SETICB("scr.fix_columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS ssh client");
-	SETCB("scr.highlight", "", &cb_scrhighlight, "Highligh that word at RCons level");
-	SETCB("scr.interactive", "true", &cb_scrint, "Start in interractive mode");
+	SETICB("scr.fix_columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS SSH client");
+	SETCB("scr.highlight", "", &cb_scrhighlight, "Highlight that word at RCons level");
+	SETCB("scr.interactive", "true", &cb_scrint, "Start in interactive mode");
 	SETI("scr.feedback", 1, "Set visual feedback level (1=arrow on jump, 2=every key (useful for videos))");
-	SETCB("scr.html", "false", &cb_scrhtml, "If enabled disassembly uses HTML syntax");
+	SETCB("scr.html", "false", &cb_scrhtml, "Disassembly uses HTML syntax");
 	SETCB("scr.nkey", "hit", &cb_scrnkey, "Select the seek mode in visual");
-	SETCB("scr.pager", "", &cb_pager, "Select pager program (used if output doesn't fit on window)");
-	SETPREF("scr.pipecolor", "false", "Enable colors when using pipes if true");
-	SETPREF("scr.promptfile", "false", "Show/hide user prompt (used by r2 -q)");
-	SETCB("scr.prompt", "true", &cb_scrprompt, "Show/hide user prompt (used by r2 -q)");
-	SETCB("scr.rows", "0", &cb_scrrows, "Set the rows number");
-	SETCB("scr.tee", "", &cb_teefile, "Pipe console output to file if not empty");
+	SETCB("scr.pager", "", &cb_pager, "Select pager program (when output overflows the window)");
+	SETPREF("scr.pipecolor", "false", "Enable colors when using pipes");
+	SETPREF("scr.promptfile", "false", "Show user prompt file (used by r2 -q)");
+	SETCB("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by r2 -q)");
+	SETCB("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF("scr.seek", "", "Seek to the specified address on startup");
 #if __WINDOWS__ && !__CYGWIN__
 	r_config_set_cb (cfg, "scr.rgbcolor", "false", &cb_rgbcolors);
 #else
 	r_config_set_cb (cfg, "scr.rgbcolor", "true", &cb_rgbcolors);
 #endif
-	r_config_desc (cfg, "scr.rgbcolor", "Use RGB colors (no available on windows)");
+	r_config_desc (cfg, "scr.rgbcolor", "Use RGB colors (not available on Windows)");
 	SETCB("scr.truecolor", "false", &cb_truecolor, "Manage color palette (0: ansi 16, 1: 256, 2: 16M)");
-	SETCB("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false", &cb_color, "Enable/Disable colors");
-	SETCB("scr.null", "false", &cb_scrnull, "if set shows no output (disable console)");
+	SETCB("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false", &cb_color, "Enable colors");
+	SETCB("scr.null", "false", &cb_scrnull, "Show no output");
 	SETCB("scr.utf8", r_cons_is_utf8()?"true":"false",
 		&cb_utf8, "Show UTF-8 characters instead of ANSI");
 	SETPREF("scr.histsave", "true", "Always save history on exit");
@@ -1280,21 +1307,23 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
 	SETICB("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
 	SETI("search.chunk", 0, "Chunk size for /+ (default size is asm.bits/8");
-	SETI("search.esilcombo", 8, "Stop search at a specific number of consecutive hits");
+	SETI("search.esilcombo", 8, "Stop search after N consecutive hits");
 	SETI("search.count", 0, "Start index number at search hits");
 	SETI("search.distance", 0, "Search string distance");
-	SETPREF("search.flags", "true", "If enabled all search results are flagged, else just printed r2 commands");
-	SETI("search.maxhits", 0, "Limit maximum number of hits (0 disable limit)");
+	SETPREF("search.flags", "true", "All search results are flagged, otherwise only printed");
+	SETI("search.maxhits", 0, "Maximum number of hits (0: no limit)");
 	SETI("search.from", -1, "Search start address");
 	SETCB("search.in", "file", &cb_searchin, "Specify search boundaries (raw, block, file, section)");
 	SETICB("search.kwidx", 0, &cb_search_kwidx, "Store last search index count");
 	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
-	SETPREF("search.show", "true", "Show search results while found (disable if lot of hits)");
+	SETPREF("search.show", "true", "Show search results");
 	SETI("search.to", -1, "Search end address");
 
 	/* rop */
-	SETI("rop.len", 5, "Maximum number of instructions for a ROP Gadget");
-	SETPREF("rop.conditional", "false", "Use conditional jump, calls and returns for ropsearch too");
+	SETI("rop.len", 5, "Maximum ROP gadget length");
+	SETPREF("rop.subchains", "false", "Display every length gadget from rop.len=X to 2 in /Rl");
+	SETPREF("rop.conditional", "false", "Include conditional jump, calls and returns in ropsearch");
+	SETPREF("rop.nx", "false", "Include NX/XN/XD sections in ropsearch");
 
 	/* io */
 	SETICB("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");
@@ -1303,25 +1332,25 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("io.buffer.from", 0, "Lower address of buffered cache");
 	SETI("io.buffer.to", 0, "Higher address of buffered cache");
 	SETCB("io.cache", "false", &cb_iocache, "Enable cache for io changes");
-	SETCB("io.raw", "false", &cb_ioraw, "Enable to ignore maps/sections and use raw io");
+	SETCB("io.raw", "false", &cb_ioraw, "Ignore maps/sections and use raw io");
 	SETCB("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
-	SETCB("io.va", "true", &cb_iova, "If enabled virtual address layout can be used");
+	SETCB("io.va", "true", &cb_iova, "Use virtual address layout");
 	SETCB("io.zeromap", "0", &cb_iozeromap, "Double map the last opened file to address zero");
-	SETCB("io.autofd", "true", &cb_ioautofd, "change fd when opening new file automatically");
-	SETCB("io.vio", "false", &cb_iovio, "enable this for testing the new vio (reading only)");
+	SETCB("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
+	SETCB("io.vio", "false", &cb_iovio, "Enable the new vio (reading only) (WIP)");
 
 	/* file */
 	SETPREF("file.analyze", "false", "Analyze file on load. Same as r2 -c aa ..");
-	SETPREF("file.desc", "", "User defined file description. Used by projects");
-	SETPREF("file.md5", "", "md5 sum of current file");
+	SETPREF("file.desc", "", "User defined file description (used by projects)");
+	SETPREF("file.md5", "", "MD5 sum of current file");
 	SETPREF("file.path", "", "Path of current file");
 	SETPREF("file.project", "", "Name of current project");
-	SETPREF("file.sha1", "", "sha1 hash of current file");
+	SETPREF("file.sha1", "", "SHA1 hash of current file");
 	SETPREF("file.type", "", "Type of current file");
 	SETCB("file.loadmethod", "fail", &cb_fileloadmethod, "What to do when load addresses overlap: fail, overwrite, or append (next available)");
 	SETI("file.loadalign", 1024, "Alignment of load addresses");
-	SETI("file.openmany", 1, "How many files to open at once.");
-	SETPREF("file.nowarn", "true", "Suppress file loading warning messages if true");
+	SETI("file.openmany", 1, "Maximum number of files opened at once");
+	SETPREF("file.nowarn", "true", "Suppress file loading warning messages");
 	SETPREF("file.location", "", "Is the file 'local', 'remote', or 'memory'");
 	/* magic */
 	SETI("magic.depth", 100, "Recursivity depth in magic description strings");

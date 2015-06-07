@@ -135,7 +135,4 @@ return strdup (
 "fpu    xmm7h .64 272  0\n"
 "fpu    xmm7l .64 280  0\n"
 "fpu    x64   .64 288  0\n"
-
-
 );
-

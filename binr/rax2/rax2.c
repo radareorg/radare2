@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2015 - pancake */
 
 #include <r_util.h>
 #include <r_print.h>
@@ -155,7 +155,7 @@ static int rax (char *str, int len, int last) {
 	dotherax:
 	
 	if (flags & 1) { // -s
-		ut64 n = ((strlen (str))>>1)+1;
+		int n = ((strlen (str))>>1)+1;
 		buf = malloc (n);
 		if (buf) {
 			memset (buf, '\0', n);
@@ -259,9 +259,8 @@ static int rax (char *str, int len, int last) {
 	} else if (flags & 2048) { // -t
 		ut32 n = r_num_math (num, str);
 		RPrint *p = r_print_new ();
-		p->big_endian = 0; // TODO: honor endian here
-		r_mem_copyendian ((ut8*) &n, (ut8*) &n, 8, 0); // fix endian here
-		r_print_date_unix (p, (const ut8*)&n, sizeof (ut64));
+		r_mem_copyendian ((ut8*) &n, (ut8*) &n, 4, !(flags & 2));
+		r_print_date_unix (p, (const ut8*)&n, sizeof (ut32));
 		r_print_free (p);
 		return R_TRUE;
 	} else if (flags & 4096) { // -E
@@ -371,11 +370,11 @@ int main (int argc, char **argv) {
 	int i;
 	num = r_num_new (NULL, NULL);
 	if (argc == 1) {
-		r_num_free (num);
-		return use_stdin ();
-	}
-	for (i=1; i<argc; i++) {
-		rax (argv[i], 0, i==argc-1);
+		use_stdin ();
+	} else {
+		for (i=1; i<argc; i++) {
+			rax (argv[i], 0, i==argc-1);
+		}
 	}
 	r_num_free (num);
 	return 0;

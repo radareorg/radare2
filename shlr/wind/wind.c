@@ -92,7 +92,7 @@ wind_get_profile (int bits, int build, int sp) {
 
 #define LOG_PKT(p) \
 { \
-	eprintf("Leader\t: %08x\nType\t: %08x\nLenght\t: %08x\nID\t: %08x\nCheck\t: %08x [%s]\n", \
+	eprintf("Leader\t: %08x\nType\t: %08x\nLength\t: %08x\nID\t: %08x\nCheck\t: %08x [%s]\n", \
 		(p)->leader, \
 		(p)->type, \
 		(p)->length, \
@@ -1116,16 +1116,19 @@ wind_break (WindCtx *ctx) {
 	return 1;
 }
 
-#if __WINDOWS__
-static BOOL WINAPI (*w32_CancelIoEx)(HANDLE, LPOVERLAPPED) = NULL;
-#endif
 int
 wind_break_read (WindCtx *ctx) {
 #if __WINDOWS__
-    HANDLE lib;
-	lib = LoadLibrary ("psapi.dll");
-	w32_CancelIoEx = (BOOL WINAPI (*)(HANDLE, LPOVERLAPPED))GetProcAddress (GetModuleHandle ("kernel32"),"CancelIoEx");
-	w32_CancelIoEx(ctx->io_ptr,NULL);
+    static BOOL WINAPI (*w32_CancelIoEx)(HANDLE, LPOVERLAPPED) = NULL;
+	if (!w32_CancelIoEx) {
+		HANDLE lib;
+		lib = LoadLibrary ("psapi.dll");
+		w32_CancelIoEx = (BOOL WINAPI (*)(HANDLE, LPOVERLAPPED))
+			GetProcAddress (GetModuleHandle ("kernel32"),
+				"CancelIoEx");
+	}
+	if (w32_CancelIoEx)
+		w32_CancelIoEx(ctx->io_ptr,NULL);
 #endif
 	return 1;
 }

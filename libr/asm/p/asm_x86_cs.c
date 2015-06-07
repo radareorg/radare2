@@ -49,8 +49,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
-	if (a->syntax == R_ASM_SYNTAX_ATT)
+	if (a->syntax == R_ASM_SYNTAX_ATT) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
+	} else {
+		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
+	}
 	op->size = 1;
 #if USE_ITER_API
 	{
@@ -80,6 +83,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		ptrstr = strstr (op->buf_asm, "ptr ");
 		if (ptrstr) {
 			memmove (ptrstr, ptrstr+4, strlen (ptrstr+4)+1);
+		}
+	}
+	if (a->syntax == R_ASM_SYNTAX_JZ) {
+		if (!strncmp (op->buf_asm, "je ", 3)) {
+			memcpy (op->buf_asm, "jz", 2);
+		} else if (!strncmp (op->buf_asm, "jne ", 4)) {
+			memcpy (op->buf_asm, "jnz", 3);
 		}
 	}
 #if USE_ITER_API

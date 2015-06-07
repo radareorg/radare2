@@ -334,6 +334,65 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->family = R_ANAL_OP_FAMILY_PRIV;
 			break;
 		// cmov
+		case X86_INS_SETNE:
+		case X86_INS_SETNO:
+		case X86_INS_SETNP:
+		case X86_INS_SETNS:
+		case X86_INS_SETO:
+		case X86_INS_SETP:
+		case X86_INS_SETS:
+		case X86_INS_SETL:
+		case X86_INS_SETLE:
+		case X86_INS_SETB:
+		case X86_INS_SETG:
+		case X86_INS_SETAE:
+		case X86_INS_SETA:
+		case X86_INS_SETBE:
+		case X86_INS_SETE:
+		case X86_INS_SETGE:
+			op->type = R_ANAL_OP_TYPE_CMOV;
+			op->family = 0;
+			if (a->decode) {
+				char *dst = getarg (handle, insn, 0, 0, NULL);
+				switch (insn->id) {
+				case X86_INS_SETE:  esilprintf (op, "zf,%s,=", dst); break;
+				case X86_INS_SETNE: esilprintf (op, "zf,!,%s,=", dst); break;
+				case X86_INS_SETO:  esilprintf (op, "of,%s,=", dst); break;
+				case X86_INS_SETNO: esilprintf (op, "of,!,%s,=", dst); break;
+				case X86_INS_SETP:  esilprintf (op, "pf,%s,=", dst); break;
+				case X86_INS_SETNP: esilprintf (op, "pf,!,%s,=", dst); break;
+				case X86_INS_SETS:  esilprintf (op, "sf,%s,=", dst); break;
+				case X86_INS_SETNS: esilprintf (op, "sf,!,%s,=", dst); break;
+
+				case X86_INS_SETB:  esilprintf (op, "cf,%s,=", dst); break;
+				case X86_INS_SETAE: esilprintf (op, "cf,!,%s,=", dst); break;
+
+				/* TODO */
+#if 0
+SETLE/SETNG
+	Sets the byte in the operand to 1 if the Zero Flag is set or the
+	Sign Flag is not equal to the Overflow Flag,  otherwise sets the
+	operand to 0.
+SETBE/SETNA
+	Sets the byte in the operand to 1 if the Carry Flag or the Zero
+        Flag is set, otherwise sets the operand to 0.
+SETL/SETNGE
+	Sets the byte in the operand to 1 if the Sign Flag is not equal
+        to the Overflow Flag, otherwise sets the operand to 0.
+
+				case X86_INS_SETL:  esilprintf (op, "pf,!,%s,=", dst); break;
+				case X86_INS_SETLE: esilprintf (op, "pf,!,%s,=", dst); break;
+				case X86_INS_SETG:  esilprintf (op, "pf,!,%s,=", dst); break;
+				case X86_INS_SETA:  esilprintf (op, "pf,!,%s,=", dst); break;
+				case X86_INS_SETBE: esilprintf (op, "pf,!,%s,=", dst); break;
+				case X86_INS_SETGE: esilprintf (op, "pf,!,%s,=", dst); break;
+						    break;
+#endif
+				}
+				free (dst);
+			}
+			break;
+		// cmov
 		case X86_INS_CMOVA:
 		case X86_INS_CMOVAE:
 		case X86_INS_CMOVB:
@@ -655,12 +714,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				esilprintf (op, "%d,$", R_ABS((int)INSOP(0).imm));
 			op->type = R_ANAL_OP_TYPE_SWI;
 			break;
+		case X86_INS_SYSCALL:
+			op->type = R_ANAL_OP_TYPE_SWI;
+			break;
 		case X86_INS_INT1:
 		case X86_INS_INT3:
 		case X86_INS_INTO:
 		case X86_INS_VMCALL:
 		case X86_INS_VMMCALL:
-		case X86_INS_SYSCALL:
 			op->type = R_ANAL_OP_TYPE_TRAP;
 			if (a->decode)
 				esilprintf (op, "%d,$", (int)INSOP(0).imm);
@@ -794,15 +855,33 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				free (src);
 			}
 			// TODO: what if UJMP?
-			if (INSOP(0).type == X86_OP_IMM) {
+			switch (INSOP(0).type) {
+			case X86_OP_IMM:
 				op->jump = INSOP(0).imm;
 				op->type = R_ANAL_OP_TYPE_JMP;
 				if (a->decode) {
 					ut64 dst = INSOP(0).imm;
 					esilprintf (op, "0x%"PFMT64x",%s,=", dst, pc);
 				}
-			} else {
+				break;
+			case X86_OP_MEM:
+				{
+					cs_x86_op in = INSOP(0);
+					op->type = R_ANAL_OP_TYPE_UJMP;
+					if (in.mem.index == 0 && in.mem.base == 0 && in.mem.scale == 1) {
+						op->type = R_ANAL_OP_TYPE_UJMP;
+						op->ptr= in.mem.disp;
+						if (a->decode) {
+							esilprintf (op, "0x%"PFMT64x",[],%s,=", op->ptr, pc);
+						}
+					}
+				}
+				break;
+			case X86_OP_REG:
+			case X86_OP_FP:
+			default: // other?
 				op->type = R_ANAL_OP_TYPE_UJMP;
+				break;
 			}
 			break;
 		case X86_INS_IN:
@@ -928,7 +1007,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0, NULL);
 				char *dst = getarg (handle, insn, 0, 1, "&");
-				esilprintf (op, "%s,%s", src, dst);
+				// TODO: update of = cf = 0
+				// TODO: update sf, zf and pf
+				// TODO: af is undefined
+				esilprintf (op, "0,of,=,0,cf,=," // set carry and overflow flags
+					"%s,%s," // set reg value
+					"%%z,zf,="  // update zero flag
+					"%%s,sf,="  // update sign flag
+					"%%o,pf,=", // update parity flag
+					// TODO: add sign and parity flags here
+					src, dst);
 				free (src);
 				free (dst);
 			}
@@ -1086,6 +1174,324 @@ static int esil_x86_cs_fini (RAnalEsil *esil)
 	return R_TRUE;
 }
 
+static int set_reg_profile(RAnal *anal) {
+	const char *p = NULL;
+	switch (anal->bits) {
+	case 16: p=
+		"=pc	ip\n"
+		"=sp	sp\n"
+		"=bp	bp\n"
+		"=a0	ax\n"
+		"=a1	bx\n"
+		"=a2	cx\n"
+		"=a3	di\n"
+		"gpr	ip	.16	48	0\n"
+		"gpr	ax	.16	24	0\n"
+		"gpr	ah	.8	24	0\n"
+		"gpr	al	.8	25	0\n"
+		"gpr	bx	.16	0	0\n"
+		"gpr	bh	.8	0	0\n"
+		"gpr	bl	.8	1	0\n"
+		"gpr	cx	.16	4	0\n"
+		"gpr	ch	.8	4	0\n"
+		"gpr	cl	.8	5	0\n"
+		"gpr	dx	.16	8	0\n"
+		"gpr	dh	.8	8	0\n"
+		"gpr	dl	.8	9	0\n"
+		"gpr	sp	.16	60	0\n"
+		"gpr	bp	.16	20	0\n"
+		"gpr	si	.16	12	0\n"
+		"gpr	di	.16	16	0\n"
+		"seg	cs	.16	52	0\n"
+		"gpr	flags	.16	56	0\n"
+		"gpr	cf	.1	.448	0\n"
+		"flg	pf	.1	.449	0\n"
+		"flg	af	.1	.450	0\n"
+		"gpr	zf	.1	.451	0\n"
+		"gpr	sf	.1	.452	0\n"
+		"flg	tf	.1	.453	0\n"
+		"flg	if	.1	.454	0\n"
+		"flg	df	.1	.455	0\n"
+		"flg	of	.1	.456	0\n"
+		"flg	rf	.1	.457	0\n";
+#if 0
+		"drx	dr0	.32	0	0\n"
+		"drx	dr1	.32	4	0\n"
+		"drx	dr2	.32	8	0\n"
+		"drx	dr3	.32	12	0\n"
+		//"drx	dr4	.32	16	0\n"
+		//"drx	dr5	.32	20	0\n"
+		"drx	dr6	.32	24	0\n"
+		"drx	dr7	.32	28	0\n"
+#endif
+		break;
+	case 32: p=
+		"=pc	eip\n"
+		"=sp	esp\n"
+		"=bp	ebp\n"
+		"=a0	eax\n"
+		"=a1	ebx\n"
+		"=a2	ecx\n"
+		"=a3	edi\n"
+		"gpr	eip	.32	48	0\n"
+		"gpr	ip	.16	48	0\n"
+		"gpr	oeax	.32	44	0\n"
+		"gpr	eax	.32	24	0\n"
+		"gpr	ax	.16	24	0\n"
+		"gpr	ah	.8	24	0\n"
+		"gpr	al	.8	25	0\n"
+		"gpr	ebx	.32	0	0\n"
+		"gpr	bx	.16	0	0\n"
+		"gpr	bh	.8	0	0\n"
+		"gpr	bl	.8	1	0\n"
+		"gpr	ecx	.32	4	0\n"
+		"gpr	cx	.16	4	0\n"
+		"gpr	ch	.8	4	0\n"
+		"gpr	cl	.8	5	0\n"
+		"gpr	edx	.32	8	0\n"
+		"gpr	dx	.16	8	0\n"
+		"gpr	dh	.8	8	0\n"
+		"gpr	dl	.8	9	0\n"
+		"gpr	esp	.32	60	0\n"
+		"gpr	sp	.16	60	0\n"
+		"gpr	ebp	.32	20	0\n"
+		"gpr	bp	.16	20	0\n"
+		"gpr	esi	.32	12	0\n"
+		"gpr	si	.16	12	0\n"
+		"gpr	edi	.32	16	0\n"
+		"gpr	di	.16	16	0\n"
+		"seg	xfs	.32	36	0\n"
+		"seg	xgs	.32	40	0\n"
+		"seg	xcs	.32	52	0\n"
+		"seg	cs	.16	52	0\n"
+		"seg	xss	.32	52	0\n"
+		"gpr	eflags	.32	56	0	c1p.a.zstido.n.rv\n"
+		"gpr	flags	.16	56	0\n"
+		"gpr	cf	.1	.448	0\n"
+		"flg	pf	.1	.449	0\n"
+		"flg	af	.1	.450	0\n"
+		"gpr	zf	.1	.451	0\n"
+		"gpr	sf	.1	.452	0\n"
+		"flg	tf	.1	.453	0\n"
+		"flg	if	.1	.454	0\n"
+		"flg	df	.1	.455	0\n"
+		"flg	of	.1	.456	0\n"
+		"flg	rf	.1	.457	0\n"
+		"drx	dr0	.32	0	0\n"
+		"drx	dr1	.32	4	0\n"
+		"drx	dr2	.32	8	0\n"
+		"drx	dr3	.32	12	0\n"
+		//"drx	dr4	.32	16	0\n"
+		//"drx	dr5	.32	20	0\n"
+		"drx	dr6	.32	24	0\n"
+		"drx	dr7	.32	28	0\n";
+		 break;
+	case 64:
+		 p =
+		 "=pc	rip\n"
+		 "=sp	rsp\n"
+		 "=bp	rbp\n"
+		 "=a0	rdi\n"
+		 "=a1	rsi\n"
+		 "=a2	rdx\n"
+		 "=a3	r10\n"
+		 "=a4	r8\n"
+		 "=a5	r9\n"
+		 "=sn	orax\n"
+		 "# no profile defined for x86-64\n"
+		 "gpr	r15	.64	0	0\n"
+		 "gpr	r14	.64	8	0\n"
+		 "gpr	r13	.64	16	0\n"
+		 "gpr	r12	.64	24	0\n"
+		 "gpr	rbp	.64	32	0\n"
+		 "gpr	rbx	.64	40	0\n"
+		 "gpr	ebx	.32	40	0\n"
+		 "gpr	bx	.16	40	0\n"
+		 "gpr	bh	.8	41	0\n"
+		 "gpr	bl	.8	40	0\n"
+		 "gpr	r11	.64	48	0\n"
+		 "gpr	r10	.64	56	0\n"
+		 "gpr	r9	.64	64	0\n"
+		 "gpr	r8	.64	72	0\n"
+		 "gpr	rax	.64	80	0\n"
+		 "gpr	eax	.32	80	0\n"
+		 "gpr	ax	.16	80	0\n"
+		 "gpr	ah	.8	81	0\n"
+		 "gpr	al	.8	80	0\n"
+		 "gpr	rcx	.64	88	0\n"
+		 "gpr	ecx	.32	88	0\n"
+		 "gpr	cx	.16	88	0\n"
+		 "gpr	ch	.8	89	0\n"
+		 "gpr	cl	.8	88	0\n"
+		 "gpr	rdx	.64	96	0\n"
+		 "gpr	edx	.32	96	0\n"
+		 "gpr	dx	.16	96	0\n"
+		 "gpr	dh	.8	97	0\n"
+		 "gpr	dl	.8	96	0\n"
+		 "gpr	rsi	.64	104	0\n"
+		 "gpr	esi	.32	104	0\n"
+		 "gpr	si	.16	104	0\n"
+		 "gpr	rdi	.64	112	0\n"
+		 "gpr	edi	.32	112	0\n"
+		 "gpr	di	.16	112	0\n"
+		 "gpr	orax	.64	120	0\n"
+		 "gpr	rip	.64	128	0\n"
+		 "seg	cs	.64	136	0\n"
+		 "gpr	rflags	.64	144	0	c1p.a.zstido.n.rv\n"
+		 "gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
+		 "gpr	cf	.1	.1152	0	carry\n"
+		 "gpr	pf	.1	.1154	0	parity\n"
+		 "gpr	af	.1	.1156	0	adjust\n"
+		 "gpr	zf	.1	.1158	0	zero\n"
+		 "gpr	sf	.1	.1159	0	sign\n"
+		 "gpr	tf	.1	.1160	0	trap\n"
+		 "gpr	if	.1	.1161	0	interrupt\n"
+		 "gpr	df	.1	.1162	0	direction\n"
+		 "gpr	of	.1	.1163	0	overflow\n"
+
+		 "gpr	rsp	.64	152	0\n"
+		 "seg	ss	.64	160	0\n"
+		 "seg	fs_base	.64	168	0\n"
+		 "seg	gs_base	.64	176	0\n"
+		 "seg	ds	.64	184	0\n"
+		 "seg	es	.64	192	0\n"
+		 "seg	fs	.64	200	0\n"
+		 "seg	gs	.64	208	0\n"
+		 "drx	dr0	.64	0	0\n"
+		 "drx	dr1	.64	8	0\n"
+		 "drx	dr2	.64	16	0\n"
+		 "drx	dr3	.64	24	0\n"
+		 // dr4 32
+		 // dr5 40
+		 "drx	dr6	.64	48	0\n"
+		 "drx	dr7	.64	56	0\n"
+
+		 /*0030 struct user_fpregs_struct
+		   0031 {
+		   0032   __uint16_t        cwd;
+		   0033   __uint16_t        swd;
+		   0034   __uint16_t        ftw;
+		   0035   __uint16_t        fop;
+		   0036   __uint64_t        rip;
+		   0037   __uint64_t        rdp;
+		   0038   __uint32_t        mxcsr;
+		   0039   __uint32_t        mxcr_mask;
+		   0040   __uint32_t        st_space[32];   // 8*16 bytes for each FP-reg = 128 bytes
+		   0041   __uint32_t        xmm_space[64];  // 16*16 bytes for each XMM-reg = 256 bytes
+		   0042   __uint32_t        padding[24];
+		   0043 };
+		  */
+		 "fpu    cwd .16 0   0\n"
+		 "fpu    swd .16 2   0\n"
+		 "fpu    ftw .16 4   0\n"
+		 "fpu    fop .16 6   0\n"
+		 "fpu    frip .64 8   0\n"
+		 "fpu    frdp .64 16  0\n"
+		 "fpu    mxcsr .32 24  0\n"
+		 "fpu    mxcr_mask .32 28  0\n"
+
+		 "fpu    st0 .64 32  0\n"
+		 "fpu    st1 .64 48  0\n"
+		 "fpu    st2 .64 64  0\n"
+		 "fpu    st3 .64 80  0\n"
+		 "fpu    st4 .64 96  0\n"
+		 "fpu    st5 .64 112  0\n"
+		 "fpu    st6 .64 128  0\n"
+		 "fpu    st7 .64 144  0\n"
+
+		 "fpu    xmm0h .64 160  0\n"
+		 "fpu    xmm0l .64 168  0\n"
+
+		 "fpu    xmm1h .64 176  0\n"
+		 "fpu    xmm1l .64 184  0\n"
+
+		 "fpu    xmm2h .64 192  0\n"
+		 "fpu    xmm2l .64 200  0\n"
+
+		 "fpu    xmm3h .64 208  0\n"
+		 "fpu    xmm3l .64 216  0\n"
+
+		 "fpu    xmm4h .64 224  0\n"
+		 "fpu    xmm4l .64 232  0\n"
+
+		 "fpu    xmm5h .64 240  0\n"
+		 "fpu    xmm5l .64 248  0\n"
+
+		 "fpu    xmm6h .64 256  0\n"
+		 "fpu    xmm6l .64 264  0\n"
+
+		 "fpu    xmm7h .64 272  0\n"
+		 "fpu    xmm7l .64 280  0\n"
+		 "fpu    x64   .64 288  0\n";
+		 break;
+	default: p= /* XXX */
+		 "=pc	rip\n"
+		 "=sp	rsp\n"
+		 "=bp	rbp\n"
+		 "=a0	rax\n"
+		 "=a1	rbx\n"
+		 "=a2	rcx\n"
+		 "=a3	rdx\n"
+		 "# no profile defined for x86-64\n"
+		 "gpr	r15	.64	0	0\n"
+		 "gpr	r14	.64	8	0\n"
+		 "gpr	r13	.64	16	0\n"
+		 "gpr	r12	.64	24	0\n"
+		 "gpr	rbp	.64	32	0\n"
+		 "gpr	ebp	.32	32	0\n"
+		 "gpr	rbx	.64	40	0\n"
+		 "gpr	ebx	.32	40	0\n"
+		 "gpr	bx	.16	40	0\n"
+		 "gpr	bh	.8	40	0\n"
+		 "gpr	bl	.8	41	0\n"
+		 "gpr	r11	.64	48	0\n"
+		 "gpr	r10	.64	56	0\n"
+		 "gpr	r9	.64	64	0\n"
+		 "gpr	r8	.64	72	0\n"
+		 "gpr	rax	.64	80	0\n"
+		 "gpr	eax	.32	80	0\n"
+		 "gpr	rcx	.64	88	0\n"
+		 "gpr	ecx	.32	88	0\n"
+		 "gpr	rdx	.64	96	0\n"
+		 "gpr	edx	.32	96	0\n"
+		 "gpr	rsi	.64	104	0\n"
+		 "gpr	esi	.32	104	0\n"
+		 "gpr	rdi	.64	112	0\n"
+		 "gpr	edi	.32	112	0\n"
+		 "gpr	oeax	.64	120	0\n"
+		 "gpr	rip	.64	128	0\n"
+		 "seg	cs	.64	136	0\n"
+		 //"flg	eflags	.64	144	0\n"
+		 "gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
+		 "gpr	cf	.1	.1152	0\n"
+		 "flg	pf	.1	.1153	0\n"
+		 "flg	af	.1	.1154	0\n"
+		 "gpr	zf	.1	.1155	0\n"
+		 "gpr	sf	.1	.1156	0\n"
+		 "flg	tf	.1	.1157	0\n"
+		 "flg	if	.1	.1158	0\n"
+		 "flg	df	.1	.1159	0\n"
+		 "flg	of	.1	.1160	0\n"
+		 "flg	rf	.1	.1161	0\n"
+		 "gpr	rsp	.64	152	0\n"
+		 "seg	ss	.64	160	0\n"
+		 "seg	fs_base	.64	168	0\n"
+		 "seg	gs_base	.64	176	0\n"
+		 "seg	ds	.64	184	0\n"
+		 "seg	es	.64	192	0\n"
+		 "seg	fs	.64	200	0\n"
+		 "seg	gs	.64	208	0\n"
+		 "drx	dr0	.32	0	0\n"
+		 "drx	dr1	.32	4	0\n"
+		 "drx	dr2	.32	8	0\n"
+		 "drx	dr3	.32	12	0\n"
+		 "drx	dr6	.32	24	0\n"
+		 "drx	dr7	.32	28	0\n";
+		 break;
+	}
+	return r_reg_set_profile_string (anal->reg, p);
+}
+
 RAnalPlugin r_anal_plugin_x86_cs = {
 	.name = "x86",
 	.desc = "Capstone X86 analysis",
@@ -1094,7 +1500,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.arch = R_SYS_ARCH_X86,
 	.bits = 16|32|64,
 	.op = &analop,
-	//.set_reg_profile = &set_reg_profile,
+	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
 };

@@ -80,3 +80,4 @@ Use '-e bin.strings=false' to disable automatic string search when loading the b
 The unix-like reverse engineering framework.
 This code was intentionally left blank, try 'e asm.arch = ws'
 For a full list of commands see `strings /dev/urandom`
+Thanks for using radare2!

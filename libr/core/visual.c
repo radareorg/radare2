@@ -14,6 +14,58 @@ static const char *printfmt[] = {
 static int autoblocksize = 1;
 static int obs = 0;
 
+#undef USE_THREADS
+#define USE_THREADS 1
+
+#if USE_THREADS
+static int visual_repeat_thread(RThread *th) {
+	RCore *core = th->user;
+	int i = 0;
+	for (;;) {
+		if (core->cons->breaked)
+			break;
+		r_core_visual_refresh (core);
+		r_cons_flush ();
+		r_cons_gotoxy (0, 0);
+		r_cons_printf ("[@%d] ", i++);
+		r_cons_flush ();
+		r_sys_sleep (1);
+	}
+	r_th_kill (th, 1);
+	return 0;
+}
+
+static void visual_repeat(RCore *core) {
+	int atport = r_config_get_i (core->config, "scr.atport");
+
+	if (atport) {
+#if __UNIX__ && !__APPLE__
+		int port = r_config_get_i (core->config, "http.port");
+		if (!r_core_rtr_http (core, '&', NULL)) {
+			const char *xterm = r_config_get (core->config, "cmd.xterm");
+			// TODO: this must be configurable
+			r_sys_cmdf ("%s 'r2 -C http://localhost:%d/cmd/V;sleep 1' &", xterm, port);
+			//xterm -bg black -fg gray -e 'r2 -C http://localhost:%d/cmd/;sleep 1' &", port);
+		} else {
+			r_cons_any_key (NULL);
+		}
+#else
+		eprintf ("Unsupported on this platform\n");
+		r_cons_any_key (NULL);
+#endif
+	} else {
+		RThread *th = r_th_new (visual_repeat_thread, core, 0);
+		r_th_start (th, 1);
+		r_cons_break (NULL, NULL);
+		r_cons_any_key (NULL);
+		eprintf ("^C  \n");
+		core->cons->breaked = R_TRUE;
+		r_th_wait (th);
+		r_cons_break_end ();
+	}
+}
+#endif
+
 static void showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
 		r_cons_show_cursor (x);
@@ -127,7 +179,8 @@ static void visual_help() {
 	" wW       seek cursor to next/prev word\n"
 	" xX       show xrefs/refs of current function from/to data/code\n"
 	" yY       copy and paste selection\n"
-	" z        toggle zoom mode\n"
+	" z        fold/unfold comments in disassembly\n"
+	" Z        toggle zoom mode\n"
 	" Enter    follow address of jump/call\n"
 	"Function Keys: (See 'e key.'), defaults to:\n"
 	"  F2      toggle breakpoint\n"
@@ -158,9 +211,11 @@ static void prompt_read (const char *p, char *buf, int buflen) {
 
 R_API void r_core_visual_prompt_input (RCore *core) {
 	int ret;
-	eprintf ("Press <enter> to return to Visual mode.\n");
 	ut64 addr = core->offset;
 	ut64 bsze = core->blocksize;
+
+	r_cons_reset_colors();
+	r_cons_printf("\nPress <enter> to return to Visual mode.\n");
 
 	r_cons_show_cursor (R_TRUE);
 	core->vmode = R_FALSE;
@@ -715,11 +770,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			} while (--wheelspeed>0);
 		}
 		break;
-	case 90: // shift+tab
-		if (!strcmp (printfmt[0], "x"))
-			printfmt[0] = "pxa";
-		else printfmt[0] = "x";
-		break;
 	case 9: // tab
 		{ // XXX: unify diff mode detection
 		ut64 f = r_config_get_i (core->config, "diff.from");
@@ -799,22 +849,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		setcursor (core, curset?0:1);
 		break;
 	case '@':
-#if __UNIX__ && !__APPLE__
-		{
-		int port = r_config_get_i (core->config, "http.port");
-		if (!r_core_rtr_http (core, '&', NULL)) {
-			const char *xterm = r_config_get (core->config, "cmd.xterm");
-			// TODO: this must be configurable
-			r_sys_cmdf ("%s 'r2 -C http://localhost:%d/cmd/V;sleep 1' &", xterm, port);
-			//xterm -bg black -fg gray -e 'r2 -C http://localhost:%d/cmd/;sleep 1' &", port);
-		} else {
-			r_cons_any_key (NULL);
-		}
-		}
-#else
-		eprintf ("Unsupported on this platform\n");
-		r_cons_any_key (NULL);
-#endif
+		visual_repeat (core);
 		break;
 	case 'C':
 		color = color? 0: 1;
@@ -1433,6 +1468,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case 'z':
+		r_config_swap (core->config, "asm.cmtfold");
+		break;
+	case 'Z':
 		if (zoom && cursor) {
 			ut64 from = r_config_get_i (core->config, "zoom.from");
 			ut64 to = r_config_get_i (core->config, "zoom.to");
@@ -1554,7 +1592,7 @@ static void r_core_visual_refresh (RCore *core) {
 	core->cons->blankline = R_TRUE;
 
 	if (r_config_get_i (core->config, "scr.responsive")) {
-		if (w<78) {
+		if (w<110) {
 			r_config_set_i (core->config, "asm.cmtright", 0);
 		} else {
 			r_config_set_i (core->config, "asm.cmtright", 1);
@@ -1576,7 +1614,7 @@ static void r_core_visual_refresh (RCore *core) {
 		} else {
 			r_config_set_i (core->config, "asm.lineswidth", 7);
 		}
-		if (w<55) {
+		if (w<70) {
 			r_config_set_i (core->config, "asm.lineswidth", 1);
 			r_config_set_i (core->config, "asm.bytes", 0);
 		} else {
@@ -1585,7 +1623,7 @@ static void r_core_visual_refresh (RCore *core) {
 	}
 
 	/* hack to blank last line. move prompt here? */
-	r_cons_fill_line ();
+	//r_cons_fill_line ();
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
 		r_cons_flush ();
