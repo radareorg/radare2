@@ -33,7 +33,7 @@ var BBGraph = function () {
     updateBox: function(event) {
       // move the html mask when moving the svg rect
       var bbox = this.model.getBBox();
-      this.$box.css({ width: bbox.width + 2, height: bbox.height, left: bbox.x - 1, top: bbox.y + 7});
+      this.$box.css({ width: bbox.width + 2, height: bbox.height - 6, left: bbox.x - 1, top: bbox.y + 7});
     }
   });
 };
@@ -76,7 +76,7 @@ BBGraph.prototype.makeLink = function(v1, v2, color) {
     target: { id: String(v2) },
     attrs: {
       '.marker-target': {
-        d: 'M 4 0 L 0 2 L 4 4 z',
+        d: 'M 6 0 L 0 3 L 6 6 z',
         fill: color,
         stroke: color
       },
