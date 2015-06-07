@@ -13,7 +13,7 @@ static Sdb * get_sdb(RBinObject *o) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	unsigned int pe_offset;
+	unsigned int exth_offset;
 	int ret = R_FALSE;
 	if (!buf)
 		return R_FALSE;
@@ -23,10 +23,15 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	{
 		ret = R_TRUE;
 
-		pe_offset = (buf[0x3c] | (buf[0x3d]<<8));
-		if (length > pe_offset+2)
-			if (!memcmp (buf+pe_offset, "PE", 2))
+		exth_offset = (buf[0x3c] | (buf[0x3d]<<8));
+		if (length > exth_offset+2)
+		{
+			if (!memcmp (buf+exth_offset, "PE", 2) ||
+				!memcmp (buf+exth_offset, "NE", 2) ||
+				!memcmp (buf+exth_offset, "LE", 2) ||
+				!memcmp (buf+exth_offset, "LX", 2) )
 				ret = R_FALSE;
+		}
 	}
 	return ret;
 }
@@ -37,7 +42,8 @@ static int check(RBinFile *arch) {
 	return check_bytes (bytes, sz);
 }
 
-static void * load_bytes(const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz,
+		ut64 loadaddr, Sdb *sdb) {
 	const struct r_bin_mz_obj_t *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
@@ -60,7 +66,7 @@ static int load(RBinFile *arch) {
 
 	bytes = r_buf_buffer (arch->buf);
 	sz = r_buf_size (arch->buf);
-	res = load_bytes (bytes, sz, arch->o->loadaddr, arch->sdb);
+	res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	arch->o->bin_obj = (void *)res;
 	return res? R_TRUE: R_FALSE;
 }

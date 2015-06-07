@@ -47,7 +47,7 @@ R_API void *btree_search(struct btree_node *root, void *x, BTREE_CMP(cmp), int p
 	} return NULL;
 }
 
-R_API void *btree_traverse(struct btree_node *root, int reverse, void *context, BTREE_TRV(trv)) {
+R_API void btree_traverse(struct btree_node *root, int reverse, void *context, BTREE_TRV(trv)) {
 	if (root!=NULL) {
 		if (reverse) {
 			btree_traverse (root->right, reverse, context, trv);
