@@ -136,11 +136,6 @@ adjustVertices = function(graph, cell) {
       var angle = g.toRad(theta + sign * 90);
       var vertex = g.point.fromPolar(offset, angle, midPoint);
 
-      console.log(" sign ", sign,
-          " theta ", theta,
-          " angle ", angle,
-          " midpoint ", midPoint,
-          " vertex ", vertex);
       // we tell the link deviate to the right or to the left
       // from its path depending on sign
       //     ^             ^
@@ -221,8 +216,6 @@ BBGraph.prototype.render = function() {
   // reposition graph
   reposition_graph();
 
-  var myAdjustVertices = _.partial(adjustVertices, graph);
-
   // remove html mask in minimap since its not scaled
   $("#minimap .basicblock").remove();
 
@@ -273,7 +266,8 @@ BBGraph.prototype.render = function() {
     }
   });
 
-  graph.getLinks().forEach(myAdjustVertices);
+  var myAdjustVertices = _.partial(adjustVertices, graph);
+  _.each(graph.getLinks(), myAdjustVertices);
   paper.on('cell:pointerup', myAdjustVertices);
 
   if (r2ui._dis.minimap) {
