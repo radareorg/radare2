@@ -268,7 +268,7 @@ BBGraph.prototype.render = function() {
   });
 
   var myAdjustVertices = _.partial(adjustVertices, graph);
-  graph.getLinks().forEach(myAdjustVertices);
+  _.each(graph.getLinks(), myAdjustVertices);
   paper.on('cell:pointerup', myAdjustVertices);
 
   if (r2ui._dis.minimap) {
