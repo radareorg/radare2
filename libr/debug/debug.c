@@ -48,7 +48,7 @@ static int r_debug_recoil(RDebug *dbg) {
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_TRUE);
 			//eprintf ("[BP Hit] Setting pc to 0x%"PFMT64x"\n", (addr-recoil));
 			return R_TRUE;
-		} 
+		}
 	} else eprintf ("r_debug_recoil: Cannot get program counter\n");
 	return R_FALSE;
 }
@@ -67,7 +67,8 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->pid = -1;
 		dbg->bpsize = 1;
 		dbg->tid = -1;
-		dbg->graph = r_graph_new ();
+		dbg->tree = r_tree_new ();
+		dbg->tracenodes = sdb_new0 ();
 		dbg->swstep = 0;
 		dbg->newstate = 0;
 		dbg->signum = 0;
@@ -90,6 +91,17 @@ R_API RDebug *r_debug_new(int hard) {
 	return dbg;
 }
 
+static int free_tracenodes_entry (RDebug *dbg, const char *k, const char *v) {
+	ut64 v_num = r_num_get (NULL, v);
+	free((void *)(size_t)v_num);
+	return R_TRUE;
+}
+
+R_API void r_debug_tracenodes_reset (RDebug *dbg) {
+	sdb_foreach (dbg->tracenodes, (SdbForeachCallback)free_tracenodes_entry, dbg);
+	sdb_reset (dbg->tracenodes);
+}
+
 R_API RDebug *r_debug_free(RDebug *dbg) {
 	if (!dbg) return NULL;
 	// TODO: free it correctly.. we must ensure this is an instance and not a reference..
@@ -97,9 +109,11 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 	//r_reg_free(&dbg->reg);
 	r_list_free (dbg->snaps);
 	sdb_free (dbg->sgnls);
+	r_tree_free (dbg->tree);
+	sdb_foreach (dbg->tracenodes, (SdbForeachCallback)free_tracenodes_entry, dbg);
+	sdb_free (dbg->tracenodes);
 	//r_debug_plugin_free();
 	r_debug_trace_free (dbg);
-	r_graph_free (dbg->graph);
 	free (dbg);
 	return NULL;
 }
