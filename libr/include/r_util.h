@@ -218,6 +218,15 @@ typedef struct r_stack_t {
 	int top;
 } RStack;
 
+/* queue api */
+typedef struct r_queue_t {
+	void **elems;
+	unsigned int capacity;
+	unsigned int front;
+	int rear;
+	unsigned int size;
+} RQueue;
+
 /* graph api */
 typedef struct r_graph_node_t {
 	RList *parents; // <RGraphNode>
@@ -244,6 +253,12 @@ R_API void r_stack_free (RStack *s);
 R_API int r_stack_push (RStack *s, void *el);
 R_API void *r_stack_pop (RStack *s);
 R_API int r_stack_is_empty (RStack *s);
+
+R_API RQueue *r_queue_new (int n);
+R_API void r_queue_free (RQueue *q);
+R_API int r_queue_enqueue (RQueue *q, void *el);
+R_API void *r_queue_dequeue (RQueue *q);
+R_API int r_queue_is_empty (RQueue *q);
 
 R_API RGraphNode *r_graph_node_new (ut64 addr, void *data);
 R_API void r_graph_node_free (RGraphNode *n);

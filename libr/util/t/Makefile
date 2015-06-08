@@ -17,6 +17,7 @@ BINS+=test_str
 BINS+=test_file_slurp_hexpairs
 BINS+=test_cmd_str
 BINS+=test_stack
+BINS+=test_queue
 
 all: ${BINS}
 
