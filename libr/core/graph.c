@@ -874,8 +874,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 						" TAB  - select previous node\n"
 						" t/f  - follow true/false edges\n"
 						" e    - toggle edge-lines style (diagonal/square)\n"
-						" n    - toggle mini-graph\n"
 						" O    - toggle disasm mode\n"
+						" p    - toggle mini-graph\n"
 						" u    - select previous node\n"
 						" V    - toggle basicblock / call graphs\n"
 						" x/X  - jump to xref/ref\n"
@@ -957,7 +957,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 			case 'e':
 				  can->linemode = !!!can->linemode;
 				  break;
-			case 'n':
+			case 'p':
 				  graph_toggle_small_nodes(g);
 				  break;
 			case 'u':

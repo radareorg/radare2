@@ -89,6 +89,11 @@ static int core_cmd_callback (void *user, const char *cmd) {
 	return r_core_cmd0 (core, cmd);
 }
 
+static char *core_cmdstr_callback (void *user, const char *cmd) {
+	RCore *core = (RCore *)user;
+	return r_core_cmd_str (core, cmd);
+}
+
 static ut64 getref (RCore *core, int n, char t, int type) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	RListIter *iter;
@@ -884,7 +889,8 @@ R_API int r_core_init(RCore *core) {
 	core->io = r_io_new ();
 	core->io->ff = 1;
 	core->io->user = (void *)core;
-	core->io->core_cmd_cb = core_cmd_callback;
+	core->io->cb_core_cmd = core_cmd_callback;
+	core->io->cb_core_cmdstr = core_cmdstr_callback;
 	core->sign = r_sign_new ();
 	core->search = r_search_new (R_SEARCH_KEYWORD);
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval

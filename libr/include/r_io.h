@@ -140,14 +140,15 @@ typedef struct r_io_t {
 	RList *files;
 	RList *cache;
 	int zeromap;
-	//XXX: Need by rap
-	void *user;
-	int (*core_cmd_cb)(void *user, const char *str);
 	RCache *buffer;
 	int buffer_enabled;
 	int ff;
 	int autofd;
 	char *runprofile;
+	/* Core Callbacks  (used by rap) */
+	void *user;
+	int (*cb_core_cmd)(void *user, const char *str);
+	char* (*cb_core_cmdstr)(void *user, const char *str);
 } RIO;
 
 typedef struct r_io_plugin_t {
