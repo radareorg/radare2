@@ -227,6 +227,31 @@ typedef struct r_queue_t {
 	unsigned int size;
 } RQueue;
 
+/* tree api */
+struct r_tree_t;
+
+typedef struct r_tree_node_t {
+	struct r_tree_node_t *parent;
+	struct r_tree_t *tree;
+	RList *children; // <RTreeNode>
+	unsigned int n_children;
+	int depth;
+	RListFree free;
+	void *data;
+} RTreeNode;
+
+typedef struct r_tree_t {
+	RTreeNode *root;
+} RTree;
+
+typedef struct r_tree_visitor_t {
+	void (*pre_visit)(RTreeNode *, struct r_tree_visitor_t *);
+	void (*post_visit)(RTreeNode *, struct r_tree_visitor_t *);
+	void (*discover_child)(RTreeNode *, struct r_tree_visitor_t *);
+	void *data;
+} RTreeVisitor;
+typedef void (*RTreeNodeVisitCb)(RTreeNode *n, RTreeVisitor *vis);
+
 /* graph api */
 typedef struct r_graph_node_t {
 	RList *parents; // <RGraphNode>
@@ -259,6 +284,13 @@ R_API void r_queue_free (RQueue *q);
 R_API int r_queue_enqueue (RQueue *q, void *el);
 R_API void *r_queue_dequeue (RQueue *q);
 R_API int r_queue_is_empty (RQueue *q);
+
+R_API RTree *r_tree_new (void);
+R_API RTreeNode *r_tree_add_node (RTree *t, RTreeNode *node, void *child_data);
+R_API void r_tree_reset (RTree *t);
+R_API void r_tree_free (RTree *t);
+R_API void r_tree_dfs (RTree *t, RTreeVisitor *vis);
+R_API void r_tree_bfs (RTree *t, RTreeVisitor *vis);
 
 R_API RGraphNode *r_graph_node_new (ut64 addr, void *data);
 R_API void r_graph_node_free (RGraphNode *n);
