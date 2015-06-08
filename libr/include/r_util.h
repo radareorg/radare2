@@ -211,6 +211,13 @@ typedef struct r_list_range_t {
 	//RListComparator c;
 } RListRange;
 
+/* stack api */
+typedef struct r_stack_t {
+	void **elems;
+	unsigned int n_elems;
+	int top;
+} RStack;
+
 /* graph api */
 typedef struct r_graph_node_t {
 	RList *parents; // <RGraphNode>
@@ -232,6 +239,12 @@ typedef struct r_graph_t {
 } RGraph;
 
 #ifdef R_API
+R_API RStack *r_stack_new (unsigned int n);
+R_API void r_stack_free (RStack *s);
+R_API int r_stack_push (RStack *s, void *el);
+R_API void *r_stack_pop (RStack *s);
+R_API int r_stack_is_empty (RStack *s);
+
 R_API RGraphNode *r_graph_node_new (ut64 addr, void *data);
 R_API void r_graph_node_free (RGraphNode *n);
 R_API void r_graph_traverse(RGraph *t);
