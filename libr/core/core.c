@@ -915,7 +915,6 @@ R_API int r_core_init(RCore *core) {
 	r_core_cmd_init (core);
 	core->dbg = r_debug_new (R_TRUE);
 	r_core_bind (core, &core->dbg->corebind);
-	core->dbg->graph->printf = (PrintfCallback)r_cons_printf;
 	core->dbg->printf = (PrintfCallback)r_cons_printf;
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");

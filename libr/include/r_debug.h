@@ -166,7 +166,8 @@ typedef struct r_debug_t {
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
 	RList *snaps; // <RDebugSnap>
-	RGraph *graph;
+	RTree *tree;
+	Sdb *tracenodes;
 	Sdb *sgnls;
 	RCoreBind corebind;
 #if __WINDOWS__
@@ -365,6 +366,8 @@ R_API int r_debug_arg_set (RDebug *dbg, int fast, int num, ut64 value);
 
 /* pid */
 R_API int r_debug_thread_list(RDebug *dbg, int pid);
+
+R_API void r_debug_tracenodes_reset (RDebug *dbg);
 
 R_API void r_debug_trace_reset (RDebug *dbg);
 R_API int r_debug_trace_pc (RDebug *dbg);
