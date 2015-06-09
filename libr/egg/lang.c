@@ -519,7 +519,11 @@ static void rcc_context(REgg *egg, int delta) {
 	REggEmit *emit = egg->remit;
 	char str[64];
 
-	nestedi[CTX-1]++;
+
+	if (CTX>31 || CTX <0)
+		return;
+
+	nestedi[CTX]++;
 	if (callname && CTX>0) {// && delta>0) {
 	//	set_nested (callname);
 //eprintf (" - - - - - - -  set nested d=%d c=%d (%s)\n", delta, context-1, callname);
