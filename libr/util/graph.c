@@ -1,200 +1,116 @@
 /* radare - LGPL - Copyright 2007-2012 - pancake */
-/* graph with stack facilities implementation */
 
 #include <r_util.h>
 
-#if 0
-RGraph *r_anal_getgraph(RAnal *anal, ut64 addr) {
-        RGraph *g;
-        RFunction *f = r_anal_fcn_get (anal, addr);
-        if (!f) return NULL;
-        g = r_graph_new ();
-        // walk basic blocks, and create nodes and edges
+#define INITIAL_CAPACITY 16
+
+/* TODO: allow deletion of nodes and update the "is_in_range"
+ *       function to "is_valid_index" function, that checks if
+ *       the node really exists */
+static int is_in_range (RGraph *g, unsigned int idx) {
+	return idx < g->n_nodes;
 }
 
-// r_anal_graph_to_kv()
-node.0x804840={"name":"patata",size:123,"code":"jlasdfjlksf"}
-node.0x804840.to=[0x804805,0x804805,0x0485085,0x90850]
-#endif
-
-R_API RGraphNode *r_graph_node_new (ut64 addr, void *data) {
+static RGraphNode *r_graph_node_new (void *data) {
 	RGraphNode *p = R_NEW0 (RGraphNode);
-	p->parents = r_list_new ();
-	p->children = r_list_new ();
-	p->addr = addr;
 	p->data = data;
-	p->refs = 0;
+	p->free = NULL;
 	return p;
 }
 
-R_API void r_graph_node_free (RGraphNode *n) {
-	r_list_free (n->parents);
-	r_list_free (n->children);
+static void r_graph_node_free (RGraphNode *n) {
 	if (n->free)
 		n->free (n->data);
 	free (n);
 }
 
-static void walk_children (RGraph *t, RGraphNode *tn, int level) {
-	int i;
-	RListIter *iter;
-	RGraphNode *n;
-	if (r_list_contains (t->path, tn)) {
-		// do not repeat pushed nodes
-		return;
-	}
-	for (i=0; i<level; i++)
-		t->printf ("   ");
-	t->printf (" 0x%08"PFMT64x" refs %d\n",
-			tn->addr, tn->refs);
-	r_list_foreach (tn->parents, iter, n) {
-		for (i=0; i<level; i++)
-			t->printf ("   ");
-		t->printf (" |_ 0x%08"PFMT64x"\n", n->addr);
-	}
-	r_list_push (t->path, tn);
-	r_list_foreach (tn->children, iter, n) {
-		walk_children (t, n, level+1);
-	}
-	r_list_pop (t->path);
-}
-
-R_API void r_graph_traverse(RGraph *t) {
-	RListIter *iter;
-	RGraphNode *root;
-	RList *path = t->path;
-	t->path = r_list_new ();
-	r_list_foreach (t->roots, iter, root) {
-		walk_children (t, root, 0);
-	}
-	r_list_free (t->path);
-	t->path = path;
-}
-
-R_API RGraph* r_graph_new () {
+R_API RGraph *r_graph_new () {
 	RGraph *t = R_NEW0 (RGraph);
-	t->printf = (PrintfCallback) printf;
-	t->path = r_list_new ();
-	t->nodes = r_list_new ();
-	t->roots = r_list_new ();
-	t->nodes->free = (RListFree)r_graph_node_free;
-	t->root = NULL;
-	t->cur = NULL;
+	t->capacity = INITIAL_CAPACITY;
+	t->nodes = calloc (t->capacity, sizeof(RGraphNode *));
+	t->adjacency = calloc (t->capacity, sizeof(RList *));
+	t->n_nodes = 0;
+	t->last_index = -1;
 	return t;
 }
 
 R_API void r_graph_free (RGraph* t) {
-	r_list_free (t->nodes);
-	r_list_free (t->path);
-	r_list_free (t->roots);
+	unsigned i;
+
+	for (i = 0; i < t->capacity; ++i) {
+		if (t->nodes[i] != NULL) {
+			r_list_free (t->adjacency[i]);
+			r_graph_node_free (t->nodes[i]);
+		}
+	}
+
+	free (t->nodes);
+	free (t->adjacency);
 	free (t);
 }
 
-R_API RGraphNode* r_graph_get_current (RGraph *t, ut64 addr) {
-	return t->cur? t->cur->data: NULL;
-}
-
-R_API RGraphNode* r_graph_get_node (RGraph *t, ut64 addr, boolt c) {
-	RListIter *iter;
-	RGraphNode *n;
-	r_list_foreach (t->nodes, iter, n) {
-		if (n->addr == addr)
-			return n;
-	}
-	if (c) {
-		n = r_graph_node_new (addr, NULL);
-		r_list_append (t->nodes, n);
-		return n;
-	}
-	return NULL;
+R_API RGraphNode *r_graph_get_node (RGraph *t, unsigned int idx) {
+	return t->nodes[idx];
 }
 
 R_API void r_graph_reset (RGraph *t) {
-	r_list_free (t->nodes);
-	t->nodes = r_list_new ();
-	t->nodes->free = (RListFree)r_graph_node_free;
-	r_list_free (t->roots);
-	t->roots = r_list_new ();
-	t->root = NULL;
-}
+	unsigned i;
 
-// g.add (0x804840, 0x804408, null);
-R_API void r_graph_add (RGraph *t, ut64 from, ut64 addr, void *data) {
-	RGraphNode *n, *f = r_graph_get_node (t, from, R_TRUE);
-	n = r_graph_get_node (t, addr, R_TRUE);
-	n->data = data;
-	if (!r_list_contains (f->children, n))
-		r_list_append (f->children, n);
-	if (!r_list_contains (f->parents, n))
-		r_list_append (n->parents, f);
-}
-
-// plant: to set new root :)
-R_API void r_graph_plant(RGraph *t) {
-	t->root = NULL;
-}
-
-R_API void r_graph_push (RGraph *t, ut64 addr, void *data) {
-	RGraphNode *c, *n = r_graph_get_node (t, addr, R_FALSE);
-	t->level++;
-	if (!n) {
-		n = r_graph_node_new (addr, data);
-		r_list_append (t->nodes, n);
-		if (t->root == NULL) {
-			t->root = n;
-			r_list_append (t->roots, n);
-		}
-	} else {
-		n->refs++;
-		n->data = data; // update data if already pushed?
+	for (i = 0; i < t->capacity; ++i) {
+		if (t->adjacency[i])
+			r_list_free (t->adjacency[i]);
+		if (t->nodes[i])
+			r_graph_node_free (t->nodes[i]);
 	}
-	if (!t->cur)
-		t->cur = r_list_contains (t->nodes, n);
-	if (t->cur) {
-		c = t->cur->data;
-		if (!r_list_contains (c->children, n))
-			r_list_append (c->children, n);
-		if (c->addr && !r_list_contains (n->parents, c))
-			r_list_append (n->parents, c);
+	free (t->nodes);
+	t->capacity = INITIAL_CAPACITY;
+	t->nodes = calloc (t->capacity, sizeof(RGraphNode *));
+	t->adjacency = calloc (t->capacity, sizeof(RList *));
+	t->n_nodes = 0;
+}
 
+R_API RGraphNode *r_graph_add_node (RGraph *t, void *data) {
+	RGraphNode *n = r_graph_node_new (data);
+
+	if (t->n_nodes == t->capacity) {
+		int new_capacity = t->capacity * 2;
+		t->adjacency = realloc (t->adjacency, new_capacity * sizeof(RList *));
+		t->nodes = realloc (t->nodes, new_capacity * sizeof (RGraphNode *));
+		memset (t->nodes + t->capacity, 0, (new_capacity - t->capacity) * sizeof (RGraphNode *));
+		t->capacity = new_capacity;
 	}
-	t->cur = r_list_append (t->path, n);
+
+	n->idx = ++t->last_index;
+	t->adjacency[n->idx] = r_list_new();
+	t->adjacency[n->idx]->free = NULL;
+	t->nodes[n->idx] = n;
+	t->n_nodes++;
+	return n;
 }
 
-R_API RGraphNode* r_graph_pop(RGraph *t) {
-	RListIter *p;
-	if (!t || !t->path || !t->cur)
-		return NULL;
-	// TODO: handle null
-	t->level--;
-	if (t->level<0) {
-		eprintf ("Negative pop!\n");
-		return NULL;
-	}
-	p = t->cur->p;
-	r_list_delete (t->path, t->cur);
-	t->cur = p;
-	return (RGraphNode*)t->cur;
+R_API void r_graph_add_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
+	if (is_in_range(t, from->idx))
+		r_list_append(t->adjacency[from->idx], to);
 }
 
-#if TEST
-// usage
-main () {
-	RGraph *t = r_graph_new ();
-	r_graph_push (t, 0x8048590, NULL);
-	r_graph_push (t, 0x8048230, NULL);
-	r_graph_pop (t);
-	r_graph_push (t, 0x8044300, NULL);
-	r_graph_push (t, 0x8046300, NULL);
-	r_graph_pop (t);
-	r_graph_push (t, 0x8046388, NULL);
-	r_graph_pop (t);
-	r_graph_push (t, 0x8046388, NULL);
-	r_graph_push (t, 0x8046388, NULL);
-		r_graph_push (t, 0x8046300, NULL);
-		r_graph_push (t, 0x8046300, NULL);
-	r_graph_pop (t);
-	r_graph_traverse (t);
-	r_graph_free (t);
+R_API RList *r_graph_get_neighbours (RGraph *g, RGraphNode *n) {
+	return is_in_range(g, n->idx) ? g->adjacency[n->idx] : NULL;
 }
-#endif
+
+/* returns a list with all the nodes in the graph
+ * NOTE: the user should free the list */
+R_API RList *r_graph_get_nodes (RGraph *g) {
+	RList *res;
+	unsigned int i;
+
+	res = r_list_new ();
+	res->free = NULL;
+	for (i = 0; i < g->capacity; ++i)
+		if (g->nodes[i])
+			r_list_append (res, g->nodes[i]);
+	return res;
+}
+
+R_API int r_graph_adjacent (RGraph *g, RGraphNode *from, RGraphNode *to) {
+	return r_list_contains (g->adjacency[from->idx], to) ? R_TRUE : R_FALSE;
+}
