@@ -758,11 +758,13 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	x27	.64	216	0\n"
 		"gpr	x28	.64	224	0\n"
 		"gpr	x29	.64	232	0\n"
+		"gpr	fp	.64	232	0\n" // fp = x29
 		"gpr	x30	.64	240	0\n"
-		"gpr	pc	.64	248	0\n"
-		"gpr	pstate	.64	256	0\n"
-		"gpr	ox0	.64	264	0\n"
-		"gpr	snr	.64	272	0\n"
+		"gpr	lr	.64	240	0\n" // lr = x30
+		"gpr	sp	.64	248	0\n"
+		"gpr	zr	.64	248	0\n" // zr = sp (x31)
+		"gpr	cpsr	.64	256	0\n"
+		"gpr	pc	.64	272	0\n"
 		// probably wrong
 		"gpr	nf	.1	.256	0	sign\n" // msb bit of last op
 		"gpr	zf	.1	.257	0	zero\n" // set if last op is 0
