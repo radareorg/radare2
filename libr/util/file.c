@@ -118,7 +118,7 @@ R_API char *r_file_abspath(const char *file) {
 	} else {
 #if __UNIX__ || __CYGWIN__
 		if (cwd && *file != '/')
-			ret = r_str_newf ("%s/%s", cwd, file);
+			ret = r_str_newf ("%s"R_SYS_DIR"%s", cwd, file);
 #elif __WINDOWS__ && !__CYGWIN__
 		if (cwd && !strchr (file, ':'))
 			ret = r_str_newf ("%s\\%s", cwd, file);
@@ -155,7 +155,7 @@ R_API char *r_file_path(const char *bin) {
 			ptr = strchr (str, ':');
 			if (ptr) {
 				*ptr = '\0';
-				snprintf (file, sizeof (file), "%s/%s", str, bin);
+				snprintf (file, sizeof (file), "%s"R_SYS_DIR"%s", str, bin);
 				if (r_file_exists (file)) {
 					free (path);
 					free (path_env);
@@ -403,7 +403,7 @@ R_API char *r_file_root(const char *root, const char *path) {
 	while (strstr (s, "..")) s = r_str_replace (s, "..", "", 1);
 	while (strstr (s, "./")) s = r_str_replace (s, "./", "", 1);
 	while (strstr (s, "//")) s = r_str_replace (s, "//", "", 1);
-	ret = r_str_concat (strdup (root), "/");
+	ret = r_str_concat (strdup (root), R_SYS_DIR);
 	ret = r_str_concat (ret, s);
 	free (s);
 	return ret;

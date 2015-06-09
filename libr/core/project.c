@@ -27,12 +27,12 @@ static int is_valid_project_name (const char *name) {
 static char *r_core_project_file(RCore *core, const char *file) {
 	const char *magic = "# r2 rdb project file";
 	char *data, *prjfile;
-	if (*file != '/') {
+	if (*file != R_SYS_DIR[0]) {
 		if (!is_valid_project_name (file))
 			return NULL;
 		prjfile = r_file_abspath (r_config_get (
 			core->config, "dir.projects"));
-		prjfile = r_str_concat (prjfile, "/");
+		prjfile = r_str_concat (prjfile, R_SYS_DIR);
 		prjfile = r_str_concat (prjfile, file);
 	} else prjfile = strdup (file);
 	data = r_file_slurp (prjfile, NULL);
@@ -328,7 +328,7 @@ R_API char *r_core_project_notes_file (RCore *core, const char *file) {
 	char *notes_txt;
 	const char *prjdir = r_config_get (core->config, "dir.projects");
 	char *prjpath = r_file_abspath (prjdir);
-	notes_txt = r_str_newf ("%s/%s.d/notes.txt", prjpath, file);
+	notes_txt = r_str_newf ("%s"R_SYS_DIR"%s.d"R_SYS_DIR"notes.txt", prjpath, file);
 	free (prjpath);
 	return notes_txt;
 }
