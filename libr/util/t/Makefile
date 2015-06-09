@@ -19,6 +19,7 @@ BINS+=test_cmd_str
 BINS+=test_stack
 BINS+=test_queue
 BINS+=test_tree
+BINS+=test_graph
 
 all: ${BINS}
 
