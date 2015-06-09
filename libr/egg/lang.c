@@ -368,6 +368,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 			eprintf ("Something is really wrong\n");
 		}
 		ret = strdup(out);
+		free (oldstr);
 	} else if (*str=='"' || *str=='\'') {
 		int mustfilter = *str=='"';
 		/* TODO: check for room in stackfixed area */
@@ -382,8 +383,8 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		dstvar = strdup (skipspaces (foo));
 		rcc_pushstr (egg, str, mustfilter);
 		ret = r_egg_mkvar (egg, out, foo, 0);
+		free (oldstr);
 	}
-	free (oldstr);
 	return ret;
 }
 
