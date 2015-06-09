@@ -3,6 +3,11 @@
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%lld"
 
+struct dot_trace_ght {
+	RGraph *graph;
+	Sdb *graphnodes;
+};
+
 struct trace_node {
 	ut64 addr;
 	int refs;
@@ -47,6 +52,94 @@ static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 	r_debug_continue_syscalls (core->dbg, syscalls, count);
 	checkbpcallback (core);
 	free (syscalls);
+}
+
+static RGraphNode *get_graphtrace_node (RGraph *g, Sdb *nodes, struct trace_node *tn) {
+	RGraphNode *gn;
+	char tn_key[TN_KEY_LEN];
+
+	snprintf (tn_key, TN_KEY_LEN, TN_KEY_FMT, tn->addr);
+	gn = (RGraphNode *)(size_t)sdb_num_get (nodes, tn_key, NULL);
+	if (!gn) {
+		gn = r_graph_add_node (g, tn);
+		sdb_num_set (nodes, tn_key, (ut64)(size_t)gn, 0);
+	}
+	return gn;
+}
+
+static void dot_trace_create_node (RTreeNode *n, RTreeVisitor *vis) {
+	struct dot_trace_ght *data = (struct dot_trace_ght *)vis->data;
+	struct trace_node *tn = n->data;
+
+	if (tn)
+		get_graphtrace_node (data->graph, data->graphnodes, tn);
+}
+
+static void dot_trace_discover_child (RTreeNode *n, RTreeVisitor *vis) {
+	struct dot_trace_ght *data = (struct dot_trace_ght *)vis->data;
+	RGraph *g = data->graph;
+	Sdb *gnodes = data->graphnodes;
+	RTreeNode *parent = n->parent;
+	struct trace_node *tn = n->data;
+	struct trace_node *tn_parent = parent->data;
+
+	if (tn && tn_parent) {
+		RGraphNode *gn = get_graphtrace_node (g, gnodes, tn);
+		RGraphNode *gn_parent = get_graphtrace_node (g, gnodes, tn_parent);
+
+		if (!r_graph_adjacent (g, gn_parent, gn))
+			r_graph_add_edge (g, gn_parent, gn);
+	}
+}
+
+static void dot_trace_traverse(RCore *core, RTree *t) {
+	const char *gfont = r_config_get (core->config, "graph.font");
+	struct dot_trace_ght aux_data;
+	RTreeVisitor vis = { 0 };
+	RList *nodes;
+	RListIter *iter;
+	RGraphNode *n;
+
+	aux_data.graph = r_graph_new ();
+	aux_data.graphnodes = sdb_new0 ();
+
+	/* build a callgraph from the execution trace */
+	vis.data = &aux_data;
+	vis.pre_visit = (RTreeNodeVisitCb)dot_trace_create_node;
+	vis.discover_child = (RTreeNodeVisitCb)dot_trace_discover_child;
+	r_tree_bfs (t, &vis);
+
+	/* traverse the callgraph to print the dot file */
+	nodes = r_graph_get_nodes (aux_data.graph);
+	r_cons_printf ("digraph code {\n"
+		"graph [bgcolor=white];\n"
+		"    node [color=lightgray, style=filled"
+		" shape=box fontname=\"%s\" fontsize=\"8\"];\n", gfont);
+	r_list_foreach (nodes, iter, n) {
+		struct trace_node *tn = (struct trace_node *)n->data;
+		RList *neighbours = r_graph_get_neighbours (aux_data.graph, n);
+		RListIter *it_n;
+		RGraphNode *w;
+
+		if (tn) {
+			r_cons_printf ("\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x
+					"\" color=\"lightgray\" label=\"0x%08"PFMT64x
+					" (%d)\"]\n", tn->addr, tn->addr, tn->addr, tn->refs);
+		}
+		r_list_foreach (neighbours, it_n, w) {
+			 struct trace_node *tv = (struct trace_node *)w->data;
+
+			 if (tv && tn) {
+				 r_cons_printf ("\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x
+						 "\" [color=\"red\"];\n", tn->addr, tv->addr);
+			 }
+		}
+	}
+	r_cons_printf ("}\n");
+	r_list_free (nodes);
+
+	r_graph_free (aux_data.graph);
+	sdb_free (aux_data.graphnodes);
 }
 
 /* TODO: refactor all those step_until* function into a single one
@@ -1914,7 +2007,7 @@ static int cmd_debug(void *data, const char *input) {
 			r_core_cmd0 (core, "pd 1 @@= `dt~[0]`");
 			break;
 		case 'g': // "dtg"
-			/* dot_trace_traverse (core, core->dbg->tree); */
+			dot_trace_traverse (core, core->dbg->tree);
 			break;
 		case 'r':
 			r_tree_reset (core->dbg->tree);
