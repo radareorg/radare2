@@ -315,7 +315,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 
 	r_mem_copyendian ((ut8*)&i, buf+1, 4, ENDIAN);
 	ret = 0;
-	if (i>0xffff) {
+	if (i>0xffffffff) {
 		eprintf ("Invalid length\n");
 		return -1;
 	}
