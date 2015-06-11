@@ -1507,72 +1507,152 @@ static void trace_traverse (RTree *t) {
 	r_tree_dfs (t, &vis);
 }
 
-static void r_core_debug_trace_calls (RCore *core) {
+static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_addr) {
+	int shallow_trace = r_config_get_i (core->config, "dbg.shallow_trace");
 	Sdb *tracenodes = core->dbg->tracenodes;
 	RTree *tr = core->dbg->tree;
+	RDebug *dbg = core->dbg;
+	ut64 debug_to = UT64_MAX;
 	RTreeNode *cur;
-	int n = 0, t = core->dbg->trace->enabled;
-	core->dbg->trace->enabled = 0;
+	int n = 0;
+
 	/* set root if not already present */
 	r_tree_add_node (tr, NULL, NULL);
 	cur = tr->root;
-	r_cons_break (static_debug_stop, core->dbg);
-	r_reg_arena_swap (core->dbg->reg, R_TRUE);
-	for (;;) {
+
+	while (R_TRUE) {
 		ut8 buf[32];
 		ut64 addr;
 		RAnalOp aop;
+		int addr_in_range;
+
 		if (r_cons_singleton ()->breaked)
 			break;
-		if (r_debug_is_dead (core->dbg))
+		if (r_debug_is_dead (dbg))
 			break;
-		if (!r_debug_step (core->dbg, 1))
+		if (debug_to != UT64_MAX && !r_debug_continue_until (dbg, debug_to))
 			break;
-		if (!r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE))
+		else if (!r_debug_step (dbg, 1))
 			break;
-		addr = r_debug_reg_get (core->dbg, "pc");
+		debug_to = UT64_MAX;
+		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE))
+			break;
+		addr = r_debug_reg_get (dbg, "pc");
+		addr_in_range = addr >= from && addr < to;
+
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
 		r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
 		eprintf (" %d %"PFMT64x"\r", n++, addr);
 		switch (aop.type) {
-			case R_ANAL_OP_TYPE_UCALL:
-				// store regs
-				// step into
-				// get pc
-				r_debug_step (core->dbg, 1);
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-				addr = r_debug_reg_get (core->dbg, "pc");
+		case R_ANAL_OP_TYPE_UCALL:
+		{
+			ut64 called_addr;
+			int called_in_range;
+			// store regs
+			// step into
+			// get pc
+			r_debug_step (dbg, 1);
+			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+			called_addr = r_debug_reg_get (dbg, "pc");
+			called_in_range = called_addr >= from && called_addr < to;
+			if (!called_in_range && addr_in_range && shallow_trace)
+				debug_to = addr;
+			if (addr_in_range) {
 				cur = add_trace_tree_child(tracenodes, tr, cur, addr);
-				// TODO: push pc+aop.length into the call path stack
-				break;
-			case R_ANAL_OP_TYPE_CALL:
-				cur = add_trace_tree_child(tracenodes, tr, cur, addr);
-				break;
-			case R_ANAL_OP_TYPE_RET:
-#if 0
-				// TODO: we must store ret value for each call in the graph path to do this check
-				r_debug_step (core->dbg, 1);
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-				addr = r_debug_reg_get (core->dbg, "pc");
-				// TODO: step into and check return address if correct
-				// if not correct we are hijacking the control flow (exploit!)
-#endif
-				if (cur != tr->root)
+				if (debug_to != UT64_MAX)
 					cur = cur->parent;
+			}
+			// TODO: push pc+aop.length into the call path stack
+			break;
+		}
+		case R_ANAL_OP_TYPE_CALL:
+		{
+			int called_in_range = aop.jump >= from && aop.jump < to;
+			if (!called_in_range && addr_in_range && shallow_trace)
+				debug_to = aop.addr + aop.size;
+			if (addr_in_range) {
+				cur = add_trace_tree_child(tracenodes, tr, cur, addr);
+				if (debug_to != UT64_MAX)
+					cur = cur->parent;
+			}
+			break;
+		}
+		case R_ANAL_OP_TYPE_RET:
 #if 0
-				if (addr != gn->addr) {
-					eprintf ("Oops. invalid return address 0x%08"PFMT64x
-							"\n0x%08"PFMT64x"\n", addr, gn->addr);
-				}
+			// TODO: we must store ret value for each call in the graph path to do this check
+			r_debug_step (dbg, 1);
+			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+			addr = r_debug_reg_get (dbg, "pc");
+			// TODO: step into and check return address if correct
+			// if not correct we are hijacking the control flow (exploit!)
 #endif
-				break;
+			if (cur != tr->root)
+				cur = cur->parent;
+#if 0
+			if (addr != gn->addr) {
+				eprintf ("Oops. invalid return address 0x%08"PFMT64x
+						"\n0x%08"PFMT64x"\n", addr, gn->addr);
+			}
+#endif
+			break;
 		}
 		if (checkbpcallback (core)) {
 			eprintf ("Interrupted by a breakpoint\n");
 			break;
 		}
 	}
-	trace_traverse (tr);
+}
+
+static void debug_trace_calls (RCore *core, const char *input) {
+	RBreakpointItem *bp_final = NULL;
+	int t = core->dbg->trace->enabled;
+	ut64 from = 0, to = UT64_MAX, final_addr = UT64_MAX;
+
+	if (r_debug_is_dead (core->dbg)) {
+		eprintf ("No process to debug.");
+		return;
+	}
+
+	if (*input == ' ') {
+		ut64 first_n;
+
+		while (*input == ' ') input++;
+		first_n = r_num_math (core->num, input);
+		input = strchr (input, ' ');
+		if (input) {
+			while (*input == ' ') input++;
+			from = first_n;
+			to = r_num_math (core->num, input);
+			input = strchr (input, ' ');
+			if (input) {
+				while (*input == ' ') input++;
+				final_addr = r_num_math (core->num, input);
+			}
+		} else {
+			final_addr = first_n;
+		}
+	}
+
+	core->dbg->trace->enabled = 0;
+	r_cons_break (static_debug_stop, core->dbg);
+	r_reg_arena_swap (core->dbg->reg, R_TRUE);
+
+	if (final_addr != UT64_MAX) {
+		int hwbp = r_config_get_i (core->config, "dbg.hwbp");
+
+		if (hwbp)
+			bp_final = r_bp_add_hw (core->dbg->bp, final_addr, 1, R_BP_PROT_EXEC);
+		else
+			bp_final = r_bp_add_sw (core->dbg->bp, final_addr, 1, R_BP_PROT_EXEC);
+		if (!bp_final)
+			eprintf ("Cannot set breakpoint at final address (%llx)\n", final_addr);
+	}
+
+	do_debug_trace_calls (core, from, to, final_addr);
+	if (bp_final)
+		r_bp_del (core->dbg->bp, final_addr);
+
+	trace_traverse (core->dbg->tree);
 	core->dbg->trace->enabled = t;
 	r_cons_break_end();
 }
@@ -1997,7 +2077,7 @@ static int cmd_debug(void *data, const char *input) {
 				"Usage: dt", "", "Trace commands",
 				"dt", "", "List all traces ",
 				"dtd", "", "List all traced disassembled",
-				"dtc", "", "Trace call/ret",
+				"dtc [addr]|([from] [to] [addr])", "", "Trace call/ret",
 				"dtg", "", "Graph call/ret trace",
 				"dtr", "", "Reset traces (instruction//cals)",
 				NULL
@@ -2006,9 +2086,7 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'c': // "dtc"
-			if (r_debug_is_dead (core->dbg))
-				eprintf ("No process to debug.");
-			else r_core_debug_trace_calls (core);
+			debug_trace_calls (core, input + 2);
 			break;
 		case 'd':
 			// TODO: reimplement using the api

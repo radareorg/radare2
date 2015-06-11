@@ -1149,6 +1149,7 @@ R_API int r_core_config_init(RCore *core) {
 	else r_config_set_i (cfg, "dbg.follow", 32);
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
 	SETCB("dbg.swstep", "false", &cb_swstep, "Force use of software steps (code analysis+breakpoint)");
+	SETPREF("dbg.shallow_trace", "false", "While tracing, avoid following calls outside specified range");
 
 	r_config_set_getter (cfg, "dbg.swstep", (RConfigCallback)__dbg_swstep_getter);
 
