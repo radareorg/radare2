@@ -1144,6 +1144,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 
 		"dbt", "", "Display backtrace",
 		"dbt=", "", "Display backtrace in one line",
+		"dbtj", "", "Display backtrace in JSON",
 		"dbte", " <addr>", "Enable Breakpoint Trace",
 		"dbtd", " <addr>", "Disable Breakpoint Trace",
 		"dbts", " <addr>", "Swap Breakpoint Trace",
@@ -1195,7 +1196,22 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				eprintf ("Cannot unset tracepoint\n");
 			}
 			break;
-		case '=':
+		case 'j': // dbtj
+			addr = UT64_MAX;
+			if (input[2]==' ' && input[3])
+				addr = r_num_math (core->num, input+2);
+			i = 0;
+			list = r_debug_frames (core->dbg, addr);
+			r_cons_printf ("[");
+			r_list_foreach (list, iter, frame) {
+				r_cons_printf ("%s%08"PFMT64d,
+					(i?",":""), frame->addr);
+				i++;
+			}
+			r_cons_printf ("]\n");
+			r_list_purge (list);
+			break;
+		case '=': // dbt=
 			addr = UT64_MAX;
 			if (input[2]==' ' && input[3])
 				addr = r_num_math (core->num, input+2);
