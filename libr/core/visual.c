@@ -1036,7 +1036,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_core_cmd0 (core, "agv $$");
 		} else {
 			int ocolor = r_config_get_i (core->config, "scr.color");
-			r_core_visual_graph (core, NULL);
+			r_core_visual_graph (core, NULL, R_TRUE);
 			r_config_set_i (core->config, "scr.color", ocolor);
 		}
 		break;

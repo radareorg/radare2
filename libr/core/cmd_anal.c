@@ -881,7 +881,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 }
 		 break;
 	case 'g': // "afg" - non-interactive VV
-		r_core_fcn_graph (core, NULL);
+		r_core_visual_graph (core, NULL, R_FALSE);
 		break;
 	case '?':{ // "af?"
 		 const char* help_msg[] = {

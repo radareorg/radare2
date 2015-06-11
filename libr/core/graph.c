@@ -55,20 +55,10 @@ struct graph {
 	int force_update_seek;
 };
 
-#if 0
-static Node nodes[] = {
-	 {25,4, 18, 6, 0x8048320, "push ebp\nmov esp, ebp\njz 0x8048332" },
-	 {10,13, 18, 5, 0x8048332, "xor eax, eax\nint 0x80\n"},
-	 {30,13, 18, 5, 0x8048324, "pop ebp\nret"},
-	{NULL}
+struct graph_refresh_data {
+	struct graph *g;
+	int fs;
 };
-
-static Edge edges[] = {
-	{ 0, 0, 1 },
-	{ 1, 0, 2 },
-	{ -1 }
-};
-#endif
 
 #define G(x,y) r_cons_canvas_gotoxy (g->can, x, y)
 #define W(x) r_cons_canvas_write (g->can, x)
@@ -660,8 +650,10 @@ static void graph_prev_node(struct graph *g) {
 	graph_update_seek (g, g->curnode, R_FALSE);
 }
 
-static int graph_refresh(struct graph *g, int fs) {
+static int graph_refresh(struct graph_refresh_data *grd) {
 	char title[128];
+	struct graph *g = grd->g;
+	int fs = grd->fs;
 	int h, w = r_cons_get_size (&h);
 	int ret;
 
@@ -695,7 +687,8 @@ static int graph_refresh(struct graph *g, int fs) {
 		r_cons_clear00 ();
 	}
 
-	r_cons_canvas_resize (g->can, w, 1024);
+	h = fs ? h : 1024;
+	r_cons_canvas_resize (g->can, w, h);
 	r_cons_canvas_clear (g->can);
 
 	graph_print_edges(g);
@@ -759,46 +752,11 @@ static struct graph *graph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn
 	return g;
 }
 
-R_API int r_core_fcn_graph(RCore *core, RAnalFunction *_fcn) {
+R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interactive) {
 	RAnalFunction *fcn;
 	RConsCanvas *can;
 	struct graph *g;
-	int h;
-
-	fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
-	if (!fcn) {
-		eprintf ("No function in current seek\n");
-		return R_FALSE;
-	}
-	(void)r_cons_get_size (&h);
-	can = r_cons_canvas_new (1,1); //w - 1, h - 1);
-	if (!can) {
-		eprintf ("Cannot create RCons.canvas context\n");
-		return R_FALSE;
-	}
-	can->linemode = 1;
-	can->color = r_config_get_i (core->config, "scr.color");
-	// disable colors in disasm because canvas doesnt supports ansi text yet
-	r_config_set_i (core->config, "scr.color", 0);
-
-	g = graph_new (core, can, fcn);
-	if (!g) {
-		goto err_graph_new;
-	}
-
-	(void)graph_refresh (g, 0);
-	r_cons_printf (Color_RESET);
-	graph_free (g);
-err_graph_new:
-	r_config_set_i (core->config, "scr.color", can->color);
-	free (can);
-	return 0;
-}
-
-R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
-	RAnalFunction *fcn;
-	RConsCanvas *can;
-	struct graph *g;
+	struct graph_refresh_data *grd;
 	int ret;
 	int wheelspeed;
 	int okey, key, wheel;
@@ -811,7 +769,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 		return R_FALSE;
 	}
 	w = r_cons_get_size (&h);
-	can = r_cons_canvas_new (w - 1, h - 1);
+	can = r_cons_canvas_new (w, h);
 	if (!can) {
 		eprintf ("Cannot create RCons.canvas context\n");
 		return R_FALSE;
@@ -827,14 +785,24 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 		goto err_graph_new;
 	}
 
-	core->cons->event_data = g;
+	grd = (struct graph_refresh_data *)malloc (sizeof(*grd));
+	grd->g = g;
+	grd->fs = is_interactive;
+
+	core->cons->event_data = grd;
 	core->cons->event_resize = (RConsEvent)graph_refresh;
 
 	while (!exit_graph && !is_error) {
 		w = r_cons_get_size (&h);
-		ret = graph_refresh (g, 1);
+		ret = graph_refresh (grd);
 		if (!ret) {
 			is_error = R_TRUE;
+			break;
+		}
+
+		if (!is_interactive) {
+			/* this is a non-interactive ascii-art graph, so exit the loop */
+			r_cons_printf (Color_RESET);
 			break;
 		}
 
