@@ -120,13 +120,13 @@ const char *x##_version () { return "" GIT_TAP; }
 #define FS "\\"
 #define R_SYS_DIR "\\"
 #define R_SYS_HOME "USERPROFILE"
+#define R2_HOMEDIR ".config\\radare2"
 #else
 #define FS "/"
 #define R_SYS_DIR "/"
 #define R_SYS_HOME "HOME"
-#endif
-
 #define R2_HOMEDIR ".config/radare2"
+#endif
 
 #ifndef __packed
 #define __packed __attribute__((__packed__))

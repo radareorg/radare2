@@ -135,7 +135,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			RListIter *iter;
 			RList *files = r_sys_dir (path);
 			r_list_foreach (files, iter, f) {
-				char *filepath = r_str_concat (strdup (path), "/");
+				char *filepath = r_str_concat (strdup (path), R_SYS_DIR);
 				filepath =r_str_concat (filepath, f);
 				if (!r_file_is_directory (filepath)) {
 					eprintf ("rm %s\n", filepath);
@@ -300,7 +300,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_cons_flush ();
 		 {
 			char buf[1024];
-			snprintf (buf, sizeof (buf), "%s.d/xrefs", prj);
+			snprintf (buf, sizeof (buf), "%s.d%sxrefs", prj, R_SYS_DIR);
 			sdb_file (core->anal->sdb_xrefs, buf);
 			sdb_sync (core->anal->sdb_xrefs);
 		 }

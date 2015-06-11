@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2015 - nibble, pancake */
 
 // TODO: rename to r_anal_meta_get() ??
 #if 0
@@ -318,21 +318,21 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 				if (rad) {
 					a->printf ("%s %d @ 0x%08"PFMT64x" # %s\n",
 							r_meta_type_to_string (d->type),
-							d->size, d->from, pstr);
+							(int)d->size, d->from, pstr);
 				} else {
 					// TODO: use b64 here
 					a->printf ("0x%08"PFMT64x" string[%d] \"%s\"\n",
-							d->from, d->size, pstr);
+							d->from, (int)d->size, pstr);
 				}
 				break;
 			case 'd': /* data */
 				if (rad) {
 					a->printf ("%s %d @ 0x%08"PFMT64x"\n",
 							r_meta_type_to_string (d->type),
-							d->size, d->from);
+							(int)d->size, d->from);
 				} else {
 					a->printf ("0x%08"PFMT64x" data %s %d\n",
-						d->from, r_meta_type_to_string (d->type), d->size);
+						d->from, r_meta_type_to_string (d->type), (int)d->size);
 
 				}
 				break;
@@ -341,22 +341,22 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 				if (rad) {
 					a->printf ("%s %d %s @ 0x%08"PFMT64x"\n",
 							r_meta_type_to_string (d->type),
-							d->size, pstr, d->from);
+							(int)d->size, pstr, d->from);
 				} else {
 					const char *dtype = d->type=='m'?"magic":"format";
 					a->printf ("0x%08"PFMT64x" %s %d %s\n",
-							d->from, dtype, d->size, pstr);
+							d->from, dtype, (int)d->size, pstr);
 				}
 				break;
 			default:
 				if (rad) {
 					a->printf ("%s %d 0x%08"PFMT64x" # %s\n",
 						r_meta_type_to_string (d->type),
-						d->size, d->from, pstr);
+						(int)d->size, d->from, pstr);
 				} else {
 					// TODO: use b64 here
 					a->printf ("0x%08"PFMT64x" array[%d] %s %s\n",
-						d->from, d->size, 
+						d->from, (int)d->size, 
 						r_meta_type_to_string (d->type), pstr);
 				}
 				break;

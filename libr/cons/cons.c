@@ -24,7 +24,11 @@ static void break_signal(int sig) {
 
 static inline void r_cons_write (const char *buf, int len) {
 #if __WINDOWS__ && !__CYGWIN__
-	r_cons_w32_print ((unsigned char *)buf, len, 0);
+	if (I.fdout == 1) {
+		r_cons_w32_print ((const ut8*)buf, len, 0);
+	} else {
+		(void)write (I.fdout, buf, len);
+	}
 #else
 	if (write (I.fdout, buf, len) == -1) {
 		//eprintf ("r_cons_write: write error\n");
@@ -168,7 +172,6 @@ static void r_cons_pal_null (){
 		cons->pal.list[i] = NULL;	
 	}
 }
-
 
 R_API RCons *r_cons_new () {
 	I.refcnt++;
@@ -427,7 +430,7 @@ R_API void r_cons_flush() {
 			r_cons_set_raw (1);
 		}
 	}
-	if (tee&&*tee) {
+	if (tee && *tee) {
 		FILE *d = r_sandbox_fopen (tee, "a+");
 		if (d != NULL) {
 			if (I.buffer_len != fwrite (I.buffer, 1, I.buffer_len, d))

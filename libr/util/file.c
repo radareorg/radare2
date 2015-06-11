@@ -113,7 +113,7 @@ R_API ut64 r_file_size(const char *str) {
 R_API char *r_file_abspath(const char *file) {
 	char *ret = NULL;
 	char *cwd = r_sys_getdir ();
-	if (!strncmp (file, "~/", 2)) {
+	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
 		ret = r_str_home (file+2);
 	} else {
 #if __UNIX__ || __CYGWIN__
