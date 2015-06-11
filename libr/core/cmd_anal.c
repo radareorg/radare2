@@ -880,6 +880,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			   break;
 		 }
 		 break;
+	case 'g': // "afg" - non-interactive VV
+		r_core_fcn_graph (core, NULL);
+		break;
 	case '?':{ // "af?"
 		 const char* help_msg[] = {
 		 "Usage:", "af", "",
@@ -894,6 +897,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
 		 "afC[a]", " type @[addr]", "set calling convention for function (afC?=list cc types)",
 		 "aff", "", "re-adjust function boundaries to fit",
+		 "afg", "", "non-interactive ascii-art basic-block graph (See VV)",
 		 "afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 		 "afl", "[*] [fcn name]", "list functions (addr, size, bbs, name)",
 		 "afo", " [fcn.name]", "show address for the function named like this",

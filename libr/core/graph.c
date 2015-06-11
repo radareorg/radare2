@@ -660,7 +660,7 @@ static void graph_prev_node(struct graph *g) {
 	graph_update_seek (g, g->curnode, R_FALSE);
 }
 
-static int graph_refresh(struct graph *g) {
+static int graph_refresh(struct graph *g, int fs) {
 	char title[128];
 	int h, w = r_cons_get_size (&h);
 	int ret;
@@ -691,27 +691,37 @@ static int graph_refresh(struct graph *g) {
 		g->force_update_seek = R_FALSE;
 	}
 
-	r_cons_clear00 ();
+	if (fs) {
+		r_cons_clear00 ();
+	}
 
-	r_cons_canvas_resize (g->can, w, h);
+	r_cons_canvas_resize (g->can, w, 1024);
 	r_cons_canvas_clear (g->can);
 
 	graph_print_edges(g);
 	graph_print_nodes(g);
 
-	(void)G (-g->can->sx, -g->can->sy);
-	snprintf (title, sizeof (title)-1,
-		"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d) %s mouse:%s",
-		g->fcn->addr, g->ostack.size, g->fcn->name,
-		g->n_nodes, g->n_edges, g->is_callgraph?"CG":"BB",
-		mousemodes[mousemode]);
-	W (title);
+	if (fs) {
+		(void)G (-g->can->sx, -g->can->sy);
+		snprintf (title, sizeof (title)-1,
+			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d) %s mouse:%s",
+			g->fcn->addr, g->ostack.size, g->fcn->name,
+			g->n_nodes, g->n_edges, g->is_callgraph?"CG":"BB",
+			mousemodes[mousemode]);
+		W (title);
+	}
 
-	r_cons_canvas_print (g->can);
-	const char *cmdv = r_config_get (g->core->config, "cmd.gprompt");
-	if (cmdv && *cmdv) {
-		r_cons_gotoxy (0,1);
-		r_core_cmd0 (g->core, cmdv);
+	if (fs) {
+		r_cons_canvas_print (g->can);
+	} else {
+		r_cons_canvas_print_region (g->can);
+	}
+	if (fs) {
+		const char *cmdv = r_config_get (g->core->config, "cmd.gprompt");
+		if (cmdv && *cmdv) {
+			r_cons_gotoxy (0, 1);
+			r_core_cmd0 (g->core, cmdv);
+		}
 	}
 	r_cons_flush_nonewline ();
 	return R_TRUE;
@@ -749,6 +759,42 @@ static struct graph *graph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn
 	return g;
 }
 
+R_API int r_core_fcn_graph(RCore *core, RAnalFunction *_fcn) {
+	RAnalFunction *fcn;
+	RConsCanvas *can;
+	struct graph *g;
+	int h;
+
+	fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
+	if (!fcn) {
+		eprintf ("No function in current seek\n");
+		return R_FALSE;
+	}
+	(void)r_cons_get_size (&h);
+	can = r_cons_canvas_new (1,1); //w - 1, h - 1);
+	if (!can) {
+		eprintf ("Cannot create RCons.canvas context\n");
+		return R_FALSE;
+	}
+	can->linemode = 1;
+	can->color = r_config_get_i (core->config, "scr.color");
+	// disable colors in disasm because canvas doesnt supports ansi text yet
+	r_config_set_i (core->config, "scr.color", 0);
+
+	g = graph_new (core, can, fcn);
+	if (!g) {
+		goto err_graph_new;
+	}
+
+	(void)graph_refresh (g, 0);
+	r_cons_printf (Color_RESET);
+	graph_free (g);
+err_graph_new:
+	r_config_set_i (core->config, "scr.color", can->color);
+	free (can);
+	return 0;
+}
+
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	RAnalFunction *fcn;
 	RConsCanvas *can;
@@ -775,7 +821,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	// disable colors in disasm because canvas doesnt supports ansi text yet
 	r_config_set_i (core->config, "scr.color", 0);
 
-	g = graph_new(core, can, fcn);
+	g = graph_new (core, can, fcn);
 	if (!g) {
 		is_error = R_TRUE;
 		goto err_graph_new;
@@ -786,7 +832,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 
 	while (!exit_graph && !is_error) {
 		w = r_cons_get_size (&h);
-		ret = graph_refresh(g);
+		ret = graph_refresh (g, 1);
 		if (!ret) {
 			is_error = R_TRUE;
 			break;
@@ -1013,5 +1059,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn) {
 	graph_free(g);
 err_graph_new:
 	free (can);
+	r_config_set_i (core->config, "scr.color", can->color);
 	return !is_error;
 }
