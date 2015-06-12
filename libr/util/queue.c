@@ -4,7 +4,7 @@
 
 R_API RQueue *r_queue_new (int n) {
 	RQueue *q = R_NEW0 (RQueue);
-	q->elems = calloc (n, sizeof(void *));
+	q->elems = R_NEWS0 (void *, n);
 	if (!q->elems)
 		return NULL;
 
@@ -29,7 +29,7 @@ static int increase_capacity (RQueue *q) {
 	void **newelems;
 	int i, tmp_front;
 
-	newelems = calloc (new_capacity, sizeof(void *));
+	newelems = R_NEWS0(void *, new_capacity);
 	if (!newelems)
 		return R_FALSE;
 

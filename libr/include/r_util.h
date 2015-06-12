@@ -297,6 +297,7 @@ R_API void r_graph_add_edge (RGraph *g, RGraphNode *from, RGraphNode *to);
 R_API RList *r_graph_get_neighbours (RGraph *g, RGraphNode *n);
 R_API int r_graph_adjacent (RGraph *g, RGraphNode *from, RGraphNode *to);
 
+R_API int r_file_is_abspath(const char *file);
 R_API boolt r_file_truncate (const char *filename, ut64 newsize);
 R_API ut64 r_file_size(const char *str);
 R_API char *r_file_root(const char *root, const char *path);

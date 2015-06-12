@@ -27,8 +27,8 @@ static void r_graph_node_free (RGraphNode *n) {
 R_API RGraph *r_graph_new () {
 	RGraph *t = R_NEW0 (RGraph);
 	t->capacity = INITIAL_CAPACITY;
-	t->nodes = calloc (t->capacity, sizeof(RGraphNode *));
-	t->adjacency = calloc (t->capacity, sizeof(RList *));
+	t->nodes = R_NEWS0 (RGraphNode *, t->capacity);
+	t->adjacency = R_NEWS0 (RList *, t->capacity);
 	t->n_nodes = 0;
 	t->last_index = -1;
 	return t;
@@ -64,8 +64,8 @@ R_API void r_graph_reset (RGraph *t) {
 	}
 	free (t->nodes);
 	t->capacity = INITIAL_CAPACITY;
-	t->nodes = calloc (t->capacity, sizeof(RGraphNode *));
-	t->adjacency = calloc (t->capacity, sizeof(RList *));
+	t->nodes = R_NEWS0 (RGraphNode *, t->capacity);
+	t->adjacency = R_NEWS0 (RList *, t->capacity);
 	t->n_nodes = 0;
 }
 
