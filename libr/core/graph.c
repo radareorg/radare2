@@ -11,11 +11,8 @@ static int mousemode = 0;
 #define MARGIN_TEXT_Y 2
 #define MAX_NODE_WIDTH 18
 
-#define OS_SIZE 128
-struct ostack {
-	int nodes[OS_SIZE];
-	int size;
-};
+#define history_push(stack, x) (r_stack_push (stack, (void *)(size_t)x))
+#define history_pop(stack) ((unsigned int)r_stack_pop (stack))
 
 typedef struct {
 	int x;
@@ -48,7 +45,7 @@ struct graph {
 
 	unsigned int curnode;
 
-	struct ostack ostack;
+	RStack *history;
 	int need_reload_nodes;
 	int need_update_seek;
 	int update_seek_on;
@@ -69,20 +66,6 @@ struct graph_refresh_data {
 #define L1(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,1)
 #define L2(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,2)
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(g->can, x,y,x2,y2,c,0)
-
-static void ostack_init(struct ostack *os) {
-	os->size = 0;
-	os->nodes[0] = 0;
-}
-
-static void ostack_push(struct ostack *os, int el) {
-	if (os->size < OS_SIZE - 1)
-		os->nodes[++os->size] = el;
-}
-
-static int ostack_pop(struct ostack *os) {
-	return os->size > 0 ? os->nodes[--os->size] : 0;
-}
 
 static void update_node_dimension(Node nodes[], int nodes_size, int is_small) {
 	int i;
@@ -529,6 +512,7 @@ static void graph_free(struct graph *g) {
 		free(g->nodes);
 	if (g->edges)
 		free(g->edges);
+	r_stack_free (g->history);
 	free(g);
 }
 
@@ -616,7 +600,7 @@ static void follow_nth(struct graph *g, int nth) {
 	int cn = find_edge_node (g, g->curnode, nth);
 	if (cn != -1) {
 		g->curnode = cn;
-		ostack_push (&g->ostack, cn);
+		history_push (g->history, cn);
 	}
 }
 
@@ -631,13 +615,13 @@ static void graph_follow_false(struct graph *g) {
 }
 
 static void graph_undo_node(struct graph *g) {
-	g->curnode = ostack_pop(&g->ostack);
+	g->curnode = history_pop (g->history);
 	graph_update_seek (g, g->curnode, R_FALSE);
 }
 
 static void graph_next_node(struct graph *g) {
 	g->curnode = (g->curnode + 1) % g->n_nodes;
-	ostack_push (&g->ostack, g->curnode);
+	history_push (g->history, g->curnode);
 	graph_update_seek (g, g->curnode, R_FALSE);
 }
 
@@ -646,7 +630,7 @@ static void graph_prev_node(struct graph *g) {
 		g->curnode = g->n_nodes - 1;
 	else
 		g->curnode = g->curnode - 1;
-	ostack_push (&g->ostack, g->curnode);
+	history_push (g->history, g->curnode);
 	graph_update_seek (g, g->curnode, R_FALSE);
 }
 
@@ -698,7 +682,7 @@ static int graph_refresh(struct graph_refresh_data *grd) {
 		(void)G (-g->can->sx, -g->can->sy);
 		snprintf (title, sizeof (title)-1,
 			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d) %s mouse:%s",
-			g->fcn->addr, g->ostack.size, g->fcn->name,
+			g->fcn->addr, r_stack_size (g->history), g->fcn->name,
 			g->n_nodes, g->n_edges, g->is_callgraph?"CG":"BB",
 			mousemodes[mousemode]);
 		W (title);
@@ -733,8 +717,7 @@ static void graph_init(struct graph *g) {
 	g->need_update_seek = R_TRUE;
 	g->update_seek_on = g->curnode;
 	g->force_update_seek = R_TRUE;
-
-	ostack_init(&g->ostack);
+	g->history = r_stack_new (16);
 }
 
 static struct graph *graph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {
