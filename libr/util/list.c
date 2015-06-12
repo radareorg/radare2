@@ -23,7 +23,7 @@ void *r_list_iter_get_data(RListIter *list) {
 	return list->data;
 }
 
-RListIter *r_list_iterator (RList *list) {
+RListIter *r_list_iterator (const RList *list) {
 	return list? list->head: NULL;
 }
 
@@ -35,7 +35,7 @@ RListIter *r_list_get_next (RListIter *list) {
 	return list ? list->n : NULL;
 }
 
-R_API void* r_list_first(RList *list) {
+R_API void* r_list_first(const RList *list) {
 	if (list && list->head) {
 		return list->head->data;
 	}
@@ -48,7 +48,7 @@ R_API void r_list_init(RList *list) {
 	list->free = NULL;
 }
 
-R_API int r_list_length(RList *list) {
+R_API int r_list_length(const RList *list) {
 	int count = 0;
 	RListIter *iter = r_list_iterator (list);
 	while (iter) {
@@ -246,12 +246,12 @@ R_API int r_list_del_n(RList *list, int n) {
 	return R_FALSE;
 }
 
-R_API void *r_list_get_top(RList *list) {
+R_API void *r_list_get_top(const RList *list) {
 	if (list && list->tail)
 		return list->tail->data;
 	return NULL;
 }
-R_API void *r_list_get_bottom(RList *list) {
+R_API void *r_list_get_bottom(const RList *list) {
 	if (list && list->head)
 		return list->head->data;
 	return NULL;
@@ -335,7 +335,7 @@ R_API int r_list_set_n(RList *list, int n, void *p) {
 	return R_FALSE;
 }
 
-R_API void *r_list_get_n(RList *list, int n) {
+R_API void *r_list_get_n(const RList *list, int n) {
 	RListIter *it;
 	int i;
 	if (list)
@@ -345,7 +345,7 @@ R_API void *r_list_get_n(RList *list, int n) {
 	return NULL;
 }
 
-R_API void *r_list_get_by_int(RList *list, int off, int n) {
+R_API void *r_list_get_by_int(const RList *list, int off, int n) {
 	ut8 *p;
 	RListIter *iter;
 	r_list_foreach (list, iter, p) {
@@ -355,7 +355,7 @@ R_API void *r_list_get_by_int(RList *list, int off, int n) {
 	return NULL;
 }
 
-R_API void *r_list_get_by_int64(RList *list, int off, ut64 n) {
+R_API void *r_list_get_by_int64(const RList *list, int off, ut64 n) {
 	ut8 *p;
 	RListIter *iter;
 	r_list_foreach (list, iter, p) {
@@ -365,7 +365,7 @@ R_API void *r_list_get_by_int64(RList *list, int off, ut64 n) {
 	return NULL;
 }
 
-R_API void *r_list_get_by_string(RList *list, int off, const char *str) {
+R_API void *r_list_get_by_string(const RList *list, int off, const char *str) {
 	char *p;
 	RListIter *iter;
 	r_list_foreach (list, iter, p) {
@@ -376,7 +376,7 @@ R_API void *r_list_get_by_string(RList *list, int off, const char *str) {
 	return NULL;
 }
 
-R_API RListIter *r_list_contains (RList *list, void *p) {
+R_API RListIter *r_list_contains (const RList *list, void *p) {
 	void *q;
 	RListIter *iter;
 	r_list_foreach (list, iter, q) {
@@ -386,7 +386,7 @@ R_API RListIter *r_list_contains (RList *list, void *p) {
 	return NULL;
 }
 
-R_API RListIter *r_list_find (RList *list, void *p, RListComparator cmp) {
+R_API RListIter *r_list_find (const RList *list, void *p, RListComparator cmp) {
 	void *q;
 	RListIter *iter;
 	r_list_foreach (list, iter, q) {

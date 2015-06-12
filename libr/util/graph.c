@@ -2,14 +2,10 @@
 
 #include <r_util.h>
 
-#define INITIAL_CAPACITY 16
-
-/* TODO: allow deletion of nodes and update the "is_in_range"
- *       function to "is_valid_index" function, that checks if
- *       the node really exists */
-static int is_in_range (RGraph *g, unsigned int idx) {
-	return idx < g->n_nodes;
-}
+struct adjacency_t {
+	unsigned int idx;
+	RList *adj;
+};
 
 static RGraphNode *r_graph_node_new (void *data) {
 	RGraphNode *p = R_NEW0 (RGraphNode);
@@ -24,93 +20,102 @@ static void r_graph_node_free (RGraphNode *n) {
 	free (n);
 }
 
+static void adjancency_free (struct adjacency_t *a) {
+	r_list_free (a->adj);
+	free (a);
+}
+
+static int node_cmp (unsigned int idx, RGraphNode *b) {
+	return idx == b->idx ? 0 : -1;
+}
+
+static int adj_cmp (unsigned int idx, struct adjacency_t *b) {
+	return idx == b->idx ? 0 : -1;
+}
+
+static RList *get_adjacency (RList *l, unsigned int idx) {
+	RListIter *it = r_list_find (l, (void *)(size_t)idx, (RListComparator)adj_cmp);
+	if (!it)
+		return NULL;
+
+	struct adjacency_t *a = (struct adjacency_t *)it->data;
+	return a->adj;
+}
+
 R_API RGraph *r_graph_new () {
 	RGraph *t = R_NEW0 (RGraph);
-	t->capacity = INITIAL_CAPACITY;
-	t->nodes = R_NEWS0 (RGraphNode *, t->capacity);
-	t->adjacency = R_NEWS0 (RList *, t->capacity);
+	t->nodes = r_list_new ();
+	t->nodes->free = (RListFree)r_graph_node_free;
+	t->adjacency = r_list_new ();
+	t->adjacency->free = (RListFree)adjancency_free;
 	t->n_nodes = 0;
-	t->last_index = -1;
+	t->last_index = 0;
 	return t;
 }
 
 R_API void r_graph_free (RGraph* t) {
-	unsigned i;
-
-	for (i = 0; i < t->capacity; ++i) {
-		if (t->nodes[i] != NULL) {
-			r_list_free (t->adjacency[i]);
-			r_graph_node_free (t->nodes[i]);
-		}
-	}
-
-	free (t->nodes);
-	free (t->adjacency);
+	r_list_free (t->nodes);
+	r_list_free (t->adjacency);
 	free (t);
 }
 
 R_API RGraphNode *r_graph_get_node (RGraph *t, unsigned int idx) {
-	return t->nodes[idx];
+	RListIter *it = r_list_find (t->nodes, (void *)(size_t)idx, (RListComparator)node_cmp);
+	if (!it)
+		return NULL;
+
+	return (RGraphNode *)it->data;
+}
+
+R_API RListIter *r_graph_node_iter (RGraph *t, unsigned int idx) {
+	return r_list_find (t->nodes, (void *)(size_t)idx, (RListComparator)node_cmp);
 }
 
 R_API void r_graph_reset (RGraph *t) {
-	unsigned i;
+	r_list_free (t->nodes);
+	r_list_free (t->adjacency);
 
-	for (i = 0; i < t->capacity; ++i) {
-		if (t->adjacency[i])
-			r_list_free (t->adjacency[i]);
-		if (t->nodes[i])
-			r_graph_node_free (t->nodes[i]);
-	}
-	free (t->nodes);
-	t->capacity = INITIAL_CAPACITY;
-	t->nodes = R_NEWS0 (RGraphNode *, t->capacity);
-	t->adjacency = R_NEWS0 (RList *, t->capacity);
+	t->nodes = r_list_new ();
+	t->nodes->free = (RListFree)r_graph_node_free;
+	t->adjacency = r_list_new ();
+	t->adjacency->free = (RListFree)adjancency_free;
 	t->n_nodes = 0;
+	t->n_edges = 0;
+	t->last_index = 0;
 }
 
 R_API RGraphNode *r_graph_add_node (RGraph *t, void *data) {
 	RGraphNode *n = r_graph_node_new (data);
+	struct adjacency_t *a = R_NEW (struct adjacency_t);
 
-	if (t->n_nodes == t->capacity) {
-		int new_capacity = t->capacity * 2;
-		t->adjacency = realloc (t->adjacency, new_capacity * sizeof(RList *));
-		t->nodes = realloc (t->nodes, new_capacity * sizeof (RGraphNode *));
-		memset (t->nodes + t->capacity, 0, (new_capacity - t->capacity) * sizeof (RGraphNode *));
-		t->capacity = new_capacity;
-	}
-
-	n->idx = ++t->last_index;
-	t->adjacency[n->idx] = r_list_new();
-	t->adjacency[n->idx]->free = NULL;
-	t->nodes[n->idx] = n;
+	n->idx = t->last_index++;
+	r_list_append (t->nodes, n);
+	a->idx = n->idx;
+	a->adj = r_list_new ();
+	r_list_append (t->adjacency, a);
 	t->n_nodes++;
 	return n;
 }
 
 R_API void r_graph_add_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
-	if (is_in_range(t, from->idx))
-		r_list_append(t->adjacency[from->idx], to);
+	RList *a = get_adjacency (t->adjacency, from->idx);
+	if (!a) return;
+	r_list_append(a, to);
+	t->n_edges++;
 }
 
-R_API RList *r_graph_get_neighbours (RGraph *g, RGraphNode *n) {
-	return is_in_range(g, n->idx) ? g->adjacency[n->idx] : NULL;
+R_API const RList *r_graph_get_neighbours (RGraph *g, RGraphNode *n) {
+	return get_adjacency (g->adjacency, n->idx);
 }
 
-/* returns a list with all the nodes in the graph
- * NOTE: the user should free the list */
-R_API RList *r_graph_get_nodes (RGraph *g) {
-	RList *res;
-	unsigned int i;
+R_API RGraphNode *r_graph_nth_neighbour (RGraph *g, RGraphNode *n, int nth) {
+	return (RGraphNode *)r_list_get_n (get_adjacency (g->adjacency, n->idx), nth);
+}
 
-	res = r_list_new ();
-	res->free = NULL;
-	for (i = 0; i < g->capacity; ++i)
-		if (g->nodes[i])
-			r_list_append (res, g->nodes[i]);
-	return res;
+R_API const RList *r_graph_get_nodes (RGraph *g) {
+	return g->nodes;
 }
 
 R_API int r_graph_adjacent (RGraph *g, RGraphNode *from, RGraphNode *to) {
-	return r_list_contains (g->adjacency[from->idx], to) ? R_TRUE : R_FALSE;
+	return r_list_contains (get_adjacency (g->adjacency, from->idx), to) ? R_TRUE : R_FALSE;
 }
