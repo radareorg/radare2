@@ -1848,10 +1848,10 @@ static void comment_newline (RCore *core, RDisasmState *ds) {
 	sn = ds->show_section? getSectionName (core, ds->at): "";
 	handle_comment_align (core, ds);
 	if (ds->show_color) {
-		r_cons_printf ("\n%s%s"Color_RESET"%s%s   ^- ",
+		r_cons_printf ("\n%s%s%s%s"Color_RESET"  ^- ",
 			ds->color_fline, ds->pre, sn, ds->refline);
 	} else {
-		r_cons_printf ("\n%s%s%s   ^- ", ds->pre, sn, ds->refline);
+		r_cons_printf ("\n%s%s%s  ^- ", ds->pre, sn, ds->refline);
 	}
 }
 
