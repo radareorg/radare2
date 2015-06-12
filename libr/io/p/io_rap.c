@@ -73,9 +73,6 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 	r_socket_read_block (s, buf, i);
-	if (count>0 && count<RMT_MAX) {
-		//eprintf ("READ %d\n" ,i);
-	} else count = 0;
         return count;
 }
 

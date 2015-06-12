@@ -1713,7 +1713,7 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 						else r_cons_printf (" ;%s%s", ccstr, tmp);
 					} else {
 						if (ds->show_color)
-							r_cons_printf ("\n%s%s%s"Color_RESET"%s%s"Color_RESET"  ^- %s%s"Color_RESET,
+							r_cons_printf ("\n%s%s%s%s%s"Color_RESET"  ^- %s%s"Color_RESET,
 									ds->color_fline, ds->pre, ds->color_flow, sn, ds->refline, ccstr, tmp);
 						else r_cons_printf ("\n%s%s%s  ^- %s%s", ds->pre, ds->refline, sn, ccstr, tmp);
 					}

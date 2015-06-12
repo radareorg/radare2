@@ -5,7 +5,8 @@
 #include <r_flags.h>
 #include <r_core.h>
 
-#define ANALBS 4096
+//#define ANALBS 4096
+#define ANALBS 1024
 
 static void loganal(ut64 from, ut64 to) {
 	r_cons_clear_line (1);
@@ -800,7 +801,10 @@ if (0) {
 			goto error;
 #else
 		// this is unnecessary if its contiguous
-		r_io_read_at (core->io, at+delta, buf, ANALBS);
+		buflen = r_io_read_at (core->io, at+delta, buf, ANALBS);
+		//if (ret != 1024) { }
+		// check if read error (fffff ?)
+		// 1024 was chosed for r2pipe
 #endif
 #if 1
 		if (core->io->va && !core->io->raw) {
@@ -809,7 +813,6 @@ if (0) {
 			}
 		}
 #endif
-		buflen = ANALBS;
 		if (r_cons_singleton ()->breaked)
 			break;
 		fcnlen = r_anal_fcn (core->anal, fcn, at+delta, buf, buflen, reftype);
