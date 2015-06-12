@@ -145,10 +145,10 @@ static void normal_Node_print(struct graph *g, Node *n, int cur) {
 	if (cur) {
 		//F (n->x,n->y, n->w, n->h, '.');
 		snprintf (title, sizeof (title)-1,
-				"-[ 0x%08"PFMT64x" ]-", n->addr);
+				"[0x%08"PFMT64x"]", n->addr);
 	} else {
 		snprintf (title, sizeof (title)-1,
-				"   0x%08"PFMT64x"   ", n->addr);
+				" 0x%08"PFMT64x" ", n->addr);
 	}
 	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1))
 		W(title + delta_x);
@@ -753,15 +753,16 @@ static struct graph *graph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn
 }
 
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interactive) {
+	int exit_graph = R_FALSE, is_error = R_FALSE;
+	struct graph_refresh_data *grd;
+	int okey, key, wheel;
 	RAnalFunction *fcn;
+	const char *key_s;
 	RConsCanvas *can;
 	struct graph *g;
-	struct graph_refresh_data *grd;
-	int ret;
 	int wheelspeed;
-	int okey, key, wheel;
 	int w, h;
-	int exit_graph = R_FALSE, is_error = R_FALSE;
+	int ret;
 
 	fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
@@ -841,11 +842,15 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				break;
 			case 'z':
 				g->is_instep = R_TRUE;
-				if (r_config_get_i (core->config, "cfg.debug"))
-					r_core_cmd0 (core, "ds;.dr*");
-				else
-					r_core_cmd0 (core, "aes;.dr*");
-
+				key_s = r_config_get (core->config, "key.s");
+				if (key_s && *key_s) {
+					r_core_cmd0 (core, key_s);
+				} else {
+					if (r_config_get_i (core->config, "cfg.debug"))
+						r_core_cmd0 (core, "ds;.dr*");
+					else
+						r_core_cmd0 (core, "aes;.dr*");
+				}
 				ret = graph_reload_nodes(g);
 				if (!ret)
 					is_error = R_TRUE;

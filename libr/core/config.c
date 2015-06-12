@@ -1361,6 +1361,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("rap.loop", "true", "Run rap as a forever-listening daemon");
 
 	/* nkeys */
+	SETPREF("key.s", "", "override step into action");
+	SETPREF("key.S", "", "override step over action");
 	for (i=1; i<13; i++) {
 		snprintf (buf, sizeof (buf), "key.f%d", i);
 		snprintf (buf+10, sizeof (buf)-10,

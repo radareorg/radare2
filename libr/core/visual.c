@@ -701,6 +701,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
 	ut64 offset = core->offset;
 	char buf[4096];
+	const char *key_s;
 	int i, ret, offscreen, cols = core->print->cols, delta = 0;
 	int wheelspeed;
 	ch = r_cons_arrow_to_hjkl (ch);
@@ -1266,27 +1267,43 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 #endif
 	case 's':
-		if (r_config_get_i (core->config, "cfg.debug")) {
-			if (curset) {
-				// dcu 0xaddr
-				r_core_cmdf (core, "dcu 0x%08"PFMT64x, core->offset + cursor);
-				curset = 0;
-			} else {
-				r_core_cmd (core, "ds", 0);
-				r_core_cmd (core, ".dr*", 0);
-			}
+		key_s = r_config_get (core->config, "key.s");
+		if (key_s && *key_s) {
+			r_core_cmd0 (core, key_s);
 		} else {
-			r_core_cmd (core, "aes", 0);
-			r_core_cmd (core, ".ar*", 0);
+			if (r_config_get_i (core->config, "cfg.debug")) {
+				if (curset) {
+					// dcu 0xaddr
+					r_core_cmdf (core, "dcu 0x%08"PFMT64x, core->offset + cursor);
+					curset = 0;
+				} else {
+					r_core_cmd (core, "ds", 0);
+					r_core_cmd (core, ".dr*", 0);
+				}
+			} else {
+				r_core_cmd (core, "aes", 0);
+				r_core_cmd (core, ".ar*", 0);
+			}
 		}
 		break;
 	case 'S':
-		if (curset) {
-			r_core_cmd (core, "dcr", 0);
-			curset = 0;
+		key_s = r_config_get (core->config, "key.S");
+		if (key_s && *key_s) {
+			r_core_cmd0 (core, key_s);
 		} else {
-			r_core_cmd (core, "dso", 0);
-			r_core_cmd (core, ".dr*", 0);
+			if (r_config_get_i (core->config, "cfg.debug")) {
+				if (curset) {
+					r_core_cmd (core, "dcr", 0);
+					curset = 0;
+				} else {
+					r_core_cmd (core, "dso", 0);
+					r_core_cmd (core, ".dr*", 0);
+				}
+			} else {
+				/* step over not support for esil yet */
+				r_core_cmd (core, "aes", 0);
+				r_core_cmd (core, ".ar*", 0);
+			}
 		}
 		break;
 	case 'p':
