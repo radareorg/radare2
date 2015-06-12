@@ -693,7 +693,7 @@ static RList *r_debug_native_pids(int pid) {
 		if (p) r_list_append (list, p);
 	} else {
 		int i;
-		for(i=1; i<MAXPID; i++) {
+		for (i=1; i<MAXPID; i++) {
 			RDebugPid *p = darwin_get_pid (i);
 			if (p) r_list_append (list, p);
 		}

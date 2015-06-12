@@ -1374,10 +1374,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), R_FALSE);
 		break;
 	case 'h':
-		if (input[2]==' ') {
+		switch (input[2]) {
+		case ' ':
 			if (!r_bp_use (core->dbg->bp, input+3))
 				eprintf ("Invalid name: '%s'.\n", input+3);
-		} else r_bp_plugin_list (core->dbg->bp);
+			break;
+		case 0:
+			r_bp_plugin_list (core->dbg->bp);
+			break;
+		default:
+			eprintf ("Usage: dh [plugin-name]  # select a debug handler plugin\n");
+			break;
+		}
 		break;
 	case ' ':
 		for (p=input+1; *p==' ';p++);
