@@ -4,7 +4,7 @@
 
 R_API RStack *r_stack_new (unsigned int n) {
 	RStack *s = R_NEW0 (RStack);
-	s->elems = calloc(n, sizeof(void *));
+	s->elems = R_NEWS0 (void *, n);
 	if (!s->elems)
 		return NULL;
 
