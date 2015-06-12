@@ -14,7 +14,7 @@ static int mousemode = 0;
 #define history_push(stack, x) (r_stack_push (stack, (void *)(size_t)x))
 #define history_pop(stack) ((unsigned int)r_stack_pop (stack))
 
-typedef struct {
+typedef struct ascii_node {
 	int x;
 	int y;
 	int w;
@@ -22,7 +22,7 @@ typedef struct {
 	ut64 addr;
 	int depth;
 	char *text;
-} Node;
+} ANode;
 
 typedef struct {
 	int nth;
@@ -30,14 +30,17 @@ typedef struct {
 	int to;
 } Edge;
 
-struct graph {
+typedef struct ascii_graph {
 	RCore *core;
 	RConsCanvas *can;
 	RAnalFunction *fcn;
-	Node *nodes;
+	RGraph *graph;
+
+	ANode *nodes;
 	Edge *edges;
 	int n_nodes;
 	int n_edges;
+
 	int is_callgraph;
 	int is_instep;
 	int is_simple_mode;
@@ -50,10 +53,10 @@ struct graph {
 	int need_update_seek;
 	int update_seek_on;
 	int force_update_seek;
-};
+} AGraph;
 
-struct graph_refresh_data {
-	struct graph *g;
+struct agraph_refresh_data {
+	AGraph *g;
 	int fs;
 };
 
@@ -67,10 +70,10 @@ struct graph_refresh_data {
 #define L2(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,2)
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(g->can, x,y,x2,y2,c,0)
 
-static void update_node_dimension(Node nodes[], int nodes_size, int is_small) {
+static void update_node_dimension(ANode nodes[], int nodes_size, int is_small) {
 	int i;
 	for (i = 0; i < nodes_size; ++i) {
-		Node *n = &nodes[i];
+		ANode *n = &nodes[i];
 		if (is_small) {
 			n->w = n->h = 0;
 		} else {
@@ -82,7 +85,7 @@ static void update_node_dimension(Node nodes[], int nodes_size, int is_small) {
 	}
 }
 
-static void small_Node_print(struct graph *g, Node *n, int cur) {
+static void small_ANode_print(AGraph *g, ANode *n, int cur) {
 	char title[128];
 
 	if (!G (n->x + 2, n->y - 1))
@@ -101,7 +104,7 @@ static void small_Node_print(struct graph *g, Node *n, int cur) {
 	return;
 }
 
-static void normal_Node_print(struct graph *g, Node *n, int cur) {
+static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
 	char title[128];
 	char *text;
 	int delta_x = 0;
@@ -147,7 +150,7 @@ static void normal_Node_print(struct graph *g, Node *n, int cur) {
 	}
 
 	// TODO: check if node is traced or not and hsow proper color
-	// This info must be stored inside Node* from RCore*
+	// This info must be stored inside ANode* from RCore*
 	if (cur) {
 		B1 (n->x, n->y, n->w, n->h);
 	} else {
@@ -155,11 +158,11 @@ static void normal_Node_print(struct graph *g, Node *n, int cur) {
 	}
 }
 
-static Node *get_current_node(struct graph *g) {
+static ANode *get_current_node(AGraph *g) {
 	 return &g->nodes[g->curnode];
 }
 
-static int count_exit_edges(struct graph *g, int n) {
+static int count_exit_edges(AGraph *g, int n) {
 	int i, count = 0;
 	for (i = 0; i < g->n_edges; i++) {
 		if (g->edges[i].from == n) {
@@ -169,7 +172,7 @@ static int count_exit_edges(struct graph *g, int n) {
 	return count;
 }
 
-static int find_edge_node(struct graph *g, int cur, int nth) {
+static int find_edge_node(AGraph *g, int cur, int nth) {
 	if (g->edges) {
 		int i;
 		for (i = 0; i < g->n_edges; i++) {
@@ -180,7 +183,7 @@ static int find_edge_node(struct graph *g, int cur, int nth) {
 	return -1;
 }
 
-static int find_node_idx(struct graph *g, ut64 addr) {
+static int find_node_idx(AGraph *g, ut64 addr) {
 	if (g->nodes) {
 		int i;
 		for (i = 0; i < g->n_nodes; i++) {
@@ -191,7 +194,7 @@ static int find_node_idx(struct graph *g, ut64 addr) {
 	return -1;
 }
 
-static void set_layout_bb_depth(struct graph *g, int nth, int depth) {
+static void set_layout_bb_depth(AGraph *g, int nth, int depth) {
 	int j, f, old_d;
 	if (nth >= g->n_nodes)
 		return;
@@ -210,7 +213,7 @@ static void set_layout_bb_depth(struct graph *g, int nth, int depth) {
 	// TODO: support more than two destination points (switch tables?)
 }
 
-static void set_layout_bb(struct graph *g) {
+static void set_layout_bb(AGraph *g) {
 	int i, j, rh, nx;
 	int *rowheight = NULL;
 	int maxdepth = 0;
@@ -255,7 +258,7 @@ static void set_layout_bb(struct graph *g) {
 	free (rowheight);
 }
 
-static void set_layout_callgraph(struct graph *g) {
+static void set_layout_callgraph(AGraph *g) {
 	int y = 5, x = 20;
 	int i;
 
@@ -273,13 +276,13 @@ static void set_layout_callgraph(struct graph *g) {
 	}
 }
 
-static int get_bbnodes(struct graph *g) {
+static int get_bbnodes(AGraph *g) {
 	RAnalBlock *bb;
 	RListIter *iter;
-	Node *nodes;
+	ANode *nodes;
 	int i;
 
-	nodes = calloc(r_list_length (g->fcn->bbs), sizeof(Node));
+	nodes = calloc(r_list_length (g->fcn->bbs), sizeof(ANode));
 	if (!nodes)
 		return R_FALSE;
 
@@ -311,17 +314,17 @@ static int get_bbnodes(struct graph *g) {
 	return R_TRUE;
 }
 
-static int get_cgnodes(struct graph *g) {
+static int get_cgnodes(AGraph *g) {
 	int i = 0;
 #if FCN_OLD
 	int j;
 	char *code;
 	RAnalRef *ref;
 	RListIter *iter;
-	Node *nodes;
+	ANode *nodes;
 
 	int fcn_refs_length = r_list_length (g->fcn->refs);
-	nodes = calloc (fcn_refs_length + 2, sizeof(Node));
+	nodes = calloc (fcn_refs_length + 2, sizeof(ANode));
 	if (!nodes)
 		return R_FALSE;
 
@@ -374,7 +377,7 @@ static int get_cgnodes(struct graph *g) {
 	return R_TRUE;
 }
 
-static int get_bbedges(struct graph *g) {
+static int get_bbedges(AGraph *g) {
 	Edge *edges = NULL;
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -416,7 +419,7 @@ static int get_bbedges(struct graph *g) {
 	return R_TRUE;
 }
 
-static int get_cgedges(struct graph *g) {
+static int get_cgedges(AGraph *g) {
 	int i = 0;
 #if FCN_OLD
 	Edge *edges = NULL;
@@ -447,7 +450,7 @@ static int get_cgedges(struct graph *g) {
 	return R_TRUE;
 }
 
-static int reload_nodes(struct graph *g) {
+static int reload_nodes(AGraph *g) {
 	int ret;
 
 	if (g->is_callgraph) {
@@ -471,7 +474,7 @@ static int reload_nodes(struct graph *g) {
 	return R_TRUE;
 }
 
-static void update_seek(RConsCanvas *can, Node *n, int force) {
+static void update_seek(RConsCanvas *can, ANode *n, int force) {
 	int x, y, w, h;
 	int doscroll = R_FALSE;
 
@@ -494,20 +497,20 @@ static void update_seek(RConsCanvas *can, Node *n, int force) {
 	}
 }
 
-static void graph_set_layout(struct graph *g) {
+static void agraph_set_layout(AGraph *g) {
 	if (g->is_callgraph)
 		set_layout_callgraph(g);
 	else
 		set_layout_bb(g);
 }
 
-static void graph_update_seek(struct graph *g, int node_index, int force) {
+static void agraph_update_seek(AGraph *g, int node_index, int force) {
 	g->need_update_seek = R_TRUE;
 	g->update_seek_on = node_index;
 	g->force_update_seek = force;
 }
 
-static void graph_free(struct graph *g) {
+static void agraph_free(AGraph *g) {
 	if (g->nodes)
 		free(g->nodes);
 	if (g->edges)
@@ -516,26 +519,26 @@ static void graph_free(struct graph *g) {
 	free(g);
 }
 
-static void graph_print_node(struct graph *g, Node *n) {
+static void agraph_print_node(AGraph *g, ANode *n) {
 	int cur = get_current_node(g) == n;
 
 	if (g->is_small_nodes)
-		small_Node_print(g, n, cur);
+		small_ANode_print(g, n, cur);
 	else
-		normal_Node_print(g, n, cur);
+		normal_ANode_print(g, n, cur);
 }
 
-static void graph_print_nodes(struct graph *g) {
+static void agraph_print_nodes(AGraph *g) {
 	int i;
 	for (i = 0; i < g->n_nodes; ++i)
 		if (i != g->curnode)
-			graph_print_node(g, &g->nodes[i]);
+			agraph_print_node(g, &g->nodes[i]);
 
 	/* draw current node now to make it appear on top */
-	graph_print_node (g, &g->nodes[g->curnode]);
+	agraph_print_node (g, &g->nodes[g->curnode]);
 }
 
-static void graph_print_edge(struct graph *g, Node *a, Node *b, int nth) {
+static void agraph_print_edge(AGraph *g, ANode *a, ANode *b, int nth) {
 	int x, y, x2, y2;
 	int xinc = 3 + 2 * (nth + 1);
 	x = a->x + xinc;
@@ -553,50 +556,50 @@ static void graph_print_edge(struct graph *g, Node *a, Node *b, int nth) {
 	}
 }
 
-static void graph_print_edges(struct graph *g) {
+static void agraph_print_edges(AGraph *g) {
 	int i;
 	if (g->edges) {
 		for (i = 0; i < g->n_edges; i++) {
 			if (g->edges[i].from == -1 || g->edges[i].to == -1)
 				continue;
 
-			Node *a = &g->nodes[g->edges[i].from];
-			Node *b = &g->nodes[g->edges[i].to];
+			ANode *a = &g->nodes[g->edges[i].from];
+			ANode *b = &g->nodes[g->edges[i].to];
 			int nth = g->edges[i].nth;
 			if (count_exit_edges(g, g->edges[i].from) == 1)
 				nth = -1; // blue line
 
-			graph_print_edge (g, a, b, nth);
+			agraph_print_edge (g, a, b, nth);
 		}
 	}
 }
 
-static void graph_toggle_small_nodes(struct graph *g) {
+static void agraph_toggle_small_nodes(AGraph *g) {
 	g->is_small_nodes = !g->is_small_nodes;
 	g->need_reload_nodes = R_TRUE;
 }
 
-static void graph_toggle_simple_mode(struct graph *g) {
+static void agraph_toggle_simple_mode(AGraph *g) {
 	g->is_simple_mode = !g->is_simple_mode;
 	g->need_reload_nodes = R_TRUE;
 }
 
-static void graph_toggle_callgraph(struct graph *g) {
+static void agraph_toggle_callgraph(AGraph *g) {
 	g->is_callgraph = !g->is_callgraph;
 	g->need_reload_nodes = R_TRUE;
 }
 
-static int graph_reload_nodes(struct graph *g) {
+static int agraph_reload_nodes(AGraph *g) {
 	int ret;
 
 	ret = reload_nodes(g);
 	if (!ret)
 		return R_FALSE;
-	graph_set_layout(g);
+	agraph_set_layout(g);
 	return R_TRUE;
 }
 
-static void follow_nth(struct graph *g, int nth) {
+static void follow_nth(AGraph *g, int nth) {
 	int cn = find_edge_node (g, g->curnode, nth);
 	if (cn != -1) {
 		g->curnode = cn;
@@ -604,39 +607,39 @@ static void follow_nth(struct graph *g, int nth) {
 	}
 }
 
-static void graph_follow_true(struct graph *g) {
+static void agraph_follow_true(AGraph *g) {
 	follow_nth(g, 0);
-	graph_update_seek(g, g->curnode, R_FALSE);
+	agraph_update_seek(g, g->curnode, R_FALSE);
 }
 
-static void graph_follow_false(struct graph *g) {
+static void agraph_follow_false(AGraph *g) {
 	follow_nth(g, 1);
-	graph_update_seek(g, g->curnode, R_FALSE);
+	agraph_update_seek(g, g->curnode, R_FALSE);
 }
 
-static void graph_undo_node(struct graph *g) {
+static void agraph_undo_node(AGraph *g) {
 	g->curnode = history_pop (g->history);
-	graph_update_seek (g, g->curnode, R_FALSE);
+	agraph_update_seek (g, g->curnode, R_FALSE);
 }
 
-static void graph_next_node(struct graph *g) {
+static void agraph_next_node(AGraph *g) {
 	g->curnode = (g->curnode + 1) % g->n_nodes;
 	history_push (g->history, g->curnode);
-	graph_update_seek (g, g->curnode, R_FALSE);
+	agraph_update_seek (g, g->curnode, R_FALSE);
 }
 
-static void graph_prev_node(struct graph *g) {
+static void agraph_prev_node(AGraph *g) {
 	if (g->curnode == 0)
 		g->curnode = g->n_nodes - 1;
 	else
 		g->curnode = g->curnode - 1;
 	history_push (g->history, g->curnode);
-	graph_update_seek (g, g->curnode, R_FALSE);
+	agraph_update_seek (g, g->curnode, R_FALSE);
 }
 
-static int graph_refresh(struct graph_refresh_data *grd) {
+static int agraph_refresh(struct agraph_refresh_data *grd) {
 	char title[128];
-	struct graph *g = grd->g;
+	AGraph *g = grd->g;
 	int fs = grd->fs;
 	int h, w = r_cons_get_size (&h);
 	int ret;
@@ -654,7 +657,7 @@ static int graph_refresh(struct graph_refresh_data *grd) {
 	/* look for any change in the state of the graph
 	 * and update what's necessary */
 	if (g->need_reload_nodes) {
-		ret = graph_reload_nodes(g);
+		ret = agraph_reload_nodes(g);
 		if (!ret)
 			return R_FALSE;
 
@@ -675,8 +678,8 @@ static int graph_refresh(struct graph_refresh_data *grd) {
 	r_cons_canvas_resize (g->can, w, h);
 	r_cons_canvas_clear (g->can);
 
-	graph_print_edges(g);
-	graph_print_nodes(g);
+	agraph_print_edges(g);
+	agraph_print_nodes(g);
 
 	if (fs) {
 		(void)G (-g->can->sx, -g->can->sy);
@@ -704,7 +707,7 @@ static int graph_refresh(struct graph_refresh_data *grd) {
 	return R_TRUE;
 }
 
-static void graph_init(struct graph *g) {
+static void agraph_init(AGraph *g) {
 	g->nodes = NULL;
 	g->edges = NULL;
 
@@ -720,10 +723,10 @@ static void graph_init(struct graph *g) {
 	g->history = r_stack_new (16);
 }
 
-static struct graph *graph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {
-	struct graph *g;
+static AGraph *agraph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {
+	AGraph *g;
 
-	g = (struct graph *)malloc(sizeof(struct graph));
+	g = (AGraph *)malloc(sizeof(AGraph));
 	if (!g)
 		return NULL;
 
@@ -731,18 +734,18 @@ static struct graph *graph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn
 	g->can = can;
 	g->fcn = fcn;
 
-	graph_init(g);
+	agraph_init(g);
 	return g;
 }
 
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interactive) {
 	int exit_graph = R_FALSE, is_error = R_FALSE;
-	struct graph_refresh_data *grd;
+	struct agraph_refresh_data *grd;
 	int okey, key, wheel;
 	RAnalFunction *fcn;
 	const char *key_s;
 	RConsCanvas *can;
-	struct graph *g;
+	AGraph *g;
 	int wheelspeed;
 	int w, h;
 	int ret;
@@ -763,22 +766,22 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	// disable colors in disasm because canvas doesnt supports ansi text yet
 	r_config_set_i (core->config, "scr.color", 0);
 
-	g = graph_new (core, can, fcn);
+	g = agraph_new (core, can, fcn);
 	if (!g) {
 		is_error = R_TRUE;
 		goto err_graph_new;
 	}
 
-	grd = (struct graph_refresh_data *)malloc (sizeof(*grd));
+	grd = (struct agraph_refresh_data *)malloc (sizeof(*grd));
 	grd->g = g;
 	grd->fs = is_interactive;
 
 	core->cons->event_data = grd;
-	core->cons->event_resize = (RConsEvent)graph_refresh;
+	core->cons->event_resize = (RConsEvent)agraph_refresh;
 
 	while (!exit_graph && !is_error) {
 		w = r_cons_get_size (&h);
-		ret = graph_refresh (grd);
+		ret = agraph_refresh (grd);
 		if (!ret) {
 			is_error = R_TRUE;
 			break;
@@ -818,10 +821,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				}
 				break;
 			case 'O':
-				graph_toggle_simple_mode(g);
+				agraph_toggle_simple_mode(g);
 				break;
 			case 'V':
-				graph_toggle_callgraph(g);
+				agraph_toggle_callgraph(g);
 				break;
 			case 'z':
 				g->is_instep = R_TRUE;
@@ -834,13 +837,13 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					else
 						r_core_cmd0 (core, "aes;.dr*");
 				}
-				ret = graph_reload_nodes(g);
+				ret = agraph_reload_nodes(g);
 				if (!ret)
 					is_error = R_TRUE;
 				break;
 			case 'Z':
 				if (okey == 27) {
-					graph_prev_node(g);
+					agraph_prev_node(g);
 				} else {
 					// 'Z'
 					g->is_instep = R_TRUE;
@@ -849,7 +852,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					else
 						r_core_cmd0 (core, "aeso;.dr*");
 
-					ret = graph_reload_nodes(g);
+					ret = agraph_reload_nodes(g);
 					if (!ret)
 						is_error = R_TRUE;
 				}
@@ -863,7 +866,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					exit_graph = R_TRUE;
 				break;
 			case 9: // tab
-				graph_next_node(g);
+				agraph_next_node(g);
 				break;
 			case '?':
 				r_cons_clear00 ();
@@ -888,7 +891,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				break;
 			case 'R':
 			case 'r':
-				graph_set_layout (g);
+				agraph_set_layout (g);
 				break;
 			case 'j':
 				if (r_cons_singleton()->mouse_event) {
@@ -960,20 +963,20 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				  can->linemode = !!!can->linemode;
 				  break;
 			case 'p':
-				  graph_toggle_small_nodes(g);
+				  agraph_toggle_small_nodes(g);
 				  break;
 			case 'u':
-				  graph_undo_node(g);
+				  agraph_undo_node(g);
 				  break;
 			case '.':
-				  graph_update_seek (g, g->curnode, R_TRUE);
+				  agraph_update_seek (g, g->curnode, R_TRUE);
 				  g->is_instep = R_TRUE;
 				  break;
 			case 't':
-				  graph_follow_true(g);
+				  agraph_follow_true(g);
 				  break;
 			case 'f':
-				  graph_follow_false(g);
+				  agraph_follow_false(g);
 				  break;
 			case '/':
 				  r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
@@ -1012,7 +1015,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		}
 	}
 
-	graph_free(g);
+	agraph_free(g);
 err_graph_new:
 	free (can);
 	r_config_set_i (core->config, "scr.color", can->color);
