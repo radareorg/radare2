@@ -11,7 +11,7 @@ sign:
 	ldid -Sradare2.xml radare2
 
 ios_sdk_sign:
-	codesign -s- --entitlements radare2.xml radare2
+	-codesign -s- --entitlements radare2.xml radare2
 
 osxsign:
 	${CC} radare2.o ${CFLAGS} ${LDFLAGS} -o radare2 \
