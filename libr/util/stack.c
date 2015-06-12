@@ -45,3 +45,7 @@ R_API void *r_stack_pop (RStack *s) {
 R_API int r_stack_is_empty (RStack *s) {
 	return s->top == -1;
 }
+
+R_API unsigned int r_stack_size (RStack *s) {
+	return (unsigned int)(s->top + 1);
+}

@@ -273,6 +273,7 @@ R_API void r_stack_free (RStack *s);
 R_API int r_stack_push (RStack *s, void *el);
 R_API void *r_stack_pop (RStack *s);
 R_API int r_stack_is_empty (RStack *s);
+R_API unsigned int r_stack_size (RStack *s);
 
 R_API RQueue *r_queue_new (int n);
 R_API void r_queue_free (RQueue *q);
