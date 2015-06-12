@@ -1056,23 +1056,27 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'G':
 		ret = 0;
 		int scols = r_config_get_i (core->config, "hex.cols");
-		if (core->io->va) {
-			ut64 offset = r_io_section_get_vaddr (core->io, 0);
-			if (offset == UT64_MAX) {
-				offset = r_io_desc_size (core->io,
-							 core->file->desc)
-					- core->blocksize + 2*scols;
-				ret = r_core_seek (core, offset, 1);
+		if (core->file) {
+			if (core->io->va) {
+				ut64 offset = r_io_section_get_vaddr (core->io, 0);
+				if (offset == UT64_MAX) {
+					offset = r_io_desc_size (core->io,
+							core->file->desc)
+						- core->blocksize + 2*scols;
+					ret = r_core_seek (core, offset, 1);
+				} else {
+					offset += r_io_desc_size (core->io,
+							core->file->desc)
+						- core->blocksize + 2*scols;
+					ret = r_core_seek (core, offset, 1);
+				}
 			} else {
-				offset += r_io_desc_size (core->io,
-							  core->file->desc)
-					- core->blocksize + 2*scols;
-				ret = r_core_seek (core, offset, 1);
+				ret = r_core_seek (core,
+						r_io_desc_size (core->io, core->file->desc)
+						- core->blocksize + 2*scols, 1);
 			}
 		} else {
-			ret = r_core_seek (core,
-				r_io_desc_size (core->io, core->file->desc)
-					   - core->blocksize + 2*scols, 1);
+			ret = -1;
 		}
 		if (ret != -1)
 			r_io_sundo_push (core->io, core->offset);
