@@ -110,6 +110,10 @@ R_API ut64 r_file_size(const char *str) {
 	return (ut64)buf.st_size;
 }
 
+R_API int r_file_is_abspath(const char *file) {
+	return ((*file && file[1]==':') || *file == '/');
+}
+
 R_API char *r_file_abspath(const char *file) {
 	char *ret = NULL;
 	char *cwd = r_sys_getdir ();
@@ -120,8 +124,9 @@ R_API char *r_file_abspath(const char *file) {
 		if (cwd && *file != '/')
 			ret = r_str_newf ("%s"R_SYS_DIR"%s", cwd, file);
 #elif __WINDOWS__ && !__CYGWIN__
-		if (cwd && !strchr (file, ':'))
+		if (cwd && !strchr (file, ':')) {
 			ret = r_str_newf ("%s\\%s", cwd, file);
+		}
 #endif
 	}
 	free (cwd);
@@ -134,10 +139,6 @@ R_API char *r_file_abspath(const char *file) {
 			ret = abspath;
 		}
 	}
-#else
-	/* remove ../ */
-	/* remove ./ */
-	/* remove // */
 #endif
 	return ret;
 }
