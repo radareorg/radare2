@@ -96,7 +96,7 @@ static void dot_trace_traverse(RCore *core, RTree *t) {
 	const char *gfont = r_config_get (core->config, "graph.font");
 	struct dot_trace_ght aux_data;
 	RTreeVisitor vis = { 0 };
-	RList *nodes;
+	const RList *nodes;
 	RListIter *iter;
 	RGraphNode *n;
 
@@ -117,7 +117,7 @@ static void dot_trace_traverse(RCore *core, RTree *t) {
 		" shape=box fontname=\"%s\" fontsize=\"8\"];\n", gfont);
 	r_list_foreach (nodes, iter, n) {
 		struct trace_node *tn = (struct trace_node *)n->data;
-		RList *neighbours = r_graph_get_neighbours (aux_data.graph, n);
+		const RList *neighbours = r_graph_get_neighbours (aux_data.graph, n);
 		RListIter *it_n;
 		RGraphNode *w;
 

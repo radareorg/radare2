@@ -104,7 +104,7 @@ R_API void r_graph_add_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
 	t->n_edges++;
 }
 
-R_API RList *r_graph_get_neighbours (RGraph *g, RGraphNode *n) {
+R_API const RList *r_graph_get_neighbours (RGraph *g, RGraphNode *n) {
 	return get_adjacency (g->adjacency, n->idx);
 }
 
@@ -112,7 +112,7 @@ R_API RGraphNode *r_graph_nth_neighbour (RGraph *g, RGraphNode *n, int nth) {
 	return (RGraphNode *)r_list_get_n (get_adjacency (g->adjacency, n->idx), nth);
 }
 
-R_API RList *r_graph_get_nodes (RGraph *g) {
+R_API const RList *r_graph_get_nodes (RGraph *g) {
 	return g->nodes;
 }
 

@@ -67,7 +67,7 @@ struct agraph_refresh_data {
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(g->can, x,y,x2,y2,c,0)
 
 static void update_node_dimension(RGraph *g, int is_small) {
-	RList *nodes = r_graph_get_nodes (g);
+	const RList *nodes = r_graph_get_nodes (g);
 	RGraphNode *gn;
 	RListIter *it;
 	ANode *n;
@@ -185,7 +185,7 @@ static void set_layout_bb(AGraph *g) {
 	int maxdepth = 0;
 	const int h_spacing = 12;
 	const int v_spacing = 4;
-	RList *nodes = r_graph_get_nodes (g->graph);
+	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *gn;
 	RListIter *it;
 	ANode *n;
@@ -230,7 +230,7 @@ static void set_layout_bb(AGraph *g) {
 }
 
 static void set_layout_callgraph(AGraph *g) {
-	RList *nodes = r_graph_get_nodes (g->graph);
+	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *gn;
 	RListIter *it;
 	ANode *prev_n = NULL, *n;
@@ -439,7 +439,7 @@ static void agraph_print_node(AGraph *g, ANode *n) {
 }
 
 static void agraph_print_nodes(AGraph *g) {
-	RList *nodes = r_graph_get_nodes (g->graph);
+	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *gn;
 	RListIter *it;
 	ANode *n;
@@ -472,13 +472,13 @@ static void agraph_print_edge(AGraph *g, ANode *a, ANode *b, int nth) {
 }
 
 static void agraph_print_edges(AGraph *g) {
-	RList *nodes = r_graph_get_nodes (g->graph);
+	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *gn, *gv;
 	RListIter *it, *itn;
 	ANode *u, *v;
 
 	graph_foreach_node (nodes, it, gn, u) {
-		RList *neighbours = r_graph_get_neighbours (g->graph, gn);
+		const RList *neighbours = r_graph_get_neighbours (g->graph, gn);
 		int nth = 0, exit_edges = r_list_length (neighbours);
 
 		graph_foreach_node (neighbours, itn, gv, v) {
