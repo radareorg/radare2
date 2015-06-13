@@ -433,7 +433,7 @@ static int cmd_cmp(void *data, const char *input) {
 			ut64 addr = 0; // TOTHINK: Not sure what default address should be
 			if (input[1]=='c') { // "ccc"
 				core->print->flags |= R_PRINT_FLAGS_DIFFOUT;
-				addr = r_num_math (core->num, input+3);
+				addr = r_num_math (core->num, input+2);
 			} else {
 				if (*input && input[1])
 					addr = r_num_math (core->num, input+2);
