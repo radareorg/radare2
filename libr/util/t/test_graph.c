@@ -79,7 +79,6 @@ int main(int argc, char **argv) {
 	check(g->n_nodes, 10, "n_nodes.again");
 	check_list(nodes, exp_nodes, "get_all_nodes");
 	r_list_free(exp_nodes);
-	r_list_free(nodes);
 
 	r_graph_free (g);
 	return 0;

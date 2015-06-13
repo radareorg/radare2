@@ -136,7 +136,6 @@ static void dot_trace_traverse(RCore *core, RTree *t) {
 		}
 	}
 	r_cons_printf ("}\n");
-	r_list_free (nodes);
 
 	r_graph_free (aux_data.graph);
 	sdb_free (aux_data.graphnodes);
