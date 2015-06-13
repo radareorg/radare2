@@ -61,9 +61,10 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 	r_socket_write (s, tmp, 5);
 	r_socket_flush (s);
 	// recv
-	ret = r_socket_read (s, tmp, 5);
+	ret = r_socket_read_block (s, tmp, 5);
 	if (ret != 5 || tmp[0] != (RMT_READ|RMT_REPLY)) {
-		eprintf ("rap__read: Unexpected rap read reply (%d=0x%02x) expected (%d=0x%02x)\n",
+		eprintf ("rap__read: Unexpected rap read reply "
+			"(%d=0x%02x) expected (%d=0x%02x)\n",
 			ret, tmp[0], 2, (RMT_READ|RMT_REPLY));
 		return -1;
 	}
@@ -253,8 +254,9 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	if (*command=='!') {
 		op = RMT_SYSTEM;
 		command++;
-	} else
+	} else {
 		op = RMT_CMD;
+	}
 	buf[0] = op;
 	i = strlen (command)+1;
 	if (i>RMT_MAX-5) {
@@ -274,7 +276,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		}
 		/* system back in the middle */
 		/* TODO: all pkt handlers should check for reverse queries */
-		if (buf[0] == RMT_SYSTEM) {
+		if (buf[0] == RMT_SYSTEM || buf[0] == RMT_CMD) {
 			char *res, *str;
 			ut32 reslen = 0, cmdlen = 0;
 			// run io->cmdstr
@@ -288,6 +290,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 			ret = r_socket_read_block (s, (ut8*)str, cmdlen);
 			//eprintf ("RUN CMD(%s)\n", str);
 			res = io->cb_core_cmdstr (io->user, str);
+			eprintf ("[%s]=>(%s)\n", str, res);
 			reslen = strlen (res);
 			free (str);
 			r_mem_copyendian ((ut8*)buf+1, (const ut8*)&reslen,
