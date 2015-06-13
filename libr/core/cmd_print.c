@@ -885,6 +885,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	int show_offset = r_config_get_i (core->config, "asm.offset");
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int decode = r_config_get_i (core->config, "asm.decode");
+	int filter = r_config_get_i (core->config, "asm.filter");
 	int show_color = r_config_get_i (core->config, "scr.color");
 	int esil = r_config_get_i (core->config, "asm.esil");
 	int flags = r_config_get_i (core->config, "asm.flags");
@@ -985,15 +986,24 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 					r_cons_printf ("%s\n", opstr);
 				}
 			} else {
-				if (show_color) {
-					RAnalOp aop;
-					r_anal_op (core->anal, &aop, core->offset+i,
-							core->block+i, core->blocksize-i);
-					r_cons_printf ("%s%s"Color_RESET"\n", 
-							r_print_color_op_type (core->print, aop.type),
-							asmop.buf_asm);
+				if (filter) {
+					char opstr[128];
+					int ofs = core->parser->flagspace;
+					r_parse_filter (core->parser, core->flags,
+						asmop.buf_asm, opstr, sizeof (opstr)-1);
+					core->parser->flagspace = ofs;
+					r_cons_printf ("%s\n", opstr);
 				} else {
-					r_cons_printf ("%s\n", asmop.buf_asm);
+					if (show_color) {
+						RAnalOp aop;
+						r_anal_op (core->anal, &aop, core->offset+i,
+							core->block+i, core->blocksize-i);
+						r_cons_printf ("%s%s"Color_RESET"\n", 
+							r_print_color_op_type (core->print, aop.type),
+							      asmop.buf_asm);
+					} else {
+						r_cons_printf ("%s\n", asmop.buf_asm);
+					}
 				}
 			}
 		}
