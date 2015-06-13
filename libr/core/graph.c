@@ -12,7 +12,16 @@ static int mousemode = 0;
 #define MAX_NODE_WIDTH 18
 
 #define history_push(stack, x) (r_stack_push (stack, (void *)(size_t)x))
-#define history_pop(stack) ((unsigned int)r_stack_pop (stack))
+#define history_pop(stack) ((RGraphNode *)r_stack_pop (stack))
+
+#define gn2addr(sdb,addr,gn) (sdb_num_set (sdb, sdb_fmt (0, "%lld", addr), (ut64)(size_t)gn, 0))
+#define addr2gn(sdb,addr) ((RGraphNode *)(size_t)sdb_num_get (sdb, sdb_fmt (0, "%lld", addr), NULL))
+
+#define get_gn(iter) ((RGraphNode *)r_list_iter_get_data(iter))
+#define get_anode(iter) ((ANode *)get_gn(iter)->data)
+
+#define graph_foreach_node(list, it, pos, anode) \
+	if (list) for (it = list->head; it && (pos = it->data) && (pos) && (anode = (ANode *)pos->data); it = it->n)
 
 typedef struct ascii_node {
 	int x;
@@ -24,34 +33,21 @@ typedef struct ascii_node {
 	char *text;
 } ANode;
 
-typedef struct {
-	int nth;
-	int from;
-	int to;
-} Edge;
-
 typedef struct ascii_graph {
 	RCore *core;
 	RConsCanvas *can;
 	RAnalFunction *fcn;
 	RGraph *graph;
-
-	ANode *nodes;
-	Edge *edges;
-	int n_nodes;
-	int n_edges;
+	RListIter *curnode;
 
 	int is_callgraph;
 	int is_instep;
 	int is_simple_mode;
 	int is_small_nodes;
 
-	unsigned int curnode;
-
 	RStack *history;
+	ANode *update_seek_on;
 	int need_reload_nodes;
-	int need_update_seek;
-	int update_seek_on;
 	int force_update_seek;
 } AGraph;
 
@@ -70,10 +66,13 @@ struct agraph_refresh_data {
 #define L2(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,2)
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(g->can, x,y,x2,y2,c,0)
 
-static void update_node_dimension(ANode nodes[], int nodes_size, int is_small) {
-	int i;
-	for (i = 0; i < nodes_size; ++i) {
-		ANode *n = &nodes[i];
+static void update_node_dimension(RGraph *g, int is_small) {
+	RList *nodes = r_graph_get_nodes (g);
+	RGraphNode *gn;
+	RListIter *it;
+	ANode *n;
+
+	graph_foreach_node (nodes, it, gn, n) {
 		if (is_small) {
 			n->w = n->h = 0;
 		} else {
@@ -158,100 +157,72 @@ static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
 	}
 }
 
-static ANode *get_current_node(AGraph *g) {
-	 return &g->nodes[g->curnode];
-}
-
-static int count_exit_edges(AGraph *g, int n) {
-	int i, count = 0;
-	for (i = 0; i < g->n_edges; i++) {
-		if (g->edges[i].from == n) {
-			count++;
-		}
-	}
-	return count;
-}
-
-static int find_edge_node(AGraph *g, int cur, int nth) {
-	if (g->edges) {
-		int i;
-		for (i = 0; i < g->n_edges; i++) {
-			if (g->edges[i].from == cur && g->edges[i].nth == nth)
-				return g->edges[i].to;
-		}
-	}
-	return -1;
-}
-
-static int find_node_idx(AGraph *g, ut64 addr) {
-	if (g->nodes) {
-		int i;
-		for (i = 0; i < g->n_nodes; i++) {
-			if (g->nodes[i].addr == addr)
-				return i;
-		}
-	}
-	return -1;
-}
-
-static void set_layout_bb_depth(AGraph *g, int nth, int depth) {
-	int j, f, old_d;
-	if (nth >= g->n_nodes)
+static void set_layout_bb_depth(AGraph *g, RGraphNode *gn, int depth) {
+	ANode *n;
+	RGraphNode *next;
+	int old_d;
+	if (!gn || !gn->data)
 		return;
 
-	old_d = g->nodes[nth].depth;
-	g->nodes[nth].depth = depth;
+	n = gn->data;
+	old_d = n->depth;
+	n->depth = depth;
 	if (old_d != -1)
 		return;
 
-	j = find_edge_node (g, nth, 0);
-	if (j != -1)
-		set_layout_bb_depth (g, j, depth + 1);
-	f = find_edge_node (g, nth, 1);
-	if (f != -1)
-		set_layout_bb_depth (g, f, depth + 1);
+	next = r_graph_nth_neighbour (g->graph, gn, 0);
+	if (next)
+		set_layout_bb_depth (g, next, depth + 1);
+	next = r_graph_nth_neighbour (g->graph, gn, 1);
+	if (next)
+		set_layout_bb_depth (g, next, depth + 1);
 	// TODO: support more than two destination points (switch tables?)
 }
 
 static void set_layout_bb(AGraph *g) {
-	int i, j, rh, nx;
+	int i, rh, nx;
 	int *rowheight = NULL;
 	int maxdepth = 0;
 	const int h_spacing = 12;
 	const int v_spacing = 4;
+	RList *nodes = r_graph_get_nodes (g->graph);
+	RGraphNode *gn;
+	RListIter *it;
+	ANode *n;
 
-	set_layout_bb_depth (g, 0, 0);
+	set_layout_bb_depth (g, (RGraphNode *)r_list_get_bottom(nodes), 0);
 
 	// identify max depth
-	for (i = 0; i < g->n_nodes; i++) {
-		if (g->nodes[i].depth > maxdepth)
-			maxdepth = g->nodes[i].depth;
+	graph_foreach_node (nodes, it, gn, n) {
+		if (n->depth > maxdepth)
+			maxdepth = n->depth;
 	}
+
 	// identify row height
 	rowheight = malloc (sizeof (int) * maxdepth);
 	for (i = 0; i < maxdepth; i++) {
 		rh = 0;
-		for (j = 0; j < g->n_nodes; j++) {
-			if (g->nodes[j].depth == i)
-				if (g->nodes[j].h > rh)
-					rh = g->nodes[j].h;
+		graph_foreach_node (nodes, it, gn, n) {
+			if (n->depth == i)
+				if (n->h > rh)
+					rh = n->h;
 		}
 		rowheight[i] = rh;
 	}
 
 	// vertical align // depe
-	for (i = 0; i < g->n_nodes; i++) {
-		g->nodes[i].y = 1;
-		for (j = 0; j < g->nodes[i].depth; j++)
-			g->nodes[i].y += rowheight[j] + v_spacing;
+	graph_foreach_node (nodes, it, gn, n) {
+		n->y = 1;
+		for (i = 0; i < n->depth; i++)
+			n->y += rowheight[i] + v_spacing;
 	}
 	// horitzontal align
 	for (i = 0; i < maxdepth; i++) {
 		nx = (i % 2) * 10;
-		for (j = 0; j < g->n_nodes; j++) {
-			if (g->nodes[j].depth == i) {
-				g->nodes[j].x = nx;
-				nx += g->nodes[j].w + h_spacing;
+		graph_foreach_node (nodes, it, gn, n) {
+			if (n->depth == i) {
+				n->x = nx;
+				nx += n->w + h_spacing;
 			}
 		}
 	}
@@ -259,192 +230,142 @@ static void set_layout_bb(AGraph *g) {
 }
 
 static void set_layout_callgraph(AGraph *g) {
+	RList *nodes = r_graph_get_nodes (g->graph);
+	RGraphNode *gn;
+	RListIter *it;
+	ANode *prev_n = NULL, *n;
 	int y = 5, x = 20;
-	int i;
 
-	for (i = 0; i < g->n_nodes; i++) {
+	graph_foreach_node (nodes, it, gn, n) {
 		// wrap to width 'w'
-		if (i > 0) {
-			if (g->nodes[i].x < g->nodes[i-1].x) {
-				y += 10;
-				x = 0;
-			}
+		if (prev_n && n->x < prev_n->x) {
+			y += 10;
+			x = 0;
 		}
-		g->nodes[i].x = x;
-		g->nodes[i].y = i? y: 2;
+		n->x = x;
+		n->y = prev_n ? y : 2;
 		x += 30;
+		prev_n = n;
 	}
 }
 
 static int get_bbnodes(AGraph *g) {
 	RAnalBlock *bb;
 	RListIter *iter;
-	ANode *nodes;
-	int i;
+	Sdb *g_nodes = sdb_new0 ();
+	if (!g_nodes) return R_FALSE;
 
-	nodes = calloc(r_list_length (g->fcn->bbs), sizeof(ANode));
-	if (!nodes)
-		return R_FALSE;
-
-	i = 0;
 	r_list_foreach (g->fcn->bbs, iter, bb) {
+		RGraphNode *gn;
+		ANode *node;
+
 		if (bb->addr == UT64_MAX)
 			continue;
 
+		node = R_NEW0 (ANode);
+		if (!node) return R_FALSE;
+
 		if (g->is_simple_mode) {
-			nodes[i].text = r_core_cmd_strf (g->core,
+			node->text = r_core_cmd_strf (g->core,
 					"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
 		}else {
-			nodes[i].text = r_core_cmd_strf (g->core,
+			node->text = r_core_cmd_strf (g->core,
 					"pDi %d @ 0x%08"PFMT64x, bb->size, bb->addr);
 		}
-		nodes[i].addr = bb->addr;
-		nodes[i].depth = -1;
-		nodes[i].x = 0;
-		nodes[i].y = 0;
-		nodes[i].w = 0;
-		nodes[i].h = 0;
-		i++;
+		node->addr = bb->addr;
+		node->depth = -1;
+		node->x = 0;
+		node->y = 0;
+		node->w = 0;
+		node->h = 0;
+
+		gn = r_graph_add_node (g->graph, node);
+		if (!gn) return R_FALSE;
+		gn2addr (g_nodes, bb->addr, gn);
 	}
 
-	if (g->nodes)
-		free(g->nodes);
-	g->nodes = nodes;
-	g->n_nodes = i;
+	r_list_foreach (g->fcn->bbs, iter, bb) {
+		RGraphNode *u, *v;
+		if (bb->addr == UT64_MAX)
+			continue;
+
+		u = addr2gn (g_nodes, bb->addr);
+		if (bb->jump != UT64_MAX) {
+			v = addr2gn (g_nodes, bb->jump);
+			r_graph_add_edge (g->graph, u, v);
+		}
+		if (bb->fail != UT64_MAX) {
+			v = addr2gn (g_nodes, bb->fail);
+			r_graph_add_edge (g->graph, u, v);
+		}
+	}
+
+	g->curnode = r_list_iterator (r_graph_get_nodes(g->graph));
+	sdb_free (g_nodes);
 	return R_TRUE;
 }
 
 static int get_cgnodes(AGraph *g) {
-	int i = 0;
 #if FCN_OLD
-	int j;
-	char *code;
-	RAnalRef *ref;
+	Sdb *g_nodes = sdb_new0 ();
+	RGraphNode *fcn_gn;
 	RListIter *iter;
-	ANode *nodes;
+	RAnalRef *ref;
+	ANode *node;
+	char *code;
 
-	int fcn_refs_length = r_list_length (g->fcn->refs);
-	nodes = calloc (fcn_refs_length + 2, sizeof(ANode));
-	if (!nodes)
-		return R_FALSE;
-
-	nodes[i].text = strdup ("");
-	nodes[i].addr = g->fcn->addr;
-	nodes[i].depth = -1;
-	nodes[i].x = 10;
-	nodes[i].y = 3;
-	nodes[i].w = 0;
-	nodes[i].h = 0;
-	i++;
+	node = R_NEW0 (ANode);
+	if (!node) return R_FALSE;
+	node->text = strdup ("");
+	node->addr = g->fcn->addr;
+	node->depth = -1;
+	node->x = 10;
+	node->y = 3;
+	node->w = 0;
+	node->h = 0;
+	fcn_gn = r_graph_add_node (g->graph, node);
+	if (!fcn_gn) return R_FALSE;
+	gn2addr (g_nodes, g->fcn->addr, fcn_gn);
 
 	r_list_foreach (g->fcn->refs, iter, ref) {
 		/* XXX: something is broken, why there are duplicated
 		 *      nodes here?! goto check fcn->refs!! */
 		/* avoid dups wtf */
-		for (j = 0; j < i; j++) {
-			if (ref->addr == nodes[j].addr)
-				continue;
-		}
+		RGraphNode *gn;
+		gn = addr2gn (g_nodes, ref->addr);
+		if (gn) continue;
+
 		RFlagItem *fi = r_flag_get_at (g->core->flags, ref->addr);
+		node = R_NEW0 (ANode);
+		if (!node) return R_FALSE;
 		if (fi) {
-			nodes[i].text = strdup (fi->name);
-			nodes[i].text = r_str_concat (nodes[i].text, ":\n");
+			node->text = strdup (fi->name);
+			node->text = r_str_concat (node->text, ":\n");
 		} else {
-			nodes[i].text = strdup ("");
+			node->text = strdup ("");
 		}
 		code = r_core_cmd_strf (g->core,
 			"pi 4 @ 0x%08"PFMT64x, ref->addr);
-		nodes[i].text = r_str_concat (nodes[i].text, code);
+		node->text = r_str_concat (node->text, code);
+		node->text = r_str_concat (node->text, "...\n");
+		node->addr = ref->addr;
+		node->depth = -1;
+		node->x = 10;
+		node->y = 10;
+		node->w = 0;
+		node->h = 0;
 		free (code);
-		nodes[i].text = r_str_concat (nodes[i].text, "...\n");
-		nodes[i].addr = ref->addr;
-		nodes[i].depth = -1;
-		nodes[i].x = 10;
-		nodes[i].y = 10;
-		nodes[i].w = 0;
-		nodes[i].h = 0;
-		i++;
+		gn = r_graph_add_node (g->graph, node);
+		if (!gn) return R_FALSE;
+		gn2addr (g_nodes, ref->addr, gn);
+
+		r_graph_add_edge (g->graph, fcn_gn, gn);
 	}
 
-	if (g->nodes)
-		free(g->nodes);
-	g->nodes = nodes;
-	g->n_nodes = i;
+	g->curnode = r_list_iterator (r_graph_get_nodes (g->graph));
+	sdb_free (g_nodes);
 #else
 	eprintf ("Must be sdbized\n");
-#endif
-
-	return R_TRUE;
-}
-
-static int get_bbedges(AGraph *g) {
-	Edge *edges = NULL;
-	RListIter *iter;
-	RAnalBlock *bb;
-	int i, n_edges;
-
-	n_edges = 0;
-	r_list_foreach (g->fcn->bbs, iter, bb) {
-		if (bb->jump != UT64_MAX)
-			n_edges++;
-		if (bb->fail != UT64_MAX)
-			n_edges++;
-	}
-
-	edges = calloc(n_edges, sizeof(Edge));
-	if (!edges && n_edges != 0)
-		return R_FALSE;
-
-	i = 0;
-	r_list_foreach (g->fcn->bbs, iter, bb) {
-		// add edge from bb->addr to bb->jump / bb->fail
-		if (bb->jump != UT64_MAX) {
-			edges[i].nth = 0;
-			edges[i].from = find_node_idx (g, bb->addr);
-			edges[i].to = find_node_idx (g, bb->jump);
-			i++;
-		}
-		if (bb->fail != UT64_MAX) {
-			edges[i].nth = 1;
-			edges[i].from = find_node_idx (g, bb->addr);
-			edges[i].to = find_node_idx (g, bb->fail);
-			i++;
-		}
-	}
-
-	if (g->edges)
-		free(g->edges);
-	g->edges = edges;
-	g->n_edges = i;
-	return R_TRUE;
-}
-
-static int get_cgedges(AGraph *g) {
-	int i = 0;
-#if FCN_OLD
-	Edge *edges = NULL;
-	RAnalRef *ref;
-	RListIter *iter;
-	int refs_length;
-
-	refs_length = r_list_length(g->fcn->refs);
-	edges = calloc(refs_length, sizeof(Edge));
-	if (!edges && refs_length != 0)
-		return R_FALSE;
-
-	r_list_foreach (g->fcn->refs, iter, ref) {
-		edges[i].nth = 0;
-		edges[i].from = find_node_idx (g, g->fcn->addr);
-		edges[i].to = find_node_idx (g, ref->addr);
-		i++;
-	}
-
-	if (g->edges)
-		free(g->edges);
-	g->edges = edges;
-	g->n_edges = i;
-#else
-	#warning cgEdges not sdbized for fcn refs
 #endif
 
 	return R_TRUE;
@@ -457,20 +378,13 @@ static int reload_nodes(AGraph *g) {
 		ret = get_cgnodes(g);
 		if (!ret)
 			return R_FALSE;
-		ret = get_cgedges(g);
-		if (!ret)
-			return R_FALSE;
 	} else {
 		ret = get_bbnodes(g);
 		if (!ret)
 			return R_FALSE;
-
-		ret = get_bbedges(g);
-		if (!ret)
-			return R_FALSE;
 	}
 
-	update_node_dimension(g->nodes, g->n_nodes, g->is_small_nodes);
+	update_node_dimension(g->graph, g->is_small_nodes);
 	return R_TRUE;
 }
 
@@ -504,23 +418,19 @@ static void agraph_set_layout(AGraph *g) {
 		set_layout_bb(g);
 }
 
-static void agraph_update_seek(AGraph *g, int node_index, int force) {
-	g->need_update_seek = R_TRUE;
-	g->update_seek_on = node_index;
+static void agraph_update_seek(AGraph *g, ANode *n, int force) {
+	g->update_seek_on = n;
 	g->force_update_seek = force;
 }
 
 static void agraph_free(AGraph *g) {
-	if (g->nodes)
-		free(g->nodes);
-	if (g->edges)
-		free(g->edges);
+	r_graph_free (g->graph);
 	r_stack_free (g->history);
 	free(g);
 }
 
 static void agraph_print_node(AGraph *g, ANode *n) {
-	int cur = get_current_node(g) == n;
+	int cur = get_anode (g->curnode) == n;
 
 	if (g->is_small_nodes)
 		small_ANode_print(g, n, cur);
@@ -529,13 +439,18 @@ static void agraph_print_node(AGraph *g, ANode *n) {
 }
 
 static void agraph_print_nodes(AGraph *g) {
-	int i;
-	for (i = 0; i < g->n_nodes; ++i)
-		if (i != g->curnode)
-			agraph_print_node(g, &g->nodes[i]);
+	RList *nodes = r_graph_get_nodes (g->graph);
+	RGraphNode *gn;
+	RListIter *it;
+	ANode *n;
+
+	graph_foreach_node (nodes, it, gn, n) {
+		if (gn != get_gn (g->curnode))
+			agraph_print_node(g, n);
+	}
 
 	/* draw current node now to make it appear on top */
-	agraph_print_node (g, &g->nodes[g->curnode]);
+	agraph_print_node (g, get_anode(g->curnode));
 }
 
 static void agraph_print_edge(AGraph *g, ANode *a, ANode *b, int nth) {
@@ -557,19 +472,23 @@ static void agraph_print_edge(AGraph *g, ANode *a, ANode *b, int nth) {
 }
 
 static void agraph_print_edges(AGraph *g) {
-	int i;
-	if (g->edges) {
-		for (i = 0; i < g->n_edges; i++) {
-			if (g->edges[i].from == -1 || g->edges[i].to == -1)
-				continue;
+	RList *nodes = r_graph_get_nodes (g->graph);
+	RGraphNode *gn, *gv;
+	RListIter *it, *itn;
+	ANode *u, *v;
 
-			ANode *a = &g->nodes[g->edges[i].from];
-			ANode *b = &g->nodes[g->edges[i].to];
-			int nth = g->edges[i].nth;
-			if (count_exit_edges(g, g->edges[i].from) == 1)
-				nth = -1; // blue line
+	graph_foreach_node (nodes, it, gn, u) {
+		RList *neighbours = r_graph_get_neighbours (g->graph, gn);
+		int nth = 0, exit_edges = r_list_length (neighbours);
 
-			agraph_print_edge (g, a, b, nth);
+		graph_foreach_node (neighbours, itn, gv, v) {
+			int cur_nth = nth;
+			if (g->is_callgraph)
+				cur_nth = 0;
+			else if (exit_edges == 1)
+				cur_nth = -1;
+			agraph_print_edge (g, u, v, cur_nth);
+			nth++;
 		}
 	}
 }
@@ -592,49 +511,53 @@ static void agraph_toggle_callgraph(AGraph *g) {
 static int agraph_reload_nodes(AGraph *g) {
 	int ret;
 
+	r_graph_reset (g->graph);
 	ret = reload_nodes(g);
 	if (!ret)
 		return R_FALSE;
 	agraph_set_layout(g);
+	g->update_seek_on = get_anode(g->curnode);
 	return R_TRUE;
 }
 
 static void follow_nth(AGraph *g, int nth) {
-	int cn = find_edge_node (g, g->curnode, nth);
-	if (cn != -1) {
-		g->curnode = cn;
-		history_push (g->history, cn);
+	RGraphNode *cn = r_graph_nth_neighbour (g->graph, get_gn(g->curnode), nth);
+	if (cn) {
+		history_push (g->history, get_gn (g->curnode));
+		g->curnode = r_graph_node_iter (g->graph, cn->idx);
 	}
 }
 
 static void agraph_follow_true(AGraph *g) {
 	follow_nth(g, 0);
-	agraph_update_seek(g, g->curnode, R_FALSE);
+	agraph_update_seek(g, get_anode(g->curnode), R_FALSE);
 }
 
 static void agraph_follow_false(AGraph *g) {
 	follow_nth(g, 1);
-	agraph_update_seek(g, g->curnode, R_FALSE);
+	agraph_update_seek(g, get_anode(g->curnode), R_FALSE);
 }
 
 static void agraph_undo_node(AGraph *g) {
-	g->curnode = history_pop (g->history);
-	agraph_update_seek (g, g->curnode, R_FALSE);
+	RGraphNode *p = history_pop (g->history);
+	if (p) {
+		g->curnode = r_graph_node_iter (g->graph, p->idx);
+		agraph_update_seek (g, p->data, R_FALSE);
+	}
 }
 
 static void agraph_next_node(AGraph *g) {
-	g->curnode = (g->curnode + 1) % g->n_nodes;
-	history_push (g->history, g->curnode);
-	agraph_update_seek (g, g->curnode, R_FALSE);
+	if (!g->curnode->n) return;
+	history_push (g->history, get_gn(g->curnode));
+	g->curnode = g->curnode->n;
+	agraph_update_seek (g, get_anode(g->curnode), R_FALSE);
 }
 
 static void agraph_prev_node(AGraph *g) {
-	if (g->curnode == 0)
-		g->curnode = g->n_nodes - 1;
-	else
-		g->curnode = g->curnode - 1;
-	history_push (g->history, g->curnode);
-	agraph_update_seek (g, g->curnode, R_FALSE);
+	if (!g->curnode->p) return;
+	history_push (g->history, get_gn(g->curnode));
+	g->curnode = g->curnode->p;
+	agraph_update_seek (g, get_anode(g->curnode), R_FALSE);
 }
 
 static int agraph_refresh(struct agraph_refresh_data *grd) {
@@ -663,10 +586,9 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 
 		g->need_reload_nodes = R_FALSE;
 	}
-	if (g->need_update_seek) {
-		update_seek(g->can, &g->nodes[g->update_seek_on], g->force_update_seek);
-		g->need_update_seek = R_FALSE;
-		g->update_seek_on = 0;
+	if (g->update_seek_on) {
+		update_seek(g->can, g->update_seek_on, g->force_update_seek);
+		g->update_seek_on = NULL;
 		g->force_update_seek = R_FALSE;
 	}
 
@@ -686,7 +608,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		snprintf (title, sizeof (title)-1,
 			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d) %s mouse:%s",
 			g->fcn->addr, r_stack_size (g->history), g->fcn->name,
-			g->n_nodes, g->n_edges, g->is_callgraph?"CG":"BB",
+			g->graph->n_nodes, g->graph->n_edges, g->is_callgraph?"CG":"BB",
 			mousemodes[mousemode]);
 		W (title);
 	}
@@ -708,19 +630,16 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 }
 
 static void agraph_init(AGraph *g) {
-	g->nodes = NULL;
-	g->edges = NULL;
-
 	g->is_callgraph = R_FALSE;
 	g->is_instep = R_FALSE;
 	g->is_simple_mode = R_TRUE;
 	g->is_small_nodes = R_FALSE;
 	g->need_reload_nodes = R_TRUE;
-	g->curnode = 0;
-	g->need_update_seek = R_TRUE;
-	g->update_seek_on = g->curnode;
+	g->curnode = NULL;
+	g->update_seek_on = NULL;
 	g->force_update_seek = R_TRUE;
 	g->history = r_stack_new (16);
+	g->graph = r_graph_new ();
 }
 
 static AGraph *agraph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {
@@ -903,14 +822,14 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 							can->sx += wheelspeed;
 							break;
 						case 2: // node-y
-							get_current_node(g)->y += wheelspeed;
+							get_anode(g->curnode)->y += wheelspeed;
 							break;
 						case 3: // node-x
-							get_current_node(g)->x += wheelspeed;
+							get_anode(g->curnode)->x += wheelspeed;
 							break;
 					}
 				} else {
-					get_current_node(g)->y++;
+					get_anode(g->curnode)->y++;
 				}
 				break;
 			case 'k':
@@ -923,14 +842,14 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 							can->sx -= wheelspeed;
 							break;
 						case 2: // node-y
-							get_current_node(g)->y -= wheelspeed;
+							get_anode(g->curnode)->y -= wheelspeed;
 							break;
 						case 3: // node-x
-							get_current_node(g)->x -= wheelspeed;
+							get_anode(g->curnode)->x -= wheelspeed;
 							break;
 					}
 				} else {
-					get_current_node(g)->y--;
+					get_anode(g->curnode)->y--;
 				}
 				break;
 			case 'm':
@@ -943,12 +862,12 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				if (mousemode<0)
 					mousemode = 3;
 				break;
-			case 'h': get_current_node(g)->x--; break;
-			case 'l': get_current_node(g)->x++; break;
-			case 'J': get_current_node(g)->y += 5; break;
-			case 'K': get_current_node(g)->y -= 5; break;
-			case 'H': get_current_node(g)->x -= 5; break;
-			case 'L': get_current_node(g)->x += 5; break;
+			case 'h': get_anode(g->curnode)->x--; break;
+			case 'l': get_anode(g->curnode)->x++; break;
+			case 'J': get_anode(g->curnode)->y += 5; break;
+			case 'K': get_anode(g->curnode)->y -= 5; break;
+			case 'H': get_anode(g->curnode)->x -= 5; break;
+			case 'L': get_anode(g->curnode)->x += 5; break;
 					  // scroll
 			case '0': can->sx = can->sy = 0; break;
 			case 'w': can->sy -= 1; break;
@@ -969,7 +888,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				  agraph_undo_node(g);
 				  break;
 			case '.':
-				  agraph_update_seek (g, g->curnode, R_TRUE);
+				  agraph_update_seek (g, get_anode(g->curnode), R_TRUE);
 				  g->is_instep = R_TRUE;
 				  break;
 			case 't':
@@ -998,13 +917,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			case 27: // ESC
 				  if (r_cons_readchar () == 91) {
 					  if (r_cons_readchar () == 90) {
-						  if (g->curnode < 1) {
-							  int i;
-							  for (i = 0; i < g->n_nodes; i++) ;
-							  g->curnode = i - 1;
-						  } else {
-							  g->curnode--;
-						  }
+						  agraph_prev_node (g);
 					  }
 				  }
 				  break;
