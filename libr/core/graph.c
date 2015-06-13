@@ -9,7 +9,11 @@ static int mousemode = 0;
 #define BORDER_HEIGHT 3
 #define MARGIN_TEXT_X 2
 #define MARGIN_TEXT_Y 2
+#define HORIZONTAL_NODE_SPACING 12
+#define VERTICAL_NODE_SPACING 4
 #define MAX_NODE_WIDTH 18
+#define INIT_HISTORY_CAPACITY 16
+#define TITLE_LEN 128
 
 #define history_push(stack, x) (r_stack_push (stack, (void *)(size_t)x))
 #define history_pop(stack) ((RGraphNode *)r_stack_pop (stack))
@@ -85,7 +89,7 @@ static void update_node_dimension(RGraph *g, int is_small) {
 }
 
 static void small_ANode_print(AGraph *g, ANode *n, int cur) {
-	char title[128];
+	char title[TITLE_LEN];
 
 	if (!G (n->x + 2, n->y - 1))
 		return;
@@ -104,7 +108,7 @@ static void small_ANode_print(AGraph *g, ANode *n, int cur) {
 }
 
 static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
-	char title[128];
+	char title[TITLE_LEN];
 	char *text;
 	int delta_x = 0;
 	int delta_y = 0;
@@ -183,8 +187,8 @@ static void set_layout_bb(AGraph *g) {
 	int i, rh, nx;
 	int *rowheight = NULL;
 	int maxdepth = 0;
-	const int h_spacing = 12;
-	const int v_spacing = 4;
+	const int h_spacing = HORIZONTAL_NODE_SPACING;
+	const int v_spacing = VERTICAL_NODE_SPACING;
 	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *gn;
 	RListIter *it;
@@ -249,6 +253,7 @@ static void set_layout_callgraph(AGraph *g) {
 	}
 }
 
+/* build the RGraph inside the AGraph g, starting from the Basic Blocks */
 static int get_bbnodes(AGraph *g) {
 	RAnalBlock *bb;
 	RListIter *iter;
@@ -305,6 +310,8 @@ static int get_bbnodes(AGraph *g) {
 	return R_TRUE;
 }
 
+/* build the RGraph inside the AGraph g, starting from the Call Graph
+ * information */
 static int get_cgnodes(AGraph *g) {
 #if FCN_OLD
 	Sdb *g_nodes = sdb_new0 ();
@@ -418,6 +425,7 @@ static void agraph_set_layout(AGraph *g) {
 		set_layout_bb(g);
 }
 
+/* set the willing to center the screen on a particular node */
 static void agraph_update_seek(AGraph *g, ANode *n, int force) {
 	g->update_seek_on = n;
 	g->force_update_seek = force;
@@ -430,7 +438,7 @@ static void agraph_free(AGraph *g) {
 }
 
 static void agraph_print_node(AGraph *g, ANode *n) {
-	int cur = get_anode (g->curnode) == n;
+	const int cur = get_anode (g->curnode) == n;
 
 	if (g->is_small_nodes)
 		small_ANode_print(g, n, cur);
@@ -453,6 +461,10 @@ static void agraph_print_nodes(AGraph *g) {
 	agraph_print_node (g, get_anode(g->curnode));
 }
 
+/* print an edge between two nodes.
+ * nth: specifies if the edge is the true(1)/false(2) branch or if it's the
+ *      only edge for that node(0), so that a different style will be applied
+ *      to the drawn line */
 static void agraph_print_edge(AGraph *g, ANode *a, ANode *b, int nth) {
 	int x, y, x2, y2;
 	int xinc = 3 + 2 * (nth + 1);
@@ -479,14 +491,19 @@ static void agraph_print_edges(AGraph *g) {
 
 	graph_foreach_node (nodes, it, gn, u) {
 		const RList *neighbours = r_graph_get_neighbours (g->graph, gn);
-		int nth = 0, exit_edges = r_list_length (neighbours);
+		const int exit_edges = r_list_length (neighbours);
+		int nth = 0;
 
 		graph_foreach_node (neighbours, itn, gv, v) {
 			int cur_nth = nth;
-			if (g->is_callgraph)
+			if (g->is_callgraph) {
+				/* hack: we don't support more than two exit edges from a node
+				 * yet, so set nth to zero, to make every edge appears as the
+				 * "true" edge of the node */
 				cur_nth = 0;
-			else if (exit_edges == 1)
+			} else if (exit_edges == 1) {
 				cur_nth = -1;
+			}
 			agraph_print_edge (g, u, v, cur_nth);
 			nth++;
 		}
@@ -508,6 +525,9 @@ static void agraph_toggle_callgraph(AGraph *g) {
 	g->need_reload_nodes = R_TRUE;
 }
 
+/* reload all the info in the nodes, depending on the type of the graph
+ * (callgraph, CFG, etc.), set the default layout for these nodes and center
+ * the screen on the selected one */
 static int agraph_reload_nodes(AGraph *g) {
 	int ret;
 
@@ -521,7 +541,7 @@ static int agraph_reload_nodes(AGraph *g) {
 }
 
 static void follow_nth(AGraph *g, int nth) {
-	RGraphNode *cn = r_graph_nth_neighbour (g->graph, get_gn(g->curnode), nth);
+	const RGraphNode *cn = r_graph_nth_neighbour (g->graph, get_gn(g->curnode), nth);
 	if (cn) {
 		history_push (g->history, get_gn (g->curnode));
 		g->curnode = r_graph_node_iter (g->graph, cn->idx);
@@ -538,14 +558,17 @@ static void agraph_follow_false(AGraph *g) {
 	agraph_update_seek(g, get_anode(g->curnode), R_FALSE);
 }
 
+/* go back in the history of selected nodes, if we can */
 static void agraph_undo_node(AGraph *g) {
-	RGraphNode *p = history_pop (g->history);
+	const RGraphNode *p = history_pop (g->history);
 	if (p) {
 		g->curnode = r_graph_node_iter (g->graph, p->idx);
 		agraph_update_seek (g, p->data, R_FALSE);
 	}
 }
 
+/* pushes the current node in the history and makes g->curnode the next node in
+ * the order given by r_graph_get_nodes */
 static void agraph_next_node(AGraph *g) {
 	if (!g->curnode->n) return;
 	history_push (g->history, get_gn(g->curnode));
@@ -553,6 +576,8 @@ static void agraph_next_node(AGraph *g) {
 	agraph_update_seek (g, get_anode(g->curnode), R_FALSE);
 }
 
+/* pushes the current node in the history and makes g->curnode the prev node in
+ * the order given by r_graph_get_nodes */
 static void agraph_prev_node(AGraph *g) {
 	if (!g->curnode->p) return;
 	history_push (g->history, get_gn(g->curnode));
@@ -561,12 +586,13 @@ static void agraph_prev_node(AGraph *g) {
 }
 
 static int agraph_refresh(struct agraph_refresh_data *grd) {
-	char title[128];
+	char title[TITLE_LEN];
 	AGraph *g = grd->g;
-	int fs = grd->fs;
+	const int fs = grd->fs;
 	int h, w = r_cons_get_size (&h);
 	int ret;
 
+	/* allow to change the current function only during debugging */
 	if (g->is_instep && g->core->io->debug) {
 		RAnalFunction *f;
 		r_core_cmd0 (g->core, "sr pc");
@@ -638,7 +664,7 @@ static void agraph_init(AGraph *g) {
 	g->curnode = NULL;
 	g->update_seek_on = NULL;
 	g->force_update_seek = R_TRUE;
-	g->history = r_stack_new (16);
+	g->history = r_stack_new (INIT_HISTORY_CAPACITY);
 	g->graph = r_graph_new ();
 }
 
