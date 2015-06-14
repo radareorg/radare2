@@ -256,7 +256,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->color_push = P(push): Color_YELLOW;
 	ds->color_pop = P(pop): Color_BYELLOW;
 	ds->color_reg = P(reg): Color_YELLOW;
-	ds->color_num = P(num): Color_YELLOW;
+	ds->color_num = P(num): Color_CYAN;
 	ds->color_mov = P(mov): Color_WHITE;
 	ds->color_invalid = P(invalid): Color_BRED;
 	ds->color_gui_cflow = P(gui_cflow): Color_YELLOW;

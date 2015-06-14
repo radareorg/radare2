@@ -892,6 +892,9 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	int i=0, j, ret, err = 0;
 	ut64 old_offset = core->offset;
 	RAsmOp asmop;
+	#define PAL(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+	const char *color_reg = PAL(reg): Color_YELLOW;
+	const char *color_num = PAL(num): Color_CYAN;
 
 	if (fmt=='e') {
 		show_bytes = 0;
@@ -988,11 +991,19 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 			} else {
 				if (filter) {
 					char opstr[128];
-					int ofs = core->parser->flagspace;
-					r_parse_filter (core->parser, core->flags,
-						asmop.buf_asm, opstr, sizeof (opstr)-1);
-					core->parser->flagspace = ofs;
-					r_cons_printf ("%s\n", opstr);
+					if (show_color) {
+						RAnalOp aop = {0};
+						char *asm_str = r_print_colorize_opcode (asmop.buf_asm, color_reg, color_num);
+						r_anal_op (core->anal, &aop, core->offset+i,
+							core->block+i, core->blocksize-i);
+						r_parse_filter (core->parser, core->flags,
+							asm_str, opstr, sizeof (opstr)-1);
+						r_cons_printf ("%s%s"Color_RESET"\n", r_print_color_op_type (core->print, aop.type), opstr);
+					} else {
+						r_parse_filter (core->parser, core->flags,
+							asmop.buf_asm, opstr, sizeof (opstr)-1);
+						r_cons_printf ("%s\n", opstr);
+					}
 				} else {
 					if (show_color) {
 						RAnalOp aop;
