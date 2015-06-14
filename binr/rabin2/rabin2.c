@@ -60,7 +60,7 @@ static int rabin_show_help(int v) {
 		" -d              show debug/dwarf information\n"
 		" -D lang name    demangle symbol name\n"
 		" -e              entrypoint\n"
-		" -E              show loading offset (useful for non-ASLR libraries)"
+		" -E              show loading offset (useful for non-ASLR libraries)\n"
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
 		" -k [query]      perform sdb query on loaded file\n"
