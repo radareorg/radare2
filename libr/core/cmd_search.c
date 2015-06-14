@@ -1977,7 +1977,7 @@ static int cmd_search(void *data, const char *input) {
 			"/p", " patternsize", "search for pattern of given size",
 			"/P", "", "show offset of previous instruction",
 			"/r", " sym.printf", "analyze opcode reference an offset",
-			"/R", " [grepopcode]", "search for matching ROP gadgets, comma-separated",
+			"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 			"/v", "[1248] value", "look for an `asm.bigendian` 32bit value",
 			"/V", "[1248] min max", "look for an `asm.bigendian` 32bit value in range",
 			"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
