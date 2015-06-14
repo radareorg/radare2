@@ -1,6 +1,11 @@
 #include <r_util.h>
 
-void check_list(RList *act, RList *exp, char *descr) {
+void topo_sorting(RGraphNode *n, RGraphVisitor *vis) {
+	RList *order = (RList *)vis->data;
+	r_list_prepend(order, n);
+}
+
+void check_list(const RList *act, const RList *exp, char *descr) {
 	RListIter *ita = r_list_iterator(act);
 	RListIter *ite = r_list_iterator(exp);
 
@@ -75,10 +80,62 @@ int main(int argc, char **argv) {
 	r_list_append(exp_nodes, gn8);
 	r_list_append(exp_nodes, gn9);
 	r_list_append(exp_nodes, gn10);
-	RList *nodes = r_graph_get_nodes(g);
+	const RList *nodes = r_graph_get_nodes(g);
 	check(g->n_nodes, 10, "n_nodes.again");
 	check_list(nodes, exp_nodes, "get_all_nodes");
 	r_list_free(exp_nodes);
+
+	r_graph_add_edge (g, gn2, gn3);
+	r_graph_add_edge (g, gn2, gn4);
+	r_graph_add_edge (g, gn2, gn5);
+	r_graph_add_edge (g, gn3, gn5);
+	r_graph_add_edge (g, gn5, gn7);
+	r_graph_add_edge (g, gn7, gn9);
+	r_graph_add_edge (g, gn9, gn10);
+	r_graph_add_edge (g, gn4, gn6);
+	r_graph_add_edge (g, gn6, gn8);
+	r_graph_add_edge (g, gn6, gn9);
+	r_graph_add_edge (g, gn8, gn10);
+
+	r_graph_add_edge (g, gn5, gn4);
+	r_graph_add_edge (g, gn6, gn7);
+	r_graph_add_edge (g, gn7, gn8);
+	r_graph_add_edge (g, gn8, gn9);
+	check(g->n_edges, 17, "n_edges");
+	r_graph_del_edge (g, gn8, gn9);
+	check(r_graph_adjacent (g, gn8, gn9), R_FALSE, "is_adjacent.0");
+	check(g->n_edges, 16, "n_edges.1");
+	r_graph_add_edge (g, gn9, gn8);
+	check(g->n_edges, 17, "n_edges.2");
+	check(r_graph_adjacent (g, gn9, gn8), R_TRUE, "is_adjacent");
+	r_graph_del_edge (g, gn9, gn8);
+	r_graph_add_edge (g, gn8, gn9);
+	check(r_graph_adjacent (g, gn9, gn8), R_FALSE, "is_adjacent.1");
+	check(r_graph_adjacent (g, gn8, gn9), R_TRUE, "is_adjacent.2");
+
+	RGraphVisitor vis = { 0 };
+	vis.data = r_list_new();
+	vis.finish_node = (RGraphNodeCallback)topo_sorting;
+	r_graph_dfs_node (g, gn, &vis);
+	RList *exp_order = r_list_new();
+	r_list_append(exp_order, gn);
+	r_list_append(exp_order, gn2);
+	r_list_append(exp_order, gn3);
+	r_list_append(exp_order, gn5);
+	r_list_append(exp_order, gn4);
+	r_list_append(exp_order, gn6);
+	r_list_append(exp_order, gn7);
+	r_list_append(exp_order, gn8);
+	r_list_append(exp_order, gn9);
+	r_list_append(exp_order, gn10);
+	check_list(vis.data, exp_order, "topo_order");
+	r_list_free(exp_order);
+	r_list_free((RList *)vis.data);
+
+	r_graph_del_node (g, gn);
+	r_graph_del_node (g, gn2);
+	check (g->n_nodes, 8, "n_nodes.del_node");
+	check (g->n_edges, 12, "n_edges.del_node");
 
 	r_graph_free (g);
 	return 0;
