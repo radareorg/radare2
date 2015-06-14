@@ -182,7 +182,7 @@ static int reil_eq(RAnalEsil *esil) {
 	char tmp_buf[32];
 	RAnalReilArgType src_type, dst_type;
 	RAnalReilArg *dst, *src;
-	
+
 	dst = reil_pop_arg(esil);
 	if (!dst) return R_FALSE;
 	src = reil_pop_arg(esil);
@@ -194,6 +194,7 @@ static int reil_eq(RAnalEsil *esil) {
 	src_type = src->type;
 	// Check if the src is an internal var. If it is, we need to resolve it.
 	if (src_type == ARG_ESIL_INTERNAL) {
+		R_FREE(src);
 		reil_flag_spew_inst(esil, src->name + 1);
 		src = reil_pop_arg(esil);
 	} else if (src_type == ARG_REG) {
@@ -256,6 +257,7 @@ static int reil_eq(RAnalEsil *esil) {
 	ins->opcode = REIL_STR;
 	ins->arg[0] = reil_pop_arg(esil);
 	if (!ins->arg[0]) {
+		R_FREE(dst);
 		R_FREE(ins);
 		return R_FALSE;
 	}
@@ -274,7 +276,7 @@ static int reil_binop(RAnalEsil *esil, RAnalReilOpcode opcode) {
 	char tmp_buf[32];
 	ut8 dst_size;
 	RAnalReilArg *op2, *op1;
-	
+
 	op2 = reil_pop_arg(esil);
 	if (!op2) return R_FALSE;
 	op1 = reil_pop_arg(esil);
@@ -403,7 +405,7 @@ static int reil_smaller_equal(RAnalEsil *esil) {
 
 static int reil_larger(RAnalEsil *esil) {
 	RAnalReilArg *op2, *op1;
-	
+
 	op2 = reil_pop_arg(esil);
 	if (!op2) return R_FALSE;
 	op1 = reil_pop_arg(esil);
@@ -422,7 +424,7 @@ static int reil_larger(RAnalEsil *esil) {
 
 static int reil_larger_equal(RAnalEsil *esil) {
 	RAnalReilArg *op2, *op1;
-	
+
 	op2 = reil_pop_arg(esil);
 	if (!op2) return R_FALSE;
 	op1 = reil_pop_arg(esil);
@@ -545,7 +547,7 @@ static int reil_not(RAnalEsil *esil) {
 static int reil_if(RAnalEsil *esil) {
 	RAnalReilInst *ins;
 	RAnalReilArg *op2, *op1;
-	
+
 	op2 = reil_pop_arg(esil);
 	if (!op2) return R_FALSE;
 	op1 = reil_pop_arg(esil);
@@ -627,7 +629,7 @@ static int reil_poken(RAnalEsil *esil, ut8 n) {
 	char tmp_buf[32];
 	RAnalReilInst *ins;
 	RAnalReilArg *op2, *op1;
-	
+
 	op2 = reil_pop_arg(esil);
 	if (!op2) return R_FALSE;
 	op1 = reil_pop_arg(esil);
@@ -690,7 +692,7 @@ static int reil_poke8(RAnalEsil *esil) { return reil_poken(esil, 8); }
 static int reil_mem_bineq_n(RAnalEsil *esil, RAnalReilOpcode opcode, ut8 size) {
 	int ret = 1;
 	RAnalReilArg *op2, *op1;
-	
+
 	op2 = reil_pop_arg(esil);
 	if (!op2) return R_FALSE;
 	op1 = reil_pop_arg(esil);
