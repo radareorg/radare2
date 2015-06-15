@@ -40,14 +40,15 @@ enum {
 };
 
 // name mangling types
+// TODO: Rename to R_BIN_LANG_
 enum {
 	R_BIN_NM_NONE = 0,
 	R_BIN_NM_JAVA = 1,
-	R_BIN_NM_CXX = 2,
-	R_BIN_NM_OBJC= 3,
-	R_BIN_NM_SWIFT = 4,
-	R_BIN_NM_DLANG = 5,
-	R_BIN_NM_MSVC = 6,
+	R_BIN_NM_CXX = 1<<1,
+	R_BIN_NM_OBJC = 1<<2,
+	R_BIN_NM_SWIFT = 1<<3,
+	R_BIN_NM_DLANG = 1<<4,
+	R_BIN_NM_MSVC = 1<<5,
 	R_BIN_NM_ANY = -1,
 };
 

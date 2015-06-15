@@ -2716,9 +2716,13 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		r_cons_printf (",\"size\":%d", oplen);
 		{
-		char *escaped_str = r_str_escape (asmop.buf_asm);
-		r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
-		free (escaped_str);
+			char *escaped_str = r_str_escape (asmop.buf_asm);
+			r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
+			free (escaped_str);
+		}
+		if (ds->use_esil) {
+			const char * esil = R_STRBUF_SAFEGET (&analop.esil);
+			r_cons_printf (",\"esil\":\"%s\"", esil);
 		}
 		r_cons_printf (",\"bytes\":\"%s\"", asmop.buf_hex);
 		//r_cons_printf (",\"family\":\"%s\"", asmop.family);
