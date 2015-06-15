@@ -120,15 +120,18 @@ R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 
 R_API char *r_meta_get_string(RAnal *a, int type, ut64 addr) {
 	char key[100];
-	const char *k, *p;
+	const char *k, *p, *p2;
 	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, 'C', addr);
 	k = sdb_const_get (DB, key, NULL);
 	if (!k) return NULL;
 	p = strchr (k, SDB_RS);
 	if (!p) return NULL;
 	k = p+1;
-// TODO : comment append has been deprecated
-	return (char *)sdb_decode (k, NULL);
+	p2 = strchr (k, SDB_RS);
+	if (!p2) {
+		return (char *)sdb_decode (k, NULL);
+	}
+	return (char *)sdb_decode (p2+1, NULL);
 }
 
 R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) {
