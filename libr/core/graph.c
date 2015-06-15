@@ -268,7 +268,10 @@ static int get_bbnodes(AGraph *g) {
 			continue;
 
 		node = R_NEW0 (ANode);
-		if (!node) return R_FALSE;
+		if (!node) {
+			sdb_free (g_nodes);
+			return R_FALSE;
+		}
 
 		if (g->is_simple_mode) {
 			node->text = r_core_cmd_strf (g->core,
@@ -285,7 +288,10 @@ static int get_bbnodes(AGraph *g) {
 		node->h = 0;
 
 		gn = r_graph_add_node (g->graph, node);
-		if (!gn) return R_FALSE;
+		if (!gn) { 
+			sdb_free (g_nodes);
+			return R_FALSE;
+		}
 		gn2addr (g_nodes, bb->addr, gn);
 	}
 
@@ -322,7 +328,10 @@ static int get_cgnodes(AGraph *g) {
 	char *code;
 
 	node = R_NEW0 (ANode);
-	if (!node) return R_FALSE;
+	if (!node) { 
+		sdb_free (g_nodes);
+		return R_FALSE;
+	}
 	node->text = strdup ("");
 	node->addr = g->fcn->addr;
 	node->depth = -1;
@@ -331,7 +340,10 @@ static int get_cgnodes(AGraph *g) {
 	node->w = 0;
 	node->h = 0;
 	fcn_gn = r_graph_add_node (g->graph, node);
-	if (!fcn_gn) return R_FALSE;
+	if (!fcn_gn) { 
+		sdb_free (g_nodes);
+		return R_FALSE;
+	}
 	gn2addr (g_nodes, g->fcn->addr, fcn_gn);
 
 	r_list_foreach (g->fcn->refs, iter, ref) {
@@ -363,7 +375,10 @@ static int get_cgnodes(AGraph *g) {
 		node->h = 0;
 		free (code);
 		gn = r_graph_add_node (g->graph, node);
-		if (!gn) return R_FALSE;
+		if (!gn) { 
+			sdb_free (g_nodes);
+			return R_FALSE;
+		}
 		gn2addr (g_nodes, ref->addr, gn);
 
 		r_graph_add_edge (g->graph, fcn_gn, gn);
