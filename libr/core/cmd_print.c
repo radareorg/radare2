@@ -1738,27 +1738,34 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'I': // "pI"
 		switch (input[1]) {
-			case 'j': // "pIj" is the same as pDj
+		case 'j': // "pIj" is the same as pDj
+		{
+			char buf[32];
+			if (input[2]) {
 				cmd_pDj (core, input+2);
-				break;
-			case 'f':
-				{
-					const RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-							R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-					if (f) {
-						r_core_print_disasm_instructions (core, f->size, l);
-						break;
-					}
+			} else {
+				cmd_pDj (core, sdb_fmt(0, "%d", core->blocksize));
+			}
+		}
+			break;
+		case 'f':
+			{
+				const RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+				if (f) {
+					r_core_print_disasm_instructions (core, f->size, l);
+					break;
 				}
-			case 'd': // "pId" is the same as pDi
-				pdi (core, 0, l, 0);
-				break;
-			case '?': // "pi?"
-				r_cons_printf("|Usage: p[iI][df] [len]   print N instructions/bytes"
-						"(f=func) (see pi? and pdi)\n");
-				break;
-			default:
-				r_core_print_disasm_instructions (core, l, 0);
+			}
+		case 'd': // "pId" is the same as pDi
+			pdi (core, 0, l, 0);
+			break;
+		case '?': // "pi?"
+			r_cons_printf("|Usage: p[iI][df] [len]   print N instructions/bytes"
+					"(f=func) (see pi? and pdi)\n");
+			break;
+		default:
+			r_core_print_disasm_instructions (core, l, 0);
 		}
 		break;
 	case 'i': // "pi"

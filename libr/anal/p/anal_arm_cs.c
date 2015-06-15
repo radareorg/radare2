@@ -779,6 +779,10 @@ static int set_reg_profile(RAnal *anal) {
 		"=a1	r1\n"
 		"=a2	r2\n"
 		"=a3	r3\n"
+		"gpr	sl	.32	40	0\n" // rl0
+		"gpr	fp	.32	44	0\n" // r11
+		"gpr	ip	.32	48	0\n" // r12
+		"gpr	sp	.32	52	0\n" // r13
 		"gpr	lr	.32	56	0\n" // r14
 		"gpr	pc	.32	60	0\n" // r15
 
