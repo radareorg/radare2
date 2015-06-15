@@ -376,7 +376,7 @@ R_API void *r_list_get_by_string(const RList *list, int off, const char *str) {
 	return NULL;
 }
 
-R_API RListIter *r_list_contains (const RList *list, void *p) {
+R_API RListIter *r_list_contains (const RList *list, const void *p) {
 	void *q;
 	RListIter *iter;
 	r_list_foreach (list, iter, q) {
@@ -386,7 +386,7 @@ R_API RListIter *r_list_contains (const RList *list, void *p) {
 	return NULL;
 }
 
-R_API RListIter *r_list_find (const RList *list, void *p, RListComparator cmp) {
+R_API RListIter *r_list_find (const RList *list, const void *p, RListComparator cmp) {
 	void *q;
 	RListIter *iter;
 	r_list_foreach (list, iter, q) {

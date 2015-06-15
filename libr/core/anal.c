@@ -615,8 +615,8 @@ R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
 	return r_core_seek (core, addr, R_FALSE);
 }
 
-static int cmpaddr (void *_a, void *_b) {
-	RAnalBlock *a = _a, *b = _b;
+static int cmpaddr (const void *_a, const void *_b) {
+	const RAnalBlock *a = _a, *b = _b;
 	return (a->addr > b->addr);
 }
 
