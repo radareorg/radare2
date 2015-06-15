@@ -872,6 +872,7 @@ R_API int r_core_init(RCore *core) {
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
+	core->anal->meta_spaces.printf = r_cons_printf;
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;
 	core->anal->cb.on_fcn_rename = on_fcn_rename;

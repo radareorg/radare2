@@ -57,6 +57,20 @@ R_API void r_anal_unset_limits(RAnal *anal) {
 	anal->limit = NULL;
 }
 
+static void meta_unset_for(void *user, int idx) {
+	RSpaces *s = (RSpaces*)user;
+	RAnal *anal = (RAnal*)s->user;
+	r_meta_space_unset_for (anal, idx);
+}
+
+static int meta_count_for(void *user, int idx) {
+	int ret;
+	RSpaces *s = (RSpaces*)user;
+	RAnal *anal = (RAnal*)s->user;
+	ret = r_meta_space_count_for (anal, idx);
+	return ret;
+}
+
 R_API RAnal *r_anal_new() {
 	int i;
 	RAnalPlugin *static_plugin;
@@ -70,6 +84,8 @@ R_API RAnal *r_anal_new() {
 	anal->sdb = sdb_new0 ();
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
+	r_space_init (&anal->meta_spaces,
+		meta_unset_for, meta_count_for, anal);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
 	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs", 1);
 	//anal->sdb_vars = sdb_ns (anal->sdb, "vars", 1); // its inside fcns right now
@@ -126,6 +142,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_list_free (a->fcns);
 	// might provoke double frees since this is used in r_anal_fcn_insert()
 	//r_listrange_free (a->fcnstore);
+	r_space_fini (&a->meta_spaces);
 	r_list_free (a->refs);
 	r_list_free (a->types);
 	r_reg_free (a->reg);

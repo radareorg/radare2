@@ -1014,7 +1014,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 	int i = 0;
 
 	symbols = r_bin_get_symbols (r->bin);
-
+	r_space_set (&r->anal->meta_spaces, "bin");
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
 		r_list_foreach (symbols, iter, symbol) {
@@ -1091,7 +1091,6 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 				// set the new sym.[cname].[name] with comment
 				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s.%s", cname, name);
 				fi = r_flag_set (r->flags, str, addr, symbol->size, 0);
-
 				if (comment) {
 					r_flag_item_set_comment (fi, comment);
 					free (comment);
@@ -1196,6 +1195,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 		}
 		if (!at && !mode) r_cons_printf ("\n%i symbols\n", i);
 	}
+	r_space_set (&r->anal->meta_spaces, NULL);
 	return R_TRUE;
 }
 

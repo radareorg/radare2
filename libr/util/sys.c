@@ -488,12 +488,14 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 R_API int r_sys_rmkdir(const char *dir) {
 	int ret = R_TRUE;
 	const char slash = R_SYS_DIR[0];
-	char *path = strdup (dir), *ptr = path, *p;
+	char *path = strdup (dir), *ptr = path;
 	if (*ptr==slash) ptr++;
 #if __WINDOWS__
-	p = strstr (ptr, ":\\");
-	if (p) {
-		ptr = p + 2;
+	{
+		char *p = strstr (ptr, ":\\");
+		if (p) {
+			ptr = p + 2;
+		}
 	}
 #endif
 	while ((ptr = strchr (ptr, slash))) {
