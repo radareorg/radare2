@@ -1267,7 +1267,7 @@ static void handle_adistrick_comments (RCore *core, RDisasmState *ds) {
 static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, int len, int idx) {
 	int ret = 0;
 	const char *infos, *metas;
-	char *str, key[100];
+	char key[100];
 	RAnalMetaItem MI, *mi = &MI;
 	Sdb *s = core->anal->sdb_meta;
 
@@ -1275,6 +1275,8 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 	infos = sdb_const_get (s, key, 0);
 	if (infos)
 	for (;*infos; infos++) {
+		/* XXX wtf, must use anal.meta.deserialize() */
+		char *p, *q;
 		if (*infos==',')
 			continue;
 		snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, *infos, ds->at);
@@ -1283,9 +1285,17 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 		MI.type = *infos;
 		MI.from = ds->at;
 		MI.to = ds->at + MI.size;
-		str = metas ? strchr (metas, ',') : NULL;
-		if (str) {
-			MI.str = (char*)sdb_decode (str+1, 0);
+		if (metas) {
+			p = strchr (metas, ',');
+			if (!p) {
+				continue;
+			}
+			MI.space = atoi (p+1);
+			q = strchr (p+1, ',');
+			if (!q) {
+				continue;
+			}
+			MI.str = (char*)sdb_decode (q+1, 0);
 		} else MI.str = NULL;
 		// sdb-get blah
 		// TODO: implement ranged meta find (if not at the begging of function..
