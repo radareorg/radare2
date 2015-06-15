@@ -360,9 +360,9 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 	}
 }
 
-static int bb_cmp(void *a, void *b) {
-	RAnalBlock *ba = a;
-	RAnalBlock *bb = b;
+static int bb_cmp(const void *a, const void *b) {
+	const RAnalBlock *ba = a;
+	const RAnalBlock *bb = b;
 	return ba->addr - bb->addr;
 }
 
