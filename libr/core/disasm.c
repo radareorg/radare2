@@ -197,8 +197,8 @@ static void handle_print_comments_right (RCore *core, RDisasmState *ds);
 //static void handle_print_refptr (RCore *core, RDisasmState *ds);
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx);
 
-static int cmpaddr (void *_a, void *_b) {
-	RAnalBlock *a = _a, *b = _b;
+static int cmpaddr (const void *_a, const void *_b) {
+	const RAnalBlock *a = _a, *b = _b;
 	return (a->addr > b->addr);
 }
 
