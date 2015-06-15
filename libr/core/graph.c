@@ -956,7 +956,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 
 	agraph_free(g);
 err_graph_new:
-	free (can);
 	r_config_set_i (core->config, "scr.color", can->color);
+	free (can);
 	return !is_error;
 }
