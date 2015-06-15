@@ -95,6 +95,7 @@ R_API void r_core_syscmd_ls(const char *input) {
 	char *name;
 	char *dir;
 	int off;
+	if (!input || *input == '\0') return;
 	if (r_sandbox_enable (0)) {
 		eprintf ("Sandbox forbids listing directories\n");
 		return;

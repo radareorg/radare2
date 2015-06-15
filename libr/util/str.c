@@ -920,6 +920,7 @@ static char *r_str_escape_ (const char *buf, const int dot_nl) {
 				p++;
 				/* Parse the ANSI code (only the graphic mode
 				 * set ones are supported) */
+				if (*p == '\0') break;
 				if (*p == '[')
 					for (p++; *p != 'm'; p++)
 						;

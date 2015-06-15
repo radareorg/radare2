@@ -236,7 +236,7 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case '0':
 		{
-			ut64 len = r_num_math (core->num, input+2);
+			ut64 len = r_num_math (core->num, input+1);
 			if (len>0) {
 				ut8 *buf = calloc (1, len);
 				if (buf) {
