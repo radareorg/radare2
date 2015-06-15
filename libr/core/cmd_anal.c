@@ -1133,6 +1133,10 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			r_cons_printf ("%s\n", name);
 		break;
 	case 'n': // "drn"
+		if (*(str+1) == '\0'){
+			eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
+			break;
+		}
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str+2));
 		if (name && *name)
 			r_cons_printf ("%s\n", name);
