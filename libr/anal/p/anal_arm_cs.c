@@ -318,10 +318,19 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_SADD8:
 	case ARM_INS_ADD:
 		if (!strcmp (ARG(2), "")) {
-			if (!strcmp (ARG(0), ARG(1))) {
-				r_strbuf_appendf (&op->esil, "2,%s,*=", ARG(0));
+			if (!strcmp (ARG(1), "pc")) {
+				// that 2>>2<< is for & 0xfffffffc
+				// to clear 2 lower bits
+				r_strbuf_appendf (&op->esil,
+				"2,2,4,%s,+,>>,<<,%s,+=", ARG(1), ARG(0));
+				//"4,%s,+,0xfffffffc,&,%s,+=", ARG(1), ARG(0));
 			} else {
-				r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(1), ARG(0));
+				// THUMB
+				if (!strcmp (ARG(0), ARG(1))) {
+					r_strbuf_appendf (&op->esil, "2,%s,*=", ARG(0));
+				} else {
+					r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(1), ARG(0));
+				}
 			}
 		} else {
 			if (!strcmp (ARG(0),ARG(1))) {

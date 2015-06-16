@@ -1740,7 +1740,6 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case 'j': // "pIj" is the same as pDj
 		{
-			char buf[32];
 			if (input[2]) {
 				cmd_pDj (core, input+2);
 			} else {

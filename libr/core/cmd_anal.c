@@ -1451,6 +1451,17 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	RAnalOp *op;
 
 	switch (input[0]) {
+	case 'p': // "aep "
+		if (input[1] == ' ') {
+			// seek to this address
+			r_core_cmd0 (core, "aei");  // init vm
+			r_core_cmd0 (core, "aeis"); // init stack
+			r_core_cmdf (core, "ar pc=%s", input+2);
+			r_core_cmd0 (core, ".ar*");
+		} else {
+			eprintf ("Missing argument\n");
+		}
+		break;
 	case 'r':
 		// 'aer' is an alias for 'ar'
 		cmd_anal_reg (core, input+1);
@@ -1649,6 +1660,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				"aeis", "", "initialize ESIL VM stack (aeis- remove)",
 				"aed", "", "deinitialize ESIL VM state",
 				"ae", " [expr]", "evaluate ESIL expression",
+				"aep", " [addr]", "change esil PC to this address",
 				"aef", " [addr]", "emulate function",
 				"aek", " [query]", "perform sdb query on ESIL.info",
 				"aek-", "", "resets the ESIL.info sdb instance",
