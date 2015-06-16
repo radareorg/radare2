@@ -714,7 +714,7 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 	type = r_core_anal_address (core, value);
 	fcn = r_anal_get_fcn_in (core->anal, value, 0);
 
-	if (value && fi) {
+	if (fi) {
 		r_strbuf_appendf (s, " %s", fi->name);
 	}
 	if (fcn) {

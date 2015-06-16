@@ -2592,10 +2592,14 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_printf ("]\n");
 			} else {
 				const int ocols = core->print->cols;
+				int bitsize = core->assembler->bits;
+				/* Thumb is 16bit arm but handles 32bit data */
+				if (bitsize == 16)
+					bitsize = 32;
 				core->print->cols = 1;
 				core->print->flags |= R_PRINT_FLAGS_REFS;
 				r_print_hexdump (core->print, core->offset, core->block, len,
-					core->assembler->bits, core->assembler->bits/8);
+					bitsize, bitsize/8);
 				core->print->flags &= ~R_PRINT_FLAGS_REFS;
 				core->print->cols = ocols;
 			}
