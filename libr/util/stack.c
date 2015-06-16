@@ -4,9 +4,12 @@
 
 R_API RStack *r_stack_new (unsigned int n) {
 	RStack *s = R_NEW0 (RStack);
+	if (!s) return NULL;
 	s->elems = R_NEWS0 (void *, n);
-	if (!s->elems)
+	if (!s->elems){
+		free (s);
 		return NULL;
+	}
 
 	s->n_elems = n;
 	s->top = -1;

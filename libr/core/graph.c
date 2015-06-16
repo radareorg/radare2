@@ -356,7 +356,10 @@ static int get_cgnodes(AGraph *g) {
 
 		RFlagItem *fi = r_flag_get_at (g->core->flags, ref->addr);
 		node = R_NEW0 (ANode);
-		if (!node) return R_FALSE;
+		if (!node) {
+			sdb_free (g_nodes);
+			return R_FALSE;
+		}
 		if (fi) {
 			node->text = strdup (fi->name);
 			node->text = r_str_concat (node->text, ":\n");
