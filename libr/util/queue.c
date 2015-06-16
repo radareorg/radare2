@@ -4,9 +4,12 @@
 
 R_API RQueue *r_queue_new (int n) {
 	RQueue *q = R_NEW0 (RQueue);
+	if (!q) return NULL;
 	q->elems = R_NEWS0 (void *, n);
-	if (!q->elems)
+	if (!q->elems){
+		free (q);
 		return NULL;
+	}
 
 	q->front = 0;
 	q->rear = -1;

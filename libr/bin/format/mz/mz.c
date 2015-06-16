@@ -81,6 +81,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(
 	segments = calloc (num_relocs, sizeof(*segments));
 	if (segments == NULL) {
 		eprintf ("Error: calloc (segments)\n");
+		btree_cleartree (tree, NULL);
 		return NULL;
 	}
 
