@@ -128,6 +128,9 @@ static void r_core_file_info (RCore *core, int mode) {
 static int bin_is_executable (RBinObject *obj){
 	RListIter *it;
 	RBinSection* sec;
+	if (obj->info->arch) {
+		return R_TRUE;
+	}
 	r_list_foreach (obj->sections, it, sec){
 		if (R_BIN_SCN_EXECUTABLE & sec->srwx)
 			return R_TRUE;
@@ -141,7 +144,7 @@ static void cmd_info_bin(RCore *core, ut64 offset, int va, int mode) {
 		if (mode == R_CORE_BIN_JSON)
 			r_cons_printf ("{\"core\":");
 		r_core_file_info (core, mode);
-		if (obj && bin_is_executable (obj)){
+		if (obj && bin_is_executable (obj)) {
 				if (mode == R_CORE_BIN_JSON)
 					r_cons_printf (",\"bin\":");
 				r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
