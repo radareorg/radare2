@@ -72,7 +72,7 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[])
 				vis->back_edge (from, cur, vis);
 			else if (color[cur->idx] == BLACK_COLOR && vis->fcross_edge)
 				vis->fcross_edge (from, cur, vis);
-		} else if (!cur) {
+		} else if (!cur && from) {
 			if (color[from->idx] != BLACK_COLOR && vis->finish_node)
 				vis->finish_node (from, vis);
 			color[from->idx] = BLACK_COLOR;
