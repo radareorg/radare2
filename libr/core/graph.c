@@ -18,17 +18,15 @@ static int mousemode = 0;
 #define history_push(stack, x) (r_stack_push (stack, (void *)(size_t)x))
 #define history_pop(stack) ((RGraphNode *)r_stack_pop (stack))
 
-#define gn2addr(sdb,addr,gn) (sdb_num_set (sdb, sdb_fmt (0, "%lld", addr), (ut64)(size_t)gn, 0))
-#define addr2gn(sdb,addr) ((RGraphNode *)(size_t)sdb_num_get (sdb, sdb_fmt (0, "%lld", addr), NULL))
+#define hash_set(sdb,k,v) (sdb_num_set (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), (ut64)(size_t)v, 0))
+#define hash_get(sdb,k) (sdb_num_get (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), NULL))
+#define hash_get_rnode(sdb,k) ((RGraphNode *)(size_t)hash_get (sdb, k))
 
 #define get_gn(iter) ((RGraphNode *)r_list_iter_get_data(iter))
 #define get_anode(iter) ((ANode *)get_gn(iter)->data)
 
 #define graph_foreach_anode(list, it, pos, anode) \
 	if (list) for (it = list->head; it && (pos = it->data) && (pos) && (anode = (ANode *)pos->data); it = it->n)
-
-#define get_path(sdb,k) ((RGraphNode *)sdb_num_get (sdb, sdb_fmt (0, "%lld", k), NULL))
-#define set_path(sdb,k,v) (sdb_num_set (sdb, sdb_fmt (0, "%lld", k), (ut64)(size_t)v, 0))
 
 struct layer_t {
 	int n_nodes;
@@ -304,7 +302,7 @@ static void view_cyclic_edge (RGraphNode *from, RGraphNode *to, RGraphVisitor *v
 
 static int get_depth (Sdb *path, RGraphNode *n) {
 	int res = 0;
-	while ((n = get_path (path, n)) != NULL) {
+	while ((n = hash_get_rnode (path, n)) != NULL) {
 		res++;
 	}
 	return res;
@@ -318,7 +316,7 @@ static void set_layer (RGraphNode *from, RGraphNode *to, RGraphVisitor *vis) {
 	bdepth = get_depth (path, to);
 
 	if (adepth + 1 > bdepth)
-		set_path (path, to, from);
+		hash_set (path, to, from);
 }
 
 static void view_dummy (RGraphNode *from, RGraphNode *to, RGraphVisitor *vis) {
@@ -597,7 +595,7 @@ static int get_bbnodes(AGraph *g) {
 			sdb_free (g_nodes);
 			return R_FALSE;
 		}
-		gn2addr (g_nodes, bb->addr, gn);
+		hash_set (g_nodes, bb->addr, gn);
 	}
 
 	r_list_foreach (g->fcn->bbs, iter, bb) {
@@ -605,13 +603,13 @@ static int get_bbnodes(AGraph *g) {
 		if (bb->addr == UT64_MAX)
 			continue;
 
-		u = addr2gn (g_nodes, bb->addr);
+		u = hash_get_rnode (g_nodes, bb->addr);
 		if (bb->jump != UT64_MAX) {
-			v = addr2gn (g_nodes, bb->jump);
+			v = hash_get_rnode (g_nodes, bb->jump);
 			r_graph_add_edge (g->graph, u, v);
 		}
 		if (bb->fail != UT64_MAX) {
-			v = addr2gn (g_nodes, bb->fail);
+			v = hash_get_rnode (g_nodes, bb->fail);
 			r_graph_add_edge (g->graph, u, v);
 		}
 	}
@@ -651,14 +649,14 @@ static int get_cgnodes(AGraph *g) {
 		sdb_free (g_nodes);
 		return R_FALSE;
 	}
-	gn2addr (g_nodes, g->fcn->addr, fcn_gn);
+	hash_set (g_nodes, g->fcn->addr, fcn_gn);
 
 	r_list_foreach (g->fcn->refs, iter, ref) {
 		/* XXX: something is broken, why there are duplicated
 		 *      nodes here?! goto check fcn->refs!! */
 		/* avoid dups wtf */
 		RGraphNode *gn;
-		gn = addr2gn (g_nodes, ref->addr);
+		gn = hash_get_rnode (g_nodes, ref->addr);
 		if (gn) continue;
 
 		RFlagItem *fi = r_flag_get_at (g->core->flags, ref->addr);
@@ -691,7 +689,7 @@ static int get_cgnodes(AGraph *g) {
 			sdb_free (g_nodes);
 			return R_FALSE;
 		}
-		gn2addr (g_nodes, ref->addr, gn);
+		hash_set (g_nodes, ref->addr, gn);
 
 		r_graph_add_edge (g->graph, fcn_gn, gn);
 	}

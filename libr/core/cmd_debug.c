@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #define TN_KEY_LEN 32
-#define TN_KEY_FMT "%lld"
+#define TN_KEY_FMT "%"PFMT64u
 
 struct dot_trace_ght {
 	RGraph *graph;
