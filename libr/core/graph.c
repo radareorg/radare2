@@ -28,6 +28,8 @@ static int mousemode = 0;
 #define hash_set(sdb,k,v) (sdb_num_set (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), (ut64)(size_t)v, 0))
 #define hash_get(sdb,k) (sdb_num_get (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), NULL))
 #define hash_get_rnode(sdb,k) ((RGraphNode *)(size_t)hash_get (sdb, k))
+#define hash_get_rlist(sdb,k) ((RList *)(size_t)hash_get (sdb, k))
+#define hash_get_int(sdb,k) ((int)hash_get (sdb, k))
 
 #define get_gn(iter) ((RGraphNode *)r_list_iter_get_data(iter))
 #define get_anode(iter) ((ANode *)get_gn(iter)->data)
@@ -545,6 +547,302 @@ static void minimize_crossings (AGraph *g) {
 	} while (cross_changed);
 }
 
+/* returns the distance between two nodes */
+static int dist_nodes (const RGraphNode *a, const RGraphNode *b) {
+	ANode *aa = (ANode *)a->data;
+	return aa->w + HORIZONTAL_NODE_SPACING;
+}
+
+static int is_valid_pos (AGraph *g, int l, int pos) {
+	return pos >= 0 && pos < g->layers[l].n_nodes;
+}
+
+/* computes the set of vertical classes in the graph */
+/* if v is an original node, L(v) = { v }
+ * if v is a dummy node, L(v) is the set of all the dummies node that belongs
+ *      to the same long edge */
+static Sdb *compute_vertical_nodes (AGraph *g) {
+	Sdb *res = sdb_new0 ();
+	int i, j;
+
+	for (i = 0; i < g->n_layers; ++i) {
+		for (j = 0; j < g->layers[i].n_nodes; ++j) {
+			RGraphNode *gn = g->layers[i].nodes[j];
+			RList *Ln = hash_get_rlist (res, gn);
+			ANode *an = (ANode *)gn->data;
+
+			if (!Ln) {
+				RList *vert = r_list_new ();
+				hash_set (res, gn, vert);
+				if (an->is_dummy) {
+					RGraphNode *next = gn;
+					ANode *anext = (ANode *)next->data;
+
+					while (next && anext->is_dummy) {
+						r_list_append (vert, next);
+						next = r_graph_nth_neighbour (g->graph, next, 0);
+						if (!next) break;
+						anext = (ANode *)next->data;
+					}
+				} else {
+					r_list_append (vert, gn);
+				}
+			}
+		}
+	}
+
+	return res;
+}
+
+/* computes left or right classes, used to place dummies node */
+/* classes respect three properties:
+ * - v E C
+ * - w E C => L(v) is a subset of C
+ * - w E C, the s+(w) exists and is not in any class yet => s+(w) E C */
+static RList **compute_classes (AGraph *g, Sdb *v_nodes, int is_left, int *n_classes) {
+	int i, j, c;
+	RList **res = R_NEWS0 (RList *, g->n_layers);
+	RGraphNode *gn;
+	RListIter *it;
+	ANode *n;
+
+	graph_foreach_anode (r_graph_get_nodes (g->graph), it, gn, n) {
+		n->class = -1;
+	}
+
+	for (i = 0; i < g->n_layers; ++i) {
+		c = i;
+
+		for (j = is_left ? 0 : g->layers[i].n_nodes - 1;
+			(is_left && j < g->layers[i].n_nodes) || (!is_left && j >= 0);
+			j = is_left ? j + 1 : j - 1) {
+			RGraphNode *gj = g->layers[i].nodes[j];
+			ANode *aj = (ANode *)gj->data;
+
+			if (aj->class == -1) {
+				RList *laj = hash_get_rlist (v_nodes, gj);
+				RGraphNode *gk;
+				RListIter *it;
+				ANode *ak;
+
+				if (!res[c])
+					res[c] = r_list_new ();
+				graph_foreach_anode (laj, it, gk, ak) {
+					r_list_append (res[c], gk);
+					ak->class = c;
+				}
+			} else {
+				c = aj->class;
+			}
+		}
+	}
+
+	if (n_classes)
+		*n_classes = g->n_layers;
+	return res;
+}
+
+static int cmp_dist (const size_t a, const size_t b) {
+	return (int)a < (int)b;
+}
+
+static RGraphNode *get_sibling (AGraph *g, ANode *n, int is_left, int is_adjust_class) {
+	RGraphNode *res = NULL;
+	int pos;
+
+	if ((is_left && is_adjust_class) || (!is_left && !is_adjust_class))
+		pos = n->pos_in_layer + 1;
+	else
+		pos = n->pos_in_layer - 1;
+
+	if (is_valid_pos (g, n->layer, pos))
+		res = g->layers[n->layer].nodes[pos];
+	return res;
+}
+
+static int adjust_class_val (AGraph *g, RGraphNode *gn, RGraphNode *sibl,
+							 Sdb *res, int is_left) {
+	if (is_left)
+		return hash_get_int (res, sibl) - hash_get_int (res, gn) - dist_nodes (gn, sibl);
+	else
+		return hash_get_int (res, gn) - hash_get_int (res, sibl) - dist_nodes (sibl, gn);
+}
+
+/* adjusts the position of previously placed left/right classes */
+/* tries to place classes as close as possible */
+static void adjust_class (AGraph *g, Sdb *v_nodes, int is_left,
+						  RList **classes, Sdb *res, int c) {
+	RGraphNode *gn;
+	RListIter *it;
+	ANode *an;
+	int dist, v, is_first = R_TRUE;
+
+	graph_foreach_anode (classes[c], it, gn, an) {
+		RGraphNode *sibling;
+		ANode *sibl_anode;
+
+		sibling = get_sibling (g, an, is_left, R_TRUE);
+		if (!sibling) continue;
+		sibl_anode = (ANode *)sibling->data;
+		if (sibl_anode->class == c) continue;
+		v = adjust_class_val (g, gn, sibling, res, is_left);
+		dist = is_first ? v : R_MIN (dist, v);
+		is_first = R_FALSE;
+	}
+
+	if (is_first) {
+		RList *heap = r_list_new ();
+		int len;
+
+		graph_foreach_anode (classes[c], it, gn, an) {
+			const RList *neigh = r_graph_all_neighbours (g->graph, gn);
+			RGraphNode *gk;
+			RListIter *itk;
+			ANode *ak;
+
+			graph_foreach_anode (neigh, itk, gk, ak) {
+				if (ak->class < c)
+					r_list_append (heap, (void *)(size_t)(ak->x - an->x));
+			}
+		}
+
+		len = r_list_length (heap);
+		if (len == 0) {
+			dist = 0;
+		} else {
+			r_list_sort (heap, (RListComparator)cmp_dist);
+			dist = (int)(size_t)r_list_get_n (heap, len / 2);
+		}
+
+		r_list_free (heap);
+	}
+
+	graph_foreach_anode (classes[c], it, gn, an) {
+		int old_val = hash_get_int (res, gn);
+		int new_val = is_left ?  old_val + dist : old_val - dist;
+		hash_set (res, gn, new_val);
+	}
+}
+
+static int place_nodes_val (AGraph *g, RGraphNode *gn, RGraphNode *sibl,
+							Sdb *res, int is_left) {
+	if (is_left)
+		return hash_get_int (res, sibl) + dist_nodes (sibl, gn);
+	else
+		return hash_get_int (res, sibl) - dist_nodes (gn, sibl);
+}
+
+static int place_nodes_sel_p (int newval, int oldval, int is_first, int is_left) {
+	if (is_first)
+		return newval;
+
+	if (is_left)
+		return R_MAX (oldval, newval);
+	else
+		return R_MIN (oldval, newval);
+}
+
+static int get_default_p (AGraph *g, ANode *n, int is_left) {
+	return is_left ? 0 : 50 - n->w;
+}
+
+/* places left/right the nodes of a class */
+static void place_nodes (AGraph *g, RGraphNode *gn, int is_left, Sdb *v_nodes,
+						 RList **classes, Sdb *res, Sdb *placed) {
+	const RList *lv = hash_get_rlist (v_nodes, gn);
+	RGraphNode *gk;
+	RListIter *itk;
+	ANode *ak, *an = (ANode *)gn->data;
+	int p, v, is_first = R_TRUE;
+
+	graph_foreach_anode (lv, itk, gk, ak) {
+		RGraphNode *sibling;
+		ANode *sibl_anode;
+
+		sibling = get_sibling (g, ak, is_left, R_FALSE);
+		if (!sibling) continue;
+		sibl_anode = (ANode *)sibling->data;
+		if (ak->class == sibl_anode->class) {
+			if (!hash_get (placed, sibling))
+				place_nodes (g, sibling, is_left, v_nodes, classes, res, placed);
+
+			v = place_nodes_val (g, gk, sibling, res, is_left);
+			p = place_nodes_sel_p (v, p, is_first, is_left);
+			is_first = R_FALSE;
+		}
+	}
+
+	if (is_first)
+		p = get_default_p (g, an, is_left);
+
+	graph_foreach_anode (lv, itk, gk, ak) {
+		hash_set (res, gk, p);
+		hash_set (placed, gk, R_TRUE);
+	}
+}
+
+/* computes the position to the left/right of all the nodes */
+static Sdb *compute_pos (AGraph *g, int is_left, Sdb *v_nodes) {
+	Sdb *res, *placed;
+	RList **classes;
+	int n_classes, i;
+
+	classes = compute_classes (g, v_nodes, is_left, &n_classes);
+	if (!classes) return NULL;
+
+	res = sdb_new0 ();
+	placed = sdb_new0 ();
+	for (i = 0; i < n_classes; ++i) {
+		RGraphNode *gn;
+		RListIter *it;
+
+		r_list_foreach (classes[i], it, gn) {
+			if (!hash_get_rnode (placed, gn)) {
+				place_nodes (g, gn, is_left, v_nodes, classes, res, placed);
+			}
+		}
+
+		adjust_class (g, v_nodes, is_left, classes, res, i);
+	}
+
+	sdb_free (placed);
+	for (i = 0; i < n_classes; ++i) {
+		if (classes[i])
+			r_list_free (classes[i]);
+	}
+	free (classes);
+	return res;
+}
+
+/* calculates position of all nodes, but in particular dummies nodes */
+/* computes two different placements (called "left"/"right") and set the final
+ * position of each node to the average of the values in the two placements */
+static void place_dummies (AGraph *g) {
+	const RList *nodes;
+	Sdb *xminus, *xplus, *vertical_nodes;
+	RGraphNode *gn;
+	RListIter *it;
+	ANode *n;
+
+	vertical_nodes = compute_vertical_nodes (g);
+	if (!vertical_nodes) return;
+	xminus = compute_pos (g, R_TRUE, vertical_nodes);
+	if (!xminus) goto xminus_err;
+	xplus = compute_pos (g, R_FALSE, vertical_nodes);
+	if (!xplus) goto xplus_err;
+
+	nodes = r_graph_get_nodes (g->graph);
+	graph_foreach_anode (nodes, it, gn, n) {
+		n->x = (hash_get_int (xminus, gn) + hash_get_int (xplus, gn)) / 2;
+	}
+
+	sdb_free (xplus);
+xplus_err:
+	sdb_free (xminus);
+xminus_err:
+	sdb_free (vertical_nodes);
+}
+
 static void restore_original_edges (AGraph *g) {
 	RListIter *it;
 	RGraphEdge *e;
@@ -582,10 +880,10 @@ static void remove_dummy_nodes (AGraph *g) {
  * 2) partition the nodes in layers
  * 3) split long edges that traverse multiple layers
  * 4) reorder nodes in each layer to reduce the number of edge crossing
- * 5) assign x and y coordinates to each node (TODO)
+ * 5) assign x and y coordinates to each node
  * 6) restore the original graph, with long edges and cycles */
 static void set_layout_bb(AGraph *g) {
-	int i, j, k, rh, nx;
+	int i, j, k;
 
 	remove_cycles (g);
 	assign_layers (g);
@@ -595,7 +893,7 @@ static void set_layout_bb(AGraph *g) {
 
 	/* identify row height */
 	for (i = 0; i < g->n_layers; i++) {
-		rh = 0;
+		int rh = 0;
 		for (j = 0; j < g->layers[i].n_nodes; ++j) {
 			ANode *n = (ANode *)(g->layers[i].nodes[j]->data);
 			if (n->h > rh)
@@ -603,6 +901,11 @@ static void set_layout_bb(AGraph *g) {
 		}
 		g->layers[i].height = rh;
 	}
+
+	/* x-coordinate assignment: algorithm based on:
+	 * A Fast Layout Algorithm for k-Level Graphs
+	 * by C. Buchheim, M. Junger, S. Leipert */
+	place_dummies (g);
 
 	/* vertical align */
 	for (i = 0; i < g->n_layers; ++i) {
@@ -612,17 +915,6 @@ static void set_layout_bb(AGraph *g) {
 			for (k = 0; k < n->layer; ++k) {
 				n->y += g->layers[k].height + VERTICAL_NODE_SPACING;
 			}
-		}
-	}
-
-	/* TODO: x-coordinate assignment algorithm */
-	/* horizontal align */
-	for (i = 0; i < g->n_layers; i++) {
-		nx = (i % 2) * 10;
-		for (j = 0; j < g->layers[i].n_nodes; ++j) {
-			ANode *n = (ANode *)(g->layers[i].nodes[j]->data);
-			n->x = nx;
-			nx += n->w + HORIZONTAL_NODE_SPACING;
 		}
 	}
 
