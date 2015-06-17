@@ -191,6 +191,7 @@ R_API void r_meta_item_free(void *_item) {
 
 R_API RAnalMetaItem *r_meta_item_new(int type) {
 	RAnalMetaItem *mi = R_NEW (RAnalMetaItem);
+	if (!mi) return NULL;
 	memset (mi, 0, sizeof (RAnalMetaItem));
 	mi->type = type;
 	return mi;
@@ -437,6 +438,7 @@ static int meta_enumerate_cb(void *user, const char *k, const char *v) {
 	if (memcmp (k+6, ".0x", 3))
 		return 1;
 	it = R_NEW0 (RAnalMetaItem);
+	if (!it) return 0;
 	it->type = k[5];
 	it->size = sdb_atoi (v);
 	it->from = sdb_atoi (k+7);

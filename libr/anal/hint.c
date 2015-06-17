@@ -86,6 +86,9 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 	int token = 0;
 	RAnalHint *hint = R_NEW0 (RAnalHint);
 	char *s = strdup (str);
+	if (!hint || !s) {
+		return NULL;
+	}
 	hint->addr = addr;
 	for (r = s; ; r = nxt) {
 		r = sdb_anext (r, &nxt);

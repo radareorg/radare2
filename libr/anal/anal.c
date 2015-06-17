@@ -48,8 +48,10 @@ static void r_anal_type_init(RAnal *anal) {
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 	free (anal->limit);
 	anal->limit = R_NEW0 (RAnalRange);
-	anal->limit->from = from;
-	anal->limit->to = to;
+	if (anal->limit) {
+		anal->limit->from = from;
+		anal->limit->to = to;
+	}
 }
 
 R_API void r_anal_unset_limits(RAnal *anal) {

@@ -978,6 +978,9 @@ R_API int r_anal_esil_to_reil_setup(RAnalEsil *esil, RAnal *anal, int romem,
 	esil->cb.hook_command = setup_reil_ins;
 
 	esil->Reil = R_NEW0(RAnalReil);
+	if (!esil->Reil) {
+		return R_FALSE;
+	}
 	esil->Reil->reilNextTemp = 0;
 	esil->Reil->addr = -1;
 	esil->Reil->seq_num = 0;
