@@ -104,6 +104,7 @@ typedef struct r_bin_info_t {
 	int big_endian;
 	ut64 dbg_info;
 	RBinHash sum[3];
+	ut64 baddr;
 #if 0
 // stored in sdb
 	/* crypto (iOS bins) */
@@ -515,6 +516,7 @@ extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
 extern RBinPlugin r_bin_plugin_zimg;
 extern RBinPlugin r_bin_plugin_omf;
+extern RBinPlugin r_bin_plugin_art;
 
 #ifdef __cplusplus
 }

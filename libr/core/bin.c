@@ -282,7 +282,8 @@ static const char* get_compile_time(Sdb *binFileSdb) {
 static int bin_info (RCore *r, int mode) {
 	int i, j;
 	char str[R_FLAG_NAME_SIZE];
-	char size_str[21];
+	char size_str[32];
+	char baddr_str[32];
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RBinFile *binfile = r_core_bin_cur (r);
 	const char *compiled = NULL;
@@ -294,7 +295,10 @@ static int bin_info (RCore *r, int mode) {
 	}
 
 	compiled = get_compile_time (binfile->sdb);
-	snprintf (size_str, sizeof (size_str), "%"PFMT64d,  r_bin_get_size (r->bin));
+	snprintf (size_str, sizeof (size_str),
+		"%"PFMT64d,  r_bin_get_size (r->bin));
+	snprintf (baddr_str, sizeof (baddr_str),
+		"%"PFMT64d,  info->baddr);
 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("{\"bintype\":\"%s\","
@@ -316,6 +320,7 @@ static int bin_info (RCore *r, int mode) {
 			"\"lsyms\":%s,"
 			"\"relocs\":%s,"
 			"\"rpath\":\"%s\","
+			"\"baddr\":%s,"
 			"\"binsz\":%s,"
 			"\"subsys\":\"%s\","
 			"\"guid\":\"%s\","
@@ -340,6 +345,7 @@ static int bin_info (RCore *r, int mode) {
 			r_str_bool ((R_BIN_DBG_SYMS &info->dbg_info)),
 			r_str_bool ((R_BIN_DBG_RELOCS &info->dbg_info)),
 			STR(info->rpath),
+			baddr_str,
 			size_str,
 			STR(info->subsystem),
 			info->guid ? info->guid : "",

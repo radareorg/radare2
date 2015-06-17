@@ -13,7 +13,7 @@ char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin) {
 	return version;
 }
 
-#define FAIL(x) { eprintf(x); goto fail; }
+#define FAIL(x) { eprintf(x"\n"); goto fail; }
 struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	struct r_bin_dex_obj_t *bin = R_NEW0 (struct r_bin_dex_obj_t);
 	if (!bin) {

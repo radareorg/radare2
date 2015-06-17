@@ -628,7 +628,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				} else printfmt (j%2?"   ":"  ");
 				continue;
 			}
-			if (p && base==32) {
+			if (p && (base==16 || base==32)) {
 if (step==2) {
 				ut16 n = 0;
 				r_mem_copyendian ((ut8*)&n, buf+j, sizeof (n), !p->big_endian);
