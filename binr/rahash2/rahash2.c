@@ -86,11 +86,12 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 }
 
 static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int rad, int print, int le) {
-	int dlen;
-	if (len<1)
+	int dlen = r_hash_size (hash);
+	if (len<0)
 		return 0;
-	dlen = r_hash_calculate (ctx, hash, buf, len);
-	if (!dlen) return 0;
+	r_hash_do_begin(ctx, hash);
+	r_hash_calculate (ctx, hash, buf, len);
+	r_hash_do_end(ctx, hash);
 	if (!print) return 1;
 	if (hash == R_HASH_ENTROPY) {
 		double e = r_hash_entropy (buf, len);
@@ -216,7 +217,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 }
 
 static int do_help(int line) {
-	printf ("Usage: rahash2 [-rBhLkv] [-b sz] [-a algo] [-s str] [-f from] [-t to] [file] ...\n");
+	printf ("Usage: rahash2 [-rBhLkv] [-b sz] [-a algo] [-sE str] [-f from] [-t to] [file] ...\n");
 	if (line) return 0;
 	printf (
 	" -a algo     comma separated list of algorithms (default is 'sha256')\n"
@@ -232,6 +233,7 @@ static int do_help(int line) {
 	" -L          list all available algorithms (see -a)\n"
 	" -r          output radare commands\n"
 	" -s string   hash this string instead of files\n"
+	" -E string   hash a string interpreting backslash escapes"
 	" -t to       stop hashing at given address\n"
 	" -x hexstr   hash this hexpair string instead of files\n"
 	" -v          show version information\n");
@@ -265,11 +267,12 @@ int main(int argc, char **argv) {
 	char *hashstr = NULL;
 	int hashstr_len = 0;
 	int hashstr_hex = 0;
+	int escaped = 0;
 	ut64 algobit;
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "jdDrvea:i:S:s:x:b:nBhf:t:kLq")) != -1) {
+	while ((c = getopt (argc, argv, "jdDrvea:i:S:s:x:b:nBhf:t:E:kLq")) != -1) {
 		switch (c) {
 		case 'q': quiet = 1; break;
 		case 'i': iterations = atoi (optarg);
@@ -294,9 +297,9 @@ int main(int argc, char **argv) {
 		case 't': to = 1+r_num_math (NULL, optarg); break;
 		case 'v': return blob_version ("rahash2");
 		case 'h': return do_help (0);
+		case 'E': escaped = 1;
 		case 's': setHashString (optarg, 0); break;
 		case 'x': setHashString (optarg, 1); break;
-			break;
 		default: eprintf ("rahash2: Unknown flag\n"); return 1;
 		}
 	}
@@ -350,6 +353,11 @@ int main(int argc, char **argv) {
 		}
 		hashstr = hashstr+from;
 		hashstr_len = to-from;
+		if (escaped) {
+			hashstr[hashstr_len] = '\0'; /* needed for unescape */
+			hashstr_len = r_str_unescape(hashstr);
+		}
+		puts(hashstr);
 		switch (b64mode) {
 		case 1: // encode
 			{
