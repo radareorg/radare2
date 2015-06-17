@@ -10,13 +10,16 @@ fi
 
 #------------------------------------------#
 
-PROGDIR=`dirname $0`
-PROGDIR=`cd $PROGDIR && pwd`
+PROGDIR=$(dirname "$0")
+PROGDIR=$(cd "$PROGDIR" && pwd)
 
 ANDROID_KITKAT=19
 ANDROID_LOLIPOP=21
 
-OS=`uname | tr 'A-Z' 'a-z'`
+# shellcheck disable=SC2086
+# shellcheck disable=SC2018
+# shellcheck disable=SC2019
+OS="$(uname | tr 'A-Z' 'a-z')"
 [ "${OS}" = macos ] && OS=darwin
 
 ARCH2=${ARCH}
@@ -64,9 +67,11 @@ PROGDIR=${NDK}
 PLATFORM=android-${ANDROID_SDK_VERSION}
 PLATFORM_ROOT=${PROGDIR}/platforms/${PLATFORM}/arch-${ARCH2}
 PLATFORM_PATH=${PLATFORM_ROOT}/usr
-NDK_BINS=`ls ${PROGDIR}/toolchains/*/prebuilt/${OS}*/bin |grep prebuilt | grep "/${ARCH}-" |sort |tail -n 1`
+#shellcheck disable=SC2010
+NDK_BINS=$(ls "${PROGDIR}"/toolchains/*/prebuilt/"${OS}"*/bin |grep prebuilt | grep "/${ARCH}-" |sort |tail -n 1)
+#shellcheck disable=SC2010
 [ -z "${NDK_BINS}" ] && \
-NDK_BINS=`ls ${PROGDIR}/toolchains/*/prebuilt/${OS}*/bin |grep prebuilt | grep "/${ARCH}" |sort |tail -n 1`
+	NDK_BINS=$(ls "${PROGDIR}"/toolchains/*/prebuilt/"${OS}"*/bin |grep prebuilt | grep "/${ARCH}" |sort |tail -n 1)
 #echo "ls ${PROGDIR}/toolchains/*/prebuilt/linux*/bin |grep prebuilt | grep "/${ARCH}-" |sort |tail -n 1"
 #echo NDKBINS=${NDK_BINS}
 if [ -z "${NDK_BINS}" ]; then
@@ -101,4 +106,4 @@ EXT_SO=so
 export PATH=${NDK_BINS}:$PATH
 export EXT_SO AR CC CFLAGS LDFLAGS PATH
 # echo ${CC} ${CFLAGS} ${LDFLAGS} $*"
-${CC} ${CFLAGS} ${LDFLAGS} $*
+${CC} "${CFLAGS}" "${LDFLAGS}" "$@"

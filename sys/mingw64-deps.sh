@@ -1,10 +1,10 @@
 #!/bin/sh
 
 # find root
-cd `dirname $PWD/$0`
+cd "$(dirname "$PWD/$0")"
 
-if [ `uname` = Linux ]; then
-case `uname -m` in
+if [ "$(uname)" = "Linux" ]; then
+	case $(uname -m) in
 i?86)
 URL="http://downloads.sourceforge.net/project/mingw-w64/Toolchains%20targetting%20Win64/Automated%20Builds/mingw-w64-bin_i686-linux_20110831.tar.bz2?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fmingw-w64%2Ffiles%2FToolchains%2520targetting%2520Win64%2FAutomated%2520Builds%2F&ts=1315999254&use_mirror=switch"
 ;;
