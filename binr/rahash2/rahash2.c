@@ -87,7 +87,7 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 
 static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int rad, int print, int le) {
 	int dlen;
-	if (len<1)
+	if (len<0)
 		return 0;
 	dlen = r_hash_calculate (ctx, hash, buf, len);
 	if (!dlen) return 0;
