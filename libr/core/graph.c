@@ -467,12 +467,19 @@ static void remove_dummy_nodes (AGraph *g) {
 	RGraphNode *gn;
 	RListIter *it;
 	ANode *n;
+	RList *toremove = r_list_new ();
 
 	graph_foreach_anode (r_graph_get_nodes (g->graph), it, gn, n) {
 		if (n->is_dummy) {
-			r_graph_del_node (g->graph, gn);
+			r_list_append (toremove, gn);
 		}
 	}
+
+	r_list_foreach (toremove, it, gn) {
+		r_graph_del_node (g->graph, gn);
+	}
+
+	r_list_free (toremove);
 }
 
 /* 1) trasform the graph into a DAG
