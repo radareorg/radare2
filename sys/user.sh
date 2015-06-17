@@ -5,7 +5,7 @@ gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd "$(dirname "$PWD/$0")" ; cd ..
 
 # update
 if [ "$1" != "--without-pull" ]; then
@@ -33,13 +33,13 @@ fi
 ROOT=${HOME}/.radare2-prefix
 
 if [ "${HARDEN}" = 1 ]; then
-	./sys/build-harden.sh ${ROOT} && ${MAKE} symstall
+	./sys/build-harden.sh "${ROOT}" && ${MAKE} symstall
 else
-	./sys/build.sh ${ROOT} && ${MAKE} symstall
+	./sys/build.sh "${ROOT}" && ${MAKE} symstall
 fi
 ${MAKE} user-install
 echo
 echo radare2 is now installed in ~/.radare2-prefix
 echo
-echo Now add ${HOME}/bin to your ${PATH}
+echo "Now add ${HOME}/bin to your ${PATH}"
 echo
