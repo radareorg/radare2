@@ -1,7 +1,7 @@
 #!/bin/sh
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
 
-CWD=`dirname $0`
+CWD="$(dirname "$0")"
 #CPU="armv7 arm64"
 if [ -z "${CPU}" ]; then
 	CPU=armv7
@@ -63,4 +63,6 @@ LDFLAGS="-L ${IOSROOT}/usr/lib/ ${LDFLAGS}"
 #fi
 
 # arm64
-${CC} ${CFLAGS} ${LDFLAGS} $*
+# shellcheck disable=SC2048
+# shellcheck disable=SC2086
+${CC} "${CFLAGS}" "${LDFLAGS}" $*
