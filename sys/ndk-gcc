@@ -107,4 +107,4 @@ export EXT_SO AR CC CFLAGS LDFLAGS PATH
 
 #shellcheck disable=SC2048
 #shellcheck disable=SC2086
-${CC} "${CFLAGS}" "${LDFLAGS}" $*
+${CC} ${CFLAGS} ${LDFLAGS} $*
