@@ -16,6 +16,8 @@ static int mousemode = 0;
 #define INIT_HISTORY_CAPACITY 16
 #define TITLE_LEN 128
 #define DEFAULT_SPEED 1
+#define SMALLNODE_TEXT "[____]"
+#define SMALLNODE_TEXT_CUR "[_@@_]"
 
 #define ZOOM_STEP 10
 #define ZOOM_DEFAULT 100
@@ -50,6 +52,8 @@ typedef struct ascii_node {
 	int pos_in_layer;
 	char *text;
 	int is_dummy;
+	int is_reversed;
+	int class;
 } ANode;
 
 typedef struct ascii_graph {
@@ -95,6 +99,17 @@ struct agraph_refresh_data {
 #define L2(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,2)
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(g->can, x,y,x2,y2,c,0)
 
+static ANode *ascii_node_new (int is_dummy) {
+	ANode *res = R_NEW0 (ANode);
+	if (!res) return NULL;
+	res->layer = -1;
+	res->pos_in_layer = -1;
+	res->is_dummy = is_dummy;
+	res->is_reversed = R_FALSE;
+	res->class = -1;
+	return res;
+}
+
 static void update_node_dimension(RGraph *g, int is_small, int zoom) {
 	const RList *nodes = r_graph_get_nodes (g);
 	RGraphNode *gn;
@@ -103,7 +118,8 @@ static void update_node_dimension(RGraph *g, int is_small, int zoom) {
 
 	graph_foreach_anode (nodes, it, gn, n) {
 		if (is_small) {
-			n->w = n->h = 0;
+			n->h = 0;
+			n->w = strlen (SMALLNODE_TEXT);
 		} else {
 			n->w = r_str_bounds (n->text, &n->h);
 			n->w += BORDER_WIDTH;
@@ -121,7 +137,7 @@ static void small_ANode_print(AGraph *g, ANode *n, int cur) {
 	if (!G (n->x + 2, n->y - 1))
 		return;
 	if (cur) {
-		W("[_@@_]");
+		W(SMALLNODE_TEXT_CUR);
 		(void)G (-g->can->sx, -g->can->sy + 2);
 		snprintf (title, sizeof (title) - 1,
 				"0x%08"PFMT64x":", n->addr);
@@ -129,7 +145,7 @@ static void small_ANode_print(AGraph *g, ANode *n, int cur) {
 		(void)G (-g->can->sx, -g->can->sy + 3);
 		W (n->text);
 	} else {
-		W("[____]");
+		W(SMALLNODE_TEXT);
 	}
 	return;
 }
@@ -433,6 +449,14 @@ static void assign_layers (AGraph *g) {
 	sdb_free (path_layers);
 }
 
+static int find_edge (const RGraphEdge *a, const RGraphEdge *b) {
+	return a->from == b->to && a->to == b->from ? 0 : 1;
+}
+
+static int is_reversed (AGraph *g, RGraphEdge *e) {
+	return r_list_find (g->back_edges, e, (RListComparator)find_edge) ? R_TRUE : R_FALSE;
+}
+
 /* add dummy nodes when there are edges that span multiple layers */
 static void create_dummy_nodes (AGraph *g) {
 	RGraphVisitor dummy_vis = { 0 };
@@ -454,10 +478,11 @@ static void create_dummy_nodes (AGraph *g) {
 
 		r_graph_del_edge (g->graph, e->from, e->to);
 		for (i = 1; i < diff_layer; ++i) {
-			ANode *n = R_NEW0 (ANode);
+			ANode *n = ascii_node_new (R_TRUE);
+			if (!n) return;
 			n->layer = from->layer + i;
-			n->pos_in_layer = -1;
-			n->is_dummy = R_TRUE;
+			n->is_reversed = is_reversed (g, e);
+			n->w = 1;
 			RGraphNode *dummy = r_graph_add_node (g->graph, n);
 			r_graph_add_edge (g->graph, prev, dummy);
 			prev = dummy;
@@ -646,7 +671,7 @@ static int get_bbnodes(AGraph *g) {
 		if (bb->addr == UT64_MAX)
 			continue;
 
-		node = R_NEW0 (ANode);
+		node = ascii_node_new (R_FALSE);
 		if (!node) {
 			sdb_free (g_nodes);
 			return R_FALSE;
@@ -660,16 +685,9 @@ static int get_bbnodes(AGraph *g) {
 					"pDi %d @ 0x%08"PFMT64x, bb->size, bb->addr);
 		}
 		node->addr = bb->addr;
-		node->layer = -1;
-		node->pos_in_layer = -1;
-		node->is_dummy = R_FALSE;
-		node->x = 0;
-		node->y = 0;
-		node->w = 0;
-		node->h = 0;
 
 		gn = r_graph_add_node (g->graph, node);
-		if (!gn) { 
+		if (!gn) {
 			sdb_free (g_nodes);
 			return R_FALSE;
 		}
@@ -708,22 +726,17 @@ static int get_cgnodes(AGraph *g) {
 	ANode *node;
 	char *code;
 
-	node = R_NEW0 (ANode);
-	if (!node) { 
+	node = ascii_node_new (R_FALSE);
+	if (!node) {
 		sdb_free (g_nodes);
 		return R_FALSE;
 	}
 	node->text = strdup ("");
 	node->addr = g->fcn->addr;
-	node->layer = -1;
-	node->pos_in_layer = -1;
-	node->is_dummy = R_FALSE;
 	node->x = 10;
 	node->y = 3;
-	node->w = 0;
-	node->h = 0;
 	fcn_gn = r_graph_add_node (g->graph, node);
-	if (!fcn_gn) { 
+	if (!fcn_gn) {
 		sdb_free (g_nodes);
 		return R_FALSE;
 	}
@@ -738,7 +751,7 @@ static int get_cgnodes(AGraph *g) {
 		if (gn) continue;
 
 		RFlagItem *fi = r_flag_get_at (g->core->flags, ref->addr);
-		node = R_NEW0 (ANode);
+		node = ascii_node_new (R_FALSE);
 		if (!node) {
 			sdb_free (g_nodes);
 			return R_FALSE;
@@ -754,13 +767,8 @@ static int get_cgnodes(AGraph *g) {
 		node->text = r_str_concat (node->text, code);
 		node->text = r_str_concat (node->text, "...\n");
 		node->addr = ref->addr;
-		node->layer = -1;
-		node->pos_in_layer = -1;
-		node->is_dummy = R_FALSE;
 		node->x = 10;
 		node->y = 10;
-		node->w = 0;
-		node->h = 0;
 		free (code);
 		gn = r_graph_add_node (g->graph, node);
 		if (!gn) { 
