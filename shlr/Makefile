@@ -6,9 +6,9 @@ CS_VER=3.0
 CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_TAR=
 CS_URL=https://www.github.com/aquynh/capstone.git
-CS_UPD=20150531
+CS_UPD=20150619
 CS_BRA=next
-CS_TIP=715d4474b5e4ceaf7e2774f1fe9cf1539a7f84af
+CS_TIP=3dcb8fbc493f77411e422acf5804f4168d159bfa
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=21b9b25e9dae4af0ef309d4089a54e53b8f5b479
 
