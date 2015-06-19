@@ -295,8 +295,8 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 			free (str);
 			r_mem_copyendian ((ut8*)buf+1, (const ut8*)&reslen,
 				sizeof(ut32), ENDIAN);
-			free (res);
 			memcpy (buf+5, res, reslen);
+			free (res);
 			r_socket_write (s, buf, 5+reslen);
 			r_socket_flush (s);
 		} else {

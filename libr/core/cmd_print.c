@@ -2159,9 +2159,10 @@ static int cmd_print(void *data, const char *input) {
 		free (old_arch);
 		free (new_arch);
 
-		if (processed_cmd)
+		if (processed_cmd) {
 			ret = pd_result;
 			goto beach;
+		}
 		}
 		break;
 	case 's': //ps

@@ -160,8 +160,6 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 					break;
 				atl = btl = 0;
 				hit = 0;
-				if (!ret)
-					break;
 			}
 		}
 		oop = op;
