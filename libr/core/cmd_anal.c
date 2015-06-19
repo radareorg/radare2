@@ -1125,6 +1125,8 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				//core->anal->reg = core->dbg->reg;
 				r_cons_printf ("%s\n", core->dbg->reg->reg_profile_str);
 				//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
+			} else {
+				eprintf ("No register profile defined. Try 'dr.'\n");
 			}
 		} else if (str[1] == 'j') {
 			// drpj
