@@ -72,7 +72,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 					goto __next;
 				list2 = R_NEW (RAnalRefline);
 				if (!list2) {
-					eprintf ("not enough memory in %s - %s", __FILE__, __LINE__); 
+					eprintf ("not enough memory in %s - %d", __FILE__, __LINE__); 
 					free_refline_list (&(list->list));
 					return NULL;
 				}
@@ -97,7 +97,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 								continue;
 							list2 = R_NEW (RAnalRefline);
 							if (!list2) {
-								eprintf ("not enough memory in %s - %s", __FILE__, __LINE__); 
+								eprintf ("not enough memory in %s - %d", __FILE__, __LINE__); 
 								free_refline_list (&(list->list));
 								return NULL;
 							}
@@ -170,7 +170,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 
 			list2 = R_NEW0 (RAnalRefline);
 			if (!list2) {
-				eprintf ("not enough memory in %s - %s", __FILE__, __LINE__); 
+				eprintf ("not enough memory in %s - %d", __FILE__, __LINE__); 
 				free_refline_list (&(list->list));
 				return NULL;
 			}
@@ -192,7 +192,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 							continue;
 						list2 = R_NEW (RAnalRefline);
 						if (!list2){
-							eprintf ("not enough memory in %s - %s", __FILE__, __LINE__); 
+							eprintf ("not enough memory in %s - %d", __FILE__, __LINE__); 
 							free_refline_list (&(list->list));
 							return NULL;
 						}
