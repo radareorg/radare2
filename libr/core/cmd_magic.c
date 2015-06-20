@@ -49,7 +49,8 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		// allocate once
 		ck = r_magic_new (0);
 		if (file) {
-			ofile = file;
+			if (ofile) free (ofile);
+			ofile = strdup (file);
 			if (r_magic_load (ck, file) == -1) {
 				eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
 				ck = NULL;
