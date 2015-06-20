@@ -1681,6 +1681,10 @@ static int cmd_search(void *data, const char *input) {
 		// TODO: add support for json
 		{
 		int err = 1, vsize = atoi (input+1);
+		if (!vsize || !*(input+2) || !*(input+3)){
+			eprintf ("Usage: /V[1|2|4|8] [minval] [maxval]\n");
+			break;
+		}
 		ut64 vmin = r_num_math (core->num, input+2);
 		char *w = strchr (input+3, ' ');
 		if (w) {
