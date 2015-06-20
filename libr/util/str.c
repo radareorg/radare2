@@ -818,6 +818,9 @@ R_API int r_str_unescape(char *buf) {
 		if (buf[i+1]=='e') {
 			buf[i] = 0x1b;
 			memmove (buf+i+1, buf+i+2, strlen (buf+i+2)+1);
+		} else if (buf[i+1]=='\\') {
+			buf[i] = '\\';
+			memmove (buf+i+1, buf+i+2, strlen (buf+i+2)+1);
 		} else if (buf[i+1]=='r') {
 			buf[i] = 0x0d;
 			memmove (buf+i+1, buf+i+2, strlen (buf+i+2)+1);
@@ -878,7 +881,7 @@ static char *r_str_escape_ (const char *buf, const int dot_nl) {
 		return NULL;
 
 	/* Worst case scenario, we convert every byte */
-	new_buf = malloc (1 + (strlen(buf) * 4));
+	new_buf = malloc (1 + (strlen (buf) * 4));
 
 	if (!new_buf)
 		return NULL;
