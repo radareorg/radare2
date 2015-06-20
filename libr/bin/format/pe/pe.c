@@ -1781,8 +1781,6 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	exp = parse_symbol_table (bin, exports, exports_sz - 1);
 	if (exp)
 		exports = exp;
-	else 
-		eprintf ("Warning: bad symbol table\n");
 	return exports;
 }
 
