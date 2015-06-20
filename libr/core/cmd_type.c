@@ -46,6 +46,10 @@ static int cmd_type(void *data, const char *input) {
 		char *q, *p, *o, *e;
 		p = o = strdup (input+1);
 		for (;;) {
+			if (*p == '\0'){
+				eprintf ("Usage: ts <k>=<v> Set fields at curseek linked type\n");	
+				break;
+			}
 			q = strchr (p, ' ');
 			if (q) *q = 0;
 			if (!*p) {
