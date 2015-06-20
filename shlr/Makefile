@@ -161,7 +161,7 @@ capstone-sync:
 		git config user.name || ( \
 		git config user.name "radare-travis" ; \
 		git config user.email radare-travis@foo.com ) ; \
-		EDITOR=cat git revert ${CS_REV} ; \
+		EDITOR=cat git revert --no-edit ${CS_REV} ; \
 	fi
 
 .PHONY: capstone
