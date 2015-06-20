@@ -89,7 +89,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 		if (size==0) {
 			if (blocksize == 1) {
 				memset (buf+copied, 0xff, len-copied);
-				return size+copied;
+				return len; //size+copied;
 			}
 			blocksize = 1;
 			blen = 1;
@@ -98,7 +98,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 		//if (size != blen) { return size+copied; }
 		copied += blen;
 	}
-        return (int)size;
+        return len; //(int)size;
 }
 
 static int mach_write_at(RIOMach *riom, const void *buff, int len, ut64 addr) {
