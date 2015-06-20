@@ -200,6 +200,10 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 			if (name) {
 				*name++ = 0;
 				name = strdup (name);
+				if (!name){
+					free (clas);
+					return NULL;
+				}
 				for (i=0; name[i]; i++) {
 					if (name[i]==']') {
 						name[i] = 0;
@@ -221,6 +225,11 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 		}
 		*args = 0;
 		name = strdup (args+2);
+		if (!name){
+			free (args);
+			free (clas);
+			return NULL;
+		}
 		args = NULL;
 		for (i=0; name[i]; i++) {
 			if (name[i]=='_') {
