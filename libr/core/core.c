@@ -1443,7 +1443,7 @@ reaccept:
 					strcpy ((char*)buf, "/tmp/.out");
 					pipefd = r_cons_pipe_open ((const char *)buf, 1, 0);
 					//eprintf("SYSTEM(%s)\n", ptr+6);
-					system ((const char*)ptr+6);
+					r_sandbox_system ((const char*)ptr+6, 1);
 					r_cons_pipe_close (pipefd);
 					{
 						FILE *fd = r_sandbox_fopen((char*)buf, "r");

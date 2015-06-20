@@ -1,7 +1,14 @@
 #!/bin/sh
-export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
 
 CWD="$(dirname "$0")"
+CC="xcrun --sdk iphoneos gcc -arch armv7 -I${CWD}/ios-include"
+#echo ${CC} "${CFLAGS}" "${LDFLAGS}" $*
+#exec ${CC} ${CFLAGS} ${LDFLAGS} $*
+exec ${CC} $*
+exit 1
+
+export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
+
 #CPU="armv7 arm64"
 if [ -z "${CPU}" ]; then
 	CPU=armv7

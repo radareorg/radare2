@@ -34,7 +34,6 @@ static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 
 #if __APPLE__
 #include <spawn.h>
-#include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <mach/exception_types.h>

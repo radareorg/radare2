@@ -10,9 +10,6 @@
 
 #define EXCEPTION_PORT 0
 
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <mach/exception_types.h>
 #include <mach/mach_vm.h>
 #include <mach/mach_init.h>
@@ -28,6 +25,8 @@
 #include <mach-o/nlist.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/wait.h>
 #include <errno.h>
 

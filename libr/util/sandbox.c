@@ -68,7 +68,29 @@ R_API int r_sandbox_enable (int e) {
 
 R_API int r_sandbox_system (const char *x, int n) {
 	if (!enabled) {
+#if __IPHONE_8_0
+		#include <spawn.h>
+		if (n) {
+			int pid, argc;
+			char **argv = r_str_argv (x, &argc);
+			if (argv) {
+				char *argv0 = r_file_path (argv[0]);
+				if (!argv0) {
+					eprintf ("Cannot find '%s'\n", argv[0]);
+					return -1;
+				}
+				posix_spawn(&pid, argv0, NULL, NULL, argv, NULL);
+				waitpid(pid, NULL, 0);
+				r_str_argv_free (argv);
+				free (argv0);
+			} else {
+				eprintf ("Error parsing command arguments\n");
+				return -1;
+			}
+		}
+#else
 		if (n) return system (x);
+#endif
 		return execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
 	}
 	eprintf ("sandbox: system call disabled\n");

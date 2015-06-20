@@ -410,7 +410,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 		r_list_append(names_l, str_info);
 
 		read_len += len;
-		if ((len == 1)) {
+		if (len == 1) {
 			if (*(prev_pos + 1) == '@') {
 				prev_pos = curr_pos;
 			} else {

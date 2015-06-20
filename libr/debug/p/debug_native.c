@@ -489,9 +489,11 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return tid;
 #elif __APPLE__
 #if __arm__
-	int i, ret, status;
-	thread_array_t inferior_threads = NULL;
-	unsigned int inferior_thread_count = 0;
+	return 1;
+#if 0
+	//int i, ret, status;
+	//thread_array_t inferior_threads = NULL;
+	//unsigned int inferior_thread_count = 0;
 
 // XXX: detach is noncontrollable continue
         ptrace (PT_DETACH, pid, 0, 0);
@@ -513,7 +515,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
         for (i = 0; i < inferior_thread_count; i++)
 		thread_resume (inferior_threads[i]);
 */
-	return 1;
+#endif
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
 	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
@@ -1472,7 +1474,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		thread_array_t inferior_threads = NULL;
 		unsigned int inferior_thread_count = 0;
 		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
-		unsigned int gp_count = R_DEBUG_STATE_SZ;
+		mach_msg_type_number_t gp_count = R_DEBUG_STATE_SZ;
 
 		ret = task_threads (pid_to_task (pid),
 			&inferior_threads, &inferior_thread_count);
@@ -1510,7 +1512,8 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 			}
 #else
 			ret = thread_set_state (inferior_threads[tid],
-					R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+				R_DEBUG_STATE_T, (thread_state_t) regs,
+				gp_count);
 #endif
 //if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS)
 			if (ret != KERN_SUCCESS) {
