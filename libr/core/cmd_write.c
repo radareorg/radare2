@@ -676,7 +676,7 @@ static int cmd_write(void *data, const char *input) {
 		r_core_block_read (core, 0);
 		break;
 	case 't': // "wt"
-		if (*str == '?') {
+		if (*str == '?' || *str == '\0') {
 			eprintf ("Usage: wt[a] file [size]   write 'size' bytes in current block to file\n");
 			free (ostr);
 			return 0;
