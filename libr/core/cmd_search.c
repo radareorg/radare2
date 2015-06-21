@@ -34,7 +34,6 @@ struct endlist_pair {
 static int search_hash(RCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen) {
 	RIOMap *map;
 	ut8 *buf;
-	st64 bufsz = 0;
 	int i, j;
 	RList *list;
 	RListIter *iter;
@@ -53,6 +52,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 
 	for (j = minlen; j<=maxlen; j++) {
 		ut32 len = j;
+		eprintf ("Searching %s for %d byte length.\n", hashname, j);
 		r_list_foreach (list, iter, map) {
 			ut64 from = map->from;
 			ut64 to = map->to;
@@ -71,9 +71,13 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 				eprintf ("Cannot allocate %"PFMT64d" bytes\n", bufsz);
 				goto hell;
 			}
+			eprintf ("Search in range 0x%08"PFMT64x" and 0x%08"PFMT64x"\n", from, to);
+			int blocks = (int)(to-from-len);
+			eprintf ("Carving %d blocks...\n", blocks);
 			(void)r_io_read_at (core->io, from, buf, bufsz);
 			for (i = 0; (from+i+len)<to; i++) {
 				char *s = r_hash_to_string (NULL, hashname, buf+i, len);
+				if (!(i%5)) eprintf ("%d\r", i);
 				if (!s) {
 					eprintf ("Hash fail\n");
 					break;
@@ -1916,7 +1920,6 @@ static int cmd_search(void *data, const char *input) {
 	case '#':
 		{
 		char *p, *arg = r_str_chop (strdup (input+1));
-		eprintf ("HASH (%s)\n", input+1);
 		p = strchr (arg, ' ');
 		if (p) {
 			*p++ = 0;
