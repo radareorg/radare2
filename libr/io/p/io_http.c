@@ -65,7 +65,7 @@ static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
 }
 
 static inline int getmalfd (RIOMalloc *mal) {
-	return 0xfffffff & (int)(size_t)mal->buf;
+	return (UT32_MAX>>1) & (int)(size_t)mal->buf;
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
@@ -107,6 +107,7 @@ RIOPlugin r_io_plugin_http = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_http
+	.data = &r_io_plugin_http,
+	.version = R2_VERSION
 };
 #endif

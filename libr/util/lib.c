@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2015 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -255,6 +255,13 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 	RLibPlugin *p;
 	RListIter *iter;
 	int ret = R_FALSE;
+
+	if (stru->version) {
+		if (strcmp (stru->version, R2_VERSION)) {
+			eprintf ("Invalid version for module %s\n", file);
+			return R_FAIL;
+		}
+	}
 	// TODO: Use Sdb here. just a single line
 	r_list_foreach (lib->plugins, iter, p) {
 		if (samefile (file, p->file)) {
