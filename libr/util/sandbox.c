@@ -66,33 +66,54 @@ R_API int r_sandbox_enable (int e) {
 	return (enabled = !!e);
 }
 
+#if __IPHONE_8_0 && TARGET_OS_IPHONE
+#define LIBC_HAVE_SYSTEM 0
+#else
+#define LIBC_HAVE_SYSTEM 1
+#endif
+
 R_API int r_sandbox_system (const char *x, int n) {
+#if LIBC_HAVE_SYSTEM && 0
 	if (!enabled) {
-#if __IPHONE_8_0
+		if (n) return system (x);
+		return execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
+	}
+#else
+	if (!enabled) {
 		#include <spawn.h>
 		if (n) {
-			int pid, argc;
-			char **argv = r_str_argv (x, &argc);
+			char **argv, *cmd = strdup (x);
+			int rc, pid, argc;
+			char *isbg = strchr (cmd, '&');
+			// XXX this is hacky
+			if (isbg) {
+				*isbg = 0;
+			}
+			argv = r_str_argv (cmd, &argc);
 			if (argv) {
 				char *argv0 = r_file_path (argv[0]);
 				if (!argv0) {
 					eprintf ("Cannot find '%s'\n", argv[0]);
 					return -1;
 				}
-				posix_spawn(&pid, argv0, NULL, NULL, argv, NULL);
-				waitpid(pid, NULL, 0);
+				pid = 0;
+				posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
+				if (isbg) {
+					// XXX. wait for children
+					rc = 0;
+				} else {
+					rc = waitpid (pid, NULL, 0);
+				}
 				r_str_argv_free (argv);
 				free (argv0);
+				return rc;
 			} else {
 				eprintf ("Error parsing command arguments\n");
 				return -1;
 			}
 		}
-#else
-		if (n) return system (x);
-#endif
-		return execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
 	}
+#endif
 	eprintf ("sandbox: system call disabled\n");
 	return -1;
 }

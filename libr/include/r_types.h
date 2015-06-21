@@ -56,6 +56,12 @@
 #endif
 #endif
 
+#if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
+#define TARGET_OS_IPHONE 1
+#else
+#define TARGET_OS_IPHONE 0
+#endif
+
 #ifdef __GNUC__
   #define FUNC_ATTR_MALLOC __attribute__((malloc))
   #define FUNC_ATTR_ALLOC_SIZE(x) __attribute__((alloc_size(x)))
