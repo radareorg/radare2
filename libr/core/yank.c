@@ -290,6 +290,8 @@ R_API int r_core_yank_hud_file (RCore *core, const char *input) {
 	char *buf = NULL;
 	ut32 len = 0;
 	int res = R_FALSE;
+	
+	if (!input || !*input) return res;
 
 	for (input++; *input==' '; input++) ;
 
