@@ -1765,8 +1765,8 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			}
 			else { // no forwarder export
 				snprintf (forwarder_name, PE_NAME_LENGTH, "NONE");
-				snprintf (export_name, PE_NAME_LENGTH, "%s_%s", dll_name, function_name);
 			}
+			snprintf (export_name, PE_NAME_LENGTH, "%s_%s", dll_name, function_name);
 			exports[i].vaddr = function_vaddr;
 			exports[i].paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, function_vaddr);
 			exports[i].ordinal = function_ordinal;
