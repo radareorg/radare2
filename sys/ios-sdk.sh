@@ -35,7 +35,7 @@ if true ; then
 make clean
 cp -f plugins.tiny.cfg plugins.cfg
 ./configure --prefix=${PREFIX} --with-ostype=darwin \
-  --without-fork --without-pic --with-nonpic \
+  --without-pic --with-nonpic \
   --with-compiler=ios-sdk --target=arm-unknown-darwin
 # --disable-debugger --with-compiler=ios-sdk
 fi
