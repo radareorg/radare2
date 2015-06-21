@@ -73,7 +73,7 @@ R_API int r_sandbox_enable (int e) {
 #endif
 
 R_API int r_sandbox_system (const char *x, int n) {
-#if LIBC_HAVE_SYSTEM && 0
+#if LIBC_HAVE_SYSTEM
 	if (!enabled) {
 		if (n) return system (x);
 		return execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
