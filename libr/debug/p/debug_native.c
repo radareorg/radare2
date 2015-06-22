@@ -339,6 +339,128 @@ static inline void debug_arch_x86_trap_set(RDebug *dbg, int foo) {
 #endif // __APPLE__
 #endif
 
+#if TARGET_OS_IPHONE
+static int isThumb32(ut16 op) {
+	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
+}
+
+// BCR address match type
+#define BCR_M_IMVA_MATCH        ((uint32_t)(0u << 21))
+#define BCR_M_CONTEXT_ID_MATCH  ((uint32_t)(1u << 21))
+#define BCR_M_IMVA_MISMATCH     ((uint32_t)(2u << 21))
+#define BCR_M_RESERVED          ((uint32_t)(3u << 21))
+
+// Link a BVR/BCR or WVR/WCR pair to another
+#define E_ENABLE_LINKING        ((uint32_t)(1u << 20))
+
+// Byte Address Select
+#define BAS_IMVA_PLUS_0         ((uint32_t)(1u << 5))
+#define BAS_IMVA_PLUS_1         ((uint32_t)(1u << 6))
+#define BAS_IMVA_PLUS_2         ((uint32_t)(1u << 7))
+#define BAS_IMVA_PLUS_3         ((uint32_t)(1u << 8))
+#define BAS_IMVA_0_1            ((uint32_t)(3u << 5))
+#define BAS_IMVA_2_3            ((uint32_t)(3u << 7))
+#define BAS_IMVA_ALL            ((uint32_t)(0xfu << 5))
+
+// Break only in privileged or user mode
+#define S_RSVD                  ((uint32_t)(0u << 1))
+#define S_PRIV                  ((uint32_t)(1u << 1))
+#define S_USER                  ((uint32_t)(2u << 1))
+#define S_PRIV_USER             ((S_PRIV) | (S_USER))
+
+#define BCR_ENABLE              ((uint32_t)(1u))
+#define WCR_ENABLE              ((uint32_t)(1u))
+
+// Watchpoint load/store
+#define WCR_LOAD                ((uint32_t)(1u << 3))
+#define WCR_STORE               ((uint32_t)(1u << 4))
+
+static void ios_hwstep_enable(RDebug *dbg, int enable) {
+	task_t port = pid_to_task (dbg->tid);
+	// get-regs
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+	// get-dbg-state
+#if defined (__arm64__) || defined (__aarch64__)
+	typedef struct {
+		ut64 bvr[16];
+		ut64 bcr[16];
+		ut64 wvr[16];
+		ut64 wcr[16];
+		ut64 mdscr_el1;
+	} ARMDebugState64;
+	ARMDebugState64 ds;
+
+	mach_msg_type_number_t count = ARM_DEBUG_STATE64_COUNT;
+	(void)thread_get_state (port, ARM_DEBUG_STATE64, &ds, &count);
+
+	// The use of __arm64__ here is not ideal.  If debugserver is running on
+	// an armv8 device, regardless of whether it was built for arch arm or arch arm64,
+	// it needs to use the MDSCR_EL1 SS bit to single instruction step.
+
+	// MDSCR_EL1 single step bit at gpr.pc
+	if (enable) {
+		ds.mdscr_el1 |= 1LL;
+	} else {
+		ds.mdscr_el1 &= ~(1ULL);
+	}
+	(void)thread_set_state (port, ARM_DEBUG_STATE64, &ds, count);
+#else
+	typedef struct {
+		ut32 bvr[16];
+		ut32 bcr[16];
+		ut32 wvr[16];
+		ut32 wcr[16];
+		ut64 mdscr_el1;
+	} ARMDebugState32;
+	int i;
+	static ARMDebugState32 olds;
+	ARMDebugState32 ds;
+
+	mach_msg_type_number_t count = ARM_DEBUG_STATE32_COUNT;
+	(void)thread_get_state (port, ARM_DEBUG_STATE32, (thread_state_t)&ds, &count);
+
+	//static ut64 chainstep = UT64_MAX;
+	if (enable) {
+		RIOBind *bio = &dbg->iob;
+		ut32 pc = r_reg_get_value (dbg->reg, r_reg_get (dbg->reg, "pc", R_REG_TYPE_GPR));
+		ut32 cpsr = r_reg_get_value (dbg->reg, r_reg_get (dbg->reg, "cpsr", R_REG_TYPE_GPR));
+
+		for (i = 0; i<16 ;i++) {
+			ds.bcr[i] = ds.bvr[i] = 0;
+		}
+		olds = ds;
+		//chainstep = UT64_MAX;
+		// state = old_state;
+		ds.bvr[i] = pc & (UT32_MAX >> 2) << 2;
+		ds.bcr[i] = BCR_M_IMVA_MISMATCH | S_USER | BCR_ENABLE;
+		if (cpsr & 0x20) {
+			ut16 op;
+			if (pc & 2) {
+				ds.bcr[i] |= BAS_IMVA_2_3;
+			} else {
+				ds.bcr[i] |= BAS_IMVA_0_1;
+			}
+			/* check for thumb */
+			bio->read_at (bio->io, pc, (void *)&op, 2);
+			if (isThumb32 (op)) {
+				eprintf ("Thumb32 chain stepping not supported yet\n");
+				//chainstep = pc + 2;
+			} else {
+				ds.bcr[i] |= BAS_IMVA_ALL;
+			}
+		} else {
+			ds.bcr[i] |= BAS_IMVA_ALL;
+		}
+	} else {
+		//bcr[i] = BAS_IMVA_ALL;
+		ds = olds; //dbg = old_state;
+	}
+	(void)thread_set_state (port, ARM_DEBUG_STATE32, (thread_state_t)&ds, count);
+#endif
+	// set-dbg-state
+}
+#endif
+
 static int r_debug_native_step(RDebug *dbg) {
 	int ret = R_FALSE;
 	int pid = dbg->pid;
@@ -354,22 +476,17 @@ static int r_debug_native_step(RDebug *dbg) {
 #elif __APPLE__
 	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
-#if __arm__
+#if __arm__ || __arm64__ || __aarch64__
+	ios_hwstep_enable (dbg, 1);
+	//ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT);
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT);
 	if (ret != 0) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		ret = R_FALSE; /* do not wait for events */
 	} else ret = R_TRUE;
+	ios_hwstep_enable (dbg, 0);
 #else
-	#if 0 && __arm__
-	if (!dbg->swstep)
-		eprintf ("XXX hardware stepping is not supported in arm. set e dbg.swstep=true\n");
-	else eprintf ("XXX: software step is not implemented??\n");
-	return R_FALSE;
-	#endif
-	//eprintf ("stepping from pc = %08x\n", (ut32)get_offset("eip"));
-	//ret = ptrace (PT_STEP, ps.tid, (caddr_t)get_offset("eip"), SIGSTOP);
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT);
 	if (ret != 0) {
 		perror ("ptrace-step");
