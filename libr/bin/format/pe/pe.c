@@ -1698,7 +1698,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	PE_Word function_ordinal;
 	PE_VWord functions_paddr, names_paddr, ordinals_paddr, function_vaddr, name_vaddr, name_paddr;
 	char function_name[PE_NAME_LENGTH + 1], forwarder_name[PE_NAME_LENGTH + 1];
-	char dll_name[PE_NAME_LENGTH + 1], export_name[PE_NAME_LENGTH + 1];
+	char dll_name[PE_NAME_LENGTH + 1], export_name[256];
 	PE_(image_data_directory) *data_dir_export;
 	PE_VWord export_dir_vaddr ;
 	int n,i, export_dir_size;
@@ -1766,7 +1766,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			else { // no forwarder export
 				snprintf (forwarder_name, PE_NAME_LENGTH, "NONE");
 			}
-			snprintf (export_name, PE_NAME_LENGTH, "%s_%s", dll_name, function_name);
+			dll_name[PE_NAME_LENGTH]='\0';
+			function_name[PE_NAME_LENGTH]='\0';
+			snprintf (export_name, sizeof (export_name)-1, "%s_%s", dll_name, function_name);
 			exports[i].vaddr = function_vaddr;
 			exports[i].paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, function_vaddr);
 			exports[i].ordinal = function_ordinal;
