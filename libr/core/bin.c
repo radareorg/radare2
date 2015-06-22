@@ -912,6 +912,7 @@ static ut64 impaddr(RBin *bin, int va, ut64 baddr, const char *name) {
 }
 
 static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name) {
+//	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RBinImport *import;
 	RListIter *iter;
 	RList *imports;
@@ -994,8 +995,9 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 					import->ordinal, addr,
 					import->bind, import->type, import->classname, import->name, import->descriptor);
 			} else r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s name=%s\n",
-					import->ordinal, addr,
-					import->bind, import->type, import->name);
+				import->ordinal, addr,
+				import->bind, import->type,
+				import->name);
 			i++;
 		}
 		if (!mode) r_cons_printf ("\n%i imports\n", i);
@@ -1041,8 +1043,20 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_list_foreach (symbols, iter, symbol) {
-			ut64 at = rva (r->bin, va, symbol->paddr, symbol->vaddr, baddr, laddr);
+			ut64 at = rva (r->bin, va, symbol->paddr,
+				symbol->vaddr, baddr, laddr);
 			char *name = strdup (symbol->name);
+			if (bin_demangle) {
+				const char *symname = name;
+				char *dname;
+				if (!strncmp (symname, "imp.", 4))
+					symname += 4;
+				dname = r_bin_demangle (r->bin->cur, lang, symname);
+				if (dname) {
+					free (name);
+					name = dname;
+				}
+			}
 			r_name_filter (name, 80);
 			r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
 				at, symbol->size, name);
@@ -1148,12 +1162,14 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 					r_cons_printf ("%s\n", symbol->name);
 			} else {
 				if (mode) {
-					char *mn = r_bin_demangle (r->bin->cur, lang, symbol->name);
-					if (mn) {
-						//r_name_filter (mn, strlen (mn));
-						r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n",
-							symbol->paddr, mn);
-						free (mn);
+					if (bin_demangle) {
+						char *mn = r_bin_demangle (r->bin->cur, lang, symbol->name);
+						if (mn) {
+							//r_name_filter (mn, strlen (mn));
+							r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n",
+								symbol->paddr, mn);
+							free (mn);
+						}
 					}
 					r_name_filter (symbol->name, sizeof (symbol->name));
 #if 0
@@ -1190,12 +1206,21 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 							}
 						}
 					 }
-				} else r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
+				} else {
+					const char *name = symbol->name;
+					char *mn = NULL;
+					if (bin_demangle) {
+						mn = r_bin_demangle (r->bin->cur, lang, symbol->name);
+						if (mn) name = mn;
+					}
+					r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
 						    "fwd=%s sz=%u bind=%s type=%s name=%s\n",
 						    addr, symbol->paddr,
 						    symbol->ordinal, symbol->forwarder,
 						    symbol->size, symbol->bind, symbol->type,
-						    symbol->name);
+						    name);
+					free (mn);
+				}
 			}
 			i++;
 		}
