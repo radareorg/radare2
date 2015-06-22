@@ -1543,9 +1543,106 @@ static const char * unparse_inheritance (vm_inherit_t i) {
 
 extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_t buffersize);
 
+static RList *osx_dbg_maps(RDebug *dbg);
+static RList *ios_dbg_maps(RDebug *dbg) {
+	boolt contiguous = R_FALSE;
+	ut32 oldprot = UT32_MAX;
+	char buf[1024];
+	mach_vm_address_t address = MACH_VM_MIN_ADDRESS;
+	mach_vm_size_t size = (mach_vm_size_t) 0;
+	natural_t depth = 0;
+	task_t task = pid_to_task (dbg->tid);
+	RDebugMap *mr = NULL;
+	RList *list = NULL;
+	int i = 0;
+#if __arm64__ || __aarch64__
+	size = 16384; // acording to frida
+#else
+	size = 4096;
+#endif
+
+	while (TRUE) {
+		struct vm_region_submap_info_64 info;
+		mach_msg_type_number_t info_count;
+		kern_return_t kr;
+
+		depth = VM_REGION_BASIC_INFO_64;
+		while (TRUE) {
+			info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
+			memset (&info, 0, sizeof (info));
+			kr = mach_vm_region_recurse (task, &address, &size, &depth,
+				(vm_region_recurse_info_t) &info, &info_count);
+			if (kr != KERN_SUCCESS)
+				break;
+#if 0
+			if (info.is_submap) {
+				depth++;
+				continue;
+			}
+#endif
+			break;
+		}
+		if (kr != KERN_SUCCESS)
+			break;
+		if (info.max_protection == 0) {
+			continue;
+		}
+		if (!list) {
+			list = r_list_new ();
+			//list->free = (RListFree*)r_debug_map_free;
+		}
+		if (mr) {
+			if (address == mr->addr + mr->size) {
+				if (oldprot != UT32_MAX && oldprot == info.protection) {
+					/* expand region */
+					mr->size += size;
+					contiguous = R_TRUE;
+				} else {
+					contiguous = R_FALSE;
+				}
+			} else {
+				contiguous = R_FALSE;
+			}
+		} else contiguous = R_FALSE;
+		oldprot = info.protection;
+		if (!contiguous) {
+			char module_name[1024];
+			module_name[0] = 0;
+			int ret = proc_regionfilename (dbg->pid, address, module_name, sizeof (module_name));
+			module_name[ret] = 0;
+			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
+			// XXX: if its shared, it cannot be read?
+			snprintf (buf, sizeof (buf), "%s %02x %s%s%s%s %s",
+				r_str_rwx_i (xwr2rwx (info.max_protection)), i,
+				unparse_inheritance (info.inheritance),
+				info.user_tag? " user": "",
+				info.is_submap? " sub": "",
+				info.inheritance? " inherit": "",
+				module_name);
+				//info.shared ? "shar" : "priv", 
+				//info.reserved ? "reserved" : "not-reserved",
+				//""); //module_name);
+			mr = r_debug_map_new (buf, address, address+size,
+					xwr2rwx (info.protection), 0);
+			if (mr == NULL) {
+				eprintf ("Cannot create r_debug_map_new\n");
+				break;
+			}
+			mr->file = strdup (module_name);
+			i++;
+			r_list_append (list, mr);
+		}
+
+		if (size<1) size = 1; // fuck
+		address += size;
+		size = 0;
+	}
+	return list;
+}
+
 // TODO: move to p/native/darwin.c
 // TODO: this loop MUST be cleaned up
-static RList *darwin_dbg_maps (RDebug *dbg) {
+static RList *osx_dbg_maps (RDebug *dbg) {
 	RDebugMap *mr;
 	char buf[1024];
 	int i, print;
@@ -1571,7 +1668,11 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 	}
 	memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
 */
+#if __arm64__ || __aarch64__
+	size = 16384; // acording to frida
+#else
 	size = 4096;
+#endif
 	memset (&prev_info, 0, sizeof (prev_info));
 	prev_address = address;
 	prev_size = size;
@@ -1633,6 +1734,7 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				break;
 			}
+			mr->file = strdup (module_name);
 			r_list_append (list, mr);
 		}
 }
@@ -1678,6 +1780,18 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 			//              }
 	}
 	return list;
+}
+
+static RList *darwin_dbg_maps(RDebug *dbg) {
+	//return osx_dbg_maps (dbg);
+	return ios_dbg_maps (dbg);
+#if 0
+	const char *osname = dbg->anal->syscall->os;
+	if (osname && !strcmp (osname, "ios")) {
+		return ios_dbg_maps (dbg);
+	} 
+	return osx_dbg_maps (dbg);
+#endif
 }
 #endif
 

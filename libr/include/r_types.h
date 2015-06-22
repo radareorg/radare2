@@ -344,6 +344,8 @@ enum {
 /* os */
 #if defined (__QNX__)
 #define R_SYS_OS "qnx"
+//#elif TARGET_OS_IPHONE
+//#define R_SYS_OS "ios"
 #elif defined (__APPLE__)
 #define R_SYS_OS "darwin"
 #elif defined (__linux__)
