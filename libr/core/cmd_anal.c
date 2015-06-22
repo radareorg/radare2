@@ -1503,7 +1503,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		if (input[1] == ' ') {
 			// seek to this address
 			r_core_cmd0 (core, "aei");  // init vm
-			r_core_cmd0 (core, "aeis"); // init stack
+			r_core_cmd0 (core, "aeim"); // init stack
 			r_core_cmdf (core, "ar pc=%s", input+2);
 			r_core_cmd0 (core, ".ar*");
 		} else {
@@ -1571,6 +1571,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 'i': // "aei"
 		switch (input [1]) {
+		case 's':
 		case 'm':
 			cmd_esil_mem (core, input+2);
 			break;
@@ -1705,7 +1706,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				"ae?", "", "show this help",
 				"ae??", "", "show ESIL help",
 				"aei", "", "initialize ESIL VM state",
-				"aeis", "", "initialize ESIL VM stack (aeis- remove)",
+				"aeim", "", "initialize ESIL VM stack (aeim- remove)",
 				"aed", "", "deinitialize ESIL VM state",
 				"ae", " [expr]", "evaluate ESIL expression",
 				"aep", " [addr]", "change esil PC to this address",
