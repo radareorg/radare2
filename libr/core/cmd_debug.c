@@ -1375,7 +1375,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 'h':
 		switch (input[2]) {
 		case ' ':
-			if (!r_bp_use (core->dbg->bp, input+3))
+			if (!r_bp_use (core->dbg->bp, input+3, core->anal->bits))
 				eprintf ("Invalid name: '%s'.\n", input+3);
 			break;
 		case 0:

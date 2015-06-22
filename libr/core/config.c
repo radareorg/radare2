@@ -274,6 +274,7 @@ static int cb_asmbits(void *user, void *data) {
 		}
 		__setsegoff (core->config, asmarch, core->anal->bits);
 	}
+	r_bp_use (core->dbg->bp, asmarch, core->anal->bits);
 	return ret;
 }
 

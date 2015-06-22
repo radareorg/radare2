@@ -1037,13 +1037,29 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			break;
 		}
 #elif __arm__ || __arm64__ || __aarch64__
-		if (dbg->bits==R_SYS_BITS_64) {
-			ret = thread_get_state (inferior_threads[tid],
-				ARM_THREAD_STATE64, (thread_state_t) regs, &gp_count);
-		} else {
-			ret = thread_get_state (inferior_threads[tid],
-				ARM_THREAD_STATE, (thread_state_t) regs, &gp_count);
-				//R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+		switch (type) {
+		case R_REG_TYPE_FLG:
+		case R_REG_TYPE_GPR:
+			if (dbg->bits==R_SYS_BITS_64) {
+				ret = thread_get_state (inferior_threads[tid],
+					ARM_THREAD_STATE64, (thread_state_t) regs, &gp_count);
+			} else {
+				ret = thread_get_state (inferior_threads[tid],
+					ARM_THREAD_STATE, (thread_state_t) regs, &gp_count);
+					//R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+			}
+			break;
+		case R_REG_TYPE_DRX:
+			if (dbg->bits== R_SYS_BITS_64) {
+				ret = thread_get_state (inferior_threads[tid],
+					ARM_DEBUG_STATE64, (thread_state_t)
+					regs, &gp_count);
+			} else {
+				ret = thread_get_state (inferior_threads[tid],
+					ARM_DEBUG_STATE32, (thread_state_t)
+					regs, &gp_count);
+			}
+			break;
 		}
 #else
 		eprintf ("Unknown architecture\n");
