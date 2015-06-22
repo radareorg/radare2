@@ -1,11 +1,17 @@
 include ../config-user.mk
 include ../mk/${COMPILER}.mk
 
+ifndef USE_GIT_URLS
+GIT_PREFIX=https://www.
+else
+GIT_PREFIX=git://
+endif
+
 WGET?=wget
 CS_VER=3.0
 CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_TAR=
-CS_URL=https://www.github.com/aquynh/capstone.git
+CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
 CS_UPD=20150619
 CS_BRA=next
 CS_TIP=3dcb8fbc493f77411e422acf5804f4168d159bfa
@@ -22,7 +28,7 @@ MODS=sdb udis86 java tcc zip
 ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
-SDB_URL=git://github.com/radare/sdb
+SDB_URL=$(GIT_PREFIX)github.com/radare/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
@@ -109,7 +115,7 @@ HFILES+=elf.h libtcc.h config.h i386-tok.h
 .PHONY: sdb-sync sync-sdb sdbclean
 tcc-sync sync-tcc:
 	rm -rf _
-	git clone --depth 1 git://repo.or.cz/tinycc.git _
+	git clone --depth 1 $(GIT_PREFIX)repo.or.cz/tinycc.git _
 	cd _ ; ./configure --prefix=${PREFIX}
 	mkdir -p tcc
 	for a in ${CFILES} ${HFILES} ; do cp -f _/$$a tcc ; done

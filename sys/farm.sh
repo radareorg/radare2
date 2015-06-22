@@ -1,11 +1,18 @@
 #!/bin/sh
 # Build script for radare2 - pancake<nopcode.org>
 
+if [ -z "${USE_GIT_URLS}" ]; then
+    GIT_PREFIX=https://www.
+else
+    GIT_PREFIX=git://
+fi
+
 [ -z "${MAKEFLAGS}" ] && MAKEFLAGS="-j4"
 [ -z "${MAKE}" ] && MAKE=make
 [ -z "${NAME}" ] && NAME=radare2
 [ -z "${DIR}" ] && DIR=radare2.build
-[ -z "${URL}" ] && URL=http://github.com/radare/${NAME}
+[ -z "${URL}" ] && URL=${GIT_PREFIX}github.com/radare/${NAME}
+
 PYTHON=python2
 WD=${PWD}/${DIR}
 NOW=$(date +%Y%m%d-%H%M%S)
@@ -80,7 +87,7 @@ installdeps() {
 			git clean -xdf
 			git pull
 		else
-			git clone http://github.com/radare/valabind
+			git clone ${GIT_PREFIX}github.com/radare/valabind
 			cd valabind
 		fi
 		chmod +x configure
