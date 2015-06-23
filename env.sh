@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pfx=$1
+pfx=$(readlink --canonicalize "$1")
 if [ -z "$pfx" ]; then
 	echo "Usage: ./env.sh [path-to-prefix] [program]"
 	exit 1
