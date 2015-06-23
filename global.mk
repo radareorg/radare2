@@ -14,6 +14,12 @@ else
 SILENT=
 endif
 
+ifndef USE_GIT_URLS
+GIT_PREFIX=https://www.
+else
+GIT_PREFIX=git://
+endif
+
 # verbose error messages everywhere
 STATIC_DEBUG=0
 

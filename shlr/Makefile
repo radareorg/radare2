@@ -1,11 +1,6 @@
+include ../global.mk
 include ../config-user.mk
 include ../mk/${COMPILER}.mk
-
-ifndef USE_GIT_URLS
-GIT_PREFIX=https://www.
-else
-GIT_PREFIX=git://
-endif
 
 WGET?=wget
 CS_VER=3.0

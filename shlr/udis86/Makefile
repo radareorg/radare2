@@ -1,12 +1,6 @@
 include ../../global.mk
 include $(TOP)/libr/config.mk
 
-ifndef USE_GIT_URLS
-GIT_PREFIX=https://www.
-else
-GIT_PREFIX=git://
-endif
-
 PYTHON=python2
 SRC=$(shell ls *.c)
 OUT=$(subst .c,.o,$(SRC))

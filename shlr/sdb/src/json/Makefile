@@ -1,14 +1,9 @@
+include ../../../../global.mk
 include ../../config.mk
 
 HASOVR=$(shell clang -Wno-initializer-overrides -E -</dev/null 2>&1| grep unknown)
 ifeq ($(HASOVR),)
 CFLAGS+=-Wno-initializer-overrides
-endif
-
-ifndef USE_GIT_URLS
-GIT_PREFIX=https://www.
-else
-GIT_PREFIX=git://
 endif
 
 CFLAGS+=-Wall -g -ggdb
