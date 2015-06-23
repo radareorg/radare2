@@ -540,6 +540,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int last_sparse = 0;
 	const char *a, *b;
 
+	len = len - (len % step);
 	if (p) {
 		pairs = p->pairs;
 		use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
