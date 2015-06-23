@@ -8,6 +8,7 @@ void topo_sorting(RGraphNode *n, RGraphVisitor *vis) {
 void check_list(const RList *act, const RList *exp, char *descr) {
 	RListIter *ita = r_list_iterator(act);
 	RListIter *ite = r_list_iterator(exp);
+	int diff = 0;
 
 	while (r_list_iter_next(ita) && r_list_iter_next(ite)) {
 		int a = (int)r_list_iter_get(ita);
@@ -15,10 +16,11 @@ void check_list(const RList *act, const RList *exp, char *descr) {
 
 		if (a != e) {
 			printf("[-][%s] test failed (actual: %d; expected: %d)\n", descr, a, e);
+			diff = 1;
 		}
 	}
 
-	if (!ita && !ite) {
+	if (!ita && !ite && !diff) {
 		printf("[+][%s] test passed (lists have same elements)\n", descr);
 	} else {
 		printf("[-][%s] test failed (one list shorter or different)\n", descr);
@@ -131,6 +133,18 @@ int main(int argc, char **argv) {
 	check_list(vis.data, exp_order, "topo_order");
 	r_list_free(exp_order);
 	r_list_free((RList *)vis.data);
+
+	RList *exp_innodes = r_list_new();
+	r_list_append(exp_innodes, gn);
+	r_list_append(exp_innodes, gn2);
+	check_list(r_graph_innodes(g, gn3), exp_innodes, "in_nodes");
+	r_list_free(exp_innodes);
+	RList *exp_allnodes = r_list_new();
+	r_list_append(exp_allnodes, gn);
+	r_list_append(exp_allnodes, gn2);
+	r_list_append(exp_allnodes, gn5);
+	check_list(r_graph_all_neighbours(g, gn3), exp_allnodes, "in/out_nodes");
+	r_list_free(exp_allnodes);
 
 	r_graph_del_node (g, gn);
 	r_graph_del_node (g, gn2);
