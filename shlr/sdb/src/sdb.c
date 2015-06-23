@@ -504,6 +504,7 @@ SDB_API int sdb_sync (Sdb* s) {
 	SdbListIter it, *iter;
 	char *k, *v;
 	SdbKv *kv;
+	ut64 now = 0LL;
 
 	if (!s || !sdb_disk_create (s)) {
 		return 0;
@@ -536,10 +537,13 @@ SDB_API int sdb_sync (Sdb* s) {
 	ls_foreach (s->ht->list, iter, kv) {
 		if (*kv->value && kv->expire == 0LL)
 			sdb_disk_insert (s, kv->key, kv->value);
-		if (kv->expire == 0LL) {
-			it.n = iter->n;
-			sdb_unset (s, kv->key, 0);
-			iter = &it;
+		if (kv->expire) {
+			if (!now) now = sdb_now ();
+			if (now > kv->expire) {
+				it.n = iter->n;
+				sdb_unset (s, kv->key, 0);
+				iter = &it;
+			}
 		}
 	}
 	sdb_disk_finish (s);
