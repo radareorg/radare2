@@ -19,6 +19,7 @@
 #define MUSTSEEJSON (mode & R_PRINT_JSON && mode & R_PRINT_ISFIELD)
 
 static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr64) {
+
 	if (addr) {
 		if (endian)
 			*addr = (*(buf+i))<<24
@@ -41,7 +42,7 @@ static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr
 			| ((ut64)(*(buf+i+5))<<16)
 			| ((ut64)(*(buf+i+6))<<8)
 			| ((ut64)(*(buf+i+7)));
-		else
+		else 	
 			*addr64 =(((ut64)(*(buf+i+7))<<56))
 			| ((ut64)(*(buf+i+6))<<48)
 			| ((ut64)(*(buf+i+5))<<40)
@@ -1039,7 +1040,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 	if (len < 1)
 		return 0;
-	buf = malloc (len);
+	buf = (ut8 *)calloc (1,len+1);
 	if (!buf)
 		return 0;
 	memcpy (buf, b, len);
@@ -1134,7 +1135,15 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			} else {
 				size = -1;
 			}
-			updateAddr (buf, i, endian, &addr, &addr64);
+			if (i+3<len || i+7<len)
+				updateAddr (buf, i, endian, &addr, &addr64);
+			else {
+				eprintf ("Likely a heap buffer overflow at %s in %d\n", __FILE__, __LINE__);
+				free (buf);
+				free (args);
+				free (field);
+				return 0;
+   			}
 
 			tmp = *arg;
 
