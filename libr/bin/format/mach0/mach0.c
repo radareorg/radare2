@@ -490,8 +490,11 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 	bin->uuidn = 0;
 	bin->os = 0;
 	bin->has_crypto = 0;
-	if (bin->hdr.sizeofcmds > bin->size)
-		return R_FALSE;
+	if (bin->hdr.sizeofcmds > bin->size) {
+		eprintf ("Warning: chopping hdr.sizeofcmds\n");
+		bin->hdr.sizeofcmds = bin->size - 128;
+		//return R_FALSE;
+	}
 	//eprintf ("Commands: %d\n", bin->hdr.ncmds);
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)); \
 			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {

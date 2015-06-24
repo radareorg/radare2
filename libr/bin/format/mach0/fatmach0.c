@@ -45,7 +45,13 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 	}
 #if 1
 	if (bin->archs[idx].size == 0 || bin->archs[idx].size > bin->size) {
-		eprintf ("Corrupted file\n");
+		eprintf ("Skipping corrupted sub-bin %d arch %d\n",
+			idx, bin->archs[idx].size);
+		free (buf);
+		ret->b = r_buf_new ();
+		ret->offset = bin->archs[idx].offset;
+		ret->size = bin->archs[idx].size;
+		return ret;
 //		free (ret);
 //		return NULL;
 	}
