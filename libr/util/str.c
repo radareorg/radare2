@@ -1130,39 +1130,34 @@ R_API void r_str_filter(char *str, int len) {
 			str[i] = '.';
 }
 
-R_API int r_str_glob (const char *str, const char *glob) {
-	const char *p;
-	int slen, glen;
-	if (!*str) return R_TRUE;
-	glen = strlen (glob);
-	slen = strlen (str);
-	if (*glob == '*') {
-		if (glob[1] == '\0')
-			return R_TRUE;
-		if (glob[glen-1] == '*') {
-			return r_mem_mem ((const ut8*)str, slen,
-				(const ut8*)glob+1, glen-2) != 0;
-		}
-		if (slen<glen-2)
+R_API int r_str_glob (const char* str, const char *glob) {
+	const char* cp = NULL, *mp = NULL;
+	while ((*str) && (*glob != '*')) {
+		if ((*glob != *str)) {
 			return R_FALSE;
-		p = str + slen - (glen-1);
-		return memcmp (p, glob+1, glen-1) == 0;
-	} else {
-		if (glob[glen-1] == '*') {
-			if (slen<glen-1)
-				return R_FALSE;
-			return memcmp (str, glob, glen-1) == 0;
-		} else {
-			char *p = strchr (glob, '*');
-			if (p) {
-				int a = (int)(size_t)(p-glob);
-				return ((!memcmp (str, glob, a)) && \
-					(!memcmp (str+slen-a, glob+a+1, glen-a-1)))? 1: 0;
+		}
+		++glob;
+		++str;
+	}
+	while (*str) {
+		if (*glob == '*') {
+			if (!*++glob) {
+				return R_TRUE;
 			}
-			return !strcmp (str, glob);
+			mp = glob;
+			cp = str+1;
+		} else if (*glob == *str) {
+			++glob;
+			++str;
+		} else {
+			glob = mp;
+			str = cp++;
 		}
 	}
-	return R_FALSE; // statement never reached
+	while (*glob == '*') {
+		++glob;
+	}
+	return (*glob == '\x00');
 }
 
 // Escape the string arg so that it is parsed as a single argument by r_str_argv
