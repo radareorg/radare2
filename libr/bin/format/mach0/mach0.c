@@ -492,9 +492,11 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 	bin->has_crypto = 0;
 	if (bin->hdr.sizeofcmds > bin->size)
 		return R_FALSE;
+	//eprintf ("Commands: %d\n", bin->hdr.ncmds);
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)); \
 			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		if (off > bin->size || off + sizeof (struct load_command) > bin->size){
+			eprintf ("mach0: out of bounds command\n");
 			return R_FALSE;
 		}
 		len = r_buf_fread_at (bin->b, off, (ut8*)&lc, bin->endian?"2I":"2i", 1);
@@ -512,6 +514,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.format", i), 
 			"xd cmd size", 0);
 
+		//eprintf ("%d\n", lc.cmd);
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
 			// TODO table of non-instructions in __text
@@ -523,17 +526,22 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_SEGMENT:
 			bin->nsegs++;
 			if (!parse_segments (bin, off)) {
+				eprintf ("error parsing segment\n");
 				bin->nsegs--;
 				return R_FALSE;
 			}
 			break;
 		case LC_SYMTAB:
-			if (!parse_symtab (bin, off))
+			if (!parse_symtab (bin, off)) {
+				eprintf ("error parsing symtab\n");
 				return R_FALSE;
+			}
 			break;
 		case LC_DYSYMTAB:
-			if (!parse_dysymtab(bin, off))
+			if (!parse_dysymtab(bin, off)) {
+				eprintf ("error parsing dysymtab\n");
 				return R_FALSE;
+			}
 			break;
 		case LC_DYLIB_CODE_SIGN_DRS:
 			//eprintf ("[mach0] code is signed\n");
@@ -551,8 +559,10 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_UUID:
 			{
 			struct uuid_command uc = {0};
-			if (off + sizeof (struct uuid_command) > bin->size)
+			if (off + sizeof (struct uuid_command) > bin->size) {
+				eprintf ("UUID out of obunds\n");
 				return R_FALSE;
+			}
 			if (r_buf_fread_at (bin->b, off, (ut8*)&uc, "24c", 1) != -1) {
 				char key[128];
 				char val[128];
@@ -568,8 +578,10 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_ENCRYPTION_INFO:
 			{
 			struct encryption_info_command eic = {0};
-			if (off + sizeof (struct encryption_info_command) > bin->size)
+			if (off + sizeof (struct encryption_info_command) > bin->size) {
+				eprintf ("encryption info out of bounds\n");
 				return R_FALSE;
+			}
 			if (r_buf_fread_at (bin->b, off, (ut8*)&eic,
 					bin->endian?"5I":"5i", 1) != -1) {
 				bin->has_crypto = 1;
@@ -593,8 +605,10 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				eprintf("Error: LC_MAIN with other threads\n");
 				return R_FALSE;
 			}
-			if (off+8 > bin->size || off + sizeof (ep) > bin->size)
+			if (off+8 > bin->size || off + sizeof (ep) > bin->size) {
+				eprintf ("invalid command size for main\n");
 				return R_FALSE;
+			}
 			r_buf_fread_at (bin->b, off+8, (void*)&ep,
 				bin->endian?"2L": "2l", 1);
 			bin->entry = ep.eo;
@@ -612,14 +626,17 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				return R_FALSE;
 			}
 		case LC_THREAD:
-			if (!parse_thread(bin, &lc, off, is_first_thread))
+			if (!parse_thread(bin, &lc, off, is_first_thread)) {
+				eprintf ("Cannot parse thread\n");
 				return R_FALSE;
+			}
 
 			is_first_thread = R_FALSE;
 			break;
 		case LC_LOAD_DYLIB:
 			bin->nlibs++;
 			if (!parse_dylib(bin, off)){
+				eprintf ("Cannot parse dylib\n");
 				bin->nlibs--;
 				return R_FALSE;
 			}
@@ -628,6 +645,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_DYLD_INFO_ONLY:
 			bin->dyld_info = malloc (sizeof(struct dyld_info_command));
 			if (off + sizeof (struct dyld_info_command) > bin->size){
+				eprintf ("Cannot parse dyldinfo\n");
 				free (bin->dyld_info);
 				return R_FALSE;
 			}
@@ -836,7 +854,6 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 	}
 	return R_FALSE;
 }
-
 
 static ut64 get_text_base(struct MACH0_(obj_t)* bin) {
 	ut64 ret = 0LL;
