@@ -141,7 +141,7 @@ static int __system(RIO *io, RIODesc *fd, const char *msg) {
 		return -1;
 	}
 	res = r2p_read (R2P (fd));
-	eprintf ("%s\n", res);
+	//eprintf ("%s\n", res);
 	/* TODO: parse json back */
 	r = strstr (res, "result");
 	if (r) { rescount = atoi (r+6+1); }
