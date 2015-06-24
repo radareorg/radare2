@@ -2609,7 +2609,8 @@ static int cmd_print(void *data, const char *input) {
 			r_print_hexdump (core->print, core->offset, core->block, len, 32, 2);
 			break;
 		case 'H':
-			for (i=0; i+2<len; i+=2) {
+			len = len - (len % 2);
+			for (i = 0; i < len; i += 2) {
 				const char *a, *b;
 				char *fn;
 				RPrint *p = core->print;
@@ -2642,7 +2643,8 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'Q':
 			// TODO. show if flag name, or inside function
-			for (i=0; i+8<len; i+=8) {
+			len = len - (len % 8);
+			for (i = 0; i < len; i += 8) {
 				const char *a, *b;
 				char *fn;
 				RPrint *p = core->print;
