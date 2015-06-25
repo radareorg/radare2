@@ -349,6 +349,7 @@ static int autocomplete(RLine *line) {
 		if ((!memcmp (line->buffer.data, "o ", 2)) ||
 		     !memcmp (line->buffer.data, "o+ ", 3) ||
 		     !memcmp (line->buffer.data, "oc ", 3) ||
+		     !memcmp (line->buffer.data, "cd ", 3) ||
 		     !memcmp (line->buffer.data, "on ", 3) ||
 		     !memcmp (line->buffer.data, "op ", 3) ||
 		     !memcmp (line->buffer.data, ". ", 2) ||
