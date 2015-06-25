@@ -2224,11 +2224,15 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		"agd", " [fcn name]", "output graphviz code of diffed function",
 		"agl", " [fcn name]",  "output graphviz code using meta-data",
 		"agt", " [addr]", "find paths from current offset to given address",
+		"agf", " [addr]", "Show ASCII art graph of given function",
 		"agfl", " [fcn name]", "output graphviz code of function using meta-data",
 		"agv", "[acdltfl] [a]", "view function using graphviz",
 		NULL};
 
 	switch (input[0]) {
+	case 'f':
+		r_core_cmd0 (core, "afg"); // afg should be deprecated imho
+		break;
 	case 't':
 		list = r_core_anal_graph_to (core, r_num_math (core->num, input+1), 0);
 		if (list) {
