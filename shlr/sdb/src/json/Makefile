@@ -1,11 +1,9 @@
-include ../../../../global.mk
 include ../../config.mk
 
 HASOVR=$(shell clang -Wno-initializer-overrides -E -</dev/null 2>&1| grep unknown)
 ifeq ($(HASOVR),)
 CFLAGS+=-Wno-initializer-overrides
 endif
-
 CFLAGS+=-Wall -g -ggdb
 BIN=a.out
 OBJ=rangstr.o path.o js0n.o api.o main.o
@@ -33,8 +31,6 @@ update:
 	${MAKE} js0n.c
 
 js0n.c:
-	git clone ${GIT_PREFIX}github.com/quartzjer/js0n.git
+	git clone git://github.com/quartzjer/js0n.git
 	cp js0n/js0n.c js0n.c
 	rm -rf js0n
-
-

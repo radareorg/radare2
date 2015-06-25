@@ -12,11 +12,7 @@ if [ -d valabind ]; then
 	cd valabind
 	git pull
 else
-    if [ -z "${USE_GIT_URLS}" ]; then
-    	git clone https://github.com/radare/valabind
-    else
-    	git clone git://github.com/radare/valabind
-    fi
+	git clone git://github.com/radare/valabind
 	cd valabind
 fi
 

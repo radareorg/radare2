@@ -37,11 +37,7 @@ if [ -d vala ]; then
 	#sudo make uninstall
 	git pull
 else
-    if [ -z "$USE_GIT_URLS" ]; then
-        git clone https://git.gnome.org/vala
-    else
-        git clone git://git.gnome.org/vala
-    fi
+	git clone git://git.gnome.org/vala
 	cd vala
 fi
 sh autogen.sh --prefix="${PREFIX}" && \
