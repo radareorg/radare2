@@ -110,7 +110,7 @@ HFILES+=elf.h libtcc.h config.h i386-tok.h
 .PHONY: sdb-sync sync-sdb sdbclean
 tcc-sync sync-tcc:
 	rm -rf _
-	git clone --depth 1 $(GIT_PREFIX)repo.or.cz/tinycc.git _
+	git clone --depth 1 git://repo.or.cz/tinycc.git _
 	cd _ ; ./configure --prefix=${PREFIX}
 	mkdir -p tcc
 	for a in ${CFILES} ${HFILES} ; do cp -f _/$$a tcc ; done
