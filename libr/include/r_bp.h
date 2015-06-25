@@ -16,6 +16,7 @@ R_LIB_VERSION_HEADER(r_bp);
 #define R_BP_CONT_NORMAL 0
 
 typedef struct r_bp_arch_t {
+	int bits;
 	int length;
 	int endian;
 	const ut8 *bytes;
@@ -58,6 +59,7 @@ typedef struct r_bp_t {
 	void *user;
 	int stepcont;
 	int endian;
+	int bits;
 	RIOBind iob; // compile time dependency
 	RBreakpointPlugin *cur;
 	RList *traces; // XXX
@@ -95,7 +97,7 @@ R_API int r_bp_del(RBreakpoint *bp, ut64 addr);
 R_API int r_bp_del_all(RBreakpoint *bp);
 
 R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo);
-R_API int r_bp_use(RBreakpoint *bp, const char *name);
+R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits);
 R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name);
 R_API void r_bp_plugin_list(RBreakpoint *bp);
 

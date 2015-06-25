@@ -37,17 +37,18 @@ static char *stdin_slurp(int *sz) {
 	int len, rr, rr2;
 	char *buf, *tmp;
 #if USE_SLURPIN
-        if (!sz) {
+	if (!sz) {
 		/* this is faster but have limits */
 		/* must optimize the code below before reomving this */
 		/* run test/add10k.sh script to benchmark */
-                static char buf[96096]; // MAGIC NUMBERS CO.
-                if (!fgets (buf, sizeof (buf)-1, stdin))
-                        return NULL;
-                if (feof (stdin)) return NULL;
-                buf[strlen (buf)-1] = 0;
-                return strdup (buf);
-        }
+		static char buf[96096]; // MAGIC NUMBERS CO.
+		memset (buf, 0, sizeof (buf));
+		if (!fgets (buf, sizeof (buf)-1, stdin))
+			return NULL;
+		if (feof (stdin)) return NULL;
+		buf[strlen (buf)-1] = 0;
+		return strdup (buf);
+	}
 #endif
 	buf = calloc (BS+1, 1);
 	if (buf == NULL) {
@@ -345,7 +346,9 @@ static int base64encode() {
 	ut8* in;
 	char *out;
 	in = (ut8*)stdin_slurp (&len);
-	if (!in) return 0;
+	if (!in) {
+		return 0;
+	}
 	out = sdb_encode (in, len);
 	if (!out) {
 		free (in);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2015 - pancake */
 
 #include "r_io.h"
 #include "r_util.h"
@@ -931,6 +931,9 @@ static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
 	off = io->off;
 
 	if (*out_sz == UT64_MAX) return buf;
+	if (*out_sz > 0xffffff) {
+		return buf;
+	}
 
 	buf = malloc (*out_sz);
 
@@ -938,7 +941,7 @@ static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
 		if (!buf || !desc->plugin->read (io, desc, buf, *out_sz)) {
 			free (buf);
 			io->off = off;
-			return R_FALSE;
+			return NULL;
 		}
 	}
 	io->off = off;

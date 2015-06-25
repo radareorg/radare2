@@ -3,7 +3,7 @@
 /* ugly global vars */
 static int magicdepth = 99; //XXX: do not use global var here
 static RMagic *ck = NULL; // XXX: Use RCore->magic
-static const char *ofile = NULL;
+static char *ofile = NULL;
 
 static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v) {
 	const char *fmt;
@@ -49,7 +49,8 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		// allocate once
 		ck = r_magic_new (0);
 		if (file) {
-			ofile = file;
+			free (ofile);
+			ofile = strdup (file);
 			if (r_magic_load (ck, file) == -1) {
 				eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
 				ck = NULL;

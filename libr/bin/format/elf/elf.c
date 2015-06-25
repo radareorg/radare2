@@ -291,7 +291,7 @@ static int Elf_(r_bin_elf_init_dynamic_section) (struct Elf_(r_bin_elf_obj_t) *b
 		free (dyn);
 		return R_FALSE;
 	}
-	strtab = (char *)calloc (1, strsize);
+	strtab = (char *)calloc (1, strsize+1);
 	if (!strtab){
 		free (dyn);
 		return R_FALSE;
@@ -483,7 +483,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 					break;
 				default:
 					eprintf ("Unsupported relocation type for imports %d\n", reloc_type);
-					eprintf ("0x%llx - 0x%llx  i \n", (ut64)rel[k].r_offset, (ut64)rel[k].r_info);
+					eprintf ("0x%"PFMT64x" - 0x%"PFMT64x" i \n", (ut64)rel[k].r_offset, (ut64)rel[k].r_info);
 					free (rel);
 					return of;
 					break;
@@ -764,6 +764,8 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_PPC:
 	case EM_PPC64:
 		return strdup ("ppc");
+	case EM_PARISC:
+		return strdup ("hppa");
 	case EM_PROPELLER:
 		return strdup ("propeller");
 	case EM_SH: return strdup ("sh");
@@ -988,6 +990,7 @@ static size_t Elf_(r_bin_elf_get_relocs_num)(struct Elf_(r_bin_elf_obj_t) *bin) 
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		nidx = bin->shdr[i].sh_name;
 
+		if (bin->shdr[i].sh_size > bin->size) return 0;
 		if (nidx < 0 || !bin->shstrtab_section ||
 			!bin->shstrtab_size || nidx > bin->shstrtab_size) {
 			continue;
@@ -1140,9 +1143,12 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			for (j = 0; j < bin->shdr[i].sh_size; j += res) {
 				if (bin->shdr[i].sh_size > bin->size || bin->shdr[i].sh_offset > bin->size)
 					break;
+				if (&ret[rel]+1 > ret+reloc_num)
+					break;
 				res = Elf_(r_bin_elf_read_reloc) (bin, &ret[rel],
 					1, bin->shdr[i].sh_offset + j);
 				ret[rel].rva = ret[rel].offset + section_text_offset;
+				ret[rel].sto = section_text_offset;
 				ret[rel].offset = ret[rel].offset - bin->baddr;
 				ret[rel].last = 0;
 				if (res < 0)
@@ -1174,7 +1180,7 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 	struct r_bin_elf_lib_t *ret = NULL;
 	int j, k;
 
-	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab)
+	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab || *(bin->strtab+1) == '0') 
 		return NULL;
 
 	for (j = 0, k = 0; j < bin->dyn_entries; j++)
@@ -1609,6 +1615,7 @@ if (
 			free (sym);
 			sym = NULL;
 			ret[ret_ctr].last = 1; // ugly dirty hack :D
+			R_FREE (strtab);
 
 			if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {
 				bin->imports_by_ord_size = nsym;
@@ -1619,7 +1626,6 @@ if (
 			} else break;
 		}
 	}
-	free (strtab);
 	// maybe it had some section header but not the symtab
 	if (!ret) return get_symbols_from_phdr (bin, type);
 	return ret;

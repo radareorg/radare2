@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_bp.h>
 
-R_API int r_bp_plugin_del(struct r_bp_t *bp, const char *name) {
+R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name) {
 //TODO: r_bp_plugin_del
 	return R_FALSE;
 }
@@ -24,8 +24,9 @@ R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo) {
 	return R_TRUE;
 }
 
-R_API int r_bp_use(struct r_bp_t *bp, const char *name) {
+R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits) {
 	RListIter *iter;
+	bp->bits = bits;
 	RBreakpointPlugin *h;
 	r_list_foreach (bp->plugins, iter, h) {
 		if (!strcmp (h->name, name)) {

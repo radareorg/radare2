@@ -670,16 +670,19 @@ R_API DsoJsonObj * r_bin_java_get_bin_obj_json (RBinJavaObj *bin) {
 	//eprintf ("Resulting methods json: \n%s\n", res);
 	free (res);
 	dso_json_dict_insert_str_key_obj (class_dict, "methods", methods_list);
+	dso_json_list_free (methods_list);
 
 	res = dso_json_obj_to_str (fields_list);
 	//eprintf ("Resulting fields json: \n%s\n", res);
 	free (res);
 	dso_json_dict_insert_str_key_obj (class_dict, "fields", fields_list);
+	dso_json_list_free (fields_list);
 
 	res = dso_json_obj_to_str (imports_list);
 	//eprintf ("Resulting imports json: \n%s\n", res);
 	free (res);
 	dso_json_dict_insert_str_key_obj (class_dict, "imports", imports_list);
+	dso_json_list_free (imports_list);
 
 	//res = dso_json_obj_to_str (interfaces_list);
 	//eprintf ("Resulting interfaces json: \n%s\n", res);
@@ -754,6 +757,7 @@ R_API DsoJsonObj * r_bin_java_get_class_info_json(RBinJavaObj *bin) {
 		if (!class_->super) {
 			DsoJsonObj *str = dso_json_str_new ();
 			dso_json_dict_insert_str_key_obj (class_info_dict, "super", str);
+			dso_json_str_free (str);
 		} else {
 			dso_json_dict_insert_str_key_str (class_info_dict, "super", class_->super);
 		}
@@ -771,6 +775,7 @@ R_API DsoJsonObj * r_bin_java_get_class_info_json(RBinJavaObj *bin) {
 	}
 	dso_json_dict_insert_str_key_obj (class_info_dict, "interfaces", interfaces_list);
 	r_list_free (classes);
+	dso_json_list_free (interfaces_list);
 	return class_info_dict;
 }
 
@@ -974,66 +979,68 @@ R_API int extract_type_value (const char *arg_str, char **output) {
 	char *str = NULL;
 	if (output == NULL) {
 		return 0;
-	}else if (output && *output && *output != NULL) {
+	} else if (output && *output && *output != NULL) {
 		free(*output);
 		*output = NULL;
 	}
 	while (arg_str && *arg_str && !found_one) {
 		// handle the end of an object
 		switch (*arg_str) {
-			case 'V':
-				len = 1;
-				str = get_type_value_str ("void", array_cnt);
-				break;
-			case 'J':
-				len = 1;
-				str = get_type_value_str ("long", array_cnt);
-				array_cnt = 0;
-				break;
-			case 'I':
-				len = 1;
-				str = get_type_value_str ("int", array_cnt);
-				array_cnt = 0;
-				break;
-			case 'D':
-				len = 1;
-				str = get_type_value_str ("double", array_cnt);
-				array_cnt = 0;
-				break;
-			case 'F':
-				len = 1;
-				str = get_type_value_str ("float", array_cnt);
-				array_cnt = 0;
-				break;
-			case 'B':
-				len = 1;
-				str = get_type_value_str ("byte", array_cnt);
-				array_cnt = 0;
-				break;
-			case 'C':
-				len = 1;
-				str = get_type_value_str ("char", array_cnt);
-				array_cnt = 0;
-				break;
-			case 'Z':
-				len = 1;
-				str = get_type_value_str ("boolean", array_cnt);
-				array_cnt = 0;
-				break;
-			case 'S':
-				len = 1;
-				str = get_type_value_str ("short", array_cnt);
-				array_cnt = 0;
-				break;
-			case '[': len = 1; array_cnt ++; break;
-			case 'L':
-				len = r_bin_java_extract_reference_name (arg_str, &str, array_cnt);
-				array_cnt = 0;
-				break;
-			case '(': len = 1; str = strdup ("("); break;
-			case ')': len = 1; str = strdup (")"); break;
-			default : break;
+		case 'V':
+			len = 1;
+			str = get_type_value_str ("void", array_cnt);
+			break;
+		case 'J':
+			len = 1;
+			str = get_type_value_str ("long", array_cnt);
+			array_cnt = 0;
+			break;
+		case 'I':
+			len = 1;
+			str = get_type_value_str ("int", array_cnt);
+			array_cnt = 0;
+			break;
+		case 'D':
+			len = 1;
+			str = get_type_value_str ("double", array_cnt);
+			array_cnt = 0;
+			break;
+		case 'F':
+			len = 1;
+			str = get_type_value_str ("float", array_cnt);
+			array_cnt = 0;
+			break;
+		case 'B':
+			len = 1;
+			str = get_type_value_str ("byte", array_cnt);
+			array_cnt = 0;
+			break;
+		case 'C':
+			len = 1;
+			str = get_type_value_str ("char", array_cnt);
+			array_cnt = 0;
+			break;
+		case 'Z':
+			len = 1;
+			str = get_type_value_str ("boolean", array_cnt);
+			array_cnt = 0;
+			break;
+		case 'S':
+			len = 1;
+			str = get_type_value_str ("short", array_cnt);
+			array_cnt = 0;
+			break;
+		case '[': len = 1; array_cnt ++; break;
+		case 'L':
+			len = r_bin_java_extract_reference_name (arg_str, &str, array_cnt);
+			array_cnt = 0;
+			break;
+		case '(': len = 1; str = strdup ("("); break;
+		case ')': len = 1; str = strdup (")"); break;
+		default : break;
 		}
+		if (len<1)
+			break;
 		consumed += len;
 		arg_str += len;
 		if (str) {
@@ -1798,7 +1805,7 @@ R_API char* r_bin_java_get_item_name_from_cp_item_list (RList *cp_list, RBinJava
 	default:
 		return NULL;
 	case 0:
-		eprintf ("Invalid 0 tag in the constant pool\n");
+		IFDBG eprintf ("Invalid 0 tag in the constant pool\n");
 		return NULL;
 	}
 	return NULL;
@@ -3260,6 +3267,10 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	ut64 offset = 0;
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	if (!attr) return NULL;
+	if (sz < 16 || sz > buf_offset) {//sz > buf_offset) {
+		free (attr);
+		return NULL;
+	}
 	offset += 6;
 	attr->type = R_BIN_JAVA_ATTR_TYPE_CODE_ATTR;
 	attr->info.code_attr.max_stack = R_BIN_JAVA_USHORT (buffer, offset);
@@ -3276,15 +3287,22 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 		return attr;
 	}
 	R_BIN_JAVA_GLOBAL_BIN->current_code_attr = attr;
-	memset (attr->info.code_attr.code, 0, attr->info.code_attr.code_length);
-	memcpy (attr->info.code_attr.code, buffer+offset, attr->info.code_attr.code_length);
-	offset += attr->info.code_attr.code_length;
+	{
+		int len = attr->info.code_attr.code_length;
+		memset (attr->info.code_attr.code, 0, len);
+		if (offset + len >= sz) {
+			len = sz;
+			return attr;
+		}
+		memcpy (attr->info.code_attr.code, buffer+offset, len);
+		offset += len;
+	}
 	attr->info.code_attr.exception_table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.code_attr.exception_table = r_list_newf (free);
 	for (k = 0; k < attr->info.code_attr.exception_table_length; k++) {
 		cur_location = buf_offset+offset;
-		if (cur_location>sz)
+		if (cur_location+8>sz)
 			return attr;
 		exc_entry = R_NEW0(RBinJavaExceptionEntry);
 		exc_entry->file_offset = cur_location;
@@ -3307,6 +3325,7 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	if (attr->info.code_attr.attributes_count > 0) {
 		for (k = 0; k < attr->info.code_attr.attributes_count; k++) {
 			int size = (offset<sz)? sz-offset:0;
+			if (size > sz || size <= 0) break;
 			_attr = r_bin_java_read_next_attr_from_buffer (buffer+offset, size, buf_offset+offset);
 			if (!_attr) {
 				eprintf ("[X] r_bin_java_code_attr_new: Error unable to parse remainder of classfile after Method's Code Attribute: %d.\n", k);
@@ -3497,6 +3516,7 @@ R_API ut64 r_bin_java_exceptions_attr_calc_size(RBinJavaAttrInfo *attr) {
 R_API RBinJavaAttrInfo* r_bin_java_inner_classes_attr_new (ut8* buffer, ut64 sz, ut64 buf_offset) {
 	RBinJavaClassesAttribute *icattr;
 	RBinJavaAttrInfo *attr = NULL;
+	RBinJavaCPTypeObj *obj;
 	ut32 i = 0;
 	ut64 offset = 0, cur_location;
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
@@ -3507,6 +3527,7 @@ R_API RBinJavaAttrInfo* r_bin_java_inner_classes_attr_new (ut8* buffer, ut64 sz,
 	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_INNER_CLASSES_ATTR;
 	attr->info.inner_classes_attr.number_of_classes = R_BIN_JAVA_USHORT (buffer, offset);
+	offset += 2;
 	attr->info.inner_classes_attr.classes = r_list_newf (r_bin_java_inner_classes_attr_entry_free);
 	for (i = 0; i < attr->info.inner_classes_attr.number_of_classes; i++) {
 		cur_location = buf_offset + offset;
@@ -3523,17 +3544,24 @@ R_API RBinJavaAttrInfo* r_bin_java_inner_classes_attr_new (ut8* buffer, ut64 sz,
 		icattr->file_offset = cur_location;
 		icattr->size = 8;
 
-		RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, icattr->inner_name_idx);
+		obj = r_bin_java_get_item_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, icattr->inner_name_idx);
 		if (obj == NULL) {
-eprintf ("BINCPLIS IS HULL %d\n", icattr->inner_name_idx);
+			eprintf ("BINCPLIS IS HULL %d\n", icattr->inner_name_idx);
 		}
 		icattr->name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, obj);
-		if (icattr->name == NULL) {
-			icattr->name = r_str_dup (NULL, "NULL");
-			eprintf ("r_bin_java_inner_classes_attr: Unable to find the name for %d index.\n", icattr->inner_name_idx);
-		}
-		IFDBG eprintf ("r_bin_java_inner_classes_attr: Inner class name %d is %s.\n", icattr->inner_name_idx, icattr->name);
+		if (icattr->name == NULL){
+			obj = r_bin_java_get_item_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, icattr->inner_class_info_idx);
+			if (obj == NULL){
+				eprintf ("BINCPLIST IS NULL %d\n", icattr->inner_class_info_idx);
+			}
+			icattr->name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, obj);
+			if (icattr->name == NULL){
+				icattr->name = r_str_dup (NULL, "NULL");
+				eprintf ("r_bin_java_inner_classes_attr: Unable to find the name for %d index.\n", icattr->inner_name_idx);
+			}
+ 		}		
 
+		IFDBG eprintf ("r_bin_java_inner_classes_attr: Inner class name %d is %s.\n", icattr->inner_name_idx, icattr->name);
 		r_list_append (attr->info.inner_classes_attr.classes, (void *) icattr);
 	}
 	attr->size = offset;
@@ -3703,18 +3731,21 @@ R_API RBinJavaAttrInfo* r_bin_java_local_variable_table_attr_new (ut8* buffer, u
 	attr->info.local_variable_table_attr.table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.local_variable_table_attr.local_variable_table = r_list_newf (r_bin_java_local_variable_table_attr_entry_free);
-	for(i = 0; i < attr->info.local_variable_table_attr.table_length; i++) {
+	for (i = 0; i < attr->info.local_variable_table_attr.table_length; i++) {
+		if (offset + 10 < sz) {
+			break;
+		}
 		cur_location = buf_offset + offset;
 		lvattr = R_NEW0 (RBinJavaLocalVariableAttribute);
-		lvattr->start_pc = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		lvattr->length = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->length = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		lvattr->name_idx = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->name_idx = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		lvattr->descriptor_idx = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->descriptor_idx = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		lvattr->index = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->index = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 		lvattr->file_offset = cur_location;
 		lvattr->name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, lvattr->name_idx);

@@ -117,17 +117,29 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 		}
 		if ((int)bin->nsects>0) {
 			if (!UT32_MUL (&size_sects, bin->nsects-sect, sizeof (struct MACH0_(section)))){
+				bin->nsects = sect;
 				return R_FALSE;
 			}
-			if (!size_sects || size_sects > bin->size)
+			if (!size_sects || size_sects > bin->size){
+				bin->nsects = sect;
 				return R_FALSE;
+			}
+
+			if (bin->segs[seg].cmdsize != sizeof (struct MACH0_(segment_command)) \
+					  + (sizeof (struct MACH0_(section))*bin->segs[seg].nsects)){
+				bin->nsects = sect;
+				return R_FALSE;
+			}
 
 			if (off + sizeof (struct MACH0_(segment_command)) > bin->size ||\
-			  off + sizeof (struct MACH0_(segment_command)) + size_sects > bin->size)
+			  off + sizeof (struct MACH0_(segment_command)) + size_sects > bin->size){
+				bin->nsects = sect;
 				return R_FALSE;
+			}
 
 			if (!(bin->sects = realloc (bin->sects, bin->nsects * sizeof (struct MACH0_(section))))) {
 				perror ("realloc (sects)");
+				bin->nsects = sect;
 				return R_FALSE;
 			}
 			len = r_buf_fread_at (bin->b, off + sizeof (struct MACH0_(segment_command)),
@@ -140,10 +152,12 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 			    bin->nsects - sect);
 			if (len == 0 || len == -1) {
 				eprintf ("Error: read (sects)\n");
+				bin->nsects = sect;
 				return R_FALSE;
 			}
 		} else {
 			eprintf ("Warning: Invalid number of sections\n");
+			bin->nsects = sect;
 			return R_FALSE;
 		}
 	}
@@ -476,11 +490,16 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 	bin->uuidn = 0;
 	bin->os = 0;
 	bin->has_crypto = 0;
-	if (bin->hdr.sizeofcmds > bin->size)
-		return R_FALSE;
+	if (bin->hdr.sizeofcmds > bin->size) {
+		eprintf ("Warning: chopping hdr.sizeofcmds\n");
+		bin->hdr.sizeofcmds = bin->size - 128;
+		//return R_FALSE;
+	}
+	//eprintf ("Commands: %d\n", bin->hdr.ncmds);
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)); \
 			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		if (off > bin->size || off + sizeof (struct load_command) > bin->size){
+			eprintf ("mach0: out of bounds command\n");
 			return R_FALSE;
 		}
 		len = r_buf_fread_at (bin->b, off, (ut8*)&lc, bin->endian?"2I":"2i", 1);
@@ -498,6 +517,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.format", i), 
 			"xd cmd size", 0);
 
+		//eprintf ("%d\n", lc.cmd);
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
 			// TODO table of non-instructions in __text
@@ -509,17 +529,22 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_SEGMENT:
 			bin->nsegs++;
 			if (!parse_segments (bin, off)) {
+				eprintf ("error parsing segment\n");
 				bin->nsegs--;
 				return R_FALSE;
 			}
 			break;
 		case LC_SYMTAB:
-			if (!parse_symtab (bin, off))
+			if (!parse_symtab (bin, off)) {
+				eprintf ("error parsing symtab\n");
 				return R_FALSE;
+			}
 			break;
 		case LC_DYSYMTAB:
-			if (!parse_dysymtab(bin, off))
+			if (!parse_dysymtab(bin, off)) {
+				eprintf ("error parsing dysymtab\n");
 				return R_FALSE;
+			}
 			break;
 		case LC_DYLIB_CODE_SIGN_DRS:
 			//eprintf ("[mach0] code is signed\n");
@@ -537,8 +562,10 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_UUID:
 			{
 			struct uuid_command uc = {0};
-			if (off + sizeof (struct uuid_command) > bin->size)
+			if (off + sizeof (struct uuid_command) > bin->size) {
+				eprintf ("UUID out of obunds\n");
 				return R_FALSE;
+			}
 			if (r_buf_fread_at (bin->b, off, (ut8*)&uc, "24c", 1) != -1) {
 				char key[128];
 				char val[128];
@@ -554,8 +581,10 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_ENCRYPTION_INFO:
 			{
 			struct encryption_info_command eic = {0};
-			if (off + sizeof (struct encryption_info_command) > bin->size)
+			if (off + sizeof (struct encryption_info_command) > bin->size) {
+				eprintf ("encryption info out of bounds\n");
 				return R_FALSE;
+			}
 			if (r_buf_fread_at (bin->b, off, (ut8*)&eic,
 					bin->endian?"5I":"5i", 1) != -1) {
 				bin->has_crypto = 1;
@@ -579,8 +608,10 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				eprintf("Error: LC_MAIN with other threads\n");
 				return R_FALSE;
 			}
-			if (off+8 > bin->size || off + sizeof (ep) > bin->size)
+			if (off+8 > bin->size || off + sizeof (ep) > bin->size) {
+				eprintf ("invalid command size for main\n");
 				return R_FALSE;
+			}
 			r_buf_fread_at (bin->b, off+8, (void*)&ep,
 				bin->endian?"2L": "2l", 1);
 			bin->entry = ep.eo;
@@ -598,20 +629,26 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				return R_FALSE;
 			}
 		case LC_THREAD:
-			if (!parse_thread(bin, &lc, off, is_first_thread))
+			if (!parse_thread(bin, &lc, off, is_first_thread)) {
+				eprintf ("Cannot parse thread\n");
 				return R_FALSE;
+			}
 
 			is_first_thread = R_FALSE;
 			break;
 		case LC_LOAD_DYLIB:
 			bin->nlibs++;
-			if (!parse_dylib(bin, off))
+			if (!parse_dylib(bin, off)){
+				eprintf ("Cannot parse dylib\n");
+				bin->nlibs--;
 				return R_FALSE;
+			}
 			break;
 		case LC_DYLD_INFO:
 		case LC_DYLD_INFO_ONLY:
 			bin->dyld_info = malloc (sizeof(struct dyld_info_command));
 			if (off + sizeof (struct dyld_info_command) > bin->size){
+				eprintf ("Cannot parse dyldinfo\n");
 				free (bin->dyld_info);
 				return R_FALSE;
 			}
@@ -821,7 +858,6 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 	return R_FALSE;
 }
 
-
 static ut64 get_text_base(struct MACH0_(obj_t)* bin) {
 	ut64 ret = 0LL;
 	struct section_t *sections;
@@ -945,7 +981,8 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 							break;
 						}
 					}
-					char *symstr_dup = r_str_ndup (symstr, len);
+					char *symstr_dup = NULL;
+					if (len>0) symstr_dup = r_str_ndup (symstr, len);
 					if (!symstr_dup) {
 						symbols[j].name[0] = 0;
 					} else {
@@ -971,7 +1008,6 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 static int parse_import_ptr(struct MACH0_(obj_t)* bin, struct reloc_t *reloc, int idx) {
 	int i, j, sym, wordsize;
 	ut32 stype;
-
 	wordsize = MACH0_(get_bits)(bin) / 8;
 	if (idx<0 || idx>= bin->nsymtab)
 		return 0;
@@ -1073,47 +1109,70 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 	return imports;
 }
 
-static ut64 read_uleb128(ut8 **p) {
-	ut64 r = 0, byte;
-	int bit = 0;
+
+typedef struct _ulebr {
+	ut8 *p;
+} ulebr;
+
+
+static ut64 read_uleb128(ulebr *r, ut8 *end)
+{
+	ut64 result = 0;
+	int	 bit = 0;
+	ut64 slice = 0;
+	ut8 *p = r->p;
 	do {
-		if (bit > 63) {
-			eprintf ("uleb128 too big for u64 (%d bits) - partial result: 0x%08"PFMT64x"\n", bit, r);
-			return r;
+		if (p == end)
+			eprintf ("malformed uleb128");
+
+		slice = *p & 0x7f;
+
+		if (bit > 63)
+			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%0llX", bit, result);
+		else {
+			result |= (slice << bit);
+			bit += 7;
 		}
-		byte = *(*p)++;
-		r |= (byte & 0x7f) << bit;
-		bit += 7;
-	} while (byte & 0x80);
-	return r;
+	} while (*p++ & 0x80);
+	r->p = p;
+	return result;
 }
 
-static st64 read_sleb128(ut8 **p) {
-	st64 r = 0, byte;
+static st64 read_sleb128(ulebr *r, ut8 *end)
+{
+	st64 result = 0;
 	int bit = 0;
+	ut8 byte;
+	ut8 *p = r->p;
 	do {
-		byte = *(*p)++;
-		r |= (byte & 0x7f) << bit;
+		if (p == end)
+			eprintf ("malformed sleb128");
+		byte = *p++;
+		result |= (((st64)(byte & 0x7f)) << bit);
 		bit += 7;
 	} while (byte & 0x80);
-
-	// Sign extend negative numbers.
-	if (byte & 0x40)
-		r |= -1LL << bit;
-	return r;
+	// sign extend negative numbers
+	if ( (byte & 0x40) != 0 )
+		result |= (-1LL) << bit;
+	r->p = p;
+	return result;
 }
+
+
+
 
 struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 	struct reloc_t *relocs;
 	int i = 0, len;
-
+	ulebr ur = {NULL};
 	int wordsize = MACH0_(get_bits)(bin) / 8;
 	if (bin->dyld_info) {
-		ut8 *opcodes, *p, *end, type = 0, rel_type = 0;
+		ut8 *opcodes,*end, type = 0, rel_type = 0;
 		int lib_ord, seg_idx = -1, sym_ord = -1;
 		size_t j, count, skip, bind_size, lazy_size;
 		st64 addend = 0;
 		ut64 addr = 0LL;
+		ut8 done = 0;
 
 #define CASE(T) case (T / 8): rel_type = R_BIN_RELOC_ ## T; break
 		switch (wordsize) {
@@ -1138,6 +1197,8 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		if (bin->dyld_info->lazy_bind_off > bin->size || \
 		  bin->dyld_info->lazy_bind_off + lazy_size > bin->size)
 			return NULL;
+		if (bin->dyld_info->bind_off+bind_size+lazy_size > bin->size)
+			return NULL;
 		// NOTE(eddyb) it's a waste of memory, but we don't know the actual number of relocs.
 		if (!(relocs = malloc ((bind_size + lazy_size) * sizeof (struct reloc_t))))
 			return NULL;
@@ -1160,12 +1221,14 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		// that +2 is a minimum required for uleb128, this may be wrong,
 		// the correct fix would be to make ULEB() must use rutil's
 		// implementation that already checks for buffer boundaries
-		for (p = opcodes, end = opcodes + bind_size + lazy_size; p+2 < end; p++) {
-			ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
+		for (ur.p = opcodes, end = opcodes + bind_size + lazy_size ; (ur.p+2 < end) && !done; ) {
+			ut8 imm = *ur.p & BIND_IMMEDIATE_MASK, op = *ur.p & BIND_OPCODE_MASK;
+			++ur.p;
 			switch (op) {
-#define ULEB() read_uleb128 (&p)
-#define SLEB() read_sleb128 (&p)
+#define ULEB() read_uleb128 (&ur,end)
+#define SLEB() read_sleb128 (&ur,end)
 				case BIND_OPCODE_DONE:
+					done = 1;	
 					break;
 				case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
 					lib_ord = imm;
@@ -1180,9 +1243,9 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 						lib_ord = (st8)(BIND_OPCODE_MASK | imm);
 					break;
 				case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
-					char *sym_name = (char*)p;
+					char *sym_name = (char*)ur.p;
 					//ut8 sym_flags = imm;
-					while (*p++ && p<end);
+					while (*ur.p++ && ur.p<end);
 					sym_ord = -1;
 					if (bin->symtab && bin->dysymtab.nundefsym<0xffff)
 					for (j = 0; j < bin->dysymtab.nundefsym; j++) {
@@ -1216,7 +1279,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 							" has unexistent segment %d\n", seg_idx);
 						addr = 0LL;
 					} else {
-						addr = bin->segs[seg_idx].vmaddr + ULEB();
+						addr = bin->segs[seg_idx].vmaddr + ULEB(); 
 					}
 					break;
 				case BIND_OPCODE_ADD_ADDR_ULEB:
@@ -1264,7 +1327,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 #undef ULEB
 #undef SLEB
 				default:
-					eprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
+					eprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *ur.p);
 					free (opcodes);
 					relocs[i].last = 1;
 					return relocs;

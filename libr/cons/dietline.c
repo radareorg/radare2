@@ -87,86 +87,41 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 #endif
 #if __WINDOWS__ && !__CYGWIN__
 static int r_line_readchar_win(int * vch) {  // this function handle the input in console mode
-	ut8 buf[2];
-	*buf = '\0';
-	BOOL ret;
-	BOOL bCtrl=FALSE;
-	DWORD mode, out;
-	HANDLE h;
 	INPUT_RECORD irInBuf[128];
+	BOOL ret, bCtrl = FALSE;
+	DWORD mode, out;
+	ut8 buf[2];
+	HANDLE h;
 	int i;
+	*buf = '\0';
 do_it_again:
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
-	SetConsoleMode (h, 0 ); // RAW
-	*vch=0;
-	ret= ReadConsoleInput(h,irInBuf,128,&out);
-	if (ret) {
-		for (i = 0; i < out; i++) {
-			if (irInBuf[i].EventType==KEY_EVENT) {
-				if (irInBuf[i].Event.KeyEvent.bKeyDown) {
-					buf[0]=irInBuf[i].Event.KeyEvent.uChar.AsciiChar;
-					bCtrl=irInBuf[i].Event.KeyEvent.dwControlKeyState & 8;
-					if (irInBuf[i].Event.KeyEvent.uChar.AsciiChar==0) {
-						buf[0]=0;
-						switch(irInBuf[i].Event.KeyEvent.wVirtualKeyCode) {
-							case VK_DOWN: // key down
-								if (bCtrl)
-									*vch=140;
-								else
-									*vch=40;
-								break;
-							case VK_UP: // key up
-								if (bCtrl)
-									*vch=138;
-								else
-									*vch=38;
-								break;
-							case VK_RIGHT: // key right
-								if (bCtrl)
-									*vch=139;
-								else
-									*vch=39;
-								break;
-							case VK_LEFT: // key left
-								if (bCtrl)
-									*vch=137;
-								else
-									*vch=37;
-								break;
-							case 46: // key supr
-								if (bCtrl)
-									*vch=146;
-								else
-									*vch=46;
-								break;
-							case VK_PRIOR: // key home
-								if (bCtrl)
-									*vch=136;
-								else
-									*vch=36;
-								break;
-							case VK_NEXT: // key end
-								if (bCtrl)
-									*vch=135;
-								else
-									*vch=35;
-								break;
-							default:
-								/*eprintf("ch=%c VC=%d (%x) VSC=%d (%x) CKS=%d (%x) %i\n",
-										irInBuf[i].Event.KeyEvent.uChar.AsciiChar,
-										irInBuf[i].Event.KeyEvent.wVirtualKeyCode,irInBuf[i].Event.KeyEvent.wVirtualKeyCode,
-										irInBuf[i].Event.KeyEvent.wVirtualScanCode,irInBuf[i].Event.KeyEvent.wVirtualScanCode,
-										irInBuf[i].Event.KeyEvent.dwControlKeyState,irInBuf[i].Event.KeyEvent.dwControlKeyState,
-										bCtrl
-										);*/
-								buf[0]=0;
-								*vch=0;
-								break;
-						}
-					}
-				}
-			}
+	SetConsoleMode (h, 0); // RAW
+	*vch = 0;
+	ret = ReadConsoleInput (h, irInBuf, sizeof (irInBuf), &out);
+	if (ret<1) {
+		return 0;
+	}
+	for (i = 0; i < out; i++) {
+		if (irInBuf[i].EventType!=KEY_EVENT)
+			continue;
+		if (!irInBuf[i].Event.KeyEvent.bKeyDown)
+			continue;
+		*buf = irInBuf[i].Event.KeyEvent.uChar.AsciiChar;
+		bCtrl = irInBuf[i].Event.KeyEvent.dwControlKeyState & 8;
+		if (irInBuf[i].Event.KeyEvent.uChar.AsciiChar) {
+			continue;
+		}
+		switch (irInBuf[i].Event.KeyEvent.wVirtualKeyCode) {
+		case VK_DOWN: *vch = bCtrl? 140: 40; break;
+		case VK_UP: *vch = bCtrl? 138: 38; break;
+		case VK_RIGHT: *vch = bCtrl? 139: 39; break;
+		case VK_LEFT: *vch = bCtrl? 137:37; break;
+		case 46: *vch = bCtrl? 146: 46; break; // SUPR KEY
+		case VK_PRIOR: *vch = bCtrl? 136:36; break; // HOME KEY
+		case VK_NEXT: *vch = bCtrl? 135: 35; break; // END KEY
+		default: *vch = *buf = 0; break;
 		}
 	}
 	SetConsoleMode (h, mode);
@@ -979,7 +934,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 10: // ^J -- ignore
 			return I.buffer.data;
-		case 11: // ^K -- ignore
+		case 11: // ^K
+			I.buffer.data[I.buffer.index] = '\0';
+			I.buffer.length = I.buffer.index;
 			break;
 		case 6: // ^f // emacs right
 #if USE_UTF8
@@ -1078,6 +1035,30 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					 break;
 				case 5: // end
 					 I.buffer.index = I.buffer.length;
+					 break;
+				case 'B':
+				case 'b':
+					 // previous word
+					 for (i = I.buffer.index - 2; i >= 0; i--) {
+						 if (I.buffer.data[i] == ' ' && I.buffer.data[i + 1] != ' ') {
+							 I.buffer.index = i + 1;
+							 break;
+						 }
+					 }
+					 if (i < 0)
+						 I.buffer.index = 0;
+					 break;
+				case 'F':
+				case 'f':
+					 // next word
+					 for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
+						 if (I.buffer.data[i] != ' ' && I.buffer.data[i - 1] == ' ') {
+							 I.buffer.index = i;
+							 break;
+						 }
+					 }
+					 if (i >= I.buffer.length)
+						 I.buffer.index = I.buffer.length;
 					 break;
 				default:
 					 buf[1] = r_line_readchar();

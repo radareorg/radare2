@@ -5,7 +5,8 @@
 #include <r_flags.h>
 #include <r_core.h>
 
-#define ANALBS 4096
+//#define ANALBS 4096
+#define ANALBS 1024
 
 static void loganal(ut64 from, ut64 to) {
 	r_cons_clear_line (1);
@@ -614,8 +615,8 @@ R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
 	return r_core_seek (core, addr, R_FALSE);
 }
 
-static int cmpaddr (void *_a, void *_b) {
-	RAnalBlock *a = _a, *b = _b;
+static int cmpaddr (const void *_a, const void *_b) {
+	const RAnalBlock *a = _a, *b = _b;
 	return (a->addr > b->addr);
 }
 
@@ -800,7 +801,10 @@ if (0) {
 			goto error;
 #else
 		// this is unnecessary if its contiguous
-		r_io_read_at (core->io, at+delta, buf, ANALBS);
+		buflen = r_io_read_at (core->io, at+delta, buf, ANALBS);
+		//if (ret != 1024) { }
+		// check if read error (fffff ?)
+		// 1024 was chosed for r2pipe
 #endif
 #if 1
 		if (core->io->va && !core->io->raw) {
@@ -809,7 +813,6 @@ if (0) {
 			}
 		}
 #endif
-		buflen = ANALBS;
 		if (r_cons_singleton ()->breaked)
 			break;
 		fcnlen = r_anal_fcn (core->anal, fcn, at+delta, buf, buflen, reftype);
@@ -1109,7 +1112,7 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 	RListIter *iter;
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		r_cons_printf ("afbb 0x%08"PFMT64x" 0x%08"PFMT64x" %04"PFMT64d" ",
+		r_cons_printf ("afb+ 0x%08"PFMT64x" 0x%08"PFMT64x" %04"PFMT64d" ",
 				fcn->addr, bbi->addr, bbi->size);
 		r_cons_printf ("0x%08"PFMT64x" ", bbi->jump);
 		r_cons_printf ("0x%08"PFMT64x" ", bbi->fail);
@@ -1267,6 +1270,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 					r_cons_printf ("afC %s @ 0x%08"PFMT64x"\n",
 							r_anal_cc_type2str (fcn->call), fcn->addr);
 				fcn_list_bbs (fcn);
+				/* show variables  and arguments */
+				r_core_cmdf (core, "afa* @ 0x%"PFMT64x"\n", fcn->addr);
+				r_core_cmdf (core, "afv* @ 0x%"PFMT64x"\n", fcn->addr);
 			} else {
 				r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 						fcn->addr, fcn->name, (ut64)fcn->size);
@@ -1408,8 +1414,10 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	RListIter *iter;
 	int count = 0;
 
-	if (r_list_empty (core->anal->fcns))
+	if (r_list_empty (core->anal->fcns)) {
+		eprintf ("No functions to diff\n");
 		return R_FALSE;
+	}
 
 	opts |= R_CORE_ANAL_GRAPHBODY;
 	reflines = r_config_get_i (core->config, "asm.lines");
@@ -1951,10 +1959,15 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 
 R_API void r_core_anal_undefine (RCore *core, ut64 off) {
 	RAnalFunction *f;
-	r_flag_unset_i (core->flags, off, NULL);
+	//r_flag_unset_i (core->flags, off, NULL);
 	r_anal_fcn_del_locs (core->anal, off);
 	f = r_anal_get_fcn_in (core->anal, off, 0);
-	if (f) r_meta_del (core->anal, R_META_TYPE_ANY, off, f->size, "");
+	if (f) {
+		if (!strncmp (f->name, "fcn.", 4)) {
+			r_flag_unset (core->flags, f->name, NULL);
+		}
+		r_meta_del (core->anal, R_META_TYPE_ANY, off, f->size, "");
+	}
 	r_anal_fcn_del (core->anal, off);
 }
 

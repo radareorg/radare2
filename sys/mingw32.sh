@@ -1,6 +1,6 @@
 #!/bin/sh
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd "$(dirname "$PWD/$0")" ; cd ..
 #TODO: add support for ccache
 
 # XXX. fails with >1
@@ -21,7 +21,7 @@ elif [ -x /usr/bin/i686-w64-mingw32-gcc ]; then
 elif [ -x /usr/bin/pacman ]; then
 	C=i486-mingw32-gcc
 	H=i486-unknown-windows
-elif [ `uname` = Darwin ]; then
+elif [ "$(uname)" = Darwin ]; then
 	C=i386-mingw32-gcc
 	H=i386-unknown-windows
 elif [ -x /usr/bin/apt-get ]; then
@@ -37,3 +37,5 @@ make mrproper
 ./configure ${CFGFLAGS} --with-compiler=$C --host=$H && \
 	make -s -j ${MAKE_JOBS} CC="${C} -static-libgcc" && \
 	make w32dist
+
+LDFLAGS="${OLD_LDFLAGS}"

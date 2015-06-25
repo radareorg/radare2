@@ -181,14 +181,47 @@ R_API void r_egg_math (REgg *egg) {//, char eq, const char *vs, char type, const
 
 R_API int r_egg_raw(REgg *egg, const ut8 *b, int len) {
 	char *out;
-	int outlen = (len*2)+1;
-	out = malloc (outlen);
+	int outlen = len*2; // two hexadecimal digits per byte
+	out = malloc (outlen+1);
 	if (!out) return R_FALSE;
 	r_hex_bin2str (b, len, out);
 	r_buf_append_bytes (egg->buf, (const ut8*)".hex ", 5);
 	r_buf_append_bytes (egg->buf, (const ut8*)out, outlen);
 	r_buf_append_bytes (egg->buf, (const ut8*)"\n", 1);
 	free (out);
+	return R_TRUE;
+}
+
+static int r_egg_raw_prepend(REgg *egg, const ut8 *b, int len) {
+	char *out;
+	int outlen = len*2; // two hexadecimal digits per byte
+	out = malloc (outlen+1);
+	if (!out) return R_FALSE;
+	r_hex_bin2str (b, len, out);
+	r_buf_prepend_bytes (egg->buf, (const ut8*)"\n", 1);
+	r_buf_prepend_bytes (egg->buf, (const ut8*)out, outlen);
+	r_buf_prepend_bytes (egg->buf, (const ut8*)".hex ", 5);
+	free (out);
+	return R_TRUE;
+}
+
+static int r_egg_prepend_bytes(REgg *egg, const ut8 *b, int len) {
+	if (!r_egg_raw_prepend(egg, b, len))
+		return R_FALSE;
+
+	if (!r_buf_prepend_bytes (egg->bin, b, len))
+		return R_FALSE;
+
+	return R_TRUE;
+}
+
+static int r_egg_append_bytes(REgg *egg, const ut8 *b, int len) {
+	if (!r_egg_raw(egg, b, len))
+		return R_FALSE;
+
+	if (!r_buf_append_bytes (egg->bin, b, len))
+		return R_FALSE;
+
 	return R_TRUE;
 }
 
@@ -349,9 +382,9 @@ R_API int r_egg_padding (REgg *egg, const char *pad) {
 
 		memset (buf, padding_byte, number);
 		if (f>='a' && f<='z') {
-			r_buf_prepend_bytes (egg->bin, buf, number);
+			r_egg_prepend_bytes(egg, buf, number);
 		} else {
-			r_buf_append_bytes (egg->bin, buf, number);
+			r_egg_append_bytes(egg, buf, number);
 		}
 		free (buf);
 	}
@@ -424,7 +457,7 @@ R_API void r_egg_finalize(REgg *egg) {
 		egg->bin = r_buf_new ();
 	r_list_foreach (egg->patches, iter, b) {
 		if (b->cur <0) {
-			r_buf_append_bytes (egg->bin, b->buf, b->length);
+			r_egg_append_bytes (egg, b->buf, b->length);
 		} else {
 			// TODO: use r_buf_cpy_buf or what
 			if (b->length+b->cur > egg->bin->length) {
@@ -439,7 +472,7 @@ R_API void r_egg_finalize(REgg *egg) {
 R_API void r_egg_pattern(REgg *egg, int size) {
 	char *ret = r_debruijn_pattern ((int)size, 0, NULL);
 	if (ret) {
-		r_buf_prepend_bytes (egg->bin, (const ut8*)ret, strlen (ret));
+		r_egg_prepend_bytes (egg, (const ut8*)ret, strlen(ret));
 		free (ret);
 	} else eprintf ("Invalid debruijn pattern length.\n");
 }

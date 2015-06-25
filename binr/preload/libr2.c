@@ -7,18 +7,45 @@
 static RCore *core = NULL;
 
 #if __UNIX__
+
+// XXX check if its already opened
+static RCoreFile *openself(void) {
+	RCoreFile *fd = NULL;
+	char *out = r_core_cmd_str (core, "o");
+	if (out) {
+		if (!strstr(out, "self://")) {
+			fd = r_core_file_open (core, "self://", R_IO_RW, 0);
+		}
+		free (out);
+	}
+	return fd;
+}
+
 static void sigusr1(int s) {
-	RCoreFile *fd = r_core_file_open (core, "self://", R_IO_RW, 0);
+	RCoreFile *fd = openself();
 	r_core_prompt_loop (core);
 	r_core_file_close (core, fd);
 }
+
+static void sigusr2(int s) {
+	(void)openself();
+	r_core_cmd0 (core, "=H&");
+}
 static void _libwrap_init() __attribute__ ((constructor));
 static void _libwrap_init() {
+	char *web;
 	signal (SIGUSR1, sigusr1);
+	signal (SIGUSR2, sigusr2);
 	printf ("libr2 initialized. send SIGUSR1 to %d in order to reach the r2 prompt\n", getpid ());
 	printf ("kill -USR1 %d\n", getpid());
+	web = r_sys_getenv ("RARUN2_WEB");
 	core = r_core_new ();
 	r_core_loadlibs (core, R_CORE_LOADLIBS_ALL, NULL);
+	if (web) {
+		r_core_cmd0 (core, "=H&");
+		r_sys_setenv ("RARUN2_WEB", NULL);
+		free (web);
+	}
 	// TODO: maybe reopen every time a signal is spawned to reload memory regions information
 	// TODO: open io_self
 }

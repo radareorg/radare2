@@ -49,7 +49,17 @@ typedef struct r_anal_meta_item_t {
 	ut64 size;
 	int type;
 	char *str;
+	int space;
 } RAnalMetaItem;
+
+typedef struct {
+	struct r_anal_t *anal;
+	int type;
+	int rad;
+	SdbForeachCallback cb;
+	void *user;
+	int count;
+} RAnalMetaUserItem;
 
 typedef struct r_anal_range_t {
 	ut64 from;
@@ -589,6 +599,7 @@ typedef struct r_anal_t {
 	Sdb *sdb_xrefs;
 	Sdb *sdb_types;
 	Sdb *sdb_meta; // TODO: Future r_meta api
+	RSpaces meta_spaces;
 	PrintfCallback printf;
 //moved from RAnalFcn
 	Sdb *sdb; // root
@@ -1304,7 +1315,7 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
 R_API RAnalRefline *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn,
     int nlines, int linesout, int linescall);
 /* TODO move to r_core */
-R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind);
+R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
 
 // calling conventions API
@@ -1338,6 +1349,9 @@ R_API void r_anal_data_free (RAnalData *d);
 R_API char *r_anal_data_to_string (RAnalData *d);
 
 R_API void r_meta_free(RAnal *m);
+R_API void r_meta_space_unset_for(RAnal *a, int type);
+R_API int r_meta_space_count_for(RAnal *a, int ctx);
+R_API RList *r_meta_enumerate(RAnal *a, int type);
 R_API int r_meta_count(RAnal *m, int type, ut64 from, ut64 to);
 R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr);
 R_API int r_meta_set_string(RAnal *m, int type, ut64 addr, const char *s);
@@ -1346,7 +1360,9 @@ R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 size, const char *str);
 R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where);
 R_API int r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
+R_API RList *r_meta_enumerate(RAnal *a, int type);
 R_API int r_meta_list(RAnal *m, int type, int rad);
+R_API int r_meta_list_cb(RAnal *m, int type, int rad, SdbForeachCallback cb, void *user);
 R_API void r_meta_item_free(void *_item);
 R_API RAnalMetaItem *r_meta_item_new(int type);
 

@@ -49,6 +49,7 @@ typedef struct r_lib_handler_t {
 typedef struct r_lib_struct_t {
 	int type;
 	void *data; /* pointer to data handled by plugin handler */
+	const char *version; /* r2 version */
 } RLibStruct;
 
 // order matters because of libr/util/lib.c

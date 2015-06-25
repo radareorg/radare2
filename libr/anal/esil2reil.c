@@ -195,6 +195,7 @@ static int reil_eq(RAnalEsil *esil) {
 	// Check if the src is an internal var. If it is, we need to resolve it.
 	if (src_type == ARG_ESIL_INTERNAL) {
 		reil_flag_spew_inst(esil, src->name + 1);
+		R_FREE (src);
 		src = reil_pop_arg(esil);
 	} else if (src_type == ARG_REG) {
 		// No direct register to register transfer.
@@ -248,7 +249,7 @@ static int reil_eq(RAnalEsil *esil) {
 		ins->arg[2] = src;
 		reil_print_inst (esil, ins);
 		reil_free_inst(ins);
-		R_FREE(dst);
+		R_FREE (dst);
 		return R_TRUE;
 	}
 
@@ -256,7 +257,8 @@ static int reil_eq(RAnalEsil *esil) {
 	ins->opcode = REIL_STR;
 	ins->arg[0] = reil_pop_arg(esil);
 	if (!ins->arg[0]) {
-		R_FREE(ins);
+		R_FREE (dst);
+		R_FREE (ins);
 		return R_FALSE;
 	}
 
@@ -978,6 +980,9 @@ R_API int r_anal_esil_to_reil_setup(RAnalEsil *esil, RAnal *anal, int romem,
 	esil->cb.hook_command = setup_reil_ins;
 
 	esil->Reil = R_NEW0(RAnalReil);
+	if (!esil->Reil) {
+		return R_FALSE;
+	}
 	esil->Reil->reilNextTemp = 0;
 	esil->Reil->addr = -1;
 	esil->Reil->seq_num = 0;

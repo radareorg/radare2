@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_diff.h>
 
-R_LIB_VERSION (r_diff);
+//R_LIB_VERSION (r_diff);
 
 R_API RDiff *r_diff_new(ut64 off_a, ut64 off_b) {
 	RDiff *d = R_NEW (RDiff);
@@ -156,11 +156,10 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 					.b_off = oob, .b_buf = bt, .b_len = btl
 				};
 				ret = d->callback(d, d->user, &o);
+				if (!ret)
 					break;
 				atl = btl = 0;
 				hit = 0;
-				if (!ret)
-					break;
 			}
 		}
 		oop = op;

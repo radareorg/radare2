@@ -180,6 +180,14 @@ static const char *dwarf_langs[] = {
 	[DW_LANG_UPC] = "UPC",
 	[DW_LANG_D] = "D",
 	[DW_LANG_Python] = "Python",
+	[DW_LANG_Rust] = "Rust",
+	[DW_LANG_C11] = "C11",
+	[DW_LANG_Swift] = "Swift",
+	[DW_LANG_Julia] = "Julia",
+	[DW_LANG_Dylan] = "Dylan",
+	[DW_LANG_C_plus_plus_14] = "C++14",
+	[DW_LANG_Fortran03] = "Fortran03",
+	[DW_LANG_Fortran08] = "Fortran08"
 };
 
 static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
@@ -258,7 +266,14 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 			free (str);
 			break;
 		}
-		if (f) fprintf (f, "INCLUDEDIR (%s)\n", buf);
+		if (*str != '/' && *str != '.') {
+			// no more paths in here
+			free (str);
+			break;
+		}
+		if (f) {
+			fprintf (f, "INCLUDEDIR (%s)\n", str);
+		}
 		add_sdb_include_dir (s, str, i);
 		free (str);
 		i++;
@@ -447,7 +462,8 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 		buf += (strlen (filename) + 1);
 		ut64 dir_idx;
-		buf = r_uleb128 (buf, ST32_MAX, &dir_idx);
+		if (buf+1 < buf_end)
+			buf = r_uleb128 (buf, ST32_MAX, &dir_idx);
 		break;
 	case DW_LNE_set_discriminator:
 		buf = r_uleb128(buf, ST32_MAX, &addr);
@@ -1328,6 +1344,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 //					inf->comp_units[curr_unit].hdr.version);
 			return -1;
 		}
+		if (inf->comp_units[curr_unit].hdr.length > len) return -1;
 
 		inf->comp_units[curr_unit].hdr.abbrev_offset = READ (buf, ut32);
 		inf->comp_units[curr_unit].hdr.pointer_size = READ (buf, ut8);
@@ -1506,7 +1523,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 		if (len<1) {
 			return NULL;
 		}
-		buf = calloc (1, len);
+		buf = calloc (1, len+1);
 		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		if (!ret) {
 			free (buf);

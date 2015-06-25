@@ -5,6 +5,7 @@
 #include <r_util.h>
 #include <r_db.h>
 
+#define IFDBG if (esil->debug)
 #define FLG(x) R_ANAL_ESIL_FLAG_##x
 #define cpuflag(x,y) if (y) { R_BIT_SET (&esil->flags, FLG(x)); } else { R_BIT_UNSET (&esil->flags, FLG(x)); }
 
@@ -117,7 +118,7 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (!ret && esil->cb.mem_read) {
 		ret = esil->cb.mem_read (esil, addr, buf, len);
 	}
-	if (esil->debug) {
+	IFDBG {
 		eprintf ("0x%08"PFMT64x" R> ", addr);
 		for (i=0; i<len; i++)
 			eprintf ("%02x", buf[i]);
@@ -136,7 +137,7 @@ R_API int r_anal_esil_mem_write (RAnalEsil *esil, ut64 addr, const ut8 *buf, int
 	int i, ret = 0;
 	if (!buf || !esil)
 		return 0;
-	if (esil->debug) {
+	IFDBG {
 		eprintf ("0x%08"PFMT64x" <W ", addr);
 		for (i=0;i<len;i++)
 			eprintf ("%02x", buf[i]);
@@ -302,7 +303,7 @@ R_API int r_anal_esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num) {
 			break;
 		return R_TRUE;
 	default:
-		eprintf ("Invalid arg (%s)\n", str);
+		IFDBG eprintf ("Invalid arg (%s)\n", str);
 		esil->parse_stop = 1;
 		break;
 	}
@@ -329,7 +330,7 @@ static int isregornum(RAnalEsil *esil, const char *str, ut64 *num) {
 
 R_API int r_anal_esil_reg_write (RAnalEsil *esil, const char *dst, ut64 num) {
 	int ret = 0;
-	if (esil->debug) {
+	IFDBG {
 		eprintf ("%s=0x%"PFMT64x"\n", dst, num);
 	}
 	if (esil->cb.hook_reg_write) {
@@ -353,8 +354,10 @@ R_API int r_anal_esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num)
 	if (!ret && esil->cb.reg_read) {
 		ret = esil->cb.reg_read (esil, regname, num);
 	}
-	if (ret && esil->debug) {
-		eprintf ("%s=0x%"PFMT64x"\n", regname, *num);
+	if (ret) {
+		IFDBG {
+			eprintf ("%s=0x%"PFMT64x"\n", regname, *num);
+		}
 	}
 	return ret;
 }
@@ -372,9 +375,11 @@ static int esil_eq (RAnalEsil *esil) {
 				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 			}
 			ret = r_anal_esil_reg_write (esil, dst, num2);
-		} else eprintf ("esil_eq: invalid src\n");
+		} else {
+			IFDBG eprintf ("esil_eq: invalid src\n");
+		}
 	} else {
-		eprintf ("esil_eq: invalid parameters\n");
+		IFDBG eprintf ("esil_eq: invalid parameters\n");
 	}
 	free (src);
 	free (dst);
@@ -393,7 +398,9 @@ static int esil_neg(RAnalEsil *esil) {
 			if (isregornum (esil, src, &num)) {
 				ret = 1;
 				r_anal_esil_pushnum (esil, !!!num);
-			} else eprintf ("esil_neg: trashed stack wtf? %s\n", src);
+			} else {
+				eprintf ("esil_neg: unknown reg %s\n", src);
+			}
 		}
 	} else {
 		eprintf ("esil_neg: empty stack\n");
@@ -891,17 +898,17 @@ static int esil_modeq(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, &s)) {
 		if (dst && r_anal_esil_reg_read (esil, dst, &d)) {
-			if (s==0) {
-				eprintf ("esil_modeq: Division by zero!\n");
-				esil->trap = R_ANAL_TRAP_DIVBYZERO;
-				esil->trap_code = 0;
-			} else {
+			if (s) {
 				if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
 					esil->old = d;
 					esil->cur = d%s;
 					esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 				}
 				r_anal_esil_reg_write (esil, dst, d%s);
+			} else {
+				eprintf ("esil_modeq: Division by zero!\n");
+				esil->trap = R_ANAL_TRAP_DIVBYZERO;
+				esil->trap_code = 0;
 			}
 			ret = 1;
 		} else {
@@ -946,17 +953,17 @@ static int esil_diveq (RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, &s)) {
 		if (dst && r_anal_esil_reg_read (esil, dst, &d)) {
-			if (s == 0) {
-				eprintf ("esil_diveq: Division by zero!\n");
-				esil->trap = R_ANAL_TRAP_DIVBYZERO;
-				esil->trap_code = 0;
-			} else  {
+			if (s) {
 				if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
 					esil->old = d;
 					esil->cur = d/s;
 					esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 				}
 				r_anal_esil_reg_write (esil, dst, d/s);
+			} else {
+				eprintf ("esil_diveq: Division by zero!\n");
+				esil->trap = R_ANAL_TRAP_DIVBYZERO;
+				esil->trap_code = 0;
 			}
 			ret = 1;
 		} else {
@@ -2919,7 +2926,7 @@ R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats)
 		return R_FALSE;
 	// register callbacks using this anal module.
 	// this is: set
-	esil->debug = 1;
+	//esil->debug = 0;
 	esil->anal = anal;
 	esil->parse_goto_count = anal->esil_goto_limit;
 	esil->trap = 0;

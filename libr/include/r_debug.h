@@ -83,6 +83,7 @@ enum { // TODO: not yet used by r_debug
 typedef struct r_debug_frame_t {
 	ut64 addr;
 	int size;
+	char *name;
 } RDebugFrame;
 
 typedef struct r_debug_map_t {
@@ -166,7 +167,8 @@ typedef struct r_debug_t {
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
 	RList *snaps; // <RDebugSnap>
-	RGraph *graph;
+	RTree *tree;
+	Sdb *tracenodes;
 	Sdb *sgnls;
 	RCoreBind corebind;
 #if __WINDOWS__
@@ -182,6 +184,8 @@ typedef struct r_debug_t {
 	- list of mapped memory (from /proc/XX/maps)
 	- list of managed memory (allocated in child...)
 	*/
+	/* select backtrace algorithm */
+	char *btalgo;
 } RDebug;
 
 typedef struct r_debug_desc_plugin_t {
@@ -365,6 +369,8 @@ R_API int r_debug_arg_set (RDebug *dbg, int fast, int num, ut64 value);
 
 /* pid */
 R_API int r_debug_thread_list(RDebug *dbg, int pid);
+
+R_API void r_debug_tracenodes_reset (RDebug *dbg);
 
 R_API void r_debug_trace_reset (RDebug *dbg);
 R_API int r_debug_trace_pc (RDebug *dbg);

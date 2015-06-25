@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2014 pancake */
+/* radare - LGPL - Copyright 2011-2015 pancake */
 /* vala extension for libr (radare2) */
 // TODO: add cache directory (~/.r2/cache)
 
@@ -39,7 +39,7 @@ static int lang_c_file(RLang *lang, const char *file) {
 	snprintf (buf, sizeof (buf), "%s -fPIC -shared %s -o %s/lib%s."R_LIB_EXT
 		" $(pkg-config --cflags --libs r_core)", cc, file, libpath, libname);
 	free (cc);
-	if (system (buf) != 0)
+	if (r_sandbox_system (buf, 1) != 0)
 		return R_FALSE;
 
 	snprintf (buf, sizeof (buf), "%s/lib%s."R_LIB_EXT, libpath, libname);

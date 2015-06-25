@@ -444,8 +444,8 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_X86_64_PLT32:	ADD(32,-P /* +L */);
 		case R_X86_64_GOT32:	ADD(32, GOT);
 		case R_X86_64_PC32:	ADD(32,-P);
-		case R_X86_64_GLOB_DAT:	SET(64);
-		case R_X86_64_JUMP_SLOT:SET(64);
+		case R_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
+		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
 		case R_X86_64_RELATIVE:	ADD(64, B);
 		case R_X86_64_32:	ADD(32, 0);
 		case R_X86_64_32S:	ADD(32, 0);

@@ -389,7 +389,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case MIPS_INS_JIC:
 	case MIPS_INS_JRADDIUSP:
 	case MIPS_INS_BAL:
-	case MIPS_INS_BGEZAL: // Branch on less than zero and link
+	// (no blezal/bgtzal or blezall/bgtzall, only blezalc/bgtzalc)
+	case MIPS_INS_BLTZAL: // Branch on <0 and link
+	case MIPS_INS_BGEZAL: // Branch on >=0 and link
+	case MIPS_INS_BLTZALL: // "likely" versions
+	case MIPS_INS_BGEZALL:
+	case MIPS_INS_BLTZALC: // compact versions
+	case MIPS_INS_BLEZALC:
+	case MIPS_INS_BGEZALC:
+	case MIPS_INS_BGTZALC:
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->delay = 1;
 		op->jump = IMM(0);
@@ -472,9 +480,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case MIPS_INS_BTEQZ:
 	case MIPS_INS_BTNEZ:
 	case MIPS_INS_BLTZ:
+	case MIPS_INS_BLTZL:
+	case MIPS_INS_BLTZC:
+	case MIPS_INS_BLEZ:
+	case MIPS_INS_BLEZL:
+	case MIPS_INS_BLEZC:
 	case MIPS_INS_BGEZ:
+	case MIPS_INS_BGEZL:
 	case MIPS_INS_BGEZC:
-	case MIPS_INS_BGEZALC:
+	case MIPS_INS_BGTZ:
+	case MIPS_INS_BGTZL:
+	case MIPS_INS_BGTZC:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->delay = 1;
 		if (OPERAND(0).type == MIPS_OP_IMM) {

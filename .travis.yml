@@ -33,9 +33,10 @@ env:
   - TESTS=format.java
   - TESTS=format.dex
   - TESTS=format.mach0
+  - TESTS=format.omf
   - TESTS=format.xbe
   - TESTS=format.firmware
-  #- TESTS=format.others # U MAD
+  - TESTS=format.others
 
   #- (dis)assemblers
   - TESTS=asm.8051
@@ -48,10 +49,13 @@ env:
   - TESTS=asm.gb
   - TESTS=asm.h8300
   - TESTS=asm.java
+  - TESTS=asm.lh5801
   - TESTS=asm.mips
+  - TESTS=asm.msp430
   - TESTS=asm.tms320
-  - TESTS=asm.z80
+  - TESTS=asm.ws
   - TESTS=asm.x86
+  - TESTS=asm.z80
   
   #- debugger
   #- TESTS=dbg.linux

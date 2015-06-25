@@ -256,6 +256,7 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case 'G':
 			{
+			if (!core->file) break;
 			RIOSection *s = r_io_section_vget (core->io, core->offset);
 			// XXX: this +2 is a hack. must fix gap between sections
 			if (s) r_core_seek (core, s->vaddr+s->size+2, 1);

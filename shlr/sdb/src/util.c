@@ -224,24 +224,6 @@ SDB_API int sdb_num_base (const char *s) {
 	return 10;
 }
 
-SDB_API int sdb_match (const char *str, const char *glob) {
-	if (*glob=='^') {
-		if (!strncmp (str, glob+1, strlen (glob+1)))
-			return 1;
-	} else if (glob[strlen(glob)-1]=='$') {
-		int glob_len = strlen (glob)-1;
-		int str_len = strlen (str);
-		if (str_len > glob_len) {
-			int n = str_len - glob_len;
-			if (!strncmp (str + n, glob, glob_len))
-				return 1;
-		}
-	} else if (strstr (str, glob)) {
-		return 1;
-	}
-	return 0;
-}
-
 SDB_API const char *sdb_type(const char *k) {
 	if (!k || !*k)
 		return "undefined";

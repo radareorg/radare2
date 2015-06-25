@@ -133,6 +133,13 @@ typedef struct r_cons_canvas_t {
 } RConsCanvas;
 
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
+typedef int (*RConsClickCallback)(void *core, int x, int y);
+
+#if 0
+r_cons_click_begin();
+r_cons_click_end();
+r_cons_click_clear();
+#endif
 
 typedef struct r_cons_t {
 	RConsGrep grep;
@@ -185,6 +192,9 @@ typedef struct r_cons_t {
 	struct r_line_t *line;
 	const char **vline;
 	int refcnt;
+	RConsClickCallback onclick;
+
+	int newline;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -295,6 +305,7 @@ R_API RConsCanvas* r_cons_canvas_new (int w, int h);
 R_API void r_cons_canvas_free (RConsCanvas *c);
 R_API void r_cons_canvas_clear (RConsCanvas *c);
 R_API void r_cons_canvas_print(RConsCanvas *c);
+R_API void r_cons_canvas_print_region(RConsCanvas *c);
 R_API char *r_cons_canvas_to_string(RConsCanvas *c);
 R_API void r_cons_canvas_attr(RConsCanvas *c,const char * attr);
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
@@ -356,6 +367,7 @@ R_API void r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
+R_API void r_cons_flush_nonewline(void);
 R_API void r_cons_less_str(const char *str);
 R_API void r_cons_less(void);
 R_API void r_cons_2048(void);

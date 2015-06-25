@@ -60,6 +60,8 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 	char *response, *host, *path, *port = "80";
 	char *uri = strdup (url);
 
+	if (code) *code = 0;
+	if (rlen) *rlen = 0;
 	host = strstr (uri, "://");
 	if (!host) {
 		free (uri);

@@ -145,6 +145,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			if (ptr && *ptr == '{') { ptr = strchr (ptr+1, '}'); }
 			if (!ptr) {
 				eprintf ("Unbalanced bracket\n");
+				free(buf);
 				return R_FALSE;
 			}
 			ptr = strchr (ptr, ',');

@@ -540,6 +540,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int last_sparse = 0;
 	const char *a, *b;
 
+	len = len - (len % step);
 	if (p) {
 		pairs = p->pairs;
 		use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
@@ -552,8 +553,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		stride = p->stride;
 	}
 	if (step<1) step = 1;
-	if (inc<1)
-		inc = 1;
+	if (inc<1) inc = 1;
 	switch (base) {
 	case 8: fmt = "%03o"; pre = " "; break;
 	case 10: fmt = "%3d"; pre = " "; break;
@@ -628,10 +628,17 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				} else printfmt (j%2?"   ":"  ");
 				continue;
 			}
-			if (p && base==32) {
-if (step==2) {
-				ut16 n = 0;
-				r_mem_copyendian ((ut8*)&n, buf+j, sizeof (n), !p->big_endian);
+			if (p && (base == 32 || base == 64)) {
+				/* TODO: check step. it should be 2/4 for base(32) and 8 for
+				 *       base(64) */
+				ut64 n = 0;
+				size_t sz_n;
+
+				if (base == 64)
+					sz_n = sizeof (ut64);
+				else
+					sz_n = step == 2 ? sizeof (ut16) : sizeof (ut32);
+				r_mem_copyendian ((ut8*)&n, buf+j, sz_n, !p->big_endian);
 				r_print_cursor (p, j, 1);
 
 				// stub for colors
@@ -640,39 +647,14 @@ if (step==2) {
 					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
 				} else { a = b = ""; }
 
-				printfmt ("%s0x%04x%s ", a, n, b);
+				if (base == 64)
+					printfmt ("%s0x%016"PFMT64x"%s  ", a, (ut64)n, b);
+				else if (step == 2)
+					printfmt ("%s0x%04x%s ", a, (ut16)n, b);
+				else
+					printfmt ("%s0x%08x%s ", a, (ut32)n, b);
 				r_print_cursor (p, j, 0);
-				j += 1;
-} else {
-				ut32 n = 0;
-				r_mem_copyendian ((ut8*)&n, buf+j, sizeof (n), !p->big_endian);
-				r_print_cursor (p, j, 1);
-
-				// stub for colors
-				if (p && p->colorfor) {
-					a = p->colorfor (p->user, n);
-					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
-				} else { a = b = ""; }
-
-				printfmt ("%s0x%08x%s ", a, n, b);
-				r_print_cursor (p, j, 0);
-				j += 3;
-}
-			} else
-			if (p && base==64) {
-				ut64 x = 0LL;
-				/* Prevent reading outside of buf. Necessary as inc is not
-				 * a multiple of 4 for base == 64. */
-				r_mem_copyendian ((ut8*)&x, buf+j, sizeof (x), !p->big_endian);
-				r_print_cursor (p, j, 1);
-				// stub for colors
-				if (p && p->colorfor) {
-					a = p->colorfor (p->user, x);
-					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
-				} else { a = b = ""; }
-				printfmt ("%s0x%016"PFMT64x"%s  ", a, x, b);
-				r_print_cursor (p, j, 0);
-				j += 7;
+				j += step - 1;
 			} else {
 				if (j>=len) {
 					break;
@@ -1005,8 +987,12 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size) {
 		}
 		//for (j=1;j<arr[i]; j+=INC) p->printf (under);
 		p->printf ("|");
-		if (arr[i+1]>arr[i])
+		if (i+1 == size){
+			if (0>arr[i])
+				for (j=arr[i]+INC+base; j+base<next; j+=INC) p->printf ("_");
+		}else if (arr[i+1] > arr[i]) {
 			for (j=arr[i]+INC+base; j+base<next; j+=INC) p->printf ("_");
+		}
 		p->printf ("\n");
 	}
 }

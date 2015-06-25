@@ -4,9 +4,10 @@
 #include <r_util.h>
 #include <r_list.h>
 
+
 #define FCN_DEPTH 16
 
-#define JMP_IS_EOB 1
+#define JMP_IS_EOB 0
 #define JMP_IS_EOB_RANGE 32
 #define CALL_IS_EOB 0
 
@@ -513,8 +514,57 @@ if (anal->bbsplit) {
 				bb->jump = op.jump;
 				bb->fail = op.fail;
 			}
+			if (continue_after_jump) {
+				recurseAt (op.jump);
+				recurseAt (op.fail);
+			} else {
+				// This code seems to break #1519
+				if (anal->eobjmp) {
+#if JMP_IS_EOB
+					if (!overlapped) {
+						bb->jump = op.jump;
+						bb->fail = UT64_MAX;
+					}
+					FITFCNSZ();
 			recurseAt (op.jump);
 			recurseAt (op.fail);
+					return R_ANAL_RET_END;
+#else
+					// hardcoded jmp size // must be checked at the end wtf?
+					// always fitfcnsz and retend
+					//if (op.jump>fcn->addr && op.jump<(fcn->addr+fcn->size)) {
+					if (op.jump>fcn->addr+JMP_IS_EOB_RANGE) { // && op.jump<(fcn->addr+fcn->size)) {
+			recurseAt (op.fail);
+						/* jump inside the same function */
+						FITFCNSZ();
+						return R_ANAL_RET_END;
+#if JMP_IS_EOB_RANGE>0
+					} else {
+						if (op.jump < addr-JMP_IS_EOB_RANGE && op.jump<addr) {
+							gotoBeach (R_ANAL_RET_END);
+						}
+						if (op.jump > addr+JMP_IS_EOB_RANGE) {
+							gotoBeach (R_ANAL_RET_END);
+						}
+#endif
+					}
+#endif
+			recurseAt (op.jump);
+			recurseAt (op.fail);
+				} else {
+					/* if not eobjmp. a jump will break the function if jumps before the beginning of the function */
+			recurseAt (op.jump);
+			recurseAt (op.fail);
+					if (op.jump < fcn->addr) {
+						if (!overlapped) {
+							bb->jump = op.jump;
+							bb->fail = UT64_MAX;
+						}
+						FITFCNSZ();
+						return R_ANAL_RET_END;
+					}
+				}
+			}
 
 			// XXX breaks mips analysis too !op.delay
 			// this will be all x86, arm (at least)
@@ -537,6 +587,7 @@ if (anal->bbsplit) {
 		case R_ANAL_OP_TYPE_UJMP:
 			if (continue_after_jump)
 				break;
+			/* fallthru */
 		case R_ANAL_OP_TYPE_RET:
 			VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n",
 				addr+delay.un_idx-oplen, overlapped,

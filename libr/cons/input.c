@@ -6,6 +6,8 @@
 #include <errno.h>
 #endif
 
+#define USE_CLICK 0
+
 #define I r_cons_singleton()
 
 #if 0
@@ -156,10 +158,33 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		case 'M': // Mouse events
 			ch = r_cons_readchar ();
 			/* Skip the x/y coordinates */
-			(void)r_cons_readchar();
-			(void)r_cons_readchar();
+#if USE_CLICK
+			int x = r_cons_readchar() - 33;
+			int y = r_cons_readchar() - 33;
+#else
+			(void) r_cons_readchar();
+			(void) r_cons_readchar();
+#endif
+#if USE_CLICK
+			if (ch==35) {
+				/* handle click  */
+#define CLICK_DEBUG 1
+#if CLICK_DEBUG
+				r_cons_gotoxy (0,0);
+				r_cons_printf ("Click at %d %d\n", x, y);
+				r_cons_flush ();
+#endif
+				RCons *cons = r_cons_singleton ();
+				if (cons->onclick) {
+					cons->onclick (cons->data, x, y);
+				}
+				r_cons_enable_mouse (R_FALSE);
+				(void)r_cons_readchar ();
+				ch = 0;
+			} else
+#endif
 			if (ch==0x20) {
-				// click
+				// click - deprecated?
 				r_cons_enable_mouse (R_FALSE);
 				ch = 0;
 				//r_cons_enable_mouse (R_TRUE);

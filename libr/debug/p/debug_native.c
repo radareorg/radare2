@@ -5,6 +5,7 @@
 #include <r_asm.h>
 #include <r_reg.h>
 #include <r_lib.h>
+#include <r_anal.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/param.h>
@@ -339,6 +340,128 @@ static inline void debug_arch_x86_trap_set(RDebug *dbg, int foo) {
 #endif // __APPLE__
 #endif
 
+#if TARGET_OS_IPHONE
+static int isThumb32(ut16 op) {
+	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
+}
+
+// BCR address match type
+#define BCR_M_IMVA_MATCH        ((uint32_t)(0u << 21))
+#define BCR_M_CONTEXT_ID_MATCH  ((uint32_t)(1u << 21))
+#define BCR_M_IMVA_MISMATCH     ((uint32_t)(2u << 21))
+#define BCR_M_RESERVED          ((uint32_t)(3u << 21))
+
+// Link a BVR/BCR or WVR/WCR pair to another
+#define E_ENABLE_LINKING        ((uint32_t)(1u << 20))
+
+// Byte Address Select
+#define BAS_IMVA_PLUS_0         ((uint32_t)(1u << 5))
+#define BAS_IMVA_PLUS_1         ((uint32_t)(1u << 6))
+#define BAS_IMVA_PLUS_2         ((uint32_t)(1u << 7))
+#define BAS_IMVA_PLUS_3         ((uint32_t)(1u << 8))
+#define BAS_IMVA_0_1            ((uint32_t)(3u << 5))
+#define BAS_IMVA_2_3            ((uint32_t)(3u << 7))
+#define BAS_IMVA_ALL            ((uint32_t)(0xfu << 5))
+
+// Break only in privileged or user mode
+#define S_RSVD                  ((uint32_t)(0u << 1))
+#define S_PRIV                  ((uint32_t)(1u << 1))
+#define S_USER                  ((uint32_t)(2u << 1))
+#define S_PRIV_USER             ((S_PRIV) | (S_USER))
+
+#define BCR_ENABLE              ((uint32_t)(1u))
+#define WCR_ENABLE              ((uint32_t)(1u))
+
+// Watchpoint load/store
+#define WCR_LOAD                ((uint32_t)(1u << 3))
+#define WCR_STORE               ((uint32_t)(1u << 4))
+
+static void ios_hwstep_enable(RDebug *dbg, int enable) {
+	task_t port = pid_to_task (dbg->tid);
+	// get-regs
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+	// get-dbg-state
+#if defined (__arm64__) || defined (__aarch64__)
+	typedef struct {
+		ut64 bvr[16];
+		ut64 bcr[16];
+		ut64 wvr[16];
+		ut64 wcr[16];
+		ut64 mdscr_el1;
+	} ARMDebugState64;
+	ARMDebugState64 ds;
+
+	mach_msg_type_number_t count = ARM_DEBUG_STATE64_COUNT;
+	(void)thread_get_state (port, ARM_DEBUG_STATE64, &ds, &count);
+
+	// The use of __arm64__ here is not ideal.  If debugserver is running on
+	// an armv8 device, regardless of whether it was built for arch arm or arch arm64,
+	// it needs to use the MDSCR_EL1 SS bit to single instruction step.
+
+	// MDSCR_EL1 single step bit at gpr.pc
+	if (enable) {
+		ds.mdscr_el1 |= 1LL;
+	} else {
+		ds.mdscr_el1 &= ~(1ULL);
+	}
+	(void)thread_set_state (port, ARM_DEBUG_STATE64, &ds, count);
+#else
+	typedef struct {
+		ut32 bvr[16];
+		ut32 bcr[16];
+		ut32 wvr[16];
+		ut32 wcr[16];
+		ut64 mdscr_el1;
+	} ARMDebugState32;
+	int i;
+	static ARMDebugState32 olds;
+	ARMDebugState32 ds;
+
+	mach_msg_type_number_t count = ARM_DEBUG_STATE32_COUNT;
+	(void)thread_get_state (port, ARM_DEBUG_STATE32, (thread_state_t)&ds, &count);
+
+	//static ut64 chainstep = UT64_MAX;
+	if (enable) {
+		RIOBind *bio = &dbg->iob;
+		ut32 pc = r_reg_get_value (dbg->reg, r_reg_get (dbg->reg, "pc", R_REG_TYPE_GPR));
+		ut32 cpsr = r_reg_get_value (dbg->reg, r_reg_get (dbg->reg, "cpsr", R_REG_TYPE_GPR));
+
+		for (i = 0; i<16 ;i++) {
+			ds.bcr[i] = ds.bvr[i] = 0;
+		}
+		olds = ds;
+		//chainstep = UT64_MAX;
+		// state = old_state;
+		ds.bvr[i] = pc & (UT32_MAX >> 2) << 2;
+		ds.bcr[i] = BCR_M_IMVA_MISMATCH | S_USER | BCR_ENABLE;
+		if (cpsr & 0x20) {
+			ut16 op;
+			if (pc & 2) {
+				ds.bcr[i] |= BAS_IMVA_2_3;
+			} else {
+				ds.bcr[i] |= BAS_IMVA_0_1;
+			}
+			/* check for thumb */
+			bio->read_at (bio->io, pc, (void *)&op, 2);
+			if (isThumb32 (op)) {
+				eprintf ("Thumb32 chain stepping not supported yet\n");
+				//chainstep = pc + 2;
+			} else {
+				ds.bcr[i] |= BAS_IMVA_ALL;
+			}
+		} else {
+			ds.bcr[i] |= BAS_IMVA_ALL;
+		}
+	} else {
+		//bcr[i] = BAS_IMVA_ALL;
+		ds = olds; //dbg = old_state;
+	}
+	(void)thread_set_state (port, ARM_DEBUG_STATE32, (thread_state_t)&ds, count);
+#endif
+	// set-dbg-state
+}
+#endif
+
 static int r_debug_native_step(RDebug *dbg) {
 	int ret = R_FALSE;
 	int pid = dbg->pid;
@@ -349,32 +472,29 @@ static int r_debug_native_step(RDebug *dbg) {
 	regs.EFlags |= 0x100;
 	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
 	r_debug_native_continue (dbg, pid, dbg->tid, dbg->signum);
-	ret=R_TRUE;
+	ret = R_TRUE;
+	r_debug_handle_signals (dbg);
 #elif __APPLE__
 	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
-#if __arm__
+#if __arm__ || __arm64__ || __aarch64__
+	ios_hwstep_enable (dbg, 1);
+	//ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT);
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT);
 	if (ret != 0) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		ret = R_FALSE; /* do not wait for events */
 	} else ret = R_TRUE;
+	ios_hwstep_enable (dbg, 0);
 #else
-	#if 0 && __arm__
-	if (!dbg->swstep)
-		eprintf ("XXX hardware stepping is not supported in arm. set e dbg.swstep=true\n");
-	else eprintf ("XXX: software step is not implemented??\n");
-	return R_FALSE;
-	#endif
-	//eprintf ("stepping from pc = %08x\n", (ut32)get_offset("eip"));
-	//ret = ptrace (PT_STEP, ps.tid, (caddr_t)get_offset("eip"), SIGSTOP);
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT);
 	if (ret != 0) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		ret = R_FALSE; /* do not wait for events */
 	} else ret = R_TRUE;
+	r_debug_handle_signals (dbg);
 #endif
 #elif __BSD__
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0);
@@ -477,7 +597,6 @@ static int r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 /* TODO: specify thread? */
 /* TODO: must return true/false */
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
-	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 #if __WINDOWS__ && !__CYGWIN__
 	eprintf("r_debug_native_continue: pid=%08x tid=%08x\n",pid,tid);
 	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
@@ -488,9 +607,11 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return tid;
 #elif __APPLE__
 #if __arm__
-	int i, ret, status;
-	thread_array_t inferior_threads = NULL;
-	unsigned int inferior_thread_count = 0;
+	return 1;
+#if 0
+	//int i, ret, status;
+	//thread_array_t inferior_threads = NULL;
+	//unsigned int inferior_thread_count = 0;
 
 // XXX: detach is noncontrollable continue
         ptrace (PT_DETACH, pid, 0, 0);
@@ -512,19 +633,22 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
         for (i = 0; i < inferior_thread_count; i++)
 		thread_resume (inferior_threads[i]);
 */
-	return 1;
+#endif
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
+	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 	return ptrace (PT_CONTINUE, pid, (void*)(size_t)1,
 		(int)(size_t)data) == 0;
 #endif
 #elif __BSD__
+	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 	ut64 pc = r_debug_reg_get (dbg, "pc");
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)data) == 0;
 #elif __CYGWIN__
 	#warning "r_debug_native_continue not supported on this platform"
 	return -1;
 #else
+	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 //eprintf ("SIG %d\n", dbg->signum);
 	return ptrace (PTRACE_CONT, pid, NULL, data) == 0;
 #endif
@@ -689,7 +813,7 @@ static RList *r_debug_native_pids(int pid) {
 		if (p) r_list_append (list, p);
 	} else {
 		int i;
-		for(i=1; i<MAXPID; i++) {
+		for (i=1; i<MAXPID; i++) {
 			RDebugPid *p = darwin_get_pid (i);
 			if (p) r_list_append (list, p);
 		}
@@ -1031,13 +1155,29 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			break;
 		}
 #elif __arm__ || __arm64__ || __aarch64__
-		if (dbg->bits==R_SYS_BITS_64) {
-			ret = thread_get_state (inferior_threads[tid],
-				ARM_THREAD_STATE64, (thread_state_t) regs, &gp_count);
-		} else {
-			ret = thread_get_state (inferior_threads[tid],
-				ARM_THREAD_STATE, (thread_state_t) regs, &gp_count);
-				//R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+		switch (type) {
+		case R_REG_TYPE_FLG:
+		case R_REG_TYPE_GPR:
+			if (dbg->bits==R_SYS_BITS_64) {
+				ret = thread_get_state (inferior_threads[tid],
+					ARM_THREAD_STATE64, (thread_state_t) regs, &gp_count);
+			} else {
+				ret = thread_get_state (inferior_threads[tid],
+					ARM_THREAD_STATE, (thread_state_t) regs, &gp_count);
+					//R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+			}
+			break;
+		case R_REG_TYPE_DRX:
+			if (dbg->bits== R_SYS_BITS_64) {
+				ret = thread_get_state (inferior_threads[tid],
+					ARM_DEBUG_STATE64, (thread_state_t)
+					regs, &gp_count);
+			} else {
+				ret = thread_get_state (inferior_threads[tid],
+					ARM_DEBUG_STATE32, (thread_state_t)
+					regs, &gp_count);
+			}
+			break;
 		}
 #else
 		eprintf ("Unknown architecture\n");
@@ -1468,7 +1608,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		thread_array_t inferior_threads = NULL;
 		unsigned int inferior_thread_count = 0;
 		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
-		unsigned int gp_count = R_DEBUG_STATE_SZ;
+		mach_msg_type_number_t gp_count = R_DEBUG_STATE_SZ;
 
 		ret = task_threads (pid_to_task (pid),
 			&inferior_threads, &inferior_thread_count);
@@ -1506,7 +1646,8 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 			}
 #else
 			ret = thread_set_state (inferior_threads[tid],
-					R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+				R_DEBUG_STATE_T, (thread_state_t) regs,
+				gp_count);
 #endif
 //if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS)
 			if (ret != KERN_SUCCESS) {
@@ -1536,9 +1677,106 @@ static const char * unparse_inheritance (vm_inherit_t i) {
 
 extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_t buffersize);
 
+static RList *osx_dbg_maps(RDebug *dbg);
+static RList *ios_dbg_maps(RDebug *dbg) {
+	boolt contiguous = R_FALSE;
+	ut32 oldprot = UT32_MAX;
+	char buf[1024];
+	mach_vm_address_t address = MACH_VM_MIN_ADDRESS;
+	mach_vm_size_t size = (mach_vm_size_t) 0;
+	natural_t depth = 0;
+	task_t task = pid_to_task (dbg->tid);
+	RDebugMap *mr = NULL;
+	RList *list = NULL;
+	int i = 0;
+#if __arm64__ || __aarch64__
+	size = 16384; // acording to frida
+#else
+	size = 4096;
+#endif
+
+	while (TRUE) {
+		struct vm_region_submap_info_64 info;
+		mach_msg_type_number_t info_count;
+		kern_return_t kr;
+
+		depth = VM_REGION_BASIC_INFO_64;
+		while (TRUE) {
+			info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
+			memset (&info, 0, sizeof (info));
+			kr = mach_vm_region_recurse (task, &address, &size, &depth,
+				(vm_region_recurse_info_t) &info, &info_count);
+			if (kr != KERN_SUCCESS)
+				break;
+#if 0
+			if (info.is_submap) {
+				depth++;
+				continue;
+			}
+#endif
+			break;
+		}
+		if (kr != KERN_SUCCESS)
+			break;
+		if (info.max_protection == 0) {
+			continue;
+		}
+		if (!list) {
+			list = r_list_new ();
+			//list->free = (RListFree*)r_debug_map_free;
+		}
+		if (mr) {
+			if (address == mr->addr + mr->size) {
+				if (oldprot != UT32_MAX && oldprot == info.protection) {
+					/* expand region */
+					mr->size += size;
+					contiguous = R_TRUE;
+				} else {
+					contiguous = R_FALSE;
+				}
+			} else {
+				contiguous = R_FALSE;
+			}
+		} else contiguous = R_FALSE;
+		oldprot = info.protection;
+		if (!contiguous) {
+			char module_name[1024];
+			module_name[0] = 0;
+			int ret = proc_regionfilename (dbg->pid, address, module_name, sizeof (module_name));
+			module_name[ret] = 0;
+			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
+			// XXX: if its shared, it cannot be read?
+			snprintf (buf, sizeof (buf), "%s %02x %s%s%s%s %s",
+				r_str_rwx_i (xwr2rwx (info.max_protection)), i,
+				unparse_inheritance (info.inheritance),
+				info.user_tag? " user": "",
+				info.is_submap? " sub": "",
+				info.inheritance? " inherit": "",
+				module_name);
+				//info.shared ? "shar" : "priv", 
+				//info.reserved ? "reserved" : "not-reserved",
+				//""); //module_name);
+			mr = r_debug_map_new (buf, address, address+size,
+					xwr2rwx (info.protection), 0);
+			if (mr == NULL) {
+				eprintf ("Cannot create r_debug_map_new\n");
+				break;
+			}
+			mr->file = strdup (module_name);
+			i++;
+			r_list_append (list, mr);
+		}
+
+		if (size<1) size = 1; // fuck
+		address += size;
+		size = 0;
+	}
+	return list;
+}
+
 // TODO: move to p/native/darwin.c
 // TODO: this loop MUST be cleaned up
-static RList *darwin_dbg_maps (RDebug *dbg) {
+static RList *osx_dbg_maps (RDebug *dbg) {
 	RDebugMap *mr;
 	char buf[1024];
 	int i, print;
@@ -1564,7 +1802,11 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 	}
 	memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
 */
+#if __arm64__ || __aarch64__
+	size = 16384; // acording to frida
+#else
 	size = 4096;
+#endif
 	memset (&prev_info, 0, sizeof (prev_info));
 	prev_address = address;
 	prev_size = size;
@@ -1626,6 +1868,7 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				break;
 			}
+			mr->file = strdup (module_name);
 			r_list_append (list, mr);
 		}
 }
@@ -1671,6 +1914,18 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 			//              }
 	}
 	return list;
+}
+
+static RList *darwin_dbg_maps(RDebug *dbg) {
+	//return osx_dbg_maps (dbg);
+	return ios_dbg_maps (dbg);
+#if 0
+	const char *osname = dbg->anal->syscall->os;
+	if (osname && !strcmp (osname, "ios")) {
+		return ios_dbg_maps (dbg);
+	} 
+	return osx_dbg_maps (dbg);
+#endif
 }
 #endif
 
@@ -1743,13 +1998,13 @@ static RDebugMap* r_debug_native_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	if (!dbg->process_handle) {
 		dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
 	}
-	base = VirtualAllocEx (dbg->process_handle, (LPVOID)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
+	base = VirtualAllocEx (dbg->process_handle, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
 	if (!base) {
 		eprintf("Failed to allocate memory\n");
 		return map;
 	}
 	r_debug_map_sync (dbg);
-	map = r_debug_map_get (dbg, (ut64)base);
+	map = r_debug_map_get (dbg, (ut64)(size_t)base);
 	return map;
 #else
 	// malloc not implemented for this platform
@@ -1772,7 +2027,7 @@ static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	if (!dbg->process_handle) {
 		dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
 	}
-	if (!VirtualFreeEx (dbg->process_handle, (LPVOID)addr, (SIZE_T)size, MEM_DECOMMIT)) {
+	if (!VirtualFreeEx (dbg->process_handle, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_DECOMMIT)) {
 		eprintf("Failed to free memory\n");
 		return R_FALSE;
 	}
@@ -1922,7 +2177,6 @@ static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
 }
 #endif
 
-/* TODO: Can I use this as in a coroutine? */
 static RList *r_debug_native_frames_x86_32(RDebug *dbg, ut64 at) {
 	RRegItem *ri;
 	RReg *reg = dbg->reg;
@@ -1945,7 +2199,7 @@ static RList *r_debug_native_frames_x86_32(RDebug *dbg, ut64 at) {
 
 		// TODO: arch_is_call() here and this fun will be portable
 		if (buf[(ebp2-5)%4]==0xe8) {
-			RDebugFrame *frame = R_NEW (RDebugFrame);
+			RDebugFrame *frame = R_NEW0 (RDebugFrame);
 			frame->addr = ebp2;
 			frame->size = esp-_esp;
 			r_list_append (list, frame);
@@ -1955,7 +2209,57 @@ static RList *r_debug_native_frames_x86_32(RDebug *dbg, ut64 at) {
 	return list;
 }
 
-// XXX: Do this work correctly?
+/* TODO: Can I use this as in a coroutine? */
+static RList *r_debug_native_frames_x86_32_anal(RDebug *dbg, ut64 at) {
+	RRegItem *ri;
+	RReg *reg = dbg->reg;
+	ut32 i, _esp, esp, eip, ebp2;
+	RList *list;
+	RIOBind *bio = &dbg->iob;
+	RAnalFunction *fcn;
+	RDebugFrame *frame;
+	ut8 buf[4];
+
+	// TODO : frame->size by using esil to emulate first instructions
+	list = r_list_new ();
+	list->free = free;
+
+	ri = (at==UT64_MAX)? r_reg_get (reg, "ebp", R_REG_TYPE_GPR): NULL;
+	_esp = (ut32) ((ri)? r_reg_get_value (reg, ri): at);
+		// TODO: implement [stack] map uptrace method too
+	esp = _esp;
+
+	eip = r_reg_get_value (reg, r_reg_get (reg, "eip", R_REG_TYPE_GPR));
+	fcn = r_anal_get_fcn_in (dbg->anal, eip, R_ANAL_FCN_TYPE_NULL);
+	if (fcn != NULL) {
+		frame = R_NEW0 (RDebugFrame);
+		frame->addr = fcn->addr;
+		frame->size = 0;
+		frame->name = (fcn && fcn->name) ? strdup(fcn->name) : NULL;
+		r_list_append (list, frame);
+	}
+
+	for (i=1; i<MAXBT; i++) {
+		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
+		if (ebp2 == UT32_MAX)
+			break;
+		*buf = '\0';
+		bio->read_at (bio->io, (ebp2-5)-(ebp2-5)%4, (void *)&buf, 4);
+
+		// TODO: arch_is_call() here and this fun will be portable
+		if (buf[(ebp2-5)%4]==0xe8) {
+			fcn = r_anal_get_fcn_in (dbg->anal, ebp2, R_ANAL_FCN_TYPE_NULL);
+			frame = R_NEW0 (RDebugFrame);
+			frame->addr = ebp2;
+			frame->size = esp-_esp;
+			frame->name = (fcn && fcn->name) ? strdup (fcn->name) : NULL;
+			r_list_append (list, frame);
+		}
+		esp += 4;
+	}
+	return list;
+}
+
 static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 	int i;
 	ut8 buf[8];
@@ -1986,7 +2290,7 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 			free (list);
 			return R_FALSE;
 		}
-		RDebugFrame *frame = R_NEW (RDebugFrame);
+		frame = R_NEW0 (RDebugFrame);
 		frame->addr = ptr;
 		frame->size = 0; // TODO ?
 		r_list_append (list, frame);
@@ -2001,7 +2305,7 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 		bio->read_at (bio->io, _rbp+8, (ut8*)&ptr, 8);
 		if (!ptr || !_rbp)
 			break;
-		frame = R_NEW (RDebugFrame);
+		frame = R_NEW0 (RDebugFrame);
 		frame->addr = ptr;
 		frame->size = 0; // TODO ?
 		r_list_append (list, frame);
@@ -2009,11 +2313,81 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 	}
 	return list;
 }
+// XXX: Do this work correctly?
+static RList *r_debug_native_frames_x86_64_anal(RDebug *dbg, ut64 at) {
+	int i;
+	ut8 buf[8];
+	RDebugFrame *frame;
+	ut64 ptr, ebp2;
+	ut64 _rip, _rbp;
+	RList *list;
+	RReg *reg = dbg->reg;
+	RIOBind *bio = &dbg->iob;
+	RAnalFunction *fcn;
+
+	_rip = r_reg_get_value (reg, r_reg_get (reg, "rip", R_REG_TYPE_GPR));
+	if (at == UT64_MAX) {
+		//_rsp = r_reg_get_value (reg, r_reg_get (reg, "rsp", R_REG_TYPE_GPR));
+		_rbp = r_reg_get_value (reg, r_reg_get (reg, "rbp", R_REG_TYPE_GPR));
+	//} else {
+	//	_rsp = _rbp = at;
+	}
+
+	list = r_list_new ();
+	list->free = free;
+	bio->read_at (bio->io, _rip, (ut8*)&buf, 8);
+
+	// TODO : frame->size by using esil to emulate first instructions
+	fcn = r_anal_get_fcn_in (dbg->anal, _rip, R_ANAL_FCN_TYPE_NULL);
+	if (fcn) {
+		frame = R_NEW0 (RDebugFrame);
+		frame->addr = fcn->addr;
+		frame->size = 0;
+		frame->name = (fcn->name) ? strdup (fcn->name) : NULL;
+		r_list_append (list, frame);
+	}
+
+	for (i=1; i<MAXBT; i++) {
+		// TODO: make those two reads in a shot
+		bio->read_at (bio->io, _rbp, (ut8*)&ebp2, 8);
+		if (ebp2 == UT64_MAX)
+			break;
+		bio->read_at (bio->io, _rbp+8, (ut8*)&ptr, 8);
+		if (!ptr || !_rbp)
+			break;
+		fcn = r_anal_get_fcn_in (dbg->anal, ptr, R_ANAL_FCN_TYPE_NULL);
+		frame = R_NEW0 (RDebugFrame);
+		frame->addr = ptr;
+		frame->size = 0;
+		frame->name = (fcn && fcn->name) ? strdup (fcn->name) : NULL;
+		r_list_append (list, frame);
+		_rbp = ebp2;
+	}
+
+	return list;
+}
+
+typedef RList* (*RDebugFrameCallback)(RDebug *dbg, ut64 at);
 
 static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
-	if (dbg->bits == R_SYS_BITS_64)
-		return r_debug_native_frames_x86_64 (dbg, at);
-	return r_debug_native_frames_x86_32 (dbg, at);
+	RDebugFrameCallback cb = NULL;
+	if (dbg->btalgo) {
+		if (!strcmp (dbg->btalgo, "anal")) {
+			if (dbg->bits == R_SYS_BITS_64) {
+				cb = r_debug_native_frames_x86_64_anal;
+			} else {
+				cb = r_debug_native_frames_x86_32_anal;
+			}
+		}
+	}
+	if (cb == NULL) {
+		if (dbg->bits == R_SYS_BITS_64) {
+			cb = r_debug_native_frames_x86_64;
+		} else {
+			cb = r_debug_native_frames_x86_32;
+		}
+	}
+	return cb (dbg, at);
 }
 
 // TODO: implement own-defined signals

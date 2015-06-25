@@ -48,11 +48,8 @@ static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int le
 	if (!data) {
 		free (s);
 		return NULL;
-	}
-	if (data) {
-		memcpy (s->data, data, len);
 	} else {
-		memset (s->data, 0xff, len);
+		memcpy (s->data, data, len);
 	}
 	if (r_list_append (l, s) == NULL) return NULL;
 	return s;

@@ -57,6 +57,7 @@ SDB_API int sdb_journal_load(Sdb *s) {
 	}
 	rr = read (fd, str, sz);
 	if (rr <0) {
+		free (str);
 		return 0;
 	}
 	str[sz] = 0;

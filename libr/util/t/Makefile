@@ -16,11 +16,15 @@ BINS+=test_sys
 BINS+=test_str
 BINS+=test_file_slurp_hexpairs
 BINS+=test_cmd_str
+BINS+=test_stack
+BINS+=test_queue
+BINS+=test_tree
+BINS+=test_graph
 
 all: ${BINS}
 
 ${BINS}: $(addsuffix .o,$(BINS))
-	$(CC) $(LDFLAGS) -o $@ $< 
+	$(CC) $(LDFLAGS) -o $@ $@.o
 
 myclean:
 	rm -f ${BINS} *.o

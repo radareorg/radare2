@@ -13,12 +13,9 @@ R_LIB_VERSION (r_syscall);
 extern RSyscallPort sysport_x86[];
 
 R_API RSyscall* r_syscall_new() {
-	RSyscall *rs = R_NEW (RSyscall);
+	RSyscall *rs = R_NEW0 (RSyscall);
 	if (rs) {
-		rs->fd = NULL;
-		rs->sysptr = NULL; //syscalls_linux_x86;
 		rs->sysport = sysport_x86;
-		rs->db = NULL;
 		rs->printf = (PrintfCallback)printf;
 		rs->regs = fastcall_x86_32;
 	}
@@ -44,6 +41,10 @@ R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bit
 		os = R_SYS_OS;
 	if (arch == NULL)
 		arch = R_SYS_ARCH;
+
+	free (s->os);
+	s->os = strdup (os);
+
 	if (!strcmp (os, "any")) // ignored
 		return R_TRUE;
 

@@ -739,6 +739,57 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	return str;
 }
 
+R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
+				  const char *key, const char *val, int g) {
+
+	int i, klen, vlen, slen, delta = 0, bias;
+	char *newstr, *scnd, *p = clean, *str_p;
+
+	if (!str || !key || !val || !clean || !thunk) return NULL;
+	klen = strlen (key);
+	vlen = strlen (val);
+	if (klen == vlen && !strcmp (key, val))
+		return str;
+	slen = strlen (str) + 1;
+
+	for (i = 0; i < clen; ) {
+		bias = 0;
+		p = (char *)r_mem_mem (
+			(const ut8*)clean + i, clen - i,
+			(const ut8*)key, klen);
+		if (!p) break;
+		i = (int)(size_t)(p - clean);
+		/* as the original string changes size during replacement
+		 * we need delta to keep track of it*/
+		str_p = str + thunk[i] + delta;
+
+		int newo = thunk[i + klen] - thunk[i];
+		r_str_ansi_filter(str_p, NULL, NULL, newo);
+		scnd = strdup (str_p + newo);
+		bias = vlen - newo;
+
+		slen += bias;
+		// HACK: this 32 avoids overwrites wtf
+		newstr = realloc (str, slen + klen);
+		if (!newstr) {
+			eprintf ("realloc fail\n");
+			free (str);
+			free (scnd);
+			str = NULL;
+			break;
+		}
+		str = newstr;
+		str_p = str + thunk[i] + delta;
+		memcpy (str_p, val, vlen);
+		memcpy (str_p + vlen, scnd, strlen (scnd) + 1);
+		i += klen;
+		delta += bias;
+		free (scnd);
+		if (!g) break;
+	}
+	return str;
+}
+
 
 R_API char *r_str_clean(char *str) {
 	int len;
@@ -766,6 +817,9 @@ R_API int r_str_unescape(char *buf) {
 			continue;
 		if (buf[i+1]=='e') {
 			buf[i] = 0x1b;
+			memmove (buf+i+1, buf+i+2, strlen (buf+i+2)+1);
+		} else if (buf[i+1]=='\\') {
+			buf[i] = '\\';
 			memmove (buf+i+1, buf+i+2, strlen (buf+i+2)+1);
 		} else if (buf[i+1]=='r') {
 			buf[i] = 0x0d;
@@ -827,7 +881,7 @@ static char *r_str_escape_ (const char *buf, const int dot_nl) {
 		return NULL;
 
 	/* Worst case scenario, we convert every byte */
-	new_buf = malloc (1 + (strlen(buf) * 4));
+	new_buf = malloc (1 + (strlen (buf) * 4));
 
 	if (!new_buf)
 		return NULL;
@@ -869,6 +923,7 @@ static char *r_str_escape_ (const char *buf, const int dot_nl) {
 				p++;
 				/* Parse the ANSI code (only the graphic mode
 				 * set ones are supported) */
+				if (*p == '\0') goto out;
 				if (*p == '[')
 					for (p++; *p != 'm'; p++)
 						;
@@ -888,6 +943,7 @@ static char *r_str_escape_ (const char *buf, const int dot_nl) {
 		p++;
 	}
 
+out:
 	*q = '\0';
 
 	return new_buf;
@@ -937,8 +993,14 @@ R_API int r_str_ansi_chop(char *str, int str_len, int n) {
 	 * max length of n */
 	char ch, ch2;
 	int back, i = 0, len = 0;
+	if (!str) {
+		return 0;
+	}
 	/* simple case - no need to cut */
-	if (n >= str_len){
+	if (str_len<0) {
+		str_len = strlen (str);
+	}
+	if (n >= str_len) {
 		str[str_len - 1] = 0;
 		return str_len - 1;
 	}
@@ -1004,18 +1066,47 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
 	return str+li;
 }
 
-R_API int r_str_ansi_filter(char *str, int len) {
-	int i, j;
+/*
+ * filter out ansi CSI shit in-place!.
+ * str - input string,
+ * out - if not NULL write a pointer to the original string there,
+ * cposs - if not NULL write a pointer to thunk array there
+ * (*cposs)[i] is the offset of the out[i] in str
+ * len - lenght of str
+ */
+R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
+
+	int i, j, *cps;
 	char *tmp;
-	if (len<1) len = strlen (str)+1;
+
+	if (len < 1) len = strlen (str) + 1;
 	tmp = malloc (len);
 	if (!tmp) return -1;
 	memcpy (tmp, str, len);
-	for (i=j=0; i<len; i++)
-		if (i+1<len && tmp[i] == 0x1b && tmp[i+1] == '[')
-			for (i+=2;i<len&&str[i]!='J'&&str[i]!='m'&&str[i]!='H';i++);
-		else str[j++] = tmp[i];
-	free (tmp);
+	cps = malloc(len * sizeof(int));
+
+	for (i = j = 0; i < len; i++) {
+
+		if ((i + 1) < len && tmp[i] == 0x1b && tmp[i + 1] == '[') {
+			for (i += 2; i < len && str[i] != 'J'
+				     && str[i] != 'm' && str[i] != 'H'; i++);
+		} else {
+			str[j] = tmp[i];
+			cps[j] = i;
+			j++;
+		}
+	}
+
+	if (out)
+		*out = tmp;
+	else
+		free (tmp);
+
+	if (cposs)
+		*cposs = cps;
+	else
+		free(cps);
+
 	return j;
 }
 
@@ -1039,39 +1130,34 @@ R_API void r_str_filter(char *str, int len) {
 			str[i] = '.';
 }
 
-R_API int r_str_glob (const char *str, const char *glob) {
-	const char *p;
-	int slen, glen;
-	if (!*str) return R_TRUE;
-	glen = strlen (glob);
-	slen = strlen (str);
-	if (*glob == '*') {
-		if (glob[1] == '\0')
-			return R_TRUE;
-		if (glob[glen-1] == '*') {
-			return r_mem_mem ((const ut8*)str, slen,
-				(const ut8*)glob+1, glen-2) != 0;
-		}
-		if (slen<glen-2)
+R_API int r_str_glob (const char* str, const char *glob) {
+	const char* cp = NULL, *mp = NULL;
+	while ((*str) && (*glob != '*')) {
+		if ((*glob != *str)) {
 			return R_FALSE;
-		p = str + slen - (glen-1);
-		return memcmp (p, glob+1, glen-1) == 0;
-	} else {
-		if (glob[glen-1] == '*') {
-			if (slen<glen-1)
-				return R_FALSE;
-			return memcmp (str, glob, glen-1) == 0;
-		} else {
-			char *p = strchr (glob, '*');
-			if (p) {
-				int a = (int)(size_t)(p-glob);
-				return ((!memcmp (str, glob, a)) && \
-					(!memcmp (str+slen-a, glob+a+1, glen-a-1)))? 1: 0;
+		}
+		++glob;
+		++str;
+	}
+	while (*str) {
+		if (*glob == '*') {
+			if (!*++glob) {
+				return R_TRUE;
 			}
-			return !strcmp (str, glob);
+			mp = glob;
+			cp = str+1;
+		} else if (*glob == *str) {
+			++glob;
+			++str;
+		} else {
+			glob = mp;
+			str = cp++;
 		}
 	}
-	return R_FALSE; // statement never reached
+	while (*glob == '*') {
+		++glob;
+	}
+	return (*glob == '\x00');
 }
 
 // Escape the string arg so that it is parsed as a single argument by r_str_argv
@@ -1628,38 +1714,32 @@ R_API char *r_str_crop(const char *str, int x, int y, int w, int h) {
 	r = ret = strdup (str);
 	while (*str) {
 		/* crop height */
-		if (ch>=h) {
+		if (ch >= h) {
 			r--;
 			break;
 		}
+
 		if (*str == '\n') {
-			if (ch>=y && ch<h)
-				if (cw>=x && cw<w)
-					*r++ = *str;
+			if (ch >= y && ch < h)
+				*r++ = *str;
+			str++;
 			ch++;
 			cw = 0;
 		} else {
+			if (ch >= y && ch < h && cw >= x && cw < w)
+				*r++ = *str;
+
 			/* crop width */
-			if (w>0 && cw>=w) {
-				*r++ = '\n';
-				/* skip str until newline */
-				while (*str && *str != '\n') {
+			/* skip until newline */
+			if (cw >= w) {
+				while (*str && *str != '\n')
 					str++;
-				}
-				if (!*str)break;
-				if (*str=='\n') {
-					str++;
-					if (!*str)break;
-				}
-				cw = 0;
-				ch++;
+			} else {
+				str++;
 			}
-			if (ch>=y && ch<h)
-				if (cw>=x && cw<w)
-					*r++ = *str;
+
+			cw++;
 		}
-		str++;
-		cw++;
 	}
 	*r = 0;
 	return ret;

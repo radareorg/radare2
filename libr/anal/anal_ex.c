@@ -110,15 +110,16 @@ R_API void r_anal_ex_clone_op_switch_to_bb (RAnalBlock *bb, RAnalOp *op) {
 	RListIter *iter;
 	RAnalCaseOp *caseop = NULL;
 
-	if ( op->switch_op ) {
+	if (op->switch_op) {
 
 		bb->switch_op = r_anal_switch_op_new (op->switch_op->addr,
 											op->switch_op->min_val,
 											op->switch_op->max_val);
-
-		r_list_foreach (op->switch_op->cases, iter, caseop) {
-			r_anal_switch_op_add_case (bb->switch_op, caseop->addr,
+		if (bb->switch_op){
+			r_list_foreach (op->switch_op->cases, iter, caseop) {
+				r_anal_switch_op_add_case (bb->switch_op, caseop->addr,
 													caseop->value, caseop->jump);
+			}
 		}
 	}
 }
@@ -167,10 +168,14 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (r_anal_state_addr_is_valid(state, addr) && op == NULL)
 		op = r_anal_ex_get_op(anal, state, addr);
 
-	if (op == NULL || !r_anal_state_addr_is_valid(state, addr)) return NULL;
-
+	if (op == NULL || !r_anal_state_addr_is_valid(state, addr)) {
+		return NULL;
+	}
 	current_bb = r_anal_bb_new ();
-	r_anal_ex_op_to_bb(anal, state, current_bb, op);
+	if (!current_bb) {
+		return NULL;
+	}
+	r_anal_ex_op_to_bb (anal, state, current_bb, op);
 
 	if (r_anal_op_is_eob (op))
 		current_bb->type |= R_ANAL_BB_TYPE_LAST;
@@ -182,6 +187,7 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 			int buf_len = r_anal_state_get_len( state, addr);
 			if (current_bb->op_sz <buf_len) {
 				eprintf ("Oops\n");
+				r_anal_bb_free (current_bb);
 				return NULL;
 			}
 			memcpy (current_bb->op_bytes, r_anal_state_get_buf_by_addr(state, addr), current_bb->op_sz);

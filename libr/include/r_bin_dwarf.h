@@ -466,8 +466,17 @@ extern "C" {
 #define DW_LANG_UPC			0x0012
 #define DW_LANG_D			0x0013
 #define DW_LANG_Python			0x0014
+#define DW_LANG_Rust			0x001c
+#define DW_LANG_C11			0x001d
+#define DW_LANG_Swift			0x001e
+#define DW_LANG_Julia			0x001f
+#define DW_LANG_Dylan			0x0020
+#define DW_LANG_C_plus_plus_14		0x0021
+#define DW_LANG_Fortran03		0x0022
+#define DW_LANG_Fortran08		0x0023
 #define DW_LANG_lo_user			0x8000
 #define DW_LANG_hi_user			0xffff
+
 
 #define DW_ID_case_sensitive		0x00
 #define DW_ID_up_case			0x01

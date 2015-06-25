@@ -1,3 +1,4 @@
+
 /* radare2 - LGPL - Copyright 2015 pancake */
 
 #include "r_lib.h"
@@ -20,21 +21,22 @@ static void env(const char *s, int f) {
 }
 
 #if __WINDOWS__
-static int myCreateChildProcess(char * szCmdline);
-static int myCreateChildProcess(char * szCmdline) {
+static HANDLE  myCreateChildProcess(const char * szCmdline) {
 	PROCESS_INFORMATION piProcInfo;
 	STARTUPINFO siStartInfo;
 	BOOL bSuccess = FALSE;
 	DWORD dwWritten;
-	ZeroMemory( &piProcInfo, sizeof(PROCESS_INFORMATION));
-	ZeroMemory( &siStartInfo, sizeof(STARTUPINFO) );
+	ZeroMemory (&piProcInfo, sizeof (PROCESS_INFORMATION));
+	ZeroMemory (&siStartInfo, sizeof (STARTUPINFO));
 	siStartInfo.cb = sizeof(STARTUPINFO);
-	bSuccess = CreateProcess(NULL,szCmdline,NULL,NULL,TRUE,0,NULL,NULL,&siStartInfo,&piProcInfo);
-	if ( ! bSuccess )
-		return R_FALSE;
-	CloseHandle(piProcInfo.hProcess);
-	CloseHandle(piProcInfo.hThread);
-	return R_TRUE;
+	bSuccess = CreateProcess (NULL, szCmdline, NULL, NULL,
+		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
+	if (!bSuccess)
+		return NULL;
+	
+	//CloseHandle (piProcInfo.hProcess);
+	//CloseHandle (piProcInfo.hThread);
+	return piProcInfo.hProcess;
 }
 #endif
 
@@ -70,7 +72,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			sleep (1);
 		}
 #endif
-		write (output[1], "", 1);
+		write (input[1], "", 1);
 		close (input[0]);
 		close (input[1]);
 		close (output[0]);
@@ -80,6 +82,11 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	} else {
 		/* parent */
 		char *res, buf[1024];
+
+		/* Close pipe ends not required in the parent */
+		close(output[1]);
+		close(input[0]);
+
 		r_cons_break (NULL, NULL);
 		for (;;) {
 			if (r_cons_singleton ()->breaked) {
@@ -90,7 +97,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			if (ret <1 || !buf[0]) {
 				break;
 			}
-			buf[sizeof(buf)-1] = 0;
+			buf[sizeof (buf)-1] = 0;
 			res = lang->cmd_str ((RCore*)lang->user, buf);
 			//eprintf ("%d %s\n", ret, buf);
 			if (res) {
@@ -119,43 +126,56 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 #else
 #if __WINDOWS__
 	HANDLE hPipeInOut = NULL;
+	HANDLE hproc=NULL;
 	DWORD dwRead, dwWritten;
 	CHAR buf[1024];
 	BOOL bSuccess = FALSE;
 	SECURITY_ATTRIBUTES saAttr;
 	int res=0;
-	hPipeInOut = CreateNamedPipe("\\\\.\\pipe\\R2PIPE_IN",
+	sprintf(buf,"R2PIPE_IN%x",_getpid());
+	SetEnvironmentVariable("R2PIPE_PATH",buf);
+	sprintf(buf,"\\\\.\\pipe\\R2PIPE_IN%x",_getpid());
+	hPipeInOut = CreateNamedPipe(buf,
 		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
 		PIPE_READMODE_MESSAGE | \
-		PIPE_WAIT,PIPE_UNLIMITED_INSTANCES,
+		PIPE_NOWAIT,PIPE_UNLIMITED_INSTANCES,
 		sizeof (buf), sizeof (buf), 0, NULL);
-	if (myCreateChildProcess(code)!=R_TRUE) {
+	hproc=myCreateChildProcess (code);
+	if (hproc==NULL) {
 		//eprintf("Error spawning process: %s\n",code);
 		return R_TRUE;
 	}
-	bSuccess = ConnectNamedPipe(hPipeInOut, NULL);
-	if (!bSuccess) {
-		//eprintf("Error connecting pipe.\n");
-		return R_TRUE;
-	}
 	r_cons_break (NULL, NULL);
-	for (;;) {
-		/*if (r_cons_singleton ()->breaked) {
+	for (;;)
+	{
+		res = ConnectNamedPipe(hPipeInOut, NULL);
+		if (GetLastError()==ERROR_PIPE_CONNECTED) {
+			//eprintf("new client\n");
 			break;
-		}*/
+		}
+		if (r_cons_singleton ()->breaked) {
+			TerminateProcess(hproc,0);
+			break;
+		}
+
+	}
+	for (;;) {
+		if (r_cons_singleton ()->breaked) {
+			TerminateProcess(hproc,0);
+			break;
+		}
 		memset (buf, 0, sizeof (buf));
 		bSuccess = ReadFile( hPipeInOut, buf, sizeof (buf), &dwRead, NULL);
-		if (!bSuccess || !buf[0]) {
-			break;
-		}
-		buf[sizeof(buf)-1] = 0;
-		res = lang->cmd_str ((RCore*)lang->user, buf);
-		if (res) {
-			WriteFile(hPipeInOut, res, strlen (res)+1, &dwWritten, NULL);
-			free (res);
-		} else {
-			WriteFile(hPipeInOut, "", 1, &dwWritten, NULL);
-		}
+	  	if (dwRead!=0) {
+			buf[sizeof(buf)-1] = 0;
+			res = lang->cmd_str ((RCore*)lang->user, buf);
+			if (res) {
+				WriteFile(hPipeInOut, res, strlen (res)+1, &dwWritten, NULL);
+				free (res);
+			} else {
+				WriteFile(hPipeInOut, "", 1, &dwWritten, NULL);
+			}
+	  	}
 	}
 	CloseHandle(hPipeInOut);
 	r_cons_break_end ();

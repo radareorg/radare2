@@ -37,7 +37,6 @@ static int verify_version(int show) {
 		{ "r_bp", &r_bp_version },
 		{ "r_debug", &r_debug_version },
 		{ "r_hash", &r_hash_version },
-		{ "r_diff", &r_diff_version },
 		{ "r_fs", &r_fs_version },
 		{ "r_io", &r_io_version },
 		{ "r_magic", &r_magic_version },
@@ -69,17 +68,22 @@ static int verify_version(int show) {
 // we should probably move this functionality into the r_debug API
 // r_debug_get_baddr
 static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
+	char *abspath;
 	RListIter *iter;
 	RDebugMap *map;
 	if (!r || !r->io || !r->io->desc)
 		return 0LL;
 	r_debug_attach (r->dbg, r->io->desc->fd);
 	r_debug_map_sync (r->dbg);
+	abspath = r_file_abspath (file);
+	if (!abspath) abspath = strdup (file);
 	r_list_foreach (r->dbg->maps, iter, map) {
-		if (!strcmp (file, map->name)) {
+		if (!strcmp (abspath, map->name)) {
+			free (abspath);
 			return map->addr;
 		}
 	}
+	free (abspath);
 	// fallback resolution (osx/w32?)
 	// we asume maps to be loaded in order, so lower addresses come first
 	r_list_foreach (r->dbg->maps, iter, map) {
@@ -91,21 +95,22 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 }
 
 static int main_help(int line) {
-	if (line<2)
+	if (line<2) {
 		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|-|--|=\n");
+			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|pid|-|--|=\n");
+	}
 	if (line != 1) printf (
 		" --           open radare2 on an empty file\n"
 		" -            equivalent of 'r2 malloc://512'\n"
 		" =            read file from stdin (use -i and -c to run cmds)\n"
 		" -0           print \\x00 after init and every command\n"
 		" -a [arch]    set asm.arch\n"
-		" -A           run 'aa' command to analyze all referenced code\n"
+		" -A           run 'aaa' command to analyze all referenced code\n"
 		" -b [bits]    set asm.bits\n"
 		" -B [baddr]   set base address for PIE binaries\n"
 		" -c 'cmd..'   execute radare command\n"
 		" -C           file is host:port (alias for -c+=http://%%s/cmd/)\n"
-		" -d           use 'file' as a program to debug\n"
+		" -d           debug the executable 'file' or running process 'pid'\n"
 		" -D [backend] enable debug mode (e cfg.debug=true)\n"
 		" -e k=v       evaluate config var\n"
 		" -f           block size = file size\n"
@@ -361,8 +366,14 @@ int main(int argc, char **argv, char **envp) {
 				return 1;
 		}
 	}
-	if (help>1) return main_help (2);
-	else if (help) return main_help (0);
+
+	if (help > 0) {
+		r_list_free (evals);
+		r_list_free (cmds);
+		if (help > 1)
+			return main_help (2);
+		return main_help (0);
+	}
 
 	if (r_config_get_i (r.config, "cfg.plugins")) {
 		r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
@@ -704,7 +715,8 @@ int main(int argc, char **argv, char **envp) {
 			(void)r_core_run_script (&r, global_rc);
 	}
 	if (do_analysis) {
-		r_core_cmd0 (&r, "aa");
+		//r_core_cmd0 (&r, "aa");
+		r_core_cmd0 (&r, "aaa");
 		r_cons_flush ();
 	}
 	/* run -i flags */

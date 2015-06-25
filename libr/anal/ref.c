@@ -21,6 +21,7 @@ R_API RAnalRef *r_anal_ref_new() {
 
 R_API RList *r_anal_ref_list_new() {
 	RList *list = r_list_new ();
+	if (!list) return NULL;
 	list->free = &r_anal_ref_free;
 	return list;
 }

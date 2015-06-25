@@ -1,12 +1,12 @@
 #!/bin/sh
-cd `dirname $PWD/$0`
+cd "$(dirname "$PWD/$0")"
 ./clone-r2-bindings.sh
 cd ../radare2-bindings
 
 type i686-pc-mingw32-gcc >/dev/null 2>&1
 if [ $? = 0 ]; then
 	C=i686-pc-mingw32-gcc
-	G=i686-pc-mingw32-gcc
+	G=i686-pc-mingw32-g++
 	H=i686-unknown-windows
 elif [ -x /usr/bin/i686-w64-mingw32-gcc ]; then
 	C=i686-w64-mingw32-gcc
@@ -16,7 +16,7 @@ elif [ -x /usr/bin/pacman ]; then
 	C=i486-mingw32-gcc
 	H=i486-unknown-windows
 	G=i486-mingw32-g++
-elif [ `uname` = Darwin ]; then
+elif [ "$(uname)" = Darwin ]; then
 	C=i386-mingw32-gcc
 	H=i386-unknown-windows
 	G=i386-mingw32-g++

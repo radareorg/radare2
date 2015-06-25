@@ -1,3 +1,4 @@
+include ../global.mk
 include ../config-user.mk
 include ../mk/${COMPILER}.mk
 
@@ -5,10 +6,10 @@ WGET?=wget
 CS_VER=3.0
 CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_TAR=
-CS_URL=https://www.github.com/aquynh/capstone.git
-CS_UPD=20150512
+CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
+CS_UPD=20150619
 CS_BRA=next
-CS_TIP=c42effd51cac83a4010f5a1517233a23aa1bedef
+CS_TIP=a5540d843b71fdeb72a04acbb7c67bd7a3459f1a
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=21b9b25e9dae4af0ef309d4089a54e53b8f5b479
 
@@ -158,7 +159,10 @@ capstone-sync:
 	else true ; fi)
 	if [ -n "${CS_REV}" ]; then \
 		cd capstone ; \
-		EDITOR=cat git revert ${CS_REV} ; \
+		git config user.name || ( \
+		git config user.name "radare-travis" ; \
+		git config user.email radare-travis@foo.com ) ; \
+		EDITOR=cat git revert --no-edit ${CS_REV} ; \
 	fi
 
 .PHONY: capstone
@@ -184,6 +188,5 @@ CAPSTONE_CFLAGS=-g
 capstone-build: capstone
 	cd capstone && CFLAGS="-Dmips=mips ${CAPSTONE_CFLAGS} $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
 		$(MAKE) CC="$(CC)" AR_EXT=a IS_CYGWIN=0 CAPSTONE_STATIC=yes CAPSTONE_SHARED=no \
-		RANLIB="$(RANLIB)" AR="$(AR)" IS_MINGW=0 \
-		./libcapstone.a
+		RANLIB="$(RANLIB)" AR="$(AR)" IS_MINGW=0 ./libcapstone.a
 endif

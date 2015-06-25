@@ -555,6 +555,7 @@ static int cmd_help(void *data, const char *input) {
 		"/","", "Search for bytes, regexps, patterns, ..",
 		"!"," [cmd]", "Run given command as in system(3)",
 		"#"," [algo] [len]", "Calculate hash checksum of current block",
+		"#","!lang [..]", "Hashbang to run an rlang script",
 		"a","", "Perform analysis of code",
 		"b","", "Get or change block size",
 		"c"," [arg]", "Compare block with given data",

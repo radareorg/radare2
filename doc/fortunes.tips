@@ -23,7 +23,7 @@ Move around the bytes with h,j,k,l! Arrow keys are neither portable nor efficien
 Seek at relative offsets with 's +<offset>' or 's -<offset>'
 Invert the block bytes using the 'I' key in visual mode
 Switch between print modes using the 'p' and 'P' keys in visual mode
-Add comments using the ';' key in visual mode or the 'C' command from the radare2 shell
+Add comments using the ';' key in visual mode or the 'CC' command from the radare2 shell
 Assemble opcodes with the 'a' and 'A' keys in visual mode, which are bindings to the 'wa' and 'wA' commands
 Find expanded AES keys in memory with '/Ca'
 Find wide-char strings with the '/w <string>' command
@@ -80,3 +80,4 @@ Use '-e bin.strings=false' to disable automatic string search when loading the b
 The unix-like reverse engineering framework.
 This code was intentionally left blank, try 'e asm.arch = ws'
 For a full list of commands see `strings /dev/urandom`
+Thanks for using radare2!

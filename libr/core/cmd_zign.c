@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 static int cmd_zign(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -9,13 +9,37 @@ static int cmd_zign(void *data, const char *input) {
 	char *ptr, *name;
 
 	switch (*input) {
+	case 'B':
+		if (input[1]==' ' && input[2]) {
+			ut8 buf[128];
+			ut64 addr = core->offset;
+			int size = 32;
+			ptr = strchr (input+2, ' ');
+			if (ptr) {
+				size = atoi (ptr+1);
+				if (size<1) size = 1;
+			}
+			if (r_io_read_at (core->io, core->offset, buf,
+					sizeof (buf)) == sizeof (buf)) {
+				RFlagItem *flag = r_flag_get_i (core->flags, addr);
+				if (flag) {
+					name = flag->name;
+					r_cons_printf ("zb %s ", name);
+					len = R_MIN (size, sizeof (buf));
+					for (i=0; i<len; i++)
+						r_cons_printf ("%02x", buf[i]);
+					r_cons_newline ();
+				} else eprintf ("Unnamed function at 0x%08"PFMT64x"\n", addr);
+			} else eprintf ("Cannot read at 0x%08"PFMT64x"\n", addr);
+		} else eprintf ("Usage: zB [size] @@ sym*\nNote: Use zn and zn-");
+		break;
 	case 'g':
 		if (input[1]==' ' && input[2]) {
 			int fdold = r_cons_singleton ()->fdout;
 			ptr = strchr (input+2, ' ');
 			if (ptr) {
 				*ptr = '\0';
-				fd = open (ptr+1, O_RDWR|O_CREAT|O_TRUNC, 0644);
+				fd = r_sandbox_open (ptr+1, O_RDWR|O_CREAT|O_TRUNC, 0644);
 				if (fd == -1) {
 					eprintf ("Cannot open %s in read-write\n", ptr+1);
 					return R_FALSE;
@@ -60,11 +84,15 @@ static int cmd_zign(void *data, const char *input) {
 	case 'b':
 	case 'h':
 	case 'f':
-		ptr = strchr (input+3, ' ');
-		if (ptr) {
-			*ptr = 0;
-			r_sign_add (core->sign, core->anal, (int)*input, input+2, ptr+1);
-		} else eprintf ("Usage: z%c [name] [arg]\n", *input);
+		if (*(input+1) == '\0' || *(input+2) == '\0')
+			eprintf ("Usage: z%c [name] [arg]\n", *input);
+		else{
+			ptr = strchr (input+3, ' ');
+			if (ptr) {
+				*ptr = 0;
+				r_sign_add (core->sign, core->anal, (int)*input, input+2, ptr+1);
+			} 
+		}	
 		break;
 	case 'c':
 		item = r_sign_check (core->sign, core->block, core->blocksize);
@@ -170,6 +198,7 @@ static int cmd_zign(void *data, const char *input) {
 			"z/", "[ini] [end]", "search zignatures between these regions",
 			"za", " ...", "define new zignature for analysis",
 			"zb", " name bytes", "define zignature for bytes",
+			"zB", " size", "Generate zignatures for current offset/flag",
 			"zc", " @ fcn.foo", "flag signature if matching (.zc@@fcn)",
 			"zf", " name fmt", "define function zignature (fast/slow, args, types)",
 			"zF", " file", "Open a flirt signature file and scan opened file",

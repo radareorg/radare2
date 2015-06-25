@@ -89,6 +89,11 @@ static int core_cmd_callback (void *user, const char *cmd) {
 	return r_core_cmd0 (core, cmd);
 }
 
+static char *core_cmdstr_callback (void *user, const char *cmd) {
+	RCore *core = (RCore *)user;
+	return r_core_cmd_str (core, cmd);
+}
+
 static ut64 getref (RCore *core, int n, char t, int type) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	RListIter *iter;
@@ -700,52 +705,51 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 	return ret;
 }
 
-// TODO: return string instead of printing it. reuse from 'drr'
-R_API const char *r_core_anal_hasrefs(RCore *core, ut64 value) {
+R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
+	RStrBuf *s = r_strbuf_new (NULL);
 	ut64 type;
-	//int bits = core->assembler->bits;
-	//RList *list = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
 	RAnalFunction *fcn;
 	RFlagItem *fi;
 	fi = r_flag_get_i (core->flags, value);
 	type = r_core_anal_address (core, value);
 	fcn = r_anal_get_fcn_in (core->anal, value, 0);
-	if (value && fi) {
-		r_cons_printf (" %s", fi->name);
+
+	if (fi) {
+		r_strbuf_appendf (s, " %s", fi->name);
 	}
 	if (fcn) {
-		r_cons_printf (" %s", fcn->name);
+		r_strbuf_appendf (s, " %s", fcn->name);
 	}
 	if (type) {
 		const char *c = r_core_anal_optype_colorfor (core, value);
 		const char *cend = (c&&*c)? Color_RESET: "";
 		if (!c) c = "";
 		if (type & R_ANAL_ADDR_TYPE_HEAP) {
-			r_cons_printf (" %sheap%s", c, cend);
+			r_strbuf_appendf (s, " %sheap%s", c, cend);
 		} else if (type & R_ANAL_ADDR_TYPE_STACK) {
-			r_cons_printf (" %sstack%s", c, cend);
+			r_strbuf_appendf (s, " %sstack%s", c, cend);
 		}
 		if (type & R_ANAL_ADDR_TYPE_PROGRAM)
-			r_cons_printf (" %sprogram%s", c, cend);
+			r_strbuf_appendf (s, " %sprogram%s", c, cend);
 		if (type & R_ANAL_ADDR_TYPE_LIBRARY)
-			r_cons_printf (" %slibrary%s", c, cend);
+			r_strbuf_appendf (s, " %slibrary%s", c, cend);
 		if (type & R_ANAL_ADDR_TYPE_ASCII)
-			r_cons_printf (" %sascii%s", c, cend);
+			r_strbuf_appendf (s, " %sascii%s", c, cend);
 		if (type & R_ANAL_ADDR_TYPE_SEQUENCE)
-			r_cons_printf (" %ssequence%s", c, cend);
+			r_strbuf_appendf (s, " %ssequence%s", c, cend);
 		if (type & R_ANAL_ADDR_TYPE_READ)
-			r_cons_printf (" %sR%s", c, cend);
+			r_strbuf_appendf (s, " %sR%s", c, cend);
 		if (type & R_ANAL_ADDR_TYPE_WRITE)
-			r_cons_printf (" %sW%s", c, cend);
+			r_strbuf_appendf (s, " %sW%s", c, cend);
 		if (type & R_ANAL_ADDR_TYPE_EXEC) {
-			r_cons_printf (" %sX%s", c, cend);
+			r_strbuf_appendf (s, " %sX%s", c, cend);
 			{
 				RAsmOp op;
 				ut8 buf[32];
 				r_io_read_at (core->io, value, buf, sizeof (buf));
 				r_asm_set_pc (core->assembler, value);
 				r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
-				r_cons_printf (" '%s'", op.buf_asm);
+				r_strbuf_appendf (s, " '%s'", op.buf_asm);
 			}
 			/* get library name */
 			{
@@ -754,7 +758,7 @@ R_API const char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 				r_list_foreach (core->dbg->maps, iter, map) {
 					if ((value >=map->addr) && (value<map->addr_end)) {
 						const char *lastslash = r_str_lchr (map->name, '/');
-						r_cons_printf (" '%s'", lastslash?
+						r_strbuf_appendf (s, " '%s'", lastslash?
 							lastslash+1:map->name);
 						break;
 					}
@@ -762,7 +766,11 @@ R_API const char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 			}
 		}
 	}
-	return NULL;
+	{
+		char *rs = strdup (r_strbuf_get (s));
+		r_strbuf_free (s);
+		return rs;
+	}
 }
 
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr) {
@@ -864,6 +872,7 @@ R_API int r_core_init(RCore *core) {
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
+	core->anal->meta_spaces.printf = r_cons_printf;
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;
 	core->anal->cb.on_fcn_rename = on_fcn_rename;
@@ -881,7 +890,8 @@ R_API int r_core_init(RCore *core) {
 	core->io = r_io_new ();
 	core->io->ff = 1;
 	core->io->user = (void *)core;
-	core->io->core_cmd_cb = core_cmd_callback;
+	core->io->cb_core_cmd = core_cmd_callback;
+	core->io->cb_core_cmdstr = core_cmdstr_callback;
 	core->sign = r_sign_new ();
 	core->search = r_search_new (R_SEARCH_KEYWORD);
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
@@ -906,7 +916,6 @@ R_API int r_core_init(RCore *core) {
 	r_core_cmd_init (core);
 	core->dbg = r_debug_new (R_TRUE);
 	r_core_bind (core, &core->dbg->corebind);
-	core->dbg->graph->printf = (PrintfCallback)r_cons_printf;
 	core->dbg->printf = (PrintfCallback)r_cons_printf;
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");
@@ -927,13 +936,13 @@ R_API int r_core_init(RCore *core) {
 	// TODO: get arch from r_bin or from native arch
 	r_asm_use (core->assembler, R_SYS_ARCH);
 	r_anal_use (core->anal, R_SYS_ARCH);
-	r_bp_use (core->dbg->bp, R_SYS_ARCH);
 	if (R_SYS_BITS & R_SYS_BITS_64)
 		r_config_set_i (core->config, "asm.bits", 64);
 	else
 	if (R_SYS_BITS & R_SYS_BITS_32)
 		r_config_set_i (core->config, "asm.bits", 32);
 	r_config_set (core->config, "asm.arch", R_SYS_ARCH);
+	r_bp_use (core->dbg->bp, R_SYS_ARCH, core->anal->bits);
 	update_sdb (core);
 	return 0;
 }
@@ -1434,7 +1443,7 @@ reaccept:
 					strcpy ((char*)buf, "/tmp/.out");
 					pipefd = r_cons_pipe_open ((const char *)buf, 1, 0);
 					//eprintf("SYSTEM(%s)\n", ptr+6);
-					system ((const char*)ptr+6);
+					r_sandbox_system ((const char*)ptr+6, 1);
 					r_cons_pipe_close (pipefd);
 					{
 						FILE *fd = r_sandbox_fopen((char*)buf, "r");

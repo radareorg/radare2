@@ -292,6 +292,9 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 	const char *port;
 	const int timeout = 1; // 1 second
 	RCore *core = (RCore*)u;
+#if __WINDOWS__
+	r_socket_http_server_set_breaked(1);
+#endif
 	if (((size_t)u)>0xff) {
 		port = listenport? listenport: r_config_get (
 			core->config, "http.port");
@@ -377,10 +380,12 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		port = path;
 		path = NULL;
 	} else {
-		if (!strcmp (httpui, "p")
-		|| !strcmp (httpui, "enyo")
-		|| !strcmp (httpui, "t")) {
-			path = httpui;
+		if (core->file) {
+			if (!strcmp (httpui, "p")
+					|| !strcmp (httpui, "enyo")
+					|| !strcmp (httpui, "t")) {
+				path = httpui;
+			}
 		}
 	}
 
@@ -1067,15 +1072,15 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	for (i = 0; i < RTR_MAX_HOSTS; i++)
 		if (!rtr_host[i].fd) {
 			rtr_host[i].proto = proto;
-			memcpy (rtr_host[i].host, host, 512);
+			strncpy (rtr_host[i].host, host, sizeof (rtr_host[i].proto)-1);
 			rtr_host[i].port = r_num_get (core->num, port);
-			memcpy (rtr_host[i].file, file, 1024);
+			strncpy (rtr_host[i].file, file, sizeof (rtr_host[i].file)-1);
 			rtr_host[i].fd = fd;
 			rtr_n = i;
 			break;
 		}
 	core->num->value = ret;
-	r_socket_free(fd);
+	// double free wtf is freed this here? r_socket_free(fd);
 	//r_core_rtr_list (core);
 }
 
@@ -1094,9 +1099,12 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 				break;
 		}
 	} else {
-		for (i = 0; i < RTR_MAX_HOSTS; i++)
-			if (rtr_host[i].fd)
+		for (i = 0; i < RTR_MAX_HOSTS; i++) {
+			if (rtr_host[i].fd) {
 				r_socket_free (rtr_host[i].fd);
+				rtr_host[i].fd = NULL;
+			}
+		}
 		memset (rtr_host, '\0', RTR_MAX_HOSTS * sizeof(RCoreRtrHost));
 		rtr_n = 0;
 	}

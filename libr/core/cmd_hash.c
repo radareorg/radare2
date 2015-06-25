@@ -21,7 +21,7 @@ typedef struct {
 	HashHandler handler;
 } RHashHashHandlers;
 
-static RHashHashHandlers HASH_HANDLERS[] = {
+static RHashHashHandlers hash_handlers[] = {
 	{"md4", handle_md4},
 	{"md5", handle_md5},
 	{"sha1", handle_sha1},
@@ -171,7 +171,7 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 		} else {
 			if (r_config_get_i (core->config, "scr.interactive")) {
 				r_lang_prompt (core->lang);
-			} else eprintf ("Cannot enter into the rlang prompt in non-interactive mode\n");
+			} else eprintf ("Error: scr.interactive required to run the rlang prompt\n");
 		}
 	} else {
 		if (!p || *p==' ')
@@ -193,8 +193,8 @@ static int cmd_hash(void *data, const char *input) {
 		return 0;
 	case '#':
 		if (!input[1]) {
-		algolist (1);
-		return R_TRUE;
+			algolist (1);
+			return R_TRUE;
 		}
 	case '!':
 		return cmd_hash_bang (core, input);
@@ -217,9 +217,9 @@ static int cmd_hash(void *data, const char *input) {
 	} else if (!ptr || !*(ptr+1)) osize = len;
 	/* TODO: Simplify this spaguetti monster */
 
-	while (osize > 0 && HASH_HANDLERS[pos].name != NULL) {
-		if (!r_str_ccmp (input, HASH_HANDLERS[pos].name, ' ')) {
-			HASH_HANDLERS[pos].handler (core->block, len);
+	while (osize > 0 && hash_handlers[pos].name != NULL) {
+		if (!r_str_ccmp (input, hash_handlers[pos].name, ' ')) {
+			hash_handlers[pos].handler (core->block, len);
 			handled_cmd = R_TRUE;
 			break;
 		}

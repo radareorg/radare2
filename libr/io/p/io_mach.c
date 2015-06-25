@@ -10,9 +10,6 @@
 
 #define EXCEPTION_PORT 0
 
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <mach/exception_types.h>
 #include <mach/mach_vm.h>
 #include <mach/mach_init.h>
@@ -28,6 +25,8 @@
 #include <mach-o/nlist.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/wait.h>
 #include <errno.h>
 
@@ -89,7 +88,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 		if (size==0) {
 			if (blocksize == 1) {
 				memset (buf+copied, 0xff, len-copied);
-				return size+copied;
+				return len; //size+copied;
 			}
 			blocksize = 1;
 			blen = 1;
@@ -98,7 +97,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 		//if (size != blen) { return size+copied; }
 		copied += blen;
 	}
-        return (int)size;
+        return len; //(int)size;
 }
 
 static int mach_write_at(RIOMach *riom, const void *buff, int len, ut64 addr) {

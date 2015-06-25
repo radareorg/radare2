@@ -77,7 +77,7 @@
 #include "config.h"
 
 static inline int seek_set(int fd, off_t pos) {
-	return (fd==-1 || lseek (fd, (off_t) pos, SEEK_SET) == -1)? 0:1;
+	return ((fd==-1) || (lseek (fd, (off_t) pos, SEEK_SET) == -1))? 0:1;
 }
 
 static inline void ut32_pack(char s[4], ut32 u) {
@@ -99,7 +99,7 @@ static inline void ut32_pack_big(char s[4], ut32 u) {
 }
 
 static inline void ut32_unpack(char s[4], ut32 *u) {
-	ut32 result;
+	ut32 result = 0;
 	result = (ut8) s[3];
 	result <<= 8;
 	result += (ut8) s[2];

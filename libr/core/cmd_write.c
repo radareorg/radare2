@@ -236,7 +236,7 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case '0':
 		{
-			ut64 len = r_num_math (core->num, input+2);
+			ut64 len = r_num_math (core->num, input+1);
 			if (len>0) {
 				ut8 *buf = calloc (1, len);
 				if (buf) {
@@ -676,7 +676,7 @@ static int cmd_write(void *data, const char *input) {
 		r_core_block_read (core, 0);
 		break;
 	case 't': // "wt"
-		if (*str == '?') {
+		if (*str == '?' || *str == '\0') {
 			eprintf ("Usage: wt[a] file [size]   write 'size' bytes in current block to file\n");
 			free (ostr);
 			return 0;
@@ -845,7 +845,7 @@ static int cmd_write(void *data, const char *input) {
 		default:
 			r_cons_printf ("|Usage: wa[of*] [arg]\n"
 				"| wa nop           : write nopcode using asm.arch and asm.bits\n"
-				"| wa* mov eax, 33  : show 'wx' op with hexpair bytes of sassembled opcode\n"
+				"| wa* mov eax, 33  : show 'wx' op with hexpair bytes of assembled opcode\n"
 				"| \"wa nop;nop\"     : assemble more than one instruction (note the quotes)\n"
 				"| waf foo.asm      : assemble file and write bytes\n"
 				"| wao nop          : convert current opcode into nops\n"

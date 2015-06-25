@@ -29,7 +29,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		  {
 			 const ut8 *p = buf + 1;
 			 int lev = 0, i = 1;
-			 while (*p && i<len) {
+			 while (i<len && *p) {
 				 if (*p == '[')
 					 lev++;
 				 if (*p == ']') {

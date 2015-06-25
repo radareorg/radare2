@@ -488,8 +488,8 @@ SDB_API void sdb_array_sort(Sdb *s, const char *key, ut32 cas) {
 	if (!str || !*str)
 		return;
 	strs = sdb_fmt_array (str);
-	for(i=0; strs[i]; i++);
-	qsort (strs, i, sizeof (char**), cstring_cmp);
+	for (i=0; strs[i]; i++);
+	qsort (strs, i, sizeof (char*), cstring_cmp);
 	nstr = str;
 	for(i=0; strs[i]; i++) {
 		j = strlen(strs[i]);

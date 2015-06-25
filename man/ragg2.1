@@ -80,6 +80,8 @@ use default output file (filename without extension or a.out)
 add include path
 .It Fl s
 show assembler code
+.It Fl r
+show raw bytes instead of hexpairs
 .It Fl x
 execute (just-in-time)
 .It Fl z
@@ -89,8 +91,8 @@ output in C string syntax
 .Pp
   $ cat hi.r
   /* hello world in r_egg */
-  write@syscall(4);
-  exit@syscall(1);
+  write@syscall(4); //x64 write@syscall(1);
+  exit@syscall(1); //x64 exit@syscall(60);
 .Pp
   main@global(128) {
     .var0 = "hi!\\n";

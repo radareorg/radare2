@@ -20,10 +20,11 @@ static void pair(const char *a, const char *b) {
 static int r_core_bin_set_cur (RCore *core, RBinFile *binfile);
 
 static ut64 rva (RBin *bin, int va, ut64 paddr, ut64 vaddr, ut64 baddr, ut64 laddr) {
-	int has_info = 0;
-	if (bin && bin->cur && bin->cur->o && bin->cur->o->info)
-		has_info = 1;
-	if (has_info && bin->cur->o->info->type[0] != 'E') {
+	RBinInfo *info = NULL;
+	if (bin && bin->cur && bin->cur->o && bin->cur->o->info) {
+		info = bin->cur->o->info;
+	}
+	if (info && info->type[0] != 'E') {
 		// if its not an executable, use va = 2 mode to load the syms
 		// hackaround to make -1 be va=0 and 0 to be no-laddr
 		if (baddr == 0) {
@@ -33,7 +34,7 @@ static ut64 rva (RBin *bin, int va, ut64 paddr, ut64 vaddr, ut64 baddr, ut64 lad
 	}
 	if (laddr == UT64_MAX)
 		va = 0;
-	if (has_info && bin->cur->o->info->bits != 16) {
+	if (info && info->bits != 16) {
 		// hackaround the hackaround for bios
 		if (va == 2) {
 			if (!baddr) baddr = 1;
@@ -44,7 +45,13 @@ static ut64 rva (RBin *bin, int va, ut64 paddr, ut64 vaddr, ut64 baddr, ut64 lad
 	case 0: // pa $ rabin2 -p
 		return paddr;
 	case 1: // va $ rabin2
-		return r_bin_get_vaddr (bin, baddr, paddr, vaddr);
+		{
+			ut64 addr = r_bin_get_vaddr (bin, baddr, paddr, vaddr);
+			if (baddr>addr) {
+				addr += baddr;
+			}
+			return addr;
+		}
 	case 2: // la $ rabin2 -B
 		if (!baddr && !laddr)
 			return vaddr;
@@ -275,20 +282,23 @@ static const char* get_compile_time(Sdb *binFileSdb) {
 static int bin_info (RCore *r, int mode) {
 	int i, j;
 	char str[R_FLAG_NAME_SIZE];
-	char size_str[21];
+	char size_str[32];
+	char baddr_str[32];
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RBinFile *binfile = r_core_bin_cur (r);
 	const char *compiled = NULL;
-	if (binfile) {
-		compiled = get_compile_time (binfile->sdb);
-	}
-	snprintf (size_str, sizeof (size_str), "%"PFMT64d,  r_bin_get_size (r->bin));
 
-	if (!info) {
+	if (!binfile || !info) {
 		if (mode & R_CORE_BIN_JSON)
 			r_cons_printf ("{}");
 		return R_FALSE;
 	}
+
+	compiled = get_compile_time (binfile->sdb);
+	snprintf (size_str, sizeof (size_str),
+		"%"PFMT64d,  r_bin_get_size (r->bin));
+	snprintf (baddr_str, sizeof (baddr_str),
+		"%"PFMT64d,  info->baddr);
 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("{\"bintype\":\"%s\","
@@ -310,6 +320,7 @@ static int bin_info (RCore *r, int mode) {
 			"\"lsyms\":%s,"
 			"\"relocs\":%s,"
 			"\"rpath\":\"%s\","
+			"\"baddr\":%s,"
 			"\"binsz\":%s,"
 			"\"subsys\":\"%s\","
 			"\"guid\":\"%s\","
@@ -334,6 +345,7 @@ static int bin_info (RCore *r, int mode) {
 			r_str_bool ((R_BIN_DBG_SYMS &info->dbg_info)),
 			r_str_bool ((R_BIN_DBG_RELOCS &info->dbg_info)),
 			STR(info->rpath),
+			baddr_str,
 			size_str,
 			STR(info->subsystem),
 			info->guid ? info->guid : "",
@@ -543,24 +555,35 @@ static int bin_pdb (RCore *core, ut64 baddr, int mode) {
 
 static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 	RBinAddr *binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN);
+	ut64 main_addr = 0LL;
+	//RBinObject *binobj = r_bin_get_object(r->bin);
+	//ut64 baseaddr = binobj->baddr;
 	if (!binmain) return R_FALSE;
-	baddr = 0LL; // This is broken, just to make t.formats/elf/main happy
+
+	if (va) {
+		if (baddr) {
+			main_addr = baddr + binmain->paddr;
+		} else {
+			main_addr = binmain->vaddr;
+		}
+	} else {
+		main_addr = binmain->paddr;
+	}
+
 	if ((mode & R_CORE_BIN_SIMPLE) || mode & R_CORE_BIN_JSON) {
-		r_cons_printf ("%"PFMT64d, va? (baddr+binmain->vaddr):binmain->paddr);
-	} else
-	if ((mode & R_CORE_BIN_SET)) {
+		r_cons_printf ("%"PFMT64d, main_addr);
+	} else if ((mode & R_CORE_BIN_SET)) {
 		r_flag_space_set (r->flags, "symbols");
-		r_flag_set (r->flags, "main", va? (baddr+binmain->vaddr): binmain->paddr,
+		r_flag_set (r->flags, "main", main_addr,
 				r->blocksize, 0);
 	} else {
 		if (mode) {
 			r_cons_printf ("fs symbols\n");
-			r_cons_printf ("f main @ 0x%08"PFMT64x"\n",
-				va? baddr+binmain->vaddr: binmain->paddr);
+			r_cons_printf ("f main @ 0x%08"PFMT64x"\n", main_addr);
 		} else {
 			r_cons_printf ("[Main]\n");
 			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x"\n",
-					baddr+binmain->vaddr, binmain->paddr);
+					main_addr, binmain->paddr);
 		}
 	}
 	return R_TRUE;
@@ -607,17 +630,23 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, ut64 laddr, int va) {
 
 		r_list_foreach (entries, iter, entry) {
 			ut64 paddr = entry->paddr;
-			ut64 vaddr = r_bin_get_vaddr (r->bin, baddr,
-				paddr, entry->vaddr);
+			ut64 vaddr = r_bin_get_vaddr (r->bin, baddr, paddr, entry->vaddr);
+			ut64 at = rva (r->bin, va, entry->paddr, entry->vaddr, baddr, laddr);
+			if (at > vaddr) {
+				vaddr = at;
+			}
+			if (!va) {
+				vaddr = paddr;
+			}
 			if (mode) {
-				ut64 at = rva (r->bin, va, entry->paddr, entry->vaddr, baddr, laddr);
-				r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, at);
+				r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, vaddr);
 				r_cons_printf ("s entry%i\n", i);
 			} else {
 				if (!baddr) {
 					baddr = vaddr - paddr;
 				}
-				r_cons_printf ("vaddr=0x%08"PFMT64x
+				r_cons_printf (
+					 "vaddr=0x%08"PFMT64x
 					" paddr=0x%08"PFMT64x
 					" baddr=0x%08"PFMT64x
 					" laddr=0x%08"PFMT64x"\n",
@@ -797,7 +826,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 		} else {
 			r_cons_printf ("[Relocations]\n");
 			r_list_foreach (relocs, iter, reloc) {
-				ut64 addr = va? reloc->vaddr: reloc->paddr;
+				ut64 addr = va? reloc->vaddr : reloc->paddr;
 				r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" type=%s",
 					addr, reloc->paddr, bin_reloc_type_name (reloc));
 				if (reloc->import && reloc->import->name[0])
@@ -883,6 +912,7 @@ static ut64 impaddr(RBin *bin, int va, ut64 baddr, const char *name) {
 }
 
 static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name) {
+//	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RBinImport *import;
 	RListIter *iter;
 	RList *imports;
@@ -965,8 +995,9 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 					import->ordinal, addr,
 					import->bind, import->type, import->classname, import->name, import->descriptor);
 			} else r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s name=%s\n",
-					import->ordinal, addr,
-					import->bind, import->type, import->name);
+				import->ordinal, addr,
+				import->bind, import->type,
+				import->name);
 			i++;
 		}
 		if (!mode) r_cons_printf ("\n%i imports\n", i);
@@ -991,7 +1022,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 	int i = 0;
 
 	symbols = r_bin_get_symbols (r->bin);
-
+	r_space_set (&r->anal->meta_spaces, "bin");
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
 		r_list_foreach (symbols, iter, symbol) {
@@ -1012,8 +1043,20 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_list_foreach (symbols, iter, symbol) {
-			ut64 at = rva (r->bin, va, symbol->paddr, symbol->vaddr, baddr, laddr);
+			ut64 at = rva (r->bin, va, symbol->paddr,
+				symbol->vaddr, baddr, laddr);
 			char *name = strdup (symbol->name);
+			if (bin_demangle) {
+				const char *symname = name;
+				char *dname;
+				if (!strncmp (symname, "imp.", 4))
+					symname += 4;
+				dname = r_bin_demangle (r->bin->cur, lang, symname);
+				if (dname) {
+					free (name);
+					name = dname;
+				}
+			}
 			r_name_filter (name, 80);
 			r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
 				at, symbol->size, name);
@@ -1068,7 +1111,6 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 				// set the new sym.[cname].[name] with comment
 				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s.%s", cname, name);
 				fi = r_flag_set (r->flags, str, addr, symbol->size, 0);
-
 				if (comment) {
 					r_flag_item_set_comment (fi, comment);
 					free (comment);
@@ -1120,12 +1162,14 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 					r_cons_printf ("%s\n", symbol->name);
 			} else {
 				if (mode) {
-					char *mn = r_bin_demangle (r->bin->cur, lang, symbol->name);
-					if (mn) {
-						//r_name_filter (mn, strlen (mn));
-						r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n",
-							symbol->paddr, mn);
-						free (mn);
+					if (bin_demangle) {
+						char *mn = r_bin_demangle (r->bin->cur, lang, symbol->name);
+						if (mn) {
+							//r_name_filter (mn, strlen (mn));
+							r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n",
+								symbol->paddr, mn);
+							free (mn);
+						}
 					}
 					r_name_filter (symbol->name, sizeof (symbol->name));
 #if 0
@@ -1162,17 +1206,27 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 							}
 						}
 					 }
-				} else r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
+				} else {
+					const char *name = symbol->name;
+					char *mn = NULL;
+					if (bin_demangle) {
+						mn = r_bin_demangle (r->bin->cur, lang, symbol->name);
+						if (mn) name = mn;
+					}
+					r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
 						    "fwd=%s sz=%u bind=%s type=%s name=%s\n",
 						    addr, symbol->paddr,
 						    symbol->ordinal, symbol->forwarder,
 						    symbol->size, symbol->bind, symbol->type,
-						    symbol->name);
+						    name);
+					free (mn);
+				}
 			}
 			i++;
 		}
 		if (!at && !mode) r_cons_printf ("\n%i symbols\n", i);
 	}
+	r_space_set (&r->anal->meta_spaces, NULL);
 	return R_TRUE;
 }
 
@@ -1611,8 +1665,9 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	ut64 at = 0, baseaddr = 0LL;
 
 	// WTF, should be the same but we are not keeping it
-	if (core->bin && core->bin->cur && core->bin->cur->o)
+	if (core->bin && core->bin->cur && core->bin->cur->o) {
 		baseaddr = core->bin->cur->o->baddr;
+	}
 
 	if (loadaddr)
 		va = 2;

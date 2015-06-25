@@ -24,6 +24,7 @@ static void var_help(RCore *core, char ch) {
 	 const char* help_msg[] = {
 		 "Usage:", "af[aAv]", " [idx] [type] [name]",
 		 "afa", "", "list function arguments",
+		 "afa*", "", "list function arguments in commands",
 		 "afa", " [idx] [name] ([type])", "define argument N with name and type",
 		 "afan", " [old_name] [new_name]", "rename function argument",
 		 "afaj", "", "return list of function arguments in JSON format",
@@ -47,7 +48,6 @@ static void var_help(RCore *core, char ch) {
 
 static int var_cmd(RCore *core, const char *str) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	RList *list;
 	char *p, *ostr;
 	int delta, type = *str;
 
@@ -56,8 +56,8 @@ static int var_cmd(RCore *core, const char *str) {
 
 	switch (type) {
 	case 'V': // show vars in human readable format
-		r_anal_var_list_show (core->anal, fcn, 'v');
-		r_anal_var_list_show (core->anal, fcn, 'a');
+		r_anal_var_list_show (core->anal, fcn, 'v', 0);
+		r_anal_var_list_show (core->anal, fcn, 'a', 0);
 		break;
 	case '?':
 		var_help (core, 0);
@@ -69,13 +69,15 @@ static int var_cmd(RCore *core, const char *str) {
 		/* Variable access CFvs = set fun var */
 		switch (str[1]) {
 		case '\0':
-			r_anal_var_list_show (core->anal, fcn, type);
+		case '*':
+		case 'j':
+			r_anal_var_list_show (core->anal, fcn, type, str[1]);
 			goto end;
 		case '?':
 			var_help (core, *str);
 			goto end;
 		case '.':
-			r_anal_var_list_show (core->anal, fcn, core->offset);
+			r_anal_var_list_show (core->anal, fcn, core->offset, 0);
 			goto end;
 		case '-':
 			if (fcn) {
@@ -102,21 +104,6 @@ static int var_cmd(RCore *core, const char *str) {
 				old_name, new_name);
 			free (old_name);
 			goto end;
-		case 'j':
-			list = r_anal_var_list (core->anal, fcn, type);
-			RAnalVar *var;
-			RListIter *iter;
-			r_cons_printf ("[");
-			r_list_foreach (list, iter, var) {
-				r_cons_printf ("{\"name\":\"%s\","
-						"\"kind\":\"%s\",\"type\":\"%s\",\"ref\":\"%s%s%d\"}",
-						var->name, var->kind=='v'?"var":"arg", var->type,
-						core->anal->reg->name[R_REG_NAME_BP], (var->kind=='v')?"-":"+", var->delta);
-				if (iter->n) r_cons_printf (",");
-			}
-			r_cons_printf ("]\n");
-			r_list_free (list);
-			goto end;
 		case 's':
 		case 'g':
 			if (str[2]!='\0') {
@@ -128,7 +115,6 @@ static int var_cmd(RCore *core, const char *str) {
 						int scope = (str[1]=='g')?0: 1;
 						r_anal_var_access (core->anal, fcn->addr, (char)type,
 							scope, atoi (str+2), rw, core->offset);
-						//return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
 						r_anal_var_free (var);
 						goto end;
 					}
@@ -315,8 +301,9 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 
 			r_cons_printf ("\"cycles\":%d,", op.cycles);
 			if (op.failcycles)
-				r_cons_printf ("failcycles: %d\n", op.failcycles);
-			r_cons_printf ("\"stack\":%d,", r_anal_stackop_tostring (op.stackop));
+				r_cons_printf ("\"failcycles\":%d,", op.failcycles);
+			r_cons_printf ("\"delay\":%d,", op.delay);
+			r_cons_printf ("\"stack\":\"%s\",", r_anal_stackop_tostring (op.stackop));
 			r_cons_printf ("\"cond\":%d,",
 				(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
 			r_cons_printf ("\"family\":\"%s\"}", r_anal_op_family_to_string (op.family));
@@ -374,9 +361,9 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 	}
 }
 
-static int bb_cmp(void *a, void *b) {
-	RAnalBlock *ba = a;
-	RAnalBlock *bb = b;
+static int bb_cmp(const void *a, const void *b) {
+	const RAnalBlock *ba = a;
+	const RAnalBlock *bb = b;
 	return ba->addr - bb->addr;
 }
 
@@ -640,11 +627,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'l': // "afl"
 		switch (input[2]) {
-		case '?': eprintf ("Usage: afl[j*] <addr>\n"); break;
-		case 'j': r_core_anal_fcn_list (core, NULL, 'j'); break; // "aflj"
-		case '*': r_core_anal_fcn_list (core, NULL, '*'); break; // "afl*"
-		case 'a': r_core_anal_fcn_list (core, NULL, 'a'); break; // "afla"
-		default: r_core_anal_fcn_list (core, NULL, 'q'); break; // "afl"
+		case '?':
+			eprintf ("Usage: afl[ajq*] <addr>\n");
+			eprintf ("List all functions in quiet, commands or json format\n");
+			break;
+		case 'a':
+		case '*':
+		case 'j':
+		case 'q':
+			r_core_anal_fcn_list (core, NULL, input[2]);
+			break;
+		default:
+			r_core_anal_fcn_list (core, NULL, 'q');
+			break;
 		}
 		break;
 	case 's': { // "afs"
@@ -886,6 +881,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			   break;
 		 }
 		 break;
+	case 'g': // "afg" - non-interactive VV
+		r_core_visual_graph (core, NULL, R_FALSE);
+		break;
 	case '?':{ // "af?"
 		 const char* help_msg[] = {
 		 "Usage:", "af", "",
@@ -900,6 +898,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
 		 "afC[a]", " type @[addr]", "set calling convention for function (afC?=list cc types)",
 		 "aff", "", "re-adjust function boundaries to fit",
+		 "afg", "", "non-interactive ascii-art basic-block graph (See VV)",
 		 "afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 		 "afl", "[*] [fcn name]", "list functions (addr, size, bbs, name)",
 		 "afo", " [fcn.name]", "show address for the function named like this",
@@ -1121,20 +1120,67 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			break;
 		}
 		break;
-	case 'p':
+	case 'p':  // drp
 		if (!str[1]) {
 			if (core->dbg->reg->reg_profile_str) {
 				//core->anal->reg = core->dbg->reg;
 				r_cons_printf ("%s\n", core->dbg->reg->reg_profile_str);
 				//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
-			} else eprintf ("No register profile defined. Try 'dr.'\n");
-		} else r_reg_set_profile (core->dbg->reg, str+2);
+			} else {
+				eprintf ("No register profile defined. Try 'dr.'\n");
+			}
+		} else if (str[1] == 'j') {
+			// drpj
+			RListIter *iter;
+			RRegItem *r;
+			int i;
+			int first = 1;
+			static const char *types[R_REG_TYPE_LAST+1] = {
+				"gpr", "drx", "fpu", "mmx", "xmm", "flg", "seg", NULL
+			};
+			static const char *roles[R_REG_NAME_LAST+1] = {
+				"pc", "sp", "sr", "bp", "ao", "a1",
+				"a2", "a3", "a4", "a5", "a6", "zf",
+				"sf", "cf", "of", "sb", NULL
+			};
+			r_cons_printf ("{\"alias_info\":[");
+			for (i = 0; i < R_REG_NAME_LAST; i++) {
+				if (core->dbg->reg->name[i]) {
+					if (!first) r_cons_printf (",");
+					r_cons_printf ("{\"role\":%d,", i);
+					r_cons_printf ("\"role_str\":\"%s\",", roles[i]);
+					r_cons_printf ("\"reg\":\"%s\"}",
+						core->dbg->reg->name[i]);
+					first = 0;
+				}
+			}
+			r_cons_printf ("],\"reg_info\":[");
+			first = 1;
+			for (i = 0; i < R_REG_TYPE_LAST; i++) {
+				r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
+					if (!first) r_cons_printf (",");
+					r_cons_printf ("{\"type\":%d,", r->type);
+					r_cons_printf ("\"type_str\":\"%s\",", types[r->type]);
+					r_cons_printf ("\"name\":\"%s\",", r->name);
+					r_cons_printf ("\"size\":%d,", r->size);
+					r_cons_printf ("\"offset\":%d}", r->offset);
+					first = 0;
+				}
+			}
+			r_cons_printf ("]}");
+		} else {
+			r_reg_set_profile (core->dbg->reg, str+2);
+		}
 		break;
 	case 't': // "drt"
 		for (i=0; (name=r_reg_get_type (i)); i++)
 			r_cons_printf ("%s\n", name);
 		break;
 	case 'n': // "drn"
+		if (*(str+1) == '\0'){
+			eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
+			break;
+		}
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str+2));
 		if (name && *name)
 			r_cons_printf ("%s\n", name);
@@ -1453,6 +1499,17 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	RAnalOp *op;
 
 	switch (input[0]) {
+	case 'p': // "aep "
+		if (input[1] == ' ') {
+			// seek to this address
+			r_core_cmd0 (core, "aei");  // init vm
+			r_core_cmd0 (core, "aeim"); // init stack
+			r_core_cmdf (core, "ar pc=%s", input+2);
+			r_core_cmd0 (core, ".ar*");
+		} else {
+			eprintf ("Missing argument\n");
+		}
+		break;
 	case 'r':
 		// 'aer' is an alias for 'ar'
 		cmd_anal_reg (core, input+1);
@@ -1504,7 +1561,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		if (input[1] == 'u' && input[2] == 'e')
 			until_expr = input + 3;
 		else if (input[1] == 'u')
-			until_addr = r_num_math(core->num, input + 2);
+			until_addr = r_num_math (core->num, input + 2);
 		else until_expr = "0";
 		esil_step (core, until_addr, until_expr);
 		break;
@@ -1514,6 +1571,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 'i': // "aei"
 		switch (input [1]) {
+		case 's':
 		case 'm':
 			cmd_esil_mem (core, input+2);
 			break;
@@ -1648,9 +1706,10 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				"ae?", "", "show this help",
 				"ae??", "", "show ESIL help",
 				"aei", "", "initialize ESIL VM state",
-				"aeis", "", "initialize ESIL VM stack (aeis- remove)",
+				"aeim", "", "initialize ESIL VM stack (aeim- remove)",
 				"aed", "", "deinitialize ESIL VM state",
 				"ae", " [expr]", "evaluate ESIL expression",
+				"aep", " [addr]", "change esil PC to this address",
 				"aef", " [addr]", "emulate function",
 				"aek", " [query]", "perform sdb query on ESIL.info",
 				"aek-", "", "resets the ESIL.info sdb instance",
@@ -1683,13 +1742,14 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				"aos", " [esil]", "show sdb representation of esil expression (TODO)",
 				"aoe", " 4", "emulate 4 opcodes starting at current offset",
 				"ao", " 5", "display opcode analysis of 5 opcodes",
+				"ao*", "", "display opcode in r commands",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
 		break;
 	case 'j':
 		{
-			int count = 0;
+			int count = 1;
 			if (input[1] && input[2]) {
 				l = (int) r_num_get (core->num, input+1);
 				if (l>0) count = l;
@@ -1706,6 +1766,9 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		break;
 	case 'e':
 		eprintf ("TODO: See 'ae' command\n");
+		break;
+	case '*':
+		r_core_anal_hint_list (core->anal, input[0]);
 		break;
 	default:
 		{
@@ -1729,6 +1792,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 static void cmd_anal_calls(RCore *core, const char *input) {
 	int minop = 1; // 4
 	ut8 buf[32];
+	RBinFile *binfile;
 	RAnalOp op;
 	ut64 addr, addr_end;
 	ut64 len = r_num_math (core->num, input);
@@ -1738,6 +1802,15 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	}
 	if (len<1) {
 		len = r_num_math (core->num, "$SS-($$-$S)"); // section size
+	}
+	binfile = r_core_bin_cur (core);
+	if (!binfile){
+		eprintf ("cur binfile null\n");
+		return;
+	}
+	if (len > binfile->size){
+		eprintf ("section size greater than file size\n");
+		return;
 	}
 	addr = core->offset;
 	addr_end = addr + len;
@@ -2151,11 +2224,15 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		"agd", " [fcn name]", "output graphviz code of diffed function",
 		"agl", " [fcn name]",  "output graphviz code using meta-data",
 		"agt", " [addr]", "find paths from current offset to given address",
+		"agf", " [addr]", "Show ASCII art graph of given function",
 		"agfl", " [fcn name]", "output graphviz code of function using meta-data",
 		"agv", "[acdltfl] [a]", "view function using graphviz",
 		NULL};
 
 	switch (input[0]) {
+	case 'f':
+		r_core_cmd0 (core, "afg"); // afg should be deprecated imho
+		break;
 	case 't':
 		list = r_core_anal_graph_to (core, r_num_math (core->num, input+1), 0);
 		if (list) {

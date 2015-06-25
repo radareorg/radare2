@@ -1,8 +1,9 @@
-// by jeremie miller - 2010
+// by jeremie miller - 2010-2015
 // public domain, contributions/improvements welcome via github
 
 // opportunity to further optimize would be having different jump tables for higher depths
 
+#include "rangstr.h"
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #pragma GCC diagnostic push
@@ -16,9 +17,9 @@
 #define PUSH(i) if(depth == 1) prev = *out++ = ((cur+i) - js)
 #define CAP(i) if(depth == 1) prev = *out++ = ((cur+i) - (js + prev) + 1)
 
-int js0n(const unsigned char *js, unsigned int len, unsigned short *out) {
-	unsigned short prev = 0;
-	const unsigned char *cur, *end;
+int js0n(const ut8 *js, RangstrType len, RangstrType *out) {
+	ut32 prev = 0;
+	const ut8 *cur, *end;
 	int depth = 0, utf8_remain = 0;
 	static void *gostruct[] = {
 		[0 ... 255] = &&l_bad,

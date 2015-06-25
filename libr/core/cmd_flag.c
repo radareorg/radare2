@@ -117,6 +117,12 @@ rep:
 		break;
 	case 'R':
 		{
+		if (*str == '\0'){
+			eprintf ("Usage: fR [from] [to] ([mask])\n");
+			eprintf ("Example to relocate PIE flags on debugger:\n"
+				" > fR entry0 `dm~:1[1]`\n");
+			break;
+		}
 		char *p = strchr (str+1, ' ');
 		ut64 from, to, mask = 0xffff;
 		int ret;
@@ -463,7 +469,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 	case '*':
 	case '\0':
 	case 'j':
-		r_flag_list (core->flags, *input, input+1);
+		r_flag_list (core->flags, *input, input[0]? input+1:"");
 		break;
 	case 'd':
 		{

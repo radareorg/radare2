@@ -123,8 +123,9 @@ static int cb_analarch(void *user, void *data) {
 		if (*node->value) {
 			if (!r_anal_use (core->anal, node->value)) {
 				const char *aa = r_config_get (core->config, "asm.arch");
-				if (!aa || strcmp (aa, node->value))
+				if (!aa || strcmp (aa, node->value)) {
 					eprintf ("anal.arch: cannot find '%s'\n", node->value);
+				}
 				return R_FALSE;
 			}
 		} else return R_FALSE;
@@ -230,16 +231,36 @@ static int cb_asmbits(void *user, void *data) {
 			ret = R_TRUE;
 		}
 	}
-	if (!r_anal_set_bits (core->anal, node->i_value))
+	if (!r_anal_set_bits (core->anal, node->i_value)) {
 		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", (int)node->i_value);
+	}
 	core->print->bits = node->i_value;
 	if (core->dbg  && core->anal && core->anal->cur) {
+		int load_from_debug = 0;
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, node->i_value);
-		if (core->dbg->h && core->dbg->h->reg_profile && !core->anal->cur->set_reg_profile) {
-			char *rp = core->dbg->h->reg_profile (core->dbg);
-			r_reg_set_profile_string (core->dbg->reg, rp);
-			r_reg_set_profile_string (core->anal->reg, rp);
-			free (rp);
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			if (core->dbg->h && core->dbg->h->reg_profile) {
+				char *rp = core->dbg->h->reg_profile (core->dbg);
+				r_reg_set_profile_string (core->dbg->reg, rp);
+				r_reg_set_profile_string (core->anal->reg, rp);
+				free (rp);
+			} else {
+				load_from_debug = 1;
+			}
+		} else {
+			if (core->anal->cur->set_reg_profile) {
+				core->anal->cur->set_reg_profile (core->anal);
+			} else {
+				load_from_debug = 1;
+			}
+		}
+		if (load_from_debug) {
+			if (core->dbg->h && core->dbg->h->reg_profile) {
+				char *rp = core->dbg->h->reg_profile (core->dbg);
+				r_reg_set_profile_string (core->dbg->reg, rp);
+				r_reg_set_profile_string (core->anal->reg, rp);
+				free (rp);
+			}
 		}
 	}
 
@@ -253,6 +274,7 @@ static int cb_asmbits(void *user, void *data) {
 		}
 		__setsegoff (core->config, asmarch, core->anal->bits);
 	}
+	r_bp_use (core->dbg->bp, asmarch, core->anal->bits);
 	return ret;
 }
 
@@ -442,6 +464,18 @@ static int cb_dbgbep(void *user, void *data) {
 		r_cons_printf ("loader\nentry\nconstructor\nmain\n");
 		return R_FALSE;
 	}
+	return R_TRUE;
+}
+
+static int cb_dbg_btalgo(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (*node->value == '?') {
+		r_cons_printf ("default\nanal\n");
+		return R_FALSE;
+	}
+	free (core->dbg->btalgo);
+	core->dbg->btalgo = strdup (node->value);
 	return R_TRUE;
 }
 
@@ -969,6 +1003,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* pdb */
 	SETPREF("pdb.user_agent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF("pdb.server", "http://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");
+	SETI("pdb.extract", 1, "Avoid extract of the pdb file, just download");
 
 	/* anal */
 	SETPREF("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
@@ -988,8 +1023,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");
 	SETCB("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");
-	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis.");
-	SETCB("anal.recont", "false", &cb_analrecont, "Split functions into basic blocks in analysis.");
+	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis");
+	SETCB("anal.recont", "false", &cb_analrecont, "End block after splitting a basic block instead of error"); // testing
 	SETCB("anal.trace", "false", &cb_anal_trace, "Record ESIL trace in log database");
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
@@ -1040,6 +1075,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.vars", "true", "Show local function variables in disassembly");
 	SETPREF("asm.varxs", "false", "Show accesses of local variables");
 	SETPREF("asm.varsub", "true", "Substitute variables in disassembly");
+	SETPREF("asm.cmtfold", "false", "Fold comments, toggle with Vz");
 	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be used by asm");
 	SETCB("asm.features", "", &cb_asmfeatures, "Specify supported features by the target CPU (=? for help)");
 	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");
@@ -1102,6 +1138,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("dir.types", "/usr/include", "Default path to look for cparse type files");
 #if __ANDROID__
 	SETPREF("dir.projects", "/data/data/org.radare2.installer/radare2/projects", "Default path for projects");
+#elif __WINDOWS__
+	SETPREF("dir.projects", "~\\"R2_HOMEDIR"\\projects", "Default path for projects");
 #else
 	SETPREF("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
 #endif
@@ -1111,6 +1149,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("stack.delta", 0,  "Delta for the stack dump");
 
 	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
+	SETCB("dbg.btalgo", "", &cb_dbg_btalgo, "Select backtrace algorithm");
 	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
 	SETCB("dbg.clone", "false", &cb_dbg_clone, "Stop execution if new thread is created");
 	SETCB("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");
@@ -1124,6 +1163,7 @@ R_API int r_core_config_init(RCore *core) {
 	else r_config_set_i (cfg, "dbg.follow", 32);
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
 	SETCB("dbg.swstep", "false", &cb_swstep, "Force use of software steps (code analysis+breakpoint)");
+	SETPREF("dbg.shallow_trace", "false", "While tracing, avoid following calls outside specified range");
 
 	r_config_set_getter (cfg, "dbg.swstep", (RConfigCallback)__dbg_swstep_getter);
 
@@ -1248,6 +1288,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("scr.responsive", "false", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
 #endif
 	SETPREF("scr.wheel", "true", "Mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
+	SETPREF("scr.atport", "false", "V@ starts a background http server and spawns an r2 -C");
 	SETI("scr.wheelspeed", 1, "Mouse wheel speed");
 	// DEPRECATED: USES hex.cols now SETI("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETICB("scr.columns", 0, &cb_scrcolumns, "Force console column count (width)");
@@ -1297,7 +1338,9 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* rop */
 	SETI("rop.len", 5, "Maximum ROP gadget length");
+	SETPREF("rop.subchains", "false", "Display every length gadget from rop.len=X to 2 in /Rl");
 	SETPREF("rop.conditional", "false", "Include conditional jump, calls and returns in ropsearch");
+	SETPREF("rop.nx", "false", "Include NX/XN/XD sections in ropsearch");
 
 	/* io */
 	SETICB("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");
@@ -1333,6 +1376,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("rap.loop", "true", "Run rap as a forever-listening daemon");
 
 	/* nkeys */
+	SETPREF("key.s", "", "override step into action");
+	SETPREF("key.S", "", "override step over action");
 	for (i=1; i<13; i++) {
 		snprintf (buf, sizeof (buf), "key.f%d", i);
 		snprintf (buf+10, sizeof (buf)-10,

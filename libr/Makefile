@@ -11,7 +11,7 @@ IFX=$(call rmdblslash,${DESTDIR}/${INCLUDEDIR})
 PWD=$(call rmdblslash,$(shell pwd))
 
 LIBS0=util hash
-LIBS1=reg cons db magic diff bp search config socket
+LIBS1=reg cons db magic bp search config socket
 LIBS2=syscall lang io crypto flags
 LIBS3=fs anal bin
 LIBS4=parse

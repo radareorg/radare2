@@ -1,7 +1,7 @@
 #!/bin/sh
 
 Rebuild() {
-	cd $1
+	cd "$1"
 	make clean
 	make -j8 || exit 1
 	cd -

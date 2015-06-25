@@ -98,6 +98,9 @@ struct MACH0_(obj_t) {
 	int os;
 	Sdb *kv;
 	int has_crypto;
+	int has_canary;
+	int dbg_info;
+	const char *lang;
 	int uuidn;
 };
 

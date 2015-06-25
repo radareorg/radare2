@@ -292,21 +292,41 @@ static int var_comparator (const RAnalVar *a, const RAnalVar *b){
 	return R_FALSE;
 }
 
-R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind) {
+R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode) {
 	RList *list = r_anal_var_list(anal, fcn, kind);
 	r_list_sort (list, (RListComparator)var_comparator);
 	RAnalVar *var;
 	RListIter *iter;
+	if (mode=='j')
+		anal->printf ("[");
 	r_list_foreach (list, iter, var) {
-		if (var->kind == kind)
-			anal->printf ("%s %s %s @ %s%s0x%x\n",
-				kind=='v'?"var":"arg",
-				var->type,
-				var->name,
-				anal->reg->name[R_REG_NAME_BP],
-				(kind=='v')?"-":"+",
-				var->delta
-			);
+		if (var->kind == kind) {
+			switch (mode) {
+			case '*':
+				// we cant express all type info here :(
+				anal->printf ("af%c %d %s %s @ 0x%"PFMT64x"\n",
+					kind, var->delta,
+					var->type, var->name, fcn->addr);
+				break;
+			case 'j':
+				anal->printf ("{\"name\":\"%s\","
+					"\"kind\":\"%s\",\"type\":\"%s\",\"ref\":\"%s%s0x%x\"}",
+					var->name, var->kind=='v'?"var":"arg", var->type,
+					anal->reg->name[R_REG_NAME_BP],
+					(var->kind=='v')?"-":"+", var->delta);
+				if (iter->n) anal->printf (",");
+				break;
+			default:
+				anal->printf ("%s %s %s @ %s%s0x%x\n",
+					kind=='v'?"var":"arg",
+					var->type, var->name,
+					anal->reg->name[R_REG_NAME_BP],
+					(kind=='v')?"-":"+",
+					var->delta);
+			}
+		}
 	}
+	if (mode=='j')
+		anal->printf ("]\n");
 	r_list_free (list);
 }

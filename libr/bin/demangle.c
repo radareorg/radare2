@@ -200,6 +200,10 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 			if (name) {
 				*name++ = 0;
 				name = strdup (name);
+				if (!name){
+					free (clas);
+					return NULL;
+				}
 				for (i=0; name[i]; i++) {
 					if (name[i]==']') {
 						name[i] = 0;
@@ -221,6 +225,11 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 		}
 		*args = 0;
 		name = strdup (args+2);
+		if (!name){
+			free (args);
+			free (clas);
+			return NULL;
+		}
 		args = NULL;
 		for (i=0; name[i]; i++) {
 			if (name[i]=='_') {
@@ -290,7 +299,11 @@ R_API int r_bin_lang_type(RBinFile *binfile, const char *def) {
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && plugin->demangle_type)
 		type = plugin->demangle_type (def);
-	else type = r_bin_demangle_type (binfile->o->info->lang);
+	else {
+		if (binfile->o && binfile->o->info) {
+			type = r_bin_demangle_type (binfile->o->info->lang);
+		}
+	}
 	if (type == R_BIN_NM_NONE)
 		type = r_bin_demangle_type (def);
 	return type;
