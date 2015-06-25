@@ -876,7 +876,11 @@ static void handle_print_pre (RCore *core, RDisasmState *ds) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f) {
 			if (f->addr == ds->at) {
-				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+				if (ds->analop.size == f->size) {
+					handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
+				} else {
+					handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+				}
 				ds->pre = r_str_concat (ds->pre, " ");
 				if (ds->show_color) {
 					r_cons_printf ("%s%s"Color_RESET, ds->color_fline, ds->pre);
