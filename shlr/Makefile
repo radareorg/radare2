@@ -23,7 +23,7 @@ MODS=sdb udis86 java tcc zip
 ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
-SDB_URL=git://github.com/radare/sdb
+SDB_URL=$(GIT_PREFIX)github.com/radare/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
