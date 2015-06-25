@@ -2177,8 +2177,40 @@ static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
 }
 #endif
 
-/* TODO: Can I use this as in a coroutine? */
 static RList *r_debug_native_frames_x86_32(RDebug *dbg, ut64 at) {
+	RRegItem *ri;
+	RReg *reg = dbg->reg;
+	ut32 i, _esp, esp, ebp2;
+	RList *list = r_list_new ();
+	RIOBind *bio = &dbg->iob;
+	ut8 buf[4];
+
+	list->free = free;
+	ri = (at==UT64_MAX)? r_reg_get (reg, "ebp", R_REG_TYPE_GPR): NULL;
+	_esp = (ut32) ((ri)? r_reg_get_value (reg, ri): at);
+		// TODO: implement [stack] map uptrace method too
+	esp = _esp;
+	for (i=0; i<MAXBT; i++) {
+		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
+		if (ebp2 == UT32_MAX)
+			break;
+		*buf = '\0';
+		bio->read_at (bio->io, (ebp2-5)-(ebp2-5)%4, (void *)&buf, 4);
+
+		// TODO: arch_is_call() here and this fun will be portable
+		if (buf[(ebp2-5)%4]==0xe8) {
+			RDebugFrame *frame = R_NEW0 (RDebugFrame);
+			frame->addr = ebp2;
+			frame->size = esp-_esp;
+			r_list_append (list, frame);
+		}
+		esp += 4;
+	}
+	return list;
+}
+
+/* TODO: Can I use this as in a coroutine? */
+static RList *r_debug_native_frames_x86_32_anal(RDebug *dbg, ut64 at) {
 	RRegItem *ri;
 	RReg *reg = dbg->reg;
 	ut32 i, _esp, esp, eip, ebp2;
@@ -2200,7 +2232,7 @@ static RList *r_debug_native_frames_x86_32(RDebug *dbg, ut64 at) {
 	eip = r_reg_get_value (reg, r_reg_get (reg, "eip", R_REG_TYPE_GPR));
 	fcn = r_anal_get_fcn_in (dbg->anal, eip, R_ANAL_FCN_TYPE_NULL);
 	if (fcn != NULL) {
-		frame = R_NEW (RDebugFrame);
+		frame = R_NEW0 (RDebugFrame);
 		frame->addr = fcn->addr;
 		frame->size = 0;
 		frame->name = (fcn && fcn->name) ? strdup(fcn->name) : NULL;
@@ -2217,7 +2249,7 @@ static RList *r_debug_native_frames_x86_32(RDebug *dbg, ut64 at) {
 		// TODO: arch_is_call() here and this fun will be portable
 		if (buf[(ebp2-5)%4]==0xe8) {
 			fcn = r_anal_get_fcn_in (dbg->anal, ebp2, R_ANAL_FCN_TYPE_NULL);
-			frame = R_NEW (RDebugFrame);
+			frame = R_NEW0 (RDebugFrame);
 			frame->addr = ebp2;
 			frame->size = esp-_esp;
 			frame->name = (fcn && fcn->name) ? strdup (fcn->name) : NULL;
@@ -2228,7 +2260,6 @@ static RList *r_debug_native_frames_x86_32(RDebug *dbg, ut64 at) {
 	return list;
 }
 
-// XXX: Do this work correctly?
 static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 	int i;
 	ut8 buf[8];
@@ -2238,7 +2269,6 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 	RList *list;
 	RReg *reg = dbg->reg;
 	RIOBind *bio = &dbg->iob;
-	RAnalFunction *fcn;
 
 	_rip = r_reg_get_value (reg, r_reg_get (reg, "rip", R_REG_TYPE_GPR));
 	if (at == UT64_MAX) {
@@ -2251,11 +2281,66 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 	list = r_list_new ();
 	list->free = free;
 	bio->read_at (bio->io, _rip, (ut8*)&buf, 8);
+	/* %rbp=old rbp, %rbp+4 points to ret */
+	/* Plugin before function prelude: push %rbp ; mov %rsp, %rbp */
+	if (!memcmp (buf, "\x55\x89\xe5", 3) || !memcmp (buf, "\x89\xe5\x57", 3)) {
+		if (bio->read_at (bio->io, _rsp, (ut8*)&ptr, 8) != 8) {
+			eprintf ("read error at 0x%08"PFMT64x"\n", _rsp);
+			r_list_purge (list);
+			free (list);
+			return R_FALSE;
+		}
+		frame = R_NEW0 (RDebugFrame);
+		frame->addr = ptr;
+		frame->size = 0; // TODO ?
+		r_list_append (list, frame);
+		_rbp = ptr;
+	}
+
+	for (i=1; i<MAXBT; i++) {
+		// TODO: make those two reads in a shot
+		bio->read_at (bio->io, _rbp, (ut8*)&ebp2, 8);
+		if (ebp2 == UT64_MAX)
+			break;
+		bio->read_at (bio->io, _rbp+8, (ut8*)&ptr, 8);
+		if (!ptr || !_rbp)
+			break;
+		frame = R_NEW0 (RDebugFrame);
+		frame->addr = ptr;
+		frame->size = 0; // TODO ?
+		r_list_append (list, frame);
+		_rbp = ebp2;
+	}
+	return list;
+}
+// XXX: Do this work correctly?
+static RList *r_debug_native_frames_x86_64_anal(RDebug *dbg, ut64 at) {
+	int i;
+	ut8 buf[8];
+	RDebugFrame *frame;
+	ut64 ptr, ebp2;
+	ut64 _rip, _rbp;
+	RList *list;
+	RReg *reg = dbg->reg;
+	RIOBind *bio = &dbg->iob;
+	RAnalFunction *fcn;
+
+	_rip = r_reg_get_value (reg, r_reg_get (reg, "rip", R_REG_TYPE_GPR));
+	if (at == UT64_MAX) {
+		//_rsp = r_reg_get_value (reg, r_reg_get (reg, "rsp", R_REG_TYPE_GPR));
+		_rbp = r_reg_get_value (reg, r_reg_get (reg, "rbp", R_REG_TYPE_GPR));
+	//} else {
+	//	_rsp = _rbp = at;
+	}
+
+	list = r_list_new ();
+	list->free = free;
+	bio->read_at (bio->io, _rip, (ut8*)&buf, 8);
 
 	// TODO : frame->size by using esil to emulate first instructions
 	fcn = r_anal_get_fcn_in (dbg->anal, _rip, R_ANAL_FCN_TYPE_NULL);
-	if(fcn) {
-		frame = R_NEW (RDebugFrame);
+	if (fcn) {
+		frame = R_NEW0 (RDebugFrame);
 		frame->addr = fcn->addr;
 		frame->size = 0;
 		frame->name = (fcn->name) ? strdup (fcn->name) : NULL;
@@ -2271,7 +2356,7 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 		if (!ptr || !_rbp)
 			break;
 		fcn = r_anal_get_fcn_in (dbg->anal, ptr, R_ANAL_FCN_TYPE_NULL);
-		frame = R_NEW (RDebugFrame);
+		frame = R_NEW0 (RDebugFrame);
 		frame->addr = ptr;
 		frame->size = 0;
 		frame->name = (fcn && fcn->name) ? strdup (fcn->name) : NULL;
@@ -2282,10 +2367,27 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 	return list;
 }
 
+typedef RList* (*RDebugFrameCallback)(RDebug *dbg, ut64 at);
+
 static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
-	if (dbg->bits == R_SYS_BITS_64)
-		return r_debug_native_frames_x86_64 (dbg, at);
-	return r_debug_native_frames_x86_32 (dbg, at);
+	RDebugFrameCallback cb = NULL;
+	if (dbg->btalgo) {
+		if (!strcmp (dbg->btalgo, "anal")) {
+			if (dbg->bits == R_SYS_BITS_64) {
+				cb = r_debug_native_frames_x86_64_anal;
+			} else {
+				cb = r_debug_native_frames_x86_32_anal;
+			}
+		}
+	}
+	if (cb == NULL) {
+		if (dbg->bits == R_SYS_BITS_64) {
+			cb = r_debug_native_frames_x86_64;
+		} else {
+			cb = r_debug_native_frames_x86_32;
+		}
+	}
+	return cb (dbg, at);
 }
 
 // TODO: implement own-defined signals

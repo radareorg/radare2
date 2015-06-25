@@ -467,6 +467,18 @@ static int cb_dbgbep(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_dbg_btalgo(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (*node->value == '?') {
+		r_cons_printf ("default\nanal\n");
+		return R_FALSE;
+	}
+	free (core->dbg->btalgo);
+	core->dbg->btalgo = strdup (node->value);
+	return R_TRUE;
+}
+
 static int cb_dbg_forks(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -1137,6 +1149,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("stack.delta", 0,  "Delta for the stack dump");
 
 	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
+	SETCB("dbg.btalgo", "", &cb_dbg_btalgo, "Select backtrace algorithm");
 	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
 	SETCB("dbg.clone", "false", &cb_dbg_clone, "Stop execution if new thread is created");
 	SETCB("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");

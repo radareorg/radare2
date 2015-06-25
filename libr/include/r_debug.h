@@ -184,6 +184,8 @@ typedef struct r_debug_t {
 	- list of mapped memory (from /proc/XX/maps)
 	- list of managed memory (allocated in child...)
 	*/
+	/* select backtrace algorithm */
+	char *btalgo;
 } RDebug;
 
 typedef struct r_debug_desc_plugin_t {
