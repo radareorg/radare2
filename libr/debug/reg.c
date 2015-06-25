@@ -53,7 +53,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 
 R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
 	int i, delta, from, to, cols, n = 0;
-	const char *fmt, *fmt2, *kwhites;
+	const char *fmt1, *fmt2, *fmt3;
 	RListIter *iter;
 	RRegItem *item;
 	RList *head;
@@ -65,18 +65,19 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		// TODO: verify if 32bit exists, otherwise use 64 or 8?
 		size = 32;
 	}
-	//if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
+
 	if (dbg->bits & R_SYS_BITS_64) {
-		fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt2 = "%4s 0x%08"PFMT64x"%s";
+		fmt1 = "%4s %#18"PFMT64x;
+		fmt2 = "%6s = %#18"PFMT64x" was %#18"PFMT64x" delta %d\n";
+		fmt3 = "%6s = %#18"PFMT64x"\n";
 		cols = 3;
-		kwhites = "         ";
 	} else {
-		fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt2 = "%4s 0x%08"PFMT64x"%s";
+		fmt1 = "%4s %#10"PFMT64x;
+		fmt2 = "%6s = %#10"PFMT64x" was %#10"PFMT64x" delta %d\n";
+		fmt3 = "%6s = %#10"PFMT64x"\n";
 		cols = 4;
-		kwhites = "    ";
 	}
+
 	if (rad=='j')
 		dbg->printf ("{");
 	if (type == -1) {
@@ -105,63 +106,51 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 
 			switch (rad) {
 			case 'j':
-				dbg->printf ("%s\"%s\":%"PFMT64d,
-					n?",":"", item->name, value);
+				if (n)
+					dbg->printf (",");
+				dbg->printf ("\"%s\":%"PFMT64d, item->name, value);
 				break;
 			case '-':
 				dbg->printf ("f-%s\n", item->name);
 				break;
 			case 1:
 			case '*':
-				dbg->printf ("f %s 1 0x%"PFMT64x"\n",
-					item->name, value);
+				dbg->printf ("f %s 1 0x%"PFMT64x"\n", item->name, value);
 				break;
 			case 'd':
 			case 2:
-				 {
-					char *str, whites[16], content[128];
-					int len;
-					strcpy (whites, kwhites);
-					if (delta && use_color)
-						dbg->printf (use_color);
-					if (item->flags) {
-						str = r_reg_get_bvalue (dbg->reg, item);
-						len = strlen (str);
-						strcpy (whites, "        ");
-						len = (len>9)?9:(9-len);
-						whites[len] = 0;
-						dbg->printf (" %s = %s%s", item->name,
-							str, ((n+1)%cols)? whites: "\n");
-						free (str);
-					} else {
-						snprintf (content, sizeof(content), fmt2, item->name, value, "");
-						len = strlen (content);
-						len -= 4;
-						if (len>10) {
-							len -= 10;
-							len = (len>9)?9:(9-len);
-							whites[len] = 0;
-						}
-						dbg->printf (fmt2, item->name, value,
-							((n+1)%cols)? whites: "\n");
+				// make columns
+				if (n == 0);
+				else if (n % cols == 0)
+					dbg->printf ("\n");
+				else dbg->printf (" |");
 
-					}
-					if (delta && use_color)
-						dbg->printf (Color_RESET);
-				 }
+				// set color
+				if (delta && use_color)
+					dbg->printf (use_color);
+
+				// print register
+				if (item->flags) {
+					char *str;
+					str = r_reg_get_bvalue (dbg->reg, item);
+					dbg->printf ("%s = %s\n", item->name, str);
+					free (str);
+				} else {
+					dbg->printf (fmt1, item->name, value);
+				}
+
+				// reset color
+				if (delta && use_color)
+					dbg->printf (Color_RESET);
 				break;
 			case 3:
-				if (delta) {
-					char woot[64];
-					snprintf (woot, sizeof (woot),
-						" was 0x%08"PFMT64x" delta %d\n", diff, delta);
-					dbg->printf (fmt, item->name, value, woot);
-				}
+				if (delta)
+					dbg->printf (fmt2, item->name, value, diff, delta);
 				break;
 			default:
 				if (delta && use_color)
 					dbg->printf (use_color);
-				dbg->printf (fmt, item->name, value, "\n");
+				dbg->printf (fmt3, item->name, value);
 				if (delta && use_color)
 					dbg->printf (Color_RESET);
 				break;
