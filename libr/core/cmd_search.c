@@ -1414,7 +1414,12 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			if (!json) {
 				eprintf ("# %d [0x%"PFMT64x"-0x%"PFMT64x"]\n", fd, param->from, param->to);
 			}
-
+			if (r_sandbox_enable (0)) {
+				if ((param->to - param->from) > 1024*64) {
+					eprintf ("Sandbox restricts search range\n");
+					break;
+				}
+			}
 			if (param->bckwrds) {
 				if (param->to < param->from + bufsz) {
 					at = param->from;
@@ -2107,7 +2112,7 @@ static int cmd_search(void *data, const char *input) {
 	searchhits = 0;
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch)
-		do_string_search(core, &param);
+		do_string_search (core, &param);
 beach: 
 	core->num->value = searchhits;
 	core->in_search = R_FALSE;

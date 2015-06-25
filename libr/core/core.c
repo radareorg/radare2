@@ -1092,9 +1092,17 @@ R_API int r_core_prompt_exec(RCore *r) {
 R_API int r_core_block_size(RCore *core, int bsize) {
 	ut8 *bump;
 	int ret = R_FALSE;
+	if (bsize<0) return R_FALSE;
 	if (bsize == core->blocksize)
 		return R_TRUE;
-	if (bsize<0 || bsize > core->blocksize_max) {
+	if (r_sandbox_enable (0)) {
+		// TODO : restrict to filesize?
+		if (bsize > 1024*32) {
+			eprintf ("Sandbox mode restricts blocksize bigger than 32k\n");
+			return R_FALSE;
+		}
+	}
+	if (bsize > core->blocksize_max) {
 		eprintf ("Block size %d is too big\n", bsize);
 		return R_FALSE;
 	}
