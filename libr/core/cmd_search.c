@@ -96,6 +96,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 			free (buf);
 		}
 	}
+	r_list_free (list);
 	eprintf ("No hashes found\n");
 	return 0;
 hell:

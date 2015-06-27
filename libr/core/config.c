@@ -273,7 +273,9 @@ static int cb_asmbits(void *user, void *data) {
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
 		__setsegoff (core->config, asmarch, core->anal->bits);
-		r_bp_use (core->dbg->bp, asmarch, core->anal->bits);
+		if (core->dbg) {
+			r_bp_use (core->dbg->bp, asmarch, core->anal->bits);
+		}
 	}
 	return ret;
 }
