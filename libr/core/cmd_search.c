@@ -827,10 +827,10 @@ R_API RList* r_core_get_boundaries_ok(RCore *core) {
 	__to = r_config_get_i (core->config, "search.to");
 	if (__from != UT64_MAX) from = __from;
 	if (__to != UT64_MAX) to = __to;
-	
+
 	if (!strncmp (searchin, "dbg.", 4) \
 	|| !strncmp (searchin, "io.sections", 11) \
-	|| prot & R_IO_EXEC) {
+	|| prot & R_IO_EXEC) /* always true */ {
 		list = r_core_get_boundaries_prot (core,
 			prot, searchin, &from, &to);
 	} else list = NULL;
@@ -926,6 +926,11 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		map = R_NEW0 (RIOMap);
 		if (!map) {
 			eprintf ("Cannot allocate map\n");
+			free (gregexp);
+			r_list_free (rx_list);
+			r_list_free (end_list);
+			r_list_free (badstart);
+			r_list_free (list);
 			return R_FALSE;
 		}
 		map->fd = core->io->desc->fd;
