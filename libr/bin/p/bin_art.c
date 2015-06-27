@@ -74,7 +74,7 @@ static int destroy(RBinFile *arch) {
 
 static ut64 baddr(RBinFile *arch) {
 	ArtObj *ao = arch->o->bin_obj;
-	return ao->art.image_base;
+	return ao?ao->art.image_base:0x00;
 }
 
 static RList *strings(RBinFile *arch) {
@@ -84,7 +84,7 @@ static RList *strings(RBinFile *arch) {
 static RBinInfo* info(RBinFile *arch) {
 	ArtObj *ao = arch->o->bin_obj;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) return NULL;
+	if (!ret || !ao) return NULL;
 
 	//art_header_load (&art, arch->buf);
 
@@ -137,6 +137,7 @@ static RList* entries(RBinFile *arch) {
 
 static RList* sections(RBinFile *arch) {
 	ArtObj *ao = arch->o->bin_obj;
+	if (!ao) return NULL;
 	ARTHeader art = ao->art;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
