@@ -1039,7 +1039,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 	if (len < 1)
 		return 0;
-	// len+2 to save space for the null termination wide string
+	// len+2 to save space for the null termination in wide strings
 	buf = calloc (1,len+2);
 	if (!buf)
 		return 0;
@@ -1135,7 +1135,12 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			} else {
 				size = -1;
 			}
-			updateAddr (buf, i, endian, &addr, &addr64);
+			if (i+3<len && i+7<len)
+				updateAddr (buf, i, endian, &addr, &addr64);
+			else{
+				eprintf ("Likely a heap buffer overflow in %s at %d\n", __FILE__, __LINE__);
+				goto beach;
+			}
 
 			tmp = *arg;
 
@@ -1208,7 +1213,12 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (/*addr<(b+len) && addr>=b && */p->iob.read_at) { /* The test was here to avoid segfault in the next line,
 						but len make it doesnt work... */
 					p->iob.read_at (p->iob.io, (ut64)addr, buf, len-4);
-					updateAddr (buf, i, endian, &addr, &addr64);
+					if (i+3<len || i+7<len)
+						updateAddr (buf, i, endian, &addr, &addr64);
+					else {
+						eprintf ("Likely a heap buffer overflow at %s at %d\n", __FILE__, __LINE__);
+						goto beach;
+					}
 				} else {
 					eprintf ("(SEGFAULT: cannot read memory at 0x%08"PFMT64x", Block: %s, blocksize: 0x%x)\n",
 							addr, b, len);
@@ -1297,163 +1307,170 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				isptr = PTRBACK;
 			} else
 			/* format chars */
-			switch (tmp) {
-			case 'u':
-				i+= r_print_format_uleb(p, endian, mode, setval, seeki, buf, i, size);
-				break;
-			case 't':
-				r_print_format_time(p, endian, mode, setval, seeki, buf, i, size);
-				i+= (size==-1) ? 4 : 4*size;
-				break;
-			case 'q':
-				r_print_format_quadword(p, endian, mode, setval, seeki, buf, i, size);
-				i += (size==-1) ? 8 : 8*size;
-				break;
-			case 'b':
-				r_print_format_byte(p, endian, mode, setval, seeki, buf, i, size);
-				i+= (size==-1) ? 1 : size;
-				break;
-			case 'C':
-				r_print_format_decchar (p, endian, mode,
-					setval, seeki, buf, i, size);
-				i+= (size==-1) ? 1 : size;
-				break;
-			case 'c':
-				r_print_format_char (p, endian, mode,
-					setval, seeki, buf, i, size);
-				i+= (size==-1) ? 1 : size;
-				break;
-			case 'X':
-				size = r_print_format_hexpairs (p, endian, mode,
-					setval, seeki, buf, i, size);
-				i += size;
-				break;
-			case 'T':
-				if(r_print_format_10bytes(p, mode,
-					setval, seeki, addr, buf) == 0)
-					i += (size==-1) ? 4 : 4*size;
-				break;
-			case 'f':
-				r_print_format_float(p, endian, mode, setval, seeki, buf, i, size);
-				i += (size==-1) ? 4 : 4*size;
-				break;
-			case 'i':
-			case 'd':
-				r_print_format_hex(p, endian, mode, setval, seeki, buf, i, size);
-				i+= (size==-1) ? 4 : 4*size;
-				break;
-			case 'D':
-				if (size>0) p->printf ("Size not yet implemented\n");
-				if (p->disasm && p->user)
-					i += p->disasm (p->user, seeki);
-				break;
-			case 'o':
-				r_print_format_octal (p, endian, mode, setval, seeki, buf, i, size);
-				i+= (size==-1) ? 4 : 4*size;
-				break;
-			case 'x':
-				r_print_format_hexflag(p, endian, mode, setval, seeki, buf, i, size);
-				i+= (size==-1) ? 4 : 4*size;
-				break;
-			case 'w':
-				r_print_format_word(p, endian, mode, setval, seeki, buf, i, size);
-				i+= (size==-1) ? 2 : 2*size;
-				break;
-			case 'z': // zero terminated string
-				r_print_format_nulltermstring (p, len, endian, mode, setval, seeki, buf, i, size);
-				if (size == -1)
-					i+=strlen((char*)buf+i)+1;
-				else
-					while (size--) i++;
-				break;
-			case 'Z': // zero terminated wide string
-				r_print_format_nulltermwidestring (p, len, endian, mode, setval, seeki, buf, i, size);
-				if (size == -1)
-					i+=r_wstr_clen((char*)(buf+i))*2+2;
-				else
-					while (size--) i+=2;
-				break;
-			case 's':
-				if (r_print_format_string (p, seeki, addr64, addr, 0, mode) == 0)
-					i += (size==-1) ? 4 : 4*size;
-				break;
-			case 'S':
-				if (r_print_format_string (p, seeki, addr64, addr, 1, mode) == 0)
+			// before to enter in the switch statement check buf boundaries due to  updateAddr
+			// might go beyond its len and it's usually called in each of the following functions
+			if (i+3<len || i+7<len){
+				switch (tmp) {
+				case 'u':
+					i+= r_print_format_uleb(p, endian, mode, setval, seeki, buf, i, size);
+					break;
+				case 't':
+					r_print_format_time(p, endian, mode, setval, seeki, buf, i, size);
+					i+= (size==-1) ? 4 : 4*size;
+					break;
+				case 'q':
+					r_print_format_quadword(p, endian, mode, setval, seeki, buf, i, size);
 					i += (size==-1) ? 8 : 8*size;
-				break;
-			case 'B': // resolve bitfield
-				if (size >= ARRAYINDEX_COEF) size %= ARRAYINDEX_COEF;
-				r_print_format_bitfield (p, seeki, fmtname, fieldname, addr, mode, size);
-				i+=(size==-1)?1:size;
-				break;
-			case 'E': // resolve enum
-				if (size >= ARRAYINDEX_COEF) size %= ARRAYINDEX_COEF;
-				r_print_format_enum (p, seeki, fmtname, fieldname, addr, mode, size);
-				i+=(size==-1)?1:size;
-				break;
-			case '?':
-				{
-				int s = 0;
-				char *nxtfield = NULL;
-				if (size >= ARRAYINDEX_COEF) {
-					elem = size/ARRAYINDEX_COEF-1;
-					size %= ARRAYINDEX_COEF;
-				}
-				if (!(mode & R_PRINT_ISFIELD)) nxtfield = MINUSONE;
-				else if (field) nxtfield = strchr (ofield, '.');
-				if (nxtfield != MINUSONE && nxtfield != NULL) nxtfield++;
-
-				if (MUSTSEE)
-					p->printf ("\n");
-				if (MUSTSEEJSON) {
-					if (isptr)
-						p->printf ("%d},", seeki);
+					break;
+				case 'b':
+					r_print_format_byte(p, endian, mode, setval, seeki, buf, i, size);
+					i+= (size==-1) ? 1 : size;
+					break;
+				case 'C':
+					r_print_format_decchar (p, endian, mode,
+						setval, seeki, buf, i, size);
+					i+= (size==-1) ? 1 : size;
+					break;
+				case 'c':
+					r_print_format_char (p, endian, mode,
+						setval, seeki, buf, i, size);
+					i+= (size==-1) ? 1 : size;
+					break;
+				case 'X':
+					size = r_print_format_hexpairs (p, endian, mode,
+						setval, seeki, buf, i, size);
+					i += size;
+					break;
+				case 'T':
+					if(r_print_format_10bytes(p, mode,
+						setval, seeki, addr, buf) == 0)
+						i += (size==-1) ? 4 : 4*size;
+					break;
+				case 'f':
+					r_print_format_float(p, endian, mode, setval, seeki, buf, i, size);
+					i += (size==-1) ? 4 : 4*size;
+					break;
+				case 'i':
+				case 'd':
+					r_print_format_hex(p, endian, mode, setval, seeki, buf, i, size);
+					i+= (size==-1) ? 4 : 4*size;
+					break;
+				case 'D':
+					if (size>0) p->printf ("Size not yet implemented\n");
+					if (p->disasm && p->user)
+						i += p->disasm (p->user, seeki);
+					break;
+				case 'o':
+					r_print_format_octal (p, endian, mode, setval, seeki, buf, i, size);
+					i+= (size==-1) ? 4 : 4*size;
+					break;
+				case 'x':
+					r_print_format_hexflag(p, endian, mode, setval, seeki, buf, i, size);
+					i+= (size==-1) ? 4 : 4*size;
+					break;
+				case 'w':
+					r_print_format_word(p, endian, mode, setval, seeki, buf, i, size);
+					i+= (size==-1) ? 2 : 2*size;
+					break;
+				case 'z': // zero terminated string
+					r_print_format_nulltermstring (p, len, endian, mode, setval, seeki, buf, i, size);
+					if (size == -1)
+						i+=strlen((char*)buf+i)+1;
 					else
-						p->printf ("[");
-				}
-				if (mode & R_PRINT_SEEFLAGS) slide+=STRUCTFLAG;
-				oldslide = slide;
-				slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
-				if (size == -1) {
-					s = r_print_format_struct (p, seeki,
-						buf+i, len-i, fmtname, slide,
-						mode, setval, nxtfield);
-					i+= (isptr) ? 4 : s;
-				} else {
-					if (mode & R_PRINT_ISFIELD)
-						p->printf ("[\n");
-					while (size--) {
-						if (elem == -1 || elem == 0) {
-							mode |= R_PRINT_MUSTSEE;
-							if (elem == 0) elem = -2;
-						} else {
-							mode &= ~R_PRINT_MUSTSEE;
-						}
-						s = r_print_format_struct (p, seek+i,
-							buf+i, len-i, fmtname, slide, mode, setval, nxtfield);
-						if ((MUSTSEE || MUSTSEEJSON) && size != 0 && elem == -1) {
-							p->printf (",");
-							if (MUSTSEE) p->printf ("\n");
-						}
-						if (elem > -1) elem--;
-						i+= (isptr) ? 4 : s;
+						while (size--) i++;
+					break;
+				case 'Z': // zero terminated wide string
+					r_print_format_nulltermwidestring (p, len, endian, mode, setval, seeki, buf, i, size);
+					if (size == -1)
+						i+=r_wstr_clen((char*)(buf+i))*2+2;
+					else
+						while (size--) i+=2;
+					break;
+				case 's':
+					if (r_print_format_string (p, seeki, addr64, addr, 0, mode) == 0)
+						i += (size==-1) ? 4 : 4*size;
+					break;
+				case 'S':
+					if (r_print_format_string (p, seeki, addr64, addr, 1, mode) == 0)
+						i += (size==-1) ? 8 : 8*size;
+					break;
+				case 'B': // resolve bitfield
+					if (size >= ARRAYINDEX_COEF) size %= ARRAYINDEX_COEF;
+					r_print_format_bitfield (p, seeki, fmtname, fieldname, addr, mode, size);
+					i+=(size==-1)?1:size;
+					break;
+				case 'E': // resolve enum
+					if (size >= ARRAYINDEX_COEF) size %= ARRAYINDEX_COEF;
+					r_print_format_enum (p, seeki, fmtname, fieldname, addr, mode, size);
+					i+=(size==-1)?1:size;
+					break;
+				case '?':
+					{
+					int s = 0;
+					char *nxtfield = NULL;
+					if (size >= ARRAYINDEX_COEF) {
+						elem = size/ARRAYINDEX_COEF-1;
+						size %= ARRAYINDEX_COEF;
 					}
-					if (mode & R_PRINT_ISFIELD)
-						p->printf ("]");
-					if (MUSTSEEJSON) p->printf ("]}]}");
-				}
-				oldslide = slide;
-				slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
-				if (mode & R_PRINT_SEEFLAGS) {
+					if (!(mode & R_PRINT_ISFIELD)) nxtfield = MINUSONE;
+					else if (field) nxtfield = strchr (ofield, '.');
+					if (nxtfield != MINUSONE && nxtfield != NULL) nxtfield++;
+		
+					if (MUSTSEE)
+						p->printf ("\n");
+					if (MUSTSEEJSON) {
+						if (isptr)
+							p->printf ("%d},", seeki);
+						else
+							p->printf ("[");
+					}
+					if (mode & R_PRINT_SEEFLAGS) slide+=STRUCTFLAG;
 					oldslide = slide;
-					slide-=STRUCTFLAG;
-				}
-				break;
-				}
-			default:
-				/* ignore unknown chars */
-				invalid = 1;
-				break;
+					slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
+					if (size == -1) {
+						s = r_print_format_struct (p, seeki,
+							buf+i, len-i, fmtname, slide,
+							mode, setval, nxtfield);
+						i+= (isptr) ? 4 : s;
+					} else {
+						if (mode & R_PRINT_ISFIELD)
+							p->printf ("[\n");
+						while (size--) {
+							if (elem == -1 || elem == 0) {
+								mode |= R_PRINT_MUSTSEE;
+								if (elem == 0) elem = -2;
+							} else {
+								mode &= ~R_PRINT_MUSTSEE;
+							}
+							s = r_print_format_struct (p, seek+i,
+								buf+i, len-i, fmtname, slide, mode, setval, nxtfield);
+							if ((MUSTSEE || MUSTSEEJSON) && size != 0 && elem == -1) {
+								p->printf (",");
+								if (MUSTSEE) p->printf ("\n");
+							}
+							if (elem > -1) elem--;
+							i+= (isptr) ? 4 : s;
+						}
+						if (mode & R_PRINT_ISFIELD)
+							p->printf ("]");
+						if (MUSTSEEJSON) p->printf ("]}]}");
+					}
+					oldslide = slide;
+					slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
+					if (mode & R_PRINT_SEEFLAGS) {
+						oldslide = slide;
+						slide-=STRUCTFLAG;
+					}
+					break;
+					}
+				default:
+					/* ignore unknown chars */
+					invalid = 1;
+					break;
+				} //switch
+			} else {
+				eprintf ("Likely a heap buffer overflow in %s at %d\n", __FILE__, __LINE__);
+				goto beach;
 			}
 			if (viewflags && p->offname) {
 				const char *s = p->offname (p->user, seeki);
@@ -1476,8 +1493,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	}
 	if (mode & R_PRINT_JSON && slide==0) p->printf("]");
 beach:
-	if (oarg != NULL)
-		free (oarg);
+	free (oarg);
 	free (buf);
 	free (field);
 	free (args);
