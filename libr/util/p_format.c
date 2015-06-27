@@ -1039,7 +1039,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 	if (len < 1)
 		return 0;
-	buf = malloc (len);
+	// len+2 to save space for the null termination wide string
+	buf = calloc (1,len+2);
 	if (!buf)
 		return 0;
 	memcpy (buf, b, len);
