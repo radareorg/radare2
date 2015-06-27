@@ -1022,15 +1022,6 @@ SETL/SETNGE
 			}
 			break;
 		case X86_INS_DIV:
-			op->type = R_ANAL_OP_TYPE_DIV;
-			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 1, "/");
-				esilprintf (op, "%s,%s", src, dst);
-				free (src);
-				free (dst);
-			}
-			break;
 		case X86_INS_IDIV:
 			op->type = R_ANAL_OP_TYPE_DIV;
 			if (a->decode) {

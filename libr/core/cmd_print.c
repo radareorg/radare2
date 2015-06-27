@@ -1028,7 +1028,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 }
 
 static void cmd_print_pwn(const RCore* core) {
-	eprintf ("easter egg license has expired\n");
+	r_cons_printf ("easter egg license has expired\n");
 }
 
 static int cmd_print_pxA(RCore *core, int len, const char *data) {

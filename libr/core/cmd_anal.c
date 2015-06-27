@@ -1539,6 +1539,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				until_addr = r_num_math (core->num, input + 2);
 			}
 			esil_step (core, until_addr, until_expr);
+			r_core_cmd0 (core, ".ar*");
 			break;
 		case 'o':
 			// step over
@@ -1548,9 +1549,11 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			}
 			esil_step (core, until_addr, until_expr);
 			r_anal_op_free (op);
+			r_core_cmd0 (core, ".ar*");
 			break;
 		default:
 			esil_step (core, until_addr, until_expr);
+			r_core_cmd0 (core, ".ar*");
 			break;
 		}
 		break;
