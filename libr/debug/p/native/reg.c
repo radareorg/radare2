@@ -67,9 +67,9 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
  |___|___|
 */
 	if (dbg->bits & R_SYS_BITS_64) {
-#include "reg/nt-x64.h"
+#include "reg/windows-x64.h"
 	} else {
-#include "reg/nt-x86.h"
+#include "reg/windows-x86.h"
 	}
 #elif (__OpenBSD__ || __NetBSD__)
 /*                           __.--..__
