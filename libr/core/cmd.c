@@ -1531,6 +1531,7 @@ ignore:
 				/* XXXX:YYYY */
 			} else {
 				*ptr2 = '\0';
+				if (!ptr2[1]) return -1;
 				r_core_block_size (core, r_num_math (core->num, ptr2+1));
 			}
 		}
