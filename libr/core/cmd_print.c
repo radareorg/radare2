@@ -2889,6 +2889,9 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case ' ':
 		case '\0':
+			//len must be multiple of 4 since r_mem_copyendian move data in fours
+			if (len < 4) eprintf ("You should change the block size: b 4\n");
+			if (len % 4 != 0) len = len - (len % 4);
 			for (l=0; l<len; l+=sizeof (ut32))
 				r_print_date_unix (core->print, core->block+l, sizeof (ut32));
 			break;
