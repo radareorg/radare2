@@ -370,8 +370,9 @@ static int cmd_help(void *data, const char *input) {
 	case 'e': // echo
 		{
 		const char *msg = r_str_chop_ro (input+1);
-		char *newmsg = filter_flags (core, msg);
 		// TODO: replace all ${flagname} by its value in hexa
+		char *newmsg = filter_flags (core, msg);
+		r_str_unescape (newmsg);
 		r_cons_printf ("%s\n", newmsg);
 		free (newmsg);
 		}

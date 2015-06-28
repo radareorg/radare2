@@ -11,6 +11,11 @@ unset LDFLAGS
 
 CFGFLAGS="--with-ostype=windows"
 
+type i586-mingw32-gcc
+if [ $? = 0 ]; then
+	C=i586-mingw32-gcc
+	H=i586-unknown-windows
+else
 type i686-pc-mingw32-gcc >/dev/null 2>&1
 if [ $? = 0 ]; then
 	C=i686-pc-mingw32-gcc
@@ -30,6 +35,7 @@ elif [ -x /usr/bin/apt-get ]; then
 else
 	echo "arch/opensuse/ubuntu/debian mingw32 package required."
 	exit 1
+fi
 fi
 
 make mrproper
