@@ -136,16 +136,20 @@ static int var_cmd(RCore *core, const char *str) {
 			 {
 				int size = 4;
 				int scope = 1; // 0 = global, 1 = LOCAL;
-				const char *name = p;
-				char *vartype = strchr (name, ' ');
-				if (vartype) {
-					*vartype++ = 0;
+				const char *vartype = p;
+				char *name = strchr (vartype, ' ');
+				if (name) {
+					*name++ = 0;
+					eprintf ("SRC(%s)\n", p);
+					if (fcn) {
+						eprintf ("ADD (type=%s)(name=%s)\n", vartype, name);
+						r_anal_var_add (core->anal, fcn->addr,
+								scope, delta, type,
+								vartype, size, name);
+					} else eprintf ("Cannot find function\n");
+				} else {
+					eprintf ("Missing name\n");
 				}
-				if (fcn) {
-					r_anal_var_add (core->anal, fcn->addr,
-						scope, delta, type,
-						vartype, size, name);
-				} else eprintf ("Cannot find function\n");
 			 }
 			break;
 		default:
