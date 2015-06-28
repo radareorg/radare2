@@ -1081,11 +1081,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		// r_core_graph_inputhandle()
 		okey = r_cons_readchar ();
 		key = r_cons_arrow_to_hjkl (okey);
-		if (r_cons_singleton()->mouse_event) {
-			wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
-		} else {
-			wheelspeed = 1;
-		}
+		wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
 
 		switch (key) {
 			case '=':
@@ -1154,7 +1150,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 						" .    - center graph to the current node\n"
 						" C    - toggle scr.color\n"
 						" hjkl - move node\n"
-						" asdw - scroll canvas\n"
+						" HJKL - scroll canvas\n"
 						" tab  - select next node\n"
 						" TAB  - select previous node\n"
 						" t/f  - follow true/false edges\n"
@@ -1225,20 +1221,13 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				break;
 			case 'h': get_anode(g->curnode)->x--; break;
 			case 'l': get_anode(g->curnode)->x++; break;
-			case 'J': get_anode(g->curnode)->y += 5; break;
-			case 'K': get_anode(g->curnode)->y -= 5; break;
-			case 'H': get_anode(g->curnode)->x -= 5; break;
-			case 'L': get_anode(g->curnode)->x += 5; break;
-					  // scroll
+
 			case '0': can->sx = can->sy = 0; break;
-			case 'w': can->sy -= 1; break;
-			case 's': can->sy += 1; break;
-			case 'a': can->sx -= 1; break;
-			case 'd': can->sx += 1; break;
-			case 'W': can->sy -= 5; break;
-			case 'S': can->sy += 5; break;
-			case 'A': can->sx -= 5; break;
-			case 'D': can->sx += 5; break;
+			case 'K': can->sy -= wheelspeed; break;
+			case 'J': can->sy += wheelspeed; break;
+			case 'H': can->sx -= wheelspeed; break;
+			case 'L': can->sx += wheelspeed; break;
+
 			case 'e':
 				  can->linemode = !!!can->linemode;
 				  break;
