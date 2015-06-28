@@ -4,7 +4,7 @@ static RList *backtrace_x86_64(RDebug *dbg, ut64 at) {
 	ut8 buf[8];
 	RDebugFrame *frame;
 	ut64 ptr, ebp2;
-	ut64 _rip, _rsp, _rbp;
+	ut64 _rip, _rsp, _rbp = 0;
 	RList *list;
 	RReg *reg = dbg->reg;
 	RIOBind *bio = &dbg->iob;

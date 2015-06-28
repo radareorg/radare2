@@ -89,6 +89,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 						hashname, hashstr, from+i);
 					free (s);
 					free (buf);
+					r_list_free (list);
 					return 1;
 				}
 				free (s);
