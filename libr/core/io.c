@@ -52,8 +52,16 @@ R_API int r_core_seek_base (RCore *core, const char *hex) {
 	if (p) {
 		strcpy (p, "0x");
 		strcpy (p+2, hex);
-		n = r_num_math (core->num, p);
+		if (hex[0] >= '0' && hex[0] <= '9') {
+			n = r_num_math (core->num, p);
+		} else {
+			eprintf ("Invalid argument\n");
+			n = 0;
+		}
 		free (p);
+	}
+	if (!n) {
+		return R_FALSE;
 	}
 	mask = UT64_MAX << i;
 	addr = (addr & mask) | n;
