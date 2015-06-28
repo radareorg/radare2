@@ -185,7 +185,10 @@ static void add_hit_to_hits(RList* hits, ut64 addr, int len, ut8 is_valid) {
 		hit->len = len;
 		hit->valid = is_valid;
 		hit->code = NULL;
-		r_list_append (hits, hit);
+		if (!r_list_append (hits, hit)){
+			free (hit);
+			IFDBG eprintf ("hit couldn't be added to the list in %s at %d\n", __FILE__, __LINE__);	
+		}
 	}
 }
 

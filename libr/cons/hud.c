@@ -29,7 +29,7 @@ R_API char *r_cons_hud_file(const char *f) {
 
 R_API char *r_cons_hud_string(const char *s) {
 	int i;
-	char *os, *ret, *o = strdup (s);
+	char *os, *track, *ret, *o = strdup (s);
 	RList *fl = r_list_new ();
 	if (!fl) {
 		free (o);
@@ -39,8 +39,13 @@ R_API char *r_cons_hud_string(const char *s) {
 	for (os=o, i=0; o[i]; i++) {
 		if (o[i]=='\n') {
 			o[i] = 0;
-			if (*os && *os != '#')
-				r_list_append (fl, strdup (os));
+			if (*os && *os != '#'){
+				track = strdup (os);
+				if (!r_list_append (fl, track)){
+					free (track);
+					break;
+				}
+			}
 			os = o + i + 1;
 		}
 	}
