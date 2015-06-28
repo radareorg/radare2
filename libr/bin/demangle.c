@@ -289,7 +289,7 @@ R_API int r_bin_demangle_type (const char *str) {
 }
 
 R_API int r_bin_lang_type(RBinFile *binfile, const char *def) {
-	int type;
+	int type = 0;
 	RBinPlugin *plugin;
 	if (def && *def) {
 		type = r_bin_demangle_type (def);

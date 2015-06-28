@@ -261,6 +261,7 @@ typedef struct r_io_range_t {
 			desc->data = fdata; \
 		} else { \
 			free (desc); \
+			free (fdata); \
 			desc = NULL; \
 		} \
 	} \
