@@ -1754,13 +1754,17 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	case 'p': // "/p"
 		{
-			int ps = atoi (input+param_offset);
-			if (ps>1) {
-				r_cons_break (NULL, NULL);
-				r_search_pattern_size (core->search, ps);
-				r_search_pattern (core->search, param.from, param.to);
-				r_cons_break_end ();
-			} else eprintf ("Invalid pattern size (must be >0)\n");
+			if (input[param_offset-1]) {
+				int ps = atoi (input+param_offset);
+				if (ps>1) {
+					r_cons_break (NULL, NULL);
+					r_search_pattern_size (core->search, ps);
+					r_search_pattern (core->search, param.from, param.to);
+					r_cons_break_end ();
+					break;
+				} 
+			}
+			eprintf ("Invalid pattern size (must be >0)\n");
 		}
 		break;
 	case 'V':
