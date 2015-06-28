@@ -900,6 +900,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		show_bytes = 0;
 		decode = 1;
 	}
+	if (!nb_opcodes && !nb_bytes) return 0;
 
 	if (!nb_opcodes) {
 		nb_opcodes = 0xffff;
@@ -990,7 +991,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 				}
 			} else {
 				if (filter) {
-					char opstr[128];
+					char opstr[128] = {0};
 					if (show_color) {
 						RAnalOp aop = {0};
 						char *asm_str = r_print_colorize_opcode (asmop.buf_asm, color_reg, color_num);
