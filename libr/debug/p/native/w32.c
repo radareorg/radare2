@@ -4,7 +4,6 @@
 #include <winbase.h>
 #include <psapi.h>
 
-#include "maps/windows.c"
 
 static HANDLE tid2handler(int pid, int tid);
 
@@ -106,7 +105,6 @@ static BOOL WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
 static DWORD WINAPI (*w32_getthreadid)(HANDLE) = NULL; // Vista
 static DWORD WINAPI (*w32_getprocessid)(HANDLE) = NULL; // XP
 static HANDLE WINAPI (*w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
-
 
 static void r_str_wtoc(char* d, const WCHAR* s) {
 	int i = 0;
@@ -515,3 +513,5 @@ err_load_th:
                 CloseHandle (th);
 	return list;
 }
+
+#include "maps/windows.c"
