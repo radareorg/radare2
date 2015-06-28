@@ -1272,11 +1272,11 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 			if (info->has_va)
 				addr = entry->vaddr;
 			else	addr = entry->paddr;
-			eprintf ("PC=entry0\n");
+			//eprintf ("PC=entry0\n");
 			r_list_push (entries, entry);
 		} else {
 			addr = core->offset;
-			eprintf ("PC=OFF\n");
+			//eprintf ("PC=OFF\n");
 		}
 		r_reg_setv (core->anal->reg, name, addr);
 		// set memory read only

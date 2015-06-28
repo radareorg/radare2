@@ -1080,11 +1080,22 @@ SETL/SETNGE
 		case X86_INS_XADD:
 			op->type = R_ANAL_OP_TYPE_ADD;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 1, "+");
-				esilprintf (op, "%s,%s", src, dst);		// TODO: update flags
-				free (src);
-				free (dst);
+				if (INSOP(0).type == X86_OP_MEM) {
+					char *src = getarg (handle, insn, 1, 0, NULL);
+					char *src2 = getarg (handle, insn, 0, 0, NULL);
+					char *dst = getarg (handle, insn, 0, 1, NULL);
+					// TODO: update flags
+					esilprintf (op, "%s,%s,+,%s", src, src2, dst);
+					free (src);
+					free (src2);
+					free (dst);
+				} else {
+					char *src = getarg (handle, insn, 1, 0, NULL);
+					char *dst = getarg (handle, insn, 0, 1, "+");
+					esilprintf (op, "%s,%s", src, dst);		// TODO: update flags
+					free (src);
+					free (dst);
+				}
 			}
 			if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
 				if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
