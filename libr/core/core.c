@@ -1211,7 +1211,8 @@ reaccept:
 			return -1;
 		if (c == NULL) {
 			eprintf ("rap: cannot accept\n");
-			r_socket_close (c);
+			/*r_socket_close (c);*/
+			r_socket_free (c);
 			return -1;
 		}
 		eprintf ("rap: client connected\n");
@@ -1220,6 +1221,8 @@ reaccept:
 				eprintf ("rap: connection closed\n");
 				if (r_config_get_i (core->config, "rap.loop")) {
 					eprintf ("rap: waiting for new connection\n");
+					/*r_socket_close (c);*/
+					r_socket_free (c);
 					goto reaccept;
 				}
 				return -1;
@@ -1255,6 +1258,7 @@ reaccept:
 					} else {
 						pipefd = -1;
 						eprintf ("Cannot open file (%s)\n", ptr);
+						r_socket_close (c);
 						return -1; //XXX: Close conection and goto accept
 					}
 				}

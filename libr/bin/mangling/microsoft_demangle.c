@@ -241,6 +241,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 
 #define SET_OPERATOR_CODE(str) { \
 	str_info = (SStrInfo *) malloc(sizeof(SStrInfo)); \
+	if (!str_info) break; \
 	str_info->len = strlen(str); \
 	str_info->str_ptr = str; \
 	r_list_append(names_l, str_info); \
