@@ -3,6 +3,7 @@
 #include <r_core.h>
 static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
 static int mousemode = 0;
+static int zoom = 100;
 
 #define BORDER 3
 #define BORDER_WIDTH 4
@@ -100,6 +101,9 @@ static void update_node_dimension(RGraph *g, int is_small) {
 			n->w += BORDER_WIDTH;
 			n->h += BORDER_HEIGHT;
 			n->w = R_MAX (MAX_NODE_WIDTH, n->w);
+			/* scale node by zoom */
+			n->w = (n->w * zoom) / 100;
+			n->h = (n->h * zoom) / 100;
 		}
 	}
 }
@@ -157,9 +161,19 @@ static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
 	}
 	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1))
 		W(title + delta_x);
+	int center_x = 0;
+	int center_y = 0;
+	if (zoom>100) {
+		center_x += ((zoom-100)/20);
+		center_y += ((zoom-100)/30);
+	}
 
-	if (G(n->x + MARGIN_TEXT_X + delta_x, n->y + MARGIN_TEXT_Y + delta_y)) {
-		text = r_str_crop (n->text, delta_x, delta_y, n->w - BORDER_WIDTH, n->h);
+	if (G(n->x + MARGIN_TEXT_X + delta_x + center_x,
+			n->y + MARGIN_TEXT_Y + delta_y + center_y)) {
+		text = r_str_crop (n->text,
+			delta_x, delta_y,
+			n->w - BORDER_WIDTH,
+			n->h - BORDER_WIDTH + 1);
 		if (text) {
 			W (text);
 			free (text);
@@ -966,9 +980,9 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	if (fs) {
 		(void)G (-g->can->sx, -g->can->sy);
 		snprintf (title, sizeof (title)-1,
-			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d) %s mouse:%s",
+			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s",
 			g->fcn->addr, r_stack_size (g->history), g->fcn->name,
-			g->graph->n_nodes, g->graph->n_edges, g->is_callgraph?"CG":"BB",
+			g->graph->n_nodes, g->graph->n_edges, zoom, g->is_callgraph?"CG":"BB",
 			mousemodes[mousemode]);
 		W (title);
 	}
@@ -1004,11 +1018,8 @@ static void agraph_init(AGraph *g) {
 }
 
 static AGraph *agraph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {
-	AGraph *g;
-
-	g = (AGraph *)malloc(sizeof(AGraph));
-	if (!g)
-		return NULL;
+	AGraph *g = R_NEW0 (AGraph);
+	if (!g) return NULL;
 
 	g->core = core;
 	g->can = can;
@@ -1084,197 +1095,215 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
 
 		switch (key) {
-			case '=':
-			case '|':
-				{ // TODO: edit
-					const char *buf = NULL;
-					const char *cmd = r_config_get (core->config, "cmd.gprompt");
-					r_line_set_prompt ("cmd.gprompt> ");
-					core->cons->line->contents = strdup (cmd);
-					buf = r_line_readline ();
-					core->cons->line->contents = NULL;
-					r_config_set (core->config, "cmd.gprompt", buf);
-				}
-				break;
-			case 'O':
-				agraph_toggle_simple_mode(g);
-				break;
-			case 'V':
-				agraph_toggle_callgraph(g);
-				break;
-			case 'z':
+		case '-':
+			zoom-=10;
+			if (zoom<0) zoom = 0;
+			update_node_dimension(g->graph, g->is_small_nodes);
+			agraph_set_layout (g);
+			//  agraph_update_seek (g, get_anode(g->curnode), R_TRUE);
+			break;
+		case '+':
+			zoom+=10;
+			update_node_dimension (g->graph, g->is_small_nodes);
+			agraph_set_layout (g);
+			//  agraph_update_seek (g, get_anode(g->curnode), R_TRUE);
+			 // g->is_instep = R_TRUE;
+			break;
+		case '=':
+		case '|':
+			{ // TODO: edit
+				const char *buf = NULL;
+				const char *cmd = r_config_get (core->config, "cmd.gprompt");
+				r_line_set_prompt ("cmd.gprompt> ");
+				core->cons->line->contents = strdup (cmd);
+				buf = r_line_readline ();
+				core->cons->line->contents = NULL;
+				r_config_set (core->config, "cmd.gprompt", buf);
+			}
+			break;
+		case 'O':
+			agraph_toggle_simple_mode(g);
+			break;
+		case 'V':
+			agraph_toggle_callgraph(g);
+			break;
+		case 'z':
+			g->is_instep = R_TRUE;
+			key_s = r_config_get (core->config, "key.s");
+			if (key_s && *key_s) {
+				r_core_cmd0 (core, key_s);
+			} else {
+				if (r_config_get_i (core->config, "cfg.debug"))
+					r_core_cmd0 (core, "ds;.dr*");
+				else
+					r_core_cmd0 (core, "aes;.dr*");
+			}
+			ret = agraph_reload_nodes(g);
+			if (!ret)
+				is_error = R_TRUE;
+			break;
+		case 'Z':
+			if (okey == 27) {
+				agraph_prev_node(g);
+			} else {
+				// 'Z'
 				g->is_instep = R_TRUE;
-				key_s = r_config_get (core->config, "key.s");
-				if (key_s && *key_s) {
-					r_core_cmd0 (core, key_s);
-				} else {
-					if (r_config_get_i (core->config, "cfg.debug"))
-						r_core_cmd0 (core, "ds;.dr*");
-					else
-						r_core_cmd0 (core, "aes;.dr*");
-				}
+				if (r_config_get_i (core->config, "cfg.debug"))
+					r_core_cmd0 (core, "dso;.dr*");
+				else
+					r_core_cmd0 (core, "aeso;.dr*");
+
 				ret = agraph_reload_nodes(g);
 				if (!ret)
 					is_error = R_TRUE;
-				break;
-			case 'Z':
-				if (okey == 27) {
-					agraph_prev_node(g);
-				} else {
-					// 'Z'
-					g->is_instep = R_TRUE;
-					if (r_config_get_i (core->config, "cfg.debug"))
-						r_core_cmd0 (core, "dso;.dr*");
-					else
-						r_core_cmd0 (core, "aeso;.dr*");
-
-					ret = agraph_reload_nodes(g);
-					if (!ret)
-						is_error = R_TRUE;
+			}
+			break;
+		case 'x':
+			if (r_core_visual_xrefs_x (core))
+				exit_graph = R_TRUE;
+			break;
+		case 'X':
+			if (r_core_visual_xrefs_X (core))
+				exit_graph = R_TRUE;
+			break;
+		case 9: // tab
+			agraph_next_node(g);
+			break;
+		case '?':
+			r_cons_clear00 ();
+			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
+					" .    - center graph to the current node\n"
+					" C    - toggle scr.color\n"
+					" hjkl - move node\n"
+					" HJKL - scroll canvas\n"
+					" tab  - select next node\n"
+					" TAB  - select previous node\n"
+					" t/f  - follow true/false edges\n"
+					" e    - toggle edge-lines style (diagonal/square)\n"
+					" O    - toggle disasm mode\n"
+					" p    - toggle mini-graph\n"
+					" u    - select previous node\n"
+					" V    - toggle basicblock / call graphs\n"
+					" x/X  - jump to xref/ref\n"
+					" z/Z  - step / step over\n"
+					" +/-  - zoom in/out\n"
+					" R    - relayout\n");
+			r_cons_flush ();
+			r_cons_any_key (NULL);
+			break;
+		case 'R':
+		case 'r':
+			agraph_set_layout (g);
+			break;
+		case 'j':
+			if (r_cons_singleton()->mouse_event) {
+				switch (mousemode) {
+					case 0: // canvas-y
+						can->sy += wheelspeed;
+						break;
+					case 1: // canvas-x
+						can->sx += wheelspeed;
+						break;
+					case 2: // node-y
+						get_anode(g->curnode)->y += wheelspeed;
+						break;
+					case 3: // node-x
+						get_anode(g->curnode)->x += wheelspeed;
+						break;
 				}
-				break;
-			case 'x':
-				if (r_core_visual_xrefs_x (core))
-					exit_graph = R_TRUE;
-				break;
-			case 'X':
-				if (r_core_visual_xrefs_X (core))
-					exit_graph = R_TRUE;
-				break;
-			case 9: // tab
-				agraph_next_node(g);
-				break;
-			case '?':
-				r_cons_clear00 ();
-				r_cons_printf ("Visual Ascii Art graph keybindings:\n"
-						" .    - center graph to the current node\n"
-						" C    - toggle scr.color\n"
-						" hjkl - move node\n"
-						" HJKL - scroll canvas\n"
-						" tab  - select next node\n"
-						" TAB  - select previous node\n"
-						" t/f  - follow true/false edges\n"
-						" e    - toggle edge-lines style (diagonal/square)\n"
-						" O    - toggle disasm mode\n"
-						" p    - toggle mini-graph\n"
-						" u    - select previous node\n"
-						" V    - toggle basicblock / call graphs\n"
-						" x/X  - jump to xref/ref\n"
-						" z/Z  - step / step over\n"
-						" R    - relayout\n");
-				r_cons_flush ();
-				r_cons_any_key (NULL);
-				break;
-			case 'R':
-			case 'r':
-				agraph_set_layout (g);
-				break;
-			case 'j':
-				if (r_cons_singleton()->mouse_event) {
-					switch (mousemode) {
-						case 0: // canvas-y
-							can->sy += wheelspeed;
-							break;
-						case 1: // canvas-x
-							can->sx += wheelspeed;
-							break;
-						case 2: // node-y
-							get_anode(g->curnode)->y += wheelspeed;
-							break;
-						case 3: // node-x
-							get_anode(g->curnode)->x += wheelspeed;
-							break;
-					}
-				} else {
-					get_anode(g->curnode)->y++;
+			} else {
+				get_anode(g->curnode)->y++;
+			}
+			break;
+		case 'k':
+			if (r_cons_singleton()->mouse_event) {
+				switch (mousemode) {
+					case 0: // canvas-y
+						can->sy -= wheelspeed;
+						break;
+					case 1: // canvas-x
+						can->sx -= wheelspeed;
+						break;
+					case 2: // node-y
+						get_anode(g->curnode)->y -= wheelspeed;
+						break;
+					case 3: // node-x
+						get_anode(g->curnode)->x -= wheelspeed;
+						break;
 				}
-				break;
-			case 'k':
-				if (r_cons_singleton()->mouse_event) {
-					switch (mousemode) {
-						case 0: // canvas-y
-							can->sy -= wheelspeed;
-							break;
-						case 1: // canvas-x
-							can->sx -= wheelspeed;
-							break;
-						case 2: // node-y
-							get_anode(g->curnode)->y -= wheelspeed;
-							break;
-						case 3: // node-x
-							get_anode(g->curnode)->x -= wheelspeed;
-							break;
-					}
-				} else {
-					get_anode(g->curnode)->y--;
-				}
-				break;
-			case 'm':
-				mousemode++;
-				if (!mousemodes[mousemode])
-					mousemode = 0;
-				break;
-			case 'M':
-				mousemode--;
-				if (mousemode<0)
-					mousemode = 3;
-				break;
-			case 'h': get_anode(g->curnode)->x--; break;
-			case 'l': get_anode(g->curnode)->x++; break;
+			} else {
+				get_anode(g->curnode)->y--;
+			}
+			break;
+		case 'm':
+			mousemode++;
+			if (!mousemodes[mousemode])
+				mousemode = 0;
+			break;
+		case 'M':
+			mousemode--;
+			if (mousemode<0)
+				mousemode = 3;
+			break;
+		case 'h': get_anode(g->curnode)->x--; break;
+		case 'l': get_anode(g->curnode)->x++; break;
 
-			case '0': can->sx = can->sy = 0; break;
-			case 'K': can->sy -= wheelspeed; break;
-			case 'J': can->sy += wheelspeed; break;
-			case 'H': can->sx -= wheelspeed; break;
-			case 'L': can->sx += wheelspeed; break;
+		case '0': can->sx = can->sy = 0; break;
+		case 'K': can->sy -= wheelspeed; break;
+		case 'J': can->sy += wheelspeed; break;
+		case 'H': can->sx -= wheelspeed; break;
+		case 'L': can->sx += wheelspeed; break;
 
-			case 'e':
-				  can->linemode = !!!can->linemode;
-				  break;
-			case 'p':
-				  agraph_toggle_small_nodes(g);
-				  break;
-			case 'u':
-				  agraph_undo_node(g);
-				  break;
-			case '.':
-				  agraph_update_seek (g, get_anode(g->curnode), R_TRUE);
-				  g->is_instep = R_TRUE;
-				  break;
-			case 't':
-				  agraph_follow_true(g);
-				  break;
-			case 'f':
-				  agraph_follow_false(g);
-				  break;
-			case '/':
-				  r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
-				  break;
-			case ':':
-				  core->vmode = R_FALSE;
-				  r_core_visual_prompt_input (core);
-				  core->vmode = R_TRUE;
-				  break;
-			case 'C':
-				  can->color = !!!can->color;
-				  //r_config_swap (core->config, "scr.color");
-				  // refresh graph
-				  break;
-			case -1: // EOF
-			case 'q':
-				  exit_graph = R_TRUE;
-				  break;
-			case 27: // ESC
-				  if (r_cons_readchar () == 91) {
-					  if (r_cons_readchar () == 90) {
-						  agraph_prev_node (g);
-					  }
+		case 'e':
+			  can->linemode = !!!can->linemode;
+			  break;
+		case 'p':
+			  agraph_toggle_small_nodes(g);
+			  break;
+		case 'u':
+			  agraph_undo_node(g);
+			  break;
+		case '.':
+			  zoom = 100;
+			  update_node_dimension (g->graph, g->is_small_nodes);
+			  agraph_set_layout (g);
+			  //agraph_update_seek (g, get_anode (g->curnode), R_TRUE);
+			  g->is_instep = R_TRUE;
+			  break;
+		case 't':
+			  agraph_follow_true (g);
+			  break;
+		case 'f':
+			  agraph_follow_false (g);
+			  break;
+		case '/':
+			  r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
+			  break;
+		case ':':
+			  core->vmode = R_FALSE;
+			  r_core_visual_prompt_input (core);
+			  core->vmode = R_TRUE;
+			  break;
+		case 'C':
+			  can->color = !!!can->color;
+			  //r_config_swap (core->config, "scr.color");
+			  // refresh graph
+			  break;
+		case -1: // EOF
+		case 'q':
+			  exit_graph = R_TRUE;
+			  break;
+		case 27: // ESC
+			  if (r_cons_readchar () == 91) {
+				  if (r_cons_readchar () == 90) {
+					  agraph_prev_node (g);
 				  }
-				  break;
-			default:
-				  eprintf ("Key %d\n", key);
-				  //sleep (1);
-				  break;
+			  }
+			  break;
+		default:
+			  eprintf ("Key %d\n", key);
+			  //sleep (1);
+			  break;
 		}
 	}
 
