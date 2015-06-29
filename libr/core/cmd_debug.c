@@ -2199,17 +2199,19 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'i':
 		{
-#define P r_cons_printf
 		const char * help_message[] = {
-			"Usage: di", "", "Backend information",
-			"di", "", "List backend information",
-			"dij", "", "List backend information in JSON format",
+			"Usage: di", "", "Debugger target information",
+			"di", "", "Show debugger target information",
+			"dij", "", "Show debugger target information in JSON format",
 			NULL
 		};
 		RDebugInfo *rdi = r_debug_info (core->dbg, input+2);
 		int stop = r_debug_stop_reason(core->dbg);
+		char *escaped_str;
 		switch (input[1]) {
 			case '\0':
+#define P r_cons_printf
+#define PS(X, Y) {escaped_str = r_str_escape (Y);r_cons_printf(X, escaped_str);free(escaped_str);}
 				if (rdi) {
 					P ("pid=%d\n", rdi->pid);
 					P ("tid=%d\n", rdi->tid);
@@ -2224,18 +2226,19 @@ static int cmd_debug(void *data, const char *input) {
 				if (rdi) {
 					P ("\"pid\":%d,", rdi->pid);
 					P ("\"tid\":%d,", rdi->tid);
-					if (rdi->exe) P ("\"exe\":%s,", rdi->exe);
-					if (rdi->cmdline) P ("\"cmdline\":%s,", rdi->cmdline);
-					if (rdi->cwd) P ("\"cwd\":%s,", rdi->cwd);
+					if (rdi->exe) PS("\"exe\":\"%s\",", rdi->exe)
+					if (rdi->cmdline) PS ("\"cmdline\":\"%s\",", rdi->cmdline);
+					if (rdi->cwd) PS ("\"cwd\":\"%s\",", rdi->cwd);
 				}
 				P ("\"stopreason\":%d", stop);
 				P ("}");
 				break;
+#undef P
+#undef PS
 			case '?':
 			default:
 				r_core_cmd_help (core, help_message);
 			}
-#undef P
 		if (rdi)
 			r_debug_info_free (rdi);
 		}
