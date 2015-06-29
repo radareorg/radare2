@@ -1722,13 +1722,16 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 					}
 					// if doesnt fits in screen newline
 					if (cmtright) {
+						handle_comment_align (core, ds);
 						if (ds->show_color)
-							r_cons_printf (" ;"Color_RESET"%s%s%s"Color_RESET, ds->pal_comment, ccstr, tmp);
+							r_cons_printf (" "Color_RESET"%s;%s%s"Color_RESET,
+								ds->pal_comment, ccstr, tmp);
 						else r_cons_printf (" ;%s%s", ccstr, tmp);
 					} else {
 						if (ds->show_color)
-							r_cons_printf ("\n%s%s%s%s%s"Color_RESET"  ^- %s%s"Color_RESET,
-									ds->color_fline, ds->pre, ds->color_flow, sn, ds->refline, ccstr, tmp);
+							r_cons_printf ("\n%s%s%s%s%s  "Color_RESET"^-%s %s%s"Color_RESET,
+									ds->color_fline, ds->pre, ds->color_flow,
+									sn, ds->refline, ds->pal_comment, ccstr, tmp);
 						else r_cons_printf ("\n%s%s%s  ^- %s%s", ds->pre, ds->refline, sn, ccstr, tmp);
 					}
 				}
@@ -1862,8 +1865,8 @@ static void comment_newline (RCore *core, RDisasmState *ds) {
 	sn = ds->show_section? getSectionName (core, ds->at): "";
 	handle_comment_align (core, ds);
 	if (ds->show_color) {
-		r_cons_printf ("\n%s%s%s%s"Color_RESET"  ^- ",
-			ds->color_fline, ds->pre, sn, ds->refline);
+		r_cons_printf ("\n%s%s%s%s"Color_RESET"  ^- %s",
+			ds->color_fline, ds->pre, sn, ds->refline, ds->pal_comment);
 	} else {
 		r_cons_printf ("\n%s%s%s  ^- ", ds->pre, sn, ds->refline);
 	}
@@ -1908,17 +1911,17 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				const char *flag = "";
 				f = r_flag_get_i (core->flags, p);
 				if (f) flag = f->name;
-				r_cons_printf ("  ; 0x%"PFMT64x" %s%s", p, *flag?"; ":"", flag);
+				r_cons_printf (" ; 0x%"PFMT64x" %s%s", p, *flag?"; ":"", flag);
 			} else {
 				if (n==UT32_MAX || n==UT64_MAX) {
-					r_cons_printf ("  ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
+					r_cons_printf (" ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
 				} else if (n == n32 && (n32>-512 && n32 <512)) {
-					r_cons_printf ("  ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
+					r_cons_printf (" ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
 				} else {
 					const char *flag = "";
 					f = r_flag_get_i (core->flags, n);
 					if (f) flag = f->name;
-					r_cons_printf ("  ; [0x%"PFMT64x":%d]=0x%"PFMT64x" %s",
+					r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x" %s",
 							p, ds->analop.refptr, n, flag);
 				}
 			}
