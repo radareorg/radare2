@@ -103,11 +103,13 @@ SDB_API int sdb_disk_finish (Sdb* s) {
 	free (s->ndump);
 	s->ndump = NULL;
 	// reopen if was open before
+	reopen = 1; // always reopen if possible
 	if (reopen) {
 		int rr = sdb_open (s, s->dir);
 		if (ret && rr<0) {
 			ret = 0;
 		}
+		cdb_init (&s->db, s->fd);
 	}
 	return ret;
 }

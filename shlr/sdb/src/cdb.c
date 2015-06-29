@@ -1,4 +1,5 @@
 /* Public domain - author D. J. Bernstein, modified by pancake - 2014-2015 */
+#include <stdio.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -33,7 +34,7 @@ void cdb_findstart(struct cdb *c) {
 	c->loop = 0;
 }
 
-void cdb_init(struct cdb *c, int fd) {
+int cdb_init(struct cdb *c, int fd) {
 	struct stat st;
 	c->map = NULL;
 	c->fd = fd;
@@ -43,14 +44,18 @@ void cdb_init(struct cdb *c, int fd) {
 		char *x = mmap (0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 #else
 		char *x = malloc (st.st_size);
-		if (!x) return;
+		if (!x) return 0;
 		read (fd, x, st.st_size); // TODO: handle return value
 #endif
 		if (x + 1) {
 			c->size = st.st_size;
 			c->map = x;
 		}
+		return 1;
 	}
+	c->map = NULL;
+	c->size = 0;
+	return 0;
 }
 
 int cdb_read(struct cdb *c, char *buf, ut32 len, ut32 pos) {
@@ -93,22 +98,25 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, ut32 len) {
 	char buf[8];
 	ut32 pos;
 	int m;
-
+	if (c->fd == -1) return -1;
 	c->hslots = 0;
 	if (!c->loop) {
-		if (!cdb_read (c, buf, sizeof (buf), (u << 3) & 2047))
+		if (!cdb_read (c, buf, sizeof (buf), (u << 3) & 2047)) {
 			return -1;
+		}
 		ut32_unpack (buf + 4, &c->hslots);
-		if (!c->hslots)
+		if (!c->hslots) {
 			return 0;
+		}
 		ut32_unpack (buf, &c->hpos);
 		c->khash = u;
 		u = ((u>>8)%c->hslots)<<3;
 		c->kpos = c->hpos + u;
 	}
 	while (c->loop < c->hslots) {
-		if (!cdb_read (c, buf, sizeof (buf), c->kpos))
+		if (!cdb_read (c, buf, sizeof (buf), c->kpos)) {
 			return 0;
+		}
 		ut32_unpack (buf + 4, &pos);
 		if (!pos) return 0;
 		c->loop++;
@@ -117,12 +125,16 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, ut32 len) {
 			c->kpos = c->hpos;
 		ut32_unpack (buf, &u);
 		if (u == c->khash) {
-			if (!seek_set (c->fd, pos))
+			if (!seek_set (c->fd, pos)) {
+
 				return -1;
-			if (!cdb_getkvlen (c->fd, &u, &c->dlen))
+			}
+			if (!cdb_getkvlen (c->fd, &u, &c->dlen)) {
 				return -1;
-			if (u == 0)
+			}
+			if (u == 0) {
 				return -1;
+			}
 			if (u == len) {
 				if ((m = match (c, key, len, pos + KVLSZ))==-1)
 					return 0;

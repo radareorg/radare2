@@ -117,6 +117,7 @@ char *sdb_querys (Sdb* s, char *buf, size_t len, const char *cmd);
 char *sdb_querysf (Sdb* s, char *buf, size_t buflen, const char *fmt, ...);
 int  sdb_query_file(Sdb *s, const char* file);
 int  sdb_exists (Sdb*, const char *key);
+int  sdb_remove (Sdb*, const char *key, ut32 cas);
 int  sdb_unset (Sdb*, const char *key, ut32 cas);
 int  sdb_unset_like(Sdb *s, const char *k);
 char** sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback cb);
@@ -144,6 +145,9 @@ ut64 sdb_num_dec  (Sdb* s, const char *key, ut64 n, ut32 cas);
 int  sdb_num_min  (Sdb* s, const char *key, ut64 v, ut32 cas);
 int  sdb_num_max  (Sdb* s, const char *key, ut64 v, ut32 cas);
 
+/* ptr */
+int sdb_ptr_set(Sdb *db, const char *key, void *p, ut32 cas);
+void* sdb_ptr_get(Sdb *db, const char *key, ut32 *cas);
 
 /* create db */
 int sdb_disk_create (Sdb* s);

@@ -75,3 +75,13 @@ SDB_API int sdb_bool_get(Sdb *db, const char *str, ut32 *cas) {
 	const char *b = sdb_const_get (db, str, cas);
 	return (!strcmp (b, "1") || !strcmp (b, "true"))? 1: 0;
 }
+
+/* pointers */
+
+SDB_API int sdb_ptr_set(Sdb *db, const char *key, void *p, ut32 cas) {
+	return sdb_num_set (db, key, (ut64)(size_t)p, cas);
+}
+
+SDB_API void* sdb_ptr_get(Sdb *db, const char *key, ut32 *cas) {
+	return (void*)(size_t)sdb_num_get (db, key, cas);
+}
