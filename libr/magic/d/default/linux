@@ -214,3 +214,4 @@
 >72	string	x		%s]
 >168	string	x		UUID: %s
 
+0	string	#!/bin/sh			Shellscript
