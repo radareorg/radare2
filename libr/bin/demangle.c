@@ -288,6 +288,30 @@ R_API int r_bin_demangle_type (const char *str) {
 	return R_BIN_NM_NONE;
 }
 
+R_API int r_bin_lang_rust(RBinFile *binfile) {
+        RBinObject *o = binfile ? binfile->o : NULL;
+        RBinInfo *info = o ? o->info : NULL;
+        RBinSymbol *sym;
+        RListIter *iter;
+        int haslang = R_FALSE;
+
+        if (!info)
+                return R_FALSE;
+        r_list_foreach (o->symbols, iter, sym) {
+                if (strstr (sym->name, "rust_stack_exhausted")) {
+                        haslang = R_TRUE;
+                        info->lang = "rust";
+                        break;
+                }
+        }
+	// NOTE: if the rust binary is stripped we can check
+	// if the strings contain 'rust', but this can be too
+	// time consuming and spawn some false positives and,
+	// as long as lang detection is only useful for demangling
+	// there's no utility on catching this case.
+        return haslang;
+}
+
 R_API int r_bin_lang_type(RBinFile *binfile, const char *def) {
 	int type = 0;
 	RBinPlugin *plugin;
@@ -314,6 +338,8 @@ R_API char *r_bin_demangle (RBinFile *binfile, const char *def, const char *str)
 	int type = r_bin_lang_type (binfile, def);
 	switch (type) {
 	case R_BIN_NM_JAVA: return r_bin_demangle_java (str);
+	/* rust uses the same mangling as c++ and appends a uniqueid */
+	case R_BIN_NM_RUST: return r_bin_demangle_cxx (str);
 	case R_BIN_NM_CXX: return r_bin_demangle_cxx (str);
 	case R_BIN_NM_OBJC: return r_bin_demangle_objc (NULL, str);
 	case R_BIN_NM_SWIFT: return r_bin_demangle_swift (str);

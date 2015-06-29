@@ -422,6 +422,7 @@ SETL/SETNGE
 		case X86_INS_MOVAPS:
 		case X86_INS_MOVAPD:
 		case X86_INS_MOVZX:
+		case X86_INS_MOVUPS:
 		case X86_INS_MOVABS:
 		case X86_INS_MOVHPD:
 		case X86_INS_MOVHPS:
@@ -899,6 +900,7 @@ SETL/SETNGE
 		case X86_INS_VPXORD:
 		case X86_INS_VPXORQ:
 		case X86_INS_VPXOR:
+		case X86_INS_XORPS:
 		case X86_INS_KXORW:
 		case X86_INS_PXOR:
 		case X86_INS_XOR:

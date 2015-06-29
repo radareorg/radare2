@@ -308,6 +308,8 @@ R_API int r_bin_dump_strings(RBinFile *a, int min) {
 }
 
 R_API int r_bin_load_languages(RBinFile *binfile) {
+	if (r_bin_lang_rust (binfile))
+		return R_BIN_NM_RUST;
 	if (r_bin_lang_swift (binfile))
 		return R_BIN_NM_SWIFT;
 	if (r_bin_lang_objc (binfile))

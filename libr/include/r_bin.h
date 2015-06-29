@@ -49,6 +49,7 @@ enum {
 	R_BIN_NM_SWIFT = 1<<3,
 	R_BIN_NM_DLANG = 1<<4,
 	R_BIN_NM_MSVC = 1<<5,
+	R_BIN_NM_RUST = 1<<6,
 	R_BIN_NM_ANY = -1,
 };
 
