@@ -61,6 +61,7 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->bits = R_SYS_BITS;
 		dbg->trace_forks = 1;
 		dbg->trace_clone = 0;
+		R_FREE (dbg->btalgo);
 		dbg->trace_execs = 0;
 		dbg->anal = NULL;
 		dbg->snaps = r_list_newf (r_debug_snap_free);

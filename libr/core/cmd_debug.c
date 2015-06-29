@@ -1289,7 +1289,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				i++;
 			}
 			r_cons_printf ("]\n");
-			r_list_purge (list);
+			r_list_free (list);
 			break;
 		case '=': // dbt=
 			addr = UT64_MAX;
@@ -1304,7 +1304,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				i++;
 			}
 			r_cons_newline ();
-			r_list_purge (list);
+			r_list_free (list);
 			break;
 		case 0:
 			addr = UT64_MAX;
@@ -1313,16 +1313,27 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
 			r_list_foreach (list, iter, frame) {
-				if(frame->name) {
-					r_cons_printf ("%d  0x%08"PFMT64x"  %d [%s]\n",
-						i++, frame->addr, frame->size, frame->name);
-					free(frame->name);
+				char flagdesc[1024];
+				RFlagItem *f = r_flag_get_at (core->flags, frame->addr);
+				if (f) {
+					if (f->offset != addr) {
+						snprintf (flagdesc, sizeof(flagdesc), "%s+%d", f->name, (int)(frame->addr - f->offset));
+					} else {
+						snprintf (flagdesc, sizeof(flagdesc), "%s", f->name);
+					}
 				} else {
-					r_cons_printf ("%d  0x%08"PFMT64x"  %d\n",
-						i++, frame->addr, frame->size);
+					flagdesc[0] = 0;
+				}
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
+				if (fcn) {
+					r_cons_printf ("%d  0x%08"PFMT64x"  %d  [%s]  %s\n",
+						i++, frame->addr, frame->size, fcn->name, flagdesc);
+				} else {
+					r_cons_printf ("%d  0x%08"PFMT64x"  %d  %s\n",
+						i++, frame->addr, frame->size, flagdesc);
 				}
 			}
-			r_list_purge (list);
+			r_list_free (list);
 			break;
 		default:
 			eprintf ("See db?\n");

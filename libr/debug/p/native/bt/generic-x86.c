@@ -61,9 +61,8 @@ static RList *backtrace_x86_32_anal(RDebug *dbg, ut64 at) {
 	fcn = r_anal_get_fcn_in (dbg->anal, eip, R_ANAL_FCN_TYPE_NULL);
 	if (fcn != NULL) {
 		frame = R_NEW0 (RDebugFrame);
-		frame->addr = fcn->addr;
+		frame->addr = eip;
 		frame->size = 0;
-		frame->name = (fcn && fcn->name) ? strdup(fcn->name) : NULL;
 		r_list_append (list, frame);
 	}
 
@@ -76,11 +75,9 @@ static RList *backtrace_x86_32_anal(RDebug *dbg, ut64 at) {
 
 		// TODO: arch_is_call() here and this fun will be portable
 		if (buf[(ebp2-5)%4]==0xe8) {
-			fcn = r_anal_get_fcn_in (dbg->anal, ebp2, R_ANAL_FCN_TYPE_NULL);
 			frame = R_NEW0 (RDebugFrame);
 			frame->addr = ebp2;
 			frame->size = esp-_esp;
-			frame->name = (fcn && fcn->name) ? strdup (fcn->name) : NULL;
 			r_list_append (list, frame);
 		}
 		esp += 4;
