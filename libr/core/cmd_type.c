@@ -70,10 +70,10 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'b':
 		{
-	       int i;
-		char *p, *s = strdup (input+2);
+		int i;
+		char *p, *s = (input && strlen(input) > 1) ? strdup (input+2): NULL;
 		const char *isenum;
-		p = strchr (s, ' ');
+		p = s ? strchr (s, ' ') : NULL;
 		if (p) {
 			*p++ = 0;
 // dupp in core.c (see getbitfield())
@@ -92,7 +92,6 @@ static int cmd_type(void *data, const char *input) {
 						if (res) r_cons_printf ("%s", res);
 						else r_cons_printf ("0x%x", (1<<i));
 						empty = 0;
-						
 					}
 				}
 			} else {
