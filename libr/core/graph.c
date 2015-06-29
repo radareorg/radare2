@@ -15,8 +15,7 @@ static int mousemode = 0;
 #define MIN_NODE_HEIGTH BORDER_HEIGHT
 #define INIT_HISTORY_CAPACITY 16
 #define TITLE_LEN 128
-#define SLOW_MOV 1
-#define FAST_MOV 5
+#define DEFAULT_SPEED 1
 
 #define ZOOM_STEP 10
 #define ZOOM_DEFAULT 100
@@ -1046,6 +1045,12 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	return R_TRUE;
 }
 
+static void agraph_toggle_speed (AGraph *g) {
+	int alt = r_config_get_i (g->core->config, "graph.scroll");
+
+	g->movspeed = g->movspeed == DEFAULT_SPEED ? alt : DEFAULT_SPEED;
+}
+
 static void agraph_init(AGraph *g) {
 	g->is_callgraph = R_FALSE;
 	g->is_instep = R_FALSE;
@@ -1056,7 +1061,7 @@ static void agraph_init(AGraph *g) {
 	g->history = r_stack_new (INIT_HISTORY_CAPACITY);
 	g->graph = r_graph_new ();
 	g->zoom = ZOOM_DEFAULT;
-	g->movspeed = SLOW_MOV;
+	g->movspeed = DEFAULT_SPEED;
 }
 
 static AGraph *agraph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {
@@ -1105,7 +1110,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		goto err_graph_new;
 	}
 
-	grd = (struct agraph_refresh_data *)malloc (sizeof(*grd));
+	grd = R_NEW (struct agraph_refresh_data);
 	grd->g = g;
 	grd->fs = is_interactive;
 
@@ -1221,7 +1226,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					" p      - toggle mini-graph\n"
 					" u      - select previous node\n"
 					" V      - toggle basicblock / call graphs\n"
-					" w      - toggle between movements speed 1 and 5\n"
+					" w      - toggle between movements speed 1 and graph.scroll\n"
 					" x/X    - jump to xref/ref\n"
 					" z/Z    - step / step over\n"
 					" +/-/0  - zoom in/out/default\n"
@@ -1324,7 +1329,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  // refresh graph
 			  break;
 		case 'w':
-			  g->movspeed = g->movspeed == SLOW_MOV ? FAST_MOV : SLOW_MOV;
+			  agraph_toggle_speed (g);
 			  break;
 		case -1: // EOF
 		case 'q':
@@ -1342,6 +1347,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		}
 	}
 
+	free (grd);
 	agraph_free(g);
 err_graph_new:
 	r_config_set_i (core->config, "scr.color", can->color);
