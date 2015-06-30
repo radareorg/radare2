@@ -2022,6 +2022,7 @@ static int cmd_search(void *data, const char *input) {
 			len = r_str_unescape (str);
 			ochunksize = chunksize = R_MIN (len, chunksize);
 			eprintf ("Using chunksize: %d\n", chunksize);
+			core->in_search = R_FALSE;
 			for (i=0; i<len; i += chunksize) {
 				chunksize = ochunksize;
 				again:

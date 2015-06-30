@@ -225,6 +225,7 @@ static char *get_varname (RAnal *a, const char *pfx, int idx) {
 }
 
 #define gotoBeach(x) ret=x;goto beach;
+#define gotoBeachRet() goto beach;
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int continue_after_jump = anal->afterjmp;
 	RAnalBlock *bb = NULL;
@@ -458,7 +459,7 @@ if (anal->bbsplit) {
 				bb->fail = UT64_MAX;
 			}
 			recurseAt (op.jump);
-			gotoBeach (ret);
+			gotoBeachRet ();
 } else {
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					R_ANAL_REF_TYPE_CODE)) {
@@ -571,7 +572,7 @@ if (anal->bbsplit) {
 			// without which the analysis is really slow,
 			// presumably because each opcode would get revisited
 			// (and already covered by a bb) many times
-			gotoBeach (ret);
+			gotoBeachRet();
                         // For some reason, branch delayed code (MIPS) needs to continue
 			break;
 		case R_ANAL_OP_TYPE_CCALL:

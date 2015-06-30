@@ -414,6 +414,7 @@ R_API int r_bin_lang_swift(RBinFile *binfile);
 R_API int r_bin_lang_cxx(RBinFile *binfile);
 R_API int r_bin_lang_msvc(RBinFile *binfile);
 R_API int r_bin_lang_dlang(RBinFile *binfile);
+R_API int r_bin_lang_rust(RBinFile *binfile);
 
 R_API RList* r_bin_get_entries(RBin *bin);
 R_API RList* r_bin_get_fields(RBin *bin);

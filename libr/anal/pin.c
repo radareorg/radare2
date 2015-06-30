@@ -56,7 +56,7 @@ R_API int r_anal_pin_call(RAnal *a, ut64 addr) {
 	if (!key) return R_FALSE;
 	name = sdb_const_get (DB, key, NULL);
 	if (!name) return R_FALSE;
-	RAnalEsilPin fcnptr = (RAnalEsilPin *)sdb_ptr_get (DB, name, NULL);
+	RAnalEsilPin fcnptr = (RAnalEsilPin)sdb_ptr_get (DB, name, NULL);
 	if (fcnptr) {
 		fcnptr (a);
 		return R_TRUE;
