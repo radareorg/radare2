@@ -1268,7 +1268,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  g->zoom = ZOOM_DEFAULT;
 			  update_node_dimension (g->graph, g->is_small_nodes, g->zoom);
 			  agraph_set_layout (g);
-			  //agraph_update_seek (g, get_anode (g->curnode), R_TRUE);
+			  agraph_update_seek (g, get_anode (g->curnode), R_TRUE);
 			  g->is_instep = R_TRUE;
 			  break;
 		case 't':
