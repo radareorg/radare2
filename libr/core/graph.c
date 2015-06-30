@@ -1125,7 +1125,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case '+':
 			agraph_set_zoom (g, g->zoom + ZOOM_STEP);
 			break;
-		case '=':
+		case '0':
+			agraph_set_zoom (g, ZOOM_DEFAULT);
+			agraph_update_seek (g, get_anode (g->curnode), R_TRUE);
+			break;
 		case '|':
 			{ // TODO: edit
 				const char *buf = NULL;
@@ -1188,22 +1191,22 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
-					" .    - center graph to the current node\n"
-					" C    - toggle scr.color\n"
-					" hjkl - move node\n"
-					" HJKL - scroll canvas\n"
-					" tab  - select next node\n"
-					" TAB  - select previous node\n"
-					" t/f  - follow true/false edges\n"
-					" e    - toggle edge-lines style (diagonal/square)\n"
-					" O    - toggle disasm mode\n"
-					" p    - toggle mini-graph\n"
-					" u    - select previous node\n"
-					" V    - toggle basicblock / call graphs\n"
-					" x/X  - jump to xref/ref\n"
-					" z/Z  - step / step over\n"
-					" +/-  - zoom in/out\n"
-					" R    - relayout\n");
+					" .      - center graph to the current node\n"
+					" C      - toggle scr.color\n"
+					" hjkl   - move node\n"
+					" HJKL   - scroll canvas\n"
+					" tab    - select next node\n"
+					" TAB    - select previous node\n"
+					" t/f    - follow true/false edges\n"
+					" e      - toggle edge-lines style (diagonal/square)\n"
+					" O      - toggle disasm mode\n"
+					" p      - toggle mini-graph\n"
+					" u      - select previous node\n"
+					" V      - toggle basicblock / call graphs\n"
+					" x/X    - jump to xref/ref\n"
+					" z/Z    - step / step over\n"
+					" +/-/0  - zoom in/out/default\n"
+					" R      - relayout\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
 			break;
@@ -1264,7 +1267,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'h': get_anode(g->curnode)->x--; break;
 		case 'l': get_anode(g->curnode)->x++; break;
 
-		case '0': can->sx = can->sy = 0; break;
 		case 'K': can->sy -= wheelspeed; break;
 		case 'J': can->sy += wheelspeed; break;
 		case 'H': can->sx -= wheelspeed; break;
@@ -1275,12 +1277,12 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  break;
 		case 'p':
 			  agraph_toggle_small_nodes (g);
+			  agraph_update_seek (g, get_anode (g->curnode), R_TRUE);
 			  break;
 		case 'u':
 			  agraph_undo_node(g);
 			  break;
 		case '.':
-			  agraph_set_zoom (g, ZOOM_DEFAULT);
 			  agraph_update_seek (g, get_anode (g->curnode), R_TRUE);
 			  g->is_instep = R_TRUE;
 			  break;
@@ -1315,8 +1317,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  }
 			  break;
 		default:
-			  eprintf ("Key %d\n", key);
-			  //sleep (1);
 			  break;
 		}
 	}
