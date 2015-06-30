@@ -350,6 +350,8 @@ int main(int argc, char **argv) {
 		}
 		hashstr = hashstr+from;
 		hashstr_len = to-from;
+		hashstr[hashstr_len] = '\0';
+		hashstr_len = r_str_unescape (hashstr);
 		switch (b64mode) {
 		case 1: // encode
 			{
