@@ -134,8 +134,8 @@ static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
 	int center_x = 0, center_y = 0;
 	char title[TITLE_LEN];
 	char *text;
-	int delta_x = 0;
-	int delta_y = 0;
+	int delta_x = 0, delta_txt_x = 0;
+	int delta_y = 0, delta_txt_y = 0;
 	int x, y;
 
 #if SHOW_OUT_OF_SCREEN_NODES
@@ -169,14 +169,19 @@ static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
 	if (g->zoom > ZOOM_DEFAULT) {
 		center_x = (g->zoom - ZOOM_DEFAULT) / 20;
 		center_y = (g->zoom - ZOOM_DEFAULT) / 30;
+		delta_txt_x = R_MIN (delta_x, center_x);
+		delta_txt_y = R_MIN (delta_y, center_y);
 	}
 
-	if (G(n->x + MARGIN_TEXT_X + delta_x + center_x,
-			n->y + MARGIN_TEXT_Y + delta_y + center_y)) {
+	if (G(n->x + MARGIN_TEXT_X + delta_x + center_x - delta_txt_x,
+			n->y + MARGIN_TEXT_Y + delta_y + center_y - delta_txt_y)) {
+		int text_x = R_MAX (0, delta_x - center_x);
+		int text_y = R_MAX (0, delta_y - center_y);
+
 		text = r_str_crop (n->text,
-			delta_x, delta_y,
+			text_x, text_y,
 			n->w - BORDER_WIDTH,
-			n->h - BORDER_WIDTH + 1);
+			n->h - BORDER_HEIGHT);
 		if (text) {
 			W (text);
 			free (text);
