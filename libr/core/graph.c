@@ -37,6 +37,12 @@ static int mousemode = 0;
 #define graph_foreach_anode(list, it, pos, anode) \
 	if (list) for (it = list->head; it && (pos = it->data) && (pos) && (anode = (ANode *)pos->data); it = it->n)
 
+struct dist_t {
+	const RGraphNode *from;
+	const RGraphNode *to;
+	int dist;
+};
+
 struct layer_t {
 	int n_nodes;
 	RGraphNode **nodes;
@@ -84,6 +90,7 @@ typedef struct ascii_graph {
 	RList *long_edges;
 	struct layer_t *layers;
 	int n_layers;
+	RList *dists; /* RList<struct dist_t> */
 } AGraph;
 
 struct agraph_refresh_data {
@@ -547,10 +554,80 @@ static void minimize_crossings (AGraph *g) {
 	} while (cross_changed);
 }
 
+static int find_dist (const struct dist_t *a, const struct dist_t *b) {
+	return a->from == b->from && a->to == b->to ? 0 : 1;
+}
+
 /* returns the distance between two nodes */
-static int dist_nodes (const RGraphNode *a, const RGraphNode *b) {
-	ANode *aa = (ANode *)a->data;
-	return aa->w + HORIZONTAL_NODE_SPACING;
+/* if the distance between two nodes were explicitly set, returns that;
+ * otherwise calculate the distance of two nodes on the same layer */
+static int dist_nodes (AGraph *g, const RGraphNode *a, const RGraphNode *b) {
+	struct dist_t d;
+	ANode *aa, *ab;
+	int res = 0;
+
+	if (g->dists) {
+		d.from = a;
+		d.to = b;
+		RListIter *it = r_list_find (g->dists, &d, (RListComparator)find_dist);
+		if (it) {
+			struct dist_t *old = (struct dist_t *)r_list_iter_get_data (it);
+			return old->dist;
+		}
+	}
+
+	aa = (ANode *)a->data;
+	ab = (ANode *)b->data;
+	if (aa->layer == ab->layer) {
+		int i;
+
+		res = 0;
+		for (i = aa->pos_in_layer; i < ab->pos_in_layer; ++i) {
+			RGraphNode *cur = g->layers[aa->layer].nodes[i];
+			RGraphNode *next = g->layers[aa->layer].nodes[i + 1];
+			ANode *anext = (ANode *)next->data;
+			ANode *acur = (ANode *)cur->data;
+			int found = R_FALSE;
+
+			if (g->dists) {
+				d.from = cur;
+				d.to = next;
+				RListIter *it = r_list_find (g->dists, &d, (RListComparator)find_dist);
+				if (it) {
+					struct dist_t *old = (struct dist_t *)r_list_iter_get_data (it);
+					res += old->dist;
+					found = R_TRUE;
+				}
+			}
+
+			if (!found) {
+				int space = acur->is_dummy && anext->is_dummy ? 1 : HORIZONTAL_NODE_SPACING;
+				res += acur->w / 2 + anext->w / 2 + space;
+			}
+		}
+	}
+
+	return res;
+}
+
+/* explictly set the distance between two nodes on the same layer */
+static void set_dist_nodes (AGraph *g, int l, int cur, int next) {
+	struct dist_t *d;
+	RGraphNode *vi, *vip;
+	ANode *avi, *avip;
+
+	if (!g->dists) return;
+	d = R_NEW (struct dist_t);
+
+	vi = g->layers[l].nodes[cur];
+	vip = g->layers[l].nodes[next];
+	avi = (ANode *)vi->data;
+	avip = (ANode *)vip->data;
+
+	d->from = vi;
+	d->to = vip;
+	d->dist = avip->x - avi->x;
+	r_list_push (g->dists, d);
 }
 
 static int is_valid_pos (AGraph *g, int l, int pos) {
@@ -663,9 +740,9 @@ static RGraphNode *get_sibling (AGraph *g, ANode *n, int is_left, int is_adjust_
 static int adjust_class_val (AGraph *g, RGraphNode *gn, RGraphNode *sibl,
 							 Sdb *res, int is_left) {
 	if (is_left)
-		return hash_get_int (res, sibl) - hash_get_int (res, gn) - dist_nodes (gn, sibl);
+		return hash_get_int (res, sibl) - hash_get_int (res, gn) - dist_nodes (g, gn, sibl);
 	else
-		return hash_get_int (res, gn) - hash_get_int (res, sibl) - dist_nodes (sibl, gn);
+		return hash_get_int (res, gn) - hash_get_int (res, sibl) - dist_nodes (g, sibl, gn);
 }
 
 /* adjusts the position of previously placed left/right classes */
@@ -727,9 +804,9 @@ static void adjust_class (AGraph *g, Sdb *v_nodes, int is_left,
 static int place_nodes_val (AGraph *g, RGraphNode *gn, RGraphNode *sibl,
 							Sdb *res, int is_left) {
 	if (is_left)
-		return hash_get_int (res, sibl) + dist_nodes (sibl, gn);
+		return hash_get_int (res, sibl) + dist_nodes (g, sibl, gn);
 	else
-		return hash_get_int (res, sibl) - dist_nodes (gn, sibl);
+		return hash_get_int (res, sibl) - dist_nodes (g, gn, sibl);
 }
 
 static int place_nodes_sel_p (int newval, int oldval, int is_first, int is_left) {
@@ -743,7 +820,7 @@ static int place_nodes_sel_p (int newval, int oldval, int is_first, int is_left)
 }
 
 static int get_default_p (AGraph *g, ANode *n, int is_left) {
-	return is_left ? 0 : 50 - n->w;
+	return is_left ? 0 : 50;
 }
 
 /* places left/right the nodes of a class */
@@ -915,6 +992,14 @@ static void set_layout_bb(AGraph *g) {
 			for (k = 0; k < n->layer; ++k) {
 				n->y += g->layers[k].height + VERTICAL_NODE_SPACING;
 			}
+		}
+	}
+
+	/* finalize x coordinate */
+	for (i = 0; i < g->n_layers; ++i) {
+		for (j = 0; j < g->layers[i].n_nodes; ++j) {
+			ANode *n = (ANode *)(g->layers[i].nodes[j]->data);
+			n->x -= n->w / 2;
 		}
 	}
 
