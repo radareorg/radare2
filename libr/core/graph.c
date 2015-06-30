@@ -1,6 +1,8 @@
 /* Copyright radare2 2014-2015 - Author: pancake */
 
 #include <r_core.h>
+#include <limits.h>
+
 static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
 static int mousemode = 0;
 
@@ -36,6 +38,11 @@ static int mousemode = 0;
 
 #define graph_foreach_anode(list, it, pos, anode) \
 	if (list) for (it = list->head; it && (pos = it->data) && (pos) && (anode = (ANode *)pos->data); it = it->n)
+
+struct len_pos_t {
+	int len;
+	int pos;
+};
 
 struct dist_t {
 	const RGraphNode *from;
@@ -545,7 +552,6 @@ static void minimize_crossings (AGraph *g) {
 			cross_changed |= layer_sweep (g->graph, g->layers, g->n_layers, i, R_TRUE);
 	} while (cross_changed);
 
-
 	do {
 		cross_changed = R_FALSE;
 
@@ -920,6 +926,368 @@ xminus_err:
 	sdb_free (vertical_nodes);
 }
 
+static RGraphNode *get_right_dummy (AGraph *g, RGraphNode *n) {
+	ANode *an = (ANode *)n->data;
+	int k, layer = an->layer;
+
+	for (k = an->pos_in_layer + 1; k < g->layers[layer].n_nodes; ++k) {
+		RGraphNode *gk = g->layers[layer].nodes[k];
+		ANode *ak = (ANode *)gk->data;
+
+		if (ak->is_dummy)
+			return gk;
+	}
+
+	return NULL;
+}
+
+static void adjust_directions (AGraph *g, int i, int from_up, Sdb *D, Sdb *P) {
+	RGraphNode *vm = NULL, *wm = NULL;
+	ANode *vma = NULL, *wma = NULL;
+	int j, d = from_up ? 1 : -1;
+
+	if (i + d < 0 || i + d >= g->n_layers) return;
+
+	for (j = 0; j < g->layers[i + d].n_nodes; ++j) {
+		RGraphNode *wp, *vp = g->layers[i + d].nodes[j];
+		ANode *wpa, *vpa = (ANode *)vp->data;
+
+		if (!vpa->is_dummy) continue;
+		if (from_up)
+			wp = r_list_get_n (r_graph_innodes (g->graph, vp), 0);
+		else
+			wp = r_graph_nth_neighbour (g->graph, vp, 0);
+		wpa = (ANode *)wp->data;
+		if (!wpa->is_dummy) continue;
+
+		if (vm) {
+			int p = hash_get_int (P, wm);
+			int k;
+
+			for (k = wma->pos_in_layer + 1; k < wpa->pos_in_layer; ++k) {
+				RGraphNode *w = g->layers[wma->layer].nodes[k];
+				ANode *aw = (ANode *)w->data;
+
+				if (aw->is_dummy)
+					p &= hash_get_int (P, w);
+			}
+			if (p) {
+				hash_set (D, vm, from_up);
+				for (k = vma->pos_in_layer + 1; k < vpa->pos_in_layer; ++k) {
+					RGraphNode *v = g->layers[vma->layer].nodes[k];
+					ANode *av = (ANode *)v->data;
+
+					if (av->is_dummy)
+						hash_set (D, v, from_up);
+				}
+			}
+		}
+
+		vm = vp;
+		wm = wp;
+		vma = (ANode *)vm->data;
+		wma = (ANode *)wm->data;
+	}
+}
+
+/* find a placement for a single node */
+static void place_single (AGraph *g, int l, RGraphNode *bm, RGraphNode *bp, int from_up, int va) {
+	RGraphNode *v = g->layers[l].nodes[va];
+	ANode *av = (ANode *)v->data;
+	const RList *neigh;
+	ANode *bma, *bpa;
+	int len;
+
+	bma = bm ? (ANode *)bm->data : NULL;
+	bpa = bp ? (ANode *)bp->data : NULL;
+
+	if (from_up)
+		neigh = r_graph_innodes (g->graph, v);
+	else
+		neigh = r_graph_get_neighbours (g->graph, v);
+
+	len = r_list_length (neigh);
+	if (len == 0)
+		return;
+
+	RGraphNode *gk;
+	RListIter *itk;
+	ANode *ak;
+	int sum_x = 0;
+	graph_foreach_anode (neigh, itk, gk, ak) {
+		if (ak->is_reversed) {
+			len--;
+			continue;
+		}
+
+		sum_x += ak->x;
+	}
+
+	if (len == 0)
+		return;
+
+	av->x = sum_x / len;
+	if (bm) {
+		ANode *bma = (ANode *)bm->data;
+		av->x = R_MAX (av->x, bma->x + dist_nodes (g, bm, v));
+	}
+	if (bp) {
+		ANode *bpa = (ANode *)bp->data;
+		av->x = R_MIN (av->x, bpa->x - dist_nodes (g, v, bp));
+	}
+}
+
+static int RM_listcmp (const struct len_pos_t *a, const struct len_pos_t *b) {
+	return a->pos < b->pos;
+}
+
+static int RP_listcmp (const struct len_pos_t *a, const struct len_pos_t *b) {
+	return a->pos >= b->pos;
+}
+
+static void collect_changes (AGraph *g, int l, RGraphNode *b, int from_up,
+								  int s, int e, RList *list, int is_left) {
+	RGraphNode *vt = g->layers[l].nodes[e - 1];
+	RGraphNode *vtp = g->layers[l].nodes[s];
+	RListComparator lcmp;
+	struct len_pos_t *cx;
+	int i;
+
+	lcmp = is_left ? (RListComparator)RM_listcmp : (RListComparator)RP_listcmp;
+
+	for (i = is_left ? s : e - 1;
+	     (is_left && i < e) || (!is_left && i >= s);
+		 i = is_left ? i + 1 : i - 1) {
+		RGraphNode *v, *vi = g->layers[l].nodes[i];
+		ANode *av, *avi = (ANode *)vi->data;
+		const RList *neigh;
+		RListIter *it;
+		int c = 0;
+
+		if (from_up)
+			neigh = r_graph_innodes (g->graph, vi);
+		else
+			neigh = r_graph_get_neighbours (g->graph, vi);
+
+		graph_foreach_anode (neigh, it, v, av) {
+			if ((is_left && av->x >= avi->x) || (!is_left && av->x <= avi->x)) {
+				c++;
+			} else {
+				cx = R_NEW (struct len_pos_t);
+
+				c--;
+				cx->len = 2;
+				cx->pos = av->x;
+				if (is_left)
+					cx->pos += dist_nodes (g, vi, vt);
+				else
+					cx->pos -= dist_nodes (g, vtp, vi);
+				r_list_add_sorted (list, cx, lcmp);
+			}
+		}
+
+		cx = R_NEW (struct len_pos_t);
+		cx->len = c;
+		cx->pos = avi->x;
+		if (is_left)
+			cx->pos += dist_nodes (g, vi, vt);
+		else
+			cx->pos -= dist_nodes (g, vtp, vi);
+		r_list_add_sorted (list, cx, lcmp);
+	}
+
+	if (b) {
+		ANode *ab = (ANode *)b->data;
+
+		cx = R_NEW (struct len_pos_t);
+		cx->len = is_left ? INT_MAX : INT_MIN;
+		cx->pos = ab->x;
+		if (is_left)
+			cx->pos += dist_nodes (g, b, vt);
+		else
+			cx->pos -= dist_nodes (g, vtp, b);
+		r_list_add_sorted (list, cx, lcmp);
+	}
+}
+
+static void combine_sequences (AGraph *g, int l, RGraphNode *bm, RGraphNode *bp,
+							   int from_up, int a, int r) {
+	RList *Rm = r_list_new (), *Rp = r_list_new ();
+	RGraphNode *vt, *vtp;
+	ANode *at, *atp;
+	int rm, rp, t, m, i;
+
+	t = (a + r) / 2;
+	vt = g->layers[l].nodes[t - 1];
+	vtp = g->layers[l].nodes[t];
+	at = (ANode *)vt->data;
+	atp = (ANode *)vtp->data;
+
+	collect_changes (g, l, bm, from_up, a, t, Rm, R_TRUE);
+	collect_changes (g, l, bp, from_up, t, r, Rp, R_FALSE);
+	rm = rp = 0;
+
+	m = dist_nodes (g, vt, vtp);
+	while (atp->x - at->x < m) {
+		if (rm < rp) {
+			if (r_list_empty (Rm)) {
+				at->x = atp->x - m;
+			} else {
+				struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rm);
+				rm = rm + cx->len;
+				at->x = R_MAX (cx->pos, atp->x - m);
+				free (cx);
+			}
+		} else {
+			if (r_list_empty (Rp)) {
+				atp->x = at->x + m;
+			} else {
+				struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rp);
+				rp = rp + cx->len;
+				atp->x = R_MIN (cx->pos, at->x + m);
+				free (cx);
+			}
+		}
+	}
+
+	for (i = t - 2; i >= a; --i) {
+		RGraphNode *gv = g->layers[l].nodes[i];
+		ANode *av = (ANode *)gv->data;
+
+		av->x = R_MIN (av->x, at->x - dist_nodes (g, gv, vt));
+	}
+
+	for (i = t + 1; i < r; ++i) {
+		RGraphNode *gv = g->layers[l].nodes[i];
+		ANode *av = (ANode *)gv->data;
+
+		av->x = R_MAX (av->x, atp->x + dist_nodes (g, vtp, gv));
+	}
+}
+
+/* places a sequence of consecutive original nodes */
+/* it tries to minimize the distance between each node in the sequence and its
+ * neighbours in the "previous" layer. Those neighbours are considered as
+ * "fixed". The previous layer depends on the direction used during the layers
+ * traversal */
+static void place_sequence (AGraph *g, int l, RGraphNode *bm, RGraphNode *bp,
+							int from_up, int va, int vr) {
+	int vt;
+
+	if (vr == va + 1) {
+		place_single (g, l, bm, bp, from_up, va);
+	} else if (vr > va + 1) {
+		vt = (vr + va) / 2;
+		place_sequence (g, l, bm, bp, from_up, va, vt);
+		place_sequence (g, l, bm, bp, from_up, vt, vr);
+		combine_sequences (g, l, bm, bp, from_up, va, vr);
+	}
+}
+
+/* finds the placements of nodes while traversing the graph in the given
+ * direction */
+/* places all the sequences of consecutive original nodes in each layer. */
+static void original_traverse_l (AGraph *g, Sdb *D, Sdb *P, int from_up) {
+	int i, k, va, vr;
+
+	for (i = from_up ? 0 : g->n_layers - 1;
+		(from_up && i < g->n_layers) || (!from_up && i >= 0);
+		i = from_up ? i + 1 : i - 1) {
+		int j;
+		RGraphNode *bm = NULL;
+		ANode *bma = NULL;
+
+		j = 0;
+		while (j < g->layers[i].n_nodes && !bm) {
+			RGraphNode *gn = g->layers[i].nodes[j];
+			ANode *an = (ANode *)gn->data;
+
+			if (an->is_dummy) {
+				va = 0;
+				vr = j;
+				bm = gn;
+				bma = an;
+			}
+			j++;
+		}
+
+		if (!bm) {
+			va = 0;
+			vr = g->layers[i].n_nodes;
+		}
+
+		place_sequence (g, i, NULL, bm, from_up, va, vr);
+		for (k = va; k < vr - 1; ++k)
+			set_dist_nodes (g, i, k, k + 1);
+
+		if (is_valid_pos (g, i, vr - 1) && bm)
+			set_dist_nodes (g, i, vr - 1, bma->pos_in_layer);
+
+		while (bm) {
+			RGraphNode *bp = get_right_dummy (g, bm);
+			ANode *bpa = NULL;
+			bma = (ANode *)bm->data;
+
+			if (!bp) {
+				va = bma->pos_in_layer + 1;
+				vr = g->layers[bma->layer].n_nodes;
+				place_sequence (g, i, bm, NULL, from_up, va, vr);
+				for (k = va; k < vr - 1; ++k)
+					set_dist_nodes (g, i, k, k + 1);
+
+				if (is_valid_pos (g, i, va))
+					set_dist_nodes (g, i, bma->pos_in_layer, va);
+			} else if (hash_get_int (D, bm) == from_up) {
+				bpa = (ANode *)bp->data;
+				va = bma->pos_in_layer + 1;
+				vr = bpa->pos_in_layer;
+				place_sequence (g, i, bm, bp, from_up, va, vr);
+				hash_set (P, bm, R_TRUE);
+			}
+
+			bm = bp;
+		}
+
+		adjust_directions (g, i, from_up, D, P);
+	}
+}
+
+/* computes a final position of original nodes, considering dummies nodes as
+ * fixed */
+/* set the node placements traversing the graph downward and then upward */
+static void place_original (AGraph *g) {
+	const RList *nodes = r_graph_get_nodes (g->graph);
+	Sdb *D, *P;
+	RGraphNode *gn;
+	RListIter *itn;
+	ANode *an;
+
+	D = sdb_new0 ();
+	P = sdb_new0 ();
+	g->dists = r_list_new ();
+	g->dists->free = (RListFree)free;
+
+	graph_foreach_anode (nodes, itn, gn, an) {
+		if (!an->is_dummy) continue;
+		RGraphNode *right_v = get_right_dummy (g, gn);
+		if (right_v) {
+			ANode *right = (ANode *)right_v->data;
+
+			hash_set (D, gn, 0);
+			int dt_eq = right->x - an->x == dist_nodes (g, gn, right_v);
+			hash_set (P, gn, dt_eq);
+		}
+	}
+
+	original_traverse_l (g, D, P, R_TRUE);
+	original_traverse_l (g, D, P, R_FALSE);
+
+	r_list_free (g->dists);
+	g->dists = NULL;
+	sdb_free (P);
+	sdb_free (D);
+}
+
 static void restore_original_edges (AGraph *g) {
 	RListIter *it;
 	RGraphEdge *e;
@@ -983,6 +1351,7 @@ static void set_layout_bb(AGraph *g) {
 	 * A Fast Layout Algorithm for k-Level Graphs
 	 * by C. Buchheim, M. Junger, S. Leipert */
 	place_dummies (g);
+	place_original (g);
 
 	/* vertical align */
 	for (i = 0; i < g->n_layers; ++i) {
