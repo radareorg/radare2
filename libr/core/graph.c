@@ -941,6 +941,26 @@ static RGraphNode *get_right_dummy (AGraph *g, RGraphNode *n) {
 	return NULL;
 }
 
+/* returns true if all nodes on the right of n are dummies and reversed */
+static int all_reversed_right (AGraph *g, RGraphNode *n) {
+	ANode *an;
+	int k, layer;
+
+	if (!n) return R_FALSE;
+
+	an = (ANode *)n->data;
+	layer = an->layer;
+	for (k = an->pos_in_layer; k < g->layers[layer].n_nodes; ++k) {
+		RGraphNode *gk = g->layers[layer].nodes[k];
+		ANode *ak = (ANode *)gk->data;
+
+		if (!ak->is_reversed)
+			return R_FALSE;
+	}
+
+	return R_TRUE;
+}
+
 static void adjust_directions (AGraph *g, int i, int from_up, Sdb *D, Sdb *P) {
 	RGraphNode *vm = NULL, *wm = NULL;
 	ANode *vma = NULL, *wma = NULL;
@@ -1031,7 +1051,7 @@ static void place_single (AGraph *g, int l, RGraphNode *bm, RGraphNode *bp, int 
 		ANode *bma = (ANode *)bm->data;
 		av->x = R_MAX (av->x, bma->x + dist_nodes (g, bm, v));
 	}
-	if (bp) {
+	if (bp && !all_reversed_right (g, bp)) {
 		ANode *bpa = (ANode *)bp->data;
 		av->x = R_MIN (av->x, bpa->x - dist_nodes (g, v, bp));
 	}
@@ -1184,6 +1204,54 @@ static void place_sequence (AGraph *g, int l, RGraphNode *bm, RGraphNode *bp,
 	}
 }
 
+/* if all nodes to the right of right_pos are reversed, shift them to make the
+ * placement feasible and larger */
+static void shift_right_dummies (AGraph *g, int l, int right_pos) {
+	RGraphNode *vr, *bp;
+	ANode *ar, *abp;
+
+	if (!is_valid_pos (g, l, right_pos)) return;
+	vr = g->layers[l].nodes[right_pos];
+	ar = (ANode *)vr->data;
+	if (ar->is_dummy) return;
+
+	if (!is_valid_pos (g, l, right_pos + 1)) return;
+	bp = g->layers[l].nodes[right_pos + 1];
+	abp = (ANode *)bp->data;
+	if (!abp->is_dummy) return;
+
+	if (all_reversed_right (g, bp)) {
+		int k;
+
+		for (k = right_pos + 1; k < g->layers[l].n_nodes; ++k) {
+			RGraphNode *vk = g->layers[l].nodes[k];
+			ANode *ak = (ANode *)vk->data;
+			int newv = ar->x + dist_nodes (g, vr, vk);
+
+			if (newv > ak->x) {
+				RGraphNode *vj = vk;
+				ANode *aj = ak;
+
+				while (vj && aj && aj->is_dummy && aj->is_reversed) {
+					aj->x = newv;
+
+					vj = r_list_get_n (r_graph_innodes (g->graph, vj), 0);
+					aj = (ANode *)vj->data;
+				}
+
+				vj = vk;
+				aj = ak;
+				while (vj && aj && aj->is_dummy && aj->is_reversed) {
+					aj->x = newv;
+
+					vj = r_graph_nth_neighbour (g->graph, vj, 0);
+					aj = (ANode *)vj->data;
+				}
+			}
+		}
+	}
+}
+
 /* finds the placements of nodes while traversing the graph in the given
  * direction */
 /* places all the sequences of consecutive original nodes in each layer. */
@@ -1222,6 +1290,7 @@ static void original_traverse_l (AGraph *g, Sdb *D, Sdb *P, int from_up) {
 
 		if (is_valid_pos (g, i, vr - 1) && bm)
 			set_dist_nodes (g, i, vr - 1, bma->pos_in_layer);
+		shift_right_dummies (g, i, vr - 1);
 
 		while (bm) {
 			RGraphNode *bp = get_right_dummy (g, bm);
@@ -1237,12 +1306,14 @@ static void original_traverse_l (AGraph *g, Sdb *D, Sdb *P, int from_up) {
 
 				if (is_valid_pos (g, i, va))
 					set_dist_nodes (g, i, bma->pos_in_layer, va);
+				shift_right_dummies (g, i, vr - 1);
 			} else if (hash_get_int (D, bm) == from_up) {
 				bpa = (ANode *)bp->data;
 				va = bma->pos_in_layer + 1;
 				vr = bpa->pos_in_layer;
 				place_sequence (g, i, bm, bp, from_up, va, vr);
 				hash_set (P, bm, R_TRUE);
+				shift_right_dummies (g, i, vr - 1);
 			}
 
 			bm = bp;
