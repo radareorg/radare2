@@ -106,6 +106,10 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'e':
 		{
+		if (!input[1]) {
+			eprintf ("Missing value\n");
+			break;
+		}
 		char *p, *s = strdup (input+2);
 		const char *isenum;
 		p = strchr (s, ' ');
