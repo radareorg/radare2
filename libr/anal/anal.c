@@ -96,6 +96,7 @@ R_API RAnal *r_anal_new() {
 	//anal->sdb_locals = sdb_ns (anal->sdb, "locals", 1);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->printf = (PrintfCallback) printf;
+	r_anal_pin_init (anal);
 	r_anal_type_init (anal);
 	r_anal_xrefs_init (anal);
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;
@@ -145,6 +146,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	// might provoke double frees since this is used in r_anal_fcn_insert()
 	//r_listrange_free (a->fcnstore);
 	r_space_fini (&a->meta_spaces);
+	r_anal_pin_fini (a);
 	r_list_free (a->refs);
 	r_list_free (a->types);
 	r_reg_free (a->reg);

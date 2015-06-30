@@ -1273,9 +1273,7 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		if (entries && r_list_length(entries)) {
 			entry = (RBinAddr *) r_list_pop (entries);
 			info = r_bin_get_info (core->bin);
-			if (info->has_va)
-				addr = entry->vaddr;
-			else	addr = entry->paddr;
+			addr = info->has_va? entry->vaddr : entry->paddr;
 			//eprintf ("PC=entry0\n");
 			r_list_push (entries, entry);
 		} else {
@@ -1288,6 +1286,10 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		addr = r_reg_getv (core->anal->reg, name);
 		//eprintf ("PC=0x%llx\n", (ut64)addr);
 	}
+	if (r_anal_pin_call (core->anal, addr)) {
+		eprintf ("esil pin called\n");
+		return;
+	}
 	if (core->anal->esil->delay)
 		addr = core->anal->esil->delay_addr;
 	r_io_read_at (core->io, addr, code, sizeof (code));
@@ -1295,7 +1297,7 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
 	core->anal->esil->delay = op.delay;
 	if (core->anal->esil->delay)
-		core->anal->esil->delay_addr = addr+op.size;
+		core->anal->esil->delay_addr = addr + op.size;
 #if 0
 eprintf ("RET %d\n", ret);
 eprintf ("ADDR 0x%llx\n", addr);
@@ -1494,6 +1496,13 @@ static void cmd_esil_mem (RCore *core, const char *input) {
 }
 
 static void cmd_anal_esil(RCore *core, const char *input) {
+	 const char* help_msg[] = {
+		 "Usage:", "aep[-c] ", " [...]",
+		 "aepc", " [addr]", "change program counter for esil",
+		 "aep", "-[addr]", "remove pin",
+		 "aep", " [name] @ [addr]", "set pin",
+		 "aep", "", "list pins",
+		 NULL};
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
 	int romem = r_config_get_i (core->config, "esil.romem");
@@ -1503,15 +1512,33 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	RAnalOp *op;
 
 	switch (input[0]) {
-	case 'p': // "aep "
-		if (input[1] == ' ') {
-			// seek to this address
-			r_core_cmd0 (core, "aei");  // init vm
-			r_core_cmd0 (core, "aeim"); // init stack
-			r_core_cmdf (core, "ar pc=%s", input+2);
-			r_core_cmd0 (core, ".ar*");
-		} else {
-			eprintf ("Missing argument\n");
+	case 'p': // "aep"
+		switch (input[1]) {
+		case 'c':
+			if (input[2] == ' ') {
+				// seek to this address
+				r_core_cmd0 (core, "aei");  // init vm
+				r_core_cmd0 (core, "aeim"); // init stack
+				r_core_cmdf (core, "ar pc=%s", input+3);
+				r_core_cmd0 (core, ".ar*");
+			} else {
+				eprintf ("Missing argument\n");
+			}
+			break;
+		case 0:
+			r_anal_pin_list (core->anal);
+			break;
+		case '-':
+			if (input[2])
+				addr = r_num_math (core->num, input+2);
+			r_anal_pin_unset (core->anal, addr);
+			break;
+		case ' ':
+			r_anal_pin (core->anal, addr, input+2);
+			break;
+		default:
+			r_core_cmd_help (core, help_msg);
+			break;
 		}
 		break;
 	case 'r':

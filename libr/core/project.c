@@ -314,7 +314,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_cons_flush ();
 		 {
 			char buf[1024];
-			snprintf (buf, sizeof (buf), "%s.d%sxrefs", prj, R_SYS_DIR);
+			snprintf (buf, sizeof (buf), "%s.d"R_SYS_DIR"xrefs", prj);
 			sdb_file (core->anal->sdb_xrefs, buf);
 			sdb_sync (core->anal->sdb_xrefs);
 		 }

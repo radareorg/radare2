@@ -605,6 +605,7 @@ typedef struct r_anal_t {
 	Sdb *sdb; // root
 	Sdb *sdb_refs;
 	Sdb *sdb_fcns;
+	Sdb *sdb_pins;
 #define DEPRECATE 1
 #if DEPRECATE
 	Sdb *sdb_args;  //
@@ -1158,6 +1159,15 @@ R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt);
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
 R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);
+
+/* pin */
+R_API void r_anal_pin_init(RAnal *a);
+R_API void r_anal_pin_fini(RAnal *a);
+R_API void r_anal_pin (RAnal *a, ut64 addr, const char *name);
+R_API void r_anal_pin_unset (RAnal *a, ut64 addr);
+R_API int r_anal_pin_call(RAnal *a, ut64 addr);
+R_API void r_anal_pin_list(RAnal *a);
+
 /* fcn.c */
 R_API RAnalFunction *r_anal_fcn_new(void);
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);
