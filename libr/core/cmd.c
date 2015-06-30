@@ -701,8 +701,11 @@ static int cmd_resize(void *data, const char *input) {
 		else eprintf ("Usage: rm [file]   # removes a file\n");
 		return R_TRUE;
 	case '\0':
-		if (core->file && core->file->desc)
-			r_cons_printf ("%"PFMT64d"\n", oldsize);
+		if (core->file && core->file->desc) {
+			if (oldsize != -1) {
+				r_cons_printf ("%"PFMT64d"\n", oldsize);
+			}
+		}
 		return R_TRUE;
 	case '+':
 	case '-':
