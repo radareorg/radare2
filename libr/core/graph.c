@@ -3,7 +3,6 @@
 #include <r_core.h>
 static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
 static int mousemode = 0;
-static int zoom = 100;
 
 #define BORDER 3
 #define BORDER_WIDTH 4
@@ -12,9 +11,12 @@ static int zoom = 100;
 #define MARGIN_TEXT_Y 2
 #define HORIZONTAL_NODE_SPACING 12
 #define VERTICAL_NODE_SPACING 4
-#define MAX_NODE_WIDTH 18
+#define MIN_NODE_WIDTH 18
 #define INIT_HISTORY_CAPACITY 16
 #define TITLE_LEN 128
+
+#define ZOOM_STEP 10
+#define ZOOM_DEFAULT 100
 
 #define history_push(stack, x) (r_stack_push (stack, (void *)(size_t)x))
 #define history_pop(stack) ((RGraphNode *)r_stack_pop (stack))
@@ -59,6 +61,7 @@ typedef struct ascii_graph {
 	int is_instep;
 	int is_simple_mode;
 	int is_small_nodes;
+	int zoom;
 
 	RStack *history;
 	ANode *update_seek_on;
@@ -87,7 +90,7 @@ struct agraph_refresh_data {
 #define L2(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,2)
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(g->can, x,y,x2,y2,c,0)
 
-static void update_node_dimension(RGraph *g, int is_small) {
+static void update_node_dimension(RGraph *g, int is_small, int zoom) {
 	const RList *nodes = r_graph_get_nodes (g);
 	RGraphNode *gn;
 	RListIter *it;
@@ -100,7 +103,7 @@ static void update_node_dimension(RGraph *g, int is_small) {
 			n->w = r_str_bounds (n->text, &n->h);
 			n->w += BORDER_WIDTH;
 			n->h += BORDER_HEIGHT;
-			n->w = R_MAX (MAX_NODE_WIDTH, n->w);
+			n->w = R_MAX (MIN_NODE_WIDTH, n->w);
 			/* scale node by zoom */
 			n->w = (n->w * zoom) / 100;
 			n->h = (n->h * zoom) / 100;
@@ -128,6 +131,7 @@ static void small_ANode_print(AGraph *g, ANode *n, int cur) {
 }
 
 static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
+	int center_x = 0, center_y = 0;
 	char title[TITLE_LEN];
 	char *text;
 	int delta_x = 0;
@@ -161,11 +165,10 @@ static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
 	}
 	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1))
 		W(title + delta_x);
-	int center_x = 0;
-	int center_y = 0;
-	if (zoom>100) {
-		center_x += ((zoom-100)/20);
-		center_y += ((zoom-100)/30);
+
+	if (g->zoom > ZOOM_DEFAULT) {
+		center_x = (g->zoom - ZOOM_DEFAULT) / 20;
+		center_y = (g->zoom - ZOOM_DEFAULT) / 30;
 	}
 
 	if (G(n->x + MARGIN_TEXT_X + delta_x + center_x,
@@ -737,7 +740,7 @@ static int reload_nodes(AGraph *g) {
 			return R_FALSE;
 	}
 
-	update_node_dimension(g->graph, g->is_small_nodes);
+	update_node_dimension(g->graph, g->is_small_nodes, g->zoom);
 	return R_TRUE;
 }
 
@@ -982,7 +985,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		snprintf (title, sizeof (title)-1,
 			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s",
 			g->fcn->addr, r_stack_size (g->history), g->fcn->name,
-			g->graph->n_nodes, g->graph->n_edges, zoom, g->is_callgraph?"CG":"BB",
+			g->graph->n_nodes, g->graph->n_edges, g->zoom, g->is_callgraph?"CG":"BB",
 			mousemodes[mousemode]);
 		W (title);
 	}
@@ -1015,6 +1018,7 @@ static void agraph_init(AGraph *g) {
 	g->history = r_stack_new (INIT_HISTORY_CAPACITY);
 	g->graph = r_graph_new ();
 	g->back_edges = NULL;
+	g->zoom = ZOOM_DEFAULT;
 }
 
 static AGraph *agraph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {
@@ -1096,18 +1100,15 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 
 		switch (key) {
 		case '-':
-			zoom-=10;
-			if (zoom<0) zoom = 0;
-			update_node_dimension(g->graph, g->is_small_nodes);
+			if (g->zoom > ZOOM_STEP)
+				g->zoom -= ZOOM_STEP;
+			update_node_dimension(g->graph, g->is_small_nodes, g->zoom);
 			agraph_set_layout (g);
-			//  agraph_update_seek (g, get_anode(g->curnode), R_TRUE);
 			break;
 		case '+':
-			zoom+=10;
-			update_node_dimension (g->graph, g->is_small_nodes);
+			g->zoom += ZOOM_STEP;
+			update_node_dimension (g->graph, g->is_small_nodes, g->zoom);
 			agraph_set_layout (g);
-			//  agraph_update_seek (g, get_anode(g->curnode), R_TRUE);
-			 // g->is_instep = R_TRUE;
 			break;
 		case '=':
 		case '|':
@@ -1264,8 +1265,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  agraph_undo_node(g);
 			  break;
 		case '.':
-			  zoom = 100;
-			  update_node_dimension (g->graph, g->is_small_nodes);
+			  g->zoom = ZOOM_DEFAULT;
+			  update_node_dimension (g->graph, g->is_small_nodes, g->zoom);
 			  agraph_set_layout (g);
 			  //agraph_update_seek (g, get_anode (g->curnode), R_TRUE);
 			  g->is_instep = R_TRUE;
