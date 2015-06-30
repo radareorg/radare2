@@ -67,6 +67,8 @@ typedef struct ascii_graph {
 	RStack *history;
 	ANode *update_seek_on;
 	int need_reload_nodes;
+	int need_set_layout;
+	int need_update_dim;
 	int force_update_seek;
 
 	/* layout algorithm info */
@@ -868,7 +870,8 @@ static void agraph_print_edges(AGraph *g) {
 
 static void agraph_toggle_small_nodes(AGraph *g) {
 	g->is_small_nodes = !g->is_small_nodes;
-	g->need_reload_nodes = R_TRUE;
+	g->need_update_dim = R_TRUE;
+	g->need_set_layout = R_TRUE;
 }
 
 static void agraph_toggle_simple_mode(AGraph *g) {
@@ -879,6 +882,13 @@ static void agraph_toggle_simple_mode(AGraph *g) {
 static void agraph_toggle_callgraph(AGraph *g) {
 	g->is_callgraph = !g->is_callgraph;
 	g->need_reload_nodes = R_TRUE;
+}
+
+static void agraph_set_zoom (AGraph *g, int v) {
+	g->is_small_nodes = v <= 0;
+	g->zoom = R_MAX (0, v);
+	g->need_update_dim = R_TRUE;
+	g->need_set_layout = R_TRUE;
 }
 
 /* reload all the info in the nodes, depending on the type of the graph
@@ -968,6 +978,14 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 
 		g->need_reload_nodes = R_FALSE;
 	}
+	if (g->need_update_dim) {
+		update_node_dimension (g->graph, g->is_small_nodes, g->zoom);
+		g->need_update_dim = R_FALSE;
+	}
+	if (g->need_set_layout) {
+		agraph_set_layout (g);
+		g->need_set_layout = R_FALSE;
+	}
 	if (g->update_seek_on) {
 		update_seek(g->can, g->update_seek_on, g->force_update_seek);
 		g->update_seek_on = NULL;
@@ -1017,12 +1035,9 @@ static void agraph_init(AGraph *g) {
 	g->is_simple_mode = R_TRUE;
 	g->is_small_nodes = R_FALSE;
 	g->need_reload_nodes = R_TRUE;
-	g->curnode = NULL;
-	g->update_seek_on = NULL;
 	g->force_update_seek = R_TRUE;
 	g->history = r_stack_new (INIT_HISTORY_CAPACITY);
 	g->graph = r_graph_new ();
-	g->back_edges = NULL;
 	g->zoom = ZOOM_DEFAULT;
 }
 
@@ -1105,15 +1120,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 
 		switch (key) {
 		case '-':
-			if (g->zoom > ZOOM_STEP)
-				g->zoom -= ZOOM_STEP;
-			update_node_dimension(g->graph, g->is_small_nodes, g->zoom);
-			agraph_set_layout (g);
+			agraph_set_zoom (g, g->zoom - ZOOM_STEP);
 			break;
 		case '+':
-			g->zoom += ZOOM_STEP;
-			update_node_dimension (g->graph, g->is_small_nodes, g->zoom);
-			agraph_set_layout (g);
+			agraph_set_zoom (g, g->zoom + ZOOM_STEP);
 			break;
 		case '=':
 		case '|':
@@ -1264,15 +1274,13 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  can->linemode = !!!can->linemode;
 			  break;
 		case 'p':
-			  agraph_toggle_small_nodes(g);
+			  agraph_toggle_small_nodes (g);
 			  break;
 		case 'u':
 			  agraph_undo_node(g);
 			  break;
 		case '.':
-			  g->zoom = ZOOM_DEFAULT;
-			  update_node_dimension (g->graph, g->is_small_nodes, g->zoom);
-			  agraph_set_layout (g);
+			  agraph_set_zoom (g, ZOOM_DEFAULT);
 			  agraph_update_seek (g, get_anode (g->curnode), R_TRUE);
 			  g->is_instep = R_TRUE;
 			  break;
