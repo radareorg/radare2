@@ -153,7 +153,7 @@ static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
 	if (x + n->w < -MARGIN_TEXT_X)
 		return;
 	if (y < -1)
-		delta_y = -y - MARGIN_TEXT_Y;
+		delta_y = R_MIN (n->h - BORDER_HEIGHT - 1, -y - MARGIN_TEXT_Y);
 
 	if (cur) {
 		//F (n->x,n->y, n->w, n->h, '.');
