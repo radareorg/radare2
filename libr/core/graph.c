@@ -12,6 +12,7 @@ static int mousemode = 0;
 #define HORIZONTAL_NODE_SPACING 12
 #define VERTICAL_NODE_SPACING 4
 #define MIN_NODE_WIDTH 18
+#define MIN_NODE_HEIGTH BORDER_HEIGHT
 #define INIT_HISTORY_CAPACITY 16
 #define TITLE_LEN 128
 
@@ -103,10 +104,9 @@ static void update_node_dimension(RGraph *g, int is_small, int zoom) {
 			n->w = r_str_bounds (n->text, &n->h);
 			n->w += BORDER_WIDTH;
 			n->h += BORDER_HEIGHT;
-			n->w = R_MAX (MIN_NODE_WIDTH, n->w);
 			/* scale node by zoom */
-			n->w = (n->w * zoom) / 100;
-			n->h = (n->h * zoom) / 100;
+			n->w = R_MAX (MIN_NODE_WIDTH, (n->w * zoom) / 100);
+			n->h = R_MAX (MIN_NODE_HEIGTH, (n->h * zoom) / 100);
 		}
 	}
 }
