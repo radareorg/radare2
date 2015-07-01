@@ -364,9 +364,16 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char uri[128];
+	int pid;
 	if (__plugin_open (io, file,  0)) {
-		int pid = atoi (file+6);
-		if (pid == 0) {
+		const char *pidfile = file + 6;
+		if (!strcmp (pidfile, "0")) {
+			pid = 0;
+		} else {
+			pid = atoi (pidfile);
+			if (pid <1) pid = -1;
+		}
+		if (pid == -1) {
 			pid = fork_and_ptraceme (io, io->bits, file+6);
 			if (pid==-1)
 				return NULL;

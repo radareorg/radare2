@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_userconf.h>
 
@@ -215,14 +215,21 @@ static int debug_attach(int pid) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *ret = NULL;
 	RIOMach *riom;
+	const char *pidfile;
 	char *pidpath;
 	int pid;
 	task_t task;
 	if (!__plugin_open (io, file, 0))
 		return NULL;
- 	pid = atoi (file+(file[0]=='a'?9:7));
-	if (pid<1)
-		return NULL;
+	pidfile = file+(file[0]=='a'?9:7);
+	if (!strcmp (pidfile, "0")) {
+		/* tfp0 */
+		pid = 0;
+	} else {
+		pid = atoi (pidfile);
+		if (pid<1)
+			return NULL;
+	}
 	task = debug_attach (pid);
 	if ((int)task == -1) {
 		switch (errno) {
