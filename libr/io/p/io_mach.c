@@ -224,20 +224,16 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *ret = NULL;
 	RIOMach *riom;
 	const char *pidfile;
-	char *pidpath;
+	char *pidpath, *endptr;
 	int pid;
 	task_t task;
 	if (!__plugin_open (io, file, 0))
 		return NULL;
 	pidfile = file+(file[0]=='a'?9:7);
-	if (!strcmp (pidfile, "0")) {
-		/* tfp0 */
-		pid = 0;
-	} else {
-		pid = atoi (pidfile);
-		if (pid<1)
-			return NULL;
-	}
+	pid = (int)strtol (pidfile, &endptr, 10);
+	if (endptr == pidfile || pid < 0)
+		return NULL;
+
 	task = debug_attach (pid);
 	if ((int)task == -1) {
 		switch (errno) {
