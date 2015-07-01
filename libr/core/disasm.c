@@ -1070,15 +1070,15 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 	// TODO : line analysis must respect data types! shouldnt be interpreted as code
 	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
 	if (ds->asmop.size<1) {
-		ut32 *n32 = (ut32*)buf;
-		ut64 *n64 = (ut64*)buf;
+		ut32 n32 = len >= sizeof(ut32) ? *((ut32*)buf) : UT32_MAX;
+		ut64 n64 = len >= sizeof(ut64) ? *((ut64*)buf) : UT64_MAX;
 		// if arm or mips.. 32 or 64
 		snprintf (ds->asmop.buf_asm,
 			sizeof (ds->asmop.buf_asm),
-			"0x%08x", *n32);
+			"0x%08x", n32);
 		snprintf (ds->asmop.buf_asm,
 			sizeof (ds->asmop.buf_asm),
-			"0x%08"PFMT64x, *n64);
+			"0x%08"PFMT64x, n64);
 		ds->asmop.size = 1;
 	}
 	ds->oplen = ds->asmop.size;
