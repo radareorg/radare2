@@ -157,8 +157,8 @@ static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
 	if (y < -1)
 		delta_y = R_MIN (n->h - BORDER_HEIGHT - 1, -y - MARGIN_TEXT_Y);
 
+	/* print the title */
 	if (cur) {
-		//F (n->x,n->y, n->w, n->h, '.');
 		snprintf (title, sizeof (title)-1,
 				"[0x%08"PFMT64x"]", n->addr);
 	} else {
@@ -168,6 +168,7 @@ static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
 	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1))
 		W(title + delta_x);
 
+	/* print the body */
 	if (g->zoom > ZOOM_DEFAULT) {
 		center_x = (g->zoom - ZOOM_DEFAULT) / 20;
 		center_y = (g->zoom - ZOOM_DEFAULT) / 30;
@@ -179,16 +180,29 @@ static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
 			n->y + MARGIN_TEXT_Y + delta_y + center_y - delta_txt_y)) {
 		int text_x = R_MAX (0, delta_x - center_x);
 		int text_y = R_MAX (0, delta_y - center_y);
+		int text_h = n->h - BORDER_HEIGHT;
 
-		text = r_str_crop (n->text,
-			text_x, text_y,
-			n->w - BORDER_WIDTH,
-			n->h - BORDER_HEIGHT);
-		if (text) {
-			W (text);
-			free (text);
-		} else {
-			W (n->text);
+		if (g->zoom < ZOOM_DEFAULT) text_h--;
+		if (text_y <= text_h - 1) {
+			text = r_str_crop (n->text,
+					text_x, text_y,
+					n->w - BORDER_WIDTH,
+					text_h);
+			if (text) {
+				W (text);
+				if (g->zoom < ZOOM_DEFAULT) W ("\n");
+				free (text);
+			} else {
+				W (n->text);
+			}
+		}
+		/* print some dots when the text is cropped because of zoom */
+		if (text_y <= text_h && g->zoom < ZOOM_DEFAULT) {
+			char *dots = "...";
+			if (delta_x < strlen(dots)) {
+				dots += delta_x;
+				W (dots);
+			}
 		}
 	}
 
