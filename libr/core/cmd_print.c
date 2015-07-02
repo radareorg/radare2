@@ -1020,7 +1020,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 			}
 		}
 		i += ret;
-		if (nb_bytes && (nb_bytes <= i))
+		if ((nb_bytes && (nb_bytes <= i)) || (i >= core->blocksize))
 			break;
 	}
 	r_cons_break_end ();
