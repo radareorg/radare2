@@ -17,42 +17,31 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 	char buf[1024];
 	mach_vm_address_t address = MACH_VM_MIN_ADDRESS;
 	mach_vm_size_t size = (mach_vm_size_t) 0;
+	mach_vm_size_t osize = (mach_vm_size_t) 0;
 	natural_t depth = 0;
 	task_t task = pid_to_task (dbg->tid);
 	RDebugMap *mr = NULL;
 	RList *list = NULL;
 	int i = 0;
 #if __arm64__ || __aarch64__
-	size = 16384; // acording to frida
+	size = osize = 16384; // acording to frida
 #else
-	size = 4096;
+	size = osize = 4096;
 #endif
 
+	kern_return_t kr;
 	while (TRUE) {
 		struct vm_region_submap_info_64 info;
 		mach_msg_type_number_t info_count;
-		kern_return_t kr;
 
 		depth = VM_REGION_BASIC_INFO_64;
-		while (TRUE) {
-			info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
-			memset (&info, 0, sizeof (info));
-			kr = mach_vm_region_recurse (task, &address, &size, &depth,
-				(vm_region_recurse_info_t) &info, &info_count);
-			if (kr != KERN_SUCCESS)
-				break;
-#if 0
-			if (info.is_submap) {
-				depth++;
-				continue;
-			}
-#endif
+		info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
+		memset (&info, 0, sizeof (info));
+		kr = mach_vm_region_recurse (task, &address, &size, &depth,
+			(vm_region_recurse_info_t) &info, &info_count);
+		if (kr != KERN_SUCCESS) {
+			eprintf ("Cannot kern succ recurse\n");
 			break;
-		}
-		if (kr != KERN_SUCCESS)
-			break;
-		if (info.max_protection == 0) {
-			continue;
 		}
 		if (!list) {
 			list = r_list_new ();
@@ -72,20 +61,22 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 			}
 		} else contiguous = R_FALSE;
 		oldprot = info.protection;
-		if (!contiguous) {
+		if (info.max_protection!=0 && !contiguous) {
 			char module_name[1024];
 			module_name[0] = 0;
-			int ret = proc_regionfilename (dbg->pid, address, module_name, sizeof (module_name));
+			int ret = proc_regionfilename (dbg->pid, address,
+				module_name, sizeof (module_name));
 			module_name[ret] = 0;
 			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 			// XXX: if its shared, it cannot be read?
-			snprintf (buf, sizeof (buf), "%s %02x %s%s%s%s %s",
+			snprintf (buf, sizeof (buf), "%s %02x %s%s%s%s%s %s (sz=0x%x) (depth=%d)",
 				r_str_rwx_i (xwr2rwx (info.max_protection)), i,
 				unparse_inheritance (info.inheritance),
 				info.user_tag? " user": "",
 				info.is_submap? " sub": "",
 				info.inheritance? " inherit": "",
-				module_name);
+				info.is_submap ? " submap": "",
+				module_name, size, depth);
 				//info.shared ? "shar" : "priv", 
 				//info.reserved ? "reserved" : "not-reserved",
 				//""); //module_name);
@@ -99,8 +90,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 			i++;
 			r_list_append (list, mr);
 		}
-
-		if (size<1) size = 1; // fuck
+		if (size<1) size = osize; // fuck
 		address += size;
 		size = 0;
 	}

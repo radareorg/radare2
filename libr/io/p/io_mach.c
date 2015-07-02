@@ -45,7 +45,7 @@ typedef struct {
 extern int errno;
 
 static task_t pid_to_task(int pid) {
-        task_t task = 0;
+        task_t task = -1;
         int err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
         if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
                 eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
@@ -61,9 +61,15 @@ static task_t pid_to_task(int pid) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	vm_size_t size = 0;
 	int blen, err, copied = 0;
-	int blocksize = 16;
+	int blocksize = 32;
+	if (RIOMACH_PID (fd->data) == 0) {
+		if (io->off<4096)
+			return len;
+	}
+	memset (buf, 0xff, len);
 	while (copied<len) {
 		blen = R_MIN ((len-copied), blocksize);
+		//blen = len;
 		err = vm_read_overwrite (RIOMACH_TASK (fd->data),
 			(ut64)io->off+copied, blen, (pointer_t)buf+copied, &size);
 		switch (err) {
@@ -171,8 +177,10 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 // s/inferior_task/port/
 static int debug_attach(int pid) {
         task_t task = pid_to_task (pid);
-        if (task == -1)
+        if (task == -1) {
+		eprintf ("Got task %d for pid %d\n", task, pid);
                 return -1;
+	}
         eprintf ("pid: %d\ntask: %d\n", pid, task);
 #if 0
 	// TODO : move this code into debug
@@ -250,10 +258,15 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	riom->pid = pid;
 	riom->task = task;
 	// sleep 1s to get proper path (program name instead of ls) (racy)
-	pidpath = r_sys_pid_to_path (pid);
+	if (pid == 0) {
+		pidpath = strdup ("kernel");
+	} else {
+		pidpath = r_sys_pid_to_path (pid);
+	}
 	ret = r_io_desc_new (&r_io_plugin_mach, riom->pid,
 		pidpath, rw | R_IO_EXEC, mode, riom);
 	free (pidpath);
+eprintf ("GOT FD %p\n", ret);
 	return ret;
 }
 
@@ -272,14 +285,21 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOMach *riom = (RIOMach*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
-	if (!strcmp (cmd, "pid")) {
+	if (!strncmp (cmd, "pid", 3)) {
+		const char *pidstr = cmd + 4;
+		int pid = -1;
 		if (!cmd[3]) {
 			int pid = RIOMACH_PID (fd->data);
 			eprintf ("%d\n", pid);
 			return 0;
 		}
-		int pid = atoi (cmd+4);
-		if (pid != 0) {
+		if (!strcmp (pidstr, "0")) {
+			pid = 0;
+		} else {
+			pid = atoi (cmd+4);
+			if (!pid) pid = -1;
+		}
+		if (pid != -1) {
 			task_t task = pid_to_task (pid);
 			if (task != -1) {
 				eprintf ("PID=%d\n", pid);
@@ -289,7 +309,6 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			}
 		}
 		eprintf ("io_mach_system: Invalid pid %d\n", pid);
-		return 1;
 	} else eprintf ("Try: '=!pid'\n");
 	return 1;
 }

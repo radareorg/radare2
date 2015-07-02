@@ -119,6 +119,7 @@ static int update_self_regions(int pid) {
 	return R_FALSE;
 #endif
 }
+
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	return (!strncmp (file, "self://", 7));
 }
@@ -180,7 +181,7 @@ static int __close(RIODesc *fd) {
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "pid")) {
 		eprintf ("%d\n", fd->fd);
-	}else if (!strcmp (cmd, "maps")) {
+	} else if (!strcmp (cmd, "maps")) {
 		int i;
 		for (i =0; i<self_sections_count ;i++) {
 			eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %s %s\n",
