@@ -1268,6 +1268,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("graph.web", "false", "Display graph in web browser (VV)");
 	SETI("graph.from", UT64_MAX, "");
 	SETI("graph.to", UT64_MAX, "");
+	SETI("graph.scroll", 5, "Scroll speed in ascii-art graph");
 
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");

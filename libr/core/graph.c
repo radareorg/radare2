@@ -15,6 +15,7 @@ static int mousemode = 0;
 #define MIN_NODE_HEIGTH BORDER_HEIGHT
 #define INIT_HISTORY_CAPACITY 16
 #define TITLE_LEN 128
+#define DEFAULT_SPEED 1
 
 #define ZOOM_STEP 10
 #define ZOOM_DEFAULT 100
@@ -63,6 +64,7 @@ typedef struct ascii_graph {
 	int is_simple_mode;
 	int is_small_nodes;
 	int zoom;
+	int movspeed;
 
 	RStack *history;
 	ANode *update_seek_on;
@@ -1020,10 +1022,10 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	if (fs) {
 		(void)G (-g->can->sx, -g->can->sy);
 		snprintf (title, sizeof (title)-1,
-			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s",
+			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
 			g->fcn->addr, r_stack_size (g->history), g->fcn->name,
 			g->graph->n_nodes, g->graph->n_edges, g->zoom, g->is_callgraph?"CG":"BB",
-			mousemodes[mousemode]);
+			mousemodes[mousemode], g->movspeed);
 		W (title);
 	}
 
@@ -1043,6 +1045,12 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	return R_TRUE;
 }
 
+static void agraph_toggle_speed (AGraph *g) {
+	int alt = r_config_get_i (g->core->config, "graph.scroll");
+
+	g->movspeed = g->movspeed == DEFAULT_SPEED ? alt : DEFAULT_SPEED;
+}
+
 static void agraph_init(AGraph *g) {
 	g->is_callgraph = R_FALSE;
 	g->is_instep = R_FALSE;
@@ -1053,6 +1061,7 @@ static void agraph_init(AGraph *g) {
 	g->history = r_stack_new (INIT_HISTORY_CAPACITY);
 	g->graph = r_graph_new ();
 	g->zoom = ZOOM_DEFAULT;
+	g->movspeed = DEFAULT_SPEED;
 }
 
 static AGraph *agraph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {
@@ -1101,7 +1110,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		goto err_graph_new;
 	}
 
-	grd = (struct agraph_refresh_data *)malloc (sizeof(*grd));
+	grd = R_NEW (struct agraph_refresh_data);
 	grd->g = g;
 	grd->fs = is_interactive;
 
@@ -1217,6 +1226,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					" p      - toggle mini-graph\n"
 					" u      - select previous node\n"
 					" V      - toggle basicblock / call graphs\n"
+					" w      - toggle between movements speed 1 and graph.scroll\n"
 					" x/X    - jump to xref/ref\n"
 					" z/Z    - step / step over\n"
 					" +/-/0  - zoom in/out/default\n"
@@ -1245,7 +1255,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 						break;
 				}
 			} else {
-				get_anode(g->curnode)->y++;
+				get_anode(g->curnode)->y += g->movspeed;
 			}
 			break;
 		case 'k':
@@ -1265,7 +1275,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 						break;
 				}
 			} else {
-				get_anode(g->curnode)->y--;
+				get_anode(g->curnode)->y -= g->movspeed;
 			}
 			break;
 		case 'm':
@@ -1278,14 +1288,13 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			if (mousemode<0)
 				mousemode = 3;
 			break;
-		case 'h': get_anode(g->curnode)->x--; break;
-		case 'l': get_anode(g->curnode)->x++; break;
+		case 'h': get_anode(g->curnode)->x -= g->movspeed; break;
+		case 'l': get_anode(g->curnode)->x += g->movspeed; break;
 
-		case 'K': can->sy -= wheelspeed; break;
-		case 'J': can->sy += wheelspeed; break;
-		case 'H': can->sx -= wheelspeed; break;
-		case 'L': can->sx += wheelspeed; break;
-
+		case 'K': can->sy -= g->movspeed; break;
+		case 'J': can->sy += g->movspeed; break;
+		case 'H': can->sx -= g->movspeed; break;
+		case 'L': can->sx += g->movspeed; break;
 		case 'e':
 			  can->linemode = !!!can->linemode;
 			  break;
@@ -1319,6 +1328,9 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  //r_config_swap (core->config, "scr.color");
 			  // refresh graph
 			  break;
+		case 'w':
+			  agraph_toggle_speed (g);
+			  break;
 		case -1: // EOF
 		case 'q':
 			  exit_graph = R_TRUE;
@@ -1335,6 +1347,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		}
 	}
 
+	free (grd);
 	agraph_free(g);
 err_graph_new:
 	r_config_set_i (core->config, "scr.color", can->color);
