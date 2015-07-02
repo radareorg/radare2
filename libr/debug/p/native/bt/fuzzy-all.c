@@ -38,8 +38,7 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 	ut32 *p32;
 	ut16 *p16;
 	ut64 cursp, oldsp;
-	RList *list = r_list_new ();
-	list->free = free;
+	RList *list;
 
 	stacksize = 1024*512; // 512KB .. should get the size from the regions if possible
 	stack = malloc (stacksize);
@@ -49,11 +48,13 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 		const char *spname = r_reg_get_name (reg, R_REG_NAME_SP);
 		if (!spname) {
 			eprintf ("Cannot find stack pointer register\n");
+			free (stack);
 			return NULL;
 		}
 		ri = r_reg_get (reg, spname, R_REG_TYPE_GPR);
 		if (!ri) {
 			eprintf ("Cannot find stack pointer register\n");
+			free (stack);
 			return NULL;
 		}
 		sp = r_reg_get_value (reg, ri);
@@ -61,6 +62,8 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 		sp = at;
 	}
 
+	list = r_list_new ();
+	list->free = free;
 	cursp = oldsp = sp;
 	(void)bio->read_at (bio->io, sp, stack, stacksize);
 	ptr = stack;

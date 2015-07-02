@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2015 - pancake, Anton Kochkov, Jody Frankowski */
 
 static void show_help(RCore *core) {
 	const char * help_message[] = {
@@ -71,7 +71,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'b':
 		{
 		int i;
-		char *p, *s = (input && strlen(input) > 1) ? strdup (input+2): NULL;
+		char *p, *s = (strlen (input) > 1) ? strdup (input+2): NULL;
 		const char *isenum;
 		p = s ? strchr (s, ' ') : NULL;
 		if (p) {

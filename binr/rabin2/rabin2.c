@@ -505,7 +505,7 @@ int main(int argc, char **argv) {
 			break;
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
-		case 'N': {
+		case 'N': if (optarg) {
 				  char *q, *p = strdup (optarg);
 				  q = strchr (p, ':');
 				  if (q) {
@@ -515,7 +515,10 @@ int main(int argc, char **argv) {
 					  r_config_set (core.config, "bin.minstr", optarg);
 				  }
 				  free (p);
-			} break;
+			} else {
+				eprintf ("Missing argument for -N\n");
+			}
+			break;
 		case 'h':
 			  r_core_fini (&core);
 			  return rabin_show_help (1);

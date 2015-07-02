@@ -98,6 +98,7 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	if (!trace) {
 		free (buf);
 		free (trap);
+		free (bits);
 		return R_FALSE;
 	}
 	trace->addr = from;

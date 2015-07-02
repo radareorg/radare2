@@ -272,8 +272,11 @@ R_API int r_config_rm(RConfig *cfg, const char *name) {
 
 R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) {
 	char buf[128], *ov = NULL;
-	RConfigNode *node = r_config_node_get (cfg, name);
+	RConfigNode *node;
+	if (!cfg || !name)
+		return NULL;
 
+	node = r_config_node_get (cfg, name);
 	if (node) {
 		if (node->flags & CN_RO)
 			return NULL;
