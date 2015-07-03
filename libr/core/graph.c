@@ -167,11 +167,11 @@ static void small_ANode_print(AGraph *g, ANode *n, int cur) {
 }
 
 static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
-	int center_x = 0, center_y = 0;
+	unsigned int center_x = 0, center_y = 0;
+	unsigned int delta_x = 0, delta_txt_x = 0;
+	unsigned int delta_y = 0, delta_txt_y = 0;
 	char title[TITLE_LEN];
 	char *text;
-	int delta_x = 0, delta_txt_x = 0;
-	int delta_y = 0, delta_txt_y = 0;
 	int x, y;
 
 #if SHOW_OUT_OF_SCREEN_NODES
@@ -184,8 +184,8 @@ static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
 #endif
 	x = n->x + g->can->sx;
 	y = n->y + g->can->sy;
-	if (x < -MARGIN_TEXT_X)
-		delta_x = -x - MARGIN_TEXT_X;
+	if (x + MARGIN_TEXT_X < 0)
+		delta_x = -(x + MARGIN_TEXT_X);
 	if (x + n->w < -MARGIN_TEXT_X)
 		return;
 	if (y < -1)
@@ -212,9 +212,9 @@ static void normal_ANode_print(AGraph *g, ANode *n, int cur) {
 
 	if (G(n->x + MARGIN_TEXT_X + delta_x + center_x - delta_txt_x,
 			n->y + MARGIN_TEXT_Y + delta_y + center_y - delta_txt_y)) {
-		int text_x = R_MAX (0, delta_x - center_x);
-		int text_y = R_MAX (0, delta_y - center_y);
-		int text_h = n->h - BORDER_HEIGHT;
+		unsigned int text_x = center_x >= delta_x ? 0 : delta_x - center_x;
+		unsigned int text_y = center_y >= delta_y ? 0 : delta_y - center_y;
+		unsigned int text_h = BORDER_HEIGHT >= n->h ? 0 : n->h - BORDER_HEIGHT;
 
 		if (g->zoom < ZOOM_DEFAULT) text_h--;
 		if (text_y <= text_h - 1) {
@@ -430,7 +430,7 @@ static void view_dummy (RGraphNode *from, RGraphNode *to, RGraphVisitor *vis) {
 /* find a set of edges that, removed, makes the graph acyclic */
 /* invert the edges identified in the previous step */
 static void remove_cycles (AGraph *g) {
-	RGraphVisitor cyclic_vis = { 0 };
+	RGraphVisitor cyclic_vis = { NULL, NULL, NULL, NULL, NULL, NULL };
 	RGraphEdge *e;
 	RListIter *it;
 
@@ -447,7 +447,7 @@ static void remove_cycles (AGraph *g) {
 
 /* assign a layer to each node of the graph */
 static void assign_layers (AGraph *g) {
-	RGraphVisitor layer_vis = { 0 };
+	RGraphVisitor layer_vis = { NULL, NULL, NULL, NULL, NULL, NULL };
 	Sdb *path_layers = sdb_new0 ();
 	RGraphNode *gn;
 	RListIter *it;
@@ -475,7 +475,7 @@ static int is_reversed (AGraph *g, RGraphEdge *e) {
 
 /* add dummy nodes when there are edges that span multiple layers */
 static void create_dummy_nodes (AGraph *g) {
-	RGraphVisitor dummy_vis = { 0 };
+	RGraphVisitor dummy_vis = { NULL, NULL, NULL, NULL, NULL, NULL };
 	RListIter *it;
 	RGraphEdge *e;
 
@@ -704,15 +704,12 @@ static RList **compute_classes (AGraph *g, Sdb *v_nodes, int is_left, int *n_cla
 
 			if (aj->class == -1) {
 				RList *laj = hash_get_rlist (v_nodes, gj);
-				RGraphNode *gk;
-				RListIter *it;
-				ANode *ak;
 
 				if (!res[c])
 					res[c] = r_list_new ();
-				graph_foreach_anode (laj, it, gk, ak) {
-					r_list_append (res[c], gk);
-					ak->class = c;
+				graph_foreach_anode (laj, it, gn, n) {
+					r_list_append (res[c], gn);
+					n->class = c;
 				}
 			} else {
 				c = aj->class;
@@ -753,7 +750,7 @@ static int adjust_class_val (AGraph *g, RGraphNode *gn, RGraphNode *sibl,
 
 /* adjusts the position of previously placed left/right classes */
 /* tries to place classes as close as possible */
-static void adjust_class (AGraph *g, Sdb *v_nodes, int is_left,
+static void adjust_class (AGraph *g, int is_left,
 						  RList **classes, Sdb *res, int c) {
 	RGraphNode *gn;
 	RListIter *it;
@@ -825,18 +822,14 @@ static int place_nodes_sel_p (int newval, int oldval, int is_first, int is_left)
 		return R_MIN (oldval, newval);
 }
 
-static int get_default_p (AGraph *g, ANode *n, int is_left) {
-	return is_left ? 0 : 50;
-}
-
 /* places left/right the nodes of a class */
 static void place_nodes (AGraph *g, RGraphNode *gn, int is_left, Sdb *v_nodes,
 						 RList **classes, Sdb *res, Sdb *placed) {
 	const RList *lv = hash_get_rlist (v_nodes, gn);
+	int p, v, is_first = R_TRUE;
 	RGraphNode *gk;
 	RListIter *itk;
-	ANode *ak, *an = (ANode *)gn->data;
-	int p, v, is_first = R_TRUE;
+	ANode *ak;
 
 	graph_foreach_anode (lv, itk, gk, ak) {
 		RGraphNode *sibling;
@@ -856,7 +849,7 @@ static void place_nodes (AGraph *g, RGraphNode *gn, int is_left, Sdb *v_nodes,
 	}
 
 	if (is_first)
-		p = get_default_p (g, an, is_left);
+		p = is_left ? 0 : 50;
 
 	graph_foreach_anode (lv, itk, gk, ak) {
 		hash_set (res, gk, p);
@@ -885,7 +878,7 @@ static Sdb *compute_pos (AGraph *g, int is_left, Sdb *v_nodes) {
 			}
 		}
 
-		adjust_class (g, v_nodes, is_left, classes, res, i);
+		adjust_class (g, is_left, classes, res, i);
 	}
 
 	sdb_free (placed);
@@ -1015,11 +1008,7 @@ static void place_single (AGraph *g, int l, RGraphNode *bm, RGraphNode *bp, int 
 	RGraphNode *v = g->layers[l].nodes[va];
 	ANode *av = (ANode *)v->data;
 	const RList *neigh;
-	ANode *bma, *bpa;
 	int len;
-
-	bma = bm ? (ANode *)bm->data : NULL;
-	bpa = bp ? (ANode *)bp->data : NULL;
 
 	if (from_up)
 		neigh = r_graph_innodes (g->graph, v);
