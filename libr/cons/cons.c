@@ -489,7 +489,6 @@ R_API void r_cons_visual_flush() {
 		} else prev = r_sys_now ();
 		eprintf ("\x1b[0;%dH[%d FPS] \n", w-10, fps);
 	}
-	return;
 }
 
 R_API void r_cons_visual_write (char *buffer) {

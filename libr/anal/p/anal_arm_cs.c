@@ -59,34 +59,66 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 }
 #define ARG(x) arg(a, handle, insn, str[x], x)
 
+
+#define OPCALL(opchar) arm64math(a, op, addr, buf, len, handle, insn, opchar)
+static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar) {
+	const char *r0 = REG64(0);
+	const char *r1 = REG64(1);
+	if (ISREG64(2)) {
+		const char *r2 = REG64(2);
+		if (r0 == r1) {
+			r_strbuf_setf (&op->esil, "%s,%s,%s=", r2, r0, opchar);
+		} else {
+			r_strbuf_setf (&op->esil, "%s,%s,%s,%s,=", r2, r1, opchar, r0);
+		}
+	} else {
+		ut64 i2 = IMM64(2);
+		if (r0 == r1) {
+			r_strbuf_setf (&op->esil, "%d,%s,%s=", i2, r0, opchar);
+		} else {
+			r_strbuf_setf (&op->esil, "%d,%s,%s,%s,=", i2, r1, opchar, r0);
+		}
+	}
+}
+
 static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 
 	switch (insn->id) {
-	case ARM64_INS_ADD:
-		/* TODO: support WZR XZR to specify 32, 64bit op */
-		r_strbuf_setf (&op->esil, "%s,%s,-=", REG64 (1), REG64 (0));
+	case ARM64_INS_REV: {
+		const char *r0 = REG64(0);
+		const char *r1 = REG64(1);
+		r_strbuf_setf (&op->esil,
+			"24,0xff,%s,&,<<,%s,=,"
+			"16,0xff,8,%s,>>,&,<<,%s,|=,"
+			"8,0xff,16,%s,>>,&,<<,%s,|=,"
+			"0xff,24,%s,>>,&,%s,|=,",
+			r1, r0, r1, r0, r1, r0, r1, r0);
+		} break;
+	case ARM64_INS_ADR:
+		// TODO: must be 21bit signed
+		r_strbuf_setf (&op->esil,
+			"pc,%d,+,%s,=",IMM64(1), REG64(0));
 		break;
-	case ARM64_INS_SUB:
-		/* TODO: support WZR XZR to specify 32, 64bit op */
-		r_strbuf_setf (&op->esil, "%s,%s,+=", REG64 (1), REG64 (0));
+	case ARM64_INS_MADD:
+		r_strbuf_setf (&op->esil,
+			"%s,%s,*,%s,+,%s,=",REG64(2),REG64(1),REG64(3), REG64(0));
 		break;
-	case ARM64_INS_MUL:
-		/* TODO: support WZR XZR to specify 32, 64bit op */
-		r_strbuf_setf (&op->esil, "%s,%s,*=", REG64 (1), REG64 (0));
-		break;
-	case ARM64_INS_ORR:
-		// TODO: if (IMM64(1) == 6) { // WZR }
-		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,|=",
-			IMM64(2), REG64 (0));
-		break;
+	case ARM64_INS_ADD: OPCALL("+"); break;
+	case ARM64_INS_SUB: OPCALL("+"); break;
+	case ARM64_INS_MUL: OPCALL("*"); break;
+	case ARM64_INS_AND: OPCALL("&"); break;
+	case ARM64_INS_ORR: OPCALL("|"); break;
 	case ARM64_INS_STURB: // sturb wzr, [x9, 0xffffffffffffffff]
 		// TODO
 		break;
 	case ARM64_INS_EOR:
 		r_strbuf_setf (&op->esil, "%s,%s,%s,^,=",
 			REG64(2), REG64(1), REG64(0));
+		break;
+	case ARM64_INS_NOP:
+		r_strbuf_setf (&op->esil, "");
 		break;
 	case ARM64_INS_FDIV:
 	case ARM64_INS_SDIV:
@@ -95,15 +127,16 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil, "%s,%s,/=", REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_B:
-		r_strbuf_setf (&op->esil, "%d,pc,=", IMM64 (0));
+		r_strbuf_setf (&op->esil, "%"PFMT64d",pc,=", (ut64)addr + IMM64 (0));
 		break;
 	case ARM64_INS_BL:
-		r_strbuf_setf (&op->esil, "pc,lr,=,%d,pc,=", IMM64 (0));
+		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64d",pc,=", addr + IMM64 (0));
 		break;
 	case ARM64_INS_BLR:
 		// XXX
 		r_strbuf_setf (&op->esil, "pc,lr,=,%d,pc,=", IMM64 (0));
 		break;
+	case ARM64_INS_LDUR: // ldr x6, [x6,0xf90]
 	case ARM64_INS_LDR: // ldr x6, [x6,0xf90]
 		r_strbuf_setf (&op->esil, "%s,%d,+,[],%s,=",
 			MEMBASE64(1), MEMDISP64(1),  REG64(0));
@@ -129,6 +162,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_STRB:
 		r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",+,=[1]",
 			REG64(0), MEMBASE64(1), MEMDISP64(1));
+	case ARM64_INS_STUR:
 	case ARM64_INS_STR: // str x6, [x6,0xf90]
 	case ARM64_INS_STRH:
 		r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",+,=[]",
@@ -448,6 +482,8 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		op->ptr = 0LL;
 		op->ptrsize = 2;
 		break;
+	case ARM64_INS_CCMP:
+	case ARM64_INS_CCMN:
 	case ARM64_INS_CMP:
 	case ARM64_INS_TST:
 		op->type = R_ANAL_OP_TYPE_CMP;
