@@ -33,8 +33,7 @@ static int mousemode = 0;
 #define hash_get_rlist(sdb,k) ((RList *)(size_t)hash_get (sdb, k))
 #define hash_get_int(sdb,k) ((int)hash_get (sdb, k))
 
-#define get_gn(iter) ((RGraphNode *)r_list_iter_get_data(iter))
-#define get_anode(iter) ((ANode *)get_gn(iter)->data)
+#define get_anode(gn) ((ANode *)gn->data)
 
 #define graph_foreach_anode(list, it, pos, anode) \
 	if (list) for (it = list->head; it && (pos = it->data) && (pos) && (anode = (ANode *)pos->data); it = it->n)
@@ -76,7 +75,7 @@ typedef struct ascii_graph {
 	RConsCanvas *can;
 	RAnalFunction *fcn;
 	RGraph *graph;
-	RListIter *curnode;
+	const RGraphNode *curnode;
 
 	int is_callgraph;
 	int is_instep;
@@ -1524,7 +1523,6 @@ static int get_bbnodes(AGraph *g) {
 		}
 	}
 
-	g->curnode = r_list_iterator (r_graph_get_nodes(g->graph));
 	sdb_free (g_nodes);
 	return R_TRUE;
 }
@@ -1594,7 +1592,6 @@ static int get_cgnodes(AGraph *g) {
 		r_graph_add_edge (g->graph, fcn_gn, gn);
 	}
 
-	g->curnode = r_list_iterator (r_graph_get_nodes (g->graph));
 	sdb_free (g_nodes);
 #else
 	eprintf ("Must be sdbized\n");
@@ -1643,11 +1640,55 @@ static void update_seek(RConsCanvas *can, ANode *n, int force) {
 	}
 }
 
+static int is_near (const ANode *n, int x, int y, int is_next) {
+	if (is_next)
+		return (n->y == y && n->x > x) || n->y > y;
+	else
+		return (n->y == y && n->x < x) || n->y < y;
+}
+
+static const RGraphNode *find_near_of (const AGraph *g, const RGraphNode *cur,
+									   int is_next) {
+	/* XXX: it's slow */
+	const RList *nodes = r_graph_get_nodes (g->graph);
+	const RListIter *it;
+	const RGraphNode *gn, *resgn = NULL;
+	const ANode *n, *acur = cur ? get_anode(cur) : NULL;
+	int default_v = is_next ? INT_MIN : INT_MAX;
+	int start_y = acur ? acur->y : default_v;
+	int start_x = acur ? acur->x : default_v;
+
+	graph_foreach_anode (nodes, it, gn, n) {
+		if (is_near (n, start_x, start_y, is_next)) {
+			const ANode *resn;
+
+			if (!resgn) {
+				resgn = gn;
+				continue;
+			}
+
+			resn = get_anode (resgn);
+			if ((is_next && resn->y > n->y) || (!is_next && resn->y < n->y))
+				resgn = gn;
+			else if ((is_next && resn->y == n->y && resn->x > n->x) ||
+					(!is_next && resn->y == n->y && resn->x < n->x))
+				resgn = gn;
+		}
+	}
+
+	if (!resgn && cur)
+		resgn = find_near_of (g, NULL, is_next);
+
+	return resgn;
+}
+
 static void agraph_set_layout(AGraph *g) {
 	if (g->is_callgraph)
 		set_layout_callgraph(g);
 	else
 		set_layout_bb(g);
+
+	g->curnode = find_near_of (g, NULL, R_TRUE);
 }
 
 /* set the willing to center the screen on a particular node */
@@ -1678,7 +1719,7 @@ static void agraph_print_nodes(AGraph *g) {
 	ANode *n;
 
 	graph_foreach_anode (nodes, it, gn, n) {
-		if (gn != get_gn (g->curnode))
+		if (gn != g->curnode)
 			agraph_print_node(g, n);
 	}
 
@@ -1776,10 +1817,10 @@ static int agraph_reload_nodes(AGraph *g) {
 }
 
 static void follow_nth(AGraph *g, int nth) {
-	const RGraphNode *cn = r_graph_nth_neighbour (g->graph, get_gn(g->curnode), nth);
+	const RGraphNode *cn = r_graph_nth_neighbour (g->graph, g->curnode, nth);
 	if (cn) {
-		history_push (g->history, get_gn (g->curnode));
-		g->curnode = r_graph_node_iter (g->graph, cn->idx);
+		history_push (g->history, g->curnode);
+		g->curnode = cn;
 	}
 }
 
@@ -1797,7 +1838,7 @@ static void agraph_follow_false(AGraph *g) {
 static void agraph_undo_node(AGraph *g) {
 	const RGraphNode *p = history_pop (g->history);
 	if (p) {
-		g->curnode = r_graph_node_iter (g->graph, p->idx);
+		g->curnode = p;
 		agraph_update_seek (g, p->data, R_FALSE);
 	}
 }
@@ -1805,18 +1846,16 @@ static void agraph_undo_node(AGraph *g) {
 /* pushes the current node in the history and makes g->curnode the next node in
  * the order given by r_graph_get_nodes */
 static void agraph_next_node(AGraph *g) {
-	if (!g->curnode->n) return;
-	history_push (g->history, get_gn(g->curnode));
-	g->curnode = g->curnode->n;
+	history_push (g->history, g->curnode);
+	g->curnode = find_near_of (g, g->curnode, R_TRUE);
 	agraph_update_seek (g, get_anode(g->curnode), R_FALSE);
 }
 
 /* pushes the current node in the history and makes g->curnode the prev node in
  * the order given by r_graph_get_nodes */
 static void agraph_prev_node(AGraph *g) {
-	if (!g->curnode->p) return;
-	history_push (g->history, get_gn(g->curnode));
-	g->curnode = g->curnode->p;
+	history_push (g->history, g->curnode);
+	g->curnode = find_near_of (g, g->curnode, R_FALSE);
 	agraph_update_seek (g, get_anode(g->curnode), R_FALSE);
 }
 
