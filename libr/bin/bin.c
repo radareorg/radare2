@@ -391,10 +391,12 @@ static void r_bin_object_free (void /*RBinObject*/ *o_) {
 	r_bin_object_delete_items (o);
 	free (o);
 }
+
 // XXX - change this to RBinObject instead of RBinFile
 // makes no sense to pass in a binfile and set the RBinObject
 // kinda a clunky functions
 static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
+	RBin *bin = binfile->rbin;
 	RBinObject *old_o = binfile ? binfile->o : NULL;
 	int i, minlen;
 	RBinPlugin *cp = NULL;
@@ -419,8 +421,16 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 			o->binsym[i] = cp->binsym (binfile, i);
 	if (cp->entries) o->entries = cp->entries (binfile);
 	if (cp->fields) o->fields = cp->fields (binfile);
-	if (cp->imports) o->imports = cp->imports (binfile);
-	if (cp->symbols) o->symbols = cp->symbols (binfile);
+	if (cp->imports) {
+		o->imports = cp->imports (binfile);
+		if (bin->filter)
+			r_bin_filter_imports (o->imports);
+	}
+	if (cp->symbols) {
+		o->symbols = cp->symbols (binfile);
+		if (bin->filter)
+			r_bin_filter_symbols (o->symbols);
+	}
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) o->libs = cp->libs (binfile);
 	if (cp->relocs) o->relocs = cp->relocs (binfile);

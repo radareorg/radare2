@@ -589,6 +589,7 @@ free (methodname);
 	return ret;
 #endif
 }
+
 static RList* methods (RBinFile *arch) {
 	RBinDexObj *bin;
 	if (!arch || !arch->o || !arch->o->bin_obj)
