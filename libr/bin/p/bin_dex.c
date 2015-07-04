@@ -694,6 +694,10 @@ static RList* entries(RBinFile *arch) {
 			r_list_append (ret, ptr);
 		}
 	}
+	if (r_list_empty (ret)) {
+		ptr->paddr = ptr->vaddr = bin->code_from;
+		r_list_append (ret, ptr);
+	}
 	return ret;
 }
 
