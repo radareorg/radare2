@@ -423,8 +423,6 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (cp->fields) o->fields = cp->fields (binfile);
 	if (cp->imports) {
 		o->imports = cp->imports (binfile);
-		if (bin->filter)
-			r_bin_filter_imports (o->imports);
 	}
 	if (cp->symbols) {
 		o->symbols = cp->symbols (binfile);

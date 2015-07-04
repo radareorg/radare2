@@ -28,17 +28,3 @@ R_API void r_bin_filter_symbols (RList *list) {
 		sdb_free (db);
 	} else eprintf ("SymbolName is not dynamic\n");
 }
-
-R_API void r_bin_filter_imports (RList *list) {
-	Sdb *db = sdb_new0 ();
-	RBinImport *imp;
-	const int maxlen = sizeof (imp->name)-8;
-	RListIter *iter;
-	if (maxlen>0) {
-		r_list_foreach (list, iter, imp) {
-			r_bin_filter_name (db, imp->name, maxlen);
-		}
-		sdb_free (db);
-	} else eprintf ("SymbolName is not dynamic\n");
-}
-
