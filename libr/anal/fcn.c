@@ -102,7 +102,7 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	RAnalRef *ref;
 	if (!fcn || !a)
 		return R_FALSE;
-	if (!a->iob.is_valid_offset (a->iob.io, addr))
+	if (!a->iob.is_valid_offset (a->iob.io, addr, 0))
 		return R_FALSE;
 	ref = r_anal_ref_new ();
 	if (!ref)

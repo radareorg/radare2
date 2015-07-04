@@ -568,7 +568,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 #endif
 			r_core_read_at (core, at+bblen, buf, ANALBS); //core->blocksize);
 //			if (!memcmp (buf, "\xff\xff\xff\xff", 4))
-			if (R_TRUE != r_io_is_valid_offset (core->io, at+bblen))
+			if (R_TRUE != r_io_is_valid_offset (core->io, at+bblen, core->anal->noncode?0:1))
 				goto error;
 			buflen = ANALBS; //core->blocksize;
 //eprintf ("Pre %llx %d\n", at, buflen);
@@ -656,11 +656,16 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	RAnalRef *ref = NULL, *refi;
 	ut64 *next = NULL;
 	int i, nexti = 0;
-	ut8 *buf;
+	ut8 *buf = NULL;
 #	define next_append(x) {\
 		next = realloc (next, sizeof (ut64)*(1+nexti)); \
 		next[nexti] = (x); \
 		nexti++; \
+	}
+	if (core->io->va && !core->io->raw) {
+		if (R_TRUE != r_io_is_valid_offset (core->io, at, core->anal->noncode?0:1)) {
+			goto error;
+		}
 	}
 	if (r_config_get_i (core->config, "anal.a2f")) {
 		r_core_cmd0 (core, ".a2f");
@@ -808,7 +813,7 @@ if (0) {
 #endif
 #if 1
 		if (core->io->va && !core->io->raw) {
-			if (R_TRUE != r_io_is_valid_offset (core->io, at+delta)) {
+			if (R_TRUE != r_io_is_valid_offset (core->io, at+delta, core->anal->noncode?0:1)) {
 				goto error;
 			}
 		}
@@ -945,7 +950,7 @@ if (0) {
 			}
 		}
 	} while (fcnlen != R_ANAL_RET_END);
-	free (buf);
+	R_FREE (buf);
 
 	if (has_next) {
 		for (i=0; i<nexti; i++) {

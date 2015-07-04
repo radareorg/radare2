@@ -366,7 +366,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	if (io->vio)
 		return r_io_read_cr (io, addr, buf, len);
 	if (io->sectonly && !r_list_empty (io->sections)) {
-		if (!r_io_section_exists_for_vaddr (io, addr)) {
+		if (!r_io_section_exists_for_vaddr (io, addr, 0)) {
 			// find next sec
 			memset (buf, 0xff, len);
 			ut64 next = r_io_section_next (io, addr);
@@ -402,8 +402,8 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		// may prevent "raw" access to locations in the data space for entities like debuggers.
 		// Until that issue is resolved this code will be disabled.
 		// step one does a section exist for the offset
-		int exists = r_io_section_exists_for_paddr (io, addr+w) ||
-		r_io_section_exists_for_vaddr (io, addr+w) ||
+		int exists = r_io_section_exists_for_paddr (io, addr+w, 0) ||
+		r_io_section_exists_for_vaddr (io, addr+w, 0) ||
 		r_io_map_exists_for_offset (io, addr+w);
 
 		// XXX this is a break b/c external IO caller do not need to create
@@ -956,8 +956,8 @@ R_API void r_io_set_raw(RIO *io, int raw) {
 	io->raw = raw?1:0;
 }
 
-//checks if reading at offset or writting to offset is reasonable
-R_API int r_io_is_valid_offset (RIO *io, ut64 offset) {
+// check if reading at offset or writting to offset is reasonable
+R_API int r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm) {
 	if (!io) {
 		eprintf ("r_io_is_valid_offset: io is NULL\n");
 		r_sys_backtrace ();
@@ -968,20 +968,26 @@ R_API int r_io_is_valid_offset (RIO *io, ut64 offset) {
 		r_sys_backtrace ();
 		return R_FAIL;
 	}
-	if (r_list_length (io->files) == 0)
+	if (r_list_empty (io->files))
 		return R_FALSE;
 	if (!io->desc) {
 		eprintf ("r_io_is_valid_offset: io->desc is NULL\n");
 		r_sys_backtrace ();
 		return R_FAIL;
 	}
+#if 0
+if (hasperm) {
+	int ret = (r_io_map_exists_for_offset (io, offset) ||
+			r_io_section_exists_for_vaddr (io, offset, hasperm));
+if (!ret)
+	r_sys_backtrace ();
+}
+#endif
 	switch (io->va) {
-		case 0:
-			return (offset < r_io_size (io));
-		case 1:
-			return (r_io_map_exists_for_offset (io, offset) ||
-				r_io_section_exists_for_vaddr (io, offset));
-	}	//more io.va modes pls
+	case 0: return (offset < r_io_size (io));
+	case 1: return (r_io_map_exists_for_offset (io, offset) ||
+			r_io_section_exists_for_vaddr (io, offset, hasperm));
+	} // more io.va modes pls
 	eprintf ("r_io_is_valid_offset: io->va is %i\n", io->va);
 	r_sys_backtrace ();
 	return R_FAIL;

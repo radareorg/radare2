@@ -203,7 +203,7 @@ static int cmpaddr (const void *_a, const void *_b) {
 }
 
 static const char *getSectionName (RCore *core, ut64 addr) {
-	static char section[128] = {0};
+	static char section[128] = "";
 	static ut64 oaddr = UT64_MAX;
 	RIOSection *s;
 	if (oaddr == addr)
@@ -1899,7 +1899,9 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			case 4: n &= UT32_MAX; break;
 			case 8: n &= UT64_MAX; break;
 			}
-			r_mem_copyendian ((ut8*)&n, (ut8*)&n, ds->analop.refptr, !core->assembler->big_endian);
+			r_mem_copyendian ((ut8*)&n, (ut8*)&n,
+				ds->analop.refptr,
+				!core->assembler->big_endian);
 			n32 = n;
 
 			handle_comment_align (core, ds);

@@ -589,6 +589,7 @@ typedef struct r_anal_t {
 	int maxreflines;
 	int trace;
 	int esil_goto_limit;
+	int noncode;
 	RList *types;
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_esil_t *esil;

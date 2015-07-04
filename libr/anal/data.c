@@ -57,7 +57,7 @@ static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 	n = r_mem_get_num (buf, size, endian);
 	if (!n) return 1; // null pointer
 #if USE_IS_VALID_OFFSET
-	int r = iob->is_valid_offset (iob->io, n);
+	int r = iob->is_valid_offset (iob->io, n, 0);
 	return r? n: 0LL;
 #else 
 	// optimization to ignore very low and very high pointers

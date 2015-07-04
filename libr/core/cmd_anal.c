@@ -923,14 +923,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			ut64 addr = core->offset;
 
 			// first undefine
-			if (input[1]==' ') {
+			if (input[0] && input[1]==' ') {
 				name = strdup (input+2);
-				uaddr = strchr (name+1, ' ');
+				uaddr = strchr (name, ' ');
 				if (uaddr) {
 					*uaddr++ = 0;
 					addr = r_num_math (core->num, uaddr);
 				}
-				//depth = 1; // or 1?
+				// depth = 1; // or 1?
 				// disable hasnext
 			}
 			//r_core_anal_undefine (core, core->offset);
@@ -951,10 +951,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 	RReg *hack = core->dbg->reg;
-	int bits;
-	if (size > 0)			//TODO: ar all
-		bits = size;
-	else	bits = core->anal->bits;
+	int bits = (size>0)? size: core->anal->bits;;
 	const char *use_color;
 	int use_colors = r_config_get_i(core->config, "scr.color");
 	if (use_colors) {
