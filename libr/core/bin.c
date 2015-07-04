@@ -916,6 +916,7 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 	RBinImport *import;
 	RListIter *iter;
 	RList *imports;
+	char *str;
 	int i = 0;
 
 	imports = r_bin_get_imports (r->bin);
@@ -926,9 +927,12 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 		r_list_foreach (imports, iter, import) {
 			if (name && strcmp (import->name, name))
 				continue;
+			str = r_str_utf16_encode (import->name, -1);
+			str = r_str_replace (str, "\"", "\\\"", 1);
 			addr = impaddr (r->bin, va, baddr, import->name);
 			r_cons_printf ("%s{\"name\":\"%s\", \"plt\":%"PFMT64d"}",
-				iter->p?",":"", import->name, addr);
+				iter->p?",":"", str, addr);
+			free (str);
 		}
 		r_cons_printf ("]");
 	} else
@@ -1028,6 +1032,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 		r_list_foreach (symbols, iter, symbol) {
 			//char *str = r_str_uri_encode (symbol->name);
 			char *str = r_str_utf16_encode (symbol->name, -1);
+			str = r_str_replace (str, "\"", "\\\"", 1);
 			ut64 at = rva (r->bin, va, symbol->paddr, symbol->vaddr, baddr, laddr);
 			ut64 vaddr = rva (r->bin, 1, symbol->paddr, symbol->vaddr, baddr, laddr);
 			r_cons_printf ("%s{\"name\":\"%s\","
