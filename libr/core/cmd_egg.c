@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
 static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
+	if (!*input) return;
 	if (input[1]!=' ') {
 		char *a = r_egg_option_get (egg, key);
 		if (a) {
