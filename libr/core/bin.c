@@ -1521,17 +1521,17 @@ static int bin_classes (RCore *r, int mode) {
 		r_cons_printf ("[");
 		r_list_foreach (cs, iter, c) {
 			if (c->super)
-			r_cons_printf ("%s{\"name\":\"%s\",\"index\":%"PFMT64d",\"super\":\"%s\"}",
-				iter->p?",":"", c->name, c->index, c->super);
+			r_cons_printf ("%s{\"name\":\"%s\",\"addr\":%"PFMT64d",\"index\":%"PFMT64d",\"super\":\"%s\"}",
+				iter->p?",":"", c->name, c->addr, c->index, c->super);
 			else
-			r_cons_printf ("%s{\"name\":\"%s\",\"index\":%"PFMT64d"}",
-				iter->p?",":"", c->name, c->index);
+			r_cons_printf ("%s{\"name\":\"%s\",\"addr\":%"PFMT64d",\"index\":%"PFMT64d"}",
+				iter->p?",":"", c->name, c->addr, c->index);
 		}
 		r_cons_printf ("]");
 	} else if (mode & R_CORE_BIN_SIMPLE) {
 		r_list_foreach (cs, iter, c) {
 			r_cons_printf ("0x%08"PFMT64x"  %s  %s\n",
-				c->index, c->name, c->super?c->super:"");
+				c->addr, c->name, c->super?c->super:"");
 		}
 	} else if (mode & R_CORE_BIN_SET) {
 		// Nothing to set.
@@ -1542,27 +1542,26 @@ static int bin_classes (RCore *r, int mode) {
 			if (!c->name || !*c->name)
 				continue;
 			name = strdup (c->name);
-			ut64 addr = c->index; //c->addr? c->addr : c->index;
 			r_name_filter (name, 0);
 			snprintf (str, R_FLAG_NAME_SIZE, "class.%s", name);
-			r_flag_set (r->flags, str, addr, 1, 0);
+			r_flag_set (r->flags, str, c->addr, 1, 0);
 			free (name);
 		}
 	} else {
 		r_cons_printf ("fs classes\n");
 		r_list_foreach (cs, iter, c) {
 			char *name = strdup (c->name);
-			ut64 addr = c->index; //c->addr? c->addr : c->index;
 			r_name_filter (name, 0);
 			if (mode) {
-				r_cons_printf ("f class.%s @ 0x%"PFMT64x"\n", name, addr);
+				r_cons_printf ("f class.%s @ 0x%"PFMT64x"\n", name, c->addr);
 				if (c->super)
 					r_cons_printf ("f super.%s.%s @ %d\n", c->name, c->super, c->index);
 				r_list_foreach (c->methods, iter2, methname) {
 					r_cons_printf ("f method.%s.%s\n", c->name, methname);
 				}
 			} else {
-				r_cons_printf ("class %d = %s\n", c->index, c->name);
+				r_cons_printf ("class %d @ 0x%"PFMT64x" = %s\n",
+					c->index, c->addr, c->name);
 				if (c->super)
 					r_cons_printf ("  super = %s\n", c->super);
 				r_list_foreach (c->methods, iter2, methname) {

@@ -68,6 +68,7 @@ static char *flagname (const char *class, const char *method) {
 	for (str=s; *class; class++) {
 		switch (*class) {
 		case '$':
+		case ' ':
 		case '/': *s++ = '_'; break;
 		case ';': *s++ = '.'; break;
 		default: *s++ = *class; break;
@@ -295,6 +296,17 @@ static char *dex_class_name_byid (RBinDexObj *bin, int cid) {
 	tid = bin->types [cid].descriptor_id;
 	//int sid = bin->strings[tid];
 	return get_string (bin, cid, tid);
+}
+
+static char *getClassName(const char *name) {
+	const char *p = strstr (name, ".L");
+	if (p) {
+		char *q, *r = strdup (p+2);
+		q = strchr (r, ';');
+		if (q) *q = 0;
+		return r;
+	}
+	return NULL;
 }
 
 static char *dex_class_name (RBinDexObj *bin, RBinDexClass *c) {
@@ -610,9 +622,9 @@ static RList* classes (RBinFile *arch) {
 	struct dex_class_t entry;
 	const int len = 100;
 	RList *ret = NULL;
+	int i, class_index = 0;
 	char *name = NULL;
 	RBinClass *class;
-	int i;
 	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
 
@@ -625,9 +637,11 @@ static RList* classes (RBinFile *arch) {
 		return NULL;
 	ret->free = (RListFree)__r_bin_class_free;
 	for (i = 0; i < bin->header.class_size; i++) {
-		ut64 class_addr = (ut64) bin->header.class_offset + (sizeof (struct dex_class_t)*i);
+		ut64 class_addr = (ut64) bin->header.class_offset \
+			+ (sizeof (struct dex_class_t)*i);
 		// ETOOSLOW
-		r_buf_read_at (bin->b, class_addr, (ut8*)&entry, sizeof (struct dex_class_t));
+		r_buf_read_at (bin->b, class_addr, (ut8*)&entry,
+			sizeof (struct dex_class_t));
 		// TODO: implement sections.. each section specifies a class boundary
 {
 		free (name);
@@ -655,19 +669,28 @@ static RList* classes (RBinFile *arch) {
 		// TODO: use RConstr here
 		//class->name = strdup (name[0]<0x41? name+1: name); 
 		class->name = dex_class_name_byid (bin, entry.class_id);
-		class->index = entry.class_id + bin->header.class_offset;
-// find reference to this class instance
-		//class->addr = class_addr;
-		r_list_append (ret, class);
-		dprintf ("class.%s=%d\n", name[0]==12?name+1:name, entry.class_id);
-		dprintf ("# access_flags = %x;\n", entry.access_flags);
-		dprintf ("# super_class = %d;\n", entry.super_class);
-		dprintf ("# interfaces_offset = %08x;\n", entry.interfaces_offset);
-		//dprintf ("ut32 source_file = %08x;\n", entry.source_file);
-		dprintf ("# anotations_offset = %08x;\n", entry.anotations_offset);
-		dprintf ("# class_data_offset = %08x;\n", entry.class_data_offset);
-		dprintf ("# static_values_offset = %08x;\n\n", entry.static_values_offset);
-}
+		// find reference to this class instance
+		char *cn = getClassName(class->name);
+		if (cn) {
+			free (class->name);
+			class->index = class_index++;
+			class->addr = entry.class_id + bin->header.class_offset;
+			class->name = cn;
+			//class->addr = class_addr;
+			r_list_append (ret, class);
+			dprintf ("class.%s=%d\n", name[0]==12?name+1:name, entry.class_id);
+			dprintf ("# access_flags = %x;\n", entry.access_flags);
+			dprintf ("# super_class = %d;\n", entry.super_class);
+			dprintf ("# interfaces_offset = %08x;\n", entry.interfaces_offset);
+			//dprintf ("ut32 source_file = %08x;\n", entry.source_file);
+			dprintf ("# anotations_offset = %08x;\n", entry.anotations_offset);
+			dprintf ("# class_data_offset = %08x;\n", entry.class_data_offset);
+			dprintf ("# static_values_offset = %08x;\n\n", entry.static_values_offset);
+		} else {
+			free (class->name);
+			free (class);
+		}
+	}
 	}
 	free (name);
 	return ret;
