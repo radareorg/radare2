@@ -46,8 +46,8 @@ static ut64 at = 0LL;
 static RLib *l;
 
 static int rabin_show_help(int v) {
-	printf ("Usage: rabin2 [-ACdehHiIjlLMqrRsSvVxzZ] [-@ addr] [-a arch] [-b bits]\n"
-		"              [-B addr] [-c F:C:D] [-f str] [-m addr] [-n str] [-N m:M]\n"
+	printf ("Usage: rabin2 [-AcdehHiIjlLMqrRsSvVxzZ] [-@ addr] [-a arch] [-b bits]\n"
+		"              [-B addr] [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M]\n"
 		"              [-o str] [-O str] [-k query] [-D lang symname] | file\n");
 	if (v) printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
@@ -55,8 +55,8 @@ static int rabin_show_help(int v) {
 		" -a [arch]       set arch (x86, arm, .. or <arch>_<bits>)\n"
 		" -b [bits]       set bits (32, 64 ...)\n"
 		" -B [addr]       override base address (pie bins)\n"
-		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
-		" -C              list classes\n"
+		" -c              list classes\n"
+		" -C [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -d              show debug/dwarf information\n"
 		" -D lang name    demangle symbol name (-D all for bin.demangle=true)\n"
 		" -e              entrypoint\n"
@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |= x
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgqAf:F:a:B:G:b:c:Ck:K:dD:Mm:n:N:@:isSIHeElRwO:o:pPrvLhuxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgqAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSIHeElRwO:o:pPrvLhuxzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);
@@ -412,9 +412,9 @@ int main(int argc, char **argv) {
 		case 'j': rad = R_CORE_BIN_JSON; break;
 		case 'A': set_action (ACTION_LISTARCHS); break;
 		case 'a': if (optarg) arch = optarg; break;
-		case 'c':
+		case 'C':
 			if (!optarg) {
-				eprintf ("Missing argument for -c");
+				eprintf ("Missing argument for -C");
 				r_core_fini (&core);
 				return 1;
 			}
@@ -424,7 +424,7 @@ int main(int argc, char **argv) {
 		case 'u': bin->filter = 0; break;
 		case 'k': query = optarg; break;
 		case 'K': chksum = optarg; break;
-		case 'C': set_action (ACTION_CLASSES); break;
+		case 'c': set_action (ACTION_CLASSES); break;
 		case 'f': if (optarg) arch_name = strdup (optarg); break;
 		case 'F': forcebin = optarg; break;
 		case 'b': bits = r_num_math (NULL, optarg); break;
@@ -575,7 +575,7 @@ int main(int argc, char **argv) {
 		ut8 *data = NULL, *code = NULL;
 		char *p2, *p = strchr (create, ':');
 		if (!p) {
-			eprintf ("Invalid format for -c flag. Use 'format:codehexpair:datahexpair'\n");
+			eprintf ("Invalid format for -C flag. Use 'format:codehexpair:datahexpair'\n");
 			r_core_fini (&core);
 			return 1;
 		}

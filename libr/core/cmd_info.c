@@ -310,8 +310,12 @@ static int cmd_info(void *data, const char *input) {
 				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS);
 			}
 			break;
-		case 'c':
-		case 'C': RBININFO ("classes", R_CORE_BIN_ACC_CLASSES); break;
+		case 'c': // for r2 `ic`
+			if (input[1]== ' ') {
+				eprintf ("TODO: list methods\n");
+			} else {
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES); break;
+			}
 		case 'D':
 			if (input[1]!=' ' || !demangle (core, input+2)) {
 				eprintf ("|Usage: iD lang symbolname\n");
