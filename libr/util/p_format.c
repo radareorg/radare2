@@ -1138,7 +1138,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			if (i+3<len && i+7<len)
 				updateAddr (buf, i, endian, &addr, &addr64);
 			else{
-				eprintf ("Likely a heap buffer overflow in %s at %d\n", __FILE__, __LINE__);
+				/*eprintf ("Likely a heap buffer overflow in %s at %d\n", __FILE__, __LINE__);*/
 				goto beach;
 			}
 
@@ -1469,7 +1469,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					break;
 				} //switch
 			} else {
-				eprintf ("Likely a heap buffer overflow in %s at %d\n", __FILE__, __LINE__);
+				/*eprintf ("Likely a heap buffer overflow in %s at %d\n", __FILE__, __LINE__);*/
 				goto beach;
 			}
 			if (viewflags && p->offname) {
