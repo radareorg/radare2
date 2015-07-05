@@ -1530,7 +1530,7 @@ static int bin_classes (RCore *r, int mode) {
 		r_cons_printf ("]");
 	} else if (mode & R_CORE_BIN_SIMPLE) {
 		r_list_foreach (cs, iter, c) {
-			r_cons_printf ("0x%08"PFMT64x"  %s  %s\n",
+			r_cons_printf ("0x%08"PFMT64x" %s %s\n",
 				c->addr, c->name, c->super?c->super:"");
 		}
 	} else if (mode & R_CORE_BIN_SET) {
@@ -1548,7 +1548,8 @@ static int bin_classes (RCore *r, int mode) {
 			free (name);
 		}
 	} else {
-		r_cons_printf ("fs classes\n");
+		if (mode)
+			r_cons_printf ("fs classes\n");
 		r_list_foreach (cs, iter, c) {
 			char *name = strdup (c->name);
 			r_name_filter (name, 0);
