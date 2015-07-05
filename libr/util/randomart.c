@@ -46,8 +46,11 @@ R_API char *r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr)
 	ut32	 i, b;
 	int	 x, y;
 	size_t	 len = strlen(augmentation_string) - 1;
-
-	retval = malloc((FLDSIZE_X + 3) * (FLDSIZE_Y + 2));
+	
+	// 2*(FLDSIZE_X+3) there are two for loops that iterate over this
+	// FLDSIZE_Y * (FLDSIZE_X+3) there is a loop that for each y iterates over the whole FLDSIZE_X
+	// The rest is counting the +--[0x%08"PFMT64x"]- and '\0'
+	retval = calloc (1, 2*(FLDSIZE_X+3) + (FLDSIZE_Y * (FLDSIZE_X+3))+ 7 + sizeof (PFMT64x));
 
 	/* initialize field */
 	memset(field, 0, FLDSIZE_X * FLDSIZE_Y * sizeof(char));
