@@ -439,7 +439,11 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	}
 	if (cp->strings) o->strings = cp->strings (binfile);
 	else o->strings = get_strings (binfile, minlen, 0);
-	if (cp->classes) o->classes = cp->classes (binfile);
+	if (cp->classes) {
+		o->classes = cp->classes (binfile);
+		if (bin->filter)
+			r_bin_filter_classes (o->classes);
+	}
 	if (cp->lines) o->lines = cp->lines (binfile);
 	if (cp->get_sdb) o->kv = cp->get_sdb (o);
 	if (cp->mem) o->mem = cp->mem (binfile);

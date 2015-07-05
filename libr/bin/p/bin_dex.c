@@ -696,6 +696,16 @@ static RList* classes (RBinFile *arch) {
 	return ret;
 }
 
+static int already_entry (RList *entries, ut64 vaddr) {
+	RBinAddr *e;
+	RListIter *iter;
+	r_list_foreach (entries, iter, e) {
+		if (e->vaddr == vaddr)
+			return 1;
+	}
+	return 0;
+}
+
 static RList* entries(RBinFile *arch) {
 	RListIter *iter;
 	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
@@ -707,19 +717,26 @@ static RList* entries(RBinFile *arch) {
 		free (ptr);
 		return NULL;
 	}
-	if (!bin->methods_list)
+	if (!bin->methods_list) {
 		dex_loadcode (arch, bin);
+	}
 	// XXX: entry + main???
 	r_list_foreach (bin->methods_list, iter, m) {
 		if (strlen (m->name)>=4 && !strcmp (m->name+strlen (m->name)-4, "main")) {
 			dprintf ("ENTRY -> %s\n", m->name);
 			ptr->paddr = ptr->vaddr = m->paddr;
-			r_list_append (ret, ptr);
+			if (!already_entry (ret, ptr->vaddr)) {
+				r_list_append (ret, ptr);
+				ptr = R_NEW0 (RBinAddr);
+				if (!ptr) break;
+			}
 		}
 	}
-	if (r_list_empty (ret)) {
+	if (ptr && r_list_empty (ret)) {
 		ptr->paddr = ptr->vaddr = bin->code_from;
-		r_list_append (ret, ptr);
+		if (!already_entry (ret, ptr->vaddr)) {
+			r_list_append (ret, ptr);
+		}
 	}
 	return ret;
 }
