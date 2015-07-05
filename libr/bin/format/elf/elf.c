@@ -190,13 +190,13 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		bin->strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
 
 	bin->shstrtab_size = bin->strtab_section->sh_size;
+	if (bin->shstrtab_size > bin->size) return R_FALSE;
 
 	if ((bin->shstrtab = calloc (1, bin->shstrtab_size+1)) == NULL) {
 		perror ("malloc");
 		bin->shstrtab = NULL;
 		return R_FALSE;
 	}
-	memset (bin->shstrtab, 0, bin->shstrtab_size);
 	
 	if (bin->shstrtab_section->sh_offset > bin->size){
 		R_FREE (bin->shstrtab);
