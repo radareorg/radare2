@@ -856,7 +856,7 @@ R_API int r_core_init(RCore *core) {
 	core->print->cons = core->cons;
 	core->cons->num = core->num;
 	core->blocksize = R_CORE_BLOCKSIZE;
-	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE);
+	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE+1);
 	if (core->block == NULL) {
 		eprintf ("Cannot allocate %d bytes\n", R_CORE_BLOCKSIZE);
 		/* XXX memory leak */
