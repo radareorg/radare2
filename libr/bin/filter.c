@@ -28,3 +28,16 @@ R_API void r_bin_filter_symbols (RList *list) {
 		sdb_free (db);
 	} else eprintf ("SymbolName is not dynamic\n");
 }
+
+R_API void r_bin_filter_sections (RList *list) {
+	RBinSection *sec;
+	const int maxlen = sizeof (sec->name)-8;
+	Sdb *db = sdb_new0 ();
+	RListIter *iter;
+	if (maxlen>0) {
+		r_list_foreach (list, iter, sec) {
+			r_bin_filter_name (db, sec->name, maxlen);
+		}
+		sdb_free (db);
+	} else eprintf ("SectionName is not dynamic\n");
+}

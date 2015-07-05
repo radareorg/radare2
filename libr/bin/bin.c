@@ -432,7 +432,11 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) o->libs = cp->libs (binfile);
 	if (cp->relocs) o->relocs = cp->relocs (binfile);
-	if (cp->sections) o->sections = cp->sections (binfile);
+	if (cp->sections) {
+		o->sections = cp->sections (binfile);
+		if (bin->filter)
+			r_bin_filter_sections (o->sections);
+	}
 	if (cp->strings) o->strings = cp->strings (binfile);
 	else o->strings = get_strings (binfile, minlen, 0);
 	if (cp->classes) o->classes = cp->classes (binfile);

@@ -63,8 +63,6 @@ static int rabin_show_help(int v) {
 		" -E              show loading offset (useful for non-ASLR libraries)\n"
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
-		" -k [query]      perform sdb query on loaded file\n"
-		" -K [algo]       calculate checksums (md5, sha1, ..)\n"
 		" -g              same as -SMResiz (show all info)\n"
 		" -G [addr]       load address . offset to header\n"
 		" -h              this help\n"
@@ -72,6 +70,7 @@ static int rabin_show_help(int v) {
 		" -i              imports (symbols imported from libraries)\n"
 		" -I              binary info\n"
 		" -j              output in json\n"
+		" -K [algo]       calculate checksums (md5, sha1, ..)\n"
 		" -k [sdb-query]  run sdb query. for example: '*'\n"
 		" -l              linked libraries\n"
 		" -L              list supported bin plugins\n"
@@ -89,6 +88,7 @@ static int rabin_show_help(int v) {
 		" -R              relocations\n"
 		" -s              symbols (exports)\n"
 		" -S              sections\n"
+		" -u              unfiltered (no rename duplicated symbols/sections)\n"
 		" -v              display version and quit\n"
 		" -x              extract bins contained in file\n"
 		" -z              strings (from data section)\n"
@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |= x
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgqAf:F:a:B:G:b:c:Ck:K:dD:Mm:n:N:@:isSIHeElRwO:o:pPrvLhxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgqAf:F:a:B:G:b:c:Ck:K:dD:Mm:n:N:@:isSIHeElRwO:o:pPrvLhuxzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);
@@ -421,6 +421,7 @@ int main(int argc, char **argv) {
 			set_action (ACTION_CREATE);
 			create = strdup (optarg);
 			break;
+		case 'u': bin->filter = 0; break;
 		case 'k': query = optarg; break;
 		case 'K': chksum = optarg; break;
 		case 'C': set_action (ACTION_CLASSES); break;

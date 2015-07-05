@@ -874,6 +874,18 @@ static ut64 get_text_base(struct MACH0_(obj_t)* bin) {
 	return ret;
 }
 
+static int inSymtab (struct symbol_t *symbols, int last, const char *name, ut64 addr) {
+	int i;
+	for (i=0; i<last; i++) {
+		if (symbols[i].addr != addr)
+			continue;
+		if (!strcmp (symbols[i].name, name)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	const char *symstr;
 	struct symbol_t *symbols;
@@ -894,10 +906,12 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	if (symbols_size < 1)
 		return NULL;
 
-	if (!(symbols = malloc (symbols_size)))
+	if (!(symbols = calloc (1, symbols_size)))
 		return NULL;
 
 	j = 0; // symbol_idx
+#if 0
+// symtab is wrongly parsed and produces dupped syms with incorrect vaddr */
 	for (i=0; i<bin->nsymtab; i++) {
 		struct MACH0_(nlist) *st = &bin->symtab[i];
 #if 0
@@ -912,10 +926,10 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		// 1 is for symbols
 		// 2 is for func.eh (exception handlers?)
 		int section = st->n_sect;
-		if (section == 1) { // text ??st->n_type == 1) {
+		if (section == 1) { // text ??st->n_type == 1) 
 			/* is symbol */
-			symbols[j].offset = st->n_value + text_base;
-			symbols[j].addr = addr_to_offset(bin, symbols[j].offset);
+			symbols[j].addr = st->n_value + text_base;
+			symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
 			symbols[j].size = 0; /* find next symbol and crop */
 			if (st->n_type & N_EXT)
 				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
@@ -923,9 +937,16 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			strncpy (symbols[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
 			symbols[j].name[R_BIN_MACH0_STRING_LENGTH-1] = 0;
 			symbols[j].last = 0;
-			j++;
+			if (inSymtab (symbols, j, symbols[j].name, symbols[j].addr)) {
+				eprintf ("iii DUPEED %d %s %d\n", i, symbols[j].name, st->n_value);
+				symbols[j].name[0] = 0;
+			} else {
+				eprintf ("iii OK %d %s\n", i, symbols[j].name);
+				j++;
+			}
 		}
 	}
+#endif
 	for (s = 0; s < 2; s++) {
 		switch (s) {
 		case 0:
@@ -947,9 +968,9 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			continue;
 #define OLD 1
 #if OLD
-               from = R_MIN (R_MAX (0, from), symbols_size/sizeof(struct symbol_t));
-               to = R_MIN (to , symbols_size/sizeof(struct symbol_t));
-               to = R_MIN (to, bin->nsymtab);
+		from = R_MIN (R_MAX (0, from), symbols_size/sizeof(struct symbol_t));
+		to = R_MIN (to , symbols_size/sizeof(struct symbol_t));
+		to = R_MIN (to, bin->nsymtab);
 #else
 		from = R_MIN (R_MAX (0, from), symbols_size/sizeof(struct symbol_t));
 		to = symbols_count; //symbols_size/sizeof(struct symbol_t);
@@ -960,6 +981,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			return NULL;
 		}
 		for (i = from; i < to; i++, j++) {
+// TODO: rename to vaddr / paddr
 			symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
 			symbols[j].addr = bin->symtab[i].n_value;
 			symbols[j].size = 0; /* TODO: Is it anywhere? */
@@ -976,7 +998,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 				len = bin->symstrlen - stridx;
 				if (len>0) {
 					for (i = 0; i<len; i++) {
-						if ((unsigned char)symstr[i]==0xff || !symstr[i]) {
+						if ((ut8)(symstr[i]&0xff)==0xff || !symstr[i]) {
 							len = i;
 							break;
 						}
@@ -994,6 +1016,11 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 					symbols[j].name[0] = 0;
 				}
 				symbols[j].last = 0;
+			}
+			if (inSymtab (symbols, j, symbols[j].name, symbols[j].addr)) {
+				eprintf ("DUPEED\n");
+				symbols[j].name[0] = 0;
+				j--;
 			}
 		}
 	}
@@ -1114,9 +1141,7 @@ typedef struct _ulebr {
 	ut8 *p;
 } ulebr;
 
-
-static ut64 read_uleb128(ulebr *r, ut8 *end)
-{
+static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut64 result = 0;
 	int	 bit = 0;
 	ut64 slice = 0;
@@ -1138,8 +1163,7 @@ static ut64 read_uleb128(ulebr *r, ut8 *end)
 	return result;
 }
 
-static st64 read_sleb128(ulebr *r, ut8 *end)
-{
+static st64 read_sleb128(ulebr *r, ut8 *end) {
 	st64 result = 0;
 	int bit = 0;
 	ut8 byte;
@@ -1157,9 +1181,6 @@ static st64 read_sleb128(ulebr *r, ut8 *end)
 	r->p = p;
 	return result;
 }
-
-
-
 
 struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 	struct reloc_t *relocs;

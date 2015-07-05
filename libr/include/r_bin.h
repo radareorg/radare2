@@ -495,6 +495,7 @@ R_API RList *r_bin_get_mem (RBin *bin);
 /* filter.c */
 R_API void r_bin_filter_name(Sdb *db, char *name, int maxlen);
 R_API void r_bin_filter_symbols (RList *list);
+R_API void r_bin_filter_sections (RList *list);
 
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;
