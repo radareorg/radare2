@@ -910,43 +910,6 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		return NULL;
 
 	j = 0; // symbol_idx
-#if 0
-// symtab is wrongly parsed and produces dupped syms with incorrect vaddr */
-	for (i=0; i<bin->nsymtab; i++) {
-		struct MACH0_(nlist) *st = &bin->symtab[i];
-#if 0
-		eprintf ("stridx %d -> section %d type %d value = %d\n",
-			st->n_un.n_strx, st->n_sect, st->n_type, st->n_value);
-#endif
-		stridx = st->n_un.n_strx;
-		if (stridx>=0 && stridx<bin->symstrlen)
-			symstr = (char*)bin->symstr+stridx;
-		else symstr = "???";
-		// 0 is for imports
-		// 1 is for symbols
-		// 2 is for func.eh (exception handlers?)
-		int section = st->n_sect;
-		if (section == 1) { // text ??st->n_type == 1) 
-			/* is symbol */
-			symbols[j].addr = st->n_value + text_base;
-			symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
-			symbols[j].size = 0; /* find next symbol and crop */
-			if (st->n_type & N_EXT)
-				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
-			else symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-			strncpy (symbols[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
-			symbols[j].name[R_BIN_MACH0_STRING_LENGTH-1] = 0;
-			symbols[j].last = 0;
-			if (inSymtab (symbols, j, symbols[j].name, symbols[j].addr)) {
-				eprintf ("iii DUPEED %d %s %d\n", i, symbols[j].name, st->n_value);
-				symbols[j].name[0] = 0;
-			} else {
-				eprintf ("iii OK %d %s\n", i, symbols[j].name);
-				j++;
-			}
-		}
-	}
-#endif
 	for (s = 0; s < 2; s++) {
 		switch (s) {
 		case 0:
@@ -1018,7 +981,6 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 				symbols[j].last = 0;
 			}
 			if (inSymtab (symbols, j, symbols[j].name, symbols[j].addr)) {
-				eprintf ("DUPEED\n");
 				symbols[j].name[0] = 0;
 				j--;
 			}
@@ -1028,6 +990,41 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	for (i = bin->dysymtab.iundefsym; i < to; i++)
 		if (parse_import_stub(bin, &symbols[j], i))
 			symbols[j++].last = 0;
+#if 1
+// symtab is wrongly parsed and produces dupped syms with incorrect vaddr */
+	for (i=0; i<bin->nsymtab; i++) {
+		struct MACH0_(nlist) *st = &bin->symtab[i];
+#if 0
+		eprintf ("stridx %d -> section %d type %d value = %d\n",
+			st->n_un.n_strx, st->n_sect, st->n_type, st->n_value);
+#endif
+		stridx = st->n_un.n_strx;
+		if (stridx>=0 && stridx<bin->symstrlen)
+			symstr = (char*)bin->symstr+stridx;
+		else symstr = "???";
+		// 0 is for imports
+		// 1 is for symbols
+		// 2 is for func.eh (exception handlers?)
+		int section = st->n_sect;
+		if (section == 1) { // text ??st->n_type == 1)
+			/* is symbol */
+			symbols[j].addr = st->n_value; // + text_base;
+			symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
+			symbols[j].size = 0; /* find next symbol and crop */
+			if (st->n_type & N_EXT)
+				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
+			else symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+			strncpy (symbols[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
+			symbols[j].name[R_BIN_MACH0_STRING_LENGTH-1] = 0;
+			symbols[j].last = 0;
+			if (inSymtab (symbols, j, symbols[j].name, symbols[j].addr)) {
+				symbols[j].name[0] = 0;
+			} else {
+				j++;
+			}
+		}
+	}
+#endif
 	symbols[j].last = 1;
 	return symbols;
 }
