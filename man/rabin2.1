@@ -10,7 +10,7 @@
 .Op Fl b Ar bits
 .Op Fl B Ar addr
 .Op Fl C Ar fmt:C:[D]
-.Op Fl D Ar lang
+.Op Fl D Ar lang sym|-
 .Op Fl f Ar subbin
 .Op Fl k Ar query
 .Op Fl K Ar algo
@@ -39,8 +39,8 @@ List classes
 Create [elf,mach0,pe] for arm and x86-32/64 tiny binaries where 'C' is an hexpair list of the code bytes and ':D' is an optional concatenation to describe the bytes for the data section.
 .It Fl d
 Show debug/dwarf information
-.It Fl D Ar lang symbolname
-Demangle symbol name for lang
+.It Fl D Ar lang symbolname|-
+Demangle symbol name (or - to read from stdin) for lang (cxx, swift, java, cxx, ..)
 .It Fl e
 Show entrypoints for disk and on-memory
 .It Fl f Ar subbin

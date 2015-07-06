@@ -535,20 +535,46 @@ int main(int argc, char **argv) {
 		}
 		type = r_bin_demangle_type (do_demangle);
 		file = argv[optind +1];
-		switch (type) {
-		case R_BIN_NM_CXX: res = r_bin_demangle_cxx (file); break;
-		case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
-		case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
-		case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file); break;
-		case R_BIN_NM_MSVC: res = r_bin_demangle_msvc(file); break;
-		default:
-			eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
-			return 1;
-		}
-		if (res && *res) {
-			printf ("%s\n", res);
-			free(res);
-			return 0;
+		if (!strcmp (file, "-")) {
+			for (;;) {
+				file = stdin_gets();
+				if (!file || !*file) break;
+				switch (type) {
+				case R_BIN_NM_CXX: res = r_bin_demangle_cxx (file); break;
+				case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
+				case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
+				case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file); break;
+				case R_BIN_NM_MSVC: res = r_bin_demangle_msvc(file); break;
+				default:
+				    eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
+				    return 1;
+				}
+				if (res && *res) {
+					printf ("%s\n", res);
+				} else if (file && *file) {
+					printf ("%s\n", file);
+				}
+				R_FREE (res);
+				R_FREE (file);
+			}
+		} else {
+			switch (type) {
+			case R_BIN_NM_CXX: res = r_bin_demangle_cxx (file); break;
+			case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
+			case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
+			case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file); break;
+			case R_BIN_NM_MSVC: res = r_bin_demangle_msvc(file); break;
+			default:
+			    eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
+			    return 1;
+			}
+			if (res && *res) {
+				printf ("%s\n", res);
+				free(res);
+				return 0;
+			} else {
+				printf ("%s\n", file);
+			}
 		}
 		free (res);
 		//eprintf ("%s\n", file);
