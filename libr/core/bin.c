@@ -198,8 +198,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			free (q);
 		}
 		r_cons_printf ("]");
-	} else
-	if ((mode & R_CORE_BIN_SIMPLE)) {
+	} else if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_list_foreach (list, iter, string) {
 			ut64 addr = va? r_bin_get_vaddr (bin, baddr,
 				string->paddr, string->vaddr): string->paddr;
@@ -262,10 +261,10 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				free (filtered_name);
 			} else r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x
 				" ordinal=%03u "
-				"sz=%u len=%u section=%s type=%c string=%s\n", vaddr, paddr,
+				"sz=%u len=%u section=%s type=%s string=%s\n", vaddr, paddr,
 				string->ordinal, string->size, string->length,
 				section?section->name:"unknown",
-				string->type, string->string);
+				string->type=='w'?"wide":"ascii", string->string);
 		}
 	}
 	return R_TRUE;
