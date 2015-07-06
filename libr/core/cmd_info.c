@@ -311,11 +311,51 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'c': // for r2 `ic`
-			if (input[1]== ' ') {
-				eprintf ("TODO: list methods\n");
+			if (input[1]== '?') {
+				eprintf("Usage: ic[jq*] [class-index]\n");
+			} else if (input[1]== ' ' || input[1] == 'q' || input[1] == 'j') {
+				RBinClass *cls;
+				RBinSymbol *sym;
+				RListIter *iter;
+				RBinObject *obj = r_bin_cur_object (core->bin);
+				int idx = r_num_math (core->num, input +2);
+				int count = 0;
+				if (input[2]) {
+					r_list_foreach (obj->classes, iter, cls) {
+						if (idx != count++)
+							continue;
+						switch (input[1]) {
+						case '*':
+							r_list_foreach (cls->methods, iter, sym) {
+								r_cons_printf ("f sym.%s @ 0x%"PFMT64x"\n", sym->name, sym->vaddr);
+							}
+							break;
+						case 'j':
+							r_cons_printf ("\"class\":\"%s\"", cls->name);
+							r_cons_printf (",\"methods\":[");
+							r_list_foreach (cls->methods, iter, sym) {
+								const char *comma = iter->p? ",": "";
+								r_cons_printf ("%s{\"name\":\"%s\",\"vaddr\":%"PFMT64d"}",
+									comma, sym->name, sym->vaddr);
+							}
+							r_cons_printf ("]");
+							break;
+						default:
+							r_cons_printf ("class %s\n", cls->name);
+							r_list_foreach (cls->methods, iter, sym) {
+								r_cons_printf ("method %s\n", sym->name);
+							}
+							break;
+						}
+						goto done;
+					}
+				} else {
+					RBININFO ("classes", R_CORE_BIN_ACC_CLASSES);
+				}
 			} else {
-				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES); break;
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES);
 			}
+			break;
 		case 'D':
 			if (input[1]!=' ' || !demangle (core, input+2)) {
 				eprintf ("|Usage: iD lang symbolname\n");

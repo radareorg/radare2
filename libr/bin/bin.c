@@ -396,13 +396,18 @@ static void r_bin_object_free (void /*RBinObject*/ *o_) {
 // makes no sense to pass in a binfile and set the RBinObject
 // kinda a clunky functions
 static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
-	RBin *bin = binfile->rbin;
-	RBinObject *old_o = binfile ? binfile->o : NULL;
+	RBinObject *old_o;
+	RBinPlugin *cp;
 	int i, minlen;
-	RBinPlugin *cp = NULL;
-	if (!binfile || !o || !o->plugin) return R_FALSE;
+	RBin *bin;
 
+	if (!binfile || !o || !o->plugin)
+		return R_FALSE;
+
+	bin = binfile->rbin;
+	old_o = binfile->o;
 	cp = o->plugin;
+
 	if (binfile->rbin->minstrlen>0) {
 		minlen = binfile->rbin->minstrlen;
 	} else {

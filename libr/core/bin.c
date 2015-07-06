@@ -1511,9 +1511,9 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 
 static int bin_classes (RCore *r, int mode) {
 	RListIter *iter, *iter2;
+	RBinSymbol *sym;
 	RBinClass *c;
 	RList *cs = r_bin_get_classes (r->bin);
-	const char *methname;
 	if (!cs) return R_FALSE;
 
 	// XXX: support for classes is broken and needs more love
@@ -1557,17 +1557,21 @@ static int bin_classes (RCore *r, int mode) {
 				r_cons_printf ("f class.%s @ 0x%"PFMT64x"\n", name, c->addr);
 				if (c->super)
 					r_cons_printf ("f super.%s.%s @ %d\n", c->name, c->super, c->index);
-				r_list_foreach (c->methods, iter2, methname) {
-					r_cons_printf ("f method.%s.%s\n", c->name, methname);
+				r_list_foreach (c->methods, iter2, sym) {
+					r_cons_printf ("f method.%s.%s\n", c->name, sym->name);
 				}
 			} else {
-				r_cons_printf ("class %d @ 0x%"PFMT64x" = %s\n",
-					c->index, c->addr, c->name);
+				r_cons_printf ("0x%08"PFMT64x" class %d %s ",
+					c->addr, c->index, c->name);
 				if (c->super)
-					r_cons_printf ("  super = %s\n", c->super);
-				r_list_foreach (c->methods, iter2, methname) {
-					r_cons_printf ("  method %s\n", methname);
+					r_cons_printf (" super: %s\n", c->super);
+				r_cons_newline();
+				int m = 0;
+				r_list_foreach (c->methods, iter2, sym) {
+					r_cons_printf ("0x%08"PFMT64x" method %d %s\n", sym->vaddr, m, sym->name);
+					m++;
 				}
+				r_cons_newline ();
 			}
 			// TODO: show belonging methods and fields
 			free (name);

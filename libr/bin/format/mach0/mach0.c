@@ -858,6 +858,7 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 	return R_FALSE;
 }
 
+#if 0
 static ut64 get_text_base(struct MACH0_(obj_t)* bin) {
 	ut64 ret = 0LL;
 	struct section_t *sections;
@@ -873,6 +874,7 @@ static ut64 get_text_base(struct MACH0_(obj_t)* bin) {
 	}
 	return ret;
 }
+#endif
 
 static int inSymtab (struct symbol_t *symbols, int last, const char *name, ut64 addr) {
 	int i;
@@ -890,7 +892,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	const char *symstr;
 	struct symbol_t *symbols;
 	int from, to, i, j, s, stridx, symbols_size, symbols_count;
-	ut64 text_base = get_text_base (bin);
+	//ut64 text_base = get_text_base (bin);
 
 	if (!bin || !bin->symtab || !bin->symstr)
 		return NULL;

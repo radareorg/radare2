@@ -9,7 +9,7 @@ static void hashify(char *s, ut64 vaddr) {
 	while (*s) {
 		if (!IS_PRINTABLE(*s)) {
 			if (vaddr && vaddr != UT64_MAX) {
-				sprintf (s, "%"PFMT64d, vaddr);
+				sprintf (s, "_%"PFMT64d, vaddr);
 			} else {
 				ut32 hash = sdb_hash (s);
 				sprintf (s, "%x", hash);
@@ -62,17 +62,20 @@ R_API void r_bin_filter_sections (RList *list) {
 
 R_API void r_bin_filter_classes (RList *list) {
 	Sdb *db = sdb_new0 ();
-	RListIter *iter;
+	RListIter *iter, *iter2;
 	RBinClass *cls;
+	RBinSymbol *sym;
 	r_list_foreach (list, iter, cls) {
-		int namepad_len = strlen (cls->name)+10;
+		int namepad_len = strlen (cls->name)+32;
 		char *namepad = malloc (namepad_len);
 		if (namepad) {
 			strcpy (namepad, cls->name);
 			r_bin_filter_name (db, cls->index, namepad, namepad_len);
-			//hashify (namepad, (ut64)cls->index);
 			free (cls->name);
 			cls->name = namepad;
+			r_list_foreach (cls->methods, iter2, sym) {
+				r_bin_filter_name (db, sym->vaddr, sym->name, sizeof (sym->name));
+			}
 		} else eprintf ("Cannot alloc %d bytes\n", namepad_len);
 	}
 	sdb_free (db);
