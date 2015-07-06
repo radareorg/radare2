@@ -88,7 +88,7 @@ static int r_debug_handle_signals (RDebug *dbg) {
 #include <mach/mach_interface.h>
 #include <mach/mach_traps.h>
 #include <mach/mach_types.h>
-#include <mach/mach_vm.h>
+//no available for ios #include <mach/mach_vm.h>
 #include <mach/mach_error.h>
 #include <mach/task.h>
 #include <mach/task_info.h>
@@ -129,6 +129,17 @@ static int r_debug_handle_signals (RDebug *dbg) {
 
 // iPhone
 #elif __arm
+ #include <mach/arm/thread_status.h>
+ #ifndef ARM_THREAD_STATE
+ #define ARM_THREAD_STATE                1
+ #endif
+ #ifndef ARM_THREAD_STATE64
+ #define ARM_THREAD_STATE64              6
+ #endif
+ #define R_DEBUG_REG_T arm_thread_state_t
+ #define R_DEBUG_STATE_T ARM_THREAD_STATE
+ #define R_DEBUG_STATE_SZ ARM_THREAD_STATE_COUNT
+#elif __arm64
  #include <mach/arm/thread_status.h>
  #ifndef ARM_THREAD_STATE
  #define ARM_THREAD_STATE                1
@@ -393,7 +404,7 @@ static void ios_hwstep_enable(RDebug *dbg, int enable) {
 	ARMDebugState64 ds;
 
 	mach_msg_type_number_t count = ARM_DEBUG_STATE64_COUNT;
-	(void)thread_get_state (port, ARM_DEBUG_STATE64, &ds, &count);
+	(void)thread_get_state (port, ARM_DEBUG_STATE64, (thread_state_t)&ds, &count);
 
 	// The use of __arm64__ here is not ideal.  If debugserver is running on
 	// an armv8 device, regardless of whether it was built for arch arm or arch arm64,
@@ -405,7 +416,7 @@ static void ios_hwstep_enable(RDebug *dbg, int enable) {
 	} else {
 		ds.mdscr_el1 &= ~(1ULL);
 	}
-	(void)thread_set_state (port, ARM_DEBUG_STATE64, &ds, count);
+	(void)thread_set_state (port, ARM_DEBUG_STATE64, (thread_state_t)&ds, count);
 #else
 	typedef struct {
 		ut32 bvr[16];

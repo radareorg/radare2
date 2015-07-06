@@ -11,7 +11,7 @@
 #define EXCEPTION_PORT 0
 
 #include <mach/exception_types.h>
-#include <mach/mach_vm.h>
+//#include <mach/mach_vm.h>
 #include <mach/mach_init.h>
 #include <mach/mach_port.h>
 #include <mach/mach_traps.h>

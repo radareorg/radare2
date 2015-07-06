@@ -1,5 +1,15 @@
 #if __APPLE__
 
+kern_return_t mach_vm_region_recurse
+(
+        vm_map_t target_task,
+        mach_vm_address_t *address,
+        mach_vm_size_t *size,
+        natural_t *nesting_depth,
+        vm_region_recurse_info_t info,
+        mach_msg_type_number_t *infoCnt
+);
+
 static const char * unparse_inheritance (vm_inherit_t i) {
         switch (i) {
         case VM_INHERIT_SHARE: return "share";
@@ -7,6 +17,56 @@ static const char * unparse_inheritance (vm_inherit_t i) {
         case VM_INHERIT_NONE: return "none";
         default: return "???";
         }
+}
+
+#if __LP64__
+#define ADDR "%16lx"
+#define HEADER_SIZE 0x1000
+#define IMAGE_OFFSET 0x2000
+#define KERNEL_LOWER 0xffffff8000000000
+#else
+#define ADDR "%8x"
+#define HEADER_SIZE 0x1000
+#define IMAGE_OFFSET 0x201000
+#define KERNEL_LOWER 0x80000000
+#endif
+
+vm_address_t get_kernel_base(task_t ___task) {
+	kern_return_t ret;
+	task_t task;
+	vm_region_submap_info_data_64_t info;
+	ut64 size;
+	mach_msg_type_number_t info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
+	unsigned int depth = 0;
+	ut64 addr = KERNEL_LOWER;         // lowest possible kernel base address
+	int count;
+
+	ret = task_for_pid(mach_task_self(), 0, &task);
+	if (ret != KERN_SUCCESS)
+		return 0;
+	ut64 naddr;
+	eprintf ("%d vs %d\n", task, ___task);
+	for (count=128; count; count--) {
+		// get next memory region
+		naddr = addr;
+		ret = vm_region_recurse_64 (task, &naddr, &size,
+				&depth, (vm_region_info_t)&info, &info_count);
+		if (ret != KERN_SUCCESS)
+			break;
+		if (size<1) break;
+		if (addr == naddr) {
+			addr += size;
+			continue;
+		}
+		eprintf ("0x%08"PFMT64x" size 0x%08"PFMT64x" perm 0x%x\n", (ut64)addr, (ut64)size, info.max_protection);
+		// the kernel maps over a GB of RAM at the address where it maps
+		// itself so we use that fact to detect it's position
+		if (size > 1024*1024*1024) {
+			return addr + IMAGE_OFFSET;
+		}
+		addr += size;
+	}
+	return (vm_address_t)0;
 }
 
 extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_t buffersize);
@@ -28,9 +88,16 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 #else
 	size = osize = 4096;
 #endif
+#if 0
+	if (dbg->pid == 0) {
+		vm_address_t base = get_kernel_base (task);
+		eprintf ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
+		return NULL;
+	}
+#endif
 
 	kern_return_t kr;
-	while (TRUE) {
+	for (;;) {
 		struct vm_region_submap_info_64 info;
 		mach_msg_type_number_t info_count;
 
@@ -69,7 +136,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 			module_name[ret] = 0;
 			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 			// XXX: if its shared, it cannot be read?
-			snprintf (buf, sizeof (buf), "%s %02x %s%s%s%s%s %s (sz=0x%x) (depth=%d)",
+			snprintf (buf, sizeof (buf), "%s %02x %s%s%s%s%s %s (sz=0x%"PFMT64x") (depth=%d)",
 				r_str_rwx_i (xwr2rwx (info.max_protection)), i,
 				unparse_inheritance (info.inheritance),
 				info.user_tag? " user": "",

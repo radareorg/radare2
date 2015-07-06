@@ -13,7 +13,7 @@
 #include <mach/mach_interface.h>
 #include <mach/mach_traps.h>
 #include <mach/mach_types.h>
-#include <mach/mach_vm.h>
+//#include <mach/mach_vm.h>
 #include <mach/mach_error.h>
 #include <mach/task.h>
 #include <mach/task_info.h>
@@ -218,6 +218,17 @@ struct r_lib_struct_t radare_plugin = {
 #endif
 
 #if __APPLE__
+// mach/mach_vm.h not available for iOS
+kern_return_t mach_vm_region
+(
+        vm_map_t target_task,
+        mach_vm_address_t *address,
+        mach_vm_size_t *size,
+        vm_region_flavor_t flavor,
+        vm_region_info_t info,
+        mach_msg_type_number_t *infoCnt,
+        mach_port_t *object_name
+);
 // taken from vmmap.c ios clone
 // XXX. this code is dupped in libr/debug/p/debug_native.c
 // but this one looks better, the other one seems to work too.

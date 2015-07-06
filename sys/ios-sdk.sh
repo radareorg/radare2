@@ -1,5 +1,7 @@
 #!/bin/sh
 
+[ -n "$1" ] && CPU="$1"
+
 if [ -z "${CPU}" ]; then
   export CPU=arm64
   export CPU=armv7
@@ -9,14 +11,28 @@ BUILD=1
 PREFIX="/usr"
 # PREFIX=/var/mobile
 
-if [ ! -d sys/ios-include ]; then
-(
-  cd sys && \
-  curl -o ios-include.tar.gz http://lolcathost.org/b/ios-include.tar.gz && \
-  tar xzvf ios-include.tar.gz
-)
-fi
+#if [ ! -d sys/ios-include ]; then
+#(
+#  cd sys && \
+#  curl -o ios-include.tar.gz http://lolcathost.org/b/ios-include.tar.gz && \
+#  tar xzvf ios-include.tar.gz
+#)
+#fi
+case "$CPU"  in
+arm)
+	CPU=armv7
+	;;
+aarch64)
+	CPU=arm64
+	;;
+arm64)
+	;;
+*)
+	echo "Valid values for CPU are: armv7 or arm64"
+	exit 1
+esac
 
+export CPU="$CPU"
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
 export PATH=`pwd`/sys:${PATH}
 export CC=`pwd`/sys/ios-sdk-gcc
