@@ -1706,9 +1706,9 @@ R_API int r_str_bounds(const char *_str, int *h) {
 }
 #endif
 
-R_API char *r_str_crop(const char *str, int x, int y, int w, int h) {
+R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int w, unsigned int h) {
 	char *r, *ret;
-	int ch = 0, cw = 0;
+	unsigned int ch = 0, cw = 0;
 	if (w<1 || h<1)
 		return strdup ("");
 	r = ret = strdup (str);

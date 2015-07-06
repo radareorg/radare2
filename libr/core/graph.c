@@ -213,10 +213,10 @@ static void normal_ANode_print(const AGraph *g, const ANode *n, int cur) {
 			n->y + MARGIN_TEXT_Y + delta_y + center_y - delta_txt_y)) {
 		unsigned int text_x = center_x >= delta_x ? 0 : delta_x - center_x;
 		unsigned int text_y = center_y >= delta_y ? 0 : delta_y - center_y;
-		unsigned int text_h = BORDER_HEIGHT >= n->h ? 0 : n->h - BORDER_HEIGHT;
+		unsigned int text_h = BORDER_HEIGHT >= n->h ? 1 : n->h - BORDER_HEIGHT;
 
 		if (g->zoom < ZOOM_DEFAULT) text_h--;
-		if (text_y <= text_h - 1) {
+		if (text_y + 1 <= text_h) {
 			text = r_str_crop (n->text,
 					text_x, text_y,
 					n->w - BORDER_WIDTH,
