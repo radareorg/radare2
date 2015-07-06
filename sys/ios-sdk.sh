@@ -20,6 +20,8 @@ fi
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
 export PATH=`pwd`/sys:${PATH}
 export CC=`pwd`/sys/ios-sdk-gcc
+export RANLIB="xcrun --sdk iphoneos ranlib"
+export LD="xcrun --sdk iphoneos ld"
 # set only for arm64, otherwise it is armv7
 # select ios sdk version
 export IOSVER=8.3

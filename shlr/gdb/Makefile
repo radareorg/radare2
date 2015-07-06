@@ -50,7 +50,7 @@ $(LIB):
 	mkdir -p $(LIB)
 
 $(LIB)/$(LIBNAME).a: $(LIB) $(SRC_O)
-	$(LD) -fPIC -shared -o $(LIB)/$(LIBFILE) $(SRC_O) $(LDFLAGS)
+	$(LD) -fPIC -shared -o $(LIB)/$(LIBFILE) $(SRC_O) $(LDFLAGS) $(LINK)
 	$(AR) rvs $(LIB)/$(LIBNAME).a $(SRC_O)
 	# required for solaris and w32
 	$(RANLIB) $(LIB)/$(LIBNAME).a
