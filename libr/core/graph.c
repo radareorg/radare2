@@ -91,6 +91,9 @@ typedef struct ascii_graph {
 	int need_update_dim;
 	int force_update_seek;
 
+	int x, y;
+	int w, h;
+
 	/* layout algorithm info */
 	RList *back_edges;
 	RList *long_edges;
@@ -1685,6 +1688,26 @@ static const RGraphNode *find_near_of (const AGraph *g, const RGraphNode *cur,
 	return resgn;
 }
 
+static void update_graph_sizes (AGraph *g) {
+	RListIter *it;
+	RGraphNode *gk;
+	ANode *ak;
+	int max_x, max_y;
+
+	g->x = g->y = INT_MAX;
+	max_x = max_y = INT_MIN;
+
+	graph_foreach_anode (r_graph_get_nodes (g->graph), it, gk, ak) {
+		if (ak->x < g->x) g->x = ak->x;
+		if (ak->y < g->y) g->y = ak->y;
+		if (ak->x + ak->w > max_x) max_x = ak->x + ak->w;
+		if (ak->y + ak->h > max_y) max_y = ak->y + ak->h;
+	}
+
+	g->w = max_x - g->x;
+	g->h = max_y - g->y;
+}
+
 static void agraph_set_layout(AGraph *g) {
 	if (g->is_callgraph)
 		set_layout_callgraph(g);
@@ -1692,6 +1715,7 @@ static void agraph_set_layout(AGraph *g) {
 		set_layout_bb(g);
 
 	g->curnode = find_near_of (g, NULL, R_TRUE);
+	update_graph_sizes (g);
 }
 
 /* set the willing to center the screen on a particular node */
@@ -1907,9 +1931,15 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		r_cons_clear00 ();
 	}
 
-	h = fs ? h : 1024;
+	/* TODO: limit to screen size when the output is not redirected to file */
+	h = fs ? h : g->h;
+	w = fs ? w : g->w;
 	r_cons_canvas_resize (g->can, w, h);
 	r_cons_canvas_clear (g->can);
+	if (!fs) {
+		g->can->sx = -g->x;
+		g->can->sy = -g->y;
+	}
 
 	agraph_print_edges(g);
 	agraph_print_nodes(g);
