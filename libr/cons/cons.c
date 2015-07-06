@@ -414,14 +414,14 @@ R_API void r_cons_flush() {
 				if (I.buffer[i]=='\n')
 					lines ++;
 			}
-			if (!r_cons_yesno ('n',"Do you want to print %d lines? (y/N)", lines)) {
+			if (lines>0 && !r_cons_yesno ('n',"Do you want to print %d lines? (y/N)", lines)) {
 				r_cons_reset ();
 				return;
 			}
 #else
 			char buf[64];
 			char *buflen = r_num_units (buf, I.buffer_len);
-			if (!r_cons_yesno ('n',"Do you want to print %s chars? (y/N)", buflen)) {
+			if (buflen && !r_cons_yesno ('n',"Do you want to print %s chars? (y/N)", buflen)) {
 				r_cons_reset ();
 				return;
 			}
