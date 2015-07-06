@@ -273,7 +273,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #elif __WINDOWS__
 # define R_SYS_BASE ((ut64)0x01001000)
 #else // linux, bsd, ...
-# if __arm__
+# if __arm__ || __arm64__
 # define R_SYS_BASE ((ut64)0x4000)
 # else
 # define R_SYS_BASE ((ut64)0x8048000)
@@ -293,6 +293,9 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #elif __arm__
 #define R_SYS_ARCH "arm"
 #define R_SYS_BITS R_SYS_BITS_32
+#elif __arm64__
+#define R_SYS_ARCH "arm"
+#define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
 #elif __arc__
 #define R_SYS_ARCH "arc"
 #define R_SYS_BITS R_SYS_BITS_32
