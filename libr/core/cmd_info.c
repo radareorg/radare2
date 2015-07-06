@@ -312,11 +312,11 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'c': // for r2 `ic`
 			if (input[1]== '?') {
-				eprintf("Usage: ic[jq*] [class-index]\n");
-			} else if (input[1]== ' ' || input[1] == 'q' || input[1] == 'j') {
+				eprintf("Usage: ic[ljq*] [class-index]\n");
+			} else if (input[1]== ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l') {
 				RBinClass *cls;
 				RBinSymbol *sym;
-				RListIter *iter;
+				RListIter *iter, *iter2;
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				int idx = r_num_math (core->num, input +2);
 				int count = 0;
@@ -326,15 +326,22 @@ static int cmd_info(void *data, const char *input) {
 							continue;
 						switch (input[1]) {
 						case '*':
-							r_list_foreach (cls->methods, iter, sym) {
+							r_list_foreach (cls->methods, iter2, sym) {
 								r_cons_printf ("f sym.%s @ 0x%"PFMT64x"\n", sym->name, sym->vaddr);
 							}
+							break;
+						case 'l':
+							r_list_foreach (cls->methods, iter2, sym) {
+								const char *comma = iter2->p? " ": "";
+								r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
+							}
+							r_cons_newline();
 							break;
 						case 'j':
 							r_cons_printf ("\"class\":\"%s\"", cls->name);
 							r_cons_printf (",\"methods\":[");
-							r_list_foreach (cls->methods, iter, sym) {
-								const char *comma = iter->p? ",": "";
+							r_list_foreach (cls->methods, iter2, sym) {
+								const char *comma = iter2->p? ",": "";
 								r_cons_printf ("%s{\"name\":\"%s\",\"vaddr\":%"PFMT64d"}",
 									comma, sym->name, sym->vaddr);
 							}
@@ -342,7 +349,7 @@ static int cmd_info(void *data, const char *input) {
 							break;
 						default:
 							r_cons_printf ("class %s\n", cls->name);
-							r_list_foreach (cls->methods, iter, sym) {
+							r_list_foreach (cls->methods, iter2, sym) {
 								r_cons_printf ("method %s\n", sym->name);
 							}
 							break;
@@ -350,7 +357,18 @@ static int cmd_info(void *data, const char *input) {
 						goto done;
 					}
 				} else {
-					RBININFO ("classes", R_CORE_BIN_ACC_CLASSES);
+					if (input[1] == 'l') { // "icl"
+						r_list_foreach (obj->classes, iter, cls) {
+							r_list_foreach (cls->methods, iter2, sym) {
+								const char *comma = iter2->p? " ": "";
+								r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
+							}
+							if (!r_list_empty (cls->methods))
+								r_cons_newline();
+						}
+					} else {
+						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES);
+					}
 				}
 			} else {
 				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES);
