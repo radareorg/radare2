@@ -135,7 +135,7 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 	return types;
 }
 
-R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
+R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 	int use_getopt = 0;
 	int use_isatty = 0;
 	char *do_call = NULL;
@@ -146,6 +146,10 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
 		r_list_foreach (fcn->refs, iter, ref) {
 			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
 			if (f) {
+				if (dump) {
+					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x
+						" %s\n", ref->at, ref->addr, f->name);
+				}
 				if (strstr (f->name, "isatty"))
 					use_isatty = 1;
 				if (strstr (f->name, "getopt"))
@@ -153,8 +157,7 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
 				if (!strncmp (f->name, "sym.imp.", 8)) {
 					free (do_call);
 					do_call = strdup (f->name+8);
-				} else
-				if (!strncmp (f->name, "reloc.", 6)) {
+				} else if (!strncmp (f->name, "reloc.", 6)) {
 					free (do_call);
 					do_call = strdup (f->name+6);
 				}

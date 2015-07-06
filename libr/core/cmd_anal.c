@@ -750,28 +750,40 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 	case 'n': // "afn"
-		if (input[2]=='a') { // afna autoname
-			char *name = r_core_anal_fcn_autoname (core, core->offset);
+		switch (input[2]) {
+		case '?':
+			eprintf ("Usage: afn[sa] - analyze function names\n");
+			eprintf (" afna       - construct a function name for the current offset\n");
+			eprintf (" afns       - list all strings associated with the current function\n");
+			eprintf (" afn [name] - rename function\n");
+			break;
+		case 's':
+			free (r_core_anal_fcn_autoname (core, core->offset, 1));
+			break;
+		case 'a': {
+			char *name = r_core_anal_fcn_autoname (core, core->offset, 0);
 			if (name) {
 				r_cons_printf ("afn %s 0x%08"PFMT64x"\n",
 					name, core->offset);
 				free (name);
 			}
-		} else {
-			 ut64 off = core->offset;
-			 char *p, *name = strdup (input+3);
-			 if ((p=strchr (name, ' '))) {
-				 *p++ = 0;
-				 off = r_num_math (core->num, p);
-			 }
-			 if (*name) {
-				 if (!setFunctionName (core, off, name))
-					 eprintf ("Cannot find function '%s' at 0x%08"PFMT64x"\n", name, off);
-				 free (name);
-			 } else {
-				 eprintf ("Usage: afn newname [off]   # set new name to given function\n");
-				 free (name);
-			 }
+			} break;
+		default: {
+			ut64 off = core->offset;
+			char *p, *name = strdup (input+3);
+			if ((p=strchr (name, ' '))) {
+				*p++ = 0;
+				off = r_num_math (core->num, p);
+			}
+			if (*name) {
+				if (!setFunctionName (core, off, name))
+					eprintf ("Cannot find function '%s' at 0x%08"PFMT64x"\n", name, off);
+				free (name);
+			} else {
+				eprintf ("Usage: afn newname [off]   # set new name to given function\n");
+				free (name);
+			}
+			} break;
 		 }
 		 break;
 #if FCN_OLD
