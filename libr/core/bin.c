@@ -208,7 +208,8 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			}
 			if (string->length>minstr) {
 				r_cons_printf ("%"PFMT64d" %d %d %s\n",
-					addr, string->size, string->length, string->string);
+					addr, string->size,
+					string->length, string->string);
 			}
 		}
 	} else
@@ -1530,8 +1531,8 @@ static int bin_classes (RCore *r, int mode) {
 		r_cons_printf ("]");
 	} else if (mode & R_CORE_BIN_SIMPLE) {
 		r_list_foreach (cs, iter, c) {
-			r_cons_printf ("0x%08"PFMT64x" %s %s\n",
-				c->addr, c->name, c->super?c->super:"");
+			r_cons_printf ("0x%08"PFMT64x" %s%s%s\n",
+				c->addr, c->name, c->super?" ":"", c->super?c->super:"");
 		}
 	} else if (mode & R_CORE_BIN_SET) {
 		// Nothing to set.
@@ -1561,7 +1562,7 @@ static int bin_classes (RCore *r, int mode) {
 					r_cons_printf ("f method.%s.%s\n", c->name, sym->name);
 				}
 			} else {
-				r_cons_printf ("0x%08"PFMT64x" class %d %s ",
+				r_cons_printf ("0x%08"PFMT64x" class %d %s",
 					c->addr, c->index, c->name);
 				if (c->super)
 					r_cons_printf (" super: %s\n", c->super);

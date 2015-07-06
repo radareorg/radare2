@@ -299,7 +299,10 @@ static char *dex_class_name_byid (RBinDexObj *bin, int cid) {
 }
 
 static char *getClassName(const char *name) {
-	const char *p = strstr (name, ".L");
+	const char *p;
+	if (!name)
+		return NULL;
+	p = strstr (name, ".L");
 	if (p) {
 		char *q, *r = strdup (p+2);
 		q = strchr (r, ';');
@@ -538,23 +541,25 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		free (class_name);
 		free (super_name);
 	}
-	dprintf ("imports: \n");
-	for (i = 0; i<bin->header.method_size; i++) {
-		//RBinDexMethod *method = &bin->methods[i];
-		if (!methods[i]) {
-			char *method_name = dex_method_name (bin, i);
-			dprintf ("import %d (%s)\n", i, method_name);
-			if (method_name && *method_name) {
-				RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				strncpy (sym->name, method_name, R_BIN_SIZEOF_STRINGS);
-				strcpy (sym->type, "FUNC");
-				sym->paddr = sym->vaddr = 0; // UNKNOWN
-				r_list_append (bin->imports_list, sym);
+	if (methods) {
+		dprintf ("imports: \n");
+		for (i = 0; i<bin->header.method_size; i++) {
+			//RBinDexMethod *method = &bin->methods[i];
+			if (!methods[i]) {
+				char *method_name = dex_method_name (bin, i);
+				dprintf ("import %d (%s)\n", i, method_name);
+				if (method_name && *method_name) {
+					RBinSymbol *sym = R_NEW0 (RBinSymbol);
+					strncpy (sym->name, method_name, R_BIN_SIZEOF_STRINGS);
+					strcpy (sym->type, "FUNC");
+					sym->paddr = sym->vaddr = 0; // UNKNOWN
+					r_list_append (bin->imports_list, sym);
+				}
+				free (method_name);
 			}
-			free (method_name);
 		}
+		free (methods);
 	}
-	free (methods);
 	return R_TRUE;
 }
 
