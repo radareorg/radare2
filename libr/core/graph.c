@@ -1165,6 +1165,9 @@ static void combine_sequences (const AGraph *g, int l,
 		}
 	}
 
+	r_list_free (Rm);
+	r_list_free (Rp);
+
 	for (i = t - 2; i >= a; --i) {
 		const RGraphNode *gv = g->layers[l].nodes[i];
 		ANode *av = (ANode *)gv->data;
