@@ -287,8 +287,8 @@ static int **get_crossing_matrix (const RGraph *g,
 						const ANode *ak, *at; /* k and t should be "indexes" on layer i */
 
 						if (gt == gk) continue;
-						ak = (ANode *)gk->data;
-						at = (ANode *)gt->data;
+						ak = get_anode (gk);
+						at = get_anode (gt);
 						if (ak->layer != i || at->layer != i) {
 							 eprintf("%llx or %llx are not on the right layer (%d)\n", ak->addr, at->addr, i);
 							 eprintf("edge from %llx to %llx is wrong\n", ((ANode*)(gj->data))->addr, ak->addr);
@@ -308,7 +308,7 @@ static int **get_crossing_matrix (const RGraph *g,
 		for (j = 0; j < layers[i].n_nodes; ++j) {
 			const RGraphNode *gj = layers[i].nodes[j];
 			const RList *neigh = r_graph_get_neighbours (g, gj);
-			const ANode *ak, *aj = (ANode *)gj->data;
+			const ANode *ak, *aj = get_anode (gj);
 			RGraphNode *gk;
 			RListIter *itk;
 
@@ -319,7 +319,7 @@ static int **get_crossing_matrix (const RGraph *g,
 					const RList *neigh_s;
 					RGraphNode *gt;
 					RListIter *itt;
-					const ANode *at, *as = (ANode *)gs->data;
+					const ANode *at, *as = get_anode (gs);
 
 					if (gs == gj) continue;
 					neigh_s = r_graph_get_neighbours (g, gs);
@@ -361,8 +361,8 @@ static int layer_sweep (const RGraph *g, const struct layer_t layers[],
 
 		u = layers[i].nodes[j];
 		v = layers[i].nodes[j + 1];
-		au = (ANode *)u->data;
-		av = (ANode *)v->data;
+		au = get_anode (u);
+		av = get_anode (v);
 		auidx = au->pos_in_layer;
 		avidx = av->pos_in_layer;
 
@@ -378,7 +378,7 @@ static int layer_sweep (const RGraph *g, const struct layer_t layers[],
 	 * elements we didn't swap also the pos_in_layer because the cross_matrix
 	 * is indexed by it, so do it now! */
 	for (j = 0; j < layers[i].n_nodes; ++j) {
-		ANode *n = (ANode *)layers[i].nodes[j]->data;
+		ANode *n = get_anode (layers[i].nodes[j]);
 		n->pos_in_layer = j;
 	}
 
@@ -417,8 +417,8 @@ static void set_layer (const RGraphNode *from, const RGraphNode *to, const RGrap
 }
 
 static void view_dummy (RGraphNode *from, RGraphNode *to, const RGraphVisitor *vis) {
-	const ANode *a = (ANode *)from->data;
-	const ANode *b = (ANode *)to->data;
+	const ANode *a = get_anode (from);
+	const ANode *b = get_anode (to);
 	RList *long_edges = (RList *)vis->data;
 
 	if (R_ABS (a->layer - b->layer) > 1) {
@@ -488,8 +488,8 @@ static void create_dummy_nodes (AGraph *g) {
 	r_graph_dfs (g->graph, &dummy_vis);
 
 	r_list_foreach (g->long_edges, it, e) {
-		const ANode *from = (ANode *)e->from->data;
-		const ANode *to = (ANode *)e->to->data;
+		const ANode *from = get_anode (e->from);
+		const ANode *to = get_anode (e->to);
 		int diff_layer = R_ABS (from->layer - to->layer);
 		RGraphNode *prev = e->from;
 		int i;
@@ -587,8 +587,8 @@ static int dist_nodes (const AGraph *g, const RGraphNode *a, const RGraphNode *b
 		}
 	}
 
-	aa = (ANode *)a->data;
-	ab = (ANode *)b->data;
+	aa = get_anode (a);
+	ab = get_anode (b);
 	if (aa->layer == ab->layer) {
 		int i;
 
@@ -596,8 +596,8 @@ static int dist_nodes (const AGraph *g, const RGraphNode *a, const RGraphNode *b
 		for (i = aa->pos_in_layer; i < ab->pos_in_layer; ++i) {
 			const RGraphNode *cur = g->layers[aa->layer].nodes[i];
 			const RGraphNode *next = g->layers[aa->layer].nodes[i + 1];
-			const ANode *anext = (ANode *)next->data;
-			const ANode *acur = (ANode *)cur->data;
+			const ANode *anext = get_anode (next);
+			const ANode *acur = get_anode (cur);
 			int found = R_FALSE;
 
 			if (g->dists) {
@@ -632,8 +632,8 @@ static void set_dist_nodes (const AGraph *g, int l, int cur, int next) {
 
 	vi = g->layers[l].nodes[cur];
 	vip = g->layers[l].nodes[next];
-	avi = (ANode *)vi->data;
-	avip = (ANode *)vip->data;
+	avi = get_anode (vi);
+	avip = get_anode (vip);
 
 	d->from = vi;
 	d->to = vip;
@@ -657,20 +657,20 @@ static Sdb *compute_vertical_nodes (const AGraph *g) {
 		for (j = 0; j < g->layers[i].n_nodes; ++j) {
 			RGraphNode *gn = g->layers[i].nodes[j];
 			const RList *Ln = hash_get_rlist (res, gn);
-			const ANode *an = (ANode *)gn->data;
+			const ANode *an = get_anode (gn);
 
 			if (!Ln) {
 				RList *vert = r_list_new ();
 				hash_set (res, gn, vert);
 				if (an->is_dummy) {
 					RGraphNode *next = gn;
-					const ANode *anext = (ANode *)next->data;
+					const ANode *anext = get_anode (next);
 
 					while (next && anext->is_dummy) {
 						r_list_append (vert, next);
 						next = r_graph_nth_neighbour (g->graph, next, 0);
 						if (!next) break;
-						anext = (ANode *)next->data;
+						anext = get_anode (next);
 					}
 				} else {
 					r_list_append (vert, gn);
@@ -705,7 +705,7 @@ static RList **compute_classes (const AGraph *g, Sdb *v_nodes, int is_left, int 
 			(is_left && j < g->layers[i].n_nodes) || (!is_left && j >= 0);
 			j = is_left ? j + 1 : j - 1) {
 			const RGraphNode *gj = g->layers[i].nodes[j];
-			const ANode *aj = (ANode *)gj->data;
+			const ANode *aj = get_anode (gj);
 
 			if (aj->class == -1) {
 				const RList *laj = hash_get_rlist (v_nodes, gj);
@@ -768,7 +768,7 @@ static void adjust_class (const AGraph *g, int is_left,
 
 		sibling = get_sibling (g, an, is_left, R_TRUE);
 		if (!sibling) continue;
-		sibl_anode = (ANode *)sibling->data;
+		sibl_anode = get_anode (sibling);
 		if (sibl_anode->class == c) continue;
 		v = adjust_class_val (g, gn, sibling, res, is_left);
 		dist = is_first ? v : R_MIN (dist, v);
@@ -842,7 +842,7 @@ static void place_nodes (const AGraph *g, const RGraphNode *gn, int is_left,
 
 		sibling = get_sibling (g, ak, is_left, R_FALSE);
 		if (!sibling) continue;
-		sibl_anode = (ANode *)sibling->data;
+		sibl_anode = get_anode (sibling);
 		if (ak->class == sibl_anode->class) {
 			if (!hash_get (placed, sibling))
 				place_nodes (g, sibling, is_left, v_nodes, classes, res, placed);
@@ -925,12 +925,12 @@ xminus_err:
 }
 
 static RGraphNode *get_right_dummy (const AGraph *g, const RGraphNode *n) {
-	const ANode *an = (ANode *)n->data;
+	const ANode *an = get_anode (n);
 	int k, layer = an->layer;
 
 	for (k = an->pos_in_layer + 1; k < g->layers[layer].n_nodes; ++k) {
 		RGraphNode *gk = g->layers[layer].nodes[k];
-		const ANode *ak = (ANode *)gk->data;
+		const ANode *ak = get_anode (gk);
 
 		if (ak->is_dummy)
 			return gk;
@@ -946,11 +946,11 @@ static int all_reversed_right (const AGraph *g, const RGraphNode *n) {
 
 	if (!n) return R_FALSE;
 
-	an = (ANode *)n->data;
+	an = get_anode (n);
 	layer = an->layer;
 	for (k = an->pos_in_layer; k < g->layers[layer].n_nodes; ++k) {
 		const RGraphNode *gk = g->layers[layer].nodes[k];
-		const ANode *ak = (ANode *)gk->data;
+		const ANode *ak = get_anode (gk);
 
 		if (!ak->is_reversed)
 			return R_FALSE;
@@ -968,14 +968,14 @@ static void adjust_directions (const AGraph *g, int i, int from_up, Sdb *D, Sdb 
 
 	for (j = 0; j < g->layers[i + d].n_nodes; ++j) {
 		const RGraphNode *wp, *vp = g->layers[i + d].nodes[j];
-		const ANode *wpa, *vpa = (ANode *)vp->data;
+		const ANode *wpa, *vpa = get_anode (vp);
 
 		if (!vpa->is_dummy) continue;
 		if (from_up)
 			wp = r_list_get_n (r_graph_innodes (g->graph, vp), 0);
 		else
 			wp = r_graph_nth_neighbour (g->graph, vp, 0);
-		wpa = (ANode *)wp->data;
+		wpa = get_anode (wp);
 		if (!wpa->is_dummy) continue;
 
 		if (vm) {
@@ -984,7 +984,7 @@ static void adjust_directions (const AGraph *g, int i, int from_up, Sdb *D, Sdb 
 
 			for (k = wma->pos_in_layer + 1; k < wpa->pos_in_layer; ++k) {
 				const RGraphNode *w = g->layers[wma->layer].nodes[k];
-				const ANode *aw = (ANode *)w->data;
+				const ANode *aw = get_anode (w);
 
 				if (aw->is_dummy)
 					p &= hash_get_int (P, w);
@@ -993,7 +993,7 @@ static void adjust_directions (const AGraph *g, int i, int from_up, Sdb *D, Sdb 
 				hash_set (D, vm, from_up);
 				for (k = vma->pos_in_layer + 1; k < vpa->pos_in_layer; ++k) {
 					const RGraphNode *v = g->layers[vma->layer].nodes[k];
-					const ANode *av = (ANode *)v->data;
+					const ANode *av = get_anode (v);
 
 					if (av->is_dummy)
 						hash_set (D, v, from_up);
@@ -1003,8 +1003,8 @@ static void adjust_directions (const AGraph *g, int i, int from_up, Sdb *D, Sdb 
 
 		vm = vp;
 		wm = wp;
-		vma = (ANode *)vm->data;
-		wma = (ANode *)wm->data;
+		vma = get_anode (vm);
+		wma = get_anode (wm);
 	}
 }
 
@@ -1013,7 +1013,7 @@ static void place_single (const AGraph *g, int l, const RGraphNode *bm,
 						  const RGraphNode *bp, int from_up, int va) {
 	const RGraphNode *gk, *v = g->layers[l].nodes[va];
 	const ANode *ak;
-	ANode *av = (ANode *)v->data;
+	ANode *av = get_anode (v);
 	const RList *neigh;
 	const RListIter *itk;
 	int len;
@@ -1042,11 +1042,11 @@ static void place_single (const AGraph *g, int l, const RGraphNode *bm,
 
 	av->x = sum_x / len;
 	if (bm) {
-		const ANode *bma = (ANode *)bm->data;
+		const ANode *bma = get_anode (bm);
 		av->x = R_MAX (av->x, bma->x + dist_nodes (g, bm, v));
 	}
 	if (bp && !all_reversed_right (g, bp)) {
-		const ANode *bpa = (ANode *)bp->data;
+		const ANode *bpa = get_anode (bp);
 		av->x = R_MIN (av->x, bpa->x - dist_nodes (g, v, bp));
 	}
 }
@@ -1073,7 +1073,7 @@ static void collect_changes (const AGraph *g, int l, const RGraphNode *b,
 	     (is_left && i < e) || (!is_left && i >= s);
 		 i = is_left ? i + 1 : i - 1) {
 		const RGraphNode *v, *vi = g->layers[l].nodes[i];
-		const ANode *av, *avi = (ANode *)vi->data;
+		const ANode *av, *avi = get_anode (vi);
 		const RList *neigh;
 		const RListIter *it;
 		int c = 0;
@@ -1111,7 +1111,7 @@ static void collect_changes (const AGraph *g, int l, const RGraphNode *b,
 	}
 
 	if (b) {
-		const ANode *ab = (ANode *)b->data;
+		const ANode *ab = get_anode (b);
 
 		cx = R_NEW (struct len_pos_t);
 		cx->len = is_left ? INT_MAX : INT_MIN;
@@ -1135,8 +1135,8 @@ static void combine_sequences (const AGraph *g, int l,
 	t = (a + r) / 2;
 	vt = g->layers[l].nodes[t - 1];
 	vtp = g->layers[l].nodes[t];
-	at = (ANode *)vt->data;
-	atp = (ANode *)vtp->data;
+	at = get_anode (vt);
+	atp = get_anode (vtp);
 
 	collect_changes (g, l, bm, from_up, a, t, Rm, R_TRUE);
 	collect_changes (g, l, bp, from_up, t, r, Rp, R_FALSE);
@@ -1170,14 +1170,14 @@ static void combine_sequences (const AGraph *g, int l,
 
 	for (i = t - 2; i >= a; --i) {
 		const RGraphNode *gv = g->layers[l].nodes[i];
-		ANode *av = (ANode *)gv->data;
+		ANode *av = get_anode (gv);
 
 		av->x = R_MIN (av->x, at->x - dist_nodes (g, gv, vt));
 	}
 
 	for (i = t + 1; i < r; ++i) {
 		const RGraphNode *gv = g->layers[l].nodes[i];
-		ANode *av = (ANode *)gv->data;
+		ANode *av = get_anode (gv);
 
 		av->x = R_MAX (av->x, atp->x + dist_nodes (g, vtp, gv));
 	}
@@ -1211,12 +1211,12 @@ static void shift_right_dummies (const AGraph *g, int l, int right_pos) {
 
 	if (!is_valid_pos (g, l, right_pos)) return;
 	vr = g->layers[l].nodes[right_pos];
-	ar = (ANode *)vr->data;
+	ar = get_anode (vr);
 	if (ar->is_dummy) return;
 
 	if (!is_valid_pos (g, l, right_pos + 1)) return;
 	bp = g->layers[l].nodes[right_pos + 1];
-	abp = (ANode *)bp->data;
+	abp = get_anode (bp);
 	if (!abp->is_dummy) return;
 
 	if (all_reversed_right (g, bp)) {
@@ -1224,7 +1224,7 @@ static void shift_right_dummies (const AGraph *g, int l, int right_pos) {
 
 		for (k = right_pos + 1; k < g->layers[l].n_nodes; ++k) {
 			RGraphNode *vk = g->layers[l].nodes[k];
-			ANode *ak = (ANode *)vk->data;
+			ANode *ak = get_anode (vk);
 			int newv = ar->x + dist_nodes (g, vr, vk);
 
 			if (newv > ak->x) {
@@ -1235,7 +1235,7 @@ static void shift_right_dummies (const AGraph *g, int l, int right_pos) {
 					aj->x = newv;
 
 					vj = r_list_get_n (r_graph_innodes (g->graph, vj), 0);
-					aj = (ANode *)vj->data;
+					aj = get_anode (vj);
 				}
 
 				vj = vk;
@@ -1244,7 +1244,7 @@ static void shift_right_dummies (const AGraph *g, int l, int right_pos) {
 					aj->x = newv;
 
 					vj = r_graph_nth_neighbour (g->graph, vj, 0);
-					aj = (ANode *)vj->data;
+					aj = get_anode (vj);
 				}
 			}
 		}
@@ -1267,7 +1267,7 @@ static void original_traverse_l (const AGraph *g, Sdb *D, Sdb *P, int from_up) {
 		j = 0;
 		while (j < g->layers[i].n_nodes && !bm) {
 			const RGraphNode *gn = g->layers[i].nodes[j];
-			const ANode *an = (ANode *)gn->data;
+			const ANode *an = get_anode (gn);
 
 			if (an->is_dummy) {
 				va = 0;
@@ -1294,7 +1294,7 @@ static void original_traverse_l (const AGraph *g, Sdb *D, Sdb *P, int from_up) {
 		while (bm) {
 			const RGraphNode *bp = get_right_dummy (g, bm);
 			const ANode *bpa = NULL;
-			bma = (ANode *)bm->data;
+			bma = get_anode (bm);
 
 			if (!bp) {
 				va = bma->pos_in_layer + 1;
@@ -1307,7 +1307,7 @@ static void original_traverse_l (const AGraph *g, Sdb *D, Sdb *P, int from_up) {
 					set_dist_nodes (g, i, bma->pos_in_layer, va);
 				shift_right_dummies (g, i, vr - 1);
 			} else if (hash_get_int (D, bm) == from_up) {
-				bpa = (ANode *)bp->data;
+				bpa = get_anode (bp);
 				va = bma->pos_in_layer + 1;
 				vr = bpa->pos_in_layer;
 				place_sequence (g, i, bm, bp, from_up, va, vr);
@@ -1341,7 +1341,7 @@ static void place_original (AGraph *g) {
 		if (!an->is_dummy) continue;
 		const RGraphNode *right_v = get_right_dummy (g, gn);
 		if (right_v) {
-			const ANode *right = (ANode *)right_v->data;
+			const ANode *right = get_anode (right_v);
 
 			hash_set (D, gn, 0);
 			int dt_eq = right->x - an->x == dist_nodes (g, gn, right_v);
@@ -1410,7 +1410,7 @@ static void set_layout_bb(AGraph *g) {
 	for (i = 0; i < g->n_layers; i++) {
 		int rh = 0;
 		for (j = 0; j < g->layers[i].n_nodes; ++j) {
-			const ANode *n = (ANode *)(g->layers[i].nodes[j]->data);
+			const ANode *n = get_anode (g->layers[i].nodes[j]);
 			if (n->h > rh)
 				rh = n->h;
 		}
@@ -1426,7 +1426,7 @@ static void set_layout_bb(AGraph *g) {
 	/* vertical align */
 	for (i = 0; i < g->n_layers; ++i) {
 		for (j = 0; j < g->layers[i].n_nodes; ++j) {
-			ANode *n = (ANode *)(g->layers[i].nodes[j]->data);
+			ANode *n = get_anode (g->layers[i].nodes[j]);
 			n->y = 1;
 			for (k = 0; k < n->layer; ++k) {
 				n->y += g->layers[k].height + VERTICAL_NODE_SPACING;
@@ -1437,7 +1437,7 @@ static void set_layout_bb(AGraph *g) {
 	/* finalize x coordinate */
 	for (i = 0; i < g->n_layers; ++i) {
 		for (j = 0; j < g->layers[i].n_nodes; ++j) {
-			ANode *n = (ANode *)(g->layers[i].nodes[j]->data);
+			ANode *n = get_anode (g->layers[i].nodes[j]);
 			n->x -= n->w / 2;
 		}
 	}
@@ -1656,7 +1656,7 @@ static const RGraphNode *find_near_of (const AGraph *g, const RGraphNode *cur,
 	const RList *nodes = r_graph_get_nodes (g->graph);
 	const RListIter *it;
 	const RGraphNode *gn, *resgn = NULL;
-	const ANode *n, *acur = cur ? get_anode(cur) : NULL;
+	const ANode *n, *acur = cur ? get_anode (cur) : NULL;
 	int default_v = is_next ? INT_MIN : INT_MAX;
 	int start_y = acur ? acur->y : default_v;
 	int start_x = acur ? acur->x : default_v;
@@ -1727,7 +1727,7 @@ static void agraph_print_nodes(AGraph *g) {
 	}
 
 	/* draw current node now to make it appear on top */
-	agraph_print_node (g, get_anode(g->curnode));
+	agraph_print_node (g, get_anode (g->curnode));
 }
 
 /* print an edge between two nodes.
@@ -1815,7 +1815,7 @@ static int agraph_reload_nodes(AGraph *g) {
 	if (!ret)
 		return R_FALSE;
 	agraph_set_layout(g);
-	g->update_seek_on = get_anode(g->curnode);
+	g->update_seek_on = get_anode (g->curnode);
 	return R_TRUE;
 }
 
@@ -1829,12 +1829,12 @@ static void follow_nth(AGraph *g, int nth) {
 
 static void agraph_follow_true(AGraph *g) {
 	follow_nth(g, 0);
-	agraph_update_seek(g, get_anode(g->curnode), R_FALSE);
+	agraph_update_seek(g, get_anode (g->curnode), R_FALSE);
 }
 
 static void agraph_follow_false(AGraph *g) {
 	follow_nth(g, 1);
-	agraph_update_seek(g, get_anode(g->curnode), R_FALSE);
+	agraph_update_seek(g, get_anode (g->curnode), R_FALSE);
 }
 
 /* go back in the history of selected nodes, if we can */
@@ -1851,7 +1851,7 @@ static void agraph_undo_node(AGraph *g) {
 static void agraph_next_node(AGraph *g) {
 	history_push (g->history, g->curnode);
 	g->curnode = find_near_of (g, g->curnode, R_TRUE);
-	agraph_update_seek (g, get_anode(g->curnode), R_FALSE);
+	agraph_update_seek (g, get_anode (g->curnode), R_FALSE);
 }
 
 /* pushes the current node in the history and makes g->curnode the prev node in
@@ -1859,7 +1859,7 @@ static void agraph_next_node(AGraph *g) {
 static void agraph_prev_node(AGraph *g) {
 	history_push (g->history, g->curnode);
 	g->curnode = find_near_of (g, g->curnode, R_FALSE);
-	agraph_update_seek (g, get_anode(g->curnode), R_FALSE);
+	agraph_update_seek (g, get_anode (g->curnode), R_FALSE);
 }
 
 static int agraph_refresh(struct agraph_refresh_data *grd) {
