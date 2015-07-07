@@ -206,7 +206,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				continue;
 			}
 			if (string->length>minstr) {
-				r_cons_printf ("%"PFMT64d" %d %d %s\n",
+				r_cons_printf ("0x%"PFMT64x" %d %d %s\n",
 					addr, string->size,
 					string->length, string->string);
 			}
