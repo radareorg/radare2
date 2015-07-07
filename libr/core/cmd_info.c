@@ -320,7 +320,7 @@ static int cmd_info(void *data, const char *input) {
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				int idx = r_num_math (core->num, input +2);
 				int count = 0;
-				if (input[2]) {
+				if (input[2] && obj) {
 					r_list_foreach (obj->classes, iter, cls) {
 						if (idx != count++)
 							continue;
@@ -357,7 +357,7 @@ static int cmd_info(void *data, const char *input) {
 						goto done;
 					}
 				} else {
-					if (input[1] == 'l') { // "icl"
+					if (input[1] == 'l' && obj) { // "icl"
 						r_list_foreach (obj->classes, iter, cls) {
 							r_list_foreach (cls->methods, iter2, sym) {
 								const char *comma = iter2->p? " ": "";
