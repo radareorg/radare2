@@ -501,14 +501,17 @@ R_API const char *r_line_hist_get(int n);
 /* r_agraph */
 
 typedef struct r_ascii_node_t {
+	RGraphNode *gnode;
+	const char *title;
+	const char *body;
+
 	int x;
 	int y;
 	int w;
 	int h;
-	ut64 addr;
+
 	int layer;
 	int pos_in_layer;
-	char *body;
 	int is_dummy;
 	int is_reversed;
 	int class;
@@ -548,6 +551,7 @@ typedef struct r_ascii_graph_t {
 R_API RAGraph *r_agraph_new (RConsCanvas *can);
 R_API void r_agraph_free (RAGraph *g);
 R_API void r_agraph_reset (RAGraph *g);
+R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title, const char *body);
 #endif
 
 #ifdef __cplusplus

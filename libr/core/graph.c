@@ -74,15 +74,8 @@ struct agraph_refresh_data {
 #define L2(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,2)
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(g->can, x,y,x2,y2,c,0)
 
-static RANode *ascii_node_new (int is_dummy) {
-	RANode *res = R_NEW0 (RANode);
-	if (!res) return NULL;
-	res->layer = -1;
-	res->pos_in_layer = -1;
-	res->is_dummy = is_dummy;
-	res->is_reversed = R_FALSE;
-	res->class = -1;
-	return res;
+static char *get_title (ut64 addr) {
+	return r_str_newf ("0x%"PFMT64x, addr);
 }
 
 static void update_node_dimension(const RGraph *g, int is_small, int zoom) {
@@ -115,7 +108,7 @@ static void small_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		W(SMALLNODE_TEXT_CUR);
 		(void)G (-g->can->sx, -g->can->sy + 2);
 		snprintf (title, sizeof (title) - 1,
-				"0x%08"PFMT64x":", n->addr);
+				"%s:", n->title);
 		W (title);
 		(void)G (-g->can->sx, -g->can->sy + 3);
 		W (n->body);
@@ -153,10 +146,10 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	/* print the title */
 	if (cur) {
 		snprintf (title, sizeof (title)-1,
-				"[0x%08"PFMT64x"]", n->addr);
+				"[%s]", n->title);
 	} else {
 		snprintf (title, sizeof (title)-1,
-				" 0x%08"PFMT64x" ", n->addr);
+				" %s ", n->title);
 	}
 	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1))
 		W(title + delta_x);
@@ -250,9 +243,10 @@ static int **get_crossing_matrix (const RGraph *g,
 						ak = get_anode (gk);
 						at = get_anode (gt);
 						if (ak->layer != i || at->layer != i) {
-							 eprintf("%llx or %llx are not on the right layer (%d)\n", ak->addr, at->addr, i);
-							 eprintf("edge from %llx to %llx is wrong\n", ((RANode*)(gj->data))->addr, ak->addr);
-							 eprintf("edge from %llx to %llx is wrong\n\n", ((RANode*)(gs->data))->addr, at->addr);
+							 eprintf("\"%s\" (%d) or \"%s\" (%d) are not on the right layer (%d)\n",
+									 ak->title, ak->layer,
+									 at->title, at->layer,
+									 i);
 
 							 continue;
 						}
@@ -451,23 +445,22 @@ static void create_dummy_nodes (RAGraph *g) {
 		const RANode *from = get_anode (e->from);
 		const RANode *to = get_anode (e->to);
 		int diff_layer = R_ABS (from->layer - to->layer);
-		RGraphNode *prev = e->from;
+		RANode *prev = get_anode(e->from);
 		int i;
 
 		r_graph_del_edge (g->graph, e->from, e->to);
 		for (i = 1; i < diff_layer; ++i) {
-			RANode *n = ascii_node_new (R_TRUE);
-			RGraphNode *dummy;
+			RANode *dummy = r_agraph_add_node (g, NULL, NULL);
+			if (!dummy) return;
+			dummy->is_dummy = R_TRUE;
+			dummy->layer = from->layer + i;
+			dummy->is_reversed = is_reversed (g, e);
+			dummy->w = 1;
+			r_graph_add_edge (g->graph, prev->gnode, dummy->gnode);
 
-			if (!n) return;
-			n->layer = from->layer + i;
-			n->is_reversed = is_reversed (g, e);
-			n->w = 1;
-			dummy = r_graph_add_node (g->graph, n);
-			r_graph_add_edge (g->graph, prev, dummy);
 			prev = dummy;
 		}
-		r_graph_add_edge (g->graph, prev, e->to);
+		r_graph_add_edge (g->graph, prev->gnode, e->to);
 	}
 }
 
@@ -1441,33 +1434,28 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	if (!g_nodes) return R_FALSE;
 
 	r_list_foreach (fcn->bbs, iter, bb) {
-		RGraphNode *gn;
 		RANode *node;
+		char *title, *body;
 
 		if (bb->addr == UT64_MAX)
 			continue;
 
-		node = ascii_node_new (R_FALSE);
+		if (g->is_simple_mode) {
+			body = r_core_cmd_strf (core,
+					"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
+		}else {
+			body = r_core_cmd_strf (core,
+					"pDi %d @ 0x%08"PFMT64x, bb->size, bb->addr);
+		}
+		title = get_title (bb->addr);
+
+		node = r_agraph_add_node (g, title, body);
 		if (!node) {
 			sdb_free (g_nodes);
 			return R_FALSE;
 		}
 
-		if (g->is_simple_mode) {
-			node->body = r_core_cmd_strf (core,
-					"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
-		}else {
-			node->body = r_core_cmd_strf (core,
-					"pDi %d @ 0x%08"PFMT64x, bb->size, bb->addr);
-		}
-		node->addr = bb->addr;
-
-		gn = r_graph_add_node (g->graph, node);
-		if (!gn) {
-			sdb_free (g_nodes);
-			return R_FALSE;
-		}
-		hash_set (g_nodes, bb->addr, gn);
+		hash_set (g_nodes, bb->addr, node->gnode);
 	}
 
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -1499,22 +1487,17 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *ref;
 	RANode *node;
-	char *code;
+	char *code, *title, *body;
 
-	node = ascii_node_new (R_FALSE);
+	title = get_title (fcn->addr);
+	node = r_agraph_add_node (g, title, strdup (""));
 	if (!node) {
 		sdb_free (g_nodes);
 		return R_FALSE;
 	}
-	node->body = strdup ("");
-	node->addr = fcn->addr;
 	node->x = 10;
 	node->y = 3;
-	fcn_gn = r_graph_add_node (g->graph, node);
-	if (!fcn_gn) {
-		sdb_free (g_nodes);
-		return R_FALSE;
-	}
+	fcn_gn = node->gnode;
 	hash_set (g_nodes, fcn->addr, fcn_gn);
 
 	r_list_foreach (fcn->refs, iter, ref) {
@@ -1526,33 +1509,30 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (gn) continue;
 
 		RFlagItem *fi = r_flag_get_at (core->flags, ref->addr);
-		node = ascii_node_new (R_FALSE);
+
+		if (fi) {
+			body = strdup (fi->name);
+			body = r_str_concat (body, ":\n");
+		} else {
+			body = strdup ("");
+		}
+		code = r_core_cmd_strf (core,
+			"pi 4 @ 0x%08"PFMT64x, ref->addr);
+		body = r_str_concat (body, code);
+		body = r_str_concat (body, "...\n");
+		title = get_title (ref->addr);
+
+		node = r_agraph_add_node (g, title, body);
 		if (!node) {
 			sdb_free (g_nodes);
 			return R_FALSE;
 		}
-		if (fi) {
-			node->body = strdup (fi->name);
-			node->body = r_str_concat (node->body, ":\n");
-		} else {
-			node->body = strdup ("");
-		}
-		code = r_core_cmd_strf (core,
-			"pi 4 @ 0x%08"PFMT64x, ref->addr);
-		node->body = r_str_concat (node->body, code);
-		node->body = r_str_concat (node->body, "...\n");
-		node->addr = ref->addr;
 		node->x = 10;
 		node->y = 10;
 		free (code);
-		gn = r_graph_add_node (g->graph, node);
-		if (!gn) {
-			sdb_free (g_nodes);
-			return R_FALSE;
-		}
-		hash_set (g_nodes, ref->addr, gn);
+		hash_set (g_nodes, ref->addr, node->gnode);
 
-		r_graph_add_edge (g->graph, fcn_gn, gn);
+		r_graph_add_edge (g->graph, fcn_gn, node->gnode);
 	}
 
 	sdb_free (g_nodes);
@@ -1940,6 +1920,22 @@ static void agraph_init(RAGraph *g) {
 	g->graph = r_graph_new ();
 	g->zoom = ZOOM_DEFAULT;
 	g->movspeed = DEFAULT_SPEED;
+}
+
+R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
+                                 const char *body) {
+	RANode *res = R_NEW0 (RANode);
+	if (!res) return NULL;
+	res->title = title;
+	res->body = body;
+	res->layer = -1;
+	res->pos_in_layer = -1;
+	res->is_dummy = R_FALSE;
+	res->is_reversed = R_FALSE;
+	res->class = -1;
+
+	res->gnode = r_graph_add_node (g->graph, res);
+	return res;
 }
 
 R_API void r_agraph_reset (RAGraph *g) {
