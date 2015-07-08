@@ -1288,7 +1288,14 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	int kwidx = core->search->n_kws; //(int)r_config_get_i (core->config, "search.kwidx")-1;
 	RList *hits;
 	RIOMap *map;
-	int outmode = input[1];
+	int regexp = input[1] == '/';
+	char *end_cmd = strstr (input, " ");
+	int outmode;
+	if (!end_cmd) {
+		outmode = input[1];
+	} else {
+		outmode = *(end_cmd - 1);
+	}
 	if (outmode != 'j')
 		json = 0;
 
@@ -1322,7 +1329,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 
 		if (outmode == 0) hits = NULL;
 		else hits = r_core_asm_strsearch (core, input+2,
-				param->from, param->to, maxhits);
+				param->from, param->to, maxhits, regexp);
 
 		if (hits) {
 			r_list_foreach (hits, iter, hit) {
@@ -1998,8 +2005,9 @@ static int cmd_search(void *data, const char *input) {
 	case 'c': /* search asm */
 		if (input[1] == '?') {
 			const char* help_msg[] = {
-				"Usage:", "/c [inst]", "Search for asm",
+				"Usage:", "/c [inst]", " Search for asm",
 				"/c ", "instr", "search for instruction 'instr'",
+				"/c/ ", "instr", "search for instruction that matches regexp 'instr'",
 				"/c ", "instr1;instr2", "search for instruction 'instr1' followed by 'instr2'",
 				"/cj ", "instr", "json output",
 				"/c* ", "instr", "r2 command output",

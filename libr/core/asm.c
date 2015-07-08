@@ -59,15 +59,17 @@ R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to
 
 #define OPSZ 8
 // TODO: add support for byte-per-byte opcode search
-R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits) {
+R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp) {
 	RCoreAsmHit *hit;
 	RAsmOp op;
 	RList *hits;
 	ut64 at, toff = core->offset;
 	ut8 *buf;
+	RRegex* rx = NULL;
 	char *tok, *tokens[1024], *code = NULL, *ptr;
 	int idx, tidx = 0, ret, len;
 	int tokcount, matchcount, count = 0;
+	int matches = 0;
 
 	if (!*input)
 		return NULL;
@@ -96,6 +98,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	tokens[tokcount] = NULL;
 	r_cons_break (NULL, NULL);
 	for (at = from, matchcount = 0; at < to; at += core->blocksize-OPSZ) {
+		matches = 0;
 		if (r_cons_singleton ()->breaked)
 			break;
 		ret = r_io_read_at (core->io, at, buf, core->blocksize);
@@ -111,7 +114,15 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				matchcount = 0;
 				continue;
 			}
-			if (tokens[matchcount] && strstr (op.buf_asm, tokens[matchcount])) {
+			if (tokens[matchcount]) {
+				if (!regexp) matches = strstr(op.buf_asm, tokens[matchcount]);
+				else {
+					rx = r_regex_new (tokens[matchcount], "");
+					matches = r_regex_exec (rx, op.buf_asm, 0, 0, 0) == 0;
+					r_regex_free (rx);
+				}
+			}
+			if (matches) {
 				code = r_str_concatf (code, "%s; ", op.buf_asm);
 				if (matchcount == tokcount-1) {
 					if (tokcount == 1)
