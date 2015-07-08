@@ -115,7 +115,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				continue;
 			}
 			if (tokens[matchcount]) {
-				if (!regexp) matches = strstr(op.buf_asm, tokens[matchcount]);
+				if (!regexp) matches = strstr(op.buf_asm, tokens[matchcount]) != NULL;
 				else {
 					rx = r_regex_new (tokens[matchcount], "");
 					matches = r_regex_exec (rx, op.buf_asm, 0, 0, 0) == 0;
