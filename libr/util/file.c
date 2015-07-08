@@ -414,7 +414,7 @@ R_API boolt r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 	int ret;
 	FILE *fd;
 	if (!file || !*file || !buf) {
-		eprintf ("RET %p, buf %p\n", file, buf);
+		eprintf ("r_file_dump file: %s buf: %p\n", file, buf);
 		return R_FALSE;
 	}
 	if (append) {
