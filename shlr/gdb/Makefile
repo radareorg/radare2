@@ -14,7 +14,6 @@ MINOR=1
 LD=$(CC)
 LDFLAGS+=-L${LIBR}/socket -lr_socket
 LDFLAGS+=-L${LIBR}/util -lr_util
-include ../../shlr/zip/deps.mk
 #OSTYPE=windows
 include ../../libr/socket/deps.mk
 
