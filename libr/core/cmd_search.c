@@ -2009,7 +2009,9 @@ static int cmd_search(void *data, const char *input) {
 				"/c ", "instr", "search for instruction 'instr'",
 				"/c/ ", "instr", "search for instruction that matches regexp 'instr'",
 				"/c ", "instr1;instr2", "search for instruction 'instr1' followed by 'instr2'",
+				"/c/ ", "instr1;instr2", "search for regex instruction 'instr1' followed by regex 'instr2'",
 				"/cj ", "instr", "json output",
+				"/c/j ", "instr", "regex search with json output",
 				"/c* ", "instr", "r2 command output",
 				NULL};
 			r_core_cmd_help (core, help_msg);
