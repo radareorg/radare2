@@ -18,7 +18,7 @@ static const char *instrs[] = {
 	[V810_MUL]			= "mul",
 	[V810_DIV]			= "div",
 	[V810_MULU]			= "mulu",
-	[V810_DIVU]			= "div",
+	[V810_DIVU]			= "divu",
 	[V810_OR]			= "or",
 	[V810_AND]			= "and",
 	[V810_XOR]			= "xor",
@@ -57,8 +57,8 @@ static const char *instrs[] = {
 	[V810_TRAP]			= "trap",
 	[V810_HALT]			= "halt",
 	[V810_RETI]			= "reti",
-	[V810_DI]			= "di",
-	[V810_EI]			= "ei",
+	[V810_SEI]			= "sei",
+	[V810_CLI]			= "cli",
 };
 
 static const char *bit_instrs[] = {
@@ -177,6 +177,10 @@ static int decode_imm_reg(const ut16 instr, struct v810_cmd *cmd) {
 			snprintf(cmd->operands, V810_INSTR_MAXLEN - 1, "%u, r%u",
 					immed & 0x1F, get_reg2(instr));
 			break;
+		case V810_TRAP:
+			snprintf(cmd->operands, V810_INSTR_MAXLEN - 1, "%u",
+					immed & 0x1F);
+			break;
 	}
 
 	return 2;
@@ -227,14 +231,21 @@ static int decode_3operands(const ut8 *instr, struct v810_cmd *cmd) {
 
 	snprintf(cmd->instr, V810_INSTR_MAXLEN - 1, "%s",
 			instrs[get_opcode(word1)]);
-	snprintf(cmd->operands, V810_INSTR_MAXLEN - 1, "0x%x, r%d, r%d",
-			word2, get_reg1(word1), get_reg2(word1));
+
+	if (get_opcode(word1) == V810_ADDI) {
+		snprintf(cmd->operands, V810_INSTR_MAXLEN - 1, "%d, r%d, r%d",
+				(st16) word2, get_reg1(word1), get_reg2(word1));
+	} else {
+		snprintf(cmd->operands, V810_INSTR_MAXLEN - 1, "0x%x, r%d, r%d",
+				word2, get_reg1(word1), get_reg2(word1));
+	}
 
 	return 4;
 }
 
 static int decode_load_store(const ut8 *instr, struct v810_cmd *cmd) {
-	ut16 word1, word2;
+	ut16 word1;
+	st16 word2;
 
 	r_mem_copyendian((ut8*)&word1, instr, 2, LIL_ENDIAN);
 	r_mem_copyendian((ut8*)&word2, instr + 2, 2, LIL_ENDIAN);
@@ -246,15 +257,22 @@ static int decode_load_store(const ut8 *instr, struct v810_cmd *cmd) {
 		case V810_STB:
 		case V810_STH:
 		case V810_STW:
+		case V810_OUTB:
+		case V810_OUTH:
+		case V810_OUTW:
 			snprintf(cmd->operands, V810_INSTR_MAXLEN - 1,
-					"r%d, 0x%x[r%d]",
+					"r%d, %d[r%d]",
 					get_reg2(word1), word2, get_reg1(word1));
 			break;
 		case V810_LDB:
 		case V810_LDH:
 		case V810_LDW:
+		case V810_INB:
+		case V810_INH:
+		case V810_INW:
+		case V810_CAXI:
 			snprintf(cmd->operands, V810_INSTR_MAXLEN - 1,
-					"0x%x[r%d], r%d",
+					"%d[r%d], r%d",
 					word2, get_reg1(word1), get_reg2(word1));
 			break;
 	}
@@ -339,14 +357,14 @@ int v810_decode_command(const ut8 *instr, struct v810_cmd *cmd) {
 		case V810_CMP_IMM5:
 		case V810_SHL_IMM5:
 		case V810_SHR_IMM5:
-		case V810_EI:
+		case V810_CLI:
 		case V810_SAR_IMM5:
 		case V810_TRAP:
 		case V810_RETI:
 		case V810_HALT:
 		case V810_LDSR:
 		case V810_STSR:
-		case V810_DI:
+		case V810_SEI:
 			ret = decode_imm_reg(in, cmd);
 			break;
 		case V810_MOVEA:
