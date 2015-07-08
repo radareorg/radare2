@@ -455,6 +455,7 @@ R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int
 }
 
 R_API void r_buf_deinit(RBuffer *b) {
+	if (!b) return;
 	if (b->sparse) {
 		r_list_free (b->sparse);
 		b->sparse = NULL;
