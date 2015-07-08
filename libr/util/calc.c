@@ -151,6 +151,10 @@ R_API const char *r_num_calc_index (RNum *num, const char *p) {
 		num->nc.calc_buf = p;
 		num->nc.calc_len = strlen (p);
 		num->nc.calc_i = 0;
+	} else {
+		num->nc.calc_buf = NULL;
+		num->nc.calc_len = 0;
+		num->nc.calc_i = 0;
 	}
 	//if (num->nc.calc_i>num->nc.calc_len) return NULL;
 	return num->nc.calc_buf + num->nc.calc_i;
