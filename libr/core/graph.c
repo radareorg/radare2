@@ -14,7 +14,7 @@ static int mousemode = 0;
 #define HORIZONTAL_NODE_SPACING 12
 #define VERTICAL_NODE_SPACING 4
 #define MIN_NODE_WIDTH 18
-#define MIN_NODE_HEIGTH BORDER_HEIGHT
+#define MIN_NODE_HEIGTH BORDER_HEIGHT + 1
 #define INIT_HISTORY_CAPACITY 16
 #define TITLE_LEN 128
 #define DEFAULT_SPEED 1
@@ -64,16 +64,14 @@ typedef struct ascii_node {
 	ut64 addr;
 	int layer;
 	int pos_in_layer;
-	char *text;
+	char *body;
 	int is_dummy;
 	int is_reversed;
 	int class;
 } ANode;
 
 typedef struct ascii_graph {
-	RCore *core;
 	RConsCanvas *can;
-	RAnalFunction *fcn;
 	RGraph *graph;
 	const RGraphNode *curnode;
 
@@ -103,7 +101,9 @@ typedef struct ascii_graph {
 } AGraph;
 
 struct agraph_refresh_data {
+	RCore *core;
 	AGraph *g;
+	RAnalFunction **fcn;
 	int fs;
 };
 
@@ -139,7 +139,7 @@ static void update_node_dimension(const RGraph *g, int is_small, int zoom) {
 			n->h = 0;
 			n->w = strlen (SMALLNODE_TEXT);
 		} else {
-			n->w = r_str_bounds (n->text, &n->h);
+			n->w = r_str_bounds (n->body, &n->h);
 			n->w += BORDER_WIDTH;
 			n->h += BORDER_HEIGHT;
 			/* scale node by zoom */
@@ -161,7 +161,7 @@ static void small_ANode_print(const AGraph *g, const ANode *n, int cur) {
 				"0x%08"PFMT64x":", n->addr);
 		W (title);
 		(void)G (-g->can->sx, -g->can->sy + 3);
-		W (n->text);
+		W (n->body);
 	} else {
 		W(SMALLNODE_TEXT);
 	}
@@ -173,7 +173,7 @@ static void normal_ANode_print(const AGraph *g, const ANode *n, int cur) {
 	unsigned int delta_x = 0, delta_txt_x = 0;
 	unsigned int delta_y = 0, delta_txt_y = 0;
 	char title[TITLE_LEN];
-	char *text;
+	char *body;
 	int x, y;
 
 #if SHOW_OUT_OF_SCREEN_NODES
@@ -214,26 +214,26 @@ static void normal_ANode_print(const AGraph *g, const ANode *n, int cur) {
 
 	if (G(n->x + MARGIN_TEXT_X + delta_x + center_x - delta_txt_x,
 			n->y + MARGIN_TEXT_Y + delta_y + center_y - delta_txt_y)) {
-		unsigned int text_x = center_x >= delta_x ? 0 : delta_x - center_x;
-		unsigned int text_y = center_y >= delta_y ? 0 : delta_y - center_y;
-		unsigned int text_h = BORDER_HEIGHT >= n->h ? 1 : n->h - BORDER_HEIGHT;
+		unsigned int body_x = center_x >= delta_x ? 0 : delta_x - center_x;
+		unsigned int body_y = center_y >= delta_y ? 0 : delta_y - center_y;
+		unsigned int body_h = BORDER_HEIGHT >= n->h ? 1 : n->h - BORDER_HEIGHT;
 
-		if (g->zoom < ZOOM_DEFAULT) text_h--;
-		if (text_y + 1 <= text_h) {
-			text = r_str_crop (n->text,
-					text_x, text_y,
+		if (g->zoom < ZOOM_DEFAULT) body_h--;
+		if (body_y + 1 <= body_h) {
+			body = r_str_crop (n->body,
+					body_x, body_y,
 					n->w - BORDER_WIDTH,
-					text_h);
-			if (text) {
-				W (text);
+					body_h);
+			if (body) {
+				W (body);
 				if (g->zoom < ZOOM_DEFAULT) W ("\n");
-				free (text);
+				free (body);
 			} else {
-				W (n->text);
+				W (n->body);
 			}
 		}
-		/* print some dots when the text is cropped because of zoom */
-		if (text_y <= text_h && g->zoom < ZOOM_DEFAULT) {
+		/* print some dots when the body is cropped because of zoom */
+		if (body_y <= body_h && g->zoom < ZOOM_DEFAULT) {
 			char *dots = "...";
 			if (delta_x < strlen(dots)) {
 				dots += delta_x;
@@ -669,7 +669,7 @@ static Sdb *compute_vertical_nodes (const AGraph *g) {
 					RGraphNode *next = gn;
 					const ANode *anext = get_anode (next);
 
-					while (next && anext->is_dummy) {
+					while (anext->is_dummy) {
 						r_list_append (vert, next);
 						next = r_graph_nth_neighbour (g->graph, next, 0);
 						if (!next) break;
@@ -1477,13 +1477,13 @@ static void set_layout_callgraph(AGraph *g) {
 }
 
 /* build the RGraph inside the AGraph g, starting from the Basic Blocks */
-static int get_bbnodes(AGraph *g) {
+static int get_bbnodes(AGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
 	Sdb *g_nodes = sdb_new0 ();
 	if (!g_nodes) return R_FALSE;
 
-	r_list_foreach (g->fcn->bbs, iter, bb) {
+	r_list_foreach (fcn->bbs, iter, bb) {
 		RGraphNode *gn;
 		ANode *node;
 
@@ -1497,10 +1497,10 @@ static int get_bbnodes(AGraph *g) {
 		}
 
 		if (g->is_simple_mode) {
-			node->text = r_core_cmd_strf (g->core,
+			node->body = r_core_cmd_strf (core,
 					"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
 		}else {
-			node->text = r_core_cmd_strf (g->core,
+			node->body = r_core_cmd_strf (core,
 					"pDi %d @ 0x%08"PFMT64x, bb->size, bb->addr);
 		}
 		node->addr = bb->addr;
@@ -1513,7 +1513,7 @@ static int get_bbnodes(AGraph *g) {
 		hash_set (g_nodes, bb->addr, gn);
 	}
 
-	r_list_foreach (g->fcn->bbs, iter, bb) {
+	r_list_foreach (fcn->bbs, iter, bb) {
 		RGraphNode *u, *v;
 		if (bb->addr == UT64_MAX)
 			continue;
@@ -1535,7 +1535,7 @@ static int get_bbnodes(AGraph *g) {
 
 /* build the RGraph inside the AGraph g, starting from the Call Graph
  * information */
-static int get_cgnodes(AGraph *g) {
+static int get_cgnodes(AGraph *g, RCore *core, RAnalFunction *fcn) {
 #if FCN_OLD
 	Sdb *g_nodes = sdb_new0 ();
 	RGraphNode *fcn_gn;
@@ -1549,8 +1549,8 @@ static int get_cgnodes(AGraph *g) {
 		sdb_free (g_nodes);
 		return R_FALSE;
 	}
-	node->text = strdup ("");
-	node->addr = g->fcn->addr;
+	node->body = strdup ("");
+	node->addr = fcn->addr;
 	node->x = 10;
 	node->y = 3;
 	fcn_gn = r_graph_add_node (g->graph, node);
@@ -1558,9 +1558,9 @@ static int get_cgnodes(AGraph *g) {
 		sdb_free (g_nodes);
 		return R_FALSE;
 	}
-	hash_set (g_nodes, g->fcn->addr, fcn_gn);
+	hash_set (g_nodes, fcn->addr, fcn_gn);
 
-	r_list_foreach (g->fcn->refs, iter, ref) {
+	r_list_foreach (fcn->refs, iter, ref) {
 		/* XXX: something is broken, why there are duplicated
 		 *      nodes here?! goto check fcn->refs!! */
 		/* avoid dups wtf */
@@ -1568,28 +1568,28 @@ static int get_cgnodes(AGraph *g) {
 		gn = hash_get_rnode (g_nodes, ref->addr);
 		if (gn) continue;
 
-		RFlagItem *fi = r_flag_get_at (g->core->flags, ref->addr);
+		RFlagItem *fi = r_flag_get_at (core->flags, ref->addr);
 		node = ascii_node_new (R_FALSE);
 		if (!node) {
 			sdb_free (g_nodes);
 			return R_FALSE;
 		}
 		if (fi) {
-			node->text = strdup (fi->name);
-			node->text = r_str_concat (node->text, ":\n");
+			node->body = strdup (fi->name);
+			node->body = r_str_concat (node->body, ":\n");
 		} else {
-			node->text = strdup ("");
+			node->body = strdup ("");
 		}
-		code = r_core_cmd_strf (g->core,
+		code = r_core_cmd_strf (core,
 			"pi 4 @ 0x%08"PFMT64x, ref->addr);
-		node->text = r_str_concat (node->text, code);
-		node->text = r_str_concat (node->text, "...\n");
+		node->body = r_str_concat (node->body, code);
+		node->body = r_str_concat (node->body, "...\n");
 		node->addr = ref->addr;
 		node->x = 10;
 		node->y = 10;
 		free (code);
 		gn = r_graph_add_node (g->graph, node);
-		if (!gn) { 
+		if (!gn) {
 			sdb_free (g_nodes);
 			return R_FALSE;
 		}
@@ -1606,15 +1606,15 @@ static int get_cgnodes(AGraph *g) {
 	return R_TRUE;
 }
 
-static int reload_nodes(AGraph *g) {
+static int reload_nodes(AGraph *g, RCore *core, RAnalFunction *fcn) {
 	int ret;
 
 	if (g->is_callgraph) {
-		ret = get_cgnodes(g);
+		ret = get_cgnodes(g, core, fcn);
 		if (!ret)
 			return R_FALSE;
 	} else {
-		ret = get_bbnodes(g);
+		ret = get_bbnodes(g, core, fcn);
 		if (!ret)
 			return R_FALSE;
 	}
@@ -1831,11 +1831,11 @@ static void agraph_set_zoom (AGraph *g, int v) {
 /* reload all the info in the nodes, depending on the type of the graph
  * (callgraph, CFG, etc.), set the default layout for these nodes and center
  * the screen on the selected one */
-static int agraph_reload_nodes(AGraph *g) {
+static int agraph_reload_nodes(AGraph *g, RCore *core, RAnalFunction *fcn) {
 	int ret;
 
-	r_graph_reset (g->graph);
-	ret = reload_nodes(g);
+	agraph_reset (g);
+	ret = reload_nodes(g, core, fcn);
 	if (!ret)
 		return R_FALSE;
 	agraph_set_layout(g);
@@ -1888,18 +1888,20 @@ static void agraph_prev_node(AGraph *g) {
 
 static int agraph_refresh(struct agraph_refresh_data *grd) {
 	char title[TITLE_LEN];
+	RCore *core = grd->core;
 	AGraph *g = grd->g;
+	RAnalFunction **fcn = grd->fcn;
 	const int fs = grd->fs;
 	int h, w = r_cons_get_size (&h);
 	int ret;
 
 	/* allow to change the current function only during debugging */
-	if (g->is_instep && g->core->io->debug) {
+	if (g->is_instep && core->io->debug) {
 		RAnalFunction *f;
-		r_core_cmd0 (g->core, "sr pc");
-		f = r_anal_get_fcn_in (g->core->anal, g->core->offset, 0);
-		if (f && f != g->fcn) {
-			g->fcn = f;
+		r_core_cmd0 (core, "sr pc");
+		f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+		if (f && f != *fcn) {
+			*fcn = f;
 			g->need_reload_nodes = R_TRUE;
 		}
 	}
@@ -1907,7 +1909,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	/* look for any change in the state of the graph
 	 * and update what's necessary */
 	if (g->need_reload_nodes) {
-		ret = agraph_reload_nodes(g);
+		ret = agraph_reload_nodes(g, core, *fcn);
 		if (!ret)
 			return R_FALSE;
 
@@ -1948,7 +1950,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		(void)G (-g->can->sx, -g->can->sy);
 		snprintf (title, sizeof (title)-1,
 			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
-			g->fcn->addr, r_stack_size (g->history), g->fcn->name,
+			(*fcn)->addr, r_stack_size (g->history), (*fcn)->name,
 			g->graph->n_nodes, g->graph->n_edges, g->zoom, g->is_callgraph?"CG":"BB",
 			mousemodes[mousemode], g->movspeed);
 		W (title);
@@ -1960,18 +1962,18 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		r_cons_canvas_print_region (g->can);
 	}
 	if (fs) {
-		const char *cmdv = r_config_get (g->core->config, "cmd.gprompt");
+		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
 		if (cmdv && *cmdv) {
 			r_cons_gotoxy (0, 1);
-			r_core_cmd0 (g->core, cmdv);
+			r_core_cmd0 (core, cmdv);
 		}
 	}
 	r_cons_flush_nonewline ();
 	return R_TRUE;
 }
 
-static void agraph_toggle_speed (AGraph *g) {
-	int alt = r_config_get_i (g->core->config, "graph.scroll");
+static void agraph_toggle_speed (AGraph *g, RCore *core) {
+	int alt = r_config_get_i (core->config, "graph.scroll");
 
 	g->movspeed = g->movspeed == DEFAULT_SPEED ? alt : DEFAULT_SPEED;
 }
@@ -1986,16 +1988,23 @@ static void agraph_init(AGraph *g) {
 	g->history = r_stack_new (INIT_HISTORY_CAPACITY);
 	g->graph = r_graph_new ();
 	g->zoom = ZOOM_DEFAULT;
-	g->movspeed = r_config_get_i (g->core->config, "graph.scroll");
+	g->movspeed = DEFAULT_SPEED;
 }
 
-static AGraph *agraph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {
+static void agraph_reset (AGraph *g) {
+	r_graph_reset (g->graph);
+	r_stack_free (g->history);
+
+	g->update_seek_on = NULL;
+	g->x = g->y = g->w = g->h = 0;
+	g->history = r_stack_new (INIT_HISTORY_CAPACITY);
+}
+
+static AGraph *agraph_new(RConsCanvas *can) {
 	AGraph *g = R_NEW0 (AGraph);
 	if (!g) return NULL;
 
-	g->core = core;
 	g->can = can;
-	g->fcn = fcn;
 
 	agraph_init(g);
 	return g;
@@ -2029,15 +2038,18 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	// disable colors in disasm because canvas doesnt supports ansi text yet
 	r_config_set_i (core->config, "scr.color", 0);
 
-	g = agraph_new (core, can, fcn);
+	g = agraph_new (can);
 	if (!g) {
 		is_error = R_TRUE;
 		goto err_graph_new;
 	}
+	g->movspeed = r_config_get_i (core->config, "graph.scroll");
 
 	grd = R_NEW (struct agraph_refresh_data);
 	grd->g = g;
 	grd->fs = is_interactive;
+	grd->core = core;
+	grd->fcn = &fcn;
 
 	core->cons->event_data = grd;
 	core->cons->event_resize = (RConsEvent)agraph_refresh;
@@ -2105,7 +2117,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				else
 					r_core_cmd0 (core, "aes;.dr*");
 			}
-			ret = agraph_reload_nodes(g);
+			ret = agraph_reload_nodes(g, core, fcn);
 			if (!ret)
 				is_error = R_TRUE;
 			break;
@@ -2120,7 +2132,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				else
 					r_core_cmd0 (core, "aeso;.dr*");
 
-				ret = agraph_reload_nodes(g);
+				ret = agraph_reload_nodes(g, core, fcn);
 				if (!ret)
 					is_error = R_TRUE;
 			}
@@ -2254,7 +2266,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  // refresh graph
 			  break;
 		case 'w':
-			  agraph_toggle_speed (g);
+			  agraph_toggle_speed (g, core);
 			  break;
 		case -1: // EOF
 		case 'q':
