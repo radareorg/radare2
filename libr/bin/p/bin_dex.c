@@ -844,6 +844,7 @@ static RList* sections(RBinFile *arch) {
 		strcpy (ptr->name, "constpool");
 		ptr->size = ptr->vsize = fsym;
 		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
+		ptr->size = bin->code_from - ptr->vaddr; // fix size
 		ptr->srwx = 4;
 		r_list_append (ret, ptr);
 	}
