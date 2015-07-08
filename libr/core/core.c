@@ -141,13 +141,19 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		// push state
 		{
-			if (str[1]) {
+			if (str[0] && str[1]) {
+				const char *q;
 				char *o = strdup (str+1);
-				const char *q = r_num_calc_index (core->num, NULL);
-				r_str_replace_char (o, ']', 0);
-				n = r_num_math (core->num, o);
-				r_num_calc_index (core->num, q);
-				free (o);
+				if (o) {
+					q = r_num_calc_index (core->num, NULL);
+					if (q) {
+						if (r_str_replace_char (o, ']', 0)>0) {
+							n = r_num_math (core->num, o);
+							r_num_calc_index (core->num, q);
+						}
+					}
+					free (o);
+				}
 			}
 		}
 		// pop state

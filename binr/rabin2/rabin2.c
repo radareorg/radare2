@@ -129,8 +129,13 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 	int res = R_FALSE;
 
 	if (!bf || !o || !filename ) return R_FALSE;
+	if (!arch) arch = "unknown";
 
 	path = strdup (filename);
+	if (!bytes) {
+		eprintf ("error: BinFile buffer is empty\n");
+		return R_FALSE;
+	}
 
 	// XXX: Wrong for w32 (/)
 

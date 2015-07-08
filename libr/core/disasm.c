@@ -1920,11 +1920,28 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				} else if (n == n32 && (n32>-512 && n32 <512)) {
 					r_cons_printf (" ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
 				} else {
-					const char *flag = "";
+					const char *kind, *flag = "";
+					char *msg2 = NULL;
 					f = r_flag_get_i (core->flags, n);
-					if (f) flag = f->name;
+					if (f) {
+						flag = f->name;
+					} else {
+						msg2 = calloc(sizeof(char), len);
+						r_io_read_at (core->io, n, (ut8*)msg2, len-1);
+						kind = r_anal_data_kind (core->anal, p, (const ut8*)msg2, len-1);
+						if (kind && !strcmp (kind, "text")) {
+							r_str_filter (msg2, 0);
+							if (*msg2) {
+								char *lala = r_str_newf ("\"%s\"", msg2);
+								free (msg2);
+								flag = msg2 = lala;
+							}
+						}
+					}
+					// try to guess what's in there
 					r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x" %s",
 							p, ds->analop.refptr, n, flag);
+					free (msg2);
 				}
 			}
 			if (ds->show_color)

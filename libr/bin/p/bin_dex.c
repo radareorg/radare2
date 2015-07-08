@@ -338,10 +338,9 @@ static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
 }
 
 static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct dex_class_t *c, RBinClass *cls) {
-	int *methods;
+	int i, *methods;
 	char *name;
 	ut64 SF, IF, DM, VM;
-	int i, j;
 	const ut8 *p, *p_end;
 	char *class_name = dex_class_name (bin, c);
 	if (c->class_data_offset==0) {
@@ -366,7 +365,7 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 //eprintf ("SF %d IF %d DM %d VM %d\n", SF, IF, DM, VM);
 	dprintf ("  static fields: %u\n", (ut32)SF);
 	/* static fields */
-	for (j=0; j<SF; j++) {
+	for (i=0; i<SF; i++) {
 		ut64 FI, FA;
 		p = r_uleb128 (p, p_end-p, &FI);
 		p = r_uleb128 (p, p_end-p, &FA);
@@ -377,7 +376,7 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 	}
 	/* instance fields */
 	dprintf ("  instance fields: %u\n", (ut32)IF);
-	for (j=0; j<IF; j++) {
+	for (i=0; i<IF; i++) {
 		ut64 FI, FA;
 		p = r_uleb128 (p, p_end-p, &FI);
 		p = r_uleb128 (p, p_end-p, &FA);
@@ -393,7 +392,7 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 	}
 #endif
 	ut64 omi = 0;
-	for (j=0; j<DM; j++) {
+	for (i=0; i<DM; i++) {
 		char *method_name, *flag_name;
 		ut64 MI, MA, MC;
 		p = r_uleb128 (p, p_end-p, &MI);
@@ -463,7 +462,7 @@ encoded_catch_handler_list handlers
 	}
 	/* virtual methods */
 	dprintf ("  virtual methods: %u\n", (ut32)VM);
-	for (j=0; j<VM; j++) {
+	for (i=0; i<VM; i++) {
 		ut64 MI, MA, MC;
 		p = r_uleb128 (p, p_end-p, &MI);
 		p = r_uleb128 (p, p_end-p, &MA);
@@ -484,8 +483,7 @@ encoded_catch_handler_list handlers
 }
 
 static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
-	int i, j;
-	const ut8 *p, *p_end;
+	int i;
 	int *methods = NULL;
 
 	// doublecheck??

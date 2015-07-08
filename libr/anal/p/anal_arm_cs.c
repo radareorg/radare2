@@ -23,7 +23,7 @@
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) insn->detail->arm64.operands[x].mem.disp
 #define ISREG(x) insn->detail->arm.operands[x].type == ARM_OP_REG
-#define ISREG64(x) insn->detail->arm64.operands[x].type == ARM_OP_REG
+#define ISREG64(x) insn->detail->arm64.operands[x].type == ARM64_OP_REG
 // TODO scale and disp
 
 /* arm64 */

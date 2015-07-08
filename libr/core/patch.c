@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2014 - pancake */
+/* radare - LGPL - Copyright 2011-2015 - pancake */
 
 #include <r_core.h>
 
@@ -29,6 +29,58 @@ R_API int r_core_patch_line (RCore *core, char *str) {
 	return 1;
 }
 
+static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
+	char tmp[128];
+	char *s, *p, *q, *off;
+	RBuffer *b = r_buf_new ();
+
+	if (!b) return 0;
+	p = off = strdup (str);;
+	if (!p) {
+		r_buf_free (b);
+		return 0;
+	}
+	for (;*p;) {
+		if (*p=='\n') {
+			*p++ = 0;
+		} else {
+			p++;
+			continue;
+		}
+		if (*str=='}')
+			break;
+		if ((q=strstr (str, "${"))) {
+			char *end = strchr (q+2,'}');
+			if (end) {
+				*q = *end = 0;
+				*noff = r_num_math (core->num, q+2);
+				r_buf_append_bytes (b, (const ut8*)str, strlen (str));
+				snprintf (tmp, sizeof (tmp), "0x%08"PFMT64x, *noff);
+				r_buf_append_bytes (b, (const ut8*)tmp, strlen (tmp));
+				r_buf_append_bytes (b, (const ut8*)end+1, strlen (end+1));
+			}
+		} else r_buf_append_bytes (b, (const ut8*)str, strlen (str));
+		str = p;
+	}
+
+	s = r_buf_to_string (b);
+	r_egg_load (core->egg, s, 0);
+	free (s);
+
+	r_egg_compile (core->egg);
+	r_egg_assemble (core->egg);
+
+	r_buf_free (b);
+	b = r_egg_get_bin (core->egg);
+
+	if (strcmp (off, "+"))
+		*noff = r_num_math (core->num, off);
+	r_core_write_at (core, *noff, b->buf, b->length);
+	*noff += b->length;
+	free (off);
+	return 1;
+}
+
 R_API int r_core_patch (RCore *core, const char *patch) {
 	char *p, *p0, *str;
 	ut64 noff = 0LL;
@@ -36,7 +88,7 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 	p = p0 = str = strdup (patch);
 	if (!p)
 		return 0;
-	for (; ; p++) {
+	for (; *p; p++) {
 		/* read until newline */
 		if (!*p || *p=='\n') *p++ = 0; else continue;
 
@@ -53,50 +105,9 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 		case '!':
 			r_core_cmd0 (core, str);
 			break;
-		case '{': {
-			  char tmp[128];
-			  char *s, *q, *off = strdup (str);
-			  RBuffer *b = r_buf_new ();
-
-			  str = p;
-			  for (;;) {
-				  if (*p=='\n') {
-					*p++ = 0;
-				  } else continue;
-				  if (*str=='}')
-					  break;
-				  if ((q=strstr (str, "${"))) {
-					  char *end = strchr (q+2,'}');
-					  if (end) {
-						  *q = *end = 0;
-						  noff = r_num_math (core->num, q+2);
-						  r_buf_append_bytes (b, (const ut8*)str, strlen (str));
-						  snprintf (tmp, sizeof (tmp), "0x%08"PFMT64x, noff);
-						  r_buf_append_bytes (b, (const ut8*)tmp, strlen (tmp));
-						  r_buf_append_bytes (b, (const ut8*)end+1, strlen (end+1));
-					  }
-				  } else r_buf_append_bytes (b, (const ut8*)str, strlen (str));
-				  str = p;
-			  }
-
-			  s = r_buf_to_string (b);
-			  r_egg_load (core->egg, s, 0);
-			  free (s);
-
-			  r_egg_compile (core->egg);
-			  r_egg_assemble (core->egg);
-
-			  r_buf_free (b);
-			  b = r_egg_get_bin (core->egg);
-
-			  if (strcmp (off, "+"))
-				  noff = r_num_math (core->num, off);
-			  r_core_write_at (core, noff, b->buf, b->length);
-			  noff += b->length;
-			  r_buf_free (b);
-			  free (off);
-			  }
-			  break;
+		case '{':
+			(void)__core_patch_bracket (core, str, &noff);
+			break;
 		default:
 			r_core_patch_line (core, str);
 			break;
