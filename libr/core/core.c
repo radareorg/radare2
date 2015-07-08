@@ -146,9 +146,12 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				char *o = strdup (str+1);
 				if (o) {
 					q = r_num_calc_index (core->num, NULL);
-					r_str_replace_char (o, ']', 0);
-					n = r_num_math (core->num, o);
-					r_num_calc_index (core->num, q);
+					if (q) {
+						if (r_str_replace_char (o, ']', 0)>0) {
+							n = r_num_math (core->num, o);
+							r_num_calc_index (core->num, q);
+						}
+					}
 					free (o);
 				}
 			}
