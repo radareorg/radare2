@@ -94,7 +94,8 @@ symstall install-symlink:
 	rm -rf "${IFX}/libr" && ln -fs "${PWD}/include" "${IFX}/libr"
 	cd ../pkgcfg && for a in *.pc ; do \
 		if [ -e "${PWD}/../pkgcfg/$${a}" ] ; then \
-			ln -fs "${PWD}/../pkgcfg/$${a}" "${LFX}/pkgconfig/$${a}" ; \
+			ln -fs "${PWD}/../pkgcfg/$${a}" \
+				"${LFX}/pkgconfig/$${a}" ; \
 		fi ; \
 	done
 	@$(foreach lib,${LIBS}, \
@@ -106,8 +107,8 @@ symstall install-symlink:
 	  $(foreach module,$(wildcard $(lib)/p/*.${EXT_SO}), \
 	    ln -fs "${PWD}/$(module)" "${LFX}/radare2/${VERSION}/" ; \
 	  ) \
-	  ( cd "${LFX}/radare2" ; ln -fs "${VERSION}" last ) ; \
 	)
+	cd "${LFX}/radare2" ; rm -f last ; ln -fs "${VERSION}" last
 
 install: install-includes install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir

@@ -6,6 +6,9 @@
 
 R_LIB_VERSION (r_io);
 
+/* allocate 128 MB */
+#define R_IO_MAX_ALLOC (1024*1024*128)
+
 // XXX: this is buggy. must use seek+read
 #define USE_CACHE 1
 // the new io is buggy	//liar
@@ -920,8 +923,9 @@ static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
 	ut8 *buf = NULL;
 	ut64 off = 0;
 
-	if (!io || !desc || !out_sz)
+	if (!io || !desc || !out_sz) {
 		return NULL;
+	}
 
 	if (*out_sz == UT64_MAX)
 		*out_sz = r_io_desc_size (io, desc);
@@ -931,13 +935,16 @@ static ut8 * r_io_desc_read (RIO *io, RIODesc * desc, ut64 *out_sz) {
 	off = io->off;
 
 	if (*out_sz == UT64_MAX) return buf;
-	if (*out_sz > 0xffffff) {
+	if (*out_sz > R_IO_MAX_ALLOC) {
 		return buf;
 	}
 
 	buf = malloc (*out_sz);
-
-	if (desc->plugin && desc->plugin->read) {
+	if (!buf) {
+		eprintf ("Cannot allocate %"PFMT64d" bytes\n", *out_sz);
+		return NULL;
+	}
+	if (buf && desc->plugin && desc->plugin->read) {
 		if (!buf || !desc->plugin->read (io, desc, buf, *out_sz)) {
 			free (buf);
 			io->off = off;

@@ -85,12 +85,12 @@ static void h8300_anal_jsr(RAnalOp *op, ut64 addr, const ut8 *buf) {
 }
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
-	r_strbuf_init (&op->esil);
-	r_strbuf_set (&op->esil, "");
 	int ret = -1;
 	ut8 opcode = buf[0];
-	if (op == NULL)
+	if (!op)
 		return 2;
+	r_strbuf_init (&op->esil);
+	r_strbuf_set (&op->esil, "");
 	switch (opcode >> 4) {
 	case H8300_CMP_4BIT:
 		//acc. to manual this is how it's done, could use == in esil
