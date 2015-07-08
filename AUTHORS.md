@@ -54,6 +54,7 @@ This release comes with contributions from the following people:
  - Anton Devil
  - Asger Hautop Drewsen
  - Clement Vuchener
+ - David Weinstein
  - Elias Boutaleb
  - Gabriel Corona
  - James Sullivan1

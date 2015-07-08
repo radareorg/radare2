@@ -38,6 +38,7 @@ static void var_help(RCore *core, char ch) {
 		 "afv-", " [idx]", "delete variable at the given index",
 		 "afvg", " [idx] [addr]", "define var get reference",
 		 "afvs", " [idx] [addr]", "define var set reference",
+		 "afx", "[-] [from] [to]", "manipulate function xrefs",
 		 NULL};
 	if (ch=='a' || ch=='A' || ch=='v') {
 		r_core_cmd_help (core, help_msg);
@@ -1964,7 +1965,27 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 		NULL };
 	switch (input[0]) {
 	case '-':
-		r_anal_ref_del (core->anal, r_num_math (core->num, input+1), core->offset);
+		{ // "ax-"
+			const char *inp;
+			ut64 a, b;
+			for (inp=input+1;*inp && IS_WHITESPACE(*inp); inp++);
+			if (!strcmp (inp, "*")) {
+				r_anal_xrefs_init (core->anal);
+			} else {
+				char *p = strdup (inp);
+				char *q = strchr (p, ' ');
+				a = r_num_math (core->num, p);
+				if (q) {
+					*q++ = 0;
+					b = r_num_math (core->num, q);
+				} else {
+					b = UT64_MAX;
+					b = core->offset;
+				}
+				r_anal_ref_del (core->anal, b, a);
+				free (p);
+			}
+		}
 		break;
 	case 'k':
 		if (input[1]==' ') {
