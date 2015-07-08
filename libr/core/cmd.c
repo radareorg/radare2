@@ -701,8 +701,11 @@ static int cmd_resize(void *data, const char *input) {
 		else eprintf ("Usage: rm [file]   # removes a file\n");
 		return R_TRUE;
 	case '\0':
-		if (core->file && core->file->desc)
-			r_cons_printf ("%"PFMT64d"\n", oldsize);
+		if (core->file && core->file->desc) {
+			if (oldsize != -1) {
+				r_cons_printf ("%"PFMT64d"\n", oldsize);
+			}
+		}
 		return R_TRUE;
 	case '+':
 	case '-':
@@ -969,8 +972,9 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	char *_ptr;
 #if __UNIX__
 	int stdout_fd, fds[2];
+	int child;
 #endif
-	int child, si, olen, ret = -1, pipecolor = -1;
+	int si, olen, ret = -1, pipecolor = -1;
 	char *str, *out = NULL;
 
 	if (r_sandbox_enable (0)) {
@@ -1255,45 +1259,50 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	ptr = strchr (cmd, '<');
 	if (ptr) {
 		ptr[0] = '\0';
-		if (ptr[1]=='<') {
-			/* this is a bit mess */
-			//const char *oprompt = strdup (r_line_singleton ()->prompt);
-			//oprompt = ">";
-			for (str=ptr+2; str[0]==' '; str++);
-			eprintf ("==> Reading from stdin until '%s'\n", str);
-			free (core->oobi);
-			core->oobi = malloc (1);
-			if (core->oobi)
-				core->oobi[0] = '\0';
-			core->oobi_len = 0;
-			for (;;) {
-				char buf[1024];
-				int ret;
-				write (1, "> ", 2);
-				fgets (buf, sizeof (buf)-1, stdin); // XXX use r_line ??
-				if (feof (stdin))
-					break;
-				if (*buf) buf[strlen (buf)-1]='\0';
-				ret = strlen (buf);
-				core->oobi_len += ret;
-				core->oobi = realloc (core->oobi, core->oobi_len+1);
-				if (core->oobi) {
-					if (!strcmp (buf, str))
+		if (r_cons_singleton()->is_interactive) {
+			if (ptr[1]=='<') {
+				/* this is a bit mess */
+				//const char *oprompt = strdup (r_line_singleton ()->prompt);
+				//oprompt = ">";
+				for (str=ptr+2; str[0]==' '; str++);
+				eprintf ("==> Reading from stdin until '%s'\n", str);
+				free (core->oobi);
+				core->oobi = malloc (1);
+				if (core->oobi)
+					core->oobi[0] = '\0';
+				core->oobi_len = 0;
+				for (;;) {
+					char buf[1024];
+					int ret;
+					write (1, "> ", 2);
+					fgets (buf, sizeof (buf)-1, stdin); // XXX use r_line ??
+					if (feof (stdin))
 						break;
-					strcat ((char *)core->oobi, buf);
+					if (*buf) buf[strlen (buf)-1]='\0';
+					ret = strlen (buf);
+					core->oobi_len += ret;
+					core->oobi = realloc (core->oobi, core->oobi_len+1);
+					if (core->oobi) {
+						if (!strcmp (buf, str))
+							break;
+						strcat ((char *)core->oobi, buf);
+					}
 				}
+				//r_line_set_prompt (oprompt);
+			} else {
+				for (str=ptr+1; *str== ' '; str++);
+				if (!*str) goto next;
+				eprintf ("Slurping file '%s'\n", str);
+				free (core->oobi);
+				core->oobi = (ut8*)r_file_slurp (str, &core->oobi_len);
+				if (core->oobi == NULL)
+					eprintf ("cannot open file\n");
+				else if (ptr == cmd)
+					return r_core_cmd_buffer (core, (const char *)core->oobi);
 			}
-			//r_line_set_prompt (oprompt);
 		} else {
-			for (str=ptr+1; *str== ' '; str++);
-			if (!*str) goto next;
-			eprintf ("Slurping file '%s'\n", str);
-			free (core->oobi);
-			core->oobi = (ut8*)r_file_slurp (str, &core->oobi_len);
-			if (core->oobi == NULL)
-				eprintf ("cannot open file\n");
-			else if (ptr == cmd)
-				return r_core_cmd_buffer (core, (const char *)core->oobi);
+			eprintf ("Cannot slurp with << in non-interactive mode\n");
+			return 0;
 		}
 	}
 next:
@@ -1525,6 +1534,7 @@ ignore:
 				/* XXXX:YYYY */
 			} else {
 				*ptr2 = '\0';
+				if (!ptr2[1]) return -1;
 				r_core_block_size (core, r_num_math (core->num, ptr2+1));
 			}
 		}

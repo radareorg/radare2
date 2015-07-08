@@ -161,11 +161,8 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 						hashbit, s.buf, s.len, rad, 0, ule);
 				}
 				for (j=from; j<to; j+=bsize) {
-					int len = ((j+bsize)<fsize)?  bsize:
-						(bsize>j)?(fsize-j):0;
-					if (j+len>to)
-						len = to-j;
-					r_io_pread (io, j, buf, bsize);
+					int len = ((j+bsize)>to)? (to-j): bsize;
+					r_io_pread (io, j, buf, len);
 					do_hash_internal (ctx, hashbit, buf,
 						len, rad, 0, ule);
 				}
@@ -353,6 +350,8 @@ int main(int argc, char **argv) {
 		}
 		hashstr = hashstr+from;
 		hashstr_len = to-from;
+		hashstr[hashstr_len] = '\0';
+		hashstr_len = r_str_unescape (hashstr);
 		switch (b64mode) {
 		case 1: // encode
 			{

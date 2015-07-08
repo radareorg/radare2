@@ -7,7 +7,7 @@ gmake --help >/dev/null 2>&1
 [ -z "${INSTALL_TARGET}" ] && INSTALL_TARGET=symstall
 
 # find root
-cd $(dirname $0) ; cd ..
+cd "$(dirname "$0")" ; cd ..
 
 # update
 if [ "$1" != "--without-pull" ]; then
@@ -22,11 +22,15 @@ else
 	shift
 fi
 
-[ "`id -u`" = 0 ] || SUDO=sudo
+[ "$(id -u)" = 0 ] || SUDO=sudo
 [ -n "${NOSUDO}" ] && SUDO=
 
 if [ "${HARDEN}" = 1 ]; then
+	# shellcheck disable=SC2048
+	# shellcheck disable=SC2086
 	./sys/build-harden.sh $* && ${SUDO} ${MAKE} ${INSTALL_TARGET}
 else
+	# shellcheck disable=SC2048
+	# shellcheck disable=SC2086
 	./sys/build.sh $* && ${SUDO} ${MAKE} ${INSTALL_TARGET}
 fi

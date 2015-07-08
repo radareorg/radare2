@@ -818,6 +818,9 @@ R_API int r_str_unescape(char *buf) {
 		if (buf[i+1]=='e') {
 			buf[i] = 0x1b;
 			memmove (buf+i+1, buf+i+2, strlen (buf+i+2)+1);
+		} else if (buf[i+1]=='\\') {
+			buf[i] = '\\';
+			memmove (buf+i+1, buf+i+2, strlen (buf+i+2)+1);
 		} else if (buf[i+1]=='r') {
 			buf[i] = 0x0d;
 			memmove (buf+i+1, buf+i+2, strlen (buf+i+2)+1);
@@ -878,7 +881,7 @@ static char *r_str_escape_ (const char *buf, const int dot_nl) {
 		return NULL;
 
 	/* Worst case scenario, we convert every byte */
-	new_buf = malloc (1 + (strlen(buf) * 4));
+	new_buf = malloc (1 + (strlen (buf) * 4));
 
 	if (!new_buf)
 		return NULL;
@@ -920,6 +923,7 @@ static char *r_str_escape_ (const char *buf, const int dot_nl) {
 				p++;
 				/* Parse the ANSI code (only the graphic mode
 				 * set ones are supported) */
+				if (*p == '\0') goto out;
 				if (*p == '[')
 					for (p++; *p != 'm'; p++)
 						;
@@ -939,6 +943,7 @@ static char *r_str_escape_ (const char *buf, const int dot_nl) {
 		p++;
 	}
 
+out:
 	*q = '\0';
 
 	return new_buf;
@@ -1125,39 +1130,34 @@ R_API void r_str_filter(char *str, int len) {
 			str[i] = '.';
 }
 
-R_API int r_str_glob (const char *str, const char *glob) {
-	const char *p;
-	int slen, glen;
-	if (!*str) return R_TRUE;
-	glen = strlen (glob);
-	slen = strlen (str);
-	if (*glob == '*') {
-		if (glob[1] == '\0')
-			return R_TRUE;
-		if (glob[glen-1] == '*') {
-			return r_mem_mem ((const ut8*)str, slen,
-				(const ut8*)glob+1, glen-2) != 0;
-		}
-		if (slen<glen-2)
+R_API int r_str_glob (const char* str, const char *glob) {
+	const char* cp = NULL, *mp = NULL;
+	while ((*str) && (*glob != '*')) {
+		if ((*glob != *str)) {
 			return R_FALSE;
-		p = str + slen - (glen-1);
-		return memcmp (p, glob+1, glen-1) == 0;
-	} else {
-		if (glob[glen-1] == '*') {
-			if (slen<glen-1)
-				return R_FALSE;
-			return memcmp (str, glob, glen-1) == 0;
-		} else {
-			char *p = strchr (glob, '*');
-			if (p) {
-				int a = (int)(size_t)(p-glob);
-				return ((!memcmp (str, glob, a)) && \
-					(!memcmp (str+slen-a, glob+a+1, glen-a-1)))? 1: 0;
+		}
+		++glob;
+		++str;
+	}
+	while (*str) {
+		if (*glob == '*') {
+			if (!*++glob) {
+				return R_TRUE;
 			}
-			return !strcmp (str, glob);
+			mp = glob;
+			cp = str+1;
+		} else if (*glob == *str) {
+			++glob;
+			++str;
+		} else {
+			glob = mp;
+			str = cp++;
 		}
 	}
-	return R_FALSE; // statement never reached
+	while (*glob == '*') {
+		++glob;
+	}
+	return (*glob == '\x00');
 }
 
 // Escape the string arg so that it is parsed as a single argument by r_str_argv
@@ -1706,9 +1706,9 @@ R_API int r_str_bounds(const char *_str, int *h) {
 }
 #endif
 
-R_API char *r_str_crop(const char *str, int x, int y, int w, int h) {
+R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int w, unsigned int h) {
 	char *r, *ret;
-	int ch = 0, cw = 0;
+	unsigned int ch = 0, cw = 0;
 	if (w<1 || h<1)
 		return strdup ("");
 	r = ret = strdup (str);

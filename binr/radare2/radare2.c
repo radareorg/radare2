@@ -132,6 +132,7 @@ static int main_help(int line) {
 #if USE_THREADS
 		" -t           load rabin2 info in thread\n"
 #endif
+		" -u           set bin.filter=false to get raw sym/sec/cls names\n"
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
 		" -z, -zz      do not load strings or load them even in raw\n");
@@ -276,7 +277,7 @@ int main(int argc, char **argv, char **envp) {
 		argv++;
 	} else prefile = 0;
 
-	while ((c = getopt (argc, argv, "0ACwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSz"
+	while ((c = getopt (argc, argv, "0ACwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
@@ -290,6 +291,9 @@ int main(int argc, char **argv, char **envp) {
 				r_config_set (r.config, "scr.prompt", "false");
 				r_config_set (r.config, "scr.color", "false");
 				quiet = R_TRUE;
+				break;
+			case 'u':
+				r_config_set (r.config, "bin.filter", "false");
 				break;
 			case 'a': asmarch = optarg; break;
 			case 'z': zflag++; break;

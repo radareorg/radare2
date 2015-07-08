@@ -10,7 +10,7 @@ gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd "$(dirname "$PWD/$0")" ; cd ..
 if [ -d .git ]; then
 	echo git checkout "${REV}"
 	git checkout "${REV}"

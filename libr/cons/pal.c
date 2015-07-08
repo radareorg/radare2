@@ -19,12 +19,12 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.b0x7f = Color_CYAN;
 	cons->pal.b0xff = Color_RED;
 	cons->pal.args = Color_YELLOW;
-	cons->pal.bin = Color_YELLOW;
-	cons->pal.btext = Color_WHITE;
+	cons->pal.bin = Color_CYAN;
+	cons->pal.btext = Color_YELLOW;
 	cons->pal.call = Color_BGREEN;
 	cons->pal.cjmp = Color_GREEN;
 	cons->pal.cmp = Color_CYAN;
-	cons->pal.comment = Color_CYAN; // blue
+	cons->pal.comment = Color_RED;
 	cons->pal.creg = Color_CYAN;
 	cons->pal.flag = Color_CYAN;
 	cons->pal.fline = Color_CYAN;

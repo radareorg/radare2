@@ -59,7 +59,7 @@ char *rangstr_dup (Rangstr *rs) {
 	return p;
 }
 
-Rangstr rangstr_news (const char *s, ut16 *res, int i) {
+Rangstr rangstr_news (const char *s, RangstrType *res, int i) {
 	Rangstr rs;
 	rs.next = 1;
 	rs.f = res[i];

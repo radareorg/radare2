@@ -197,13 +197,13 @@ static void handle_print_comments_right (RCore *core, RDisasmState *ds);
 //static void handle_print_refptr (RCore *core, RDisasmState *ds);
 static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx);
 
-static int cmpaddr (void *_a, void *_b) {
-	RAnalBlock *a = _a, *b = _b;
+static int cmpaddr (const void *_a, const void *_b) {
+	const RAnalBlock *a = _a, *b = _b;
 	return (a->addr > b->addr);
 }
 
 static const char *getSectionName (RCore *core, ut64 addr) {
-	static char section[128] = {0};
+	static char section[128] = "";
 	static ut64 oaddr = UT64_MAX;
 	RIOSection *s;
 	if (oaddr == addr)
@@ -256,7 +256,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->color_push = P(push): Color_YELLOW;
 	ds->color_pop = P(pop): Color_BYELLOW;
 	ds->color_reg = P(reg): Color_YELLOW;
-	ds->color_num = P(num): Color_YELLOW;
+	ds->color_num = P(num): Color_CYAN;
 	ds->color_mov = P(mov): Color_WHITE;
 	ds->color_invalid = P(invalid): Color_BRED;
 	ds->color_gui_cflow = P(gui_cflow): Color_YELLOW;
@@ -876,7 +876,11 @@ static void handle_print_pre (RCore *core, RDisasmState *ds) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f) {
 			if (f->addr == ds->at) {
-				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+				if (ds->analop.size == f->size) {
+					handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
+				} else {
+					handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+				}
 				ds->pre = r_str_concat (ds->pre, " ");
 				if (ds->show_color) {
 					r_cons_printf ("%s%s"Color_RESET, ds->color_fline, ds->pre);
@@ -1066,15 +1070,15 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 	// TODO : line analysis must respect data types! shouldnt be interpreted as code
 	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
 	if (ds->asmop.size<1) {
-		ut32 *n32 = (ut32*)buf;
-		ut64 *n64 = (ut64*)buf;
+		ut32 n32 = len >= sizeof(ut32) ? *((ut32*)buf) : UT32_MAX;
+		ut64 n64 = len >= sizeof(ut64) ? *((ut64*)buf) : UT64_MAX;
 		// if arm or mips.. 32 or 64
 		snprintf (ds->asmop.buf_asm,
 			sizeof (ds->asmop.buf_asm),
-			"0x%08x", *n32);
+			"0x%08x", n32);
 		snprintf (ds->asmop.buf_asm,
 			sizeof (ds->asmop.buf_asm),
-			"0x%08"PFMT64x, *n64);
+			"0x%08"PFMT64x, n64);
 		ds->asmop.size = 1;
 	}
 	ds->oplen = ds->asmop.size;
@@ -1267,7 +1271,7 @@ static void handle_adistrick_comments (RCore *core, RDisasmState *ds) {
 static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, int len, int idx) {
 	int ret = 0;
 	const char *infos, *metas;
-	char *str, key[100];
+	char key[100];
 	RAnalMetaItem MI, *mi = &MI;
 	Sdb *s = core->anal->sdb_meta;
 
@@ -1275,6 +1279,8 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 	infos = sdb_const_get (s, key, 0);
 	if (infos)
 	for (;*infos; infos++) {
+		/* XXX wtf, must use anal.meta.deserialize() */
+		char *p, *q;
 		if (*infos==',')
 			continue;
 		snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, *infos, ds->at);
@@ -1283,9 +1289,17 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 		MI.type = *infos;
 		MI.from = ds->at;
 		MI.to = ds->at + MI.size;
-		str = metas ? strchr (metas, ',') : NULL;
-		if (str) {
-			MI.str = (char*)sdb_decode (str+1, 0);
+		if (metas) {
+			p = strchr (metas, ',');
+			if (!p) {
+				continue;
+			}
+			MI.space = atoi (p+1);
+			q = strchr (p+1, ',');
+			if (!q) {
+				continue;
+			}
+			MI.str = (char*)sdb_decode (q+1, 0);
 		} else MI.str = NULL;
 		// sdb-get blah
 		// TODO: implement ranged meta find (if not at the begging of function..
@@ -1708,13 +1722,16 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 					}
 					// if doesnt fits in screen newline
 					if (cmtright) {
+						handle_comment_align (core, ds);
 						if (ds->show_color)
-							r_cons_printf (" ;"Color_RESET"%s%s%s"Color_RESET, ds->pal_comment, ccstr, tmp);
+							r_cons_printf (" "Color_RESET"%s;%s%s"Color_RESET,
+								ds->pal_comment, ccstr, tmp);
 						else r_cons_printf (" ;%s%s", ccstr, tmp);
 					} else {
 						if (ds->show_color)
-							r_cons_printf ("\n%s%s%s"Color_RESET"%s%s"Color_RESET"  ^- %s%s"Color_RESET,
-									ds->color_fline, ds->pre, ds->color_flow, sn, ds->refline, ccstr, tmp);
+							r_cons_printf ("\n%s%s%s%s%s  "Color_RESET"^-%s %s%s"Color_RESET,
+									ds->color_fline, ds->pre, ds->color_flow,
+									sn, ds->refline, ds->pal_comment, ccstr, tmp);
 						else r_cons_printf ("\n%s%s%s  ^- %s%s", ds->pre, ds->refline, sn, ccstr, tmp);
 					}
 				}
@@ -1848,10 +1865,10 @@ static void comment_newline (RCore *core, RDisasmState *ds) {
 	sn = ds->show_section? getSectionName (core, ds->at): "";
 	handle_comment_align (core, ds);
 	if (ds->show_color) {
-		r_cons_printf ("\n%s%s"Color_RESET"%s%s   ^- ",
-			ds->color_fline, ds->pre, sn, ds->refline);
+		r_cons_printf ("\n%s%s%s%s"Color_RESET"  ^- %s",
+			ds->color_fline, ds->pre, sn, ds->refline, ds->pal_comment);
 	} else {
-		r_cons_printf ("\n%s%s%s   ^- ", ds->pre, sn, ds->refline);
+		r_cons_printf ("\n%s%s%s  ^- ", ds->pre, sn, ds->refline);
 	}
 }
 
@@ -1882,7 +1899,9 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			case 4: n &= UT32_MAX; break;
 			case 8: n &= UT64_MAX; break;
 			}
-			r_mem_copyendian ((ut8*)&n, (ut8*)&n, ds->analop.refptr, !core->assembler->big_endian);
+			r_mem_copyendian ((ut8*)&n, (ut8*)&n,
+				ds->analop.refptr,
+				!core->assembler->big_endian);
 			n32 = n;
 
 			handle_comment_align (core, ds);
@@ -1894,18 +1913,35 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				const char *flag = "";
 				f = r_flag_get_i (core->flags, p);
 				if (f) flag = f->name;
-				r_cons_printf ("  ; 0x%"PFMT64x" %s%s", p, *flag?"; ":"", flag);
+				r_cons_printf (" ; 0x%"PFMT64x" %s%s", p, *flag?"; ":"", flag);
 			} else {
 				if (n==UT32_MAX || n==UT64_MAX) {
-					r_cons_printf ("  ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
+					r_cons_printf (" ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
 				} else if (n == n32 && (n32>-512 && n32 <512)) {
-					r_cons_printf ("  ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
+					r_cons_printf (" ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
 				} else {
-					const char *flag = "";
+					const char *kind, *flag = "";
+					char *msg2 = NULL;
 					f = r_flag_get_i (core->flags, n);
-					if (f) flag = f->name;
-					r_cons_printf ("  ; [0x%"PFMT64x":%d]=0x%"PFMT64x" %s",
+					if (f) {
+						flag = f->name;
+					} else {
+						msg2 = calloc(sizeof(char), len);
+						r_io_read_at (core->io, n, (ut8*)msg2, len-1);
+						kind = r_anal_data_kind (core->anal, p, (const ut8*)msg2, len-1);
+						if (kind && !strcmp (kind, "text")) {
+							r_str_filter (msg2, 0);
+							if (*msg2) {
+								char *lala = r_str_newf ("\"%s\"", msg2);
+								free (msg2);
+								flag = msg2 = lala;
+							}
+						}
+					}
+					// try to guess what's in there
+					r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x" %s",
 							p, ds->analop.refptr, n, flag);
+					free (msg2);
 				}
 			}
 			if (ds->show_color)
@@ -2716,9 +2752,13 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		r_cons_printf (",\"size\":%d", oplen);
 		{
-		char *escaped_str = r_str_escape (asmop.buf_asm);
-		r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
-		free (escaped_str);
+			char *escaped_str = r_str_escape (asmop.buf_asm);
+			r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
+			free (escaped_str);
+		}
+		if (ds->use_esil) {
+			const char * esil = R_STRBUF_SAFEGET (&analop.esil);
+			r_cons_printf (",\"esil\":\"%s\"", esil);
 		}
 		r_cons_printf (",\"bytes\":\"%s\"", asmop.buf_hex);
 		//r_cons_printf (",\"family\":\"%s\"", asmop.family);

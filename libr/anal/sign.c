@@ -12,6 +12,10 @@ R_API RSign *r_sign_new() {
 		sig->ns[0] = '\0';
 		sig->printf = (PrintfCallback) printf;
 		sig->items = r_list_new ();
+		if (!sig->items){
+			free (sig);
+			return NULL;
+		}
 		sig->items->free = r_sign_item_free;
 	}
 	return sig;
@@ -48,7 +52,9 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 		//	sig->addr =
 		}
 		sig->s_func++;
-		r_list_append (sig->items, si);
+		if (!r_list_append (sig->items, si)){
+			r_sign_item_free (si);
+		}
 		break;
 	case R_SIGN_HEAD: // function prefix (push ebp..)
 	case R_SIGN_BYTE: // function mask

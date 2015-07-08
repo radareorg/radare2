@@ -154,8 +154,11 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	int ret, buffer_len = 0, l = 0, tl = 0;
 
 	if((len == 0 || buf == NULL || buf[0] == '\0')
-	   && (cons->grep.json || cons->grep.less))
+	   && (cons->grep.json || cons->grep.less)){
+		cons->grep.json = 0;
+		cons->grep.less = 0;
 		return 0;
+	}
 
 	if (cons->grep.json) {
 		char *out = sdb_json_indent (buf);

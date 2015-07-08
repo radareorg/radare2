@@ -42,7 +42,7 @@ static int lang_vala_file(RLang *lang, const char *file) {
 		free (vapidir);
 	} else snprintf (buf, sizeof(buf)-1, "valac -d %s --pkg r_core -C %s", srcdir, name);
 	free (srcdir);
-	if (system (buf) != 0) {
+	if (r_sandbox_system (buf, 1) != 0) {
 		free (libname);
 		return R_FALSE;
 	}
@@ -51,7 +51,7 @@ static int lang_vala_file(RLang *lang, const char *file) {
 	// TODO: use CC environ if possible
 	snprintf (buf, sizeof (buf), "gcc -fPIC -shared %s.c -o lib%s."R_LIB_EXT
 		" $(pkg-config --cflags --libs r_core gobject-2.0)", name, libname);
-	if (system (buf) != 0) {
+	if (r_sandbox_system (buf, 1) != 0) {
 		free (libname);
 		return R_FALSE;
 	}

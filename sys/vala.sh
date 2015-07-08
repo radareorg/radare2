@@ -3,7 +3,7 @@
 [ -z "${PREFIX}" ] && PREFIX=/usr
 
 # find root
-cd `dirname $PWD/$0`
+cd "$(dirname "$PWD/$0")"
 . ./CONFIG
 
 mkdir -p _work
@@ -22,10 +22,10 @@ if [ ! $? = 0 ]; then
 	VV=0.13.4
 	SV=$(echo ${VV}|cut -d . -f 1,2)
 	if [ ! -d vala-${VV} ]; then
-		wget http://download.gnome.org/sources/vala/${SV}/vala-${VV}.tar.bz2
+		wget "http://download.gnome.org/sources/vala/${SV}/vala-${VV}.tar.bz2"
 		tar xjvf vala-${VV}.tar.bz2
 	fi
-	cd vala-${VV}
+	cd vala-${VV} || exit 1
 	./configure --prefix=/usr && \
 	make && \
 	sudo make install

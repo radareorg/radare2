@@ -68,6 +68,7 @@ static char *flagname (const char *class, const char *method) {
 	for (str=s; *class; class++) {
 		switch (*class) {
 		case '$':
+		case ' ':
 		case '/': *s++ = '_'; break;
 		case ';': *s++ = '.'; break;
 		default: *s++ = *class; break;
@@ -297,6 +298,20 @@ static char *dex_class_name_byid (RBinDexObj *bin, int cid) {
 	return get_string (bin, cid, tid);
 }
 
+static char *getClassName(const char *name) {
+	const char *p;
+	if (!name)
+		return NULL;
+	p = strstr (name, ".L");
+	if (p) {
+		char *q, *r = strdup (p+2);
+		q = strchr (r, ';');
+		if (q) *q = 0;
+		return r;
+	}
+	return NULL;
+}
+
 static char *dex_class_name (RBinDexObj *bin, RBinDexClass *c) {
 	int cid, tid;
 	if (!bin || !c || !bin->types)
@@ -322,11 +337,154 @@ static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
 	return get_string (bin, cid, tid);
 }
 
-static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
-	int *methods;
-	int i, j;
+static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct dex_class_t *c, RBinClass *cls) {
+	int i, *methods;
 	char *name;
+	ut64 SF, IF, DM, VM;
 	const ut8 *p, *p_end;
+	char *class_name = dex_class_name (bin, c);
+	if (c->class_data_offset==0) {
+		// no method here, just class definition
+		//free (class_name);
+		//free (super_name);
+		return NULL;
+	}
+	methods = calloc (sizeof (ut32), bin->header.method_size);
+	if (!methods)
+		return R_FALSE;
+	dprintf ("  class_data_offset: %d\n", c->class_data_offset);
+	p = r_buf_get_at (binfile->buf, c->class_data_offset, NULL);
+	p_end = p + (binfile->buf->length - c->class_data_offset);
+	/* data header */
+	/* walk over class data items */
+	p = r_uleb128 (p, p_end-p, &SF);
+	p = r_uleb128 (p, p_end-p, &IF);
+	p = r_uleb128 (p, p_end-p, &DM);
+	p = r_uleb128 (p, p_end-p, &VM);
+//eprintf ("METHODS %s %d\n", class_name, DM);
+//eprintf ("SF %d IF %d DM %d VM %d\n", SF, IF, DM, VM);
+	dprintf ("  static fields: %u\n", (ut32)SF);
+	/* static fields */
+	for (i=0; i<SF; i++) {
+		ut64 FI, FA;
+		p = r_uleb128 (p, p_end-p, &FI);
+		p = r_uleb128 (p, p_end-p, &FA);
+		dprintf ("    field_idx: %u\n", (ut32)FI);
+// TODO: retrieve name of field here
+// TODO: add comment or store that fcn var info in sdb directly
+		dprintf ("    field access_flags: 0x%x\n", (ut32)FA);
+	}
+	/* instance fields */
+	dprintf ("  instance fields: %u\n", (ut32)IF);
+	for (i=0; i<IF; i++) {
+		ut64 FI, FA;
+		p = r_uleb128 (p, p_end-p, &FI);
+		p = r_uleb128 (p, p_end-p, &FA);
+		dprintf ("    field_idx: %u,\n", (ut32)FI);
+		dprintf ("    field access_flags: %u,\n", (ut32)FA);
+	}
+	/* direct methods */
+	dprintf ("  direct methods: %u\n", (ut32)DM);
+#if 0
+	// hardcoded DEX limit
+	if (DM>=0xffff) {
+		DM = 0xFFFF;
+	}
+#endif
+	ut64 omi = 0;
+	for (i=0; i<DM; i++) {
+		char *method_name, *flag_name;
+		ut64 MI, MA, MC;
+		p = r_uleb128 (p, p_end-p, &MI);
+		MI += omi;
+		omi = MI;
+		// the mi is diff
+#if 0
+		index into the method_ids list for the identity of this method (includes the name and descriptor), represented as a difference from the index of previous element in the list. The index of the first element in a list is represented directly. 
+#endif
+		p = r_uleb128 (p, p_end-p, &MA);
+		p = r_uleb128 (p, p_end-p, &MC);
+
+		if (MI<bin->header.method_size) methods[MI] = 1;
+		if (MC>0 && bin->code_from>MC) bin->code_from = MC;
+		if (MC>0 && bin->code_to<MC) bin->code_to = MC;
+
+		method_name = dex_method_name (bin, MI);
+		dprintf ("METHOD NAME %u\n", (ut32)MI);
+		if (!method_name) method_name = strdup ("unknown");
+		flag_name = flagname (class_name, method_name);
+		dprintf ("f %s @ 0x%x\n", flag_name, (ut32)MC);
+		dprintf ("    { name: %d %d %s,\n", (ut32)MC, (ut32)MI, method_name);
+		dprintf ("      idx: %u,\n", (ut32)MI);
+		dprintf ("      access_flags: 0x%x,\n", (ut32)MA);
+		dprintf ("      code_offset: 0x%x },\n", (ut32)MC);
+		/* add symbol */
+		if (flag_name && *flag_name) {
+			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			strncpy (sym->name, flag_name, sizeof (sym->name)-1);
+			strcpy (sym->type, "FUNC");
+			sym->paddr = sym->vaddr = MC;
+			if (MC>0) { /* avoid methods at 0 paddr */
+#if 0
+// TODO: use sdb+pf to show method header
+ut16 regsz;
+ut16 ins_size
+ut16 outs_size
+ut16 tries_size
+ut32 debug_info_off
+ut32 insns_size
+ut16[insn_size] insns;
+ut16 padding = 0
+try_item[tries_size] tries
+encoded_catch_handler_list handlers
+#endif
+				sym->paddr += 0x10;
+				r_list_append (bin->methods_list, sym);
+				if (cls) {
+					if (!cls->methods) {
+						cls->methods = r_list_new ();
+					}
+					r_list_append (cls->methods, sym);
+				}
+				/* cache in sdb */
+				if (!mdb) {
+					mdb = sdb_new0 ();
+				}
+				sdb_num_set (mdb, sdb_fmt(0, "method.%d", MI), sym->paddr, 0);
+			} else {
+				//r_list_append (bin->methods_list, sym);
+				// XXX memleak sym
+				free (sym);
+			}
+		}
+		free (method_name);
+		free (flag_name);
+	}
+	/* virtual methods */
+	dprintf ("  virtual methods: %u\n", (ut32)VM);
+	for (i=0; i<VM; i++) {
+		ut64 MI, MA, MC;
+		p = r_uleb128 (p, p_end-p, &MI);
+		p = r_uleb128 (p, p_end-p, &MA);
+		p = r_uleb128 (p, p_end-p, &MC);
+
+		if (MI<bin->header.method_size) methods[MI] = 1;
+		if (MC>0 && bin->code_from>MC) bin->code_from = MC;
+		if (MC>0 && bin->code_to<MC) bin->code_to = MC;
+
+		name = dex_method_name (bin, MI);
+		dprintf ("    method name: %s\n", name);
+		dprintf ("    method_idx: %u\n", (ut32)MI);
+		dprintf ("    method access_flags: %u\n", (ut32)MA);
+		dprintf ("    method code_offset: %u\n", (ut32)MC);
+		free (name);
+	}
+	return methods;
+}
+
+static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
+	int i;
+	int *methods = NULL;
 
 	// doublecheck??
 	if (!bin || bin->methods_list)
@@ -342,9 +500,6 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		bin->header.method_size = 0;
 		return R_FALSE;
 	}
-	methods = calloc (sizeof (ut32), bin->header.method_size);
-	if (!methods)
-		return R_FALSE;
 
 	/* WrapDown the header sizes to avoid huge allocations */
 	bin->header.method_size = R_MIN (bin->header.method_size, bin->size);
@@ -352,7 +507,6 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	bin->header.strings_size = R_MIN (bin->header.strings_size, bin->size);
 
 	if (bin->header.strings_size > bin->size) {
-		free (methods);
 		eprintf ("Invalid strings size\n");
 		return R_FALSE;
 	}
@@ -379,158 +533,31 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			continue;
 		}
 #endif
-		if (c->class_data_offset==0) {
-			// no method here, just class definition
-			free (class_name);
-			free (super_name);
-			continue;
-		}
-		dprintf ("  class_data_offset: %d\n", c->class_data_offset);
-		p = r_buf_get_at (arch->buf, c->class_data_offset, NULL);
-		p_end = p + (arch->buf->length - c->class_data_offset);
-		/* data header */
-		/* walk over class data items */
-		{
-			ut64 SF, IF, DM, VM;
-			p = r_uleb128 (p, p_end-p, &SF);
-			p = r_uleb128 (p, p_end-p, &IF);
-			p = r_uleb128 (p, p_end-p, &DM);
-			p = r_uleb128 (p, p_end-p, &VM);
-//eprintf ("METHODS %s %d\n", class_name, DM);
-//eprintf ("SF %d IF %d DM %d VM %d\n", SF, IF, DM, VM);
-			dprintf ("  static fields: %u\n", (ut32)SF);
-			/* static fields */
-			for (j=0; j<SF; j++) {
-				ut64 FI, FA;
-				p = r_uleb128 (p, p_end-p, &FI);
-				p = r_uleb128 (p, p_end-p, &FA);
-				dprintf ("    field_idx: %u\n", (ut32)FI);
-// TODO: retrieve name of field here
-// TODO: add comment or store that fcn var info in sdb directly
-				dprintf ("    field access_flags: 0x%x\n", (ut32)FA);
-			}
-			/* instance fields */
-			dprintf ("  instance fields: %u\n", (ut32)IF);
-			for (j=0; j<IF; j++) {
-				ut64 FI, FA;
-				p = r_uleb128 (p, p_end-p, &FI);
-				p = r_uleb128 (p, p_end-p, &FA);
-				dprintf ("    field_idx: %u,\n", (ut32)FI);
-				dprintf ("    field access_flags: %u,\n", (ut32)FA);
-			}
-			/* direct methods */
-			dprintf ("  direct methods: %u\n", (ut32)DM);
-#if 0
-			// hardcoded DEX limit
-			if (DM>=0xffff) {
-				DM = 0xFFFF;
-			}
-#endif
-			ut64 omi = 0;
-			for (j=0; j<DM; j++) {
-				char *method_name, *flag_name;
-				ut64 MI, MA, MC;
-				p = r_uleb128 (p, p_end-p, &MI);
-				MI += omi;
-				omi = MI;
-				// the mi is diff
-#if 0
-				index into the method_ids list for the identity of this method (includes the name and descriptor), represented as a difference from the index of previous element in the list. The index of the first element in a list is represented directly. 
-#endif
-				p = r_uleb128 (p, p_end-p, &MA);
-				p = r_uleb128 (p, p_end-p, &MC);
-
-				if (MI<bin->header.method_size) methods[MI] = 1;
-				if (MC>0 && bin->code_from>MC) bin->code_from = MC;
-				if (MC>0 && bin->code_to<MC) bin->code_to = MC;
-
-				method_name = dex_method_name (bin, MI);
-				dprintf ("METHOD NAME %u\n", (ut32)MI);
-				if (!method_name) method_name = strdup ("unknown");
-				flag_name = flagname (class_name, method_name);
-				dprintf ("f %s @ 0x%x\n", flag_name, (ut32)MC);
-				dprintf ("    { name: %d %d %s,\n", (ut32)MC, (ut32)MI, method_name);
-				dprintf ("      idx: %u,\n", (ut32)MI);
-				dprintf ("      access_flags: 0x%x,\n", (ut32)MA);
-				dprintf ("      code_offset: 0x%x },\n", (ut32)MC);
-				/* add symbol */
-				if (flag_name && *flag_name) {
-					RBinSymbol *sym = R_NEW0 (RBinSymbol);
-					strncpy (sym->name, flag_name, sizeof (sym->name)-1);
-					strcpy (sym->type, "FUNC");
-					sym->paddr = sym->vaddr = MC;
-					if (MC>0) { /* avoid methods at 0 paddr */
-#if 0
-// TODO: use sdb+pf to show method header
-ut16 regsz;
-ut16 ins_size
-ut16 outs_size
-ut16 tries_size
-ut32 debug_info_off
-ut32 insns_size
-ut16[insn_size] insns;
-ut16 padding = 0
-try_item[tries_size] tries
-encoded_catch_handler_list handlers
-#endif
-						sym->paddr += 0x10;
-						r_list_append (bin->methods_list, sym);
-						/* cache in sdb */
-						if (!mdb) {
-							mdb = sdb_new0 ();
-						}
-						sdb_num_set (mdb, sdb_fmt(0, "method.%d", MI), sym->paddr, 0);
-					} else {
-						//r_list_append (bin->methods_list, sym);
-						// XXX memleak sym
-						free (sym);
-					}
-				}
-				free (method_name);
-				free (flag_name);
-			}
-			/* virtual methods */
-			dprintf ("  virtual methods: %u\n", (ut32)VM);
-			for (j=0; j<VM; j++) {
-				ut64 MI, MA, MC;
-				p = r_uleb128 (p, p_end-p, &MI);
-				p = r_uleb128 (p, p_end-p, &MA);
-				p = r_uleb128 (p, p_end-p, &MC);
-
-				if (MI<bin->header.method_size) methods[MI] = 1;
-				if (MC>0 && bin->code_from>MC) bin->code_from = MC;
-				if (MC>0 && bin->code_to<MC) bin->code_to = MC;
-
-				name = dex_method_name (bin, MI);
-				dprintf ("    method name: %s\n", name);
-				dprintf ("    method_idx: %u\n", (ut32)MI);
-				dprintf ("    method access_flags: %u\n", (ut32)MA);
-				dprintf ("    method code_offset: %u\n", (ut32)MC);
-				free (name);
-			}
-		}
+		methods = parse_class (arch, bin, c, NULL);
 		dprintf ("  ],\n");
 		dprintf ("},");
 		free (class_name);
 		free (super_name);
 	}
-	dprintf ("imports: \n");
-	for (i = 0; i<bin->header.method_size; i++) {
-		//RBinDexMethod *method = &bin->methods[i];
-		if (!methods[i]) {
-			char *method_name = dex_method_name (bin, i);
-			dprintf ("import %d (%s)\n", i, method_name);
-			if (method_name && *method_name) {
-				RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				strncpy (sym->name, method_name, R_BIN_SIZEOF_STRINGS);
-				strcpy (sym->type, "FUNC");
-				sym->paddr = sym->vaddr = 0; // UNKNOWN
-				r_list_append (bin->imports_list, sym);
+	if (methods) {
+		dprintf ("imports: \n");
+		for (i = 0; i<bin->header.method_size; i++) {
+			//RBinDexMethod *method = &bin->methods[i];
+			if (!methods[i]) {
+				char *method_name = dex_method_name (bin, i);
+				dprintf ("import %d (%s)\n", i, method_name);
+				if (method_name && *method_name) {
+					RBinSymbol *sym = R_NEW0 (RBinSymbol);
+					strncpy (sym->name, method_name, R_BIN_SIZEOF_STRINGS);
+					strcpy (sym->type, "FUNC");
+					sym->paddr = sym->vaddr = 0; // UNKNOWN
+					r_list_append (bin->imports_list, sym);
+				}
+				free (method_name);
 			}
-			free (method_name);
 		}
+		free (methods);
 	}
-	free (methods);
 	return R_TRUE;
 }
 
@@ -589,6 +616,7 @@ free (methodname);
 	return ret;
 #endif
 }
+
 static RList* methods (RBinFile *arch) {
 	RBinDexObj *bin;
 	if (!arch || !arch->o || !arch->o->bin_obj)
@@ -609,9 +637,9 @@ static RList* classes (RBinFile *arch) {
 	struct dex_class_t entry;
 	const int len = 100;
 	RList *ret = NULL;
+	int i, class_index = 0;
 	char *name = NULL;
 	RBinClass *class;
-	int i;
 	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
 
@@ -624,9 +652,11 @@ static RList* classes (RBinFile *arch) {
 		return NULL;
 	ret->free = (RListFree)__r_bin_class_free;
 	for (i = 0; i < bin->header.class_size; i++) {
-		ut64 class_addr = (ut64) bin->header.class_offset + (sizeof (struct dex_class_t)*i);
+		ut64 class_addr = (ut64) bin->header.class_offset \
+			+ (sizeof (struct dex_class_t)*i);
 		// ETOOSLOW
-		r_buf_read_at (bin->b, class_addr, (ut8*)&entry, sizeof (struct dex_class_t));
+		r_buf_read_at (bin->b, class_addr, (ut8*)&entry,
+			sizeof (struct dex_class_t));
 		// TODO: implement sections.. each section specifies a class boundary
 {
 		free (name);
@@ -654,22 +684,45 @@ static RList* classes (RBinFile *arch) {
 		// TODO: use RConstr here
 		//class->name = strdup (name[0]<0x41? name+1: name); 
 		class->name = dex_class_name_byid (bin, entry.class_id);
-		class->index = entry.class_id + bin->header.class_offset;
-// find reference to this class instance
-		//class->addr = class_addr;
-		r_list_append (ret, class);
-		dprintf ("class.%s=%d\n", name[0]==12?name+1:name, entry.class_id);
-		dprintf ("# access_flags = %x;\n", entry.access_flags);
-		dprintf ("# super_class = %d;\n", entry.super_class);
-		dprintf ("# interfaces_offset = %08x;\n", entry.interfaces_offset);
-		//dprintf ("ut32 source_file = %08x;\n", entry.source_file);
-		dprintf ("# anotations_offset = %08x;\n", entry.anotations_offset);
-		dprintf ("# class_data_offset = %08x;\n", entry.class_data_offset);
-		dprintf ("# static_values_offset = %08x;\n\n", entry.static_values_offset);
-}
+		// find reference to this class instance
+		char *cn = getClassName(class->name);
+		if (cn) {
+			free (class->name);
+			class->index = class_index++;
+			class->addr = entry.class_id + bin->header.class_offset;
+			class->name = cn;
+			//class->addr = class_addr;
+
+		int *methods = parse_class (arch, bin, &entry, class);
+		free (methods);
+
+			r_list_append (ret, class);
+			dprintf ("class.%s=%d\n", name[0]==12?name+1:name, entry.class_id);
+			dprintf ("# access_flags = %x;\n", entry.access_flags);
+			dprintf ("# super_class = %d;\n", entry.super_class);
+			dprintf ("# interfaces_offset = %08x;\n", entry.interfaces_offset);
+			//dprintf ("ut32 source_file = %08x;\n", entry.source_file);
+			dprintf ("# anotations_offset = %08x;\n", entry.anotations_offset);
+			dprintf ("# class_data_offset = %08x;\n", entry.class_data_offset);
+			dprintf ("# static_values_offset = %08x;\n\n", entry.static_values_offset);
+		} else {
+			free (class->name);
+			free (class);
+		}
+	}
 	}
 	free (name);
 	return ret;
+}
+
+static int already_entry (RList *entries, ut64 vaddr) {
+	RBinAddr *e;
+	RListIter *iter;
+	r_list_foreach (entries, iter, e) {
+		if (e->vaddr == vaddr)
+			return 1;
+	}
+	return 0;
 }
 
 static RList* entries(RBinFile *arch) {
@@ -683,13 +736,24 @@ static RList* entries(RBinFile *arch) {
 		free (ptr);
 		return NULL;
 	}
-	if (!bin->methods_list)
+	if (!bin->methods_list) {
 		dex_loadcode (arch, bin);
+	}
 	// XXX: entry + main???
 	r_list_foreach (bin->methods_list, iter, m) {
 		if (strlen (m->name)>=4 && !strcmp (m->name+strlen (m->name)-4, "main")) {
 			dprintf ("ENTRY -> %s\n", m->name);
 			ptr->paddr = ptr->vaddr = m->paddr;
+			if (!already_entry (ret, ptr->vaddr)) {
+				r_list_append (ret, ptr);
+				ptr = R_NEW0 (RBinAddr);
+				if (!ptr) break;
+			}
+		}
+	}
+	if (ptr && r_list_empty (ret)) {
+		ptr->paddr = ptr->vaddr = bin->code_from;
+		if (!already_entry (ret, ptr->vaddr)) {
 			r_list_append (ret, ptr);
 		}
 	}

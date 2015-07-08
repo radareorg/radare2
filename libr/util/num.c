@@ -119,8 +119,9 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		if (ok) return ret;
 	}
 
-	if (str[0]=='\'' && str[2]=='\'')
-		return (ut64)str[1];
+	if (str[0] && str[1] && str[2])
+		if (str[0]=='\'' && str[2]=='\'')
+			return (ut64)str[1];
 
 	len = strlen (str);
 	if (len>3 && str[4] == ':') {

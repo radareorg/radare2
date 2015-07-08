@@ -212,8 +212,7 @@ R_API RIOSection *r_io_section_vget(RIO *io, ut64 vaddr) {
 	RListIter *iter;
 	RIOSection *s;
 	r_list_foreach (io->sections, iter, s) {
-		if (!s->vaddr)
-			continue;
+		//if (!s->vaddr) continue;
 		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize)
 			return s;
 	}
@@ -302,15 +301,19 @@ R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
 }
 
 // TODO: deprecate ?
-R_API int r_io_section_exists_for_paddr (RIO *io, ut64 maddr) {
-	RIOSection *s = r_io_section_mget (io, maddr);
-	return s?1:0;
+R_API int r_io_section_exists_for_paddr (RIO *io, ut64 paddr, int hasperm) {
+	RIOSection *s = r_io_section_mget (io, paddr);
+	if (!s) return R_FALSE;
+	if (hasperm) return (s->rwx & hasperm)? R_TRUE: R_FALSE;
+	return R_TRUE;
 }
 
 // TODO: deprecate ?
-R_API int r_io_section_exists_for_vaddr (RIO *io, ut64 vaddr) {
+R_API int r_io_section_exists_for_vaddr (RIO *io, ut64 vaddr, int hasperm) {
 	RIOSection *s = r_io_section_vget (io, vaddr);
-	return s?1:0;
+	if (!s) return R_FALSE;
+	if (hasperm) return (s->rwx & hasperm)? R_TRUE: R_FALSE;
+	return R_TRUE;
 }
 
 // dupped in vio.c

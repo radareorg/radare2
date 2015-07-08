@@ -1,3 +1,4 @@
+include ../global.mk
 include ../config-user.mk
 include ../mk/${COMPILER}.mk
 
@@ -5,10 +6,10 @@ WGET?=wget
 CS_VER=3.0
 CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_TAR=
-CS_URL=https://www.github.com/aquynh/capstone.git
-CS_UPD=20150531
+CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
+CS_UPD=20150630
 CS_BRA=next
-CS_TIP=3808eec03330341a09f8017c5370dbf6a4fa1c13
+CS_TIP=fec23ae5311473643ace79d47dfcf0b7d0d6a658
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=21b9b25e9dae4af0ef309d4089a54e53b8f5b479
 
@@ -27,7 +28,7 @@ SDB_URL=git://github.com/radare/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
-ifneq (,$(findstring cygwin,${OSTYPE})$(findstring mingw32,${OSTYPE}))
+ifneq (,$(findstring cygwin,${OSTYPE})$(findstring mingw32,${OSTYPE})$(findstring msys,${OSTYPE}))
 CFLAGS_SHARED=
 else
 CFLAGS_SHARED=-fPIC
@@ -161,7 +162,7 @@ capstone-sync:
 		git config user.name || ( \
 		git config user.name "radare-travis" ; \
 		git config user.email radare-travis@foo.com ) ; \
-		EDITOR=cat git revert ${CS_REV} ; \
+		EDITOR=cat git revert --no-edit ${CS_REV} ; \
 	fi
 
 .PHONY: capstone
@@ -187,6 +188,5 @@ CAPSTONE_CFLAGS=-g
 capstone-build: capstone
 	cd capstone && CFLAGS="-Dmips=mips ${CAPSTONE_CFLAGS} $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
 		$(MAKE) CC="$(CC)" AR_EXT=a IS_CYGWIN=0 CAPSTONE_STATIC=yes CAPSTONE_SHARED=no \
-		RANLIB="$(RANLIB)" AR="$(AR)" IS_MINGW=0 \
-		./libcapstone.a
+		RANLIB="$(RANLIB)" AR="$(AR)" IS_MINGW=0 ./libcapstone.a
 endif

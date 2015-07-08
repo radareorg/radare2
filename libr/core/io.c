@@ -52,8 +52,16 @@ R_API int r_core_seek_base (RCore *core, const char *hex) {
 	if (p) {
 		strcpy (p, "0x");
 		strcpy (p+2, hex);
-		n = r_num_math (core->num, p);
+		if (hex[0] >= '0' && hex[0] <= '9') {
+			n = r_num_math (core->num, p);
+		} else {
+			eprintf ("Invalid argument\n");
+			n = 0;
+		}
 		free (p);
+	}
+	if (!n) {
+		return R_FALSE;
 	}
 	mask = UT64_MAX << i;
 	addr = (addr & mask) | n;
@@ -399,5 +407,5 @@ R_API int r_core_is_valid_offset (RCore *core, ut64 offset) {
 		r_sys_backtrace ();
 		return R_FAIL;
 	}
-	return r_io_is_valid_offset (core->io, offset);
+	return r_io_is_valid_offset (core->io, offset, 0);
 }

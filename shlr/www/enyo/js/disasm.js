@@ -33,7 +33,7 @@ var BBGraph = function () {
     updateBox: function(event) {
       // move the html mask when moving the svg rect
       var bbox = this.model.getBBox();
-      this.$box.css({ width: bbox.width + 2, height: bbox.height, left: bbox.x - 1, top: bbox.y + 7});
+      this.$box.css({ width: bbox.width + 2, height: bbox.height - 6, left: bbox.x - 1, top: bbox.y + 7});
     }
   });
 };
@@ -76,7 +76,7 @@ BBGraph.prototype.makeLink = function(v1, v2, color) {
     target: { id: String(v2) },
     attrs: {
       '.marker-target': {
-        d: 'M 4 0 L 0 2 L 4 4 z',
+        d: 'M 6 0 L 0 3 L 6 6 z',
         fill: color,
         stroke: color
       },
@@ -136,11 +136,6 @@ adjustVertices = function(graph, cell) {
       var angle = g.toRad(theta + sign * 90);
       var vertex = g.point.fromPolar(offset, angle, midPoint);
 
-      console.log(" sign ", sign,
-          " theta ", theta,
-          " angle ", angle,
-          " midpoint ", midPoint,
-          " vertex ", vertex);
       // we tell the link deviate to the right or to the left
       // from its path depending on sign
       //     ^             ^
@@ -221,8 +216,6 @@ BBGraph.prototype.render = function() {
   // reposition graph
   reposition_graph();
 
-  var myAdjustVertices = _.partial(adjustVertices, graph);
-
   // remove html mask in minimap since its not scaled
   $("#minimap .basicblock").remove();
 
@@ -273,7 +266,8 @@ BBGraph.prototype.render = function() {
     }
   });
 
-  graph.getLinks().forEach(myAdjustVertices);
+  var myAdjustVertices = _.partial(adjustVertices, graph);
+  _.each(graph.getLinks(), myAdjustVertices);
   paper.on('cell:pointerup', myAdjustVertices);
 
   if (r2ui._dis.minimap) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2014 - pancake */
+/* radare - LGPL - Copyright 2011-2015 - pancake */
 
 // TODO: implement the rap API in r_socket ?
 #include "r_io.h"
@@ -61,9 +61,10 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 	r_socket_write (s, tmp, 5);
 	r_socket_flush (s);
 	// recv
-	ret = r_socket_read (s, tmp, 5);
+	ret = r_socket_read_block (s, tmp, 5);
 	if (ret != 5 || tmp[0] != (RMT_READ|RMT_REPLY)) {
-		eprintf ("rap__read: Unexpected rap read reply (%d=0x%02x) expected (%d=0x%02x)\n",
+		eprintf ("rap__read: Unexpected rap read reply "
+			"(%d=0x%02x) expected (%d=0x%02x)\n",
 			ret, tmp[0], 2, (RMT_READ|RMT_REPLY));
 		return -1;
 	}
@@ -73,9 +74,6 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 	r_socket_read_block (s, buf, i);
-	if (count>0 && count<RMT_MAX) {
-		//eprintf ("READ %d\n" ,i);
-	} else count = 0;
         return count;
 }
 
@@ -256,8 +254,9 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	if (*command=='!') {
 		op = RMT_SYSTEM;
 		command++;
-	} else
+	} else {
 		op = RMT_CMD;
+	}
 	buf[0] = op;
 	i = strlen (command)+1;
 	if (i>RMT_MAX-5) {
@@ -269,9 +268,45 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	r_socket_write (s, buf, i+5);
 	r_socket_flush (s);
 
+	/* read reverse cmds */
+	for (;;) {
+		ret = r_socket_read_block (s, buf, 1);
+		if (ret != 1) {
+			return -1;
+		}
+		/* system back in the middle */
+		/* TODO: all pkt handlers should check for reverse queries */
+		if (buf[0] == RMT_SYSTEM || buf[0] == RMT_CMD) {
+			char *res, *str;
+			ut32 reslen = 0, cmdlen = 0;
+			// run io->cmdstr
+			// return back the string
+			buf[0] |= RMT_REPLY;
+			ret = r_socket_read_block (s, buf+1, 4);
+			r_mem_copyendian ((ut8*)&cmdlen, buf+1, 4, ENDIAN);
+			if (cmdlen+1==0) // check overflow
+				cmdlen = 0;
+			str = calloc (1, cmdlen+1);
+			ret = r_socket_read_block (s, (ut8*)str, cmdlen);
+			//eprintf ("RUN CMD(%s)\n", str);
+			res = io->cb_core_cmdstr (io->user, str);
+			eprintf ("[%s]=>(%s)\n", str, res);
+			reslen = strlen (res);
+			free (str);
+			r_mem_copyendian ((ut8*)buf+1, (const ut8*)&reslen,
+				sizeof(ut32), ENDIAN);
+			memcpy (buf+5, res, reslen);
+			free (res);
+			r_socket_write (s, buf, 5+reslen);
+			r_socket_flush (s);
+		} else {
+			break;
+		}
+	}
+
 	// read
-	ret = r_socket_read_block (s, buf, 5);
-	if (ret != 5)
+	ret = r_socket_read_block (s, buf+1, 4);
+	if (ret != 4)
 		return -1;
 	if (buf[0] != (op | RMT_REPLY)) {
 		eprintf ("Unexpected system reply\n");
@@ -280,6 +315,10 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 
 	r_mem_copyendian ((ut8*)&i, buf+1, 4, ENDIAN);
 	ret = 0;
+	if (i>0xffffffff) {
+		eprintf ("Invalid length\n");
+		return -1;
+	}
 	ptr = (char *)malloc (i+1);
 	if (ptr) {
 		int ir;

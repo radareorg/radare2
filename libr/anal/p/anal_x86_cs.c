@@ -422,6 +422,7 @@ SETL/SETNGE
 		case X86_INS_MOVAPS:
 		case X86_INS_MOVAPD:
 		case X86_INS_MOVZX:
+		case X86_INS_MOVUPS:
 		case X86_INS_MOVABS:
 		case X86_INS_MOVHPD:
 		case X86_INS_MOVHPS:
@@ -865,12 +866,16 @@ SETL/SETNGE
 				}
 				break;
 			case X86_OP_MEM:
-				{
+				op->type = R_ANAL_OP_TYPE_UJMP;
+				if (INSOP(0).mem.base == X86_REG_RIP) {
+					op->ptr = INSOP(0).mem.disp;
+					op->ptr += addr + insn->size;
+					op->refptr = 8;
+				} else {
 					cs_x86_op in = INSOP(0);
-					op->type = R_ANAL_OP_TYPE_UJMP;
 					if (in.mem.index == 0 && in.mem.base == 0 && in.mem.scale == 1) {
 						op->type = R_ANAL_OP_TYPE_UJMP;
-						op->ptr= in.mem.disp;
+						op->ptr = in.mem.disp;
 						if (a->decode) {
 							esilprintf (op, "0x%"PFMT64x",[],%s,=", op->ptr, pc);
 						}
@@ -899,6 +904,7 @@ SETL/SETNGE
 		case X86_INS_VPXORD:
 		case X86_INS_VPXORQ:
 		case X86_INS_VPXOR:
+		case X86_INS_XORPS:
 		case X86_INS_KXORW:
 		case X86_INS_PXOR:
 		case X86_INS_XOR:
@@ -1022,15 +1028,6 @@ SETL/SETNGE
 			}
 			break;
 		case X86_INS_DIV:
-			op->type = R_ANAL_OP_TYPE_DIV;
-			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 1, "/");
-				esilprintf (op, "%s,%s", src, dst);
-				free (src);
-				free (dst);
-			}
-			break;
 		case X86_INS_IDIV:
 			op->type = R_ANAL_OP_TYPE_DIV;
 			if (a->decode) {
@@ -1089,11 +1086,22 @@ SETL/SETNGE
 		case X86_INS_XADD:
 			op->type = R_ANAL_OP_TYPE_ADD;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 1, "+");
-				esilprintf (op, "%s,%s", src, dst);		// TODO: update flags
-				free (src);
-				free (dst);
+				if (INSOP(0).type == X86_OP_MEM) {
+					char *src = getarg (handle, insn, 1, 0, NULL);
+					char *src2 = getarg (handle, insn, 0, 0, NULL);
+					char *dst = getarg (handle, insn, 0, 1, NULL);
+					// TODO: update flags
+					esilprintf (op, "%s,%s,+,%s", src, src2, dst);
+					free (src);
+					free (src2);
+					free (dst);
+				} else {
+					char *src = getarg (handle, insn, 1, 0, NULL);
+					char *dst = getarg (handle, insn, 0, 1, "+");
+					esilprintf (op, "%s,%s", src, dst);		// TODO: update flags
+					free (src);
+					free (dst);
+				}
 			}
 			if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
 				if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {

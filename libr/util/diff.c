@@ -156,11 +156,10 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 					.b_off = oob, .b_buf = bt, .b_len = btl
 				};
 				ret = d->callback(d, d->user, &o);
+				if (!ret)
 					break;
 				atl = btl = 0;
 				hit = 0;
-				if (!ret)
-					break;
 			}
 		}
 		oop = op;

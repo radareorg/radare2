@@ -51,6 +51,10 @@ R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx
 repeat:
 		for (i=0; i<bp->cur->nbps; i++) {
 			b = &bp->cur->bps[i];
+			if (bp->cur->bps[i].bits) {
+				if (bp->bits != bp->cur->bps[i].bits)
+					continue;
+			}
 			if (bp->cur->bps[i].length == len) {
 				memcpy (buf, b->bytes, b->length);
 				return b->length;

@@ -16,6 +16,7 @@
 
 R_API RAnalState * r_anal_state_new (ut64 start, ut8* buffer, ut64 len) {
 	RAnalState *state = R_NEW0 (RAnalState);
+	if (!state) return NULL;
 	state->start = start;
 	state->end = start + len;
 	state->buffer = buffer;

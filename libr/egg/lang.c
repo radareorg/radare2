@@ -251,6 +251,11 @@ static void rcc_element(REgg *egg, char *str) {
 			mode = NORMAL;
 			break;
 		case SYSCALL:
+			if (nsyscalls > 255){
+				eprintf ("global-buffer-overflow in syscalls\n");
+				break;
+			}
+			//XXX the mem for name and arg are not freed - MEMLEAK
 			syscalls[nsyscalls].name = strdup (dstvar);
 			syscalls[nsyscalls].arg = strdup (str);
 			nsyscalls++;
@@ -352,7 +357,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 					for (i=0; i<nsyscalls; i++)
 						if (!strcmp (syscalls[i].name, callname)) {
 							free (oldstr);
-							return syscalls[i].arg;
+							return strdup(syscalls[i].arg);
 						}
 					eprintf ("Unknown arg for syscall '%s'\n", callname);
 				} else eprintf ("NO CALLNAME '%s'\n", callname);
@@ -368,6 +373,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 			eprintf ("Something is really wrong\n");
 		}
 		ret = strdup(out);
+		free (oldstr);
 	} else if (*str=='"' || *str=='\'') {
 		int mustfilter = *str=='"';
 		/* TODO: check for room in stackfixed area */
@@ -382,8 +388,8 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		dstvar = strdup (skipspaces (foo));
 		rcc_pushstr (egg, str, mustfilter);
 		ret = r_egg_mkvar (egg, out, foo, 0);
+		free (oldstr);
 	}
-	free (oldstr);
 	return ret;
 }
 
@@ -518,7 +524,11 @@ static void rcc_context(REgg *egg, int delta) {
 	REggEmit *emit = egg->remit;
 	char str[64];
 
-	nestedi[CTX-1]++;
+
+	if (CTX>31 || CTX <0)
+		return;
+
+	nestedi[CTX]++;
 	if (callname && CTX>0) {// && delta>0) {
 	//	set_nested (callname);
 //eprintf (" - - - - - - -  set nested d=%d c=%d (%s)\n", delta, context-1, callname);

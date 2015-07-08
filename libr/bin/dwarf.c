@@ -1327,8 +1327,9 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 	RBinDwarfDebugInfo *inf = NULL, di;
 	inf = &di;
 
-	r_bin_dwarf_init_debug_info (inf);
 	if (!da || !s || !obuf) return R_FALSE;
+
+	r_bin_dwarf_init_debug_info (inf);
 	while (buf < buf_end) {
 		if (inf->length >= inf->capacity)
 			break;
@@ -1499,6 +1500,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 
 static RBinDwarfRow *r_bin_dwarf_row_new (ut64 addr, const char *file, int line, int col) {
 	RBinDwarfRow *row = R_NEW0 (RBinDwarfRow);
+	if (!row) return NULL;
 	row->file = strdup (file);
 	row->address = addr;
 	row->line = line;

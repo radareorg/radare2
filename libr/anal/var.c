@@ -306,7 +306,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				// we cant express all type info here :(
 				anal->printf ("af%c %d %s %s @ 0x%"PFMT64x"\n",
 					kind, var->delta,
-					var->type, var->name, fcn->addr);
+					var->name, var->type, fcn->addr);
 				break;
 			case 'j':
 				anal->printf ("{\"name\":\"%s\","

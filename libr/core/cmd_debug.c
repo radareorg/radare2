@@ -1,5 +1,18 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+#define TN_KEY_LEN 32
+#define TN_KEY_FMT "%"PFMT64u
+
+struct dot_trace_ght {
+	RGraph *graph;
+	Sdb *graphnodes;
+};
+
+struct trace_node {
+	ut64 addr;
+	int refs;
+};
+
 static int checkbpcallback(RCore *core);
 
 static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
@@ -41,24 +54,91 @@ static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 	free (syscalls);
 }
 
-static void dot_r_graph_traverse(RCore *core, RGraph *t) {
-	RGraphNode *n, *n2;
-	RListIter *iter, *iter2;
+static RGraphNode *get_graphtrace_node (RGraph *g, Sdb *nodes, struct trace_node *tn) {
+	RGraphNode *gn;
+	char tn_key[TN_KEY_LEN];
+
+	snprintf (tn_key, TN_KEY_LEN, TN_KEY_FMT, tn->addr);
+	gn = (RGraphNode *)(size_t)sdb_num_get (nodes, tn_key, NULL);
+	if (!gn) {
+		gn = r_graph_add_node (g, tn);
+		sdb_num_set (nodes, tn_key, (ut64)(size_t)gn, 0);
+	}
+	return gn;
+}
+
+static void dot_trace_create_node (RTreeNode *n, RTreeVisitor *vis) {
+	struct dot_trace_ght *data = (struct dot_trace_ght *)vis->data;
+	struct trace_node *tn = n->data;
+
+	if (tn)
+		get_graphtrace_node (data->graph, data->graphnodes, tn);
+}
+
+static void dot_trace_discover_child (RTreeNode *n, RTreeVisitor *vis) {
+	struct dot_trace_ght *data = (struct dot_trace_ght *)vis->data;
+	RGraph *g = data->graph;
+	Sdb *gnodes = data->graphnodes;
+	RTreeNode *parent = n->parent;
+	struct trace_node *tn = n->data;
+	struct trace_node *tn_parent = parent->data;
+
+	if (tn && tn_parent) {
+		RGraphNode *gn = get_graphtrace_node (g, gnodes, tn);
+		RGraphNode *gn_parent = get_graphtrace_node (g, gnodes, tn_parent);
+
+		if (!r_graph_adjacent (g, gn_parent, gn))
+			r_graph_add_edge (g, gn_parent, gn);
+	}
+}
+
+static void dot_trace_traverse(RCore *core, RTree *t) {
 	const char *gfont = r_config_get (core->config, "graph.font");
+	struct dot_trace_ght aux_data;
+	RTreeVisitor vis = { 0 };
+	const RList *nodes;
+	RListIter *iter;
+	RGraphNode *n;
+
+	aux_data.graph = r_graph_new ();
+	aux_data.graphnodes = sdb_new0 ();
+
+	/* build a callgraph from the execution trace */
+	vis.data = &aux_data;
+	vis.pre_visit = (RTreeNodeVisitCb)dot_trace_create_node;
+	vis.discover_child = (RTreeNodeVisitCb)dot_trace_discover_child;
+	r_tree_bfs (t, &vis);
+
+	/* traverse the callgraph to print the dot file */
+	nodes = r_graph_get_nodes (aux_data.graph);
 	r_cons_printf ("digraph code {\n"
 		"graph [bgcolor=white];\n"
 		"    node [color=lightgray, style=filled"
 		" shape=box fontname=\"%s\" fontsize=\"8\"];\n", gfont);
-	r_list_foreach (t->nodes, iter, n) {
-		r_cons_printf ("\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x
-			"\" color=\"lightgray\" label=\"0x%08"PFMT64x
-			" (%d)\"]\n", n->addr, n->addr, n->addr, n->refs);
-		r_list_foreach (n->children, iter2, n2) {
-			r_cons_printf ("\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x
-				"\" [color=\"red\"];\n", n->addr, n2->addr);
+	r_list_foreach (nodes, iter, n) {
+		struct trace_node *tn = (struct trace_node *)n->data;
+		const RList *neighbours = r_graph_get_neighbours (aux_data.graph, n);
+		RListIter *it_n;
+		RGraphNode *w;
+
+		if (tn) {
+			r_cons_printf ("\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x
+					"\" color=\"lightgray\" label=\"0x%08"PFMT64x
+					" (%d)\"]\n", tn->addr, tn->addr, tn->addr, tn->refs);
+		}
+		r_list_foreach (neighbours, it_n, w) {
+			 struct trace_node *tv = (struct trace_node *)w->data;
+
+			 if (tv && tn) {
+				 r_cons_printf ("\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x
+						 "\" [color=\"red\"];\n", tn->addr, tv->addr);
+			 }
 		}
 	}
 	r_cons_printf ("}\n");
+
+	r_graph_free (aux_data.graph);
+	sdb_free (aux_data.graphnodes);
 }
 
 /* TODO: refactor all those step_until* function into a single one
@@ -1144,6 +1224,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 
 		"dbt", "", "Display backtrace",
 		"dbt=", "", "Display backtrace in one line",
+		"dbtj", "", "Display backtrace in JSON",
 		"dbte", " <addr>", "Enable Breakpoint Trace",
 		"dbtd", " <addr>", "Disable Breakpoint Trace",
 		"dbts", " <addr>", "Swap Breakpoint Trace",
@@ -1195,7 +1276,22 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				eprintf ("Cannot unset tracepoint\n");
 			}
 			break;
-		case '=':
+		case 'j': // dbtj
+			addr = UT64_MAX;
+			if (input[2]==' ' && input[3])
+				addr = r_num_math (core->num, input+2);
+			i = 0;
+			list = r_debug_frames (core->dbg, addr);
+			r_cons_printf ("[");
+			r_list_foreach (list, iter, frame) {
+				r_cons_printf ("%s%08"PFMT64d,
+					(i?",":""), frame->addr);
+				i++;
+			}
+			r_cons_printf ("]\n");
+			r_list_free (list);
+			break;
+		case '=': // dbt=
 			addr = UT64_MAX;
 			if (input[2]==' ' && input[3])
 				addr = r_num_math (core->num, input+2);
@@ -1208,7 +1304,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				i++;
 			}
 			r_cons_newline ();
-			r_list_purge (list);
+			r_list_free (list);
 			break;
 		case 0:
 			addr = UT64_MAX;
@@ -1217,10 +1313,27 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
 			r_list_foreach (list, iter, frame) {
-				r_cons_printf ("%d  0x%08"PFMT64x"  %d\n",
-					i++, frame->addr, frame->size);
+				char flagdesc[1024];
+				RFlagItem *f = r_flag_get_at (core->flags, frame->addr);
+				if (f) {
+					if (f->offset != addr) {
+						snprintf (flagdesc, sizeof(flagdesc), "%s+%d", f->name, (int)(frame->addr - f->offset));
+					} else {
+						snprintf (flagdesc, sizeof(flagdesc), "%s", f->name);
+					}
+				} else {
+					flagdesc[0] = 0;
+				}
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
+				if (fcn) {
+					r_cons_printf ("%d  0x%08"PFMT64x"  %d  [%s]  %s\n",
+						i++, frame->addr, frame->size, fcn->name, flagdesc);
+				} else {
+					r_cons_printf ("%d  0x%08"PFMT64x"  %d  %s\n",
+						i++, frame->addr, frame->size, flagdesc);
+				}
 			}
-			r_list_purge (list);
+			r_list_free (list);
 			break;
 		default:
 			eprintf ("See db?\n");
@@ -1277,10 +1390,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), R_FALSE);
 		break;
 	case 'h':
-		if (input[2]==' ') {
-			if (!r_bp_use (core->dbg->bp, input+3))
+		switch (input[2]) {
+		case ' ':
+			if (!r_bp_use (core->dbg->bp, input+3, core->anal->bits))
 				eprintf ("Invalid name: '%s'.\n", input+3);
-		} else r_bp_plugin_list (core->dbg->bp);
+			break;
+		case 0:
+			r_bp_plugin_list (core->dbg->bp);
+			break;
+		default:
+			eprintf ("Usage: dh [plugin-name]  # select a debug handler plugin\n");
+			break;
+		}
 		break;
 	case ' ':
 		for (p=input+1; *p==' ';p++);
@@ -1358,68 +1479,196 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	}
 }
 
-static void r_core_debug_trace_calls (RCore *core) {
-	int n = 0, t = core->dbg->trace->enabled;
-	/*RGraphNode *gn;*/
-	core->dbg->trace->enabled = 0;
-	r_graph_plant (core->dbg->graph);
-	r_cons_break (static_debug_stop, core->dbg);
-	r_reg_arena_swap (core->dbg->reg, R_TRUE);
-	for (;;) {
+static RTreeNode *add_trace_tree_child (Sdb *db, RTree *t, RTreeNode *cur, ut64 addr) {
+	struct trace_node *t_node;
+	RTreeNode *node;
+	char dbkey[TN_KEY_LEN];
+
+	snprintf (dbkey, TN_KEY_LEN, TN_KEY_FMT, addr);
+	t_node = (struct trace_node *)(size_t)sdb_num_get (db, dbkey, NULL);
+	if (!t_node) {
+		t_node = (struct trace_node *)malloc (sizeof(*t_node));
+		t_node->addr = addr;
+		t_node->refs = 1;
+		sdb_num_set (db, dbkey, (ut64)(size_t)t_node, 0);
+	} else {
+		t_node->refs++;
+	}
+
+	node = r_tree_add_node (t, cur, t_node);
+	return node;
+}
+
+static void trace_traverse_pre (RTreeNode *n, RTreeVisitor *vis) {
+	struct trace_node *tn = n->data;
+	unsigned int i;
+
+	if (!tn)
+		return;
+
+	for (i = 0; i < n->depth - 1; ++i)
+		r_cons_printf ("   ");
+
+	r_cons_printf (" 0x%08"PFMT64x" refs %d\n",
+			tn->addr, tn->refs);
+}
+
+static void trace_traverse (RTree *t) {
+	RTreeVisitor vis = { 0 };
+
+	/* clear the line on stderr, because somebody has written there */
+	fprintf (stderr, "\x1b[2K\r");
+	fflush (stderr);
+	vis.pre_visit = (RTreeNodeVisitCb)trace_traverse_pre;
+	r_tree_dfs (t, &vis);
+}
+
+static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_addr) {
+	int shallow_trace = r_config_get_i (core->config, "dbg.shallow_trace");
+	Sdb *tracenodes = core->dbg->tracenodes;
+	RTree *tr = core->dbg->tree;
+	RDebug *dbg = core->dbg;
+	ut64 debug_to = UT64_MAX;
+	RTreeNode *cur;
+	int n = 0;
+
+	/* set root if not already present */
+	r_tree_add_node (tr, NULL, NULL);
+	cur = tr->root;
+
+	while (R_TRUE) {
 		ut8 buf[32];
 		ut64 addr;
 		RAnalOp aop;
+		int addr_in_range;
+
 		if (r_cons_singleton ()->breaked)
 			break;
-		if (r_debug_is_dead (core->dbg))
+		if (r_debug_is_dead (dbg))
 			break;
-		if (!r_debug_step (core->dbg, 1))
+		if (debug_to != UT64_MAX && !r_debug_continue_until (dbg, debug_to))
 			break;
-		if (!r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE))
+		else if (!r_debug_step (dbg, 1))
 			break;
-		addr = r_debug_reg_get (core->dbg, "pc");
+		debug_to = UT64_MAX;
+		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE))
+			break;
+		addr = r_debug_reg_get (dbg, "pc");
+		addr_in_range = addr >= from && addr < to;
+
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
 		r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
 		eprintf (" %d %"PFMT64x"\r", n++, addr);
 		switch (aop.type) {
-			case R_ANAL_OP_TYPE_UCALL:
-				// store regs
-				// step into
-				// get pc
-				r_debug_step (core->dbg, 1);
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-				addr = r_debug_reg_get (core->dbg, "pc");
-				//eprintf ("0x%08"PFMT64x" ucall. computation may fail\n", addr);
-				r_graph_push (core->dbg->graph, addr, NULL);
-				// TODO: push pc+aop.length into the call path stack
-				break;
-			case R_ANAL_OP_TYPE_CALL:
-				r_graph_push (core->dbg->graph, addr, NULL);
-				break;
-			case R_ANAL_OP_TYPE_RET:
+		case R_ANAL_OP_TYPE_UCALL:
+		{
+			ut64 called_addr;
+			int called_in_range;
+			// store regs
+			// step into
+			// get pc
+			r_debug_step (dbg, 1);
+			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+			called_addr = r_debug_reg_get (dbg, "pc");
+			called_in_range = called_addr >= from && called_addr < to;
+			if (!called_in_range && addr_in_range && shallow_trace)
+				debug_to = addr;
+			if (addr_in_range) {
+				cur = add_trace_tree_child(tracenodes, tr, cur, addr);
+				if (debug_to != UT64_MAX)
+					cur = cur->parent;
+			}
+			// TODO: push pc+aop.length into the call path stack
+			break;
+		}
+		case R_ANAL_OP_TYPE_CALL:
+		{
+			int called_in_range = aop.jump >= from && aop.jump < to;
+			if (!called_in_range && addr_in_range && shallow_trace)
+				debug_to = aop.addr + aop.size;
+			if (addr_in_range) {
+				cur = add_trace_tree_child(tracenodes, tr, cur, addr);
+				if (debug_to != UT64_MAX)
+					cur = cur->parent;
+			}
+			break;
+		}
+		case R_ANAL_OP_TYPE_RET:
 #if 0
-				// TODO: we must store ret value for each call in the graph path to do this check
-				r_debug_step (core->dbg, 1);
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-				addr = r_debug_reg_get (core->dbg, "pc");
-				// TODO: step into and check return address if correct
-				// if not correct we are hijacking the control flow (exploit!)
+			// TODO: we must store ret value for each call in the graph path to do this check
+			r_debug_step (dbg, 1);
+			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+			addr = r_debug_reg_get (dbg, "pc");
+			// TODO: step into and check return address if correct
+			// if not correct we are hijacking the control flow (exploit!)
 #endif
-				/*gn =*/ r_graph_pop (core->dbg->graph);
+			if (cur != tr->root)
+				cur = cur->parent;
 #if 0
-				if (addr != gn->addr) {
-					eprintf ("Oops. invalid return address 0x%08"PFMT64x
-							"\n0x%08"PFMT64x"\n", addr, gn->addr);
-				}
+			if (addr != gn->addr) {
+				eprintf ("Oops. invalid return address 0x%08"PFMT64x
+						"\n0x%08"PFMT64x"\n", addr, gn->addr);
+			}
 #endif
-				break;
+			break;
 		}
 		if (checkbpcallback (core)) {
 			eprintf ("Interrupted by a breakpoint\n");
 			break;
 		}
 	}
-	r_graph_traverse (core->dbg->graph);
+}
+
+static void debug_trace_calls (RCore *core, const char *input) {
+	RBreakpointItem *bp_final = NULL;
+	int t = core->dbg->trace->enabled;
+	ut64 from = 0, to = UT64_MAX, final_addr = UT64_MAX;
+
+	if (r_debug_is_dead (core->dbg)) {
+		eprintf ("No process to debug.");
+		return;
+	}
+
+	if (*input == ' ') {
+		ut64 first_n;
+
+		while (*input == ' ') input++;
+		first_n = r_num_math (core->num, input);
+		input = strchr (input, ' ');
+		if (input) {
+			while (*input == ' ') input++;
+			from = first_n;
+			to = r_num_math (core->num, input);
+			input = strchr (input, ' ');
+			if (input) {
+				while (*input == ' ') input++;
+				final_addr = r_num_math (core->num, input);
+			}
+		} else {
+			final_addr = first_n;
+		}
+	}
+
+	core->dbg->trace->enabled = 0;
+	r_cons_break (static_debug_stop, core->dbg);
+	r_reg_arena_swap (core->dbg->reg, R_TRUE);
+
+	if (final_addr != UT64_MAX) {
+		int hwbp = r_config_get_i (core->config, "dbg.hwbp");
+
+		if (hwbp)
+			bp_final = r_bp_add_hw (core->dbg->bp, final_addr, 1, R_BP_PROT_EXEC);
+		else
+			bp_final = r_bp_add_sw (core->dbg->bp, final_addr, 1, R_BP_PROT_EXEC);
+		if (!bp_final)
+			eprintf ("Cannot set breakpoint at final address (%llx)\n", final_addr);
+	}
+
+	do_debug_trace_calls (core, from, to, final_addr);
+	if (bp_final)
+		r_bp_del (core->dbg->bp, final_addr);
+
+	trace_traverse (core->dbg->tree);
 	core->dbg->trace->enabled = t;
 	r_cons_break_end();
 }
@@ -1844,7 +2093,7 @@ static int cmd_debug(void *data, const char *input) {
 				"Usage: dt", "", "Trace commands",
 				"dt", "", "List all traces ",
 				"dtd", "", "List all traced disassembled",
-				"dtc", "", "Trace call/ret",
+				"dtc [addr]|([from] [to] [addr])", "", "Trace call/ret",
 				"dtg", "", "Graph call/ret trace",
 				"dtr", "", "Reset traces (instruction//cals)",
 				NULL
@@ -1853,20 +2102,19 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'c': // "dtc"
-			if (r_debug_is_dead (core->dbg))
-				eprintf ("No process to debug.");
-			else r_core_debug_trace_calls (core);
+			debug_trace_calls (core, input + 2);
 			break;
 		case 'd':
 			// TODO: reimplement using the api
 			r_core_cmd0 (core, "pd 1 @@= `dt~[0]`");
 			break;
 		case 'g': // "dtg"
-			dot_r_graph_traverse (core, core->dbg->graph);
+			dot_trace_traverse (core, core->dbg->tree);
 			break;
 		case 'r':
-			r_graph_reset (core->dbg->graph);
+			r_tree_reset (core->dbg->tree);
 			r_debug_trace_free (core->dbg);
+			r_debug_tracenodes_reset (core->dbg);
 			core->dbg->trace = r_debug_trace_new ();
 			break;
 		case '\0':
@@ -1962,17 +2210,50 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'i':
 		{
-#define P r_cons_printf
+		const char * help_message[] = {
+			"Usage: di", "", "Debugger target information",
+			"di", "", "Show debugger target information",
+			"dij", "", "Same as above, but in JSON format",
+			NULL
+		};
 		RDebugInfo *rdi = r_debug_info (core->dbg, input+2);
-		if (rdi) {
-			P ("pid=%d\n", rdi->pid);
-			P ("tid=%d\n", rdi->tid);
-			if (rdi->exe) P ("exe=%s\n", rdi->exe);
-			if (rdi->cmdline) P ("cmdline=%s\n", rdi->cmdline);
-			if (rdi->cwd) P ("cwd=%s\n", rdi->cwd);
-			r_debug_info_free (rdi);
-		}
+		int stop = r_debug_stop_reason(core->dbg);
+		char *escaped_str;
+		switch (input[1]) {
+		case '\0':
+#define P r_cons_printf
+#define PS(X, Y) {escaped_str = r_str_escape (Y);r_cons_printf(X, escaped_str);free(escaped_str);}
+			if (rdi) {
+				P ("pid=%d\n", rdi->pid);
+				P ("tid=%d\n", rdi->tid);
+				if (rdi->exe && *rdi->exe)
+					P ("exe=%s\n", rdi->exe);
+				if (rdi->cmdline && *rdi->cmdline)
+					P ("cmdline=%s\n", rdi->cmdline);
+				if (rdi->cwd && *rdi->cwd)
+					P ("cwd=%s\n", rdi->cwd);
+			}
+			P ("stopreason=%d\n", stop);
+			break;
+		case 'j':
+			P ("{");
+			if (rdi) {
+				P ("\"pid\":%d,", rdi->pid);
+				P ("\"tid\":%d,", rdi->tid);
+				if (rdi->exe) PS("\"exe\":\"%s\",", rdi->exe)
+				if (rdi->cmdline) PS ("\"cmdline\":\"%s\",", rdi->cmdline);
+				if (rdi->cwd) PS ("\"cwd\":\"%s\",", rdi->cwd);
+			}
+			P ("\"stopreason\":%d}", stop);
+			break;
 #undef P
+#undef PS
+		case '?':
+		default:
+			r_core_cmd_help (core, help_message);
+		}
+		if (rdi)
+			r_debug_info_free (rdi);
 		}
 		break;
 	case 'x':

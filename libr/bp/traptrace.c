@@ -95,13 +95,24 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	r_bp_get_bytes (bp, trap, len, bp->endian, 0);
 
 	trace = R_NEW (RBreakpointTrace);
+	if (!trace) {
+		free (buf);
+		free (trap);
+		free (bits);
+		return R_FALSE;
+	}
 	trace->addr = from;
 	trace->addr_end = to;
 	trace->bits = bits;
 	trace->traps = trap;
 	trace->buffer = buf;
 	trace->length = len;
-	r_list_append (bp->traces, trace);
+	if (!r_list_append (bp->traces, trace)){
+		free (buf);
+		free (trap);
+		free (trace);
+		return R_FALSE;
+	}
 	// read a memory, overwrite it as breakpointing area
 	// everytime it is hitted, instruction is restored
 	return R_TRUE;

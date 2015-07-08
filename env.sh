@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pfx=$1
+pfx=$(readlink --canonicalize "$1")
 if [ -z "$pfx" ]; then
 	echo "Usage: ./env.sh [path-to-prefix] [program]"
 	exit 1
@@ -10,8 +10,8 @@ new_env='
 LIBR_PLUGINS=${pfx}/lib/radare2
 PATH=$pfx/bin:${PATH}
 LD_LIBRARY_PATH=$pfx/lib:$LD_LIBRARY_PATH
-DYLD_LIBRARY_PATH=$pfx/lib:$LD_LIBRARY_PATH
-PKG_CONFIG_PATH=$PWD/libr/
+DYLD_LIBRARY_PATH=$pfx/lib:$DYLD_LIBRARY_PATH
+PKG_CONFIG_PATH=$pfx/lib/pkgconfig:$PKG_CONFIG_PATH
 '
 
 [ -n "$2" ] && SHELL=$2

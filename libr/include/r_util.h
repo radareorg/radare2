@@ -53,6 +53,18 @@ R_REFCTR_REF (foo)
 R_REFCTR_UNREF (foo)
 #endif
 
+#define R_SPACES_MAX 512
+
+typedef struct r_space_t {
+	int space_idx;
+	int space_idx2;
+	char *spaces[R_SPACES_MAX];
+	RList *spacestack; // metaspaces
+	PrintfCallback printf;
+	void (*unset_for)(void *user, int idx);
+	int (*count_for)(void *user, int idx);
+	void *user;
+} RSpaces;
 
 /* empty classes */
 typedef struct { } RSystem;
@@ -211,40 +223,120 @@ typedef struct r_list_range_t {
 	//RListComparator c;
 } RListRange;
 
+/* stack api */
+typedef struct r_stack_t {
+	void **elems;
+	unsigned int n_elems;
+	int top;
+} RStack;
+
+/* queue api */
+typedef struct r_queue_t {
+	void **elems;
+	unsigned int capacity;
+	unsigned int front;
+	int rear;
+	unsigned int size;
+} RQueue;
+
+/* tree api */
+struct r_tree_t;
+
+typedef struct r_tree_node_t {
+	struct r_tree_node_t *parent;
+	struct r_tree_t *tree;
+	RList *children; // <RTreeNode>
+	unsigned int n_children;
+	int depth;
+	RListFree free;
+	void *data;
+} RTreeNode;
+
+typedef struct r_tree_t {
+	RTreeNode *root;
+} RTree;
+
+typedef struct r_tree_visitor_t {
+	void (*pre_visit)(RTreeNode *, struct r_tree_visitor_t *);
+	void (*post_visit)(RTreeNode *, struct r_tree_visitor_t *);
+	void (*discover_child)(RTreeNode *, struct r_tree_visitor_t *);
+	void *data;
+} RTreeVisitor;
+typedef void (*RTreeNodeVisitCb)(RTreeNode *n, RTreeVisitor *vis);
+
 /* graph api */
 typedef struct r_graph_node_t {
-	RList *parents; // <RGraphNode>
-	RList *children; // <RGraphNode>
-	ut64 addr;
+	unsigned int idx;
 	void *data;
-	int refs;
+	RList *out_nodes;
+	RList *in_nodes;
+	RList *all_neighbours;
 	RListFree free;
 } RGraphNode;
 
+typedef struct r_graph_edge_t {
+	RGraphNode *from;
+	RGraphNode *to;
+} RGraphEdge;
+
 typedef struct r_graph_t {
-	RList *path; // <RGraphNode>
-	RGraphNode *root;
-	RList *roots; // <RGraphNode>
-	RListIter *cur; // ->data = RGraphNode*
-	RList *nodes; // <RGraphNode>
-	PrintfCallback printf;
-	int level;
+	unsigned int n_nodes;
+	unsigned int n_edges;
+	int last_index;
+	RList *nodes; /* RGraphNode */
 } RGraph;
 
-#ifdef R_API
-R_API RGraphNode *r_graph_node_new (ut64 addr, void *data);
-R_API void r_graph_node_free (RGraphNode *n);
-R_API void r_graph_traverse(RGraph *t);
-R_API RGraph * r_graph_new (void);
-R_API void r_graph_free (RGraph* t);
-R_API RGraphNode* r_graph_get_current (RGraph *t, ut64 addr);
-R_API RGraphNode* r_graph_get_node (RGraph *t, ut64 addr, boolt c);
-R_API void r_graph_reset (RGraph *t);
-R_API void r_graph_add (RGraph *t, ut64 from, ut64 addr, void *data);
-R_API void r_graph_plant(RGraph *t);
-R_API void r_graph_push (RGraph *t, ut64 addr, void *data);
-R_API RGraphNode* r_graph_pop(RGraph *t);
+typedef struct r_graph_visitor_t {
+	void (*discover_node)(RGraphNode *n, struct r_graph_visitor_t *vis);
+	void (*finish_node)(RGraphNode *n, struct r_graph_visitor_t *vis);
+	void (*tree_edge)(RGraphNode *u, RGraphNode *v, struct r_graph_visitor_t *vis);
+	void (*back_edge)(RGraphNode *u, RGraphNode *v, struct r_graph_visitor_t *vis);
+	void (*fcross_edge)(RGraphNode *u, RGraphNode *v, struct r_graph_visitor_t *vis);
+	void *data;
+} RGraphVisitor;
+typedef void (*RGraphNodeCallback)(RGraphNode *n, RGraphVisitor *vis);
+typedef void (*RGraphEdgeCallback)(RGraphNode *u, RGraphNode *v, RGraphVisitor *vis);
 
+#ifdef R_API
+R_API RStack *r_stack_new (unsigned int n);
+R_API void r_stack_free (RStack *s);
+R_API int r_stack_push (RStack *s, void *el);
+R_API void *r_stack_pop (RStack *s);
+R_API int r_stack_is_empty (RStack *s);
+R_API unsigned int r_stack_size (RStack *s);
+
+R_API RQueue *r_queue_new (int n);
+R_API void r_queue_free (RQueue *q);
+R_API int r_queue_enqueue (RQueue *q, void *el);
+R_API void *r_queue_dequeue (RQueue *q);
+R_API int r_queue_is_empty (RQueue *q);
+
+R_API RTree *r_tree_new (void);
+R_API RTreeNode *r_tree_add_node (RTree *t, RTreeNode *node, void *child_data);
+R_API void r_tree_reset (RTree *t);
+R_API void r_tree_free (RTree *t);
+R_API void r_tree_dfs (RTree *t, RTreeVisitor *vis);
+R_API void r_tree_bfs (RTree *t, RTreeVisitor *vis);
+
+R_API RGraphNode *r_graph_get_node (const RGraph *g, unsigned int idx);
+R_API RListIter *r_graph_node_iter (const RGraph *g, unsigned int idx);
+R_API const RList *r_graph_get_nodes (const RGraph *g);
+R_API RGraph *r_graph_new (void);
+R_API void r_graph_free (RGraph* g);
+R_API void r_graph_reset (RGraph *g);
+R_API RGraphNode *r_graph_add_node (RGraph *g, void *data);
+R_API void r_graph_del_node (RGraph *g, RGraphNode *n);
+R_API void r_graph_add_edge (RGraph *g, RGraphNode *from, RGraphNode *to);
+R_API void r_graph_del_edge (RGraph *g, RGraphNode *from, RGraphNode *to);
+R_API const RList *r_graph_get_neighbours (const RGraph *g, const RGraphNode *n);
+R_API RGraphNode *r_graph_nth_neighbour (const RGraph *g, const RGraphNode *n, int nth);
+R_API const RList *r_graph_innodes (const RGraph *g, const RGraphNode *n);
+R_API const RList *r_graph_all_neighbours (const RGraph *g, const RGraphNode *n);
+R_API int r_graph_adjacent (const RGraph *g, const RGraphNode *from, const RGraphNode *to);
+R_API void r_graph_dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis);
+R_API void r_graph_dfs (RGraph *g, RGraphVisitor *vis);
+
+R_API int r_file_is_abspath(const char *file);
 R_API boolt r_file_truncate (const char *filename, ut64 newsize);
 R_API ut64 r_file_size(const char *str);
 R_API char *r_file_root(const char *root, const char *path);
@@ -388,7 +480,7 @@ R_API const char *r_str_pad(const char ch, int len);
 R_API const char *r_str_rchr(const char *base, const char *p, int ch);
 R_API const char *r_str_closer_chr (const char *b, const char *s);
 R_API int r_str_bounds(const char *str, int *h);
-R_API char *r_str_crop(const char *str, int x, int y, int w, int h);
+R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int w, unsigned int h);
 R_API int r_str_len_utf8 (const char *s);
 R_API int r_str_len_utf8char (const char *s, int left);
 R_API void r_str_filter_zeroline(char *str, int len);
@@ -706,6 +798,19 @@ R_API void r_strbuf_init(RStrBuf *sb);
 R_API char **r_sys_get_environ (void);
 R_API void r_sys_set_environ (char **e);
 
+
+/* spaces */
+
+R_API void r_space_init(RSpaces *f, void (*unset_for)(void*, int), int (*count_for)(void *,int), void *user);
+R_API void r_space_fini(RSpaces *f);
+R_API int r_space_get(RSpaces *f, const char *name);
+R_API const char *r_space_get_i (RSpaces *f, int idx);
+R_API int r_space_push(RSpaces *f, const char *name);
+R_API int r_space_pop(RSpaces *f);
+R_API int r_space_set(RSpaces *f, const char *name);
+R_API int r_space_unset (RSpaces *f, const char *fs);
+R_API int r_space_list(RSpaces *f, int mode);
+R_API int r_space_rename (RSpaces *f, const char *oname, const char *nname);
 
 /* Some "secured" functions, to do basic operation (mul, sub, add...) on integers */
 static inline int UT64_ADD(ut64 *r, ut64 a, ut64 b) {

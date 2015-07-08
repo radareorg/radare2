@@ -885,17 +885,22 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	int show_offset = r_config_get_i (core->config, "asm.offset");
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int decode = r_config_get_i (core->config, "asm.decode");
+	int filter = r_config_get_i (core->config, "asm.filter");
 	int show_color = r_config_get_i (core->config, "scr.color");
 	int esil = r_config_get_i (core->config, "asm.esil");
 	int flags = r_config_get_i (core->config, "asm.flags");
 	int i=0, j, ret, err = 0;
 	ut64 old_offset = core->offset;
 	RAsmOp asmop;
+	#define PAL(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+	const char *color_reg = PAL(reg): Color_YELLOW;
+	const char *color_num = PAL(num): Color_CYAN;
 
 	if (fmt=='e') {
 		show_bytes = 0;
 		decode = 1;
 	}
+	if (!nb_opcodes && !nb_bytes) return 0;
 
 	if (!nb_opcodes) {
 		nb_opcodes = 0xffff;
@@ -985,20 +990,37 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 					r_cons_printf ("%s\n", opstr);
 				}
 			} else {
-				if (show_color) {
-					RAnalOp aop;
-					r_anal_op (core->anal, &aop, core->offset+i,
+				if (filter) {
+					char opstr[128] = {0};
+					if (show_color) {
+						RAnalOp aop = {0};
+						char *asm_str = r_print_colorize_opcode (asmop.buf_asm, color_reg, color_num);
+						r_anal_op (core->anal, &aop, core->offset+i,
 							core->block+i, core->blocksize-i);
-					r_cons_printf ("%s%s"Color_RESET"\n", 
-							r_print_color_op_type (core->print, aop.type),
-							asmop.buf_asm);
+						r_parse_filter (core->parser, core->flags,
+							asm_str, opstr, sizeof (opstr)-1);
+						r_cons_printf ("%s%s"Color_RESET"\n", r_print_color_op_type (core->print, aop.type), opstr);
+					} else {
+						r_parse_filter (core->parser, core->flags,
+							asmop.buf_asm, opstr, sizeof (opstr)-1);
+						r_cons_printf ("%s\n", opstr);
+					}
 				} else {
-					r_cons_printf ("%s\n", asmop.buf_asm);
+					if (show_color) {
+						RAnalOp aop;
+						r_anal_op (core->anal, &aop, core->offset+i,
+							core->block+i, core->blocksize-i);
+						r_cons_printf ("%s%s"Color_RESET"\n", 
+							r_print_color_op_type (core->print, aop.type),
+							      asmop.buf_asm);
+					} else {
+						r_cons_printf ("%s\n", asmop.buf_asm);
+					}
 				}
 			}
 		}
 		i += ret;
-		if (nb_bytes && (nb_bytes <= i))
+		if ((nb_bytes && (nb_bytes <= i)) || (i >= core->blocksize))
 			break;
 	}
 	r_cons_break_end ();
@@ -1007,7 +1029,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 }
 
 static void cmd_print_pwn(const RCore* core) {
-	eprintf ("easter egg license has expired\n");
+	r_cons_printf ("easter egg license has expired\n");
 }
 
 static int cmd_print_pxA(RCore *core, int len, const char *data) {
@@ -1717,27 +1739,33 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'I': // "pI"
 		switch (input[1]) {
-			case 'j': // "pIj" is the same as pDj
+		case 'j': // "pIj" is the same as pDj
+		{
+			if (input[2]) {
 				cmd_pDj (core, input+2);
-				break;
-			case 'f':
-				{
-					const RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-							R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-					if (f) {
-						r_core_print_disasm_instructions (core, f->size, l);
-						break;
-					}
+			} else {
+				cmd_pDj (core, sdb_fmt(0, "%d", core->blocksize));
+			}
+		}
+			break;
+		case 'f':
+			{
+				const RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+				if (f) {
+					r_core_print_disasm_instructions (core, f->size, l);
+					break;
 				}
-			case 'd': // "pId" is the same as pDi
-				pdi (core, 0, l, 0);
-				break;
-			case '?': // "pi?"
-				r_cons_printf("|Usage: p[iI][df] [len]   print N instructions/bytes"
-						"(f=func) (see pi? and pdi)\n");
-				break;
-			default:
-				r_core_print_disasm_instructions (core, l, 0);
+			}
+		case 'd': // "pId" is the same as pDi
+			pdi (core, 0, l, 0);
+			break;
+		case '?': // "pi?"
+			r_cons_printf("|Usage: p[iI][df] [len]   print N instructions/bytes"
+					"(f=func) (see pi? and pdi)\n");
+			break;
+		default:
+			r_core_print_disasm_instructions (core, l, 0);
 		}
 		break;
 	case 'i': // "pi"
@@ -2132,9 +2160,10 @@ static int cmd_print(void *data, const char *input) {
 		free (old_arch);
 		free (new_arch);
 
-		if (processed_cmd)
+		if (processed_cmd) {
 			ret = pd_result;
 			goto beach;
+		}
 		}
 		break;
 	case 's': //ps
@@ -2565,10 +2594,14 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_printf ("]\n");
 			} else {
 				const int ocols = core->print->cols;
+				int bitsize = core->assembler->bits;
+				/* Thumb is 16bit arm but handles 32bit data */
+				if (bitsize == 16)
+					bitsize = 32;
 				core->print->cols = 1;
 				core->print->flags |= R_PRINT_FLAGS_REFS;
 				r_print_hexdump (core->print, core->offset, core->block, len,
-					core->assembler->bits, core->assembler->bits/8);
+					bitsize, bitsize/8);
 				core->print->flags &= ~R_PRINT_FLAGS_REFS;
 				core->print->cols = ocols;
 			}
@@ -2577,7 +2610,8 @@ static int cmd_print(void *data, const char *input) {
 			r_print_hexdump (core->print, core->offset, core->block, len, 32, 2);
 			break;
 		case 'H':
-			for (i=0; i+2<len; i+=2) {
+			len = len - (len % 2);
+			for (i = 0; i < len; i += 2) {
 				const char *a, *b;
 				char *fn;
 				RPrint *p = core->print;
@@ -2610,7 +2644,8 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'Q':
 			// TODO. show if flag name, or inside function
-			for (i=0; i+8<len; i+=8) {
+			len = len - (len % 8);
+			for (i = 0; i < len; i += 8) {
 				const char *a, *b;
 				char *fn;
 				RPrint *p = core->print;
@@ -2855,15 +2890,24 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case ' ':
 		case '\0':
+			//len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof(ut32)
+			if (len < sizeof (ut32)) eprintf ("You should change the block size: b %lu\n", sizeof (ut32));
+			if (len % sizeof (ut32) != 0) len = len - (len % sizeof (ut32));
 			for (l=0; l<len; l+=sizeof (ut32))
 				r_print_date_unix (core->print, core->block+l, sizeof (ut32));
 			break;
 		case 'd':
+			//len must be multiple of 4 since r_print_date_dos read buf+3
+			//if block size is 1 or 5 for example it reads beyond the buffer
+			if (len < sizeof (ut32)) eprintf ("You should change the block size: b %lu\n", sizeof (ut32));
+			if (len % sizeof (ut32) != 0) len = len - (len % sizeof (ut32));
 			for (l=0; l<len; l+=sizeof (ut32))
 				r_print_date_dos (core->print, core->block+l, sizeof (ut32));
 			break;
 		case 'n':
 			core->print->big_endian = !core->print->big_endian;
+			if (len < sizeof (ut64)) eprintf ("You should change the block size: b %lu\n", sizeof (ut64));
+	      	if (len % sizeof (ut64) != 0) len = len - (len % sizeof (ut64));
 			for (l=0; l<len; l+=sizeof (ut64))
 				r_print_date_w32 (core->print, core->block+l, sizeof (ut64));
 			core->print->big_endian = !core->print->big_endian;

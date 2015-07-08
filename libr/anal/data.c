@@ -57,7 +57,7 @@ static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 	n = r_mem_get_num (buf, size, endian);
 	if (!n) return 1; // null pointer
 #if USE_IS_VALID_OFFSET
-	int r = iob->is_valid_offset (iob->io, n);
+	int r = iob->is_valid_offset (iob->io, n, 0);
 	return r? n: 0LL;
 #else 
 	// optimization to ignore very low and very high pointers
@@ -153,6 +153,7 @@ R_API char *r_anal_data_to_string (RAnalData *d) {
 
 R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int len, int type) {
 	RAnalData *ad = R_NEW0 (RAnalData);
+	if (!ad) return NULL;
 	ad->str = NULL;
 	ad->addr = addr;
 	ad->type = type;
@@ -163,6 +164,10 @@ R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int len, int 
 		//eprintf ("r_anal_data_new_string: wide string not supported yet\n");
 	} else {
 		ad->str = malloc (len+1);
+		if (!ad->str) {
+			free (ad);
+			return NULL;
+		}
 		memcpy (ad->str, p, len);
 		ad->str[len] = 0;
 		ad->buf = malloc (len+1);
@@ -176,6 +181,9 @@ R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int len, int 
 R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, int len) {
 	RAnalData *ad = R_NEW0 (RAnalData);
 	int l = R_MIN (len, 8);
+	if (!ad) {
+		return NULL;
+	}
 	ad->buf = (ut8*) &(ad->sbuf);
 	memset (ad->buf, 0, 8);
 	if (l<1) {

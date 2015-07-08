@@ -23,27 +23,27 @@ static void r_reg_item_free(RRegItem *item) {
 }
 
 R_API int r_reg_get_name_idx(const char *type) {
-	if (type)
-	switch (*type | (type[1]<<8)) {
-	/* flags */
-	case 'z'+('f'<<8): return R_REG_NAME_ZF;
-	case 's'+('f'<<8): return R_REG_NAME_SF;
-	case 'c'+('f'<<8): return R_REG_NAME_CF;
-	case 'o'+('f'<<8): return R_REG_NAME_OF;
-	/* gpr */
-	case 'p'+('c'<<8): return R_REG_NAME_PC;
-	case 's'+('r'<<8): return R_REG_NAME_SR;
-	case 's'+('p'<<8): return R_REG_NAME_SP;
-	case 'b'+('p'<<8): return R_REG_NAME_BP;
-	case 's'+('n'<<8): return R_REG_NAME_SN;
-	/* args */
-	case 'a'+('0'<<8): return R_REG_NAME_A0;
-	case 'a'+('1'<<8): return R_REG_NAME_A1;
-	case 'a'+('2'<<8): return R_REG_NAME_A2;
-	case 'a'+('3'<<8): return R_REG_NAME_A3;
-	case 'a'+('4'<<8): return R_REG_NAME_A4;
-	case 'a'+('5'<<8): return R_REG_NAME_A5;
-	case 'a'+('6'<<8): return R_REG_NAME_A6;
+	if (type && *type != '\0')
+		switch (*type | (type[1]<<8)) {
+		/* flags */
+		case 'z'+('f'<<8): return R_REG_NAME_ZF;
+		case 's'+('f'<<8): return R_REG_NAME_SF;
+		case 'c'+('f'<<8): return R_REG_NAME_CF;
+		case 'o'+('f'<<8): return R_REG_NAME_OF;
+		/* gpr */
+		case 'p'+('c'<<8): return R_REG_NAME_PC;
+		case 's'+('r'<<8): return R_REG_NAME_SR;
+		case 's'+('p'<<8): return R_REG_NAME_SP;
+		case 'b'+('p'<<8): return R_REG_NAME_BP;
+		case 's'+('n'<<8): return R_REG_NAME_SN;
+		/* args */
+		case 'a'+('0'<<8): return R_REG_NAME_A0;
+		case 'a'+('1'<<8): return R_REG_NAME_A1;
+		case 'a'+('2'<<8): return R_REG_NAME_A2;
+		case 'a'+('3'<<8): return R_REG_NAME_A3;
+		case 'a'+('4'<<8): return R_REG_NAME_A4;
+		case 'a'+('5'<<8): return R_REG_NAME_A5;
+		case 'a'+('6'<<8): return R_REG_NAME_A6;
 	}
 	return -1;
 }

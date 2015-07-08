@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # find root
-cd `dirname $PWD/$0`
+cd "$(dirname "$PWD/$0")"
 ./clone-r2-bindings.sh
 cd ..
 
@@ -20,11 +20,11 @@ echo "Using PYTHON_CONFIG ${PYTHON_CONFIG}"
 echo
 
 cd radare2-bindings
-./configure --prefix=${PREFIX} --enable=python || exit 1
-${SUDO} make install-vapi DESTDIR=${DESTDIR} || exit 1
+./configure --prefix="${PREFIX}" --enable=python || exit 1
+${SUDO} make install-vapi DESTDIR="${DESTDIR}" || exit 1
 cd python
 make clean
-make PYTHON=${PYTHON}
+make PYTHON="${PYTHON}"
 [ "$1" != '--no-install' ] && \
-	${SUDO} make install PYTHON=${PYTHON} \
-	PYTHON_VERSION=${PYTHON_VERSION} DESTDIR=${DESTDIR}
+	${SUDO} make install PYTHON="${PYTHON}" \
+	PYTHON_VERSION="${PYTHON_VERSION}" DESTDIR="${DESTDIR}"

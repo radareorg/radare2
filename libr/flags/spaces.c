@@ -14,7 +14,7 @@ R_API int r_flag_space_get(RFlag *f, const char *name) {
 }
 
 R_API const char *r_flag_space_get_i (RFlag *f, int idx) {
-	if (idx==-1 || idx>255 || !f || !f->spaces[idx] || !*f->spaces[idx])
+	if (idx==-1 || idx>=R_FLAG_SPACES_MAX || !f || !f->spaces[idx] || !*f->spaces[idx])
 		return "";
 	return f->spaces[idx];
 }

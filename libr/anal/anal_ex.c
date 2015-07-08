@@ -168,10 +168,14 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (r_anal_state_addr_is_valid(state, addr) && op == NULL)
 		op = r_anal_ex_get_op(anal, state, addr);
 
-	if (op == NULL || !r_anal_state_addr_is_valid(state, addr)) return NULL;
-
+	if (op == NULL || !r_anal_state_addr_is_valid(state, addr)) {
+		return NULL;
+	}
 	current_bb = r_anal_bb_new ();
-	r_anal_ex_op_to_bb(anal, state, current_bb, op);
+	if (!current_bb) {
+		return NULL;
+	}
+	r_anal_ex_op_to_bb (anal, state, current_bb, op);
 
 	if (r_anal_op_is_eob (op))
 		current_bb->type |= R_ANAL_BB_TYPE_LAST;

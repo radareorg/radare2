@@ -86,8 +86,11 @@ static void r_core_file_info (RCore *core, int mode) {
 		r_cons_printf (",\"file\":\"%s\"", uri);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
+			ut64 fsz = r_io_desc_size (core->io, cf->desc);
 			r_cons_printf (",\"fd\":%d", cf->desc->fd);
-			r_cons_printf (",\"size\":%"PFMT64d, r_io_desc_size (core->io, cf->desc));
+			if (fsz != UT64_MAX) {
+				r_cons_printf (",\"size\":%"PFMT64d, fsz);
+			}
 			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
 				cf->desc->flags & 7 ));
 			r_cons_printf (",\"obsz\":%"PFMT64d, (ut64)core->io->desc->obsz);
@@ -109,10 +112,13 @@ static void r_core_file_info (RCore *core, int mode) {
 		pair ("file", fn ? fn : cf->desc->uri);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
+			ut64 fsz = r_io_desc_size (core->io, cf->desc);
 			if (cf->desc->referer && *cf->desc->referer)
 				pair ("referer", cf->desc->referer);
 			pair ("fd", sdb_fmt (0, "%d", cf->desc->fd));
-			pair ("size", sdb_fmt (0,"0x%"PFMT64x, r_io_desc_size (core->io, cf->desc)));
+			if (fsz != UT64_MAX) {
+				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
+			}
 			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x,
 				(ut64)core->io->desc->obsz));
 			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
@@ -128,6 +134,9 @@ static void r_core_file_info (RCore *core, int mode) {
 static int bin_is_executable (RBinObject *obj){
 	RListIter *it;
 	RBinSection* sec;
+	if (obj->info->arch) {
+		return R_TRUE;
+	}
 	r_list_foreach (obj->sections, it, sec){
 		if (R_BIN_SCN_EXECUTABLE & sec->srwx)
 			return R_TRUE;
@@ -137,11 +146,11 @@ static int bin_is_executable (RBinObject *obj){
 
 static void cmd_info_bin(RCore *core, ut64 offset, int va, int mode) {
 	RBinObject *obj = r_bin_cur_object (core->bin);
-	if (core->file && obj) {
+	if (core->file) {
 		if (mode == R_CORE_BIN_JSON)
 			r_cons_printf ("{\"core\":");
 		r_core_file_info (core, mode);
-		if (bin_is_executable (obj)){
+		if (obj && bin_is_executable (obj)) {
 				if (mode == R_CORE_BIN_JSON)
 					r_cons_printf (",\"bin\":");
 				r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
@@ -301,8 +310,70 @@ static int cmd_info(void *data, const char *input) {
 				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS);
 			}
 			break;
-		case 'c':
-		case 'C': RBININFO ("classes", R_CORE_BIN_ACC_CLASSES); break;
+		case 'c': // for r2 `ic`
+			if (input[1]== '?') {
+				eprintf("Usage: ic[ljq*] [class-index]\n");
+			} else if (input[1]== ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l') {
+				RBinClass *cls;
+				RBinSymbol *sym;
+				RListIter *iter, *iter2;
+				RBinObject *obj = r_bin_cur_object (core->bin);
+				int idx = r_num_math (core->num, input +2);
+				int count = 0;
+				if (input[2] && obj) {
+					r_list_foreach (obj->classes, iter, cls) {
+						if (idx != count++)
+							continue;
+						switch (input[1]) {
+						case '*':
+							r_list_foreach (cls->methods, iter2, sym) {
+								r_cons_printf ("f sym.%s @ 0x%"PFMT64x"\n", sym->name, sym->vaddr);
+							}
+							break;
+						case 'l':
+							r_list_foreach (cls->methods, iter2, sym) {
+								const char *comma = iter2->p? " ": "";
+								r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
+							}
+							r_cons_newline();
+							break;
+						case 'j':
+							r_cons_printf ("\"class\":\"%s\"", cls->name);
+							r_cons_printf (",\"methods\":[");
+							r_list_foreach (cls->methods, iter2, sym) {
+								const char *comma = iter2->p? ",": "";
+								r_cons_printf ("%s{\"name\":\"%s\",\"vaddr\":%"PFMT64d"}",
+									comma, sym->name, sym->vaddr);
+							}
+							r_cons_printf ("]");
+							break;
+						default:
+							r_cons_printf ("class %s\n", cls->name);
+							r_list_foreach (cls->methods, iter2, sym) {
+								r_cons_printf ("method %s\n", sym->name);
+							}
+							break;
+						}
+						goto done;
+					}
+				} else {
+					if (input[1] == 'l' && obj) { // "icl"
+						r_list_foreach (obj->classes, iter, cls) {
+							r_list_foreach (cls->methods, iter2, sym) {
+								const char *comma = iter2->p? " ": "";
+								r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
+							}
+							if (!r_list_empty (cls->methods))
+								r_cons_newline();
+						}
+					} else {
+						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES);
+					}
+				}
+			} else {
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES);
+			}
+			break;
 		case 'D':
 			if (input[1]!=' ' || !demangle (core, input+2)) {
 				eprintf ("|Usage: iD lang symbolname\n");

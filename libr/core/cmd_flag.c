@@ -117,6 +117,12 @@ rep:
 		break;
 	case 'R':
 		{
+		if (*str == '\0'){
+			eprintf ("Usage: fR [from] [to] ([mask])\n");
+			eprintf ("Example to relocate PIE flags on debugger:\n"
+				" > fR entry0 `dm~:1[1]`\n");
+			break;
+		}
 		char *p = strchr (str+1, ' ');
 		ut64 from, to, mask = 0xffff;
 		int ret;

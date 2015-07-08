@@ -5,6 +5,7 @@
 #include <r_asm.h>
 #include <r_reg.h>
 #include <r_lib.h>
+#include <r_anal.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/param.h>
@@ -13,6 +14,8 @@
 #include "r_cons.h"
 
 #if DEBUGGER
+
+#include "native/bt.c"
 
 #if __UNIX__ || __CYGWIN__
 # include <errno.h>
@@ -55,7 +58,6 @@ static int r_debug_handle_signals (RDebug *dbg) {
 #endif
 }
 
-#define MAXBT 128
 
 #if __WINDOWS__
 #include <windows.h>
@@ -86,7 +88,7 @@ static int r_debug_handle_signals (RDebug *dbg) {
 #include <mach/mach_interface.h>
 #include <mach/mach_traps.h>
 #include <mach/mach_types.h>
-#include <mach/mach_vm.h>
+//no available for ios #include <mach/mach_vm.h>
 #include <mach/mach_error.h>
 #include <mach/task.h>
 #include <mach/task_info.h>
@@ -127,6 +129,17 @@ static int r_debug_handle_signals (RDebug *dbg) {
 
 // iPhone
 #elif __arm
+ #include <mach/arm/thread_status.h>
+ #ifndef ARM_THREAD_STATE
+ #define ARM_THREAD_STATE                1
+ #endif
+ #ifndef ARM_THREAD_STATE64
+ #define ARM_THREAD_STATE64              6
+ #endif
+ #define R_DEBUG_REG_T arm_thread_state_t
+ #define R_DEBUG_STATE_T ARM_THREAD_STATE
+ #define R_DEBUG_STATE_SZ ARM_THREAD_STATE_COUNT
+#elif __arm64
  #include <mach/arm/thread_status.h>
  #ifndef ARM_THREAD_STATE
  #define ARM_THREAD_STATE                1
@@ -339,6 +352,128 @@ static inline void debug_arch_x86_trap_set(RDebug *dbg, int foo) {
 #endif // __APPLE__
 #endif
 
+#if TARGET_OS_IPHONE
+static int isThumb32(ut16 op) {
+	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
+}
+
+// BCR address match type
+#define BCR_M_IMVA_MATCH        ((uint32_t)(0u << 21))
+#define BCR_M_CONTEXT_ID_MATCH  ((uint32_t)(1u << 21))
+#define BCR_M_IMVA_MISMATCH     ((uint32_t)(2u << 21))
+#define BCR_M_RESERVED          ((uint32_t)(3u << 21))
+
+// Link a BVR/BCR or WVR/WCR pair to another
+#define E_ENABLE_LINKING        ((uint32_t)(1u << 20))
+
+// Byte Address Select
+#define BAS_IMVA_PLUS_0         ((uint32_t)(1u << 5))
+#define BAS_IMVA_PLUS_1         ((uint32_t)(1u << 6))
+#define BAS_IMVA_PLUS_2         ((uint32_t)(1u << 7))
+#define BAS_IMVA_PLUS_3         ((uint32_t)(1u << 8))
+#define BAS_IMVA_0_1            ((uint32_t)(3u << 5))
+#define BAS_IMVA_2_3            ((uint32_t)(3u << 7))
+#define BAS_IMVA_ALL            ((uint32_t)(0xfu << 5))
+
+// Break only in privileged or user mode
+#define S_RSVD                  ((uint32_t)(0u << 1))
+#define S_PRIV                  ((uint32_t)(1u << 1))
+#define S_USER                  ((uint32_t)(2u << 1))
+#define S_PRIV_USER             ((S_PRIV) | (S_USER))
+
+#define BCR_ENABLE              ((uint32_t)(1u))
+#define WCR_ENABLE              ((uint32_t)(1u))
+
+// Watchpoint load/store
+#define WCR_LOAD                ((uint32_t)(1u << 3))
+#define WCR_STORE               ((uint32_t)(1u << 4))
+
+static void ios_hwstep_enable(RDebug *dbg, int enable) {
+	task_t port = pid_to_task (dbg->tid);
+	// get-regs
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+	// get-dbg-state
+#if defined (__arm64__) || defined (__aarch64__)
+	typedef struct {
+		ut64 bvr[16];
+		ut64 bcr[16];
+		ut64 wvr[16];
+		ut64 wcr[16];
+		ut64 mdscr_el1;
+	} ARMDebugState64;
+	ARMDebugState64 ds;
+
+	mach_msg_type_number_t count = ARM_DEBUG_STATE64_COUNT;
+	(void)thread_get_state (port, ARM_DEBUG_STATE64, (thread_state_t)&ds, &count);
+
+	// The use of __arm64__ here is not ideal.  If debugserver is running on
+	// an armv8 device, regardless of whether it was built for arch arm or arch arm64,
+	// it needs to use the MDSCR_EL1 SS bit to single instruction step.
+
+	// MDSCR_EL1 single step bit at gpr.pc
+	if (enable) {
+		ds.mdscr_el1 |= 1LL;
+	} else {
+		ds.mdscr_el1 &= ~(1ULL);
+	}
+	(void)thread_set_state (port, ARM_DEBUG_STATE64, (thread_state_t)&ds, count);
+#else
+	typedef struct {
+		ut32 bvr[16];
+		ut32 bcr[16];
+		ut32 wvr[16];
+		ut32 wcr[16];
+		ut64 mdscr_el1;
+	} ARMDebugState32;
+	int i;
+	static ARMDebugState32 olds;
+	ARMDebugState32 ds;
+
+	mach_msg_type_number_t count = ARM_DEBUG_STATE32_COUNT;
+	(void)thread_get_state (port, ARM_DEBUG_STATE32, (thread_state_t)&ds, &count);
+
+	//static ut64 chainstep = UT64_MAX;
+	if (enable) {
+		RIOBind *bio = &dbg->iob;
+		ut32 pc = r_reg_get_value (dbg->reg, r_reg_get (dbg->reg, "pc", R_REG_TYPE_GPR));
+		ut32 cpsr = r_reg_get_value (dbg->reg, r_reg_get (dbg->reg, "cpsr", R_REG_TYPE_GPR));
+
+		for (i = 0; i<16 ;i++) {
+			ds.bcr[i] = ds.bvr[i] = 0;
+		}
+		olds = ds;
+		//chainstep = UT64_MAX;
+		// state = old_state;
+		ds.bvr[i] = pc & (UT32_MAX >> 2) << 2;
+		ds.bcr[i] = BCR_M_IMVA_MISMATCH | S_USER | BCR_ENABLE;
+		if (cpsr & 0x20) {
+			ut16 op;
+			if (pc & 2) {
+				ds.bcr[i] |= BAS_IMVA_2_3;
+			} else {
+				ds.bcr[i] |= BAS_IMVA_0_1;
+			}
+			/* check for thumb */
+			bio->read_at (bio->io, pc, (void *)&op, 2);
+			if (isThumb32 (op)) {
+				eprintf ("Thumb32 chain stepping not supported yet\n");
+				//chainstep = pc + 2;
+			} else {
+				ds.bcr[i] |= BAS_IMVA_ALL;
+			}
+		} else {
+			ds.bcr[i] |= BAS_IMVA_ALL;
+		}
+	} else {
+		//bcr[i] = BAS_IMVA_ALL;
+		ds = olds; //dbg = old_state;
+	}
+	(void)thread_set_state (port, ARM_DEBUG_STATE32, (thread_state_t)&ds, count);
+#endif
+	// set-dbg-state
+}
+#endif
+
 static int r_debug_native_step(RDebug *dbg) {
 	int ret = R_FALSE;
 	int pid = dbg->pid;
@@ -354,22 +489,17 @@ static int r_debug_native_step(RDebug *dbg) {
 #elif __APPLE__
 	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
-#if __arm__
+#if __arm__ || __arm64__ || __aarch64__
+	ios_hwstep_enable (dbg, 1);
+	//ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT);
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT);
 	if (ret != 0) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		ret = R_FALSE; /* do not wait for events */
 	} else ret = R_TRUE;
+	ios_hwstep_enable (dbg, 0);
 #else
-	#if 0 && __arm__
-	if (!dbg->swstep)
-		eprintf ("XXX hardware stepping is not supported in arm. set e dbg.swstep=true\n");
-	else eprintf ("XXX: software step is not implemented??\n");
-	return R_FALSE;
-	#endif
-	//eprintf ("stepping from pc = %08x\n", (ut32)get_offset("eip"));
-	//ret = ptrace (PT_STEP, ps.tid, (caddr_t)get_offset("eip"), SIGSTOP);
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT);
 	if (ret != 0) {
 		perror ("ptrace-step");
@@ -489,9 +619,11 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return tid;
 #elif __APPLE__
 #if __arm__
-	int i, ret, status;
-	thread_array_t inferior_threads = NULL;
-	unsigned int inferior_thread_count = 0;
+	return 1;
+#if 0
+	//int i, ret, status;
+	//thread_array_t inferior_threads = NULL;
+	//unsigned int inferior_thread_count = 0;
 
 // XXX: detach is noncontrollable continue
         ptrace (PT_DETACH, pid, 0, 0);
@@ -513,7 +645,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
         for (i = 0; i < inferior_thread_count; i++)
 		thread_resume (inferior_threads[i]);
 */
-	return 1;
+#endif
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
 	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
@@ -693,7 +825,7 @@ static RList *r_debug_native_pids(int pid) {
 		if (p) r_list_append (list, p);
 	} else {
 		int i;
-		for(i=1; i<MAXPID; i++) {
+		for (i=1; i<MAXPID; i++) {
 			RDebugPid *p = darwin_get_pid (i);
 			if (p) r_list_append (list, p);
 		}
@@ -900,7 +1032,7 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 		}
 	}
 #else
-	eprintf ("TODO\n");
+	eprintf ("TODO: list threads\n");
 #endif
 	return list;
 }
@@ -941,7 +1073,7 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			eprintf ("dof = 0x%08x\n", (ut32)ctx.FloatSave.DataOffset);
 			eprintf ("dse = 0x%08x\n", (ut32)ctx.FloatSave.DataSelector);
 			eprintf ("mxcr = 0x%08x\n", (ut32)ctx.ExtendedRegisters[24]);
-			for(i=0; i<8; i++) {
+			for (i=0; i<8; i++) {
 				ut32 *a = (ut32*) &(ctx.ExtendedRegisters[10*16]);
 				a = a + (i * 4);
 				eprintf ("xmm%d = %08x %08x %08x %08x  ",i
@@ -1035,13 +1167,29 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			break;
 		}
 #elif __arm__ || __arm64__ || __aarch64__
-		if (dbg->bits==R_SYS_BITS_64) {
-			ret = thread_get_state (inferior_threads[tid],
-				ARM_THREAD_STATE64, (thread_state_t) regs, &gp_count);
-		} else {
-			ret = thread_get_state (inferior_threads[tid],
-				ARM_THREAD_STATE, (thread_state_t) regs, &gp_count);
-				//R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+		switch (type) {
+		case R_REG_TYPE_FLG:
+		case R_REG_TYPE_GPR:
+			if (dbg->bits==R_SYS_BITS_64) {
+				ret = thread_get_state (inferior_threads[tid],
+					ARM_THREAD_STATE64, (thread_state_t) regs, &gp_count);
+			} else {
+				ret = thread_get_state (inferior_threads[tid],
+					ARM_THREAD_STATE, (thread_state_t) regs, &gp_count);
+					//R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+			}
+			break;
+		case R_REG_TYPE_DRX:
+			if (dbg->bits== R_SYS_BITS_64) {
+				ret = thread_get_state (inferior_threads[tid],
+					ARM_DEBUG_STATE64, (thread_state_t)
+					regs, &gp_count);
+			} else {
+				ret = thread_get_state (inferior_threads[tid],
+					ARM_DEBUG_STATE32, (thread_state_t)
+					regs, &gp_count);
+			}
+			break;
 		}
 #else
 		eprintf ("Unknown architecture\n");
@@ -1322,8 +1470,9 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			// yet available to accept more ptrace queries.
 			return R_FALSE;
 		}
-		if (sizeof (regs) < size)
+		if (sizeof (regs) < size) {
 			size = sizeof (regs);
+		}
 		memcpy (buf, &regs, size);
 		return sizeof (regs);
 		}
@@ -1472,7 +1621,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		thread_array_t inferior_threads = NULL;
 		unsigned int inferior_thread_count = 0;
 		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
-		unsigned int gp_count = R_DEBUG_STATE_SZ;
+		mach_msg_type_number_t gp_count = R_DEBUG_STATE_SZ;
 
 		ret = task_threads (pid_to_task (pid),
 			&inferior_threads, &inferior_thread_count);
@@ -1510,7 +1659,8 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 			}
 #else
 			ret = thread_set_state (inferior_threads[tid],
-					R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+				R_DEBUG_STATE_T, (thread_state_t) regs,
+				gp_count);
 #endif
 //if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS)
 			if (ret != KERN_SUCCESS) {
@@ -1528,155 +1678,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 	return R_FALSE;
 }
 
-#if __APPLE__
-static const char * unparse_inheritance (vm_inherit_t i) {
-        switch (i) {
-        case VM_INHERIT_SHARE: return "share";
-        case VM_INHERIT_COPY: return "copy";
-        case VM_INHERIT_NONE: return "none";
-        default: return "???";
-        }
-}
-
-extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_t buffersize);
-
-// TODO: move to p/native/darwin.c
-// TODO: this loop MUST be cleaned up
-static RList *darwin_dbg_maps (RDebug *dbg) {
-	RDebugMap *mr;
-	char buf[1024];
-	int i, print;
-	kern_return_t kret;
-	vm_region_basic_info_data_64_t info, prev_info;
-	mach_vm_address_t prev_address;
-	mach_vm_size_t size, prev_size;
-	mach_port_t object_name;
-	mach_msg_type_number_t count;
-	int nsubregions = 0;
-	int num_printed = 0;
-	size_t address = 0;
-	task_t task = pid_to_task (dbg->pid);
-	RList *list = r_list_new ();
-	// XXX: wrong for 64bits
-/*
-	count = VM_REGION_BASIC_INFO_COUNT_64;
-	kret = mach_vm_region (pid_to_task (dbg->pid), &address, &size, VM_REGION_BASIC_INFO_64,
-			(vm_region_info_t) &info, &count, &object_name);
-	if (kret != KERN_SUCCESS) {
-		printf("No memory regions.\n");
-		return;
-	}
-	memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
-*/
-	size = 4096;
-	memset (&prev_info, 0, sizeof (prev_info));
-	prev_address = address;
-	prev_size = size;
-	nsubregions = 1;
-
-	for (i=0; ; i++) {
-		int done = 0;
-
-		address = prev_address + prev_size;
-		print = 0;
-
-		if (prev_size==0)
-			break;
-		/* Check to see if address space has wrapped around. */
-		if (address == 0)
-			done = 1;
-
-		if (!done) {
-			count = VM_REGION_BASIC_INFO_COUNT_64;
-			kret = mach_vm_region (task, (mach_vm_address_t *)&address,
-					&size, VM_REGION_BASIC_INFO_64,
-					(vm_region_info_t) &info, &count, &object_name);
-			if (kret != KERN_SUCCESS) {
-				size = 0;
-				print = done = 1;
-			}
-		}
-
-		if (address != prev_address + prev_size)
-			print = 1;
-
-		if ((info.protection != prev_info.protection)
-				|| (info.max_protection != prev_info.max_protection)
-				|| (info.inheritance != prev_info.inheritance)
-				|| (info.shared != prev_info.reserved)
-				|| (info.reserved != prev_info.reserved))
-			print = 1;
-
-//#if __OSX_AVAILABLE_STARTING(__MAC_10_5, __IPHONE_2_0)
-		 {
-			char module_name[1024];
-			module_name[0] = 0;
-			int ret = proc_regionfilename (dbg->pid, address, module_name, sizeof (module_name));
-			module_name[ret] = 0;
-
-		#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
-		if (print && size>0 && prev_info.inheritance != VM_INHERIT_SHARE) {
-			snprintf (buf, sizeof (buf), "%s %02x %s/%s/%s %s",
-					r_str_rwx_i (xwr2rwx (prev_info.max_protection)), i,
-					unparse_inheritance (prev_info.inheritance),
-					prev_info.shared ? "shar" : "priv",
-					prev_info.reserved ? "reserved" : "not-reserved",
-					module_name);
-			// TODO: MAPS can have min and max protection rules
-			// :: prev_info.max_protection
-			mr = r_debug_map_new (buf, prev_address, prev_address+prev_size,
-				xwr2rwx (prev_info.protection), 0);
-			if (mr == NULL) {
-				eprintf ("Cannot create r_debug_map_new\n");
-				break;
-			}
-			r_list_append (list, mr);
-		}
-}
-#if 0
-		if (1==0 && rest) { /* XXX never pritn this info here */
-			addr = 0LL;
-			addr = (ut64) (ut32) prev_address;
-			if (num_printed == 0)
-				fprintf(stderr, "Region ");
-			else    fprintf(stderr, "   ... ");
-			fprintf(stderr, " 0x%08llx - 0x%08llx %s (%s) %s, %s, %s",
-					addr, addr + prev_size,
-					unparse_protection (prev_info.protection),
-					unparse_protection (prev_info.max_protection),
-					unparse_inheritance (prev_info.inheritance),
-					prev_info.shared ? "shared" : " private",
-					prev_info.reserved ? "reserved" : "not-reserved");
-
-			if (nsubregions > 1)
-				fprintf(stderr, " (%d sub-regions)", nsubregions);
-
-			fprintf(stderr, "\n");
-
-			prev_address = address;
-			prev_size = size;
-			memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
-			nsubregions = 1;
-
-			num_printed++;
-		} else {
-#endif
-#if 0
-			prev_size += size;
-			nsubregions++;
-#else
-			prev_address = address;
-			prev_size = size;
-			memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
-			nsubregions = 1;
-
-			num_printed++;
-#endif
-			//              }
-	}
-	return list;
-}
-#endif
+#include "native/maps/darwin.c"
 
 #if __KFBSD__
 static RList *r_debug_native_sysctl_map (RDebug *dbg) {
@@ -1925,100 +1927,6 @@ static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
 	return R_TRUE;
 }
 #endif
-
-/* TODO: Can I use this as in a coroutine? */
-static RList *r_debug_native_frames_x86_32(RDebug *dbg, ut64 at) {
-	RRegItem *ri;
-	RReg *reg = dbg->reg;
-	ut32 i, _esp, esp, ebp2;
-	RList *list = r_list_new ();
-	RIOBind *bio = &dbg->iob;
-	ut8 buf[4];
-
-	list->free = free;
-	ri = (at==UT64_MAX)? r_reg_get (reg, "ebp", R_REG_TYPE_GPR): NULL;
-	_esp = (ut32) ((ri)? r_reg_get_value (reg, ri): at);
-		// TODO: implement [stack] map uptrace method too
-	esp = _esp;
-	for (i=0; i<MAXBT; i++) {
-		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
-		if (ebp2 == UT32_MAX)
-			break;
-		*buf = '\0';
-		bio->read_at (bio->io, (ebp2-5)-(ebp2-5)%4, (void *)&buf, 4);
-
-		// TODO: arch_is_call() here and this fun will be portable
-		if (buf[(ebp2-5)%4]==0xe8) {
-			RDebugFrame *frame = R_NEW (RDebugFrame);
-			frame->addr = ebp2;
-			frame->size = esp-_esp;
-			r_list_append (list, frame);
-		}
-		esp += 4;
-	}
-	return list;
-}
-
-// XXX: Do this work correctly?
-static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
-	int i;
-	ut8 buf[8];
-	RDebugFrame *frame;
-	ut64 ptr, ebp2;
-	ut64 _rip, _rsp, _rbp;
-	RList *list;
-	RReg *reg = dbg->reg;
-	RIOBind *bio = &dbg->iob;
-
-	_rip = r_reg_get_value (reg, r_reg_get (reg, "rip", R_REG_TYPE_GPR));
-	if (at == UT64_MAX) {
-		_rsp = r_reg_get_value (reg, r_reg_get (reg, "rsp", R_REG_TYPE_GPR));
-		_rbp = r_reg_get_value (reg, r_reg_get (reg, "rbp", R_REG_TYPE_GPR));
-	} else {
-		_rsp = _rbp = at;
-	}
-
-	list = r_list_new ();
-	list->free = free;
-	bio->read_at (bio->io, _rip, (ut8*)&buf, 8);
-	/* %rbp=old rbp, %rbp+4 points to ret */
-	/* Plugin before function prelude: push %rbp ; mov %rsp, %rbp */
-	if (!memcmp (buf, "\x55\x89\xe5", 3) || !memcmp (buf, "\x89\xe5\x57", 3)) {
-		if (bio->read_at (bio->io, _rsp, (ut8*)&ptr, 8) != 8) {
-			eprintf ("read error at 0x%08"PFMT64x"\n", _rsp);
-			r_list_purge (list);
-			free (list);
-			return R_FALSE;
-		}
-		RDebugFrame *frame = R_NEW (RDebugFrame);
-		frame->addr = ptr;
-		frame->size = 0; // TODO ?
-		r_list_append (list, frame);
-		_rbp = ptr;
-	}
-
-	for (i=1; i<MAXBT; i++) {
-		// TODO: make those two reads in a shot
-		bio->read_at (bio->io, _rbp, (ut8*)&ebp2, 8);
-		if (ebp2 == UT64_MAX)
-			break;
-		bio->read_at (bio->io, _rbp+8, (ut8*)&ptr, 8);
-		if (!ptr || !_rbp)
-			break;
-		frame = R_NEW (RDebugFrame);
-		frame->addr = ptr;
-		frame->size = 0; // TODO ?
-		r_list_append (list, frame);
-		_rbp = ebp2;
-	}
-	return list;
-}
-
-static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
-	if (dbg->bits == R_SYS_BITS_64)
-		return r_debug_native_frames_x86_64 (dbg, at);
-	return r_debug_native_frames_x86_32 (dbg, at);
-}
 
 // TODO: implement own-defined signals
 static int r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {

@@ -143,10 +143,8 @@ static RList* symbols(RBinFile *arch) {
 			break;
 		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		if (symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)
-			strncpy (ptr->bind, "LOCAL", R_BIN_SIZEOF_STRINGS);
-		else
-			strncpy (ptr->bind, "GLOBAL", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->bind, (symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
+			"LOCAL":"GLOBAL" , R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
 		ptr->vaddr = symbols[i].addr;
 		ptr->paddr = symbols[i].offset+obj->boffset;
