@@ -498,6 +498,58 @@ R_API const char *r_line_hist_get(int n);
 
 #endif
 
+/* r_agraph */
+
+typedef struct r_ascii_node_t {
+	int x;
+	int y;
+	int w;
+	int h;
+	ut64 addr;
+	int layer;
+	int pos_in_layer;
+	char *body;
+	int is_dummy;
+	int is_reversed;
+	int class;
+} RANode;
+
+typedef struct r_ascii_graph_t {
+	RConsCanvas *can;
+	RGraph *graph;
+	const RGraphNode *curnode;
+
+	int is_callgraph;
+	int is_instep;
+	int is_simple_mode;
+	int is_small_nodes;
+	int zoom;
+	int movspeed;
+
+	RStack *history;
+	RANode *update_seek_on;
+	int need_reload_nodes;
+	int need_set_layout;
+	int need_update_dim;
+	int force_update_seek;
+
+	int x, y;
+	int w, h;
+
+	/* layout algorithm info */
+	RList *back_edges;
+	RList *long_edges;
+	struct layer_t *layers;
+	int n_layers;
+	RList *dists; /* RList<struct dist_t> */
+} RAGraph;
+
+#ifdef R_API
+R_API RAGraph *r_agraph_new (RConsCanvas *can);
+R_API void r_agraph_free (RAGraph *g);
+R_API void r_agraph_reset (RAGraph *g);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
