@@ -555,6 +555,7 @@ R_API void r_agraph_reset (RAGraph *g);
 R_API RANode *r_agraph_get_node (const RAGraph *g, const char *title);
 R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title, const char *body);
 R_API void r_agraph_add_edge (const RAGraph *g, RANode *a, RANode *b);
+R_API void r_agraph_print (RAGraph *g);
 #endif
 
 #ifdef __cplusplus

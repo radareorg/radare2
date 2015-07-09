@@ -1679,7 +1679,7 @@ R_API int r_str_bounds(const char *_str, int *h) {
 	char *ostr, *str, *ptr;
 	int W = 0, H = 0;
 	int cw = 0;
-	
+
 	if (_str) {
 		ptr = str = ostr = strdup (_str);
 		while (*str) {
