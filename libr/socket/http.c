@@ -6,13 +6,13 @@
 static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	const char *p;
 	int ret, olen, len = 0, bufsz = 32768, delta = 0;
-	char *dn, *res, *buf = malloc (bufsz); // XXX: use r_buffer here
+	char *dn, *res, *buf = malloc (bufsz+32); // XXX: use r_buffer here
 
 	r_socket_block_time (s, 1, 5);
 	res = NULL;
 	olen = r_socket_read_block (s, (unsigned char*) buf, bufsz);
 	if (olen < 1) goto fail;
-
+	buf[olen] = 0;
 	if ((dn = (char*)r_str_casestr (buf, "\n\n"))) {
 		delta += 2;
 	} else if ((dn = (char*)r_str_casestr (buf, "\r\n\r\n"))) {
@@ -28,7 +28,7 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 
 	if (len >0) {
 		if (len > olen) {
-			res = malloc (len+1);
+			res = malloc (len+2);
 			memcpy (res, dn+delta, olen);
 			do {
 				ret = r_socket_read_block (s,
