@@ -228,7 +228,7 @@ function panelSettings() {
 	document.getElementById('title').innerHTML = 'Settings';
 	var c = document.getElementById("content");
 
-	c.style = 'background-color: #f0f0f0 !important';
+	c.style.backgroundColor = '#f0f0f0';
 	out += uiBlock({ name: 'Platform', blocks: [
 	     { name: "Arch", buttons: [
 			{ name: "x86", js: 'configArchX86', default:true },
@@ -316,7 +316,7 @@ function printHeaderPanel(title, cmd, grep) {
 	update = panelFunctions;
 	document.getElementById('title').innerHTML = title;
 	var c = document.getElementById("content");
-	c.style = 'background-color: #f0f0f0 !important;';
+	c.style.backgroundColor = '#f0f0f0';
 	c.innerHTML = "<br />";
 	c.innerHTML += uiButton('javascript:panelHeaders()', 'Headers');
 	c.innerHTML += uiButton('javascript:panelSymbols()', 'Symbols');
@@ -359,7 +359,7 @@ function panelFunctions() {
 	update = panelFunctions;
 	document.getElementById('title').innerHTML = 'Functions';
 	var c = document.getElementById("content");
-	c.style = 'background-color: #f0f0f0 !important';
+	c.style.backgroundColor = '#f0f0f0';
 	c.innerHTML = "<br />";
 	c.innerHTML += uiButton('javascript:analyzeSymbols()', 'Symbols');
 	c.innerHTML += uiButton('javascript:analyzeCalls()', 'Calls');
@@ -388,7 +388,7 @@ function consoleKey(e) {
 	if (!e) {
 		inp.onkeypress = consoleKey;
 	} else {
-		if (!e.charCode) {
+		if (!e.charCode || e.charCode == 13) {
 			runCommand (inp.value);
 			inp.value = '';
 		}
@@ -399,17 +399,16 @@ function panelConsole() {
 	update = panelConsole;
 	document.getElementById('title').innerHTML = 'Console';
 	var c = document.getElementById("content");
-	if (inColor) {
-		c.style = 'background-color: #202020 !important';
-	}
 	c.innerHTML = "<br />";
 	if (inColor) {
+		c.style.backgroundColor = "#202020";
 		c.innerHTML += "<input style='color:white' onkeypress='consoleKey()' class='mdl-card--expand mdl-textfield__input' id='input'/>";
 		//c.innerHTML += uiButton('javascript:runCommand()', 'Run');
 		c.innerHTML += "<div id='output' class='pre' style='color:white !important'><div>";
 		r2.cmd("e scr.color=true");
 		r2.cmd("e scr.html=true");
 	} else {
+		c.style.backgroundColor = "#f0f0f0";
 		c.innerHTML += "<input style='color:black' class='mdl-card--expand mdl-textfield__input' id='input'/>";
 		c.innerHTML += uiButton('javascript:runCommand()', 'Run');
 		c.innerHTML += "<div id='output' class='pre' style='color:black!important'><div>";
@@ -421,7 +420,7 @@ function panelFlags() {
 	update = panelFlags;
 	document.getElementById('title').innerHTML = 'Flags';
 	var c = document.getElementById("content");
-	c.style = 'background-color: #f0f0f0 !important';
+	c.style.backgroundColor = "#f0f0f0";
 	c.innerHTML = "<br />";
 	c.innerHTML += uiButton('javascript:flagspaces()', 'Spaces');
 	if (inColor) {
@@ -438,7 +437,7 @@ function panelComments() {
 	update = panelComments;
 	document.getElementById('title').innerHTML = 'Comments';
 	var c = document.getElementById("content");
-	c.style = 'background-color: #f0f0f0 !important';
+	c.style.backgroundColor = "#f0f0f0";
 	c.innerHTML = "<br />";
 	c.innerHTML += uiButton('javascript:notes()', 'Notes');
 	if (inColor) {
@@ -456,7 +455,7 @@ function panelHexdump() {
 	var c = document.getElementById("content");
 	document.getElementById('title').innerHTML = 'Hexdump';
 	if (inColor) {
-		c.style = 'background-color: #202020 !important';
+		c.style.backgroundColor = "#202020";
 	}
 	c.innerHTML = "<br />"; //Version: "+d;
 	c.innerHTML += uiButton('javascript:comment()', 'Comment');
@@ -479,7 +478,7 @@ function panelDisasm() {
 	var c = document.getElementById("content");
 	document.getElementById('title').innerHTML = 'Disassembly';
 	if (inColor) {
-		c.style = 'background-color: #202020 !important';
+		c.style.backgroundColor = "#202020";
 	}
 	var out = "<br />";
 	out += '&nbsp;<a href="javascript:analyze()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Analyze</a>';
