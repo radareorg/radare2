@@ -1018,9 +1018,9 @@ SETL/SETNGE
 				// TODO: af is undefined
 				esilprintf (op, "0,of,=,0,cf,=," // set carry and overflow flags
 					"%s,%s," // set reg value
-					"%%z,zf,="  // update zero flag
-					"%%s,sf,="  // update sign flag
-					"%%o,pf,=", // update parity flag
+					"%%z,zf,=,"  // update zero flag
+					"%%s,sf,=,"  // update sign flag
+					"%%o,pf,=",  // update parity flag
 					// TODO: add sign and parity flags here
 					src, dst);
 				free (src);
