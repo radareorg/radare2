@@ -991,9 +991,21 @@ if (!ret)
 }
 #endif
 	switch (io->va) {
-	case 0: return (offset < r_io_size (io));
-	case 1: return (r_io_map_exists_for_offset (io, offset) ||
-			r_io_section_exists_for_vaddr (io, offset, hasperm));
+	case 0: {
+		if ((r_io_map_exists_for_offset (io, offset))) {
+			return R_TRUE;
+		}
+		return (offset < r_io_size (io));
+	}
+		break;
+	case 1:
+		if (io->sectonly) {
+			if (r_list_empty (io->sections)) {
+				return R_TRUE;
+			}
+			return (r_io_map_exists_for_offset (io, offset) ||
+				r_io_section_exists_for_vaddr (io, offset, hasperm));
+		} else return R_TRUE;
 	} // more io.va modes pls
 	eprintf ("r_io_is_valid_offset: io->va is %i\n", io->va);
 	r_sys_backtrace ();

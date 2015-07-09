@@ -251,14 +251,14 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
-	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0))
+	// check if address is readable //:
+	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
-// check if address is readable //:
-#if 1
+	}
+
 	if (r_anal_get_fcn_at (anal, addr, 0)) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
-#endif
 	bb = bbget (fcn, addr);
 	if (bb) {
 		r_anal_fcn_split_bb (anal, fcn, bb, addr);

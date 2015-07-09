@@ -107,7 +107,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 		kr = mach_vm_region_recurse (task, &address, &size, &depth,
 			(vm_region_recurse_info_t) &info, &info_count);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("Cannot kern succ recurse\n");
+			//eprintf ("Cannot kern succ recurse\n");
 			break;
 		}
 		if (!list) {
