@@ -512,7 +512,7 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0, NULL);
 				char *dst = getarg (handle, insn, 0, 1, "<<");
-				esilprintf (op, "%s,%s,cz,%%z,zf,=", src, dst);
+				esilprintf (op, "%s,%s,%%z,zf,=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -546,7 +546,7 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (handle, insn, 1, 0, NULL);
 				char *dst = getarg (handle, insn, 0, 0, NULL);
-				esilprintf (op, "%s,%s,>>=,cz,%%z,zf,=", src, dst);
+				esilprintf (op, "%s,%s,>>=,%%z,zf,=", src, dst);
 				free (src);
 				free (dst);
 			}
