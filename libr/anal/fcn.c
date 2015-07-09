@@ -54,7 +54,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	/* Function calling convention: cdecl/stdcall/fastcall/etc */
 	fcn->call = R_ANAL_CC_TYPE_NONE;
 	/* Function attributes: weak/noreturn/format/etc */
-	fcn->addr = -1;
+	fcn->addr = UT64_MAX;
 	fcn->bits = 0;
 #if FCN_OLD
 	fcn->refs = r_anal_ref_list_new ();
@@ -252,7 +252,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	}
 
 	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0))
-		return R_FALSE;
+		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 // check if address is readable //:
 #if 1
 	if (r_anal_get_fcn_at (anal, addr, 0)) {
