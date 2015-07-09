@@ -34,9 +34,7 @@ static ut8 bitindex[] = {
 #define POP2  "1,sp,-=,sp,[2],1,sp,-=,"
 #define CALL(skipbytes) skipbytes",pc,+," PUSH2
 #define JMP(skipbytes) skipbytes",+,pc,+="
-#define CJMP(target, skipbytes) "?{," ES_##target "" JMP(skipbytes) ",}"
-#define SJMP1 ES_L1 JMP("2")
-#define SJMP2 ES_L2 JMP("3")
+#define CJMP(target, skipbytes) "?{," ESX_##target "" JMP(skipbytes) ",}"
 #define BIT_R "%2$d,%1$d,[1],>>,1,&,"
 
 #define IRAM_BASE  "0x10000"
@@ -52,6 +50,10 @@ static ut8 bitindex[] = {
 #define ES_L1 "%2$d,"
 #define ES_L2 "%3$d,"
 #define ES_C "C,"
+
+// signed char variant
+#define ESX_L1 "%2$hhd,"
+#define ESX_L2 "%2$hhd,"
 
 #define ACC_IB1 "[1],"
 #define ACC_IB2 "[1],"
@@ -102,17 +104,17 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	// Irregulars sorted by lower nibble
 	case 0x00: /* nop  */ emit(","); break;
 	case 0x10: /* jbc  */
-		k(BIT_R "&,?{,%2$d,1,<<,255,^,%1$d,&=[1],%3$d,3,+,pc,+=,}"); break;
+		k(BIT_R "&,?{,%2$d,1,<<,255,^,%1$d,&=[1],%3$hhd,3,+,pc,+=,}"); break;
 	case 0x20: /* jb   */
-		k(BIT_R "&,?{,%3$d,3,+,pc,+=,}"); break;
+		k(BIT_R "&,?{,%3$hhd,3,+,pc,+=,}"); break;
 	case 0x30: /* jnb  */
-		k(BIT_R "&,!,?{,%3$d,3,+,pc,+=,}"); break;
-	case 0x40: /* jc   */ emitf("C,!,?{,%d,2,+,pc,+=,}", buf[1]); break;
-	case 0x50: /* jnc  */ emitf("C,""?{,%d,2,+,pc,+=,}", buf[1]); break;
-	case 0x60: /* jz   */ emitf("A,!,?{,%d,2,+,pc,+=,}", buf[1]); break;
-	case 0x70: /* jnz  */ emitf("A,""?{,%d,2,+,pc,+=,}", buf[1]); break;
-	case 0x80: /* sjmp */ emit(SJMP1); break;
-	case 0x90: /* mov  */ emitf("%d,dptr,=", (buf[2] << 8) | buf[1]); break;
+		k(BIT_R "&,!,?{,%3$hhd,3,+,pc,+=,}"); break;
+	case 0x40: /* jc   */ emitf("C,!,?{,%hhd,2,+,pc,+=,}", buf[1]); break;
+	case 0x50: /* jnc  */ emitf("C,""?{,%hhd,2,+,pc,+=,}", buf[1]); break;
+	case 0x60: /* jz   */ emitf("A,!,?{,%hhd,2,+,pc,+=,}", buf[1]); break;
+	case 0x70: /* jnz  */ emitf("A,""?{,%hhd,2,+,pc,+=,}", buf[1]); break;
+	case 0x80: /* sjmp */ j(ESX_L1 JMP("2")); break;
+	case 0x90: /* mov  */ emitf("%d,dptr,=", (buf[1]<<8) + buf[2]); break;
 	case 0xA0: /* orl  */ k(BIT_R "C,|="); break;
 	case 0xB0: /* anl  */ k(BIT_R "C,&="); break;
 	case 0xC0: /* push */ h(XR(IB1) PUSH1); break;
@@ -217,18 +219,18 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 		h (XR(IB1) XW(R0)) break;
 
 	case 0xB4:
-		h (XR(L1)  XR(A)   "!=,?{,%3$d,2,+pc,+=,}") break;
+		h (XR(L1)  XR(A)   "!=,?{,%3$hhd,2,+pc,+=,}") break;
 	case 0xB5:
-		h (XR(IB1) XR(A)   "!=,?{,%3$d,2,+pc,+=,}") break;
+		h (XR(IB1) XR(A)   "!=,?{,%3$hhd,2,+pc,+=,}") break;
 
 	case 0xB6: case 0xB7:
-		j (XR(L1)  XR(R0I) "!=,?{,%3$d,2,+pc,+=,}") break;
+		j (XR(L1)  XR(R0I) "!=,?{,%3$hhd,2,+pc,+=,}") break;
 
 	case 0xB8: case 0xB9:
 	case 0xBA: case 0xBB:
 	case 0xBC: case 0xBD:
 	case 0xBE: case 0xBF:
-		h (XR(L1)  XR(R0)  "!=,?{,%3$d,2,+pc,+=,}") break;
+		h (XR(L1)  XR(R0)  "!=,?{,%3$hhd,2,+pc,+=,}") break;
 
 	case 0xC4:
 		/* swap */ emit("4,A,0x101,*,>>,A,="); break;
@@ -261,8 +263,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	case 0xDA: case 0xDB:
 	case 0xDC: case 0xDD:
 	case 0xDE: case 0xDF:
-		/* djnz */ h(XI(R0, "--") "," XR(R0) CJMP(L1, "2"));
-		break;
+		/* djnz */ h(XI(R0, "--") "," XR(R0) CJMP(L1, "2")); break;
 
 	case 0xE2: case 0xE3:
 		/* movx */ j(XRAM_BASE "r%0$d,+,[1]," XW(A)); break;
