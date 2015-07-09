@@ -1166,6 +1166,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("stack.size", 64,  "Size of anotated hexdump in visual debug");
 	SETI("stack.delta", 0,  "Delta for the stack dump");
 
+	SETPREF("dbg.bpinmaps", "true", "Force breakpoints to be inside a valid map");
 	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
 	SETCB("dbg.btalgo", "fuzzy", &cb_dbg_btalgo, "Select backtrace algorithm");
 	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
