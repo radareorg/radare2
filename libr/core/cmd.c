@@ -922,6 +922,16 @@ static int cmd_system(void *data, const char *input) {
 	ut64 n;
 	int ret = 0;
 	switch (*input) {
+	case '=':
+		if (input[1] == '?') {
+			r_cons_printf ("Usage: !=[!]  - enable/disable remote commands\n");
+		} else {
+			if (!r_sandbox_enable (0)) {
+				core->cmdremote = input[1]? 1: 0;
+				r_cons_printf ("%s\n", r_str_bool (core->cmdremote));
+			}
+		}
+		break;
 	case '!':
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
@@ -1900,6 +1910,13 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	char *cmd, *ocmd, *ptr, *rcmd;
 	int ret = R_FALSE;
+
+	if (core->cmdremote) {
+		if (strncmp (cstr, "!=", 2)) {
+			r_io_system (core->io, cstr);
+			return 0;
+		}
+	}
 
 	if (cstr==NULL)
 		return R_FALSE;
