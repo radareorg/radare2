@@ -31,7 +31,6 @@ static int mousemode = 0;
 #define hash_set(sdb,k,v) (sdb_num_set (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), (ut64)(size_t)v, 0))
 #define hash_get(sdb,k) (sdb_num_get (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), NULL))
 #define hash_get_rnode(sdb,k) ((RGraphNode *)(size_t)hash_get (sdb, k))
-#define hash_get_anode(sdb,k) ((RANode *)(size_t)hash_get (sdb, k))
 #define hash_get_rlist(sdb,k) ((RList *)(size_t)hash_get (sdb, k))
 #define hash_get_int(sdb,k) ((int)hash_get (sdb, k))
 
@@ -1431,8 +1430,6 @@ static void set_layout_callgraph(RAGraph *g) {
 static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
-	Sdb *a_nodes = sdb_new0 ();
-	if (!a_nodes) return R_FALSE;
 
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RANode *node;
@@ -1451,31 +1448,34 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		title = get_title (bb->addr);
 
 		node = r_agraph_add_node (g, title, body);
-		if (!node) {
-			sdb_free (a_nodes);
+		if (!node)
 			return R_FALSE;
-		}
-
-		hash_set (a_nodes, bb->addr, node);
 	}
 
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RANode *u, *v;
+		char *title;
+
 		if (bb->addr == UT64_MAX)
 			continue;
 
-		u = hash_get_anode (a_nodes, bb->addr);
+		title = get_title (bb->addr);
+		u = r_agraph_get_node (g, title);
+		if (title) free (title);
 		if (bb->jump != UT64_MAX) {
-			v = hash_get_anode (a_nodes, bb->jump);
+			title = get_title (bb->jump);
+			v = r_agraph_get_node (g, title);
+			if (title) free (title);
 			r_agraph_add_edge (g, u, v);
 		}
 		if (bb->fail != UT64_MAX) {
-			v = hash_get_anode (a_nodes, bb->fail);
+			title = get_title (bb->fail);
+			v = r_agraph_get_node (g, title);
+			if (title) free (title);
 			r_agraph_add_edge (g, u, v);
 		}
 	}
 
-	sdb_free (a_nodes);
 	return R_TRUE;
 }
 
@@ -1483,7 +1483,6 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
  * information */
 static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 #if FCN_OLD
-	Sdb *a_nodes = sdb_new0 ();
 	RANode *node, *fcn_anode;
 	RListIter *iter;
 	RAnalRef *ref;
@@ -1491,19 +1490,20 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 	title = get_title (fcn->addr);
 	fcn_anode = r_agraph_add_node (g, title, strdup (""));
-	if (!fcn_anode) {
-		sdb_free (a_nodes);
+	if (!fcn_anode)
 		return R_FALSE;
-	}
+
 	fcn_anode->x = 10;
 	fcn_anode->y = 3;
-	hash_set (a_nodes, fcn->addr, fcn_anode);
 
 	r_list_foreach (fcn->refs, iter, ref) {
 		/* XXX: something is broken, why there are duplicated
 		 *      nodes here?! goto check fcn->refs!! */
 		/* avoid dups wtf */
-		if (hash_get_anode (a_nodes, ref->addr) != NULL) continue;
+		title = get_title (ref->addr);
+		if (r_agraph_get_node (g, title) != NULL)
+				continue;
+		if (title) free (title);
 
 		RFlagItem *fi = r_flag_get_at (core->flags, ref->addr);
 
@@ -1520,19 +1520,16 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		title = get_title (ref->addr);
 
 		node = r_agraph_add_node (g, title, body);
-		if (!node) {
-			sdb_free (a_nodes);
+		if (!node)
 			return R_FALSE;
-		}
+
 		node->x = 10;
 		node->y = 10;
 		free (code);
-		hash_set (a_nodes, ref->addr, node);
 
 		r_agraph_add_edge (g, fcn_anode, node);
 	}
 
-	sdb_free (a_nodes);
 #else
 	eprintf ("Must be sdbized\n");
 #endif
@@ -1915,6 +1912,7 @@ static void agraph_init(RAGraph *g) {
 	g->force_update_seek = R_TRUE;
 	g->history = r_stack_new (INIT_HISTORY_CAPACITY);
 	g->graph = r_graph_new ();
+	g->nodes = sdb_new0 ();
 	g->zoom = ZOOM_DEFAULT;
 	g->movspeed = DEFAULT_SPEED;
 }
@@ -1932,7 +1930,12 @@ R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
 	res->class = -1;
 
 	res->gnode = r_graph_add_node (g->graph, res);
+	sdb_num_set (g->nodes, title, (ut64)(size_t)res, 0);
 	return res;
+}
+
+R_API RANode *r_agraph_get_node (const RAGraph *g, const char *title) {
+	return (RANode *)(size_t)sdb_num_get (g->nodes, title, NULL);
 }
 
 R_API void r_agraph_add_edge (const RAGraph *g, RANode *a, RANode *b) {
@@ -1943,7 +1946,9 @@ R_API void r_agraph_add_edge (const RAGraph *g, RANode *a, RANode *b) {
 R_API void r_agraph_reset (RAGraph *g) {
 	r_graph_reset (g->graph);
 	r_stack_free (g->history);
+	sdb_free (g->nodes);
 
+	g->nodes = sdb_new0 ();
 	g->update_seek_on = NULL;
 	g->x = g->y = g->w = g->h = 0;
 	g->history = r_stack_new (INIT_HISTORY_CAPACITY);
@@ -1952,6 +1957,7 @@ R_API void r_agraph_reset (RAGraph *g) {
 R_API void r_agraph_free(RAGraph *g) {
 	r_graph_free (g->graph);
 	r_stack_free (g->history);
+	sdb_free (g->nodes);
 	free(g);
 }
 
