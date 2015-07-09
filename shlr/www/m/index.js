@@ -388,7 +388,7 @@ function consoleKey(e) {
 	if (!e) {
 		inp.onkeypress = consoleKey;
 	} else {
-		if (!e.charCode || e.charCode == 13) {
+		if (e.keyCode == 13) {
 			runCommand (inp.value);
 			inp.value = '';
 		}
