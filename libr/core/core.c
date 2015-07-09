@@ -1050,6 +1050,9 @@ R_API int r_core_prompt(RCore *r, int sync) {
 			r_file_basename (r->io->desc->name));
 	}
 	if (r->cmdremote) {
+		char *s = r_core_cmd_str (r, "s");
+		r->offset = r_num_math (NULL, s);
+		free (s);
 		remote = "=!";
 	//	core->offset = r_num_math (NULL, 
 	}
