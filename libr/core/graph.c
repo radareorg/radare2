@@ -1655,7 +1655,7 @@ static void agraph_update_seek(RAGraph *g, RANode *n, int force) {
 	g->force_update_seek = force;
 }
 
-static void agraph_print_node(RAGraph *g, RANode *n) {
+static void agraph_print_node(const RAGraph *g, RANode *n) {
 	const int cur = get_anode (g->curnode) == n;
 
 	if (g->is_small_nodes)
@@ -1664,7 +1664,7 @@ static void agraph_print_node(RAGraph *g, RANode *n) {
 		normal_RANode_print(g, n, cur);
 }
 
-static void agraph_print_nodes(RAGraph *g) {
+static void agraph_print_nodes(const RAGraph *g) {
 	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *gn;
 	RListIter *it;
@@ -1683,7 +1683,7 @@ static void agraph_print_nodes(RAGraph *g) {
  * nth: specifies if the edge is the true(1)/false(2) branch or if it's the
  *      only edge for that node(0), so that a different style will be applied
  *      to the drawn line */
-static void agraph_print_edge(RAGraph *g, RANode *a, RANode *b, int nth) {
+static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	int x, y, x2, y2;
 	int xinc = 3 + 2 * (nth + 1);
 	x = a->x + xinc;
@@ -1703,7 +1703,7 @@ static void agraph_print_edge(RAGraph *g, RANode *a, RANode *b, int nth) {
 	}
 }
 
-static void agraph_print_edges(RAGraph *g) {
+static void agraph_print_edges(const RAGraph *g) {
 	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *gn, *gv;
 	RListIter *it, *itn;
@@ -1811,13 +1811,73 @@ static void agraph_prev_node(RAGraph *g) {
 	agraph_update_seek (g, get_anode (g->curnode), R_FALSE);
 }
 
-static int agraph_refresh(struct agraph_refresh_data *grd) {
+static void agraph_print (RAGraph *g, int is_interactive,
+                          RCore *core, RAnalFunction *fcn) {
 	char title[TITLE_LEN];
+	int h, w = r_cons_get_size (&h);
+
+	if (g->need_update_dim || !is_interactive) {
+		update_node_dimension (g->graph, g->is_small_nodes, g->zoom);
+		g->need_update_dim = R_FALSE;
+	}
+	if (g->need_set_layout || !is_interactive) {
+		agraph_set_layout (g);
+		g->need_set_layout = R_FALSE;
+	}
+	if (g->update_seek_on) {
+		update_seek(g->can, g->update_seek_on, g->force_update_seek);
+		g->update_seek_on = NULL;
+		g->force_update_seek = R_FALSE;
+	}
+
+	if (is_interactive) {
+		r_cons_clear00 ();
+	}
+
+	/* TODO: limit to screen size when the output is not redirected to file */
+	if (!is_interactive)
+		update_graph_sizes (g);
+
+	h = is_interactive ? h : g->h;
+	w = is_interactive ? w : g->w;
+	r_cons_canvas_resize (g->can, w, h);
+	r_cons_canvas_clear (g->can);
+	if (!is_interactive) {
+		g->can->sx = -g->x;
+		g->can->sy = -g->y;
+	}
+
+	agraph_print_edges(g);
+	agraph_print_nodes(g);
+
+	if (is_interactive) {
+		const char *cmdv;
+		(void)G (-g->can->sx, -g->can->sy);
+		snprintf (title, sizeof (title)-1,
+			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
+			fcn->addr, r_stack_size (g->history), fcn->name,
+			g->graph->n_nodes, g->graph->n_edges, g->zoom, g->is_callgraph?"CG":"BB",
+			mousemodes[mousemode], g->movspeed);
+		W (title);
+
+		r_cons_canvas_print (g->can);
+
+		cmdv = r_config_get (core->config, "cmd.gprompt");
+		if (cmdv && *cmdv) {
+			r_cons_gotoxy (0, 1);
+			r_core_cmd0 (core, cmdv);
+		}
+	} else {
+		r_cons_canvas_print_region (g->can);
+	}
+	r_cons_flush_nonewline ();
+}
+
+static int agraph_refresh(struct agraph_refresh_data *grd) {
 	RCore *core = grd->core;
 	RAGraph *g = grd->g;
 	RAnalFunction **fcn = grd->fcn;
 	const int fs = grd->fs;
-	int h, w = r_cons_get_size (&h);
 	int ret;
 
 	/* allow to change the current function only during debugging */
@@ -1840,60 +1900,8 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 
 		g->need_reload_nodes = R_FALSE;
 	}
-	if (g->need_update_dim) {
-		update_node_dimension (g->graph, g->is_small_nodes, g->zoom);
-		g->need_update_dim = R_FALSE;
-	}
-	if (g->need_set_layout) {
-		agraph_set_layout (g);
-		g->need_set_layout = R_FALSE;
-	}
-	if (g->update_seek_on) {
-		update_seek(g->can, g->update_seek_on, g->force_update_seek);
-		g->update_seek_on = NULL;
-		g->force_update_seek = R_FALSE;
-	}
 
-	if (fs) {
-		r_cons_clear00 ();
-	}
-
-	/* TODO: limit to screen size when the output is not redirected to file */
-	h = fs ? h : g->h;
-	w = fs ? w : g->w;
-	r_cons_canvas_resize (g->can, w, h);
-	r_cons_canvas_clear (g->can);
-	if (!fs) {
-		g->can->sx = -g->x;
-		g->can->sy = -g->y;
-	}
-
-	agraph_print_edges(g);
-	agraph_print_nodes(g);
-
-	if (fs) {
-		(void)G (-g->can->sx, -g->can->sy);
-		snprintf (title, sizeof (title)-1,
-			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
-			(*fcn)->addr, r_stack_size (g->history), (*fcn)->name,
-			g->graph->n_nodes, g->graph->n_edges, g->zoom, g->is_callgraph?"CG":"BB",
-			mousemodes[mousemode], g->movspeed);
-		W (title);
-	}
-
-	if (fs) {
-		r_cons_canvas_print (g->can);
-	} else {
-		r_cons_canvas_print_region (g->can);
-	}
-	if (fs) {
-		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
-		if (cmdv && *cmdv) {
-			r_cons_gotoxy (0, 1);
-			r_core_cmd0 (core, cmdv);
-		}
-	}
-	r_cons_flush_nonewline ();
+	agraph_print (g, fs, core, *fcn);
 	return R_TRUE;
 }
 
@@ -1915,6 +1923,10 @@ static void agraph_init(RAGraph *g) {
 	g->nodes = sdb_new0 ();
 	g->zoom = ZOOM_DEFAULT;
 	g->movspeed = DEFAULT_SPEED;
+}
+
+R_API void r_agraph_print (RAGraph *g) {
+	agraph_print (g, R_FALSE, NULL, NULL);
 }
 
 R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
