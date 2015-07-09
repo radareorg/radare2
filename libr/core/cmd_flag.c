@@ -251,13 +251,28 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 		}
 		break;
-	case 'l':
+	case 'l': // "fl"
 		if (input[1] == ' ') {
-			RFlagItem *item = r_flag_get_i (core->flags,
-				r_num_math (core->num, input+2));
+			char *p, *arg = strdup (input+2);
+			r_str_trim_head_tail (arg);
+			p = strchr (arg, ' ');
+			if (p) {
+				*p++ = 0;
+				RFlagItem *item = r_flag_get_i (core->flags,
+					r_num_math (core->num, str));
+				if (item)
+					item->size = r_num_math (core->num, p);
+			} else {
+				RFlagItem *item = r_flag_get_i (core->flags,
+					r_num_math (core->num, str));
+				if (item)
+					r_cons_printf ("0x%08"PFMT64x"\n", item->size);
+			}
+		} else {
+			RFlagItem *item = r_flag_get_i (core->flags, core->offset);
 			if (item)
 				r_cons_printf ("0x%08"PFMT64x"\n", item->size);
-		} else eprintf ("Missing arguments\n");
+		}
 		break;
 #if 0
 	case 'd':
@@ -523,7 +538,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"fe"," [name]","create flag name.#num# enumerated flag. See fe?",
 		"fg","","bring visual mode to foreground",
 		"fj","","list flags in JSON format",
-		"fl"," [flagname]","show flag length (size)",
+		"fl"," [flag] [size]","show or set flag length (size)",
 		"fm"," addr","move flag at current offset to new address",
 		"fn","","list flags displaying the real name (demangled)",
 		"fo","","show fortunes",
