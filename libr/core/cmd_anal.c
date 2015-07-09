@@ -2290,6 +2290,10 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		"agl", " [fcn name]",  "output graphviz code using meta-data",
 		"agt", " [addr]", "find paths from current offset to given address",
 		"agf", " [addr]", "Show ASCII art graph of given function",
+		"ag-", "", "Reset the current ASCII art graph",
+		"agn", " title body", "Add a node to the current ASCII art graph",
+		"age", " title1 title2", "Add an edge to the current ASCII art graph",
+		"agg", "", "Print the current ASCII art graph",
 		"agfl", " [fcn name]", "output graphviz code of function using meta-data",
 		"agv", "[acdltfl] [a]", "view function using graphviz",
 		NULL};
@@ -2297,6 +2301,68 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'f':
 		r_core_cmd0 (core, "afg"); // afg should be deprecated imho
+		break;
+	case '-':
+		r_agraph_reset (core->graph);
+		break;
+	case 'n':
+		/* TODO: accept title and body with spaces (wrapped in "") */
+		/* TODO: accept base64 body */
+		input++;
+		if (*input == ' ') {
+			char *title, *body;
+			int len;
+
+			input++;
+			arg = r_str_tok (input, ' ', -1);
+			if (arg) {
+				len = arg - input;
+				title = r_str_ndup (input, len);
+
+				input = arg;
+				while (*input == ' ') input++;
+				arg = r_str_tok (input, ' ', -1);
+				len = arg ? arg - input : strlen (input);
+				body = r_str_ndup (input, len);
+
+				r_agraph_add_node (core->graph, title, body);
+			}
+		}
+		break;
+	case 'e':
+		/* TODO: accept titles with spaces (wrapped in "") */
+		input++;
+		if (*input == ' ') {
+			RANode *u, *v;
+			char *title1, *title2;
+			int len;
+
+			input++;
+			arg = r_str_tok (input, ' ', -1);
+			if (arg) {
+				len = arg - input;
+				title1 = r_str_ndup (input, len);
+
+				input = arg;
+				while (*input == ' ') input++;
+				arg = r_str_tok (input, ' ', -1);
+				len = arg ? arg - input : strlen (input);
+				title2 = r_str_ndup (input, len);
+
+				u = r_agraph_get_node (core->graph, title1);
+				v = r_agraph_get_node (core->graph, title2);
+				if (!u || !v) {
+					r_cons_printf ("nodes not found!\n");
+					break;
+				}
+				r_agraph_add_edge (core->graph, u, v);
+			}
+		}
+		break;
+	case 'g':
+		core->graph->can->linemode = 1;
+		core->graph->can->color = r_config_get_i (core->config, "scr.color");
+		r_agraph_print (core->graph);
 		break;
 	case 't':
 		list = r_core_anal_graph_to (core, r_num_math (core->num, input+1), 0);
