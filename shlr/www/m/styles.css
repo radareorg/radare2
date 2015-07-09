@@ -243,3 +243,15 @@ _:-ms-input-placeholder, :root .demo-graph {
 ul {
     list-style-type: none;
 }
+
+.pre {
+    font-family: Console, Courier New, monospace;
+    white-space: pre;
+}
+
+input {
+	background-color: #f0f0f0 !important;
+	color: black !important;
+	font-family: monospace;
+	width: 100%;
+}

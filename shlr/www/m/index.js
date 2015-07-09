@@ -375,11 +375,24 @@ function panelFunctions() {
 	});
 }
 
-function runCommand() {
-	var text = document.getElementById('input').value;
+function runCommand(text) {
+	if (!text)
+		text = document.getElementById('input').value;
 	r2.cmd (text, function (d) {
 		document.getElementById('output').innerHTML = d;
 	});
+}
+
+function consoleKey(e) {
+	var inp = document.getElementById('input');
+	if (!e) {
+		inp.onkeypress = consoleKey;
+	} else {
+		if (!e.charCode) {
+			runCommand (inp.value);
+			inp.value = '';
+		}
+	}
 }
 
 function panelConsole() {
@@ -391,15 +404,15 @@ function panelConsole() {
 	}
 	c.innerHTML = "<br />";
 	if (inColor) {
-		c.innerHTML += "<input style='color:white' class='mdl-card--expand mdl-textfield__input' id='input'/>";
-		c.innerHTML += uiButton('javascript:runCommand()', 'Run');
-		c.innerHTML += "<pre id='output' style='color:white !important'><pre>";
+		c.innerHTML += "<input style='color:white' onkeypress='consoleKey()' class='mdl-card--expand mdl-textfield__input' id='input'/>";
+		//c.innerHTML += uiButton('javascript:runCommand()', 'Run');
+		c.innerHTML += "<div id='output' class='pre' style='color:white !important'><div>";
 		r2.cmd("e scr.color=true");
 		r2.cmd("e scr.html=true");
 	} else {
 		c.innerHTML += "<input style='color:black' class='mdl-card--expand mdl-textfield__input' id='input'/>";
 		c.innerHTML += uiButton('javascript:runCommand()', 'Run');
-		c.innerHTML += "<pre id='output' style='color:black!important'><pre>";
+		c.innerHTML += "<div id='output' class='pre' style='color:black!important'><div>";
 	}
 	r2.cmd("e scr.utf8=false");
 }
