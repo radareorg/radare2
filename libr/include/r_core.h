@@ -124,6 +124,7 @@ typedef struct r_core_t {
 	RFS *fs;
 	REgg *egg;
 	RCoreLog *log;
+	RAGraph *graph;
 	char *cmdqueue;
 	char *lastcmd;
 	int cmdrepeat;

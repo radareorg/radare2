@@ -90,6 +90,7 @@ static void update_node_dimension(const RGraph *g, int is_small, int zoom) {
 			n->w = strlen (SMALLNODE_TEXT);
 		} else {
 			n->w = r_str_bounds (n->body, &n->h);
+			n->w = R_MAX (n->w, strlen (n->title));
 			n->w += BORDER_WIDTH;
 			n->h += BORDER_HEIGHT;
 			/* scale node by zoom */
@@ -1656,7 +1657,7 @@ static void agraph_update_seek(RAGraph *g, RANode *n, int force) {
 }
 
 static void agraph_print_node(const RAGraph *g, RANode *n) {
-	const int cur = get_anode (g->curnode) == n;
+	const int cur = g->curnode && get_anode (g->curnode) == n;
 
 	if (g->is_small_nodes)
 		small_RANode_print(g, n, cur);
@@ -1676,7 +1677,8 @@ static void agraph_print_nodes(const RAGraph *g) {
 	}
 
 	/* draw current node now to make it appear on top */
-	agraph_print_node (g, get_anode (g->curnode));
+	if (g->curnode)
+		agraph_print_node (g, get_anode (g->curnode));
 }
 
 /* print an edge between two nodes.
@@ -1927,6 +1929,8 @@ static void agraph_init(RAGraph *g) {
 
 R_API void r_agraph_print (RAGraph *g) {
 	agraph_print (g, R_FALSE, NULL, NULL);
+	if (g->graph->n_nodes > 0)
+		r_cons_newline ();
 }
 
 R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,

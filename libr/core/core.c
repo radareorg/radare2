@@ -906,6 +906,7 @@ R_API int r_core_init(RCore *core) {
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->fs = r_fs_new ();
 	core->flags = r_flag_new ();
+	core->graph = r_agraph_new (r_cons_canvas_new (1, 1));
 
 	r_bin_bind (core->bin, &(core->assembler->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
@@ -994,6 +995,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_egg_free (c->egg);
 	r_lib_free (c->lib);
 	r_buf_free (c->yank_buf);
+	r_agraph_free (c->graph);
 	sdb_free (c->sdb);
 	return NULL;
 }
