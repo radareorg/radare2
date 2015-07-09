@@ -103,6 +103,7 @@ static int main_help(int line) {
 		" --           open radare2 on an empty file\n"
 		" -            equivalent of 'r2 malloc://512'\n"
 		" =            read file from stdin (use -i and -c to run cmds)\n"
+		" -=           perform !=! command to run all commands remotely\n"
 		" -0           print \\x00 after init and every command\n"
 		" -a [arch]    set asm.arch\n"
 		" -A           run 'aaa' command to analyze all referenced code\n"
@@ -277,12 +278,15 @@ int main(int argc, char **argv, char **envp) {
 		argv++;
 	} else prefile = 0;
 
-	while ((c = getopt (argc, argv, "0ACwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSzu"
+	while ((c = getopt (argc, argv, "=0ACwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
 	))!=-1) {
 		switch (c) {
+			case '=':
+				r.cmdremote = 1;
+				break;
 			case '0':
 				zerosep = R_TRUE;
 				//r_config_set (r.config, "scr.color", "false");

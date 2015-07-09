@@ -209,7 +209,15 @@ static int cmd_rap(void *data, const char *input) {
 	case '=': r_core_rtr_session (core, input+1); break;
 	//case ':': r_core_rtr_cmds (core, input+1); break;
 	case '<': r_core_rtr_pushout (core, input+1); break;
-	case '!': r_io_system (core->io, input+1); break;
+	case '!':
+		if (input[1]=='=') {
+			// swap core->cmdremote = core->cmdremote? 0: 1;
+			core->cmdremote = input[2]? 1: 0;
+			r_cons_printf ("%s\n", r_str_bool (core->cmdremote));
+		} else {
+			r_io_system (core->io, input+1);
+		}
+		break;
 	default: r_core_rtr_cmd (core, input);
 	}
 	return 0;
@@ -1912,7 +1920,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	int ret = R_FALSE;
 
 	if (core->cmdremote) {
-		if (strncmp (cstr, "!=", 2)) {
+		if (*cstr != '=' && *cstr != 'q' && strncmp (cstr, "!=", 2)) {
 			r_io_system (core->io, cstr);
 			return 0;
 		}

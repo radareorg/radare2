@@ -810,6 +810,8 @@ R_API void r_core_rtr_help(RCore *core) {
 	"=+", " [proto://]host", "add host (default=rap://, tcp://, udp://)",
 	"=-", "[fd]", "remove all hosts or host 'fd'",
 	"==", "[fd]", "open remote session with host 'fd', 'q' to quit",
+	"=!=", "", "disable remote cmd mode",
+	"!=!", "", "enable remote cmd mode",
 	"\nrap server:","","",
 	"=", ":port", "listen on given port using rap protocol (o rap://9999)",
 	"=", ":host:port cmd", "run 'cmd' command on remote server",

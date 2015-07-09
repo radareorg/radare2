@@ -1032,6 +1032,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 	const char *BEGIN = r->cons->pal.prompt;
 	const char *END = r->cons->pal.reset;
+	const char *remote = "";
 	rnv = r->num->value;
 
 	if (!BEGIN) BEGIN = "";
@@ -1048,6 +1049,10 @@ R_API int r_core_prompt(RCore *r, int sync) {
 		filename = r_str_newf ("\"%s\"",
 			r_file_basename (r->io->desc->name));
 	}
+	if (r->cmdremote) {
+		remote = "=!";
+	//	core->offset = r_num_math (NULL, 
+	}
 	// TODO: also in visual prompt and disasm/hexdump ?
 	if (r_config_get_i (r->config, "asm.segoff")) {
 		ut32 a, b;
@@ -1056,24 +1061,24 @@ R_API int r_core_prompt(RCore *r, int sync) {
 #if __UNIX__
 		if (r_config_get_i (r->config, "scr.color"))
 			snprintf (prompt, sizeof (prompt),
-				"%s%s[%04x:%04x]>%s ",
-				filename, BEGIN, a, b, END);
+				"%s%s[%s%04x:%04x]>%s ",
+				filename, BEGIN, remote, a, b, END);
 		else
 #endif
 		snprintf (prompt, sizeof (prompt),
-			"%s[%04x:%04x]> ",
-			filename, a, b);
+			"%s[%s%04x:%04x]> ",
+			filename, remote, a, b);
 	} else {
 #if __UNIX__
 		if (r_config_get_i (r->config, "scr.color"))
 			snprintf (prompt, sizeof (prompt),
-				"%s%s[0x%08"PFMT64x"]>%s ",
-				filename, BEGIN, r->offset, END);
+				"%s%s[%s0x%08"PFMT64x"]>%s ",
+				filename, BEGIN, remote, r->offset, END);
 		else
 #endif
 		snprintf (prompt, sizeof (prompt),
-			"%s[0x%08"PFMT64x"]> ",
-			filename, r->offset);
+			"%s[%s0x%08"PFMT64x"]> ",
+			filename, remote, r->offset);
 	}
 	free (filename);
 	filename = NULL;

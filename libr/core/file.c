@@ -160,13 +160,15 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 // unidirectional ones.
 R_API void r_core_sysenv_help(const RCore* core) {
 	const char* help_msg[] = {
-	"Usage:", "!<cmd>", "Run given command as in system(3)",
+	"Usage:", "!<cmd>", "  Run given command as in system(3)",
 	"!", "", "list all historic commands",
 	"!", "ls", "execute 'ls' in shell",
 	"!!", "", "save command history to hist file",
 	"!!", "ls~txt", "print output of 'ls' and grep for 'txt'",
 	".!", "rabin2 -rpsei ${FILE}", "run each output line as a r2 cmd",
 	"!", "echo $SIZE", "display file size",
+	"!=!", "", "enable remotecmd mode",
+	"=!=", "", "disable remotecmd mode",
 	"\nEnvironment:", "", "",
 	"FILE", "", "file name",
 	"SIZE", "","file size",
