@@ -1,5 +1,6 @@
 
 var update = function() {/* nop */}
+var inColor = true;
 
 function uiButton(href,label,type) {
 if (type=='active') {
@@ -77,8 +78,10 @@ function flagspaces() {
 	var c = document.getElementById("content");
 	document.getElementById('title').innerHTML = 'Flag Spaces';
 	c.innerHTML += '<br /><br />'+uiButton('javascript:flagspaces()', 'Flags');
-	r2.cmd("e scr.color=true");
-	r2.cmd("e scr.html=true");
+	if (inColor) {
+		r2.cmd("e scr.color=true");
+		r2.cmd("e scr.html=true");
+	}
 	r2.cmd("e scr.utf8=false");
 	r2.cmd ("fs", function (d) {
 // TODO: show in checklist
@@ -197,13 +200,15 @@ function configBits8() { r2.cmd("e asm.bits=8"); }
 function configBits16() { r2.cmd("e asm.bits=16"); }
 function configBits32() { r2.cmd("e asm.bits=32"); }
 function configBits64() { r2.cmd("e asm.bits=64"); }
+function configColorTrue() { inColor = true; r2.cmd("e scr.color=true"); }
+function configColorFalse() { inColor = false; r2.cmd("e scr.color=false"); }
 
 function uiBlock(d) {
 	var out = '<br /><div class="mdl-card__supporting-text mdl-color-text--blue-grey-50" style="color:black !important;background-color:white !important">';
 	out += '<h3 style="color:black">'+d.name+'</h3>';
 	for (var i in d.blocks) {
 		var D = d.blocks[i];
-		out += '<br /><br />'+D.name+': ';
+		out += '<br />'+D.name+': ';
 		for (var b in D.buttons) {
 			var B = D.buttons[b];
 if (B.default) {
@@ -266,6 +271,8 @@ function panelSettings() {
 			{ name: 'Ogray', js: 'configColorTheme("ogray")' },
 			{ name: 'Twilight', js: 'configColorTheme("twilight")' },
 			{ name: 'Rasta', js: 'configColorTheme("rasta")' },
+			{ name: 'Tango', js: 'configColorTheme("tango")' },
+			{ name: 'White', js: 'configColorTheme("white")' },
 			]}
 					]
 	});
@@ -275,6 +282,11 @@ function panelSettings() {
 		     { name: "PA", js: 'configPA' },
 		     { name: "VA", js: 'configVA' },
 		     { name: "Debug", js: 'configDebug' }
+		    ]
+		},{
+		    name: 'Colors', buttons: [
+		     { name: "Yes", js: 'configColorTrue', default:true },
+		     { name: "No", js: 'configColorFalse' },
 		    ]
 	     }]});
 	out += uiBlock({ name: 'Analysis', blocks: [
@@ -316,7 +328,8 @@ function printHeaderPanel(title, cmd, grep) {
 		cmd += "~" + grep;
 	}
 	r2.cmd (cmd, function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier' style='color:white !important'>"+d+"<pre>";
+		var color = inColor? "white": "black";
+		c.innerHTML += "<pre style='font-family:Console,Courier' style='color:"+color+" !important'>"+d+"<pre>";
 	});
 }
 
@@ -352,8 +365,10 @@ function panelFunctions() {
 	c.innerHTML += uiButton('javascript:analyzeCalls()', 'Calls');
 	c.innerHTML += uiButton('javascript:analyzeFunction()', 'Function');
 	c.innerHTML += uiButton('javascript:analyzeNames()', 'AutoName');
-	r2.cmd("e scr.color=true");
-	r2.cmd("e scr.html=true");
+	if (inColor) {
+		r2.cmd("e scr.color=true");
+		r2.cmd("e scr.html=true");
+	}
 	r2.cmd("e scr.utf8=false");
 	r2.cmd ("afl", function (d) {
 		c.innerHTML += "<pre style='font-family:Console,Courier' style='color:white !important'>"+d+"<pre>";
@@ -371,13 +386,21 @@ function panelConsole() {
 	update = panelConsole;
 	document.getElementById('title').innerHTML = 'Console';
 	var c = document.getElementById("content");
-	c.style = 'background-color: #202020 !important';
+	if (inColor) {
+		c.style = 'background-color: #202020 !important';
+	}
 	c.innerHTML = "<br />";
-	c.innerHTML += "<input style='color:white' class='mdl-card--expand mdl-textfield__input' id='input'/>";
-	c.innerHTML += uiButton('javascript:runCommand()', 'Run');
-	c.innerHTML += "<pre id='output' style='color:white !important'><pre>";
-	r2.cmd("e scr.color=true");
-	r2.cmd("e scr.html=true");
+	if (inColor) {
+		c.innerHTML += "<input style='color:white' class='mdl-card--expand mdl-textfield__input' id='input'/>";
+		c.innerHTML += uiButton('javascript:runCommand()', 'Run');
+		c.innerHTML += "<pre id='output' style='color:white !important'><pre>";
+		r2.cmd("e scr.color=true");
+		r2.cmd("e scr.html=true");
+	} else {
+		c.innerHTML += "<input style='color:black' class='mdl-card--expand mdl-textfield__input' id='input'/>";
+		c.innerHTML += uiButton('javascript:runCommand()', 'Run');
+		c.innerHTML += "<pre id='output' style='color:black!important'><pre>";
+	}
 	r2.cmd("e scr.utf8=false");
 }
 
@@ -388,8 +411,10 @@ function panelFlags() {
 	c.style = 'background-color: #f0f0f0 !important';
 	c.innerHTML = "<br />";
 	c.innerHTML += uiButton('javascript:flagspaces()', 'Spaces');
-	r2.cmd("e scr.color=true");
-	r2.cmd("e scr.html=true");
+	if (inColor) {
+		r2.cmd("e scr.color=true");
+		r2.cmd("e scr.html=true");
+	}
 	r2.cmd("e scr.utf8=false");
 	r2.cmd ("f", function (d) {
 		c.innerHTML += "<pre style='font-family:Console,Courier' style='color:white !important'>"+d+"<pre>";
@@ -403,8 +428,10 @@ function panelComments() {
 	c.style = 'background-color: #f0f0f0 !important';
 	c.innerHTML = "<br />";
 	c.innerHTML += uiButton('javascript:notes()', 'Notes');
-	r2.cmd("e scr.color=true");
-	r2.cmd("e scr.html=true");
+	if (inColor) {
+		r2.cmd("e scr.color=true");
+		r2.cmd("e scr.html=true");
+	}
 	r2.cmd("e scr.utf8=false");
 	r2.cmd ("CC", function (d) {
 		c.innerHTML += "<pre style='font-family:Console,Courier'>"+d+"<pre>";
@@ -415,18 +442,22 @@ function panelHexdump() {
 	update = panelHexdump;
 	var c = document.getElementById("content");
 	document.getElementById('title').innerHTML = 'Hexdump';
-	c.style = 'background-color: #202020 !important';
+	if (inColor) {
+		c.style = 'background-color: #202020 !important';
+	}
 	c.innerHTML = "<br />"; //Version: "+d;
 	c.innerHTML += uiButton('javascript:comment()', 'Comment');
 	c.innerHTML += uiButton('javascript:flag()', 'Flag');
 	c.innerHTML += uiButton('javascript:flagsize()', 'Size');
 	c.innerHTML += uiButton('javascript:block()', 'Block');
-	r2.cmd("e scr.color=true");
-	r2.cmd("e scr.html=true");
+	if (inColor) {
+		r2.cmd("e scr.color=true");
+		r2.cmd("e scr.html=true");
+	}
 	r2.cmd("e scr.utf8=false");
 	r2.cmd ("pxa", function (d) {
-		//d = d.replace(/\[0m/g, "");
-		c.innerHTML += "<pre style='color:white !important'>"+d+"<pre>";
+		var color = inColor? "white": "black";
+		c.innerHTML += "<pre style='color:"+color+"!important'>"+d+"<pre>";
 	});
 }
 
@@ -434,15 +465,19 @@ function panelDisasm() {
 	update = panelDisasm;
 	var c = document.getElementById("content");
 	document.getElementById('title').innerHTML = 'Disassembly';
-	c.style = 'background-color: #202020 !important';
+	if (inColor) {
+		c.style = 'background-color: #202020 !important';
+	}
 	var out = "<br />";
 	out += '&nbsp;<a href="javascript:analyze()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Analyze</a>';
 	out += '&nbsp;<a href="javascript:comment()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Comment</a>';
 	out += '&nbsp;<a href="javascript:info()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Info</a>';
 	out += '&nbsp;<a href="javascript:rename()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Rename</a>';
 	c.innerHTML = out;
-	r2.cmd("e scr.color=true");
-	r2.cmd("e scr.html=true");
+	if (inColor) {
+		r2.cmd("e scr.color=true");
+		r2.cmd("e scr.html=true");
+	}
 	r2.cmd("e scr.utf8=false");
 	r2.cmd ("pd 128", function (d) {
 		c.innerHTML += "<pre style='font-family:Console,Courier'>"+d+"<pre>";
@@ -472,35 +507,41 @@ function rename() {
 }
 function info() {
 	var c = document.getElementById('content');
+	var color = inColor? "white": "black";
 	document.getElementById('title').innerHTML = 'Info';
 	c.innerHTML = "<br />"; //Version: "+d;
 	c.innerHTML += uiButton ('javascript:panelDisasm()', '&lt; disasm');
 	c.innerHTML += uiButton ('javascript:graph()', 'graph');
 	c.innerHTML += uiButton ('javascript:decompile()', 'decompile');
 	r2.cmd ("afi", function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier;color:white'>"+d+"<pre>";
+		c.innerHTML += "<pre style='font-family:Console,Courier;color:"+color+"'>"+d+"<pre>";
 	});
 }
 function decompile() {
 	document.getElementById('title').innerHTML = 'Decompile';
 	var c = document.getElementById('content');
-c.style['overflow'] = 'auto';
+	c.style['overflow'] = 'none';
+	var color = inColor? "white": "black";
 	c.innerHTML = "<br />";
 	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
 	r2.cmd ("pdc", function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier;color:white'>"+d+"<pre>";
+		c.innerHTML += "<pre style='font-family:Console,Courier;color:"+color+"'>"+d+"<pre>";
 	});
 }
+
 function graph() {
 	document.getElementById('title').innerHTML = 'Graph';
 	var c = document.getElementById('content');
-c.style['overflow'] = 'auto';
-	c.innerHTML = "<br />";
-	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
+	c.style['overflow'] = 'auto';
+	var color = inColor? "white": "black";
+	c.innerHTML = '<br />&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a>';
 	r2.cmd ("agf", function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier;color:white'>"+d+"<pre>";
+		c.innerHTML += "<pre style='font-family:Console,Courier;color:"+color+"'>"+d+"<pre>";
 	});
 }
+
+//-------------
+
     Array.prototype.forEach.call(document.querySelectorAll('.mdl-card__media'), function(el) {
       var link = el.querySelector('a');
       if(!link) {

@@ -25,3 +25,5 @@ ec offset blue
 ec flow red
 ec fline green
 ec prompt red
+ec mov blue
+ec invalid red

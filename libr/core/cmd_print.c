@@ -551,6 +551,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	const int col = core->print->col;
 	RFlagItem *flag, *current_flag = NULL;
 	char** note;
+	int html = r_config_get_i (core->config, "scr.html");
 	int nb_cons_cols;
 
 	// Adjust the number of columns
@@ -667,7 +668,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 						append (echars, colors[color_idx]);
 					}
 				} else {
-					append (ebytes, Color_INVERT);
+					if (html) {
+						append (ebytes, "[");
+					} else {
+						append (ebytes, Color_INVERT);
+					}
 				}
 			}
 			here = R_MIN ((i * nb_cols) + j, core->blocksize);
@@ -681,13 +686,23 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			if (core->print->cur_enabled) {
 				if (low==max) {
 					if (low == here) {
-						append (echars, Color_INVERT);
-						append (ebytes, Color_INVERT);
+						if (html) {
+							append (ebytes, "[");
+							append (echars, "[");
+						} else {
+							append (echars, Color_INVERT);
+							append (ebytes, Color_INVERT);
+						}
 					}
 				} else {
 					if (here >= low && here <max) {
-						append (ebytes, Color_INVERT);
-						append (echars, Color_INVERT);
+						if (html) {
+							append (ebytes, "[");
+							append (echars, "[");
+						} else {
+							append (ebytes, Color_INVERT);
+							append (echars, Color_INVERT);
+						}
 					}
 				}
 			}
@@ -696,8 +711,10 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			sprintf (echars, "%c", IS_PRINTABLE (ch)?ch:'.');
 			echars++;
 			if (core->print->cur_enabled && max == here) {
-				append (ebytes, Color_RESET);
-				append (echars, Color_RESET);
+				if (!html) {
+					append (ebytes, Color_RESET);
+					append (echars, Color_RESET);
+				}
 				hascolor = R_FALSE;
 			}
 
@@ -705,7 +722,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				append (ebytes, " ");
 
 			if (fend != UT64_MAX && fend == addr+j+1) {
-				if (usecolor) {
+				if (!html) {
 					append (ebytes, Color_RESET);
 					append (echars, Color_RESET);
 				}
@@ -714,8 +731,10 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			}
 
 		}
-		append (ebytes, Color_RESET);
-		append (echars, Color_RESET);
+		if (!html) {
+			append (ebytes, Color_RESET);
+			append (echars, Color_RESET);
+		}
 		append (ebytes, (col==1)?"| ":(col==2)?" |":"  ");
 		if (col==2) append (echars, "|");
 
