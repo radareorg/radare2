@@ -546,7 +546,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		}
 
 		if (!strcmp (rs->method, "OPTIONS")) {
-			r_socket_http_response (rs, 200, "", 0, NULL);
+			r_socket_http_response (rs, 200, "", 0, headers);
 		} else
 		if (!strcmp (rs->method, "GET")) {
 			if (!strncmp (rs->path, "/up/", 4)) {
