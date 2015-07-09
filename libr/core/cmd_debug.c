@@ -1193,13 +1193,19 @@ static int bypassbp(RCore *core) {
 }
 
 static int validAddress(RCore *core, ut64 addr) {
-	ut8 buf[8];
-	int word = r_io_read_at (core->io, addr, buf, 8);
-	core->num->value = 1;
-	if (word != 8)
-		return 0;
-	core->num->value = 0;
-	return 1;
+	RDebugMap *map;
+	RListIter *iter;
+	if (!r_config_get_i (core->config, "dbg.bpinmaps")) {
+		return core->num->value = 1;
+	}
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (addr >= map->addr && addr < map->addr_end) {
+			return core->num->value = 1;
+		}
+	}
+	// TODO: try to read memory, expect no 0xffff
+	// TODO: check map permissions
+	return core->num->value = 0;
 }
 
 static void static_debug_stop(void *u) {

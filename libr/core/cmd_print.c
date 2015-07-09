@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+#define R_CORE_MAX_DISASM (1024*1024*1)
+
 static char get_string_type (const ut8 *buf, ut64 len){
 	ut64 needle = 0;
 	int rc, i;
@@ -2133,15 +2135,23 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				const int bs = core->blocksize;
 				// XXX: issue with small blocks
-				if (*input == 'D' && l>0) { //pD
-					block = malloc (l);
-					if (l>core->blocksize) {
-						r_core_read_at (core, addr, block, l); //core->blocksize);
-					} else {
-						memcpy (block, core->block, l);
+				if (*input == 'D' && l>0) {
+					if (l>R_CORE_MAX_DISASM) { // pD
+						eprintf ("Block size too big\n");
+						return 1;
 					}
-					core->num->value = r_core_print_disasm (core->print,
-						core, addr, block, l, l, 0, 1);
+					block = malloc (l);
+					if (block) {
+						if (l>core->blocksize) {
+							r_core_read_at (core, addr, block, l); //core->blocksize);
+						} else {
+							memcpy (block, core->block, l);
+						}
+						core->num->value = r_core_print_disasm (core->print,
+								core, addr, block, l, l, 0, 1);
+					} else {
+						eprintf ("Cannot allocate %d bytes\n", l);
+					}
 				} else {
 					block = malloc (R_MAX(l*10, bs));
 					memcpy (block, core->block, bs);

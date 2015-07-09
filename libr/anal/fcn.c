@@ -12,7 +12,8 @@
 #define CALL_IS_EOB 0
 
 // 64KB max size
-#define MAX_FCN_SIZE 262140
+// 256KB max function size
+#define MAX_FCN_SIZE (1024*256)
 
 #define DB a->sdb_fcns
 #define EXISTS(x,y...) snprintf (key, sizeof(key)-1,x,##y),sdb_exists(DB,key)
@@ -53,7 +54,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	/* Function calling convention: cdecl/stdcall/fastcall/etc */
 	fcn->call = R_ANAL_CC_TYPE_NONE;
 	/* Function attributes: weak/noreturn/format/etc */
-	fcn->addr = -1;
+	fcn->addr = UT64_MAX;
 	fcn->bits = 0;
 #if FCN_OLD
 	fcn->refs = r_anal_ref_list_new ();
@@ -201,8 +202,7 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 }
 //fcn->addr += n; fcn->size -= n; } else 
 #define FITFCNSZ() {st64 n=bb->addr+bb->size-fcn->addr; \
-	if (n<0) { } else \
-	if (fcn->size<n)fcn->size=n; } \
+	if (n>=0) if (fcn->size<n) fcn->size=n; } \
 	if (fcn->size > MAX_FCN_SIZE) { \
 		eprintf ("Function too big at 0x%"PFMT64x"\n", bb->addr); \
 		fcn->size = 0; \
@@ -251,6 +251,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
+	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0))
+		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
+// check if address is readable //:
 #if 1
 	if (r_anal_get_fcn_at (anal, addr, 0)) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND

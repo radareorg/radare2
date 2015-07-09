@@ -1986,7 +1986,7 @@ static void agraph_init(AGraph *g) {
 	g->history = r_stack_new (INIT_HISTORY_CAPACITY);
 	g->graph = r_graph_new ();
 	g->zoom = ZOOM_DEFAULT;
-	g->movspeed = DEFAULT_SPEED;
+	g->movspeed = r_config_get_i (g->core->config, "graph.scroll");
 }
 
 static AGraph *agraph_new(RCore *core, RConsCanvas *can, RAnalFunction *fcn) {

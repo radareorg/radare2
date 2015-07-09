@@ -808,6 +808,8 @@ R_API void r_core_visual_config(RCore *core) {
 		switch (ch) {
 		case 'j': option++; break;
 		case 'k': option = (option<=0)? 0: option-1; break;
+		case 'J': option+=4; break;
+		case 'K': option = (option<=3)? 0: option-4; break;
 		case 'h':
 		case 'b': // back
 			menu = 0;
