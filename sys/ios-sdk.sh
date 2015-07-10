@@ -1,11 +1,7 @@
 #!/bin/sh
 
-[ -n "$1" ] && CPU="$1"
-
-if [ -z "${CPU}" ]; then
-  export CPU=arm64
-  export CPU=armv7
-fi
+CPU="$1"
+[ -z "$CPU" ] && CPU="armv7"
 
 BUILD=1
 PREFIX="/usr"
@@ -19,7 +15,7 @@ PREFIX="/usr"
 #)
 #fi
 case "$CPU"  in
-arm)
+arm|armv7)
 	CPU=armv7
 	;;
 aarch64)

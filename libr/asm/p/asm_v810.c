@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-#include <v810_disas.h>
+#include "../arch/v810/v810_disas.h"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int ret = R_TRUE;
@@ -34,6 +34,7 @@ RAsmPlugin r_asm_plugin_v810 = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_v810
+	.data = &r_asm_plugin_v810,
+	.version = R2_VERSION
 };
 #endif
