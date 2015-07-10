@@ -329,7 +329,7 @@ function printHeaderPanel(title, cmd, grep) {
 	}
 	r2.cmd (cmd, function (d) {
 		var color = inColor? "white": "black";
-		c.innerHTML += "<pre style='font-family:Console,Courier' style='color:"+color+" !important'>"+d+"<pre>";
+		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace' style='color:"+color+" !important'>"+d+"<pre>";
 	});
 }
 
@@ -371,7 +371,7 @@ function panelFunctions() {
 	}
 	r2.cmd("e scr.utf8=false");
 	r2.cmd ("afl", function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier' style='color:white !important'>"+d+"<pre>";
+		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace' style='color:white !important'>"+d+"<pre>";
 	});
 }
 
@@ -429,7 +429,7 @@ function panelFlags() {
 	}
 	r2.cmd("e scr.utf8=false");
 	r2.cmd ("f", function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier' style='color:white !important'>"+d+"<pre>";
+		c.innerHTML += "<pre style='font-family:Console,Courier New, monospace' style='color:white !important'>"+d+"<pre>";
 	});
 }
 
@@ -446,7 +446,7 @@ function panelComments() {
 	}
 	r2.cmd("e scr.utf8=false");
 	r2.cmd ("CC", function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier'>"+d+"<pre>";
+		c.innerHTML += "<pre style='font-family:monospace,Console,Courier New,monospace'>"+d+"<pre>";
 	});
 }
 
@@ -492,7 +492,7 @@ function panelDisasm() {
 	}
 	r2.cmd("e scr.utf8=false");
 	r2.cmd ("pd 128", function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier'>"+d+"<pre>";
+		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace'>"+d+"<pre>";
 	});
 }
 
@@ -526,7 +526,7 @@ function info() {
 	c.innerHTML += uiButton ('javascript:graph()', 'graph');
 	c.innerHTML += uiButton ('javascript:decompile()', 'decompile');
 	r2.cmd ("afi", function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier;color:"+color+"'>"+d+"<pre>";
+		c.innerHTML += "<pre style='font-family:Console,Courier,monospace;color:"+color+"'>"+d+"<pre>";
 	});
 }
 function decompile() {
@@ -537,7 +537,7 @@ function decompile() {
 	c.innerHTML = "<br />";
 	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
 	r2.cmd ("pdc", function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier;color:"+color+"'>"+d+"<pre>";
+		c.innerHTML += "<pre style='font-family:Console,Courier,monospace;color:"+color+"'>"+d+"<pre>";
 	});
 }
 
@@ -548,7 +548,7 @@ function graph() {
 	var color = inColor? "white": "black";
 	c.innerHTML = '<br />&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a>';
 	r2.cmd ("agf", function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier;color:"+color+"'>"+d+"<pre>";
+		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace;color:"+color+"'>"+d+"<pre>";
 	});
 }
 

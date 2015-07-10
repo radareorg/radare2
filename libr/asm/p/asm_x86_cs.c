@@ -116,7 +116,6 @@ RAsmPlugin r_asm_plugin_x86_cs = {
 		"sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
 };
 
-
 static int check_features(RAsm *a, cs_insn *insn) {
 	const char *name;
 	int i;
@@ -131,7 +130,7 @@ static int check_features(RAsm *a, cs_insn *insn) {
 			continue;
 		name = cs_group_name (cd, id);
 		if (!name) return 1;
-		if (name && !strstr (a->features, name)) {
+		if (!strstr (a->features, name)) {
 			return 0;
 		}
 	}
