@@ -1568,6 +1568,112 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	return count;
 }
 
+R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to) {
+	ut8 *buf;
+	ut64 at;
+	int count = 0;
+	RAnalOp op = {0};
+
+	if (from >= to) {
+		eprintf ("Invalid range (from >= to)\n");
+		return -1;
+	}
+
+	if (core->blocksize <= OPSZ) {
+		eprintf ("Error: block size too small\n");
+		return -1;
+	}
+
+	buf = (ut8 *)malloc (core->blocksize);
+	if (!buf) {
+		eprintf ("Error: cannot allocate a block\n");
+		return -1;
+	}
+
+	r_io_use_desc (core->io, core->file->desc);
+	r_cons_break (NULL, NULL);
+	at = from;
+	while (at < to && !r_cons_singleton ()->breaked) {
+		int i, ret;
+
+		ret = r_io_read_at (core->io, at, buf, core->blocksize);
+		if (ret != core->blocksize && at+ret-OPSZ < to)
+			break;
+
+		for (i = 0; i < ret-OPSZ && at+i < to; i++) {
+			RAnalRefType type;
+			ut64 xref_to;
+			const char *cmd;
+
+			r_anal_op_fini (&op);
+			if (!r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i)
+					|| at+i + op.size > to)
+				continue;
+
+			// Get reference type and target address
+			type = R_ANAL_REF_TYPE_NULL;
+			switch (op.type) {
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_CJMP:
+				type = R_ANAL_REF_TYPE_CODE;
+				xref_to = op.jump;
+				break;
+			case R_ANAL_OP_TYPE_CALL:
+			case R_ANAL_OP_TYPE_CCALL:
+				type = R_ANAL_REF_TYPE_CALL;
+				xref_to = op.jump;
+				break;
+			case R_ANAL_OP_TYPE_UJMP:
+			case R_ANAL_OP_TYPE_UCJMP:
+				type = R_ANAL_REF_TYPE_CODE;
+				xref_to = op.ptr;
+				break;
+			case R_ANAL_OP_TYPE_UCALL:
+			case R_ANAL_OP_TYPE_UCCALL:
+				type = R_ANAL_REF_TYPE_CALL;
+				xref_to = op.ptr;
+				break;
+			default:
+				if (op.ptr != -1) {
+					type = R_ANAL_REF_TYPE_DATA;
+					xref_to = op.ptr;
+				}
+				break;
+			}
+
+			// Validate the reference. If virtual addressing is enabled,
+			// we allow only references to virtual addresses in order to
+			// reduce the number of false positives.
+			if (type == R_ANAL_REF_TYPE_NULL)
+				continue;
+			if (!r_core_is_valid_offset (core, xref_to))
+				continue;
+			if (core->io->va) {
+				if (!r_io_section_exists_for_vaddr (core->io, xref_to, 0))
+					continue;
+			}
+
+			// Print r2 command
+			switch (type) {
+			case R_ANAL_REF_TYPE_CODE: cmd = "axc"; break;
+			case R_ANAL_REF_TYPE_CALL: cmd = "axC"; break;
+			case R_ANAL_REF_TYPE_DATA: cmd = "axd"; break;
+			default: cmd = "ax"; break;
+			}
+			r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+					cmd, xref_to, at+i);
+
+			count++;
+		}
+
+		at += i;
+	}
+	r_cons_break_end ();
+	free (buf);
+	r_anal_op_fini (&op);
+	return count;
+}
+
 R_API int r_core_anal_ref_list(RCore *core, int rad) {
 	r_anal_xrefs_list (core->anal, rad);
 	return 0;

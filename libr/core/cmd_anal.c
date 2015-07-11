@@ -1973,6 +1973,7 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 		"axc", " addr [at]", "add code jmp ref // unused?",
 		"axC", " addr [at]", "add code call ref",
 		"axd", " addr [at]", "add data ref",
+		"axa", " [sz]", "analyze sz bytes of instructions for refs",
 		"axj", "", "list refs in json format",
 		"axF", " [flg-glob]", "find data/code references of flags",
 		"axt", " [addr]", "find data/code references to this address",
@@ -2156,6 +2157,50 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 			}
 			r_anal_ref_add (core->anal, addr, at, input[0]);
 			free (ptr);
+		}
+		break;
+	case 'a':
+		{
+			ut64 from, to;
+			char *ptr;
+			int n;
+
+			if (input[1] == '?') {
+				eprintf ("Usage: axa [sz]\n");
+				break;
+			}
+
+			from = to = 0;
+			ptr = strdup (r_str_trim_head ((char*)input+1));
+			n = r_str_word_set0 (ptr);
+			if (n == 0) {
+				if (core->io->va) { // analyze current section
+					RIOSection *s = r_io_section_vget (core->io, core->offset);
+					if (s == NULL) {
+						eprintf ("Cannot determine current section\n");
+						return R_FALSE;
+					}
+					if (!(s->rwx & R_IO_EXEC))
+						eprintf ("Warning: Searching xrefs in non-executable section\n");
+					from = s->vaddr;
+					to = s->vaddr + s->vsize;
+				} else {
+					RIOMap *map = r_io_map_get (core->io, core->offset);
+					from = core->offset;
+					to = r_io_size (core->io) + (map? map->to:0);
+				}
+			} else if (n == 1) {
+				from = core->offset;
+				to = core->offset + r_num_math (core->num, r_str_word_get0 (ptr, 0));;
+			} else {
+				eprintf ("Invalid number of arguments\n");
+			}
+			free (ptr);
+
+			if (from == 0 && to == 0)
+				return R_FALSE;
+
+			r_core_anal_search_xrefs (core, from, to);
 		}
 		break;
 	default:
