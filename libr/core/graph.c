@@ -1936,7 +1936,7 @@ static void agraph_init(RAGraph *g) {
 	g->graph = r_graph_new ();
 	g->nodes = sdb_new0 ();
 	g->zoom = ZOOM_DEFAULT;
-	g->movspeed = r_config_get_i (g->core->config, "graph.scroll");
+	g->movspeed = DEFAULT_SPEED; //r_config_get_i (g->core->config, "graph.scroll");
 }
 
 R_API void r_agraph_print (RAGraph *g) {
