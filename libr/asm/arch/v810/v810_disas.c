@@ -35,7 +35,6 @@ static const char *instrs[] = {
 	[V810_ORI]			= "ori",
 	[V810_ANDI]			= "andi",
 	[V810_XORI]			= "xori",
-	[V810_MULI]			= "muli",
 	[V810_JR]			= "jr",
 	[V810_JAL]			= "jal",
 	[V810_LDB]			= "ld.b",
@@ -109,6 +108,19 @@ static const char *conds[] = {
 	[V810_COND_GT]	= "gt",
 };
 
+static const char *sysreg_names[] = {
+	[V810_SREG_EIPC]	= "EIPC",
+	[V810_SREG_EIPSW]	= "EIPSW",
+	[V810_SREG_FEPC]	= "FEPC",
+	[V810_SREG_FEPSW]	= "FEPSW",
+	[V810_SREG_ECR]		= "ECR",
+	[V810_SREG_PSW]		= "PSW",
+	[V810_SREG_PIR]		= "PIR",
+	[V810_SREG_TKCW]	= "TKCW",
+	[V810_SREG_CHCW]	= "CHCW",
+	[V810_SREG_ADTRE]	= "ADTRE",
+};
+
 static inline ut8 get_opcode(const ut16 instr) {
 	return (instr >> 10) & 0x3F;
 }
@@ -168,12 +180,18 @@ static int decode_imm_reg(const ut16 instr, struct v810_cmd *cmd) {
 			snprintf(cmd->operands, V810_INSTR_MAXLEN - 1, "%d, r%u",
 					immed, get_reg2(instr));
 			break;
+		case V810_LDSR:
+		case V810_STSR:
+			immed = immed & 0x1F;
+			if (sysreg_names[(ut8)immed]) {
+				snprintf(cmd->operands, V810_INSTR_MAXLEN - 1, "%s, r%u",
+						sysreg_names[(ut8)immed], get_reg2(instr));
+				break;
+			}
 		case V810_SETF:
 		case V810_SHL_IMM5:
 		case V810_SHR_IMM5:
 		case V810_SAR_IMM5:
-		case V810_LDSR:
-		case V810_STSR:
 			snprintf(cmd->operands, V810_INSTR_MAXLEN - 1, "%u, r%u",
 					immed & 0x1F, get_reg2(instr));
 			break;
@@ -349,6 +367,7 @@ int v810_decode_command(const ut8 *instr, struct v810_cmd *cmd) {
 		case V810_OR:
 		case V810_AND:
 		case V810_NOT:
+		case V810_XOR:
 			ret = decode_reg_reg(in, cmd);
 			break;
 		case V810_MOV_IMM5:

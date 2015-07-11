@@ -46,11 +46,9 @@ enum v810_cmd_opcodes {
 	V810_MOVHI		= 0x2F,
 	V810_LDB		= 0x30,
 	V810_LDH		= 0x31,
-	V810_MULI		= 0x32,
 	V810_LDW		= 0x33,
 	V810_STB		= 0x34,
 	V810_STH		= 0x35,
-	V810_MACI		= 0x36,
 	V810_STW		= 0x37,
 	V810_INB		= 0x38,
 	V810_INH		= 0x39,
@@ -109,6 +107,19 @@ enum v810_conds {
 	V810_COND_NOP	= 0xD,
 	V810_COND_GE	= 0xE,
 	V810_COND_GT	= 0xF,
+};
+
+enum v810_sysregs {
+	V810_SREG_EIPC	= 0x0,
+	V810_SREG_EIPSW	= 0x1,
+	V810_SREG_FEPC	= 0x2,
+	V810_SREG_FEPSW	= 0x3,
+	V810_SREG_ECR	= 0x4,
+	V810_SREG_PSW	= 0x5,
+	V810_SREG_PIR	= 0x6,
+	V810_SREG_TKCW	= 0x7,
+	V810_SREG_CHCW	= 0x18,
+	V810_SREG_ADTRE	= 0x19,
 };
 
 struct v810_cmd {

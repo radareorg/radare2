@@ -65,7 +65,6 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf,
 			op->type = R_ANAL_OP_TYPE_OR;
 			break;
 		case V810_MUL:
-		case V810_MULI:
 		case V810_MULU:
 			op->type = R_ANAL_OP_TYPE_MUL;
 			break;
