@@ -1506,13 +1506,13 @@ static void cmd_esil_mem (RCore *core, const char *input) {
 }
 
 static void cmd_anal_esil(RCore *core, const char *input) {
-	 const char* help_msg[] = {
-		 "Usage:", "aep[-c] ", " [...]",
-		 "aepc", " [addr]", "change program counter for esil",
-		 "aep", "-[addr]", "remove pin",
-		 "aep", " [name] @ [addr]", "set pin",
-		 "aep", "", "list pins",
-		 NULL};
+	const char* help_msg[] = {
+		"Usage:", "aep[-c] ", " [...]",
+		"aepc", " [addr]", "change program counter for esil",
+		"aep", "-[addr]", "remove pin",
+		"aep", " [name] @ [addr]", "set pin",
+		"aep", "", "list pins",
+		NULL};
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
 	int romem = r_config_get_i (core->config, "esil.romem");
@@ -1706,7 +1706,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					break;
 				}
         }
-        break;
+	break;
 	case '?':
 		if (input[1]=='?') {
 			const char* help_msg[] = {

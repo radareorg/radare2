@@ -71,9 +71,9 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 /*
 	SYSTEM_INFO SysInfo;
 	LPBYTE page;
-    MODULEINFO ModInfo;
+	MODULEINFO ModInfo;
 	MEMORY_BASIC_INFORMATION mbi;
-    memset (&SysInfo, 0, sizeof (SysInfo));
+	memset (&SysInfo, 0, sizeof (SysInfo));
 	GetSystemInfo (&SysInfo); // TODO: check return value
 	if (gmi == NULL) {
 		eprintf ("w32dbg: no gmi\n");

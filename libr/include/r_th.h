@@ -19,7 +19,7 @@
 #define R_TH_LOCK_T pthread_mutex_t
 
 #else
-#error Threading library only supported for ptrace and w32
+#error Threading library only supported for pthread and w32
 #endif
 
 #define R_TH_FUNCTION(x) int (*x)(struct r_th_t *)

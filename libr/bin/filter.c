@@ -2,9 +2,6 @@
 
 #include <r_bin.h>
 
-// TODO: optimize this api:
-// - bin plugins should call r_bin_filter_name() before appending
-
 static void hashify(char *s, ut64 vaddr) {
 	while (*s) {
 		if (!IS_PRINTABLE(*s)) {
@@ -20,6 +17,8 @@ static void hashify(char *s, ut64 vaddr) {
 	}
 }
 
+// TODO: optimize this api:
+// - bin plugins should call r_bin_filter_name() before appending
 R_API void r_bin_filter_name(Sdb *db, ut64 vaddr, char *name, int maxlen) {
 	ut32 hash = sdb_hash (name);
 	int count = sdb_num_inc (db, sdb_fmt (0, "%x", hash), 1, 0);

@@ -124,12 +124,12 @@ static int __system(RIO *io, RIODesc *fd, const char *command) {
 
 RIOPlugin r_io_plugin_r2web = {
 	.name = "r2web",
-        .desc = "r2web io client (r2web://cloud.rada.re/cmd/)",
+	.desc = "r2web io client (r2web://cloud.rada.re/cmd/)",
 	.license = "LGPL3",
-        .open = __open,
-        .close = __close,
+	.open = __open,
+	.close = __close,
 	.read = __read,
-        .plugin_open = __plugin_open,
+	.plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,
