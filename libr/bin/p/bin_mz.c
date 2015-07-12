@@ -77,7 +77,7 @@ static int destroy(RBinFile *arch) {
 }
 
 static RList * entries(RBinFile *arch) {
-    int entry;
+	int entry;
 	RList *res = NULL;
 	RBinAddr *ptr = NULL;
 

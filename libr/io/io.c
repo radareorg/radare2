@@ -1015,7 +1015,7 @@ if (!ret)
 		} else {
 			return (r_io_map_exists_for_offset (io, offset) ||
 				r_io_section_exists_for_vaddr (io, offset, hasperm));
-		       //return (offset < r_io_size (io));
+			//return (offset < r_io_size (io));
 		}
 #endif
 	} // more io.va modes pls

@@ -14,7 +14,7 @@ int r_bin_mz_get_entrypoint(const struct r_bin_mz_obj_t *bin)
 	/* Value of CS in DOS header may be negative */
 	const short cs = (const short)bin->dos_header->cs;
 	const int paddr = ((bin->dos_header->header_paragraphs + cs) << 4) + \
-            bin->dos_header->ip;
+		  bin->dos_header->ip;
 	if (paddr >= 0 && paddr < bin->dos_file_size)
 		return paddr;
 	else
@@ -52,13 +52,13 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(
 	const MZ_image_relocation_entry * const relocs = bin->relocation_entries;
 	const int num_relocs = bin->dos_header->num_relocs;
 	const ut64 last_parag = ((bin->dos_file_size + 0xF) >> 4) - \
-            bin->dos_header->header_paragraphs;
+		bin->dos_header->header_paragraphs;
 
 	btree_init (&tree);
 
 	for (i = 0; i < num_relocs; i++) {
 		paddr = r_bin_mz_seg_to_paddr (bin, relocs[i].segment) + \
-                relocs[i].offset;
+			relocs[i].offset;
 		if ((paddr + 2) < bin->dos_file_size) {
 			curr_seg = (ut16 *) (bin->b->buf + paddr);
 			/* Add segment only if it's located inside dos executable data */
@@ -68,12 +68,12 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(
 	}
 
 	/* Add segment address of first segment to make sure that it will be
-    added. If relocations empty or there isn't first segment in relocations.)
-    */
+	added. If relocations empty or there isn't first segment in relocations.)
+	*/
 	btree_add (&tree, (void *)&first_segment, cmp_segs);
 	/* Add segment address of stack segment if it's resides inside dos
 	executable.
-    */
+	*/
 	if (r_bin_mz_seg_to_paddr (bin, stack_segment) < bin->dos_file_size) {
 		btree_add (&tree, (void *)&stack_segment, cmp_segs);
 	}
@@ -155,7 +155,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
 		return R_FALSE;
 	}
 	if (r_buf_read_at (bin->b, 0, (ut8*)bin->dos_header,
-            sizeof(*bin->dos_header)) == -1) {
+			sizeof(*bin->dos_header)) == -1) {
 		eprintf ("Error: read (MZ_image_dos_header)\n");
 		return R_FALSE;
 	}
@@ -171,10 +171,10 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
 	if (dos_file_size > bin->size)
 		return R_FALSE;
 
-    relocations_size = bin->dos_header->num_relocs * \
-            sizeof(MZ_image_relocation_entry);
+	relocations_size = bin->dos_header->num_relocs * \
+		sizeof(MZ_image_relocation_entry);
 
-    /* Check if relocation table doesn't exceed dos binary size */
+	/* Check if relocation table doesn't exceed dos binary size */
 	if ((bin->dos_header->reloc_table_offset + relocations_size) > \
 			dos_file_size)
 		return R_FALSE;
@@ -184,7 +184,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
 	sdb_num_set (bin->kv, "mz.initial.ss", bin->dos_header->ss, 0);
 	sdb_num_set (bin->kv, "mz.initial.sp", bin->dos_header->sp, 0);
 	sdb_num_set (bin->kv, "mz.overlay_number",
-            bin->dos_header->overlay_number, 0);
+		bin->dos_header->overlay_number, 0);
 	sdb_num_set (bin->kv, "mz.dos_header.offset", 0, 0);
 	sdb_set (bin->kv, "mz.dos_header.format", "[2]zwwwwwwwwwwwww"
 			" signature bytes_in_last_block blocks_in_file num_relocs "
@@ -192,17 +192,17 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
 			" ss sp checksum ip cs reloc_table_offset overlay_number ", 0);
 
 	bin->dos_extended_header_size = bin->dos_header->reloc_table_offset - \
-            sizeof(MZ_image_dos_header);
+		sizeof(MZ_image_dos_header);
 
 	if (bin->dos_extended_header_size > 0)
 	{
 		if (!(bin->dos_extended_header = \
-                malloc (bin->dos_extended_header_size))) {
+				malloc (bin->dos_extended_header_size))) {
 			r_sys_perror ("malloc (dos extended header)");
 			return R_FALSE;
 		}
 		if (r_buf_read_at (bin->b, sizeof(MZ_image_dos_header),
-                (ut8*)bin->dos_extended_header,
+				(ut8*)bin->dos_extended_header,
 				bin->dos_extended_header_size) == -1) {
 			eprintf ("Error: read (dos extended header)\n");
 			return R_FALSE;

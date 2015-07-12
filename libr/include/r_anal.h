@@ -3,7 +3,6 @@
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
 
-#define NEW_ESIL 1
 /* use sdb function storage */
 #define FCN_SDB 1
 /* use old refs and function storage */
@@ -186,7 +185,7 @@ enum {
 	R_ANAL_CC_TYPE_BOFASTCALL, // borland fastcall
 	R_ANAL_CC_TYPE_WAFASTCALL, // wacom fastcall
 	R_ANAL_CC_TYPE_CLARION, // TopSpeed/Clarion/JPI
-	/* Clation:
+	/* Clarion:
 	 *	first four integer parameters are passed in registers:
 	 *	eax, ebx, ecx, edx. Floating point parameters are passed
 	 *	on the floating point stack - registers
@@ -1012,7 +1011,7 @@ typedef struct r_anal_plugin_t {
 	RAnalFnFromBuffer fn_from_buffer;
 
 	// analysis algorithm to use instead of the default
-	// r_anal_ex_recursive_decent when using perform_analysis from
+	// r_anal_ex_recursive_descent when using perform_analysis from
 	// RAnalEx stuffs
 	RAnalExAnalysisAlgorithm analysis_algorithm;
 	// order in which these call backs are

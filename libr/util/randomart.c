@@ -1,4 +1,9 @@
 /*
+ * This code is originally taken from OpenSSH:
+ * http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/usr.bin/ssh/key.c?rev=1.75&content-type=text/x-cvsweb-markup
+ */
+
+/*
  * Draw an ASCII-Art representing the fingerprint so human brain can
  * profit from its built-in pattern recognition ability.
  * This technique is called "random art" and can be found in some
