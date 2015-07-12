@@ -20,5 +20,6 @@ struct r_bp_plugin_t r_bp_plugin_mips = {
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_BP,
 	.data = &r_bp_plugin_mips,
+	.version = R2_VERSION
 };
 #endif

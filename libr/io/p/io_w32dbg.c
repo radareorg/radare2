@@ -131,6 +131,7 @@ struct r_io_plugin_t r_io_plugin_w32dbg = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_w32dbg
+	.data = &r_io_plugin_w32dbg,
+	.version = R2_VERSION
 };
 #endif

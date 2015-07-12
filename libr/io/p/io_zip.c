@@ -635,6 +635,7 @@ RIOPlugin r_io_plugin_zip = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_zip
+	.data = &r_io_plugin_zip,
+	.version = R2_VERSION
 };
 #endif

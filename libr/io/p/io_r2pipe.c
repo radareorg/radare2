@@ -165,6 +165,7 @@ RIOPlugin r_io_plugin_r2pipe = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_r2pipe
+	.data = &r_io_plugin_r2pipe,
+	.version = R2_VERSION
 };
 #endif

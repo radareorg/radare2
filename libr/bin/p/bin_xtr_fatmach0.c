@@ -184,6 +184,7 @@ struct r_bin_xtr_plugin_t r_bin_xtr_plugin_fatmach0 = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_BIN_XTR,
-	.data = &r_bin_xtr_plugin_fatmach0
+	.data = &r_bin_xtr_plugin_fatmach0,
+	.version = R2_VERSION
 };
 #endif

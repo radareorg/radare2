@@ -190,6 +190,7 @@ RAsmPlugin r_asm_plugin_arm_gnu = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_arm_gnu
+	.data = &r_asm_plugin_arm_gnu,
+	.version = R2_VERSION
 };
 #endif

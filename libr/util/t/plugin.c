@@ -4,5 +4,6 @@ int mystuff = 31337;
 
 struct r_lib_struct_t radare_plugin = {
 	.type = 1,
-	.data = &mystuff
+	.data = &mystuff,
+	.version = R2_VERSION
 };

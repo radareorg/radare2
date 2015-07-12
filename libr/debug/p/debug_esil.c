@@ -148,6 +148,7 @@ RDebugPlugin r_debug_plugin_esil = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
-	.data = &r_debug_plugin_esil
+	.data = &r_debug_plugin_esil,
+	.version = R2_VERSION
 };
 #endif

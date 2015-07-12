@@ -281,6 +281,7 @@ RAnalPlugin r_anal_plugin_cris = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_cris
+	.data = &r_anal_plugin_cris,
+	.version = R2_VERSION
 };
 #endif

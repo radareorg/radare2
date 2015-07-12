@@ -64,6 +64,7 @@ RAsmPlugin r_asm_plugin_x86_nasm = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_x86_nasm
+	.data = &r_asm_plugin_x86_nasm,
+	.version = R2_VERSION
 };
 #endif
