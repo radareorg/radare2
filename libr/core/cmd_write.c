@@ -74,7 +74,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		if (input[2]){
 			r_core_write_op (core, input+3, input[1]);
 			r_core_block_read (core, 0);
-		}
+		} else eprintf ("Missing argument\n");
 		break;
 	case 'R':
 		r_core_cmd0 (core, "wr $b");
