@@ -34,7 +34,7 @@ else
 CFLAGS_SHARED=-fPIC
 endif
 
-preall: sdb/sdb libgdbr libwind capstone-build
+preall: sdb/sdb${EXT_EXE} libgdbr libwind capstone-build
 	@for a in ${MODS} ; do \
 		echo $(MAKE) -C $$a ; \
 		$(MAKE) -C $$a RANLIB="$(RANLIB)" CC_AR="$(CC_AR)" HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
@@ -44,24 +44,25 @@ clean mrproper:
 	-cd capstone && $(MAKE) clean
 	cd gdb && $(MAKE) clean
 	cd wind && $(MAKE) clean
-	rm -f sdb/src/.sdb sdb/sdb
+	rm -f sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE}
 	cd sdb && $(MAKE) clean
-	rm -f sdb/sdb
+	rm -f sdb/sdb${EXT_EXE}
 	@for a in ${MODS} ; do $(MAKE) -C $$a clean ; done
 
-$(SDBLIB) sdb/sdb:
+$(SDBLIB) sdb/sdb${EXT_EXE}:
 	cd sdb ; $(MAKE) src/sdb-version.h
 	cd sdb ; $(MAKE) clean
 	cd sdb ; \
 		$(MAKE) clean && \
 		$(MAKE) CC=${HOST_CC} CFLAGS='${HOST_CFLAGS} -fPIC' && \
-		cp -f src/sdb src/.sdb
+		cp -f src/sdb src/.sdb${EXT_EXE}
 	cd sdb ; $(MAKE) clean
 	cd sdb ; $(MAKE) src/sdb-version.h
 	cd sdb/src ; $(MAKE) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
 		CC="${CC}" AR="${AR}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 	${RANLIB} sdb/src/libsdb.a
-	cp -f sdb/src/.sdb sdb/sdb
+	rm -f sdb/sdb${EXT_EXE}
+	cp sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE}
 
 .PHONY: sdb-sync sync-sdb sdbclean
 F=README.md config.mk src Makefile Jamroot

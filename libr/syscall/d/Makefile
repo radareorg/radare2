@@ -49,7 +49,7 @@ clean:
 	rm -f *.sdb
 
 ${SDB}:
-	@echo "Cannot find sdb/sdb"
+	@echo "Cannot find ${SDB}"
 	@false
 
 #	cp -rf "$(SDBPATH)/src" "$(SDBPATH)/src-native"
