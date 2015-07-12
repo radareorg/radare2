@@ -57,7 +57,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	return R_TRUE;
 }
 
-static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static struct disassemble_info disasm_obj;
 	if (len<4) return -1;
 	buf_global = op->buf_asm;
@@ -88,7 +88,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *str) {
+static int assemble(const RAsm *a, RAsmOp *op, const char *str) {
 	int ret = mips_assemble (str, a->pc, op->buf);
 	r_mem_copyendian (op->buf, op->buf, 4, !a->big_endian);
 	return ret;

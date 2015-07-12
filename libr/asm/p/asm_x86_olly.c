@@ -9,7 +9,7 @@
 
 #include "x86/ollyasm/disasm.h"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	t_disasm disasm_obj;
 
 	op->size = Disasm_olly(buf, len, a->pc, &disasm_obj, DISASM_FILE);
@@ -18,7 +18,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble(const RAsm *a, RAsmOp *op, const char *buf) {
 	char buf_err[128];
 	static t_asmmodel asm_obj;
 	int attempt, constsize, oattempt = 0, oconstsize = 0, ret = 0, oret = 0xCAFE;

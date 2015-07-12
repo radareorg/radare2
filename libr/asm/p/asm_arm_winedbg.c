@@ -9,7 +9,7 @@
 #include <r_asm.h>
 #include "../arch/arm/winedbg/be_arm.h"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ut8 buf2[4];
 	struct winedbg_arm_insn *arminsn = arm_new();
 	arm_set_pc (arminsn, a->pc);

@@ -71,7 +71,7 @@ int print_insn_crisv10_v32_without_register_prefix (bfd_vma vma, disassemble_inf
 bfd_boolean cris_parse_disassembler_options (disassemble_info *info, int distype);
 int print_insn_crisv10_v32_with_register_prefix (bfd_vma vma, disassemble_info *info);
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	int mode = 2;
 

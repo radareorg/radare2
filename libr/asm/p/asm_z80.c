@@ -7,11 +7,11 @@
 
 #include "../arch/z80/z80.c"
 
-static int do_assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int do_assemble(const RAsm *a, RAsmOp *op, const char *buf) {
 	return op->size = z80asm (op->buf, buf);
 }
 
-static int do_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int do_disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int dlen = z80dis (0, buf, op->buf_asm, len);
 	if (dlen<0) dlen = 0;
 	op->size = dlen;
@@ -27,7 +27,7 @@ RAsmPlugin r_asm_plugin_z80 = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = do_disassemble,
-	.assemble = &do_assemble, 
+	.assemble = &do_assemble,
 };
 
 #ifndef CORELIB

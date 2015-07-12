@@ -55,7 +55,7 @@ int decodeInstr (bfd_vma address, disassemble_info * info);
 int ARCTangent_decodeInstr (bfd_vma address, disassemble_info * info);
 int ARCompact_decodeInstr (bfd_vma address, disassemble_info * info);
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static struct disassemble_info disasm_obj;
 	if (len<2) return -1;
 	buf_global = op->buf_asm;

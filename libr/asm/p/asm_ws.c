@@ -7,7 +7,7 @@
 #define WS_API static
 #include "../arch/whitespace/wsdis.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return wsdis (op, buf, len);
 }
 

@@ -18,7 +18,7 @@ static int arch_msil_disasm(char *str, const ut8 *buf, ut64 seek) {
 	return o;
 }
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return (op->size = arch_msil_disasm (op->buf_asm, buf, a->pc));
 }
 

@@ -5,7 +5,7 @@
 #include <r_asm.h>
 #include <r_types.h>
 
-static int disassemble(RAsm *as, RAsmOp *op, const ut8 *buf, int len)
+static int disassemble(const RAsm *as, RAsmOp *op, const ut8 *buf, int len)
 {
 	struct lh5801_insn insn;
 	int consumed;

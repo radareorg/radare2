@@ -6,7 +6,7 @@
 
 #include "../arch/v810/v810_disas.h"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int ret = R_TRUE;
 	struct v810_cmd cmd;
 

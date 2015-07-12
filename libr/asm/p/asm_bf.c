@@ -7,7 +7,7 @@
 #include <r_asm.h>
 
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	const ut8 *b;
 	int rep = 1;
 
@@ -67,7 +67,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return rep;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble(const RAsm *a, RAsmOp *op, const char *buf) {
 	const char *ref, *arg;
 	int n = 0;
 	if (buf[0] && buf[1]==' ')

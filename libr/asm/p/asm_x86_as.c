@@ -9,7 +9,7 @@
 #define O_BINARY 0
 #endif
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble(const RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
 	int ifd, ofd;
 	const char *syntaxstr = "";

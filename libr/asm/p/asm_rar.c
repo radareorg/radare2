@@ -9,14 +9,14 @@
 #include <r_asm.h>
 #include "../../shlr/rar/all.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	// TODO: support bitsize opcodes
 	// rarvm_disassemble (&b, str);
 	return 0;
 }
 
 // XXX: This is wrong, some opcodes are 32bit in thumb mode
-static int assemble(RAsm *a, RAsmOp *op, const char *str) {
+static int assemble(const RAsm *a, RAsmOp *op, const char *str) {
 	Bitbuf b = {.out = op->buf, .bits = 0};
 	return op->size = rarvm_assemble (&b, str);
 }

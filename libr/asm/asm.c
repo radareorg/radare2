@@ -316,7 +316,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 	return R_TRUE;
 }
 
-R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+R_API int r_asm_disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int oplen, ret = op->payload = 0;
 	op->size = 4;
 	if (len<1)
@@ -345,7 +345,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
+R_API int r_asm_assemble(const RAsm *a, RAsmOp *op, const char *buf) {
 	int ret = 0;
 	RAsmPlugin *h;
 	RListIter *iter;

@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble(const RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
 	int ifd, ofd;
 	char asm_buf[R_ASM_BUFSIZE];

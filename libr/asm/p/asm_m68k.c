@@ -10,7 +10,7 @@
 
 #include "m68k/m68k_disasm/m68k_disasm.h"
 
-static int disassemble(RAsm *a, RAsmOp *aop, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *aop, const ut8 *buf, int len) {
 	m68k_word bof[8] = {0};
 	int iaddr = (int)a->pc;
 	char opcode[256], operands[256];

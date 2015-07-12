@@ -10,7 +10,7 @@
 
 #include <8051_disas.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char *tmp = NULL;
 
 	r_8051_op o = r_8051_decode (buf, len);
