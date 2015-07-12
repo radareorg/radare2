@@ -456,6 +456,9 @@ if [ "$HAVE_BIGEND" = "1" ]; then
 LIL_ENDIAN="0"; fi
 check_library HAVE_LIB_LUA5_1 lua5.1 0 
 if [ "$USEROSTYPE" = "auto" ]; then
+if [ "$HOST_OS" = "mingw32_nt" ]; then
+USEROSTYPE="windows"
+else
 if [ "$HOST_OS" = "linux" ]; then
 USEROSTYPE="gnulinux"
 else
@@ -477,7 +480,7 @@ if [ "$HOST_OS" = "openbsd" ]; then
 USEROSTYPE="gnulinux"
 else
 if [ "$HOST_OS" = "darwin" ]; then
-USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi
+USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi; fi
 if [ "$LIBVERSION" = "xxx" ]; then
 LIBVERSION="$VERSION"; fi
 SEDFLAGS=" -e '"
