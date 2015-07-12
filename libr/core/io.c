@@ -151,15 +151,17 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	if (op=='2' || op=='4') {
 		op -= '0';
 		// if i < core->blocksize would pass the test but buf[i+3] goes beyond the buffer
-		for (i=0; i<core->blocksize-3; i+=op) {
-			/* endian swap */
-			ut8 tmp = buf[i];
-			buf[i] = buf[i+3];
-			buf[i+3] = tmp;
-			if (op==4) {
-				tmp = buf[i+1];
-				buf[i+1] = buf[i+2];
-				buf[i+2] = tmp;
+		if (core->blocksize > 3) {
+			for (i=0; i<core->blocksize-3; i+=op) {
+				/* endian swap */
+				ut8 tmp = buf[i];
+				buf[i] = buf[i+3];
+				buf[i+3] = tmp;
+				if (op==4) {
+					tmp = buf[i+1];
+					buf[i+1] = buf[i+2];
+					buf[i+2] = tmp;
+				}
 			}
 		}
 	} else {
