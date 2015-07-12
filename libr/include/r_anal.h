@@ -3,7 +3,6 @@
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
 
-#define NEW_ESIL 1
 /* use sdb function storage */
 #define FCN_SDB 1
 /* use old refs and function storage */
