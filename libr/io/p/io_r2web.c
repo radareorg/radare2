@@ -138,6 +138,7 @@ RIOPlugin r_io_plugin_r2web = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_r2web
+	.data = &r_io_plugin_r2web,
+	.version = R2_VERSION
 };
 #endif

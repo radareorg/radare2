@@ -156,6 +156,7 @@ struct r_io_plugin_t r_io_plugin_malloc = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_malloc
+	.data = &r_io_plugin_malloc,
+	.version = R2_VERSION
 };
 #endif

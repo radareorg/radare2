@@ -1031,6 +1031,7 @@ struct r_anal_plugin_t r_anal_plugin_java_ls = {
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	//.data = &r_anal_plugin_java
-	.data = &r_anal_plugin_java_ls
+	.data = &r_anal_plugin_java_ls,
+	.version = R2_VERSION
 };
 #endif

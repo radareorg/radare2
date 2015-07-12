@@ -42,6 +42,7 @@ RAsmPlugin r_asm_plugin_ebc = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_ebc
+	.data = &r_asm_plugin_ebc,
+	.version = R2_VERSION
 };
 #endif

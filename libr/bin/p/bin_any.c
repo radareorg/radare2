@@ -85,6 +85,7 @@ struct r_bin_plugin_t r_bin_plugin_any = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
-	.data = &r_bin_plugin_any
+	.data = &r_bin_plugin_any,
+	.version = R2_VERSION
 };
 #endif

@@ -26,6 +26,7 @@ RAsmPlugin r_asm_plugin_z80_cr = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_z80_cr
+	.data = &r_asm_plugin_z80_cr,
+	.version = R2_VERSION
 };
 #endif

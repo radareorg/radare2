@@ -2328,7 +2328,8 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
-	.data = &r_debug_plugin_native
+	.data = &r_debug_plugin_native,
+	.version = R2_VERSION
 };
 #endif // CORELIB
 

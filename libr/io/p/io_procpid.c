@@ -152,6 +152,7 @@ struct r_io_plugin_t r_io_plugin_procpid = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_procpid
+	.data = &r_io_plugin_procpid,
+	.version = R2_VERSION
 };
 #endif

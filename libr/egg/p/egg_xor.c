@@ -84,7 +84,8 @@ REggPlugin r_egg_plugin_xor = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_EGG,
-	.data = &r_egg_plugin_xor
+	.data = &r_egg_plugin_xor,
+	.version = R2_VERSION
 };
 #endif
 #endif

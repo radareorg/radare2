@@ -157,7 +157,8 @@ struct r_anal_plugin_t r_anal_plugin_ppc_gnu = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_ppc_gnu
+	.data = &r_anal_plugin_ppc_gnu,
+	.version = R2_VERSION
 };
 #endif
 

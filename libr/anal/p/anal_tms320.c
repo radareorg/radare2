@@ -113,5 +113,6 @@ struct r_anal_plugin_t r_anal_plugin_tms320 = {
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_tms320,
+	.version = R2_VERSION
 };
 #endif

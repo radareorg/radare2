@@ -79,7 +79,8 @@ RIOPlugin r_io_plugin_w32 = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_w32
+	.data = &r_io_plugin_w32,
+	.version = R2_VERSION
 };
 #endif
 
