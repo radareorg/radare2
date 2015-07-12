@@ -31,9 +31,9 @@ radare2 is portable.
 
 Architectures:
 
-6502, 8051, CRIS, H8/300, LH5801, LH5801, T8200, arc, arm, avr, bf, blackfin,
-csr, dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, mips,
-msil, nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), x86-64,
+6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, csr,
+dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, mips, msil,
+nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), V810, x86-64,
 zimg.
 
 File Formats:
