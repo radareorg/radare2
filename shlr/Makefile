@@ -1,6 +1,8 @@
 include ../global.mk
 include ../config-user.mk
 include ../mk/${COMPILER}.mk
+# for EXT_EXE
+include ../libr/config.mk
 
 WGET?=wget
 CS_VER=3.0
@@ -32,6 +34,12 @@ ifneq (,$(findstring cygwin,${OSTYPE})$(findstring mingw32,${OSTYPE})$(findstrin
 CFLAGS_SHARED=
 else
 CFLAGS_SHARED=-fPIC
+endif
+
+ifeq (${EXT_SO},)
+all:
+	echo EXT_SO not defined
+	exit 1
 endif
 
 preall: sdb/sdb${EXT_EXE} libgdbr libwind capstone-build
