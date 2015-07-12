@@ -1585,7 +1585,7 @@ static int cmd_print(void *data, const char *input) {
 			p = malloc (core->blocksize);
 			if (!p) {
 				eprintf ("Error: failed to malloc memory");
-                                free (ptr);
+				free (ptr);
 				goto beach;
 			}
 			for (i=0; i<psz; i++) {
@@ -2343,7 +2343,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'u':
 			{
-			       char *str = r_str_utf16_encode (
+				char *str = r_str_utf16_encode (
 					(const char*)core->block, len);
 				r_cons_printf ("%s\n", str);
 				free (str);
@@ -2936,7 +2936,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'n':
 			core->print->big_endian = !core->print->big_endian;
 			if (len < sizeof (ut64)) eprintf ("You should change the block size: b %lu\n", sizeof (ut64));
-	      	if (len % sizeof (ut64) != 0) len = len - (len % sizeof (ut64));
+			if (len % sizeof (ut64) != 0) len = len - (len % sizeof (ut64));
 			for (l=0; l<len; l+=sizeof (ut64))
 				r_print_date_w32 (core->print, core->block+l, sizeof (ut64));
 			core->print->big_endian = !core->print->big_endian;

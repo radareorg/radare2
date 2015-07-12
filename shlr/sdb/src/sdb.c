@@ -318,7 +318,7 @@ SDB_API int sdb_exists (Sdb* s, const char *key) {
 }
 
 SDB_API int sdb_open (Sdb *s, const char *file) {
-        struct stat st = {0};
+	struct stat st = {0};
 	if (!s) return -1;
 	if (file) {
 		if (s->fd != -1) {

@@ -35,7 +35,7 @@ static int rap__write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count)
 	}
 	free (tmp);
 	// TODO: get reply
-        return ret;
+	return ret;
 }
 
 static boolt rap__accept(RIO *io, RIODesc *desc, int fd) {
@@ -74,7 +74,7 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 	r_socket_read_block (s, buf, i);
-        return count;
+	return count;
 }
 
 static int rap__close(RIODesc *fd) {

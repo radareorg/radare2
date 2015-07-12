@@ -45,17 +45,17 @@ typedef struct {
 extern int errno;
 
 static task_t pid_to_task(int pid) {
-        task_t task = -1;
-        int err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
-        if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
-                eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
-                eprintf ("Reason: 0x%x: %s\n", err, MACH_ERROR_STRING (err));
-                eprintf ("You probably need to add user to procmod group.\n"
-                                " Or chmod g+s radare && chown root:procmod radare\n");
-                eprintf ("FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
-                return -1;
-        }
-        return task;
+	task_t task = -1;
+	int err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
+	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
+		eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
+		eprintf ("Reason: 0x%x: %s\n", err, MACH_ERROR_STRING (err));
+		eprintf ("You probably need to add user to procmod group.\n"
+				" Or chmod g+s radare && chown root:procmod radare\n");
+		eprintf ("FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
+		return -1;
+	}
+	return task;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
@@ -103,7 +103,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 		//if (size != blen) { return size+copied; }
 		copied += blen;
 	}
-        return len; //(int)size;
+	return len; //(int)size;
 }
 
 static int mach_write_at(RIOMach *riom, const void *buff, int len, ut64 addr) {
@@ -134,14 +134,14 @@ eprintf ("+ PERMS (%x) %llx\n", basic64->protection, addr);
 #endif
 /* get page perms */
 
-        // XXX SHOULD RESTORE PERMS LATER!!!
-        if (vm_protect (task, addr, len, 0, VM_PROT_COPY | VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE) != KERN_SUCCESS)
+	// XXX SHOULD RESTORE PERMS LATER!!!
+	if (vm_protect (task, addr, len, 0, VM_PROT_COPY | VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE) != KERN_SUCCESS)
 		//if (mach_vm_protect (task, addr, len, 0, VM_PROT_READ | VM_PROT_WRITE) != KERN_SUCCESS)
 			if (vm_protect (task, addr, len, 0, VM_PROT_WRITE) != KERN_SUCCESS)
 				eprintf ("cant change page perms to rw at 0x%"PFMT64x" with len= %d\n", addr, len);
-        if (vm_write (task, (vm_address_t)addr,
-                	(vm_offset_t)buff, (mach_msg_type_number_t)len) != KERN_SUCCESS)
-                eprintf ("cant write on memory\n");
+	if (vm_write (task, (vm_address_t)addr,
+			(vm_offset_t)buff, (mach_msg_type_number_t)len) != KERN_SUCCESS)
+		eprintf ("cant write on memory\n");
 	//if (vm_read_overwrite(task, addr, 4, buff, &sz)) { eprintf ("cannot overwrite\n"); }
 
 #if 0
@@ -176,12 +176,10 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 
 // s/inferior_task/port/
 static int debug_attach(int pid) {
-        task_t task = pid_to_task (pid);
-        if (task == -1) {
-		eprintf ("Got task %d for pid %d\n", task, pid);
-                return -1;
-	}
-        eprintf ("pid: %d\ntask: %d\n", pid, task);
+	task_t task = pid_to_task (pid);
+	if (task == -1)
+		return -1;
+	eprintf ("pid: %d\ntask: %d\n", pid, task);
 #if 0
 	// TODO : move this code into debug
         if (task_threads (task, &inferior_threads, &inferior_thread_count)
@@ -201,23 +199,23 @@ static int debug_attach(int pid) {
 	/* is this required for arm ? */
 #if EXCEPTION_PORT
 	int exception_port;
-        if (mach_port_allocate (mach_task_self (), MACH_PORT_RIGHT_RECEIVE,
+	if (mach_port_allocate (mach_task_self (), MACH_PORT_RIGHT_RECEIVE,
 			&exception_port) != KERN_SUCCESS) {
-                eprintf ("Failed to create exception port.\n");
-                return -1;
-        }
-        if (mach_port_insert_right(mach_task_self(), exception_port,
+		eprintf ("Failed to create exception port.\n");
+		return -1;
+	}
+	if (mach_port_insert_right(mach_task_self(), exception_port,
 			exception_port, MACH_MSG_TYPE_MAKE_SEND) != KERN_SUCCESS) {
-                eprintf ("Failed to acquire insertion rights on the port.\n");
-                return -1;
-        }
-        if (task_set_exception_ports(inferior_task, EXC_MASK_ALL, exception_port,
+		eprintf ("Failed to acquire insertion rights on the port.\n");
+		return -1;
+	}
+	if (task_set_exception_ports(inferior_task, EXC_MASK_ALL, exception_port,
 			EXCEPTION_DEFAULT, THREAD_STATE_NONE) != KERN_SUCCESS) {
-                eprintf ("Failed to set the inferior's exception ports.\n");
-                return -1;
-        }
+		eprintf ("Failed to set the inferior's exception ports.\n");
+		return -1;
+	}
 #endif
-        return task;
+	return task;
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
@@ -312,12 +310,12 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 // TODO: rename ptrace to io_mach .. err io.ptrace ??
 RIOPlugin r_io_plugin_mach = {
 	.name = "mach",
-        .desc = "mach debugger io plugin (mach://pid)",
+	.desc = "mach debugger io plugin (mach://pid)",
 	.license = "LGPL",
-        .open = __open,
-        .close = __close,
+	.open = __open,
+	.close = __close,
 	.read = __read,
-        .plugin_open = __plugin_open,
+	.plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,
@@ -327,7 +325,7 @@ RIOPlugin r_io_plugin_mach = {
 #else
 RIOPlugin r_io_plugin_mach = {
 	.name = "mach",
-        .desc = "mach debug io (unsupported in this platform)",
+	.desc = "mach debug io (unsupported in this platform)",
 	.license = "LGPL"
 };
 #endif
