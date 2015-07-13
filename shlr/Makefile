@@ -194,8 +194,15 @@ endif
 
 CAPSTONE_CFLAGS=-g
 
+ifeq (${EXT_AR},)
+all:
+	echo EXT_AR is not defined
+	exit 1
+endif
+
 capstone-build: capstone
 	cd capstone && CFLAGS="-Dmips=mips ${CAPSTONE_CFLAGS} $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
 		$(MAKE) CC="$(CC)" AR_EXT=a IS_CYGWIN=0 CAPSTONE_STATIC=yes CAPSTONE_SHARED=no \
-		RANLIB="$(RANLIB)" AR="$(AR)" IS_MINGW=0 ./libcapstone.a
+		RANLIB="$(RANLIB)" AR="$(AR)" IS_MINGW=0 libcapstone.a
+	-mv capstone/libcapstone.a capstone/libcapstone.${EXT_AR}
 endif

@@ -1,10 +1,9 @@
-LIBAR=libgrubfs.a
+NAME=grubfs
 
 include ../../config-user.mk
 
-LIBAR=libgrubfs.a
-LIB=libgrubfs
-EXT_AR?=.a
+EXT_AR?=a
+LIBAR?=libgrubfs.${EXT_AR}
 CC?=gcc
 CC_AR?=ar q ${LIBAR}
 RANLIB?=ranlib
