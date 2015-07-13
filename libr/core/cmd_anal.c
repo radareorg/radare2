@@ -2185,24 +2185,34 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 			ptr = strdup (r_str_trim_head ((char*)input+1));
 			n = r_str_word_set0 (ptr);
 			if (n == 0) {
-				if (core->io->va) { // analyze current section
-					RIOSection *s = r_io_section_vget (core->io, core->offset);
-					if (s == NULL) {
-						eprintf ("Cannot determine current section\n");
-						return R_FALSE;
+				int rwx = R_IO_EXEC;
+				// get boundaries of current memory map, section or io map
+				if (r_config_get_i (core->config, "cfg.debug")) {
+					RDebugMap *map = r_debug_map_get (core->dbg, core->offset);
+					if (map) {
+						from = map->addr;
+						to = map->addr_end;
+						rwx = map->perm;
 					}
-					if (!(s->rwx & R_IO_EXEC))
-						eprintf ("Warning: Searching xrefs in non-executable section\n");
-					from = s->vaddr;
-					to = s->vaddr + s->vsize;
+				} else if (core->io->va) {
+					RIOSection *section = r_io_section_vget (core->io, core->offset);
+					if (section) {
+						from = section->vaddr;
+						to = section->vaddr + section->vsize;
+						rwx = section->rwx;
+					}
 				} else {
 					RIOMap *map = r_io_map_get (core->io, core->offset);
 					from = core->offset;
 					to = r_io_size (core->io) + (map? map->to:0);
 				}
+				if (from == 0 && to == 0)
+					eprintf ("Cannot determine xref search boundaries\n");
+				else if (!(rwx & R_IO_EXEC))
+					eprintf ("Warning: Searching xrefs in non-executable region\n");
 			} else if (n == 1) {
 				from = core->offset;
-				to = core->offset + r_num_math (core->num, r_str_word_get0 (ptr, 0));;
+				to = core->offset + r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			} else {
 				eprintf ("Invalid number of arguments\n");
 			}

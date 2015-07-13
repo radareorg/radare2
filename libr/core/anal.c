@@ -1647,14 +1647,18 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				break;
 			}
 
-			// Validate the reference. If virtual addressing is enabled,
-			// we allow only references to virtual addresses in order to
-			// reduce the number of false positives.
+			// Validate the reference. If virtual addressing is enabled, we
+			// allow only references to virtual addresses in order to reduce
+			// the number of false positives. In debugger mode, the reference
+			// must point to a mapped memory region.
 			if (type == R_ANAL_REF_TYPE_NULL)
 				continue;
 			if (!r_core_is_valid_offset (core, xref_to))
 				continue;
-			if (core->io->va) {
+			if (r_config_get_i (core->config, "cfg.debug")) {
+				if (!r_debug_map_get (core->dbg, xref_to))
+					continue;
+			} else if (core->io->va) {
 				RListIter *iter;
 				RIOSection *s;
 				r_list_foreach (core->io->sections, iter, s) {
