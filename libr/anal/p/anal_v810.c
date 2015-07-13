@@ -12,8 +12,8 @@
 static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf,
 				   int len) {
 	int ret;
-	ut16 destaddr;
-	st16 destaddrs;
+	ut32 destaddr;
+	st32 destaddrs;
 	ut16 word1, word2;
 	struct v810_cmd cmd;
 	ut8 opcode;
@@ -149,7 +149,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf,
 		case V810_BCOND:
 			destaddr = word1 & 0x1FE;
 			if (destaddr & 0x100) {
-				destaddrs = destaddr | 0xFE00;
+				destaddrs = destaddr | 0xFFFFFE00;
 			} else {
 				destaddrs = destaddr;
 			}
