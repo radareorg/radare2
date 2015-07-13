@@ -2,9 +2,10 @@ NAME=r_java
 LIBAR?=libr_java.a
 
 include ../../config-user.mk
+include ../../global.mk
+_INCLUDE_MK_GCC_=
 include ../../mk/${COMPILER}.mk
 SHLR?=$(shell pwd)/..
-include ../../global.mk
 include $(SHLR)/zip/deps.mk
 
 OSTYPE?=$(shell uname | tr 'A-Z' 'a-z')
@@ -35,6 +36,7 @@ libr_java.a: ${OBJS}
 	${RANLIB} libr_java.a
 
 out: ${OBJS} main.o
+	echo ${COMPILER} ${CC}
 	${CC} ${LDFLAGS} ${CFLAGS} -I. ${OBJS} main.o \
 		-lr_util ${SHLR}/sdb/src/libsdb.a ${LINK} -o out 
 

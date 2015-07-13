@@ -9,7 +9,7 @@ my $bits = 32;
 
 die "Invalid base address" if ($baddr % 4);
 
-local $classdump = qx(class-dump -A "$file") or die ("Cannot open file\n");
+local $classdump = qx(class-dump-z -A "$file") or die ("Cannot open file\n");
 
 foreach my $line (split /[\r\n]+/, $classdump) {
 	if ($line=~/Arch: /) {

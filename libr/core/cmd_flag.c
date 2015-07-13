@@ -47,6 +47,7 @@ static int cmd_flag(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 off = core->offset;
 	char *ptr, *str = NULL;
+	RFlagItem *item;
 	char *name = NULL;
 	st64 base;
 
@@ -258,18 +259,19 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			p = strchr (arg, ' ');
 			if (p) {
 				*p++ = 0;
-				RFlagItem *item = r_flag_get_i (core->flags,
+				item = r_flag_get_i (core->flags,
 					r_num_math (core->num, str));
 				if (item)
 					item->size = r_num_math (core->num, p);
 			} else {
-				RFlagItem *item = r_flag_get_i (core->flags,
+				item = r_flag_get_i (core->flags,
 					r_num_math (core->num, str));
 				if (item)
 					r_cons_printf ("0x%08"PFMT64x"\n", item->size);
 			}
+			free (arg);
 		} else {
-			RFlagItem *item = r_flag_get_i (core->flags, core->offset);
+			item = r_flag_get_i (core->flags, core->offset);
 			if (item)
 				r_cons_printf ("0x%08"PFMT64x"\n", item->size);
 		}

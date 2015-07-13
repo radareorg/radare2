@@ -987,11 +987,12 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size) {
 		}
 		//for (j=1;j<arr[i]; j+=INC) p->printf (under);
 		p->printf ("|");
-		if (i+1 == size){
-			if (0>arr[i])
-				for (j=arr[i]+INC+base; j+base<next; j+=INC) p->printf ("_");
-		}else if (arr[i+1] > arr[i]) {
-			for (j=arr[i]+INC+base; j+base<next; j+=INC) p->printf ("_");
+		if (i+1 == size) {
+			for (j=arr[i]+INC+base; j+base<next; j+=INC)
+				p->printf ("_");
+		} else if (arr[i+1] > arr[i]) {
+			for (j=arr[i]+INC+base; j+base<next; j+=INC)
+				p->printf ("_");
 		}
 		p->printf ("\n");
 	}

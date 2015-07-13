@@ -94,6 +94,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "push.w",  "push 1"},
 		{ 0, NULL }
 	};
+	if (!newstr) {
+		return R_FALSE;
+	}
 
 	for (i=0; ops[i].op != NULL; i++) {
 		if (ops[i].narg) {
@@ -102,18 +105,16 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			}
 		}
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr != NULL) {
-				for (j=k=0; ops[i].str[j]!='\0'; j++, k++) {
-					if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
-						const char *w = argv[ ops[i].str[j]-'0' ];
-						if (w != NULL) {
-							strcpy (newstr+k, w);
-							k += strlen(w)-1;
-						}
-					} else newstr[k] = ops[i].str[j];
-				}
-				newstr[k]='\0';
+			for (j=k=0; ops[i].str[j]!='\0'; j++, k++) {
+				if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
+					const char *w = argv[ ops[i].str[j]-'0' ];
+					if (w != NULL) {
+						strcpy (newstr+k, w);
+						k += strlen(w)-1;
+					}
+				} else newstr[k] = ops[i].str[j];
 			}
+			newstr[k]='\0';
 			if (argc == 4 && argv[2][0] == '[') {
 				strcat (newstr+k, " + ");
 				strcat (newstr+k+3, argv[3]);
@@ -125,12 +126,10 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	}
 
 	/* TODO: this is slow */
-	if (newstr != NULL) {
-		newstr[0] = '\0';
-		for (i=0; i<argc; i++) {
-			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i == argc - 1)?" ":",");
-		}
+	newstr[0] = '\0';
+	for (i=0; i<argc; i++) {
+		strcat (newstr, argv[i]);
+		strcat (newstr, (i == 0 || i == argc - 1)?" ":",");
 	}
 	r_str_replace_char (newstr, '{', '(');
 	r_str_replace_char (newstr, '}', ')');

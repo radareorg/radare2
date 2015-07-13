@@ -129,7 +129,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	switch (*str) {
 	case '[':
 {
-		ut64 n;
+		ut64 n = 0LL;
 		int refsz = (core->assembler->bits & R_SYS_BITS_64)? 8: 4;
 		const char *p = NULL;
 		if (strlen (str)>5)

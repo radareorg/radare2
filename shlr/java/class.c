@@ -7744,21 +7744,20 @@ R_API RList * r_bin_java_get_method_exception_table_with_addr(RBinJavaObj *bin, 
 }
 
 R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin) {
-	if (bin) {
-		return bin->methods_list;
-	} else if (R_BIN_JAVA_GLOBAL_BIN) {
+	if (bin) return bin->methods_list;
+	if (R_BIN_JAVA_GLOBAL_BIN)
 		return R_BIN_JAVA_GLOBAL_BIN->methods_list;
-	}
 	return NULL;
 }
 
 R_API RList* r_bin_java_get_bin_obj_list_thru_obj(RBinJavaObj *bin_obj) {
-	Sdb * sdb = bin_obj ? bin_obj->AllJavaBinObjs : NULL;
-	if (bin_obj == NULL || sdb == NULL) {
-		return NULL;
-	}
-	RList *the_list = r_list_new();
-	if (sdb == NULL || the_list == NULL) return NULL;
+	RList *the_list;
+	Sdb * sdb;
+	if (!bin_obj) return NULL;
+	sdb = bin_obj->AllJavaBinObjs;
+	if (!sdb) return NULL;
+	the_list = r_list_new();
+	if (!the_list) return NULL;
 	sdb_foreach (sdb, sdb_iterate_build_list, (void *) the_list);
 	return the_list;
 }

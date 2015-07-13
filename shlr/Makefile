@@ -1,8 +1,9 @@
 include ../global.mk
 include ../config-user.mk
-include ../mk/${COMPILER}.mk
 # for EXT_EXE
 include ../libr/config.mk
+_INCLUDE_MK_GCC_=
+include ../mk/${COMPILER}.mk
 
 WGET?=wget
 CS_VER=3.0
@@ -42,7 +43,7 @@ all:
 	exit 1
 endif
 
-preall: sdb/sdb${EXT_EXE} libgdbr libwind capstone-build
+preall: sdb/sdb sdb/sdb${EXT_EXE} libgdbr libwind capstone-build
 	@for a in ${MODS} ; do \
 		echo $(MAKE) -C $$a ; \
 		$(MAKE) -C $$a HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
@@ -57,20 +58,39 @@ clean mrproper:
 	rm -f sdb/sdb${EXT_EXE}
 	@for a in ${MODS} ; do $(MAKE) -C $$a clean ; done
 
-$(SDBLIB) sdb/sdb${EXT_EXE}:
+ifeq ($(BUILD_OS),windows)
+BUILD_EXT_EXE=.exe
+else
+BUILD_EXT_EXE=
+endif
+
+$(SDBLIB) sdb/sdb${EXT_EXE} sdb/sdb:
+	@echo
+	@echo BUILD SUMARY
+	@echo ============
+	@echo COMPILER ${COMPILER}
+	@echo CC ${CC}
+	@echo HOST_CC ${HOST_CC}
+	@echo HOST_OS ${HOST_OS}
+	@echo BUILD_OS ${BUILD_OS}
+	@echo ============
+	@echo
 	cd sdb ; $(MAKE) src/sdb-version.h
 	cd sdb ; $(MAKE) clean
+	echo "NATIVE BUILD SDB"
 	cd sdb ; \
 		$(MAKE) clean && \
 		$(MAKE) CC=${HOST_CC} CFLAGS='${HOST_CFLAGS} -fPIC' && \
-		cp -f src/sdb src/.sdb${EXT_EXE}
+		cp -f src/sdb${BUILD_EXT_EXE} src/.sdb${BUILD_EXT_EXE}
 	cd sdb ; $(MAKE) clean
 	cd sdb ; $(MAKE) src/sdb-version.h
+	echo "TRANS BUILD SDB"
 	cd sdb/src ; $(MAKE) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
 		CC="${CC}" AR="${AR}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 	${RANLIB} sdb/src/libsdb.a
-	rm -f sdb/sdb${EXT_EXE}
-	cp sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE}
+	-cp -f sdb/src/libsdb.a sdb/src/libsdb.${EXT_AR}
+	rm -f $@
+	cp sdb/src/.sdb${BUILD_EXT_EXE} $@
 
 .PHONY: sdb-sync sync-sdb sdbclean
 F=README.md config.mk src Makefile Jamroot
@@ -82,6 +102,11 @@ libgdbr:
 
 libwind:
 	cd wind; $(MAKE) all
+
+sdb-clean clean-sdb:
+	$(MAKE) -C sdb clean
+	rm -f sdb/sdb.exe
+	rm -f sdb/src/libsdb.a
 
 sdb-sync sync-sdb:
 	rm -rf sdb sdb.vc
@@ -204,5 +229,5 @@ capstone-build: capstone
 	cd capstone && CFLAGS="-Dmips=mips ${CAPSTONE_CFLAGS} $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
 		$(MAKE) CC="$(CC)" AR_EXT=a IS_CYGWIN=0 CAPSTONE_STATIC=yes CAPSTONE_SHARED=no \
 		RANLIB="$(RANLIB)" AR="$(AR)" IS_MINGW=0 libcapstone.a
-	-mv capstone/libcapstone.a capstone/libcapstone.${EXT_AR}
+	-cp -f capstone/libcapstone.a capstone/libcapstone.${EXT_AR}
 endif

@@ -1,6 +1,8 @@
 NAME=grubfs
 
 include ../../config-user.mk
+include ../../global.mk
+include ../../mk/${COMPILER}.mk
 
 EXT_AR?=a
 LIBAR?=libgrubfs.${EXT_AR}

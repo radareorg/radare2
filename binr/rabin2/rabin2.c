@@ -118,7 +118,7 @@ static void __sdb_prompt(Sdb *sdb) {
 static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 	ut64 boffset = o ? o->boffset : 0;
 	ut64 bin_size = o ? o->obj_size : 0;
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
+	const ut8 *bytes;
 	//ut64 sz = bf ? r_buf_size (bf->buf) : 0;
 	RBinInfo *info = o ? o->info : NULL;
 	const char *arch = info ? info->arch : "unknown";
@@ -129,11 +129,15 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 	int res = R_FALSE;
 
 	if (!bf || !o || !filename ) return R_FALSE;
-	if (!arch) arch = "unknown";
-
-	path = strdup (filename);
+	bytes = r_buf_buffer (bf->buf);
 	if (!bytes) {
 		eprintf ("error: BinFile buffer is empty\n");
+		return R_FALSE;
+	}
+
+	if (!arch) arch = "unknown";
+	path = strdup (filename);
+	if (!path) {
 		return R_FALSE;
 	}
 

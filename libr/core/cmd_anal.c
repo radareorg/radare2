@@ -1980,7 +1980,7 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 					*q++ = 0;
 					b = r_num_math (core->num, q);
 				} else {
-					b = UT64_MAX;
+					//b = UT64_MAX;
 					b = core->offset;
 				}
 				r_anal_ref_del (core->anal, b, a);

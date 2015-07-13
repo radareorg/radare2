@@ -342,16 +342,22 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 	char *name;
 	ut64 SF, IF, DM, VM;
 	const ut8 *p, *p_end;
-	char *class_name = dex_class_name (bin, c);
-	if (c->class_data_offset==0) {
+	char *class_name;
+	if (!c || !c->class_data_offset) {
 		// no method here, just class definition
 		//free (class_name);
 		//free (super_name);
 		return NULL;
 	}
+	class_name = dex_class_name (bin, c);
+	if (!class_name) {
+		return NULL;
+	}
 	methods = calloc (sizeof (ut32), bin->header.method_size);
-	if (!methods)
+	if (!methods) {
+		free (class_name);
 		return R_FALSE;
+	}
 	dprintf ("  class_data_offset: %d\n", c->class_data_offset);
 	p = r_buf_get_at (binfile->buf, c->class_data_offset, NULL);
 	p_end = p + (binfile->buf->length - c->class_data_offset);
@@ -516,7 +522,6 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	for (i=0; i<bin->header.class_size; i++) {
 		char *super_name, *class_name;
 		struct dex_class_t *c = &bin->classes[i];
-		if (!c) continue;
 		class_name = dex_class_name (bin, c);
 		super_name = dex_class_super_name (bin, c);
 		dprintf ("{\n");
@@ -533,6 +538,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			continue;
 		}
 #endif
+		free (methods);
 		methods = parse_class (arch, bin, c, NULL);
 		dprintf ("  ],\n");
 		dprintf ("},");

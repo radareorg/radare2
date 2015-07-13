@@ -1005,7 +1005,6 @@ if (!ret)
 	       }
 	       break;
 	case 1:
-	default: // iova=2 ?
 		if (io->sectonly) {
 			if (r_list_empty (io->sections)) {
 				return R_TRUE;
