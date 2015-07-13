@@ -200,6 +200,29 @@ R_API RListIter *r_list_prepend(RList *list, void *data) {
 	return NULL;
 }
 
+R_API RListIter *r_list_insert(RList *list, int n, void *data) {
+	RListIter *it, *new;
+	int i;
+	if (list) {
+		if (!list->head || n == 0)
+			return r_list_prepend (list, data);
+		for (it = list->head, i = 0; it && it->data; it = it->n, i++) {
+			if (i == n) {
+				new = R_NEW (RListIter);
+				if (!new) return NULL;
+				new->data = data;
+				new->n = it;
+				new->p = it->p;
+				if (it->p)
+					it->p->n = new;
+				it->p = new;
+				return new;
+			}
+		}
+	}
+	return r_list_append (list, data);
+}
+
 R_API void *r_list_pop(RList *list) {
 	void *data = NULL;
 	RListIter *iter;

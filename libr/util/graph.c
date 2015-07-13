@@ -154,8 +154,12 @@ R_API void r_graph_del_node (RGraph *t, RGraphNode *n) {
 }
 
 R_API void r_graph_add_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
+	r_graph_add_edge_at (t, from, to, -1);
+}
+
+R_API void r_graph_add_edge_at (RGraph *t, RGraphNode *from, RGraphNode *to, int nth) {
 	if (!from || !to) return;
-	r_list_append(from->out_nodes, to);
+	r_list_insert(from->out_nodes, nth, to);
 	r_list_append(from->all_neighbours, to);
 	r_list_append(to->in_nodes, from);
 	r_list_append(to->all_neighbours, from);
