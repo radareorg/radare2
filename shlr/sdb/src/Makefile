@@ -39,8 +39,8 @@ endif
 	${RANLIB} libsdb.a
 
 libsdb.${SOVER}: ${SOBJ}
-ifneq ($(SOEXT),${SOVER})
-	ln -fs libsdb.${SOVER} libsdb.${SOEXT}
+ifneq ($(EXT_SO),${SOVER})
+	ln -fs libsdb.${SOVER} libsdb.${EXT_SO}
 endif
 ifneq ($(SILENT),)
 	@echo LIB libsdb.${SOVER}
@@ -55,7 +55,7 @@ endif
 
 mrproper clean:
 	rm -rf ${OBJ} ${SOBJ} main.o libsdb.a a.out ${BIN} sdb.dSYM
-	rm -rf *.d *._d json/*.d json/*._d *.sdb *.db *.${SOEXT} *.${SOEXT}.*
+	rm -rf *.d *._d json/*.d json/*._d *.sdb *.db *.${EXT_SO} *.${EXT_SO}.*
 
 # rules #
 .c:
