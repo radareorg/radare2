@@ -1649,7 +1649,15 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to) {
 			if (!r_core_is_valid_offset (core, xref_to))
 				continue;
 			if (core->io->va) {
-				if (!r_io_section_exists_for_vaddr (core->io, xref_to, 0))
+				RListIter *iter;
+				RIOSection *s;
+				r_list_foreach (core->io->sections, iter, s) {
+					if (xref_to >= s->vaddr && xref_to < s->vaddr + s->vsize) {
+						if (s->vaddr != 0)
+							break;
+					}
+				}
+				if (!iter)
 					continue;
 			}
 
