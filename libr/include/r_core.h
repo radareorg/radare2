@@ -295,7 +295,7 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr);
 R_API void r_core_anal_undefine (RCore *core, ut64 off);
 R_API void r_core_anal_hint_list (RAnal *a, int mode);
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref);
-R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to);
+R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad);
 R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth);
 R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv);
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head);

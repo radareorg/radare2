@@ -1568,7 +1568,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	return count;
 }
 
-R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to) {
+R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	ut8 *buf;
 	ut64 at;
 	int count = 0;
@@ -1589,6 +1589,9 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to) {
 		eprintf ("Error: cannot allocate a block\n");
 		return -1;
 	}
+
+	if (rad == 'j')
+		r_cons_printf ("{");
 
 	r_io_use_desc (core->io, core->file->desc);
 	r_cons_break (NULL, NULL);
@@ -1664,15 +1667,26 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to) {
 					continue;
 			}
 
-			// Print r2 command
-			switch (type) {
-			case R_ANAL_REF_TYPE_CODE: cmd = "axc"; break;
-			case R_ANAL_REF_TYPE_CALL: cmd = "axC"; break;
-			case R_ANAL_REF_TYPE_DATA: cmd = "axd"; break;
-			default: cmd = "ax"; break;
+			if (!rad) {
+				// Add to SDB
+				r_anal_xrefs_set (core->anal, type, xref_from, xref_to);
+			} else if (rad == 'j') {
+				// Output JSON
+				if (count > 0) r_cons_printf (",");
+				r_cons_printf ("%"PFMT64d":%"PFMT64d, xref_to, xref_from);
+			} else {
+				// Display in radare commands format
+				char *cmd;
+				switch (type) {
+				case R_ANAL_REF_TYPE_CODE: cmd = "axc"; break;
+				case R_ANAL_REF_TYPE_CALL: cmd = "axC"; break;
+				case R_ANAL_REF_TYPE_DATA: cmd = "axd"; break;
+				default: cmd = "ax"; break;
+				}
+
+				r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+						cmd, xref_to, xref_from);
 			}
-			r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-					cmd, xref_to, xref_from);
 
 			count++;
 		}
@@ -1682,6 +1696,10 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to) {
 	r_cons_break_end ();
 	free (buf);
 	r_anal_op_fini (&op);
+
+	if (rad == 'j')
+		r_cons_printf ("}\n");
+
 	return count;
 }
 

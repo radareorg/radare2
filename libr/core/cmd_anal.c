@@ -1973,7 +1973,7 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 		"axc", " addr [at]", "add code jmp ref // unused?",
 		"axC", " addr [at]", "add code call ref",
 		"axd", " addr [at]", "add data ref",
-		"axa", " [sz]", "analyze sz bytes of instructions for refs",
+		"axa", "[j*] [sz]", "analyze sz bytes of instructions for refs",
 		"axj", "", "list refs in json format",
 		"axF", " [flg-glob]", "find data/code references of flags",
 		"axt", " [addr]", "find data/code references to this address",
@@ -2163,12 +2163,23 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 		{
 			ut64 from, to;
 			char *ptr;
-			int n;
+			int rad, n;
+			const char* help_msg_axa[] = {
+				"Usage:", "axa", "[j*] [sz] # search xrefs",
+				"axa", " [sz]", "analyze xrefs in current section or sz bytes of code",
+				"axaj", " [sz]", "list found xrefs in JSON format",
+				"axa*", " [sz]", "list found xrefs in radare commands format",
+				NULL};
 
 			if (input[1] == '?') {
-				eprintf ("Usage: axa [sz]\n");
+				r_core_cmd_help (core, help_msg_axa);
 				break;
 			}
+
+			if (input[1] == 'j' || input[1] == '*') {
+				rad = input[1];
+				input++;
+			} else rad = 0;
 
 			from = to = 0;
 			ptr = strdup (r_str_trim_head ((char*)input+1));
@@ -2200,7 +2211,7 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 			if (from == 0 && to == 0)
 				return R_FALSE;
 
-			r_core_anal_search_xrefs (core, from, to);
+			r_core_anal_search_xrefs (core, from, to, rad);
 		}
 		break;
 	default:
