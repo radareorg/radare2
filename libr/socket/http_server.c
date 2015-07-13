@@ -1,12 +1,13 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake */
+/* radare - LGPL - Copyright 2012-2015 - pancake */
 
 #include <r_socket.h>
-#if __WINDOWS__
-static int *breaked =NULL;
+
+static int *breaked = NULL;
+
 R_API void r_socket_http_server_set_breaked(int *b) {
-	breaked=b;
+	breaked = b;
 }
-#endif
+
 R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 	int content_length = 0, xx, yy;
 	int pxx = 1, first = 0;

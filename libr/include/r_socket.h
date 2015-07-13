@@ -102,6 +102,7 @@ R_API int r_socket_proc_ready (RSocketProc *sp, int secs, int usecs);
 /* HTTP */
 R_API char *r_socket_http_get (const char *url, int *code, int *rlen);
 R_API char *r_socket_http_post (const char *url, const char *data, int *code, int *rlen);
+R_API void r_socket_http_server_set_breaked(int *b);
 
 typedef struct r_socket_http_request {
 	RSocket *s;
