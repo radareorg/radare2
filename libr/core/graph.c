@@ -400,7 +400,7 @@ static void remove_cycles (RAGraph *g) {
 
 	r_list_foreach (g->back_edges, it, e) {
 		 r_graph_del_edge (g->graph, e->from, e->to);
-		 r_graph_add_edge (g->graph, e->to, e->from);
+		 r_graph_add_edge_at (g->graph, e->to, e->from, e->nth);
 	}
 }
 
@@ -449,7 +449,7 @@ static void create_dummy_nodes (RAGraph *g) {
 		const RANode *to = get_anode (e->to);
 		int diff_layer = R_ABS (from->layer - to->layer);
 		RANode *prev = get_anode(e->from);
-		int i;
+		int i, nth = e->nth;
 
 		r_graph_del_edge (g->graph, e->from, e->to);
 		for (i = 1; i < diff_layer; ++i) {
@@ -459,9 +459,10 @@ static void create_dummy_nodes (RAGraph *g) {
 			dummy->layer = from->layer + i;
 			dummy->is_reversed = is_reversed (g, e);
 			dummy->w = 1;
-			r_graph_add_edge (g->graph, prev->gnode, dummy->gnode);
+			r_graph_add_edge_at (g->graph, prev->gnode, dummy->gnode, nth);
 
 			prev = dummy;
+			nth = -1;
 		}
 		r_graph_add_edge (g->graph, prev->gnode, e->to);
 	}
@@ -1319,12 +1320,12 @@ static void restore_original_edges (const RAGraph *g) {
 	const RGraphEdge *e;
 
 	r_list_foreach (g->long_edges, it, e) {
-		r_graph_add_edge (g->graph, e->from, e->to);
+		r_graph_add_edge_at (g->graph, e->from, e->to, e->nth);
 	}
 
 	r_list_foreach (g->back_edges, it, e) {
 		r_graph_del_edge (g->graph, e->to, e->from);
-		r_graph_add_edge (g->graph, e->from, e->to);
+		r_graph_add_edge_at (g->graph, e->from, e->to, e->nth);
 	}
 }
 
