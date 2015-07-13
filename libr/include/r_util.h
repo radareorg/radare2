@@ -277,6 +277,7 @@ typedef struct r_graph_node_t {
 typedef struct r_graph_edge_t {
 	RGraphNode *from;
 	RGraphNode *to;
+	int nth;
 } RGraphEdge;
 
 typedef struct r_graph_t {
@@ -327,6 +328,7 @@ R_API void r_graph_reset (RGraph *g);
 R_API RGraphNode *r_graph_add_node (RGraph *g, void *data);
 R_API void r_graph_del_node (RGraph *g, RGraphNode *n);
 R_API void r_graph_add_edge (RGraph *g, RGraphNode *from, RGraphNode *to);
+R_API void r_graph_add_edge_at (RGraph *g, RGraphNode *from, RGraphNode *to, int nth);
 R_API void r_graph_del_edge (RGraph *g, RGraphNode *from, RGraphNode *to);
 R_API const RList *r_graph_get_neighbours (const RGraph *g, const RGraphNode *n);
 R_API RGraphNode *r_graph_nth_neighbour (const RGraph *g, const RGraphNode *n, int nth);
