@@ -1,8 +1,12 @@
 LIBAR=libgrubfs.a
 
 include ../../config-user.mk
+
+LIBAR=libgrubfs.a
+LIB=libgrubfs
+EXT_AR?=.a
 CC?=gcc
-CC_AR?=ar q
+CC_AR?=ar q ${LIBAR}
 RANLIB?=ranlib
 OSTYPE=$(shell uname | tr 'A-Z' 'a-z')
 ifeq (${OSTYPE},)
@@ -81,7 +85,7 @@ lib: $(LIBAR)
 
 $(LIBAR): ${KERNOBJS}
 	rm -f $(LIBAR)
-	$(CC_AR) $(LIBAR) ${KERNOBJS}
+	$(CC_AR) ${KERNOBJS}
 	${RANLIB} $(LIBAR)
 
 clean:
