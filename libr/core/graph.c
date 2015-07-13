@@ -1875,7 +1875,7 @@ static void agraph_print (RAGraph *g, int is_interactive,
 	} else {
 		r_cons_canvas_print_region (g->can);
 	}
-	r_cons_flush_nonewline ();
+	r_cons_flush ();
 }
 
 static int agraph_refresh(struct agraph_refresh_data *grd) {
