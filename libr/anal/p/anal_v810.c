@@ -32,7 +32,6 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf,
 	op->ptr = op->val = -1;
 
 	r_mem_copyendian((ut8*)&word1, buf, 2, LIL_ENDIAN);
-	r_mem_copyendian((ut8*)&word2, buf + 2, 2, LIL_ENDIAN);
 
 	opcode = (word1 >> 10) & 0x3F;
 	if (opcode>>3 == 0x4)
@@ -125,17 +124,9 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf,
 			op->type = R_ANAL_OP_TYPE_RET;
 			break;
 		case V810_JAL:
-			destaddr = ((word1 & 0x3FF) << 16) | word2;
-			if (destaddr & 0x2000000)
-				destaddrs = destaddr | 0xFC000000;
-			else
-				destaddrs = destaddr;
-
-			op->jump = addr + destaddrs;
-			op->fail = addr + 4;
-			op->type = R_ANAL_OP_TYPE_CALL;
-			break;
 		case V810_JR:
+			r_mem_copyendian((ut8*)&word2, buf + 2, 2, LIL_ENDIAN);
+
 			destaddr = ((word1 & 0x3FF) << 16) | word2;
 			if (destaddr & 0x2000000)
 				destaddrs = destaddr | 0xFC000000;
@@ -144,7 +135,10 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf,
 
 			op->jump = addr + destaddrs;
 			op->fail = addr + 4;
-			op->type = R_ANAL_OP_TYPE_JMP;
+			if (opcode == V810_JAL)
+				op->type = R_ANAL_OP_TYPE_CALL;
+			else
+				op->type = R_ANAL_OP_TYPE_JMP;
 			break;
 		case V810_BCOND:
 			destaddr = word1 & 0x1FE;
