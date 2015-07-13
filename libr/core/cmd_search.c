@@ -1795,40 +1795,60 @@ static int cmd_search(void *data, const char *input) {
 		}
 		break;
 	case 'v':
-		if (input[2] == 'j') {
-			json = R_TRUE;
-			param_offset++;
+		if (input[1]){
+			if (input[2] == 'j') {
+				json = R_TRUE;
+				param_offset++;
+			}
 		}
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
 		switch (input[1]) {
 		case '8':
-			n64 = r_num_math (core->num, input+param_offset);
-			r_mem_copyendian ((ut8*)&n64, (const ut8*)&n64,
-				8, !core->assembler->big_endian);
-			r_search_kw_add (core->search,
-				r_search_keyword_new ((const ut8*)&n64, 8, NULL, 0, NULL));
+			if (input[param_offset]){
+				n64 = r_num_math (core->num, input+param_offset);
+				r_mem_copyendian ((ut8*)&n64, (const ut8*)&n64,
+					8, !core->assembler->big_endian);
+				r_search_kw_add (core->search,
+					r_search_keyword_new ((const ut8*)&n64, 8, NULL, 0, NULL));
+				break;
+			}
+			eprintf ("Usage: /v[1248] value\n");
 			break;
 		case '1':
-			n8 = (ut8)r_num_math (core->num, input+param_offset);
-			r_search_kw_add (core->search,
-				r_search_keyword_new ((const ut8*)&n8, 1, NULL, 0, NULL));
+			if (input[param_offset]){
+				n8 = (ut8)r_num_math (core->num, input+param_offset);
+				r_search_kw_add (core->search,
+					r_search_keyword_new ((const ut8*)&n8, 1, NULL, 0, NULL));
+				break;
+			}
+			eprintf ("Usage: /v[1248] value\n");
 			break;
 		case '2':
-			n16 = (ut16)r_num_math (core->num, input+param_offset);
-			r_mem_copyendian ((ut8*)&n16, (ut8*)&n16,
-				2, !core->assembler->big_endian);
-			r_search_kw_add (core->search,
-				r_search_keyword_new ((const ut8*)&n16, 2, NULL, 0, NULL));
+			if (input[param_offset]){
+				n16 = (ut16)r_num_math (core->num, input+param_offset);
+				r_mem_copyendian ((ut8*)&n16, (ut8*)&n16,
+					2, !core->assembler->big_endian);
+				r_search_kw_add (core->search,
+					r_search_keyword_new ((const ut8*)&n16, 2, NULL, 0, NULL));
+				break;
+			}
+			eprintf ("Usage: /v[1248] value\n");
 			break;
 		default: // default size
 		case '4':
-			n32 = (ut32)r_num_math (core->num, input+param_offset);
-			r_mem_copyendian ((ut8*)&n32, (const ut8*)&n32,
-				4, !core->assembler->big_endian);
-			r_search_kw_add (core->search,
-				r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
+			if (input[param_offset-1]) {
+				if (input[param_offset]){
+					n32 = (ut32)r_num_math (core->num, input+param_offset);
+					r_mem_copyendian ((ut8*)&n32, (const ut8*)&n32,
+						4, !core->assembler->big_endian);
+					r_search_kw_add (core->search,
+						r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
+					break;
+				}
+			}
+			eprintf ("Usage: /v[1248] value\n");
 			break;
 		}
 // TODO: Add support for /v4 /v8 /v2
