@@ -6,7 +6,7 @@ include ../../global.mk
 _INCLUDE_MK_GCC_=
 include ../../mk/${COMPILER}.mk
 SHLR?=$(shell pwd)/..
-include $(SHLR)/zip/deps.mk
+include ../zip/deps.mk
 
 OSTYPE?=$(shell uname | tr 'A-Z' 'a-z')
 ifeq (${OSTYPE},)

@@ -76,7 +76,6 @@ $(SDBLIB) sdb/sdb${EXT_EXE} sdb/sdb:
 	@echo BUILD_OS ${BUILD_OS}
 	@echo ============
 	@echo
-	@echo
 	@echo ">>>>>>>>>>>>>>>>"
 	@echo "NATIVE BUILD SDB"
 	@echo ">>>>>>>>>>>>>>>>"
@@ -99,7 +98,7 @@ ifneq (${EXT_AR},.a)
 	-cp -f sdb/src/libsdb.a sdb/src/libsdb.${EXT_AR}
 endif
 	rm -f $@
-	cp sdb/src/.sdb${BUILD_EXT_EXE} $@
+	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
 
 .PHONY: sdb-sync sync-sdb sdbclean
 F=README.md config.mk src Makefile Jamroot

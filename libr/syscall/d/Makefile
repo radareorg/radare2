@@ -37,11 +37,11 @@ linux-x86-32.sdb: linux-x86-32
 ifneq ($(SILENT),)
 	@echo "SDB $<"
 	@rm -f $<.sdb
-	@${SHELL} gen.sh < $< | ${SDB} $<.sdb =
+	@"${SHELL}" gen.sh < $< | ${SDB} $<.sdb =
 	@test -f $<.sdb
 else
 	rm -f $<.sdb
-	${SHELL} gen.sh < $< | ${SDB} $<.sdb =
+	"${SHELL}" gen.sh < $< | ${SDB} $<.sdb =
 	test -f $<.sdb
 endif
 
