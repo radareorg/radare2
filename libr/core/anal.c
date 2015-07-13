@@ -1600,14 +1600,17 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to) {
 		if (ret != core->blocksize && at+ret-OPSZ < to)
 			break;
 
-		for (i = 0; i < ret-OPSZ && at+i < to; i++) {
+		i = 0;
+		while (at+i < to && i < ret-OPSZ) {
 			RAnalRefType type;
-			ut64 xref_to;
+			ut64 xref_from, xref_to;
 			const char *cmd;
 
+			xref_from = at+i;
 			r_anal_op_fini (&op);
-			if (!r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i)
-					|| at+i + op.size > to)
+			ret = r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i);
+			i += (ret > 0) ? ret : 1;
+			if (ret <= 0 || at+i > to)
 				continue;
 
 			// Get reference type and target address
@@ -1669,7 +1672,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to) {
 			default: cmd = "ax"; break;
 			}
 			r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-					cmd, xref_to, at+i);
+					cmd, xref_to, xref_from);
 
 			count++;
 		}
