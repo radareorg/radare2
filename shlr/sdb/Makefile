@@ -74,12 +74,12 @@ INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h
 
 install: pkgconfig install-dirs
 	$(INSTALL_MAN) src/sdb.1 ${MANDIR}
-	$(INSTALL_LIB) src/libsdb.${SOEXT} ${PFX}/lib
+	$(INSTALL_LIB) src/libsdb.${EXT_SO} ${PFX}/lib
 	$(INSTALL_DATA) src/libsdb.a ${PFX}/lib
-	-if [ "$(SOEXT)" != "$(SOVER)" ]; then \
+	-if [ "$(EXT_SO)" != "$(SOVER)" ]; then \
 	  cd $(PFX)/lib ; \
-	  mv libsdb.$(SOEXT) libsdb.$(SOVER) ; \
-	  ln -s libsdb.$(SOVER) libsdb.$(SOEXT) ; \
+	  mv libsdb.$(EXT_SO) libsdb.$(SOVER) ; \
+	  ln -s libsdb.$(SOVER) libsdb.$(EXT_SO) ; \
 	fi
 	$(INSTALL_DATA) $(INCFILES) ${PFX}/include/sdb
 	$(INSTALL_PROGRAM) src/sdb ${PFX}/bin
