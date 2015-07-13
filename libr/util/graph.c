@@ -47,20 +47,21 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[])
 		RGraphNode *v, *cur = cur_edge->to, *from = cur_edge->from;
 		const RList *neighbours;
 		RListIter *it;
+		int i;
 
-		free (cur_edge);
 		if (from && cur) {
 			if (color[cur->idx] == WHITE_COLOR && vis->tree_edge)
-				vis->tree_edge (from, cur, vis);
+				vis->tree_edge (cur_edge, vis);
 			else if (color[cur->idx] == GRAY_COLOR && vis->back_edge)
-				vis->back_edge (from, cur, vis);
+				vis->back_edge (cur_edge, vis);
 			else if (color[cur->idx] == BLACK_COLOR && vis->fcross_edge)
-				vis->fcross_edge (from, cur, vis);
+				vis->fcross_edge (cur_edge, vis);
 		} else if (!cur && from) {
 			if (color[from->idx] != BLACK_COLOR && vis->finish_node)
 				vis->finish_node (from, vis);
 			color[from->idx] = BLACK_COLOR;
 		}
+		free (cur_edge);
 
 		if (!cur || color[cur->idx] != WHITE_COLOR)
 			continue;
@@ -69,16 +70,17 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[])
 			vis->discover_node (cur, vis);
 		color[cur->idx] = GRAY_COLOR;
 
-		edg = R_NEW (RGraphEdge);
+		edg = R_NEW0 (RGraphEdge);
 		edg->from = cur;
-		edg->to = NULL;
 		r_stack_push (s, edg);
 
+		i = 0;
 		neighbours = r_graph_get_neighbours (g, cur);
 		r_list_foreach (neighbours, it, v) {
 			edg = R_NEW (RGraphEdge);
 			edg->from = cur;
 			edg->to = v;
+			edg->nth = i++;
 			r_stack_push (s, edg);
 		}
 	}
