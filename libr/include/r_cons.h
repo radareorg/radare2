@@ -514,7 +514,7 @@ typedef struct r_ascii_node_t {
 	int pos_in_layer;
 	int is_dummy;
 	int is_reversed;
-	int class;
+	int klass;
 } RANode;
 
 typedef struct r_ascii_graph_t {

@@ -649,7 +649,7 @@ static RList **compute_classes (const RAGraph *g, Sdb *v_nodes, int is_left, int
 	RANode *n;
 
 	graph_foreach_anode (r_graph_get_nodes (g->graph), it, gn, n) {
-		n->class = -1;
+		n->klass = -1;
 	}
 
 	for (i = 0; i < g->n_layers; ++i) {
@@ -661,17 +661,17 @@ static RList **compute_classes (const RAGraph *g, Sdb *v_nodes, int is_left, int
 			const RGraphNode *gj = g->layers[i].nodes[j];
 			const RANode *aj = get_anode (gj);
 
-			if (aj->class == -1) {
+			if (aj->klass == -1) {
 				const RList *laj = hash_get_rlist (v_nodes, gj);
 
 				if (!res[c])
 					res[c] = r_list_new ();
 				graph_foreach_anode (laj, it, gn, n) {
 					r_list_append (res[c], gn);
-					n->class = c;
+					n->klass = c;
 				}
 			} else {
-				c = aj->class;
+				c = aj->klass;
 			}
 		}
 	}
@@ -723,7 +723,7 @@ static void adjust_class (const RAGraph *g, int is_left,
 		sibling = get_sibling (g, an, is_left, R_TRUE);
 		if (!sibling) continue;
 		sibl_anode = get_anode (sibling);
-		if (sibl_anode->class == c) continue;
+		if (sibl_anode->klass == c) continue;
 		v = adjust_class_val (g, gn, sibling, res, is_left);
 		dist = is_first ? v : R_MIN (dist, v);
 		is_first = R_FALSE;
@@ -740,7 +740,7 @@ static void adjust_class (const RAGraph *g, int is_left,
 			const RANode *ak;
 
 			graph_foreach_anode (neigh, itk, gk, ak) {
-				if (ak->class < c)
+				if (ak->klass < c)
 					r_list_append (heap, (void *)(size_t)(ak->x - an->x));
 			}
 		}
@@ -797,7 +797,7 @@ static void place_nodes (const RAGraph *g, const RGraphNode *gn, int is_left,
 		sibling = get_sibling (g, ak, is_left, R_FALSE);
 		if (!sibling) continue;
 		sibl_anode = get_anode (sibling);
-		if (ak->class == sibl_anode->class) {
+		if (ak->klass == sibl_anode->klass) {
 			if (!hash_get (placed, sibling))
 				place_nodes (g, sibling, is_left, v_nodes, classes, res, placed);
 
@@ -1943,7 +1943,7 @@ R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
 	res->pos_in_layer = -1;
 	res->is_dummy = R_FALSE;
 	res->is_reversed = R_FALSE;
-	res->class = -1;
+	res->klass = -1;
 
 	res->gnode = r_graph_add_node (g->graph, res);
 	sdb_num_set (g->nodes, title, (ut64)(size_t)res, 0);
