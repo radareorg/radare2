@@ -24,7 +24,7 @@ Rangstr rangstr_new (const char *s) {
 }
 
 Rangstr rangstr_null(void) {
-	Rangstr rs = {0};
+	Rangstr rs = {0, 0, 0, 0, 0};
 	return rs;
 }
 

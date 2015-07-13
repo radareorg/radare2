@@ -14,7 +14,7 @@ extern "C" {
 #include "ls.h"
 #include "cdb.h"
 #include "cdb_make.h"
-#include "sdb-version.h"
+#include "sdb_version.h"
 
 #undef r_offsetof
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)

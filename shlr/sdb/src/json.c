@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2012-2015 - pancake */
+/* sdb - MIT - Copyright 2012-2015 - pancake */
 
 #include <stdarg.h>
 #include "sdb.h"

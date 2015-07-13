@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2015 - pancake */
+/* sdb - MIT - Copyright 2011-2015 - pancake */
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -318,7 +318,7 @@ SDB_API int sdb_exists (Sdb* s, const char *key) {
 }
 
 SDB_API int sdb_open (Sdb *s, const char *file) {
-	struct stat st = {0};
+        struct stat st;
 	if (!s) return -1;
 	if (file) {
 		if (s->fd != -1) {
@@ -824,7 +824,7 @@ typedef struct {
 	const char *key;
 	const char *val;
 	SdbForeachCallback cb;
-	char const **array;
+	const char **array;
 	int array_index;
 	int array_size;
 } LikeCallbackData;
@@ -854,7 +854,7 @@ static int like_cb(void *user, const char *k, const char *v) {
 }
 
 SDB_API char** sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback cb) {
-	LikeCallbackData lcd = { s, k, v, cb };
+	LikeCallbackData lcd = { s, k, v, cb, NULL, 0, 0 };
 	if (cb) {
 		sdb_foreach (s, like_cb, &lcd);
 		return NULL;

@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2015 - pancake */
+/* sdb - MIT - Copyright 2011-2015 - pancake */
 
 #include "sdb.h"
 
@@ -508,8 +508,8 @@ SDB_API void sdb_array_sort(Sdb *s, const char *key, ut32 cas) {
 
 SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
 	char *ret, *nstr, *str;
-	int lstr, i;
-	ut64 *nums;
+	int lstr;
+	ut64 i, *nums;
 	str = sdb_get_len (s, key, &lstr, 0);
 	if (!str) return;
 	if (!*str) {

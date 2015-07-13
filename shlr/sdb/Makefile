@@ -8,7 +8,7 @@ VAPIDIR=$(PFX)/share/vala/vapi/
 MANDIR=${PFX}/share/man/man1
 MKDIR=mkdir
 
-all: pkgconfig src/sdb-version.h
+all: pkgconfig src/sdb_version.h
 	${MAKE} -C src
 ifeq ($(BUILD_MEMCACHE),1)
 	${MAKE} -C memcache
@@ -23,24 +23,24 @@ test:
 	${MAKE} -C test
 
 asan:
-	${MAKE} src/sdb-version.h
+	${MAKE} src/sdb_version.h
 	${MAKE} -C src CC="gcc -fsanitize=address" LDFLAGS=-lasan all
 
 pkgconfig:
 	[ -d pkgconfig ] && ${MAKE} -C pkgconfig || true
 
-src/sdb-version.h:
-	echo '#define SDB_VERSION "${SDBVER}"' > src/sdb-version.h
+src/sdb_version.h:
+	echo '#define SDB_VERSION "${SDBVER}"' > src/sdb_version.h
 
 CFILES=cdb.c buffer.c cdb_make.c ls.c ht.c sdb.c num.c base64.c
 CFILES+=json.c ns.c lock.c util.c disk.c query.c array.c fmt.c main.c
 EMCCFLAGS=-O2 -s EXPORTED_FUNCTIONS="['_sdb_querys','_sdb_new0']"
 #EMCCFLAGS+=--embed-file sdb.data
-sdb.js: src/sdb-version.h
+sdb.js: src/sdb_version.h
 	cd src ; emcc ${EMCCFLAGS} -I. -o ../sdb.js ${CFILES}
 
 clean:
-	rm -f src/sdb-version.h
+	rm -f src/sdb_version.h
 	cd src && ${MAKE} clean
 	cd memcache && ${MAKE} clean
 	cd test && ${MAKE} clean
@@ -69,7 +69,7 @@ install-dirs:
 	$(INSTALL_DIR) ${MANDIR} ${PFX}/lib/pkgconfig ${PFX}/bin 
 	$(INSTALL_DIR) ${PFX}/share/vala/vapi ${PFX}/include/sdb
 
-INCFILES=src/sdb.h src/sdb-version.h src/cdb.h src/ht.h src/types.h
+INCFILES=src/sdb.h src/sdb_version.h src/cdb.h src/ht.h src/types.h
 INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h
 
 install: pkgconfig install-dirs
@@ -121,7 +121,7 @@ symstall: install-dirs
 	ln -fs ${PWD}/src/sdb.1 ${MANDIR}/sdb.1
 	ln -fs ${PWD}/src/sdb ${PFX}/bin
 	ln -fs ${PWD}/src/sdb.h ${PFX}/include/sdb
-	ln -fs ${PWD}/src/sdb-version.h ${PFX}/include/sdb
+	ln -fs ${PWD}/src/sdb_version.h ${PFX}/include/sdb
 	ln -fs ${PWD}/src/cdb.h ${PFX}/include/sdb
 	ln -fs ${PWD}/src/ht.h ${PFX}/include/sdb
 	ln -fs ${PWD}/src/types.h ${PFX}/include/sdb
@@ -146,7 +146,7 @@ WCP=i386-mingw32
 # mxe
 #WCP=i686-pc-mingw32
 
-w32: src/sdb-version.h
+w32: src/sdb_version.h
 	cd src ; \
 	${MAKE} OS=w32 WCP=${WCP} CC=${WCP}-gcc AR=${WCP}-ar RANLIB=${WCP}-ranlib sdb.exe
 
@@ -154,7 +154,7 @@ w32: src/sdb-version.h
 IOS_CC=$(shell xcrun --sdk iphoneos --find clang) -isysroot $(shell xcrun --sdk iphoneos --show-sdk-path) -arch armv7 -arch arm64
 IOS_AR=$(shell xcrun --sdk iphoneos --find ar)
 IOS_RL=$(shell xcrun --sdk iphoneos --find ranlib)
-ios: src/sdb-version.h
+ios: src/sdb_version.h
 	${MAKE} OS=Darwin ARCH=arm CC="${IOS_CC}" AR="${IOS_AR}" RANLIB="${IOS_RL}" HAVE_VALA= all
 
 .PHONY: all ${VALADIR} clean dist w32 ios

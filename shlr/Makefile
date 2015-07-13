@@ -55,6 +55,7 @@ clean mrproper:
 	cd wind && $(MAKE) clean
 	rm -f sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE}
 	cd sdb && $(MAKE) clean
+	rm -f sdb/src/.sdb sdb/sdb
 	rm -f sdb/sdb${EXT_EXE}
 	@for a in ${MODS} ; do $(MAKE) -C $$a clean ; done
 
@@ -75,20 +76,28 @@ $(SDBLIB) sdb/sdb${EXT_EXE} sdb/sdb:
 	@echo BUILD_OS ${BUILD_OS}
 	@echo ============
 	@echo
-	cd sdb ; $(MAKE) src/sdb-version.h
-	cd sdb ; $(MAKE) clean
-	echo "NATIVE BUILD SDB"
-	cd sdb ; \
-		$(MAKE) clean && \
-		$(MAKE) CC=${HOST_CC} CFLAGS='${HOST_CFLAGS} -fPIC' && \
-		cp -f src/sdb${BUILD_EXT_EXE} src/.sdb${BUILD_EXT_EXE}
-	cd sdb ; $(MAKE) clean
-	cd sdb ; $(MAKE) src/sdb-version.h
-	echo "TRANS BUILD SDB"
+	@echo
+	@echo ">>>>>>>>>>>>>>>>"
+	@echo "NATIVE BUILD SDB"
+	@echo ">>>>>>>>>>>>>>>>"
+	@echo
+	$(MAKE) -C sdb clean
+	$(MAKE) -C sdb src/sdb_version.h
+	$(MAKE) -C sdb/src CC=${HOST_CC} CFLAGS='${HOST_CFLAGS} -fPIC' bin
+	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/src/.sdb${BUILD_EXT_EXE}
+	@echo
+	@echo ">>>>>>>>>>>>>>>>"
+	@echo "TARGET BUILD SDB"
+	@echo ">>>>>>>>>>>>>>>>"
+	@echo
+	$(MAKE) -C sdb clean
+	cd sdb ; $(MAKE) src/sdb_version.h
 	cd sdb/src ; $(MAKE) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
 		CC="${CC}" AR="${AR}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 	${RANLIB} sdb/src/libsdb.a
+ifneq (${EXT_AR},.a)
 	-cp -f sdb/src/libsdb.a sdb/src/libsdb.${EXT_AR}
+endif
 	rm -f $@
 	cp sdb/src/.sdb${BUILD_EXT_EXE} $@
 
@@ -115,8 +124,8 @@ sdb-sync sync-sdb:
 	cp -rf ${SYNCFILES} sdb
 	rm -rf sdb.vc $I/sdb
 	mkdir -p $I/sdb
-	rm -f src/sdb-version.h
-	cd sdb ; $(MAKE) src/sdb-version.h
+	rm -f src/sdb_version.h
+	cd sdb ; $(MAKE) src/sdb_version.h
 	cp -f sdb/src/*.h $I/sdb
 	echo '#include <sdb/sdb.h>' > $I/sdb.h
 	mkdir -p sdb/test sdb/memcache

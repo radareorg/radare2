@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2014-2015 - pancake */
+/* sdb - MIT - Copyright 2014-2015 - pancake */
 
 #include "sdb.h"
 #include <stdarg.h>
@@ -75,7 +75,7 @@ SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 			n = sizeof (size_t);
 			break;
 		}
-		len += R_MAX (sizeof (void*), n); // align
+		len += R_MAX ((long)sizeof (void*), n); // align
 	}
 	return out;
 }
@@ -108,7 +108,7 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 		case 'p': *((void**)(stru + idx)) = (void*)(size_t)sdb_atoi (word);
 			break;
 		}
-		idx += R_MAX(sizeof (void*), n); // align
+		idx += R_MAX((long)sizeof (void*), n); // align
 		if (!next)
 			break;
 		ptr = next;
@@ -130,7 +130,7 @@ SDB_API void sdb_fmt_free (void *stru, const char *fmt) {
 		case 'z':
 		case 's': free ((void*)*((char**)(stru+len))); break;
 		}
-		len += R_MAX (sizeof (void*), n); // align
+		len += R_MAX ((long)sizeof (void*), n); // align
 	}
 }
 
