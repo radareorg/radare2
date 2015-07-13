@@ -304,7 +304,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		r_cons_clear00 ();
 
 		if (menu) {
-			r_cons_printf ("Flags in flagspace '%s'. Press '?' for help.\n",
+			r_cons_printf ("Flags in flagspace '%s'. Press '?' for help.\n\n",
 			(core->flags->space_idx==-1)?"*":core->flags->spaces[core->flags->space_idx]);
 			hit = 0;
 			i = j = 0;
@@ -345,7 +345,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				if (*cmd) r_core_cmd (core, cmd, 0);
 			} else r_cons_printf ("(no flags)\n");
 		} else {
-			r_cons_printf ("Flag spaces:\n");
+			r_cons_printf ("Flag spaces:\n\n");
 			hit = 0;
 			for (j=i=0;i<R_FLAG_SPACES_MAX;i++) {
 				if (core->flags->spaces[i]) {
@@ -738,7 +738,7 @@ R_API void r_core_visual_config(RCore *core) {
 
 		switch (menu) {
 		case 0: // flag space
-			r_cons_printf ("[EvalSpace]\n");
+			r_cons_printf ("[EvalSpace]\n\n");
 			hit = j = i = 0;
 			r_list_foreach (core->config->nodes, iter, bt) {
 				if (option==i) {
@@ -768,7 +768,7 @@ R_API void r_core_visual_config(RCore *core) {
 			r_cons_printf ("\n Sel:%s \n\n", fs);
 			break;
 		case 1: // flag selection
-			r_cons_printf ("[EvalSpace < Variables: %s]\n", fs);
+			r_cons_printf ("[EvalSpace < Variables: %s]\n\n", fs);
 			hit = 0;
 			j = i = 0;
 			// TODO: cut -d '.' -f 1 | sort | uniq !!!

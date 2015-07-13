@@ -225,7 +225,6 @@ R_API RCons *r_cons_new () {
 	I.pager = NULL; /* no pager by default */
 	I.truecolor = 0;
 	I.mouse = 0;
-	I.newline = R_TRUE;
 	r_cons_pal_null ();
 	r_cons_pal_init (NULL);
 	r_cons_rgb_init ();
@@ -443,24 +442,7 @@ R_API void r_cons_flush() {
 	if (I.is_html) r_cons_html_print (I.buffer);
 	else r_cons_write (I.buffer, I.buffer_len);
 
-	// TODO: remove this newline in the future. Stuff without newline should have one.
-	//
-	// add newline if there's no one in buffer. this fixes the problem of printing
-	// stuff without newline to the console and the prompt hides it.
-	if (I.newline && I.buffer_len>0)
-		if (I.buffer[I.buffer_len-1]!= '\n')
-			write (2, "\n", 1);
 	r_cons_reset ();
-}
-
-/* TODO: remove this function in the future, because cons
- *       shouldn't at all print a newline. Commands that
- *       need a newline should print it themselves. */
-R_API void r_cons_flush_nonewline() {
-	int old_newline = I.newline;
-	I.newline = R_FALSE;
-	r_cons_flush();
-	I.newline = old_newline;
 }
 
 R_API void r_cons_visual_flush() {
@@ -494,9 +476,9 @@ R_API void r_cons_visual_flush() {
 R_API void r_cons_visual_write (char *buffer) {
 	char white[1024];
 	int cols = I.columns;
-	int alen, lines = I.rows;
+	int alen, plen, lines = I.rows;
 	const char *endptr;
-	char *nl, *ptr = buffer;
+	char *nl, *ptr = buffer, *pptr;
 
 	if (I.null)
 		return;
@@ -506,44 +488,41 @@ R_API void r_cons_visual_write (char *buffer) {
 		int len = ((int)(size_t)(nl-ptr))+1;
 
 		*nl = 0;
-		//alen = r_str_ansi_len (ptr);
-// handle ansi chars
-		 {
+		{
 			int utf8len = r_str_len_utf8 (ptr);
 			int ansilen = r_str_ansi_len (ptr);
 			int diff = len-utf8len;
 			if (diff) diff--;
 			alen = ansilen - diff;
-		 }
+		}
 		*nl = '\n';
+		pptr = ptr > buffer ? ptr - 1 : ptr;
+		plen = ptr > buffer ? len : len - 1;
 
-		if (alen>cols) {
+		if (alen > cols) {
 			endptr = r_str_ansi_chrn (ptr, cols);
 			endptr++;
 			len = (endptr-ptr);
-			if (lines>0) {
-				r_cons_write (ptr, len);
-			}
+			plen = ptr > buffer ? len : len - 1;
+			if (lines > 0)
+				r_cons_write (pptr, plen);
 		} else {
-			if (lines>0) {
-				int w = cols-alen;
-				if (ptr>buffer) r_cons_write (ptr-1, len);
-				else r_cons_write (ptr, len-1);
-				if (I.blankline && w>0) { 
+			if (lines > 0) {
+				int w = cols - alen;
+				r_cons_write (pptr, plen);
+				if (I.blankline && w>0) {
 					if (w>sizeof (white)-1)
 						w = sizeof (white)-1;
 					r_cons_write (white, w);
 				}
 			}
-#if 1
+
 			// TRICK to empty columns.. maybe buggy in w32
 			if (r_mem_mem ((const ut8*)ptr, len, (const ut8*)"\x1b[0;0H", 6)) {
 				lines = I.rows;
-				r_cons_write (ptr, len);
+				r_cons_write (pptr, plen);
 			}
-#endif
 		}
-//r_cons_write ("\r\n", 2);
 		lines--; // do not use last line
 		ptr = nl+1;
 	}
@@ -551,7 +530,7 @@ R_API void r_cons_visual_write (char *buffer) {
 	if (lines>0) {
 		if (cols>sizeof (white))
 			cols = sizeof (white);
-		while (lines-->0)
+		while (--lines > 0)
 			r_cons_write (white, cols);
 	}
 }
