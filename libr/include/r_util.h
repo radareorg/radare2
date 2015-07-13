@@ -290,13 +290,13 @@ typedef struct r_graph_t {
 typedef struct r_graph_visitor_t {
 	void (*discover_node)(RGraphNode *n, struct r_graph_visitor_t *vis);
 	void (*finish_node)(RGraphNode *n, struct r_graph_visitor_t *vis);
-	void (*tree_edge)(RGraphNode *u, RGraphNode *v, struct r_graph_visitor_t *vis);
-	void (*back_edge)(RGraphNode *u, RGraphNode *v, struct r_graph_visitor_t *vis);
-	void (*fcross_edge)(RGraphNode *u, RGraphNode *v, struct r_graph_visitor_t *vis);
+	void (*tree_edge)(const RGraphEdge *e, struct r_graph_visitor_t *vis);
+	void (*back_edge)(const RGraphEdge *e, struct r_graph_visitor_t *vis);
+	void (*fcross_edge)(const RGraphEdge *e, struct r_graph_visitor_t *vis);
 	void *data;
 } RGraphVisitor;
 typedef void (*RGraphNodeCallback)(RGraphNode *n, RGraphVisitor *vis);
-typedef void (*RGraphEdgeCallback)(RGraphNode *u, RGraphNode *v, RGraphVisitor *vis);
+typedef void (*RGraphEdgeCallback)(const RGraphEdge *e, RGraphVisitor *vis);
 
 #ifdef R_API
 R_API RStack *r_stack_new (unsigned int n);

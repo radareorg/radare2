@@ -343,13 +343,14 @@ static int layer_sweep (const RGraph *g, const struct layer_t layers[],
 	return changed;
 }
 
-static void view_cyclic_edge (RGraphNode *from, RGraphNode *to, const RGraphVisitor *vis) {
+static void view_cyclic_edge (const RGraphEdge *e, const RGraphVisitor *vis) {
 	const RAGraph *g = (RAGraph *)vis->data;
-	RGraphEdge *e = R_NEW (RGraphEdge);
+	RGraphEdge *new_e = R_NEW (RGraphEdge);
 
-	e->from = from;
-	e->to = to;
-	r_list_append (g->back_edges, e);
+	new_e->from = e->from;
+	new_e->to = e->to;
+	new_e->nth = e->nth;
+	r_list_append (g->back_edges, new_e);
 }
 
 static int get_depth (Sdb *path, const RGraphNode *n) {
@@ -360,27 +361,28 @@ static int get_depth (Sdb *path, const RGraphNode *n) {
 	return res;
 }
 
-static void set_layer (const RGraphNode *from, const RGraphNode *to, const RGraphVisitor *vis) {
+static void set_layer (const RGraphEdge *e, const RGraphVisitor *vis) {
 	Sdb *path = (Sdb *)vis->data;
 	int bdepth, adepth;
 
-	adepth = get_depth (path, from);
-	bdepth = get_depth (path, to);
+	adepth = get_depth (path, e->from);
+	bdepth = get_depth (path, e->to);
 
 	if (adepth + 1 > bdepth)
-		hash_set (path, to, from);
+		hash_set (path, e->to, e->from);
 }
 
-static void view_dummy (RGraphNode *from, RGraphNode *to, const RGraphVisitor *vis) {
-	const RANode *a = get_anode (from);
-	const RANode *b = get_anode (to);
+static void view_dummy (const RGraphEdge *e, const RGraphVisitor *vis) {
+	const RANode *a = get_anode (e->from);
+	const RANode *b = get_anode (e->to);
 	RList *long_edges = (RList *)vis->data;
 
 	if (R_ABS (a->layer - b->layer) > 1) {
-		RGraphEdge *e = R_NEW (RGraphEdge);
-		e->from = from;
-		e->to = to;
-		r_list_append (long_edges, e);
+		RGraphEdge *new_e = R_NEW (RGraphEdge);
+		new_e->from = e->from;
+		new_e->to = e->to;
+		new_e->nth = e->nth;
+		r_list_append (long_edges, new_e);
 	}
 }
 
