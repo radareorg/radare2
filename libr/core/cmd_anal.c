@@ -258,10 +258,11 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		ret = r_anal_op (core->anal, &op, core->offset+idx, buf + idx, len-idx);
 		if (ret<1 && fmt!='d') {
-			if (idx+2 < core->blocksize)
-				eprintf ("Oops at 0x%08"PFMT64x" (%02x %02x %02x ...)\n",
-					core->offset+idx, buf[idx],
-					buf[idx+1], buf[idx+2]);
+			eprintf ("Oops at 0x%08"PFMT64x" (", core->offset+idx);
+			for (i=idx, j=0 ; i < core->blocksize || j<3 ; i++, j++){
+				eprintf ("%02x ", buf[idx]);
+			}
+			eprintf ("...)\n");
 			break;
 		}
 		size = (hint&&hint->size)? hint->size: op.size;
