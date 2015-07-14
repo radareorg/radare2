@@ -1107,7 +1107,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.xrefs", "true", "Show xrefs in disassembly");
 	SETPREF("asm.demangle", "true", "Show demangled symbols in disasm");
 	SETPREF("asm.describe", "false", "Show opcode description");
-	SETPREF("asm.cursor", "true", "Show cursor before the disassembly");
+	SETPREF("asm.indicators", "true", "Show indicators before the disassembly");
 	SETCB("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");
