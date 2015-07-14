@@ -21,15 +21,15 @@
 static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr64) {
 	if (addr) {
 		if (endian)
-			*addr = (*(buf+i))<<24
-			| (*(buf+i+1))<<16
-			| (*(buf+i+2))<<8
-			| (*(buf+i+3));
+			*addr = ((ut32)*(buf+i))<<24)
+			| ((ut32)*(buf+i+1))<<16)
+			| ((ut32)*(buf+i+2))<<8)
+			| ((ut32)*(buf+i+3)));
 		else
-			*addr = (*(buf+i+3))<<24
-			| (*(buf+i+2))<<16
-			| (*(buf+i+1))<<8
-			| (*(buf+i));
+			*addr = ((ut32)*(buf+i+3))<<24)
+			| ((ut32)(*(buf+i+2))<<16)
+			| ((ut32)(*(buf+i+1))<<8)
+			| ((ut32)(*(buf+i)));
 	}
 	if (addr64) {
 		if (endian)
