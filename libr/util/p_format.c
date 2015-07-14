@@ -21,19 +21,19 @@
 static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr64) {
 	if (addr) {
 		if (endian)
-			*addr = ((ut32)*(buf+i))<<24)
-			| ((ut32)*(buf+i+1))<<16)
-			| ((ut32)*(buf+i+2))<<8)
-			| ((ut32)*(buf+i+3)));
+			*addr = ((ut32)(*(buf+i))<<24)
+			| ((ut32)(*(buf+i+1))<<16)
+			| ((ut32)(*(buf+i+2))<<8)
+			| ((ut32)(*(buf+i+3)));
 		else
-			*addr = ((ut32)*(buf+i+3))<<24)
+			*addr = ((ut32)(*(buf+i+3))<<24)
 			| ((ut32)(*(buf+i+2))<<16)
 			| ((ut32)(*(buf+i+1))<<8)
 			| ((ut32)(*(buf+i)));
 	}
 	if (addr64) {
 		if (endian)
-			*addr64 = (((ut64)(*(buf+i))<<56))
+			*addr64 = ((ut64)(*(buf+i))<<56)
 			| ((ut64)(*(buf+i+1))<<48)
 			| ((ut64)(*(buf+i+2))<<40)
 			| ((ut64)(*(buf+i+3))<<32)
@@ -42,7 +42,7 @@ static void updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *addr
 			| ((ut64)(*(buf+i+6))<<8)
 			| ((ut64)(*(buf+i+7)));
 		else
-			*addr64 =(((ut64)(*(buf+i+7))<<56))
+			*addr64 = ((ut64)(*(buf+i+7))<<56)
 			| ((ut64)(*(buf+i+6))<<48)
 			| ((ut64)(*(buf+i+5))<<40)
 			| ((ut64)(*(buf+i+4))<<32)

@@ -733,15 +733,18 @@ static int already_entry (RList *entries, ut64 vaddr) {
 
 static RList* entries(RBinFile *arch) {
 	RListIter *iter;
-	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
-	RList *ret = r_list_new ();
-	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	RBinDexObj *bin;
+	RList *ret;
+	RBinAddr *ptr;
 	RBinSymbol *m;
-	if (!arch || !bin) {
-		free (ret);
-		free (ptr);
+
+	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
-	}
+
+	bin = (RBinDexObj*) arch->o->bin_obj;
+	ret = r_list_new ();
+	ptr = R_NEW0 (RBinAddr);
+
 	if (!bin->methods_list) {
 		dex_loadcode (arch, bin);
 	}
