@@ -79,7 +79,7 @@ typedef struct r_disam_options_t {
 	int show_xrefs;
 	int show_functions;
 	int show_fcncalls;
-	int show_cursor;
+	int show_marks;
 	int cursor;
 	int show_comment_right_default;
 	int flagspace_ports;
@@ -324,7 +324,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmtright");
 	ds->show_comment_right = r_config_get_i (core->config, "asm.cmtright"); // XX conflict with show_comment_right_default
 	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
-	ds->show_cursor = r_config_get_i (core->config, "asm.cursor");
+	ds->show_marks = r_config_get_i (core->config, "asm.marks");
 	ds->pre = strdup ("  ");
 	ds->ocomment = NULL;
 	ds->linesopts = 0;
@@ -763,7 +763,7 @@ static void handle_atabs_option(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
-	if (!ds->show_cursor) return;
+	if (!ds->show_marks) return;
 
 	int q = core->print->cur_enabled &&
 		ds->cursor >= ds->index &&
