@@ -220,6 +220,9 @@ R_API int r_core_search_preludes(RCore *core) {
 		int kwlen = r_hex_str2bin (prelude, kw);
 		ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
 		free (kw);
+	} else if (strstr (arch, "ppc")) {
+		ret = r_core_search_prelude (core, from, to,
+			(const ut8 *)"\x7c\x08\x02\xa6", 4, NULL, 0);
 	} else if (strstr (arch, "mips")) {
 		ret = r_core_search_prelude (core, from, to,
 			(const ut8 *)"\x27\xbd\x00", 3, NULL, 0);
