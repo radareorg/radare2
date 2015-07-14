@@ -1946,8 +1946,10 @@ R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
                                  const char *body) {
 	RANode *res = R_NEW0 (RANode);
 	if (!res) return NULL;
-	res->title = strdup(title);
-	res->body = strdup(body);
+	if (title)
+		res->title = strdup(title);
+	if (body)
+		res->body = strdup(body);
 	res->layer = -1;
 	res->pos_in_layer = -1;
 	res->is_dummy = R_FALSE;
