@@ -259,8 +259,8 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 		ret = r_anal_op (core->anal, &op, core->offset+idx, buf + idx, len-idx);
 		if (ret<1 && fmt!='d') {
 			eprintf ("Oops at 0x%08"PFMT64x" (", core->offset+idx);
-			for (i=idx, j=0 ; i < core->blocksize || j<3 ; i++, j++){
-				eprintf ("%02x ", buf[idx]);
+			for (i=idx,j=0 ; i < core->blocksize && j<3 ;++i,++j){
+				eprintf ("%02x ", buf[i]);
 			}
 			eprintf ("...)\n");
 			break;
