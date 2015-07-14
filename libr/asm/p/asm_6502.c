@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake
-	2014 - condret					*/
+/* radare - LGPL - Copyright 2012-2015 - pancake, condret */
 
 // copypasta from asm_gb.c
 
