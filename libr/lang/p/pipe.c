@@ -41,12 +41,11 @@ static HANDLE  myCreateChildProcess(const char * szCmdline) {
 #endif
 
 static int lang_pipe_run(RLang *lang, const char *code, int len) {
+#if __UNIX__
 	int safe_in = dup (0);
 	int child, ret;
 	int input[2];
 	int output[2];
-
-#if __UNIX__
 	pipe (input);
 	pipe (output);
 
@@ -130,7 +129,6 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	DWORD dwRead, dwWritten;
 	CHAR buf[1024];
 	BOOL bSuccess = FALSE;
-	SECURITY_ATTRIBUTES saAttr;
 	int res=0;
 	sprintf(buf,"R2PIPE_IN%x",_getpid());
 	SetEnvironmentVariable("R2PIPE_PATH",buf);

@@ -1018,7 +1018,7 @@ static void r_bin_dwarf_dump_attr_value(const RBinDwarfAttrValue *val, FILE *f)
 	case DW_FORM_block1:
 	case DW_FORM_block2:
 	case DW_FORM_block4:
-		fprintf (f, "%llu byte block:", val->encoding.block.length);
+		fprintf (f, "%"PFMT64u" byte block:", val->encoding.block.length);
 		for (i = 0; i < val->encoding.block.length; i++) {
 			fprintf (f, "%02x", val->encoding.block.data[i]);
 		}
@@ -1027,7 +1027,7 @@ static void r_bin_dwarf_dump_attr_value(const RBinDwarfAttrValue *val, FILE *f)
 	case DW_FORM_data2:
 	case DW_FORM_data4:
 	case DW_FORM_data8:
-		fprintf (f, "%llu", val->encoding.data);
+		fprintf (f, "%"PFMT64u"", val->encoding.data);
 		if (val->name == DW_AT_language) {
 			fprintf (f, "   (%s)", dwarf_langs[val->encoding.data]);
 		}
@@ -1049,7 +1049,7 @@ static void r_bin_dwarf_dump_attr_value(const RBinDwarfAttrValue *val, FILE *f)
 		fprintf (f, "%"PFMT64d"", val->encoding.sdata);
 		break;
 	case DW_FORM_udata:
-		fprintf (f, "%llu", val->encoding.data);
+		fprintf (f, "%"PFMT64u"", val->encoding.data);
 		break;
 	case DW_FORM_ref_addr:
 		fprintf (f, "<0x%"PFMT64x">", val->encoding.reference);
@@ -1081,7 +1081,7 @@ static void r_bin_dwarf_dump_debug_info (FILE *f, const RBinDwarfDebugInfo *inf)
 		dies = inf->comp_units[i].dies;
 
 		for (j = 0; j < inf->comp_units[i].length; j++) {
-			fprintf(f, "    Abbrev Number: %llu ", dies[j].abbrev_code);
+			fprintf(f, "    Abbrev Number: %"PFMT64u" ", dies[j].abbrev_code);
 
 			if (dies[j].tag && dies[j].tag <= DW_TAG_volatile_type &&
 				       dwarf_tag_name_encodings[dies[j].tag]) {

@@ -1667,7 +1667,7 @@ static void debug_trace_calls (RCore *core, const char *input) {
 		else
 			bp_final = r_bp_add_sw (core->dbg->bp, final_addr, 1, R_BP_PROT_EXEC);
 		if (!bp_final)
-			eprintf ("Cannot set breakpoint at final address (%llx)\n", final_addr);
+			eprintf ("Cannot set breakpoint at final address (%"PFMT64x")\n", final_addr);
 	}
 
 	do_debug_trace_calls (core, from, to, final_addr);

@@ -206,6 +206,7 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 
 static char *crash_handler_cmd = NULL;
 
+#if __UNIX__
 static void signal_handler(int signum) {
 	int len;
 	char *cmd;
@@ -228,6 +229,7 @@ static int checkcmd(const char *c) {
 	}
 	return 1;
 }
+#endif
 
 R_API int r_sys_crash_handler(const char *cmd) {
 #if __UNIX__
@@ -623,7 +625,7 @@ R_API int r_is_heap (void *p) {
 
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	DWORD WINAPI (*QueryFullProcessImageNameA) (HANDLE, DWORD, LPTSTR, PDWORD);
+	BOOL WINAPI (*QueryFullProcessImageNameA) (HANDLE, DWORD, LPTSTR, PDWORD);
 	DWORD WINAPI (*GetProcessImageFileNameA) (HANDLE, LPTSTR, DWORD);
 	HANDLE kernel32 = LoadLibrary ("Kernel32.dll");
 	if (!kernel32) {

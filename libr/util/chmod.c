@@ -7,12 +7,14 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#if __UNIX__
 static int chmodr(const char *, int recursive);
 static int parsemode(const char *);
 static void recurse(const char *path, int rec, int (*fn)(const char *,int));
 
 static char oper = '=';
 static mode_t mode = 0;
+#endif
 
 R_API int r_file_chmod (const char *file, const char *mod, int recursive) {
 #if __UNIX__
