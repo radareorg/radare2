@@ -72,7 +72,11 @@ SDB_TARGETS+=sdb/sdb${EXT_EXE}
 else
 SDB_TARGETS+=sdb/sdb
 endif
-ifneq (${BUILD_EXT_EXE},)
+
+ifeq (${BUILD_EXT_EXE},)
+# TODO avoid dup
+SDB_TARGETS+=sdb/sdb
+else
 SDB_TARGETS+=sdb/sdb${BUILD_EXT_EXE}
 endif
 
