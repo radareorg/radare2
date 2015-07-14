@@ -817,6 +817,7 @@ R_API void r_core_visual_config(RCore *core) {
 			break;
 		case 'q':
 			if (menu<=0) return; menu--;
+			option = _option;
 			break;
 		case '*':
 		case '+':
