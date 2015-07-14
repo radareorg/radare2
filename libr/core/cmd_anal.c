@@ -2028,7 +2028,7 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 						char str[512];
 						r_parse_filter (core->parser, core->flags,
 								asmop.buf_asm, str, sizeof (str));
-						r_cons_printf ("{\"from\":%llu,\"type\":\"%c\",\"opcode\":\"%s\"}%s",
+						r_cons_printf ("{\"from\":%"PFMT64u",\"type\":\"%c\",\"opcode\":\"%s\"}%s",
 								ref->addr, ref->type, str, iter->n?",":"");
 					}
 					r_cons_printf("]");
