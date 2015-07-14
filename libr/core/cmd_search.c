@@ -1812,18 +1812,16 @@ static int cmd_search(void *data, const char *input) {
 					8, !core->assembler->big_endian);
 				r_search_kw_add (core->search,
 					r_search_keyword_new ((const ut8*)&n64, 8, NULL, 0, NULL));
-				break;
 			}
-			eprintf ("Usage: /v[1248] value\n");
+			else eprintf ("Usage: /v8 value\n");
 			break;
 		case '1':
 			if (input[param_offset]){
 				n8 = (ut8)r_num_math (core->num, input+param_offset);
 				r_search_kw_add (core->search,
 					r_search_keyword_new ((const ut8*)&n8, 1, NULL, 0, NULL));
-				break;
-			}
-			eprintf ("Usage: /v[1248] value\n");
+			} 
+			else eprintf ("Usage: /v1 value\n");
 			break;
 		case '2':
 			if (input[param_offset]){
@@ -1832,9 +1830,8 @@ static int cmd_search(void *data, const char *input) {
 					2, !core->assembler->big_endian);
 				r_search_kw_add (core->search,
 					r_search_keyword_new ((const ut8*)&n16, 2, NULL, 0, NULL));
-				break;
-			}
-			eprintf ("Usage: /v[1248] value\n");
+			} 
+			else eprintf ("Usage: /v2 value\n");
 			break;
 		default: // default size
 		case '4':
@@ -1845,10 +1842,9 @@ static int cmd_search(void *data, const char *input) {
 						4, !core->assembler->big_endian);
 					r_search_kw_add (core->search,
 						r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
-					break;
 				}
-			}
-			eprintf ("Usage: /v[1248] value\n");
+			} 
+			else eprintf ("Usage: /v4 value\n");
 			break;
 		}
 // TODO: Add support for /v4 /v8 /v2
