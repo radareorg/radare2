@@ -5,13 +5,13 @@ include ../../config-user.mk
 include ../../global.mk
 _INCLUDE_MK_GCC_=
 include ../../mk/${COMPILER}.mk
-SHLR?=$(shell pwd)/..
+SHLR?=..
 include ../zip/deps.mk
 
 OSTYPE?=$(shell uname | tr 'A-Z' 'a-z')
 ifeq (${OSTYPE},)
 all:
-	echo LE FAIL
+	echo "OSTYPE not defined"
 	exit 1
 endif
 
@@ -36,9 +36,11 @@ libr_java.a: ${OBJS}
 	${RANLIB} libr_java.a
 
 out: ${OBJS} main.o
-	echo ${COMPILER} ${CC}
+	echo "COMPILER: ${COMPILER} ${CC}"
+	ls -l ../zip/
+	ls -l ../sdb/src
 	${CC} ${LDFLAGS} ${CFLAGS} -I. ${OBJS} main.o \
-		-lr_util ${SHLR}/sdb/src/libsdb.a ${LINK} -o out 
+		-lr_util ../sdb/src/libsdb.a ${LINK} -o out
 
 clean:
 	rm -f ${OBJS} main.o a.out libr_java.a out

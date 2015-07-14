@@ -22,10 +22,11 @@ HOST_CC?=gcc
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=sdb udis86 java tcc zip 
+MODS=sdb zip udis86 java tcc
 ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
+MODS+=gdb
 SDB_URL=git://github.com/radare/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 PWD=$(shell pwd)
@@ -43,7 +44,7 @@ all:
 	exit 1
 endif
 
-preall: sdb/sdb sdb/sdb${EXT_EXE} libgdbr libwind capstone-build
+preall: targets libwind capstone-build
 	@for a in ${MODS} ; do \
 		echo $(MAKE) -C $$a ; \
 		$(MAKE) -C $$a HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
@@ -65,7 +66,19 @@ else
 BUILD_EXT_EXE=
 endif
 
-$(SDBLIB) sdb/sdb${EXT_EXE} sdb/sdb:
+SDB_TARGETS=$(SDBLIB)
+ifneq (${EXT_EXE},)
+SDB_TARGETS+=sdb/sdb${EXT_EXE}
+else
+SDB_TARGETS+=sdb/sdb
+endif
+ifneq (${BUILD_EXT_EXE},)
+SDB_TARGETS+=sdb/sdb${BUILD_EXT_EXE}
+endif
+
+targets: ${SDB_TARGETS}
+
+${SDB_TARGETS}:
 	@echo
 	@echo BUILD SUMARY
 	@echo ============
@@ -109,7 +122,7 @@ libgdbr:
 	cd gdb ; $(MAKE) all
 
 libwind:
-	cd wind; $(MAKE) all
+	cd wind ; $(MAKE) all
 
 sdb-clean clean-sdb:
 	$(MAKE) -C sdb clean

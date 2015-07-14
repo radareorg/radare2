@@ -24,7 +24,12 @@ HOST_CC?=gcc
 F_SDB=$(addsuffix .sdb,$F)
 
 SDBPATH=$(call rmdblslash,$(LTOP)/../shlr/sdb/)
-SDB=$(call rmdblslash,$(SDBPATH)/sdb)
+ifeq ($(BUILD_OS),windows)
+BUILD_EXT_EXE=.exe
+else
+BUILD_EXT_EXE=
+endif
+SDB=$(call rmdblslash,$(SDBPATH)/sdb${BUILD_EXT_EXE})
 
 all: ${SDB}
 	@$(MAKE) compile

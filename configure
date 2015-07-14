@@ -361,7 +361,7 @@ else
 fi
 printf "checking host endianness... "
 LIL_ENDIAN=$(printf I|od|awk '{print substr($2,6,1);exit}')
-if [ "${LIL_ENDIAN}" = 1 ]; then
+if [ 0 = 1 -o "${LIL_ENDIAN}" = 1 ]; then
 	BYTEORDER=1234
 	BIG_ENDIAN=0
 	echo little
