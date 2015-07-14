@@ -2307,57 +2307,45 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		r_agraph_reset (core->graph);
 		break;
 	case 'n':
-		/* TODO: accept title and body with spaces (wrapped in "") */
 		/* TODO: accept base64 body */
 		input++;
 		if (*input == ' ') {
-			char *title, *body;
-			int len;
+			char **args;
+			int n_args;
 
 			input++;
-			arg = r_str_tok (input, ' ', -1);
-			if (arg) {
-				len = arg - input;
-				title = r_str_ndup (input, len);
-
-				input = arg;
-				while (*input == ' ') input++;
-				arg = r_str_tok (input, ' ', -1);
-				len = arg ? arg - input : strlen (input);
-				body = r_str_ndup (input, len);
-
-				r_agraph_add_node (core->graph, title, body);
+			args = r_str_argv (input, &n_args);
+			if (n_args != 2) {
+				r_cons_printf ("Wrong arguments\n");
+				break;
 			}
+
+			r_agraph_add_node (core->graph, args[0], args[1]);
+			r_str_argv_free (args);
 		}
 		break;
 	case 'e':
-		/* TODO: accept titles with spaces (wrapped in "") */
 		input++;
 		if (*input == ' ') {
 			RANode *u, *v;
-			char *title1, *title2;
-			int len;
+			char **args;
+			int n_args;
 
 			input++;
-			arg = r_str_tok (input, ' ', -1);
-			if (arg) {
-				len = arg - input;
-				title1 = r_str_ndup (input, len);
-
-				input = arg;
-				while (*input == ' ') input++;
-				arg = r_str_tok (input, ' ', -1);
-				len = arg ? arg - input : strlen (input);
-				title2 = r_str_ndup (input, len);
-
-				u = r_agraph_get_node (core->graph, title1);
-				v = r_agraph_get_node (core->graph, title2);
-				if (!u || !v) {
-					r_cons_printf ("nodes not found!\n");
-					break;
-				}
-				r_agraph_add_edge (core->graph, u, v);
+			args = r_str_argv (input, &n_args);
+			if (n_args != 2) {
+				r_cons_printf("Wrong arguments\n");
+				break;
 			}
+
+			u = r_agraph_get_node (core->graph, args[0]);
+			v = r_agraph_get_node (core->graph, args[1]);
+			if (!u || !v) {
+				r_cons_printf ("Nodes not found!\n");
+				break;
+			}
+			r_agraph_add_edge (core->graph, u, v);
+			r_str_argv_free (args);
 		}
 		break;
 	case 'g':

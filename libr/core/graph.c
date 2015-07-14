@@ -90,7 +90,7 @@ static void update_node_dimension(const RGraph *g, int is_small, int zoom) {
 			n->w = strlen (SMALLNODE_TEXT);
 		} else {
 			n->w = r_str_bounds (n->body, &n->h);
-			n->w = R_MAX (n->w, strlen (n->title));
+			n->w = R_MAX (n->w, strlen (n->title) + MARGIN_TEXT_X);
 			n->w += BORDER_WIDTH;
 			n->h += BORDER_HEIGHT;
 			/* scale node by zoom */
@@ -1454,6 +1454,9 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		node = r_agraph_add_node (g, title, body);
 		if (!node)
 			return R_FALSE;
+
+		free (body);
+		free (title);
 	}
 
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -1493,10 +1496,11 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	char *code, *title, *body;
 
 	title = get_title (fcn->addr);
-	fcn_anode = r_agraph_add_node (g, title, strdup (""));
+	fcn_anode = r_agraph_add_node (g, title, "");
 	if (!fcn_anode)
 		return R_FALSE;
 
+	free (title);
 	fcn_anode->x = 10;
 	fcn_anode->y = 3;
 
@@ -1526,6 +1530,8 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		node = r_agraph_add_node (g, title, body);
 		if (!node)
 			return R_FALSE;
+		free (title);
+		free (body);
 
 		node->x = 10;
 		node->y = 10;
@@ -1940,8 +1946,8 @@ R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
                                  const char *body) {
 	RANode *res = R_NEW0 (RANode);
 	if (!res) return NULL;
-	res->title = title;
-	res->body = body;
+	res->title = strdup(title);
+	res->body = strdup(body);
 	res->layer = -1;
 	res->pos_in_layer = -1;
 	res->is_dummy = R_FALSE;
