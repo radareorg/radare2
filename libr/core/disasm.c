@@ -851,9 +851,14 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 			idx = 12-strlen (var->name);
 			if (idx<0)idx = 0;
 			spaces[idx] = 0;
+			if (!ds->show_fcnlines) {
+				r_cons_printf (" %s", ds->refline2);
+			}
 			if (ds->show_color) {
-				r_cons_printf ("%s%s %s"Color_RESET,
-						ds->color_fline, core->cons->vline[LINE_VERT], ds->refline2);
+				if (ds->show_fcnlines) {
+					r_cons_printf ("%s%s %s"Color_RESET,
+							ds->color_fline, core->cons->vline[LINE_VERT], ds->refline2);
+				}
 				r_cons_printf ("%s; %s %s %s %s@ %s%s0x%x"Color_RESET"\n",
 						ds->color_other,
 						var->kind=='v'?"var":"arg",
@@ -864,8 +869,10 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 						(var->kind=='v')?"-":"+",
 						var->delta);
 			} else {
-				r_cons_printf ("%s %s",
+				if (ds->show_fcnlines) {
+					r_cons_printf ("%s %s",
 						core->cons->vline[LINE_VERT], ds->refline2);
+				}
 				r_cons_printf ("; %s %s %s %s@ %s%s0x%x\n",
 						var->kind=='v'?"var":"arg",
 						var->type,
