@@ -77,6 +77,7 @@ typedef struct r_disam_options_t {
 	int show_xrefs;
 	int show_functions;
 	int show_fcncalls;
+	int show_cursor;
 	int cursor;
 	int show_comment_right_default;
 	int flagspace_ports;
@@ -319,6 +320,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmtright");
 	ds->show_comment_right = r_config_get_i (core->config, "asm.cmtright"); // XX conflict with show_comment_right_default
 	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
+	ds->show_cursor = r_config_get_i (core->config, "asm.cursor");
 	ds->pre = strdup ("  ");
 	ds->ocomment = NULL;
 	ds->linesopts = 0;
@@ -754,11 +756,20 @@ static void handle_atabs_option(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
+	if (!ds->show_cursor) return;
+
 	int q = core->print->cur_enabled &&
 		ds->cursor >= ds->index &&
 		ds->cursor < (ds->index+ds->asmop.size);
 	void *p = r_bp_get_at (core->dbg->bp, ds->at);
-	r_cons_printf (p&&q?"b*":p? "b ":q?"* ":"  ");
+	if (p && q)
+		r_cons_printf ("b*");
+	else if (p)
+		r_cons_printf ("b ");
+	else if (q)
+		r_cons_printf ("* ");
+	else
+		r_cons_printf ("  ");
 }
 
 
