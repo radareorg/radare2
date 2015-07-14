@@ -2357,7 +2357,8 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'm': //pm
 		if (input[1]=='?') {
-			r_cons_printf ("|Usage: pm [file|directory]\n"
+			r_cons_printf ("|Usage: pm[a] [file|directory]\n"
+				"| pma: scan till end of file\n"
 				"| r_magic will use given file/dir as reference\n"
 				"| output of those magic can contain expressions like:\n"
 				"|   foo@0x40   # use 'foo' magic file on address 0x40\n"
@@ -3019,7 +3020,7 @@ static int cmd_print(void *data, const char *input) {
 			 "p","[dD][ajbrfils] [sz] [a] [b]","disassemble N opcodes/bytes for Arch/Bits (see pd?)",
 			 "pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>) ",
 			 "p","[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
-			 "pm"," [magic]","print libmagic data (pm? for more information)",
+			 "pm","[a] [magic]","print libmagic data (pm? for more information)",
 			 "pr","[glx] [len]","print N raw bytes (in lines or hexblocks, 'g'unzip)",
 			 "p","[kK] [len]","print key in randomart (K is for mosaic)",
 			 "ps","[pwz] [len]","print pascal/wide/zero-terminated strings",
