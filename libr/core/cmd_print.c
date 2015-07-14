@@ -2364,6 +2364,7 @@ static int cmd_print(void *data, const char *input) {
 				"|   @0x40      # use current magic file on address 0x40\n"
 				"|   \\n         # append newline\n"
 				"| e dir.magic  # defaults to "R_MAGIC_PATH"\n"
+				"| /m           # search for magic signatures\n"
 				);
 		} else r_core_magic (core, input+1, R_TRUE);
 		break;
@@ -3019,7 +3020,7 @@ static int cmd_print(void *data, const char *input) {
 			 "p","[dD][ajbrfils] [sz] [a] [b]","disassemble N opcodes/bytes for Arch/Bits (see pd?)",
 			 "pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>) ",
 			 "p","[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
-			 "pm"," [magic]","print libmagic data (pm? for more information)",
+			 "pm"," [magic]","print libmagic data (see pm? and /m?)",
 			 "pr","[glx] [len]","print N raw bytes (in lines or hexblocks, 'g'unzip)",
 			 "p","[kK] [len]","print key in randomart (K is for mosaic)",
 			 "ps","[pwz] [len]","print pascal/wide/zero-terminated strings",
