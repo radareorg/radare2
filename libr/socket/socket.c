@@ -120,7 +120,7 @@ R_API RSocket *r_socket_new (int is_ssl) {
 	return s;
 }
 
-R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto, int timeout) {
+R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
 #if __WINDOWS__
 	struct sockaddr_in sa;
 	struct hostent *he;
@@ -172,26 +172,18 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 			s->fd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 			if (s->fd == -1)
 				continue;
-			if (timeout>0)
+			if (timeout>0) {
 				r_socket_block_time (s, 1, timeout);
 				//fcntl (s->fd, F_SETFL, O_NONBLOCK, 1);
+			}
 			ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
-			if (timeout<1) {
-				if (ret == -1) {
-					close (s->fd);
-					s->fd = -1;
-					freeaddrinfo (res);
-					return R_FALSE;
-				}
+
+			if (timeout == 0 && ret == 0) {
 				freeaddrinfo (res);
 				return R_TRUE;
-			}
-			if (ret<0) {
-				close (s->fd);
-				s->fd = -1;
-				continue;
-			}
-			if (timeout>0) {
+
+			} else if (ret == 0 /* || nonblocking */) {
+
 				struct timeval tv;
 				fd_set fdset, errset;
 				FD_ZERO (&fdset);
@@ -208,16 +200,13 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 					socklen_t len = sizeof so_error;
 					ret = getsockopt (s->fd, SOL_SOCKET,
 						SO_ERROR, &so_error, &len);
-			//		fcntl (s->fd, F_SETFL, O_NONBLOCK, 0);
-//					r_socket_block_time (s, 0, 0);
-					freeaddrinfo (res);
-					return R_TRUE;
-				} else {
-	//				freeaddrinfo (res);
-					close (s->fd);
-					s->fd = -1;
-					continue;
-	//				return R_FALSE;
+
+					if (so_error == 0) {
+						//fcntl (s->fd, F_SETFL, O_NONBLOCK, 0);
+						//r_socket_block_time (s, 0, 0);
+						freeaddrinfo (res);
+						return R_TRUE;
+					}
 				}
 			}
 			close (s->fd);
