@@ -33,10 +33,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	}
 	if (((addr&7)==0) && ((addr&(7<<8))==0))
 		eprintf ("0x%08"PFMT64x"\r", addr);
-	if (file) {
-		if (*file == ' ') file++;
-		if (!*file) file = NULL;
-	}
+
 	if (file && ofile && file != ofile) {
 		if (strcmp (file, ofile)) {
 			r_magic_free (ck);
@@ -150,10 +147,23 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	return adelta; //found;
 }
 
-static void r_core_magic(RCore *core, const char *file, int v) {
-	ut64 addr = core->offset;
+static void r_core_magic(RCore *core, const char *input, int v) {
+	ut64 addr, addr_start, addr_end;
+	addr = addr_start = addr_end = core->offset,
 	magicdepth = r_config_get_i (core->config, "magic.depth"); // TODO: do not use global var here
-	r_core_magic_at (core, file, addr, magicdepth, v);
-	if (addr != core->offset)
-		r_core_seek (core, addr, R_TRUE);
+	const char *file = NULL;
+	if (input) {
+		if (*input == 'a') {
+			addr_end = r_io_size (core->io);
+			input++;
+		}
+		while (*input == ' ') input++;
+		if (*input) file = input;
+	}
+	do {
+		r_core_magic_at (core, file, addr, magicdepth, v);
+		addr++;
+	} while (addr < addr_end);
+	if (addr_start != core->offset)
+		r_core_seek (core, addr_start, R_TRUE);
 }
