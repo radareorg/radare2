@@ -37,8 +37,6 @@ libr_java.a: ${OBJS}
 
 out: ${OBJS} main.o
 	echo "COMPILER: ${COMPILER} ${CC}"
-	ls -l ../zip/
-	ls -l ../sdb/src
 	${CC} ${LDFLAGS} ${CFLAGS} -I. ${OBJS} main.o \
 		-lr_util ../sdb/src/libsdb.a ${LINK} -o out
 

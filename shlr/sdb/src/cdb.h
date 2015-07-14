@@ -7,6 +7,8 @@
 #include "types.h"
 
 #define KVLSZ 4
+#define CDB_MAX_KEY 0xff
+#define CDB_MAX_VALUE 0xffffff
 
 /* TODO THIS MUST GTFO! */
 int cdb_getkvlen(int fd, ut32 *klen, ut32 *vlen);

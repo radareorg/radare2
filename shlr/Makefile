@@ -80,7 +80,8 @@ else
 SDB_TARGETS+=sdb/sdb${BUILD_EXT_EXE}
 endif
 
-targets: ${SDB_TARGETS}
+targets:
+	for a in ${SDB_TARGETS} ; do ${MAKE} $$a ; done
 
 ${SDB_TARGETS}:
 	@echo
