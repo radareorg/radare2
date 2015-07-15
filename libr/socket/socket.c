@@ -201,7 +201,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 					ret = getsockopt (s->fd, SOL_SOCKET,
 						SO_ERROR, &so_error, &len);
 
-					if (so_error == 0) {
+					if (ret == 0 && so_error == 0) {
 						//fcntl (s->fd, F_SETFL, O_NONBLOCK, 0);
 						//r_socket_block_time (s, 0, 0);
 						freeaddrinfo (res);

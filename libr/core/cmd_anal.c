@@ -2309,6 +2309,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'n':
 		input++;
 		if (*input == ' ') {
+			char *newbody = NULL;
 			char **args, *body;
 			int n_args, B_LEN = strlen ("base64:");
 
@@ -2316,15 +2317,19 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			args = r_str_argv (input, &n_args);
 			if (n_args != 2) {
 				r_cons_printf ("Wrong arguments\n");
+				r_str_argv_free (args);
 				break;
 			}
 
 			body = args[1];
-			if (strncmp(body, "base64:", B_LEN) == 0)
-				body = (char *)r_base64_decode_dyn (body + B_LEN, 0);
+			if (strncmp (body, "base64:", B_LEN) == 0) {
+				newbody = (char *)r_base64_decode_dyn (body + B_LEN, 0);
+				body = newbody;
 
+			}
 			r_agraph_add_node (core->graph, args[0], body);
 			r_str_argv_free (args);
+			free (newbody);
 		}
 		break;
 	case 'e':

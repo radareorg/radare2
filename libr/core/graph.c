@@ -1452,11 +1452,11 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		title = get_title (bb->addr);
 
 		node = r_agraph_add_node (g, title, body);
-		if (!node)
-			return R_FALSE;
-
 		free (body);
 		free (title);
+		if (!node) {
+			return R_FALSE;
+		}
 	}
 
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -1497,10 +1497,11 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 	title = get_title (fcn->addr);
 	fcn_anode = r_agraph_add_node (g, title, "");
+
+	free (title);
 	if (!fcn_anode)
 		return R_FALSE;
 
-	free (title);
 	fcn_anode->x = 10;
 	fcn_anode->y = 3;
 
