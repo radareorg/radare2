@@ -141,9 +141,9 @@ static int var_cmd(RCore *core, const char *str) {
 				char *name = strchr (vartype, ' ');
 				if (name) {
 					*name++ = 0;
-					eprintf ("SRC(%s)\n", p);
+					//eprintf ("SRC(%s)\n", p);
 					if (fcn) {
-						eprintf ("ADD (type=%s)(name=%s)\n", vartype, name);
+						//eprintf ("ADD (type=%s)(name=%s)\n", vartype, name);
 						r_anal_var_add (core->anal, fcn->addr,
 								scope, delta, type,
 								vartype, size, name);
