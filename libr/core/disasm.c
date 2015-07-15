@@ -2083,10 +2083,12 @@ static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
 	char *desc = NULL;
 	handle_print_relocs (core, ds);
 	if (ds->asm_describe) {
-		char *op = strchr (ds->asmop.buf_asm, ' ');
+		char *locase = strdup (ds->asmop.buf_asm);
+		char *op = strchr (locase, ' ');
 		if (op) *op = 0;
-		desc = r_asm_describe (core->assembler, ds->asmop.buf_asm);
-		if (op) *op = ' ';
+		r_str_case (locase, 0);
+		desc = r_asm_describe (core->assembler, locase);
+		free (locase);
 	}
 	if (ds->show_comments) {
 		if (desc) {
