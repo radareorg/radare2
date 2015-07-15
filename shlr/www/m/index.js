@@ -1,12 +1,18 @@
 
 var update = function() {/* nop */}
 var inColor = true;
+var lastView = 'pd';
 
 function uiButton(href,label,type) {
 if (type=='active') {
 	return '&nbsp;<a href="'+href.replace(/"/g,"'")+'" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast" style="background-color:#f04040 !important">'+label+'</a>';
 }
 	return '&nbsp;<a href="'+href.replace(/"/g,"'")+'" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">'+label+'</a>';
+}
+
+function clickableOffsets(x) {
+	x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a href='javascript:seek(\"0x$1\")'>0x$1</a>");
+	return x;
 }
 
 function comment() {
@@ -49,10 +55,19 @@ function flagsize() {
 	}
 }
 
-function seek() {
-	var addr = prompt ("address");
+function seek(x) {
+	if (x === undefined) {
+		var addr = prompt ("address");
+	} else {
+		var addr = x;
+	}
 	if (addr && addr.trim() != "") {
 		r2.cmd("s "+addr);
+		if (lastView == 'px') {
+			panelHexdump();
+		} else {
+			panelDisasm();
+		}
 		update();
 	}
 }
@@ -362,7 +377,8 @@ function panelFunctions() {
 	c.innerHTML += uiButton('javascript:analyzeNames()', 'AutoName');
 	r2.cmd("e scr.utf8=false");
 	r2.cmd ("afl", function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace' style='color:white !important'>"+d+"<pre>";
+		var dis = clickableOffsets (d);
+		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace' style='color:white !important'>"+dis+"<pre>";
 	});
 }
 
@@ -398,10 +414,48 @@ function panelConsole() {
 		c.innerHTML += "<div id='output' class='pre' style='color:white !important'><div>";
 	} else {
 		c.style.backgroundColor = "#f0f0f0";
-		c.innerHTML += "<input style='color:black' class='mdl-card--expand mdl-textfield__input' id='input'/>";
+		c.innerHTML += "<input style='color:black' onkeypress='consoleKey()' class='mdl-card--expand mdl-textfield__input' id='input'/>";
 		c.innerHTML += uiButton('javascript:runCommand()', 'Run');
 		c.innerHTML += "<div id='output' class='pre' style='color:black!important'><div>";
 	}
+}
+
+function searchKey(e) {
+	var inp = document.getElementById('search_input');
+	if (!e) {
+		inp.onkeypress = searchKey;
+	} else {
+		if (e.keyCode == 13) {
+			runSearch (inp.value);
+			inp.value = '';
+		}
+	}
+}
+
+function runSearch(text) {
+	if (!text)
+		text = document.getElementById('search_input').value;
+	if (text[0]=='"') {
+		r2.cmd ('"/ '+text+'"', function (d) {
+			document.getElementById('search_output').innerHTML = d;
+		});
+	} else {
+		r2.cmd ('"/x '+text+'"', function (d) {
+			document.getElementById('search_output').innerHTML = d;
+		});
+	}
+}
+
+function panelSearch() {
+	update = panelConsole;
+	document.getElementById('title').innerHTML = 'Search';
+	var c = document.getElementById("content");
+	var out = "<br />";
+	c.style.backgroundColor = "#f0f0f0";
+	out += "<input style='color:black' class='mdl-card--expand mdl-textfield__input' onkeypress='searchKey()' id='search_input'/>";
+	out += uiButton('javascript:runSearch()', 'Search');
+	out += "<div id='search_output' class='pre' style='color:black!important'><div>";
+	c.innerHTML = out;
 }
 
 function panelFlags() {
@@ -412,6 +466,7 @@ function panelFlags() {
 	c.innerHTML = "<br />";
 	c.innerHTML += uiButton('javascript:flagspaces()', 'Spaces');
 	r2.cmd ("f", function (d) {
+		d = clickableOffsets (d);
 		c.innerHTML += "<pre style='font-family:Console,Courier New, monospace' style='color:white !important'>"+d+"<pre>";
 	});
 }
@@ -428,34 +483,52 @@ function panelComments() {
 	});
 }
 
+function up() {
+	r2.cmd ("s--");
+	update();
+}
+
+function down() {
+	r2.cmd ("s++");
+	update();
+}
+
 function panelHexdump() {
 	update = panelHexdump;
+	lastView = 'px';
 	var c = document.getElementById("content");
 	document.getElementById('title').innerHTML = 'Hexdump';
 	if (inColor) {
 		c.style.backgroundColor = "#202020";
 	}
-	c.innerHTML = "<br />"; //Version: "+d;
-	c.innerHTML += uiButton('javascript:comment()', 'Comment');
-	c.innerHTML += uiButton('javascript:flag()', 'Flag');
-	c.innerHTML += uiButton('javascript:flagsize()', 'Size');
-	c.innerHTML += uiButton('javascript:block()', 'Block');
+	var out = "<br />"; //Version: "+d;
+	out += uiButton('javascript:up()', 'Up');
+	out += uiButton('javascript:down()', 'Down');
+	out += uiButton('javascript:comment()', 'Comment');
+	out += uiButton('javascript:flag()', 'Flag');
+	out += uiButton('javascript:flagsize()', 'Size');
+	out += uiButton('javascript:block()', 'Block');
+	c.innerHTML = out;
 	var tail = inColor? '@e:scr.color=1,scr.html=1': '';
 	r2.cmd ("pxa"+tail, function (d) {
 		var color = inColor? "white": "black";
+		d = clickableOffsets (d);
 		c.innerHTML += "<pre style='color:"+color+"!important'>"+d+"<pre>";
 	});
 }
 
 function panelDisasm() {
 	update = panelDisasm;
+	lastView = panelDisasm;
 	var c = document.getElementById("content");
 	document.getElementById('title').innerHTML = 'Disassembly';
 	if (inColor) {
 		c.style.backgroundColor = "#202020";
 	}
 	var out = "<br />";
-	out += '&nbsp;<a href="javascript:analyze()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Analyze</a>';
+	out += uiButton('javascript:up()', 'Up');
+	out += uiButton('javascript:down()', 'Down');
+	out += uiButton('javascript:analyze()', 'Analyze');
 	out += '&nbsp;<a href="javascript:comment()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Comment</a>';
 	out += '&nbsp;<a href="javascript:info()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Info</a>';
 	out += '&nbsp;<a href="javascript:rename()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Rename</a>';
@@ -465,7 +538,8 @@ function panelDisasm() {
 		tail = '@e:scr.color=1,scr.html=1';
 	}
 	r2.cmd ("pd 128"+tail, function (d) {
-		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace'>"+d+"<pre>";
+		var dis = clickableOffsets (d);
+		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace'>"+dis+"<pre>";
 	});
 }
 
@@ -494,14 +568,31 @@ function info() {
 	var c = document.getElementById('content');
 	var color = inColor? "white": "black";
 	document.getElementById('title').innerHTML = 'Info';
-	c.innerHTML = "<br />"; //Version: "+d;
-	c.innerHTML += uiButton ('javascript:panelDisasm()', '&lt; disasm');
-	c.innerHTML += uiButton ('javascript:graph()', 'graph');
-	c.innerHTML += uiButton ('javascript:decompile()', 'decompile');
+	var out = "<br />"; //Version: "+d;
+	out += uiButton ('javascript:panelDisasm()', '&lt; disasm');
+	out += uiButton ('javascript:graph()', 'graph');
+	out += uiButton ('javascript:blocks()', 'blocks');
+	out += uiButton ('javascript:decompile()', 'decompile');
+	out += uiButton('javascript:blocks()', 'Blocks');
+	c.innerHTML = out;
 	r2.cmd ("afi", function (d) {
 		c.innerHTML += "<pre style='font-family:Console,Courier,monospace;color:"+color+"'>"+d+"<pre>";
 	});
 }
+
+function blocks() {
+	document.getElementById('title').innerHTML = 'Blocks';
+	var c = document.getElementById('content');
+	c.style['overflow'] = 'none';
+	var color = inColor? "white": "black";
+	c.innerHTML = "<br />";
+	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
+	var tail = inColor? '@e:scr.color=1,scr.html=1': '';
+	r2.cmd ("pdr"+tail, function (d) {
+		c.innerHTML += "<pre style='font-family:Console,Courier,monospace;color:"+color+"'>"+d+"<pre>";
+	});
+}
+
 function decompile() {
 	document.getElementById('title').innerHTML = 'Decompile';
 	var c = document.getElementById('content');
