@@ -1227,6 +1227,13 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			ostr = r_str_chop (strdup (str+1));
 			regname = r_str_clean (ostr);
 			r = r_reg_get (core->dbg->reg, regname, -1); //R_REG_TYPE_GPR);
+			if (!r) {
+				int type = r_reg_get_name_idx (regname);
+				if (type != -1) {
+					const char *alias = r_reg_get_name (core->dbg->reg, type);
+					r = r_reg_get (core->dbg->reg, alias, -1);
+				}
+			}
 			if (r) {
 				eprintf ("%s 0x%08"PFMT64x" -> ", str,
 					r_reg_get_value (core->dbg->reg, r));
@@ -1621,12 +1628,21 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case 'm':
 			cmd_esil_mem (core, input+2);
 			break;
+		case 'p': // initialize pc = $$
+			r_core_cmd0 (core, "ar pc=$$");
+			break;
 		case '?':
 			cmd_esil_mem (core, "?");
 			break;
 		case 0:
 			r_anal_esil_free (esil);
 			// reinitialize
+			{
+				const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+				if (r_reg_getv (core->anal->reg, pc) == 0LL) {
+					r_core_cmd0 (core, "ar pc=$$");
+				}
+			}
 			esil = core->anal->esil = r_anal_esil_new ();
 			romem = r_config_get_i (core->config, "esil.romem");
 			stats = r_config_get_i (core->config, "esil.stats");
@@ -1753,6 +1769,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				"ae??", "", "show ESIL help",
 				"aei", "", "initialize ESIL VM state",
 				"aeim", "", "initialize ESIL VM stack (aeim- remove)",
+				"aeip", "", "initialize ESIL program counter to curseek", 
 				"aed", "", "deinitialize ESIL VM state",
 				"ae", " [expr]", "evaluate ESIL expression",
 				"aep", " [addr]", "change esil PC to this address",
