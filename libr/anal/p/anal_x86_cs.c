@@ -449,8 +449,11 @@ SETL/SETNGE
 				if (INSOP(0).mem.base == X86_REG_RIP) {
 					op->ptr += addr + insn->size;
 				} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
+					op->ptr = UT64_MAX;
 					op->stackop = R_ANAL_STACK_SET;
 					op->stackptr = regsz;
+				} else {
+					op->ptr = UT64_MAX;
 				}
 				if (a->decode) {
 					if (op->prefix & R_ANAL_OP_PREFIX_REP) {
@@ -460,19 +463,18 @@ SETL/SETNGE
 						const char *counter = (a->bits==16)?"cx":
 							(a->bits==32)?"ecx":"rcx";
 						esilprintf (op, "%s,!,?{,BREAK,},%s,DUP,%s,DUP,"\
-											"%s,[%d],%s,=[%d],df,?{,%d,%s,-=,%d,%s,-=,},"\
-											"df,!,?{,%d,%s,+=,%d,%s,+=,},%s,--=,%s," \
-											"?{,8,GOTO,},%s,=,%s,=",
-											counter, src, dst, src, width, dst,
-											width, width, src, width, dst, width, src,
-											width, dst, counter, counter, dst, src);
-					}
-					else {
+								"%s,[%d],%s,=[%d],df,?{,%d,%s,-=,%d,%s,-=,},"\
+								"df,!,?{,%d,%s,+=,%d,%s,+=,},%s,--=,%s," \
+								"?{,8,GOTO,},%s,=,%s,=",
+								counter, src, dst, src, width, dst,
+								width, width, src, width, dst, width, src,
+								width, dst, counter, counter, dst, src);
+					} else {
 						char *src = getarg (handle, insn, 1, 0, NULL);
 						char *dst = getarg (handle, insn, 0, 1, NULL);
 						esilprintf (op, "%s,%s", src, dst);
-					   free (src);
-					   free (dst);
+						free (src);
+						free (dst);
 					}
 				}
 				break;
@@ -486,7 +488,7 @@ SETL/SETNGE
 				}
 				break;
 			}
-			if (op->ptr == UT64_MAX) {
+			if (op->refptr<1 || op->ptr == UT64_MAX) {
 				switch (INSOP(1).type) {
 				case X86_OP_MEM:
 					op->ptr = INSOP(1).mem.disp;
