@@ -78,11 +78,6 @@ function flagspaces() {
 	var c = document.getElementById("content");
 	document.getElementById('title').innerHTML = 'Flag Spaces';
 	c.innerHTML += '<br /><br />'+uiButton('javascript:flagspaces()', 'Flags');
-	if (inColor) {
-		r2.cmd("e scr.color=true");
-		r2.cmd("e scr.html=true");
-	}
-	r2.cmd("e scr.utf8=false");
 	r2.cmd ("fs", function (d) {
 // TODO: show in checklist
 		//c.innerHTML += "<pre style='font-family:Console,Courier' color=white>"+d+"<pre>";
@@ -200,8 +195,8 @@ function configBits8() { r2.cmd("e asm.bits=8"); }
 function configBits16() { r2.cmd("e asm.bits=16"); }
 function configBits32() { r2.cmd("e asm.bits=32"); }
 function configBits64() { r2.cmd("e asm.bits=64"); }
-function configColorTrue() { inColor = true; r2.cmd("e scr.color=true"); }
-function configColorFalse() { inColor = false; r2.cmd("e scr.color=false"); }
+function configColorTrue() { inColor = true; }
+function configColorFalse() { inColor = false; }
 
 function uiBlock(d) {
 	var out = '<br /><div class="mdl-card__supporting-text mdl-color-text--blue-grey-50" style="color:black !important;background-color:white !important">';
@@ -365,10 +360,6 @@ function panelFunctions() {
 	c.innerHTML += uiButton('javascript:analyzeCalls()', 'Calls');
 	c.innerHTML += uiButton('javascript:analyzeFunction()', 'Function');
 	c.innerHTML += uiButton('javascript:analyzeNames()', 'AutoName');
-	if (inColor) {
-		r2.cmd("e scr.color=true");
-		r2.cmd("e scr.html=true");
-	}
 	r2.cmd("e scr.utf8=false");
 	r2.cmd ("afl", function (d) {
 		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace' style='color:white !important'>"+d+"<pre>";
@@ -405,15 +396,12 @@ function panelConsole() {
 		c.innerHTML += "<input style='color:white' onkeypress='consoleKey()' class='mdl-card--expand mdl-textfield__input' id='input'/>";
 		//c.innerHTML += uiButton('javascript:runCommand()', 'Run');
 		c.innerHTML += "<div id='output' class='pre' style='color:white !important'><div>";
-		r2.cmd("e scr.color=true");
-		r2.cmd("e scr.html=true");
 	} else {
 		c.style.backgroundColor = "#f0f0f0";
 		c.innerHTML += "<input style='color:black' class='mdl-card--expand mdl-textfield__input' id='input'/>";
 		c.innerHTML += uiButton('javascript:runCommand()', 'Run');
 		c.innerHTML += "<div id='output' class='pre' style='color:black!important'><div>";
 	}
-	r2.cmd("e scr.utf8=false");
 }
 
 function panelFlags() {
@@ -423,11 +411,6 @@ function panelFlags() {
 	c.style.backgroundColor = "#f0f0f0";
 	c.innerHTML = "<br />";
 	c.innerHTML += uiButton('javascript:flagspaces()', 'Spaces');
-	if (inColor) {
-		r2.cmd("e scr.color=true");
-		r2.cmd("e scr.html=true");
-	}
-	r2.cmd("e scr.utf8=false");
 	r2.cmd ("f", function (d) {
 		c.innerHTML += "<pre style='font-family:Console,Courier New, monospace' style='color:white !important'>"+d+"<pre>";
 	});
@@ -440,11 +423,6 @@ function panelComments() {
 	c.style.backgroundColor = "#f0f0f0";
 	c.innerHTML = "<br />";
 	c.innerHTML += uiButton('javascript:notes()', 'Notes');
-	if (inColor) {
-		r2.cmd("e scr.color=true");
-		r2.cmd("e scr.html=true");
-	}
-	r2.cmd("e scr.utf8=false");
 	r2.cmd ("CC", function (d) {
 		c.innerHTML += "<pre style='font-family:monospace,Console,Courier New,monospace'>"+d+"<pre>";
 	});
@@ -462,12 +440,8 @@ function panelHexdump() {
 	c.innerHTML += uiButton('javascript:flag()', 'Flag');
 	c.innerHTML += uiButton('javascript:flagsize()', 'Size');
 	c.innerHTML += uiButton('javascript:block()', 'Block');
-	if (inColor) {
-		r2.cmd("e scr.color=true");
-		r2.cmd("e scr.html=true");
-	}
-	r2.cmd("e scr.utf8=false");
-	r2.cmd ("pxa", function (d) {
+	var tail = inColor? '@e:scr.color=1,scr.html=1': '';
+	r2.cmd ("pxa"+tail, function (d) {
 		var color = inColor? "white": "black";
 		c.innerHTML += "<pre style='color:"+color+"!important'>"+d+"<pre>";
 	});
@@ -486,12 +460,11 @@ function panelDisasm() {
 	out += '&nbsp;<a href="javascript:info()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Info</a>';
 	out += '&nbsp;<a href="javascript:rename()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Rename</a>';
 	c.innerHTML = out;
+	var tail = '';
 	if (inColor) {
-		r2.cmd("e scr.color=true");
-		r2.cmd("e scr.html=true");
+		tail = '@e:scr.color=1,scr.html=1';
 	}
-	r2.cmd("e scr.utf8=false");
-	r2.cmd ("pd 128", function (d) {
+	r2.cmd ("pd 128"+tail, function (d) {
 		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace'>"+d+"<pre>";
 	});
 }
@@ -536,7 +509,8 @@ function decompile() {
 	var color = inColor? "white": "black";
 	c.innerHTML = "<br />";
 	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
-	r2.cmd ("pdc", function (d) {
+	var tail = inColor? '@e:scr.color=1,scr.html=1': '';
+	r2.cmd ("pdc"+tail, function (d) {
 		c.innerHTML += "<pre style='font-family:Console,Courier,monospace;color:"+color+"'>"+d+"<pre>";
 	});
 }
@@ -547,7 +521,8 @@ function graph() {
 	c.style['overflow'] = 'auto';
 	var color = inColor? "white": "black";
 	c.innerHTML = '<br />&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a>';
-	r2.cmd ("agf", function (d) {
+	var tail = inColor? '@e:scr.color=1,scr.html=1': '';
+	r2.cmd ("agf"+tail, function (d) {
 		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace;color:"+color+"'>"+d+"<pre>";
 	});
 }
