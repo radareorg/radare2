@@ -288,6 +288,7 @@ static int cmd_help(void *data, const char *input) {
 			"@@", " hit*", "run the command on every flag matching 'hit*'",
 			"@a:", "arch[:bits]", "temporary set arch and bits",
 			"@b:", "bits", "temporary set asm.bits",
+			"@e:", "k=v,k=v", "temporary change eval vars",
 			"@f:", "file", "temporary replace block with file contents",
 			"@s:", "string", "same as above but from a string",
 			"@x:", "909192", "from hex pairs string",

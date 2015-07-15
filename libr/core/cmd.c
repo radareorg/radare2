@@ -1062,6 +1062,32 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	return ret;
 }
 
+static char *parse_tmp_evals(RCore *core, const char *str) {
+	char *res = NULL;
+	RStrBuf *buf;
+	char *s = strdup (str);
+	buf = r_strbuf_new ("");
+	int i, argc = r_str_split(s, ',');
+	for (i = 0; i<argc; i++) {
+		char *eq, *kv = (char *)r_str_word_get0 (s, i);
+		if (!kv) break;
+		eq = strchr (kv, '=');
+		if (eq) {
+			*eq = 0;
+			const char *ov = r_config_get (core->config, kv);
+			r_strbuf_appendf (buf, "e %s=%s;", kv, ov);
+			r_config_set (core->config, kv, eq+1);
+			*eq = '=';
+		} else {
+			eprintf ("Missing '=' in e: expression (%s)\n", kv);
+		}
+	}
+	res = strdup (r_strbuf_get (buf));
+	r_strbuf_free (buf);
+	free (s);
+	return res;
+}
+
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char* colon);
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	int ret = 0, rep = atoi (cmd), orep;
@@ -1452,11 +1478,12 @@ next2:
 		ut64 tmpoff, tmpbsz, addr;
 		const char *tmpasm = NULL;
 		const char *tmpbits = NULL;
-		const char *offstr;
+		char *tmpeval = NULL;
+		const char *offstr = NULL;
 		char *f, *ptr2 = strchr (ptr+1, '!');
 		int sz, len;
 		ut8 *buf;
-		addr = 0LL;
+		addr = UT64_MAX;
 		tmpoff = core->offset;
 		tmpbsz = core->blocksize;
 
@@ -1493,6 +1520,9 @@ repeat_arroba:
 			case 'b': // "@b:" // bits
 				r_config_set_i (core->config, "asm.bits",
 					r_num_math (core->num, ptr+2));
+				break;
+			case 'e': // "@e:"
+				tmpeval = parse_tmp_evals (core, ptr+2);
 				break;
 			case 'x': // "@x:" // hexpairs
 				if (ptr[1]==':') {
@@ -1588,13 +1618,17 @@ next_arroba:
 			//ret = -1; /* do not run out-of-foreach cmd */
 		} else {
 			if (usemyblock) {
-				core->offset = addr;
+				if (addr != UT64_MAX) {
+					core->offset = addr;
+				}
 				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 			} else {
+if (addr != UT64_MAX) {
 				if (!ptr[1] || r_core_seek (core, addr, 1)) {
 					r_core_block_read (core, 0);
 					ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 				} else ret = 0;
+}
 			}
 		}
 		if (ptr2) {
@@ -1608,6 +1642,10 @@ next_arroba:
 		if (tmpbits) {
 			r_config_set (core->config, "asm.bits", tmpbits);
 			tmpbits = NULL;
+		}
+		if (tmpeval) {
+			r_core_cmd0 (core, tmpeval);
+			free (tmpeval);
 		}
 		r_core_seek (core, tmpoff, 1);
 		*ptr = '@';

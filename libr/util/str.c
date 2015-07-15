@@ -259,7 +259,7 @@ R_API int r_str_split(char *str, char ch) {
 	for (i=1, p=str; *p; p++)
 		if (*p==ch) {
 			i++;
-			*p='\0';
+			*p = '\0';
 		} // s/ /\0/g
 	return i;
 }
