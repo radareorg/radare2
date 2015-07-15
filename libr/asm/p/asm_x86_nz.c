@@ -6,8 +6,8 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-static int getnum(RAsm *a, const char *s);
-static int isnum(RAsm *a, const char *str);
+static int getnum(const RAsm *a, const char *s);
+static int isnum(const RAsm *a, const char *str);
 static ut8 getreg(const char *s);
 #if 0
 TODO
@@ -18,7 +18,7 @@ BLA:
         0x100000ec5    1    4883e4f0         and rsp, 0xfffffffffffffff0
 #endif
 
-static int getnum(RAsm *a, const char *s) {
+static int getnum(const RAsm *a, const char *s) {
 	if (!s) return 0;
 	if (*s=='$') s++;
 	return r_num_math (a->num, s);
@@ -43,7 +43,7 @@ static ut8 getshop(const char *s) {
 	return 0;
 }
 
-static int jop (RAsm *a, ut8 *data, ut8 x, ut8 b, const char *arg) {
+static int jop (const RAsm *a, ut8 *data, ut8 x, ut8 b, const char *arg) {
 	ut32 dst32;
 	int l = 0;
 	ut64 addr = a->pc;
@@ -97,13 +97,13 @@ static ut8 getreg(const char *str) {
 	return 0xff;
 }
 
-static int isnum(RAsm *a, const char *str) {
+static int isnum(const RAsm *a, const char *str) {
 	if (r_num_get (a->num, str) != 0)
 		return 1;
 	return str && (*str == '-' || (*str >= '0' && *str <= '9'));
 }
 
-static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
+static int assemble(const RAsm *a, RAsmOp *ao, const char *str) {
 	ut64 offset = a->pc;
 	ut8 t, *data = ao->buf;
 	char *arg, op[128];

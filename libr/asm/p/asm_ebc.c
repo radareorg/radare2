@@ -9,7 +9,7 @@
 
 #include <ebc_disas.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int ret = 1;
 	ebc_command_t cmd = { {0}, {0} };
 

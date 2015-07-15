@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <capstone/capstone.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	csh handle;
 	cs_insn* insn;
 	int mode, n, ret = -1;

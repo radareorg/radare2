@@ -1291,7 +1291,7 @@ static int write_asm(ut8 *data, Opcode *opcode_ptr, Operand *operands) {
 /*
  * Core assemble function.
  */
-static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
+static int assemble(const RAsm *a, RAsmOp *ao, const char *str) {
 	ut64 offset = a->pc;
 	ut8 *data = ao->buf;
 	size_t pos = 0, nextpos;

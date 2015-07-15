@@ -9,7 +9,7 @@
 
 #include <dalvik/opcode.h>
 
-static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int dalvik_disassemble (const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int i = (int) buf[0];
 	int vA, vB, vC;
 	char str[1024], *strasm;
@@ -421,7 +421,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 }
 
 //TODO
-static int dalvik_assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int dalvik_assemble(const RAsm *a, RAsmOp *op, const char *buf) {
 	int i;
 	char *p = strchr (buf,' ');
 	if (p) *p = 0;

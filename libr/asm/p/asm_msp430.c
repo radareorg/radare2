@@ -6,7 +6,7 @@
 
 #include <msp430_disas.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len)
 {
 	int ret;
 	struct msp430_cmd cmd;

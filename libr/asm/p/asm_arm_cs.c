@@ -5,10 +5,10 @@
 #include <capstone/capstone.h>
 #include "../arch/arm/asm-arm.h"
 
-static int check_features(RAsm *a, cs_insn *insn);
+static int check_features(const RAsm *a, cs_insn *insn);
 static csh cd;
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
@@ -73,7 +73,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble(const RAsm *a, RAsmOp *op, const char *buf) {
 	const int is_thumb = a->bits==16? 1: 0;
 	int opsize;
 	ut32 opcode = armass_assemble (buf, a->pc, is_thumb);
@@ -115,7 +115,7 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 		"mulops,crc,dpvfp,v6m"
 };
 
-static int check_features(RAsm *a, cs_insn *insn) {
+static int check_features(const RAsm *a, cs_insn *insn) {
 	const char *name;
 	int i;
 	if (!insn || !insn->detail)

@@ -11,7 +11,7 @@
 #include "../arch/dcpu16/dis.c"
 #include "../arch/dcpu16/asm.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len<2) return -1; // at least 2 bytes!
 	op->size = dcpu16_disasm (op->buf_asm, (const ut16*)buf, len, NULL);
 	if (op->size == -1)
@@ -19,7 +19,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble(const RAsm *a, RAsmOp *op, const char *buf) {
 	return dcpu16_assemble (op->buf, buf);
 }
 

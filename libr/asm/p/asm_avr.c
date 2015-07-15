@@ -11,7 +11,7 @@
 
 #include "../arch/avr/disasm.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size = avrdis (op->buf_asm, a->pc, buf, len);
 }
 

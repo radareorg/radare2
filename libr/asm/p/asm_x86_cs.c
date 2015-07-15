@@ -24,9 +24,9 @@ static int the_end(void *p) {
 	return R_TRUE;
 }
 
-static int check_features(RAsm *a, cs_insn *insn);
+static int check_features(const RAsm *a, cs_insn *insn);
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = 0;
 	int mode, ret;
 	ut64 off = a->pc;
@@ -116,7 +116,7 @@ RAsmPlugin r_asm_plugin_x86_cs = {
 		"sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
 };
 
-static int check_features(RAsm *a, cs_insn *insn) {
+static int check_features(const RAsm *a, cs_insn *insn) {
 	const char *name;
 	int i;
 	if (!insn || !insn->detail)

@@ -28,7 +28,7 @@ static int arch_csr_disasm(char *str, const unsigned char *buf, ut64 seek) {
 #endif
 	return 0;
 }
-static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	arch_csr_disasm (op->buf_asm, buf, a->pc);
 	return (op->size=2);
 }

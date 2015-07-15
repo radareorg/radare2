@@ -16,7 +16,7 @@ static int the_end(void *p) {
 	return R_TRUE;
 }
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = 0;
 	int mode, n, ret;
 	ut64 off = a->pc;

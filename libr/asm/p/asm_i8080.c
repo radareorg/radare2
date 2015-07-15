@@ -7,7 +7,7 @@
 
 #include "../arch/i8080/i8080dis.c"
 
-static int do_disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
+static int do_disassemble(const RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	int dlen = i8080_disasm (buf, op->buf_asm, len);
 	if (dlen<0) dlen = 0;
 	op->size = dlen;

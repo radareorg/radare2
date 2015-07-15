@@ -6,7 +6,7 @@
 #define R_IPI static
 #include "../arch/mips/mipsasm.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	csh handle;
 	cs_insn* insn;
 	int mode, n, ret = -1;
@@ -51,7 +51,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *str) {
+static int assemble(const RAsm *a, RAsmOp *op, const char *str) {
 	int ret = mips_assemble (str, a->pc, op->buf);
 	r_mem_copyendian (op->buf, op->buf, 4, !a->big_endian);
 	return ret;

@@ -9,7 +9,7 @@
 #include "../../shlr/java/code.h"
 #include "../../shlr/java/class.h"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	//void *cp;
 	RBinJavaObj *obj = NULL;
 	RBin *bin = a->binb.bin;
@@ -27,7 +27,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int assemble(const RAsm *a, RAsmOp *op, const char *buf) {
 	// TODO: get class info from bin if possible
 	return op->size = r_java_assemble (op->buf, buf);
 }

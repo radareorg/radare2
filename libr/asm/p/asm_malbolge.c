@@ -35,7 +35,7 @@ static int mal_dis(RAsmOp *op, ut64 c, const ut8 *buf, ut64 len) {
 	return R_FALSE;
 }
 
-static int __disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int __disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size = mal_dis(op, a->pc, buf, len);
 }
 

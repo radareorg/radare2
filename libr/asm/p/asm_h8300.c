@@ -6,7 +6,7 @@
 
 #include <h8300_disas.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
+static int disassemble(const RAsm *a, RAsmOp *op, const ut8 *buf, int len)
 {
 	int ret = 1;
 	struct h8300_cmd cmd;
