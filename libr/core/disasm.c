@@ -42,6 +42,7 @@ typedef struct r_disam_options_t {
 	//int show_utf8;
 	int acase;
 	int atabs;
+	int atabsonce;
 	int decode;
 	int pseudo;
 	int filter;
@@ -272,6 +273,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
 	ds->acase = r_config_get_i (core->config, "asm.ucase");
 	ds->atabs = r_config_get_i (core->config, "asm.tabs");
+	ds->atabsonce = r_config_get_i (core->config, "asm.tabsonce");
 	ds->midflags = r_config_get_i (core->config, "asm.midflags");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
 	ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
@@ -752,6 +754,9 @@ static void handle_atabs_option(RCore *core, RDisasmState *ds) {
 		free (t);
 		i = 0;
 		word++;
+		if (ds->atabsonce) {
+			break;
+		}
 	}
 }
 
