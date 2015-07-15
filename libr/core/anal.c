@@ -1607,7 +1607,6 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		while (at+i < to && i < ret-OPSZ) {
 			RAnalRefType type;
 			ut64 xref_from, xref_to;
-			const char *cmd;
 
 			xref_from = at+i;
 			r_anal_op_fini (&op);
