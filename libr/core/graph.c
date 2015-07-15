@@ -1,4 +1,4 @@
-/* Copyright radare2 2014-2015 - Author: pancake */
+/* Copyright radare2 2014-2015 - Author: pancake, ret2libc */
 
 #include <r_core.h>
 #include <r_cons.h>
@@ -6,6 +6,7 @@
 
 static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
 static int mousemode = 0;
+static int color_disasm = 0;
 
 #define BORDER 3
 #define BORDER_WIDTH 4
@@ -2026,7 +2027,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	can->linemode = 1;
 	can->color = r_config_get_i (core->config, "scr.color");
 	// disable colors in disasm because canvas doesnt supports ansi text yet
-	r_config_set_i (core->config, "scr.color", 0);
+	if (!color_disasm)
+		r_config_set_i (core->config, "scr.color", 0);
 
 	g = r_agraph_new (can);
 	if (!g) {
@@ -2108,8 +2110,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					r_core_cmd0 (core, "aes;.dr*");
 			}
 			ret = agraph_reload_nodes(g, core, fcn);
-			if (!ret)
-				is_error = R_TRUE;
+			if (!ret) is_error = R_TRUE;
 			break;
 		case 'Z':
 			if (okey == 27) {
@@ -2119,12 +2120,9 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				g->is_instep = R_TRUE;
 				if (r_config_get_i (core->config, "cfg.debug"))
 					r_core_cmd0 (core, "dso;.dr*");
-				else
-					r_core_cmd0 (core, "aeso;.dr*");
-
+				else r_core_cmd0 (core, "aeso;.dr*");
 				ret = agraph_reload_nodes(g, core, fcn);
-				if (!ret)
-					is_error = R_TRUE;
+				if (!ret) is_error = R_TRUE;
 			}
 			break;
 		case 'x':
@@ -2136,12 +2134,13 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				exit_graph = R_TRUE;
 			break;
 		case 9: // tab
-			agraph_next_node(g);
+			agraph_next_node (g);
 			break;
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
 					" .      - center graph to the current node\n"
+					" !      - toggle color disassembly (experimental)\n"
 					" C      - toggle scr.color\n"
 					" hjkl   - move node\n"
 					" HJKL   - scroll canvas\n"
@@ -2150,14 +2149,15 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					" t/f    - follow true/false edges\n"
 					" e      - toggle edge-lines style (diagonal/square)\n"
 					" O      - toggle disasm mode\n"
+					" r      - relayout\n"
+					" R      - randomize colors\n"
 					" p      - toggle mini-graph\n"
 					" u      - select previous node\n"
 					" V      - toggle basicblock / call graphs\n"
 					" w      - toggle between movements speed 1 and graph.scroll\n"
 					" x/X    - jump to xref/ref\n"
 					" z/Z    - step / step over\n"
-					" +/-/0  - zoom in/out/default\n"
-					" R      - relayout\n");
+					" +/-/0  - zoom in/out/default\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
 			break;
@@ -2169,24 +2169,23 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			g->color_true = core->cons->pal.graph_true;
 			g->color_false = core->cons->pal.graph_false;
 			break;
+		case '!':
+			color_disasm = color_disasm? 0: 1;
+			r_config_set_i (core->config, "scr.color", color_disasm);
+			ret = agraph_reload_nodes(g, core, fcn);
+			if (!ret) is_error = R_TRUE;
+			agraph_set_layout (g);
+			break;
 		case 'r':
 			agraph_set_layout (g);
 			break;
 		case 'j':
 			if (r_cons_singleton()->mouse_event) {
 				switch (mousemode) {
-					case 0: // canvas-y
-						can->sy += wheelspeed;
-						break;
-					case 1: // canvas-x
-						can->sx += wheelspeed;
-						break;
-					case 2: // node-y
-						get_anode(g->curnode)->y += wheelspeed;
-						break;
-					case 3: // node-x
-						get_anode(g->curnode)->x += wheelspeed;
-						break;
+				case 0: can->sy += wheelspeed; break; // canvas-y
+				case 1: can->sx += wheelspeed; break; // canvas-x
+				case 2: get_anode(g->curnode)->y += wheelspeed; break; // node-y
+				case 3: get_anode(g->curnode)->x += wheelspeed; break; // node-x
 				}
 			} else {
 				get_anode(g->curnode)->y += g->movspeed;
@@ -2195,18 +2194,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'k':
 			if (r_cons_singleton()->mouse_event) {
 				switch (mousemode) {
-					case 0: // canvas-y
-						can->sy -= wheelspeed;
-						break;
-					case 1: // canvas-x
-						can->sx -= wheelspeed;
-						break;
-					case 2: // node-y
-						get_anode(g->curnode)->y -= wheelspeed;
-						break;
-					case 3: // node-x
-						get_anode(g->curnode)->x -= wheelspeed;
-						break;
+				case 0: can->sy -= wheelspeed; break; // canvas-y
+				case 1: can->sx -= wheelspeed; break; // canvas-x
+				case 2: get_anode(g->curnode)->y -= wheelspeed; break; // node-y
+				case 3: get_anode(g->curnode)->x -= wheelspeed; break; // node-x
 				}
 			} else {
 				get_anode(g->curnode)->y -= g->movspeed;
@@ -2259,6 +2250,9 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  break;
 		case 'C':
 			  can->color = !!!can->color;
+			  if (!can->color) {
+				  color_disasm = R_FALSE;
+			  }
 			  //r_config_swap (core->config, "scr.color");
 			  // refresh graph
 			  break;
