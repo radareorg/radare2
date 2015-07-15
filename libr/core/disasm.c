@@ -43,6 +43,7 @@ typedef struct r_disam_options_t {
 	int acase;
 	int atabs;
 	int atabsonce;
+	int atabsoff;
 	int decode;
 	int pseudo;
 	int filter;
@@ -274,6 +275,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->acase = r_config_get_i (core->config, "asm.ucase");
 	ds->atabs = r_config_get_i (core->config, "asm.tabs");
 	ds->atabsonce = r_config_get_i (core->config, "asm.tabsonce");
+	ds->atabsoff = r_config_get_i (core->config, "asm.tabsoff");
 	ds->midflags = r_config_get_i (core->config, "asm.midflags");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
 	ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
@@ -1257,6 +1259,14 @@ static void handle_print_offset (RCore *core, RDisasmState *ds) {
 		}
 		r_print_offset (core->print, ds->at, (ds->at==ds->dest),
 				ds->show_offseg, delta);
+	}
+	if (ds->atabsoff>0) {
+		// TODO: optimize by caching this spaces inside ds
+		char *spaces = malloc (ds->atabsoff+1);
+		memset (spaces, ' ', ds->atabsoff);
+		spaces[ds->atabsoff] = 0;
+		r_cons_strcat (spaces);
+		free (spaces);
 	}
 }
 

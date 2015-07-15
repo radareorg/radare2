@@ -1087,6 +1087,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.cycles", "false", "Show CPU-cycles taken by instruction at disassembly");
 	SETI("asm.tabs", 0, "Use tabs in disassembly");
 	SETPREF("asm.tabsonce", "false", "Only tabulate the opcode, not the arguments");
+	SETI("asm.tabsoff", 0, "tabulate spaces after the offset");
 	SETPREF("asm.trace", "false", "Show execution traces for each opcode");
 	SETPREF("asm.tracespace", "false", "Indent disassembly with trace.count information");
 	SETPREF("asm.ucase", "false", "Use uppercase syntax at disassembly");
