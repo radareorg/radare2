@@ -362,7 +362,6 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 R_API void r_cons_canvas_line (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
 	if (c->linemode) {
 		r_cons_canvas_line_square (c, x, y, x2, y2, style);
-		return;
 	} else {
 		r_cons_canvas_line_diagonal (c, x, y, x2, y2, style);
 	}

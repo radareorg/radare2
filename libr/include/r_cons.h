@@ -103,6 +103,15 @@ typedef struct r_cons_palette_t {
 	char *gui_background;
 	char *gui_alt_background;
 	char *gui_border;
+
+	/* graph colors */
+	char *graph_box;
+	char *graph_box2;
+	char *graph_box3;
+	char *graph_true;
+	char *graph_false;
+	char *graph_trufae;
+
 #define R_CONS_PALETTE_LIST_SIZE 8
 	char *list[R_CONS_PALETTE_LIST_SIZE];
 } RConsPalette;
@@ -543,6 +552,11 @@ typedef struct r_ascii_graph_t {
 	struct layer_t *layers;
 	int n_layers;
 	RList *dists; /* RList<struct dist_t> */
+	const char *color_box;
+	const char *color_box2;
+	const char *color_box3;
+	const char *color_true;
+	const char *color_false;
 } RAGraph;
 
 #ifdef R_API

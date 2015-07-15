@@ -66,9 +66,9 @@ struct agraph_refresh_data {
 
 #define G(x,y) r_cons_canvas_gotoxy (g->can, x, y)
 #define W(x) r_cons_canvas_write (g->can, x)
-#define B(x,y,w,h) r_cons_canvas_box(g->can, x,y,w,h,NULL)
-#define B1(x,y,w,h) r_cons_canvas_box(g->can, x,y,w,h,Color_BLUE)
-#define B2(x,y,w,h) r_cons_canvas_box(g->can, x,y,w,h,Color_MAGENTA)
+#define B(x,y,w,h) r_cons_canvas_box(g->can, x,y,w,h, g->color_box)
+#define B1(x,y,w,h) r_cons_canvas_box(g->can, x,y,w,h, g->color_box2)
+#define B2(x,y,w,h) r_cons_canvas_box(g->can, x,y,w,h, g->color_box3)
 #define L(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,0)
 #define L1(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,1)
 #define L2(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,2)
@@ -203,9 +203,9 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 }
 
 static int **get_crossing_matrix (const RGraph *g,
-								  const struct layer_t layers[],
-								  int maxlayer, int i, int from_up,
-								  int *n_rows) {
+		const struct layer_t layers[],
+		int maxlayer, int i, int from_up,
+		int *n_rows) {
 	int len = layers[i].n_nodes;
 	int **m;
 	int j;
@@ -690,12 +690,11 @@ static int cmp_dist (const size_t a, const size_t b) {
 
 static RGraphNode *get_sibling (const RAGraph *g, const RANode *n, int is_left, int is_adjust_class) {
 	RGraphNode *res = NULL;
-	int pos;
+	int pos = n->pos_in_layer;
 
 	if ((is_left && is_adjust_class) || (!is_left && !is_adjust_class))
-		pos = n->pos_in_layer + 1;
-	else
-		pos = n->pos_in_layer - 1;
+		pos++;
+	else pos--;
 
 	if (is_valid_pos (g, n->layer, pos))
 		res = g->layers[n->layer].nodes[pos];
@@ -760,18 +759,17 @@ static void adjust_class (const RAGraph *g, int is_left,
 	}
 
 	graph_foreach_anode (classes[c], it, gn, an) {
-		int old_val = hash_get_int (res, gn);
-		int new_val = is_left ?  old_val + dist : old_val - dist;
+		const int old_val = hash_get_int (res, gn);
+		const int new_val = is_left ?  old_val + dist : old_val - dist;
 		hash_set (res, gn, new_val);
 	}
 }
 
 static int place_nodes_val (const RAGraph *g, const RGraphNode *gn,
-							const RGraphNode *sibl, Sdb *res, int is_left) {
+		const RGraphNode *sibl, Sdb *res, int is_left) {
 	if (is_left)
 		return hash_get_int (res, sibl) + dist_nodes (g, sibl, gn);
-	else
-		return hash_get_int (res, sibl) - dist_nodes (g, gn, sibl);
+	return hash_get_int (res, sibl) - dist_nodes (g, gn, sibl);
 }
 
 static int place_nodes_sel_p (int newval, int oldval, int is_first, int is_left) {
@@ -1930,6 +1928,9 @@ static void agraph_init(RAGraph *g) {
 	g->is_small_nodes = R_FALSE;
 	g->need_reload_nodes = R_TRUE;
 	g->force_update_seek = R_TRUE;
+	g->color_box = Color_RESET;
+	g->color_box2 = Color_BLUE; // selected node
+	g->color_box3 = Color_MAGENTA;
 	g->history = r_stack_new (INIT_HISTORY_CAPACITY);
 	g->graph = r_graph_new ();
 	g->nodes = sdb_new0 ();
@@ -2161,6 +2162,13 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			r_cons_any_key (NULL);
 			break;
 		case 'R':
+			r_core_cmd0 (core, "ecr");
+			g->color_box = core->cons->pal.graph_box;
+			g->color_box2 = core->cons->pal.graph_box2;
+			g->color_box3 = core->cons->pal.graph_box3;
+			g->color_true = core->cons->pal.graph_true;
+			g->color_false = core->cons->pal.graph_false;
+			break;
 		case 'r':
 			agraph_set_layout (g);
 			break;
@@ -2259,7 +2267,9 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  break;
 		case -1: // EOF
 		case 'q':
-			  exit_graph = R_TRUE;
+			  if (g->is_callgraph) {
+				  agraph_toggle_callgraph(g);
+			  } else exit_graph = R_TRUE;
 			  break;
 		case 27: // ESC
 			  if (r_cons_readchar () == 91) {

@@ -12,23 +12,25 @@ enum {
 };
 
 static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2, int style){
+	RCons *cons = r_cons_singleton ();
 	switch (style) {
 	case 0: // Unconditional jump
-		c->attr=Color_BLUE;
+		//c->attr=Color_BLUE;
+		c->attr = cons->pal.graph_trufae; //Color_GREEN;
 		if (G (x, y))
 			W ("v");
 		if (G (x2, y2))
 			W ("V");
 		break;
 	case 1: // Conditional jump, True branch
-		c->attr=Color_GREEN;
+		c->attr = cons->pal.graph_true; //Color_GREEN;
 		if (G (x, y))
 			W ("t"); //\\");
 		if (G (x2, y2))
 			W ("\\");
 		break;
 	case 2: // Conditional jump, False branch
-		c->attr=Color_RED;
+		c->attr = cons->pal.graph_false; //Color_RED;
 		if (G (x, y))
 			W ("f");
 		if (G (x2, y2))
