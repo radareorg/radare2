@@ -441,6 +441,7 @@ SETL/SETNGE
 		case X86_INS_MOVDQ2Q:
 			{
 			op->type = R_ANAL_OP_TYPE_MOV;
+			op->ptr = UT64_MAX;
 			switch (INSOP(0).type) {
 			case X86_OP_MEM:
 				op->ptr = INSOP(0).mem.disp;
@@ -485,23 +486,25 @@ SETL/SETNGE
 				}
 				break;
 			}
-			switch (INSOP(1).type) {
-			case X86_OP_MEM:
-				op->ptr = INSOP(1).mem.disp;
-				op->refptr = INSOP(1).size;
-				if (INSOP(1).mem.base == X86_REG_RIP) {
-					op->ptr += addr + insn->size;
-				} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
-					op->stackop = R_ANAL_STACK_GET;
-					op->stackptr = regsz;
+			if (op->ptr == UT64_MAX) {
+				switch (INSOP(1).type) {
+				case X86_OP_MEM:
+					op->ptr = INSOP(1).mem.disp;
+					op->refptr = INSOP(1).size;
+					if (INSOP(1).mem.base == X86_REG_RIP) {
+						op->ptr += addr + insn->size;
+					} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
+						op->stackop = R_ANAL_STACK_GET;
+						op->stackptr = regsz;
+					}
+					break;
+				case X86_OP_IMM:
+					if (INSOP(1).imm > 10)
+						op->ptr = INSOP(1).imm;
+					break;
+				default:
+					break;
 				}
-				break;
-			case X86_OP_IMM:
-				if (INSOP(1).imm > 10)
-					op->ptr = INSOP(1).imm;
-				break;
-			default:
-				break;
 			}
 			}
 			break;

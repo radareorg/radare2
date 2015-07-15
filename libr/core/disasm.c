@@ -1907,7 +1907,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 	} else if (((st64)p)>0) {
 		const char *kind;
 		char *msg = calloc(sizeof(char), len);
-		RFlagItem *f;
+		RFlagItem *f, *f2;
 
 		r_io_read_at (core->io, p, (ut8*)msg, len-1);
 
@@ -1949,7 +1949,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 					if (f) {
 						flag = f->name;
 					} else {
-						msg2 = calloc(sizeof(char), len);
+						msg2 = calloc (sizeof (char), len);
 						r_io_read_at (core->io, n, (ut8*)msg2, len-1);
 						kind = r_anal_data_kind (core->anal, p, (const ut8*)msg2, len-1);
 						if (kind && !strcmp (kind, "text")) {
@@ -1965,6 +1965,11 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 					r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x" %s",
 							p, ds->analop.refptr, n, flag);
 					free (msg2);
+				}
+				// not just for LEA
+				f2 = r_flag_get_i (core->flags, p);
+				if (f2 && f != f2) {
+					r_cons_printf (" LEA %s", f2->name);
 				}
 			}
 			if (ds->show_color)
