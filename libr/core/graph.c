@@ -2012,6 +2012,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	int wheelspeed;
 	int w, h;
 	int ret;
+    int invscroll;
 
 	fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
@@ -2036,7 +2037,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		goto err_graph_new;
 	}
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
-	g->invscroll = r_config_get_i (core->config, "graph.invscroll");
 
 	grd = R_NEW (struct agraph_refresh_data);
 	grd->g = g;
@@ -2048,6 +2048,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	core->cons->event_resize = (RConsEvent)agraph_refresh;
 
 	while (!exit_graph && !is_error) {
+        invscroll = r_config_get_i (core->config, "graph.invscroll");
 		w = r_cons_get_size (&h);
 		ret = agraph_refresh (grd);
 		if (!ret) {
@@ -2183,8 +2184,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'j':
 			if (r_cons_singleton()->mouse_event) {
 				switch (mousemode) {
-				case 0: can->sy += wheelspeed * (g->invscroll ? -1 : 1); break; // canvas-y
-				case 1: can->sx += wheelspeed * (g->invscroll ? -1 : 1); break; // canvas-x
+				case 0: can->sy += wheelspeed * (invscroll ? -1 : 1); break; // canvas-y
+				case 1: can->sx += wheelspeed * (invscroll ? -1 : 1); break; // canvas-x
 				case 2: get_anode(g->curnode)->y += wheelspeed; break; // node-y
 				case 3: get_anode(g->curnode)->x += wheelspeed; break; // node-x
 				}
@@ -2195,8 +2196,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'k':
 			if (r_cons_singleton()->mouse_event) {
 				switch (mousemode) {
-				case 0: can->sy -= wheelspeed * (g->invscroll ? -1 : 1); break; // canvas-y
-				case 1: can->sx -= wheelspeed * (g->invscroll ? -1 : 1); break; // canvas-x
+				case 0: can->sy -= wheelspeed * (invscroll ? -1 : 1); break; // canvas-y
+				case 1: can->sx -= wheelspeed * (invscroll ? -1 : 1); break; // canvas-x
 				case 2: get_anode(g->curnode)->y -= wheelspeed; break; // node-y
 				case 3: get_anode(g->curnode)->x -= wheelspeed; break; // node-x
 				}
@@ -2217,10 +2218,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'h': get_anode(g->curnode)->x -= g->movspeed; break;
 		case 'l': get_anode(g->curnode)->x += g->movspeed; break;
 
-		case 'K': can->sy -= g->movspeed * (g->invscroll ? -1 : 1); break;
-		case 'J': can->sy += g->movspeed * (g->invscroll ? -1 : 1); break;
-		case 'H': can->sx -= g->movspeed * (g->invscroll ? -1 : 1); break;
-		case 'L': can->sx += g->movspeed * (g->invscroll ? -1 : 1); break;
+		case 'K': can->sy -= g->movspeed * (invscroll ? -1 : 1); break;
+		case 'J': can->sy += g->movspeed * (invscroll ? -1 : 1); break;
+		case 'H': can->sx -= g->movspeed * (invscroll ? -1 : 1); break;
+		case 'L': can->sx += g->movspeed * (invscroll ? -1 : 1); break;
 		case 'e':
 			  can->linemode = !!!can->linemode;
 			  break;

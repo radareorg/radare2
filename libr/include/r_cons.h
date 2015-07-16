@@ -535,7 +535,6 @@ typedef struct r_ascii_graph_t {
 	int is_small_nodes;
 	int zoom;
 	int movspeed;
-	int invscroll;
 
 	RStack *history;
 	RANode *update_seek_on;
