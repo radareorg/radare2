@@ -2705,8 +2705,9 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_clear_line (1);
 			r_cons_break_end ();
 			if (input[1] == 'a') { // "aaa"
-				r_core_cmd0 (core, ".afna @@ fcn.*"); break; // "aaa"
+				r_core_cmd0 (core, ".afna @@ fcn.*");
 				r_core_cmd0 (core, "aar");
+				r_core_cmd0 (core, "aac");
 			}
 			break;
 		case 'r':
