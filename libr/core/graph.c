@@ -1865,10 +1865,10 @@ static void agraph_print (RAGraph *g, int is_interactive,
 		const char *cmdv;
 		(void)G (-g->can->sx, -g->can->sy);
 		snprintf (title, sizeof (title)-1,
-			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
+			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d scroll:%s",
 			fcn->addr, r_stack_size (g->history), fcn->name,
 			g->graph->n_nodes, g->graph->n_edges, g->zoom, g->is_callgraph?"CG":"BB",
-			mousemodes[mousemode], g->movspeed);
+			mousemodes[mousemode], g->movspeed, g->invert_scroll ? "invert" : "normal");
 		W (title);
 
 		r_cons_canvas_print (g->can);
@@ -1920,6 +1920,10 @@ static void agraph_toggle_speed (RAGraph *g, RCore *core) {
 	int alt = r_config_get_i (core->config, "graph.scroll");
 
 	g->movspeed = g->movspeed == DEFAULT_SPEED ? alt : DEFAULT_SPEED;
+}
+
+static void agraph_toggle_scroll_dir (RAGraph *g, RCore *core) {
+	g->invert_scroll = !g->invert_scroll;
 }
 
 static void agraph_init(RAGraph *g) {
@@ -2036,6 +2040,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		goto err_graph_new;
 	}
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
+	g->invert_scroll = r_config_get_i (core->config, "graph.invert_scroll");
 
 	grd = R_NEW (struct agraph_refresh_data);
 	grd->g = g;
@@ -2155,6 +2160,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					" u      - select previous node\n"
 					" V      - toggle basicblock / call graphs\n"
 					" w      - toggle between movements speed 1 and graph.scroll\n"
+					" d      - toggle invert scroll direction\n"
 					" x/X    - jump to xref/ref\n"
 					" z/Z    - step / step over\n"
 					" +/-/0  - zoom in/out/default\n");
@@ -2182,8 +2188,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'j':
 			if (r_cons_singleton()->mouse_event) {
 				switch (mousemode) {
-				case 0: can->sy += wheelspeed; break; // canvas-y
-				case 1: can->sx += wheelspeed; break; // canvas-x
+				case 0: can->sy += wheelspeed * (g->invert_scroll ? -1 : 1); break; // canvas-y
+				case 1: can->sx += wheelspeed * (g->invert_scroll ? -1 : 1); break; // canvas-x
 				case 2: get_anode(g->curnode)->y += wheelspeed; break; // node-y
 				case 3: get_anode(g->curnode)->x += wheelspeed; break; // node-x
 				}
@@ -2194,8 +2200,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'k':
 			if (r_cons_singleton()->mouse_event) {
 				switch (mousemode) {
-				case 0: can->sy -= wheelspeed; break; // canvas-y
-				case 1: can->sx -= wheelspeed; break; // canvas-x
+				case 0: can->sy -= wheelspeed * (g->invert_scroll ? -1 : 1); break; // canvas-y
+				case 1: can->sx -= wheelspeed * (g->invert_scroll ? -1 : 1); break; // canvas-x
 				case 2: get_anode(g->curnode)->y -= wheelspeed; break; // node-y
 				case 3: get_anode(g->curnode)->x -= wheelspeed; break; // node-x
 				}
@@ -2216,10 +2222,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'h': get_anode(g->curnode)->x -= g->movspeed; break;
 		case 'l': get_anode(g->curnode)->x += g->movspeed; break;
 
-		case 'K': can->sy -= g->movspeed; break;
-		case 'J': can->sy += g->movspeed; break;
-		case 'H': can->sx -= g->movspeed; break;
-		case 'L': can->sx += g->movspeed; break;
+		case 'K': can->sy -= g->movspeed * (g->invert_scroll ? -1 : 1); break;
+		case 'J': can->sy += g->movspeed * (g->invert_scroll ? -1 : 1); break;
+		case 'H': can->sx -= g->movspeed * (g->invert_scroll ? -1 : 1); break;
+		case 'L': can->sx += g->movspeed * (g->invert_scroll ? -1 : 1); break;
 		case 'e':
 			  can->linemode = !!!can->linemode;
 			  break;
@@ -2258,6 +2264,9 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  break;
 		case 'w':
 			  agraph_toggle_speed (g, core);
+			  break;
+		case 'd':
+			  agraph_toggle_scroll_dir(g, core);
 			  break;
 		case -1: // EOF
 		case 'q':
