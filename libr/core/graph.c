@@ -1865,10 +1865,10 @@ static void agraph_print (RAGraph *g, int is_interactive,
 		const char *cmdv;
 		(void)G (-g->can->sx, -g->can->sy);
 		snprintf (title, sizeof (title)-1,
-			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d scroll:%s",
+			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
 			fcn->addr, r_stack_size (g->history), fcn->name,
 			g->graph->n_nodes, g->graph->n_edges, g->zoom, g->is_callgraph?"CG":"BB",
-			mousemodes[mousemode], g->movspeed, g->invert_scroll ? "invert" : "normal");
+			mousemodes[mousemode], g->movspeed);
 		W (title);
 
 		r_cons_canvas_print (g->can);
@@ -1920,10 +1920,6 @@ static void agraph_toggle_speed (RAGraph *g, RCore *core) {
 	int alt = r_config_get_i (core->config, "graph.scroll");
 
 	g->movspeed = g->movspeed == DEFAULT_SPEED ? alt : DEFAULT_SPEED;
-}
-
-static void agraph_toggle_scroll_dir (RAGraph *g, RCore *core) {
-	g->invert_scroll = !g->invert_scroll;
 }
 
 static void agraph_init(RAGraph *g) {
@@ -2160,7 +2156,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					" u      - select previous node\n"
 					" V      - toggle basicblock / call graphs\n"
 					" w      - toggle between movements speed 1 and graph.scroll\n"
-					" d      - toggle invert scroll direction\n"
 					" x/X    - jump to xref/ref\n"
 					" z/Z    - step / step over\n"
 					" +/-/0  - zoom in/out/default\n");
@@ -2264,9 +2259,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  break;
 		case 'w':
 			  agraph_toggle_speed (g, core);
-			  break;
-		case 'd':
-			  agraph_toggle_scroll_dir(g, core);
 			  break;
 		case -1: // EOF
 		case 'q':
