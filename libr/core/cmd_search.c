@@ -398,6 +398,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			RIOMap *map = r_io_map_get (core->io, core->offset);
 			*from = core->offset;
 			*to = r_io_size (core->io) + (map? map->to:0);
+			if (*from > *to) {
+				*from = 0;
+			}
 		}
 	} else if (!strcmp (mode, "io.section")) {
 		if (core->io->va) {
@@ -954,6 +957,10 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		from = map->from;
 		to = map->to;
 
+		if (from>to) {
+			eprintf ("Invalid range 0x%"PFMT64x" - 0x%"PFMT64x"\n", from, to);
+			continue;
+		}
 		delta = to - from;
 		if (delta < 1) {
 			delta = from - to;
@@ -1617,9 +1624,14 @@ static int cmd_search(void *data, const char *input) {
 	/* we don't really care what's bigger bc there's a flag for backward search
 	   from now on 'from' and 'to' represent only the search boundaries, not
 	   search direction */
-	__from = R_MIN (param.from, param.to);
-	param.to = R_MAX (param.from, param.to);
-	param.from = __from;
+	if (core->io->va) {
+		__from = R_MIN (param.from, param.to);
+		param.to = R_MAX (param.from, param.to);
+		param.from = __from;
+	} else {
+		param.from = 0;
+		param.to = r_io_size (core->io);
+	}
 	core->search->bckwrds = R_FALSE;
 
 	if (param.from == param.to) {
