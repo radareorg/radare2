@@ -2704,8 +2704,10 @@ static int cmd_anal(void *data, const char *input) {
 				eprintf ("Interrupted\n");
 			r_cons_clear_line (1);
 			r_cons_break_end ();
-			if (input[1] == 'a') // "aaa"
+			if (input[1] == 'a') { // "aaa"
 				r_core_cmd0 (core, ".afna @@ fcn.*"); break; // "aaa"
+				r_core_cmd0 (core, "aar");
+			}
 			break;
 		case 'r':
 			{
