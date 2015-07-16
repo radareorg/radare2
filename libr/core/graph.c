@@ -2012,7 +2012,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	int wheelspeed;
 	int w, h;
 	int ret;
-    int invscroll;
+	int invscroll;
 
 	fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
@@ -2048,7 +2048,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	core->cons->event_resize = (RConsEvent)agraph_refresh;
 
 	while (!exit_graph && !is_error) {
-        invscroll = r_config_get_i (core->config, "graph.invscroll");
+		invscroll = r_config_get_i (core->config, "graph.invscroll");
 		w = r_cons_get_size (&h);
 		ret = agraph_refresh (grd);
 		if (!ret) {
