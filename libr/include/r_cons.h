@@ -508,8 +508,8 @@ R_API const char *r_line_hist_get(int n);
 
 typedef struct r_ascii_node_t {
 	RGraphNode *gnode;
-	const char *title;
-	const char *body;
+	char *title;
+	char *body;
 
 	int x;
 	int y;
