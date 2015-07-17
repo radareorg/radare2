@@ -1,4 +1,4 @@
-OBJ_MACH0=bin_mach0.o ../format/mach0/mach0.o
+OBJ_MACH0=bin_mach0.o ../format/mach0/mach0.o ../format/objc/mach032_classes.o ../format/objc/mach064_classes.o
 
 STATIC_OBJ+=${OBJ_MACH0}
 TARGET_MACH0=bin_mach0.${EXT_SO}

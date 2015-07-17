@@ -3,6 +3,8 @@
 #define R_BIN_MACH064 1
 #include "bin_mach0.c"
 
+#include "objc/mach064_classes.h"
+
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
@@ -211,6 +213,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.dbginfo = NULL,
 	.write = NULL,
 	.create = &create,
+	.classes = &classes_mach064
 };
 
 #ifndef CORELIB
