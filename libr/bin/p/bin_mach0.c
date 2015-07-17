@@ -5,6 +5,7 @@
 #include <r_lib.h>
 #include <r_bin.h>
 #include "mach0/mach0.h"
+#include "objc/mach032_classes.h"
 
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
@@ -570,6 +571,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.dbginfo = NULL,
 	.write = NULL,
 	.create = &create,
+	.classes = &classes_mach032
 };
 
 #ifndef CORELIB

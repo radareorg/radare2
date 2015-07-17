@@ -165,6 +165,13 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	char *args = NULL;
 	int i, nargs = 0;
 	const char *type = NULL;
+
+	if (binfile && binfile->o) {
+		if (binfile->o->classes) {
+			binfile = NULL;
+		}
+	}
+
 	/* classes */
 	if (!strncmp (sym, "_OBJC_Class_", 12)) {
 		ret = malloc (10+strlen (sym));
