@@ -2282,10 +2282,13 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		}
 	}
 
+	core->cons->event_data = NULL;
+	core->cons->event_resize = NULL;
+
 	free (grd);
 	r_agraph_free(g);
 err_graph_new:
 	r_config_set_i (core->config, "scr.color", can->color);
-	free (can);
+	r_cons_canvas_free (can);
 	return !is_error;
 }
