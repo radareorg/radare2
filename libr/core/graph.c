@@ -2061,6 +2061,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		if (!is_interactive) {
 			/* this is a non-interactive ascii-art graph, so exit the loop */
 			r_cons_printf (Color_RESET);
+			r_cons_newline ();
 			break;
 		}
 
