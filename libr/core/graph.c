@@ -2191,7 +2191,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			g->color_false = core->cons->pal.graph_false;
 			break;
 		case '!':
-			color_disasm = color_disasm? 0: 1;
+			color_disasm = !color_disasm;
 			r_config_set_i (core->config, "scr.color", color_disasm);
 			ret = agraph_reload_nodes(g, core, fcn, R_FALSE);
 			if (!ret) is_error = R_TRUE;
@@ -2271,9 +2271,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  break;
 		case 'C':
 			  can->color = !!!can->color;
-			  if (!can->color) {
+			  if (!can->color)
 				  color_disasm = R_FALSE;
-			  }
 			  //r_config_swap (core->config, "scr.color");
 			  // refresh graph
 			  break;
