@@ -4,10 +4,20 @@ BINDEPS+=r_bin r_debug r_anal r_reg r_bp r_io r_fs
 BINDEPS+=r_lang r_asm r_syscall r_db r_hash
 BINDEPS+=r_magic r_socket r_flags r_util r_egg r_crypto
 
+# Apple Sign #
+CERTID=org.radare.radare2
+BUNDLE=org.radare.radare2
+MACSDK=macosx10.10
+ENTITL=radare2.xcent
+#ENTITL=radare2.xml
+
+FOOD_LIBS=$(addprefix ../../libr/,$(subst r_,,$(BINDEPS)))
+SIGN_LIBS=$(addsuffix /libr_*.dylib,$(FOOD_LIBS))
+
 include ../rules.mk
 CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
 
-sign:
+ios-sign iossign sign:
 	xcrun --sdk iphoneos codesign \
 		-s- --entitlements radare2.xml radare2
 	#ldid -Sradare2.xml radare2
@@ -15,13 +25,22 @@ sign:
 ios_sdk_sign:
 	-codesign -s- --entitlements radare2.xml radare2
 
-osxsign:
-	${CC} radare2.o ${CFLAGS} ${LDFLAGS} -o radare2 \
-		-sectcreate __TEXT __info_plist ./Info.plist \
-		-framework Security -framework CoreFoundation
-	codesign -dvvv -s radare2 ./radare2
-	sudo chown root:procmod radare2
-	sudo chmod g+s radare2
+osx-sign osxsign:
+	${CC} radare2.c ${CFLAGS} ${LDFLAGS} -o radare2 \
+		-sectcreate __TEXT __info_plist ./Info.plist
+	xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} radare2
+	#codesign -f -s ${CERTID} radare2
+
+osx-sign-libs:
+	for a in ${SIGN_LIBS} ; do \
+		echo Signing $$a ; \
+		codesign -f -s ${CERTID} $$a ; \
+	done
+#	xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} --entitlements $(ENTITL) radare2
+#	xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} radare2
+#	codesign -dvvv -s $(XNUCERT) ./radare2
+#	sudo chown root:procmod radare2
+#	sudo chmod g+s radare2
 
 ifeq ($(OSTYPE),android)
 LDFLAGS+=${DL_LIBS} -lm
