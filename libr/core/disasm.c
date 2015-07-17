@@ -1948,6 +1948,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				if (f) flag = f->name;
 				r_cons_printf (" ; 0x%"PFMT64x" %s%s", p, *flag?"; ":"", flag);
 			} else {
+				f = NULL;
 				if (n==UT32_MAX || n==UT64_MAX) {
 					r_cons_printf (" ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
 				} else if (n == n32 && (n32>-512 && n32 <512)) {
