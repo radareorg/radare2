@@ -2312,7 +2312,6 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		"agn", " title body", "Add a node to the current ASCII art graph",
 		"age", " title1 title2", "Add an edge to the current ASCII art graph",
 		"agg", "", "Print the current ASCII art graph",
-		"agfl", " [fcn name]", "output graphviz code of function using meta-data",
 		"agv", "[acdltfl] [a]", "view function using graphviz",
 		NULL};
 
