@@ -1767,7 +1767,8 @@ static void agraph_set_zoom (RAGraph *g, int v) {
 /* reload all the info in the nodes, depending on the type of the graph
  * (callgraph, CFG, etc.), set the default layout for these nodes and center
  * the screen on the selected one */
-static int agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
+static int agraph_reload_nodes(RAGraph *g, RCore *core,
+		RAnalFunction *fcn, int center) {
 	int ret;
 
 	r_agraph_reset (g);
@@ -1775,7 +1776,8 @@ static int agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	if (!ret)
 		return R_FALSE;
 	agraph_set_layout(g);
-	g->update_seek_on = get_anode (g->curnode);
+	if (center)
+		g->update_seek_on = get_anode (g->curnode);
 	return R_TRUE;
 }
 
@@ -1905,7 +1907,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	/* look for any change in the state of the graph
 	 * and update what's necessary */
 	if (g->need_reload_nodes) {
-		ret = agraph_reload_nodes(g, core, *fcn);
+		ret = agraph_reload_nodes (g, core, *fcn, R_TRUE);
 		if (!ret)
 			return R_FALSE;
 
@@ -2111,7 +2113,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				else
 					r_core_cmd0 (core, "aes;.dr*");
 			}
-			ret = agraph_reload_nodes(g, core, fcn);
+			ret = agraph_reload_nodes(g, core, fcn, R_FALSE);
 			if (!ret) is_error = R_TRUE;
 			break;
 		case 'Z':
@@ -2123,7 +2125,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				if (r_config_get_i (core->config, "cfg.debug"))
 					r_core_cmd0 (core, "dso;.dr*");
 				else r_core_cmd0 (core, "aeso;.dr*");
-				ret = agraph_reload_nodes(g, core, fcn);
+				ret = agraph_reload_nodes(g, core, fcn, R_FALSE);
 				if (!ret) is_error = R_TRUE;
 			}
 			break;
@@ -2174,7 +2176,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case '!':
 			color_disasm = color_disasm? 0: 1;
 			r_config_set_i (core->config, "scr.color", color_disasm);
-			ret = agraph_reload_nodes(g, core, fcn);
+			ret = agraph_reload_nodes(g, core, fcn, R_FALSE);
 			if (!ret) is_error = R_TRUE;
 			agraph_set_layout (g);
 			break;
