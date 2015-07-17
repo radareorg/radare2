@@ -90,8 +90,12 @@ static void update_node_dimension(const RGraph *g, int is_small, int zoom) {
 			n->h = 0;
 			n->w = strlen (SMALLNODE_TEXT);
 		} else {
-			n->w = r_str_bounds (n->body, &n->h);
-			n->w = R_MAX (n->w, strlen (n->title) + MARGIN_TEXT_X);
+			unsigned int len;
+
+			n->w = r_str_bounds (n->body, (int *)&n->h);
+			len = strlen (n->title) + MARGIN_TEXT_X;
+			if (len > INT_MAX) len = INT_MAX;
+			n->w = R_MAX (n->w, (int)len);
 			n->w += BORDER_WIDTH;
 			n->h += BORDER_HEIGHT;
 			/* scale node by zoom */
@@ -1941,6 +1945,22 @@ static void agraph_init(RAGraph *g) {
 	g->movspeed = DEFAULT_SPEED; //r_config_get_i (g->core->config, "graph.scroll");
 }
 
+static void free_anode (RANode *n) {
+	free (n->title);
+	free (n->body);
+}
+
+static int free_anode_cb (void *user UNUSED, const char *k UNUSED, const char *v) {
+	RANode *n = (RANode *)(size_t)sdb_atoi(v);
+	free_anode (n);
+	return 1;
+}
+
+static void agraph_free_nodes (const RAGraph *g) {
+	sdb_foreach (g->nodes, (SdbForeachCallback)free_anode_cb, NULL);
+	sdb_free (g->nodes);
+}
+
 R_API void r_agraph_print (RAGraph *g) {
 	agraph_print (g, R_FALSE, NULL, NULL);
 	if (g->graph->n_nodes > 0)
@@ -1978,7 +1998,7 @@ R_API void r_agraph_add_edge (const RAGraph *g, RANode *a, RANode *b) {
 R_API void r_agraph_reset (RAGraph *g) {
 	r_graph_reset (g->graph);
 	r_stack_free (g->history);
-	sdb_free (g->nodes);
+	agraph_free_nodes (g);
 
 	g->nodes = sdb_new0 ();
 	g->update_seek_on = NULL;
@@ -1989,7 +2009,7 @@ R_API void r_agraph_reset (RAGraph *g) {
 R_API void r_agraph_free(RAGraph *g) {
 	r_graph_free (g->graph);
 	r_stack_free (g->history);
-	sdb_free (g->nodes);
+	agraph_free_nodes (g);
 	free(g);
 }
 
@@ -2061,6 +2081,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		if (!is_interactive) {
 			/* this is a non-interactive ascii-art graph, so exit the loop */
 			r_cons_printf (Color_RESET);
+			r_cons_newline ();
 			break;
 		}
 
@@ -2174,7 +2195,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			g->color_false = core->cons->pal.graph_false;
 			break;
 		case '!':
-			color_disasm = color_disasm? 0: 1;
+			color_disasm = !color_disasm;
 			r_config_set_i (core->config, "scr.color", color_disasm);
 			ret = agraph_reload_nodes(g, core, fcn, R_FALSE);
 			if (!ret) is_error = R_TRUE;
@@ -2254,9 +2275,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  break;
 		case 'C':
 			  can->color = !!!can->color;
-			  if (!can->color) {
+			  if (!can->color)
 				  color_disasm = R_FALSE;
-			  }
 			  //r_config_swap (core->config, "scr.color");
 			  // refresh graph
 			  break;
@@ -2281,10 +2301,13 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		}
 	}
 
+	core->cons->event_data = NULL;
+	core->cons->event_resize = NULL;
+
 	free (grd);
 	r_agraph_free(g);
 err_graph_new:
 	r_config_set_i (core->config, "scr.color", can->color);
-	free (can);
+	r_cons_canvas_free (can);
 	return !is_error;
 }
