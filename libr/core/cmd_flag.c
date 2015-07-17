@@ -320,6 +320,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			"fs","-*","remove all flagspaces",
 			"fs","+foo","push previous flagspace and set",
 			"fs","-","pop to the previous flagspace",
+			"fs","-.","remove the current flagspace",
 			"fsm"," [addr]","move flags at given address to the current flagspace",
 			"fsr"," newname","rename selected flagspace",
 			NULL};
@@ -335,14 +336,22 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			else eprintf ("Usage: fsr [newname]\n");
 			break;
 		case '-':
-			if (input[2]) {
-				if (input[2]=='*') {
-					r_flag_space_unset (core->flags, NULL);
-				} else {
-					r_flag_space_unset (core->flags, input+2);
+			switch (input[2]) {
+			case '*':
+				r_flag_space_unset (core->flags, NULL);
+				break;
+			case '.':
+				{
+				const char *curfs = r_flag_space_cur (core->flags);
+				r_flag_space_unset (core->flags, curfs);
 				}
-			} else {
+				break;
+			case 0:
 				r_flag_space_pop (core->flags);
+				break;
+			default:
+				r_flag_space_unset (core->flags, input+2);
+				break;
 			}
 			break;
 		case 'j':

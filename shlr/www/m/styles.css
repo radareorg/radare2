@@ -255,3 +255,7 @@ input {
 	font-family: monospace;
 	width: 100%;
 }
+
+td {
+	text-align:left !important;
+}

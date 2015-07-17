@@ -19,6 +19,10 @@ R_API const char *r_flag_space_get_i (RFlag *f, int idx) {
 	return f->spaces[idx];
 }
 
+R_API const char *r_flag_space_cur(RFlag *f) {
+	return r_flag_space_get_i (f, f->space_idx);
+}
+
 #if 0
 void flag_space_init(struct r_flag_t *f) {
 	static int init = 0;

@@ -1658,7 +1658,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				if (!r_debug_map_get (core->dbg, xref_to))
 					continue;
 			} else if (core->io->va) {
-				RListIter *iter;
+				RListIter *iter = NULL;
 				RIOSection *s;
 				r_list_foreach (core->io->sections, iter, s) {
 					if (xref_to >= s->vaddr && xref_to < s->vaddr + s->vsize) {
