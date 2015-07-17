@@ -2771,7 +2771,9 @@ static int cmd_anal(void *data, const char *input) {
 
 				if (from == 0 && to == 0)
 					return R_FALSE;
-
+				if (to-from > r_io_size (core->io)) {
+					return R_FALSE;
+				}
 				r_core_anal_search_xrefs (core, from, to, rad);
 			}
 			break;
