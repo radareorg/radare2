@@ -527,6 +527,7 @@ typedef struct r_ascii_graph_t {
 	RConsCanvas *can;
 	RGraph *graph;
 	const RGraphNode *curnode;
+	char *title;
 	Sdb *nodes;
 
 	int is_callgraph;
