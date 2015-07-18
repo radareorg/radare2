@@ -90,8 +90,12 @@ static void update_node_dimension(const RGraph *g, int is_small, int zoom) {
 			n->h = 0;
 			n->w = strlen (SMALLNODE_TEXT);
 		} else {
-			n->w = r_str_bounds (n->body, &n->h);
-			n->w = R_MAX (n->w, strlen (n->title) + MARGIN_TEXT_X);
+			unsigned int len;
+
+			n->w = r_str_bounds (n->body, (int *)&n->h);
+			len = strlen (n->title) + MARGIN_TEXT_X;
+			if (len > INT_MAX) len = INT_MAX;
+			n->w = R_MAX (n->w, (int)len);
 			n->w += BORDER_WIDTH;
 			n->h += BORDER_HEIGHT;
 			/* scale node by zoom */
@@ -1946,7 +1950,7 @@ static void free_anode (RANode *n) {
 	free (n->body);
 }
 
-static int free_anode_cb (void *user, const char *k, const char *v) {
+static int free_anode_cb (void *user UNUSED, const char *k UNUSED, const char *v) {
 	RANode *n = (RANode *)(size_t)sdb_atoi(v);
 	free_anode (n);
 	return 1;
