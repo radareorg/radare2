@@ -1357,7 +1357,7 @@ static void remove_dummy_nodes (const RAGraph *g) {
  * 4) reorder nodes in each layer to reduce the number of edge crossing
  * 5) assign x and y coordinates to each node
  * 6) restore the original graph, with long edges and cycles */
-static void set_layout_bb(RAGraph *g) {
+static void set_layout(RAGraph *g) {
 	int i, j, k;
 
 	remove_cycles (g);
@@ -1411,26 +1411,6 @@ static void set_layout_bb(RAGraph *g) {
 	free (g->layers);
 	r_list_free (g->long_edges);
 	r_list_free (g->back_edges);
-}
-
-static void set_layout_callgraph(RAGraph *g) {
-	const RList *nodes = r_graph_get_nodes (g->graph);
-	RGraphNode *gn;
-	RListIter *it;
-	RANode *prev_n = NULL, *n;
-	int y = 5, x = 20;
-
-	graph_foreach_anode (nodes, it, gn, n) {
-		// wrap to width 'w'
-		if (prev_n && n->x < prev_n->x) {
-			y += 10;
-			x = 0;
-		}
-		n->x = x;
-		n->y = prev_n ? y : 2;
-		x += 30;
-		prev_n = n;
-	}
 }
 
 /* build the RGraph inside the RAGraph g, starting from the Basic Blocks */
@@ -1658,10 +1638,7 @@ static void update_graph_sizes (RAGraph *g) {
 }
 
 static void agraph_set_layout(RAGraph *g) {
-	if (g->is_callgraph)
-		set_layout_callgraph(g);
-	else
-		set_layout_bb(g);
+	set_layout(g);
 
 	g->curnode = find_near_of (g, NULL, R_TRUE);
 	update_graph_sizes (g);
