@@ -1290,6 +1290,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("graph.to", UT64_MAX, "");
 	SETI("graph.scroll", 5, "Scroll speed in ascii-art graph");
 	SETPREF("graph.invscroll", "false", "Invert scroll direction in ascii-art graph");
+	SETPREF("graph.title", "", "Title of the graph");
 
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");

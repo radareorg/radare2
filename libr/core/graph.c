@@ -1650,6 +1650,10 @@ static void update_graph_sizes (RAGraph *g) {
 	}
 
 	g->w = max_x - g->x;
+	if (g->title) {
+		size_t len = strlen (g->title);
+		if (len > g->w) g->w = len;
+	}
 	g->h = max_y - g->y;
 }
 
@@ -1828,9 +1832,18 @@ static void agraph_prev_node(RAGraph *g) {
 	agraph_update_seek (g, get_anode (g->curnode), R_FALSE);
 }
 
+static void agraph_update_title (RAGraph *g, RAnalFunction *fcn) {
+	char *new_title = r_str_newf(
+			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
+			fcn->addr, r_stack_size (g->history), fcn->name,
+			g->graph->n_nodes, g->graph->n_edges, g->zoom, g->is_callgraph?"CG":"BB",
+			mousemodes[mousemode], g->movspeed);
+	r_agraph_set_title (g, new_title);
+	r_str_free (new_title);
+}
+
 static void agraph_print (RAGraph *g, int is_interactive,
                           RCore *core, RAnalFunction *fcn) {
-	char title[TITLE_LEN];
 	int h, w = r_cons_get_size (&h);
 
 	if (g->need_update_dim || !is_interactive) {
@@ -1855,37 +1868,32 @@ static void agraph_print (RAGraph *g, int is_interactive,
 	if (!is_interactive)
 		update_graph_sizes (g);
 
-	h = is_interactive ? h : g->h;
+	h = is_interactive ? h : g->h + 1;
 	w = is_interactive ? w : g->w;
 	r_cons_canvas_resize (g->can, w, h);
 	r_cons_canvas_clear (g->can);
 	if (!is_interactive) {
 		g->can->sx = -g->x;
-		g->can->sy = -g->y;
+		g->can->sy = -g->y + 1;
 	}
 
 	agraph_print_edges(g);
 	agraph_print_nodes(g);
 
+	/* print the graph title */
+	(void)G (-g->can->sx, -g->can->sy);
+	W (g->title);
+
+	r_cons_canvas_print_region (g->can);
+
 	if (is_interactive) {
 		const char *cmdv;
-		(void)G (-g->can->sx, -g->can->sy);
-		snprintf (title, sizeof (title)-1,
-			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
-			fcn->addr, r_stack_size (g->history), fcn->name,
-			g->graph->n_nodes, g->graph->n_edges, g->zoom, g->is_callgraph?"CG":"BB",
-			mousemodes[mousemode], g->movspeed);
-		W (title);
-
-		r_cons_canvas_print (g->can);
 
 		cmdv = r_config_get (core->config, "cmd.gprompt");
 		if (cmdv && *cmdv) {
 			r_cons_gotoxy (0, 1);
 			r_core_cmd0 (core, cmdv);
 		}
-	} else {
-		r_cons_canvas_print_region (g->can);
 	}
 	r_cons_flush ();
 }
@@ -1918,6 +1926,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		g->need_reload_nodes = R_FALSE;
 	}
 
+	agraph_update_title (g, *fcn);
 	agraph_print (g, fs, core, *fcn);
 	return R_TRUE;
 }
@@ -1967,6 +1976,11 @@ R_API void r_agraph_print (RAGraph *g) {
 		r_cons_newline ();
 }
 
+R_API void r_agraph_set_title (RAGraph *g, const char *title) {
+	if (g->title) free (g->title);
+	g->title = title ? strdup (title) : NULL;
+}
+
 R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
                                  const char *body) {
 	RANode *res = R_NEW0 (RANode);
@@ -1999,6 +2013,7 @@ R_API void r_agraph_reset (RAGraph *g) {
 	r_graph_reset (g->graph);
 	r_stack_free (g->history);
 	agraph_free_nodes (g);
+	r_agraph_set_title (g, NULL);
 
 	g->nodes = sdb_new0 ();
 	g->update_seek_on = NULL;
@@ -2010,6 +2025,7 @@ R_API void r_agraph_free(RAGraph *g) {
 	r_graph_free (g->graph);
 	r_stack_free (g->history);
 	agraph_free_nodes (g);
+	r_agraph_set_title (g, NULL);
 	free(g);
 }
 
