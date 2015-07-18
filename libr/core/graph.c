@@ -1357,7 +1357,7 @@ static void remove_dummy_nodes (const RAGraph *g) {
  * 4) reorder nodes in each layer to reduce the number of edge crossing
  * 5) assign x and y coordinates to each node
  * 6) restore the original graph, with long edges and cycles */
-static void set_layout_bb(RAGraph *g) {
+static void set_layout(RAGraph *g) {
 	int i, j, k;
 
 	remove_cycles (g);
@@ -1411,26 +1411,6 @@ static void set_layout_bb(RAGraph *g) {
 	free (g->layers);
 	r_list_free (g->long_edges);
 	r_list_free (g->back_edges);
-}
-
-static void set_layout_callgraph(RAGraph *g) {
-	const RList *nodes = r_graph_get_nodes (g->graph);
-	RGraphNode *gn;
-	RListIter *it;
-	RANode *prev_n = NULL, *n;
-	int y = 5, x = 20;
-
-	graph_foreach_anode (nodes, it, gn, n) {
-		// wrap to width 'w'
-		if (prev_n && n->x < prev_n->x) {
-			y += 10;
-			x = 0;
-		}
-		n->x = x;
-		n->y = prev_n ? y : 2;
-		x += 30;
-		prev_n = n;
-	}
 }
 
 /* build the RGraph inside the RAGraph g, starting from the Basic Blocks */
@@ -1554,15 +1534,12 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 static int reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	int ret;
 
-	if (g->is_callgraph) {
+	if (g->is_callgraph)
 		ret = get_cgnodes(g, core, fcn);
-		if (!ret)
-			return R_FALSE;
-	} else {
+	else
 		ret = get_bbnodes(g, core, fcn);
-		if (!ret)
-			return R_FALSE;
-	}
+	if (!ret)
+		return R_FALSE;
 
 	update_node_dimension(g->graph, g->is_small_nodes, g->zoom);
 	return R_TRUE;
@@ -1658,10 +1635,7 @@ static void update_graph_sizes (RAGraph *g) {
 }
 
 static void agraph_set_layout(RAGraph *g) {
-	if (g->is_callgraph)
-		set_layout_callgraph(g);
-	else
-		set_layout_bb(g);
+	set_layout(g);
 
 	g->curnode = find_near_of (g, NULL, R_TRUE);
 	update_graph_sizes (g);
@@ -1763,6 +1737,7 @@ static void agraph_toggle_simple_mode(RAGraph *g) {
 static void agraph_toggle_callgraph(RAGraph *g) {
 	g->is_callgraph = !g->is_callgraph;
 	g->need_reload_nodes = R_TRUE;
+	g->force_update_seek = R_TRUE;
 }
 
 static void agraph_set_zoom (RAGraph *g, int v) {
@@ -1775,8 +1750,7 @@ static void agraph_set_zoom (RAGraph *g, int v) {
 /* reload all the info in the nodes, depending on the type of the graph
  * (callgraph, CFG, etc.), set the default layout for these nodes and center
  * the screen on the selected one */
-static int agraph_reload_nodes(RAGraph *g, RCore *core,
-		RAnalFunction *fcn, int center) {
+static int agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	int ret;
 
 	r_agraph_reset (g);
@@ -1784,8 +1758,6 @@ static int agraph_reload_nodes(RAGraph *g, RCore *core,
 	if (!ret)
 		return R_FALSE;
 	agraph_set_layout(g);
-	if (center)
-		g->update_seek_on = get_anode (g->curnode);
 	return R_TRUE;
 }
 
@@ -1854,8 +1826,11 @@ static void agraph_print (RAGraph *g, int is_interactive,
 		agraph_set_layout (g);
 		g->need_set_layout = R_FALSE;
 	}
-	if (g->update_seek_on) {
-		update_seek(g->can, g->update_seek_on, g->force_update_seek);
+	if (g->update_seek_on || g->force_update_seek) {
+		RANode *n = g->update_seek_on;
+
+		if (!n && g->curnode) n = get_anode (g->curnode);
+		if (n) update_seek(g->can, n, g->force_update_seek);
 		g->update_seek_on = NULL;
 		g->force_update_seek = R_FALSE;
 	}
@@ -1919,7 +1894,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	/* look for any change in the state of the graph
 	 * and update what's necessary */
 	if (g->need_reload_nodes) {
-		ret = agraph_reload_nodes (g, core, *fcn, R_TRUE);
+		ret = agraph_reload_nodes (g, core, *fcn);
 		if (!ret)
 			return R_FALSE;
 
@@ -2150,8 +2125,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				else
 					r_core_cmd0 (core, "aes;.dr*");
 			}
-			ret = agraph_reload_nodes(g, core, fcn, R_FALSE);
-			if (!ret) is_error = R_TRUE;
+			g->need_reload_nodes = R_TRUE;
 			break;
 		case 'Z':
 			if (okey == 27) {
@@ -2162,8 +2136,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				if (r_config_get_i (core->config, "cfg.debug"))
 					r_core_cmd0 (core, "dso;.dr*");
 				else r_core_cmd0 (core, "aeso;.dr*");
-				ret = agraph_reload_nodes(g, core, fcn, R_FALSE);
-				if (!ret) is_error = R_TRUE;
+				g->need_reload_nodes = R_TRUE;
 			}
 			break;
 		case 'x':
@@ -2213,9 +2186,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case '!':
 			color_disasm = !color_disasm;
 			r_config_set_i (core->config, "scr.color", color_disasm);
-			ret = agraph_reload_nodes(g, core, fcn, R_FALSE);
-			if (!ret) is_error = R_TRUE;
-			agraph_set_layout (g);
+			g->need_reload_nodes = R_TRUE;
 			break;
 		case 'r':
 			agraph_set_layout (g);
