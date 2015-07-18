@@ -2375,6 +2375,8 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'g':
 		core->graph->can->linemode = 1;
 		core->graph->can->color = r_config_get_i (core->config, "scr.color");
+		r_agraph_set_title (core->graph,
+				r_config_get (core->config, "graph.title"));
 		r_agraph_print (core->graph);
 		break;
 	case 't':

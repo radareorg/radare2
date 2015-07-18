@@ -1650,6 +1650,10 @@ static void update_graph_sizes (RAGraph *g) {
 	}
 
 	g->w = max_x - g->x;
+	if (g->title) {
+		size_t len = strlen (g->title);
+		if (len > g->w) g->w = len;
+	}
 	g->h = max_y - g->y;
 }
 
@@ -1829,12 +1833,13 @@ static void agraph_prev_node(RAGraph *g) {
 }
 
 static void agraph_update_title (RAGraph *g, RAnalFunction *fcn) {
-	if (g->title) r_str_free (g->title);
-	g->title = r_str_newf(
+	char *new_title = r_str_newf(
 			"[0x%08"PFMT64x"]> %d VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
 			fcn->addr, r_stack_size (g->history), fcn->name,
 			g->graph->n_nodes, g->graph->n_edges, g->zoom, g->is_callgraph?"CG":"BB",
 			mousemodes[mousemode], g->movspeed);
+	r_agraph_set_title (g, new_title);
+	r_str_free (new_title);
 }
 
 static void agraph_print (RAGraph *g, int is_interactive,
@@ -1971,6 +1976,11 @@ R_API void r_agraph_print (RAGraph *g) {
 		r_cons_newline ();
 }
 
+R_API void r_agraph_set_title (RAGraph *g, const char *title) {
+	if (g->title) free (g->title);
+	g->title = title ? strdup (title) : NULL;
+}
+
 R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
                                  const char *body) {
 	RANode *res = R_NEW0 (RANode);
@@ -2003,8 +2013,7 @@ R_API void r_agraph_reset (RAGraph *g) {
 	r_graph_reset (g->graph);
 	r_stack_free (g->history);
 	agraph_free_nodes (g);
-	if (g->title) r_str_free (g->title);
-	g->title = NULL;
+	r_agraph_set_title (g, NULL);
 
 	g->nodes = sdb_new0 ();
 	g->update_seek_on = NULL;
@@ -2016,7 +2025,7 @@ R_API void r_agraph_free(RAGraph *g) {
 	r_graph_free (g->graph);
 	r_stack_free (g->history);
 	agraph_free_nodes (g);
-	if (g->title) r_str_free (g->title);
+	r_agraph_set_title (g, NULL);
 	free(g);
 }
 
