@@ -529,6 +529,7 @@ typedef struct r_ascii_graph_t {
 	RGraph *graph;
 	const RGraphNode *curnode;
 	char *title;
+	Sdb *db;
 	Sdb *nodes;
 
 	int is_callgraph;
@@ -561,6 +562,9 @@ typedef struct r_ascii_graph_t {
 	const char *color_false;
 } RAGraph;
 
+typedef void (*RANodeCallback)(RANode *n);
+typedef void (*RAEdgeCallback)(RANode *from, RANode *to);
+
 #ifdef R_API
 R_API RAGraph *r_agraph_new (RConsCanvas *can);
 R_API void r_agraph_free (RAGraph *g);
@@ -569,7 +573,12 @@ R_API void r_agraph_set_title (RAGraph *g, const char *title);
 R_API RANode *r_agraph_get_node (const RAGraph *g, const char *title);
 R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title, const char *body);
 R_API void r_agraph_add_edge (const RAGraph *g, RANode *a, RANode *b);
+R_API void r_agraph_add_edge_at (const RAGraph *g, RANode *a, RANode *b, int nth);
+R_API void r_agraph_del_edge (const RAGraph *g, RANode *a, RANode *b);
 R_API void r_agraph_print (RAGraph *g);
+R_API Sdb *r_agraph_get_sdb (RAGraph *g);
+R_API void r_agraph_foreach (RAGraph *g, RANodeCallback cb);
+R_API void r_agraph_foreach_edge (RAGraph *g, RAEdgeCallback cb);
 #endif
 
 #ifdef __cplusplus
