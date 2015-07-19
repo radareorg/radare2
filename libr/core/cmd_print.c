@@ -1405,6 +1405,7 @@ static int cmd_print(void *data, const char *input) {
 		r_list_free (r_core_get_boundaries (core, "file", &from, &to));
 		piece = R_MAX((to - from) / w, 1);
 		as = r_core_anal_get_stats (core, from, to, piece);
+		if (!as && mode !='?') return 0;
 		//eprintf ("RANGE = %llx %llx\n", from, to);
 		switch (mode) {
 		case '?':{

@@ -1885,12 +1885,20 @@ R_API RCoreAnalStats* r_core_anal_get_stats (RCore *core, ut64 from, ut64 to, ut
 	RAnalFunction *F;
 	//RAnalMetaItem *m;
 	RListIter *iter;
-	RCoreAnalStats *as = R_NEW0 (RCoreAnalStats);
+	RCoreAnalStats *as = NULL;
 	int piece, as_size, blocks;
+
+	if (from == to) return NULL;
+	as = R_NEW0 (RCoreAnalStats);
+	if (!as) return NULL;
 	if (step<1) step = 1;
 	blocks = (to-from)/step;
 	as_size = (1+blocks) * sizeof (RCoreAnalStatsItem);
 	as->block = malloc (as_size);
+	if (!as->block) {
+		free (as);
+		return NULL;
+	}
 	memset (as->block, 0, as_size);
 //	eprintf ("Use %d blocks\n", blocks);
 //	eprintf (" ( 0x%"PFMT64x" - 0x%"PFMT64x" )\n", from, to);
