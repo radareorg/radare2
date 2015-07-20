@@ -679,7 +679,7 @@ SETL/SETNGE
 		case X86_INS_LEAVE:
 			op->type = R_ANAL_OP_TYPE_POP;
 			if (a->decode) {
-				esilprintf (op, "%s,%s,=,%s,[%d],%s,%d,%s,-=",
+				esilprintf (op, "%s,%s,=,%s,[%d],%s,=,%d,%s,+=",
 					bp, sp, sp, rs, bp, rs, sp);
 			}
 			op->stackop = R_ANAL_STACK_INC;
