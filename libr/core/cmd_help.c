@@ -335,9 +335,16 @@ static int cmd_help(void *data, const char *input) {
 		}
 		return R_TRUE;
 	case 'V':
-		if (!strcmp (R2_VERSION, GIT_TAP))
-			r_cons_printf ("%s %d\n", R2_VERSION, R2_VERSION_COMMIT);
-		else r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, GIT_TAP, R2_VERSION_COMMIT);
+		if (!input[1]){
+			if (!strcmp (R2_VERSION, GIT_TAP))
+				r_cons_printf ("%s %d\n", R2_VERSION, R2_VERSION_COMMIT);
+
+			else r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, GIT_TAP, R2_VERSION_COMMIT);
+		}	
+		if (input[1] == 'j' && !input[2]){
+			r_cons_printf ("{\"system\":\"%s-%s-%s\"", R_SYS_OS, R_SYS_ENDIAN, R_SYS_ARCH);
+			r_cons_printf (",\"version\":\"%s\"}\n",  R2_VERSION);
+		}
 		break;
 	case 'l':
 		for (input++; input[0]==' '; input++);
