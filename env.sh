@@ -1,9 +1,19 @@
 #!/bin/sh
 
-pfx=$(readlink --canonicalize "$1")
+pfx="$1"
 if [ -z "$pfx" ]; then
-	echo "Usage: ./env.sh [path-to-prefix] [program]"
+	echo "Usage: ./env.sh [destdir|prefix] [program]"
 	exit 1
+fi
+
+if [ ! -d "$pfx" ]; then
+	echo "Cannot find $pfx directory"
+	exit 1
+fi
+
+# Support DESTDIR
+if [ -d "$pfx/usr/bin" ]; then
+	pfx="$pfx/usr"
 fi
 
 new_env='
@@ -14,19 +24,22 @@ DYLD_LIBRARY_PATH=$pfx/lib:$DYLD_LIBRARY_PATH
 PKG_CONFIG_PATH=$pfx/lib/pkgconfig:$PKG_CONFIG_PATH
 '
 
-[ -n "$2" ] && SHELL=$2
+shift
 
-#echo
-#echo "==> Entering radare2 environment shell..."
-#echo
-#echo $new_env $SHELL \
-#   | sed -e 's, ,\n,g' \
-#   | sed -e 's,^,  ,g' \
-#   | sed -e 's,$, \\,'
-#echo
-
-eval $new_env $SHELL
-
-#echo
-#echo "==> Back to system shell..."
-#echo
+if [ -z "$*" ]; then
+	echo
+	echo "==> Entering radare2 environment shell..."
+	echo
+	echo $new_env $* \
+	   | sed -e 's, ,\n,g' \
+	   | sed -e 's,^,  ,g' \
+	   | sed -e 's,$, \\,'
+	echo
+	export PS1="r2env.sh$ "
+	eval $new_env $SHELL
+	echo
+	echo "==> Back to system shell..."
+	echo
+else
+	eval $new_env $*
+fi
