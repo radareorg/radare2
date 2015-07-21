@@ -383,7 +383,7 @@ SDB_API int sdb_array_contains(Sdb *s, const char *key, const char *val, ut32 *c
 	if (list && *list) {
 		do {
 			const char *str = sdb_const_anext (ptr, &next);
-			int len = next? (int)(size_t)(next-str)-1 : strlen (str);
+			int len = next? (int)(size_t)(next-str)-1 : (int)strlen (str);
 			if (len == vlen) {
 				if (!memcmp (str, val, len)) {
 					return 1;

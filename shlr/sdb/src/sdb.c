@@ -477,7 +477,7 @@ static int sdb_foreach_list_cb(void *user, const char *k, const char *v) {
 	SdbList *list = (SdbList *)user;
 	list->free = free;
 	SdbKv *kv = R_NEW0 (SdbKv);
-	strcpy (kv->key, k); // just copy pointer
+	strncpy (kv->key, k, sizeof (kv->key)-1);
 	kv->value = (char*)v;
 	ls_append (list, kv);
 	return 1;
