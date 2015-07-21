@@ -975,8 +975,9 @@ R_API int r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm) {
 		r_sys_backtrace ();
 		return R_FAIL;
 	}
-	if (r_list_empty (io->files))
+	if (r_list_empty (io->files)) {
 		return R_FALSE;
+	}
 	if (!io->desc) {
 		eprintf ("r_io_is_valid_offset: io->desc is NULL\n");
 		r_sys_backtrace ();
@@ -1005,17 +1006,22 @@ if (!ret)
 	       }
 	       break;
 	case 1:
-		if (io->sectonly) {
-			if (r_list_empty (io->sections)) {
-				return R_TRUE;
-			}
-			return (r_io_map_exists_for_offset (io, offset) ||
-				r_io_section_exists_for_vaddr (io, offset, hasperm));
-		} else {
-			return (r_io_map_exists_for_offset (io, offset) ||
-				r_io_section_exists_for_vaddr (io, offset, hasperm));
-			//return (offset < r_io_size (io));
-		}
+	       if (io->debug) {
+			// check debug maps here
+			return 1;
+	       } else {
+		       if (io->sectonly) {
+			       if (r_list_empty (io->sections)) {
+				       return R_TRUE;
+			       }
+			       return (r_io_map_exists_for_offset (io, offset) ||
+					       r_io_section_exists_for_vaddr (io, offset, hasperm));
+		       } else {
+			       return (r_io_map_exists_for_offset (io, offset) ||
+					       r_io_section_exists_for_vaddr (io, offset, hasperm));
+			       //return (offset < r_io_size (io));
+		       }
+	       }
 #endif
 	} // more io.va modes pls
 	eprintf ("r_io_is_valid_offset: io->va is %i\n", io->va);
