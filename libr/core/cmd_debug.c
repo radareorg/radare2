@@ -1703,6 +1703,7 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 		if (!done) {
 			eprintf ("Usage: de [rwx] [reg|mem] [expr]\n");
 		}
+		free (line);
 		}
 		break;
 	case '-':

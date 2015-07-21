@@ -64,8 +64,10 @@ static int __esil_wait(RDebug *dbg, int pid) {
 static int __esil_attach(RDebug *dbg, int pid) {
 	eprintf ("OK attach\n");
 	return R_TRUE;
+#if 0
 	if (!is_io_esil (dbg))
 		return R_FALSE;
+#endif
 #if 0
 	RIOBdescbg *o;
 	o = dbg->iob.io->desc->data;
