@@ -1661,11 +1661,8 @@ static void debug_trace_calls (RCore *core, const char *input) {
 
 	if (final_addr != UT64_MAX) {
 		int hwbp = r_config_get_i (core->config, "dbg.hwbp");
-
-		if (hwbp)
-			bp_final = r_bp_add_hw (core->dbg->bp, final_addr, 1, R_BP_PROT_EXEC);
-		else
-			bp_final = r_bp_add_sw (core->dbg->bp, final_addr, 1, R_BP_PROT_EXEC);
+		if (hwbp) bp_final = r_bp_add_hw (core->dbg->bp, final_addr, 1, R_BP_PROT_EXEC);
+		else bp_final = r_bp_add_sw (core->dbg->bp, final_addr, 1, R_BP_PROT_EXEC);
 		if (!bp_final)
 			eprintf ("Cannot set breakpoint at final address (%"PFMT64x")\n", final_addr);
 	}
@@ -1677,6 +1674,79 @@ static void debug_trace_calls (RCore *core, const char *input) {
 	trace_traverse (core->dbg->tree);
 	core->dbg->trace->enabled = t;
 	r_cons_break_end();
+}
+
+static void r_core_debug_esil (RCore *core, const char *input) {
+	switch (input[0]) {
+	case ' ':
+		{
+		char *line = strdup (input+1);
+		char *p, *q;
+		int done = 0;
+		int rwx = 0, dev = 0;
+		p = strchr (line, ' ');
+		if (p) {
+			*p++ = 0;
+			if (strchr (line, 'r')) rwx |= R_IO_READ;
+			if (strchr (line, 'w')) rwx |= R_IO_WRITE;
+			if (strchr (line, 'x')) rwx |= R_IO_EXEC;
+			q = strchr (p, ' ');
+			if (q) {
+				*q++ = 0;
+				dev = p[0];
+				if (q) {
+					r_debug_esil_watch (core->dbg, rwx, dev, q);
+					done = 1;
+				}
+			}
+		}
+		if (!done) {
+			eprintf ("Usage: de [rwx] [reg|mem] [expr]\n");
+		}
+		}
+		break;
+	case '-':
+		r_debug_esil_watch_reset (core->dbg);
+		break;
+	case 's':
+		if (input[1] == '?' || !input[1]) {
+			eprintf ("Usage: des [num-of-instructions]\n");
+		} else {
+			r_core_cmd0 (core, "aei");
+			r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
+			// continue
+			r_debug_esil_step (core->dbg, r_num_math (core->num, input+1));
+		}
+		break;
+	case 'c':
+		if (r_debug_esil_watch_empty (core->dbg)) {
+			eprintf ("Error: no esil watchpoints defined\n");
+		} else {
+			r_core_cmd0 (core, "aei");
+			r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
+			r_debug_esil_continue (core->dbg);
+		}
+		break;
+	case 0:
+		// list
+		r_debug_esil_watch_list (core->dbg);
+		break;
+	case '?':
+	default:
+		eprintf ("Usage: de[-sc] [rwx] [rm] [expr]\n");
+		eprintf ("Examples:\n");
+		eprintf ("> de               # list esil watchpoints\n");
+		eprintf ("> de-*             # delete all esil watchpoints\n");
+		eprintf ("> de r r rip       # stop when reads rip\n");
+		eprintf ("> de rw m ADDR     # stop when read or write in ADDR\n");
+		eprintf ("> de w r rdx       # stop when rdx register is modified\n");
+		eprintf ("> de x m FROM..TO  # stop when rip in range\n");
+		eprintf ("> dec              # continue execution until matching expression\n");
+		eprintf ("> des [num]        # step-in N instructions with esildebug\n");
+		eprintf ("TODO: Add support for conditionals in expressions like rcx == 4 or rcx<10\n");
+		eprintf ("TODO: Turn on/off debugger trace of esil debugging\n");
+		break;
+	}
 }
 
 static void r_core_debug_kill (RCore *core, const char *input) {
@@ -2334,6 +2404,9 @@ static int cmd_debug(void *data, const char *input) {
 	case 'k':
 		r_core_debug_kill (core, input+1);
 		break;
+	case 'e':
+		r_core_debug_esil (core, input+1);
+		break;
 	default:{
 			const char* help_msg[] = {
 			"Usage:", "d", " # Debug commands",
@@ -2341,6 +2414,7 @@ static int cmd_debug(void *data, const char *input) {
 			"dbt", "", "Display backtrace",
 			"dc", "[?]", "Continue execution",
 			"dd", "[?]", "File descriptors (!fd in r1)",
+			"de", "[-sc] [rwx] [rm] [e]", "Debug with ESIL (see de?)",
 			"dh", " [handler]", "List or set debugger handler",
 			"dH", " [handler]", "Transplant process to a new handler",
 			"di", "", "Show debugger backend information (See dh)",
@@ -2352,7 +2426,7 @@ static int cmd_debug(void *data, const char *input) {
 			"ds", "[?]", "Step, over, source line",
 			"dt", "[?]", "Display instruction traces (dtr=reset)",
 			"dw", " <pid>", "Block prompt until pid dies",
-			"dx", "[?]", "Inject code on running process and execute it (See gs)",
+			"dx", "[?]", "Inject and run code on target process (See gs)",
 			NULL};
 			r_core_cmd_help (core, help_msg);
 		}

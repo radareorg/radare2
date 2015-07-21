@@ -109,6 +109,7 @@ void sdb_drain (Sdb*, Sdb*);
 
 typedef int (*SdbForeachCallback)(void *user, const char *k, const char *v);
 int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user);
+SdbList *sdb_foreach_list (Sdb* s);
 
 int  sdb_query (Sdb* s, const char *cmd);
 int  sdb_queryf (Sdb* s, const char *fmt, ...);

@@ -473,6 +473,22 @@ SDB_API int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	return sdb_set_internal (s, key, (char*)val, 0, cas);
 }
 
+static int sdb_foreach_list_cb(void *user, const char *k, const char *v) {
+	SdbList *list = (SdbList *)user;
+	list->free = free;
+	SdbKv *kv = R_NEW0 (SdbKv);
+	strcpy (kv->key, k); // just copy pointer
+	kv->value = (char*)v;
+	ls_append (list, kv);
+	return 1;
+}
+
+SDB_API SdbList *sdb_foreach_list (Sdb* s) {
+	SdbList *list = ls_new();
+	sdb_foreach (s, sdb_foreach_list_cb, list);
+	return list;
+}
+
 SDB_API int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 	SdbListIter *iter;
 	char *k, *v;

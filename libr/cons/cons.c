@@ -120,6 +120,10 @@ R_API void r_cons_break(void (*cb)(void *u), void *user) {
 // TODO: add support for w32 ^C
 }
 
+R_API int r_cons_is_breaked() {
+	return I.breaked;
+}
+
 R_API void r_cons_break_end() {
 	I.breaked = R_FALSE;
 	r_print_set_interrupted (I.breaked);

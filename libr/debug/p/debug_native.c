@@ -319,9 +319,14 @@ task_t pid_to_task(int pid) {
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
 		eprintf ("Reason: 0x%x: %s\n", err, (char *)MACH_ERROR_STRING (err));
-		eprintf ("You probably need to add user to procmod group.\n"
-			" Or chmod g+s radare && chown root:procmod radare\n");
-		eprintf ("FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
+		eprintf ("You probably need to run as root or sign the binary.\n"
+#if __IPHONE_2_0
+			" Read doc/ios.md\n"
+			" make -C binr/radare2 ios-sign\n");
+#else
+			" Read doc/osx.md\n"
+			" make -C binr/radare2 osx-sign\n");
+#endif
 		return -1;
 	}
 	old_pid = pid;

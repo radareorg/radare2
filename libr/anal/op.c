@@ -62,10 +62,14 @@ R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
 	RAnalOp *nop = R_NEW (RAnalOp);
 	if (!nop) return NULL;
 	*nop = *op;
-	nop->mnemonic = strdup (op->mnemonic);
-	if (!nop->mnemonic) {
-		free (nop);
-		return NULL;
+	if (op->mnemonic) {
+		nop->mnemonic = strdup (op->mnemonic);
+		if (!nop->mnemonic) {
+			free (nop);
+			return NULL;
+		}
+	} else {
+		nop->mnemonic = NULL;
 	}
 	nop->src[0] = r_anal_value_copy (op->src[0]);
 	nop->src[1] = r_anal_value_copy (op->src[1]);

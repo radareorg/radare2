@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake, TheLemonMan */
 
 #include <r_debug.h>
-#include <r_anal.h>
 #include <signal.h>
 
 R_LIB_VERSION(r_debug);
@@ -55,39 +54,39 @@ static int r_debug_recoil(RDebug *dbg) {
 
 R_API RDebug *r_debug_new(int hard) {
 	RDebug *dbg = R_NEW0 (RDebug);
-	if (dbg) {
-		// R_SYS_ARCH
-		dbg->arch = r_sys_arch_id (R_SYS_ARCH); // 0 is native by default
-		dbg->bits = R_SYS_BITS;
-		dbg->trace_forks = 1;
-		dbg->trace_clone = 0;
-		R_FREE (dbg->btalgo);
-		dbg->trace_execs = 0;
-		dbg->anal = NULL;
-		dbg->snaps = r_list_newf (r_debug_snap_free);
-		dbg->pid = -1;
-		dbg->bpsize = 1;
-		dbg->tid = -1;
-		dbg->tree = r_tree_new ();
-		dbg->tracenodes = sdb_new0 ();
-		dbg->swstep = 0;
-		dbg->newstate = 0;
-		dbg->signum = 0;
-		dbg->reason = R_DBG_REASON_UNKNOWN;
-		dbg->stop_all_threads = R_FALSE;
-		dbg->trace = r_debug_trace_new ();
-		dbg->printf = (void *)printf;
-		dbg->reg = r_reg_new ();
-		dbg->h = NULL;
-		/* TODO: needs a redesign? */
-		dbg->maps = r_debug_map_list_new ();
-		dbg->maps_user = r_debug_map_list_new ();
-		r_debug_signal_init (dbg);
-		if (hard) {
-			dbg->bp = r_bp_new ();
-			r_debug_plugin_init (dbg);
-			dbg->bp->iob.init = R_FALSE;
-		}
+	if (!dbg) return NULL;
+	// R_SYS_ARCH
+	dbg->arch = r_sys_arch_id (R_SYS_ARCH); // 0 is native by default
+	dbg->bits = R_SYS_BITS;
+	dbg->trace_forks = 1;
+	dbg->trace_clone = 0;
+	R_FREE (dbg->btalgo);
+	dbg->trace_execs = 0;
+	dbg->anal = NULL;
+	dbg->snaps = r_list_newf (r_debug_snap_free);
+	dbg->pid = -1;
+	dbg->bpsize = 1;
+	dbg->tid = -1;
+	dbg->tree = r_tree_new ();
+	dbg->tracenodes = sdb_new0 ();
+	dbg->swstep = 0;
+	dbg->newstate = 0;
+	dbg->signum = 0;
+	dbg->reason = R_DBG_REASON_UNKNOWN;
+	dbg->stop_all_threads = R_FALSE;
+	dbg->trace = r_debug_trace_new ();
+	dbg->printf = (void *)printf;
+	dbg->reg = r_reg_new ();
+	dbg->num = r_num_new (r_debug_num_callback, dbg);
+	dbg->h = NULL;
+	/* TODO: needs a redesign? */
+	dbg->maps = r_debug_map_list_new ();
+	dbg->maps_user = r_debug_map_list_new ();
+	r_debug_signal_init (dbg);
+	if (hard) {
+		dbg->bp = r_bp_new ();
+		r_debug_plugin_init (dbg);
+		dbg->bp->iob.init = R_FALSE;
 	}
 	return dbg;
 }
@@ -324,8 +323,10 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	sp = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_SP]);
 
-	if (dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf)) < 0)
-		return R_FALSE;
+	if (dbg->iob.read_at) {
+		if (dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf)) < 0)
+			return R_FALSE;
+	} else return R_FALSE;
 
 	if (!r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf)))
 		return R_FALSE;
@@ -334,29 +335,29 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		return R_FALSE;
 
 	switch (op.type) {
-		case R_ANAL_OP_TYPE_RET:
-			dbg->iob.read_at (dbg->iob.io, sp, (ut8 *)&sp_top, 8);
-			next[0] = (dbg->bits == R_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
-			br = 1;
-			break;
+	case R_ANAL_OP_TYPE_RET:
+		dbg->iob.read_at (dbg->iob.io, sp, (ut8 *)&sp_top, 8);
+		next[0] = (dbg->bits == R_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
+		br = 1;
+		break;
 
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_CCALL:
-			next[0] = op.jump;
-			next[1] = op.fail;
-			br = 2;
-			break;
+	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_CCALL:
+		next[0] = op.jump;
+		next[1] = op.fail;
+		br = 2;
+		break;
 
-		case R_ANAL_OP_TYPE_CALL:
-		case R_ANAL_OP_TYPE_JMP:
-			next[0] = op.jump;
-			br = 1;
-			break;
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_JMP:
+		next[0] = op.jump;
+		br = 1;
+		break;
 
-		default:
-			next[0] = op.addr + op.size;
-			br = 1;
-			break;
+	default:
+		next[0] = op.addr + op.size;
+		br = 1;
+		break;
 	}
 
 	for (i = 0; i < br; i++)

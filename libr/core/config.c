@@ -1046,6 +1046,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
+	SETPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETCB("esil.debug", "false", &cb_esildebug, "Show ESIL debug info");
 	SETICB("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
 
