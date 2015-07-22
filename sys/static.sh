@@ -33,10 +33,14 @@ BINS="rarun2 rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 rasign2 r2agent rad
 # shellcheck disable=SC2086
 for a in ${BINS} ; do
 (
-cd binr/$a
-${MAKE} clean
-LDFLAGS=-static ${MAKE} -j2
-strip -s $a
+	cd binr/$a
+	${MAKE} clean
+	if [ "`uname`" = Darwin ]; then
+		${MAKE} -j2
+	else
+		LDFLAGS=-static ${MAKE} -j2
+	fi
+	strip -s $a
 )
 done
 
