@@ -290,6 +290,7 @@ static void print_format_help_help(RCore *core) {
 	" ", "S", "64bit pointer to string (8 bytes)",
 	" ", "t", "UNIX timestamp (4 bytes)",
 	" ", "T", "show Ten first bytes of buffer",
+	" ", "u", "uleb128 (variable length)",
 	" ", "w", "word (2 bytes unsigned short in hex)",
 	" ", "x", "0x%%08x hex value and flag (fd @ addr)",
 	" ", "X", "show formatted hexpairs",
@@ -340,6 +341,10 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 	case 'j':
 		_input++;
 		mode = R_PRINT_JSON;
+		break;
+	case 'v':
+		_input++;
+		mode = R_PRINT_VALUE | R_PRINT_MUSTSEE;
 		break;
 	case 's':
 		{
@@ -456,6 +461,10 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 	if (!strcmp (input, "*") && mode == R_PRINT_SEEFLAGS)
 		listFormats = 1;
 
+	core->print->reg = core->dbg->reg;
+	core->print->get_register = r_reg_get;
+	core->print->get_register_value = r_reg_get_value;
+
 	if (listFormats) {
 		core->print->num = core->num;
 		/* print all stored format */
@@ -501,7 +510,7 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 			if (dot) {
 				*dot++ = 0;
 				eq = strchr (dot, '=');
-				if (eq) {
+				if (eq) { // Write mode (pf.field=value)
 					*eq++ = 0;
 					mode = R_PRINT_MUSTSET;
 					r_print_format (core->print, core->offset,

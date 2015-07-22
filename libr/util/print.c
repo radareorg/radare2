@@ -168,6 +168,9 @@ R_API RPrint *r_print_new() {
 		   R_PRINT_FLAGS_HEADER |
 		   R_PRINT_FLAGS_ADDRMOD;
 	p->zoom = R_NEW0 (RPrintZoom);
+	p->reg = NULL;
+	p->get_register = NULL;
+	p->get_register_value = NULL;
 	return p;
 }
 
