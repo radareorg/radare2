@@ -658,6 +658,12 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base) {
 
 R_API void r_file_mmap_free (RMmap *m) {
 	if (!m) return;
+#if __WINDOWS__
+	if (m->fm != INVALID_HANDLE_VALUE)
+		CloseHandle (m->fm);
+	if (m->fh != INVALID_HANDLE_VALUE)
+		CloseHandle (m->fh);
+#endif
 	if (m->fd == -1) {
 		free (m);
 		return;
@@ -665,8 +671,6 @@ R_API void r_file_mmap_free (RMmap *m) {
 #if __UNIX__
 	munmap (m->buf, m->len);
 #elif __WINDOWS__
-	CloseHandle (m->fm);
-	CloseHandle (m->fh);
 	UnmapViewOfFile (m->buf);
 #endif
 	close (m->fd);
