@@ -5,6 +5,7 @@
 #include "r_util.h"
 #include "r_cons.h"
 #include "r_io.h"
+#include "r_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,6 +66,7 @@ typedef struct r_print_t {
 	RStrHT *formats;
 	RCons *cons;
 	RNum *num;
+	RReg *reg;
 } RPrint;
 
 #ifdef R_API

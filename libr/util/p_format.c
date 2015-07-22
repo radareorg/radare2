@@ -3,6 +3,7 @@
 #include "r_cons.h"
 #include "r_util.h"
 #include "r_print.h"
+#include "r_reg.h"
 
 #define NOPTR 0
 #define PTRSEEK 1
@@ -872,6 +873,22 @@ static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
 	free (enumvalue);
 }
 
+static void r_print_format_register (const RPrint* p, int mode,
+		const char *name, const char* setval) {
+	RRegItem *ri = r_reg_get (p->reg, name, R_REG_TYPE_ALL);
+	if (ri == NULL) {
+		p->printf ("Register %s does not exists\n", name);
+		return;
+	}
+	if (MUSTSET) {
+		p->printf ("dr %s=%s\n", name, setval);
+	} else if (MUSTSEE) {
+		p->printf("%s : 0x%08"PFMT64x"\n", ri->name, r_reg_get_value (p->reg, ri));
+	} else if (MUSTSEEJSON) {
+		p->printf ("%d}", r_reg_get_value (p->reg, ri));
+	}
+}
+
 // XXX: this is very incomplete. must be updated to handle all format chars
 int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 	char *o = strdup(f);
@@ -1027,6 +1044,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	char *oarg = NULL;
 	static int slide=0, oldslide=0;
 	ut8 *buf;
+
 	if (!formatname)
 		return 0;
 	fmt = r_strht_get (p->formats, formatname);
@@ -1157,7 +1175,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (oarg != NULL)
 					free (oarg);
 				oarg = fieldname = strdup(r_str_word_get0 (args, idx));
-				if (ISSTRUCT || tmp=='E' || tmp=='B') {
+				if (ISSTRUCT || tmp=='E' || tmp=='B' || tmp=='r') {
 					if (*fieldname == '(') {
 						fmtname = fieldname+1;
 						fieldname = strchr (fieldname, ')');
@@ -1403,6 +1421,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if (size >= ARRAYINDEX_COEF) size %= ARRAYINDEX_COEF;
 					r_print_format_enum (p, seeki, fmtname, fieldname, addr, mode, size);
 					i+=(size==-1)?1:size;
+					break;
+				case 'r':
+					r_print_format_register (p, mode, fmtname, setval);
 					break;
 				case '?':
 					{

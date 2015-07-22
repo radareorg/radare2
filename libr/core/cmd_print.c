@@ -456,6 +456,8 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 	if (!strcmp (input, "*") && mode == R_PRINT_SEEFLAGS)
 		listFormats = 1;
 
+	core->print->reg = core->dbg->reg;
+
 	if (listFormats) {
 		core->print->num = core->num;
 		/* print all stored format */
