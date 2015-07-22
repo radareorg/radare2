@@ -263,7 +263,7 @@ int main(int argc, char **argv) {
 		case 'q':
 			get_offset = 1;
 			sequence = strdup (optarg);
-      break;
+			break;
 		default:
 			return 1;
 		}
