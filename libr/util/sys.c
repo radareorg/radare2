@@ -296,7 +296,7 @@ R_API int r_sys_chdir(const char *s) {
 	return r_sandbox_chdir (s)==0;
 }
 
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
 	char buffer[1024], *outputptr = NULL;
 	char *inputptr = (char *)input;
