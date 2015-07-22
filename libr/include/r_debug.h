@@ -402,10 +402,11 @@ R_API void r_debug_esil_prestep (RDebug *d, int p);
 /* snap */
 R_API void r_debug_snap_free (void *snap);
 R_API int r_debug_snap_delete(RDebug *dbg, int idx);
-R_API void r_debug_snap_list(RDebug *dbg, int idx);
+R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode);
 R_API int r_debug_snap_diff(RDebug *dbg, int idx);
 R_API int r_debug_snap(RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_comment (RDebug *dbg, int idx, const char *msg);
+R_API int r_debug_snap_all(RDebug *dbg, int perms);
 
 /* plugin pointers */
 extern RDebugPlugin r_debug_plugin_native;

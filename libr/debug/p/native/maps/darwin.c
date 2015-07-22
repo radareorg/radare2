@@ -49,7 +49,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 	for (count=128; count; count--) {
 		// get next memory region
 		naddr = addr;
-		ret = vm_region_recurse_64 (task, &naddr, &size,
+		ret = vm_region_recurse_64 (task, (vm_address_t*)&naddr, (vm_size_t*)&size,
 				&depth, (vm_region_info_t)&info, &info_count);
 		if (ret != KERN_SUCCESS)
 			break;
@@ -136,14 +136,14 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 			module_name[ret] = 0;
 			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 			// XXX: if its shared, it cannot be read?
-			snprintf (buf, sizeof (buf), "%s %02x %s%s%s%s%s %s (sz=0x%"PFMT64x") (depth=%d)",
+			snprintf (buf, sizeof (buf), "%s %02x %s%s%s%s%s %s depth=%d",
 				r_str_rwx_i (xwr2rwx (info.max_protection)), i,
 				unparse_inheritance (info.inheritance),
 				info.user_tag? " user": "",
 				info.is_submap? " sub": "",
 				info.inheritance? " inherit": "",
 				info.is_submap ? " submap": "",
-				module_name, size, depth);
+				module_name, depth);
 				//info.shared ? "shar" : "priv", 
 				//info.reserved ? "reserved" : "not-reserved",
 				//""); //module_name);
@@ -163,7 +163,6 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 	}
 	return list;
 }
-
 
 #if 0
 // TODO: this loop MUST be cleaned up

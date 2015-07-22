@@ -517,10 +517,14 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "dms", " # Memory map snapshots",
 		"dms", "", "List memory snapshots",
+		"dmsj", "", "list snapshots in JSON",
+		"dms*", "", "list snapshots in r2 commands",
 		"dms", " addr", "take snapshot with given id of map at address",
 		"dms", "-id", "delete memory snapshot",
 		"dmsC", " id comment", "add comment for given snapshot",
 		"dmsd", " id", "hexdiff given snapshot. See `ccc`.",
+		"dmsw", "", "snapshot of the writable maps",
+		"dmsa", "", "full snapshot of all `dm` maps",
 		// TODO: dmsj - for json
 		NULL
 	};
@@ -544,12 +548,70 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 	case 'd':
 		__r_debug_snap_diff (core, atoi (input+1));
 		break;
+	case 'a':
+		r_debug_snap_all (core->dbg, 0);
+		break;
+	case 'w':
+		r_debug_snap_all (core->dbg, R_IO_RW);
+		break;
 	case 0:
-		// list memory snapshots
-		r_debug_snap_list (core->dbg, -1);
+	case 'j':
+	case '*':
+		r_debug_snap_list (core->dbg, -1, input[0]);
 		break;
 	}
 	return 0;
+}
+
+#define MAX_MAP_SIZE 1024*1024*512
+static int dump_maps(RCore *core, int perm, const char *filename) {
+	RDebugMap *map;
+	char file[128];
+	RListIter *iter;
+	r_debug_map_sync (core->dbg); // update process memory maps
+	ut64 addr = core->offset;
+	int do_dump = R_FALSE;
+	int ret = r_list_empty(core->dbg->maps)? R_FALSE: R_TRUE;
+	r_list_foreach (core->dbg->maps, iter, map) {
+		do_dump = R_FALSE;
+		if (perm == -1) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				do_dump = R_TRUE;
+			}
+		} else if (perm == 0) {
+			do_dump = R_TRUE;
+		} else if (perm == (map->perm & perm)) {
+			do_dump = R_TRUE;
+		}
+		if (do_dump) {
+			ut8 *buf = malloc (map->size);
+			//TODO: use mmap here. we need a portable implementation
+			if (!buf) {
+				eprintf ("Cannot allocate 0x%08"PFMT64x" bytes\n", map->size);
+				/// XXX: TODO: read by blocks!!1
+				continue;
+			}
+			if (map->size > MAX_MAP_SIZE) {
+				eprintf ("Do not dumping 0x%08"PFMT64x" because it's too big\n", map->addr);
+				continue;
+			}
+			r_io_read_at (core->io, map->addr, buf, map->size);
+			if (filename) {
+				snprintf (file, sizeof (file), "%s", filename);
+			} else snprintf (file, sizeof (file),
+				"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
+			map->addr, map->addr_end, r_str_rwx_i (map->perm));
+			if (!r_file_dump (file, buf, map->size, 0)) {
+				eprintf ("Cannot write '%s'\n", file);
+				ret = 0;
+			} else {
+				eprintf ("Dumped %d bytes into %s\n", (int)map->size, file);
+			}
+			free (buf);
+		}
+	}
+	//eprintf ("No debug region found here\n");
+	return ret;
 }
 
 static int cmd_debug_map(RCore *core, const char *input) {
@@ -560,7 +622,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"dm.", "", "Show map name of current address",
 		"dm*", "", "List memmaps in radare commands",
 		"dm-", "<address>", "Deallocate memory map of <address>",
-		"dmd", " [file]", "Dump current debug map region to a file (from-to.dmp) (see Sd)",
+		"dmd", "[a] [file]", "Dump current (all) debug map region to a file (from-to.dmp) (see Sd)",
 		"dmi", " [addr|libname] [symname]", "List symbols of target lib",
 		"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
 		"dmj", "", "List memmaps in JSON format",
@@ -571,7 +633,6 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
 		"TODO:", "", "map files in process memory. (dmf file @ [addr])",
 		NULL};
-	char file[128];
 	RListIter *iter;
 	RDebugMap *map;
 	ut64 addr = core->offset;
@@ -613,33 +674,16 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		} else eprintf ("See dm?\n");
 		break;
 	case 'd':
-		r_debug_map_sync (core->dbg); // update process memory maps
-		r_list_foreach (core->dbg->maps, iter, map) {
-			if (addr >= map->addr && addr < map->addr_end) {
-				ut8 *buf = malloc (map->size);
-				//TODO: use mmap here. we need a portable implementation
-				if (!buf) {
-					eprintf ("Cannot allocate 0x%08"PFMT64x" bytes\n", map->size);
-					return R_FALSE;
-				}
-				r_io_read_at (core->io, map->addr, buf, map->size);
-				if (input[1]==' ' && input[2]) {
-					snprintf (file, sizeof (file), "%s", input+2);
-				} else snprintf (file, sizeof (file),
-					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
-					map->addr, map->addr_end, r_str_rwx_i (map->perm));
-				if (!r_file_dump (file, buf, map->size, 0)) {
-					eprintf ("Cannot write '%s'\n", file);
-					free (buf);
-					return R_FALSE;
-				}
-				eprintf ("Dumped %d bytes into %s\n", (int)map->size, file);
-				free (buf);
-				return R_TRUE;
-			}
+		switch (input[1]) {
+		case 'a': return dump_maps (core, 0, NULL);
+		case 'w': return dump_maps (core, R_IO_RW, NULL);
+		case ' ': return dump_maps (core, -1, input+2);
+		case 0: return dump_maps (core, -1, NULL);
+		case '?':
+		default:
+			eprintf ("Usage: dmd[aw]  - dump (all-or-writable) debug maps\n");
+			break;
 		}
-		eprintf ("No debug region found here\n");
-		return R_FALSE;
 	case 'l':
 		if (input[1] != ' ') {
 			eprintf ("Usage: dml [file]\n");
