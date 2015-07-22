@@ -165,5 +165,6 @@ This is fine.
 Using radare2 to generate intelligence...
 taking the file and moving it
 It's the year of desktop on radare2
-It's the year of radare2 on the desktop💺
+💺
+It's the year of radare2 on the desktop
 SSAbotage from ISIL
