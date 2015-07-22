@@ -295,7 +295,7 @@ R_API RCore *r_core_new() {
 /*-----------------------------------*/
 #define CMDS (sizeof (radare_argv)/sizeof(const char*))
 static const char *radare_argv[] = {
-	"?", "?v", "whereis", "which", "ls", "mkdir", "pwd", "cat", "less",
+	"?", "?v", "whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "less",
 	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db ", "db-",
         "dp", "dr", "dcu", "dmd", "dmp", "dml",
 	"ec","ecs",
@@ -362,6 +362,7 @@ static int autocomplete(RLine *line) {
 		     !memcmp (line->buffer.data, "op ", 3) ||
 		     !memcmp (line->buffer.data, ". ", 2) ||
 		     !memcmp (line->buffer.data, "wf ", 3) ||
+		     !memcmp (line->buffer.data, "rm ", 3) ||
 		     !memcmp (line->buffer.data, "ls ", 3) ||
 		     !memcmp (line->buffer.data, "ls -l ", 5) ||
 		     !memcmp (line->buffer.data, "wF ", 3) ||
