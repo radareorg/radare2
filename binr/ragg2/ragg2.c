@@ -260,7 +260,7 @@ int main(int argc, char **argv) {
 		case 'z':
 			show_str = 1;
 			break;
-	  case 'q':
+		case 'q':
 			get_offset = 1;
 			sequence = strdup (optarg);
       break;
