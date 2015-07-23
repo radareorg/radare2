@@ -1200,11 +1200,13 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					}
 				}
 				if (args == NULL || (field==NULL && ofield != MINUSONE)
-						|| (field && !strncmp(field, fieldname, strlen(fieldname)))) {
+						|| (field && !strncmp(field, fieldname,
+								strchr(field, '[')!=NULL?strchr(field, '[')-field:strlen(field)+1))) {
 					mode |= R_PRINT_ISFIELD;
 				} else {
 					mode &= ~R_PRINT_ISFIELD;
 				}
+
 				/* There we handle specific element in array */
 				if (field != NULL && (bracket = strchr (field, '[')) != NULL && mode & R_PRINT_ISFIELD) {
 					char *end = strchr (field, ']');
