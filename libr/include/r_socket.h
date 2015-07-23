@@ -9,7 +9,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_socket);
 
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __UNIX__ || __CYGWIN__ || __MINGW64__ && !defined(MINGW32)
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <poll.h>
@@ -24,8 +24,13 @@ R_LIB_VERSION_HEADER(r_socket);
 #include <openssl/err.h>
 #endif
 
-#if defined(__WINDOWS__) && !defined(__CYGWIN__) && !defined(MINGW32)
+#if defined(__WINDOWS__) && !defined(__CYGWIN__) && !defined(MINGW32) && !defined(__MINGW64__)
 #include <ws2tcpip.h>
+#endif
+
+/* For the Mingw-W64 toolchain */
+#ifndef MSG_DONTWAIT
+#define MSG_DONTWAIT 0
 #endif
 
 typedef struct {
