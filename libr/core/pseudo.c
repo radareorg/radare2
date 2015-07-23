@@ -174,7 +174,6 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 		//n_bb --;
 	} while (n_bb>0);
 	r_cons_printf ("}\n");
-	r_cons_flush ();
 	r_config_set_i (core->config, "asm.pseudo", asmpseudo);
 	r_config_set_i (core->config, "asm.decode", asmdecode);
 	r_config_set_i (core->config, "asm.lines", asmlines);
