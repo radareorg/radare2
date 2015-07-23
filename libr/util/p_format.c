@@ -884,7 +884,7 @@ static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
 
 static void r_print_format_register (const RPrint* p, int mode,
 		const char *name, const char* setval) {
-	const RRegItem *ri = r_reg_get (p->reg, name, R_REG_TYPE_ALL);
+	const RRegItem *ri = p->get_register (p->reg, name, R_REG_TYPE_ALL);
 	if (ri == NULL) {
 		p->printf ("Register %s does not exists\n", name);
 		return;
@@ -892,10 +892,10 @@ static void r_print_format_register (const RPrint* p, int mode,
 	if (MUSTSET) {
 		p->printf ("dr %s=%s\n", name, setval);
 	} else if (MUSTSEE) {
-		if (!SEEVALUE) p->printf("%s : 0x%08"PFMT64x"\n", ri->name, r_reg_get_value (p->reg, ri));
-		else p->printf("0x%08"PFMT64x"\n", r_reg_get_value (p->reg, ri));
+		if (!SEEVALUE) p->printf("%s : 0x%08"PFMT64x"\n", ri->name, p->get_register_value (p->reg, ri));
+		else p->printf("0x%08"PFMT64x"\n", p->get_register_value (p->reg, ri));
 	} else if (MUSTSEEJSON) {
-		p->printf ("%d}", r_reg_get_value (p->reg, ri));
+		p->printf ("%d}", p->get_register_value (p->reg, ri));
 	}
 }
 

@@ -462,6 +462,8 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 		listFormats = 1;
 
 	core->print->reg = core->dbg->reg;
+	core->print->get_register = r_reg_get;
+	core->print->get_register_value = r_reg_get_value;
 
 	if (listFormats) {
 		core->print->num = core->num;
