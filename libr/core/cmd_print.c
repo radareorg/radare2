@@ -465,6 +465,10 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 	core->print->get_register = r_reg_get;
 	core->print->get_register_value = r_reg_get_value;
 
+	/* This make sure the structure will be printed entirely */
+	int b_len = r_print_format_struct_size (input+2, core->print, 0)+10;
+	b_len = b_len>core->blocksize?b_len:core->blocksize;
+
 	if (listFormats) {
 		core->print->num = core->num;
 		/* print all stored format */
@@ -521,12 +525,12 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 				}
 			} else {
 				r_print_format (core->print, core->offset,
-						core->block, len, name, mode, NULL, NULL);
+						core->block, b_len, name, mode, NULL, NULL);
 			}
 			free (name);
 		}
 	} else r_print_format (core->print, core->offset,
-			core->block, len, input+1, mode, NULL, NULL);
+			core->block, b_len, input+1, mode, NULL, NULL);
 	free (input);
 }
 
