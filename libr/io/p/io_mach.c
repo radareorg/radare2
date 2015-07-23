@@ -49,10 +49,12 @@ static task_t pid_to_task(int pid) {
 	int err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
-		eprintf ("Reason: 0x%x: %s\n", err, MACH_ERROR_STRING (err));
+		eprintf ("Missing priviledges? 0x%x: %s\n", err, MACH_ERROR_STRING (err));
+#if 0
 		eprintf ("You probably need to add user to procmod group.\n"
 				" Or chmod g+s radare && chown root:procmod radare\n");
 		eprintf ("FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
+#endif
 		return -1;
 	}
 	return task;

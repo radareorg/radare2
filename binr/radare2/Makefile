@@ -26,10 +26,16 @@ ios_sdk_sign:
 	-codesign -s- --entitlements radare2.xml radare2
 
 osx-sign osxsign:
+	rm -f radare2
 	${CC} radare2.c ${CFLAGS} ${LDFLAGS} -o radare2 \
-		-sectcreate __TEXT __info_plist ./Info.plist
-	xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} radare2
-	#codesign -f -s ${CERTID} radare2
+		-sectcreate __TEXT __info_plist Info.plist \
+		-framework Security -framework CoreFoundation
+	#xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} radare2
+	codesign -dvvv --deep -f -s ${CERTID} -i ${BUNDLE} radare2
+	#sudo chown root:_developer radare2
+#	sudo chown root:procmod radare2
+	#sudo chmod g+s radare2
+#	sudo chmod 4755 radare2
 
 osx-sign-libs:
 	for a in ${SIGN_LIBS} ; do \

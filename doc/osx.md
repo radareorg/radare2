@@ -82,6 +82,35 @@ Follow those steps to fix this issue:
 
 And run `codesign -dv` and `spctl -av` to confirm.
 
+Troubleshooting
+---------------
+Make sure that taskgated runs with -p by editing `com.apple.taskgated.plist`:
+
+	<key>ProgramArguments</key> 
+	<array> 
+		<string>/usr/libexec/taskgated</string> 
+		<string>-p</string> 
+		<string>-s</string> 
+	</array>
+
+Then run those lines:
+
+	launchctl unload /System/Library/LaunchDaemons/com.apple.taskgated.plist
+	sudo vim /System/Library/LaunchDaemons/com.apple.taskgated.plist
+	launchctl load /System/Library/LaunchDaemons/com.apple.taskgated.plist
+
+
+To root your certificate read the following instructions:
+
+https://llvm.org/svn/llvm-project/lldb/trunk/docs/code-signing.txt
+
+	sudo security add-trust -d -r trustRoot \
+		-p basic -p codeSign \
+		-k /Library/Keychains/System.keychain \
+		~/Desktop/org.radare.radare2.cer
+
+And then reboot!
+
 Packaging
 ---------
 
