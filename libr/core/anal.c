@@ -2268,14 +2268,16 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 
 R_API void r_core_anal_esil (RCore *core, const char *str) {
 	RAnalEsil *ESIL = core->anal->esil;
+	const char *pcname;
 	RAnalOp op;
-	mycore = core;
 	ut8 *buf = NULL;
 	int i, iend;
-	ut64 cur;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
 	ut64 addr = core->offset;
 	ut64 end = 0LL;
+	ut64 cur;
+
+	mycore = core;
 	if (!strcmp (str, "?")) {
 		eprintf ("Usage: aae[f] [len] - analyze refs in function, section or len bytes with esil\n");
 		return;
@@ -2313,6 +2315,8 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		ESIL->cb.hook_mem_write = &esilbreak_mem_write;
 	}
 	eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
+	// TODO: backup/restore register state before/after analysis
+	pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_cons_break (NULL, NULL);
 	for (i=0; i<iend; i++) {
 		if (r_cons_is_breaked ()) {
@@ -2331,11 +2335,29 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 			if (op.size<1) {
 				i++;
 			} else {
+				const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
 				r_anal_esil_set_offset (ESIL, cur);
-				(void)r_anal_esil_parse (ESIL, R_STRBUF_SAFEGET (&op.esil));
+				(void)r_anal_esil_parse (ESIL, esilstr); 
 				//r_anal_esil_dumpstack (ESIL);
 				r_anal_esil_stack_free (ESIL);
 				i += op.size -1;
+				switch (op.type) {
+				case R_ANAL_OP_TYPE_UJMP:
+				case R_ANAL_OP_TYPE_UCALL:
+					{
+						if (pcname && *pcname) {
+							ut64 dst = r_reg_getv (core->anal->reg, pcname);
+							if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+								// get pc
+								eprintf ("0x%08"PFMT64x" UCALL 0x%08"PFMT64x"\n", cur, dst);
+								r_core_cmdf (core, "axc 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
+							} else {
+								eprintf ("Unknown JMP/CALL at 0x%08"PFMT64x"\n", cur);
+							}
+						}
+					}
+					break;
+				}
 			}
 		} else {
 			i += minopsize - 1;
