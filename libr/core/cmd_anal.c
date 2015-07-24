@@ -2793,7 +2793,7 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			break;
 		case 'e':
-			r_core_anal_esil (core, input+1);
+			r_core_anal_esil (core, input+2);
 			break;
 		case 'r':
 			{

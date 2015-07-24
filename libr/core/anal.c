@@ -2225,23 +2225,39 @@ static int is_string (const ut8 *buf, int size, int *len) {
 	*len = i;
 	return 1;
 }
+
+static int myvalid(ut64 addr) {
+	if (addr <0x100)
+		return 0;
+	if (addr == UT32_MAX || addr == UT64_MAX)
+		return 0;
+	return 1;
+}
+
+static int esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	/* do nothing */
+	return 1;
+}
+
 static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+	int slen = 0;
 	ut8 str[128];
 	char cmd[128];
-	if (r_io_is_valid_offset (mycore->io, addr, 0)) {
+	if (myvalid (addr) && r_io_is_valid_offset (mycore->io, addr, 0)) {
 		ut32 refptr = 0;
 		r_io_read_at (mycore->io, addr, (ut8*)&refptr, sizeof (refptr));
-		if (r_io_is_valid_offset (mycore->io, (ut64)refptr, 0)) {
-			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x"\n",
+		if (myvalid (refptr) && r_io_is_valid_offset (mycore->io, (ut64)refptr, 0)) {
+			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
 				esil->offset, (ut64)refptr);
 			r_io_read_at (mycore->io, refptr, str, sizeof (str));
-			int slen = 0;
 			if (is_string (str, sizeof (str)-1, &slen)) {
-				r_core_cmdf (mycore, "CC ref: %s @ 0x%08llx", str, esil->offset);
-				r_core_cmdf (mycore, "CC ref: %s @ 0x%08llx", str, refptr);
+				char str2[128];
+				snprintf (str2, sizeof(str2)-1, "esilref: '%s'", str);
+				r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, esil->offset, str2);
+				r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, refptr, str2);
 			}
 		} else {
-			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x"\n",
+			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
 				esil->offset, addr);
 		}
 		eprintf ("%s\n", cmd);
@@ -2259,12 +2275,27 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 	ut64 cur;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
 	ut64 addr = core->offset;
-	ut64 end = r_num_math (core->num, str);
-	if (end == 0) {
-		end = addr + core->blocksize;
-		// handle function size maybe?
+	ut64 end = 0LL;
+	if (!strcmp (str, "?")) {
+		eprintf ("Usage: aae[f] [len] - analyze refs in function, section or len bytes with esil\n");
+		return;
+	}
+	if (!strcmp (str, "f")) {
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+		if (fcn) {
+			addr = fcn->addr;
+			end = fcn->addr + fcn->size;
+		}
+	}
+	if (str[0] == ' ') {
+		end = addr + r_num_math (core->num, str+1);
 	} else {
-		end = addr + 4096;
+		RIOSection *sect = r_io_section_vget (core->io, addr);
+		if (sect) {
+			end = sect->vaddr + sect->size;
+		} else {
+			end = addr + core->blocksize;
+		}
 	}
 	iend = end - addr;
 	buf = malloc (iend+1);
@@ -2278,17 +2309,37 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		}
 	}
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
+	if (!core->io->cached) {
+		ESIL->cb.hook_mem_write = &esilbreak_mem_write;
+	}
+	eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
+	r_cons_break (NULL, NULL);
 	for (i=0; i<iend; i++) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		cur = addr + i;
-		if (r_anal_op (core->anal, &op, cur, buf+i, sizeof (buf))) {
-			eprintf ("0x%08"PFMT64x"  %s\n", cur, R_STRBUF_SAFEGET (&op.esil));
-			r_anal_esil_set_offset (ESIL, cur);
-			(void)r_anal_esil_parse (ESIL, R_STRBUF_SAFEGET (&op.esil));
-			//r_anal_esil_dumpstack (ESIL);
-			r_anal_esil_stack_free (ESIL);
-			i += op.size -1;
+		if (r_anal_op (core->anal, &op, cur, buf+i, iend-i)) {
+#if 0
+			RAsmOp asmop;
+			r_asm_set_pc (core->assembler, cur);
+			if (r_asm_disassemble (core->assembler, &asmop, buf+i, iend-i)>0) {
+				op.mnemonic = strdup (asmop.buf_asm);
+				eprintf ("0x%08"PFMT64x"  %s\n", cur, op.mnemonic); //R_STRBUF_SAFEGET (&op.esil));
+			}
+#endif
+			if (op.size<1) {
+				i++;
+			} else {
+				r_anal_esil_set_offset (ESIL, cur);
+				(void)r_anal_esil_parse (ESIL, R_STRBUF_SAFEGET (&op.esil));
+				//r_anal_esil_dumpstack (ESIL);
+				r_anal_esil_stack_free (ESIL);
+				i += op.size -1;
+			}
 		} else {
 			i += minopsize - 1;
 		}
 	}
+	r_cons_break_end ();
 }
