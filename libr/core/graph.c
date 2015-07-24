@@ -562,7 +562,7 @@ static int dist_nodes (const RAGraph *g, const RGraphNode *a, const RGraphNode *
 	if (aa->layer == ab->layer) {
 		int i;
 
-		res = 0;
+		res = aa == ab && !aa->is_reversed ? HORIZONTAL_NODE_SPACING : 0;
 		for (i = aa->pos_in_layer; i < ab->pos_in_layer; ++i) {
 			const RGraphNode *cur = g->layers[aa->layer].nodes[i];
 			const RGraphNode *next = g->layers[aa->layer].nodes[i + 1];
@@ -582,8 +582,16 @@ static int dist_nodes (const RAGraph *g, const RGraphNode *a, const RGraphNode *
 			}
 
 			if (!found) {
-				int space = acur->is_dummy && anext->is_dummy ? 1 : HORIZONTAL_NODE_SPACING;
-				res += acur->w / 2 + anext->w / 2 + space;
+				int space = HORIZONTAL_NODE_SPACING;
+				if (acur->is_reversed && anext->is_reversed) {
+					if (!acur->is_reversed)
+						res += acur->w / 2;
+					else if (!anext->is_reversed)
+						res += anext->w / 2;
+					res += 1;
+				} else {
+					res += acur->w / 2 + anext->w / 2 + space;
+				}
 			}
 		}
 	}
