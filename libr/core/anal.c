@@ -2192,3 +2192,103 @@ R_API void r_core_anal_auto_merge (RCore *core, ut64 addr) {
 	}
 #endif
 }
+
+static RCore *mycore = NULL;
+
+// XXX: copypaste from anal/data.c
+#define MINLEN 1
+static int is_string (const ut8 *buf, int size, int *len) {
+	int i;
+	if (size<1)
+		return 0;
+	if (size>3 && buf[0] &&!buf[1]&&buf[2]&&!buf[3]) {
+		*len = 1; // XXX: TODO: Measure wide string length
+		return 2; // is wide
+	}
+	for (i=0; i<size; i++) {
+		if (!buf[i] && i>MINLEN) {
+			*len = i;
+			return 1;
+		}
+		if (buf[i]==10||buf[i]==13||buf[i]==9) {
+			continue;
+		}
+		if (buf[i]<32 || buf[i]>127) {
+			// not ascii text
+			return 0;
+		}
+		if (!IS_PRINTABLE (buf[i])) {
+			*len = i;
+			return 0;
+		}
+	}
+	*len = i;
+	return 1;
+}
+static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+	ut8 str[128];
+	char cmd[128];
+	if (r_io_is_valid_offset (mycore->io, addr, 0)) {
+		ut32 refptr = 0;
+		r_io_read_at (mycore->io, addr, (ut8*)&refptr, sizeof (refptr));
+		if (r_io_is_valid_offset (mycore->io, (ut64)refptr, 0)) {
+			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x"\n",
+				esil->offset, (ut64)refptr);
+			r_io_read_at (mycore->io, refptr, str, sizeof (str));
+			int slen = 0;
+			if (is_string (str, sizeof (str)-1, &slen)) {
+				r_core_cmdf (mycore, "CC ref: %s @ 0x%08llx", str, esil->offset);
+				r_core_cmdf (mycore, "CC ref: %s @ 0x%08llx", str, refptr);
+			}
+		} else {
+			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x"\n",
+				esil->offset, addr);
+		}
+		eprintf ("%s\n", cmd);
+		r_core_cmd0 (mycore, cmd);
+	}
+	return 0; // fallback
+}
+
+R_API void r_core_anal_esil (RCore *core, const char *str) {
+	RAnalEsil *ESIL = core->anal->esil;
+	RAnalOp op;
+	mycore = core;
+	ut8 *buf = NULL;
+	int i, iend;
+	ut64 cur;
+	int minopsize = 4; // XXX this depends on asm->mininstrsize
+	ut64 addr = core->offset;
+	ut64 end = r_num_math (core->num, str);
+	if (end == 0) {
+		end = addr + core->blocksize;
+		// handle function size maybe?
+	} else {
+		end = addr + 4096;
+	}
+	iend = end - addr;
+	buf = malloc (iend+1);
+	r_io_read_at (core->io, addr, buf, iend+1);
+	if (!ESIL) {
+		r_core_cmd0 (core, "aei");
+		ESIL = core->anal->esil;
+		if (!ESIL) {
+			eprintf ("ESIL not initialized\n");
+			return;
+		}
+	}
+	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
+	for (i=0; i<iend; i++) {
+		cur = addr + i;
+		if (r_anal_op (core->anal, &op, cur, buf+i, sizeof (buf))) {
+			eprintf ("0x%08"PFMT64x"  %s\n", cur, R_STRBUF_SAFEGET (&op.esil));
+			r_anal_esil_set_offset (ESIL, cur);
+			(void)r_anal_esil_parse (ESIL, R_STRBUF_SAFEGET (&op.esil));
+			//r_anal_esil_dumpstack (ESIL);
+			r_anal_esil_stack_free (ESIL);
+			i += op.size -1;
+		} else {
+			i += minopsize - 1;
+		}
+	}
+}

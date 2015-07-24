@@ -2691,6 +2691,7 @@ static int cmd_anal(void *data, const char *input) {
 		"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
 		"aaa", "", "autoname functions after aa (see afna)",
 		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
+		"aae", " [len]", "analyze references with ESIL",
 		"aar", " [len]", "analyze len bytes of instructions for references",
 		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
 		"aap", "", "find and analyze function preludes",
@@ -2790,6 +2791,9 @@ static int cmd_anal(void *data, const char *input) {
 				r_core_cmd0 (core, "aar");
 				r_core_cmd0 (core, "aac");
 			}
+			break;
+		case 'e':
+			r_core_anal_esil (core, input+1);
 			break;
 		case 'r':
 			{
