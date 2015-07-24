@@ -81,7 +81,8 @@ R_API char *r_base64_encode_dyn(const char *str, int len) {
 	int in, out;
 	if (!str) return NULL;
 	if (len<1) len = strlen (str) +1;
-	bout = malloc ((len * 4)+1);
+	bout = (char *)malloc ((len * 4)+1);
+	if (!bout) return NULL;
 	for (in=out=0; in<len; in+=3,out+=4)
 		b64_encode ((const ut8*)str+in, (char*)bout+out,
 			(len-in)>3?3:len-in);
