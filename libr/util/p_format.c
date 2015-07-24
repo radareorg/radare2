@@ -884,7 +884,7 @@ static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
 
 static void r_print_format_register (const RPrint* p, int mode,
 		const char *name, const char* setval) {
-	const RRegItem *ri = p->get_register (p->reg, name, R_REG_TYPE_ALL);
+	RRegItem *ri = p->get_register (p->reg, name, R_REG_TYPE_ALL);
 	if (ri == NULL) {
 		p->printf ("Register %s does not exists\n", name);
 		return;
@@ -1041,7 +1041,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 //#define MUSTSET (setval && field && isfield && mode == R_PRINT_MUSTSET)
 //#define MUSTSEE (ofield != MINUSONE && (field == NULL || (setval == NULL && isfield)) && mode == R_PRINT_MUSTSEE)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
-R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
+R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int b_size,
 		const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const char *argend;
@@ -1049,21 +1049,27 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	const char *fmt = NULL;
 	char *args = NULL, *bracket, tmp, last = 0;
 	const char *arg = NULL;
-	int viewflags = 0;
+	int viewflags = 0, len;
 	char namefmt[8], *field = NULL;
 	char *oarg = NULL;
 	static int slide=0, oldslide=0;
 	ut8 *buf;
 
+	/* Load format from name into fmt */
 	if (!formatname)
 		return 0;
 	fmt = r_strht_get (p->formats, formatname);
 	if (fmt == NULL)
 		fmt = formatname;
+	while (*fmt && iswhitechar (*fmt)) fmt++;
 	argend = fmt+strlen (fmt);
 	arg = fmt;
 
 	nexti = nargs = i = j = 0;
+
+	/* This make sure the structure will be printed entirely */
+	int f_len = r_print_format_struct_size (fmt, p, 0)+10;
+	len = f_len>b_size?f_len:b_size;
 
 	if (len < 1)
 		return 0;
@@ -1075,8 +1081,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	endian = p->big_endian;
 
 	if (ofield && ofield != MINUSONE) field = strdup (ofield);
-
-	while (*arg && iswhitechar (*arg)) arg++;
 
 	/* get times */
 	otimes = times = atoi (arg);
@@ -1513,7 +1517,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (s)
 					p->printf ("*(%s)", s);
 			}
-			if (tmp != 'D' && !invalid && fmtname==NULL && MUSTSEE)
+			if (tmp != 'D' && !invalid && fmtname==NULL && MUSTSEE && !SEEVALUE)
 				p->printf ("\n");
 			last = tmp;
 		}
