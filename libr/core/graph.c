@@ -593,22 +593,27 @@ static int dist_nodes (const RAGraph *g, const RGraphNode *a, const RGraphNode *
 
 /* explictly set the distance between two nodes on the same layer */
 static void set_dist_nodes (const RAGraph *g, int l, int cur, int next) {
-	struct dist_t *d;
+	struct dist_t *d, find_el;
 	const RGraphNode *vi, *vip;
 	const RANode *avi, *avip;
+	RListIter *it;
 
 	if (!g->dists) return;
-	d = R_NEW (struct dist_t);
-
 	vi = g->layers[l].nodes[cur];
 	vip = g->layers[l].nodes[next];
 	avi = get_anode (vi);
 	avip = get_anode (vip);
 
+	find_el.from = vi;
+	find_el.to = vip;
+	it = r_list_find (g->dists, &find_el, (RListComparator)find_dist);
+	d = it ? (struct dist_t *)r_list_iter_get_data (it) : R_NEW (struct dist_t);
+
 	d->from = vi;
 	d->to = vip;
 	d->dist = avip->x - avi->x;
-	r_list_push (g->dists, d);
+	if (!it)
+		r_list_push (g->dists, d);
 }
 
 static int is_valid_pos (const RAGraph *g, int l, int pos) {
