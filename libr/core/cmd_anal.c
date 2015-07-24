@@ -2339,10 +2339,11 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 
 			body = args[1];
 			if (strncmp (body, "base64:", B_LEN) == 0) {
+				body = r_str_replace (body, "\\n", "", R_TRUE);
 				newbody = (char *)r_base64_decode_dyn (body + B_LEN, 0);
 				body = newbody;
-
 			}
+			body = r_str_concat (body, "\n");
 			r_agraph_add_node (core->graph, args[0], body);
 			r_str_argv_free (args);
 			free (newbody);
