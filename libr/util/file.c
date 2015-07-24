@@ -663,6 +663,8 @@ R_API void r_file_mmap_free (RMmap *m) {
 		CloseHandle (m->fm);
 	if (m->fh != INVALID_HANDLE_VALUE)
 		CloseHandle (m->fh);
+	if (m->buf)
+		UnmapViewOfFile (m->buf);
 #endif
 	if (m->fd == -1) {
 		free (m);
@@ -670,8 +672,6 @@ R_API void r_file_mmap_free (RMmap *m) {
 	}
 #if __UNIX__
 	munmap (m->buf, m->len);
-#elif __WINDOWS__
-	UnmapViewOfFile (m->buf);
 #endif
 	close (m->fd);
 	free (m);
