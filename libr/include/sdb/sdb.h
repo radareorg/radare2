@@ -106,6 +106,8 @@ void sdb_file (Sdb* s, const char *dir);
 void sdb_reset (Sdb* s);
 void sdb_setup (Sdb* s, int options);
 void sdb_drain (Sdb*, Sdb*);
+int sdb_stats(Sdb *s, ut32 *disk, ut32 *mem);
+int sdb_dump_hasnext (Sdb* s);
 
 typedef int (*SdbForeachCallback)(void *user, const char *k, const char *v);
 int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user);

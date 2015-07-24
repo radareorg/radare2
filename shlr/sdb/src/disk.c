@@ -28,9 +28,7 @@ static inline int r_sys_rmkdir(char *dir) {
         if (*ptr==slash) ptr++;
 #if __WINDOWS__
         char *p = strstr (ptr, ":\\");
-        if (p) {
-                ptr = p + 2;
-        }
+        if (p) ptr = p + 2;
 #endif
         while ((ptr = strchr (ptr, slash))) {
                 *ptr = 0;

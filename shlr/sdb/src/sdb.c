@@ -616,6 +616,39 @@ SDB_API SdbKv *sdb_dump_next (Sdb* s) {
 	return &s->tmpkv;
 }
 
+SDB_API int sdb_dump_hasnext (Sdb* s) {
+	ut32 k, v;
+	if (s->fd==-1)
+		return 0;
+	if (!cdb_getkvlen (s->fd, &k, &v))
+		return 0;
+	if (k<1 || v<1)
+		return 0;
+	if (lseek (s->fd, k+v, SEEK_CUR) == -1) {
+		return 0;
+	}
+	s->pos += k + v + 4;
+	return 1;
+}
+
+SDB_API int sdb_stats(Sdb *s, ut32 *disk, ut32 *mem) {
+	if (!s) return 0;
+	if (disk) {
+		ut32 count = 0;
+		if (s->fd != -1) {
+			sdb_dump_begin (s);
+			while (sdb_dump_hasnext (s)) {
+				count ++;
+			}
+		}
+		*disk = count;
+	}
+	if (mem) {
+		*mem = s->ht->list->length;
+	}
+	return 1;
+}
+
 // TODO: make it static? internal api?
 SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value, int *_vlen) {
 	ut32 vlen = 0, klen = 0;
@@ -627,8 +660,9 @@ SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value, int *_vlen) {
 		return 0;
 	if (!cdb_getkvlen (s->fd, &klen, &vlen))
 		return 0;
-	if (klen<1 || vlen<1)
+	if (klen<1 || vlen<1) {
 		return 0;
+	}
 	if (_vlen)
 		*_vlen = vlen;
 	if (key) {

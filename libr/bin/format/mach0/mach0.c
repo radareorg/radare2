@@ -876,22 +876,19 @@ static ut64 get_text_base(struct MACH0_(obj_t)* bin) {
 }
 #endif
 
-static int inSymtab (struct symbol_t *symbols, int last, const char *name, ut64 addr) {
-	int i;
-	for (i=0; i<last; i++) {
-		if (symbols[i].addr != addr)
-			continue;
-		if (!strcmp (symbols[i].name, name)) {
-			return 1;
-		}
-	}
-	return 0;
+static int inSymtab (Sdb *db, struct symbol_t *symbols, int last, const char *name, ut64 addr) {
+	const char *key = sdb_fmt (0, "%s.%"PFMT64x, name, addr);
+	if (sdb_const_get (db, key, NULL))
+		return R_TRUE;
+	sdb_set (db, key, "1", 0);
+	return R_FALSE;
 }
 
 struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	const char *symstr;
 	struct symbol_t *symbols;
 	int from, to, i, j, s, stridx, symbols_size, symbols_count;
+	Sdb *db;
 	//ut64 text_base = get_text_base (bin);
 
 	if (!bin || !bin->symtab || !bin->symstr)
@@ -910,6 +907,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 
 	if (!(symbols = calloc (1, symbols_size)))
 		return NULL;
+	db = sdb_new0 ();
 
 	j = 0; // symbol_idx
 	for (s = 0; s < 2; s++) {
@@ -982,7 +980,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 				}
 				symbols[j].last = 0;
 			}
-			if (inSymtab (symbols, j, symbols[j].name, symbols[j].addr)) {
+			if (inSymtab (db, symbols, j, symbols[j].name, symbols[j].addr)) {
 				symbols[j].name[0] = 0;
 				j--;
 			}
@@ -1019,7 +1017,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			strncpy (symbols[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
 			symbols[j].name[R_BIN_MACH0_STRING_LENGTH-1] = 0;
 			symbols[j].last = 0;
-			if (inSymtab (symbols, j, symbols[j].name, symbols[j].addr)) {
+			if (inSymtab (db, symbols, j, symbols[j].name, symbols[j].addr)) {
 				symbols[j].name[0] = 0;
 			} else {
 				j++;
@@ -1027,6 +1025,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		}
 	}
 #endif
+	sdb_free (db);
 	symbols[j].last = 1;
 	return symbols;
 }

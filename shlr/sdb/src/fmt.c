@@ -35,7 +35,7 @@ SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
 		return Key[n];
 	va_start (ap, fmt);
 	*Key[n] = 0;
-	vsnprintf (Key[n], 255, fmt, ap);
+	vsnprintf (Key[n], sizeof (Key[n]), fmt, ap);
 	Key[n][255] = 0;
 	va_end (ap);
 	return Key[n];
@@ -191,7 +191,8 @@ SDB_API char** sdb_fmt_array(const char *list) {
 		}
 		do {
 			const char *str = sdb_anext2 (ptr, &next);
-			int slen = next?(next-str)-1:strlen (str)+1;
+			int slen = next? (next-str) - 1:
+				(int)strlen (str) + 1;
 			memcpy (_s, str, slen);
 			_s[slen]=0;
 			*retp++ = _s;

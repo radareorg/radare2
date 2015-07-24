@@ -130,7 +130,6 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, ut32 len) {
 		ut32_unpack (buf, &u);
 		if (u == c->khash) {
 			if (!seek_set (c->fd, pos)) {
-
 				return -1;
 			}
 			if (!cdb_getkvlen (c->fd, &u, &c->dlen)) {
