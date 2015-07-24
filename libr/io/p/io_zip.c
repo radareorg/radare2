@@ -402,7 +402,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	if (!res) {
 		eprintf ("Failed to open the archive %s and file %s\n",
 			zip_filename, filename_in_zipfile);
-		free (zfo);
+		//free (zfo); zfo is already freed by r_io_desc_new
 		r_io_desc_free (res);
 		res = NULL;
 	}

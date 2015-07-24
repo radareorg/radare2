@@ -485,6 +485,7 @@ encoded_catch_handler_list handlers
 		dprintf ("    method code_offset: %u\n", (ut32)MC);
 		free (name);
 	}
+	free (class_name);
 	return methods;
 }
 
