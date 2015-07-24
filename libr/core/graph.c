@@ -13,7 +13,7 @@ static int color_disasm = 0;
 #define BORDER_HEIGHT 3
 #define MARGIN_TEXT_X 2
 #define MARGIN_TEXT_Y 2
-#define HORIZONTAL_NODE_SPACING 12
+#define HORIZONTAL_NODE_SPACING 6
 #define VERTICAL_NODE_SPACING 4
 #define MIN_NODE_WIDTH 18
 #define MIN_NODE_HEIGTH BORDER_HEIGHT
@@ -593,22 +593,27 @@ static int dist_nodes (const RAGraph *g, const RGraphNode *a, const RGraphNode *
 
 /* explictly set the distance between two nodes on the same layer */
 static void set_dist_nodes (const RAGraph *g, int l, int cur, int next) {
-	struct dist_t *d;
+	struct dist_t *d, find_el;
 	const RGraphNode *vi, *vip;
 	const RANode *avi, *avip;
+	RListIter *it;
 
 	if (!g->dists) return;
-	d = R_NEW (struct dist_t);
-
 	vi = g->layers[l].nodes[cur];
 	vip = g->layers[l].nodes[next];
 	avi = get_anode (vi);
 	avip = get_anode (vip);
 
+	find_el.from = vi;
+	find_el.to = vip;
+	it = r_list_find (g->dists, &find_el, (RListComparator)find_dist);
+	d = it ? (struct dist_t *)r_list_iter_get_data (it) : R_NEW (struct dist_t);
+
 	d->from = vi;
 	d->to = vip;
 	d->dist = avip->x - avi->x;
-	r_list_push (g->dists, d);
+	if (!it)
+		r_list_push (g->dists, d);
 }
 
 static int is_valid_pos (const RAGraph *g, int l, int pos) {
@@ -1804,14 +1809,8 @@ static void agraph_set_zoom (RAGraph *g, int v) {
  * (callgraph, CFG, etc.), set the default layout for these nodes and center
  * the screen on the selected one */
 static int agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
-	int ret;
-
 	r_agraph_reset (g);
-	ret = reload_nodes(g, core, fcn);
-	if (!ret)
-		return R_FALSE;
-	agraph_set_layout(g);
-	return R_TRUE;
+	return reload_nodes(g, core, fcn);
 }
 
 static void follow_nth(RAGraph *g, int nth) {
@@ -2042,10 +2041,8 @@ R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
                                  const char *body) {
 	RANode *res = R_NEW0 (RANode);
 	if (!res) return NULL;
-	if (title)
-		res->title = strdup(title);
-	if (body)
-		res->body = strdup(body);
+	res->title = title ? strdup(title) : strdup("");
+	res->body = body ? strdup(body) : strdup("");
 	res->layer = -1;
 	res->pos_in_layer = -1;
 	res->is_dummy = R_FALSE;
