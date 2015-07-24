@@ -250,7 +250,7 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 			" e_magic e_cblp e_cp e_crlc e_cparhdr e_minalloc e_maxalloc"
 			" e_ss e_sp e_csum e_ip e_cs e_lfarlc e_ovno e_res e_oemid"
 			" e_oeminfo e_res2 e_lfanew", 0);
-	if (bin->dos_header->e_lfanew > bin->size) {
+	if (bin->dos_header->e_lfanew > (unsigned int)bin->size) {
 		eprintf("Invalid e_lfanew field\n");
 		return R_FALSE;
 	}
@@ -311,23 +311,26 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 	sdb_set (bin->kv, "pe_image_data_directory.format", "xx virtualAddress size",0);
 	
 	// adding compile time to the SDB
-	{
-	    struct timezone tz;
-	    struct timeval tv;
-	    int gmtoff;
-	    char *timestr;
-	    time_t ts = (time_t)bin->nt_headers->file_header.TimeDateStamp;
-	    sdb_num_set (bin->kv, "image_file_header.TimeDateStamp",
-	    	bin->nt_headers->file_header.TimeDateStamp, 0);
-	    gettimeofday (&tv, &tz);
-	    gmtoff = (int)(tz.tz_minuteswest*60); // in seconds
-	    ts += gmtoff;
-	    timestr = r_str_chop (strdup (ctime (&ts)));
-	   // gmt offset for pe date is t->tm_gmtoff
-	    sdb_set_owned (bin->kv,
+	 {
+		struct my_timezone {
+			int tz_minuteswest;     /* minutes west of Greenwich */
+			int tz_dsttime;         /* type of DST correction */
+		} tz;
+		struct timeval tv;
+		int gmtoff;
+		char *timestr;
+		time_t ts = (time_t)bin->nt_headers->file_header.TimeDateStamp;
+		sdb_num_set (bin->kv, "image_file_header.TimeDateStamp",
+			bin->nt_headers->file_header.TimeDateStamp, 0);
+		gettimeofday (&tv, &tz);
+		gmtoff = (int)(tz.tz_minuteswest*60); // in seconds
+		ts += gmtoff;
+		timestr = r_str_chop (strdup (ctime (&ts)));
+		// gmt offset for pe date is t->tm_gmtoff
+		sdb_set_owned (bin->kv,
 			"image_file_header.TimeDateStamp_string",
-			timestr, 0);
-	}
+			      timestr, 0);
+	 }
 
 	if (strncmp ((char*)&bin->dos_header->e_magic, "MZ", 2) ||
 		strncmp ((char*)&bin->nt_headers->Signature, "PE", 2))
@@ -536,7 +539,8 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 		// asume 1 entry for each
 		delay_import_dir_size = data_dir_delay_import->Size = 0xffff;
 	}
-	int maxidsz = R_MIN (bin->size, import_dir_offset+import_dir_size);
+	int maxidsz = R_MIN ((PE_DWord)bin->size,
+		import_dir_offset+import_dir_size);
 	maxidsz -= import_dir_offset;
 	if (maxidsz<0) maxidsz = 0;
 	//int maxcount = maxidsz/ sizeof (struct r_bin_pe_import_t);
@@ -585,7 +589,8 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	}
 
 	indx = 0;
-	if ((delay_import_dir_offset != 0) && (delay_import_dir_offset < bin->b->length)) {
+	if (bin->b->length >0)
+	if ((delay_import_dir_offset != 0) && (delay_import_dir_offset < (ut32)bin->b->length)) {
 		ut64 off;
 		bin->delay_import_directory_offset = delay_import_dir_offset;
 		do {
@@ -1399,16 +1404,17 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj
 }
 
 static Sdb *Pe_r_bin_store_var(Var *var) {
+	unsigned int i = 0;
 	char key[20];
-	if (var == NULL)
-		return NULL;
-	Sdb *sdb = sdb_new0();
-	if (sdb == NULL)
-		return NULL;
-	int i = 0;
-	for (; i < var->numOfValues; i++) {
-		snprintf(key, 20, "%d", i);
-		sdb_num_set(sdb, key, var->Value[i], 0);
+	Sdb *sdb = NULL;
+	if (var) {
+		sdb = sdb_new0();
+		if (sdb) {
+			for (; i < var->numOfValues; i++) {
+				snprintf(key, 20, "%d", i);
+				sdb_num_set(sdb, key, var->Value[i], 0);
+			}
+		}
 	}
 	return sdb;
 }
@@ -1420,7 +1426,7 @@ static Sdb *Pe_r_bin_store_var_file_info(VarFileInfo *varFileInfo) {
 	Sdb *sdb = sdb_new0();
 	if (sdb == NULL)
 		return NULL;
-	int i = 0;
+	unsigned int i = 0;
 	for (; i < varFileInfo->numOfChildren; i++) {
 		snprintf(key, 20, "var%d", i);
 		sdb_ns_set (sdb, key, Pe_r_bin_store_var(varFileInfo->Children[i]));
