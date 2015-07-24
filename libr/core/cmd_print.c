@@ -2853,11 +2853,8 @@ static int cmd_print(void *data, const char *input) {
 			if (input[2] == '?')
 				r_cons_printf ("|Usage: p6d [len]    base 64 decode\n");
 			else if (r_base64_decode (buf, (const char *)core->block, len))
-				r_cons_printf ("%s", buf);
+				r_cons_printf ("%s\n", buf);
 			else eprintf ("r_base64_decode: invalid stream\n");
-			break;
-		case '?':
-			r_cons_printf ("|Usage: p6[ed] [len]    base 64 encode/decode\n");
 			break;
 		case 'e':
 			if (input[2] == '?') {
@@ -2866,9 +2863,10 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				len = len > core->blocksize ? core->blocksize : len;
 				r_base64_encode ((char *)buf, core->block, len);
-				r_cons_printf ("%s", buf);
+				r_cons_printf ("%s\n", buf);
 			}
 			break;
+		case '?':
 		default:
 			r_cons_printf ("|Usage: p6[ed] [len]    base 64 encode/decode\n");
 			break;
