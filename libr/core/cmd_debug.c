@@ -686,6 +686,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			eprintf ("Usage: dmd[aw]  - dump (all-or-writable) debug maps\n");
 			break;
 		}
+		break;
 	case 'l':
 		if (input[1] != ' ') {
 			eprintf ("Usage: dml [file]\n");
