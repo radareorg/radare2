@@ -2338,17 +2338,24 @@ static void cmd_agraph_node (RCore *core, const char *input) {
 			r_str_argv_free (args);
 			break;
 		}
-
-		body = args[1];
+		//strdup cause there is double free in r_str_argv_free due to a realloc call
+		body = strdup (args[1]);
 		if (strncmp (body, "base64:", B_LEN) == 0) {
 			body = r_str_replace (body, "\\n", "", R_TRUE);
 			newbody = (char *)r_base64_decode_dyn (body + B_LEN, 0);
+			free (body);
+			if (!newbody){
+				eprintf ("Not enough space to allocate %s at %d\n", __FILE__,__LINE__);
+				r_str_argv_free (args);
+				break;
+			}
 			body = newbody;
 		}
 		body = r_str_concat (body, "\n");
 		r_agraph_add_node (core->graph, args[0], body);
 		r_str_argv_free (args);
-		free (newbody);
+		free (body);
+		//free newbody it's not necessary since r_str_concat reallocate the space
 		break;
 	}
 	case '?':
