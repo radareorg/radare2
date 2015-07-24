@@ -20,8 +20,15 @@ static void hashify(char *s, ut64 vaddr) {
 // TODO: optimize this api:
 // - bin plugins should call r_bin_filter_name() before appending
 R_API void r_bin_filter_name(Sdb *db, ut64 vaddr, char *name, int maxlen) {
-	ut32 hash = sdb_hash (name);
+	const char *uname = sdb_fmt (0, "%"PFMT64x".%s", vaddr, name);
+	ut32 vhash = sdb_hash (uname); // vaddr hash - unique
+	ut32 hash = sdb_hash (name); // name hash - if dupped and not in unique hash must insert
 	int count = sdb_num_inc (db, sdb_fmt (0, "%x", hash), 1, 0);
+	if (sdb_exists (db, sdb_fmt (0, "%x", vhash))) {
+		// TODO: symbol is dupped, so symbol can be removed!
+		return;
+	}
+	sdb_num_set (db, sdb_fmt (0, "%x", vhash), 1, 0);
 	if (vaddr) {
 		hashify (name, vaddr);
 	}
@@ -29,6 +36,7 @@ R_API void r_bin_filter_name(Sdb *db, ut64 vaddr, char *name, int maxlen) {
 		int namelen = strlen (name);
 		if (namelen>maxlen) name[maxlen] = 0;
 		strcat (name, sdb_fmt (0,"_%d", count-1));
+		// two symbols at different addresses and same name wtf
 	//	eprintf ("Symbol '%s' dupped!\n", sym->name);
 	}
 }
@@ -37,9 +45,9 @@ R_API void r_bin_filter_symbols (RList *list) {
 	RBinSymbol *sym;
 	const int maxlen = sizeof (sym->name)-8;
 	Sdb *db = sdb_new0 ();
-	RListIter *iter;
+	RListIter *iter, *iter2;
 	if (maxlen>0) {
-		r_list_foreach (list, iter, sym) {
+		r_list_foreach_safe (list, iter, iter2, sym) {
 			r_bin_filter_name (db, sym->vaddr, sym->name, maxlen);
 		}
 	} else eprintf ("SymbolName is not dynamic\n");
