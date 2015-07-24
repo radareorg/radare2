@@ -65,8 +65,13 @@ static char *getarg(csh handle, cs_insn *insn, int n, int set, char *setop) {
 		{
 		const char *base = cs_reg_name (handle, op.mem.base);
 		const char *index = cs_reg_name (handle, op.mem.index);
+		int riprelative = (op.mem.base == X86_REG_RIP);
 		int scale = op.mem.scale;
 		st64 disp = op.mem.disp;
+		if (riprelative) {
+			// fix rip relative references
+			disp += op.size;
+		}
 		if (scale>1) {
 			if (set>1) {
 				if (base) {
