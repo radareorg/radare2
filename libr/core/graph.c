@@ -562,7 +562,7 @@ static int dist_nodes (const RAGraph *g, const RGraphNode *a, const RGraphNode *
 	if (aa->layer == ab->layer) {
 		int i;
 
-		res = 0;
+		res = aa == ab && !aa->is_reversed ? HORIZONTAL_NODE_SPACING : 0;
 		for (i = aa->pos_in_layer; i < ab->pos_in_layer; ++i) {
 			const RGraphNode *cur = g->layers[aa->layer].nodes[i];
 			const RGraphNode *next = g->layers[aa->layer].nodes[i + 1];
@@ -582,8 +582,16 @@ static int dist_nodes (const RAGraph *g, const RGraphNode *a, const RGraphNode *
 			}
 
 			if (!found) {
-				int space = acur->is_dummy && anext->is_dummy ? 1 : HORIZONTAL_NODE_SPACING;
-				res += acur->w / 2 + anext->w / 2 + space;
+				int space = HORIZONTAL_NODE_SPACING;
+				if (acur->is_reversed && anext->is_reversed) {
+					if (!acur->is_reversed)
+						res += acur->w / 2;
+					else if (!anext->is_reversed)
+						res += anext->w / 2;
+					res += 1;
+				} else {
+					res += acur->w / 2 + anext->w / 2 + space;
+				}
 			}
 		}
 	}
@@ -912,26 +920,6 @@ static RGraphNode *get_right_dummy (const RAGraph *g, const RGraphNode *n) {
 	return NULL;
 }
 
-/* returns true if all nodes on the right of n are dummies and reversed */
-static int all_reversed_right (const RAGraph *g, const RGraphNode *n) {
-	const RANode *an;
-	int k, layer;
-
-	if (!n) return R_FALSE;
-
-	an = get_anode (n);
-	layer = an->layer;
-	for (k = an->pos_in_layer; k < g->layers[layer].n_nodes; ++k) {
-		const RGraphNode *gk = g->layers[layer].nodes[k];
-		const RANode *ak = get_anode (gk);
-
-		if (!ak->is_reversed)
-			return R_FALSE;
-	}
-
-	return R_TRUE;
-}
-
 static void adjust_directions (const RAGraph *g, int i, int from_up, Sdb *D, Sdb *P) {
 	const RGraphNode *vm = NULL, *wm = NULL;
 	const RANode *vma = NULL, *wma = NULL;
@@ -1018,7 +1006,7 @@ static void place_single (const RAGraph *g, int l, const RGraphNode *bm,
 		const RANode *bma = get_anode (bm);
 		av->x = R_MAX (av->x, bma->x + dist_nodes (g, bm, v));
 	}
-	if (bp && !all_reversed_right (g, bp)) {
+	if (bp) {
 		const RANode *bpa = get_anode (bp);
 		av->x = R_MIN (av->x, bpa->x - dist_nodes (g, v, bp));
 	}
@@ -1117,23 +1105,29 @@ static void combine_sequences (const RAGraph *g, int l,
 
 	m = dist_nodes (g, vt, vtp);
 	while (atp->x - at->x < m) {
-		if (rm < rp) {
-			if (r_list_empty (Rm)) {
-				at->x = atp->x - m;
-			} else {
-				struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rm);
-				rm = rm + cx->len;
-				at->x = R_MAX (cx->pos, atp->x - m);
-				free (cx);
-			}
+		if (atp->x == at->x) {
+			int step = m / 2;
+			at->x -= step;
+			atp->x += m - step;
 		} else {
-			if (r_list_empty (Rp)) {
-				atp->x = at->x + m;
+			if (rm < rp) {
+				if (r_list_empty (Rm)) {
+					at->x = atp->x - m;
+				} else {
+					struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rm);
+					rm = rm + cx->len;
+					at->x = R_MAX (cx->pos, atp->x - m);
+					free (cx);
+				}
 			} else {
-				struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rp);
-				rp = rp + cx->len;
-				atp->x = R_MIN (cx->pos, at->x + m);
-				free (cx);
+				if (r_list_empty (Rp)) {
+					atp->x = at->x + m;
+				} else {
+					struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rp);
+					rp = rp + cx->len;
+					atp->x = R_MIN (cx->pos, at->x + m);
+					free (cx);
+				}
 			}
 		}
 	}
@@ -1176,54 +1170,6 @@ static void place_sequence (const RAGraph *g, int l,
 	}
 }
 
-/* if all nodes to the right of right_pos are reversed, shift them to make the
- * placement feasible and larger */
-static void shift_right_dummies (const RAGraph *g, int l, int right_pos) {
-	const RGraphNode *vr, *bp;
-	const RANode *ar, *abp;
-
-	if (!is_valid_pos (g, l, right_pos)) return;
-	vr = g->layers[l].nodes[right_pos];
-	ar = get_anode (vr);
-	if (ar->is_dummy) return;
-
-	if (!is_valid_pos (g, l, right_pos + 1)) return;
-	bp = g->layers[l].nodes[right_pos + 1];
-	abp = get_anode (bp);
-	if (!abp->is_dummy) return;
-
-	if (all_reversed_right (g, bp)) {
-		int k;
-
-		for (k = right_pos + 1; k < g->layers[l].n_nodes; ++k) {
-			RGraphNode *vk = g->layers[l].nodes[k];
-			RANode *ak = get_anode (vk);
-			int newv = ar->x + dist_nodes (g, vr, vk);
-
-			if (newv > ak->x) {
-				const RGraphNode *vj = vk;
-				RANode *aj = ak;
-
-				while (vj && aj && aj->is_dummy && aj->is_reversed) {
-					aj->x = newv;
-
-					vj = r_list_get_n (r_graph_innodes (g->graph, vj), 0);
-					aj = get_anode (vj);
-				}
-
-				vj = vk;
-				aj = ak;
-				while (vj && aj && aj->is_dummy && aj->is_reversed) {
-					aj->x = newv;
-
-					vj = r_graph_nth_neighbour (g->graph, vj, 0);
-					aj = get_anode (vj);
-				}
-			}
-		}
-	}
-}
-
 /* finds the placements of nodes while traversing the graph in the given
  * direction */
 /* places all the sequences of consecutive original nodes in each layer. */
@@ -1262,7 +1208,6 @@ static void original_traverse_l (const RAGraph *g, Sdb *D, Sdb *P, int from_up) 
 
 		if (is_valid_pos (g, i, vr - 1) && bm)
 			set_dist_nodes (g, i, vr - 1, bma->pos_in_layer);
-		shift_right_dummies (g, i, vr - 1);
 
 		while (bm) {
 			const RGraphNode *bp = get_right_dummy (g, bm);
@@ -1278,14 +1223,12 @@ static void original_traverse_l (const RAGraph *g, Sdb *D, Sdb *P, int from_up) 
 
 				if (is_valid_pos (g, i, va))
 					set_dist_nodes (g, i, bma->pos_in_layer, va);
-				shift_right_dummies (g, i, vr - 1);
 			} else if (hash_get_int (D, bm) == from_up) {
 				bpa = get_anode (bp);
 				va = bma->pos_in_layer + 1;
 				vr = bpa->pos_in_layer;
 				place_sequence (g, i, bm, bp, from_up, va, vr);
 				hash_set (P, bm, R_TRUE);
-				shift_right_dummies (g, i, vr - 1);
 			}
 
 			bm = bp;
