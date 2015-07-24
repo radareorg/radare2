@@ -1105,23 +1105,29 @@ static void combine_sequences (const RAGraph *g, int l,
 
 	m = dist_nodes (g, vt, vtp);
 	while (atp->x - at->x < m) {
-		if (rm < rp) {
-			if (r_list_empty (Rm)) {
-				at->x = atp->x - m;
-			} else {
-				struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rm);
-				rm = rm + cx->len;
-				at->x = R_MAX (cx->pos, atp->x - m);
-				free (cx);
-			}
+		if (atp->x == at->x) {
+			int step = m / 2;
+			at->x -= step;
+			atp->x += m - step;
 		} else {
-			if (r_list_empty (Rp)) {
-				atp->x = at->x + m;
+			if (rm < rp) {
+				if (r_list_empty (Rm)) {
+					at->x = atp->x - m;
+				} else {
+					struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rm);
+					rm = rm + cx->len;
+					at->x = R_MAX (cx->pos, atp->x - m);
+					free (cx);
+				}
 			} else {
-				struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rp);
-				rp = rp + cx->len;
-				atp->x = R_MIN (cx->pos, at->x + m);
-				free (cx);
+				if (r_list_empty (Rp)) {
+					atp->x = at->x + m;
+				} else {
+					struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rp);
+					rp = rp + cx->len;
+					atp->x = R_MIN (cx->pos, at->x + m);
+					free (cx);
+				}
 			}
 		}
 	}
