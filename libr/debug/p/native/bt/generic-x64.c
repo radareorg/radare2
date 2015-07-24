@@ -68,8 +68,8 @@ static RList *backtrace_x86_64_anal(RDebug *dbg, ut64 at) {
 	if (at == UT64_MAX) {
 		//_rsp = r_reg_get_value (reg, r_reg_get (reg, "rsp", R_REG_TYPE_GPR));
 		_rbp = r_reg_get_value (reg, r_reg_get (reg, "rbp", R_REG_TYPE_GPR));
-	//} else {
-	//	_rsp = _rbp = at;
+	} else {
+		_rbp = at;
 	}
 
 	list = r_list_new ();

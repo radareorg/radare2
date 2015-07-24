@@ -2378,6 +2378,7 @@ static void cmd_agraph_edge (RCore *core, const char *input) {
 		args = r_str_argv (input, &n_args);
 		if (n_args != 2) {
 			r_cons_printf("Wrong arguments\n");
+			r_str_argv_free (args);
 			break;
 		}
 
@@ -2385,6 +2386,7 @@ static void cmd_agraph_edge (RCore *core, const char *input) {
 		v = r_agraph_get_node (core->graph, args[1]);
 		if (!u || !v) {
 			r_cons_printf ("Nodes not found!\n");
+			r_str_argv_free (args);
 			break;
 		}
 		r_agraph_add_edge (core->graph, u, v);
