@@ -1738,14 +1738,8 @@ static void agraph_set_zoom (RAGraph *g, int v) {
  * (callgraph, CFG, etc.), set the default layout for these nodes and center
  * the screen on the selected one */
 static int agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
-	int ret;
-
 	r_agraph_reset (g);
-	ret = reload_nodes(g, core, fcn);
-	if (!ret)
-		return R_FALSE;
-	agraph_set_layout(g);
-	return R_TRUE;
+	return reload_nodes(g, core, fcn);
 }
 
 static void follow_nth(RAGraph *g, int nth) {
@@ -1976,10 +1970,8 @@ R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
                                  const char *body) {
 	RANode *res = R_NEW0 (RANode);
 	if (!res) return NULL;
-	if (title)
-		res->title = strdup(title);
-	if (body)
-		res->body = strdup(body);
+	res->title = title ? strdup(title) : strdup("");
+	res->body = body ? strdup(body) : strdup("");
 	res->layer = -1;
 	res->pos_in_layer = -1;
 	res->is_dummy = R_FALSE;
