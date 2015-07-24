@@ -1,7 +1,17 @@
 #!/bin/sh
+
+[ -z "${CPU}" ] && CPU="armv7"
+# CPU=arm64
+[ -z "${IOSINC}" ] && IOSINC="${CWD}/ios-include"
+CWD="$(dirname "$0")"
+#CC="xcrun --sdk iphoneos gcc -arch armv7 -I${CWD}/ios-include"
+CC="xcrun --sdk iphoneos gcc -arch ${CPU} -I${IOSINC}"
+#CC="xcrun --sdk iphoneos gcc -arch arm64"
+exec ${CC} $*
+exit 1
+
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
 
-CWD=`dirname $0`
 #CPU="armv7 arm64"
 if [ -z "${CPU}" ]; then
 	CPU=armv7
@@ -34,7 +44,10 @@ LDFLAGS="-isysroot ${SDKROOT}"
 # -Wl, -syslibroot ${SDKROOT}"
 export PATH=${DEVROOT}/usr/bin:${SDKROOT}/Developer/usr/bin:${PATH}
 CC=${DEVROOT}/usr/bin/gcc
+CC="xcrun --sdk iphoneos gcc"
+CXX="xcrun --sdk iphoneos g++"
 LD=${CC}
+export CC CXX LD
 for a in ${CPU} ; do
 	CFLAGS="${CFLAGS} -arch ${a}"
 done
@@ -60,4 +73,6 @@ LDFLAGS="-L ${IOSROOT}/usr/lib/ ${LDFLAGS}"
 #fi
 
 # arm64
-${CC} ${CFLAGS} ${LDFLAGS} $*
+# shellcheck disable=SC2048
+# shellcheck disable=SC2086
+${CC} "${CFLAGS}" "${LDFLAGS}" $*

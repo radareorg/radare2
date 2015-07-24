@@ -2,20 +2,20 @@
 
 #include <r_types.h>
 
-enum{
-	SNES_OP_8BIT	=	1,
+enum {
+	SNES_OP_8BIT = 1,
 	SNES_OP_16BIT,
 	SNES_OP_24BIT,
 	SNES_OP_32BIT
 };
 
-typedef struct{
+typedef struct {
 	const char *name;
 	ut8 len;
 } snes_op_t;
 
 
-snes_op_t snes_op[]={
+static snes_op_t snes_op[]={
 {"brk 0x%02x",		SNES_OP_16BIT},
 {"ora (0x%02x,x)",	SNES_OP_16BIT},
 {"cop 0x%02x",		SNES_OP_16BIT},

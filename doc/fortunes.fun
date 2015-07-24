@@ -161,3 +161,10 @@ What has been executed cannot be unexecuted
 What about taking a break? Here, have this nice 0xCC.
 r2 is meant to be read by machines.
 prove you are a robot to continue...
+This is fine.
+Using radare2 to generate intelligence...
+taking the file and moving it
+It's the year of desktop on radare2
+💺
+It's the year of radare2 on the desktop
+SSAbotage from ISIL

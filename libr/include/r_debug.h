@@ -166,7 +166,8 @@ typedef struct r_debug_t {
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
 	RList *snaps; // <RDebugSnap>
-	RGraph *graph;
+	RTree *tree;
+	Sdb *tracenodes;
 	Sdb *sgnls;
 	RCoreBind corebind;
 #if __WINDOWS__
@@ -182,6 +183,9 @@ typedef struct r_debug_t {
 	- list of mapped memory (from /proc/XX/maps)
 	- list of managed memory (allocated in child...)
 	*/
+	/* select backtrace algorithm */
+	char *btalgo;
+	RNum *num;
 } RDebug;
 
 typedef struct r_debug_desc_plugin_t {
@@ -366,6 +370,8 @@ R_API int r_debug_arg_set (RDebug *dbg, int fast, int num, ut64 value);
 /* pid */
 R_API int r_debug_thread_list(RDebug *dbg, int pid);
 
+R_API void r_debug_tracenodes_reset (RDebug *dbg);
+
 R_API void r_debug_trace_reset (RDebug *dbg);
 R_API int r_debug_trace_pc (RDebug *dbg);
 R_API void r_debug_trace_at (RDebug *dbg, const char *str);
@@ -382,13 +388,25 @@ R_API void r_debug_drx_list (RDebug *dbg);
 R_API int r_debug_drx_set (RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g);
 R_API int r_debug_drx_unset (RDebug *dbg, int idx);
 
+/* esil */
+R_API ut64 r_debug_num_callback(RNum *userptr, const char *str, int *ok);
+R_API int r_debug_esil_stepi (RDebug *dbg);
+R_API ut64 r_debug_esil_step (RDebug *dbg, ut32 count);
+R_API ut64 r_debug_esil_continue (RDebug *dbg);
+R_API void r_debug_esil_watch(RDebug *dbg, int rwx, int dev, const char *expr);
+R_API void r_debug_esil_watch_reset(RDebug *dbg);
+R_API void r_debug_esil_watch_list(RDebug *dbg);
+R_API int r_debug_esil_watch_empty(RDebug *dbg);
+R_API void r_debug_esil_prestep (RDebug *d, int p);
+
 /* snap */
 R_API void r_debug_snap_free (void *snap);
 R_API int r_debug_snap_delete(RDebug *dbg, int idx);
-R_API void r_debug_snap_list(RDebug *dbg, int idx);
+R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode);
 R_API int r_debug_snap_diff(RDebug *dbg, int idx);
 R_API int r_debug_snap(RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_comment (RDebug *dbg, int idx, const char *msg);
+R_API int r_debug_snap_all(RDebug *dbg, int perms);
 
 /* plugin pointers */
 extern RDebugPlugin r_debug_plugin_native;

@@ -666,7 +666,7 @@ static int PE_(r_bin_pe_init_exports)(struct PE_(r_bin_pe_obj_t) *bin) {
 			ut16 n_desc;        /* description field */
 #if R_BIN_PE64
 			ut64 n_value;    /* value of symbol (bfd_vma) */
-#else
+#else	
 			ut32 n_value;    /* value of symbol (bfd_vma) */
 #endif
 		};
@@ -1698,82 +1698,77 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	PE_Word function_ordinal;
 	PE_VWord functions_paddr, names_paddr, ordinals_paddr, function_vaddr, name_vaddr, name_paddr;
 	char function_name[PE_NAME_LENGTH + 1], forwarder_name[PE_NAME_LENGTH + 1];
-	char dll_name[PE_NAME_LENGTH + 1], export_name[PE_NAME_LENGTH + 1];
+	char dll_name[PE_NAME_LENGTH + 1], export_name[256];
 	PE_(image_data_directory) *data_dir_export;
 	PE_VWord export_dir_vaddr ;
-	int i, export_dir_size;
+	int n,i, export_dir_size;
 	int exports_sz = 0;
-
 	if (!bin || !bin->nt_headers)
 		return NULL;
-	data_dir_export = \
-		&bin->nt_headers->optional_header.\
-		DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
+	data_dir_export  = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
 	export_dir_vaddr = data_dir_export->VirtualAddress;
-	export_dir_size = data_dir_export->Size;
-
-	if (bin->export_directory && bin->export_directory->NumberOfNames<0xfff) {
-		exports_sz = (bin->export_directory->NumberOfNames + 1) \
-			* sizeof (struct r_bin_pe_export_t);
+	export_dir_size  = data_dir_export->Size;
+	if (bin->export_directory && bin->export_directory->NumberOfFunctions<0xfff) {
+		exports_sz = (bin->export_directory->NumberOfFunctions + 1) * sizeof (struct r_bin_pe_export_t);
 		if (!(exports = malloc (exports_sz)))
 			return NULL;
-		if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(
-				bin, bin->export_directory->Name),
-				(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
+		if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->export_directory->Name),(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
 			eprintf ("Error: read (dll name)\n");
 			free (exports);
 			return NULL;
 		}
-		functions_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin,
-			bin->export_directory->AddressOfFunctions);
-		names_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin,
-			bin->export_directory->AddressOfNames);
-		ordinals_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin,
-			bin->export_directory->AddressOfOrdinals);
-		for (i = 0; i < bin->export_directory->NumberOfNames; i++) {
-			if (r_buf_read_at (bin->b, names_paddr + i *
-					sizeof (PE_VWord), (ut8*)&name_vaddr,
-					sizeof (PE_VWord)) == -1) {
-				eprintf ("Error: read (name vaddr)\n");
-				free (exports);
-				return NULL;
-			}
-			if (r_buf_read_at (bin->b, ordinals_paddr + i *
-					sizeof(PE_Word), (ut8*)&function_ordinal,
-					sizeof (PE_Word)) == -1) {
-				eprintf ("Error: read (function ordinal)\n");
-				free (exports);
-				return NULL;
-			}
-			if (-1 == r_buf_read_at (bin->b, functions_paddr +
-					function_ordinal * sizeof(PE_VWord),
-					(ut8*)&function_vaddr, sizeof(PE_VWord))) {
-				eprintf ("Error: read (function vaddr)\n");
-				free (exports);
-				return NULL;
-			}
-			name_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, name_vaddr);
-			if (name_paddr) {
-				if (-1 == r_buf_read_at(bin->b, name_paddr,
-					(ut8*)function_name, PE_NAME_LENGTH)) {
-					eprintf("Error: read (function name)\n");
-					free (exports);
-					return NULL;
+		functions_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin,bin->export_directory->AddressOfFunctions);
+		names_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin,	bin->export_directory->AddressOfNames);
+		ordinals_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin,bin->export_directory->AddressOfOrdinals);
+		for (i=0;i<bin->export_directory->NumberOfFunctions;i++) {
+			// get vaddr from AddressOfFunctions array
+			r_buf_read_at (bin->b, functions_paddr + i * sizeof(PE_VWord),	(ut8*)&function_vaddr, sizeof(PE_VWord));
+			// have exports by name?
+			if (bin->export_directory->NumberOfNames!=0) {
+				// search for value of i into AddressOfOrdinals
+				name_vaddr=0;
+				for(n=0;n<bin->export_directory->NumberOfNames;n++) {
+					r_buf_read_at (bin->b, ordinals_paddr + n * sizeof(PE_Word), (ut8*)&function_ordinal,sizeof (PE_Word));
+					// if exist this index into AddressOfOrdinals
+					if (i==function_ordinal) {
+						// get the VA of export name  from AddressOfNames
+						r_buf_read_at (bin->b, names_paddr + n * sizeof (PE_VWord), (ut8*)&name_vaddr,sizeof (PE_VWord));
+						break;
+					}
 				}
-			} else {
-				snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", function_ordinal);
+				// have a address into name_vaddr?
+				if (name_vaddr) {
+					// get the name of the Export 
+					name_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, name_vaddr);
+					if (-1 == r_buf_read_at(bin->b, name_paddr,(ut8*)function_name, PE_NAME_LENGTH)) {
+						eprintf("Error: read (function name)\n");
+						free (exports);
+						return NULL;
+					}
+				}
+				else { // No name export, get the ordinal
+					snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", i+1);
+				}
 			}
-			snprintf (export_name, PE_NAME_LENGTH, "%s_%s", dll_name, function_name);
+			else { // if dont export by name exist, get the ordinal taking in mind the Base value.
+				function_ordinal=i+bin->export_directory->Base;
+				snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", function_ordinal);				                     
+			}
+			// check if VA are into export directory, this mean a forwarder export
 			if (function_vaddr >= export_dir_vaddr && function_vaddr < (export_dir_vaddr + export_dir_size)) {
-				if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, function_vaddr),
-						(ut8*)forwarder_name, PE_NAME_LENGTH) == -1) {
+				// if forwarder, the VA point to Forwarded name
+				if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, function_vaddr),(ut8*)forwarder_name, PE_NAME_LENGTH) == -1) {
 					eprintf ("Error: read (magic)\n");
 					free (exports);
 					return NULL;
 				}
-			} else {
+			}
+			else { // no forwarder export
 				snprintf (forwarder_name, PE_NAME_LENGTH, "NONE");
 			}
+			dll_name[PE_NAME_LENGTH]='\0';
+			function_name[PE_NAME_LENGTH]='\0';
+			snprintf (export_name, sizeof (export_name)-1, "%s_%s", dll_name, function_name);
 			exports[i].vaddr = function_vaddr;
 			exports[i].paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, function_vaddr);
 			exports[i].ordinal = function_ordinal;
@@ -1785,11 +1780,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		}
 		exports[i].last = 1;
 	}
-
 	exp = parse_symbol_table (bin, exports, exports_sz - 1);
-	if (exp) exports = exp;
-	//else eprintf ("Warning: bad symbol table\n");
-
+	if (exp)
+		exports = exp;
 	return exports;
 }
 

@@ -462,7 +462,8 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 		buf += (strlen (filename) + 1);
 		ut64 dir_idx;
-		buf = r_uleb128 (buf, ST32_MAX, &dir_idx);
+		if (buf+1 < buf_end)
+			buf = r_uleb128 (buf, ST32_MAX, &dir_idx);
 		break;
 	case DW_LNE_set_discriminator:
 		buf = r_uleb128(buf, ST32_MAX, &addr);
@@ -1017,7 +1018,7 @@ static void r_bin_dwarf_dump_attr_value(const RBinDwarfAttrValue *val, FILE *f)
 	case DW_FORM_block1:
 	case DW_FORM_block2:
 	case DW_FORM_block4:
-		fprintf (f, "%llu byte block:", val->encoding.block.length);
+		fprintf (f, "%"PFMT64u" byte block:", val->encoding.block.length);
 		for (i = 0; i < val->encoding.block.length; i++) {
 			fprintf (f, "%02x", val->encoding.block.data[i]);
 		}
@@ -1026,7 +1027,7 @@ static void r_bin_dwarf_dump_attr_value(const RBinDwarfAttrValue *val, FILE *f)
 	case DW_FORM_data2:
 	case DW_FORM_data4:
 	case DW_FORM_data8:
-		fprintf (f, "%llu", val->encoding.data);
+		fprintf (f, "%"PFMT64u"", val->encoding.data);
 		if (val->name == DW_AT_language) {
 			fprintf (f, "   (%s)", dwarf_langs[val->encoding.data]);
 		}
@@ -1048,7 +1049,7 @@ static void r_bin_dwarf_dump_attr_value(const RBinDwarfAttrValue *val, FILE *f)
 		fprintf (f, "%"PFMT64d"", val->encoding.sdata);
 		break;
 	case DW_FORM_udata:
-		fprintf (f, "%llu", val->encoding.data);
+		fprintf (f, "%"PFMT64u"", val->encoding.data);
 		break;
 	case DW_FORM_ref_addr:
 		fprintf (f, "<0x%"PFMT64x">", val->encoding.reference);
@@ -1080,7 +1081,7 @@ static void r_bin_dwarf_dump_debug_info (FILE *f, const RBinDwarfDebugInfo *inf)
 		dies = inf->comp_units[i].dies;
 
 		for (j = 0; j < inf->comp_units[i].length; j++) {
-			fprintf(f, "    Abbrev Number: %llu ", dies[j].abbrev_code);
+			fprintf(f, "    Abbrev Number: %"PFMT64u" ", dies[j].abbrev_code);
 
 			if (dies[j].tag && dies[j].tag <= DW_TAG_volatile_type &&
 				       dwarf_tag_name_encodings[dies[j].tag]) {
@@ -1326,8 +1327,9 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 	RBinDwarfDebugInfo *inf = NULL, di;
 	inf = &di;
 
-	r_bin_dwarf_init_debug_info (inf);
 	if (!da || !s || !obuf) return R_FALSE;
+
+	r_bin_dwarf_init_debug_info (inf);
 	while (buf < buf_end) {
 		if (inf->length >= inf->capacity)
 			break;
@@ -1498,6 +1500,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 
 static RBinDwarfRow *r_bin_dwarf_row_new (ut64 addr, const char *file, int line, int col) {
 	RBinDwarfRow *row = R_NEW0 (RBinDwarfRow);
+	if (!row) return NULL;
 	row->file = strdup (file);
 	row->address = addr;
 	row->line = line;
@@ -1522,7 +1525,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 		if (len<1) {
 			return NULL;
 		}
-		buf = calloc (1, len);
+		buf = calloc (1, len+1);
 		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		if (!ret) {
 			free (buf);

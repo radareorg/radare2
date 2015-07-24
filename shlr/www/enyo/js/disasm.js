@@ -7,34 +7,34 @@ var BBGraph = function () {
 
   joint.shapes.html = {};
   joint.shapes.html.Element = joint.shapes.basic.Rect.extend({
-      defaults: joint.util.deepSupplement({
-          type: 'html.Element',
-          attrs: {
-              rect: { stroke: r2ui.colors[".ec_gui_border"], fill: r2ui.colors[".ec_gui_alt_background"] }
-          }
-      }, joint.shapes.basic.Rect.prototype.defaults)
+    defaults: joint.util.deepSupplement({
+      type: 'html.Element',
+      attrs: {
+        rect: { stroke: r2ui.colors[".ec_gui_border"], fill: r2ui.colors[".ec_gui_alt_background"] }
+      }
+    }, joint.shapes.basic.Rect.prototype.defaults)
   });
 
   joint.shapes.html.ElementView = joint.dia.ElementView.extend({
-      initialize: function() {
-          _.bindAll(this, 'updateBox');
-          joint.dia.ElementView.prototype.initialize.apply(this, arguments);
-          this.$box = $(_.template(this.model.get('html'))());
-          this.$box.find('input').on('mousedown click', function(evt) { evt.stopPropagation(); });
-          this.model.on('change', this.updateBox, this);
-          this.updateBox();
-      },
-      render: function() {
-          joint.dia.ElementView.prototype.render.apply(this, arguments);
-          this.paper.$el.prepend(this.$box);
-          this.updateBox();
-          return this;
-      },
-      updateBox: function(event) {
-        // move the html mask when moving the svg rect
-        var bbox = this.model.getBBox();
-        this.$box.css({ width: bbox.width + 2, height: bbox.height, left: bbox.x - 1, top: bbox.y + 7});
-      }
+    initialize: function() {
+      _.bindAll(this, 'updateBox');
+      joint.dia.ElementView.prototype.initialize.apply(this, arguments);
+      this.$box = $(_.template(this.model.get('html'))());
+      this.$box.find('input').on('mousedown click', function(evt) { evt.stopPropagation(); });
+      this.model.on('change', this.updateBox, this);
+      this.updateBox();
+    },
+    render: function() {
+      joint.dia.ElementView.prototype.render.apply(this, arguments);
+      this.paper.$el.prepend(this.$box);
+      this.updateBox();
+      return this;
+    },
+    updateBox: function(event) {
+      // move the html mask when moving the svg rect
+      var bbox = this.model.getBBox();
+      this.$box.css({ width: bbox.width + 2, height: bbox.height - 6, left: bbox.x - 1, top: bbox.y + 7});
+    }
   });
 };
 BBGraph.prototype.addVertex = function(addr, vlen, dom) {
@@ -65,29 +65,98 @@ BBGraph.prototype.addEdge = function(v1, v2, color) {
 }
 BBGraph.prototype.makeElement = function(addr, width, height, html) {
   this.elements.push(new joint.shapes.html.Element({
-      id: String(addr),
-      size: { width: width, height: height },
-      html: html
+    id: String(addr),
+    size: { width: width, height: height },
+    html: html
   }));
 };
 BBGraph.prototype.makeLink = function(v1, v2, color) {
   this.links.push(new joint.dia.Link({
-      source: { id: String(v1) },
-      target: { id: String(v2) },
-      attrs: {
-          '.marker-target': {
-              d: 'M 4 0 L 0 2 L 4 4 z',
-              fill: color,
-              stroke: color
-          },
-          '.connection': {
-              'stroke-width': 1,
-              stroke: color
-          }
+    source: { id: String(v1) },
+    target: { id: String(v2) },
+    attrs: {
+      '.marker-target': {
+        d: 'M 6 0 L 0 3 L 6 6 z',
+        fill: color,
+        stroke: color
       },
-      smooth: true
+      '.connection': {
+        'stroke-width': 1,
+        stroke: color
+      }
+    },
+    smooth: true
   }));
 };
+
+
+adjustVertices = function(graph, cell) {
+  // If the cell is a view, find its model.
+  cell = cell.model || cell;
+
+  if (cell instanceof joint.dia.Element) {
+
+    _.chain(graph.getConnectedLinks(cell)).groupBy(function(link) {
+      // the key of the group is the model id of the link's source or target, but not our cell id.
+      return _.omit([link.get('source').id, link.get('target').id], cell.id)[0];
+    }).each(function(group, key) {
+      // If the member of the group has both source and target model adjust vertices.
+      if (key !== 'undefined') adjustVertices(graph, _.first(group));
+    });
+
+    return;
+  }
+
+  var srcId = cell.get('source').id || cell.previous('source').id;
+  var trgId = cell.get('target').id || cell.previous('target').id;
+
+  var siblings = _.filter(graph.getLinks(), function(sibling) {
+    var _srcId = sibling.get('source').id;
+    var _trgId = sibling.get('target').id;
+
+    return (_srcId === srcId && _trgId === trgId) ||
+      (_srcId === trgId && _trgId === srcId);
+  });
+  // more than one link between two blocks
+  if (siblings.length > 1) {
+    var srcbox = r2ui.graph.getCell(srcId).getBBox();
+    var dstbox = r2ui.graph.getCell(trgId).getBBox();
+    src = srcbox.intersectionWithLineFromCenterToPoint(dstbox.center());
+    dst = dstbox.intersectionWithLineFromCenterToPoint(srcbox.center());
+
+    var midPoint = g.line(src, dst).midpoint();
+    var theta = src.theta(dst);
+    var gap = 10;
+    // if the vertex is in the rect : bug
+    // vertex doesn't seem to go to the right place
+
+    _.each(siblings, function(sibling, index) {
+      var offset = gap;
+      var sign = index % 2 ? 1 : -1;
+      var angle = g.toRad(theta + sign * 90);
+      var vertex = g.point.fromPolar(offset, angle, midPoint);
+
+      // we tell the link deviate to the right or to the left
+      // from its path depending on sign
+      //     ^             ^
+      //     |           /   \
+      //     |     =>   x     x
+      //     |           \   /
+      //     v             v
+
+      // if the vertex is inside one of the box, don't do anything
+      // they are very close and this will result in a rendering bug
+      if (!srcbox.containsPoint(vertex) && !dstbox.containsPoint(vertex)) {
+        sibling.set('vertices', [{ x: vertex.x, y: vertex.y }]);
+      } else {
+        sibling.unset('vertices');
+      }
+    });
+
+  }
+
+};
+
 BBGraph.prototype.render = function() {
   var name = Object.keys(this.vertices).toString();
   var outergbox = document.createElement('div');
@@ -108,6 +177,8 @@ BBGraph.prototype.render = function() {
   for (var j = 0; j < this.edges.length; j++) {
     this.makeLink(this.edges[j].from, this.edges[j].to, this.edges[j].color);
   }
+
+
   $("#outergbox").remove();
 
   this.makeElement("minimap_area", 1, 1, "<div id='minimap_area'>");
@@ -116,11 +187,11 @@ BBGraph.prototype.render = function() {
   var width = $("#center_panel").width();
   var graph = new joint.dia.Graph();
   var paper = new joint.dia.Paper({
-      el: $('#canvas'),
-      gridSize: 1,
-      width: 2000,
-      height: 6000,
-      model: graph,
+    el: $('#canvas'),
+    gridSize: 1,
+    width: 2000,
+    height: 6000,
+    model: graph,
   });
 
   var minimap_width = 200;
@@ -128,11 +199,11 @@ BBGraph.prototype.render = function() {
   $('#minimap').html("");
   $('#minimap').html("");
   var minimap = new joint.dia.Paper({
-      el: $('#minimap'),
-      gridSize: 1,
-      width: minimap_width,
-      height: minimap_heigh,
-      model: graph
+    el: $('#minimap'),
+    gridSize: 1,
+    width: minimap_width,
+    height: minimap_heigh,
+    model: graph
   });
 
   graph.resetCells(items);
@@ -169,7 +240,7 @@ BBGraph.prototype.render = function() {
     $("#minimap").css("left", $("#main_panel").width() - minimap_width - $("#main_panel").position().left);
     $("#minimap").css("top",  $("#center_panel").position().top);
     $("#main_panel").bind('scroll', update_minimap);
-  // panel layout
+    // panel layout
   } else if ($("#main_panel").length){
     $("#minimap").css("left", $("#main_panel").width() - minimap_width);
     $("#minimap").css("top",  $("#center_panel").position().top - 40);
@@ -194,6 +265,10 @@ BBGraph.prototype.render = function() {
       }
     }
   });
+
+  var myAdjustVertices = _.partial(adjustVertices, graph);
+  _.each(graph.getLinks(), myAdjustVertices);
+  paper.on('cell:pointerup', myAdjustVertices);
 
   if (r2ui._dis.minimap) {
     update_minimap();
@@ -242,7 +317,7 @@ function update_minimap() {
     // enyo layout
     if ($("#radareApp_mp").length) {
       el = $('#main_panel');
-    // panel layout
+      // panel layout
     } else if ($("#main_panel").length){
       el = $('#center_panel');
     }
@@ -260,7 +335,7 @@ function update_minimap() {
       $("#minimap").css("left", el.scrollLeft() + el.width() - minimap_width - $("#radareApp_mp").position().left + 2 * el.css("padding").replace('px',''));
       $("#minimap").css("top",  el.scrollTop());
       $("#minimap").css("display", "block");
-    // panel layout
+      // panel layout
     } else if ($("#main_panel").length){
       $("#minimap").css("left", el.scrollLeft() + $("#main_panel").width() - minimap_width);
       $("#minimap").css("top",  el.scrollTop());
@@ -350,10 +425,10 @@ function render_graph(x) {
 
   var element = $("#canvas svg g .element");
   element.on("mousedown", function(event){
-      flag = 0;
+    flag = 0;
   });
   element.on("mousemove", function(event){
-      flag = 1;
+    flag = 1;
   });
   element.on("mouseup", function(event){
     if(flag === 0){
@@ -543,11 +618,11 @@ function render_instructions(instructions) {
 }
 
 function getOffsetRect(elem) {
-    var box = elem.getBoundingClientRect();
-    var offset = $('#gbox').offset().top;
-    var top  = box.top - offset;
-    var bottom  = box.bottom - offset;
-    return {top: Math.round(top), bottom: Math.round(bottom)};
+  var box = elem.getBoundingClientRect();
+  var offset = $('#gbox').offset().top;
+  var top  = box.top - offset;
+  var bottom  = box.bottom - offset;
+  return {top: Math.round(top), bottom: Math.round(bottom)};
 }
 
 function countProperties(obj) {
@@ -620,73 +695,73 @@ function html_for_instruction(ins) {
         var name = '';
         var xrefoffset = "0x"+xref.addr.toString(16);
         if (r2.get_flag_names(address_canonicalize(xrefoffset)).length > 0) name = ' (' + r2.get_flag_names(address_canonicalize(xrefoffset)).join(";") + ')';
-        idump += '<div class="ec_flag xrefs">; ' + xref.type.toUpperCase() + ' XREF from ' +
-        '<span class="offset addr addr_' + address_canonicalize(xrefoffset) + '">' + xrefoffset + '</span> ' +  name + '</div> ';
-      }
+            idump += '<div class="ec_flag xrefs">; ' + xref.type.toUpperCase() + ' XREF from ' +
+            '<span class="offset addr addr_' + address_canonicalize(xrefoffset) + '">' + xrefoffset + '</span> ' +  name + '</div> ';
+            }
 
-    }
-  }
+            }
+            }
 
-  idump += '<span class="insaddr datainstruction ec_offset addr addr_' + address_canonicalize(offset) + '">' + address + '</span> ';
+            idump += '<span class="insaddr datainstruction ec_offset addr addr_' + address_canonicalize(offset) + '">' + address + '</span> ';
 
-  if (asm_bytes) {
-    if (ins.bytes !== undefined && ins.bytes !== null && ins.bytes !== "") {
-      var dorep = function(a) {
-        if (a=="00") return '<span class="ec_b0x00">00</span>';
-        if (a=="ff") return '<span class="ec_b0x00">ff</span>';
-        if (a=="7f") return '<span class="ec_b0x00">7f</span>';
-      };
-      var bytes = ins.bytes.replace(new RegExp("(00)|(ff)|(7f)", "g"), dorep);
-      idump += '<span class="bytes ec_other">' + bytes + '</span> ';
-    }
-  }
+            if (asm_bytes) {
+              if (ins.bytes !== undefined && ins.bytes !== null && ins.bytes !== "") {
+                var dorep = function(a) {
+                  if (a=="00") return '<span class="ec_b0x00">00</span>';
+                  if (a=="ff") return '<span class="ec_b0x00">ff</span>';
+                  if (a=="7f") return '<span class="ec_b0x00">7f</span>';
+                };
+                var bytes = ins.bytes.replace(new RegExp("(00)|(ff)|(7f)", "g"), dorep);
+                idump += '<span class="bytes ec_other">' + bytes + '</span> ';
+              }
+            }
 
-  var opcode = highlight_instruction(ins.opcode, true);
-  if ((r2.varMap[ins.fcn_addr] !== null && r2.varMap[ins.fcn_addr] !== undefined && r2.varMap[ins.fcn_addr].length > 0) ||
-      (r2.argMap[ins.fcn_addr] !== null && r2.argMap[ins.fcn_addr] !== undefined && r2.argMap[ins.fcn_addr].length > 0)) {
-    for (var i in r2.varMap[ins.fcn_addr]) {
-      var var_name = r2.varMap[ins.fcn_addr][i].name;
-      var var_id = r2.varMap[ins.fcn_addr][i].id;
-      opcode = opcode.replace(" " + var_name + " ", " <span class='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span> ");
-    }
-    for (var i in r2.argMap[ins.fcn_addr]) {
-      var arg_name = r2.argMap[ins.fcn_addr][i];
-      var arg_id = r2.argMap[ins.fcn_addr][i].id;
-      opcode = opcode.replace(" " + arg_name + " ", " <span id='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span> ");
-    }
-  }
+            var opcode = highlight_instruction(ins.opcode, true);
+            if ((r2.varMap[ins.fcn_addr] !== null && r2.varMap[ins.fcn_addr] !== undefined && r2.varMap[ins.fcn_addr].length > 0) ||
+                (r2.argMap[ins.fcn_addr] !== null && r2.argMap[ins.fcn_addr] !== undefined && r2.argMap[ins.fcn_addr].length > 0)) {
+              for (var i in r2.varMap[ins.fcn_addr]) {
+                var var_name = r2.varMap[ins.fcn_addr][i].name;
+                var var_id = r2.varMap[ins.fcn_addr][i].id;
+                opcode = opcode.replace(" " + var_name + " ", " <span class='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span> ");
+              }
+              for (var i in r2.argMap[ins.fcn_addr]) {
+                var arg_name = r2.argMap[ins.fcn_addr][i];
+                var arg_id = r2.argMap[ins.fcn_addr][i].id;
+                opcode = opcode.replace(" " + arg_name + " ", " <span id='fvar id_" + var_id + " ec_prompt faddr faddr_" + address_canonicalize(offset) + "'>" + escapeHTML(var_name) + "</span> ");
+              }
+            }
 
-  if (ins.type !== undefined && ins.type !== null) {
-    if (contains(math, ins.type)) ins.type = "math";
-    if (contains(bin, ins.type)) ins.type = "bin";
-    if (ins.type == "ill") ins.type = "invalid";
-    if (ins.type == "null") ins.type = "invalid";
-    if (ins.type == "undefined") ins.type = "invalid";
-    if (ins.type == "ujmp") ins.type = "jmp";
-    if (ins.type == "upush") ins.type = "push";
-    if (ins.type == "upop") ins.type = "pop";
-    if (ins.type == "ucall") ins.type = "call";
-    if (ins.type == "lea") ins.type = "mov";
-    // Add default color if we failed to identify op type
-    if (!contains(known_types, ins.type)) ins.type = "other";
-    idump += '<div class="instructiondesc ec_' + ins.type + '">' + opcode + '</div> ';
-  } else {
-    idump += '<div class="instructiondesc">' + opcode + '</div> ';
-  }
-  if (ins.ptr_info) {
-    idump += '<span class="comment ec_comment comment_' + address_canonicalize(offset) + '">' + escapeHTML(ins.ptr_info) + '</span>';
-  }
+            if (ins.type !== undefined && ins.type !== null) {
+              if (contains(math, ins.type)) ins.type = "math";
+              if (contains(bin, ins.type)) ins.type = "bin";
+              if (ins.type == "ill") ins.type = "invalid";
+              if (ins.type == "null") ins.type = "invalid";
+              if (ins.type == "undefined") ins.type = "invalid";
+              if (ins.type == "ujmp") ins.type = "jmp";
+              if (ins.type == "upush") ins.type = "push";
+              if (ins.type == "upop") ins.type = "pop";
+              if (ins.type == "ucall") ins.type = "call";
+              if (ins.type == "lea") ins.type = "mov";
+              // Add default color if we failed to identify op type
+              if (!contains(known_types, ins.type)) ins.type = "other";
+              idump += '<div class="instructiondesc ec_' + ins.type + '">' + opcode + '</div> ';
+            } else {
+              idump += '<div class="instructiondesc">' + opcode + '</div> ';
+            }
+            if (ins.ptr_info) {
+              idump += '<span class="comment ec_comment comment_' + address_canonicalize(offset) + '">' + escapeHTML(ins.ptr_info) + '</span>';
+            }
 
-  if (ins.comment && asm_cmtright) {
-    idump += '<span class="comment ec_comment comment_' + address_canonicalize(offset) + '"> ; ' + escapeHTML(ins.comment) + '</span>';
-  }
+            if (ins.comment && asm_cmtright) {
+              idump += '<span class="comment ec_comment comment_' + address_canonicalize(offset) + '"> ; ' + escapeHTML(ins.comment) + '</span>';
+            }
 
-  if (ins.type == "ret") {
-    idump += "<div>&nbsp</div>";
-  }
+            if (ins.type == "ret") {
+              idump += "<div>&nbsp</div>";
+            }
 
-  idump += '</div>';
-  return idump;
+            idump += '</div>';
+            return idump;
 }
 
 var math = ["add", "sub", "mul", "imul", "div", "idiv", "neg", "adc", "sbb", "inc", "dec", ".byte"];
@@ -792,7 +867,7 @@ function fnum(a) {
 function get_address_from_class(t, type) {
   if (type === undefined) type = "addr";
   var prefix = type+"_";
-if (!t) return undefined;
+  if (!t) return undefined;
   var l = t.className.split(" ").filter(function(x) { return x.substr(0,prefix.length) == type+"_"; });
   if (l.length != 1) return undefined;
   return l[0].split("_")[1].split(" ")[0];
@@ -817,7 +892,7 @@ function get_element_by_address(address) {
 }
 
 Element.prototype.documentOffsetTop = function () {
-    return this.offsetTop + ( this.offsetParent ? this.offsetParent.documentOffsetTop() : 0 );
+  return this.offsetTop + ( this.offsetParent ? this.offsetParent.documentOffsetTop() : 0 );
 };
 
 function scroll_to_address(address) {
@@ -927,12 +1002,12 @@ function address_canonicalize(s) {
 }
 
 function contains(a, obj) {
-    for (var i = 0; i < a.length; i++) {
-        if (a[i] === obj) {
-            return true;
-        }
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] === obj) {
+      return true;
     }
-    return false;
+  }
+  return false;
 }
 
 function handleInputTextChange() {
@@ -1003,28 +1078,28 @@ function get_reloc_flag(reloc) {
 // Cookies
 
 function createCookie(name,value,days) {
-    if (days) {
-        var date = new Date();
-        date.setTime(date.getTime()+(days*24*60*60*1000));
-        var expires = "; expires="+date.toGMTString();
-    }
-    else var expires = "";
-    document.cookie = name+"="+value+expires+"; path=/";
+  if (days) {
+    var date = new Date();
+    date.setTime(date.getTime()+(days*24*60*60*1000));
+    var expires = "; expires="+date.toGMTString();
+  }
+  else var expires = "";
+  document.cookie = name+"="+value+expires+"; path=/";
 }
 
 function readCookie(name) {
-    var nameEQ = name + "=";
-    var ca = document.cookie.split(';');
-    for(var i=0;i < ca.length;i++) {
-        var c = ca[i];
-        while (c.charAt(0)==' ') c = c.substring(1,c.length);
-        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
-    }
-    return null;
+  var nameEQ = name + "=";
+  var ca = document.cookie.split(';');
+  for(var i=0;i < ca.length;i++) {
+    var c = ca[i];
+    while (c.charAt(0)==' ') c = c.substring(1,c.length);
+    if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+  }
+  return null;
 }
 
 function eraseCookie(name) {
-    createCookie(name,"",-1);
+  createCookie(name,"",-1);
 }
 
 function do_randomcolors(element, inEvent) {

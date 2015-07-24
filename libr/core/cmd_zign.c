@@ -84,11 +84,15 @@ static int cmd_zign(void *data, const char *input) {
 	case 'b':
 	case 'h':
 	case 'f':
-		ptr = strchr (input+3, ' ');
-		if (ptr) {
-			*ptr = 0;
-			r_sign_add (core->sign, core->anal, (int)*input, input+2, ptr+1);
-		} else eprintf ("Usage: z%c [name] [arg]\n", *input);
+		if (*(input+1) == '\0' || *(input+2) == '\0')
+			eprintf ("Usage: z%c [name] [arg]\n", *input);
+		else{
+			ptr = strchr (input+3, ' ');
+			if (ptr) {
+				*ptr = 0;
+				r_sign_add (core->sign, core->anal, (int)*input, input+2, ptr+1);
+			} 
+		}	
 		break;
 	case 'c':
 		item = r_sign_check (core->sign, core->block, core->blocksize);

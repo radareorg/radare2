@@ -278,6 +278,10 @@ static int cmd_open(void *data, const char *input) {
 		isn = 1;
 		/* fall through */
 	case ' ':
+		if (input[(isn?2:1) - 1] == '\x00') {
+			eprintf ("Usage: on [file]\n");
+			break;
+		}
 		ptr = strchr (input+(isn?2:1), ' ');
 		if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
 			*ptr = '\0';

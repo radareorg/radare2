@@ -190,13 +190,13 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		bin->strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
 
 	bin->shstrtab_size = bin->strtab_section->sh_size;
+	if (bin->shstrtab_size > bin->size) return R_FALSE;
 
 	if ((bin->shstrtab = calloc (1, bin->shstrtab_size+1)) == NULL) {
 		perror ("malloc");
 		bin->shstrtab = NULL;
 		return R_FALSE;
 	}
-	memset (bin->shstrtab, 0, bin->shstrtab_size);
 	
 	if (bin->shstrtab_section->sh_offset > bin->size){
 		R_FREE (bin->shstrtab);
@@ -291,7 +291,7 @@ static int Elf_(r_bin_elf_init_dynamic_section) (struct Elf_(r_bin_elf_obj_t) *b
 		free (dyn);
 		return R_FALSE;
 	}
-	strtab = (char *)calloc (1, strsize);
+	strtab = (char *)calloc (1, strsize+1);
 	if (!strtab){
 		free (dyn);
 		return R_FALSE;
@@ -1180,7 +1180,7 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 	struct r_bin_elf_lib_t *ret = NULL;
 	int j, k;
 
-	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab)
+	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab || *(bin->strtab+1) == '0') 
 		return NULL;
 
 	for (j = 0, k = 0; j < bin->dyn_entries; j++)
@@ -1615,6 +1615,7 @@ if (
 			free (sym);
 			sym = NULL;
 			ret[ret_ctr].last = 1; // ugly dirty hack :D
+			R_FREE (strtab);
 
 			if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {
 				bin->imports_by_ord_size = nsym;
@@ -1625,7 +1626,6 @@ if (
 			} else break;
 		}
 	}
-	free (strtab);
 	// maybe it had some section header but not the symtab
 	if (!ret) return get_symbols_from_phdr (bin, type);
 	return ret;

@@ -292,6 +292,9 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 	const char *port;
 	const int timeout = 1; // 1 second
 	RCore *core = (RCore*)u;
+#if __WINDOWS__
+	r_socket_http_server_set_breaked(1);
+#endif
 	if (((size_t)u)>0xff) {
 		port = listenport? listenport: r_config_get (
 			core->config, "http.port");
@@ -543,7 +546,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		}
 
 		if (!strcmp (rs->method, "OPTIONS")) {
-			r_socket_http_response (rs, 200, "", 0, NULL);
+			r_socket_http_response (rs, 200, "", 0, headers);
 		} else
 		if (!strcmp (rs->method, "GET")) {
 			if (!strncmp (rs->path, "/up/", 4)) {
@@ -807,6 +810,8 @@ R_API void r_core_rtr_help(RCore *core) {
 	"=+", " [proto://]host", "add host (default=rap://, tcp://, udp://)",
 	"=-", "[fd]", "remove all hosts or host 'fd'",
 	"==", "[fd]", "open remote session with host 'fd', 'q' to quit",
+	"=!=", "", "disable remote cmd mode",
+	"!=!", "", "enable remote cmd mode",
 	"\nrap server:","","",
 	"=", ":port", "listen on given port using rap protocol (o rap://9999)",
 	"=", ":host:port cmd", "run 'cmd' command on remote server",

@@ -14,7 +14,7 @@ extern "C" {
 #include "ls.h"
 #include "cdb.h"
 #include "cdb_make.h"
-#include "sdb-version.h"
+#include "sdb_version.h"
 
 #undef r_offsetof
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
@@ -106,6 +106,12 @@ void sdb_file (Sdb* s, const char *dir);
 void sdb_reset (Sdb* s);
 void sdb_setup (Sdb* s, int options);
 void sdb_drain (Sdb*, Sdb*);
+int sdb_stats(Sdb *s, ut32 *disk, ut32 *mem);
+int sdb_dump_hasnext (Sdb* s);
+
+typedef int (*SdbForeachCallback)(void *user, const char *k, const char *v);
+int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user);
+SdbList *sdb_foreach_list (Sdb* s);
 
 int  sdb_query (Sdb* s, const char *cmd);
 int  sdb_queryf (Sdb* s, const char *fmt, ...);
@@ -114,8 +120,10 @@ char *sdb_querys (Sdb* s, char *buf, size_t len, const char *cmd);
 char *sdb_querysf (Sdb* s, char *buf, size_t buflen, const char *fmt, ...);
 int  sdb_query_file(Sdb *s, const char* file);
 int  sdb_exists (Sdb*, const char *key);
+int  sdb_remove (Sdb*, const char *key, ut32 cas);
 int  sdb_unset (Sdb*, const char *key, ut32 cas);
-int  sdb_unset_matching(Sdb *s, const char *k);
+int  sdb_unset_like(Sdb *s, const char *k);
+char** sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback cb);
 char *sdb_get (Sdb*, const char *key, ut32 *cas);
 char *sdb_get_len (Sdb*, const char *key, int *vlen, ut32 *cas);
 const char *sdb_const_get (Sdb*, const char *key, ut32 *cas);
@@ -140,8 +148,9 @@ ut64 sdb_num_dec  (Sdb* s, const char *key, ut64 n, ut32 cas);
 int  sdb_num_min  (Sdb* s, const char *key, ut64 v, ut32 cas);
 int  sdb_num_max  (Sdb* s, const char *key, ut64 v, ut32 cas);
 
-typedef int (*SdbForeachCallback)(void *user, const char *k, const char *v);
-int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user);
+/* ptr */
+int sdb_ptr_set(Sdb *db, const char *key, void *p, ut32 cas);
+void* sdb_ptr_get(Sdb *db, const char *key, ut32 *cas);
 
 /* create db */
 int sdb_disk_create (Sdb* s);

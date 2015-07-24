@@ -235,6 +235,7 @@ struct r_io_plugin_t r_io_plugin_mmap = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_mmap
+	.data = &r_io_plugin_mmap,
+	.version = R2_VERSION
 };
 #endif

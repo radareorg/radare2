@@ -5,7 +5,8 @@
 #include <r_flags.h>
 #include <r_core.h>
 
-#define ANALBS 4096
+//#define ANALBS 4096
+#define ANALBS 1024
 
 static void loganal(ut64 from, ut64 to) {
 	r_cons_clear_line (1);
@@ -134,7 +135,7 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 	return types;
 }
 
-R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
+R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 	int use_getopt = 0;
 	int use_isatty = 0;
 	char *do_call = NULL;
@@ -145,6 +146,10 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
 		r_list_foreach (fcn->refs, iter, ref) {
 			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
 			if (f) {
+				if (dump) {
+					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x
+						" %s\n", ref->at, ref->addr, f->name);
+				}
 				if (strstr (f->name, "isatty"))
 					use_isatty = 1;
 				if (strstr (f->name, "getopt"))
@@ -152,8 +157,7 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr) {
 				if (!strncmp (f->name, "sym.imp.", 8)) {
 					free (do_call);
 					do_call = strdup (f->name+8);
-				} else
-				if (!strncmp (f->name, "reloc.", 6)) {
+				} else if (!strncmp (f->name, "reloc.", 6)) {
 					free (do_call);
 					do_call = strdup (f->name+6);
 				}
@@ -567,7 +571,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 #endif
 			r_core_read_at (core, at+bblen, buf, ANALBS); //core->blocksize);
 //			if (!memcmp (buf, "\xff\xff\xff\xff", 4))
-			if (R_TRUE != r_io_is_valid_offset (core->io, at+bblen))
+			if (R_TRUE != r_io_is_valid_offset (core->io, at+bblen, core->anal->noncode?0:1))
 				goto error;
 			buflen = ANALBS; //core->blocksize;
 //eprintf ("Pre %llx %d\n", at, buflen);
@@ -614,8 +618,8 @@ R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
 	return r_core_seek (core, addr, R_FALSE);
 }
 
-static int cmpaddr (void *_a, void *_b) {
-	RAnalBlock *a = _a, *b = _b;
+static int cmpaddr (const void *_a, const void *_b) {
+	const RAnalBlock *a = _a, *b = _b;
 	return (a->addr > b->addr);
 }
 
@@ -655,11 +659,16 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	RAnalRef *ref = NULL, *refi;
 	ut64 *next = NULL;
 	int i, nexti = 0;
-	ut8 *buf;
+	ut8 *buf = NULL;
 #	define next_append(x) {\
 		next = realloc (next, sizeof (ut64)*(1+nexti)); \
 		next[nexti] = (x); \
 		nexti++; \
+	}
+	if (core->io->va && !core->io->raw) {
+		if (R_TRUE != r_io_is_valid_offset (core->io, at, core->anal->noncode?0:1)) {
+			goto error;
+		}
 	}
 	if (r_config_get_i (core->config, "anal.a2f")) {
 		r_core_cmd0 (core, ".a2f");
@@ -800,16 +809,18 @@ if (0) {
 			goto error;
 #else
 		// this is unnecessary if its contiguous
-		r_io_read_at (core->io, at+delta, buf, ANALBS);
+		buflen = r_io_read_at (core->io, at+delta, buf, ANALBS);
+		//if (ret != 1024) { }
+		// check if read error (fffff ?)
+		// 1024 was chosed for r2pipe
 #endif
 #if 1
 		if (core->io->va && !core->io->raw) {
-			if (R_TRUE != r_io_is_valid_offset (core->io, at+delta)) {
+			if (R_TRUE != r_io_is_valid_offset (core->io, at+delta, core->anal->noncode?0:1)) {
 				goto error;
 			}
 		}
 #endif
-		buflen = ANALBS;
 		if (r_cons_singleton ()->breaked)
 			break;
 		fcnlen = r_anal_fcn (core->anal, fcn, at+delta, buf, buflen, reftype);
@@ -942,7 +953,7 @@ if (0) {
 			}
 		}
 	} while (fcnlen != R_ANAL_RET_END);
-	free (buf);
+	R_FREE (buf);
 
 	if (has_next) {
 		for (i=0; i<nexti; i++) {
@@ -1256,6 +1267,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				}
 				r_cons_printf ("}");
 			} else if (rad) {
+				r_cons_printf ("f %s %d 0x%08"PFMT64x"\n", fcn->name, fcn->size, fcn->addr);
 				r_cons_printf ("af+ 0x%08"PFMT64x" %d %s %c %c\n",
 						fcn->addr, fcn->size, fcn->name,
 						fcn->type==R_ANAL_FCN_TYPE_LOC?'l':
@@ -1267,6 +1279,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 					r_cons_printf ("afC %s @ 0x%08"PFMT64x"\n",
 							r_anal_cc_type2str (fcn->call), fcn->addr);
 				fcn_list_bbs (fcn);
+				/* show variables  and arguments */
+				r_core_cmdf (core, "afa* @ 0x%"PFMT64x"\n", fcn->addr);
+				r_core_cmdf (core, "afv* @ 0x%"PFMT64x"\n", fcn->addr);
 			} else {
 				r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 						fcn->addr, fcn->name, (ut64)fcn->size);
@@ -1553,6 +1568,144 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	return count;
 }
 
+R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
+	ut8 *buf;
+	ut64 at;
+	int count = 0;
+	RAnalOp op = {0};
+
+	if (from >= to) {
+		eprintf ("Invalid range (from >= to)\n");
+		return -1;
+	}
+
+	if (core->blocksize <= OPSZ) {
+		eprintf ("Error: block size too small\n");
+		return -1;
+	}
+
+	buf = (ut8 *)malloc (core->blocksize);
+	if (!buf) {
+		eprintf ("Error: cannot allocate a block\n");
+		return -1;
+	}
+
+	if (rad == 'j')
+		r_cons_printf ("{");
+
+	r_io_use_desc (core->io, core->file->desc);
+	r_cons_break (NULL, NULL);
+	at = from;
+	while (at < to && !r_cons_singleton ()->breaked) {
+		int i, ret;
+
+		ret = r_io_read_at (core->io, at, buf, core->blocksize);
+		if (ret != core->blocksize && at+ret-OPSZ < to)
+			break;
+
+		i = 0;
+		while (at+i < to && i < ret-OPSZ) {
+			RAnalRefType type;
+			ut64 xref_from, xref_to;
+
+			xref_from = at+i;
+			r_anal_op_fini (&op);
+			ret = r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i);
+			i += (ret > 0) ? ret : 1;
+			if (ret <= 0 || at+i > to)
+				continue;
+
+			// Get reference type and target address
+			type = R_ANAL_REF_TYPE_NULL;
+			switch (op.type) {
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_CJMP:
+				type = R_ANAL_REF_TYPE_CODE;
+				xref_to = op.jump;
+				break;
+			case R_ANAL_OP_TYPE_CALL:
+			case R_ANAL_OP_TYPE_CCALL:
+				type = R_ANAL_REF_TYPE_CALL;
+				xref_to = op.jump;
+				break;
+			case R_ANAL_OP_TYPE_UJMP:
+			case R_ANAL_OP_TYPE_UCJMP:
+				type = R_ANAL_REF_TYPE_CODE;
+				xref_to = op.ptr;
+				break;
+			case R_ANAL_OP_TYPE_UCALL:
+			case R_ANAL_OP_TYPE_UCCALL:
+				type = R_ANAL_REF_TYPE_CALL;
+				xref_to = op.ptr;
+				break;
+			default:
+				if (op.ptr != -1) {
+					type = R_ANAL_REF_TYPE_DATA;
+					xref_to = op.ptr;
+				}
+				break;
+			}
+
+			// Validate the reference. If virtual addressing is enabled, we
+			// allow only references to virtual addresses in order to reduce
+			// the number of false positives. In debugger mode, the reference
+			// must point to a mapped memory region.
+			if (type == R_ANAL_REF_TYPE_NULL)
+				continue;
+			if (!r_core_is_valid_offset (core, xref_to))
+				continue;
+			if (r_config_get_i (core->config, "cfg.debug")) {
+				if (!r_debug_map_get (core->dbg, xref_to))
+					continue;
+			} else if (core->io->va) {
+				RListIter *iter = NULL;
+				RIOSection *s;
+				r_list_foreach (core->io->sections, iter, s) {
+					if (xref_to >= s->vaddr && xref_to < s->vaddr + s->vsize) {
+						if (s->vaddr != 0)
+							break;
+					}
+				}
+				if (!iter)
+					continue;
+			}
+
+			if (!rad) {
+				// Add to SDB
+				r_anal_xrefs_set (core->anal, type, xref_from, xref_to);
+			} else if (rad == 'j') {
+				// Output JSON
+				if (count > 0) r_cons_printf (",");
+				r_cons_printf ("%"PFMT64d":%"PFMT64d, xref_to, xref_from);
+			} else {
+				// Display in radare commands format
+				char *cmd;
+				switch (type) {
+				case R_ANAL_REF_TYPE_CODE: cmd = "axc"; break;
+				case R_ANAL_REF_TYPE_CALL: cmd = "axC"; break;
+				case R_ANAL_REF_TYPE_DATA: cmd = "axd"; break;
+				default: cmd = "ax"; break;
+				}
+
+				r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+						cmd, xref_to, xref_from);
+			}
+
+			count++;
+		}
+
+		at += i;
+	}
+	r_cons_break_end ();
+	free (buf);
+	r_anal_op_fini (&op);
+
+	if (rad == 'j')
+		r_cons_printf ("}\n");
+
+	return count;
+}
+
 R_API int r_core_anal_ref_list(RCore *core, int rad) {
 	r_anal_xrefs_list (core->anal, rad);
 	return 0;
@@ -1732,12 +1885,20 @@ R_API RCoreAnalStats* r_core_anal_get_stats (RCore *core, ut64 from, ut64 to, ut
 	RAnalFunction *F;
 	//RAnalMetaItem *m;
 	RListIter *iter;
-	RCoreAnalStats *as = R_NEW0 (RCoreAnalStats);
+	RCoreAnalStats *as = NULL;
 	int piece, as_size, blocks;
+
+	if (from == to) return NULL;
+	as = R_NEW0 (RCoreAnalStats);
+	if (!as) return NULL;
 	if (step<1) step = 1;
 	blocks = (to-from)/step;
 	as_size = (1+blocks) * sizeof (RCoreAnalStatsItem);
 	as->block = malloc (as_size);
+	if (!as->block) {
+		free (as);
+		return NULL;
+	}
 	memset (as->block, 0, as_size);
 //	eprintf ("Use %d blocks\n", blocks);
 //	eprintf (" ( 0x%"PFMT64x" - 0x%"PFMT64x" )\n", from, to);

@@ -1,4 +1,4 @@
-/* base64 enc/dec - LGPLv3 - Copyright 2011-2014 - pancake */
+/* base64 enc/dec - MIT - Copyright 2011-2015 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>

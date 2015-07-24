@@ -1,5 +1,5 @@
 #!/bin/sh
-cd `dirname $PWD/$0`
+cd "$(dirname "$PWD/$0")"
 ./clone-r2-bindings.sh
 cd ../radare2-bindings
 
@@ -16,7 +16,7 @@ elif [ -x /usr/bin/pacman ]; then
 	C=i486-mingw32-gcc
 	H=i486-unknown-windows
 	G=i486-mingw32-g++
-elif [ `uname` = Darwin ]; then
+elif [ "$(uname)" = Darwin ]; then
 	C=i386-mingw32-gcc
 	H=i386-unknown-windows
 	G=i386-mingw32-g++

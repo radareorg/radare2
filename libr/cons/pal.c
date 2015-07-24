@@ -19,12 +19,12 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.b0x7f = Color_CYAN;
 	cons->pal.b0xff = Color_RED;
 	cons->pal.args = Color_YELLOW;
-	cons->pal.bin = Color_YELLOW;
-	cons->pal.btext = Color_WHITE;
+	cons->pal.bin = Color_CYAN;
+	cons->pal.btext = Color_YELLOW;
 	cons->pal.call = Color_BGREEN;
 	cons->pal.cjmp = Color_GREEN;
 	cons->pal.cmp = Color_CYAN;
-	cons->pal.comment = Color_CYAN; // blue
+	cons->pal.comment = Color_RED;
 	cons->pal.creg = Color_CYAN;
 	cons->pal.flag = Color_CYAN;
 	cons->pal.fline = Color_CYAN;
@@ -62,6 +62,13 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.gui_background = Color_BLACK;
 	cons->pal.gui_alt_background = Color_WHITE;
 	cons->pal.gui_border = Color_BLACK;
+
+	cons->pal.graph_box = Color_RESET;
+	cons->pal.graph_box2 = Color_BLUE;
+	cons->pal.graph_box3 = Color_MAGENTA;
+	cons->pal.graph_true = Color_GREEN;
+	cons->pal.graph_false = Color_RED;
+	cons->pal.graph_trufae = Color_BLUE; // single jump
 	
 	r_cons_pal_free ();
 	cons->pal.list[0] = strdup (Color_RED);
@@ -197,6 +204,13 @@ static struct {
 	{ "ai.exec", r_offsetof (RConsPalette, ai_exec) },
 	{ "ai.seq", r_offsetof (RConsPalette, ai_seq) },
 	{ "ai.ascii", r_offsetof (RConsPalette, ai_ascii) },
+
+	{ "graph.box", r_offsetof (RConsPalette, graph_box) },
+	{ "graph.box2", r_offsetof (RConsPalette, graph_box2) },
+	{ "graph.box3", r_offsetof (RConsPalette, graph_box3) },
+	{ "graph.true", r_offsetof (RConsPalette, graph_true) },
+	{ "graph.false", r_offsetof (RConsPalette, graph_false) },
+	{ "graph.trufae", r_offsetof (RConsPalette, graph_trufae) },
 
 	{ "gui.cflow", r_offsetof (RConsPalette, gui_cflow) },
 	{ "gui.dataoffset", r_offsetof (RConsPalette, gui_dataoffset) },

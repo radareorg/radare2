@@ -9,22 +9,33 @@
 
 #include <8051_disas.h>
 
+#define IRAM 0x10000
+
+static ut8 bitindex[] = {
+	// bit 'i' can be found in (ram[bitindex[i>>3]] >> (i&7)) & 1
+	0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, // 0x00
+	0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, // 0x40
+	0x80, 0x88, 0x90, 0x98, 0xA0, 0xA8, 0xB0, 0xB8, // 0x80
+	0x00, 0x00, 0xD0, 0x00, 0xE0, 0x00, 0xF0, 0x00  // 0xC0
+};
+
 #define emit(frag) r_strbuf_appendf(&op->esil, frag)
 #define emitf(...) r_strbuf_appendf(&op->esil, __VA_ARGS__)
 
 #define j(frag) emitf(frag, 1 & buf[0], buf[1], buf[2]);
 #define h(frag) emitf(frag, 7 & buf[0], buf[1], buf[2]);
+#define k(frag) emitf(frag, bitindex[buf[1]>>3], buf[1] & 7, buf[2]);
 
-// wrong endianness
+// on 8051 the stack grows upward and lsb is pushed first meaning
+// that on little-endian esil vms =[2] works as indended
 #define PUSH1 "1,sp,+=,sp,=[1]"
 #define POP1  "sp,[1],1,sp,-=,"
 #define PUSH2 "1,sp,+=,sp,=[2],1,sp,+="
 #define POP2  "1,sp,-=,sp,[2],1,sp,-=,"
 #define CALL(skipbytes) skipbytes",pc,+," PUSH2
 #define JMP(skipbytes) skipbytes",+,pc,+="
-#define CJMP(target, skipbytes) "?{," ES_##target "" JMP(skipbytes) ",}"
-#define SJMP1 ES_L1 JMP("2")
-#define SJMP2 ES_L2 JMP("3")
+#define CJMP(target, skipbytes) "?{," ESX_##target "" JMP(skipbytes) ",}"
+#define BIT_R "%2$d,%1$d,[1],>>,1,&,"
 
 #define IRAM_BASE  "0x10000"
 #define XRAM_BASE  "0x10100"
@@ -38,6 +49,11 @@
 #define ES_A "A,"
 #define ES_L1 "%2$d,"
 #define ES_L2 "%3$d,"
+#define ES_C "C,"
+
+// signed char variant
+#define ESX_L1 "%2$hhd,"
+#define ESX_L2 "%2$hhd,"
 
 #define ACC_IB1 "[1],"
 #define ACC_IB2 "[1],"
@@ -48,6 +64,7 @@
 #define ACC_A   ""
 #define ACC_L1  ""
 #define ACC_L2  ""
+#define ACC_C   ""
 
 #define XR(subject)            ES_##subject               ACC_##subject
 #define XW(subject)            ES_##subject "="           ACC_##subject
@@ -86,17 +103,20 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 
 	// Irregulars sorted by lower nibble
 	case 0x00: /* nop  */ emit(","); break;
-	case 0x10: /* jbc  */ /* TODO */ break;
-	case 0x20: /* jb   */ /* TODO */ break;
-	case 0x30: /* jnb  */ /* TODO */ break;
-	case 0x40: /* jc   */ emitf("C,!,?{,%d,2,+,pc,+=,}", buf[1]); break;
-	case 0x50: /* jnc  */ emitf("C,""?{,%d,2,+,pc,+=,}", buf[1]); break;
-	case 0x60: /* jz   */ emitf("A,!,?{,%d,2,+,pc,+=,}", buf[1]); break;
-	case 0x70: /* jnz  */ emitf("A,""?{,%d,2,+,pc,+=,}", buf[1]); break;
-	case 0x80: /* sjmp */ emit(SJMP1); break;
-	case 0x90: /* mov  */ /* TODO */ break;
-	case 0xA0: /* orl  */ /* TODO */ break;
-	case 0xB0: /* anl  */ /* TODO */ break;
+	case 0x10: /* jbc  */
+		k(BIT_R "&,?{,%2$d,1,<<,255,^,%1$d,&=[1],%3$hhd,3,+,pc,+=,}"); break;
+	case 0x20: /* jb   */
+		k(BIT_R "&,?{,%3$hhd,3,+,pc,+=,}"); break;
+	case 0x30: /* jnb  */
+		k(BIT_R "&,!,?{,%3$hhd,3,+,pc,+=,}"); break;
+	case 0x40: /* jc   */ emitf("C,!,?{,%hhd,2,+,pc,+=,}", buf[1]); break;
+	case 0x50: /* jnc  */ emitf("C,""?{,%hhd,2,+,pc,+=,}", buf[1]); break;
+	case 0x60: /* jz   */ emitf("A,!,?{,%hhd,2,+,pc,+=,}", buf[1]); break;
+	case 0x70: /* jnz  */ emitf("A,""?{,%hhd,2,+,pc,+=,}", buf[1]); break;
+	case 0x80: /* sjmp */ j(ESX_L1 JMP("2")); break;
+	case 0x90: /* mov  */ emitf("%d,dptr,=", (buf[1]<<8) + buf[2]); break;
+	case 0xA0: /* orl  */ k(BIT_R "C,|="); break;
+	case 0xB0: /* anl  */ k(BIT_R "C,&="); break;
 	case 0xC0: /* push */ h(XR(IB1) PUSH1); break;
 	case 0xD0: /* pop  */ h(POP1 XW(IB1)); break;
 	case 0xE0: /* movx */ /* TODO */ break;
@@ -109,27 +129,27 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	case 0x81: case 0xA1: case 0xC1: case 0xE1:
 		emitf("0x%x,pc,=", (addr & 0xF800) | ((((unsigned short)buf[0])<<3) & 0x0700) | buf[1]); break;
 
-	case 0x02: /* ljmp  */ emitf(CALL("3")",%d,pc,=", (unsigned int)((buf[1]<<8)+buf[2])); break;
-	case 0x12: /* lcall */ /* TODO */ break;
+	case 0x02: /* ljmp  */ emitf(          "%d,pc,=", (unsigned int)((buf[1]<<8)+buf[2])); break;
+	case 0x12: /* lcall */ emitf(CALL("3")",%d,pc,=", (unsigned int)((buf[1]<<8)+buf[2])); break;
 	case 0x22: /* ret   */ emitf(POP2 "pc,="); break;
 	case 0x32: /* reti  */ /* TODO */ break;
 	case 0x72: /* orl   */ /* TODO */ break;
 	case 0x82: /* anl   */ /* TODO */ break;
 	case 0x92: /* mov   */ /* TODO */ break;
 	case 0xA2: /* mov   */ /* TODO */ break;
-	case 0xB2: /* cpl   */ /* TODO */ break;
+	case 0xB2: /* cpl   */ k("%2$d,1,<<,%1$d,^=[1]"); break;
 	case 0xC2: /* clr   */ /* TODO */ break;
 
-	case 0x03: /* rr   */ /* TODO */ break;
+	case 0x03: /* rr   */ emit("1,A,0x101,*,>>,A,="); break;
 	case 0x13: /* rrc  */ /* TODO */ break;
-	case 0x23: /* rl   */ /* TODO */ break;
+	case 0x23: /* rl   */ emit("7,A,0x101,*,>>,A,="); break;
 	case 0x33: /* rlc  */ /* TODO */ break;
 	case 0x73: /* jmp  */ emit("dptr,A,+,pc,="); break;
-	case 0x83: /* movc */ /* TODO */ break;
-	case 0x93: /* movc */ /* TODO */ break;
-	case 0xA3: /* inc  */ /* TODO */ break;
-	case 0xB3: /* cpl  */ /* TODO */ break;
-	case 0xC3: /* clr  */ /* TODO */ break;
+	case 0x83: /* movc */ emit("A,dptr,+,[1],A,="); break;
+	case 0x93: /* movc */ emit("A,pc,+,[1],A,="); break;
+	case 0xA3: /* inc  */ h(XI(IB1, "++")); break;
+	case 0xB3: /* cpl  */ emit("1," XI(C, "^")); break;
+	case 0xC3: /* clr  */ emit("0,C,="); break;
 
 	// Regulars sorted by upper nibble
 	OP_GROUP_UNARY_4(0x00, "++")
@@ -169,9 +189,9 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 		h (XR(L1) XW(R0)) break;
 
 	case 0x84:
-		/* div */ /* TODO */ break;
+		/* div */ emit("B,!,OV,=,0,A,B,A,/=,A,B,*,-,-,B,=,0,C,="); break;
 	case 0x85:
-		/* mov */ /* TODO */ break;
+		/* mov */ h(IRAM_BASE ",%2$d,+,[1]," IRAM_BASE ",%2$d,+,=[1]"); break;
 
 	case 0x86: case 0x87:
 		j (XR(R0I) XW(IB1)) break;
@@ -185,7 +205,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	OP_GROUP_INPLACE_LHS_4(0x90, A, ".")
 
 	case 0xA4:
-		/* mul */ /* TODO */ break;
+		/* mul */ emit("8,A,B,*,DUP,>>,DUP,!,!,OV,=,B,=,A,=,0,C,="); break;
 	case 0xA5:
 		/* ??? */ emit("$$"); break;
 
@@ -199,21 +219,21 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 		h (XR(IB1) XW(R0)) break;
 
 	case 0xB4:
-		h (XR(L1)  XR(A)   "!=,?{,%3$d,2,+pc,+=,}") break;
+		h (XR(L1)  XR(A)   "!=,?{,%3$hhd,2,+pc,+=,}") break;
 	case 0xB5:
-		h (XR(IB1) XR(A)   "!=,?{,%3$d,2,+pc,+=,}") break;
+		h (XR(IB1) XR(A)   "!=,?{,%3$hhd,2,+pc,+=,}") break;
 
 	case 0xB6: case 0xB7:
-		j (XR(L1)  XR(R0I) "!=,?{,%3$d,2,+pc,+=,}") break;
+		j (XR(L1)  XR(R0I) "!=,?{,%3$hhd,2,+pc,+=,}") break;
 
 	case 0xB8: case 0xB9:
 	case 0xBA: case 0xBB:
 	case 0xBC: case 0xBD:
 	case 0xBE: case 0xBF:
-		h (XR(L1)  XR(R0)  "!=,?{,%3$d,2,+pc,+=,}") break;
+		h (XR(L1)  XR(R0)  "!=,?{,%3$hhd,2,+pc,+=,}") break;
 
 	case 0xC4:
-		/* swap */ /* TODO */ break;
+		/* swap */ emit("4,A,0x101,*,>>,A,="); break;
 	case 0xC5:
 		/* xch  */ /* TODO */ break;
 
@@ -224,7 +244,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	case 0xCA: case 0xCB:
 	case 0xCC: case 0xCD:
 	case 0xCE: case 0xCF:
-		/* xch  */ /* TODO */ break;
+		/* xch  */ h (XR(A) XR(R0) XW(A) ","  XW(R0)); break;
 
 	case 0xD2:
 		/* setb */ /* TODO */ break;
@@ -243,8 +263,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	case 0xDA: case 0xDB:
 	case 0xDC: case 0xDD:
 	case 0xDE: case 0xDF:
-		/* djnz */ h(XI(R0, "--") "," XR(R0) CJMP(L1, "2"));
-		break;
+		/* djnz */ h(XI(R0, "--") "," XR(R0) CJMP(L1, "2")); break;
 
 	case 0xE2: case 0xE3:
 		/* movx */ j(XRAM_BASE "r%0$d,+,[1]," XW(A)); break;
@@ -284,7 +303,6 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	}
 }
 
-
 static struct r_i8015_reg {
 	const char *name;
 	ut8  offset;      // offset into memory, where the value is held
@@ -294,36 +312,36 @@ static struct r_i8015_reg {
 	ut8  isdptr : 1;
 } registers[] = {
 	// keep these sorted
-	{"acc",   0xE0, 0x00, 0},
-	{"b",     0xF0, 0x00, 0},
-	{"dph",   0x83, 0x00, 0},
-	{"dpl",   0x82, 0x00, 0},
-	{"dptr",  0x00, 0x00, 0, 1},
-	{"ie",    0xA8, 0x00, 0},
-	{"ip",    0xB8, 0x00, 0},
-	{"p0",    0x80, 0xFF, 0},
-	{"p1",    0x90, 0xFF, 0},
-	{"p2",    0xA0, 0xFF, 0},
-	{"p3",    0xB0, 0xFF, 0},
-	{"pcon",  0x87, 0x00, 0},
-	{"psw",   0xD0, 0x00, 0},
-	{"r0",    0x00, 0x00, 1},
-	{"r1",    0x01, 0x00, 1},
-	{"r2",    0x02, 0x00, 1},
-	{"r3",    0x03, 0x00, 1},
-	{"r4",    0x04, 0x00, 1},
-	{"r5",    0x05, 0x00, 1},
-	{"r6",    0x06, 0x00, 1},
-	{"r7",    0x07, 0x00, 1},
-	{"sbuf",  0x99, 0x00, 0},
-	{"scon",  0x98, 0x00, 0},
-	{"sp",    0x81, 0x07, 0},
-	{"tcon",  0x88, 0x00, 0},
-	{"th0",   0x8C, 0x00, 0},
-	{"th1",   0x8D, 0x00, 0},
-	{"tl0",   0x8A, 0x00, 0},
-	{"tl1",   0x8B, 0x00, 0},
-	{"tmod",  0x89, 0x00, 0}
+	{"acc",   0xE0, 0x00, 1, 0},
+	{"b",     0xF0, 0x00, 1, 0},
+	{"dph",   0x83, 0x00, 1, 0},
+	{"dpl",   0x82, 0x00, 1, 0},
+	{"dptr",  0x00, 0x00, 2, 0, 1},
+	{"ie",    0xA8, 0x00, 1, 0},
+	{"ip",    0xB8, 0x00, 1, 0},
+	{"p0",    0x80, 0xFF, 1, 0},
+	{"p1",    0x90, 0xFF, 1, 0},
+	{"p2",    0xA0, 0xFF, 1, 0},
+	{"p3",    0xB0, 0xFF, 1, 0},
+	{"pcon",  0x87, 0x00, 1, 0},
+	{"psw",   0xD0, 0x00, 1, 0},
+	{"r0",    0x00, 0x00, 1, 1},
+	{"r1",    0x01, 0x00, 1, 1},
+	{"r2",    0x02, 0x00, 1, 1},
+	{"r3",    0x03, 0x00, 1, 1},
+	{"r4",    0x04, 0x00, 1, 1},
+	{"r5",    0x05, 0x00, 1, 1},
+	{"r6",    0x06, 0x00, 1, 1},
+	{"r7",    0x07, 0x00, 1, 1},
+	{"sbuf",  0x99, 0x00, 1, 0},
+	{"scon",  0x98, 0x00, 1, 0},
+	{"sp",    0x81, 0x07, 1, 0},
+	{"tcon",  0x88, 0x00, 1, 0},
+	{"th0",   0x8C, 0x00, 1, 0},
+	{"th1",   0x8D, 0x00, 1, 0},
+	{"tl0",   0x8A, 0x00, 1, 0},
+	{"tl1",   0x8B, 0x00, 1, 0},
+	{"tmod",  0x89, 0x00, 1, 0}
 };
 
 static int i8051_hook_reg_read(RAnalEsil *, const char *, ut64 *);
@@ -356,7 +374,11 @@ static int i8051_reg_get_offset(RAnalEsil *esil, struct r_i8015_reg *ri) {
 //           as r_reg_get already does this. Also, the anal esil callbacks
 //           approach interferes with r_reg_arena_swap.
 
-static RAnalEsilCallbacks ocbs = {0};
+#define ocbs ((struct r_i8051_user*)esil->cb.user)->cbs
+
+struct r_i8051_user {
+	RAnalEsilCallbacks cbs;
+};
 
 static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
 	int ret = 0;
@@ -365,10 +387,8 @@ static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
 	RAnalEsilCallbacks cbs = esil->cb;
 
 	if ((ri = i8051_reg_find (name))) {
-		if (ocbs.hook_mem_read) {
-			ut8 offset = i8051_reg_get_offset(esil, ri);
-			ret = ocbs.hook_mem_read (esil, offset, (ut8*)res, ri->num_bytes);
-		}
+		ut8 offset = i8051_reg_get_offset(esil, ri);
+		ret = r_anal_esil_mem_read (esil, IRAM + offset, (ut8*)res, ri->num_bytes);
 	}
 
 	esil->cb = ocbs;
@@ -383,17 +403,14 @@ static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
 	return ret;
 }
 
-#if	0
 static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 val) {
 	int ret = 0;
 	struct r_i8015_reg *ri;
 	RAnalEsilCallbacks cbs = esil->cb;
 
 	if ((ri = i8051_reg_find (name))) {
-		if (ocbs.hook_mem_write) {
-			ut8 offset = i8051_reg_get_offset(esil, ri);
-			ret = ocbs.hook_mem_write (esil, offset, (ut8*)&val, ri->num_bytes);
-		}
+		ut8 offset = i8051_reg_get_offset(esil, ri);
+		ret = r_anal_esil_mem_write (esil, IRAM + offset, (ut8*)&val, ri->num_bytes);
 	}
 
 	esil->cb = ocbs;
@@ -404,7 +421,25 @@ static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 val) {
 
 	return ret;
 }
-#endif
+
+static int esil_i8051_init (RAnalEsil *esil) {
+	if (esil->cb.user)
+		return R_TRUE;
+
+	esil->cb.user = R_NEW0(struct r_i8051_user);
+	ocbs = esil->cb;
+
+	esil->cb.hook_reg_read = i8051_hook_reg_read;
+	esil->cb.hook_reg_write = i8051_hook_reg_write;
+
+	return R_TRUE;
+}
+
+static int esil_i8051_fini (RAnalEsil *esil) {
+	esil->cb = ocbs;
+	R_FREE(esil->cb.user);
+	return R_TRUE;
+}
 
 static int set_reg_profile(RAnal *anal) {
 	char *p =
@@ -420,8 +455,11 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	r7	.8	7	0\n"
 		"gpr	A	.8	8	0\n"
 		"gpr	B	.8	9	0\n"
-		"gpr	pc	.16	10	0\n"
-		"gpr	sp	.16	12	0\n";
+		"gpr	sp	.8	10	0\n"
+		"gpr	pc	.16	12	0\n"
+		"gpr	dptr	.16	14	0\n"
+		"gpr	C	.1	16	0\n"
+		"gpr	OV	.1	17	0\n";
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
@@ -518,12 +556,15 @@ struct r_anal_plugin_t r_anal_plugin_8051 = {
 	.fingerprint_fcn = NULL,
 	.diff_bb = NULL,
 	.diff_fcn = NULL,
-	.diff_eval = NULL
+	.diff_eval = NULL,
+	.esil_init = esil_i8051_init,
+	.esil_fini = esil_i8051_fini
 };
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_8051
+	.data = &r_anal_plugin_8051,
+	.version = R2_VERSION
 };
 #endif

@@ -11,7 +11,6 @@
 #include "../arch/dcpu16/dis.c"
 #include "../arch/dcpu16/asm.c"
 
-// ut64 for length here is overkill!
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len<2) return -1; // at least 2 bytes!
 	op->size = dcpu16_disasm (op->buf_asm, (const ut16*)buf, len, NULL);
@@ -39,6 +38,7 @@ RAsmPlugin r_asm_plugin_dcpu16 = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_dcpu16
+	.data = &r_asm_plugin_dcpu16,
+	.version = R2_VERSION
 };
 #endif

@@ -32,6 +32,7 @@ static int download(struct SPDBDownloader *pd) {
 	// dbg_file len is > 0
 	archive_name_len = strlen (opt->dbg_file);
 	archive_name = malloc (archive_name_len+1);
+	if (!archive_name) return 0;
 	memcpy (archive_name, opt->dbg_file, archive_name_len+1);
 
 	archive_name[archive_name_len-1] = '_';
@@ -95,6 +96,7 @@ static int download(struct SPDBDownloader *pd) {
 
 void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->opt = R_NEW0 (SPDBDownloaderOpt);
+	if (!pd->opt) return;
 	pd->opt->dbg_file = strdup(opt->dbg_file);
 	pd->opt->guid = strdup(opt->guid);
 	pd->opt->symbol_server = strdup(opt->symbol_server);

@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2010-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2015 - pancake, nibble */
+/* bb.c - basic block analysis */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -45,6 +46,7 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 
 R_API RList *r_anal_bb_list_new() {
 	RList *list = r_list_new ();
+	if (!list) return NULL;
 	list->free = (void*)r_anal_bb_free;
 	return list;
 }

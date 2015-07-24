@@ -390,10 +390,10 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 
 	zfo = r_io_zip_alloc_zipfileobj (zip_filename,
 		filename_in_zipfile, ZIP_CREATE, mode, rw);
-	if (zfo && zfo->entry == -1)
-		eprintf ("Warning: File did not exist, creating a new one.\n");
 
 	if (zfo) {
+		if (zfo->entry == -1)
+			eprintf ("Warning: File did not exist, creating a new one.\n");
 		zfo->io_backref = io;
 		res = r_io_desc_new (&r_io_plugin_zip, zfo->fd,
 			zfo->name, rw, mode, zfo);
@@ -403,6 +403,8 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		eprintf ("Failed to open the archive %s and file %s\n",
 			zip_filename, filename_in_zipfile);
 		free (zfo);
+		r_io_desc_free (res);
+		res = NULL;
 	}
 	free (zip_uri);
 	free (filename_in_zipfile);
@@ -633,6 +635,7 @@ RIOPlugin r_io_plugin_zip = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_zip
+	.data = &r_io_plugin_zip,
+	.version = R2_VERSION
 };
 #endif

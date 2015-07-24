@@ -113,6 +113,13 @@ static int cb_analbbsplit (void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_analnoncode(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->noncode = node->i_value ? 1: 0; // obey section permissions
+	return R_TRUE;
+}
+
 static int cb_analarch(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -123,8 +130,9 @@ static int cb_analarch(void *user, void *data) {
 		if (*node->value) {
 			if (!r_anal_use (core->anal, node->value)) {
 				const char *aa = r_config_get (core->config, "asm.arch");
-				if (!aa || strcmp (aa, node->value))
+				if (!aa || strcmp (aa, node->value)) {
 					eprintf ("anal.arch: cannot find '%s'\n", node->value);
+				}
 				return R_FALSE;
 			}
 		} else return R_FALSE;
@@ -272,6 +280,9 @@ static int cb_asmbits(void *user, void *data) {
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
 		__setsegoff (core->config, asmarch, core->anal->bits);
+		if (core->dbg) {
+			r_bp_use (core->dbg->bp, asmarch, core->anal->bits);
+		}
 	}
 	return ret;
 }
@@ -346,6 +357,13 @@ static int cb_asmparser(void *user, void *data) {
 	return r_parse_use (core->parser, node->value);
 	// TODO: control error and restore old value (return false?) show errormsg?
 	//return R_TRUE;
+}
+
+static int cb_binfilter(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->bin->filter = node->i_value;
+	return R_TRUE;
 }
 
 static int cb_binforce(void *user, void *data) {
@@ -462,6 +480,18 @@ static int cb_dbgbep(void *user, void *data) {
 		r_cons_printf ("loader\nentry\nconstructor\nmain\n");
 		return R_FALSE;
 	}
+	return R_TRUE;
+}
+
+static int cb_dbg_btalgo(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (*node->value == '?') {
+		r_cons_printf ("default\nfuzzy\nanal\n");
+		return R_FALSE;
+	}
+	free (core->dbg->btalgo);
+	core->dbg->btalgo = strdup (node->value);
 	return R_TRUE;
 }
 
@@ -1006,6 +1036,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
 	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
 	SETCB("anal.bbsplit", "true", &cb_analbbsplit, "Use the experimental basic block split for JMPs");
+	SETCB("anal.noncode", "false", &cb_analnoncode, "Analyze data as code");
 	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");
 	SETCB("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");
@@ -1015,6 +1046,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
+	SETPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETCB("esil.debug", "false", &cb_esildebug, "Show ESIL debug info");
 	SETICB("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
 
@@ -1055,12 +1087,15 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.cyclespace", "false", "Indent instructions depending on CPU-cycles");
 	SETPREF("asm.cycles", "false", "Show CPU-cycles taken by instruction at disassembly");
 	SETI("asm.tabs", 0, "Use tabs in disassembly");
+	SETPREF("asm.tabsonce", "false", "Only tabulate the opcode, not the arguments");
+	SETI("asm.tabsoff", 0, "tabulate spaces after the offset");
 	SETPREF("asm.trace", "false", "Show execution traces for each opcode");
 	SETPREF("asm.tracespace", "false", "Indent disassembly with trace.count information");
 	SETPREF("asm.ucase", "false", "Use uppercase syntax at disassembly");
 	SETPREF("asm.vars", "true", "Show local function variables in disassembly");
 	SETPREF("asm.varxs", "false", "Show accesses of local variables");
 	SETPREF("asm.varsub", "true", "Substitute variables in disassembly");
+	SETPREF("asm.cmtfold", "false", "Fold comments, toggle with Vz");
 	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be used by asm");
 	SETCB("asm.features", "", &cb_asmfeatures, "Specify supported features by the target CPU (=? for help)");
 	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");
@@ -1075,6 +1110,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.xrefs", "true", "Show xrefs in disassembly");
 	SETPREF("asm.demangle", "true", "Show demangled symbols in disasm");
 	SETPREF("asm.describe", "false", "Show opcode description");
+	SETPREF("asm.marks", "true", "Show marks before the disassembly");
+	SETCB("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");
 	SETPREF("bin.demangle", "false", "Import demangled symbols from RBin");
@@ -1123,6 +1160,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("dir.types", "/usr/include", "Default path to look for cparse type files");
 #if __ANDROID__
 	SETPREF("dir.projects", "/data/data/org.radare2.installer/radare2/projects", "Default path for projects");
+#elif __WINDOWS__
+	SETPREF("dir.projects", "~\\"R2_HOMEDIR"\\projects", "Default path for projects");
 #else
 	SETPREF("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
 #endif
@@ -1131,7 +1170,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("stack.size", 64,  "Size of anotated hexdump in visual debug");
 	SETI("stack.delta", 0,  "Delta for the stack dump");
 
+	SETPREF("dbg.bpinmaps", "true", "Force breakpoints to be inside a valid map");
 	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
+	SETCB("dbg.btalgo", "fuzzy", &cb_dbg_btalgo, "Select backtrace algorithm");
 	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
 	SETCB("dbg.clone", "false", &cb_dbg_clone, "Stop execution if new thread is created");
 	SETCB("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");
@@ -1145,6 +1186,7 @@ R_API int r_core_config_init(RCore *core) {
 	else r_config_set_i (cfg, "dbg.follow", 32);
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
 	SETCB("dbg.swstep", "false", &cb_swstep, "Force use of software steps (code analysis+breakpoint)");
+	SETPREF("dbg.shallow_trace", "false", "While tracing, avoid following calls outside specified range");
 
 	r_config_set_getter (cfg, "dbg.swstep", (RConfigCallback)__dbg_swstep_getter);
 
@@ -1225,9 +1267,9 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETPREF("http.port", "9090", "Server port");
 #if __ANDROID__ || __IPHONE_2_0
-	SETPREF("http.ui", "enyo", "Default webui (enyo, p, t)");
+	SETPREF("http.ui", "m", "Default webui (enyo, m, p, t)");
 #else
-	SETPREF("http.ui", "p", "Default webui (enyo, p, t)");
+	SETPREF("http.ui", "p", "Default webui (enyo, m, p, t)");
 #endif
 	SETPREF("http.sandbox", "false", "Sandbox the HTTP server");
 	SETI("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
@@ -1247,6 +1289,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("graph.web", "false", "Display graph in web browser (VV)");
 	SETI("graph.from", UT64_MAX, "");
 	SETI("graph.to", UT64_MAX, "");
+	SETI("graph.scroll", 5, "Scroll speed in ascii-art graph");
+	SETPREF("graph.invscroll", "false", "Invert scroll direction in ascii-art graph");
+	SETPREF("graph.title", "", "Title of the graph");
 
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");
@@ -1357,6 +1402,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("rap.loop", "true", "Run rap as a forever-listening daemon");
 
 	/* nkeys */
+	SETPREF("key.s", "", "override step into action");
+	SETPREF("key.S", "", "override step over action");
 	for (i=1; i<13; i++) {
 		snprintf (buf, sizeof (buf), "key.f%d", i);
 		snprintf (buf+10, sizeof (buf)-10,

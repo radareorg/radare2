@@ -7,8 +7,8 @@
 # sudo pkgutil --forget org.radare.radare2
 
 SRC=/tmp/r2osx
-DST=`pwd`/sys/osx-pkg/radare2.unpkg
-VERSION=0.9.9git
+DST="$(pwd)/sys/osx-pkg/radare2.unpkg"
+VERSION=0.9.9
 
 rm -rf "${SRC}"
 make mrproper
@@ -19,7 +19,7 @@ make install PREFIX=/usr DESTDIR=${SRC} || exit 1
 if [ -d "${SRC}" ]; then
 	(
 		cd ${SRC} && \
-		find . | cpio -o --format odc | gzip -c > ${DST}/Payload
+		find . | cpio -o --format odc | gzip -c > "${DST}/Payload"
 	)
 	mkbom ${SRC} "${DST}/Bom"
 

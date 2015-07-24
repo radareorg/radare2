@@ -24,7 +24,11 @@ static void break_signal(int sig) {
 
 static inline void r_cons_write (const char *buf, int len) {
 #if __WINDOWS__ && !__CYGWIN__
-	r_cons_w32_print ((unsigned char *)buf, len, 0);
+	if (I.fdout == 1) {
+		r_cons_w32_print ((const ut8*)buf, len, 0);
+	} else {
+		(void)write (I.fdout, buf, len);
+	}
 #else
 	if (write (I.fdout, buf, len) == -1) {
 		//eprintf ("r_cons_write: write error\n");
@@ -116,6 +120,10 @@ R_API void r_cons_break(void (*cb)(void *u), void *user) {
 // TODO: add support for w32 ^C
 }
 
+R_API int r_cons_is_breaked() {
+	return I.breaked;
+}
+
 R_API void r_cons_break_end() {
 	I.breaked = R_FALSE;
 	r_print_set_interrupted (I.breaked);
@@ -168,7 +176,6 @@ static void r_cons_pal_null (){
 		cons->pal.list[i] = NULL;	
 	}
 }
-
 
 R_API RCons *r_cons_new () {
 	I.refcnt++;
@@ -245,7 +252,7 @@ R_API RCons *r_cons_free () {
 	return NULL;
 }
 
-#define MOAR 4096*4
+#define MOAR 4096*8
 static void palloc(int moar) {
 	if (I.buffer == NULL) {
 		I.buffer_sz = moar+MOAR;
@@ -410,14 +417,14 @@ R_API void r_cons_flush() {
 				if (I.buffer[i]=='\n')
 					lines ++;
 			}
-			if (!r_cons_yesno ('n',"Do you want to print %d lines? (y/N)", lines)) {
+			if (lines>0 && !r_cons_yesno ('n',"Do you want to print %d lines? (y/N)", lines)) {
 				r_cons_reset ();
 				return;
 			}
 #else
 			char buf[64];
 			char *buflen = r_num_units (buf, I.buffer_len);
-			if (!r_cons_yesno ('n',"Do you want to print %s chars? (y/N)", buflen)) {
+			if (buflen && !r_cons_yesno ('n',"Do you want to print %s chars? (y/N)", buflen)) {
 				r_cons_reset ();
 				return;
 			}
@@ -426,7 +433,7 @@ R_API void r_cons_flush() {
 			r_cons_set_raw (1);
 		}
 	}
-	if (tee&&*tee) {
+	if (tee && *tee) {
 		FILE *d = r_sandbox_fopen (tee, "a+");
 		if (d != NULL) {
 			if (I.buffer_len != fwrite (I.buffer, 1, I.buffer_len, d))
@@ -438,11 +445,7 @@ R_API void r_cons_flush() {
 	// is_html must be a filter, not a write endpoint
 	if (I.is_html) r_cons_html_print (I.buffer);
 	else r_cons_write (I.buffer, I.buffer_len);
-	// add newline if there's no one in buffer. this fixes the problem of printing
-	// stuff without newline to the console and the prompt hides it.
-	if (I.buffer_len>0)
-		if (I.buffer[I.buffer_len-1]!= '\n')
-			write (2, "\n", 1);
+
 	r_cons_reset ();
 }
 
@@ -472,15 +475,14 @@ R_API void r_cons_visual_flush() {
 		} else prev = r_sys_now ();
 		eprintf ("\x1b[0;%dH[%d FPS] \n", w-10, fps);
 	}
-	return;
 }
 
 R_API void r_cons_visual_write (char *buffer) {
 	char white[1024];
 	int cols = I.columns;
-	int alen, lines = I.rows;
+	int alen, plen, lines = I.rows;
 	const char *endptr;
-	char *nl, *ptr = buffer;
+	char *nl, *ptr = buffer, *pptr;
 
 	if (I.null)
 		return;
@@ -490,44 +492,41 @@ R_API void r_cons_visual_write (char *buffer) {
 		int len = ((int)(size_t)(nl-ptr))+1;
 
 		*nl = 0;
-		//alen = r_str_ansi_len (ptr);
-// handle ansi chars
-		 {
+		{
 			int utf8len = r_str_len_utf8 (ptr);
 			int ansilen = r_str_ansi_len (ptr);
 			int diff = len-utf8len;
 			if (diff) diff--;
 			alen = ansilen - diff;
-		 }
+		}
 		*nl = '\n';
+		pptr = ptr > buffer ? ptr - 1 : ptr;
+		plen = ptr > buffer ? len : len - 1;
 
-		if (alen>cols) {
+		if (alen > cols) {
 			endptr = r_str_ansi_chrn (ptr, cols);
 			endptr++;
 			len = (endptr-ptr);
-			if (lines>0) {
-				r_cons_write (ptr, len);
-			}
+			plen = ptr > buffer ? len : len - 1;
+			if (lines > 0)
+				r_cons_write (pptr, plen);
 		} else {
-			if (lines>0) {
-				int w = cols-alen;
-				if (ptr>buffer) r_cons_write (ptr-1, len);
-				else r_cons_write (ptr, len-1);
-				if (I.blankline && w>0) { 
+			if (lines > 0) {
+				int w = cols - alen;
+				r_cons_write (pptr, plen);
+				if (I.blankline && w>0) {
 					if (w>sizeof (white)-1)
 						w = sizeof (white)-1;
 					r_cons_write (white, w);
 				}
 			}
-#if 1
+
 			// TRICK to empty columns.. maybe buggy in w32
 			if (r_mem_mem ((const ut8*)ptr, len, (const ut8*)"\x1b[0;0H", 6)) {
 				lines = I.rows;
-				r_cons_write (ptr, len);
+				r_cons_write (pptr, plen);
 			}
-#endif
 		}
-//r_cons_write ("\r\n", 2);
 		lines--; // do not use last line
 		ptr = nl+1;
 	}
@@ -535,7 +534,7 @@ R_API void r_cons_visual_write (char *buffer) {
 	if (lines>0) {
 		if (cols>sizeof (white))
 			cols = sizeof (white);
-		while (lines-->0)
+		while (--lines > 0)
 			r_cons_write (white, cols);
 	}
 }
@@ -546,7 +545,7 @@ R_API void r_cons_printf(const char *format, ...) {
 
 	if (I.null) return;
 	if (strchr (format, '%')) {
-		palloc (MOAR);
+		palloc (MOAR + strlen (format)*20);
 		size = I.buffer_sz-I.buffer_len-1; /* remaining space in I.buffer */
 		va_start (ap, format);
 		written = vsnprintf (I.buffer+I.buffer_len, size, format, ap);
@@ -664,7 +663,7 @@ R_API int r_cons_get_size(int *rows) {
 			}
 		}
 		I.columns = win.ws_col;
-		I.rows = win.ws_row-1;
+		I.rows = win.ws_row;
 	} else {
 		I.columns = 80;
 		I.rows = 23;
@@ -812,7 +811,7 @@ R_API void r_cons_highlight (const char *word) {
 	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
 	int l, *cpos;
 
-	if (word && *word) {
+	if (word && *word && I.buffer) {
 		int word_len = strlen (word);
 		char *orig;
 		clean = I.buffer;

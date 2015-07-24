@@ -17,6 +17,7 @@
 #define UTF8_DETECT_LOCALE 0
 #define UTF8_DETECT_CURSOR 0
 
+#if UTF8_DETECT_CURSOR
 static inline int rd(const int fd) {
 	unsigned char   buffer[4];
 	ssize_t         n;
@@ -61,6 +62,7 @@ static inline int wr(const int fd, const char *const data, const size_t bytes) {
 
 	return 0;
 }
+#endif
 
 /* Return a new file descriptor to the current TTY.
  */

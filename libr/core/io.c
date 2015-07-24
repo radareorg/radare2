@@ -52,8 +52,16 @@ R_API int r_core_seek_base (RCore *core, const char *hex) {
 	if (p) {
 		strcpy (p, "0x");
 		strcpy (p+2, hex);
-		n = r_num_math (core->num, p);
+		if (hex[0] >= '0' && hex[0] <= '9') {
+			n = r_num_math (core->num, p);
+		} else {
+			eprintf ("Invalid argument\n");
+			n = 0;
+		}
 		free (p);
+	}
+	if (!n) {
+		return R_FALSE;
 	}
 	mask = UT64_MAX << i;
 	addr = (addr & mask) | n;
@@ -142,15 +150,18 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	} else
 	if (op=='2' || op=='4') {
 		op -= '0';
-		for (i=0; i<core->blocksize; i+=op) {
-			/* endian swap */
-			ut8 tmp = buf[i];
-			buf[i] = buf[i+3];
-			buf[i+3] = tmp;
-			if (op==4) {
-				tmp = buf[i+1];
-				buf[i+1] = buf[i+2];
-				buf[i+2] = tmp;
+		// if i < core->blocksize would pass the test but buf[i+3] goes beyond the buffer
+		if (core->blocksize > 3) {
+			for (i=0; i<core->blocksize-3; i+=op) {
+				/* endian swap */
+				ut8 tmp = buf[i];
+				buf[i] = buf[i+3];
+				buf[i+3] = tmp;
+				if (op==4) {
+					tmp = buf[i+1];
+					buf[i+1] = buf[i+2];
+					buf[i+2] = tmp;
+				}
 			}
 		}
 	} else {
@@ -399,5 +410,5 @@ R_API int r_core_is_valid_offset (RCore *core, ut64 offset) {
 		r_sys_backtrace ();
 		return R_FAIL;
 	}
-	return r_io_is_valid_offset (core->io, offset);
+	return r_io_is_valid_offset (core->io, offset, 0);
 }

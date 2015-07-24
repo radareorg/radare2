@@ -29,14 +29,25 @@ static void XREFKEY(char * const key, const size_t key_len,
 }
 
 R_API int r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
-        char *path, *db = r_str_newf (R2_HOMEDIR"/projects/%s.d", prjfile);
+	char *path, *db = r_str_newf (R2_HOMEDIR"/projects/%s.d", prjfile);
+	ut8 found = 0;
+	SdbListIter *it;
+	SdbNs *ns;
 	if (!db) return R_FALSE;
 	path = r_str_home (db);
 	if (!path) {
 		free (db);
 		return R_FALSE;
 	}
-	sdb_free (DB);
+
+	ls_foreach (anal->sdb->ns, it, ns){
+		if (ns->sdb == DB){
+			ls_delete (anal->sdb->ns, it);
+			found = 1;
+			break;
+		}
+	}
+	if (!found) sdb_free (DB);
 	DB = sdb_new (path, "xrefs", 0);
 	if (!DB) {
 		free (db);
@@ -103,6 +114,7 @@ R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const R
 
 R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 	RList *list = r_list_new ();
+	if (!list) return NULL;
 	list->free = NULL; // XXX
 	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_NULL, to);
 	r_anal_xrefs_from (anal, list, "xref", R_ANAL_REF_TYPE_CODE, to);
@@ -118,6 +130,7 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 
 R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
 	RList *list = r_list_new ();
+	if (!list) return NULL;
 	list->free = NULL; // XXX
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_NULL, to);
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_CODE, to);

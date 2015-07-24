@@ -34,7 +34,6 @@ static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 
 #if __APPLE__
 #include <spawn.h>
-#include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <mach/exception_types.h>
@@ -366,10 +365,14 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char uri[128];
 	if (__plugin_open (io, file,  0)) {
-		int pid = atoi (file+6);
-		if (pid == 0) {
+		const char *pidfile = file + 6;
+		char *endptr;
+		int pid = (int)strtol (pidfile, &endptr, 10);
+		if (endptr == pidfile || pid < 0) pid = -1;
+
+		if (pid == -1) {
 			pid = fork_and_ptraceme (io, io->bits, file+6);
-			if (pid==-1)
+			if (pid == -1)
 				return NULL;
 #if __WINDOWS__
 			sprintf (uri, "w32dbg://%d", pid);
@@ -410,6 +413,7 @@ struct r_io_plugin_t r_io_plugin_debug = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_debug
+	.data = &r_io_plugin_debug,
+	.version = R2_VERSION
 };
 #endif

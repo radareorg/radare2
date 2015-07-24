@@ -12,12 +12,12 @@ static int is_io_esil(RDebug *dbg) {
 	return R_FALSE;
 }
 
-static int r_debug_esil_step_over(RDebug *dbg) {
+static int __esil_step_over(RDebug *dbg) {
 	eprintf ("TODO: ESIL STEP OVER\n");
 	return R_TRUE;
 }
 
-static int r_debug_esil_step(RDebug *dbg) {
+static int __esil_step(RDebug *dbg) {
 	int oplen;
 	ut8 buf[64];
 	ut64 pc = 0LL; // getreg("pc")
@@ -40,32 +40,34 @@ eprintf ("READ 0x%08"PFMT64x" %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
 	return R_TRUE;
 }
 
-static int r_debug_esil_init(RDebug *dbg) {
+static int __esil_init(RDebug *dbg) {
 	dbg->tid = dbg->pid = 1;
 	eprintf ("TODO: ESIL INIT\n");
 	return R_TRUE;
 }
 
-static int r_debug_esil_continue(RDebug *dbg, int pid, int tid, int sig) {
+static int __esil_continue(RDebug *dbg, int pid, int tid, int sig) {
 	eprintf ("ESIL continue\n");
 	return R_TRUE;
 }
 
-static int r_debug_esil_continue_syscall(RDebug *dbg, int pid, int num) {
+static int __esil_continue_syscall(RDebug *dbg, int pid, int num) {
 	eprintf ("ESIL continue until syscall\n");
 	return R_TRUE;
 }
 
-static int r_debug_esil_wait(RDebug *dbg, int pid) {
+static int __esil_wait(RDebug *dbg, int pid) {
 	/* do nothing */
 	return R_TRUE;
 }
 
-static int r_debug_esil_attach(RDebug *dbg, int pid) {
+static int __esil_attach(RDebug *dbg, int pid) {
 	eprintf ("OK attach\n");
 	return R_TRUE;
+#if 0
 	if (!is_io_esil (dbg))
 		return R_FALSE;
+#endif
 #if 0
 	RIOBdescbg *o;
 	o = dbg->iob.io->desc->data;
@@ -76,12 +78,12 @@ eprintf ("input = %llx\n", o->bfvm->input);
 	return R_TRUE;
 }
 
-static int r_debug_esil_detach(int pid) {
+static int __esil_detach(int pid) {
 	// reset vm?
 	return R_TRUE;
 }
 
-static char *r_debug_esil_reg_profile(RDebug *dbg) {
+static char *__esil_reg_profile(RDebug *dbg) {
 	eprintf ("TODO: esil %s\n", r_sys_arch_str (dbg->arch));
 	return strdup (
 	"=pc	pc\n"
@@ -100,17 +102,17 @@ static char *r_debug_esil_reg_profile(RDebug *dbg) {
 	);
 }
 
-static int r_debug_esil_breakpoint (RBreakpointItem *bp, int set, void *user) {
+static int __esil_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	//r_io_system (dbg->iob.io, "db");
 	return R_FALSE;
 }
 
-static int r_debug_esil_kill(RDebug *dbg, int pid, int tid, int sig) {
+static int __esil_kill(RDebug *dbg, int pid, int tid, int sig) {
 	// TODO: ESIL reset
 	return R_TRUE;
 }
 
-static int r_debug_esil_stop(RDebug *dbg) {
+static int __esil_stop(RDebug *dbg) {
 	eprintf ("ESIL: stop\n");
 	return R_TRUE;
 }
@@ -121,33 +123,34 @@ RDebugPlugin r_debug_plugin_esil = {
 	/* TODO: Add support for more architectures here */
 	.arch = R_ASM_ARCH_BF,
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
-	.init = r_debug_esil_init,
-	.step = r_debug_esil_step,
-	.step_over = r_debug_esil_step_over,
-	.cont = r_debug_esil_continue,
-	.contsc = r_debug_esil_continue_syscall,
-	.attach = &r_debug_esil_attach,
-	.detach = &r_debug_esil_detach,
-	.wait = &r_debug_esil_wait,
+	.init = __esil_init,
+	.step = __esil_step,
+	.step_over = __esil_step_over,
+	.cont = __esil_continue,
+	.contsc = __esil_continue_syscall,
+	.attach = &__esil_attach,
+	.detach = &__esil_detach,
+	.wait = &__esil_wait,
 	.pids = NULL,
-	.stop = r_debug_esil_stop,
+	.stop = __esil_stop,
 	.tids = NULL,
 	.threads = NULL,
-	.kill = r_debug_esil_kill,
+	.kill = __esil_kill,
 	.frames = NULL,
-	.breakpoint = &r_debug_esil_breakpoint,
-	.reg_read = NULL, // &r_debug_esil_reg_read,
-	.reg_write = NULL, //&r_debug_esil_reg_write,
-	.reg_profile = r_debug_esil_reg_profile,
+	.breakpoint = &__esil_breakpoint,
+	.reg_read = NULL, // &__esil_reg_read,
+	.reg_write = NULL, //&__esil_reg_write,
+	.reg_profile = __esil_reg_profile,
 	.map_get = NULL, //r_debug_native_map_get,
 //	.breakpoint = r_debug_native_bp,
-	//.ptr_write = &r_debug_esil_ptr_write,
-	//.ptr_read = &r_debug_esil_ptr_read,
+	//.ptr_write = &__esil_ptr_write,
+	//.ptr_read = &__esil_ptr_read,
 };
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
-	.data = &r_debug_plugin_esil
+	.data = &r_debug_plugin_esil,
+	.version = R2_VERSION
 };
 #endif

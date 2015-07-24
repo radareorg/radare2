@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2015 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -65,16 +65,16 @@ static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
 }
 
 static inline int getmalfd (RIOMalloc *mal) {
-	return 0xfffffff & (int)(size_t)mal->buf;
+	return (UT32_MAX>>1) & (int)(size_t)mal->buf;
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	char *out;
 	int rlen, code;
-	if (__plugin_open (io, pathname,0)) {
-		RIOMalloc *mal = R_NEW0 (RIOMalloc);
+	if (__plugin_open (io, pathname, 0)) {
 		out = r_socket_http_get (pathname, &code, &rlen);
 		if (out && rlen>0) {
+			RIOMalloc *mal = R_NEW0 (RIOMalloc);
 			mal->size = rlen;
 			mal->buf = malloc (mal->size+1);
 			if (mal->buf != NULL) {
@@ -85,8 +85,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 					mal->fd, pathname, rw, mode, mal);
 			}
 			eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9, mal->size);
+			free (mal);
 		}
-		free (mal);
 		free (out);
 	}
 	return NULL;
@@ -94,7 +94,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 
 RIOPlugin r_io_plugin_http = {
 	.name = "http",
-        .desc = "http get (http://radare.org/)",
+        .desc = "http get (http://rada.re/)",
 	.license = "LGPL3",
         .open = __open,
         .close = __close,
@@ -107,6 +107,7 @@ RIOPlugin r_io_plugin_http = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_http
+	.data = &r_io_plugin_http,
+	.version = R2_VERSION
 };
 #endif

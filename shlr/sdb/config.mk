@@ -1,7 +1,7 @@
 DESTDIR?=
 PREFIX?=/usr
 
-SDBVER=0.9.6
+SDBVER=0.9.8
 
 BUILD_MEMCACHE=0
 
@@ -32,6 +32,9 @@ ifeq ($(CC),cc)
 CFLAGS+=$(shell gcc -v 2>&1 | grep -q LLVM && echo '-Wno-initializer-overrides')
 endif
 CFLAGS+=-Wall
+CFLAGS+=-Wsign-compare
+# some old gcc doesnt support this
+# CFLAGS+=-Wmissing-field-initializers
 #CFLAGS+=-O3
 #CFLAGS+=-ggdb -g -Wall -O0
 CFLAGS+=-g
@@ -47,8 +50,8 @@ ARCH?=$(shell uname -m)
 
 AR?=ar
 CC?=gcc
-EXEXT=
-SOEXT=.so
+EXT_EXE=
+EXT_SO=.so
 
 ifneq (,$(findstring MINGW32,${OSTYPE}))
 OS=w32
@@ -65,8 +68,8 @@ endif
 LDFLAGS_SHARED?=-shared
 
 ifeq (${OS},w32)
-EXEXT=.exe
-SOEXT=.dll
+EXT_EXE=.exe
+EXT_SO=.dll
 LDFLAGS_SHARED=-shared
 endif
 
@@ -78,7 +81,7 @@ OSTYPE=MINGW32
 endif
 
 ifeq (${OS},Darwin)
-SOEXT=dylib
+EXT_SO=dylib
 SOVER=dylib
 LDFLAGS+=-dynamic
   ifeq (${ARCH},i386)
@@ -88,19 +91,19 @@ CC+=-arch x86_64
 else
   ifneq (,$(findstring CYGWIN,${OSTYPE}))
 CFLAGS+=-D__CYGWIN__=1
-SOEXT=dll
-SOVER=${SOEXT}
+EXT_SO=dll
+SOVER=${EXT_SO}
 LDFLAGS_SHARED?=-shared
   else
     ifneq (,$(findstring MINGW32,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
-SOEXT=dll
-SOVER=${SOEXT}
+EXT_SO=dll
+SOVER=${EXT_SO}
     else
 CFLAGS+=-fPIC
 SOVERSION=0
-SOEXT=so
-SOVER=${SOEXT}.${SDBVER}
+EXT_SO=so
+SOVER=${EXT_SO}.${SDBVER}
 LDFLAGS_SHARED?=-fPIC 
     endif
   endif

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - condret@runas-racer.com */
+/* radare - LGPL - Copyright 2015 - condret@runas-racer.com */
 
 #include <r_types.h>
 #include <r_util.h>

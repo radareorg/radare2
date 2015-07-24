@@ -178,6 +178,16 @@ static const char *const fpcregs[3] = {
   "fpiar", "fpsr", "fpcr"
 };
 
+static inline void PRINT_FPREG(dis_buffer_t *dbuf, unsigned int reg) {
+  addstr(dbuf, reg<8?fpregs[reg]:"f?");
+}
+static inline void PRINT_DREG(dis_buffer_t *dbuf, unsigned int reg) {
+  addstr(dbuf, reg<8?dregs[reg]:"d?");
+}
+static inline void PRINT_AREG(dis_buffer_t *dbuf, unsigned int reg) {
+  addstr(dbuf, reg<8?aregs[reg]:"a?");
+}
+
 static char asm_buffer[256];
 static char info_buffer[256];
 static int db_radix = 16;

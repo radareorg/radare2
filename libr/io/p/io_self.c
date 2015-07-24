@@ -13,7 +13,7 @@
 #include <mach/mach_interface.h>
 #include <mach/mach_traps.h>
 #include <mach/mach_types.h>
-#include <mach/mach_vm.h>
+//#include <mach/mach_vm.h>
 #include <mach/mach_error.h>
 #include <mach/task.h>
 #include <mach/task_info.h>
@@ -119,6 +119,7 @@ static int update_self_regions(int pid) {
 	return R_FALSE;
 #endif
 }
+
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	return (!strncmp (file, "self://", 7));
 }
@@ -180,7 +181,7 @@ static int __close(RIODesc *fd) {
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "pid")) {
 		eprintf ("%d\n", fd->fd);
-	}else if (!strcmp (cmd, "maps")) {
+	} else if (!strcmp (cmd, "maps")) {
 		int i;
 		for (i =0; i<self_sections_count ;i++) {
 			eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %s %s\n",
@@ -212,11 +213,23 @@ struct r_io_plugin_t r_io_plugin_self = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_mach
+	.data = &r_io_plugin_mach,
+	.version = R2_VERSION
 };
 #endif
 
 #if __APPLE__
+// mach/mach_vm.h not available for iOS
+kern_return_t mach_vm_region
+(
+        vm_map_t target_task,
+        mach_vm_address_t *address,
+        mach_vm_size_t *size,
+        vm_region_flavor_t flavor,
+        vm_region_info_t info,
+        mach_msg_type_number_t *infoCnt,
+        mach_port_t *object_name
+);
 // taken from vmmap.c ios clone
 // XXX. this code is dupped in libr/debug/p/debug_native.c
 // but this one looks better, the other one seems to work too.
@@ -367,7 +380,8 @@ struct r_io_plugin_t r_io_plugin_self = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_mach
+	.data = &r_io_plugin_mach,
+	.version = R2_VERSION
 };
 #endif
 #endif

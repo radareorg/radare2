@@ -103,6 +103,15 @@ typedef struct r_cons_palette_t {
 	char *gui_background;
 	char *gui_alt_background;
 	char *gui_border;
+
+	/* graph colors */
+	char *graph_box;
+	char *graph_box2;
+	char *graph_box3;
+	char *graph_true;
+	char *graph_false;
+	char *graph_trufae;
+
 #define R_CONS_PALETTE_LIST_SIZE 8
 	char *list[R_CONS_PALETTE_LIST_SIZE];
 } RConsPalette;
@@ -303,6 +312,7 @@ R_API RConsCanvas* r_cons_canvas_new (int w, int h);
 R_API void r_cons_canvas_free (RConsCanvas *c);
 R_API void r_cons_canvas_clear (RConsCanvas *c);
 R_API void r_cons_canvas_print(RConsCanvas *c);
+R_API void r_cons_canvas_print_region(RConsCanvas *c);
 R_API char *r_cons_canvas_to_string(RConsCanvas *c);
 R_API void r_cons_canvas_attr(RConsCanvas *c,const char * attr);
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
@@ -323,6 +333,7 @@ R_API char *r_cons_lastline (void);
 typedef void (*RConsBreak)(void *);
 R_API void r_cons_break(RConsBreak cb, void *user);
 R_API void r_cons_break_end(void);
+R_API int r_cons_is_breaked();
 
 /* pipe */
 R_API int r_cons_pipe_open(const char *file, int fdn, int append);
@@ -492,6 +503,73 @@ R_API const char *r_line_hist_get(int n);
 
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 
+#endif
+
+/* r_agraph */
+
+typedef struct r_ascii_node_t {
+	RGraphNode *gnode;
+	char *title;
+	char *body;
+
+	int x;
+	int y;
+	int w;
+	int h;
+
+	int layer;
+	int pos_in_layer;
+	int is_dummy;
+	int is_reversed;
+	int klass;
+} RANode;
+
+typedef struct r_ascii_graph_t {
+	RConsCanvas *can;
+	RGraph *graph;
+	const RGraphNode *curnode;
+	char *title;
+	Sdb *nodes;
+
+	int is_callgraph;
+	int is_instep;
+	int is_simple_mode;
+	int is_small_nodes;
+	int zoom;
+	int movspeed;
+
+	RStack *history;
+	RANode *update_seek_on;
+	int need_reload_nodes;
+	int need_set_layout;
+	int need_update_dim;
+	int force_update_seek;
+
+	int x, y;
+	int w, h;
+
+	/* layout algorithm info */
+	RList *back_edges;
+	RList *long_edges;
+	struct layer_t *layers;
+	int n_layers;
+	RList *dists; /* RList<struct dist_t> */
+	const char *color_box;
+	const char *color_box2;
+	const char *color_box3;
+	const char *color_true;
+	const char *color_false;
+} RAGraph;
+
+#ifdef R_API
+R_API RAGraph *r_agraph_new (RConsCanvas *can);
+R_API void r_agraph_free (RAGraph *g);
+R_API void r_agraph_reset (RAGraph *g);
+R_API void r_agraph_set_title (RAGraph *g, const char *title);
+R_API RANode *r_agraph_get_node (const RAGraph *g, const char *title);
+R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title, const char *body);
+R_API void r_agraph_add_edge (const RAGraph *g, RANode *a, RANode *b);
+R_API void r_agraph_print (RAGraph *g);
 #endif
 
 #ifdef __cplusplus

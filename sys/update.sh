@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd "$(dirname "$PWD/$0")" ; cd ..
 
 # update
 if [ -d .git ]; then

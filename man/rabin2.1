@@ -5,12 +5,12 @@
 .Nd Binary program info extractor
 .Sh SYNOPSIS
 .Nm rabin2
-.Op Fl ACeghHiIsSMzlpRrLxvh
+.Op Fl AceghHiIsSMzlpRrLxvh
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl B Ar addr
-.Op Fl c Ar fmt:C:[D]
-.Op Fl D Ar lang
+.Op Fl C Ar fmt:C:[D]
+.Op Fl D Ar lang sym|-
 .Op Fl f Ar subbin
 .Op Fl k Ar query
 .Op Fl K Ar algo
@@ -33,14 +33,14 @@ Set arch (x86, arm, .. accepts underscore for bits x86_32)
 Set bits (32, 64, ...)
 .It Fl B Ar addr
 Override baddr
-.It Fl c Ar [fmt:C[:D]]
-Create [elf,mach0,pe] for arm and x86-32/64 tiny binaries where 'C' is an hexpair list of the code bytes and ':D' is an optional concatenation to describe the bytes for the data section.
-.It Fl C
+.It Fl c
 List classes
+.It Fl C Ar [fmt:C[:D]]
+Create [elf,mach0,pe] for arm and x86-32/64 tiny binaries where 'C' is an hexpair list of the code bytes and ':D' is an optional concatenation to describe the bytes for the data section.
 .It Fl d
 Show debug/dwarf information
-.It Fl D Ar lang symbolname
-Demangle symbol name for lang
+.It Fl D Ar lang symbolname|-
+Demangle symbol name (or - to read from stdin) for lang (cxx, swift, java, cxx, ..)
 .It Fl e
 Show entrypoints for disk and on-memory
 .It Fl f Ar subbin

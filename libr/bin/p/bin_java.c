@@ -258,6 +258,7 @@ RBinPlugin r_bin_plugin_java = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
-	.data = &r_bin_plugin_java
+	.data = &r_bin_plugin_java,
+	.version = R2_VERSION
 };
 #endif

@@ -5,6 +5,7 @@
 #define DB dbg->sgnls
 
 // TODO: this must be done by the debugger plugin
+// which is stored already in SDB.. but this is faster :P
 static struct {
 	const char *k;
 	const char *v;
@@ -146,4 +147,3 @@ R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action) {
 	// TODO: implement r_debug_kill_setup
 	return R_FALSE;
 }
-

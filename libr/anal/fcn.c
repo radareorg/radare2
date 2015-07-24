@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_list.h>
 
+
 #define FCN_DEPTH 16
 
 #define JMP_IS_EOB 0
@@ -11,7 +12,8 @@
 #define CALL_IS_EOB 0
 
 // 64KB max size
-#define MAX_FCN_SIZE 262140
+// 256KB max function size
+#define MAX_FCN_SIZE (1024*256)
 
 #define DB a->sdb_fcns
 #define EXISTS(x,y...) snprintf (key, sizeof(key)-1,x,##y),sdb_exists(DB,key)
@@ -52,7 +54,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	/* Function calling convention: cdecl/stdcall/fastcall/etc */
 	fcn->call = R_ANAL_CC_TYPE_NONE;
 	/* Function attributes: weak/noreturn/format/etc */
-	fcn->addr = -1;
+	fcn->addr = UT64_MAX;
 	fcn->bits = 0;
 #if FCN_OLD
 	fcn->refs = r_anal_ref_list_new ();
@@ -101,7 +103,7 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	RAnalRef *ref;
 	if (!fcn || !a)
 		return R_FALSE;
-	if (!a->iob.is_valid_offset (a->iob.io, addr))
+	if (!a->iob.is_valid_offset (a->iob.io, addr, 0))
 		return R_FALSE;
 	ref = r_anal_ref_new ();
 	if (!ref)
@@ -200,8 +202,7 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 }
 //fcn->addr += n; fcn->size -= n; } else 
 #define FITFCNSZ() {st64 n=bb->addr+bb->size-fcn->addr; \
-	if (n<0) { } else \
-	if (fcn->size<n)fcn->size=n; } \
+	if (n>=0) if (fcn->size<n) fcn->size=n; } \
 	if (fcn->size > MAX_FCN_SIZE) { \
 		eprintf ("Function too big at 0x%"PFMT64x"\n", bb->addr); \
 		fcn->size = 0; \
@@ -224,6 +225,7 @@ static char *get_varname (RAnal *a, const char *pfx, int idx) {
 }
 
 #define gotoBeach(x) ret=x;goto beach;
+#define gotoBeachRet() goto beach;
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int continue_after_jump = anal->afterjmp;
 	RAnalBlock *bb = NULL;
@@ -249,11 +251,14 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
-#if 1
+	// check if address is readable //:
+	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
+		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
+	}
+
 	if (r_anal_get_fcn_at (anal, addr, 0)) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
-#endif
 	bb = bbget (fcn, addr);
 	if (bb) {
 		r_anal_fcn_split_bb (anal, fcn, bb, addr);
@@ -457,7 +462,7 @@ if (anal->bbsplit) {
 				bb->fail = UT64_MAX;
 			}
 			recurseAt (op.jump);
-			gotoBeach (ret);
+			gotoBeachRet ();
 } else {
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					R_ANAL_REF_TYPE_CODE)) {
@@ -570,7 +575,7 @@ if (anal->bbsplit) {
 			// without which the analysis is really slow,
 			// presumably because each opcode would get revisited
 			// (and already covered by a bb) many times
-			gotoBeach (ret);
+			gotoBeachRet();
                         // For some reason, branch delayed code (MIPS) needs to continue
 			break;
 		case R_ANAL_OP_TYPE_CCALL:

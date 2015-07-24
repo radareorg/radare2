@@ -3,7 +3,6 @@
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
 
-#define NEW_ESIL 1
 /* use sdb function storage */
 #define FCN_SDB 1
 /* use old refs and function storage */
@@ -49,7 +48,17 @@ typedef struct r_anal_meta_item_t {
 	ut64 size;
 	int type;
 	char *str;
+	int space;
 } RAnalMetaItem;
+
+typedef struct {
+	struct r_anal_t *anal;
+	int type;
+	int rad;
+	SdbForeachCallback cb;
+	void *user;
+	int count;
+} RAnalMetaUserItem;
 
 typedef struct r_anal_range_t {
 	ut64 from;
@@ -176,7 +185,7 @@ enum {
 	R_ANAL_CC_TYPE_BOFASTCALL, // borland fastcall
 	R_ANAL_CC_TYPE_WAFASTCALL, // wacom fastcall
 	R_ANAL_CC_TYPE_CLARION, // TopSpeed/Clarion/JPI
-	/* Clation:
+	/* Clarion:
 	 *	first four integer parameters are passed in registers:
 	 *	eax, ebx, ecx, edx. Floating point parameters are passed
 	 *	on the floating point stack - registers
@@ -579,6 +588,7 @@ typedef struct r_anal_t {
 	int maxreflines;
 	int trace;
 	int esil_goto_limit;
+	int noncode;
 	RList *types;
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_esil_t *esil;
@@ -589,11 +599,13 @@ typedef struct r_anal_t {
 	Sdb *sdb_xrefs;
 	Sdb *sdb_types;
 	Sdb *sdb_meta; // TODO: Future r_meta api
+	RSpaces meta_spaces;
 	PrintfCallback printf;
 //moved from RAnalFcn
 	Sdb *sdb; // root
 	Sdb *sdb_refs;
 	Sdb *sdb_fcns;
+	Sdb *sdb_pins;
 #define DEPRECATE 1
 #if DEPRECATE
 	Sdb *sdb_args;  //
@@ -999,7 +1011,7 @@ typedef struct r_anal_plugin_t {
 	RAnalFnFromBuffer fn_from_buffer;
 
 	// analysis algorithm to use instead of the default
-	// r_anal_ex_recursive_decent when using perform_analysis from
+	// r_anal_ex_recursive_descent when using perform_analysis from
 	// RAnalEx stuffs
 	RAnalExAnalysisAlgorithm analysis_algorithm;
 	// order in which these call backs are
@@ -1147,6 +1159,15 @@ R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt);
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
 R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);
+
+/* pin */
+R_API void r_anal_pin_init(RAnal *a);
+R_API void r_anal_pin_fini(RAnal *a);
+R_API void r_anal_pin (RAnal *a, ut64 addr, const char *name);
+R_API void r_anal_pin_unset (RAnal *a, ut64 addr);
+R_API int r_anal_pin_call(RAnal *a, ut64 addr);
+R_API void r_anal_pin_list(RAnal *a);
+
 /* fcn.c */
 R_API RAnalFunction *r_anal_fcn_new(void);
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);
@@ -1304,7 +1325,7 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
 R_API RAnalRefline *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn,
     int nlines, int linesout, int linescall);
 /* TODO move to r_core */
-R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind);
+R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
 
 // calling conventions API
@@ -1338,6 +1359,9 @@ R_API void r_anal_data_free (RAnalData *d);
 R_API char *r_anal_data_to_string (RAnalData *d);
 
 R_API void r_meta_free(RAnal *m);
+R_API void r_meta_space_unset_for(RAnal *a, int type);
+R_API int r_meta_space_count_for(RAnal *a, int ctx);
+R_API RList *r_meta_enumerate(RAnal *a, int type);
 R_API int r_meta_count(RAnal *m, int type, ut64 from, ut64 to);
 R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr);
 R_API int r_meta_set_string(RAnal *m, int type, ut64 addr, const char *s);
@@ -1346,7 +1370,9 @@ R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 size, const char *str);
 R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where);
 R_API int r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
+R_API RList *r_meta_enumerate(RAnal *a, int type);
 R_API int r_meta_list(RAnal *m, int type, int rad);
+R_API int r_meta_list_cb(RAnal *m, int type, int rad, SdbForeachCallback cb, void *user);
 R_API void r_meta_item_free(void *_item);
 R_API RAnalMetaItem *r_meta_item_new(int type);
 
@@ -1454,6 +1480,7 @@ extern RAnalPlugin r_anal_plugin_xcore_cs;
 extern RAnalPlugin r_anal_plugin_propeller;
 extern RAnalPlugin r_anal_plugin_msp430;
 extern RAnalPlugin r_anal_plugin_cris;
+extern RAnalPlugin r_anal_plugin_v810;
 #ifdef __cplusplus
 }
 #endif

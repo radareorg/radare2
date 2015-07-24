@@ -16,7 +16,7 @@
 .Op Fl p Ar project
 .Op Fl P Ar patch
 .Op Fl s Ar addr
-.Op Fl 0AdDwntLqv
+.Op Fl 0AdDwntLquvV
 .Ar -|--|=|file
 .Sh DESCRIPTION
 radare2 is a commandline hexadecimal editor.
@@ -36,7 +36,7 @@ Print \\x00 after initialization and after every command executed
 .It Fl a Ar arch
 force asm.arch (x86, ppc, arm, mips, bf, java, ...)
 .It Fl A
-run 'aa' command before prompt or patch to analyze all referenced code
+run 'aaa' command before prompt or patch to analyze all referenced code
 .It Fl b Ar bits
 force asm.bits (16, 32, 64)
 .It Fl B Ar baddr
@@ -79,8 +79,12 @@ Start seeking at this address
 Enable sandboxed mode (same as \-e cfg.sandbox=true)
 .It Fl t
 Get binary information using a thread
+.It Fl u
+Set bin.filter=false to load rbin info without filtering names.
 .It Fl v
 Show version information and exit.
+.It Fl V
+Show radare2 library versions
 .It Fl w
 Open in write mode
 .It Fl h

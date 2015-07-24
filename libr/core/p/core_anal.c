@@ -347,6 +347,7 @@ RCorePlugin r_core_plugin_anal = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_CORE,
-	.data = &r_core_plugin_anal
+	.data = &r_core_plugin_anal,
+	.version = R2_VERSION
 };
 #endif

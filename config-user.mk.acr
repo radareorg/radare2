@@ -2,7 +2,7 @@
 DESTDIR=
 CC=@CC@
 WITH_GPL=@WITH_GPL@
-#HOST_CC=@HOST_CC@
+# HOST_CC=@HOST_CC@
 PREFIX=@PREFIX@
 BINDIR=@BINDIR@
 LIBDIR=@LIBDIR@
@@ -12,7 +12,6 @@ INCLUDEDIR=@INCLUDEDIR@
 HAVE_LIB_GMP=@HAVE_LIB_GMP@
 LIL_ENDIAN=@LIL_ENDIAN@
 USE_RPATH=@USE_RPATH@
-BUILD_OS=@BUILD_OS@
 
 MKPLUGINS=mk/stat.mk mk/sloc.mk
 
@@ -33,6 +32,7 @@ LIBVERSION=@LIBVERSION@
 
 # ./configure --with-ostype=[linux,osx,solaris,windows] # TODO: rename to w32, w64?
 OSTYPE=@USEROSTYPE@
+BUILD_OS=@BUILD_OS@
 HOST_OS=@HOST_OS@
 # hack: must be fixed in acr
 ifneq ($(OSTYPE),darwin)

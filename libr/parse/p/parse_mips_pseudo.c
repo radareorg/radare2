@@ -10,63 +10,73 @@
 #include <r_anal.h>
 #include <r_parse.h>
 
+static int can_replace(const char *str, int idx, int max_operands) {
+	int ret = R_TRUE;
+	if (str[idx] > '9' || str[idx] < '1') ret = R_FALSE;
+	if (str[idx + 1] != '\x00' && str[idx + 1] <= '9' && str[idx + 1] >= '1')
+		ret = R_FALSE;
+	if ((int)((int)str[idx] - 0x30) > max_operands) ret = R_FALSE;
+	return ret;
+}
+
 static int replace(int argc, const char *argv[], char *newstr) {
 	int i,j,k;
 	struct {
 		char *op;
 		char *str;
+		int max_operands;
 	} ops[] = {
-		{ "addi",  "1 = 2 + 3"},
-		{ "addiu",  "1 = 2 + 3"},
-		{ "addu",  "1 = 2 + 3"},
-		{ "and",  "1 = 2 & 3"},
-		{ "andi",  "1 = 2 & 3"},
-		{ "b",  "goto 1"},
-		{ "bal",  "call 1"},
-		{ "begz", "if (1 >= 0) goto 2"},
-		{ "begzal", "if (1 >= 0) call 2"},
-		{ "beq",  "if (1 == 2) goto 3"},
-		{ "beqz",  "if (!1) goto 2"},
-		{ "bgtz", "if (1 > 0) goto 2"},
-		{ "bltz", "if (1 < 0) goto 2"},
-		{ "bltzal", "if (1 < 0) call 2"},
-		{ "bne",  "if (1 != 2) goto 3"},
-		{ "bnez",  "if (1) goto 2"},
-		{ "j",   "call 1"},
-		{ "jal",   "call 1"},
-		{ "jalr",  "call 1"},
-		{ "jr",   "ret 1"},
-		{ "lb",  "1 = byte [3 + 2]"},
-		{ "lbu",  "1 = byte [3 + 2]"},
-		{ "lw",  "1 = halfword [3 + 2]"},
-		{ "li",   "1 = 2"},
-		{ "lui",  "1 |= 2 << 16"},
-		{ "lw",  "1 = [3 + 2]"},
-		{ "move",  "1 = 2"},
-		{ "mult",  "1 = 2 * 3"},
-		{ "multu",  "1 = 2 * 3"},
-		{ "negu",  "1 = !2"},
-		{ "nop",   ""},
-		{ "nor",   "1 = ~(2 | 3)"},
-		{ "or",   "1 = 2 | 3"},
-		{ "ori",   "1 = 2 | 3"},
-		{ "sb",  "byte [3 + 2] = 1"},
-		{ "sh",  "halfword [3 + 2] = 1"},
-		{ "sll",  "1 = 2 << 3"},
-		{ "sllv",  "1 = 2 << 3"},
-		{ "slr",  "1 = 2 >> 3"}, // logic
-		{ "slt",  "1 = (2 < 3)"},
-		{ "slti",  "1 = (2 < 3)"},
-		{ "sltiu",  "1 = (2 < 3)"},
-		{ "sltu",  "1 = unsigned (2 < 3)"},
-		{ "sra",  "1 = 2 >> 3"}, // arithmetic
-		{ "srl",  "1 = 2 >> 3"},
-		{ "srlv",  "1 = 2 >> 3"},
-		{ "subu",  "1 = 2 - 3"},
-		{ "sub",  "1 = 2 - 3"},
-		{ "sw",  "[3 + 2] = 1"},
-		{ "xor",  "1 = 2 ^ 3"},
-		{ "xori",  "1 = 2 ^ 3"},
+		{ "addi",  "1 = 2 + 3", 3},
+		{ "addiu",  "1 = 2 + 3", 3},
+		{ "addu",  "1 = 2 + 3", 3},
+		{ "and",  "1 = 2 & 3", 3},
+		{ "andi",  "1 = 2 & 3", 3},
+		{ "b",  "goto 1", 1},
+		{ "bal",  "call 1", 1},
+		{ "begz", "if (1 >= 0) goto 2", 2},
+		{ "begzal", "if (1 >= 0) call 2", 2},
+		{ "beq",  "if (1 == 2) goto 3", 3},
+		{ "beqz",  "if (!1) goto 2", 2},
+		{ "bgtz", "if (1 > 0) goto 2", 2},
+		{ "bltz", "if (1 < 0) goto 2", 2},
+		{ "bltzal", "if (1 < 0) call 2", 2},
+		{ "bne",  "if (1 != 2) goto 3", 3},
+		{ "bnez",  "if (1) goto 2", 2},
+		{ "j",   "call 1", 1},
+		{ "jal",   "call 1", 1},
+		{ "jalr",  "call 1", 1},
+		{ "jr",   "ret 1", 1},
+		{ "lb",  "1 = byte [3 + 2]", 3},
+		{ "lbu",  "1 = byte [3 + 2]", 3},
+		{ "lw",  "1 = halfword [3 + 2]", 3},
+		{ "li",   "1 = 2", 2},
+		{ "lui",  "1 |= 2 << 16", 2},
+		{ "lw",  "1 = [3 + 2]", 3},
+		{ "move",  "1 = 2", 1},
+		{ "mult",  "1 = 2 * 3", 3},
+		{ "multu",  "1 = 2 * 3", 3},
+		{ "negu",  "1 = !2", 2},
+		{ "nop",   "", 0},
+		{ "nor",   "1 = ~(2 | 3)", 3},
+		{ "or",   "1 = 2 | 3", 3},
+		{ "ori",   "1 = 2 | 3", 3},
+		{ "sb",  "byte [3 + 2] = 1", 3},
+		{ "sh",  "halfword [3 + 2] = 1", 3},
+		{ "sll",  "1 = 2 << 3", 3},
+		{ "sllv",  "1 = 2 << 3", 3},
+		{ "slr",  "1 = 2 >> 3", 3}, // logic
+		{ "slt",  "1 = (2 < 3)", 3},
+		{ "slti",  "1 = (2 < 3)", 3},
+		{ "sltiu",  "1 = (2 < 3)", 3},
+		{ "sltu",  "1 = unsigned (2 < 3)", 3},
+		{ "sra",  "1 = 2 >> 3", 3}, // arithmetic
+		{ "srl",  "1 = 2 >> 3", 3},
+		{ "srlv",  "1 = 2 >> 3", 3},
+		{ "subu",  "1 = 2 - 3", 3},
+		{ "sub",  "1 = 2 - 3", 3},
+		{ "sw",  "[3 + 2] = 1", 3},
+		{ "xor",  "1 = 2 ^ 3", 3},
+		{ "xori",  "1 = 2 ^ 3", 3},
 		{ NULL }
 	};
 
@@ -74,7 +84,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
 				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
-					if (ops[i].str[j]>='1' && ops[i].str[j]<='9') {
+					if (can_replace(ops[i].str, j, ops[i].max_operands)) {
 						const char *w = argv[ ops[i].str[j]-'0' ];
 						if (w != NULL) {
 							strcpy (newstr+k, w);
@@ -217,6 +227,7 @@ struct r_parse_plugin_t r_parse_plugin_mips_pseudo = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_mips_pseudo
+	.data = &r_parse_plugin_mips_pseudo,
+	.version = R2_VERSION
 };
 #endif

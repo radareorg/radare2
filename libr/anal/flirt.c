@@ -661,8 +661,11 @@ static ut8 read_module_tail_bytes (RFlirtModule *module, RBuffer *b) {
 	}
 
 	for (i = 0 ; i < number_of_tail_bytes ; i++) {
-		tail_byte = R_NEW0(RFlirtTailByte);
-		if ( version >= 9 ) {
+		tail_byte = R_NEW0 (RFlirtTailByte);
+		if (!tail_byte) {
+			return R_FALSE;
+		}
+		if (version >= 9) {
 			/*/!\ XXX don't trust ./zipsig output because it will write a version 9 header, but keep the old version offsets*/
 			tail_byte->offset = read_multiple_bytes(b);
 			if (buf_eof || buf_err) goto err_exit;
@@ -704,7 +707,7 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b) {
 
 	for (i = 0 ; i < number_of_referenced_functions ; i++) {
 		ref_function = R_NEW0(RFlirtFunction);
-
+		if (!ref_function) goto err_exit;
 		if ( version >= 9 ) {
 			ref_function->offset = read_multiple_bytes(b);
 			if (buf_eof || buf_err) goto err_exit;
@@ -908,7 +911,13 @@ static ut8 read_node_bytes (RFlirtNode *node, RBuffer *b) {
 	ut64 current_mask_bit = 1ULL << (node->length - 1);
 
 	node->pattern_bytes = malloc(node->length);
+	if (!node->pattern_bytes) {
+		return 0x00;
+	}
 	node->variant_bool_array = malloc(node->length);
+	if (!node->variant_bool_array) {
+		return 0x00;
+	}
 
 	for (i = 0; i < node->length ; i++, current_mask_bit >>= 1) {
 		node->variant_bool_array[i] =

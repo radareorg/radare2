@@ -154,7 +154,6 @@ R_API char *r2p_read(R2Pipe *r2p) {
 }
 
 R_API void r2p_free (R2Pipe *r2p) {
-	r2p_close (r2p);
 	r2p->magic = 0;
-	free (r2p);
+	r2p_close (r2p);
 }

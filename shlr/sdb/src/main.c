@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2015 - pancake */
+/* sdb - MIT - Copyright 2011-2015 - pancake */
 
 #include <signal.h>
 #include <stdio.h>
@@ -302,10 +302,11 @@ static int createdb(const char *f, const char **args, int nargs) {
 }
 
 static int showusage(int o) {
-	printf ("usage: sdb [-0dehjJv|-D A B] [-|db] "
+	printf ("usage: sdb [-0cdehjJv|-D A B] [-|db] "
 		"[.file]|[-=]|[-+][(idx)key[:json|=value] ..]\n");
 	if (o==2) {
 		printf ("  -0      terminate results with \\x00\n"
+			"  -c      count the number of keys database\n"
 			"  -d      decode base64 from stdin\n"
 			"  -D      diff two databases\n"
 			"  -e      encode stdin as base64\n"
@@ -409,6 +410,17 @@ static int dbdiff (const char *a, const char *b) {
 	return n;
 }
 
+int showcount (const char *db) {
+	ut32 d;
+	s = sdb_new (NULL, db, 0);
+	if (sdb_stats (s, &d, NULL)) {
+		printf ("%d\n", d);
+	}
+	// TODO: show version, timestamp information
+	sdb_free (s);
+	return 0;
+}
+
 int main(int argc, const char **argv) {
 	char *line;
 	const char *arg, *grep = NULL;
@@ -451,6 +463,7 @@ int main(int argc, const char **argv) {
 				return showusage(1);
 			}
 			break;
+		case 'c': return (argc<3)? showusage (1) : showcount (argv[2]);
 		case 'v': return showversion ();
 		case 'h': return showusage (2);
 		case 'e': return base64encode ();

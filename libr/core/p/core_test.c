@@ -33,6 +33,7 @@ RCorePlugin r_core_plugin_test = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_CORE,
-	.data = &r_core_plugin_test
+	.data = &r_core_plugin_test,
+	.version = R2_VERSION
 };
 #endif

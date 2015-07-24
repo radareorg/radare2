@@ -29,7 +29,7 @@ WSACleanup: closes all network connections
 #define BUFFER_SIZE 4096
 
 R_API int r_socket_is_connected (RSocket *s) {
-#if __WINDOWS__
+#if __WINDOWS__ && !defined(__CYGWIN__) && !defined(__MINGW64__)
 	char buf[2];
 	r_socket_block_time (s, 0, 0);
 	ssize_t ret = recv (s->fd, (char*)&buf, 1, MSG_PEEK);
@@ -120,8 +120,8 @@ R_API RSocket *r_socket_new (int is_ssl) {
 	return s;
 }
 
-R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto, int timeout) {
-#if __WINDOWS__
+R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
+#if __WINDOWS__ && !defined(__CYGWIN__) && !defined(__MINGW64__)
 	struct sockaddr_in sa;
 	struct hostent *he;
 	WSADATA wsadata;
@@ -172,26 +172,18 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 			s->fd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 			if (s->fd == -1)
 				continue;
-			if (timeout>0)
+			if (timeout>0) {
 				r_socket_block_time (s, 1, timeout);
 				//fcntl (s->fd, F_SETFL, O_NONBLOCK, 1);
+			}
 			ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
-			if (timeout<1) {
-				if (ret == -1) {
-					close (s->fd);
-					s->fd = -1;
-					freeaddrinfo (res);
-					return R_FALSE;
-				}
+
+			if (timeout == 0 && ret == 0) {
 				freeaddrinfo (res);
 				return R_TRUE;
-			}
-			if (ret<0) {
-				close (s->fd);
-				s->fd = -1;
-				continue;
-			}
-			if (timeout>0) {
+
+			} else if (ret == 0 /* || nonblocking */) {
+
 				struct timeval tv;
 				fd_set fdset, errset;
 				FD_ZERO (&fdset);
@@ -208,16 +200,13 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 					socklen_t len = sizeof so_error;
 					ret = getsockopt (s->fd, SOL_SOCKET,
 						SO_ERROR, &so_error, &len);
-			//		fcntl (s->fd, F_SETFL, O_NONBLOCK, 0);
-//					r_socket_block_time (s, 0, 0);
-					freeaddrinfo (res);
-					return R_TRUE;
-				} else {
-	//				freeaddrinfo (res);
-					close (s->fd);
-					s->fd = -1;
-					continue;
-	//				return R_FALSE;
+
+					if (ret == 0 && so_error == 0) {
+						//fcntl (s->fd, F_SETFL, O_NONBLOCK, 0);
+						//r_socket_block_time (s, 0, 0);
+						freeaddrinfo (res);
+						return R_TRUE;
+					}
 				}
 			}
 			close (s->fd);
@@ -295,7 +284,7 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 #endif
 	if (r_sandbox_enable (0))
 		return R_FALSE;
-#if __WINDOWS__
+#if __WINDOWS__ && !defined(__CYGWIN__) && !defined(__MINGW64__)
 	WSADATA wsadata;
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
 		eprintf ("Error creating socket.");
@@ -412,7 +401,7 @@ R_API int r_socket_block_time (RSocket *s, int block, int sec) {
 			(flags | O_NONBLOCK));
 	if (ret < 0)
 		return R_FALSE;
-#elif __WINDOWS__
+#elif __WINDOWS__ && !defined(__CYGWIN__) && !defined(__MINGW64__)
 	// HACK: nonblocking io on w32 behaves strange
 	return R_TRUE;
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
@@ -447,7 +436,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	fds[0].events = POLLIN|POLLPRI;
 	fds[0].revents = POLLNVAL|POLLHUP|POLLERR;
 	return poll ((struct pollfd *)&fds, 1, msecs);
-#elif __WINDOWS__
+#elif __WINDOWS__ && !defined(__CYGWIN__) && !defined(__MINGW64__)
 	return 1;
 #if XXX_THIS_IS_NOT_WORKING_WELL
 	fd_set rfds;
@@ -468,7 +457,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 }
 
 R_API char *r_socket_to_string(RSocket *s) {
-#if __WINDOWS__
+#if __WINDOWS__ && !defined(__CYGWIN__) && !defined(__MINGW64__)
 	char *str = malloc (32);
 	snprintf (str, 31, "fd%d", s->fd);
 	return str;
@@ -547,7 +536,7 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 		return SSL_read (s->sfd, buf, len);
 	}
 #endif
-#if __WINDOWS__
+#if __WINDOWS__ && !defined(__CYGWIN__) && !defined(__MINGW64__)
 rep:
 	{
 	int ret = recv (s->fd, (void *)buf, len, 0);

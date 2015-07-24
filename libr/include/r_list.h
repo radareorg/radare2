@@ -25,7 +25,7 @@ typedef struct r_list_t {
 	RListFree free;
 } RList;
 
-typedef int (*RListComparator)(void *a, void *b);
+typedef int (*RListComparator)(const void *a, const void *b);
 
 #define ROFList_Parent RList
 typedef struct r_oflist_t {
@@ -64,8 +64,9 @@ R_API int r_list_set_n(RList *list, int n, void *p);
 R_API void *r_list_iter_get_data(RListIter *list);
 R_API RListIter *r_list_append(RList *list, void *data);
 R_API RListIter *r_list_prepend(RList *list, void *data);
-R_API int r_list_length(RList *list);
-R_API void* r_list_first(RList *list);
+R_API RListIter *r_list_insert(RList *list, int n, void *data);
+R_API int r_list_length(const RList *list);
+R_API void* r_list_first(const RList *list);
 R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp);
 R_API void r_list_sort(RList *list, RListComparator cmp);
 
@@ -79,20 +80,20 @@ R_API RListIter *r_list_item_new (void *data);
 R_API void r_list_split (RList *list, void *ptr);
 R_API void r_list_split_iter (RList *list, RListIter *iter);
 R_API int r_list_join (RList *list1, RList *list2);
-R_API void *r_list_get_n (RList *list, int n);
+R_API void *r_list_get_n (const RList *list, int n);
 R_API int r_list_del_n (RList *list, int n);
-R_API void *r_list_get_top (RList *list);
-R_API void *r_list_get_bottom (RList *list);
+R_API void *r_list_get_top (const RList *list);
+R_API void *r_list_get_bottom (const RList *list);
 R_API void *r_list_pop (RList *list);
 R_API void r_list_reverse (RList *list);
 R_API RList *r_list_clone (RList *list);
 
 /* hashlike api */
-R_API void *r_list_get_by_int(RList *list, int off, int n);
-R_API void *r_list_get_by_int64(RList *list, int off, ut64 n);
-R_API void *r_list_get_by_string(RList *list, int off, const char *str);
-R_API RListIter *r_list_contains (RList *list, void *p);
-R_API RListIter *r_list_find (RList *list, void *p, RListComparator cmp);
+R_API void *r_list_get_by_int(const RList *list, int off, int n);
+R_API void *r_list_get_by_int64(const RList *list, int off, ut64 n);
+R_API void *r_list_get_by_string(const RList *list, int off, const char *str);
+R_API RListIter *r_list_contains (const RList *list, const void *p);
+R_API RListIter *r_list_find (const RList *list, const void *p, RListComparator cmp);
 
 /* rlistflist */
 // TODO: rename to init or so.. #define r_oflist_new() R_NEW(ROFList);memset

@@ -92,8 +92,8 @@ R_API int r_th_start(struct r_th_t *th, int enable) {
 
 R_API int r_th_wait(struct r_th_t *th) {
 	int ret = R_FALSE;
-	void *thret;
 #if HAVE_PTHREAD
+	void *thret;
 	if (th) {
 		ret = pthread_join (th->tid, &thret);
 		th->running = R_FALSE;

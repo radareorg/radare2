@@ -9,7 +9,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_socket);
 
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __UNIX__ || __CYGWIN__ || __MINGW64__ && !defined(MINGW32)
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <poll.h>
@@ -24,8 +24,13 @@ R_LIB_VERSION_HEADER(r_socket);
 #include <openssl/err.h>
 #endif
 
-#if defined(__WINDOWS__) && !defined(__CYGWIN__) && !defined(MINGW32)
+#if defined(__WINDOWS__) && !defined(__CYGWIN__) && !defined(MINGW32) && !defined(__MINGW64__)
 #include <ws2tcpip.h>
+#endif
+
+/* For the Mingw-W64 toolchain */
+#ifndef MSG_DONTWAIT
+#define MSG_DONTWAIT 0
 #endif
 
 typedef struct {
@@ -60,7 +65,7 @@ typedef struct r_socket_t {
 #ifdef R_API
 R_API RSocket *r_socket_new_from_fd (int fd);
 R_API RSocket *r_socket_new (int is_ssl);
-R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto, int timeout);
+R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout);
 #define r_socket_connect_tcp(a,b,c,d) r_socket_connect(a,b,c,R_SOCKET_PROTO_TCP,d)
 #define r_socket_connect_udp(a,b,c,d) r_socket_connect(a,b,c,R_SOCKET_PROTO_UDP,d)
 #if __UNIX__
@@ -102,6 +107,7 @@ R_API int r_socket_proc_ready (RSocketProc *sp, int secs, int usecs);
 /* HTTP */
 R_API char *r_socket_http_get (const char *url, int *code, int *rlen);
 R_API char *r_socket_http_post (const char *url, const char *data, int *code, int *rlen);
+R_API void r_socket_http_server_set_breaked(int *b);
 
 typedef struct r_socket_http_request {
 	RSocket *s;

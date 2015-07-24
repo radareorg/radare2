@@ -124,6 +124,7 @@ typedef struct r_core_t {
 	RFS *fs;
 	REgg *egg;
 	RCoreLog *log;
+	RAGraph *graph;
 	char *cmdqueue;
 	char *lastcmd;
 	int cmdrepeat;
@@ -148,6 +149,7 @@ typedef struct r_core_t {
 	ut8 switch_file_view;
 	Sdb *sdb;
 	int incomment;
+	int cmdremote;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -210,7 +212,8 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_visual_prompt_input (RCore *core);
 R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
-R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn);
+R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interactive);
+R_API int r_core_fcn_graph(RCore *core, RAnalFunction *_fcn);
 R_API int r_core_visual_panels(RCore *core);
 R_API int r_core_visual_cmd(RCore *core, int ch);
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr);
@@ -278,6 +281,7 @@ R_API int r_core_cmdf(void *user, const char *fmt, ...);
 R_API int r_core_cmd0(void *user, const char *cmd);
 R_API char *r_core_cmd_str(RCore *core, const char *cmd);
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each);
+R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each);
 R_API char *r_core_op_str(RCore *core, ut64 addr);
 R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr);
 R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l);
@@ -291,12 +295,13 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr);
 R_API void r_core_anal_undefine (RCore *core, ut64 off);
 R_API void r_core_anal_hint_list (RAnal *a, int mode);
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref);
+R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad);
 R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth);
 R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv);
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head);
 R_API int r_core_anal_bb_seek(RCore *core, ut64 addr);
-R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr);
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth);
+R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump);
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad);
 R_API void r_core_anal_fcn_labels(RCore *core, RAnalFunction *fcn, int rad);
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts);
@@ -320,7 +325,7 @@ R_API RCoreAsmHit *r_core_asm_hit_new(void);
 R_API RList *r_core_asm_hit_list_new(void);
 R_API void r_core_asm_hit_free(void *_hit);
 R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to);
-R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits);
+R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp);
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len);
 R_API RList *r_core_asm_back_disassemble_instr (RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 R_API RList *r_core_asm_back_disassemble_byte (RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
@@ -421,6 +426,7 @@ R_API int r_core_search_preludes(RCore *core);
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
 R_API RList* /*<RIOMap*>*/ r_core_get_boundaries_prot (RCore *core, int protection, const char *mode, ut64 *from, ut64 *to);
 R_API RList* /*<RIOMap*>*/ r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to);
+R_API RList* r_core_get_boundaries_ok(RCore *core);
 
 R_API int r_core_patch (RCore *core, const char *patch);
 
@@ -465,6 +471,7 @@ typedef struct {
 	RCoreAnalStatsItem *block;
 } RCoreAnalStats;
 
+R_API char *r_core_anal_hasrefs(RCore *core, ut64 value);
 R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 step);
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);
 R_API void r_core_syscmd_ls(const char *input);

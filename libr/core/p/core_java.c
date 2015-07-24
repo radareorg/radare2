@@ -2045,6 +2045,7 @@ RCorePlugin r_core_plugin_java = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_CORE,
-	.data = &r_core_plugin_java
+	.data = &r_core_plugin_java,
+	.version = R2_VERSION
 };
 #endif

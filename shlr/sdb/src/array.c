@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2015 - pancake */
+/* sdb - MIT - Copyright 2011-2015 - pancake */
 
 #include "sdb.h"
 
@@ -383,7 +383,7 @@ SDB_API int sdb_array_contains(Sdb *s, const char *key, const char *val, ut32 *c
 	if (list && *list) {
 		do {
 			const char *str = sdb_const_anext (ptr, &next);
-			int len = next? (int)(size_t)(next-str)-1 : strlen (str);
+			int len = next? (int)(size_t)(next-str)-1 : (int)strlen (str);
 			if (len == vlen) {
 				if (!memcmp (str, val, len)) {
 					return 1;
@@ -482,11 +482,14 @@ SDB_API char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas) {
 }
 
 SDB_API void sdb_array_sort(Sdb *s, const char *key, ut32 cas) {
+	char *nstr, *str, **strs;
 	int lstr, j, i;
-	char *nstr, *str = sdb_get_len (s, key, &lstr, 0);
-	char **strs;
-	if (!str || !*str)
+	str = sdb_get_len (s, key, &lstr, 0);
+	if (!str) return;
+	if (!*str) {
+		free (str);
 		return;
+	}
 	strs = sdb_fmt_array (str);
 	for (i=0; strs[i]; i++);
 	qsort (strs, i, sizeof (char*), cstring_cmp);
@@ -499,16 +502,20 @@ SDB_API void sdb_array_sort(Sdb *s, const char *key, ut32 cas) {
 	}
 	*(--nstr) = '\0';
 	sdb_set_owned (s, key, str, cas);
-	free(strs);
+	free (strs);
 	return;
 }
 
 SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
-	int lstr, i;
-	char *ret, *nstr, *str = sdb_get_len (s, key, &lstr, 0);
-	ut64 *nums;
-	if (!str || !*str)
+	char *ret, *nstr, *str;
+	int lstr;
+	ut64 i, *nums;
+	str = sdb_get_len (s, key, &lstr, 0);
+	if (!str) return;
+	if (!*str) {
+		free (str);
 		return;
+	}
 	nums = sdb_fmt_array_num (str);
 	qsort (nums+1, (int)*nums, sizeof (ut64), int_cmp);
 	nstr = str;

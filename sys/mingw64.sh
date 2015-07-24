@@ -3,7 +3,7 @@
 MAKE_JOBS=8
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd "$(dirname "$PWD/$0")" ; cd ..
 
 export PATH=${PWD}/sys/_work/mingw64/bin:${PATH}
 # TODO: add support for ccache

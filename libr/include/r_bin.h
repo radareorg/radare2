@@ -40,14 +40,16 @@ enum {
 };
 
 // name mangling types
+// TODO: Rename to R_BIN_LANG_
 enum {
 	R_BIN_NM_NONE = 0,
 	R_BIN_NM_JAVA = 1,
-	R_BIN_NM_CXX = 2,
-	R_BIN_NM_OBJC= 3,
-	R_BIN_NM_SWIFT = 4,
-	R_BIN_NM_DLANG = 5,
-	R_BIN_NM_MSVC = 6,
+	R_BIN_NM_CXX = 1<<1,
+	R_BIN_NM_OBJC = 1<<2,
+	R_BIN_NM_SWIFT = 1<<3,
+	R_BIN_NM_DLANG = 1<<4,
+	R_BIN_NM_MSVC = 1<<5,
+	R_BIN_NM_RUST = 1<<6,
 	R_BIN_NM_ANY = -1,
 };
 
@@ -103,6 +105,7 @@ typedef struct r_bin_info_t {
 	int big_endian;
 	ut64 dbg_info;
 	RBinHash sum[3];
+	ut64 baddr;
 #if 0
 // stored in sdb
 	/* crypto (iOS bins) */
@@ -182,6 +185,7 @@ typedef struct r_bin_t {
 	RIOBind iob;
 	char *force;
 	int is_debugger;
+	int filter;
 } RBin;
 
 typedef int (*FREE_XTR)(void *xtr_obj);
@@ -274,6 +278,7 @@ typedef struct r_bin_class_t {
 	char *super;
 	char *visibility_str;
 	int index;
+	ut64 addr;
 	RList *methods; // <RBinSymbol>
 	RList *fields; // <RBinField>
 	int visibility;
@@ -411,6 +416,7 @@ R_API int r_bin_lang_swift(RBinFile *binfile);
 R_API int r_bin_lang_cxx(RBinFile *binfile);
 R_API int r_bin_lang_msvc(RBinFile *binfile);
 R_API int r_bin_lang_dlang(RBinFile *binfile);
+R_API int r_bin_lang_rust(RBinFile *binfile);
 
 R_API RList* r_bin_get_entries(RBin *bin);
 R_API RList* r_bin_get_fields(RBin *bin);
@@ -486,6 +492,13 @@ R_API void r_bin_demangle_list(RBin *bin);
 R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str);
 
 R_API RList *r_bin_get_mem (RBin *bin);
+
+/* filter.c */
+R_API void r_bin_filter_name(Sdb *db, ut64 addr, char *name, int maxlen);
+R_API void r_bin_filter_symbols (RList *list);
+R_API void r_bin_filter_sections (RList *list);
+R_API void r_bin_filter_classes (RList *list);
+
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;
 extern RBinPlugin r_bin_plugin_fs;
@@ -514,6 +527,7 @@ extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
 extern RBinPlugin r_bin_plugin_zimg;
 extern RBinPlugin r_bin_plugin_omf;
+extern RBinPlugin r_bin_plugin_art;
 
 #ifdef __cplusplus
 }

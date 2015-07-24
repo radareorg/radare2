@@ -288,6 +288,7 @@ static int cmd_help(void *data, const char *input) {
 			"@@", " hit*", "run the command on every flag matching 'hit*'",
 			"@a:", "arch[:bits]", "temporary set arch and bits",
 			"@b:", "bits", "temporary set asm.bits",
+			"@e:", "k=v,k=v", "temporary change eval vars",
 			"@f:", "file", "temporary replace block with file contents",
 			"@s:", "string", "same as above but from a string",
 			"@x:", "909192", "from hex pairs string",
@@ -334,9 +335,16 @@ static int cmd_help(void *data, const char *input) {
 		}
 		return R_TRUE;
 	case 'V':
-		if (!strcmp (R2_VERSION, GIT_TAP))
-			r_cons_printf ("%s %d\n", R2_VERSION, R2_VERSION_COMMIT);
-		else r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, GIT_TAP, R2_VERSION_COMMIT);
+		if (!input[1]){
+			if (!strcmp (R2_VERSION, GIT_TAP))
+				r_cons_printf ("%s %d\n", R2_VERSION, R2_VERSION_COMMIT);
+
+			else r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, GIT_TAP, R2_VERSION_COMMIT);
+		}	
+		if (input[1] == 'j' && !input[2]){
+			r_cons_printf ("{\"system\":\"%s-%s-%s\"", R_SYS_OS, R_SYS_ENDIAN, R_SYS_ARCH);
+			r_cons_printf (",\"version\":\"%s\"}\n",  R2_VERSION);
+		}
 		break;
 	case 'l':
 		for (input++; input[0]==' '; input++);
@@ -370,8 +378,9 @@ static int cmd_help(void *data, const char *input) {
 	case 'e': // echo
 		{
 		const char *msg = r_str_chop_ro (input+1);
-		char *newmsg = filter_flags (core, msg);
 		// TODO: replace all ${flagname} by its value in hexa
+		char *newmsg = filter_flags (core, msg);
+		r_str_unescape (newmsg);
 		r_cons_printf ("%s\n", newmsg);
 		free (newmsg);
 		}
@@ -555,6 +564,7 @@ static int cmd_help(void *data, const char *input) {
 		"/","", "Search for bytes, regexps, patterns, ..",
 		"!"," [cmd]", "Run given command as in system(3)",
 		"#"," [algo] [len]", "Calculate hash checksum of current block",
+		"#","!lang [..]", "Hashbang to run an rlang script",
 		"a","", "Perform analysis of code",
 		"b","", "Get or change block size",
 		"c"," [arg]", "Compare block with given data",

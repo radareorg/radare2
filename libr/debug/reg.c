@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_debug.h>
 #include <r_cons.h>
@@ -34,7 +34,9 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			//int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
 			int bufsize = dbg->reg->size;
 			ut8 *buf = malloc (bufsize);
-			size = dbg->h->reg_read (dbg, i, buf, dbg->reg->size);
+			if (dbg->h && dbg->h->reg_read) {
+				size = dbg->h->reg_read (dbg, i, buf, dbg->reg->size);
+			} else size = -1;
 			if (size < 0) {
 				eprintf ("r_debug_reg: error reading registers\n");
 				return R_FALSE;
@@ -219,4 +221,11 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err) {
 		ret = r_reg_get_value (dbg->reg, ri);
 	}
 	return ret;
+}
+
+// XXX: dup for get_Err!
+R_API ut64 r_debug_num_callback(RNum *userptr, const char *str, int *ok) {
+	RDebug *dbg = (RDebug *)userptr;
+	// resolve using regnu
+	return r_debug_reg_get_err (dbg, str, ok);
 }

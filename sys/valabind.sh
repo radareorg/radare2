@@ -3,7 +3,7 @@
 [ -z "${PREFIX}" ] && PREFIX=/usr
 
 # find root
-cd `dirname $PWD/$0`
+cd "$(dirname "$PWD/$0")"
 . ./CONFIG
 
 mkdir  _work

@@ -1,8 +1,15 @@
-LIBAR=libgrubfs.a
+NAME=grubfs
 
 include ../../config-user.mk
+include ../../global.mk
+NAME=grubfs
+_INCLUDE_MK_GCC_=
+include ../../libr/config.mk
+include ../../mk/${COMPILER}.mk
+
+EXT_AR?=a
+LIBAR=libgrubfs.${EXT_AR}
 CC?=gcc
-CC_AR?=ar q
 RANLIB?=ranlib
 OSTYPE=$(shell uname | tr 'A-Z' 'a-z')
 ifeq (${OSTYPE},)
@@ -81,8 +88,11 @@ lib: $(LIBAR)
 
 $(LIBAR): ${KERNOBJS}
 	rm -f $(LIBAR)
-	$(CC_AR) $(LIBAR) ${KERNOBJS}
+	${CC_AR} ${KERNOBJS}
 	${RANLIB} $(LIBAR)
+ifneq ($(LIBAR),libgrubfs.a)
+	cp -f $(LIBAR) libgrubfs.a
+endif
 
 clean:
 	rm -f ${KERNOBJS} ${BIN} main.o $(LIBAR)

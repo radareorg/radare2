@@ -1,200 +1,231 @@
 /* radare - LGPL - Copyright 2007-2012 - pancake */
-/* graph with stack facilities implementation */
 
 #include <r_util.h>
 
-#if 0
-RGraph *r_anal_getgraph(RAnal *anal, ut64 addr) {
-        RGraph *g;
-        RFunction *f = r_anal_fcn_get (anal, addr);
-        if (!f) return NULL;
-        g = r_graph_new ();
-        // walk basic blocks, and create nodes and edges
-}
+enum {
+	WHITE_COLOR = 0,
+	GRAY_COLOR,
+	BLACK_COLOR
+};
 
-// r_anal_graph_to_kv()
-node.0x804840={"name":"patata",size:123,"code":"jlasdfjlksf"}
-node.0x804840.to=[0x804805,0x804805,0x0485085,0x90850]
-#endif
-
-R_API RGraphNode *r_graph_node_new (ut64 addr, void *data) {
+static RGraphNode *r_graph_node_new (void *data) {
 	RGraphNode *p = R_NEW0 (RGraphNode);
-	p->parents = r_list_new ();
-	p->children = r_list_new ();
-	p->addr = addr;
 	p->data = data;
-	p->refs = 0;
+	p->free = NULL;
+	p->out_nodes = r_list_new ();
+	p->in_nodes = r_list_new ();
+	p->all_neighbours = r_list_new ();
 	return p;
 }
 
-R_API void r_graph_node_free (RGraphNode *n) {
-	r_list_free (n->parents);
-	r_list_free (n->children);
+static void r_graph_node_free (RGraphNode *n) {
+	if (!n) return;
 	if (n->free)
 		n->free (n->data);
+	r_list_free (n->out_nodes);
+	r_list_free (n->in_nodes);
+	r_list_free (n->all_neighbours);
 	free (n);
 }
 
-static void walk_children (RGraph *t, RGraphNode *tn, int level) {
-	int i;
-	RListIter *iter;
-	RGraphNode *n;
-	if (r_list_contains (t->path, tn)) {
-		// do not repeat pushed nodes
-		return;
-	}
-	for (i=0; i<level; i++)
-		t->printf ("   ");
-	t->printf (" 0x%08"PFMT64x" refs %d\n",
-			tn->addr, tn->refs);
-	r_list_foreach (tn->parents, iter, n) {
-		for (i=0; i<level; i++)
-			t->printf ("   ");
-		t->printf (" |_ 0x%08"PFMT64x"\n", n->addr);
-	}
-	r_list_push (t->path, tn);
-	r_list_foreach (tn->children, iter, n) {
-		walk_children (t, n, level+1);
-	}
-	r_list_pop (t->path);
+static int node_cmp (unsigned int idx, RGraphNode *b) {
+	return idx == b->idx ? 0 : -1;
 }
 
-R_API void r_graph_traverse(RGraph *t) {
-	RListIter *iter;
-	RGraphNode *root;
-	RList *path = t->path;
-	t->path = r_list_new ();
-	r_list_foreach (t->roots, iter, root) {
-		walk_children (t, root, 0);
+static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[]) {
+	RStack *s;
+	RGraphEdge *edg;
+
+	s = r_stack_new (2 * g->n_edges);
+
+	edg = R_NEW (RGraphEdge);
+	edg->from = NULL;
+	edg->to = n;
+	r_stack_push (s, edg);
+	while (!r_stack_is_empty (s)) {
+		RGraphEdge *cur_edge = (RGraphEdge *)r_stack_pop (s);
+		RGraphNode *v, *cur = cur_edge->to, *from = cur_edge->from;
+		const RList *neighbours;
+		RListIter *it;
+		int i;
+
+		if (from && cur) {
+			if (color[cur->idx] == WHITE_COLOR && vis->tree_edge)
+				vis->tree_edge (cur_edge, vis);
+			else if (color[cur->idx] == GRAY_COLOR && vis->back_edge)
+				vis->back_edge (cur_edge, vis);
+			else if (color[cur->idx] == BLACK_COLOR && vis->fcross_edge)
+				vis->fcross_edge (cur_edge, vis);
+		} else if (!cur && from) {
+			if (color[from->idx] != BLACK_COLOR && vis->finish_node)
+				vis->finish_node (from, vis);
+			color[from->idx] = BLACK_COLOR;
+		}
+		free (cur_edge);
+
+		if (!cur || color[cur->idx] != WHITE_COLOR)
+			continue;
+
+		if (color[cur->idx] == WHITE_COLOR && vis->discover_node)
+			vis->discover_node (cur, vis);
+		color[cur->idx] = GRAY_COLOR;
+
+		edg = R_NEW0 (RGraphEdge);
+		edg->from = cur;
+		r_stack_push (s, edg);
+
+		i = 0;
+		neighbours = r_graph_get_neighbours (g, cur);
+		r_list_foreach (neighbours, it, v) {
+			edg = R_NEW (RGraphEdge);
+			edg->from = cur;
+			edg->to = v;
+			edg->nth = i++;
+			r_stack_push (s, edg);
+		}
 	}
-	r_list_free (t->path);
-	t->path = path;
+	r_stack_free (s);
 }
 
-R_API RGraph* r_graph_new () {
+R_API RGraph *r_graph_new () {
 	RGraph *t = R_NEW0 (RGraph);
-	t->printf = (PrintfCallback) printf;
-	t->path = r_list_new ();
 	t->nodes = r_list_new ();
-	t->roots = r_list_new ();
 	t->nodes->free = (RListFree)r_graph_node_free;
-	t->root = NULL;
-	t->cur = NULL;
+	t->n_nodes = 0;
+	t->last_index = 0;
 	return t;
 }
 
 R_API void r_graph_free (RGraph* t) {
 	r_list_free (t->nodes);
-	r_list_free (t->path);
-	r_list_free (t->roots);
 	free (t);
 }
 
-R_API RGraphNode* r_graph_get_current (RGraph *t, ut64 addr) {
-	return t->cur? t->cur->data: NULL;
+R_API RGraphNode *r_graph_get_node (const RGraph *t, unsigned int idx) {
+	RListIter *it = r_list_find (t->nodes, (void *)(size_t)idx, (RListComparator)node_cmp);
+	if (!it)
+		return NULL;
+
+	return (RGraphNode *)it->data;
 }
 
-R_API RGraphNode* r_graph_get_node (RGraph *t, ut64 addr, boolt c) {
-	RListIter *iter;
-	RGraphNode *n;
-	r_list_foreach (t->nodes, iter, n) {
-		if (n->addr == addr)
-			return n;
-	}
-	if (c) {
-		n = r_graph_node_new (addr, NULL);
-		r_list_append (t->nodes, n);
-		return n;
-	}
-	return NULL;
+R_API RListIter *r_graph_node_iter (const RGraph *t, unsigned int idx) {
+	return r_list_find (t->nodes, (void *)(size_t)idx, (RListComparator)node_cmp);
 }
 
 R_API void r_graph_reset (RGraph *t) {
 	r_list_free (t->nodes);
+
 	t->nodes = r_list_new ();
 	t->nodes->free = (RListFree)r_graph_node_free;
-	r_list_free (t->roots);
-	t->roots = r_list_new ();
-	t->root = NULL;
+	t->n_nodes = 0;
+	t->n_edges = 0;
+	t->last_index = 0;
 }
 
-// g.add (0x804840, 0x804408, null);
-R_API void r_graph_add (RGraph *t, ut64 from, ut64 addr, void *data) {
-	RGraphNode *n, *f = r_graph_get_node (t, from, R_TRUE);
-	n = r_graph_get_node (t, addr, R_TRUE);
-	n->data = data;
-	if (!r_list_contains (f->children, n))
-		r_list_append (f->children, n);
-	if (!r_list_contains (f->parents, n))
-		r_list_append (n->parents, f);
+R_API RGraphNode *r_graph_add_node (RGraph *t, void *data) {
+	RGraphNode *n = r_graph_node_new (data);
+
+	n->idx = t->last_index++;
+	r_list_append (t->nodes, n);
+	t->n_nodes++;
+	return n;
 }
 
-// plant: to set new root :)
-R_API void r_graph_plant(RGraph *t) {
-	t->root = NULL;
-}
+/* remove the node from the graph and free the node */
+/* users of this function should be aware they can't access n anymore */
+R_API void r_graph_del_node (RGraph *t, RGraphNode *n) {
+	RGraphNode *gn;
+	RListIter *it;
 
-R_API void r_graph_push (RGraph *t, ut64 addr, void *data) {
-	RGraphNode *c, *n = r_graph_get_node (t, addr, R_FALSE);
-	t->level++;
-	if (!n) {
-		n = r_graph_node_new (addr, data);
-		r_list_append (t->nodes, n);
-		if (t->root == NULL) {
-			t->root = n;
-			r_list_append (t->roots, n);
-		}
-	} else {
-		n->refs++;
-		n->data = data; // update data if already pushed?
+	if (!n) return;
+	r_list_foreach (n->in_nodes, it, gn) {
+		r_list_delete_data (gn->out_nodes, n);
+		r_list_delete_data (gn->all_neighbours, n);
+		t->n_edges--;
 	}
-	if (!t->cur)
-		t->cur = r_list_contains (t->nodes, n);
-	if (t->cur) {
-		c = t->cur->data;
-		if (!r_list_contains (c->children, n))
-			r_list_append (c->children, n);
-		if (c->addr && !r_list_contains (n->parents, c))
-			r_list_append (n->parents, c);
 
+	r_list_foreach (n->out_nodes, it, gn) {
+		r_list_delete_data (gn->in_nodes, n);
+		r_list_delete_data (gn->all_neighbours, n);
+		t->n_edges--;
 	}
-	t->cur = r_list_append (t->path, n);
+
+	r_list_delete_data (t->nodes, n);
+	t->n_nodes--;
 }
 
-R_API RGraphNode* r_graph_pop(RGraph *t) {
-	RListIter *p;
-	if (!t || !t->path || !t->cur)
-		return NULL;
-	// TODO: handle null
-	t->level--;
-	if (t->level<0) {
-		eprintf ("Negative pop!\n");
-		return NULL;
+R_API void r_graph_add_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
+	r_graph_add_edge_at (t, from, to, -1);
+}
+
+R_API void r_graph_add_edge_at (RGraph *t, RGraphNode *from, RGraphNode *to, int nth) {
+	if (!from || !to) return;
+	r_list_insert(from->out_nodes, nth, to);
+	r_list_append(from->all_neighbours, to);
+	r_list_append(to->in_nodes, from);
+	r_list_append(to->all_neighbours, from);
+	t->n_edges++;
+}
+
+R_API void r_graph_del_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
+	if (!from || !to) return;
+	r_list_delete_data (from->out_nodes, to);
+	r_list_delete_data (from->all_neighbours, to);
+	r_list_delete_data (to->in_nodes, from);
+	r_list_delete_data (to->all_neighbours, from);
+	t->n_edges--;
+}
+
+R_API const RList *r_graph_get_neighbours (const RGraph *g, const RGraphNode *n) {
+	if (!n) return NULL;
+	return n->out_nodes;
+}
+
+R_API RGraphNode *r_graph_nth_neighbour (const RGraph *g, const RGraphNode *n, int nth) {
+	if (!n) return NULL;
+	return (RGraphNode *)r_list_get_n (n->out_nodes, nth);
+}
+
+R_API const RList *r_graph_innodes (const RGraph *g, const RGraphNode *n) {
+	if (!n) return NULL;
+	return n->in_nodes;
+}
+
+R_API const RList *r_graph_all_neighbours (const RGraph *g, const RGraphNode *n) {
+	if (!n) return NULL;
+	return n->all_neighbours;
+}
+
+R_API const RList *r_graph_get_nodes (const RGraph *g) {
+	if (!g) return NULL;
+	return g->nodes;
+}
+
+R_API int r_graph_adjacent (const RGraph *g, const RGraphNode *from, const RGraphNode *to) {
+	if (!g || !from) return R_FALSE;
+	return r_list_contains (from->out_nodes, to) ? R_TRUE : R_FALSE;
+}
+
+R_API void r_graph_dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis) {
+	int *color;
+
+	if (!g || !n || !vis) return;
+	color = R_NEWS0 (int, g->last_index);
+	dfs_node (g, n, vis, color);
+	free (color);
+}
+
+R_API void r_graph_dfs (RGraph *g, RGraphVisitor *vis) {
+	RGraphNode *n;
+	RListIter *it;
+	int *color;
+
+	if (!g || !vis) return;
+	color = R_NEWS0 (int, g->last_index);
+	r_list_foreach (g->nodes, it, n) {
+		 if (color[n->idx] == WHITE_COLOR)
+			 dfs_node (g, n, vis, color);
 	}
-	p = t->cur->p;
-	r_list_delete (t->path, t->cur);
-	t->cur = p;
-	return (RGraphNode*)t->cur;
+	free (color);
 }
-
-#if TEST
-// usage
-main () {
-	RGraph *t = r_graph_new ();
-	r_graph_push (t, 0x8048590, NULL);
-	r_graph_push (t, 0x8048230, NULL);
-	r_graph_pop (t);
-	r_graph_push (t, 0x8044300, NULL);
-	r_graph_push (t, 0x8046300, NULL);
-	r_graph_pop (t);
-	r_graph_push (t, 0x8046388, NULL);
-	r_graph_pop (t);
-	r_graph_push (t, 0x8046388, NULL);
-	r_graph_push (t, 0x8046388, NULL);
-		r_graph_push (t, 0x8046300, NULL);
-		r_graph_push (t, 0x8046300, NULL);
-	r_graph_pop (t);
-	r_graph_traverse (t);
-	r_graph_free (t);
-}
-#endif

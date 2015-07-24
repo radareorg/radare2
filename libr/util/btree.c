@@ -47,6 +47,20 @@ R_API void *btree_search(struct btree_node *root, void *x, BTREE_CMP(cmp), int p
 	} return NULL;
 }
 
+R_API void btree_traverse(struct btree_node *root, int reverse, void *context, BTREE_TRV(trv)) {
+	if (root!=NULL) {
+		if (reverse) {
+			btree_traverse (root->right, reverse, context, trv);
+			trv(root->data, context);
+			btree_traverse (root->left, reverse, context, trv);
+		} else {
+			btree_traverse (root->left, reverse, context, trv);
+			trv(root->data, context);
+			btree_traverse (root->right, reverse, context, trv);
+		}
+	}
+}
+
 R_API int btree_del(struct btree_node *proot, void *x, BTREE_CMP(cmp), BTREE_DEL(del)) {
 	struct btree_node *p = btree_search (proot, x, cmp, 1);
 	if (p) {

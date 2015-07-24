@@ -172,7 +172,7 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 			}
 			/* Print the escape code */
 			else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\e", (char)r)) {
-				if ((i+32) < sizeof (tmp)) {
+				if ((i+32) < sizeof (tmp) && r < 28) {
 					tmp[i+0] = '\\';
 					tmp[i+1] = "       abtnvfr             e"[r];
 				} else {
@@ -308,6 +308,8 @@ R_API int r_bin_dump_strings(RBinFile *a, int min) {
 }
 
 R_API int r_bin_load_languages(RBinFile *binfile) {
+	if (r_bin_lang_rust (binfile))
+		return R_BIN_NM_RUST;
 	if (r_bin_lang_swift (binfile))
 		return R_BIN_NM_SWIFT;
 	if (r_bin_lang_objc (binfile))
@@ -389,16 +391,23 @@ static void r_bin_object_free (void /*RBinObject*/ *o_) {
 	r_bin_object_delete_items (o);
 	free (o);
 }
+
 // XXX - change this to RBinObject instead of RBinFile
 // makes no sense to pass in a binfile and set the RBinObject
 // kinda a clunky functions
 static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
-	RBinObject *old_o = binfile ? binfile->o : NULL;
+	RBinObject *old_o;
+	RBinPlugin *cp;
 	int i, minlen;
-	RBinPlugin *cp = NULL;
-	if (!binfile || !o || !o->plugin) return R_FALSE;
+	RBin *bin;
 
+	if (!binfile || !o || !o->plugin)
+		return R_FALSE;
+
+	bin = binfile->rbin;
+	old_o = binfile->o;
 	cp = o->plugin;
+
 	if (binfile->rbin->minstrlen>0) {
 		minlen = binfile->rbin->minstrlen;
 	} else {
@@ -417,15 +426,29 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 			o->binsym[i] = cp->binsym (binfile, i);
 	if (cp->entries) o->entries = cp->entries (binfile);
 	if (cp->fields) o->fields = cp->fields (binfile);
-	if (cp->imports) o->imports = cp->imports (binfile);
-	if (cp->symbols) o->symbols = cp->symbols (binfile);
+	if (cp->imports) {
+		o->imports = cp->imports (binfile);
+	}
+	if (cp->symbols) {
+		o->symbols = cp->symbols (binfile);
+		if (bin->filter)
+			r_bin_filter_symbols (o->symbols);
+	}
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) o->libs = cp->libs (binfile);
 	if (cp->relocs) o->relocs = cp->relocs (binfile);
-	if (cp->sections) o->sections = cp->sections (binfile);
+	if (cp->sections) {
+		o->sections = cp->sections (binfile);
+		if (bin->filter)
+			r_bin_filter_sections (o->sections);
+	}
 	if (cp->strings) o->strings = cp->strings (binfile);
 	else o->strings = get_strings (binfile, minlen, 0);
-	if (cp->classes) o->classes = cp->classes (binfile);
+	if (cp->classes) {
+		o->classes = cp->classes (binfile);
+		if (bin->filter)
+			r_bin_filter_classes (o->classes);
+	}
 	if (cp->lines) o->lines = cp->lines (binfile);
 	if (cp->get_sdb) o->kv = cp->get_sdb (o);
 	if (cp->mem) o->mem = cp->mem (binfile);

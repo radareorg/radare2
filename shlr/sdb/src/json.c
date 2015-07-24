@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2012-2015 - pancake */
+/* sdb - MIT - Copyright 2012-2015 - pancake */
 
 #include <stdarg.h>
 #include "sdb.h"
@@ -214,7 +214,7 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 
 SDB_API const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...) {
 	char *arg_s, *x, tmp[128];
-	unsigned long long arg_l;
+	ut64 arg_l;
 	int i, arg_i;
 	float arg_f;
 	va_list ap;
@@ -252,14 +252,14 @@ SDB_API const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...) {
 				break;
 			case 'f':
 				JSONSTR_ALLOCATE (32);
-				arg_f = va_arg (ap, int);
+				arg_f = va_arg (ap, double);
 				snprintf (tmp, sizeof (tmp), "%f", arg_f);
 				memcpy (s->buf+s->len, tmp, strlen (tmp));
 				s->len += strlen (tmp);
 				break;
 			case 'l':
 				JSONSTR_ALLOCATE (32);
-				arg_l = va_arg (ap, unsigned long long);
+				arg_l = va_arg (ap, ut64);
 				snprintf (tmp, sizeof (tmp), "0x%"ULLFMT"x", arg_l);
 				memcpy (s->buf+s->len, tmp, strlen (tmp));
 				s->len += strlen (tmp);

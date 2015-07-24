@@ -37,7 +37,6 @@ static int verify_version(int show) {
 		{ "r_bp", &r_bp_version },
 		{ "r_debug", &r_debug_version },
 		{ "r_hash", &r_hash_version },
-		{ "r_diff", &r_diff_version },
 		{ "r_fs", &r_fs_version },
 		{ "r_io", &r_io_version },
 		{ "r_magic", &r_magic_version },
@@ -104,9 +103,10 @@ static int main_help(int line) {
 		" --           open radare2 on an empty file\n"
 		" -            equivalent of 'r2 malloc://512'\n"
 		" =            read file from stdin (use -i and -c to run cmds)\n"
+		" -=           perform !=! command to run all commands remotely\n"
 		" -0           print \\x00 after init and every command\n"
 		" -a [arch]    set asm.arch\n"
-		" -A           run 'aa' command to analyze all referenced code\n"
+		" -A           run 'aaa' command to analyze all referenced code\n"
 		" -b [bits]    set asm.bits\n"
 		" -B [baddr]   set base address for PIE binaries\n"
 		" -c 'cmd..'   execute radare command\n"
@@ -133,6 +133,7 @@ static int main_help(int line) {
 #if USE_THREADS
 		" -t           load rabin2 info in thread\n"
 #endif
+		" -u           set bin.filter=false to get raw sym/sec/cls names\n"
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
 		" -z, -zz      do not load strings or load them even in raw\n");
@@ -277,12 +278,15 @@ int main(int argc, char **argv, char **envp) {
 		argv++;
 	} else prefile = 0;
 
-	while ((c = getopt (argc, argv, "0ACwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSz"
+	while ((c = getopt (argc, argv, "=0ACwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
 	))!=-1) {
 		switch (c) {
+			case '=':
+				r.cmdremote = 1;
+				break;
 			case '0':
 				zerosep = R_TRUE;
 				//r_config_set (r.config, "scr.color", "false");
@@ -291,6 +295,9 @@ int main(int argc, char **argv, char **envp) {
 				r_config_set (r.config, "scr.prompt", "false");
 				r_config_set (r.config, "scr.color", "false");
 				quiet = R_TRUE;
+				break;
+			case 'u':
+				r_config_set (r.config, "bin.filter", "false");
 				break;
 			case 'a': asmarch = optarg; break;
 			case 'z': zflag++; break;
@@ -367,8 +374,14 @@ int main(int argc, char **argv, char **envp) {
 				return 1;
 		}
 	}
-	if (help>1) return main_help (2);
-	else if (help) return main_help (0);
+
+	if (help > 0) {
+		r_list_free (evals);
+		r_list_free (cmds);
+		if (help > 1)
+			return main_help (2);
+		return main_help (0);
+	}
 
 	if (r_config_get_i (r.config, "cfg.plugins")) {
 		r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);

@@ -47,6 +47,7 @@ static int cmd_flag(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 off = core->offset;
 	char *ptr, *str = NULL;
+	RFlagItem *item;
 	char *name = NULL;
 	st64 base;
 
@@ -117,6 +118,12 @@ rep:
 		break;
 	case 'R':
 		{
+		if (*str == '\0'){
+			eprintf ("Usage: fR [from] [to] ([mask])\n");
+			eprintf ("Example to relocate PIE flags on debugger:\n"
+				" > fR entry0 `dm~:1[1]`\n");
+			break;
+		}
 		char *p = strchr (str+1, ' ');
 		ut64 from, to, mask = 0xffff;
 		int ret;
@@ -245,13 +252,29 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 		}
 		break;
-	case 'l':
+	case 'l': // "fl"
 		if (input[1] == ' ') {
-			RFlagItem *item = r_flag_get_i (core->flags,
-				r_num_math (core->num, input+2));
+			char *p, *arg = strdup (input+2);
+			r_str_trim_head_tail (arg);
+			p = strchr (arg, ' ');
+			if (p) {
+				*p++ = 0;
+				item = r_flag_get_i (core->flags,
+					r_num_math (core->num, str));
+				if (item)
+					item->size = r_num_math (core->num, p);
+			} else {
+				item = r_flag_get_i (core->flags,
+					r_num_math (core->num, str));
+				if (item)
+					r_cons_printf ("0x%08"PFMT64x"\n", item->size);
+			}
+			free (arg);
+		} else {
+			item = r_flag_get_i (core->flags, core->offset);
 			if (item)
 				r_cons_printf ("0x%08"PFMT64x"\n", item->size);
-		} else eprintf ("Missing arguments\n");
+		}
 		break;
 #if 0
 	case 'd':
@@ -297,6 +320,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			"fs","-*","remove all flagspaces",
 			"fs","+foo","push previous flagspace and set",
 			"fs","-","pop to the previous flagspace",
+			"fs","-.","remove the current flagspace",
 			"fsm"," [addr]","move flags at given address to the current flagspace",
 			"fsr"," newname","rename selected flagspace",
 			NULL};
@@ -312,14 +336,22 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			else eprintf ("Usage: fsr [newname]\n");
 			break;
 		case '-':
-			if (input[2]) {
-				if (input[2]=='*') {
-					r_flag_space_unset (core->flags, NULL);
-				} else {
-					r_flag_space_unset (core->flags, input+2);
+			switch (input[2]) {
+			case '*':
+				r_flag_space_unset (core->flags, NULL);
+				break;
+			case '.':
+				{
+				const char *curfs = r_flag_space_cur (core->flags);
+				r_flag_space_unset (core->flags, curfs);
 				}
-			} else {
+				break;
+			case 0:
 				r_flag_space_pop (core->flags);
+				break;
+			default:
+				r_flag_space_unset (core->flags, input+2);
+				break;
 			}
 			break;
 		case 'j':
@@ -517,7 +549,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"fe"," [name]","create flag name.#num# enumerated flag. See fe?",
 		"fg","","bring visual mode to foreground",
 		"fj","","list flags in JSON format",
-		"fl"," [flagname]","show flag length (size)",
+		"fl"," [flag] [size]","show or set flag length (size)",
 		"fm"," addr","move flag at current offset to new address",
 		"fn","","list flags displaying the real name (demangled)",
 		"fo","","show fortunes",

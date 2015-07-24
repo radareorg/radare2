@@ -109,6 +109,7 @@ static int __plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOGzip *mal = R_NEW0 (RIOGzip);
+		if (!mal) return NULL;
 		int len;
 		ut8 *data = (ut8*)r_file_slurp (pathname+7, &len);
 		mal->buf = r_inflate (data, len, NULL, &mal->size);
@@ -140,6 +141,7 @@ struct r_io_plugin_t r_io_plugin_gzip = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_gzip
+	.data = &r_io_plugin_gzip,
+	.version = R2_VERSION
 };
 #endif

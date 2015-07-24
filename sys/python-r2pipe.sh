@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cd `dirname $PWD/$0`
+cd "$(dirname "$PWD/$0")"
 ./clone-r2-bindings.sh
 cd ..
 

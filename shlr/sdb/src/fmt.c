@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2014 - pancake */
+/* sdb - MIT - Copyright 2014-2015 - pancake */
 
 #include "sdb.h"
 #include <stdarg.h>
@@ -35,7 +35,7 @@ SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
 		return Key[n];
 	va_start (ap, fmt);
 	*Key[n] = 0;
-	vsnprintf (Key[n], 255, fmt, ap);
+	vsnprintf (Key[n], sizeof (Key[n]), fmt, ap);
 	Key[n][255] = 0;
 	va_end (ap);
 	return Key[n];
@@ -75,7 +75,7 @@ SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 			n = sizeof (size_t);
 			break;
 		}
-		len += R_MAX (sizeof (void*), n); // align
+		len += R_MAX ((long)sizeof (void*), n); // align
 	}
 	return out;
 }
@@ -108,7 +108,7 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 		case 'p': *((void**)(stru + idx)) = (void*)(size_t)sdb_atoi (word);
 			break;
 		}
-		idx += R_MAX(sizeof (void*), n); // align
+		idx += R_MAX((long)sizeof (void*), n); // align
 		if (!next)
 			break;
 		ptr = next;
@@ -130,7 +130,7 @@ SDB_API void sdb_fmt_free (void *stru, const char *fmt) {
 		case 'z':
 		case 's': free ((void*)*((char**)(stru+len))); break;
 		}
-		len += R_MAX (sizeof (void*), n); // align
+		len += R_MAX ((long)sizeof (void*), n); // align
 	}
 }
 
@@ -191,7 +191,8 @@ SDB_API char** sdb_fmt_array(const char *list) {
 		}
 		do {
 			const char *str = sdb_anext2 (ptr, &next);
-			int slen = next?(next-str)-1:strlen (str)+1;
+			int slen = next? (next-str) - 1:
+				(int)strlen (str) + 1;
 			memcpy (_s, str, slen);
 			_s[slen]=0;
 			*retp++ = _s;

@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2015 - pancake */
+/* sdb - MIT - Copyright 2011-2015 - pancake */
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -28,7 +28,6 @@ SDB_API Sdb* sdb_new0 () {
 }
 
 SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
-        struct stat st = {0};
 	Sdb* s = R_NEW0 (Sdb);
 	if (!s) return NULL;
 	s->fd = -1;
@@ -58,13 +57,7 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 				goto fail;
 			break;
 		}
-		if (sdb_open (s, s->dir) != -1) {
-			if (s->fd > -1 && fstat (s->fd, &st) != -1) {
-				if ((S_IFREG & st.st_mode) != S_IFREG)
-					goto fail;
-			}
-			s->last = st.st_mtime;
-		} else {
+		if (sdb_open (s, s->dir) == -1) {
 			s->last = sdb_now ();
 			// TODO: must fail if we cant open for write in sync
 		}
@@ -180,14 +173,13 @@ SDB_API const char *sdb_const_get_len (Sdb* s, const char *key, int *vlen, ut32 
 	/* search in disk */
 	if (s->fd == -1)
 		return NULL;
-	cdb_findstart (&s->db);
-	if (!cdb_findnext (&s->db, hash, key, keylen))
+	(void)cdb_findstart (&s->db);
+	if (cdb_findnext (&s->db, hash, key, keylen) <1)
 		return NULL;
 	len = cdb_datalen (&s->db);
 	if (len == 0)
 		return NULL;
-	if (vlen)
-		*vlen = len;
+	if (vlen) *vlen = len;
 	pos = cdb_datapos (&s->db);
 	return s->db.map+pos;
 }
@@ -205,36 +197,35 @@ SDB_API char *sdb_get_len (Sdb* s, const char *key, int *vlen, ut32 *cas) {
 	char *buf;
 
 	if (cas) *cas = 0;
+	if (vlen) *vlen = 0;
 	if (!s || !key) return NULL;
 	keylen = strlen (key)+1;
-	hash = sdb_hash (key);//keylen-1);
-	if (vlen) *vlen = 0;
+	hash = sdb_hash (key);
 
 	/* search in memory */
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
 	if (kv) {
-		if (*kv->value) {
-			if (kv->expire) {
-				if (!now) now = sdb_now ();
-				if (now > kv->expire) {
-					sdb_unset (s, key, 0);
-					return NULL;
-				}
+		if (!*kv->value)
+			return NULL;
+		if (kv->expire) {
+			if (!now) now = sdb_now ();
+			if (now > kv->expire) {
+				sdb_unset (s, key, 0);
+				return NULL;
 			}
-			if (cas) *cas = kv->cas;
-			if (vlen) *vlen = kv->value_len;
-			return strdup (kv->value);
 		}
-		return NULL;
+		if (cas) *cas = kv->cas;
+		if (vlen) *vlen = kv->value_len;
+		return strdup (kv->value);
 	}
 
 	/* search in disk */
 	if (s->fd == -1)
 		return NULL;
-	cdb_findstart (&s->db);
+	(void)cdb_findstart (&s->db);
 	if (!cdb_findnext (&s->db, hash, key, keylen))
 		return NULL;
-	if ((len = cdb_datalen (&s->db))<1)
+	if ((len = cdb_datalen (&s->db)) >= SDB_MAX_VALUE)
 		return NULL;
 	if (vlen)
 		*vlen = len;
@@ -252,6 +243,19 @@ SDB_API char *sdb_get (Sdb* s, const char *key, ut32 *cas) {
 
 SDB_API int sdb_unset (Sdb* s, const char *key, ut32 cas) {
 	return key? sdb_set (s, key, "", cas): 0;
+}
+
+/* remove from memory */
+SDB_API int sdb_remove(Sdb *s, const char *key, ut32 cas) {
+	SdbHashEntry *e;
+	ut32 hash = sdb_hash (key);
+	e = ht_search (s->ht, hash);
+	if (e) {
+		ht_delete_entry (s->ht, e);
+		ls_delete (s->ht->list, e->iter);
+		return 1;
+	}
+	return 0;
 }
 
 // alias for '-key=str'.. '+key=str' concats
@@ -304,7 +308,7 @@ SDB_API int sdb_exists (Sdb* s, const char *key) {
 	if (kv) return (*kv->value)? 1: 0;
 	if (s->fd == -1)
 		return 0;
-	cdb_findstart (&s->db);
+	(void)cdb_findstart (&s->db);
 	if (cdb_findnext (&s->db, hash, key, klen)) {
 		pos = cdb_datapos (&s->db);
 		cdb_read (&s->db, &ch, 1, pos);
@@ -314,6 +318,7 @@ SDB_API int sdb_exists (Sdb* s, const char *key) {
 }
 
 SDB_API int sdb_open (Sdb *s, const char *file) {
+        struct stat st;
 	if (!s) return -1;
 	if (file) {
 		if (s->fd != -1) {
@@ -324,7 +329,21 @@ SDB_API int sdb_open (Sdb *s, const char *file) {
 		if (file != s->dir) {
 			free (s->dir);
 			s->dir = strdup (file);
+			s->path = NULL; // TODO: path is important
 		}
+	}
+	s->last = 0LL;
+	if (s->fd != -1 && fstat (s->fd, &st) != -1) {
+		if ((S_IFREG & st.st_mode) != S_IFREG) {
+			eprintf ("Database must be a file\n");
+			close (s->fd);
+			s->fd = -1;
+			return -1;
+		}
+		s->last = st.st_mtime;
+	}
+	if (s->fd != -1) {
+		cdb_init (&s->db, s->fd);
 	}
 	return s->fd;
 }
@@ -454,10 +473,27 @@ SDB_API int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	return sdb_set_internal (s, key, (char*)val, 0, cas);
 }
 
+static int sdb_foreach_list_cb(void *user, const char *k, const char *v) {
+	SdbList *list = (SdbList *)user;
+	list->free = free;
+	SdbKv *kv = R_NEW0 (SdbKv);
+	strncpy (kv->key, k, sizeof (kv->key)-1);
+	kv->value = (char*)v;
+	ls_append (list, kv);
+	return 1;
+}
+
+SDB_API SdbList *sdb_foreach_list (Sdb* s) {
+	SdbList *list = ls_new();
+	sdb_foreach (s, sdb_foreach_list_cb, list);
+	return list;
+}
+
 SDB_API int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 	SdbListIter *iter;
 	char *k, *v;
 	SdbKv *kv;
+	if (!s) return 0;
 	sdb_dump_begin (s);
 	while (sdb_dump_dupnext (s, &k, &v, NULL)) {
 		ut32 hash = sdb_hash (k);
@@ -535,12 +571,13 @@ SDB_API int sdb_sync (Sdb* s) {
 	}
 	/* append new keyvalues */
 	ls_foreach (s->ht->list, iter, kv) {
-		if (*kv->value && kv->expire == 0LL)
-			sdb_disk_insert (s, kv->key, kv->value);
-		if (kv->expire == 0LL) {
-			it.n = iter->n;
-			sdb_unset (s, kv->key, 0);
-			iter = &it;
+		if (*kv->value && kv->expire == 0LL) {
+			if (sdb_disk_insert (s, kv->key, kv->value)) {
+				it.n = iter->n;
+				//sdb_unset (s, kv->key, 0);
+				sdb_remove (s, kv->key, 0);
+				iter = &it;
+			}
 		}
 	}
 	sdb_disk_finish (s);
@@ -579,6 +616,39 @@ SDB_API SdbKv *sdb_dump_next (Sdb* s) {
 	return &s->tmpkv;
 }
 
+SDB_API int sdb_dump_hasnext (Sdb* s) {
+	ut32 k, v;
+	if (s->fd==-1)
+		return 0;
+	if (!cdb_getkvlen (s->fd, &k, &v))
+		return 0;
+	if (k<1 || v<1)
+		return 0;
+	if (lseek (s->fd, k+v, SEEK_CUR) == -1) {
+		return 0;
+	}
+	s->pos += k + v + 4;
+	return 1;
+}
+
+SDB_API int sdb_stats(Sdb *s, ut32 *disk, ut32 *mem) {
+	if (!s) return 0;
+	if (disk) {
+		ut32 count = 0;
+		if (s->fd != -1) {
+			sdb_dump_begin (s);
+			while (sdb_dump_hasnext (s)) {
+				count ++;
+			}
+		}
+		*disk = count;
+	}
+	if (mem) {
+		*mem = s->ht->list->length;
+	}
+	return 1;
+}
+
 // TODO: make it static? internal api?
 SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value, int *_vlen) {
 	ut32 vlen = 0, klen = 0;
@@ -590,8 +660,9 @@ SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value, int *_vlen) {
 		return 0;
 	if (!cdb_getkvlen (s->fd, &klen, &vlen))
 		return 0;
-	if (klen<1 || vlen<1)
+	if (klen<1 || vlen<1) {
 		return 0;
+	}
 	if (_vlen)
 		*_vlen = vlen;
 	if (key) {
@@ -663,7 +734,7 @@ SDB_API int sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas) {
 	}
 	if (s->fd == -1)
 		return 0;
-	cdb_findstart (&s->db);
+	(void)cdb_findstart (&s->db);
 	if (!cdb_findnext (&s->db, hash, key, strlen (key)+1))
 		return 0;
 	pos = cdb_datapos (&s->db);
@@ -793,7 +864,60 @@ static int unset_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-SDB_API int sdb_unset_matching(Sdb *s, const char *k) {
+SDB_API int sdb_unset_like(Sdb *s, const char *k) {
 	UnsetCallbackData ucd = { s, k };
 	return sdb_foreach (s, unset_cb, &ucd);
+}
+
+typedef struct {
+	Sdb *sdb;
+	const char *key;
+	const char *val;
+	SdbForeachCallback cb;
+	const char **array;
+	int array_index;
+	int array_size;
+} LikeCallbackData;
+
+static int like_cb(void *user, const char *k, const char *v) {
+	LikeCallbackData *lcd = user;
+	if (!user) return 0;
+	if (k && lcd->key && !sdb_match (k, lcd->key))
+		return 1;
+	if (v && lcd->val && !sdb_match (v, lcd->val))
+		return 1;
+	if (lcd->array) {
+		int idx = lcd->array_index;
+		lcd->array_size += sizeof (char*) * 2;
+		lcd->array = realloc (lcd->array, lcd->array_size);
+		// concatenate in array
+		lcd->array[idx] = k;
+		lcd->array[idx+1] = v;
+		lcd->array[idx+2] = NULL;
+		lcd->array[idx+3] = NULL;
+		lcd->array_index = idx+2;
+	} else {
+		if (lcd->cb)
+			lcd->cb (lcd->sdb, k, v);
+	}
+	return 1;
+}
+
+SDB_API char** sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback cb) {
+	LikeCallbackData lcd = { s, k, v, cb, NULL, 0, 0 };
+	if (cb) {
+		sdb_foreach (s, like_cb, &lcd);
+		return NULL;
+	}
+	if (k && !*k) lcd.key = NULL;
+	if (v && !*v) lcd.val = NULL;
+	lcd.array_size = sizeof (char*) * 2;
+	lcd.array = calloc (lcd.array_size, 1);
+	lcd.array_index = 0;
+	sdb_foreach (s, like_cb, &lcd);
+	if (lcd.array_index==0) {
+		free (lcd.array);
+		return NULL;
+	}
+	return (char**)lcd.array;
 }

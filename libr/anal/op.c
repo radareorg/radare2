@@ -6,19 +6,19 @@
 
 R_API RAnalOp *r_anal_op_new () {
 	RAnalOp *op = R_NEW0 (RAnalOp);
-	if (op) {
-		op->addr = -1;
-		op->jump = -1;
-		op->fail = -1;
-		op->ptr = -1;
-		op->val = -1;
-		r_strbuf_init (&op->esil);
-	}
+	if (!op) return NULL;
+	op->addr = -1;
+	op->jump = -1;
+	op->fail = -1;
+	op->ptr = -1;
+	op->val = -1;
+	r_strbuf_init (&op->esil);
 	return op;
 }
 
 R_API RList *r_anal_op_list_new() {
 	RList *list = r_list_new ();
+	if (!list) return NULL;
 	list->free = &r_anal_op_free;
 	return list;
 }
@@ -60,8 +60,17 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
 	RAnalOp *nop = R_NEW (RAnalOp);
+	if (!nop) return NULL;
 	*nop = *op;
-	nop->mnemonic = strdup (op->mnemonic);
+	if (op->mnemonic) {
+		nop->mnemonic = strdup (op->mnemonic);
+		if (!nop->mnemonic) {
+			free (nop);
+			return NULL;
+		}
+	} else {
+		nop->mnemonic = NULL;
+	}
 	nop->src[0] = r_anal_value_copy (op->src[0]);
 	nop->src[1] = r_anal_value_copy (op->src[1]);
 	nop->src[2] = r_anal_value_copy (op->src[2]);

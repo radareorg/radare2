@@ -70,13 +70,24 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	return R_TRUE;
 }
 
-R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope, int delta) {
+R_API int r_anal_var_delete (RAnal *a, ut64 addr, const char kind, int scope, int delta) {
+	if (delta<0)
+		delta = -delta;
+	RAnalVar *av = r_anal_var_get (a, addr, kind, scope, delta);
 	if (scope>0) {
-		// TODO
+		char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x".%c", addr, kind);
+		char *var_key = sdb_fmt (2, "var.0x%"PFMT64x".%c.%d.%d", addr, kind, scope, delta);
+		char *name_key = sdb_fmt (3, "var.0x%"PFMT64x".%c.%d.%s", addr, kind, scope, av->name);
+		char *shortvar = sdb_fmt (4, "%d.%d", scope, delta);
+		sdb_array_remove (DB, fcn_key, shortvar, 0);
+		sdb_unset (DB, var_key, 0);
+		sdb_unset (DB, name_key, 0);
 	} else {
-		// TODO
+		char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, addr);
+		char *var_def = sdb_fmt (2,"%c.%s,%d,%s", kind, av->type, av->size, av->name);
+		sdb_array_remove (DB, var_global, var_def, 0);
 	}
-	r_anal_var_access_clear (a, var_addr, scope, delta);
+	r_anal_var_access_clear (a, addr, scope, delta);
 	return R_TRUE;
 }
 
@@ -292,21 +303,41 @@ static int var_comparator (const RAnalVar *a, const RAnalVar *b){
 	return R_FALSE;
 }
 
-R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind) {
+R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode) {
 	RList *list = r_anal_var_list(anal, fcn, kind);
 	r_list_sort (list, (RListComparator)var_comparator);
 	RAnalVar *var;
 	RListIter *iter;
+	if (mode=='j')
+		anal->printf ("[");
 	r_list_foreach (list, iter, var) {
-		if (var->kind == kind)
-			anal->printf ("%s %s %s @ %s%s0x%x\n",
-				kind=='v'?"var":"arg",
-				var->type,
-				var->name,
-				anal->reg->name[R_REG_NAME_BP],
-				(kind=='v')?"-":"+",
-				var->delta
-			);
+		if (var->kind == kind) {
+			switch (mode) {
+			case '*':
+				// we cant express all type info here :(
+				anal->printf ("af%c %d %s %s @ 0x%"PFMT64x"\n",
+					kind, var->delta,
+					var->name, var->type, fcn->addr);
+				break;
+			case 'j':
+				anal->printf ("{\"name\":\"%s\","
+					"\"kind\":\"%s\",\"type\":\"%s\",\"ref\":\"%s%s0x%x\"}",
+					var->name, var->kind=='v'?"var":"arg", var->type,
+					anal->reg->name[R_REG_NAME_BP],
+					(var->kind=='v')?"-":"+", var->delta);
+				if (iter->n) anal->printf (",");
+				break;
+			default:
+				anal->printf ("%s %s %s @ %s%s0x%x\n",
+					kind=='v'?"var":"arg",
+					var->type, var->name,
+					anal->reg->name[R_REG_NAME_BP],
+					(kind=='v')?"-":"+",
+					var->delta);
+			}
+		}
 	}
+	if (mode=='j')
+		anal->printf ("]\n");
 	r_list_free (list);
 }

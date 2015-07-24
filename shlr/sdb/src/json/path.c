@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2012-2013 - pancake */
+/* sdb - MIT - Copyright 2012-2015 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,8 +30,8 @@ rep:
 	s->f = ++s->t;
 	if (s->p[s->t] == stop)
 		s->f = ++s->t;
-    if (!s->p[s->t])
-        return 0;
+	if (!s->p[s->t])
+		return 0;
 	while (s->p[s->t] != stop) {
 		if (!s->p[s->t]) {
 			s->next = 0;
@@ -75,7 +75,7 @@ int json_foreach(const char *s, JSONCallback cb UNUSED) {
 #endif
 
 int json_walk (const char *s) {
-	unsigned short *res;
+	RangstrType *res;
 	int i, ret, len = strlen (s);
 	res = malloc (len+1);
 	ret = js0n ((const unsigned char *)s, len, res);
@@ -98,17 +98,20 @@ int json_walk (const char *s) {
 }
 
 Rangstr json_find (const char *s, Rangstr *rs) {
-#define RESFIXSZ 512
-	unsigned short resfix[RESFIXSZ];
-	unsigned short *res = NULL;
+#define RESFIXSZ 1024
+	RangstrType resfix[RESFIXSZ], *res = NULL;
 	int i, j, n, len, ret;
 	Rangstr rsn;
 
 	if (!s) return rangstr_null ();
 	len = strlen (s);
-	res = (len<RESFIXSZ)? resfix: malloc (len+1);
-	for (i=0;i<len;i++)
-		res[i]=0;
+	res = (len<RESFIXSZ)? resfix: malloc (sizeof (RangstrType)* (len+1));
+	if (!res) {
+		eprintf ("Cannot allocate %d bytes\n", len+1);
+		return rangstr_null ();
+	}
+	for (i=0; i<len; i++)
+		res[i] = 0;
 	ret = js0n ((const unsigned char *)s, len, res);
 #define PFREE(x) if (x&&x!=resfix) free (x)
 	if (ret>0) {

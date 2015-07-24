@@ -9,9 +9,14 @@
                                   --pancake
 </pre>
 
-[![Build Status](http://ci.rada.re/buildStatus/icon?job=radare2)](http://ci.rada.re/job/radare2/)
+[![Build Status](http://ci.rada.re/buildStatus/icon?job=radare2)](http://ci.rada.re/job/radare2/) Jenkins
 
-[![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416)
+[![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)](https://travis-ci.org/radare/radare2) TravisCI
+
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/radare/radare2?branch=master&svg=true)]( https://ci.appveyor.com/project/radare/radare2 ) AppVeyor
+
+[![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) Coverity
+
 
 # Introduction
 
@@ -31,9 +36,9 @@ radare2 is portable.
 
 Architectures:
 
-6502, 8051, CRIS, H8/300, LH5801, LH5801, T8200, arc, arm, avr, bf, blackfin,
-csr, dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, mips,
-msil, nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), x86-64,
+6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, csr,
+dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, mips, msil,
+nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), V810, x86-64,
 zimg.
 
 File Formats:

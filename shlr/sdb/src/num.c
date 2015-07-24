@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2015 - pancake */
+/* sdb - MIT - Copyright 2011-2015 - pancake */
 
 #include "sdb.h"
 #include "types.h"
@@ -53,15 +53,6 @@ SDB_API ut64 sdb_num_dec(Sdb *s, const char *key, ut64 n2, ut32 cas) {
 	return n;
 }
 
-SDB_API int sdb_bool_set(Sdb *db, const char *str, int v, ut32 cas) {
-	return sdb_set (db, str, v?"true":"false", cas);
-}
-
-SDB_API int sdb_bool_get(Sdb *db, const char *str, ut32 *cas) {
-	const char *b = sdb_const_get (db, str, cas);
-	return (!strcmp (b, "1") || !strcmp (b, "true"))? 1: 0;
-}
-
 SDB_API int sdb_num_min(Sdb *db, const char*k, ut64 n, ut32 cas) {
 	const char* a = sdb_const_get (db, k, NULL);
 	if (!a || n<sdb_atoi (a))
@@ -74,4 +65,23 @@ SDB_API int sdb_num_max(Sdb *db, const char*k, ut64 n, ut32 cas) {
 	if (!a || n>sdb_atoi (a))
 		return sdb_num_set (db, k, n, cas);
 	return 0;
+}
+
+SDB_API int sdb_bool_set(Sdb *db, const char *str, int v, ut32 cas) {
+	return sdb_set (db, str, v?"true":"false", cas);
+}
+
+SDB_API int sdb_bool_get(Sdb *db, const char *str, ut32 *cas) {
+	const char *b = sdb_const_get (db, str, cas);
+	return (!strcmp (b, "1") || !strcmp (b, "true"))? 1: 0;
+}
+
+/* pointers */
+
+SDB_API int sdb_ptr_set(Sdb *db, const char *key, void *p, ut32 cas) {
+	return sdb_num_set (db, key, (ut64)(size_t)p, cas);
+}
+
+SDB_API void* sdb_ptr_get(Sdb *db, const char *key, ut32 *cas) {
+	return (void*)(size_t)sdb_num_get (db, key, cas);
 }

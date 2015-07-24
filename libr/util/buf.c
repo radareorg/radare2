@@ -48,11 +48,8 @@ static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int le
 	if (!data) {
 		free (s);
 		return NULL;
-	}
-	if (data) {
-		memcpy (s->data, data, len);
 	} else {
-		memset (s->data, 0xff, len);
+		memcpy (s->data, data, len);
 	}
 	if (r_list_append (l, s) == NULL) return NULL;
 	return s;
@@ -458,6 +455,7 @@ R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int
 }
 
 R_API void r_buf_deinit(RBuffer *b) {
+	if (!b) return;
 	if (b->sparse) {
 		r_list_free (b->sparse);
 		b->sparse = NULL;

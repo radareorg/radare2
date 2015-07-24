@@ -134,7 +134,10 @@ R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const ch
 	strncpy (item->cmd_short, scmd, sizeof (item->cmd_short)-1);
 	item->cmd_len = strlen (lcmd);
 	strncpy (item->desc, desc, sizeof (item->desc)-1);
-	r_list_append (cmd->lcmds, item);
+	if (!r_list_append (cmd->lcmds, item)){
+		free (item);
+		return R_FALSE;
+	}
 	return R_TRUE;
 }
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 #if 0
 static void filter_line(char *line) {
 	char *a;
@@ -239,6 +239,34 @@ error:
 static int cmd_meta_comment(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[1]) {
+	case '?': {
+		const char* help_msg[] = {
+			"Usage:", "CC[-+!*au] [base64:..|str] @ addr", "",
+			"CC", "", "list all comments in human friednly form",
+			"CC*", "", "list all comments in r2 commands",
+			"CC.", "", "show comment at current offset",
+			"CC", " or maybe not", "append comment at current address",
+			"CC+", " same as above", "append comment at current address",
+			"CC!", "", "edit comment using cfg.editor (vim, ..)",
+			"CC-", " @ cmt_addr", "remove comment at given address",
+			"CCu", " good boy @ addr", "add good boy comment at given address",
+			"CCu", " base64:AA== @ addr", "add comment in base64",
+			NULL};
+		r_core_cmd_help (core, help_msg);
+		} break;
+	case '.':
+		  {
+			  char *comment = r_meta_get_string (
+					  core->anal, R_META_TYPE_COMMENT, addr);
+			  if (comment) {
+				  r_cons_printf ("%s\n", comment);
+				  free (comment);
+			  }
+		  }
+		break;
+	case 0:
+		r_meta_list (core->anal, R_META_TYPE_COMMENT, 0);
+		break;
 	case '!':
 		{
 			char *out, *comment = r_meta_get_string (
@@ -259,22 +287,25 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case ' ':
 		{
 		const char* newcomment = input+2;
-		char *text;
+		char *text, *nc;
 		while (*newcomment==' ') newcomment++;
 		char *comment = r_meta_get_string (
 				core->anal, R_META_TYPE_COMMENT, addr);
+		nc = strdup (newcomment);
+		r_str_unescape (nc);
 		if (comment) {
 			text = malloc (strlen (comment)+strlen (newcomment)+2);
 			strcpy (text, comment);
 			strcat (text, "\n");
-			strcat (text, newcomment);
+			strcat (text, nc);
 			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
 					addr, text);
 			free (text);
 		} else {
 			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-					addr, newcomment);
+					addr, nc);
 		}
+		free (nc);
 		}
 		break;
 	case '*':
@@ -286,15 +317,29 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case 'u':
 		//
 		{
-		const char* newcomment = input+2;
-		while (*newcomment==' ') newcomment++;
-		char *comment = r_meta_get_string (
-				core->anal, R_META_TYPE_COMMENT, addr);
-		if (!comment || (comment && !strstr (comment, newcomment))) {
-			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-					addr, newcomment);
+		char *newcomment;
+		const char *arg = input+2;
+		while (*arg && *arg == ' ') arg++;
+		if (!strncmp (arg, "base64:", 7)) {
+			char *s = (char *)sdb_decode (arg+7, NULL);
+			if (s) {
+				newcomment = s;
+			} else {
+				newcomment = NULL;
+			}
+		} else {
+			newcomment = strdup (arg);
 		}
-		free (comment);
+		if (newcomment) {
+			char *comment = r_meta_get_string (
+					core->anal, R_META_TYPE_COMMENT, addr);
+			if (!comment || (comment && !strstr (comment, newcomment))) {
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
+						addr, newcomment);
+			}
+			free (comment);
+			free (newcomment);
+		}
 		}
 		break;
 	case 'a':
@@ -503,6 +548,7 @@ static int cmd_meta(void *data, const char *input) {
 				"C*", "", "list meta info in r2 commands",
 				"C-", " [len] [[@]addr]", "delete metadata at given address range",
 				"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
+				"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
 				"CC", "[-] [comment-text] [@addr]", "add/remove comment",
 				"CC!", " [@addr]", "edit comment with $EDITOR",
 				"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
@@ -521,6 +567,80 @@ static int cmd_meta(void *data, const char *input) {
 			R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) r_anal_str_to_fcn (core->anal, f, input+2);
 		else eprintf ("Cannot find function here\n");
+		break;
+	case 'S':
+		 {
+		RSpaces *ms = &core->anal->meta_spaces;
+		/** copypasta from `fs`.. this must be refactorized to be shared */
+		switch (input[1]) {
+		case '?':
+			{
+			const char *help_msg[] = {
+			"Usage: CS","[*] [+-][metaspace|addr]", " # Manage metaspaces",
+			"CS","","display metaspaces",
+			"CS"," *","select all metaspaces",
+			"CS"," metaspace","select metaspace or create if it doesn't exist",
+			"CS","-metaspace","remove metaspace",
+			"CS","-*","remove all metaspaces",
+			"CS","+foo","push previous metaspace and set",
+			"CS","-","pop to the previous metaspace",
+		//	"CSm"," [addr]","move metas at given address to the current metaspace",
+			"CSr"," newname","rename selected metaspace",
+			NULL};
+			r_core_cmd_help (core, help_msg);
+			}
+			break;
+		case '+':
+			r_space_push (ms, input+2);
+			break;
+		case 'r':
+			if (input[2]==' ')
+				r_space_rename (ms, NULL, input+2);
+			else eprintf ("Usage: CSr [newname]\n");
+			break;
+		case '-':
+			if (input[2]) {
+				if (input[2]=='*') {
+					r_space_unset (ms, NULL);
+				} else {
+					r_space_unset (ms, input+2);
+				}
+			} else {
+				r_space_pop (ms);
+			}
+			break;
+		case 'j':
+		case '\0':
+		case '*':
+			r_space_list (ms, input[1]);
+			break;
+		case ' ':
+			r_space_set (ms, input+2);
+			break;
+#if 0
+		case 'm':
+			{ RFlagItem *f;
+			ut64 off = core->offset;
+			if (input[2] == ' ')
+				off = r_num_math (core->num, input+2);
+			f = r_flag_get_i (core->flags, off);
+			if (f) {
+				f->space = core->flags->space_idx;
+			} else eprintf ("Cannot find any flag at 0x%"PFMT64x".\n", off);
+			}
+			break;
+#endif
+		default: {
+			int i, j = 0;
+			for (i=0; i<R_FLAG_SPACES_MAX; i++) {
+				if (ms->spaces[i])
+					r_cons_printf ("%02d %c %s\n", j++,
+					(i==ms->space_idx)?'*':' ',
+					ms->spaces[i]);
+			}
+			} break;
+		}
+		 }
 		break;
 	}
 	return R_TRUE;

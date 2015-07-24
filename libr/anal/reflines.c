@@ -4,16 +4,32 @@
 #include <r_util.h>
 #include <r_cons.h>
 
+
+
+static void free_refline_list (struct list_head *head){
+	struct list_head *pos, *n;
+	RAnalRefline *ref;
+	list_for_each_safe (pos, n, head){
+		ref = list_entry (pos, RAnalRefline, list);
+		free (ref);
+	}
+	ref = list_entry (head, RAnalRefline, list);
+	free (ref);
+}
+
 R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 	ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall)
 {
-	RAnalRefline *list2, *list = R_NEW (RAnalRefline);
+	RAnalRefline *list2, *list = NULL;
 	RAnalOp op = {0};
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
 	ut64 opc = addr;
 	int sz = 0, index = 0;
 	int count = 0;
+
+	list = R_NEW (RAnalRefline);
+	if (!list) return NULL;
 
 	INIT_LIST_HEAD (&(list->list));
 
@@ -55,6 +71,11 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 				if (op.jump == 0LL)
 					goto __next;
 				list2 = R_NEW (RAnalRefline);
+				if (!list2) {
+					eprintf ("not enough memory in %s - %d", __FILE__, __LINE__);
+					free_refline_list (&(list->list));
+					return NULL;
+				}
 				list2->from = addr;
 				list2->to = op.jump;
 				list2->index = index++;
@@ -75,6 +96,11 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 							if (!linesout && (op.jump > opc+len || op.jump < opc))
 								continue;
 							list2 = R_NEW (RAnalRefline);
+							if (!list2) {
+								eprintf ("not enough memory in %s - %d", __FILE__, __LINE__);
+								free_refline_list (&(list->list));
+								return NULL;
+							}
 							list2->from = op.switch_op->addr;
 							list2->to = caseop->jump;
 							list2->index = index++;
@@ -96,12 +122,15 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn,
     int nlines, int linesout, int linescall)
 {
-	RAnalRefline *list2, *list = R_NEW0 (RAnalRefline);
+	RAnalRefline *list2, *list = NULL;
 	RAnalBlock *bb;
 	RListIter *bb_iter;
 
 	int index = 0;
 	ut32 len;
+
+	list = R_NEW0 (RAnalRefline);
+	if (!list) return NULL;
 
 	INIT_LIST_HEAD (&(list->list));
 
@@ -125,6 +154,10 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 			// dont need to continue here is opc+len exceed function scope
 			if (linesout && bb->fail > 0LL && bb->fail != bb->addr + len) {
 				list2 = R_NEW0 (RAnalRefline);
+				if (!list2) {
+					free_refline_list (&(list->list));
+					return NULL;
+				}
 				list2->from = bb->addr;
 				list2->to = bb->fail;
 				list2->index = index++;
@@ -136,6 +169,11 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 				continue;
 
 			list2 = R_NEW0 (RAnalRefline);
+			if (!list2) {
+				eprintf ("not enough memory in %s - %d", __FILE__, __LINE__);
+				free_refline_list (&(list->list));
+				return NULL;
+			}
 			list2->from = bb->addr;
 			list2->to = bb->jump;
 			list2->index = index++;
@@ -153,6 +191,11 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 						if (!linesout)// && (op.jump > opc+len || op.jump < pc))
 							continue;
 						list2 = R_NEW (RAnalRefline);
+						if (!list2){
+							eprintf ("not enough memory in %s - %d", __FILE__, __LINE__);
+							free_refline_list (&(list->list));
+							return NULL;
+						}
 						list2->from = bb->switch_op->addr;
 						list2->to = caseop->jump;
 						list2->index = index++;

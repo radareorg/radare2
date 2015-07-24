@@ -715,6 +715,7 @@ RAnalPlugin r_anal_plugin_sparc_gnu = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_sparc_gnu
+	.data = &r_anal_plugin_sparc_gnu,
+	.version = R2_VERSION
 };
 #endif

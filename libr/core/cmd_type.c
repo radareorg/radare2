@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2015 - pancake, Anton Kochkov, Jody Frankowski */
 
 static void show_help(RCore *core) {
 	const char * help_message[] = {
@@ -46,6 +46,10 @@ static int cmd_type(void *data, const char *input) {
 		char *q, *p, *o, *e;
 		p = o = strdup (input+1);
 		for (;;) {
+			if (*p == '\0'){
+				eprintf ("Usage: ts <k>=<v> Set fields at curseek linked type\n");	
+				break;
+			}
 			q = strchr (p, ' ');
 			if (q) *q = 0;
 			if (!*p) {
@@ -66,10 +70,10 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'b':
 		{
-	       int i;
-		char *p, *s = strdup (input+2);
+		int i;
+		char *p, *s = (strlen (input) > 1) ? strdup (input+2): NULL;
 		const char *isenum;
-		p = strchr (s, ' ');
+		p = s ? strchr (s, ' ') : NULL;
 		if (p) {
 			*p++ = 0;
 // dupp in core.c (see getbitfield())
@@ -88,7 +92,6 @@ static int cmd_type(void *data, const char *input) {
 						if (res) r_cons_printf ("%s", res);
 						else r_cons_printf ("0x%x", (1<<i));
 						empty = 0;
-						
 					}
 				}
 			} else {
@@ -103,6 +106,10 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'e':
 		{
+		if (!input[1]) {
+			eprintf ("Missing value\n");
+			break;
+		}
 		char *p, *s = strdup (input+2);
 		const char *isenum;
 		p = strchr (s, ' ');

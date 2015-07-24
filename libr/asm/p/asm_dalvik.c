@@ -454,6 +454,7 @@ RAsmPlugin r_asm_plugin_dalvik = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_dalvik
+	.data = &r_asm_plugin_dalvik,
+	.version = R2_VERSION
 };
 #endif

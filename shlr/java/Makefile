@@ -1,13 +1,17 @@
+NAME=r_java
+LIBAR?=libr_java.a
+
 include ../../config-user.mk
-include ../../mk/${COMPILER}.mk
-SHLR?=$(shell pwd)/..
 include ../../global.mk
-include $(SHLR)/zip/deps.mk
+_INCLUDE_MK_GCC_=
+include ../../mk/${COMPILER}.mk
+SHLR?=..
+include ../zip/deps.mk
 
 OSTYPE?=$(shell uname | tr 'A-Z' 'a-z')
 ifeq (${OSTYPE},)
 all:
-	echo LE FAIL
+	echo "OSTYPE not defined"
 	exit 1
 endif
 
@@ -28,12 +32,13 @@ all: out libr_java.a
 
 libr_java.a: ${OBJS}
 	rm -f libr_java.a
-	${CC_AR} libr_java.a ${OBJS}
+	${CC_AR} ${OBJS}
 	${RANLIB} libr_java.a
 
 out: ${OBJS} main.o
+	echo "COMPILER: ${COMPILER} ${CC}"
 	${CC} ${LDFLAGS} ${CFLAGS} -I. ${OBJS} main.o \
-		-lr_util ${SHLR}/sdb/src/libsdb.a ${LINK} -o out 
+		-lr_util ../sdb/src/libsdb.a ${LINK} -o out
 
 clean:
 	rm -f ${OBJS} main.o a.out libr_java.a out

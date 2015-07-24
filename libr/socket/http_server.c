@@ -1,6 +1,12 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake */
+/* radare - LGPL - Copyright 2012-2015 - pancake */
 
 #include <r_socket.h>
+
+static int *breaked = NULL;
+
+R_API void r_socket_http_server_set_breaked(int *b) {
+	breaked = b;
+}
 
 R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 	int content_length = 0, xx, yy;
@@ -15,6 +21,10 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 	if (timeout>0)
 		r_socket_block_time (hr->s, 1, timeout);
 	for (;;) {
+#if __WINDOWS__
+		if (breaked)
+			break;
+#endif
 		memset (buf, 0, sizeof (buf));
 		xx = r_socket_gets (hr->s, buf, sizeof (buf));
 		yy = r_socket_ready (hr->s, 0, 20 * 1000); //this function uses usecs as argument

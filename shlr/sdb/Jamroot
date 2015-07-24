@@ -9,4 +9,4 @@ lib sdb : $(CFILES) : <link>static <include>. ;
 
 exe sdb : $(CFILES) src/main.c : <include>. ;
 
-ret = [ SHELL "echo '#define SDB_VERSION \"0.8.0\"' > src/sdb-version.h" ] ;
+ret = [ SHELL "echo '#define SDB_VERSION \"0.9.8\"' > src/sdb_version.h" ] ;

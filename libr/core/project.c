@@ -9,6 +9,8 @@ static int is_valid_project_name (const char *name) {
 	int i;
 	for (i=0; name[i]; i++) {
 		switch (name[i]) {
+		case '\\': // for w32
+		case '.':
 		case '_':
 		case ':':
 			continue;
@@ -27,14 +29,17 @@ static int is_valid_project_name (const char *name) {
 static char *r_core_project_file(RCore *core, const char *file) {
 	const char *magic = "# r2 rdb project file";
 	char *data, *prjfile;
-	if (*file != '/') {
+	//if (*file != R_SYS_DIR[0]) {
+	if (r_file_is_abspath (file)) {
+		prjfile = strdup (file);
+	} else {
 		if (!is_valid_project_name (file))
 			return NULL;
 		prjfile = r_file_abspath (r_config_get (
 			core->config, "dir.projects"));
-		prjfile = r_str_concat (prjfile, "/");
+		prjfile = r_str_concat (prjfile, R_SYS_DIR);
 		prjfile = r_str_concat (prjfile, file);
-	} else prjfile = strdup (file);
+	}
 	data = r_file_slurp (prjfile, NULL);
 	if (data) {
 		if (strncmp (data, magic, strlen (magic))) {
@@ -135,7 +140,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			RListIter *iter;
 			RList *files = r_sys_dir (path);
 			r_list_foreach (files, iter, f) {
-				char *filepath = r_str_concat (strdup (path), "/");
+				char *filepath = r_str_concat (strdup (path), R_SYS_DIR);
 				filepath =r_str_concat (filepath, f);
 				if (!r_file_is_directory (filepath)) {
 					eprintf ("rm %s\n", filepath);
@@ -228,31 +233,40 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 
 R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	FILE *fd;
-	char buf[256], *file = NULL, *prj = r_core_project_file (core, prjfile);
+	char buf[256], *file = NULL;
+	char *prj = r_core_project_file (core, prjfile);
 	if (!prj) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
 		return NULL;
 	}
 	fd = r_sandbox_fopen (prj, "r");
-	for (;fd;) {
-		fgets (buf, sizeof (buf), fd);
-		if (feof (fd))
-			break;
-		if (!memcmp (buf, "\"e file.path = ", 15)) {
-			buf[strlen(buf)-2]=0;
-			file = r_str_new (buf+15);
-			break;
+	if (fd) {
+		for (;;) {
+			fgets (buf, sizeof (buf), fd);
+			if (feof (fd))
+				break;
+			if (!strncmp (buf, "\"e file.path = ", 15)) {
+				buf[strlen(buf)-2]=0;
+				file = r_str_new (buf+15);
+				break;
+			}
+			// TODO: deprecate before 1.0
+			if (!strncmp (buf, "e file.path = ", 14)) {
+				buf[strlen(buf)-1]=0;
+				file = r_str_new (buf+14);
+				break;
+			}
 		}
-		// TODO: deprecate before 1.0
-		if (!memcmp (buf, "e file.path = ", 14)) {
-			buf[strlen(buf)-1]=0;
-			file = r_str_new (buf+14);
-			break;
-		}
+		fclose (fd);
+	} else {
+		eprintf ("Cannot open project info (%s)\n", prj);
 	}
-	if (fd) fclose (fd);
-	r_cons_printf ("%s\n", prj);
-	if (file) r_cons_printf ("FilePath: %s\n", file);
+#if 0
+	if (file) {
+		r_cons_printf ("Project: %s\n", prj);
+		r_cons_printf ("FilePath: %s\n", file);
+	}
+#endif
 	free (prj);
 	return file;
 }
@@ -300,7 +314,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_cons_flush ();
 		 {
 			char buf[1024];
-			snprintf (buf, sizeof (buf), "%s.d/xrefs", prj);
+			snprintf (buf, sizeof (buf), "%s.d"R_SYS_DIR"xrefs", prj);
 			sdb_file (core->anal->sdb_xrefs, buf);
 			sdb_sync (core->anal->sdb_xrefs);
 		 }
@@ -328,7 +342,7 @@ R_API char *r_core_project_notes_file (RCore *core, const char *file) {
 	char *notes_txt;
 	const char *prjdir = r_config_get (core->config, "dir.projects");
 	char *prjpath = r_file_abspath (prjdir);
-	notes_txt = r_str_newf ("%s/%s.d/notes.txt", prjpath, file);
+	notes_txt = r_str_newf ("%s"R_SYS_DIR"%s.d"R_SYS_DIR"notes.txt", prjpath, file);
 	free (prjpath);
 	return notes_txt;
 }

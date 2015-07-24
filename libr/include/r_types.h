@@ -56,6 +56,12 @@
 #endif
 #endif
 
+#if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
+#define TARGET_OS_IPHONE 1
+#else
+#define TARGET_OS_IPHONE 0
+#endif
+
 #ifdef __GNUC__
   #define FUNC_ATTR_MALLOC __attribute__((malloc))
   #define FUNC_ATTR_ALLOC_SIZE(x) __attribute__((alloc_size(x)))
@@ -120,13 +126,13 @@ const char *x##_version () { return "" GIT_TAP; }
 #define FS "\\"
 #define R_SYS_DIR "\\"
 #define R_SYS_HOME "USERPROFILE"
+#define R2_HOMEDIR ".config\\radare2"
 #else
 #define FS "/"
 #define R_SYS_DIR "/"
 #define R_SYS_HOME "HOME"
-#endif
-
 #define R2_HOMEDIR ".config/radare2"
+#endif
 
 #ifndef __packed
 #define __packed __attribute__((__packed__))
@@ -176,7 +182,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
-#define R_NEWS0(x,y) (x*)calloc(sizeof(x),y)
+#define R_NEWS0(x,y) (x*)calloc(y,sizeof(x))
 #define R_NEWS(x,y) (x*)malloc(sizeof(x)*y)
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))
 #define R_NEW(x) (x*)malloc(sizeof(x))
@@ -267,7 +273,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #elif __WINDOWS__
 # define R_SYS_BASE ((ut64)0x01001000)
 #else // linux, bsd, ...
-# if __arm__
+# if __arm__ || __arm64__
 # define R_SYS_BASE ((ut64)0x4000)
 # else
 # define R_SYS_BASE ((ut64)0x8048000)
@@ -287,6 +293,9 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #elif __arm__
 #define R_SYS_ARCH "arm"
 #define R_SYS_BITS R_SYS_BITS_32
+#elif __arm64__
+#define R_SYS_ARCH "arm"
+#define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
 #elif __arc__
 #define R_SYS_ARCH "arc"
 #define R_SYS_BITS R_SYS_BITS_32
@@ -333,11 +342,14 @@ enum {
 	R_SYS_ARCH_MSP430 = 0x8000000, // 1<<27
 	R_SYS_ARCH_CRIS =  0x10000000, // 1<<28
 	R_SYS_ARCH_HPPA =  0x20000000, // 1<<29
+	R_SYS_ARCH_V810 =  0x40000000, // 1<<30
 };
 
 /* os */
 #if defined (__QNX__)
 #define R_SYS_OS "qnx"
+//#elif TARGET_OS_IPHONE
+//#define R_SYS_OS "ios"
 #elif defined (__APPLE__)
 #define R_SYS_OS "darwin"
 #elif defined (__linux__)

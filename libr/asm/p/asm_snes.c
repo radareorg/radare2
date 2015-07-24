@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2014 - condret, pancake */
+/* radare - LGPL - Copyright 2012-2015 - condret, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -29,6 +29,7 @@ RAsmPlugin r_asm_plugin_snes = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_snes
+	.data = &r_asm_plugin_snes,
+	.version = R2_VERSION
 };
 #endif

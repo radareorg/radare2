@@ -114,7 +114,7 @@
 0	string		UC2\x1a		UC2 archive data
 
 # ZIP archives (Greg Roelofs, c/o zip-bugs@wkuvx1.wku.edu)
-0	string		PK\003\004
+0	string		PK\003\004	ZIP
 >4	byte		0x00		Zip archive data
 !:mime	application/zip
 >4	byte		0x09		Zip archive data, at least v0.9 to extract

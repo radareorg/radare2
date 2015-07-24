@@ -71,8 +71,10 @@ static void cmd_write_op (RCore *core, const char *input) {
 		}
 	case '2':
 	case '4':
-		r_core_write_op (core, input+3, input[1]);
-		r_core_block_read (core, 0);
+		if (input[2]){
+			r_core_write_op (core, input+3, input[1]);
+			r_core_block_read (core, 0);
+		} else eprintf ("Missing argument\n");
 		break;
 	case 'R':
 		r_core_cmd0 (core, "wr $b");
@@ -236,7 +238,7 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case '0':
 		{
-			ut64 len = r_num_math (core->num, input+2);
+			ut64 len = r_num_math (core->num, input+1);
 			if (len>0) {
 				ut8 *buf = calloc (1, len);
 				if (buf) {
@@ -676,7 +678,7 @@ static int cmd_write(void *data, const char *input) {
 		r_core_block_read (core, 0);
 		break;
 	case 't': // "wt"
-		if (*str == '?') {
+		if (*str == '?' || *str == '\0') {
 			eprintf ("Usage: wt[a] file [size]   write 'size' bytes in current block to file\n");
 			free (ostr);
 			return 0;

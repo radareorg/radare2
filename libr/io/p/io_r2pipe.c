@@ -99,7 +99,6 @@ beach:
 static int __close(RIODesc *fd) {
 	if (!fd || !fd->data)
 		return -1;
-	r2p_close (fd->data);
 	r2p_free (fd->data);
 	fd->data = NULL;
 	fd->state = R_IO_DESC_TYPE_CLOSED;
@@ -142,7 +141,7 @@ static int __system(RIO *io, RIODesc *fd, const char *msg) {
 		return -1;
 	}
 	res = r2p_read (R2P (fd));
-	eprintf ("%s\n", res);
+	//eprintf ("%s\n", res);
 	/* TODO: parse json back */
 	r = strstr (res, "result");
 	if (r) { rescount = atoi (r+6+1); }
@@ -166,6 +165,7 @@ RIOPlugin r_io_plugin_r2pipe = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_r2pipe
+	.data = &r_io_plugin_r2pipe,
+	.version = R2_VERSION
 };
 #endif

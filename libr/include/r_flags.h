@@ -104,6 +104,7 @@ R_API const char *r_flag_color(RFlag *f, RFlagItem *it, const char *color);
 /* spaces */
 R_API int r_flag_space_get(RFlag *f, const char *name);
 R_API const char *r_flag_space_get_i(RFlag *f, int idx);
+R_API const char *r_flag_space_cur(RFlag *f);
 R_API int r_flag_space_set(RFlag *f, const char *name);
 R_API int r_flag_space_unset (RFlag *f, const char *fs);
 R_API int r_flag_space_list(RFlag *f, int mode);

@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2015 - pancake */
+/* sdb - MIT - Copyright 2011-2015 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -267,7 +267,7 @@ next_quote:
 			SdbNs *ns;
 			ls_foreach (s->ns, it, ns) {
 				int len = strlen (ns->name);
-				if (len<sizeof (root)) {
+				if (len<(long)sizeof (root)) {
 					memcpy (root, ns->name, len+1);
 					walk_namespace (out, root,
 						sizeof (root)-len,
@@ -285,7 +285,7 @@ next_quote:
 			goto fail;
 		} else
 		if (!strcmp (cmd, "*")) {
-			ForeachListUser user = { out, encode };
+			ForeachListUser user = { out, encode, NULL };
 			sdb_foreach (s, foreach_list_cb, &user);
 			goto fail;
 		}
@@ -325,7 +325,7 @@ next_quote:
 	} else
 	if (*cmd == '~') {
 		d = 1;
-		sdb_unset_matching (s, cmd+1);
+		sdb_unset_like (s, cmd+1);
 	} else
 	if (*cmd == '+' || *cmd == '-') {
 		d = 1;

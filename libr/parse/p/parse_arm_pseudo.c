@@ -21,9 +21,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "adc",  "1 = 2 + 3"},
 		{ 3, "add",  "1 = 2 + 3"},
 		{ 2, "add",  "1 += 2"},
+		{ 3, "adds",  "1 = 2 + 3"},
+		{ 3, "addw",  "1 = 2 + 3"},
 		{ 0, "adf",  "1 = 2 + 3"},
 		{ 0, "adrp",  "1 = 2"},
 		{ 0, "and",  "1 = 2 & 3"},
+		{ 0, "ands",  "1 &= 2"},
 		{ 0, "asl",  "1 = 2 << 3"},
 		{ 0, "asr",  "1 = 2 >> 3"},
 		{ 0, "b",  "jmp 1"},
@@ -34,12 +37,14 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "b.le",  "jmp ifle 1"},
 		{ 0, "beq lr",  "ifeq ret"},
 		{ 0, "beq",  "je 1"},
-		{ 0, "bl",  "call 1"},
-		{ 0, "blx",  "call 1"},
+		{ 0, "call",  "1()"},
+		{ 0, "bl",  "1()"},
+		{ 0, "blx",  "1()"},
 		{ 0, "bx lr",  "ret"},
 		{ 0, "bxeq",  "je 1"},
-		{ 0, "cmf",  "cmp 1 2"},
-		{ 0, "cmp",  "cmp 1 2"},
+		{ 0, "cmf",  "if (1 == 2)"},
+		{ 0, "cmp",  "if (1 == 2)"},
+		{ 0, "tst",  "if (1 == 2)"},
 		{ 0, "dvf",  "1 = 2 / 3"},
 		{ 0, "eor",  "1 = 2 ^ 3"},
 		{ 0, "fdv",  "1 = 2 / 3"},
@@ -57,12 +62,20 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "mul",  "1 = 2 * 3"},
 		{ 0, "orr",  "1 = 2 | 3"},
 		{ 0, "rmf",  "1 = 2 % 3"},
+		{ 0, "bge",  "(>=) goto 1"},
 		{ 0, "sbc",  "1 = 2 - 3"},
 		{ 0, "sqt",  "1 = sqrt(2)"},
 		{ 0, "str",  "2 + 3 = 1"},
+		{ 0, "lsrs",  "1 = 2 >> 3"},
+		{ 0, "lsls",  "1 = 2 << 3"},
+		{ 0, "lsr",  "1 = 2 >> 3"},
+		{ 0, "lsl",  "1 = 2 << 3"},
+		{ 0, "strb",  "2 =(byte) 1"},
+		{ 0, "strh",  "2 =(halt) 1"},
 		{ 0, "strh.w",  "2 + 3 = 1"},
 		{ 3, "sub",  "1 = 2 - 3"},
 		{ 2, "sub",  "1 -= 2"}, // THUMB
+		{ 2, "subs",  "1 -= 2"}, // THUMB
 		{ 0, "swp",  "swap(1, 2)"},
 		/* arm thumb */
 		{ 0, "movs",  "1 = 2"},
@@ -81,6 +94,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "push.w",  "push 1"},
 		{ 0, NULL }
 	};
+	if (!newstr) {
+		return R_FALSE;
+	}
 
 	for (i=0; ops[i].op != NULL; i++) {
 		if (ops[i].narg) {
@@ -89,30 +105,34 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			}
 		}
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr != NULL) {
-				for (j=k=0; ops[i].str[j]!='\0'; j++, k++) {
-					if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
-						const char *w = argv[ ops[i].str[j]-'0' ];
-						if (w != NULL) {
-							strcpy(newstr+k, w);
-							k += strlen(w)-1;
-						}
-					} else newstr[k] = ops[i].str[j];
-				}
-				newstr[k]='\0';
+			for (j=k=0; ops[i].str[j]!='\0'; j++, k++) {
+				if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
+					const char *w = argv[ ops[i].str[j]-'0' ];
+					if (w != NULL) {
+						strcpy (newstr+k, w);
+						k += strlen(w)-1;
+					}
+				} else newstr[k] = ops[i].str[j];
 			}
+			newstr[k]='\0';
+			if (argc == 4 && argv[2][0] == '[') {
+				strcat (newstr+k, " + ");
+				strcat (newstr+k+3, argv[3]);
+			}
+			r_str_replace_char (newstr, '{', '(');
+			r_str_replace_char (newstr, '}', ')');
 			return R_TRUE;
 		}
 	}
 
 	/* TODO: this is slow */
-	if (newstr != NULL) {
-		newstr[0] = '\0';
-		for (i=0; i<argc; i++) {
-			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i == argc - 1)?" ":",");
-		}
+	newstr[0] = '\0';
+	for (i=0; i<argc; i++) {
+		strcat (newstr, argv[i]);
+		strcat (newstr, (i == 0 || i == argc - 1)?" ":",");
 	}
+	r_str_replace_char (newstr, '{', '(');
+	r_str_replace_char (newstr, '}', ')');
 	return R_FALSE;
 }
 
@@ -145,6 +165,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			if (ptr && *ptr == '{') { ptr = strchr (ptr+1, '}'); }
 			if (!ptr) {
 				eprintf ("Unbalanced bracket\n");
+				free(buf);
 				return R_FALSE;
 			}
 			ptr = strchr (ptr, ',');
@@ -285,6 +306,7 @@ struct r_parse_plugin_t r_parse_plugin_arm_pseudo = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_arm_pseudo
+	.data = &r_parse_plugin_arm_pseudo,
+	.version = R2_VERSION
 };
 #endif

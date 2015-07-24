@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake
-	2014 - condret					*/
+/* radare - LGPL - Copyright 2012-2015 - pancake, condret */
 
 // copypasta from asm_gb.c
 
@@ -32,6 +31,7 @@ RAsmPlugin r_asm_plugin_6502 = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_6502
+	.data = &r_asm_plugin_6502,
+	.version = R2_VERSION
 };
 #endif

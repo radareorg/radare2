@@ -24,8 +24,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	op->size = r_java_disasm (obj, a->pc, buf,
 		op->buf_asm, sizeof (op->buf_asm));
-	a->pc += op->size;
-	return  op->size;
+	return op->size;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
@@ -48,6 +47,7 @@ RAsmPlugin r_asm_plugin_java = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_java
+	.data = &r_asm_plugin_java,
+	.version = R2_VERSION
 };
 #endif

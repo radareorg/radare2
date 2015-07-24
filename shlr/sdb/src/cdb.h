@@ -7,6 +7,8 @@
 #include "types.h"
 
 #define KVLSZ 4
+#define CDB_MAX_KEY 0xff
+#define CDB_MAX_VALUE 0xffffff
 
 /* TODO THIS MUST GTFO! */
 int cdb_getkvlen(int fd, ut32 *klen, ut32 *vlen);
@@ -26,7 +28,7 @@ struct cdb {
 };
 
 void cdb_free(struct cdb *);
-void cdb_init(struct cdb *, int fd);
+int cdb_init(struct cdb *, int fd);
 void cdb_findstart(struct cdb *);
 int cdb_read(struct cdb *, char *, unsigned int, ut32);
 int cdb_findnext(struct cdb *, ut32 u, const char *, ut32);

@@ -110,18 +110,23 @@ R_API ut64 r_file_size(const char *str) {
 	return (ut64)buf.st_size;
 }
 
+R_API int r_file_is_abspath(const char *file) {
+	return ((*file && file[1]==':') || *file == '/');
+}
+
 R_API char *r_file_abspath(const char *file) {
 	char *ret = NULL;
 	char *cwd = r_sys_getdir ();
-	if (!strncmp (file, "~/", 2)) {
+	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
 		ret = r_str_home (file+2);
 	} else {
 #if __UNIX__ || __CYGWIN__
 		if (cwd && *file != '/')
-			ret = r_str_newf ("%s/%s", cwd, file);
+			ret = r_str_newf ("%s"R_SYS_DIR"%s", cwd, file);
 #elif __WINDOWS__ && !__CYGWIN__
-		if (cwd && !strchr (file, ':'))
+		if (cwd && !strchr (file, ':')) {
 			ret = r_str_newf ("%s\\%s", cwd, file);
+		}
 #endif
 	}
 	free (cwd);
@@ -134,10 +139,6 @@ R_API char *r_file_abspath(const char *file) {
 			ret = abspath;
 		}
 	}
-#else
-	/* remove ../ */
-	/* remove ./ */
-	/* remove // */
 #endif
 	return ret;
 }
@@ -155,7 +156,7 @@ R_API char *r_file_path(const char *bin) {
 			ptr = strchr (str, ':');
 			if (ptr) {
 				*ptr = '\0';
-				snprintf (file, sizeof (file), "%s/%s", str, bin);
+				snprintf (file, sizeof (file), "%s"R_SYS_DIR"%s", str, bin);
 				if (r_file_exists (file)) {
 					free (path);
 					free (path_env);
@@ -403,7 +404,7 @@ R_API char *r_file_root(const char *root, const char *path) {
 	while (strstr (s, "..")) s = r_str_replace (s, "..", "", 1);
 	while (strstr (s, "./")) s = r_str_replace (s, "./", "", 1);
 	while (strstr (s, "//")) s = r_str_replace (s, "//", "", 1);
-	ret = r_str_concat (strdup (root), "/");
+	ret = r_str_concat (strdup (root), R_SYS_DIR);
 	ret = r_str_concat (ret, s);
 	free (s);
 	return ret;
@@ -413,7 +414,7 @@ R_API boolt r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 	int ret;
 	FILE *fd;
 	if (!file || !*file || !buf) {
-		eprintf ("RET %p, buf %p\n", file, buf);
+		eprintf ("r_file_dump file: %s buf: %p\n", file, buf);
 		return R_FALSE;
 	}
 	if (append) {
@@ -657,6 +658,12 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base) {
 
 R_API void r_file_mmap_free (RMmap *m) {
 	if (!m) return;
+#if __WINDOWS__
+	if (m->fm != INVALID_HANDLE_VALUE)
+		CloseHandle (m->fm);
+	if (m->fh != INVALID_HANDLE_VALUE)
+		CloseHandle (m->fh);
+#endif
 	if (m->fd == -1) {
 		free (m);
 		return;
@@ -664,8 +671,6 @@ R_API void r_file_mmap_free (RMmap *m) {
 #if __UNIX__
 	munmap (m->buf, m->len);
 #elif __WINDOWS__
-	CloseHandle (m->fm);
-	CloseHandle (m->fh);
 	UnmapViewOfFile (m->buf);
 #endif
 	close (m->fd);

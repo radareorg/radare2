@@ -206,6 +206,7 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 
 static char *crash_handler_cmd = NULL;
 
+#if __UNIX__
 static void signal_handler(int signum) {
 	int len;
 	char *cmd;
@@ -228,6 +229,7 @@ static int checkcmd(const char *c) {
 	}
 	return 1;
 }
+#endif
 
 R_API int r_sys_crash_handler(const char *cmd) {
 #if __UNIX__
@@ -294,7 +296,7 @@ R_API int r_sys_chdir(const char *s) {
 	return r_sandbox_chdir (s)==0;
 }
 
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
 	char buffer[1024], *outputptr = NULL;
 	char *inputptr = (char *)input;
@@ -487,17 +489,25 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 
 R_API int r_sys_rmkdir(const char *dir) {
 	int ret = R_TRUE;
+	const char slash = R_SYS_DIR[0];
 	char *path = strdup (dir), *ptr = path;
-	// XXX: Wrong for w32 (/).. and no errno ?
-	if (*ptr=='/') ptr++;
-	while ((ptr = strchr (ptr, '/'))) {
+	if (*ptr==slash) ptr++;
+#if __WINDOWS__
+	{
+		char *p = strstr (ptr, ":\\");
+		if (p) {
+			ptr = p + 2;
+		}
+	}
+#endif
+	while ((ptr = strchr (ptr, slash))) {
 		*ptr = 0;
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
-			eprintf ("r_sys_rmkdir: fail %s\n", dir);
+			eprintf ("r_sys_rmkdir: fail '%s' of '%s'\n", path, dir);
 			free (path);
 			return R_FALSE;
 		}
-		*ptr = '/';
+		*ptr = slash;
 		ptr++;
 	}
 	if (!r_sys_mkdir (path) && r_sys_mkdir_failed ())
@@ -615,7 +625,7 @@ R_API int r_is_heap (void *p) {
 
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	DWORD WINAPI (*QueryFullProcessImageNameA) (HANDLE, DWORD, LPTSTR, PDWORD);
+	BOOL WINAPI (*QueryFullProcessImageNameA) (HANDLE, DWORD, LPTSTR, PDWORD);
 	DWORD WINAPI (*GetProcessImageFileNameA) (HANDLE, LPTSTR, DWORD);
 	HANDLE kernel32 = LoadLibrary ("Kernel32.dll");
 	if (!kernel32) {

@@ -1,4 +1,4 @@
-BINDEPS=r_diff r_util
+BINDEPS=r_util
 BIN=test
 OBJ=test.o
 

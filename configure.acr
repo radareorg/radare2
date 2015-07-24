@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 0.9.9-git
+VERSION 0.10.0-git
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -96,6 +96,9 @@ ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin haiku )
 (( TODO: throw error if unknown ostype ))
 (( TODO: handle BSD os as different ostype? ))
 IFEQ USEROSTYPE auto ; {
+	IFEQ HOST_OS mingw32_nt ; {
+		USEROSTYPE = windows ;
+	}{
 	IFEQ HOST_OS linux ; {
 		USEROSTYPE = gnulinux ;
 	}{
@@ -119,7 +122,7 @@ IFEQ USEROSTYPE auto ; {
 	}{
 	IFEQ HOST_OS darwin ; {
 		USEROSTYPE = darwin ;
-	} } } } } } }
+	} } } } } } } }
 }
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
@@ -146,7 +149,6 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_anal.pc
 	pkgcfg/r_hash.pc
 	pkgcfg/r_cons.pc
-	pkgcfg/r_diff.pc
 	pkgcfg/r_core.pc
 	pkgcfg/r_lang.pc
 	pkgcfg/r_socket.pc

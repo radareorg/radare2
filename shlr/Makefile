@@ -1,14 +1,18 @@
+include ../global.mk
 include ../config-user.mk
+# for EXT_EXE
+include ../libr/config.mk
+_INCLUDE_MK_GCC_=
 include ../mk/${COMPILER}.mk
 
 WGET?=wget
 CS_VER=3.0
 CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_TAR=
-CS_URL=https://www.github.com/aquynh/capstone.git
-CS_UPD=20150512
+CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
+CS_UPD=20150715
 CS_BRA=next
-CS_TIP=ef5011297174e80c2f19290f717ebe04bee5f19b
+CS_TIP=cc7434c57e422ef6f8331bd21a1bcb27d668e0a9
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=21b9b25e9dae4af0ef309d4089a54e53b8f5b479
 
@@ -18,49 +22,101 @@ HOST_CC?=gcc
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=sdb udis86 java tcc zip 
+MODS=sdb zip udis86 java tcc
 ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
+MODS+=gdb
 SDB_URL=git://github.com/radare/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
-ifneq (,$(findstring cygwin,${OSTYPE})$(findstring mingw32,${OSTYPE}))
+ifneq (,$(findstring cygwin,${OSTYPE})$(findstring mingw32,${OSTYPE})$(findstring mingw64,${OSTYPE})$(findstring msys,${OSTYPE}))
 CFLAGS_SHARED=
 else
 CFLAGS_SHARED=-fPIC
 endif
 
-preall: sdb/sdb libgdbr libwind capstone-build
+ifeq (${EXT_SO},)
+all:
+	echo EXT_SO not defined
+	exit 1
+endif
+
+preall: targets libwind capstone-build
 	@for a in ${MODS} ; do \
 		echo $(MAKE) -C $$a ; \
-		$(MAKE) -C $$a RANLIB="$(RANLIB)" CC_AR="$(CC_AR)" HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
+		$(MAKE) -C $$a HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
 clean mrproper:
 	-cd capstone && $(MAKE) clean
 	cd gdb && $(MAKE) clean
 	cd wind && $(MAKE) clean
-	rm -f sdb/src/.sdb sdb/sdb
+	rm -f sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE}
 	cd sdb && $(MAKE) clean
-	rm -f sdb/sdb
+	rm -f sdb/src/.sdb sdb/sdb
+	rm -f sdb/sdb${EXT_EXE}
 	@for a in ${MODS} ; do $(MAKE) -C $$a clean ; done
 
-$(SDBLIB) sdb/sdb:
-	cd sdb ; $(MAKE) src/sdb-version.h
-	cd sdb ; $(MAKE) clean
-	cd sdb ; \
-		$(MAKE) clean && \
-		$(MAKE) CC=${HOST_CC} CFLAGS='${HOST_CFLAGS} -fPIC' && \
-		cp -f src/sdb src/.sdb
-	cd sdb ; $(MAKE) clean
-	cd sdb ; $(MAKE) src/sdb-version.h
+ifeq ($(BUILD_OS),windows)
+BUILD_EXT_EXE=.exe
+else
+BUILD_EXT_EXE=
+endif
+
+SDB_TARGETS=$(SDBLIB)
+ifneq (${EXT_EXE},)
+SDB_TARGETS+=sdb/sdb${EXT_EXE}
+else
+SDB_TARGETS+=sdb/sdb
+endif
+
+ifeq (${BUILD_EXT_EXE},)
+# TODO avoid dup
+SDB_TARGETS+=sdb/sdb
+else
+SDB_TARGETS+=sdb/sdb${BUILD_EXT_EXE}
+endif
+
+targets:
+	for a in ${SDB_TARGETS} ; do ${MAKE} $$a ; done
+
+${SDB_TARGETS}:
+	@echo
+	@echo BUILD SUMARY
+	@echo ============
+	@echo COMPILER ${COMPILER}
+	@echo CC ${CC}
+	@echo HOST_CC ${HOST_CC}
+	@echo HOST_OS ${HOST_OS}
+	@echo BUILD_OS ${BUILD_OS}
+	@echo ============
+	@echo
+	@echo ">>>>>>>>>>>>>>>>"
+	@echo "NATIVE BUILD SDB"
+	@echo ">>>>>>>>>>>>>>>>"
+	@echo
+	$(MAKE) -C sdb clean
+	$(MAKE) -C sdb src/sdb_version.h
+	$(MAKE) -C sdb/src CC=${HOST_CC} CFLAGS='${HOST_CFLAGS} -fPIC' bin
+	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/src/.sdb${BUILD_EXT_EXE}
+	@echo
+	@echo ">>>>>>>>>>>>>>>>"
+	@echo "TARGET BUILD SDB"
+	@echo ">>>>>>>>>>>>>>>>"
+	@echo
+	$(MAKE) -C sdb clean
+	cd sdb ; $(MAKE) src/sdb_version.h
 	cd sdb/src ; $(MAKE) ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
 		CC="${CC}" AR="${AR}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 	${RANLIB} sdb/src/libsdb.a
-	cp -f sdb/src/.sdb sdb/sdb
+ifneq (${EXT_AR},.a)
+	-cp -f sdb/src/libsdb.a sdb/src/libsdb.${EXT_AR}
+endif
+	rm -f $@
+	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
 
 .PHONY: sdb-sync sync-sdb sdbclean
 F=README.md config.mk src Makefile Jamroot
@@ -71,7 +127,12 @@ libgdbr:
 	cd gdb ; $(MAKE) all
 
 libwind:
-	cd wind; $(MAKE) all
+	cd wind ; $(MAKE) all
+
+sdb-clean clean-sdb:
+	$(MAKE) -C sdb clean
+	rm -f sdb/sdb.exe
+	rm -f sdb/src/libsdb.a
 
 sdb-sync sync-sdb:
 	rm -rf sdb sdb.vc
@@ -80,8 +141,8 @@ sdb-sync sync-sdb:
 	cp -rf ${SYNCFILES} sdb
 	rm -rf sdb.vc $I/sdb
 	mkdir -p $I/sdb
-	rm -f src/sdb-version.h
-	cd sdb ; $(MAKE) src/sdb-version.h
+	rm -f src/sdb_version.h
+	cd sdb ; $(MAKE) src/sdb_version.h
 	cp -f sdb/src/*.h $I/sdb
 	echo '#include <sdb/sdb.h>' > $I/sdb.h
 	mkdir -p sdb/test sdb/memcache
@@ -161,7 +222,7 @@ capstone-sync:
 		git config user.name || ( \
 		git config user.name "radare-travis" ; \
 		git config user.email radare-travis@foo.com ) ; \
-		EDITOR=cat git revert ${CS_REV} ; \
+		EDITOR=cat git revert --no-edit ${CS_REV} ; \
 	fi
 
 .PHONY: capstone
@@ -184,9 +245,15 @@ endif
 
 CAPSTONE_CFLAGS=-g
 
+ifeq (${EXT_AR},)
+all:
+	echo EXT_AR is not defined
+	exit 1
+endif
+
 capstone-build: capstone
 	cd capstone && CFLAGS="-Dmips=mips ${CAPSTONE_CFLAGS} $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
 		$(MAKE) CC="$(CC)" AR_EXT=a IS_CYGWIN=0 CAPSTONE_STATIC=yes CAPSTONE_SHARED=no \
-		RANLIB="$(RANLIB)" AR="$(AR)" IS_MINGW=0 \
-		./libcapstone.a
+		RANLIB="$(RANLIB)" AR="$(AR)" IS_MINGW=0 libcapstone.a
+	-cp -f capstone/libcapstone.a capstone/libcapstone.${EXT_AR}
 endif

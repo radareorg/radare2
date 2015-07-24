@@ -78,6 +78,9 @@ static int formatDisassembledOperand(char *strOperand, int operandNum, const dis
 	char binary[9];
 	int retVal;
 
+	if (operandNum >= AVR_MAX_NUM_OPERANDS)
+		return 0;
+
 	switch (dInstruction.instruction->operandTypes[operandNum]) {
 	case OPERAND_NONE:
 	case OPERAND_REGISTER_GHOST:

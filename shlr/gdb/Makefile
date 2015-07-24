@@ -1,4 +1,5 @@
 include ../../libr/config.mk
+include ../../shlr/zip/deps.mk
 EDITOR?=vim
 CC?=gcc
 AR?=ar
@@ -13,7 +14,6 @@ MINOR=1
 LD=$(CC)
 LDFLAGS+=-L${LIBR}/socket -lr_socket
 LDFLAGS+=-L${LIBR}/util -lr_util
-LDFLAGS+=../zip/librz.a
 #OSTYPE=windows
 include ../../libr/socket/deps.mk
 
@@ -49,7 +49,7 @@ $(LIB):
 	mkdir -p $(LIB)
 
 $(LIB)/$(LIBNAME).a: $(LIB) $(SRC_O)
-	$(LD) -fPIC -shared -o $(LIB)/$(LIBFILE) $(SRC_O) $(LDFLAGS)
+	$(LD) -fPIC -shared -o $(LIB)/$(LIBFILE) $(SRC_O) $(LDFLAGS) $(LINK)
 	$(AR) rvs $(LIB)/$(LIBNAME).a $(SRC_O)
 	# required for solaris and w32
 	$(RANLIB) $(LIB)/$(LIBNAME).a

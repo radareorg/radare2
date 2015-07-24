@@ -670,16 +670,19 @@ R_API DsoJsonObj * r_bin_java_get_bin_obj_json (RBinJavaObj *bin) {
 	//eprintf ("Resulting methods json: \n%s\n", res);
 	free (res);
 	dso_json_dict_insert_str_key_obj (class_dict, "methods", methods_list);
+	dso_json_list_free (methods_list);
 
 	res = dso_json_obj_to_str (fields_list);
 	//eprintf ("Resulting fields json: \n%s\n", res);
 	free (res);
 	dso_json_dict_insert_str_key_obj (class_dict, "fields", fields_list);
+	dso_json_list_free (fields_list);
 
 	res = dso_json_obj_to_str (imports_list);
 	//eprintf ("Resulting imports json: \n%s\n", res);
 	free (res);
 	dso_json_dict_insert_str_key_obj (class_dict, "imports", imports_list);
+	dso_json_list_free (imports_list);
 
 	//res = dso_json_obj_to_str (interfaces_list);
 	//eprintf ("Resulting interfaces json: \n%s\n", res);
@@ -754,6 +757,7 @@ R_API DsoJsonObj * r_bin_java_get_class_info_json(RBinJavaObj *bin) {
 		if (!class_->super) {
 			DsoJsonObj *str = dso_json_str_new ();
 			dso_json_dict_insert_str_key_obj (class_info_dict, "super", str);
+			dso_json_str_free (str);
 		} else {
 			dso_json_dict_insert_str_key_str (class_info_dict, "super", class_->super);
 		}
@@ -771,6 +775,7 @@ R_API DsoJsonObj * r_bin_java_get_class_info_json(RBinJavaObj *bin) {
 	}
 	dso_json_dict_insert_str_key_obj (class_info_dict, "interfaces", interfaces_list);
 	r_list_free (classes);
+	dso_json_list_free (interfaces_list);
 	return class_info_dict;
 }
 
@@ -3262,7 +3267,7 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	ut64 offset = 0;
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	if (!attr) return NULL;
-	if (sz > buf_offset) {
+	if (sz < 16 || sz > buf_offset) {//sz > buf_offset) {
 		free (attr);
 		return NULL;
 	}
@@ -3282,15 +3287,22 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 		return attr;
 	}
 	R_BIN_JAVA_GLOBAL_BIN->current_code_attr = attr;
-	memset (attr->info.code_attr.code, 0, attr->info.code_attr.code_length);
-	memcpy (attr->info.code_attr.code, buffer+offset, attr->info.code_attr.code_length);
-	offset += attr->info.code_attr.code_length;
+	{
+		int len = attr->info.code_attr.code_length;
+		memset (attr->info.code_attr.code, 0, len);
+		if (offset + len >= sz) {
+			len = sz;
+			return attr;
+		}
+		memcpy (attr->info.code_attr.code, buffer+offset, len);
+		offset += len;
+	}
 	attr->info.code_attr.exception_table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.code_attr.exception_table = r_list_newf (free);
 	for (k = 0; k < attr->info.code_attr.exception_table_length; k++) {
 		cur_location = buf_offset+offset;
-		if (cur_location>sz)
+		if (cur_location+8>sz)
 			return attr;
 		exc_entry = R_NEW0(RBinJavaExceptionEntry);
 		exc_entry->file_offset = cur_location;
@@ -3313,6 +3325,7 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	if (attr->info.code_attr.attributes_count > 0) {
 		for (k = 0; k < attr->info.code_attr.attributes_count; k++) {
 			int size = (offset<sz)? sz-offset:0;
+			if (size > sz || size <= 0) break;
 			_attr = r_bin_java_read_next_attr_from_buffer (buffer+offset, size, buf_offset+offset);
 			if (!_attr) {
 				eprintf ("[X] r_bin_java_code_attr_new: Error unable to parse remainder of classfile after Method's Code Attribute: %d.\n", k);
@@ -3718,18 +3731,21 @@ R_API RBinJavaAttrInfo* r_bin_java_local_variable_table_attr_new (ut8* buffer, u
 	attr->info.local_variable_table_attr.table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.local_variable_table_attr.local_variable_table = r_list_newf (r_bin_java_local_variable_table_attr_entry_free);
-	for(i = 0; i < attr->info.local_variable_table_attr.table_length; i++) {
+	for (i = 0; i < attr->info.local_variable_table_attr.table_length; i++) {
+		if (offset + 10 < sz) {
+			break;
+		}
 		cur_location = buf_offset + offset;
 		lvattr = R_NEW0 (RBinJavaLocalVariableAttribute);
-		lvattr->start_pc = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		lvattr->length = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->length = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		lvattr->name_idx = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->name_idx = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		lvattr->descriptor_idx = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->descriptor_idx = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		lvattr->index = R_BIN_JAVA_USHORT (buffer,offset);
+		lvattr->index = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 		lvattr->file_offset = cur_location;
 		lvattr->name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, lvattr->name_idx);
@@ -7728,21 +7744,20 @@ R_API RList * r_bin_java_get_method_exception_table_with_addr(RBinJavaObj *bin, 
 }
 
 R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin) {
-	if (bin) {
-		return bin->methods_list;
-	} else if (R_BIN_JAVA_GLOBAL_BIN) {
+	if (bin) return bin->methods_list;
+	if (R_BIN_JAVA_GLOBAL_BIN)
 		return R_BIN_JAVA_GLOBAL_BIN->methods_list;
-	}
 	return NULL;
 }
 
 R_API RList* r_bin_java_get_bin_obj_list_thru_obj(RBinJavaObj *bin_obj) {
-	Sdb * sdb = bin_obj ? bin_obj->AllJavaBinObjs : NULL;
-	if (bin_obj == NULL || sdb == NULL) {
-		return NULL;
-	}
-	RList *the_list = r_list_new();
-	if (sdb == NULL || the_list == NULL) return NULL;
+	RList *the_list;
+	Sdb * sdb;
+	if (!bin_obj) return NULL;
+	sdb = bin_obj->AllJavaBinObjs;
+	if (!sdb) return NULL;
+	the_list = r_list_new();
+	if (!the_list) return NULL;
 	sdb_foreach (sdb, sdb_iterate_build_list, (void *) the_list);
 	return the_list;
 }

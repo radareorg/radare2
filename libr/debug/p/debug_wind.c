@@ -144,14 +144,14 @@ static int r_debug_wind_detach (int pid) {
 }
 
 static char *r_debug_wind_reg_profile(RDebug *dbg) {
-	if (dbg->arch != R_SYS_ARCH_X86)
+	if (!dbg || dbg->arch != R_SYS_ARCH_X86)
 		return NULL;
-
-	if (dbg->bits == R_SYS_BITS_32)
-#include "native/reg-w32.h"
-	if (dbg->bits == R_SYS_BITS_64)
-#include "native/reg-w64.h"
-
+	if (dbg->bits == R_SYS_BITS_32) {
+#include "native/reg/windows-x86.h"
+	}
+	if (dbg->bits == R_SYS_BITS_64) {
+#include "native/reg/windows-x64.h"
+	}
 	return NULL;
 }
 
@@ -242,6 +242,7 @@ struct r_debug_plugin_t r_debug_plugin_wind = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
-	.data = &r_debug_plugin_wind
+	.data = &r_debug_plugin_wind,
+	.version = R2_VERSION
 };
 #endif

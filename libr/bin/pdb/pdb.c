@@ -334,12 +334,14 @@ static int pdb_read_root(R_PDB *pdb) {
 		//      look default
 		case ePDB_STREAM_PDB:
 			pdb_info_stream = R_NEW0 (SPDBInfoStream);
+			if (!pdb_info_stream) return 0;
 			pdb_info_stream->free_ = free_info_stream;
 			parse_pdb_info_stream(pdb_info_stream, &stream_file);
 			r_list_append(pList, pdb_info_stream);
 			break;
 		case ePDB_STREAM_TPI:
 			tpi_stream = R_NEW0 (STpiStream);
+			if (!tpi_stream) return 0;
 			init_tpi_stream(tpi_stream);
 			if (!parse_tpi_stream(tpi_stream, &stream_file)) {
 				free (tpi_stream);

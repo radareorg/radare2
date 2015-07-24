@@ -214,6 +214,7 @@ extern RAsmPlugin r_asm_plugin_cris_gnu;
 extern RAsmPlugin r_asm_plugin_z80_cr;
 extern RAsmPlugin r_asm_plugin_lh5801;
 extern RAsmPlugin r_asm_plugin_hppa_gnu;
+extern RAsmPlugin r_asm_plugin_v810;
 #endif
 
 #ifdef __cplusplus

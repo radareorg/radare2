@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2013-2015 - pancake */
+/* sdb - MIT - Copyright 2013-2015 - pancake */
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -20,21 +20,27 @@
 #define r_sys_mkdir_failed() (errno != EEXIST)
 #endif
 
-// TODO: move into util.c ?
 static inline int r_sys_rmkdir(char *dir) {
-        char *ptr = dir;
-        if (*ptr==DIRSEP) ptr++;
-        while ((ptr = strchr (ptr, DIRSEP))) {
+        int ret = 1;
+        const char slash = DIRSEP;
+        char *path = dir;
+	char *ptr = path;
+        if (*ptr==slash) ptr++;
+#if __WINDOWS__
+        char *p = strstr (ptr, ":\\");
+        if (p) ptr = p + 2;
+#endif
+        while ((ptr = strchr (ptr, slash))) {
                 *ptr = 0;
-                if (!r_sys_mkdir (dir) && r_sys_mkdir_failed ()) {
-                        eprintf ("r_sys_rmkdir: fail %s\n", dir);
-			*ptr = DIRSEP;
+                if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
+                        eprintf ("r_sys_rmkdir: fail '%s' of '%s'\n", path, dir);
+			*ptr = slash;
                         return 0;
                 }
-                *ptr = DIRSEP;
+                *ptr = slash;
                 ptr++;
         }
-        return 1;
+        return ret;
 }
 
 SDB_API int sdb_disk_create (Sdb* s) {
@@ -95,11 +101,13 @@ SDB_API int sdb_disk_finish (Sdb* s) {
 	free (s->ndump);
 	s->ndump = NULL;
 	// reopen if was open before
+	reopen = 1; // always reopen if possible
 	if (reopen) {
 		int rr = sdb_open (s, s->dir);
 		if (ret && rr<0) {
 			ret = 0;
 		}
+		cdb_init (&s->db, s->fd);
 	}
 	return ret;
 }
