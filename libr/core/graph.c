@@ -2220,6 +2220,10 @@ R_API RAGraph *r_agraph_new(RConsCanvas *can) {
 
 static void visual_offset (RCore *core) {
 	char buf[256];
+	int cols, rows;
+	cols = r_cons_get_size (&rows);
+	r_cons_gotoxy (0,rows);
+	r_cons_flush ();
 	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
 	if (r_cons_fgets (buf+2, sizeof (buf)-3, 0, NULL) >0) {
