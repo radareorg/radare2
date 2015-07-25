@@ -41,7 +41,7 @@ R_API RFlag * r_flag_new() {
 	RFlag *f = R_NEW (RFlag);
 	if (!f) return NULL;
 #if USE_SDB
-db = sdb_new0 ();
+	db = sdb_new0 ();
 #endif
 	f->num = r_num_new (&num_callback, f);
 	f->base = 0;
@@ -59,8 +59,8 @@ db = sdb_new0 ();
 
 R_API void r_flag_item_free (RFlagItem *item) {
 #if USE_SDB
-sdb_free (db);
-db = NULL;
+	sdb_free (db);
+	db = NULL;
 #endif
 	free (item->cmd);
 	free (item->color);
@@ -201,13 +201,11 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 	RFlagItem *item = NULL;
 	RList *list;
 #if USE_SDB
-	{
-		char buf[128];
-		char * foo = sdb_get(db, sdb_itoa(off, buf, 16), 0);
-		return r_flag_get (f, foo);
-	}
+	char buf[128];
+	char * foo = sdb_get (db, sdb_itoa (off, buf, 16), 0);
+	return r_flag_get (f, foo);
 #else
-list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
+       list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
 
 //if (off == 0x4005c4) { eprintf ("FLAG GET IT %llx = %p\n", off, list); }
 	if (list) {
@@ -216,13 +214,28 @@ list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
 			// XXX: hack, because some times the hashtable is poluted by ghost values
 			if (item->offset != off)
 				continue;
+#define NEW_FILTER 0
+#if NEW_FILTER
+			/* catch sym. first */
+			if (strlen (item->name)>4 && item->name[3]) {
+				oitem = item;
+				break;
+			}
+			oitem = item;
+//			if (!strchr (item->name, '.'))
+//				oitem = item;
+//			if (!strchr (item->name, '.'))
+//				oitem = item;
+#else
 			if (!strchr (item->name, '.'))
 				oitem = item;
 			if (strlen (item->name) < 5 || item->name[3]!='.')
 				continue;
 			oitem = item;
+#endif
 		}
 	}
+//if (oitem) eprintf ("%s\n", oitem->name); eprintf ("FIN\n");
 	return oitem;
 #endif
 }

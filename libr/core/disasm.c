@@ -668,62 +668,62 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 }
 
 static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
-	// Show xrefs
-	if (ds->show_xrefs) {
-		RList *xrefs;
-		RAnalRef *refi;
-		RListIter *iter;
-		int count = 0;
-
-		if (!ds->show_comments)
-			return;
-		/* show xrefs */
-		xrefs = r_anal_xref_get (core->anal, ds->at);
-		if (!xrefs)
-			return;
-
-		if (r_list_length (xrefs)> ds->maxrefs) {
-			RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-			beginline (core, ds, f);
-			r_cons_printf ("%s; XREFS: ", ds->show_color? ds->pal_comment: "");
-			r_list_foreach (xrefs, iter, refi) {
-				r_cons_printf ("%s 0x%08"PFMT64x"  ",
-					r_anal_xrefs_type_tostring (refi->type), refi->addr);
-				if (count == 2) {
-					if (iter->n) {
-						r_cons_newline ();
-						beginline (core, ds, f);
-						r_cons_printf ("%s; XREFS: ",
-							ds->show_color? ds->pal_comment: "");
-					}
-					count = 0;
-				} else count++;
-			}
-			r_cons_newline ();
-			r_list_free (xrefs);
-			return;
-		}
-		r_list_foreach (xrefs, iter, refi) {
-			if (refi->at == ds->at) {
-				RAnalFunction *fun = r_anal_get_fcn_in (
-					core->anal, refi->addr, -1);
-				beginline (core, ds, fun);
-				if (ds->show_color) {
-					r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
-						ds->pal_comment,
-						r_anal_xrefs_type_tostring (refi->type),
-						refi->addr,
-						fun?fun->name:"unk");
-				} else {
-					r_cons_printf ("; %s XREF from 0x%08"PFMT64x" (%s)\n",
-						r_anal_xrefs_type_tostring (refi->type),
-						refi->addr,
-						fun?fun->name: "unk");
-				}
-			}
-		}
-		r_list_free (xrefs);
+	RList *xrefs;
+	RAnalRef *refi;
+	RListIter *iter;
+	int count = 0;
+	if (!ds->show_xrefs) {
+		return;
 	}
+	if (!ds->show_comments)
+		return;
+	/* show xrefs */
+	xrefs = r_anal_xref_get (core->anal, ds->at);
+	if (!xrefs)
+		return;
+
+	if (r_list_length (xrefs) > ds->maxrefs) {
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		beginline (core, ds, f);
+		r_cons_printf ("%s; XREFS: ", ds->show_color? ds->pal_comment: "");
+		r_list_foreach (xrefs, iter, refi) {
+			r_cons_printf ("%s 0x%08"PFMT64x"  ",
+				r_anal_xrefs_type_tostring (refi->type), refi->addr);
+			if (count == 2) {
+				if (iter->n) {
+					r_cons_newline ();
+					beginline (core, ds, f);
+					r_cons_printf ("%s; XREFS: ",
+						ds->show_color? ds->pal_comment: "");
+				}
+				count = 0;
+			} else count++;
+		}
+		r_cons_newline ();
+		r_list_free (xrefs);
+		return;
+	}
+
+	r_list_foreach (xrefs, iter, refi) {
+		if (refi->at == ds->at) {
+			RAnalFunction *fun = r_anal_get_fcn_in (
+				core->anal, refi->addr, -1);
+			beginline (core, ds, fun);
+			if (ds->show_color) {
+				r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
+					ds->pal_comment,
+					r_anal_xrefs_type_tostring (refi->type),
+					refi->addr,
+					fun?fun->name:"unk");
+			} else {
+				r_cons_printf ("; %s XREF from 0x%08"PFMT64x" (%s)\n",
+					r_anal_xrefs_type_tostring (refi->type),
+					refi->addr,
+					fun?fun->name: "unk");
+			}
+		}
+	}
+	r_list_free (xrefs);
 }
 
 static void handle_atabs_option(RCore *core, RDisasmState *ds) {
@@ -763,27 +763,23 @@ static void handle_atabs_option(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
-	if (!ds->show_marks) return;
-
-	int q = core->print->cur_enabled &&
+	void *p;
+	int q;
+	if (!core || !ds || !ds->show_marks)
+		return;
+	q = core->print->cur_enabled &&
 		ds->cursor >= ds->index &&
 		ds->cursor < (ds->index+ds->asmop.size);
-	void *p = r_bp_get_at (core->dbg->bp, ds->at);
-	if (p && q)
-		r_cons_printf ("b*");
-	else if (p)
-		r_cons_printf ("b ");
-	else if (q)
-		r_cons_printf ("* ");
-	else
-		r_cons_printf ("  ");
+	p = r_bp_get_at (core->dbg->bp, ds->at);
+	if (p && q) r_cons_strcat ("b*");
+	else if (p) r_cons_strcat ("b ");
+	else if (q) r_cons_strcat ("* ");
+	else r_cons_strcat ("  ");
 }
 
 
 static int var_comparator (const RAnalVar *a, const RAnalVar *b){
-	//avoid NULL dereference
-	if ( a && b)
-		return a->delta > b->delta;
+	if (a && b) return a->delta > b->delta;
 	return R_FALSE;
 }
 
@@ -838,8 +834,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 		}
 	}
 	if (sign) r_cons_printf ("// %s\n", sign);
-	free (sign);
-	sign = NULL;
+	R_FREE (sign);
 	handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 	ds->pre = r_str_concat (ds->pre, " ");
 	ds->stackptr = 0;
