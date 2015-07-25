@@ -1990,16 +1990,16 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	RCore *core = grd->core;
 	RAGraph *g = grd->g;
 	RAnalFunction **fcn = grd->fcn;
+	RAnalFunction *f;
 
-	/* allow to change the current function only during debugging */
-	if (g->is_instep && core->io->debug) {
-		RAnalFunction *f;
+	/* allow to change the current function during debugging */
+	if (g->is_instep && core->io->debug) 
 		r_core_cmd0 (core, "sr pc");
-		f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-		if (f && f != *fcn) {
-			*fcn = f;
-			g->need_reload_nodes = R_TRUE;
-		}
+
+	f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	if (f && f != *fcn) {
+		*fcn = f;
+		g->need_reload_nodes = R_TRUE;
 	}
 
 	return agraph_print (g, grd->fs, core, *fcn);
@@ -2228,18 +2228,6 @@ static void visual_offset (RCore *core) {
 	}
 }
 
-static void print_agraph (RAGraph *g, RCore *core, struct agraph_refresh_data *grd){
-	RAnalFunction **fcn = grd->fcn;
-	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-	if (f && f != *fcn){
-		*fcn = f;
-		g->need_reload_nodes = R_TRUE;
-	}
-	agraph_print (g, grd->fs, core, *fcn);
-	return;
-}
-
-
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interactive) {
 	int exit_graph = R_FALSE, is_error = R_FALSE;
 	struct agraph_refresh_data *grd;
@@ -2405,14 +2393,12 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			break;
 		case 'o':
 			visual_offset (core);
-			print_agraph (g,core,grd);
 			break;
 		case 'u':
 			{
 			ut64 off = r_io_sundo (core->io, core->offset);
 			if (off != UT64_MAX){
 				r_core_seek (core, off, 1);
-				print_agraph (g,core,grd);
 			} else eprintf ("Can not undo\n");
 			}
 			break;
@@ -2421,7 +2407,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			ut64 off = r_io_sundo_redo (core->io);
 			if (off != UT64_MAX){
 				r_core_seek (core,off, 1);
-				print_agraph (g,core,grd);
 			} else eprintf ("Can not redo\n");
 			break;
 			}
