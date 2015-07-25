@@ -36,6 +36,9 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2, int s
 		if (G (x2, y2))
 			W ("/");
 		break;
+	default:
+		c->attr = cons->pal.graph_trufae; //Color_BLUE;
+		break;
 	}
 }
 
@@ -136,10 +139,9 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 	int diff_x = R_ABS (x - x2);
 	int diff_y = R_ABS (y - y2);
 
-	apply_line_style (c, x, y, x2, y2, style);
-
 	// --
 	// TODO: find if there's any collision in this line
+	apply_line_style (c, x, y, x2, y2, style);
 	if (y2 - y > 1) {
 		int hl = diff_y / 2 - 1;
 		int hl2 = diff_y - hl;
@@ -150,20 +152,13 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 		draw_vertical_line(c, x2, y + hl + 1, hl2);
 		draw_horizontal_line(c, min_x, y + hl + 1, w, style);
 	} else  {
-		int rl = diff_x / 2;
-		int rl2 = diff_x - rl + 1;
-		int vl = y2 - y == 1 ? 1 : diff_y + 1;
-		int y_line, style;
-
-		draw_vertical_line(c, min_x + rl, y2, vl);
-
-		y_line = min_x == x ? y + 1 : y2 - 1;
-		style = min_x == x ? REV_APEX_APEX : DOT_DOT;
-		draw_horizontal_line(c, min_x, y_line, rl + 1, style);
-
-		y_line = min_x == x ? y2 - 1 : y + 1;
-		style = min_x == x ? DOT_DOT : REV_APEX_APEX;
-		draw_horizontal_line(c, min_x + rl, y_line, rl2, style);
+		if (y2 == y) {
+			draw_horizontal_line (c, min_x, y-1, diff_x, DOT_DOT);
+		} else {
+			if (x != x2)
+				draw_horizontal_line (c, min_x, y, diff_x + 1, REV_APEX_APEX);
+			draw_vertical_line (c, x2, y2, diff_y);
+		}
 	}
 
 	c->attr = Color_RESET;

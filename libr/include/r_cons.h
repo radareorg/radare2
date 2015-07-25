@@ -555,6 +555,7 @@ typedef struct r_ascii_graph_t {
 	struct layer_t *layers;
 	int n_layers;
 	RList *dists; /* RList<struct dist_t> */
+	RList *edges; /* RList<AEdge> */
 	const char *color_box;
 	const char *color_box2;
 	const char *color_box3;

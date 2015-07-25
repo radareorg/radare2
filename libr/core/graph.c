@@ -56,6 +56,13 @@ struct g_cb {
 	RAEdgeCallback cb;
 };
 
+typedef struct ascii_edge_t {
+	RANode *from;
+	RANode *to;
+	RList *x, *y;
+	int is_reversed;
+} AEdge;
+
 struct layer_t {
 	int n_nodes;
 	RGraphNode **nodes;
@@ -1297,12 +1304,53 @@ static void restore_original_edges (const RAGraph *g) {
 static void remove_dummy_nodes (const RAGraph *g) {
 	RGraphNode *gn;
 	const RListIter *it;
-	const RANode *n;
 	RList *toremove = r_list_new ();
+	int i, j;
 
-	graph_foreach_anode (r_graph_get_nodes (g->graph), it, gn, n) {
-		if (n->is_dummy) {
-			r_list_append (toremove, gn);
+	for (i = 0; i < g->n_layers; ++i) {
+		for (j = 0; j < g->layers[i].n_nodes; ++j) {
+			RGraphNode *n = g->layers[i].nodes[j];
+			RANode *an = get_anode (n);
+			if (!an->is_dummy || r_list_contains (toremove, n)) continue;
+
+			RGraphNode *from = r_list_get_n (r_graph_innodes (g->graph, n), 0);
+			RANode *a_from = get_anode (from);
+			RListIter *(*add_to_list)(RList *, void *) = NULL;
+			AEdge *e = R_NEW0 (AEdge);
+			int is_reversed = an->is_reversed;
+
+			e->x = r_list_new ();
+			e->y = r_list_new ();
+			e->is_reversed = is_reversed;
+			if (is_reversed) {
+				e->to = a_from;
+				add_to_list = r_list_prepend;
+				add_to_list (e->x, (void *)(size_t)an->x);
+				add_to_list (e->y, (void *)(size_t)a_from->y);
+			} else {
+				e->from = a_from;
+				add_to_list = r_list_append;
+			}
+
+			while (an->is_dummy) {
+				add_to_list (toremove, n);
+
+				add_to_list (e->x, (void *)(size_t)an->x);
+				add_to_list (e->y, (void *)(size_t)an->y);
+
+				add_to_list (e->x, (void *)(size_t)an->x);
+				add_to_list (e->y, (void *)(size_t)
+						(an->y + g->layers[an->layer].height));
+
+				n = r_graph_nth_neighbour (g->graph, n, 0);
+				an = get_anode (n);
+			}
+
+			if (is_reversed)
+				e->from = an;
+			else
+				e->to = an;
+			r_list_append (g->edges, e);
 		}
 	}
 
@@ -1321,6 +1369,9 @@ static void remove_dummy_nodes (const RAGraph *g) {
  * 6) restore the original graph, with long edges and cycles */
 static void set_layout(RAGraph *g) {
 	int i, j, k;
+
+	if (g->edges) r_list_free (g->edges);
+	g->edges = r_list_new ();
 
 	remove_cycles (g);
 	assign_layers (g);
@@ -1673,27 +1724,77 @@ static void agraph_print_nodes(const RAGraph *g) {
 		agraph_print_node (g, get_anode (g->curnode));
 }
 
+static int find_ascii_edge (const AEdge *a, const AEdge *b) {
+	return a->from == b->from && a->to == b->to ? 0 : 1;
+}
+
 /* print an edge between two nodes.
  * nth: specifies if the edge is the true(1)/false(2) branch or if it's the
  *      only edge for that node(0), so that a different style will be applied
  *      to the drawn line */
 static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	int x, y, x2, y2;
-	int xinc = 3 + 2 * (nth + 1);
+	int xinc;
+	RListIter *it;
+	AEdge e, *edg = NULL;
+	int is_first = R_TRUE;
+
+	xinc = 3 + 2 * (nth + 1);
 	x = a->x + xinc;
 	y = a->y + a->h;
+	if (nth > 1) nth = 1;
+
+	e.from = a;
+	e.to = b;
+	it = r_list_find (g->edges, &e, (RListComparator)find_ascii_edge);
+	if (it) {
+		int i, len;
+
+		edg = r_list_iter_get_data (it);
+		len = r_list_length (edg->x);
+
+		for (i = 0; i < len; ++i) {
+			x2 = (int)(size_t)r_list_get_n (edg->x, i);
+			y2 = (int)(size_t)r_list_get_n (edg->y, i);
+
+			if (is_first && nth == 0 && x2 > x) {
+				xinc += 4;
+				x += 4;
+			}
+			if (edg->is_reversed) {
+				r_cons_canvas_line (g->can, x, y, x2, y2, 5);
+			} else {
+				switch (nth) {
+				case 0: L1 (x, y, x2, y2); break;
+				case 1: L2 (x, y, x2, y2); break;
+				case -1: L (x, y, x2, y2); break;
+				}
+			}
+
+			x = x2;
+			y = y2;
+			is_first = R_FALSE;
+		}
+	}
+
 	x2 = b->x + xinc;
 	y2 = b->y;
+	if (is_first && nth == 0 && x2 > x) {
+		xinc += 4;
+		x += 4;
+	}
 	if (a == b) {
 		x2 = a->x;
 		y2 = y - 3;
 	}
-	if (nth > 1)
-		nth = 1;
-	switch (nth) {
-	case 0: L1 (x, y, x2, y2); break;
-	case 1: L2 (x, y, x2, y2); break;
-	case -1: L (x, y, x2, y2); break;
+	if (edg && edg->is_reversed) {
+		r_cons_canvas_line (g->can, x, y, x2, y2, 5);
+	} else {
+		switch (nth) {
+		case 0: L1 (x, y, x2, y2); break;
+		case 1: L2 (x, y, x2, y2); break;
+		case -1: L (x, y, x2, y2); break;
+		}
 	}
 }
 
@@ -1817,7 +1918,7 @@ static int check_changes (RAGraph *g, int is_interactive,
 		int ret = agraph_reload_nodes (g, core, fcn);
 		if (!ret) return R_FALSE;
 	}
-	if (is_interactive)
+	if (is_interactive && fcn)
 		agraph_update_title (g, fcn);
 	if (g->need_update_dim || g->need_reload_nodes || !is_interactive)
 		update_node_dimension (g->graph, g->is_small_nodes, g->zoom);
@@ -2086,17 +2187,20 @@ R_API void r_agraph_reset (RAGraph *g) {
 	agraph_free_nodes (g);
 	r_agraph_set_title (g, NULL);
 	sdb_reset (g->db);
+	r_list_free (g->edges);
 
 	g->nodes = sdb_new0 ();
 	g->update_seek_on = NULL;
 	g->x = g->y = g->w = g->h = 0;
 	g->history = r_stack_new (INIT_HISTORY_CAPACITY);
 	agraph_sdb_init (g);
+	g->edges = r_list_new ();
 }
 
 R_API void r_agraph_free(RAGraph *g) {
 	r_graph_free (g->graph);
 	r_stack_free (g->history);
+	if (g->edges) r_list_free (g->edges);
 	agraph_free_nodes (g);
 	r_agraph_set_title (g, NULL);
 	sdb_free (g->db);
