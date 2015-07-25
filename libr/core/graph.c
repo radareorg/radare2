@@ -2392,9 +2392,9 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					" r      - relayout\n"
 					" R      - randomize colors\n"
 					" o      - go/seek to given offset\n"
-					" U/b    - undo/redo seek\n"
+					" u/U    - undo/redo seek\n"
 					" p      - toggle mini-graph\n"
-					" u      - select previous node\n"
+					" b      - select previous node\n"
 					" V      - toggle basicblock / call graphs\n"
 					" w      - toggle between movements speed 1 and graph.scroll\n"
 					" x/X    - jump to xref/ref\n"
@@ -2407,7 +2407,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			visual_offset (core);
 			print_agraph (g,core,grd);
 			break;
-		case 'U':
+		case 'u':
 			{
 			ut64 off = r_io_sundo (core->io, core->offset);
 			if (off != UT64_MAX){
@@ -2416,7 +2416,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			} else eprintf ("Can not undo\n");
 			}
 			break;
-		case 'b':
+		case 'U':
 			{	
 			ut64 off = r_io_sundo_redo (core->io);
 			if (off != UT64_MAX){
@@ -2489,7 +2489,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  agraph_toggle_small_nodes (g);
 			  agraph_update_seek (g, get_anode (g->curnode), R_TRUE);
 			  break;
-		case 'u':
+		case 'b':
 			  agraph_undo_node(g);
 			  break;
 		case '.':
