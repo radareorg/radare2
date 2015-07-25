@@ -1918,7 +1918,7 @@ static int check_changes (RAGraph *g, int is_interactive,
 		int ret = agraph_reload_nodes (g, core, fcn);
 		if (!ret) return R_FALSE;
 	}
-	if (is_interactive && fcn)
+	if (fcn)
 		agraph_update_title (g, fcn);
 	if (g->need_update_dim || g->need_reload_nodes || !is_interactive)
 		update_node_dimension (g->graph, g->is_small_nodes, g->zoom);
@@ -2275,7 +2275,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 
 		if (!is_interactive) {
 			/* this is a non-interactive ascii-art graph, so exit the loop */
-			r_cons_printf (Color_RESET);
 			r_cons_newline ();
 			break;
 		}
