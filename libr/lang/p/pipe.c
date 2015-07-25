@@ -111,7 +111,9 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		if (safe_in != -1)
 			close (safe_in);
 		safe_in = open (ttyname(0), O_RDONLY);
-		dup2 (safe_in, 0);
+		if (safe_in != -1) {
+			dup2 (safe_in, 0);
+		} else eprintf ("Cannot open ttyname(0) %s\n", ttyname(0));
 		r_cons_break_end ();
 	}
 
@@ -119,8 +121,9 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	close (input[1]);
 	close (output[0]);
 	close (output[1]);
-	close (safe_in);
-	waitpid(child, NULL, 0);
+	if (safe_in != -1)
+		close (safe_in);
+	waitpid (child, NULL, 0);
 	return R_TRUE;
 #else
 #if __WINDOWS__

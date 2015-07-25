@@ -906,7 +906,10 @@ static void struct_decl(CType *type, int u)
             bit_pos = 0;
             offset = 0;
             while (tok != '}') {
-                parse_btype(&btype, &ad);
+                if (!parse_btype(&btype, &ad)) {
+			expect("bracket");
+			break;
+		}
                 while (1) {
                     bit_size = -1;
                     v = 0;

@@ -57,7 +57,7 @@ static RList *backtrace_x86_64_anal(RDebug *dbg, ut64 at) {
 	int i;
 	ut8 buf[8];
 	RDebugFrame *frame;
-	ut64 ptr, ebp2;
+	ut64 ptr, ebp2 = UT64_MAX;
 	ut64 _rip, _rbp;
 	RList *list;
 	RReg *reg = dbg->reg;
