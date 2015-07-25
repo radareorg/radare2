@@ -1995,12 +1995,17 @@ R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
 	res->gnode = r_graph_add_node (g->graph, res);
 	sdb_num_set (g->nodes, title, (ut64)(size_t)res, 0);
 	if (res->title) {
-		char *s, *estr;
+		char *s, *estr, *b;
+		size_t len;
 
 		sdb_array_add (g->db, "agraph.nodes", res->title, 0);
-		estr = sdb_encode ((const void *)res->body, -1);
+		b = strdup (res->body);
+		len = strlen (b);
+		if (b[len - 1] == '\n') b[len - 1] = '\0';
+		estr = sdb_encode ((const void *)b, -1);
 		s = sdb_fmt (1, "base64:%s", estr);
 		free (estr);
+		free (b);
 		sdb_set (g->db, sdb_fmt (2, "agraph.nodes.%s.body", res->title), s, 0);
 	}
 	return res;
