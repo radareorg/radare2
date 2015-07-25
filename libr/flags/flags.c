@@ -217,7 +217,10 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 #define NEW_FILTER 1
 #if NEW_FILTER
 			/* catch sym. first */
-			if (strlen (item->name)>4 && item->name[3]) {
+			if (!strncmp (item->name, "fcn.", 4)) {
+				continue;
+			}
+			if (strlen (item->name)>4 && item->name[3]=='.') {
 				oitem = item;
 				break;
 			}
@@ -227,8 +230,10 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 //			if (!strchr (item->name, '.'))
 //				oitem = item;
 #else
+#if 0
 			if (!strchr (item->name, '.'))
 				oitem = item;
+#endif
 			if (strlen (item->name) < 5 || item->name[3]!='.')
 				continue;
 			oitem = item;
