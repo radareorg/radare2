@@ -1813,7 +1813,7 @@ static void agraph_update_title (RAGraph *g, RAnalFunction *fcn) {
  * and update what's necessary */
 static int check_changes (RAGraph *g, int is_interactive,
 		RCore *core, RAnalFunction *fcn) {
-	if (g->need_reload_nodes && fcn && core) {
+	if (g->need_reload_nodes && core) {
 		int ret = agraph_reload_nodes (g, core, fcn);
 		if (!ret) return R_FALSE;
 	}

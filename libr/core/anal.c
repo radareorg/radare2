@@ -2296,7 +2296,8 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		if (sect) {
 			end = sect->vaddr + sect->size;
 		} else {
-			end = addr + core->blocksize;
+			if (!end)
+				end = addr + core->blocksize;
 		}
 	}
 	iend = end - addr;

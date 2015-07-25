@@ -941,6 +941,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		if (to>0x500000) {
 			eprintf ("WARNING: corrupted mach0 header: symbol table is too big %d\n", to);
 			free (symbols);
+			sdb_free (db);
 			return NULL;
 		}
 		for (i = from; i < to; i++, j++) {
