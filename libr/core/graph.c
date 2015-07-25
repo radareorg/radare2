@@ -1982,7 +1982,12 @@ R_API void r_agraph_set_title (RAGraph *g, const char *title) {
 
 R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
                                  const char *body) {
-	RANode *res = R_NEW0 (RANode);
+	RANode *res;
+
+	res = r_agraph_get_node (g, title);
+	if (res) return res;
+
+	res = R_NEW0 (RANode);
 	if (!res) return NULL;
 	res->title = title ? strdup(title) : strdup("");
 	res->body = body ? strdup(body) : strdup("");
