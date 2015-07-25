@@ -2218,6 +2218,29 @@ R_API RAGraph *r_agraph_new(RConsCanvas *can) {
 	return g;
 }
 
+static void visual_offset (RCore *core) {
+	char buf[256];
+	r_line_set_prompt ("[offset]> ");
+	strcpy (buf, "s ");
+	if (r_cons_fgets (buf+2, sizeof (buf)-3, 0, NULL) >0) {
+		if (buf[2]=='.')buf[1]='.';
+		r_core_cmd0 (core, buf);
+	}
+}
+
+static void seek_and_go_agraph (RAGraph *g, RCore *core, struct agraph_refresh_data *grd){
+	RAnalFunction **fcn = grd->fcn;
+	visual_offset (core);
+	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	if (f && f != *fcn){
+		*fcn = f;
+		g->need_reload_nodes = R_TRUE;
+	}
+	agraph_print (g, grd->fs, core, *fcn);
+	return;
+}
+
+
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interactive) {
 	int exit_graph = R_FALSE, is_error = R_FALSE;
 	struct agraph_refresh_data *grd;
@@ -2369,6 +2392,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					" O      - toggle disasm mode\n"
 					" r      - relayout\n"
 					" R      - randomize colors\n"
+					" o      - go/seek to given offset\n"
 					" p      - toggle mini-graph\n"
 					" u      - select previous node\n"
 					" V      - toggle basicblock / call graphs\n"
@@ -2378,6 +2402,9 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					" +/-/0  - zoom in/out/default\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
+			break;
+		case 'o':
+			seek_and_go_agraph (g, core, grd);
 			break;
 		case 'R':
 			r_core_cmd0 (core, "ecr");
