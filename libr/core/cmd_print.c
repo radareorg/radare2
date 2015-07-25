@@ -262,9 +262,10 @@ static void print_format_help(RCore *core) {
 	"pfo", "", "List all format files",
 	"pfo", " elf32", "Load the elf32 format definition file",
 	"pf.", "fmt_name", "Run stored format",
-	"pf.", "fmt_name.name", "Show string inside object",
+	"pf.", "fmt_name.field_name", "Show specific field inside format",
 	"pf.", "fmt_name.size=33", "Set new value for the size field in obj",
 	"pfj.", "fmt_name", "Print format in JSON",
+	"pfv.", "fmt_name", "Print the value(s) only. Useful for one-liners",
 	"pf*.", "fmt_name", "Display flag commands",
 	NULL};
 	r_core_cmd_help (core, help_msg);
@@ -286,6 +287,7 @@ static void print_format_help_help(RCore *core) {
 	" ", "o", "0x%%08o octal value (4 byte)",
 	" ", "p", "pointer reference (2, 4 or 8 bytes)",
 	" ", "q", "quadword (8 bytes)",
+	" ", "r", "CPU register `pf r (eax)plop`",
 	" ", "s", "32bit pointer to string (4 bytes)",
 	" ", "S", "64bit pointer to string (8 bytes)",
 	" ", "t", "UNIX timestamp (4 bytes)",
@@ -296,7 +298,7 @@ static void print_format_help_help(RCore *core) {
 	" ", "X", "show formatted hexpairs",
 	" ", "z", "\\0 terminated string",
 	" ", "Z", "\\0 terminated wide string",
-	" ", "?", "data structure `pf ? (struct_type)struct_name`",
+	" ", "?", "data structure `pf ? (struct_name)example_name`",
 	" ", "*", "next char is pointer (honors asm.bits)",
 	" ", "+", "toggle show flags for each offset",
 	" ", ":", "skip 4 bytes",
