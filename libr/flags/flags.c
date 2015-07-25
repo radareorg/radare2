@@ -214,7 +214,7 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 			// XXX: hack, because some times the hashtable is poluted by ghost values
 			if (item->offset != off)
 				continue;
-#define NEW_FILTER 0
+#define NEW_FILTER 1
 #if NEW_FILTER
 			/* catch sym. first */
 			if (strlen (item->name)>4 && item->name[3]) {
