@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
-#include "r_core.h"
+#include <r_core.h>
 
 #define NPF 7
 static int blocksize = 0;
