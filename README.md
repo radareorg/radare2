@@ -77,7 +77,7 @@ version or remove all previous installations:
 # Bindings
 
 All language bindings are under the r2-bindings directory.
-You will need to install swig2 and valabind in order to
+You will need to install swig and valabind in order to
 build the bindings for Python, LUA, etc..
 
 APIs are defined in vapi files which are then translated
@@ -87,19 +87,28 @@ The easiest way to install the python bindings is to run:
 
     $ sys/python.sh
 
-If you want to use the NodeJS bindings just do:
+In addition there are `r2pipe` bindings, which are an API
+interface to interact with the prompt, passing commands
+and receivent the output as a string, many commands support
+JSON output, so it's integrated easily with many languages
+in order to deserialize it into native objects.
 
-    $ npm install radare2.js
+    $ npm install r2pipe   # NodeJS
+    $ gem install r2pipe   # Ruby
+    $ pip install r2pipe   # Python
 
-To specify the installed version of radare2:
+And also for Go, Rust, D, .NET, Java, NewLisp, Perl, Haskell,
+Vala, Ocaml, and many more to come!
 
-    $ npm install radare2.js@0.9.2
+# Regression Testsuite
 
-# Tests
+Running `make tests` it will fetch the radare2-regressions
+repository and run all the tests in order to verify that no
+changes break a functionality.
 
-There is a test suite that can be retrieved by running:
-
-    $ make tests
+We run those tests on every commit, and they are also
+executed with ASAN and valgrind on different platforms
+to catch other unwanted 'features'.
 
 # Documentation
 
@@ -112,8 +121,7 @@ Commands are small mnemonics of few characters and there is
 some extra syntax sugar that makes the shell much more pleasant
 for scripting and interacting with the apis.
 
-You could also checkout the [radare2
-book](http://maijin.gitbooks.io/radare2book/content/).
+You could also checkout the [radare2 book](http://maijin.gitbooks.io/radare2book/content/).
 
 # Webserver
 
@@ -127,7 +135,7 @@ To use the webserver on Windows, you require a cmd instance
 with administrator rights. To start the webserver use command
 in the project root.
 
-    radare2.exe -c=H rax2.exe
+    > radare2.exe -c=H rax2.exe
 
 # Pointers
 
