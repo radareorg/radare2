@@ -9,15 +9,12 @@
                                   --pancake
 </pre>
 
-[![Build Status](http://ci.rada.re/buildStatus/icon?job=radare2)](http://ci.rada.re/job/radare2/) Jenkins
-
-[![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)](https://travis-ci.org/radare/radare2) TravisCI
-
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/radare/radare2?branch=master&svg=true)]( https://ci.appveyor.com/project/radare/radare2 ) AppVeyor
-
-[![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) Coverity
-
-
+||Status|
+|----------|---------------------------------------------------------------------|
+| **Jenkins**  	| ![Build Status](http://ci.rada.re/buildStatus/icon?job=radare2)|
+| **TravisCI** 	| ![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)|
+|**AppVeyor**|![Build Status](https://ci.appveyor.com/api/projects/status/github/radare/radare2?branch=master&svg=true)|
+| **Coverity** 	| ![Build Status](https://scan.coverity.com/projects/416/badge.svg) |
 # Introduction
 
 r2 is a rewrite from scratch of radare in order to provide
@@ -32,30 +29,26 @@ commandline hexadecimal editor able to open disk files,
 but later support for analyzing binaries, disassembling
 code, debugging programs, attaching to remote gdb servers, ..
 
-radare2 is portable.
+   radare2 is portable.
 
-Architectures:
+   * **Architectures:**
+	* 6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, csr,
+   dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, mips, msil,
+   nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), V810, x86-64,
+   zimg.
 
-6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, csr,
-dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, mips, msil,
-nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), V810, x86-64,
-zimg.
+   * **File Formats:**
+	* bios, dex, elf, elf64, filesystem, java, fatmach0, mach0,
+   mach0-64, MZ, PE, PE+, TE, COFF, plan9, bios, dyldcache,
+   Gameboy and Nintendo DS ROMs
 
-File Formats:
+   * **Operating Systems:**
+	* Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32,
+   w64, Solaris, Haiku, FirefoxOS
 
-  bios, dex, elf, elf64, filesystem, java, fatmach0, mach0,
-  mach0-64, MZ, PE, PE+, TE, COFF, plan9, bios, dyldcache,
-  Gameboy and Nintendo DS ROMs
-
-Operating Systems:
-
-  Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32,
-  w64, Solaris, Haiku, FirefoxOS
-
-Bindings:
-
-  Vala/Genie, Python (2, 3), NodeJS, LUA, Go, Perl,
-  Guile, php5, newlisp, Ruby, Java, OCAML, ...
+   * **Bindings:**
+	* Vala/Genie, Python (2, 3), NodeJS, LUA, Go, Perl,
+   Guile, php5, newlisp, Ruby, Java, OCAML, ...
 
 # Dependencies
 
@@ -118,6 +111,9 @@ appending '?' to every command you are interested in.
 Commands are small mnemonics of few characters and there is
 some extra syntax sugar that makes the shell much more pleasant
 for scripting and interacting with the apis.
+
+You could also checkout the [radare2
+book](http://maijin.gitbooks.io/radare2book/content/).
 
 # Webserver
 
