@@ -1671,14 +1671,15 @@ static ut64 rebase (RAGraph *g, int v) {
 	return g->x < 0 ? -g->x + v : v;
 }
 
-static void agraph_set_layout(RAGraph *g) {
+static void agraph_set_layout(RAGraph *g, int is_interactive) {
 	RListIter *it;
 	RGraphNode *n;
 	RANode *a;
 
 	set_layout(g);
 
-	set_curnode (g, find_near_of (g, NULL, R_TRUE));
+	if (is_interactive)
+		set_curnode (g, find_near_of (g, NULL, R_TRUE));
 	update_graph_sizes (g);
 	graph_foreach_anode (r_graph_get_nodes (g->graph), it, n, a) {
 		char *k;
@@ -1917,7 +1918,7 @@ static int check_changes (RAGraph *g, int is_interactive,
 	if (g->need_update_dim || g->need_reload_nodes || !is_interactive)
 		update_node_dimension (g->graph, g->is_small_nodes, g->zoom);
 	if (g->need_set_layout || g->need_reload_nodes || !is_interactive)
-		agraph_set_layout (g);
+		agraph_set_layout (g, is_interactive);
 	if (g->update_seek_on || g->force_update_seek) {
 		RANode *n = g->update_seek_on;
 
@@ -2422,7 +2423,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			g->need_reload_nodes = R_TRUE;
 			break;
 		case 'r':
-			agraph_set_layout (g);
+			agraph_set_layout (g, R_TRUE);
 			break;
 		case 'j':
 			if (r_cons_singleton()->mouse_event) {
