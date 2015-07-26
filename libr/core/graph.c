@@ -1307,6 +1307,8 @@ static void remove_dummy_nodes (const RAGraph *g) {
 	RList *toremove = r_list_new ();
 	int i, j;
 
+	/* traverse all dummy nodes to keep track
+	 * of the path long edges should go by */
 	for (i = 0; i < g->n_layers; ++i) {
 		for (j = 0; j < g->layers[i].n_nodes; ++j) {
 			RGraphNode *n = g->layers[i].nodes[j];
@@ -1317,12 +1319,11 @@ static void remove_dummy_nodes (const RAGraph *g) {
 			RANode *a_from = get_anode (from);
 			RListIter *(*add_to_list)(RList *, void *) = NULL;
 			AEdge *e = R_NEW0 (AEdge);
-			int is_reversed = an->is_reversed;
 
 			e->x = r_list_new ();
 			e->y = r_list_new ();
-			e->is_reversed = is_reversed;
-			if (is_reversed) {
+			e->is_reversed = an->is_reversed;
+			if (e->is_reversed) {
 				e->to = a_from;
 				add_to_list = r_list_prepend;
 				add_to_list (e->x, (void *)(size_t)an->x);
@@ -1346,7 +1347,7 @@ static void remove_dummy_nodes (const RAGraph *g) {
 				an = get_anode (n);
 			}
 
-			if (is_reversed)
+			if (e->is_reversed)
 				e->from = an;
 			else
 				e->to = an;
@@ -1738,11 +1739,19 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	RListIter *it;
 	AEdge e, *edg = NULL;
 	int is_first = R_TRUE;
+	RCanvasLineStyle style;
 
 	xinc = 3 + 2 * (nth + 1);
 	x = a->x + xinc;
 	y = a->y + a->h;
 	if (nth > 1) nth = 1;
+
+	switch (nth) {
+	case 0: style.color = LINE_TRUE; break;
+	case 1: style.color = LINE_FALSE; break;
+	case -1: style.color = LINE_UNCJMP; break;
+	}
+	style.symbol = style.color;
 
 	e.from = a;
 	e.to = b;
@@ -1761,18 +1770,11 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 				xinc += 4;
 				x += 4;
 			}
-			if (edg->is_reversed) {
-				r_cons_canvas_line (g->can, x, y, x2, y2, 5);
-			} else {
-				switch (nth) {
-				case 0: L1 (x, y, x2, y2); break;
-				case 1: L2 (x, y, x2, y2); break;
-				case -1: L (x, y, x2, y2); break;
-				}
-			}
+			r_cons_canvas_line (g->can, x, y, x2, y2, &style);
 
 			x = x2;
 			y = y2;
+			style.symbol = LINE_NONE;
 			is_first = R_FALSE;
 		}
 	}
@@ -1787,15 +1789,7 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 		x2 = a->x;
 		y2 = y - 3;
 	}
-	if (edg && edg->is_reversed) {
-		r_cons_canvas_line (g->can, x, y, x2, y2, 5);
-	} else {
-		switch (nth) {
-		case 0: L1 (x, y, x2, y2); break;
-		case 1: L2 (x, y, x2, y2); break;
-		case -1: L (x, y, x2, y2); break;
-		}
-	}
+	r_cons_canvas_line (g->can, x, y, x2, y2, &style);
 }
 
 static void agraph_print_edges(const RAGraph *g) {
@@ -2000,6 +1994,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	if (f && f != *fcn) {
 		*fcn = f;
 		g->need_reload_nodes = R_TRUE;
+		g->force_update_seek = R_TRUE;
 	}
 
 	return agraph_print (g, grd->fs, core, *fcn);
@@ -2226,8 +2221,8 @@ static void visual_offset (RCore *core) {
 	r_cons_flush ();
 	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
-	if (r_cons_fgets (buf+2, sizeof (buf)-3, 0, NULL) >0) {
-		if (buf[2]=='.')buf[1]='.';
+	if (r_cons_fgets (buf+2, sizeof (buf)-3, 0, NULL) > 0) {
+		if (buf[2] == '.') buf[1]='.';
 		r_core_cmd0 (core, buf);
 	}
 }
@@ -2400,17 +2395,17 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'u':
 			{
 			ut64 off = r_io_sundo (core->io, core->offset);
-			if (off != UT64_MAX){
+			if (off != UT64_MAX)
 				r_core_seek (core, off, 1);
-			} else eprintf ("Can not undo\n");
+			else eprintf ("Can not undo\n");
 			}
 			break;
 		case 'U':
 			{
 			ut64 off = r_io_sundo_redo (core->io);
-			if (off != UT64_MAX){
+			if (off != UT64_MAX)
 				r_core_seek (core,off, 1);
-			} else eprintf ("Can not redo\n");
+			else eprintf ("Can not redo\n");
 			break;
 			}
 		case 'R':
