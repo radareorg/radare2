@@ -9,20 +9,16 @@
                                   --pancake
 </pre>
 
-||Status|
+| | |
 |----------|---------------------------------------------------------------------|
-| **Jenkins**  	| ![Build Status](http://ci.rada.re/buildStatus/icon?job=radare2)|
-| **TravisCI** 	| ![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)|
-|**AppVeyor**|![Build Status](https://ci.appveyor.com/api/projects/status/github/radare/radare2?branch=master&svg=true)|
-| **Coverity** 	| ![Build Status](https://scan.coverity.com/projects/416/badge.svg) |
+| **Jenkins**  	| [![Build Status](http://ci.rada.re/buildStatus/icon?job=radare2)](http://ci.rada.re/job/radare2)|
+| **TravisCI** 	| [![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)](https://travis-ci.org/radare/radare2)|
+| **AppVeyor**  | [![Build Status](https://ci.appveyor.com/api/projects/status/github/radare/radare2?branch=master&svg=true)](https://ci.appveyor.com/project/radare/radare2)|
+| **Coverity** 	| [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) |
 # Introduction
 
 r2 is a rewrite from scratch of radare in order to provide
-a set of libraries and tools to work with binary files
-
-This is the rewrite of radare (1.x branch) to provide a
-framework with a set of libraries and programs to work
-with binary data.
+a set of libraries and tools to work with binary files.
 
 Radare project started as a forensics tool, an scriptable
 commandline hexadecimal editor able to open disk files,
@@ -97,7 +93,7 @@ in order to deserialize it into native objects.
     $ gem install r2pipe   # Ruby
     $ pip install r2pipe   # Python
 
-And also for Go, Rust, D, .NET, Java, NewLisp, Perl, Haskell,
+And also for Go, Rust, Swift, D, .NET, Java, NewLisp, Perl, Haskell,
 Vala, Ocaml, and many more to come!
 
 # Regression Testsuite
