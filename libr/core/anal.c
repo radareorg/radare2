@@ -7,6 +7,7 @@
 
 //#define ANALBS 4096
 #define ANALBS 1024
+#define HASNEXT_FOREVER 1
 
 static void loganal(ut64 from, ut64 to) {
 	r_cons_clear_line (1);
@@ -706,30 +707,30 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 #if 1
 	{
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
-		if (fcn) {
-			//int len = r_list_length (fcn->xrefs);
-			// XXX: use r_anal-xrefs api and sdb
-				/* If the xref is new, add it */
+	if (fcn) {
+		//int len = r_list_length (fcn->xrefs);
+		// XXX: use r_anal-xrefs api and sdb
+			/* If the xref is new, add it */
 // avoid dupes
-				r_list_foreach (fcn->xrefs, iter2, refi)
-					if (from == refi->addr)
-						return R_TRUE;
-				if (!(ref = r_anal_ref_new ())) {
-					eprintf ("Error: new (xref)\n");
-					return R_FALSE;
-				}
-				ref->addr = from;
-				ref->at = at;
-				ref->type = reftype;
-				if (reftype == 'd') {
-					// XXX HACK TO AVOID INVALID REFS
-					r_list_append (fcn->xrefs, ref);
-				} else {
-					free (ref);
-				}
-			//if (len==0) return R_TRUE;
-			return 1;
+		r_list_foreach (fcn->xrefs, iter2, refi)
+			if (from == refi->addr)
+				return R_TRUE;
+		if (!(ref = r_anal_ref_new ())) {
+			eprintf ("Error: new (xref)\n");
+			return R_FALSE;
 		}
+		ref->addr = from;
+		ref->at = at;
+		ref->type = reftype;
+		if (reftype == 'd') {
+			// XXX HACK TO AVOID INVALID REFS
+			r_list_append (fcn->xrefs, ref);
+		} else {
+			free (ref);
+		}
+		//if (len==0) return R_TRUE;
+		return 1;
+	}
 	}
 #endif
 #if 0
@@ -861,12 +862,10 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				fcn->name = strdup (f->name);
 			//	fcn->name = r_str_newf ("fcn.%s", f->name);
 			} else {
-#if 1
 				fcn->name = r_str_newf ("%s.%08"PFMT64x,
 						fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
 						fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
 						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", fcn->addr);
-#endif
 				/* Add flag */
 				r_flag_space_push (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name,
@@ -1005,7 +1004,11 @@ error:
 				for (i=0; i<nexti; i++) {
 					if (!next[i]) continue;
 					//r_cons_printf ("af @ 0x%08"PFMT64x"\n", next[i]);
+#if HASNEXT_FOREVER
+					r_core_anal_fcn (core, next[i], next[i], 0, 9999);
+#else
 					r_core_anal_fcn (core, next[i], next[i], 0, depth-1);
+#endif
 				}
 				free (next);
 			}
