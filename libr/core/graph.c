@@ -1621,18 +1621,57 @@ static const RGraphNode *find_near_of (const RAGraph *g, const RGraphNode *cur,
 static void update_graph_sizes (RAGraph *g) {
 	RListIter *it;
 	RGraphNode *gk;
-	RANode *ak;
+	RANode *ak, *min_gn, *max_gn;
 	int max_x, max_y;
 	int delta_x, delta_y;
+	AEdge *e;
 
 	g->x = g->y = INT_MAX;
 	max_x = max_y = INT_MIN;
+	min_gn = max_gn = NULL;
 
 	graph_foreach_anode (r_graph_get_nodes (g->graph), it, gk, ak) {
 		if (ak->x < g->x) g->x = ak->x;
-		if (ak->y < g->y) g->y = ak->y;
+		if (ak->y < g->y) {
+			g->y = ak->y;
+			min_gn = ak;
+		}
 		if (ak->x + ak->w > max_x) max_x = ak->x + ak->w;
-		if (ak->y + ak->h > max_y) max_y = ak->y + ak->h;
+		if (ak->y + ak->h > max_y) {
+			max_y = ak->y + ak->h;
+			max_gn = ak;
+		}
+	}
+
+	/* while calculating the graph size, take into account long edges */
+	r_list_foreach (g->edges, it, e) {
+		RListIter *kt;
+		void *vv;
+		int v;
+
+		r_list_foreach (e->x, kt, vv) {
+			v = (int)(size_t)vv;
+			if (v < g->x) g->x = v;
+			if (v + 1 > max_x) max_x = v + 1;
+		}
+		r_list_foreach (e->y, kt, vv) {
+			v = (int)(size_t)vv;
+			if (v < g->y) g->y = v;
+			if (v + 1 > max_y) max_y = v + 1;
+		}
+	}
+
+	if (min_gn) {
+		const RList *neigh = r_graph_innodes (g->graph, min_gn->gnode);
+		if (r_list_length (neigh) > 0) {
+			g->y--;
+			max_y++;
+		}
+	}
+	if (max_gn) {
+		const RList *neigh = r_graph_get_neighbours (g->graph, min_gn->gnode);
+		if (r_list_length (neigh) > 0)
+			max_y++;
 	}
 
 	if (g->x != INT_MAX && g->y != INT_MAX) {
