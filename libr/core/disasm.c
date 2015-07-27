@@ -1036,6 +1036,10 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		const RList /*RFlagList*/ *flaglist = r_flag_get_list (core->flags, ds->at);
 		r_list_foreach (flaglist, iter, flag) {
+			if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
+				// do not show flags that have the same name as the function
+				continue;
+			}
 			beginline (core, ds, f);
 			if (ds->show_offset) r_cons_printf (";-- ");
 			if (ds->show_color) r_cons_strcat (ds->color_flag);
