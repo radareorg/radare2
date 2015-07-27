@@ -20,6 +20,18 @@ static void find_refs(RCore *core, const char *glob) {
 	r_core_seek (core, curseek, 1);
 }
 
+/* set flags for every function */
+static void flag_every_function(RCore *core) {
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_flag_space_push (core->flags, "functions");
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		r_flag_set (core->flags, fcn->name,
+			fcn->addr, fcn->size, 0);
+	}
+	r_flag_space_pop (core->flags);
+}
+
 static void var_help(RCore *core, char ch) {
 	 const char* help_msg[] = {
 		 "Usage:", "af[aAv]", " [idx] [type] [name]",
@@ -906,8 +918,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case '?':{ // "af?"
 		 const char* help_msg[] = {
 		 "Usage:", "af", "",
-		 "af", " [name] ([addr]) (@ [addr])", "analyze functions (start at addr)",
-		 "af+", " addr size name [type] [diff]", "add function",
+		 "af", " ([name]) ([addr])", "analyze functions (start at addr or $$)",
+		 "afr", " ([name]) ([addr])", "analyze functions recursively",
+		 "af+", " addr size name [type] [diff]", "hand craft a function (requires afb+)",
 		 "af-", " [addr]", "clean all function analysis data (or function at addr)",
 		 "afa", "[?] [idx] [type] [name]", "add function argument",
 		 "af[aAv?]", "[arg]", "manipulate args, fastargs and variables in function",
@@ -930,12 +943,18 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 r_core_cmd_help (core, help_msg);
 		}
 		 break;
+	case 'r': // "afr" // analyze function recursively
 	default:
 		{
 			char *uaddr = NULL, *name = NULL;
 			int depth = r_config_get_i (core->config, "anal.depth");
+			int analyze_recursively = r_config_get_i (core->config, "anal.calls");
 			RAnalFunction *fcn;
 			ut64 addr = core->offset;
+			if (input[1] == 'r') {
+				input ++;
+				analyze_recursively = R_TRUE;
+			}
 
 			// first undefine
 			if (input[0] && input[1]==' ') {
@@ -954,11 +973,34 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (fcn) r_anal_fcn_resize (fcn, addr - fcn->addr);
 			r_core_anal_fcn (core, addr, UT64_MAX,
 				R_ANAL_REF_TYPE_NULL, depth);
-			if (name && *name) {
-				if (!setFunctionName (core, addr, name))
-					eprintf ("Cannot find function '%s' at 0x%08"PFMT64x"\n", name, addr);
+			if (analyze_recursively) {
+				fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
+				if (fcn) {
+					RAnalRef *ref;
+					RListIter *iter;
+					RIOSection *sect = r_io_section_vget (core->io, fcn->addr);
+					ut64 text_addr = 0x1000; // XXX use file baddr
+					if (sect) {
+						text_addr = sect->vaddr;
+					}
+					r_list_foreach (fcn->refs, iter, ref) {
+						if (ref->addr == UT64_MAX || ref->addr < text_addr)
+							continue;
+						eprintf ("NEW FUN 0x%llx\n", ref->addr);
+						r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
+						RAnalFunction * f = r_anal_get_fcn_at (core->anal, addr, 0);
+						if (!f) {
+							eprintf ("Function at 0x%"PFMT64x" was not analyzed\n", addr);
+						}
+					}
+				}
 			}
-			free (name);
+			if (name) {
+				if (*name && !setFunctionName (core, addr, name))
+					eprintf ("Cannot find function '%s' at 0x%08"PFMT64x"\n", name, addr);
+				free (name);
+			}
+			flag_every_function (core);
 		}
 	}
 	return R_TRUE;
@@ -1502,8 +1544,7 @@ static void cmd_esil_mem (RCore *core, const char *input) {
 	}
 	snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
 	cf = r_core_file_open (core, uri, R_IO_RW, addr);
-	if (cf)
-		r_flag_set (core->flags, name, addr, size, 0);
+	if (cf) r_flag_set (core->flags, name, addr, size, 0);
 	//r_core_cmdf (core, "f stack_fd=`on malloc://%d 0x%08"
 	//	PFMT64x"`", stack_size, stack_addr);
 	//r_core_cmdf (core, "f stack=0x%08"PFMT64x, stack_addr);
@@ -2800,6 +2841,7 @@ static int cmd_anal(void *data, const char *input) {
 				r_core_cmd0 (core, "aar");
 				r_core_cmd0 (core, "aac");
 			}
+			flag_every_function (core);
 			break;
 		case 'e':
 			r_core_anal_esil (core, input+2);

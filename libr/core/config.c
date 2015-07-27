@@ -1032,6 +1032,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.afterjmp", "false", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
 	SETI("anal.depth", 16, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB("anal.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
+	SETPREF("anal.calls", "false", "Make basic af analysis walk into calls");
 	SETPREF("anal.hasnext", "false", "Continue analysis after each function");
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
 	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
