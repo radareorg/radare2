@@ -1857,12 +1857,15 @@ static int cmd_print(void *data, const char *input) {
 		case 'e':
 			pdi (core, l, 0, 'e');
 			break;
-		case 'f': //pif
+		case 'f': // "pif"
 			{
 			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			if (f) {
-				r_core_print_disasm_instructions (core, f->size, l);
+				ut32 bsz = core->blocksize;
+				r_core_block_size (core, f->size);
+				r_core_print_disasm_instructions (core, 0, 0);
+				r_core_block_size (core, bsz);
 			} else {
 				r_core_print_disasm_instructions (core,
 					core->blocksize, l);
@@ -2030,55 +2033,36 @@ static int cmd_print(void *data, const char *input) {
 		case 'f': // "pdf"
 			processed_cmd = R_TRUE;
 			{
-				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-				if (f && input[2] == 'j') { // "pdfj"
-					r_cons_printf ("{");
-					r_cons_printf ("\"name\":\"%s\"", f->name);
-					r_cons_printf (",\"size\":%d", f->size);
-					r_cons_printf (",\"addr\":%"PFMT64d, f->addr);
-					r_cons_printf (",\"ops\":");
-					// instructions are all outputted as a json list
-					{
-						ut8 *buf = malloc (f->size);
-						if (buf) {
-							r_io_read_at (core->io, f->addr, buf, f->size);
-							r_core_print_disasm_json (core, f->addr, buf, f->size, 0);
-							r_cons_newline ();
-							free (buf);
-						} else eprintf ("cannot allocate %d bytes\n", f->size);
-					}
-					//close function json
-					r_cons_printf ("}");
-					pd_result = 0;
-
-
-				} else if (f) {
-#if 0
-#if 1
-// funsize = sum(bb)
-					core->num->value = r_core_print_fcn_disasm (core->print, core, f->addr, 9999, 0, 2);
-#else
-//  funsize = addrend-addrstart
-					ut8 *block = malloc (f->size+1);
-					if (block) {
-						r_core_read_at (core, f->addr, block, f->size);
-						core->num->value = r_core_print_disasm (
-							core->print, core, f->addr, block,
-							f->size, 9999, 0, 2);
-						free (block);
-						pd_result = 0;
-					}
-#endif
-#else
-					r_core_cmdf (core, "pD %d @ 0x%08llx", f->size, f->addr);
-					pd_result = 0;
-#endif
-				} else {
-					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
-					processed_cmd = R_TRUE;
-					core->num->value = -1;
-				}
+			       ut32 bsz = core->blocksize;
+			       RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+				       R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+			       if (f && input[2] == 'j') { // "pdfj"
+				       ut8 *buf;
+				       r_cons_printf ("{");
+				       r_cons_printf ("\"name\":\"%s\"", f->name);
+				       r_cons_printf (",\"size\":%d", f->size);
+				       r_cons_printf (",\"addr\":%"PFMT64d, f->addr);
+				       r_cons_printf (",\"ops\":");
+				       // instructions are all outputted as a json list
+				       buf = malloc (f->size);
+				       if (buf) {
+					       r_io_read_at (core->io, f->addr, buf, f->size);
+					       r_core_print_disasm_json (core, f->addr, buf, f->size, 0);
+					       r_cons_newline ();
+					       free (buf);
+				       } else eprintf ("cannot allocate %d bytes\n", f->size);
+				       r_cons_printf ("}");
+				       pd_result = 0;
+			       } else if (f) {
+				       r_core_cmdf (core, "pD %d @ 0x%08llx", f->size, f->addr);
+				       pd_result = 0;
+			       } else {
+				       eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+				       processed_cmd = R_TRUE;
+				       core->num->value = -1;
+			       }
+			       if (bsz != core->blocksize)
+				       r_core_block_size (core, bsz);
 			}
 			l = 0;
 			break;
