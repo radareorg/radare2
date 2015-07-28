@@ -71,6 +71,7 @@ function seek(x) {
 		update();
 	}
 }
+
 function analyze() {
 	r2.cmd("af", function() {
 		panelDisasm();
@@ -667,6 +668,7 @@ function down() {
 }
 
 function panelHexdump() {
+	window.scrollTo(0, 0);
 	update = panelHexdump;
 	lastView = 'px';
 	var c = document.getElementById("content");
@@ -699,6 +701,7 @@ function uiRoundButton(a, b) {
 	return out;
 }
 function panelDisasm() {
+	window.scrollTo(0, 0);
 	update = panelDisasm;
 	lastView = panelDisasm;
 	var c = document.getElementById("content");
