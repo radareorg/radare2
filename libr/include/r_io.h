@@ -198,6 +198,7 @@ typedef ut8 * (*RIODescRead)(RIO *io, RIODesc *desc, ut64 *sz);
 typedef ut64 (*RIODescSeek)(RIO *io, RIODesc *desc, ut64 offset);
 typedef ut64 (*RIODescSize)(RIO *io, RIODesc *desc);
 typedef int (*RIOIsValidOffset)(RIO *io, ut64 addr, int hasperm);
+typedef RIOSection* (*RIOSectionVGet)(RIO *io, ut64 addr);
 
 typedef RIOSection* (*RIOSectionAdd)(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 typedef int (*RIOSectionSetArchBinID)(RIO *io, ut64 addr, const char *arch, int bits, ut32 bin_id);
@@ -215,6 +216,7 @@ typedef struct r_io_bind_t {
 	RIOSeek seek;
 	RIOIsValidOffset is_valid_offset;
 
+	RIOSectionVGet section_vget;
 	RIOSectionAdd section_add;
 	RIOSectionSetArchBin section_set_arch;
 	RIOSectionSetArchBinID section_set_arch_bin_id;

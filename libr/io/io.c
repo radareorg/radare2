@@ -299,7 +299,6 @@ R_API int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 	} else if (!io->desc) {
 		if (io->files && r_list_length (io->files) != 0) {
 			eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
-			r_sys_backtrace ();
 		}
 		read_from = "FAILED";
 		bytes_read = 0;
@@ -866,6 +865,7 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->desc_get_by_fd = r_io_desc_get;
 
 	bnd->section_add = r_io_section_add;
+	bnd->section_vget = r_io_section_vget;
 
 	bnd->section_set_arch = r_io_section_set_archbits;
 	bnd->section_set_arch_bin_id = r_io_section_set_archbits_bin_id;
