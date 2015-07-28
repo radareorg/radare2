@@ -198,9 +198,9 @@ static int r_print_format_uleb(const RPrint* p, int endian, int mode,
 		free (nbr);
 		// sum = size of the converted number
 	} else if (MUSTSEE) {
-		if (!SEEVALUE) p->printf ("0x%08"PFMT64x" = ", seeki+offset);
+		if (!SEEVALUE) p->printf ("0x%08"PFMT64x" = ", seeki);
 		if (size==-1) {
-			r_uleb128_decode (buf+offset, &s, &value);
+			r_uleb128_decode (buf+i, &s, &value);
 			p->printf ("%"PFMT64d, value);
 			sum = s;
 		} else {
@@ -221,7 +221,7 @@ static int r_print_format_uleb(const RPrint* p, int endian, int mode,
 		}
 	} else if (MUSTSEEJSON) {
 		if (size==-1) {
-			r_uleb128_decode (buf+offset, &s, &value);
+			r_uleb128_decode (buf+i, &s, &value);
 			p->printf ("\"%"PFMT64d"\"", value);
 			sum = s;
 		} else {
