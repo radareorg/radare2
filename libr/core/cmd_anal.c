@@ -986,7 +986,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					r_list_foreach (fcn->refs, iter, ref) {
 						if (ref->addr == UT64_MAX || ref->addr < text_addr)
 							continue;
-						eprintf ("NEW FUN 0x%llx\n", ref->addr);
 						r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
 						RAnalFunction * f = r_anal_get_fcn_at (core->anal, addr, 0);
 						if (!f) {
@@ -2838,9 +2837,15 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_clear_line (1);
 			r_cons_break_end ();
 			if (input[1] == 'a') { // "aaa"
+				int c = r_config_get_i (core->config, "anal.calls");
+				//int n = r_config_get_i (core->config, "anal.hasnext");
+				r_config_set_i (core->config, "anal.calls", 1);
+				//r_config_set_i (core->config, "anal.hasnext", 1);
 				r_core_cmd0 (core, ".afna @@ fcn.*");
 				r_core_cmd0 (core, "aar");
 				r_core_cmd0 (core, "aac");
+				r_config_set_i (core->config, "anal.calls", c);
+				//r_config_set_i (core->config, "anal.hasnext", n);
 			}
 			flag_every_function (core);
 			break;
