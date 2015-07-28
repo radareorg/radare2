@@ -2744,6 +2744,7 @@ static int cmd_anal(void *data, const char *input) {
 		"aae", " [len]", "analyze references with ESIL",
 		"aar", " [len]", "analyze len bytes of instructions for references",
 		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
+		"aat", " [len]", "analyze all consecutive functions in section",
 		"aap", "", "find and analyze function preludes",
 		NULL};
 	const char* help_msg[] = {
@@ -2842,6 +2843,24 @@ static int cmd_anal(void *data, const char *input) {
 				r_core_cmd0 (core, "aac");
 			}
 			flag_every_function (core);
+			break;
+		case 't':
+			{
+			ut64 cur = core->offset;
+			RIOSection *s = r_io_section_vget (core->io, cur);
+			if (s) {
+				int hasnext = r_config_get_i (core->config, "anal.hasnext");
+				r_core_seek (core, s->vaddr, 1);
+				//r_config_set_i (core->config, "anal.calls", 1);
+				r_config_set_i (core->config, "anal.hasnext", 1);
+				r_core_cmd0 (core, "af");
+				r_config_set_i (core->config, "anal.hasnext", hasnext);
+			} else {
+				// TODO: honor search.in ? support dbg.maps?
+				eprintf ("Cannot find section boundaries in here\n");
+			}
+			r_core_seek (core, cur, 1);
+			}
 			break;
 		case 'e':
 			r_core_anal_esil (core, input+2);
