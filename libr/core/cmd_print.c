@@ -467,6 +467,8 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 	core->print->get_register = r_reg_get;
 	core->print->get_register_value = r_reg_get_value;
 
+	int o_blocksize = core->blocksize;
+
 	if (listFormats) {
 		core->print->num = core->num;
 		/* print all stored format */
@@ -508,6 +510,16 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 				free (input);
 				return;
 			}
+
+			/* Load format from name into fmt to get the size */
+			/* This make sure the whole structure will be printed */
+			const char *fmt = NULL;
+			fmt = r_strht_get (core->print->formats, name);
+			if (fmt != NULL) {
+				int size = r_print_format_struct_size (fmt, core->print, mode)+10;
+				if (size > core->blocksize)
+					r_core_block_size (core, size);
+			}
 			/* display a format */
 			if (dot) {
 				*dot++ = 0;
@@ -527,9 +539,19 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 			}
 			free (name);
 		}
-	} else r_print_format (core->print, core->offset,
-			core->block, core->blocksize, input+1, mode, NULL, NULL);
+	} else {
+		/* This make sure the structure will be printed entirely */
+		char *fmt = input+1;
+		int size = 0;
+		while (*fmt && iswhitechar (*fmt)) fmt++;
+		size = r_print_format_struct_size (fmt, core->print, mode)+10;
+		if (size > core->blocksize)
+			r_core_block_size (core, size);
+		r_print_format (core->print, core->offset,
+			core->block, core->blocksize, fmt, mode, NULL, NULL);
+	}
 	free (input);
+	r_core_block_size (core, o_blocksize);
 }
 
 // > pxa

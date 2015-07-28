@@ -274,12 +274,12 @@ static void r_print_format_char(const RPrint* p, int endian, int mode,
 		}
 	} else if (MUSTSEEJSON) {
 		if (size==-1)
-			p->printf ("\"%c\"", buf[i]);
+			p->printf ("\"%c\"", IS_PRINTABLE (buf[i])?buf[i]:'.');
 		else {
 			p->printf ("[ ");
 			while (size--) {
 				if (elem == -1 || elem == 0) {
-					p->printf ("\"%c\"", buf[i]);
+					p->printf ("\"%c\"", IS_PRINTABLE (buf[i])?buf[i]:'.');
 					if (elem == 0) elem = -2;
 				}
 				if (size != 0 && elem == -1)
@@ -1041,7 +1041,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 //#define MUSTSET (setval && field && isfield && mode == R_PRINT_MUSTSET)
 //#define MUSTSEE (ofield != MINUSONE && (field == NULL || (setval == NULL && isfield)) && mode == R_PRINT_MUSTSEE)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
-R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int b_size,
+R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const char *argend;
@@ -1049,7 +1049,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int b_size,
 	const char *fmt = NULL;
 	char *args = NULL, *bracket, tmp, last = 0;
 	const char *arg = NULL;
-	int viewflags = 0, len;
+	int viewflags = 0;
 	char namefmt[8], *field = NULL;
 	char *oarg = NULL;
 	static int slide=0, oldslide=0;
@@ -1066,10 +1066,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int b_size,
 	arg = fmt;
 
 	nexti = nargs = i = j = 0;
-
-	/* This make sure the structure will be printed entirely */
-	int f_len = r_print_format_struct_size (fmt, p, 0)+10;
-	len = f_len>b_size?f_len:b_size;
 
 	if (len < 1)
 		return 0;
@@ -1528,7 +1524,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int b_size,
 		arg = orig;
 		oldslide = 0;
 	}
-	if (mode & R_PRINT_JSON && slide==0) p->printf("]");
+	if (mode & R_PRINT_JSON && slide==0) p->printf("]\n");
 beach:
 	free (oarg);
 	free (buf);
