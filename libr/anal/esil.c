@@ -182,14 +182,17 @@ static int esil_internal_carry_check (RAnalEsil *esil, ut8 bit) {
 }
 
 static int esil_internal_parity_check (RAnalEsil *esil) {
-	int i, bits = 0;
-	ut64 mask = 1;
-	for (i=0; i<64; i++) {
-		if (esil->cur & mask)
-			bits++;
-		mask = (ut64)(mask>>1);						//yes, this cast is needed since every shift will produce a ut32
-	}
-	return (bits & 1);
+	// Set if the number of set bits in the least significant byte is a multiple of 2.
+	int bits = 1;
+	bits ^= esil->cur & (ut64)   1;
+	bits ^= esil->cur & (ut64) ( 1 << 1 );
+	bits ^= esil->cur & (ut64) ( 1 << 2 );
+	bits ^= esil->cur & (ut64) ( 1 << 3 );
+	bits ^= esil->cur & (ut64) ( 1 << 4 );
+	bits ^= esil->cur & (ut64) ( 1 << 5 );
+	bits ^= esil->cur & (ut64) ( 1 << 6 );
+	bits ^= esil->cur & (ut64) ( 1 << 7 );
+	return bits;
 }
 
 static int esil_internal_sign_check (RAnalEsil *esil) {
