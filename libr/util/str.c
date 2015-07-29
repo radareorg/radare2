@@ -484,6 +484,8 @@ R_API const char *r_str_trim_const(const char *str) {
 	return str;
 }
 
+/* remove spaces from the head of the string.
+ * the string is changed in place */
 R_API char *r_str_trim_head(char *str) {
 	char *p;
 
@@ -739,9 +741,20 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	return str;
 }
 
+/* replace the key in str with val.
+ *
+ * str - input string
+ * clean - input string cleaned of ANSI chars
+ * thunk - array of integers that map each char of the clean string into the
+ *         position in the str string
+ * clen  - number of elements in thunk
+ * key   - string to find in the clean string
+ * val   - string that replaces key in the str string
+ * g     - if true, replace all occurences of key
+ *
+ * It returns a pointer to the modified string */
 R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 				  const char *key, const char *val, int g) {
-
 	int i, klen, vlen, slen, delta = 0, bias;
 	char *newstr, *scnd, *p = clean, *str_p;
 
@@ -988,11 +1001,12 @@ R_API int r_str_ansi_len(const char *str) {
 	return len-sub;
 }
 
+
+/* suposed to chop a string with ansi controls to
+ * max length of n. */
 R_API int r_str_ansi_chop(char *str, int str_len, int n) {
-	/* suposed to chop a string with ansi controls to
-	 * max length of n */
 	char ch, ch2;
-	int back, i = 0, len = 0;
+	int back = 0, i = 0, len = 0;
 	if (!str) {
 		return 0;
 	}
@@ -1001,13 +1015,12 @@ R_API int r_str_ansi_chop(char *str, int str_len, int n) {
 		str_len = strlen (str);
 	}
 	if (n >= str_len) {
-		str[str_len - 1] = 0;
-		return str_len - 1;
+		str[str_len] = 0;
+		return str_len;
 	}
-	while ((i < str_len) && str[i] && (len < n)) {
+	while ((i < str_len) && str[i] && len < n && n > 0) {
 		ch = str[i];
 		ch2 = str[i+1];
-		back = i; 	/* index in the original array */
 		if (ch == 0x1b) {
 			if (ch2 == '\\') {
 				i++;
@@ -1023,6 +1036,7 @@ R_API int r_str_ansi_chop(char *str, int str_len, int n) {
 		} else if ((str[i] & 0xc0) != 0x80) len++;
 
 		i++;
+		back = i; 	/* index in the original array */
 	}
 	str[back] = 0;
 	return back;
@@ -1073,20 +1087,20 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
  * cposs - if not NULL write a pointer to thunk array there
  * (*cposs)[i] is the offset of the out[i] in str
  * len - lenght of str
+ *
+ * it returns the number of normal characters found in str
  */
 R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
-
 	int i, j, *cps;
 	char *tmp;
 
-	if (len < 1) len = strlen (str) + 1;
-	tmp = malloc (len);
+	if (len < 1) len = strlen (str);
+	tmp = malloc (len + 1);
 	if (!tmp) return -1;
-	memcpy (tmp, str, len);
+	memcpy (tmp, str, len + 1);
 	cps = malloc(len * sizeof(int));
 
 	for (i = j = 0; i < len; i++) {
-
 		if ((i + 1) < len && tmp[i] == 0x1b && tmp[i + 1] == '[') {
 			for (i += 2; i < len && str[i] != 'J'
 				     && str[i] != 'm' && str[i] != 'H'; i++);
@@ -1096,6 +1110,7 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 			j++;
 		}
 	}
+	str[j] = tmp[i];
 
 	if (out)
 		*out = tmp;
@@ -1706,32 +1721,36 @@ R_API int r_str_bounds(const char *_str, int *h) {
 }
 #endif
 
-R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int w, unsigned int h) {
+/* crop a string like it is in a rectangle with the upper-left corner at (x, y)
+ * coordinates and the bottom-right corner at (x2, y2) coordinates. The result
+ * is a newly allocated string, that should be deallocated by the user */
+R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
+		unsigned int x2, unsigned int y2) {
 	char *r, *ret;
 	unsigned int ch = 0, cw = 0;
-	if (w<1 || h<1)
+	if (x2<1 || y2<1 || !str)
 		return strdup ("");
 	r = ret = strdup (str);
 	while (*str) {
 		/* crop height */
-		if (ch >= h) {
+		if (ch >= y2) {
 			r--;
 			break;
 		}
 
 		if (*str == '\n') {
-			if (ch >= y && ch < h)
+			if (ch >= y && ch < y2)
 				*r++ = *str;
 			str++;
 			ch++;
 			cw = 0;
 		} else {
-			if (ch >= y && ch < h && cw >= x && cw < w)
+			if (ch >= y && ch < y2 && cw >= x && cw < x2)
 				*r++ = *str;
 
 			/* crop width */
 			/* skip until newline */
-			if (cw >= w) {
+			if (cw >= x2) {
 				while (*str && *str != '\n')
 					str++;
 			} else {

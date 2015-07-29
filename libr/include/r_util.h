@@ -482,7 +482,7 @@ R_API const char *r_str_pad(const char ch, int len);
 R_API const char *r_str_rchr(const char *base, const char *p, int ch);
 R_API const char *r_str_closer_chr (const char *b, const char *s);
 R_API int r_str_bounds(const char *str, int *h);
-R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int w, unsigned int h);
+R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
 R_API int r_str_len_utf8 (const char *s);
 R_API int r_str_len_utf8char (const char *s, int left);
 R_API void r_str_filter_zeroline(char *str, int len);
