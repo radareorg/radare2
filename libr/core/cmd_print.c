@@ -2927,6 +2927,7 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_canvas_free (c);
 			r_core_read_at (core, offset0, core->block, len);
 			core->offset = offset0;
+			r_cons_printf("\n");
 		}
 		break;
 	case 'n': // easter

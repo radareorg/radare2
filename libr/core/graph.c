@@ -6,7 +6,6 @@
 
 static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
 static int mousemode = 0;
-static int color_disasm = 0;
 
 #define BORDER 3
 #define BORDER_WIDTH 4
@@ -82,9 +81,6 @@ struct agraph_refresh_data {
 #define B(x,y,w,h) r_cons_canvas_box(g->can, x,y,w,h, g->color_box)
 #define B1(x,y,w,h) r_cons_canvas_box(g->can, x,y,w,h, g->color_box2)
 #define B2(x,y,w,h) r_cons_canvas_box(g->can, x,y,w,h, g->color_box3)
-#define L(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,0)
-#define L1(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,1)
-#define L2(x,y,x2,y2) r_cons_canvas_line(g->can, x,y,x2,y2,2)
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(g->can, x,y,x2,y2,c,0)
 
 static char *get_title (ut64 addr) {
@@ -188,7 +184,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 
 		if (g->zoom < ZOOM_DEFAULT) body_h--;
 		if (body_y + 1 <= body_h) {
-			body = r_str_crop (n->body,
+			body = r_str_ansi_crop (n->body,
 					body_x, body_y,
 					n->w - BORDER_WIDTH,
 					body_h);
@@ -2293,9 +2289,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	}
 	can->linemode = 1;
 	can->color = r_config_get_i (core->config, "scr.color");
-	// disable colors in disasm because canvas doesnt supports ansi text yet
-	if (!color_disasm)
-		r_config_set_i (core->config, "scr.color", 0);
 
 	g = r_agraph_new (can);
 	if (!g) {
@@ -2406,8 +2399,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			r_cons_clear00 ();
 			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
 					" .      - center graph to the current node\n"
-					" !      - toggle color disassembly (experimental)\n"
-					" C      - toggle scr.color\n"
+					" !      - toggle scr.color\n"
 					" hjkl   - move node\n"
 					" HJKL   - scroll canvas\n"
 					" tab    - select next node\n"
@@ -2455,12 +2447,16 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			g->color_box3 = core->cons->pal.graph_box3;
 			g->color_true = core->cons->pal.graph_true;
 			g->color_false = core->cons->pal.graph_false;
+			/* TODO: reload only the body of the nodes to update colors */
 			break;
 		case '!':
-			color_disasm = !color_disasm;
-			r_config_set_i (core->config, "scr.color", color_disasm);
+		{
+			/* TODO: remove this option once the colored are "stable" */
+			int colors = r_config_get_i (core->config, "scr.color");
+			r_config_set_i (core->config, "scr.color", !colors);
 			g->need_reload_nodes = R_TRUE;
 			break;
+		}
 		case 'r':
 			agraph_set_layout (g, R_TRUE);
 			break;
@@ -2532,13 +2528,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  core->vmode = R_FALSE;
 			  r_core_visual_prompt_input (core);
 			  core->vmode = R_TRUE;
-			  break;
-		case 'C':
-			  can->color = !!!can->color;
-			  if (!can->color)
-				  color_disasm = R_FALSE;
-			  //r_config_swap (core->config, "scr.color");
-			  // refresh graph
 			  break;
 		case 'w':
 			  agraph_toggle_speed (g, core);
