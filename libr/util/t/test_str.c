@@ -133,6 +133,16 @@ int main(int argc, char *argv[]) {
 	res_s = r_str_replace_thunked(orig, str, cpos, l, "ell", "\x1b[31mell\x1b[39;49m", 1);
 	check("\x1b[30mH\x1b[31mell\x1b[39;49mo\nIt'\x1b[33ms an h\x1b[31mell\x1b[39;49m\n", res_s, "r_str_ansi_filter + replace_thunked");
 
-	/* printf ("%s\n", r_file_slurp_line ("/etc/fstab", 4, 0)); */
+	crop =
+		"\x1b[30mThis is the \x1b[34mfirst line\n"
+		"\x1b[32mThis \x1b[31mis the\x1b[39;49m second\n"
+		"\n"
+		"And this is the \x1b[32mlast\n";
+	crop_exp =
+		"\x1b[30m\x1b[34m\x1b[32mis \x1b[31mis the\x1b[39;49m se\n"
+		"\n"
+		"d this is th\n";
+	check(crop_exp, r_str_ansi_crop(crop, 2, 1, 14, 10), "r_str_ansi_crop");
+
 	return 0;
 }
