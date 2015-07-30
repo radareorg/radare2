@@ -1971,6 +1971,7 @@ static int check_changes (RAGraph *g, int is_interactive,
 
 static int agraph_print (RAGraph *g, int is_interactive,
                           RCore *core, RAnalFunction *fcn) {
+	int title_len;
 	int h, w = r_cons_get_size (&h);
 	int ret;
 
@@ -2000,6 +2001,10 @@ static int agraph_print (RAGraph *g, int is_interactive,
 	/* print the graph title */
 	(void)G (-g->can->sx, -g->can->sy);
 	W (g->title);
+	title_len = strlen (g->title);
+	if (is_interactive)
+		r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
+				w - title_len, 1, ' ', R_TRUE);
 
 	r_cons_canvas_print_region (g->can);
 
