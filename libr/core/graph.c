@@ -1663,11 +1663,11 @@ static void update_graph_sizes (RAGraph *g) {
 			g->y--;
 			max_y++;
 		}
-	}
-	if (max_gn) {
-		const RList *neigh = r_graph_get_neighbours (g->graph, min_gn->gnode);
-		if (r_list_length (neigh) > 0)
-			max_y++;
+		if (max_gn) {
+			const RList *neigh = r_graph_get_neighbours (g->graph, min_gn->gnode);
+			if (r_list_length (neigh) > 0)
+				max_y++;
+		}
 	}
 
 	if (g->x != INT_MAX && g->y != INT_MAX) {
@@ -1786,6 +1786,7 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	case 0: style.color = LINE_TRUE; break;
 	case 1: style.color = LINE_FALSE; break;
 	case -1: style.color = LINE_UNCJMP; break;
+	default: style.color = LINE_NONE; break;
 	}
 	style.symbol = style.color;
 
