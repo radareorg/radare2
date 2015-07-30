@@ -182,7 +182,7 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 		for (p = s; *p && *p != 'J' && *p != 'm' && *p != 'H'; ++p);
 		p++;
 
-		color = strndup(s, p - s);
+		color = r_str_ndup(s, p - s);
 		c->attr = color;
 		s = p;
 	}
