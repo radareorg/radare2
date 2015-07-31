@@ -2144,7 +2144,8 @@ R_API RANode *r_agraph_add_node (const RAGraph *g, const char *title,
 		sdb_array_add (g->db, "agraph.nodes", res->title, 0);
 		b = strdup (res->body);
 		len = strlen (b);
-		if (b[len - 1] == '\n') b[len - 1] = '\0';
+		if (len>0 && b[len-1] == '\n')
+			b[len - 1] = '\0';
 		estr = sdb_encode ((const void *)b, -1);
 		s = sdb_fmt (1, "base64:%s", estr);
 		free (estr);
