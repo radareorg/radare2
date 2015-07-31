@@ -59,7 +59,7 @@ static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 #if USE_IS_VALID_OFFSET
 	int r = iob->is_valid_offset (iob->io, n, 0);
 	return r? n: 0LL;
-#else 
+#else
 	// optimization to ignore very low and very high pointers
 	// this makes disasm 5x faster, but can result in some false positives
 	// we should compare with current offset, to avoid
@@ -110,43 +110,48 @@ R_API char *r_anal_data_to_string (RAnalData *d) {
 	}
 	strcat (line, "  ");
 	idx += 2;
-	if ((mallocsz-idx)>12)
-	switch (d->type) {
-	case R_ANAL_DATA_TYPE_STRING:
-		snprintf (line+idx, mallocsz-idx, "string \"%s\"", d->str);
-		idx = strlen (line);
-		break;
-	case R_ANAL_DATA_TYPE_WIDE_STRING:
-		strcat (line, "wide string");
-		break;
-	case R_ANAL_DATA_TYPE_NUMBER:
-		if (n32 == d->ptr)
-			snprintf (line+idx, mallocsz-idx, "number %d 0x%x", n32, n32);
-		else snprintf (line+idx, mallocsz-idx, "number %"PFMT64d" 0x%"PFMT64x,
-				d->ptr, d->ptr);
-		break;
-	case R_ANAL_DATA_TYPE_POINTER:
-		strcat (line, "pointer ");
-		sprintf (line+strlen (line), " 0x%08"PFMT64x, d->ptr);
-		break;
-	case R_ANAL_DATA_TYPE_INVALID:
-		strcat (line, "invalid");
-		break;
-	case R_ANAL_DATA_TYPE_HEADER:
-		strcat (line, "header");
-		break;
-	case R_ANAL_DATA_TYPE_SEQUENCE:
-		strcat (line, "sequence");
-		break;
-	case R_ANAL_DATA_TYPE_PATTERN:
-		strcat (line, "pattern");
-		break;
-	case R_ANAL_DATA_TYPE_UNKNOWN:
-		strcat (line, "unknown");
-		break;
-	default:
-		strcat (line, "(null)");
-		break;
+	if (mallocsz - idx > 12) {
+		switch (d->type) {
+		case R_ANAL_DATA_TYPE_STRING:
+			snprintf (line+idx, mallocsz-idx, "string \"%s\"", d->str);
+			idx = strlen (line);
+			break;
+		case R_ANAL_DATA_TYPE_WIDE_STRING:
+			strcat (line, "wide string");
+			break;
+		case R_ANAL_DATA_TYPE_NUMBER:
+			if (n32 == d->ptr) {
+				snprintf (line+idx, mallocsz-idx,
+					"number %d 0x%x", n32, n32);
+			} else {
+				snprintf (line+idx, mallocsz-idx,
+					"number %"PFMT64d" 0x%"PFMT64x,
+					d->ptr, d->ptr);
+			}
+			break;
+		case R_ANAL_DATA_TYPE_POINTER:
+			strcat (line, "pointer ");
+			sprintf (line+strlen (line), " 0x%08"PFMT64x, d->ptr);
+			break;
+		case R_ANAL_DATA_TYPE_INVALID:
+			strcat (line, "invalid");
+			break;
+		case R_ANAL_DATA_TYPE_HEADER:
+			strcat (line, "header");
+			break;
+		case R_ANAL_DATA_TYPE_SEQUENCE:
+			strcat (line, "sequence");
+			break;
+		case R_ANAL_DATA_TYPE_PATTERN:
+			strcat (line, "pattern");
+			break;
+		case R_ANAL_DATA_TYPE_UNKNOWN:
+			strcat (line, "unknown");
+			break;
+		default:
+			strcat (line, "(null)");
+			break;
+		}
 	}
 	return line;
 }
@@ -157,11 +162,12 @@ R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int len, int 
 	ad->str = NULL;
 	ad->addr = addr;
 	ad->type = type;
-	if (len == 0)
+	if (len == 0) {
 		len = strlen (p);
+	}
+
 	if (type == R_ANAL_DATA_TYPE_WIDE_STRING) {
 		/* TODO: add support for wide strings */
-		//eprintf ("r_anal_data_new_string: wide string not supported yet\n");
 	} else {
 		ad->str = malloc (len+1);
 		if (!ad->str) {
@@ -243,7 +249,6 @@ R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size) 
 				is_pattern++;
 			}
 		}
-		//eprintf ("%d %d %d %d\n", is_sequence, is_pattern , len, size);
 		if (is_sequence>len-2) {
 			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_SEQUENCE, -1,
 					buf, is_sequence);
@@ -310,7 +315,7 @@ R_API const char *r_anal_data_kind (RAnal *a, ut64 addr, const ut8 *buf, int len
 			break;
 		case R_ANAL_DATA_TYPE_STRING:
 			if (data->len>0) {
-				i += data->len; //strlen ((const char*)buf+i)+1;
+				i += data->len;
 			} else i+=word;
 			str++;
 			break;
@@ -318,13 +323,11 @@ R_API const char *r_anal_data_kind (RAnal *a, ut64 addr, const ut8 *buf, int len
 			i += word;
 		}
 		r_anal_data_free (data);
-        }
-//eprintf ("%d %d %d %d\n", inv, unk, num, str);
+	}
 	if (j<1) return "unknown";
 	if ((inv*100/j)>60) return "invalid";
 	if ((unk*100/j)>60) return "code";
 	if ((num*100/j)>60) return "code";
-//return "text";
 	if ((str*100/j)>40) return "text";
 	return "data";
 }

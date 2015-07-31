@@ -11,18 +11,6 @@ R_LIB_VERSION(r_anal);
 static RAnalPlugin *anal_static_plugins[] =
 	{ R_ANAL_STATIC_PLUGINS };
 
-/*
-static RAnalVarType anal_default_vartypes[] =
-	{{ "char",  "c",  1 },
-	 { "byte",  "b",  1 },
-	 { "int",   "i",  4 },
-	 { "int32", "d",  4 },
-	 { "int64", "q",  8 },
-	 { "dword", "x",  4 },
-	 { "float", "f",  4 },
-	 { NULL,    NULL, 0 }};
-*/
-
 static void r_anal_type_init(RAnal *anal) {
 	Sdb *D = anal->sdb_types;
 	sdb_set (D, "unsigned int", "type", 0);
@@ -99,10 +87,6 @@ R_API RAnal *r_anal_new() {
 		meta_unset_for, meta_count_for, anal);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
 	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs", 1);
-	//anal->sdb_vars = sdb_ns (anal->sdb, "vars", 1); // its inside fcns right now
-	//anal->sdb_args = sdb_ns (anal->sdb, "args", 1);
-	//anal->sdb_ret = sdb_ns (anal->sdb, "ret", 1);
-	//anal->sdb_locals = sdb_ns (anal->sdb, "locals", 1);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->cb_printf = (PrintfCallback) printf;
 	r_anal_pin_init (anal);
@@ -131,11 +115,7 @@ R_API RAnal *r_anal_new() {
 		*static_plugin = *anal_static_plugins[i];
 		r_anal_add (anal, static_plugin);
 	}
-/*
-	for (i=0; anal_default_vartypes[i].name; i++)
-		r_anal_var_type_add (anal, anal_default_vartypes[i].name,
-				anal_default_vartypes[i].size, anal_default_vartypes[i].fmt);
-*/
+
 	return anal;
 }
 
@@ -152,8 +132,6 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_list_free (a->plugins);
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);
-	// might provoke double frees since this is used in r_anal_fcn_insert()
-	//r_listrange_free (a->fcnstore);
 	r_space_fini (&a->meta_spaces);
 	r_anal_pin_fini (a);
 	r_list_free (a->refs);
@@ -167,7 +145,6 @@ R_API RAnal *r_anal_free(RAnal *a) {
 		r_anal_esil_free (a->esil);
 		a->esil = NULL;
 	}
-	// r_io_free(anal->iob.io); // need r_core (but recursive problem to fix)
 	memset (a, 0, sizeof (RAnal));
 	free (a);
 	return NULL;
