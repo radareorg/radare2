@@ -91,7 +91,7 @@ static int get_piece (const char *p, char *chr) {
 	const char *q = p;
 	if (!p) return 0;
 	while (p && *p && *p != '\n' && !is_ansi_seq(p)) p++;
-	if (p && chr) *chr = *p;
+	if (chr) *chr = *p;
 	return p - q;
 }
 
