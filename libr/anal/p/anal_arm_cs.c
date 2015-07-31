@@ -74,9 +74,9 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	} else {
 		ut64 i2 = IMM64(2);
 		if (r0 == r1) {
-			r_strbuf_setf (&op->esil, "%d,%s,%s=", i2, r0, opchar);
+			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,%s=", i2, r0, opchar);
 		} else {
-			r_strbuf_setf (&op->esil, "%d,%s,%s,%s,=", i2, r1, opchar, r0);
+			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,%s,%s,=", i2, r1, opchar, r0);
 		}
 	}
 }
