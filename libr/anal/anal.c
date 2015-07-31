@@ -80,7 +80,7 @@ R_API RAnal *r_anal_new() {
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
-	anal->noncode = 0; // do not analyze data by default
+	anal->noncode = R_FALSE; // do not analyze data by default
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
 	r_space_init (&anal->meta_spaces,

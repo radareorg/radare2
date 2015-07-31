@@ -305,6 +305,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump);
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad);
 R_API void r_core_anal_fcn_labels(RCore *core, RAnalFunction *fcn, int rad);
+R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr);
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts);
 R_API int r_core_anal_graph_fcn(RCore *core, char *input, int opts);
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n);
