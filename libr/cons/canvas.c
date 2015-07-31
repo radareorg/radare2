@@ -96,11 +96,13 @@ static int get_piece (const char *p, char *chr) {
 }
 
 static char *prefixline(RConsCanvas *c, int *left) {
-	int x;
+	int x, len;
 	char *p;
 	if (!c) return NULL;
+	if (strlen (c->b) < (c->y * c->w)) return NULL;
 	p = c->b + (c->y * c->w);
-	for (x = 0; p[x] && x<c->x; x++) {
+	len = strlen(p)-1;
+	for (x = 0; (p[x] && x<c->x) && x < len; x++) {
 		if (p[x] == '\n')
 			p[x] = ' ';
 	}
