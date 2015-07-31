@@ -2403,22 +2403,27 @@ static int cmd_debug(void *data, const char *input) {
 			r_reg_arena_push (core->dbg->reg);
 			if (input[2]==' ') {
 				ut8 bytes[4096];
-				int bytes_len = r_hex_str2bin (input+2, bytes);
-				if (bytes_len>0) {
-					r_debug_execute (core->dbg, bytes, bytes_len, 0);
-				} else {
-					eprintf ("Invalid hexpairs\n");
-				}
+				if (strlen (input+2) < 4096){
+					int bytes_len = r_hex_str2bin (input+2, bytes);
+					if (bytes_len>0) {
+						r_debug_execute (core->dbg, bytes, bytes_len, 0);
+					} else {
+						eprintf ("Invalid hexpairs\n");
+					}
+				} else eprintf ("Injection opcodes so long\n");
 			}
 			r_reg_arena_pop (core->dbg->reg);
 			break;
 		case ' ':
 			{
 			ut8 bytes[4096];
-			int bytes_len = r_hex_str2bin (input+2, bytes);
-			if (bytes_len>0)
-				r_debug_execute (core->dbg, bytes, bytes_len, 0);
-			}
+			if (strlen (input+2) < 4096){
+				int bytes_len = r_hex_str2bin (input+2, bytes);
+				if (bytes_len>0)
+					r_debug_execute (core->dbg, bytes, bytes_len, 0);
+				else eprintf ("Invalid hexpairs\n");
+			} else eprintf ("Injection opcodes so long\n");
+			} 
 			break;
 		default:{
 			const char* help_msg[] = {
