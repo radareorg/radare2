@@ -116,7 +116,7 @@ static int cb_analbbsplit (void *user, void *data) {
 static int cb_analnoncode(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->anal->noncode = node->i_value ? 1: 0; // obey section permissions
+	core->anal->noncode = node->i_value ? R_TRUE: R_FALSE; // obey section permissions
 	return R_TRUE;
 }
 
