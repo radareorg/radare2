@@ -882,10 +882,14 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	if (max_count == 0) {
 		max_count = -1;
 	}
-	if (max_instr <= 0) {
+	if (max_instr <= 1) {
 		r_list_free (badstart);
 		r_list_free (end_list);
-		eprintf ("ROP length (rop.len) must be greater than 0\n");
+		eprintf ("ROP length (rop.len) must be greater than 1.\n");
+		if (max_instr == 1) {
+			eprintf ("For rop.len = 1, use /c to search for single "
+							"instructions. See /c? for help.\n");
+		}
 		return R_FALSE;
 	}
 
