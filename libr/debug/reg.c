@@ -34,15 +34,17 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			//int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
 			int bufsize = dbg->reg->size;
 			ut8 *buf = malloc (bufsize);
-			if (dbg->h && dbg->h->reg_read) {
-				size = dbg->h->reg_read (dbg, i, buf, dbg->reg->size);
-			} else size = -1;
-			if (size < 0) {
+			if (!buf) return R_FALSE;
+			//we have already checked dbg->h and dbg->h->reg_read above
+			size = dbg->h->reg_read (dbg, i, buf, bufsize);
+			// we need to check against zero because reg_read can return R_FALSE
+			if (!size) {
 				eprintf ("r_debug_reg: error reading registers\n");
+				free (buf);
 				return R_FALSE;
-			}
-			if (size)
+			} else
 				r_reg_set_bytes (dbg->reg, i, buf, R_MIN(size, bufsize));
+
 			free (buf);
 		}
 		// DO NOT BREAK R_REG_TYPE_ALL PLEASE
