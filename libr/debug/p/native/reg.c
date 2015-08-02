@@ -30,34 +30,6 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 #error "Unsupported Linux CPU"
 #endif
 
-#elif __APPLE__
-/*   _
-    _\)/_
-   /     \
-   \     /
-    \_._/
-*/
-#if __i386__ || __x86_64__
-	if (dbg->bits & R_SYS_BITS_32) {
-#include "reg/darwin-x86.h"
-	} else if (dbg->bits == R_SYS_BITS_64) {
-#include "reg/darwin-x64.h"
-	} else {
-		eprintf ("invalid bit size\n");
-		return NULL;
-	}
-#elif __POWERPC__
-#include "reg/darwin-ppc.h"
-#elif (defined(__arm64__) || __arm__) && __APPLE__
-	// arm64 aarch64
-	if (dbg->bits & R_SYS_BITS_64) {
-#include "reg/darwin-arm64.h"
-	} else {
-#include "reg/darwin-arm.h"
-	}
-#else
-#error "Unsupported Apple architecture"
-#endif
 
 #elif __WINDOWS__
 /*_______
