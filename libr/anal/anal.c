@@ -34,15 +34,23 @@ static void r_anal_type_init(RAnal *anal) {
 	sdb_set (D, "char", "type", 0);
 	sdb_set (D, "char *", "type", 0);
 	sdb_set (D, "const char*", "type", 0);
+	sdb_set (D, "uint8_t", "type", 0);
+	sdb_set (D, "uint16_t", "type", 0);
+	sdb_set (D, "uint32_t", "type", 0);
+	sdb_set (D, "uint64_t", "type", 0);
 	sdb_set (D, "type.unsigned int", "i", 0);
 	sdb_set (D, "type.unsigned char", "b", 0);
 	sdb_set (D, "type.unsigned short", "w", 0);
 	sdb_set (D, "type.int", "d", 0);
 	sdb_set (D, "type.long", "x", 0);
 	sdb_set (D, "type.void *", "p", 0);
-	sdb_set (D, "type.char", "x", 0);
+	sdb_set (D, "type.char", "b", 0);
 	sdb_set (D, "type.char *", "*z", 0);
 	sdb_set (D, "type.const char*", "*z", 0);
+	sdb_set (D, "type.uint8_t", "b", 0);
+	sdb_set (D, "type.uint16_t", "w", 0);
+	sdb_set (D, "type.uint32_t", "d", 0);
+	sdb_set (D, "type.uint64_t", "q", 0);
 }
 
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
