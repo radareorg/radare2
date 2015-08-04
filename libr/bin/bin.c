@@ -885,10 +885,7 @@ static RBinXtrPlugin * r_bin_get_xtrplugin_by_name (RBin *bin, const char *name)
 }
 
 static RBinPlugin * r_bin_get_binplugin_any (RBin *bin) {
-	static RBinPlugin *any = NULL;
-	if (!bin) return NULL;
-	if (!any) any = r_bin_get_binplugin_by_name (bin, "any");
-	return any;
+	return r_bin_get_binplugin_by_name (bin, "any");
 }
 
 static int r_bin_object_set_sections (RBinFile *bf, RBinObject *obj) {
