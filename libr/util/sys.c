@@ -67,7 +67,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
 
 R_API int r_sys_fork() {
 #if HAVE_FORK
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	return -1;
 #else
 	return fork ();
@@ -91,7 +91,7 @@ R_API ut64 r_sys_now(void) {
 }
 
 R_API int r_sys_truncate(const char *file, int sz) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	int fd = r_sandbox_open (file, O_RDWR, 0644);
 	if (!fd) return R_FALSE;
 	ftruncate (fd, sz);
@@ -176,7 +176,7 @@ R_API int r_sys_sleep(int secs) {
 }
 
 R_API int r_sys_usleep(int usecs) {
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	// unix api uses microseconds
 	return usleep (usecs);
 #else
@@ -296,7 +296,7 @@ R_API int r_sys_chdir(const char *s) {
 	return r_sandbox_chdir (s)==0;
 }
 
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
 	char buffer[1024], *outputptr = NULL;
 	char *inputptr = (char *)input;
@@ -441,7 +441,7 @@ R_API int r_sys_cmdf (const char *fmt, ...) {
 }
 
 R_API int r_sys_cmdbg (const char *str) {
-#if __UNIX__
+#if __UNIX__ || __CYGWIN && !defined(MINGW32)
 	int ret, pid = r_sys_fork ();
 	if (pid == -1) return -1;
 	if (pid) return pid;
@@ -517,7 +517,7 @@ R_API int r_sys_rmkdir(const char *dir) {
 }
 
 R_API void r_sys_perror(const char *fun) {
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	perror (fun);
 #elif __WINDOWS__
 	char *lpMsgBuf;
@@ -582,7 +582,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (void*)ptr;
 #if USE_FORK
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	pid = r_sys_fork ();
 	//pid = -1;
 #else
