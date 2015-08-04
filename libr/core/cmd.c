@@ -988,7 +988,7 @@ static int cmd_system(void *data, const char *input) {
 
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	char *_ptr;
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 	int stdout_fd, fds[2];
 	int child;
 #endif
@@ -1023,7 +1023,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		free (out);
 		ret = 0;
 	}
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__
 	radare_cmd = (char*)r_str_trim_head (radare_cmd);
 	shell_cmd = (char*)r_str_trim_head (shell_cmd);
 
