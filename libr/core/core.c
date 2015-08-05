@@ -314,6 +314,7 @@ static const char *radare_argv[] = {
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
 	"o", "o+", "oc", "on", "op", "o-", "x", "wf", "wF", "wt", "wp",
+	"t", "to ", "t-", "tf", "td", "td-", "tb", "te", "tl", "tk", "ts",
 	"(", "(*", "(-", "()", ".", ".!", ".(", "./",
 	"r", "r+", "r-",
 	"b", "bf", "b?",
@@ -370,7 +371,7 @@ static int autocomplete(RLine *line) {
 		     !memcmp (line->buffer.data, "less ", 5) ||
 		     !memcmp (line->buffer.data, "wt ", 3) ||
 		     !memcmp (line->buffer.data, "wp ", 3) ||
-		     !memcmp (line->buffer.data, "tf ", 3) ||
+		     !memcmp (line->buffer.data, "to ", 3) ||
 		     !memcmp (line->buffer.data, "pm ", 3) ||
 		     !memcmp (line->buffer.data, "dml ", 4) ||
 		     !memcmp (line->buffer.data, "/m ", 3)) {
@@ -514,6 +515,7 @@ static int autocomplete(RLine *line) {
 		    (!memcmp (line->buffer.data, "db- ", 4)) ||
 		    (!memcmp (line->buffer.data, "f ", 2)) ||
 		    (!memcmp (line->buffer.data, "fr ", 3)) ||
+		    (!memcmp (line->buffer.data, "tf ", 3)) ||
 		    (!memcmp (line->buffer.data, "/a ", 3)) ||
 		    (!memcmp (line->buffer.data, "?v ", 3)) ||
 		    (!memcmp (line->buffer.data, "? ", 2))) {
