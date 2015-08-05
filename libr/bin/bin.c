@@ -604,7 +604,7 @@ if (r_list_length (bin->binfiles)==0) {
 		// stream based loaders
 		// NOTE: For RBin we dont need to open the file in read-write. This can be problematic
 		RIODesc *tdesc = iob->desc_open (io, filepath, R_IO_READ, 0); //desc->flags, R_IO_READ);
-		eprintf ("Asuming filepath %s\n", filepath);
+		eprintf ("Assuming filepath %s\n", filepath);
 		if (tdesc) {
 			file_sz = iob->desc_size (io, tdesc);
 			if (file_sz != UT64_MAX) {
