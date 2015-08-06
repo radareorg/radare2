@@ -213,7 +213,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.dbginfo = NULL,
 	.write = NULL,
 	.create = &create,
-	.classes = &classes_mach064
+	.classes = &Mach0_class_(get_classes)
 };
 
 #ifndef CORELIB
