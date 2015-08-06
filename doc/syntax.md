@@ -16,8 +16,8 @@ default:
 
 * Braces open on the same line as the for/while/if/else/function/etc. Closing
   braces are put on a line of its own, except in the else of an if statement or
-  in a while of a do-while statement. If you have a one line statement, don't
-  use braces (except for do-while).
+  in a while of a do-while statement. Always use braces, except when you have
+  filtering conditions or error paths that can fit into a one-line statement.
 
 ```
 if (a == b) {
@@ -47,7 +47,23 @@ if (a == b) {
 do {
 	do_something ();
 } while (cond);
+
+if (a == b) {
+	b = 3;
+}
+
+if (!ok) return R_FALSE;
+
+if (!buf) goto err_buf;
 ```
+
+* In general, don't use goto. The goto statement only comes in handy when a
+  function exits from multiple locations and some common work such as cleanup
+  has to be done.  If there is no cleanup needed then just return directly.
+
+  Choose label names which say what the goto does or why the goto exists.  An
+  example of a good name could be "out_buffer:" if the goto frees "buffer".
+  Avoid using GW-BASIC names like "err1:" and "err2:".
 
 * Use a space after most of the keyword and around operators.
 

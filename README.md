@@ -119,6 +119,10 @@ for scripting and interacting with the apis.
 
 You could also checkout the [radare2 book](http://maijin.gitbooks.io/radare2book/content/).
 
+# Coding Style
+
+Look at [doc/syntax.md](https://github.com/radare/radare2/blob/master/doc/syntax.md).
+
 # Webserver
 
 radare2 comes with an embedded webserver that serves a pure
