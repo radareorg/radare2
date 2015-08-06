@@ -65,6 +65,18 @@ if (!buf) goto err_buf;
   example of a good name could be "out_buffer:" if the goto frees "buffer".
   Avoid using GW-BASIC names like "err1:" and "err2:".
 
+* Use early returns instead of if-else when you need to filter out some bad
+  value at the start of a function.
+
+```
+int check(RCore *c, int a, int b) {
+	if (!c) return R_FALSE;
+	if (a < 0 || b < 1) return R_FALSE;
+
+	... /* do something else */
+}
+```
+
 * Use a space after most of the keyword and around operators.
 
 ```
