@@ -12,7 +12,7 @@ default:
 }
 ```
 
-* Lines should be at most 80 chars
+* Lines should be at most 78 chars
 
 * Braces open on the same line as the for/while/if/else/function/etc. Closing
   braces are put on a line of its own, except in the else of an if statement or
@@ -86,9 +86,6 @@ a = (b << 3) * 5;
 
 * Do not leave trailing whitespaces at the end of line
 
-* Before sending a patch, run clang-format using the style provided in
-  doc/clang-format
-
 * Do not use C99 variable declaration
   - This way we reduce the number of local variables per function
     and it's easier to find which variables are used, where and so on.
@@ -101,6 +98,7 @@ a = (b << 3) * 5;
 * Use 'R_API' define to mark exportable methods
 
 * Try not using oneline comments '//'. Use /* */ instead
+
 * If you *really* need to comment out some code, use #if 0 (...) #endif. In
   general, don't comment out code because it makes the code less readable.
 
