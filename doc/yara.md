@@ -27,7 +27,7 @@ Yara in radare2
 radare2 provides several commands, allowing the user, to add or remove rules,
 scan a file, and list or use rules tags.
 
-You can list the yara commands with the following r2 command `yara [help]`.
+You can list the yara commands with the following r2 command `yara3 [help]`.
 
 Rules
 -----
@@ -43,6 +43,14 @@ Example
 -------
 
 Load a rule file on the fly, and then scan the currently opened file:
+```
+yara add /home/name/rules/malware.rules
+yara scan
+```
+Yara versions
+-------------
 
-	yara add /home/name/rules/malware.rules
-	yara scan
+Because radare2 has support for both yara versions currently, 
+depending from the version/plugin you've loaded, you need
+to use the proper versioned command.
+E.g. `yara2` or `yara3`. For example `yara3 scan`.
