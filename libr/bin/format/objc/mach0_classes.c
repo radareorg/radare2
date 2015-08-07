@@ -581,8 +581,8 @@ static void Mach0_class_(get_class_t)(mach0_ut p, RBinFile *arch,
 									RBinClass *processed_class)
 {
 	Mach0_struct_(SClass) c;
-	mach0_ut r;
-	ut32 offset, left;
+	mach0_ut r = 0;
+	ut32 offset = 0, left = 0;
 	ut32 is_meta_class = 0;
 
 	r = Mach0_class_(get_pointer)(p, &offset, &left, arch);
@@ -639,6 +639,8 @@ RList* Mach0_class_(get_classes)(RBinFile *arch)
 	ut32 left;
 	ut8 isFound = 0;
 
+	ut64 numOfUnnamedClass = 0;
+
 	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
 
@@ -694,6 +696,23 @@ RList* Mach0_class_(get_classes)(RBinFile *arch)
 		r_buf_read_at(arch->buf, s->vaddr - r_bin_plugin_mach.baddr(arch) + i, (ut8 *)&p, size);
 
 		Mach0_class_(get_class_t)(p, arch, processed_class);
+
+		if (!processed_class->name) {
+			st8 *tmp = 0;
+			size_t len = 0;
+
+			tmp = r_str_newf("%s%llu", "UnnamedClass", numOfUnnamedClass);
+			len = strlen(tmp);
+			processed_class->name = malloc(len + 1);
+			if (!processed_class->name) {
+				goto get_classes_error;
+			}
+			memset(processed_class->name, 0, len + 1);
+			strcpy(processed_class->name, tmp);
+
+			numOfUnnamedClass++;
+			R_FREE(tmp);
+		}
 
 		r_list_append(ret, processed_class);
 	}
