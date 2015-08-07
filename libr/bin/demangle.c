@@ -166,10 +166,8 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	int i, nargs = 0;
 	const char *type = NULL;
 
-	if (binfile && binfile->o) {
-		if (binfile->o->classes) {
-			binfile = NULL;
-		}
+	if (binfile && binfile->o && binfile->o->classes) {
+		binfile = NULL;
 	}
 
 	/* classes */
