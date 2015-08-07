@@ -944,7 +944,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			sdb_free (db);
 			return NULL;
 		}
-		for (i = from; i < to; i++, j++) {
+		for (i = from; i < to && j < symbols_count; i++, j++) {
 // TODO: rename to vaddr / paddr
 			symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
 			symbols[j].addr = bin->symtab[i].n_value;
@@ -962,7 +962,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 				len = bin->symstrlen - stridx;
 				if (len>0) {
 					for (i = 0; i<len; i++) {
-						if ((ut8)(symstr[i]&0xff)==0xff || !symstr[i]) {
+						if ((ut8)(symstr[i]&0xff) == 0xff || !symstr[i]) {
 							len = i;
 							break;
 						}
@@ -988,12 +988,18 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		}
 	}
 	to = R_MIN (bin->nsymtab, bin->dysymtab.iundefsym + bin->dysymtab.nundefsym);
-	for (i = bin->dysymtab.iundefsym; i < to; i++)
+	for (i = bin->dysymtab.iundefsym; i < to; i++) {
+		if (j > symbols_count) {
+			eprintf ("Error: %s at %d\n", __FILE__,__LINE__);
+			break;
+		}
 		if (parse_import_stub(bin, &symbols[j], i))
 			symbols[j++].last = 0;
+	}
+
 #if 1
 // symtab is wrongly parsed and produces dupped syms with incorrect vaddr */
-	for (i=0; i<bin->nsymtab; i++) {
+	for (i=0; i < bin->nsymtab; i++) {
 		struct MACH0_(nlist) *st = &bin->symtab[i];
 #if 0
 		eprintf ("stridx %d -> section %d type %d value = %d\n",
@@ -1007,7 +1013,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		// 1 is for symbols
 		// 2 is for func.eh (exception handlers?)
 		int section = st->n_sect;
-		if (section == 1) { // text ??st->n_type == 1)
+		if (section == 1 && j < symbols_count) { // text ??st->n_type == 1)
 			/* is symbol */
 			symbols[j].addr = st->n_value; // + text_base;
 			symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
