@@ -1191,6 +1191,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		int lib_ord, seg_idx = -1, sym_ord = -1;
 		size_t j, count, skip, bind_size, lazy_size;
 		st64 addend = 0;
+		ut64 segmentAddres = 0LL;
 		ut64 addr = 0LL;
 		ut8 done = 0;
 
@@ -1209,13 +1210,13 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		if (!bind_size || !lazy_size)
 			return NULL;
 
-		if ((bind_size +lazy_size)<1) {
+		if ((bind_size + lazy_size)<1) {
 			return NULL;
 		}
 		if (bin->dyld_info->bind_off > bin->size || bin->dyld_info->bind_off + bind_size > bin->size)
 			return NULL;
 		if (bin->dyld_info->lazy_bind_off > bin->size || \
-		  bin->dyld_info->lazy_bind_off + lazy_size > bin->size)
+			bin->dyld_info->lazy_bind_off + lazy_size > bin->size)
 			return NULL;
 		if (bin->dyld_info->bind_off+bind_size+lazy_size > bin->size)
 			return NULL;
@@ -1267,7 +1268,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 					//ut8 sym_flags = imm;
 					while (*ur.p++ && ur.p<end);
 					sym_ord = -1;
-					if (bin->symtab && bin->dysymtab.nundefsym<0xffff)
+					if (bin->symtab && bin->dysymtab.nundefsym < 0xffff)
 					for (j = 0; j < bin->dysymtab.nundefsym; j++) {
 						int stridx = 0;
 						int iundefsym = bin->dysymtab.iundefsym;
@@ -1294,12 +1295,13 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 					break;
 				case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
 					seg_idx = imm;
-					if (seg_idx<0 || seg_idx >= bin->nsegs) {
+					if (seg_idx < 0 || seg_idx >= bin->nsegs) {
 						eprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
 							" has unexistent segment %d\n", seg_idx);
 						addr = 0LL;
 					} else {
 						addr = bin->segs[seg_idx].vmaddr + ULEB(); 
+						segmentAddres = addr;
 					}
 					break;
 				case BIND_OPCODE_ADD_ADDR_ULEB:
@@ -1323,14 +1325,26 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 } while (0)
 
 				case BIND_OPCODE_DO_BIND:
+					if (addr >= segmentAddres) {
+						eprintf ("Error: Malformed bind opcode\n");
+						break;
+					}
 					DO_BIND();
 					addr += wordsize;
 					break;
 				case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
+					if (addr >= segmentAddres) {
+						eprintf ("Error: Malformed bind opcode\n");
+						break;
+					}
 					DO_BIND();
 					addr += ULEB() + wordsize;
 					break;
 				case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
+					if (addr >= segmentAddres) {
+						eprintf ("Error: Malformed bind opcode\n");
+						break;
+					}
 					DO_BIND();
 					addr += (ut64)imm * (ut64)wordsize + wordsize;
 					break;
@@ -1338,6 +1352,10 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 					count = ULEB();
 					skip = ULEB();
 					for (j = 0; j < count; j++) {
+						if (addr >= segmentAddres) {
+							eprintf ("Error: Malformed bind opcode\n");
+							break;
+						}
 						DO_BIND();
 						addr += skip + wordsize;
 					}
