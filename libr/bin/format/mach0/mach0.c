@@ -7,13 +7,13 @@
 
 static ut64 entry_to_vaddr(struct MACH0_(obj_t)* bin) {
 	switch (bin->main_cmd.cmd) {
-		case LC_MAIN:
-			return bin->entry + bin->baddr;
-		case LC_UNIXTHREAD:
-		case LC_THREAD:
-			return bin->entry;
-		default:
-			return 0;
+	case LC_MAIN:
+		return bin->entry + bin->baddr;
+	case LC_UNIXTHREAD:
+	case LC_THREAD:
+		return bin->entry;
+	default:
+		return 0;
 	}
 }
 
@@ -720,7 +720,7 @@ struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file) {
 	ut8 *buf;
 	struct MACH0_(obj_t) *bin;
 
-	if (!(bin = malloc(sizeof(struct MACH0_(obj_t)))))
+	if (!(bin = malloc (sizeof (struct MACH0_(obj_t)))))
 		return NULL;
 	memset (bin, 0, sizeof (struct MACH0_(obj_t)));
 	bin->file = file;
@@ -1152,14 +1152,14 @@ static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut64 slice = 0;
 	ut8 *p = r->p;
 	do {
-		if (p == end)
+		if (p == end) {
 			eprintf ("malformed uleb128");
-
+		}
 		slice = *p & 0x7f;
 
-		if (bit > 63)
+		if (bit > 63) {
 			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%0llX", bit, result);
-		else {
+		} else {
 			result |= (slice << bit);
 			bit += 7;
 		}
@@ -1197,24 +1197,25 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		int lib_ord, seg_idx = -1, sym_ord = -1;
 		size_t j, count, skip, bind_size, lazy_size;
 		st64 addend = 0;
-		ut64 segmentAddres = 0LL;
+		ut64 segmentAddress = 0LL;
 		ut64 addr = 0LL;
 		ut8 done = 0;
 
 #define CASE(T) case (T / 8): rel_type = R_BIN_RELOC_ ## T; break
 		switch (wordsize) {
-			CASE(8);
-			CASE(16);
-			CASE(32);
-			CASE(64);
-			default: return NULL;
+		CASE(8);
+		CASE(16);
+		CASE(32);
+		CASE(64);
+		default: return NULL;
 		}
 #undef CASE
 		bind_size = bin->dyld_info->bind_size;
 		lazy_size = bin->dyld_info->lazy_bind_size;
 
-		if (!bind_size || !lazy_size)
+		if (!bind_size || !lazy_size) {
 			return NULL;
+		}
 
 		if ((bind_size + lazy_size)<1) {
 			return NULL;
@@ -1254,127 +1255,128 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 			switch (op) {
 #define ULEB() read_uleb128 (&ur,end)
 #define SLEB() read_sleb128 (&ur,end)
-				case BIND_OPCODE_DONE:
-					done = 1;	
-					break;
-				case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
-					lib_ord = imm;
-					break;
-				case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
-					lib_ord = ULEB();
-					break;
-				case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
-					if (!imm)
-						lib_ord = 0;
-					else
-						lib_ord = (st8)(BIND_OPCODE_MASK | imm);
-					break;
-				case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
-					char *sym_name = (char*)ur.p;
-					//ut8 sym_flags = imm;
-					while (*ur.p++ && ur.p<end);
-					sym_ord = -1;
-					if (bin->symtab && bin->dysymtab.nundefsym < 0xffff)
-					for (j = 0; j < bin->dysymtab.nundefsym; j++) {
-						int stridx = 0;
-						int iundefsym = bin->dysymtab.iundefsym;
-						if (iundefsym>=0 && iundefsym < bin->nsymtab) {
-							int sidx = iundefsym +j;
-							if (sidx<0 || sidx>= bin->nsymtab)
-								continue;
-							stridx = bin->symtab[sidx].n_un.n_strx;
-							if (stridx < 0 || stridx >= bin->symstrlen)
-								continue;
-						}
-						if (!strcmp((char *)bin->symstr + stridx, sym_name)) {
-							sym_ord = j;
-							break;
-						}
-					}
-					break;
+			case BIND_OPCODE_DONE:
+				done = 1;	
+				break;
+			case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
+				lib_ord = imm;
+				break;
+			case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
+				lib_ord = ULEB();
+				break;
+			case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
+				lib_ord = imm? (st8)(BIND_OPCODE_MASK | imm) : 0;
+				break;
+			case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
+				char *sym_name = (char*)ur.p;
+				//ut8 sym_flags = imm;
+				while (*ur.p++ && ur.p<end) {
+					/* empty loop */
 				}
-				case BIND_OPCODE_SET_TYPE_IMM:
-					type = imm;
-					break;
-				case BIND_OPCODE_SET_ADDEND_SLEB:
-					addend = SLEB();
-					break;
-				case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
-					seg_idx = imm;
-					if (seg_idx < 0 || seg_idx >= bin->nsegs) {
-						eprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
-							" has unexistent segment %d\n", seg_idx);
-						addr = 0LL;
-					} else {
-						addr = bin->segs[seg_idx].vmaddr + ULEB(); 
-						segmentAddres = addr;
+				sym_ord = -1;
+				if (bin->symtab && bin->dysymtab.nundefsym < 0xffff)
+				for (j = 0; j < bin->dysymtab.nundefsym; j++) {
+					int stridx = 0;
+					int iundefsym = bin->dysymtab.iundefsym;
+					if (iundefsym>=0 && iundefsym < bin->nsymtab) {
+						int sidx = iundefsym +j;
+						if (sidx<0 || sidx>= bin->nsymtab)
+							continue;
+						stridx = bin->symtab[sidx].n_un.n_strx;
+						if (stridx < 0 || stridx >= bin->symstrlen)
+							continue;
 					}
-					break;
-				case BIND_OPCODE_ADD_ADDR_ULEB:
-					addr += ULEB();
-					break;
+					if (!strcmp((char *)bin->symstr + stridx, sym_name)) {
+						sym_ord = j;
+						break;
+					}
+				}
+				break;
+			}
+			case BIND_OPCODE_SET_TYPE_IMM:
+				type = imm;
+				break;
+			case BIND_OPCODE_SET_ADDEND_SLEB:
+				addend = SLEB();
+				break;
+			case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
+				seg_idx = imm;
+				if (seg_idx < 0 || seg_idx >= bin->nsegs) {
+					eprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
+						" has unexistent segment %d\n", seg_idx);
+					addr = 0LL;
+				} else {
+					addr = bin->segs[seg_idx].vmaddr + ULEB(); 
+					segmentAddress = addr;
+				}
+				break;
+			case BIND_OPCODE_ADD_ADDR_ULEB:
+				addr += ULEB();
+				break;
 
 #define DO_BIND() do {\
-	if (sym_ord == -1 || seg_idx == -1)\
-		break;\
-	relocs[i].addr = addr;\
-	relocs[i].offset = addr - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;\
-	if (type == BIND_TYPE_TEXT_PCREL32)\
-		relocs[i].addend = addend - (bin->baddr + addr);\
-	else\
-		relocs[i].addend = addend;\
-	/* library ordinal ??? */ \
-	relocs[i].ord = lib_ord;\
-	relocs[i].ord = sym_ord;\
-	relocs[i].type = rel_type;\
-	relocs[i++].last = 0;\
+if (sym_ord == -1 || seg_idx == -1)\
+	break;\
+relocs[i].addr = addr;\
+relocs[i].offset = addr - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;\
+if (type == BIND_TYPE_TEXT_PCREL32)\
+	relocs[i].addend = addend - (bin->baddr + addr);\
+else\
+	relocs[i].addend = addend;\
+/* library ordinal ??? */ \
+relocs[i].ord = lib_ord;\
+relocs[i].ord = sym_ord;\
+relocs[i].type = rel_type;\
+relocs[i++].last = 0;\
 } while (0)
-
-				case BIND_OPCODE_DO_BIND:
-					if (addr >= segmentAddres) {
-						eprintf ("Error: Malformed bind opcode\n");
-						break;
+			case BIND_OPCODE_DO_BIND:
+				if (addr >= segmentAddress) {
+					if (addr > segmentAddress)
+						eprintf ("Error: Malformed DO bind opcode\n");
+					goto beach;
+				}
+				DO_BIND();
+				addr += wordsize;
+				break;
+			case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
+				if (addr >= segmentAddress) {
+					if (addr > segmentAddress)
+						eprintf ("Error: Malformed ADDR ULEB bind opcode\n");
+					goto beach;
+				}
+				DO_BIND();
+				addr += ULEB() + wordsize;
+				break;
+			case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
+				if (addr >= segmentAddress) {
+					if (addr > segmentAddress)
+						eprintf ("Error: Malformed IMM SCALED bind opcode\n");
+					goto beach;
+				}
+				DO_BIND();
+				addr += (ut64)imm * (ut64)wordsize + wordsize;
+				break;
+			case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
+				count = ULEB();
+				skip = ULEB();
+				for (j = 0; j < count; j++) {
+					if (addr >= segmentAddress) {
+						if (addr > segmentAddress)
+							eprintf ("Error: Malformed ULEB TIMES bind opcode\n");
+						goto beach;
 					}
 					DO_BIND();
-					addr += wordsize;
-					break;
-				case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
-					if (addr >= segmentAddres) {
-						eprintf ("Error: Malformed bind opcode\n");
-						break;
-					}
-					DO_BIND();
-					addr += ULEB() + wordsize;
-					break;
-				case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
-					if (addr >= segmentAddres) {
-						eprintf ("Error: Malformed bind opcode\n");
-						break;
-					}
-					DO_BIND();
-					addr += (ut64)imm * (ut64)wordsize + wordsize;
-					break;
-				case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
-					count = ULEB();
-					skip = ULEB();
-					for (j = 0; j < count; j++) {
-						if (addr >= segmentAddres) {
-							eprintf ("Error: Malformed bind opcode\n");
-							break;
-						}
-						DO_BIND();
-						addr += skip + wordsize;
-					}
-					break;
+					addr += skip + wordsize;
+				}
+				break;
 #undef DO_BIND
-
 #undef ULEB
 #undef SLEB
-				default:
-					eprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *ur.p);
-					free (opcodes);
-					relocs[i].last = 1;
-					return relocs;
+			default:
+				eprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *ur.p);
+				free (opcodes);
+				relocs[i].last = 1;
+				return relocs;
 			}
 		}
 		free (opcodes);
@@ -1382,14 +1384,16 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		int j;
 		if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
 			return NULL;
-		if (!(relocs = malloc((bin->dysymtab.nundefsym + 1) * sizeof(struct reloc_t))))
+		if (!(relocs = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct reloc_t))))
 			return NULL;
-		for (j = 0; j < bin->dysymtab.nundefsym; j++)
+		for (j = 0; j < bin->dysymtab.nundefsym; j++) {
 			if (parse_import_ptr(bin, &relocs[i], bin->dysymtab.iundefsym + j)) {
 				relocs[i].ord = j;
 				relocs[i++].last = 0;
 			}
+		}
 	}
+beach:
 	relocs[i].last = 1;
 
 	return relocs;
@@ -1412,7 +1416,7 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 	if (!bin->entry || entry->offset == 0) {
 		// XXX: section name doesnt matters at all.. just check for exec flags
 		for (i = 0; i < bin->nsects; i++) {
-			if (!memcmp (bin->sects[i].sectname, "__text", 6)) {
+			if (!strncmp (bin->sects[i].sectname, "__text", 6)) {
 				entry->offset = (ut64)bin->sects[i].offset;
 				sdb_num_set (bin->kv, "mach0.entry", entry->offset, 0);
 				entry->addr = (ut64)bin->sects[i].addr;
@@ -1433,7 +1437,7 @@ struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin) {
 
 	if (!bin->nlibs)
 		return NULL;
-	if (!(libs = malloc((bin->nlibs + 1) * sizeof(struct lib_t))))
+	if (!(libs = malloc ((bin->nlibs + 1) * sizeof(struct lib_t))))
 		return NULL;
 	for (i = 0; i < bin->nlibs; i++) {
 		strncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH);
