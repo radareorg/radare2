@@ -1,2 +1,2 @@
-#define R_MACH0_CLASS64 1
+#define R_BIN_MACH064 1
 #include "mach0_classes.c"
