@@ -94,7 +94,7 @@ R_API void r_io_sundo_list(RIO *io) {
 	undos = io->undo.undos;
 	redos = io->undo.redos;
 	if (!undos && !redos) {
-		io->printf ("-no seeks done-\n");
+		io->cb_printf ("-no seeks done-\n");
 		return;
 	}
 
@@ -105,11 +105,11 @@ R_API void r_io_sundo_list(RIO *io) {
 	j = 0;
 	for (i = start; i != end || j == 0; i = (i + 1) % R_IO_UNDOS) {
 		if (j < undos) {
-			io->printf ("f undo_%d @ 0x%"PFMT64x"\n", undos - j - 1, io->undo.seek[i]);
+			io->cb_printf ("f undo_%d @ 0x%"PFMT64x"\n", undos - j - 1, io->undo.seek[i]);
 		} else if (j == undos && j != 0 && redos != 0) {
-			io->printf ("# Current undo/redo position.\n");
+			io->cb_printf ("# Current undo/redo position.\n");
 		} else if (j != undos) {
-			io->printf ("f redo_%d @ 0x%"PFMT64x"\n", j - undos - 1, io->undo.seek[i]);
+			io->cb_printf ("f redo_%d @ 0x%"PFMT64x"\n", j - undos - 1, io->undo.seek[i]);
 		}
 		j++;
 	}
@@ -160,14 +160,14 @@ R_API void r_io_wundo_list(RIO *io) {
 
 	if (io->undo.w_init)
 	r_list_foreach (io->undo.w_list, iter, u) {
-		io->printf ("%02d %c %d %08"PFMT64x": ", i, u->set?'+':'-', u->len, u->off);
+		io->cb_printf ("%02d %c %d %08"PFMT64x": ", i, u->set?'+':'-', u->len, u->off);
 		len = (u->len>BW)?BW:u->len;
-		for (j=0;j<len;j++) io->printf ("%02x ", u->o[j]);
-		if (len == BW) io->printf (".. ");
-		io->printf ("=> ");
-		for (j=0;j<len;j++) io->printf ("%02x ", u->n[j]);
-		if (len == BW) io->printf (".. ");
-		io->printf ("\n");
+		for (j=0;j<len;j++) io->cb_printf ("%02x ", u->o[j]);
+		if (len == BW) io->cb_printf (".. ");
+		io->cb_printf ("=> ");
+		for (j=0;j<len;j++) io->cb_printf ("%02x ", u->n[j]);
+		if (len == BW) io->cb_printf (".. ");
+		io->cb_printf ("\n");
 		i++;
 	}
 }

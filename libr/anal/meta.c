@@ -292,7 +292,7 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 //		r_str_sanitize (str);
 		switch (rad) {
 		case 'j':
-			a->printf ("{\"offset\":%"PFMT64d", \"type\":\"%s\", \"name\":\"%s\"}",
+			a->cb_printf ("{\"offset\":%"PFMT64d", \"type\":\"%s\", \"name\":\"%s\"}",
 				d->from, r_meta_type_to_string (d->type), str);
 			break;
 		case 0:
@@ -307,20 +307,20 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 				if (!s) s = strdup (pstr);
 				if (rad) {
 					if (!strcmp (type, "CCu")) {
-						a->printf ("%s base64:%s @ 0x%08"PFMT64x"\n",
+						a->cb_printf ("%s base64:%s @ 0x%08"PFMT64x"\n",
 							type, s, d->from);
 					} else {
-						a->printf ("%s %s @ 0x%08"PFMT64x"\n",
+						a->cb_printf ("%s %s @ 0x%08"PFMT64x"\n",
 							type, pstr, d->from);
 					}
 				} else {
 					if (!strcmp (type, "CCu")) {
 						char *mys = r_str_escape (pstr);
-						a->printf ("0x%08"PFMT64x" %s \"%s\"\n",
+						a->cb_printf ("0x%08"PFMT64x" %s \"%s\"\n",
 								d->from, type, mys);
 						free (mys);
 					} else {
-						a->printf ("0x%08"PFMT64x" %s \"%s\"\n",
+						a->cb_printf ("0x%08"PFMT64x" %s \"%s\"\n",
 								d->from, type, pstr);
 					}
 				}
@@ -330,22 +330,22 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 			case 'h': /* hidden */
 			case 's': /* string */
 				if (rad) {
-					a->printf ("%s %d @ 0x%08"PFMT64x" # %s\n",
+					a->cb_printf ("%s %d @ 0x%08"PFMT64x" # %s\n",
 							r_meta_type_to_string (d->type),
 							(int)d->size, d->from, pstr);
 				} else {
 					// TODO: use b64 here
-					a->printf ("0x%08"PFMT64x" string[%d] \"%s\"\n",
+					a->cb_printf ("0x%08"PFMT64x" string[%d] \"%s\"\n",
 							d->from, (int)d->size, pstr);
 				}
 				break;
 			case 'd': /* data */
 				if (rad) {
-					a->printf ("%s %d @ 0x%08"PFMT64x"\n",
+					a->cb_printf ("%s %d @ 0x%08"PFMT64x"\n",
 							r_meta_type_to_string (d->type),
 							(int)d->size, d->from);
 				} else {
-					a->printf ("0x%08"PFMT64x" data %s %d\n",
+					a->cb_printf ("0x%08"PFMT64x" data %s %d\n",
 						d->from, r_meta_type_to_string (d->type), (int)d->size);
 
 				}
@@ -353,23 +353,23 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 			case 'm': /* magic */
 			case 'f': /* formatted */
 				if (rad) {
-					a->printf ("%s %d %s @ 0x%08"PFMT64x"\n",
+					a->cb_printf ("%s %d %s @ 0x%08"PFMT64x"\n",
 							r_meta_type_to_string (d->type),
 							(int)d->size, pstr, d->from);
 				} else {
 					const char *dtype = d->type=='m'?"magic":"format";
-					a->printf ("0x%08"PFMT64x" %s %d %s\n",
+					a->cb_printf ("0x%08"PFMT64x" %s %d %s\n",
 							d->from, dtype, (int)d->size, pstr);
 				}
 				break;
 			default:
 				if (rad) {
-					a->printf ("%s %d 0x%08"PFMT64x" # %s\n",
+					a->cb_printf ("%s %d 0x%08"PFMT64x" # %s\n",
 						r_meta_type_to_string (d->type),
 						(int)d->size, d->from, pstr);
 				} else {
 					// TODO: use b64 here
-					a->printf ("0x%08"PFMT64x" array[%d] %s %s\n",
+					a->cb_printf ("0x%08"PFMT64x" array[%d] %s %s\n",
 						d->from, (int)d->size, 
 						r_meta_type_to_string (d->type), pstr);
 				}
@@ -413,13 +413,13 @@ beach:
 
 R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user) {
 	RAnalMetaUserItem ui = { a, type, rad, cb, user, 0 };
-	if (rad=='j') a->printf ("[");
+	if (rad=='j') a->cb_printf ("[");
 	if (cb) {
 		sdb_foreach (DB, cb, &ui);
 	} else {
 		sdb_foreach (DB, meta_print_item, &ui);
 	}
-	if (rad=='j') a->printf ("]\n");
+	if (rad=='j') a->cb_printf ("]\n");
 	return ui.count;
 }
 

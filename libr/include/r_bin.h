@@ -180,7 +180,7 @@ typedef struct r_bin_t {
 	RList/*<RBinPlugin>*/ *plugins;
 	RList/*<RBinXtrPlugin>*/ *binxtrs;
 	RList/*<RBinFile>*/ *binfiles;
-	PrintfCallback printf;
+	PrintfCallback cb_printf;
 	int loadany;
 	RIOBind iob;
 	char *force;

@@ -2240,7 +2240,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	core->rcmd->macro.num = core->num;
 	core->rcmd->macro.cmd = r_core_cmd0;
 	core->rcmd->nullcallback = r_core_cmd_nullcallback;
-	core->rcmd->macro.printf = (PrintfCallback)r_cons_printf;
+	core->rcmd->macro.cb_printf = (PrintfCallback)r_cons_printf;
 	r_cmd_set_data (core->rcmd, core);
 	r_cmd_add (core->rcmd, "0x",       "alias for px", &cmd_ox);
 	r_cmd_add (core->rcmd, "x",        "alias for px", &cmd_hexdump);

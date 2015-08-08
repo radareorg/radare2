@@ -68,10 +68,10 @@ static int cb_list(void *user, const char *k, const char *v) {
 	RAnal *a = (RAnal*)user;
 	if (!strncmp (k, "0x", 2)) {
 		// bind
-		a->printf ("%s = %s\n", k, v);
+		a->cb_printf ("%s = %s\n", k, v);
 	} else {
 		// ptr
-		a->printf ("PIN %s\n", k);
+		a->cb_printf ("PIN %s\n", k);
 	}
 	return 1;
 }

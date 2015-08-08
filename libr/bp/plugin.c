@@ -42,7 +42,7 @@ R_API void r_bp_plugin_list(RBreakpoint *bp) {
 	RListIter *iter;
 	RBreakpointPlugin *b;
 	r_list_foreach (bp->plugins, iter, b) {
-		bp->printf ("bp %c %s\n", 
+		bp->cb_printf ("bp %c %s\n", 
 			(bp->cur && !strcmp (bp->cur->name, b->name))?'*':'-',
 			b->name);
 	}

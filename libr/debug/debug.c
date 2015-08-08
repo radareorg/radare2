@@ -75,7 +75,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->reason = R_DBG_REASON_UNKNOWN;
 	dbg->stop_all_threads = R_FALSE;
 	dbg->trace = r_debug_trace_new ();
-	dbg->printf = (void *)printf;
+	dbg->cb_printf = (void *)printf;
 	dbg->reg = r_reg_new ();
 	dbg->num = r_num_new (r_debug_num_callback, dbg);
 	dbg->h = NULL;

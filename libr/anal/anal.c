@@ -104,7 +104,7 @@ R_API RAnal *r_anal_new() {
 	//anal->sdb_ret = sdb_ns (anal->sdb, "ret", 1);
 	//anal->sdb_locals = sdb_ns (anal->sdb, "locals", 1);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
-	anal->printf = (PrintfCallback) printf;
+	anal->cb_printf = (PrintfCallback) printf;
 	r_anal_pin_init (anal);
 	r_anal_type_init (anal);
 	r_anal_xrefs_init (anal);
@@ -189,7 +189,7 @@ R_API int r_anal_list(RAnal *anal) {
 	RAnalPlugin *h;
 	RListIter *it;
 	r_list_foreach (anal->plugins, it, h) {
-		anal->printf ("anal %-10s %s\n", h->name, h->desc);
+		anal->cb_printf ("anal %-10s %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
 }

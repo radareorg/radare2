@@ -67,13 +67,13 @@ R_API int r_debug_desc_list(RDebug *dbg, int rad) {
 	RDebugDesc *p;
 
 	if (rad) {
-		if (dbg && dbg->printf)
-			dbg->printf ("TODO \n");
+		if (dbg && dbg->cb_printf)
+			dbg->cb_printf ("TODO \n");
 	} else {
 		if (dbg && dbg->h && dbg->h->desc.list) {
 			list = dbg->h->desc.list (dbg->pid);
 			r_list_foreach (list, iter, p) {
-				dbg->printf ("%i 0x%"PFMT64x" %c%c%c %s\n", p->fd, p->off,
+				dbg->cb_printf ("%i 0x%"PFMT64x" %c%c%c %s\n", p->fd, p->off,
 						(p->perm & R_IO_READ)?'r':'-',
 						(p->perm & R_IO_WRITE)?'w':'-',
 						p->type, p->path);

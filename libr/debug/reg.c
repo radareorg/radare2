@@ -80,7 +80,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		kwhites = "    ";
 	}
 	if (rad=='j')
-		dbg->printf ("{");
+		dbg->cb_printf ("{");
 	if (type == -1) {
 		from = 0;
 		to = R_REG_TYPE_LAST;
@@ -107,15 +107,15 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 
 			switch (rad) {
 			case 'j':
-				dbg->printf ("%s\"%s\":%"PFMT64d,
+				dbg->cb_printf ("%s\"%s\":%"PFMT64d,
 					n?",":"", item->name, value);
 				break;
 			case '-':
-				dbg->printf ("f-%s\n", item->name);
+				dbg->cb_printf ("f-%s\n", item->name);
 				break;
 			case 1:
 			case '*':
-				dbg->printf ("f %s 1 0x%"PFMT64x"\n",
+				dbg->cb_printf ("f %s 1 0x%"PFMT64x"\n",
 					item->name, value);
 				break;
 			case 'd':
@@ -125,14 +125,14 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					int len;
 					strcpy (whites, kwhites);
 					if (delta && use_color)
-						dbg->printf (use_color);
+						dbg->cb_printf (use_color);
 					if (item->flags) {
 						str = r_reg_get_bvalue (dbg->reg, item);
 						len = strlen (str);
 						strcpy (whites, "        ");
 						len = (len>9)?9:(9-len);
 						whites[len] = 0;
-						dbg->printf (" %s = %s%s", item->name,
+						dbg->cb_printf (" %s = %s%s", item->name,
 							str, ((n+1)%cols)? whites: "\n");
 						free (str);
 					} else {
@@ -144,12 +144,12 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 							len = (len>9)?9:(9-len);
 							whites[len] = 0;
 						}
-						dbg->printf (fmt2, item->name, value,
+						dbg->cb_printf (fmt2, item->name, value,
 							((n+1)%cols)? whites: "\n");
 
 					}
 					if (delta && use_color)
-						dbg->printf (Color_RESET);
+						dbg->cb_printf (Color_RESET);
 				 }
 				break;
 			case 3:
@@ -157,23 +157,23 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					char woot[64];
 					snprintf (woot, sizeof (woot),
 						" was 0x%08"PFMT64x" delta %d\n", diff, delta);
-					dbg->printf (fmt, item->name, value, woot);
+					dbg->cb_printf (fmt, item->name, value, woot);
 				}
 				break;
 			default:
 				if (delta && use_color)
-					dbg->printf (use_color);
-				dbg->printf (fmt, item->name, value, "\n");
+					dbg->cb_printf (use_color);
+				dbg->cb_printf (fmt, item->name, value, "\n");
 				if (delta && use_color)
-					dbg->printf (Color_RESET);
+					dbg->cb_printf (Color_RESET);
 				break;
 			}
 			n++;
 		}
 	}
-	if (rad=='j') dbg->printf ("}\n");
+	if (rad=='j') dbg->cb_printf ("}\n");
 	else if (n>0 && rad==2 && ((n%cols)))
-		dbg->printf ("\n");
+		dbg->cb_printf ("\n");
 	return n;
 }
 

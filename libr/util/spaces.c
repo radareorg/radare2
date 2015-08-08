@@ -23,7 +23,7 @@ R_API void r_space_init(RSpaces *f, void (*unset_for)(void*,int), int (*count_fo
 	f->space_idx = -1;
 	f->space_idx2 = -1;
 	f->spacestack = r_list_new ();
-	f->printf = (PrintfCallback)printf;
+	f->cb_printf = (PrintfCallback)printf;
 	f->unset_for = unset_for;
 	f->count_for = count_for;
 	f->user = user;
@@ -125,17 +125,17 @@ R_API int r_space_list(RSpaces *f, int mode) {
 	const char *defspace = NULL;
 	int count, len, i, j = 0;
 	if (mode == 'j')
-		f->printf ("[");
+		f->cb_printf ("[");
 	for (i=0; i<R_SPACES_MAX; i++) {
 		if (!f->spaces[i]) continue;
 		count = r_space_count (f, i);
 		if (mode=='j') {
-			f->printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
+			f->cb_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
 					j? ",":"", f->spaces[i],
 					(i==f->space_idx)? ",\"selected\":true":"",
 					count);
 		} else if (mode=='*') {
-			f->printf ("fs %s\n", f->spaces[i]);
+			f->cb_printf ("fs %s\n", f->spaces[i]);
 			if (i==f->space_idx) defspace = f->spaces[i];
 		} else {
 			#define INDENT 5
@@ -147,16 +147,16 @@ R_API int r_space_list(RSpaces *f, int mode) {
 			if (len<INDENT) {
 				spaces[INDENT-len] = 0;
 			} else spaces[0] = 0;
-			f->printf ("%s%s %s %c %s\n", num0, spaces, num1,
+			f->cb_printf ("%s%s %s %c %s\n", num0, spaces, num1,
 					(i==f->space_idx)?'*':'.',
 					f->spaces[i]);
 		}
 		j++;
 	}
 	if (defspace)
-		f->printf ("fs %s # current\n", defspace);
+		f->cb_printf ("fs %s # current\n", defspace);
 	if (mode == 'j')
-		f->printf ("]\n");
+		f->cb_printf ("]\n");
 	return j;
 }
 

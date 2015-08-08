@@ -372,8 +372,8 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		if (files) {
 			ut32 i = 0;
 			r_list_foreach_safe (files, iter, iter_tmp, name) {
-				// XXX - io->printf does not flush
-				// io->printf("%s\n", name);
+				// XXX - io->cb_printf does not flush
+				// io->cb_printf("%s\n", name);
 				r_cons_printf ("%d %s\n", i, name);
 				r_cons_flush ();
 				i++;

@@ -97,10 +97,10 @@ R_API int r_io_plugin_close(RIO *io, int fd, RIOPlugin *plugin) {
 R_API int r_io_plugin_list(RIO *io) {
 	int n = 0;
 	struct list_head *pos;
-	io->printf ("IO plugins:\n");
+	io->cb_printf ("IO plugins:\n");
 	list_for_each_prev (pos, &io->io_list) {
 		struct r_io_list_t *il = list_entry (pos, struct r_io_list_t, list);
-		io->printf (" - %s\n", il->plugin->name);
+		io->cb_printf (" - %s\n", il->plugin->name);
 		n++;
 	}
 	return n;

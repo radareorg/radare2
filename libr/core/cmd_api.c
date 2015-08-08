@@ -218,7 +218,7 @@ R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->counter = 0;
 	mac->_brk_value = 0;
 	mac->brk_value = &mac->_brk_value;
-	mac->printf = (void*)printf;
+	mac->cb_printf = (void*)printf;
 	mac->num = NULL;
 	mac->user = NULL;
 	mac->cmd = NULL;
@@ -324,7 +324,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		for (;codelen<R_CMD_MAXLEN;) { // XXX input from mac->fd
 #if 0
 			if (stdin == r_cons_stdin_fd) {
-				mac->printf(".. ");
+				mac->cb_printf(".. ");
 				fflush(stdout);
 			}
 			fgets(buf, 1023, r_cons_stdin_fd);
@@ -377,19 +377,19 @@ R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
 	return R_FALSE;
 }
 
-// TODO: use mac->printf which is r_cons_printf at the end
+// TODO: use mac->cb_printf which is r_cons_printf at the end
 R_API void r_cmd_macro_list(RCmdMacro *mac) {
 	RCmdMacroItem *m;
 	int j, idx = 0;
 	RListIter *iter;
 	r_list_foreach (mac->macros, iter, m) {
-		mac->printf ("%d (%s %s, ", idx, m->name, m->args);
+		mac->cb_printf ("%d (%s %s, ", idx, m->name, m->args);
 		for (j=0; m->code[j]; j++) {
 			if (m->code[j]=='\n')
-				mac->printf (", ");
-			else mac->printf ("%c", m->code[j]);
+				mac->cb_printf (", ");
+			else mac->cb_printf ("%c", m->code[j]);
 		}
-		mac->printf (")\n");
+		mac->cb_printf (")\n");
 		idx++;
 	}
 }

@@ -514,7 +514,7 @@ static int bin_dwarf (RCore *core, int mode) {
 static int bin_pdb (RCore *core, ut64 baddr, int mode) {
 	R_PDB pdb = {0};
 
-	pdb.printf = r_cons_printf;
+	pdb.cb_printf = r_cons_printf;
 	if (!init_pdb_parser (&pdb, core->bin->file)) {
 		//eprintf ("initialization error of pdb parser\n");
 		return R_FALSE;

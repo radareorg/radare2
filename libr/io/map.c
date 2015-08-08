@@ -331,10 +331,10 @@ R_API int r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
 R_API void r_io_map_list (RIO *io) {
 	RIOMap *map;
 	RListIter *iter;
-	if (io && io->maps && io->printf) {
+	if (io && io->maps && io->cb_printf) {
 		r_list_foreach (io->maps, iter, map) {
 			if (map)
-				io->printf ("%i +0x%"PFMT64x" 0x%"PFMT64x" - 0x%"PFMT64x" ; %s\n", map->fd, map->delta, map->from, map->to, r_str_rwx_i (map->flags));
+				io->cb_printf ("%i +0x%"PFMT64x" 0x%"PFMT64x" - 0x%"PFMT64x" ; %s\n", map->fd, map->delta, map->from, map->to, r_str_rwx_i (map->flags));
 		}
 	}
 }

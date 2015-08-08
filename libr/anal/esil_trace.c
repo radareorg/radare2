@@ -128,7 +128,7 @@ R_API void r_anal_esil_trace_list (RAnalEsil *esil) {
 }
 
 R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
-	PrintfCallback p = esil->anal->printf;
+	PrintfCallback p = esil->anal->cb_printf;
 	const char *str2;
 	const char *str;
 	int trace_idx = esil->trace_idx;

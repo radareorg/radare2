@@ -60,7 +60,7 @@ typedef struct r_space_t {
 	int space_idx2;
 	char *spaces[R_SPACES_MAX];
 	RList *spacestack; // metaspaces
-	PrintfCallback printf;
+	PrintfCallback cb_printf;
 	void (*unset_for)(void *user, int idx);
 	int (*count_for)(void *user, int idx);
 	void *user;

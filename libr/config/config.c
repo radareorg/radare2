@@ -56,7 +56,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	case 0:
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len))))
-				cfg->printf ("%s%s = %s%s\n", pfx,
+				cfg->cb_printf ("%s%s = %s%s\n", pfx,
 					node->name, node->value, sfx);
 		}
 		break;
@@ -64,28 +64,28 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len))))
 				if (!str || !strncmp (str, node->name, len))
-					cfg->printf ("%20s: %s\n", node->name,
+					cfg->cb_printf ("%20s: %s\n", node->name,
 						node->desc?node->desc:"");
 		}
 		break;
 	case 'j':
-		cfg->printf ("{");
+		cfg->cb_printf ("{");
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len))))
 				if (!str || !strncmp (str, node->name, len)) {
 					const char *val = node->value;
 					if (node->flags & CN_BOOL || node->flags & CN_INT || node->flags & CN_OFFT) {
 						if (!val) val = "0";
-						cfg->printf ("\"%s\":%s",
+						cfg->cb_printf ("\"%s\":%s",
 							node->name, val);
 					} else
-						cfg->printf ("\"%s\":\"%s\"",
+						cfg->cb_printf ("\"%s\":\"%s\"",
 							node->name, val);
 					if (iter->n)
-						cfg->printf (",");
+						cfg->cb_printf (",");
 				}
 		}
-		cfg->printf ("}\n");
+		cfg->cb_printf ("}\n");
 		break;
 	}
 }
@@ -360,7 +360,7 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 			/* get */
 			const char *str = r_config_get(cfg, foo);
 			if (str)
-				cfg->printf ("%s\n",
+				cfg->cb_printf ("%s\n",
 					(((int)(size_t)str)==1)?"true":str);
 		}
 	}
@@ -393,7 +393,7 @@ R_API RConfig *r_config_new(void *user) {
 		cfg->num = NULL;
 		cfg->n_nodes = 0;
 		cfg->lock = 0;
-		cfg->printf = (void *)printf;
+		cfg->cb_printf = (void *)printf;
 	}
 	return cfg;
 }
@@ -409,7 +409,7 @@ R_API RConfig *r_config_clone (RConfig *cfg) {
 		c->n_nodes++;
 	}
 	c->lock = cfg->lock;
-	c->printf = cfg->printf;
+	c->cb_printf = cfg->cb_printf;
 	return c;
 }
 

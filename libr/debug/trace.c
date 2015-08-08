@@ -96,8 +96,8 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode) {
 	r_list_foreach (dbg->trace->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			if (mode == 1)
-				dbg->printf ("at+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);
-			else dbg->printf ("0x%08"PFMT64x" size=%d count=%d times=%d tag=%d\n",
+				dbg->cb_printf ("at+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);
+			else dbg->cb_printf ("0x%08"PFMT64x" size=%d count=%d times=%d tag=%d\n",
 				trace->addr, trace->size, trace->count, trace->times, trace->tag);
 		}
 	}

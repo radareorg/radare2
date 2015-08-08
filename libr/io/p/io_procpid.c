@@ -114,7 +114,7 @@ static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 		int pid = atoi (cmd+4);
 		if (pid != 0)
 			iop->pid = pid;
-		io->printf ("%d\n", iop->pid);
+		io->cb_printf ("%d\n", iop->pid);
 		return 0;
 	} else eprintf ("Try: '=!pid'\n");
 	return R_TRUE;

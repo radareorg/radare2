@@ -34,25 +34,25 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 		if (list == NULL)
 			return R_FALSE;
 		if (fmt == 'j')
-			dbg->printf ("[");
+			dbg->cb_printf ("[");
 		r_list_foreach (list, iter, p) {
 			switch (fmt) {
 			case 'j':
-				dbg->printf ("{\"pid\":%d,"
+				dbg->cb_printf ("{\"pid\":%d,"
 					"\"status\":\"%c\","
 					"\"path\":\"%s\"}%s",
 					p->pid, p->status, p->path,
 					iter->n?",":"");
 				break;
 			default:
-				dbg->printf (" %c %d %c %s\n", 
+				dbg->cb_printf (" %c %d %c %s\n", 
 					dbg->pid==p->pid?'*':'-',
 					p->pid, p->status, p->path);
 				break;
 			}
 		}
 		if (fmt == 'j')
-			dbg->printf ("]\n");
+			dbg->cb_printf ("]\n");
 		r_list_free (list);
 	}
 	return R_FALSE;
@@ -67,18 +67,18 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid) {
 		if (list == NULL)
 			return R_FALSE;
 		if (pid== -'j') {
-			dbg->printf ("[");
+			dbg->cb_printf ("[");
 			r_list_foreach (list, iter, p) {
-				dbg->printf ("{\"pid\":%d,"
+				dbg->cb_printf ("{\"pid\":%d,"
 					"\"status\":\"%s\","
 					"\"path\":\"%s\"}%s",
 					p->pid, p->status, p->path,
 					iter->n?",":"");
 			}
-			dbg->printf ("]\n");
+			dbg->cb_printf ("]\n");
 		} else {
 			r_list_foreach (list, iter, p) {
-				dbg->printf (" %c %d %c %s\n",
+				dbg->cb_printf (" %c %d %c %s\n",
 					dbg->tid==p->pid?'*':'-',
 					p->pid, p->status, p->path);
 			}

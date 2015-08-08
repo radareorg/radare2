@@ -17,7 +17,7 @@ typedef struct r_lang_t {
 	void *user;
 	RList *defs;
 	RList *langs;
-	PrintfCallback printf;
+	PrintfCallback cb_printf;
 	RCoreCmdStrCallback cmd_str;
 } RLang;
 

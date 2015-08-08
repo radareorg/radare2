@@ -106,19 +106,19 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 		if (rad) {
 			char *n = strdup (s->name);
 			r_name_filter (n, strlen (n));
-			io->printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n",
+			io->cb_printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n",
 				n, s->size, s->vaddr);
-			io->printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"
+			io->cb_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"
 				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->offset,
 				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->rwx));
 		} else {
-			io->printf ("[%02d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x
+			io->cb_printf ("[%02d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x
 				" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s",
 			i, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
 			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);
 			if (s->arch && s->bits)
-				io->printf ("  ; %s %d\n", r_sys_arch_str (s->arch), s->bits);
-			else io->printf ("\n");
+				io->cb_printf ("  ; %s %d\n", r_sys_arch_str (s->arch), s->bits);
+			else io->cb_printf ("\n");
 		}
 		i++;
 	}
@@ -164,12 +164,12 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int
 				color_end = "";
 			}
 			if (io->va) {
-				io->printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
+				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
 						(seek>=s->offset && seek<s->offset+s->size)?'*':' ', 
 						//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ', 
 						color, s->vaddr, color_end);
 			} else {
-				io->printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
+				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
 						(seek>=s->offset && seek<s->offset+s->size)?'*':' ', 
 						color, s->vaddr, color_end);
 			}
@@ -177,15 +177,15 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int
 				ut64 pos = min + (j*mul);
 				ut64 npos = min + ((j+1)*mul);
 				if (s->offset <npos && (s->offset+s->size)>pos)
-					io->printf ("#");
-				else io->printf ("-");
+					io->cb_printf ("#");
+				else io->cb_printf ("-");
 			}
 			if (io->va) {
-				io->printf ("| %s0x%08"PFMT64x"%s %s %s\n", 
+				io->cb_printf ("| %s0x%08"PFMT64x"%s %s %s\n", 
 					color, s->vaddr+s->size, color_end,
 					r_str_rwx_i (s->rwx), s->name);
 			} else {
-				io->printf ("| %s0x%08"PFMT64x"%s %s %s\n",
+				io->cb_printf ("| %s0x%08"PFMT64x"%s %s %s\n",
 					color, s->offset+s->size, color_end,
 					r_str_rwx_i (s->rwx), s->name);
 			}
@@ -196,14 +196,14 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int
 			if (seek == UT64_MAX)
 				seek = 0;
 			//len = 8096;//r_io_size (io);
-			io->printf ("=>  0x%08"PFMT64x" |", seek);
+			io->cb_printf ("=>  0x%08"PFMT64x" |", seek);
 			for (j=0;j<width;j++) {
-				io->printf (
+				io->cb_printf (
 					((j*mul)+min >= seek &&
 					 (j*mul)+min <= seek+len)
 					?"^":"-");
 			}
-			io->printf ("| 0x%08"PFMT64x"\n", seek+len);
+			io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len);
 		}
 	}
 }
