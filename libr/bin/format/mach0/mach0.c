@@ -1307,7 +1307,8 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 					addr = 0LL;
 				} else {
 					addr = bin->segs[seg_idx].vmaddr + ULEB(); 
-					segmentAddress = addr;
+					segmentAddress = bin->segs[seg_idx].vmaddr \
+							+ bin->segs[seg_idx].vmsize;
 				}
 				break;
 			case BIND_OPCODE_ADD_ADDR_ULEB:
@@ -1331,8 +1332,7 @@ relocs[i++].last = 0;\
 } while (0)
 			case BIND_OPCODE_DO_BIND:
 				if (addr >= segmentAddress) {
-					if (addr > segmentAddress)
-						eprintf ("Error: Malformed DO bind opcode\n");
+					eprintf ("Error: Malformed DO bind opcode\n");
 					goto beach;
 				}
 				DO_BIND();
@@ -1340,8 +1340,7 @@ relocs[i++].last = 0;\
 				break;
 			case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
 				if (addr >= segmentAddress) {
-					if (addr > segmentAddress)
-						eprintf ("Error: Malformed ADDR ULEB bind opcode\n");
+					eprintf ("Error: Malformed ADDR ULEB bind opcode\n");
 					goto beach;
 				}
 				DO_BIND();
@@ -1349,8 +1348,7 @@ relocs[i++].last = 0;\
 				break;
 			case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
 				if (addr >= segmentAddress) {
-					if (addr > segmentAddress)
-						eprintf ("Error: Malformed IMM SCALED bind opcode\n");
+					eprintf ("Error: Malformed IMM SCALED bind opcode\n");
 					goto beach;
 				}
 				DO_BIND();
@@ -1361,8 +1359,7 @@ relocs[i++].last = 0;\
 				skip = ULEB();
 				for (j = 0; j < count; j++) {
 					if (addr >= segmentAddress) {
-						if (addr > segmentAddress)
-							eprintf ("Error: Malformed ULEB TIMES bind opcode\n");
+						eprintf ("Error: Malformed ULEB TIMES bind opcode\n");
 						goto beach;
 					}
 					DO_BIND();
