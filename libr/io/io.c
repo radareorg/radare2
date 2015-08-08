@@ -24,7 +24,7 @@ R_API RIO *r_io_new() {
 	if (!io) return NULL;
 	io->buffer = r_cache_new (); // RCache is a list of ranged buffers. maybe rename?
 	io->write_mask_fd = -1;
-	io->printf = (void*) printf;
+	io->cb_printf = (void*) printf;
 	io->bits = (sizeof(void*) == 8)? 64: 32;
 	io->ff = 1;
 	io->raised = -1;

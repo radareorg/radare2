@@ -23,7 +23,7 @@ R_API RBreakpoint *r_bp_new() {
 	bp->bps_idx = R_NEWS0 (RBreakpointItem*, bp->bps_idx_count);
 	bp->stepcont = R_BP_CONT_NORMAL;
 	bp->traces = r_bp_traptrace_new ();
-	bp->printf = (PrintfCallback)printf;
+	bp->cb_printf = (PrintfCallback)printf;
 	bp->bps = r_list_newf ((RListFree)r_bp_item_free);
 	bp->plugins = r_list_newf ((RListFree)free);
 	for (i=0; bp_static_plugins[i]; i++) {
@@ -228,13 +228,13 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	RBreakpointItem *b;
 	RListIter *iter;
 	if (rad=='j') {
-		bp->printf ("[");
+		bp->cb_printf ("[");
 	}
 	//eprintf ("Breakpoint list:\n");
 	r_list_foreach (bp->bps, iter, b) {
 		switch (rad) {
 		case 0:
-			bp->printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %d %c%c%c %s %s %s cmd=\"%s\"\n",
+			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %d %c%c%c %s %s %s cmd=\"%s\"\n",
 				b->addr, b->addr+b->size, b->size,
 			(b->rwx & R_BP_PROT_READ)? 'r': '-',
 			(b->rwx & R_BP_PROT_WRITE)? 'w': '-',
@@ -248,13 +248,13 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 		case 'r':
 		case '*':
 			// TODO: add command, tracing, enable, ..
-			bp->printf ("db 0x%08"PFMT64x"\n", b->addr);
+			bp->cb_printf ("db 0x%08"PFMT64x"\n", b->addr);
 			//b->trace? "trace": "break",
 			//b->enabled? "enabled": "disabled",
 			// b->data? b->data: "");
 			break;
 		case 'j':
-			bp->printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,\"prot\":\"%c%c%c\",\"hw\":%s,\"trace\":%s,\"enabled\":%s,\"data\":\"%s\"}",
+			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,\"prot\":\"%c%c%c\",\"hw\":%s,\"trace\":%s,\"enabled\":%s,\"data\":\"%s\"}",
 				iter->p? ",":"",
 				b->addr, b->size,
 				(b->rwx & R_BP_PROT_READ)? 'r': '-',
@@ -270,7 +270,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 		n++;
 	}
 	if (rad=='j') {
-		bp->printf ("]\n");
+		bp->cb_printf ("]\n");
 	}
 	return n;
 }

@@ -816,7 +816,7 @@ R_API int r_core_init(RCore *core) {
 	core->print->get_enumname = getenumname;
 	core->print->get_bitfield = getbitfield;
 	core->print->offname = r_core_print_offname;
-	core->print->printf = (void *)r_cons_printf;
+	core->print->cb_printf = (void *)r_cons_printf;
 	core->print->write = (void *)r_cons_memcat;
 	core->print->disasm = __disasm;
 	core->print->colorfor = (RPrintColorFor)r_core_anal_optype_colorfor;
@@ -877,27 +877,27 @@ R_API int r_core_init(RCore *core) {
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
 	core->cons->editor = (RConsEditorCallback)r_core_editor;
 	core->cons->user = (void*)core;
-	core->lang->printf = r_cons_printf;
+	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
 	core->assembler = r_asm_new ();
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
-	core->anal->meta_spaces.printf = r_cons_printf;
+	core->anal->meta_spaces.cb_printf = r_cons_printf;
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;
 	core->anal->cb.on_fcn_rename = on_fcn_rename;
 	core->assembler->syscall = \
 		core->anal->syscall; // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
-	core->anal->printf = (void *) r_cons_printf;
+	core->anal->cb_printf = (void *) r_cons_printf;
 	core->parser = r_parse_new ();
 	core->parser->anal = core->anal;
 	core->parser->varlist = r_anal_var_list;
 	r_parse_set_user_ptr (core->parser, core);
 	core->bin = r_bin_new ();
-	core->bin->printf = (PrintfCallback) r_cons_printf;
+	core->bin->cb_printf = (PrintfCallback) r_cons_printf;
 	r_bin_set_user_ptr (core->bin, core);
 	core->io = r_io_new ();
 	core->io->ff = 1;
@@ -929,16 +929,16 @@ R_API int r_core_init(RCore *core) {
 	r_core_cmd_init (core);
 	core->dbg = r_debug_new (R_TRUE);
 	r_core_bind (core, &core->dbg->corebind);
-	core->dbg->printf = (PrintfCallback)r_cons_printf;
+	core->dbg->cb_printf = (PrintfCallback)r_cons_printf;
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");
 // XXX pushing unititialized regstate results in trashed reg values
 //	r_reg_arena_push (core->dbg->reg); // create a 2 level register state stack
 //	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
-	core->sign->printf = r_cons_printf;
-	core->io->printf = r_cons_printf;
-	core->dbg->printf = r_cons_printf;
-	core->dbg->bp->printf = r_cons_printf;
+	core->sign->cb_printf = r_cons_printf;
+	core->io->cb_printf = r_cons_printf;
+	core->dbg->cb_printf = r_cons_printf;
+	core->dbg->bp->cb_printf = r_cons_printf;
 	r_debug_io_bind (core->dbg, core->io);
 
 	r_core_config_init (core);

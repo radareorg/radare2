@@ -10,7 +10,7 @@ R_API RSign *r_sign_new() {
 	if (sig) {
 		sig->s_byte = sig->s_anal = 0;
 		sig->ns[0] = '\0';
-		sig->printf = (PrintfCallback) printf;
+		sig->cb_printf = (PrintfCallback) printf;
 		sig->items = r_list_new ();
 		if (!sig->items){
 			free (sig);
@@ -97,22 +97,22 @@ R_API void r_sign_list(RSign *sig, int rad) {
 		RListIter *iter;
 		RSignItem *si;
 		if (!r_list_empty (sig->items))
-			sig->printf ("zp-\n");
+			sig->cb_printf ("zp-\n");
 		r_list_foreach (sig->items, iter, si) {
-			sig->printf ("z%c %s ", si->type, si->name);
+			sig->cb_printf ("z%c %s ", si->type, si->name);
 			for (i=0; i<si->size; i++){
 				if (!si->mask[i]) // This is a mask
-					sig->printf ("..");
+					sig->cb_printf ("..");
 				else
-					sig->printf ("%02x", si->bytes[i]);
+					sig->cb_printf ("%02x", si->bytes[i]);
 			}
-			sig->printf ("\n");
+			sig->cb_printf ("\n");
 		}
 	} else {
-		sig->printf ("Loaded %d signatures\n", sig->s_byte + sig->s_anal + sig->s_func);
-		sig->printf ("  %d byte signatures\n", sig->s_byte);
-		sig->printf ("  %d head signatures\n", sig->s_head);
-		sig->printf ("  %d func signatures\n", sig->s_func);
+		sig->cb_printf ("Loaded %d signatures\n", sig->s_byte + sig->s_anal + sig->s_func);
+		sig->cb_printf ("  %d byte signatures\n", sig->s_byte);
+		sig->cb_printf ("  %d head signatures\n", sig->s_head);
+		sig->cb_printf ("  %d func signatures\n", sig->s_func);
 	}
 }
 

@@ -124,7 +124,7 @@ typedef struct r_io_t {
 	char *referer;
 	char *redirect;
 	/* write mask */
-	void (*printf)(const char *str, ...);
+	void (*cb_printf)(const char *str, ...);
 	int write_mask_fd;
 	ut8 *write_mask_buf;
 	int write_mask_len;

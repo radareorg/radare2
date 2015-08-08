@@ -19,7 +19,7 @@ typedef struct R_PDB {
 	void (*finish_pdb_parse)(struct R_PDB *pdb);
 	void (*print_types)(struct R_PDB *pdb, int mode);
 //	FILE *fp;
-	PrintfCallback printf;
+	PrintfCallback cb_printf;
 	struct R_PDB7_ROOT_STREAM *root_stream;
 	void *stream_map;
 	RList *pdb_streams;

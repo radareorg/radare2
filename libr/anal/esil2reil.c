@@ -128,26 +128,26 @@ void reil_print_inst(RAnalEsil *esil, RAnalReilInst *ins) {
 
 	if ((!ins) || (!esil)) return;
 
-	esil->anal->printf("%04"PFMT64x".%02"PFMT64x": %8s",
+	esil->anal->cb_printf("%04"PFMT64x".%02"PFMT64x": %8s",
 			esil->Reil->addr,
 			esil->Reil->seq_num++,
 			ops[ins->opcode]);
 	for (i = 0; i < 3; i++) {
 		if (i != 0)
-			esil->anal->printf (" ,");
+			esil->anal->cb_printf (" ,");
 		if (ins->arg[i]->type == ARG_NONE) {
-			esil->anal->printf ("%10s   ", ins->arg[i]->name);
+			esil->anal->cb_printf ("%10s   ", ins->arg[i]->name);
 			continue;
 		}
 		if (ins->arg[i]->type == ARG_REG) {
 			strncpy (tmp_buf, REIL_REG_PREFIX, sizeof(tmp_buf) - 1);
 			strncat (tmp_buf, ins->arg[i]->name, sizeof(tmp_buf) - strlen(tmp_buf) - 1);
-			esil->anal->printf ("%10s:%02d", tmp_buf, ins->arg[i]->size);
+			esil->anal->cb_printf ("%10s:%02d", tmp_buf, ins->arg[i]->size);
 			continue;
 		}
-		esil->anal->printf ("%10s:%02d", ins->arg[i]->name, ins->arg[i]->size);
+		esil->anal->cb_printf ("%10s:%02d", ins->arg[i]->name, ins->arg[i]->size);
 	}
-	esil->anal->printf("\n");
+	esil->anal->cb_printf("\n");
 }
 
 // Used to cast sizes during assignment. OR is used for casting.

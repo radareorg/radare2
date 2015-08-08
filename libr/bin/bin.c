@@ -1320,7 +1320,7 @@ R_API RBin* r_bin_new() {
 	if (!bin) return NULL;
 	bin->force = NULL;
 	bin->sdb = sdb_new0 ();
-	bin->printf = (PrintfCallback)printf;
+	bin->cb_printf = (PrintfCallback)printf;
 	bin->plugins = r_list_new();
 	bin->plugins->free = free;
 	bin->minstrlen = 0;
@@ -1543,7 +1543,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	sdb_unset (binfile_sdb, ARCHS_KEY, 0);
 
 	if (mode =='j') {
-		bin->printf ("\"bins\":[");
+		bin->cb_printf ("\"bins\":[");
 	}
 	RBinFile *nbinfile = r_bin_file_find_by_name_n (bin, name, i);
 	if (!nbinfile) return;
@@ -1565,12 +1565,12 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 		if (info && narch > 1) {
 			if (mode) {
 				if (mode == 'j') {
-					bin->printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
+					bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
 						"\"offset\":%"PFMT64d",\"machine\":\"%s\"}",
 						i?",":"",arch, bits,
 						boffset, machine);
 				} else {
-					bin->printf ("%03i 0x%08"PFMT64x" %d %s_%i %s\n", i,
+					bin->cb_printf ("%03i 0x%08"PFMT64x" %d %s_%i %s\n", i,
 							boffset, obj_size, arch, bits, machine);
 				}
 			}
@@ -1583,12 +1583,12 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			if (info) {
 				if (mode) {
 					if (mode == 'j') {
-						bin->printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
+						bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
 								"\"offset\":%"PFMT64d"}",
 								i?",":"",arch, bits,
 								boffset);
 					} else {
-						bin->printf ("%03i 0x%08"PFMT64x" %d %s_%d\n", i,
+						bin->cb_printf ("%03i 0x%08"PFMT64x" %d %s_%d\n", i,
 								boffset, obj_size, arch, bits);
 					}
 				}
@@ -1598,12 +1598,12 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			} else if (nbinfile && mode) {
 				if (mode) {
 					if (mode == 'j') {
-						bin->printf ("%s{\"arch\":\"unk_%d\",\"bits\":%d,"
+						bin->cb_printf ("%s{\"arch\":\"unk_%d\",\"bits\":%d,"
 								"\"offset\":%"PFMT64d",\"size\":%d}",
 								i?",":"", i, bits,
 								boffset, obj_size);
 					} else {
-						bin->printf ("%03i 0x%08"PFMT64x" %d unk_0\n", i,
+						bin->cb_printf ("%03i 0x%08"PFMT64x" %d unk_0\n", i,
 								boffset, obj_size);
 					}
 				}
@@ -1617,7 +1617,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 		}
 	}
 	if (mode =='j') {
-		bin->printf ("]");
+		bin->cb_printf ("]");
 	}
 }
 

@@ -328,10 +328,10 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 			if (ir>0) tr += ir;
 			else break;
 		} while (tr<i);
-		// TODO: use io->printf() with support for \x00
+		// TODO: use io->cb_printf() with support for \x00
 		ptr[i] = 0;
-		if (io->printf) {
-			io->printf ("%s", ptr);
+		if (io->cb_printf) {
+			io->cb_printf ("%s", ptr);
 			j = i;
 		} else j = write (1, ptr, i);
 		free (ptr);

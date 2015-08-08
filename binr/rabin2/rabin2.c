@@ -755,7 +755,7 @@ int main(int argc, char **argv) {
 }
 	r_config_set_i (core.config, "bin.laddr", laddr);
 	core.bin = bin;
-	bin->printf = r_cons_printf;
+	bin->cb_printf = r_cons_printf;
 	filter.offset = at;
 	filter.name = name;
 	r_cons_new ()->is_interactive = R_FALSE;

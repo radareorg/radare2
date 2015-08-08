@@ -94,7 +94,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		int pid = atoi (cmd+4);
 		if (pid != 0)
 			iop->pid = iop->tid = pid;
-		io->printf ("\n");
+		io->cb_printf ("\n");
 		//printf("PID=%d\n", io->fd);
 		return pid;
 	} else eprintf ("Try: '=!pid'\n");

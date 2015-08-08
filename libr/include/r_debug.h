@@ -158,7 +158,7 @@ typedef struct r_debug_t {
 	int bpsize;
 	void *user;
 	/* io */
-	PrintfCallback printf;
+	PrintfCallback cb_printf;
 	struct r_debug_plugin_t *h;
 	struct list_head plugins;
 	RAnal *anal;

@@ -71,14 +71,14 @@ R_API int r_anal_fcn_labels (RAnal *anal, RAnalFunction *fcn, int rad) {
 			switch (rad) {
 			case '*':
 			case 1:
-				anal->printf ("f.%s@0x%08"PFMT64x"\n",
+				anal->cb_printf ("f.%s@0x%08"PFMT64x"\n",
 					loc.name, loc.addr);
 				break;
 			case 'j':
 				eprintf ("TODO\n");
 				break;
 			default:
-				anal->printf ("0x%08"PFMT64x" %s   [%s + %"PFMT64d"]\n",
+				anal->cb_printf ("0x%08"PFMT64x" %s   [%s + %"PFMT64d"]\n",
 					loc.addr,
 					loc.name, fcn->name,
 					loc.addr - fcn->addr, loc.addr);

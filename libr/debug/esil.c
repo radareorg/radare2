@@ -319,6 +319,6 @@ R_API void r_debug_esil_watch_list(RDebug *dbg) {
 	EsilBreak *ew;
 	RListIter *iter;
 	r_list_foreach (EWPS, iter, ew) {
-		dbg->printf ("de %s %c %s\n", r_str_rwx_i (ew->rwx), ew->dev, ew->expr);
+		dbg->cb_printf ("de %s %c %s\n", r_str_rwx_i (ew->rwx), ew->dev, ew->expr);
 	}
 }

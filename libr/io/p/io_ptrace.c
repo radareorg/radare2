@@ -274,7 +274,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 				iop->pid = iop->tid = pid;
 			}
 		} else {
-			io->printf ("%d\n", iop->pid);
+			io->cb_printf ("%d\n", iop->pid);
 		}
 		return pid;
 	} else eprintf ("Try: '=!pid'\n");

@@ -16,7 +16,7 @@ R_API RSyscall* r_syscall_new() {
 	RSyscall *rs = R_NEW0 (RSyscall);
 	if (rs) {
 		rs->sysport = sysport_x86;
-		rs->printf = (PrintfCallback)printf;
+		rs->cb_printf = (PrintfCallback)printf;
 		rs->regs = fastcall_x86_32;
 	}
 	return rs;

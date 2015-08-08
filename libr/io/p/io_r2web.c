@@ -115,7 +115,7 @@ static int __system(RIO *io, RIODesc *fd, const char *command) {
 	char *url = r_str_newf ("%s/%s", rURL(fd), command);
 	out = r_socket_http_get (url, &code, &rlen);
 	if (out && rlen>0) {
-		io->printf ("%s", out);
+		io->cb_printf ("%s", out);
 	}
 	free (out);
 	free (url);

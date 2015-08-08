@@ -40,7 +40,7 @@ typedef struct r_config_t {
 	int n_nodes;
 	void *user;
 	RNum *num;
-	PrintfCallback printf;
+	PrintfCallback cb_printf;
 	RList *nodes;
 	RHashTable *ht;
 } RConfig;

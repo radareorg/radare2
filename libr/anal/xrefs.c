@@ -157,7 +157,7 @@ static int xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {
 		char *p = strchr (k+4, '.');
 		if (p) {
 			dst = r_num_get (NULL, p+1);
-			anal->printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", src, dst);
+			anal->cb_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", src, dst);
 		}
 	}
 	return 1;
@@ -170,14 +170,14 @@ static int xrefs_list_cb_json(RAnal *anal, const char *k, const char *v) {
 		if (p) {
 			dst = r_num_get (NULL, p+1);
 			sscanf (p+1, "0x%"PFMT64x, &dst);
-			anal->printf ("%"PFMT64d":%"PFMT64d",", src, dst);
+			anal->cb_printf ("%"PFMT64d":%"PFMT64d",", src, dst);
 		}
 	}
 	return 1;
 }
 
 static int xrefs_list_cb_plain(RAnal *anal, const char *k, const char *v) {
-	anal->printf ("%s=%s\n", k, v);
+	anal->cb_printf ("%s=%s\n", k, v);
 	return 1;
 }
 
@@ -188,9 +188,9 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_rad, anal);
 		break;
 	case 'j':
-		anal->printf ("{");
+		anal->cb_printf ("{");
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_json, anal);
-		anal->printf ("}\n");
+		anal->cb_printf ("}\n");
 		break;
 	default:
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_plain, anal);

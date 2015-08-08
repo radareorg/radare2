@@ -309,26 +309,26 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 	RAnalVar *var;
 	RListIter *iter;
 	if (mode=='j')
-		anal->printf ("[");
+		anal->cb_printf ("[");
 	r_list_foreach (list, iter, var) {
 		if (var->kind == kind) {
 			switch (mode) {
 			case '*':
 				// we cant express all type info here :(
-				anal->printf ("af%c %d %s %s @ 0x%"PFMT64x"\n",
+				anal->cb_printf ("af%c %d %s %s @ 0x%"PFMT64x"\n",
 					kind, var->delta,
 					var->name, var->type, fcn->addr);
 				break;
 			case 'j':
-				anal->printf ("{\"name\":\"%s\","
+				anal->cb_printf ("{\"name\":\"%s\","
 					"\"kind\":\"%s\",\"type\":\"%s\",\"ref\":\"%s%s0x%x\"}",
 					var->name, var->kind=='v'?"var":"arg", var->type,
 					anal->reg->name[R_REG_NAME_BP],
 					(var->kind=='v')?"-":"+", var->delta);
-				if (iter->n) anal->printf (",");
+				if (iter->n) anal->cb_printf (",");
 				break;
 			default:
-				anal->printf ("%s %s %s @ %s%s0x%x\n",
+				anal->cb_printf ("%s %s %s @ %s%s0x%x\n",
 					kind=='v'?"var":"arg",
 					var->type, var->name,
 					anal->reg->name[R_REG_NAME_BP],
@@ -338,6 +338,6 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 		}
 	}
 	if (mode=='j')
-		anal->printf ("]\n");
+		anal->cb_printf ("]\n");
 	r_list_free (list);
 }

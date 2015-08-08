@@ -839,7 +839,7 @@ R_API int r_anal_esil_dumpstack (RAnalEsil *esil) {
 		return 0;
 	//eprintf ("StackDump:\n");
 	for (i=esil->stackptr-1; i>=0; i--) {
-		esil->anal->printf ("%s\n", esil->stack[i]);
+		esil->anal->cb_printf ("%s\n", esil->stack[i]);
 	}
 	return 1;
 }

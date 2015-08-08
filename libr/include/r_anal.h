@@ -600,7 +600,7 @@ typedef struct r_anal_t {
 	Sdb *sdb_types;
 	Sdb *sdb_meta; // TODO: Future r_meta api
 	RSpaces meta_spaces;
-	PrintfCallback printf;
+	PrintfCallback cb_printf;
 //moved from RAnalFcn
 	Sdb *sdb; // root
 	Sdb *sdb_refs;

@@ -64,7 +64,7 @@ typedef struct r_bp_t {
 	RBreakpointPlugin *cur;
 	RList *traces; // XXX
 	RList *plugins;
-	PrintfCallback printf;
+	PrintfCallback cb_printf;
 	RBreakpointCallback breakpoint;
 	/* storage of breakpoints */
 	int nbps;

@@ -450,31 +450,31 @@ static void print_module (const RAnal *anal, const RFlirtModule *module) {
 	RFlirtFunction *func, *ref_func;
 	RFlirtTailByte *tail_byte;
 
-	anal->printf ("%02X %04X %04X ", module->crc_length, module->crc16, module->length);
+	anal->cb_printf ("%02X %04X %04X ", module->crc_length, module->crc16, module->length);
 	r_list_foreach (module->public_functions, pub_func_it, func) {
 		if (func->is_local || func->is_collision) {
-			anal->printf ("(");
-			if (func->is_local) anal->printf ("l");
-			if (func->is_collision) anal->printf ("!");
-			anal->printf (")");
+			anal->cb_printf ("(");
+			if (func->is_local) anal->cb_printf ("l");
+			if (func->is_collision) anal->cb_printf ("!");
+			anal->cb_printf (")");
 		}
-		anal->printf ("%04X:%s", func->offset, func->name);
-		if (pub_func_it->n) anal->printf (" ");
+		anal->cb_printf ("%04X:%s", func->offset, func->name);
+		if (pub_func_it->n) anal->cb_printf (" ");
 	}
 	if (module->tail_bytes) {
 		r_list_foreach (module->tail_bytes, tail_byte_it, tail_byte) {
-			anal->printf(" (%04X: %02X)", tail_byte->offset, tail_byte->value);
+			anal->cb_printf(" (%04X: %02X)", tail_byte->offset, tail_byte->value);
 		}
 	}
 	if (module->referenced_functions) {
-		anal->printf (" (REF ");
+		anal->cb_printf (" (REF ");
 		r_list_foreach (module->referenced_functions, ref_func_it, ref_func) {
-			anal->printf ("%04X: %s", ref_func->offset, ref_func->name);
-			if (ref_func_it->n) anal->printf (" ");
+			anal->cb_printf ("%04X: %s", ref_func->offset, ref_func->name);
+			if (ref_func_it->n) anal->cb_printf (" ");
 		}
-		anal->printf (")");
+		anal->cb_printf (")");
 	}
-	anal->printf ("\n");
+	anal->cb_printf ("\n");
 }
 
 
@@ -483,16 +483,16 @@ static void print_node_pattern (const RAnal *anal, const RFlirtNode *node) {
 
 	for (i = 0; i < node->length; i++) {
 		if (node->variant_bool_array[i])
-			anal->printf ("..");
+			anal->cb_printf ("..");
 		else
-			anal->printf ("%02X", node->pattern_bytes[i]);
+			anal->cb_printf ("%02X", node->pattern_bytes[i]);
 	}
-	anal->printf (":\n");
+	anal->cb_printf (":\n");
 }
 
 static void print_indentation (const RAnal *anal, int indent) {
 	int i;
-	for (i = 0 ; i<indent ; i++) anal->printf ("  ");
+	for (i = 0 ; i<indent ; i++) anal->cb_printf ("  ");
 }
 
 static void print_node (const RAnal *anal, const RFlirtNode *node, int indent) {
@@ -514,7 +514,7 @@ static void print_node (const RAnal *anal, const RFlirtNode *node, int indent) {
 		i = 0;
 		r_list_foreach (node->module_list, module_it, module) {
 			print_indentation (anal, indent + 1);
-			anal->printf ("%d. ", i);
+			anal->cb_printf ("%d. ", i);
 			print_module (anal, module);
 			i++;
 		}
@@ -557,7 +557,7 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 			anal->flb.set (anal->flb.f, next_module_function->name,
 				next_module_function->addr, next_module_function->size, 0);
 
-			anal->printf ("Found %s\n", next_module_function->name);
+			anal->cb_printf ("Found %s\n", next_module_function->name);
 		}
 	}
 
@@ -615,7 +615,7 @@ static int node_match_functions (const RAnal *anal, const RFlirtNode *root_node)
 	int size, ret = R_TRUE;
 
 	if (r_list_length(anal->fcns) == 0) {
-		anal->printf("There is no analyzed functions. Have you run 'aa'?\n");
+		anal->cb_printf("There is no analyzed functions. Have you run 'aa'?\n");
 		return R_TRUE;
 	}
 
@@ -1194,7 +1194,7 @@ static RFlirtNode* flirt_parse (const RAnal *anal, RBuffer *flirt_buf) {
 
 	name[header->library_name_len] = '\0';
 
-	anal->printf  ("Loading: %s\n", name);
+	anal->cb_printf  ("Loading: %s\n", name);
 #if DEBUG
 	print_header (header);
 	header_size = flirt_buf->cur;
