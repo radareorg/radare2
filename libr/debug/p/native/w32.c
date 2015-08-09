@@ -4,7 +4,6 @@
 #include <winbase.h>
 #include <psapi.h>
 #include <tchar.h>
-#include <string.h>
 
 static HANDLE tid2handler(int pid, int tid);
 
