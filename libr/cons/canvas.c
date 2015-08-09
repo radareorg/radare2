@@ -174,27 +174,30 @@ static void stamp_attr(RConsCanvas *c,int length){
 	}
 }
 
+/* check for ANSI sequences and use them as attr */
 static const char *set_attr(RConsCanvas *c, const char *s) {
-	const char *p;
+	const char *p = s;
 	char *color;
 
-	/* check for ANSI sequences and use them as attr */
-	if (is_ansi_seq(s)) {
-		p = s + 2;
-		for (p = s; *p && *p != 'J' && *p != 'm' && *p != 'H'; ++p);
+	while (is_ansi_seq(p)) {
+		p += 2;
+		while (*p && *p != 'J' && *p != 'm' && *p != 'H') {
+			p++;
+		}
 		p++;
+	}
 
+	if (p != s) {
 		color = r_str_ndup(s, p - s);
 		c->attr = color;
-		s = p;
 	}
-	return s;
+	return p;
 }
 
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 	char *p, ch;
 	int orig_x, x;
-	int left, slen, piece_len;
+	int left, slen, attr_len, piece_len;
 
 	if (!c || !s || !*s) return;
 
@@ -202,21 +205,24 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 	 * using the ANSI chars to set the attr of the canvas */
 	orig_x = c->x;
 	do {
-		s = set_attr (c, s);
-		piece_len = get_piece (s, &ch);
-		if (piece_len == 0 && ch == '\0') break;
+		const char *s_part = set_attr (c, s);
+		piece_len = get_piece (s_part, &ch);
+		if (piece_len == 0 && ch == '\0' && s_part == s) break;
 
 		slen = 0;
-		if (piece_len > 0) {
-			p = prefixline (c, &left);
-			slen = R_MIN (left, piece_len);
-			x = c->x - c->sx;
-			if (G (x, c->y - c->sy)) {
-				stamp_attr(c, slen);
-				memcpy (p, s, slen);
-			}
+		p = prefixline (c, &left);
+		slen = R_MIN (left, piece_len);
+		attr_len = slen <= 0 && s_part != s ? 1 : slen;
+		if (attr_len > 0) {
+			stamp_attr (c, attr_len);
 		}
 
+		x = c->x - c->sx;
+		if (G (x, c->y - c->sy)) {
+			memcpy (p, s_part, slen);
+		}
+
+		s = s_part;
 		if (ch == '\n') {
 			c->y++;
 			c->x = orig_x;
@@ -227,6 +233,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 		}
 		s += piece_len;
 	} while (*s);
+	c->x = orig_x;
 }
 
 R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
