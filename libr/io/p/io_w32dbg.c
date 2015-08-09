@@ -52,7 +52,7 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 }
 
 static int __attach (RIOW32Dbg *dbg) {
-	eprintf ("---> attach to %d\n", dbg->pid);
+	eprintf ("Attaching io to pid %d\n", dbg->pid);
 	dbg->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	if (dbg->pi.hProcess == NULL)
 		return -1;

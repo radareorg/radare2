@@ -275,9 +275,8 @@ static int r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 /* TODO: must return true/false */
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 #if __WINDOWS__ && !__CYGWIN__
-	eprintf("r_debug_native_continue: pid=%08x tid=%08x\n",pid,tid);
 	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
-		print_lasterr ((char *)__FUNCTION__);
+		print_lasterr ((char *)__FUNCTION__, "ContinueDebugEvent");
 		eprintf ("debug_contp: error\n");
 		return R_FALSE;
 	}
