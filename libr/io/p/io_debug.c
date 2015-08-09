@@ -202,8 +202,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	if (th != INVALID_HANDLE_VALUE)
 		CloseHandle (th);
 
-	eprintf ("PID=%d\n", pid);
-	eprintf ("TID=%d\n", tid);
+	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
         return pid;
 
 err_fork:
@@ -351,7 +350,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		// XXX kill (pid, SIGSTOP);
 		break;
 	}
-	eprintf ("PID = %d\n", pid);
 	return pid;
 }
 #endif

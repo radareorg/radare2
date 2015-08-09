@@ -17,13 +17,12 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 
 	hModuleSnap = CreateToolhelp32Snapshot( TH32CS_SNAPMODULE, pid );
 	if( hModuleSnap == NULL ) {
-		//print_lasterr ((char *)__FUNCTION__);
+		print_lasterr ((char *)__FUNCTION__, "CreateToolhelp32Snapshot");
 		CloseHandle( hModuleSnap );
 		return NULL;
 	}
 	me32.dwSize = sizeof( MODULEENTRY32 );
 	if( !Module32First(hModuleSnap, &me32))	{
-		//print_lasterr ((char *)__FUNCTION__);
 		CloseHandle( hModuleSnap );
 		return NULL;
 	}
