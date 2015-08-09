@@ -9,6 +9,8 @@
 #include <sys/time.h>
 #include <time.h>
 
+#define PE_IMAGE_FILE_MACHINE_RPI2 452
+
 struct SCV_NB10_HEADER;
 typedef struct {
 	ut8 signature[4];
@@ -35,6 +37,21 @@ typedef struct {
 
 	void (*free)(struct SCV_RSDS_HEADER *rsds_hdr);
 } SCV_RSDS_HEADER;
+
+static inline int is_thumb (struct PE_(r_bin_pe_obj_t)* bin) {
+	return bin->nt_headers->optional_header.AddressOfEntryPoint & 1;
+}
+
+static inline int is_arm (struct PE_(r_bin_pe_obj_t)* bin) {
+	switch (bin->nt_headers->file_header.Machine) {
+	case PE_IMAGE_FILE_MACHINE_RPI2: // 462
+	case PE_IMAGE_FILE_MACHINE_ARM:
+	case PE_IMAGE_FILE_MACHINE_THUMB:
+		return 1;
+	}
+	return 0;
+}
+
 
 struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin) {
 	struct r_bin_pe_addr_t *entry;
@@ -1659,6 +1676,7 @@ char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin) {
 	case PE_IMAGE_FILE_MACHINE_ALPHA64:
 		arch = strdup("alpha");
 		break;
+	case PE_IMAGE_FILE_MACHINE_RPI2: // 462
 	case PE_IMAGE_FILE_MACHINE_ARM:
 	case PE_IMAGE_FILE_MACHINE_THUMB:
 		arch = strdup("arm");
@@ -1689,13 +1707,20 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 	struct r_bin_pe_addr_t *entry = NULL;
 	if (!bin || !bin->nt_headers)
 		return NULL;
-	if ((entry = malloc(sizeof(struct r_bin_pe_addr_t))) == NULL) {
+	if ((entry = malloc (sizeof (struct r_bin_pe_addr_t))) == NULL) {
 		r_sys_perror("malloc (entrypoint)");
 		return NULL;
 	}
 	entry->vaddr  = bin->nt_headers->optional_header.AddressOfEntryPoint;
 	entry->paddr  = PE_(r_bin_pe_vaddr_to_paddr)(bin, entry->vaddr);
 	entry->vaddr += bin->nt_headers->optional_header.ImageBase;
+
+	if (is_arm (bin) && entry->vaddr & 1) {
+		entry->vaddr = entry->vaddr--;
+		if (entry->paddr & 1) {
+			entry->paddr = entry->paddr--;
+		}
+	}
 	return entry;
 }
 
@@ -2207,11 +2232,18 @@ char* PE_(r_bin_pe_get_class)(struct PE_(r_bin_pe_obj_t)* bin) {
 
 int PE_(r_bin_pe_get_bits)(struct PE_(r_bin_pe_obj_t)* bin) {
 	int bits = 32;
-	if (bin && bin->nt_headers)
-	switch (bin->nt_headers->optional_header.Magic) {
-	case PE_IMAGE_FILE_TYPE_PE32: bits = 32; break;
-	case PE_IMAGE_FILE_TYPE_PE32PLUS: bits = 64; break;
-	default: bits = -1;
+	if (bin && bin->nt_headers) {
+		if (is_arm (bin)) {
+			if (is_thumb (bin)) {
+				bits = 16;
+			}
+		} else {
+			switch (bin->nt_headers->optional_header.Magic) {
+			case PE_IMAGE_FILE_TYPE_PE32: bits = 32; break;
+			case PE_IMAGE_FILE_TYPE_PE32PLUS: bits = 64; break;
+			default: bits = -1;
+			}
+		}
 	}
 	return bits;
 }
