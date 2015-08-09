@@ -445,7 +445,12 @@ static int cmd_interpret(void *data, const char *input) {
 		} else r_core_run_script (core, "-");
 		break;
 	case ' ':
-		r_core_run_script (core, input+1);
+		if (!r_core_run_script (core, input+1)) {
+			eprintf ("Cannot find '%s'\n", input+1);
+			core->num->value = 1;
+		} else {
+			core->num->value = 0;
+		}
 		break;
 	case '!':
 		/* from command */
