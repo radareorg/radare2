@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <winbase.h>
 #include <psapi.h>
-
+#include <tchar.h>
+#include <string.h>
 
 static HANDLE tid2handler(int pid, int tid);
 
@@ -106,6 +107,8 @@ static DWORD WINAPI (*w32_getthreadid)(HANDLE) = NULL; // Vista
 static DWORD WINAPI (*w32_getprocessid)(HANDLE) = NULL; // XP
 static HANDLE WINAPI (*w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
 
+static DWORD WINAPI (*psapi_getmappedfilename)(HANDLE, LPVOID, LPTSTR, DWORD) = NULL;
+
 static void r_str_wtoc(char* d, const WCHAR* s) {
 	int i = 0;
 	while (s[i] != '\0') {
@@ -151,28 +154,21 @@ static int w32dbg_SeDebugPrivilege() {
 	return ret;
 }
 
-static void print_lasterr(const char *str) {
-	/* code from MSDN, :? */
-	LPWSTR pMessage = L"%1!*.*s! %4 %5!*s!";
-	DWORD_PTR pArgs[] = { (DWORD_PTR)4, (DWORD_PTR)2, (DWORD_PTR)L"Bill",  // %1!*.*s!
-		(DWORD_PTR)L"Bob",                                                // %4
-		(DWORD_PTR)6, (DWORD_PTR)L"Bill" };                               // %5!*s!
+static void print_lasterr(const char *caller, char *cause) {
 	WCHAR buffer[200];
 	char cbuffer[100];
-	if (!FormatMessage (FORMAT_MESSAGE_FROM_STRING |
+	if (!FormatMessageA (FORMAT_MESSAGE_FROM_SYSTEM |
 				FORMAT_MESSAGE_ARGUMENT_ARRAY,
-				pMessage,
-				0,  // ignored
-				0,  // ignored
-				(LPTSTR)&buffer,
-				sizeof (buffer)-1,
-				(va_list*)pArgs)) {
-		eprintf ("(%s): Format message failed with 0x%x\n",
-			r_str_get (str), (ut32)GetLastError ());
+				NULL,
+				GetLastError(),
+				LANG_SYSTEM_DEFAULT,
+				&cbuffer,
+				sizeof (cbuffer)-1,
+				NULL)) {
+		eprintf ("Format message failed with 0x%d\n", (ut32)GetLastError ());
 		return;
 	}
-	r_str_wtoc (cbuffer, buffer);
-	eprintf ("print_lasterr: %s ::: %s\n", r_str_get (str), r_str_get (cbuffer));
+	eprintf ("Error detected in %s/%s: %s\n", r_str_get (caller), r_str_get (cause), r_str_get (cbuffer));
 }
 
 
@@ -201,9 +197,11 @@ static int w32_dbg_init() {
 
 	lib = LoadLibrary ("psapi.dll");
 	if(lib == NULL) {
-		eprintf ("Cannot load psapi.dll!!\n");
+		eprintf ("Cannot load psapi.dll. Aborting\n");
 		return R_FALSE;
 	}
+	psapi_getmappedfilename = (DWORD WINAPI (*)(HANDLE, LPVOID, LPTSTR, DWORD))
+		GetProcAddress (lib, "GetMappedFileNameA");
 	gmbn = (void (*)(HANDLE, HMODULE, LPTSTR, int))
 		GetProcAddress (lib, "GetModuleBaseNameA");
 	gmi = (int (*)(HANDLE, HMODULE, LPMODULEINFO, int))
@@ -249,12 +247,10 @@ static inline int w32_h2p(HANDLE h) {
 	return w32_getprocessid (h);
 }
 
-// TODO: not yet used !!!
 static int w32_first_thread(int pid) {
         HANDLE th; 
         HANDLE thid; 
         THREADENTRY32 te32;
-        int ret = -1;
 
         te32.dwSize = sizeof(THREADENTRY32);
 
@@ -272,20 +268,22 @@ static int w32_first_thread(int pid) {
 		eprintf ("w32_thread_list: no thread first\n");
 		return -1;
 	}
-        do {
+        
+	do {
                 /* get all threads of process */
                 if (te32.th32OwnerProcessID == pid) {
 			thid = w32_openthread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
-			if (thid == NULL)
+			if (thid == NULL) {
+        			print_lasterr ((char *)__FUNCTION__, "OpenThread");
                                 goto err_load_th;
+			}
 			CloseHandle (th);
 			return te32.th32ThreadID;
 		}
         } while (Thread32Next (th, &te32));
 err_load_th:    
-        if (ret == -1) 
-                print_lasterr ((char *)__FUNCTION__);
-eprintf ("w32thread: Oops\n");
+	eprintf ("Could not find an active thread for pid %d\n", pid);
+	CloseHandle (th);
 	return pid; // -1 ?
 }
 
@@ -318,16 +316,107 @@ static int debug_exception_event (unsigned long code) {
 	return 0;
 }
 
+static char *get_file_name_from_handle(HANDLE handle_file) 
+{
+	HANDLE handle_file_map;
+	TCHAR *filename = NULL;
+
+	// Get the file size.
+	DWORD file_size_high = 0;
+	DWORD file_size_low = GetFileSize(handle_file, &file_size_high); 
+
+	if (file_size_low == 0 && file_size_high == 0) {
+		return NULL;
+	}
+
+	// Create a file mapping object.
+	handle_file_map = CreateFileMapping(handle_file, NULL, PAGE_READONLY, 0, 1, NULL);
+
+	if (!handle_file_map) {
+		return NULL;
+	}
+	filename = malloc(MAX_PATH+1);
+
+	// Create a file mapping to get the file name.
+	void* map = MapViewOfFile(handle_file_map, FILE_MAP_READ, 0, 0, 1);
+
+	if (!map) { 
+		CloseHandle(handle_file_map);
+		return NULL;
+	}
+
+	if (!psapi_getmappedfilename (GetCurrentProcess(), 
+		map, 
+		filename,
+		MAX_PATH)) {
+
+		free(filename);
+		UnmapViewOfFile(map);
+		CloseHandle(handle_file_map);
+		return NULL;
+	}
+
+	// Translate path with device name to drive letters.
+	int temp_size = 512;
+	TCHAR temp_buffer[temp_size];
+	temp_buffer[0] = '\0';
+
+	if (!GetLogicalDriveStrings(temp_size-1, temp_buffer)) {
+		free(filename);
+		UnmapViewOfFile(map);
+		CloseHandle(handle_file_map);
+		return NULL;
+	}
+		
+	TCHAR name[MAX_PATH];
+	TCHAR drive[3] = TEXT(" :");
+	BOOL found = FALSE;
+	TCHAR* p = temp_buffer;
+
+	do {
+		// Copy the drive letter to the template string
+		*drive = *p;
+
+		// Look up each device name
+		if (QueryDosDevice(drive, name, MAX_PATH)) {
+			size_t name_length = strlen(name);
+
+			if (name_length < MAX_PATH) {
+				found = strncmp(filename, name, name_length) == 0
+					&& *(filename + name_length) == _T('\\');
+
+				if (found) {
+					// Reconstruct filename using temp_buffer
+					// Replace device path with DOS path
+					TCHAR temp_filename[MAX_PATH];
+					snprintf(temp_filename, MAX_PATH-1, "%s%s", 
+						drive, filename+name_length);
+					strncpy(filename, temp_filename, MAX_PATH-1);
+				}
+			}
+		}
+
+		// Go to the next NULL character.
+		while (*p++);
+	} while (!found && *p); // end of string
+
+	UnmapViewOfFile(map);
+	CloseHandle(handle_file_map);
+
+	return filename;
+}
+
 static int w32_dbg_wait(RDebug *dbg, int pid) {
 	DEBUG_EVENT de;
 	int tid, next_event = 0;
 	unsigned int code;
+	char *dllname = NULL;
 	int ret = R_DBG_REASON_UNKNOWN;
 
 	do {
 		/* handle debug events */
 		if (WaitForDebugEvent (&de, INFINITE) == 0) {
-			print_lasterr ((char *)__FUNCTION__);
+			print_lasterr ((char *)__FUNCTION__, "WaitForDebugEvent");
 			return -1;
 		}
 		/* save thread id */
@@ -341,48 +430,56 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		/* get kind of event */
 		switch (code) {
 		case CREATE_PROCESS_DEBUG_EVENT:
-			eprintf ("(%d) created process (%d:%p)\n", pid, w32_h2t (de.u.CreateProcessInfo.hProcess), de.u.CreateProcessInfo.lpStartAddress);
+			eprintf ("(%d) created process (%d:%p)\n", 
+				pid, w32_h2t (de.u.CreateProcessInfo.hProcess), 
+				de.u.CreateProcessInfo.lpStartAddress);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_NEW_PID;
 			break;
 		case EXIT_PROCESS_DEBUG_EVENT:
-			eprintf ("\n\n______________[ process finished ]_______________\n\n");
+			eprintf ("(%d) Finished process %d\n", pid, pid);
 			//debug_load();
 			next_event = 0;
 			ret = R_DBG_REASON_EXIT_PID;
 			break;
 		case CREATE_THREAD_DEBUG_EVENT:
-			eprintf ("(%d) created thread (%p)\n", pid, de.u.CreateThread.lpStartAddress);
+			eprintf ("(%d) Created thread %d (start @ %p)\n", pid, tid, de.u.CreateThread.lpStartAddress);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			ret = R_DBG_REASON_NEW_TID;
 			next_event = 1;
 			break;
 		case EXIT_THREAD_DEBUG_EVENT:
-			eprintf ("EXIT_THREAD\n");
+			eprintf ("(%d) Finished thread %d\n", pid, tid);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_EXIT_TID;
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
-			eprintf ("(%d) Loading %s library at %p\n",pid, "", de.u.LoadDll.lpBaseOfDll);
+			dllname = get_file_name_from_handle(de.u.LoadDll.hFile);	
+			eprintf ("(%d) Loading library at %p (%s)\n",
+				pid, de.u.LoadDll.lpBaseOfDll, 
+				dllname ? dllname : "no name");
+			if (dllname) {
+				free(dllname);
+			}
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_NEW_LIB;
 			break;
 		case UNLOAD_DLL_DEBUG_EVENT:
-			eprintf ("UNLOAD_DLL\n");
+			eprintf ("(%d) Unloading library at %p\n", pid, de.u.UnloadDll.lpBaseOfDll);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_EXIT_LIB;
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
-			eprintf("OUTPUT_DEBUG_STRING\n");
+			eprintf ("(%d) Debug string\n", pid);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			break;
 		case RIP_EVENT:
-			eprintf("RIP_EVENT\n");
+			eprintf ("(%d) RIP event\n", pid);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			// XXX unknown ret = R_DBG_REASON_TRAP;
@@ -395,7 +492,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 				r_debug_native_continue (dbg, pid, tid, -1);
 			break;
 		default:
-			eprintf ("Unknown event: %d\n", code);
+			eprintf ("(%d) unknown event: %d\n", pid, code);
 			return -1;
 		}
 	} while (next_event);
@@ -419,7 +516,6 @@ static inline int CheckValidPE(unsigned char * PeHeader) {
 static HANDLE tid2handler(int pid, int tid) {
         HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
         THREADENTRY32 te32 = { .dwSize = sizeof (THREADENTRY32) };
-        int ret = -1;
         if (th == INVALID_HANDLE_VALUE)
 		return NULL;
 	if (!Thread32First (th, &te32)) {
@@ -432,10 +528,7 @@ static HANDLE tid2handler(int pid, int tid) {
 			return w32_openthread (THREAD_ALL_ACCESS, 0,
 					te32.th32ThreadID);
 		}
-		ret++;
         } while (Thread32Next (th, &te32));
-        if (ret == -1)
-                print_lasterr ((char *)__FUNCTION__);
 	CloseHandle (th);
         return NULL;
 }
@@ -444,9 +537,7 @@ RList *w32_thread_list (int pid, RList *list) {
         HANDLE th; 
         HANDLE thid; 
         THREADENTRY32 te32;
-        int ret;
 
-        ret = -1; 
         te32.dwSize = sizeof(THREADENTRY32);
 
 	if (w32_openthread == NULL) {
@@ -473,16 +564,14 @@ RList *w32_thread_list (int pid, RList *list) {
  82         DWORD dwFlags;
 #endif
 			thid = w32_openthread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
-			if (thid == NULL)
+			if (thid == NULL) {
+				print_lasterr((char *)__FUNCTION__, "OpenThread");
                                 goto err_load_th;
-                        ret = te32.th32ThreadID;
-			//eprintf("Thread: %x %x\n", thid, te32.th32ThreadID);
+			}
 			r_list_append (list, r_debug_pid_new ("???", te32.th32ThreadID, 's', 0));
                 }
         } while (Thread32Next (th, &te32));
 err_load_th:    
-        if(ret == -1) 
-                print_lasterr ((char *)__FUNCTION__);
         if(th != INVALID_HANDLE_VALUE)
                 CloseHandle (th);
 	return list;
@@ -507,8 +596,6 @@ RList *w32_pids (int pid, RList *list) {
 		ret = te32.th32OwnerProcessID;
         } while (Thread32Next (th, &te32));
 err_load_th:    
-        if(ret == -1) 
-                print_lasterr ((char *)__FUNCTION__);
         if(th != INVALID_HANDLE_VALUE)
                 CloseHandle (th);
 	return list;

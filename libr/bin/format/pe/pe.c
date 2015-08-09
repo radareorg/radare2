@@ -181,7 +181,6 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 			if (import_table & ILT_MASK1) {
 				import_ordinal = import_table & ILT_MASK2;
 				import_hint = 0;
-eprintf ("DLLNAME(%s)\n", dll_name);
 				snprintf (import_name, PE_NAME_LENGTH, "qq%s_Ordinal_%i",
 					dll_name, import_ordinal);
 				//

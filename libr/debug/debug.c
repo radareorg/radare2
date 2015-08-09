@@ -123,7 +123,7 @@ R_API int r_debug_attach(RDebug *dbg, int pid) {
 	if (dbg && dbg->h && dbg->h->attach) {
 		ret = dbg->h->attach (dbg, pid);
 		if (ret != -1) {
-			eprintf ("pid = %d tid = %d\n", pid, ret);
+			eprintf ("Attached debugger to pid = %d, tid = %d\n", pid, ret);
 			// TODO: get arch and set io pid
 			//int arch = dbg->h->arch;
 			//r_reg_set(dbg->reg->nregs, arch); //R_DBG_ARCH_X86);
@@ -254,7 +254,7 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 		tid = pid;
 
 	if (pid != dbg->pid || tid != dbg->tid)
-		eprintf ("r_debug_select: %d %d\n", pid, tid);
+		eprintf ("Debugging pid = %d, tid = %d now\n", pid, tid);
 
 	if (dbg->h && dbg->h->select && !dbg->h->select (pid, tid))
 		return R_FALSE;
