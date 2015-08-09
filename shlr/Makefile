@@ -73,10 +73,7 @@ else
 SDB_TARGETS+=sdb/sdb
 endif
 
-ifeq (${BUILD_EXT_EXE},)
-# TODO avoid dup
-SDB_TARGETS+=sdb/sdb
-else
+ifeq ($(filter sdb/sdb${BUILD_EXT_EXE},$(SDB_TARGETS)),)
 SDB_TARGETS+=sdb/sdb${BUILD_EXT_EXE}
 endif
 
@@ -207,23 +204,7 @@ ifeq ($(CS_TAR),)
 capstone: capstone-sync
 
 capstone-sync:
-	if [ ! -d capstone ]; then \
-		git clone $(CS_URL) ; \
-	fi
-	cd capstone ; \
-		git reset --hard @^^^ ; \
-		git checkout $(CS_BRA) ; \
-		git reset --hard $(CS_TIP) || \
-	( if [ -d .git ]; then \
-		git pull ; git reset --hard $(CS_TIP) ; \
-	else true ; fi)
-	if [ -n "${CS_REV}" ]; then \
-		cd capstone ; \
-		git config user.name || ( \
-		git config user.name "radare-travis" ; \
-		git config user.email radare-travis@foo.com ) ; \
-		EDITOR=cat git revert --no-edit ${CS_REV} ; \
-	fi
+	$(SHELL) capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
 
 .PHONY: capstone
 else
