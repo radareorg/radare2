@@ -106,17 +106,7 @@ static BOOL WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
 static DWORD WINAPI (*w32_getthreadid)(HANDLE) = NULL; // Vista
 static DWORD WINAPI (*w32_getprocessid)(HANDLE) = NULL; // XP
 static HANDLE WINAPI (*w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
-
 static DWORD WINAPI (*psapi_getmappedfilename)(HANDLE, LPVOID, LPTSTR, DWORD) = NULL;
-
-static void r_str_wtoc(char* d, const WCHAR* s) {
-	int i = 0;
-	while (s[i] != '\0') {
-		d[i] = (char)s[i];
-		++i;
-	}
-	d[i] = 0;
-}
 
 static int w32dbg_SeDebugPrivilege() {
 	/////////////////////////////////////////////////////////
@@ -154,7 +144,7 @@ static int w32dbg_SeDebugPrivilege() {
 	return ret;
 }
 
-static void print_lasterr(const char *caller, char *cause) {
+static void print_lasterr (const char *caller, char *cause) {
 	WCHAR buffer[200];
 	char cbuffer[100];
 	if (!FormatMessageA (FORMAT_MESSAGE_FROM_SYSTEM |
@@ -248,52 +238,48 @@ static inline int w32_h2p(HANDLE h) {
 }
 
 static int w32_first_thread(int pid) {
-        HANDLE th; 
-        HANDLE thid; 
-        THREADENTRY32 te32;
-
-        te32.dwSize = sizeof(THREADENTRY32);
+	HANDLE th; 
+	HANDLE thid; 
+	THREADENTRY32 te32;
+	te32.dwSize = sizeof (THREADENTRY32);
 
 	if (w32_openthread == NULL) {
 		eprintf("w32_thread_list: no w32_openthread?\n");
 		return -1;
 	}
-        th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid); 
-        if (th == INVALID_HANDLE_VALUE) {
+	th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid); 
+	if (th == INVALID_HANDLE_VALUE) {
 		eprintf ("w32_thread_list: invalid handle\n");
 		return -1;
 	}
 	if (!Thread32First (th, &te32)) {
-                CloseHandle (th);
+		CloseHandle (th);
 		eprintf ("w32_thread_list: no thread first\n");
 		return -1;
 	}
-        
 	do {
-                /* get all threads of process */
-                if (te32.th32OwnerProcessID == pid) {
+		/* get all threads of process */
+		if (te32.th32OwnerProcessID == pid) {
 			thid = w32_openthread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
 			if (thid == NULL) {
-        			print_lasterr ((char *)__FUNCTION__, "OpenThread");
-                                goto err_load_th;
+				print_lasterr ((char *)__FUNCTION__, "OpenThread");
+				goto err_load_th;
 			}
 			CloseHandle (th);
 			return te32.th32ThreadID;
 		}
-        } while (Thread32Next (th, &te32));
+	} while (Thread32Next (th, &te32));
 err_load_th:    
 	eprintf ("Could not find an active thread for pid %d\n", pid);
 	CloseHandle (th);
-	return pid; // -1 ?
+	return pid;
 }
 
 static int debug_exception_event (unsigned long code) {
 	switch (code) {
 	case EXCEPTION_BREAKPOINT:
-		//eprintf ("breakpoint\n");
 		break;
 	case EXCEPTION_SINGLE_STEP:
-		//eprintf ("singlestep\n");
 		break;
 	/* fatal exceptions */
 	case EXCEPTION_ACCESS_VIOLATION:
@@ -316,93 +302,81 @@ static int debug_exception_event (unsigned long code) {
 	return 0;
 }
 
-static char *get_file_name_from_handle(HANDLE handle_file) 
-{
+static char *get_file_name_from_handle (HANDLE handle_file) {
 	HANDLE handle_file_map;
 	TCHAR *filename = NULL;
 
-	// Get the file size.
 	DWORD file_size_high = 0;
-	DWORD file_size_low = GetFileSize(handle_file, &file_size_high); 
-
+	DWORD file_size_low = GetFileSize (handle_file, &file_size_high); 
 	if (file_size_low == 0 && file_size_high == 0) {
 		return NULL;
 	}
 
-	// Create a file mapping object.
-	handle_file_map = CreateFileMapping(handle_file, NULL, PAGE_READONLY, 0, 1, NULL);
+	handle_file_map = CreateFileMapping (handle_file, NULL, PAGE_READONLY, 0, 1, NULL);
 
 	if (!handle_file_map) {
 		return NULL;
 	}
 	filename = malloc(MAX_PATH+1);
 
-	// Create a file mapping to get the file name.
-	void* map = MapViewOfFile(handle_file_map, FILE_MAP_READ, 0, 0, 1);
+	/* Create a file mapping to get the file name. */
+	void* map = MapViewOfFile (handle_file_map, FILE_MAP_READ, 0, 0, 1);
 
 	if (!map) { 
-		CloseHandle(handle_file_map);
+		CloseHandle (handle_file_map);
 		return NULL;
 	}
 
-	if (!psapi_getmappedfilename (GetCurrentProcess(), 
+	if (!psapi_getmappedfilename (GetCurrentProcess (), 
 		map, 
 		filename,
 		MAX_PATH)) {
 
 		free(filename);
-		UnmapViewOfFile(map);
-		CloseHandle(handle_file_map);
+		UnmapViewOfFile (map);
+		CloseHandle (handle_file_map);
 		return NULL;
 	}
 
-	// Translate path with device name to drive letters.
+	/* Translate path with device name to drive letters. */
 	int temp_size = 512;
 	TCHAR temp_buffer[temp_size];
 	temp_buffer[0] = '\0';
 
-	if (!GetLogicalDriveStrings(temp_size-1, temp_buffer)) {
-		free(filename);
-		UnmapViewOfFile(map);
-		CloseHandle(handle_file_map);
+	if (!GetLogicalDriveStrings (temp_size-1, temp_buffer)) {
+		free (filename);
+		UnmapViewOfFile (map);
+		CloseHandle (handle_file_map);
 		return NULL;
 	}
 		
 	TCHAR name[MAX_PATH];
-	TCHAR drive[3] = TEXT(" :");
+	TCHAR drive[3] = TEXT (" :");
 	BOOL found = FALSE;
-	TCHAR* p = temp_buffer;
-
+	TCHAR *p = temp_buffer;
 	do {
-		// Copy the drive letter to the template string
+		/* Look up each device name */
 		*drive = *p;
-
-		// Look up each device name
-		if (QueryDosDevice(drive, name, MAX_PATH)) {
-			size_t name_length = strlen(name);
+		if (QueryDosDevice (drive, name, MAX_PATH)) {
+			size_t name_length = strlen (name);
 
 			if (name_length < MAX_PATH) {
-				found = strncmp(filename, name, name_length) == 0
-					&& *(filename + name_length) == _T('\\');
+				found = strncmp (filename, name, name_length) == 0
+					&& *(filename + name_length) == _T ('\\');
 
 				if (found) {
-					// Reconstruct filename using temp_buffer
-					// Replace device path with DOS path
 					TCHAR temp_filename[MAX_PATH];
-					snprintf(temp_filename, MAX_PATH-1, "%s%s", 
+					snprintf (temp_filename, MAX_PATH-1, "%s%s", 
 						drive, filename+name_length);
-					strncpy(filename, temp_filename, MAX_PATH-1);
+					strncpy (filename, temp_filename, MAX_PATH-1);
 				}
 			}
 		}
-
-		// Go to the next NULL character.
 		while (*p++);
-	} while (!found && *p); // end of string
+	} while (!found && *p);
 
-	UnmapViewOfFile(map);
-	CloseHandle(handle_file_map);
-
+	UnmapViewOfFile (map);
+	CloseHandle (handle_file_map);
 	return filename;
 }
 
