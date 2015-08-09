@@ -1716,9 +1716,9 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 	entry->vaddr += bin->nt_headers->optional_header.ImageBase;
 
 	if (is_arm (bin) && entry->vaddr & 1) {
-		entry->vaddr = entry->vaddr--;
+		entry->vaddr--;
 		if (entry->paddr & 1) {
-			entry->paddr = entry->paddr--;
+			entry->paddr--;
 		}
 	}
 	return entry;
