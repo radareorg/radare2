@@ -19,8 +19,10 @@ static int mousemode = 0;
 #define INIT_HISTORY_CAPACITY 16
 #define TITLE_LEN 128
 #define DEFAULT_SPEED 1
-#define SMALLNODE_TEXT     "[____]"
-#define SMALLNODE_TEXT_CUR "<@@@@@>"
+#define SMALLNODE_TEXT_CUR "<@@@@@@>"
+#define SMALLNODE_MIN_WIDTH 8
+#define SMALLNODE_TITLE_LEN 4
+#define SMALLNODE_CENTER_X 3
 
 #define ZOOM_STEP 10
 #define ZOOM_DEFAULT 100
@@ -95,8 +97,8 @@ static void update_node_dimension(const RGraph *g, int is_small, int zoom) {
 
 	graph_foreach_anode (nodes, it, gn, n) {
 		if (is_small) {
-			n->h = 0;
-			n->w = strlen (SMALLNODE_TEXT);
+			n->h = 1;
+			n->w = SMALLNODE_MIN_WIDTH;
 		} else {
 			unsigned int len;
 
@@ -115,11 +117,19 @@ static void update_node_dimension(const RGraph *g, int is_small, int zoom) {
 
 static void small_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	char title[TITLE_LEN];
+	int x, delta_x = 0;
 
-	if (!G (n->x + 3, n->y - 1))
-		return;
+	if (!G (n->x + SMALLNODE_CENTER_X, n->y) &&
+		!G (n->x + SMALLNODE_CENTER_X + n->w, n->y)) return;
+
+	x = n->x + SMALLNODE_CENTER_X + g->can->sx;
+	if (x < 0) {
+		delta_x = -x;
+	}
+	G (n->x + SMALLNODE_CENTER_X + delta_x, n->y);
+
 	if (cur) {
-		W(SMALLNODE_TEXT_CUR);
+		W(SMALLNODE_TEXT_CUR + delta_x);
 		(void)G (-g->can->sx, -g->can->sy + 2);
 		snprintf (title, sizeof (title) - 1,
 				"%s:", n->title);
@@ -130,16 +140,14 @@ static void small_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		char *str = "____";
 		if (n->title) {
 			int l = strlen (n->title);
-			if (l>3) {
-				str = n->title+l-4;
-			} else {
-				str = n->title;
+
+			str = n->title;
+			if (l > SMALLNODE_TITLE_LEN) {
+				str += l - SMALLNODE_TITLE_LEN;
 			}
 		}
 		snprintf (title, sizeof (title) - 1, "[_%s_]", str);
-		W(title);
-
-		//W(SMALLNODE_TEXT);
+		W(title + delta_x);
 	}
 	return;
 }
@@ -152,14 +160,6 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	char *body;
 	int x, y;
 
-#if SHOW_OUT_OF_SCREEN_NODES
-	x = n->x + g->can->sx;
-	y = n->y + n->h + g->can->sy;
-	if (x < 0 || x > g->can->w)
-		return;
-	if (y < 0 || y > g->can->h)
-		return;
-#endif
 	x = n->x + g->can->sx;
 	y = n->y + g->can->sy;
 	if (x + MARGIN_TEXT_X < 0)
@@ -1575,12 +1575,8 @@ static void update_seek(RConsCanvas *can, RANode *n, int force) {
 	doscroll = force || y < 0 || y + 5 > h || x + 5 > w || x + n->w + 5 < 0;
 
 	if (doscroll) {
-		// top-left
-		can->sy = -n->y + BORDER;
-		can->sx = -n->x + BORDER;
-		// center
-		can->sy = -n->y + BORDER + (h / 8);
-		can->sx = -n->x + BORDER + (w / 4);
+		can->sx = -n->x - n->w / 2 + w / 2;
+		can->sy = -n->y - n->h / 8 + h / 4;
 	}
 }
 
@@ -1789,7 +1785,7 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	int is_first = R_TRUE;
 	RCanvasLineStyle style;
 
-	xinc = 3 + 2 * (nth + 1);
+	xinc = 4 + 2 * (nth + 1);
 	x = a->x + xinc;
 	y = a->y + a->h;
 	if (nth > 1) nth = 1;
@@ -1813,7 +1809,7 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 
 		for (i = 0; i < len; ++i) {
 			x2 = (int)(size_t)r_list_get_n (edg->x, i);
-			y2 = (int)(size_t)r_list_get_n (edg->y, i);
+			y2 = (int)(size_t)r_list_get_n (edg->y, i) - 1;
 
 			if (is_first && nth == 0 && x2 > x) {
 				xinc += 4;
@@ -1826,16 +1822,10 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 			style.symbol = LINE_NONE;
 			is_first = R_FALSE;
 		}
-	} else {
-		if (g->is_small_nodes) {
-			x2++;
-		}
 	}
 
 	x2 = b->x + xinc;
-	if (g->is_small_nodes)
-		y2 = b->y-2;
-	else y2 = b->y-1;
+	y2 = b->y - 1;
 	if (is_first && nth == 0 && x2 > x) {
 		xinc += 4;
 		x += 4;
@@ -2276,14 +2266,16 @@ R_API RAGraph *r_agraph_new(RConsCanvas *can) {
 
 static void visual_offset (RCore *core) {
 	char buf[256];
-	int cols, rows;
-	cols = r_cons_get_size (&rows);
-	r_cons_gotoxy (0,rows);
+	int rows;
+	r_cons_get_size (&rows);
+	r_cons_gotoxy (0, rows);
 	r_cons_flush ();
 	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
-	if (r_cons_fgets (buf+2, sizeof (buf)-3, 0, NULL) > 0) {
-		if (buf[2] == '.') buf[1]='.';
+	if (r_cons_fgets (buf + 2, sizeof (buf) - 3, 0, NULL) > 0) {
+		if (buf[2] == '.') {
+			buf[1] = '.';
+		}
 		r_core_cmd0 (core, buf);
 	}
 }
