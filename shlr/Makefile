@@ -50,15 +50,12 @@ preall: targets libwind capstone-build
 		$(MAKE) -C $$a HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
+SDBFILES=sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE} sdb/src/.sdb sdb/sdb
+PREMODS=capstone gdb wind sdb
+
 clean mrproper:
-	-cd capstone && $(MAKE) clean
-	cd gdb && $(MAKE) clean
-	cd wind && $(MAKE) clean
-	rm -f sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE}
-	cd sdb && $(MAKE) clean
-	rm -f sdb/src/.sdb sdb/sdb
-	rm -f sdb/sdb${EXT_EXE}
-	@for a in ${MODS} ; do $(MAKE) -C $$a clean ; done
+	rm -f ${SDBFILES}
+	@for a in ${PREMODS} ${MODS} ; do $(MAKE) -C $$a clean ; done
 
 ifeq ($(BUILD_OS),windows)
 BUILD_EXT_EXE=.exe
