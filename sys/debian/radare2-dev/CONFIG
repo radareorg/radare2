@@ -4,6 +4,4 @@ PRIORITY=optional
 MAINTAINER=pancake <pancake@nopcode.org>
 
 include ../../../config-user.mk
-ARCH=$(shell uname -m)
-#VERSION=0.10.0
-#ARCH=iphoneos-arm
+include ../arch.mk
