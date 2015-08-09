@@ -1641,6 +1641,10 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				type = R_ANAL_REF_TYPE_CALL;
 				xref_to = op.ptr;
 				break;
+			case R_ANAL_OP_TYPE_LOAD:
+				type = R_ANAL_REF_TYPE_DATA;
+				xref_to = op.ptr;
+				break;
 			default:
 				if (op.ptr != -1) {
 					type = R_ANAL_REF_TYPE_DATA;
@@ -2242,22 +2246,35 @@ static int esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int l
 	return 1;
 }
 
+
+static ut64 esilbreak_last_read = UT64_MAX;
+static ut32 esilbreak_last_data = UT32_MAX;
+
 static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	int slen = 0;
 	ut8 str[128];
-	char cmd[128];
+	char cmd[128], cmd2[128];
+	esilbreak_last_read = UT64_MAX;
 	if (myvalid (addr) && r_io_is_valid_offset (mycore->io, addr, 0)) {
 		ut32 refptr = 0;
 		r_io_read_at (mycore->io, addr, (ut8*)&refptr, sizeof (refptr));
 		if (myvalid (refptr) && r_io_is_valid_offset (mycore->io, (ut64)refptr, 0)) {
+			esilbreak_last_read = addr;
 			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
-				esil->offset, (ut64)refptr);
+				(ut64)refptr, esil->offset);
 			r_io_read_at (mycore->io, refptr, str, sizeof (str));
 			if (is_string (str, sizeof (str)-1, &slen)) {
 				char str2[128];
+				esilbreak_last_data = refptr;
 				snprintf (str2, sizeof(str2)-1, "esilref: '%s'", str);
 				r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, esil->offset, str2);
 				r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, refptr, str2);
+				if (refptr) {
+					snprintf (cmd2, sizeof (cmd2), "axd 0x%"PFMT64x" 0x%"PFMT64x,
+						esil->offset, addr);
+					eprintf ("%s\n", cmd2);
+					r_core_cmd0 (mycore, cmd2);
+				}
 			}
 		} else {
 			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
@@ -2346,6 +2363,18 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 				r_anal_esil_stack_free (ESIL);
 				i += op.size -1;
 				switch (op.type) {
+				case R_ANAL_OP_TYPE_LOAD:
+					{
+					       ut64 dst = esilbreak_last_read;
+						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+							// get pc
+							eprintf ("0x%08"PFMT64x" DATA 0x%08"PFMT64x"\n", cur, dst);
+							r_core_cmdf (core, "axd 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
+						} else {
+							eprintf ("Unknown LOAD at 0x%08"PFMT64x"\n", cur);
+						}
+					}
+					break;
 				case R_ANAL_OP_TYPE_UJMP:
 				case R_ANAL_OP_TYPE_UCALL:
 					{

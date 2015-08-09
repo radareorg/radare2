@@ -387,43 +387,40 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_LDR:
 		if (MEMDISP(1)<0) {
 			if (REGBASE(1) == ARM_REG_PC) {
-				r_strbuf_appendf (&op->esil, "8,%s,+,%d,-,[4],%s,=",
-						MEMBASE(1), -MEMDISP(1), REG(0));
+				int pcdelta = 8;
 				switch (a->bits) {
 				case 32:
 					op->ptr = addr + 8 - MEMDISP(1);
-					op->refptr = 4;
 					break;
 				case 16:
-					if ( (addr % 4) == 0 ) {
-						op->ptr = addr + 4 - MEMDISP(1);
-						op->refptr = 4;
-					} else {
-						op->ptr = addr + 2 - MEMDISP(1);
-						op->refptr = 4;
-					}
+					pcdelta = op->size;
+					op->refptr = 4;
+					op->ptr = addr + pcdelta - MEMDISP(1);
 					break;
 				}
+				r_strbuf_appendf (&op->esil, "%d,%s,+,%d,-,[4],%s,=",
+					pcdelta, MEMBASE(1), -MEMDISP(1), REG(0));
 			} else {
 				r_strbuf_appendf (&op->esil, "%s,%d,-,[4],%s,=",
 					MEMBASE(1), -MEMDISP(1), REG(0));
 			}
 		} else {
 			if (REGBASE(1) == ARM_REG_PC) {
-				r_strbuf_appendf (&op->esil, "8,%s,+,%d,+,[4],%s,=",
-					MEMBASE(1), MEMDISP(1), REG(0));
-				if (a->bits==32) {
+				int pcdelta = 8;
+				switch (a->bits) {
+				case 16:
+					pcdelta = op->size * 2;
+					op->refptr = 4;
+					op->ptr = addr + pcdelta + MEMDISP(1);
+					break;
+				case 32:
+					pcdelta = 8;
 					op->ptr = addr + 8 + MEMDISP(1);
 					op->refptr = 4;
-				} else if (a->bits==16) {
-					if ( (addr % 4) == 0 ) {
-						op->ptr = addr + 4 + MEMDISP(1);
-						op->refptr = 4;
-					} else {
-						op->ptr = addr + 2 + MEMDISP(1);
-						op->refptr = 4;
-					}
+					break;
 				}
+				r_strbuf_appendf (&op->esil, "%d,%s,+,%d,+,[4],%s,=",
+					pcdelta, MEMBASE(1), MEMDISP(1), REG(0));
 			} else {
 				r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
 					MEMBASE(1), MEMDISP(1), REG(0));

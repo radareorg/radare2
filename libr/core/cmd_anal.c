@@ -332,6 +332,7 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 	else r_cons_printf ("%s: ", k); \
 	if (fmt) r_cons_printf (fmt, arg); \
 }
+			printline ("address", "0x%"PFMT64x"\n", core->offset + idx);
 			printline ("opcode", "%s\n", asmop.buf_asm);
 			if (hint) {
 				if (hint->opcode)
