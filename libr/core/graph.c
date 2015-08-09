@@ -19,8 +19,8 @@ static int mousemode = 0;
 #define INIT_HISTORY_CAPACITY 16
 #define TITLE_LEN 128
 #define DEFAULT_SPEED 1
-#define SMALLNODE_TEXT "[____]"
-#define SMALLNODE_TEXT_CUR "[_@@_]"
+#define SMALLNODE_TEXT     "[____]"
+#define SMALLNODE_TEXT_CUR "<@@@@@>"
 
 #define ZOOM_STEP 10
 #define ZOOM_DEFAULT 100
@@ -116,7 +116,7 @@ static void update_node_dimension(const RGraph *g, int is_small, int zoom) {
 static void small_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	char title[TITLE_LEN];
 
-	if (!G (n->x + 2, n->y - 1))
+	if (!G (n->x + 3, n->y - 1))
 		return;
 	if (cur) {
 		W(SMALLNODE_TEXT_CUR);
@@ -127,7 +127,19 @@ static void small_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		(void)G (-g->can->sx, -g->can->sy + 3);
 		W (n->body);
 	} else {
-		W(SMALLNODE_TEXT);
+		char *str = "____";
+		if (n->title) {
+			int l = strlen (n->title);
+			if (l>3) {
+				str = n->title+l-4;
+			} else {
+				str = n->title;
+			}
+		}
+		snprintf (title, sizeof (title) - 1, "[_%s_]", str);
+		W(title);
+
+		//W(SMALLNODE_TEXT);
 	}
 	return;
 }
@@ -1814,10 +1826,16 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 			style.symbol = LINE_NONE;
 			is_first = R_FALSE;
 		}
+	} else {
+		if (g->is_small_nodes) {
+			x2++;
+		}
 	}
 
 	x2 = b->x + xinc;
-	y2 = b->y;
+	if (g->is_small_nodes)
+		y2 = b->y-2;
+	else y2 = b->y-1;
 	if (is_first && nth == 0 && x2 > x) {
 		xinc += 4;
 		x += 4;
