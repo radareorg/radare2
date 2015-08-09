@@ -2642,9 +2642,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			const char *opcolor = NULL;
 			if (ds->show_color) {
 				opcolor = r_print_color_op_type (core->print, ds->analop.type);
+				r_cons_printf ("%s%s" Color_RESET "\n", opcolor, ds->opstr);
+			} else {
+				r_cons_printf ("%s\n", ds->opstr);
 			}
-			if (!opcolor) opcolor = "";
-			r_cons_printf ("%s%s\n", opcolor, ds->opstr);
 			free (ds->opstr);
 			ds->opstr = NULL;
 		}
