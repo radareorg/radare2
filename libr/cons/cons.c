@@ -534,7 +534,7 @@ R_API void r_cons_visual_write (char *buffer) {
 	if (lines>0) {
 		if (cols>sizeof (white))
 			cols = sizeof (white);
-		while (--lines > 0)
+		while (--lines >= 0)
 			r_cons_write (white, cols);
 	}
 }
