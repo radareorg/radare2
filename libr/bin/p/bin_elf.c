@@ -162,6 +162,7 @@ static RList* sections(RBinFile *arch) {
 			ut64 paddr = phdr[i].p_offset;
 			ut64 vaddr = phdr[i].p_vaddr;
 			int memsz = (int)phdr[i].p_memsz;
+			int filesz = (int)phdr[i].p_filesz;
 			int perms = phdr[i].p_flags;
 			ut64 align = phdr[i].p_align;
 			if (!align) align = 0x1000;
@@ -170,7 +171,7 @@ static RList* sections(RBinFile *arch) {
 			if (!(ptr = R_NEW0 (RBinSection)))
 				return ret;
 			sprintf (ptr->name, "phdr%d", n);
-			ptr->size = memsz;
+			ptr->size = filesz;
 			ptr->vsize = memsz;
 			ptr->paddr = paddr;
 			ptr->vaddr = vaddr;
