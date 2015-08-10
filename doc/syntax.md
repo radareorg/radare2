@@ -30,13 +30,10 @@ if (a == b) {
 	...
 }
 
-if (a == b)
-	do_something ();
+if (a == b) do_something ();
 
-if (a == b)
-	do_something ();
-else
-	do_something_else ();
+if (a == b) do_something ();
+else do_something_else ();
 
 if (a == b) {
 	...
@@ -95,9 +92,12 @@ a = (b << 3) * 5;
   possible at all, we can still use a comment. But it is a bad idea
   to relay on comment to make the code readable.
 
-* Use 'R_API' define to mark exportable methods
+* Use 'R_API' define to mark exportable (public) methods only for module APIs
 
-* Try not using oneline comments '//'. Use /* */ instead
+* The rest of functions must be static, to avoid polluting the global space.
+
+* Avoid using global variables, they are evil. Only use them for singletons
+  and wip code, placing a comment explaining the reason for them to stay there.
 
 * If you *really* need to comment out some code, use #if 0 (...) #endif. In
   general, don't comment out code because it makes the code less readable.
@@ -107,3 +107,5 @@ a = (b << 3) * 5;
   can be accepted in this way (gnu code, external disassemblers, etc..)
 
 * See doc/vim for vimrc
+
+* See doc/clang-format for work-in-progress support for automated indentation
