@@ -127,7 +127,6 @@ static mach0_ut get_pointer (mach0_ut p,
 {
 	mach0_ut r;
 	mach0_ut addr;
-	mach0_ut section_content_addr;
 
 	RList *sctns = NULL;
 	RListIter *iter = NULL;
@@ -135,7 +134,8 @@ static mach0_ut get_pointer (mach0_ut p,
 
 	sctns = r_bin_plugin_mach.sections(arch);
 	if (sctns == NULL) {
-		eprintf ("there is no sections\n");
+		// retain just for debug
+		// eprintf ("there is no sections\n");
 		return 0;
 	}
 
@@ -149,8 +149,7 @@ static mach0_ut get_pointer (mach0_ut p,
 				*left = s->vsize - (addr - s->vaddr);
 			}
 
-			section_content_addr = (s->vaddr - r_bin_plugin_mach.baddr (arch));
-			r = (section_content_addr + (addr - s->vaddr));
+			r = (s->paddr + (addr - s->vaddr));
 
 			r_list_free (sctns);
 			return r;
@@ -227,7 +226,8 @@ static void get_ivar_list_t (mach0_ut p,
 		}
 
 		if (!(field = R_NEW0 (RBinField))) {
-			eprintf ("RBinField allocation error\n");
+			// retain just for debug
+			// eprintf ("RBinField allocation error\n");
 			return;
 		}
 
@@ -322,7 +322,8 @@ static void get_objc_property_list (mach0_ut p,
 			return;
 
 		if (!(property = R_NEW0 (RBinSymbol))) {
-			eprintf("RBinClass allocation error\n");
+			// retain just for debug
+			// eprintf("RBinClass allocation error\n");
 			return;
 		}
 
@@ -401,7 +402,8 @@ static void get_method_list_t (mach0_ut p,
 		}
 
 		if (!(method = R_NEW0 (RBinSymbol))) {
-			eprintf ("RBinClass allocation error\n");
+			// retain just for debug
+			// eprintf ("RBinClass allocation error\n");
 			return;
 		}
 
@@ -667,7 +669,8 @@ RList* MACH0_(parse_classes)(RBinFile *arch)
 	// searching of section with name __objc_classlist
 	sctns = r_bin_plugin_mach.sections (arch);
 	if (sctns == NULL) {
-		eprintf ("there is no sections\n");
+		// retain just for debug
+		// eprintf ("there is no sections\n");
 		return NULL;
 	}
 
@@ -679,13 +682,15 @@ RList* MACH0_(parse_classes)(RBinFile *arch)
 	}
 
 	if (!is_found) {
-		eprintf ("there is no section __objc_classlist\n");
+		// retain just for debug
+		// eprintf ("there is no section __objc_classlist\n");
 		goto get_classes_error;
 	}
 	// end of seaching of section with name __objc_classlist
 
 	if (!(ret = r_list_new ())) {
-		eprintf ("RList<RBinClass> allocation error\n");
+		// retain just for debug
+		// eprintf ("RList<RBinClass> allocation error\n");
 		goto get_classes_error;
 	}
 
@@ -694,17 +699,20 @@ RList* MACH0_(parse_classes)(RBinFile *arch)
 	// start of getting information about each class in file
 	for (i = 0; i < s->size; i+= sizeof (mach0_ut)) {
 		if (!(processed_class = R_NEW0 (RBinClass))) {
-			eprintf ("RBinClass allocation error\n");
+			// retain just for debug
+			// eprintf ("RBinClass allocation error\n");
 			goto get_classes_error;
 		}
 
 		if (!(processed_class->methods = r_list_new())) {
-			eprintf ("RList<RBinField> allocation error\n");
+			// retain just for debug
+			// eprintf ("RList<RBinField> allocation error\n");
 			goto get_classes_error;
 		}
 
 		if (!(processed_class->fields = r_list_new())) {
-			eprintf ("RList<RBinSymbol> allocation error\n");
+			// retain just for debug
+			// eprintf ("RList<RBinSymbol> allocation error\n");
 			goto get_classes_error;
 		}
 
@@ -714,7 +722,7 @@ RList* MACH0_(parse_classes)(RBinFile *arch)
 		size = left < sizeof (mach0_ut) ? left : sizeof (mach0_ut);
 
 		r_buf_read_at (arch->buf,
-					s->vaddr - r_bin_plugin_mach.baddr (arch) + i,
+					s->paddr + i,
 					(ut8 *)&p,
 					size);
 
