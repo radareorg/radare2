@@ -443,6 +443,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 			of = of - got_addr + got_offset;
 			switch (bin->ehdr.e_machine) {
 			case EM_ARM:
+			case EM_AARCH64:
 				switch (reloc_type) {
 				case 22:
 					{
@@ -455,6 +456,9 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 						return plt_addr;
 					}
 					break;
+				case 1026: // arm64 aarch64
+					plt_sym_addr = plt_addr + (k*12) + 20;
+					goto done;
 				default:
 					eprintf ("Unsupported relocation type for imports %d\n", reloc_type);
 					break;
@@ -490,7 +494,8 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 				}
 				break;
 			default:
-				eprintf ("Unsupported relocs for this arch\n");
+				eprintf ("Unsupported relocs for this arch %d\n",
+					bin->ehdr.e_machine);
 				break;
 			}
 		}
