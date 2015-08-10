@@ -1,18 +1,21 @@
 /* radare - LGPL - Copyright 2007-2015 - pancake */
 
+#include <stdlib.h>
+#include <assert.h>
 #include <r_util.h>
 #include <r_print.h>
 #include "../blob/version.c"
 
 #define STDIN_BUFFER_SIZE 354096
 
-static RNum *num;
-static int help ();
+static RNum *num = NULL;
+static void usage ();
 static ut64 flags = 0;
 static int use_stdin ();
 static int force_mode = 0;
 static int rax (char *str, int len, int last);
 
+/* argv flags to direct input conversion */
 enum {
 	Flag_hexstr_to_raw = 1 << 0,
 	Flag_swap_endian   = 1 << 1,
@@ -30,7 +33,7 @@ enum {
 	Flag_from_base64   = 1 <<13,
 	Flag_stdin_slurp   = 1 <<14,
 	Flag_to_escape_seq = 1 <<15,
-} flags_t;
+} rax_flags_t;
 
 static int format_output (char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
@@ -65,13 +68,15 @@ static int format_output (char mode, const char *s) {
 		break;
 	default:
 		eprintf ("Unknown output mode %d\n", mode);
+		exit (EXIT_FAILURE);
 		break;
 	}
 	return R_TRUE;
 }
 
-static int help () {
-	printf (
+static void usage () {
+    eprintf (/* Unix utilities usually dump usage() to stderr */
+        "Usage: rax2 [options] [expr ...]\n"
 		"  =[base]                 ;  rax2 =10 0x46 -> output in base 10\n"
 		"  int   ->  hex           ;  rax2 10\n"
 		"  hex   ->  int           ;  rax2 0xa\n"
@@ -108,13 +113,13 @@ static int help () {
 		"  -u    units             ;  rax2 -u 389289238 # 317.0M\n"
 		"  -v    rax2 version      ;  rax2 -v\n"
 		);
-	return R_TRUE;
 }
 
 static int rax (char *str, int len, int last) {
 	float f;
-	ut8 *buf;
-	char *p, out_mode = (flags & Flag_force_int)? 'I': '0';
+	ut8 *buf = NULL;
+	char *p = NULL;
+	char out_mode = (flags & Flag_force_int)? 'I': '0';
 	int i;
 	if (!(flags & Flag_raw_to_hexstr) || !len)
 		len = strlen (str);
@@ -128,6 +133,7 @@ static int rax (char *str, int len, int last) {
 		case 10: force_mode = 'I'; break;
 		case 16: force_mode = '0'; break;
 		case 0: force_mode = str[1]; break;
+		default: assert(0); break; // unreachable
 		}
 		return R_TRUE;
 	}
@@ -158,8 +164,9 @@ static int rax (char *str, int len, int last) {
 					if (str[2]=='x') out_mode = 'I';
 					return format_output (out_mode, str);
 				}
-				printf ("Usage: rax2 [options] [expr ...]\n");
-				return help ();
+				/* Unknown option, treat as user input error */
+				usage ();
+				exit (EXIT_FAILURE);
 			}
 			str++;
 		}
@@ -170,8 +177,10 @@ static int rax (char *str, int len, int last) {
 	if (!flags) {
 		if (*str=='q')
 			return R_FALSE;
-		if (*str=='h' || *str=='?')
-			return help ();
+		if (*str=='h' || *str=='?') {
+			usage ();
+			exit (EXIT_SUCCESS);
+		}
 	}
 	dotherax:
 	
@@ -271,7 +280,6 @@ static int rax (char *str, int len, int last) {
 				np[0], np[1], np[2], np[3]);
 		}
 		fflush (stdout);
-		return R_TRUE;
 	} else if (flags & Flag_convert_units) { // -u
 		char buf[80];
 		r_num_units (buf, r_num_math (NULL, str));
@@ -362,6 +370,7 @@ static int rax (char *str, int len, int last) {
 
 static int use_stdin () {
 	static char buf[STDIN_BUFFER_SIZE];
+	int retcode = EXIT_SUCCESS;
 	int l, sflag = (flags & Flag_keep_base);
 	if (! (flags & Flag_stdin_slurp)) {
 		for (l=0; l>=0; l++) {
@@ -384,12 +393,13 @@ static int use_stdin () {
 	}
 	if (l>0)
 		rax (buf, l, 0);
-	return 0;
+	return retcode;
 }
 
 int main (int argc, char **argv) {
 	int i;
 	num = r_num_new (NULL, NULL);
+	assert(num);
 	if (argc == 1) {
 		use_stdin ();
 	} else {
@@ -398,5 +408,5 @@ int main (int argc, char **argv) {
 		}
 	}
 	r_num_free (num);
-	return 0;
+	return EXIT_SUCCESS;
 }
