@@ -757,6 +757,8 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_MIPS_RS3_LE:
 	case EM_MIPS_X:
 		return strdup ("mips");
+	case EM_MCST_ELBRUS:
+		return strdup ("elbrus");
 	case EM_ARM:
 	case EM_AARCH64:
 		return strdup ("arm");

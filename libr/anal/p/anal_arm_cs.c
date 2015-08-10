@@ -106,7 +106,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			"%s,%s,*,%s,+,%s,=",REG64(2),REG64(1),REG64(3), REG64(0));
 		break;
 	case ARM64_INS_ADD: OPCALL("+"); break;
-	case ARM64_INS_SUB: OPCALL("+"); break;
+	case ARM64_INS_SUB: OPCALL("-"); break;
 	case ARM64_INS_MUL: OPCALL("*"); break;
 	case ARM64_INS_AND: OPCALL("&"); break;
 	case ARM64_INS_ORR: OPCALL("|"); break;
