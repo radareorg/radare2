@@ -15,9 +15,9 @@ default:
 * Lines should be at most 78 chars
 
 * Braces open on the same line as the for/while/if/else/function/etc. Closing
-  braces are put on a line of its own, except in the else of an if statement or
-  in a while of a do-while statement. Always use braces, except when you have
-  filtering conditions or error paths that can fit into a one-line statement.
+  braces are put on a line of their own, except in the else of an if statement
+  or in a while of a do-while statement. Always use braces for if and while,
+  except when the expressions are very simple and they can fit in a one-line.
 
 ```
 if (a == b) {
@@ -35,6 +35,10 @@ if (a == b) do_something ();
 if (a == b) do_something ();
 else do_something_else ();
 
+if (!ok) return R_FALSE;
+
+if (!buf) goto err_buf;
+
 if (a == b) {
 	...
 } else {
@@ -49,9 +53,6 @@ if (a == b) {
 	b = 3;
 }
 
-if (!ok) return R_FALSE;
-
-if (!buf) goto err_buf;
 ```
 
 * In general, don't use goto. The goto statement only comes in handy when a
@@ -87,7 +88,7 @@ a = (b << 3) * 5;
   - This way we reduce the number of local variables per function
     and it's easier to find which variables are used, where and so on.
 
-* Comments should be smart. Function names should be enought explicit
+* Comments should be smart. Function names should be explicit enough
   to not require a comment to explain what it does. If this is not
   possible at all, we can still use a comment. But it is a bad idea
   to relay on comment to make the code readable.
