@@ -1,17 +1,16 @@
-.Dd Aug 10, 2015
+.Dd Sep 30, 2014
 .Dt RAX2 1
 .Sh NAME
 .Nm rax2
-.Nd radare2 base number converter
+.Nd radare base converter
 .Sh SYNOPSIS
 .Nm rax2
-.Op Fl bBdDeEfFhknNsStxuv
-.Op =base
-.Op expr ...
+.Op Fl ebBsSvxkh
+.Op [expr] ...
 .Sh DESCRIPTION
-This command is part of the radare2 project.
+This command is part of the radare project.
 .Pp
-It allows you to convert numerical and string values between formats and radixes. It supports positive and negative integers, floating point numbers, octal, binary and hexadecimal representations, Base64 encodings etc.
+This command allows you to convert values between positive and negative integer, float, octal, binary and hexadecimal values.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl b
@@ -19,15 +18,15 @@ Convert from binary string to character (rax2 \-b 01000101)
 .It Fl B
 Keep the same base as the input data
 .It Fl e
-Swap endianness
+Swap endian.
 .It Fl F
-Read C strings from stdin and output them as hexpairs. Useful to load shellcodes
+Read C strings from stdin and output in hexpairs. Useful to load shellcodes
 .It Fl k
-Show randomart key ASCII-art for values or hexpairs
+Show randomart key asciiart for values or hexpairs
 .It Fl s
-Convert from hexadecimal pairs to raw characters (rax2 \-s 43 4a 50)
+Convert from hex string to character (rax2 \-s 43 4a 50)
 .It Fl S
-Convert from raw characters to headecimal pairs (rax2 \-S C J P)
+Convert from hex string to character (rax2 \-S C J P)
 .It Fl n
 Show hexpairs from integer value
 .It Fl N
@@ -43,7 +42,7 @@ Show usage help message
 .El
 .Sh USAGE
 .Pp
-To force output mode (numeric base):
+Force output mode (numeric base)
 .Pp
   =f    floating point
   =2    binary
@@ -52,7 +51,7 @@ To force output mode (numeric base):
   =10   decimal
   =16   hexadecimal
 .Pp
-Available conversions:
+Available variable types are:
 .Pp
   int   \->  hex    rax2 10
   hex   \->  int    rax2 0xa
@@ -67,29 +66,26 @@ Available conversions:
   bin   \->  hex    rax2 1100011b
   hex   \->  bin    rax2 Bx63
 .Pp
-You can pass one or more values as arguments. With no arguments, rax2 reads values from stdin.
+With no arguments, rax2 reads values from stdin. You can pass one or more values
+as arguments.
 .Pp
   $ rax2 33 0x41 0101b
   0x21
   65
   0x5
 .Pp
-You can "unpack" hexadecimal pairs encoded as strings:
+You can do 'unpack' hexpair encoded strings easily.
 .Pp
   $ rax2 \-s 41 42 43
   ABC
 .Pp
-Basic mathematical operations are supported:
+And it supports some math operations.
 .Pp
   $ rax2
   0x5*101b+5
   30
 .Pp
-rax2 may be very useful tool for scripting. It can simplify reading of floating point values, or calulating an integer offset of a jump, or finding a stack delta when analyzing programs.
-.Pp
-.Sh EXIT STATUS
-.Pp
-On success, rax2 exits with status 0. If an unknown option or invalid input is encountered, exit code is 1.
+It is a very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.
 .Pp
 .Sh SEE ALSO
 .Pp
