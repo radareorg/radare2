@@ -615,4 +615,32 @@ RList *w32_pids (int pid, RList *list) {
 	return list;
 }
 
+int w32_terminate_process (RDebug *dbg, int pid) {
+	HANDLE process = dbg->process_handle;
+	if (process == INVALID_HANDLE_VALUE) {
+		return R_FALSE;
+	}
+
+	/* stop debugging if we are still attached */
+	DebugActiveProcessStop (pid);
+	if (TerminateProcess (process, 1) == 0) {
+		print_lasterr ((char *)__FUNCTION__, "TerminateProcess");
+		return R_FALSE;
+
+	}
+	DWORD ret_wait;
+	/* wait up to one second to give the process some time to exit */
+	ret_wait = WaitForSingleObject (process, 1000);
+	if (ret_wait == WAIT_FAILED) {
+		print_lasterr ((char *)__FUNCTION__, "WaitForSingleObject");
+		return R_FALSE;
+	}
+	if (ret_wait == WAIT_TIMEOUT) {
+		eprintf ("(%d) Waiting for process to terminate timed out.\n", pid);
+		return R_FALSE;
+	}
+
+	return R_TRUE;
+}
+
 #include "maps/windows.c"

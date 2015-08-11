@@ -1169,23 +1169,11 @@ static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
 
 // TODO: implement own-defined signals
 static int r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
-#if __WINDOWS__ && !__CYGWIN__
-	// TODO: implement thread support signaling here
-	eprintf ("TODO: r_debug_native_kill\n");
-#if 0
-	HANDLE hProcess; // XXX
-	static uint WM_CLOSE = 0x10;
-	static bool CloseWindow(IntPtr hWnd) {
-		hWnd = FindWindowByCaption (0, "explorer");
-		SendMessage(hWnd, WM_CLOSE, NULL, NULL);
-		CloseWindow(hWnd);
-		return true;
-	}
-	TerminateProcess (hProcess, 1);
-#endif
-	return R_FALSE;
-#else
 	int ret = R_FALSE;
+	if (pid == 0) pid = dbg->pid;
+#if __WINDOWS__ && !__CYGWIN__
+	ret = w32_terminate_process (dbg, pid);
+#else
 #if 0
 	if (thread) {
 // XXX this is linux>2.5 specific..ugly
@@ -1195,7 +1183,6 @@ static int r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 		}
 	} else {
 #endif
-		if (pid==0) pid = dbg->pid;
 		if ((r_sandbox_kill (pid, sig) != -1))
 			ret = R_TRUE;
 		if (errno == 1) // EPERM
@@ -1203,8 +1190,8 @@ static int r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 #if 0
 //	}
 #endif
-	return ret;
 #endif
+	return ret;
 }
 
 struct r_debug_desc_plugin_t r_debug_desc_plugin_native;
