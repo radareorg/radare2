@@ -1032,15 +1032,14 @@ R_API void r_core_prompt_loop(RCore *r) {
 
 static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 	const char DOTS[] = "...";
-	RFlagItem *f = r_flag_get_at (r->flags, r->offset);
+	const RFlagItem *f = r_flag_get_at (r->flags, r->offset);
 	if (!f) return R_FALSE;
 
-	if (f->offset != r->offset) {
-		snprintf (s, maxlen, "%s + %d",
-			f->name, (int)(r->offset - f->offset));
+	if (f->offset < r->offset) {
+		snprintf (s, maxlen, "%s + %" PFMT64u, f->name,
+			r->offset - f->offset);
 	} else {
-		snprintf (s, maxlen, "%s",
-			f->name);
+		snprintf (s, maxlen, "%s", f->name);
 	}
 	if (strlen (s) > maxlen - sizeof (DOTS)) {
 		s[maxlen - sizeof (DOTS) - 1] = '\0';
@@ -1049,10 +1048,17 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 	return R_TRUE;
 }
 
+static void prompt_sec(RCore *r, char *s, size_t maxlen) {
+	const RIOSection *sec = r_io_section_vget (r->io, r->offset);
+	if (!sec) return;
+
+	snprintf (s, maxlen, "%s:", sec->name);
+}
+
 R_API int r_core_prompt(RCore *r, int sync) {
 	int ret, rnv;
 	char line[4096];
-	char prompt[128];
+	char prompt[128]; // FIXME: prompt should be variable length
 	char *filename = strdup ("");
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 	const char *BEGIN = "";
@@ -1096,20 +1102,24 @@ R_API int r_core_prompt(RCore *r, int sync) {
 			"%s%s[%s%04x:%04x]>%s ",
 			filename, BEGIN, remote, a, b, END);
 	} else {
+		char tmp[64], sec[32];
 		int promptset = R_FALSE;
-		char tmp[64];
 		int w = r_cons_get_size (NULL);
 		size_t tmp_size = R_MIN (w / 2, sizeof (tmp));
 
+		sec[0] = '\0';
 		if (r_config_get_i (r->config, "scr.promptflag")) {
 			promptset = prompt_flag (r, tmp, tmp_size);
+		}
+		if (r_config_get_i (r->config, "scr.promptsect")) {
+			prompt_sec (r, sec, sizeof (sec));
 		}
 
 		if (!promptset) {
 			snprintf (tmp, tmp_size, "0x%08" PFMT64x, r->offset);
 		}
-		snprintf (prompt, sizeof (prompt), "%s%s[%s%s]>%s ",
-			filename, BEGIN, remote, tmp, END);
+		snprintf (prompt, sizeof (prompt), "%s%s[%s%s%s]>%s ",
+			filename, BEGIN, remote, sec, tmp, END);
 	}
 	free (filename);
 	filename = NULL;
