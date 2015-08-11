@@ -575,9 +575,11 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 
 	if (w32_queryfullprocessimagename (process, 0, 
 		image_name, (PDWORD)&length)) {
+		CloseHandle(process);
 		return r_debug_pid_new (image_name, pe->th32ProcessID, 's', 0);
 	}
 
+	CloseHandle(process);
 	return r_debug_pid_new (pe->szExeFile, pe->th32ProcessID, 's', 0);
 }
 
