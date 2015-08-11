@@ -1030,14 +1030,33 @@ R_API void r_core_prompt_loop(RCore *r) {
 	} while (ret != R_CORE_CMD_EXIT);
 }
 
+static int prompt_flag (RCore *r, char *s, size_t maxlen) {
+	const char DOTS[] = "...";
+	RFlagItem *f = r_flag_get_at (r->flags, r->offset);
+	if (!f) return R_FALSE;
+
+	if (f->offset != r->offset) {
+		snprintf (s, maxlen, "%s + %d",
+			f->name, (int)(r->offset - f->offset));
+	} else {
+		snprintf (s, maxlen, "%s",
+			f->name);
+	}
+	if (strlen (s) > maxlen - sizeof (DOTS)) {
+		s[maxlen - sizeof (DOTS) - 1] = '\0';
+		strcat (s, DOTS);
+	}
+	return R_TRUE;
+}
+
 R_API int r_core_prompt(RCore *r, int sync) {
 	int ret, rnv;
 	char line[4096];
-	char prompt[64];
+	char prompt[128];
 	char *filename = strdup ("");
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
-	const char *BEGIN = r->cons->pal.prompt;
-	const char *END = r->cons->pal.reset;
+	const char *BEGIN = "";
+	const char *END = "";
 	const char *remote = "";
 	rnv = r->num->value;
 
@@ -1062,32 +1081,35 @@ R_API int r_core_prompt(RCore *r, int sync) {
 		remote = "=!";
 	//	core->offset = r_num_math (NULL, 
 	}
+#if __UNIX__
+	if (r_config_get_i (r->config, "scr.color")) {
+		BEGIN = r->cons->pal.prompt;
+		END = r->cons->pal.reset;
+	}
+#endif
 	// TODO: also in visual prompt and disasm/hexdump ?
 	if (r_config_get_i (r->config, "asm.segoff")) {
 		ut32 a, b;
-		a = ((r->offset >>16)<<12);
+		a = ((r->offset >> 16) << 12);
 		b = (r->offset & 0xffff);
-#if __UNIX__
-		if (r_config_get_i (r->config, "scr.color"))
-			snprintf (prompt, sizeof (prompt),
-				"%s%s[%s%04x:%04x]>%s ",
-				filename, BEGIN, remote, a, b, END);
-		else
-#endif
 		snprintf (prompt, sizeof (prompt),
-			"%s[%s%04x:%04x]> ",
-			filename, remote, a, b);
+			"%s%s[%s%04x:%04x]>%s ",
+			filename, BEGIN, remote, a, b, END);
 	} else {
-#if __UNIX__
-		if (r_config_get_i (r->config, "scr.color"))
-			snprintf (prompt, sizeof (prompt),
-				"%s%s[%s0x%08"PFMT64x"]>%s ",
-				filename, BEGIN, remote, r->offset, END);
-		else
-#endif
-		snprintf (prompt, sizeof (prompt),
-			"%s[%s0x%08"PFMT64x"]> ",
-			filename, remote, r->offset);
+		int promptset = R_FALSE;
+		char tmp[64];
+		int w = r_cons_get_size (NULL);
+		size_t tmp_size = R_MIN (w / 2, sizeof (tmp));
+
+		if (r_config_get_i (r->config, "scr.promptflag")) {
+			promptset = prompt_flag (r, tmp, tmp_size);
+		}
+
+		if (!promptset) {
+			snprintf (tmp, tmp_size, "0x%08" PFMT64x, r->offset);
+		}
+		snprintf (prompt, sizeof (prompt), "%s%s[%s%s]>%s ",
+			filename, BEGIN, remote, tmp, END);
 	}
 	free (filename);
 	filename = NULL;

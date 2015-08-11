@@ -447,8 +447,8 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 				switch (reloc_type) {
 				case 22:
 					{
-						plt_addr += (k*12) + 20;
-						if (plt_addr&1) {
+						plt_addr += k * 12 + 20;
+						if (plt_addr & 1) {
 							// thumb symbol
 							plt_addr--;
 						}
@@ -457,7 +457,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 					}
 					break;
 				case 1026: // arm64 aarch64
-					plt_sym_addr = plt_addr + (k*16)+32;
+					plt_sym_addr = plt_addr + k * 16 + 32;
 					goto done;
 				default:
 					eprintf ("Unsupported relocation type for imports %d\n", reloc_type);

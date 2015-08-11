@@ -517,13 +517,16 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			f = r_flag_get_at (core->flags, addr);
 			if (f) {
 				if (f->offset != addr) {
-					r_cons_printf ("%s + %d\n", f->name, (int)(addr-f->offset));
-				} else r_cons_printf ("%s\n", f->name);
+					r_cons_printf ("%s + %d\n", f->name,
+						(int)(addr - f->offset));
+				} else {
+					r_cons_printf ("%s\n", f->name);
+				}
 			}
 		}
 		break;
 	case '?':
-{
+	{
 		const char *help_msg[] = {
 		"Usage: f","[?] [flagname]", " # Manage offset-name flags",
 		"f","","list flags (will only list flags from selected flagspaces)",
@@ -561,8 +564,8 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
 		NULL};
 		r_core_cmd_help (core, help_msg);
-}
 		break;
+	}
 	}
 	if (str)
 		free (str);
