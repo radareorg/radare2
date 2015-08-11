@@ -201,7 +201,7 @@ ifeq ($(CS_TAR),)
 capstone: capstone-sync
 
 capstone-sync:
-	$(SHELL) capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
+	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
 
 .PHONY: capstone
 else
