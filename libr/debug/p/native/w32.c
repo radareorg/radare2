@@ -385,9 +385,14 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 	unsigned int code;
 	char *dllname = NULL;
 	int ret = R_DBG_REASON_UNKNOWN;
+	static int exited_already = 0;
 
+	/* handle debug events */
 	do {
-		/* handle debug events */
+		/* do not continue when already exited but still open for examination */
+		if (exited_already) {
+			return -1;
+		}
 		if (WaitForDebugEvent (&de, INFINITE) == 0) {
 			print_lasterr ((char *)__FUNCTION__, "WaitForDebugEvent");
 			return -1;
@@ -396,7 +401,6 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		tid = de.dwThreadId;
 		//pid = de.dwProcessId;
 		dbg->tid=tid;
-		/* get exception code */
 		code = de.dwDebugEventCode;
 		//eprintf("code: %x pid=%08x tid=%08x\n",code,pid,tid);
 		/* Ctrl-C? */
@@ -411,13 +415,17 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			ret = R_DBG_REASON_NEW_PID;
 			break;
 		case EXIT_PROCESS_DEBUG_EVENT:
-			eprintf ("(%d) Finished process %d\n", pid, pid);
+			eprintf ("(%d) Process %d exited with exit code %d\n",
+				de.dwProcessId, de.dwProcessId,
+				de.u.ExitProcess.dwExitCode);
 			//debug_load();
 			next_event = 0;
+			exited_already = 1;
 			ret = R_DBG_REASON_EXIT_PID;
 			break;
 		case CREATE_THREAD_DEBUG_EVENT:
-			eprintf ("(%d) Created thread %d (start @ %p)\n", pid, tid, de.u.CreateThread.lpStartAddress);
+			eprintf ("(%d) Created thread %d (start @ %p)\n",
+				pid, tid, de.u.CreateThread.lpStartAddress);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			ret = R_DBG_REASON_NEW_TID;
 			next_event = 1;
