@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2015 - inisider */
+
 #include "mach0_classes.h"
 
 #define RO_META               (1<<0)
@@ -410,12 +412,9 @@ static void get_method_list_t (mach0_ut p,
 		memset (&m, '\0', sizeof (struct MACH0_(SMethod)));
 		if (left < sizeof (struct MACH0_(SMethod))){
 			r_buf_read_at (arch->buf, r, (ut8 *)&ml, left);
-		}
-		else {
-			r_buf_read_at (arch->buf,
-						r,
-						(ut8 *)&m,
-						sizeof (struct MACH0_(SMethod)));
+		} else {
+			r_buf_read_at (arch->buf, r, (ut8 *)&m,
+				sizeof (struct MACH0_(SMethod)));
 		}
 
 		r = get_pointer (m.name, NULL, &left, arch);
@@ -444,10 +443,7 @@ static void get_method_list_t (mach0_ut p,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_protocol_list_t (mach0_ut p,
-								RBinFile *arch,
-								RBinClass *processed_class)
-{
+static void get_protocol_list_t (mach0_ut p, RBinFile *arch, RBinClass *processed_class) {
 	struct MACH0_(SProtocolList) pl;
 	mach0_ut q;
 	struct MACH0_(SProtocol) pc;

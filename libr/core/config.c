@@ -1125,6 +1125,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for r_bin");
 	SETCB("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETPREF("bin.strings", "true", "Load strings from rbin on startup");
+	SETPREF("bin.classes", "true", "Load classes from rbin on startup");
 
 	/* cfg */
 	r_config_set_cb (cfg, "cfg.bigendian", CFG_BIGENDIAN, &cb_bigendian);

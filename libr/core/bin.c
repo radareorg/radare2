@@ -1534,6 +1534,9 @@ static int bin_classes (RCore *r, int mode) {
 				c->addr, c->name, c->super?" ":"", c->super?c->super:"");
 		}
 	} else if (mode & R_CORE_BIN_SET) {
+		if (!r_config_get_i (r->config, "bin.classes")) {
+			return R_FALSE;
+		}
 		// Nothing to set.
 		r_flag_space_set (r->flags, "classes");
 		r_list_foreach (cs, iter, c) {
@@ -1545,20 +1548,28 @@ static int bin_classes (RCore *r, int mode) {
 			r_name_filter (name, 0);
 			snprintf (str, R_FLAG_NAME_SIZE, "class.%s", name);
 			r_flag_set (r->flags, str, c->addr, 1, 0);
+			r_list_foreach (c->methods, iter2, sym) {
+				snprintf (str, sizeof (str),
+					"method.%s.%s", c->name, sym->name);
+				r_name_filter (str, 0);
+				r_flag_set (r->flags, str, sym->vaddr, 1, 0);
+			}
 			free (name);
 		}
 	} else {
-		if (mode)
-			r_cons_printf ("fs classes\n");
+		if (mode) r_cons_printf ("fs classes\n");
 		r_list_foreach (cs, iter, c) {
 			char *name = strdup (c->name);
 			r_name_filter (name, 0);
 			if (mode) {
-				r_cons_printf ("f class.%s @ 0x%"PFMT64x"\n", name, c->addr);
+				r_cons_printf ("f class.%s = 0x%"PFMT64x"\n",
+					name, c->addr);
 				if (c->super)
-					r_cons_printf ("f super.%s.%s @ %d\n", c->name, c->super, c->index);
+					r_cons_printf ("f super.%s.%s = %d\n",
+						c->name, c->super, c->index);
 				r_list_foreach (c->methods, iter2, sym) {
-					r_cons_printf ("f method.%s.%s\n", c->name, sym->name);
+					r_cons_printf ("f method.%s.%s = 0x%"PFMT64x"\n",
+						c->name, sym->name, sym->vaddr);
 				}
 			} else {
 				r_cons_printf ("0x%08"PFMT64x" class %d %s",
