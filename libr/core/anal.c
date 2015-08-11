@@ -2162,7 +2162,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 	if (!core->io->cached) {
 		ESIL->cb.hook_mem_write = &esilbreak_mem_write;
 	}
-	eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
+	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
 	pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_cons_break (NULL, NULL);

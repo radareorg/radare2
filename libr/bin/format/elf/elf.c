@@ -419,7 +419,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	plt_sym_addr = -1;
 
 	for (j = k = 0; j < rel_shdr->sh_size && k <nrel; j += tsize, k++) {
-		if (rel_shdr->sh_offset+j > bin->size || rel_shdr->sh_offset+j+sizeof (Elf_(Rel)) > bin->size){
+		if (rel_shdr->sh_offset+j > bin->size || rel_shdr->sh_offset+j+sizeof (Elf_(Rel)) > bin->size) {
 			free (rel);
 			return -1;
 		}
@@ -457,7 +457,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 					}
 					break;
 				case 1026: // arm64 aarch64
-					plt_sym_addr = plt_addr + (k*12) + 20;
+					plt_sym_addr = plt_addr + (k*16)+32;
 					goto done;
 				default:
 					eprintf ("Unsupported relocation type for imports %d\n", reloc_type);
