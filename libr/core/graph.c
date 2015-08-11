@@ -129,7 +129,7 @@ static void small_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	G (n->x + SMALLNODE_CENTER_X + delta_x, n->y);
 
 	if (cur) {
-		W(SMALLNODE_TEXT_CUR + delta_x);
+		W(&SMALLNODE_TEXT_CUR[delta_x]);
 		(void)G (-g->can->sx, -g->can->sy + 2);
 		snprintf (title, sizeof (title) - 1,
 				"%s:", n->title);
