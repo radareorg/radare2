@@ -105,6 +105,7 @@ static BOOL WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
 static DWORD WINAPI (*w32_getthreadid)(HANDLE) = NULL; // Vista
 static DWORD WINAPI (*w32_getprocessid)(HANDLE) = NULL; // XP
 static HANDLE WINAPI (*w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
+static BOOL WINAPI (*w32_queryfullprocessimagename)(HANDLE, DWORD, LPTSTR, PDWORD) = NULL;
 static DWORD WINAPI (*psapi_getmappedfilename)(HANDLE, LPVOID, LPTSTR, DWORD) = NULL;
 
 static int w32dbg_SeDebugPrivilege() {
@@ -183,6 +184,8 @@ static int w32_dbg_init() {
 	// from xp1
 	w32_getprocessid = (DWORD WINAPI (*)(HANDLE))  
 		GetProcAddress (GetModuleHandle ("kernel32"), "GetProcessId");
+	w32_queryfullprocessimagename = (BOOL WINAPI (*)(HANDLE, DWORD, LPTSTR, PDWORD))
+		GetProcAddress (GetModuleHandle ("kernel32"), "QueryFullProcessImageNameA");
 
 	lib = LoadLibrary ("psapi.dll");
 	if(lib == NULL) {
@@ -558,27 +561,55 @@ err_load_th:
 	return list;
 }
 
-// XXX hacky
+static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
+	HANDLE process = OpenProcess (PROCESS_QUERY_LIMITED_INFORMATION,
+		FALSE, pe->th32ProcessID);
+
+	if (!process || w32_queryfullprocessimagename == NULL) {
+		return r_debug_pid_new (pe->szExeFile, pe->th32ProcessID, 's', 0);
+	}
+
+	char image_name[MAX_PATH+1];
+	image_name[0] = '\0';
+	DWORD length = MAX_PATH;
+
+	if (w32_queryfullprocessimagename ((HANDLE)process, 0, 
+		image_name, (PDWORD)&length)) {
+		return r_debug_pid_new (image_name, pe->th32ProcessID, 's', 0);
+	}
+
+	return r_debug_pid_new (pe->szExeFile, pe->th32ProcessID, 's', 0);
+}
+
 RList *w32_pids (int pid, RList *list) {
-        HANDLE th; 
-        THREADENTRY32 te32;
-        int ret = -1; 
-        te32.dwSize = sizeof (THREADENTRY32);
-	if (w32_openthread == NULL) {
-		eprintf ("w32_thread_list: no w32_openthread?\n");
+	HANDLE process_snapshot;
+	PROCESSENTRY32 pe;
+	pe.dwSize = sizeof (PROCESSENTRY32);
+	int show_all_pids = pid == 0;
+
+	process_snapshot = CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, pid); 
+	if (process_snapshot == INVALID_HANDLE_VALUE) {
+		print_lasterr ((char *)__FUNCTION__, "CreateToolhelp32Snapshot");
 		return list;
 	}
-        th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid); 
-        if(th == INVALID_HANDLE_VALUE || !Thread32First (th, &te32))
-                goto err_load_th;
-        do {
-		if (ret != te32.th32OwnerProcessID)
-			r_list_append (list, r_debug_pid_new ("???", te32.th32OwnerProcessID, 's', 0));
-		ret = te32.th32OwnerProcessID;
-        } while (Thread32Next (th, &te32));
-err_load_th:    
-        if(th != INVALID_HANDLE_VALUE)
-                CloseHandle (th);
+	if (!Process32First (process_snapshot, &pe)) {
+		print_lasterr ((char *)__FUNCTION__, "Process32First");
+		CloseHandle (process_snapshot);
+		return list;
+	}
+	do {
+		if (show_all_pids || 
+			pe.th32ProcessID == pid || 
+			pe.th32ParentProcessID == pid) {
+	
+			RDebugPid *pid = build_debug_pid (&pe);
+			if (pid) {
+				r_list_append (list, pid);
+			}
+		}
+	} while (Process32Next (process_snapshot, &pe));
+
+	CloseHandle (process_snapshot);
 	return list;
 }
 
