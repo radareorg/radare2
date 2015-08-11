@@ -305,7 +305,7 @@ static const char *radare_argv[] = {
 	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
 	"#!python", "#!perl", "#!vala",
 	"V",
-	"aa", "ab", "af", "ar", "ag", "at", "a?", "ax",
+	"aa", "ab", "af", "ar", "ag", "at", "a?", "ax", "ad",
 	"af", "afc", "afi", "afb", "afbb", "afr", "afs", "af*",
 	"aga", "agc", "agd", "agl", "agfl",
 	"e", "e-", "e*", "e!", "e?", "env ",
@@ -355,26 +355,26 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else
-		if ((!memcmp (line->buffer.data, "o ", 2)) ||
-		     !memcmp (line->buffer.data, "o+ ", 3) ||
-		     !memcmp (line->buffer.data, "oc ", 3) ||
-		     !memcmp (line->buffer.data, "cd ", 3) ||
-		     !memcmp (line->buffer.data, "on ", 3) ||
-		     !memcmp (line->buffer.data, "op ", 3) ||
-		     !memcmp (line->buffer.data, ". ", 2) ||
-		     !memcmp (line->buffer.data, "wf ", 3) ||
-		     !memcmp (line->buffer.data, "rm ", 3) ||
-		     !memcmp (line->buffer.data, "ls ", 3) ||
-		     !memcmp (line->buffer.data, "ls -l ", 5) ||
-		     !memcmp (line->buffer.data, "wF ", 3) ||
-		     !memcmp (line->buffer.data, "cat ", 4) ||
-		     !memcmp (line->buffer.data, "less ", 5) ||
-		     !memcmp (line->buffer.data, "wt ", 3) ||
-		     !memcmp (line->buffer.data, "wp ", 3) ||
-		     !memcmp (line->buffer.data, "to ", 3) ||
-		     !memcmp (line->buffer.data, "pm ", 3) ||
-		     !memcmp (line->buffer.data, "dml ", 4) ||
-		     !memcmp (line->buffer.data, "/m ", 3)) {
+		if ((!strncmp (line->buffer.data, "o ", 2)) ||
+		     !strncmp (line->buffer.data, "o+ ", 3) ||
+		     !strncmp (line->buffer.data, "oc ", 3) ||
+		     !strncmp (line->buffer.data, "cd ", 3) ||
+		     !strncmp (line->buffer.data, "on ", 3) ||
+		     !strncmp (line->buffer.data, "op ", 3) ||
+		     !strncmp (line->buffer.data, ". ", 2) ||
+		     !strncmp (line->buffer.data, "wf ", 3) ||
+		     !strncmp (line->buffer.data, "rm ", 3) ||
+		     !strncmp (line->buffer.data, "ls ", 3) ||
+		     !strncmp (line->buffer.data, "ls -l ", 5) ||
+		     !strncmp (line->buffer.data, "wF ", 3) ||
+		     !strncmp (line->buffer.data, "cat ", 4) ||
+		     !strncmp (line->buffer.data, "less ", 5) ||
+		     !strncmp (line->buffer.data, "wt ", 3) ||
+		     !strncmp (line->buffer.data, "wp ", 3) ||
+		     !strncmp (line->buffer.data, "to ", 3) ||
+		     !strncmp (line->buffer.data, "pm ", 3) ||
+		     !strncmp (line->buffer.data, "dml ", 4) ||
+		     !strncmp (line->buffer.data, "/m ", 3)) {
 			// XXX: SO MANY FUCKING MEMORY LEAKS
 			char *str, *p, *path;
 			int n = 0, i = 0, isroot = 0, iscwd = 0;
@@ -464,8 +464,8 @@ static int autocomplete(RLine *line) {
 			if (pfree)
 				free (p);
 		} else
-		if((!memcmp (line->buffer.data, ".(", 2))  ||
-		   (!memcmp (line->buffer.data, "(-", 2))) {
+		if((!strncmp (line->buffer.data, ".(", 2))  ||
+		   (!strncmp (line->buffer.data, "(-", 2))) {
 			const char *str = line->buffer.data;
 			RCmdMacroItem *item;
 			char buf[1024];
@@ -495,30 +495,31 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else
-		if ((!memcmp (line->buffer.data, "s ", 2)) ||
-		    (!memcmp (line->buffer.data, "bf ", 3)) ||
-		    (!memcmp (line->buffer.data, "ag ", 3)) ||
-		    (!memcmp (line->buffer.data, "afi ", 4)) ||
-		    (!memcmp (line->buffer.data, "afb ", 4)) ||
-		    (!memcmp (line->buffer.data, "afc ", 4)) ||
-		    (!memcmp (line->buffer.data, "axt ", 4)) ||
-		    (!memcmp (line->buffer.data, "axf ", 4)) ||
-		    (!memcmp (line->buffer.data, "aga ", 5)) ||
-		    (!memcmp (line->buffer.data, "agc ", 4)) ||
-		    (!memcmp (line->buffer.data, "agl ", 4)) ||
-		    (!memcmp (line->buffer.data, "agd ", 4)) ||
-		    (!memcmp (line->buffer.data, "agfl ", 5)) ||
-		    (!memcmp (line->buffer.data, "b ", 2)) ||
-		    (!memcmp (line->buffer.data, "dcu ", 4)) ||
-		    (!memcmp (line->buffer.data, "/v ", 3)) ||
-		    (!memcmp (line->buffer.data, "db ", 3)) ||
-		    (!memcmp (line->buffer.data, "db- ", 4)) ||
-		    (!memcmp (line->buffer.data, "f ", 2)) ||
-		    (!memcmp (line->buffer.data, "fr ", 3)) ||
-		    (!memcmp (line->buffer.data, "tf ", 3)) ||
-		    (!memcmp (line->buffer.data, "/a ", 3)) ||
-		    (!memcmp (line->buffer.data, "?v ", 3)) ||
-		    (!memcmp (line->buffer.data, "? ", 2))) {
+		if ((!strncmp (line->buffer.data, "s ", 2)) ||
+		    (!strncmp (line->buffer.data, "ad ", 3)) ||
+		    (!strncmp (line->buffer.data, "bf ", 3)) ||
+		    (!strncmp (line->buffer.data, "ag ", 3)) ||
+		    (!strncmp (line->buffer.data, "afi ", 4)) ||
+		    (!strncmp (line->buffer.data, "afb ", 4)) ||
+		    (!strncmp (line->buffer.data, "afc ", 4)) ||
+		    (!strncmp (line->buffer.data, "axt ", 4)) ||
+		    (!strncmp (line->buffer.data, "axf ", 4)) ||
+		    (!strncmp (line->buffer.data, "aga ", 5)) ||
+		    (!strncmp (line->buffer.data, "agc ", 4)) ||
+		    (!strncmp (line->buffer.data, "agl ", 4)) ||
+		    (!strncmp (line->buffer.data, "agd ", 4)) ||
+		    (!strncmp (line->buffer.data, "agfl ", 5)) ||
+		    (!strncmp (line->buffer.data, "b ", 2)) ||
+		    (!strncmp (line->buffer.data, "dcu ", 4)) ||
+		    (!strncmp (line->buffer.data, "/v ", 3)) ||
+		    (!strncmp (line->buffer.data, "db ", 3)) ||
+		    (!strncmp (line->buffer.data, "db- ", 4)) ||
+		    (!strncmp (line->buffer.data, "f ", 2)) ||
+		    (!strncmp (line->buffer.data, "fr ", 3)) ||
+		    (!strncmp (line->buffer.data, "tf ", 3)) ||
+		    (!strncmp (line->buffer.data, "/a ", 3)) ||
+		    (!strncmp (line->buffer.data, "?v ", 3)) ||
+		    (!strncmp (line->buffer.data, "? ", 2))) {
 			int n, i = 0;
 			int sdelta = (line->buffer.data[1]==' ')?2:
 				(line->buffer.data[2]==' ')?3:4;
