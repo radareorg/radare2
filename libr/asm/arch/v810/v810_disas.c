@@ -12,7 +12,6 @@ static const char *instrs[] = {
 	[V810_CMP]			= "cmp",
 	[V810_SHL]			= "shl",
 	[V810_SHR]			= "shr",
-	[V810_NOT]			= "not",
 	[V810_JMP]			= "jmp",
 	[V810_SAR]			= "sar",
 	[V810_MUL]			= "mul",
