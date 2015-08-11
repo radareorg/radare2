@@ -1170,7 +1170,7 @@ static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
 // TODO: implement own-defined signals
 static int r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 	int ret = R_FALSE;
-	if (pid==0) pid = dbg->pid;
+	if (pid == 0) pid = dbg->pid;
 #if __WINDOWS__ && !__CYGWIN__
 	ret = w32_terminate_process (dbg, pid);
 #else

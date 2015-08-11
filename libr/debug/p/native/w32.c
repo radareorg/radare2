@@ -630,13 +630,16 @@ int w32_terminate_process (RDebug *dbg, int pid) {
 	}
 	DWORD ret_wait;
 	/* wait up to one second to give the process some time to exit */
-	if ((ret_wait = WaitForSingleObject (process, 1000)) != 0) {
-		if (ret_wait == WAIT_TIMEOUT) {
-			eprintf ("(%d) Waiting for process to terminate timed out.\n",
-						pid);
-		}
+	ret_wait = WaitForSingleObject (process, 1000);
+	if (ret_wait == WAIT_FAILED) {
+		print_lasterr ((char *)__FUNCTION__, "WaitForSingleObject");
 		return R_FALSE;
 	}
+	if (ret_wait == WAIT_TIMEOUT) {
+		eprintf ("(%d) Waiting for process to terminate timed out.\n", pid);
+		return R_FALSE;
+	}
+
 	return R_TRUE;
 }
 
