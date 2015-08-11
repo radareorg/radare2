@@ -1032,15 +1032,14 @@ R_API void r_core_prompt_loop(RCore *r) {
 
 static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 	const char DOTS[] = "...";
-	RFlagItem *f = r_flag_get_at (r->flags, r->offset);
+	const RFlagItem *f = r_flag_get_at (r->flags, r->offset);
 	if (!f) return R_FALSE;
 
-	if (f->offset != r->offset) {
-		snprintf (s, maxlen, "%s + %d",
-			f->name, (int)(r->offset - f->offset));
+	if (f->offset < r->offset) {
+		snprintf (s, maxlen, "%s + %" PFMT64u, f->name,
+			r->offset - f->offset);
 	} else {
-		snprintf (s, maxlen, "%s",
-			f->name);
+		snprintf (s, maxlen, "%s", f->name);
 	}
 	if (strlen (s) > maxlen - sizeof (DOTS)) {
 		s[maxlen - sizeof (DOTS) - 1] = '\0';
@@ -1049,26 +1048,43 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 	return R_TRUE;
 }
 
-R_API int r_core_prompt(RCore *r, int sync) {
-	int ret, rnv;
-	char line[4096];
-	char prompt[128];
+static void prompt_sec(RCore *r, char *s, size_t maxlen) {
+	const RIOSection *sec = r_io_section_vget (r->io, r->offset);
+	if (!sec) return;
+
+	snprintf (s, maxlen, "%s:", sec->name);
+}
+
+static void chop_prompt (const char *filename, char *tmp) {
+	size_t tmp_len, file_len;
+	unsigned int OTHRSCH = 3;
+	const char DOTS[] = "...";
+	int w, p_len;
+
+	w = r_cons_get_size (NULL);
+	file_len = strlen (filename);
+	tmp_len = strlen (tmp);
+	p_len = R_MAX (0, w - 6);
+	if (file_len + tmp_len + OTHRSCH >= p_len) {
+		tmp[p_len - OTHRSCH - file_len - sizeof (DOTS) - 1] = '\0';
+		strcat (tmp, DOTS);
+	}
+}
+
+static void set_prompt (RCore *r) {
+	char tmp[128];
+	char *prompt = NULL;
 	char *filename = strdup ("");
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 	const char *BEGIN = "";
 	const char *END = "";
 	const char *remote = "";
-	rnv = r->num->value;
 
-	if (!BEGIN) BEGIN = "";
-	if (!END) END = "";
 	// hacky fix fo rio
 	r_core_block_read (r, 0);
 	if (cmdprompt && *cmdprompt)
 		r_core_cmd (r, cmdprompt, 0);
 
-	if (!r_line_singleton ()->echo)
-		*prompt = 0;
 	if (r_config_get_i (r->config, "scr.promptfile")) {
 		free (filename);
 		filename = r_str_newf ("\"%s\"",
@@ -1079,7 +1095,6 @@ R_API int r_core_prompt(RCore *r, int sync) {
 		r->offset = r_num_math (NULL, s);
 		free (s);
 		remote = "=!";
-	//	core->offset = r_num_math (NULL, 
 	}
 #if __UNIX__
 	if (r_config_get_i (r->config, "scr.color")) {
@@ -1090,30 +1105,44 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	// TODO: also in visual prompt and disasm/hexdump ?
 	if (r_config_get_i (r->config, "asm.segoff")) {
 		ut32 a, b;
+
 		a = ((r->offset >> 16) << 12);
 		b = (r->offset & 0xffff);
-		snprintf (prompt, sizeof (prompt),
-			"%s%s[%s%04x:%04x]>%s ",
-			filename, BEGIN, remote, a, b, END);
+		snprintf (tmp, sizeof (tmp), "%04x:%04x", a, b);
 	} else {
+		char p[64], sec[32];
 		int promptset = R_FALSE;
-		char tmp[64];
-		int w = r_cons_get_size (NULL);
-		size_t tmp_size = R_MIN (w / 2, sizeof (tmp));
 
+		sec[0] = '\0';
 		if (r_config_get_i (r->config, "scr.promptflag")) {
-			promptset = prompt_flag (r, tmp, tmp_size);
+			promptset = prompt_flag (r, p, sizeof (p));
+		}
+		if (r_config_get_i (r->config, "scr.promptsect")) {
+			prompt_sec (r, sec, sizeof (sec));
 		}
 
 		if (!promptset) {
-			snprintf (tmp, tmp_size, "0x%08" PFMT64x, r->offset);
+			snprintf (p, sizeof (p), "0x%08" PFMT64x, r->offset);
 		}
-		snprintf (prompt, sizeof (prompt), "%s%s[%s%s]>%s ",
-			filename, BEGIN, remote, tmp, END);
+		snprintf (tmp, sizeof (tmp), "%s%s", sec, p);
 	}
-	free (filename);
-	filename = NULL;
-	r_line_set_prompt (prompt);
+
+	chop_prompt (filename, tmp);
+	prompt = r_str_newf ("%s%s[%s%s]>%s ", filename, BEGIN, remote,
+		tmp, END);
+	r_line_set_prompt (prompt ? prompt : "");
+
+	R_FREE (filename);
+	R_FREE (prompt);
+}
+
+R_API int r_core_prompt(RCore *r, int sync) {
+	int ret, rnv;
+	char line[4096];
+
+	rnv = r->num->value;
+	set_prompt (r);
+
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret == -2) return R_CORE_CMD_EXIT; // ^D
 	if (ret == -1) return R_FALSE; // FD READ ERROR
