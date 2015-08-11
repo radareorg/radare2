@@ -565,7 +565,7 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	HANDLE process = OpenProcess (PROCESS_QUERY_LIMITED_INFORMATION,
 		FALSE, pe->th32ProcessID);
 
-	if (!process || w32_queryfullprocessimagename == NULL) {
+	if (process == INVALID_HANDLE_VALUE || w32_queryfullprocessimagename == NULL) {
 		return r_debug_pid_new (pe->szExeFile, pe->th32ProcessID, 's', 0);
 	}
 
@@ -573,7 +573,7 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	image_name[0] = '\0';
 	DWORD length = MAX_PATH;
 
-	if (w32_queryfullprocessimagename ((HANDLE)process, 0, 
+	if (w32_queryfullprocessimagename (process, 0, 
 		image_name, (PDWORD)&length)) {
 		return r_debug_pid_new (image_name, pe->th32ProcessID, 's', 0);
 	}
@@ -602,9 +602,9 @@ RList *w32_pids (int pid, RList *list) {
 			pe.th32ProcessID == pid || 
 			pe.th32ParentProcessID == pid) {
 	
-			RDebugPid *pid = build_debug_pid (&pe);
-			if (pid) {
-				r_list_append (list, pid);
+			RDebugPid *debug_pid = build_debug_pid (&pe);
+			if (debug_pid) {
+				r_list_append (list, debug_pid);
 			}
 		}
 	} while (Process32Next (process_snapshot, &pe));
