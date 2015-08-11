@@ -1,17 +1,39 @@
 /* radare - LGPL - Copyright 2007-2015 - pancake */
 
+#include <stdlib.h>
+#include <assert.h>
 #include <r_util.h>
 #include <r_print.h>
 #include "../blob/version.c"
 
 #define STDIN_BUFFER_SIZE 354096
 
-static RNum *num;
-static int help ();
+static RNum *num = NULL;
+static void usage ();
 static ut64 flags = 0;
 static int use_stdin ();
 static int force_mode = 0;
 static int rax (char *str, int len, int last);
+
+/* argv flags to direct input conversion */
+enum {
+	Flag_hexstr_to_raw = 1 << 0,
+	Flag_swap_endian   = 1 << 1,
+	Flag_raw_to_hexstr = 1 << 2,
+	Flag_binstr_to_bin = 1 << 3,
+	Flag_hash_string   = 1 << 4,
+	Flag_keep_base     = 1 << 5,
+	Flag_float         = 1 << 6,
+	Flag_force_int     = 1 << 7,
+	Flag_randomart     = 1 << 8,
+	Flag_convert_endian= 1 << 9,
+	Flag_convert_units = 1 <<10,
+	Flag_timestamp_str = 1 <<11,
+	Flag_to_base64     = 1 <<12,
+	Flag_from_base64   = 1 <<13,
+	Flag_stdin_slurp   = 1 <<14,
+	Flag_to_escape_seq = 1 <<15,
+} rax_flags_t;
 
 static int format_output (char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
@@ -21,7 +43,7 @@ static int format_output (char mode, const char *s) {
 	if (force_mode)
 		mode = force_mode;
 
-	if (flags & 2) {
+	if (flags & Flag_swap_endian) {
 		/* swap endian */
 		ut32 n2 = (n>>32)? 8:4;
 		r_mem_copyendian ((ut8*) str, (ut8*) str, n2, 0);
@@ -46,13 +68,15 @@ static int format_output (char mode, const char *s) {
 		break;
 	default:
 		eprintf ("Unknown output mode %d\n", mode);
+		exit (EXIT_FAILURE);
 		break;
 	}
 	return R_TRUE;
 }
 
-static int help () {
-	printf (
+static void usage () {
+    eprintf (/* Unix utilities usually dump usage() to stderr */
+        "Usage: rax2 [options] [expr ...]\n"
 		"  =[base]                 ;  rax2 =10 0x46 -> output in base 10\n"
 		"  int   ->  hex           ;  rax2 10\n"
 		"  hex   ->  int           ;  rax2 0xa\n"
@@ -73,7 +97,9 @@ static int help () {
 		"  -b    binstr -> bin     ;  rax2 -b 01000101 01110110\n"
 		"  -B    keep base         ;  rax2 -B 33+3 -> 36\n"
 		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
+		"  -D    from Base64       ;  rax2 -D aGVsbG8= # hello"
 		"  -e    swap endianness   ;  rax2 -e 0x33\n"
+		"  -E    to Base64         ;  rax2 -E 0x11223344 # MHgxMTIyMzM0NA==\n"
 		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
 		"  -F    stdin slurp C hex ;  rax2 -F < shellcode.c\n"
 		"  -h    help              ;  rax2 -h\n"
@@ -85,19 +111,19 @@ static int help () {
 		"  -t    tstamp -> str     ;  rax2 -t 1234567890\n"
 		"  -x    hash string       ;  rax2 -x linux osx\n"
 		"  -u    units             ;  rax2 -u 389289238 # 317.0M\n"
-		"  -v    version           ;  rax2 -V\n"
+		"  -v    rax2 version      ;  rax2 -v\n"
 		);
-	return R_TRUE;
 }
 
 static int rax (char *str, int len, int last) {
 	float f;
-	ut8 *buf;
-	char *p, out_mode = (flags&128)? 'I': '0';
+	ut8 *buf = NULL;
+	char *p = NULL;
+	char out_mode = (flags & Flag_force_int)? 'I': '0';
 	int i;
-	if (!(flags & 4) || !len)
+	if (!(flags & Flag_raw_to_hexstr) || !len)
 		len = strlen (str);
-	if ((flags & 4))
+	if ((flags & Flag_raw_to_hexstr))
 		goto dotherax;
 	if (*str=='=') {
 		switch (atoi (str+1)) {
@@ -107,38 +133,40 @@ static int rax (char *str, int len, int last) {
 		case 10: force_mode = 'I'; break;
 		case 16: force_mode = '0'; break;
 		case 0: force_mode = str[1]; break;
+		default: assert(0); break; // unreachable
 		}
 		return R_TRUE;
 	}
 	if (*str=='-') {
 		while (str[1] && str[1]!=' ') {
 			switch (str[1]) {
-			case 's': flags ^= 1; break;
-			case 'e': flags ^= 1<<1; break;
-			case 'S': flags ^= 1<<2; break;
-			case 'b': flags ^= 1<<3; break;
-			case 'x': flags ^= 1<<4; break;
-			case 'B': flags ^= 1<<5; break;
-			case 'f': flags ^= 1<<6; break;
-			case 'd': flags ^= 1<<7; break;
-			case 'k': flags ^= 1<<8; break;
-			case 'n': flags ^= 1<<9; break;
-			case 'u': flags ^=1<<10; break;
-			case 't': flags ^=1<<11; break;
-			case 'E': flags ^=1<<12; break;
-			case 'D': flags ^=1<<13; break;
-			case 'F': flags ^=1<<14; break;
-			case 'N': flags ^=1<<15; break;
+			case 's': flags ^= Flag_hexstr_to_raw; break;
+			case 'e': flags ^= Flag_swap_endian; break;
+			case 'S': flags ^= Flag_raw_to_hexstr; break;
+			case 'b': flags ^= Flag_binstr_to_bin; break;
+			case 'x': flags ^= Flag_hash_string; break;
+			case 'B': flags ^= Flag_keep_base; break;
+			case 'f': flags ^= Flag_float; break;
+			case 'd': flags ^= Flag_force_int; break;
+			case 'k': flags ^= Flag_randomart; break;
+			case 'n': flags ^= Flag_convert_endian; break;
+			case 'u': flags ^= Flag_convert_units; break;
+			case 't': flags ^= Flag_timestamp_str; break;
+			case 'E': flags ^= Flag_to_base64; break;
+			case 'D': flags ^= Flag_from_base64; break;
+			case 'F': flags ^= Flag_stdin_slurp; break;
+			case 'N': flags ^= Flag_to_escape_seq; break;
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
-				out_mode = (flags^32)? '0': 'I';
+				out_mode = (flags ^ Flag_keep_base)? '0': 'I';
 				if (str[1]>='0' && str[1]<='9') {
 					if (str[2]=='x') out_mode = 'I';
 					return format_output (out_mode, str);
 				}
-				printf ("Usage: rax2 [options] [expr ...]\n");
-				return help ();
+				/* Unknown option, treat as user input error */
+				usage ();
+				exit (EXIT_FAILURE);
 			}
 			str++;
 		}
@@ -149,12 +177,14 @@ static int rax (char *str, int len, int last) {
 	if (!flags) {
 		if (*str=='q')
 			return R_FALSE;
-		if (*str=='h' || *str=='?')
-			return help ();
+		if (*str=='h' || *str=='?') {
+			usage ();
+			exit (EXIT_SUCCESS);
+		}
 	}
 	dotherax:
 	
-	if (flags & 1) { // -s
+	if (flags & Flag_hexstr_to_raw) { // -s
 		int n = ((strlen (str))>>1)+1;
 		buf = malloc (n);
 		if (buf) {
@@ -169,27 +199,27 @@ static int rax (char *str, int len, int last) {
 		}
 		return R_TRUE;
 	}
-	if (flags & 4) { // -S
+	if (flags & Flag_raw_to_hexstr) { // -S
 		for (i=0; i<len; i++)
 			printf ("%02x", (ut8)str[i]);
 		printf ("\n");
 		return R_TRUE;
-	} else if (flags & 8) {
+	} else if (flags & Flag_binstr_to_bin) {
 		int i, len;
 		ut8 buf[4096];
 		len = r_str_binstr2bin (str, buf, sizeof (buf));
 		for (i=0; i<len; i++)
 			printf ("%c", buf[i]);
 		return R_TRUE;
-	} else if (flags & 16) {
+	} else if (flags & Flag_hash_string) {
 		int h = r_str_hash (str);
 		printf ("0x%x\n", h);
 		return R_TRUE;
-	} else if (flags & 32) {
+	} else if (flags & Flag_keep_base) {
 		out_mode = 'I';
-	} else if (flags & 64) {
+	} else if (flags & Flag_float) {
 		out_mode = 'f';
-	} else if (flags & 256) { // -k
+	} else if (flags & Flag_randomart) { // -k
 		int n = ((strlen (str))>>1)+1;
 		char *s = NULL;
 		ut32 *m;
@@ -212,12 +242,12 @@ static int rax (char *str, int len, int last) {
 		}
 		free (m);
 		return R_TRUE;
-	} else if (flags & (1<<9)) { // -n
+	} else if (flags & Flag_convert_endian) { // -n
 		ut64 n = r_num_math (num, str);
 		if (n>>32) {
 			/* is 64 bit value */
 			ut8 *np = (ut8*)&n;
-			if (flags & 1) fwrite (&n, sizeof (n), 1, stdout);
+			if (flags & Flag_hexstr_to_raw) fwrite (&n, sizeof (n), 1, stdout);
 			else printf ("%02x%02x%02x%02x" "%02x%02x%02x%02x\n",
 				np[0], np[1], np[2], np[3],
 				np[4], np[5], np[6], np[7]);
@@ -225,18 +255,18 @@ static int rax (char *str, int len, int last) {
 			/* is 32 bit value */
 			ut32 n32 = (ut32)(n&UT32_MAX);
 			ut8 *np = (ut8*)&n32;
-			if (flags & 1) fwrite (&n32, sizeof (n32), 1, stdout);
+			if (flags & Flag_hexstr_to_raw) fwrite (&n32, sizeof (n32), 1, stdout);
 			else printf ("%02x%02x%02x%02x\n",
 					np[0], np[1], np[2], np[3]);
 		}
 		fflush (stdout);
 		return R_TRUE;
-	} else if (flags & (1<<15)) { // -N
+	} else if (flags & Flag_to_escape_seq) { // -N
 		ut64 n = r_num_math (num, str);
 		if (n>>32) {
 			/* is 64 bit value */
 			ut8 *np = (ut8*)&n;
-			if (flags & 1) fwrite (&n, sizeof (n), 1, stdout);
+			if (flags & Flag_hexstr_to_raw) fwrite (&n, sizeof (n), 1, stdout);
 			else printf ("\\x%02x\\x%02x\\x%02x\\x%02x"
 				"\\x%02x\\x%02x\\x%02x\\x%02x\n",
 				np[0], np[1], np[2], np[3],
@@ -245,25 +275,24 @@ static int rax (char *str, int len, int last) {
 			/* is 32 bit value */
 			ut32 n32 = (ut32)(n&UT32_MAX);
 			ut8 *np = (ut8*)&n32;
-			if (flags & 1) fwrite (&n32, sizeof (n32), 1, stdout);
+			if (flags & Flag_hexstr_to_raw) fwrite (&n32, sizeof (n32), 1, stdout);
 			else printf ("\\x%02x\\x%02x\\x%02x\\x%02x\n",
 				np[0], np[1], np[2], np[3]);
 		}
 		fflush (stdout);
-		return R_TRUE;
-	} else if (flags & 1024) { // -u
+	} else if (flags & Flag_convert_units) { // -u
 		char buf[80];
 		r_num_units (buf, r_num_math (NULL, str));
 		printf ("%s\n", buf);
 		return R_TRUE;
-	} else if (flags & 2048) { // -t
+	} else if (flags & Flag_timestamp_str) { // -t
 		ut32 n = r_num_math (num, str);
 		RPrint *p = r_print_new ();
-		r_mem_copyendian ((ut8*) &n, (ut8*) &n, 4, !(flags & 2));
+		r_mem_copyendian ((ut8*) &n, (ut8*) &n, 4, !(flags & Flag_swap_endian));
 		r_print_date_unix (p, (const ut8*)&n, sizeof (ut32));
 		r_print_free (p);
 		return R_TRUE;
-	} else if (flags & 4096) { // -E
+	} else if (flags & Flag_to_base64) { // -E
 		const int len = strlen (str);
 		char * out = calloc (sizeof(ut8), ((len+1)*4)/3);
 		if (out) {
@@ -273,7 +302,7 @@ static int rax (char *str, int len, int last) {
 			free (out);
 		}
 		return R_TRUE;
-	} else if (flags & 8192) { // -D
+	} else if (flags & Flag_from_base64) { // -D
 		const int len = strlen (str);
 		ut8* out = calloc (sizeof(ut8), ((len+1)/4)*3);
 		if (out) {
@@ -283,7 +312,7 @@ static int rax (char *str, int len, int last) {
 			free (out);
 		}
 		return R_TRUE;
-	} else if (flags & 16384) { // -F
+	} else if (flags & Flag_stdin_slurp) { // -F
 		char *str = r_stdin_slurp (NULL);
 		if (str) {
 			char *res = r_hex_from_c (str);
@@ -300,7 +329,7 @@ static int rax (char *str, int len, int last) {
 	}
 
 	if (str[0]=='0' && str[1]=='x') {
-		out_mode = (flags&32)? '0': 'I';
+		out_mode = (flags & Flag_keep_base)? '0': 'I';
 	} else if (str[0]=='b') {
 		out_mode = 'B';
 		str++;
@@ -341,8 +370,9 @@ static int rax (char *str, int len, int last) {
 
 static int use_stdin () {
 	static char buf[STDIN_BUFFER_SIZE];
-	int l, sflag = (flags & 5);
-	if (! (flags & 16384)) {
+	int retcode = EXIT_SUCCESS;
+	int l, sflag = (flags & Flag_keep_base);
+	if (! (flags & Flag_stdin_slurp)) {
 		for (l=0; l>=0; l++) {
 			int n = read (0, buf+l, sizeof (buf)-l-1);
 			if (n<1) break;
@@ -363,12 +393,13 @@ static int use_stdin () {
 	}
 	if (l>0)
 		rax (buf, l, 0);
-	return 0;
+	return retcode;
 }
 
 int main (int argc, char **argv) {
 	int i;
 	num = r_num_new (NULL, NULL);
+	assert(num);
 	if (argc == 1) {
 		use_stdin ();
 	} else {
@@ -377,5 +408,5 @@ int main (int argc, char **argv) {
 		}
 	}
 	r_num_free (num);
-	return 0;
+	return EXIT_SUCCESS;
 }
