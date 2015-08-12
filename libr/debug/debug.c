@@ -522,6 +522,7 @@ repeat:
 			dbg->tid=tmp;
 			winbreak=0;
 		}
+		ret = retwait;
 #endif
 		r_bp_restore (dbg->bp, R_FALSE); // unset sw breakpoints
 		//r_debug_recoil (dbg);

@@ -277,7 +277,8 @@ err_load_th:
 	return pid;
 }
 
-static int debug_exception_event (unsigned long code) {
+static int debug_exception_event (DEBUG_EVENT *de) {
+	unsigned long code = de->u.Exception.ExceptionRecord.ExceptionCode;
 	switch (code) {
 	case EXCEPTION_BREAKPOINT:
 		break;
@@ -289,16 +290,23 @@ static int debug_exception_event (unsigned long code) {
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
 	case EXCEPTION_STACK_OVERFLOW:
-		eprintf ("fatal exception\n");
+		eprintf ("(%d) Fatal exception in thread %d\n", de->dwThreadId);
 		break;
 #if __MINGW64__
-	case 0x4000001f: //STATUS_WX86_BREAKPOINT
-		eprintf("WOW64 Loaded.\n");
+	/* STATUS_WX86_BREAKPOINT */
+	case 0x4000001f: 
+		eprintf ("(%d) WOW64 loaded.\n", de->dwProcessId);
 		return 1;
 		break;
 #endif
+	/* MS_VC_EXCEPTION */
+	case 0x406D1388: 
+		eprintf ("(%d) MS_VC_EXCEPTION (%x) in thread %d\n",
+			de->dwProcessId, code, de->dwThreadId);
+		break;
 	default:
-		eprintf ("unknown exception\n");
+		eprintf ("(%d) Unknown exception %x in thread %d\n",
+			de->dwProcessId, code, de->dwThreadId);
 		break;
 	}
 	return 0;
@@ -469,11 +477,12 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			// XXX unknown ret = R_DBG_REASON_TRAP;
 			break;
 		case EXCEPTION_DEBUG_EVENT:
-			next_event = debug_exception_event (de.u.Exception.ExceptionRecord.ExceptionCode);
-			if (!next_event)
-				return R_DBG_REASON_TRAP;
-			else 
+			next_event = debug_exception_event (&de);
+			if (!next_event) {
+				return de.dwThreadId;
+			} else {
 				r_debug_native_continue (dbg, pid, tid, -1);
+			}
 			break;
 		default:
 			eprintf ("(%d) unknown event: %d\n", pid, code);
