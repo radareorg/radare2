@@ -2599,12 +2599,17 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 		"at%", "", "TODO",
 		"ata", " 0x804020 ...", "only trace given addresses",
 		"atr", "", "show traces as range commands (ar+)",
-		"atd", "", "show disassembly trace",
+		"atd", "", "show disassembly trace (use .atd)",
+		"atl", "", "list all traced addresses (useful for @@= `atl`)",
 		"atD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
 		NULL
 	};
 
 	switch (input[0]) {
+	case 'r':
+		eprintf ("TODO\n");
+		//trace_show(-1, trace_tag_get());
+		break;
 	case 'e': // "ate"
 		if (!core->anal->esil) {
 			int romem = r_config_get_i (core->config, "esil.romem");
@@ -2676,17 +2681,16 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 	case 't':
 		r_debug_trace_tag (core->dbg, atoi (input+1));
 		break;
+	case 'l':
+		r_debug_trace_list (core->dbg, 'l');
+		r_cons_newline ();
+		break;
 	case 'd':
-		//trace_show (2, trace_tag_get());
-		eprintf ("TODO\n");
+		r_debug_trace_list (core->dbg, 'd');
 		break;
 	case 'D':
 		// XXX: not yet tested..and rsc dwarf-traces comes from r1
 		r_core_cmd (core, "at*|rsc dwarf-traces $FILE", 0);
-		break;
-	case 'r':
-		eprintf ("TODO\n");
-		//trace_show(-1, trace_tag_get());
 		break;
 	case '+':
 		ptr = input+2;

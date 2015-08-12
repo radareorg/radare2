@@ -138,6 +138,7 @@ typedef struct r_disam_options_t {
 	int l;
 	int middle;
 	int indent_level;
+	int indent_space;
 	char *line;
 	char *refline, *refline2;
 	char *comment;
@@ -288,6 +289,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
 	ds->linesright = r_config_get_i (core->config, "asm.linesright");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
+	ds->indent_space = r_config_get_i (core->config, "asm.indentspace");
 	ds->tracespace = r_config_get_i (core->config, "asm.tracespace");
 	ds->cyclespace = r_config_get_i (core->config, "asm.cyclespace");
 	ds->show_dwarf = r_config_get_i (core->config, "asm.dwarf");
@@ -1561,7 +1563,7 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 static void handle_print_indent (RCore *core, RDisasmState *ds) {
 	if (ds->show_indent) {
 		char indent[128];
-		int num = ds->indent_level * 4;
+		int num = ds->indent_level * ds->indent_space;
 		if (num<0) num = 0;
 		if (num>=sizeof (indent))
 			num = sizeof(indent)-1;

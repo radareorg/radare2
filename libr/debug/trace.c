@@ -95,10 +95,22 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode) {
 	RDebugTracepoint *trace;
 	r_list_foreach (dbg->trace->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
-			if (mode == 1)
+			switch (mode) {
+			case 1:
+			case '*':
 				dbg->cb_printf ("at+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);
-			else dbg->cb_printf ("0x%08"PFMT64x" size=%d count=%d times=%d tag=%d\n",
-				trace->addr, trace->size, trace->count, trace->times, trace->tag);
+				break;
+			case 'd':
+				dbg->cb_printf ("pd 1 @ 0x%"PFMT64x"\n", trace->addr);
+				break;
+			case 'l':
+				dbg->cb_printf ("0x%"PFMT64x" ", trace->addr);
+				break;
+			default:
+				dbg->cb_printf ("0x%08"PFMT64x" size=%d count=%d times=%d tag=%d\n",
+					trace->addr, trace->size, trace->count, trace->times, trace->tag);
+				break;
+			}
 		}
 	}
 }

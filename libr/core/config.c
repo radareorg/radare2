@@ -1065,6 +1065,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF("asm.decode", "false", "Use code analysis as a disassembler");
 	SETPREF("asm.indent", "false", "Indent disassembly based on reflines depth");
+	SETI("asm.indentspace", 2, "How many spaces to indent the code");
 	SETPREF("asm.dwarf", "false", "Show dwarf comment at disassembly");
 	SETPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETPREF("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");

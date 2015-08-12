@@ -2138,6 +2138,7 @@ static int cmd_print(void *data, const char *input) {
 				"pdi", "", "like 'pi', with offset and bytes",
 				"pdl", "", "show instruction sizes",
 				"pds", "", "disassemble with back sweep (greedy disassembly backwards)",
+				"pdt", "", "disassemble the debugger traces (see atd)",
 				NULL};
 				r_core_cmd_help (core, help_msg);
 			pd_result = 0;
