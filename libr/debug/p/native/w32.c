@@ -479,7 +479,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		case EXCEPTION_DEBUG_EVENT:
 			next_event = debug_exception_event (&de);
 			if (!next_event) {
-				return de.dwThreadId;
+				return R_DBG_REASON_TRAP;
 			} else {
 				r_debug_native_continue (dbg, pid, tid, -1);
 			}
