@@ -993,12 +993,14 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		ret = r_asm_disassemble (core->assembler, &asmop, core->block+i,
 			core->blocksize-i);
 		if (flags) {
-			item = r_flag_get_i (core->flags, core->offset+i);
-			if (item) {
-				if (show_offset)
-					r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
-				r_cons_printf ("  %s:\n", item->name);
-			}
+			if (fmt != 'e') { // pie
+				item = r_flag_get_i (core->flags, core->offset+i);
+				if (item) {
+					if (show_offset)
+						r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
+					r_cons_printf ("  %s:\n", item->name);
+				}
+			} // do not show flags in pie
 		}
 		if (show_offset) {
 			const int show_offseg = 0;
@@ -1024,9 +1026,11 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 					core->block+i, core->blocksize-i);
 				tmpopstr = r_anal_op_to_string (core->anal, &analop);
 				if (fmt == 'e') { // pie
+					char *esil = (R_STRBUF_SAFEGET (&analop.esil));
+					r_cons_printf ("%s\n", esil);
+#if 0
 					char spaces[26];
 					char *code = asmop.buf_asm;
-					char *esil = (R_STRBUF_SAFEGET (&analop.esil));
 					int j, wlen = sizeof (spaces)-strlen (code);
 					for (j=0; j<wlen; j++) {
 						spaces[j] = ' ';
@@ -1035,6 +1039,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 					spaces[R_MIN(sizeof (spaces)-1,j)] = 0;
 					r_cons_printf ("%s%s%s\n",
 						code, spaces, esil);
+#endif
 				} else {
 					if (decode) {
 						opstr = (tmpopstr)? tmpopstr: (asmop.buf_asm);
