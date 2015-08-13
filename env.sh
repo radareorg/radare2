@@ -1,6 +1,10 @@
 #!/bin/sh
 
 pfx="$1"
+if [ "`echo $pfx | cut -c 1`" != / ]; then
+	pfx="$PWD/$pfx"
+fi
+
 if [ -z "$pfx" ]; then
 	echo "Usage: ./env.sh [destdir|prefix] [program]"
 	exit 1
