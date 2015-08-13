@@ -5,7 +5,6 @@ TARGET_PTRACE=debug_native.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_PTRACE}
 
-
 ifeq (${OSTYPE},darwin)
 NATIVE_OBJS=native/xnu/xnu_debug.o
 endif

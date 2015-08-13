@@ -14,7 +14,8 @@ CS_UPD=20150813
 CS_BRA=next
 CS_TIP=0088d2a318ff0abc37005d508692e95c2011b24e
 # REVERT THIS COMMIT BECAUSE ITS WRONG
-CS_REV=21b9b25e9dae4af0ef309d4089a54e53b8f5b479
+CS_REV=
+#21b9b25e9dae4af0ef309d4089a54e53b8f5b479
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwind
 
