@@ -382,8 +382,9 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	} else {
 		if (core->file) {
 			if (!strcmp (httpui, "p")
-					|| !strcmp (httpui, "enyo")
-					|| !strcmp (httpui, "t")) {
+			|| !strcmp (httpui, "m")
+			|| !strcmp (httpui, "enyo")
+			|| !strcmp (httpui, "t")) {
 				path = httpui;
 			}
 		}
