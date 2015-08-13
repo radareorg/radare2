@@ -1,7 +1,9 @@
 #!/bin/sh
 
 pfx="$1"
-if [ "`echo $pfx | cut -c 1`" != / ]; then
+if [ "`echo $pfx | cut -c 1`" = ~ ]; then
+	pfx="$HOME/$pfx"
+elif [ "`echo $pfx | cut -c 1`" != / ]; then
 	pfx="$PWD/$pfx"
 fi
 
