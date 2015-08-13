@@ -306,7 +306,9 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 	}
 #endif
 
-	if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, desc->fd, treat_as_rawstr)) {
+	// do not reuse current io, so we set fd = -1
+	if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, -1, treat_as_rawstr)) {
+		eprintf ("Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
 			treat_as_rawstr = R_TRUE;
 			if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, desc->fd, treat_as_rawstr)) {
