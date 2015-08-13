@@ -177,11 +177,12 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 	if (pid == dbg->pid)
 		return pid;
 #if __WINDOWS__ && !__CYGWIN__
-	dbg->process_handle = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-	if (dbg->process_handle != (HANDLE)NULL && DebugActiveProcess (pid))
+	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, pid);
+	if (process != (HANDLE)NULL && DebugActiveProcess (pid))
 		ret = w32_first_thread (pid);
 	else ret = -1;
 	ret = w32_first_thread (pid);
+	CloseHandle (process);
 #elif __CYGWIN__
 	#warning "r_debug_native_attach not supported on this platform"
 	ret = -1;
@@ -943,12 +944,14 @@ static RDebugMap* r_debug_native_map_alloc(RDebug *dbg, ut64 addr, int size) {
 #elif __WINDOWS__ && !__CYGWIN__
 	RDebugMap *map = NULL;
 	LPVOID base = NULL;
-	if (!dbg->process_handle) {
-		dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
+	HANDLE process = tid2handler (dbg->pid, dbg->tid);
+	if (process == INVALID_HANDLE_VALUE) {
+		return map;
 	}
-	base = VirtualAllocEx (dbg->process_handle, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
+	base = VirtualAllocEx (process, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
+	CloseHandle (process);
 	if (!base) {
-		eprintf("Failed to allocate memory\n");
+		eprintf ("Failed to allocate memory\n");
 		return map;
 	}
 	r_debug_map_sync (dbg);
@@ -966,14 +969,17 @@ static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	return xnu_map_dealloc (dbg, addr, size);
 
 #elif __WINDOWS__ && !__CYGWIN__
-	if (!dbg->process_handle) {
-		dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
-	}
-	if (!VirtualFreeEx (dbg->process_handle, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_DECOMMIT)) {
-		eprintf ("Failed to free memory\n");
+	HANDLE process = tid2handler (dbg->pid, dbg->tid);
+	if (process == INVALID_HANDLE_VALUE) {
 		return R_FALSE;
 	}
-	return R_TRUE;
+	int ret = R_TRUE;
+	if (!VirtualFreeEx (process, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_DECOMMIT)) {
+		eprintf ("Failed to free memory\n");
+		ret = R_FALSE;
+	}
+	CloseHandle (process);
+	return ret;
 #else
     // mdealloc not implemented for this platform
 	return R_FALSE;
@@ -1403,16 +1409,15 @@ static RList *r_debug_desc_native_list (int pid) {
 }
 
 static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
-
 #if __WINDOWS__ && !__CYGWIN__
 	DWORD old;
-	if (!dbg->process_handle) {
-			dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
-	}
+	HANDLE process = tid2handler (dbg->pid, dbg->tid);
 	// TODO: align pointers
-  return VirtualProtectEx (WIN32_PI (dbg->process_handle), (LPVOID)(UINT)addr, size, perms, &old);
+	BOOL ret = VirtualProtectEx (WIN32_PI (process), (LPVOID)(UINT)addr, size, perms, &old);
+	CloseHandle (process);
+	return ret;	
 #elif __APPLE__
-  return xnu_map_protect (dbg, addr, size, perms);
+	return xnu_map_protect (dbg, addr, size, perms);
 #elif __linux__
     // mprotect not implemented for this Linux.. contribs are welcome. use r_egg here?
 	return R_FALSE;

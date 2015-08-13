@@ -212,6 +212,14 @@ static int w32_dbg_init() {
 	return R_TRUE;
 }
 
+static HANDLE w32_open_process (DWORD access, BOOL inherit, DWORD pid) {
+	HANDLE h = w32_openprocess(access, inherit, pid);
+	if (h == INVALID_HANDLE_VALUE) {
+		print_lasterr((char *)__FUNCTION__, "OpenProcess");
+	}
+	return h;
+}
+
 #if 0
 static HANDLE w32_t2h(pid_t tid) {
 	TH_INFO *th = get_th (tid);
@@ -569,7 +577,7 @@ err_load_th:
 }
 
 static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
-	HANDLE process = OpenProcess (PROCESS_QUERY_LIMITED_INFORMATION,
+	HANDLE process = w32_open_process (PROCESS_QUERY_LIMITED_INFORMATION,
 		FALSE, pe->th32ProcessID);
 
 	if (process == INVALID_HANDLE_VALUE || w32_queryfullprocessimagename == NULL) {
@@ -623,7 +631,7 @@ RList *w32_pids (int pid, RList *list) {
 }
 
 int w32_terminate_process (RDebug *dbg, int pid) {
-	HANDLE process = dbg->process_handle;
+	HANDLE process = w32_open_process(PROCESS_TERMINATE | SYNCHRONIZE , FALSE, pid);
 	if (process == INVALID_HANDLE_VALUE) {
 		return R_FALSE;
 	}
@@ -632,6 +640,7 @@ int w32_terminate_process (RDebug *dbg, int pid) {
 	DebugActiveProcessStop (pid);
 	if (TerminateProcess (process, 1) == 0) {
 		print_lasterr ((char *)__FUNCTION__, "TerminateProcess");
+		CloseHandle (process);
 		return R_FALSE;
 
 	}
@@ -640,10 +649,12 @@ int w32_terminate_process (RDebug *dbg, int pid) {
 	ret_wait = WaitForSingleObject (process, 1000);
 	if (ret_wait == WAIT_FAILED) {
 		print_lasterr ((char *)__FUNCTION__, "WaitForSingleObject");
+		CloseHandle (process);
 		return R_FALSE;
 	}
 	if (ret_wait == WAIT_TIMEOUT) {
 		eprintf ("(%d) Waiting for process to terminate timed out.\n", pid);
+		CloseHandle (process);
 		return R_FALSE;
 	}
 
@@ -654,10 +665,14 @@ void w32_break_process (void *d) {
 	static BOOL WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
 	RDebug *dbg = (RDebug *)d;
 	HANDLE lib;
-	HANDLE process = dbg->process_handle;
+	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
+	if (process == INVALID_HANDLE_VALUE) {
+		return;
+	}
 	lib = LoadLibrary ("kernel32.dll");
 	if (lib == NULL) {
 		print_lasterr ((char *)__FUNCTION__, "LoadLibrary");
+		CloseHandle (process);
 		return;
 	}
 	if (!w32_dbgbreak) {
@@ -670,6 +685,7 @@ void w32_break_process (void *d) {
 			print_lasterr ((char *)__FUNCTION__, "DebugBreakProcess");
 		}
 	}
+	CloseHandle (process);
 	CloseHandle (lib);
 }
 
