@@ -666,7 +666,9 @@ void w32_break_process (void *d) {
 					"DebugBreakProcess");
 	}
 	if (process != INVALID_HANDLE_VALUE && w32_dbgbreak != NULL) {
-		w32_dbgbreak (process);
+		if (!w32_dbgbreak (process)) {
+			print_lasterr ((char *)__FUNCTION__, "DebugBreakProcess");
+		}
 	}
 	CloseHandle (lib);
 }
