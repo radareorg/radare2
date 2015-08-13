@@ -427,10 +427,11 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		}
 		return 2;
 	} else
-	if (!memcmp (ao->op, "ldr", 3)) {
+	if (!strncmp (ao->op, "ldr", 3)) {
 		getrange (ao->a[1]);
 		getrange (ao->a[2]);
-		if (ao->op[3]=='h') {
+		switch (ao->op[3]) {
+		case 'h': {
 			int a0 = getreg (ao->a[0]);
 			int a1 = getreg (ao->a[1]);
 			int a2 = getreg (ao->a[2]);
@@ -441,9 +442,8 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 				ao->o |= (7&a1)<<11;
 				ao->o += (7&a2);
 				return 2;
-			} else return 0;
-		} else
-		if (ao->op[3]=='b') {
+			} else return 0; }
+		case 'b': {
 			int a0 = getreg (ao->a[0]);
 			int a1 = getreg (ao->a[1]);
 			int a2 = getreg (ao->a[2]);
@@ -454,8 +454,8 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 				ao->o |= (7&a1)<<11;
 				ao->o |= (7&a2);
 				return 2;
-			} else return 0;
-		} else {
+			} else return 0; }
+		default: {
 			if (!strcmpnull (ao->a[1], "sp")) {
 				// ldr r0, [sp, n] = a[r0-7][nn]
 				if (getreg (ao->a[2]) == -1) {
@@ -483,9 +483,9 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 				ao->o |= (7&a2)<<14;
 				return 2;
 			}
-		}
+		} }
 	} else
-	if (!memcmp (ao->op, "str", 3)) {
+	if (!strncmp (ao->op, "str", 3)) {
 		getrange (ao->a[1]);
 		getrange (ao->a[2]);
 		if (ao->op[3]=='h') {
@@ -680,7 +680,7 @@ static int findyz(int x, int *y, int *z) {
 static int arm_assemble(ArmOpcode *ao, const char *str) {
 	int i, j, ret, reg, a, b;
 	for (i=0; ops[i].name; i++) {
-		if (!memcmp (ao->op, ops[i].name, strlen (ops[i].name))) {
+		if (!strncmp (ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = ops[i].code;
 			arm_opcode_cond (ao, strlen(ops[i].name));
 			if (ao->a[0] || ops[i].type == TYPE_BKP)
@@ -690,14 +690,16 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				getrange (ao->a[1]);
 				getrange (ao->a[2]);
 				ao->o |= getreg (ao->a[0])<<20;
-				ao->o |= getreg (ao->a[1])<<8; // delta
+				ao->o |= getreg (ao->a[1])<<5; // delta
 				ret = getreg (ao->a[2]);
 				if (ret != -1) {
 					ao->o |= (strstr (str,"],"))?6:7;
-					ao->o |= (ret&0x0f)<<24;//(getreg(ao->a[2])&0x0f);
+					ao->o |= (ret & 0x0f) << 24;
 				} else {
-					ao->o |= (strstr (str,"],"))?4:5;
-					ao->o |= (getnum (ao->a[2])&0x7f)<<24; // delta
+					int num = getnum (ao->a[2]) & 0xfff;
+					ao->o |= (strstr (str, "],"))? 4: 5;
+					ao->o |= (num & 0xff) << 24;
+					ao->o |= ((num >> 8) & 0xf) << 16;
 				}
 				break;
 			case TYPE_IMM:
