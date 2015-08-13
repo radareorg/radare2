@@ -1,11 +1,11 @@
 #!/bin/sh
 
-pfx="$1"
-if [ "`echo $pfx | cut -c 1`" = ~ ]; then
-	pfx="$HOME/$pfx"
-elif [ "`echo $pfx | cut -c 1`" != / ]; then
-	pfx="$PWD/$pfx"
-fi
+
+case "$1" in
+"~"*) pfx="$HOME/`cut -c 2- $1`" ; ;;
+"/"*) pfx="$1" ; ;;
+*) pfx="$PWD/$1" ; ;;
+esac
 
 if [ -z "$pfx" ]; then
 	echo "Usage: ./env.sh [destdir|prefix] [program]"
