@@ -170,9 +170,6 @@ typedef struct r_debug_t {
 	Sdb *tracenodes;
 	Sdb *sgnls;
 	RCoreBind corebind;
-#if __WINDOWS__
-	HANDLE process_handle;
-#endif
 	int trace_forks;
 	int trace_execs;
 	int trace_clone;
