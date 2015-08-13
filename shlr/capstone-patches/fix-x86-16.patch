@@ -1,0 +1,32 @@
+diff --git a/arch/X86/X86ATTInstPrinter.c b/arch/X86/X86ATTInstPrinter.c
+index 12dfdae..134e182 100644
+--- a/arch/X86/X86ATTInstPrinter.c
++++ b/arch/X86/X86ATTInstPrinter.c
+@@ -529,8 +529,10 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
+ 			SStream_concat(O, "0x%"PRIx64, imm);
+ 		} else {
+ 			// handle 16bit segment bound
+-			if (MI->csh->mode == CS_MODE_16)
++			if (MI->csh->mode == CS_MODE_16) {
+ 				imm = imm & 0xffff;
++				imm |= (MI->address >> 16) << 16;
++			}
+ 
+ 			if (imm > HEX_THRESHOLD)
+ 				SStream_concat(O, "0x%"PRIx64, imm);
+diff --git a/arch/X86/X86IntelInstPrinter.c b/arch/X86/X86IntelInstPrinter.c
+index 9854b98..9167b45 100644
+--- a/arch/X86/X86IntelInstPrinter.c
++++ b/arch/X86/X86IntelInstPrinter.c
+@@ -693,8 +693,10 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
+ 			imm = imm & 0xffffffff;
+ 		}
+ 
+-		if (MI->csh->mode == CS_MODE_16)
++		if (MI->csh->mode == CS_MODE_16) {
+ 			imm = imm & 0xffff;
++			imm |= (MI->address >> 16) << 16;
++		}
+ 
+ 		printImm(MI->csh->syntax, O, imm, true);
+ 

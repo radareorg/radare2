@@ -14,7 +14,7 @@ else
 	if [ -n "${CS_REV}" ]; then
 		HEAD="`git log|grep ^commit | head -n2|tail -n1 | awk '{print $2}'`"
 	else
-		HEAD="`git log|head -n1 awk '{print $2}'`"
+		HEAD="`git log|head -n1 | awk '{print $2}'`"
 	fi
 	if [ "${HEAD}" = "${CS_TIP}" ]; then
 		echo "[capstone] Already in TIP, no need to update from git"

@@ -16,6 +16,7 @@ CS_TIP=0088d2a318ff0abc37005d508692e95c2011b24e
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
 #21b9b25e9dae4af0ef309d4089a54e53b8f5b479
+CS_PATCHES=1
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwind
 
@@ -203,6 +204,10 @@ capstone: capstone-sync
 
 capstone-sync:
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
+ifeq ($(CS_PATCHES),1)
+	cd capstone ; git reset --hard
+	cd capstone ; for a in ../capstone-patches/* ; do patch -p1 < $$a ; done
+endif
 
 .PHONY: capstone
 else
@@ -216,7 +221,7 @@ capstone: capstone-$(CS_VER).tar.gz
 	tar xzvf capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
-	#cd capstone ; for a in ../capstone-patches/* ; do patch -p1 < $$a ; done
+	cd capstone ; for a in ../capstone-patches/* ; do patch -p1 < $$a ; done
 
 capstone-$(CS_VER).tar.gz:
 	$(WGET) --no-check-certificate -O capstone-$(CS_VER).tar.gz -c $(CS_TAR)
