@@ -470,42 +470,17 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 	return i;
 }
-#if __WINDOWS__
-static int winbreak=0;
-static void static_debug_native_break(void *d) {
-	static BOOL WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
-	static HANDLE WINAPI (*w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
-	RDebug *dbg = (RDebug *)d;
-	HANDLE lib;
-	HANDLE hProcess;
-	lib = LoadLibrary ("kernel32.dll");
-	if (!w32_dbgbreak) {
-		w32_dbgbreak = (HANDLE WINAPI (*)(HANDLE))
-				GetProcAddress (GetModuleHandle ("kernel32"),
-					"DebugBreakProcess");
-	}
-	if (!w32_openprocess) {
-		w32_openprocess=(HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
-				GetProcAddress (GetModuleHandle ("kernel32"),
-					"OpenProcess");
-	}
-	if (w32_dbgbreak!=NULL && w32_openprocess!=NULL) {
-		hProcess=w32_openprocess(PROCESS_ALL_ACCESS,FALSE, dbg->pid );
-		winbreak=1;
-		w32_dbgbreak(hProcess);
-		CloseHandle(lib);
-		CloseHandle(hProcess);
-	}
-}
-#endif
 
+#if __WINDOWS__
+void w32_break_process (void *);
+#endif
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	ut64 pc;
 	int retwait, ret = R_FALSE;
 	if (!dbg)
 		return R_FALSE;
 #if __WINDOWS__
-	r_cons_break(static_debug_native_break,dbg);
+	r_cons_break(w32_break_process, dbg);
 #endif
 repeat:
 	if (r_debug_is_dead (dbg))
@@ -516,12 +491,6 @@ repeat:
 		dbg->signum = 0;
 		retwait = r_debug_wait (dbg);
 #if __WINDOWS__
-		if (winbreak) {
-			int tmp=ret;
-			ret=dbg->tid;
-			dbg->tid=tmp;
-			winbreak=0;
-		}
 		if (retwait != R_DBG_REASON_DEAD) {
 			ret = dbg->tid;
 		}

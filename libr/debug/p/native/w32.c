@@ -297,13 +297,12 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 	case 0x4000001f: 
 		eprintf ("(%d) WOW64 loaded.\n", de->dwProcessId);
 		return 1;
-		break;
 #endif
 	/* MS_VC_EXCEPTION */
 	case 0x406D1388: 
 		eprintf ("(%d) MS_VC_EXCEPTION (%x) in thread %d\n",
 			de->dwProcessId, code, de->dwThreadId);
-		break;
+		return 1;
 	default:
 		eprintf ("(%d) Unknown exception %x in thread %d\n",
 			de->dwProcessId, code, de->dwThreadId);
@@ -411,9 +410,8 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		/* save thread id */
 		tid = de.dwThreadId;
 		//pid = de.dwProcessId;
-		dbg->tid=tid;
+		dbg->tid = tid;
 		code = de.dwDebugEventCode;
-		//eprintf("code: %x pid=%08x tid=%08x\n",code,pid,tid);
 		/* Ctrl-C? */
 		/* get kind of event */
 		switch (code) {
@@ -448,12 +446,12 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			ret = R_DBG_REASON_EXIT_TID;
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
-			dllname = get_file_name_from_handle(de.u.LoadDll.hFile);	
+			dllname = get_file_name_from_handle (de.u.LoadDll.hFile);
 			eprintf ("(%d) Loading library at %p (%s)\n",
 				pid, de.u.LoadDll.lpBaseOfDll, 
 				dllname ? dllname : "no name");
 			if (dllname) {
-				free(dllname);
+				free (dllname);
 			}
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
@@ -650,6 +648,27 @@ int w32_terminate_process (RDebug *dbg, int pid) {
 	}
 
 	return R_TRUE;
+}
+
+void w32_break_process (void *d) {
+	static BOOL WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
+	RDebug *dbg = (RDebug *)d;
+	HANDLE lib;
+	HANDLE process = dbg->process_handle;
+	lib = LoadLibrary ("kernel32.dll");
+	if (lib == NULL) {
+		print_lasterr ((char *)__FUNCTION__, "LoadLibrary");
+		return;
+	}
+	if (!w32_dbgbreak) {
+		w32_dbgbreak = (HANDLE WINAPI (*)(HANDLE))
+				GetProcAddress (GetModuleHandle ("kernel32"),
+					"DebugBreakProcess");
+	}
+	if (process != INVALID_HANDLE_VALUE && w32_dbgbreak != NULL) {
+		w32_dbgbreak (process);
+	}
+	CloseHandle (lib);
 }
 
 #include "maps/windows.c"
