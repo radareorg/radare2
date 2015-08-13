@@ -1,11 +1,11 @@
 #!/bin/sh
 
-pfx="$1"
-if [ "`echo $pfx | cut -c 1`" = ~ ]; then
-	pfx="$HOME/$pfx"
-elif [ "`echo $pfx | cut -c 1`" != / ]; then
-	pfx="$PWD/$pfx"
-fi
+function getabsolutepath(){
+	[ -d "$1" ] && { cd "$1"; echo "$(pwd -P)"; } ||
+	{ cd "$(dirname "$1")"; echo "$(pwd -P)/$(basename "$1")"; }
+}
+
+pfx=$(getabsolutepath "$1")
 
 if [ -z "$pfx" ]; then
 	echo "Usage: ./env.sh [destdir|prefix] [program]"
