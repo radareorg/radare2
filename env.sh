@@ -1,11 +1,11 @@
 #!/bin/sh
 
+function getabsolutepath(){
+	[ -d "$1" ] && { cd "$1"; echo "$(pwd -P)"; } ||
+	{ cd "$(dirname "$1")"; echo "$(pwd -P)/$(basename "$1")"; }
+}
 
-case "$1" in
-"~"*) pfx="$HOME/`cut -c 2- $1`" ; ;;
-"/"*) pfx="$1" ; ;;
-*) pfx="$PWD/$1" ; ;;
-esac
+pfx=$(getabsolutepath "$1")
 
 if [ -z "$pfx" ]; then
 	echo "Usage: ./env.sh [destdir|prefix] [program]"
