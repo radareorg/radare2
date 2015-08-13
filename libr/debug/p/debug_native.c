@@ -483,15 +483,15 @@ static int windows_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 		type = -type;
 	}
 
-	HANDLE hProcess=tid2handler (pid, tid);
+	HANDLE thread = w32_open_thread (pid, tid);
 	CONTEXT ctx __attribute__ ((aligned (16)));
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-	if (!GetThreadContext (hProcess, &ctx)) {
+	if (!GetThreadContext (thread, &ctx)) {
 		eprintf ("GetThreadContext: %x\n", (int)GetLastError ());
-		CloseHandle(hProcess);
+		CloseHandle(thread);
 		return R_FALSE;
 	}
-	CloseHandle(hProcess);
+	CloseHandle(thread);
 	if (type==R_REG_TYPE_FPU || type==R_REG_TYPE_MMX || type==R_REG_TYPE_XMM) {
 	#if __MINGW64__
 		eprintf ("TODO: r_debug_native_reg_read fpu/mmx/xmm\n");
@@ -845,13 +845,13 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		int tid = dbg->tid;
 		int pid = dbg->pid;
 		BOOL ret;
-		HANDLE hProcess;
+		HANDLE thread;
 		CONTEXT ctx __attribute__((aligned (16)));
 		memcpy (&ctx, buf, sizeof (CONTEXT));
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-		hProcess=tid2handler (pid, tid);
-		ret=SetThreadContext (hProcess, &ctx)? R_TRUE: R_FALSE;
-		CloseHandle(hProcess);
+		thread = w32_open_thread (pid, tid);
+		ret=SetThreadContext (thread, &ctx)? R_TRUE: R_FALSE;
+		CloseHandle(thread);
 		return ret;
 		#endif
 		return R_FALSE;
@@ -863,14 +863,13 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 	if (type == R_REG_TYPE_GPR) {
 #if __WINDOWS__ && !__CYGWIN__
 		BOOL ret;
-		HANDLE hProcess;
 		CONTEXT ctx __attribute__((aligned (16)));
 		memcpy (&ctx, buf, sizeof (CONTEXT));
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 	//	eprintf ("EFLAGS =%x\n", ctx.EFlags);
-		hProcess = tid2handler (dbg->pid, dbg->tid);
-		ret=SetThreadContext (hProcess, &ctx)? R_TRUE: R_FALSE;
-		CloseHandle (hProcess);
+		HANDLE thread = w32_open_thread (dbg->pid, dbg->tid);
+		ret = SetThreadContext (thread, &ctx)? R_TRUE: R_FALSE;
+		CloseHandle (thread);
 		return ret;
 #elif __linux__
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid,
@@ -944,7 +943,7 @@ static RDebugMap* r_debug_native_map_alloc(RDebug *dbg, ut64 addr, int size) {
 #elif __WINDOWS__ && !__CYGWIN__
 	RDebugMap *map = NULL;
 	LPVOID base = NULL;
-	HANDLE process = tid2handler (dbg->pid, dbg->tid);
+	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	if (process == INVALID_HANDLE_VALUE) {
 		return map;
 	}
@@ -969,7 +968,7 @@ static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	return xnu_map_dealloc (dbg, addr, size);
 
 #elif __WINDOWS__ && !__CYGWIN__
-	HANDLE process = tid2handler (dbg->pid, dbg->tid);
+	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, dbg->tid);
 	if (process == INVALID_HANDLE_VALUE) {
 		return R_FALSE;
 	}
@@ -1411,7 +1410,7 @@ static RList *r_debug_desc_native_list (int pid) {
 static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 #if __WINDOWS__ && !__CYGWIN__
 	DWORD old;
-	HANDLE process = tid2handler (dbg->pid, dbg->tid);
+	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	// TODO: align pointers
 	BOOL ret = VirtualProtectEx (WIN32_PI (process), (LPVOID)(UINT)addr, size, perms, &old);
 	CloseHandle (process);

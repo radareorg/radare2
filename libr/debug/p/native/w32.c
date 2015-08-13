@@ -5,8 +5,6 @@
 #include <psapi.h>
 #include <tchar.h>
 
-static HANDLE tid2handler(int pid, int tid);
-
 // XXX remove
 #define WIN32_PI(x) x
 #if 0
@@ -415,13 +413,12 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			print_lasterr ((char *)__FUNCTION__, "WaitForDebugEvent");
 			return -1;
 		}
-		/* save thread id */
-		tid = de.dwThreadId;
-		//pid = de.dwProcessId;
-		dbg->tid = tid;
 		code = de.dwDebugEventCode;
-		/* Ctrl-C? */
-		/* get kind of event */
+		tid = de.dwThreadId;
+		pid = de.dwProcessId;
+		dbg->tid = tid;
+		dbg->pid = pid;
+		/* TODO: DEBUG_CONTROL_C */
 		switch (code) {
 		case CREATE_PROCESS_DEBUG_EVENT:
 			eprintf ("(%d) created process (%d:%p)\n", 
@@ -512,24 +509,12 @@ static inline int CheckValidPE(unsigned char * PeHeader) {
 	return 0;
 }
 
-static HANDLE tid2handler(int pid, int tid) {
-        HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
-        THREADENTRY32 te32 = { .dwSize = sizeof (THREADENTRY32) };
-        if (th == INVALID_HANDLE_VALUE)
-		return NULL;
-	if (!Thread32First (th, &te32)) {
-		CloseHandle (th);
-                return NULL;
+static HANDLE w32_open_thread (int pid, int tid) {
+	HANDLE thread = w32_openthread (THREAD_ALL_ACCESS, 0, tid);
+	if (thread == INVALID_HANDLE_VALUE) {
+		print_lasterr((char *)__FUNCTION__, "OpenThread");
 	}
-        do {
-                if (te32.th32OwnerProcessID == pid && te32.th32ThreadID == tid) {
-			CloseHandle (th);
-			return w32_openthread (THREAD_ALL_ACCESS, 0,
-					te32.th32ThreadID);
-		}
-        } while (Thread32Next (th, &te32));
-	CloseHandle (th);
-        return NULL;
+	return thread;
 }
 
 RList *w32_thread_list (int pid, RList *list) {
