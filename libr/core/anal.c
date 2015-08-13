@@ -432,9 +432,10 @@ error:
 }
 
 /* decode and return the RANalOp at the address addr */
-R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
+R_API RAnalOp* r_core_anal_op (RCore *core, ut64 addr) {
 	int len;
 	RAnalOp *op;
+	ut8 buf[128];
 	ut8 *ptr;
 	RAsmOp asmop;
 
@@ -445,28 +446,25 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
 		int delta = (addr - core->offset);
 		ptr = core->block + delta;
 		len = core->blocksize - delta;
-		if (len<1) {
-			free (op);
-			return NULL;
-		}
+		if (len < 1) goto err_op;
 	} else {
-		ut8 buf[128];
 		if (r_io_read_at (core->io, addr, buf, sizeof (buf)) < 1) {
-			free (op);
-			return NULL;
+			goto err_op;
 		}
 		ptr = buf;
 		len = sizeof (buf);
 	}
-	if (r_anal_op (core->anal, op, addr, ptr, len) < 1) {
-		free (op);
-		return NULL;
-	}
+	if (r_anal_op (core->anal, op, addr, ptr, len) < 1) goto err_op;
+
 	// decode instruction here
 	r_asm_set_pc (core->assembler, addr);
 	if (r_asm_disassemble (core->assembler, &asmop, ptr, len) > 0)
 		op->mnemonic = strdup (asmop.buf_asm);
 	return op;
+
+err_op:
+	free (op);
+	return NULL;
 }
 
 static int cb(void *p, const char *k, const char *v) {
