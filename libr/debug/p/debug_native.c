@@ -30,8 +30,6 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size);
 
 
-
-
 static int r_debug_handle_signals (RDebug *dbg) {
 #if __linux__
 	siginfo_t siginfo = {0};
@@ -60,7 +58,6 @@ static int r_debug_handle_signals (RDebug *dbg) {
 #endif
 }
 
-
 #if __WINDOWS__
 #include <windows.h>
 #define R_DEBUG_REG_T CONTEXT
@@ -80,61 +77,15 @@ static int r_debug_handle_signals (RDebug *dbg) {
 #include "native/xnu/xnu_debug.h"
 
 #elif __sun
-#define R_DEBUG_REG_T gregset_t
-#undef DEBUGGER
-#define DEBUGGER 0
-#warning No debugger support for SunOS yet
+
+# define R_DEBUG_REG_T gregset_t
+# undef DEBUGGER
+# define DEBUGGER 0
+# warning No debugger support for SunOS yet
 
 #elif __linux__
-#include <limits.h>
-
-struct user_regs_struct_x86_64 {
-  ut64 r15; ut64 r14; ut64 r13; ut64 r12; ut64 rbp; ut64 rbx; ut64 r11;
-  ut64 r10; ut64 r9; ut64 r8; ut64 rax; ut64 rcx; ut64 rdx; ut64 rsi;
-  ut64 rdi; ut64 orig_rax; ut64 rip; ut64 cs; ut64 eflags; ut64 rsp;
-  ut64 ss; ut64 fs_base; ut64 gs_base; ut64 ds; ut64 es; ut64 fs; ut64 gs;
-};
-
-struct user_regs_struct_x86_32 {
-  ut32 ebx; ut32 ecx; ut32 edx; ut32 esi; ut32 edi; ut32 ebp; ut32 eax;
-  ut32 xds; ut32 xes; ut32 xfs; ut32 xgs; ut32 orig_eax; ut32 eip;
-  ut32 xcs; ut32 eflags; ut32 esp; ut32 xss;
-};
-
-#if __ANDROID__
-
- #if __arm64__ || __aarch64__
- # define R_DEBUG_REG_T struct user_pt_regs
- # undef PTRACE_GETREGS
- # define PTRACE_GETREGS PTRACE_GETREGSET
- # undef PTRACE_SETREGS
- #define PTRACE_SETREGS PTRACE_SETREGSET
- #else
- # define R_DEBUG_REG_T struct pt_regs
- #endif
-
-#else
-
-#include <sys/user.h>
-# if __i386__ || __x86_64__
-#   define R_DEBUG_REG_T struct user_regs_struct
-# elif __arm64__ || __aarch64__
-#   define R_DEBUG_REG_T struct user_pt_regs
-#   undef PTRACE_GETREGS
-#   define PTRACE_GETREGS PTRACE_GETREGSET
-#   undef PTRACE_SETREGS
-#   define PTRACE_SETREGS PTRACE_SETREGSET
-# elif __arm__
-#   define R_DEBUG_REG_T struct user_regs
-# elif __mips__
-
-#include <sys/ucontext.h>
-typedef ut64 mips64_regs_t [274];
-# define R_DEBUG_REG_T mips64_regs_t
-#endif
-# endif
+#include "native/linux/linux_debug.h"
 #else // OS
-
 
 #warning Unsupported debugging platform
 #undef DEBUGGER
@@ -160,22 +111,23 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 #endif
 
 static int r_debug_native_step(RDebug *dbg) {
-
 	int ret = R_FALSE;
-	int pid = dbg->pid;
 #if __WINDOWS__ && !__CYGWIN__
 	/* set TRAP flag */
 	CONTEXT regs __attribute__ ((aligned (16)));
-	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
+	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR,
+		(ut8 *)&regs, sizeof (regs));
 	regs.EFlags |= 0x100;
-	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
-	r_debug_native_continue (dbg, pid, dbg->tid, dbg->signum);
+	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR,
+		(ut8 *)&regs, sizeof (regs));
+	r_debug_native_continue (dbg, dbg->pid,
+		dbg->tid, dbg->signum);
 	ret = R_TRUE;
 	r_debug_handle_signals (dbg);
 #elif __APPLE__
 	return xnu_step (dbg);
 #elif __BSD__
-	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0);
+	ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0);
 	if (ret != 0) {
 		perror ("native-singlestep");
 		ret = R_FALSE;
@@ -188,7 +140,8 @@ static int r_debug_native_step(RDebug *dbg) {
 	//ut32 data = 0;
 	//printf("NATIVE STEP over PID=%d\n", pid);
 	addr = r_debug_reg_get (dbg, "pc");
-	ret = ptrace (PTRACE_SINGLESTEP, pid, (void*)(size_t)addr, 0); //addr, data);
+	ret = ptrace (PTRACE_SINGLESTEP, dbg->pid,
+		(void*)(size_t)addr, 0); //addr, data);
 	r_debug_handle_signals (dbg);
 	if (ret == -1) {
 		perror ("native-singlestep");
@@ -907,26 +860,26 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 #endif
 	} else
 	if (type == R_REG_TYPE_GPR) {
-		int pid = dbg->pid;
 #if __WINDOWS__ && !__CYGWIN__
-		int tid = dbg->tid;
 		BOOL ret;
 		HANDLE hProcess;
 		CONTEXT ctx __attribute__((aligned (16)));
 		memcpy (&ctx, buf, sizeof (CONTEXT));
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 	//	eprintf ("EFLAGS =%x\n", ctx.EFlags);
-		hProcess=tid2handler (pid, tid);
+		hProcess = tid2handler (dbg->pid, dbg->tid);
 		ret=SetThreadContext (hProcess, &ctx)? R_TRUE: R_FALSE;
-		CloseHandle(hProcess);
+		CloseHandle (hProcess);
 		return ret;
 #elif __linux__
-		int ret = ptrace (PTRACE_SETREGS, pid, 0, (void*)buf);
+		int ret = ptrace (PTRACE_SETREGS, dbg->pid,
+			0, (void*)buf);
 		if (sizeof (R_DEBUG_REG_T) < size)
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE: R_TRUE;
 #elif __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__
-		int ret = ptrace (PTRACE_SETREGS, pid, (void*)(size_t)buf, sizeof (R_DEBUG_REG_T));
+		int ret = ptrace (PTRACE_SETREGS, dbg->pid,
+			(void*)(size_t)buf, sizeof (R_DEBUG_REG_T));
 		if (sizeof (R_DEBUG_REG_T) < size)
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE: R_TRUE;
@@ -938,7 +891,6 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 	} //else eprintf ("TODO: reg_write_non-gpr (%d)\n", type);
 	return R_FALSE;
 }
-
 
 #if __KFBSD__
 static RList *r_debug_native_sysctl_map (RDebug *dbg) {
@@ -1018,7 +970,7 @@ static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 		dbg->process_handle = tid2handler (dbg->pid, dbg->tid);
 	}
 	if (!VirtualFreeEx (dbg->process_handle, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_DECOMMIT)) {
-		eprintf("Failed to free memory\n");
+		eprintf ("Failed to free memory\n");
 		return R_FALSE;
 	}
 	return R_TRUE;

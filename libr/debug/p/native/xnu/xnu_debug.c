@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2015 - pancake */
+
 #include <r_debug.h>
 #include <r_asm.h>
 #include <r_reg.h>
@@ -5,11 +7,9 @@
 #include <r_anal.h>
 #include "xnu_debug.h"
 
-
-
+void ios_hwstep_enable (RDebug *dbg, int enable);
 
 int xnu_step (RDebug *dbg) {
-
 	int ret = R_FALSE;
 	int pid = dbg->pid;
 
@@ -261,7 +261,6 @@ int xnu_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 RDebugMap *xnu_map_alloc (RDebug *dbg, ut64 addr, int size) {
-
 	RDebugMap *map = NULL;
 	kern_return_t ret;
 	unsigned char *base = (unsigned char *)addr;
@@ -286,7 +285,6 @@ RDebugMap *xnu_map_alloc (RDebug *dbg, ut64 addr, int size) {
 }
 
 int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
-
 	int ret;
 	ret = vm_deallocate (pid_to_task (dbg->tid),
 			(vm_address_t)addr,
@@ -301,7 +299,6 @@ int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 }
 
 RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
-
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
@@ -315,7 +312,6 @@ RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
 }
 
 RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
-
 #if __arm__
 	#define OSX_PC state.__pc
 #elif __arm64__
@@ -383,7 +379,6 @@ int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 }
 
 task_t pid_to_task(int pid) {
-
 	static task_t old_pid = -1;
 	static task_t old_task = -1;
 	task_t task = 0;
@@ -517,8 +512,7 @@ RDebugPid *xnu_get_pid (int pid) {
 }
 
 
-kern_return_t mach_vm_region_recurse
-(
+kern_return_t mach_vm_region_recurse (
         vm_map_t target_task,
         mach_vm_address_t *address,
         mach_vm_size_t *size,
@@ -536,10 +530,8 @@ static const char * unparse_inheritance (vm_inherit_t i) {
         }
 }
 
-
-//it's not used
+//it's not used (yet)
 vm_address_t get_kernel_base(task_t ___task) {
-
 	kern_return_t ret;
 	task_t task;
 	vm_region_submap_info_data_64_t info;
@@ -579,10 +571,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 
 extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_t buffersize);
 
-
-
 static RList *ios_dbg_maps(RDebug *dbg) {
-
 	boolt contiguous = R_FALSE;
 	ut32 oldprot = UT32_MAX;
 	char buf[1024];
@@ -699,7 +688,6 @@ int isThumb32(ut16 op) {
 }
 
 static void ios_hwstep_enable64 (task_t port, int enable) {
-
 	ARMDebugState64 ds;
 	mach_msg_type_number_t count = ARM_DEBUG_STATE64_COUNT;
 
@@ -783,8 +771,8 @@ static void ios_hwstep_enable32 (task_t port, int enable) {
 			count);
 
 }
-void ios_hwstep_enable (RDebug *dbg, int enable) {
 
+void ios_hwstep_enable (RDebug *dbg, int enable) {
 	task_t port = pid_to_task (dbg->tid);
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
 

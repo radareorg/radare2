@@ -34,24 +34,23 @@ int pids_sons_of_r(int pid, int recursive, int limit) {
                 p = atoi(file->d_name);
                 if (p) {
                         sprintf(buf,"/proc/%s/stat", file->d_name);
-                        fd = fopen(buf, "r");
+                        fd = fopen (buf, "r");
                         if (fd) {
                                 mola = 0;
-                                fscanf(fd,"%d %s %s %d",
+                                fscanf (fd,"%d %s %s %d",
                                         &tmp, tmp2, tmp3, &mola);
                                 if (mola == pid) {
-                                        pids_cmdline(p, tmp2);
+                                        pids_cmdline (p, tmp2);
                                         //for(i=0; i<recursive*2;i++)
                                         //      printf(" ");
-                                        cons_printf(" `- %d : %s (%s)\n", p, tmp2, (tmp3[0]=='S')?"sleeping":(tmp3[0]=='T')?"stopped":"running");
+                                        cons_printf (" `- %d : %s (%s)\n", p, tmp2, (tmp3[0]=='S')?"sleeping":(tmp3[0]=='T')?"stopped":"running");
                                         n++;
                                         if (recursive<limit)
                                                 n+=pids_sons_of_r(p, recursive+1, limit);
                                 }
                         }
-                        fclose(fd);
+                        fclose (fd);
                 }
         }
         return n;
 }
-
