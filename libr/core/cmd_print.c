@@ -46,6 +46,36 @@ static char get_string_type (const ut8 *buf, ut64 len){
 	}
 	return str_type;
 }
+
+static void cmd_print_eq_dict(RCore *core, int bsz) {
+	int i;
+	int min = 0;
+	int max = 0;
+	int dict = 0;
+	int range = 0;
+	ut8 buf[0xff+1];
+
+	for (i=0; i<0xff; i++) {
+		buf[i] = 0;
+	}
+	for (i=0; i<bsz; i++) {
+		buf[core->block[i]] = 1;
+	}
+	for (i=0; i<0xff; i++) {
+		if (buf[i]) {
+			if (min == 0)
+				min = i;
+			max = i;
+			dict++;
+		}
+	}
+	range = max - min;
+	r_cons_printf ("min:   %d  0x%x\n", min, min);
+	r_cons_printf ("max:   %d  0x%x\n", max, max);
+	r_cons_printf ("dict:  %d  0x%x\n", dict, dict);
+	r_cons_printf ("range: %d  0x%x\n", range, range);
+}
+
 static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set (core->config, "asm.arch", arch);
 	r_config_set_i (core->config, "asm.bits", bits);
@@ -1561,15 +1591,14 @@ static int cmd_print(void *data, const char *input) {
 	case '=': //p=
 		{
 		char input1 = 'b';
+		nbsz = core->blocksize;
 		if (input[0]) {
-			if (input[1] != ' ') {
+			if (input[1] && input[1] != ' ') {
 				input1 = input[1];
 				nbsz = r_num_get (core->num, input+2);
 			} else {
 				nbsz = r_num_get (core->num, input+1); //*input?input[1]?input+2:input+1:input);
 			}
-		} else {
-			nbsz = core->blocksize;
 		}
 		fsz = (core->file && core->io)? r_io_desc_size (core->io, core->file->desc): 0;
 		if (nbsz) {
@@ -1596,6 +1625,9 @@ static int cmd_print(void *data, const char *input) {
 			NULL};
 			r_core_cmd_help (core, help_msg);
 			}
+			break;
+		case 'd':
+			cmd_print_eq_dict (core, nbsz); //core->blocksize);
 			break;
 		case 'e': // entropy
 			{
