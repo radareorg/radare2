@@ -2772,10 +2772,10 @@ static int cmd_anal_all (RCore *core, const char *input) {
 		if (*input == 'a') { // "aaa"
 			int c = r_config_get_i (core->config, "anal.calls");
 			r_config_set_i (core->config, "anal.calls", 1);
-			r_core_cmd0 (core, ".afna @@ fcn.*");
 			r_core_cmd0 (core, "aar");
 			r_core_cmd0 (core, "aac");
 			r_config_set_i (core->config, "anal.calls", c);
+			r_core_cmd0 (core, ".afna @@ fcn.*");
 		}
 		flag_every_function (core);
 		break;
