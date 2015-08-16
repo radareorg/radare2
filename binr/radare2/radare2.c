@@ -422,16 +422,16 @@ int main(int argc, char **argv, char **envp) {
 	}
 
 	switch (va) {
-		case 0:
-			r_config_set_i (r.config, "io.va", 0);
-			baddr = 0;
-			break;
-		case 2:
-			r_config_set_i (r.config, "bin.laddr", baddr);
-			break;
+	case 0:
+		r_config_set_i (r.config, "io.va", R_FALSE);
+		baddr = 0;
+		break;
+	case 2:
+		r_config_set_i (r.config, "bin.laddr", baddr);
+		break;
 	}
-// TODO: set io.va = 2 if -B
-// -- means opening r2 without any file
+
+	// -- means opening r2 without any file
 	if (run_rc) {
 		char *homerc = r_str_home (".radare2rc");
 		if (homerc) {
@@ -477,7 +477,7 @@ int main(int argc, char **argv, char **envp) {
 	} else if (strcmp (argv[optind-1], "--")) {
 		if (debug) {
 			r_config_set (r.config, "search.in", "raw"); // implicit?
-			r_config_set (r.config, "io.va", "false"); // implicit?
+			r_config_set_i (r.config, "io.va", R_FALSE); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
 			perms = R_IO_READ | R_IO_WRITE;
 			if (optind>=argc) {
@@ -603,7 +603,7 @@ int main(int argc, char **argv, char **envp) {
 										if (file && file->o)
 											file->o->baddr = baddr;
 									} else {
-										r_config_set (r.config, "io.va", "false");
+										r_config_set_i (r.config, "io.va", R_FALSE);
 									}
 								}
 							}
@@ -705,13 +705,13 @@ int main(int argc, char **argv, char **envp) {
 			free (sha1);
 			free (path);
 		}
-#if 1
+
 		r_list_foreach (evals, iter, cmdn) {
 			r_config_eval (r.config, cmdn);
 			r_cons_flush ();
 		}
 		r_list_free (evals);
-#endif
+
 		// no flagspace selected by default the beginning
 		r.flags->space_idx = -1;
 		/* load <file>.r2 */
