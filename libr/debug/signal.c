@@ -17,7 +17,7 @@ static struct {
 	{ "SIGILL", "4" },
 	{ "SIGTRAP", "5" },
 	{ "SIGABRT", "6" },
-	{ "SIGIOT", "6" },
+	// { "SIGIOT", "6" },
 	{ "SIGBUS", "7" },
 	{ "SIGFPE", "8" },
 	{ "SIGKILL", "9" },

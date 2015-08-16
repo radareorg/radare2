@@ -44,7 +44,11 @@ static int r_debug_handle_signals (RDebug *dbg) {
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
 #warning DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
+		case SIGABRT: // 6 / SIGIOT // SIGABRT
+			dbg->reason.type = R_DEBUG_REASON_ABORT;
+			break;
 		case SIGSEGV:
+			dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
 			eprintf ("[+] SIGNAL %d errno=%d addr=%p code=%d ret=%d\n",
 				siginfo.si_signo, siginfo.si_errno,
 				siginfo.si_addr, siginfo.si_code, ret);
@@ -55,6 +59,7 @@ static int r_debug_handle_signals (RDebug *dbg) {
 	}
 	return R_FALSE;
 #else
+
 	return -1;
 #endif
 }
