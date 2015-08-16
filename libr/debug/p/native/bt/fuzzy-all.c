@@ -10,7 +10,7 @@ static int iscallret(RDebug *dbg, ut64 addr) {
 	if (dbg->arch == R_SYS_ARCH_X86) {
 		(void)dbg->iob.read_at (dbg->iob.io, addr-5, buf, 5);
 		if (buf[0] == 0xe8) return 1;
-		if (buf[3] == 0xff && (buf[4] &0xf0)==0xd0) return 1;
+		if (buf[3] == 0xff && (buf[4] & 0xf0)==0xd0) return 1;
 		// IMMAMISSINGANYOP
 	} else {
 		RAnalOp op;
