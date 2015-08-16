@@ -1,4 +1,4 @@
-// Copyright (c) 2014, The Lemon Man, All rights reserved.
+// Copyright (c) 2014-2015, The Lemon Man, All rights reserved.
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -66,35 +66,37 @@ static int r_debug_wind_continue(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 static int dbreak=0;
+
 static void wstatic_debug_break(void *u) {
-    dbreak=1;
-    wind_break_read(wctx);
+	dbreak = 1;
+	wind_break_read (wctx);
 }
 
 static int r_debug_wind_wait (RDebug *dbg, int pid) {
-	#define STATE_EXCEPTION 0x3030
+#	define STATE_EXCEPTION 0x3030
 	kd_packet_t *pkt;
 	kd_stc_64 *stc;
 	int ret;
 	r_cons_break (wstatic_debug_break, dbg);
-	dbreak=0;
+	dbreak = 0;
 	for (;;) {
-_repeat_wait:
 		ret = wind_wait_packet (wctx, KD_PACKET_TYPE_STATE_CHANGE, &pkt);
 		if (dbreak) {
-			dbreak=0;
-			wind_break(wctx);
-			goto _repeat_wait;
+			dbreak = 0;
+			wind_break (wctx);
+			continue;
 		}
 		if (ret != KD_E_OK || !pkt)
 			break;
-
 		stc = (kd_stc_64 *)pkt->data;
 		// Handle exceptions only
 		if (stc->state == STATE_EXCEPTION) {
 			wind_set_cpu (wctx, stc->cpu);
 			free (pkt);
-			dbg->reason = R_DBG_REASON_INT;
+			dbg->reason.type = R_DEBUG_REASON_INT;
+			dbg->reason.addr = stc->pc;
+			dbg->reason.tid = stc->kthread;
+			dbg->reason.signum = stc->state;
 			break;
 		} else wind_continue (wctx);
 		free(pkt);
@@ -110,7 +112,7 @@ static int r_debug_wind_attach (RDebug *dbg, int pid) {
 	if (!desc || !desc->plugin || !desc->plugin->name || !desc->data)
 		return R_FALSE;
 
-	if (strncmp(desc->plugin->name, "windbg", 6))
+	if (strncmp (desc->plugin->name, "windbg", 6))
 		return R_FALSE;
 
 	if (dbg->arch != R_SYS_ARCH_X86)
@@ -148,8 +150,7 @@ static char *r_debug_wind_reg_profile(RDebug *dbg) {
 		return NULL;
 	if (dbg->bits == R_SYS_BITS_32) {
 #include "native/reg/windows-x86.h"
-	}
-	if (dbg->bits == R_SYS_BITS_64) {
+	} else if (dbg->bits == R_SYS_BITS_64) {
 #include "native/reg/windows-x64.h"
 	}
 	return NULL;
@@ -157,13 +158,9 @@ static char *r_debug_wind_reg_profile(RDebug *dbg) {
 
 static int r_debug_wind_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	int *tag;
-
-	if (!bp)
-		return R_FALSE;
-
+	if (!bp) return R_FALSE;
 	// Use a 32 bit word here to keep this compatible with 32 bit hosts
 	tag = (int *)&bp->data;
-
 	return wind_bkpt(wctx, bp->addr, set, bp->hw, tag);
 }
 
@@ -177,8 +174,7 @@ static RList *r_debug_wind_pids (int pid) {
 	WindProc *p;
 
 	ret = r_list_newf (free);
-	if (!ret)
-		return NULL;
+	if (!ret) return NULL;
 
 	pids = wind_list_process(wctx);
 	if (!pids)

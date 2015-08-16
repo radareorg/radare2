@@ -37,12 +37,13 @@ static int r_debug_handle_signals (RDebug *dbg) {
 	if (ret != -1 && siginfo.si_signo > 0) {
 		//siginfo_t newsiginfo = {0};
 		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
-		dbg->reason = R_DBG_REASON_SIGNAL;
-		dbg->signum = siginfo.si_signo;
+		dbg->reason.type = R_DEBUG_REASON_SIGNAL;
+		dbg->reason.signum = siginfo.si_signo;
 		//dbg->stopaddr = siginfo.si_addr;
 		//dbg->errno = siginfo.si_errno;
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
-		switch (dbg->signum) {
+#warning DO MORE RDEBUGREASON HERE
+		switch (dbg->reason.signum) {
 		case SIGSEGV:
 			eprintf ("[+] SIGNAL %d errno=%d addr=%p code=%d ret=%d\n",
 				siginfo.si_signo, siginfo.si_errno,
@@ -121,7 +122,7 @@ static int r_debug_native_step(RDebug *dbg) {
 	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR,
 		(ut8 *)&regs, sizeof (regs));
 	r_debug_native_continue (dbg, dbg->pid,
-		dbg->tid, dbg->signum);
+		dbg->tid, dbg->reason.signum);
 	ret = R_TRUE;
 	r_debug_handle_signals (dbg);
 #elif __APPLE__
@@ -238,47 +239,54 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 #elif __APPLE__
 	return xnu_continue (dbg, pid, tid, sig);
 #elif __BSD__
-	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
+	void *data = (void*)(size_t)((sig != -1)?sig: dbg->reason.signum);
 	ut64 pc = r_debug_reg_get (dbg, "pc");
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)data) == 0;
 #elif __CYGWIN__
 	#warning "r_debug_native_continue not supported on this platform"
 	return -1;
 #else
-	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
-//eprintf ("SIG %d\n", dbg->signum);
+	void *data = (void*)(size_t)((sig != -1)?sig: dbg->reason.signum);
+//eprintf ("SIG %d\n", dbg->reason.signum);
 	return ptrace (PTRACE_CONT, pid, NULL, data) == 0;
 #endif
 }
 
 static int r_debug_native_wait(RDebug *dbg, int pid) {
+	int status = -1;
 #if __WINDOWS__ && !__CYGWIN__
-	return w32_dbg_wait (dbg, pid);
+	status = w32_dbg_wait (dbg, pid);
 #else
-	int ret, status = -1;
-	//printf ("prewait\n");
-	if (pid==-1)
-		return R_DBG_REASON_UNKNOWN;
-	// XXX: this is blocking, ^C will be ignored
-	ret = waitpid (pid, &status, 0);
-	//printf ("status=%d (return=%d)\n", status, ret);
-	// TODO: switch status and handle reasons here
-	r_debug_handle_signals (dbg);
-
-	if (WIFSTOPPED (status)) {
-		dbg->signum = WSTOPSIG (status);
-		status = R_DBG_REASON_SIGNAL;
-	} else if (status == 0 || ret == -1) {
-		status = R_DBG_REASON_DEAD;
+	int ret;
+	if (pid==-1) {
+		status = R_DEBUG_REASON_UNKNOWN;
 	} else {
-		if (ret != pid)
-			status = R_DBG_REASON_NEW_PID;
-		else status = dbg->reason;
-	}
-	return status;
-#endif
-}
+		// XXX: this is blocking, ^C will be ignored
+		ret = waitpid (pid, &status, 0);
+		if (ret == -1) {
+			status = R_DEBUG_REASON_ERROR;
+		} else {
+			//printf ("status=%d (return=%d)\n", status, ret);
+			// TODO: switch status and handle reasons here
+			r_debug_handle_signals (dbg);
 
+			if (WIFSTOPPED (status)) {
+				dbg->reason.signum = WSTOPSIG (status);
+				status = R_DEBUG_REASON_SIGNAL;
+			} else if (status == 0 || ret == -1) {
+				status = R_DEBUG_REASON_DEAD;
+			} else {
+				if (ret != pid)
+					status = R_DEBUG_REASON_NEW_PID;
+				else status = R_DEBUG_REASON_UNKNOWN;
+			}
+		}
+	}
+#endif
+	dbg->reason.tid = pid;
+	dbg->reason.type = status;
+	return status;
+}
 
 #undef MAXPID
 #define MAXPID 69999

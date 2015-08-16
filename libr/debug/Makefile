@@ -20,7 +20,6 @@ ifeq (${OSTYPE},darwin)
 OBJS+= p/${NATIVE_OBJS}
 endif
 
-
 plugins:
 	cd p && ${MAKE} all
 

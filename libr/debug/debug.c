@@ -28,6 +28,7 @@ static int r_debug_recoil(RDebug *dbg) {
 		return R_FALSE;
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
 	ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
+	dbg->reason.bpi = NULL;
 	if (ri) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
 		recoil = r_bp_recoil (dbg->bp, addr);
@@ -38,9 +39,11 @@ static int r_debug_recoil(RDebug *dbg) {
 		if (recoil<1) recoil = 0; //1; // XXX Hack :D (x86 only?)
 #endif
 		if (recoil) {
-			dbg->reason = R_DBG_REASON_BP;
+			dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
+			dbg->reason.bpi = r_bp_get_at (dbg->bp, addr-recoil);
+			dbg->reason.addr = addr - recoil;
 			r_reg_set_value (dbg->reg, ri, addr-recoil);
-			if (r_reg_get_value (dbg->reg, ri ) != (addr-recoil)) {
+			if (r_reg_get_value (dbg->reg, ri) != (addr-recoil)) {
 				eprintf ("r_debug_recoil: Cannot set program counter\n");
 				return R_FALSE;
 			}
@@ -71,8 +74,6 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->tracenodes = sdb_new0 ();
 	dbg->swstep = 0;
 	dbg->newstate = 0;
-	dbg->signum = 0;
-	dbg->reason = R_DBG_REASON_UNKNOWN;
 	dbg->stop_all_threads = R_FALSE;
 	dbg->trace = r_debug_trace_new ();
 	dbg->cb_printf = (void *)printf;
@@ -253,8 +254,13 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 	if (tid < 0)
 		tid = pid;
 
-	if (pid != dbg->pid || tid != dbg->tid)
-		eprintf ("Debugging pid = %d, tid = %d now\n", pid, tid);
+	if (pid != -1 && tid != -1) {
+		if (pid != dbg->pid || tid != dbg->tid)
+			eprintf ("Debugging pid = %d, tid = %d now\n", pid, tid);
+	} else {
+		if (dbg->pid != -1)
+			eprintf ("Child %d is dead\n", dbg->pid);
+	}
 
 	if (dbg->h && dbg->h->select && !dbg->h->select (pid, tid))
 		return R_FALSE;
@@ -265,6 +271,33 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 	return R_TRUE;
 }
 
+R_API const char *r_debug_reason_to_string(int type) {
+	switch (type) {
+	case R_DEBUG_REASON_DEAD: return "dead";
+	case R_DEBUG_REASON_NONE: return "none";
+	case R_DEBUG_REASON_SIGNAL: return "signal";
+	case R_DEBUG_REASON_BREAKPOINT: return "breakpoint";
+	case R_DEBUG_REASON_READERR: return "read-error";
+	case R_DEBUG_REASON_WRITERR: return "write-error";
+	case R_DEBUG_REASON_DIVBYZERO: return "div-by-zero";
+	case R_DEBUG_REASON_ILLEGAL: return "illegal";
+	case R_DEBUG_REASON_UNKNOWN: return "unknown";
+	case R_DEBUG_REASON_ERROR: return "error";
+	case R_DEBUG_REASON_NEW_PID: return "new-pid";
+	case R_DEBUG_REASON_NEW_TID: return "new-tid";
+	case R_DEBUG_REASON_NEW_LIB: return "new-lib";
+	case R_DEBUG_REASON_EXIT_PID: return "exit-pid";
+	case R_DEBUG_REASON_EXIT_TID: return "exit-tid";
+	case R_DEBUG_REASON_EXIT_LIB: return "exit-lib";
+	case R_DEBUG_REASON_TRAP: return "trap";
+	case R_DEBUG_REASON_SWI: return "software-interrupt";
+	case R_DEBUG_REASON_INT: return "interrupt";
+	case R_DEBUG_REASON_FPU: return "fpu";
+	case R_DEBUG_REASON_STEP: return "step";
+	}
+	return "unhandled";
+}
+
 R_API int r_debug_stop_reason(RDebug *dbg) {
 	// TODO: return reason to stop debugging
 	// - new process
@@ -272,7 +305,7 @@ R_API int r_debug_stop_reason(RDebug *dbg) {
 	// - illegal instruction
 	// - fpu exception
 	// return dbg->reason
-	return dbg->reason;
+	return dbg->reason.type;
 }
 
 /* Returns PID */
@@ -280,12 +313,13 @@ R_API int r_debug_wait(RDebug *dbg) {
 	int ret = 0;
 	if (!dbg)
 		return R_FALSE;
-	if (r_debug_is_dead (dbg))
-		return R_FALSE;
+	dbg->reason.type = R_DEBUG_REASON_UNKNOWN;
+	if (r_debug_is_dead (dbg)) {
+		return dbg->reason.type = R_DEBUG_REASON_DEAD;
+	}
 	if (dbg->h && dbg->h->wait) {
-		dbg->reason = R_DBG_REASON_UNKNOWN;
+		dbg->reason.type = R_DEBUG_REASON_UNKNOWN;
 		ret = dbg->h->wait (dbg, dbg->pid);
-		dbg->reason = ret;
 		dbg->newstate = 1;
 		if (ret == -1) {
 			eprintf ("\n==> Process finished\n\n");
@@ -294,13 +328,13 @@ R_API int r_debug_wait(RDebug *dbg) {
 		//eprintf ("wait = %d\n", ret);
 		if (dbg->trace->enabled)
 			r_debug_trace_pc (dbg);
-		if (ret == R_DBG_REASON_SIGNAL && dbg->signum != -1) {
+		if (ret == R_DEBUG_REASON_SIGNAL && dbg->reason.signum != -1) {
 			/* handle signal on continuations here */
-			int what = r_debug_signal_what (dbg, dbg->signum);
-			const char *name = r_debug_signal_resolve_i (dbg, dbg->signum);
+			int what = r_debug_signal_what (dbg, dbg->reason.signum);
+			const char *name = r_debug_signal_resolve_i (dbg, dbg->reason.signum);
 			if (name && strcmp ("SIGTRAP", name))
 				r_cons_printf ("[+] signal %d aka %s received %d\n",
-						dbg->signum, name, what);
+						dbg->reason.signum, name, what);
 		}
 	}
 	return ret;
@@ -372,6 +406,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 }
 
 R_API int r_debug_step_hard(RDebug *dbg) {
+	dbg->reason.type = R_DEBUG_REASON_STEP;
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
 	if (!dbg->h->step (dbg))
@@ -384,9 +419,11 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 
 	if (!dbg || !dbg->h)
 		return R_FALSE;
+	dbg->reason.type = R_DEBUG_REASON_STEP;
 
-	if (r_debug_is_dead (dbg))
+	if (r_debug_is_dead (dbg)) {
 		return R_FALSE;
+	}
 
 	if (steps < 1)
 		steps = 1;
@@ -398,7 +435,11 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 		if (!ret) {
 			eprintf ("Stepping failed!\n");
 			return R_FALSE;
-		} else dbg->steps++;
+		} else {
+			dbg->steps++;
+			dbg->reason.type = R_DEBUG_REASON_STEP;
+			//dbg->reason.addr = 
+		}
 	}
 
 	return i;
@@ -488,16 +529,16 @@ repeat:
 	if (dbg->h && dbg->h->cont) {
 		r_bp_restore (dbg->bp, R_TRUE); // set sw breakpoints
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
-		dbg->signum = 0;
+		dbg->reason.signum = 0;
 		retwait = r_debug_wait (dbg);
 #if __WINDOWS__
-		if (retwait != R_DBG_REASON_DEAD) {
+		if (retwait != R_DEBUG_REASON_DEAD) {
 			ret = dbg->tid;
 		}
 #endif
 		r_bp_restore (dbg->bp, R_FALSE); // unset sw breakpoints
 		//r_debug_recoil (dbg);
-		if (r_debug_recoil (dbg) || dbg->reason == R_DBG_REASON_BP) {
+		if (r_debug_recoil (dbg) || (dbg->reason.type == R_DEBUG_REASON_BREAKPOINT)) {
 			/* check if cur bp demands tracing or not */
 			pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 			RBreakpointItem *b = r_bp_get_at (dbg->bp, pc);
@@ -529,10 +570,10 @@ repeat:
 #endif
 		r_debug_select (dbg, dbg->pid, ret);
 		sig = 0; // clear continuation after signal if needed
-		if (retwait == R_DBG_REASON_SIGNAL && dbg->signum != -1) {
-			int what = r_debug_signal_what (dbg, dbg->signum);
+		if (retwait == R_DEBUG_REASON_SIGNAL && dbg->reason.signum != -1) {
+			int what = r_debug_signal_what (dbg, dbg->reason.signum);
 			if (what & R_DBG_SIGNAL_CONT) {
-				sig = dbg->signum;
+				sig = dbg->reason.signum;
 				eprintf ("Continue into the signal %d handler\n", sig);
 				goto repeat;
 			} else if (what & R_DBG_SIGNAL_SKIP) {
@@ -543,10 +584,10 @@ repeat:
 				dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 				r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
 				if (op.size>0) {
-					const char *signame = r_debug_signal_resolve_i (dbg, dbg->signum);
+					const char *signame = r_debug_signal_resolve_i (dbg, dbg->reason.signum);
 					r_debug_reg_set (dbg, "pc", pc+op.size);
 					eprintf ("Skip signal %d handler %s\n",
-						dbg->signum, signame);
+						dbg->reason.signum, signame);
 					goto repeat;
 				} else  {
 					ut64 pc = r_debug_reg_get (dbg, "pc");
@@ -559,7 +600,7 @@ repeat:
 }
 
 R_API int r_debug_continue(RDebug *dbg) {
-	return r_debug_continue_kill (dbg, 0); //dbg->signum);
+	return r_debug_continue_kill (dbg, 0); //dbg->reason.signum);
 }
 
 R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
@@ -573,8 +614,9 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	RAnalOp op;
 	ut8 buf[DBG_BUF_SIZE];
 
-	if (r_debug_is_dead (dbg))
+	if (r_debug_is_dead (dbg)) {
 		return R_FALSE;
+	}
 
 	if (!dbg->anal || !dbg->reg) { 
 		eprintf ("Undefined pointer at dbg->anal\n");
@@ -781,7 +823,11 @@ R_API int r_debug_child_clone (RDebug *dbg) {
 }
 
 R_API int r_debug_is_dead (RDebug *dbg) {
-	return (dbg->pid == -1);
+	int is_dead = (dbg->pid == -1);
+	if (is_dead) {
+		dbg->reason.type = R_DEBUG_REASON_DEAD;
+	}
+	return is_dead;
 }
 
 R_API int r_debug_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {

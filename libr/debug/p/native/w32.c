@@ -143,20 +143,19 @@ static int w32dbg_SeDebugPrivilege() {
 }
 
 static void print_lasterr (const char *caller, char *cause) {
-	WCHAR buffer[200];
 	char cbuffer[100];
 	if (!FormatMessageA (FORMAT_MESSAGE_FROM_SYSTEM |
 				FORMAT_MESSAGE_ARGUMENT_ARRAY,
 				NULL,
 				GetLastError(),
 				LANG_SYSTEM_DEFAULT,
-				&cbuffer,
+				(LPSTR)&cbuffer,
 				sizeof (cbuffer)-1,
 				NULL)) {
 		eprintf ("Format message failed with 0x%d\n", (ut32)GetLastError ());
-		return;
+	} else {
+		eprintf ("Error detected in %s/%s: %s\n", r_str_get (caller), r_str_get (cause), r_str_get (cbuffer));
 	}
-	eprintf ("Error detected in %s/%s: %s\n", r_str_get (caller), r_str_get (cause), r_str_get (cbuffer));
 }
 
 
@@ -296,7 +295,8 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
 	case EXCEPTION_STACK_OVERFLOW:
-		eprintf ("(%d) Fatal exception in thread %d\n", de->dwThreadId);
+		eprintf ("(%d) Fatal exception in thread %d\n",
+			(int)de->dwProcessId, (int)de->dwThreadId);
 		break;
 #if __MINGW64__
 	/* STATUS_WX86_BREAKPOINT */
@@ -307,11 +307,11 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 	/* MS_VC_EXCEPTION */
 	case 0x406D1388: 
 		eprintf ("(%d) MS_VC_EXCEPTION (%x) in thread %d\n",
-			de->dwProcessId, code, de->dwThreadId);
+			(int)de->dwProcessId, (int)code, (int)de->dwThreadId);
 		return 1;
 	default:
 		eprintf ("(%d) Unknown exception %x in thread %d\n",
-			de->dwProcessId, code, de->dwThreadId);
+			(int)de->dwProcessId, (int)code, (int)de->dwThreadId);
 		break;
 	}
 	return 0;
@@ -400,7 +400,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 	int tid, next_event = 0;
 	unsigned int code;
 	char *dllname = NULL;
-	int ret = R_DBG_REASON_UNKNOWN;
+	int ret = R_DEBUG_REASON_UNKNOWN;
 	static int exited_already = 0;
 
 	/* handle debug events */
@@ -426,29 +426,29 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 				de.u.CreateProcessInfo.lpStartAddress);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
-			ret = R_DBG_REASON_NEW_PID;
+			ret = R_DEBUG_REASON_NEW_PID;
 			break;
 		case EXIT_PROCESS_DEBUG_EVENT:
 			eprintf ("(%d) Process %d exited with exit code %d\n",
-				de.dwProcessId, de.dwProcessId,
-				de.u.ExitProcess.dwExitCode);
+				(int)de.dwProcessId, (int)de.dwProcessId,
+				(int)de.u.ExitProcess.dwExitCode);
 			//debug_load();
 			next_event = 0;
 			exited_already = 1;
-			ret = R_DBG_REASON_EXIT_PID;
+			ret = R_DEBUG_REASON_EXIT_PID;
 			break;
 		case CREATE_THREAD_DEBUG_EVENT:
 			eprintf ("(%d) Created thread %d (start @ %p)\n",
 				pid, tid, de.u.CreateThread.lpStartAddress);
 			r_debug_native_continue (dbg, pid, tid, -1);
-			ret = R_DBG_REASON_NEW_TID;
+			ret = R_DEBUG_REASON_NEW_TID;
 			next_event = 1;
 			break;
 		case EXIT_THREAD_DEBUG_EVENT:
 			eprintf ("(%d) Finished thread %d\n", pid, tid);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
-			ret = R_DBG_REASON_EXIT_TID;
+			ret = R_DEBUG_REASON_EXIT_TID;
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
 			dllname = get_file_name_from_handle (de.u.LoadDll.hFile);
@@ -460,13 +460,13 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			}
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
-			ret = R_DBG_REASON_NEW_LIB;
+			ret = R_DEBUG_REASON_NEW_LIB;
 			break;
 		case UNLOAD_DLL_DEBUG_EVENT:
 			eprintf ("(%d) Unloading library at %p\n", pid, de.u.UnloadDll.lpBaseOfDll);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
-			ret = R_DBG_REASON_EXIT_LIB;
+			ret = R_DEBUG_REASON_EXIT_LIB;
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
 			eprintf ("(%d) Debug string\n", pid);
@@ -477,12 +477,12 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			eprintf ("(%d) RIP event\n", pid);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
-			// XXX unknown ret = R_DBG_REASON_TRAP;
+			// XXX unknown ret = R_DEBUG_REASON_TRAP;
 			break;
 		case EXCEPTION_DEBUG_EVENT:
 			next_event = debug_exception_event (&de);
 			if (!next_event) {
-				return R_DBG_REASON_TRAP;
+				return R_DEBUG_REASON_TRAP;
 			} else {
 				r_debug_native_continue (dbg, pid, tid, -1);
 			}
@@ -562,7 +562,7 @@ err_load_th:
 }
 
 static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
-	HANDLE process = w32_open_process (PROCESS_QUERY_LIMITED_INFORMATION,
+	HANDLE process = w32_open_process (0x1000, //PROCESS_QUERY_LIMITED_INFORMATION,
 		FALSE, pe->th32ProcessID);
 
 	if (process == INVALID_HANDLE_VALUE || w32_queryfullprocessimagename == NULL) {
@@ -622,7 +622,9 @@ int w32_terminate_process (RDebug *dbg, int pid) {
 	}
 
 	/* stop debugging if we are still attached */
-	DebugActiveProcessStop (pid);
+	if (w32_detach) {
+		w32_detach (pid); //DebugActiveProcessStop (pid);
+	}
 	if (TerminateProcess (process, 1) == 0) {
 		print_lasterr ((char *)__FUNCTION__, "TerminateProcess");
 		CloseHandle (process);
@@ -647,7 +649,7 @@ int w32_terminate_process (RDebug *dbg, int pid) {
 }
 
 void w32_break_process (void *d) {
-	static BOOL WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
+	static HANDLE WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
 	RDebug *dbg = (RDebug *)d;
 	HANDLE lib;
 	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, dbg->pid);

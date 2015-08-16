@@ -62,28 +62,21 @@ enum {
 	//..
 };
 
-enum { // TODO: not yet used by r_debug
-	R_DBG_REASON_DEAD = -1,
-	R_DBG_REASON_UNKNOWN,
-	R_DBG_REASON_NEW_PID,
-	R_DBG_REASON_NEW_TID,
-	R_DBG_REASON_NEW_LIB,
-	R_DBG_REASON_EXIT_PID,
-	R_DBG_REASON_EXIT_TID,
-	R_DBG_REASON_EXIT_LIB,
-	R_DBG_REASON_TRAP,
-	R_DBG_REASON_ILL,
-	R_DBG_REASON_INT,
-	R_DBG_REASON_SIGNAL,
-	R_DBG_REASON_FPU,
-	R_DBG_REASON_BP,
-};
-
 /* TODO: move to r_anal */
 typedef struct r_debug_frame_t {
 	ut64 addr;
 	int size;
 } RDebugFrame;
+
+typedef struct r_debug_reason_t {
+        int type;
+	int tid;
+	int signum;
+	RBreakpointItem *bpi;
+	ut64 timestamp;
+	ut64 addr;
+	ut64 ptr;
+} RDebugReason;
 
 typedef struct r_debug_map_t {
 	char *name;
@@ -149,8 +142,7 @@ typedef struct r_debug_t {
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
 	int newstate;
-	int reason; /* stop reason */
-	int signum;
+	RDebugReason reason; /* stop reason */
 	RDebugTrace *trace;
 	int stop_all_threads;
 	RReg *reg;
@@ -266,12 +258,37 @@ typedef struct r_debug_pid_t {
 	ut64 pc;
 } RDebugPid;
 
+enum RDebugReasonType {
+	R_DEBUG_REASON_DEAD = -1,
+	R_DEBUG_REASON_NONE = 0,
+	R_DEBUG_REASON_SIGNAL,
+	R_DEBUG_REASON_BREAKPOINT,
+	R_DEBUG_REASON_READERR,
+	R_DEBUG_REASON_STEP,
+	R_DEBUG_REASON_WRITERR,
+	R_DEBUG_REASON_DIVBYZERO,
+	R_DEBUG_REASON_ILLEGAL,
+	R_DEBUG_REASON_UNKNOWN,
+	R_DEBUG_REASON_ERROR,
+	R_DEBUG_REASON_NEW_PID,
+	R_DEBUG_REASON_NEW_TID,
+	R_DEBUG_REASON_NEW_LIB,
+	R_DEBUG_REASON_EXIT_PID,
+	R_DEBUG_REASON_EXIT_TID,
+	R_DEBUG_REASON_EXIT_LIB,
+	R_DEBUG_REASON_TRAP,
+	R_DEBUG_REASON_SWI,
+	R_DEBUG_REASON_INT,
+	R_DEBUG_REASON_FPU,
+};
+
 #ifdef R_API
 R_API int r_debug_attach(RDebug *dbg, int pid);
 R_API int r_debug_detach(RDebug *dbg, int pid);
 R_API int r_debug_startv(RDebug *dbg, int argc, char **argv);
 R_API int r_debug_start(RDebug *dbg, const char *cmd);
 R_API int r_debug_stop_reason(RDebug *dbg);
+R_API const char *r_debug_reason_to_string(int type);
 R_API int r_debug_wait(RDebug *dbg);
 R_API int r_debug_step_over(RDebug *dbg, int steps);
 R_API int r_debug_continue_until(RDebug *dbg, ut64 addr);

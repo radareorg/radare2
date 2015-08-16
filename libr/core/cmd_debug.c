@@ -2348,6 +2348,13 @@ static int cmd_debug(void *data, const char *input) {
 #define P r_cons_printf
 #define PS(X, Y) {escaped_str = r_str_escape (Y);r_cons_printf(X, escaped_str);free(escaped_str);}
 			if (rdi) {
+				const char *s = r_debug_signal_resolve_i (core->dbg, core->dbg->reason.signum);
+				P ("type=%s\n", r_debug_reason_to_string (core->dbg->reason.type));
+				P ("signal=%s\n", s? s: "none");
+				P ("signum=%d\n", core->dbg->reason.signum);
+				P ("sigpid=%d\n", core->dbg->reason.tid);
+				P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
+				P ("inbp=%s\n", core->dbg->reason.bpi? "true": "false");
 				P ("pid=%d\n", rdi->pid);
 				P ("tid=%d\n", rdi->tid);
 				if (rdi->exe && *rdi->exe)
@@ -2357,7 +2364,8 @@ static int cmd_debug(void *data, const char *input) {
 				if (rdi->cwd && *rdi->cwd)
 					P ("cwd=%s\n", rdi->cwd);
 			}
-			P ("stopreason=%d\n", stop);
+			if (stop != -1)
+				P ("stopreason=%d\n", stop);
 			break;
 		case 'j':
 			P ("{");
