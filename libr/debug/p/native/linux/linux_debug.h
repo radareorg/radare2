@@ -1,6 +1,13 @@
-
+/*  __
+ -=(o '.
+    \.-.\
+    /|  \\
+    '|  ||
+     _\_):,_
+*/
 
 #include <limits.h>
+#include <sys/ptrace.h>
 
 struct user_regs_struct_x86_64 {
   ut64 r15; ut64 r14; ut64 r13; ut64 r12; ut64 rbp; ut64 rbx; ut64 r11;
@@ -48,3 +55,14 @@ typedef ut64 mips64_regs_t [274];
 #endif
 # endif
 
+
+//API
+int linux_step (RDebug *dbg);
+int linux_attach (RDebug *dbg, int pid);
+RDebugInfo *linux_info (RDebug *dbg, const char *arg);
+RList *linux_thread_list (int pid, RList *list);
+int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
+int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size);
+RList *linux_desc_list (int pid);
+int linux_handle_signals (RDebug *dbg);
+const char *linux_reg_profile (RDebug *dbg);
