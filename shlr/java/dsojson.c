@@ -12,7 +12,6 @@ R_API char * dso_json_dict_to_str (DsoJsonDict *list);
 R_API char * dso_json_num_to_str (DsoJsonNum * num);
 R_API char * dso_json_str_to_str (DsoJsonStr *str);
 
-static int cmpDsoStr (DsoJsonStr *dsoStr1, DsoJsonStr *dsoStr2);
 static int cmpDsoStr_to_str (DsoJsonStr *dsoStr1, char *dsoStr2);
 static const DsoJsonInfo* get_type_info (unsigned int type);
 static char * dso_json_get_str_data (DsoJsonObj *dso_obj);
@@ -163,11 +162,6 @@ static const DsoJsonInfo* get_type_info (unsigned int type) {
 		if (DSO_JSON_INFOS[i].type == type) return &DSO_JSON_INFOS[i];
 	}
 	return NULL;
-}
-
-static int cmpDsoStr (DsoJsonStr *dsoStr1, DsoJsonStr *dsoStr2) {
-	if (dsoStr1 && dsoStr2) return cmpDsoStr_to_str (dsoStr1, dsoStr2->data);
-	return -1;
 }
 
 static int cmpDsoStr_to_str (DsoJsonStr *dsoStr1, char *dsoStr2) {

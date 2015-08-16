@@ -306,7 +306,11 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 	}
 #endif
 	// HACK if its a relative path, load from disk instead of memory
+#if __APPLE__
 	int fd = (filenameuri[0] == '.')? -1: desc->fd;
+#else
+	int fd = desc->fd;
+#endif
 	if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, fd, treat_as_rawstr)) {
 		eprintf ("Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
