@@ -9,6 +9,7 @@ static struct r_bp_plugin_t *bp_static_plugins[] =
 	{ R_BP_STATIC_PLUGINS };
 
 static void r_bp_item_free (RBreakpointItem *b) {
+	free (b->name);
 	free (b->bbytes);
 	free (b->obytes);
 	free (b);
@@ -234,7 +235,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	r_list_foreach (bp->bps, iter, b) {
 		switch (rad) {
 		case 0:
-			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %d %c%c%c %s %s %s cmd=\"%s\"\n",
+			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %d %c%c%c %s %s %s cmd=\"%s\" name=\"%s\"\n",
 				b->addr, b->addr+b->size, b->size,
 			(b->rwx & R_BP_PROT_READ)? 'r': '-',
 			(b->rwx & R_BP_PROT_WRITE)? 'w': '-',
@@ -242,7 +243,8 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 			b->hw? "hw": "sw",
 			b->trace? "trace": "break",
 			b->enabled? "enabled": "disabled",
-			b->data? b->data: "");
+			b->data? b->data: "",
+			b->name? b->name: "");
 			break;
 		case 1:
 		case 'r':

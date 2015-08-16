@@ -39,6 +39,7 @@ typedef struct r_bp_plugin_t {
 } RBreakpointPlugin;
 
 typedef struct r_bp_item_t {
+	char *name;
 	ut64 addr;
 	int size; /* size of breakpoint area */
 	int recoil; /* recoil */

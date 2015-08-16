@@ -1268,6 +1268,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"db", " sym.main", "Add breakpoint into sym.main",
 		"db", " <addr>", "Add breakpoint",
 		"db", " -<addr>", "Remove breakpoint",
+		"db.", "", "Show breakpoint info in current offset",
 		"dbj", "", "List breakpoints in JSON format",
 		// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
 		"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
@@ -1281,6 +1282,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbte", " <addr>", "Enable Breakpoint Trace",
 		"dbtd", " <addr>", "Disable Breakpoint Trace",
 		"dbts", " <addr>", "Swap Breakpoint Trace",
+		"dbn", " [<name>]", "Show or set name for current breakpoint",
 		//
 		"dbi", "", "List breakpoint indexes",
 		"dbic", " <index> <cmd>", "Run command at breakpoint index",
@@ -1305,6 +1307,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	addr = p? r_num_math (core->num, p+1): 0LL;
 
 	switch (input[1]) {
+	case '.':
+		{
+		       RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, core->offset);
+		       if (bpi) {
+			       r_cons_printf ("breakpoint %s %s %s\n",
+					r_str_rwx_i (bpi->rwx),
+					bpi->enabled? "enabled": "disabled",
+				       bpi->name? bpi->name: ""
+					);
+		       }
+		}
+		break;
 	case 't':
 		switch (input[2]) {
 		case 'e':
@@ -1430,6 +1444,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		}
 		r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), 0);
 		break;
+	case 'n':
+		bpi = r_bp_get_at (core->dbg->bp, core->offset);
+		if (input[2] == ' ') {
+			if (bpi) {
+				free (bpi->name);
+				bpi->name = strdup (input+3);
+			}
+		} else {
+			if (bpi->name)
+				r_cons_printf ("%s\n", bpi->name);
+		}
+		break;
 	case 'e':
 		for (p=input+2; *p==' ';p++);
 		if (*p == '*') {
@@ -1463,9 +1489,15 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} else {
 			addr = r_num_math (core->num, input+2);
 			if (validAddress (core, addr)) {
-				if (hwbp) bpi = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-				else bpi = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-				if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input+2);
+				bpi = hwbp \
+				? r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC)
+				: r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+				if (bpi) {
+					free (bpi->name);
+					bpi->name = strdup (input+2);
+				} else {
+					eprintf ("Cannot set breakpoint at '%s'\n", input+2);
+				}
 			} else eprintf ("Can't place a breakpoint here. No mapped memory\n");
 		}
 		break;
