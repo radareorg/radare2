@@ -280,8 +280,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				cpu_type_t cpu;
 				pid_t p = -1;
 				int ret;
-
-				int useASLR = 1;
+				int useASLR = io->aslr;
 				posix_spawnattr_init (&attr);
 				if (useASLR != -1) {
 					if (useASLR) {

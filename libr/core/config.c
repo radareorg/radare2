@@ -679,6 +679,15 @@ static int cb_iocache(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_ioaslr(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value != core->io->aslr) {
+		core->io->aslr = node->i_value;
+	}
+	return R_TRUE;
+}
+
 static int cb_iova(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1382,6 +1391,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("io.cache", "false", &cb_iocache, "Enable cache for io changes");
 	SETCB("io.raw", "false", &cb_ioraw, "Ignore maps/sections and use raw io");
 	SETCB("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
+	SETCB("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
 	SETCB("io.va", "true", &cb_iova, "Use virtual address layout");
 	SETCB("io.zeromap", "0", &cb_iozeromap, "Double map the last opened file to address zero");
 	SETCB("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");

@@ -186,11 +186,13 @@ static void setASLR(int enabled) {
 #endif
 	}
 #elif __APPLE__
-	setenv ("DYLD_NO_PIE", "1", 1);
-	eprintf ("Patch mach0.hdr.flags with:\n"
-		"f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
+	// TOO OLD setenv ("DYLD_NO_PIE", "1", 1);
+	// disable this because its 
+	//eprintf ("Patch mach0.hdr.flags with:\n"
+	//	"f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
 	// for osxver>=10.7
 	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
+	// the right way is to disable the aslr bit in the spawn call
 #else
 	// not supported for this platform
 #endif

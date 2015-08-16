@@ -262,7 +262,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	ret = r_io_desc_new (&r_io_plugin_mach, riom->pid,
 		pidpath, rw | R_IO_EXEC, mode, riom);
 	free (pidpath);
-eprintf ("GOT FD %p\n", ret);
 	return ret;
 }
 

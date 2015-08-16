@@ -27,6 +27,7 @@ R_API RIO *r_io_new() {
 	io->cb_printf = (void*) printf;
 	io->bits = (sizeof(void*) == 8)? 64: 32;
 	io->ff = 1;
+	io->aslr = 0;
 	io->raised = -1;
 	io->autofd = R_TRUE;
 	r_io_map_init (io);
