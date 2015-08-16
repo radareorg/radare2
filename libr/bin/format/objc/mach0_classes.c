@@ -298,7 +298,7 @@ static void get_objc_property_list (mach0_ut p,
 	mach0_ut r;
 	ut32 offset, left, j;
 	char *name;
-	RBinSymbol *property = NULL;
+	RBinField *property = NULL;
 
 	r = get_pointer (p, &offset, &left, arch);
 	if (r == 0) {
@@ -323,7 +323,7 @@ static void get_objc_property_list (mach0_ut p,
 		if (r == 0)
 			return;
 
-		if (!(property = R_NEW0 (RBinSymbol))) {
+		if (!(property = R_NEW0 (RBinField))) {
 			// retain just for debug
 			// eprintf("RBinClass allocation error\n");
 			return;
@@ -345,9 +345,12 @@ static void get_objc_property_list (mach0_ut p,
 
 			name = malloc (left);
 			r_buf_read_at (arch->buf, r, (ut8 *)name, left);
-			tmp = r_str_newf ("%s%s", "(property)", name);
+			tmp = r_str_newf ("%s::%s%s",
+							processed_class->name,
+							"(property)",
+							name);
 
-			copy_sym_name_with_namespace (processed_class->name, tmp, property);
+			memcpy (property->name, tmp, strlen (tmp));
 
 			R_FREE (tmp);
 			R_FREE (name);
@@ -360,7 +363,7 @@ static void get_objc_property_list (mach0_ut p,
 			R_FREE (name);
 		}
 
-		r_list_append (processed_class->methods, property);
+		r_list_append (processed_class->fields, property);
 
 		p += sizeof (struct MACH0_(SObjcProperty));
 		offset += sizeof (struct MACH0_(SObjcProperty));
