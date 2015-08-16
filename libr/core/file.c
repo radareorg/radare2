@@ -305,7 +305,9 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 		r_config_set_i (r->config, "bin.laddr", baseaddr);
 	}
 #endif
-	if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, desc->fd, treat_as_rawstr)) {
+	// HACK if its a relative path, load from disk instead of memory
+	int fd = (filenameuri[0] == '.')? -1: desc->fd;
+	if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, fd, treat_as_rawstr)) {
 		eprintf ("Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
 			treat_as_rawstr = R_TRUE;
