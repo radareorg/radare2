@@ -98,21 +98,21 @@ Some people didn't contributed to the last release, but they did it for the past
  - 0xroot
  - Alexander
  - Anton Bolotinksy
- - Glyn Kennington
- - earada
+ - Eduardo Arada
  - elektranox
- - esanfelix
- - esteve
- - graz
+ - Eloi Sanfelix
+ - Esteve Espunya
+ - Javier Segura (graz)
+ - Glyn Kennington
  - l0gic
  - milabs
  - montekki
  - neuroflip
  - nion
  - oxff
- - pof
+ - Pau Oliva Fora (pof)
+ - Roc Vallès (rvalles)
  - rudi_s
- - rvalles
  - schrotthaufen
  - timstrazz
  - vext01
