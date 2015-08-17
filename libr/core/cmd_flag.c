@@ -491,13 +491,13 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			}
 		}
 		break;
-	case 'n':
-	case '*':
+	case 'n': // "fn"
+	case '*': // "f*"
 	case '\0':
-	case 'j':
+	case 'j': // "fj"
 		r_flag_list (core->flags, *input, input[0]? input+1:"");
 		break;
-	case 'd':
+	case 'd': // "fd"
 		{
 			ut64 addr = 0;
 			RFlagItem *f = NULL;

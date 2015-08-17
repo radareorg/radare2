@@ -1312,21 +1312,21 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		       RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, core->offset);
 		       if (bpi) {
 			       r_cons_printf ("breakpoint %s %s %s\n",
-					r_str_rwx_i (bpi->rwx),
-					bpi->enabled? "enabled": "disabled",
-				       bpi->name? bpi->name: ""
-					);
+				       r_str_rwx_i (bpi->rwx),
+				       bpi->enabled? "enabled": "disabled",
+				       bpi->name? bpi->name: "");
 		       }
 		}
 		break;
 	case 't':
 		switch (input[2]) {
 		case 'e':
-			for (p=input+3; *p==' ';p++);
+			for (p=input+3; *p==' '; p++) { /* nothing to do here */ }
 			if (*p == '*') {
 				r_bp_set_trace_all (core->dbg->bp,R_TRUE);
-			} else	if (!r_bp_set_trace (core->dbg->bp, addr, R_TRUE))
+			} else if (!r_bp_set_trace (core->dbg->bp, addr, R_TRUE)) {
 				eprintf ("Cannot set tracepoint\n");
+			}
 			break;
 		case 'd':
 			for (p=input+3; *p==' ';p++);
@@ -1450,10 +1450,13 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			if (bpi) {
 				free (bpi->name);
 				bpi->name = strdup (input+3);
+			} else {
+				eprintf ("Cant find breakpoint at 0x%08"PFMT64x"\n", core->offset);
 			}
 		} else {
-			if (bpi->name)
+			if (bpi && bpi->name) {
 				r_cons_printf ("%s\n", bpi->name);
+			}
 		}
 		break;
 	case 'e':
@@ -1494,7 +1497,22 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				: r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
 				if (bpi) {
 					free (bpi->name);
-					bpi->name = strdup (input+2);
+					if (!strcmp (input+2, "$$")) {
+						char *newname = NULL;
+						//RFlagItem *f = r_flag_get_at (core->flags, addr);
+						RFlagItem *f = r_flag_get_i2 (core->flags, addr);
+						if (f) {
+							if (f->offset != addr) {
+								newname = r_str_newf ("%s+%d\n",
+									f->name, (int)(addr - f->offset));
+							} else {
+								newname = strdup (f->name);
+							}
+						}
+						bpi->name = newname;
+					} else {
+						bpi->name = strdup (input+2);
+					}
 				} else {
 					eprintf ("Cannot set breakpoint at '%s'\n", input+2);
 				}
