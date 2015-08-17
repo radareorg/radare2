@@ -226,7 +226,7 @@ int main(int argc, char **argv, char **envp) {
 	int run_rc = 1;
  	int ret, i, c, perms = R_IO_READ;
 	int sandbox = 0;
-	ut64 baddr = 0;
+	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
 	char *pfile = NULL, *file = NULL;
 	char *cmdfile[32];
@@ -312,9 +312,6 @@ int main(int argc, char **argv, char **envp) {
 		case 'B':
 			baddr = r_num_math (r.num, optarg);
 			va = 2;
-			// hackaround. baddr=0: no laddr and -1 means baddr=0
-			if (baddr==0)
-				baddr = UT64_MAX;
 			break;
 		case 'c': r_list_append (cmds, optarg); break;
 		case 'C':
@@ -424,7 +421,7 @@ int main(int argc, char **argv, char **envp) {
 	switch (va) {
 	case 0:
 		r_config_set_i (r.config, "io.va", R_FALSE);
-		baddr = 0;
+		baddr = UT64_MAX;
 		break;
 	case 2:
 		r_config_set_i (r.config, "bin.laddr", baddr);
@@ -556,7 +553,7 @@ int main(int argc, char **argv, char **envp) {
 					/* load symbols when doing r2 -d ls */
 					// NOTE: the baddr is redefined to support PIE/ASLR
 					baddr = getBaddrFromDebugger (&r, diskfile);
-					if (baddr) eprintf ("Using BADDR 0x%"PFMT64x"\n", baddr);
+					if (baddr != UT64_MAX) eprintf ("Using BADDR 0x%"PFMT64x"\n", baddr);
 					if (r_core_bin_load (&r, diskfile, baddr)) {
 						RBinObject *obj = r_bin_get_object (r.bin);
 						if (obj && obj->info)

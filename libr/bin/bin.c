@@ -586,6 +586,8 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	ut8 is_debugger = desc && desc->plugin && desc->plugin->isdbg;
 
 	if (!io || !desc) return R_FALSE;
+	if (baseaddr == UT64_MAX) baseaddr = 0;
+	if (loadaddr == UT64_MAX) loadaddr = 0;
 
 	buf_bytes = NULL;
 	file_sz = iob->desc_size (io, desc);
@@ -626,7 +628,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	}
 	sz = R_MIN (file_sz, sz);
 	if (!buf_bytes) {
-		iob->desc_seek (io, desc, baseaddr);
+		iob->desc_seek (io, desc, loadaddr);
 		buf_bytes = iob->desc_read (io, desc, &sz);
 	}
 
@@ -668,7 +670,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 			buf_bytes, sz, file_sz, bin->rawstr, baseaddr, loadaddr,
 			desc->fd, name, NULL, offset);
 		/* hack to force baseaddr, looks like rbinfilenewfrombytes() ignores the value */
-		if (loadaddr) {
+		if (baseaddr) {
 			binfile_set_baddr (binfile, baseaddr);
 		}
 	}
@@ -921,6 +923,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	o->id = r_num_rand (0xfffff000);
 	o->kv = sdb_new0 ();
 	o->baddr = baseaddr;
+	o->baddr_shift = 0;
 	// XXX more checking will be needed here
 	// only use LoadBytes if buffer offset != 0
 	//if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
@@ -956,6 +959,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	o->plugin = plugin;
 	o->loadaddr = loadaddr;
 	o->baddr = baseaddr;
+	o->baddr_shift = 0;
 	// XXX - binfile could be null here meaning an improper load
 	// XXX - object size cant be set here and needs to be set where 
 	// where the object is created from.  The reason for this is to prevent
@@ -1149,19 +1153,23 @@ R_API int r_bin_list(RBin *bin) {
 	return R_FALSE;
 }
 
+static ut64 binobj_get_baddr (RBinObject *o) {
+	return o ? o->baddr + o->baddr_shift : 0;
+}
+
 R_API ut64 r_binfile_get_baddr (RBinFile *binfile) {
-	return binfile && binfile->o ? binfile->o->baddr : 0LL;
+	return binfile ? binobj_get_baddr(binfile->o) : 0LL;
 }
 
 /* returns the base address of bin or 0 in case of errors */
 R_API ut64 r_bin_get_baddr(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	return o ? o->baddr : 0;
+	return binobj_get_baddr (o);
 }
 
 static void binobj_set_baddr (RBinObject *o, ut64 baddr) {
-	if (!o) return;
-	o->baddr = baddr;
+	if (!o || baddr == UT64_MAX) return;
+	o->baddr_shift = baddr - o->baddr;
 }
 
 static void binfile_set_baddr (RBinFile *binfile, ut64 baddr) {
@@ -1750,18 +1758,12 @@ R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 paddr, ut64 vaddr) {
 	int use_va = 0;
 	if (binfile && binfile->o && binfile->o->info)
 		use_va = binfile->o->info->has_va;
-	return use_va ? vaddr : paddr;
+	return use_va ? binobj_a2b (binfile->o, vaddr) : paddr;
 }
 
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 paddr, ut64 vaddr) {
-	ut64 baddr = r_bin_get_baddr (bin);
+	if (!bin || !bin->cur) return UT64_MAX;
 
-	if (!bin || !bin->cur)
-		return UT64_MAX;
-
-	if (bin->is_debugger && baddr) {
-		return r_bin_a2b (bin, paddr);
-	}
 	// autodetect thumb
 	if (bin->cur->o && bin->cur->o->info && bin->cur->o->info->arch) {
 		if (!strcmp (bin->cur->o->info->arch, "arm") && (vaddr & 1)) {
@@ -1773,12 +1775,12 @@ R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 paddr, ut64 vaddr) {
 
 static ut64 binobj_a2b (RBinObject *o, ut64 addr) {
 	if (!o) return addr;
-	return o->baddr + addr;
+	return o->baddr_shift + addr;
 }
 
 R_API ut64 r_bin_a2b (RBin *bin, ut64 addr) {
-	ut64 baddr = r_bin_get_baddr (bin);
-	return baddr + addr;
+	RBinObject *o = r_bin_cur_object (bin);
+	return o ? o->baddr_shift + addr : addr;
 }
 
 R_API ut64 r_bin_get_size (RBin *bin) {

@@ -1175,7 +1175,7 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		}
 
 		r_list_foreach (symbols, iter, symbol) {
-			ut64 addr = va? r_bin_get_vaddr (r->bin, symbol->paddr, symbol->vaddr): symbol->paddr;
+			ut64 addr = va ? r_bin_get_vaddr (r->bin, symbol->paddr, symbol->vaddr) : symbol->paddr;
 			if (name && strcmp (symbol->name, name))
 				continue;
 			if (at) {
@@ -1689,8 +1689,11 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	const char *name = NULL;
 	ut64 at = 0;
 
-	if (loadaddr)
+	if (loadaddr == UT64_MAX) loadaddr = 0;
+
+	if (loadaddr) {
 		va = 2;
+	}
 
 	if (filter && filter->offset)
 		at = filter->offset;
