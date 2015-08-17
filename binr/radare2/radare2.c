@@ -596,15 +596,10 @@ int main(int argc, char **argv, char **envp) {
 
 								/* Load rbin info from r2 dbg:// or r2 /bin/ls */
 								/* the baddr should be set manually here */
-								{
-									if (r_core_bin_load (&r, filepath, 0)) {
-										RBinFile *file = r_bin_cur (r.bin);
-										// use_baddr
-										if (file && file->o)
-											file->o->baddr = baddr;
-									} else {
-										r_config_set_i (r.config, "io.va", R_FALSE);
-									}
+								if (r_core_bin_load (&r, filepath, 0)) {
+									r_bin_set_baddr (r.bin, baddr);
+								} else {
+									r_config_set_i (r.config, "io.va", R_FALSE);
 								}
 							}
 						} else {

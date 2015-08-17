@@ -388,65 +388,6 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	return R_TRUE;
 }
 
-#if 0
-// XXX - remove this code after June 2014, because current code setup is sufficient
-static int r_core_file_do_load_for_hex (RCore *r, ut64 baddr, ut64 loadaddr, const char *filenameuri) {
-	// HEXEDITOR
-	RBinFile * binfile = NULL;
-	ut64 fd = r_core_file_cur_fd (r);
-	int i = 0;
-	int xtr_idx = 0; // if 0, load all if xtr is used
-	int treat_as_rawstr = R_FALSE;
-
-	if (!r_bin_load (r->bin, filenameuri, baddr, loadaddr, xtr_idx, fd, treat_as_rawstr)) {
-		treat_as_rawstr = R_TRUE;
-		if (!r_bin_load (r->bin, filenameuri, baddr, loadaddr, xtr_idx, fd, treat_as_rawstr))
-			return R_FALSE;
-	}
-
-	binfile = r_core_bin_cur (r);
-	if (binfile) {
-		r_core_bin_bind (r, binfile);
-	}
-
-	// binary files should be treated as views into a file
-	// not the actual file
-	/*
-	{
-		RListIter *iter;
-		RIOMap *im;
-
-		r_list_foreach (r->io->maps, iter, im) {
-			if (binfile->size > 0) {
-				im->delta = binfile->offset;
-				im->to = im->from + binfile->size;
-			}
-		}
-	}*/
-
-	if (binfile->narch>1 && r_config_get_i (r->config, "scr.prompt")) {
-		int narch = binfile->narch;
-		eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
-					r->assembler->cur->arch, r->assembler->bits);
-		eprintf ("NOTE: Use -a and -b to select sub binary in fat binary\n");
-
-		for (i=0; i<narch; i++) {
-			RBinFile *lbinfile = r_bin_file_find_by_name_n (r->bin, binfile->file, i);
-			RBinObject *lbinobj = lbinfile ? lbinfile->o : NULL;
-			if (lbinobj && lbinobj->info) {
-				eprintf ("  $ r2 -a %s -b %d %s  # 0x%08"PFMT64x"\n",
-						lbinobj->info->arch,
-						lbinobj->info->bits,
-						binfile->file,
-						lbinobj->boffset);
-			} else eprintf ("No extract info found.\n");
-		}
-	}
-
-	return R_TRUE;
-}
-#endif
-
 R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	ut64 loadaddr = 0;
@@ -630,7 +571,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 	return top_file;
 }
 
-R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr) {
+R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 loadaddr) {
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	const int openmany = r_config_get_i (r->config, "file.openmany");
 	const char *cp;

@@ -684,8 +684,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (baddr != 0LL) {
-		bin->cur->o->baddr = baddr;
-		//bin->cur->o->baddr = laddr;
+		r_bin_set_baddr (bin, baddr);
 	}
 	if (rawstr == 2) {
 		rawstr = R_FALSE;
@@ -736,13 +735,6 @@ int main(int argc, char **argv) {
 		r_core_fini (&core);
 		return 0;
 	}
-#if 0
-	// ASLR WTF
-	if (laddr != 0LL) {
-		//r_bin_set_baddr (bin, laddr);
-		//bin->cur->o->baddr = laddr;
-	}
-#endif
 #define isradjson (rad==R_CORE_BIN_JSON&&actions>0)
 #define run_action(n,x,y) {\
 	if (action&x) {\

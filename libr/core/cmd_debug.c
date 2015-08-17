@@ -838,17 +838,16 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		}
 		r_debug_map_sync (core->dbg); // update process memory maps
 		r_list_foreach (core->dbg->maps, iter, map) {
-			if (core->bin && core->bin->cur && core->bin->cur->o && \
-					((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
-					(libname != NULL && (strstr (map->name, libname))))) {
-				RBinObject *o = core->bin->cur->o;
+			if (core->bin &&
+				((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
+				(libname != NULL && (strstr (map->name, libname))))) {
 				filter.offset = 0LL;
 				filter.name = (char *)symname;
-				baddr = o->baddr;
-				o->baddr = map->addr;
+				baddr = r_bin_get_baddr (core->bin);
+				r_bin_set_baddr (core->bin, map->addr);
 				r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'),
 						R_TRUE, &filter, 0, NULL);
-				o->baddr = baddr;
+				r_bin_set_baddr (core->bin, baddr);
 				break;
 			}
 		}

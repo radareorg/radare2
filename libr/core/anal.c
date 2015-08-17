@@ -1648,13 +1648,13 @@ R_API int r_core_anal_all(RCore *core) {
 	}
 	/* Main */
 	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL) {
-		ut64 addr = va? binmain->vaddr: binmain->paddr; // offset + va?baddr+binmain->vaddr:binmain->paddr;
+		ut64 addr = va? binmain->vaddr: binmain->paddr;
 		r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
 	}
 	if ((list = r_bin_get_entries (core->bin)) != NULL)
 		r_list_foreach (list, iter, entry)
-			r_core_anal_fcn (core, offset + va? baddr+entry->vaddr:entry->paddr, -1,
-					R_ANAL_REF_TYPE_NULL, depth);
+			r_core_anal_fcn (core, (offset + va) ? r_bin_a2b (core->bin, entry->vaddr)
+					: entry->paddr, -1, R_ANAL_REF_TYPE_NULL, depth);
 	/* Symbols (Imports are already analized by rabin2 on init) */
 	if ((list = r_bin_get_symbols (core->bin)) != NULL)
 		r_list_foreach (list, iter, symbol) {

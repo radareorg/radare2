@@ -46,6 +46,8 @@ static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const 
 static int getoffset (RBin *bin, int type, int idx);
 static const char *getname (RBin *bin, int off);
 static int r_bin_file_object_add (RBinFile *binfile, RBinObject *o);
+static void binfile_set_baddr (RBinFile *binfile, ut64 baddr);
+static ut64 binobj_a2b (RBinObject *o, ut64 addr);
 
 R_API void r_bin_iobind(RBin *bin, RIO *io) {
 	r_io_bind (io, &bin->iob);
@@ -463,14 +465,18 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	RIOBind *iob = &(bin->iob);
 	RIO *io;
 	RIODesc *desc = NULL;
-	io = (iob&&iob->get_io) ? iob->get_io(iob) : NULL;
+	io = (iob && iob->get_io) ? iob->get_io(iob) : NULL;
 	if (!io) {
 		io = r_io_new ();
 		if (io) r_io_bind (io, &bin->iob);
 	}
 	if (!io) return R_FALSE;
 	bin->rawstr = rawstr;
-	desc = fd == -1 ? iob->desc_open (io, file, O_RDONLY, 0644) : iob->desc_get_by_fd (io, fd);
+	if (fd == -1) {
+		desc = iob->desc_open (io, file, O_RDONLY, 0644);
+	} else {
+		desc = iob->desc_get_by_fd (io, fd);
+	}
 	if (!desc) return R_FALSE;
 	return r_bin_load_io (bin, desc, baseaddr, loadaddr, xtr_idx);
 }
@@ -588,39 +594,36 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	if (!file_sz || file_sz == UT64_MAX)
 		file_sz = 2*1024*1024; // 2MB
 #endif
-	if (sz == 0)
-		sz = file_sz;
-#if 1
-if (r_list_length (bin->binfiles)==0) {
-	if ((file_sz == 0 || file_sz == UT64_MAX) && is_debugger) {
-		int fail = 1;
-		/* get file path from desc name */
-		const char *filepath = desc->name;
+	if (sz == 0) sz = file_sz;
 
-		// attempt a local open and read
-		// This happens when a plugin like debugger does not have a fixed size.
-		// if there is no fixed size or its MAXED, there is no way to definitively
-		// load the bin-properly.  Many of the plugins require all content and are not
-		// stream based loaders
-		// NOTE: For RBin we dont need to open the file in read-write. This can be problematic
-		RIODesc *tdesc = iob->desc_open (io, filepath, R_IO_READ, 0); //desc->flags, R_IO_READ);
-		eprintf ("Assuming filepath %s\n", filepath);
-		if (tdesc) {
-			file_sz = iob->desc_size (io, tdesc);
-			if (file_sz != UT64_MAX) {
-				sz = R_MIN (file_sz, sz);
-				buf_bytes = iob->desc_read (io, tdesc, &sz);
-				fail = 0;
+	if (r_list_length (bin->binfiles) == 0) {
+		if ((file_sz == 0 || file_sz == UT64_MAX) && is_debugger) {
+			int fail = 1;
+			/* get file path from desc name */
+			const char *filepath = desc->name;
+
+			// attempt a local open and read
+			// This happens when a plugin like debugger does not have a fixed size.
+			// if there is no fixed size or its MAXED, there is no way to definitively
+			// load the bin-properly.  Many of the plugins require all content and are not
+			// stream based loaders
+			// NOTE: For RBin we dont need to open the file in read-write. This can be problematic
+			RIODesc *tdesc = iob->desc_open (io, filepath, R_IO_READ, 0); //desc->flags, R_IO_READ);
+			eprintf ("Assuming filepath %s\n", filepath);
+			if (tdesc) {
+				file_sz = iob->desc_size (io, tdesc);
+				if (file_sz != UT64_MAX) {
+					sz = R_MIN (file_sz, sz);
+					buf_bytes = iob->desc_read (io, tdesc, &sz);
+					fail = 0;
+				}
+				iob->desc_close (io, tdesc);
 			}
-			iob->desc_close (io, tdesc);
+			if (fail) return R_FALSE;
 		}
-		if (fail)
-			return R_FALSE;
-	}
-} else
-#endif
-	if (sz == UT64_MAX)
+	} else if (sz == UT64_MAX) {
 		return R_FALSE;
+	}
 	sz = R_MIN (file_sz, sz);
 	if (!buf_bytes) {
 		iob->desc_seek (io, desc, baseaddr);
@@ -653,9 +656,7 @@ if (r_list_length (bin->binfiles)==0) {
 						desc->name, buf_bytes, sz, file_sz,
 						baseaddr, loadaddr, xtr_idx,
 						desc->fd, bin->rawstr);
-					if (binfile->o) {
-						binfile->o->baddr = baseaddr;
-					}
+					binfile_set_baddr (binfile, baseaddr);
 				}
 				xtr = NULL;
 			}
@@ -663,14 +664,12 @@ if (r_list_length (bin->binfiles)==0) {
 	}
 
 	if (!binfile) {
-//eprintf ("LOAD BINFILE FROM BYTE %lld b=0x%08llx l=0x%08llx\n", sz, baseaddr, loadaddr);
 		binfile = r_bin_file_new_from_bytes (bin, desc->name,
 			buf_bytes, sz, file_sz, bin->rawstr, baseaddr, loadaddr,
 			desc->fd, name, NULL, offset);
 		/* hack to force baseaddr, looks like rbinfilenewfrombytes() ignores the value */
 		if (loadaddr) {
-			if (binfile && binfile->o)
-				binfile->o->baddr = baseaddr;
+			binfile_set_baddr (binfile, baseaddr);
 		}
 	}
 
@@ -681,18 +680,18 @@ if (r_list_length (bin->binfiles)==0) {
 }
 
 R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name) {
-#if 1
 	// adding file_sz to help reduce the performance impact on the system
 	// in this case the number of bytes read will be limited to 2MB (MIN_LOAD_SIZE)
 	// if it fails, the whole file is loaded.
 	const ut64 MAX_LOAD_SIZE = 0; //0xfffff; //128 * (1 << 10 << 10);
 	int res = r_bin_load_io_at_offset_as_sz (bin, desc, baseaddr,
 		loadaddr, xtr_idx, offset, name, MAX_LOAD_SIZE);
-	if (res)
-		return res;
-#endif
-	return r_bin_load_io_at_offset_as_sz (bin, desc, baseaddr,
-		loadaddr, xtr_idx, offset, name, UT64_MAX);
+	if (!res) {
+		res = r_bin_load_io_at_offset_as_sz (bin, desc, baseaddr,
+			loadaddr, xtr_idx, offset, name, UT64_MAX);
+	}
+
+	return res;
 }
 
 #if 0
@@ -917,7 +916,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	ut64 bytes_sz = binfile ? r_buf_size (binfile->buf): 0;
 	Sdb *sdb = binfile ? binfile->sdb : NULL;
 	RBinObject *o = R_NEW0 (RBinObject);
-	o->obj_size = bytes && (bytes_sz >= sz+offset) ? sz : 0;
+	o->obj_size = bytes && (bytes_sz >= sz + offset) ? sz : 0;
 	o->boffset = offset;
 	o->id = r_num_rand (0xfffff000);
 	o->kv = sdb_new0 ();
@@ -1154,18 +1153,26 @@ R_API ut64 r_binfile_get_baddr (RBinFile *binfile) {
 	return binfile && binfile->o ? binfile->o->baddr : 0LL;
 }
 
+/* returns the base address of bin or 0 in case of errors */
 R_API ut64 r_bin_get_baddr(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return o->baddr;
-	return 0LL;
+	return o ? o->baddr : 0;
+}
+
+static void binobj_set_baddr (RBinObject *o, ut64 baddr) {
+	if (!o) return;
+	o->baddr = baddr;
+}
+
+static void binfile_set_baddr (RBinFile *binfile, ut64 baddr) {
+	if (!binfile) return;
+	binobj_set_baddr (binfile->o, baddr);
 }
 
 R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) {
-		o->baddr = baddr;
-		// XXX - update all the infos?
-	}
+	binobj_set_baddr (o, baddr);
+	// XXX - update all the infos?
 }
 
 R_API ut64 r_bin_get_boffset(RBin *bin) {
@@ -1207,8 +1214,7 @@ R_API RList* r_bin_get_imports(RBin *bin) {
 
 R_API RBinInfo* r_bin_get_info(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (!o) return NULL;
-	return o->info;
+	return o ? o->info : NULL;
 }
 
 R_API RList* r_bin_get_libs(RBin *bin) {
@@ -1238,9 +1244,9 @@ R_API RBinSection* r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	if (o) {
 		// TODO: must be O(1) .. use sdb here
 		r_list_foreach (o->sections, iter, section) {
-			from = va ? o->baddr+section->vaddr: section->paddr;
-			to = va ? (o->baddr+section->vaddr + section->vsize) :
-					  (section->paddr+ section->size);
+			from = va ? binobj_a2b (o, section->vaddr) : section->paddr;
+			to = va ? (binobj_a2b (o, section->vaddr) + section->vsize) :
+					  (section->paddr + section->size);
 			if (off >= from && off < to)
 				return section;
 		}
@@ -1740,30 +1746,39 @@ R_API ut64 r_bin_get_offset (RBin *bin) {
 	return UT64_MAX;
 }
 
-R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 baddr, ut64 paddr, ut64 vaddr) {
+R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 paddr, ut64 vaddr) {
 	int use_va = 0;
 	if (binfile && binfile->o && binfile->o->info)
 		use_va = binfile->o->info->has_va;
-	return use_va? vaddr: paddr;
+	return use_va ? vaddr : paddr;
 }
 
-R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
+R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 paddr, ut64 vaddr) {
+	ut64 baddr = r_bin_get_baddr (bin);
+
 	if (!bin || !bin->cur)
 		return UT64_MAX;
 
-	if (bin->is_debugger) {
-		if (baddr) 
-			return baddr + paddr;
+	if (bin->is_debugger && baddr) {
+		return r_bin_a2b (bin, paddr);
 	}
 	// autodetect thumb
 	if (bin->cur->o && bin->cur->o->info && bin->cur->o->info->arch) {
-		if (!strcmp (bin->cur->o->info->arch, "arm")) {
-			if (vaddr & 1) {
-				vaddr = (vaddr>>1)<<1;
-			}
+		if (!strcmp (bin->cur->o->info->arch, "arm") && (vaddr & 1)) {
+			vaddr = (vaddr >> 1) << 1;
 		}
 	}
-	return r_binfile_get_vaddr (bin->cur, baddr, paddr, vaddr);
+	return r_binfile_get_vaddr (bin->cur, paddr, vaddr);
+}
+
+static ut64 binobj_a2b (RBinObject *o, ut64 addr) {
+	if (!o) return addr;
+	return o->baddr + addr;
+}
+
+R_API ut64 r_bin_a2b (RBin *bin, ut64 addr) {
+	ut64 baddr = r_bin_get_baddr (bin);
+	return baddr + addr;
 }
 
 R_API ut64 r_bin_get_size (RBin *bin) {
