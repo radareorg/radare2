@@ -83,15 +83,22 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int a
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return R_FALSE;
 	}
+	/* some io backends seems to be buggy in those cases */
+	if (bs > 4096)
+		bs = 4096;
 	buf = malloc (bs);
+	if (!buf) {
+		eprintf ("Cannot alloc %d bytes\n", bs);
+		return R_FALSE;
+	}
 	r_cons_break (NULL, NULL);
-	for (i=0; i<size; i+=bs) {
+	for (i = 0; i<size; i += bs) {
 		if (r_cons_singleton ()->breaked)
 			break;
-		if ((i+bs)>size)
-			bs = size-i;
-		r_io_read_at (core->io, addr+i, buf, bs);
-		if (fwrite (buf, bs, 1, fd) <1) {
+		if ((i + bs) > size)
+			bs = size - i;
+		r_io_read_at (core->io, addr + i, buf, bs);
+		if (fwrite (buf, bs, 1, fd) < 1) {
 			eprintf ("write error\n");
 			break;
 		}
