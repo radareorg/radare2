@@ -7,6 +7,8 @@
 #define FMT_JSON 2
 
 
+static int needs_newline = 0;
+
 static void showfile(const int nth, const char *fpath, const char *name, int printfmt) {
 #if __UNIX__
 	struct stat sb;
@@ -31,7 +33,8 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 	}
 	perm = isdir? 0755: 0644;
 	if (!printfmt) {
-		r_cons_printf ("%18s%s", nn, (nth%4)?"  ":"\n");
+		needs_newline = ((nth+1)%4)? 1: 0;
+		r_cons_printf ("%18s%s", nn, needs_newline? "  ": "\n");
 		free (nn);
 		return;
 	}
@@ -95,6 +98,7 @@ R_API void r_core_syscmd_ls(const char *input) {
 	char *name;
 	char *dir;
 	int off;
+	int mode = 0;
 	if (!input || *input == '\0') return;
 	if (r_sandbox_enable (0)) {
 		eprintf ("Sandbox forbids listing directories\n");
@@ -102,8 +106,10 @@ R_API void r_core_syscmd_ls(const char *input) {
 	}
 	if (input[1]==' ') {
 		if ((!strncmp (input+2, "-l", 2)) || (!strncmp (input+2, "-j", 2))) {
+			mode = 'l';
 			if (input[3]) {
 				printfmt = (input[3] == 'j') ? FMT_JSON : FMT_RAW;
+				mode = 'j';
 				path = input+4;
 				while (*path==' ') path++;
 				if (!*path) path = ".";
@@ -156,16 +162,18 @@ R_API void r_core_syscmd_ls(const char *input) {
 		dir = r_str_concat (strdup (path), "/");
 	int nth = 0;
 	if (printfmt == FMT_JSON) r_cons_printf ("[");
+	needs_newline = 0;
 	r_list_foreach (files, iter, name) {
 		char *n = r_str_concat (strdup (dir), name);
 		if (!n) break;
-		if (r_str_glob(name, pattern)){
+		if (r_str_glob (name, pattern)) {
 			if (*n) showfile (nth, n, name, printfmt);
 			nth++;
 		}
 		free (n);
 	}
 	if (printfmt == FMT_JSON) r_cons_printf ("]");
+	if (needs_newline) r_cons_newline ();
 	free (dir);
 	free (d);
 	free (homepath);

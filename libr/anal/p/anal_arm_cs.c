@@ -537,6 +537,10 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		op->jump = IMM64(1);
 		op->fail = addr+op->size;
 		break;
+	case ARM64_INS_BR:
+		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->eob = 1;
+		break;
 	case ARM64_INS_B:
 		// BX LR == RET
 		if (insn->detail->arm64.operands[0].reg == ARM64_REG_LR) {

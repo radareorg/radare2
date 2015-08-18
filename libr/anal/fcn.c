@@ -7,7 +7,7 @@
 
 #define FCN_DEPTH 16
 
-#define JMP_IS_EOB 0
+#define JMP_IS_EOB 1
 #define JMP_IS_EOB_RANGE 32
 #define CALL_IS_EOB 0
 
@@ -424,6 +424,14 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
+			if (anal->eobjmp) {
+				FITFCNSZ();
+				op.jump = UT64_MAX;
+				//recurseAt (op.jump);
+				//recurseAt (op.fail);
+				gotoBeachRet ();
+				return R_ANAL_RET_END;
+			}
 			if (anal->bbsplit) {
 				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 				if (!overlapped) {

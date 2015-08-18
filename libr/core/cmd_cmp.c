@@ -329,6 +329,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 }
 
 static int cmd_cmp(void *data, const char *input) {
+	static char *oldcwd = NULL;
 	RCore *core = data;
 	ut64 val = UT64_MAX;
 	ut8 *buf;
@@ -394,17 +395,37 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'd':
 		while (input[1]==' ') input++;
 		if (input[1]) {
-			if (input[1]=='~' && input[2]=='/') {
+			if (!strcmp (input+1, "-")) {
+				if (oldcwd) {
+					char *newdir = oldcwd;
+					oldcwd = r_sys_getdir ();
+					if (r_sandbox_chdir (newdir)==-1) {
+						eprintf ("Cannot chdir to %s\n", newdir);
+						free (oldcwd);
+						oldcwd = newdir;
+					} else {
+						free (newdir);
+					}
+				} else {
+					// nothing to do here
+				}
+			} else if (input[1]=='~' && input[2]=='/') {
 				char *homepath = r_str_home (input+3);
 				if (homepath) {
-					if (*homepath)
+					if (*homepath) {
+						free (oldcwd);
+						oldcwd = r_sys_getdir ();
 						if (r_sandbox_chdir (homepath)==-1)
 							eprintf ("Cannot chdir to %s\n", homepath);
+					}
 					free (homepath);
 				} else eprintf ("Cannot find home\n");
 			} else {
-				if (r_sandbox_chdir (input+1)==-1)
+				free (oldcwd);
+				oldcwd = r_sys_getdir ();
+				if (r_sandbox_chdir (input+1)==-1) {
 					eprintf ("Cannot chdir to %s\n", input+1);
+				}
 			}
 		} else {
 			char* home = r_sys_getenv (R_SYS_HOME);
