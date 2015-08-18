@@ -356,7 +356,6 @@ RList*
 wind_list_process (WindCtx *ctx) {
 	RList *ret;
 	uint64_t ptr, base;
-	int i;
 
 	if (!ctx || !ctx->io_ptr || !ctx->syncd)
 		return NULL;

@@ -722,7 +722,6 @@ R_API DsoJsonObj * r_bin_java_get_import_json_definitions(RBinJavaObj *bin) {
 
 R_API DsoJsonObj * r_bin_java_get_class_info_json(RBinJavaObj *bin) {
 	RList *classes = r_bin_java_get_classes (bin);
-	RListIter *iter, *iter_tmp;
 	DsoJsonObj *interfaces_list = dso_json_list_new (),
 			   *class_info_dict = dso_json_dict_new ();
 
@@ -732,7 +731,6 @@ R_API DsoJsonObj * r_bin_java_get_class_info_json(RBinJavaObj *bin) {
 		int dummy = 0;
 		RListIter *iter;
 		RBinClass *class_v = NULL;
-		char *super_name = NULL;
 		// add access flags like in methods
 		int is_public = ((class_->visibility & R_BIN_JAVA_CLASS_ACC_PUBLIC) != 0),
 			is_final = ((class_->visibility & R_BIN_JAVA_CLASS_ACC_FINAL) != 0),
@@ -803,7 +801,6 @@ R_API DsoJsonObj * r_bin_java_get_interface_json_definitions(RBinJavaObj *bin) {
 }
 
 R_API DsoJsonObj * r_bin_java_get_method_json_definitions(RBinJavaObj *bin) {
-	char *res = NULL;
 	RBinJavaField *fm_type = NULL;
 	RListIter *iter = NULL;
 	DsoJsonObj *json_list = dso_json_list_new ();
@@ -858,8 +855,6 @@ R_API char * r_bin_java_create_field_fq_str(const char *klass, const char* name,
 }
 
 R_API DsoJsonObj * r_bin_java_get_fm_type_definition_json (RBinJavaObj *bin, RBinJavaField *fm_type, int is_method) {
-	char * json = NULL;
-
 	char *prototype = NULL,
 	     *fq_name = NULL;
 
@@ -2885,7 +2880,6 @@ R_API RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 	 {
 		RBinImport *imp;
 		RList *imports = r_bin_java_get_imports (bin);
-		int ord = 0;
 		r_list_foreach (imports, iter, imp) {
 			sym = R_NEW0 (RBinSymbol);
 			strncpy (sym->name, sdb_fmt(0, "imp.%s", imp->name),
@@ -7098,8 +7092,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_find_cp_name_and_type_info(RBinJavaObj *bin,
 
 R_API char * r_bin_java_resolve_cp_idx_type(RBinJavaObj *BIN_OBJ, int idx) {
 	RBinJavaCPTypeObj *item = NULL;
-	char *cp_name = NULL, *str = NULL;
-   	int memory_alloc = 0;
+	char *str = NULL;
 	if (BIN_OBJ && BIN_OBJ->cp_count < 1) {
 		//r_bin_java_new_bin(BIN_OBJ);
 		return NULL;
@@ -7148,7 +7141,6 @@ R_API char * r_bin_java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 space_bn_name
 		 *empty = "",
 		 *cp_name = NULL,
 		 *str = NULL;
-   	int memory_alloc = 0;
 	if (BIN_OBJ && BIN_OBJ->cp_count < 1) {
 		//r_bin_java_new_bin(BIN_OBJ);
 		return NULL;
@@ -7209,13 +7201,11 @@ R_API char * r_bin_java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 space_bn_name
 		if (desc_str != empty)
 			free (desc_str);
 	} else if (!strcmp (cp_name, "String")) {
-		ut32 length = r_bin_java_get_utf8_len_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx);
 		string_str = r_bin_java_get_utf8_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx);
 		str = NULL;
 		IFDBG eprintf("java_resolve String got: (%d) %s\n", item->info.cp_string.string_idx, string_str);
 		if (!string_str) {
 			string_str = empty;
-			length = strlen (empty);
 		}
 		str = r_str_newf ("\"%s\"", string_str);
 		IFDBG eprintf("java_resolve String return: %s\n", str);
@@ -8667,7 +8657,6 @@ R_API int r_bin_java_valid_class (const ut8 * buf, ut64 buf_sz) {
 
 R_API ut64 r_bin_java_calc_class_size(ut8* bytes, ut64 size){
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj), *cur_bin = R_BIN_JAVA_GLOBAL_BIN;
-	int res = R_FALSE;
 	ut64 bin_size = UT64_MAX;
 	if (!bin) return bin_size;
 	if (r_bin_java_load_bin (bin, bytes, size))

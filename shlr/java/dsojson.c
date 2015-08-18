@@ -86,20 +86,8 @@ static int dso_json_is_null (DsoJsonObj *y) {
 	return get_type (y) == DSO_JSON_NULL;
 }
 
-static int dso_json_is_str (DsoJsonObj *y) {
-	return get_type (y) == DSO_JSON_STR;
-}
-
-static int dso_json_is_num (DsoJsonObj *y) {
-	return get_type (y) == DSO_JSON_NUM;
-}
-
 static int dso_json_is_list (DsoJsonObj *y) {
 	return get_type (y) == DSO_JSON_LIST;
-}
-
-static int dso_json_is_dict (DsoJsonObj *y) {
-	return get_type (y) == DSO_JSON_DICT;
 }
 
 static int dso_json_is_dict_entry (DsoJsonObj *y) {
