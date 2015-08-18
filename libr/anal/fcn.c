@@ -427,8 +427,8 @@ repeat:
 			if (anal->eobjmp) {
 				FITFCNSZ();
 				op.jump = UT64_MAX;
-				//recurseAt (op.jump);
-				//recurseAt (op.fail);
+				recurseAt (op.jump);
+				recurseAt (op.fail);
 				gotoBeachRet ();
 				return R_ANAL_RET_END;
 			}
