@@ -350,7 +350,7 @@ static void get_objc_property_list (mach0_ut p,
 							"(property)",
 							name);
 
-			memcpy (property->name, tmp, strlen (tmp));
+			strncpy (property->name, tmp, sizeof (property->name)-1);
 
 			R_FREE (tmp);
 			R_FREE (name);
