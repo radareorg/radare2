@@ -138,7 +138,7 @@ static int var_cmd(RCore *core, const char *str) {
 			} else eprintf ("Missing argument\n");
 			break;
 		case ' ':
-			for (str++;*str==' ';) str++;
+			for (str++; *str == ' '; ) str++;
 			p = strchr (str, ' ');
 			if (!p) {
 				var_help (core, type);
@@ -149,10 +149,10 @@ static int var_cmd(RCore *core, const char *str) {
 			 {
 				int size = 4;
 				int scope = 1; // 0 = global, 1 = LOCAL;
-				const char *vartype = p;
-				char *name = strchr (vartype, ' ');
-				if (name) {
-					*name++ = 0;
+				const char *name = p;
+				char *vartype = strchr (name, ' ');
+				if (vartype) {
+					*vartype++ = 0;
 					//eprintf ("SRC(%s)\n", p);
 					if (fcn) {
 						//eprintf ("ADD (type=%s)(name=%s)\n", vartype, name);
