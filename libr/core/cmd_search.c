@@ -869,6 +869,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	RList/*<intptr_t>*/ *badstart = r_list_new();
 	RList/*<RRegex>*/ *rx_list = NULL;
 	RList/*<RIOMap>*/ *list = NULL;
+	int align = core->search->align;
 	RListIter *itermap = NULL;
 	char* tok, *gregexp = NULL;
 	char* grep_arg = NULL;
@@ -998,18 +999,18 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				continue;
 			}
 			if (is_end_gadget (&end_gadget, crop)) {
+				struct endlist_pair *epair;
 				if (maxhits && r_list_length (end_list) >= maxhits) {
 					// limit number of high level rop gadget results
 					break;
 				}
-				struct endlist_pair *epair = R_NEW0 (struct endlist_pair);
+				epair = R_NEW0 (struct endlist_pair);
 				// If this arch has branch delay slots, add the next instr as well
 				if (end_gadget.delay) {
 					epair->instr_offset = i+increment;
 					epair->delay_size = end_gadget.delay;
-					r_list_append(end_list, (void*)(intptr_t)epair);
-				}
-				else {
+					r_list_append (end_list, (void*)(intptr_t)epair);
+				} else {
 					epair->instr_offset = (intptr_t)i;
 					epair->delay_size = end_gadget.delay;
 					r_list_append (end_list, (void*)epair);
@@ -1070,7 +1071,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 						rx_list, end_gadget, badstart, &max_count);
 					if (!hitlist)
 						continue;
-
+					if (align && (0 != ((from + i) % align))) {
+						continue;
+					}
 					if (json) mode = 'j';
 
 					if ((mode == 'l') && subchain) {
@@ -1090,7 +1093,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		r_list_purge (badstart);
 		free (buf);
 	}
-	if (r_cons_singleton()->breaked)
+	if (r_cons_singleton ()->breaked)
 		eprintf ("\n");
 	r_cons_break_end ();
 
