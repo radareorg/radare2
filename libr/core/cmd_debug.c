@@ -2461,13 +2461,20 @@ static int cmd_debug(void *data, const char *input) {
 		case 'j':
 			P ("{");
 			if (rdi) {
+				const char *s = r_debug_signal_resolve_i (core->dbg, core->dbg->reason.signum);
+				P ("\"type\":\"%s\",", r_debug_reason_to_string (core->dbg->reason.type));
+				P ("\"signal\":\"%s\",", s? s: "none");
+				P ("\"signum\":%d,", core->dbg->reason.signum);
+				P ("\"sigpid\":%d,", core->dbg->reason.tid);
+				P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
+				P ("\"inbp\":%s,", core->dbg->reason.bpi? "true": "false");
 				P ("\"pid\":%d,", rdi->pid);
 				P ("\"tid\":%d,", rdi->tid);
 				if (rdi->exe) PS("\"exe\":\"%s\",", rdi->exe)
 				if (rdi->cmdline) PS ("\"cmdline\":\"%s\",", rdi->cmdline);
 				if (rdi->cwd) PS ("\"cwd\":\"%s\",", rdi->cwd);
 			}
-			P ("\"stopreason\":%d}", stop);
+			P ("\"stopreason\":%d}\n", stop);
 			break;
 #undef P
 #undef PS
