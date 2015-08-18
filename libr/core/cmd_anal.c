@@ -1179,7 +1179,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'p':  // drp
-		if (!str[1]) {
+		if (!str[1]) { // "drp"
 			if (core->dbg->reg->reg_profile_str) {
 				//core->anal->reg = core->dbg->reg;
 				r_cons_printf ("%s\n", core->dbg->reg->reg_profile_str);
@@ -1187,7 +1187,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			} else {
 				eprintf ("No register profile defined. Try 'dr.'\n");
 			}
-		} else if (str[1] == 'j') {
+		} else if (str[1] == 'j') { // "drpj"
 			// drpj
 			RListIter *iter;
 			RRegItem *r;

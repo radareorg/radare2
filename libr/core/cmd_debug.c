@@ -1004,7 +1004,48 @@ free (rf);
 				r_cons_printf ("%s\n", core->dbg->reg->reg_profile_str);
 				//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
 			} else eprintf ("No register profile defined. Try 'dr.'\n");
-		} else r_reg_set_profile (core->dbg->reg, str+2);
+		} else if (str[1] == 'j') {
+			// "drpj" .. dup from "arpj"
+			RListIter *iter;
+			RRegItem *r;
+			int i;
+			int first = 1;
+			static const char *types[R_REG_TYPE_LAST+1] = {
+				"gpr", "drx", "fpu", "mmx", "xmm", "flg", "seg", NULL
+			};
+			static const char *roles[R_REG_NAME_LAST+1] = {
+				"pc", "sp", "sr", "bp", "ao", "a1",
+				"a2", "a3", "a4", "a5", "a6", "zf",
+				"sf", "cf", "of", "sb", NULL
+			};
+			r_cons_printf ("{\"alias_info\":[");
+			for (i = 0; i < R_REG_NAME_LAST; i++) {
+				if (core->dbg->reg->name[i]) {
+					if (!first) r_cons_printf (",");
+					r_cons_printf ("{\"role\":%d,", i);
+					r_cons_printf ("\"role_str\":\"%s\",", roles[i]);
+					r_cons_printf ("\"reg\":\"%s\"}",
+						core->dbg->reg->name[i]);
+					first = 0;
+				}
+			}
+			r_cons_printf ("],\"reg_info\":[");
+			first = 1;
+			for (i = 0; i < R_REG_TYPE_LAST; i++) {
+				r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
+					if (!first) r_cons_printf (",");
+					r_cons_printf ("{\"type\":%d,", r->type);
+					r_cons_printf ("\"type_str\":\"%s\",", types[r->type]);
+					r_cons_printf ("\"name\":\"%s\",", r->name);
+					r_cons_printf ("\"size\":%d,", r->size);
+					r_cons_printf ("\"offset\":%d}", r->offset);
+					first = 0;
+				}
+			}
+			r_cons_printf ("]}");
+		} else {
+			r_reg_set_profile (core->dbg->reg, str+2);
+		}
 		break;
 	case 't': // "drt"
 		switch (str[1]) {
