@@ -293,6 +293,46 @@ static registers_t mips[] = {
 	{"",	0,	0}
 };
 
+static registers_t avr[] = {
+    {"r0", 0, 1},
+	{"r1", 1, 1},
+	{"r2", 2, 1},
+	{"r3", 3, 1},
+	{"r4", 4, 1},
+	{"r5", 5, 1},
+	{"r6", 6, 1},
+	{"r7", 7, 1},
+	{"r8", 8, 1},
+	{"r9", 9, 1},
+	{"r10", 10, 1},
+	{"r11", 11, 1},
+	{"r12", 12, 1},
+	{"r13", 13, 1},
+	{"r14", 14, 1},
+	{"r15", 15, 1},
+	{"r16", 16, 1},
+	{"r17", 17, 1},
+	{"r18", 18, 1},
+	{"r19", 19, 1},
+	{"r20", 20, 1},
+	{"r21", 21, 1},
+	{"r22", 22, 1},
+	{"r23", 23, 1},
+	{"r24", 24, 1},
+	{"r25", 25, 1},
+	{"r26", 26, 1},
+	{"r27", 27, 1},
+	{"r28", 28, 1},
+	{"r29", 29, 1},
+	{"r30", 30, 1},
+	{"r31", 31, 1},
+	{"sreg", 32, 1},
+	{"sp", 33, 2},
+	{"pc2", 35, 4},
+	{"pc", 39, 4},
+	{"", 0, 0}
+};
+
 int gdbr_init(libgdbr_t* g) {
 	if (!g) return -1;
 	memset (g ,0 , sizeof (libgdbr_t));
@@ -340,6 +380,9 @@ int gdbr_set_architecture(libgdbr_t* g, uint8_t architecture) {
 			break;
         case ARCH_MIPS:
 			g->registers = mips;
+			break;
+		case ARCH_AVR:
+			g->registers = avr;
 			break;
 		default:
 			fprintf (stderr, "Error unknown architecture set\n");

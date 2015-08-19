@@ -14,6 +14,7 @@
 #define ARM_32 ARCH_ARM_32
 #define ARM_64 ARCH_ARM_64
 #define MIPS ARCH_MIPS
+#define AVR ARCH_AVR
 
 #define MSG_OK 0
 #define MSG_NOT_SUPPORTED -1

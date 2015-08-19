@@ -517,6 +517,48 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	fir	.32	284	0\n"
 			"gpr	unknw	.32	288	0\n" //Not documented what this part of the register packet is
 		);
+	case R_SYS_ARCH_AVR:
+		return strdup (
+			"=pc    pc\n"
+			"=sp    sp\n"
+			"gpr	r0	.8	0	0\n"
+			"gpr	r1	.8	1	0\n"
+			"gpr	r2	.8	2	0\n"
+			"gpr	r3	.8	3	0\n"
+			"gpr	r4	.8	4	0\n"
+			"gpr	r5	.8	5	0\n"
+			"gpr	r6	.8	6	0\n"
+			"gpr	r7	.8	7	0\n"
+			"gpr	r8	.8	8	0\n"
+			"gpr	r9	.8	9	0\n"
+			"gpr	r10	.8	10	0\n"
+			"gpr	r11	.8	11	0\n"
+			"gpr	r12	.8	12	0\n"
+			"gpr	r13	.8	13	0\n"
+			"gpr	r14	.8	14	0\n"
+			"gpr	r15	.8	15	0\n"
+			"gpr	r16	.8	16	0\n"
+			"gpr	r17	.8	17	0\n"
+			"gpr	r18	.8	18	0\n"
+			"gpr	r19	.8	19	0\n"
+			"gpr	r20	.8	20	0\n"
+			"gpr	r21	.8	21	0\n"
+			"gpr	r22	.8	22	0\n"
+			"gpr	r23	.8	23	0\n"
+			"gpr	r24	.8	24	0\n"
+			"gpr	r25	.8	25	0\n"
+			"gpr	r26	.8	26	0\n"
+			"gpr	r27	.8	27	0\n"
+			"gpr	r28	.8	28	0\n"
+			"gpr	r29	.8	29	0\n"
+			"gpr	r30	.8	30	0\n"
+			"gpr	r31	.8	31	0\n"
+			"gpr	sreg	.8	32	0\n"
+			"gpr	sp	.16	33	0\n"
+			"gpr	pc2	.32	35	0\n"
+			"gpr	pc	.32	39	0\n"
+	);
+
 	}
 	return NULL;
 }
@@ -544,7 +586,7 @@ struct r_debug_plugin_t r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_X86 | R_SYS_ARCH_ARM | R_SYS_ARCH_SH | R_SYS_ARCH_MIPS,
+	.arch = R_SYS_ARCH_X86 | R_SYS_ARCH_ARM | R_SYS_ARCH_SH | R_SYS_ARCH_MIPS | R_SYS_ARCH_AVR,
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.init = NULL,
 	.step = r_debug_gdb_step,
