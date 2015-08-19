@@ -94,7 +94,7 @@ ${LIBNAME}: ${OBJS}
 ifneq ($(SILENT),)
 	@echo LIB ${LIBNAME}
 endif
-	${CC} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS} ${LINKFLAGS}
+	${CC} $(CFLAGS) ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS} ${LINKFLAGS}
 
 ${LIBAR}: ${OFILES}
 	#${CC_AR} $(LIBAR) ${OFILES}

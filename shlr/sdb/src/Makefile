@@ -45,13 +45,13 @@ endif
 ifneq ($(SILENT),)
 	@echo LIB libsdb.${SOVER}
 endif
-	${CC} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${SOBJ}
+	${CC} ${CFLAGS} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${SOBJ}
 
 ${BIN}: sdb_version.h libsdb.a main.o
 ifneq ($(SILENT),)
 	@echo BIN ${BIN}
 endif
-	${CC} ${LDFLAGS} -o ${BIN} main.o ${OBJ}
+	${CC} ${CFLAGS} ${LDFLAGS} -o ${BIN} main.o ${OBJ}
 
 mrproper clean:
 	rm -rf ${OBJ} ${SOBJ} main.o libsdb.a a.out ${BIN} sdb.dSYM

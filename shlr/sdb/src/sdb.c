@@ -156,19 +156,18 @@ SDB_API const char *sdb_const_get_len (Sdb* s, const char *key, int *vlen, ut32 
 	/* search in memory */
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
 	if (kv) {
-		if (*kv->value) {
-			if (kv->expire) {
-				if (!now) now = sdb_now ();
-				if (now > kv->expire) {
-					sdb_unset (s, key, 0);
-					return NULL;
-				}
+		if (!*kv->value)
+			return NULL;
+		if (kv->expire) {
+			if (!now) now = sdb_now ();
+			if (now > kv->expire) {
+				sdb_unset (s, key, 0);
+				return NULL;
 			}
-			if (cas) *cas = kv->cas;
-			if (vlen) *vlen = kv->value_len;
-			return kv->value;
 		}
-		return NULL;
+		if (cas) *cas = kv->cas;
+		if (vlen) *vlen = kv->value_len;
+		return kv->value;
 	}
 	/* search in disk */
 	if (s->fd == -1)
@@ -888,8 +887,13 @@ static int like_cb(void *user, const char *k, const char *v) {
 		return 1;
 	if (lcd->array) {
 		int idx = lcd->array_index;
-		lcd->array_size += sizeof (char*) * 2;
-		lcd->array = realloc (lcd->array, lcd->array_size);
+		int newsize = lcd->array_size + sizeof (char*) * 2;
+		const char **newarray = realloc (lcd->array, newsize);
+		if (!newarray) {
+			return 0;
+		}
+		lcd->array = newarray;
+		lcd->array_size = newsize;
 		// concatenate in array
 		lcd->array[idx] = k;
 		lcd->array[idx+1] = v;
