@@ -2529,8 +2529,11 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 's':
-			// XXX: last byte fails (ret) should not be generated
-			r_core_cmdf (core, "dir `gs %s`", input+2);
+			if (input[2]) {
+				r_core_cmdf (core, "dxr `gs %s`", input+2);
+			} else {
+				eprintf ("Missing parameter used in gs by dxs\n");
+			}
 			break;
 		case 'r':
 			r_reg_arena_push (core->dbg->reg);
