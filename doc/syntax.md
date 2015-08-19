@@ -110,3 +110,9 @@ a = (b << 3) * 5;
 * See doc/vim for vimrc
 
 * See doc/clang-format for work-in-progress support for automated indentation
+
+* Use the r2 types instead of the ones in stdint, which are known to cause some
+  portability issues. So, instead of uint8_t, use ut8, etc..
+
+* Never ever use %lld or %llx. This is not portable. Always use the PFMT64x
+  macros. Those are similar to the ones in GLIB.
