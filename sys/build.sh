@@ -33,6 +33,11 @@ if [ $? = 0 ]; then
 	export CC
 fi
 
+# Required to build on FreeBSD
+if [ ! -x /usr/bin/gcc -a -x /usr/bin/cc ]; then
+	export CC=cc
+	export HOST_CC=cc
+fi
 
 echo
 echo "export USE_R2_CAPSTONE=$USE_R2_CAPSTONE"
