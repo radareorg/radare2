@@ -183,7 +183,8 @@ static void copy_sym_name_with_namespace (char *class_name,
 			class_name,
 			(len < R_BIN_SIZEOF_STRINGS) ? len : R_BIN_SIZEOF_STRINGS);
 
-	tmp = r_str_newf ("%s::%s", class_name, read_name);
+	//tmp = r_str_newf ("%s::%s", class_name, read_name);
+	tmp = r_str_newf ("%s", read_name); //class_name, read_name);
 	len = strlen (tmp);
 	memcpy (sym->name,
 			tmp,

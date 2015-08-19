@@ -266,8 +266,8 @@ static int cmd_info(void *data, const char *input) {
 				r_bin_list_archs (core->bin, 1);
 			}
 			break;
-		case 'Z': RBININFO ("size",R_CORE_BIN_ACC_SIZE); break;
-		case 'S': RBININFO ("sections",R_CORE_BIN_ACC_SECTIONS); break;
+		case 'Z': RBININFO ("size", R_CORE_BIN_ACC_SIZE); break;
+		case 'S': RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS); break;
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS); break;
 		case 'l': RBININFO ("libs", R_CORE_BIN_ACC_LIBS); break;
 		case 's': RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS); break;
@@ -276,9 +276,9 @@ static int cmd_info(void *data, const char *input) {
 		case 'd': RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF); break;
 		case 'i': RBININFO ("imports",R_CORE_BIN_ACC_IMPORTS); break;
 		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO); break;
-		case 'e': RBININFO ("entries",R_CORE_BIN_ACC_ENTRIES); break;
-		case 'M': RBININFO ("main",R_CORE_BIN_ACC_MAIN); break;
-		case 'm': RBININFO ("memory",R_CORE_BIN_ACC_MEM); break;
+		case 'e': RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES); break;
+		case 'M': RBININFO ("main", R_CORE_BIN_ACC_MAIN); break;
+		case 'm': RBININFO ("memory", R_CORE_BIN_ACC_MEM); break;
 		case 'z':
 			if (input[1] == 'z') {
 				/* TODO: reimplement in C to avoid forks */
@@ -312,7 +312,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'c': // for r2 `ic`
 			if (input[1]== '?') {
-				eprintf("Usage: ic[ljq*] [class-index]\n");
+				eprintf ("Usage: ic[ljq*] [class-index]\n");
 			} else if (input[1]== ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l') {
 				RBinClass *cls;
 				RBinSymbol *sym;
@@ -327,17 +327,21 @@ static int cmd_info(void *data, const char *input) {
 						switch (input[1]) {
 						case '*':
 							r_list_foreach (cls->methods, iter2, sym) {
-								r_cons_printf ("f sym.%s @ 0x%"PFMT64x"\n", sym->name, sym->vaddr);
+								r_cons_printf ("f sym.%s @ 0x%"PFMT64x"\n",
+									sym->name, sym->vaddr);
 							}
+							input++;
 							break;
 						case 'l':
 							r_list_foreach (cls->methods, iter2, sym) {
 								const char *comma = iter2->p? " ": "";
 								r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
 							}
-							r_cons_newline();
+							r_cons_newline ();
+							input++;
 							break;
 						case 'j':
+							input++;
 							r_cons_printf ("\"class\":\"%s\"", cls->name);
 							r_cons_printf (",\"methods\":[");
 							r_list_foreach (cls->methods, iter2, sym) {
@@ -350,7 +354,8 @@ static int cmd_info(void *data, const char *input) {
 						default:
 							r_cons_printf ("class %s\n", cls->name);
 							r_list_foreach (cls->methods, iter2, sym) {
-								r_cons_printf ("method %s\n", sym->name);
+								r_cons_printf ("0x%08"PFMT64x" method %s %s\n",
+									sym->vaddr, cls->name, sym->name);
 							}
 							break;
 						}
@@ -364,7 +369,7 @@ static int cmd_info(void *data, const char *input) {
 								r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
 							}
 							if (!r_list_empty (cls->methods))
-								r_cons_newline();
+								r_cons_newline ();
 						}
 					} else {
 						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES);
@@ -380,17 +385,15 @@ static int cmd_info(void *data, const char *input) {
 			}
 			return 0;
 		case 'a':
-			{
-				switch (mode) {
-				case R_CORE_BIN_RADARE: cmd_info (core, "i*IiesSmz"); break;
-				case R_CORE_BIN_JSON: cmd_info (core, "ijIiesSmz"); break;
-				case R_CORE_BIN_SIMPLE: cmd_info (core, "iqIiesSmz"); break;
-				default: cmd_info (core, "iIiesSmz"); break;
-				}
+			switch (mode) {
+			case R_CORE_BIN_RADARE: cmd_info (core, "i*IiecsSmz"); break;
+			case R_CORE_BIN_JSON: cmd_info (core, "ijIiecsSmz"); break;
+			case R_CORE_BIN_SIMPLE: cmd_info (core, "iqIiecsSmz"); break;
+			default: cmd_info (core, "iIiecsSmz"); break;
 			}
 			break;
 		case '?': {
-				const char * help_message[] = {
+			const char * help_message[] = {
 				"Usage: i", "", "Get info from opened file",
 				"Output mode:", "", "",
 				"'*'", "", "Output in radare commands",
@@ -401,7 +404,7 @@ static int cmd_info(void *data, const char *input) {
 				"iA", "", "List archs",
 				"ia", "", "Show all info (imports, exports, sections..)",
 				"ib", "", "Reload the current buffer for setting of the bin (use once only)",
-				"ic", "", "List classes",
+				"ic", "", "List classes, methods and fields",
 				"id", "", "Debug information (source lines)",
 				"iD", " lang sym", "demangle symbolname for given language",
 				"ie", "", "Entrypoint",
@@ -420,9 +423,8 @@ static int cmd_info(void *data, const char *input) {
 				"izz", "", "Search for Strings in the whole binary",
 				NULL
 				};
-				r_core_cmd_help(core, help_message);
-
-				}
+				r_core_cmd_help (core, help_message);
+			}
 			goto done;
 		case '*':
 			mode = R_CORE_BIN_RADARE;
@@ -440,10 +442,9 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 		input++;
-		if (!strcmp (input, "j"))
+		if ((*input == 'j' || *input == 'q') && !input[1]) {
 			break;
-		if (!strcmp (input, "q"))
-			break;
+		}
 	}
 done:
 	if (is_array)
