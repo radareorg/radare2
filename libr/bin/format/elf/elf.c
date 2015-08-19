@@ -442,6 +442,22 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 			int of = rel[k].r_offset;
 			of = of - got_addr + got_offset;
 			switch (bin->ehdr.e_machine) {
+			case EM_SPARC:
+			case EM_SPARCV9:
+			case EM_SPARC32PLUS:
+				if (reloc_type == 21) {
+					plt_addr += k * 12 + 20;
+					if (plt_addr & 1) {
+						// thumb symbol
+						plt_addr--;
+					}
+					free (rel);
+					return plt_addr;
+				} else {
+					eprintf ("Unknown sparc reloc type %d\n", reloc_type);
+				}
+				/* SPARC */
+				break;
 			case EM_ARM:
 			case EM_AARCH64:
 				switch (reloc_type) {
