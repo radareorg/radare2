@@ -29,14 +29,16 @@ if [ -z "${CC}" ]; then
 fi
 
 # Get path for sflib
-SFLIBPATH=`ragg2 -v | cut -d ' ' -f 3-`
+[ -z "${SFLIBPATH}" ] && \
+	SFLIBPATH=$(r2 -hh | grep INCDIR | awk '{print $2}')
 if [ ! -d "${SFLIBPATH}" ]; then
 	echo "Cannot find ${SFLIBPATH}"
+	echo "Define SFLIBPATH env var or fix the r2 installation"
 	exit 1
 fi
 
 # Get local architecture
-case "`uname -m`" in
+case "$(uname -m)" in
 "x86_64")
 	B=64
 	;;
@@ -45,18 +47,19 @@ case "`uname -m`" in
 	;;
 esac
 
-
 dohelp() {
-	echo "Usage: ragg2-cc [-dabkoscxv] [file.c]"
-	echo "  -d       enable debug mode"
-	echo "  -a x86   set arch (x86, arm)"
-	echo "  -b 32    bits (32, 64)"
-	echo "  -k linux set kernel (darwin, linux)"
-	echo "  -o file  set output file"
-	echo "  -s       generate assembly"
-	echo "  -c       generate compiled shellcode"
-	echo "  -x       show hexpair bytes"
-	echo "  -v       show version"
+	cat<<EOF
+Usage: ragg2-cc [-dabkoscxv] [file.c]"
+  -d       enable debug mode"
+  -a x86   set arch (x86, arm)"
+  -b 32    bits (32, 64)"
+  -k linux set kernel (darwin, linux)"
+  -o file  set output file"
+  -s       generate assembly"
+  -c       generate compiled shellcode"
+  -x       show hexpair bytes"
+  -v       show version"
+EOF
 }
 
 case "`uname`" in

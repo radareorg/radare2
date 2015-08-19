@@ -153,6 +153,10 @@ static int main_help(int line) {
 		" MAGICPATH    "R_MAGIC_PATH"\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
 		" VAPIDIR      path to extra vapi directory\n"
+		"Paths:\n"
+		" PREFIX       "R2_PREFIX"\n"
+		" INCDIR       "R2_INCDIR"\n"
+		" LIBDIR       "R2_LIBDIR"\n"
 		);
 	return 0;
 }
