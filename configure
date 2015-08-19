@@ -468,16 +468,16 @@ HAVE_LIB_DL="1"
 DL_LIBS="-ldl"
 else
 if [ "$HOST_OS" = "gnu/kfreebsd" ]; then
-USEROSTYPE="gnulinux"
+USEROSTYPE="bsd"
 else
 if [ "$HOST_OS" = "netbsd" ]; then
-USEROSTYPE="gnulinux"
+USEROSTYPE="bsd"
 else
 if [ "$HOST_OS" = "freebsd" ]; then
-USEROSTYPE="gnulinux"
+USEROSTYPE="bsd"
 else
 if [ "$HOST_OS" = "openbsd" ]; then
-USEROSTYPE="gnulinux"
+USEROSTYPE="bsd"
 else
 if [ "$HOST_OS" = "darwin" ]; then
 USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi; fi
