@@ -807,6 +807,7 @@ int main(int argc, char **argv, char **envp) {
 			r_core_prompt_loop (&r);
 #endif
 			ret = r.num->value;
+			debug = r_config_get_i (r.config, "cfg.debug");
 			if (ret != -1 && r_config_get_i (r.config, "scr.interactive")) {
 				char *question;
 				if (debug) {

@@ -368,7 +368,8 @@ static int cmd_open(void *data, const char *input) {
 				const char *oldname = core->file->desc->uri;
 				char *newfile = r_str_newf ("dbg://%s", oldname);
 				core->file->desc->uri = newfile;
-				r_core_file_reopen (core, input+2, 0, 2);
+				core->file->desc->referer = NULL;
+				r_core_file_reopen (core, newfile, 0, 2);
 				r_config_set_i (core->config, "asm.bits", bits);
 				r_config_set_i (core->config, "cfg.debug", R_TRUE);
 				r_core_cmd0 (core, "sr pc");
