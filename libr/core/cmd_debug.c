@@ -525,10 +525,63 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 		"dmsd", " id", "hexdiff given snapshot. See `ccc`.",
 		"dmsw", "", "snapshot of the writable maps",
 		"dmsa", "", "full snapshot of all `dm` maps",
+		"dmsf", " [file] @ addr", "read snapshot from disk",
+		"dmst", " [file] @ addr", "dump snapshot to disk",
 		// TODO: dmsj - for json
 		NULL
 	};
 	switch (*input) {
+	case 'f':
+		{
+		char *file;
+		RDebugSnap *snap;
+		if (input[1] == ' ') {
+			file = strdup (input+2);
+		} else {
+			file = r_str_newf ("0x%08"PFMT64x".dump", core->offset);
+		}
+		snap = r_debug_snap_get (core->dbg, core->offset);
+		if (!snap) {
+			r_debug_snap (core->dbg, core->offset);
+			snap = r_debug_snap_get (core->dbg, core->offset);
+		}
+		if (snap) {
+			int fsz = 0;
+			char *data = r_file_slurp (file, &fsz);
+			if (data) {
+				if (fsz >= snap->size) {
+					memcpy (snap->data, data, snap->size);
+				} else {
+					eprintf ("This file is smaller than the snapshot size\n");
+				}
+				free (data);
+			} else eprintf ("Cannot slurp '%s'\n", file);
+		} else {
+			eprintf ("Unable to find a snapshot for 0x%08"PFMT64x"\n", core->offset);
+		}
+		free (file);
+		}
+		break;
+	case 't':
+		{
+		char *file;
+		RDebugSnap *snap;
+		if (input[1] == ' ') {
+			file = strdup (input+2);
+		} else {
+			file = r_str_newf ("0x%08"PFMT64x".dump", core->offset);
+		}
+		snap = r_debug_snap_get (core->dbg, core->offset);
+		if (snap) {
+			if (!r_file_dump (file, snap->data, snap->size, 0)) {
+				eprintf ("Cannot slurp '%s'\n", file);
+			}
+		} else {
+			eprintf ("Unable to find a snapshot for 0x%08"PFMT64x"\n", core->offset);
+		}
+		free (file);
+		}
+		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
 		break;

@@ -67,6 +67,17 @@ R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode) {
 		dbg->cb_printf ("]\n");
 }
 
+R_API RDebugSnap* r_debug_snap_get (RDebug *dbg, ut64 addr) {
+	RListIter *iter;
+	RDebugSnap *snap;
+	r_list_foreach (dbg->snaps, iter, snap) {
+		if (snap->addr >= addr && snap->addr_end < addr) {
+			return snap;
+		}
+	}
+	return NULL;
+}
+
 static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
 	RDebugSnap *snap;
 	if (map->size<1) {
