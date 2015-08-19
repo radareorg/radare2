@@ -1,6 +1,13 @@
-
+/*  __
+ -=(o '.
+    \.-.\
+    /|  \\
+    '|  ||
+     _\_):,_
+*/
 
 #include <limits.h>
+#include <sys/ptrace.h>
 
 struct user_regs_struct_x86_64 {
   ut64 r15; ut64 r14; ut64 r13; ut64 r12; ut64 rbp; ut64 rbx; ut64 r11;
@@ -17,34 +24,45 @@ struct user_regs_struct_x86_32 {
 
 #if __ANDROID__
 
- #if __arm64__ || __aarch64__
- # define R_DEBUG_REG_T struct user_pt_regs
- # undef PTRACE_GETREGS
- # define PTRACE_GETREGS PTRACE_GETREGSET
- # undef PTRACE_SETREGS
- #define PTRACE_SETREGS PTRACE_SETREGSET
- #else
- # define R_DEBUG_REG_T struct pt_regs
- #endif
+#if __arm64__ || __aarch64__
+#define R_DEBUG_REG_T struct user_pt_regs
+#undef PTRACE_GETREGS
+#define PTRACE_GETREGS PTRACE_GETREGSET
+#undef PTRACE_SETREGS
+#define PTRACE_SETREGS PTRACE_SETREGSET
+#else
+#define R_DEBUG_REG_T struct pt_regs
+#endif
 
 #else
 
 #include <sys/user.h>
-# if __i386__ || __x86_64__
-#   define R_DEBUG_REG_T struct user_regs_struct
-# elif __arm64__ || __aarch64__
-#   define R_DEBUG_REG_T struct user_pt_regs
-#   undef PTRACE_GETREGS
-#   define PTRACE_GETREGS PTRACE_GETREGSET
-#   undef PTRACE_SETREGS
-#   define PTRACE_SETREGS PTRACE_SETREGSET
-# elif __arm__
-#   define R_DEBUG_REG_T struct user_regs
-# elif __mips__
+#if __i386__ || __x86_64__
+#define R_DEBUG_REG_T struct user_regs_struct
+#elif __arm64__ || __aarch64__
+#define R_DEBUG_REG_T struct user_pt_regs
+#undef PTRACE_GETREGS
+#define PTRACE_GETREGS PTRACE_GETREGSET
+#undef PTRACE_SETREGS
+#define PTRACE_SETREGS PTRACE_SETREGSET
+#elif __arm__
+#define R_DEBUG_REG_T struct user_regs
+#elif __mips__
 
 #include <sys/ucontext.h>
 typedef ut64 mips64_regs_t [274];
-# define R_DEBUG_REG_T mips64_regs_t
+#define R_DEBUG_REG_T mips64_regs_t
 #endif
-# endif
+#endif
 
+
+//API
+int linux_step (RDebug *dbg);
+int linux_attach (RDebug *dbg, int pid);
+RDebugInfo *linux_info (RDebug *dbg, const char *arg);
+RList *linux_thread_list (int pid, RList *list);
+int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
+int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size);
+RList *linux_desc_list (int pid);
+int linux_handle_signals (RDebug *dbg);
+const char *linux_reg_profile (RDebug *dbg);
