@@ -8,7 +8,7 @@
 
 static int lang_c_file(RLang *lang, const char *file) {
 	void *lib;
-	char *cc, *p, name[512], buf[512];
+	char *a, *cc, *p, name[512], buf[512];
 	const char *libpath, *libname;
 
 	if (strlen (file) > (sizeof(name)-10))
@@ -21,8 +21,7 @@ static int lang_c_file(RLang *lang, const char *file) {
 		return R_FALSE;
 	}
 
-{
-	char *a = (char*)r_str_lchr (name, '/');
+	a = (char*)r_str_lchr (name, '/');
 	if (a) {
 		*a = 0;
 		libpath = name;
@@ -31,7 +30,7 @@ static int lang_c_file(RLang *lang, const char *file) {
 		libpath = ".";
 		libname = name;
 	}
-}
+	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
 	p = strstr (name, ".c"); if (p) *p=0;
 	cc = r_sys_getenv ("CC");
 	if (!cc || !*cc)

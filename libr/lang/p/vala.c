@@ -33,6 +33,7 @@ static int lang_vala_file(RLang *lang, const char *file) {
 		libname = strdup (file);
 		strcpy (srcdir, ".");
 	}
+	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
 	vapidir = r_sys_getenv ("VAPIDIR");
 	if (vapidir) {
 		if (*vapidir) {
