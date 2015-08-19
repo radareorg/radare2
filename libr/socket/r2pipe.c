@@ -116,15 +116,53 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 	return r2p;
 }
 
+R_API char *r2p_cmd(R2Pipe *r2p, const char *str) {
+	if (!r2p_write (r2p, str))
+		return NULL;
+	return r2p_read (r2p);
+}
+
+R_API char *r2p_cmdf(R2Pipe *r2p, const char *fmt, ...) {
+	int ret, ret2;
+	char *p, string[1024];
+	va_list ap, ap2;
+	va_start (ap, fmt);
+	va_start (ap2, fmt);
+	ret = vsnprintf (string, sizeof (string)-1, fmt, ap);
+	if (ret < 1 || ret >= sizeof (string)) {
+		p = malloc (ret+2);
+		if (!p) {
+			va_end (ap2);
+			va_end (ap);
+			return NULL;
+		}
+		ret2 = vsnprintf (p, ret+1, fmt, ap2);
+		if (ret2 < 1 || ret2 > ret+1) {
+			free (p);
+			va_end (ap2);
+			va_end (ap);
+			return NULL;
+		}
+		fmt = r2p_cmd (r2p, p);
+		free (p);
+	} else {
+		fmt = r2p_cmd (r2p, string);
+	}
+	va_end (ap2);
+	va_end (ap);
+	return (char*)fmt;
+}
+
 R_API int r2p_write(R2Pipe *r2p, const char *str) {
-	int len = strlen (str)+1; /* include \x00 */
+	int ret, len = strlen (str)+1; /* include \x00 */
 #if __WINDOWS__
 	DWORD dwWritten = -1;
 	WriteFile (r2p->pipe, str, len, &dwWritten, NULL);
-	return dwWritten;
+	ret = (dwWritten == len)? R_TRUE: R_FALSE;
 #else
-	return write (r2p->input[1], str, len);
+	ret = (write (r2p->input[1], str, len) == len)? R_TRUE: R_FALSE;
 #endif
+	return ret;
 }
 
 /* TODO: add timeout here ? */

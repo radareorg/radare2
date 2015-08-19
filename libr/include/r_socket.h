@@ -214,7 +214,8 @@ R_API R2Pipe *r2p_open(const char *cmd);
 R_API int r2p_write(R2Pipe *r2p, const char *str);
 R_API char *r2p_read(R2Pipe *r2p);
 R_API void r2p_free (R2Pipe *r2p);
-
+R_API char *r2p_cmd(R2Pipe *r2p, const char *str);
+R_API char *r2p_cmdf(R2Pipe *r2p, const char *fmt, ...);
 #endif
 
 #ifdef __cplusplus
