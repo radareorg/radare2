@@ -14,6 +14,10 @@
 
 #if DEBUGGER
 
+static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig);
+static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
+static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int size);
+
 #include "native/bt.c"
 
 #if __UNIX__ || __CYGWIN__
@@ -65,13 +69,6 @@
 
 /* begin of debugger code */
 #if DEBUGGER
-
-
-static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig);
-static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
-static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int size);
-
-
 static int r_debug_handle_signals (RDebug *dbg) {
 #if __linux__
 	return linux_handle_signals (dbg);
