@@ -19,6 +19,9 @@ OBJS+=pid.o reg.o desc.o esil.o ${STATIC_OBJS}
 ifeq (${OSTYPE},darwin)
 OBJS+= p/${NATIVE_OBJS}
 endif
+ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
+OBJS+= p/${NATIVE_OBJS}		
+endif
 
 plugins:
 	cd p && ${MAKE} all
