@@ -88,6 +88,10 @@ a = (b << 3) * 5;
   - This way we reduce the number of local variables per function
     and it's easier to find which variables are used, where and so on.
 
+* Always put a space before every parenthesis (function calls, conditionals,
+  fors, etc, ...) except when defining the function signature. This is
+  useful for grepping.
+
 * Comments should be smart. Function names should be explicit enough
   to not require a comment to explain what it does. If this is not
   possible at all, we can still use a comment. But it is a bad idea

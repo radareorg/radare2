@@ -5,9 +5,12 @@
 
 R_LIB_VERSION(r_lang);
 
-#include "p/pipe.c" // hardcoded
-#include "p/vala.c" // hardcoded
-#include "p/c.c"    // hardcoded
+#include "p/pipe.c"  // hardcoded
+#include "p/vala.c"  // hardcoded
+#include "p/c.c"     // hardcoded
+#if __UNIX__
+#include "p/cpipe.c" // hardcoded
+#endif
 
 
 static RLang *__lang = NULL;
@@ -27,6 +30,9 @@ R_API RLang *r_lang_new() {
 		lang->defs->free = (RListFree)r_lang_def_free;
 		lang->cb_printf = (PrintfCallback)printf;
 		r_lang_add (lang, &r_lang_plugin_c);
+#if __UNIX__
+		r_lang_add (lang, &r_lang_plugin_cpipe);
+#endif
 		r_lang_add (lang, &r_lang_plugin_vala);
 		r_lang_add (lang, &r_lang_plugin_pipe);
 	}

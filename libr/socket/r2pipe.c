@@ -88,6 +88,33 @@ static int w32_createPipe(R2Pipe *r2p, const char *cmd) {
 R_API R2Pipe *r2p_open(const char *cmd) {
 	R2Pipe *r2p = R_NEW0 (R2Pipe);
 	r2p->magic = R2P_MAGIC;
+	if (cmd == NULL) {
+		r2p->child = -1;
+#if __UNIX__
+		 {
+			char *out = r_sys_getenv ("R2PIPE_IN");
+			char *in = r_sys_getenv ("R2PIPE_OUT");
+			int done = R_FALSE;
+			if (in && out) {
+				int i_in = atoi (in);
+				int i_out = atoi (out);
+				if (i_in>=0 && i_out>=0) {
+					r2p->input[0] = r2p->input[1] = i_in;
+					r2p->output[0] = r2p->output[1] = i_out;
+					done = R_TRUE;
+				}
+			}
+			if (!done) {
+				eprintf ("Cannot find R2PIPE_IN or R2PIPE_OUT environment\n");
+				R_FREE (r2p);
+			}
+		 }
+		return r2p;
+#else
+		eprintf ("r2p_open(NULL) not supported on windows\n");
+		return NULL;
+#endif
+	}
 #if __WINDOWS__
 	w32_createPipe (r2p, cmd);
 	r2p->child = (int)(r2p->pipe);
@@ -106,8 +133,9 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 		eprintf ("Child is %d\n", r2p->child);
 	} else {
 		int rc;
-		rc = r_sandbox_system (cmd, 1);
-		eprintf ("Child was %d with %d\n", r2p->child, rc);
+		if (cmd && *cmd) {
+			rc = r_sandbox_system (cmd, 1);
+		} else rc = 0;
 		r2p_close (r2p);
 		exit (0);
 		return NULL;
@@ -117,8 +145,10 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 }
 
 R_API char *r2p_cmd(R2Pipe *r2p, const char *str) {
-	if (!r2p_write (r2p, str))
+	if (!r2p_write (r2p, str)) {
+		perror ("r2p_write");
 		return NULL;
+	}
 	return r2p_read (r2p);
 }
 

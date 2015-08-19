@@ -1,4 +1,3 @@
-
 /* radare2 - LGPL - Copyright 2015 pancake */
 
 #include "r_lib.h"
@@ -28,7 +27,7 @@ static HANDLE  myCreateChildProcess(const char * szCmdline) {
 	DWORD dwWritten;
 	ZeroMemory (&piProcInfo, sizeof (PROCESS_INFORMATION));
 	ZeroMemory (&siStartInfo, sizeof (STARTUPINFO));
-	siStartInfo.cb = sizeof(STARTUPINFO);
+	siStartInfo.cb = sizeof (STARTUPINFO);
 	bSuccess = CreateProcess (NULL, szCmdline, NULL, NULL,
 		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
 	if (!bSuccess)
@@ -46,6 +45,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	int child, ret;
 	int input[2];
 	int output[2];
+
 	pipe (input);
 	pipe (output);
 
@@ -57,20 +57,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		/* error */
 	} else if (child == 0) {
 		/* children */
-#if 1
 		r_sandbox_system (code, 1);
-#else
-		/* DEMO */
-		char buf[1024];
-		/* kid stuff here */
-		while (1) {
-			write (output[1], "pd 3\n", 6);
-			res = read (input[0], buf, sizeof (buf)-1);
-			if (res <1) break;
-			printf ("---> ((%s))\n", buf);
-			sleep (1);
-		}
-#endif
 		write (input[1], "", 1);
 		close (input[0]);
 		close (input[1]);
@@ -83,8 +70,8 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		char *res, buf[1024];
 
 		/* Close pipe ends not required in the parent */
-		close(output[1]);
-		close(input[0]);
+		close (output[1]);
+		close (input[0]);
 
 		r_cons_break (NULL, NULL);
 		for (;;) {
@@ -147,8 +134,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		return R_TRUE;
 	}
 	r_cons_break (NULL, NULL);
-	for (;;)
-	{
+	for (;;) {
 		res = ConnectNamedPipe(hPipeInOut, NULL);
 		if (GetLastError()==ERROR_PIPE_CONNECTED) {
 			//eprintf("new client\n");
