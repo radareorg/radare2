@@ -1,7 +1,7 @@
 /* c55plus - LGPL - Copyright 2013 - th0rpe */
 
 #include "ins.h"
-#include "hashvector.h"
+#include "hashvector.c"
 #include <r_types.h>
 
 static const st32 hash_const_01 = 0x2474f685;
@@ -12,8 +12,6 @@ static const st32 hash_const_05 = 0;
 
 extern ut8* ins_buff;
 extern ut32 ins_buff_len;
-extern HASHCODE_ENTRY_T ins_hash[];
-
 
 st32 get_hashfunc_01(st32 arg1, st32 arg2) {
 	return arg1;
