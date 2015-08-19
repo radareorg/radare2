@@ -786,7 +786,7 @@ R_API ut64 r_io_size(RIO *io) {
 		eprintf("Failed to reset the file position\n");
 	}
 	io->va = oldva;
-	if (size == 0 && r_io_is_blockdevice (io)) {
+	if (r_io_is_blockdevice (io)) {
 		io->va = 0;
 		size = UT64_MAX;
 	}

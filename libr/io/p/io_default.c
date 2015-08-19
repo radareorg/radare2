@@ -64,7 +64,8 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	} else {
 		cur = 0;
 	}
-	if (r_file_size (mmo->filename) > ST32_MAX) {
+	st64 sz = r_file_size (mmo->filename);
+	if (sz == 0 || sz > ST32_MAX) {
 		// Do not use mmap if the file is huge
 		mmo->rawio = 1;
 	}
