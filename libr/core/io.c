@@ -89,6 +89,7 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int a
 	buf = malloc (bs);
 	if (!buf) {
 		eprintf ("Cannot alloc %d bytes\n", bs);
+		fclose (fd);
 		return R_FALSE;
 	}
 	r_cons_break (NULL, NULL);
