@@ -115,7 +115,7 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 				 bin->nsects, new_nsects);
 			bin->nsects = new_nsects;
 		}
-		if ((int)bin->nsects>0) {
+		if ((int)bin->nsects > 0) {
 			if (!UT32_MUL (&size_sects, bin->nsects-sect, sizeof (struct MACH0_(section)))){
 				bin->nsects = sect;
 				return R_FALSE;
@@ -132,7 +132,7 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 			}
 
 			if (off + sizeof (struct MACH0_(segment_command)) > bin->size ||\
-			  off + sizeof (struct MACH0_(segment_command)) + size_sects > bin->size){
+					off + sizeof (struct MACH0_(segment_command)) + size_sects > bin->size){
 				bin->nsects = sect;
 				return R_FALSE;
 			}
@@ -145,11 +145,11 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 			len = r_buf_fread_at (bin->b, off + sizeof (struct MACH0_(segment_command)),
 				(ut8*)&bin->sects[sect],
 #if R_BIN_MACH064
-			    bin->endian?"16c16c2L8I":"16c16c2l8i", 
+				bin->endian?"16c16c2L8I":"16c16c2l8i",
 #else
-			    bin->endian?"16c16c9I":"16c16c9i", 
+				bin->endian?"16c16c9I":"16c16c9i",
 #endif
-			    bin->nsects - sect);
+				bin->nsects - sect);
 			if (len == 0 || len == -1) {
 				eprintf ("Error: read (sects)\n");
 				bin->nsects = sect;
