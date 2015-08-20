@@ -15,6 +15,13 @@ R_LIB_VERSION(r_bin);
 
 #define DB a->sdb;
 #define RBINLISTFREE(x) if(x){r_list_free(x);x=NULL;}
+#define REBASE_PADDR(o, l, type_t) do {         \
+	RListIter *_it;                         \
+	type_t *_el;                            \
+	r_list_foreach ((l), _it, _el) {        \
+		_el->paddr += (o)->loadaddr;    \
+	}                                       \
+} while (0)
 
 #define ARCHS_KEY "archs"
 
@@ -417,35 +424,54 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	}
 	binfile->o = o;
 	if (cp->baddr) o->baddr = cp->baddr (binfile);
-	o->loadaddr = o->baddr;
 	if (cp->boffset) o->boffset = cp->boffset (binfile);
 	// XXX: no way to get info from xtr pluginz?
 	// Note, object size can not be set from here due to potential inconsistencies
 	if (cp->size)
 		o->size = cp->size (binfile);
-	if (cp->binsym)
-		for (i=0; i<R_BIN_SYM_LAST; i++)
+	if (cp->binsym) {
+		for (i = 0; i < R_BIN_SYM_LAST; i++) {
 			o->binsym[i] = cp->binsym (binfile, i);
-	if (cp->entries) o->entries = cp->entries (binfile);
-	if (cp->fields) o->fields = cp->fields (binfile);
+			if (o->binsym[i]) {
+				o->binsym[i]->paddr += o->loadaddr;
+			}
+		}
+	}
+	if (cp->entries) {
+		o->entries = cp->entries (binfile);
+		REBASE_PADDR (o, o->entries, RBinAddr);
+	}
+	if (cp->fields) {
+		o->fields = cp->fields (binfile);
+		REBASE_PADDR (o, o->fields, RBinField);
+	}
 	if (cp->imports) {
 		o->imports = cp->imports (binfile);
 	}
 	if (cp->symbols) {
 		o->symbols = cp->symbols (binfile);
+		REBASE_PADDR (o, o->symbols, RBinSymbol);
 		if (bin->filter)
 			r_bin_filter_symbols (o->symbols);
 	}
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) o->libs = cp->libs (binfile);
-	if (cp->relocs) o->relocs = cp->relocs (binfile);
+	if (cp->relocs) {
+		o->relocs = cp->relocs (binfile);
+		REBASE_PADDR (o, o->relocs, RBinReloc);
+	}
 	if (cp->sections) {
 		o->sections = cp->sections (binfile);
+		REBASE_PADDR (o, o->sections, RBinSection);
 		if (bin->filter)
 			r_bin_filter_sections (o->sections);
 	}
-	if (cp->strings) o->strings = cp->strings (binfile);
-	else o->strings = get_strings (binfile, minlen, 0);
+	if (cp->strings) {
+		o->strings = cp->strings (binfile);
+	} else {
+		o->strings = get_strings (binfile, minlen, 0);
+	}
+	REBASE_PADDR (o, o->strings, RBinString);
 	if (cp->classes) {
 		o->classes = cp->classes (binfile);
 		if (bin->filter)
@@ -628,7 +654,8 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	}
 	sz = R_MIN (file_sz, sz);
 	if (!buf_bytes) {
-		iob->desc_seek (io, desc, loadaddr);
+		ut64 seekaddr = is_debugger ? baseaddr : loadaddr;
+		iob->desc_seek (io, desc, seekaddr);
 		buf_bytes = iob->desc_read (io, desc, &sz);
 	}
 

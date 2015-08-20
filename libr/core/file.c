@@ -281,13 +281,11 @@ R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 }
 
 // XXX - need to handle index selection during debugging
-static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *filenameuri) {
+static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *filenameuri) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? cf->desc : NULL;
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin;
-	ut64 baseaddr = 0;
-	//int va = r->io->va || r->io->debug;
 	int xtr_idx = 0; // if 0, load all if xtr is used
 	int treat_as_rawstr = R_FALSE;
 
@@ -296,13 +294,10 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 		int newpid = desc->fd;
 		r_debug_select (r->dbg, newpid, newpid);
 	}
-#if __linux__
-	baseaddr = loadaddr;
-#else
+#if !__linux__
 	baseaddr = get_base_from_maps (r, filenameuri);
 	if (baseaddr != UT64_MAX) {
-		// eprintf ("LOADING AT 0x%08llx\n", baseaddr);
-		r_config_set_i (r->config, "bin.laddr", baseaddr);
+		r_config_set_i (r->config, "bin.baddr", baseaddr);
 	}
 #endif
 	// HACK if its a relative path, load from disk instead of memory
@@ -311,11 +306,11 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 #else
 	int fd = desc->fd;
 #endif
-	if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, fd, treat_as_rawstr)) {
+	if (!r_bin_load (r->bin, filenameuri, baseaddr, UT64_MAX, xtr_idx, fd, treat_as_rawstr)) {
 		eprintf ("Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
 			treat_as_rawstr = R_TRUE;
-			if (!r_bin_load (r->bin, filenameuri, baseaddr, loadaddr, xtr_idx, desc->fd, treat_as_rawstr)) {
+			if (!r_bin_load (r->bin, filenameuri, baseaddr, UT64_MAX, xtr_idx, desc->fd, treat_as_rawstr)) {
 				return R_FALSE;
 			}
 		}
@@ -390,7 +385,6 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 
 R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
-	ut64 loadaddr = 0;
 	RCoreFile *cf = r_core_file_cur (r);
 	RBinFile *binfile = NULL;
 	RIODesc *desc = cf ? cf->desc : NULL;
@@ -410,10 +404,6 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				    filenameuri, cf->desc->name);
 			}
 		}
-		if (cf->map) {
-			//XXX: a file can have more then 1 map
-			loadaddr = cf->map->from;
-		}
 	}
 
 	if (!filenameuri) {
@@ -428,12 +418,9 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// Fix to select pid before trying to load the binary
 		if ( (desc->plugin && desc->plugin->isdbg) \
 				|| r_config_get_i (r->config, "cfg.debug")) {
-			if (!loadaddr) {
-				loadaddr = baddr;
-			}
-			r_core_file_do_load_for_debug (r, loadaddr, filenameuri);
+			r_core_file_do_load_for_debug (r, baddr, filenameuri);
 		} else {
-			r_core_file_do_load_for_io_plugin (r, baddr, loadaddr);
+			r_core_file_do_load_for_io_plugin (r, baddr, 0);
 		}
 		// Restore original desc
 		r_io_use_desc (r->io, desc);
