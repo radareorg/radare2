@@ -1334,6 +1334,7 @@ static int set_reg_profile(RAnal *anal) {
 		 "gpr	r12w	.16	24	0\n"
 		 "gpr	r12b	.8	24	0\n"
 		 "gpr	rbp	.64	32	0\n"
+		 "gpr	ebp	.32	20	0\n"
 		 "gpr	rbx	.64	40	0\n"
 		 "gpr	ebx	.32	40	0\n"
 		 "gpr	bx	.16	40	0\n"
