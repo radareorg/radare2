@@ -61,6 +61,7 @@ R_API void r_cmd_alias_free (RCmd *cmd) {
 	cmd->aliases.count = 0;
 	free (cmd->aliases.keys);
 	free (cmd->aliases.values);
+	free (cmd->aliases.remote);
 	cmd->aliases.keys = NULL;
 	cmd->aliases.values = NULL;
 }
@@ -68,7 +69,7 @@ R_API void r_cmd_alias_free (RCmd *cmd) {
 R_API int r_cmd_alias_del (RCmd *cmd, const char *k) {
 	int i; // find
 	for (i=0; i<cmd->aliases.count; i++) {
-		if (!strcmp (k, cmd->aliases.keys[i])) {
+		if (!k || !strcmp (k, cmd->aliases.keys[i])) {
 			free (cmd->aliases.values[i]);
 			cmd->aliases.values[i] = NULL;
 			cmd->aliases.count--;
@@ -92,10 +93,12 @@ R_API int r_cmd_alias_del (RCmd *cmd, const char *k) {
 	return 0;
 }
 
-R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v) {
+R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) {
 	int i; // find
 	for (i=0; i<cmd->aliases.count; i++) {
-		if (!strcmp (k, cmd->aliases.keys[i])) {
+		int matches;
+		matches = !strcmp (k, cmd->aliases.keys[i]);
+		if (matches) {
 			free (cmd->aliases.values[i]);
 			cmd->aliases.values[i] = strdup (v);
 			return 1;
@@ -105,18 +108,30 @@ R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v) {
 	i = cmd->aliases.count++;
 	cmd->aliases.keys = (char **)realloc (cmd->aliases.keys,
 		sizeof (char**)*cmd->aliases.count);
+	cmd->aliases.remote = (int *)realloc (cmd->aliases.remote,
+		sizeof (int*)*cmd->aliases.count);
 	cmd->aliases.values = (char **)realloc (cmd->aliases.values,
 		sizeof (char**)*cmd->aliases.count);
 	cmd->aliases.keys[i] = strdup (k);
 	cmd->aliases.values[i] = strdup (v);
+	cmd->aliases.remote[i] = remote;
 	return 0;
 }
 
-R_API char *r_cmd_alias_get (RCmd *cmd, const char *k) {
+R_API char *r_cmd_alias_get (RCmd *cmd, const char *k, int remote) {
 	int i; // find
 	for (i=0; i<cmd->aliases.count; i++) {
-		if (!strcmp (k, cmd->aliases.keys[i]))
+		int matches;
+		if (remote && cmd->aliases.remote[i]) {
+			matches = !strncmp (k, cmd->aliases.keys[i],
+				strlen (cmd->aliases.keys[i]));
+		} else {
+			matches = !strcmp (k, cmd->aliases.keys[i]);
+		}
+		if (matches) {
+			//eprintf ("MATHI S memleak asegurado\n");
 			return cmd->aliases.values[i];
+		}
 	}
 	return NULL;
 }
@@ -172,11 +187,20 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 		if (cmd->nullcallback != NULL)
 			ret = cmd->nullcallback (cmd->data);
 	} else {
+		char *nstr = NULL;
+		const char *ji = r_cmd_alias_get (cmd, input, 1);
+		if (ji) {
+			nstr = r_str_newf ("=!%s", input);
+			input = nstr;
+		}
 		r_list_foreach (cmd->plist, iter, cp) {
-			if (cp->call (cmd->data, input))
+			if (cp->call (cmd->data, input)) {
+				free (nstr);
 				return R_TRUE;
+			}
 		}
 		if (input[0] == -1) {
+			free (nstr);
 			return -1;
 		}
 		c = cmd->cmds[((ut8)input[0]) & 0xff];
@@ -184,6 +208,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 			const char *inp = (input && *input)? input+1: "";
 			ret = c->callback (cmd->data, inp);
 		} else ret = -1;
+		free (nstr);
 	}
 	return ret;
 }

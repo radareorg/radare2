@@ -129,7 +129,7 @@ static int cmd_alias(void *data, const char *input) {
 		}
 
 		if (!q || (q && q>def)) {
-			if (*def) r_cmd_alias_set (core->rcmd, buf, def);
+			if (*def) r_cmd_alias_set (core->rcmd, buf, def, 0);
 			else r_cmd_alias_del (core->rcmd, buf);
 		}
 
@@ -137,7 +137,7 @@ static int cmd_alias(void *data, const char *input) {
 	} else if (desc && !q) {
 		char *v;
 		*desc = 0;
-		v = r_cmd_alias_get (core->rcmd, buf);
+		v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
 			r_cons_printf ("%s\n", v);
 			free (buf);
@@ -151,7 +151,7 @@ static int cmd_alias(void *data, const char *input) {
 		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
 		for (i=0; i<count; i++) {
-			const char *v = r_cmd_alias_get (core->rcmd, keys[i]);
+			const char *v = r_cmd_alias_get (core->rcmd, keys[i], 0);
 			r_cons_printf ("%s=%s\n", keys[i], v);
 		}
 	} else if (!buf[1]) {
@@ -164,7 +164,7 @@ static int cmd_alias(void *data, const char *input) {
 	} else {
 		char *v;
 		if (q) *q = 0;
-		v = r_cmd_alias_get (core->rcmd, buf);
+		v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
 			if (q) {
 				char *out, *args = q+1;
@@ -196,9 +196,34 @@ static int getArg(char ch, int def) {
 	return def;
 }
 
+static void aliascmd(RCore *core, const char *str) {
+	switch (str[0]) {
+	case '-':
+		if (str[1]) {
+			r_cmd_alias_del (core->rcmd, str+2);
+		} else {
+			r_cmd_alias_del (core->rcmd, NULL);
+		//	r_cmd_alias_reset (core->rcmd);
+		}
+		break;
+	case '?':
+		eprintf ("Usage: =$[-][remotecmd]  # remote command alias\n");
+		eprintf (" =$dr   # makes 'dr' alias for =!dr\n");
+		eprintf (" =$-dr  # unset 'dr' alias\n");
+		break;
+	case 0:
+		r_core_cmd0 (core, "$");
+		break;
+	default:
+		r_cmd_alias_set (core->rcmd, str, "", 1);
+		break;
+	}
+}
+
 static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
+	case '$': aliascmd (core, input+1); break;
 	case '\0': r_core_rtr_list (core); break;
 	case 'h': r_core_rtr_http (core, getArg(input[1],'h'), input+1); break;
 	case 'H': while (input[1]==' ') input++;

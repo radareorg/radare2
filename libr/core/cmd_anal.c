@@ -1277,13 +1277,13 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				}
 			}
 			if (r) {
-				eprintf ("%s 0x%08"PFMT64x" -> ", str,
-					r_reg_get_value (core->dbg->reg, r));
+				//eprintf ("%s 0x%08"PFMT64x" -> ", str,
+				//	r_reg_get_value (core->dbg->reg, r));
 				r_reg_set_value (core->dbg->reg, r,
 					r_num_math (core->num, arg+1));
 				r_debug_reg_sync (core->dbg, -1, R_TRUE);
-				eprintf ("0x%08"PFMT64x"\n",
-					r_reg_get_value (core->dbg->reg, r));
+				//eprintf ("0x%08"PFMT64x"\n",
+				//	r_reg_get_value (core->dbg->reg, r));
 			} else {
 				eprintf ("ar: Unknown register '%s'\n", regname);
 			}

@@ -64,6 +64,7 @@ typedef struct r_cmd_alias_t {
 	int count;
 	char **keys;
 	char **values;
+	int *remote;
 } RCmdAlias;
 
 typedef struct r_cmd_t {
@@ -112,8 +113,8 @@ R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value);
 
 R_API int r_cmd_alias_del (RCmd *cmd, const char *k);
 R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz);
-R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v);
-R_API char *r_cmd_alias_get (RCmd *cmd, const char *k);
+R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote);
+R_API char *r_cmd_alias_get (RCmd *cmd, const char *k, int remote);
 R_API void r_cmd_alias_free (RCmd *cmd);
 
 #ifdef __cplusplus
