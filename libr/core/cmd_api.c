@@ -96,8 +96,7 @@ R_API int r_cmd_alias_del (RCmd *cmd, const char *k) {
 R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) {
 	int i; // find
 	for (i=0; i<cmd->aliases.count; i++) {
-		int matches;
-		matches = !strcmp (k, cmd->aliases.keys[i]);
+		int matches = !strcmp (k, cmd->aliases.keys[i]);
 		if (matches) {
 			free (cmd->aliases.values[i]);
 			cmd->aliases.values[i] = strdup (v);
@@ -119,17 +118,18 @@ R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) 
 }
 
 R_API char *r_cmd_alias_get (RCmd *cmd, const char *k, int remote) {
-	int i; // find
+	int matches, i;
 	for (i=0; i<cmd->aliases.count; i++) {
-		int matches;
-		if (remote && cmd->aliases.remote[i]) {
-			matches = !strncmp (k, cmd->aliases.keys[i],
-				strlen (cmd->aliases.keys[i]));
+		matches = 0;
+		if (remote) {
+			if (cmd->aliases.remote[i]) {
+				matches = !strncmp (k, cmd->aliases.keys[i],
+					strlen (cmd->aliases.keys[i]));
+			}
 		} else {
 			matches = !strcmp (k, cmd->aliases.keys[i]);
 		}
 		if (matches) {
-			//eprintf ("MATHI S memleak asegurado\n");
 			return cmd->aliases.values[i];
 		}
 	}
