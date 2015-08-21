@@ -15,6 +15,7 @@
 #include <mach/mach_init.h>
 #include <mach/mach_port.h>
 #include <mach/mach_traps.h>
+#include <mach/processor_set.h>
 #include <mach/mach_error.h>
 #include <mach/task.h>
 #include <mach/task_info.h>
@@ -44,17 +45,58 @@ typedef struct {
 #define R_IO_NFDS 2
 extern int errno;
 
+kern_return_t processor_set_default(host_t host, processor_set_t *default_set);
+
+static task_t task_for_pid_workaround(int Pid) {
+        host_t        myhost = mach_host_self();
+        processor_set_t psDefault;
+        mach_port_t   psDefault_control;
+        task_array_t  tasks;
+        mach_msg_type_number_t numTasks;
+        kern_return_t kr;
+        int i;
+        if (Pid == -1) return -1;
+
+        (void)processor_set_default (myhost, &psDefault);
+        kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
+        if (kr != KERN_SUCCESS) {
+                eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
+                //mach_error ("host_processor_set_priv",kr);
+                return -1;
+        }
+
+        numTasks = 0;
+        kr = processor_set_tasks (psDefault_control, &tasks, &numTasks);
+        if (kr != KERN_SUCCESS) {
+                eprintf ("processor_set_tasks failed with error %x\n", kr);
+                return -1;
+        }
+        for (i = 0; i < numTasks; i++) {
+                int pid;
+                //pid_for_task (tasks[i], &pid);
+                pid_for_task (i, &pid);
+                if (pid == Pid) {
+                        eprintf ("Tfphack works!\n");
+                        return (tasks[i]);
+                }
+        }
+        return -1;
+}
+
 static task_t pid_to_task(int pid) {
 	task_t task = -1;
 	int err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
-		eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
-		eprintf ("Missing priviledges? 0x%x: %s\n", err, MACH_ERROR_STRING (err));
+		task = task_for_pid_workaround (pid);
+		if (task == -1) {
+			eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
+			eprintf ("Missing priviledges? 0x%x: %s\n", err, MACH_ERROR_STRING (err));
 #if 0
-		eprintf ("You probably need to add user to procmod group.\n"
-				" Or chmod g+s radare && chown root:procmod radare\n");
-		eprintf ("FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
+			eprintf ("You probably need to add user to procmod group.\n"
+					" Or chmod g+s radare && chown root:procmod radare\n");
+			eprintf ("FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
 #endif
+		}
 		return -1;
 	}
 	return task;

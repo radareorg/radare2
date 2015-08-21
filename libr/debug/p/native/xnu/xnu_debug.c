@@ -7,6 +7,44 @@
 #include <r_anal.h>
 #include "xnu_debug.h"
 
+kern_return_t processor_set_default(host_t host, processor_set_t *default_set);
+
+static task_t task_for_pid_workaround(int Pid) {
+	host_t        myhost = mach_host_self();
+	processor_set_t psDefault;
+	mach_port_t   psDefault_control;
+	task_array_t  tasks; 
+	mach_msg_type_number_t numTasks;
+	kern_return_t kr;
+	int i;
+	if (Pid == -1) return -1;
+
+	(void)processor_set_default (myhost, &psDefault);
+	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control); 
+	if (kr != KERN_SUCCESS) {
+		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr); 
+		//mach_error ("host_processor_set_priv",kr);
+		return -1;
+	}
+
+	numTasks = 0;
+	kr = processor_set_tasks (psDefault_control, &tasks, &numTasks); 
+	if (kr != KERN_SUCCESS) {
+		eprintf ("processor_set_tasks failed with error %x\n", kr);
+		return -1; 
+	}
+	for (i = 0; i < numTasks; i++) {
+		int pid;
+		//pid_for_task (tasks[i], &pid);
+		pid_for_task (i, &pid);
+		if (pid == Pid) {
+			eprintf ("Tfphack works!\n");
+			return (tasks[i]);
+		}
+	}
+	return -1;
+}
+
 void ios_hwstep_enable (RDebug *dbg, int enable);
 
 int xnu_step (RDebug *dbg) {
@@ -89,7 +127,6 @@ int xnu_continue (RDebug *dbg, int pid, int tid, int sig) {
 */
 
 const char *xnu_reg_profile(RDebug *dbg) {
-
 #if __i386__ || __x86_64__
 	if (dbg->bits & R_SYS_BITS_32) {
 #include "reg/darwin-x86.h"
@@ -180,84 +217,75 @@ int xnu_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 
 
 int xnu_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
-
 	int ret;
 	int pid = dbg->pid;
 	thread_array_t inferior_threads = NULL;
 	unsigned int inferior_thread_count = 0;
 	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
-    unsigned int gp_count = R_DEBUG_STATE_SZ;
+	unsigned int gp_count = R_DEBUG_STATE_SZ;
 	int tid = dbg->tid;
 
-    ret = task_threads (pid_to_task (pid),
-		&inferior_threads,
-		&inferior_thread_count);
-    if (ret != KERN_SUCCESS) {
+	ret = task_threads (pid_to_task (pid),
+		&inferior_threads, &inferior_thread_count);
+	if (ret != KERN_SUCCESS) {
 		return R_FALSE;
- 	}
+	}
 	if (tid < 0 || tid >= inferior_thread_count) {
 		dbg->tid = tid = dbg->pid;
 	}
-	if (tid == dbg->pid)
+	if (tid == dbg->pid) {
 		tid = 0;
+	}
 
-    if (inferior_thread_count > 0) {
+	if (inferior_thread_count > 0) {
 		/* TODO: allow to choose the thread */
 		gp_count = R_DEBUG_STATE_SZ;
 
-
-// XXX: kinda spaguetti coz multi-arch
+		// XXX: kinda spaguetti coz multi-arch
 #if __i386__ || __x86_64__
 		switch (type) {
 		case R_REG_TYPE_SEG:
 		case R_REG_TYPE_FLG:
 		case R_REG_TYPE_GPR:
-			if (dbg->bits == R_SYS_BITS_64) {
-				ret = THREAD_GET_STATE (x86_THREAD_STATE);
-			}
-			else {
-				ret = THREAD_GET_STATE (i386_THREAD_STATE);
-			}
+			ret = THREAD_GET_STATE ((dbg->bits == R_SYS_BITS_64)?
+				x86_THREAD_STATE: i386_THREAD_STATE);
 			break;
 		case R_REG_TYPE_DRX:
-			if (dbg->bits == R_SYS_BITS_64) {
-				ret = THREAD_GET_STATE (x86_DEBUG_STATE64);
-			} else {
-				ret = THREAD_GET_STATE (x86_DEBUG_STATE32);
-			}
+			ret = THREAD_GET_STATE ((dbg->bits == R_SYS_BITS_64)?
+				x86_DEBUG_STATE64: x86_DEBUG_STATE32);
 			break;
 		}
 #elif __arm__ || __arm64__ || __aarch64__
 		switch (type) {
-		case R_REG_TYPE_FLG:
-		case R_REG_TYPE_GPR:
-			if (dbg->bits == R_SYS_BITS_64) {
-				ret = THREAD_GET_STATE (ARM_THREAD_STATE64);
-			} else {
-				ret = THREAD_GET_STATE (ARM_THREAD_STATE);
-			}
-			break;
-		case R_REG_TYPE_DRX:
-			if (dbg->bits == R_SYS_BITS_64) {
-				ret = THREAD_GET_STATE (ARM_DEBUG_STATE64);
-			} else {
-				ret = THREAD_GET_STATE (ARM_DEBUG_STATE32);
-			}
-			break;
+			case R_REG_TYPE_FLG:
+			case R_REG_TYPE_GPR:
+				if (dbg->bits == R_SYS_BITS_64) {
+					ret = THREAD_GET_STATE (ARM_THREAD_STATE64);
+				} else {
+					ret = THREAD_GET_STATE (ARM_THREAD_STATE);
+				}
+				break;
+			case R_REG_TYPE_DRX:
+				if (dbg->bits == R_SYS_BITS_64) {
+					ret = THREAD_GET_STATE (ARM_DEBUG_STATE64);
+				} else {
+					ret = THREAD_GET_STATE (ARM_DEBUG_STATE32);
+				}
+				break;
 		}
 #else
 		eprintf ("Unknown architecture\n");
 #endif
 		if (ret != KERN_SUCCESS) {
 			eprintf (
-			  	"debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
-				(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret)
+					"debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
+					(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret)
 				);
 			perror ("thread_get_state");
 			return R_FALSE;
 		}
 	} else eprintf ("There are no threads!\n");
-        return sizeof (R_DEBUG_REG_T);
+	return sizeof (R_DEBUG_REG_T);
 }
 
 RDebugMap *xnu_map_alloc (RDebug *dbg, ut64 addr, int size) {
@@ -355,7 +383,6 @@ RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
 
 }
 
-
 static vm_prot_t unix_prot_to_darwin(int prot) {
         return ((prot&1<<4)?VM_PROT_READ:0 |
                 (prot&1<<2)?VM_PROT_WRITE:0 |
@@ -375,27 +402,29 @@ int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 		return R_FALSE;
 	}
 	return R_TRUE;
-
 }
 
 task_t pid_to_task(int pid) {
 	static task_t old_pid = -1;
 	static task_t old_task = -1;
-	task_t task = 0;
+	task_t task = -1;
 	int err;
 
 	/* xlr8! */
-	if (old_task!= -1 && old_pid == pid)
+	if (old_task != -1 && old_pid == pid)
 		return old_task;
 
-	err = task_for_pid (mach_task_self(), (pid_t)pid, &task);
+	err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
-		eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
-		eprintf ("Reason: 0x%x: %s\n", err, (char *)MACH_ERROR_STRING (err));
-		eprintf ("You probably need to run as root or sign the binary.\n"
-			" Read doc/ios.md || doc/osx.md\n"
-			" make -C binr/radare2 ios-sign || osx-sign\n");
-		return -1;
+		task = task_for_pid_workaround (pid);
+		if (task == -1) {
+			eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
+			eprintf ("Reason: 0x%x: %s\n", err, (char *)MACH_ERROR_STRING (err));
+			eprintf ("You probably need to run as root or sign the binary.\n"
+				" Read doc/ios.md || doc/osx.md\n"
+				" make -C binr/radare2 ios-sign || osx-sign\n");
+			return -1;
+		}
 	}
 	old_pid = pid;
 	old_task = task;
@@ -530,6 +559,13 @@ static const char * unparse_inheritance (vm_inherit_t i) {
         }
 }
 
+#ifndef KERNEL_LOWER
+#define ADDR "%8x"
+#define HEADER_SIZE 0x1000
+#define IMAGE_OFFSET 0x201000
+#define KERNEL_LOWER 0x80000000
+#endif
+
 //it's not used (yet)
 vm_address_t get_kernel_base(task_t ___task) {
 	kern_return_t ret;
@@ -541,7 +577,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 	ut64 addr = KERNEL_LOWER;         // lowest possible kernel base address
 	int count;
 
-	ret = task_for_pid(mach_task_self(), 0, &task);
+	ret = task_for_pid (mach_task_self(), 0, &task);
 	if (ret != KERN_SUCCESS)
 		return 0;
 	ut64 naddr;
@@ -678,12 +714,9 @@ RList *xnu_dbg_maps (RDebug *dbg) {
 #endif
 }
 
-
-
 #if TARGET_OS_IPHONE
 
-
-int isThumb32(ut16 op) {
+static int isThumb32(ut16 op) {
 	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
 }
 
@@ -712,11 +745,9 @@ static void ios_hwstep_enable64 (task_t port, int enable) {
 	  	ARM_DEBUG_STATE64,
 		(thread_state_t)&ds,
 		count);
-
 }
 
-static void ios_hwstep_enable32 (task_t port, int enable) {
-
+static void ios_hwstep_enable32 (RDebug *dbg, task_t port, int enable) {
 	int i;
 	static ARMDebugState32 olds;
 	ARMDebugState32 ds;
@@ -775,11 +806,10 @@ static void ios_hwstep_enable32 (task_t port, int enable) {
 void ios_hwstep_enable (RDebug *dbg, int enable) {
 	task_t port = pid_to_task (dbg->tid);
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
-
 #if defined (__arm64__) || defined (__aarch64__)
-	ios_hwstep_enable64 (port, count);
+	ios_hwstep_enable64 (port, enable);
 #else
-	ios_hwstep_enable32 (port, count);
+	ios_hwstep_enable32 (dbg, port, enable);
 #endif
 }
 
