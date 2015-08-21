@@ -11,7 +11,9 @@
 #define EXCEPTION_PORT 0
 
 #include <mach/exception_types.h>
-//#include <mach/mach_vm.h>
+#include <mach/mach_vm.h>
+#include <mach/mach_host.h>
+#include <mach/host_priv.h>
 #include <mach/mach_init.h>
 #include <mach/mach_port.h>
 #include <mach/mach_traps.h>
@@ -45,42 +47,45 @@ typedef struct {
 #define R_IO_NFDS 2
 extern int errno;
 
-kern_return_t processor_set_default(host_t host, processor_set_t *default_set);
-
 static task_t task_for_pid_workaround(int Pid) {
-        host_t        myhost = mach_host_self();
-        processor_set_t psDefault;
-        mach_port_t   psDefault_control;
-        task_array_t  tasks;
-        mach_msg_type_number_t numTasks;
-        kern_return_t kr;
-        int i;
-        if (Pid == -1) return -1;
+	host_t myhost = mach_host_self();
+	mach_port_t psDefault = 0;
+	mach_port_t psDefault_control = 0;
+	task_array_t tasks = NULL;
+	mach_msg_type_number_t numTasks = 0;
+	kern_return_t kr = -1;
+	int i;
+	if (Pid == -1) return -1;
 
-        (void)processor_set_default (myhost, &psDefault);
-        kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
-        if (kr != KERN_SUCCESS) {
-                eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
-                //mach_error ("host_processor_set_priv",kr);
-                return -1;
-        }
+	kr = processor_set_default (myhost, &psDefault);
+	if (kr != KERN_SUCCESS) {
+		return -1;
+	}
+	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
+	if (kr != KERN_SUCCESS) {
+		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
+		//mach_error ("host_processor_set_priv",kr);
+		return -1;
+	}
 
-        numTasks = 0;
-        kr = processor_set_tasks (psDefault_control, &tasks, &numTasks);
-        if (kr != KERN_SUCCESS) {
-                eprintf ("processor_set_tasks failed with error %x\n", kr);
-                return -1;
-        }
-        for (i = 0; i < numTasks; i++) {
-                int pid;
-                //pid_for_task (tasks[i], &pid);
-                pid_for_task (i, &pid);
-                if (pid == Pid) {
-                        eprintf ("Tfphack works!\n");
-                        return (tasks[i]);
-                }
-        }
-        return -1;
+	numTasks = 0;
+	kr = processor_set_tasks (psDefault_control, &tasks, &numTasks);
+	if (kr != KERN_SUCCESS) {
+		eprintf ("processor_set_tasks failed with error %x\n", kr);
+		return -1;
+	}
+	if (Pid == 0) {
+		/* kernel task */
+		return tasks[0];
+	}
+	for (i = 0; i < numTasks; i++) {
+		int pid;
+		pid_for_task (i, &pid);
+		if (pid == Pid) {
+			return (tasks[i]);
+		}
+	}
+	return -1;
 }
 
 static task_t pid_to_task(int pid) {
@@ -96,8 +101,8 @@ static task_t pid_to_task(int pid) {
 					" Or chmod g+s radare && chown root:procmod radare\n");
 			eprintf ("FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
 #endif
+			return -1;
 		}
-		return -1;
 	}
 	return task;
 }
