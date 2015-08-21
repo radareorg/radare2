@@ -121,9 +121,9 @@ static int r_debug_gdb_wait(RDebug *dbg, int pid) {
 
 static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
-// TODO: the core must update the dbg.swstep config var when this var is changed
-dbg->swstep = R_FALSE;
-eprintf ("XWJSTEP TOFALSE\n");
+	// TODO: the core must update the dbg.swstep config var when this var is changed
+	dbg->swstep = R_FALSE;
+	//eprintf ("XWJSTEP TOFALSE\n");
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;
@@ -157,6 +157,14 @@ eprintf ("XWJSTEP TOFALSE\n");
 			case R_SYS_ARCH_MIPS:
 				if ( dbg->anal->bits == 32 ) {
 					gdbr_set_architecture(&g->desc, MIPS);
+				} else {
+					eprintf("Not supported register profile\n");
+					return R_FALSE;
+				}
+				break;
+			case R_SYS_ARCH_AVR:
+				if (dbg->anal->bits == 16) {
+					gdbr_set_architecture(&g->desc, AVR);
 				} else {
 					eprintf("Not supported register profile\n");
 					return R_FALSE;
