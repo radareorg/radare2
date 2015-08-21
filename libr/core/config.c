@@ -377,7 +377,7 @@ static int cb_asmsyntax(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		r_cons_printf ("att\nintel\njz\nregnum\n");
+		r_cons_printf ("att\nintel\nmasm\njz\nregnum\n");
 		return R_FALSE;
 	} else if (!strcmp (node->value, "regnum")) {
 		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_REGNUM);
@@ -385,6 +385,8 @@ static int cb_asmsyntax(void *user, void *data) {
 		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_JZ);
 	} else if (!strcmp (node->value, "intel")) {
 		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
+	} else if (!strcmp (node->value, "masm")) {
+		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_MASM);
 	} else if (!strcmp (node->value, "att")) {
 		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_ATT);
 	} else return R_FALSE;
