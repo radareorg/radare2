@@ -214,6 +214,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"seg	es	.32	52	0\n"
 				"seg	fs	.32	56	0\n"
 				"seg	gs	.32	60	0\n"
+			/* Commented until the long registers will be implemented
 				"gpr	st0	.80	64	0\n"
 				"gpr	st1	.80	74	0\n"
 				"gpr	st2	.80	84	0\n"
@@ -239,6 +240,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"gpr	xmm6	.128	272	0\n"
 				"gpr	xmm7	.128	288	0\n"
 				"gpr	mxcsr	.32	304	0\n"
+			*/
 				);
 		}
 		else if ( dbg->anal->bits == 64) {
@@ -275,6 +277,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"seg	es	.32	152	0\n"
 				"seg	fs	.32	156	0\n"
 				"seg	gs	.32	160	0\n"
+			/* Commented until the long registers will be implemented
 				"gpr	st0	.80	164	0\n"
 				"gpr	st1	.80	174	0\n"
 				"gpr	st2	.80	184	0\n"
@@ -308,6 +311,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"gpr	xmm14	.128	500	0\n"
 				"gpr	xmm15	.128	516	0\n"
 				"gpr	mxcsr	.32	532	0\n"
+			*/
 					);
 		}
 		return strdup (
