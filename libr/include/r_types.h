@@ -293,7 +293,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #elif __arm__
 #define R_SYS_ARCH "arm"
 #define R_SYS_BITS R_SYS_BITS_32
-#elif __arm64__
+#elif __arm64__ || __aarch64__
 #define R_SYS_ARCH "arm"
 #define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
 #elif __arc__
