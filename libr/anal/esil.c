@@ -182,23 +182,17 @@ static int esil_internal_carry_check (RAnalEsil *esil, ut8 bit) {
 }
 
 static int esil_internal_parity_check (RAnalEsil *esil) {
-	// Set if the number of set bits in the least significant byte is a multiple of 2.
-	int bits = 1;
-	bits ^= esil->cur & (ut64)   1;
-	bits ^= esil->cur & (ut64) ( 1 << 1 );
-	bits ^= esil->cur & (ut64) ( 1 << 2 );
-	bits ^= esil->cur & (ut64) ( 1 << 3 );
-	bits ^= esil->cur & (ut64) ( 1 << 4 );
-	bits ^= esil->cur & (ut64) ( 1 << 5 );
-	bits ^= esil->cur & (ut64) ( 1 << 6 );
-	bits ^= esil->cur & (ut64) ( 1 << 7 );
+	// Set if the number of set bits in the least significant byte is not a multiple of 2.
+	int i, bits = esil->cur & 1;
+	for (i = 1; i < 8; i++)
+		bits ^= ((esil->cur & (1 << i)) >> i);
 	return bits;
 }
 
 static int esil_internal_sign_check (RAnalEsil *esil) {
 	if (!esil || !esil->lastsz)						//XXX we must rethink of how we set esil->lastsz (check the src) (a,a,^=,%%z,z,= esil->lastsz will be 1 here not sizeof(a))
 		return R_FALSE;
-	return !!((esil->cur & (0x1<<(esil->lastsz-1)))>>(esil->lastsz-1));
+	return !!((esil->cur & (0x1 << (esil->lastsz - 1))) >> (esil->lastsz - 1));
 }
 
 static int esil_internal_overflow_check (RAnalEsil *esil) {
