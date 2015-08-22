@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 getabsolutepath() {
 	[ -d "$1" ] && { cd "$1"; echo "$(pwd -P)"; } ||
