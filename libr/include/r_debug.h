@@ -148,6 +148,7 @@ typedef struct r_debug_t {
 	RReg *reg;
 	RBreakpoint *bp;
 	int bpsize;
+	int btdepth;
 	void *user;
 	/* io */
 	PrintfCallback cb_printf;

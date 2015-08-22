@@ -36,7 +36,7 @@ static RList *backtrace_x86_64(RDebug *dbg, ut64 at) {
 		_rbp = ptr;
 	}
 
-	for (i=1; i<MAXBT; i++) {
+	for (i=1; i<dbg->btdepth; i++) {
 		// TODO: make those two reads in a shot
 		bio->read_at (bio->io, _rbp, (ut8*)&ebp2, 8);
 		if (ebp2 == UT64_MAX)
@@ -85,7 +85,7 @@ static RList *backtrace_x86_64_anal(RDebug *dbg, ut64 at) {
 		r_list_append (list, frame);
 	}
 
-	for (i=1; i<MAXBT; i++) {
+	for (i=1; i<dbg->btdepth; i++) {
 		// TODO: make those two reads in a shot
 		bio->read_at (bio->io, _rbp, (ut8*)&ebp2, 8);
 		if (ebp2 == UT64_MAX)

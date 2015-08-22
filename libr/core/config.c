@@ -217,6 +217,13 @@ static int cb_dbgbpsize(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_dbgbtdepth(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->dbg->btdepth = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_asmbits(void *user, void *data) {
 	const char *asmos, *asmarch;
 	RCore *core = (RCore *) user;
@@ -1210,6 +1217,7 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETICB("dbg.bpsize", 1, &cb_dbgbpsize, "Size of software breakpoints");
 #endif
+	SETICB("dbg.btdepth", 128, &cb_dbgbtdepth, "Depth of backtrace");
 	SETCB("dbg.trace", "false", &cb_trace, "Trace program execution (see asm.trace)");
 	SETICB("dbg.trace.tag", 0, &cb_tracetag, "Trace tag");
 
