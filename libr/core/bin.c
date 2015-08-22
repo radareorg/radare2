@@ -524,7 +524,7 @@ static int bin_main (RCore *r, int mode, int va) {
 
 	if (va) {
 		if (baddr) {
-			main_addr = r_bin_a2b (r->bin, binmain->paddr);
+			main_addr = r_bin_a2b (r->bin, binmain->vaddr);
 		} else {
 			main_addr = binmain->vaddr;
 		}
