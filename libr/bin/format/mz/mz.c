@@ -3,33 +3,30 @@
 #include "mz.h"
 #include <btree.h>
 
-static ut64 r_bin_mz_seg_to_paddr(const struct r_bin_mz_obj_t *bin,
+static ut64 r_bin_mz_seg_to_paddr (const struct r_bin_mz_obj_t *bin,
 	const ut16 segment)
 {
 	return (bin->dos_header->header_paragraphs + segment) << 4;
 }
 
-int r_bin_mz_get_entrypoint(const struct r_bin_mz_obj_t *bin)
+int r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin)
 {
 	/* Value of CS in DOS header may be negative */
 	const short cs = (const short)bin->dos_header->cs;
 	const int paddr = ((bin->dos_header->header_paragraphs + cs) << 4) + \
-		  bin->dos_header->ip;
-	if (paddr >= 0 && paddr < bin->dos_file_size)
-		return paddr;
-	else
-		return -1;
+			bin->dos_header->ip;
+	if (paddr >= 0 && paddr < bin->dos_file_size) return paddr;
+	else return -1;
 }
 
-int cmp_segs(const void *a, const void *b) {
+int cmp_segs (const void *a, const void *b) {
 	const ut16 * const ma = (const ut16 * const)a;
 	const ut16 * const mb = (const ut16 * const)b;
-	if (ma == NULL || mb == NULL)
-		return 0;
+	if (ma == NULL || mb == NULL) return 0;
 	return (int)(*ma-*mb);
 }
 
-void trv_segs(const void *seg, const void *segs)
+void trv_segs (const void *seg, const void *segs)
 {
 	const ut16 * const mseg = (const ut16 * const)seg;
 	ut16 ** const msegs = (ut16 **)segs;
@@ -39,9 +36,9 @@ void trv_segs(const void *seg, const void *segs)
 	}
 }
 
-struct r_bin_mz_segment_t * r_bin_mz_get_segments(
-	const struct r_bin_mz_obj_t *bin)
-{
+struct r_bin_mz_segment_t * r_bin_mz_get_segments (
+	const struct r_bin_mz_obj_t *bin) {
+
 	struct btree_node *tree;
 	struct r_bin_mz_segment_t *ret;
 	ut16 *segments, *curr_seg;
@@ -78,6 +75,10 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(
 		btree_add (&tree, (void *)&stack_segment, cmp_segs);
 	}
 
+	if (num_relocs ==  0) {
+		btree_cleartree (tree, NULL);
+		return NULL;
+	}
 	segments = calloc (num_relocs, sizeof(*segments));
 	if (segments == NULL) {
 		eprintf ("Error: calloc (segments)\n");
@@ -111,7 +112,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(
 	return ret;
 }
 
-struct r_bin_mz_reloc_t *r_bin_mz_get_relocs(const struct r_bin_mz_obj_t *bin)
+struct r_bin_mz_reloc_t *r_bin_mz_get_relocs (const struct r_bin_mz_obj_t *bin)
 {
 	struct r_bin_mz_reloc_t *relocs;
 	int i, j;
@@ -136,7 +137,7 @@ struct r_bin_mz_reloc_t *r_bin_mz_get_relocs(const struct r_bin_mz_obj_t *bin)
 	return relocs;
 }
 
-void *r_bin_mz_free(struct r_bin_mz_obj_t* bin) {
+void *r_bin_mz_free (struct r_bin_mz_obj_t* bin) {
 	if (!bin) return NULL;
 	free ((void *)bin->dos_header);
 	free ((void *)bin->dos_extended_header);
@@ -147,7 +148,7 @@ void *r_bin_mz_free(struct r_bin_mz_obj_t* bin) {
 	return NULL;
 }
 
-static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
+static int r_bin_mz_init_hdr (struct r_bin_mz_obj_t* bin) {
 	int relocations_size, dos_file_size;
 
 	if (!(bin->dos_header = malloc (sizeof(MZ_image_dos_header)))) {
@@ -160,19 +161,17 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
 		return R_FALSE;
 	}
 
-	if (bin->dos_header->blocks_in_file < 1)
-		return R_FALSE;
+	if (bin->dos_header->blocks_in_file < 1) return R_FALSE;
 
 	dos_file_size = ((bin->dos_header->blocks_in_file - 1) << 9) + \
 			bin->dos_header->bytes_in_last_block;
 
 	bin->dos_file_size = dos_file_size;
 
-	if (dos_file_size > bin->size)
-		return R_FALSE;
+	if (dos_file_size > bin->size) return R_FALSE;
 
 	relocations_size = bin->dos_header->num_relocs * \
-		sizeof(MZ_image_relocation_entry);
+				sizeof(MZ_image_relocation_entry);
 
 	/* Check if relocation table doesn't exceed dos binary size */
 	if ((bin->dos_header->reloc_table_offset + relocations_size) > \
@@ -225,7 +224,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
 	return R_TRUE;
 }
 
-static int r_bin_mz_init(struct r_bin_mz_obj_t* bin) {
+static int r_bin_mz_init (struct r_bin_mz_obj_t* bin) {
 	bin->dos_header = NULL;
 	bin->dos_extended_header = NULL;
 	bin->relocation_entries = NULL;
@@ -239,7 +238,7 @@ static int r_bin_mz_init(struct r_bin_mz_obj_t* bin) {
 	return R_TRUE;
 }
 
-struct r_bin_mz_obj_t* r_bin_mz_new(const char* file)
+struct r_bin_mz_obj_t* r_bin_mz_new (const char* file)
 {
 	const ut8 *buf;
 	struct r_bin_mz_obj_t *bin = R_NEW0 (struct r_bin_mz_obj_t);
@@ -253,8 +252,7 @@ struct r_bin_mz_obj_t* r_bin_mz_new(const char* file)
 		return r_bin_mz_free (bin);
 	}
 	free ((void *)buf);
-	if (!r_bin_mz_init (bin))
-		return r_bin_mz_free (bin);
+	if (!r_bin_mz_init (bin)) return r_bin_mz_free (bin);
 	return bin;
 }
 
@@ -267,7 +265,6 @@ struct r_bin_mz_obj_t* r_bin_mz_new_buf(const struct r_buf_t *buf)
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
 		return r_bin_mz_free (bin);
 	}
-	if (!r_bin_mz_init (bin))
-		return r_bin_mz_free (bin);
+	if (!r_bin_mz_init (bin)) return r_bin_mz_free (bin);
 	return bin;
 }
