@@ -183,16 +183,8 @@ static int esil_internal_carry_check (RAnalEsil *esil, ut8 bit) {
 
 static int esil_internal_parity_check (RAnalEsil *esil) {
 	// Set if the number of set bits in the least significant byte is a multiple of 2.
-	int bits = 1;
-	bits ^= esil->cur & (ut64)   1;
-	bits ^= esil->cur & (ut64) ( 1 << 1 );
-	bits ^= esil->cur & (ut64) ( 1 << 2 );
-	bits ^= esil->cur & (ut64) ( 1 << 3 );
-	bits ^= esil->cur & (ut64) ( 1 << 4 );
-	bits ^= esil->cur & (ut64) ( 1 << 5 );
-	bits ^= esil->cur & (ut64) ( 1 << 6 );
-	bits ^= esil->cur & (ut64) ( 1 << 7 );
-	return bits;
+	// https://graphics.stanford.edu/~seander/bithacks.html#ParityWith64Bits
+	return !(((( (esil->cur & 0xff) * 0x0101010101010101ULL) & 0x8040201008040201ULL) % 0x1FF) & 1);
 }
 
 static int esil_internal_sign_check (RAnalEsil *esil) {
