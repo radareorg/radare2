@@ -1,7 +1,5 @@
 #include <r_anal.h>
 
-#define MAXBT 128
-
 #include "bt/generic-x86.c"
 #include "bt/generic-x64.c"
 #include "bt/fuzzy-all.c"
