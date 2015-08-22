@@ -37,6 +37,7 @@ static const char* r_vline_u[] = {
 typedef struct r_disam_options_t {
 	char str[1024], strsub[1024];
 	int use_esil;
+	int hex_invalid;
 	int show_color;
 	int colorop;
 	//int show_utf8;
@@ -271,6 +272,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
+	ds->hex_invalid = r_config_get_i (core->config, "asm.hex_invalid");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
 	ds->colorop = r_config_get_i (core->config, "scr.colorops");
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
@@ -457,10 +459,23 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 	return r_print_colorize_opcode (source, ds->color_reg, ds->color_num);
 }
 
+static void build_hex_invalid (RDisasmState *ds) {
+	char hex_str[24] = "0x";
+	if (r_str_casestr (ds->asmop.buf_asm, "invalid") ||\
+		r_str_casestr (ds->asmop.buf_asm, "undefined")) {
+		ds->opstr = strdup (strcat (hex_str, ds->asmop.buf_hex));
+	} else {
+		ds->opstr = strdup (ds->asmop.buf_asm);
+	}
+	return;
+
+}
+
 static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 	char *asm_str;
 	if (!ds->opstr) {
-		ds->opstr = strdup (ds->asmop.buf_asm);
+		if (ds->hex_invalid) build_hex_invalid (ds);
+		else ds->opstr = strdup (ds->asmop.buf_asm);
 	}
 	if (ds->varsub && ds->opstr) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
@@ -2296,7 +2311,7 @@ toro:
 	r_cons_break (NULL, NULL);
 	int inc = 0;
 	for (i=idx=ret=0; idx < len && ds->lines < ds->l;
-			idx += inc,i++, ds->index += inc, ds->lines++) {
+		idx += inc,i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		if (r_cons_singleton ()->breaked) {
 			dorepeat = 0;
@@ -2642,7 +2657,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 				ds->opstr = strdup (ds->asmop.buf_asm);
 			}
 		}
-		if (ret<1) {
+		if (ret < 1) {
 			err = 1;
 			ret = 1;
 			r_cons_printf ("invalid\n");
