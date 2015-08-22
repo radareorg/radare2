@@ -1069,7 +1069,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.bytes", "true",  "Display the bytes of each instruction");
 	SETPREF("asm.flagsinbytes", "false",  "Display flags inside the bytes space");
 	SETPREF("asm.midflags", "true", "Realign disassembly if there is a flag in the middle of an instruction");
-	SETPREF("asm.cmtflgrefs", "true", "Show comment flags associated to branch refenrece");
+	SETPREF("asm.cmtflgrefs", "true", "Show comment flags associated to branch reference");
 	SETPREF("asm.cmtright", "true", "Show comments at right of disassembly if they fit in screen");
 	SETI("asm.cmtcol", 70, "Align comments at column 60");
 	SETPREF("asm.calls", "true", "Show calling convention calls as comments in disasm");
