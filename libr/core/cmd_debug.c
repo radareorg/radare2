@@ -1451,7 +1451,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbe", " <addr>", "Enable breakpoint",
 		"dbs", " <addr>", "Toggle breakpoint",
 
-		"dbt", "", "Display backtrace",
+		"dbt", "", "Display backtrace based on dbg.btdepth and dbg.btalgo",
 		"dbt=", "", "Display backtrace in one line",
 		"dbtj", "", "Display backtrace in JSON",
 		"dbte", " <addr>", "Enable Breakpoint Trace",
@@ -1554,6 +1554,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				addr = r_num_math (core->num, input+2);
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
+			r_cons_printf ("#  Address  Size  [Func]  Desc1 Desc2\n");
 			r_list_foreach (list, iter, frame) {
 				char flagdesc[1024], flagdesc2[1024];
 				RFlagItem *f = r_flag_get_at (core->flags, frame->addr);
@@ -2734,7 +2735,7 @@ static int cmd_debug(void *data, const char *input) {
 			const char* help_msg[] = {
 			"Usage:", "d", " # Debug commands",
 			"db", "[?]", "Breakpoints commands",
-			"dbt", "", "Display backtrace",
+			"dbt", "", "Display backtrace based on dbg.btdepth and dbg.btalgo",
 			"dc", "[?]", "Continue execution",
 			"dd", "[?]", "File descriptors (!fd in r1)",
 			"de", "[-sc] [rwx] [rm] [e]", "Debug with ESIL (see de?)",
