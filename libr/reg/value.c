@@ -1,10 +1,8 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
 
-/* XXX: reg get can be accessed using the print_format stuff */
-// This is the same as r_buf_set_bits, arenas can be r_buf
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	RRegSet *regset;
 	ut32 v32;
@@ -21,25 +19,13 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		item->size, off, item->offset, (item->offset/8));
 #endif
 	switch (item->size) {
+	case 80: // long double
+		ret = (ut64)r_reg_get_double (reg, item);
+		eprintf ("precission loss\n");
+		break;
 	case 1:
 		ret = (regset->arena->bytes[item->offset/8] & \
 			(1<<(item->offset%8)))?1:0;
-#if 0
-off=144;
-eprintf ("..... %d  : %02x %02x %02x %02x\n",
-off,
-		(regset->arena->bytes[off]),
-		(regset->arena->bytes[off+1]),
-		(regset->arena->bytes[off+2]),
-		(regset->arena->bytes[off+3]));
-eprintf ("%d   :   %02x %02x %02x %02x\n",
-	(int)(item->offset/8),
-		(regset->arena->bytes[item->offset/8]),
-		(regset->arena->bytes[1+(item->offset/8)]),
-		(regset->arena->bytes[2+(item->offset/8)]),
-		(regset->arena->bytes[3+(item->offset/8)]));
-#endif
-
 		break;
 	case 8:
 		if (regset->arena->size-off-1>=0) {
@@ -54,14 +40,6 @@ eprintf ("%d   :   %02x %02x %02x %02x\n",
 		}
 		break;
 	case 32:
-#if 0
-eprintf ("%d  : %02x %02x %02x %02x\n",
-off,
-		(regset->arena->bytes[off]),
-		(regset->arena->bytes[off+1]),
-		(regset->arena->bytes[off+2]),
-		(regset->arena->bytes[off+3]));
-#endif
 		if (off+4<=regset->arena->size) {
 			r_mem_copyendian ((ut8*)&v32, (ut8*)regset->arena->bytes+off, 4, !reg->big_endian);
 			ret = v32;
@@ -79,7 +57,6 @@ off,
 	return ret;
 }
 
-// TODO: cleanup this ugly code
 R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	ut64 v64;
 	ut32 v32;
@@ -103,8 +80,8 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 			buf[0] = (buf[0] &(0xff^mask)) | mask;
 		} else {
 			ut8 * buf = reg->regset[item->type].arena->bytes + (item->offset/8);
-			int bit = (item->offset%8);
-			ut8 mask = 0xff^(1<<bit);
+			int bit = item->offset % 8;
+			ut8 mask = 0xff ^ (1 << bit);
 			buf[0] = (buf[0] & mask) | 0;
 		}
 		return R_TRUE;
@@ -122,48 +99,76 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 }
 
 R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str) {
-	ut64 num;
-	if (!item->flags)
-		return UT64_MAX;
-	num = r_str_bits_from_string (str, item->flags);
-	if (num == UT64_MAX) 
-		r_reg_set_value (reg, item, r_num_math (NULL, str));
-	else r_reg_set_value (reg, item, num);
+	ut64 num = UT64_MAX;
+	if (item && item->flags && str) {
+		num = r_str_bits_from_string (str, item->flags);
+		if (num == UT64_MAX) 
+			num = r_num_math (NULL, str);
+		r_reg_set_value (reg, item, num);
+	}
 	return num;
 }
 
-R_API char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
-	char *out;
-	ut64 num;
-	if (!item->flags)
-		return NULL;
-	out = malloc (strlen (item->flags)+1);
-	num = r_reg_get_value (reg, item);
-	r_str_bits (out, (ut8*)&num, strlen (item->flags)*8, item->flags);
+// experimental new notation
+#undef HEAP
+#define HEAP 
+
+R_API HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
+	char *out = NULL;
+	if (reg && item && item->flags) {
+		out = malloc (strlen (item->flags)+1);
+		if (out) {
+			ut64 num = r_reg_get_value (reg, item);
+			r_str_bits (out, (ut8*)&num,
+				strlen (item->flags) * 8, item->flags);
+		}
+	}
 	return out;
 }
 
-/* floating point */
-// XXX: use double for better precission?
-R_API float r_reg_get_fvalue(RReg *reg, RRegItem *item) {
-	// TODO
-	return 0.0;
-}
-
-R_API int r_reg_set_fvalue(RReg *reg, RRegItem *item, float value) {
-	int ret = R_FALSE;
-	// TODO
-	return ret;
-}
-
 /* packed registers */
-R_API ut64 r_reg_get_pvalue(RReg *reg, RRegItem *item, int packidx) {
-	// TODO
-	return 0LL;
-}
-
-R_API int r_reg_set_pvalue(RReg *reg, RRegItem *item, ut64 value, int packidx) {
-	int ret = R_FALSE;
-	// TODO
+// packbits can be 8, 16, 32 or 64
+// result value is always casted into ut64
+R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) {
+	int packbytes = packbits / 8;
+	int packmod = packbits % 8;
+	ut64 ret = 0LL;
+	RRegSet *regset;
+	int off;
+	if (!reg || !item)
+		return 0LL;
+	if (packmod) {
+		eprintf ("Invalid bit size for packet register\n");
+		return 0LL;
+	}
+	off = BITS2BYTES (item->offset);
+	regset = &reg->regset[item->type];
+	off += (packidx * packbytes);
+	if (regset->arena->size - off - 1 >= 0) {
+		memcpy (&ret, regset->arena->bytes + off, packbytes);
+	}
 	return ret;
 }
+
+R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
+	int packbytes = packbits / 8;
+	int packmod = packbits % 8;
+	int off = item->offset;
+
+	if (!reg || !item) {
+		eprintf ("r_reg_set_value: item is NULL\n");
+		return R_FALSE;
+	}
+	if (packmod) {
+		eprintf ("Invalid bit size for packet register\n");
+		return 0LL;
+	}
+	if (reg->regset[item->type].arena->size - BITS2BYTES (off) - BITS2BYTES(packbytes) >= 0) {
+		r_mem_copybits (reg->regset[item->type].arena->bytes+
+				BITS2BYTES (off), (ut8*)&val, packbytes);
+		return R_TRUE;
+	}
+	eprintf ("r_reg_set_value: Cannot set %s to 0x%"PFMT64x"\n", item->name, val);
+	return R_FALSE;
+}
+

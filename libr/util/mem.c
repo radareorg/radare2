@@ -46,8 +46,8 @@ R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int 
 
 R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
 	ut8 srcmask, dstmask;
-	int bytes = (int)(bits/8);
-	bits = bits%8;
+	int bytes = (int)(bits / 8);
+	bits = bits % 8;
 
 	memcpy (dst, src, bytes);
 	if (bits) {
@@ -61,7 +61,7 @@ R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
 		case 6: srcmask = 0xfc; dstmask = 0x03; break;
 		case 7: srcmask = 0xfe; dstmask = 0x01; break;
 		}
-		dst[bytes] = ((dst[bytes]&dstmask) | (src[bytes]&srcmask));
+		dst[bytes] = ((dst[bytes] & dstmask) | (src[bytes] & srcmask));
 	}
 }
 

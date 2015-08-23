@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_reg.h>
 
@@ -6,24 +6,28 @@
 R_API ut8* r_reg_get_bytes(RReg *reg, int type, int *size) {
 	RRegArena *arena;
 	int i, sz, osize;
-	ut8 *buf;
-	if (size)
-		*size = 0;
+	ut8 *buf, *newbuf;
+	if (size) *size = 0;
 	if (type == -1) {
 		/* serialize ALL register types in a single buffer */
 		// owned buffer is returned
 		osize = sz = 0;
 		buf = malloc (8);
+		if (!buf) {
+			return NULL;
+		}
 		for (i=0; i<R_REG_TYPE_LAST; i++) {
 			arena = reg->regset[i].arena;
 			sz += arena->size;
-			buf = realloc (buf, sz);
-			if (!buf) break;
-			memcpy (buf+osize, arena->bytes, arena->size);
+			newbuf = realloc (buf, sz);
+			if (!newbuf) {
+				break;
+			}
+			buf = newbuf;
+			memcpy (buf + osize, arena->bytes, arena->size);
 			osize = sz;
 		}
-		if (size)
-			*size = sz;
+		if (size) *size = sz;
 		return buf;
 	}
 
