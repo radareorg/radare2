@@ -542,6 +542,7 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = IMM64(2);
 		op->fail = addr+op->size;
+		break;
 	case ARM64_INS_BR:
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->eob = 1;

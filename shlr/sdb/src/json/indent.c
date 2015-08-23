@@ -67,6 +67,7 @@ SDB_API char *sdb_json_indent(const char *s) {
 			*o++ = *s;
 		}
 	}
+	*o++ = '\n';
 	*o = 0;
 	return O;
 }

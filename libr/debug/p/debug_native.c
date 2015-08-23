@@ -249,7 +249,7 @@ static int r_debug_native_wait (RDebug *dbg, int pid) {
 }
 
 #undef MAXPID
-#define MAXPID 69999
+#define MAXPID 99999
 
 static RList *r_debug_native_tids (int pid) {
 	printf ("TODO: Threads: \n");
@@ -685,7 +685,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	char unkstr[128];
 #endif
 #if __APPLE__
-	list = xnu_dbg_maps (dbg);
+	list = xnu_dbg_maps (dbg, 0);
 #elif __WINDOWS__ && !__CYGWIN__
 	list = w32_dbg_maps (dbg); // TODO: moar?
 #else
@@ -793,6 +793,47 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 #endif // __sun
 #endif // __WINDOWS
 	return list;
+}
+
+static RList *r_debug_native_modules_get (RDebug *dbg) {
+	const char *lastname = NULL;
+	RDebugMap *map;
+	RListIter *iter, *iter2;
+	RList *list, *last;
+	int must_delete;
+#if __APPLE__
+	list = xnu_dbg_maps (dbg, 1);
+	if (list && !r_list_empty (list)) {
+		return list;
+	}
+#endif
+	list = r_debug_native_map_get (dbg);
+	if (!list) {
+		return NULL;
+	}
+	r_list_foreach_safe (list, iter, iter2, map) {
+		must_delete = 1;
+		if (map->file && *map->file) {
+			if (map->file[0] == '/') {
+				if (lastname) {
+					if (strcmp (lastname, map->file)) {
+						must_delete = 0;
+					}
+				} else {
+					must_delete = 0;
+				}
+			}
+		}
+		if (must_delete) {
+			r_list_delete (list, iter);
+		} else {
+			lastname = map->file;
+		}
+	}
+	return list;
+	r_list_free (list);
+
+	return last; 
 }
 
 // TODO: deprecate???
@@ -1115,6 +1156,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.map_alloc = r_debug_native_map_alloc,
 	.map_dealloc = r_debug_native_map_dealloc,
 	.map_get = r_debug_native_map_get,
+	.modules_get = r_debug_native_modules_get,
 	.map_protect = r_debug_native_map_protect,
 	.breakpoint = r_debug_native_bp,
 	.drx = r_debug_native_drx,

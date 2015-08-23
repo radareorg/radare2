@@ -1,7 +1,6 @@
 #if __APPLE__
 
-kern_return_t mach_vm_region_recurse
-(
+kern_return_t mach_vm_region_recurse (
         vm_map_t target_task,
         mach_vm_address_t *address,
         mach_vm_size_t *size,
@@ -133,6 +132,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 			module_name[0] = 0;
 			int ret = proc_regionfilename (dbg->pid, address,
 				module_name, sizeof (module_name));
+eprintf("REGION NAME (%s)\n", module_name);
 			module_name[ret] = 0;
 			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 			// XXX: if its shared, it cannot be read?

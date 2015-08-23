@@ -95,6 +95,13 @@ R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm
 	return map;
 }
 
+R_API RList *r_debug_modules_list(RDebug *dbg) {
+	if (dbg && dbg->h && dbg->h->modules_get) {
+		return dbg->h->modules_get (dbg);
+	}
+	return NULL;
+}
+
 R_API int r_debug_map_sync(RDebug *dbg) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->map_get) {

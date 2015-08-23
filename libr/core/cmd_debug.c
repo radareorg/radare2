@@ -669,27 +669,43 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 	return ret;
 }
 
-static void cmd_debug_modules(RCore *core) {
+static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
 	RDebugMap *map;
+	RList *list;
 	RListIter *iter;
 	SdbListIter *it;
 	SdbKv *kv;
 
-	Sdb *db = sdb_new0 ();
-	r_list_foreach (core->dbg->maps, iter, map) {
-		if (map->file && *map->file) {
-			ut64 addr = sdb_num_get (db, map->file, NULL);
-			if (!addr || addr < map->addr) {
-				sdb_num_set (db, map->file, map->addr, 0);
+	if (mode == '?') {
+		eprintf ("Usage: dmm[j*]\n");
+		return;
+	}
+	if (mode == 'j') {
+		r_cons_printf ("[");
+	}
+	// TODO: honor mode
+	list = r_debug_modules_list (core->dbg);
+	r_list_foreach (list, iter, map) {
+		switch (mode) {
+		case 'j':
+			r_cons_printf ("{\"address\":%"PFMT64d",\"file\":\"%s\"}%s",
+				map->addr, map->file, iter->n?",":"");
+			break;
+		case '*':
+			{
+				char *fn = strdup (map->file);
+				r_name_filter (fn, 0);
+				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n", fn, map->addr);
 			}
+			break;
+		default:
+			r_cons_printf ("0x%08"PFMT64x" %s\n", map->addr, map->file);
 		}
 	}
-
-	ls_foreach (db->ht->list, it, kv) {
-		ut64 addr = sdb_atoi (kv->value);
-		r_cons_printf ("0x%08"PFMT64x" %s\n", addr, kv->key);
+	if (mode == 'j') {
+		r_cons_printf ("]\n");
 	}
-	sdb_free (db);
+	r_list_free (list);
 }
 
 static int cmd_debug_map(RCore *core, const char *input) {
@@ -705,7 +721,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
 		"dmj", "", "List memmaps in JSON format",
 		"dml", " <file>", "Load contents of file into the current map region (see Sl)",
-		"dmm", "", "List map modules",
+		"dmm", "[j*]", "List modules (libraries, binaries loaded in memory)",
 		"dmp", " <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
 		"dms", " <id> <mapaddr>", "take memory snapshot",
 		"dms-", " <id> <mapaddr>", "restore memory snapshot",
@@ -728,8 +744,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case 'm':
-		cmd_debug_modules (core);
+	case 'm': // "dmm"
+		cmd_debug_modules (core, input[1]);
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);

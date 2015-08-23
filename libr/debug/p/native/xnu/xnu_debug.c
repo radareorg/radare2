@@ -220,7 +220,6 @@ int xnu_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 
 }
 
-
 int xnu_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	int ret;
 	int pid = dbg->pid;
@@ -612,18 +611,167 @@ vm_address_t get_kernel_base(task_t ___task) {
 
 extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_t buffersize);
 
-static RList *ios_dbg_maps(RDebug *dbg) {
+#define MAX_MACH_HEADER_SIZE (64 * 1024)
+#define DYLD_INFO_COUNT 5
+#define DYLD_INFO_LEGACY_COUNT 1
+#define DYLD_INFO_32_COUNT 3
+#define DYLD_INFO_64_COUNT 5
+#define DYLD_IMAGE_INFO_32_SIZE 12
+#define DYLD_IMAGE_INFO_64_SIZE 24
+typedef struct {
+  ut32 version;
+  ut32 info_array_count;
+  ut32 info_array;
+} DyldAllImageInfos32;
+typedef struct {
+  ut32 image_load_address;
+  ut32 image_file_path;
+  ut32 image_file_mod_date;
+} DyldImageInfo32;
+typedef struct {
+  ut32 version;
+  ut32 info_array_count;
+  ut64 info_array;
+} DyldAllImageInfos64;
+typedef struct {
+  ut64 image_load_address;
+  ut64 image_file_path;
+  ut64 image_file_mod_date;
+} DyldImageInfo64;
+
+static int xnu_get_bits(RDebug *dbg) {
+	struct task_dyld_info info;
+	mach_msg_type_number_t count;
+	kern_return_t kr;
+	count = TASK_DYLD_INFO_COUNT;
+	task_t task = pid_to_task (dbg->tid);
+
+	kr = task_info (task, TASK_DYLD_INFO, (task_info_t) &info, &count);
+	if (kr != KERN_SUCCESS)
+		return 0;
+
+	if (info.all_image_info_format == TASK_DYLD_ALL_IMAGE_INFO_64) {
+		return 64;
+	}
+	return 32; // 16 for ARM?
+}
+
+// TODO: Implement mach0 size.. maybe copypasta from rbin?
+static int mach0_size (RDebug *dbg, ut64 addr) {
+	return 4096;
+#if 0
+	int size = 4096;
+	ut8 header[MAX_MACH_HEADER_SIZE];
+
+	dbg->iob.read_at (dbg->iob.io, addr, header, sizeof (header));
+	p = first_command;
+	for (cmd_index = 0; cmd_index != header->ncmds; cmd_index++) {
+		const struct load_command * lc = (struct load_command *) p;
+		if (lc->cmd == GUM_LC_SEGMENT) {
+			gum_segment_command_t * sc = (gum_segment_command_t *) lc;
+			size += sc->vmsize;
+		}
+
+		p += lc->cmdsize;
+	}
+	return size;	
+#endif
+}
+
+static RList *xnu_dbg_modules(RDebug *dbg) {
+	struct task_dyld_info info;
+	mach_msg_type_number_t count;
+	kern_return_t kr;
+	int size, info_array_count, info_array_size, i;
+	ut64 info_array_address;
+	void *info_array = NULL;
+	void *header_data = NULL;
+	char file_path[MAXPATHLEN];
+	count = TASK_DYLD_INFO_COUNT;
+	task_t task = pid_to_task (dbg->tid);
+	ut64 addr, file_path_address;
+	RDebugMap *mr = NULL;
+	RList *list = NULL;
+
+	kr = task_info (task, TASK_DYLD_INFO, (task_info_t) &info, &count);
+	if (kr != KERN_SUCCESS)
+		return NULL;
+
+	if (info.all_image_info_format == TASK_DYLD_ALL_IMAGE_INFO_64) {
+		DyldAllImageInfos64 all_infos;
+		dbg->iob.read_at (dbg->iob.io, info.all_image_info_addr,
+			(ut8*)&all_infos, sizeof (DyldAllImageInfos64));
+		info_array_count = all_infos.info_array_count;
+		info_array_size = info_array_count * DYLD_IMAGE_INFO_64_SIZE;
+		info_array_address = all_infos.info_array;
+	} else {
+		DyldAllImageInfos32 all_info;
+		dbg->iob.read_at (dbg->iob.io, info.all_image_info_addr,
+			(ut8*)&all_info, sizeof (DyldAllImageInfos32));
+		info_array_count = all_info.info_array_count;
+		info_array_size = info_array_count * DYLD_IMAGE_INFO_32_SIZE;
+		info_array_address = all_info.info_array;
+	}
+
+	if (info_array_address == 0) {
+		return NULL;
+	}
+
+	info_array = malloc (info_array_size);
+	if (!info_array) {
+		eprintf ("Cannot allocate info_array_size %d\n", info_array_size);
+		return NULL;
+	}
+	
+	dbg->iob.read_at (dbg->iob.io, info_array_address,
+			info_array, info_array_size);
+
+	list = r_list_new ();
+	for (i=0; i < info_array_count; i++) {
+		if (info.all_image_info_format == TASK_DYLD_ALL_IMAGE_INFO_64) {
+			DyldImageInfo64 * info = info_array + (i * DYLD_IMAGE_INFO_64_SIZE);
+			addr = info->image_load_address;
+			file_path_address = info->image_file_path;
+		} else {
+			DyldImageInfo32 * info = info_array + (i * DYLD_IMAGE_INFO_32_SIZE);
+			addr = info->image_load_address;
+			file_path_address = info->image_file_path;
+		}
+		dbg->iob.read_at (dbg->iob.io, file_path_address,
+				(ut8*)file_path, MAXPATHLEN);
+		eprintf ("--> %d 0x%08"PFMT64x" %s\n", i, addr, file_path);
+		size = mach0_size (dbg, addr);
+		mr = r_debug_map_new (file_path, addr, addr+size, 7, 0);
+		if (mr == NULL) {
+			eprintf ("Cannot create r_debug_map_new\n");
+			break;
+		}
+		mr->file = strdup (file_path);
+		r_list_append (list, mr);
+	}
+	free (info_array);
+eprintf ("List done\n");
+	return list;
+}
+
+static RList *ios_dbg_maps(RDebug *dbg, int only_modules) {
 	boolt contiguous = R_FALSE;
 	ut32 oldprot = UT32_MAX;
+	ut32 oldmaxprot = UT32_MAX;
 	char buf[1024];
+	char module_name[MAXPATHLEN];
 	mach_vm_address_t address = MACH_VM_MIN_ADDRESS;
 	mach_vm_size_t size = (mach_vm_size_t) 0;
 	mach_vm_size_t osize = (mach_vm_size_t) 0;
 	natural_t depth = 0;
-	task_t task = pid_to_task (dbg->tid);
+	int tid = dbg->pid;
+	task_t task = pid_to_task (tid);
 	RDebugMap *mr = NULL;
 	RList *list = NULL;
 	int i = 0;
+	if (only_modules) {
+		return xnu_dbg_modules (dbg);
+	}
 #if __arm64__ || __aarch64__
 	size = osize = 16384; // acording to frida
 #else
@@ -636,13 +784,11 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 		return NULL;
 	}
 #endif
-
 	kern_return_t kr;
 	for (;;) {
 		struct vm_region_submap_info_64 info;
 		mach_msg_type_number_t info_count;
 
-		depth = VM_REGION_BASIC_INFO_64;
 		info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
 		memset (&info, 0, sizeof (info));
 		kr = mach_vm_region_recurse (task, &address, &size, &depth,
@@ -651,13 +797,29 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 			//eprintf ("Cannot kern succ recurse\n");
 			break;
 		}
+		if (info.is_submap) {
+			depth++;
+			continue;
+		}
 		if (!list) {
 			list = r_list_new ();
 			//list->free = (RListFree*)r_debug_map_free;
 		}
+		{
+			module_name[0] = 0;
+			int ret = proc_regionfilename (tid, address,
+				module_name, sizeof (module_name));
+			module_name[ret] = 0;
+		}
+#if 0
+		oldprot = info.protection;
+		oldmaxprot = info.max_protection;
+// contiguous pages seems to hide some map names
 		if (mr) {
 			if (address == mr->addr + mr->size) {
-				if (oldprot != UT32_MAX && oldprot == info.protection) {
+				if (oldmaxprot == info.max_protection) {
+					contiguous = R_FALSE;
+				} else if (oldprot != UT32_MAX && oldprot == info.protection) {
 					/* expand region */
 					mr->size += size;
 					contiguous = R_TRUE;
@@ -668,13 +830,9 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 				contiguous = R_FALSE;
 			}
 		} else contiguous = R_FALSE;
-		oldprot = info.protection;
-		if (info.max_protection != 0 && !contiguous) {
-			char module_name[1024];
-			module_name[0] = 0;
-			int ret = proc_regionfilename (dbg->pid, address,
-				module_name, sizeof (module_name));
-			module_name[ret] = 0;
+		//if (info.max_protection == oldprot && !contiguous) {
+#endif
+		if (1) {
 			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 			// XXX: if its shared, it cannot be read?
 			snprintf (buf, sizeof (buf), "%s %02x %s%s%s%s%s %s depth=%d",
@@ -698,18 +856,19 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 			i++;
 			r_list_append (list, mr);
 		}
-		if (size<1) size = osize; // fuck
+		if (size<1) {
+			eprintf ("EFUCK\n");
+			size = osize; // fuck
+		}
 		address += size;
 		size = 0;
 	}
 	return list;
 }
 
-
-RList *xnu_dbg_maps (RDebug *dbg) {
-
+RList *xnu_dbg_maps (RDebug *dbg, int only_modules) {
 	//return osx_dbg_maps (dbg);
-	return ios_dbg_maps (dbg);
+	return ios_dbg_maps (dbg, only_modules);
 #if 0
 	const char *osname = dbg->anal->syscall->os;
 	if (osname && !strcmp (osname, "ios")) {
