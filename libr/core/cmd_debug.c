@@ -669,6 +669,29 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 	return ret;
 }
 
+static void cmd_debug_modules(RCore *core) {
+	RDebugMap *map;
+	RListIter *iter;
+	SdbListIter *it;
+	SdbKv *kv;
+
+	Sdb *db = sdb_new0 ();
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (map->file && *map->file) {
+			ut64 addr = sdb_num_get (db, map->file, NULL);
+			if (!addr || addr < map->addr) {
+				sdb_num_set (db, map->file, map->addr, 0);
+			}
+		}
+	}
+
+	ls_foreach (db->ht->list, it, kv) {
+		ut64 addr = sdb_atoi (kv->value);
+		r_cons_printf ("0x%08"PFMT64x" %s\n", addr, kv->key);
+	}
+	sdb_free (db);
+}
+
 static int cmd_debug_map(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "dm", " # Memory maps commands",
@@ -682,6 +705,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
 		"dmj", "", "List memmaps in JSON format",
 		"dml", " <file>", "Load contents of file into the current map region (see Sl)",
+		"dmm", "", "List map modules",
 		"dmp", " <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
 		"dms", " <id> <mapaddr>", "take memory snapshot",
 		"dms-", " <id> <mapaddr>", "restore memory snapshot",
@@ -703,6 +727,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				break;
 			}
 		}
+		break;
+	case 'm':
+		cmd_debug_modules (core);
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
