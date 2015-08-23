@@ -18,12 +18,17 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	op->delay = 0;
 	if (*ins == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
+		op->cycles = 1;
 	} else
-	if (buf[1]>=0x0c && buf[1]<=0x0f) { // hacky
+	if ((buf[1] >= 0x0c && buf[1] <= 0x0f) ||	//ADD
+		(buf[1] >= 0x1c && buf[1] <= 0x1f)) {	//ADC
 		op->type = R_ANAL_OP_TYPE_ADD;
+		op->cycles = 1;
 	} else
-	if (buf[1]>=0x18 && buf[1]<=0x1b) { // hacky
+	if ((buf[1] >= 0x18 && buf[1] <= 0x1b) ||	//SUB
+		(buf[1] >= 0x08 && buf[1] <= 0x0b)) {	//SBC
 		op->type = R_ANAL_OP_TYPE_SUB;
+		op->cycles = 1;
 	} else
 	//if (((buf[1] & 0x94) == 0x94) && ((buf[0] & 0x0e)==0x0e)) {
 	if (!memcmp (buf, "\x0e\x94", 2)) {
