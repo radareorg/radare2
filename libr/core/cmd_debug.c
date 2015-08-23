@@ -861,9 +861,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		break;
 	case '?':
 		if (str[1]) {
+			const char *p = str+1;
 			ut64 off;
+			while (IS_WHITESPACE (*p)) p++;
 			r_debug_reg_sync (core->dbg, -1, 0); //R_REG_TYPE_GPR, R_FALSE);
-			off = r_debug_reg_get (core->dbg, str+1);
+			off = r_debug_reg_get (core->dbg, p);
 	//		r = r_reg_get (core->dbg->reg, str+1, 0);
 	//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
 			r_cons_printf ("0x%08"PFMT64x"\n", off);

@@ -129,14 +129,19 @@ R_API HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
 /* packed registers */
 // packbits can be 8, 16, 32 or 64
 // result value is always casted into ut64
+// TODO: use item->packed_size 
 R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) {
-	int packbytes = packbits / 8;
-	int packmod = packbits % 8;
+	int packbytes, packmod;
 	ut64 ret = 0LL;
 	RRegSet *regset;
 	int off;
 	if (!reg || !item)
 		return 0LL;
+	if (packbits<1) {
+		packbits = item->packed_size;
+	}
+	packbytes = packbits / 8;
+	packmod = packbits % 8;
 	if (packmod) {
 		eprintf ("Invalid bit size for packet register\n");
 		return 0LL;
@@ -151,17 +156,25 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 }
 
 R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
-	int packbytes = packbits / 8;
-	int packmod = packbits % 8;
+	int packbytes, packmod;
 	int off = item->offset;
 
 	if (!reg || !item) {
 		eprintf ("r_reg_set_value: item is NULL\n");
 		return R_FALSE;
 	}
+	if (packbits<1) {
+		packbits = item->packed_size;
+	}
+	packbytes = packbits / 8;
+	packmod = packbits % 8;
+	if (packidx * packbits > item->size) {
+		eprintf ("Packed index is beyond the register size\n");
+		return R_FALSE;
+	}
 	if (packmod) {
 		eprintf ("Invalid bit size for packet register\n");
-		return 0LL;
+		return R_FALSE;
 	}
 	if (reg->regset[item->type].arena->size - BITS2BYTES (off) - BITS2BYTES(packbytes) >= 0) {
 		r_mem_copybits (reg->regset[item->type].arena->bytes+
