@@ -15,7 +15,7 @@ SILENT=
 endif
 
 ifndef USE_GIT_URLS
-GIT_PREFIX=https://www.
+GIT_PREFIX=https://
 else
 GIT_PREFIX=git://
 endif
