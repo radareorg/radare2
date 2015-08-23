@@ -673,8 +673,6 @@ static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
 	RDebugMap *map;
 	RList *list;
 	RListIter *iter;
-	SdbListIter *it;
-	SdbKv *kv;
 
 	if (mode == '?') {
 		eprintf ("Usage: dmm[j*]\n");

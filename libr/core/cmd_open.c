@@ -363,7 +363,7 @@ static int cmd_open(void *data, const char *input) {
 	case 'o':
 		switch (input[1]) {
 		case 'd': // "ood" : reopen in debugger
-			if (core && core->file && core->file->desc && core->file->desc->uri) {
+			if (core->file && core->file->desc && core->file->desc->uri) {
 				int bits = core->assembler->bits;
 				const char *oldname = core->file->desc->uri;
 				char *newfile = r_str_newf ("dbg://%s", oldname);

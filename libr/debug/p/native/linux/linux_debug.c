@@ -27,9 +27,7 @@ const char *linux_reg_profile (RDebug *dbg) {
 #else
 #error "Unsupported Linux CPU"
 #endif
-
 }
-
 
 int linux_handle_signals (RDebug *dbg) {
 	siginfo_t siginfo = {0};
@@ -152,12 +150,16 @@ RList *linux_thread_list (int pid, RList *list) {
 		/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
 		//while ((de = readdir (dh))) {
 #undef MAXPID
-#define MAXPID 69999
+#define MAXPID 99999
 		for (i = pid; i < MAXPID; i++) { // XXX
 			snprintf (cmdline, sizeof(cmdline), "/proc/%d/status", i);
 			fd = open (cmdline, O_RDONLY);
 			if (fd == -1) continue;
-			read (fd, cmdline, 1024);
+			if (read (fd, cmdline, 1024)<2) {
+				// read error
+				close (fd);
+				break;
+			}
 			cmdline[sizeof(cmdline) - 1] = '\0';
 			ptr = strstr (cmdline, "Tgid:");
 			if (ptr) {
@@ -166,16 +168,18 @@ RList *linux_thread_list (int pid, RList *list) {
 					close (fd);
 					continue;
 				}
-				(void)read (fd, cmdline, sizeof(cmdline) - 1);
+				if (read (fd, cmdline, sizeof(cmdline) - 1) <2) {
+					break;
+				}
 				snprintf (cmdline, sizeof(cmdline), "thread_%d", thid++);
-				cmdline[sizeof(cmdline) - 1] = '\0';
+				cmdline[sizeof (cmdline) - 1] = '\0';
 				r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
 			}
 			close (fd);
+			fd = -1;
 		}
 	}
 	return list;
-
 }
 
 
@@ -475,7 +479,8 @@ RList *linux_desc_list (int pid) {
 		memcpy (file, path, len);
 		memcpy (file + len, de->d_name, len2 + 1);
 		memset (buf, 0, sizeof(buf));
-		readlink (file, buf, sizeof(buf) - 1);
+		readlink (file, buf, sizeof (buf) - 1);
+		buf[sizeof (buf)-1] = 0;
 		type = perm = 0;
 		if (stat (file, &st) != -1) {
 			type  = st.st_mode & S_IFIFO  ? 'P':

@@ -29,7 +29,6 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 # include <signal.h>
 #endif
 
-
 #if __WINDOWS__
 #include <windows.h>
 #define R_DEBUG_REG_T CONTEXT
@@ -96,7 +95,6 @@ static const char *r_debug_native_reg_profile (RDebug *dbg) {
 #endif
 
 static int r_debug_native_step (RDebug *dbg) {
-	int ret = R_FALSE;
 #if __WINDOWS__ && !__CYGWIN__
 	/* set TRAP flag */
 	CONTEXT regs __attribute__ ((aligned (16)));
@@ -107,33 +105,33 @@ static int r_debug_native_step (RDebug *dbg) {
 		(ut8 *)&regs, sizeof (regs));
 	r_debug_native_continue (dbg, dbg->pid,
 		dbg->tid, dbg->reason.signum);
-	ret = R_TRUE;
 	r_debug_handle_signals (dbg);
+	return R_TRUE;
 #elif __APPLE__
 	return xnu_step (dbg);
 #elif __BSD__
-	ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0);
+	int ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0);
 	if (ret != 0) {
 		perror ("native-singlestep");
-		ret = R_FALSE;
-	} else ret = R_TRUE;
+		return R_FALSE;
+	}
+	return R_TRUE;
 #elif __CYGWIN__
 	#warning "r_debug_native_step not supported on this platform"
-	ret = R_FALSE;
+	return R_FALSE;
 #else // linux
 	return linux_step (dbg);
 #endif
-	return ret;
 }
 
 // return thread id
 static int r_debug_native_attach (RDebug *dbg, int pid) {
-	int ret = -1;
-	if (pid == dbg->pid)
+	if (!dbg || pid == dbg->pid)
 		return pid;
 #if __linux__
 	return linux_attach (dbg, pid);
 #elif __WINDOWS__ && !__CYGWIN__
+	int ret;
 	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (process != (HANDLE)NULL && DebugActiveProcess (pid)) {
 		ret = w32_first_thread (pid);
@@ -142,20 +140,22 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 	}
 	ret = w32_first_thread (pid);
 	CloseHandle (process);
+	return ret;
 #elif __CYGWIN__
 	#warning "r_debug_native_attach not supported on this platform"
-	ret = -1;
+	return -1;
 #elif __APPLE__
 	return xnu_attach (dbg, pid);
 #elif __KFBSD__
 	if (ptrace (PT_ATTACH, pid, 0, 0) != -1) perror ("ptrace (PT_ATTACH)");
 	return pid;
 #else
-	ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
-	if (ret!=-1) perror ("ptrace (PT_ATTACH)");
-	ret = pid;
+	int ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
+	if (ret != -1) {
+		perror ("ptrace (PT_ATTACH)");
+	}
+	return pid;
 #endif
-	return ret;
 }
 
 static int r_debug_native_detach (int pid) {
@@ -379,11 +379,10 @@ static RList *r_debug_native_threads (RDebug *dbg, int pid) {
 	return linux_thread_list (pid, list);
 #else
 	eprintf ("TODO: list threads\n");
+	r_list_free (list);
+	return NULL;
 #endif
-	return list;
 }
-
-
 
 #if __WINDOWS__ && !__CYGWIN__
 static int windows_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
@@ -719,7 +718,10 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	}
 
 	list = r_list_new ();
-	if (!list) return NULL;
+	if (!list) {
+		fclose (fd);
+		return NULL;
+	}
 	while (!feof (fd)) {
 		line[0] = '\0';
 		fgets (line, sizeof(line) - 1, fd);
@@ -992,10 +994,9 @@ static void addr_to_string (struct sockaddr_storage *ss, char *buffer, int bufle
 #endif
 
 static RList *r_debug_desc_native_list (int pid) {
-
-	RList *ret = NULL;
 // TODO: windows
 #if __KFBSD__
+	RList *ret = NULL;
 	int perm, type, mib[4];
 	size_t len;
 	char *buf, *bp, *eb, *str, path[1024];
@@ -1069,10 +1070,13 @@ static RList *r_debug_desc_native_list (int pid) {
 	}
 	
 	free (buf);
+	return ret;
 #elif __linux__
 	return linux_desc_list (pid);
+#else
+#warning list filedescriptors not supported for this platform
+	return NULL;
 #endif
-	return ret;
 }
 
 static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {

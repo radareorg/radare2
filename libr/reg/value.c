@@ -61,7 +61,7 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	ut64 v64;
 	ut32 v32;
 	ut16 v16;
-	ut8 v8, *src;
+	ut8 v8, *src = NULL;
 
 	if (!item) {
 		eprintf ("r_reg_set_value: item is NULL\n");
@@ -155,8 +155,7 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 }
 
 R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
-	int packbytes, packmod;
-	int off = item->offset;
+	int off, packbytes, packmod;
 
 	if (!reg || !item) {
 		eprintf ("r_reg_set_value: item is NULL\n");
@@ -165,6 +164,7 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 	if (packbits<1) {
 		packbits = item->packed_size;
 	}
+	off = item->offset;
 	packbytes = packbits / 8;
 	packmod = packbits % 8;
 	if (packidx * packbits > item->size) {

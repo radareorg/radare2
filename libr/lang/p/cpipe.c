@@ -33,8 +33,10 @@ static int lang_cpipe_file(RLang *lang, const char *file) {
 	p = strstr (name, ".c");
 	if (p) *p = 0;
 	cc = r_sys_getenv ("CC");
-	if (!cc || !*cc)
+	if (!cc || !*cc) {
+		free (cc);
 		cc = strdup ("gcc");
+	}
 	snprintf (buf, sizeof (buf), "%s %s -o %s/bin%s"
 		" $(pkg-config --cflags --libs r_socket)",
 		cc, file, libpath, libname);
@@ -45,6 +47,7 @@ static int lang_cpipe_file(RLang *lang, const char *file) {
 	binfile = r_str_newf ("%s/bin%s", libpath, libname);
 	lang_pipe_run (lang, binfile, -1);
 	r_file_rm (binfile);
+	free (binfile);
 	return 0;
 }
 

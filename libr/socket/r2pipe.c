@@ -108,6 +108,8 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 				eprintf ("Cannot find R2PIPE_IN or R2PIPE_OUT environment\n");
 				R_FREE (r2p);
 			}
+			free (in);
+			free (out);
 		 }
 		return r2p;
 #else
