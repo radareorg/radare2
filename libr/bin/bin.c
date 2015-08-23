@@ -54,6 +54,7 @@ static int getoffset (RBin *bin, int type, int idx);
 static const char *getname (RBin *bin, int off);
 static int r_bin_file_object_add (RBinFile *binfile, RBinObject *o);
 static void binfile_set_baddr (RBinFile *binfile, ut64 baddr);
+static void binobj_set_baddr (RBinObject *o, ut64 baddr);
 static ut64 binobj_a2b (RBinObject *o, ut64 addr);
 
 R_API void r_bin_iobind(RBin *bin, RIO *io) {
@@ -423,7 +424,12 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		minlen = cp->minstrlen;
 	}
 	binfile->o = o;
-	if (cp->baddr) o->baddr = cp->baddr (binfile);
+	if (cp->baddr) {
+		ut64 old_baddr = o->baddr;
+
+		o->baddr = cp->baddr (binfile);
+		binobj_set_baddr (o, old_baddr);
+	}
 	if (cp->boffset) o->boffset = cp->boffset (binfile);
 	// XXX: no way to get info from xtr pluginz?
 	// Note, object size can not be set from here due to potential inconsistencies
@@ -612,7 +618,6 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	ut8 is_debugger = desc && desc->plugin && desc->plugin->isdbg;
 
 	if (!io || !desc) return R_FALSE;
-	if (baseaddr == UT64_MAX) baseaddr = 0;
 	if (loadaddr == UT64_MAX) loadaddr = 0;
 
 	buf_bytes = NULL;
@@ -655,6 +660,8 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	sz = R_MIN (file_sz, sz);
 	if (!buf_bytes) {
 		ut64 seekaddr = is_debugger ? baseaddr : loadaddr;
+
+		if (seekaddr == UT64_MAX) seekaddr = 0;
 		iob->desc_seek (io, desc, seekaddr);
 		buf_bytes = iob->desc_read (io, desc, &sz);
 	}
@@ -685,7 +692,6 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 						desc->name, buf_bytes, sz, file_sz,
 						baseaddr, loadaddr, xtr_idx,
 						desc->fd, bin->rawstr);
-					binfile_set_baddr (binfile, baseaddr);
 				}
 				xtr = NULL;
 			}
@@ -696,10 +702,6 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		binfile = r_bin_file_new_from_bytes (bin, desc->name,
 			buf_bytes, sz, file_sz, bin->rawstr, baseaddr, loadaddr,
 			desc->fd, name, NULL, offset);
-		/* hack to force baseaddr, looks like rbinfilenewfrombytes() ignores the value */
-		if (baseaddr) {
-			binfile_set_baddr (binfile, baseaddr);
-		}
 	}
 
 	free (buf_bytes);
@@ -994,6 +996,11 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	// from a set of bytes in the file
 	r_bin_object_set_items (binfile, o);
 	r_bin_file_object_add (binfile, o);
+
+	if (o->baddr == UT64_MAX) {
+		o->baddr = 0;
+		o->baddr_shift = 0;
+	}
 	// XXX this is a very hacky alternative to rewriting the
 	// RIO stuff, as discussed here:
 	if (o->sections)

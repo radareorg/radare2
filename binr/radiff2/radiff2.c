@@ -78,12 +78,12 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 }
 
 static RCore* opencore(const char *f) {
-	const ut64 baddr = 0;
+	const ut64 baddr = UT64_MAX;
 	RCore *c = r_core_new ();
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
 	r_config_set_i (c->config, "io.va", useva);
 	r_config_set_i (c->config, "anal.split", R_TRUE);
-	if (r_core_file_open (c, f, 0, 0) == NULL) {
+	if (r_core_file_open (c, f, 0, UT64_MAX) == NULL) {
 		r_core_free (c);
 		return NULL;
 	}
