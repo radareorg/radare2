@@ -392,6 +392,10 @@ R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);
 R_API int r_bin_load_languages(RBinFile *binfile);
 R_API int r_bin_dump_strings(RBinFile *a, int min);
+//io-wrappers
+R_API int r_bin_read_at (RBin *bin, ut64 addr, ut8 *buf, int size);
+R_API int r_bin_write_at (RBin *bin, ut64 addr, const ut8 *buf, int size);
+
 // ref
 R_API int r_bin_file_deref_by_bind (RBinBind * binb);
 R_API int r_bin_file_deref (RBin *bin, RBinFile * a);
