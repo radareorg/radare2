@@ -1097,6 +1097,39 @@ free (rf);
 		/* Note, that negative type forces sync to print the regs from the backend */
 		r_debug_reg_sync (core->dbg, -R_REG_TYPE_FPU, R_FALSE);
 		//r_debug_drx_list (core->dbg);
+		if (str[1]=='?') {
+			eprintf ("Usage: drf [fpureg] [= value]\n");
+		} else if (str[1]==' ') {
+			char *p, *name = strdup (str+2);
+			char *eq = strchr (name, '=');
+			if (eq) {
+				*eq++ = 0;
+			}
+			p = strchr (name, ' ');
+			if (p) {
+				*p++ = 0;
+			}
+			RRegItem *item = r_reg_get (core->dbg->reg, name, -1);
+			if (item) {
+				if (eq) {
+					long double val = 0.0f;
+					sscanf (eq, "%Lf", &val);
+					r_reg_set_double (core->dbg->reg, item, val);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_TRUE);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, R_TRUE);
+				} else {
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, R_FALSE);
+					long double res = r_reg_get_double (core->dbg->reg, item);
+					r_cons_printf ("%Lf\n", res);
+				}
+			} else {
+				eprintf ("Cannot find multimedia register '%s'\n", name);
+			}
+			free (name);
+		} else {
+			r_debug_reg_sync (core->dbg, -R_REG_TYPE_FPU, R_FALSE);
+		}
 		break;
 	case 'p': // "drp"
 		if (!str[1]) {
