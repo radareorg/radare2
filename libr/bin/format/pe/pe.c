@@ -92,9 +92,10 @@ static PE_DWord bin_pe_vaddr_to_paddr(RBinPEObj* bin, PE_DWord vaddr) {
 	for (i = 0; i < bin->nt_headers->file_header.NumberOfSections; i++) {
 		section_base = bin->section_header[i].VirtualAddress;
 		section_size = bin->section_header[i].Misc.VirtualSize;
-		if (vaddr >= section_base && vaddr < section_base + section_size)
+		if (vaddr >= section_base && vaddr < section_base + section_size) {
 			return bin->section_header[i].PointerToRawData \
 				+ (vaddr - section_base);
+		}
 	}
 	return vaddr;
 }
@@ -187,9 +188,8 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 				symdllname = strdup (dll_name);
 				// rip ".dll"
 				int len = strlen (symdllname);
-				if (len<4) len = 0;
-				else len -=4;
-				symdllname[len]=0;//strlen(symdllname)-4]=0;
+				len = len < 4 ? 0 : len - 4;
+				symdllname[len] = 0;
 				if (!sdb_module || strcmp (symdllname, sdb_module)) {
 					sdb_free (db);
 					db = NULL;
@@ -219,7 +219,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 					}
 				}
 			} else {
-				import_ordinal ++;
+				import_ordinal++;
 				ut64 off = bin_pe_vaddr_to_paddr(bin, import_table);
 				if (r_buf_read_at (bin->b, off, (ut8*)&import_hint, sizeof (PE_Word)) == -1) {
 					eprintf ("Error: read import hint at 0x%08"PFMT64x"\n", off);
@@ -235,13 +235,14 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 					break;
 				snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
 			}
-			if (!(*importp = realloc (*importp, (*nimp+1) * sizeof(struct r_bin_pe_import_t)))) {
+			if (!(*importp = realloc (*importp, (*nimp + 1) * sizeof(struct r_bin_pe_import_t)))) {
 				r_sys_perror ("realloc (import)");
 				return R_FALSE;
 			}
 			memcpy((*importp)[*nimp].name, import_name, PE_NAME_LENGTH);
 			(*importp)[*nimp].name[PE_NAME_LENGTH] = '\0';
 			(*importp)[*nimp].vaddr = FirstThunk + i * sizeof (PE_DWord);
+			(*importp)[*nimp].vaddr += bin->nt_headers->optional_header.ImageBase;
 			(*importp)[*nimp].paddr = bin_pe_vaddr_to_paddr(bin, FirstThunk) + i * sizeof(PE_DWord);
 			(*importp)[*nimp].hint = import_hint;
 			(*importp)[*nimp].ordinal = import_ordinal;
@@ -1959,25 +1960,23 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	if (!bin)
 		return NULL;
 
-	if (bin->import_directory_offset+32 >= bin->size) {
+	if (bin->import_directory_offset + 32 >= bin->size) {
 		return NULL;
 	}
 	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
 		void *last;
 		curr_import_dir = (PE_(image_import_directory)*)(bin->b->buf + bin->import_directory_offset);
 		dll_name_offset = curr_import_dir->Name;
-		if (bin->import_directory_offset<1) {
-			return NULL;
-		}
-		if (bin->import_directory_size<1) {
-			return NULL;
-		}
-		if (bin->import_directory_offset+bin->import_directory_size > bin->size) {
+
+		if (bin->import_directory_offset < 1) return NULL;
+		if (bin->import_directory_size < 1) return NULL;
+
+		if (bin->import_directory_offset + bin->import_directory_size > bin->size) {
 			eprintf ("Error: read (import directory too big)\n");
 			bin->import_directory_size = bin->size - bin->import_directory_offset;
 		}
 		last = (char *)curr_import_dir + bin->import_directory_size;
-		while ((void*)(curr_import_dir+1) <= last && (
+		while ((void*)(curr_import_dir + 1) <= last && (
 				curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 				curr_import_dir->ForwarderChain != 0)) {
@@ -2014,7 +2013,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 
 		while ((curr_delay_import_dir->Name != 0) && (curr_delay_import_dir->DelayImportAddressTable !=0)) {
 			int rr = r_buf_read_at (bin->b, dll_name_offset, (ut8*)dll_name, PE_NAME_LENGTH);
-			if (rr <5) { //!= PE_NAME_LENGTH) {
+			if (rr < 5) {
 				eprintf ("Error: read (magic)\n");
 				return NULL;
 			}
@@ -2027,7 +2026,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	}
 
 	if (nimp) {
-		imps = realloc (imports, (nimp+1) * sizeof(struct r_bin_pe_import_t));
+		imps = realloc (imports, (nimp + 1) * sizeof(struct r_bin_pe_import_t));
 		if (!imps) {
 			r_sys_perror ("realloc (import)");
 			return NULL;
