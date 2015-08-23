@@ -85,7 +85,7 @@ struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) 
 }
 
 #define RBinPEObj struct PE_(r_bin_pe_obj_t)
-static PE_DWord PE_(r_bin_pe_vaddr_to_paddr)(RBinPEObj* bin, PE_DWord vaddr) {
+static PE_DWord bin_pe_vaddr_to_paddr(RBinPEObj* bin, PE_DWord vaddr) {
 	PE_DWord section_base;
 	int i, section_size;
 
@@ -151,7 +151,7 @@ static char *resolveModuleOrdinal (Sdb *sdb, const char *module, int ordinal) {
 	return NULL;
 }
 
-static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, int* nimp, const char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk) {
+static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, int* nimp, const char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk) {
 	char import_name[PE_NAME_LENGTH + 1];
 	char name[PE_NAME_LENGTH + 1];
 	PE_Word import_hint, import_ordinal = 0;
@@ -164,8 +164,8 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 	char *symdllname;
 	if (!dll_name || *dll_name == '0')
 		return 0;
-	if ((off = PE_(r_bin_pe_vaddr_to_paddr)(bin, OriginalFirstThunk)) == 0 &&
-		(off = PE_(r_bin_pe_vaddr_to_paddr)(bin, FirstThunk)) == 0)
+	if ((off = bin_pe_vaddr_to_paddr(bin, OriginalFirstThunk)) == 0 &&
+		(off = bin_pe_vaddr_to_paddr(bin, FirstThunk)) == 0)
 		return 0;
 
 	do {
@@ -220,13 +220,13 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 				}
 			} else {
 				import_ordinal ++;
-				ut64 off = PE_(r_bin_pe_vaddr_to_paddr)(bin, import_table);
+				ut64 off = bin_pe_vaddr_to_paddr(bin, import_table);
 				if (r_buf_read_at (bin->b, off, (ut8*)&import_hint, sizeof (PE_Word)) == -1) {
 					eprintf ("Error: read import hint at 0x%08"PFMT64x"\n", off);
 					return 0;
 				}
 				name[0] = 0;
-				if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, import_table) + sizeof(PE_Word),
+				if (r_buf_read_at (bin->b, bin_pe_vaddr_to_paddr(bin, import_table) + sizeof(PE_Word),
 							(ut8*)name, PE_NAME_LENGTH) == -1) {
 					eprintf ("Error: read (import name)\n");
 					return 0;
@@ -242,7 +242,7 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 			memcpy((*importp)[*nimp].name, import_name, PE_NAME_LENGTH);
 			(*importp)[*nimp].name[PE_NAME_LENGTH] = '\0';
 			(*importp)[*nimp].vaddr = FirstThunk + i * sizeof (PE_DWord);
-			(*importp)[*nimp].paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, FirstThunk) + i * sizeof(PE_DWord);
+			(*importp)[*nimp].paddr = bin_pe_vaddr_to_paddr(bin, FirstThunk) + i * sizeof(PE_DWord);
 			(*importp)[*nimp].hint = import_hint;
 			(*importp)[*nimp].ordinal = import_ordinal;
 			(*importp)[*nimp].last = 0;
@@ -252,7 +252,7 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 	return i;
 }
 
-static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
+static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!(bin->dos_header = malloc(sizeof(PE_(image_dos_header))))) {
 		r_sys_perror ("malloc (dos header)");
 		return R_FALSE;
@@ -459,7 +459,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	return exports;
 }
 
-static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
+static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 	int num_of_sections = bin->nt_headers->file_header.NumberOfSections;
 	int sections_size;
 	if (num_of_sections<1) {
@@ -522,19 +522,19 @@ struct symrec {
 	return R_TRUE;
 }
 
-static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
+static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_(image_data_directory) *data_dir_import = \
 		&bin->nt_headers->optional_header.DataDirectory[ \
 		PE_IMAGE_DIRECTORY_ENTRY_IMPORT];
 	PE_(image_data_directory) *data_dir_delay_import = \
 		&bin->nt_headers->optional_header.DataDirectory[\
 		PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
-	PE_DWord import_dir_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin,
+	PE_DWord import_dir_paddr = bin_pe_vaddr_to_paddr(bin,
 		data_dir_import->VirtualAddress);
-	PE_DWord import_dir_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin,
+	PE_DWord import_dir_offset = bin_pe_vaddr_to_paddr(bin,
 		data_dir_import->VirtualAddress);
 	PE_DWord delay_import_dir_offset = data_dir_delay_import?
-		PE_(r_bin_pe_vaddr_to_paddr)(bin, data_dir_delay_import->VirtualAddress): 0;
+		bin_pe_vaddr_to_paddr(bin, data_dir_delay_import->VirtualAddress): 0;
 	PE_(image_import_directory) *import_dir = NULL;
 	PE_(image_import_directory) *new_import_dir = NULL;
 	PE_(image_import_directory) *curr_import_dir = NULL;
@@ -646,11 +646,11 @@ fail:
 	return R_FALSE;
 }
 
-static int PE_(r_bin_pe_init_exports)(struct PE_(r_bin_pe_obj_t) *bin) {
+static int bin_pe_init_exports(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_(image_data_directory) *data_dir_export = \
 		&bin->nt_headers->optional_header.DataDirectory \
 		[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
-	PE_DWord export_dir_paddr = PE_(r_bin_pe_vaddr_to_paddr)
+	PE_DWord export_dir_paddr = bin_pe_vaddr_to_paddr
 		(bin, data_dir_export->VirtualAddress);
 #if 0
 	// STAB PARSER
@@ -769,11 +769,11 @@ printf ("SYMBOL 0x%x = %d (%s)\n", (ut32)si->n_value, (int)si->n_strx,
 	return R_TRUE;
 }
 
-static int PE_(r_bin_pe_init_resource)(struct PE_(r_bin_pe_obj_t)* bin) {
+static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_data_directory) *resource_dir = \
 		&bin->nt_headers->optional_header.DataDirectory[ \
 		PE_IMAGE_DIRECTORY_ENTRY_RESOURCE];
-	PE_DWord resource_dir_paddr = PE_(r_bin_pe_vaddr_to_paddr)
+	PE_DWord resource_dir_paddr = bin_pe_vaddr_to_paddr
 		(bin, resource_dir->VirtualAddress);
 	if (resource_dir_paddr == 0) {
 		return R_FALSE;
@@ -1610,7 +1610,7 @@ void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin)
 						sdb_free (sdb);
 						return;
 					}
-					PE_DWord data_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, data.OffsetToData);
+					PE_DWord data_paddr = bin_pe_vaddr_to_paddr(bin, data.OffsetToData);
 					if (data_paddr == 0) {
 						eprintf ("Error: bad RVA in resource data entry\n");
 						sdb_free (sdb);
@@ -1641,7 +1641,7 @@ void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin)
 	sdb_ns_set (bin->kv, "vs_version_info", sdb);
 }
 
-static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin) {
+static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->dos_header = NULL;
 	bin->nt_headers = NULL;
 	bin->section_header = NULL;
@@ -1650,17 +1650,17 @@ static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->resource_directory = NULL;
 	bin->delay_import_directory = NULL;
 	bin->endian = 0; /* TODO: get endian */
-	if (!PE_(r_bin_pe_init_hdr)(bin)) {
+	if (!bin_pe_init_hdr(bin)) {
 		eprintf ("Warning: File is not PE\n");
 		return R_FALSE;
 	}
-	if (!PE_(r_bin_pe_init_sections)(bin)) {
+	if (!bin_pe_init_sections(bin)) {
 		eprintf ("Warning: Cannot initialize sections\n");
 		return R_FALSE;
 	}
-	PE_(r_bin_pe_init_imports)(bin);
-	PE_(r_bin_pe_init_exports)(bin);
-	PE_(r_bin_pe_init_resource)(bin);
+	bin_pe_init_imports(bin);
+	bin_pe_init_exports(bin);
+	bin_pe_init_resource(bin);
 	PE_(r_bin_store_all_resource_version_info)(bin);
 	bin->relocs = NULL;
 	return R_TRUE;
@@ -1711,7 +1711,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 		return NULL;
 	}
 	entry->vaddr  = bin->nt_headers->optional_header.AddressOfEntryPoint;
-	entry->paddr  = PE_(r_bin_pe_vaddr_to_paddr)(bin, entry->vaddr);
+	entry->paddr  = bin_pe_vaddr_to_paddr(bin, entry->vaddr);
 	entry->vaddr += bin->nt_headers->optional_header.ImageBase;
 
 	if (is_arm (bin) && entry->vaddr & 1) {
@@ -1742,14 +1742,14 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		exports_sz = (bin->export_directory->NumberOfFunctions + 1) * sizeof (struct r_bin_pe_export_t);
 		if (!(exports = malloc (exports_sz)))
 			return NULL;
-		if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, bin->export_directory->Name),(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
+		if (r_buf_read_at (bin->b, bin_pe_vaddr_to_paddr(bin, bin->export_directory->Name),(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
 			eprintf ("Error: read (dll name)\n");
 			free (exports);
 			return NULL;
 		}
-		functions_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin,bin->export_directory->AddressOfFunctions);
-		names_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin,	bin->export_directory->AddressOfNames);
-		ordinals_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin,bin->export_directory->AddressOfOrdinals);
+		functions_paddr = bin_pe_vaddr_to_paddr(bin,bin->export_directory->AddressOfFunctions);
+		names_paddr = bin_pe_vaddr_to_paddr(bin,	bin->export_directory->AddressOfNames);
+		ordinals_paddr = bin_pe_vaddr_to_paddr(bin,bin->export_directory->AddressOfOrdinals);
 		for (i=0;i<bin->export_directory->NumberOfFunctions;i++) {
 			// get vaddr from AddressOfFunctions array
 			r_buf_read_at (bin->b, functions_paddr + i * sizeof(PE_VWord),	(ut8*)&function_vaddr, sizeof(PE_VWord));
@@ -1769,7 +1769,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 				// have a address into name_vaddr?
 				if (name_vaddr) {
 					// get the name of the Export 
-					name_paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, name_vaddr);
+					name_paddr = bin_pe_vaddr_to_paddr(bin, name_vaddr);
 					if (-1 == r_buf_read_at(bin->b, name_paddr,(ut8*)function_name, PE_NAME_LENGTH)) {
 						eprintf("Error: read (function name)\n");
 						free (exports);
@@ -1787,7 +1787,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			// check if VA are into export directory, this mean a forwarder export
 			if (function_vaddr >= export_dir_vaddr && function_vaddr < (export_dir_vaddr + export_dir_size)) {
 				// if forwarder, the VA point to Forwarded name
-				if (r_buf_read_at (bin->b, PE_(r_bin_pe_vaddr_to_paddr)(bin, function_vaddr),(ut8*)forwarder_name, PE_NAME_LENGTH) == -1) {
+				if (r_buf_read_at (bin->b, bin_pe_vaddr_to_paddr(bin, function_vaddr),(ut8*)forwarder_name, PE_NAME_LENGTH) == -1) {
 					eprintf ("Error: read (magic)\n");
 					free (exports);
 					return NULL;
@@ -1800,7 +1800,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			function_name[PE_NAME_LENGTH]='\0';
 			snprintf (export_name, sizeof (export_name)-1, "%s_%s", dll_name, function_name);
 			exports[i].vaddr = function_vaddr;
-			exports[i].paddr = PE_(r_bin_pe_vaddr_to_paddr)(bin, function_vaddr);
+			exports[i].paddr = bin_pe_vaddr_to_paddr(bin, function_vaddr);
 			exports[i].ordinal = function_ordinal;
 			memcpy (exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
 			exports[i].forwarder[PE_NAME_LENGTH] = '\0';
@@ -1923,7 +1923,7 @@ int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, SDebugInfo *re
 	int result = 0;
 	if (!bin) return 0;
 	dbg_dir = &bin->nt_headers->optional_header.DataDirectory[6/*IMAGE_DIRECTORY_ENTRY_DEBUG*/];
-	dbg_dir_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin, dbg_dir->VirtualAddress);
+	dbg_dir_offset = bin_pe_vaddr_to_paddr(bin, dbg_dir->VirtualAddress);
 	if ((int)dbg_dir_offset<0 || dbg_dir_offset>= bin->size)
 		return R_FALSE;
 	if (dbg_dir_offset >= bin->b->length)
@@ -1983,13 +1983,13 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 				curr_import_dir->ForwarderChain != 0)) {
 			dll_name_offset = curr_import_dir->Name;
 			int rr = r_buf_read_at (bin->b,
-				PE_(r_bin_pe_vaddr_to_paddr)(bin, dll_name_offset),
+				bin_pe_vaddr_to_paddr(bin, dll_name_offset),
 				(ut8*)dll_name, PE_NAME_LENGTH);
 			if (rr != PE_NAME_LENGTH) {
 				eprintf ("Error: read (magic)\n");
 				return NULL;
 			}
-			if (!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
+			if (!bin_pe_parse_imports(bin, &imports, &nimp, dll_name,
 					curr_import_dir->Characteristics,
 					curr_import_dir->FirstThunk)) {
 				break;
@@ -2003,12 +2003,12 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 			bin->b->buf + bin->delay_import_directory_offset);
 
 		if (curr_delay_import_dir->Attributes == 0) {
-			dll_name_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin,
+			dll_name_offset = bin_pe_vaddr_to_paddr(bin,
 				curr_delay_import_dir->Name - PE_(r_bin_pe_get_image_base)(bin));
 			import_func_name_offset = curr_delay_import_dir->DelayImportNameTable -
 				PE_(r_bin_pe_get_image_base)(bin);
 		} else {
-			dll_name_offset = PE_(r_bin_pe_vaddr_to_paddr)(bin, curr_delay_import_dir->Name);
+			dll_name_offset = bin_pe_vaddr_to_paddr(bin, curr_delay_import_dir->Name);
 			import_func_name_offset = curr_delay_import_dir->DelayImportNameTable;
 		}
 
@@ -2018,7 +2018,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 				eprintf ("Error: read (magic)\n");
 				return NULL;
 			}
-			if (!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
+			if (!bin_pe_parse_imports(bin, &imports, &nimp, dll_name,
 					import_func_name_offset,
 					curr_delay_import_dir->DelayImportAddressTable))
 				break;
@@ -2077,7 +2077,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 				curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 				curr_import_dir->ForwarderChain != 0)) {
-			name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, curr_import_dir->Name);
+			name_off = bin_pe_vaddr_to_paddr(bin, curr_import_dir->Name);
 			len = r_buf_read_at (bin->b, name_off, (ut8*)libs[index].name, PE_STRING_LENGTH);
 			if (libs[index].name[0] == 0) { // minimum string length
 				goto next;
@@ -2110,7 +2110,7 @@ next:
 		curr_delay_import_dir = (PE_(image_delay_import_directory)*)(
 			bin->b->buf + bin->delay_import_directory_offset);
 		while (curr_delay_import_dir->Name != 0 && curr_delay_import_dir->DelayImportNameTable != 0) {
-			name_off = PE_(r_bin_pe_vaddr_to_paddr)(bin, curr_delay_import_dir->Name);
+			name_off = bin_pe_vaddr_to_paddr(bin, curr_delay_import_dir->Name);
 			len = r_buf_read_at (bin->b, name_off, (ut8*)libs[index].name, PE_STRING_LENGTH);
 			if (len != PE_STRING_LENGTH) {
 				eprintf ("Error: read (libs - delay import dirs)\n");
@@ -2390,7 +2390,7 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file) {
 		return PE_(r_bin_pe_free)(bin);
 	}
 	free (buf);
-	if (!PE_(r_bin_pe_init)(bin))
+	if (!bin_pe_init(bin))
 		return PE_(r_bin_pe_free)(bin);
 	return bin;
 }
@@ -2404,7 +2404,7 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t *buf) {
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
 		return PE_(r_bin_pe_free)(bin);
 	}
-	if (!PE_(r_bin_pe_init)(bin))
+	if (!bin_pe_init(bin))
 		return PE_(r_bin_pe_free)(bin);
 	return bin;
 }
