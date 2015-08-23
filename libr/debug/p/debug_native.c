@@ -765,6 +765,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 			r_num_get (NULL, region2),
 			perm, 0);
 		if (map == NULL) break;
+		map->file = strdup (path);
 #if 0
 		mr->ini = get_offset(region);
 		mr->end = get_offset(region2);
@@ -798,7 +799,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 }
 
 static RList *r_debug_native_modules_get (RDebug *dbg) {
-	const char *lastname = NULL;
+	char *lastname = NULL;
 	RDebugMap *map;
 	RListIter *iter, *iter2;
 	RList *list, *last;
@@ -813,12 +814,18 @@ static RList *r_debug_native_modules_get (RDebug *dbg) {
 	if (!list) {
 		return NULL;
 	}
+	last = r_list_new ();
+	last->free = (RListFree)r_debug_map_free;
 	r_list_foreach_safe (list, iter, iter2, map) {
+		const char *file = map->file;
+		if (!map->file) {
+			file = map->file = strdup (map->name);
+		}
 		must_delete = 1;
-		if (map->file && *map->file) {
-			if (map->file[0] == '/') {
+		if (file && *file) {
+			if (file[0] == '/') {
 				if (lastname) {
-					if (strcmp (lastname, map->file)) {
+					if (strcmp (lastname, file)) {
 						must_delete = 0;
 					}
 				} else {
@@ -829,13 +836,15 @@ static RList *r_debug_native_modules_get (RDebug *dbg) {
 		if (must_delete) {
 			r_list_delete (list, iter);
 		} else {
-			lastname = map->file;
+			r_list_append (last, map);
+			free (lastname);
+			lastname = strdup (file);
 		}
 	}
-	return list;
+	list->free = NULL;
+	free (lastname);
 	r_list_free (list);
-
-	return last; 
+	return last;
 }
 
 // TODO: deprecate???
