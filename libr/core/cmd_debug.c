@@ -877,6 +877,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"dr", "", "Show 'gpr' registers",
 				"dr", " 16", "Show 16 bit registers",
 				"dr", " 32", "Show 32 bit registers",
+				"dr", " 80", "Show 80 bit registers (long double)",
 				"dr", " all", "Show all registers",
 				"dr", " <type>", "Show flag registers",
 				"dr", " <register>=<val>", "Set register value",
@@ -893,9 +894,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"drs", " [?]", "Stack register states",
 				"drt", "", "Show all register types",
 				"drx", "", "Show all debug registers",
-				"drx", " number addr len rwx", "Modify hardware breakpoint",
+				"drx", " idx addr len rwx", "Modify hardware breakpoint",
 				"drx-", "number", "Clear hardware breakpoint",
-				"drm","","show fpu registers",
+				"drf","","show fpu registers (80 bit long double)",
+				"drm","","show multimedia packed registers",
+				"drm"," mmx0 0 32 = 12","set the first 32 bit word of the mmx reg to 12",
 				".dr", "*", "Include common register values in flags",
 				".dr", "-", "Unflag all registers",
 				NULL
@@ -1048,6 +1051,49 @@ free (rf);
 		}
 		break;
 	case 'm': // "drm"
+		if (str[1]=='?') {
+			eprintf ("Usage: drm [reg] [idx] [wordsize] [= value]\n");
+		} else if (str[1]==' ') {
+			int word = 0;
+			int size = 0; // auto
+			char *q, *p, *name = strdup (str+2);
+			char *eq = strchr (name, '=');
+			if (eq) {
+				*eq++ = 0;
+			}
+			p = strchr (name, ' ');
+			if (p) {
+				*p++ = 0;
+				q = strchr (p, ' ');
+				if (q) {
+					*q++ = 0;
+					size = r_num_math (core->num, q);
+				}
+				word = r_num_math (core->num, p);
+			}
+			RRegItem *item = r_reg_get (core->dbg->reg, name, -1);
+			if (item) {
+				if (eq) {
+					ut64 val = r_num_math (core->num, eq);
+					r_reg_set_pack (core->dbg->reg, item, word, size, val);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_TRUE);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_MMX, R_TRUE);
+				} else {
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_MMX, R_FALSE);
+					ut64 res = r_reg_get_pack (core->dbg->reg, item, word, size);
+					r_cons_printf ("0x%08"PFMT64x"\n", res);
+				}
+			} else {
+				eprintf ("Cannot find multimedia register '%s'\n", name);
+			}
+			free (name);
+		} else {
+			r_debug_reg_sync (core->dbg, -R_REG_TYPE_MMX, R_FALSE);
+		}
+		//r_debug_drx_list (core->dbg);
+		break;
+	case 'f': // "drf"
 		/* Note, that negative type forces sync to print the regs from the backend */
 		r_debug_reg_sync (core->dbg, -R_REG_TYPE_FPU, R_FALSE);
 		//r_debug_drx_list (core->dbg);

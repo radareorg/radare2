@@ -165,6 +165,11 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #undef R_IPI
 #endif
 
+#ifdef R_HEAP
+#undef R_HEAP
+#endif
+#define R_HEAP
+
 #ifdef R_API
 #undef R_API
 #endif

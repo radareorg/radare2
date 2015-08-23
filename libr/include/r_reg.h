@@ -16,7 +16,7 @@ enum {
 	R_REG_TYPE_FLG,
 	R_REG_TYPE_SEG,
 	R_REG_TYPE_LAST,
-	R_REG_TYPE_ALL = -1,
+	R_REG_TYPE_ALL = -1, // TODO; rename to ANY
 };
 
 enum {

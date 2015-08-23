@@ -68,6 +68,9 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		return R_FALSE;
 	}
 	switch (item->size) {
+	case 80:
+		r_reg_set_double (reg, item, (long double) value);
+		break;
 	case 64: r_mem_copyendian ( (ut8*)&v64, (ut8*)&value, 8, !reg->big_endian); src = (ut8*)&v64; break;
 	case 32: r_mem_copyendian ( (ut8*)&v32, (ut8*)&value, 4, !reg->big_endian); src = (ut8*)&v32; break;
 	case 16: r_mem_copyendian ( (ut8*)&v16, (ut8*)&value, 2, !reg->big_endian); src = (ut8*)&v16; break;
@@ -109,11 +112,7 @@ R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str) {
 	return num;
 }
 
-// experimental new notation
-#undef HEAP
-#define HEAP 
-
-R_API HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
+R_API R_HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
 	char *out = NULL;
 	if (reg && item && item->flags) {
 		out = malloc (strlen (item->flags)+1);
