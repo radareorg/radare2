@@ -228,7 +228,7 @@ static RList* imports(RBinFile *arch) {
 		rel->additive = 0;
 		rel->import = ptr;
 		rel->addend = 0;
-		rel->vaddr = imports[i].vaddr + baddr (arch);
+		rel->vaddr = imports[i].vaddr;
 		rel->paddr = imports[i].paddr;
 		r_list_append (relocs, rel);
 	}
