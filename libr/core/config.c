@@ -425,11 +425,13 @@ static int cb_timezone(void *user, void *data) {
 }
 
 static int cb_cfgdebug(void *user, void *data) {
+	int ioraw = 1;
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (!core) return R_FALSE;
-	if (core->io)
+	if (core->io) {
 		core->io->debug = node->i_value;
+	}
 	if (core->dbg && node->i_value) {
 		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
 		core->bin->is_debugger = R_TRUE;
@@ -447,7 +449,14 @@ static int cb_cfgdebug(void *user, void *data) {
 		if (core->dbg) r_debug_use (core->dbg, NULL);
 		core->bin->is_debugger = R_FALSE;
 	}
-	r_config_set (core->config, "io.raw", "true");
+	if (core->io) {
+		if (core->dbg && core->dbg->h) {
+			ioraw = core->dbg->h->keepio? 0: 1;
+		} else {
+			ioraw = 0;
+		}
+	}
+	r_config_set (core->config, "io.raw", ioraw? "true": "false");
 	return R_TRUE;
 }
 

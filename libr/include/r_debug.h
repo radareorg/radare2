@@ -213,6 +213,7 @@ typedef struct r_debug_plugin_t {
 	ut32 bits;
 	ut64 arch;
 	int canstep;
+	int keepio;
 	/* life */
 	RDebugInfo* (*info)(RDebug *dbg, const char *arg);
 	int (*startv)(int argc, char **argv);

@@ -708,7 +708,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	case R_IO_SEEK_CUR:
 //		offset += io->off;
 		posix_whence = SEEK_CUR;
-		ret = offset+io->off;
+		ret = offset + io->off;
 		break;
 	case R_IO_SEEK_END:
 		//offset = UT64_MAX; // XXX: depending on io bits?
@@ -719,11 +719,13 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	// XXX: list_empty trick must be done in r_io_set_va();
 	//eprintf ("-(seek)-> 0x%08llx\n", offset);
 	//if (!io->debug && io->va && !r_list_empty (io->sections)) {
-	if (io->va && !r_list_empty (io->sections)) {
-		ut64 o = r_io_section_vaddr_to_offset (io, offset);
-		if (o != UT64_MAX)
-			offset = o;
-	//	eprintf ("-(vadd)-> 0x%08llx\n", offset);
+	if (!io->debug || !io->raw) { //
+		if (io->va && !r_list_empty (io->sections)) {
+			ut64 o = r_io_section_vaddr_to_offset (io, offset);
+			if (o != UT64_MAX)
+				offset = o;
+			//	eprintf ("-(vadd)-> 0x%08llx\n", offset);
+		}
 	}
 	// if resolution fails... just return as invalid address
 	if (offset==UT64_MAX)
