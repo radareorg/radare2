@@ -281,7 +281,7 @@ static int Elf_(r_bin_elf_init_dynamic_section) (struct Elf_(r_bin_elf_obj_t) *b
 	}
 	for (i = 0; i < entries; i++) {
 		switch (dyn[i].d_tag){
-		case DT_STRTAB: strtabaddr = dyn[i].d_un.d_ptr - bin->baddr; break;
+		case DT_STRTAB: strtabaddr = Elf_(r_bin_elf_v2p) (bin, dyn[i].d_un.d_ptr); break;
 		case DT_STRSZ: strsize = dyn[i].d_un.d_val; break;
 		default: break;
 		}
@@ -572,8 +572,12 @@ ut64 Elf_(r_bin_elf_get_init_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return 0;
 	}
 	if (buf[0] == 0x68) { // push // x86 only
+		ut64 addr;
+
 		memmove (buf, buf+1, 4);
-		return (ut64)((int)(buf[0]+(buf[1]<<8)+(buf[2]<<16)+(buf[3]<<24)))-bin->baddr;
+		addr = (ut64)((int)(buf[0] + (buf[1] << 8) +
+			(buf[2] << 16) + (buf[3] << 24)));
+		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 	return 0;
 }
@@ -588,9 +592,12 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return 0;
 	}
 	if (*buf == 0x68) { // push // x86/32 only
+		ut64 addr;
+
 		memmove (buf, buf+1, 4);
-		return (ut64)((int)(buf[0]+(buf[1]<<8)+
-			(buf[2]<<16)+(buf[3]<<24)))-bin->baddr;
+		addr = (ut64)((int)(buf[0] + (buf[1] << 8) +
+			(buf[2] << 16) + (buf[3] << 24)));
+		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 	return 0;
 }
@@ -608,9 +615,7 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init");
 		if (entry != UT64_MAX) return entry;
 	}
-	if (bin->ehdr.e_entry < bin->baddr)
-		return bin->ehdr.e_entry;
-	return bin->ehdr.e_entry - bin->baddr;
+	return Elf_(r_bin_elf_v2p) (bin, bin->ehdr.e_entry);
 }
 
 ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
@@ -637,8 +642,9 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		   0x00012000    00b0a0e3     mov fp, 0
 		   0x00012004    00e0a0e3     mov lr, 0
 		*/
-		if (*addr > text && *addr < (text_end))
-			return *addr - bin->baddr;
+		if (*addr > text && *addr < (text_end)) {
+			return Elf_(r_bin_elf_v2p) (bin, *addr);
+		}
 	}
 
 	// MIPS
@@ -669,7 +675,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 				if ((instr & 0xffff0000) == 0x8f840000) { // lw a0, offset(gp)
 					const short delta = instr & 0x0000ffff;
 					r_buf_read_at (bin->b, /* got_entry_offset = */ gp + delta, buf, 4);
-					return (/* main_vaddr = */ BUF_U32(0)) - bin->baddr;
+					return Elf_(r_bin_elf_v2p) (bin, BUF_U32(0));
 				}
 			}
 
@@ -680,8 +686,10 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	// ARM
 	if (!memcmp (buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
-		return (ut64)((int)(buf[48+0]+(buf[48+1]<<8)+
-		(buf[48+2]<<16)+(buf[48+3]<<24)))-bin->baddr;
+		ut64 addr = (ut64)((int)(buf[48] +
+			(buf[48 + 1] << 8) + (buf[48 + 2] << 16) +
+			(buf[48 + 3] << 24)));
+		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 	// X86-PIE
 	if (buf[0x1d] == 0x48 && buf[0x1e] == 0x8b) {
@@ -704,17 +712,22 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	// X86-NONPIE
 #if R_BIN_ELF64
-	if (!memcmp (buf, "\x49\x89\xd9", 3) && buf[156] == 0xe8) {// openbsd
-		return (ut64)((int)(buf[157+0]+(buf[157+1]<<8)+
-		(buf[157+2]<<16)+(buf[157+3]<<24)))+ entry + 156 + 5;
+	if (!memcmp (buf, "\x49\x89\xd9", 3) && buf[156] == 0xe8) { // openbsd
+		return (ut64)((int)(buf[157 + 0] + (buf[157 + 1] << 8) +
+			(buf[157 + 2] << 16) + (buf[157 + 3] << 24))) +
+			entry + 156 + 5;
 	}
-	if (!memcmp (buf+29, "\x48\xc7\xc7", 3)) // linux
-		return (ut64)((int)(buf[29+3]+(buf[29+4]<<8)+
-		(buf[29+5]<<16)+(buf[29+6]<<24)))-bin->baddr;
+	if (!memcmp (buf+29, "\x48\xc7\xc7", 3)) { // linux
+		ut64 addr = (ut64)((int)(buf[29 + 3] + (buf[29 + 4] << 8) +
+			(buf[29 + 5] << 16) + (buf[29 + 6] << 24))) ;
+		return Elf_(r_bin_elf_v2p) (bin, addr);
+	}
 #else
-	if (buf[23] == '\x68')
-		return (ut64)((int)(buf[23+1]+(buf[23+2]<<8)+
-		(buf[23+3]<<16)+(buf[23+4]<<24)))-bin->baddr;
+	if (buf[23] == '\x68') {
+		ut64 addr = (ut64)((int)(buf[23 + 1] + (buf[23 + 2] << 8) +
+			(buf[23 + 3] << 16) + (buf[23 + 4] << 24)));
+		return Elf_(r_bin_elf_v2p) (bin, addr);
+	}
 #endif
 	/* linux64 pie main */
 	if (buf[29] == 0x48 && buf[30] == 0x8d) { // lea rdi, qword [rip-0x21c4]
@@ -1172,7 +1185,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 					1, bin->shdr[i].sh_offset + j);
 				ret[rel].rva = ret[rel].offset + section_text_offset;
 				ret[rel].sto = section_text_offset;
-				ret[rel].offset = ret[rel].offset - bin->baddr;
+				ret[rel].offset = Elf_(r_bin_elf_v2p) (bin, ret[rel].offset);
 				ret[rel].last = 0;
 				if (res < 0)
 					break;
@@ -1185,7 +1198,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 				res = Elf_(r_bin_elf_read_reloc) (bin, &ret[rel],
 					0, bin->shdr[i].sh_offset + j);
 				ret[rel].rva = ret[rel].offset;
-				ret[rel].offset = ret[rel].offset - bin->baddr;
+				ret[rel].offset = Elf_(r_bin_elf_v2p) (bin, ret[rel].offset);
 				ret[rel].last = 0;
 				if (res < 0)
 					break;
@@ -1323,7 +1336,7 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 
 	for (j = 0; j < bin->dyn_entries; j++) {
 		if (bin->dyn_buf[j].d_tag == DT_SYMTAB){
-			addr_sym_table = bin->dyn_buf[j].d_un.d_ptr - bin->baddr;
+			addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_buf[j].d_un.d_ptr);
 			break;
 		}
 	}
@@ -1385,7 +1398,7 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 				// is not a symbol so is the end
 				goto done;
 
-			ret[ret_ctr].offset = (toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
+			ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
 			ret[ret_ctr].size = tsize;
 			{
 			   int rest = R_MIN (ELF_STRING_LENGTH,128)-1;
@@ -1605,7 +1618,7 @@ if (
 					}
 				}
 #endif
-				ret[ret_ctr].offset = (toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
+				ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
 				if (section_text) 
 					ret[ret_ctr].offset += section_text_offset;
 				ret[ret_ctr].size = tsize;
@@ -1735,4 +1748,48 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(struct r_buf_t *buf) {
 	if (!Elf_(r_bin_elf_init) (bin))
 		return Elf_(r_bin_elf_free) (bin);
 	return bin;
+}
+
+static int is_in_pphdr (Elf_(Phdr) *p, ut64 addr) {
+	return addr >= p->p_offset && addr < p->p_offset + p->p_memsz;
+}
+
+static int is_in_vphdr (Elf_(Phdr) *p, ut64 addr) {
+	return addr >= p->p_vaddr && addr < p->p_vaddr + p->p_memsz;
+}
+
+/* converts a physical address to the virtual address, looking
+ * at the program headers in the binary bin */
+ut64 Elf_(r_bin_elf_p2v) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 paddr) {
+	int i;
+
+	if (!bin) return paddr;
+	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
+		Elf_(Phdr) *p = &bin->phdr[i];
+		if (!p) break;
+
+		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
+			return p->p_vaddr + paddr - p->p_offset;
+		}
+	}
+
+	return paddr;
+}
+
+/* converts a virtual address to the relative physical address, looking
+ * at the program headers in the binary bin */
+ut64 Elf_(r_bin_elf_v2p) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 vaddr) {
+	int i;
+
+	if (!bin) return vaddr;
+	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
+		Elf_(Phdr) *p = &bin->phdr[i];
+		if (!p) break;
+
+		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
+			return p->p_offset + vaddr - p->p_vaddr;
+		}
+	}
+
+	return vaddr;
 }

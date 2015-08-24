@@ -647,7 +647,8 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, ut64 laddr, int va) {
 				r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, vaddr);
 				r_cons_printf ("s entry%i\n", i);
 			} else {
-				if (!baddr) {
+				/* XXX: just a temporary workaround */
+				if (!baddr && vaddr > paddr) {
 					baddr = vaddr - paddr;
 				}
 				r_cons_printf (

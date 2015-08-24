@@ -92,7 +92,7 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 	}
 	if (addr && (ret = R_NEW0 (RBinAddr))) {
 		ret->paddr = addr;
-		ret->vaddr = obj->baddr + addr;
+		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
 	}
 	return ret;
 }
@@ -112,7 +112,7 @@ static RList* entries(RBinFile *arch) {
 	if (!(ptr = R_NEW0 (RBinAddr)))
 		return ret;
 	ptr->paddr = Elf_(r_bin_elf_get_entry_offset) (arch->o->bin_obj);
-	ptr->vaddr = obj->baddr + ptr->paddr;
+	ptr->vaddr = Elf_(r_bin_elf_p2v) (arch->o->bin_obj, ptr->paddr);
 	r_list_append (ret, ptr);
 	return ret;
 }
@@ -167,7 +167,6 @@ static RList* sections(RBinFile *arch) {
 			ut64 align = phdr[i].p_align;
 			if (!align) align = 0x1000;
 			memsz = (int)(size_t)R_PTR_ALIGN_NEXT ((size_t)memsz, (int)align);
-			//vaddr -= obj->baddr; // yeah
 			if (!(ptr = R_NEW0 (RBinSection)))
 				return ret;
 			sprintf (ptr->name, "phdr%d", n);
@@ -221,52 +220,26 @@ static RList* sections(RBinFile *arch) {
 
 static RBinInfo* info(RBinFile *arch);
 static RList* symbols(RBinFile *arch) {
-	int i, bin_bits;
 	struct Elf_(r_bin_elf_obj_t) *bin;
 	struct r_bin_elf_symbol_t *symbol = NULL;
 	RBinSymbol *ptr = NULL;
 	RList *ret = NULL;
-	ut64 base = 0;
-	if (!arch || !arch->o || !arch->o->bin_obj)
-		return NULL;
-	bin = arch->o->bin_obj;
-	// has_va = Elf_(r_bin_elf_has_va) (bin);
-	// if (!has_va) {
-	if (arch && arch->o && arch->o->baddr==0LL) {
-		// find base address for non-linked object (.o) //
-		if (arch->o->sections) {
-			RBinSection *s;
-			RListIter *iter;
-			r_list_foreach (arch->o->sections, iter, s) {
-				if (s->srwx & R_BIN_SCN_EXECUTABLE) {
-					base = s->paddr;
-					break;
-				}
-			}
-		}
-	}
+	int i, bin_bits;
 
-	if (!(ret = r_list_new ()))
-		return NULL;
+	if (!arch || !arch->o || !arch->o->bin_obj) return NULL;
+
+	bin = arch->o->bin_obj;
+	ret = r_list_new ();
+	if (!ret) return NULL;
 	ret->free = free;
 
 	bin_bits = Elf_(r_bin_elf_get_bits) (arch->o->bin_obj);
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_SYMBOLS)))
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
-		ut64 vaddr = r_bin_get_vaddr (NULL, //arch->o->bin_obj,
-			arch->o->baddr, symbol[i].offset,
-			symbol[i].offset+arch->o->baddr);
 		ut64 paddr = symbol[i].offset;
-		if (vaddr == UT64_MAX) {
-			ut64 ba = baddr (arch);
-			if (ba) {
-				vaddr = paddr + ba;
-			} else {
-				// no base address, probably an object file
-				vaddr = paddr + base;
-			}
-		}
+		ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
+
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
 		strncpy (ptr->name, symbol[i].name, R_BIN_SIZEOF_STRINGS);
@@ -299,17 +272,8 @@ static RList* symbols(RBinFile *arch) {
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
 		ut64 paddr = symbol[i].offset;
-		ut64 vaddr = r_bin_get_vaddr (NULL, baddr (arch), paddr, 
-			symbol[i].offset+arch->o->baddr);
-		if (vaddr == UT64_MAX) {
-			ut64 ba = baddr (arch);
-			if (ba) {
-				vaddr = paddr + ba;
-			} else {
-				// no base address, probably an object file
-				vaddr = paddr + base;
-			}
-		}
+		ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
+
 		if (!symbol[i].size)
 			continue;
 		if (!(ptr = R_NEW0 (RBinSymbol)))
@@ -755,15 +719,6 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-
-static ut64 get_elf_vaddr (RBinFile *arch, ut64 ba, ut64 pa, ut64 va) {
-	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
-// WHY? NO NEED TO HAVE PLUGIN SPECIFIC VADDR
-	struct Elf_(r_bin_elf_obj_t)* obj = arch->o->bin_obj;
-	return obj->baddr - obj->boffset + va - ba;
-
-}
-
 RBinPlugin r_bin_plugin_elf = {
 	.name = "elf",
 	.desc = "ELF format r_bin plugin",
@@ -793,7 +748,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.dbginfo = &r_bin_dbginfo_elf,
 	.create = &create,
 	.write = &r_bin_write_elf,
-	.get_vaddr = &get_elf_vaddr,
+	.get_vaddr = NULL,
 };
 
 #ifndef CORELIB

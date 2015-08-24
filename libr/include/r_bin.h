@@ -404,6 +404,7 @@ R_API int r_bin_file_ref_by_bind (RBinBind * binb);
 R_API int r_bin_file_ref (RBin *bin, RBinFile * a);
 R_API int r_bin_list(RBin *bin);
 R_API RBinObject *r_bin_get_object(RBin *bin);
+R_API ut64 r_binfile_get_baddr (RBinFile *binfile);
 R_API ut64 r_bin_get_baddr(RBin *bin);
 R_API void r_bin_set_baddr(RBin *bin, ut64 baddr);
 R_API ut64 r_bin_get_boffset(RBin *bin);
