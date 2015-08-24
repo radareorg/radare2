@@ -16,20 +16,25 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		return 2;
 	op->size = 2;
 	op->delay = 0;
+	op->type = R_ANAL_OP_TYPE_UNK;
 	if (*ins == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
-	} else
+	}
 	if ((buf[1] >= 0x0c && buf[1] <= 0x0f) ||	//ADD
 		(buf[1] >= 0x1c && buf[1] <= 0x1f)) {	//ADC
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->cycles = 1;
-	} else
+	}
 	if ((buf[1] >= 0x18 && buf[1] <= 0x1b) ||	//SUB
 		(buf[1] >= 0x08 && buf[1] <= 0x0b)) {	//SBC
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->cycles = 1;
-	} else
+	}
+	if (((buf[0] & 0xf) == 7) && ((buf[1] & 0xfe) == 0x94)) {
+		op->type = R_ANAL_OP_TYPE_ROR;
+		op->cycles = 1;
+	}
 	//if (((buf[1] & 0x94) == 0x94) && ((buf[0] & 0x0e)==0x0e)) {
 	if (!memcmp (buf, "\x0e\x94", 2)) {
 		op->addr = addr;
@@ -48,7 +53,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			return op->size;
 		}
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
-	} else
+	}
 	if ((buf[1] & 0xf0) == 0xd0) {
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // rcall (relative)
@@ -58,7 +63,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		ofst*=2;
 		op->jump = addr+ofst+2;
 		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
-	} else
+	}
 	if (((buf[1] & 0xfe) == 0x94) && ((buf[0] & 0x0e)==0x0c)) {
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CJMP; // breq, jmp (absolute)
@@ -67,7 +72,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		// TODO: check return value
 		op->jump = *k*2;
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
-	} else
+	}
 	if ((buf[1] & 0xf0) == 0xc0) { // rjmp (relative)
 		op->addr=addr;
 		op->type = R_ANAL_OP_TYPE_JMP;
@@ -77,13 +82,12 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		ofst*=2;
 		op->jump = addr+ofst+2;
 		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
-	} else
-	if (*ins == 0x9508) { // ret
-		//eprintf("ret at addr: %x\n", addr);
+	}
+	if (*ins == 0x9508 || *ins == 0x9518) { // ret || reti
 		op->type = R_ANAL_OP_TYPE_RET;
+		op->cycles = 4;			//5 for 22-bit bus
 		op->eob = R_TRUE;
-		//op->stackptr =
-	} else op->type = R_ANAL_OP_TYPE_UNK;
+	}
 	return op->size;
 }
 
