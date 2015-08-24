@@ -356,17 +356,29 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	r_str_case (b, 0); // to-lower
 	memset (op, 0, sizeof (RAsmOp));
 	if (a->cur) {
+		int (*ase)(RAsm *a, RAsmOp *op, const char *buf) = NULL;
 		if (!a->cur->assemble) {
 			/* find callback if no assembler support in current plugin */
 			r_list_foreach (a->plugins, iter, h) {
 				if (h->arch && h->assemble
-				&& has_bits (h, a->bits)
-				&& !strcmp (a->cur->arch, h->arch)) {
-					ret = h->assemble (a, op, b);
-					break;
+						&& has_bits (h, a->bits)
+						&& !strncmp (a->cur->arch,
+						h->arch,
+						strlen (a->cur->arch))) {
+					if (strstr (h->name, ".nz")) {
+						ase = h->assemble;
+						break;
+					} else {
+						ase = h->assemble;
+					}
 				}
 			}
-		} else ret = a->cur->assemble (a, op, b);
+		} else {
+			ase = a->cur->assemble;
+		}
+		if (ase) {
+			ret = ase (a, op, b);
+		}
 	}
 	if (op && ret > 0) {
 		r_hex_bin2str (op->buf, ret, op->buf_hex);
