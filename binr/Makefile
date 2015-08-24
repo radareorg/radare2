@@ -14,6 +14,8 @@ BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarun2 ragg2 r2agent
 # this command needs more love to bring it back
 #BINS+=ranal2
 
+LIBR2=$(call libname-version,libr2.$(EXT_SO),${LIBVERSION})
+
 all: preload
 	@for a in ${BINS} ; do (cd $$a && ${MAKE} all) || exit 1; done
 
@@ -27,8 +29,8 @@ install:
 	-cd "${BFX}" && rm -f r2 ; ln -fs radare2 r2
 	${INSTALL_LIB} "preload/libr2.$(EXT_SO)" "$(LFX)"
 	-cd "$(LFX)" && \
-		mv libr2.$(EXT_SO) libr2.$(EXT_SO).$(VERSION) && \
-		ln -fs libr2.$(EXT_SO).$(VERSION) libr2.$(EXT_SO)
+		mv libr2.$(EXT_SO) $(LIBR2) && \
+		ln -fs $(LIBR2) libr2.$(EXT_SO)
 
 symstall install-symlink:
 	mkdir -p "${BFX}"
@@ -37,8 +39,8 @@ symstall install-symlink:
 	-ln -fs "${PFX}/bin/radare2" "${BFX}/r2"
 	-ln -fs "${BTOP}/preload/libr2.$(EXT_SO)" "${LFX}/libr2.$(EXT_SO)"
 	-cd "$(LFX)" && \
-		mv libr2.$(EXT_SO) libr2.$(EXT_SO).$(VERSION) && \
-		ln -fs libr2.$(EXT_SO).$(VERSION) libr2.$(EXT_SO)
+		mv libr2.$(EXT_SO) $(LIBR2) && \
+		ln -fs $(LIBR2) libr2.$(EXT_SO)
 
 deinstall uninstall:
 	for a in ${BINS} ; do rm -f "${BFX}/$$a" ; done
