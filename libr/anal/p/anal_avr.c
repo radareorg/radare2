@@ -35,6 +35,14 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type = R_ANAL_OP_TYPE_ROR;
 		op->cycles = 1;
 	}
+	if ((buf[0] == 1) || ((buf[0] & 0xfe) == 0x16))	{//MOVW + MOV
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->cycles = 1;
+	}
+	if ((buf[0] & 0xf0) == 0xe0) {			//LDI
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->cycles = 1;
+	}
 	//if (((buf[1] & 0x94) == 0x94) && ((buf[0] & 0x0e)==0x0e)) {
 	if (!memcmp (buf, "\x0e\x94", 2)) {
 		op->addr = addr;
