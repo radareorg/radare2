@@ -670,6 +670,7 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 }
 
 static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
+	ut64 addr = core->offset;
 	RDebugMap *map;
 	RList *list;
 	RListIter *iter;
@@ -685,6 +686,13 @@ static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
 	list = r_debug_modules_list (core->dbg);
 	r_list_foreach (list, iter, map) {
 		switch (mode) {
+		case '.':
+			if (addr >= map->addr && addr < map->addr_end) {
+				r_cons_printf ("0x%08"PFMT64x" %s\n",
+					map->addr, map->file);
+				goto beach;
+			}
+			break;
 		case 'j':
 			r_cons_printf ("{\"address\":%"PFMT64d",\"file\":\"%s\"}%s",
 				map->addr, map->file, iter->n?",":"");
@@ -700,6 +708,7 @@ static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
 			r_cons_printf ("0x%08"PFMT64x" %s\n", map->addr, map->file);
 		}
 	}
+beach:
 	if (mode == 'j') {
 		r_cons_printf ("]\n");
 	}
