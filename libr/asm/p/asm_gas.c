@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2010-2013 - pancake */
+/* radare - LGPL - Copyright 2010-2015 - pancake */
+
+// XXX: deprecate
 
 #include <r_types.h>
 #include <r_util.h>
@@ -24,10 +26,10 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 }
 
 RAsmPlugin r_asm_plugin_x86_gas = {
-	.name = "gas",
+	.name = "x86.gas",
 	.license = "LGPL3",
 	.desc = "GNU Assembler (gas)",
-	.arch = "x86", // XXX
+	.arch = NULL, //"x86", // XXX
 	.bits = 16|32|64,
 	.init = NULL,
 	.fini = NULL,

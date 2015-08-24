@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 pancake */
+/* radare - LGPL - Copyright 2015 pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -9,10 +9,17 @@
 #define O_BINARY 0
 #endif
 
+// USE ARM_AS environment variable
+#define ARM32_AS "arm-linux-androideabi-as"
+#define ARM64_AS "aarch64-linux-android-as"
+// toolchains/arm-linux-androideabi-4.8/prebuilt/darwin-arm_64/bin/
+// toolchains/aarch64-linux-android-4.9/prebuilt/darwin-arm_64/bin/
+
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+	const char *bitconfig = "";
 	char *ipath, *opath;
 	int ifd, ofd;
-	const char *syntaxstr = "";
+	char *as = NULL;
 	char asm_buf[R_ASM_BUFSIZE];
 	int len = 0;
 
@@ -26,18 +33,29 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		return -1;
 	}
 
-	syntaxstr = ".intel_syntax noprefix\n"; // if intel syntax
+	as = r_sys_getenv ("ARM_AS");
+	if (!as || !*as) {
+		free (as);
+		if (a->bits == 64) {
+			as = strdup (ARM64_AS);
+		} else {
+			as = strdup (ARM32_AS);
+		}
+	}
+	if (a->bits == 16) {
+		bitconfig = ".thumb";
+	}
+
 	len = snprintf (asm_buf, sizeof (asm_buf),
-			"%s.code%i\n" //.org 0x%"PFMT64x"\n"
+			"%s\n" //.org 0x%"PFMT64x"\n"
 			".ascii \"BEGINMARK\"\n"
 			"%s\n"
 			".ascii \"ENDMARK\"\n",
-			syntaxstr, a->bits, buf); // a->pc ??
+			bitconfig, buf); // a->pc ??
 	write (ifd, asm_buf, len);
-	//write (1, asm_buf, len);
 	close (ifd);
 
-	if (!r_sys_cmdf ("as %s -o %s", ipath, opath)) {
+	if (!r_sys_cmdf ("%s %s -o %s", as, ipath, opath)) {
 		const ut8 *begin, *end;
 		close (ofd);
 		ofd = open (opath, O_BINARY|O_RDONLY);
@@ -58,9 +76,11 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			else len = 0;
 		}
 	} else {
-		eprintf ("Error running: as %s -o %s", ipath, opath);
+		eprintf ("Error running: %s %s -o %s", as, ipath, opath);
+		eprintf ("export PATH=~/NDK/toolchains/arm-linux*/prebuilt/darwin-arm_64/bin\n");
 		len = 0;
 	}
+	free (as);
 
 	close (ofd);
 
@@ -73,12 +93,11 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return len;
 }
 
-RAsmPlugin r_asm_plugin_x86_as = {
-	.name = "x86.as",
-	.desc = "Intel X86 GNU Assembler",
-	.arch = "x86",
+RAsmPlugin r_asm_plugin_arm_as = {
+	.name = "arm.as",
+	.desc = "as ARM Assembler (use ARM_AS environment)",
+	.arch = "arm",
 	.license = "LGPL3",
-	// NOTE: 64bits is not supported on OSX's nasm :(
 	.bits = 16|32|64,
 	.init = NULL,
 	.fini = NULL,
@@ -89,7 +108,7 @@ RAsmPlugin r_asm_plugin_x86_as = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_x86_as,
+	.data = &r_asm_plugin_arm_as,
 	.version = R2_VERSION
 };
 #endif

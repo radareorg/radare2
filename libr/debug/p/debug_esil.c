@@ -85,21 +85,27 @@ static int __esil_detach(int pid) {
 
 static char *__esil_reg_profile(RDebug *dbg) {
 	eprintf ("TODO: esil %s\n", r_sys_arch_str (dbg->arch));
-	return strdup (
-	"=pc	pc\n"
-	"=sp	esp\n"
-	"=bp	ptr\n"
-	"gpr	rax	.32	0	0\n"
-	"gpr	pc	.32	0	0\n"
-	"gpr	ptr	.32	4	0\n"
-	"gpr	esp	.32	8	0\n"
-	"gpr	scr	.32	12	0\n"
-	"gpr	scri	.32	16	0\n"
-	"gpr	inp	.32	20	0\n"
-	"gpr	inpi	.32	24	0\n"
-	"gpr	mem	.32	28	0\n"
-	"gpr	memi	.32	32	0\n"
-	);
+	if (!strcmp (dbg->arch, "bf")) {
+		return strdup (
+			"=pc	pc\n"
+			"=sp	esp\n"
+			"=bp	ptr\n"
+			"gpr	rax	.32	0	0\n"
+			"gpr	pc	.32	0	0\n"
+			"gpr	ptr	.32	4	0\n"
+			"gpr	esp	.32	8	0\n"
+			"gpr	scr	.32	12	0\n"
+			"gpr	scri	.32	16	0\n"
+			"gpr	inp	.32	20	0\n"
+			"gpr	inpi	.32	24	0\n"
+			"gpr	mem	.32	28	0\n"
+			"gpr	memi	.32	32	0\n"
+		      );
+	} else if (!strcmp (dbg->arch, "x86")) {
+		eprintf ("[DEBUGESIL] Missing regprofile for x86\n");
+	} else {
+		return NULL;
+	}
 }
 
 static int __esil_breakpoint (RBreakpointItem *bp, int set, void *user) {
