@@ -1150,6 +1150,10 @@ R_API int r_bin_list(RBin *bin) {
 	return R_FALSE;
 }
 
+R_API ut64 r_binfile_get_baddr (RBinFile *binfile) {
+	return binfile && binfile->o ? binfile->o->baddr : 0LL;
+}
+
 R_API ut64 r_bin_get_baddr(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
 	if (o) return o->baddr;
