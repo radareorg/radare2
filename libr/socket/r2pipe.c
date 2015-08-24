@@ -134,12 +134,11 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 	if (r2p->child) {
 		eprintf ("Child is %d\n", r2p->child);
 	} else {
-		int rc;
-		if (cmd && *cmd) {
+		int rc = 0;
+		if (cmd && *cmd)
 			rc = r_sandbox_system (cmd, 1);
-		} else rc = 0;
 		r2p_close (r2p);
-		exit (0);
+		exit (rc);
 		return NULL;
 	}
 #endif

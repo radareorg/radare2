@@ -323,7 +323,7 @@ typedef struct {
 
 int
 wind_walk_vadtree (WindCtx *ctx, uint64_t address, uint64_t parent) {
-	mmvad_short entry = {0};
+	mmvad_short entry = {{0}};
 	uint64_t start, end;
 	int prot;
 

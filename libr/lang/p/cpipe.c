@@ -8,7 +8,8 @@
 
 static int lang_cpipe_file(RLang *lang, const char *file) {
 	char *a, *cc, *p, name[512], buf[512];
-	const char *libpath, *libname, *binfile;
+	const char *libpath, *libname;
+	char* binfile;
 
 	if (strlen (file) > (sizeof (name)-10))
 		return R_FALSE;
