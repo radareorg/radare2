@@ -50,7 +50,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 	if (a->syntax == R_ASM_SYNTAX_MASM) {
+#if CS_OPT_SYNTAX_MASM
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
+#endif
 	} else if (a->syntax == R_ASM_SYNTAX_ATT) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
 	} else {
