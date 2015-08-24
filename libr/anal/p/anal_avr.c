@@ -21,13 +21,11 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
 	}
-	if ((buf[1] >= 0x0c && buf[1] <= 0x0f) ||	//ADD
-		(buf[1] >= 0x1c && buf[1] <= 0x1f)) {	//ADC
+	if ((buf[1] & 0xec) == 12) {		//ADD + ADC
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->cycles = 1;
 	}
-	if ((buf[1] >= 0x18 && buf[1] <= 0x1b) ||	//SUB
-		(buf[1] >= 0x08 && buf[1] <= 0x0b)) {	//SBC
+	if ((buf[1] & 0xec) == 8) {		//SUB + SBC
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->cycles = 1;
 	}
@@ -35,15 +33,41 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type = R_ANAL_OP_TYPE_ROR;
 		op->cycles = 1;
 	}
-	if ((buf[0] == 1) || ((buf[0] & 0xfe) == 0x16))	{//MOVW + MOV
+	if (buf[1] == 1) {			//MOVW
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->cycles = 1;
 	}
-	if ((buf[0] & 0xf0) == 0xe0) {			//LDI
+	if ((buf[1] & 0xf0) == 0xe0) {		//LDI
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->cycles = 1;
 	}
-	//if (((buf[1] & 0x94) == 0x94) && ((buf[0] & 0x0e)==0x0e)) {
+	if ((buf[1] & 0xec) == 4) {		//CP + CPC
+		op->type = R_ANAL_OP_TYPE_CMP;
+		op->cycles = 1;
+	}
+	switch (buf[1] & 0xfc) {
+		case 0x10:			//CPSE
+			op->type = R_ANAL_OP_TYPE_CMP;
+			op->type2 = R_ANAL_OP_TYPE_CJMP;
+			op->failcycles = 1;	//TODO Cycles
+			break;
+		case 0x20:			//TST
+			op->type = R_ANAL_OP_TYPE_ACMP;
+			op->cycles = 1;
+			break;
+		case 0x24:			//EOR
+			op->type = R_ANAL_OP_TYPE_XOR;
+			op->cycles = 1;
+			break;
+		case 0x28:			//OR
+			op->type = R_ANAL_OP_TYPE_OR;
+			op->cycles = 1;
+			break;
+		case 0x2c:			//MOV
+			op->type = R_ANAL_OP_TYPE_MOV;
+			op->cycles = 1;
+			break;
+	}
 	if (!memcmp (buf, "\x0e\x94", 2)) {
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // call (absolute)
