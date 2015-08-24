@@ -434,6 +434,9 @@ static int cb_cfgdebug(void *user, void *data) {
 		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
 		core->bin->is_debugger = R_TRUE;
 		r_debug_use (core->dbg, dbgbackend);
+		if (!strcmp (r_config_get (core->config, "cmd.prompt"), "")) {
+			r_config_set (core->config, "cmd.prompt", ".dr*");
+		}
 		if (!strcmp (dbgbackend, "bf"))
 			r_config_set (core->config, "asm.arch", "bf");
 		if (core->file) {

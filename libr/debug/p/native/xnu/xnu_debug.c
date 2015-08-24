@@ -739,7 +739,7 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 		}
 		dbg->iob.read_at (dbg->iob.io, file_path_address,
 				(ut8*)file_path, MAXPATHLEN);
-		eprintf ("--> %d 0x%08"PFMT64x" %s\n", i, addr, file_path);
+		//eprintf ("--> %d 0x%08"PFMT64x" %s\n", i, addr, file_path);
 		size = mach0_size (dbg, addr);
 		mr = r_debug_map_new (file_path, addr, addr+size, 7, 0);
 		if (mr == NULL) {
@@ -750,7 +750,6 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 		r_list_append (list, mr);
 	}
 	free (info_array);
-eprintf ("List done\n");
 	return list;
 }
 
