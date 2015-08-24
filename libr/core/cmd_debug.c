@@ -1245,19 +1245,24 @@ free (rf);
 			size = atoi (regname);
 			if (size<1) {
 				char *arg = strchr (str+2, ' ');
+				size = -1;
 				if (arg) {
 					*arg++ = 0;
 					size = atoi (arg);
-					type = r_reg_type_by_name (str+2);
-
 				}
-				if (size<0)
-					size = 0;
-			}
-			if (type != R_REG_TYPE_LAST) {
+				type = r_reg_type_by_name (str+2);
+				if (size < 0)
+					size = core->dbg->bits * 8;
 				r_debug_reg_sync (core->dbg, type, R_FALSE);
-				r_debug_reg_list (core->dbg, type, size, (int)(size_t)strchr (str,'*'), use_color);
-			} else eprintf ("cmd_debug_reg: Unknown type\n");
+				r_debug_reg_list (core->dbg, type, size,
+					strchr (str,'*')? 1: 0, use_color);
+			} else {
+				if (type != R_REG_TYPE_LAST) {
+					r_debug_reg_sync (core->dbg, type, R_FALSE);
+					r_debug_reg_list (core->dbg, type, size,
+						strchr (str,'*')?1:0, use_color);
+				} else eprintf ("cmd_debug_reg: Unknown type\n");
+			}
 			} break;
 		default:
 			for (i=0; (name = r_reg_get_type (i)); i++)
