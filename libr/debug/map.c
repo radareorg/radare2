@@ -3,7 +3,7 @@
 #include <r_debug.h>
 #include <r_list.h>
 
-R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
+R_API void r_debug_map_list (RDebug *dbg, ut64 addr, int rad) {
 	const char *fmtstr;
 	char buf[128];
 	int notfirst = R_FALSE;
@@ -79,36 +79,35 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm, int user) {
 	RDebugMap *map;
 	if (name == NULL || addr >= addr_end) {
-		eprintf ("r_debug_map_new: error assert(%"PFMT64x">=%"PFMT64x")\n", addr, addr_end);
+		eprintf ("r_debug_map_new: error assert(\
+			%"PFMT64x">=%"PFMT64x")\n", addr, addr_end);
 		return NULL;
 	}
 	map = R_NEW (RDebugMap);
-	if (map) {
-		map->name = strdup (name);
-		map->file = NULL;
-		map->addr = addr;
-		map->addr_end = addr_end;
-		map->size = addr_end-addr;
-		map->perm = perm;
-		map->user = user;
-	}
+	if (!map) return NULL;
+	map->name = strdup (name);
+	map->file = NULL;
+	map->addr = addr;
+	map->addr_end = addr_end;
+	map->size = addr_end-addr;
+	map->perm = perm;
+	map->user = user;
 	return map;
 }
 
-R_API RList *r_debug_modules_list(RDebug *dbg) {
+R_API RList *r_debug_modules_list (RDebug *dbg) {
 	if (dbg && dbg->h && dbg->h->modules_get) {
 		return dbg->h->modules_get (dbg);
 	}
 	return NULL;
 }
 
-R_API int r_debug_map_sync(RDebug *dbg) {
+R_API int r_debug_map_sync (RDebug *dbg) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->map_get) {
 		RList *newmaps = dbg->h->map_get (dbg);
 		if (newmaps) {
-			// XXX free all non-user maps // but not unallocate!! only unlink from list
-			r_debug_map_list_free (dbg->maps);
+			r_list_free (dbg->maps);
 			dbg->maps = newmaps;
 			ret = R_TRUE;
 		}
@@ -116,7 +115,7 @@ R_API int r_debug_map_sync(RDebug *dbg) {
 	return ret;
 }
 
-R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size) {
+R_API RDebugMap* r_debug_map_alloc (RDebug *dbg, ut64 addr, int size) {
 	RDebugMap *map = NULL;
 	if (dbg && dbg->h && dbg->h->map_alloc) {
 		map = dbg->h->map_alloc (dbg, addr, size);
@@ -124,7 +123,7 @@ R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	return map;
 }
 
-R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
+R_API int r_debug_map_dealloc (RDebug *dbg, RDebugMap *map) {
 	int ret = R_FALSE;
 	ut64 addr = map->addr;
 	if (dbg && dbg->h && dbg->h->map_dealloc) {
@@ -135,7 +134,7 @@ R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
 	return ret;
 }
 
-R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {
+R_API RDebugMap *r_debug_map_get (RDebug *dbg, ut64 addr) {
 	RDebugMap *map, *ret = NULL;
 	RListIter *iter;
 	r_list_foreach (dbg->maps, iter, map) {
@@ -147,24 +146,15 @@ R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {
 	return ret;
 }
 
-R_API void r_debug_map_free(RDebugMap *map) {
-	//r_list_delete_data (dbg->maps_user, map);
+R_API void r_debug_map_free (RDebugMap *map) {
 	free (map->name);
 	free (map);
 }
 
 R_API RList *r_debug_map_list_new() {
 	RList *list = r_list_new ();
+	if (!list) return NULL;
 	list->free = (RListFree)r_debug_map_free;
 	return list;
 }
 
-/* XXX Use r_list_purge? FIXME: use correct maps->free function */
-R_API void r_debug_map_list_free(RList *maps) {
-	RListIter *iter;
-	RDebugMap *map;
-	r_list_foreach (maps, iter, map) {
-		r_debug_map_free (map);
-	}
-	r_list_free (maps);
-}

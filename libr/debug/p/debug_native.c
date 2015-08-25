@@ -513,7 +513,7 @@ static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	return windows_reg_read (dbg, type, buf, size);
 #elif __APPLE__
 	return xnu_reg_read (dbg, type, buf, size);
-#elif __linux__ 
+#elif __linux__
 	return linux_reg_read (dbg, type, buf, size);
 #elif __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__
 	return bsd_reg_read (dbg, type, buf, size);
@@ -600,7 +600,7 @@ static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 	mib[2] = KERN_PROC_VMMAP;
 	mib[3] = dbg->pid;
 
-	if (sysctl(mib, 4, NULL, &len, NULL, 0) != 0) return NULL;
+	if (sysctl (mib, 4, NULL, &len, NULL, 0) != 0) return NULL;
 	len = len * 4 / 3;
 	buf = malloc(len);
 	if (buf == NULL) return (NULL);
@@ -610,11 +610,15 @@ static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 	}
 	bp = buf;
 	eb = buf + len;
-	list = r_list_new ();
+	list = r_debug_map_list_new();
+	if (!list) {
+		free (buf);
+		return NULL;
+	}
 	while (bp < eb) {
 		kve = (struct kinfo_vmentry *)(uintptr_t)bp;
 		map = r_debug_map_new (kve->kve_path, kve->kve_start,
-				kve->kve_end, kve->kve_protection, 0);
+					kve->kve_end, kve->kve_protection, 0);
 		if (map == NULL) break;
 		r_list_append (list, map);
 		bp += kve->kve_structsize;
@@ -637,7 +641,7 @@ static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
 	if (process == INVALID_HANDLE_VALUE) {
 		return map;
 	}
-	base = VirtualAllocEx (process, (LPVOID)(size_t)addr, 
+	base = VirtualAllocEx (process, (LPVOID)(size_t)addr,
 	  			(SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
 	CloseHandle (process);
 	if (!base) {
@@ -664,7 +668,7 @@ static int r_debug_native_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 		return R_FALSE;
 	}
 	int ret = R_TRUE;
-	if (!VirtualFreeEx (process, (LPVOID)(size_t)addr, 
+	if (!VirtualFreeEx (process, (LPVOID)(size_t)addr,
 			  (SIZE_T)size, MEM_DECOMMIT)) {
 		eprintf ("Failed to free memory\n");
 		ret = R_FALSE;
@@ -675,6 +679,13 @@ static int r_debug_native_map_dealloc (RDebug *dbg, ut64 addr, int size) {
     // mdealloc not implemented for this platform
 	return R_FALSE;
 #endif
+}
+
+static void _map_free (RDebugMap *map) {
+	if (!map) return;
+	free (map->name);
+	free (map->file);
+	free (map);
 }
 
 static RList *r_debug_native_map_get (RDebug *dbg) {
@@ -717,11 +728,12 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		return NULL;
 	}
 
-	list = r_list_new ();
+	list = r_list_new();
 	if (!list) {
 		fclose (fd);
 		return NULL;
 	}
+	list->free = (RListFree)_map_free;
 	while (!feof (fd)) {
 		line[0] = '\0';
 		fgets (line, sizeof(line) - 1, fd);
@@ -761,35 +773,11 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 			}
 
 		map = r_debug_map_new (path,
-			r_num_get (NULL, region),
-			r_num_get (NULL, region2),
-			perm, 0);
+					r_num_get (NULL, region),
+					r_num_get (NULL, region2),
+					perm, 0);
 		if (map == NULL) break;
 		map->file = strdup (path);
-#if 0
-		mr->ini = get_offset(region);
-		mr->end = get_offset(region2);
-		mr->size = mr->end - mr->ini;
-		mr->bin = strdup(path);
-		mr->perms = 0;
-		if(!strcmp(path, "[stack]") || !strcmp(path, "[vdso]"))
-			mr->flags = FLAG_NOPERM;
-		else
-			mr->flags = 0;
-
-		for(i = 0; perms[i] && i < 4; i++) {
-			switch(perms[i]) {
-				case 'r':
-					mr->perms |= REGION_READ;
-					break;
-				case 'w':
-					mr->perms |= REGION_WRITE;
-					break;
-				case 'x':
-					mr->perms |= REGION_EXEC;
-			}
-		}
-#endif
 		r_list_append (list, map);
 	}
 	fclose (fd);
@@ -1077,7 +1065,7 @@ static RList *r_debug_desc_native_list (int pid) {
 		if (desc == NULL) break;
 		r_list_append (ret, desc);
 	}
-	
+
 	free (buf);
 	return ret;
 #elif __linux__
@@ -1093,7 +1081,7 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 	DWORD old;
 	HANDLE process = w32_open_process (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	// TODO: align pointers
-	BOOL ret = VirtualProtectEx (WIN32_PI (process), (LPVOID)(UINT)addr, 
+	BOOL ret = VirtualProtectEx (WIN32_PI (process), (LPVOID)(UINT)addr,
 	  			size, perms, &old);
 	CloseHandle (process);
 	return ret;
