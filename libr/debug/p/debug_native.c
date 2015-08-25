@@ -45,6 +45,8 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #endif
 
 #elif __APPLE__
+#include <sys/resource.h>
+#include <libproc.h>
 #include "native/xnu/xnu_debug.h"
 
 #elif __sun
@@ -996,9 +998,50 @@ static void addr_to_string (struct sockaddr_storage *ss, char *buffer, int bufle
 }
 #endif
 
+#if __APPLE__
+
+static int getMaxFiles() {
+	struct rlimit limit;
+	if (getrlimit (RLIMIT_NOFILE, &limit) != 0) {
+		return 1024;
+	}
+	return limit.rlim_cur;
+}
+
+static RList *xnu_desc_list (int pid) {
+#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
+	RDebugDesc *desc;
+	RList *ret = r_list_new();
+	struct vnode_fdinfowithpath vi;
+	int i, nb, type = 0;
+	int maxfd = getMaxFiles();
+
+	for (i=0 ; i<maxfd; i++) {
+		nb = proc_pidfdinfo (pid, i, PROC_PIDFDVNODEPATHINFO, &vi, sizeof (vi));
+		if (nb<1) {
+			continue;
+		}
+		if (nb < sizeof (vi)) {
+			perror ("too few bytes");
+			break;
+		}
+		//printf ("FD %d RWX %x ", i, vi.pfi.fi_openflags);
+		//printf ("PATH %s\n", vi.pvip.vip_path);
+		desc = r_debug_desc_new (i,
+				vi.pvip.vip_path,
+				xwr2rwx(vi.pfi.fi_openflags),
+				type, 0);
+		r_list_append (ret, desc);
+	}
+	return ret;
+}
+#endif
+
 static RList *r_debug_desc_native_list (int pid) {
 // TODO: windows
-#if __KFBSD__
+#if __APPLE__
+	return xnu_desc_list (pid);
+#elif __KFBSD__
 	RList *ret = NULL;
 	int perm, type, mib[4];
 	size_t len;
