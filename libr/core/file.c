@@ -904,6 +904,12 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	RHash *ctx;
 	ut64 limit;
 	RCoreFile *cf = r_core_file_cur (r);
+	if (!file && cf && cf->desc) {
+		file = cf->desc->name;
+	}
+	if (!file) {
+		return R_FALSE;
+	}
 
 	limit = r_config_get_i (r->config, "cfg.hashlimit");
 	if (r_io_desc_size (r->io, cf->desc) > limit)
