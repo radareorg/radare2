@@ -212,7 +212,6 @@ R_API RIOSection *r_io_section_vget(RIO *io, ut64 vaddr) {
 	RListIter *iter;
 	RIOSection *s;
 	r_list_foreach (io->sections, iter, s) {
-		//if (!s->vaddr) continue;
 		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize)
 			return s;
 	}
@@ -223,8 +222,7 @@ R_API RIOSection *r_io_section_mget(RIO *io, ut64 maddr) {
 	RIOSection *s;
 	RListIter *iter;
 	r_list_foreach (io->sections, iter, s) {
-		if (!s->vaddr)
-			continue;
+		if (!(s->rwx & R_IO_MAP)) continue;
 		if ((maddr >= s->offset && maddr < (s->offset + s->size)))
 			return s;
 	}
@@ -255,8 +253,7 @@ R_API int r_io_section_overlaps(RIO *io, RIOSection *s) {
 	RIOSection *s2;
 
 	r_list_foreach (io->sections, iter, s2) {
-		if (!s->vaddr)
-			continue;
+		if (!(s->rwx & R_IO_MAP)) continue;
 		if (s != s2) {
 			if (s->offset >= s2->offset) {
 				if (s2->offset+s2->size < s->offset)
@@ -277,8 +274,7 @@ R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 	RIOSection *s;
 
 	r_list_foreach (io->sections, iter, s) {
-		if (!s->vaddr)
-			continue;
+		if (!(s->rwx & R_IO_MAP)) continue;
 		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
 			/* XXX: Do we need this hack?
 			if (s->vaddr == 0) // hack
@@ -325,8 +321,7 @@ R_API ut64 r_io_section_next(RIO *io, ut64 o) {
 
 	r_list_foreach (io->sections, iter, s) {
 		ut64 addr = s->vaddr;
-		if (!s->vaddr)
-			continue;
+		if (!(s->rwx & R_IO_MAP)) continue;
 		if (o < addr) {
 			if (newsec) {
 				if (addr<newsec)
@@ -359,8 +354,7 @@ R_API RList *r_io_section_get_in_paddr_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RList *sections = r_list_new ();
 	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, s) {
-		if (!s->vaddr)
-			continue;
+		if (!(s->rwx & R_IO_MAP)) continue;
 		sec_from = s->offset;
 		sec_to = sec_from + s->size;
 		if (sec_from <= addr && addr < sec_to) r_list_append (sections, s);
@@ -376,8 +370,7 @@ R_API RList *r_io_section_get_in_vaddr_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RList *sections = r_list_new ();
 	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, s) {
-		if (!s->vaddr)
-			continue;
+		if (!(s->rwx & R_IO_MAP)) continue;
 		sec_from = s->vaddr;
 		sec_to = sec_from + s->vsize;
 		if (sec_from <= addr && addr < sec_to) r_list_append(sections, s);
@@ -392,8 +385,7 @@ R_API RIOSection * r_io_section_get_first_in_paddr_range(RIO *io, ut64 addr, ut6
 	RListIter *iter;
 	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, s) {
-		if (!s->vaddr)
-			continue;
+		if (!(s->rwx & R_IO_MAP)) continue;
 		sec_to = s->offset + s->size;
 		sec_from = s->offset;
 		if (sec_from <= addr && addr < sec_to) break;
@@ -410,8 +402,7 @@ R_API RIOSection * r_io_section_get_first_in_vaddr_range(RIO *io, ut64 addr, ut6
 	RListIter *iter;
 	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, s) {
-		if (!s->vaddr)
-			continue;
+		if (!(s->rwx & R_IO_MAP)) continue;
 		sec_to = s->vaddr + s->vsize;
 		sec_from = s->vaddr;
 		if (sec_from <= addr && addr < sec_to) break;
@@ -447,8 +438,7 @@ R_API RIOSection *r_io_section_getv_bin_id(RIO *io, ut64 vaddr, ut32 bin_id) {
 	RListIter *iter;
 	RIOSection *s;
 	r_list_foreach (io->sections, iter, s) {
-		if (!s->vaddr)
-			continue;
+		if (!(s->rwx & R_IO_MAP)) continue;
 		if (s->bin_id != bin_id) continue;
 		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize)
 			return s;
