@@ -288,94 +288,94 @@ int main(int argc, char **argv, char **envp) {
 #endif
 	))!=-1) {
 		switch (c) {
-			case '=':
-				r.cmdremote = 1;
-				break;
-			case '0':
-				zerosep = R_TRUE;
-				//r_config_set (r.config, "scr.color", "false");
-				/* implicit -q */
-				r_config_set (r.config, "scr.interactive", "false");
-				r_config_set (r.config, "scr.prompt", "false");
-				r_config_set (r.config, "scr.color", "false");
-				quiet = R_TRUE;
-				break;
-			case 'u':
-				r_config_set (r.config, "bin.filter", "false");
-				break;
-			case 'a': asmarch = optarg; break;
-			case 'z': zflag++; break;
-			case 'A':
-				do_analysis = R_TRUE;
-				break;
-			case 'b': asmbits = optarg; break;
-			case 'B':
-				baddr = r_num_math (r.num, optarg);
-				va = 2;
-				// hackaround. baddr=0: no laddr and -1 means baddr=0
-				if (baddr==0)
-					baddr = UT64_MAX;
-				break;
-			case 'c': r_list_append (cmds, optarg); break;
-			case 'C':
-				do_connect = R_TRUE;
-				break;
+		case '=':
+			r.cmdremote = 1;
+			break;
+		case '0':
+			zerosep = R_TRUE;
+			//r_config_set (r.config, "scr.color", "false");
+			/* implicit -q */
+			r_config_set (r.config, "scr.interactive", "false");
+			r_config_set (r.config, "scr.prompt", "false");
+			r_config_set (r.config, "scr.color", "false");
+			quiet = R_TRUE;
+			break;
+		case 'u':
+			r_config_set (r.config, "bin.filter", "false");
+			break;
+		case 'a': asmarch = optarg; break;
+		case 'z': zflag++; break;
+		case 'A':
+			do_analysis = R_TRUE;
+			break;
+		case 'b': asmbits = optarg; break;
+		case 'B':
+			baddr = r_num_math (r.num, optarg);
+			va = 2;
+			// hackaround. baddr=0: no laddr and -1 means baddr=0
+			if (baddr==0)
+				baddr = UT64_MAX;
+			break;
+		case 'c': r_list_append (cmds, optarg); break;
+		case 'C':
+			do_connect = R_TRUE;
+			break;
 #if DEBUGGER
-			case 'd': debug = 1; break;
+		case 'd': debug = 1; break;
 #else
-			case 'd': eprintf ("Sorry. No compiler backend available.\n"); return 1;
+		case 'd': eprintf ("Sorry. No compiler backend available.\n"); return 1;
 #endif
-			case 'D':
-				debug = 2;
-				debugbackend = optarg;
-				break;
-			case 'e': r_config_eval (r.config, optarg);
-				  r_list_append (evals, optarg); break;
-			case 'f': fullfile = 1; break;
-			case 'F': forcebin = optarg; break;
-			case 'h': help++; break;
-			case 'i':
-				if (cmdfilei+1 < (sizeof (cmdfile)/sizeof (*cmdfile)))
-					cmdfile[cmdfilei++] = optarg;
-				break;
-			case 'k': 
-				{
-					char *out = sdb_querys (r.sdb, NULL, 0, optarg);
-					if (out&& *out) {
-						r_cons_printf ("%s\n", out);
-					}
-					free (out);
+		case 'D':
+			debug = 2;
+			debugbackend = optarg;
+			break;
+		case 'e': r_config_eval (r.config, optarg);
+			  r_list_append (evals, optarg); break;
+		case 'f': fullfile = 1; break;
+		case 'F': forcebin = optarg; break;
+		case 'h': help++; break;
+		case 'i':
+			if (cmdfilei+1 < (sizeof (cmdfile)/sizeof (*cmdfile)))
+				cmdfile[cmdfilei++] = optarg;
+			break;
+		case 'k': 
+			{
+				char *out = sdb_querys (r.sdb, NULL, 0, optarg);
+				if (out&& *out) {
+					r_cons_printf ("%s\n", out);
 				}
-				break;
-			case 'o': asmos = optarg; break;
-			case 'l': r_lib_open (r.lib, optarg); break;
-			case 'L': list_io_plugins (r.io); return 0;
-			case 'm': mapaddr = r_num_math (r.num, optarg); break;
-			case 'n': run_anal --; break;
-			case 'N': run_rc = 0; break;
-			case 'p':
-				r_config_set (r.config, "file.project", optarg);
-				break;
-			case 'P': patchfile = optarg; break;
-			case 'q':
-				r_config_set (r.config, "scr.interactive", "false");
-				r_config_set (r.config, "scr.prompt", "false");
-				quiet = R_TRUE;
-				break;
-			case 's': seek = r_num_math (r.num, optarg); break;
-			case 'S': sandbox = 1; break;
+				free (out);
+			}
+			break;
+		case 'o': asmos = optarg; break;
+		case 'l': r_lib_open (r.lib, optarg); break;
+		case 'L': list_io_plugins (r.io); return 0;
+		case 'm': mapaddr = r_num_math (r.num, optarg); break;
+		case 'n': run_anal --; break;
+		case 'N': run_rc = 0; break;
+		case 'p':
+			r_config_set (r.config, "file.project", optarg);
+			break;
+		case 'P': patchfile = optarg; break;
+		case 'q':
+			r_config_set (r.config, "scr.interactive", "false");
+			r_config_set (r.config, "scr.prompt", "false");
+			quiet = R_TRUE;
+			break;
+		case 's': seek = r_num_math (r.num, optarg); break;
+		case 'S': sandbox = 1; break;
 #if USE_THREADS
-			case 't':
-				threaded = R_TRUE;
-				break;
+		case 't':
+			threaded = R_TRUE;
+			break;
 #endif
-			case 'v': verify_version(0); return blob_version ("radare2");
-			case 'V': return verify_version (1);
-			case 'w': perms = R_IO_READ | R_IO_WRITE; break;
-			default:
-				r_list_free (evals);
-				r_list_free (cmds);
-				return 1;
+		case 'v': verify_version(0); return blob_version ("radare2");
+		case 'V': return verify_version (1);
+		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
+		default:
+			r_list_free (evals);
+			r_list_free (cmds);
+			return 1;
 		}
 	}
 
@@ -490,8 +490,12 @@ int main(int argc, char **argv, char **envp) {
 				if (strcmp (debugbackend, "native")) {
 					pfile = argv[optind++];
 					perms = R_IO_READ; // XXX. should work with rw too
-					debug = 1;
+					debug = 2;
+					if (!strstr (pfile, "://")) {
+						optind--; // take filename
+					}
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					r_config_set (r.config, "io.raw", "false");
 /*
 					if (fh) {
 						r_core_bin_load (&r, pfile);
