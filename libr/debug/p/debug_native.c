@@ -810,6 +810,12 @@ static RList *r_debug_native_modules_get (RDebug *dbg) {
 		return list;
 	}
 #endif
+#if __WINDOWS__
+	list = w32_dbg_modules (dbg);
+	if (list && !r_list_empty (list)) {
+		return list;
+	}
+#endif
 	list = r_debug_native_map_get (dbg);
 	if (!list) {
 		return NULL;
