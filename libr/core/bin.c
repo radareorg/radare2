@@ -1076,6 +1076,9 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 			ut64 addr = rva (r->bin, va, symbol->paddr, symbol->vaddr, baddr, laddr);
 			name = strdup (symbol->name);
 			cname = (symbol->classname[0] != 0) ? strdup (symbol->classname) : NULL;
+			if (!strcmp (symbol->type, "NOTYPE")) {
+				continue;
+			}
 			// XXX - may want a configuration variable here for class and name lengths.
 			// XXX - need something to handle overloaded symbols (e.g. methods)
 			// void add (int i, int j);
@@ -1167,6 +1170,9 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 					r_cons_printf ("%s\n", symbol->name);
 			} else {
 				if (mode) {
+					if (!strcmp (symbol->type, "NOTYPE")) {
+						continue;
+					}
 					if (bin_demangle) {
 						char *mn = r_bin_demangle (r->bin->cur, lang, symbol->name);
 						if (mn) {

@@ -207,10 +207,12 @@ static int cmpaddr (const void *_a, const void *_b) {
 	return (a->addr > b->addr);
 }
 
+#if 0
 static int iscodesection(RCore *core, ut64 addr) {
 	RIOSection *s = r_io_section_vget (core->io, addr);
 	return (s && s->rwx & R_IO_EXEC)? 1: 0;
 }
+#endif
 
 static ut64 *next_append (ut64 *next, int *nexti, ut64 v) {
 	next = realloc (next, sizeof (ut64) * (1 + *nexti));
@@ -1658,9 +1660,10 @@ R_API int r_core_anal_all(RCore *core) {
 		r_list_foreach (list, iter, symbol) {
 			if (core->cons->breaked)
 				break;
-			if (!strcmp (symbol->type, "FUNC"))
+			if (!strcmp (symbol->type, "FUNC")) {
 				r_core_anal_fcn (core, va? symbol->vaddr:symbol->paddr,
 						-1, R_ANAL_REF_TYPE_NULL, depth);
+			}
 		}
 	/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 	r_list_foreach (core->anal->fcns, iter, fcni) {
