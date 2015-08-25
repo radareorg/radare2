@@ -68,6 +68,27 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			op->cycles = 1;
 			break;
 	}
+	switch (buf[1]) {
+		case 0x96:			//ADIW
+			op->type = R_ANAL_OP_TYPE_ADD;
+			op->cycles = 2;
+			break;
+		case 0x97:			//SBIW
+			op->type = R_ANAL_OP_TYPE_SUB;
+			op->cycles = 2;
+			break;
+		case 0x98:			//SBI
+		case 0x9a:			//CBI
+			op->type = R_ANAL_OP_TYPE_IO;
+			op->cycles = 2;		//1 for atTiny
+			break;
+		case 0x99:			//SBIC
+		case 0x9b:			//SBIS
+			op->type = R_ANAL_OP_TYPE_CMP;
+			op->type2 = R_ANAL_OP_TYPE_CJMP;
+			op->failcycles = 1;
+			break;
+	}
 	if (!memcmp (buf, "\x0e\x94", 2)) {
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // call (absolute)
