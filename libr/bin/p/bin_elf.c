@@ -175,7 +175,7 @@ static RList* sections(RBinFile *arch) {
 			ptr->vsize = memsz;
 			ptr->paddr = paddr;
 			ptr->vaddr = vaddr;
-			ptr->srwx = perms;
+			ptr->srwx = perms | R_BIN_SCN_MAP;
 			r_list_append (ret, ptr);
 			n++;
 		}
@@ -194,7 +194,8 @@ static RList* sections(RBinFile *arch) {
 			ptr->vsize = arch->size;
 			ptr->paddr = 0;
 			ptr->vaddr = 0x10000;
-			ptr->srwx = 7;
+			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE |
+				R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
 			r_list_append (ret, ptr);
 		}
 	}
@@ -203,12 +204,15 @@ static RList* sections(RBinFile *arch) {
 	if (ptr) {
 		ut64 ehdr_size = sizeof (obj->ehdr);
 
+		if (arch->size < ehdr_size) {
+			ehdr_size = arch->size;
+		}
 		sprintf (ptr->name, "ehdr");
 		ptr->paddr = 0;
 		ptr->vaddr = obj->baddr;
 		ptr->size = ehdr_size;
 		ptr->vsize = ehdr_size;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP;
 		r_list_append (ret, ptr);
 	}
 

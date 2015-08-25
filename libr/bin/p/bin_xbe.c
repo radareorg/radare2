@@ -150,11 +150,11 @@ static RList* sections(RBinFile *arch) {
 		item->size  = sect[i].size;
 		item->vsize = sect[i].vsize;
 
-		item->srwx |= 4;
+		item->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
 		if (sect[i].flags & SECT_FLAG_X)
-			item->srwx |= 1;
+			item->srwx |= R_BIN_SCN_EXECUTABLE;
 		if (sect[i].flags & SECT_FLAG_W)
-			item->srwx |= 2;
+			item->srwx |= R_BIN_SCN_WRITABLE;
 		r_list_append (ret, item);
 	}
 	free (sect);

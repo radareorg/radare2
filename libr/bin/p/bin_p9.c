@@ -82,7 +82,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->vsize = textsize + (textsize%4096);
 	ptr->paddr = 8*4;
 	ptr->vaddr = ptr->paddr;
-	ptr->srwx = 5; // r-x
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
 	r_list_append (ret, ptr);
 	// add data segment
 	datasize = r_mem_get_num (arch->buf->buf+8, 4, big_endian);
@@ -94,7 +94,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vsize = datasize + (datasize%4096);
 		ptr->paddr = textsize+(8*4);
 		ptr->vaddr = ptr->paddr;
-		ptr->srwx = 6; // rw-
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP; // rw-
 		r_list_append (ret, ptr);
 	}
 	// ignore bss or what
@@ -108,7 +108,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vsize = symssize + (symssize%4096);
 		ptr->paddr = datasize+textsize+(8*4);
 		ptr->vaddr = ptr->paddr;
-		ptr->srwx = 4; // r--
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
 		r_list_append (ret, ptr);
 	}
 	// add spsz segment
@@ -121,7 +121,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vsize = spszsize + (spszsize%4096);
 		ptr->paddr = symssize+datasize+textsize+(8*4);
 		ptr->vaddr = ptr->paddr;
-		ptr->srwx = 4; // r--
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
 		r_list_append (ret, ptr);
 	}
 	// add pcsz segment
@@ -134,7 +134,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vsize = pcszsize + (pcszsize%4096);
 		ptr->paddr = spszsize+symssize+datasize+textsize+(8*4);
 		ptr->vaddr = ptr->paddr;
-		ptr->srwx = 4; // r--
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
 		r_list_append (ret, ptr);
 	}
 	return ret;

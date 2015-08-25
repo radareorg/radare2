@@ -232,12 +232,11 @@ static int cmd_section(void *data, const char *input) {
 		}
 		break;
 	case '\0':
-		r_io_section_list (core->io, core->offset, 0);
+		r_io_section_list (core->io, core->offset, R_FALSE);
 		break;
 	case '*':
-		r_io_section_list (core->io, core->offset, 1);
+		r_io_section_list (core->io, core->offset, R_TRUE);
 		break;
 	}
 	return 0;
 }
-

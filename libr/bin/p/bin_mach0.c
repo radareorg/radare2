@@ -111,7 +111,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vaddr = sections[i].addr;
 		if (ptr->vaddr == 0)
 			ptr->vaddr = ptr->paddr;
-		ptr->srwx = sections[i].srwx;
+		ptr->srwx = sections[i].srwx | R_BIN_SCN_MAP;
 		r_list_append (ret, ptr);
 	}
 	free (sections);

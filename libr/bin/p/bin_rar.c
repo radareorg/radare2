@@ -106,7 +106,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->size = ptr->vsize = 0x9a;
 	ptr->paddr = 0;
 	ptr->vaddr = ptr->paddr;
-	ptr->srwx = 4; // r--
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
 	r_list_append (ret, ptr);
 
 	/* rarvm code */
@@ -115,7 +115,7 @@ static RList* sections(RBinFile *arch) {
 	strncpy (ptr->name, "rarvm", R_BIN_SIZEOF_STRINGS);
 	ptr->vsize = ptr->size = sz - 0x9a;
 	ptr->vaddr = ptr->paddr = 0x9a;
-	ptr->srwx = 5; // rw-
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
 	r_list_append (ret, ptr);
 	return ret;
 }
