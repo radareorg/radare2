@@ -651,7 +651,6 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 	const char *section = "";
 	if (ds->show_section)
 		section = getSectionName (core, ds->at);
-	// THAT'S OK
 	if (ds->show_functions) {
 		if (ds->show_color) {
 			r_cons_printf ("%s%s"Color_RESET, ds->color_fline, f?ds->pre:"  ");
@@ -685,9 +684,11 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 		return;
 
 	if (r_list_length (xrefs) > ds->maxrefs) {
-		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
+			ds->at, R_ANAL_FCN_TYPE_NULL);
 		beginline (core, ds, f);
-		r_cons_printf ("%s; XREFS: ", ds->show_color? ds->pal_comment: "");
+		r_cons_printf ("%s; XREFS: ", ds->show_color?
+			ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
 			r_cons_printf ("%s 0x%08"PFMT64x"  ",
 				r_anal_xrefs_type_tostring (refi->type), refi->addr);
@@ -709,7 +710,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 	r_list_foreach (xrefs, iter, refi) {
 		if (refi->at == ds->at) {
 			RAnalFunction *fun = r_anal_get_fcn_in (
-				core->anal, refi->addr, -1);
+				core->anal, refi->at, -1);
 			beginline (core, ds, fun);
 			if (ds->show_color) {
 				r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
