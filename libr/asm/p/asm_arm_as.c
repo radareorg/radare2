@@ -60,6 +60,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		close (ofd);
 		ofd = open (opath, O_BINARY|O_RDONLY);
 		if (ofd < 0) {
+			free (as);
 			free (ipath);
 			free (opath);
 			return -1;
@@ -72,15 +73,15 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			len = 0;
 		} else {
 			len = (int)(size_t)(end-begin-9);
-			if (len>0) memcpy (op->buf, begin+9, len);
-			else len = 0;
+			if (len>0) {
+				memcpy (op->buf, begin+9, len);
+			} else len = 0;
 		}
 	} else {
 		eprintf ("Error running: %s %s -o %s", as, ipath, opath);
 		eprintf ("export PATH=~/NDK/toolchains/arm-linux*/prebuilt/darwin-arm_64/bin\n");
 		len = 0;
 	}
-	free (as);
 
 	close (ofd);
 
@@ -88,6 +89,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	unlink (opath);
 	free (ipath);
 	free (opath);
+	free (as);
 
 	op->size = len;
 	return len;

@@ -701,7 +701,9 @@ static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
 			{
 				char *fn = strdup (map->file);
 				r_name_filter (fn, 0);
-				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n", fn, map->addr);
+				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
+					fn, map->addr);
+				free (fn);
 			}
 			break;
 		default:

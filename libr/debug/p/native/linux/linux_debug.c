@@ -124,7 +124,7 @@ RDebugInfo *linux_info (RDebug *dbg, const char *arg) {
 
 
 RList *linux_thread_list (int pid, RList *list) {
-	int i, fd, thid = 0;
+	int i, fd = -1, thid = 0;
 	char *ptr, cmdline[1024];
 
 	if (!pid) {
@@ -178,10 +178,12 @@ RList *linux_thread_list (int pid, RList *list) {
 			close (fd);
 			fd = -1;
 		}
+		if (fd != -1) {
+			close (fd);
+		}
 	}
 	return list;
 }
-
 
 #define PRINT_FPU(fpregs) \
 	eprintf ("cwd = 0x%04x  ; control   ", (fpregs).cwd);\
