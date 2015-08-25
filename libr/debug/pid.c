@@ -45,7 +45,7 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 					iter->n?",":"");
 				break;
 			default:
-				dbg->cb_printf (" %c %d %c %s\n", 
+				dbg->cb_printf (" %c %d %c %s\n",
 					dbg->pid==p->pid?'*':'-',
 					p->pid, p->status, p->path);
 				break;
@@ -79,7 +79,7 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid) {
 		} else {
 			r_list_foreach (list, iter, p) {
 				dbg->cb_printf (" %c %d %c %s\n",
-					dbg->tid==p->pid?'*':'-',
+					dbg->tid == p->pid?'*':'-',
 					p->pid, p->status, p->path);
 			}
 		}

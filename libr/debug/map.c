@@ -76,22 +76,22 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 	}
 }
 
-R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm, int user) {
+R_API RDebugMap *r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user) {
 	RDebugMap *map;
 	if (name == NULL || addr >= addr_end) {
-		eprintf ("r_debug_map_new: error assert(%"PFMT64x">=%"PFMT64x")\n", addr, addr_end);
+		eprintf ("r_debug_map_new: error assert(\
+			%"PFMT64x">=%"PFMT64x")\n", addr, addr_end);
 		return NULL;
 	}
 	map = R_NEW (RDebugMap);
-	if (map) {
-		map->name = strdup (name);
-		map->file = NULL;
-		map->addr = addr;
-		map->addr_end = addr_end;
-		map->size = addr_end-addr;
-		map->perm = perm;
-		map->user = user;
-	}
+	if (!map) return NULL;
+	map->name = strdup (name);
+	map->file = NULL;
+	map->addr = addr;
+	map->addr_end = addr_end;
+	map->size = addr_end-addr;
+	map->perm = perm;
+	map->user = user;
 	return map;
 }
 
@@ -107,8 +107,7 @@ R_API int r_debug_map_sync(RDebug *dbg) {
 	if (dbg && dbg->h && dbg->h->map_get) {
 		RList *newmaps = dbg->h->map_get (dbg);
 		if (newmaps) {
-			// XXX free all non-user maps // but not unallocate!! only unlink from list
-			r_debug_map_list_free (dbg->maps);
+			r_list_free (dbg->maps);
 			dbg->maps = newmaps;
 			ret = R_TRUE;
 		}
@@ -148,23 +147,14 @@ R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {
 }
 
 R_API void r_debug_map_free(RDebugMap *map) {
-	//r_list_delete_data (dbg->maps_user, map);
 	free (map->name);
 	free (map);
 }
 
 R_API RList *r_debug_map_list_new() {
 	RList *list = r_list_new ();
+	if (!list) return NULL;
 	list->free = (RListFree)r_debug_map_free;
 	return list;
 }
 
-/* XXX Use r_list_purge? FIXME: use correct maps->free function */
-R_API void r_debug_map_list_free(RList *maps) {
-	RListIter *iter;
-	RDebugMap *map;
-	r_list_foreach (maps, iter, map) {
-		r_debug_map_free (map);
-	}
-	r_list_free (maps);
-}
