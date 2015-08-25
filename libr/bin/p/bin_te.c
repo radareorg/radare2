@@ -106,15 +106,15 @@ static RList* sections(RBinFile *arch) {
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr;
-		ptr->srwx = 0;
+		ptr->srwx = R_BIN_SCN_MAP;
 		if (R_BIN_TE_SCN_IS_EXECUTABLE (sections[i].flags))
-			ptr->srwx |= 0x1;
+			ptr->srwx |= R_BIN_SCN_EXECUTABLE;
 		if (R_BIN_TE_SCN_IS_WRITABLE (sections[i].flags))
-			ptr->srwx |= 0x2;
+			ptr->srwx |= R_BIN_SCN_WRITABLE;
 		if (R_BIN_TE_SCN_IS_READABLE (sections[i].flags))
-			ptr->srwx |= 0x4;
+			ptr->srwx |= R_BIN_SCN_SHAREABLE;
 		if (R_BIN_TE_SCN_IS_SHAREABLE (sections[i].flags))
-			ptr->srwx |= 0x8;
+			ptr->srwx |= R_BIN_SCN_SHAREABLE;
 		/* All TE files have _TEXT_RE section, which is 16-bit, because of
 		 * CPU start in this mode */
 		if (!strncmp(ptr->name, "_TEXT_RE", 8))

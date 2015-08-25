@@ -847,7 +847,7 @@ static RList* sections(RBinFile *arch) {
 		strcpy (ptr->name, "header");
 		ptr->size = ptr->vsize = sizeof (struct dex_header_t);
 		ptr->paddr= ptr->vaddr = 0;
-		ptr->srwx = 4;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
@@ -855,14 +855,14 @@ static RList* sections(RBinFile *arch) {
 		//ptr->size = ptr->vsize = fsym;
 		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
 		ptr->size = bin->code_from - ptr->vaddr; // fix size
-		ptr->srwx = 4;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
 		strcpy (ptr->name, "code");
 		ptr->vaddr = ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
 		ptr->size = bin->code_to - ptr->paddr;
-		ptr->srwx = 4|1;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
@@ -878,7 +878,7 @@ static RList* sections(RBinFile *arch) {
 			dprintf ("Hack\n");
 			//ptr->size = ptr->vsize = 1024;
 		}
-		ptr->srwx = 4; //|2;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; //|2;
 		r_list_append (ret, ptr);
 	}
 	return ret;

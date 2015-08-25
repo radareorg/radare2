@@ -174,26 +174,45 @@ R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
 R_API int r_str_rwx(const char *str) {
 	int ret = atoi (str);
 	if (!ret) {
-		ret |= strchr (str, 'r')?4:0;
-		ret |= strchr (str, 'w')?2:0;
-		ret |= strchr (str, 'x')?1:0;
+		ret |= strchr (str, 'm') ? 16 : 0;
+		ret |= strchr (str, 'r') ? 4 : 0;
+		ret |= strchr (str, 'w') ? 2 : 0;
+		ret |= strchr (str, 'x') ? 1 : 0;
 	}
 	return ret;
 }
 
 R_API const char *r_str_rwx_i(int rwx) {
-	static const char *rwxstr[16] = {
-		[0] = "---",
-		[1] = "--x",
-		[2] = "-w-",
-		[3] = "-wx",
-		[4] = "r--",
-		[5] = "r-x",
-		[6] = "rw-",
-		[7] = "rwx",
+	static const char *rwxstr[24] = {
+		[0] = "----",
+		[1] = "--x-",
+		[2] = "-w--",
+		[3] = "-wx-",
+		[4] = "r---",
+		[5] = "r-x-",
+		[6] = "rw--",
+		[7] = "rwx-",
+
+		[8] =  "----",
+		[9] =  "--x-",
+		[10] = "-w--",
+		[11] = "-wx-",
+		[12] = "r---",
+		[13] = "r-x-",
+		[14] = "rw--",
+		[15] = "rwx-",
+
+		[16] = "---m",
+		[17] = "--xm",
+		[18] = "-w-m",
+		[19] = "-wxm",
+		[20] = "r--m",
+		[21] = "r-xm",
+		[22] = "rw-m",
+		[23] = "rwxm",
 		/* ... */
 	};
-	return rwxstr[rwx&7]; // 15 for srwx
+	return rwxstr[rwx % 24]; // 15 for srwx
 }
 
 R_API const char *r_str_bool(int b) {

@@ -9,10 +9,12 @@
 extern "C" {
 #endif
 
-#define R_IO_READ  4
-#define R_IO_WRITE 2
-#define R_IO_EXEC  1
-#define R_IO_RW R_IO_READ | R_IO_WRITE
+/* these should be equals to R_BIN_SCN_* permissions */
+#define R_IO_EXEC  (1 << 0)
+#define R_IO_WRITE (1 << 1)
+#define R_IO_READ  (1 << 2)
+#define R_IO_MAP   (1 << 4)
+#define R_IO_RW    (R_IO_READ | R_IO_WRITE)
 
 #define R_IO_SEEK_SET 0
 #define R_IO_SEEK_CUR 1
