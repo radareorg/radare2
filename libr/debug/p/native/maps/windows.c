@@ -1,4 +1,43 @@
 
+static RList *w32_dbg_modules(RDebug *dbg) {
+	HANDLE hProcess = 0;
+	HANDLE hModuleSnap = 0;
+	MODULEENTRY32 me32;
+	RDebugMap *mr;
+	char *mapname = NULL;
+	int pid = dbg->pid;
+	RList *list = r_list_new ();
+
+	hModuleSnap = CreateToolhelp32Snapshot( TH32CS_SNAPMODULE, pid );
+	if( hModuleSnap == NULL ) {
+		print_lasterr ((char *)__FUNCTION__, "CreateToolhelp32Snapshot");
+		CloseHandle( hModuleSnap );
+		return NULL;
+	}
+	me32.dwSize = sizeof( MODULEENTRY32 );
+	if( !Module32First(hModuleSnap, &me32))	{
+		CloseHandle( hModuleSnap );
+		return NULL;
+	}
+	hProcess=w32_openprocess(PROCESS_QUERY_INFORMATION |PROCESS_VM_READ,FALSE, pid );
+	do {
+		mapname = (char *)malloc(MAX_PATH);
+		snprintf (mapname, MAX_PATH, "%s\\%s",me32.szExePath,me32.szModule);
+		mr = r_debug_map_new (mapname,
+				(ut64)(size_t) (me32.modBaseAddr),
+				(ut64)(size_t) (me32.modBaseAddr+1),
+				0,
+				0);
+		if (mr != NULL) {
+			mr->file=strdup(mapname);
+			r_list_append (list, mr);
+		}
+		free(mapname);
+	} while(Module32Next(hModuleSnap, &me32));
+	CloseHandle( hModuleSnap );
+	CloseHandle( hProcess );
+	return( list );
+}
 static RList *w32_dbg_maps(RDebug *dbg) {
 	HANDLE hProcess = 0;
 	HANDLE hModuleSnap = 0;
