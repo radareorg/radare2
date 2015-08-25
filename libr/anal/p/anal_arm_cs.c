@@ -699,7 +699,13 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 		if (insn->detail->arm.operands[0].reg == ARM_REG_LR) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		} else if (insn->detail->arm.cc) {
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			if (insn->detail->arm.cc == ARM_CC_INVALID) {
+				op->type = R_ANAL_OP_TYPE_ILL;
+			} else if (insn->detail->arm.cc == ARM_CC_AL) {
+				op->type = R_ANAL_OP_TYPE_JMP;
+			} else {
+				op->type = R_ANAL_OP_TYPE_CJMP;
+			}
 			if (REGID(1)==ARM_REG_PC) {
 				op->jump = addr+op->size;
 			} else {
