@@ -1763,6 +1763,12 @@ static int cmd_print(void *data, const char *input) {
 				}
 				r_anal_op_fini (&aop);
 			}
+		} else if (input[1] == 'D') {
+			if (input[2]=='?') {
+				r_cons_printf ("|Usage: paD [asm]       disasm like in pdi\n");
+			} else {
+				r_core_cmdf (core, "pdi@x:%s", input+2);
+			}
 		} else if (input[1]=='d') { // "pad"
 			if (input[2]=='?') {
 				r_cons_printf ("|Usage: pad [asm]       disasm\n");
@@ -3083,7 +3089,7 @@ static int cmd_print(void *data, const char *input) {
 			 "p3"," [file]","print stereogram (3D)",
 			 "p6","[de] [len]", "base64 decode/encode",
 			 "p8","[j] [len]","8bit hexpair list of bytes",
-			 "pa","[ed] [hex|asm]", "pa:assemble  pad:disasm or pae: esil from hexpairs",
+			 "pa","[edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hexpairs",
 			 "pA","[n_ops]", "show n_ops address and type",
 			 "p","[b|B|xb] [len] ([skip])", "bindump N bits skipping M",
 			 "p","[bB] [len]","bitstream of N bytes",
