@@ -792,8 +792,9 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 				}
 				snprintf (str, R_FLAG_NAME_SIZE,
 					"reloc.%s_%d", reloc->import->name, (int)(addr&0xff));
-				if (bin_demangle)
+				if (bin_demangle) {
 					demname = r_bin_demangle (r->bin->cur, lang, str);
+				}
 				r_name_filter (str, 0);
 				//r_str_replace_char (str, '$', '_');
 				fi = r_flag_set (r->flags, str, addr, bin_reloc_size (reloc), 0);
@@ -1019,35 +1020,107 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 	return R_TRUE;
 }
 
+static const char *getPrefixFor(const char *s) {
+	if (s) {
+		if (!strcmp (s, "NOTYPE")) {
+			return "loc";
+		} else if (!strcmp (s, "OBJECT")) {
+			return "obj";
+		}
+	}
+	return "sym";
+}
+
+typedef struct {
+	ut64 addr;
+	const char *pfx; // prefix for flags
+	char *name;      // raw symbol name
+	char *nameflag;  // flag name for symbol
+	char *demname;   // demangled raw symbol name
+	char *demflag;   // flag name for demangled symbol
+	char *classname; // classname
+	char *classflag; // flag for classname
+} SymName;
+
+static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
+#define MAXFLAG_LEN 50
+	int bin_demangle = lang != NULL;
+	const char *pfx = getPrefixFor (sym->type);
+	sn->name = strdup (sym->name);
+	sn->nameflag = r_str_newf ("%s.%s", pfx, sym->name);
+	r_name_filter (sn->nameflag, MAXFLAG_LEN);
+	if (sym->classname[0]) {
+		sn->classname = strdup (sym->classname);
+		sn->classflag = strdup (sn->classname);
+		r_name_filter (sn->classflag, MAXFLAG_LEN);
+	} else {
+		sn->classname = NULL;
+		sn->classflag = NULL;
+	}
+	if (bin_demangle) {
+		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name);
+		sn->demflag = r_str_newf ("%s.%s", pfx, sn->demname);
+		r_name_filter (sn->demflag, MAXFLAG_LEN);
+	} else {
+		sn->demflag = NULL;
+		sn->demname = NULL;
+	}
+}
+
+static void snFini(SymName *sn) {
+	R_FREE (sn->name);
+	R_FREE (sn->nameflag);
+	R_FREE (sn->demname);
+	R_FREE (sn->demflag);
+	R_FREE (sn->classname);
+	R_FREE (sn->classflag);
+}
+
 static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64 at, const char *name) {
-	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
-	const char *lang = r_config_get (r->config, "bin.lang");
 	RBinInfo *info = r_bin_get_info (r->bin);
 	int is_arm = info && info->arch && !strcmp (info->arch, "arm");
+	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	char str[R_FLAG_NAME_SIZE];
-	RList *symbols;
-	RListIter *iter;
 	RBinSymbol *symbol;
+	const char *lang;
+	RListIter *iter;
+	RList *symbols;
 	int i = 0;
+
+	if (bin_demangle) {
+		lang = r_config_get (r->config, "bin.lang");
+	} else {
+		lang = NULL;
+	}
 
 	symbols = r_bin_get_symbols (r->bin);
 	r_space_set (&r->anal->meta_spaces, "bin");
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
 		r_list_foreach (symbols, iter, symbol) {
-			//char *str = r_str_uri_encode (symbol->name);
-			char *str = r_str_utf16_encode (symbol->name, -1);
-			str = r_str_replace (str, "\"", "\\\"", 1);
+			char *str;
 			ut64 at = rva (r->bin, va, symbol->paddr, symbol->vaddr, baddr, laddr);
 			ut64 vaddr = rva (r->bin, 1, symbol->paddr, symbol->vaddr, baddr, laddr);
+			SymName sn;
+
+			snInit (r, &sn, symbol, lang);
+
+			str = r_str_utf16_encode (symbol->name, -1);
+			str = r_str_replace (str, "\"", "\\\"", 1);
 			r_cons_printf ("%s{\"name\":\"%s\","
+				"\"demname\":\"%s\","
+				"\"flagname\":\"%s\","
 				"\"size\":%"PFMT64d","
 				"\"addr\":%"PFMT64d","
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d"}",
-				iter->p?",":"", str, symbol->size,
+				iter->p?",":"", str, 
+				sn.demname,
+				sn.nameflag,
+				symbol->size,
 				at, vaddr, symbol->paddr);
 			free (str);
+			snFini (&sn);
 		}
 		r_cons_printf ("]");
 	} else
@@ -1074,91 +1147,60 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
-		char *name, *dname, *cname, *demname = NULL;
-		//ut8 cname_greater_than_15;
 		r_flag_space_set (r->flags, "symbols");
 		r_list_foreach (symbols, iter, symbol) {
-			ut64 addr = rva (r->bin, va, symbol->paddr, symbol->vaddr, baddr, laddr);
-			name = strdup (symbol->name);
-			cname = (symbol->classname[0] != 0) ? strdup (symbol->classname) : NULL;
-			if (!strcmp (symbol->type, "NOTYPE")) {
-				continue;
-			}
-			// XXX - may want a configuration variable here for class and name lengths.
-			// XXX - need something to handle overloaded symbols (e.g. methods)
-			// void add (int i, int j);
-			// void add (float i, int j);
-			{
-				int is_thumb = (is_arm && va && symbol->bits == 16); //vaddr &1);
-				if (is_thumb)
-					r_anal_hint_set_bits (r->anal, addr, 16);
-			}
-			{
-				int is_not_thumb = (is_arm && info->bits==16 && symbol->bits == 32);
-				if (is_not_thumb)
-					r_anal_hint_set_bits (r->anal, addr, 32);
+			SymName sn;
+			ut64 addr = rva (r->bin, va, symbol->paddr,
+				symbol->vaddr, baddr, laddr);
+
+			snInit (r, &sn, symbol, lang);
+
+			if (is_arm) {
+				int force_bits = 0;
+				if (va && symbol->bits == 16) //vaddr & 1
+					force_bits = 16;
+				if (info->bits == 16 && symbol->bits == 32)
+					force_bits = 32;
+				r_anal_hint_set_bits (r->anal, addr, force_bits);
 			}
 
-			demname = NULL;
-			if (bin_demangle) {
-				demname = r_bin_demangle (r->bin->cur, lang, name);
-			}
-			r_name_filter (name, 80);
-			if (!demname)
-				demname = name;
-
-			if (cname) {
+			/* If that's a Classed symbol (method or so) */
+			if (sn.classname) {
 				RFlagItem *fi = NULL;
-				char * comment = NULL;
+				char *comment = NULL;
 
-				r_name_filter (cname, 50);
-				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s", name);
-				// check for a duplicate name sym.[name]
-				fi = r_flag_get (r->flags, str);
-				r_flag_item_set_name (fi, str, sdb_fmt (1,"sym.%s", demname));
-				if (fi != NULL && (fi->offset - r->flags->base) == addr) {
-					comment = fi->comment ? strdup (fi->comment) : NULL;
-					r_flag_unset (r->flags, str, fi);
-					fi = NULL;
+				fi = r_flag_get (r->flags, sn.nameflag);
+				if (fi) {
+					r_flag_item_set_name (fi, sn.classflag, sn.classname);
+					if ((fi->offset - r->flags->base) == addr) {
+						comment = fi->comment ? strdup (fi->comment) : NULL;
+						r_flag_unset (r->flags, str, fi);
+						fi = NULL;
+					}
 				}
-				// set the new sym.[cname].[name] with comment
-				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s.%s", cname, name);
-				fi = r_flag_set (r->flags, str, addr, symbol->size, 0);
+				fi = r_flag_set (r->flags, sn.nameflag, addr, symbol->size, 0);
 				if (comment) {
 					r_flag_item_set_comment (fi, comment);
 					free (comment);
 				}
 			} else {
+				const char *fn, *n;
 				RFlagItem *fi;
-				const char *pfx = "sym";
-				char *flagname = sdb_fmt (0, "%s.%s", pfx, demname);
-				r_name_filter (flagname, 0);
-				fi = r_flag_set (r->flags, flagname, addr, symbol->size, 0);
+				n = sn.demname? sn.demname: sn.name;
+				fn = sn.demflag? sn.demflag: sn.nameflag;
+				fi = r_flag_set (r->flags, fn, addr, symbol->size, 0);
 				if (fi) {
-					r_flag_item_set_name (fi, flagname, sdb_fmt (1,"sym.%s", demname));
+					r_flag_item_set_name (fi, fn, n);
 				} else {
-					eprintf ("Cant create flag (%s)\n", flagname);
+					eprintf ("== Cant find flag (%s)\n", fn);
 				}
 			}
-			if (demname != name) {
-				R_FREE (demname);
-			}
-#if 0
-			// dunno why this is here and mips results in wrong dis
-			if (!strncmp (symbol->type, "OBJECT", 6)) {
-				r_meta_add (r->anal, R_META_TYPE_DATA, addr,
-					addr + symbol->size, name);
-			}
-#endif
-			dname = r_bin_demangle (r->bin->cur, lang, symbol->name);
-			if (dname) {
+			if (sn.demname) {
 				r_meta_add (r->anal, R_META_TYPE_COMMENT,
-						addr, symbol->size, dname);
-				free (dname);
+					addr, symbol->size, sn.demname);
 			}
-			free (name);
-			free (cname);
 			//r_meta_cleanup (r->anal->meta, 0LL, UT64_MAX);
+			snFini (&sn);
 		}
 	} else {
 		if (!at) {

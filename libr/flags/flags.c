@@ -217,6 +217,9 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 #define NEW_FILTER 1
 #if NEW_FILTER
 			/* catch sym. first */
+			if (!strncmp (item->name, "loc.", 4)) {
+				continue;
+			}
 			if (!strncmp (item->name, "fcn.", 4)) {
 				continue;
 			}
