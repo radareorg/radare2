@@ -331,6 +331,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			 }
 #else
 			 if (argv && *argv) {
+				int i;
+				for (i=3; i<1024; i++) {
+					(void)close (i);
+				}
 				 execvp (argv[0], argv);
 			 } else {
 				 eprintf ("Invalid execvp\n");
