@@ -95,6 +95,63 @@ BOOL WINAPI DebugBreakProcess(
   HANDLE Process
   //_In_  HANDLE Process
 );
+typedef struct _SYSTEM_HANDLE
+{
+	ULONG ProcessId;
+	BYTE ObjectTypeNumber;
+	BYTE Flags;
+	USHORT Handle;
+	PVOID Object;
+	ACCESS_MASK GrantedAccess;
+} SYSTEM_HANDLE, *PSYSTEM_HANDLE;
+typedef struct _SYSTEM_HANDLE_INFORMATION
+{
+	ULONG HandleCount;
+	SYSTEM_HANDLE Handles[1];
+} SYSTEM_HANDLE_INFORMATION, *PSYSTEM_HANDLE_INFORMATION;
+typedef enum _POOL_TYPE
+{
+	NonPagedPool,
+	PagedPool,
+	NonPagedPoolMustSucceed,
+	DontUseThisType,
+	NonPagedPoolCacheAligned,
+	PagedPoolCacheAligned,
+	NonPagedPoolCacheAlignedMustS
+} POOL_TYPE, *PPOOL_TYPE;
+typedef struct _UNICODE_STRING
+{
+	USHORT Length;
+	USHORT MaximumLength;
+	PWSTR Buffer;
+} UNICODE_STRING, *PUNICODE_STRING;
+typedef struct _OBJECT_TYPE_INFORMATION
+{
+	UNICODE_STRING Name;
+	ULONG TotalNumberOfObjects;
+	ULONG TotalNumberOfHandles;
+	ULONG TotalPagedPoolUsage;
+	ULONG TotalNonPagedPoolUsage;
+	ULONG TotalNamePoolUsage;
+	ULONG TotalHandleTableUsage;
+	ULONG HighWaterNumberOfObjects;
+	ULONG HighWaterNumberOfHandles;
+	ULONG HighWaterPagedPoolUsage;
+	ULONG HighWaterNonPagedPoolUsage;
+	ULONG HighWaterNamePoolUsage;
+	ULONG HighWaterHandleTableUsage;
+	ULONG InvalidAttributes;
+	GENERIC_MAPPING GenericMapping;
+	ULONG ValidAccess;
+	BOOLEAN SecurityRequired;
+	BOOLEAN MaintainHandleCount;
+	USHORT MaintainTypeList;
+	POOL_TYPE PoolType;
+	ULONG PagedPoolUsage;
+	ULONG NonPagedPoolUsage;
+} OBJECT_TYPE_INFORMATION, *POBJECT_TYPE_INFORMATION;
+
+
 static void (*gmbn)(HANDLE, HMODULE, LPTSTR, int) = NULL;
 static int (*gmi)(HANDLE, HMODULE, LPMODULEINFO, int) = NULL;
 static BOOL WINAPI (*w32_detach)(DWORD) = NULL;
@@ -105,7 +162,9 @@ static DWORD WINAPI (*w32_getprocessid)(HANDLE) = NULL; // XP
 static HANDLE WINAPI (*w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
 static BOOL WINAPI (*w32_queryfullprocessimagename)(HANDLE, DWORD, LPTSTR, PDWORD) = NULL;
 static DWORD WINAPI (*psapi_getmappedfilename)(HANDLE, LPVOID, LPTSTR, DWORD) = NULL;
-
+static NTSTATUS WINAPI (*w32_ntquerysysteminformation)(ULONG, PVOID, ULONG, PULONG) = NULL;
+static NTSTATUS WINAPI (*w32_ntduplicateobject)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG) =NULL;
+static NTSTATUS WINAPI (*w32_ntqueryobject)(HANDLE, ULONG, PVOID, ULONG, PULONG) = NULL;
 static int w32dbg_SeDebugPrivilege() {
 	/////////////////////////////////////////////////////////
 	//   Note: Enabling SeDebugPrivilege adapted from sample
@@ -195,6 +254,15 @@ static int w32_dbg_init() {
 		GetProcAddress (lib, "GetModuleBaseNameA");
 	gmi = (int (*)(HANDLE, HMODULE, LPMODULEINFO, int))
 		GetProcAddress (lib, "GetModuleInformation");
+
+	lib=LoadLibrary("ntdll.dll");
+	w32_ntquerysysteminformation = (NTSTATUS WINAPI (*)(ULONG, PVOID, ULONG, PULONG))
+		GetProcAddress (lib, "NtQuerySystemInformation");
+	w32_ntduplicateobject = (NTSTATUS WINAPI (*)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG))
+		GetProcAddress (lib, "NtDuplicateObject");
+	w32_ntqueryobject = (NTSTATUS WINAPI (*)(HANDLE, ULONG, PVOID, ULONG, PULONG))
+		GetProcAddress(lib,"NtQueryObject");
+
 	if (w32_detach == NULL || w32_openthread == NULL || w32_dbgbreak == NULL || 
 	   gmbn == NULL || gmi == NULL) {
 		// OOPS!
