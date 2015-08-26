@@ -1002,8 +1002,8 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 						import->name, va?baddr+import->vaddr:import->paddr);*/
 			} else if (import->classname[0] != 0) {
 				r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s classname=%s name=%s descriptor=%s\n",
-					import->ordinal, addr,
-					import->bind, import->type, import->classname, import->name, import->descriptor);
+					import->ordinal, addr, import->bind, import->type,
+					import->classname, import->name, import->descriptor);
 			} else r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s name=%s\n",
 				import->ordinal, addr,
 				import->bind, import->type,
@@ -1040,10 +1040,12 @@ typedef struct {
 	char *demflag;   // flag name for demangled symbol
 	char *classname; // classname
 	char *classflag; // flag for classname
+	char *methname;  // methods [class]::[method]
+	char *methflag;  // methods flag sym.[class].[method]
 } SymName;
 
 static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
-#define MAXFLAG_LEN 50
+#define MAXFLAG_LEN 128
 	int bin_demangle = lang != NULL;
 	const char *pfx = getPrefixFor (sym->type);
 	sn->name = strdup (sym->name);
@@ -1051,11 +1053,17 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	r_name_filter (sn->nameflag, MAXFLAG_LEN);
 	if (sym->classname[0]) {
 		sn->classname = strdup (sym->classname);
-		sn->classflag = strdup (sn->classname);
+		sn->classflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
 		r_name_filter (sn->classflag, MAXFLAG_LEN);
+
+		sn->methname = r_str_newf ("%s::%s", sn->classname, sym->name);
+		sn->methflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
+		r_name_filter (sn->methflag, MAXFLAG_LEN);
 	} else {
 		sn->classname = NULL;
 		sn->classflag = NULL;
+		sn->methname = NULL;
+		sn->methflag = NULL;
 	}
 	if (bin_demangle) {
 		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name);
@@ -1074,6 +1082,8 @@ static void snFini(SymName *sn) {
 	R_FREE (sn->demflag);
 	R_FREE (sn->classname);
 	R_FREE (sn->classflag);
+	R_FREE (sn->methname);
+	R_FREE (sn->methflag);
 }
 
 static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64 at, const char *name) {
@@ -1168,20 +1178,21 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 			if (sn.classname) {
 				RFlagItem *fi = NULL;
 				char *comment = NULL;
-
-				fi = r_flag_get (r->flags, sn.nameflag);
+				fi = r_flag_get (r->flags, sn.methflag);
 				if (fi) {
-					r_flag_item_set_name (fi, sn.classflag, sn.classname);
+					const char *meth = sn.methname? sn.methname: sn.nameflag;
+					r_flag_item_set_name (fi, sn.methflag, sn.methname);
 					if ((fi->offset - r->flags->base) == addr) {
 						comment = fi->comment ? strdup (fi->comment) : NULL;
 						r_flag_unset (r->flags, str, fi);
 						fi = NULL;
 					}
-				}
-				fi = r_flag_set (r->flags, sn.nameflag, addr, symbol->size, 0);
-				if (comment) {
-					r_flag_item_set_comment (fi, comment);
-					free (comment);
+				} else {
+					fi = r_flag_set (r->flags, sn.methflag, addr, symbol->size, 0);
+					if (comment) {
+						r_flag_item_set_comment (fi, comment);
+						free (comment);
+					}
 				}
 			} else {
 				const char *fn, *n;

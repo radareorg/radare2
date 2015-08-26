@@ -2906,10 +2906,12 @@ R_API RList* r_bin_java_get_strings(RBinJavaObj* bin) {
 			if(str) {
 				str->paddr = cp_obj->file_offset + bin->loadaddr;
 				str->ordinal = cp_obj->metas->ord;
-				str->size = cp_obj->info.cp_utf8.length;
+				str->size = cp_obj->info.cp_utf8.length + 3;
+				str->length = cp_obj->info.cp_utf8.length;
 				str->string[0] = 0;
 				if (str->size > 0)
-					strncpy ((char *) str->string, (const char *) cp_obj->info.cp_utf8.bytes, R_BIN_JAVA_MAXSTR);
+					strncpy ((char *) str->string, (const char *)
+						cp_obj->info.cp_utf8.bytes, R_BIN_JAVA_MAXSTR);
 				r_list_append (strings, (void *) str);
 			}
 		}
@@ -7495,9 +7497,9 @@ R_API void U(add_field_infos_to_sdb)(RBinJavaObj *bin){
 	snprintf (field_key, key_size, "%s.methods", class_name);
 	field_key[key_size-1] = 0;
 	r_list_foreach_safe (bin->fields_list, iter, iter_tmp, fm_type) {
-		char number_buffer[50];
+		char number_buffer[80];
 		ut64 file_offset = fm_type->file_offset + bin->loadaddr;
-		snprintf (number_buffer, 50, "0x%04"PFMT64x, file_offset);
+		snprintf (number_buffer, sizeof (number_buffer), "0x%04"PFMT64x, file_offset);
 		IFDBG eprintf ("Inserting: []%s = %s\n", field_key, number_buffer);
 		sdb_array_push (bin->kv, field_key, number_buffer, 0);
 	}
@@ -7577,9 +7579,9 @@ R_API void U(add_method_infos_to_sdb)(RBinJavaObj *bin){
 	snprintf (method_key, key_size, "%s.methods", class_name);
 	method_key[key_size-1] = 0;
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
-		char number_buffer[50];
+		char number_buffer[80];
 		ut64 file_offset = fm_type->file_offset + baddr;
-		snprintf (number_buffer, 50, "0x%04"PFMT64x, file_offset);
+		snprintf (number_buffer, sizeof (number_buffer), "0x%04"PFMT64x, file_offset);
 		sdb_array_push (bin->kv, method_key, number_buffer, 0);
 	}
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {

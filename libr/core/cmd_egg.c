@@ -64,7 +64,7 @@ static int cmd_egg(void *data, const char *input) {
 	case 's': // "gs"
 		// TODO: pass args to r_core_syscall without vararg
 		if (input[1] == ' ') {
-			char *ooaa = input+2;
+			const char *ooaa = input+2;
 			while (IS_WHITESPACE(*ooaa) && *ooaa) ooaa++;
 			oa = strdup (ooaa);
 			p = strchr (oa+1, ' ');
