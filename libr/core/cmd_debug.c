@@ -2569,6 +2569,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 's':
 			// r_debug_desc_seek()
+			// TODO: handle read, readwrite, append
 			break;
 		case 'd':
 			// r_debug_desc_dup()

@@ -263,8 +263,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			//	r_str_argv_free (argv);
 			exit (1);
 		} else {
-			// TODO: Add support to redirect filedescriptors
-			// TODO: Configure process environment
 			char *_cmd = strdup (cmd);
 			argv = r_str_argv (_cmd, NULL);
 			if (!argv) {
@@ -352,7 +350,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				return -1;
 			if (ret != pid)
 				eprintf ("Wait event received by different pid %d\n", ret);
-		} while (ret!=pid);
+		} while (ret != pid);
 		if (WIFSTOPPED (status))
 			eprintf ("Process with PID %d started...\n", (int)pid);
 		if (WEXITSTATUS (status) == MAGIC_EXIT)

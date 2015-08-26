@@ -1093,6 +1093,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("asm.cmtcol", 70, "Align comments at column 60");
 	SETPREF("asm.calls", "true", "Show calling convention calls as comments in disasm");
 	SETPREF("asm.comments", "true", "Show comments in disassembly view");
+	SETPREF("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETPREF("asm.decode", "false", "Use code analysis as a disassembler");
 	SETPREF("asm.indent", "false", "Indent disassembly based on reflines depth");
 	SETI("asm.indentspace", 2, "How many spaces to indent the code");

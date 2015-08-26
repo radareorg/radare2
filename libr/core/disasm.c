@@ -70,6 +70,7 @@ typedef struct r_disam_options_t {
 	int show_bytes;
 	int show_reloff;
 	int show_comments;
+	int show_slow;
 	int cmtcol;
 	int show_fcnlines;
 	int show_calls;
@@ -308,6 +309,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_reloff = r_config_get_i (core->config, "asm.reloff");
 	ds->show_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
+	ds->show_slow = r_config_get_i (core->config, "asm.slow");
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
 	ds->cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmtflgrefs");
@@ -1914,6 +1916,9 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 #define DOALIGN() if (!aligned) { handle_comment_align (core, ds); aligned = 1; }
 	if (!ds->show_comments)
 		return;
+	if (!ds->show_slow) {
+		return;
+	}
 	if (p == UT64_MAX) {
 		/* do nothing */
 	} else if (((st64)p)>0) {
