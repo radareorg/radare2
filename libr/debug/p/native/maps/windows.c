@@ -90,7 +90,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 					SectionHeader->Characteristics,
 					0);
 			if (mr != NULL) r_list_append (list, mr);
-			if (Numsections <= 0) continue;
+			if (NumSections <= 0) continue;
 			mapname = (char *)malloc(MAX_PATH);
 			if (!mapname) continue;
 			for (i = 0; i < NumSections; i++) {
