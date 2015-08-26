@@ -2579,10 +2579,11 @@ static int cmd_debug(void *data, const char *input) {
 		case 'w':
 			// r_debug_desc_write()
 			break;
-		case '-':
+		case '-': // "dd-"
 			// close file
 			//r_core_syscallf (core, "close", "%d", atoi (input+2));
-			r_core_cmdf (core, "dis close %d", atoi (input+2));
+			r_core_cmdf (core, "dxs close %d", (int)r_num_math (
+				core->num, input+2));
 			// TODO: run
 			break;
 		case ' ':
@@ -2722,7 +2723,12 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 's':
 			if (input[2]) {
-				r_core_cmdf (core, "dxr `gs %s`", input+2);
+				r_cons_push ();
+				char * str = r_core_cmd_str (core,
+					sdb_fmt (0, "gs %s", input+2));
+				r_cons_pop ();
+				r_core_cmdf (core, "dx %s", str); //`gs %s`", input+2);
+				free (str);
 			} else {
 				eprintf ("Missing parameter used in gs by dxs\n");
 			}
@@ -2761,7 +2767,7 @@ static int cmd_debug(void *data, const char *input) {
 			"dxs", " write 1, 0x8048, 12", "Syscall injection (see gs)",
 			"\nExamples:", "", "",
 			"dx", " 9090", "Inject two x86 nop",
-			"\"dia mov eax,6;mov ebx,0;int 0x80\"", "", "Inject and restore state",
+			"\"dxa mov eax,6;mov ebx,0;int 0x80\"", "", "Inject and restore state",
 			NULL};
 			r_core_cmd_help (core, help_msg);
 			}

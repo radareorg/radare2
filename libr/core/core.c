@@ -1689,14 +1689,18 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 	char code[1024];
 
 	num = r_syscall_get_num (core->anal->syscall, name);
+	if (!num) {
+		num = atoi (name);
+	}
 	snprintf (code, sizeof (code),
-		"ptr@syscall(%d);\n"
-		"main@global(0) { ptr(%s);\n"
+		"sc@syscall(%d);\n"
+		"main@global(0) { sc(%s);\n"
 		":int3\n" /// XXX USE trap
 		"}\n", num, args);
 	r_egg_reset (core->egg);
 	// TODO: setup arch/bits/os?
 	r_egg_load (core->egg, code, 0);
+
 	if (!r_egg_compile (core->egg))
 		eprintf ("Cannot compile.\n");
 	if (!r_egg_assemble (core->egg))

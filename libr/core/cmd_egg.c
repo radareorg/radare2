@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
 	if (!*input) return;
@@ -61,11 +61,12 @@ static int cmd_egg(void *data, const char *input) {
 		core->assembler->bits, 0,
 		r_config_get (core->config, "asm.os")); // XXX
 	switch (*input) {
-	case 's':
+	case 's': // "gs"
 		// TODO: pass args to r_core_syscall without vararg
-		switch (input[1]) {
-		case ' ':
-			oa = strdup (input+2);
+		if (input[1] == ' ') {
+			char *ooaa = input+2;
+			while (IS_WHITESPACE(*ooaa) && *ooaa) ooaa++;
+			oa = strdup (ooaa);
 			p = strchr (oa+1, ' ');
 			if (p) {
 				*p = 0;
@@ -74,10 +75,8 @@ static int cmd_egg(void *data, const char *input) {
 				r_core_syscall (core, oa, "");
 			}
 			free (oa);
-			break;
-		default:
+		} else {
 			eprintf ("Usage: gs [syscallname] [parameters]\n");
-			break;
 		}
 		break;
 	case ' ':
@@ -93,10 +92,10 @@ static int cmd_egg(void *data, const char *input) {
 		if (!cmd_egg_compile (egg))
 			eprintf ("Cannot compile\n");
 		break;
-	case 'p':
+	case 'p': // "gp"
 		cmd_egg_option (egg, "egg.padding", input);
 		break;
-	case 'e':
+	case 'e': // "ge"
 		cmd_egg_option (egg, "egg.encoder", input);
 		break;
 	case 'i':
