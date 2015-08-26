@@ -1090,7 +1090,6 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 	RBinInfo *info = r_bin_get_info (r->bin);
 	int is_arm = info && info->arch && !strcmp (info->arch, "arm");
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
-	char str[R_FLAG_NAME_SIZE];
 	RBinSymbol *symbol;
 	const char *lang;
 	RListIter *iter;
@@ -1180,11 +1179,10 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, ut64 laddr, int va, ut64
 				char *comment = NULL;
 				fi = r_flag_get (r->flags, sn.methflag);
 				if (fi) {
-					const char *meth = sn.methname? sn.methname: sn.nameflag;
 					r_flag_item_set_name (fi, sn.methflag, sn.methname);
 					if ((fi->offset - r->flags->base) == addr) {
 						comment = fi->comment ? strdup (fi->comment) : NULL;
-						r_flag_unset (r->flags, str, fi);
+						r_flag_unset (r->flags, sn.methflag, fi);
 						fi = NULL;
 					}
 				} else {
