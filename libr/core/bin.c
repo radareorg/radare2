@@ -530,9 +530,14 @@ static int bin_pdb (RCore *core, ut64 baddr, int mode) {
 		r_cons_printf("[");
 
 	switch (mode) {
+	case R_CORE_BIN_SET:
+		mode = 's';
+		r_core_cmd0 (core, ".iP*");
+		return R_TRUE;
 	case R_CORE_BIN_JSON:
 		mode = 'j';
 		break;
+	case '*':
 	case 1:
 		mode = 'r';
 		break;
