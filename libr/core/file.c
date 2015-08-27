@@ -550,7 +550,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 	cp = r_config_get (r->config, "cmd.open");
 	if (cp && *cp) r_core_cmd (r, cp, 0);
 
-	r_config_set (r->config, "file.path", top_file->desc->name);
+	r_config_set (r->config, "file.path", r_file_abspath (top_file->desc->name));
 	r_config_set_i (r->config, "zoom.to", top_file->map->from + r_io_desc_size (r->io, top_file->desc));
 	if (loadmethod) r_config_set (r->config, "file.loadmethod", loadmethod);
 	free (loadmethod);
@@ -604,7 +604,7 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 	cp = r_config_get (r->config, "cmd.open");
 	if (cp && *cp)
 		r_core_cmd (r, cp, 0);
-	r_config_set (r->config, "file.path", file);
+	r_config_set (r->config, "file.path", r_file_abspath (file));
 	fh->map = r_core_file_get_next_map (r, fh, flags, loadaddr);
 	if (!fh->map) {
 		r_core_file_free (fh);
