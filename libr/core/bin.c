@@ -664,6 +664,8 @@ static char *resolveModuleOrdinal (Sdb *sdb, const char *module, int ordinal) {
 }
 
 static int bin_relocs (RCore *r, int mode, int va) {
+	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
+	const char *lang = r_config_get (r->config, "bin.lang");
 	char str[R_FLAG_NAME_SIZE];
 	RList *relocs;
 	RListIter *iter;
@@ -692,8 +694,6 @@ static int bin_relocs (RCore *r, int mode, int va) {
 		r_cons_printf ("]");
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
-		int bin_demangle = r_config_get_i (r->config, "bin.demangle");
-		const char *lang = r_config_get (r->config, "bin.lang");
 		int is_pe = 1; // TODO: optimize
 		int is_sandbox = r_sandbox_enable (0);
 		char *sdb_module = NULL;
@@ -1026,8 +1026,13 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	}
 	if (bin_demangle) {
 		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name);
-		sn->demflag = r_str_newf ("%s.%s", pfx, sn->demname);
-		r_name_filter (sn->demflag, MAXFLAG_LEN);
+		if (sn->demname) {
+			sn->demflag = r_str_newf ("%s.%s", pfx, sn->demname);
+			r_name_filter (sn->demflag, MAXFLAG_LEN);
+		} else {
+			sn->demflag = NULL;
+			sn->demname = NULL;
+		}
 	} else {
 		sn->demflag = NULL;
 		sn->demname = NULL;
