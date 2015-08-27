@@ -245,9 +245,8 @@ static int cmd_info(void *data, const char *input) {
 					return 0;
 				}
 				const char *fn = input[1]==' '? input+2: cf->desc->name;
-				ut64 laddr = UT64_MAX;
-				laddr = r_config_get_i (core->config, "bin.baddr");
-				r_core_bin_load (core, fn, laddr);
+				ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+				r_core_bin_load (core, fn, baddr);
 			 }
 			break;
 	#define RBININFO(n,x) \

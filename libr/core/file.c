@@ -14,7 +14,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbin) {
 	int isdebug = r_config_get_i (core->config, "cfg.debug");
 	char *path;
-	ut64 ofrom = 0, baddr = 0; // XXX ? check file->map ?
+	ut64 ofrom = 0, laddr = r_config_get_i (core->config, "bin.laddr");
 	RCoreFile *file = NULL;
 	RCoreFile *ofile = core->file;
 	RBinFile *bf = (ofile && ofile->desc) ?
@@ -79,9 +79,10 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	free (obinfilepath);
 	obinfilepath = strdup(ofilepath);
 
-	file = r_core_file_open (core, path, perm, baddr);
+	file = r_core_file_open (core, path, perm, laddr);
 	if (file) {
 		int had_rbin_info = 0;
+
 		ofile->map->from = ofrom;
 		if (r_bin_file_delete (core->bin, ofile->desc->fd)) {
 			had_rbin_info = 1;
@@ -95,7 +96,8 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		eprintf ("File %s reopened in %s mode\n", path,
 			(perm&R_IO_WRITE)? "read-write": "read-only");
 
-		if (loadbin && (loadbin==2 || had_rbin_info)) {
+		if (loadbin && (loadbin == 2 || had_rbin_info)) {
+			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 			ret = r_core_bin_load (core, obinfilepath, baddr);
 			if (!ret) {
 				eprintf ("Error: Failed to reload rbin for: %s", path);
