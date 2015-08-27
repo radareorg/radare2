@@ -150,7 +150,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 	}
 
     ok:
-      fprintf_fn (stream,"%s\t", op->name);
+      fprintf_fn (stream,"%s ", op->name);
       for (n = 0; n < 3 && op->arg[n] != A_END; n++)
 	{
 	  if (n && op->arg[1] != A_END)
@@ -316,7 +316,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 	      || (op->name[0] == 'b' && op->name[2] == '.')))
 	{
 	  info->flags |= 1;
-	  fprintf_fn (stream, "\t(slot ");
+	  fprintf_fn (stream, " (slot ");
 	  print_insn_shx (memaddr + 2, info);
 	  info->flags &= ~1;
 	  fprintf_fn (stream, ")");
@@ -350,7 +350,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 				val=(info->flags & LITTLE_BIT)? bfd_getl32 (bytes):bfd_getb32 (bytes);
 			}
 			// XXX this will not work until read_memory_func() is fixed.
-			//fprintf_fn (stream, "\t;[0x%X]=0x%X", (unsigned int) disp_pc_addr, val);
+			//fprintf_fn (stream, " ;[0x%X]=0x%X", (unsigned int) disp_pc_addr, val);
 	}
 
       return 2;
