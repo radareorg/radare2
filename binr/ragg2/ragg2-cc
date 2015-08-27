@@ -30,7 +30,7 @@ fi
 
 # Get path for sflib
 [ -z "${SFLIBPATH}" ] && \
-	SFLIBPATH=$(r2 -hh | grep INCDIR | awk '{print $2}')
+	SFLIBPATH="$(r2 -hh | grep INCDIR | awk '{print $2}')"/sflib
 if [ ! -d "${SFLIBPATH}" ]; then
 	echo "Cannot find ${SFLIBPATH}"
 	echo "Define SFLIBPATH env var or fix the r2 installation"
