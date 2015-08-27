@@ -296,12 +296,12 @@ int main(int argc, char **argv) {
 
 	bufa = (ut8*)r_file_slurp (file, &sza);
 	if (!bufa) {
-		eprintf ("radiff2: Cannot open %s\n", r_str_get ((const char *)bufa));
+		eprintf ("radiff2: Cannot open %s\n", r_str_get (file));
 		return 1;
 	}
 	bufb = (ut8*)r_file_slurp (file2, &szb);
 	if (!bufb) {
-		eprintf ("radiff2: Cannot open: %s\n", r_str_get ((const char*)bufb));
+		eprintf ("radiff2: Cannot open: %s\n", r_str_get (file2));
 		free (bufa);
 		return 1;
 	}
