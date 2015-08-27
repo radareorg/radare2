@@ -2199,7 +2199,7 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 }
 
 static int cmd_debug_continue (RCore *core, const char *input) {
-	int pid, old_pid;
+	int pid, old_pid, signum;
 	ut64 addr;
 	char *ptr;
 	const char * help_message[] = {
@@ -2228,7 +2228,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	switch (input[1]) {
 	case '?':
 		r_core_cmd_help (core, help_message);
-		break;
+		return 0;
 	case 'a':
 		eprintf ("TODO: dca\n");
 		break;
@@ -2256,6 +2256,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	case 'k':
 		// select pid and r_debug_continue_kill (core->dbg,
 		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		signum = r_num_math (core->num, input+2);
 		ptr = strchr (input+3, ' ');
 		if (ptr) {
 			bypassbp (core);
@@ -2265,9 +2266,11 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			int tid = pid; // XXX
 			*ptr = 0;
 			r_debug_select (core->dbg, pid, tid);
-			r_debug_continue_kill (core->dbg, atoi (input+2));
+			r_debug_continue_kill (core->dbg, signum);
 			r_debug_select (core->dbg, old_pid, old_tid);
-		} else r_debug_continue_kill (core->dbg, atoi (input+2));
+		} else {
+			r_debug_continue_kill (core->dbg, signum);
+		}
 		checkbpcallback (core);
 		break;
 	case 's':
@@ -2342,7 +2345,10 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			r_debug_continue (core->dbg);
 			checkbpcallback (core);
 			r_bp_del (core->dbg->bp, addr);
-		} else eprintf ("Cannot continue until address 0\n");
+		} else {
+			eprintf ("Cannot continue until address 0\n");
+			return 0;
+		}
 		break;
 	case ' ':
 		old_pid = core->dbg->pid;
@@ -2363,10 +2369,10 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		r_debug_continue (core->dbg);
 		checkbpcallback (core);
 	}
-	return 0;
+	return 1;
 }
 
-static void cmd_debug_step (RCore *core, const char *input) {
+static int cmd_debug_step (RCore *core, const char *input) {
 	ut64 addr;
 	ut8 buf[64];
 	RAnalOp aop;
@@ -2393,112 +2399,113 @@ static void cmd_debug_step (RCore *core, const char *input) {
 	if (times<1) times = 1;
 	switch (input[1]) {
 	case '?':
-		  r_core_cmd_help (core, help_message);
-		  break;
+		r_core_cmd_help (core, help_message);
+		return 0;
 	case 'i':
-		  if (input[2] == ' ') {
-			  int n = 0;
-			  r_cons_break (static_debug_stop, core->dbg);
-			  do {
-				  if (r_cons_singleton ()->breaked)
-					  break;
-				  r_debug_step (core->dbg, 1);
-				  if (r_debug_is_dead (core->dbg))
-					  break;
-				  if (checkbpcallback (core)) {
-					  eprintf ("Interrupted by a breakpoint\n");
-					  break;
-				  }
-				  r_core_cmd0 (core, ".dr*");
-				  n++;
-			  } while (!r_num_conditional (core->num, input+3));
-			  eprintf ("Stopped after %d instructions\n", n);
-		  } else eprintf ("Missing argument\n");
-		  break;
+		if (input[2] == ' ') {
+			int n = 0;
+			r_cons_break (static_debug_stop, core->dbg);
+			do {
+				if (r_cons_singleton ()->breaked)
+					break;
+				r_debug_step (core->dbg, 1);
+				if (r_debug_is_dead (core->dbg))
+					break;
+				if (checkbpcallback (core)) {
+					eprintf ("Interrupted by a breakpoint\n");
+					break;
+				}
+				r_core_cmd0 (core, ".dr*");
+				n++;
+			} while (!r_num_conditional (core->num, input+3));
+			eprintf ("Stopped after %d instructions\n", n);
+		} else eprintf ("Missing argument\n");
+		break;
 	case 'f':
-		  step_until_eof (core);
-		  break;
+		step_until_eof (core);
+		break;
 	case 'u':
-		  switch (input[2]) {
-		  case 'f':
-			  step_until_flag (core, input+3);
-			  break;
-		  case 'i':
-			  step_until_inst (core, input+3);
-			  break;
-		  case 'e':
-			  step_until_esil (core, input+3);
-			  break;
-		  case ' ':
-			  r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			  step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
-			  break;
-		  default:
-			  eprintf ("Usage: dsu[fei] [arg]  . step until address ' ',"
-					  " 'f'lag, 'e'sil or 'i'nstruction matching\n");
-			  break;
-		  }
-		  break;
+		switch (input[2]) {
+		case 'f':
+			step_until_flag (core, input+3);
+			break;
+		case 'i':
+			step_until_inst (core, input+3);
+			break;
+		case 'e':
+			step_until_esil (core, input+3);
+			break;
+		case ' ':
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
+			step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
+			break;
+		default:
+			eprintf ("Usage: dsu[fei] [arg]  . step until address ' ',"
+					" 'f'lag, 'e'sil or 'i'nstruction matching\n");
+			return 0;
+		}
+		break;
 	case 'p':
-		  r_reg_arena_swap (core->dbg->reg, R_TRUE);
-		  for (i=0; i<times; i++) {
-			  ut8 buf[64];
-			  ut64 addr;
-			  RAnalOp aop;
-			  r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-			  addr = r_debug_reg_get (core->dbg, "pc");
-			  r_io_read_at (core->io, addr, buf, sizeof (buf));
-			  r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
-			  if (aop.type == R_ANAL_OP_TYPE_CALL) {
-				  RIOSection *s = r_io_section_vget (core->io, aop.jump);
-				  if (!s) {
-					  r_debug_step_over (core->dbg, times);
-					  continue;
-				  }
-			  }
-			  r_debug_step (core->dbg, 1);
-			  if (checkbpcallback (core)) {
-				  eprintf ("Interrupted by a breakpoint\n");
-				  break;
-			  }
-		  }
-		  break;
+		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		for (i=0; i<times; i++) {
+			ut8 buf[64];
+			ut64 addr;
+			RAnalOp aop;
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+			addr = r_debug_reg_get (core->dbg, "pc");
+			r_io_read_at (core->io, addr, buf, sizeof (buf));
+			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+			if (aop.type == R_ANAL_OP_TYPE_CALL) {
+				RIOSection *s = r_io_section_vget (core->io, aop.jump);
+				if (!s) {
+					r_debug_step_over (core->dbg, times);
+					continue;
+				}
+			}
+			r_debug_step (core->dbg, 1);
+			if (checkbpcallback (core)) {
+				eprintf ("Interrupted by a breakpoint\n");
+				break;
+			}
+		}
+		break;
 	case 's':
-		  addr = r_debug_reg_get (core->dbg, "pc");
-		  r_reg_arena_swap (core->dbg->reg, R_TRUE);
-		  for (i=0; i<times; i++) {
-			  r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-			  r_io_read_at (core->io, addr, buf, sizeof (buf));
-			  r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
-			  if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
-				  eprintf ("Don't know how to skip this instruction\n");
-				  break;
-			  }
-			  addr += aop.size;
-		  }
-		  r_debug_reg_set (core->dbg, "pc", addr);
-		  break;
+		addr = r_debug_reg_get (core->dbg, "pc");
+		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		for (i = 0; i < times; i++) {
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+			r_io_read_at (core->io, addr, buf, sizeof (buf));
+			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+			if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
+				eprintf ("Don't know how to skip this instruction\n");
+				break;
+			}
+			addr += aop.size;
+		}
+		r_debug_reg_set (core->dbg, "pc", addr);
+		break;
 	case 'o':
-		  r_reg_arena_swap (core->dbg->reg, R_TRUE);
-		  r_debug_step_over (core->dbg, times);
-		  if (checkbpcallback (core)) {
-			  eprintf ("Interrupted by a breakpoint\n");
-			  break;
-		  }
-		  break;
+		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		r_debug_step_over (core->dbg, times);
+		if (checkbpcallback (core)) {
+			eprintf ("Interrupted by a breakpoint\n");
+			break;
+		}
+		break;
 	case 'l':
-		  r_reg_arena_swap (core->dbg->reg, R_TRUE);
-		  step_line (core, times);
-		  break;
+		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		step_line (core, times);
+		break;
 	default:
-		  r_reg_arena_swap (core->dbg->reg, R_TRUE);
-		  r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-		  r_debug_step (core->dbg, times);
-		  if (checkbpcallback (core)) {
-			  eprintf ("Interrupted by a breakpoint\n");
-			  break;
-		  }
+		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+		r_debug_step (core->dbg, times);
+		if (checkbpcallback (core)) {
+			eprintf ("Interrupted by a breakpoint\n");
+			break;
+		}
 	}
+	return 1;
 }
 
 static int cmd_debug(void *data, const char *input) {
@@ -2608,8 +2615,9 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 's':
-		cmd_debug_step (core, input);
-		follow = r_config_get_i (core->config, "dbg.follow");
+		if (cmd_debug_step (core, input)) {
+			follow = r_config_get_i (core->config, "dbg.follow");
+		}
 		break;
 	case 'b':
 		r_core_cmd_bp (core, input);
@@ -2821,7 +2829,7 @@ static int cmd_debug(void *data, const char *input) {
 	}
 	if (follow>0) {
 		ut64 pc = r_debug_reg_get (core->dbg, "pc");
-		if ((pc<core->offset) || (pc > (core->offset+follow)))
+		if ((pc < core->offset) || (pc > (core->offset + follow)))
 			r_core_cmd0 (core, "sr pc");
 	}
 	return 0;
