@@ -30,7 +30,7 @@ fi
 
 # Get path for sflib
 [ -z "${SFLIBPATH}" ] && \
-	SFLIBPATH=$(r2 -hh | grep INCDIR | awk '{print $2}')
+	SFLIBPATH=$(r2 -hh | grep INCDIR | awk '{print $2}')/sflib
 if [ ! -d "${SFLIBPATH}" ]; then
 	echo "Cannot find ${SFLIBPATH}"
 	echo "Define SFLIBPATH env var or fix the r2 installation"
@@ -49,16 +49,16 @@ esac
 
 dohelp() {
 	cat<<EOF
-Usage: ragg2-cc [-dabkoscxv] [file.c]"
-  -d       enable debug mode"
-  -a x86   set arch (x86, arm)"
-  -b 32    bits (32, 64)"
-  -k linux set kernel (darwin, linux)"
-  -o file  set output file"
-  -s       generate assembly"
-  -c       generate compiled shellcode"
-  -x       show hexpair bytes"
-  -v       show version"
+Usage: ragg2-cc [-dabkoscxv] [file.c]
+  -d       enable debug mode
+  -a x86   set arch (x86, arm)
+  -b 32    bits (32, 64)
+  -k linux set kernel (darwin, linux)
+  -o file  set output file
+  -s       generate assembly
+  -c       generate compiled shellcode
+  -x       show hexpair bytes
+  -v       show version
 EOF
 }
 
@@ -218,7 +218,7 @@ fi
 
 if [ "$D" ]; then
 	echo "==> Assemble"
-	echo "${CC} -c ${LDFLAGS} -Os -o $F.o $F.s"
+	echo "${CC} ${LDFLAGS} ${OPT} -o $F.o $F.s"
 fi
 ${CC} ${LDFLAGS} ${OPT} -o $F.o $F.s || fail
 
