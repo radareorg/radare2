@@ -2194,6 +2194,22 @@ static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 
 }
 #endif
 
+static int handleMidFlags(RCore *core, RDisasmState *ds) {
+	RFlagItem *fi;
+	int i;
+	for (i = 1; i < ds->oplen; i++) {
+		fi = r_flag_get_i (core->flags, ds->at + i);
+		if (fi) {
+			if (!strncmp (fi->name, "reloc.", 6)) {
+				r_cons_printf ("(%s)\n", fi->name);
+				continue;
+			}
+			return i;
+		}
+	}
+	return 0;
+}
+
 static void handle_print_as_string(RCore *core, RDisasmState *ds) {
 	char *str = r_num_as_string (NULL, ds->analop.ptr);
 	if (str) {
@@ -2463,13 +2479,9 @@ toro:
 		ds->opstr = NULL;
 		inc = ds->oplen;
 		if (ds->midflags) {
-			int i;
-			for (i=1;i<ds->oplen; i++) {
-				RFlagItem *fi = r_flag_get_i (core->flags, ds->at+i);
-				if (fi) {
-					inc = i;
-					break;
-				}
+			int skip_bytes = handleMidFlags (core, ds);
+			if (skip_bytes > 0) {
+				inc = skip_bytes;
 			}
 		}
 	}
