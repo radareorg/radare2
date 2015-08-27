@@ -423,9 +423,6 @@ int main(int argc, char **argv, char **envp) {
 		r_config_set_i (r.config, "io.va", R_FALSE);
 		baddr = UT64_MAX;
 		break;
-	case 2:
-		r_config_set_i (r.config, "bin.laddr", baddr);
-		break;
 	}
 
 	// -- means opening r2 without any file

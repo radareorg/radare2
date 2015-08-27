@@ -745,7 +745,6 @@ int main(int argc, char **argv) {
 		actions_done++;\
 	}\
 }
-	r_config_set_i (core.config, "bin.laddr", laddr);
 	core.bin = bin;
 	bin->cb_printf = r_cons_printf;
 	filter.offset = at;
