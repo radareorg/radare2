@@ -78,7 +78,8 @@ install:
   # This little hack will prevent the test names from being erased in the
   # travis logfile.
   - sed -i 's/\\r//' radare2-regressions/tests.sh
-
+  - pip install coveralls
+  
 script:
   # llvm-symbolizer isn't in PATH, so we need this.
   # (Also, YAML doesn't like underscores)
@@ -97,6 +98,8 @@ script:
   - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
   - cd radare2-regressions
   - VERBOSE=1 make $TESTS   # Run the tests, report only regressions as errors.
+
+after_success: coveralls
 
 notifications:
   irc: "chat.freenode.net#radare"
