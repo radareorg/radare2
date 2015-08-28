@@ -350,6 +350,11 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		ao->o = 0x10bf;
 		return 2;
 	} else
+	if (!strcmpnull (ao->op, "udf")) {
+		ao->o = 0xde;
+		ao->o |= getnum (ao->a[0])<<8;
+		return 2;
+	} else
 	if (!strcmpnull (ao->op, "wfe")) {
 		ao->o = 0x20bf;
 		return 2;
