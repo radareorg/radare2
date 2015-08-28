@@ -827,7 +827,7 @@ static int place_nodes_sel_p (int newval, int oldval, int is_first, int is_left)
 static void place_nodes (const RAGraph *g, const RGraphNode *gn, int is_left,
 						 Sdb *v_nodes, RList **classes, Sdb *res, Sdb *placed) {
 	const RList *lv = hash_get_rlist (v_nodes, gn);
-	int p, v, is_first = R_TRUE;
+	int p = 0, v, is_first = R_TRUE;
 	const RGraphNode *gk;
 	const RListIter *itk;
 	const RANode *ak;

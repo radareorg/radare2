@@ -265,7 +265,7 @@ static int rax (char *str, int len, int last) {
 		return R_TRUE;
 	} else if (flags & 4096) { // -E
 		const int len = strlen (str);
-		char * out = calloc (sizeof(ut8), ((len+1)*4)/3);
+		char * out = calloc (sizeof (char), ((len + 1) * 4) / 3);
 		if (out) {
 			r_base64_encode (out, (const ut8*)str, len);
 			printf ("%s\n", out);
