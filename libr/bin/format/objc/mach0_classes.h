@@ -1,6 +1,7 @@
 #include <r_bin.h>
 
 #include "mach0/mach0_specs.h"
+#include "mach0/mach0.h"
 
 #undef mach0_ut
 #undef r_bin_plugin_mach
