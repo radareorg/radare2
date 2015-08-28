@@ -207,6 +207,11 @@ static void get_ivar_list_t (mach0_ut p,
 	mach0_ut ivar_offset_p, ivar_offset;
 	RBinField *field = NULL;
 
+	if (!arch || !arch->o || !arch->o->bin_obj) {
+		eprintf("uncorrect RBinFile pointer\n");
+		return;
+	}
+
 	r = get_pointer (p, &offset, &left, arch);
 	if (r == 0) {
 		return;
@@ -260,8 +265,17 @@ static void get_ivar_list_t (mach0_ut p,
 			char *tmp = NULL;
 			int len = 0;
 
-			name = malloc (left);
-			r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
+			int isCrypted = bin->has_crypto;
+
+			if (isCrypted == 1) {
+				left = strlen("some_ encrypted_data") + 1;
+				name = malloc (left );
+				memcpy(name, "some_encrypted_data", left);
+			} else {
+				name = malloc (left);
+				r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			}
 
 			tmp = r_str_newf ("%s::%s%s",
 							processed_class->name,
@@ -277,10 +291,21 @@ static void get_ivar_list_t (mach0_ut p,
 			R_FREE (name);
 		}
 
+		// TODO: add check of is binary crypted
 		r = get_pointer (i.type, NULL, &left, arch);
 		if (r != 0) {
-			name = malloc (left);
-			r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
+			int isCrypted = bin->has_crypto;
+
+			if (isCrypted == 1) {
+				left = strlen("some_encrypted_data") + 1;
+				name = malloc (left );
+				memcpy(name, "some_encrypted_data", left);
+			} else {
+				name = malloc (left);
+				r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			}
+
 			R_FREE (name);
 		}
 
@@ -302,6 +327,11 @@ static void get_objc_property_list (mach0_ut p,
 	ut32 offset, left, j;
 	char *name;
 	RBinField *property = NULL;
+
+	if (!arch || !arch->o || !arch->o->bin_obj) {
+		eprintf("uncorrect RBinFile pointer\n");
+		return;
+	}
 
 	r = get_pointer (p, &offset, &left, arch);
 	if (r == 0) {
@@ -342,12 +372,22 @@ static void get_objc_property_list (mach0_ut p,
 						sizeof (struct MACH0_(SObjcProperty)));
 		}
 
+		// TODO: add check of is binary crypted
 		r = get_pointer (op.name, NULL, &left, arch);
 		if (r != 0) {
 			char *tmp = NULL;
+			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
+			int isCrypted = bin->has_crypto;
 
-			name = malloc (left);
-			r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			if (isCrypted == 1) {
+				left = strlen("some_encrypted_data") + 1;
+				name = malloc (left );
+				memcpy(name, "some_encrypted_data", left);
+			} else {
+				name = malloc (left);
+				r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			}
+
 			tmp = r_str_newf ("%s::%s%s",
 							processed_class->name,
 							"(property)",
@@ -359,10 +399,21 @@ static void get_objc_property_list (mach0_ut p,
 			R_FREE (name);
 		}
 
+		// TODO: add check of is binary crypted
 		r = get_pointer (op.attributes, NULL, &left, arch);
 		if (r != 0) {
-			name = malloc (left);
-			r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
+			int isCrypted = bin->has_crypto;
+
+			if (isCrypted == 1) {
+				left = strlen("some_encrypted_data") + 1;
+				name = malloc (left );
+				memcpy(name, "some_encrypted_data", left);
+			} else {
+				name = malloc (left);
+				r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			}
+
 			R_FREE (name);
 		}
 
@@ -386,6 +437,11 @@ static void get_method_list_t (mach0_ut p,
 	char *name = NULL;
 
 	RBinSymbol *method = NULL;
+
+	if (!arch || !arch->o || !arch->o->bin_obj) {
+		eprintf("uncorrect RBinFile pointer\n");
+		return;
+	}
 
 	r = get_pointer (p, &offset, &left, arch);
 	if (r == 0)
@@ -423,19 +479,40 @@ static void get_method_list_t (mach0_ut p,
 				sizeof (struct MACH0_(SMethod)));
 		}
 
+		// TODO: add check of is binary crypted
 		r = get_pointer (m.name, NULL, &left, arch);
 		if (r != 0) {
-			name = malloc (left);
-			r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
+			int isCrypted = bin->has_crypto;
+
+			if (isCrypted == 1) {
+				left = strlen("some_encrypted_data") + 1;
+				name = malloc (left );
+				memcpy(name, "some_encrypted_data", left);
+			} else {
+				name = malloc (left);
+				r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			}
 
 			copy_sym_name_with_namespace (class_name, name, method);
 
 			R_FREE (name);
 		}
+		// TODO: add check of is binary crypted
 		r = get_pointer (m.types, NULL, &left, arch);
 		if (r != 0) {
-			name = malloc (left);
-			r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
+			int isCrypted = bin->has_crypto;
+
+			if (isCrypted == 1) {
+				left = strlen("some_encrypted_data") + 1;
+				name = malloc (left );
+				memcpy(name, "some_encrypted_data", left);
+			} else {
+				name = malloc (left);
+				r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			}
+
 			R_FREE (name);
 		}
 
@@ -456,6 +533,11 @@ static void get_protocol_list_t (mach0_ut p, RBinFile *arch, RBinClass *processe
 	mach0_ut r;
 	ut32 offset, left, i;
 	char *class_name;
+
+	if (!arch || !arch->o || !arch->o->bin_obj) {
+		eprintf("uncorrect RBinFile pointer\n");
+		return;
+	}
 
 	r = get_pointer (p, &offset, &left, arch);
 	if (r == 0) {
@@ -500,12 +582,21 @@ static void get_protocol_list_t (mach0_ut p, RBinFile *arch, RBinClass *processe
 						sizeof (struct MACH0_(SProtocol)));
 		}
 
+		// TODO: add check of is binary crypted
 		r =  get_pointer (pc.name, NULL, &left, arch);
 		if (r != 0) {
 			char *name = NULL;
+			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
+			int isCrypted = bin->has_crypto;
 
-			name = malloc (left);
-			r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			if (isCrypted == 1) {
+				left = strlen("some_encrypted_data") + 1;
+				name = malloc (left );
+				memcpy(name, "some_encrypted_data", left);
+			} else {
+				name = malloc (left);
+				r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+			}
 
 			class_name = r_str_newf ("%s::%s%s",
 									processed_class->name,
@@ -545,6 +636,11 @@ static void get_class_ro_t (mach0_ut p,
 	ut64 r;
 	ut32 offset, left;
 
+	if (!arch || !arch->o || !arch->o->bin_obj) {
+		eprintf("uncorrect RBinFile pointer\n");
+		return;
+	}
+
 	r = get_pointer (p, &offset, &left, arch);
 	if (r == 0)
 		return;
@@ -558,10 +654,20 @@ static void get_class_ro_t (mach0_ut p,
 					sizeof (struct MACH0_(SClassRoT)));
 	}
 
+	// TODO: add check of is binary crypted
 	r = get_pointer (cro.name, NULL, &left, arch);
 	if (r != 0) {
-		processed_class->name = malloc (left);
-		r_buf_read_at (arch->buf, r, (ut8 *)processed_class->name, left);
+		struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
+		int isCrypted = bin->has_crypto;
+
+		if (isCrypted == 1) {
+			left = strlen("some_encrypted_data") + 1;
+			processed_class->name = malloc (left );
+			memcpy(processed_class->name, "some_encrypted_data", left);
+		} else {
+			processed_class->name = malloc (left);
+			r_buf_read_at (arch->buf, r, (ut8 *)processed_class->name, left);
+		}
 	}
 
 	if (cro.baseMethods != 0) {
