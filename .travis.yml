@@ -100,7 +100,7 @@ script:
   - cd radare2-regressions
   - VERBOSE=1 make $TESTS   # Run the tests, report only regressions as errors.
 
-after_success: coveralls --exclude lib --exclude tests --gcov-options '\-lp'
+after_success: coveralls -r ${TRAVIS_BUILD_DIR} --exclude lib --exclude tests --gcov-options '\-lp'
 
 notifications:
   irc: "chat.freenode.net#radare"
