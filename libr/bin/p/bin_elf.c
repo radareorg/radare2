@@ -516,7 +516,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->lang = "c";
 	if (arch->file)
 		ret->file = strdup (arch->file);
-	else *ret->file = 0;
+	else ret->file = '\0';
 	if ((str = Elf_(r_bin_elf_get_rpath)(arch->o->bin_obj))) {
 		ret->rpath = strdup (str);
 		free (str);

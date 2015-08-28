@@ -236,6 +236,8 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 				snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
 			}
 			if (!(*importp = realloc (*importp, (*nimp + 1) * sizeof(struct r_bin_pe_import_t)))) {
+				free (symdllname);
+				free (sdb_module);
 				r_sys_perror ("realloc (import)");
 				return R_FALSE;
 			}

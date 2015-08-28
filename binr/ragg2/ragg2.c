@@ -265,6 +265,7 @@ int main(int argc, char **argv) {
 			sequence = strdup (optarg);
 			break;
 		default:
+			free (sequence);
 			return 1;
 		}
 	}

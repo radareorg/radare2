@@ -178,7 +178,7 @@ static void copy_sym_name_with_namespace (char *class_name,
 	size_t len = 0;
 	char *tmp = 0;
 
-	len = strlen (class_name);
+	len = class_name ? strlen (class_name) : 0;
 	memcpy (sym->classname, class_name,
 		(len < R_BIN_SIZEOF_STRINGS) ?
 		len : R_BIN_SIZEOF_STRINGS);

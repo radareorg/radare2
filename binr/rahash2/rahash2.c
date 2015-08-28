@@ -272,7 +272,9 @@ int main(int argc, char **argv) {
 	while ((c = getopt (argc, argv, "jdDrvea:i:S:s:x:b:nBhf:t:kLq")) != -1) {
 		switch (c) {
 		case 'q': quiet = 1; break;
-		case 'i': iterations = atoi (optarg);
+		case 'i':
+			if (!optarg) return 1;
+			iterations = atoi (optarg);
 			if (iterations<0) {
 				eprintf ("error: -i argument must be positive\n");
 				return 1;

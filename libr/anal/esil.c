@@ -1179,7 +1179,7 @@ static int esil_deceq (RAnalEsil *esil) {
 static int esil_poke1(RAnalEsil *esil) {
 	int ret = 0;
 	ut64 num, addr;
-	ut8 num1;
+	ut8 num1 = 0;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, &num)) {

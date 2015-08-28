@@ -1779,7 +1779,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		color = r_config_get_i (core->config, "scr.color");
 		if (color) flags |= R_PRINT_FLAGS_COLOR;
 		debug = r_config_get_i (core->config, "cfg.debug");
-		flags = R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
+		flags |= R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
 		r_print_set_flags (core->print, core->print->flags);
 		scrseek = r_num_math (core->num,
 			r_config_get (core->config, "scr.seek"));
