@@ -1186,8 +1186,7 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 		eprintf ("bsize is bigger than `bm`. dimmed to 0x%x > 0x%x\n",
 			bsize, core->blocksize_max);
 		bsize = core->blocksize_max;
-	}
-
+	} else ret = R_TRUE;
 	bump = realloc (core->block, bsize+1);
 	if (bump == NULL) {
 		eprintf ("Oops. cannot allocate that much (%u)\n", bsize);

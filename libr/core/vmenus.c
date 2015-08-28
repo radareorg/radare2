@@ -553,6 +553,7 @@ R_API int r_core_visual_comments (RCore *core) {
 	for (;;) {
 		r_cons_clear00 ();
 		r_cons_strcat ("Comments:\n");
+		i = 0;
 		found = 0;
 #undef DB
 #define DB core->anal->sdb_meta
