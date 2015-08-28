@@ -115,6 +115,9 @@ R_API int r_file_is_abspath(const char *file) {
 }
 
 R_API char *r_file_abspath(const char *file) {
+	if (strstr (file, "://") != NULL) {
+		return strdup (file);
+	}
 	char *ret = NULL;
 	char *cwd = r_sys_getdir ();
 	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
@@ -140,14 +143,6 @@ R_API char *r_file_abspath(const char *file) {
 		}
 	}
 #endif
-	// First make sure that it is a real file.
-	FILE* fptr = fopen (ret, "r");
-	if (fptr != NULL) {
-		fclose (fptr);
-	} else {
-		return strdup (file);
-	}
-	// Ok, it's real, let's find a realpath.
 	return ret;
 }
 
