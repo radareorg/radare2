@@ -1017,18 +1017,14 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 		sn->methname = NULL;
 		sn->methflag = NULL;
 	}
+	sn->demname = NULL;
+	sn->demflag = NULL;
 	if (bin_demangle) {
 		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name);
 		if (sn->demname) {
 			sn->demflag = r_str_newf ("%s.%s", pfx, sn->demname);
 			r_name_filter (sn->demflag, MAXFLAG_LEN);
-		} else {
-			sn->demflag = NULL;
-			sn->demname = NULL;
 		}
-	} else {
-		sn->demflag = NULL;
-		sn->demname = NULL;
 	}
 }
 

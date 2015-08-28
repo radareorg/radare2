@@ -195,6 +195,27 @@ static void cmd_open_map (RCore *core, const char *input) {
 	r_core_block_read (core, 0);
 }
 
+static void reopen_in_debug(RCore *core) {
+	if (!core->file || !core->file->desc || !core->file->desc->uri) {
+		eprintf ("No file open?\n");
+		return;
+	}
+
+	if (strstr (core->file->desc->uri, "://") != NULL) {
+		r_core_cmd0 (core, "oo");
+	} else {
+		int bits = core->assembler->bits;
+		const char *oldname = core->file->desc->uri;
+		char *newfile = r_str_newf ("dbg://%s", oldname);
+		core->file->desc->uri = newfile;
+		core->file->desc->referer = NULL;
+		r_core_file_reopen (core, newfile, 0, 2);
+		r_config_set_i (core->config, "asm.bits", bits);
+		r_config_set_i (core->config, "cfg.debug", R_TRUE);
+		r_core_cmd0 (core, "sr pc");
+	}
+}
+
 static int cmd_open(void *data, const char *input) {
 	const char *help_msg[] = {
 		"Usage: o","[com- ] [file] ([offset])","",
@@ -363,21 +384,7 @@ static int cmd_open(void *data, const char *input) {
 	case 'o':
 		switch (input[1]) {
 		case 'd': // "ood" : reopen in debugger
-			if (strstr (core->file && core->file->desc && core->file->desc->uri, "://") != NULL) {
-				r_core_cmd0 (core, "oo");
-			} else if (core->file && core->file->desc && core->file->desc->uri) {
-				int bits = core->assembler->bits;
-				const char *oldname = core->file->desc->uri;
-				char *newfile = r_str_newf ("dbg://%s", oldname);
-				core->file->desc->uri = newfile;
-				core->file->desc->referer = NULL;
-				r_core_file_reopen (core, newfile, 0, 2);
-				r_config_set_i (core->config, "asm.bits", bits);
-				r_config_set_i (core->config, "cfg.debug", R_TRUE);
-				r_core_cmd0 (core, "sr pc");
-			} else {
-				eprintf ("No file open?\n");
-			}
+			reopen_in_debug (core);
 			break;
 		case 'b': // "oob" : reopen with bin info
 			r_core_file_reopen (core, input+2, 0, 2);
