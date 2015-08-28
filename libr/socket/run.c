@@ -284,6 +284,8 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 			*v++ = 0;
 			r_sys_setenv (e, v);
 		}
+	} else if (!strcmp(b, "clearenv")) {
+		r_sys_clearenv ();
 	}
 	if (must_free == R_TRUE)
 		free (e);
@@ -304,6 +306,7 @@ R_API const char *r_run_help() {
 	"# aslr=no\n"
 	"setenv=FOO=BAR\n"
 	"# unsetenv=FOO\n"
+	"# clearenv=true\n"
 	"# envfile=environ.txt\n"
 	"timeout=3\n"
 	"# connect=localhost:8080\n"
