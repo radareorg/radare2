@@ -517,15 +517,10 @@ static int bin_pdb (RCore *core, int mode) {
 static int bin_main (RCore *r, int mode, int va) {
 	RBinAddr *binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN);
 	ut64 main_addr = 0LL;
-	ut64 baddr = r_bin_get_baddr (r->bin);
 	if (!binmain) return R_FALSE;
 
 	if (va) {
-		if (baddr) {
-			main_addr = r_bin_a2b (r->bin, binmain->vaddr);
-		} else {
-			main_addr = binmain->vaddr;
-		}
+		main_addr = r_bin_a2b (r->bin, binmain->vaddr);
 	} else {
 		main_addr = binmain->paddr;
 	}
