@@ -144,7 +144,7 @@ static int bin_is_executable (RBinObject *obj){
 	return R_FALSE;
 }
 
-static void cmd_info_bin(RCore *core, ut64 offset, int va, int mode) {
+static void cmd_info_bin(RCore *core, int va, int mode) {
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	if (core->file) {
 		if (mode == R_CORE_BIN_JSON)
@@ -154,7 +154,7 @@ static void cmd_info_bin(RCore *core, ut64 offset, int va, int mode) {
 				if (mode == R_CORE_BIN_JSON)
 					r_cons_printf (",\"bin\":");
 				r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
-					mode, va, NULL, offset, NULL);
+					mode, va, NULL, NULL);
 		}
 		if (mode == R_CORE_BIN_JSON)
 			r_cons_printf ("}\n");
@@ -164,7 +164,6 @@ static void cmd_info_bin(RCore *core, ut64 offset, int va, int mode) {
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int newline = r_config_get_i (core->config, "scr.interactive");
-	ut64 offset = r_bin_get_offset (core->bin);
 	RBinObject *o = r_bin_cur_object (core->bin);
 	RCoreFile *cf = core->file;
 	int i, va = core->io->va || core->io->debug;
@@ -187,7 +186,7 @@ static int cmd_info(void *data, const char *input) {
 	if (is_array)
 		r_cons_printf ("{");
 	if (!*input)
-		cmd_info_bin (core, offset, va, mode);
+		cmd_info_bin (core, va, mode);
 	/* i* is an alias for iI* */
 	if (!strcmp (input, "*")) {
 		input = "I*";
@@ -254,7 +253,7 @@ static int cmd_info(void *data, const char *input) {
 		if (is_array==1) is_array++; else r_cons_printf (","); \
 		r_cons_printf ("\"%s\":",n); \
 	}\
-	r_core_bin_info (core,x,mode,va,NULL,offset,NULL);
+	r_core_bin_info (core, x, mode, va, NULL, NULL);
 		case 'A':
 			newline = 0;
 			if (input[1]=='j') {
@@ -430,14 +429,14 @@ static int cmd_info(void *data, const char *input) {
 			goto done;
 		case 'q':
 			mode = R_CORE_BIN_SIMPLE;
-			cmd_info_bin (core, offset, va, mode);
+			cmd_info_bin (core, va, mode);
 			goto done;
 		case 'j':
 			mode = R_CORE_BIN_JSON;
-			cmd_info_bin (core, offset, va, mode);
+			cmd_info_bin (core, va, mode);
 			goto done;
 		default:
-			cmd_info_bin (core, offset, va, mode);
+			cmd_info_bin (core, va, mode);
 			break;
 		}
 		input++;

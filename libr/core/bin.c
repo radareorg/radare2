@@ -54,12 +54,10 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 		int va = info->has_va;
 		const char * arch = info->arch;
 		ut16 bits = info->bits;
-		ut64 loadaddr = r_config_get_i (r->config, "bin.laddr");
 		ut64 baseaddr = r_bin_get_baddr (r->bin);
 		/* Hack to make baddr work on some corner */
 		r_config_set_i (r->config, "io.va",
 			(binobj->info)? binobj->info->has_va: 0);
-		r_config_set_i (r->config, "bin.laddr", loadaddr);
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 		r_config_set (r->config, "asm.arch", arch);
 		r_config_set_i (r->config, "asm.bits", bits);
@@ -70,7 +68,7 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 		r_asm_use (r->assembler, arch);
 
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET,
-			va, NULL, loadaddr, NULL);
+			va, NULL, NULL);
 		r_core_bin_set_cur (r, binfile);
 		return R_TRUE;
 	}
@@ -1690,16 +1688,10 @@ static int bin_mem (RCore *r, int mode) {
 	return R_TRUE;
 }
 
-R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 loadaddr, const char *chksum) {
+R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	int ret = R_TRUE;
 	const char *name = NULL;
-	ut64 at = 0;
-
-	if (loadaddr == UT64_MAX) loadaddr = 0;
-
-	if (loadaddr) {
-		va = 2;
-	}
+	ut64 at = 0, loadaddr = r_bin_get_laddr (core->bin);
 
 	if (filter && filter->offset)
 		at = filter->offset;

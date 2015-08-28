@@ -1188,17 +1188,23 @@ R_API int r_bin_list(RBin *bin) {
 }
 
 static ut64 binobj_get_baddr (RBinObject *o) {
-	return o ? o->baddr + o->baddr_shift : 0;
+	return o ? o->baddr + o->baddr_shift : UT64_MAX;
 }
 
 R_API ut64 r_binfile_get_baddr (RBinFile *binfile) {
-	return binfile ? binobj_get_baddr(binfile->o) : 0LL;
+	return binfile ? binobj_get_baddr(binfile->o) : UT64_MAX;
 }
 
-/* returns the base address of bin or 0 in case of errors */
+/* returns the base address of bin or UT64_MAX in case of errors */
 R_API ut64 r_bin_get_baddr(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
 	return binobj_get_baddr (o);
+}
+
+/* returns the load address of bin or UT64_MAX in case of errors */
+R_API ut64 r_bin_get_laddr(RBin *bin) {
+	RBinObject *o = r_bin_cur_object (bin);
+	return o ? o->loadaddr : UT64_MAX;
 }
 
 static void binobj_set_baddr (RBinObject *o, ut64 baddr) {
