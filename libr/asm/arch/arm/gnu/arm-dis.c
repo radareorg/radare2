@@ -2530,7 +2530,7 @@ print_arm_address (bfd_vma pc, struct disassemble_info *info, long given)
 	  func (stream, "], %s%d", NEGATIVE_BIT_SET ? "-" : "", (int) offset);
 
 	  /* Ie ignore the offset.  */
-	  offset = pc + 8;
+	  //offset = pc + 8;
 	}
 
       offset = 0;

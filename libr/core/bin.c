@@ -1149,9 +1149,10 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					}
 				} else {
 					fi = r_flag_set (r->flags, sn.methflag, addr, symbol->size, 0);
+					comment = fi->comment ? strdup (fi->comment) : NULL;
 					if (comment) {
 						r_flag_item_set_comment (fi, comment);
-						free (comment);
+						R_FREE (comment);
 					}
 				}
 			} else {

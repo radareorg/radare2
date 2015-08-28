@@ -455,20 +455,16 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 		free (scol2);
 		return source;
 	}
-
 	return r_print_colorize_opcode (source, ds->color_reg, ds->color_num);
 }
 
 static void build_hex_invalid (RDisasmState *ds) {
-	char hex_str[24] = "0x";
 	if (r_str_casestr (ds->asmop.buf_asm, "invalid") ||\
 		r_str_casestr (ds->asmop.buf_asm, "undefined")) {
-		ds->opstr = strdup (strcat (hex_str, ds->asmop.buf_hex));
+		ds->opstr = r_str_newf ("0x%s", ds->asmop.buf_hex);
 	} else {
 		ds->opstr = strdup (ds->asmop.buf_asm);
 	}
-	return;
-
 }
 
 static void handle_build_op_str (RCore *core, RDisasmState *ds) {
