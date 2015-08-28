@@ -627,6 +627,9 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 	case ARM_INS_VQMOVN:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
+	case ARM_INS_UDF:
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
 	case ARM_INS_SVC:
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
