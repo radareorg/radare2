@@ -1325,7 +1325,7 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 	Elf_(Sym) *sym = NULL;
 	Elf_(Addr) addr_sym_table = 0;
 	struct r_bin_elf_symbol_t *ret = NULL;
-	int j, k, r, tsize, len, nsym, ret_ctr;
+	int j, k, r, tsize, nsym, ret_ctr;
 	ut64 toffset;
 	ut32 size;
 
@@ -1403,10 +1403,9 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 			   int st_name = sym[k].st_name;
 			   int maxsize = R_MIN (bin->size, bin->strtab_size);
 			   if (st_name < 0 || st_name >= maxsize) {
-					len = 0;
 					ret[ret_ctr].name[0] = 0;
 			   } else {
-					len = __strnlen (bin->strtab+st_name, rest);
+					int len = __strnlen (bin->strtab+st_name, rest);
 					memcpy (ret[ret_ctr].name, &bin->strtab[st_name], len);
 			   }	
 			}

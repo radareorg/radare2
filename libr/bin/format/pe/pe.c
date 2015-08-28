@@ -1982,7 +1982,6 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 				curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 				curr_import_dir->ForwarderChain != 0)) {
-			dll_name_offset = curr_import_dir->Name;
 			int rr = r_buf_read_at (bin->b,
 				bin_pe_vaddr_to_paddr(bin, dll_name_offset),
 				(ut8*)dll_name, PE_NAME_LENGTH);

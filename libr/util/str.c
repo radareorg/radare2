@@ -1541,13 +1541,13 @@ R_API char *r_str_utf16_encode (const char *s, int len) {
 // TODO: merge print inside rutil
 /* hack from print */
 R_API int r_print_format_length (const char *fmt) {
-	int nargs, i, j, idx, times, endian;
+	int nargs, i, idx, times, endian;
 	char *args, *bracket, tmp, last = 0;
 	const char *arg = fmt;
 	const char *argend = arg+strlen (fmt);
 	char namefmt[8];
 	int viewflags = 0;
-	nargs = endian = i = j = 0;
+	endian = 0;
 
 	while (*arg && iswhitechar (*arg)) arg++;
 	/* get times */

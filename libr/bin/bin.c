@@ -957,8 +957,6 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	// only use LoadBytes if buffer offset != 0
 	//if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
 	if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
-		ut64 bsz = bytes_sz - offset;
-		if (sz<bsz) bsz = sz;
 		o->bin_obj = plugin->load_bytes (binfile, bytes+offset, sz, loadaddr, sdb);
 		if (!o->bin_obj) {
 			eprintf("Error in r_bin_object_new: load_bytes failed for %s plugin\n",

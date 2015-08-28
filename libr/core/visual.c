@@ -1053,8 +1053,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		} else r_core_seek (core, 0, 1);
 		r_io_sundo_push (core->io, core->offset);
 		break;
-	case 'G':
-		ret = 0;
+	case 'G':{
 		int scols = r_config_get_i (core->config, "hex.cols");
 		if (core->file) {
 			if (core->io->va) {
@@ -1081,6 +1080,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (ret != -1)
 			r_io_sundo_push (core->io, core->offset);
 		break;
+		}
 	case 'h':
 		if (curset) {
 			cursor--;
