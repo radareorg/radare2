@@ -36,6 +36,7 @@ enum {
 	TYPE_SWP = 11,
 	TYPE_MOVW = 12,
 	TYPE_MOVT = 13,
+	TYPE_UDF = 14,
 };
 
 static int strcmpnull(const char *a, const char *b) {
@@ -60,6 +61,8 @@ static ArmOp ops[] = {
 	{ "rsbs", 0x7000, TYPE_ARI },
 	{ "rsc", 0xe000, TYPE_ARI },
 	{ "rscs", 0xf000, TYPE_ARI },
+
+	{ "udf", 0xf000f000, TYPE_UDF },
 
 	{ "push", 0x2d09, TYPE_IMM },
 	{ "pop", 0xbd08, TYPE_IMM },
@@ -762,6 +765,17 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				ao->o |= (getnum (ao->a[0])&0xff)<<24;
 				ao->o |= ((getnum (ao->a[0])>>8)&0xff)<<16;
 				ao->o |= ((getnum (ao->a[0])>>16)&0xff)<<8;
+				break;
+			case TYPE_UDF:
+				{
+					// e7f000f0 = udf 0
+					// e7ffffff = udf 0xffff
+					ut32 n = getnum (ao->a[0]);
+					ao->o |= 0xe7;
+					ao->o |= (n & 0xf) << 24;
+					ao->o |= ((n>>4) & 0xff) << 16;
+					ao->o |= ((n>>12) & 0xf) << 8;
+				}
 				break;
 			case TYPE_ARI:
 				if (!ao->a[2]) {
