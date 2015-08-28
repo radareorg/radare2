@@ -91,7 +91,7 @@ script:
   - ulimit -s 32768
   # Now on to actually building stuff...
 # Set prefix for which we don't need sudo
-  - CFLAGS='-fprofile-arcs -ftest-coverage'
+  - export CFLAGS='-fprofile-arcs -ftest-coverage'
   - ./configure --prefix=`pwd`/install > /dev/null  # TODO: Might enable some of the additional features.
   - make -s > /dev/null
   - make install > /dev/null
