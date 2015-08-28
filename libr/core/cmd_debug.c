@@ -846,7 +846,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				baddr = r_bin_get_baddr (core->bin);
 				r_bin_set_baddr (core->bin, map->addr);
 				r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'),
-						R_TRUE, &filter, 0, NULL);
+						R_TRUE, &filter, NULL);
 				r_bin_set_baddr (core->bin, baddr);
 				break;
 			}

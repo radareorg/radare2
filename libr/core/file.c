@@ -422,7 +422,8 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				|| r_config_get_i (r->config, "cfg.debug")) {
 			r_core_file_do_load_for_debug (r, baddr, filenameuri);
 		} else {
-			r_core_file_do_load_for_io_plugin (r, baddr, 0);
+			ut64 laddr = r_config_get_i (r->config, "bin.laddr");
+			r_core_file_do_load_for_io_plugin (r, baddr, laddr);
 		}
 		// Restore original desc
 		r_io_use_desc (r->io, desc);
