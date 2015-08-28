@@ -92,6 +92,7 @@ script:
   # Now on to actually building stuff...
 # Set prefix for which we don't need sudo
   - export CFLAGS="-fprofile-arcs -ftest-coverage ${CFLAGS}"
+  - export LDFLAGS="-lgcov ${LDFLAGS}"
   - ./configure --prefix=`pwd`/install > /dev/null  # TODO: Might enable some of the additional features.
   - make -s > /dev/null
   - make install > /dev/null
