@@ -78,7 +78,7 @@ install:
   # This little hack will prevent the test names from being erased in the
   # travis logfile.
   - sed -i 's/\\r//' radare2-regressions/tests.sh
-  - pip install 'coveralls' --user && export PATH=$HOME/.local/bin:$PATH
+  - pip install 'cpp-coveralls' --user && export PATH=$HOME/.local/bin:$PATH
 
 script:
   # llvm-symbolizer isn't in PATH, so we need this.
@@ -91,6 +91,7 @@ script:
   - ulimit -s 32768
   # Now on to actually building stuff...
 # Set prefix for which we don't need sudo
+  - CFLAGS='-fprofile-arcs -ftest-coverage'
   - ./configure --prefix=`pwd`/install > /dev/null  # TODO: Might enable some of the additional features.
   - make -s > /dev/null
   - make install > /dev/null
@@ -99,7 +100,7 @@ script:
   - cd radare2-regressions
   - VERBOSE=1 make $TESTS   # Run the tests, report only regressions as errors.
 
-after_success: coveralls
+after_success: coveralls --exclude lib --exclude tests --gcov-options '\-lp'
 
 notifications:
   irc: "chat.freenode.net#radare"
