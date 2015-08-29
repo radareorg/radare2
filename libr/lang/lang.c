@@ -96,7 +96,7 @@ R_API void r_lang_undef(RLang *lang, const char *name) {
 			}
 		}
 	} else {
-		r_list_purge (lang->defs);
+		r_list_free (lang->defs);
 		lang->defs = NULL;
 	}
 }
