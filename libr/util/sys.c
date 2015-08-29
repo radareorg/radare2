@@ -31,6 +31,9 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 # include <sys/stat.h>
 # include <errno.h>
 # include <signal.h>
+# include <unistd.h>
+extern char **environ;
+
 #ifdef __HAIKU__
 # define Sleep sleep
 #endif
@@ -183,6 +186,21 @@ R_API int r_sys_usleep(int usecs) {
 	// w32 api uses milliseconds
 	usecs /= 1000;
 	Sleep (usecs); // W32
+	return 0;
+#endif
+}
+
+R_API int r_sys_clearenv(void) {
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+	if (environ == NULL) {
+		return 0;
+	}
+	while (*environ != NULL) {
+		*environ++ = NULL;
+	}
+	return 0;
+#else
+#warning r_sys_clearenv : unimplemented for this platform
 	return 0;
 #endif
 }
