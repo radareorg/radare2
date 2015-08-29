@@ -94,10 +94,10 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 		return -1;
 	}
 
-	{
-		RIOSection *s = r_io_section_mget_in (core->io, core->offset);
-		baddr = s? s->paddr: r_config_get_i (core->config, "bin.baddr");
-	}
+#if 0
+	baddr = s ? s->addr : r_config_get_i (core->config, "bin.baddr");
+#endif
+	baddr = r_config_get_i (core->config, "bin.baddr");
 
 	line_count = start_addr? 0: 1;
 	core->print->lines_cache[0] = start_addr? 0: baddr;
@@ -452,7 +452,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (s) {
 			r_core_seek (core, s->vaddr + s->size + 2, 1);
 		} else {
-			r_core_seek (core, r_io_desc_size (core->io, core->file->desc), 1);
+			r_core_seek (core, r_io_desc_size (core->file->desc), 1);
 		}
 	}
 	break;
@@ -485,7 +485,14 @@ static int cmd_seek(void *data, const char *input) {
 			if (!core->print->lines_cache) {
 				__init_seek_line (core);
 			}
-			__seek_line_relative (core, sl_arg);
+			__seek_line_absolute (core, sl_arg);
+			break;
+		case 'g': // "sg"
+			{
+				RIOSection *s = r_io_section_vget (core->io, core->offset); 
+				if (s) r_core_seek (core, s->vaddr, 1);
+				else r_core_seek (core, 0, 1);
+			}
 			break;
 		case 'c':
 			__clean_lines_cache (core);
@@ -495,6 +502,15 @@ static int cmd_seek(void *data, const char *input) {
 				__init_seek_line (core);
 			}
 			eprintf ("%d lines\n", core->print->lines_cache_sz - 1);
+			break;
+		case 'G': // "sG"
+			{
+				if (!core->file) break;				//broken concept
+				RIOSection *s = r_io_section_vget (core->io, core->offset); 
+				// XXX: this +2 is a hack. must fix gap between sections
+				if (s) r_core_seek (core, s->vaddr+s->size+2, 1);
+				else r_core_seek (core, r_io_desc_size (core->file->desc), 1);
+			}
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg);

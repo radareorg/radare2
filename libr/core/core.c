@@ -232,6 +232,8 @@ R_API RCore *r_core_cast(void *p) {
 
 static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt) {
 	RCore *core = (RCore *)user;
+	RIOSection *sec;
+	ut64 vaddr;
 
 	if (!r_config_get_i (core->config, "asm.cmtpatch")) {
 		return;
@@ -250,8 +252,8 @@ static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt
 		return;
 	}
 
-	ut64 vaddr = r_io_section_maddr_to_vaddr (core->io, maddr);
-	vaddr = (vaddr == UT64_MAX) ? maddr : vaddr;
+	sec = r_io_section_get (core->io, maddr); 
+	vaddr = sec ? (sec->vaddr + maddr - sec->paddr) : maddr;
 
 	r_meta_add (core->anal, R_META_TYPE_COMMENT, vaddr, vaddr, comment);
 	free (comment);
@@ -477,9 +479,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'B':
 		case 'M': {
 				ut64 lower = UT64_MAX;
-				RListIter *iter;
+				SdbListIter *iter;
 				RIOSection *s;
-				r_list_foreach (core->io->sections, iter, s) {
+				ls_foreach (core->io->sections, iter, s) {
 					if (!s->vaddr && s->paddr) {
 						continue;
 					}
@@ -499,16 +501,18 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'b': return core->blocksize;
 		case 's':
 			if (core->file) {
-				return r_io_desc_size (core->io, core->file->desc);
+				return r_io_desc_size (core->file->desc);
 			}
 			return 0LL;
 		case 'w':
 			return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
-			if ((s = r_io_section_vget (core->io, core->offset))) {
-				return (str[2] == 'S'? s->size: s->vaddr);
+			{
+				SdbList *secs = r_io_section_vget_secs_at (core->io, core->offset);
+				s = secs ? ls_pop (secs) : NULL;
+				ls_free (secs);
 			}
-			return 0LL;
+			return s? (str[2]=='S'? s->size: s->vaddr): 0LL;
 		case 'D':
 			if (IS_DIGIT (str[2])) {
 				return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_DATA);
@@ -524,7 +528,15 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return 0LL; // maybe // return UT64_MAX;
 		case '?': return core->num->value;
 		case '$': return core->offset;
-		case 'o': return r_io_section_vaddr_to_maddr_try (core->io, core->offset);
+		case 'o': 
+			{
+				SdbList *secs;
+				RIOSection *s;
+				secs = r_io_section_vget_secs_at (core->io, core->offset);
+				s = secs ? ls_pop (secs) : NULL;
+				ls_free (secs);
+				return s ? core->offset - s->vaddr + s->paddr : core->offset;
+			}
 		case 'C': return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
 		case 'J': return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CODE);
 		case 'X': return getref (core, atoi (str + 2), 'x', R_ANAL_REF_TYPE_CALL);
@@ -545,7 +557,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return 0;
 		}
 		break;
-	default:
+		default:
 		if (*str>'A') {
 			// NOTE: functions override flags
 			RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, str);
@@ -1319,6 +1331,7 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose) {
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	RStrBuf *s = r_strbuf_new (NULL);
 	ut64 type;
+	SdbList *secs;
 	RIOSection *sect;
 	char *mapname;
 	RAnalFunction *fcn;
@@ -1335,7 +1348,9 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	} else {
 		mapname = NULL;
 	}
-	sect = value? r_io_section_vget (core->io, value): NULL;
+	secs = value? r_io_section_vget_secs_at (core->io, value): NULL;
+	sect = secs ? ls_pop (secs): NULL;
+	ls_free (secs);
 	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
 		if (sect && sect->name[0]) {
@@ -1758,10 +1773,11 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 }
 
 static void prompt_sec(RCore *r, char *s, size_t maxlen) {
-	const RIOSection *sec = r_io_section_vget (r->io, r->offset);
-	if (!sec) {
-		return;
-	}
+	SdbList * secs = r_io_section_vget_secs_at (r->io, r->offset);
+	RIOSection *sec = secs ? ls_pop (secs) : NULL;
+	if (!sec) return;
+	ls_free (secs);
+
 	snprintf (s, maxlen, "%s:", sec->name);
 }
 
@@ -1996,8 +2012,12 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 
 	r_cons_break_push (rap_break, rior);
 reaccept:
+#warning check this
+#if 0
 	core->io->plugin = NULL;
 	while (!r_cons_is_breaked ()) {
+#endif
+	while (!core->cons->breaked) {
 		c = r_socket_accept (fd);
 		if (!c) {
 			break;
@@ -2044,7 +2064,7 @@ reaccept:
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
 						file->map = r_io_map_add (core->io, file->desc->fd,
-								perm, 0, 0, r_io_desc_size (core->io, file->desc));
+								perm, 0, 0, r_io_desc_size (file->desc));
 						if (core->file && core->file->desc) {
 							pipefd = core->file->desc->fd;
 						} else {
@@ -2184,7 +2204,7 @@ reaccept:
 				x = r_read_at_be64 (buf, 1);
 				if (buf[0] == 2) {
 					if (core->file) {
-						x = r_io_desc_size (core->io, core->file->desc);
+						x = r_io_desc_size (core->file->desc);
 					} else {
 						x = 0;
 					}

@@ -79,7 +79,7 @@ static RList *sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 
-	if (!(ret = r_list_newf ((RListFree) free))) {
+	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
 	// program headers is another section

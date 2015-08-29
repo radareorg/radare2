@@ -455,13 +455,13 @@ static int cmd_cmp(void *data, const char *input) {
 		buf = malloc (core->blocksize);
 		if (buf) {
 			if (!r_io_read_at (core->io, r_num_math (core->num,
-				input + 1), buf, core->blocksize)) {
+							  input+1), buf, core->blocksize)) {
 				eprintf ("Cannot read hexdump\n");
 			} else {
 				val = radare_compare (core, core->block, buf, ret, mode);
 			}
 			free (buf);
-		}
+		} 
 		return false;
 		break;
 	case 'f':

@@ -83,7 +83,7 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	if (!r || !r->io || !r->io->desc) {
 		return 0LL;
 	}
-#if __WINDOWS__
+#if 0
 	typedef struct {
 		int pid;
 		int tid;
@@ -92,17 +92,16 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	RIODesc *d = r->io->desc;
 	if (!strcmp ("w32dbg", d->plugin->name)) {
 		RIOW32Dbg *g = d->data;
-		r->io->desc->fd = g->pid;
 		r_debug_attach (r->dbg, g->pid);
 	}
 	return r->io->winbase;
-#else
-	int pid = r->io->desc->fd;
+#endif
+	int pid = r_io_desc_get_pid (r->io, r->io->desc->fd);
+	int tid = r_io_desc_get_tid (r->io, r->io->desc->fd);
 	if (r_debug_attach (r->dbg, pid) == -1) {
 		return 0LL;
 	}
-	r_debug_select (r->dbg, pid, pid);
-#endif
+	r_debug_select (r->dbg, pid, tid);
 	r_debug_map_sync (r->dbg);
 	abspath = r_file_abspath (file);
 	if (!abspath) {
@@ -239,6 +238,21 @@ static int main_print_var(const char *var_name) {
 	}
 	free (homedir);
 	return 0;
+}
+
+static void list_io_plugins(RIO *io) {
+	SdbListIter *iter;
+	RIOPlugin *plugin;
+	char str[4];
+	ls_foreach (io->plugins, iter, plugin){
+		// read, write, debug, proxy
+		str[0] = 'r';
+		str[1] = plugin->write? 'w': '_';
+		str[2] = plugin->isdbg? 'd': '_';
+		str[3] = 0;
+		printf ("%s  %-11s %s (%s)\n", str, plugin->name,
+			plugin->desc, plugin->license);
+	}
 }
 
 // Load the binary information from rabin2
@@ -681,7 +695,7 @@ int main(int argc, char **argv, char **envp) {
 		if (quietLeak) {
 			exit (0);
 		}
-		r_io_plugin_list (r.io);
+		list_io_plugins (r.io);
 		r_cons_flush ();
 		r_list_free (evals);
 		r_list_free (files);
@@ -1055,7 +1069,7 @@ int main(int argc, char **argv, char **envp) {
 		}
 
 		if (fullfile) {
-			r_core_block_size (&r, r_io_desc_size (r.io, r.file->desc));
+			r_core_block_size (&r, r_io_desc_size (r.file->desc));
 		}
 
 		r_core_seek (&r, r.offset, 1); // read current block
@@ -1133,7 +1147,7 @@ int main(int argc, char **argv, char **envp) {
 #endif
 #endif
 	if (fullfile) {
-		r_core_block_size (&r, r_io_desc_size (r.io, r.file->desc));
+		r_core_block_size (&r, r_io_desc_size (r.file->desc));
 	}
 	ret = run_commands (cmds, files, quiet);
 	r_list_free (cmds);

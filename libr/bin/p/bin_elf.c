@@ -676,7 +676,7 @@ static RList* patch_relocs(RBin *b) {
 	RBinObject *obj = NULL;
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	RIOSection *g = NULL, *s = NULL;
-	RListIter *iter;
+	SdbListIter *iter;
 	RBinElfReloc *relcs = NULL;
 	int i;
 	ut64 n_off, n_vaddr, vaddr, size, sym_addr = 0, offset = 0;
@@ -694,10 +694,10 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	if (!io->cached) {
-	   	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
+	   	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");	//wat?
 		return relocs (r_bin_cur (b));
 	}
-	r_list_foreach (io->sections, iter, s) {
+	ls_foreach (io->sections, iter, s) {
 		if (s->paddr > offset) {
 			offset = s->paddr;
 			g = s;
@@ -710,7 +710,7 @@ static RList* patch_relocs(RBin *b) {
 	n_vaddr = g->vaddr + g->vsize;
 	//reserve at least that space
 	size = bin->reloc_num * 4;
-	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_BIN_SCN_READABLE|R_BIN_SCN_MAP, ".got.r2", 0, io->desc->fd)) {
+	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_BIN_SCN_READABLE|R_BIN_SCN_MAP, ".got.r2", 0, io->desc->fd)) {		//XXX binid is wrong
 		return NULL;
 	}
 	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin))) {

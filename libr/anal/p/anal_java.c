@@ -575,7 +575,7 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 
 	if (end == UT64_MAX) {
 		//analyze_all = 1;
-		buf_len = anal->iob.size (anal->iob.io);
+		buf_len = anal->iob.desc_size (anal->iob.io->desc);
 
 		if (buf_len == UT64_MAX) buf_len = 1024;
 
