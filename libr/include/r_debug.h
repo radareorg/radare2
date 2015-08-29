@@ -168,6 +168,7 @@ typedef struct r_debug_t {
 	int trace_clone;
 	// internal use only
 	int _mode;
+	RList *threads;
 	/* TODO
 	- list of processes and their threads
 	- list of mapped memory (from /proc/XX/maps)
@@ -202,7 +203,7 @@ typedef struct r_debug_info_t {
 	// environment?
 	// /proc/pid/stack ???
 	// /proc/pid/syscall ???
-	// 
+	//
 } RDebugInfo;
 
 /* TODO: pass dbg and user data pointer everywhere */

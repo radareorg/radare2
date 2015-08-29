@@ -34,6 +34,8 @@
 int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #else
 #include <sys/ptrace.h>
+#include <sys/proc_info.h>
+#include <libproc.h>
 #endif
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -154,8 +156,8 @@ typedef union {
 //#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
 #define R_DEBUG_STATE_SZ ((dbg->bits==R_SYS_BITS_64)?168:64)
 
-#define REG_PC ((dbg->bits==R_SYS_BITS_64)?16:10)
-#define REG_FL ((dbg->bits==R_SYS_BITS_64)?17:9)
+#define REG_PC ((dbg->bits == R_SYS_BITS_64) ? 16 : 10)
+#define REG_FL ((dbg->bits == R_SYS_BITS_64) ? 17 : 9)
 #define REG_SP (7)
 
 #endif
