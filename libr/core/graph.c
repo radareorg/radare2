@@ -2325,7 +2325,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 
 	while (!exit_graph && !is_error) {
 		invscroll = r_config_get_i (core->config, "graph.invscroll");
-		w = r_cons_get_size (&h);
 		ret = agraph_refresh (grd);
 		if (!ret) {
 			is_error = R_TRUE;

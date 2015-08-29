@@ -68,8 +68,7 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 			"usr %04s 0x%08"PFMT64x" - 0x%08"PFMT64x" %c %x %s\n";
 		r_list_foreach (dbg->maps_user, iter, map) {
 			r_num_units (buf, map->size);
-			dbg->cb_printf ("usr %04s 0x%016"PFMT64x" - 0x%016"PFMT64x" %c %x %s\n",
-				buf, map->addr, map->addr_end,
+			dbg->cb_printf (fmtstr, buf, map->addr, map->addr_end,
 				map->user?'u':'s', map->perm, map->name);
 		}
 		break;

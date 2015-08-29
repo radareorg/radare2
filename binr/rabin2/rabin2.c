@@ -301,19 +301,15 @@ static int rabin_do_operation(const char *op) {
 		case 's':
 			if (ptr2) {
 				if (!rabin_dump_symbols (r_num_math (NULL, ptr2)))
-					return R_FALSE;
-			} else if (!rabin_dump_symbols (0)) {
-				free (arg);
-				return R_FALSE;
-			}
+					goto error;
+			} else if (!rabin_dump_symbols (0))
+				goto error;
 			break;
 		case 'S':
 			if (!ptr2)
 				goto _rabin_do_operation_error;
-			if (!rabin_dump_sections (ptr2)) {
-				free (arg);
-				return R_FALSE;
-			}
+			else if (!rabin_dump_sections (ptr2))
+				goto error;
 			break;
 		default:
 			goto _rabin_do_operation_error;
@@ -327,12 +323,15 @@ static int rabin_do_operation(const char *op) {
 	default:
 	_rabin_do_operation_error:
 		eprintf ("Unknown operation. use -O help\n");
-		free (arg);
-		return R_FALSE;
+		goto error;
 	}
 
 	free (arg);
 	return R_TRUE;
+
+error:
+	free (arg);
+	return R_FALSE;
 }
 
 static int rabin_show_srcline(ut64 at) {

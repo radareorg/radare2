@@ -330,6 +330,7 @@ int main(int argc, char **argv) {
 			if (hashstr_len<1) {
 				eprintf ("Invalid hex string\n");
 				free (out);
+				return 1;
 			}
 			hashstr = (char *)out;
 			/* out memleaks here, hashstr can't be freed */

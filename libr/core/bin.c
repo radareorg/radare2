@@ -1263,7 +1263,6 @@ static int bin_sections (RCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 	if (mode & R_CORE_BIN_JSON) {
 		char *hashstr = NULL;
 		r_cons_printf ("[");
-		i = 0;
 		r_list_foreach (sections, iter, section) {
 			ut64 addr = rva (r->bin, section->paddr, section->vaddr, va);
 			if (va) delta = section->vaddr - r_bin_get_vaddr (r->bin, section->paddr, section->vaddr);

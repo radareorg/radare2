@@ -1591,7 +1591,6 @@ R_API int r_print_format_length (const char *fmt) {
 	if (!times) times = 1;
 	for (; times; times--) { // repeat N times
 		const char * orig = arg;
-		idx = 0;
 		arg = orig;
 		for (idx=0; arg<argend && *arg; idx++, arg++) {
 			tmp = *arg;

@@ -162,7 +162,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 	char *sdb_module = NULL;
 	char *symname;
 	char *filename;
-	char *symdllname;
+	char *symdllname = NULL;
 	if (!dll_name || *dll_name == '0')
 		return 0;
 	if ((off = bin_pe_vaddr_to_paddr(bin, OriginalFirstThunk)) == 0 &&
@@ -252,6 +252,8 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 			(*nimp)++; i++;
 		}
 	} while (import_table);
+	free (symdllname);
+	free (sdb_module);
 	return i;
 }
 
