@@ -110,7 +110,7 @@ static void r_core_file_info(RCore *core, int mode) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
 		}
 		if (cf->desc) {
-			ut64 fsz = r_io_desc_size (core->io, cf->desc);
+			ut64 fsz = r_io_desc_size (cf->desc);
 			r_cons_printf (",\"fd\":%d", cf->desc->fd);
 			if (fsz != UT64_MAX) {
 				r_cons_printf (",\"size\":%"PFMT64d, fsz);
@@ -143,7 +143,7 @@ static void r_core_file_info(RCore *core, int mode) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
 		}
 		if (cf->desc) {
-			ut64 fsz = r_io_desc_size (core->io, cf->desc);
+			ut64 fsz = r_io_desc_size (cf->desc);
 			if (cf->desc->referer && *cf->desc->referer) {
 				pair ("referer", cf->desc->referer);
 			}
@@ -151,10 +151,8 @@ static void r_core_file_info(RCore *core, int mode) {
 			if (fsz != UT64_MAX) {
 				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
 			}
-			pair ("iorw", r_str_bool ( io_cache ||\
-					cf->desc->flags & R_IO_WRITE ));
-			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x,
-					(ut64) core->io->desc->obsz));
+			pair ("iorw", r_str_bool ( io_cache ||cf->desc->flags & R_IO_WRITE ));
+			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x, (ut64) core->io->desc->obsz));
 			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
 		}
 		pair ("block", sdb_fmt (0, "0x%x", core->blocksize));

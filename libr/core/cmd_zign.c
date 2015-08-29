@@ -96,7 +96,6 @@ static int zignAddBytes(void *data, const char *input, int type) {
 				eprintf ("usage: za%s name bytes\n", type == R_SIGN_ANAL? "a": "e");
 				return false;
 			}
-
 			name = r_str_word_get0(args, 0);
 			hexbytes = r_str_word_get0(args, 1);
 

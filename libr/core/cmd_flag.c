@@ -82,7 +82,7 @@ static void flagbars(RCore *core, const char *glob) {
 	}
 	r_list_foreach (core->flags->flags, iter, flag) {
 		ut64 min = 0, max = r_io_size (core->io);
-		RIOSection *s = r_io_section_vget (core->io, flag->offset);
+		RIOSection *s = r_io_section_vget (core->io, flag->offset); 
 		if (s) {
 			min = s->vaddr;
 			max = s->vaddr + s->size;

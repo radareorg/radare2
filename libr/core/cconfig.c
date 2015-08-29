@@ -675,7 +675,7 @@ static int cb_timezone(void *user, void *data) {
 }
 
 static int cb_cfgdebug(void *user, void *data) {
-	int ioraw = 1;
+//	int ioraw = 1;
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (!core) return false;
@@ -696,8 +696,8 @@ static int cb_cfgdebug(void *user, void *data) {
 			r_debug_select (core->dbg, core->dbg->pid,
 					core->dbg->tid);
 #else
-			r_debug_select (core->dbg, core->file->desc->fd,
-					core->file->desc->fd);
+			r_debug_select (core->dbg, r_io_desc_get_pid (core->io, core->file->desc->fd),
+					r_io_desc_get_tid (core->io, core->file->desc->fd));
 #endif
 		}
 	} else {
@@ -706,13 +706,15 @@ static int cb_cfgdebug(void *user, void *data) {
 	}
 	if (core->io) {
 		r_config_set (core->config, "io.va", "true");
+#if 0
 		if (core->dbg && core->dbg->h) {
 			ioraw = core->dbg->h->keepio? 0: 1;
 		} else {
 			ioraw = 0;
 		}
+#endif
 	}
-	r_config_set (core->config, "io.raw", ioraw? "true": "false");
+//	r_config_set (core->config, "io.raw", ioraw? "true": "false");
 	return true;
 }
 
@@ -1063,27 +1065,6 @@ static int cb_search_kwidx(void *user, void *data) {
 	return true;
 }
 
-static int cb_ioenforce(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	int perm = node->i_value;
-	core->io->enforce_rwx = 0;
-	if (perm & 1) {
-		core->io->enforce_rwx |= R_IO_READ;
-	}
-	if (perm & 2) {
-		core->io->enforce_rwx |= R_IO_WRITE;
-	}
-	return true;
-}
-
-static int cb_iosectonly(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->io->sectonly = node->i_value? 1: 0;
-	return true;
-}
-
 static int cb_iobuffer(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1112,6 +1093,23 @@ static int cb_iocache(void *user, void *data) {
 	return true;
 }
 
+static int cb_iopcache (void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if ((bool)node->i_value) {
+		if (core && core->io) {
+			core->io->p_cache = true;
+		}
+	} else {
+		if (core && core->io) {
+			r_io_desc_cache_fini_all (core->io);
+			core->io->p_cache = false;
+		}
+	}
+	return true;
+}
+
+
 static int cb_ioaslr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1126,31 +1124,24 @@ static int cb_iova(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value != core->io->va) {
 		core->io->va = node->i_value;
-		/* ugly fix for r2 -d ... "r2 is going to die soon ..." */
-		if (r_io_desc_get (core->io, core->io->raised)) {
+		if (core->io->desc && r_io_desc_get (core->io, core->io->desc->fd))			//ugly fix for r2 -d ... "r2 is going to die soon ..."
 			r_core_block_read (core);
-		}
-		/* reload symbol information */
-		if (r_list_length (r_bin_get_sections (core->bin)) > 0) {
+		// reload symbol information
+		if (r_list_length (r_bin_get_sections (core->bin))>0) {
 			r_core_cmd0 (core, ".ia*");
 		}
 	}
 	return true;
 }
 
-static int cb_iopava(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->io->pava = node->i_value;
-	return true;
-}
-
+#if 0
 static int cb_ioraw(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	r_io_set_raw (core->io, node->i_value);
 	return true;
 }
+#endif
 
 static int cb_ioff(void *user, void *data) {
 	RCore *core = (RCore *) user;
@@ -1159,24 +1150,19 @@ static int cb_ioff(void *user, void *data) {
 	return true;
 }
 
+#if 0
 static int cb_io_oxff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->io->Oxff = node->i_value;
 	return true;
 }
+#endif
 
 static int cb_ioautofd(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->io->autofd = node->i_value;
-	return true;
-}
-
-static int cb_iovio(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->io->vio = node->i_value;
 	return true;
 }
 
@@ -2240,20 +2226,18 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("rop.comments", "false", "Display comments in rop search output");
 
 	/* io */
-	SETICB("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");
 	SETCB("io.buffer", "false", &cb_iobuffer, "Load and use buffer cache if enabled");
-	SETCB("io.sectonly", "false", &cb_iosectonly, "Only read from sections (if any)");
 	SETI("io.buffer.from", 0, "Lower address of buffered cache");
 	SETI("io.buffer.to", 0, "Higher address of buffered cache");
 	SETCB("io.cache", "false", &cb_iocache, "Enable cache for io changes");
-	SETCB("io.raw", "false", &cb_ioraw, "Ignore maps/sections and use raw io");
+	SETCB("io.pcache", "false", &cb_iopcache, "io.cache for p-level");
+//	SETCB("io.raw", "false", &cb_ioraw, "Ignore maps/sections and use raw io");
 	SETCB("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
-	SETICB("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
+//	SETICB("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
 	SETCB("io.va", "true", &cb_iova, "Use virtual address layout");
-	SETCB("io.pava", "false", &cb_iopava, "Use EXPERIMENTAL paddr -> vaddr address mode");
+//	SETCB("io.pava", "false", &cb_iopava, "Use EXPERIMENTAL paddr -> vaddr address mode");
 	SETCB("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
-	SETCB("io.vio", "false", &cb_iovio, "Enable the new vio (reading only) (WIP)");
 
 	/* file */
 	SETPREF("file.desc", "", "User defined file description (used by projects)");

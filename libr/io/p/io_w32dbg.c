@@ -63,6 +63,7 @@ static int __attach (RIOW32Dbg *dbg) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file, 0)) {
 		char *pidpath;
+		RIODesc *ret
 		RIOW32Dbg *dbg = R_NEW0 (RIOW32Dbg);
 		if (!dbg) {
 			return NULL;
@@ -73,8 +74,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			return NULL;
 		}
 		pidpath = r_sys_pid_to_path (dbg->pid);
-		RETURN_IO_DESC_NEW (&r_io_plugin_w32dbg, -1,
-			pidpath, rw | R_IO_EXEC, mode, dbg);
+		ret = r_io_desc_new (io, &r_io_plugin_w32dbg,
+				file, rw | R_IO_EXEC, mode, dbg);
+		ret->name = pidpath;
+		return ret;
 	}
 	return NULL;
 }
@@ -119,6 +122,20 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	return -1;
 }
 
+static int __getpid (RIODesc *fd) {
+	RIOW32Dbg *iow = (RIOW32Dbg *)(fd ? fd->data : NULL);
+	if (!iow)
+		return -1;
+	return iow->pid;
+}
+
+static int __gettid (RIODesc *fd) {
+	RIOW32Dbg *iow = (RIOW32Dbg *)(fd ? fd->data : NULL);
+	if (!iow)
+		return -1;
+	return iow->tid;
+}
+
 RIOPlugin r_io_plugin_w32dbg = {
 	.name = "w32dbg",
 	.desc = "w32dbg io",
@@ -130,6 +147,8 @@ RIOPlugin r_io_plugin_w32dbg = {
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,
+	.getpid = __getpid,
+	.gettid = __gettid,
 	.isdbg = true
 };
 #else

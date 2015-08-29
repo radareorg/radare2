@@ -8,33 +8,29 @@ R_API void r_io_buffer_close(RIO* io) {
 }
 
 R_API int r_io_buffer_load(RIO* io, ut64 addr, int len) {
-	ut64 at;
-	int i, r;
 	ut8 buf[512];
-	if (len < 1) {
+	int i;
+	if (!io || addr == UT64_MAX || len < 1) {
 		return false;
 	}
 	io->buffer_enabled = 0;
 	for (i = 0; i < len; i += sizeof (buf)) {
-		at = addr + i;
-		(void) r_io_seek (io, at, R_IO_SEEK_SET);
 		memset (buf, 0xff, sizeof (buf));
-		r = r_io_read (io, buf, sizeof (buf));
-		if (r < 1) {
+		if (!r_io_read_at (io, addr + i, buf, sizeof (buf))) {
 			break;
 		}
-		r_cache_set (io->buffer, at, buf, sizeof (buf));
+		r_cache_set (io->buffer, addr + i, buf, sizeof (buf));
 	}
 	io->buffer_enabled = 1;
 	return true;
 }
 
-R_API const ut8* r_io_buffer_get (RIO *io, ut64 addr, int *len) {
+R_API const ut8* r_io_buffer_get(RIO* io, ut64 addr, int* len) {
 	return r_cache_get (io->buffer, addr, len);
 }
 
-R_API int r_io_buffer_read (RIO *io, ut64 addr, ut8* buf, int len) {
-	const ut8 *ret;
+R_API int r_io_buffer_read(RIO* io, ut64 addr, ut8* buf, int len) {
+	const ut8* ret;
 	int next, l = 0;
 	// align addr if out of buffer if its mapped on io //
 	ret = r_cache_get (io->buffer, addr, &l);
