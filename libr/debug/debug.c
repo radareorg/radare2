@@ -34,9 +34,9 @@ static int r_debug_recoil(RDebug *dbg) {
 		recoil = r_bp_recoil (dbg->bp, addr);
 		//eprintf ("[R2] Breakpoint recoil at 0x%"PFMT64x" = %d\n", addr, recoil);
 #if __arm__
-		if (recoil<1) recoil = 0; // XXX Hack :D
+		if (recoil < 1) recoil = 0; // XXX Hack :D
 #else
-		if (recoil<1) recoil = 0; //1; // XXX Hack :D (x86 only?)
+		if (recoil < 1) recoil = 0; //1; // XXX Hack :D (x86 only?)
 #endif
 		if (recoil) {
 			dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
@@ -51,7 +51,9 @@ static int r_debug_recoil(RDebug *dbg) {
 			//eprintf ("[BP Hit] Setting pc to 0x%"PFMT64x"\n", (addr-recoil));
 			return R_TRUE;
 		}
-	} else eprintf ("r_debug_recoil: Cannot get program counter\n");
+	} else {
+		eprintf ("r_debug_recoil: Cannot get program counter\n");
+	}
 	return R_FALSE;
 }
 
@@ -80,6 +82,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->reg = r_reg_new ();
 	dbg->num = r_num_new (r_debug_num_callback, dbg);
 	dbg->h = NULL;
+	dbg->threads = NULL;
 	/* TODO: needs a redesign? */
 	dbg->maps = r_debug_map_list_new ();
 	dbg->maps_user = r_debug_map_list_new ();
@@ -111,6 +114,7 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 	r_list_free (dbg->snaps);
 	r_list_free (dbg->maps);
 	r_list_free (dbg->maps_user);
+	r_list_free (dbg->threads);
 	sdb_free (dbg->sgnls);
 	r_tree_free (dbg->tree);
 	sdb_foreach (dbg->tracenodes, (SdbForeachCallback)free_tracenodes_entry, dbg);
@@ -177,7 +181,7 @@ R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits) {
 	return R_FALSE;
 }
 
-/* 
+/*
  * Save 4096 bytes from %esp
  * TODO: Add support for reverse stack architectures
  * Also known as r_debug_inject()
@@ -448,7 +452,7 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 		} else {
 			dbg->steps++;
 			dbg->reason.type = R_DEBUG_REASON_STEP;
-			//dbg->reason.addr = 
+			//dbg->reason.addr =
 		}
 	}
 
@@ -488,8 +492,8 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 	for (i = 0; i < steps; i++) {
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-		// Try to keep the buffer full 
-		if (pc - buf_pc > sizeof (buf)) { 
+		// Try to keep the buffer full
+		if (pc - buf_pc > sizeof (buf)) {
 			buf_pc = pc;
 			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
@@ -628,7 +632,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 		return R_FALSE;
 	}
 
-	if (!dbg->anal || !dbg->reg) { 
+	if (!dbg->anal || !dbg->reg) {
 		eprintf ("Undefined pointer at dbg->anal\n");
 		return R_FALSE;
 	}
@@ -644,8 +648,8 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	for (;;) {
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-		// Try to keep the buffer full 
-		if (pc - buf_pc > sizeof (buf)) { 
+		// Try to keep the buffer full
+		if (pc - buf_pc > sizeof (buf)) {
 			buf_pc = pc;
 			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
@@ -654,7 +658,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			eprintf ("Decode error at %"PFMT64x"\n", pc);
 			return R_FALSE;
 		}
-		if (op.type == type) 
+		if (op.type == type)
 			break;
 		// Step over and repeat
 		ret = over ?

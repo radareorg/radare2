@@ -1540,27 +1540,29 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	switch (input[1]) {
 	case '.':
 		{
-		       RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, core->offset);
-		       if (bpi) {
-			       r_cons_printf ("breakpoint %s %s %s\n",
-				       r_str_rwx_i (bpi->rwx),
-				       bpi->enabled? "enabled": "disabled",
-				       bpi->name? bpi->name: "");
-		       }
+			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, core->offset);
+			if (bpi) {
+				r_cons_printf ("breakpoint %s %s %s\n",
+						r_str_rwx_i (bpi->rwx),
+						bpi->enabled ?
+						"enabled" : "disabled",
+						bpi->name ? bpi->name : "");
+			}
 		}
 		break;
 	case 't':
 		switch (input[2]) {
 		case 'e':
-			for (p=input+3; *p==' '; p++) { /* nothing to do here */ }
+			for (p = input + 3; *p == ' '; p++) { /* nothing to do here */ }
 			if (*p == '*') {
 				r_bp_set_trace_all (core->dbg->bp,R_TRUE);
-			} else if (!r_bp_set_trace (core->dbg->bp, addr, R_TRUE)) {
+			} else if (!r_bp_set_trace (core->dbg->bp,
+						addr, R_TRUE)) {
 				eprintf ("Cannot set tracepoint\n");
 			}
 			break;
 		case 'd':
-			for (p=input+3; *p==' ';p++);
+			for (p = input + 3; *p==' ';p++);
 			if (*p == '*') {
 				r_bp_set_trace_all (core->dbg->bp,R_FALSE);
 			} else if (!r_bp_set_trace (core->dbg->bp, addr, R_FALSE))
@@ -1568,22 +1570,19 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		case 's':
 			bpi = r_bp_get_at (core->dbg->bp, addr);
-			if (bpi) {
-				bpi->trace = !!!bpi->trace;
-			} else {
-				eprintf ("Cannot unset tracepoint\n");
-			}
+			if (bpi) bpi->trace = !!!bpi->trace;
+			else eprintf ("Cannot unset tracepoint\n");
 			break;
 		case 'j': // dbtj
 			addr = UT64_MAX;
-			if (input[2]==' ' && input[3])
+			if (input[2] == ' ' && input[3])
 				addr = r_num_math (core->num, input+2);
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
 			r_cons_printf ("[");
 			r_list_foreach (list, iter, frame) {
 				r_cons_printf ("%s%08"PFMT64d,
-					(i?",":""), frame->addr);
+						(i ? "," : ""), frame->addr);
 				i++;
 			}
 			r_cons_printf ("]\n");
@@ -1591,14 +1590,14 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		case '=': // dbt=
 			addr = UT64_MAX;
-			if (input[2]==' ' && input[3])
+			if (input[2] == ' ' && input[3])
 				addr = r_num_math (core->num, input+2);
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
 			r_list_reverse (list);
 			r_list_foreach (list, iter, frame) {
 				r_cons_printf ("%s0x%08"PFMT64x,
-					(i?" > ":""), frame->addr);
+						(i ? " > " : ""), frame->addr);
 				i++;
 			}
 			r_cons_newline ();
@@ -1606,26 +1605,37 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		case 0:
 			addr = UT64_MAX;
-			if (input[2]==' ' && input[3])
-				addr = r_num_math (core->num, input+2);
+			if (input[2] == ' ' && input[3])
+				addr = r_num_math (core->num, input + 2);
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
 			r_cons_printf ("#  Address  Size  [Func]  Desc1 Desc2\n");
 			r_list_foreach (list, iter, frame) {
 				char flagdesc[1024], flagdesc2[1024];
-				RFlagItem *f = r_flag_get_at (core->flags, frame->addr);
+				RFlagItem *f = r_flag_get_at (core->flags,
+							frame->addr);
 				if (f) {
 					if (f->offset != addr) {
 						int delta = (int)(frame->addr - f->offset);
-						if (delta>0) {
-							snprintf (flagdesc, sizeof(flagdesc), "%s+%d", f->name, delta);
-						} else if (delta<0) {
-							snprintf (flagdesc, sizeof(flagdesc), "%s%d", f->name, delta);
+						if (delta > 0) {
+							snprintf (flagdesc,
+								sizeof(flagdesc),
+								"%s+%d",
+								f->name, delta);
+						} else if (delta < 0) {
+							snprintf (flagdesc,
+								sizeof(flagdesc),
+								"%s%d",
+								f->name, delta);
 						} else {
-							snprintf (flagdesc, sizeof(flagdesc), "%s", f->name);
+							snprintf (flagdesc,
+								sizeof(flagdesc),
+								"%s", f->name);
 						}
 					} else {
-						snprintf (flagdesc, sizeof(flagdesc), "%s", f->name);
+						snprintf (flagdesc,
+							sizeof(flagdesc),
+							"%s", f->name);
 					}
 				} else {
 					flagdesc[0] = 0;
@@ -1634,15 +1644,25 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				if (f) {
 					if (f->offset != addr) {
 						int delta = (int)(frame->addr - 1 - f->offset);
-						if (delta>0) {
-							snprintf (flagdesc2, sizeof(flagdesc2), "%s+%d", f->name, delta+1);
+						if (delta > 0) {
+							snprintf (flagdesc2,
+								sizeof(flagdesc2),
+								"%s+%d",
+								f->name, delta + 1);
 						} else if (delta<0) {
-							snprintf (flagdesc2, sizeof(flagdesc2), "%s%d", f->name, delta+1);
+							snprintf (flagdesc2,
+								sizeof(flagdesc2),
+								"%s%d",
+								f->name, delta + 1);
 						} else {
-							snprintf (flagdesc2, sizeof(flagdesc2), "%s+1", f->name);
+							snprintf (flagdesc2,
+								sizeof(flagdesc2),
+								"%s+1", f->name);
 						}
 					} else {
-						snprintf (flagdesc2, sizeof(flagdesc2), "%s", f->name);
+						snprintf (flagdesc2,
+							sizeof(flagdesc2),
+							"%s", f->name);
 					}
 				} else {
 					flagdesc2[0] = 0;
@@ -1652,11 +1672,16 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				}
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
 				if (fcn) {
-					r_cons_printf ("%d  0x%08"PFMT64x"  %d  [%s]  %s %s\n",
-						i++, frame->addr, frame->size, fcn->name, flagdesc, flagdesc2);
+					r_cons_printf ("%d  0x%08"PFMT64x"  %d \
+							[%s]  %s %s\n", i++,
+							frame->addr, frame->size,
+							fcn->name, flagdesc,
+							flagdesc2);
 				} else {
-					r_cons_printf ("%d  0x%08"PFMT64x"  %d  %s %s\n",
-						i++, frame->addr, frame->size, flagdesc, flagdesc2);
+					r_cons_printf ("%d  0x%08"PFMT64x"  %d  \
+							%s %s\n", i++, frame->addr,
+							frame->size, flagdesc,
+							flagdesc2);
 				}
 			}
 			r_list_free (list);
@@ -1670,20 +1695,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case '*': r_bp_list (core->dbg->bp, 1); break;
 	case '\0': r_bp_list (core->dbg->bp, 0); break;
 	case '-':
-		if (input[2] == '*') {
-			r_bp_del_all (core->dbg->bp);
-		} else r_bp_del (core->dbg->bp, r_num_math (core->num, input+2));
+		if (input[2] == '*') r_bp_del_all (core->dbg->bp);
+		else r_bp_del (core->dbg->bp, r_num_math (core->num, input + 2));
 		break;
 	case 'c':
-		addr = r_num_math (core->num, input+2);
+		addr = r_num_math (core->num, input + 2);
 		bpi = r_bp_get_at (core->dbg->bp, addr);
 		if (bpi) {
-			char *arg = strchr (input+2, ' ');
-			if (arg)
-				arg = strchr (arg+1, ' ');
+			char *arg = strchr (input + 2, ' ');
+			if (arg) arg = strchr (arg + 1, ' ');
 			if (arg) {
 				free (bpi->data);
-				bpi->data = strdup (arg+1);
+				bpi->data = strdup (arg + 1);
 			} else {
 				free (bpi->data);
 				bpi->data = NULL;
@@ -1691,26 +1714,31 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} else eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
 		break;
 	case 's':
-		addr = r_num_math (core->num, input+2);
+		addr = r_num_math (core->num, input + 2);
 		bpi = r_bp_get_at (core->dbg->bp, addr);
 		if (bpi) {
 			//bp->enabled = !bp->enabled;
 			r_bp_del (core->dbg->bp, addr);
 		} else {
-			if (hwbp) bpi = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-			else bpi = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input+2);
+			if (hwbp) bpi = r_bp_add_hw (core->dbg->bp, addr,
+						1, R_BP_PROT_EXEC);
+			else bpi = r_bp_add_sw (core->dbg->bp, addr,
+						1, R_BP_PROT_EXEC);
+			if (!bpi) eprintf ("Cannot set breakpoint "
+					"(%s)\n", input + 2);
 		}
-		r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), 0);
+		r_bp_enable (core->dbg->bp, r_num_math (core->num,
+							input + 2), 0);
 		break;
 	case 'n':
 		bpi = r_bp_get_at (core->dbg->bp, core->offset);
 		if (input[2] == ' ') {
 			if (bpi) {
 				free (bpi->name);
-				bpi->name = strdup (input+3);
+				bpi->name = strdup (input + 3);
 			} else {
-				eprintf ("Cant find breakpoint at 0x%08"PFMT64x"\n", core->offset);
+				eprintf ("Cant find breakpoint at "
+					"0x%08"PFMT64x"\n", core->offset);
 			}
 		} else {
 			if (bpi && bpi->name) {
@@ -1719,21 +1747,21 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		}
 		break;
 	case 'e':
-		for (p=input+2; *p==' ';p++);
-		if (*p == '*') {
-			r_bp_enable_all (core->dbg->bp,R_TRUE);
-		} else r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), R_TRUE);
+		for (p = input + 2; *p == ' '; p++);
+		if (*p == '*') r_bp_enable_all (core->dbg->bp,R_TRUE);
+		else r_bp_enable (core->dbg->bp, r_num_math (core->num,
+							input + 2), R_TRUE);
 		break;
 	case 'd':
-		for (p=input+2; *p==' ';p++);
-		if (*p == '*') {
-			r_bp_enable_all (core->dbg->bp,R_FALSE);
-		} r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), R_FALSE);
+		for (p = input + 2; *p == ' '; p++);
+		if (*p == '*') r_bp_enable_all (core->dbg->bp, R_FALSE);
+		r_bp_enable (core->dbg->bp, r_num_math (core->num,
+							input + 2), R_FALSE);
 		break;
 	case 'h':
 		switch (input[2]) {
 		case ' ':
-			if (!r_bp_use (core->dbg->bp, input+3, core->anal->bits))
+			if (!r_bp_use (core->dbg->bp, input + 3, core->anal->bits))
 				eprintf ("Invalid name: '%s'.\n", input+3);
 			break;
 		case 0:
@@ -1745,18 +1773,20 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		}
 		break;
 	case ' ':
-		for (p=input+1; *p==' ';p++);
+		for (p = input + 1; *p == ' '; p++);
 		if (*p == '-') {
-			r_bp_del (core->dbg->bp, r_num_math (core->num, p+1));
+			r_bp_del (core->dbg->bp, r_num_math (core->num, p + 1));
 		} else {
 			addr = r_num_math (core->num, input+2);
 			if (validAddress (core, addr)) {
 				bpi = hwbp \
-				? r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC)
-				: r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+				? r_bp_add_hw (core->dbg->bp, addr,
+						1, R_BP_PROT_EXEC)
+				: r_bp_add_sw (core->dbg->bp, addr,
+						1, R_BP_PROT_EXEC);
 				if (bpi) {
 					free (bpi->name);
-					if (!strcmp (input+2, "$$")) {
+					if (!strcmp (input + 2, "$$")) {
 						char *newname = NULL;
 						//RFlagItem *f = r_flag_get_at (core->flags, addr);
 						RFlagItem *f = r_flag_get_i2 (core->flags, addr);
@@ -1770,18 +1800,22 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						}
 						bpi->name = newname;
 					} else {
-						bpi->name = strdup (input+2);
+						bpi->name = strdup (input + 2);
 					}
 				} else {
-					eprintf ("Cannot set breakpoint at '%s'\n", input+2);
+					eprintf ("Cannot set breakpoint at "
+						"'%s'\n", input+2);
 				}
-			} else eprintf ("Can't place a breakpoint here. No mapped memory\n");
+			} else {
+				eprintf ("Can't place a breakpoint here. "
+					"No mapped memory\n");
+			}
 		}
 		break;
 	case 'i':
 		switch (input[2]) {
 		case 0: // "dbi"
-			for (i=0;i<core->dbg->bp->bps_idx_count;i++) {
+			for (i = 0;i < core->dbg->bp->bps_idx_count; i++) {
 				if ((bpi = core->dbg->bp->bps_idx[i])) {
 					r_cons_printf ("%d 0x%08"PFMT64x" E:%d T:%d\n",
 						i, bpi->addr, bpi->enabled, bpi->trace);
@@ -2632,10 +2666,10 @@ static int cmd_debug(void *data, const char *input) {
 		r_cons_break_end ();
 		break;
 	case 'm': // "dm"
-		cmd_debug_map (core, input+1);
+		cmd_debug_map (core, input + 1);
 		break;
 	case 'r': // "dr"
-		if (core->io->debug || input[1]=='?') {
+		if (core->io->debug || input[1] == '?') {
 			cmd_debug_reg (core, input+1);
 		} else {
 			void cmd_anal_reg(RCore *core, const char *str);
@@ -2683,8 +2717,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (rdi->cwd && *rdi->cwd)
 					P ("cwd=%s\n", rdi->cwd);
 			}
-			if (stop != -1)
-				P ("stopreason=%d\n", stop);
+			if (stop != -1) P ("stopreason=%d\n", stop);
 			break;
 		case 'j':
 			P ("{");
@@ -2723,7 +2756,8 @@ static int cmd_debug(void *data, const char *input) {
 			acode = r_asm_massemble (core->assembler, input+2);
 			if (acode && *acode->buf_hex) {
 				r_reg_arena_push (core->dbg->reg);
-				r_debug_execute (core->dbg, acode->buf, acode->len, 0);
+				r_debug_execute (core->dbg, acode->buf,
+						acode->len, 0);
 				r_reg_arena_pop (core->dbg->reg);
 			}
 			r_asm_code_free (acode);
@@ -2733,7 +2767,7 @@ static int cmd_debug(void *data, const char *input) {
 			if (input[2]) {
 				r_cons_push ();
 				char * str = r_core_cmd_str (core,
-					sdb_fmt (0, "gs %s", input+2));
+					sdb_fmt (0, "gs %s", input + 2));
 				r_cons_pop ();
 				r_core_cmdf (core, "dx %s", str); //`gs %s`", input+2);
 				free (str);
@@ -2743,12 +2777,15 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'r':
 			r_reg_arena_push (core->dbg->reg);
-			if (input[2]==' ') {
+			if (input[2] == ' ') {
 				ut8 bytes[4096];
-				if (strlen (input+2) < 4096){
-					int bytes_len = r_hex_str2bin (input+2, bytes);
-					if (bytes_len>0) {
-						r_debug_execute (core->dbg, bytes, bytes_len, 0);
+				if (strlen (input + 2) < 4096){
+					int bytes_len = r_hex_str2bin (input + 2,
+									bytes);
+					if (bytes_len > 0) {
+						r_debug_execute (core->dbg,
+								bytes, bytes_len,
+								0);
 					} else {
 						eprintf ("Invalid hexpairs\n");
 					}
@@ -2759,13 +2796,13 @@ static int cmd_debug(void *data, const char *input) {
 		case ' ':
 			{
 			ut8 bytes[4096];
-			if (strlen (input+2) < 4096){
-				int bytes_len = r_hex_str2bin (input+2, bytes);
-				if (bytes_len>0)
-					r_debug_execute (core->dbg, bytes, bytes_len, 0);
+			if (strlen (input + 2) < 4096){
+				int bytes_len = r_hex_str2bin (input + 2, bytes);
+				if (bytes_len>0) r_debug_execute (core->dbg,
+							bytes, bytes_len, 0);
 				else eprintf ("Invalid hexpairs\n");
 			} else eprintf ("Injection opcodes so long\n");
-			} 
+			}
 			break;
 		default:{
 			const char* help_msg[] = {
@@ -2783,12 +2820,12 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 'o':
-		r_core_file_reopen (core, input[1]? input+2: NULL, 0, 1);
+		r_core_file_reopen (core, input[1] ? input + 2: NULL, 0, 1);
 		break;
 	case 'w':
 		r_cons_break (static_debug_stop, core->dbg);
 		for (;!r_cons_singleton ()->breaked;) {
-			int pid = atoi (input+1);
+			int pid = atoi (input + 1);
 			//int opid = core->dbg->pid = pid;
 			int res = r_debug_kill (core->dbg, pid, 0, 0);
 			if (!res) break;
@@ -2797,10 +2834,10 @@ static int cmd_debug(void *data, const char *input) {
 			r_cons_break_end();
 		break;
 	case 'k':
-		r_core_debug_kill (core, input+1);
+		r_core_debug_kill (core, input + 1);
 		break;
 	case 'e':
-		r_core_debug_esil (core, input+1);
+		r_core_debug_esil (core, input + 1);
 		break;
 	default:{
 			const char* help_msg[] = {
@@ -2827,7 +2864,7 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	}
-	if (follow>0) {
+	if (follow > 0) {
 		ut64 pc = r_debug_reg_get (core->dbg, "pc");
 		if ((pc < core->offset) || (pc > (core->offset + follow)))
 			r_core_cmd0 (core, "sr pc");

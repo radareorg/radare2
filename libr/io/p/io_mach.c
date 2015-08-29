@@ -11,7 +11,7 @@
 #define EXCEPTION_PORT 0
 
 #include <mach/exception_types.h>
-#include <mach/mach_vm.h>
+//no available for ios #include <mach/mach_vm.h>
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
 #include <mach/mach_init.h>
@@ -40,8 +40,8 @@ typedef struct {
 	int pid;
 	task_t task;
 } RIOMach;
-#define RIOMACH_PID(x) (x?((RIOMach*)(x))->pid:-1)
-#define RIOMACH_TASK(x) (x?((RIOMach*)(x))->task:-1)
+#define RIOMACH_PID(x) (x ? ((RIOMach*)(x))->pid : -1)
+#define RIOMACH_TASK(x) (x ? ((RIOMach*)(x))->task : -1)
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
