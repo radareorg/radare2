@@ -9,6 +9,8 @@
 #include <mach/host_priv.h>
 #include "xnu_debug.h"
 
+#include "xnu_threads.c"
+
 
 static task_t task_for_pid_workaround(int Pid) {
 	host_t myhost = mach_host_self();
@@ -276,7 +278,7 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	} else {
 		eprintf ("There are no threads!\n");
 	}
-	return sizeof (R_DEBUG_REG_T);
+	return sizeof(R_DEBUG_REG_T);
 }
 
 RDebugMap *xnu_map_alloc(RDebug *dbg, ut64 addr, int size) {
@@ -344,6 +346,7 @@ static void xnu_free_threads_ports (RDebugPid *p) {
 }
 */
 
+
 RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
 #if __arm__
 	#define OSX_PC state.__pc
@@ -360,42 +363,26 @@ RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
 #undef OSX_PC
 #define OSX_PC state.x32[REG_PC]
 #endif
-	int i, tid;
-	kern_return_t kret;
-	thread_array_t inferior_threads = NULL;
-	unsigned int inferior_thread_count = 0;
+	RListIter *iter;
+	xnu_thread_t *thread;
 	R_DEBUG_REG_T state;
+	xnu_update_thread_list (dbg);
 
-	//is freed in r_debug_thread_list
-	//FIXME mach_port_deallocate is failing
-	//list->free = (RListFree)xnu_free_threads_ports;
-	if (task_threads (pid_to_task (pid), &inferior_threads,
-			&inferior_thread_count) != KERN_SUCCESS) {
-		eprintf ("Failed to get list of task's threads.\n");
-		return list;
+	list->free = (RListFree)&r_debug_pid_free;
+	r_list_foreach (dbg->threads, iter, thread) {
+		r_list_append (list, r_debug_pid_new (thread->name,
+						thread->tid, 's',
+						OSX_PC));
 	}
-
-	for (i = 0; i < inferior_thread_count; i++) {
-		tid = inferior_threads[i];
-		r_list_append (list, r_debug_pid_new ("???", tid, 's', OSX_PC));
-	}
-
-	//deallocate the buffer
-	kret = vm_deallocate (pid_to_task (pid), inferior_threads,
-			inferior_thread_count * sizeof(thread_t));
-	if (kret != KERN_SUCCESS) {
-		eprintf ("error: vm_deallocate xnu_thread_list\n");
-	}
-
 
 	return list;
 
 }
 
 static vm_prot_t unix_prot_to_darwin(int prot) {
-        return ((prot&1<<4)?VM_PROT_READ:0 |
-                (prot&1<<2)?VM_PROT_WRITE:0 |
-                (prot&1<<1)?VM_PROT_EXECUTE:0);
+        return ((prot & 1 << 4) ? VM_PROT_READ : 0 |
+                (prot & 1 << 2) ? VM_PROT_WRITE : 0 |
+                (prot & 1 << 1) ? VM_PROT_EXECUTE : 0);
 }
 
 int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {

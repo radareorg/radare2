@@ -46,7 +46,6 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 
 #elif __APPLE__
 #include <sys/resource.h>
-#include <libproc.h>
 #include "native/xnu/xnu_debug.h"
 
 #elif __sun
@@ -101,12 +100,12 @@ static int r_debug_native_step (RDebug *dbg) {
 	/* set TRAP flag */
 	CONTEXT regs __attribute__ ((aligned (16)));
 	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR,
-		(ut8 *)&regs, sizeof (regs));
+				(ut8 *)&regs, sizeof (regs));
 	regs.EFlags |= 0x100;
 	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR,
-		(ut8 *)&regs, sizeof (regs));
+				(ut8 *)&regs, sizeof (regs));
 	r_debug_native_continue (dbg, dbg->pid,
-		dbg->tid, dbg->reason.signum);
+				dbg->tid, dbg->reason.signum);
 	r_debug_handle_signals (dbg);
 	return R_TRUE;
 #elif __APPLE__
@@ -278,7 +277,6 @@ static RList *r_debug_native_pids (int pid) {
 #else
 	int i, fd;
 	char *ptr, cmdline[1024];
-// TODO: new syntax: R_LIST (r_debug_pid_free)
 	list->free = (RListFree)&r_debug_pid_free;
 	/* TODO */
 	if (pid) {
@@ -1009,6 +1007,9 @@ static int getMaxFiles() {
 }
 
 static RList *xnu_desc_list (int pid) {
+#if TARGET_OS_IPHONE
+	return NULL;
+#else
 #define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 	RDebugDesc *desc;
 	RList *ret = r_list_new();
@@ -1034,6 +1035,7 @@ static RList *xnu_desc_list (int pid) {
 		r_list_append (ret, desc);
 	}
 	return ret;
+#endif
 }
 #endif
 #if __WINDOWS__
