@@ -36,6 +36,7 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 	int i;
 	if (!cmd) return NULL;
 	r_cmd_alias_free (cmd);
+	r_cmd_macro_free (&cmd->macro);
 	// dinitialize plugin commands
 	r_core_plugin_deinit(cmd);
 	r_list_free (cmd->plist);
@@ -248,6 +249,11 @@ R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->user = NULL;
 	mac->cmd = NULL;
 	mac->macros = r_list_new ();
+}
+
+R_API void r_cmd_macro_free(RCmdMacro *mac) {
+	r_list_free (mac->macros);
+	mac->macros = NULL;
 }
 
 // XXX add support single line function definitions

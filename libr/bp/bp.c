@@ -40,6 +40,7 @@ R_API RBreakpoint *r_bp_new() {
 R_API RBreakpoint *r_bp_free(RBreakpoint *bp) {
 	r_list_free (bp->bps);
 	r_list_free (bp->plugins);
+	r_list_free (bp->traces);
 	free (bp);
 	return NULL;
 }
