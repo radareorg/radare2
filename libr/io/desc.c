@@ -1,231 +1,122 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
-
 #include <r_io.h>
-#include <r_util.h>
-#include <r_cons.h>
-// TODO: to be deprecated.. this is slow and boring
+#include <sdb.h>
+#include <string.h>
 
-R_API void r_io_desc_init(RIO *io) {
-	io->files = r_list_new ();
-	if (!io->files) return;
-	io->files->free = (RListFree)r_io_desc_free;
+R_API int r_io_desc_init (RIO *io)
+{
+	if (!io || io->files)
+		return R_FALSE;
+	io->files = sdb_new0 ();
+	return R_TRUE;
 }
 
-R_API void r_io_desc_fini(RIO *io) {
-	r_list_free (io->files);
-}
-
-R_API ut64 r_io_desc_size(RIO *io, RIODesc *desc){
-	RIODesc *old = NULL;
-	ut64 sz = -1;
-	if (desc && io->desc != desc){
-		old = io->desc;
-		r_io_use_desc (io, desc);
-	}
-	if (desc) {
-		sz = r_io_size (io);
-	}
-	if (old) {
-		r_io_use_desc (io, old);
-	}
-	return sz;
-}
-
-R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int flags, int mode, void *data) {
-	RETURN_IO_DESC_NEW (plugin, fd, name, flags, mode, data);
-}
-#if 0
-	int i;
-	RIODesc *desc = R_NEW (RIODesc);
-	if (!desc) return NULL;
-	if (fd==-1) eprintf ("WARNING: r_io_desc_new with fd = -1\n");
-	desc->state = R_IO_DESC_TYPE_OPENED;
-	desc->name = strdup (name);
-	if (!desc->name) {
-		free (desc);
+//shall be used by plugins for creating descs
+R_API RIODesc *r_io_desc_new (RIOPlugin *plugin, int fd, char *uri, int flags, void *data)
+{
+	RIODesc *desc = NULL;
+	if (!plugin || !uri)
 		return NULL;
-	}
-	desc->plugin = plugin;
-	desc->flags = flags;
-	if (fd == -2) {
-		ut8 *p = (ut8 *)&(desc->fd);
-		desc->fd = ((int) ((size_t) desc) & 0xffffff);
-		desc->fd = p[0];
-		for (i=1; i<sizeof (desc->fd); i++)
-			desc->fd ^= p[i];
-	} else desc->fd = fd;
+	desc = R_NEW0 (RIODesc);
+	desc->cbs = cbs;
+	desc->fd = fd;
 	desc->data = data;
+	desc->flags = flags;
+	desc->uri = strdup (uri);			//because the uri-arg may live on the stack
 	return desc;
-#endif
+}
 
-R_API void r_io_desc_free(RIODesc *desc) {
-	if (!desc) {
-		return;
+R_API void r_io_desc_free (RIODesc *desc)
+{
+	if (desc) {
+		free (desc->uri);
+//		free (desc->cbs);
 	}
-	if (desc->io) {
-		RIO* io = (RIO*)desc->io;
-		desc->io = NULL;
-		r_io_close (io, desc);
-	}
-	if (desc->plugin && desc->plugin->close)
-		desc->plugin->close (desc);
-	R_FREE (desc->name);
-	R_FREE (desc->uri);
-	R_FREE (desc->referer);
 	free (desc);
 }
 
-R_API int r_io_desc_add(RIO *io, RIODesc *desc) {
-	RIODesc *foo = r_io_desc_get (io, desc->fd);
-	if (!foo){
-		desc->io = io;
-		r_list_append (io->files, desc);
-	}
-	return foo? 1: 0;
+R_API int r_io_desc_add (RIO *io, RIODesc *desc)
+{
+	char s[64];
+	if (!io || !io->files || !desc)
+		return R_FALSE;
+	sdb_itoa ((ut64)desc->fd, s, 10);
+	if (sdb_num_exists (io->files, s))		//check if fd already exists in db
+		return R_FALSE;
+	sdb_num_set (io->files, s, (ut64)desc, 0);
+	return sdb_num_exists (io->files, s);		//check if storage worked
 }
 
-R_API int r_io_desc_del(RIO *io, int fd) {
-	RListIter *iter;
-	RIODesc *d;
-	io->desc = NULL;
-	if (!r_list_empty (io->files)) {
-		io->desc = r_list_first (io->files);
-	}
-	/* No _safe loop necessary because we return immediately after the delete. */
-	r_list_foreach (io->files, iter, d) {
-		if (d->fd == fd || fd == -1) {
-			r_io_desc_free (d);
-			iter->data = NULL; // enforce free
-			r_list_delete (io->files, iter);
-			return true;
-		}
-	}
-	return false;
+R_API int r_io_desc_del (RIO *io, int fd)
+{
+	char s[64];
+	if (!io || !io->files)
+		return R_FALSE;
+	sdb_itoa ((ut64)fd, s, 10);
+	r_io_desc_free ((RIODesc *)sdb_num_get (io->files, s, NULL));
+	if ((ut64)io->desc == sdb_num_get (io->files, s, NULL))
+		io->desc = NULL;					//prevent evil segfaults
+	return sdb_unset (io->files, s, 0);
 }
 
-R_API RIODesc *r_io_desc_get(RIO *io, int fd) {
-	RListIter *iter;
-	RIODesc *d;
-	if (fd<0)
+R_API RIODesc *r_io_desc_get (RIO *io, int fd)
+{
+	char s[64];
+	if (!io || !io->files)
 		return NULL;
-	r_list_foreach (io->files, iter, d) {
-		if (d && d->fd == fd)
-			return d;
-	}
-	return NULL;
+	sdb_itoa ((ut64)fd, s, 10);
+	return (RIODesc *)sdb_num_get (io->files, s, NULL);
 }
 
-R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset) {
-	if (!io || !desc)
-		return UT64_MAX;
-	if (!desc->plugin)
-		return (ut64)lseek (desc->fd, offset, SEEK_SET);
-	return desc->plugin->lseek (io, desc, offset, SEEK_SET);
+R_API int r_io_desc_use (RIO *io, int fd)
+{
+	RIODesc *desc;
+	if (!(desc = r_io_desc_get (io, fd)))
+		return R_FALSE;
+	io->desc = desc;
+	return R_TRUE;
 }
 
-R_API void r_io_desc_list (RIO *io) {
-	RIODesc *desc = NULL;
-	RListIter *iter;
-	if (io && io->files) {
-		r_list_foreach (io->files, iter, desc) {
-			if (desc) {
-				io->cb_printf ("- %i", desc->fd);
-				if (desc->uri)
-					io->cb_printf ("\t%s", desc->uri);
-				if (desc->name)
-					io->cb_printf ("\t%s", desc->name);
-				io->cb_printf ("\tstate: %i\tflags: %s\n", desc->state, r_str_rwx_i (desc->flags));
-			}
-		}
-	}
+R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence)
+{
+	if (!desc || !desc->cbs || !desc->cbs->lseek)
+		return (ut64)-1;
+	return desc->cbs->lseek (desc->io, desc, offset, whence);
 }
 
-#if 0
-// XXX: This must be deprecated in order to promote the cast of dataptr to ut32
-R_API int r_io_desc_generate(struct r_io_t *io) {
-	int fd;
-	do fd = 0xf000 + rand ()%0xfff;
-	while (r_io_desc_get(io, fd));
-	return fd;
+R_API ut64 r_io_desc_size (RIODesc *desc)
+{
+	ut64 off, ret;
+	if (desc || !desc->cbs || !desc->cbs->lseek)
+		return 0LL;
+	off = desc->cbs->lseek (desc->io, desc, 0LL, R_IO_SEEK_CUR);
+	ret = desc->cbs->lseek (desc->io, desc, 0LL, R_IO_SEEK_END);
+	desc->cbs->lseek (desc->io, desc, off, R_IO_SEEK_CUR);			//what to do if that seek fails?
+	return ret;
 }
-#endif
 
-R_API void r_io_desc_list_visual(RIO *io, ut64 seek, ut64 len, int width, int use_color) {
-	ut64 mul, min = -1, max = -1;
-	RListIter *iter;
-	RIOMap *s;
-	int j, i;
+int desc_fini_cb (void *user, const char *fd, const char *cdesc)
+{
+//	RIO *io = (RIO *)user;							//unused
+	RIODesc *desc = (RIODesc *)(size_t)sdb_atoi (cdesc);
+	if (!desc)
+		return R_TRUE;
+	if (desc->cbs && desc->cbs->close)
+		desc->cbs->close (desc);
+	r_io_desc_free (desc);
+	return R_TRUE;
+}
 
-	width -= 52;
-	if (width<1)
-		width = 30;
-
-	seek = (io->va || io->debug) ? r_io_section_vaddr_to_maddr_try (io, seek) : seek;
-
-	r_list_foreach (io->maps, iter, s) {
-		if (min == -1 || s->from < min) {
-			min = s->from;
-		}
-		if (max == -1 || s->to > max) {
-			max = s->to;
-		}
-	}
-	mul = (max-min) / width;
-	if (min != -1 && mul != 0) {
-		const char * color = "", *color_end = "";
-		i = 0;
-		r_list_foreach (io->maps, iter, s) {
-			if (use_color) {
-				color_end = Color_RESET;
-				if (s->flags & 1) { // exec bit
-					color = Color_GREEN;
-				} else if (s->flags & 2) { // write bit
-					color = Color_RED;
-				} else {
-					color = "";
-					color_end = "";
-				}
-			} else {
-				color = "";
-				color_end = "";
-			}
-			if (io->va) {
-				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						(seek>=s->from&& seek<s->to)?'*':' ',
-						//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ',
-						color, s->from, color_end);
-			} else {
-				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						(seek >= s->from && seek < s->to) ? '*':' ',
-						color, s->from, color_end);
-			}
-			for (j=0; j<width; j++) {
-				ut64 pos = min + (j*mul);
-				ut64 npos = min + ((j+1)*mul);
-				if (s->from<npos && (s->to)>pos)
-					io->cb_printf ("#");
-				else io->cb_printf ("-");
-			}
-			io->cb_printf ("| %s0x%08"PFMT64x"%s %s %d\n",
-				color, s->to, color_end,
-				r_str_rwx_i (s->flags), s->fd);
-			i++;
-		}
-		/* current seek */
-		if (i>0 && len != 0) {
-			if (seek == UT64_MAX)
-				seek = 0;
-			//len = 8096;//r_io_size (io);
-			io->cb_printf ("=>  0x%08"PFMT64x" |", seek);
-			for (j=0;j<width;j++) {
-				io->cb_printf (
-					((j*mul)+min >= seek &&
-					 (j*mul)+min <= seek+len)
-					?"^":"-");
-			}
-			io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len);
-		}
-	}
+//closes all descs and frees all descs and io->files
+R_API int r_io_desc_fini (RIO *io)
+{
+	int ret;
+	if (!io || !io->files)
+		return R_FALSE;
+	ret = sdb_foreach (io->files, desc_fini_cb, io);
+	sdb_free (io->files);
+	io->files = NULL;
+	io->desc = NULL;							//no map-cleanup here, to keep it modular useable
+	return ret;
 }
 
 R_API bool r_io_desc_detach (RIO *io, RIODesc *fd) {
