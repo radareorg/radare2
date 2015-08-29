@@ -163,9 +163,8 @@ R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
 
 R_API R_API int r_lib_close(RLib *lib, const char *file) {
 	RLibPlugin *p;
-	RListIter *iter;
-	/* No _safe loop necessary because we return immediately after the delete. */
-	r_list_foreach (lib->plugins, iter, p) {
+	RListIter *iter, *iter_tmp;
+	r_list_foreach_safe (lib->plugins, iter, iter_tmp, p) {
 		if ((file==NULL || (!strcmp (file, p->file)))) {
 			int ret = 0;
 			if (p->handler && p->handler->constructor) {
@@ -174,8 +173,13 @@ R_API R_API int r_lib_close(RLib *lib, const char *file) {
 			}
 			free (p->file);
 			r_list_delete (lib->plugins, iter);
-			return ret;
+			if (file != NULL) {
+				return ret;
+			}
 		}
+	}
+	if (file == NULL) {
+		return 0;
 	}
 	// delete similar plugin name
 	r_list_foreach (lib->plugins, iter, p) {
