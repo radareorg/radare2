@@ -2532,10 +2532,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'H': get_anode(g->curnode)->x -= g->movspeed; break;
 		case 'L': get_anode(g->curnode)->x += g->movspeed; break;
 
-		case 'k': can->sy -= g->movspeed * (invscroll ? -1 : 1); break;
-		case 'j': can->sy += g->movspeed * (invscroll ? -1 : 1); break;
-		case 'h': can->sx -= g->movspeed * (invscroll ? -1 : 1); break;
-		case 'l': can->sx += g->movspeed * (invscroll ? -1 : 1); break;
+		case 'j': can->sy -= g->movspeed * (invscroll ? -1 : 1); break;
+		case 'k': can->sy += g->movspeed * (invscroll ? -1 : 1); break;
+		case 'l': can->sx -= g->movspeed * (invscroll ? -1 : 1); break;
+		case 'h': can->sx += g->movspeed * (invscroll ? -1 : 1); break;
 		case 'e':
 			  can->linemode = !!!can->linemode;
 			  break;
