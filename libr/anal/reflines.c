@@ -15,6 +15,13 @@ static void free_refline_list (struct list_head *head){
 	free (ref);
 }
 
+R_API void r_anal_reflines_free (RAnalRefline *rl) {
+	if (rl) {
+		//free_refline_list (&rl->list);
+		free (rl);
+	}
+}
+
 R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 	ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall)
 {

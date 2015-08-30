@@ -338,6 +338,13 @@ static int cb_asmlineswidth(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_asm_invhex(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->assembler->invhex = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_asmos(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	int asmbits = r_config_get_i (core->config, "asm.bits");
@@ -1085,7 +1092,8 @@ R_API int r_core_config_init(RCore *core) {
 	//asm.os needs to be first, since other asm.* depend on it
 	SETCB("asm.os", R_SYS_OS, &cb_asmos, "Select operating system (kernel) (linux, darwin, w32,..)");
 	SETI("asm.maxrefs", 5,  "Maximum number of xrefs to be displayed as list (use columns above)");
-	SETPREF("asm.bytes", "true",  "Display the bytes of each instruction");
+	SETCB("asm.invhex", "false", &cb_asm_invhex, "Show invalid instructions as hexadecimal numbers");
+	SETPREF("asm.bytes", "true", "Display the bytes of each instruction");
 	SETPREF("asm.flagsinbytes", "false",  "Display flags inside the bytes space");
 	SETPREF("asm.midflags", "true", "Realign disassembly if there is a flag in the middle of an instruction");
 	SETPREF("asm.cmtflgrefs", "true", "Show comment flags associated to branch reference");
@@ -1104,7 +1112,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.flags", "true", "Show flags");
 	SETPREF("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF("asm.lines", "true", "Show ASCII-art lines at disassembly");
-	SETPREF("asm.linescall", "false", "Enable call lines");
+	SETPREF("asm.lines.call", "false", "Enable call lines");
+	SETPREF("asm.lines.ret", "false", "Show separator lines after ret");
 	SETPREF("asm.linesout", "true", "Show out of block lines");
 	SETPREF("asm.linesright", "false", "Show lines before opcode instead of offset");
 	SETPREF("asm.linesstyle", "false", "Iterate the jump list backwards");
@@ -1144,7 +1153,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.demangle", "true", "Show demangled symbols in disasm");
 	SETPREF("asm.describe", "false", "Show opcode description");
 	SETPREF("asm.marks", "true", "Show marks before the disassembly");
-	SETPREF("asm.hex_invalid", "false", "Show hexvalue of invalid opcodes");
 	SETCB("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");

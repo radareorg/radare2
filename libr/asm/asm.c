@@ -322,26 +322,35 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	op->size = 4;
 	if (len<1)
 		return 0;
-	// on mips/arm/sparc .. use word size
-	sprintf (op->buf_asm,".byte 0x%02x %d", buf[0], len);
+	op->buf_asm[0] = '\0';
 	if (a->cur && a->cur->disassemble)
 		ret = a->cur->disassemble (a, op, buf, len);
-	// avoid undefined behaviour
-	if (ret<0)
-		ret = 0;
+	if (ret<0) ret = 0;
+	// WAT
 	oplen = r_asm_op_get_size (op);
 	oplen = op->size;
 	if (oplen>len) oplen = len;
 	if (oplen<1) oplen = 1;
-	if (ret > 0) {
-		if (a->ofilter)
-			r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
+
+	if (op->size <1 || !strcmp (op->buf_asm, "invalid")) {
+		if (a->invhex) {
+			eprintf ("ksajdf (%s)\n", op->buf_asm);
+				ut32 *b = (ut32 *)buf;
+				snprintf (op->buf_asm, sizeof (op->buf_asm), ".dword 0x%08x", *b);
+		} else {
+			strcpy (op->buf_asm, "invalid");
+		}
+	}
+	if (a->ofilter)
+		r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
+#if 0
 	//	r_hex_bin2str (buf, oplen, op->buf_hex);
 	} else ret = 0;
+#endif
 	r_mem_copyendian (op->buf, buf, oplen, !a->big_endian);
 	*op->buf_hex = 0;
-	if ((oplen*4)>=sizeof(op->buf_hex))
-		oplen = (sizeof(op->buf_hex)/4)-1;
+	if ((oplen*4) >= sizeof (op->buf_hex))
+		oplen = (sizeof (op->buf_hex)/4)-1;
 	r_hex_bin2str (buf, oplen, op->buf_hex);
 	return ret;
 }

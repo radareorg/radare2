@@ -102,6 +102,7 @@ typedef struct r_asm_t {
 	RSyscall *syscall;
 	RNum *num;
 	char *features;
+	int invhex; // invalid instructions displayed in hex
 } RAsm;
 
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);

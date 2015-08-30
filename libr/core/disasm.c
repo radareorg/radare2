@@ -37,10 +37,8 @@ static const char* r_vline_u[] = {
 typedef struct r_disam_options_t {
 	char str[1024], strsub[1024];
 	int use_esil;
-	int hex_invalid;
 	int show_color;
 	int colorop;
-	//int show_utf8;
 	int acase;
 	int atabs;
 	int atabsonce;
@@ -51,13 +49,14 @@ typedef struct r_disam_options_t {
 	int interactive;
 	int varsub;
 	int show_lines;
+	int show_lines_ret;
+	int show_lines_call;
 	int linesright;
 	int tracespace;
 	int cyclespace;
 	int cmtfold;
 	int show_indent;
 	int show_dwarf;
-	int show_linescall;
 	int show_size;
 	int show_trace;
 	int asm_describe;
@@ -272,7 +271,6 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
-	ds->hex_invalid = r_config_get_i (core->config, "asm.hex_invalid");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
 	ds->colorop = r_config_get_i (core->config, "scr.colorops");
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
@@ -296,7 +294,8 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->tracespace = r_config_get_i (core->config, "asm.tracespace");
 	ds->cyclespace = r_config_get_i (core->config, "asm.cyclespace");
 	ds->show_dwarf = r_config_get_i (core->config, "asm.dwarf");
-	ds->show_linescall = r_config_get_i (core->config, "asm.linescall");
+	ds->show_lines_call = r_config_get_i (core->config, "asm.lines.call");
+	ds->show_lines_ret = r_config_get_i (core->config, "asm.lines.ret");
 	ds->show_size = r_config_get_i (core->config, "asm.size");
 	ds->show_trace = r_config_get_i (core->config, "asm.trace");
 	ds->linesout = r_config_get_i (core->config, "asm.linesout");
@@ -373,12 +372,11 @@ static RDisasmState * handle_init_ds (RCore * core) {
 
 static void handle_reflines_init (RCore *core, RDisasmState *ds) {
 	if (ds->show_lines) {
-		// TODO: make anal->reflines implicit
-		free (core->reflines); // TODO: leak
-		free (core->reflines2); // TODO: leak
+		r_anal_reflines_free (core->reflines);
+		r_anal_reflines_free (core->reflines2);
 		core->reflines = r_anal_reflines_get (core->anal,
 			ds->addr, ds->buf, ds->len, ds->l,
-			ds->linesout, ds->show_linescall);
+			ds->linesout, ds->show_lines_call);
 		core->reflines2 = r_anal_reflines_get (core->anal,
 			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, 1);
@@ -390,7 +388,7 @@ static void handle_reflines_fcn_init (RCore *core, RDisasmState *ds,  RAnalFunct
 		// TODO: make anal->reflines implicit
 		free (core->reflines); // TODO: leak
 		core->reflines = r_anal_reflines_fcn_get (core->anal,
-				fcn, -1, ds->linesout, ds->show_linescall);
+				fcn, -1, ds->linesout, ds->show_lines_call);
 		free (core->reflines2); // TODO: leak
 		core->reflines2 = r_anal_reflines_fcn_get (core->anal,
 				fcn, -1, ds->linesout, 1);
@@ -458,20 +456,10 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 	return r_print_colorize_opcode (source, ds->color_reg, ds->color_num);
 }
 
-static void build_hex_invalid (RDisasmState *ds) {
-	if (r_str_casestr (ds->asmop.buf_asm, "invalid") ||\
-		r_str_casestr (ds->asmop.buf_asm, "undefined")) {
-		ds->opstr = r_str_newf ("0x%s", ds->asmop.buf_hex);
-	} else {
-		ds->opstr = strdup (ds->asmop.buf_asm);
-	}
-}
-
 static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 	char *asm_str;
 	if (!ds->opstr) {
-		if (ds->hex_invalid) build_hex_invalid (ds);
-		else ds->opstr = strdup (ds->asmop.buf_asm);
+		ds->opstr = strdup (ds->asmop.buf_asm);
 	}
 	if (ds->varsub && ds->opstr) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
@@ -1119,6 +1107,10 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 	// TODO : line analysis must respect data types! shouldnt be interpreted as code
 	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
 	if (ds->asmop.size<1) {
+		ds->asmop.size = 1;
+	}
+#if 0
+	if (ds->asmop.size<1) {
 		ut32 n32 = len >= sizeof(ut32) ? *((ut32*)buf) : UT32_MAX;
 		ut64 n64 = len >= sizeof(ut64) ? *((ut64*)buf) : UT64_MAX;
 		// if arm or mips.. 32 or 64
@@ -1128,8 +1120,8 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 		snprintf (ds->asmop.buf_asm,
 			sizeof (ds->asmop.buf_asm),
 			"0x%08"PFMT64x, n64);
-		ds->asmop.size = 1;
 	}
+#endif
 	ds->oplen = ds->asmop.size;
 // replace buf_asm to highlight shit
 
@@ -1151,7 +1143,7 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 		}
 #endif
 		ds->lastfail = 1;
-		strcpy (ds->asmop.buf_asm, "invalid");
+		//strcpy (ds->asmop.buf_asm, "invalid");
 	//	sprintf (asmop.buf_hex, "%02x", buf[idx]);
 		ds->asmop.size = (ds->hint && ds->hint->size)?
 			ds->hint->size: 1;
@@ -1408,14 +1400,14 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 				case 2:
 					{
 					ut16 *data = (ut16*)(buf+idx);
-					r_mem_copyendian((ut8*)data, (ut8*)data, 2, !core->print->big_endian);
+					r_mem_copyendian ((ut8*)data, (ut8*)data, 2, !core->print->big_endian);
 					r_cons_printf (".word 0x%04x", *data);
 					}
 					break;
 				case 4:
 					{
 					ut32 *data = (ut32*)(buf+idx);
-					r_mem_copyendian((ut8*)data, (ut8*)data, 4, !core->print->big_endian);
+					r_mem_copyendian ((ut8*)data, (ut8*)data, 4, !core->print->big_endian);
 					r_cons_printf (".dword 0x%08x", *data);
 					}
 					break;
@@ -2332,7 +2324,7 @@ toro:
 	r_cons_break (NULL, NULL);
 	int inc = 0;
 	for (i=idx=ret=0; idx < len && ds->lines < ds->l;
-		idx += inc,i++, ds->index += inc, ds->lines++) {
+			idx += inc,i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		if (r_cons_singleton ()->breaked) {
 			dorepeat = 0;
@@ -2464,17 +2456,15 @@ toro:
 			r_cons_newline ();
 
 		if (ds->line) {
-#if 0
-			if (ds->show_lines && ds->analop.type == R_ANAL_OP_TYPE_RET) {
+			if (ds->show_lines_ret && ds->analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (ds->line, '>'))
 					memset (ds->line, ' ', r_str_len_utf8 (ds->line));
 				if (ds->show_color) {
-					r_cons_printf ("%s %s%s"Color_RESET"; --\n",
-						core->cons->vline[LINE_VERT], ds->color_flow, ds->line);
+					r_cons_printf ("%s%s%s"Color_RESET"; --------------------------------------\n",
+							ds->pre, ds->color_flow, ds->line);
 				} else
 					r_cons_printf ("  %s; --\n", ds->line);
 			}
-#endif
 			free (ds->line);
 			free (ds->refline);
 			free (ds->refline2);
@@ -2674,7 +2664,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 				ds->opstr = strdup (ds->asmop.buf_asm);
 			}
 		}
-		if (ret < 1) {
+		if (ret<1) {
 			err = 1;
 			ret = 1;
 			r_cons_printf ("invalid\n");
