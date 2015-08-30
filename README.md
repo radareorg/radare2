@@ -62,6 +62,11 @@ the following command:
 
     $ sys/install.sh
 
+If you want to install radare2 in the home directory without
+using root privileges and sudo, simply run:
+
+    $ NOSUDO=1 sys/install.sh $HOME/radare2
+
 # Uninstall
 
 In case of a polluted filesystem you can uninstall the current
