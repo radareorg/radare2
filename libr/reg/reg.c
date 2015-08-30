@@ -86,7 +86,7 @@ R_API void r_reg_free_internal(RReg *reg) {
 		}
 	}
 	for (i = 0; i<R_REG_TYPE_LAST; i++) {
-		r_list_purge (reg->regset[i].regs);
+		r_list_free (reg->regset[i].regs);
 		reg->regset[i].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
 	reg->size = 0;
@@ -98,11 +98,14 @@ R_API void r_reg_free(RReg *reg) {
 	if (!reg) 
 		return;
 
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		r_list_purge (reg->regset[i].pool);
-		reg->regset[i].pool = NULL;
-	}
 	r_reg_free_internal (reg);
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		r_list_free (reg->regset[i].pool);
+		r_list_free (reg->regset[i].regs);
+		reg->regset[i].pool = NULL;
+		reg->regset[i].regs = NULL;
+		reg->regset[i].arena = NULL;
+	}
 	free (reg);
 }
 
