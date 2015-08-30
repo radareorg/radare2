@@ -2495,7 +2495,17 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'r':
 			agraph_set_layout (g, R_TRUE);
 			break;
-		case 'j':
+		case 'm':
+			mousemode++;
+			if (!mousemodes[mousemode])
+				mousemode = 0;
+			break;
+		case 'M':
+			mousemode--;
+			if (mousemode<0)
+				mousemode = 3;
+			break;
+		case 'J':
 			if (r_cons_singleton()->mouse_event) {
 				switch (mousemode) {
 				case 0: can->sy += wheelspeed * (invscroll ? -1 : 1); break; // canvas-y
@@ -2507,7 +2517,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				get_anode(g->curnode)->y += g->movspeed;
 			}
 			break;
-		case 'k':
+		case 'K':
 			if (r_cons_singleton()->mouse_event) {
 				switch (mousemode) {
 				case 0: can->sy -= wheelspeed * (invscroll ? -1 : 1); break; // canvas-y
@@ -2519,23 +2529,13 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				get_anode(g->curnode)->y -= g->movspeed;
 			}
 			break;
-		case 'm':
-			mousemode++;
-			if (!mousemodes[mousemode])
-				mousemode = 0;
-			break;
-		case 'M':
-			mousemode--;
-			if (mousemode<0)
-				mousemode = 3;
-			break;
-		case 'h': get_anode(g->curnode)->x -= g->movspeed; break;
-		case 'l': get_anode(g->curnode)->x += g->movspeed; break;
+		case 'H': get_anode(g->curnode)->x -= g->movspeed; break;
+		case 'L': get_anode(g->curnode)->x += g->movspeed; break;
 
-		case 'K': can->sy -= g->movspeed * (invscroll ? -1 : 1); break;
-		case 'J': can->sy += g->movspeed * (invscroll ? -1 : 1); break;
-		case 'H': can->sx -= g->movspeed * (invscroll ? -1 : 1); break;
-		case 'L': can->sx += g->movspeed * (invscroll ? -1 : 1); break;
+		case 'k': can->sy -= g->movspeed * (invscroll ? -1 : 1); break;
+		case 'j': can->sy += g->movspeed * (invscroll ? -1 : 1); break;
+		case 'h': can->sx -= g->movspeed * (invscroll ? -1 : 1); break;
+		case 'l': can->sx += g->movspeed * (invscroll ? -1 : 1); break;
 		case 'e':
 			  can->linemode = !!!can->linemode;
 			  break;
@@ -2568,6 +2568,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  agraph_toggle_speed (g, core);
 			  break;
 		case -1: // EOF
+		case ' ':
 		case 'q':
 			  if (g->is_callgraph) {
 				  agraph_toggle_callgraph(g);

@@ -1032,13 +1032,19 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'r':
 		r_core_visual_comments (core);
 		break;
+	case ' ':
 	case 'V':
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "agv $$");
 		} else {
-			int ocolor = r_config_get_i (core->config, "scr.color");
-			r_core_visual_graph (core, NULL, R_TRUE);
-			r_config_set_i (core->config, "scr.color", ocolor);
+			RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+			if (fun) {
+				int ocolor = r_config_get_i (core->config, "scr.color");
+				r_core_visual_graph (core, NULL, R_TRUE);
+				r_config_set_i (core->config, "scr.color", ocolor);
+			} else {
+				r_cons_message("Not in a function. Type 'df' to define it here");
+			}
 		}
 		break;
 	case 'v':
