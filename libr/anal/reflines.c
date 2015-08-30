@@ -1,10 +1,8 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
 
 #include <r_core.h>
 #include <r_util.h>
 #include <r_cons.h>
-
-
 
 static void free_refline_list (struct list_head *head){
 	struct list_head *pos, *n;
@@ -28,7 +26,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 	int sz = 0, index = 0;
 	int count = 0;
 
-	list = R_NEW (RAnalRefline);
+	list = R_NEW0 (RAnalRefline);
 	if (!list) return NULL;
 
 	INIT_LIST_HEAD (&(list->list));
@@ -70,7 +68,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 					goto __next;
 				if (op.jump == 0LL)
 					goto __next;
-				list2 = R_NEW (RAnalRefline);
+				list2 = R_NEW0 (RAnalRefline);
 				if (!list2) {
 					eprintf ("not enough memory in %s - %d", __FILE__, __LINE__);
 					free_refline_list (&(list->list));
@@ -145,7 +143,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 		control_type &= R_ANAL_BB_TYPE_SWITCH | R_ANAL_BB_TYPE_JMP | R_ANAL_BB_TYPE_COND | R_ANAL_BB_TYPE_CALL;
 
 		// handle call
-		if ( (control_type & R_ANAL_BB_TYPE_CALL) == R_ANAL_BB_TYPE_CALL &&  !linescall) {
+		if ( (control_type & R_ANAL_BB_TYPE_CALL) == R_ANAL_BB_TYPE_CALL && !linescall) {
 			continue;
 		}
 
@@ -182,7 +180,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 		}
 
 		// XXX - Todo test handle swith op
-		if ( control_type & R_ANAL_BB_TYPE_SWITCH) {
+		if (control_type & R_ANAL_BB_TYPE_SWITCH) {
 			if (bb->switch_op) {
 				RAnalCaseOp *caseop;
 				RListIter *iter;
@@ -190,7 +188,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 					if (caseop) {
 						if (!linesout)// && (op.jump > opc+len || op.jump < pc))
 							continue;
-						list2 = R_NEW (RAnalRefline);
+						list2 = R_NEW0 (RAnalRefline);
 						if (!list2){
 							eprintf ("not enough memory in %s - %d", __FILE__, __LINE__);
 							free_refline_list (&(list->list));

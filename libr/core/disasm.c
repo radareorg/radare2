@@ -589,7 +589,10 @@ R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 
 // this is another random hack for reflines.. crappy stuff
 static char *filter_refline2(RCore *core, const char *str) {
-	char *p, *s = strdup (str);
+	char *p, *s;
+	if (!core || !str)
+		return NULL;
+	s = strdup (str);
 	for (p=s; *p; p++) {
 		switch (*p) {
 		case '`': *p = '|'; break;
@@ -630,8 +633,10 @@ static char *filter_refline2(RCore *core, const char *str) {
 }
 
 static char *filter_refline(RCore *core, const char *str) {
-	char *p = strdup (str);
-
+	char *p;
+	if (!core || !str)
+		return NULL;
+	p = strdup (str);
 	p = r_str_replace (p, "`",
 		core->cons->vline[LINE_VERT], 1); // "`" -> "|"
 	p = r_str_replace (p,
@@ -1091,10 +1096,14 @@ static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
 		ds->line = r_anal_reflines_str (core, ds->at, ds->linesopts);
 		ds->refline = filter_refline (core, ds->line);
 		ds->refline2 = filter_refline2 (core, ds->refline);
-		if (strchr (ds->line, '<'))
-			ds->indent_level++;
-		if (strchr (ds->line, '>'))
-			ds->indent_level--;
+		if (ds->line) {
+			if (strchr (ds->line, '<'))
+				ds->indent_level++;
+			if (strchr (ds->line, '>'))
+				ds->indent_level--;
+		} else {
+			ds->indent_level = 0;
+		}
 	} else {
 		free (ds->line);
 		free (ds->refline);
