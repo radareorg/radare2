@@ -80,3 +80,4 @@ The unix-like reverse engineering framework.
 This code was intentionally left blank, try 'e asm.arch = ws'
 For a full list of commands see `strings /dev/urandom`
 Thanks for using radare2!
+give | and > a try piping and redirection
