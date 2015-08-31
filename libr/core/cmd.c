@@ -1547,6 +1547,15 @@ repeat_arroba:
 					free (f);
 				} else eprintf ("cannot open '%s'\n", ptr+3);
 				break;
+			case 'r': // "@r:" // regname
+				if (ptr[1]==':') {
+					ut64 regval = r_debug_reg_get (core->dbg, ptr+2);
+					eprintf ("REG (%s) = %llx\n", ptr+2, regval);
+					r_core_seek (core, regval, 1);
+				} else {
+					eprintf ("Fin\n");
+				}
+				break;
 			case 'b': // "@b:" // bits
 				r_config_set_i (core->config, "asm.bits",
 					r_num_math (core->num, ptr+2));

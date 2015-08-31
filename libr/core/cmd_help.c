@@ -289,6 +289,7 @@ static int cmd_help(void *data, const char *input) {
 			"@a:", "arch[:bits]", "temporary set arch and bits",
 			"@b:", "bits", "temporary set asm.bits",
 			"@e:", "k=v,k=v", "temporary change eval vars",
+			"@r:", "reg", "tmp seek to reg value (f.ex pd@r:pc)",
 			"@f:", "file", "temporary replace block with file contents",
 			"@s:", "string", "same as above but from a string",
 			"@x:", "909192", "from hex pairs string",

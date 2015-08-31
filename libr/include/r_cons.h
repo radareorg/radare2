@@ -440,6 +440,7 @@ R_API void r_cons_color (int fg, int r, int g, int b);
 R_API char *r_cons_color_random(int bg);
 R_API void r_cons_invert(int set, int color);
 R_API int r_cons_yesno(int def, const char *fmt, ...);
+R_API char *r_cons_input(const char *msg);
 R_API void r_cons_set_cup(int enable);
 R_API void r_cons_column(int c);
 R_API int r_cons_get_column (void);
