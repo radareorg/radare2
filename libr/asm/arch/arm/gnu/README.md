@@ -10,3 +10,4 @@ Download latest GNU binutils
 * find `info->symbols` references and comment them out
 * Find " ; 0x" and remove all those refs
 * Use git diff in case of doubt
+* Remove all references to abort()

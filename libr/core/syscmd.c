@@ -98,7 +98,6 @@ R_API void r_core_syscmd_ls(const char *input) {
 	char *name;
 	char *dir;
 	int off;
-	int mode = 0;
 	if (!input || *input == '\0') return;
 	if (r_sandbox_enable (0)) {
 		eprintf ("Sandbox forbids listing directories\n");
@@ -106,10 +105,10 @@ R_API void r_core_syscmd_ls(const char *input) {
 	}
 	if (input[1]==' ') {
 		if ((!strncmp (input+2, "-l", 2)) || (!strncmp (input+2, "-j", 2))) {
-			mode = 'l';
+			//mode = 'l';
 			if (input[3]) {
 				printfmt = (input[3] == 'j') ? FMT_JSON : FMT_RAW;
-				mode = 'j';
+			//	mode = 'j';
 				path = input+4;
 				while (*path==' ') path++;
 				if (!*path) path = ".";

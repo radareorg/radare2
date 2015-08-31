@@ -22,6 +22,7 @@
 
 #include "sysdep.h"
 #include <stdio.h>
+#include <string.h>
 #include "dis-asm.h"
 #include "gnu-arm.h"
 //#include "opcode/arm.h"
@@ -1855,7 +1856,7 @@ arm_decode_bitfield (const char *ptr,
 	end = start;
       bits = end - start;
       if (bits < 0)
-	abort ();
+	return NULL;
       value |= ((insn >> start) & ((2ul << bits) - 1)) << width;
       width += bits + 1;
     }
@@ -1938,7 +1939,7 @@ print_insn_coprocessor (bfd_vma pc,
     {
       unsigned long u_reg = 16;
       bfd_boolean is_unpredictable = FALSE;
-      signed long value_in_comment = 0;
+      //signed long value_in_comment = 0;
       const char *c;
 
       if (insn->arch == 0)
@@ -1961,7 +1962,7 @@ print_insn_coprocessor (bfd_vma pc,
 	    continue;
 
 	  default:
-	    abort ();
+	    return 0;
 	  }
 
       mask = insn->mask;
@@ -2013,7 +2014,7 @@ print_insn_coprocessor (bfd_vma pc,
 
 		case 'A':
 		  {
-		    int rn = (given >> 16) & 0xf;
+		    //int rn = (given >> 16) & 0xf;
   		    bfd_vma offset = given & 0xff;
 
 		    func (stream, "[%s", arm_regnames [(given >> 16) & 0xf]);
@@ -2024,8 +2025,6 @@ print_insn_coprocessor (bfd_vma pc,
 			offset = offset * 4;
 			if (NEGATIVE_BIT_SET)
 			  offset = - offset;
-			if (rn != 15)
-			  value_in_comment = offset;
 		      }
 
 		    if (PRE_BIT_SET)
@@ -2049,13 +2048,6 @@ print_insn_coprocessor (bfd_vma pc,
 			      func (stream, ", %d", (int) offset);
 			    else if (NEGATIVE_BIT_SET)
 			      func (stream, ", #-0");
-			  }
-			else
-			  {
-			    func (stream, ", {%s%d}",
-				  (NEGATIVE_BIT_SET && !offset) ? "-" : "",
-				  (int) offset);
-			    value_in_comment = offset;
 			  }
 		      }
 		  }
@@ -2208,8 +2200,8 @@ print_insn_coprocessor (bfd_vma pc,
 			  func (stream, "q%ld", value >> 1);
 			break;
 		      case 'd':
-			func (stream, "%ld", value);
-			value_in_comment = value;
+			//func (stream, "%ld", value);
+			//value_in_comment = value;
 			break;
 		      case 'k':
 			{
@@ -2283,7 +2275,7 @@ print_insn_coprocessor (bfd_vma pc,
 			c += 1 << width;
 			break;
 		      default:
-			abort ();
+			return 0;
 		      }
 		    break;
 
@@ -2342,7 +2334,7 @@ print_insn_coprocessor (bfd_vma pc,
 			  break;
 
 			default:
-			  abort ();
+			  return FALSE;
 			}
 
 		      func (stream, "%c%d", single ? 's' : 'd', regno);
@@ -2399,12 +2391,14 @@ print_insn_coprocessor (bfd_vma pc,
 
 		      func (stream, "[%s", arm_regnames [(given >> 16) & 0xf]);
 
+#if 0
 		      if (multiplier > 1)
 			{
 			  value_in_comment = offset * multiplier;
 			  if (NEGATIVE_BIT_SET)
 			    value_in_comment = - value_in_comment;
 			}
+#endif
 
 		      if (offset)
 			{
@@ -2467,7 +2461,7 @@ print_insn_coprocessor (bfd_vma pc,
 		    break;
 
 		  default:
-		    abort ();
+		    return FALSE;
 		  }
 		}
 	    }
@@ -2615,7 +2609,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
     {
       if ((given & insn->mask) == insn->value)
 	{
-	  signed long value_in_comment = 0;
+	  //signed long value_in_comment = 0;
 	  bfd_boolean is_unpredictable = FALSE;
 	  const char *c;
 
@@ -2740,7 +2734,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
                             break;
                           
                           default:
-                            abort ();
+                            return FALSE;
                           }
                                 
 			func (stream, "{");
@@ -2935,7 +2929,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
                             break;
                           
                           default:
-                            abort ();
+                            return FALSE;
                           }
 		      }
 		      break;
@@ -2970,7 +2964,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			    break;
 			  case 'd':
 			    func (stream, "%ld", value);
-			    value_in_comment = value;
+			    //value_in_comment = value;
 			    break;
 			  case 'e':
 			    func (stream, "%ld", (1ul << width) - value);
@@ -2991,7 +2985,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			      else if (*c >= 'a' && *c <= 'f')
 				limit = *c - 'a' + 10;
 			      else
-				abort ();
+				return FALSE;
 			      low = limit >> 2;
 			      high = limit & 3;
 
@@ -3031,12 +3025,12 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			    c += 1 << width;
 			    break;
 			  default:
-			    abort ();
+			    return FALSE;
 			  }
 			break;
 
 		      default:
-			abort ();
+			return FALSE;
 		      }
 		    }
 		}
@@ -3565,7 +3559,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 			    c += 1 << width;
 			    break;
 			  default:
-			    abort ();
+			    return;
 			  }
 			break;
 
@@ -3624,7 +3618,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 			break;
 
 		      default:
-			abort ();
+			return ;
 		      }
 		    }
 		}
@@ -3643,7 +3637,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 	  return;
 	}
     }
-  abort ();
+  return;
 }
 
 /* Print one 16-bit Thumb instruction from PC on INFO->STREAM.  */
@@ -3658,7 +3652,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
   for (insn = thumb_opcodes; insn->assembler; insn++)
     if ((given & insn->mask) == insn->value)
       {
-	signed long value_in_comment = 0;
+	//signed long value_in_comment = 0;
 	const char *c = insn->assembler;
 
 	for (; *c; c++)
@@ -3829,7 +3823,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 			while (*c >= '0' && *c <= '9')
 			  bitend = (bitend * 10) + *c++ - '0';
 			if (!bitend)
-			  abort ();
+			  return ;
 			reg = given >> bitstart;
 			reg &= (2 << (bitend - bitstart)) - 1;
 
@@ -3841,17 +3835,17 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 
 			  case 'd':
 			    func (stream, "%ld", (long) reg);
-			    value_in_comment = reg;
+			    //value_in_comment = reg;
 			    break;
 
 			  case 'H':
 			    func (stream, "%ld", (long) (reg << 1));
-			    value_in_comment = reg << 1;
+			    //value_in_comment = reg << 1;
 			    break;
 
 			  case 'W':
 			    func (stream, "%ld", (long) (reg << 2));
-			    value_in_comment = reg << 2;
+			    //value_in_comment = reg << 2;
 			    break;
 
 			  case 'a':
@@ -3860,7 +3854,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 			       before the calculation.  */
 			    info->print_address_func
 			      (((pc + 4) & ~3) + (reg << 2), info);
-			    value_in_comment = 0;
+			    //value_in_comment = 0;
 			    break;
 
 			  case 'x':
@@ -3870,7 +3864,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 			  case 'B':
 			    reg = ((reg ^ (1 << bitend)) - (1 << bitend));
 			    info->print_address_func (reg * 2 + pc + 4, info);
-			    value_in_comment = 0;
+			    //value_in_comment = 0;
 			    break;
 
 			  case 'c':
@@ -3878,7 +3872,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 			    break;
 
 			  default:
-			    abort ();
+			    return;
 			  }
 		      }
 		      break;
@@ -3898,13 +3892,13 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 		      break;
 
 		    default:
-		      abort ();
+		      return;
 		    }
 		}
 		break;
 
 	      default:
-		abort ();
+		return ;
 	      }
 	  }
 
@@ -3914,9 +3908,6 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 #endif
 	return;
       }
-
-  /* No match.  */
-  abort ();
 }
 
 /* Return the name of an V7M special register.  */
@@ -3963,7 +3954,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
     if ((given & insn->mask) == insn->value)
       {
 	bfd_boolean is_unpredictable = FALSE;
-	signed long value_in_comment = 0;
+	//signed long value_in_comment = 0;
 	const char *c = insn->assembler;
 
 	for (; *c; c++)
@@ -4004,7 +3995,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm12 |= (given & 0x00007000u) >> 4;
 		  imm12 |= (given & 0x04000000u) >> 15;
 		  func (stream, "%u", imm12);
-		  value_in_comment = imm12;
+		  //value_in_comment = imm12;
 		}
 		break;
 
@@ -4029,7 +4020,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		      imm  = (((imm8 << (32 - mod)) | (imm8 >> mod)) & 0xffffffff);
 		    }
 		  func (stream, "%u", imm);
-		  value_in_comment = imm;
+		  //value_in_comment = imm;
 		}
 		break;
 		  
@@ -4042,7 +4033,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm |= (given & 0x04000000u) >> 15;
 		  imm |= (given & 0x000f0000u) >> 4;
 		  func (stream, "%u", imm);
-		  value_in_comment = imm;
+		  //value_in_comment = imm;
 		}
 		break;
 
@@ -4054,7 +4045,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm |= (given & 0x00000ff0u) >> 0;
 		  imm |= (given & 0x0000000fu) << 12;
 		  func (stream, "%u", imm);
-		  value_in_comment = imm;
+		  //value_in_comment = imm;
 		}
 		break;
 
@@ -4065,7 +4056,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm |= (given & 0x000f0000u) >> 4;
 		  imm |= (given & 0x00000fffu) >> 0;
 		  func (stream, "%u", imm);
-		  value_in_comment = imm;
+		  //value_in_comment = imm;
 		}
 		break;
 
@@ -4076,7 +4067,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm |= (given & 0x00000fffu);
 		  imm |= (given & 0x000f0000u) >> 4;
 		  func (stream, "%u", imm);
-		  value_in_comment = imm;
+		  //value_in_comment = imm;
 		}
 		break;
 
@@ -4131,8 +4122,8 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  if (U) /* 12-bit positive immediate offset.  */
 		    {
 		      offset = i12;
-		      if (Rn != 15)
-			value_in_comment = offset;
+		      //if (Rn != 15)
+			//value_in_comment = offset;
 		    }
 		  else if (Rn == 15) /* 12-bit negative immediate offset.  */
 		    offset = - (int) i12;
@@ -4208,7 +4199,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		      if (off || !U)
 			{
 			  func (stream, ", %c%u", U ? '+' : '-', off * 4);
-			  value_in_comment = off * 4 * U ? 1 : -1;
+			  //value_in_comment = off * 4 * U ? 1 : -1;
 			}
 		      func (stream, "]");
 		      if (W)
@@ -4220,12 +4211,12 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		      if (W)
 			{
 			  func (stream, "%c%u", U ? '+' : '-', off * 4);
-			  value_in_comment = off * 4 * U ? 1 : -1;
+			  //value_in_comment = off * 4 * U ? 1 : -1;
 			}
 		      else
 			{
 			  func (stream, "{%u}", off);
-			  value_in_comment = off;
+			  //value_in_comment = off;
 			}
 		    }
 		}
@@ -4441,12 +4432,12 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		    {
 		    case 'd':
 		      func (stream, "%lu", val);
-		      value_in_comment = val;
+		      //value_in_comment = val;
 		      break;
 
 		    case 'W':
 		      func (stream, "%lu", val * 4);
-		      value_in_comment = val * 4;
+		      //value_in_comment = val * 4;
 		      break;
 
 		    case 'S':
@@ -4487,7 +4478,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		      break;
 
 		    default:
-		      abort ();
+		      return;
 		    }
 		}
 		break;
@@ -4506,21 +4497,23 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		break;
 
 	      default:
-		abort ();
+		return ;
 	      }
 	  }
 
+#if 0
 	if (value_in_comment > 32 || value_in_comment < -16)
 	  func (stream, " ; 0x%lx", value_in_comment);
+#endif
 
 	if (is_unpredictable)
 	  func (stream, UNPREDICTABLE_INSTRUCTION);
 
-	return;
+	return ;
       }
 
   /* No match.  */
-  abort ();
+  return ;
 }
 
 /* Print data bytes on INFO->STREAM.  */
@@ -4542,7 +4535,7 @@ print_insn_data (bfd_vma pc ATTRIBUTE_UNUSED,
       info->fprintf_func (info->stream, ".word 0x%08lx", given);
       break;
     default:
-      abort ();
+      return ;
     }
 }
 
@@ -4743,6 +4736,7 @@ get_map_sym_type (struct disassemble_info *info,
 /* Try to infer the code type (ARM or Thumb) from a non-mapping symbol.
    Returns nonzero if *MAP_TYPE was set.  */
 
+#if 0
 static int
 get_sym_code_type (struct disassemble_info *info,
 		   int n,
@@ -4751,8 +4745,6 @@ get_sym_code_type (struct disassemble_info *info,
   elf_symbol_type *es;
   unsigned int type;
 
-return FALSE;
-#if 0
   /* If the symbol is in a different section, ignore it.  */
   if (info->section != NULL && info->section != info->symtab[n]->section)
     return FALSE;
@@ -4771,8 +4763,8 @@ return FALSE;
     }
 
   return FALSE;
-#endif
 }
+#endif
 
 /* Given a bfd_mach_arm_XXX value, this function fills in the fields
    of the supplied arm_feature_set structure with bitmasks indicating
@@ -4810,7 +4802,7 @@ select_arm_features (unsigned long mach,
 	 architecture types and all extensions.  */
     case bfd_mach_arm_unknown: ARM_FEATURE (-1UL, -1UL);
     default:
-      abort ();
+      return;
     }
 }
 

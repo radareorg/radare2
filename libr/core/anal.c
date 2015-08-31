@@ -1630,12 +1630,12 @@ R_API int r_core_anal_all(RCore *core) {
 	RBinAddr *binmain;
 	RBinAddr *entry;
 	RBinSymbol *symbol;
-	ut64 baddr;
+	//ut64 baddr;
 	ut64 offset;
 	int depth = r_config_get_i (core->config, "anal.depth");
 	int va = core->io->va || core->io->debug;
 
-	baddr = r_bin_get_baddr (core->bin);
+	//baddr = r_bin_get_baddr (core->bin);
 	offset = r_bin_get_offset (core->bin);
 	/* Analyze Functions */
 	/* Entries */
