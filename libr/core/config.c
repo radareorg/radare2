@@ -166,6 +166,14 @@ static int cb_asmarch(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	const char *asmos = r_config_get (core->config, "asm.os");
+	int bits = R_SYS_BITS;
+	if (core->assembler && core->assembler->cur) {
+		bits = core->assembler->cur->bits;
+	}
+	if (8&bits) bits = 8;
+	else if (16 & bits) bits = 16;
+	else if (32 & bits) bits = 32;
+	else bits = 64;
 
 	if (*node->value=='?') {
 		rasm2_list (core, NULL);
@@ -182,13 +190,10 @@ static int cb_asmarch(void *user, void *data) {
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
 	if (!(core->assembler->cur->bits & core->anal->bits)) {
-		int bits = core->assembler->cur->bits;
-		if (8&bits) bits = 8;
-		else if (16&bits) bits=16;
-		else if (32&bits) bits=32;
-		else bits=64;
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
+
+	r_debug_set_arch (core->dbg, r_sys_arch_id (node->value), bits);
 	if (!r_config_set (core->config, "anal.arch", node->value)) {
 		char *p, *s = strdup (node->value);
 		p = strchr (s, '.');
