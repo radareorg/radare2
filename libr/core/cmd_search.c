@@ -2125,7 +2125,7 @@ static int cmd_search(void *data, const char *input) {
 		}
 		break;
 	default:{
-		const char* help_msg[] = {
+		char* help_msg[] = {
 			"Usage:", "/[amx/] [arg]", "Search",
 			"/"," foo\\x00", "search for string 'foo\\0'",
 			"/j"," foo\\x00", "search for string 'foo\\0' (json output)",
@@ -2158,14 +2158,31 @@ static int cmd_search(void *data, const char *input) {
 			"/x"," ff43 ffd0", "search for hexpair with mask",
 			"/z"," min max", "search for strings of given size",
 			"\nConfiguration:", "", " (type `e??search.` for a complete list)",
-			"e", " cmd.hit = x", "command to execute on every search hit",
-			"e", " search.in = ?", "specify where to search stuff (depends on .from/.to)",
-			"e", " search.align = 4", "only catch aligned search hits",
-			"e", " search.from = 0", "start address",
-			"e", " search.to = 0", "end address",
-			"e", " search.flags = true", "if enabled store flags on keyword hits",
+			"e", "cmd.hit", "command to execute on every search hit",
+			"e", "search.in", "specify where to search stuff (depends on .from/.to)",
+			"e", "search.align", "only catch aligned search hits",
+			"e", "search.from", "start address",
+			"e", "search.to", "end address",
+			"e", "search.flags", "if enabled store flags on keyword hits",
 			NULL};
-		r_core_cmd_help (core, help_msg);
+
+		for (i = 0; help_msg[i]; i += 3) {
+			if (help_msg[i][0] == 'e') {
+				char string[64];
+				snprintf (string, sizeof(string), " %s = %s",
+					help_msg[i + 1], r_config_get (core->config, help_msg[i + 1]));
+				help_msg[i + 1] = strdup (string);
+			}
+		}
+
+		r_core_cmd_help (core, (const char **) help_msg);
+
+		for (i = 0; help_msg[i]; i += 3) {
+			if (help_msg[i][0] == 'e') {
+				free (help_msg[i + 1]);
+				help_msg[i + 1] = NULL;
+			}
+		}
 		}
 		break;
 	}
