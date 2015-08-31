@@ -1623,6 +1623,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		// aesu -> until address
 		// aesue -> until esil expression
 		switch (input[1]) {
+		case '?':
+			eprintf ("See: ae?~aes\n");
+			break;
 		case 'u':
 			if (input[2] == 'e') {
 				until_expr = input + 3;
@@ -1822,6 +1825,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				"aecue", " [esil]", "continue until esil expression match",
 				"aetr", "[esil]", "Convert an ESIL Expression to REIL",
 				"aes", "", "perform emulated debugger step",
+				"aeso", " ", "step over",
 				"aesu", " [addr]", "step until given address",
 				"aesue", " [esil]", "step until esil expression match",
 				"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",

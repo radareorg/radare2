@@ -34,13 +34,11 @@ struct {
 static RConsCanvas *can;
 static Panel *panels = NULL;
 static int callgraph = 0;
-static int instep = 0;
-
 static int menu_x = 0;
 static int menu_y = 0;
 
 static const char *menus[] = {
-	"File", "Edit", "View", "Tools", "Debug", "Analyze", "Help",
+	"File", "Edit", "View", "Tools", "Search", "Debug", "Analyze", "Help",
 	NULL
 };
 
@@ -64,8 +62,13 @@ static const char *menus_Tools[] = {
 	NULL
 };
 
+static const char *menus_Search[] = {
+	"String", "ROP", "Code", "Hexpairs",
+	NULL
+};
+
 static const char *menus_Debug[] = {
-	"Registers", "Breakpoints", "Watchpoints", "Maps",
+	"Registers", "DRX", "Breakpoints", "Watchpoints", "Maps",
 	"Continue", "Cont until.",
 	"Backtrace",
 	NULL
@@ -86,15 +89,14 @@ static const char **menus_sub[] = {
 	menus_Edit,
 	menus_View,
 	menus_Tools,
+	menus_Search,
 	menus_Debug,
 	menus_Analyze,
 	menus_Help,
 	NULL
 };
 
-
 // TODO: handle mouse wheel
-
 static int curnode = 0;
 
 #define G(x,y) r_cons_canvas_gotoxy (can, x, y)
@@ -153,8 +155,9 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 			W (n->text);
 		}
 	}
-	if (G (n->x+1, n->y+1))
-		W (title);
+// glitch in menubar
+// 	if (G (n->x+1, n->y+1))
+//		W (title);
 	// TODO: check if node is traced or not and hsow proper color
 	// This info must be stored inside Panel* from RCore*
 	if (cur) {
@@ -266,12 +269,11 @@ static int bbPanels (RCore *core, Panel **n) {
 // into a struct makes the code to reference pointers unnecesarily
 // we can look for a non-global solution here in the future if
 // necessary
-static void r_core_panels_refresh (RCore *core) {
-	char title[128];
+static void r_core_panels_refresh(RCore *core) {
+	char title[1024];
+	const char *color = Color_BLUE;
+	char str[1024];
 	int i, j, h, w = r_cons_get_size (&h);
-	if (instep && core->io->debug) {
-		//r_core_cmd0 (core, "sr pc");
-	}
 	r_cons_clear00 ();
 	if (!can) {
 		return;
@@ -304,9 +306,9 @@ static void r_core_panels_refresh (RCore *core) {
 		}
 #endif
 		for (i=0; panels[i].text; i++) {
-//			if (i != curnode) {
+			if (i != curnode) {
 				Panel_print (can, &panels[i], i==curnode);
-//			}
+			}
 		}
 	}
 
@@ -320,8 +322,6 @@ static void r_core_panels_refresh (RCore *core) {
 	Panel_print (can, &panels[menu_pos], menu_y);
 
 	(void)G (-can->sx, -can->sy);
-	const char *color = Color_BLUE;
-	char str[128];
 	title[0] = 0;
 	if (curnode == 0)
 		strcpy (title, "> ");
@@ -354,6 +354,19 @@ static void r_core_panels_refresh (RCore *core) {
 static void reloadPanels(RCore *core) {
 	//W("HELLO WORLD");
 	Layout_run (panels);
+}
+
+static int havePanel(const char *s) {
+	int i;
+	if (!panels || !panels[0].text)
+		return 0;
+	// add new panel for testing
+	for (i=1; panels[i].text; i++) {
+		if (!strcmp (panels[i].text , s)) {
+			return 1;
+		}
+	}
+	return 0;
 }
 
 R_API int r_core_visual_panels(RCore *core) {
@@ -413,7 +426,6 @@ repeat:
 	// r_core_graph_inputhandle()
 	okey = r_cons_readchar ();
 	key = r_cons_arrow_to_hjkl (okey);
-	eprintf ("%d\n", okey);
 	if (okey == 27) {
 		key = 'K';
 	}
@@ -444,53 +456,29 @@ repeat:
 	case '\n':
 		if (curnode == 0 && menu_y) {
 			const char *action = menus_sub[menu_x][menu_y-1];
-			//eprintf ("ACTION %s\n", action);
 			if (strstr (action, "New")) {
-#if 0
-				int i;
-				// add new panel for testing
-				for (i=0; panels[i].text; i++) {
-					// find last panel
-				}
-				panels[i].text = strdup ("Test");
-				panels[i].cmd = r_str_newf ("pxW 32");
-				panels[i].addr = core->offset;
-				panels[i].type = PANEL_TYPE_FRAME;
-				i++;
-				n_panels++;
-				panels[i].text = NULL;
-#endif
 				addPanelFrame ("New files", "o", 0);
 			} else if (strstr (action, "Open")) {
 				char *res = r_cons_input ("open file: ");
-				if (res && *res) {
-					r_core_cmdf (core, "o %s", res);
+				if (res) {
+					if (*res)
+						r_core_cmdf (core, "o %s", res);
+					free (res);
 				}
-				free (res);
 			} else if (strstr (action, "Info")) {
 				addPanelFrame ("Info", "i", 0);
 			} else if (strstr (action, "Database")) {
 				addPanelFrame ("Database", "k ***", 0);
 			} else if (strstr (action, "Registers")) {
-				int i;
-				// add new panel for testing
-				for (i=1; panels[i].text; i++) {
-					if (!strcmp (panels[i].text , "Registers")) {
-						curnode = i;
-						// zoom
-						goto beach;
-						break;
-					}
-					// find last panel
+				if (!havePanel ("Registers")) {
+					addPanelFrame ("Registers", "dr=", core->offset);
 				}
-				addPanelFrame ("Registers", "dr=", core->offset);
-			}
-			if (strstr (action, "About")) {
+			} else if (strstr (action, "About")) {
 				char *s = r_core_cmd_str (core, "?V");
 				r_cons_message (s);
 				free (s);
 			} else if (strstr (action, "Hexdump")) {
-				addPanelFrame ("Registers", "px 512", core->offset);
+				addPanelFrame ("Hexdump", "px 512", core->offset);
 			} else if (strstr (action, "Disassembly")) {
 				addPanelFrame ("Disassembly", "pd 128", core->offset);
 			} else if (strstr (action, "Functions")) {
@@ -501,10 +489,36 @@ repeat:
 				addPanelFrame ("Entropy", "p=e", core->offset);
 			} else if (strstr (action, "Function")) {
 				r_core_cmdf (core, "af");
+			} else if (strstr (action, "DRX")) {
+				addPanelFrame ("DRX", "drx", core->offset);
 			} else if (strstr (action, "Program")) {
 				r_core_cmdf (core, "aaa");
 			} else if (strstr (action, "Calls")) {
 				r_core_cmdf (core, "aac");
+			} else if (strstr (action, "ROP")) {
+				char *res = r_cons_input ("rop grep: ");
+				if (res) {
+					r_core_cmdf (core, "/R %s", res);
+					free (res);
+				}
+			} else if (strstr (action, "String")) {
+				char *res = r_cons_input ("search string: ");
+				if (res) {
+					r_core_cmdf (core, "/ %s", res);
+					free (res);
+				}
+			} else if (strstr (action, "Hexpairs")) {
+				char *res = r_cons_input ("search hexpairs: ");
+				if (res) {
+					r_core_cmdf (core, "/x %s", res);
+					free (res);
+				}
+			} else if (strstr (action, "Code")) {
+				char *res = r_cons_input ("search code: ");
+				if (res) {
+					r_core_cmdf (core, "/c %s", res);
+					free (res);
+				}
 			} else if (strstr (action, "Copy")) {
 				char *res = r_cons_input ("How many bytes? ");
 				if (res) {
@@ -613,13 +627,19 @@ repeat:
 	case '?':
 		r_cons_clear00 ();
 		r_cons_printf ("Visual Ascii Art Panels:\n"
-		" !    run r2048 game\n"
-		" .    - center graph to the current node\n"
+		" !    - run r2048 game\n"
+		" .    - seek to PC or entrypoint\n"
 		" :    - run r2 command in prompt\n"
+		" ?    - show this help\n"
+		" x    - close current panel\n"
+		" m    - open menubar\n"
 		" hl   - toggle scr.color\n"
 		" HL   - move vertical column split\n"
-		" JK   - select prev/next panels\n"
+		" JK   - select prev/next panels (same as TAB)\n"
 		" jk   - scroll/select menu\n"
+		" sS   - step in / step over\n"
+		" uU   - undo / redo seek\n"
+		" np   - seek to next or previous scr.nkey\n"
 		" q    - quit, back to visual mode\n"
 		);
 		r_cons_flush ();
