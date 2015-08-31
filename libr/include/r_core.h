@@ -221,6 +221,7 @@ R_API void r_core_visual_asm(RCore *core, ut64 addr);
 R_API void r_core_visual_colors(RCore *core);
 R_API int r_core_visual_xrefs_x (RCore *core);
 R_API int r_core_visual_xrefs_X (RCore *core);
+R_API int r_core_visual_hud(RCore *core);
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
 R_API int r_core_serve(RCore *core, RIODesc *fd);

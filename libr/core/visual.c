@@ -92,7 +92,7 @@ static int zoom = 0;
 static int marks_init = 0;
 static ut64 marks[UT8_MAX+1];
 
-static int r_core_visual_hud(RCore *core) {
+R_API int r_core_visual_hud(RCore *core) {
 	const char *c = r_config_get (core->config, "hud.path");
 	const char *f = R2_LIBDIR"/radare2/"R2_VERSION"/hud/main";
 	char *homehud = r_str_home (R2_HOMEDIR"/hud");

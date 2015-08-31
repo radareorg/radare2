@@ -630,6 +630,7 @@ repeat:
 		" !    - run r2048 game\n"
 		" .    - seek to PC or entrypoint\n"
 		" :    - run r2 command in prompt\n"
+		" _    - start the hud input mode\n"
 		" ?    - show this help\n"
 		" x    - close current panel\n"
 		" m    - open menubar\n"
@@ -693,6 +694,9 @@ repeat:
 		} else {
 			r_core_cmd0 (core, "s-4");
 		}
+		break;
+	case '_':
+		r_core_visual_hud (core);
 		break;
 	case 'x':
 		delcurpanel();
