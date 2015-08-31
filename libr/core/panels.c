@@ -465,8 +465,8 @@ repeat:
 				char *res = r_cons_input ("open file: ");
 				if (res && *res) {
 					r_core_cmdf (core, "o %s", res);
-					free (res);
 				}
+				free (res);
 			} else if (strstr (action, "Info")) {
 				addPanelFrame ("Info", "i", 0);
 			} else if (strstr (action, "Database")) {
@@ -532,8 +532,10 @@ repeat:
 			} else if (strstr (action, "Calculator")) {
 				for (;;) {
 					char *s = r_cons_input ("> ");
-					if (!s || !*s)
+					if (!s || !*s) {
+						free (s);
 						break;
+					}
 					r_core_cmdf (core, "? %s", s);
 					r_cons_flush ();
 					free (s);
