@@ -1117,7 +1117,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		}
 		if (showFunc) {
 			count++;
-			if (rad==0) {
+			if (rad == 'o') {
                                 r_cons_printf ("0x%08"PFMT64x"  %d  %d  %s\n",
 					fcn->addr, fcn->size, r_list_length (fcn->bbs), fcn->name);
 			} else if (rad=='q') {
