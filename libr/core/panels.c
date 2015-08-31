@@ -634,6 +634,7 @@ repeat:
 		" ?    - show this help\n"
 		" x    - close current panel\n"
 		" m    - open menubar\n"
+		" M    - open new custom frame\n"
 		" hl   - toggle scr.color\n"
 		" HL   - move vertical column split\n"
 		" JK   - select prev/next panels (same as TAB)\n"
@@ -720,6 +721,17 @@ repeat:
 		}
 		if (!curnode) {
 			menu_x = 0;
+		}
+		break;
+	case 'M':
+		{
+			char *name = r_cons_input ("Name: ");
+			char *cmd = r_cons_input ("Command: ");
+			if (name && *name && cmd && *cmd) {
+				addPanelFrame (name, cmd, 0);
+			}
+			free (name);
+			free (cmd);
 		}
 		break;
 	case 'm':
