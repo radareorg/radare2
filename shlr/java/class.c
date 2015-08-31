@@ -3275,7 +3275,8 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	offset += 2;
 	attr->info.code_attr.code_length = R_BIN_JAVA_UINT (buffer, offset);
 	offset += 4;
-	attr->info.code_attr.code_offset = buf_offset+offset;
+	// BUG: possible unsigned integer overflow here
+	attr->info.code_attr.code_offset = buf_offset + offset;
 	attr->info.code_attr.code = (ut8*) malloc (attr->info.code_attr.code_length);
 	if (attr->info.code_attr.code == NULL) {
 		eprintf ("Handling Code Attributes: Unable to allocate memory "
@@ -8015,12 +8016,11 @@ R_API char * r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			str = out;
 		}
 	} else if (strcmp (cp_name, "Integer") == 0) {
-		str = malloc (34);
-		out = malloc (34);
-		memset (out, 0, 34);
+		str = calloc (34, 1);
+		out = calloc (34, 1);
 		if (str) {
-			snprintf (str, 34, "0x%08x", R_BIN_JAVA_UINT (item->info.cp_integer.bytes.raw,0));
-			r_base64_encode (out, (const ut8 *)str, strlen(str));
+			snprintf (str, 34, "0x%08x", R_BIN_JAVA_UINT (item->info.cp_integer.bytes.raw, 0));
+			r_base64_encode (out, (const ut8 *)str, strlen (str));
 			free (str);
 			str = out;
 		}
@@ -8246,10 +8246,12 @@ R_API void U(r_bin_java_free_const_value)(ConstJavaValue * cp_value) {
 				free (cp_value->value._ref->name);
 				free (cp_value->value._ref->desc);
 			}
+			break;
 		case 's':
 			if (second_char == 't' && cp_value->value._str) {
 				free (cp_value->value._str->str);
 			}
+			break;
 	}
 	free (cp_value);
 }

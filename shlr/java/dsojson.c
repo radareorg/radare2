@@ -1,4 +1,4 @@
-/* radare - Apache - Copyright 2014 dso <adam.pridgen@thecoverofnight.com | dso@rice.edu> */
+/* radare - Apache - Copyright 2014,2015 dso, pancake */
 
 #include "dsojson.h"
 #include "class.h"
@@ -27,12 +27,9 @@ static DsoJsonInfo DSO_JSON_INFOS []= {
 	{DSO_JSON_END},//, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
 };
 
-
-
+// TODO: remove useless calloc wrapper
 static void * json_new0 (unsigned int sz) {
-	char *alloc = malloc (sz);
-	if (alloc) memset (alloc, 0, sz);
-	return alloc;
+	return calloc (sz, 1);
 }
 
 static RList * build_str_list_from_iterable (RList *the_list) {
@@ -41,45 +38,39 @@ static RList * build_str_list_from_iterable (RList *the_list) {
 	RListIter *iter;
 	r_list_foreach (the_list, iter, json_obj) {
 		char *str = dso_json_obj_to_str (json_obj);
-		r_list_append (res, str);
+		if (str && *str) {
+			r_list_append (res, str);
+		}
 	}
 	return res;
 }
 
-static char * build_str_from_str_list_for_iterable (RList *the_list) {
+static char * build_str_from_str_list_for_iterable (RList *the_list, int is_array) {
 	char *res = NULL, *str;
 	int len = 3, pos = 1;
 	RListIter *iter = NULL;
 	RList *str_list = build_str_list_from_iterable (the_list);
-	int commas = r_list_length (str_list)-1;
 
-	if (commas > -1) {
-		r_list_foreach (str_list, iter, str) {
-			len += strlen (str) + 1;
-		}
+	r_list_foreach (str_list, iter, str) {
+		len += strlen (str) + 1;
 	}
 
 	res = json_new0 (len);
-
+	// TODO: use [ if needed
+	strcpy (res, is_array? "[": "{");
 	if (res) {
-		// build string
-		int bytes = 0;
-		char *str;
 		r_list_foreach (str_list, iter, str) {
-			if (commas > 0)
-				bytes = snprintf (res+pos, len - pos, "%s,", str);
-			else
-				bytes = snprintf (res+pos, len - pos, "%s", str);
-			pos += bytes;
-			commas--;
+			pos += snprintf (res+pos, len - pos, "%s%s",
+				str, iter->n? ",": "");
 		}
 	}
+	strcat (res, is_array?"]": "}");
 	r_list_free (str_list);
 	return res;
 }
+
 static int get_type (DsoJsonObj *y) {
-	if (y) return y->info->type;
-	return -1;
+	return (y && y->info)? y->info->type: -1;
 }
 
 static int dso_json_is_null (DsoJsonObj *y) {
@@ -95,40 +86,39 @@ static int dso_json_is_dict_entry (DsoJsonObj *y) {
 }
 
 R_API ut8  dso_json_char_needs_hexing ( ut8 b) {
-	if (b < 0x20) return 1;
+	if (b < 0x20) {
+		return 1;
+	}
 	switch (b) {
-		case 0x7f:
-		case 0x81:
-		case 0x8F:
-		case 0x90:
-		case 0x9D:
-		case 0xA0:
-		case 0xAD:
-			return 1;
+	case 0x7f:
+	case 0x81:
+	case 0x8F:
+	case 0x90:
+	case 0x9D:
+	case 0xA0:
+	case 0xAD:
+		return 1;
 	}
 	return 0;
 }
 
 R_API char * dso_json_obj_to_str (DsoJsonObj * dso_obj) {
-	char *res = NULL;
-	if (dso_obj) {
+	if (dso_obj && dso_obj->info) {
 		switch (dso_obj->info->type) {
-		case DSO_JSON_NULL: res = malloc (5); strcpy (res, "null"); break;
-		case DSO_JSON_NUM: res = dso_json_num_to_str (dso_obj->val._num); break;
-		case DSO_JSON_STR: res = dso_json_str_to_str (dso_obj->val._str); break;
-		case DSO_JSON_LIST: res = dso_json_list_to_str (dso_obj->val._list); break;
-		case DSO_JSON_DICT: res = dso_json_dict_to_str (dso_obj->val._dict); break;
-		case DSO_JSON_DICT_ENTRY: res = dso_json_dict_entry_to_str (dso_obj->val._dict_entry); break;
-		default: break;
+		case DSO_JSON_NULL: return strdup ("null");
+		case DSO_JSON_NUM: return dso_json_num_to_str (dso_obj->val._num);
+		case DSO_JSON_STR: return dso_json_str_to_str (dso_obj->val._str);
+		case DSO_JSON_LIST: return dso_json_list_to_str (dso_obj->val._list);
+		case DSO_JSON_DICT: return dso_json_dict_to_str (dso_obj->val._dict);
+		case DSO_JSON_DICT_ENTRY: return dso_json_dict_entry_to_str (dso_obj->val._dict_entry);
 		}
 	}
-	return res;
+	return NULL;
 }
 
 R_API void dso_json_obj_del (void *dso_objv) {
-	DsoJsonObj *dso_obj = NULL;
+	DsoJsonObj *dso_obj = ((DsoJsonObj *) dso_objv);
 	if (dso_objv) {
- 		dso_obj = ((DsoJsonObj *) dso_objv);
 		switch (dso_obj->info->type) {
 		case DSO_JSON_NULL: /*do nothing */ break;
 		case DSO_JSON_NUM: dso_json_num_free (dso_obj->val._num); break;
@@ -138,8 +128,7 @@ R_API void dso_json_obj_del (void *dso_objv) {
 		case DSO_JSON_DICT_ENTRY: dso_json_dict_entry_free (dso_obj->val._dict_entry); break;
 		default: break;
 		}
-		dso_obj->val._num = NULL;
-		dso_obj->info = NULL;
+		memset (dso_obj, 0, sizeof (DsoJsonObj));
 		free (dso_obj);
 	}
 }
@@ -207,8 +196,10 @@ R_API void dso_json_null_free (void *x) {
 
 R_API DsoJsonObj * dso_json_str_new () {
 	DsoJsonObj *x = dso_json_null_new ();
-	x->info = get_type_info (DSO_JSON_STR);
-	x->val._str = json_new0  (sizeof (DsoJsonStr));
+	if (x) {
+		x->info = get_type_info (DSO_JSON_STR);
+		x->val._str = json_new0  (sizeof (DsoJsonStr));
+	}
 	return x;
 }
 
@@ -217,8 +208,8 @@ R_API void dso_json_str_free (void *y) {
 	if (x) {
 		free (x->data);
 		x->data = NULL;
+		free (x);
 	}
-	free (x);
 }
 
 R_API DsoJsonObj * dso_json_dict_entry_new () {
@@ -253,22 +244,22 @@ R_API void dso_json_dict_entry_free (void *y) {
 R_API char * dso_json_dict_entry_to_str (DsoJsonDictEntry * entry) {
 	char *res = NULL;
 	if (entry) {
-		char *key = dso_json_obj_to_str (entry->key),
-		     *value = dso_json_obj_to_str (entry->value);
-
+		char *key = dso_json_obj_to_str (entry->key);
+		char *value = dso_json_obj_to_str (entry->value);
 		if (key) {
 			int len = 2 + 3 + strlen (key);
-			if (value) len += strlen(value);
+			if (value) len += strlen (value);
 			res = json_new0 (len);
-			if (res && value) {
-				snprintf (res, len, "%s:%s", key, value);
-			} else if (res) {
-				snprintf (res, len, "%s:\"\"", key);
+			if (res) {
+				if (value) {
+					snprintf (res, len, "%s:%s", key, value);
+				} else {
+					snprintf (res, len, "%s:\"\"", key);
+				}
 			}
+			free (key);
 		}
-		free (key);
 		free (value);
-
 	}
 	return res;
 }
@@ -425,42 +416,35 @@ R_API int dso_json_dict_entry_value_set_obj (DsoJsonObj *entry_obj, DsoJsonObj *
 
 R_API DsoJsonObj * dso_json_list_new () {
 	DsoJsonObj *x = dso_json_null_new ();
-	x->info = get_type_info (DSO_JSON_LIST);
-	x->val._list = json_new0  (sizeof (DsoJsonList));
-	x->val._list->json_list = r_list_newf(dso_json_obj_del);
+	if (x) {
+		x->info = get_type_info (DSO_JSON_LIST);
+		x->val._list = json_new0  (sizeof (DsoJsonList));
+		if (!x->val._list) {
+			x->val._list->json_list = r_list_newf(dso_json_obj_del);
+		} else {
+			R_FREE (x);
+		}
+	}
 	return x;
 }
 
 R_API void dso_json_list_free (void *y) {
 	DsoJsonList *x = (DsoJsonList *)y;
-	if (x && x->json_list) {
-		r_list_free (x->json_list);
-		x->json_list = NULL;
+	if (x) {
+		if (x->json_list) {
+			r_list_free (x->json_list);
+			x->json_list = NULL;
+		}
+		free (x);
 	}
-	free (x);
 }
 
 R_API char * dso_json_list_to_str (DsoJsonList *list) {
-	char *res = NULL;
 	if (list && list->json_list) {
-		// TODO create a new list of strings from the list
-		// of json objs
-		res = build_str_from_str_list_for_iterable (list->json_list);
+		return build_str_from_str_list_for_iterable (list->json_list, 1);
 	}
-	// adding [ and ] to the list ends
-	if (!res) {
-		res = json_new0 (3);
-		strncpy (res, "[]", 3);
-	} else {
-		int end = 0;
-		// need to put the prefix type or strlen returns 0;
-		res[0] = '[';
-		end = strlen (res);
-		res[end] = ']';
-	}
-	return res;
+	return strdup ("[]");
 }
-
 
 R_API int dso_json_list_append (DsoJsonObj *list_obj, DsoJsonObj *y) {
 	if (get_type (list_obj) == DSO_JSON_LIST) {
@@ -493,9 +477,11 @@ R_API int dso_json_list_append_num (DsoJsonObj *list_obj, ut64 y) {
 
 R_API DsoJsonObj * dso_json_dict_new () {
 	DsoJsonObj *x = dso_json_null_new ();
-	x->info = get_type_info (DSO_JSON_DICT);
-	x->val._dict = json_new0 (sizeof (DsoJsonObj));
-	x->val._dict->json_dict = r_list_newf (dso_json_obj_del);
+	if (x) {
+		x->info = get_type_info (DSO_JSON_DICT);
+		x->val._dict = json_new0 (sizeof (DsoJsonObj));
+		x->val._dict->json_dict = r_list_newf (dso_json_obj_del);
+	}
 	return x;
 }
 
@@ -509,22 +495,10 @@ R_API void dso_json_dict_free (void *y) {
 }
 
 R_API char * dso_json_dict_to_str (DsoJsonDict *dict) {
-	char *res = NULL;
 	if (dict && dict->json_dict) {
-		res = build_str_from_str_list_for_iterable (dict->json_dict);
+		return build_str_from_str_list_for_iterable (dict->json_dict, 0);
 	}
-	// adding { and } to the list ends
-	if (!res) {
-		res = json_new0 (3);
-		strncpy (res, "{}", 3);
-	} else {
-		int end = 0;
-		// need to put the prefix type or strlen returns 0;
-		res[0] = '{';
-		end = strlen (res);
-		res[end] = '}';
-	}
-	return res;
+	return strdup ("{}");
 }
 
 R_API int dso_json_dict_insert_str_key_obj (DsoJsonObj *dict, char *key, DsoJsonObj *val_obj) {
@@ -536,10 +510,9 @@ R_API int dso_json_dict_insert_str_key_obj (DsoJsonObj *dict, char *key, DsoJson
 	return res;
 }
 
-
 R_API int dso_json_dict_insert_str_key_num (DsoJsonObj *dict, char *key, int val) {
-	DsoJsonObj *key_obj = dso_json_str_new_from_str (key),
-			*val_obj = dso_json_num_new_from_num (val);
+	DsoJsonObj *key_obj = dso_json_str_new_from_str (key);
+	DsoJsonObj *val_obj = dso_json_num_new_from_num (val);
 	int res = dso_json_dict_insert_key_obj (dict, key_obj, val_obj);
 	if (!res) {
 		dso_json_obj_del (key_obj);
@@ -605,10 +578,12 @@ R_API int dso_json_dict_insert_key_obj (DsoJsonObj *dict, DsoJsonObj *key, DsoJs
 		r_list_append (the_list, entry);
 		res = R_TRUE;
 	//TODO implement the remove key
-	}else if (value && key && !dso_json_dict_remove_key_obj (dict, key)) {
+	} else if (value && key && !dso_json_dict_remove_key_obj (dict, key)) {
 		DsoJsonObj *entry = dso_json_dict_entry_new_from_key_obj_val_obj (key, value);
 		r_list_append (the_list, entry);
 		res = R_TRUE;
+	} else {
+		dso_json_dict_free (value);
 	}
 	return res;
 }
@@ -660,7 +635,6 @@ R_API int dso_json_dict_contains_key_str (DsoJsonObj *dict, char *key) {
 	return res;
 }
 
-
 // TODO append value to key 1) check that key is valid, 2) if not create new entry and append it
 
 R_API DsoJsonObj * dso_json_num_new () {
@@ -676,13 +650,7 @@ R_API void dso_json_num_free (void *y) {
 }
 
 R_API char * dso_json_num_to_str (DsoJsonNum * num) {
-	char *res = NULL;
-	if (num) {
-		int len = 50+3;
-		res = json_new0 (len);
-		if (res) snprintf (res, len, "%"PFMT64d, num->value);
-	}
-	return res;
+	return r_str_newf ("%"PFMT64d, num->value);
 }
 
 R_API DsoJsonObj * dso_json_num_new_from_num (ut64 num) {
@@ -691,14 +659,13 @@ R_API DsoJsonObj * dso_json_num_new_from_num (ut64 num) {
 	return x;
 }
 
-R_API char * dso_json_convert_string (const char * bytes, ut32 len ) {
+R_API char * dso_json_convert_string (const char * bytes, ut32 len) {
 	ut32 idx = 0, pos = 1;
 	ut32 str_sz = 4*len+1+2;
 	int end = 0;
-	char *cpy_buffer = len > 0 ? malloc (str_sz): NULL;
+	char *cpy_buffer = len > 0 ? calloc (1, str_sz): NULL;
 	if (!cpy_buffer) return cpy_buffer;
 	// 4x is the increase from byte to \xHH where HH represents hexed byte
-	memset (cpy_buffer, 0, str_sz);
 	cpy_buffer[0] = '"';
 	while (idx < len) {
 		if (bytes[idx] == '"') {
@@ -713,17 +680,15 @@ R_API char * dso_json_convert_string (const char * bytes, ut32 len ) {
 		}
 		idx ++;
 	}
-	end = strlen (cpy_buffer);
-	cpy_buffer[end] = '"';
+	strcat (cpy_buffer, "\"");
 	return cpy_buffer;
 }
 
 R_API char * dso_json_str_to_str (DsoJsonStr *str) {
-	char *res = NULL;
-	if (str) {
-		res = dso_json_convert_string (str->data, str->len);
+	if (str && str->data && str->len> 0) {
+		return dso_json_convert_string (str->data, str->len);
 	}
-	return res;
+	return NULL;
 }
 
 R_API DsoJsonObj * dso_json_str_new_from_str (const char *str) {
