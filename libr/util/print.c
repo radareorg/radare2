@@ -658,6 +658,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt ("%s0x%08x%s ", a, (ut32)n, b);
 				r_print_cursor (p, j, 0);
 				j += step - 1;
+			} else if (base == 10) {
+				int *w = (int*)(buf+j);
+				printfmt ("%13d ", *w);
+				j += 3;
 			} else {
 				if (j>=len) {
 					break;
