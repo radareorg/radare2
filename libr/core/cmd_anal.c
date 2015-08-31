@@ -658,7 +658,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_core_anal_fcn_list (core, NULL, input[2]);
 			break;
 		default:
-			r_core_anal_fcn_list (core, NULL, 'q');
+			r_core_anal_fcn_list (core, NULL, 0);
 			break;
 		}
 		break;

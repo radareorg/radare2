@@ -1117,9 +1117,12 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		}
 		if (showFunc) {
 			count++;
-			if (rad=='q') {
-				r_cons_printf ("0x%08"PFMT64x"  %d  %d  %s\n",
-						fcn->addr, fcn->size, r_list_length (fcn->bbs), fcn->name);
+			if (rad==0) {
+                                r_cons_printf ("0x%08"PFMT64x"  %d  %d  %s\n",
+					fcn->addr, fcn->size, r_list_length (fcn->bbs), fcn->name);
+			} else if (rad=='q') {
+				r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
+						//fcn->addr, fcn->size, r_list_length (fcn->bbs), fcn->name);
 			} else if (rad=='j') {
 				r_cons_printf ("%s{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 						count>1? ",":"", fcn->addr, fcn->name, fcn->size);
@@ -1257,6 +1260,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			}
 		}
 	}
+	if (rad == 'q')
+		r_cons_newline ();
 	if (rad == 'j')  {
 		r_cons_printf ("]\n");
 	}
