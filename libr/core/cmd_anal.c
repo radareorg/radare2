@@ -2480,7 +2480,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	RList *list;
 	const char *arg;
 	const char* help_msg[] = {
-		"Usage:", "ag[?f]", "Graphiz Code",
+		"Usage:", "ag[?f]", "Graphviz Code",
 		"ag", " [addr]", "output graphviz code (bb at addr and children)",
 		"agj", " [addr]", "idem, but in JSON format",
 		"agk", " [addr]", "idem, but in SDB key-value format",
