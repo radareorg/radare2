@@ -8,11 +8,19 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int ret = R_TRUE;
-	struct v850_cmd cmd;
+	struct v850_cmd cmd = {
+		.instr = "",
+		.operands = ""
+	};
+
+	if (len < 2) return -1;
 
 	ret = v850_decode_command (buf, &cmd);
 
-	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s", cmd.instr, cmd.operands);
+	if (ret > 0) {
+		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s",
+			  cmd.instr, cmd.operands);
+	}
 	op->size = ret;
 
 	return ret;
