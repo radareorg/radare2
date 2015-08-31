@@ -155,14 +155,19 @@ R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits) {
 			//eprintf ("arch supported by debug backend (%x)\n", arch);
 			switch (bits) {
 			case 32:
-				dbg->bits = R_SYS_BITS_32;
+				if (dbg->h->bits & R_SYS_BITS_32) {
+					dbg->bits = R_SYS_BITS_32;
+				}
 				break;
 			case 64:
 				dbg->bits = R_SYS_BITS_64;
 				break;
 			}
-			if (!(dbg->h->bits & dbg->bits))
+			if (!dbg->h->bits) {
 				dbg->bits = dbg->h->bits;
+			} else if (!(dbg->h->bits & dbg->bits)) {
+				dbg->bits = dbg->h->bits;
+			}
 			dbg->arch = arch;
 			return R_TRUE;
 		}

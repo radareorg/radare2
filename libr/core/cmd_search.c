@@ -1650,7 +1650,7 @@ static int cmd_search(void *data, const char *input) {
 		param_offset++;
 	}
 
-	reread:
+reread:
 	switch (*input) {
 	case '!':
 		input++;

@@ -167,19 +167,15 @@ static int cb_asmarch(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	const char *asmos = r_config_get (core->config, "asm.os");
 	int bits = R_SYS_BITS;
-	if (core->assembler && core->assembler->cur) {
-		bits = core->assembler->cur->bits;
+	if (core->anal->bits) {
+		bits = core->anal->bits;
 	}
-	if (8&bits) bits = 8;
-	else if (16 & bits) bits = 16;
-	else if (32 & bits) bits = 32;
-	else bits = 64;
 
 	if (*node->value=='?') {
 		rasm2_list (core, NULL);
 		return R_FALSE;
 	}
-	r_egg_setup (core->egg, node->value, core->anal->bits, 0, R_SYS_OS);
+	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
 	if (*node->value) {
 		if (!r_asm_use (core->assembler, node->value)) {
 			eprintf ("asm.arch: cannot find (%s)\n", node->value);
@@ -187,6 +183,14 @@ static int cb_asmarch(void *user, void *data) {
 		}
 	} else return R_FALSE;
 
+	if (core->assembler && core->assembler->cur) {
+		bits = core->assembler->cur->bits;
+		if (8&bits) bits = 8;
+		else if (16 & bits) bits = 16;
+		else if (32 & bits) bits = 32;
+		else bits = 64;
+		bits = 8;
+	}
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
 	if (!(core->assembler->cur->bits & core->anal->bits)) {
