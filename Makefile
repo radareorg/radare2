@@ -200,8 +200,8 @@ purge-doc:
 	rm -f ${MDR}/man1/r2.1
 
 user-wrap=echo "\#!/bin/sh" > ~/bin/$1 \
-; echo -n "${PWD}/env.sh ${PREFIX} $1 \$$@" >> ~/bin/$1 \
-; chmod +x ~/bin/$1 ;
+; echo "${PWD}/env.sh ${PREFIX} $1 \$$@" >> ~/bin/$1 \
+; chmod +x ~/bin/"$1" ;
 
 user-install:
 	mkdir -p ~/bin
