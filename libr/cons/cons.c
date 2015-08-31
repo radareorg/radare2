@@ -37,6 +37,31 @@ static inline void r_cons_write (const char *buf, int len) {
 #endif
 }
 
+R_API char *r_cons_color_random_string(int bg) {
+	int r, g, b;
+	if (I.truecolor>0) {
+		char out[32];
+		r = r_num_rand (0xff);
+		g = r_num_rand (0xff);
+		b = r_num_rand (0xff);
+		r_cons_rgb_str (out, r, g, b, bg);
+		return strdup (out);
+	}
+	// random ansi
+	r = r_num_rand (8);
+	switch (r) {
+	case 0: return strdup ("red");
+	case 1: return strdup ("white");
+	case 2: return strdup ("green");
+	case 3: return strdup ("magenta");
+	case 4: return strdup ("yellow");
+	case 5: return strdup ("cyan");
+	case 6: return strdup ("blue");
+	case 7: return strdup ("gray");
+	}
+	return strdup ("white");
+}
+
 R_API char *r_cons_color_random(int bg) {
 	int r, g, b;
 	if (I.truecolor>0) {
@@ -543,10 +568,10 @@ R_API void r_cons_printf(const char *format, ...) {
 	size_t size, written;
 	va_list ap;
 
-	if (I.null) return;
+	if (I.null || !format) return;
 	if (strchr (format, '%')) {
-		palloc (MOAR + strlen (format)*20);
-		size = I.buffer_sz-I.buffer_len-1; /* remaining space in I.buffer */
+		palloc (MOAR + strlen (format) * 20);
+		size = I.buffer_sz - I.buffer_len - 1; /* remaining space in I.buffer */
 		va_start (ap, format);
 		written = vsnprintf (I.buffer+I.buffer_len, size, format, ap);
 		va_end (ap);

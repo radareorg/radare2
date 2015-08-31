@@ -111,16 +111,26 @@ R_API void r_cons_pal_random() {
 	char val[32];
 	const char *k;
 	int i;
-	for (i=0;;i++) {
+	for (i = 0; ; i++) {
 		k = r_cons_pal_get_i (i);
 		if (!k) break;
-		r = r_num_rand (0xf);
-		g = r_num_rand (0xf);
-		b = r_num_rand (0xf);
-		sprintf (val, "rgb:%x%x%x", r, g, b);
-		r_cons_pal_set (k, val);
+		if (cons->truecolor>0) {
+			r = r_num_rand (0xf);
+			g = r_num_rand (0xf);
+			b = r_num_rand (0xf);
+			sprintf (val, "rgb:%x%x%x", r, g, b);
+			r_cons_pal_set (k, val);
+		} else {
+			char *s = r_cons_color_random_string (0);
+			if (s) {
+				r_cons_pal_set (k, s);
+				free (s);
+			} else {
+				r_cons_pal_set (k, "red");
+			}
+		}
 	}
-	for (i=0; i<R_CONS_PALETTE_LIST_SIZE; i++) {
+	for (i = 0; i<R_CONS_PALETTE_LIST_SIZE; i++) {
 		if (cons->pal.list[i])
 			R_FREE (cons->pal.list[i]);
 		cons->pal.list[i] = r_cons_color_random (0);
