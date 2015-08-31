@@ -55,12 +55,12 @@ static const char *menus_Edit[] = {
 };
 
 static const char *menus_View[] = {
-	"Hexdump", "Disassembly", "Graph", "Functions", "Entropy", "Colors",
+	"Hexdump", "Disassembly", "Graph", "FcnInfo", "Functions", "Comments", "Entropy", "Colors",
 	NULL
 };
 
 static const char *menus_Tools[] = {
-	"Assembler", "Calculator", "Shell",
+	"Assembler", "Calculator", "Shell", "System Shell",
 	NULL
 };
 
@@ -221,12 +221,14 @@ static void delcurpanel() {
 }
 
 static void zoom() {
-	if (curnode == 1 && n_panels>2) {
-		curnode = 2;
+	if (n_panels>2) {
+		if (curnode <2) {
+			curnode = 2;
+		}
+		Panel ocurnode = panels[curnode];
+		panels[curnode] = panels[1];
+		panels[1] = ocurnode;
 	}
-	Panel ocurnode = panels[curnode];
-	panels[curnode] = panels[1];
-	panels[1] = ocurnode;
 }
 
 static void addPanelFrame (const char *title, const char *cmd, ut64 addr) {
@@ -245,7 +247,6 @@ static void addPanelFrame (const char *title, const char *cmd, ut64 addr) {
 	panels[i].type = PANEL_TYPE_FRAME;
 	panels[i+1].text = NULL;
 	n_panels++;
-	//zoom();
 }
 
 static int bbPanels (RCore *core, Panel **n) {
@@ -285,10 +286,10 @@ static void r_core_panels_refresh (RCore *core) {
 		}
 		panels[menu_pos].y = 1;
 		free (panels[menu_pos].text);
-		panels[menu_pos].text = malloc (1024); //r_str_newf ("%d", menu_y);
-		panels[menu_pos].text[0] = 0;
+		panels[menu_pos].text = calloc (1, 1024); //r_str_newf ("%d", menu_y);
 		int maxsub = 0;
 		for (i=0; menus_sub[i]; i++) { maxsub = i; }
+#if 1
 		if (menu_x >= 0 && menu_x <= maxsub && menus_sub[menu_x]) {
 			for (j = 0; menus_sub[menu_x][j]; j++) {
 				if (menu_y-1 == j) {
@@ -301,10 +302,11 @@ static void r_core_panels_refresh (RCore *core) {
 				strcat (panels[menu_pos].text, "          \n");
 			}
 		}
+#endif
 		for (i=0; panels[i].text; i++) {
-			if (i != curnode) {
+//			if (i != curnode) {
 				Panel_print (can, &panels[i], i==curnode);
-			}
+//			}
 		}
 	}
 
@@ -411,6 +413,10 @@ repeat:
 	// r_core_graph_inputhandle()
 	okey = r_cons_readchar ();
 	key = r_cons_arrow_to_hjkl (okey);
+	eprintf ("%d\n", okey);
+	if (okey == 27) {
+		key = 'K';
+	}
 
 	switch (key) {
 	case 'u':
@@ -489,6 +495,10 @@ repeat:
 				addPanelFrame ("Disassembly", "pd 128", core->offset);
 			} else if (strstr (action, "Functions")) {
 				addPanelFrame ("Functions", "afl", core->offset);
+			} else if (strstr (action, "Comments")) {
+				addPanelFrame ("Comments", "CC", core->offset);
+			} else if (strstr (action, "Entropy")) {
+				addPanelFrame ("Entropy", "p=e", core->offset);
 			} else if (strstr (action, "Function")) {
 				r_core_cmdf (core, "af");
 			} else if (strstr (action, "Program")) {
@@ -558,6 +568,8 @@ repeat:
 				free (s);
 			} else if (strstr (action, "References")) {
 				r_core_cmdf (core, "aar");
+			} else if (strstr (action, "FcnInfo")) {
+				addPanelFrame ("FcnInfo", "afi", 0);
 			} else if (strstr (action, "Graph")) {
 				RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 				if (fun) {
@@ -567,6 +579,9 @@ repeat:
 				} else {
 					r_cons_message("Not in a function. Type 'df' to define it here");
 				}
+			} else if (strstr (action, "System Shell")) {
+				r_cons_set_raw (0);
+				r_sys_cmd ("$SHELL");
 			} else if (strstr (action, "Shell")) {
 				core->vmode = R_FALSE;
 				r_core_visual_prompt_input (core);
@@ -639,8 +654,8 @@ repeat:
 	case 'j':
 		if (curnode==0) {
 			if (panels[curnode].type == PANEL_TYPE_FLOAT) {
-					if (menus_sub[menu_x][menu_y])
-						menu_y ++;
+				if (menus_sub[menu_x][menu_y])
+					menu_y ++;
 			}
 		} else {
 			r_core_cmd0 (core, "s+4");
@@ -723,12 +738,14 @@ repeat:
 			goto beach;
 		}
 		break;
+#if 0
 	case 27: // ESC
 		if (r_cons_readchar () == 91) {
 			if (r_cons_readchar () == 90) {
 			}
 		}
 		break;
+#endif
 	default:
 		//eprintf ("Key %d\n", key);
 		//sleep (1);
