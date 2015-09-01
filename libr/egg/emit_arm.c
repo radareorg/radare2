@@ -64,8 +64,8 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 	int rest, off = 0;
 	off = strlen (str)+1;
 	rest = (off%4);
-	if (rest) rest = 4-rest;
-	off += rest-8;
+	if (rest) rest = 4 - rest;
+	off += rest - 4;
 	r_egg_printf (egg, "  add pc, $%d\n", (off));
 	// XXX: does not handle \n and so on.. must use r_util
 	r_egg_printf (egg, ".string \"%s\"\n", str);
