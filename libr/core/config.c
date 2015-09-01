@@ -359,9 +359,13 @@ static int cb_asmos(void *user, void *data) {
 	int asmbits = r_config_get_i (core->config, "asm.bits");
 	RConfigNode *asmarch, *node = (RConfigNode*) data;
 
-	if (*node->value=='?') {
+	if (*node->value == '?') {
 		r_cons_printf ("dos\ndarwin\nlinux\nfreebsd\nopenbsd\nnetbsd\nwindows\n");
 		return 0;
+	}
+	if (!node->value[0]) {
+		free (node->value);
+		node->value = strdup (R_SYS_OS);
 	}
 	asmarch = r_config_node_get (core->config, "asm.arch");
 	if (asmarch) {
@@ -1155,7 +1159,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("asm.syntax", "intel", &cb_asmsyntax, "Select assembly syntax");
 	SETI("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
 	SETPREF("asm.bytespace", "false", "Separate hexadecimal bytes with a whitespace");
+#if R_SYS_BITS == R_SYS_BITS_64
+	SETICB("asm.bits", 64, &cb_asmbits, "Word size in bits at assembler");
+#else
 	SETICB("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
+#endif
 	SETPREF("asm.functions", "true", "Show functions in disassembly");
 	SETPREF("asm.fcncalls", "true", "Show functions calls");
 	SETPREF("asm.xrefs", "true", "Show xrefs in disassembly");
