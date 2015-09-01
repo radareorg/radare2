@@ -185,6 +185,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 				import_hint = 0;
 				snprintf (import_name, PE_NAME_LENGTH, "qq%s_Ordinal_%i",
 					dll_name, import_ordinal);
+				free (symdllname);
 				symdllname = strdup (dll_name);
 
 				// remove the trailling ".dll"

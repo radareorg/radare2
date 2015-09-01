@@ -770,7 +770,6 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 	case 'l':
 		// Print gadgets in a 'linear manner', each sequence
 		// on one line.
-		hit = r_list_get_top (hitlist);
 		r_cons_printf ("0x%08"PFMT64x":",
 				((RCoreAsmHit *)hitlist->head->data)->addr);
 		r_list_foreach (hitlist, iter, hit) {
@@ -927,7 +926,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		}
 	}
 
-	smode = r_config_get (core->config, "search.in");
 	maxhits = r_config_get_i (core->config, "search.maxhits");
 	if (!strncmp (smode, "dbg.", 4) \
 	|| !strncmp (smode, "io.sections", 11) \

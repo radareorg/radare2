@@ -619,7 +619,7 @@ static int cmd_write(void *data, const char *input) {
 				r_io_cache_reset (core->io, R_TRUE);
 			} else if (input[2]==' ') {
 				char *p = strchr (input+3, ' ');
-				ut64 to, from = core->offset;
+				ut64 to, from;
 				if (p) {
 					*p = 0;
 					from = r_num_math (core->num, input+3);

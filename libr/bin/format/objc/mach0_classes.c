@@ -512,7 +512,7 @@ static void get_protocol_list_t (mach0_ut p, RBinFile *arch, RBinClass *processe
 	struct MACH0_(SProtocol) pc;
 	mach0_ut r;
 	ut32 offset, left, i;
-	char *class_name;
+	char *class_name = NULL;
 
 	if (!arch || !arch->o || !arch->o->bin_obj) {
 		eprintf("uncorrect RBinFile pointer\n");

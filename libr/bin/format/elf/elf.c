@@ -1430,10 +1430,16 @@ done:
 		ret[ret_ctr].last = 1; 
 		if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {
 			bin->imports_by_ord_size = ret_ctr;
-			bin->imports_by_ord = (RBinImport**)calloc (ret_ctr, sizeof (RBinImport*));
+			if (ret_ctr > 0)
+				bin->imports_by_ord = (RBinImport**)calloc (ret_ctr, sizeof (RBinImport*));
+			else
+				bin->imports_by_ord = NULL;
 		} else if (type == R_BIN_ELF_SYMBOLS && !bin->symbols_by_ord_size) {
 			bin->symbols_by_ord_size = ret_ctr; 
-			bin->symbols_by_ord = (RBinSymbol**)calloc (ret_ctr, sizeof (RBinSymbol*));
+			if (ret_ctr > 0)
+				bin->symbols_by_ord = (RBinSymbol**)calloc (ret_ctr, sizeof (RBinSymbol*));
+			else
+				bin->imports_by_ord = NULL;
 		}
 	}
 	free (sym);
@@ -1443,7 +1449,7 @@ done:
 
 struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type) {
 	ut32 shdr_size;
-	int tsize, nsym, ret_ctr, i, k, len, newsize;
+	int tsize, nsym, ret_ctr, i, k, newsize;
 	ut64 sym_offset = 0, data_offset = 0, toffset;
 	ut32 size = 0;
 	struct r_bin_elf_symbol_t *ret = NULL;
@@ -1630,14 +1636,12 @@ if (
 				}
 				{
 					int rest = R_MIN (ELF_STRING_LENGTH,128)-1; //strtab_section->sh_size - sym[k].st_name;
-					//len = r_str_nlen (strtab+sym[k].st_name, ELF_STRING_LENGTH-1);
 					int st_name = sym[k].st_name;
 					int maxsize = R_MIN (bin->b->length, strtab_section->sh_size);
 					if (st_name<0 || st_name>=maxsize) {
-						len = 0;
 						ret[ret_ctr].name[0] = 0;
 					} else {
-						len = __strnlen (strtab+sym[k].st_name, rest);
+						const size_t len = __strnlen (strtab+sym[k].st_name, rest);
 						memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], len);
 					}
 				}

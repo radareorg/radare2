@@ -267,15 +267,16 @@ static int load_omf_pubdef(OMF_record *record, const char *buf) {
 
 	if (!(record->type & 1)) { // 16 bit addr
 		ret->nb_elem = omf_count_symb (record->size + 3, ct, buf, 16);
-		if (!(ret->elems = R_NEWS0 (OMF_symbol, ret->nb_elem)))
-			return R_FALSE;
+		if (ret->nb_elem > 0)
+			if (!(ret->elems = R_NEWS0 (OMF_symbol, ret->nb_elem)))
+				return R_FALSE;
 		if (!load_omf_symb (record, ct, buf, 16, seg_idx))
 			return R_FALSE;
-	}
-	else { // 32 bit addr
+	} else { // 32 bit addr
 		ret->nb_elem = omf_count_symb (record->size + 3, ct, buf, 32);
-		if (!(ret->elems = R_NEWS0 (OMF_symbol, ret->nb_elem)))
-			return R_FALSE;
+		if (ret->nb_elem > 0)
+			if (!(ret->elems = R_NEWS0 (OMF_symbol, ret->nb_elem)))
+				return R_FALSE;
 		if (!load_omf_symb (record, ct, buf, 32, seg_idx))
 			return R_FALSE;
 	}

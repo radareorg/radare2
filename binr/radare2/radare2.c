@@ -218,7 +218,7 @@ int main(int argc, char **argv, char **envp) {
 	int do_analysis = 0;
 	int do_connect = 0;
 	int fullfile = 0;
-	int has_project = R_FALSE;
+	int has_project;
 	int prefile = 0;
 	int zerosep = 0;
 	int help = 0;
@@ -623,7 +623,6 @@ int main(int argc, char **argv, char **envp) {
 		}
 		if (r.file == NULL) // no given file
 			return 1;
-		//if (!has_project && run_anal)
 #if USE_THREADS
 		if (run_anal>0 && threaded) {
 			// XXX: if no rabin2 in path that may fail
@@ -644,7 +643,6 @@ int main(int argc, char **argv, char **envp) {
 			r_cons_flush ();
 		}
 
-		has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
 #if 0
 // Do not autodetect utf8 terminals to avoid problems on initial
 // stdin buffer and some terminals that just hang (android/ios)

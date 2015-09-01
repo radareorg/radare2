@@ -115,7 +115,7 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	if (!strncmp ((const char *)buf, "art\n", R_MIN (4, length))) {
+	if (buf && !strncmp ((const char *)buf, "art\n", R_MIN (4, length))) {
 		return R_TRUE;
 	}
 	return R_FALSE;

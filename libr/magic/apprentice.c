@@ -243,6 +243,7 @@ void file_delmagic(struct r_magic *p, int type, size_t entries) {
 		/*FALLTHROUGH*/
 	case 0:
 		free (p);
+		p = NULL;
 		break;
 	default:
 		abort ();
