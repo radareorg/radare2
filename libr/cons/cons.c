@@ -672,17 +672,16 @@ R_API int r_cons_get_size(int *rows) {
 	I.columns = 80;
 	I.rows = 23;
 #elif __UNIX__ || __CYGWIN__
-	struct winsize win;
-	// use stdin as reference?
-	//if (isatty (1) && ioctl (1, TIOCGWINSZ, &win) == 0) {
+	struct winsize win = { 0 };
 	if (isatty (0) && ioctl (0, TIOCGWINSZ, &win) == 0) {
-		if (win.ws_col==0) {
+		if ((win.ws_col == 0) || (win.ws_row == 0)) {
 			// TODO: use ttyname() ?
 			int fd = open ("/dev/tty", O_RDONLY);
 			if (fd != -1) {
-				if (ioctl (fd, TIOCGWINSZ, &win) != 0) {
-					I.columns = 80;
-					I.rows = 23;
+				int ret = ioctl (fd, TIOCGWINSZ, &win);
+				if ((ret != 0) || (win.ws_col == 0) || (win.ws_row == 0)) {
+					win.ws_col = 80;
+					win.ws_row = 23;
 				}
 				close (fd);
 			}
