@@ -263,30 +263,19 @@ static void get_ivar_list_t (mach0_ut p,
 		r = get_pointer (i.name, NULL, &left, arch);
 		if (r != 0) {
 			char *tmp = NULL;
-			int len = 0;
-
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
 			int isCrypted = bin->has_crypto;
 
 			if (isCrypted == 1) {
-				left = strlen("some_ encrypted_data") + 1;
-				name = malloc (left );
-				memcpy(name, "some_encrypted_data", left);
+				name = strdup ("some_encrypted_data");
+				left = strlen (name) + 1;
 			} else {
 				name = malloc (left);
 				r_buf_read_at (arch->buf, r, (ut8 *)name, left);
 			}
-
-			tmp = r_str_newf ("%s::%s%s",
-							processed_class->name,
-							"(ivar)",
-							name);
-			len = strlen (tmp);
-
-			memcpy (field->name,
-					tmp,
-					(len < R_BIN_SIZEOF_STRINGS) ? len : R_BIN_SIZEOF_STRINGS);
-
+			tmp = r_str_newf ("%s::%s%s", processed_class->name,
+					"(ivar)", name);
+			strncpy (field->name, tmp, sizeof (field->name));
 			R_FREE (tmp);
 			R_FREE (name);
 		}

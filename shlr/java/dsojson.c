@@ -57,14 +57,14 @@ static char * build_str_from_str_list_for_iterable (RList *the_list, int is_arra
 
 	res = json_new0 (len);
 	// TODO: use [ if needed
-	strcpy (res, is_array? "[": "{");
 	if (res) {
+		strcpy (res, is_array? "[": "{");
 		r_list_foreach (str_list, iter, str) {
 			pos += snprintf (res+pos, len - pos, "%s%s",
 				str, iter->n? ",": "");
 		}
+		strcat (res, is_array?"]": "}");
 	}
-	strcat (res, is_array?"]": "}");
 	r_list_free (str_list);
 	return res;
 }
@@ -419,8 +419,8 @@ R_API DsoJsonObj * dso_json_list_new () {
 	if (x) {
 		x->info = get_type_info (DSO_JSON_LIST);
 		x->val._list = json_new0  (sizeof (DsoJsonList));
-		if (!x->val._list) {
-			x->val._list->json_list = r_list_newf(dso_json_obj_del);
+		if (x->val._list) {
+			x->val._list->json_list = r_list_newf (dso_json_obj_del);
 		} else {
 			R_FREE (x);
 		}

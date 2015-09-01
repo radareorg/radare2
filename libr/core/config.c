@@ -189,7 +189,6 @@ static int cb_asmarch(void *user, void *data) {
 		else if (16 & bits) bits = 16;
 		else if (32 & bits) bits = 32;
 		else bits = 64;
-		bits = 8;
 	}
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
