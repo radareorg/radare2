@@ -2175,5 +2175,8 @@ beach:
 	core->num->value = searchhits;
 	core->in_search = R_FALSE;
 	r_flag_space_pop (core->flags);
+	if (json) {
+		r_cons_newline ();
+	}
 	return ret;
 }
