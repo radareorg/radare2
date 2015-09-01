@@ -31,7 +31,11 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->type = get_filetype (arch);
 	ret->has_pi = 0;
 	ret->has_canary = 0;
-	ret->bits = 32;
+	if (R_SYS_BITS & R_SYS_BITS_64) {
+		ret->bits = 64;
+	} else {
+		ret->bits = 32;
+	}
 	ret->big_endian = 0;
 	ret->has_va = 0;
 	ret->has_nx = 0;

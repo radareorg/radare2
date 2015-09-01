@@ -1429,7 +1429,7 @@ R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char
 		if (info && info->arch && info->file &&
 			(bits == info->bits) &&
 			!strcmp (info->arch, arch) &&
-			!strcmp (info->file, name)){
+			!strcmp (info->file, name)) {
 			break;
 		}
 		obj = NULL;
@@ -1450,7 +1450,6 @@ R_API RBinFile * r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int b
 	}
 	return binfile;
 }
-
 
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
 	RBinFile *cur =  r_bin_cur (bin),
