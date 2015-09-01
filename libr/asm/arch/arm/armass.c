@@ -698,7 +698,7 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				getrange (ao->a[1]);
 				getrange (ao->a[2]);
 				ao->o |= getreg (ao->a[0])<<20;
-				ao->o |= getreg (ao->a[1])<<5; // delta
+				ao->o |= getreg (ao->a[1])<<8; // delta
 				ret = getreg (ao->a[2]);
 				if (ret != -1) {
 					ao->o |= (strstr (str,"],"))?6:7;

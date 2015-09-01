@@ -326,25 +326,25 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		qi = atoi (q+1);
 		varsize = (qi==1)? 'b': 'l';
 	} else varsize='l';
-	if (*str=='*'||*str=='&') {
+	if (*str == '*' || *str == '&') {
 		varxs = *str;
 		str++;
 	} else varxs = 0;
-	if (str[0]=='.') {
+	if (str[0] == '.') {
 		REggEmit *e = egg->remit;
 		idx = atoi (str+4) + delta + e->size;
-		if (!memcmp (str+1, "ret", 3)) {
+		if (!strncmp (str+1, "ret", 3)) {
 			strcpy (out, e->retvar);
 		} else
-		if (!memcmp (str+1, "fix", 3)) {
+		if (!strncmp (str+1, "fix", 3)) {
 			e->get_var (egg, 0, out, idx-stackfixed);
 			//sprintf(out, "%d(%%"R_BP")", -(atoi(str+4)+delta+R_SZ-stackfixed));
 		} else
-		if (!memcmp (str+1, "var", 3)) {
+		if (!strncmp (str+1, "var", 3)) {
 			e->get_var (egg, 0, out, idx);
 		//sprintf(out, "%d(%%"R_BP")", -(atoi(str+4)+delta+R_SZ));
 		} else
-		if (!memcmp (str+1, "arg", 3)) {
+		if (!strncmp (str+1, "arg", 3)) {
 			if (str[4]) {
 				if (stackframe == 0) {
 					e->get_var (egg, 1, out, 4); //idx-4);
@@ -363,7 +363,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				} else eprintf ("NO CALLNAME '%s'\n", callname);
 			}
 		} else
-		if (!memcmp (str+1, "reg", 3)) {
+		if (!strncmp (str+1, "reg", 3)) {
 			// XXX: can overflow if out is small
 			if (attsyntax)
 				snprintf (out, 32, "%%%s", e->regs (egg, atoi (str+4)));

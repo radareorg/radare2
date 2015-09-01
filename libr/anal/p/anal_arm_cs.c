@@ -623,7 +623,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	case ARM_INS_ADD:
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (REGID(1)==ARM_REG_PC) {
+		if (REGID(1) == ARM_REG_PC) {
 			op->ptr = addr + 8 + IMM(2);
 			op->refptr = 0;
 		}
