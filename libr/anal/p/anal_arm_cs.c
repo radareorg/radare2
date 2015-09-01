@@ -569,6 +569,20 @@ static void anop32 (RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 	int i;
 	switch (insn->id) {
+#if 0
+
+If PC is specified for Rn, the value used is the address of the instruction plus 4.
+
+These instructions cause a PC-relative forward branch using a table of single byte offsets (TBB) or halfword offsets (TBH). Rn provides a pointer to the table, and Rm supplies an index into the table. The branch length is twice the value of the byte (TBB) or the halfword (TBH) returned from the table. The target of the branch table must be in the same execution state.
+
+jmp $$ + 4 + ( [delta] * 2 )
+
+#endif
+	case ARM_INS_TBH: // half word table
+	case ARM_INS_TBB: // byte table
+		op->type = R_ANAL_OP_TYPE_UJMP;
+		// TABLE JUMP  used for switch statements
+		break;
 	case ARM_INS_IT:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr + insn->size;
