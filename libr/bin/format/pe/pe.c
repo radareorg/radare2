@@ -350,7 +350,7 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		time_t ts = (time_t)bin->nt_headers->file_header.TimeDateStamp;
 		sdb_num_set (bin->kv, "image_file_header.TimeDateStamp",
 			bin->nt_headers->file_header.TimeDateStamp, 0);
-		gettimeofday (&tv, &tz);
+		gettimeofday (&tv, (void*)&tz);
 		gmtoff = (int)(tz.tz_minuteswest*60); // in seconds
 		ts += gmtoff;
 		timestr = r_str_chop (strdup (ctime (&ts)));

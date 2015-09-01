@@ -116,21 +116,21 @@ R_API char * dso_json_obj_to_str (DsoJsonObj * dso_obj) {
 	return NULL;
 }
 
-R_API void dso_json_obj_del (void *dso_objv) {
-	DsoJsonObj *dso_obj = ((DsoJsonObj *) dso_objv);
-	if (dso_objv) {
-		switch (dso_obj->info->type) {
-		case DSO_JSON_NULL: /*do nothing */ break;
-		case DSO_JSON_NUM: dso_json_num_free (dso_obj->val._num); break;
-		case DSO_JSON_STR: dso_json_str_free (dso_obj->val._str); break;
-		case DSO_JSON_LIST: dso_json_list_free (dso_obj->val._list); break;
-		case DSO_JSON_DICT: dso_json_dict_free (dso_obj->val._dict); break;
-		case DSO_JSON_DICT_ENTRY: dso_json_dict_entry_free (dso_obj->val._dict_entry); break;
-		default: break;
-		}
-		memset (dso_obj, 0, sizeof (DsoJsonObj));
-		free (dso_obj);
+R_API void dso_json_obj_del (DsoJsonObj *dso_obj) {
+	if (!dso_obj) return;
+	switch (dso_obj->info->type) {
+	case DSO_JSON_NULL: /*do nothing */ break;
+	case DSO_JSON_NUM: dso_json_num_free (dso_obj->val._num); break;
+	case DSO_JSON_STR: dso_json_str_free (dso_obj->val._str); break;
+	case DSO_JSON_LIST: dso_json_list_free (dso_obj); break; //->val._list); break;
+	case DSO_JSON_DICT: dso_json_dict_free (dso_obj->val._dict); break;
+	case DSO_JSON_DICT_ENTRY: dso_json_dict_entry_free (dso_obj->val._dict_entry); break;
+	default: break;
 	}
+#if 0
+	//memset (dso_obj, 0, sizeof (DsoJsonObj));
+	free (dso_obj);
+#endif
 }
 
 static const DsoJsonInfo* get_type_info (unsigned int type) {
@@ -420,7 +420,7 @@ R_API DsoJsonObj * dso_json_list_new () {
 		x->info = get_type_info (DSO_JSON_LIST);
 		x->val._list = json_new0  (sizeof (DsoJsonList));
 		if (x->val._list) {
-			x->val._list->json_list = r_list_newf (dso_json_obj_del);
+			x->val._list->json_list = r_list_newf ((RListFree)dso_json_obj_del);
 		} else {
 			R_FREE (x);
 		}
@@ -428,14 +428,11 @@ R_API DsoJsonObj * dso_json_list_new () {
 	return x;
 }
 
-R_API void dso_json_list_free (void *y) {
-	DsoJsonList *x = (DsoJsonList *)y;
-	if (x) {
-		if (x->json_list) {
-			r_list_free (x->json_list);
-			x->json_list = NULL;
-		}
-		free (x);
+R_API void dso_json_list_free (DsoJsonObj *x) {
+	if (!x) return;
+	if (x->val._list && x->val._list->json_list) {
+		r_list_free (x->val._list->json_list);
+		x->val._list->json_list = NULL;
 	}
 }
 
@@ -480,7 +477,7 @@ R_API DsoJsonObj * dso_json_dict_new () {
 	if (x) {
 		x->info = get_type_info (DSO_JSON_DICT);
 		x->val._dict = json_new0 (sizeof (DsoJsonObj));
-		x->val._dict->json_dict = r_list_newf (dso_json_obj_del);
+		x->val._dict->json_dict = r_list_newf ((RListFree)dso_json_obj_del);
 	}
 	return x;
 }
