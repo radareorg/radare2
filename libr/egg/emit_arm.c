@@ -156,7 +156,7 @@ static void emit_get_var (REgg *egg, int type, char *out, int idx) {
 }
 
 static void emit_trap (REgg *egg) {
-	r_egg_printf (egg, "  svc 3\n");
+	r_egg_printf (egg, "  udf 16\n");
 }
 
 static void emit_load_ptr(REgg *egg, const char *dst) {
