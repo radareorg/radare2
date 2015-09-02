@@ -23,7 +23,7 @@ static void emit_init (REgg *egg) {
 }
 
 static char *emit_syscall (REgg *egg, int num) {
-	return strdup (": mov "R_AX", `.arg`\n: svc 0x8000\n");
+	return strdup (": mov "R_AX", `.arg`\n: svc 0x0\n");
 }
 
 static void emit_frame (REgg *egg, int sz) {
