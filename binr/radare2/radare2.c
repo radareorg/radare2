@@ -550,7 +550,10 @@ int main(int argc, char **argv, char **envp) {
 					/* load symbols when doing r2 -d ls */
 					// NOTE: the baddr is redefined to support PIE/ASLR
 					baddr = getBaddrFromDebugger (&r, diskfile);
-					if (baddr != UT64_MAX) eprintf ("Using BADDR 0x%"PFMT64x"\n", baddr);
+					if (baddr != UT64_MAX) {
+						eprintf ("Using BADDR 0x%"PFMT64x"\n", baddr);
+						va = 2;
+					}
 					if (r_core_bin_load (&r, diskfile, baddr)) {
 						RBinObject *obj = r_bin_get_object (r.bin);
 						if (obj && obj->info)
