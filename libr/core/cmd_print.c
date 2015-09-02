@@ -1383,10 +1383,10 @@ static int cmd_print(void *data, const char *input) {
 			l = (int) r_num_math (core->num, p+1);
 			/* except disasm and memoryfmt (pd, pm) */
 			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' && input[0]!='a' && input[0]!='f') {
-				int n = (st32) r_num_math (core->num, input+1);
-				if (n<0) {
+				int n = (st32) l; //r_num_math (core->num, input+1);
+				if (l<0) {
 					off = core->offset + n;
-					len = l = -n;
+					len = l = - n;
 					tmpseek = core->offset;
 				} else if (l>0) {
 					len = l;
@@ -1423,7 +1423,7 @@ static int cmd_print(void *data, const char *input) {
 	}
 	if (input[0] == 'x' || input[0] == 'D'){
 		if (l > 0 && tmpseek == UT64_MAX){
-			if (!r_core_block_size (core,l)){
+			if (!r_core_block_size (core, l)){
 				eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
 						*input, input+2);
 				goto beach;
