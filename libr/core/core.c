@@ -1055,7 +1055,7 @@ static void prompt_sec(RCore *r, char *s, size_t maxlen) {
 	snprintf (s, maxlen, "%s:", sec->name);
 }
 
-static void chop_prompt (const char *filename, char *tmp) {
+static void chop_prompt (const char *filename, char *tmp, size_t max_tmp_size) {
 	size_t tmp_len, file_len;
 	unsigned int OTHRSCH = 3;
 	const char DOTS[] = "...";
@@ -1066,13 +1066,18 @@ static void chop_prompt (const char *filename, char *tmp) {
 	tmp_len = strlen (tmp);
 	p_len = R_MAX (0, w - 6);
 	if (file_len + tmp_len + OTHRSCH >= p_len) {
-		tmp[p_len - OTHRSCH - file_len - sizeof (DOTS) - 1] = '\0';
-		strcat (tmp, DOTS);
+		size_t dots_size = sizeof (DOTS);
+		size_t chop_point = (size_t)(p_len - OTHRSCH - file_len - dots_size - 1);
+		if (chop_point < (max_tmp_size - dots_size - 1)) {
+			tmp[chop_point] = '\0';
+			strncat (tmp, DOTS, dots_size);
+		}
 	}
 }
 
 static void set_prompt (RCore *r) {
-	char tmp[128];
+	size_t max_tmp_size = 128;
+	char tmp[max_tmp_size];
 	char *prompt = NULL;
 	char *filename = strdup ("");
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
@@ -1108,7 +1113,7 @@ static void set_prompt (RCore *r) {
 
 		a = ((r->offset >> 16) << 12);
 		b = (r->offset & 0xffff);
-		snprintf (tmp, sizeof (tmp), "%04x:%04x", a, b);
+		snprintf (tmp, max_tmp_size, "%04x:%04x", a, b);
 	} else {
 		char p[64], sec[32];
 		int promptset = R_FALSE;
@@ -1127,7 +1132,7 @@ static void set_prompt (RCore *r) {
 		snprintf (tmp, sizeof (tmp), "%s%s", sec, p);
 	}
 
-	chop_prompt (filename, tmp);
+	chop_prompt (filename, tmp, max_tmp_size);
 	prompt = r_str_newf ("%s%s[%s%s]>%s ", filename, BEGIN, remote,
 		tmp, END);
 	r_line_set_prompt (prompt ? prompt : "");
