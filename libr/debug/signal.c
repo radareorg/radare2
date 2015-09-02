@@ -84,9 +84,46 @@ static int siglistcb (void *p, const char *k, const char *v) {
 	return 1;
 }
 
+static int siglistjsoncb (void *p, const char *k, const char *v) {
+	static char key[32] = "cfg.";
+	RDebug *dbg = (RDebug *)p;
+	int opt;
+	if (atoi (k)>0) {
+		strcpy (key+4, k);
+		opt = sdb_num_get (DB, key, 0);
+
+		if (dbg->_mode == 2)
+			dbg->_mode = 0;
+		else
+			r_cons_strcat (",");
+
+		r_cons_printf ("{\"signum\":\"%s\",\"name\":\"%s\",\"option\":", k, v);
+		if (opt & R_DBG_SIGNAL_CONT) {
+			r_cons_strcat ("\"cont\"");
+		} else if (opt & R_DBG_SIGNAL_SKIP) {
+			r_cons_strcat ("\"skip\"");
+		} else {
+			r_cons_strcat ("null");
+		}
+		r_cons_strcat ("}");
+	}
+	return 1;
+}
+
 R_API void r_debug_signal_list(RDebug *dbg, int mode) {
 	dbg->_mode = mode;
-	sdb_foreach (DB, siglistcb, dbg);
+	switch (mode) {
+	case 0:
+	case 1:
+		sdb_foreach (DB, siglistcb, dbg);
+		break;
+	case 2:
+		r_cons_strcat ("[");
+		sdb_foreach (DB, siglistjsoncb, dbg);
+		r_cons_strcat ("]");
+		r_cons_newline();
+		break;
+	}
 	dbg->_mode = 0;
 }
 
