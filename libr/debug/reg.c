@@ -16,39 +16,38 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		return false;
 	if (!write && !dbg->h->reg_read)
 		return false;
-
 	// Sync all the types sequentially if asked
-	i = (type == R_REG_TYPE_ALL) ? R_REG_TYPE_GPR : type;
-
+	i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
 	do {
 		if (write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
 			if (!buf || !dbg->h->reg_write (dbg, i, buf, size)) {
-				if (i==0)
-					eprintf ("r_debug_reg: error writing registers %d to %d\n", i, dbg->pid);
+				if (i == 0)
+					eprintf ("r_debug_reg: error writing "
+						"registers %d to %d\n", i, dbg->tid);
 				return false;
 			}
 		} else {
 			//int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
 			int bufsize = dbg->reg->size;
-			ut8 *buf = malloc (bufsize);
-			if (!buf) return false;
-			//we have already checked dbg->h and dbg->h->reg_read above
-			size = dbg->h->reg_read (dbg, i, buf, bufsize);
-			// we need to check against zero because reg_read can return false
-			if (!size) {
-				eprintf ("r_debug_reg: error reading registers\n");
+			if (bufsize>0) {
+				ut8 *buf = calloc (1, bufsize);
+				if (!buf) return false;
+				//we have already checked dbg->h and dbg->h->reg_read above
+				size = dbg->h->reg_read (dbg, i, buf, bufsize);
+				// we need to check against zero because reg_read can return false
+				if (!size) {
+					eprintf ("r_debug_reg: error reading registers\n");
+					free (buf);
+					return false;
+				} else r_reg_set_bytes (dbg->reg, i, buf, R_MIN (size, bufsize));
 				free (buf);
-				return false;
-			} else r_reg_set_bytes (dbg->reg, i, buf, R_MIN(size, bufsize));
-
-			free (buf);
+			}
 		}
 		// DO NOT BREAK R_REG_TYPE_ALL PLEASE
 		//   break;
-
-		// Continue the syncronization or just stop if it was asked only for a single type of regs 
-	} while ((type==R_REG_TYPE_ALL) && (i++ < R_REG_TYPE_LAST));
+		// Continue the syncronization or just stop if it was asked only for a single type of regs
+	} while ((type == R_REG_TYPE_ALL) && (i++ < R_REG_TYPE_LAST));
 	return true;
 }
 
@@ -81,7 +80,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	if (dbg->regcols) {
 		cols = dbg->regcols;
 	}
-	if (rad=='j')
+	if (rad == 'j')
 		dbg->cb_printf ("{");
 	if (type == -1) {
 		from = 0;
@@ -90,16 +89,14 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		from = type;
 		to = from +1;
 	}
-	for (i=from; i<to; i++) {
+	for (i = from; i < to; i++) {
 		head = r_reg_get_list (dbg->reg, i);
 		if (!head) continue;
 		r_list_foreach (head, iter, item) {
 			ut64 value;
 			if (type != -1) {
-				if (type != item->type)
-					continue;
-				if (size != 0 && size != item->size)
-					continue;
+				if (type != item->type) continue;
+				if (size != 0 && size != item->size) continue;
 			}
 			value = r_reg_get_value (dbg->reg, item);
 			r_reg_arena_swap (dbg->reg, false);
@@ -122,7 +119,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				break;
 			case 'd':
 			case 2:
-				 {
+				{
 					char *str, whites[16], content[128];
 					int len;
 					strcpy (whites, kwhites);
@@ -132,18 +129,19 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 						str = r_reg_get_bvalue (dbg->reg, item);
 						len = strlen (str);
 						strcpy (whites, "        ");
-						len = (len>9)?9:(9-len);
+						len = (len > 9) ? 9: (9 - len);
 						whites[len] = 0;
 						dbg->cb_printf (" %s = %s%s", item->name,
 							str, ((n+1)%cols)? whites: "\n");
 						free (str);
 					} else {
-						snprintf (content, sizeof(content), fmt2, item->name, value, "");
+						snprintf (content, sizeof(content),
+							fmt2, item->name, value, "");
 						len = strlen (content);
 						len -= 4;
-						if (len>10) {
+						if (len > 10) {
 							len -= 10;
-							len = (len>9)?9:(9-len);
+							len = (len > 9) ? 9 : (9 - len);
 							whites[len] = 0;
 						}
 						dbg->cb_printf (fmt2, item->name, value,
@@ -152,7 +150,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					}
 					if (delta && use_color)
 						dbg->cb_printf (Color_RESET);
-				 }
+				}
 				break;
 			case 3:
 				if (delta) {
@@ -174,8 +172,8 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			n++;
 		}
 	}
-	if (rad=='j') dbg->cb_printf ("}\n");
-	else if (n>0 && rad==2 && ((n%cols)))
+	if (rad == 'j') dbg->cb_printf ("}\n");
+	else if (n > 0 && rad == 2 && ((n%cols)))
 		dbg->cb_printf ("\n");
 	return n;
 }
@@ -192,7 +190,7 @@ R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {
 		r_reg_set_value (dbg->reg, ri, num);
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true);
 	}
-	return (ri!=NULL);
+	return (ri != NULL);
 }
 
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name) {

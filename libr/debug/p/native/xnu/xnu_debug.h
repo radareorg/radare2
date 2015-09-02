@@ -1,12 +1,12 @@
 //code to support natively debugging mach binaries
-
-
 /*   _
     _\)/_
    /     \
    \     /
     \_._/
 */
+#ifndef _XNU_DEBUG_H
+#define _XNU_DEBUG_H
 
 #define MACH_ERROR_STRING(ret) \
 	(mach_error_string (ret) ? r_str_get (mach_error_string (ret)) : "(unknown)")
@@ -60,8 +60,6 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #include <sys/fcntl.h>
 #include <sys/proc.h>
 
-
-
 // G3
 #if __POWERPC__
 #include <sys/ptrace.h>
@@ -69,37 +67,24 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #include <sys/wait.h>
 #include <mach/ppc/_types.h>
 #include <mach/ppc/thread_status.h>
-#define R_DEBUG_REG_T ppc_thread_state_t
-#define R_DEBUG_STATE_T PPC_THREAD_STATE
-#define R_DEBUG_STATE_SZ PPC_THREAD_STATE_COUNT
-
+// iPhone5
+#elif __aarch64
+#include <mach/aarch64/thread_status.h>
 // iPhone
-#elif __arm || __arm64 || __aarch64
-#	include <mach/arm/thread_status.h>
-#	ifndef ARM_THREAD_STATE
-#		define ARM_THREAD_STATE 1
-#	endif
-#	ifndef ARM_THREAD_STATE64
-#		define ARM_THREAD_STATE64 6
-#	endif
-#define R_DEBUG_REG_T arm_unified_thread_state_t
-#define R_DEBUG_STATE_T ARM_UNIFIED_THREAD_STATE
-#define R_DEBUG_STATE_SZ ARM_UNIFIED_THREAD_STATE_COUNT
+#elif __arm
+#include <mach/arm/thread_status.h>
+#elif __arm64
+#include <mach/arm/thread_status.h>
 #else
-
 // iMac
 /* x86 32/64 */
 #include <mach/i386/thread_status.h>
 #include <sys/ucontext.h>
 #include <mach/i386/_structs.h>
 
-typedef union {
-	ut64 x64[21];
-	ut32 x32[16];
-} R_DEBUG_REG_T;
-
 // APPLE
 
+/*
 #if OLDIESHIT
 #if __x86_64__
 #define R_DEBUG_STATE_T x86_THREAD_STATE
@@ -111,6 +96,7 @@ typedef union {
 #define R_DEBUG_STATE_SZ i386_THREAD_STATE_COUNT
 #endif
 #endif
+*/
 // oldie
 
 #if __LP64__
@@ -124,18 +110,13 @@ typedef union {
 #define IMAGE_OFFSET 0x201000
 #define KERNEL_LOWER 0x80000000
 #endif
-
-#define R_DEBUG_STATE_T XXX
-
-
+//#define R_DEBUG_STATE_T XXX
 //(dbg->bits==64)?x86_THREAD_STATE:_STRUCT_X86_THREAD_STATE32
 //#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
-#define R_DEBUG_STATE_SZ ((dbg->bits==R_SYS_BITS_64)?168:64)
-
+//#define R_DEBUG_STATE_SZ ((dbg->bits == R_SYS_BITS_64) ? 168 : 64)
 #define REG_PC ((dbg->bits == R_SYS_BITS_64) ? 16 : 10)
 #define REG_FL ((dbg->bits == R_SYS_BITS_64) ? 17 : 9)
 #define REG_SP (7)
-
 #endif
 
 #if TARGET_OS_IPHONE
@@ -205,3 +186,5 @@ RDebugPid *xnu_get_pid (int pid);
 RList *xnu_dbg_maps (RDebug *dbg, int only_modules);
 RList *xnu_thread_list (RDebug *dbg, int pid, RList *list);
 RDebugInfo *xnu_info (RDebug *dbg, const char *arg);
+
+#endif

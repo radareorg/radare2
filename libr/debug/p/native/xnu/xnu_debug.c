@@ -8,7 +8,6 @@
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
 #include "xnu_debug.h"
-
 #include "xnu_threads.c"
 
 static thread_t getcurthread (RDebug *dbg, task_t *task) {
@@ -26,7 +25,6 @@ static thread_t getcurthread (RDebug *dbg, task_t *task) {
 }
 
 #if TARGET_OS_IPHONE
-
 static int isThumb32(ut16 op) {
 	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
 }
@@ -208,9 +206,9 @@ bool xnu_step(RDebug *dbg) {
 }
 
 int xnu_attach(RDebug *dbg, int pid) {
-	if (pid == dbg->pid) return pid;
-	if (ptrace (PT_ATTACH, pid, 0, 0) == -1) {
+	if (pid != dbg->pid && ptrace (PT_ATTACH, pid, 0, 0) == -1) {
 		perror ("ptrace (PT_ATTACH)");
+		return -1;
 	}
 	return pid;
 }
@@ -225,24 +223,8 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 	thread_t th = getcurthread (dbg, &task);
 	task_resume (task);
 	thread_resume (th);
-#if 0
-	int i;
-	thread_array_t inferior_threads = NULL;
-	unsigned int inferior_thread_count = 0;
-	if (task_threads (pid_to_task (pid), &inferior_threads,
-				&inferior_thread_count) != KERN_SUCCESS) {
-		eprintf ("Failed to get list of task's threads.\n");
-		return 0;
-	}
-	for (i = 0; i < inferior_thread_count; i++) {
-		if (thread_resume (inferior_threads[i]) != KERN_SUCCESS) {
-			eprintf ("canot resume %d\n", inferior_threads[i]);
-		}
-	}
-	// TODO: pt-cont and task-resume seems to hang, using detach as workaround
-	return xnu_dettach (pid);
-#endif
-return true;
+	//return xnu_dettach (pid);
+	return true;
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
@@ -275,148 +257,71 @@ const char *xnu_reg_profile(RDebug *dbg) {
 #endif
 }
 
-#define THREAD_GET_STATE(state) \
-	thread_get_state (inferior_threads[tid], \
-					(state), \
-					(thread_state_t)regs, \
-					&gp_count)
-#define THREAD_SET_STATE(state) \
-	thread_set_state (tid, (state), (thread_state_t)regs, gp_count)
+static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
+	task_t task;
+	RListIter *it = NULL;
+	if (!dbg) return false;
+	if (!xnu_update_thread_list (dbg)) {
+		eprintf ("Failed to update thread_list xnu_reg_write\n");
+		return NULL;
+	}
+	//TODO get the current thread
+	it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
+		(RListComparator)&thread_find);
+	if (it) return (xnu_thread_t *)it->data;
+	tid = dbg->tid = getcurthread (dbg, &task);
+	it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
+		(RListComparator)&thread_find);
+	if (it) return (xnu_thread_t *)it->data;
+	eprintf ("Thread not found xnu_reg_write\n");
+	return NULL;
+}
 
 int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	thread_array_t inferior_threads = NULL;
-	unsigned int inferior_thread_count = 0;
-	unsigned int gp_count = R_DEBUG_STATE_SZ;
-	int ret = task_threads (pid_to_task (dbg->pid),
-		&inferior_threads, &inferior_thread_count);
-
-	if (ret != KERN_SUCCESS) {
-		eprintf ("debug_getregs\n");
-		return false;
+	int ret;
+	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
+	switch (type) {
+	case R_REG_TYPE_DRX:
+		memcpy (&th->drx, buf, R_MIN (size, sizeof (th->drx)));
+		ret = xnu_thread_set_drx (dbg, th);
+		break;
+	default:
+		memcpy (&th->gpr, buf, R_MIN (size, sizeof (th->gpr)));
+		ret = xnu_thread_set_gpr (dbg, th);
+		break;
 	}
-
-	/* TODO: thread cannot be selected */
-	if (inferior_thread_count > 0) {
-		// XXX: kinda spaguetti coz multi-arch
-		int tid = inferior_threads[0];
-#if __i386__ || __x86_64__
-		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
-		gp_count = ((dbg->bits == R_SYS_BITS_64)) ? 44 : 16;
-		switch (type) {
-		case R_REG_TYPE_DRX:
-			ret = THREAD_SET_STATE ((dbg->bits == R_SYS_BITS_64) ?
-				x86_DEBUG_STATE64 : x86_DEBUG_STATE32);
-			break;
-		default:
-			ret = THREAD_SET_STATE ((dbg->bits == R_SYS_BITS_64) ?
-				x86_THREAD_STATE : i386_THREAD_STATE);
-			break;
-		}
-#elif __arm__ || __arm64__ || __aarch64__
-		arm_unified_thread_state_t state;
-		R_DEBUG_REG_T *regs = &state;
-		memset (&state, 0, sizeof (state));
-		if (dbg->bits == R_SYS_BITS_64) {
-			state.ash.flavor = ARM_THREAD_STATE64;
-			memcpy (&state.ts_64, buf,
-				MIN (sizeof (state.ts_64), size));
-		} else {
-			state.ash.flavor = ARM_THREAD_STATE32;
-			memcpy (&state.ts_32, buf,
-				MIN (sizeof (state.ts_32), size));
-		}
-		ret = THREAD_SET_STATE (R_DEBUG_STATE_T);
-#else
-		ret = THREAD_SET_STATE (R_DEBUG_STATE_T);
-#endif
-		if (ret != KERN_SUCCESS) {
-			eprintf ("debug_setregs: Failed to set thread \
-				%d %d.error (%x). (%s)\n", (int)dbg->pid,
-				pid_to_task (dbg->pid), (int)ret,
-				MACH_ERROR_STRING (ret));
-			perror ("thread_set_state");
-			return false;
-		}
-	} else {
-		eprintf ("There are no threads!\n");
-	}
-	return sizeof (R_DEBUG_REG_T);
+	return ret;
 }
 
 int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int ret;
-	thread_array_t inferior_threads = NULL;
-	unsigned int inferior_thread_count = 0;
-	unsigned int gp_count = R_DEBUG_STATE_SZ;
-	int pid = dbg->pid;
-	int tid = dbg->tid;
-
-	ret = task_threads (pid_to_task (pid),
-			&inferior_threads,
-			&inferior_thread_count);
-
-	if (ret != KERN_SUCCESS) return false;
-	if (tid < 0 || tid >= inferior_thread_count) {
-		dbg->tid = tid = dbg->pid;
+	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
+	switch (type) {
+	case R_REG_TYPE_SEG:
+	case R_REG_TYPE_FLG:
+	case R_REG_TYPE_GPR:
+		ret = xnu_thread_get_gpr (dbg, th);
+		break;
+	case R_REG_TYPE_DRX:
+		ret = xnu_thread_get_drx (dbg, th);
+		break;
 	}
-	if (tid == dbg->pid) tid = 0;
-
-	if (inferior_thread_count > 0) {
-		/* TODO: allow to choose the thread */
-		gp_count = R_DEBUG_STATE_SZ;
-
-		// XXX: kinda spaguetti coz multi-arch
-#if __i386__ || __x86_64__
-		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
-		switch (type) {
-		case R_REG_TYPE_SEG:
-		case R_REG_TYPE_FLG:
-		case R_REG_TYPE_GPR:
-			ret = THREAD_GET_STATE ((dbg->bits == R_SYS_BITS_64) ?
-				x86_THREAD_STATE: i386_THREAD_STATE);
-			break;
-		case R_REG_TYPE_DRX:
-			ret = THREAD_GET_STATE ((dbg->bits == R_SYS_BITS_64) ?
-				x86_DEBUG_STATE64: x86_DEBUG_STATE32);
-			break;
-		}
-#elif __arm__ || __arm64__ || __aarch64__
-		arm_unified_thread_state_t state;
-		R_DEBUG_REG_T *regs = &state;
-		ret = THREAD_GET_STATE (R_DEBUG_STATE_T);
-		if (ret == KERN_SUCCESS) {
-			if (state.ash.flavor == ARM_THREAD_STATE64) {
-				memcpy (buf, &state.ts_64,
-					MIN (sizeof (state.ts_64), size));
-			} else {
-				memcpy (buf, &state.ts_32,
-					MIN (sizeof (state.ts_32), size));
-			}
-		} else {
-			eprintf ("Cannot read stuff\n");
-		}
-#else
-		eprintf ("Unknown architecture\n");
-#endif
-		if (ret != KERN_SUCCESS) {
-			eprintf ("debug_getregs: Failed to get thread \
-				%d %d.error (%x). (%s)\n", (int)pid,
-				pid_to_task (pid), (int)ret,
-				MACH_ERROR_STRING (ret));
-			perror ("thread_get_state");
-			return false;
-		}
-	} else {
-		eprintf ("There are no threads!\n");
+	if (!ret) {
+		eprintf ("Failed to read reg xnu_reg_read\n");
+		return false;
 	}
-	return sizeof(R_DEBUG_REG_T);
+	if (th->state) {
+		int rsz = R_MIN (th->state_size, size);
+		memcpy (buf, th->state, rsz);
+		return rsz;
+	}
+	return 0;
 }
 
 RDebugMap *xnu_map_alloc(RDebug *dbg, ut64 addr, int size) {
-	RDebugMap *map = NULL;
 	kern_return_t ret;
-	unsigned char *base = (unsigned char *)addr;
-	boolean_t anywhere = !VM_FLAGS_ANYWHERE;
+	ut8 *base = (ut8 *)addr;
+	bool anywhere = !VM_FLAGS_ANYWHERE;
 
 	if (addr == -1) anywhere = VM_FLAGS_ANYWHERE;
 
@@ -430,8 +335,7 @@ RDebugMap *xnu_map_alloc(RDebug *dbg, ut64 addr, int size) {
 		return NULL;
 	}
 	r_debug_map_sync (dbg); // update process memory maps
-	map = r_debug_map_get (dbg, (ut64)base);
-	return map;
+	return r_debug_map_get (dbg, (ut64)base);
 }
 
 int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
@@ -446,15 +350,13 @@ int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 
 RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
+	if (!rdi) return NULL;
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
 	rdi->uid = -1;// TODO
 	rdi->gid = -1;// TODO
-	rdi->cwd = NULL;// TODO : use readlink
-	rdi->exe = NULL;// TODO : use readlink!
 	return rdi;
-
 }
 
 /*
@@ -471,29 +373,28 @@ static void xnu_free_threads_ports (RDebugPid *p) {
 	}
 }
 */
-
 RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
 #if __arm__ || __arm64__ || __aarch_64__
 	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
 		state.ts_64.__pc : state.ts_32.__pc
 #elif __POWERPC__
 	#define CPU_PC state.srr0
-#elif __x86_64__
-	//#define CPU_PC state.__rip
-	//#undef CPU_PC
-	#define CPU_PC state.x64[REG_PC]
-#else
-	//#define CPU_PC state.__eip
-	//#undef CPU_PC
-	#define CPU_PC state.x32[REG_PC]
+#elif __x86_64__ || __i386__
+	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
+		state.uts.ts64.__rip : state.uts.ts32.__eip
 #endif
 	RListIter *iter;
 	xnu_thread_t *thread;
-	R_DEBUG_REG_T state;
+	R_REG_T state;
 	xnu_update_thread_list (dbg);
-
 	list->free = (RListFree)&r_debug_pid_free;
 	r_list_foreach (dbg->threads, iter, thread) {
+		if (!xnu_thread_get_gpr (dbg, thread)) {
+			eprintf ("Failed to get gpr registers xnu_thread_list\n");
+			continue;
+		}
+		thread->state_size = sizeof (thread->gpr);
+		memcpy (&state, &thread->gpr, sizeof (R_REG_T));
 		r_list_append (list, r_debug_pid_new (thread->name,
 			thread->tid, 's', CPU_PC));
 	}
@@ -959,7 +860,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 				contiguous = false;
 			}
 		} else contiguous = false;
-		//if (info.max_protection == oldprot && !contiguous) {
+		//if (info.max_protection == oldprot && !contiguous)
 #endif
 		if (true) {
 			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
@@ -1008,4 +909,3 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 	}
 	return list;
 }
-

@@ -51,7 +51,7 @@ R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx
 	if (bp->cur) {
 		// find matching size breakpoint
 repeat:
-		for (i=0; i<bp->cur->nbps; i++) {
+		for (i=0; i< bp->cur->nbps; i++) {
 			b = &bp->cur->bps[i];
 			if (bp->cur->bps[i].bits) {
 				if (bp->bits != bp->cur->bps[i].bits)
@@ -72,7 +72,7 @@ repeat:
 			eprintf ("No matching bpsize\n");
 			return 0;
 		}
-		for (i = 0;i < len; i++) {
+		for (i = 0; i < len; i++) {
 			memcpy (buf + i, b->bytes, b->length);
 		}
 		return b->length;
