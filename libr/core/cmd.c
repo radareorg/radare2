@@ -1836,7 +1836,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	for (; *cmd==' '; cmd++);
 
 	oseek = core->offset;
-	ostr = str = strdup(each);
+	ostr = str = strdup (each);
 	//r_cons_break();
 
 	switch (each[0]) {
@@ -1848,10 +1848,29 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		"x", " @@.file", "\"\" over the offsets specified in the file (one offset per line)",
 		"x", " @@=off1 off2 ..", "manual list of offsets",
 		"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
+		"x", " @@t", "\"\" on all threads (see dp)",
 		"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
 		// TODO: Add @@k sdb-query-expression-here
 		NULL};
 		r_core_cmd_help (core, help_msg);
+		}
+		break;
+	case 't':
+		{
+			RDebugPid *p;
+			int pid = core->dbg->pid;
+			if (core->dbg && core->dbg->h && core->dbg->h->pids) {
+				RList *list = core->dbg->h->pids (R_MAX (0, pid));
+				r_list_foreach (list, iter, p) {
+					r_cons_printf ("# PID %d\n", p->pid);
+					r_debug_select (core->dbg, p->pid, p->pid);
+					r_core_cmd (core, cmd, 0);
+					r_cons_flush ();
+				}
+				r_list_free (list);
+			}
+			r_debug_select (core->dbg, pid, pid);
+			return R_FALSE;
 		}
 		break;
 	case '=':
