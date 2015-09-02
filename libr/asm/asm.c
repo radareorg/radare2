@@ -536,6 +536,10 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			*ptr = '\0';
 	}
 
+#define isavrseparator(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r'||(x)==' '|| \
+		(x)==','||(x)==';'||(x)=='['||(x)==']'|| \
+		(x)=='('||(x)==')'||(x)=='{'||(x)=='}')
+
 	/* Stage 0-2: Parse labels*/
 	/* Stage 3: Assemble */
 // XXX: stages must be dinamic. until all equs have been resolved
@@ -549,8 +553,13 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				i <= ctr; i++, idx += ret) {
 			memset (buf_token, 0, R_ASM_BUFSIZE);
 			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE-1);
-			for (ptr_start = buf_token; *ptr_start &&
-				isseparator (*ptr_start); ptr_start++);
+			if (!strncmp(a->cur->arch, "avr", 3)) {
+				for (ptr_start = buf_token; *ptr_start &&
+					isavrseparator (*ptr_start); ptr_start++);
+			} else {
+				for (ptr_start = buf_token; *ptr_start &&
+					isseparator (*ptr_start); ptr_start++);
+			}
 			ptr = strchr (ptr_start, '#'); /* Comments */
 			if (ptr && !R_BETWEEN ('0', ptr[1], '9'))
 				*ptr = '\0';
