@@ -8,7 +8,7 @@
 #define R_SZ 8
 #define R_SP "sp"
 #define R_BP "fp"
-#define R_AX "r0"
+#define R_AX "r7"
 #define R_GP { "r0", "r1", "r2", "r3", "r4" }
 #define R_TMP "r9"
 #define R_NGP 5
