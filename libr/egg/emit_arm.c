@@ -71,7 +71,7 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 	// XXX: does not handle \n and so on.. must use r_util
 	r_egg_printf (egg, ".string \"%s\"\n", str);
 	if (rest) r_egg_printf (egg, ".fill %d, 1, 0\n", (rest));
-	r_egg_printf (egg, "  sub r0, pc, %d\n", off+16);
+	r_egg_printf (egg, "  sub r0, pc, %d\n", off+12);
 	{
 		char str[32], *p = r_egg_mkvar (egg, str, dstvar, 0);
 		//r_egg_printf (egg, "DSTVAR=%s --> %s\n", dstvar, p);
