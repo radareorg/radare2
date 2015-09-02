@@ -1,5 +1,3 @@
-/* radare 2010-2013 GPL -- pancake */
-
 #include <r_syscall.h>
 
 static struct r_syscall_regs_t fastcall_arm [R_SYSCALL_ARGS] = {

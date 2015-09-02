@@ -1,5 +1,3 @@
-/* radare - GPL3 - 2013 condret@runas-racer.com */
-
 #include <r_types.h>
 #include <string.h>
 

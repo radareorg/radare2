@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2011-2014 - capi_x, pancake */
+/* radare - Public Domain - Copyright 2011-2015 - capi_x, pancake */
 
 #include <stdio.h>
 
