@@ -2163,6 +2163,7 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 				"dk?", "<signal>", "Name/signum resolver",
 				"dko", " <signal>", "Reset skip or cont options for given signal",
 				"dko", " <signal> [|skip|cont]", "On signal SKIP handler or CONT into",
+				"dkj", "", "List all signal handlers in JSON",
 				NULL
 			};
 			r_core_cmd_help (core, help_message);
@@ -2208,6 +2209,8 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			}
 		}
 		free (name);
+	} else if (*input == 'j') {	
+		r_debug_signal_list (core->dbg, 2);
 	} else if (!*input) {
 		r_debug_signal_list (core->dbg, 0);
 #if 0
