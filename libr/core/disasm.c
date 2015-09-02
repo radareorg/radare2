@@ -2462,8 +2462,9 @@ toro:
 				if (ds->show_color) {
 					r_cons_printf ("%s%s%s"Color_RESET"; --------------------------------------\n",
 							ds->pre, ds->color_flow, ds->line);
-				} else
+				} else {
 					r_cons_printf ("  %s; --\n", ds->line);
+				}
 			}
 			free (ds->line);
 			free (ds->refline);
@@ -2487,7 +2488,6 @@ toro:
 	r_cons_break_end ();
 
 #if HASRETRY
-	//if (!ds->cbytes && idx>=len) {// && (invbreak && !ds->lastfail)) {
 	if (!ds->cbytes && ds->lines<ds->l && dorepeat) {
 	retry:
 		if (len<4) len = 4;

@@ -385,7 +385,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			REG(0), MEMBASE(1), MEMDISP(1));
 		break;
 	case ARM_INS_LDR:
-		addr += (addr % 4);
+		addr &= ~3LL;
 		if (MEMDISP(1)<0) {
 			if (REGBASE(1) == ARM_REG_PC) {
 				int pcdelta = 8;
