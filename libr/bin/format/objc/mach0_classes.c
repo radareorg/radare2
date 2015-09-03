@@ -275,7 +275,8 @@ static void get_ivar_list_t (mach0_ut p,
 			}
 			tmp = r_str_newf ("%s::%s%s", processed_class->name,
 					"(ivar)", name);
-			strncpy (field->name, tmp, sizeof (field->name));
+			strncpy (field->name, tmp, sizeof (field->name)-1);
+			field->name[sizeof(field->name)-1] = 0;
 			R_FREE (tmp);
 			R_FREE (name);
 		}

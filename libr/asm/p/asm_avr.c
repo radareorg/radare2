@@ -19,7 +19,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
 
-#define MAX_TOKEN_SIZE 8
+#define MAX_TOKEN_SIZE 32
 #define TOKEN_DELIM " ,\t"
 
 /* the next few functions and structures uses for detecting
@@ -300,7 +300,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	// the delimeters are ' ' and ','
 	token = strtok ((char *)str, TOKEN_DELIM);
 	while (token != NULL && tokens_cnt < 3) {
-		strncpy (tokens[tokens_cnt], token, MAX_TOKEN_SIZE);
+		memset (tokens[tokens_cnt], 0, MAX_TOKEN_SIZE);
+		strncpy (tokens[tokens_cnt], token, MAX_TOKEN_SIZE-1);
 		token = strtok (NULL, TOKEN_DELIM);
 		tokens_cnt += 1;
 	}
