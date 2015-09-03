@@ -176,7 +176,6 @@ static void copy_sym_name_with_namespace (char *class_name,
 		(len < R_BIN_SIZEOF_STRINGS) ?
 		len : R_BIN_SIZEOF_STRINGS);
 
-	//tmp = r_str_newf ("%s::%s", class_name, read_name);
 	tmp = r_str_newf ("%s", read_name); //class_name, read_name);
 	if (tmp) {
 		len = strlen (tmp);
@@ -565,7 +564,7 @@ static void get_protocol_list_t (mach0_ut p, RBinFile *arch, RBinClass *processe
 						sizeof (struct MACH0_(SProtocol)));
 		}
 
-		r =  get_pointer (pc.name, NULL, &left, arch);
+		r = get_pointer (pc.name, NULL, &left, arch);
 		if (r != 0) {
 			char *name = NULL;
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
@@ -817,15 +816,12 @@ RList* MACH0_(parse_classes)(RBinFile *arch)
 
 		if (!processed_class->name) {
 			st8 *tmp = 0;
-			size_t len = 0;
 
 			tmp = r_str_newf ("%s%llu", "UnnamedClass", num_of_unnamed_class);
-			len = strlen (tmp);
-			processed_class->name = malloc (len + 1);
+			processed_class->name = strdup(tmp);
 			if (!processed_class->name) {
 				goto get_classes_error;
 			}
-			strcpy (processed_class->name, tmp);
 
 			num_of_unnamed_class++;
 			R_FREE (tmp);
