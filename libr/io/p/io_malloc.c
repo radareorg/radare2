@@ -126,10 +126,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 				return NULL;
 			}
 			mal->offset = 0;
-			mal->buf = malloc (mal->size+1);
+			mal->buf = calloc (1, mal->size+1);
 		}
 		if (mal->buf != NULL) {
-			memset (mal->buf, '\0', mal->size);
 			RETURN_IO_DESC_NEW (&r_io_plugin_malloc,
 				mal->fd, pathname, rw, mode,mal);
 		}

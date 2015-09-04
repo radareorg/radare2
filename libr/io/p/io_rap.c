@@ -157,7 +157,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		}
 		//TODO: Handle ^C signal (SIGINT, exit); // ???
 		eprintf ("rap: listening at port %s ssl %s\n", port, (is_ssl)?"on":"off");
-		rior = R_NEW (RIORap);
+		rior = R_NEW0 (RIORap);
 		rior->listener = R_TRUE;
 		rior->client = rior->fd = r_socket_new (is_ssl);
 		if (rior->fd == NULL) {

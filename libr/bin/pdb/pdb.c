@@ -784,12 +784,10 @@ void build_command_field(ELeafType lt, char **command_field) {
 
 ///////////////////////////////////////////////////////////////////////////////
 void build_name_field(char *name, char **name_field) {
-	if (!name) {
+	if (!name)
 		*name_field = NULL;
-	} else {
-		*name_field = (char *) malloc(strlen(name) + 1);
-		strcpy(*name_field, name);
-	}
+	else
+		*name_field = strdup (name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
