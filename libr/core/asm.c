@@ -465,8 +465,6 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 		return hits;
 	}
 
-	current_buf_pos = len - 1;
-
 	do {
 		if (r_cons_singleton ()->breaked) break;
 		// reset assembler

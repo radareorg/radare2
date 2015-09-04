@@ -369,12 +369,11 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		// Comment at
 		if (p) {
 			if (input[2]=='+') {
-				char *text = p;
 				char *comment = r_meta_get_string (
 						core->anal, R_META_TYPE_COMMENT,
 						addr);
 				if (comment) {
-					text = malloc (strlen (comment) + strlen (p)+2);
+					char* text = malloc (strlen (comment) + strlen (p)+2);
 					strcpy (text, comment);
 					strcat (text, "\n");
 					strcat (text, p);

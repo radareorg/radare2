@@ -863,7 +863,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 		if (I.echo)
 			r_cons_clear_line (0);
-		columns = r_cons_get_size (NULL)-2;
 		if (columns<1)
 			columns = 40;
 #if __WINDOWS__ && !__CYGWIN__

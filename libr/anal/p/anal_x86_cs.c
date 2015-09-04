@@ -36,7 +36,7 @@
 static char *getarg(csh handle, cs_insn *insn, int n, int set, char *setop) {
 	char buf[64];
 	char *setarg = setop? setop : "";
-	cs_x86_op op = {0};
+	cs_x86_op op;
 	if (!insn->detail)
 		return NULL;
 	buf[0] = 0;

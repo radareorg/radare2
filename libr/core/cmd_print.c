@@ -3056,8 +3056,8 @@ static int cmd_print(void *data, const char *input) {
 			int oldva = core->io->va;
 			int do_zoom = 1;
 
-			from = 0;
 			core->io->va = 0;
+			from = 0;
 			to = r_io_size (core->io);
 			from = r_config_get_i (core->config, "zoom.from");
 			to = r_config_get_i (core->config, "zoom.to");
