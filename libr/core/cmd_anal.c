@@ -2755,6 +2755,7 @@ static int cmd_anal_all (RCore *core, const char *input) {
 		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
 		"aae", " [len]", "analyze references with ESIL",
 		"aar", " [len]", "analyze len bytes of instructions for references",
+		"aan", "", "afna @@ fcn*",
 		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
 		"aat", " [len]", "analyze all consecutive functions in section",
 		"aap", "", "find and analyze function preludes",
@@ -2772,6 +2773,7 @@ static int cmd_anal_all (RCore *core, const char *input) {
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
 		r_core_cmd0 (core, "af @ entry0");
 		break;
+	case 'n': r_core_cmd0 (core, ".afna @@ fcn.*"); break;
 	case 'p':
 		if (*input=='?') {
 			// TODO: accept parameters for ranges
