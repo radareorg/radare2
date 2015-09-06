@@ -587,7 +587,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			}
 			if (r_buf_fread_at (bin->b, off, (ut8*)&eic,
 					bin->endian?"5I":"5i", 1) != -1) {
-				bin->has_crypto = 1;
+				bin->has_crypto = eic.cryptid;
 				sdb_set (bin->kv, "crypto", "true", 0);
 				sdb_num_set (bin->kv, "cryptid", eic.cryptid, 0);
 				sdb_num_set (bin->kv, "cryptoff", eic.cryptoff, 0);
