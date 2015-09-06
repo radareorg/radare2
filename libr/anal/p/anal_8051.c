@@ -362,7 +362,7 @@ static struct r_i8015_reg *i8051_reg_find(const char *name) {
 static int i8051_reg_get_offset(RAnalEsil *esil, struct r_i8015_reg *ri) {
 	ut8 offset = ri->offset;
 	if (ri->banked) {
-		ut64 psw = NULL;
+		ut64 psw = 0LL;
 		i8051_hook_reg_read(esil, "psw", &psw);
 		offset += psw & 0x18;
 	}

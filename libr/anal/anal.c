@@ -76,11 +76,11 @@ R_API RAnal *r_anal_new() {
 	if (!anal) return NULL;
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
 	anal->limit = NULL;
-	anal->nopskip = R_TRUE; // skip nops in code analysis
+	anal->opt.nopskip = R_TRUE; // skip nops in code analysis
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
-	anal->noncode = R_FALSE; // do not analyze data by default
+	anal->opt.noncode = R_FALSE; // do not analyze data by default
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
 	r_space_init (&anal->meta_spaces,

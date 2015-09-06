@@ -265,7 +265,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		// this is unnecessary if its contiguous
 		buflen = r_io_read_at (core->io, at+delta, buf, ANALBS);
 		if (core->io->va && !core->io->raw) {
-			if (!r_io_is_valid_offset (core->io, at+delta, !core->anal->noncode)) {
+			if (!r_io_is_valid_offset (core->io, at+delta, !core->anal->opt.noncode)) {
 				goto error;
 			}
 		}
@@ -797,7 +797,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 			if (r_io_read_at (core->io, at+bblen, buf, 4) != 4) // ETOOSLOW
 				goto error;
 			r_core_read_at (core, at+bblen, buf, ANALBS);
-			if (!r_io_is_valid_offset (core->io, at+bblen, !core->anal->noncode))
+			if (!r_io_is_valid_offset (core->io, at+bblen, !core->anal->opt.noncode))
 				goto error;
 			buflen = ANALBS;
 			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head);
@@ -875,7 +875,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	RListIter *iter;
 
 	if (core->io->va && !core->io->raw) {
-		if (!r_io_is_valid_offset (core->io, at, !core->anal->noncode))
+		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode))
 			return R_FALSE;
 	}
 	if (r_config_get_i (core->config, "anal.a2f")) {

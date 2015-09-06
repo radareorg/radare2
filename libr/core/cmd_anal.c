@@ -988,9 +988,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						if (ref->addr == UT64_MAX || ref->addr < text_addr)
 							continue;
 						r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
-						RAnalFunction * f = r_anal_get_fcn_at (core->anal, addr, 0);
+						RAnalFunction * f = r_anal_get_fcn_at (core->anal, fcn->addr, 0);
 						if (!f) {
-							eprintf ("Function at 0x%"PFMT64x" was not analyzed\n", addr);
+							f = r_anal_get_fcn_in (core->anal, fcn->addr, 0);
+							if (f) {
+								/* cut function */
+								r_anal_fcn_resize (f, addr - fcn->addr);
+								r_core_anal_fcn (core, ref->addr, fcn->addr,
+									R_ANAL_REF_TYPE_CALL, depth);
+								f = r_anal_get_fcn_at (core->anal, fcn->addr, 0);
+							}
+							if (!f) {
+								eprintf ("Cannot find function at 0x%08"PFMT64x"\n", fcn->addr);
+							}
 						}
 					}
 				}
@@ -1897,6 +1907,10 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_anal_jumps(RCore *core, const char *input) {
+	r_core_cmdf (core, "af @@= `ax~ref.code.jmp[1]`");
+}
+
 static void cmd_anal_calls(RCore *core, const char *input) {
 	int minop = 1; // 4
 	ut8 buf[32];
@@ -2749,6 +2763,7 @@ static int cmd_anal_all (RCore *core, const char *input) {
 	switch (*input) {
 	case '?': r_core_cmd_help (core, help_msg_aa); break;
 	case 'c': cmd_anal_calls (core, input + 1) ; break; // "aac"
+	case 'j': cmd_anal_jumps (core, input + 1) ; break; // "aaj"
 	case '*':
 		r_core_cmd0 (core, "af @@ sym.*");
 		r_core_cmd0 (core, "af @ entry0");
@@ -2770,7 +2785,7 @@ static int cmd_anal_all (RCore *core, const char *input) {
 		r_cons_break (NULL, NULL);
 		r_core_anal_all (core);
 		if (core->cons->breaked)
-			eprintf ("Interrupted\n");
+			goto jacuzzi;
 		r_cons_clear_line (1);
 		r_cons_break_end ();
 		if (*input == 'a') { // "aaa"
@@ -2778,11 +2793,18 @@ static int cmd_anal_all (RCore *core, const char *input) {
 			r_config_set_i (core->config, "anal.calls", 1);
 			r_core_cmd0 (core, "s $S");
 			r_core_cmd0 (core, "aar");
+			if (core->cons->breaked)
+				goto jacuzzi;
 			r_core_cmd0 (core, "aac");
+			if (core->cons->breaked)
+				goto jacuzzi;
 			r_config_set_i (core->config, "anal.calls", c);
 			r_core_cmd0 (core, ".afna @@ fcn.*");
+			if (core->cons->breaked)
+				goto jacuzzi;
 			r_core_cmd0 (core, "s-");
 		}
+		jacuzzi:
 		flag_every_function (core);
 		break;
 	case 't':

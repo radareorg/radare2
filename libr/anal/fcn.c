@@ -34,12 +34,29 @@ R_API const char *r_anal_fcn_type_tostring(int type) {
 }
 
 R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize) {
+	ut64 eof; /* end of function */
+	RAnalBlock *bb;
+	RListIter *iter, *iter2;
 	if (!fcn || newsize<1)
 		return R_FALSE;
 	fcn->size = newsize;
-	// TODO: walk the basic blocks and remove the ones outside the boundaries
-	// ----  or swap them into an alternative linked list
-	// we should also support to shrink basic blocks
+	eof = fcn->addr = fcn->size;
+	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
+		if (bb->addr >= eof) {
+			// already called by r_list_delete r_anal_bb_free (bb);
+			r_list_delete (fcn->bbs, iter);
+			continue;
+		}
+		if (bb->addr + bb->size >= eof) {
+			bb->size = eof - bb->addr;
+		}
+		if (bb->jump != UT64_MAX && bb->jump >= eof) {
+			bb->jump = UT64_MAX;
+		}
+		if (bb->fail != UT64_MAX && bb->fail >= eof) {
+			bb->fail = UT64_MAX;
+		}
+	}
 	return R_TRUE;
 }
 
@@ -205,7 +222,7 @@ static char *get_varname (RAnal *a, const char *pfx, int idx) {
 #define gotoBeach(x) ret=x;goto beach;
 #define gotoBeachRet() goto beach;
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
-	int continue_after_jump = anal->afterjmp;
+	int continue_after_jump = anal->opt.afterjmp;
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END;
@@ -240,7 +257,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	bb = bbget (fcn, addr);
 	if (bb) {
 		r_anal_fcn_split_bb (anal, fcn, bb, addr);
-		if (anal->recont)
+		if (anal->opt.recont)
 			return R_ANAL_RET_END;
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
@@ -382,7 +399,7 @@ repeat:
 			ret = fcn_recurse (anal, fcn, x, bbuf, sizeof (bbuf), depth-1);
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_ILL:
-			if (anal->nopskip && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
+			if (anal->opt.nopskip && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
 				if ((addr + delay.un_idx-oplen) == fcn->addr) {
 					fcn->addr += oplen;
 					bb->size -= oplen;
@@ -400,7 +417,7 @@ repeat:
 			gotoBeach (R_ANAL_RET_END);
 			break;
 		case R_ANAL_OP_TYPE_TRAP:
-			if (anal->nopskip && buf[0]==0xcc) {
+			if (anal->opt.nopskip && buf[0]==0xcc) {
 				if ((addr + delay.un_idx-oplen) == fcn->addr) {
 					fcn->addr += oplen;
 					bb->size -= oplen;
@@ -413,7 +430,7 @@ repeat:
 			r_anal_op_fini (&op);
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_NOP:
-			if (anal->nopskip) {
+			if (anal->opt.nopskip) {
 				if ((addr + delay.un_idx-oplen) == fcn->addr) {
 					fcn->addr += oplen;
 					bb->size -= oplen;
@@ -424,7 +441,7 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
-			if (anal->eobjmp) {
+			if (anal->opt.eobjmp) {
 				FITFCNSZ();
 				op.jump = UT64_MAX;
 				recurseAt (op.jump);
@@ -432,7 +449,7 @@ repeat:
 				gotoBeachRet ();
 				return R_ANAL_RET_END;
 			}
-			if (anal->bbsplit) {
+			if (anal->opt.bbsplit) {
 				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 				if (!overlapped) {
 					bb->jump = op.jump;
@@ -449,7 +466,7 @@ repeat:
 					recurseAt (op.fail);
 				} else {
 					// This code seems to break #1519
-					if (anal->eobjmp) {
+					if (anal->opt.eobjmp) {
 #if JMP_IS_EOB
 						if (!overlapped) {
 							bb->jump = op.jump;
@@ -490,7 +507,10 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
-			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
+			if (anal->opt.cjmpref) {
+				(void) r_anal_fcn_xref_add (anal, fcn,
+					op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
+			}
 			if (!overlapped) {
 				bb->jump = op.jump;
 				bb->fail = op.fail;
@@ -500,7 +520,7 @@ repeat:
 				recurseAt (op.fail);
 			} else {
 				// This code seems to break #1519
-				if (anal->eobjmp) {
+				if (anal->opt.eobjmp) {
 #if JMP_IS_EOB
 					if (!overlapped) {
 						bb->jump = op.jump;
