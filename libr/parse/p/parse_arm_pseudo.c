@@ -23,6 +23,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 2, "add",  "1 += 2"},
 		{ 3, "adds",  "1 = 2 + 3"},
 		{ 3, "addw",  "1 = 2 + 3"},
+		{ 3, "add.w",  "1 = 2 + 3"},
 		{ 0, "adf",  "1 = 2 + 3"},
 		{ 0, "adrp",  "1 = 2"},
 		{ 0, "and",  "1 = 2 & 3"},
