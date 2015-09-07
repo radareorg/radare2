@@ -2545,7 +2545,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	case 'c':
-		r_core_anal_refs (core, r_num_math (core->num, input+1), input[1]=='j'? 2: 1);
+		r_core_anal_coderefs (core, r_num_math (core->num, input+1), input[1]=='j'? 2: 1);
 		break;
 	case 'j':
 		r_core_anal_graph (core, r_num_math (core->num, input+1), R_CORE_ANAL_JSON);
@@ -2748,6 +2748,76 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 	}
 }
 
+R_API int r_core_anal_refs(RCore *core, const char *input) {
+	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
+	ut64 from, to;
+	char *ptr;
+	int rad, n;
+	const char* help_msg_aar[] = {
+		"Usage:", "aar", "[j*] [sz] # search and analyze xrefs",
+		"aar", " [sz]", "analyze xrefs in current section or sz bytes of code",
+		"aarj", " [sz]", "list found xrefs in JSON format",
+		"aar*", " [sz]", "list found xrefs in radare commands format",
+		NULL};
+
+	input++;
+	if (*input == '?') {
+		r_core_cmd_help (core, help_msg_aar);
+		return 0;
+	}
+
+	if (*input == 'j' || *input == '*') {
+		rad = *input;
+		input++;
+	} else {
+		rad = 0;
+	}
+
+	from = to = 0;
+	ptr = r_str_trim_head (strdup (input));
+	n = r_str_word_set0 (ptr);
+	if (n == 0) {
+		int rwx = R_IO_EXEC;
+		// get boundaries of current memory map, section or io map
+		if (cfg_debug) {
+			RDebugMap *map = r_debug_map_get (core->dbg, core->offset);
+			if (map) {
+				from = map->addr;
+				to = map->addr_end;
+				rwx = map->perm;
+			}
+		} else if (core->io->va) {
+			RIOSection *section = r_io_section_vget (core->io, core->offset);
+			if (section) {
+				from = section->vaddr;
+				to = section->vaddr + section->vsize;
+				rwx = section->rwx;
+			}
+		} else {
+			RIOMap *map = r_io_map_get (core->io, core->offset);
+			from = core->offset;
+			to = r_io_size (core->io) + (map? map->to:0);
+		}
+		if (from == 0 && to == 0) {
+			eprintf ("Cannot determine xref search boundaries\n");
+		} else if (!(rwx & R_IO_EXEC)) {
+			eprintf ("Warning: Searching xrefs in non-executable region\n");
+		}
+	} else if (n == 1) {
+		from = core->offset;
+		to = core->offset + r_num_math (core->num, r_str_word_get0 (ptr, 0));
+	} else {
+		eprintf ("Invalid number of arguments\n");
+	}
+	free (ptr);
+
+	if (from == UT64_MAX && to == UT64_MAX) return R_FALSE;
+	if (from == 0 && to == 0) return R_FALSE;
+	if (to-from > r_io_size (core->io)) return R_FALSE;
+
+	return r_core_anal_search_xrefs (core, from, to, rad);
+}
+
 static int cmd_anal_all (RCore *core, const char *input) {
 	const char* help_msg_aa[] = {
 		"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
@@ -2832,74 +2902,8 @@ static int cmd_anal_all (RCore *core, const char *input) {
 		r_core_anal_esil (core, input + 1);
 		break;
 	case 'r':
-	{
-		ut64 from, to;
-		char *ptr;
-		int rad, n;
-		const char* help_msg_aar[] = {
-			"Usage:", "aar", "[j*] [sz] # search and analyze xrefs",
-			"aar", " [sz]", "analyze xrefs in current section or sz bytes of code",
-			"aarj", " [sz]", "list found xrefs in JSON format",
-			"aar*", " [sz]", "list found xrefs in radare commands format",
-			NULL};
-
-		input++;
-		if (*input == '?') {
-			r_core_cmd_help (core, help_msg_aar);
-			break;
-		}
-
-		if (*input == 'j' || *input == '*') {
-			rad = *input;
-			input++;
-		} else {
-			rad = 0;
-		}
-
-		from = to = 0;
-		ptr = r_str_trim_head (strdup (input));
-		n = r_str_word_set0 (ptr);
-		if (n == 0) {
-			int rwx = R_IO_EXEC;
-			// get boundaries of current memory map, section or io map
-			if (r_config_get_i (core->config, "cfg.debug")) {
-				RDebugMap *map = r_debug_map_get (core->dbg, core->offset);
-				if (map) {
-					from = map->addr;
-					to = map->addr_end;
-					rwx = map->perm;
-				}
-			} else if (core->io->va) {
-				RIOSection *section = r_io_section_vget (core->io, core->offset);
-				if (section) {
-					from = section->vaddr;
-					to = section->vaddr + section->vsize;
-					rwx = section->rwx;
-				}
-			} else {
-				RIOMap *map = r_io_map_get (core->io, core->offset);
-				from = core->offset;
-				to = r_io_size (core->io) + (map? map->to:0);
-			}
-			if (from == 0 && to == 0) {
-				eprintf ("Cannot determine xref search boundaries\n");
-			} else if (!(rwx & R_IO_EXEC)) {
-				eprintf ("Warning: Searching xrefs in non-executable region\n");
-			}
-		} else if (n == 1) {
-			from = core->offset;
-			to = core->offset + r_num_math (core->num, r_str_word_get0 (ptr, 0));
-		} else {
-			eprintf ("Invalid number of arguments\n");
-		}
-		free (ptr);
-
-		if (from == 0 && to == 0) return R_FALSE;
-		if (to-from > r_io_size (core->io)) return R_FALSE;
-
-		r_core_anal_search_xrefs (core, from, to, rad);
+		(void)r_core_anal_refs (core, input + 1);
 		break;
-	}
 	default: r_core_cmd_help (core, help_msg_aa); break;
 	}
 
