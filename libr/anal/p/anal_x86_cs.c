@@ -1200,8 +1200,7 @@ SETL/SETNGE
 	return op->size;
 }
 
-static int x86_int_0x80 (RAnalEsil *esil, int interrupt)
-{
+static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 	int syscall;
 	ut64 eax, ebx, ecx, edx;
 	if (!esil || (interrupt != 0x80))
@@ -1212,38 +1211,43 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt)
 	r_anal_esil_reg_read (esil, "edx", &edx);
 	syscall = (int) eax;
 	switch (syscall) {
-		case 3:
-			{
-				char *dst = calloc (1, (size_t)edx);
-				read ((ut32)ebx, dst, (size_t)edx);
-				r_anal_esil_mem_write (esil, ecx, (ut8 *)dst, (int)edx);
-				free (dst);
-				return R_TRUE;
-			}
-		case 4:
-			{
-				char *src = malloc ((size_t)edx);
-				r_anal_esil_mem_read (esil, ecx, (ut8 *)src, (int)edx);
-				write ((ut32)ebx, src, (size_t)edx);
-				free (src);
-				return R_TRUE;
-			}
-		
+	case 3:
+		{
+			char *dst = calloc (1, (size_t)edx);
+			read ((ut32)ebx, dst, (size_t)edx);
+			r_anal_esil_mem_write (esil, ecx, (ut8 *)dst, (int)edx);
+			free (dst);
+			return R_TRUE;
+		}
+	case 4:
+		{
+			char *src = malloc ((size_t)edx);
+			r_anal_esil_mem_read (esil, ecx, (ut8 *)src, (int)edx);
+			write ((ut32)ebx, src, (size_t)edx);
+			free (src);
+			return R_TRUE;
+		}
 	}
 	eprintf ("syscall %d not implemented yet\n", syscall);
 	return R_FALSE;
 }
 
-static int esil_x86_cs_init (RAnalEsil *esil)
-{
+static int esil_x86_cs_intr (RAnalEsil *esil) {
 	if (!esil)
 		return R_FALSE;
+	eprintf ("INTERRUPT HAPPENS\n");
+	return R_TRUE;
+}
+
+static int esil_x86_cs_init (RAnalEsil *esil) {
+	if (!esil)
+		return R_FALSE;
+	// XXX. this depends on kernel
 	r_anal_esil_set_interrupt (esil, 0x80, x86_int_0x80);
 	return R_TRUE;
 }
 
-static int esil_x86_cs_fini (RAnalEsil *esil)
-{
+static int esil_x86_cs_fini (RAnalEsil *esil) {
 	return R_TRUE;
 }
 
@@ -1603,6 +1607,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
+	.esil_intr = esil_x86_cs_intr,
 };
 
 #ifndef CORELIB

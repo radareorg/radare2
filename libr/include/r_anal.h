@@ -984,7 +984,7 @@ typedef int (*RAnalDiffEvalCallback)(RAnal *anal);
 
 typedef int (*RAnalEsilCB)(RAnalEsil *esil);
 typedef int (*RAnalEsilLoopCB)(RAnalEsil *esil, RAnalOp *op);
-typedef int (*RAnalEsilInterrupt)(RAnalEsil *esil, int interrupt);
+typedef int (*RAnalEsilInterruptCB)(RAnalEsil *esil, int interrupt);
 
 typedef struct r_anal_plugin_t {
 	char *name;
@@ -1058,10 +1058,11 @@ typedef struct r_anal_plugin_t {
 	RAnalDiffEvalCallback diff_eval;
 	struct list_head list;
 
-	RAnalEsilCB esil_init;
-	RAnalEsilLoopCB esil_post_loop;		//cycle-counting, firing interrupts, ...
-	RAnalEsilCB esil_trap;
-	RAnalEsilCB esil_fini;
+	RAnalEsilCB esil_init; // initialize esil-related stuff
+	RAnalEsilLoopCB esil_post_loop;	//cycle-counting, firing interrupts, ...
+	RAnalEsilCB esil_trap; // exceptions, breakpoints, traps
+	RAnalEsilInterruptCB esil_intr; // interrupts
+	RAnalEsilCB esil_fini; // deinitialize
 } RAnalPlugin;
 
 
@@ -1156,7 +1157,7 @@ R_API void r_anal_esil_stack_free (RAnalEsil *esil);
 R_API int r_anal_esil_get_parm_type (RAnalEsil *esil, const char *str);
 R_API int r_anal_esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num);
 R_API int r_anal_esil_condition (RAnalEsil *esil, const char *str);
-R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilInterrupt interruptcb);
+R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilInterruptCB interruptcb);
 R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt);
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);

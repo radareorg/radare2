@@ -70,7 +70,7 @@ R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code)
 	return R_TRUE;
 }
 
-R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilInterrupt interruptcb) {
+R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilInterruptCB interruptcb) {
 	char t[128];
 	char *i;
 	if (!interruptcb || !esil || !esil->interrupts)
@@ -87,15 +87,25 @@ R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilIn
 R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt) {
 	char t[128];
 	char *i;
-	RAnalEsilInterrupt icb;
-	if (!esil || !esil->interrupts)
+	RAnalEsilInterruptCB icb;
+	eprintf ("SYSCALL!\n");
+	if (!esil)
+		return R_FALSE;
+	if (esil->anal) {
+		RAnalPlugin *ap = esil->anal->cur;
+		if (ap && ap->esil_intr) {
+			if (ap->esil_intr (esil, interrupt))
+				return R_TRUE;
+		}
+	}
+	if (!esil->interrupts)
 		return R_FALSE;
 	i = sdb_itoa ((ut64) interrupt, t, 16);
 	if (!sdb_num_exists (esil->interrupts, i)) {
 		eprintf ("Cannot find interrupt-handler for interrupt %d\n", interrupt);
 		return R_FALSE;
 	}
-	icb = (RAnalEsilInterrupt)(size_t)sdb_num_get (esil->interrupts, i, 0);
+	icb = (RAnalEsilInterruptCB)(size_t)sdb_num_get (esil->interrupts, i, 0);
 	return icb (esil, interrupt);
 }
 
@@ -572,28 +582,20 @@ static int esil_interrupt_linux_i386(RAnalEsil *esil) {		//move this into a plug
 
 static int esil_trap(RAnalEsil *esil) {
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && dst) {
-		if (r_anal_esil_get_parm (esil, src, &s)) {
-			if (r_anal_esil_get_parm (esil, dst, &d)) {
-				esil->trap = s;
-				esil->trap_code = d;
-				return 1;
-			} else eprintf ("esil_trap: missing parameter in stack\n");
-		} else eprintf ("esil_trap: missing parameter in stack\n");
+	if (popRN (esil, &s) && popRN (esil, &d)) {
+		esil->trap = s;
+		esil->trap_code = d;
+		return R_TRUE;
 	}
-	return 0;
+	eprintf ("esil_trap: missing parameters in stack\n");
+	return R_FALSE;
 }
 
 static int esil_interrupt(RAnalEsil *esil) {
 	ut64 interrupt;
-	char *i = r_anal_esil_pop (esil);
-	if (i && r_anal_esil_get_parm (esil, i, &interrupt)) {
-		free (i);
+	if (popRN (esil, &interrupt)) {
 		return r_anal_esil_fire_interrupt (esil, (int)interrupt);
 	}
-	free (i);
 	return R_FALSE;
 }
 
