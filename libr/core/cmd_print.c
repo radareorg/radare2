@@ -2296,19 +2296,29 @@ static int cmd_print(void *data, const char *input) {
 				char *str, *type;
 				ut64 vaddr;
 				RIOSection *section;
+
 				if (input[2] == ' ' && input[3]){
 					len = r_num_math (core->num, input+3);
 					len = R_MIN (len, core->blocksize);
 				}
+				/* try to get the section that contains the
+				 * string, by considering current offset as
+				 * paddr and if it isn't, trying to consider it
+				 * as vaddr. */
 				vaddr = r_io_section_offset_to_vaddr (core->io, core->offset);
 				section = core->io->section;
-				if (!section)
-					vaddr = UT64_MAX;
+				if (vaddr == UT64_MAX) {
+					section = r_io_section_vget (core->io, core->offset);
+					if (section) {
+						vaddr = core->offset;
+					}
+				}
+
 				r_cons_printf ("{\"string\":");
 				str = r_str_utf16_encode ((const char*)core->block, len);
 				r_cons_printf ("\"%s\"", str);
 				r_cons_printf (",\"offset\":%"PFMT64d, core->offset);
-				r_cons_printf (",\"section\":\"%s\"", vaddr == UT64_MAX ? "unkown" : section->name);
+				r_cons_printf (",\"section\":\"%s\"", vaddr == UT64_MAX ? "unknown" : section->name);
 				r_cons_printf (",\"length\":%d", len);
 				switch (get_string_type (core->block, len)){
 					case 'w' : type = "wide" ; break;
