@@ -65,6 +65,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	RList *hits;
 	ut64 at, toff = core->offset;
 	ut8 *buf;
+	int align = core->search->align;
 	RRegex* rx = NULL;
 	char *tok, *tokens[1024], *code = NULL, *ptr;
 	int idx, tidx = 0, ret, len;
@@ -106,7 +107,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			break;
 		idx = 0, matchcount = 0;
 		while (idx<core->blocksize) {
-			r_asm_set_pc (core->assembler, at+idx);
+			ut64 addr = at + idx;
+			r_asm_set_pc (core->assembler, addr);
 			op.buf_asm[0] = 0;
 			op.buf_hex[0] = 0;
 			if (!(len = r_asm_disassemble (core->assembler, &op, buf+idx, core->blocksize-idx))) {
@@ -122,6 +124,12 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					r_regex_free (rx);
 				}
 			}
+			if (align) {
+				if (addr % align) {
+					matches = R_FALSE;
+					eprintf ("NOT VALID %llx\n", addr);
+				}
+			}
 			if (matches) {
 				code = r_str_concatf (code, "%s; ", op.buf_asm);
 				if (matchcount == tokcount-1) {
@@ -133,7 +141,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						hits = NULL;
 						goto beach;
 					}
-					hit->addr = at+tidx;
+					hit->addr = addr;
 					hit->len = idx+len-tidx;
 					if (hit->len == -1) {
 						r_core_asm_hit_free (hit);
