@@ -2317,6 +2317,7 @@ static int cmd_print(void *data, const char *input) {
 					default : type = "unkown" ; break;
 				}
 				r_cons_printf (",\"type\":\"%s\"}", type);
+				r_cons_newline ();
 				free (str);
 			}
 			break;
