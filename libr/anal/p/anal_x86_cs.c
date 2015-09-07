@@ -567,7 +567,6 @@ SETL/SETNGE
 			}
 			break;
 		case X86_INS_SAL:
-		case X86_INS_SALC:
 			op->type = R_ANAL_OP_TYPE_SAL;
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
@@ -575,6 +574,12 @@ SETL/SETNGE
 				esilprintf (op, "%s,%s,%%z,zf,=", src, dst);
 				free (src);
 				free (dst);
+			}
+			break;
+		case X86_INS_SALC:
+			op->type = R_ANAL_OP_TYPE_SAL;
+			if (a->decode) {
+				esilprintf (op, "%%z,DUP,zf,=,al,=");
 			}
 			break;
 		case X86_INS_SHR:
@@ -748,16 +753,25 @@ SETL/SETNGE
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -regsz;
 			break;
+		case X86_INS_INT3:
+			if (a->decode)
+				esilprintf (op, "3,$");
+			op->type = R_ANAL_OP_TYPE_TRAP; // TRAP
+			break;
+		case X86_INS_INT1:
+			if (a->decode)
+				esilprintf (op, "1,$");
+			op->type = R_ANAL_OP_TYPE_SWI; // TRAP
+			break;
 		case X86_INS_INT:
 			if (a->decode)
-				esilprintf (op, "%d,$", R_ABS((int)INSOP(0).imm));
+				esilprintf (op, "%d,$",
+					R_ABS((int)INSOP(0).imm));
 			op->type = R_ANAL_OP_TYPE_SWI;
 			break;
 		case X86_INS_SYSCALL:
 			op->type = R_ANAL_OP_TYPE_SWI;
 			break;
-		case X86_INS_INT1:
-		case X86_INS_INT3:
 		case X86_INS_INTO:
 		case X86_INS_VMCALL:
 		case X86_INS_VMMCALL:
@@ -1089,6 +1103,19 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, "*");
+				if (!src && dst) {
+					switch (dst[0]) {
+					case 'r':
+						src = strdup ("rax");
+						break;
+					case 'e':
+						src = strdup ("eax");
+						break;
+					default:
+						src = strdup ("al");
+						break;
+					}
+				}
 				esilprintf (op, "%s,%s", src, dst);
 				free (src);
 				free (dst);
