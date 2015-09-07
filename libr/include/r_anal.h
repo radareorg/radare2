@@ -535,7 +535,6 @@ typedef struct r_anal_case_obj_t {
 	struct r_anal_bb_t *jumpbb;
 } RAnalCaseOp;
 
-
 typedef struct r_anal_switch_obj_t {
 	ut64 addr;
 	ut64 min_val;
@@ -557,6 +556,16 @@ typedef struct r_anal_callbacks_t {
 
 #define R_ANAL_ESIL_GOTO_LIMIT 4096
 
+typedef struct r_anal_options_t {
+	int cjmpref;
+	int afterjmp; // continue analysis after jmp eax or forward jmp // option
+	int recont; // continue on recurse analysis mode
+	int eobjmp; // option
+	int bbsplit;
+	int noncode;
+	int nopskip; // skip nops at the beginning of functions
+} RAnalOptions;
+
 typedef struct r_anal_t {
 	char *cpu;
 	int bits;
@@ -564,7 +573,6 @@ typedef struct r_anal_t {
 	int big_endian;
 	int split; // used only from core
 	int sleep; // sleep some usecs before analyzing more (avoid 100% cpu usages)
-	int nopskip; // skip nops at the beginning of functions
 	void *user;
 	ut64 gp; // global pointer. used for mips. but can be used by other arches too in the future
 	RList *fcns;
@@ -581,14 +589,9 @@ typedef struct r_anal_t {
 	RFlagBind flb;
 	RBinBind binb; // Set only from core when an analysis plugin is called.
 	int decode;
-	int eobjmp; // option
-	int bbsplit;
-	int afterjmp; // continue analysis after jmp eax or forward jmp // option
-	int recont; // continue on recurse analysis mode
 	int maxreflines;
 	int trace;
 	int esil_goto_limit;
-	int noncode;
 	RList *types;
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_esil_t *esil;
@@ -616,6 +619,7 @@ typedef struct r_anal_t {
 	Sdb *sdb_hints; // OK
 	//RList *hints; // XXX use better data structure here (slist?)
 	RAnalCallbacks cb;
+	RAnalOptions opt;
 } RAnal;
 
 typedef struct r_anal_hint_t {
@@ -953,8 +957,6 @@ typedef struct r_anal_esil_t {
 	RAnalEsilCallbacks cb;
 	RAnalReil *Reil;
 } RAnalEsil;
-
-
 
 #undef ESIL
 

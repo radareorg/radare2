@@ -118,7 +118,7 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 	}
 
 	bmbuf = NULL;
-	if (bmstr) {
+	if (bmstr && *bmstr) {
 		bmbuf = malloc (strlen (bmstr)+1);
 		if (!bmbuf) {
 			free (kwbuf);

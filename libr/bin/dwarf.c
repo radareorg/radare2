@@ -498,7 +498,7 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 
 	adj_opcode = opcode - hdr->opcode_base;
 	if (!hdr->line_range) {
-		eprintf ("Error r_bin_dwarf_parse_spec_opcode: hdr->line_range is 0\n");
+		// line line-range information. move away
 		return NULL;
 	}
 	advance_adr = adj_opcode / hdr->line_range;

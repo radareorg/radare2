@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +18,7 @@ static int showstr = 0;
 static int rad = 0;
 struct r_search_t *rs;
 static ut64 from = 0LL, to = -1;
-static char *mask = "";
+static char *mask = NULL;
 static int nonstop = 0;
 static int mode = R_SEARCH_STRING;
 static ut64 cur = 0;
@@ -101,12 +101,13 @@ static int rafind_open(char *file) {
 	}
 	if (mode == R_SEARCH_KEYWORD) {
 		r_list_foreach (keywords, iter, kw) {
-			if (hexstr)
+			if (hexstr) {
 				r_search_kw_add (rs, r_search_keyword_new_hex (kw, mask, NULL));
-			else if (widestr)
+			} else if (widestr) {
 				r_search_kw_add (rs, r_search_keyword_new_wide (kw, mask, NULL, 0));
-			else
+			} else {
 				r_search_kw_add (rs, r_search_keyword_new_str (kw, mask, NULL, 0));
+			}
 		}
 	} else if (mode == R_SEARCH_STRING) {
 		r_search_kw_add (rs,

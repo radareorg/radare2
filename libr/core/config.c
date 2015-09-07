@@ -74,14 +74,14 @@ static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
 static int cb_analeobjmp(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->anal->eobjmp = node->i_value;
+	core->anal->opt.eobjmp = node->i_value;
 	return R_TRUE;
 }
 
 static int cb_analafterjmp(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->anal->afterjmp = node->i_value;
+	core->anal->opt.afterjmp = node->i_value;
 	return R_TRUE;
 }
 
@@ -102,21 +102,21 @@ static int cb_analmaxrefs(void *user, void *data) {
 static int cb_analnopskip (void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->anal->nopskip = node->i_value;
+	core->anal->opt.nopskip = node->i_value;
 	return R_TRUE;
 }
 
 static int cb_analbbsplit (void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->anal->bbsplit = node->i_value;
+	core->anal->opt.bbsplit = node->i_value;
 	return R_TRUE;
 }
 
 static int cb_analnoncode(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->anal->noncode = node->i_value ? R_TRUE: R_FALSE; // obey section permissions
+	core->anal->opt.noncode = node->i_value ? R_TRUE: R_FALSE; // obey section permissions
 	return R_TRUE;
 }
 
@@ -157,7 +157,7 @@ static int cb_analsplit(void *user, void *data) {
 static int cb_analrecont(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->anal->recont = node->i_value;
+	core->anal->opt.recont = node->i_value;
 	return R_TRUE;
 }
 

@@ -23,6 +23,12 @@
 #define INSOP(n) insn->detail->x86.operands[n]
 #define INSOPS insn->detail->x86.op_count
 
+struct Getarg {
+	csh handle;
+	cs_insn *insn;
+	int bits;
+};
+
 /**
  * Translates operand N to esil
  *
@@ -33,10 +39,12 @@
  * @param  setoper Extra operation for the set (^, -, +, etc...)
  * @return         char* with the esil operand
  */
-static char *getarg(csh handle, cs_insn *insn, int n, int set, char *setop) {
+static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
+	csh handle = gop->handle;
+	cs_insn *insn = gop->insn;
 	char buf[64];
 	char *setarg = setop? setop : "";
-	cs_x86_op op = {0};
+	cs_x86_op op;
 	if (!insn->detail)
 		return NULL;
 	buf[0] = 0;
@@ -52,6 +60,21 @@ static char *getarg(csh handle, cs_insn *insn, int n, int set, char *setop) {
 				cs_reg_name (handle, op.reg), setarg);
 			return strdup (buf);
 		} else {
+			if (gop->bits == 64) {
+				switch (op.reg) {
+				case X86_REG_EAX: op.reg = X86_REG_RAX; break;
+				case X86_REG_EBX: op.reg = X86_REG_RBX; break;
+				case X86_REG_ECX: op.reg = X86_REG_RCX; break;
+				case X86_REG_EDX: op.reg = X86_REG_RDX; break;
+				case X86_REG_ESI: op.reg = X86_REG_RSI; break;
+				case X86_REG_EDI: op.reg = X86_REG_RDI; break;
+#if 0
+				case X86_REG_ESP: op.reg = X86_REG_RSP; break;
+				case X86_REG_EBP: op.reg = X86_REG_RBP; break;
+#endif
+				default: break;
+				}
+			}
 			return strdup (cs_reg_name (handle, op.reg));
 		}
 	case X86_OP_IMM:
@@ -207,6 +230,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 #else
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 #endif
+	struct Getarg gop = {
+		.handle = handle,
+		.insn = insn,
+		.bits = a->bits
+	};
 	if (n<1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
@@ -358,7 +386,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_CMOV;
 			op->family = 0;
 			if (a->decode) {
-				char *dst = getarg (handle, insn, 0, 0, NULL);
+				char *dst = getarg (&gop, 0, 0, NULL);
 				switch (insn->id) {
 				case X86_INS_SETE:  esilprintf (op, "zf,%s,=", dst); break;
 				case X86_INS_SETNE: esilprintf (op, "zf,!,%s,=", dst); break;
@@ -475,8 +503,8 @@ SETL/SETNGE
 								width, width, src, width, dst, width, src,
 								width, dst, counter, counter, dst, src);
 					} else {
-						char *src = getarg (handle, insn, 1, 0, NULL);
-						char *dst = getarg (handle, insn, 0, 1, NULL);
+						char *src = getarg (&gop, 1, 0, NULL);
+						char *dst = getarg (&gop, 0, 1, NULL);
 						esilprintf (op, "%s,%s", src, dst);
 						free (src);
 						free (dst);
@@ -485,8 +513,8 @@ SETL/SETNGE
 				break;
 			default:
 				if (a->decode) {
-					char *src = getarg (handle, insn, 1, 0, NULL);
-					char *dst = getarg (handle, insn, 0, 0, NULL);
+					char *src = getarg (&gop, 1, 0, NULL);
+					char *dst = getarg (&gop, 0, 0, NULL);
 					esilprintf (op, "%s,%s,=", src, dst);
 					free (src);
 					free (dst);
@@ -520,8 +548,8 @@ SETL/SETNGE
 		case X86_INS_SHLX:
 			op->type = R_ANAL_OP_TYPE_SHL;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 1, "<<");
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 1, "<<");
 				esilprintf (op, "%s,%s,%%z,zf,=", src, dst);
 				free (src);
 				free (dst);
@@ -531,8 +559,8 @@ SETL/SETNGE
 		case X86_INS_SARX:
 			op->type = R_ANAL_OP_TYPE_SAR;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 1, ">>");
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 1, ">>");
 				esilprintf (op, "%s,%s,%%z,zf,=", src, dst);
 				free (src);
 				free (dst);
@@ -542,8 +570,8 @@ SETL/SETNGE
 		case X86_INS_SALC:
 			op->type = R_ANAL_OP_TYPE_SAL;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 1, "<<");
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 1, "<<");
 				esilprintf (op, "%s,%s,%%z,zf,=", src, dst);
 				free (src);
 				free (dst);
@@ -554,8 +582,8 @@ SETL/SETNGE
 		case X86_INS_SHRX:
 			op->type = R_ANAL_OP_TYPE_SHR;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 0, NULL);
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 0, NULL);
 				esilprintf (op, "%s,%s,>>=,%%z,zf,=", src, dst);
 				free (src);
 				free (dst);
@@ -573,8 +601,8 @@ SETL/SETNGE
 			if (insn->id == X86_INS_TEST) {
 				op->type = R_ANAL_OP_TYPE_ACMP;					//compare via and
 				if (a->decode) {
-					char *src = getarg (handle, insn, 1, 0, NULL);
-					char *dst = getarg (handle, insn, 0, 0, NULL);
+					char *src = getarg (&gop, 1, 0, NULL);
+					char *dst = getarg (&gop, 0, 0, NULL);
 					esilprintf (op, "0,%s,%s,&,==,%%z,zf,=,%%p,pf,=,%%s,sf,=,0,cf,=,0,of,=",
 						src, dst);
 					free (src);
@@ -583,8 +611,8 @@ SETL/SETNGE
 			} else {
 				op->type = R_ANAL_OP_TYPE_CMP;
 				if (a->decode) {
-					char *src = getarg (handle, insn, 1, 0, NULL);
-					char *dst = getarg (handle, insn, 0, 0, NULL);
+					char *src = getarg (&gop, 1, 0, NULL);
+					char *dst = getarg (&gop, 0, 0, NULL);
 					esilprintf (op,  "%s,%s,==,%%z,zf,=,%%b%d,cf,=,%%p,pf,=,%%s,sf,=",
 						src, dst, (INSOP(0).size*8));
 					free (src);
@@ -627,8 +655,8 @@ SETL/SETNGE
 		case X86_INS_LEA:
 			op->type = R_ANAL_OP_TYPE_LEA;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 0, 0, NULL);
-				char *dst = getarg (handle, insn, 1, 2, NULL);
+				char *src = getarg (&gop, 0, 0, NULL);
+				char *dst = getarg (&gop, 1, 2, NULL);
 				esilprintf (op, "%s,%s,=", dst, src);
 				free (src);
 				free (dst);
@@ -665,7 +693,7 @@ SETL/SETNGE
 		case X86_INS_PUSHAL:
 		case X86_INS_PUSHF:
 			{
-				char *dst = getarg (handle, insn, 0, 0, NULL);
+				char *dst = getarg (&gop, 0, 0, NULL);
 				esilprintf (op,  "%d,%s,-=,%s,%s,=[%d]", rs, sp, dst, sp, rs);
 				free (dst);
 			}
@@ -697,7 +725,7 @@ SETL/SETNGE
 		case X86_INS_POPCNT:
 			op->type = R_ANAL_OP_TYPE_POP;
 			if (a->decode) {
-				char *dst = getarg (handle, insn, 0, 0, NULL);
+				char *dst = getarg (&gop, 0, 0, NULL);
 				esilprintf (op,
 					"%s,[%d],%s,=,%d,%s,+=",
 					sp, rs, dst, rs, sp);
@@ -761,7 +789,7 @@ SETL/SETNGE
 			op->jump = INSOP(0).imm;
 			op->fail = addr+op->size;
 			if (a->decode) {
-				char *dst = getarg (handle, insn, 0, 2, NULL);
+				char *dst = getarg (&gop, 0, 2, NULL);
 				switch (insn->id) {
 				case X86_INS_JL:
 					esilprintf (op, "of,sf,^,?{,%s,%s,=,}", dst, pc);
@@ -847,7 +875,7 @@ SETL/SETNGE
 				break;
 			}
 			if (a->decode) {
-				char* arg = getarg (handle, insn, 0, 0, NULL);
+				char* arg = getarg (&gop, 0, 0, NULL);
 				esilprintf (op,
 						"%d,%s,+,"
 						"%d,%s,-=,%s,"
@@ -861,7 +889,7 @@ SETL/SETNGE
 		case X86_INS_JMP:
 		case X86_INS_LJMP:
 			if (a->decode) {
-				char *src = getarg (handle, insn, 0, 0, NULL);
+				char *src = getarg (&gop, 0, 0, NULL);
 				esilprintf (op, "%s,%s,=", src, pc);
 				free (src);
 			}
@@ -920,8 +948,8 @@ SETL/SETNGE
 		case X86_INS_XOR:
 			op->type = R_ANAL_OP_TYPE_XOR;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 1, "^");
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 1, "^");
 				esilprintf (op, "%s,%s,%%z,zf,=,%%p,pf,=,0,cf,=,0,of,=,%%s,sf,=",
 					src, dst);
 				free (src);
@@ -931,8 +959,8 @@ SETL/SETNGE
 		case X86_INS_OR:
 			op->type = R_ANAL_OP_TYPE_OR;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 0, NULL);
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 0, NULL);
 				esilprintf (op, "%s,%s,|=", src, dst);
 				free (src);
 				free (dst);
@@ -942,7 +970,7 @@ SETL/SETNGE
 			op->type = R_ANAL_OP_TYPE_ADD;
 			op->val = 1;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 0, 0, NULL);
+				char *src = getarg (&gop, 0, 0, NULL);
 				esilprintf (op, "%s,++=", src);
 				free (src);
 			}
@@ -951,7 +979,7 @@ SETL/SETNGE
 			op->type = R_ANAL_OP_TYPE_SUB;
 			op->val = 1;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 0, 0, NULL);
+				char *src = getarg (&gop, 0, 0, NULL);
 				esilprintf (op, "%s,--=", src);
 				free (src);
 			}
@@ -967,8 +995,8 @@ SETL/SETNGE
 		case X86_INS_PSUBUSW:
 			op->type = R_ANAL_OP_TYPE_SUB;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 1, "-");
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 1, "-");
 				esilprintf (op, "%s,%s,%%c,cf,=,%%z,zf,=,%%s,sf,=,%%o,of,=",
 					src, dst); // TODO: update flags
 				free (src);
@@ -1021,8 +1049,8 @@ SETL/SETNGE
 		case X86_INS_ANDNPS:
 			op->type = R_ANAL_OP_TYPE_AND;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 1, "&");
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 1, "&");
 				// TODO: update of = cf = 0
 				// TODO: update sf, zf and pf
 				// TODO: af is undefined
@@ -1042,7 +1070,7 @@ SETL/SETNGE
 			op->type = R_ANAL_OP_TYPE_DIV;
 			if (a->decode) {
 				int width = INSOP(0).size;
-				char *dst = getarg (handle, insn, 0, 0, NULL);
+				char *dst = getarg (&gop, 0, 0, NULL);
 				const char *r_ax = (width==2)?"ax": (width==4)?"eax":"rax";
 				const char *r_dx = (width==2)?"dx": (width==4)?"edx":"rdx";
 				// TODO update flags & handle signedness
@@ -1059,8 +1087,8 @@ SETL/SETNGE
 		case X86_INS_MULSS:
 			op->type = R_ANAL_OP_TYPE_MUL;
 			if (a->decode) {
-				char *src = getarg (handle, insn, 1, 0, NULL);
-				char *dst = getarg (handle, insn, 0, 1, "*");
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 1, "*");
 				esilprintf (op, "%s,%s", src, dst);
 				free (src);
 				free (dst);
@@ -1097,17 +1125,17 @@ SETL/SETNGE
 			op->type = R_ANAL_OP_TYPE_ADD;
 			if (a->decode) {
 				if (INSOP(0).type == X86_OP_MEM) {
-					char *src = getarg (handle, insn, 1, 0, NULL);
-					char *src2 = getarg (handle, insn, 0, 0, NULL);
-					char *dst = getarg (handle, insn, 0, 1, NULL);
+					char *src = getarg (&gop, 1, 0, NULL);
+					char *src2 = getarg (&gop, 0, 0, NULL);
+					char *dst = getarg (&gop, 0, 1, NULL);
 					// TODO: update flags
 					esilprintf (op, "%s,%s,+,%s", src, src2, dst);
 					free (src);
 					free (src2);
 					free (dst);
 				} else {
-					char *src = getarg (handle, insn, 1, 0, NULL);
-					char *dst = getarg (handle, insn, 0, 1, "+");
+					char *src = getarg (&gop, 1, 0, NULL);
+					char *dst = getarg (&gop, 0, 1, "+");
 					esilprintf (op, "%s,%s", src, dst);		// TODO: update flags
 					free (src);
 					free (dst);

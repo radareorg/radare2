@@ -177,14 +177,16 @@ rep:
 		break;
 	case '+':
 	case ' ': {
-		char *s = strchr (str, ' '), *s2 = NULL, *eq = strchr (str, '=');
+		char* eq = strchr (str, '=');
+		char* s = strchr (str, ' ');
+		char* s2 = NULL;
 		ut32 bsze = 1; //core->blocksize;
+
 		if (eq) {
 			// TODO: add support for '=' char in flag comments
 			*eq = 0;
 			off = r_num_math (core->num, eq+1);
 		}
-		s = strchr (str, ' ');
 		if (s) {
 			*s = '\0';
 			s2 = strchr (s+1, ' ');

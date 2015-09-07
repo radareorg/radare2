@@ -507,7 +507,7 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 
 R_API int r_sys_rmkdir(const char *dir) {
 	int ret = R_TRUE;
-	const char slash = R_SYS_DIR[0];
+	char slash = R_SYS_DIR[0];
 	char *path = strdup (dir), *ptr = path;
 	if (*ptr==slash) ptr++;
 #if __WINDOWS__
@@ -518,7 +518,15 @@ R_API int r_sys_rmkdir(const char *dir) {
 		}
 	}
 #endif
-	while ((ptr = strchr (ptr, slash))) {
+	for (;;) {
+		// find next slash
+		for (; *ptr; ptr++) {
+			if (*ptr == '/' || *ptr == '\\') {
+				slash = *ptr;
+				break;
+			}
+		}
+		if (!*ptr) break;
 		*ptr = 0;
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
 			eprintf ("r_sys_rmkdir: fail '%s' of '%s'\n", path, dir);

@@ -83,8 +83,11 @@ static RList *strings(RBinFile *arch) {
 
 static RBinInfo* info(RBinFile *arch) {
 	ArtObj *ao = arch->o->bin_obj;
-	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret || !ao) return NULL;
+	RBinInfo *ret;
+	if (!ao) return NULL;
+
+	ret = R_NEW0 (RBinInfo);
+	if (!ret) return NULL;
 
 	//art_header_load (&art, arch->buf);
 

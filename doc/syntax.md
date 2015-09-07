@@ -1,7 +1,7 @@
 Syntax coding style guidelines
 ==============================
 
-* Tabs are used for indentation. They are 8 chars. In a switch statement, the
+* Tabs are used for indentation. In a switch statement, the
   cases are indentend at the switch level.
 
 ```

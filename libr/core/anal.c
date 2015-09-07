@@ -265,7 +265,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		// this is unnecessary if its contiguous
 		buflen = r_io_read_at (core->io, at+delta, buf, ANALBS);
 		if (core->io->va && !core->io->raw) {
-			if (!r_io_is_valid_offset (core->io, at+delta, !core->anal->noncode)) {
+			if (!r_io_is_valid_offset (core->io, at+delta, !core->anal->opt.noncode)) {
 				goto error;
 			}
 		}
@@ -797,7 +797,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 			if (r_io_read_at (core->io, at+bblen, buf, 4) != 4) // ETOOSLOW
 				goto error;
 			r_core_read_at (core, at+bblen, buf, ANALBS);
-			if (!r_io_is_valid_offset (core->io, at+bblen, !core->anal->noncode))
+			if (!r_io_is_valid_offset (core->io, at+bblen, !core->anal->opt.noncode))
 				goto error;
 			buflen = ANALBS;
 			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head);
@@ -875,7 +875,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	RListIter *iter;
 
 	if (core->io->va && !core->io->raw) {
-		if (!r_io_is_valid_offset (core->io, at, !core->anal->noncode))
+		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode))
 			return R_FALSE;
 	}
 	if (r_config_get_i (core->config, "anal.a2f")) {
@@ -962,7 +962,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 #define FMT_NO 0
 #define FMT_GV 1
 #define FMT_JS 2
-R_API void r_core_anal_refs(RCore *core, ut64 addr, int fmt) {
+R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 	RAnalFunction fakefr = {0};
 	const char *font = r_config_get (core->config, "graph.font");
 	int is_html = r_cons_singleton ()->is_html;
@@ -1481,6 +1481,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 }
 
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
+	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	ut8 *buf;
 	ut64 at;
 	int count = 0;
@@ -1520,6 +1521,9 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			RAnalRefType type;
 			ut64 xref_from, xref_to;
 
+			if (r_cons_singleton()->breaked) {
+				break;
+			}
 			xref_from = at+i;
 			r_anal_op_fini (&op);
 			ret = r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i);
@@ -1570,7 +1574,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				continue;
 			if (!r_core_is_valid_offset (core, xref_to))
 				continue;
-			if (r_config_get_i (core->config, "cfg.debug")) {
+			if (cfg_debug) {
 				if (!r_debug_map_get (core->dbg, xref_to))
 					continue;
 			} else if (core->io->va) {

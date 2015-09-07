@@ -192,7 +192,7 @@ RDebugPlugin r_debug_plugin_bf = {
 	.license = "LGPL3",
 	/* TODO: Add support for more architectures here */
 	.arch = R_ASM_ARCH_BF,
-	.bits = R_SYS_BITS_32,
+	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.init = NULL,
 	.step = r_debug_bf_step,
 	.step_over = r_debug_bf_step_over,
