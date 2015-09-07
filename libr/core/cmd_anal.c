@@ -1937,13 +1937,15 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	addr = core->offset;
 	addr_end = addr + len;
 	while (addr < addr_end) {
+		if (core->cons->breaked)
+			break;
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
 		if (r_anal_op (core->anal, &op, addr, buf, sizeof (buf))) {
 			if (op.size<1)
 				op.size = minop; // XXX must be +4 on arm/mips/.. like we do in disasm.c
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
-	//			eprintf ("af @ 0x%08"PFMT64x"\n", op.jump);
-				r_core_cmdf (core, "af@0x%08"PFMT64x, op.jump);
+				r_core_anal_fcn (core, op.jump, UT64_MAX,
+						R_ANAL_REF_TYPE_NULL, 16);
 			}
 		} else {
 			op.size = minop;

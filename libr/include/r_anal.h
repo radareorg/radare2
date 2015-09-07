@@ -535,7 +535,6 @@ typedef struct r_anal_case_obj_t {
 	struct r_anal_bb_t *jumpbb;
 } RAnalCaseOp;
 
-
 typedef struct r_anal_switch_obj_t {
 	ut64 addr;
 	ut64 min_val;
@@ -958,8 +957,6 @@ typedef struct r_anal_esil_t {
 	RAnalEsilCallbacks cb;
 	RAnalReil *Reil;
 } RAnalEsil;
-
-
 
 #undef ESIL
 

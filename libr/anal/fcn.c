@@ -196,10 +196,11 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 	return bb;
 }
 
-#define FITFCNSZ() {st64 n=bb->addr+bb->size-fcn->addr; \
-	if (n>=0) if (fcn->size<n) fcn->size=n; } \
+#define FITFCNSZ() {\
+	st64 n = bb->addr+bb->size-fcn->addr; \
+	if (n>=0 && fcn->size<n) {fcn->size=n; } } \
 	if (fcn->size > MAX_FCN_SIZE) { \
-		eprintf ("Function too big at 0x%"PFMT64x"\n", bb->addr); \
+		eprintf ("Function too big at 0x%"PFMT64x" + %d\n", bb->addr, fcn->size); \
 		fcn->size = 0; \
 		return R_ANAL_RET_ERROR; }
 
@@ -239,8 +240,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		int adjust;
 		int un_idx; // delay.un_idx
 	} delay = {0};
-	if (anal->sleep)
+	if (anal->sleep) {
 		r_sys_usleep (anal->sleep);
+	}
 
 	if (depth<1) {
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
