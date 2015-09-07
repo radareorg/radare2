@@ -89,37 +89,30 @@ static mach0_ut get_pointer (mach0_ut p,
 							ut32 *left,
 							RBinFile *arch);
 
-static void copy_sym_name_with_namespace (char *class_name,
-										char *read_name,
-										RBinSymbol *sym);
+static void copy_sym_name_with_namespace (char *class_name, char *read_name, RBinSymbol *sym);
 
-static void get_ivar_list_t (mach0_ut p,
-							RBinFile *arch,
-							RBinClass *processed_class);
+static void get_ivar_list_t (mach0_ut p, RBinFile *arch, RBinClass *processed_class);
 
-static void get_objc_property_list (mach0_ut p,
-								RBinFile *arch,
-								RBinClass *processed_class);
+static void get_objc_property_list (mach0_ut p, RBinFile *arch, RBinClass *processed_class);
 
-static void get_method_list_t (mach0_ut p,
-							RBinFile *arch,
-							char *class_name,
-							RBinClass *processed_class);
+static void get_method_list_t (mach0_ut p, RBinFile *arch, char *class_name, RBinClass *processed_class);
 
-static void get_protocol_list_t (mach0_ut p,
-								RBinFile *arch,
-								RBinClass *processed_class);
+static void get_protocol_list_t (mach0_ut p, RBinFile *arch, RBinClass *processed_class);
 
-static void get_class_ro_t (mach0_ut p,
-							RBinFile *arch,
-							ut32 *is_meta_class,
-							RBinClass *processed_class);
+static void get_class_ro_t (mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBinClass *processed_class);
 
-static void get_class_t (mach0_ut p,
-						RBinFile *arch,
-						RBinClass *processed_class);
+static void get_class_t (mach0_ut p, RBinFile *arch, RBinClass *processed_class);
 
 static void __r_bin_class_free(RBinClass *p);
+
+static int is_thumb(RBinFile *arch) {
+	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
+	if (bin->hdr.cputype == 12) {
+		if (bin->hdr.cpusubtype == 9)
+			return 1;
+	}
+	return 0;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 static mach0_ut get_pointer (mach0_ut p,
@@ -498,6 +491,15 @@ static void get_method_list_t (mach0_ut p,
 		}
 
 		method->vaddr = m.imp;
+
+			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
+			if (is_thumb (arch)) {
+				if (method->vaddr & 1) {
+					method->vaddr >>= 1;
+					method->vaddr <<= 1;
+					//eprintf ("0x%08llx METHOD %s\n", method->vaddr, method->name);
+				}
+			}
 
 		r_list_append (processed_class->methods, method);
 
