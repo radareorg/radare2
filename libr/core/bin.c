@@ -557,11 +557,23 @@ static int bin_entry (RCore *r, int mode, ut64 laddr, int va) {
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
 		r_list_foreach (entries, iter, entry) {
+			ut64 paddr = entry->paddr;
+			ut64 vaddr = r_bin_get_vaddr (r->bin, paddr, entry->vaddr);
 			ut64 at = rva (r->bin, entry->paddr, entry->vaddr, va);
-			r_cons_printf ("%s%"PFMT64d,
-				iter->p? ",":"", at);
+			if (at > vaddr) {
+				vaddr = at;
+			}
+			if (!va) {
+				vaddr = paddr;
+			}
+			r_cons_printf ("%s{\"vaddr\":%" PFMT64d ","
+				"\"paddr\":%" PFMT64d ","
+				"\"baddr\":%" PFMT64d ","
+				"\"laddr\":%" PFMT64d "}",
+				iter->p ? "," : "", vaddr, paddr, baddr, laddr);
 		}
 		r_cons_printf ("]");
+		r_cons_newline ();
 	} else
 	if (mode & R_CORE_BIN_SIMPLE) {
 		r_list_foreach (entries, iter, entry) {
@@ -598,10 +610,6 @@ static int bin_entry (RCore *r, int mode, ut64 laddr, int va) {
 				r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, vaddr);
 				r_cons_printf ("s entry%i\n", i);
 			} else {
-				/* XXX: just a temporary workaround */
-				if (!baddr && vaddr > paddr) {
-					baddr = vaddr - paddr;
-				}
 				r_cons_printf (
 					 "vaddr=0x%08"PFMT64x
 					" paddr=0x%08"PFMT64x
