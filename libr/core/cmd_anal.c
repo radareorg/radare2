@@ -2866,10 +2866,10 @@ static int cmd_anal_all (RCore *core, const char *input) {
 			int c = r_config_get_i (core->config, "anal.calls");
 			r_config_set_i (core->config, "anal.calls", 1);
 			r_core_cmd0 (core, "s $S");
-			r_core_cmd0 (core, "aar");
+			(void)r_core_anal_refs (core, input + 1); // "aar"
 			if (core->cons->breaked)
 				goto jacuzzi;
-			r_core_cmd0 (core, "aac");
+			(void)cmd_anal_calls (core, ""); // "aac"
 			if (core->cons->breaked)
 				goto jacuzzi;
 			r_config_set_i (core->config, "anal.calls", c);
