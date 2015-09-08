@@ -18,6 +18,11 @@ static inline int __strnlen(const char *str, int len) {
 	return l+1;
 }
 
+static int handle_e_ident(struct Elf_(r_bin_elf_obj_t) *bin) {
+	return strncmp ((char *)bin->ehdr.e_ident, ELFMAG, SELFMAG) == 0 ||
+		strncmp ((char *)bin->ehdr.e_ident, CGCMAG, SCGCMAG) == 0;
+}
+
 static int init_ehdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut8 e_ident[EI_NIDENT];
 	int len;
@@ -74,9 +79,8 @@ static int init_ehdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 		eprintf ("Warning: read (ehdr)\n");
 		return R_FALSE;
 	}
-	if (strncmp ((char *)bin->ehdr.e_ident, ELFMAG, SELFMAG))
-		return R_FALSE;
-	return R_TRUE;
+
+	return handle_e_ident (bin);
 }
 
 static int init_phdr(struct Elf_(r_bin_elf_obj_t) *bin) {
@@ -689,6 +693,16 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		ut64 addr = (ut64)((int)(buf[48] +
 			(buf[48 + 1] << 8) + (buf[48 + 2] << 16) +
 			(buf[48 + 3] << 24)));
+		return Elf_(r_bin_elf_v2p) (bin, addr);
+	}
+	// X86-CGC
+	if (buf[0] == 0xe8 && !memcmp (buf + 5, "\x50\xe8\x00\x00\x00\x00\xb8\x01\x00\x00\x00\x53", 12)) {
+		size_t SIZEOF_CALL = 5;
+		ut64 rel_addr = (ut64)((int)(buf[1] + (buf[2] << 8)
+			+ (buf[3] << 16) + (buf[4] << 24)));
+		ut64 addr = Elf_(r_bin_elf_p2v)(bin, entry + SIZEOF_CALL);
+
+		addr += rel_addr;
 		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 	// X86-PIE

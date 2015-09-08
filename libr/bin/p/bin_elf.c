@@ -8,8 +8,6 @@
 #include "elf/elf.h"
 
 #define ELFOBJ struct Elf_(r_bin_elf_obj_t)
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
 
 //TODO: implement r_bin_symbol_dup() and r_bin_symbol_free ?
 static void setsymord (ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
@@ -516,7 +514,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->lang = "c";
 	if (arch->file)
 		ret->file = strdup (arch->file);
-	else ret->file = '\0';
+	else ret->file = NULL;
 	if ((str = Elf_(r_bin_elf_get_rpath)(arch->o->bin_obj))) {
 		ret->rpath = strdup (str);
 		free (str);
@@ -607,20 +605,17 @@ static int size(RBinFile *arch) {
 	return off+len;
 }
 
-#if !R_BIN_ELF64
+#if !R_BIN_ELF64 && !R_BIN_CGC
+
+static int check_bytes(const ut8 *buf, ut64 length) {
+	return buf && length > 4 && memcmp (buf, ELFMAG, SELFMAG) == 0
+		&& buf[4] != 2;
+}
 
 static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
-
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 4 &&
-		!memcmp (buf, "\x7F\x45\x4c\x46", 4) && buf[4] != 2)
-		return R_TRUE;
-	return R_FALSE;
 }
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
