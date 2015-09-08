@@ -4,17 +4,6 @@
 #include <r_util.h>
 #include <r_cons.h>
 
-static void free_refline_list (struct list_head *head){
-	struct list_head *pos, *n;
-	RAnalRefline *ref;
-	list_for_each_safe (pos, n, head){
-		ref = list_entry (pos, RAnalRefline, list);
-		free (ref);
-	}
-	ref = list_entry (head, RAnalRefline, list);
-	free (ref);
-}
-
 R_API void r_anal_reflines_free (RAnalRefline *rl) {
 	if (rl) {
 		//free_refline_list (&rl->list);
@@ -22,10 +11,9 @@ R_API void r_anal_reflines_free (RAnalRefline *rl) {
 	}
 }
 
-R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
-	ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall)
-{
-	RAnalRefline *list2, *list = NULL;
+R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
+	RList *list;
+	RAnalRefline *item;
 	RAnalOp op = {0};
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
@@ -33,10 +21,8 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 	int sz = 0, index = 0;
 	int count = 0;
 
-	list = R_NEW0 (RAnalRefline);
+	list = r_list_new ();
 	if (!list) return NULL;
-
-	INIT_LIST_HEAD (&(list->list));
 
 	//end -= 8; // XXX Fix some segfaults when r_anal backends are buggy
 	if (ptr != (end - 8)) end -= 8;
@@ -62,7 +48,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 		addr += sz;
 		// This can segflauta if opcode length and buffer check fails
 		r_anal_op_fini (&op);
-		sz = r_anal_op (anal, &op, addr, ptr, (int)(end-ptr));
+		sz = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr));
 		if (sz > 0) {
 			/* store data */
 			switch (op.type) {
@@ -75,16 +61,14 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 					goto __next;
 				if (op.jump == 0LL)
 					goto __next;
-				list2 = R_NEW0 (RAnalRefline);
-				if (!list2) {
-					eprintf ("not enough memory in %s - %d", __FILE__, __LINE__);
-					free_refline_list (&(list->list));
+				item = R_NEW0 (RAnalRefline);
+				if (!item) {
 					return NULL;
 				}
-				list2->from = addr;
-				list2->to = op.jump;
-				list2->index = index++;
-				list_add_tail (&(list2->list), &(list->list));
+				item->from = addr;
+				item->to = op.jump;
+				item->index = index++;
+				r_list_append (list, item);
 				count++;
 				break;
 			case R_ANAL_OP_TYPE_SWITCH:
@@ -97,21 +81,22 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 					RAnalCaseOp *caseop;
 					RListIter *iter;
 					r_list_foreach (op.switch_op->cases, iter, caseop) {
-						if (caseop) {
-							if (!linesout && (op.jump > opc+len || op.jump < opc))
-								continue;
-							list2 = R_NEW (RAnalRefline);
-							if (!list2) {
-								eprintf ("not enough memory in %s - %d", __FILE__, __LINE__);
-								free_refline_list (&(list->list));
-								return NULL;
-							}
-							list2->from = op.switch_op->addr;
-							list2->to = caseop->jump;
-							list2->index = index++;
-							list_add_tail (&(list2->list), &(list->list));
-							count++;
+						if (!caseop) {
+							continue;
 						}
+						if (!linesout && (op.jump > opc+len || op.jump < opc))
+							continue;
+						item = R_NEW0 (RAnalRefline);
+						if (!item) {
+							r_list_free (list);
+							return NULL;
+						}
+						item->from = op.switch_op->addr;
+						item->to = caseop->jump;
+						item->index = index++;
+						r_list_append (list, item);
+						//list_add_tail (&(list2->list), &(list->list));
+						count++;
 					}
 				}
 				break;
@@ -124,20 +109,17 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 	return list;
 }
 
-R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn,
-    int nlines, int linesout, int linescall)
-{
-	RAnalRefline *list2, *list = NULL;
+R_API RList*r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines, int linesout, int linescall) {
+	RList *list;
+	RAnalRefline *item;
 	RAnalBlock *bb;
 	RListIter *bb_iter;
 
 	int index = 0;
 	ut32 len;
 
-	list = R_NEW0 (RAnalRefline);
+	list = r_list_new ();
 	if (!list) return NULL;
-
-	INIT_LIST_HEAD (&(list->list));
 
 	/* analyze code block */
 	r_list_foreach (fcn->bbs, bb_iter, bb) {
@@ -158,31 +140,29 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 		if ( (control_type & R_ANAL_BB_TYPE_CJMP) == R_ANAL_BB_TYPE_CJMP) {
 			// dont need to continue here is opc+len exceed function scope
 			if (linesout && bb->fail > 0LL && bb->fail != bb->addr + len) {
-				list2 = R_NEW0 (RAnalRefline);
-				if (!list2) {
-					free_refline_list (&(list->list));
+				item = R_NEW0 (RAnalRefline);
+				if (!item) {
+					r_list_free (list);
 					return NULL;
 				}
-				list2->from = bb->addr;
-				list2->to = bb->fail;
-				list2->index = index++;
-				list_add_tail (&(list2->list), &(list->list));
+				item->from = bb->addr;
+				item->to = bb->fail;
+				item->index = index++;
+				r_list_append (list, item);
 			}
 		}
 		if ( (control_type & R_ANAL_BB_TYPE_JMP) == R_ANAL_BB_TYPE_JMP) {
 			if (!linesout || bb->jump == 0LL || bb->jump == bb->addr + len)
 				continue;
-
-			list2 = R_NEW0 (RAnalRefline);
-			if (!list2) {
-				eprintf ("not enough memory in %s - %d", __FILE__, __LINE__);
-				free_refline_list (&(list->list));
+			item = R_NEW0 (RAnalRefline);
+			if (!item) {
+				r_list_free (list);
 				return NULL;
 			}
-			list2->from = bb->addr;
-			list2->to = bb->jump;
-			list2->index = index++;
-			list_add_tail (&(list2->list), &(list->list));
+			item->from = bb->addr;
+			item->to = bb->jump;
+			item->index = index++;
+			r_list_append (list, item);
 			continue;
 		}
 
@@ -195,16 +175,15 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 					if (caseop) {
 						if (!linesout)// && (op.jump > opc+len || op.jump < pc))
 							continue;
-						list2 = R_NEW0 (RAnalRefline);
-						if (!list2){
-							eprintf ("not enough memory in %s - %d", __FILE__, __LINE__);
-							free_refline_list (&(list->list));
+						item = R_NEW0 (RAnalRefline);
+						if (!item){
+							r_list_free (list);
 							return NULL;
 						}
-						list2->from = bb->switch_op->addr;
-						list2->to = caseop->jump;
-						list2->index = index++;
-						list_add_tail (&(list2->list), &(list->list));
+						item->from = bb->switch_op->addr;
+						item->to = caseop->jump;
+						item->index = index++;
+						r_list_append (list, item);
 					}
 				}
 			}
@@ -213,34 +192,35 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 	return list;
 }
 
-R_API int r_anal_reflines_middle(RAnal *a, RAnalRefline *list, ut64 addr, int len) {
-	struct list_head *pos;
-	if (list)
-	for (pos = (&(list->list))->next; pos != (&(list->list)); pos = pos->next) {
-		RAnalRefline *ref = list_entry (pos, RAnalRefline, list);
-		if ((ref->to> addr) && (ref->to < addr+len))
-			return R_TRUE;
+R_API int r_anal_reflines_middle(RAnal *a, RList* /*<RAnalRefline>*/ list, ut64 addr, int len) {
+	if (a && list) {
+		RAnalRefline *ref;
+		RListIter *iter;
+		r_list_foreach (list, iter, ref) {
+			if ((ref->to > addr) && (ref->to < addr+len))
+				return R_TRUE;
+		}
 	}
 	return R_FALSE;
 }
 
 // TODO: move into another file
 // TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
-R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
+R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
+	RCore *core = _core;
+	RAnal *anal = core->anal;
 	RBuffer *b;
-	int l, linestyle = opts & R_ANAL_REFLINE_TYPE_STYLE;
+	RListIter *iter;
+	int l;
 	int dir = 0, wide = opts & R_ANAL_REFLINE_TYPE_WIDE;
 	char ch = ' ', *str = NULL;
-	struct list_head *pos;
-	RAnalRefline *ref, *list = ((RCore*)core)->reflines;
+	RAnalRefline *ref;
 
-	if (!list) return NULL;
+	if (!anal || !anal->reflines) return NULL;
 
 	b = r_buf_new ();
 	r_buf_append_string (b, " ");
-	for (pos = linestyle?(&(list->list))->next:(&(list->list))->prev;
-		pos != (&(list->list)); pos = linestyle?pos->next:pos->prev) {
-		ref = list_entry (pos, RAnalRefline, list);
+	r_list_foreach_prev (anal->reflines, iter, ref) {
 		dir = (addr == ref->to)? 1: (addr == ref->from)? 2: dir;
 		if (addr == ref->to) {
 			r_buf_append_string (b, (ref->from>ref->to)? "." : "`");
@@ -267,8 +247,8 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 		}
 	}
 	str = r_buf_free_to_string (b);
-	if (((RCore*)core)->anal->lineswidth>0) {
-		int lw = ((RCore*)core)->anal->lineswidth;
+	if (core->anal->lineswidth>0) {
+		int lw = core->anal->lineswidth;
 		l = strlen (str);
 		if (l > lw) {
 			r_str_cpy (str, str + l - lw);
@@ -286,8 +266,7 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 	str = r_str_concat (str, (dir==1)? "-> "
 		: (dir==2)? "=< " : "   ");
 
-	/* HACK */
-	if (((RCore*)core)->utf8 && ((RCore*)core)->cons->vline) {
+	if (opts & R_ANAL_REFLINE_TYPE_UTF8) {
 		RCons *c = ((RCore*)core)->cons;
 		//str = r_str_replace (str, "=", "-", 1);
 		str = r_str_replace (str, "<", c->vline[ARROW_LEFT], 1);

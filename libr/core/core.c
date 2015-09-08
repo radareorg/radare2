@@ -838,8 +838,6 @@ R_API int r_core_init(RCore *core) {
 	core->lastcmd = NULL;
 	core->cmdqueue = NULL;
 	core->cmdrepeat = R_TRUE;
-	core->reflines = NULL;
-	core->reflines2 = NULL;
 	core->yank_buf = r_buf_new();
 	core->num = r_num_new (&num_callback, core);
 	//core->num->callback = &num_callback;

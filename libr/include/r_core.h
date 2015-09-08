@@ -111,8 +111,7 @@ typedef struct r_core_t {
 	RCmd *rcmd;
 	RAnal *anal;
 	RAsm *assembler;
-	RAnalRefline *reflines;
-	RAnalRefline *reflines2;
+	/* ^^ */
 	RParse *parser;
 	RPrint *print;
 	RLang *lang;

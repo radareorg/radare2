@@ -514,8 +514,8 @@ enum {
 };
 
 enum {
-	R_ANAL_REFLINE_TYPE_STYLE = 1,
-	R_ANAL_REFLINE_TYPE_WIDE = 2,
+	R_ANAL_REFLINE_TYPE_UTF8 = 1,
+	R_ANAL_REFLINE_TYPE_WIDE = 2
 };
 
 enum {
@@ -620,6 +620,8 @@ typedef struct r_anal_t {
 	//RList *hints; // XXX use better data structure here (slist?)
 	RAnalCallbacks cb;
 	RAnalOptions opt;
+	RList *reflines;
+	RList *reflines2;
 } RAnal;
 
 typedef struct r_anal_hint_t {
@@ -768,7 +770,6 @@ typedef struct r_anal_refline_t {
 	ut64 from;
 	ut64 to;
 	int index;
-	struct list_head list;
 } RAnalRefline;
 
 typedef struct r_anal_state_type_t {
@@ -1323,13 +1324,11 @@ R_API int r_anal_cond_eval (RAnal *anal, RAnalCond *cond);
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 
 /* reflines.c */
-R_API RAnalRefline *r_anal_reflines_get(RAnal *anal,
+R_API RList* /*<RAnalRefline>*/ r_anal_reflines_get(RAnal *anal,
 	ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
-R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
+R_API int r_anal_reflines_middle(RAnal *anal, RList *list, ut64 addr, int len);
 R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
-R_API RAnalRefline *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn,
-    int nlines, int linesout, int linescall);
-R_API void r_anal_reflines_free (RAnalRefline *rl);
+R_API RList *r_anal_reflines_fcn_get(struct r_anal_t *anal, RAnalFunction *fcn, int nlines, int linesout, int linescall);
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);

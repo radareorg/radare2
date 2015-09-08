@@ -1143,11 +1143,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.flags", "true", "Show flags");
 	SETPREF("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF("asm.lines", "true", "Show ASCII-art lines at disassembly");
+	SETPREF("asm.linesup", "true", "Update ascii-art lines instead of single shot");
 	SETPREF("asm.lines.call", "false", "Enable call lines");
 	SETPREF("asm.lines.ret", "false", "Show separator lines after ret");
 	SETPREF("asm.linesout", "true", "Show out of block lines");
 	SETPREF("asm.linesright", "false", "Show lines before opcode instead of offset");
-	SETPREF("asm.linesstyle", "false", "Iterate the jump list backwards");
 	SETPREF("asm.lineswide", "false", "Put a space between lines");
 	SETICB("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETPREF("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
