@@ -81,7 +81,7 @@ R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *b
 	}
 
 	len = strlen(kwbuf);
-	str = malloc((len+1)*2);
+	str = calloc((len+1), 2);
 	for (p2=kwbuf, p=str; *p2; p+=2, p2++) {
 		if (ignore_case)
 			p[0] = tolower((const unsigned char)*p2);

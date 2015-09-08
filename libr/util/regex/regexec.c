@@ -109,7 +109,7 @@
 #define	ASSIGN(d, s)	memcpy(d, s, m->g->nstates)
 #define	EQ(a, b)	(memcmp(a, b, m->g->nstates) == 0)
 #define	STATEVARS	long vn; char *space
-#define	STATESETUP(m, nv)	{ (m)->space = malloc((nv)*(m)->g->nstates); \
+#define	STATESETUP(m, nv)	{ (m)->space = calloc((nv),(m)->g->nstates); \
 				if ((m)->space == NULL) return(R_REGEX_ESPACE); \
 				(m)->vn = 0; }
 #define	STATETEARDOWN(m)	{ free((m)->space); }

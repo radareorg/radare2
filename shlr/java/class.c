@@ -3491,7 +3491,8 @@ R_API RBinJavaAttrInfo* r_bin_java_exceptions_attr_new (ut8 *buffer, ut64 sz, ut
 	attr->type = R_BIN_JAVA_ATTR_TYPE_LINE_NUMBER_TABLE_ATTR;
 	attr->info.exceptions_attr.number_of_exceptions = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
-	attr->info.exceptions_attr.exception_idx_table = (ut16 *) malloc (sizeof (ut16)* attr->info.exceptions_attr.number_of_exceptions);
+	attr->info.exceptions_attr.exception_idx_table = (ut16 *) calloc (sizeof (ut16),
+			attr->info.exceptions_attr.number_of_exceptions);
 	for (i = 0; i < attr->info.exceptions_attr.number_of_exceptions; i++) {
 		attr->info.exceptions_attr.exception_idx_table[i] = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;

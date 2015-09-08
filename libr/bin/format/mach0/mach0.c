@@ -199,9 +199,9 @@ static int parse_symtab(struct MACH0_(obj_t)* bin, ut64 off) {
 			R_FREE (bin->symstr);
 			return R_FALSE;
 		}
-		if (!(bin->symtab = malloc (bin->nsymtab *
+		if (!(bin->symtab = calloc (bin->nsymtab,
 				sizeof (struct MACH0_(nlist))))) {
-			perror ("malloc (symtab)");
+			perror ("calloc (symtab)");
 			return R_FALSE;
 		}
 #if R_BIN_MACH064
@@ -234,8 +234,8 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 	}
 	bin->ntoc = bin->dysymtab.ntoc;
 	if (bin->ntoc > 0) {
-		if (!(bin->toc = malloc (bin->ntoc * sizeof(struct dylib_table_of_contents)))) {
-			perror ("malloc (toc)");
+		if (!(bin->toc = calloc (bin->ntoc, sizeof(struct dylib_table_of_contents)))) {
+			perror ("calloc (toc)");
 			return R_FALSE;
 		}
 		if (!UT32_MUL (&size_tab, bin->ntoc, sizeof (struct dylib_table_of_contents))){
@@ -260,8 +260,8 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 	}
 	bin->nmodtab = bin->dysymtab.nmodtab;
 	if (bin->nmodtab > 0) {
-		if (!(bin->modtab = malloc (bin->nmodtab * sizeof(struct MACH0_(dylib_module))))) {
-			perror ("malloc (modtab)");
+		if (!(bin->modtab = calloc (bin->nmodtab, sizeof(struct MACH0_(dylib_module))))) {
+			perror ("calloc (modtab)");
 			return R_FALSE;
 		}
 		if (!UT32_MUL (&size_tab, bin->nmodtab, sizeof (struct MACH0_(dylib_module)))){
@@ -292,8 +292,8 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 	}
 	bin->nindirectsyms = bin->dysymtab.nindirectsyms;
 	if (bin->nindirectsyms > 0) {
-		if (!(bin->indirectsyms = malloc (bin->nindirectsyms * sizeof(ut32)))) {
-			perror ("malloc (indirectsyms)");
+		if (!(bin->indirectsyms = calloc (bin->nindirectsyms, sizeof(ut32)))) {
+			perror ("calloc (indirectsyms)");
 			return R_FALSE;
 		}
 		if (!UT32_MUL (&size_tab, bin->nindirectsyms, sizeof (ut32))){
@@ -778,7 +778,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 	to = R_MIN (bin->nsects, 128); // limit number of sections here to avoid fuzzed bins
 	if (to<1)
 		return NULL;
-	if (!(sections = malloc ((bin->nsects + 1) * sizeof (struct section_t))))
+	if (!(sections = calloc ((bin->nsects + 1), sizeof (struct section_t))))
 		return NULL;
 	for (i = 0; i<to; i++) {
 		sections[i].offset = (ut64)bin->sects[i].offset;
@@ -1086,7 +1086,7 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 	if (bin->dysymtab.nundefsym<1 || bin->dysymtab.nundefsym>0xfffff) {
 		return NULL;
 	}
-	if (!(imports = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct import_t))))
+	if (!(imports = calloc ((bin->dysymtab.nundefsym + 1), sizeof(struct import_t))))
 		return NULL;
 	for (i = j = 0; i < bin->dysymtab.nundefsym; i++) {
 		idx = bin->dysymtab.iundefsym +i;
@@ -1134,8 +1134,7 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 
 	if (!bin->imports_by_ord_size) {
 		bin->imports_by_ord_size = j;
-		bin->imports_by_ord = (RBinImport**)malloc (j * sizeof (RBinImport*));
-		memset (bin->imports_by_ord, 0, j * sizeof (RBinImport*));
+		bin->imports_by_ord = (RBinImport**)calloc (j, sizeof (RBinImport*));
 	}
 
 	return imports;
@@ -1228,7 +1227,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		if (bin->dyld_info->bind_off+bind_size+lazy_size > bin->size)
 			return NULL;
 		// NOTE(eddyb) it's a waste of memory, but we don't know the actual number of relocs.
-		if (!(relocs = malloc ((bind_size + lazy_size) * sizeof (struct reloc_t))))
+		if (!(relocs = calloc ((bind_size + lazy_size), sizeof (struct reloc_t))))
 			return NULL;
 
 		opcodes = malloc (bind_size + lazy_size);
@@ -1381,7 +1380,7 @@ relocs[i++].last = 0;\
 		int j;
 		if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
 			return NULL;
-		if (!(relocs = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct reloc_t))))
+		if (!(relocs = calloc ((bin->dysymtab.nundefsym + 1), sizeof(struct reloc_t))))
 			return NULL;
 		for (j = 0; j < bin->dysymtab.nundefsym; j++) {
 			if (parse_import_ptr(bin, &relocs[i], bin->dysymtab.iundefsym + j)) {
@@ -1434,7 +1433,7 @@ struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin) {
 
 	if (!bin->nlibs)
 		return NULL;
-	if (!(libs = malloc ((bin->nlibs + 1) * sizeof(struct lib_t))))
+	if (!(libs = calloc ((bin->nlibs + 1), sizeof(struct lib_t))))
 		return NULL;
 	for (i = 0; i < bin->nlibs; i++) {
 		strncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH);

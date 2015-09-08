@@ -44,7 +44,7 @@ static inline int is_valid_char (unsigned char ch) {
 
 static int inithist() {
 	ZERO_FILL (I.history);
-	I.history.data = (char **)malloc ((I.history.size+1024)*sizeof(char *));
+	I.history.data = (char **)calloc ((I.history.size+1024),sizeof(char *));
 	if (I.history.data==NULL)
 		return R_FALSE;
 	I.history.size = R_LINE_HISTSIZE;
