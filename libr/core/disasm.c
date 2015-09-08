@@ -395,8 +395,8 @@ static void handle_reflines_init (RAnal *anal, RDisasmState *ds) {
 }
 
 static void handle_reflines_update (RAnal *anal, RDisasmState *ds) {
-	int maxlen = 1024;
-	int maxlines = 1024;
+	int maxlen = 512;
+	int maxlines = 100;
 	int delta = ds->at - ds->addr;
 	if (lastaddr == UT64_MAX) {
 		lastaddr = ds->addr;

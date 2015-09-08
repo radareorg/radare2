@@ -30,7 +30,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	while (ptr<end) {
 		if (nlines != -1 && --nlines == 0)
 			break;
-		if (anal->maxreflines && count> anal->maxreflines)
+		if (anal->maxreflines && count > anal->maxreflines)
 			break;
 #if 0
 		if (config.interrupted)
@@ -254,11 +254,11 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			r_str_cpy (str, str + l - lw);
 		} else {
 			char pfx[128];
-			lw-=l;
+			lw -= l;
 			memset (pfx, ' ', sizeof (pfx));
-			if (lw>=sizeof (pfx)) lw = sizeof (pfx);
+			if (lw >= sizeof (pfx)) lw = sizeof (pfx);
 			if (lw > 0) {
-				pfx[lw - 1] = 0;
+				pfx[lw ] = 0;
 				str = r_str_prefix (str, pfx);
 			}
 		}
