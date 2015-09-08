@@ -152,6 +152,8 @@ typedef struct
 /* Conglomeration of the identification bytes, for easy testing as a word.  */
 #define	ELFMAG		"\177ELF"
 #define	SELFMAG		4
+#define	CGCMAG		"\177CGC"
+#define	SCGCMAG		4
 
 #define EI_CLASS	4		/* File class byte index */
 #define ELFCLASSNONE	0		/* Invalid class */
