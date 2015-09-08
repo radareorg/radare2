@@ -210,6 +210,7 @@ user-install:
 
 user-uninstall:
 	$(foreach mod,$(R2BINS),rm -f ~/bin/$(mod))
+	rm -f ~/bin/r2
 	-rmdir ~/bin
 
 purge-dev:

@@ -30,13 +30,17 @@ if [ ! -d "${HOME}" ]; then
 	exit 1
 fi
 
-ROOT="${HOME}/.radare2-prefix"
-mkdir -p "${ROOT}"
+ROOT="${HOME}/bin/prefix/radare2/"
+mkdir -p "${ROOT}/lib"
 
 if [ "${HARDEN}" = 1 ]; then
 	./sys/build-harden.sh "${ROOT}" && ${MAKE} symstall
 else
 	./sys/build.sh "${ROOT}" && ${MAKE} symstall
+fi
+if [ $? != 0 ]; then
+	echo "Oops"
+	exit 1
 fi
 ${MAKE} user-install
 echo
