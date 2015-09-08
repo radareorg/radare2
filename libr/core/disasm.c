@@ -347,7 +347,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	}
 	if (core->cons->vline) {
-		if (core->utf8)
+		if (ds->show_utf8)
 			ds->linesopts |= R_ANAL_REFLINE_TYPE_UTF8;
 	}
 
