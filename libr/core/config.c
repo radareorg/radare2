@@ -636,6 +636,25 @@ static int cb_hexpairs(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int r_core_esil_cmd(RAnalEsil *esil, const char *cmd, int intr) {
+	if (cmd && *cmd) {
+		RCore *core = esil->anal->user;
+		r_core_cmdf (core, "%s %d", cmd, intr);
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
+static int cb_cmd_esil_intr(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core && core->anal && core->anal->esil) {
+		core->anal->esil->cmd = r_core_esil_cmd;
+		core->anal->esil->cmd_intr = node->value;
+	}
+	return R_TRUE;
+}
+
 static int cb_fsview(void *user, void *data) {
 	int type = R_FS_VIEW_NORMAL;
 	RCore *core = (RCore *) user;
@@ -1288,6 +1307,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("cmd.fcn.rename", "", "Run when a function is renamed");
 	SETPREF("cmd.visual", "", "Replace current print mode");
 	SETPREF("cmd.vprompt", "", "Visual prompt commands");
+
+	SETCB("cmd.esil.intr", "", &cb_cmd_esil_intr, "Command to run when an esil interrupt happens");
 
 	/* filesystem */
 	SETCB("fs.view", "normal", &cb_fsview, "Set visibility options for filesystems");

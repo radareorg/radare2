@@ -1341,7 +1341,7 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		RList *entries = r_bin_get_entries (core->bin);
 		RBinAddr *entry = NULL;
 		RBinInfo *info = NULL;
-		if (entries && r_list_length(entries)) {
+		if (entries && !r_list_empty (entries)) {
 			entry = (RBinAddr *) r_list_pop (entries);
 			info = r_bin_get_info (core->bin);
 			addr = info->has_va? entry->vaddr : entry->paddr;
@@ -1615,6 +1615,15 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		// 'aer' is an alias for 'ar'
 		cmd_anal_reg (core, input+1);
 		break;
+	case '*':
+		// XXX: this is wip, not working atm
+		if (core->anal && core->anal->esil) {
+			r_cons_printf ("trap: %d\n", core->anal->esil->trap);
+			r_cons_printf ("trap-code: %d\n", core->anal->esil->trap_code);
+		} else {
+			eprintf ("esil vm not initialized. run `aei`\n");
+		}
+		break;
 	case ' ':
 		//r_anal_esil_eval (core->anal, input+1);
 		if (!esil) {
@@ -1702,6 +1711,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			stats = r_config_get_i (core->config, "esil.stats");
 			r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
 			esil->debug = (int)r_config_get_i (core->config, "esil.debug");
+			/* restore user settings for interrupt handling */
+			r_config_set (core->config, "cmd.esil.intr",
+				r_config_get (core->config, "cmd.esil.intr"));
 			break;
 		}
 		break;
@@ -1764,21 +1776,24 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 't': // "aet"
 		switch (input[1]) {
-			case 'r': // "aetr"
-				{
-					// anal ESIL to REIL.
-					int romem = r_config_get_i (core->config, "esil.romem");
-					int stats = r_config_get_i (core->config, "esil.stats");
-					RAnalEsil *esil = r_anal_esil_new ();
-					r_anal_esil_to_reil_setup (esil, core->anal, romem, stats);
-					r_anal_esil_set_offset (esil, core->offset);
-					r_anal_esil_parse (esil, input+2);
-					r_anal_esil_dumpstack (esil);
-					r_anal_esil_stack_free (esil);
-					break;
-				}
-        }
-	break;
+		case 'r': // "aetr"
+			{
+				// anal ESIL to REIL.
+				int romem = r_config_get_i (core->config, "esil.romem");
+				int stats = r_config_get_i (core->config, "esil.stats");
+				RAnalEsil *esil = r_anal_esil_new ();
+				r_anal_esil_to_reil_setup (esil, core->anal, romem, stats);
+				r_anal_esil_set_offset (esil, core->offset);
+				r_anal_esil_parse (esil, input+2);
+				r_anal_esil_dumpstack (esil);
+				r_anal_esil_stack_free (esil);
+				break;
+			}
+		default:
+			eprintf ("Unknown command. Use `aetr`.\n");
+			break;
+		}
+		break;
 	case '?':
 		if (input[1]=='?') {
 			const char* help_msg[] = {

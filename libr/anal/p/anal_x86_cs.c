@@ -1232,10 +1232,10 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 	return R_FALSE;
 }
 
-static int esil_x86_cs_intr (RAnalEsil *esil) {
+static int esil_x86_cs_intr (RAnalEsil *esil, int intr) {
 	if (!esil)
 		return R_FALSE;
-	eprintf ("INTERRUPT HAPPENS\n");
+	eprintf ("INTERRUPT 0x%02x HAPPENS\n", intr);
 	return R_TRUE;
 }
 

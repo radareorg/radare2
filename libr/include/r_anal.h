@@ -956,6 +956,8 @@ typedef struct r_anal_esil_t {
 	int trace_idx;
 	RAnalEsilCallbacks cb;
 	RAnalReil *Reil;
+	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
+	int (*cmd)(ESIL *esil, const char *name, int interrupt);
 } RAnalEsil;
 
 #undef ESIL

@@ -88,9 +88,13 @@ R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt) {
 	char t[128];
 	char *i;
 	RAnalEsilInterruptCB icb;
-	eprintf ("SYSCALL!\n");
 	if (!esil)
 		return R_FALSE;
+	if (esil->cmd) {
+		if (esil->cmd (esil, esil->cmd_intr, interrupt)) {
+			return R_TRUE;
+		}
+	}
 	if (esil->anal) {
 		RAnalPlugin *ap = esil->anal->cur;
 		if (ap && ap->esil_intr) {
