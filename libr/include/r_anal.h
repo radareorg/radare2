@@ -831,8 +831,10 @@ enum {
 	R_ANAL_TRAP_UNHANDLED = 1,
 	R_ANAL_TRAP_BREAKPOINT = 2,
 	R_ANAL_TRAP_DIVBYZERO = 3,
-	R_ANAL_TRAP_TODO = 4,
-	R_ANAL_TRAP_HALT = 5,
+	R_ANAL_TRAP_WRITE_ERR = 4,
+	R_ANAL_TRAP_READ_ERR = 5,
+	R_ANAL_TRAP_TODO = 6,
+	R_ANAL_TRAP_HALT = 7,
 };
 
 enum {
@@ -933,6 +935,7 @@ typedef struct r_anal_esil_t {
 	int stackptr;
 	int skip;
 	int nowrite;
+	int iotrap;
 	int repeat;
 	int parse_stop;
 	int parse_goto;
@@ -1139,7 +1142,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr,
 		const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
-R_API RAnalEsil *r_anal_esil_new ();
+R_API RAnalEsil *r_anal_esil_new (int iotrap);
 R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op);
 R_API void r_anal_esil_trace_list (RAnalEsil *esil);
 R_API void r_anal_esil_trace_show (RAnalEsil *esil, int idx);

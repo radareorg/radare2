@@ -858,6 +858,15 @@ static int cb_screcho(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_iotrap(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	RCore *core = (RCore*) user;
+	if (core->anal && core->anal->esil) {
+		core->anal->esil->iotrap = node->i_value;
+	}
+	return R_TRUE;
+}
+
 static int cb_scrint(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value && r_sandbox_enable (0)) {
@@ -1377,6 +1386,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");
 
+	SETCB("esil.iotrap", "true", &cb_iotrap, "invalid read or writes produce a trap exception");
 	SETPREF("esil.romem", "false", "Set memory as read-only for ESIL");
 	SETPREF("esil.stats", "false", "Statistics from ESIL emulation stored in sdb");
 

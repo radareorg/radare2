@@ -47,11 +47,12 @@ int popRN(RAnalEsil *esil, ut64 *n) {
 
 /* R_ANAL_ESIL API */
 
-R_API RAnalEsil *r_anal_esil_new() {
+R_API RAnalEsil *r_anal_esil_new(iotrap) {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
 	if (!esil) return NULL;
 	esil->parse_goto_count = R_ANAL_ESIL_GOTO_LIMIT;
 	esil->ops = sdb_new0 ();
+	esil->iotrap = iotrap;
 	esil->interrupts = sdb_new0 ();
 	return esil;
 }
@@ -59,7 +60,7 @@ R_API RAnalEsil *r_anal_esil_new() {
 R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code) {
 	char t[128];
 	char *h;
-	if (!code || !op || !strlen(op) || !esil || !esil->ops)
+	if (!code || !op || !strlen (op) || !esil || !esil->ops)
 		return R_FALSE;
 	h = sdb_itoa (sdb_hash (op), t, 16);
 	sdb_num_set (esil->ops, h, (ut64)(size_t)code, 0);
@@ -161,6 +162,12 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	}
 	if (!ret && esil->cb.mem_read) {
 		ret = esil->cb.mem_read (esil, addr, buf, len);
+		if (ret != len) {
+			if (esil->iotrap) {
+				esil->trap = R_ANAL_TRAP_READ_ERR;
+				esil->trap_code = addr;
+			}
+		}
 	}
 	IFDBG {
 		eprintf ("0x%08"PFMT64x" R> ", addr);
@@ -172,9 +179,17 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static int internal_esil_mem_write (RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	int ret;
 	if (!esil || !esil->anal || !esil->anal->iob.io)
 		return 0;
-	return esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
+	ret = esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
+	if (ret != len) {
+		if (esil->iotrap) {
+			esil->trap = R_ANAL_TRAP_WRITE_ERR;
+			esil->trap_code = addr;
+		}
+	}
+	return ret;
 }
 
 R_API int r_anal_esil_mem_write (RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
@@ -1268,6 +1283,7 @@ static int esil_poke_some(RAnalEsil *esil) {
 						(const ut8*)&num32, sizeof (num32));
 					if (ret != sizeof (num32)) {
 						eprintf ("Cannot write at 0x%08"PFMT64x"\n", ptr);
+						esil->trap = 1;
 					}
 					ptr += 4;
 					free (foo);

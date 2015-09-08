@@ -1321,7 +1321,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	}
 }
 
-static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
+static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	// Stepping
 	int ret;
 	ut8 code[256];
@@ -1331,12 +1331,13 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	repeat:
 	if (r_cons_singleton()->breaked) {
 		eprintf ("[+] ESIL emulation interrupted at 0x%08"PFMT64x"\n", addr);
-		return;
+		return 0;
 	}
 	if (!core->anal->esil) {
 		int romem = r_config_get_i (core->config, "esil.romem");
 		int stats = r_config_get_i (core->config, "esil.stats");
-		core->anal->esil = r_anal_esil_new ();
+		int iotrap = r_config_get_i (core->config, "esil.iotrap");
+		core->anal->esil = r_anal_esil_new (iotrap);
 		r_anal_esil_setup (core->anal->esil, core->anal, romem, stats); // setup io
 		RList *entries = r_bin_get_entries (core->bin);
 		RBinAddr *entry = NULL;
@@ -1354,12 +1355,13 @@ static void esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		r_reg_setv (core->anal->reg, name, addr);
 		// set memory read only
 	} else {
+		core->anal->esil->trap = 0;
 		addr = r_reg_getv (core->anal->reg, name);
 		//eprintf ("PC=0x%llx\n", (ut64)addr);
 	}
 	if (r_anal_pin_call (core->anal, addr)) {
 		eprintf ("esil pin called\n");
-		return;
+		return 1;
 	}
 	if (core->anal->esil->delay)
 		addr = core->anal->esil->delay_addr;
@@ -1410,14 +1412,21 @@ sleep (1);
 	if (until_addr != UT64_MAX) {
 		if (r_reg_getv (core->anal->reg, name) == until_addr) {
 			eprintf ("ADDR BREAK\n");
+			return 0;
 		} else goto repeat;
 	}
 	// check esil
+	if (core->anal->esil->trap) {
+		eprintf ("TRAP\n");
+		return 0;
+	}
 	if (until_expr) {
 		if (r_anal_esil_condition (core->anal->esil, until_expr)) {
 			eprintf ("ESIL BREAK!\n");
+			return 0;
 		} else goto repeat;
 	}
+	return 1;
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
@@ -1575,6 +1584,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		NULL};
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
+	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int romem = r_config_get_i (core->config, "esil.romem");
 	int stats = r_config_get_i (core->config, "esil.stats");
 	ut64 until_addr = UT64_MAX;
@@ -1627,7 +1637,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case ' ':
 		//r_anal_esil_eval (core->anal, input+1);
 		if (!esil) {
-			core->anal->esil = esil = r_anal_esil_new ();
+			core->anal->esil = esil = r_anal_esil_new (iotrap);
 		}
 		r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
 		r_anal_esil_set_offset (esil, core->offset);
@@ -1645,7 +1655,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case '?':
 			eprintf ("See: ae?~aes\n");
 			break;
-		case 'u':
+		case 'u': // "aesu"
 			if (input[2] == 'e') {
 				until_expr = input + 3;
 			} else {
@@ -1654,7 +1664,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			esil_step (core, until_addr, until_expr);
 			r_core_cmd0 (core, ".ar*");
 			break;
-		case 'o':
+		case 'o': // "aeso"
 			// step over
 			op = r_core_anal_op (core, addr);
 			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
@@ -1671,15 +1681,54 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		break;
 	case 'c':
-		// aec  -> continue until ^C
-		// aecu -> until address
-		// aecue -> until esil expression
-		if (input[1] == 'u' && input[2] == 'e')
-			until_expr = input + 3;
-		else if (input[1] == 'u')
-			until_addr = r_num_math (core->num, input + 2);
-		else until_expr = "0";
-		esil_step (core, until_addr, until_expr);
+		if (input[1] == '?') { // "aec?"
+			eprintf ("aecs         - continue until syscall\n");
+			eprintf ("aec          - continue until exception\n");
+			eprintf ("aecu [addr]  - continue until address\n");
+			eprintf ("aecue [expr] - continue until esil expression\n");
+		} else
+		if (input[1] == 's') { // "aecs"
+			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+			ut64 newaddr;
+			int ret;
+			for (;;) {
+				op = r_core_anal_op (core, addr);
+				if (!op) break;
+				if (op->type == R_ANAL_OP_TYPE_SWI) {
+					eprintf ("syscall at 0x%08"PFMT64x"\n", addr);
+					break;
+				}
+				if (op->type == R_ANAL_OP_TYPE_TRAP) {
+					eprintf ("trap at 0x%08"PFMT64x"\n", addr);
+					break;
+				}
+				ret = esil_step (core, UT64_MAX, NULL);
+				r_anal_op_free (op);
+				if (core->anal->esil->trap || core->anal->esil->trap_code) {
+					break;
+				}
+				if (!ret)
+					break;
+				r_core_cmd0 (core, ".ar*");
+				newaddr = r_num_get (core->num, pc);
+				if (addr == newaddr) {
+					addr++;
+					break;
+				} else {
+					addr = newaddr;
+				}
+			}
+		} else {
+			// "aec"  -> continue until ^C
+			// "aecu" -> until address
+			// "aecue" -> until esil expression
+			if (input[1] == 'u' && input[2] == 'e')
+				until_expr = input + 3;
+			else if (input[1] == 'u')
+				until_addr = r_num_math (core->num, input + 2);
+			else until_expr = "0";
+			esil_step (core, until_addr, until_expr);
+		}
 		break;
 	case 'd': // "aed"
 		r_anal_esil_free (esil);
@@ -1706,7 +1755,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					r_core_cmd0 (core, "ar pc=$$");
 				}
 			}
-			esil = core->anal->esil = r_anal_esil_new ();
+			iotrap = r_config_get_i (core->config, "esil.iotrap");
+			esil = core->anal->esil = r_anal_esil_new (iotrap);
 			romem = r_config_get_i (core->config, "esil.romem");
 			stats = r_config_get_i (core->config, "esil.stats");
 			r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
@@ -1781,7 +1831,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				// anal ESIL to REIL.
 				int romem = r_config_get_i (core->config, "esil.romem");
 				int stats = r_config_get_i (core->config, "esil.stats");
-				RAnalEsil *esil = r_anal_esil_new ();
+				RAnalEsil *esil = r_anal_esil_new (iotrap);
 				r_anal_esil_to_reil_setup (esil, core->anal, romem, stats);
 				r_anal_esil_set_offset (esil, core->offset);
 				r_anal_esil_parse (esil, input+2);
@@ -1846,6 +1896,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				"aek", " [query]", "perform sdb query on ESIL.info",
 				"aek-", "", "resets the ESIL.info sdb instance",
 				"aec", "", "continue until ^C",
+				"aecs", " [sn]", "continue until syscall number",
 				"aecu", " [addr]", "continue until address",
 				"aecue", " [esil]", "continue until esil expression match",
 				"aetr", "[esil]", "Convert an ESIL Expression to REIL",
@@ -2649,7 +2700,8 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 		if (!core->anal->esil) {
 			int romem = r_config_get_i (core->config, "esil.romem");
 			int stats = r_config_get_i (core->config, "esil.stats");
-			core->anal->esil = r_anal_esil_new ();
+			int iotrap = r_config_get_i (core->config, "esil.iotrap");
+			core->anal->esil = r_anal_esil_new (iotrap);
 			r_anal_esil_setup (core->anal->esil,	
 				core->anal, romem, stats);
 		}
