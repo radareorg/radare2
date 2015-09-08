@@ -26,6 +26,9 @@ OBJS += p/bin_write_elf.c format/elf/elf_write.c ;
 OBJS += p/bin_elf64.c format/elf/elf64.c ;
 OBJS += p/bin_write_elf64.c format/elf/elf64_write.c ;
 
+# CGC
+OBJS += p/bin_cgc.c format/elf/elf.c ;
+
 # MACH0
 OBJS += p/bin_mach0.c format/mach0/mach0.c ;
 OBJS += p/bin_mach064.c format/mach0/mach064.c ;
