@@ -179,8 +179,7 @@ int r_io_zip_slurp_file(RIOZipFileObj *zfo) {
 		zip_stat_init (&sb);
 		if (zFile && zfo->b && !zip_stat_index(zipArch,
 				zfo->entry, 0, &sb) ) {
-			ut8 *buf = malloc (sb.size);
-			memset (buf, 0, sb.size);
+			ut8 *buf = calloc (sb.size, 1);
 			if (buf) {
 				zip_fread (zFile, buf, sb.size);
 				r_buf_set_bytes (zfo->b, buf, sb.size);

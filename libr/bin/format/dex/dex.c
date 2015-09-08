@@ -7,8 +7,7 @@
 char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin) {
 	char *version;
 	if (!bin) return NULL;
-	version = malloc (8);
-	memset (version, 0, 8);
+	version = calloc (8, 1);
 	memcpy (version, bin->b->buf+4, 3);
 	return version;
 }
