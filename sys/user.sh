@@ -30,7 +30,8 @@ if [ ! -d "${HOME}" ]; then
 	exit 1
 fi
 
-ROOT=${HOME}/.radare2-prefix
+ROOT="${HOME}/.radare2-prefix"
+mkdir -p "${ROOT}"
 
 if [ "${HARDEN}" = 1 ]; then
 	./sys/build-harden.sh "${ROOT}" && ${MAKE} symstall

@@ -206,6 +206,7 @@ user-wrap=echo "\#!/bin/sh" > ~/bin/$1 \
 user-install:
 	mkdir -p ~/bin
 	$(foreach mod,$(R2BINS),$(call user-wrap,$(mod)))
+	cd ~/bin ; ln -fs radare2 r2
 
 user-uninstall:
 	$(foreach mod,$(R2BINS),rm -f ~/bin/$(mod))
