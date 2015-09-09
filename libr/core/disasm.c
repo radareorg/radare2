@@ -395,6 +395,8 @@ static void handle_reflines_init (RAnal *anal, RDisasmState *ds) {
 }
 
 static void handle_reflines_update (RAnal *anal, RDisasmState *ds) {
+	RListIter *iter;
+	RAnalRefline *ref;
 	int maxlen = 512;
 	int maxlines = 100;
 	int delta = ds->at - ds->addr;
@@ -407,9 +409,6 @@ static void handle_reflines_update (RAnal *anal, RDisasmState *ds) {
 		return;
 	}
 
-	RListIter *iter;
-	RAnalRefline *ref;
-
 	r_list_foreach_prev (anal->reflines, iter, ref) {
 		ut64 a = R_MIN (ref->from, ref->to);
 		ut64 b = R_MAX (ref->from, ref->to);
@@ -418,6 +417,14 @@ static void handle_reflines_update (RAnal *anal, RDisasmState *ds) {
 		if (ds->at >= a && ds->at <= b) {
 			return;
 		}
+	}
+	if (r_list_empty (anal->reflines))
+		return;
+	{
+		RAnalRefline *ref = r_list_first (anal->reflines);
+		if (ds->at < ref->from)
+			return;
+		//r_cons_printf ("--- 0x%llx 0x%llx\n", ds->at, ref->from);
 	}
 
 	r_list_free (anal->reflines);
