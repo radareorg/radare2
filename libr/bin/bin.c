@@ -53,7 +53,6 @@ static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const 
 static int getoffset (RBin *bin, int type, int idx);
 static const char *getname (RBin *bin, int off);
 static int r_bin_file_object_add (RBinFile *binfile, RBinObject *o);
-static void binfile_set_baddr (RBinFile *binfile, ut64 baddr);
 static void binobj_set_baddr (RBinObject *o, ut64 baddr);
 static ut64 binobj_a2b (RBinObject *o, ut64 addr);
 
@@ -1206,11 +1205,6 @@ R_API ut64 r_bin_get_laddr(RBin *bin) {
 static void binobj_set_baddr (RBinObject *o, ut64 baddr) {
 	if (!o || baddr == UT64_MAX) return;
 	o->baddr_shift = baddr - o->baddr;
-}
-
-static void binfile_set_baddr (RBinFile *binfile, ut64 baddr) {
-	if (!binfile) return;
-	binobj_set_baddr (binfile->o, baddr);
 }
 
 R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
