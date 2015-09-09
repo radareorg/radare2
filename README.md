@@ -28,13 +28,13 @@ code, debugging programs, attaching to remote gdb servers, ..
    radare2 is portable.
 
    * **Architectures:**
-	* 6502, 8051, CGC, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, csr,
+	* 6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, csr,
    dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, mips, msil,
    msp430, nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), V810,
    x86-64, zimg.
 
    * **File Formats:**
-	* bios, dex, elf, elf64, filesystem, java, fatmach0, mach0,
+	* bios, CGC, dex, elf, elf64, filesystem, java, fatmach0, mach0,
    mach0-64, MZ, PE, PE+, TE, COFF, plan9, dyldcache,
    Gameboy and Nintendo DS ROMs
 
