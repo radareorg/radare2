@@ -45,7 +45,7 @@ R_API ut64 r_io_sundo(RIO *io, ut64 offset) {
 	io->undo.redos++;
 
 	off = io->undo.seek[io->undo.idx];
-	io->off = r_io_section_vaddr_to_offset (io, off);
+	io->off = r_io_section_vaddr_to_maddr_try (io, off);
 	return off;
 }
 
@@ -60,7 +60,7 @@ R_API ut64 r_io_sundo_redo(RIO *io) {
 	io->undo.redos--;
 
 	off = io->undo.seek[io->undo.idx];
-	io->off = r_io_section_vaddr_to_offset (io, off);
+	io->off = r_io_section_vaddr_to_maddr_try (io, off);
 	return off;
 }
 

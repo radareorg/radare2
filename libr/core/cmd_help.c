@@ -411,7 +411,7 @@ static int cmd_help(void *data, const char *input) {
 		if (core->io->va) {
 			ut64 o, n = (input[0] && input[1])?
 				r_num_math (core->num, input+2): core->offset;
-			o = r_io_section_offset_to_vaddr (core->io, n);
+			o = r_io_section_maddr_to_vaddr (core->io, n);
 			r_cons_printf ("0x%08"PFMT64x"\n", o);
 		} else eprintf ("io.va is false\n");
 		break;
@@ -420,7 +420,7 @@ static int cmd_help(void *data, const char *input) {
 			// physical address
 			ut64 o, n = (input[0] && input[1])?
 				r_num_math (core->num, input+2): core->offset;
-			o = r_io_section_vaddr_to_offset (core->io, n);
+			o = r_io_section_vaddr_to_maddr (core->io, n);
 			r_cons_printf ("0x%08"PFMT64x"\n", o);
 		} else eprintf ("Virtual addresses not enabled!\n");
 		break;
@@ -429,11 +429,13 @@ static int cmd_help(void *data, const char *input) {
 		RIOSection *s;
 		ut64 n = (input[0] && input[1])?
 			r_num_math (core->num, input+2): core->offset;
-		n = r_io_section_vaddr_to_offset (core->io, n);
-		s = r_io_section_vget (core->io, n);
-		if (s && *(s->name))
+		n = r_io_section_vaddr_to_maddr_try (core->io, n);
+		s = r_io_section_mget (core->io, n);
+		if (s && *(s->name)) {
 			r_cons_printf ("%s\n", s->name);
-		} break;
+		}
+		break;
+		}
 	case '_': // hud input
 		r_core_yank_hud_file (core, input+1);
 		break;
