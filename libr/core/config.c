@@ -1204,7 +1204,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("bin.demangle", "false", "Import demangled symbols from RBin");
 
 	/* bin */
-	SETI("bin.baddr", 0, "Base address of the binary");
+	SETI("bin.baddr", -1, "Base address of the binary");
 	SETI("bin.laddr", 0, "Base address for loading library ('*.so')");
 	SETPREF("bin.dwarf", "true", "Load dwarf information on startup if available");
 	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for r_bin");
