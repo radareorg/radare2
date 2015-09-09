@@ -258,7 +258,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			memset (pfx, ' ', sizeof (pfx));
 			if (lw >= sizeof (pfx)) lw = sizeof (pfx);
 			if (lw > 0) {
-				pfx[lw ] = 0;
+				pfx[lw] = 0;
 				str = r_str_prefix (str, pfx);
 			}
 		}
@@ -266,8 +266,8 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	str = r_str_concat (str, (dir==1)? "-> "
 		: (dir==2)? "=< " : "   ");
 
-	if (opts & R_ANAL_REFLINE_TYPE_UTF8) {
-		RCons *c = ((RCore*)core)->cons;
+	if (core->utf8 || opts & R_ANAL_REFLINE_TYPE_UTF8) {
+		RCons *c = core->cons;
 		//str = r_str_replace (str, "=", "-", 1);
 		str = r_str_replace (str, "<", c->vline[ARROW_LEFT], 1);
 		str = r_str_replace (str, ">", c->vline[ARROW_RIGHT], 1);
