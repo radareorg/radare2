@@ -153,7 +153,7 @@ R_API void r_io_desc_list_visual(RIO *io, ut64 seek, ut64 len, int width, int us
 	if (width<1)
 		width = 30;
 
-	seek = (io->va || io->debug) ? r_io_section_vaddr_to_offset (io, seek) : seek;
+	seek = (io->va || io->debug) ? r_io_section_vaddr_to_maddr_try (io, seek) : seek;
 
 	r_list_foreach (io->maps, iter, s) {
 		if (min == -1 || s->from< min)

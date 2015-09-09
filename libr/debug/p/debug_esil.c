@@ -28,7 +28,6 @@ static int __esil_step(RDebug *dbg) {
 	pc = r_debug_reg_get (dbg, "pc");
 /// XXX. hack to trick vaddr issue
 //pc = 0x100001478;
-//pc = r_io_section_vaddr_to_offset (dbg->iob.io, pc);
 memset (buf, 0, sizeof (buf));
 	dbg->iob.read_at (dbg->iob.io, pc, buf, 64);
 eprintf ("READ 0x%08"PFMT64x" %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);

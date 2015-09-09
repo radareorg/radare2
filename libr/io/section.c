@@ -99,7 +99,7 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 	RIOSection *s;
 
 	if (io->va || io->debug)
-		offset = r_io_section_vaddr_to_offset (io, offset);
+		offset = r_io_section_vaddr_to_maddr_try (io, offset);
 	// XXX - Should this print the section->id or the location in the
 	// rio sections array?
 	r_list_foreach (io->sections, iter, s) {
@@ -136,7 +136,7 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int
 	if (width<1)
 		width = 30;
 
-	seek = (io->va || io->debug) ? r_io_section_vaddr_to_offset (io, seek) : seek;
+	seek = (io->va || io->debug) ? r_io_section_vaddr_to_maddr_try (io, seek) : seek;
 	r_list_foreach (io->sections, iter, s) {
 		if (min == -1 || s->offset < min)
 			min = s->offset;
@@ -267,8 +267,16 @@ R_API int r_io_section_overlaps(RIO *io, RIOSection *s) {
 	return -1;
 }
 
-// TODO: rename to r_io_section_vaddr_to_maddr
-R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
+/* returns the conversion from vaddr to maddr if the given vaddr is in a mapped
+ * region, otherwise it returns the original address */
+R_API ut64 r_io_section_vaddr_to_maddr_try(RIO *io, ut64 vaddr) {
+	ut64 res = r_io_section_vaddr_to_maddr (io, vaddr);
+	return res == UT64_MAX ? vaddr : res;
+}
+
+/* returns the conversion from vaddr to maddr if the given vaddr is in a mapped
+ * region, UT64_MAX otherwise */
+R_API ut64 r_io_section_vaddr_to_maddr(RIO *io, ut64 vaddr) {
 	RListIter *iter;
 	RIOSection *s;
 
@@ -278,11 +286,12 @@ R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 			return (vaddr - s->vaddr + s->offset);
 		}
 	}
-	return vaddr;
+	return UT64_MAX;
 }
 
-// TODO: rename to r_io_section_maddr_to_vaddr
-R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
+/* returns the conversion from file offset to vaddr if the given offset is
+ * mapped somewhere, UT64_MAX otherwise */
+R_API ut64 r_io_section_maddr_to_vaddr(RIO *io, ut64 offset) {
 	RIOSection *s = r_io_section_mget (io, offset);
 	if (s) {
 		io->section = s;

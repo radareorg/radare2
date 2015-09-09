@@ -94,7 +94,7 @@ static int cmd_section(void *data, const char *input) {
 		RListIter *iter;
 		RIOSection *s;
 		if (core->io->va || core->io->debug)
-			o = r_io_section_vaddr_to_offset (core->io, o);
+			o = r_io_section_vaddr_to_maddr_try (core->io, o);
 		r_list_foreach (core->io->sections, iter, s) {
 			if (o>=s->offset && o<s->offset+s->size) {
 				ut8 *buf = malloc (s->size);
@@ -125,7 +125,7 @@ static int cmd_section(void *data, const char *input) {
 			return R_FALSE;
 		}
 		if (core->io->va || core->io->debug)
-			o = r_io_section_vaddr_to_offset (core->io, o);
+			o = r_io_section_vaddr_to_maddr_try (core->io, o);
 		r_list_foreach (core->io->sections, iter, s) {
 			if (o>=s->offset && o<s->offset+s->size) {
 				int sz;
@@ -219,7 +219,7 @@ static int cmd_section(void *data, const char *input) {
 		RListIter *iter;
 		RIOSection *s;
 		if (core->io->va || core->io->debug)
-			o = r_io_section_vaddr_to_offset (core->io, o);
+			o = r_io_section_vaddr_to_maddr_try (core->io, o);
 		r_list_foreach (core->io->sections, iter, s) {
 			if (o>=s->offset && o<s->offset+s->size) {
 				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",

@@ -465,7 +465,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			l = len;
 		}
 		if (addr != UT64_MAX) {
-			paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
+			paddr = w? r_io_section_vaddr_to_maddr_try (io, addr+w): addr;
 		} else paddr = 0;
 		//if (!paddr || paddr==UT64_MAX)
 		if (paddr==UT64_MAX) {
@@ -507,9 +507,9 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			if (!io->debug && ms>0) {
 				//eprintf ("FAIL MS=%d l=%d d=%d\n", ms, l, d);
 				/* check if address is vaddred in sections */
-				ut64 o = r_io_section_offset_to_vaddr (io, addr+w);
+				ut64 o = r_io_section_maddr_to_vaddr (io, addr+w);
 				if (o == UT64_MAX) {
-					ut64 o = r_io_section_vaddr_to_offset (io, addr+w);
+					ut64 o = r_io_section_vaddr_to_maddr_try (io, addr+w);
 					if (o == UT64_MAX)
 						memset (buf+w, 0xff, l);
 				}
@@ -721,7 +721,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	//if (!io->debug && io->va && !r_list_empty (io->sections)) {
 	if (!io->debug || !io->raw) { //
 		if (io->va && !r_list_empty (io->sections)) {
-			ut64 o = r_io_section_vaddr_to_offset (io, offset);
+			ut64 o = r_io_section_vaddr_to_maddr_try (io, offset);
 			if (o != UT64_MAX)
 				offset = o;
 			//	eprintf ("-(vadd)-> 0x%08llx\n", offset);
@@ -742,7 +742,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 			// XXX this can be tricky.. better not to use this .. must be deprecated
 			// r_io_sundo_push (io);
 			ret = (!io->debug && io->va && !r_list_empty (io->sections))?
-				r_io_section_offset_to_vaddr (io, io->off) : io->off;
+				r_io_section_maddr_to_vaddr (io, io->off) : io->off;
 		} //else eprintf ("r_io_seek: cannot seek to %"PFMT64x"\n", offset);
 	} //else { eprintf ("r_io_seek: null fd\n"); }
 	return ret;

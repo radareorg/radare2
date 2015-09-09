@@ -2305,7 +2305,7 @@ static int cmd_print(void *data, const char *input) {
 				 * string, by considering current offset as
 				 * paddr and if it isn't, trying to consider it
 				 * as vaddr. */
-				vaddr = r_io_section_offset_to_vaddr (core->io, core->offset);
+				vaddr = r_io_section_maddr_to_vaddr (core->io, core->offset);
 				section = core->io->section;
 				if (vaddr == UT64_MAX) {
 					section = r_io_section_vget (core->io, core->offset);
