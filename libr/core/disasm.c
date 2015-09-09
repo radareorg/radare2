@@ -2197,6 +2197,9 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	if (!ds->show_comments) {
 		return;
 	}
+	if (!ds->show_esil_anal) {
+		return;
+	}
 	ioc = r_config_get_i (core->config, "io.cache");
 	r_config_set (core->config, "io.cache", "true");
 	handle_comment_align (core, ds);
