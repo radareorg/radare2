@@ -1627,7 +1627,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case '*':
 		// XXX: this is wip, not working atm
-		if (core->anal && core->anal->esil) {
+		if (core->anal->esil) {
 			r_cons_printf ("trap: %d\n", core->anal->esil->trap);
 			r_cons_printf ("trap-code: %d\n", core->anal->esil->trap_code);
 		} else {

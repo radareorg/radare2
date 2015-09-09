@@ -81,11 +81,9 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 					RAnalCaseOp *caseop;
 					RListIter *iter;
 					r_list_foreach (op.switch_op->cases, iter, caseop) {
-						if (!caseop) {
+						if (!linesout && (op.jump > opc+len || op.jump < opc)) {
 							continue;
 						}
-						if (!linesout && (op.jump > opc+len || op.jump < opc))
-							continue;
 						item = R_NEW0 (RAnalRefline);
 						if (!item) {
 							r_list_free (list);

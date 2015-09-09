@@ -1056,9 +1056,6 @@ static size_t get_relocs_num(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 		sh_name = &bin->shstrtab[nidx];
 
-		if (!sh_name)
-			continue;
-
 		if (!strncmp (sh_name, ".rela.", strlen (".rela."))) {
 			ret += bin->ehdr.e_ident[EI_CLASS] == 1 ? (bin->shdr[i].sh_size) / (sizeof (ut32) * 3) :
 							(bin->shdr[i].sh_size) / (sizeof (ut64) * 3);
