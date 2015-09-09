@@ -47,11 +47,12 @@ int popRN(RAnalEsil *esil, ut64 *n) {
 
 /* R_ANAL_ESIL API */
 
-R_API RAnalEsil *r_anal_esil_new() {
+R_API RAnalEsil *r_anal_esil_new(iotrap) {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
 	if (!esil) return NULL;
 	esil->parse_goto_count = R_ANAL_ESIL_GOTO_LIMIT;
 	esil->ops = sdb_new0 ();
+	esil->iotrap = iotrap;
 	esil->interrupts = sdb_new0 ();
 	return esil;
 }
@@ -59,7 +60,7 @@ R_API RAnalEsil *r_anal_esil_new() {
 R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code) {
 	char t[128];
 	char *h;
-	if (!code || !op || !strlen(op) || !esil || !esil->ops)
+	if (!code || !op || !strlen (op) || !esil || !esil->ops)
 		return R_FALSE;
 	h = sdb_itoa (sdb_hash (op), t, 16);
 	sdb_num_set (esil->ops, h, (ut64)(size_t)code, 0);
@@ -70,7 +71,7 @@ R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code)
 	return R_TRUE;
 }
 
-R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilInterrupt interruptcb) {
+R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilInterruptCB interruptcb) {
 	char t[128];
 	char *i;
 	if (!interruptcb || !esil || !esil->interrupts)
@@ -87,15 +88,29 @@ R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilIn
 R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt) {
 	char t[128];
 	char *i;
-	RAnalEsilInterrupt icb;
-	if (!esil || !esil->interrupts)
+	RAnalEsilInterruptCB icb;
+	if (!esil)
+		return R_FALSE;
+	if (esil->cmd) {
+		if (esil->cmd (esil, esil->cmd_intr, interrupt)) {
+			return R_TRUE;
+		}
+	}
+	if (esil->anal) {
+		RAnalPlugin *ap = esil->anal->cur;
+		if (ap && ap->esil_intr) {
+			if (ap->esil_intr (esil, interrupt))
+				return R_TRUE;
+		}
+	}
+	if (!esil->interrupts)
 		return R_FALSE;
 	i = sdb_itoa ((ut64) interrupt, t, 16);
 	if (!sdb_num_exists (esil->interrupts, i)) {
 		eprintf ("Cannot find interrupt-handler for interrupt %d\n", interrupt);
 		return R_FALSE;
 	}
-	icb = (RAnalEsilInterrupt)(size_t)sdb_num_get (esil->interrupts, i, 0);
+	icb = (RAnalEsilInterruptCB)(size_t)sdb_num_get (esil->interrupts, i, 0);
 	return icb (esil, interrupt);
 }
 
@@ -147,6 +162,12 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	}
 	if (!ret && esil->cb.mem_read) {
 		ret = esil->cb.mem_read (esil, addr, buf, len);
+		if (ret != len) {
+			if (esil->iotrap) {
+				esil->trap = R_ANAL_TRAP_READ_ERR;
+				esil->trap_code = addr;
+			}
+		}
 	}
 	IFDBG {
 		eprintf ("0x%08"PFMT64x" R> ", addr);
@@ -158,9 +179,17 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static int internal_esil_mem_write (RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	int ret;
 	if (!esil || !esil->anal || !esil->anal->iob.io)
 		return 0;
-	return esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
+	ret = esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
+	if (ret != len) {
+		if (esil->iotrap) {
+			esil->trap = R_ANAL_TRAP_WRITE_ERR;
+			esil->trap_code = addr;
+		}
+	}
+	return ret;
 }
 
 R_API int r_anal_esil_mem_write (RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
@@ -572,28 +601,20 @@ static int esil_interrupt_linux_i386(RAnalEsil *esil) {		//move this into a plug
 
 static int esil_trap(RAnalEsil *esil) {
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && dst) {
-		if (r_anal_esil_get_parm (esil, src, &s)) {
-			if (r_anal_esil_get_parm (esil, dst, &d)) {
-				esil->trap = s;
-				esil->trap_code = d;
-				return 1;
-			} else eprintf ("esil_trap: missing parameter in stack\n");
-		} else eprintf ("esil_trap: missing parameter in stack\n");
+	if (popRN (esil, &s) && popRN (esil, &d)) {
+		esil->trap = s;
+		esil->trap_code = d;
+		return R_TRUE;
 	}
-	return 0;
+	eprintf ("esil_trap: missing parameters in stack\n");
+	return R_FALSE;
 }
 
 static int esil_interrupt(RAnalEsil *esil) {
 	ut64 interrupt;
-	char *i = r_anal_esil_pop (esil);
-	if (i && r_anal_esil_get_parm (esil, i, &interrupt)) {
-		free (i);
+	if (popRN (esil, &interrupt)) {
 		return r_anal_esil_fire_interrupt (esil, (int)interrupt);
 	}
-	free (i);
 	return R_FALSE;
 }
 
@@ -1262,6 +1283,7 @@ static int esil_poke_some(RAnalEsil *esil) {
 						(const ut8*)&num32, sizeof (num32));
 					if (ret != sizeof (num32)) {
 						eprintf ("Cannot write at 0x%08"PFMT64x"\n", ptr);
+						esil->trap = 1;
 					}
 					ptr += 4;
 					free (foo);

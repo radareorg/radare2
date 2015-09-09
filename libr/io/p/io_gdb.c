@@ -12,6 +12,7 @@ typedef struct {
 } RIOGdb;
 
 static libgdbr_t *desc = NULL;
+static RIODesc *riogdb = NULL;
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	return (!strncmp (file, "gdb://", 6));
@@ -57,6 +58,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (!__plugin_open (io, file, 0))
 		return NULL;
 	RIOGdb *riog;
+	if (riogdb != NULL) return riogdb; // FIX: Don't allocate more than one gdb RIODesc
 	strncpy (host, file+6, sizeof (host)-1);
 	host [sizeof(host)-1] = '\0';
 	port = strchr (host , ':');
@@ -78,7 +80,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int i_port = atoi(port);
 	if (gdbr_connect(&riog->desc, host, i_port) == 0) {
 		desc = &riog->desc;
-		return r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
+		riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
+		return riogdb;
 	}
 	eprintf ("gdb.io.open: Cannot connect to host.\n");
 	free (riog);

@@ -37,7 +37,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		"wos"," [val]", "-=  substraction",
 		"wom"," [val]", "*=  multiply",
 		"wod"," [val]", "/=  divide",
-		"woe"," [from-to] [step]","..  create sequence",
+		"woe"," [from to] [step] [wsz=1]","..  create sequence",
 		"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
 		"woo"," [val]","|=  or",
 		"woA"," [val]","&=  and",
@@ -69,9 +69,10 @@ static void cmd_write_op (RCore *core, const char *input) {
 			else r_cons_printf ("Usage: 'wo%c 00 11 22'\n", input[1]);
 			return;
 		}
+		/* fallthru */
 	case '2':
 	case '4':
-		if (input[2]){
+		if (input[2]) {
 			r_core_write_op (core, input+3, input[1]);
 			r_core_block_read (core, 0);
 		} else eprintf ("Missing argument\n");
@@ -192,6 +193,7 @@ static int cmd_write(void *data, const char *input) {
 		"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
 		"wa"," push ebp","write opcode, separated by ';' (use '\"' around the command)",
 		"waf"," file","assemble file and write bytes",
+		"wao"," op","modify opcode (change conditional of jump. nop, etc)",
 		"wA"," r 0","alter/modify opcode at current seek (see wA?)",
 		"wb"," 010203","fill current block with cyclic hexpairs",
 		"wB","[-]0xVALUE","set or unset bits with given value",
@@ -800,7 +802,7 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'a':
 		switch (input[1]) {
-		case 'o':
+		case 'o': // "wao"
 			if (input[2] == ' ')
 				r_core_hack (core, input+3);
 			else r_core_hack_help (core);
@@ -824,7 +826,7 @@ static int cmd_write(void *data, const char *input) {
 				r_asm_code_free (acode);
 			}
 			} break;
-		case 'f':
+		case 'f': // "wof"
 			if ((input[2]==' '||input[2]=='*')) {
 				const char *file = input[2]=='*'? input+4: input+3;
 				RAsmCode *acode;
@@ -855,7 +857,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'b':
+	case 'b': // "wb"
 		{
 		int len = strlen (input);
 		ut8 *buf = malloc (len+1);

@@ -131,30 +131,71 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	} else len = 0;
 
 	if (op=='e') {
-		char *p, *s = strdup (arg);
+		int wordsize = 1;
+		char *os, *p, *s = strdup (arg);
 		int n, from = 0, to = 0, dif = 0, step = 1;
 		n = from = to;
+		os = s;
 		to = UT8_MAX;
 		//
 		p = strchr (s, ' ');
 		if (p) {
 			*p = 0;
-			step = atoi (p+1);
+			from = r_num_math (core->num, s);
+			s = p+1;
 		}
-		p = strchr (s, '-');
+		p = strchr (s, ' ');
 		if (p) {
 			*p = 0;
-			to = atoi (p+1);
+			to = r_num_math (core->num, s);
+			s = p+1;
 		}
-		if (to<1 || to>UT8_MAX) to = UT8_MAX;
-		from = atoi (s);
-		free (s);
+		p = strchr (s, ' ');
+		if (p) {
+			*p = 0;
+			step = r_num_math (core->num, s);
+			s = p+1;
+			wordsize = r_num_math (core->num, s);
+		} else {
+			step = r_num_math (core->num, s);
+		}
+		free (os);
+		eprintf ("from %d to %d step %d size %d\n", from, to, step, wordsize);
 		dif = (to<=from)? UT8_MAX: (to-from)+1;
-		from %= (UT8_MAX+1);
+		if (wordsize==1) {
+			if (to<1 || to>UT8_MAX) to = UT8_MAX;
+			from %= (UT8_MAX+1);
+		}
 		if (dif<1) dif = UT8_MAX+1;
 		if (step<1) step = 1;
-		for (i=n=0; i<core->blocksize; i++, n+= step)
-			buf[i] = (ut8)(n%dif)+from;
+		if (wordsize<1) wordsize = 1;
+		if (wordsize == 1) {
+			for (i=n=0; i<core->blocksize; i++, n+= step)
+				buf[i] = (ut8)(n%dif)+from;
+		} else if (wordsize == 2) {
+			ut16 num16 = from;
+			for (i=0; i<core->blocksize; i+=wordsize, num16 += step) {
+				r_mem_copyendian ((ut8*)buf+i,
+					(ut8*)&num16, sizeof (ut16),
+					!core->assembler->big_endian);
+			}
+		} else if (wordsize == 4) {
+			ut32 num32 = from;
+			for (i=0; i<core->blocksize; i += wordsize, num32 += step) {
+				r_mem_copyendian ((ut8*)buf+i,
+					(ut8*)&num32, sizeof (ut32),
+					!core->assembler->big_endian);
+			}
+		} else if (wordsize == 8) {
+			ut64 num64 = from;
+			for (i=0; i<core->blocksize; i+=wordsize, num64 += step) {
+				r_mem_copyendian ((ut8*)buf+i,
+					(ut8*)&num64, sizeof (ut64),
+					!core->assembler->big_endian);
+			}
+		} else {
+			eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
+		}
 	} else
 	if (op=='2' || op=='4') {
 		op -= '0';

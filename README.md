@@ -34,7 +34,7 @@ code, debugging programs, attaching to remote gdb servers, ..
    x86-64, zimg.
 
    * **File Formats:**
-	* bios, dex, elf, elf64, filesystem, java, fatmach0, mach0,
+	* bios, CGC, dex, elf, elf64, filesystem, java, fatmach0, mach0,
    mach0-64, MZ, PE, PE+, TE, COFF, plan9, dyldcache,
    Gameboy and Nintendo DS ROMs
 

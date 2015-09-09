@@ -111,8 +111,7 @@ typedef struct r_core_t {
 	RCmd *rcmd;
 	RAnal *anal;
 	RAsm *assembler;
-	RAnalRefline *reflines;
-	RAnalRefline *reflines2;
+	/* ^^ */
 	RParse *parser;
 	RPrint *print;
 	RLang *lang;
@@ -438,7 +437,6 @@ R_API void r_core_hack_help(RCore *core);
 R_API int r_core_hack(RCore *core, const char *op);
 R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append);
 R_API void r_core_diff_show(RCore *core, RCore *core2);
-
 
 /* watchers */
 R_API void r_core_cmpwatch_free (RCoreCmpWatcher *w);

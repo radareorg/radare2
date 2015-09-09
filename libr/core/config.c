@@ -636,6 +636,25 @@ static int cb_hexpairs(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int r_core_esil_cmd(RAnalEsil *esil, const char *cmd, int intr) {
+	if (cmd && *cmd) {
+		RCore *core = esil->anal->user;
+		r_core_cmdf (core, "%s %d", cmd, intr);
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
+static int cb_cmd_esil_intr(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core && core->anal && core->anal->esil) {
+		core->anal->esil->cmd = r_core_esil_cmd;
+		core->anal->esil->cmd_intr = node->value;
+	}
+	return R_TRUE;
+}
+
 static int cb_fsview(void *user, void *data) {
 	int type = R_FS_VIEW_NORMAL;
 	RCore *core = (RCore *) user;
@@ -836,6 +855,15 @@ static int cb_scrhighlight(void *user, void *data) {
 static int cb_screcho(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton()->echo = node->i_value;
+	return R_TRUE;
+}
+
+static int cb_iotrap(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	RCore *core = (RCore*) user;
+	if (core->anal && core->anal->esil) {
+		core->anal->esil->iotrap = node->i_value;
+	}
 	return R_TRUE;
 }
 
@@ -1124,11 +1152,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.flags", "true", "Show flags");
 	SETPREF("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF("asm.lines", "true", "Show ASCII-art lines at disassembly");
+	SETPREF("asm.linesup", "true", "Update ascii-art lines instead of single shot");
 	SETPREF("asm.lines.call", "false", "Enable call lines");
 	SETPREF("asm.lines.ret", "false", "Show separator lines after ret");
 	SETPREF("asm.linesout", "true", "Show out of block lines");
 	SETPREF("asm.linesright", "false", "Show lines before opcode instead of offset");
-	SETPREF("asm.linesstyle", "false", "Iterate the jump list backwards");
 	SETPREF("asm.lineswide", "false", "Put a space between lines");
 	SETICB("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETPREF("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
@@ -1289,6 +1317,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("cmd.visual", "", "Replace current print mode");
 	SETPREF("cmd.vprompt", "", "Visual prompt commands");
 
+	SETCB("cmd.esil.intr", "", &cb_cmd_esil_intr, "Command to run when an esil interrupt happens");
+
 	/* filesystem */
 	SETCB("fs.view", "normal", &cb_fsview, "Set visibility options for filesystems");
 
@@ -1356,6 +1386,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");
 
+	SETCB("esil.iotrap", "true", &cb_iotrap, "invalid read or writes produce a trap exception");
 	SETPREF("esil.romem", "false", "Set memory as read-only for ESIL");
 	SETPREF("esil.stats", "false", "Statistics from ESIL emulation stored in sdb");
 

@@ -567,7 +567,6 @@ SETL/SETNGE
 			}
 			break;
 		case X86_INS_SAL:
-		case X86_INS_SALC:
 			op->type = R_ANAL_OP_TYPE_SAL;
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
@@ -575,6 +574,12 @@ SETL/SETNGE
 				esilprintf (op, "%s,%s,%%z,zf,=", src, dst);
 				free (src);
 				free (dst);
+			}
+			break;
+		case X86_INS_SALC:
+			op->type = R_ANAL_OP_TYPE_SAL;
+			if (a->decode) {
+				esilprintf (op, "%%z,DUP,zf,=,al,=");
 			}
 			break;
 		case X86_INS_SHR:
@@ -748,16 +753,25 @@ SETL/SETNGE
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -regsz;
 			break;
+		case X86_INS_INT3:
+			if (a->decode)
+				esilprintf (op, "3,$");
+			op->type = R_ANAL_OP_TYPE_TRAP; // TRAP
+			break;
+		case X86_INS_INT1:
+			if (a->decode)
+				esilprintf (op, "1,$");
+			op->type = R_ANAL_OP_TYPE_SWI; // TRAP
+			break;
 		case X86_INS_INT:
 			if (a->decode)
-				esilprintf (op, "%d,$", R_ABS((int)INSOP(0).imm));
+				esilprintf (op, "%d,$",
+					R_ABS((int)INSOP(0).imm));
 			op->type = R_ANAL_OP_TYPE_SWI;
 			break;
 		case X86_INS_SYSCALL:
 			op->type = R_ANAL_OP_TYPE_SWI;
 			break;
-		case X86_INS_INT1:
-		case X86_INS_INT3:
 		case X86_INS_INTO:
 		case X86_INS_VMCALL:
 		case X86_INS_VMMCALL:
@@ -1089,6 +1103,19 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, "*");
+				if (!src && dst) {
+					switch (dst[0]) {
+					case 'r':
+						src = strdup ("rax");
+						break;
+					case 'e':
+						src = strdup ("eax");
+						break;
+					default:
+						src = strdup ("al");
+						break;
+					}
+				}
 				esilprintf (op, "%s,%s", src, dst);
 				free (src);
 				free (dst);
@@ -1173,8 +1200,7 @@ SETL/SETNGE
 	return op->size;
 }
 
-static int x86_int_0x80 (RAnalEsil *esil, int interrupt)
-{
+static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 	int syscall;
 	ut64 eax, ebx, ecx, edx;
 	if (!esil || (interrupt != 0x80))
@@ -1185,38 +1211,43 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt)
 	r_anal_esil_reg_read (esil, "edx", &edx);
 	syscall = (int) eax;
 	switch (syscall) {
-		case 3:
-			{
-				char *dst = calloc (1, (size_t)edx);
-				read ((ut32)ebx, dst, (size_t)edx);
-				r_anal_esil_mem_write (esil, ecx, (ut8 *)dst, (int)edx);
-				free (dst);
-				return R_TRUE;
-			}
-		case 4:
-			{
-				char *src = malloc ((size_t)edx);
-				r_anal_esil_mem_read (esil, ecx, (ut8 *)src, (int)edx);
-				write ((ut32)ebx, src, (size_t)edx);
-				free (src);
-				return R_TRUE;
-			}
-		
+	case 3:
+		{
+			char *dst = calloc (1, (size_t)edx);
+			read ((ut32)ebx, dst, (size_t)edx);
+			r_anal_esil_mem_write (esil, ecx, (ut8 *)dst, (int)edx);
+			free (dst);
+			return R_TRUE;
+		}
+	case 4:
+		{
+			char *src = malloc ((size_t)edx);
+			r_anal_esil_mem_read (esil, ecx, (ut8 *)src, (int)edx);
+			write ((ut32)ebx, src, (size_t)edx);
+			free (src);
+			return R_TRUE;
+		}
 	}
 	eprintf ("syscall %d not implemented yet\n", syscall);
 	return R_FALSE;
 }
 
-static int esil_x86_cs_init (RAnalEsil *esil)
-{
+static int esil_x86_cs_intr (RAnalEsil *esil, int intr) {
 	if (!esil)
 		return R_FALSE;
+	eprintf ("INTERRUPT 0x%02x HAPPENS\n", intr);
+	return R_TRUE;
+}
+
+static int esil_x86_cs_init (RAnalEsil *esil) {
+	if (!esil)
+		return R_FALSE;
+	// XXX. this depends on kernel
 	r_anal_esil_set_interrupt (esil, 0x80, x86_int_0x80);
 	return R_TRUE;
 }
 
-static int esil_x86_cs_fini (RAnalEsil *esil)
-{
+static int esil_x86_cs_fini (RAnalEsil *esil) {
 	return R_TRUE;
 }
 
@@ -1576,6 +1607,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
+	.esil_intr = esil_x86_cs_intr,
 };
 
 #ifndef CORELIB

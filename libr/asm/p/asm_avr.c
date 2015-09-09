@@ -167,9 +167,9 @@ static int parse_registerpair(const char *operand) {
 
 	op = strdup (operand);
 	first = strtok (op, ":");
-	
-	if (!first || strlen(first) < 2){
-		free(op);
+
+	if (!first || strlen (first) < 2) {
+		free (op);
 		return -1;
 	}
 	
@@ -187,8 +187,7 @@ static int parse_registerpair(const char *operand) {
 		if (first[0] == 'r' && second[0] == 'r') {
 			fnum = atoi(first+1);
 			snum = atoi(second+1);
-
-			if (fnum > snum && snum >= 0 && snum <= 30){
+			if (fnum > snum && snum >= 0 && snum <= 30) {
 				res = snum / 2;
 			}
 		} else if (first[0] >= 'x' && first[0] <= 'z' 
@@ -207,8 +206,7 @@ static int parse_registerpair(const char *operand) {
 			res = (2 - ('z' - first[0])) + 12;
 		}
 	}
-
-	free(op);	
+	free (op);
 	return res;
 }
 

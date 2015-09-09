@@ -514,8 +514,8 @@ enum {
 };
 
 enum {
-	R_ANAL_REFLINE_TYPE_STYLE = 1,
-	R_ANAL_REFLINE_TYPE_WIDE = 2,
+	R_ANAL_REFLINE_TYPE_UTF8 = 1,
+	R_ANAL_REFLINE_TYPE_WIDE = 2
 };
 
 enum {
@@ -620,6 +620,8 @@ typedef struct r_anal_t {
 	//RList *hints; // XXX use better data structure here (slist?)
 	RAnalCallbacks cb;
 	RAnalOptions opt;
+	RList *reflines;
+	RList *reflines2;
 } RAnal;
 
 typedef struct r_anal_hint_t {
@@ -768,7 +770,6 @@ typedef struct r_anal_refline_t {
 	ut64 from;
 	ut64 to;
 	int index;
-	struct list_head list;
 } RAnalRefline;
 
 typedef struct r_anal_state_type_t {
@@ -830,8 +831,10 @@ enum {
 	R_ANAL_TRAP_UNHANDLED = 1,
 	R_ANAL_TRAP_BREAKPOINT = 2,
 	R_ANAL_TRAP_DIVBYZERO = 3,
-	R_ANAL_TRAP_TODO = 4,
-	R_ANAL_TRAP_HALT = 5,
+	R_ANAL_TRAP_WRITE_ERR = 4,
+	R_ANAL_TRAP_READ_ERR = 5,
+	R_ANAL_TRAP_TODO = 6,
+	R_ANAL_TRAP_HALT = 7,
 };
 
 enum {
@@ -932,6 +935,7 @@ typedef struct r_anal_esil_t {
 	int stackptr;
 	int skip;
 	int nowrite;
+	int iotrap;
 	int repeat;
 	int parse_stop;
 	int parse_goto;
@@ -956,6 +960,8 @@ typedef struct r_anal_esil_t {
 	int trace_idx;
 	RAnalEsilCallbacks cb;
 	RAnalReil *Reil;
+	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
+	int (*cmd)(ESIL *esil, const char *name, int interrupt);
 } RAnalEsil;
 
 #undef ESIL
@@ -984,7 +990,7 @@ typedef int (*RAnalDiffEvalCallback)(RAnal *anal);
 
 typedef int (*RAnalEsilCB)(RAnalEsil *esil);
 typedef int (*RAnalEsilLoopCB)(RAnalEsil *esil, RAnalOp *op);
-typedef int (*RAnalEsilInterrupt)(RAnalEsil *esil, int interrupt);
+typedef int (*RAnalEsilInterruptCB)(RAnalEsil *esil, int interrupt);
 
 typedef struct r_anal_plugin_t {
 	char *name;
@@ -1058,10 +1064,11 @@ typedef struct r_anal_plugin_t {
 	RAnalDiffEvalCallback diff_eval;
 	struct list_head list;
 
-	RAnalEsilCB esil_init;
-	RAnalEsilLoopCB esil_post_loop;		//cycle-counting, firing interrupts, ...
-	RAnalEsilCB esil_trap;
-	RAnalEsilCB esil_fini;
+	RAnalEsilCB esil_init; // initialize esil-related stuff
+	RAnalEsilLoopCB esil_post_loop;	//cycle-counting, firing interrupts, ...
+	RAnalEsilCB esil_trap; // exceptions, breakpoints, traps
+	RAnalEsilInterruptCB esil_intr; // interrupts
+	RAnalEsilCB esil_fini; // deinitialize
 } RAnalPlugin;
 
 
@@ -1135,7 +1142,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr,
 		const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
-R_API RAnalEsil *r_anal_esil_new ();
+R_API RAnalEsil *r_anal_esil_new (int iotrap);
 R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op);
 R_API void r_anal_esil_trace_list (RAnalEsil *esil);
 R_API void r_anal_esil_trace_show (RAnalEsil *esil, int idx);
@@ -1156,7 +1163,7 @@ R_API void r_anal_esil_stack_free (RAnalEsil *esil);
 R_API int r_anal_esil_get_parm_type (RAnalEsil *esil, const char *str);
 R_API int r_anal_esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num);
 R_API int r_anal_esil_condition (RAnalEsil *esil, const char *str);
-R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilInterrupt interruptcb);
+R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilInterruptCB interruptcb);
 R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt);
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
@@ -1320,13 +1327,11 @@ R_API int r_anal_cond_eval (RAnal *anal, RAnalCond *cond);
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 
 /* reflines.c */
-R_API RAnalRefline *r_anal_reflines_get(RAnal *anal,
+R_API RList* /*<RAnalRefline>*/ r_anal_reflines_get(RAnal *anal,
 	ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
-R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
+R_API int r_anal_reflines_middle(RAnal *anal, RList *list, ut64 addr, int len);
 R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
-R_API RAnalRefline *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn,
-    int nlines, int linesout, int linescall);
-R_API void r_anal_reflines_free (RAnalRefline *rl);
+R_API RList *r_anal_reflines_fcn_get(struct r_anal_t *anal, RAnalFunction *fcn, int nlines, int linesout, int linescall);
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);

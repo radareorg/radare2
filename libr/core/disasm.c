@@ -74,6 +74,7 @@ typedef struct r_disam_options_t {
 	int cmtcol;
 	int show_fcnlines;
 	int show_calls;
+	int lines_update;
 	int show_cmtflgrefs;
 	int show_cycles;
 	int show_stackptr;
@@ -160,7 +161,7 @@ typedef struct r_disam_options_t {
 	int maxrefs;
 } RDisasmState;
 
-static void handle_reflines_init (RCore *core, RDisasmState *ds);
+static void handle_reflines_init (RAnal *anal, RDisasmState *ds);
 static void handle_comment_align (RCore *core, RDisasmState *ds);
 static RDisasmState * handle_init_ds (RCore * core);
 static void handle_set_pre (RDisasmState *ds, const char * str);
@@ -314,6 +315,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
 	ds->cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmtflgrefs");
+	ds->lines_update = r_config_get_i (core->config, "asm.linesup");
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	ds->show_xrefs = r_config_get_i (core->config, "asm.xrefs");
@@ -341,10 +343,13 @@ static RDisasmState * handle_init_ds (RCore * core) {
 		ds->show_flags = 0;
 	}
 
-	if (r_config_get_i (core->config, "asm.linesstyle"))
-		ds->linesopts |= R_ANAL_REFLINE_TYPE_STYLE;
-	if (r_config_get_i (core->config, "asm.lineswide"))
+	if (r_config_get_i (core->config, "asm.lineswide")) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
+	}
+	if (core->cons->vline) {
+		if (ds->show_utf8)
+			ds->linesopts |= R_ANAL_REFLINE_TYPE_UTF8;
+	}
 
 	if (ds->show_lines) ds->ocols += 10; // XXX
 	if (ds->show_offset) ds->ocols += 14;
@@ -362,38 +367,94 @@ static RDisasmState * handle_init_ds (RCore * core) {
 		ds->cursor = core->print->cur;
 	} else ds->cursor = -1;
 
-	if (r_config_get_i (core->config, "asm.linesstyle"))
-		ds->linesopts |= R_ANAL_REFLINE_TYPE_STYLE;
-	if (r_config_get_i (core->config, "asm.lineswide"))
+	if (r_config_get_i (core->config, "asm.lineswide")) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
+	}
+	if (core->cons->vline) {
+		if (core->utf8)
+			ds->linesopts |= R_ANAL_REFLINE_TYPE_UTF8;
+	}
 
 	return ds;
 }
 
-static void handle_reflines_init (RCore *core, RDisasmState *ds) {
+static ut64 lastaddr = UT64_MAX;
+
+static void handle_reflines_init (RAnal *anal, RDisasmState *ds) {
+	lastaddr = UT64_MAX;
 	if (ds->show_lines) {
-		r_anal_reflines_free (core->reflines);
-		r_anal_reflines_free (core->reflines2);
-		core->reflines = r_anal_reflines_get (core->anal,
+		r_list_free (anal->reflines);
+		r_list_free (anal->reflines2);
+		anal->reflines = r_anal_reflines_get (anal,
 			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, ds->show_lines_call);
-		core->reflines2 = r_anal_reflines_get (core->anal,
+		anal->reflines2 = r_anal_reflines_get (anal,
 			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, 1);
-	} else core->reflines = core->reflines2 = NULL;
+	} else anal->reflines = anal->reflines2 = NULL;
+}
+
+static void handle_reflines_update (RAnal *anal, RDisasmState *ds) {
+	RListIter *iter;
+	RAnalRefline *ref;
+	int maxlen = 512;
+	int maxlines = 100;
+	int delta = ds->at - ds->addr;
+	if (lastaddr == UT64_MAX) {
+		lastaddr = ds->addr;
+	}
+	delta = ds->at - lastaddr;
+	if (!ds->show_lines) {
+		anal->reflines = anal->reflines2 = NULL;
+		return;
+	}
+
+	r_list_foreach_prev (anal->reflines, iter, ref) {
+		ut64 a = R_MIN (ref->from, ref->to);
+		ut64 b = R_MAX (ref->from, ref->to);
+		if ((b-a)>512)
+			continue;
+		if (ds->at >= a && ds->at <= b) {
+			return;
+		}
+	}
+	if (r_list_empty (anal->reflines))
+		return;
+	{
+		RAnalRefline *ref = r_list_first (anal->reflines);
+		if (ds->at < ref->from)
+			return;
+		//r_cons_printf ("--- 0x%llx 0x%llx\n", ds->at, ref->from);
+	}
+
+	r_list_free (anal->reflines);
+	r_list_free (anal->reflines2);
+
+	anal->reflines = r_anal_reflines_get (anal,
+		ds->at, ds->buf + delta,
+		R_MIN (maxlen, ds->len),
+		R_MIN (maxlines, ds->l),
+		ds->linesout,
+		ds->show_lines_call);
+	anal->reflines2 = r_anal_reflines_get (anal,
+		ds->at, ds->buf + delta,
+		R_MIN (maxlen, ds->len),
+		R_MIN (maxlines, ds->l),
+		ds->linesout, 1);
 }
 
 static void handle_reflines_fcn_init (RCore *core, RDisasmState *ds,  RAnalFunction *fcn, ut8* buf) {
+	RAnal *anal = core->anal;
 	if (ds->show_lines) {
 		// TODO: make anal->reflines implicit
-		free (core->reflines); // TODO: leak
-		core->reflines = r_anal_reflines_fcn_get (core->anal,
-				fcn, -1, ds->linesout, ds->show_lines_call);
-		free (core->reflines2); // TODO: leak
-		core->reflines2 = r_anal_reflines_fcn_get (core->anal,
-				fcn, -1, ds->linesout, 1);
+		free (anal->reflines); // TODO: leak
+		anal->reflines = r_anal_reflines_fcn_get (anal,
+			fcn, -1, ds->linesout, ds->show_lines_call);
+		free (anal->reflines2); // TODO: leak
+		anal->reflines2 = r_anal_reflines_fcn_get (anal,
+			fcn, -1, ds->linesout, 1);
 	} else {
-		core->reflines = core->reflines2 = NULL;
+		anal->reflines = anal->reflines2 = NULL;
 	}
 }
 
@@ -1314,7 +1375,7 @@ static void handle_print_trace (RCore *core, RDisasmState *ds) {
 static void handle_adistrick_comments (RCore *core, RDisasmState *ds) {
 	if (ds->adistrick)
 		ds->middle = r_anal_reflines_middle (core->anal,
-				core->reflines, ds->at, ds->analop.size);
+			core->anal->reflines, ds->at, ds->analop.size);
 }
 
 static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, int len, int idx) {
@@ -2269,7 +2330,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	ds->len = len;
 	ds->addr = addr;
 
-	handle_reflines_init (core, ds);
+	handle_reflines_init (core->anal, ds);
 	core->inc = 0;
 	/* reset jmp table if not a bad block */
 	ds->counter = 0;
@@ -2329,6 +2390,9 @@ toro:
 		if (r_cons_singleton ()->breaked) {
 			dorepeat = 0;
 			break;
+		}
+		if (ds->lines_update) {
+			handle_reflines_update (core->anal, ds);
 		}
 
 		r_core_seek_archbits (core, ds->at); // slow but safe

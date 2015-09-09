@@ -999,21 +999,24 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 				eprintf ("Invalid reference from 0x%08"PFMT64x
 					" to 0x%08"PFMT64x"\n", fcni->addr, fcnr->addr);
 				fr = &fakefr;
-				if (fr) free (fr->name);
-				fr->name = malloc (32);
-				snprintf (fr->name, 31, "unk.0x%"PFMT64x, fcnr->addr);
+				if (fr) {
+					free (fr->name);
+					fr->name = r_str_newf ("unk.0x%"PFMT64x, fcnr->addr);
+				}
 			}
 			if (!is_html && !showhdr) {
-				if (fmt==1) r_cons_printf ("digraph code {\n"
-					"\tgraph [bgcolor=white];\n"
-					"\tnode [color=lightgray, style=filled shape=box"
-					" fontname=\"%s\" fontsize=\"8\"];\n"
-					"\tedge [fontname=\"%s\" fontsize=\"8\"];\n", font, font);
+				if (fmt==1) {
+					r_cons_printf ("digraph code {\n"
+						"\tgraph [bgcolor=white];\n"
+						"\tnode [color=lightgray, style=filled shape=box"
+						" fontname=\"%s\" fontsize=\"8\"];\n"
+						"\tedge [fontname=\"%s\" fontsize=\"8\"];\n", font, font);
+				}
 				showhdr = 1;
 			}
 			// TODO: display only code or data refs?
 			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
-			if (fmt==1) {
+			if (fmt == 1) {
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 					"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
 					fcni->addr, fcnr->addr, flag?flag->name:"",
@@ -1022,7 +1025,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 					flag? flag->name: "", fcnr->addr);
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" "
 					"[label=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
-					fcnr->addr, flag?flag->name:fr?fr->name:"unk",
+					fcnr->addr, flag? flag->name: fr->name,
 					flag? flag->name: "", fcnr->addr);
 			} else if (fmt==2) {
 				if (fr) {

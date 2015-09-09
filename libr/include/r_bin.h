@@ -511,6 +511,7 @@ R_API void r_bin_filter_classes (RList *list);
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;
 extern RBinPlugin r_bin_plugin_fs;
+extern RBinPlugin r_bin_plugin_cgc;
 extern RBinPlugin r_bin_plugin_elf;
 extern RBinPlugin r_bin_plugin_elf64;
 extern RBinPlugin r_bin_plugin_p9;
