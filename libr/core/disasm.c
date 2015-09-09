@@ -2190,11 +2190,39 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 	return 0;
 }
 
+// TODO: Move into ds-> after cleanup
+static ut64 opc = UT64_MAX;
+static ut8 *regstate = NULL;
+
+static void handle_print_esil_anal_init(RCore *core, RDisasmState *ds) {
+	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	opc = r_reg_getv (core->anal->reg, pc);
+	if (!opc) opc = core->offset;
+	if (!ds->show_esil_anal) {
+		return;
+	}
+	if (!core->anal->esil) {
+		int iotrap = r_config_get_i (core->config, "esil.iotrap");
+		core->anal->esil = r_anal_esil_new (iotrap);
+		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0);
+	}
+	free (regstate);
+	regstate = r_reg_arena_peek (core->anal->reg);
+}
+
+static void handle_print_esil_anal_fini(RCore *core, RDisasmState *ds) {
+	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	r_reg_arena_poke (core->anal->reg, regstate);
+	r_reg_setv (core->anal->reg, pc, opc);
+	free (regstate);
+	regstate = NULL;
+}
+
 static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	RAnalEsil *esil = core->anal->esil;
 	const char *pc;
 	int ioc;
-	if (!ds->show_comments) {
+	if (!esil || !ds->show_comments) {
 		return;
 	}
 	if (!ds->show_esil_anal) {
@@ -2204,15 +2232,10 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	r_config_set (core->config, "io.cache", "true");
 	handle_comment_align (core, ds);
 
-	if (!core->anal->esil) {
-		int iotrap = r_config_get_i (core->config, "esil.iotrap");
-		esil = core->anal->esil = r_anal_esil_new (iotrap);
-		r_anal_esil_setup (esil, core->anal, 0, 0);
-	}
+	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pc, ds->at);
-	// TODO: hook regset and condition hook
-	esil->cb.reg_write = myregwrite;
+	esil->cb.hook_reg_write = myregwrite;
 	likely = 0;
 	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
 	r_anal_esil_stack_free (esil);
@@ -2428,6 +2451,7 @@ toro:
 			ds->dest = item->offset;
 	}
 
+	handle_print_esil_anal_init (core, ds);
 	r_cons_break (NULL, NULL);
 	int inc = 0;
 	for (i=idx=ret=0; idx < len && ds->lines < ds->l;
@@ -2627,6 +2651,7 @@ toro:
 	}
 	r_anal_op_fini (&ds->analop);
 	handle_deinit_ds (core, ds);
+	handle_print_esil_anal_fini (core, ds);
 	return idx; //-ds->lastfail;
 }
 
@@ -3098,10 +3123,10 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	core->cons->vline = r_config_get_i (core->config, "scr.utf8")?
 			r_vline_u: r_vline_a;
 
-	r_cons_break (NULL, NULL);
 	i = 0;
 	idx = 0;
-
+	r_cons_break (NULL, NULL);
+	handle_print_esil_anal_init (core, ds);
 	r_list_foreach (bb_list, bb_iter, bb) {
 		ut32 bb_size_consumed = 0;
 		// internal loop to consume bb that contain case-like operations
@@ -3221,6 +3246,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	}
 	free (buf);
 	r_cons_break_end ();
+	handle_print_esil_anal_fini (core, ds);
 
 	if (ds->oldbits) {
 		r_config_set_i (core->config, "asm.bits", ds->oldbits);

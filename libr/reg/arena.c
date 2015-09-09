@@ -248,3 +248,17 @@ R_API void r_reg_arena_zero(RReg *reg) {
 			memset (reg->regset[i].arena->bytes, 0, a->size);
 	}
 }
+
+R_API ut8 *r_reg_arena_peek(RReg *reg) {
+	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
+	if (!reg || !regset) return NULL;
+	ut8 *ret = malloc (regset->arena->size);
+	memcpy (ret, regset->arena->bytes, regset->arena->size);
+	return ret;
+}
+
+R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret) {
+	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
+	if (!reg || !ret) return;
+	memcpy (regset->arena->bytes, ret, regset->arena->size);
+}
