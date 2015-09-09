@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
 			ret = 1;
 			goto beach;
 		case 'e':
-			r_asm_set_big_endian (a, !!!a->big_endian);
+			r_asm_set_big_endian (a, !a->big_endian);
 			break;
 		case 'v':
 			ret = blob_version ("rasm2");
@@ -373,7 +373,7 @@ int main(int argc, char *argv[]) {
 				if (dis) ret = rasm_disasm (content, offset,
 					length, a->bits, ascii, bin, dis-1);
 				else ret = rasm_asm (content, offset, length, a->bits, bin);
-				ret = !!! ret;
+				ret = !ret;
 				free (content);
 			} else {
 				eprintf ("rasm2: Cannot open file %s\n", file);
@@ -428,7 +428,7 @@ int main(int argc, char *argv[]) {
 				a->bits, ascii, bin, dis-1);
 		} else ret = rasm_asm (argv[optind], offset, len, a->bits, bin);
 		if (!ret) eprintf ("invalid\n");
-		ret = !!!ret;
+		ret = !ret;
 	}
 beach:
 	if (a)
