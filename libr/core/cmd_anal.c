@@ -1326,7 +1326,7 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	int ret;
 	ut8 code[256];
 	RAnalOp op;
-	const char *name = r_reg_get_name (core->anal->reg, r_reg_get_name_idx ("pc"));
+	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	ut64 addr = r_reg_getv (core->anal->reg, name);
 	repeat:
 	if (r_cons_singleton()->breaked) {

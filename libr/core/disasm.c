@@ -64,6 +64,7 @@ typedef struct r_disam_options_t {
 	int adistrick;
 	int asm_demangle;
 	int show_offset;
+	int show_esil_anal;
 	int show_section;
 	int show_offseg;
 	int show_flags;
@@ -305,6 +306,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->asm_describe = r_config_get_i (core->config, "asm.describe");
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
+	ds->show_esil_anal = r_config_get_i (core->config, "asm.esil.anal");
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
@@ -2180,6 +2182,47 @@ static void handle_print_relocs (RCore *core, RDisasmState *ds) {
 	}
 }
 
+static int likely = 0;
+
+static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
+	likely = 1;
+	r_cons_printf ("; %s=0x%"PFMT64x" ", name, val);
+	return 0;
+}
+
+static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
+	RAnalEsil *esil = core->anal->esil;
+	const char *pc;
+	int ioc;
+	if (!ds->show_comments) {
+		return;
+	}
+	ioc = r_config_get_i (core->config, "io.cache");
+	r_config_set (core->config, "io.cache", "true");
+	handle_comment_align (core, ds);
+
+	if (!core->anal->esil) {
+		int iotrap = r_config_get_i (core->config, "esil.iotrap");
+		esil = core->anal->esil = r_anal_esil_new (iotrap);
+		r_anal_esil_setup (esil, core->anal, 0, 0);
+	}
+	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	r_reg_setv (core->anal->reg, pc, ds->at);
+	// TODO: hook regset and condition hook
+	esil->cb.reg_write = myregwrite;
+	likely = 0;
+	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
+	r_anal_esil_stack_free (esil);
+	if (ds->analop.type == R_ANAL_OP_TYPE_CJMP) {
+		if (likely) {
+			r_cons_printf ("likely");
+		} else {
+			r_cons_printf ("; unlikely");
+		}
+	}
+	r_config_set_i (core->config, "io.cache", ioc);
+}
+
 static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
 	char *desc = NULL;
 	handle_print_relocs (core, ds);
@@ -2514,6 +2557,7 @@ toro:
 		}
 #endif
 		handle_print_comments_right (core, ds);
+		handle_print_esil_anal (core, ds);
 		if ( !(ds->show_comments &&
 			   ds->show_comment_right &&
 			   ds->comment))
@@ -3149,6 +3193,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			}*/
 			handle_print_ptr (core, ds, len, idx);
 			handle_print_comments_right (core, ds);
+			handle_print_esil_anal (core, ds);
 			if ( !(ds->show_comments && ds->show_comment_right &&
 					ds->comment))
 				r_cons_newline ();
