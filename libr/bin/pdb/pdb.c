@@ -178,7 +178,6 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 
 		// TODO: cache that num_pages * 4, its used 4 times
 		tmp = (char *) calloc (num_pages, 4);
-		memset(tmp, 0, num_pages * 4);
 		page = R_NEW0 (SPage);
 		if (num_pages != 0) {
 			if ((pos+(num_pages*4)) > tmp_data_max_size) {
@@ -836,8 +835,7 @@ int alloc_format_flag_and_member_fields(RList *ptmp,
 		return 0;
 	}
 
-	*flags_format_field = (char *) malloc(*members_amount + 1);
-	memset(*flags_format_field, 0, *members_amount + 1);
+	*flags_format_field = (char *) calloc(*members_amount + 1, 1);
 
 	size = sizeof *members_name_field * (*members_amount);
 	*members_name_field = (char **) malloc(size);

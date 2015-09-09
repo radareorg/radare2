@@ -52,7 +52,7 @@ static int splitlines(const char *a, int len, struct line **lr) {
 		if (*p == '\n' || p == plast)
 			i++;
 
-	*lr = l = (struct line *)malloc(sizeof(struct line) * i);
+	*lr = l = (struct line *)calloc(sizeof(struct line), i);
 	if (!l)
 		return -1;
 

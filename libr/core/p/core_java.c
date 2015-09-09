@@ -559,9 +559,8 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 		ut8 * bin_buffer = NULL;
 		res = r_io_use_desc (core->io, core->file->desc);
 		n_file_sz = r_io_size (core->io);
-		bin_buffer = n_file_sz > 0 ? malloc (n_file_sz) : NULL;
+		bin_buffer = n_file_sz > 0 ? calloc (n_file_sz, 1) : NULL;
 		if (bin_buffer) {
-			memset (bin_buffer, 0, n_file_sz);
 			res = n_file_sz == r_io_read_at (core->io, obj->loadaddr,
 				bin_buffer, n_file_sz) ? R_TRUE : R_FALSE;
 			if (res == R_TRUE) {
@@ -710,8 +709,7 @@ static char * r_cmd_replace_name (const char *s_new, ut32 replace_len, const cha
 		ut32 consumed = 0;
 		const char * next = r_cmd_get_next_classname_str (buffer+consumed, s_old);
 		IFDBG r_cons_printf ("Replacing \"%s\" with \"%s\" in: %s\n", s_old, s_new, buffer);
-		result = malloc (num_occurrences*replace_len + buf_len);
-		memset (result, 0, num_occurrences*replace_len + buf_len);
+		result = calloc (num_occurrences*replace_len + buf_len, 1);
 		p_result = result;
 		while (next && consumed < buf_len) {
 			// replace up to next
@@ -887,8 +885,7 @@ static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd) {
 	if (buf_size == 0) {
 		res = r_io_use_desc (core->io, core->file->desc);
 		buf_size = r_io_size (core->io);
-		buf = malloc (buf_size);
-		memset (buf, 0, buf_size);
+		buf = calloc (buf_size, 1);
 		r_io_read_at (core->io, addr, buf, buf_size);
 	}
 	if (buf && obj) {
@@ -1895,11 +1892,10 @@ static int r_cmd_java_handle_yara_code_extraction_refs (RCore *core, const char 
 	if (!p) return res;
 
 	n = *p ? r_cmd_java_strtok (p, ' ', -1) : NULL;
-	name = n && p && p != n ? malloc (n-p+2) : NULL;
+	name = n && p && p != n ? calloc (n-p+2, 1) : NULL;
 
 	if (!name) return res;
 
-	memset (name, 0, n-p);
 	memcpy (name, p, n-p);
 
 	p = r_cmd_java_strtok (p, ' ', -1);

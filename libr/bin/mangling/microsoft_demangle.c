@@ -398,8 +398,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 			}
 			len = 1;
 		} else {
-			tmp = (char *) malloc(len + 1);
-			memset(tmp, 0, len + 1);
+			tmp = (char *) calloc(len + 1, 1);
 			memcpy(tmp, prev_pos, len);
 			r_list_append(abbr_names, tmp);
 		}

@@ -32,7 +32,7 @@ R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount) {
 		mp->nodesize = nodesize;
 		mp->npool = -1;
 		mp->ncount = mp->poolsize; // force init
-		mp->nodes = (ut8**) malloc (sizeof (void*) * mp->poolcount);
+		mp->nodes = (ut8**) calloc (sizeof (void*), mp->poolcount);
 		if (mp->nodes == NULL) {
 			R_FREE (mp);
 			return NULL;
@@ -79,8 +79,7 @@ R_API void r_poolfactory_init (int limit) {
 	int size = limit * sizeof (RMemoryPool*);
 	single_pf.limit = limit+1;
 	free (single_pf.pools);
-	single_pf.pools = malloc (size);
-	memset (single_pf.pools, 0, size);
+	single_pf.pools = calloc (size, 1);
 }
 
 R_API RPoolFactory* r_poolfactory_new(int limit) {
@@ -89,8 +88,7 @@ R_API RPoolFactory* r_poolfactory_new(int limit) {
 		RPoolFactory *pf = R_NEW0 (RPoolFactory);
 		if (!pf) return NULL;
 		pf->limit = limit+1;
-		pf->pools = malloc (size);
-		memset (pf->pools, 0, size);
+		pf->pools = calloc (size, 1);
 		return pf;
 	}
 	return NULL;

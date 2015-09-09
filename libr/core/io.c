@@ -385,8 +385,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 
 
 	// XXX handling basic cases atm
-	shift_buf = malloc (b_size);
-	memset (shift_buf, 0, b_size);
+	shift_buf = calloc (b_size, 1);
 
 	// cases
 	// addr + b_size + dist > file_end
