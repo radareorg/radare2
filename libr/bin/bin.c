@@ -997,10 +997,6 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	r_bin_object_set_items (binfile, o);
 	r_bin_file_object_add (binfile, o);
 
-	if (o->baddr == UT64_MAX) {
-		o->baddr = 0;
-		o->baddr_shift = 0;
-	}
 	// XXX this is a very hacky alternative to rewriting the
 	// RIO stuff, as discussed here:
 	if (o->sections)
