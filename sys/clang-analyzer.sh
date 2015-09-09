@@ -1,6 +1,15 @@
 #!/bin/sh
 
 PLUGINS="-enable-checker alpha.core.TestAfterDivZero"
+PLUGINS="${PLUGINS} -enable-checker alpha.core.BoolAssignment"
+PLUGINS="${PLUGINS} -enable-checker alpha.core.CastToStruct"
+PLUGINS="${PLUGINS} -enable-checker alpha.core.FixedAddr"
+PLUGINS="${PLUGINS} -enable-checker alpha.core.IdenticalExpr"
+PLUGINS="${PLUGINS} -enable-checker alpha.core.PointerArithm"
+PLUGINS="${PLUGINS} -enable-checker alpha.core.PointerSub"
+PLUGINS="${PLUGINS} -enable-checker alpha.core.SizeofPtr"
+PLUGINS="${PLUGINS} -enable-checker alpha.core.TestAfterDivZero"
+PLUGINS="${PLUGINS} -enable-checker alpha.deadcode.UnreachableCode"
 PLUGINS="${PLUGINS} -enable-checker alpha.security.ArrayBoundV2"
 PLUGINS="${PLUGINS} -enable-checker alpha.security.MallocOverflow"
 PLUGINS="${PLUGINS} -enable-checker alpha.security.ReturnPtrRange"
