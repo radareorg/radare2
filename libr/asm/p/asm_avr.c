@@ -54,9 +54,9 @@ static int parse_specialreg(const char *reg) {
 		/* radare tolower instruction in rasm, so we use 'y' instead of 'Y'
 		and so on for other registers */
 		if (found == -1 && reg[1] == '+') {
-			if (reg[1] == 'y' && len > 2)
+			if (reg[0] == 'y' && len > 2)
 				found = OPERAND_YPQ;
-			else if (reg[1] == 'z' && len > 2)
+			else if (reg[0] == 'z' && len > 2)
 				found = OPERAND_ZPQ;
 		}
 	}
@@ -213,6 +213,7 @@ static int parse_registerpair(const char *operand) {
 // assembles instruction argument (operand) based on its type
 static int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *res) {
 	int ret = -1;
+	int temp;
 
 	switch (type) {
 	case OPERAND_REGISTER_EVEN_PAIR:
@@ -230,6 +231,22 @@ static int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *re
 		break;
 	case OPERAND_BRANCH_ADDRESS:
 	case OPERAND_RELATIVE_ADDRESS: // TODO: <-- check for negative (should be correct, but...)
+		temp = getnum (a, operand); // return pure number
+		/* the argument could be:
+		- target address (will be calculated in according to current pc of assemble), ex: 0x4, 200, 0x1000 
+		or
+		- relative address, ex: +2, -1, +60, -49 */
+		if(a->pc || (operand[0] != '+' && operand[0] != '-')) { // for series of commands
+			/* +2 from documentation:
+			If Rd != Rr (Z = 0) then PC <- PC + k + 1, else PC <- PC + 1 */
+			temp -= a->pc + 2;
+		}
+		temp /= 2; // in WORDs
+		if(temp >= -64 && temp <= 63)
+			ret = 0;
+		*res = temp;
+		break;
+	case OPERAND_IO_REGISTER:
 	case OPERAND_BIT:
 	case OPERAND_DES_ROUND:
 	case OPERAND_LONG_ABSOLUTE_ADDRESS:
