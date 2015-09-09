@@ -320,7 +320,7 @@ struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
 	shdr = bin->section_header;
 	sections_count = bin->header->NumberOfSections;
 
-	if ((sections = malloc((sections_count + 1) * sizeof(struct r_bin_te_section_t))) == NULL) {
+	if ((sections = calloc((sections_count + 1), sizeof(struct r_bin_te_section_t))) == NULL) {
 		perror ("malloc (sections)");
 		return NULL;
 	}

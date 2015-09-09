@@ -1094,7 +1094,7 @@ static String *Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWor
 
 	align32(*curAddr);
 
-	string->Value = (ut16 *) malloc (string->wValueLength * 2);
+	string->Value = (ut16 *) calloc (string->wValueLength, 2);
 	if (string->Value == NULL) {
 		eprintf ("Error: malloc (String Value)\n");
 		free_String(string);
