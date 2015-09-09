@@ -491,14 +491,13 @@ static void get_method_list_t (mach0_ut p,
 
 		method->vaddr = m.imp;
 
-			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
-			if (is_thumb (arch)) {
-				if (method->vaddr & 1) {
-					method->vaddr >>= 1;
-					method->vaddr <<= 1;
-					//eprintf ("0x%08llx METHOD %s\n", method->vaddr, method->name);
-				}
+		if (is_thumb (arch)) {
+			if (method->vaddr & 1) {
+				method->vaddr >>= 1;
+				method->vaddr <<= 1;
+				//eprintf ("0x%08llx METHOD %s\n", method->vaddr, method->name);
 			}
+		}
 
 		r_list_append (processed_class->methods, method);
 

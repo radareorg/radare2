@@ -597,17 +597,16 @@ static int cmd_write(void *data, const char *input) {
 				eprintf ("TODO\n");
 			} else if (input[2]==' ') {
 				char *p = strchr (input+3, ' ');
-				ut64 to, from = core->offset;
+				ut64 to, from;
+				from = r_num_math (core->num, input+3);
 				if (p) {
 					*p = 0;
-					from = r_num_math (core->num, input+3);
 					to = r_num_math (core->num, input+3);
 					if (to<from) {
 						eprintf ("Invalid range (from>to)\n");
 						return 0;
 					}
 				} else {
-					from = r_num_math (core->num, input+3);
 					to = from + core->blocksize;
 				}
 				r_io_cache_commit (core->io, from, to);

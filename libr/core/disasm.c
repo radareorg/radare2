@@ -399,7 +399,7 @@ static void handle_reflines_update (RAnal *anal, RDisasmState *ds) {
 	RAnalRefline *ref;
 	int maxlen = 512;
 	int maxlines = 100;
-	int delta = ds->at - ds->addr;
+	int delta;
 	if (lastaddr == UT64_MAX) {
 		lastaddr = ds->addr;
 	}

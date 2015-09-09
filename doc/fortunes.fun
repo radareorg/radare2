@@ -169,3 +169,4 @@ It's the year of desktop on radare2
 It's the year of radare2 on the desktop
 SSAbotage from ISIL
 "a collection of garbage" -- an r2 pro user
+A git pull a day keeps the segfault away

@@ -752,7 +752,7 @@ static int r_cmd_java_get_class_names_from_input (const char *input, char **clas
 	*class_name_len = 0;
 
 	if (p && *p && cmd_sz > 1) {
-		const char *end = p;
+		const char *end;
 		p = r_cmd_java_consumetok (p, ' ', cmd_sz);
 		end = p && *p ? r_cmd_java_strtok (p, ' ', -1) : NULL;
 
