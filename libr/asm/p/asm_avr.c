@@ -54,9 +54,9 @@ static int parse_specialreg(const char *reg) {
 		/* radare tolower instruction in rasm, so we use 'y' instead of 'Y'
 		and so on for other registers */
 		if (found == -1 && reg[1] == '+') {
-			if (reg[1] == 'y' && len > 2)
+			if (reg[0] == 'y' && len > 2)
 				found = OPERAND_YPQ;
-			else if (reg[1] == 'z' && len > 2)
+			else if (reg[0] == 'z' && len > 2)
 				found = OPERAND_ZPQ;
 		}
 	}
@@ -162,13 +162,16 @@ static uint16_t packDataByMask(uint16_t data, uint16_t mask) {
 
 static int parse_registerpair(const char *operand) {
 	int res = -1;
-	char *first, *second;
+	char *first, *second, *op;
 	int fnum, snum;
 
-	first = strtok (operand, ":");
-
-	if (!first || strlen(first) < 2)
+	op = strdup (operand);
+	first = strtok (op, ":");
+	
+	if (!first || strlen(first) < 2){
+		free(op);
 		return -1;
+	}
 	
 	second = strtok(NULL, ":");
 
@@ -177,7 +180,7 @@ static int parse_registerpair(const char *operand) {
 	   or by even register rx
 	   this is a bit ugly, code-duplicating, however stable
 	   anyway FIXME if you have better idea */
-	if (second && strlen(second) < 2) {
+	if (second && strlen (second) < 2) {
 		/* the pair is set by pair
 		   this is currently useless, cause rasm2 filters ':' from assembler
 		   however, this bug soon will be fixed */
@@ -185,8 +188,9 @@ static int parse_registerpair(const char *operand) {
 			fnum = atoi(first+1);
 			snum = atoi(second+1);
 
-			if (fnum > snum && snum >= 0 && snum <= 30)
-				res = snum/2;
+			if (fnum > snum && snum >= 0 && snum <= 30){
+				res = snum / 2;
+			}
 		} else if (first[0] >= 'x' && first[0] <= 'z' 
 			 && second[0] >= 'x' && second[0] <= 'z' 
 			 && first[1] == 'h' && second[1] == 'l') {
@@ -204,12 +208,14 @@ static int parse_registerpair(const char *operand) {
 		}
 	}
 
+	free(op);	
 	return res;
 }
 
 // assembles instruction argument (operand) based on its type
 static int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *res) {
 	int ret = -1;
+	int temp;
 
 	switch (type) {
 	case OPERAND_REGISTER_EVEN_PAIR:
@@ -227,6 +233,27 @@ static int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *re
 		break;
 	case OPERAND_BRANCH_ADDRESS:
 	case OPERAND_RELATIVE_ADDRESS: // TODO: <-- check for negative (should be correct, but...)
+		temp = getnum(a, operand); // return pure number		
+		
+		/* the argument could be:
+			- target address (will be calculated in according to current pc of assemble), ex: 0x4, 200, 0x1000 
+			or
+			- relative address, ex: +2, -1, +60, -49 */
+		if(a->pc || (operand[0] != '+' && operand[0] != '-')){ // for series of commands
+			/* +2 from documentation:
+				If Rd != Rr (Z = 0) then PC <- PC + k + 1, else PC <- PC + 1 */
+			temp -= a->pc + 2;  
+		}
+
+		temp /= 2; // in WORDs
+
+		if(temp >= -64 && temp <= 63)
+			ret = 0;		
+
+		*res = temp;
+
+		break;	
+	case OPERAND_IO_REGISTER:
 	case OPERAND_BIT:
 	case OPERAND_DES_ROUND:
 	case OPERAND_LONG_ABSOLUTE_ADDRESS:
