@@ -162,13 +162,16 @@ static uint16_t packDataByMask(uint16_t data, uint16_t mask) {
 
 static int parse_registerpair(const char *operand) {
 	int res = -1;
-	char *first, *second;
+	char *first, *second, *op;
 	int fnum, snum;
 
-	first = strtok (operand, ":");
+	op = strdup (operand);
+	first = strtok (op, ":");
 
-	if (!first || strlen(first) < 2)
+	if (!first || strlen (first) < 2) {
+		free (op);
 		return -1;
+	}
 	
 	second = strtok(NULL, ":");
 
@@ -177,16 +180,16 @@ static int parse_registerpair(const char *operand) {
 	   or by even register rx
 	   this is a bit ugly, code-duplicating, however stable
 	   anyway FIXME if you have better idea */
-	if (second && strlen(second) < 2) {
+	if (second && strlen (second) < 2) {
 		/* the pair is set by pair
 		   this is currently useless, cause rasm2 filters ':' from assembler
 		   however, this bug soon will be fixed */
 		if (first[0] == 'r' && second[0] == 'r') {
 			fnum = atoi(first+1);
 			snum = atoi(second+1);
-
-			if (fnum > snum && snum >= 0 && snum <= 30)
-				res = snum/2;
+			if (fnum > snum && snum >= 0 && snum <= 30) {
+				res = snum / 2;
+			}
 		} else if (first[0] >= 'x' && first[0] <= 'z' 
 			 && second[0] >= 'x' && second[0] <= 'z' 
 			 && first[1] == 'h' && second[1] == 'l') {
@@ -203,7 +206,7 @@ static int parse_registerpair(const char *operand) {
 			res = (2 - ('z' - first[0])) + 12;
 		}
 	}
-
+	free (op);
 	return res;
 }
 
