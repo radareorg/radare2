@@ -2262,7 +2262,7 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	r_anal_esil_stack_free (esil);
 	if (ds->analop.type == R_ANAL_OP_TYPE_CJMP) {
 		if (likely) {
-			r_cons_printf ("likely");
+			r_cons_printf (" likely");
 		} else {
 			r_cons_printf ("; unlikely");
 		}
