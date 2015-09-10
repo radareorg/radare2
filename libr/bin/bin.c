@@ -1783,6 +1783,8 @@ R_API ut64 r_bin_get_offset (RBin *bin) {
 	return UT64_MAX;
 }
 
+/* returns vaddr, rebased with the baseaddr of binfile, if va is enabled for
+ * bin, paddr otherwise */
 R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 paddr, ut64 vaddr) {
 	int use_va = 0;
 	if (binfile && binfile->o && binfile->o->info)
@@ -1790,6 +1792,8 @@ R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 paddr, ut64 vaddr) {
 	return use_va ? binobj_a2b (binfile->o, vaddr) : paddr;
 }
 
+/* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
+ * paddr otherwise */
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 paddr, ut64 vaddr) {
 	if (!bin || !bin->cur) return UT64_MAX;
 
