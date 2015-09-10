@@ -2183,10 +2183,30 @@ static void handle_print_relocs (RCore *core, RDisasmState *ds) {
 }
 
 static int likely = 0;
+static int show_slow = 0;
 
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
+	int ret;
+	char str[64], *msg;
+	ut32 *n32 = (ut32*)str;
 	likely = 1;
-	r_cons_printf ("; %s=0x%"PFMT64x" ", name, val);
+
+	if (!show_slow) {
+		return 0;
+	}
+
+	memset (str, 0, sizeof (str));
+	ret = r_io_read_at (esil->anal->iob.io, val, (ut8*)str, sizeof (str)-1);
+	str[sizeof (str)-1] = 0;
+	if (*str && r_str_is_printable (str)) {
+		// do nothing
+		msg = r_str_newf ("\"%s\"", str);
+	} else {
+		str[0] = 0;
+		msg = r_str_newf ("0x%x", *n32);
+	}
+	r_cons_printf ("; %s=0x%"PFMT64x" %s", name, val, msg);
+	free (msg);
 	return 0;
 }
 
@@ -2235,6 +2255,7 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pc, ds->at);
+	show_slow = ds->show_slow; // hacky global
 	esil->cb.hook_reg_write = myregwrite;
 	likely = 0;
 	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));

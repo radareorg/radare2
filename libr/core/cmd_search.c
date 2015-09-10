@@ -214,7 +214,6 @@ R_API int r_core_search_preludes(RCore *core) {
 	int bits = r_config_get_i (core->config, "asm.bits");
 	ut64 from = core->offset;
 	ut64 to = core->offset+0xffffff; // hacky!
-	// TODO: this is x86 only
 	if (prelude && *prelude) {
 		ut8 *kw = malloc (strlen (prelude)+1);
 		int kwlen = r_hex_str2bin (prelude, kw);
@@ -223,6 +222,13 @@ R_API int r_core_search_preludes(RCore *core) {
 	} else if (strstr (arch, "ppc")) {
 		ret = r_core_search_prelude (core, from, to,
 			(const ut8 *)"\x7c\x08\x02\xa6", 4, NULL, 0);
+	} else if (strstr (arch, "arm")) {
+		if (bits == 16) {
+			ret = r_core_search_prelude (core, from, to,
+				(const ut8 *)"\xf0\xb5", 2, NULL, 0);
+		} else {
+			eprintf ("ap: Unsupported bits: %d\n", bits);
+		}
 	} else if (strstr (arch, "mips")) {
 		ret = r_core_search_prelude (core, from, to,
 			(const ut8 *)"\x27\xbd\x00", 3, NULL, 0);

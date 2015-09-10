@@ -1076,6 +1076,15 @@ R_API int r_str_nlen(const char *str, int n) {
 	return len;
 }
 
+R_API int r_str_is_printable(const char *str) {
+	while (*str) {
+		if (!IS_PRINTABLE (*str))
+			return 0;
+		str++;
+	}
+	return 1;
+}
+
 // Length in chars of a wide string (find better name?)
 R_API int r_wstr_clen (const char *s) {
 	int len = 0;
