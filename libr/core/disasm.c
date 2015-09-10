@@ -2776,7 +2776,8 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 		ret = r_asm_disassemble (core->assembler,
 			&ds->asmop, core->block+i, core->blocksize-i);
 		if (ds->show_color && !hasanal) {
-			r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
+			r_anal_op (core->anal, &ds->analop, ds->at,
+				core->block+i, core->blocksize-i);
 			hasanal = 1;
 		}
 		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);

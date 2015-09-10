@@ -1110,7 +1110,7 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 static char o[COLORIZE_BUFSIZE];
 
 R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num) {
-	int i, j, k, is_mod, is_arg = 0;
+	int i, j, k, is_mod, is_float, is_arg = 0;
 	ut32 c_reset = strlen (Color_RESET);
 	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	ut32 opcode_sz = p && *p ? strlen (p)*10 + 1 : 0;
@@ -1165,7 +1165,10 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 		case ']':
 		case '[':
 		case ',':
-			if (is_arg) {
+			if (is_float) {
+				/* do nothing, keep going until next */
+				is_float = 0;
+			} else if (is_arg) {
 				/* if (c_reset+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, c_reset+100); */
 				if (c_reset+j+10 >= COLORIZE_BUFSIZE) {
 					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
@@ -1198,15 +1201,25 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 			break;
 		case ' ':
 			is_arg = 1;
+
 			// find if next ',' before ' ' is found
 			is_mod = 0;
+			is_float = 0;
 			for (k = i+1; p[k]; k++) {
+				if (p[k]=='e' && p[k+1]=='+') {
+					is_float = 1;
+					break;
+				}
 				if (p[k]==' ')
 					break;
 				if (p[k]==',') {
 					is_mod = 1;
 					break;
 				}
+			}
+			if (is_float) {
+				strcpy (o+j, num);
+				j += strlen (num);
 			}
 			if (!p[k]) is_mod = 1;
 			if (!is_jmp && is_mod) {
@@ -1221,7 +1234,7 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 				j += strlen (reg);
 			}
 			break;
-		case '0':
+		case '0': /* address */
 			if (!is_jmp && p[i+1]== 'x') {
 				ut32 num_len = strlen (num);
 				/* if (num_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, num_len+100); */
