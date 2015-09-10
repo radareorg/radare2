@@ -2187,7 +2187,7 @@ static int show_slow = 0;
 
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 	int ret;
-	char str[64], *msg;
+	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
 	likely = 1;
 
@@ -2196,33 +2196,32 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 	}
 
 	memset (str, 0, sizeof (str));
-	{
+	if (val != 0LL) {
 		RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, val);
 		if (fi) {
 			strncpy (str, fi->name, sizeof (str)-1);
 		}
-	}
-	if (str[0] == 0) {
-		ret = r_io_read_at (esil->anal->iob.io, val, (ut8*)str, sizeof (str)-1);
-		str[sizeof (str)-1] = 0;
-		if (*str && r_str_is_printable (str)) {
-			// do nothing
-			msg = r_str_newf ("\"%s\"", str);
-		} else {
-			str[0] = 0;
-			if (*n32 == 0) {
-				msg = strdup ("NULL");
-			} else if (*n32 == UT32_MAX) {
-				// nothing
-				msg = strdup ("");
+		if (str[0] == 0) {
+			ret = r_io_read_at (esil->anal->iob.io, val, (ut8*)str, sizeof (str)-1);
+			str[sizeof (str)-1] = 0;
+			if (*str && r_str_is_printable (str)) {
+				// do nothing
+				msg = r_str_newf ("\"%s\"", str);
 			} else {
-				msg = r_str_newf ("-> 0x%x", *n32);
+				str[0] = 0;
+				if (*n32 == 0) {
+					msg = strdup ("NULL");
+				} else if (*n32 == UT32_MAX) {
+					/* nothing */
+				} else {
+					msg = r_str_newf ("-> 0x%x", *n32);
+				}
 			}
+		} else {
+			msg = r_str_newf ("%s", str);
 		}
-	} else {
-		msg = r_str_newf ("%s", str);
 	}
-	r_cons_printf ("; %s=0x%"PFMT64x" %s", name, val, msg);
+	r_cons_printf ("; %s=0x%"PFMT64x" %s", name, val, msg? msg: "");
 	free (msg);
 	return 0;
 }
