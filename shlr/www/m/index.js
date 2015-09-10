@@ -724,7 +724,7 @@ function panelDisasm() {
 	}
 	r2.cmd ("pd 128"+tail, function (d) {
 		var dis = clickableOffsets (d);
-		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace'>"+dis+"<pre>";
+		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace;color:grey'>"+dis+"<pre>";
 	});
 }
 
