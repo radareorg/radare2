@@ -356,7 +356,8 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				// that 2>>2<< is for & 0xfffffffc
 				// to clear 2 lower bits
 				r_strbuf_appendf (&op->esil,
-				"2,2,4,%s,+,>>,<<,%s,+=", ARG(1), ARG(0));
+				//"2,2,4,%s,+,>>,<<,%s,+=", ARG(1), ARG(0));
+				"4,%s,+,%s,+=", ARG(1), ARG(0));
 				//"4,%s,+,0xfffffffc,&,%s,+=", ARG(1), ARG(0));
 			} else {
 				// THUMB
