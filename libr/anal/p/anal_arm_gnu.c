@@ -429,6 +429,7 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	r15	.32	60	0\n"
 		"gpr	r16	.32	64	0\n"
 		"gpr	r17	.32	68	0\n";
+		"gpr	cpsr	.32	72	0\n";
 	return r_reg_set_profile_string (anal->reg, p32);
 }
 
@@ -436,7 +437,7 @@ struct r_anal_plugin_t r_anal_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = R_SYS_ARCH_ARM,
 	.license = "LGPL3",
-	.bits = 32 | 64,
+	.bits = 16 | 32 | 64,
 	.desc = "ARM code analysis plugin",
 	.init = NULL,
 	.fini = NULL,
