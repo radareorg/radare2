@@ -138,7 +138,6 @@ static RList* sections(RBinFile *arch) {
 			ptr->paddr = section[i].offset;
 			ptr->vaddr = section[i].rva;
 
-			// HACK if (ptr->vaddr == 0) { ptr->vaddr = section[i].offset; }
 			ptr->srwx = 0;
 			if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags))
 				ptr->srwx |= R_BIN_SCN_EXECUTABLE;

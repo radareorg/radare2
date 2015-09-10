@@ -2,6 +2,10 @@
 
 #include <r_core.h>
 
+#define VA_FALSE    0
+#define VA_TRUE     1
+#define VA_NOREBASE 2
+
 // dup from cmd_info
 #define PAIR_WIDTH 9
 static void pair(const char *a, const char *b) {
@@ -20,8 +24,10 @@ static void pair(const char *a, const char *b) {
 static int r_core_bin_set_cur (RCore *core, RBinFile *binfile);
 
 static ut64 rva (RBin *bin, ut64 paddr, ut64 vaddr, int va) {
-	if (va) {
+	if (va == VA_TRUE) {
 		return r_bin_get_vaddr (bin, paddr, vaddr);
+	} else if (va == VA_NOREBASE) {
+		return vaddr;
 	} else {
 		return paddr;
 	}
@@ -1384,7 +1390,14 @@ static int bin_sections (RCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 		if (!at) r_cons_printf (mode? "fs sections\n": "[Sections]\n");
 
 		r_list_foreach (sections, iter, section) {
-			ut64 addr = rva (r->bin, section->paddr, section->vaddr, va);
+			ut64 addr;
+			int va_sect = va;
+
+			if (va && !(section->srwx & R_BIN_SCN_READABLE)) {
+				va_sect = VA_NOREBASE;
+			}
+			addr = rva (r->bin, section->paddr, section->vaddr, va_sect);
+
 			if (name && strcmp (section->name, name))
 				continue;
 			r_name_filter (section->name, sizeof (section->name));
@@ -1695,6 +1708,9 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 		at = filter->offset;
 	if (filter && filter->name)
 		name = filter->name;
+
+	// use our internal values for va
+	va = va ? VA_TRUE : VA_FALSE;
 
 	if ((action & R_CORE_BIN_ACC_STRINGS))
 		ret &= bin_strings (core, mode, va);
