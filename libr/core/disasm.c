@@ -64,7 +64,7 @@ typedef struct r_disam_options_t {
 	int adistrick;
 	int asm_demangle;
 	int show_offset;
-	int show_esil_anal;
+	int show_emu;
 	int show_section;
 	int show_offseg;
 	int show_flags;
@@ -306,7 +306,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->asm_describe = r_config_get_i (core->config, "asm.describe");
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
-	ds->show_esil_anal = r_config_get_i (core->config, "asm.esil.anal");
+	ds->show_emu = r_config_get_i (core->config, "asm.emu");
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
@@ -2234,7 +2234,7 @@ static void handle_print_esil_anal_init(RCore *core, RDisasmState *ds) {
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	opc = r_reg_getv (core->anal->reg, pc);
 	if (!opc) opc = core->offset;
-	if (!ds->show_esil_anal) {
+	if (!ds->show_emu) {
 		return;
 	}
 	if (!core->anal->esil) {
@@ -2261,7 +2261,7 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	if (!esil || !ds->show_comments) {
 		return;
 	}
-	if (!ds->show_esil_anal) {
+	if (!ds->show_emu) {
 		return;
 	}
 	ioc = r_config_get_i (core->config, "io.cache");
