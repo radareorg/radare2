@@ -385,8 +385,8 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		return 2;
 	} else
 	if (!strcmpnull (ao->op, "b") || !strcmpnull (ao->op, "b.n")) {
-			//uncond branch : PC += 4 + (delta*2)
-		int delta = getnum (ao->a[0]) - 4;
+		//uncond branch : PC += 4 + (delta*2)
+		int delta = getnum (ao->a[0]) - 4 - ao->off;
 		if ((delta < -2048) || (delta > 2046) || (delta & 1)) {
 			eprintf("branch out of range or not even\n");
 			return 0;
