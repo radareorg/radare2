@@ -2686,9 +2686,11 @@ toro:
 		r_config_set_i (core->config, "asm.bits", ds->oldbits);
 		ds->oldbits = 0;
 	}
+	// TODO: this should be called from deinit_ds()
 	r_anal_op_fini (&ds->analop);
-	handle_deinit_ds (core, ds);
+	// TODO: this too (must review)
 	handle_print_esil_anal_fini (core, ds);
+	handle_deinit_ds (core, ds);
 	return idx; //-ds->lastfail;
 }
 
