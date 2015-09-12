@@ -34,6 +34,8 @@ set no limit the core file size
 connect stdin/stdout/stderr to a socket
 .It Ar envfile
 set a file with lines like `var=value` to be used as env
+.It Ar fork
+used with the listen option, allow to spawn a different process for each connection. Ignored when debugging.
 .It Ar input
 set string to be passed to the program via stdin
 .It Ar libpath

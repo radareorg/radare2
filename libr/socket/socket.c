@@ -237,6 +237,12 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	return R_TRUE;
 }
 
+/* close the file descriptor associated with the RSocket s */
+R_API int r_socket_close_fd (RSocket *s) {
+	return s->fd != -1 ? close (s->fd) : R_FALSE;
+}
+
+/* shutdown the socket and close the file descriptor */
 R_API int r_socket_close (RSocket *s) {
 	int ret = R_FALSE;
 	if (!s) return R_FALSE;
@@ -255,6 +261,7 @@ R_API int r_socket_close (RSocket *s) {
 	return ret;
 }
 
+/* shutdown the socket, close the file descriptor and free the RSocket */
 R_API int r_socket_free (RSocket *s) {
 	int res = r_socket_close (s);
 #if HAVE_LIB_SSL

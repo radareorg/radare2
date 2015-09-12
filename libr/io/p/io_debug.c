@@ -214,6 +214,22 @@ err_fork:
 }
 #else // windows
 
+static void trace_me () {
+#if __APPLE__
+	signal (SIGTRAP, SIG_IGN); //NEED BY STEP
+#endif
+#if __APPLE__ || __BSD__
+/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
+	signal (SIGABRT, inferior_abort_handler);
+	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
+#else
+	if (ptrace (PTRACE_TRACEME, 0, NULL, NULL) != 0) {
+#endif
+		r_sys_perror ("ptrace-traceme");
+		exit (MAGIC_EXIT);
+	}
+}
+
 // __UNIX__ (not windows)
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	char **argv;
@@ -223,39 +239,29 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		perror ("fork_and_ptraceme");
 		break;
 	case 0:
-#if __APPLE__
-		signal (SIGTRAP, SIG_IGN); //NEED BY STEP 
-#endif
-#if __APPLE__ || __BSD__
-/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
-		signal (SIGABRT, inferior_abort_handler);
-		if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
-#else
-		if (ptrace (PTRACE_TRACEME, 0, NULL, NULL) != 0) {
-#endif
-			r_sys_perror ("ptrace-traceme");
-			exit (MAGIC_EXIT);
-		}
+		trace_me ();
 		if (io->runprofile && *(io->runprofile)) {
 			char *expr = NULL;
 			int i;
 			RRunProfile *rp = r_run_new (NULL);
 			argv = r_str_argv (cmd, NULL);
-			for (i=0; argv[i]; i++) {
+			for (i = 0; argv[i]; i++) {
 				rp->_args[i] = argv[i];
 			}
 			rp->_args[i] = NULL;
 			rp->_program = argv[0];
+			rp->_dodebug = R_TRUE;
 			if (io->runprofile && *io->runprofile) {
 				if (!r_run_parsefile (rp, io->runprofile)) {
 					eprintf ("Can't find profile '%s'\n", io->runprofile);
 					exit (MAGIC_EXIT);
 				}
 			}
-			if (bits==64)
+			if (bits == 64) {
 				r_run_parseline (rp, expr=strdup ("bits=64"));
-			else if (bits==32)
+			} else if (bits == 32) {
 				r_run_parseline (rp, expr=strdup ("bits=32"));
+			}
 			free (expr);
 			r_run_start (rp);
 			r_run_free (rp);

@@ -73,6 +73,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 R_API int r_socket_unix_listen (RSocket *s, const char *file);
 #endif
 R_API int r_socket_port_by_name(const char *name);
+R_API int r_socket_close_fd (RSocket *s);
 R_API int r_socket_close (RSocket *s);
 R_API int r_socket_free (RSocket *s);
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile);
@@ -182,6 +183,8 @@ typedef struct r_run_profile_t {
 	char *_pidfile;
 	int _r2preload;
 	int _docore;
+	int _dofork;
+	int _dodebug;
 	int _aslr;
 	int _maxstack;
 	int _maxproc;

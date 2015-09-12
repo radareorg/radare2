@@ -235,6 +235,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	else if (!strcmp (b, "input")) p->_input = strdup (e);
 	else if (!strcmp (b, "chdir")) p->_chgdir = strdup (e);
 	else if (!strcmp (b, "core")) p->_docore = parseBool (e);
+	else if (!strcmp (b, "fork")) p->_dofork = parseBool (e);
 	else if (!strcmp (b, "sleep")) p->_r2sleep = atoi (e);
 	else if (!strcmp (b, "maxstack")) p->_maxstack = atoi (e);
 	else if (!strcmp (b, "maxproc")) p->_maxproc = atoi (e);
@@ -311,6 +312,7 @@ R_API const char *r_run_help() {
 	"timeout=3\n"
 	"# connect=localhost:8080\n"
 	"# listen=8080\n"
+	"# fork=true\n"
 	"# bits=32\n"
 	"# pid=0\n"
 	"# pidfile=/tmp/foo.pid\n"
@@ -424,15 +426,38 @@ R_API int r_run_start(RRunProfile *p) {
 			r_socket_free (fd);
 			return 1;
 		}
-		child = r_socket_accept (fd);
-		if (child) {
-			eprintf ("connected\n");
-			close (0);
-			close (1);
-			close (2);
-			dup2 (child->fd, 0);
-			dup2 (child->fd, 1);
-			dup2 (child->fd, 2);
+		while (R_TRUE) {
+			child = r_socket_accept (fd);
+			if (child) {
+				int is_child = R_TRUE;
+
+				if (p->_dofork && !p->_dodebug) {
+					pid_t child_pid = r_sys_fork ();
+					if (child_pid == -1) {
+						eprintf("rarun2: cannot fork\n");
+						r_socket_free (child);
+						r_socket_free (fd);
+						return 1;
+					} else if (child_pid != 0){
+						// parent code
+						is_child = R_FALSE;
+					}
+				}
+
+				if (is_child) {
+					r_socket_close_fd (fd);
+					eprintf ("connected\n");
+					close (0);
+					close (1);
+					close (2);
+					dup2 (child->fd, 0);
+					dup2 (child->fd, 1);
+					dup2 (child->fd, 2);
+					break;
+				} else {
+					r_socket_close_fd (child);
+				}
+			}
 		}
 	}
 	if (p->_r2sleep != 0) {
