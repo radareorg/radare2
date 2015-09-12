@@ -237,6 +237,10 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	return R_TRUE;
 }
 
+R_API int r_socket_close_fd (RSocket *s) {
+	return s->fd != -1 ? close (s->fd) : R_FALSE;
+}
+
 R_API int r_socket_close (RSocket *s) {
 	int ret = R_FALSE;
 	if (!s) return R_FALSE;
