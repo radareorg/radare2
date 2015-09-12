@@ -2338,11 +2338,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	grd->core = core;
 	grd->fcn = &fcn;
 	ret = agraph_refresh (grd);
-	if (!ret) {
-		is_error = R_TRUE;
-	}
-
-	if (is_interactive) {
+	if (ret && is_interactive) {
 		// set current node based on the current offset
 		ut64 bbaddr = r_core_anal_get_bbaddr (core, core->offset);
 		if (r_anal_fcn_is_in_offset (fcn, bbaddr)) {
@@ -2353,6 +2349,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			set_curnode (g, an->gnode);
 			agraph_update_seek (g, an, R_TRUE);
 		}
+	} else {
+		r_cons_newline ();
+		exit_graph = R_TRUE;
+		is_error = !ret;
 	}
 
 	core->cons->event_data = grd;
@@ -2363,12 +2363,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		ret = agraph_refresh (grd);
 		if (!ret) {
 			is_error = R_TRUE;
-			break;
-		}
-
-		if (!is_interactive) {
-			/* this is a non-interactive ascii-art graph, so exit the loop */
-			r_cons_newline ();
 			break;
 		}
 
