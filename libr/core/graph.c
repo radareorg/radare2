@@ -2311,7 +2311,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	int ret;
 	int invscroll;
 
-	fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
+	fcn = _fcn ? _fcn : r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
 		eprintf ("No function in current seek\n");
 		return R_FALSE;
@@ -2337,6 +2337,23 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	grd->fs = is_interactive;
 	grd->core = core;
 	grd->fcn = &fcn;
+	ret = agraph_refresh (grd);
+	if (!ret) {
+		is_error = R_TRUE;
+	}
+
+	if (is_interactive) {
+		// set current node based on the current offset
+		ut64 bbaddr = r_core_anal_get_bbaddr (core, core->offset);
+		if (r_anal_fcn_is_in_offset (fcn, bbaddr)) {
+			char *bbtitle = get_title (bbaddr);
+			RANode *an = r_agraph_get_node (g, bbtitle);
+
+			free (bbtitle);
+			set_curnode (g, an->gnode);
+			agraph_update_seek (g, an, R_TRUE);
+		}
+	}
 
 	core->cons->event_data = grd;
 	core->cons->event_resize = (RConsEvent)agraph_refresh;
@@ -2572,7 +2589,14 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'q':
 			  if (g->is_callgraph) {
 				  agraph_toggle_callgraph(g);
-			  } else exit_graph = R_TRUE;
+			  } else {
+				  // update seek based on current node
+				  RANode *n = get_anode (g->curnode);
+				  char *cmd = r_str_newf ("s %s", n->title);
+				  r_core_cmd0 (core, cmd);
+				  free (cmd);
+				  exit_graph = R_TRUE;
+			  }
 			  break;
 		case 27: // ESC
 			  if (r_cons_readchar () == 91) {

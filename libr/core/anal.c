@@ -832,16 +832,29 @@ fin:
 	return rc;
 }
 
-/* seek basic block that contains address addr or just addr if there's no such
- * basic block */
-R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
+/* returns the address of the basic block that contains addr or UT64_MAX if
+ * there is no such basic block */
+R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr) {
 	RAnalBlock *bbi;
 	RAnalFunction *fcni;
 	RListIter *iter, *iter2;
-	r_list_foreach (core->anal->fcns, iter, fcni)
-		r_list_foreach (fcni->bbs, iter2, bbi)
-			if (addr >= bbi->addr && addr < bbi->addr+bbi->size)
-				return r_core_seek (core, bbi->addr, R_FALSE);
+	r_list_foreach (core->anal->fcns, iter, fcni) {
+		r_list_foreach (fcni->bbs, iter2, bbi) {
+			if (addr >= bbi->addr && addr < bbi->addr+bbi->size) {
+				return bbi->addr;
+			}
+		}
+	}
+	return UT64_MAX;
+}
+
+/* seek basic block that contains address addr or just addr if there's no such
+ * basic block */
+R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
+	ut64 bbaddr = r_core_anal_get_bbaddr (core, addr);
+	if (bbaddr != UT64_MAX) {
+		addr = bbaddr;
+	}
 	return r_core_seek (core, addr, R_FALSE);
 }
 
