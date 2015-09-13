@@ -635,14 +635,14 @@ static int gb_custom_daa (RAnalEsil *esil) {
 	ut64 n;
 	if (!esil || !esil->anal || !esil->anal->reg)
 		return R_FALSE;
-	r_anal_esil_reg_read (esil, "H", &n);
+	r_anal_esil_reg_read (esil, "H", &n, NULL);
 	H = (ut8)n;
-	r_anal_esil_reg_read (esil, "C", &n);
+	r_anal_esil_reg_read (esil, "C", &n, NULL);
 	C = (ut8)n;
-	r_anal_esil_reg_read (esil, "a", &n);
+	r_anal_esil_reg_read (esil, "a", &n, NULL);
 	esil->old = n;
 	a = (ut8)n;
-	r_anal_esil_reg_read (esil, "N", &n);
+	r_anal_esil_reg_read (esil, "N", &n, NULL);
 	if (n) {
 		if (C)
 			a = (a - 0x60) & 0xff;

@@ -10,7 +10,7 @@
 static int ocbs_set = R_FALSE;
 static RAnalEsilCallbacks ocbs = {0};
 
-static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
+static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
 	if (*name=='0') {
 		eprintf ("Register not found in profile\n");
@@ -19,11 +19,11 @@ static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
 	if (ocbs.hook_reg_read) {
 		RAnalEsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;
-		ret = ocbs.hook_reg_read (esil, name, res);
+		ret = ocbs.hook_reg_read (esil, name, res, size);
 		esil->cb = cbs;
 	}
 	if (!ret && esil->cb.reg_read) {
-		ret = esil->cb.reg_read (esil, name, res);
+		ret = esil->cb.reg_read (esil, name, res, size);
 	}
 	if (ret) {
 		ut64 val = *res;

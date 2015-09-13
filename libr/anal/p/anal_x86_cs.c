@@ -1205,10 +1205,10 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 	ut64 eax, ebx, ecx, edx;
 	if (!esil || (interrupt != 0x80))
 		return R_FALSE;
-	r_anal_esil_reg_read (esil, "eax", &eax);
-	r_anal_esil_reg_read (esil, "ebx", &ebx);
-	r_anal_esil_reg_read (esil, "ecx", &ecx);
-	r_anal_esil_reg_read (esil, "edx", &edx);
+	r_anal_esil_reg_read (esil, "eax", &eax, NULL);
+	r_anal_esil_reg_read (esil, "ebx", &ebx, NULL);
+	r_anal_esil_reg_read (esil, "ecx", &ecx, NULL);
+	r_anal_esil_reg_read (esil, "edx", &edx, NULL);
 	syscall = (int) eax;
 	switch (syscall) {
 	case 3:

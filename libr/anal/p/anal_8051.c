@@ -344,7 +344,7 @@ static struct r_i8015_reg {
 	{"tmod",  0x89, 0x00, 1, 0}
 };
 
-static int i8051_hook_reg_read(RAnalEsil *, const char *, ut64 *);
+static int i8051_hook_reg_read(RAnalEsil *, const char *, ut64 *, int *);
 
 static int i8051_reg_compare(const void *name, const void *reg) {
 	return strcmp((const char*)name, ((struct r_i8015_reg*)reg)->name);
@@ -363,7 +363,7 @@ static int i8051_reg_get_offset(RAnalEsil *esil, struct r_i8015_reg *ri) {
 	ut8 offset = ri->offset;
 	if (ri->banked) {
 		ut64 psw = 0LL;
-		i8051_hook_reg_read(esil, "psw", &psw);
+		i8051_hook_reg_read(esil, "psw", &psw, NULL);
 		offset += psw & 0x18;
 	}
 	return offset;
@@ -380,7 +380,7 @@ struct r_i8051_user {
 	RAnalEsilCallbacks cbs;
 };
 
-static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
+static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
 	ut64 val = 0LL;
 	struct r_i8015_reg *ri;
@@ -393,10 +393,10 @@ static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
 
 	esil->cb = ocbs;
 	if (!ret && ocbs.hook_reg_read) {
-		ret = ocbs.hook_reg_read (esil, name, res);
+		ret = ocbs.hook_reg_read (esil, name, res, NULL);
 	}
 	if (!ret && ocbs.reg_read) {
-		ret = ocbs.reg_read (esil, name, &val);
+		ret = ocbs.reg_read (esil, name, &val, NULL);
 	}
 	esil->cb = cbs;
 
