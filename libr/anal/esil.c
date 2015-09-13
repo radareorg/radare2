@@ -1251,15 +1251,7 @@ static int esil_poke1(RAnalEsil *esil) { return esil_poke_n (esil, 8); }
 static int esil_poke2(RAnalEsil *esil) { return esil_poke_n (esil, 16); }
 static int esil_poke4(RAnalEsil *esil) { return esil_poke_n (esil, 32); }
 static int esil_poke8(RAnalEsil *esil) { return esil_poke_n (esil, 64); }
-static int esil_poke(RAnalEsil *esil) {
-	switch (esil->anal->bits) {
-	case 64: return esil_poke8 (esil);
-	case 32: return esil_poke4 (esil);
-	case 16: return esil_poke2 (esil);
-	case 8: return esil_poke1 (esil);
-	default: return 0;
-	}
-}
+static int esil_poke (RAnalEsil *esil) { return esil_poke_n (esil, esil->anal->bits); }
 
 static int esil_poke_some(RAnalEsil *esil) {
 	int i, ret = 0;
@@ -1325,6 +1317,7 @@ static int esil_peek1(RAnalEsil *esil) { return esil_peek_n(esil, 8); }
 static int esil_peek2(RAnalEsil *esil) { return esil_peek_n(esil, 16); }
 static int esil_peek4(RAnalEsil *esil) { return esil_peek_n(esil, 32); }
 static int esil_peek8(RAnalEsil *esil) { return esil_peek_n(esil, 64); }
+static int esil_peek (RAnalEsil *esil) { return esil_peek_n(esil, esil->anal->bits); };
 
 static int esil_peek_some(RAnalEsil *esil) {
 	int i, ret = 0;
@@ -1365,16 +1358,6 @@ static int esil_peek_some(RAnalEsil *esil) {
 	return 0;
 }
 
-static int esil_peek(RAnalEsil *esil) {
-	switch (esil->anal->bits) {
-	case 64: return esil_peek8 (esil);
-	case 32: return esil_peek4 (esil);
-	case 16: return esil_peek2 (esil);
-	case 8: return esil_peek1 (esil);
-	}
-	return 0;
-}
-
 /* OREQ */
 
 static int esil_mem_oreq_n (RAnalEsil *esil, int bits) {
@@ -1407,16 +1390,7 @@ static int esil_mem_oreq1 (RAnalEsil *esil) { return esil_mem_oreq_n (esil, 8); 
 static int esil_mem_oreq2 (RAnalEsil *esil) { return esil_mem_oreq_n (esil, 16); }
 static int esil_mem_oreq4 (RAnalEsil *esil) { return esil_mem_oreq_n (esil, 32); }
 static int esil_mem_oreq8 (RAnalEsil *esil) { return esil_mem_oreq_n (esil, 64); }
-
-static int esil_mem_oreq(RAnalEsil *esil) {
-	switch (esil->anal->bits) {
-	case 64: return esil_mem_oreq8 (esil);
-	case 32: return esil_mem_oreq4 (esil);
-	case 16: return esil_mem_oreq2 (esil);
-	case 8: return esil_mem_oreq1 (esil);
-	}
-	return 0;
-}
+static int esil_mem_oreq  (RAnalEsil *esil) { return esil_mem_oreq_n (esil, esil->anal->bits); }
 
 /* XOREQ */
 
@@ -1450,16 +1424,7 @@ static int esil_mem_xoreq1 (RAnalEsil *esil) { return esil_mem_xoreq_n (esil, 8)
 static int esil_mem_xoreq2 (RAnalEsil *esil) { return esil_mem_xoreq_n (esil, 16); }
 static int esil_mem_xoreq4 (RAnalEsil *esil) { return esil_mem_xoreq_n (esil, 32); }
 static int esil_mem_xoreq8 (RAnalEsil *esil) { return esil_mem_xoreq_n (esil, 64); }
-
-static int esil_mem_xoreq(RAnalEsil *esil) {
-	switch (esil->anal->bits) {
-	case 64: return esil_mem_xoreq8 (esil);
-	case 32: return esil_mem_xoreq4 (esil);
-	case 16: return esil_mem_xoreq2 (esil);
-	case 8: return esil_mem_xoreq1 (esil);
-	}
-	return 0;
-}
+static int esil_mem_xoreq  (RAnalEsil *esil) { return esil_mem_xoreq_n (esil, esil->anal->bits); }
 
 /* ANDEQ */
 
@@ -1493,16 +1458,7 @@ static int esil_mem_andeq1 (RAnalEsil *esil) { return esil_mem_andeq_n (esil, 8)
 static int esil_mem_andeq2 (RAnalEsil *esil) { return esil_mem_andeq_n (esil, 16); }
 static int esil_mem_andeq4 (RAnalEsil *esil) { return esil_mem_andeq_n (esil, 32); }
 static int esil_mem_andeq8 (RAnalEsil *esil) { return esil_mem_andeq_n (esil, 64); }
-
-static int esil_mem_andeq(RAnalEsil *esil) {
-	switch (esil->anal->bits) {
-	case 64: return esil_mem_andeq8 (esil);
-	case 32: return esil_mem_andeq4 (esil);
-	case 16: return esil_mem_andeq2 (esil);
-	case 8: return esil_mem_andeq1 (esil);
-	}
-	return 0;
-}
+static int esil_mem_andeq  (RAnalEsil *esil) { return esil_mem_andeq_n (esil, esil->anal->bits); }
 
 /* ADDEQ */
 
@@ -1536,16 +1492,7 @@ static int esil_mem_addeq1 (RAnalEsil *esil) { return esil_mem_addeq_n (esil, 8)
 static int esil_mem_addeq2 (RAnalEsil *esil) { return esil_mem_addeq_n (esil, 16); }
 static int esil_mem_addeq4 (RAnalEsil *esil) { return esil_mem_addeq_n (esil, 32); }
 static int esil_mem_addeq8 (RAnalEsil *esil) { return esil_mem_addeq_n (esil, 64); }
-
-static int esil_mem_addeq(RAnalEsil *esil) {
-	switch (esil->anal->bits) {
-	case 64: return esil_mem_addeq8 (esil);
-	case 32: return esil_mem_addeq4 (esil);
-	case 16: return esil_mem_addeq2 (esil);
-	case 8: return esil_mem_addeq1 (esil);
-	}
-	return 0;
-}
+static int esil_mem_addeq  (RAnalEsil *esil) { return esil_mem_addeq_n (esil, esil->anal->bits); }
 
 /* SUBEQ */
 
@@ -1579,16 +1526,7 @@ static int esil_mem_subeq1 (RAnalEsil *esil) { return esil_mem_subeq_n (esil, 8)
 static int esil_mem_subeq2 (RAnalEsil *esil) { return esil_mem_subeq_n (esil, 16); }
 static int esil_mem_subeq4 (RAnalEsil *esil) { return esil_mem_subeq_n (esil, 32); }
 static int esil_mem_subeq8 (RAnalEsil *esil) { return esil_mem_subeq_n (esil, 64); }
-
-static int esil_mem_subeq(RAnalEsil *esil) {
-	switch (esil->anal->bits) {
-	case 64: return esil_mem_subeq8 (esil);
-	case 32: return esil_mem_subeq4 (esil);
-	case 16: return esil_mem_subeq2 (esil);
-	case 8: return esil_mem_subeq1 (esil);
-	}
-	return 0;
-}
+static int esil_mem_subeq  (RAnalEsil *esil) { return esil_mem_subeq_n (esil, esil->anal->bits); }
 
 /* MODEQ */
 
@@ -1628,16 +1566,7 @@ static int esil_mem_modeq1 (RAnalEsil *esil) { return esil_mem_modeq_n (esil, 8)
 static int esil_mem_modeq2 (RAnalEsil *esil) { return esil_mem_modeq_n (esil, 16); }
 static int esil_mem_modeq4 (RAnalEsil *esil) { return esil_mem_modeq_n (esil, 32); }
 static int esil_mem_modeq8 (RAnalEsil *esil) { return esil_mem_modeq_n (esil, 64); }
-
-static int esil_mem_modeq(RAnalEsil *esil) {
-	switch (esil->anal->bits) {
-	case 64: return esil_mem_modeq8 (esil);
-	case 32: return esil_mem_modeq4 (esil);
-	case 16: return esil_mem_modeq2 (esil);
-	case 8: return esil_mem_modeq1 (esil);
-	}
-	return 0;
-}
+static int esil_mem_modeq  (RAnalEsil *esil) { return esil_mem_modeq_n (esil, esil->anal->bits); }
 
 /* DIVEQ */
 
@@ -1677,16 +1606,7 @@ static int esil_mem_diveq1 (RAnalEsil *esil) { return esil_mem_diveq_n (esil, 8)
 static int esil_mem_diveq2 (RAnalEsil *esil) { return esil_mem_diveq_n (esil, 16); }
 static int esil_mem_diveq4 (RAnalEsil *esil) { return esil_mem_diveq_n (esil, 32); }
 static int esil_mem_diveq8 (RAnalEsil *esil) { return esil_mem_diveq_n (esil, 64); }
-
-static int esil_mem_diveq(RAnalEsil *esil) {
-	switch (esil->anal->bits) {
-	case 64: return esil_mem_diveq8 (esil);
-	case 32: return esil_mem_diveq4 (esil);
-	case 16: return esil_mem_diveq2 (esil);
-	case 8: return esil_mem_diveq1 (esil);
-	}
-	return 0;
-}
+static int esil_mem_diveq  (RAnalEsil *esil) { return esil_mem_diveq_n (esil, esil->anal->bits); }
 
 /* MULEQ */
 
@@ -1721,7 +1641,7 @@ static int esil_mem_muleq2 (RAnalEsil *esil) { return esil_mem_muleq_n (esil, 16
 static int esil_mem_muleq4 (RAnalEsil *esil) { return esil_mem_muleq_n (esil, 32, UT32_MAX); }
 static int esil_mem_muleq8 (RAnalEsil *esil) { return esil_mem_muleq_n (esil, 64, UT64_MAX); }
 
-static int esil_mem_muleq(RAnalEsil *esil) {
+static int esil_mem_muleq (RAnalEsil *esil) {
 	switch (esil->anal->bits) {
 		case 64: return esil_mem_muleq8 (esil);
 		case 32: return esil_mem_muleq4 (esil);
@@ -1761,16 +1681,7 @@ static int esil_mem_inceq1 (RAnalEsil *esil) { return esil_mem_inceq_n (esil, 8)
 static int esil_mem_inceq2 (RAnalEsil *esil) { return esil_mem_inceq_n (esil, 16); }
 static int esil_mem_inceq4 (RAnalEsil *esil) { return esil_mem_inceq_n (esil, 32); }
 static int esil_mem_inceq8 (RAnalEsil *esil) { return esil_mem_inceq_n (esil, 64); }
-
-static int esil_mem_inceq(RAnalEsil *esil) {
-	switch (esil->anal->bits) {
-		case 64: return esil_mem_inceq8 (esil);
-		case 32: return esil_mem_inceq4 (esil);
-		case 16: return esil_mem_inceq2 (esil);
-		case 8: return esil_mem_inceq1 (esil);
-	}
-	return 0;
-}
+static int esil_mem_inceq  (RAnalEsil *esil) { return esil_mem_inceq_n (esil, esil->anal->bits); }
 
 /* DECEQ */
 
@@ -1802,16 +1713,7 @@ static int esil_mem_deceq1 (RAnalEsil *esil) { return esil_mem_deceq_n (esil, 8)
 static int esil_mem_deceq2 (RAnalEsil *esil) { return esil_mem_deceq_n (esil, 16); }
 static int esil_mem_deceq4 (RAnalEsil *esil) { return esil_mem_deceq_n (esil, 32); }
 static int esil_mem_deceq8 (RAnalEsil *esil) { return esil_mem_deceq_n (esil, 64); }
-
-static int esil_mem_deceq(RAnalEsil *esil) {
-	switch (esil->anal->bits) {
-	case 64: return esil_mem_deceq8 (esil);
-	case 32: return esil_mem_deceq4 (esil);
-	case 16: return esil_mem_deceq2 (esil);
-	case 8: return esil_mem_deceq1 (esil);
-	}
-	return 0;
-}
+static int esil_mem_deceq  (RAnalEsil *esil) { return esil_mem_deceq_n (esil, esil->anal->bits); }
 
 static int esil_dup (RAnalEsil *esil) {
 	char *dup_me;
