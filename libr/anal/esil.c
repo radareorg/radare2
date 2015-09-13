@@ -805,13 +805,13 @@ static int esil_lsreq(RAnalEsil *esil) {
 }
 
 static int esil_ror(RAnalEsil *esil) {
-	int ret = 0;
+	int regsize, ret = 0;
 	ut64 num, num2;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
+	if (dst && r_anal_esil_get_parm_size (esil, dst, &num, &regsize)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			ut64 mask = (8*4-1);
+			ut64 mask = (regsize-1);
 			num2 &= mask;
 		        ut64 res= (num>>num2) | (num<<( (-num2)&mask ));
 			r_anal_esil_pushnum (esil, res);
@@ -826,13 +826,13 @@ static int esil_ror(RAnalEsil *esil) {
 }
 
 static int esil_rol(RAnalEsil *esil) {
-	int ret = 0;
+	int regsize, ret = 0;
 	ut64 num, num2;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
+	if (dst && r_anal_esil_get_parm_size (esil, dst, &num, &regsize)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			ut64 mask = (8*4-1);
+			ut64 mask = (regsize-1);
 			num2 &= mask;
 		        ut64 res= (num<<num2) | (num>>( (-num2)&mask ));
 			r_anal_esil_pushnum (esil, res);
