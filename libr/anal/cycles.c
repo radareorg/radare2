@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - condret */
+/* radare - LGPL - Copyright 2014 - 2015 - condret */
 
 #include <r_anal.h>
 #include <r_list.h>
@@ -7,8 +7,12 @@
 
 R_API RAnalCycleFrame *r_anal_cycle_frame_new () {
 	RAnalCycleFrame *cf = R_NEW0 (RAnalCycleFrame);
-	if (!cf) return NULL;
-	cf->hooks = r_list_new ();
+	if (cf) {
+		if (!(cf->hooks = r_list_new ())) {
+			free (cf);
+			cf = NULL;
+		}
+	}
 	return cf;
 }
 
