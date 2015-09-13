@@ -354,10 +354,12 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		if (!strcmp (ARG(2), "")) {
 			if (!strcmp (ARG(1), "pc")) {
 				// that 2>>2<< is for & 0xfffffffc
+				// (the address of the current instruction + 4) AND &FFFFFFFC.
 				// to clear 2 lower bits
 				r_strbuf_appendf (&op->esil,
+				"4,%"PFMT64d",+,%s,+=", op->addr, ARG(0));
 				//"2,2,4,%s,+,>>,<<,%s,+=", ARG(1), ARG(0));
-				"4,%s,+,%s,+=", ARG(1), ARG(0));
+				//"2,2,4,%"PFMT64d",+,>>,<<,%s,+=", op->addr, ARG(0));
 				//"4,%s,+,0xfffffffc,&,%s,+=", ARG(1), ARG(0));
 			} else {
 				// THUMB
