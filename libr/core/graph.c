@@ -2377,6 +2377,18 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
 
 		switch (key) {
+		case 'j':
+		case 'k':
+			switch (mousemode) {
+			case 0: break;
+			case 1: key = key=='k'?'h':'l'; break;
+			case 2: key = key=='k'?'J':'K'; break;
+			case 3: key = key=='k'?'L':'H'; break;
+			}
+			break;
+		}
+
+		switch (key) {
 		case '-':
 			agraph_set_zoom (g, g->zoom - ZOOM_STEP);
 			break;
@@ -2516,33 +2528,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			if (mousemode<0)
 				mousemode = 3;
 			break;
-		case 'J':
-			if (r_cons_singleton()->mouse_event) {
-				switch (mousemode) {
-				case 0: can->sy += wheelspeed * (invscroll ? -1 : 1); break; // canvas-y
-				case 1: can->sx += wheelspeed * (invscroll ? -1 : 1); break; // canvas-x
-				case 2: get_anode(g->curnode)->y += wheelspeed; break; // node-y
-				case 3: get_anode(g->curnode)->x += wheelspeed; break; // node-x
-				}
-			} else {
-				get_anode(g->curnode)->y += g->movspeed;
-			}
-			break;
-		case 'K':
-			if (r_cons_singleton()->mouse_event) {
-				switch (mousemode) {
-				case 0: can->sy -= wheelspeed * (invscroll ? -1 : 1); break; // canvas-y
-				case 1: can->sx -= wheelspeed * (invscroll ? -1 : 1); break; // canvas-x
-				case 2: get_anode(g->curnode)->y -= wheelspeed; break; // node-y
-				case 3: get_anode(g->curnode)->x -= wheelspeed; break; // node-x
-				}
-			} else {
-				get_anode(g->curnode)->y -= g->movspeed;
-			}
-			break;
+		case 'J': get_anode(g->curnode)->y += g->movspeed; break;
+		case 'K': get_anode(g->curnode)->y -= g->movspeed; break;
 		case 'H': get_anode(g->curnode)->x -= g->movspeed; break;
 		case 'L': get_anode(g->curnode)->x += g->movspeed; break;
-
 		case 'j': can->sy -= g->movspeed * (invscroll ? -1 : 1); break;
 		case 'k': can->sy += g->movspeed * (invscroll ? -1 : 1); break;
 		case 'l': can->sx -= g->movspeed * (invscroll ? -1 : 1); break;
