@@ -637,7 +637,6 @@ static int esil_cmp(RAnalEsil *esil) {
 	}
 	free (dst);
 	free (src);
-
 	//r_anal_esil_pushnum (esil, ret);
 	return ret;
 }
@@ -790,6 +789,48 @@ static int esil_lsreq(RAnalEsil *esil) {
 			ret = 1;
 		} else {
 			eprintf ("esil_lsreq: empty stack\n");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
+static int esil_ror(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, num2;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
+		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+			ut64 mask = (8*4-1);
+			num2 &= mask;
+		        ut64 res= (num>>num2) | (num<<( (-num2)&mask ));
+			r_anal_esil_pushnum (esil, res);
+			ret = 1;
+		} else {
+			eprintf ("esil_ror: empty stack\n");
+		}
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
+static int esil_rol(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num, num2;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
+		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+			ut64 mask = (8*4-1);
+			num2 &= mask;
+		        ut64 res= (num<<num2) | (num>>( (-num2)&mask ));
+			r_anal_esil_pushnum (esil, res);
+			ret = 1;
+		} else {
+			eprintf ("esil_rol: empty stack\n");
 		}
 	}
 	free (src);
@@ -1134,6 +1175,18 @@ static int esil_inceq (RAnalEsil *esil) {
 }
 
 static int esil_sub (RAnalEsil *esil) {
+	ut64 s = 0, d = 0;
+	if (!popRN (esil, &d)) {
+		eprintf ("esil_sub: src is broken\n");
+		return R_FALSE;
+	}
+	if (!popRN (esil, &s)) {
+		eprintf ("esil_sub: dst is broken\n");
+		return R_FALSE;
+	}
+	r_anal_esil_pushnum (esil, d-s);
+	return R_TRUE;
+	 /*
 	int ret = 0;
 	ut64 s = 0, d = 0;
 	char *dst = r_anal_esil_pop (esil);
@@ -1151,6 +1204,7 @@ static int esil_sub (RAnalEsil *esil) {
 	free (src);
 	free (dst);
 	return ret;
+	*/
 }
 
 static int esil_subeq (RAnalEsil *esil) {
@@ -1730,15 +1784,15 @@ static int esil_dup (RAnalEsil *esil) {
 /* in case of fail, we must set some var */
 static int esil_smaller(RAnalEsil *esil) {		// 'src < dst' => 'src,dst,<'
 	ut64 s, d;
-	if (!popRN (esil, &s)) {
+	if (!popRN (esil, &d)) {
 		eprintf ("esil_smaller: src is broken\n");
 		return R_FALSE;
 	}
-	if (!popRN (esil, &d)) {
+	if (!popRN (esil, &s)) {
 		eprintf ("esil_smaller: dst is broken\n");
 		return R_FALSE;
 	}
-	r_anal_esil_pushnum (esil, (s < d));
+	r_anal_esil_pushnum (esil, (d < s));
 	return R_TRUE;
 }
 
@@ -1746,63 +1800,45 @@ static int esil_smaller(RAnalEsil *esil) {		// 'src < dst' => 'src,dst,<'
 // sign is not handled
 // ESIL flags not updated?
 static int esil_bigger(RAnalEsil *esil) {		// 'src > dst' => 'src,dst,>'
-	int ret = 0;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && isregornum (esil, src, &s)) {
-		if (dst && isregornum (esil, dst, &d)) {
-			r_anal_esil_pushnum(esil, (s > d));
-			ret = 1;
-		} else {
-			eprintf ("esil_bigger: dst is broken\n");
-		}
-	} else {
+	if (!popRN (esil, &d)) {
 		eprintf ("esil_bigger: src is broken\n");
+		return R_FALSE;
 	}
-	free (src);
-	free (dst);
-	return ret;
+	if (!popRN (esil, &s)) {
+		eprintf ("esil_bigger: dst is broken\n");
+		return R_FALSE;
+	}
+	r_anal_esil_pushnum (esil, (d > s));
+	return R_TRUE;
 }
 
 static int esil_smaller_equal(RAnalEsil *esil) {		// 'src <= dst' => 'src,dst,<='
-	int ret = 0;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && isregornum (esil, src, &s)) {
-		if (dst && isregornum (esil, dst, &d)) {
-			r_anal_esil_pushnum(esil, (s <= d));
-			ret = 1;
-		} else {
-			eprintf ("esil_smaller_equal: dst is broken\n");
-		}
-	} else {
+	if (!popRN (esil, &d)) {
 		eprintf ("esil_smaller_equal: src is broken\n");
+		return R_FALSE;
 	}
-	free (src);
-	free (dst);
-	return ret;
+	if (!popRN (esil, &s)) {
+		eprintf ("esil_smaller_equal: dst is broken\n");
+		return R_FALSE;
+	}
+	r_anal_esil_pushnum (esil, (d <= s));
+	return R_TRUE;
 }
 
 static int esil_bigger_equal(RAnalEsil *esil) {		// 'src >= dst' => 'src,dst,>='
-	int ret = 0;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && isregornum (esil, src, &s)) {
-		if (dst && isregornum (esil, dst, &d)) {
-			r_anal_esil_pushnum(esil, (s >= d));
-			ret = 1;
-		} else {
-			eprintf ("esil_bigger_equal: dst is broken\n");
-		}
-	} else {
+	if (!popRN (esil, &d)) {
 		eprintf ("esil_bigger_equal: src is broken\n");
+		return R_FALSE;
 	}
-	free (src);
-	free (dst);
-	return ret;
+	if (!popRN (esil, &s)) {
+		eprintf ("esil_bigger_equal: dst is broken\n");
+		return R_FALSE;
+	}
+	r_anal_esil_pushnum (esil, (d >= s));
+	return R_TRUE;
 }
 
 static int iscommand (RAnalEsil *esil, const char *word, RAnalEsilOp *op) {
@@ -2041,6 +2077,8 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("<<=", esil_lsleq);
 	OP (">>", esil_lsr);
 	OP (">>=", esil_lsreq);
+	OP (">>>>", esil_ror);
+	OP ("<<<<", esil_rol);
 	OP ("&", esil_and);
 	OP ("&=", esil_andeq);
 	OP ("}", esil_nop); // just to avoid push
