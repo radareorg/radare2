@@ -940,7 +940,8 @@ static int bin_imports (RCore *r, int mode, int va, const char *name) {
 #endif
 	} else {
 		ut64 addr;
-		r_cons_printf ("[Imports]\n");
+		if (mode) r_cons_printf ("fs imports\n");
+		else r_cons_printf ("[Imports]\n");
 
 		r_list_foreach (imports, iter, import) {
 			if (name && strcmp (import->name, name))
