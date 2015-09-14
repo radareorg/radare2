@@ -1,5 +1,5 @@
 /* radare - LGPL - Copyright 2012 - pancake<nopcode.org>
-			     2014 - condret
+			     2015 - condret
 
 	this file was based on anal_i8080.c */
 
@@ -129,8 +129,8 @@ static inline void gb_anal_id (RAnal *anal, RAnalOp *op, const ut8 data)				//in
 		op->dst->memref = 1;
 		op->dst->reg = r_reg_get (anal->reg, "hl", R_REG_TYPE_GPR);
 		if (op->type == R_ANAL_OP_TYPE_ADD)
-			r_strbuf_set (&op->esil, "1,hl,[1],+,hl,=[1],%c3,H,=,%z,Z,=,0,N,=");
-		else	r_strbuf_set (&op->esil, "1,hl,[1],-,hl,=[1],%b4,H,=,%z,Z,=,1,N,=");
+			r_strbuf_set (&op->esil, "1,hl,[1],+,hl,=[1],$c3,H,=,$z,Z,=,0,N,=");
+		else	r_strbuf_set (&op->esil, "1,hl,[1],-,hl,=[1],$b4,H,=,$z,Z,=,1,N,=");
 	} else {
 		if (!(data & (1<<2))) {
 			op->dst->reg = r_reg_get (anal->reg, regs_16[data>>4], R_REG_TYPE_GPR);
@@ -420,7 +420,7 @@ static void gb_anal_xoaasc_imm (RReg *reg, RAnalOp *op, const ut8 *data)	//xor ,
 				op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
 				r_strbuf_append (&op->esil, "C,+,");
 			}
-			r_strbuf_append (&op->esil, "a,+=,%z,Z,=,%c3,H,=,%c7,C,=,0,N,=");
+			r_strbuf_append (&op->esil, "a,+=,$z,Z,=,$c3,H,=,$c7,C,=,0,N,=");
 		break;
 		case R_ANAL_OP_TYPE_SUB:
 			r_strbuf_setf (&op->esil, "0x%02x,", data[1]);
@@ -429,7 +429,7 @@ static void gb_anal_xoaasc_imm (RReg *reg, RAnalOp *op, const ut8 *data)	//xor ,
 				op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
 				r_strbuf_append (&op->esil, "C,-,");
 			}
-			r_strbuf_append (&op->esil, "a,-=,%z,Z,=,%b4,H,=,%b8,C,=,1,N,=");
+			r_strbuf_append (&op->esil, "a,-=,$z,Z,=,$b4,H,=,$b8,C,=,1,N,=");
 		break;
 		case R_ANAL_OP_TYPE_CMP:
 			r_strbuf_setf (&op->esil, "%d,a,==,$z,Z,=,$b4,H,=,$b8,C,=,1,N,=", data[1]);
@@ -616,7 +616,7 @@ static inline void gb_anal_cb_sra (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->dst->memref = ((data & 7) == 6);
 	if (op->dst->memref)
 		r_strbuf_setf (&op->esil, "1,%s,[1],&,C,=,0x80,%s,[1],&,1,%s,[1],>>,|,%s,=[1],$z,Z,=,0,N,=,0,H,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);	//spaguesil
-	else	r_strbuf_setf (&op->esil, "1,%s,&,C,=,0x80,%s,&,1,%s,>>,|,%s=,$z,Z,=,0,N,=,0,H,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
+	else	r_strbuf_setf (&op->esil, "1,%s,&,C,=,0x80,%s,&,1,%s,>>,|,%s,=,$z,Z,=,0,N,=,0,H,=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
 }
 
 static inline void gb_anal_cb_srl (RReg *reg, RAnalOp *op, const ut8 data) {
