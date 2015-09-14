@@ -20,11 +20,11 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 }
 
 static int load(RBinFile *arch) {
-	return R_TRUE;
+	return true;
 }
 
 static int destroy(RBinFile *arch) {
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {

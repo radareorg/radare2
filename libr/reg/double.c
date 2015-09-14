@@ -30,7 +30,7 @@ R_API int r_reg_set_double(RReg *reg, RRegItem *item, long double value) {
 
 	if (!item) {
 		eprintf ("r_reg_set_value: item is NULL\n");
-		return R_FALSE;
+		return false;
 	}
 	switch (item->size) {
 	case 80:
@@ -39,15 +39,15 @@ R_API int r_reg_set_double(RReg *reg, RRegItem *item, long double value) {
 		break;
 	default:
 		eprintf ("r_reg_set_double : Bit size %d not supported\n", item->size);
-		return R_FALSE;
+		return false;
 	}
 	if (reg->regset[item->type].arena->size - BITS2BYTES (item->offset) - BITS2BYTES(item->size)>=0) {
 		r_mem_copybits (reg->regset[item->type].arena->bytes+
 				BITS2BYTES (item->offset), src, item->size);
-		return R_TRUE;
+		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to %Lf\n", item->name, value);
-	return R_FALSE;
+	return false;
 }
 
 /* floating point . deprecate maybe? */
@@ -57,7 +57,7 @@ R_API float r_reg_get_float(RReg *reg, RRegItem *item) {
 }
 
 R_API int r_reg_set_float(RReg *reg, RRegItem *item, float value) {
-	int ret = R_FALSE;
+	int ret = false;
 	// TODO
 	return ret;
 }

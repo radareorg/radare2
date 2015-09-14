@@ -126,6 +126,6 @@ RIOPlugin r_io_plugin_gdb = {
 	.plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
-	.isdbg = R_TRUE
+	.isdbg = true
 };
 

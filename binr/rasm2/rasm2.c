@@ -13,7 +13,7 @@
 static RLib *l = NULL;
 static RAsm *a = NULL;
 static RAnal *anal = NULL;
-static int coutput = R_FALSE;
+static int coutput = false;
 
 static const char *has_esil(RAnal *a, const char *name) {
 	RListIter *iter;
@@ -100,7 +100,7 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 		len /= 8;
 
 	if (bin) {
-		if (len<0) return R_FALSE;
+		if (len<0) return false;
 		clen = len; // XXX
 		data = (ut8*)buf;
 	} else if (ascii) {
@@ -193,9 +193,9 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bits, int bin) {
 static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	RAsmPlugin *hand = (struct r_asm_plugin_t *)data;
 	r_asm_add (a, hand);
-	return R_TRUE;
+	return true;
 }
-static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return true; }
 
 int main(int argc, char *argv[]) {
 	const char *path;
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
 
 
 	r_asm_use (a, R_SYS_ARCH);
-	r_asm_set_big_endian (a, R_FALSE);
+	r_asm_set_big_endian (a, false);
 	while ((c = getopt (argc, argv, "i:k:DCc:eva:b:s:do:Bl:hLf:F:wO:")) != -1) {
 		switch (c) {
 		case 'k':
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
 			cpu = optarg;
 			break;
 		case 'C':
-			coutput = R_TRUE;
+			coutput = true;
 			break;
 		case 'a':
 			arch = optarg;
@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
 			ret = rasm_show_help (1);
 			goto beach;
 		case 'w':
-			whatsop = R_TRUE;
+			whatsop = true;
 			break;
 		}
 	}

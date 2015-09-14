@@ -35,14 +35,14 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
-	if (!arch || !arch->o) return R_FALSE;
+	if (!arch || !arch->o) return false;
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj ? R_TRUE: R_FALSE;
+	return arch->o->bin_obj ? true: false;
 }
 
 static int destroy(RBinFile *arch) {
 	r_bin_te_free ((struct r_bin_te_obj_t*)arch->o->bin_obj);
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -139,7 +139,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->bits = r_bin_te_get_bits (arch->o->bin_obj);
 	ret->big_endian = 1;
 	ret->dbg_info = 0;
-	ret->has_va = R_TRUE;
+	ret->has_va = true;
 
 	sdb_num_set (arch->sdb, "te.bits", ret->bits, 0);
 
@@ -154,11 +154,10 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-
 	if (buf && length > 2)
-	if (!memcmp (buf, "\x56\x5a", 2))
-		return R_TRUE;
-	return R_FALSE;
+		if (!memcmp (buf, "\x56\x5a", 2))
+			return true;
+	return false;
 }
 
 RBinPlugin r_bin_plugin_te = {

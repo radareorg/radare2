@@ -22,7 +22,7 @@ static char *r_line_nullstr = "";
 
 #if ONLY_VALID_CHARS
 static inline int is_valid_char (unsigned char ch) {
-	if (ch>=32 && ch<=127) return R_TRUE;
+	if (ch>=32 && ch<=127) return true;
 	switch (ch) {
 	//case 0: // wat
 	case 1: // ^a
@@ -36,9 +36,9 @@ static inline int is_valid_char (unsigned char ch) {
 	case 13: // carriage return
 	case 23: // ^w
 	case 27: // arrow
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 #endif
 
@@ -46,19 +46,19 @@ static int inithist() {
 	ZERO_FILL (I.history);
 	I.history.data = (char **)malloc ((I.history.size+1024)*sizeof(char *));
 	if (I.history.data==NULL)
-		return R_FALSE;
+		return false;
 	I.history.size = R_LINE_HISTSIZE;
 	memset (I.history.data, 0, I.history.size*sizeof(char *));
-	return R_TRUE;
+	return true;
 }
 
 /* initialize history stuff */
 R_API int r_line_dietline_init() {
 	ZERO_FILL (I.completion);
 	if (!inithist ())
-		return R_FALSE;
-	I.echo = R_TRUE;
-	return R_TRUE;
+		return false;
+	I.echo = true;
+	return true;
 }
 
 #if USE_UTF8
@@ -194,13 +194,13 @@ R_API int r_line_hist_add(const char *line) {
 		I.history.top = I.history.index = 0; // workaround
 	/* ignore dup */
 	if (I.history.index>0 && !strcmp (line, I.history.data[I.history.index-1]))
-		return R_FALSE;
+		return false;
 	if (line && *line) { // && I.history.index < I.history.size) {
 		I.history.data[I.history.top++] = strdup (line);
 		I.history.index = I.history.top;
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 static int r_line_hist_up() {
@@ -211,9 +211,9 @@ static int r_line_hist_up() {
 	if (I.history.index>0) {
 		strncpy (I.buffer.data, I.history.data[--I.history.index], R_LINE_BUFSIZE-1);
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 static int r_line_hist_down() {
@@ -234,9 +234,9 @@ static int r_line_hist_down() {
 			strncpy (I.buffer.data, I.history.data[I.history.index], R_LINE_BUFSIZE-1);
 			I.buffer.index = I.buffer.length = strlen (I.buffer.data);
 		}
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API const char *r_line_hist_get(int n) {
@@ -277,10 +277,10 @@ R_API int r_line_hist_load(const char *file) {
 	char buf[R_LINE_BUFSIZE],
 		*path = r_str_home (file);
 	if (path == NULL)
-		return R_FALSE;
+		return false;
 	if (!(fd = fopen (path, "r"))) {
 		free (path);
-		return R_FALSE;
+		return false;
 	}
 	while (fgets (buf, sizeof (buf), fd) != NULL) {
 		buf[strlen (buf)-1] = 0;
@@ -288,12 +288,12 @@ R_API int r_line_hist_load(const char *file) {
 	}
 	fclose (fd);
 	free (path);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_line_hist_save(const char *file) {
 	FILE *fd;
-	int i, ret = R_FALSE;
+	int i, ret = false;
 	char *p, *path = r_str_home (file);
 	if (path != NULL) {
 		p = (char*)r_str_lastbut (path, R_SYS_DIR[0], NULL); // TODO: use fs
@@ -310,7 +310,7 @@ R_API int r_line_hist_save(const char *file) {
 					fputs ("\n", fd);
 				}
 				fclose (fd);
-				ret = R_TRUE;
+				ret = true;
 			} else fclose (fd);
 		}
 	}
@@ -443,7 +443,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		printf ("\x1b[0K\r%s%s", I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
-	r_cons_singleton()->breaked = R_FALSE;
+	r_cons_singleton()->breaked = false;
 	for (;;) {
 #if 0
 		if (I.echo) {
@@ -584,13 +584,13 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				eprintf ("^C\n");
 			I.buffer.index = I.buffer.length = 0;
 			*I.buffer.data = '\0';
-			r_cons_singleton()->breaked = R_TRUE;
+			r_cons_singleton()->breaked = true;
 			goto _end;
 		case 4: // ^D
 			if (!I.buffer.data[0]) { /* eof */
 				if (I.echo)
 					printf ("^D\n");
-				r_cons_set_raw (R_FALSE);
+				r_cons_set_raw (false);
 				return NULL;
 			}
 			if (I.buffer.index<I.buffer.length)
@@ -828,7 +828,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		printf ("\x1b[0K\r%s%s", I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
-	r_cons_singleton()->breaked = R_FALSE;
+	r_cons_singleton()->breaked = false;
 	for (;;) {
 #if 0
 		if (I.echo) {
@@ -917,13 +917,13 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				eprintf ("^C\n");
 			I.buffer.index = I.buffer.length = 0;
 			*I.buffer.data = '\0';
-			r_cons_singleton()->breaked = R_TRUE;
+			r_cons_singleton()->breaked = true;
 			goto _end;
 		case 4: // ^D
 			if (!I.buffer.data[0]) { /* eof */
 				if (I.echo)
 					printf ("^D\n");
-				r_cons_set_raw (R_FALSE);
+				r_cons_set_raw (false);
 				return NULL;
 			}
 			if (I.buffer.index<I.buffer.length)

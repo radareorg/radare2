@@ -30,9 +30,9 @@ static int mal_dis(RAsmOp *op, ut64 c, const ut8 *buf, ut64 len) {
 			default:
 				sprintf(op->buf_asm, "nop");
 		}
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 static int __disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {

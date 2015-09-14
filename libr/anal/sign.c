@@ -29,16 +29,15 @@ R_API void r_sign_ns(RSign *sig, const char *str) {
 	} else sig->ns[0] = '\0';
 }
 
-R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {
-	int len, ret = R_FALSE;
+R_API _Bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {
+	int len;
 	char *data = NULL, *ptr;
 	RSignItem *si; // TODO: like in r_search.. we need r_sign_item_new ()
 			// TODO: but..we need to use a pool here..
 	if (!name || !arg || !anal)
-		return R_FALSE;
-
+		return false;
 	if (!(si = R_NEW0 (RSignItem)))
-		return R_FALSE;
+		return false;
 	si->type = type;
 	snprintf (si->name, sizeof (si->name), "%s.%c.%s",
 		*sig->ns? sig->ns: "sign", type, name);
@@ -88,7 +87,7 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 		break;
 	}
 	free (data);
-	return ret;
+	return false;
 }
 
 R_API void r_sign_list(RSign *sig, int rad) {

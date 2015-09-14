@@ -96,7 +96,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, NULL }
 	};
 	if (!newstr) {
-		return R_FALSE;
+		return false;
 	}
 
 	for (i=0; ops[i].op != NULL; i++) {
@@ -122,7 +122,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			}
 			r_str_replace_char (newstr, '{', '(');
 			r_str_replace_char (newstr, '}', ')');
-			return R_TRUE;
+			return true;
 		}
 	}
 
@@ -134,7 +134,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	}
 	r_str_replace_char (newstr, '{', '(');
 	r_str_replace_char (newstr, '}', ')');
-	return R_FALSE;
+	return false;
 }
 
 static int parse(RParse *p, const char *data, char *str) {
@@ -143,10 +143,10 @@ static int parse(RParse *p, const char *data, char *str) {
 	char *buf, *ptr, *optr;
 
 	if (len>=sizeof (w0))
-		return R_FALSE;
+		return false;
 	// malloc can be slow here :?
 	if ((buf = malloc (len+1)) == NULL)
-		return R_FALSE;
+		return false;
 	memcpy (buf, data, len+1);
 
 	if (*buf) {
@@ -167,7 +167,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			if (!ptr) {
 				eprintf ("Unbalanced bracket\n");
 				free(buf);
-				return R_FALSE;
+				return false;
 			}
 			ptr = strchr (ptr, ',');
 			if (ptr) {
@@ -204,7 +204,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		free (s);
 	}
 	free (buf);
-	return R_TRUE;
+	return true;
 }
 
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
@@ -216,7 +216,7 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 
 	if (!p->varlist) {
                 free (tstr);
-		return R_FALSE;
+		return false;
         }
 
 	vars = p->varlist (p->anal, f, 'v');
@@ -287,10 +287,10 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	} else {
 		// TOO BIG STRING CANNOT REPLACE HERE
 		free (tstr);
-		return R_FALSE;
+		return false;
 	}
 	free (tstr);
-	return R_TRUE;
+	return true;
 }
 
 struct r_parse_plugin_t r_parse_plugin_arm_pseudo = {

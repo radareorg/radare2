@@ -105,7 +105,7 @@ static int esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int l
 	return 1; // fallback
 }
 
-static int esilbreak_reg_read(RAnalEsil *esil, const char *regname, ut64 *num) {
+static int esilbreak_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
 	EsilBreak *ew;
 	RListIter *iter;
 	if (regname[0]>='0' && regname[0]<='9') {

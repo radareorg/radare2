@@ -12,13 +12,13 @@ static int lang_cpipe_file(RLang *lang, const char *file) {
 	char* binfile;
 
 	if (strlen (file) > (sizeof (name)-10))
-		return R_FALSE;
+		return false;
 	if (!strstr (file, ".c"))
 		sprintf (name, "%s.c", file);
 	else strcpy (name, file);
 	if (!r_file_exists (name)) {
 		eprintf ("file not found (%s)\n", name);
-		return R_FALSE;
+		return false;
 	}
 
 	a = (char*)r_str_lchr (name, '/');
@@ -43,7 +43,7 @@ static int lang_cpipe_file(RLang *lang, const char *file) {
 		cc, file, libpath, libname);
 	free (cc);
 	if (r_sandbox_system (buf, 1) != 0) {
-		return R_FALSE;
+		return false;
 	}
 	binfile = r_str_newf ("%s/bin%s", libpath, libname);
 	lang_pipe_run (lang, binfile, -1);
@@ -54,7 +54,7 @@ static int lang_cpipe_file(RLang *lang, const char *file) {
 
 static int lang_cpipe_init(void *user) {
 	// TODO: check if "valac" is found in path
-	return R_TRUE;
+	return true;
 }
 
 static int lang_cpipe_run(RLang *lang, const char *code, int len) {
@@ -70,7 +70,7 @@ static int lang_cpipe_run(RLang *lang, const char *code, int len) {
 		lang_cpipe_file (lang, ".tmp.c");
 		r_file_rm (".tmp.c");
 	} else eprintf ("Cannot open .tmp.c\n");
-	return R_TRUE;
+	return true;
 }
 
 static struct r_lang_plugin_t r_lang_plugin_cpipe = {

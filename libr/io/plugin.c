@@ -17,13 +17,13 @@ static RIOPlugin *io_static_plugins[] =
 R_API int r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
 	struct r_io_list_t *li;
 	if (!plugin || !plugin->name)
-		return R_FALSE;
+		return false;
 	li = R_NEW (struct r_io_list_t);
 	if (li == NULL)
-		return R_FALSE;
+		return false;
 	li->plugin = plugin;
 	list_add_tail (&(li->list), &(io->io_list));
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_io_plugin_init(RIO *io) {
@@ -44,7 +44,7 @@ R_API int r_io_plugin_init(RIO *io) {
 		}
 		r_io_plugin_add (io, static_plugin);
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, ut8 many) {
@@ -86,11 +86,11 @@ R_API int r_io_plugin_open(RIO *io, int fd, RIOPlugin *plugin) {
 	}
 	return -1;
 #endif
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_io_plugin_close(RIO *io, int fd, RIOPlugin *plugin) {
-	return R_FALSE;
+	return false;
 }
 
 // TODO: must return an r_iter ator

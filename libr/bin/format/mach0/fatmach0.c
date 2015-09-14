@@ -9,22 +9,22 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 	int len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr, "2I", 1);
 	if (len == 0 || len == -1) {
 		perror ("read (fat_header)");
-		return R_FALSE;
+		return false;
 	}
 	bin->nfat_arch = bin->hdr.nfat_arch;
 	if (bin->hdr.magic != FAT_MAGIC || bin->nfat_arch == 0 || bin->nfat_arch<1)
-		return R_FALSE;
+		return false;
 	if (!(bin->archs = malloc (bin->nfat_arch * sizeof (struct fat_arch)))) {
 		perror ("malloc (fat_arch)");
-		return R_FALSE;
+		return false;
 	}
 	len = r_buf_fread_at (bin->b, R_BUF_CUR, (ut8*)bin->archs, "5I", bin->nfat_arch);
 	if (len == 0 || len == -1) {
 		perror ("read (fat_arch)");
 		R_FREE (bin->archs);
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 }
 
 struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin, int idx, int *narch) {

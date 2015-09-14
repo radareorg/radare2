@@ -16,8 +16,8 @@ static void cache_item_free(RIOCache *cache) {
 R_API void r_io_cache_init(RIO *io) {
 	io->cache = r_list_new ();
 	io->cache->free = (RListFree)cache_item_free;
-	io->cached = R_FALSE; // cache write ops
-	io->cached_read = R_FALSE; // cached read ops
+	io->cached = false; // cache write ops
+	io->cached_read = false; // cached read ops
 }
 
 R_API void r_io_cache_enable(RIO *io, int read, int write) {
@@ -35,7 +35,7 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 		if (c->from >= from && c->to <= to) {
 			if (!r_io_write_at (io, c->from, c->data, c->size))
 				eprintf ("Error writing change at 0x%08"PFMT64x"\n", c->from);
-			else c->written = R_TRUE;
+			else c->written = true;
 			break;
 		}
 	}
@@ -50,7 +50,7 @@ R_API void r_io_cache_reset(RIO *io, int set) {
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 	RListIter *iter;
 	RIOCache *c;
-	int done = R_FALSE;
+	int done = false;
 
 	if (from<to) {
 		//r_list_foreach_safe (io->cache, iter, iter_tmp, c) {
@@ -62,8 +62,8 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 				io->cached = ioc;
 				if (!c->written)
 					r_list_delete (io->cache, iter);
-				c->written = R_FALSE;
-				done = R_TRUE;
+				c->written = false;
+				done = true;
 				break;
 			}
 		}
@@ -98,7 +98,7 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 		}
 		j++;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {

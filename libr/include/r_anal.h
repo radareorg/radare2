@@ -1430,7 +1430,7 @@ R_API RAnalBlock * r_anal_state_search_bb (RAnalState* state, ut64 addr);
 R_API void r_anal_state_free (RAnalState * state);
 R_API ut64 r_anal_state_get_len (RAnalState *state, ut64 addr);
 R_API const ut8 * r_anal_state_get_buf_by_addr (RAnalState *state, ut64 addr);
-R_API int r_anal_state_addr_is_valid (RAnalState *state, ut64 addr);
+R_API _Bool r_anal_state_addr_is_valid (RAnalState *state, ut64 addr);
 R_API void r_anal_state_merge_bb_list (RAnalState *state, RList* bbs);
 R_API void r_anal_state_set_depth(RAnalState *state, ut32 depth);
 

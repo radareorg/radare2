@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
 
 #define R_BIN_MACH064 1
 #include "bin_mach0.c"
@@ -15,12 +15,11 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-
 	if (buf && length > 4)
-	if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
-		!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
-		return R_TRUE;
-	return R_FALSE;
+		if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
+		    !memcmp (buf, "\xcf\xfa\xed\xfe", 4))
+			return true;
+	return false;
 }
 
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {

@@ -78,12 +78,12 @@ R_API int r_io_section_rm_all (RIO *io, int fd) {
 	RIOSection *section;
 	RListIter *iter, *ator;
 	if (!io || !io->sections)
-		return R_FALSE;
+		return false;
 	r_list_foreach_safe (io->sections, iter, ator, section) {
 		if (section->fd == fd || fd == -1)
 			r_list_delete (io->sections, iter);
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API void r_io_section_clear(RIO *io) {
@@ -303,17 +303,17 @@ R_API ut64 r_io_section_maddr_to_vaddr(RIO *io, ut64 offset) {
 // TODO: deprecate ?
 R_API int r_io_section_exists_for_paddr (RIO *io, ut64 paddr, int hasperm) {
 	RIOSection *s = r_io_section_mget (io, paddr);
-	if (!s) return R_FALSE;
-	if (hasperm) return (s->rwx & hasperm)? R_TRUE: R_FALSE;
-	return R_TRUE;
+	if (!s) return false;
+	if (hasperm) return (s->rwx & hasperm)? true: false;
+	return true;
 }
 
 // TODO: deprecate ?
 R_API int r_io_section_exists_for_vaddr (RIO *io, ut64 vaddr, int hasperm) {
 	RIOSection *s = r_io_section_vget (io, vaddr);
-	if (!s) return R_FALSE;
-	if (hasperm) return (s->rwx & hasperm)? R_TRUE: R_FALSE;
-	return R_TRUE;
+	if (!s) return false;
+	if (hasperm) return (s->rwx & hasperm)? true: false;
+	return true;
 }
 
 // dupped in vio.c
@@ -420,7 +420,7 @@ R_API RIOSection * r_io_section_get_first_in_vaddr_range(RIO *io, ut64 addr, ut6
 
 R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bits) {
 	RIOSection *s = r_io_section_vget (io, addr);
-	if (!s) return R_FALSE;
+	if (!s) return false;
 	if (arch) {
 		s->arch = r_sys_arch_id (arch);
 		s->bits = bits;
@@ -428,7 +428,7 @@ R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bi
 		s->arch = 0;
 		s->bits = 0;
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API const char *r_io_section_get_archbits(RIO* io, ut64 addr, int *bits) {
@@ -452,7 +452,7 @@ R_API RIOSection *r_io_section_getv_bin_id(RIO *io, ut64 vaddr, ut32 bin_id) {
 
 R_API int r_io_section_set_archbits_bin_id(RIO *io, ut64 addr, const char *arch, int bits, ut32 bin_id) {
 	RIOSection *s = r_io_section_getv_bin_id (io, addr, bin_id);
-	if (!s) return R_FALSE;
+	if (!s) return false;
 	if (arch) {
 		s->arch = r_sys_arch_id (arch);
 		s->bits = bits;
@@ -460,5 +460,5 @@ R_API int r_io_section_set_archbits_bin_id(RIO *io, ut64 addr, const char *arch,
 		s->arch = 0;
 		s->bits = 0;
 	}
-	return R_TRUE;
+	return true;
 }

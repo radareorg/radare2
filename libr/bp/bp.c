@@ -119,7 +119,7 @@ R_API int r_bp_enable_all(RBreakpoint *bp, int set) {
 	r_list_foreach (bp->bps, iter, b) {
 		b->enabled = set;
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_bp_stepy_continuation(RBreakpoint *bp) {
@@ -139,7 +139,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	b = r_bp_item_new (bp);
 	b->addr = addr;
 	b->size = size;
-	b->enabled = R_TRUE;
+	b->enabled = true;
 	b->rwx = rwx;
 	b->hw = hw;
 	if (!hw) {
@@ -167,7 +167,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 
 R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int rwx) {
 	// TODO
-	return R_FALSE;
+	return false;
 }
 
 R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx) {
@@ -189,9 +189,9 @@ R_API RBreakpointItem* r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int rwx
 
 R_API int r_bp_del_all(RBreakpoint *bp) {
 	if (r_list_empty (bp->bps))
-		return R_FALSE;
+		return false;
 	r_list_purge (bp->bps);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_bp_del(RBreakpoint *bp, ut64 addr) {
@@ -201,19 +201,19 @@ R_API int r_bp_del(RBreakpoint *bp, ut64 addr) {
 	r_list_foreach (bp->bps, iter, b) {
 		if (b->addr == addr) {
 			r_list_delete (bp->bps, iter);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set) {
 	RBreakpointItem *b = r_bp_get_in (bp, addr, 0);
 	if (b) {
 		b->trace = set;
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_bp_set_trace_all(RBreakpoint *bp, int set) {
@@ -222,7 +222,7 @@ R_API int r_bp_set_trace_all(RBreakpoint *bp, int set) {
 	r_list_foreach (bp->bps, iter, b) {
 		b->trace = set;
 	}
-	return R_TRUE;
+	return true;
 }
 // TODO: deprecate
 R_API int r_bp_list(RBreakpoint *bp, int rad) {
@@ -312,7 +312,7 @@ R_API int r_bp_del_index(RBreakpoint *bp, int idx) {
 		r_list_delete_data (bp->bps, bp->bps_idx[idx]);
 		free (bp->bps_idx[idx]);
 		bp->bps_idx[idx] = NULL;
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }

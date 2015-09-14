@@ -36,18 +36,18 @@ static int load(RBinFile *arch) {
 	ut64 sz;
 
 	if (!arch || !arch->o)
-		return R_FALSE;
+		return false;
 
 	bytes = r_buf_buffer (arch->buf);
 	sz = r_buf_size (arch->buf);
 	res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
  	arch->o->bin_obj = res;
-	return res? R_TRUE: R_FALSE;
+	return res? true: false;
 }
 
 static int destroy(RBinFile *arch) {
 	PE_(r_bin_pe_free) ((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj);
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -265,15 +265,15 @@ static int is_dot_net(RBinFile *arch) {
 	struct r_bin_pe_lib_t *libs = NULL;
 	int i;
 	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj)))
-		return R_FALSE;
+		return false;
 	for (i = 0; !libs[i].last; i++) {
 		if (!strcmp (libs[i].name, "mscoree.dll")) {
 			free (libs);
-			return R_TRUE;
+			return true;
 		}
 	}
 	free (libs);
-	return R_FALSE;
+	return false;
 }
 
 static int has_canary(RBinFile *arch) {
@@ -296,13 +296,13 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 	const ut8 *buf;
 	unsigned int idx;
 	ut64 sz;
-	if (!arch) return R_FALSE;
+	if (!arch) return false;
 	buf = r_buf_buffer (arch->buf);
-	if (!buf) return R_FALSE;
+	if (!buf) return false;
 	sz = r_buf_size (arch->buf);
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
 	if (sz < idx + 0x5E)
-		return R_FALSE;
+		return false;
 	return ((*(ut16*)(buf + idx + 0x5E)) & \
 		dllCharacteristic);
 }
@@ -345,7 +345,7 @@ static RBinInfo* info(RBinFile *arch) {
 	sdb_bool_set (arch->sdb, "pe.terminalserveraware", haschr(arch, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
 	sdb_num_set (arch->sdb, "pe.bits", ret->bits, 0);
 
-	ret->has_va = R_TRUE;
+	ret->has_va = true;
 	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->o->bin_obj))
@@ -381,18 +381,16 @@ static int check(RBinFile *arch) {
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	unsigned int idx;
-	int ret = R_FALSE;
-	if (!buf)
-		return R_FALSE;
+	if (!buf) return false;
 	if (length <= 0x3d)
-		return R_FALSE;
+		return false;
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
 	if (length > idx+0x18+2)
 		if (!memcmp (buf, "MZ", 2) &&
-			!memcmp (buf+idx, "PE", 2) &&
-			!memcmp (buf+idx+0x18, "\x0b\x01", 2))
-			ret = R_TRUE;
-	return ret;
+		    !memcmp (buf+idx, "PE", 2) &&
+		    !memcmp (buf+idx+0x18, "\x0b\x01", 2))
+			return true;
+	return false;
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */

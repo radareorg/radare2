@@ -14,11 +14,11 @@ R_API int r_anal_type_set(RAnal *anal, ut64 at, const char *field, ut64 val) {
 			snprintf (var, sizeof (var), "%s.%s.%s", p, kind, field);
 			int off = sdb_array_get_num (DB, var, 1, NULL);
 			//int siz = sdb_array_get_num (DB, var, 2, NULL);
-eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x, val, at+off);
-			return R_TRUE;
+			eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x, val, at+off);
+			return true;
 		} else eprintf ("Invalid kind of type\n");
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API void r_anal_type_del(RAnal *anal, const char *name) {
@@ -73,14 +73,14 @@ R_API int r_anal_type_frame (RAnal *anal, ut64 addr, const char *type, const cha
 		addr, name, type, off, size);
 	sdb_queryf (DB,
 		"frame.%08"PFMT64x"=%s", addr, name);
-	return R_TRUE;
+	return true;
 	
 }
 
 R_API int r_anal_type_frame_del (RAnal *anal, ut64 addr, const char *name) {
 	//"(-)frame.%08"PFMT64x"=%s", addr, name
 	//"frame.%08"PFMT64x".%s=", addr, name
-	return R_TRUE;
+	return true;
 }
 #endif
 
@@ -89,10 +89,10 @@ R_API int r_anal_type_link (RAnal *anal, const char *type, ut64 addr) {
 	if (sdb_const_get (anal->sdb_types, type, 0)) {
 		snprintf (laddr, sizeof (laddr)-1, "link.%08"PFMT64x, addr);
 		sdb_set (anal->sdb_types, laddr, type, 0);
-		return R_TRUE;
+		return true;
 	} 
 	// eprintf ("Cannot find type\n");
-	return R_FALSE;
+	return false;
 }
 
 static void filter_type(char *t) {

@@ -43,9 +43,9 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
-	if (!arch || !arch->o) return R_FALSE;
+	if (!arch || !arch->o) return false;
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj ? R_TRUE: R_FALSE;
+	return arch->o->bin_obj ? true: false;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -94,24 +94,24 @@ static int check(RBinFile *arch) {
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if (!buf || length < 8)
-		return R_FALSE;
+		return false;
 	// Non-extended opcode dex file
 	if (!memcmp (buf, "dex\n035\0", 8)) {
-	        return R_TRUE;
+	        return true;
 	}
 	// Extended (jumnbo) opcode dex file, ICS+ only (sdk level 14+)
 	if (!memcmp (buf, "dex\n036\0", 8))
-	        return R_TRUE;
+	        return true;
 	// M3 (Nov-Dec 07)
 	if (!memcmp (buf, "dex\n009\0", 8))
-	        return R_TRUE;
+	        return true;
 	// M5 (Feb-Mar 08)
         if (!memcmp (buf, "dex\n009\0", 8))
-	        return R_TRUE;
+	        return true;
 	// Default fall through, should still be a dex file
 	if (!memcmp (buf, "dex\n", 4))
-                return R_TRUE;
-	return R_FALSE;
+                return true;
+	return false;
 }
 
 static RBinInfo *info(RBinFile *arch) {
@@ -120,7 +120,7 @@ static RBinInfo *info(RBinFile *arch) {
 	if (!ret) return NULL;
 	ret->file = arch->file? strdup (arch->file): NULL;
 	ret->type = strdup ("DEX CLASS");
-	ret->has_va = R_FALSE;
+	ret->has_va = false;
 	ret->bclass = r_bin_dex_get_version (arch->o->bin_obj);
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
@@ -356,7 +356,7 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 	methods = calloc (sizeof (ut32), bin->header.method_size);
 	if (!methods) {
 		free (class_name);
-		return R_FALSE;
+		return false;
 	}
 	dprintf ("  class_data_offset: %d\n", c->class_data_offset);
 	p = r_buf_get_at (binfile->buf, c->class_data_offset, NULL);
@@ -495,7 +495,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 
 	// doublecheck??
 	if (!bin || bin->methods_list)
-		return R_FALSE;
+		return false;
 	bin->code_from = UT64_MAX;
 	bin->code_to = 0;
 	bin->methods_list = r_list_new ();
@@ -505,7 +505,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 
 	if (bin->header.method_size>bin->size) {
 		bin->header.method_size = 0;
-		return R_FALSE;
+		return false;
 	}
 
 	/* WrapDown the header sizes to avoid huge allocations */
@@ -515,7 +515,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 
 	if (bin->header.strings_size > bin->size) {
 		eprintf ("Invalid strings size\n");
-		return R_FALSE;
+		return false;
 	}
 
 	dprintf ("Walking %d classes\n", bin->header.class_size);
@@ -565,7 +565,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		}
 		free (methods);
 	}
-	return R_TRUE;
+	return true;
 }
 
 static RList* imports (RBinFile *arch) {

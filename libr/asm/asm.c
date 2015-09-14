@@ -170,9 +170,9 @@ R_API int r_asm_filter_input(RAsm *a, const char *f) {
 	if (!r_parse_use (a->ifilter, f)) {
 		r_parse_free (a->ifilter);
 		a->ifilter = NULL;
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_asm_filter_output(RAsm *a, const char *f) {
@@ -181,9 +181,9 @@ R_API int r_asm_filter_output(RAsm *a, const char *f) {
 	if (!r_parse_use (a->ofilter, f)) {
 		r_parse_free (a->ofilter);
 		a->ofilter = NULL;
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API RAsm *r_asm_free(RAsm *a) {
@@ -215,19 +215,19 @@ R_API int r_asm_add(RAsm *a, RAsmPlugin *foo) {
 	RAsmPlugin *h;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
 	if (!foo->name)
-		return R_FALSE;
+		return false;
 	if (foo->init)
 		foo->init (a->user);
 	r_list_foreach (a->plugins, iter, h)
 		if (!strcmp (h->name, foo->name))
-			return R_FALSE;
+			return false;
 	r_list_append (a->plugins, foo);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_asm_del(RAsm *a, const char *name) {
 	/* TODO: Implement r_asm_del */
-	return R_FALSE;
+	return false;
 }
 
 
@@ -235,12 +235,12 @@ R_API int r_asm_is_valid(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (!name || !*name)
-		return R_FALSE;
+		return false;
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name))
-			return R_TRUE;
+			return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 // TODO: this can be optimized using r_str_hash()
@@ -249,7 +249,7 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (!a || !name)
-		return R_FALSE;
+		return false;
 	r_list_foreach (a->plugins, iter, h)
 		if (!strcmp (h->name, name)) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
@@ -260,15 +260,15 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 				a->pair = sdb_new (NULL, file, 0);
 			}
 			a->cur = h;
-			return R_TRUE;
+			return true;
 		}
 	sdb_free (a->pair);
 	a->pair = NULL;
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_asm_set_subarch(RAsm *a, const char *name) {
-	int ret = R_FALSE;
+	int ret = false;
 	if (a->cur && a->cur->set_subarch)
 		ret = a->cur->set_subarch(a, name);
 	return ret;
@@ -276,8 +276,8 @@ R_API int r_asm_set_subarch(RAsm *a, const char *name) {
 
 static int has_bits(RAsmPlugin *h, int bits) {
 	if (h && h->bits && (bits & h->bits))
-		return R_TRUE;
-	return R_FALSE;
+		return true;
+	return false;
 }
 
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
@@ -288,14 +288,14 @@ R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
 R_API int r_asm_set_bits(RAsm *a, int bits) {
 	if (has_bits (a->cur, bits)) {
 		a->bits = bits; // TODO : use OR? :)
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_asm_set_big_endian(RAsm *a, int b) {
 	a->big_endian = b;
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_asm_set_syntax(RAsm *a, int syntax) {
@@ -306,15 +306,15 @@ R_API int r_asm_set_syntax(RAsm *a, int syntax) {
 	case R_ASM_SYNTAX_ATT:
 	case R_ASM_SYNTAX_JZ:
 		a->syntax = syntax;
-		return R_TRUE;
+		return true;
 	default:
-		return R_FALSE;
+		return false;
 	}
 }
 
 R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 	a->pc = pc;
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
@@ -624,9 +624,9 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				else if (!strncmp (ptr, ".int64 ", 7))
 					ret = r_asm_pseudo_int64 (a, &op, ptr+7);
 				else if (!strncmp (ptr, ".size", 5))
-					ret = R_TRUE; // do nothing, ignored
+					ret = true; // do nothing, ignored
 				else if (!strncmp (ptr, ".section", 8))
-					ret = R_TRUE; // do nothing, ignored
+					ret = true; // do nothing, ignored
 				else if ((!strncmp (ptr, ".byte ", 6)) || (!strncmp (ptr, ".int8 ", 6)))
 					ret = r_asm_pseudo_byte (&op, ptr+6);
 				else if (!strncmp (ptr, ".glob", 5)) { // .global .globl
@@ -697,7 +697,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 }
 
 R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val) {
-	int ret = R_FALSE;
+	int ret = false;
 	if (a->cur && a->cur->modify)
 		ret = a->cur->modify (a, buf, field, val);
 	return ret;

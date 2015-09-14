@@ -7,17 +7,15 @@
 R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	int i, size;
 	if (!dbg || !dbg->reg || !dbg->h)
-		return R_FALSE;
-
+		return false;
 	// Theres no point in syncing a dead target
 	if (r_debug_is_dead (dbg))
-		return R_FALSE;
-
+		return false;
 	// Check if the functions needed are available
 	if (write && !dbg->h->reg_write)
-		return R_FALSE;
+		return false;
 	if (!write && !dbg->h->reg_read)
-		return R_FALSE;
+		return false;
 
 	// Sync all the types sequentially if asked
 	i = (type == R_REG_TYPE_ALL) ? R_REG_TYPE_GPR : type;
@@ -28,20 +26,20 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			if (!buf || !dbg->h->reg_write (dbg, i, buf, size)) {
 				if (i==0)
 					eprintf ("r_debug_reg: error writing registers %d to %d\n", i, dbg->pid);
-				return R_FALSE;
+				return false;
 			}
 		} else {
 			//int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
 			int bufsize = dbg->reg->size;
 			ut8 *buf = malloc (bufsize);
-			if (!buf) return R_FALSE;
+			if (!buf) return false;
 			//we have already checked dbg->h and dbg->h->reg_read above
 			size = dbg->h->reg_read (dbg, i, buf, bufsize);
-			// we need to check against zero because reg_read can return R_FALSE
+			// we need to check against zero because reg_read can return false
 			if (!size) {
 				eprintf ("r_debug_reg: error reading registers\n");
 				free (buf);
-				return R_FALSE;
+				return false;
 			} else
 				r_reg_set_bytes (dbg->reg, i, buf, R_MIN(size, bufsize));
 
@@ -52,7 +50,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 
 		// Continue the syncronization or just stop if it was asked only for a single type of regs 
 	} while ((type==R_REG_TYPE_ALL) && (i++ < R_REG_TYPE_LAST));
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
@@ -64,7 +62,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	ut64 diff;
 
 	if (!dbg || !dbg->reg)
-		return R_FALSE;
+		return false;
 	if (!(dbg->reg->bits & size)) {
 		// TODO: verify if 32bit exists, otherwise use 64 or 8?
 		size = 32;
@@ -102,9 +100,9 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					continue;
 			}
 			value = r_reg_get_value (dbg->reg, item);
-			r_reg_arena_swap (dbg->reg, R_FALSE);
+			r_reg_arena_swap (dbg->reg, false);
 			diff = r_reg_get_value (dbg->reg, item);
-			r_reg_arena_swap (dbg->reg, R_FALSE);
+			r_reg_arena_swap (dbg->reg, false);
 			delta = value-diff;
 
 			switch (rad) {
@@ -184,13 +182,13 @@ R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {
 	RRegItem *ri;
 	int role = r_reg_get_name_idx (name);
 	if (!dbg || !dbg->reg)
-		return R_FALSE;
+		return false;
 	if (role != -1)
 		name = r_reg_get_name (dbg->reg, role);
 	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_GPR);
 	if (ri) {
 		r_reg_set_value (dbg->reg, ri, num);
-		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_TRUE);
+		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true);
 	}
 	return (ri!=NULL);
 }
@@ -220,7 +218,7 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err) {
 	}
 	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_GPR);
 	if (ri) {
-		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 		ret = r_reg_get_value (dbg->reg, ri);
 	}
 	return ret;

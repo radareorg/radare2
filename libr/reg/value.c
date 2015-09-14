@@ -66,7 +66,7 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 
 	if (!item) {
 		eprintf ("r_reg_set_value: item is NULL\n");
-		return R_FALSE;
+		return false;
 	}
 	switch (item->size) {
 	case 80:
@@ -100,20 +100,20 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 			ut8 mask = 0xff ^ (1 << bit);
 			buf[0] = (buf[0] & mask) | 0;
 		}
-		return R_TRUE;
+		return true;
 	default:
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
-		return R_FALSE;
+		return false;
 	}
 	fits_in_arena = (reg->regset[item->type].arena->size \
 		- BITS2BYTES (item->offset) - BITS2BYTES(item->size)) >= 0;
 	if (src && fits_in_arena) {
 		r_mem_copybits (reg->regset[item->type].arena->bytes +
 			BITS2BYTES (item->offset), src, item->size);
-		return R_TRUE;
+		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%"PFMT64x"\n", item->name, value);
-	return R_FALSE;
+	return false;
 }
 
 R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str) {
@@ -174,7 +174,7 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 
 	if (!reg || !item) {
 		eprintf ("r_reg_set_value: item is NULL\n");
-		return R_FALSE;
+		return false;
 	}
 	if (packbits<1) {
 		packbits = item->packed_size;
@@ -184,18 +184,18 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 	packmod = packbits % 8;
 	if (packidx * packbits > item->size) {
 		eprintf ("Packed index is beyond the register size\n");
-		return R_FALSE;
+		return false;
 	}
 	if (packmod) {
 		eprintf ("Invalid bit size for packet register\n");
-		return R_FALSE;
+		return false;
 	}
 	if (reg->regset[item->type].arena->size - BITS2BYTES (off) - BITS2BYTES(packbytes) >= 0) {
 		r_mem_copybits (reg->regset[item->type].arena->bytes+
 				BITS2BYTES (off), (ut8*)&val, packbytes);
-		return R_TRUE;
+		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%"PFMT64x"\n", item->name, val);
-	return R_FALSE;
+	return false;
 }
 

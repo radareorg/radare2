@@ -10,7 +10,7 @@ static csh cd = 0;
 static int n = 0;
 static cs_insn *insn = NULL;
 
-static int the_end(void *p) {
+static _Bool the_end(void *p) {
 #if !USE_ITER_API
 	if (insn) {
 		cs_free (insn, n);
@@ -21,7 +21,7 @@ static int the_end(void *p) {
 		cs_close (&cd);
 		cd = 0;
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int check_features(RAsm *a, cs_insn *insn);

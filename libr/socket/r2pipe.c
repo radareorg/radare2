@@ -55,10 +55,10 @@ static int w32_createChildProcess(const char * szCmdline) {
 	bSuccess = CreateProcess (NULL, szCmdline, NULL, NULL,
 		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
 	if (!bSuccess)
-		return R_FALSE;
+		return false;
 	CloseHandle (piProcInfo.hProcess);
 	CloseHandle (piProcInfo.hThread);
-	return R_TRUE;
+	return true;
 }
 
 static int w32_createPipe(R2Pipe *r2p, const char *cmd) {
@@ -72,16 +72,16 @@ static int w32_createPipe(R2Pipe *r2p, const char *cmd) {
 		PIPE_READMODE_MESSAGE | \
 		PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 		sizeof (buf), sizeof (buf), 0, NULL);
-	if (w32_createChildProcess (cmd) != R_TRUE) {
+	if (w32_createChildProcess (cmd) != true) {
 		//eprintf("Error spawning process: %s\n",code);
-		return R_TRUE;
+		return true;
 	}
 	bSuccess = ConnectNamedPipe (r2p->pipe, NULL);
 	if (!bSuccess) {
 		//eprintf("Error connecting pipe.\n");
-		return R_TRUE;
+		return true;
 	}
-	return R_TRUE;
+	return true;
 }
 #endif
 
@@ -94,14 +94,14 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 		 {
 			char *out = r_sys_getenv ("R2PIPE_IN");
 			char *in = r_sys_getenv ("R2PIPE_OUT");
-			int done = R_FALSE;
+			int done = false;
 			if (in && out) {
 				int i_in = atoi (in);
 				int i_out = atoi (out);
 				if (i_in>=0 && i_out>=0) {
 					r2p->input[0] = r2p->input[1] = i_in;
 					r2p->output[0] = r2p->output[1] = i_out;
-					done = R_TRUE;
+					done = true;
 				}
 			}
 			if (!done) {
@@ -189,9 +189,9 @@ R_API int r2p_write(R2Pipe *r2p, const char *str) {
 #if __WINDOWS__
 	DWORD dwWritten = -1;
 	WriteFile (r2p->pipe, str, len, &dwWritten, NULL);
-	ret = (dwWritten == len)? R_TRUE: R_FALSE;
+	ret = (dwWritten == len);
 #else
-	ret = (write (r2p->input[1], str, len) == len)? R_TRUE: R_FALSE;
+	ret = (write (r2p->input[1], str, len) == len);
 #endif
 	return ret;
 }

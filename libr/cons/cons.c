@@ -16,7 +16,7 @@ static RCons r_cons_instance;
 #define I r_cons_instance
 
 static void break_signal(int sig) {
-	I.breaked = R_TRUE;
+	I.breaked = true;
 	r_print_set_interrupted (I.breaked);
 	if (I.event_interrupt)
 		I.event_interrupt (I.data);
@@ -136,7 +136,7 @@ R_API RCons *r_cons_singleton () {
 }
 
 R_API void r_cons_break(void (*cb)(void *u), void *user) {
-	I.breaked = R_FALSE;
+	I.breaked = false;
 	I.event_interrupt = cb;
 	I.data = user;
 #if __UNIX__ || __CYGWIN__
@@ -150,7 +150,7 @@ R_API int r_cons_is_breaked() {
 }
 
 R_API void r_cons_break_end() {
-	I.breaked = R_FALSE;
+	I.breaked = false;
 	r_print_set_interrupted (I.breaked);
 #if __UNIX__ || __CYGWIN__
 	signal (SIGINT, SIG_IGN);
@@ -163,9 +163,9 @@ static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		break_signal (2); // SIGINT
 		eprintf("{ctrl+c} pressed.\n");
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 #elif __UNIX__ || __CYGWIN__
 static void resize (int sig) {
@@ -190,7 +190,7 @@ R_API int r_cons_enable_mouse (const int enable) {
 	}
 	return enabled;
 #else
-	return R_FALSE;
+	return false;
 #endif
 }
 
@@ -211,7 +211,7 @@ R_API RCons *r_cons_new () {
 	I.event_interrupt = NULL;
 	I.is_wine = -1;
 	I.fps = 0;
-	I.blankline = R_TRUE;
+	I.blankline = true;
 	I.teefile = NULL;
 	I.fix_columns = 0;
 	I.fix_rows = 0;
@@ -221,11 +221,11 @@ R_API RCons *r_cons_new () {
 	I.event_resize = NULL;
 	I.data = NULL;
 	I.event_data = NULL;
-	I.is_interactive = R_TRUE;
-	I.noflush = R_FALSE;
+	I.is_interactive = true;
+	I.noflush = false;
 	I.fdin = stdin;
 	I.fdout = 1;
-	I.breaked = R_FALSE;
+	I.breaked = false;
 	//I.lines = 0;
 	I.buffer = NULL;
 	I.buffer_sz = 0;
@@ -830,8 +830,8 @@ R_API void r_cons_zero() {
 
 R_API void r_cons_highlight (const char *word) {
 	char *rword, *res, *clean;
-	char *inv[2] = {R_CONS_INVERT(R_TRUE, R_TRUE),
-			R_CONS_INVERT(R_FALSE, R_TRUE)};
+	char *inv[2] = {R_CONS_INVERT(true, true),
+			R_CONS_INVERT(false, true)};
 	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
 	int l, *cpos;
 

@@ -76,13 +76,13 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	mmo->buf = r_buf_mmap (mmo->filename, mmo->flags);
 	if (mmo->buf) {
 		r_io_def_mmap_seek (io, mmo, cur, SEEK_SET);
-		return R_TRUE;
+		return true;
 	} else {
 		mmo->rawio = 1;
 		mmo->fd = __io_posix_open (mmo->filename, mmo->flags, mmo->mode);
 		return (mmo->fd != -1);
 	}
-	return R_FALSE;
+	return false;
 }
 
 RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int mode, int flags) {
@@ -282,17 +282,15 @@ static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int wh
 
 	seek_val = mmo->buf->cur;
 	switch (whence) {
-		case SEEK_SET:
-			seek_val = (mmo->buf->length < offset) ?
-				mmo->buf->length : offset;
-			break;
-		case SEEK_CUR:
-			seek_val = (mmo->buf->length < (offset + mmo->buf->cur)) ?
-				mmo->buf->length : offset + mmo->buf->cur;
-			break;
-		case SEEK_END:
-			seek_val = mmo->buf->length;
-			break;
+	case SEEK_SET:
+		seek_val = R_MIN (mmo->buf->length, offset);
+		break;
+	case SEEK_CUR:
+		seek_val = R_MIN (mmo->buf->length, (offset + mmo->buf->cur));
+		break;
+	case SEEK_END:
+		seek_val = mmo->buf->length;
+		break;
 	}
 	mmo->buf->cur = io->off = seek_val;
 	return seek_val;
@@ -309,7 +307,7 @@ static int r_io_def_mmap_truncate(RIOMMapFileObj *mmo, ut64 size) {
 
 	if (res && !r_io_def_mmap_refresh_def_mmap_buf (mmo) ) {
 		eprintf ("r_io_def_mmap_truncate: Error trying to refresh the def_mmap'ed file.");
-		res = R_FALSE;
+		res = false;
 	}
 	else if (!res) eprintf ("r_io_def_mmap_truncate: Error trying to resize the file.");
 	return res;

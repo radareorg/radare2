@@ -210,13 +210,13 @@ R_API int r_run_parsefile (RRunProfile *p, const char *b) {
 }
 
 R_API int r_run_parseline (RRunProfile *p, char *b) {
-	int must_free = R_FALSE;
+	int must_free = false;
 	char *e = strchr (b, '=');
 	if (!e) return 0;
 	if (*b=='#') return 0;
 	*e++ = 0;
 	if (*e=='$') {
-		must_free = R_TRUE;
+		must_free = true;
 		e = r_sys_getenv (e);
 	}
 	if (e == NULL) return 0;
@@ -263,7 +263,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 		FILE *fd = fopen (e, "r");
 		if (!fd) {
 			eprintf ("Cannot open '%s'\n", e);
-			if (must_free == R_TRUE)
+			if (must_free == true)
 				free (e);
 			return 0;
 		}
@@ -288,7 +288,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	} else if (!strcmp(b, "clearenv")) {
 		r_sys_clearenv ();
 	}
-	if (must_free == R_TRUE)
+	if (must_free == true)
 		free (e);
 	return 1;
 }
@@ -426,10 +426,10 @@ R_API int r_run_start(RRunProfile *p) {
 			r_socket_free (fd);
 			return 1;
 		}
-		while (R_TRUE) {
+		while (true) {
 			child = r_socket_accept (fd);
 			if (child) {
-				int is_child = R_TRUE;
+				int is_child = true;
 
 				if (p->_dofork && !p->_dodebug) {
 					pid_t child_pid = r_sys_fork ();
@@ -440,7 +440,7 @@ R_API int r_run_start(RRunProfile *p) {
 						return 1;
 					} else if (child_pid != 0){
 						// parent code
-						is_child = R_FALSE;
+						is_child = false;
 					}
 				}
 

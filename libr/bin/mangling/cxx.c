@@ -15,21 +15,21 @@ R_API int r_bin_lang_cxx(RBinFile *binfile) {
 	RBinInfo *info = o ? o->info : NULL;
 	RBinSymbol *sym;
 	RListIter *iter;
-	int hascxx = R_FALSE;
+	int hascxx = false;
 	const char *lib;
 
 	if (!info)
-		return R_FALSE;
+		return false;
 	r_list_foreach (o->libs, iter, lib) {
 		if (strstr (lib, "stdc++")) {
-			hascxx = R_TRUE;
+			hascxx = true;
 			break;
 		}
 	}
 	if (!hascxx) {
 		r_list_foreach (o->symbols, iter, sym) {
 			if (is_cxx_symbol (sym->name)) {
-				hascxx = R_TRUE;
+				hascxx = true;
 				break;
 			}
 		}

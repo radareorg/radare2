@@ -151,10 +151,10 @@ static void close_pidmem(RIOPtrace *iop) {
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	if (!strncmp (file, "ptrace://", 9))
-		return R_TRUE;
+		return true;
 	if (!strncmp (file, "attach://", 9))
-		return R_TRUE;
-	return R_FALSE;
+		return true;
+	return false;
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
@@ -278,7 +278,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		return pid;
 	} else eprintf ("Try: '=!pid'\n");
-	return R_TRUE;
+	return true;
 }
 
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
@@ -293,7 +293,7 @@ RIOPlugin r_io_plugin_ptrace = {
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,
-	.isdbg = R_TRUE
+	.isdbg = true
 };
 #else
 struct r_io_plugin_t r_io_plugin_ptrace = {

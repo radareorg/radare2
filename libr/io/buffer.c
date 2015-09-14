@@ -11,7 +11,7 @@ R_API int r_io_buffer_load(RIO* io, ut64 addr, int len) {
 	ut64 at;
 	int i, r;
 	ut8 buf[512];
-	if (len<1) return R_FALSE;
+	if (len<1) return false;
 	io->buffer_enabled = 0;
 	for (i=0; i<len; i+=sizeof (buf)) {
 		at = addr+i;
@@ -22,7 +22,7 @@ R_API int r_io_buffer_load(RIO* io, ut64 addr, int len) {
 		r_cache_set (io->buffer, at, buf, sizeof (buf));
 	}
 	io->buffer_enabled = 1;
-	return R_TRUE;
+	return true;
 }
 
 R_API const ut8* r_io_buffer_get (RIO *io, ut64 addr, int *len) {

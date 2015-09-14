@@ -92,12 +92,11 @@ RAsmPlugin r_asm_plugin_ppc_gnu = {
 	.name = "ppc.gnu",
 	.arch = "ppc",
 	.license = "GPL3",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.desc = "PowerPC",
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
+	.assemble = NULL,
+	0
 };
 
 #ifndef CORELIB

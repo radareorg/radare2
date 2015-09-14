@@ -48,8 +48,8 @@ static int is_fi_present(fnditem* n, unsigned char* blk , int patlen) {
 	fnditem* p;
 	for (p=n; p->next!=NULL; p=p->next)
 		if (!memcmp (blk, p->str, patlen))
-			return R_TRUE;
-	return R_FALSE;
+			return true;
+	return false;
 }
 
 R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
@@ -62,7 +62,7 @@ R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
 	eprintf ("Searching patterns between 0x%08"PFMT64x" and 0x%08"PFMT64x"\n", from, to);
 	if (patlen < 1 || patlen > MAX_PATLEN) {
 		eprintf ("Invalid pattern length (must be > 1 and < %d)\n", MAX_PATLEN);
-		return R_FALSE;
+		return false;
 	}
 	bact = from;
 	bytes = to;

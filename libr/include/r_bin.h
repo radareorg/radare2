@@ -212,6 +212,7 @@ typedef struct r_bin_xtr_plugin_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*check)(RBin *bin);
+// XXX: ut64 for size is maybe too much, what about st64? signed sizes are useful for detecting errors
 	int (*check_bytes)(const ut8 *bytes, ut64 sz);
 	RBinXtrData * (*extract_from_bytes)(const ut8 *buf, ut64 size, int idx);
 	RList * (*extractall_from_bytes)(const ut8 *buf, ut64 size);

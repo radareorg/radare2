@@ -44,10 +44,10 @@ static int self_in_section(ut64 addr, int *left, int *perm) {
 					*left = self_sections[i].to-addr;
 				if (perm)
 					*perm = self_sections[i].perm;
-				return R_TRUE;
+				return true;
 			}
 	}
-	return R_FALSE;
+	return false;
 }
 
 static int update_self_regions(int pid) {
@@ -59,11 +59,11 @@ static int update_self_regions(int pid) {
 	rc = task_for_pid (mach_task_self(),pid, &task);
 	if (rc) {
 		eprintf ("task_for_pid failed\n");
-		return R_FALSE;
+		return false;
 	}
 	macosx_debug_regions (task, (size_t)1, 1000);
 
-	return R_TRUE;
+	return true;
 #elif __linux__
 	char *pos_c;
 	int i, l, perm;
@@ -73,7 +73,7 @@ static int update_self_regions(int pid) {
 	snprintf (path, sizeof (path)-1, "/proc/%d/maps", pid);
 	FILE *fd = fopen (path, "r");
 	if (!fd)
-		return R_FALSE;
+		return false;
 
 	while (!feof (fd)) {
 		line[0]='\0';
@@ -113,10 +113,10 @@ static int update_self_regions(int pid) {
 	}
 	fclose (fd);
 
-	return R_TRUE;
+	return true;
 #else
 	#warning not yet implemented for this platform
-	return R_FALSE;
+	return false;
 #endif
 }
 
@@ -128,7 +128,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int ret, pid = getpid ();
 	if (r_sandbox_enable (0))
 		return NULL;
-	io->va = R_TRUE; // nop
+	io->va = true; // nop
 	ret = update_self_regions (pid);
 	if (ret) {
 		return r_io_desc_new (&r_io_plugin_self,

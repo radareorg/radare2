@@ -15,17 +15,17 @@ R_API int r_debug_bp_enable(struct r_debug_t *dbg, ut64 addr, int set)
 		if (set) iob->write_at(iob->io, addr, bp->bbytes, bp->size);
 		else iob->write_at(iob->io, addr, bp->obytes, bp->size);
 	}
-	return (bp!=NULL)?R_TRUE:R_FALSE;
+	return (bp!=NULL)?true:false;
 }
 
 // XXX this must be implemented in r_bp.. not here!!1
 R_API int r_debug_bp_add(struct r_debug_t *dbg, ut64 addr, int size, int hw, int rwx)
 {
 	ut8 *buf;
-	int ret = R_FALSE;
+	int ret = false;
 	struct r_bp_item_t *bp;
 	struct r_io_bind_t *iob;
-	if (dbg->bp->iob.init == R_FALSE) {
+	if (dbg->bp->iob.init == false) {
 		eprintf("No dbg->read callback defined\n");
 		return -1; // return -1?
 	}
@@ -44,7 +44,7 @@ R_API int r_debug_bp_add(struct r_debug_t *dbg, ut64 addr, int size, int hw, int
 		if (dbg->h && (!dbg->h->bp_write || !dbg->h->bp_write(dbg->pid, addr, size, hw, rwx )))
 			iob->write_at(iob->io, addr, bp->bbytes, size);
 		/* if already set, r_bp should return false */
-		ret = R_TRUE;
+		ret = true;
 	}
 	free(buf);
 	return ret;
@@ -74,8 +74,7 @@ R_API int r_bp_restore(struct r_bp_t *bp, int set) {
 			else bp->iob.write_at (bp->iob.io, b->addr, b->obytes, b->size);
 		}
 	}
-	
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_bp_recoil(RBreakpoint *bp, ut64 addr) {

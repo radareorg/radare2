@@ -48,7 +48,7 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		break;
 	default:
 		eprintf ("Invalid var kind '%c'\n", kind);
-		return R_FALSE;
+		return false;
 	}
 	var_def = sdb_fmt (0,"%c,%s,%d,%s", kind, type, size, name);
 	if (scope>0) {
@@ -67,7 +67,7 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		sdb_array_add (DB, var_global, var_def, 0);
 	}
 //	ls_sort (DB->ht->list, mystrcmp);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_anal_var_delete (RAnal *a, ut64 addr, const char kind, int scope, int delta) {
@@ -88,7 +88,7 @@ R_API int r_anal_var_delete (RAnal *a, ut64 addr, const char kind, int scope, in
 		sdb_array_remove (DB, var_global, var_def, 0);
 	}
 	r_anal_var_access_clear (a, addr, scope, delta);
-	return R_TRUE;
+	return true;
 }
 
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int delta) {
@@ -221,7 +221,7 @@ R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int delt
 	if (EXISTS("fcn.0x%08"PFMT64x, fna)) {
 		SETKEY("fcn.0x%08"PFMT64x".%c", fna, kind);
 		if (sdb_array_contains_num (DB, key, delta, 0))
-			return R_FALSE;
+			return false;
 		e = sdb_encode (name, -1);
 		if (e) {
 			sdb_array_push (DB, key, e, 0);
@@ -232,10 +232,10 @@ R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int delt
 		}
 	} else {
 		eprintf ("r_anal_fcn_local_add: cannot find function.\n");
-		return R_FALSE;
+		return false;
 	}
 #endif
-	return R_TRUE;
+	return true;
 }
 #endif
 
@@ -250,7 +250,7 @@ R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int s
 		SETKEY ("fcn.0x%08"PFMT64x".%c.%d", fna, kind, delta);
 		sdb_unset (DB, key, 0);
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
@@ -300,7 +300,7 @@ static int var_comparator (const RAnalVar *a, const RAnalVar *b){
 	//avoid NULL dereference
 	if (a && b)
 		return a->delta > b->delta;
-	return R_FALSE;
+	return false;
 }
 
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode) {

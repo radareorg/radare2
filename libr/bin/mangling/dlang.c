@@ -17,21 +17,21 @@ R_API int r_bin_lang_dlang(RBinFile *binfile) {
 	RBinInfo *info = o ? o->info : NULL;
 	RBinSymbol *sym;
 	RListIter *iter;
-	int hasdlang = R_FALSE;
+	int hasdlang = false;
 	const char *lib;
 
 	if (!info)
-		return R_FALSE;
+		return false;
 	r_list_foreach (o->libs, iter, lib) {
 		if (strstr (lib, "phobos")) {
-			hasdlang = R_TRUE;
+			hasdlang = true;
 			break;
 		}
 	}
 	if (!hasdlang) {
 		r_list_foreach (o->symbols, iter, sym) {
 			if (is_dlang_symbol (sym->name)) {
-				hasdlang = R_TRUE;
+				hasdlang = true;
 				break;
 			}
 		}

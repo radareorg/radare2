@@ -116,7 +116,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 				}
 				newstr[k]='\0';
 			}
-			return R_TRUE;
+			return true;
 		}
 	}
 
@@ -128,7 +128,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			strcat (newstr, (i == 0 || i== argc - 1)?" ":",");
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 static int parse(RParse *p, const char *data, char *str) {
@@ -137,10 +137,10 @@ static int parse(RParse *p, const char *data, char *str) {
 	char *buf, *ptr, *optr;
 
 	if (len>=sizeof (w0))
-		return R_FALSE;
+		return false;
 	// malloc can be slow here :?
 	if ((buf = malloc (len+1)) == NULL)
-		return R_FALSE;
+		return false;
 	memcpy (buf, data, len+1);
 
 	if (*buf) {
@@ -182,7 +182,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		}
 	}
 	free (buf);
-	return R_TRUE;
+	return true;
 }
 
 #if 0
@@ -220,7 +220,7 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 				snprintf (str, len, "%s%s%s", data,
 					f->varsubs[i].sub, ptr2);
 		}
-	return R_TRUE;
+	return true;
 #else
 	RAnalVar *var, *arg;
 	RListIter *variter, *argiter;
@@ -230,7 +230,7 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 
 	if (!p->varlist) {
                 free(tstr);
-		return R_FALSE;
+		return false;
         }
 	vars = p->varlist (p->anal, f, 'v');
 	args = p->varlist (p->anal, f, 'a');
@@ -291,10 +291,10 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	} else {
 		// TOO BIG STRING CANNOT REPLACE HERE
 		free (tstr);
-		return R_FALSE;
+		return false;
 	}
 	free (tstr);
-	return R_TRUE;
+	return true;
 #endif
 }
 

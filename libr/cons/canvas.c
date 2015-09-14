@@ -56,7 +56,7 @@ R_API RConsCanvas* r_cons_canvas_new (int w, int h) {
 }
 
 R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
-	int ret = R_TRUE;
+	int ret = true;
 	if (!c) return 0;
 	x += c->sx;
 	y += c->sy;
@@ -64,19 +64,19 @@ R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	if (y > c->h * 2) return 0;
 	if (x >= c->w) {
 		c->x = c->w;
-		ret = R_FALSE;
+		ret = false;
 	}
 	if (y >= c->h) {
 		c->y = c->h;
-		ret = R_FALSE;
+		ret = false;
 	}
 	if (x < 0) {
 		//c->x = 0;
-		ret = R_FALSE;
+		ret = false;
 	}
 	if (y < 0) {
 		c->y = 0;
-		ret = R_FALSE;
+		ret = false;
 	}
 	if (x < c->w && x >= 0) c->x = x;
 	if (y < c->h && y >= 0) c->y = y;
@@ -240,7 +240,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	char *o;
 	const char* b;
 	const char**atr;
-	int is_first = R_TRUE;
+	int is_first = true;
 
 	if (!c) return NULL;
 	b = c->b;
@@ -251,7 +251,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 		if (!is_first) {
 			o[olen++] = '\n';
 		}
-		is_first = R_FALSE;
+		is_first = false;
 
 		for (x = 0; x<c->w; x++) {
 			const int p = x + (y * c->w);
@@ -294,15 +294,15 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	void *newbuf = NULL;
 	const int blen = (w+1) * h;
 	char *b = NULL;
-	if (!c || w < 0) return R_FALSE;
+	if (!c || w < 0) return false;
 	b = realloc (c->b, blen+1);
-	if (!b) return R_FALSE;
+	if (!b) return false;
 	c->b = b;
 	newbuf = realloc (c->attrs, sizeof (*c->attrs)*blen+1);
 	if (!newbuf) {
 		free (c->b);
 		free (c->attrs);
-		return R_FALSE;
+		return false;
 	}
 	c->attrs = newbuf;
 	c->blen = blen;
@@ -312,7 +312,7 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	c->x = 0;
 	c->y = 0;
 	r_cons_canvas_clear (c);
-	return R_TRUE;
+	return true;
 }
 
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color) {

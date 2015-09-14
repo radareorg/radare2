@@ -9,8 +9,8 @@ static void color_line(const char *line, RStrpool *p, RList *ml){
 	char *m_addr;
 	RListIter *it;
 	RRegexMatch *m;
-	char *inv[2] = {R_CONS_INVERT(R_TRUE, R_TRUE),
-			R_CONS_INVERT(R_FALSE, R_TRUE)};
+	char *inv[2] = {R_CONS_INVERT(true, true),
+			R_CONS_INVERT(false, true)};
 	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
 
 	r_strpool_empty(p);
@@ -100,7 +100,7 @@ static int prev_match(int from, RList **mla){
 
 static int all_matches(const char *s, RRegex *rx, RList **mla,
 		       int *lines, int lcount){
-	int l, f = R_FALSE;
+	int l, f = false;
 	RRegexMatch m;
 	int slen;
 	for(l = 0; l < lcount; l++){
@@ -118,7 +118,7 @@ static int all_matches(const char *s, RRegex *rx, RList **mla,
 			r_list_append(mla[l], ms);
 			m.rm_so = m.rm_eo;
 			m.rm_eo = slen;
-			f = R_TRUE;
+			f = true;
 		}
 		free(cpos);
 		free(clean);
@@ -140,8 +140,8 @@ R_API void r_cons_less_str(const char *str) {
 	for(i = 0; i < lines_count; i++)
 		mla[i] = r_list_new();
 
-	r_cons_set_raw (R_TRUE);
-	r_cons_show_cursor (R_FALSE);
+	r_cons_set_raw (true);
+	r_cons_show_cursor (false);
 	r_cons_reset ();
 	w = h = 0;
 	while (ui) {
@@ -199,8 +199,8 @@ R_API void r_cons_less_str(const char *str) {
 	free (lines);
 	free (p);
 	r_cons_reset_colors();
-	r_cons_set_raw (R_FALSE);
-	r_cons_show_cursor (R_TRUE);
+	r_cons_set_raw (false);
+	r_cons_show_cursor (true);
 }
 
 R_API void r_cons_less() {

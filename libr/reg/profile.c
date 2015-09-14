@@ -4,12 +4,8 @@
 #include <r_util.h>
 
 static const char *parse_alias (RReg *reg, char **tok, const int n) {
-	int role;
-
-	if (n != 2)
-		return "Invalid syntax";
-
-	role = r_reg_get_name_idx (tok[0] + 1);
+	if (n != 2) return "Invalid syntax";
+	int role = r_reg_get_name_idx (tok[0] + 1);
 	return r_reg_set_name (reg, role, tok[1]) ?
 		NULL : "Invalid alias";
 }
@@ -85,11 +81,11 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	const char *p = str;
 
 	if (!reg || !str)
-		return R_FALSE;
+		return false;
 
 	// Same profile, no need to change
 	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str))
-		return R_TRUE;
+		return true;
 
 	// Purge the old registers
 	r_reg_free_internal (reg);
@@ -150,7 +146,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 					__FUNCTION__, l, r);
 				// Clean up
 				r_reg_free_internal (reg);
-				return R_FALSE;
+				return false;
 			}
 		}
 	} while (*p++);
@@ -158,13 +154,9 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	// Align to byte boundary if needed
 	if (reg->size&7)
 		reg->size += 8 - (reg->size&7);
-
-	// Transform to bytes
-	reg->size >>= 3;
-
+	reg->size >>= 3; // bits to bytes (divide by 8)
 	r_reg_fit_arena (reg);
-
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_reg_set_profile(RReg *reg, const char *profile) {
@@ -183,7 +175,7 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 
 	if (!str) {
 		eprintf ("r_reg_set_profile: Cannot find '%s'\n", profile);
-		return R_FALSE;
+		return false;
 	}
 	
 	ret = r_reg_set_profile_string (reg, str);

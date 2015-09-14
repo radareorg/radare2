@@ -262,17 +262,17 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 error:
 	free (symdllname);
 	free (sdb_module);
-	return R_FALSE;
+	return false;
 }
 
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!(bin->dos_header = malloc(sizeof(PE_(image_dos_header))))) {
 		r_sys_perror ("malloc (dos header)");
-		return R_FALSE;
+		return false;
 	}
 	if (r_buf_read_at (bin->b, 0, (ut8*)bin->dos_header, sizeof(PE_(image_dos_header))) == -1) {
 		eprintf("Error: read (dos header)\n");
-		return R_FALSE;
+		return false;
 	}
 	sdb_num_set (bin->kv, "pe_dos_header.offset", 0, 0);
 	sdb_set (bin->kv, "pe_dos_header.format", "[2]zwwwwwwwwwwwww[4]www[10]wx"
@@ -281,17 +281,17 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 			" e_oeminfo e_res2 e_lfanew", 0);
 	if (bin->dos_header->e_lfanew > (unsigned int)bin->size) {
 		eprintf("Invalid e_lfanew field\n");
-		return R_FALSE;
+		return false;
 	}
 	if (!(bin->nt_headers = malloc (sizeof (PE_(image_nt_headers))))) {
 		r_sys_perror("malloc (nt header)");
-		return R_FALSE;
+		return false;
 	}
 	bin->nt_header_offset = bin->dos_header->e_lfanew;
 	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew,
 			(ut8*)bin->nt_headers, sizeof (PE_(image_nt_headers))) == -1) {
 		eprintf ("Error: read (dos header)\n");
-		return R_FALSE;
+		return false;
 	}
 	sdb_set (bin->kv, "pe_magic.cparse", "enum pe_magic { IMAGE_NT_OPTIONAL_HDR32_MAGIC=0x10b, IMAGE_NT_OPTIONAL_HDR64_MAGIC=0x20b, IMAGE_ROM_OPTIONAL_HDR_MAGIC=0x107 };", 0);
 	sdb_set (bin->kv, "pe_subsystem.cparse", "enum pe_subsystem { IMAGE_SUBSYSTEM_UNKNOWN=0, IMAGE_SUBSYSTEM_NATIVE=1, IMAGE_SUBSYSTEM_WINDOWS_GUI=2, "
@@ -363,8 +363,8 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 
 	if (strncmp ((char*)&bin->dos_header->e_magic, "MZ", 2) ||
 		strncmp ((char*)&bin->nt_headers->Signature, "PE", 2))
-			return R_FALSE;
-	return R_TRUE;
+			return false;
+	return true;
 }
 
 typedef struct {
@@ -477,23 +477,23 @@ static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 	int sections_size;
 	if (num_of_sections<1) {
 		//eprintf("Warning: Invalid number of sections\n");
-		return R_TRUE;
+		return true;
 	}
 	sections_size = sizeof (PE_(image_section_header)) * num_of_sections;
 
 	if (sections_size > bin->size) {
 		eprintf ("Invalid NumberOfSections value\n");
-		return R_FALSE;
+		return false;
 	}
 	if (!(bin->section_header = malloc (sections_size))) {
 		r_sys_perror ("malloc (section header)");
-		return R_FALSE;
+		return false;
 	}
 	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) +
 				bin->nt_headers->file_header.SizeOfOptionalHeader,
 				(ut8*)bin->section_header, sections_size) == -1) {
 		eprintf ("Error: read (sections)\n");
-		return R_FALSE;
+		return false;
 	}
 #if 0
 Each symbol table entry includes a name, storage class, type, value and section number. Short names (8 characters or fewer) are stored directly in the symbol table; longer names are stored as an paddr into the string table at the end of the COFF object.
@@ -532,7 +532,7 @@ struct symrec {
   12h
 
 #endif
-	return R_TRUE;
+	return true;
 }
 
 static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t) *bin) {
@@ -606,7 +606,7 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t) *bin) {
 				eprintf ("Error: read (import directory)\n");
 				free (import_dir);
 				import_dir = NULL;
-				break; //return R_FALSE;
+				break; //return false;
 			}
 			count ++;
 		} while (curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
@@ -634,7 +634,7 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t) *bin) {
 			if (delay_import_dir == 0) {
 				r_sys_perror ("malloc (delay import directory)");
 				free (delay_import_dir);
-				return R_FALSE;
+				return false;
 			}
 
 			curr_delay_import_dir = delay_import_dir + (indx - 1);
@@ -650,13 +650,13 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t) *bin) {
 		bin->delay_import_directory = delay_import_dir;
 	}
 
-	return R_TRUE;
+	return true;
 fail:
 	free (import_dir);
 	import_dir = NULL;
 	bin->import_directory = import_dir;
 	free (delay_import_dir);
-	return R_FALSE;
+	return false;
 }
 
 static int bin_pe_init_exports(struct PE_(r_bin_pe_obj_t) *bin) {
@@ -764,22 +764,22 @@ printf ("SYMBOL 0x%x = %d (%s)\n", (ut32)si->n_value, (int)si->n_strx,
 	if (export_dir_paddr == 0) {
 		// This export-dir-paddr should only appear in DLL files
 		//eprintf ("Warning: Cannot find the paddr of the export directory\n");
-		return R_FALSE;
+		return false;
 	}
 	//sdb_setn (DB, "hdr.exports_directory", export_dir_paddr);
 //eprintf ("Pexports paddr at 0x%"PFMT64x"\n", export_dir_paddr);
 	if (!(bin->export_directory = malloc (sizeof(PE_(image_export_directory))))) {
 		r_sys_perror ("malloc (export directory)");
-		return R_FALSE;
+		return false;
 	}
 	if (r_buf_read_at (bin->b, export_dir_paddr, (ut8*)bin->export_directory,
 			sizeof (PE_(image_export_directory))) == -1) {
 		eprintf ("Error: read (export directory)\n");
 		free (bin->export_directory);
 		bin->export_directory = NULL;
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
@@ -789,21 +789,21 @@ static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_DWord resource_dir_paddr = bin_pe_vaddr_to_paddr
 		(bin, resource_dir->VirtualAddress);
 	if (resource_dir_paddr == 0) {
-		return R_FALSE;
+		return false;
 	}
 	if (!(bin->resource_directory = malloc (sizeof(*bin->resource_directory)))) {
 		r_sys_perror ("malloc (resource directory)");
-		return R_FALSE;
+		return false;
 	}
 	if (r_buf_read_at (bin->b, resource_dir_paddr, (ut8*)bin->resource_directory,
 			sizeof (*bin->resource_directory)) != sizeof (*bin->resource_directory)) {
 		eprintf ("Error: read (resource directory)\n");
 		free (bin->resource_directory);
 		bin->resource_directory = NULL;
-		return R_FALSE;
+		return false;
 	}
 	bin->resource_directory_offset = resource_dir_paddr;
-	return R_TRUE;
+	return true;
 }
 
 static void free_Var(Var *var) {
@@ -1665,18 +1665,18 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->endian = 0; /* TODO: get endian */
 	if (!bin_pe_init_hdr(bin)) {
 		eprintf ("Warning: File is not PE\n");
-		return R_FALSE;
+		return false;
 	}
 	if (!bin_pe_init_sections(bin)) {
 		eprintf ("Warning: Cannot initialize sections\n");
-		return R_FALSE;
+		return false;
 	}
 	bin_pe_init_imports(bin);
 	bin_pe_init_exports(bin);
 	bin_pe_init_resource(bin);
 	PE_(r_bin_store_all_resource_version_info)(bin);
 	bin->relocs = NULL;
-	return R_TRUE;
+	return true;
 }
 
 char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin) {
@@ -1938,18 +1938,18 @@ int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, SDebugInfo *re
 	dbg_dir = &bin->nt_headers->optional_header.DataDirectory[6/*IMAGE_DIRECTORY_ENTRY_DEBUG*/];
 	dbg_dir_offset = bin_pe_vaddr_to_paddr(bin, dbg_dir->VirtualAddress);
 	if ((int)dbg_dir_offset<0 || dbg_dir_offset>= bin->size)
-		return R_FALSE;
+		return false;
 	if (dbg_dir_offset >= bin->b->length)
-		return R_FALSE;
+		return false;
 	img_dbg_dir_entry = (PE_(image_debug_directory_entry)*)(bin->b->buf + dbg_dir_offset);
 	if ((bin->b->length - dbg_dir_offset)< sizeof (PE_(image_debug_directory_entry))) {
-		return R_FALSE;
+		return false;
 	}
 	if (img_dbg_dir_entry) {
 		ut32 dbg_data_poff = R_MIN (img_dbg_dir_entry->PointerToRawData, bin->b->length);
 		int dbg_data_len = R_MIN (img_dbg_dir_entry->SizeOfData, bin->b->length - dbg_data_poff);
 		if (dbg_data_len<1)  {
-			return R_FALSE;
+			return false;
 		}
 		dbg_data = (ut8 *) malloc (dbg_data_len + 1);
 		if (dbg_data) {
@@ -2328,13 +2328,13 @@ char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin) {
 
 int PE_(r_bin_pe_is_dll)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers)
-		return R_FALSE;
+		return false;
 	return HASCHR (PE_IMAGE_FILE_DLL);
 }
 
 int PE_(r_bin_pe_is_pie)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers)
-		return R_FALSE;
+		return false;
 	return HASCHR (IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
 #if 0
 	BOOL aslr = inh->OptionalHeader.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE;
@@ -2345,31 +2345,31 @@ int PE_(r_bin_pe_is_pie)(struct PE_(r_bin_pe_obj_t)* bin) {
 
 int PE_(r_bin_pe_is_big_endian)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers)
-		return R_FALSE;
+		return false;
 	return HASCHR (PE_IMAGE_FILE_BYTES_REVERSED_HI);
 }
 
 int PE_(r_bin_pe_is_stripped_relocs)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers)
-		return R_FALSE;
+		return false;
 	return HASCHR (PE_IMAGE_FILE_RELOCS_STRIPPED);
 }
 
 int PE_(r_bin_pe_is_stripped_line_nums)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers)
-		return R_FALSE;
+		return false;
 	return HASCHR (PE_IMAGE_FILE_LINE_NUMS_STRIPPED);
 }
 
 int PE_(r_bin_pe_is_stripped_local_syms)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers)
-		return R_FALSE;
+		return false;
 	return HASCHR (PE_IMAGE_FILE_LOCAL_SYMS_STRIPPED);
 }
 
 int PE_(r_bin_pe_is_stripped_debug)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers)
-		return R_FALSE;
+		return false;
 	return HASCHR (PE_IMAGE_FILE_DEBUG_STRIPPED);
 }
 

@@ -13,6 +13,8 @@
 #define st8 char
 #define boolt int
 
+#include <stdbool.h>
+
 #define R_ERROR -2
 #define R_FAIL -1
 #define R_FALSE 0

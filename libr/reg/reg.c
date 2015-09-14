@@ -62,9 +62,9 @@ R_API int r_reg_get_name_idx(const char *type) {
 R_API int r_reg_set_name(RReg *reg, int role, const char *name) {
 	if (role>=0 && role<R_REG_NAME_LAST) {
 		reg->name[role] = r_str_dup (reg->name[role], name);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API const char *r_reg_get_name(RReg *reg, int role) {
@@ -123,8 +123,8 @@ R_API RReg *r_reg_new() {
 		//r_list_append (reg->regset[i].pool, arena);
 	}
 	/* swap arena back and forth to avoid lost reg sets */
-	r_reg_arena_swap (reg, R_FALSE);
-	r_reg_arena_swap (reg, R_FALSE);
+	r_reg_arena_swap (reg, false);
+	r_reg_arena_swap (reg, false);
 	return reg;
 }
 

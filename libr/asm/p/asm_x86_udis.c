@@ -13,8 +13,6 @@
 // -- delta, size, mode.. mode is for a->pc-5, register handling and things like this
 static int modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 	ut32 val32 = (ut32)val;
-	int ret = R_FALSE;
-	
 	switch (buf[0]) {
 	case 0x68: // push dword 
 		if (field == R_ASM_MOD_RAWVALUE || field == R_ASM_MOD_VALUE) {
@@ -40,7 +38,7 @@ static int modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 		}
 		return 2;
 	}
-	return ret;
+	return 0;
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {

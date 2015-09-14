@@ -426,11 +426,11 @@ R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment) {
 R_API int r_flag_item_set_name(RFlagItem *item, const char *name, const char *realname) {
 	int len;
 	if (!item)
-		return R_FALSE;
+		return false;
 	if (!realname)
 		realname = name;
 	if (!r_name_check (name))
-		return R_FALSE;
+		return false;
 	/* original name. maybe do some char mangling : printable*/
 	/* filtered name : typable */
 	strncpy (item->realname, realname, R_FLAG_NAME_SIZE-1);
@@ -442,7 +442,7 @@ R_API int r_flag_item_set_name(RFlagItem *item, const char *name, const char *re
 	r_name_filter (item->name, 0);
 	item->name[R_FLAG_NAME_SIZE-1]='\0';
 	item->namehash = r_str_hash64 (item->realname);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
@@ -450,7 +450,7 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	RList *list;
 	if (!f || !item || !name || !*name) {
 		eprintf ("r_flag_rename: contract fail\n");
-		return R_FALSE;
+		return false;
 	}
 	hash = r_str_hash64 (item->name);
 	list = r_hashtable64_lookup (f->ht_name, hash);
@@ -465,7 +465,7 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 		}
 		if (!r_flag_item_set_name (item, name, NULL)) {
 			r_list_append (list, item);
-			return R_FALSE;
+			return false;
 		}
 		list = r_hashtable64_lookup (f->ht_name, item->namehash);
 		if (!list) {
@@ -474,16 +474,16 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 		}
 		r_list_append (list, item);
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_flag_unset_i(RFlag *f, ut64 off, RFlagItem *p) {
 	RFlagItem *flag = r_flag_get_i (f, off);
 	if (flag) {
 		r_flag_unset (f, flag->name, NULL); //, flag);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
@@ -542,7 +542,7 @@ R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 // list2 = off hash
 	if (list && list->head) {
 		if (!item) item = r_list_pop (list);
-		if (!item) return R_FALSE;
+		if (!item) return false;
 		off = item->offset;
 
 		list2 = r_hashtable64_lookup (f->ht_off, XOROFF(off));
@@ -566,9 +566,9 @@ R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 			r_list_free (list);
 			r_hashtable64_remove (f->ht_name, hash);
 		}
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off) {
@@ -611,9 +611,9 @@ R_API int r_flag_move (RFlag *f, ut64 at, ut64 to) {
 	RFlagItem *item = r_flag_get_i (f, at);
 	if (item) {
 		r_flag_set (f, item->name, to, item->size, 0);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 #ifdef MYTEST

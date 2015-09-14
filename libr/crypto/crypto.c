@@ -34,23 +34,23 @@ R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry, int hard) {
 R_API int r_crypto_add(RCrypto *cry, struct r_crypto_plugin_t *h) {
 	// add a check ?
 	list_add_tail(&(h->list), &(cry->plugins));
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_crypto_del(RCrypto *cry, struct r_crypto_plugin_t *h) {
 	list_del(&(h->list));
-	return R_TRUE;
+	return true;
 }
 
 R_API struct r_crypto_t *r_crypto_new() {
 	RCrypto *cry = R_NEW(RCrypto);
-	return r_crypto_init (cry, R_TRUE);
+	return r_crypto_init (cry, true);
 }
 
 R_API struct r_crypto_t *r_crypto_as_new(struct r_crypto_t *cry) {
 	RCrypto *c = R_NEW(RCrypto);
 	if (c != NULL) {
-		r_crypto_init (c, R_FALSE); // soft init
+		r_crypto_init (c, false); // soft init
 		memcpy (&c->plugins, &cry->plugins, sizeof (cry->plugins));
 	}
 	return c;
@@ -67,7 +67,7 @@ R_API struct r_crypto_t *r_crypto_free(RCrypto *cry) {
 }
 
 R_API int r_crypto_use(RCrypto *cry, const char *algo) {
-	int ret = R_FALSE;
+	int ret = false;
 	struct list_head *pos;
 	list_for_each_prev(pos, &cry->plugins) {
 		struct r_crypto_plugin_t *h = list_entry(pos, struct r_crypto_plugin_t, list);
@@ -82,7 +82,7 @@ R_API int r_crypto_use(RCrypto *cry, const char *algo) {
 }
 
 R_API int r_crypto_set_key(RCrypto *cry, const ut8* key, int mode, int direction) {
-	int ret = R_FALSE;
+	int ret = false;
 	if (cry->h && cry->h->set_key)
 		ret = cry->h->set_key(cry, key, mode, direction);
 	return ret;
@@ -96,7 +96,7 @@ R_API int r_crypto_get_key_size(RCrypto *cry) {
 }
 
 R_API int r_crypto_set_iv(RCrypto *cry, const ut8 *iv) {
-	int ret = R_FALSE;
+	int ret = false;
 	if (cry->h && cry->h->set_iv)
 		ret = cry->h->set_iv(cry, iv);
 	return ret;

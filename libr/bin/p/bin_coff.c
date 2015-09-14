@@ -33,14 +33,14 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
-	if (!arch || !arch->o) return R_FALSE;
+	if (!arch || !arch->o) return false;
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj ? R_TRUE: R_FALSE;
+	return arch->o->bin_obj ? true: false;
 }
 
 static int destroy(RBinFile *arch) {
 	r_bin_coff_free((struct r_bin_coff_obj*)arch->o->bin_obj);
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -189,7 +189,7 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->os = strdup ("any");
 	ret->subsystem = strdup ("any");
 	ret->big_endian = obj->endian;
-	ret->has_va = R_FALSE;
+	ret->has_va = false;
 	ret->dbg_info = 0;
 
 	if (r_coff_is_stripped (obj)) {
@@ -275,7 +275,7 @@ ut16 CHARACTERISTICS
 #endif
 	if (buf && length >= 20)
 		return r_coff_supported_arch (buf);
-	return R_FALSE;
+	return false;
 }
 
 RBinPlugin r_bin_plugin_coff = {

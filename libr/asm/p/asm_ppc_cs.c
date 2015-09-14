@@ -6,12 +6,12 @@
 
 static csh handle = 0;
 
-static int the_end(void *p) {
+static _Bool the_end(void *p) {
 	if (handle) {
 		cs_close (&handle);
 		handle = 0;
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {

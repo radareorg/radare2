@@ -71,6 +71,7 @@
  
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 //#include <portab.h>
 #ifndef R_API_I
 #define R_API_I
@@ -83,9 +84,6 @@
 #define STR char*
 #define BYTE char
 #define ULONG unsigned int
-#define Boolean int
-#define R_TRUE 1
-#define R_FALSE 0
  
 #define CODESIZE        8192L           // 8K Programmcode
 #define FUTURA_189      1               // Sprungtabellen-Sprünge für Futura Aquariencomputer ROM V1.89
@@ -260,7 +258,7 @@ static UBYTE OpcodeLen(ULONG p, const ut8 *Opcodes) {
 #if MAIN_DIS
 R_API_I ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
 	int i;
-	ULONG   next;
+	ULONG next;
  
         i = OpcodeLen (adr, Opcodes);           // Länge vom Opcode ermitteln
 	if (len<i)
@@ -440,10 +438,7 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 			}
 			break;
 		case 0x03:
-			if (a & 0x08)
-				strcpy (s,"dec ");
-			else
-				strcpy (s,"inc ");
+			strcpy (s, (a&0x80)? "dec ": "inc ");
 			strcat (s,dreg[d >> 1]);
 			break;
 		case 0x04:
@@ -491,18 +486,18 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 		case 0x01:
 			if(d & 1) {
 				switch(d >> 1) {
-					case 0x00:
-						strcpy(s,"ret");
-						break;
-					case 0x01:
-						strcpy(s,"exx");
-						break;
-					case 0x02:
-						strcpy(s,"jp (hl)");
-						break;
-					case 0x03:
-						strcpy(s,"ld sp, hl");
-						break;
+				case 0x00:
+					strcpy(s,"ret");
+					break;
+				case 0x01:
+					strcpy(s,"exx");
+					break;
+				case 0x02:
+					strcpy(s,"jp (hl)");
+					break;
+				case 0x03:
+					strcpy(s,"ld sp, hl");
+					break;
 				}
 			} else {
 				strcpy(s,"pop ");

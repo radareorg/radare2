@@ -19,7 +19,7 @@ R_API int r_io_undo_init(RIO *io) {
 	io->undo.w_enable = 0;
 	io->undo.w_list = r_list_new ();
 
-	return R_TRUE;
+	return true;
 }
 
 R_API void r_io_undo_enable(RIO *io, int s, int w) {
@@ -124,7 +124,7 @@ R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len) {
 	/* undo write changes */
 	uw = R_NEW (RIOUndoWrite);
 	if (!uw) return;
-	uw->set = R_TRUE;
+	uw->set = true;
 	uw->off = off;
 	uw->len = len;
 	uw->n = (ut8*) malloc (len);
@@ -177,10 +177,10 @@ R_API int r_io_wundo_apply(RIO *io, struct r_io_undo_w_t *u, int set) {
 	io->undo.w_enable = 0;
 	if (set) {
 		r_io_write_at (io, u->off, u->n, u->len);
-		u->set = R_TRUE;
+		u->set = true;
 	} else {
 		r_io_write_at (io, u->off, u->o, u->len);
-		u->set = R_FALSE;
+		u->set = false;
 	}
 	io->undo.w_enable = orig;
 	return 0;
@@ -208,9 +208,9 @@ R_API int r_io_wundo_set(RIO *io, int n, int set) {
 				break;
 		if (u) { // wtf?
 			r_io_wundo_apply (io, u, set);
-			return R_TRUE;
+			return true;
 		}
 		eprintf ("invalid undo-write index\n");
 	} else eprintf ("no writes done\n");
-	return R_FALSE;
+	return false;
 }

@@ -171,7 +171,7 @@ R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int 
 	int i, digest_size;
 	ut64 algo = r_hash_name_to_bits (name);
 	if (!ctx)
-		ctx = r_hash_new (R_TRUE, algo);
+		ctx = r_hash_new (true, algo);
 	r_hash_do_begin (ctx, algo);
 	r_hash_calculate (ctx, algo, data, len);
 	r_hash_do_end (ctx, algo);

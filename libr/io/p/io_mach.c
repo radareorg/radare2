@@ -242,7 +242,7 @@ static int debug_attach(int pid) {
 #if SUSPEND
 	if (task_suspend (this->port) != KERN_SUCCESS) {
 		eprintf ("cannot suspend task\n");
-		return -1; // R_FALSE
+		return -1; // false
 	}
 #endif
 	/* is this required for arm ? */
@@ -367,7 +367,7 @@ RIOPlugin r_io_plugin_mach = {
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,
-	.isdbg = R_TRUE
+	.isdbg = true
 };
 
 #else

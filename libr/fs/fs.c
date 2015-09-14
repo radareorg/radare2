@@ -140,7 +140,7 @@ R_API int r_fs_umount (RFS* fs, const char *path) {
 	RFSRoot *root;
 	RListIter *iter, *riter = NULL;
 
-	if (!path) return R_FALSE;
+	if (!path) return false;
 
 	r_list_foreach (fs->roots, iter, root) {
 		len = strlen (root->path);
@@ -149,9 +149,9 @@ R_API int r_fs_umount (RFS* fs, const char *path) {
 	}
 	if (riter) {
 		r_list_delete (fs->roots, riter);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API RList *r_fs_root (RFS *fs, const char *p) {
@@ -211,17 +211,17 @@ R_API void r_fs_close (RFS* fs, RFSFile *file) {
 R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
 	if (len<1) {
 		eprintf ("r_fs_read: too short read\n");
-		return R_FALSE;
+		return false;
 	}
 	if (fs && file) {
 		free (file->data);
 		file->data = malloc (len+1);
 		if (file->p && file->p->read) {
 			file->p->read (file, addr, len);
-			return R_TRUE;
+			return true;
 		} else eprintf ("r_fs_read: file->p->read is null\n");
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API RList *r_fs_dir(RFS* fs, const char *p) {
@@ -257,11 +257,11 @@ R_API int r_fs_dir_dump (RFS* fs, const char *path, const char *name) {
 
 	list = r_fs_dir (fs, path);
 	if (!list)
-		return R_FALSE;
+		return false;
 	if (!r_sys_mkdir (name)) {
 		if (r_sys_mkdir_failed ()) {
 			eprintf ("Cannot create \"%s\"\n", name);
-			return R_FALSE;
+			return false;
 		}
 	}
 	r_list_foreach (list, iter, file) {
@@ -269,14 +269,14 @@ R_API int r_fs_dir_dump (RFS* fs, const char *path, const char *name) {
 			continue;
 		str = (char *) malloc (strlen (name) + strlen (file->name) + 2);
 		if (!str)
-			return R_FALSE;
+			return false;
 		strcpy (str, name);
 		strcat (str, "/");
 		strcat (str, file->name);
 		npath = malloc (strlen (path) + strlen (file->name) + 2);
 		if (!npath) {
 			free (str);
-			return R_FALSE;
+			return false;
 		}
 		strcpy (npath, path);
 		strcat (npath, "/");
@@ -295,7 +295,7 @@ R_API int r_fs_dir_dump (RFS* fs, const char *path, const char *name) {
 		free (npath);
 		free (str);
 	}
-	return R_TRUE;
+	return true;
 }
 
 static void r_fs_find_off_aux (RFS* fs, const char *name, ut64 offset, RList *list) {
@@ -537,19 +537,19 @@ R_API const char *r_fs_partition_type (const char *part, int type) {
 
 R_API char *r_fs_name (RFS *fs, ut64 offset) {
 	ut8 buf[1024];
-	int i, j, len, ret = R_FALSE;
+	int i, j, len, ret = false;
 
 	for (i=0; fstypes[i].name; i++) {
 		RFSType *f = &fstypes[i];
 		len = R_MIN (f->buflen, sizeof (buf)-1);
 		fs->iob.read_at (fs->iob.io, offset + f->bufoff, buf, len);
 		if (f->buflen>0 && !memcmp (buf, f->buf, f->buflen)) {
-			ret = R_TRUE;
+			ret = true;
 			len = R_MIN (f->bytelen, sizeof (buf));
 			fs->iob.read_at (fs->iob.io, offset + f->byteoff, buf, len);
 			for (j=0; j<f->bytelen; j++) {
 				if (buf[j] != f->byte) {
-					ret = R_FALSE;
+					ret = false;
 					break;
 				}
 			}
@@ -577,7 +577,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 		if (r_list_empty (list)) {
 			printf ("Unknown root\n");
 			r_list_free (list);
-			return R_FALSE;
+			return false;
 		}
 		strncpy (path, buf, sizeof (path)-1);
 	} else strcpy (path, "/");
@@ -590,7 +590,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 		buf[strlen (buf)-1] = '\0';
 		if (!strcmp (buf, "q") || !strcmp (buf, "exit")) {
 			r_list_free (list);
-			return R_TRUE;
+			return true;
 		}
 		if (buf[0]=='!') {
 			r_sandbox_system (buf+1, 1);
@@ -715,7 +715,7 @@ beach:
 	clearerr (stdin);
 	printf ("\n");
 	r_list_free (list);
-	return R_TRUE;
+	return true;
 }
 
 R_API void r_fs_view (RFS *fs, int view) {

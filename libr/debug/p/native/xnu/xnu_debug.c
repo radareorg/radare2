@@ -53,7 +53,7 @@ static task_t task_for_pid_workaround(int Pid) {
 void ios_hwstep_enable(RDebug *dbg, int enable);
 
 int xnu_step(RDebug *dbg) {
-	int ret = R_FALSE;
+	int ret = false;
 	int pid = dbg->pid;
 
 	//debug_arch_x86_trap_set (dbg, 1);
@@ -64,16 +64,16 @@ int xnu_step(RDebug *dbg) {
 	if (ret != 0) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
-		ret = R_FALSE; /* do not wait for events */
-	} else ret = R_TRUE;
+		ret = false; /* do not wait for events */
+	} else ret = true;
 	ios_hwstep_enable (dbg, 0);
 #else
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT
 	if (ret != 0) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
-		ret = R_FALSE; /* do not wait for events */
-	} else ret = R_TRUE;
+		ret = false; /* do not wait for events */
+	} else ret = true;
 	//TODO handle the signals here in xnu. Now is  only supported for linux
 	/*r_debug_handle_signals (dbg);*/
 #endif
@@ -171,7 +171,7 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 
 	if (ret != KERN_SUCCESS) {
 		eprintf ("debug_getregs\n");
-		return R_FALSE;
+		return false;
 	}
 
 	/* TODO: thread cannot be selected */
@@ -202,7 +202,7 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 				pid_to_task (dbg->pid), (int)ret,
 				MACH_ERROR_STRING (ret));
 			perror ("thread_set_state");
-			return R_FALSE;
+			return false;
 		}
 	} else {
 		eprintf ("There are no threads!\n");
@@ -223,7 +223,7 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			&inferior_threads,
 			&inferior_thread_count);
 
-	if (ret != KERN_SUCCESS) return R_FALSE;
+	if (ret != KERN_SUCCESS) return false;
 	if (tid < 0 || tid >= inferior_thread_count) {
 		dbg->tid = tid = dbg->pid;
 	}
@@ -273,7 +273,7 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				pid_to_task (pid), (int)ret,
 				MACH_ERROR_STRING (ret));
 			perror ("thread_get_state");
-			return R_FALSE;
+			return false;
 		}
 	} else {
 		eprintf ("There are no threads!\n");
@@ -312,9 +312,9 @@ int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 
 	if (ret != KERN_SUCCESS) {
 		printf("vm_deallocate failed\n");
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 
 }
 
@@ -395,9 +395,9 @@ int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 			VM_PROT_COPY|perms); //unix_prot_to_darwin (perms));
 	if (ret != KERN_SUCCESS) {
 		printf("vm_protect failed\n");
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 }
 
 task_t pid_to_task (int pid) {
@@ -763,7 +763,7 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 }
 
 RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
-	boolt contiguous = R_FALSE;
+	boolt contiguous = false;
 	ut32 oldprot = UT32_MAX;
 	ut32 oldmaxprot = UT32_MAX;
 	char buf[1024];
@@ -824,18 +824,18 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 		if (mr) {
 			if (address == mr->addr + mr->size) {
 				if (oldmaxprot == info.max_protection) {
-					contiguous = R_FALSE;
+					contiguous = false;
 				} else if (oldprot != UT32_MAX && oldprot == info.protection) {
 					/* expand region */
 					mr->size += size;
-					contiguous = R_TRUE;
+					contiguous = true;
 				} else {
-					contiguous = R_FALSE;
+					contiguous = false;
 				}
 			} else {
-				contiguous = R_FALSE;
+				contiguous = false;
 			}
-		} else contiguous = R_FALSE;
+		} else contiguous = false;
 		//if (info.max_protection == oldprot && !contiguous) {
 #endif
 		if (1) {
@@ -963,7 +963,7 @@ static void ios_hwstep_enable32(RDebug *dbg, task_t port, int enable) {
 
 void ios_hwstep_enable(RDebug *dbg, int enable) {
 	task_t port = pid_to_task (dbg->tid);
-	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 #if defined (__arm64__) || defined (__aarch64__)
 	ios_hwstep_enable64 (port, enable);
 #else

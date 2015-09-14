@@ -34,13 +34,13 @@
 static struct r_bin_t *bin = NULL;
 static char* output = NULL;
 static char* create = NULL;
-static int rad = R_FALSE;
+static int rad = false;
 static ut64 laddr = UT64_MAX;
 static ut64 baddr = UT64_MAX;
 static char* file = NULL;
 static char *name = NULL;
-static int rw = R_FALSE;
-static int va = R_TRUE;
+static int rw = false;
+static int va = true;
 static const char *do_demangle = NULL;
 static ut64 at = 0LL;
 static RLib *l;
@@ -126,19 +126,19 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 	const char *filename = bf ? bf->file : NULL;
 	char *path = NULL, *outpath = NULL, *outfile = NULL, *ptr = NULL;
 	ut32 outfile_sz = 0, outpath_sz = 0;
-	int res = R_FALSE;
+	int res = false;
 
-	if (!bf || !o || !filename ) return R_FALSE;
+	if (!bf || !o || !filename ) return false;
 	bytes = r_buf_buffer (bf->buf);
 	if (!bytes) {
 		eprintf ("error: BinFile buffer is empty\n");
-		return R_FALSE;
+		return false;
 	}
 
 	if (!arch) arch = "unknown";
 	path = strdup (filename);
 	if (!path) {
-		return R_FALSE;
+		return false;
 	}
 
 	// XXX: Wrong for w32 (/)
@@ -162,7 +162,7 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 		free (path);
 		free (outpath);
 		eprintf ("Error creating dir structure\n");
-		return R_FALSE;
+		return false;
 	}
 
 	outfile_sz = outpath_sz + strlen (ptr) + strlen (arch) + 23;
@@ -175,14 +175,14 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 
 	if (boffset > r_buf_size (bf->buf)) {
 		eprintf ("Invalid offsets\n");
-		res = R_FALSE;
+		res = false;
 	} else {
 		if (!outfile || !r_file_dump (outfile, bytes+boffset, bin_size, 0)) {
 			eprintf ("Error extracting %s\n", outfile);
-			res = R_FALSE;
+			res = false;
 		} else {
 			printf ("%s created (%"PFMT64d")\n", outfile, bin_size);
-			res = R_TRUE;
+			res = true;
 		}
 	}
 
@@ -194,7 +194,7 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 
 static int rabin_extract(int all) {
 	RBinObject *obj = NULL;
-	int res = R_FALSE;
+	int res = false;
 	RBinFile *bf = r_bin_cur (bin);
 	if (!bf) return res;
 	if (all) {
@@ -219,7 +219,7 @@ static int rabin_dump_symbols(int len) {
 	int olen = len;
 
 	if ((symbols = r_bin_get_symbols (bin)) == NULL)
-		return R_FALSE;
+		return false;
 
 	r_list_foreach (symbols, iter, symbol) {
 		if (symbol->size != 0 && (olen > symbol->size || olen == 0))
@@ -228,11 +228,11 @@ static int rabin_dump_symbols(int len) {
 			len = 32;
 		else len = olen;
 		if (!(buf = malloc (len))) {
-			return R_FALSE;
+			return false;
 		}
 		if (!(ret = malloc (len*2+1))) {
 			free (buf);
-			return R_FALSE;
+			return false;
 		}
 		r_buf_read_at (bin->cur->buf, symbol->paddr, buf, len);
 		r_hex_bin2str (buf, len, ret);
@@ -240,7 +240,7 @@ static int rabin_dump_symbols(int len) {
 		free (buf);
 		free (ret);
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int rabin_dump_sections(char *scnname) {
@@ -251,15 +251,15 @@ static int rabin_dump_sections(char *scnname) {
 	char *ret;
 
 	if ((sections = r_bin_get_sections (bin)) == NULL)
-		return R_FALSE;
+		return false;
 
 	r_list_foreach (sections, iter, section) {
 		if (!strcmp (scnname, section->name)) {
 			if (!(buf = malloc (section->size)))
-				return R_FALSE;
+				return false;
 			if (!(ret = malloc (section->size*2+1))) {
 				free (buf);
-				return R_FALSE;
+				return false;
 			}
 			r_buf_read_at (bin->cur->buf, section->paddr, buf, section->size);
 			if (output) {
@@ -274,7 +274,7 @@ static int rabin_dump_sections(char *scnname) {
 		}
 	}
 
-	return R_TRUE;
+	return true;
 }
 
 static int rabin_do_operation(const char *op) {
@@ -282,7 +282,7 @@ static int rabin_do_operation(const char *op) {
 
 	/* Implement alloca with fixed-size buffer? */
 	if (!(arg = strdup (op)))
-		return R_FALSE;
+		return false;
 
 	if ((ptr = strchr (arg, '/'))) {
 		ptr[0] = '\0';
@@ -327,11 +327,11 @@ static int rabin_do_operation(const char *op) {
 	}
 
 	free (arg);
-	return R_TRUE;
+	return true;
 
 error:
 	free (arg);
-	return R_FALSE;
+	return false;
 }
 
 static int rabin_show_srcline(ut64 at) {
@@ -339,9 +339,9 @@ static int rabin_show_srcline(ut64 at) {
 	if ((srcline = r_bin_addr2text (bin, at))) {
 		printf ("%s\n", srcline);
 		free (srcline);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 /* bin callback */
@@ -349,11 +349,11 @@ static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	struct r_bin_plugin_t *hand = (struct r_bin_plugin_t *)data;
 	//printf(" * Added (dis)assembly plugin\n");
 	r_bin_add (bin, hand);
-	return R_TRUE;
+	return true;
 }
 
 static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
-	return R_TRUE;
+	return true;
 }
 
 /* binxtr callback */
@@ -361,11 +361,11 @@ static int __lib_bin_xtr_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	struct r_bin_xtr_plugin_t *hand = (struct r_bin_xtr_plugin_t *)data;
 	//printf(" * Added (dis)assembly plugin\n");
 	r_bin_xtr_add (bin, hand);
-	return R_TRUE;
+	return true;
 }
 
 static int __lib_bin_xtr_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
-	return R_TRUE;
+	return true;
 }
 
 int main(int argc, char **argv) {
@@ -450,7 +450,7 @@ int main(int argc, char **argv) {
 					/* to store them just dump'm all to stdout */
 					rawstr = 2;
 				} else {
-					rawstr = R_TRUE;
+					rawstr = true;
 				}
 			} else set_action (ACTION_STRINGS);
 			break;
@@ -481,7 +481,7 @@ int main(int argc, char **argv) {
 		case 'l': set_action (ACTION_LIBS); break;
 		case 'R': set_action (ACTION_RELOCS); break;
 		case 'x': set_action (ACTION_EXTRACT); break;
-		case 'w': rw = R_TRUE; break;
+		case 'w': rw = true; break;
 		case 'O':
 			op = optarg;
 			set_action (ACTION_OPERATION);
@@ -500,14 +500,14 @@ int main(int argc, char **argv) {
 			}
 			break;
 		case 'o': output = optarg; break;
-		case 'p': va = R_FALSE; break;
-		case 'r': rad = R_TRUE; break;
+		case 'p': va = false; break;
+		case 'r': rad = true; break;
 		case 'v': return blob_version ("rabin2");
 		case 'L': r_bin_list (bin); return 1;
 		case 'G':
 			laddr = r_num_math (NULL, optarg);
 			if (laddr == UT64_MAX)
-				va = R_FALSE;
+				va = false;
 			break;
 		case 'B':
 			baddr = r_num_math (NULL, optarg);
@@ -686,7 +686,7 @@ int main(int argc, char **argv) {
 		r_bin_set_baddr (bin, baddr);
 	}
 	if (rawstr == 2) {
-		rawstr = R_FALSE;
+		rawstr = false;
 		r_bin_dump_strings (core.bin->cur, bin->minstrlen);
 	}
 
@@ -748,7 +748,7 @@ int main(int argc, char **argv) {
 	bin->cb_printf = r_cons_printf;
 	filter.offset = at;
 	filter.name = name;
-	r_cons_new ()->is_interactive = R_FALSE;
+	r_cons_new ()->is_interactive = false;
 
 	if (isradjson) r_cons_printf ("{");
 

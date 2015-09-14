@@ -14,14 +14,14 @@ static Sdb * get_sdb(RBinObject *o) {
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	unsigned int exth_offset;
-	int ret = R_FALSE;
+	int ret = false;
 	if (!buf)
-		return R_FALSE;
+		return false;
 	if (length <= 0x3d)
-		return R_FALSE;
+		return false;
 	if (!memcmp (buf, "MZ", 2) || !memcmp (buf, "ZM", 2))
 	{
-		ret = R_TRUE;
+		ret = true;
 
 		exth_offset = (buf[0x3c] | (buf[0x3d]<<8));
 		if (length > exth_offset+2)
@@ -30,7 +30,7 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 				!memcmp (buf+exth_offset, "NE", 2) ||
 				!memcmp (buf+exth_offset, "LE", 2) ||
 				!memcmp (buf+exth_offset, "LX", 2) )
-				ret = R_FALSE;
+				ret = false;
 		}
 	}
 	return ret;
@@ -62,18 +62,18 @@ static int load(RBinFile *arch) {
 	ut64 sz;
 
 	if (!arch || !arch->o)
-		return R_FALSE;
+		return false;
 
 	bytes = r_buf_buffer (arch->buf);
 	sz = r_buf_size (arch->buf);
 	res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	arch->o->bin_obj = (void *)res;
-	return res? R_TRUE: R_FALSE;
+	return res != NULL;
 }
 
 static int destroy(RBinFile *arch) {
 	r_bin_mz_free ((struct r_bin_mz_obj_t*)arch->o->bin_obj);
-	return R_TRUE;
+	return true;
 }
 
 static RList * entries(RBinFile *arch) {
@@ -144,13 +144,13 @@ static RBinInfo * info(RBinFile *arch) {
 	ret->guid = NULL;
 	ret->debug_file_name = NULL;
 	ret->bits = 16;
-	ret->big_endian = R_FALSE;
+	ret->big_endian = false;
 	ret->dbg_info = 0;
-	ret->has_crypto = R_FALSE;
-	ret->has_canary = R_FALSE;
-	ret->has_nx = R_FALSE;
-	ret->has_pi = R_FALSE;
-	ret->has_va = R_FALSE;
+	ret->has_crypto = false;
+	ret->has_canary = false;
+	ret->has_nx = false;
+	ret->has_pi = false;
+	ret->has_va = false;
 
 	return ret;
 }

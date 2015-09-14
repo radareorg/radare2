@@ -178,12 +178,12 @@ int Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
 			if (!(dyn = malloc (1+bin->phdr[i].p_filesz))) {
 				perror ("malloc (dyn)");
-				return R_FALSE;
+				return false;
 			}
 			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->phdr[i].p_filesz) == -1) {
 				eprintf ("Error: read (dyn)\n");
 				free (dyn);
-				return R_FALSE;
+				return false;
 			}
 			if ((ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)))) > 0) {
 				for (j = 0; j < ndyn; j++)
@@ -197,12 +197,12 @@ int Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 									(ut8*)"", 1) == -1) {
 							eprintf ("Error: write (rpath)\n");
 							free (dyn);
-							return R_FALSE;
+							return false;
 						}
 					}
 			}
 			free (dyn);
 			break;
 		}
-	return R_TRUE;
+	return true;
 }

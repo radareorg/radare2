@@ -15,13 +15,13 @@ R_API void r_bp_watch_del() {
 /* TODO: move into _watch */
 R_API int r_bp_add_cond(struct r_bp_t *bp, const char *cond) {
 	// TODO: implement contitional breakpoints
-	bp->stepcont = R_TRUE;
+	bp->stepcont = true;
 	return 0;
 }
 
 R_API int r_bp_del_cond(struct r_bp_t *bp, int idx) {
 	// add contitional
-	bp->stepcont = R_FALSE;
-	return R_TRUE;
+	bp->stepcont = false;
+	return true;
 }
 

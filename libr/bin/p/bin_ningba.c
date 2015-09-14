@@ -35,14 +35,14 @@ static Sdb* get_sdb (RBinObject *o) {
 static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o) return R_FALSE;
+	if (!arch || !arch->o) return false;
 	return check_bytes (bytes, sz);
 }
 
 static int destroy(RBinFile *arch) {
 	r_buf_free (arch->buf);
 	arch->buf = NULL;
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {

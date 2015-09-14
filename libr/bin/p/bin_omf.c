@@ -16,25 +16,25 @@ static int load(RBinFile *arch) {
 	ut64 size = arch ? r_buf_size(arch->buf) : 0;
 
 	if (!arch || !arch->o) {
-		return R_FALSE;
+		return false;
 	}
 	if (!(arch->o->bin_obj = load_bytes(arch, byte, \
 			size, arch->o->loadaddr, arch->sdb)))
-		return R_FALSE;
-	return R_TRUE;
+		return false;
+	return true;
 }
 
 static int destroy(RBinFile *arch) {
 	r_bin_free_all_omf_obj (arch->o->bin_obj);
 	arch->o->bin_obj = NULL;
-	return R_TRUE;
+	return true;
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if ((*buf == 0x80 || *buf == 0x82) && \
 			r_bin_checksum_omf_ok((char *)buf, length))
-		return R_TRUE;
-	return R_FALSE;
+		return true;
+	return false;
 }
 
 static int check(RBinFile *arch) {
@@ -120,11 +120,11 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->os = strdup ("any");
 	ret->machine = strdup ("i386");
 	ret->arch = strdup ("x86");
-	ret->big_endian = R_FALSE;
-	ret->has_va = R_TRUE;
+	ret->big_endian = false;
+	ret->has_va = true;
 	ret->bits = r_bin_omf_get_bits (arch->o->bin_obj);
 	ret->dbg_info = 0;
-	ret->has_nx = R_FALSE;
+	ret->has_nx = false;
 	return ret;
 }
 

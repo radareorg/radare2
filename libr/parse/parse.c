@@ -40,7 +40,7 @@ R_API int r_parse_add(RParse *p, RParsePlugin *foo) {
 	if (foo->init)
 		foo->init (p->user);
 	r_list_append (p->parsers, foo);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_parse_use(RParse *p, const char *name) {
@@ -49,15 +49,15 @@ R_API int r_parse_use(RParse *p, const char *name) {
 	r_list_foreach (p->parsers, iter, h) {
 		if (!strcmp (h->name, name)) {
 			p->cur = h;
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_parse_assemble(RParse *p, char *data, char *str) {
 	char *in = strdup (str);
-	int ret = R_FALSE;
+	int ret = false;
 	char *s, *o;
 
 	data[0]='\0';
@@ -84,7 +84,7 @@ R_API int r_parse_assemble(RParse *p, char *data, char *str) {
 R_API int r_parse_parse(RParse *p, const char *data, char *str) {
 	if (p->cur && p->cur->parse)
 		return p->cur->parse (p, data, str);
-	return R_FALSE;
+	return false;
 }
 
 #define isx86separator(x) ( \
@@ -140,7 +140,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 					ptr2++;
 				snprintf (str, len, "%s%s%s", data, fcn->name,
 						(ptr!=ptr2)? ptr2: "");
-				return R_TRUE;
+				return true;
 			}
 		}
 		if (f) {
@@ -165,26 +165,26 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 					ptr2++;
 				snprintf (str, len, "%s%s%s", data, flag->name,
 					(ptr!=ptr2)? ptr2: "");
-				return R_TRUE;
+				return true;
 			}
 		}
 		ptr = ptr2;
 	}
 	strncpy (str, data, len);
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	filter (p, f, data, str, len);
 	if (p->cur && p->cur->filter)
 		return p->cur->filter (p, f, data, str, len);
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_parse_varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	if (p->cur && p->cur->varsub)
 		return p->cur->varsub (p, f, data, str, len);
-	return R_FALSE;
+	return false;
 }
 
 /* setters */
@@ -203,5 +203,5 @@ R_API int r_parse_list(RParse *p) {
 	r_list_foreach (p->parsers, iter, h) {
 		printf ("parse %10s %s\n", h->name, h->desc);
 	}
-	return R_FALSE;
+	return false;
 }

@@ -366,10 +366,10 @@ R_API int r_cons_pal_set (const char *key, const char *val) {
 			p = (char **)((char *)&(r_cons_singleton()->pal) + keys[i].off);
 //			free (*p);
 			*p = r_cons_pal_parse (val);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API const char *r_cons_pal_get_i (int n) {

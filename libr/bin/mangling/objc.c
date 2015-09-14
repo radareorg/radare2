@@ -7,7 +7,7 @@ R_API int r_bin_lang_objc(RBinFile *binfile) {
 	RBinInfo *info = o ? o->info : NULL;
 	RListIter *iter;
 	RBinSymbol *sym;
-	int hasobjc = R_FALSE;
+	int hasobjc = false;
 	char *dsym;
 	const char *ft;
 
@@ -20,7 +20,7 @@ R_API int r_bin_lang_objc(RBinFile *binfile) {
 	r_list_foreach (o->symbols, iter, sym) {
 		if (!hasobjc)
 			if (!strncmp (sym->name, "_OBJC_", 6))
-				hasobjc = R_TRUE;
+				hasobjc = true;
 		dsym = r_bin_demangle_objc (binfile, sym->name);
 		if (dsym) {
 			// Add type

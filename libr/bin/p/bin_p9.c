@@ -18,7 +18,7 @@ static int check(RBinFile *arch) {
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length >= 4)
 		return (r_bin_p9_get_arch (buf, NULL, NULL));
-	return R_FALSE;
+	return false;
 }
 
 static Sdb* get_sdb (RBinObject *o) {
@@ -37,7 +37,7 @@ static int load(RBinFile *arch) {
 }
 
 static int destroy (RBinFile *arch) {
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -170,7 +170,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->subsystem = strdup ("plan9");
 	ret->type = strdup ("EXEC (executable file)");
 	ret->bits = bits;
-	ret->has_va = R_TRUE;
+	ret->has_va = true;
 	ret->big_endian = big_endian;
 	ret->dbg_info = 0;
 	ret->dbg_info = 0;

@@ -9,10 +9,10 @@ static int r_bin_dyldcache_init(struct r_bin_dyldcache_obj_t* bin) {
 	int len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr, "16c4il", 1);
 	if (len == -1) {
 		perror ("read (cache_header)");
-		return R_FALSE;
+		return false;
 	}
 	bin->nlibs = bin->hdr.numlibs;
-	return R_TRUE;
+	return true;
 }
 
 static int r_bin_dyldcache_apply_patch (struct r_buf_t* buf, ut32 data, ut64 offset) {

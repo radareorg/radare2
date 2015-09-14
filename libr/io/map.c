@@ -41,7 +41,7 @@ R_API int r_io_map_sort(void *_a, void *_b) {
 }
 
 R_API int r_io_map_write_update(RIO *io, int fd, ut64 addr, ut64 len) {
-	int res = R_FALSE;
+	int res = false;
 	RIOMap *map = NULL;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
@@ -50,14 +50,14 @@ R_API int r_io_map_write_update(RIO *io, int fd, ut64 addr, ut64 len) {
 	}
 
 	if (map && map->to < addr+len) {
-		res = R_TRUE;
+		res = true;
 		map->to = addr+len;
 	}
 	return res;
 }
 
 R_API int r_io_map_truncate_update(RIO *io, int fd, ut64 sz) {
-	int res = R_FALSE;
+	int res = false;
 	RIOMap *map = NULL;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
@@ -66,7 +66,7 @@ R_API int r_io_map_truncate_update(RIO *io, int fd, ut64 sz) {
 	}
 
 	if (map) {
-		res = R_TRUE;
+		res = true;
 		map->to = map->from+sz;
 	}
 	return res;
@@ -161,12 +161,12 @@ R_API RIOMap * r_io_map_get_first_map_in_range(RIO *io, ut64 addr, ut64 endaddr)
 R_API int r_io_map_del(RIO *io, int fd) {
 	RIOMap *map;
 	RListIter *iter, *tmp;
-	ut8 deleted = R_FALSE;
+	ut8 deleted = false;
 	if (io && io->maps) {
 		r_list_foreach_safe (io->maps, iter, tmp, map) {
 			if (fd==-1 || map->fd==fd) {
 				r_list_delete (io->maps, iter);
-				deleted = R_TRUE;
+				deleted = true;
 			}
 		}
 	}
@@ -191,10 +191,10 @@ R_API int r_io_map_del_at(RIO *io, ut64 addr) {
 	r_list_foreach (io->maps, iter, map) {
 		if (map->from <= addr && addr < map->to) {
 			r_list_delete (io->maps, iter);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 load_align) {
@@ -234,12 +234,12 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut
 }
 
 R_API int r_io_map_exists_for_offset (RIO *io, ut64 off) {
-	int res = R_FALSE;
+	int res = false;
 	RIOMap *im = NULL;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, im) {
 		if (im->from <= off && off < im->to) {
-			res = R_TRUE;
+			res = true;
 			break;
 		}
 	}
@@ -314,18 +314,18 @@ R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 off, int fd) {
 	return paddr;
 }
 
-R_API int r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
+R_API _Bool r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
 	RListIter *iter;
 	RIOMap *im = NULL;
 	ut64 off = map->from;
-	if (!fd) return R_FALSE;
+	if (!fd) return false;
 	r_list_foreach (io->maps, iter, im) {
 		if (im == map) continue;
 		if (off >= im->from && off < im->to) {
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API void r_io_map_list (RIO *io) {

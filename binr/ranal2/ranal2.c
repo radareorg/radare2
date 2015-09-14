@@ -11,11 +11,11 @@ static int __lib_anal_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	RAnal *anal = (RAnal *)user;
 	RAnalPlugin *plugin = (RAnalPlugin *)data;
 	r_anal_add (anal, plugin);
-	return R_TRUE;
+	return true;
 }
 
 static int __lib_anal_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
-	return R_TRUE;
+	return true;
 }
 
 static char *stackop2str(int type) {
@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
 	ut8 *ptr, *buf = NULL, *data = NULL;
 	ut64 offset = 0x8048000LL;
 	char *arch = NULL;
-	int bin = R_FALSE, len = 0, bits = 32;
+	int bin = false, len = 0, bits = 32;
 	int c, idx, ret, tlen, word;
 
 	lib = r_lib_new ("radare_plugin");
@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
 			bits = r_num_math (NULL, optarg);
 			break;
 		case 'B':
-			bin = R_TRUE;
+			bin = true;
 			break;
 		case 'h':
 			return usage ();
@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
 	/* Get input & convert to bin if necessary */
 	if (argv[optind][0] == '-') {
 		idx = 0;
-		while (R_TRUE) {
+		while (true) {
 			if (!(buf = realloc (buf, idx+1024)))
 				return 1;
 			fgets ((char*)buf+idx, 1024, stdin);

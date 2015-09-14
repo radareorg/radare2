@@ -25,7 +25,7 @@ R_API int r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value
 	RListIter *iter;
 	if (key == NULL || value == NULL) {
 		eprintf ("Oops, no key or value defined in r_asm_code_set_equ ()\n");
-		return R_FALSE;
+		return false;
 	}
 	if (!code->equs) {
 		code->equs = r_list_new ();
@@ -34,13 +34,13 @@ R_API int r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value
 		if (!strcmp (equ->key, key)) {
 			free (equ->value);
 			equ->value = strdup (value);
-			return R_TRUE;
+			return true;
 		}
 	equ = R_NEW (RAsmEqu);
 	equ->key = strdup (key);
 	equ->value = strdup (value);
 	r_list_append (code->equs, equ);
-	return R_TRUE;
+	return true;
 }
 
 R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str) {
@@ -48,7 +48,7 @@ R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str) {
 	RListIter *iter;
 	if (code->equs)
 		r_list_foreach (code->equs, iter, equ) {
-			str = r_str_replace (str, equ->key, equ->value, R_TRUE);
+			str = r_str_replace (str, equ->key, equ->value, true);
 		}
 	return str;
 }

@@ -38,23 +38,23 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
-	if (!arch || !arch->o) return R_FALSE;
+	if (!arch || !arch->o) return false;
  	res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 
 	if (!arch->o || !res) {
 		MACH0_(mach0_free) (res);
-		return R_FALSE;
+		return false;
 	}
 	arch->o->bin_obj = res;
 	struct MACH0_(obj_t) *mo = arch->o->bin_obj;
 	arch->o->kv = mo->kv; // NOP
 	sdb_ns_set (arch->sdb, "info", mo->kv);
-	return R_TRUE;
+	return true;
 }
 
 static int destroy(RBinFile *arch) {
 	MACH0_(mach0_free) (arch->o->bin_obj);
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -188,7 +188,7 @@ static RList* imports(RBinFile *arch) {
 
 	if (!(imports = MACH0_(get_imports) (arch->o->bin_obj)))
 		return ret;
-	bin->has_canary = R_FALSE;
+	bin->has_canary = false;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
@@ -213,7 +213,7 @@ static RList* imports(RBinFile *arch) {
 		if (bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size)
 			bin->imports_by_ord[ptr->ordinal] = ptr;
  		if (!strcmp (name, "__stack_chk_fail") ) {
-			bin->has_canary = R_TRUE;
+			bin->has_canary = true;
 		}
 		r_list_append (ret, ptr);
 	}
@@ -316,7 +316,7 @@ static RBinInfo* info(RBinFile *arch) {
 		ret->big_endian = MACH0_(is_big_endian) (arch->o->bin_obj);
 	}
 
-	ret->has_va = R_TRUE;
+	ret->has_va = true;
 	ret->has_pi = MACH0_(is_pie) (arch->o->bin_obj);
 	return ret;
 }
@@ -332,10 +332,10 @@ static int check(RBinFile *arch) {
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length >= 4) {
 		if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
-				!memcmp (buf, "\xfe\xed\xfa\xce", 4))
-			return R_TRUE;
+		    !memcmp (buf, "\xfe\xed\xfa\xce", 4))
+			return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 #if 0

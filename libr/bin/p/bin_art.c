@@ -42,7 +42,7 @@ static int art_header_load(ARTHeader *art, RBuffer *buf, Sdb *db) {
 	sdb_set (db, "oat_data.end", sdb_fmt (0, "0x%x", art->oat_data_end), 0);
 	sdb_set (db, "patch_delta", sdb_fmt (0, "0x%x", art->patch_delta), 0);
 	sdb_set (db, "image_roots", sdb_fmt (0, "0x%x", art->image_roots), 0);
-	return R_TRUE;
+	return true;
 }
 
 static int check(RBinFile *arch);
@@ -65,11 +65,11 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 la, Sdb *
 }
 
 static int load(RBinFile *arch) {
-	return R_TRUE;
+	return true;
 }
 
 static int destroy(RBinFile *arch) {
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -118,10 +118,7 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && !strncmp ((const char *)buf, "art\n", R_MIN (4, length))) {
-		return R_TRUE;
-	}
-	return R_FALSE;
+	return (buf && !strncmp ((const char *)buf, "art\n", R_MIN (4, length)));
 }
 
 static RList* entries(RBinFile *arch) {

@@ -25,7 +25,7 @@ static boolt FSP(_read)(RFSFile *file, ut64 addr, int len) {
 	grubfs_bind_io (NULL, file->root->delta);
 	gfs->file->fs->read (gfs->file, (char*)file->data, len);
 	file->off = grub_hack_lastoff; //gfs->file->offset;
-	return R_FALSE;
+	return false;
 }
 
 static void FSP(_close)(RFSFile *file) {
@@ -70,8 +70,8 @@ static int FSP(_mount)(RFSRoot *root) {
 	root->ptr = gfs;
 	grubfs_bind_io (&root->iob, root->delta);
 	// XXX: null hook seems to be problematic on some filesystems
-	//return gfs->file->fs->dir (gfs->file->device, "/", NULL, 0)? R_FALSE:R_TRUE;
-	ret = gfs->file->fs->dir (gfs->file->device, "/", do_nothing, 0)? R_FALSE:R_TRUE;
+	//return gfs->file->fs->dir (gfs->file->device, "/", NULL, 0)? false:true;
+	ret = gfs->file->fs->dir (gfs->file->device, "/", do_nothing, 0)? false:true;
 	grubfs_bind_io (NULL, root->delta);
 	return ret;
 }

@@ -15,9 +15,9 @@ R_API RSearch *r_search_new(int mode) {
 	if (!r_search_set_mode (s, mode)) {
 		free (s);
 		eprintf ("Cannot init search for mode %d\n", mode);
-		return R_FALSE;
+		return false;
 	}
-	s->inverse = R_FALSE;
+	s->inverse = false;
 	s->user = NULL;
 	s->callback = NULL;
 	s->align = 0;
@@ -47,10 +47,10 @@ R_API RSearch *r_search_free(RSearch *s) {
 
 R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max) {
 	if (max < min)
-		return R_FALSE;
+		return false;
 	s->string_min = min;
 	s->string_max = max;
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_search_set_mode(RSearch *s, int mode) {
@@ -65,9 +65,9 @@ R_API int r_search_set_mode(RSearch *s, int mode) {
 	}
 	if (s->update || mode == R_SEARCH_PATTERN) {
 		s->mode = mode;
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_search_begin(RSearch *s) {
@@ -86,32 +86,32 @@ R_API int r_search_begin(RSearch *s) {
 		break;
 	}
 #endif
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	RSearchHit* hit;
 	if (s->align && (addr%s->align)) {
 		eprintf ("0x%08"PFMT64x" unaligned\n", addr);
-		return R_FALSE;
+		return false;
 	}
 	if (!s->contiguous) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
 			kw->last = addr + kw->keyword_length;
 			eprintf ("0x%08"PFMT64x" Sequencial hit ignored.\n", addr);
-			return R_TRUE;
+			return true;
 		}
 		kw->last = addr + kw->keyword_length;
 	}
 	if (s->callback)
 		return s->callback (kw, s->user, addr);
 	if (!(hit = r_mem_pool_alloc (s->pool)))
-		return R_FALSE;
+		return false;
 	hit->kw = kw;
 	hit->addr = addr;
 	r_list_append (s->hits, hit);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_search_deltakey_update(void *_s, ut64 from, const ut8 *buf, int len) {
@@ -162,7 +162,7 @@ R_API int r_search_bmh (const RSearchKeyword *kw, const ut64 from, const ut8 *bu
 	kw_len = kw->keyword_length - 1;
 
 	if (kw_len < 0)
-		return R_FALSE;
+		return false;
 
 	for (i = 0; i < 256; i++)
 		bad_char_shift[i] = kw->keyword_length;
@@ -189,14 +189,14 @@ R_API int r_search_bmh (const RSearchKeyword *kw, const ut64 from, const ut8 *bu
 			if (i == 0) {
 				if (out) 
 					*out = pos;
-				return R_TRUE;
+				return true;
 			}
 		}
 		ch = buf[pos + kw_len];
 		pos += bad_char_shift[kw->icase?tolower(ch):ch];
 	}
 
-	return R_FALSE;
+	return false;
 }
 #endif
 
@@ -282,12 +282,12 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 							i += kw->keyword_length-1;
 							kw->idx[j] = kw->keyword_length-1;
 							kw->distance = 0;
-							hit = R_TRUE;
+							hit = true;
 						} else {
-							hit = R_FALSE;
+							hit = false;
 						}
 					} else {
-						hit = R_FALSE;
+						hit = false;
 					}
 				} else {
 					ut8 ch = kw->bin_keyword[kw->idx[j]];
@@ -312,14 +312,14 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 						if (kw->distance<s->distance) {
 							kw->idx[kw->distance+1] = kw->idx[kw->distance];
 							kw->distance++;
-							hit = R_TRUE;
+							hit = true;
 						} else {
 							kw->idx[0] = 0;
 							kw->distance = 0;
-							hit = R_FALSE;
+							hit = false;
 						}
 					} else {
-						hit = R_TRUE;
+						hit = true;
 					}
 				}
 				if (hit) {
@@ -389,7 +389,7 @@ static int listcb(RSearchKeyword *k, void *user, ut64 addr) {
 	hit->kw = k;
 	hit->addr = addr;
 	r_list_append (user, hit);
-	return R_TRUE;
+	return true;
 }
 
 R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len) {
@@ -401,10 +401,10 @@ R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len) {
 
 /* --- keywords --- */
 R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw) {
-	if (!kw) return R_FALSE;
-	r_list_append (s->kws, kw);
+	if (!kw) return false;
 	kw->kwidx = s->n_kws++;
-	return R_TRUE;
+	r_list_append (s->kws, kw);
+	return true;
 }
 
 R_API void r_search_kw_reset(RSearch *s) {

@@ -47,7 +47,7 @@ R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bit
 	s->os = strdup (os);
 
 	if (!strcmp (os, "any")) // ignored
-		return R_TRUE;
+		return true;
 
 	if (!strcmp (arch, "mips"))
 		s->regs = fastcall_mips;
@@ -91,17 +91,18 @@ R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bit
 	if (s->fd)
 		fclose (s->fd);
 	s->fd = NULL;
-	return R_TRUE;
+	return true;
 }
 
+/// XXX wtf is this function for?
 R_API int r_syscall_setup_file(RSyscall *s, const char *path) {
 	if (s->fd)
 		fclose (s->fd);
 	s->fd = r_sandbox_fopen (path, "r");
 	if (s->fd == NULL)
-		return 1;
+		return false;
 	/* TODO: load info from file */
-	return 0;
+	return true;
 }
 
 R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char *s) {

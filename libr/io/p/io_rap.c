@@ -42,9 +42,9 @@ static boolt rap__accept(RIO *io, RIODesc *desc, int fd) {
 	RIORap *rap = desc->data;
 	if (rap) {
 		rap->client = r_socket_new_from_fd (fd);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
@@ -158,7 +158,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		//TODO: Handle ^C signal (SIGINT, exit); // ???
 		eprintf ("rap: listening at port %s ssl %s\n", port, (is_ssl)?"on":"off");
 		rior = R_NEW0 (RIORap);
-		rior->listener = R_TRUE;
+		rior->listener = true;
 		rior->client = rior->fd = r_socket_new (is_ssl);
 		if (rior->fd == NULL) {
 			free (rior);
@@ -185,14 +185,14 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		eprintf ("Cannot create new socket\n");
 		return NULL;
 	}
-	if (r_socket_connect_tcp (rap_fd, ptr, port, 30) == R_FALSE) {
+	if (r_socket_connect_tcp (rap_fd, ptr, port, 30) == false) {
 		eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
 		r_socket_free (rap_fd);
 		return NULL;
 	}
 	eprintf ("Connected to: %s at port %s\n", ptr, port);
 	rior = R_NEW (RIORap);
-	rior->listener = R_FALSE;
+	rior->listener = false;
 	rior->client = rior->fd = rap_fd;
 	if (file && *file) {
 		// send
@@ -242,7 +242,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 static int rap__listener(RIODesc *fd) {
 	if (RIORAP_IS_VALID (fd))
 		return RIORAP_IS_LISTEN (fd);
-	return R_FALSE;
+	return false;
 }
 
 static int rap__system(RIO *io, RIODesc *fd, const char *command) {

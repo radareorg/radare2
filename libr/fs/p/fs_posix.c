@@ -24,7 +24,7 @@ static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
 static boolt fs_posix_read(RFSFile *file, ut64 addr, int len) {
 	free (file->data);
 	file->data = (void*)r_file_slurp_range (file->name, 0, len, NULL);
-	return R_FALSE;
+	return false;
 }
 
 static void fs_posix_close(RFSFile *file) {
@@ -58,7 +58,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 
 static int fs_posix_mount(RFSRoot *root) {
 	root->ptr = NULL; // XXX: TODO
-	return R_TRUE;
+	return true;
 }
 
 static void fs_posix_umount(RFSRoot *root) {

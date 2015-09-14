@@ -19,8 +19,7 @@ INTERNAL void twok_init() {
 
 INTERNAL void twok_add() {
 	int i, j;
-
-	while (R_TRUE) {
+	while (true) {
 		i = r_num_rand (4);
 		j = r_num_rand (4);
 		if (!twok_buf[i][j]) {

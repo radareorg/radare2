@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - nibble, montekki, pancake */
+/* radare - LGPL - Copyright 2009-2015 - nibble, montekki, pancake */
 
 #include <r_types.h>
 #include <r_bin.h>
@@ -10,17 +10,17 @@ static int get_line(RBinFile *arch, ut64 addr, char *file, int len, int *line) {
 	if (arch->sdb_addrinfo) {
 		offset_ptr = sdb_itoa (addr, offset, 16);
 		ret = sdb_get (arch->sdb_addrinfo, offset_ptr, 0);
-		if (!ret)
-			return R_FALSE;
-		p = strchr (ret, '|');
-		if (p) {
-			*p = '\0';
-			strncpy(file, ret, len);
-			*line = atoi(p + 1);
-			return R_TRUE;
+		if (ret) {
+			p = strchr (ret, '|');
+			if (p) {
+				*p = '\0';
+				strncpy(file, ret, len);
+				*line = atoi(p + 1);
+				return true;
+			}
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 #if !R_BIN_ELF64

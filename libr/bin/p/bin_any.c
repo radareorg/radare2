@@ -46,11 +46,11 @@ static RBinInfo* info(RBinFile *arch) {
 }
 
 static int load(RBinFile *arch) {
-	return R_TRUE;
+	return true;
 }
 
 static int destroy(RBinFile *arch) {
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {

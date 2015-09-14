@@ -1224,7 +1224,7 @@ R_API int sdb_iterate_build_list(void *user, const char *k, const char *v) {
 		bin_obj = (RBinJavaObj *) value;
 		r_list_append (bin_objs_list, bin_obj);
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API RBinJavaCPTypeObj* r_bin_java_get_java_null_cp() {
@@ -2256,59 +2256,59 @@ R_API int r_bin_java_new_bin (RBinJavaObj *bin, ut64 loadaddr, Sdb *kv, const ut
 R_API int r_bin_java_load_bin (RBinJavaObj *bin, const ut8 * buf, ut64 buf_sz) {
 	ut64 adv = 0;
 	R_BIN_JAVA_GLOBAL_BIN = bin;
-	if (!bin) return R_FALSE;
+	if (!bin) return false;
 	r_bin_java_reset_bin_info (bin);
 	memcpy ((ut8*) &bin->cf, buf, 10);
 	if (memcmp (bin->cf.cafebabe, "\xCA\xFE\xBA\xBE", 4)) {
 		eprintf ("r_bin_java_new_bin: Invalid header (%02x %02x %02x %02x)\n",
 				bin->cf.cafebabe[0], bin->cf.cafebabe[1],
 				bin->cf.cafebabe[2], bin->cf.cafebabe[3]);
-		return R_FALSE;
+		return false;
 	}
 	if (bin->cf.major[0]==bin->cf.major[1] && bin->cf.major[0]==0) {
 		eprintf ("Java CLASS with MACH0 header?\n");
-		return R_FALSE;
+		return false;
 	}
 	adv += 8;
 	// -2 so that the cp_count will be parsed
 	adv += r_bin_java_parse_cp_pool (bin, adv, buf, buf_sz);
 	if (adv > buf_sz) {
 		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Constant Pool.\n");
-		return R_TRUE;
+		return true;
 	}
 	adv += r_bin_java_read_class_file2 (bin, adv, buf, buf_sz);
 	if (adv > buf_sz) {
 		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after class file info.\n");
-		return R_TRUE;
+		return true;
 	}
 	IFDBG eprintf ("This class: %d %s\n", bin->cf2.this_class, bin->cf2.this_class_name);
 	IFDBG eprintf ("0x%"PFMT64x" Access flags: 0x%04x\n", adv, bin->cf2.access_flags);
 	adv += r_bin_java_parse_interfaces (bin, adv, buf, buf_sz);
 	if (adv > buf_sz) {
 		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Interfaces.\n");
-		return R_TRUE;
+		return true;
 	}
 	adv += r_bin_java_parse_fields (bin, adv, buf, buf_sz);
 	if (adv > buf_sz) {
 		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Fields.\n");
-		return R_TRUE;
+		return true;
 	}
 	adv += r_bin_java_parse_methods (bin, adv, buf, buf_sz);
 	if (adv > buf_sz) {
 		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Methods.\n");
-		return R_TRUE;
+		return true;
 	}
 	adv += r_bin_java_parse_attrs (bin, adv, buf, buf_sz);
 	bin->calc_size = adv;
 	//if (adv > buf_sz) {
 	//	eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Attributes.\n");
-	//	return R_TRUE;
+	//	return true;
 	//}
 
 	//add_cp_objs_to_sdb(bin);
 	//add_method_infos_to_sdb(bin);
 	//add_field_infos_to_sdb(bin);
-	return R_TRUE;
+	return true;
 }
 
 R_API char* r_bin_java_get_version(RBinJavaObj* bin) {
@@ -2682,7 +2682,7 @@ R_API RList* r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx) {
 R_API  int is_class_interface(RBinJavaObj *bin, RBinJavaCPTypeObj *cp_obj) {
 	RListIter *iter;
 	RBinJavaInterfaceInfo *interface_obj;
-	int res = R_FALSE;
+	int res = false;
 	r_list_foreach(bin->interfaces_list, iter, interface_obj) {
 		if (interface_obj) {
 			res = cp_obj == interface_obj->cp_class;
@@ -4834,7 +4834,7 @@ R_API RBinJavaCPTypeObj* r_bin_java_invokedynamic_cp_new (RBinJavaObj *bin, ut8*
 }
 
 R_API int r_bin_java_check_reset_cp_obj(RBinJavaCPTypeObj* cp_obj, ut8 tag) {
-	ut32 res = R_FALSE;
+	ut32 res = false;
 	if (tag > R_BIN_JAVA_CP_METAS_SZ) {
 		eprintf ("Invalid tag '%d'.\n", tag);
 		return res;
@@ -4845,13 +4845,13 @@ R_API int r_bin_java_check_reset_cp_obj(RBinJavaCPTypeObj* cp_obj, ut8 tag) {
 		cp_obj->info.cp_utf8.length = 0;
 		free (cp_obj->name);
 		cp_obj->name = NULL;
-		res = R_TRUE;
+		res = true;
 	}
 	if (tag != cp_obj->tag) {
 		cp_obj->tag = tag;
 		cp_obj->metas->type_info = (void *)&R_BIN_JAVA_CP_METAS[tag];
 		cp_obj->name = strdup (R_BIN_JAVA_CP_METAS[tag].name);
-		res = R_TRUE;
+		res = true;
 	}
 	return res;
 }
@@ -7304,7 +7304,7 @@ R_API RList* r_bin_java_get_method_num_name(RBinJavaObj *bin_obj) {
 
 /*
 R_API int r_bin_java_does_cp_obj_ref_idx (RBinJavaObj *bin_obj, RBinJavaCPTypeObj *cp_obj, ut16 idx) {
-	int res = R_FALSE;
+	int res = false;
 	RBinJavaCPTypeObj *t_obj = NULL;
 	if (cp_obj){
 		switch (cp_obj->tag) {
@@ -7316,17 +7316,17 @@ R_API int r_bin_java_does_cp_obj_ref_idx (RBinJavaObj *bin_obj, RBinJavaCPTypeOb
 			case R_BIN_JAVA_CP_LONG: break;
 			case R_BIN_JAVA_CP_DOUBLE: break;
 			case R_BIN_JAVA_CP_CLASS:
-				res = idx == cp_obj->info.cp_class.name_idx ? R_TRUE : R_FALSE;
+				res = idx == cp_obj->info.cp_class.name_idx ? true : false;
 				break;
 			case R_BIN_JAVA_CP_STRING:
-				res = idx == cp_obj->info.cp_string.string_idx ? R_TRUE : R_FALSE;
+				res = idx == cp_obj->info.cp_string.string_idx ? true : false;
 				break;
 			case R_BIN_JAVA_CP_METHODREF: break;// check if idx is referenced here
 			case R_BIN_JAVA_CP_INTERFACEMETHOD_REF: break; // check if idx is referenced here
 			case R_BIN_JAVA_CP_FIELDREF:
 				t_obj = r_bin_java_get_item_from_cp (bin_obj, cp_obj->info.cp_method.class_idx);
 				res = r_bin_java_does_cp_obj_ref_idx (bin_obj, t_obj, idx);
-				if (res == R_TRUE) break;
+				if (res == true) break;
 				t_obj = r_bin_java_get_item_from_cp (bin_obj, cp_obj->info.cp_method.name_and_type_idx);
 				res = r_bin_java_does_cp_obj_ref_idx (bin_obj, t_obj, idx);
 				break;
@@ -7664,11 +7664,11 @@ R_API int U(r_bin_java_is_method_protected)(RBinJavaObj *bin_obj, ut64 addr) {
 }
 
 R_API int r_bin_java_print_method_idx_summary(RBinJavaObj *bin_obj, ut32 idx) {
-	int res = R_FALSE;
+	int res = false;
 	if (idx < r_list_length (bin_obj->methods_list)) {
 		RBinJavaField *fm_type = r_list_get_n (bin_obj->methods_list, idx);
 		r_bin_java_print_method_summary (fm_type);
-		res = R_TRUE;
+		res = true;
 	}
 	return res;
 }
@@ -8098,7 +8098,7 @@ R_API char * r_bin_java_resolve_cp_idx_to_string(RBinJavaObj *BIN_OBJ, int idx) 
 R_API int r_bin_java_resolve_cp_idx_print_summary(RBinJavaObj *BIN_OBJ, int idx) {
 	RBinJavaCPTypeObj *item = NULL;
 	if (BIN_OBJ && BIN_OBJ->cp_count < 1) {
-		return R_FALSE;
+		return false;
 	}
 	item = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (BIN_OBJ, idx);
 	if (item) {
@@ -8108,7 +8108,7 @@ R_API int r_bin_java_resolve_cp_idx_print_summary(RBinJavaObj *BIN_OBJ, int idx)
 	} else {
 		eprintf ("Error: Invalid CP Object.\n");
 	}
-	return item ? R_TRUE: R_FALSE;
+	return item ? true: false;
 }
 
 R_API ConstJavaValue * U(r_bin_java_resolve_to_const_value)(RBinJavaObj *BIN_OBJ, int idx) {
@@ -8269,11 +8269,11 @@ R_API char * r_bin_java_get_field_name (RBinJavaObj *bin_obj, ut32 idx){
 }
 
 R_API int r_bin_java_print_field_idx_summary (RBinJavaObj *bin_obj, ut32 idx) {
-	int res = R_FALSE;
+	int res = false;
 	if (idx < r_list_length (bin_obj->fields_list)) {
 		RBinJavaField *fm_type = r_list_get_n (bin_obj->fields_list, idx);
 		r_bin_java_print_field_summary (fm_type);
-		res = R_TRUE;
+		res = true;
 	}
 	return res;
 }
@@ -8352,14 +8352,14 @@ R_API int U(r_bin_java_integer_cp_set)(RBinJavaObj *bin, ut16 idx, ut32 val) {
 	ut8 bytes[4] = {0};
 	if (cp_obj->tag != R_BIN_JAVA_CP_INTEGER && cp_obj->tag != R_BIN_JAVA_CP_FLOAT) {
 		eprintf ("Not supporting the overwrite of CP Objects with one of a different size.\n");
-		return R_FALSE;
+		return false;
 	}
 	r_bin_java_check_reset_cp_obj(cp_obj, R_BIN_JAVA_CP_INTEGER);
 	cp_obj->tag = R_BIN_JAVA_CP_INTEGER;
 	memcpy (bytes, (const char *) &val, 4);
 	val = R_BIN_JAVA_UINT (bytes, 0);
 	memcpy (&cp_obj->info.cp_integer.bytes.raw, (const char *) &val, 4);
-	return R_TRUE;
+	return true;
 }
 
 R_API int U(r_bin_java_float_cp_set)(RBinJavaObj *bin, ut16 idx, float val){
@@ -8367,14 +8367,14 @@ R_API int U(r_bin_java_float_cp_set)(RBinJavaObj *bin, ut16 idx, float val){
 	ut8 bytes[4] = {0};
 	if (cp_obj->tag != R_BIN_JAVA_CP_INTEGER && cp_obj->tag != R_BIN_JAVA_CP_FLOAT) {
 		eprintf ("Not supporting the overwrite of CP Objects with one of a different size.\n");
-		return R_FALSE;
+		return false;
 	}
 	r_bin_java_check_reset_cp_obj(cp_obj, R_BIN_JAVA_CP_FLOAT);
 	cp_obj->tag = R_BIN_JAVA_CP_FLOAT;
 	memcpy (bytes, (const char *) &val, 4);
 	val = R_BIN_JAVA_UINT (bytes, 0);
 	memcpy (&cp_obj->info.cp_float.bytes.raw, (const char *) &val, 4);
-	return R_TRUE;
+	return true;
 }
 
 R_API int U(r_bin_java_long_cp_set)(RBinJavaObj *bin, ut16 idx, ut64 val) {
@@ -8382,14 +8382,14 @@ R_API int U(r_bin_java_long_cp_set)(RBinJavaObj *bin, ut16 idx, ut64 val) {
 	ut8 bytes[8] = {0};
 	if (cp_obj->tag != R_BIN_JAVA_CP_LONG && cp_obj->tag != R_BIN_JAVA_CP_DOUBLE) {
 		eprintf ("Not supporting the overwrite of CP Objects with one of a different size.\n");
-		return R_FALSE;
+		return false;
 	}
 	r_bin_java_check_reset_cp_obj(cp_obj, R_BIN_JAVA_CP_LONG);
 	cp_obj->tag = R_BIN_JAVA_CP_LONG;
 	memcpy (bytes, (const char *) &val, 8);
 	val = r_bin_java_raw_to_long (bytes, 0);
 	memcpy (&cp_obj->info.cp_long.bytes.raw, (const char *) &val, 8);
-	return R_TRUE;
+	return true;
 }
 
 R_API int U(r_bin_java_double_cp_set)(RBinJavaObj *bin, ut16 idx, ut32 val){
@@ -8397,14 +8397,14 @@ R_API int U(r_bin_java_double_cp_set)(RBinJavaObj *bin, ut16 idx, ut32 val){
 	ut8 bytes[8] = {0};
 	if (cp_obj->tag != R_BIN_JAVA_CP_LONG && cp_obj->tag != R_BIN_JAVA_CP_DOUBLE) {
 		eprintf ("Not supporting the overwrite of CP Objects with one of a different size.\n");
-		return R_FALSE;
+		return false;
 	}
 	r_bin_java_check_reset_cp_obj(cp_obj, R_BIN_JAVA_CP_DOUBLE);
 	cp_obj->tag = R_BIN_JAVA_CP_DOUBLE;
 	memcpy (bytes, (const char *) &val, 8);
 	val = r_bin_java_raw_to_long (bytes, 0);
 	memcpy (&cp_obj->info.cp_double.bytes.raw, (const char *) &val, 8);
-	return R_TRUE;
+	return true;
 }
 
 R_API int U(r_bin_java_utf8_cp_set)(RBinJavaObj *bin, ut16 idx, const ut8* buffer, ut32 len){
@@ -8413,7 +8413,7 @@ R_API int U(r_bin_java_utf8_cp_set)(RBinJavaObj *bin, ut16 idx, const ut8* buffe
 	//r_bin_java_check_reset_cp_obj(cp_obj, R_BIN_JAVA_CP_INTEGER);
 	if (cp_obj->tag != R_BIN_JAVA_CP_UTF8) {
 		eprintf ("Not supporting the overwrite of CP Objects with one of a different size.\n");
-		return R_FALSE;
+		return false;
 	}
 	if (cp_obj->info.cp_utf8.length != len) {
 		eprintf ("Not supporting the resize, rewriting utf8 string up to %d bytes.\n", cp_obj->info.cp_utf8.length);
@@ -8425,7 +8425,7 @@ R_API int U(r_bin_java_utf8_cp_set)(RBinJavaObj *bin, ut16 idx, const ut8* buffe
 	if (cp_obj->info.cp_utf8.length > len) {
 		memset (cp_obj->info.cp_utf8.bytes+len, 0, cp_obj->info.cp_utf8.length-len);
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API ut8 * r_bin_java_cp_get_bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, const ut64 len){
@@ -8656,7 +8656,7 @@ R_API ut8 * r_bin_java_cp_get_idx_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz
 R_API int r_bin_java_valid_class (const ut8 * buf, ut64 buf_sz) {
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj), *cur_bin = R_BIN_JAVA_GLOBAL_BIN;
 	int res = r_bin_java_load_bin (bin, buf, buf_sz);
-	if (bin->calc_size == buf_sz) res = R_TRUE;
+	if (bin->calc_size == buf_sz) res = true;
 	r_bin_java_free (bin);
 	R_BIN_JAVA_GLOBAL_BIN = cur_bin;
 	return res;

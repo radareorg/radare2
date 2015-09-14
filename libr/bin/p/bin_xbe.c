@@ -25,7 +25,7 @@ static int check(RBinFile *arch) {
 	const ut64 size = arch ? r_buf_size (arch->buf) : 0;
 
 	if (!arch || !arch->o || !bytes)
-		return R_FALSE;
+		return false;
 
 	return check_bytes(bytes, size);
 }
@@ -34,10 +34,10 @@ static int load(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj = NULL;
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	if (!arch || !arch->o)
-		return R_FALSE;
+		return false;
 	arch->o->bin_obj = malloc (sizeof (r_bin_plugin_xbe));
 	if (!arch->o->bin_obj)
-		return R_FALSE;
+		return false;
 	obj = arch->o->bin_obj;
 
 	if (obj) {
@@ -55,10 +55,10 @@ static int load(RBinFile *arch) {
 			obj->ep_key = XBE_EP_RETAIL;
 			obj->kt_key = XBE_KP_RETAIL;
 		}
-		return R_TRUE;
+		return true;
 	}
 
-	return R_FALSE;
+	return false;
 }
 
 static int destroy(RBinFile *arch) {
@@ -66,7 +66,7 @@ static int destroy(RBinFile *arch) {
 	r_buf_free (arch->buf);
 	arch->buf = NULL;
 	arch->o->bin_obj = NULL;
-	return R_TRUE;
+	return true;
 }
 
 static RBinAddr* binsym(RBinFile *arch, int type) {
@@ -210,7 +210,7 @@ static RList* libs(RBinFile *arch) {
 static RList* symbols(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj;
 	RList *ret;
-	int i, found = R_FALSE;
+	int i, found = false;
 	ut32 thunk_addr[XBE_MAX_THUNK];
 	ut32 kt_addr;
 	xbe_section sect;
@@ -225,19 +225,19 @@ static RList* symbols(RBinFile *arch) {
 
 //eprintf ("VA %llx  %llx\n", sym->paddr, sym->vaddr);
 	// PA -> VA translation
-eprintf ("sections %d\n", obj->header->sections);
+	eprintf ("sections %d\n", obj->header->sections);
 	int limit = obj->header->sections;
 	if (limit * (sizeof(xbe_section)) >= arch->buf->length - obj->header->sechdr_addr)
 		limit = arch->buf->length;
-	for (i = 0; found == R_FALSE && i < limit; i++) {
+	for (i = 0; found == false && i < limit; i++) {
 		r_buf_read_at (arch->buf, obj->header->sechdr_addr - \
 			obj->header->base + (sizeof (xbe_section) * i), \
 			(ut8 *)&sect, sizeof(sect));
 		if (kt_addr >= sect.vaddr && kt_addr < sect.vaddr + sect.vsize)
-			found = R_TRUE;
+			found = true;
 	}
 
-	if (found == R_FALSE) {
+	if (found == false) {
 		free (ret);
 		return NULL;
 	}

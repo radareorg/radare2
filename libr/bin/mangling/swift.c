@@ -7,16 +7,16 @@ R_API int r_bin_lang_swift(RBinFile *binfile) {
 	RBinInfo *info = o ? o->info : NULL;
 	RBinSymbol *sym;
 	RListIter *iter;
-	int haslang = R_FALSE;
+	_Bool haslang = false;
 
-	if (!info)
-		return R_FALSE;
-	r_list_foreach (o->symbols, iter, sym) {
-		if (strstr (sym->name, "swift_release")) {
-			haslang = R_TRUE;
-			info->lang = "swift";
-			break;
+	if (info) {
+		r_list_foreach (o->symbols, iter, sym) {
+			if (strstr (sym->name, "swift_release")) {
+				haslang = true;
+				info->lang = "swift";
+				break;
+			}
 		}
 	}
-	return haslang;
+	return (int)haslang;
 }

@@ -29,7 +29,7 @@ R_API RIO *r_io_new() {
 	io->ff = 1;
 	io->aslr = 0;
 	io->raised = -1;
-	io->autofd = R_TRUE;
+	io->autofd = true;
 	r_io_map_init (io);
 	r_io_desc_init (io);
 	r_io_undo_init (io);
@@ -46,7 +46,7 @@ R_API void r_io_raise(RIO *io, int fd) {
 R_API int r_io_is_listener(RIO *io) {
 	if (io && io->plugin && io->plugin->listener)
 		return io->plugin->listener (io->desc);
-	return R_FALSE;
+	return false;
 }
 
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len) {
@@ -253,7 +253,7 @@ R_API int r_io_reopen (RIO *io, RIODesc *desc, int flags, int mode) {
 	if (desc && desc->uri && io && io->files && (desc == r_io_desc_get (io, desc->fd))) {
 		n = __getioplugin (io, desc->uri, flags, mode);
 		if (!n)
-			return R_FALSE;
+			return false;
 		r_io_section_rm_all (io, desc->fd);
 		if (io->maps) {
 			r_list_foreach (io->maps, iter, map) {
@@ -269,18 +269,18 @@ R_API int r_io_reopen (RIO *io, RIODesc *desc, int flags, int mode) {
 		free (desc->uri);
 		*desc = *n;
 		free (n);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_io_use_desc (RIO *io, RIODesc *d) {
 	if (d) {
 		io->desc = d;
 		io->plugin = d->plugin;
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API RIODesc *r_io_use_fd (RIO *io, int fd) {
@@ -553,9 +553,9 @@ R_API int r_io_resize(RIO *io, ut64 newsize) {
 				r_io_map_truncate_update (io, io->desc->fd, newsize);
 			return res;
 		}
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_io_extend(RIO *io, ut64 size) {
@@ -563,12 +563,12 @@ R_API int r_io_extend(RIO *io, ut64 size) {
 	ut64 cur_size = r_io_size (io), tmp_size = cur_size-size;
 	ut8 *buffer = NULL;
 
-	if (!size) return R_FALSE;
+	if (!size) return false;
 
 	if (io->plugin && io->plugin->extend)
 		return io->plugin->extend (io, io->desc, size);
 
-	if (!r_io_resize (io, size+cur_size)) return R_FALSE;
+	if (!r_io_resize (io, size+cur_size)) return false;
 
 	if (cur_size < size) {
 		tmp_size = size - cur_size;
@@ -592,23 +592,23 @@ R_API int r_io_extend(RIO *io, ut64 size) {
 	// reset the cursor
 	r_io_seek (io, curr_off, R_IO_SEEK_SET);
 	free (buffer);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size) {
-	if (!size) return R_FALSE;
+	if (!size) return false;
 	r_io_seek (io, addr, R_IO_SEEK_SET);
 	return 	r_io_extend (io, size);
 }
 
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len) {
-	int ret = R_FALSE;
+	int ret = false;
 	if (len>0) {
 		io->write_mask_fd = io->desc->fd;
 		io->write_mask_buf = (ut8 *)malloc (len);
 		memcpy (io->write_mask_buf, buf, len);
 		io->write_mask_len = len;
-		ret = R_TRUE;
+		ret = true;
 	} else io->write_mask_fd = -1;
 	return ret;
 }
@@ -784,7 +784,7 @@ R_API ut64 r_io_size(RIO *io) {
 	oldva = io->va;
 	if (r_io_is_listener (io))
 		return UT64_MAX;
-	io->va = R_FALSE;
+	io->va = false;
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
 	size = r_io_seek (io, 0, R_IO_SEEK_END);
 	if (r_io_seek (io, here, R_IO_SEEK_SET) != here) {
@@ -831,7 +831,7 @@ R_API int r_io_close(RIO *io, RIODesc *d) {
 		}
 	}
 	io->desc = cur;
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_io_close_all (RIO *io) {
@@ -842,7 +842,7 @@ R_API int r_io_close_all (RIO *io) {
 	io->write_mask_fd = -1;
 	io->ff = 1;
 	io->raised = -1;
-	io->autofd = R_TRUE;
+	io->autofd = true;
 	r_io_map_del (io, -1);
 	r_io_desc_del (io, -1);
 	r_io_section_rm_all (io, -1);
@@ -854,7 +854,7 @@ R_API int r_io_close_all (RIO *io) {
 
 R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->io = io;
-	bnd->init = R_TRUE;
+	bnd->init = true;
 	bnd->get_io = r_io_bind_get_io;
 	bnd->read_at = r_io_read_at;
 	bnd->write_at = r_io_write_at;
@@ -876,13 +876,13 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->section_set_arch = r_io_section_set_archbits;
 	bnd->section_set_arch_bin_id = r_io_section_set_archbits_bin_id;
 
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_io_accept(RIO *io, int fd) {
 	if (r_io_is_listener (io) && io->plugin && io->plugin->accept)
 		return io->plugin->accept (io, io->desc, fd);
-	return R_FALSE;
+	return false;
 }
 
 /* moves bytes up (+) or down (-) within the specified range */
@@ -890,10 +890,10 @@ R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move) {
 	ut8 *buf;
 	ut64 chunksize = 0x10000;
 	ut64 rest, src, shiftsize = r_num_abs (move);
-	if (!shiftsize || (end-start) <= shiftsize) return R_FALSE;
+	if (!shiftsize || (end-start) <= shiftsize) return false;
 	rest = (end-start) - shiftsize;
 
-	if (!(buf = malloc (chunksize))) return R_FALSE;
+	if (!(buf = malloc (chunksize))) return false;
 
 	if (move>0) src = end-shiftsize;
 	else src = start+shiftsize;
@@ -909,7 +909,7 @@ R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move) {
 		rest -= chunksize;
 	}
 	free (buf);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_io_create (RIO *io, const char *file, int mode, int type) {
@@ -917,7 +917,7 @@ R_API int r_io_create (RIO *io, const char *file, int mode, int type) {
 		return io->plugin->create (io, file, mode, type);
 	if (type == 'd'|| type == 1)
 		return r_sys_mkdir (file);
-	return r_sandbox_creat (file, mode)? R_FALSE: R_TRUE;
+	return r_sandbox_creat (file, mode)? false: true;
 }
 
 R_API void r_io_sort_maps (RIO *io) {
@@ -982,7 +982,7 @@ R_API int r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm) {
 		return R_FAIL;
 	}
 	if (r_list_empty (io->files)) {
-		return R_FALSE;
+		return false;
 	}
 	if (!io->desc) {
 		eprintf ("r_io_is_valid_offset: io->desc is NULL\n");
@@ -1006,7 +1006,7 @@ if (!ret)
 	case 0:
 	       {
 		       if ((r_io_map_exists_for_offset (io, offset))) {
-			       return R_TRUE;
+			       return true;
 		       }
 		       return (offset < r_io_size (io));
 	       }
@@ -1018,7 +1018,7 @@ if (!ret)
 	       } else {
 		       if (io->sectonly) {
 			       if (r_list_empty (io->sections)) {
-				       return R_TRUE;
+				       return true;
 			       }
 			       return (r_io_map_exists_for_offset (io, offset) ||
 					       r_io_section_exists_for_vaddr (io, offset, hasperm));

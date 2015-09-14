@@ -212,7 +212,7 @@ int main(int argc, char **argv, char **envp) {
 	RCoreFile *fh = NULL;
 	const char *patchfile = NULL;
 	const char *prj = NULL;
-	//int threaded = R_FALSE;
+	//int threaded = false;
 	int debug = 0;
 	int zflag = 0;
 	int do_analysis = 0;
@@ -236,8 +236,8 @@ int main(int argc, char **argv, char **envp) {
 	const char *forcebin = NULL;
 	const char *asmbits = NULL;
 	ut64 mapaddr = 0LL;
-	int quiet = R_FALSE;
-	int is_gdb = R_FALSE;
+	int quiet = false;
+	int is_gdb = false;
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
 	int cmdfilei = 0;
@@ -292,13 +292,13 @@ int main(int argc, char **argv, char **envp) {
 			r.cmdremote = 1;
 			break;
 		case '0':
-			zerosep = R_TRUE;
+			zerosep = true;
 			//r_config_set (r.config, "scr.color", "false");
 			/* implicit -q */
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
 			r_config_set (r.config, "scr.color", "false");
-			quiet = R_TRUE;
+			quiet = true;
 			break;
 		case 'u':
 			r_config_set (r.config, "bin.filter", "false");
@@ -306,7 +306,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'a': asmarch = optarg; break;
 		case 'z': zflag++; break;
 		case 'A':
-			do_analysis = R_TRUE;
+			do_analysis = true;
 			break;
 		case 'b': asmbits = optarg; break;
 		case 'B':
@@ -315,7 +315,7 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'c': r_list_append (cmds, optarg); break;
 		case 'C':
-			do_connect = R_TRUE;
+			do_connect = true;
 			break;
 #if DEBUGGER
 		case 'd': debug = 1; break;
@@ -357,13 +357,13 @@ int main(int argc, char **argv, char **envp) {
 		case 'q':
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
-			quiet = R_TRUE;
+			quiet = true;
 			break;
 		case 's': seek = r_num_math (r.num, optarg); break;
 		case 'S': sandbox = 1; break;
 #if USE_THREADS
 		case 't':
-			threaded = R_TRUE;
+			threaded = true;
 			break;
 #endif
 		case 'v': verify_version(0); return blob_version ("radare2");
@@ -420,7 +420,7 @@ int main(int argc, char **argv, char **envp) {
 
 	switch (va) {
 	case 0:
-		r_config_set_i (r.config, "io.va", R_FALSE);
+		r_config_set_i (r.config, "io.va", false);
 		baddr = UT64_MAX;
 		break;
 	}
@@ -471,7 +471,7 @@ int main(int argc, char **argv, char **envp) {
 	} else if (strcmp (argv[optind-1], "--")) {
 		if (debug) {
 			r_config_set (r.config, "search.in", "raw"); // implicit?
-			r_config_set_i (r.config, "io.va", R_FALSE); // implicit?
+			r_config_set_i (r.config, "io.va", false); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
 			perms = R_IO_READ | R_IO_WRITE;
 			if (optind>=argc) {
@@ -594,7 +594,7 @@ int main(int argc, char **argv, char **envp) {
 								/* Load rbin info from r2 dbg:// or r2 /bin/ls */
 								/* the baddr should be set manually here */
 								if (!r_core_bin_load (&r, filepath, baddr)) {
-									r_config_set_i (r.config, "io.va", R_FALSE);
+									r_config_set_i (r.config, "io.va", false);
 								}
 							}
 						} else {
@@ -650,7 +650,7 @@ int main(int argc, char **argv, char **envp) {
 // Do not autodetect utf8 terminals to avoid problems on initial
 // stdin buffer and some terminals that just hang (android/ios)
 		if (!quiet && r_cons_is_utf8 ()) {
-			r_config_set_i (r.config, "scr.utf8", R_TRUE);
+			r_config_set_i (r.config, "scr.utf8", true);
 		}
 #endif
 		if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
@@ -682,7 +682,7 @@ int main(int argc, char **argv, char **envp) {
 			has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
 			if (has_project)
 				r_config_set (r.config, "bin.strings", "false");
-			if (r_core_hash_load (&r, r.file->desc->name) == R_FALSE)
+			if (r_core_hash_load (&r, r.file->desc->name) == false)
 				{} //eprintf ("WARNING: File hash not calculated\n");
 			nsha1 = r_config_get (r.config, "file.sha1");
 			npath = r_config_get (r.config, "file.path");
@@ -777,7 +777,7 @@ int main(int argc, char **argv, char **envp) {
 			r.zerosep = zerosep;
 #if USE_THREADS
 			do {
-				int err = r_core_prompt (&r, R_FALSE);
+				int err = r_core_prompt (&r, false);
 				if (err<1) {
 					// handle ^D
 					break;
@@ -805,7 +805,7 @@ int main(int argc, char **argv, char **envp) {
 				if (debug) {
 					if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
 						if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
-							r_debug_kill (r.dbg, 0, R_FALSE, 9); // KILL
+							r_debug_kill (r.dbg, 0, false, 9); // KILL
 					} else continue;
 				}
 				prj = r_config_get (r.config, "file.project");
@@ -816,7 +816,7 @@ int main(int argc, char **argv, char **envp) {
 			} else {
 				// r_core_project_save (&r, prj);
 				if (debug) {
-					r_debug_kill (r.dbg, 0, R_FALSE, 9); // KILL
+					r_debug_kill (r.dbg, 0, false, 9); // KILL
 				}
 			}
 			break;

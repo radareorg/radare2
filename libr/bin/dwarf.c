@@ -192,7 +192,7 @@ static const char *dwarf_langs[] = {
 
 static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 	if (!s || !incl)
-		return R_FALSE;
+		return false;
 	return sdb_array_set (s, "includedirs", idx, incl, 0);
 }
 
@@ -698,7 +698,7 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	FILE *f = NULL;
 	RBinFile *binfile = a ? a->cur : NULL;
 
-	if (!binfile || !obuf) return R_FALSE;
+	if (!binfile || !obuf) return false;
 
 	if (mode == R_CORE_BIN_PRINT) {
 		f = stdout;
@@ -709,7 +709,7 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	while (buf+1 < buf_end) {
 		buf_tmp = buf;
 		buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
-		if (!buf) return R_FALSE;
+		if (!buf) return false;
 		r_bin_dwarf_set_regs_default (&hdr, &regs);
 		//tmplen = R_MIN (len-(buf_end-buf)-1, 4+hdr.unit_length.part1);
 		tmplen = (int)(buf_end - buf);
@@ -720,10 +720,10 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 		len = (int)(buf_end - buf);
 	}
 
-	return R_TRUE;
+	return true;
 }
 
-#define READ_BUF(x,y) if (idx+sizeof(y)>=len) { return R_FALSE;} \
+#define READ_BUF(x,y) if (idx+sizeof(y)>=len) { return false;} \
 	x=*(y*)buf; idx+=sizeof(y);buf+=sizeof(y)
 
 R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
@@ -735,7 +735,7 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 	int idx = 0;
 
 	if (!buf || len< 4) {
-		return R_FALSE;
+		return false;
 	}
 
 	READ_BUF (length, ut32);
@@ -745,7 +745,7 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 	}
 
 	if (idx+12>=len)
-		return R_FALSE;
+		return false;
 
 	READ_BUF (version, ut16);
 	if (f) printf("Version %d\n", version);
@@ -764,7 +764,7 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 	if (offset) {
 		ut64 n = (((ut64) (size_t)buf / offset) + 1) * offset - ((ut64)(size_t)buf);
 		if (idx+n>=len)
-			return R_FALSE;
+			return false;
 		buf += n;
 		idx += n;
 	}
@@ -791,7 +791,7 @@ static int r_bin_dwarf_init_debug_info(RBinDwarfDebugInfo *inf) {
 	inf->capacity = DEBUG_INFO_CAPACITY;
 	inf->length = 0;
 
-	return R_TRUE;
+	return true;
 }
 
 static int r_bin_dwarf_init_die(RBinDwarfDIE *die) {
@@ -1327,7 +1327,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 	RBinDwarfDebugInfo *inf = NULL, di;
 	inf = &di;
 
-	if (!da || !s || !obuf) return R_FALSE;
+	if (!da || !s || !obuf) return false;
 
 	r_bin_dwarf_init_debug_info (inf);
 	while (buf < buf_end) {
@@ -1365,7 +1365,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 
 		if (!buf) {
 			r_bin_dwarf_free_debug_info (inf);
-			return R_FALSE;
+			return false;
 		}
 
 		curr_unit++;
@@ -1377,7 +1377,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 
 	r_bin_dwarf_free_debug_info (inf);
 
-	return R_TRUE;
+	return true;
 }
 
 static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_t len, int mode) {
@@ -1470,14 +1470,14 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 					debug_str_buf, debug_str_len);
 			if (!ret) {
 				free (debug_str_buf);
-				return R_FALSE;
+				return false;
 			}
 		}
 
 		len = section->size;
 		if (len > (UT32_MAX>>1) || len <1) {
 			free (debug_str_buf);
-			return R_FALSE;
+			return false;
 		}
 		buf = calloc (1, len);
 		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
@@ -1485,7 +1485,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 		if (!ret) {
 			free (debug_str_buf);
 			free (buf);
-			return R_FALSE;
+			return false;
 		}
 		ret = r_bin_dwarf_parse_info_raw (binfile->sdb_addrinfo, da, buf, len,
 				debug_str_buf, debug_str_len, mode);
@@ -1495,7 +1495,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 		free (buf);
 		return ret;
 	}
-	return R_FALSE;
+	return false;
 }
 
 static RBinDwarfRow *r_bin_dwarf_row_new (ut64 addr, const char *file, int line, int col) {

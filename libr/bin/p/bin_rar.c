@@ -26,8 +26,8 @@ static int check(RBinFile *arch) {
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length > 16)
 		if (!memcmp (buf, RARVMHDR, 16))
-			return R_TRUE;
-	return R_FALSE;
+			return true;
+	return false;
 }
 
 static Sdb* get_sdb (RBinObject *o) {
@@ -57,7 +57,7 @@ static int load(RBinFile *arch) {
 }
 
 static int destroy (RBinFile *arch) {
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -160,8 +160,8 @@ static RBinInfo* info(RBinFile *arch) {
 	}
 // TODO: specify if its compressed or executable
 	ret->bits = bits;
-	ret->has_va = R_TRUE;
-	ret->big_endian = R_TRUE;
+	ret->has_va = true;
+	ret->big_endian = true;
 	ret->dbg_info = 0;
 	ret->dbg_info = 0;
 	return ret;

@@ -153,22 +153,22 @@ static int r_bin_mz_init_hdr (struct r_bin_mz_obj_t* bin) {
 
 	if (!(bin->dos_header = malloc (sizeof(MZ_image_dos_header)))) {
 		r_sys_perror ("malloc (MZ_image_dos_header)");
-		return R_FALSE;
+		return false;
 	}
 	if (r_buf_read_at (bin->b, 0, (ut8*)bin->dos_header,
 			sizeof(*bin->dos_header)) == -1) {
 		eprintf ("Error: read (MZ_image_dos_header)\n");
-		return R_FALSE;
+		return false;
 	}
 
-	if (bin->dos_header->blocks_in_file < 1) return R_FALSE;
+	if (bin->dos_header->blocks_in_file < 1) return false;
 
 	dos_file_size = ((bin->dos_header->blocks_in_file - 1) << 9) + \
 			bin->dos_header->bytes_in_last_block;
 
 	bin->dos_file_size = dos_file_size;
 
-	if (dos_file_size > bin->size) return R_FALSE;
+	if (dos_file_size > bin->size) return false;
 
 	relocations_size = bin->dos_header->num_relocs * \
 				sizeof(MZ_image_relocation_entry);
@@ -176,7 +176,7 @@ static int r_bin_mz_init_hdr (struct r_bin_mz_obj_t* bin) {
 	/* Check if relocation table doesn't exceed dos binary size */
 	if ((bin->dos_header->reloc_table_offset + relocations_size) > \
 			dos_file_size)
-		return R_FALSE;
+		return false;
 
 	sdb_num_set (bin->kv, "mz.initial.cs", bin->dos_header->cs, 0);
 	sdb_num_set (bin->kv, "mz.initial.ip", bin->dos_header->ip, 0);
@@ -198,13 +198,13 @@ static int r_bin_mz_init_hdr (struct r_bin_mz_obj_t* bin) {
 		if (!(bin->dos_extended_header = \
 				malloc (bin->dos_extended_header_size))) {
 			r_sys_perror ("malloc (dos extended header)");
-			return R_FALSE;
+			return false;
 		}
 		if (r_buf_read_at (bin->b, sizeof(MZ_image_dos_header),
 				(ut8*)bin->dos_extended_header,
 				bin->dos_extended_header_size) == -1) {
 			eprintf ("Error: read (dos extended header)\n");
-			return R_FALSE;
+			return false;
 		}
 	}
 
@@ -212,16 +212,16 @@ static int r_bin_mz_init_hdr (struct r_bin_mz_obj_t* bin) {
 	{
 		if (!(bin->relocation_entries = malloc (relocations_size))) {
 			r_sys_perror ("malloc (dos relocation entries)");
-			return R_FALSE;
+			return false;
 		}
 		if (r_buf_read_at (bin->b, bin->dos_header->reloc_table_offset,
 				(ut8*)bin->relocation_entries, relocations_size) == -1) {
 			eprintf ("Error: read (dos relocation entries)\n");
-			return R_FALSE;
+			return false;
 		}
 	}
 
-	return R_TRUE;
+	return true;
 }
 
 static int r_bin_mz_init (struct r_bin_mz_obj_t* bin) {
@@ -232,10 +232,10 @@ static int r_bin_mz_init (struct r_bin_mz_obj_t* bin) {
 
 	if (!r_bin_mz_init_hdr (bin)) {
 		eprintf ("Warning: File is not MZ\n");
-		return R_FALSE;
+		return false;
 	}
 
-	return R_TRUE;
+	return true;
 }
 
 struct r_bin_mz_obj_t* r_bin_mz_new (const char* file)

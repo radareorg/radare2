@@ -40,7 +40,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		} else {
 			printf ("0x%"PFMT64x"\n", addr);
 			if (pr) {
-				r_print_hexdump (pr, addr, (ut8*)buf+delta, 78, 16, R_TRUE);
+				r_print_hexdump (pr, addr, (ut8*)buf+delta, 78, 16, true);
 				r_cons_flush ();
 			}
 		}

@@ -22,10 +22,10 @@ static int check(RBinFile *arch) {
 static int check_bytes(const ut8 *buf, ut64 length) {
 	ut8 ninlogohead[6];
 	if (!buf || length < sizeof(struct nds_hdr)) /* header size */
-		return R_FALSE;
+		return false;
 	memcpy(ninlogohead, buf+0xc0, 6);
 	/* begin of nintendo logo =    \x24\xff\xae\x51\x69\x9a */
-	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? R_TRUE : R_FALSE;
+	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? true : false;
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
@@ -36,7 +36,7 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	if (!arch || !arch->o)
-		return R_FALSE;
+		return false;
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return check_bytes (bytes, sz);
 }
@@ -44,7 +44,7 @@ static int load(RBinFile *arch) {
 static int destroy(RBinFile *arch) {
 	r_buf_free (arch->buf);
 	arch->buf = NULL;
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -140,7 +140,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->machine = strdup ("Nintendo DS");
 	ret->os = strdup ("nds");
 	ret->arch = strdup ("arm");
-	ret->has_va = R_TRUE;
+	ret->has_va = true;
 	ret->bits = 32;
 
 	return ret;

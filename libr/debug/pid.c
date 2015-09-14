@@ -8,7 +8,7 @@ R_API RDebugPid *r_debug_pid_new(const char *path, int pid, char status, ut64 pc
 	p->path = strdup (path);
 	p->pid = pid;
 	p->status = status;
-	p->runnable = R_TRUE;
+	p->runnable = true;
 	p->pc = pc;
 	return p;
 }
@@ -33,7 +33,7 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 	if (dbg && dbg->h && dbg->h->pids) {
 		list = dbg->h->pids (R_MAX (0, pid));
 		if (list == NULL)
-			return R_FALSE;
+			return false;
 		if (fmt == 'j')
 			dbg->cb_printf ("[");
 		r_list_foreach (list, iter, p) {
@@ -56,7 +56,7 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 			dbg->cb_printf ("]\n");
 		r_list_free (list);
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_debug_thread_list(RDebug *dbg, int pid) {
@@ -65,7 +65,7 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid) {
 	RDebugPid *p;
 	if (dbg && dbg->h && dbg->h->threads) {
 		list = dbg->h->threads (dbg, pid);
-		if (list == NULL) return R_FALSE;
+		if (list == NULL) return false;
 		if (pid == -'j') {
 			dbg->cb_printf ("[");
 			r_list_foreach (list, iter, p) {
@@ -85,7 +85,7 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid) {
 		}
 		r_list_free (list);
 	}
-	return R_FALSE;
+	return false;
 }
 
 /* processes */
@@ -97,24 +97,24 @@ R_API int r_debug_pid_parent(RDebugPid *pid) {
 #if 0
 R_API int r_debug_pid_del(struct r_debug_t *dbg) {
 	// kill da child
-	return R_TRUE;
+	return true;
 }
 
 /* threads */
 R_API int r_debug_pid_add_thread(struct r_debug_t *dbg) {
 	// create a thread in process
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_debug_pid_del_thread(struct r_debug_t *dbg) {
 	// kill a thread in process
-	return R_TRUE;
+	return true;
 }
 #endif
 
 /* status */
 R_API int r_debug_pid_set_state(struct r_debug_t *dbg, int status) {
-	return R_TRUE;
+	return true;
 }
 
 /* status */

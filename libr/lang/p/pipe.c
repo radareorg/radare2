@@ -64,7 +64,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		close (output[0]);
 		close (output[1]);
 		exit (0);
-		return R_FALSE;
+		return false;
 	} else {
 		/* parent */
 		char *res, buf[1024];
@@ -111,7 +111,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	if (safe_in != -1)
 		close (safe_in);
 	waitpid (child, NULL, 0);
-	return R_TRUE;
+	return true;
 #else
 #if __WINDOWS__
 	HANDLE hPipeInOut = NULL;
@@ -131,7 +131,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	hproc=myCreateChildProcess (code);
 	if (hproc==NULL) {
 		//eprintf("Error spawning process: %s\n",code);
-		return R_TRUE;
+		return true;
 	}
 	r_cons_break (NULL, NULL);
 	for (;;) {
@@ -166,7 +166,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	}
 	CloseHandle(hPipeInOut);
 	r_cons_break_end ();
-	return R_TRUE;
+	return true;
 #endif
 #endif
 }

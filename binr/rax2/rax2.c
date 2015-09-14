@@ -48,7 +48,7 @@ static int format_output (char mode, const char *s) {
 		eprintf ("Unknown output mode %d\n", mode);
 		break;
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int help () {
@@ -87,7 +87,7 @@ static int help () {
 		"  -u    units             ;  rax2 -u 389289238 # 317.0M\n"
 		"  -v    version           ;  rax2 -V\n"
 		);
-	return R_TRUE;
+	return true;
 }
 
 static int rax (char *str, int len, int last) {
@@ -108,7 +108,7 @@ static int rax (char *str, int len, int last) {
 		case 16: force_mode = '0'; break;
 		case 0: force_mode = str[1]; break;
 		}
-		return R_TRUE;
+		return true;
 	}
 	if (*str=='-') {
 		while (str[1] && str[1]!=' ') {
@@ -144,11 +144,11 @@ static int rax (char *str, int len, int last) {
 		}
 		if (last)
 			return !use_stdin ();
-		return R_TRUE;
+		return true;
 	}
 	if (!flags) {
 		if (*str=='q')
-			return R_FALSE;
+			return false;
 		if (*str=='h' || *str=='?')
 			return help ();
 	}
@@ -167,24 +167,24 @@ static int rax (char *str, int len, int last) {
 			fflush (stdout);
 			free (buf);
 		}
-		return R_TRUE;
+		return true;
 	}
 	if (flags & 4) { // -S
 		for (i=0; i<len; i++)
 			printf ("%02x", (ut8)str[i]);
 		printf ("\n");
-		return R_TRUE;
+		return true;
 	} else if (flags & 8) {
 		int i, len;
 		ut8 buf[4096];
 		len = r_str_binstr2bin (str, buf, sizeof (buf));
 		for (i=0; i<len; i++)
 			printf ("%c", buf[i]);
-		return R_TRUE;
+		return true;
 	} else if (flags & 16) {
 		int h = r_str_hash (str);
 		printf ("0x%x\n", h);
-		return R_TRUE;
+		return true;
 	} else if (flags & 32) {
 		out_mode = 'I';
 	} else if (flags & 64) {
@@ -195,7 +195,7 @@ static int rax (char *str, int len, int last) {
 		ut32 *m;
 		buf = (ut8*) malloc (n);
 		if (!buf) {
-			return R_FALSE;
+			return false;
 		}
 		m = (ut32 *) buf;
 		memset (buf, '\0', n);
@@ -211,7 +211,7 @@ static int rax (char *str, int len, int last) {
 			free (s);
 		}
 		free (m);
-		return R_TRUE;
+		return true;
 	} else if (flags & (1<<9)) { // -n
 		ut64 n = r_num_math (num, str);
 		if (n>>32) {
@@ -230,7 +230,7 @@ static int rax (char *str, int len, int last) {
 					np[0], np[1], np[2], np[3]);
 		}
 		fflush (stdout);
-		return R_TRUE;
+		return true;
 	} else if (flags & (1<<15)) { // -N
 		ut64 n = r_num_math (num, str);
 		if (n>>32) {
@@ -250,19 +250,19 @@ static int rax (char *str, int len, int last) {
 				np[0], np[1], np[2], np[3]);
 		}
 		fflush (stdout);
-		return R_TRUE;
+		return true;
 	} else if (flags & 1024) { // -u
 		char buf[80];
 		r_num_units (buf, r_num_math (NULL, str));
 		printf ("%s\n", buf);
-		return R_TRUE;
+		return true;
 	} else if (flags & 2048) { // -t
 		ut32 n = r_num_math (num, str);
 		RPrint *p = r_print_new ();
 		r_mem_copyendian ((ut8*) &n, (ut8*) &n, 4, !(flags & 2));
 		r_print_date_unix (p, (const ut8*)&n, sizeof (ut32));
 		r_print_free (p);
-		return R_TRUE;
+		return true;
 	} else if (flags & 4096) { // -E
 		const int len = strlen (str);
 		char * out = calloc (sizeof (char), ((len + 1) * 4) / 3);
@@ -272,7 +272,7 @@ static int rax (char *str, int len, int last) {
 			fflush (stdout);
 			free (out);
 		}
-		return R_TRUE;
+		return true;
 	} else if (flags & 8192) { // -D
 		const int len = strlen (str);
 		ut8* out = calloc (sizeof(ut8), ((len+1)/4)*3);
@@ -282,7 +282,7 @@ static int rax (char *str, int len, int last) {
 			fflush (stdout);
 			free (out);
 		}
-		return R_TRUE;
+		return true;
 	} else if (flags & 16384) { // -F
 		char *str = r_stdin_slurp (NULL);
 		if (str) {
@@ -296,7 +296,7 @@ static int rax (char *str, int len, int last) {
 			}
 			free (str);
 		}
-		return R_FALSE;
+		return false;
 	}
 
 	if (str[0]=='0' && str[1]=='x') {
@@ -327,7 +327,7 @@ static int rax (char *str, int len, int last) {
 		ut8 *p = (ut8*)&f;
 		sscanf (str, "%f", &f);
 		printf ("Fx%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]);
-		return R_TRUE;
+		return true;
 	}
 	while ((p = strchr (str, ' '))) {
 		*p = 0;
@@ -336,7 +336,7 @@ static int rax (char *str, int len, int last) {
 	}
 	if (*str)
 		format_output (out_mode, str);
-	return R_TRUE;
+	return true;
 }
 
 static int use_stdin () {

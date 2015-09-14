@@ -21,7 +21,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	char *buf = treplace (sdata->data, sdata->search, sdata->replace);
 	memcpy (str, buf, R_PARSE_STRLEN);
 	free (buf);
-	return R_TRUE;
+	return true;
 }
 
 static int assemble(RParse *p, char *data, char *str) {
@@ -30,7 +30,7 @@ static int assemble(RParse *p, char *data, char *str) {
 		*ptr = '\0';
 		sprintf (data, "mov %s, %s", str, ptr+1);
 	} else strcpy (data, str);
-	return R_TRUE;
+	return true;
 }
 
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
@@ -45,10 +45,10 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 				ptr2 = ptr + strlen (f->varsubs[i].pat);
 				snprintf (str, len, "%s%s%s", data, f->varsubs[i].sub, ptr2);
 		}
-	return R_TRUE;
+	return true;
 #else
 	strncpy (str, data, len);
-	return R_FALSE;
+	return false;
 #endif
 }
 

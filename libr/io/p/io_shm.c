@@ -110,7 +110,7 @@ static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
 }
 
 static int shm__init(RIO *io) {
-	return R_TRUE;
+	return true;
 }
 
 RIOPlugin r_io_plugin_shm = {

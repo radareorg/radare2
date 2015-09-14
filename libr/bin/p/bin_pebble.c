@@ -67,7 +67,7 @@ static int load(RBinFile *arch) {
 
 static int destroy(RBinFile *arch) {
 	//r_bin_pebble_free ((struct r_bin_pebble_obj_t*)arch->o->bin_obj);
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {

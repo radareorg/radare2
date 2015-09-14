@@ -298,15 +298,15 @@ R_API int r_bin_lang_rust(RBinFile *binfile) {
 	RBinInfo *info = o ? o->info : NULL;
 	RBinSymbol *sym;
 	RListIter *iter;
-	int haslang = R_FALSE;
+	int haslang = false;
 
-	if (!info)
-		return R_FALSE;
-	r_list_foreach (o->symbols, iter, sym) {
-		if (strstr (sym->name, "rust_stack_exhausted")) {
-			haslang = R_TRUE;
-			info->lang = "rust";
-			break;
+	if (info) {
+		r_list_foreach (o->symbols, iter, sym) {
+			if (strstr (sym->name, "rust_stack_exhausted")) {
+				haslang = true;
+				info->lang = "rust";
+				break;
+			}
 		}
 	}
 	// NOTE: if the rust binary is stripped we can check

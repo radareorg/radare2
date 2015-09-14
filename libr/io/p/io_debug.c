@@ -250,7 +250,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			}
 			rp->_args[i] = NULL;
 			rp->_program = argv[0];
-			rp->_dodebug = R_TRUE;
+			rp->_dodebug = true;
 			if (io->runprofile && *io->runprofile) {
 				if (!r_run_parsefile (rp, io->runprofile)) {
 					eprintf ("Can't find profile '%s'\n", io->runprofile);
@@ -374,8 +374,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	if (!strncmp (file, "dbg://", 6) && file[6])
-		return R_TRUE;
-	return R_FALSE;
+		return true;
+	return false;
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
@@ -417,7 +417,7 @@ RIOPlugin r_io_plugin_debug = {
         .plugin_open = __plugin_open,
 	.lseek = NULL,
 	.system = NULL,
-	.isdbg = R_TRUE,
+	.isdbg = true,
 };
 #else
 struct r_io_plugin_t r_io_plugin_debug = {

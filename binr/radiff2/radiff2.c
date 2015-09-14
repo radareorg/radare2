@@ -17,9 +17,9 @@ enum {
 
 static ut32 count = 0;
 static int showcount = 0;
-static int useva = R_TRUE;
+static int useva = true;
 static int delta = 0;
-static int showbare = R_FALSE;
+static int showbare = false;
 static int json_started = 0;
 static int diffmode = 0; 
 
@@ -82,7 +82,7 @@ static RCore* opencore(const char *f) {
 	RCore *c = r_core_new ();
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
 	r_config_set_i (c->config, "io.va", useva);
-	r_config_set_i (c->config, "anal.split", R_TRUE);
+	r_config_set_i (c->config, "anal.split", true);
 	if (r_core_file_open (c, f, 0, 0) == NULL) {
 		r_core_free (c);
 		return NULL;
@@ -150,7 +150,7 @@ static void dump_cols (ut8 *a, int as, ut8 *b, int bs, int w) {
 
 static void handle_sha256 (const ut8 *block, int len) {
 	int i = 0;
-	RHash *ctx = r_hash_new (R_TRUE, R_HASH_SHA256);
+	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
 	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
 	for (i=0; i<R_HASH_SIZE_SHA256; i++) printf ("%02x", c[i]);
 	r_hash_free (ctx);
@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
 			bits = atoi (optarg);
 			break;
 		case 'p':
-			useva = R_FALSE;
+			useva = false;
 			break;
 		case 'r':
 			diffmode = 'r';
@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
 			gdiff_mode++;
 			break;
 		case 'n':
-			showbare = R_TRUE;
+			showbare = true;
 			break;
 		case 'O':
 			diffops = 1;
@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
 				r_core_anal_fcn (c, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
 				r_core_anal_fcn (c2, r_num_math (c2->num, second),
 						UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
-				r_core_gdiff (c, c2, R_FALSE); // compute the diff
+				r_core_gdiff (c, c2, false); // compute the diff
 				r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
 			} else {
 				r_core_anal_fcn (c, r_num_math (c->num, words), UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
