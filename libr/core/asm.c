@@ -127,7 +127,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			if (align) {
 				if (addr % align) {
 					matches = false;
-					eprintf ("NOT VALID %llx\n", addr);
+					eprintf ("Address not valid 0x%"PFMT64x"\n", addr);
 				}
 			}
 			if (matches) {

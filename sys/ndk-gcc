@@ -77,9 +77,9 @@ if [ -z "${NDK_BINS}" ]; then
 	echo "Cant find NDK_BINS"
 	exit 1
 fi
-CFLAGS="--sysroot=${PLATFORM_ROOT}"
+CFLAGS="${CFLAGS} --sysroot=${PLATFORM_ROOT}"
 CFLAGS="${CFLAGS} -I${PLATFORM_PATH}/include"
-CFLAGS="${CFLAGS} -pie -fPIC"
+CFLAGS="${CFLAGS} -fPIC -fPIE"
 
 case "${ARCH}" in
 mips64)
@@ -98,13 +98,14 @@ LDFLAGS="${LDFLAGS} --sysroot=${PLATFORM_ROOT}"
 #if [ -z "`echo $*" | grep shared`" ]; then
 #LDFLAGS="${LDFLAGS} ${PLATFORM_PATH}/lib/crtbegin_dynamic.o"
 #fi
-CC=${NDKPFX}-gcc
-AR=${NDKPFX}-ar
+CC="${NDKPFX}-gcc"
+AR="${NDKPFX}-ar"
 EXT_SO=so
 
-export PATH=${NDK_BINS}:$PATH
+export PATH="${NDK_BINS}:$PATH"
 export EXT_SO AR CC CFLAGS LDFLAGS PATH
 
 #shellcheck disable=SC2048
 #shellcheck disable=SC2086
-${CC} ${CFLAGS} ${LDFLAGS} $*
+echo ${CC} ${LDFLAGS} ${CFLAGS} $*
+${CC} ${LDFLAGS} ${CFLAGS} $*

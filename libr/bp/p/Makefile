@@ -1,7 +1,7 @@
 include ../../config.mk
 ifeq ($(WITHPIC),1)
 
-CFLAGS=-I../../include -I../arch/ -I../arch/include -Wall -fPIC ${LDFLAGS_LIB}
+CFLAGS+=-I../../include -I../arch/ -I../arch/include -Wall -fPIC ${LDFLAGS_LIB}
 CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__
 
 foo: all

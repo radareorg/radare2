@@ -33,6 +33,12 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #include <windows.h>
 #define R_DEBUG_REG_T CONTEXT
 #include "native/w32.c"
+#ifdef NTSTATUS
+#undef NTSTATUS
+#endif
+#ifndef NTSTATUS
+#define NTSTATUS int
+#endif
 
 #elif __BSD__
 #include <sys/ptrace.h>

@@ -5,6 +5,14 @@
 #include <psapi.h>
 #include <tchar.h>
 
+#ifndef NTSTATUS
+#define NTSTATUS
+#endif
+#ifndef WINAPI
+#define WINAPI
+#endif
+
+
 // XXX remove
 #define WIN32_PI(x) x
 #if 0
@@ -150,7 +158,6 @@ typedef struct _OBJECT_TYPE_INFORMATION
 	ULONG PagedPoolUsage;
 	ULONG NonPagedPoolUsage;
 } OBJECT_TYPE_INFORMATION, *POBJECT_TYPE_INFORMATION;
-
 
 static void (*gmbn)(HANDLE, HMODULE, LPTSTR, int) = NULL;
 static int (*gmi)(HANDLE, HMODULE, LPMODULEINFO, int) = NULL;

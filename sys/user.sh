@@ -33,7 +33,9 @@ fi
 ROOT="${HOME}/bin/prefix/radare2/"
 mkdir -p "${ROOT}/lib"
 
-if [ "${HARDEN}" = 1 ]; then
+if [ "${M32}" = 1 ]; then
+	./sys/build-m32.sh "${ROOT}" && ${MAKE} symstall
+elif [ "${HARDEN}" = 1 ]; then
 	./sys/build-harden.sh "${ROOT}" && ${MAKE} symstall
 else
 	./sys/build.sh "${ROOT}" && ${MAKE} symstall

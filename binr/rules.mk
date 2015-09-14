@@ -3,7 +3,8 @@ include ../../libr/config.mk
 include ../../shlr/zip/deps.mk
 
 CFLAGS+=-DLIBDIR=\"${LIBDIR}\" -I$(LTOP)/include
-CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\" 
+BIRTH=$(shell date +%y-%m-%d)
+CFLAGS+=-DR2_BIRTH=\"$(BIRTH)\"
 CFLAGS+=-DR2_GITTIP=\"$(GIT_TIP)\"
 CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
 
@@ -65,7 +66,7 @@ ${BEXE}: ${OBJ} ${SHARED_OBJ}
 ifneq ($(SILENT),)
 	@echo LD $@
 endif
-	${CC} $+ -L.. -o $@ $(REAL_LDFLAGS)
+	${CC} ${CFLAGS} $+ -L.. -o $@ $(REAL_LDFLAGS)
 endif
 
 # Dummy myclean rule that can be overriden by the t/ Makefile

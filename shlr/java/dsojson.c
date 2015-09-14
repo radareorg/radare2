@@ -657,7 +657,6 @@ R_API DsoJsonObj * dso_json_num_new_from_num (ut64 num) {
 R_API char * dso_json_convert_string (const char * bytes, ut32 len) {
 	ut32 idx = 0, pos = 1;
 	ut32 str_sz = 4*len+1+2;
-	int end = 0;
 	char *cpy_buffer = len > 0 ? calloc (1, str_sz): NULL;
 	if (!cpy_buffer) return cpy_buffer;
 	// 4x is the increase from byte to \xHH where HH represents hexed byte

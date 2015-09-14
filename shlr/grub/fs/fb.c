@@ -47,7 +47,7 @@ grub_fbfs_mount (grub_disk_t disk)
 
   m = (struct fb_mbr *) buf;
   d = (struct fb_data *) buf;
-  if (*((grub_uint32_t *) &buf[0]) == FB_AR_MAGIC_LONG)
+  if (*((grub_uint32_t *) &buf) == FB_AR_MAGIC_LONG)
     {
       ofs = 0;
       boot_base = 0;

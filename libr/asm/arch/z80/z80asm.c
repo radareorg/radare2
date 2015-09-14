@@ -49,9 +49,6 @@ static const char *mnemonics[] = {
 	"seek", NULL
 };
 
-/* number of errors seen so far */
-static int errors = 0;
-
 /* current line, address and file */
 static int addr = 0, file;
 /* current number of characters in list file, for indentation */

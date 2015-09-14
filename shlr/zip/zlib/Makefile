@@ -63,7 +63,7 @@ ${LIBNAME}: ${OBJS}
 ifneq ($(SILENT),)
 	@echo LIB ${LIBNAME}
 endif
-	${CC} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS}
+	${CC} ${CFLAGS} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS}
 
 libr_z.a: ${OFILES}
 	${CC_AR} ${OFILES}

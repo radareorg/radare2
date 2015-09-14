@@ -205,8 +205,8 @@ grub_cpio_dir (grub_device_t device, const char *path,
 	       void *closure)
 {
   struct grub_cpio_data *data;
-  grub_uint32_t ofs;
-  char *prev, *name;
+  grub_uint32_t ofs = 0;
+  char *prev, *name = NULL;
   const char *np;
   int len;
 
@@ -280,8 +280,8 @@ fail:
 static grub_err_t
 grub_cpio_open (grub_file_t file, const char *name)
 {
-  struct grub_cpio_data *data;
-  grub_uint32_t ofs;
+  struct grub_cpio_data *data = NULL;
+  grub_uint32_t ofs = 0;
   char *fn = NULL;
   int i, j;
 
