@@ -2306,7 +2306,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	const char *key_s;
 	RConsCanvas *can;
 	RAGraph *g;
-	int wheelspeed;
+	int movspeed;
 	int w, h;
 	int ret;
 	int invscroll;
@@ -2330,6 +2330,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		is_error = true;
 		goto err_graph_new;
 	}
+	// deprecate ?
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
 
 	grd = R_NEW (struct agraph_refresh_data);
@@ -2374,18 +2375,22 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		// r_core_graph_inputhandle()
 		okey = r_cons_readchar ();
 		key = r_cons_arrow_to_hjkl (okey);
-		wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
 
-		switch (key) {
-		case 'j':
-		case 'k':
-			switch (mousemode) {
-			case 0: break;
-			case 1: key = key=='k'?'h':'l'; break;
-			case 2: key = key=='k'?'J':'K'; break;
-			case 3: key = key=='k'?'L':'H'; break;
+		if (core->cons->mouse_event) {
+			movspeed = r_config_get_i (core->config, "scr.wheelspeed");
+			switch (key) {
+			case 'j':
+			case 'k':
+				switch (mousemode) {
+				case 0: break;
+				case 1: key = key=='k'?'h':'l'; break;
+				case 2: key = key=='k'?'J':'K'; break;
+				case 3: key = key=='k'?'L':'H'; break;
+				}
+				break;
 			}
-			break;
+		} else {
+			movspeed = r_config_get_i (core->config, "graph.scroll");
 		}
 
 		switch (key) {
@@ -2492,9 +2497,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'U':
 			{
 			ut64 off = r_io_sundo_redo (core->io);
-			if (off != UT64_MAX)
-				r_core_seek (core,off, 1);
-			else eprintf ("Can not redo\n");
+			if (off != UT64_MAX) r_core_seek (core,off, 1);
+			else eprintf ("Cannot redo\n");
 			break;
 			}
 		case 'R':
@@ -2508,16 +2512,11 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			/* TODO: reload only the body of the nodes to update colors */
 			break;
 		case '!':
-		{
-			/* TODO: remove this option once the colored are "stable" */
-			int colors = r_config_get_i (core->config, "scr.color");
-			r_config_set_i (core->config, "scr.color", !colors);
+			r_config_set_i (core->config, "scr.color",
+					!r_config_get_i (core->config, "scr.color"));
 			g->need_reload_nodes = true;
 			break;
-		}
-		case 'r':
-			agraph_set_layout (g, true);
-			break;
+		case 'r': agraph_set_layout (g, true); break;
 		case 'm':
 			mousemode++;
 			if (!mousemodes[mousemode])
@@ -2528,17 +2527,15 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			if (mousemode<0)
 				mousemode = 3;
 			break;
-		case 'J': get_anode(g->curnode)->y += g->movspeed; break;
-		case 'K': get_anode(g->curnode)->y -= g->movspeed; break;
-		case 'H': get_anode(g->curnode)->x -= g->movspeed; break;
-		case 'L': get_anode(g->curnode)->x += g->movspeed; break;
-		case 'j': can->sy -= g->movspeed * (invscroll ? -1 : 1); break;
-		case 'k': can->sy += g->movspeed * (invscroll ? -1 : 1); break;
-		case 'l': can->sx -= g->movspeed * (invscroll ? -1 : 1); break;
-		case 'h': can->sx += g->movspeed * (invscroll ? -1 : 1); break;
-		case 'e':
-			  can->linemode = !!!can->linemode;
-			  break;
+		case 'J': get_anode(g->curnode)->y += movspeed; break;
+		case 'K': get_anode(g->curnode)->y -= movspeed; break;
+		case 'H': get_anode(g->curnode)->x -= movspeed; break;
+		case 'L': get_anode(g->curnode)->x += movspeed; break;
+		case 'j': can->sy -= movspeed * (invscroll ? -1 : 1); break;
+		case 'k': can->sy += movspeed * (invscroll ? -1 : 1); break;
+		case 'l': can->sx -= movspeed * (invscroll ? -1 : 1); break;
+		case 'h': can->sx += movspeed * (invscroll ? -1 : 1); break;
+		case 'e': can->linemode = !!!can->linemode; break;
 		case 'p':
 			  agraph_toggle_small_nodes (g);
 			  agraph_update_seek (g, get_anode (g->curnode), true);

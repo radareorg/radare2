@@ -136,9 +136,9 @@ R_API int r_config_swap(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node && node->flags & CN_BOOL) {
 		r_config_set_i (cfg, name, !node->i_value);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
@@ -227,7 +227,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 
 	if (node && node->setter) {
 		int ret = node->setter (cfg->user, node);
-		if (ret == R_FALSE) {
+		if (ret == false) {
 			if (oi != UT64_MAX)
 				node->i_value = oi;
 			free (node->value);
@@ -265,9 +265,9 @@ R_API int r_config_rm(RConfig *cfg, const char *name) {
 		r_hashtable_remove (cfg->ht, node->hash);
 		r_list_delete_data (cfg->nodes, node);
 		cfg->n_nodes--;
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) {
@@ -311,7 +311,7 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 	if (node && node->setter) {
 		ut64 oi = node->i_value;
 		int ret = node->setter (cfg->user, node);
-		if (ret == R_FALSE) {
+		if (ret == false) {
 			node->i_value = oi;
 			free (node->value);
 			node->value = strdup (ov? ov: "");
@@ -324,24 +324,24 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 R_API int r_config_eval(RConfig *cfg, const char *str) {
 	char *ptr, *a, *b, name[1024];
 	unsigned int len;
-	if (!str || !cfg) return R_FALSE;
+	if (!str || !cfg) return false;
 	len = strlen (str)+1;
 	if (len >= sizeof (name))
-		return R_FALSE;
+		return false;
 	memcpy (name, str, len);
 	str = r_str_chop (name);
 
 	if (str == NULL)
-		return R_FALSE;
+		return false;
 
 	if (str[0]=='\0' || !strcmp (str, "help")) {
 		r_config_list (cfg, NULL, 0);
-		return R_FALSE;
+		return false;
 	}
 
 	if (str[0]=='-') {
 		r_config_rm (cfg, str+1);
-		return R_FALSE;
+		return false;
 	}
 
 	ptr = strchr (str, '=');
@@ -355,7 +355,7 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 		char *foo = r_str_chop (name);
 		if (foo[strlen(foo)-1]=='.') {
 			r_config_list (cfg, name, 0);
-			return R_FALSE;
+			return false;
 		} else {
 			/* get */
 			const char *str = r_config_get(cfg, foo);
@@ -364,7 +364,7 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 					(((int)(size_t)str)==1)?"true":str);
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int cmp(RConfigNode *a, RConfigNode *b) {
@@ -378,9 +378,9 @@ R_API void r_config_lock(RConfig *cfg, int l) {
 
 R_API int r_config_readonly (RConfig *cfg, const char *key) {
 	RConfigNode *n = r_config_node_get (cfg, key);
-	if (!n) return R_FALSE;
+	if (!n) return false;
 	n->flags |= CN_RO;
-	return R_TRUE;
+	return true;
 }
 
 R_API RConfig *r_config_new(void *user) {

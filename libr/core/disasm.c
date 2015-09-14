@@ -2186,7 +2186,6 @@ static int likely = 0;
 static int show_slow = 0;
 
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
-	int ret;
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
 	likely = 1;
@@ -2201,8 +2200,8 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 		if (fi) {
 			strncpy (str, fi->name, sizeof (str)-1);
 		}
-		if (str[0] == 0) {
-			ret = r_io_read_at (esil->anal->iob.io, val, (ut8*)str, sizeof (str)-1);
+		if (!str[0]) {
+			(void)r_io_read_at (esil->anal->iob.io, val, (ut8*)str, sizeof (str)-1);
 			str[sizeof (str)-1] = 0;
 			if (*str && r_str_is_printable (str)) {
 				// do nothing

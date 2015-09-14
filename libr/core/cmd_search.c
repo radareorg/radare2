@@ -1721,7 +1721,7 @@ reread:
 			do_anal_search (core, &param, "?");
 			break;
 		}
-		dosearch = 0;
+		dosearch = false;
 		break;
 	case 'a': if (input[1]) {
 		char *kwd = r_core_asm_search (core, input+param_offset,
@@ -1741,7 +1741,8 @@ reread:
 		}
 		} break;
 	case 'C': {
-		dosearch = param.crypto_search = true;
+		dosearch = true;
+		param.crypto_search = true;
 		switch (input[1]) {
 			case 'a':
 				param.aes_search = true;
@@ -1750,7 +1751,8 @@ reread:
 				param.rsa_search = true;
 				break;
 			default:{
-				dosearch = param.crypto_search = false;
+				dosearch = false;
+				param.crypto_search = false;
 				const char* help_msg[] = {
 					"Usage: /C", "", "Search for crypto materials",
 					"/Ca", "" , "Search for AES keys",

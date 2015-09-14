@@ -115,7 +115,7 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 		r_list_free (maps);						//free the list
 		r_io_mread (io, io->desc->fd, vaddr, buf, len);			//ensure that io->desc is always on the top
 	}
-	return R_TRUE;
+	return true;
 }
 
 /*you can throw any fd on this beast, it's important that len is equal or smaller than the size of buf*/

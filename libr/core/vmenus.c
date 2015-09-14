@@ -4,6 +4,16 @@
 
 #define MAX_FORMAT 3
 
+typedef struct {
+	RCore *core;
+	int t_idx;
+	int t_ctr;
+	const char *type;
+	char *curname;
+	char *curfmt;
+	const char *optword;
+} RCoreVisualTypes;
+
 // TODO: move this helper into r_cons
 static char *prompt(const char *str, const char *txt) {
 	char cmd[1024];
@@ -30,16 +40,6 @@ static char *prompt(const char *str, const char *txt) {
 	r_cons_singleton ()->line->contents = NULL;
 	return res;
 }
-
-typedef struct {
-	RCore *core;
-	int t_idx;
-	int t_ctr;
-	const char *type;
-	char *curname;
-	char *curfmt;
-	const char *optword;
-} RCoreVisualTypes;
 
 static inline char *getformat (RCoreVisualTypes *vt, const char *k) {
 	return sdb_get (vt->core->anal->sdb_types,
@@ -543,55 +543,51 @@ R_API int r_core_visual_trackflags(RCore *core) {
 }
 
 R_API int r_core_visual_comments (RCore *core) {
-	char cmd[512], *p = NULL;
-	int delta = 7;
-	int i, ch, option = 0;
-	int format = 0;
-	int found = 0;
-	ut64 from = 0, size = 0;
+#undef DB
+#define DB core->anal->sdb_meta
+	const char *val, *comma = NULL;
+	char *list = sdb_get (DB, "meta.C", 0);
+	char *str, *next, *cur = list;
+	char key[128], cmd[512], *p = NULL;
+	int i, ch, option = 0, delta = 7;
+	int format = 0, found = 0;
+	ut64 addr, from = 0, size = 0;
 
 	for (;;) {
 		r_cons_clear00 ();
 		r_cons_strcat ("Comments:\n");
 		i = 0;
 		found = 0;
-#undef DB
-#define DB core->anal->sdb_meta
-				ut64 addr;
-				char key[128];
-				const char *val, *comma = NULL;
-				char *list = sdb_get (DB, "meta.C", 0);
-				char *str, *next, *cur = list;
-				if (list) {
-					for (i=0; ;i++) {
-						cur = sdb_anext (cur, &next);
-						addr = sdb_atoi (cur);
-						snprintf (key, sizeof (key)-1, "meta.C.0x%08"PFMT64x, addr);
-						val = sdb_const_get (DB, key, 0);
-						if (val)
-							comma = strchr (val, ',');
-						if (comma) {
-							str = (char *)sdb_decode (comma+1, 0);
-							if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
-								r_str_sanitize (str);
-								if (option==i) {
-									found = 1;
-									from = addr;
-									size = 1; // XXX: remove this thing size for comments is useless d->size;
-									free (p);
-									p = str;
-									r_cons_printf ("  >  %s\n", str);
-								} else {
-									r_cons_printf ("     %s\n", str);
-									free (str);
-								}
-							} else free (str);
+		if (list) {
+			for (i=0; ;i++) {
+				cur = sdb_anext (cur, &next);
+				addr = sdb_atoi (cur);
+				snprintf (key, sizeof (key)-1, "meta.C.0x%08"PFMT64x, addr);
+				val = sdb_const_get (DB, key, 0);
+				if (val)
+					comma = strchr (val, ',');
+				if (comma) {
+					str = (char *)sdb_decode (comma+1, 0);
+					if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+						r_str_sanitize (str);
+						if (option==i) {
+							found = 1;
+							from = addr;
+							size = 1; // XXX: remove this thing size for comments is useless d->size;
+							free (p);
+							p = str;
+							r_cons_printf ("  >  %s\n", str);
+						} else {
+							r_cons_printf ("     %s\n", str);
+							free (str);
 						}
-						if (!next)
-							break;
-						cur = next;
-					}
+					} else free (str);
 				}
+				if (!next)
+					break;
+				cur = next;
+			}
+		}
 
 		if (!found) {
 			option--;
@@ -1026,7 +1022,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 						if (file->type == 'd') {
 							strncat (path, file->name, sizeof (path)-strlen (path)-1);
 							r_str_chop_path (path);
-							if (!root || memcmp (root, path, strlen (root)-1))
+							if (!root || strncmp (root, path, strlen (root)-1))
 								strncpy (path, root, sizeof (path)-1);
 						} else {
 							r_core_cmdf (core, "s 0x%"PFMT64x, file->off);
@@ -1116,7 +1112,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 					if (file && root) {
 						strncat (path, file->name, sizeof (path)-strlen (path)-1);
 						r_str_chop_path (path);
-						if (memcmp (root, path, strlen (root)-1))
+						if (strncmp (root, path, strlen (root)-1))
 							strncpy (path, root, sizeof (path)-1);
 						file = r_fs_open (core->fs, path);
 						if (file) {
@@ -1475,7 +1471,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 		const char *pfx = r_config_get (core->config, "search.prefix");
 		RFlagItem *flag;
 		r_list_foreach (core->flags->flags, iter, flag) {
-			if (!memcmp (flag->name, pfx, strlen (pfx)))
+			if (!strncmp (flag->name, pfx, strlen (pfx)))
 				if (flag->offset < next && flag->offset > core->offset)
 					next = flag->offset;
 		}
@@ -1486,7 +1482,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 				next = flag->offset;
 		}
 	}
-	if (next!=UT64_MAX)
+	if (next != UT64_MAX)
 		r_core_seek (core, next, 1);
 }
 
@@ -1507,7 +1503,7 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 		RFlagItem *flag;
 		const char *pfx = r_config_get (core->config, "search.prefix");
 		r_list_foreach (core->flags->flags, iter, flag) {
-			if (!memcmp (flag->name, pfx, strlen (pfx)))
+			if (!strncmp (flag->name, pfx, strlen (pfx)))
 				if (flag->offset > next && flag->offset< core->offset)
 					next = flag->offset;
 		}

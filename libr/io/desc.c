@@ -90,10 +90,10 @@ R_API int r_io_desc_del(RIO *io, int fd) {
 			r_io_desc_free (d);
 			iter->data = NULL; // enforce free
 			r_list_delete (io->files, iter);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API RIODesc *r_io_desc_get(RIO *io, int fd) {
