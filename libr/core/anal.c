@@ -2121,24 +2121,24 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 		if (myvalid (refptr) && r_io_is_valid_offset (mycore->io, (ut64)refptr, 0)) {
 			esilbreak_last_read = addr;
 			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
-				(ut64)refptr, esil->offset);
+				(ut64)refptr, esil->address);
 			r_io_read_at (mycore->io, refptr, str, sizeof (str));
 			if (is_string (str, sizeof (str)-1, &slen)) {
 				char str2[128];
 				esilbreak_last_data = refptr;
 				snprintf (str2, sizeof(str2)-1, "esilref: '%s'", str);
-				r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, esil->offset, str2);
+				r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, esil->address, str2);
 				r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, refptr, str2);
 				if (refptr) {
 					snprintf (cmd2, sizeof (cmd2), "axd 0x%"PFMT64x" 0x%"PFMT64x,
-						esil->offset, addr);
+						esil->address, addr);
 					eprintf ("%s\n", cmd2);
 					r_core_cmd0 (mycore, cmd2);
 				}
 			}
 		} else {
 			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
-				esil->offset, addr);
+				esil->address, addr);
 		}
 		eprintf ("%s\n", cmd);
 		r_core_cmd0 (mycore, cmd);
@@ -2217,7 +2217,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 				i++;
 			} else {
 				const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
-				r_anal_esil_set_offset (ESIL, cur);
+				r_anal_esil_set_pc (ESIL, cur);
 				(void)r_anal_esil_parse (ESIL, esilstr); 
 				//r_anal_esil_dumpstack (ESIL);
 				r_anal_esil_stack_free (ESIL);

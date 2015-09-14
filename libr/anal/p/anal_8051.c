@@ -206,9 +206,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 
 	case 0xA4:
 		/* mul */ emit("8,A,B,*,DUP,>>,DUP,!,!,OV,=,B,=,A,=,0,C,="); break;
-	case 0xA5:
-		/* ??? */ emit("$$"); break;
-
+	case 0xA5: /* ??? */ emit("0,TRAP"); break;
 	case 0xA6: case 0xA7:
 		j (XR(IB1) XW(R0I)) break;
 
@@ -424,7 +422,7 @@ static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 val) {
 
 static int esil_i8051_init (RAnalEsil *esil) {
 	if (esil->cb.user)
-		return R_TRUE;
+		return true;
 
 	esil->cb.user = R_NEW0(struct r_i8051_user);
 	ocbs = esil->cb;
@@ -432,13 +430,13 @@ static int esil_i8051_init (RAnalEsil *esil) {
 	esil->cb.hook_reg_read = i8051_hook_reg_read;
 	esil->cb.hook_reg_write = i8051_hook_reg_write;
 
-	return R_TRUE;
+	return true;
 }
 
 static int esil_i8051_fini (RAnalEsil *esil) {
 	esil->cb = ocbs;
 	R_FREE(esil->cb.user);
-	return R_TRUE;
+	return true;
 }
 
 static int set_reg_profile(RAnal *anal) {

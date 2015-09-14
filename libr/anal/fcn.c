@@ -38,7 +38,7 @@ R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize) {
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
 	if (!fcn || newsize<1)
-		return R_FALSE;
+		return false;
 	fcn->size = newsize;
 	eof = fcn->addr = fcn->size;
 	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
@@ -57,7 +57,7 @@ R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize) {
 			bb->fail = UT64_MAX;
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API RAnalFunction *r_anal_fcn_new() {
@@ -116,12 +116,12 @@ R_API void r_anal_fcn_free(void *_fcn) {
 R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
 	RAnalRef *ref;
 	if (!fcn || !a)
-		return R_FALSE;
+		return false;
 	if (!a->iob.is_valid_offset (a->iob.io, addr, 0))
-		return R_FALSE;
+		return false;
 	ref = r_anal_ref_new ();
 	if (!ref)
-		return R_FALSE;
+		return false;
 	// set global reference
 	r_anal_xrefs_set (a, type, at, addr);
 	// set per-function reference
@@ -140,7 +140,7 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 		sdb_fmt (0, "fcn.0x%08"PFMT64x".xrefs", fcn->addr),
 		at, 0);
 #endif
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_anal_fcn_xref_del (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
@@ -153,14 +153,14 @@ R_API int r_anal_fcn_xref_del (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 			(at == 0LL || at == ref->at) &&
 			(addr == 0LL || addr == ref->addr)) {
 				r_list_delete (fcn->xrefs, iter);
-				return R_TRUE;
+				return true;
 		}
 	}
 #endif
 #if FCN_SDB
 	//sdb_array_delete_num (DB, key, at, 0);
 #endif
-	return R_FALSE;
+	return false;
 }
 
 static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
@@ -642,7 +642,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 	RAnalFunction *f = r_anal_get_fcn_in (anal, fcn->addr,
 		R_ANAL_FCN_TYPE_ROOT);
-	if (f) return R_FALSE;
+	if (f) return false;
 #if USE_NEW_FCN_STORE
 	r_listrange_add (anal->fcnstore, fcn);
 	// HUH? store it here .. for backweird compatibility
@@ -652,19 +652,19 @@ R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 	if (anal->cb.on_fcn_new) {
 		anal->cb.on_fcn_new (anal, anal->user, fcn);
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int type, RAnalDiff *diff) {
 	int append = 0;
 	RAnalFunction *fcn;
 
-	if (size < 1) return R_FALSE;
+	if (size < 1) return false;
 
 	fcn = r_anal_get_fcn_in (a, addr, R_ANAL_FCN_TYPE_ROOT);
 	if (fcn == NULL) {
 		if (!(fcn = r_anal_fcn_new ()))
-			return R_FALSE;
+			return false;
 		append = 1;
 	}
 	fcn->addr = addr;
@@ -686,7 +686,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 #if FCN_SDB
 	sdb_set (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x, addr), "TODO", 0); // TODO: add more info here
 #endif
-	return append? r_anal_fcn_insert (a, fcn): R_TRUE;
+	return append? r_anal_fcn_insert (a, fcn): true;
 }
 
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
@@ -696,7 +696,7 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 #if USE_NEW_FCN_STORE
 #warning TODO: r_anal_fcn_del_locs not implemented for newstore
 #endif
-	if (!f) return R_FALSE;
+	if (!f) return false;
 	r_list_foreach_safe (anal->fcns, iter, iter2, fcn) {
 		if (fcn->type != R_ANAL_FCN_TYPE_LOC)
 			continue;
@@ -704,7 +704,7 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 			r_list_delete (anal->fcns, iter);
 	}
 	r_anal_fcn_del (anal, addr);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
@@ -715,7 +715,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 #else
 		r_list_free (a->fcns);
 		if (!(a->fcns = r_anal_fcn_list_new ()))
-			return R_FALSE;
+			return false;
 #endif
 	} else {
 #if USE_NEW_FCN_STORE
@@ -735,7 +735,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 		}
 #endif
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
@@ -800,7 +800,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 		bb = appendBasicBlock (anal, fcn, addr);
 		if (!bb) {
 			eprintf ("appendBasicBlock failed\n");
-			return R_FALSE;
+			return false;
 		}
 	}
 	bb->addr = addr;
@@ -815,7 +815,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 		if (diff->name)
 			bb->diff->name = strdup (diff->name);
 	}
-	return R_TRUE;
+	return true;
 }
 
 // TODO: rename fcn_bb_split()
@@ -842,7 +842,7 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 			bbi->size = addr - bbi->addr;
 			bbi->jump = addr;
 			bbi->fail = -1;
-			bbi->conditional = R_FALSE;
+			bbi->conditional = false;
 			if (bbi->type&R_ANAL_BB_TYPE_HEAD) {
 				bb->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
 				bbi->type = R_ANAL_BB_TYPE_HEAD;
@@ -882,7 +882,7 @@ R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
 			bb->size = bbi->addr - bb->addr;
 			bb->jump = bbi->addr;
 			bb->fail = -1;
-			bb->conditional = R_FALSE;
+			bb->conditional = false;
 			if (bbi->type & R_ANAL_BB_TYPE_HEAD) {
 				bb->type = R_ANAL_BB_TYPE_HEAD;
 				bbi->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
@@ -936,7 +936,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 
 	if (!a || !f || !sig) {
 		eprintf ("r_anal_str_to_fcn: No function received\n");
-		return R_FALSE;
+		return false;
 	}
 
 	/* Add 'function' keyword */
@@ -949,7 +949,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	/* TODO: simplify this complex api usage */
 
 	free (str);
-	return R_TRUE;
+	return true;
 }
 
 R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type) {

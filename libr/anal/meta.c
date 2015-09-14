@@ -109,8 +109,8 @@ R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 	if (!size) {
 		size = strlen (s);
 		meta_inrange_add (a, addr, size);
-		ret = R_TRUE;
-	} else ret = R_FALSE;
+		ret = true;
+	} else ret = false;
 	e_str = sdb_encode ((const void*)s, -1);
 	snprintf (val, sizeof (val)-1, "%d,%d,%s", (int)size, space_idx, e_str);
 	sdb_set (DB, key, val, 0);
@@ -161,7 +161,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 				free (dtr);
 			}
 		}
-		return R_FALSE;
+		return false;
 	}
 	meta_inrange_del (a, addr, size);
 	snprintf (key, sizeof (key)-1, type==R_META_TYPE_COMMENT ?
@@ -177,7 +177,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 		}
 	}
 	sdb_unset (DB, key, 0);
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_meta_cleanup(RAnal *a, ut64 from, ut64 to) {
@@ -190,10 +190,8 @@ R_API void r_meta_item_free(void *_item) {
 }
 
 R_API RAnalMetaItem *r_meta_item_new(int type) {
-	RAnalMetaItem *mi = R_NEW (RAnalMetaItem);
-	if (!mi) return NULL;
-	memset (mi, 0, sizeof (RAnalMetaItem));
-	mi->type = type;
+	RAnalMetaItem *mi = R_NEW0 (RAnalMetaItem);
+	if (mi) mi->type = type;
 	return mi;
 }
 
@@ -202,11 +200,11 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 	char *e_str, key[100], val[2048];
 	int exists;
 	if (from>to)
-		return R_FALSE;
+		return false;
 	if (from == to)
 		to = from+1;
 	if (type == 100 && (to-from)<1) {
-		return R_FALSE;
+		return false;
 	}
 	/* set entry */
 	e_str = sdb_encode ((const void*)str, -1);
@@ -231,8 +229,7 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 		/* set type index */
 		//count = meta_type_add (a, type, from);
 	}
-
-	return R_TRUE;
+	return true;
 }
 
 R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 off, int type, int where) {

@@ -155,7 +155,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_FSUB:
 	case MIPS_INS_SUB:
 		if (REG(0)[0]!='z'){
-			r_strbuf_appendf(&op->esil, "%s,%s,>,?{,$$,}{,%s,%s,-,%s,=",ARG(1), ARG(2), ARG(1), ARG(2), ARG(0));
+			r_strbuf_appendf(&op->esil, "%s,%s,>,?{,1,TRAP,}{,%s,%s,-,%s,=",ARG(1), ARG(2), ARG(1), ARG(2), ARG(0));
 		} else {
 			r_strbuf_appendf (&op->esil, ",");
 		}
@@ -175,17 +175,18 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	/** signed -- sets overflow flag */
 	case MIPS_INS_ADD:
 		{
-		if (REG(0)[0]!='z'){
-			r_strbuf_appendf (&op->esil, "0,32,%s,%s,+,>>,>,?{,$$,}{,%s,%s,+,%s,=,}",
-					ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
+		if (REG(0)[0]!='z') {
+			r_strbuf_appendf (&op->esil,
+				"0,32,%s,%s,+,>>,>,?{,1,TRAP,}{,%s,%s,+,%s,=,}",
+				ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
 		} else {
 			r_strbuf_appendf (&op->esil, ",");
 		}
 		}
 		break;
 	case MIPS_INS_ADDI:
-		if (REG(0)[0]!='z'){
-			r_strbuf_appendf (&op->esil, "0,32,%s,0xffffffff,&,%s,+,>>,>,?{,$$,}{,%s,%s,+,%s,=,}",
+		if (REG(0)[0]!='z') {
+			r_strbuf_appendf (&op->esil, "0,32,%s,0xffffffff,&,%s,+,>>,>,?{,1,TRAP,}{,%s,%s,+,%s,=,}",
 					ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
 		} else {
 			r_strbuf_appendf (&op->esil, ",");
@@ -570,7 +571,7 @@ RAnalPlugin r_anal_plugin_mips_cs = {
 	.name = "mips",
 	.desc = "Capstone MIPS analyzer",
 	.license = "BSD",
-	.esil = R_TRUE,
+	.esil = true,
 	.arch = R_SYS_ARCH_MIPS,
 	.set_reg_profile = set_reg_profile,
 	.bits = 16|32|64,

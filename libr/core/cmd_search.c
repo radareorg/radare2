@@ -1170,7 +1170,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				eprintf ("Breaked at 0x%08"PFMT64x"\n", addr);
 				break;
 			}
-			r_anal_esil_set_offset (core->anal->esil, addr);
+			r_anal_esil_set_pc (core->anal->esil, addr);
 			if (!r_anal_esil_parse (core->anal->esil, input+2)) {
 				// XXX: return value doesnt seems to be correct here
 				eprintf ("Cannot parse esil (%s)\n", input+2);

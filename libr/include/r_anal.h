@@ -911,7 +911,7 @@ typedef struct r_anal_reil {
 	char pc[8];
 } RAnalReil;
 
-#define ESIL_INTERNAL_PREFIX	'%'		//must be a char
+#define ESIL_INTERNAL_PREFIX	'$'		//must be a char
 #define ESIL struct r_anal_esil_t
 
 typedef struct r_anal_esil_callbacks_t {
@@ -942,7 +942,7 @@ typedef struct r_anal_esil_t {
 	int parse_goto_count;
 	int debug;
 	ut64 flags;
-	ut64 offset;
+	ut64 address;
 	int delay;
 	ut64 delay_addr;
 	int trap;
@@ -1134,7 +1134,7 @@ R_API const char *r_anal_stackop_tostring (int s);
 R_API RAnalOp *r_anal_op_new(void);
 R_API void r_anal_op_free(void *op);
 R_API void r_anal_op_fini(RAnalOp *op);
-R_API int r_anal_op_is_eob (RAnalOp *op);
+R_API _Bool r_anal_op_is_eob (RAnalOp *op);
 R_API RList *r_anal_op_list_new(void);
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		const ut8 *data, int len);
@@ -1146,7 +1146,7 @@ R_API RAnalEsil *r_anal_esil_new (int iotrap);
 R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op);
 R_API void r_anal_esil_trace_list (RAnalEsil *esil);
 R_API void r_anal_esil_trace_show (RAnalEsil *esil, int idx);
-R_API int r_anal_esil_set_offset (RAnalEsil *esil, ut64 addr);
+R_API _Bool r_anal_esil_set_pc (RAnalEsil *esil, ut64 addr);
 R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats);
 R_API void r_anal_esil_free (RAnalEsil *esil);
 R_API int r_anal_esil_parse (RAnalEsil *esil, const char *str);
@@ -1156,7 +1156,7 @@ R_API int r_anal_esil_mem_write (RAnalEsil *esil, ut64 addr, const ut8 *buf, int
 R_API int r_anal_esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num, int *size);
 R_API int r_anal_esil_reg_write (RAnalEsil *esil, const char *dst, ut64 num);
 R_API int r_anal_esil_pushnum (RAnalEsil *esil, ut64 num);
-R_API int r_anal_esil_push (RAnalEsil *esil, const char *str);
+R_API _Bool r_anal_esil_push (RAnalEsil *esil, const char *str);
 R_API char *r_anal_esil_pop (RAnalEsil *esil);
 R_API int r_anal_esil_set_op (RAnalEsil *esil, const char *op, RAnalEsilOp code);
 R_API void r_anal_esil_stack_free (RAnalEsil *esil);

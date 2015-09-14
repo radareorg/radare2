@@ -240,7 +240,7 @@ R_API int r_debug_esil_stepi (RDebug *d) {
 			eprintf ("STOP AT 0x%08"PFMT64x"\n", opc);
 			ret = 0;
 		} else {
-			r_anal_esil_set_offset (ESIL, opc);
+			r_anal_esil_set_pc (ESIL, opc);
 			eprintf ("0x%08"PFMT64x"  %s\n", opc, R_STRBUF_SAFEGET (&op.esil));
 			(void)r_anal_esil_parse (ESIL, R_STRBUF_SAFEGET (&op.esil));
 			//r_anal_esil_dumpstack (ESIL);

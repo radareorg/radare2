@@ -77,11 +77,11 @@ R_API RAnal *r_anal_new() {
 	anal->reflines = anal->reflines2 = NULL;
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
 	anal->limit = NULL;
-	anal->opt.nopskip = R_TRUE; // skip nops in code analysis
-	anal->decode = R_TRUE; // slow slow if not used
+	anal->opt.nopskip = true; // skip nops in code analysis
+	anal->decode = true; // slow slow if not used
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
-	anal->opt.noncode = R_FALSE; // do not analyze data by default
+	anal->opt.noncode = false; // do not analyze data by default
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
 	r_space_init (&anal->meta_spaces,
@@ -95,7 +95,7 @@ R_API RAnal *r_anal_new() {
 	r_anal_xrefs_init (anal);
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;
 	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
-	anal->split = R_TRUE; // used from core
+	anal->split = true; // used from core
 	anal->syscall = r_syscall_new ();
 	r_io_bind_init (anal->iob);
 	r_flag_bind_init (anal->flb);
@@ -108,7 +108,7 @@ R_API RAnal *r_anal_new() {
 	anal->refs = r_anal_ref_list_new ();
 	anal->types = r_anal_type_list_new ();
 	r_anal_set_bits (anal, 32);
-	r_anal_set_big_endian (anal, R_FALSE);
+	r_anal_set_big_endian (anal, false);
 	anal->plugins = r_list_new ();
 	anal->plugins->free = (RListFree) r_anal_plugin_free;
 	for (i=0; anal_static_plugins[i]; i++) {
@@ -159,7 +159,7 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 	if (foo->init)
 		foo->init (anal->user);
 	r_list_append (anal->plugins, foo);
-	return R_TRUE;
+	return true;
 }
 
 // TODO: Must be deprecated
@@ -169,7 +169,7 @@ R_API int r_anal_list(RAnal *anal) {
 	r_list_foreach (anal->plugins, it, h) {
 		anal->cb_printf ("anal %-10s %s\n", h->name, h->desc);
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_anal_use(RAnal *anal, const char *name) {
@@ -183,16 +183,16 @@ R_API int r_anal_use(RAnal *anal, const char *name) {
 				r_anal_esil_free (anal->esil);
 				anal->esil = NULL;
 			}
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_anal_set_reg_profile(RAnal *anal) {
 	if (anal && anal->cur && anal->cur->set_reg_profile)
 		return anal->cur->set_reg_profile (anal);
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_anal_set_bits(RAnal *anal, int bits) {
@@ -203,9 +203,9 @@ R_API int r_anal_set_bits(RAnal *anal, int bits) {
 	case 64:
 		anal->bits = bits;
 		r_anal_set_reg_profile (anal);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
@@ -216,7 +216,7 @@ R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
 R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
 	anal->big_endian = bigend;
 	anal->reg->big_endian = bigend;
-	return R_TRUE;
+	return true;
 }
 
 R_API char *r_anal_strmask (RAnal *anal, const char *data) {
@@ -265,7 +265,7 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	r_list_foreach (anal->fcns, iter, fcni) {
 		r_list_foreach (fcni->bbs, iter2, bbi) {
 			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
-				bbi->traced = R_TRUE;
+				bbi->traced = true;
 				break;
 			}
 		}
@@ -275,7 +275,7 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	if (fcni) {
 		r_list_foreach (fcni->bbs, iter2, bbi) {
 			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
-				bbi->traced = R_TRUE;
+				bbi->traced = true;
 				break;
 			}
 		}
@@ -292,14 +292,14 @@ R_API RList* r_anal_get_fcns (RAnal *anal) {
 R_API int r_anal_project_load(RAnal *anal, const char *prjfile) {
 	if (prjfile && *prjfile)
 		return r_anal_xrefs_load (anal, prjfile);
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_anal_project_save(RAnal *anal, const char *prjfile) {
 	if (!prjfile || !*prjfile)
-		return R_FALSE;
+		return false;
 	r_anal_xrefs_save (anal, prjfile);
-	return R_TRUE;
+	return true;
 }
 
 R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
@@ -317,16 +317,17 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	return op;
 }
 
-R_API int r_anal_op_is_eob (RAnalOp *op) {
+R_API _Bool r_anal_op_is_eob (RAnalOp *op) {
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_RET:
 	case R_ANAL_OP_TYPE_TRAP:
-		return 1;
+		return true;
+	default:
+		return false;
 	}
-	return 0;
 }
 
 R_API int r_anal_purge (RAnal *anal) {

@@ -550,7 +550,7 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, "<<");
-				esilprintf (op, "%s,%s,%%z,zf,=", src, dst);
+				esilprintf (op, "%s,%s,$z,zf,=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -561,7 +561,7 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, ">>");
-				esilprintf (op, "%s,%s,%%z,zf,=", src, dst);
+				esilprintf (op, "%s,%s,$z,zf,=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -571,7 +571,7 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, "<<");
-				esilprintf (op, "%s,%s,%%z,zf,=", src, dst);
+				esilprintf (op, "%s,%s,$z,zf,=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -579,7 +579,7 @@ SETL/SETNGE
 		case X86_INS_SALC:
 			op->type = R_ANAL_OP_TYPE_SAL;
 			if (a->decode) {
-				esilprintf (op, "%%z,DUP,zf,=,al,=");
+				esilprintf (op, "$z,DUP,zf,=,al,=");
 			}
 			break;
 		case X86_INS_SHR:
@@ -589,7 +589,7 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 0, NULL);
-				esilprintf (op, "%s,%s,>>=,%%z,zf,=", src, dst);
+				esilprintf (op, "%s,%s,>>=,$z,zf,=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -608,7 +608,7 @@ SETL/SETNGE
 				if (a->decode) {
 					char *src = getarg (&gop, 1, 0, NULL);
 					char *dst = getarg (&gop, 0, 0, NULL);
-					esilprintf (op, "0,%s,%s,&,==,%%z,zf,=,%%p,pf,=,%%s,sf,=,0,cf,=,0,of,=",
+					esilprintf (op, "0,%s,%s,&,==,$z,zf,=,$p,pf,=,$s,sf,=,0,cf,=,0,of,=",
 						src, dst);
 					free (src);
 					free (dst);
@@ -618,7 +618,7 @@ SETL/SETNGE
 				if (a->decode) {
 					char *src = getarg (&gop, 1, 0, NULL);
 					char *dst = getarg (&gop, 0, 0, NULL);
-					esilprintf (op,  "%s,%s,==,%%z,zf,=,%%b%d,cf,=,%%p,pf,=,%%s,sf,=",
+					esilprintf (op,  "%s,%s,==,$z,zf,=,$b%d,cf,=,$p,pf,=,$s,sf,=",
 						src, dst, (INSOP(0).size*8));
 					free (src);
 					free (dst);
@@ -964,7 +964,7 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, "^");
-				esilprintf (op, "%s,%s,%%z,zf,=,%%p,pf,=,0,cf,=,0,of,=,%%s,sf,=",
+				esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,0,cf,=,0,of,=,$s,sf,=",
 					src, dst);
 				free (src);
 				free (dst);
@@ -1011,7 +1011,7 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, "-");
-				esilprintf (op, "%s,%s,%%c,cf,=,%%z,zf,=,%%s,sf,=,%%o,of,=",
+				esilprintf (op, "%s,%s,$c,cf,=,$z,zf,=,$s,sf,=,$o,of,=",
 					src, dst); // TODO: update flags
 				free (src);
 				free (dst);
@@ -1070,9 +1070,9 @@ SETL/SETNGE
 				// TODO: af is undefined
 				esilprintf (op, "0,of,=,0,cf,=," // set carry and overflow flags
 					"%s,%s," // set reg value
-					"%%z,zf,=,"  // update zero flag
-					"%%s,sf,=,"  // update sign flag
-					"%%o,pf,=",  // update parity flag
+					"$z,zf,=,"  // update zero flag
+					"$s,sf,=,"  // update sign flag
+					"$o,pf,=",  // update parity flag
 					// TODO: add sign and parity flags here
 					src, dst);
 				free (src);
@@ -1088,8 +1088,8 @@ SETL/SETNGE
 				const char *r_ax = (width==2)?"ax": (width==4)?"eax":"rax";
 				const char *r_dx = (width==2)?"dx": (width==4)?"edx":"rdx";
 				// TODO update flags & handle signedness
-				esilprintf (op, "%s,%s,%%,%s,=,%s,%s,/,%s,=",
-								dst, r_ax, r_dx, dst, r_ax, r_ax);
+				esilprintf (op, "%s,%s,$,%s,=,%s,%s,/,%s,=",
+					dst, r_ax, r_dx, dst, r_ax, r_ax);
 				free (dst);
 			}
 			break;
@@ -1204,7 +1204,7 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 	int syscall;
 	ut64 eax, ebx, ecx, edx;
 	if (!esil || (interrupt != 0x80))
-		return R_FALSE;
+		return false;
 	r_anal_esil_reg_read (esil, "eax", &eax, NULL);
 	r_anal_esil_reg_read (esil, "ebx", &ebx, NULL);
 	r_anal_esil_reg_read (esil, "ecx", &ecx, NULL);
@@ -1217,7 +1217,7 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 			read ((ut32)ebx, dst, (size_t)edx);
 			r_anal_esil_mem_write (esil, ecx, (ut8 *)dst, (int)edx);
 			free (dst);
-			return R_TRUE;
+			return true;
 		}
 	case 4:
 		{
@@ -1225,30 +1225,28 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 			r_anal_esil_mem_read (esil, ecx, (ut8 *)src, (int)edx);
 			write ((ut32)ebx, src, (size_t)edx);
 			free (src);
-			return R_TRUE;
+			return true;
 		}
 	}
 	eprintf ("syscall %d not implemented yet\n", syscall);
-	return R_FALSE;
+	return false;
 }
 
 static int esil_x86_cs_intr (RAnalEsil *esil, int intr) {
-	if (!esil)
-		return R_FALSE;
+	if (!esil) return false;
 	eprintf ("INTERRUPT 0x%02x HAPPENS\n", intr);
-	return R_TRUE;
+	return true;
 }
 
 static int esil_x86_cs_init (RAnalEsil *esil) {
-	if (!esil)
-		return R_FALSE;
+	if (!esil) return false;
 	// XXX. this depends on kernel
 	r_anal_esil_set_interrupt (esil, 0x80, x86_int_0x80);
-	return R_TRUE;
+	return true;
 }
 
 static int esil_x86_cs_fini (RAnalEsil *esil) {
-	return R_TRUE;
+	return true;
 }
 
 static int set_reg_profile(RAnal *anal) {
@@ -1603,7 +1601,7 @@ static int set_reg_profile(RAnal *anal) {
 RAnalPlugin r_anal_plugin_x86_cs = {
 	.name = "x86",
 	.desc = "Capstone X86 analysis",
-	.esil = R_TRUE,
+	.esil = true,
 	.license = "BSD",
 	.arch = R_SYS_ARCH_X86,
 	.bits = 16|32|64,

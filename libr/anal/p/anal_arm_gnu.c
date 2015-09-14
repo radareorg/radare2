@@ -38,7 +38,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	ut32 ins32 = *_ins32;
 
 	struct winedbg_arm_insn *arminsn = arm_new();
-	arm_set_thumb (arminsn, R_TRUE);
+	arm_set_thumb (arminsn, true);
 	arm_set_input_buffer (arminsn, data);
 	arm_set_pc (arminsn, addr);
 	op->jump = op->fail = -1;
@@ -167,7 +167,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return 0;
 	memset (op, '\0', sizeof (RAnalOp));
 	arminsn = arm_new();
-	arm_set_thumb (arminsn, R_FALSE);
+	arm_set_thumb (arminsn, false);
 	arm_set_input_buffer (arminsn, data);
 	arm_set_pc (arminsn, addr);
 	op->jump = op->fail = -1;
@@ -208,7 +208,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 				if ((b[3]&0xf) == 5) {
 					op->ptr = 8+addr+b[0]+((b[1]&0xf)<<8);
 				// XXX: if set it breaks the visual disasm wtf
-				//	op->refptr = R_TRUE;
+				//	op->refptr = true;
 				}
 			case 4:
 			case 6:
@@ -251,7 +251,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			//op->stackop = R_ANAL_STACK_SET;
 			op->jump = 1234;
 			//op->ptr = 4+addr+b[0]; // sure? :)
-			//op->ptrptr = R_TRUE;
+			//op->ptrptr = true;
 		}
 		//eprintf("0x%08x\n", code[i] & ARM_DTX_LOAD);
 		// 0x0001B4D8,           1eff2fe1        bx    lr

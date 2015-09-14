@@ -7,7 +7,7 @@
 #define KEYAT(x,y) sdb_fmt (0, "%d."x".0x%"PFMT64x, esil->trace_idx, y)
 #define KEYREG(x,y) sdb_fmt (0, "%d."x".%s", esil->trace_idx, y)
 
-static int ocbs_set = R_FALSE;
+static int ocbs_set = false;
 static RAnalEsilCallbacks ocbs = {0};
 
 static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
@@ -96,7 +96,7 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 		eprintf ("cannot call recursively\n");
 	}
 	ocbs = esil->cb;
-	ocbs_set = R_TRUE;
+	ocbs_set = true;
 	if (!DB) DB = sdb_new0 ();
 
 	sdb_num_set (DB, "idx", esil->trace_idx, 0);
@@ -117,7 +117,7 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 	r_anal_esil_parse (esil, expr);
 	/* restore hooks */
 	esil->cb = ocbs;
-	ocbs_set = R_FALSE;
+	ocbs_set = false;
 	esil->debug = esil_debug;
 	esil->trace_idx ++;
 }

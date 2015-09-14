@@ -48,7 +48,7 @@ R_API void r_anal_op_free(void *_op) {
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	int ret = R_FALSE;
+	int ret = false;
 	if (len>0 && anal && memset (op, 0, sizeof (RAnalOp)) &&
 		anal->cur && anal->cur->op) {
 		ret = anal->cur->op (anal, op, addr, data, len);
@@ -85,7 +85,7 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 	while (op) {
 		if (op->delay>0) {
 			anal->queued = r_anal_op_copy (op);
-			return R_FALSE;
+			return false;
 		}
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_JMP:
@@ -141,7 +141,7 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 			anal->queued = NULL;
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API const char *r_anal_optype_to_string(int t) {

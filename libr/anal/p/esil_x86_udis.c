@@ -50,10 +50,10 @@ RPN UDIS86_ESIL (call,
 	dst, info->pc);
     
 RPN UDIS86_ESIL (hlt, "hlt,TODO");
-RPN UDIS86_ESIL (shl, "%s,%s,<<=,cz,%%z,zf,=", src, dst);
-RPN UDIS86_ESIL (shr, "%s,%s,>>=,cz,%%z,zf,=", src, dst);
-RPN UDIS86_ESIL (salc, "%s,%s,<<=,%%z,zf,=", src, dst);
-RPN UDIS86_ESIL (sar, "%s,%s,>>=,%%z,zf,=", src, dst);
+RPN UDIS86_ESIL (shl, "%s,%s,<<=,cz,$z,zf,=", src, dst);
+RPN UDIS86_ESIL (shr, "%s,%s,>>=,cz,$z,zf,=", src, dst);
+RPN UDIS86_ESIL (salc, "%s,%s,<<=,$z,zf,=", src, dst);
+RPN UDIS86_ESIL (sar, "%s,%s,>>=,$z,zf,=", src, dst);
 RPN UDIS86_ESIL (rol, "%s,%s,<<<=", src, dst);
 RPN UDIS86_ESIL (ror, "%s,%s,>>>=", src, dst);
 #if 0
@@ -65,14 +65,14 @@ RPN UDIS86_ESIL (ror, "%s,%d,-,1,<<,%s,&,cf,=,%s,%s,>>=,%s,zf,=", src, info->reg
 //    UDIS86_ESIL (add,   "cf=%s<=-%s&%s!=0,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s+=%s,zf=%s==0,sf=%s>>%d", dst, src, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
 // XXX: this is wrong coz add [rax], al -> al,[rax+0],= ;;; this is not valid esil
 RPN UDIS86_ESIL (add, "%s,%s,+=", src, dst); //cf=%s<=-%s&%s!=0,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s+=%s,zf=%s==0,sf=%s>>%d", dst, src, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
-RPN UDIS86_ESIL (inc, "1,%s,+=,z,%%z,zf,=", dst);
-RPN UDIS86_ESIL (dec, "1,%s,-=,%%z,zf,=,%%o,of,=,%%s,sf,=", dst);
+RPN UDIS86_ESIL (inc, "1,%s,+=,z,$z,zf,=", dst);
+RPN UDIS86_ESIL (dec, "1,%s,-=,$z,zf,=,$o,of,=,$s,sf,=", dst);
 //    UDIS86_ESIL (inc,   "of=(%s^(%s+1))>>%d,%s++,zf=%s==0,sf=%s>>%d", dst, dst, info->bits - 1, dst, dst, dst, info->bits - 1);
 //  UDIS86_ESIL (sub,   "cf=%s<%s,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s-=%s,zf=%s==0,sf=%s>>%d", dst, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
-RPN UDIS86_ESIL (sub,   "%s,%s,-=,%%c,cf,=,%%z,zf,=,%%s,sf,=,%%o,of,=", src, dst); // TODO: update flags
+RPN UDIS86_ESIL (sub,   "%s,%s,-=,$c,cf,=,$z,zf,=,$s,sf,=,$o,of,=", src, dst); // TODO: update flags
    // UDIS86_ESIL (dec,   "of=(%s^(%s-1))>>%d,%s--,zf=%s==0,sf=%s>>%d", dst, dst, info->bits - 1, dst, dst, dst, info->bits - 1);
 //  UDIS86_ESIL (cmp,   "cf=%s<%s,zf=%s==%s", dst, src, dst, src);
-RPN UDIS86_ESIL (cmp,  "%s,%s,==,%%z,zf,=", dst, src);
+RPN UDIS86_ESIL (cmp,  "%s,%s,==,$z,zf,=", dst, src);
 //  UDIS86_ESIL (xor,   "%s^=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, dst, info->bits - 1);
 RPN UDIS86_ESIL (xor,   "%s,%s,^=", dst, src);
 //  UDIS86_ESIL (or,    "%s|=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, dst, info->bits - 1);
@@ -84,7 +84,7 @@ RPN UDIS86_ESIL (and,   "%s,%s,&=,%s,!,zf,%s,%d,>>,sf,=,0,cf,=,0,of,=",
 			src, dst, dst, dst, info->bits-1);
 #endif
     // UDIS86_ESIL (test,  "zf=%s&%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, info->bits - 1);
-RPN UDIS86_ESIL (test,  "%s,%s,==,%%z,zf,=", dst, src);
+RPN UDIS86_ESIL (test,  "%s,%s,==,$z,zf,=", dst, src);
 
 //  UDIS86_ESIL (syscall, "$");
 RPN UDIS86_ESIL (syscall, "$");
@@ -135,14 +135,14 @@ RPN UDIS86_ESIL (cld,   "0,df,=");
 #define RSZ (IS32?4:IS64?8:2)
 RPN UDIS86_ESIL (pushad,
 	"%s"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]",
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]",
 	IS64? 
 	  "rdi,rsi,rbp,rsp,rbx,rdx,rcx,rax"
 	: "edi,esi,ebp,esp,ebx,edx,ecx,eax",
@@ -157,14 +157,14 @@ RPN UDIS86_ESIL (pushad,
 	);
 RPN UDIS86_ESIL (pusha,
 	"%s"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]"
-	",%%r,%s,-=,%s,=[]",
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]"
+	",$r,%s,-=,%s,=[]",
 	IS64? 
 	  "rdi,rsi,rbp,rsp,rbx,rdx,rcx,rax"
 	: "edi,esi,ebp,esp,ebx,edx,ecx,eax",

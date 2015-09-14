@@ -28,27 +28,27 @@ R_API const char *r_anal_fcn_label_at (RAnal *anal, RAnalFunction *fcn, ut64 add
 
 R_API int r_anal_fcn_label_set (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr) {
 	if (!anal || !fcn)
-		return R_FALSE;
+		return false;
 	if (sdb_add (DB, ADDR(addr), name, 0)) {
 		if (sdb_num_add (DB, LABEL(name), addr, 0)) {
 			sdb_array_add (DB, LABELS, ADDRLABEL (addr, name), 0);
-			return R_TRUE;
+			return true;
 		} else {
 			sdb_unset (DB, ADDR(addr), 0);
 		}
 	} else {
 		eprintf ("Cannot add\n");
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_anal_fcn_label_del (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr) {
 	if (!anal || !fcn || !name)
-		return R_FALSE;
+		return false;
 	sdb_array_remove (DB, LABELS, ADDRLABEL (addr, name), 0);
 	sdb_unset (DB, LABEL(name), 0);
 	sdb_unset (DB, ADDR(addr), 0);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_anal_fcn_labels (RAnal *anal, RAnalFunction *fcn, int rad) {
@@ -95,5 +95,5 @@ R_API int r_anal_fcn_labels (RAnal *anal, RAnalFunction *fcn, int rad) {
 			r_anal_fcn_labels (anal, f, rad);
 		}
 	}
-	return R_TRUE;
+	return true;
 }

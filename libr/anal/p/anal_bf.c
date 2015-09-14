@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2014 - pancake */
+/* radare2 - LGPL - Copyright 2011-2015 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -122,7 +122,7 @@ struct r_anal_plugin_t r_anal_plugin_bf = {
 	.bits = 8,
 	.init = NULL,
 	.fini = NULL,
-	.esil = R_TRUE,
+	.esil = true,
 	.op = &bf_op,
 	.set_reg_profile = set_reg_profile,
 	.fingerprint_bb = NULL,

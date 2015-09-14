@@ -149,14 +149,14 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_TST: // cmp w8, 0xd
 	case ARM64_INS_CMP: // cmp w8, 0xd
 		// update esil, cpu flags
-		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,%%z,=",
+		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,$z,=",
 			IMM64(1), REG64(0));
 		break;
 	case ARM64_INS_FCSEL:
 	case ARM64_INS_CSEL: // CSEL w8, w13, w14, eq
 		// TODO: w8 = eq? w13: w14
 		// COND64(4) { ARM64_CC_EQ, NE, HS, ...
-		r_strbuf_setf (&op->esil, "%%z,?{,%s,}{,%s,},%s,=",
+		r_strbuf_setf (&op->esil, "$z,?{,%s,}{,%s,},%s,=",
 			REG64(1), REG64(2), REG64(0));
 		break;
 	case ARM64_INS_STRB:

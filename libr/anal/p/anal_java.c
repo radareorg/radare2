@@ -108,9 +108,7 @@ static RList * get_java_bin_obj_list(RAnal *anal) {
 
 static int check_addr_less_end (RBinJavaField *method, ut64 addr) {
 	ut64 end = r_bin_java_get_method_code_size (method);
-	if (addr < end)
-		return R_TRUE;
-	return R_FALSE;
+	return (addr < end);
 }
 
 static int check_addr_in_code (RBinJavaField *method, ut64 addr) {
@@ -120,9 +118,7 @@ static int check_addr_in_code (RBinJavaField *method, ut64 addr) {
 
 static int check_addr_less_start (RBinJavaField *method, ut64 addr) {
 	ut64 start = r_bin_java_get_method_code_offset (method);
-	if (addr < start)
-		return R_TRUE;
-	return R_FALSE;
+	return (addr < start);
 }
 
 
@@ -550,7 +546,7 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 	RBinJavaAttrInfo* code_attr = method ? r_bin_java_get_method_code_attribute(method) : NULL;
 	ut8 * code_buf = NULL;
 	char * name_buf = NULL;
-	int result = R_FALSE;
+	int result = false;
 
 	ut64 code_length = 0,
 		 code_addr = -1;
@@ -896,7 +892,7 @@ static void java_set_function_prototype (RAnal *anal, RAnalFunction *fcn, RBinJa
 				continue;
 			}
 
-			if ( (start & stop & 1) && str ){
+			if ((start & stop & 1) && str) {
 				sdb_set (A, str, "ret.type", 0);
 				sdb_set (D, str, "type", 0);
 			}
@@ -936,7 +932,7 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 			break;
 		case 'u':
 			switch (*(input+1)) {
-				case 't': {java_update_anal_types (anal, obj); return R_TRUE;}
+				case 't': {java_update_anal_types (anal, obj); return true;}
 				default: break;
 			}
 			break;
@@ -957,7 +953,7 @@ static int java_reset_counter (RAnal *anal, ut64 start_addr ) {
 	IFDBG eprintf ("Setting the new METHOD_START to 0x%08"PFMT64x" was 0x%08"PFMT64x"\n", start_addr, METHOD_START);
 	METHOD_START = start_addr;
 	r_java_new_method ();
-	return R_TRUE;
+	return true;
 }
 
 struct r_anal_plugin_t r_anal_plugin_java = {
@@ -966,31 +962,14 @@ struct r_anal_plugin_t r_anal_plugin_java = {
 	.license = "Apache",
 	.arch = R_SYS_ARCH_JAVA,
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
 	.custom_fn_anal = 1,
-
 	.reset_counter = java_reset_counter,
 	.analyze_fns = java_analyze_fns,
 	.post_anal_bb_cb = java_recursive_descent,
 	.revisit_bb_anal = java_revisit_bb_anal_recursive_descent,
 	.op = &java_op,
-	.bb = NULL,
-	.fcn = NULL,
-
-	.op_from_buffer = NULL,
-	.bb_from_buffer = NULL,
-	.fn_from_buffer = NULL,
 	.cmd_ext = java_cmd_ext,
-
-
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL,
-
+	0
 };
 
 struct r_anal_plugin_t r_anal_plugin_java_ls = {
@@ -999,32 +978,14 @@ struct r_anal_plugin_t r_anal_plugin_java_ls = {
 	.license = "Apache",
 	.arch = R_SYS_ARCH_JAVA,
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
 	.custom_fn_anal = 1,
-
 	.analyze_fns = java_analyze_fns,
 	.post_anal_bb_cb = java_linear_sweep,
 	.post_anal = java_post_anal_linear_sweep,
 	.revisit_bb_anal = java_revisit_bb_anal_recursive_descent,
 	.op = &java_op,
-	.bb = NULL,
-	.fcn = NULL,
-
-	.op_from_buffer = NULL,
-	.bb_from_buffer = NULL,
-	.fn_from_buffer = NULL,
-
-
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL,
-
 	.cmd_ext = java_cmd_ext,
-
+	0
 };
 
 #ifndef CORELIB
