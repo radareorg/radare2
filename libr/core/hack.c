@@ -21,13 +21,13 @@ R_API int r_core_hack_arm(RCore *core, const char *op, RAnalOp *analop) {
 		int len = analop->size;
 		if (len%nopsize) {
 			eprintf ("Invalid nopcode size\n");
-			return R_FALSE;
+			return false;
 		}
 		r_cons_puts ("wx ");
 		do r_cons_puts (nopcode);
 		while (len -= nopsize);
 		r_cons_puts ("\n");
-		return R_TRUE;
+		return true;
 	} else
 	if (!strcmp (op, "jz")) {
 		if (bits == 16) {
@@ -92,7 +92,7 @@ R_API int r_core_hack_arm(RCore *core, const char *op, RAnalOp *analop) {
 	if (!strcmp (op, "swap-cjmp")) {
 		eprintf ("TODO: use jnz or jz\n");
 	} else eprintf ("Invalid operation\n");
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_core_hack_x86(RCore *core, const char *op, RAnalOp *analop) {
@@ -103,31 +103,31 @@ R_API int r_core_hack_x86(RCore *core, const char *op, RAnalOp *analop) {
 		int len = analop->size;
 		if (len%nopsize) {
 			eprintf ("Invalid nopcode size\n");
-			return R_FALSE;
+			return false;
 		}
 		r_cons_puts ("wx ");
 		do r_cons_puts (nopcode);
 		while (len-=nopsize);
 		r_cons_puts ("\n");
-		return R_TRUE;
+		return true;
 	} else
 	if (!strcmp (op, "jz")) {
 		if (b[0] == 0x75) {
 			r_cons_puts ("wx 74\n");
-			return R_TRUE;
+			return true;
 		} else eprintf ("Current opcode is not conditional\n");
 	} else
 	if (!strcmp (op, "jnz")) {
 		if (b[0] == 0x74) {
 			r_cons_puts ("wx 75\n");
-			return R_TRUE;
+			return true;
 		} else eprintf ("Current opcode is not conditional\n");
-		return R_TRUE;
+		return true;
 	} else
 	if (!strcmp (op, "un-cjmp")) {
 		if (b[0] >= 0x70 && b[0] <= 0x7f) {
 			r_cons_puts ("wx eb\n");
-			return R_TRUE;
+			return true;
 		} else eprintf ("Current opcode is not conditional\n");
 	} else
 	if (!strcmp (op, "swap-cjmp")) {
@@ -139,13 +139,13 @@ R_API int r_core_hack_x86(RCore *core, const char *op, RAnalOp *analop) {
 		else eprintf ("Invalid opcode\n");
 		// XXX. add support for jb, jg, jl, ..
 	} else eprintf ("Invalid operation\n");
-	return R_FALSE;
+	return false;
 }
 
 // TODO: needs refactoring to make it cross-architecture
 R_API int r_core_hack(RCore *core, const char *op) {
 	int (*hack)(RCore *core, const char *op, RAnalOp *analop) = NULL;
-	int ret = R_FALSE;
+	int ret = false;
 	RAnalOp analop;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
 	if (strstr (asmarch, "x86")) {
@@ -159,7 +159,7 @@ R_API int r_core_hack(RCore *core, const char *op) {
 		if (!r_anal_op (core->anal, &analop, core->offset,
 				core->block, core->blocksize)) {
 			eprintf ("anal op fail\n");
-			return R_FALSE;
+			return false;
 		}
 		ret = hack (core, op, &analop);
 	}

@@ -344,7 +344,7 @@ static int cmd_write(void *data, const char *input) {
 		ut64 addr = 0, len = 0, b_size = 0;
 		st64 dist = 0;
 		ut8* bytes = NULL;
-		int cmd_suc = R_FALSE;
+		int cmd_suc = false;
 		char *input_shadow = NULL, *p = NULL;
 
 		switch (input[1]) {
@@ -438,18 +438,18 @@ static int cmd_write(void *data, const char *input) {
 					if (dist != 0){
 						r_core_shift_block (core, addr, b_size, dist);
 						r_core_seek (core, addr, 1);
-						cmd_suc = R_TRUE;
+						cmd_suc = true;
 					}
 				}
 				free (input_shadow);
 				break;
 			case '?':
 			default:
-				cmd_suc = R_FALSE;
+				cmd_suc = false;
 		}
 
 
-		if (cmd_suc == R_FALSE) {
+		if (cmd_suc == false) {
 			r_cons_printf ("|Usage: write extend\n"
 			"wen <num>               insert num null bytes at current offset\n"
 			"wex <hex_bytes>         insert bytes at current offset\n"
@@ -584,7 +584,7 @@ static int cmd_write(void *data, const char *input) {
 			r_core_block_read (core, 0);
 			break;
 		case 'r':
-			r_io_cache_reset (core->io, R_TRUE);
+			r_io_cache_reset (core->io, true);
 			/* Before loading the core block we have to make sure that if
 			 * the cache wrote past the original EOF these changes are no
 			 * longer displayed. */
@@ -593,7 +593,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case '+':
 			if (input[2]=='*') {
-				//r_io_cache_reset (core->io, R_TRUE);
+				//r_io_cache_reset (core->io, true);
 				eprintf ("TODO\n");
 			} else if (input[2]==' ') {
 				char *p = strchr (input+3, ' ');
@@ -617,7 +617,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case '-':
 			if (input[2]=='*') {
-				r_io_cache_reset (core->io, R_TRUE);
+				r_io_cache_reset (core->io, true);
 			} else if (input[2]==' ') {
 				char *p = strchr (input+3, ' ');
 				ut64 to, from;
@@ -658,12 +658,12 @@ static int cmd_write(void *data, const char *input) {
         }
 			break;
 		case '*':
-			r_io_cache_list (core->io, R_TRUE);
+			r_io_cache_list (core->io, true);
 			break;
 		case '\0':
 			//if (!r_config_get_i (core->config, "io.cache"))
 			//	eprintf ("[warning] e io.cache must be true\n");
-			r_io_cache_list (core->io, R_FALSE);
+			r_io_cache_list (core->io, false);
 			break;
 		}
 		break;

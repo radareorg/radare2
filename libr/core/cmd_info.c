@@ -135,13 +135,13 @@ static int bin_is_executable (RBinObject *obj){
 	RListIter *it;
 	RBinSection* sec;
 	if (obj->info->arch) {
-		return R_TRUE;
+		return true;
 	}
 	r_list_foreach (obj->sections, it, sec){
 		if (R_BIN_SCN_EXECUTABLE & sec->srwx)
-			return R_TRUE;
+			return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 static void cmd_info_bin(RCore *core, int va, int mode) {

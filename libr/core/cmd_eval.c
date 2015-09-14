@@ -30,7 +30,7 @@ static int cmd_eval(void *data, const char *input) {
 			}
 			free (k);
 		}
-		return R_TRUE;
+		return true;
 	case 'x': // exit
 		return cmd_quit (data, "");
 	case 'j':

@@ -276,5 +276,5 @@ static int cmd_type(void *data, const char *input) {
 		show_help (core);
 		break;
 	}
-	return R_TRUE;
+	return true;
 }

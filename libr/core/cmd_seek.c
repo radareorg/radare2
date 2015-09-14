@@ -30,7 +30,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[0]!='/' && inputnum && isalpha (inputnum[0]) && off == 0) {
 			if (!r_flag_get (core->flags, inputnum)) {
 				eprintf ("Cannot find address for '%s'\n", inputnum);
-				return R_FALSE;
+				return false;
 			}
 		}
 #endif
@@ -232,7 +232,7 @@ static int cmd_seek(void *data, const char *input) {
 				ut64 addr = core->offset;
 				int numinstr = n * -1;
 				ret = r_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
-				r_core_seek (core, addr, R_TRUE);
+				r_core_seek (core, addr, true);
 				val += ret;
 			} else {
 				for (val=i=0; i<n; i++) {

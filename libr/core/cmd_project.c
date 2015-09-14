@@ -7,7 +7,7 @@ static int cmd_project(void *data, const char *input) {
 	char *str = NULL;
 
 	if (!input)
-		return R_FALSE;
+		return false;
 
 	str = strdup (fileproject);
 	if (arg && *arg==' ') arg++;
@@ -180,5 +180,5 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	}
 	free (str);
-	return R_TRUE;
+	return true;
 }

@@ -115,14 +115,14 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 	// asm_arch: asm_arch to interpret as if present and valid, otherwise NULL;
 	// bits: bits to use if present, otherwise -1
 
-	int result = R_FALSE;
+	int result = false;
 	char *input_one = NULL, *input_two = NULL, *input_three = NULL;
 	char *str_clone = NULL,
 		 *ptr_str_clone = NULL,
 		 *trimmed_clone = NULL;
 
 	if (input == NULL || blocksize == NULL || asm_arch == NULL || bits == NULL) {
-		return R_FALSE;
+		return false;
 	}
 
 	str_clone = strdup (input);
@@ -167,7 +167,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 		*blocksize = r_num_is_valid_input (core->num, input_one) ? r_num_get_input_value (core->num, input_one): 0;
 		*asm_arch = r_asm_is_valid (core->assembler, input_two) ? strdup (input_two) : NULL;
 		*bits = r_num_get_input_value (core->num, input_three);
-		result = R_TRUE;
+		result = true;
 
 	} else if (input_one && input_two) {
 
@@ -185,7 +185,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 			*asm_arch = r_asm_is_valid (core->assembler, input_two) ? strdup (input_two) : NULL;
 		}
 
-		result = R_TRUE;
+		result = true;
 	} else if (input_one) {
 		*blocksize = r_num_is_valid_input (core->num, input_one) ? r_num_get_input_value (core->num, input_one): 0;
 		if (!r_num_is_valid_input (core->num, input_one) ) {
@@ -194,7 +194,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 				r_str_truncate_cmd (input_one);
 			*asm_arch = r_asm_is_valid (core->assembler, input_one) ? strdup (input_one) : NULL;
 		}
-		result = R_TRUE;
+		result = true;
 	}
 	return result;
 }
@@ -206,13 +206,13 @@ static int process_input_pade(RCore *core, const char *input, char** hex, char *
 	// asm_arch: asm_arch to interpret as if present and valid, otherwise NULL;
 	// bits: bits to use if present, otherwise -1
 
-	int result = R_FALSE;
+	int result = false;
 	char *input_one = NULL, *input_two = NULL, *input_three = NULL;
 	char *str_clone = NULL,
 		 *trimmed_clone = NULL;
 
 	if (input == NULL || hex == NULL || asm_arch == NULL || bits == NULL) {
-		return R_FALSE;
+		return false;
 	}
 
 	str_clone = strdup (input);
@@ -259,7 +259,7 @@ static int process_input_pade(RCore *core, const char *input, char** hex, char *
 		*hex = input_one;
 		*asm_arch = r_asm_is_valid (core->assembler, input_two) ? strdup (input_two) : NULL;
 		*bits = r_num_get_input_value (core->num, input_three);
-		result = R_TRUE;
+		result = true;
 
 	} else if (input_one && input_two) {
 		*hex = input_one;
@@ -268,10 +268,10 @@ static int process_input_pade(RCore *core, const char *input, char** hex, char *
 		}
 		*bits = r_num_is_valid_input (core->num, input_two) ? r_num_get_input_value (core->num, input_two): -1;
 		*asm_arch = r_asm_is_valid (core->assembler, input_two) ? strdup (input_two) : NULL;
-		result = R_TRUE;
+		result = true;
 	} else if (input_one) {
 		*hex = input_one;
-		result = R_TRUE;
+		result = true;
 	} else {
 		free (input_one);
 	}
@@ -601,7 +601,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	ut64 fend = UT64_MAX;
 	char *comment;
 	int i, j, low, max, here, rows;
-	boolt marks = R_FALSE, setcolor = R_TRUE, hascolor = R_FALSE;
+	boolt marks = false, setcolor = true, hascolor = false;
 	ut8 ch;
 	const char **colors = (const char **)&core->cons->pal.list;
 #if 0
@@ -675,7 +675,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		chars[0] = '\0';
 		ebytes = bytes;
 		echars = chars;
-		hascolor = R_FALSE;
+		hascolor = false;
 
 		if (usecolor) append (ebytes, core->cons->pal.offset);
 		ebytes += sprintf (ebytes, "0x%08"PFMT64x, addr);
@@ -683,7 +683,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		append (ebytes, (col==1)?" |":"  ");
 
 		for (j=0; j<nb_cols; j++) {
-			setcolor = R_TRUE;
+			setcolor = true;
 			free (note[j]);
 			note[j] = NULL;
 
@@ -692,7 +692,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			if (comment) {
 				comment = r_str_prefix (comment, ";");
 				note[j] = comment;
-				marks = R_TRUE;
+				marks = true;
 			}
 
 			// collect flags
@@ -704,22 +704,22 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					fend = addr + j + flag->size;
 				}
 				note[j] = r_str_prefix (strdup (flag->name), "/");
-				marks = R_TRUE;
+				marks = true;
 				color_idx++;
 				color_idx %= R_CONS_PALETTE_LIST_SIZE;
 				current_flag = flag;
 			} else {
 				// Are we past the current flag?
 				if (current_flag && addr+j > (current_flag->offset + current_flag->size)){
-					setcolor = R_FALSE;
+					setcolor = false;
 					current_flag = NULL;
 				}
 				// Turn colour off if we're at the end of the current flag
 				if (fend == UT64_MAX || fend <= addr + j)
-					setcolor = R_FALSE;
+					setcolor = false;
 			}
 			if (setcolor && !hascolor) {
-				hascolor = R_TRUE;
+				hascolor = true;
 				if (usecolor) {
 					if (current_flag && current_flag->color) {
 						char *ansicolor = r_cons_pal_parse (current_flag->color);
@@ -778,7 +778,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					append (ebytes, Color_RESET);
 					append (echars, Color_RESET);
 				}
-				hascolor = R_FALSE;
+				hascolor = false;
 			}
 
 			if (j < (nb_cols-1) && (j%2))
@@ -790,7 +790,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					append (echars, Color_RESET);
 				}
 				fend = UT64_MAX;
-				hascolor = R_FALSE;
+				hascolor = false;
 			}
 
 		}
@@ -827,7 +827,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				r_cons_strcat (out);
 				r_cons_newline ();
 			}
-			marks = R_FALSE;
+			marks = false;
 			free (out);
 		}
 		r_cons_strcat (bytes);
@@ -1125,12 +1125,12 @@ static void cmd_print_pwn(const RCore* core) {
 
 static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	RConsPalette *pal = &core->cons->pal;
-	int show_offset = R_TRUE;
+	int show_offset = true;
 	int cols = r_config_get_i (core->config, "hex.cols");
 	int show_color = r_config_get_i (core->config, "scr.color");
 	int onechar = r_config_get_i (core->config, "hex.onechar");
 	int show_cursor = core->print->cur_enabled;
-	int bgcolor_in_heap = R_FALSE;
+	int bgcolor_in_heap = false;
 	char buf[2];
 	char *bgcolor, *fgcolor, *text;
 	ut64 i, c, oi;
@@ -1154,17 +1154,17 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	}
 	for (oi = i = c = 0; i< len; c++) {
 		if (i && (cols != 0) && !(c % cols)) {
-			show_offset = R_TRUE;
+			show_offset = true;
 			r_cons_printf ("  %d\n", i-oi);
 			oi = i;
 		}
 		if (show_offset) {
 			r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
-			show_offset = R_FALSE;
+			show_offset = false;
 		}
 		if (bgcolor_in_heap) {
 			free (bgcolor);
-			bgcolor_in_heap = R_FALSE;
+			bgcolor_in_heap = false;
 		}
 		bgcolor = Color_BGBLACK;
 		fgcolor = Color_WHITE;
@@ -1206,80 +1206,80 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		case R_ANAL_OP_TYPE_POP:
 			text = "<-";
 			bgcolor = r_cons_swap_ground (pal->pop);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			break;
 		case R_ANAL_OP_TYPE_NOP:
 			fgcolor = Color_WHITE;
 			bgcolor = r_cons_swap_ground (pal->nop);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			text = "..";
 			break;
 		case R_ANAL_OP_TYPE_MUL:
 			fgcolor = Color_BLACK;
 			bgcolor = r_cons_swap_ground (pal->math);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			text = "_*";
 			break;
 		case R_ANAL_OP_TYPE_DIV:
 			bgcolor = r_cons_swap_ground (pal->math);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_/";
 			break;
 		case R_ANAL_OP_TYPE_AND:
 			bgcolor = r_cons_swap_ground (pal->bin);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_&";
 			break;
 		case R_ANAL_OP_TYPE_XOR:
 			bgcolor = r_cons_swap_ground (pal->bin);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_^";
 			break;
 		case R_ANAL_OP_TYPE_OR:
 			bgcolor = r_cons_swap_ground (pal->bin);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_|";
 			break;
 		case R_ANAL_OP_TYPE_SHR:
 			bgcolor = r_cons_swap_ground (pal->bin);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = ">>";
 			break;
 		case R_ANAL_OP_TYPE_SHL:
 			bgcolor = r_cons_swap_ground (pal->bin);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "<<";
 			break;
 		case R_ANAL_OP_TYPE_SUB:
 			bgcolor = r_cons_swap_ground (pal->math);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "--";
 			break;
 		case R_ANAL_OP_TYPE_ADD:
 			bgcolor = r_cons_swap_ground (pal->math);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "++";
 			break;
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_UJMP:
 			bgcolor = r_cons_swap_ground (pal->jmp);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_J";
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_UCJMP:
 			bgcolor = r_cons_swap_ground (pal->cjmp);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "cJ";
 			break;
@@ -1287,20 +1287,20 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_UCCALL:
 			bgcolor = r_cons_swap_ground (pal->call);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "_C";
 			break;
 		case R_ANAL_OP_TYPE_ACMP:
 		case R_ANAL_OP_TYPE_CMP:
 			bgcolor = r_cons_swap_ground (pal->cmp);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "==";
 			break;
 		case R_ANAL_OP_TYPE_RET:
 			bgcolor = r_cons_swap_ground (pal->ret);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "_R";
 			break;
@@ -1308,7 +1308,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		case R_ANAL_OP_TYPE_ILL:
 		case R_ANAL_OP_TYPE_UNK:
 			bgcolor = r_cons_swap_ground (pal->invalid);
-			bgcolor_in_heap = R_TRUE;
+			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "XX";
 			break;
@@ -1347,7 +1347,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	}
 	if (bgcolor_in_heap) free (bgcolor);
 
-	return R_TRUE;
+	return true;
 }
 
 static void printraw (RCore *core, int len, int mode) {
@@ -1723,7 +1723,7 @@ static int cmd_print(void *data, const char *input) {
 	{
 		ut32 new_bits = -1;
 		int segoff, old_bits, pos = 0;
-		ut8 settings_changed = R_FALSE;
+		ut8 settings_changed = false;
 		char *new_arch = NULL, *old_arch = NULL, *hex = NULL;
 		old_arch = strdup (r_config_get (core->config, "asm.arch"));
 		old_bits = r_config_get_i (core->config, "asm.bits");
@@ -1735,7 +1735,7 @@ static int cmd_print(void *data, const char *input) {
 
 			if (!process_input_pade (core, input+pos, &hex, &new_arch, &new_bits)) {
 				// XXX - print help message
-				//return R_FALSE;
+				//return false;
 			}
 		
 			if (new_arch == NULL) new_arch = strdup (old_arch);
@@ -1743,7 +1743,7 @@ static int cmd_print(void *data, const char *input) {
 			
 			if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
 				set_asm_configs (core, new_arch, new_bits, segoff);
-				settings_changed = R_TRUE;
+				settings_changed = true;
 			}
 		}
 		if (input[1]=='e') { // "pae"
@@ -1965,9 +1965,9 @@ static int cmd_print(void *data, const char *input) {
 		ut32 new_bits = -1;
 		ut64 use_blocksize = core->blocksize;
 		int segoff, old_bits, pos = 0;
-		ut8 settings_changed = R_FALSE, bw_disassemble = R_FALSE;
+		ut8 settings_changed = false, bw_disassemble = false;
 		char *new_arch = NULL, *old_arch = NULL;
-		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
+		ut32 pd_result = false, processed_cmd = false;
 		old_arch = strdup (r_config_get (core->config, "asm.arch"));
 		segoff = r_config_get_i (core->config, "asm.segoff");
 		old_bits = r_config_get_i (core->config, "asm.bits");
@@ -1982,7 +1982,7 @@ static int cmd_print(void *data, const char *input) {
 
 		if (!process_input (core, input+pos, &use_blocksize, &new_arch, &new_bits)) {
 			// XXX - print help message
-			//return R_FALSE;
+			//return false;
 		}
 		if (!use_blocksize)
 			use_blocksize = core->blocksize;
@@ -1994,7 +1994,7 @@ static int cmd_print(void *data, const char *input) {
 			free (new_arch);
 			goto beach;
 		} else if (core->blocksize_max < use_blocksize && (int)use_blocksize > -core->blocksize_max) {
-			bw_disassemble = R_TRUE;
+			bw_disassemble = true;
 			use_blocksize = -use_blocksize;
 		}
 		l = use_blocksize;
@@ -2004,17 +2004,17 @@ static int cmd_print(void *data, const char *input) {
 
 		if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
 			set_asm_configs (core, new_arch, new_bits, segoff);
-			settings_changed = R_TRUE;
+			settings_changed = true;
 		}
 
 		switch (input[1]) {
 		case 'c': // "pdc"
 			r_core_pseudo_code (core, input+2);
 			pd_result = 0;
-			processed_cmd = R_TRUE;
+			processed_cmd = true;
 			break;
 		case 'i': // "pdi"
-			processed_cmd = R_TRUE;
+			processed_cmd = true;
 			if (*input == 'D')
 				pdi (core, 0, l, 0);
 			else
@@ -2022,7 +2022,7 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = 0;
 			break;
 		case 'a': // "pda"
-			processed_cmd = R_TRUE;
+			processed_cmd = true;
 			{
 				RAsmOp asmop;
 				int ret, err = 0;
@@ -2049,11 +2049,11 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_break_end ();
 				if (buf != core->block)
 					free (buf);
-				pd_result = R_TRUE;
+				pd_result = true;
 			}
 			break;
 		case 'r': // "pdr"
-			processed_cmd = R_TRUE;
+			processed_cmd = true;
 			{
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
@@ -2088,11 +2088,11 @@ static int cmd_print(void *data, const char *input) {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 					core->num->value = -1;
 				}
-				pd_result = R_TRUE;
+				pd_result = true;
 			}
 			break;
 		case 'b': // "pdb"
-			processed_cmd = R_TRUE;
+			processed_cmd = true;
 			{
 				RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
 				if (b) {
@@ -2112,7 +2112,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'f': // "pdf"
-			processed_cmd = R_TRUE;
+			processed_cmd = true;
 			{
 			       ut32 bsz = core->blocksize;
 			       RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
@@ -2139,7 +2139,7 @@ static int cmd_print(void *data, const char *input) {
 				       pd_result = 0;
 			       } else {
 				       eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
-				       processed_cmd = R_TRUE;
+				       processed_cmd = true;
 				       core->num->value = -1;
 			       }
 			       if (bsz != core->blocksize)
@@ -2148,7 +2148,7 @@ static int cmd_print(void *data, const char *input) {
 			l = 0;
 			break;
 		case 'l': //pdl
-			processed_cmd = R_TRUE;
+			processed_cmd = true;
 			{
 				RAsmOp asmop;
 				int j, ret;
@@ -2166,7 +2166,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'j': //pdj
-			processed_cmd = R_TRUE;
+			processed_cmd = true;
 			if (*input == 'D'){
 				cmd_pDj (core, input+2);
 			} else cmd_pdj (core, input+2);
@@ -2180,7 +2180,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case '?': // "pd?"
-			processed_cmd = R_TRUE;
+			processed_cmd = true;
 			const char* help_msg[] = {
 				"Usage:", "p[dD][ajbrfils] [sz] [arch] [bits]", " # Print Disassembly",
 				"NOTE: ", "len", "parameter can be negative",
@@ -2220,13 +2220,13 @@ static int cmd_print(void *data, const char *input) {
 						int instr_len;
 						r_core_asm_bwdis_len (core, &instr_len, &addr, l);
 						ut32 prevaddr = core->offset;
-						r_core_seek(core, prevaddr - instr_len, R_TRUE);
+						r_core_seek(core, prevaddr - instr_len, true);
 						block = realloc (block, R_MAX(instr_len, bs));
 						memcpy (block, core->block, bs);
 						r_core_read_at (core, addr+bs, block+bs, instr_len-bs); //core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
 								core, addr, block, instr_len, l, 0, 1);
-						r_core_seek(core, prevaddr, R_TRUE);
+						r_core_seek(core, prevaddr, true);
 					}
 				}
 			} else {
@@ -2455,7 +2455,7 @@ static int cmd_print(void *data, const char *input) {
 				"| e dir.magic  # defaults to "R_MAGIC_PATH"\n"
 				"| /m           # search for magic signatures\n"
 				);
-		} else r_core_magic (core, input+1, R_TRUE);
+		} else r_core_magic (core, input+1, true);
 		break;
 	case 'u': //pu
 		if (input[1]=='?') {
@@ -3151,7 +3151,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int delta
 	if (show_color) {
 		const char *k = r_cons_singleton ()->pal.offset; // TODO etooslow. must cache
 		if (invert)
-			r_cons_invert (R_TRUE, R_TRUE);
+			r_cons_invert (true, true);
 		if (offseg) {
 			ut32 s, a;
 			a = off & 0xffff;

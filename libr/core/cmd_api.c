@@ -145,16 +145,16 @@ R_API int r_cmd_set_data(RCmd *cmd, void *data) {
 R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const char *desc) {
 	RCmdLongItem *item = R_NEW (RCmdLongItem);
 	if (item == NULL)
-		return R_FALSE;
+		return false;
 	strncpy (item->cmd, lcmd, sizeof (item->cmd)-1);
 	strncpy (item->cmd_short, scmd, sizeof (item->cmd_short)-1);
 	item->cmd_len = strlen (lcmd);
 	strncpy (item->desc, desc, sizeof (item->desc)-1);
 	if (!r_list_append (cmd->lcmds, item)){
 		free (item);
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(cb)) {
@@ -169,7 +169,7 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(c
 	strncpy (item->cmd, cmd, sizeof (item->cmd)-1);
 	strncpy (item->desc, desc, sizeof (item->desc)-1);
 	item->callback = cb;
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_cmd_del(RCmd *cmd, const char *command) {
@@ -197,7 +197,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 		r_list_foreach (cmd->plist, iter, cp) {
 			if (cp->call (cmd->data, input)) {
 				free (nstr);
-				return R_TRUE;
+				return true;
 			}
 		}
 		if (input[0] == -1) {
@@ -288,7 +288,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	} else {
 		eprintf ("Invalid macro body\n");
 		free (name);
-		return R_FALSE;
+		return false;
 	}
 
 	if (*name && name[1] && name[strlen (name)-1]==')') {
@@ -401,11 +401,11 @@ R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
 			free (m->code);
 			free (m);
 			free (name);
-			return R_TRUE;
+			return true;
 		}
 	}
 	free (name);
-	return R_FALSE;
+	return false;
 }
 
 // TODO: use mac->cb_printf which is r_cons_printf at the end
@@ -563,13 +563,13 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	str = strdup (name);
 	if (str == NULL) {
 		perror ("strdup");
-		return R_FALSE;
+		return false;
 	}
 	ptr = strchr (str, ')');
 	if (ptr == NULL) {
 		eprintf ("Missing end ')' parenthesis.\n");
 		free (str);
-		return R_FALSE;
+		return false;
 	} else *ptr='\0';
 
 	args = strchr (str, ' ');
@@ -601,7 +601,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					m->name, m->nargs, nargs);
 				macro_level --;
 				free (str);
-				return R_FALSE;
+				return false;
 			}
 
 			mac->brk = 0;
@@ -611,7 +611,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					eprintf ("Interrupted at (%s)\n", ptr);
 					if (end) *end = '\n';
 					free (str);
-					return R_FALSE;
+					return false;
 				}
 				r_cons_flush ();
 
@@ -645,7 +645,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				} else {
 					macro_level --;
 					free (str);
-					return R_TRUE;
+					return true;
 				}
 
 				/* Fetch next command */
@@ -655,14 +655,14 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 			if (mac->brk) {
 				macro_level--;
 				free (str);
-				return R_TRUE;
+				return true;
 			}
 		}
 	}
 	eprintf ("No macro named '%s'\n", str);
 	macro_level--;
 	free (str);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value) {
@@ -673,42 +673,3 @@ R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value) {
 		mac->brk_value = &mac->_brk_value;
 	return 0;
 }
-
-#if 0
-int cmd_quit(void *data, const char *input) {
-	printf("quit\n");
-//	exit(1);
-	return 0;
-}
-
-int cmd_echo(void *data, const char *input) {
-	const char *arg = strchr(input, ' ');
-	if (arg == NULL)
-		arg = input;
-	printf("%s\n", arg+1);
-	return 0;
-}
-
-int main()
-{
-	struct r_cmd_t *cmd;
-
-	cmd = r_cmd_new();
-
-	r_cmd_add(cmd, "e", "echo message", &cmd_echo);
-	r_cmd_add(cmd, "q", "quit program", &cmd_quit);
-
-	r_cmd_add_long(cmd, "echo", "e", "echo message");
-	r_cmd_add_long(cmd, "exit", "q", "quit program");
-
-	r_cmd_call(cmd, "e hello world short");
-	r_cmd_call_long(cmd, "echo hello world long");
-	r_cmd_call_long(cmd, "exit");
-	if (!r_cmd_call(cmd, "**dummy**"))
-		eprintf ("==> Cannot call **dummy**\n");
-	else eprintf ("==> **dummy** called\n");
-	r_cmd_call(cmd, "quit");
-
-	return 0;
-}
-#endif

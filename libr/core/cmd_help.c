@@ -100,8 +100,7 @@ static int cmd_help(void *data, const char *input) {
 			//b64 decoding takes at most strlen(str) * 4
 			const int buflen = (strlen (input+3) * 4) + 1;
 			char* buf = calloc (buflen, sizeof(char));
-			if (!buf)
-				return R_FALSE;
+			if (!buf) return false;
 			if (input[3] == '-')
 				r_base64_decode ((ut8*)buf, input+5, strlen (input+5));
 			else r_base64_encode (buf, (const ut8*)input+4, strlen (input+4));
@@ -334,7 +333,7 @@ static int cmd_help(void *data, const char *input) {
 			NULL};
 		r_core_cmd_help (core, help_msg);
 		}
-		return R_TRUE;
+		return true;
 	case 'V':
 		if (!input[1]){
 			if (!strcmp (R2_VERSION, GIT_TAP))
@@ -453,7 +452,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_message (input+2);
 			break;
 		case 'p': {
-			core->num->value = r_core_yank_hud_path (core, input+2, 0) == R_TRUE;
+			core->num->value = r_core_yank_hud_path (core, input+2, 0) == true;
 			} break;
 		case 'k':
 			r_cons_any_key (NULL);

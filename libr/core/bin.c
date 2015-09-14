@@ -40,17 +40,17 @@ static ut64 rva_va (RBin *bin, ut64 paddr, ut64 vaddr) {
 R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
 	if (r_bin_file_set_cur_by_fd (core->bin, bin_fd)) {
 		r_core_bin_set_cur (core, r_core_bin_cur(core));
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_core_bin_set_by_name (RCore *core, const char * name) {
 	if (r_bin_file_set_cur_by_name (core->bin, name)) {
 		r_core_bin_set_cur (core, r_core_bin_cur (core));
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
@@ -76,26 +76,26 @@ R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile) {
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET,
 			va, NULL, NULL);
 		r_core_bin_set_cur (r, binfile);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_core_bin_set_cur (RCore *core, RBinFile *binfile) {
-	if (!core->bin) return R_FALSE;
+	if (!core->bin) return false;
 	if (!binfile) {
 		// Find first available binfile
 		ut32 fd = r_core_file_cur_fd (core);
 		binfile = fd != (ut32) -1 ?  r_bin_file_find_by_fd (
 			core->bin, fd) : NULL;
-		if (!binfile) return R_FALSE;
+		if (!binfile) return false;
 	}
 	r_bin_file_set_cur_binfile (core->bin, binfile);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_core_bin_refresh_strings(RCore *r) {
-	return r_bin_reset_strings (r->bin) ? R_TRUE: R_FALSE;
+	return r_bin_reset_strings (r->bin) ? true: false;
 }
 
 R_API RBinFile * r_core_bin_cur (RCore *core) {
@@ -114,7 +114,7 @@ static int bin_strings (RCore *r, int mode, int va) {
 	RBinFile * binfile = r_core_bin_cur (r);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 
-	if (!binfile) return R_FALSE;
+	if (!binfile) return false;
 	minstr = r_config_get_i (r->config, "bin.minstr");
 	maxstr = r_config_get_i (r->config, "bin.maxstr");
 	rawstr = r_config_get_i (r->config, "bin.rawstr");
@@ -127,7 +127,7 @@ static int bin_strings (RCore *r, int mode, int va) {
 	if (plugin->info && plugin->name) {
 		if (!strcmp (plugin->name, "any")) {
 			if (!rawstr) {
-				return R_FALSE;
+				return false;
 
 			}
 		}
@@ -137,7 +137,7 @@ static int bin_strings (RCore *r, int mode, int va) {
 	minstr = bin->minstrlen;
 
 	if ((list = r_bin_get_strings (bin)) == NULL)
-		return R_FALSE;
+		return false;
 
 	if ((mode & R_CORE_BIN_JSON)) {
 		r_cons_printf ("[");
@@ -228,11 +228,11 @@ static int bin_strings (RCore *r, int mode, int va) {
 				string->type=='w'?"wide":"ascii", string->string);
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 static const char* get_compile_time(Sdb *binFileSdb) {
-	Sdb *info_ns = sdb_ns(binFileSdb, "info", R_FALSE);
+	Sdb *info_ns = sdb_ns(binFileSdb, "info", false);
 	const char *timeDateStamp_string = sdb_const_get (info_ns,
 		"image_file_header.TimeDateStamp_string", 0);
 	if (timeDateStamp_string)
@@ -252,7 +252,7 @@ static int bin_info (RCore *r, int mode) {
 	if (!binfile || !info) {
 		if (mode & R_CORE_BIN_JSON)
 			r_cons_printf ("{}");
-		return R_FALSE;
+		return false;
 	}
 
 	compiled = get_compile_time (binfile->sdb);
@@ -401,7 +401,7 @@ static int bin_info (RCore *r, int mode) {
 				//ut8 *sum = &info; // XXX
 				RBinHash *h = &info->sum[i];
 				ut64 hash = r_hash_name_to_bits (h->type);
-				RHash *rh = r_hash_new (R_TRUE, hash);
+				RHash *rh = r_hash_new (true, hash);
 				len = r_hash_calculate (rh, hash, (const ut8*)
 					binfile->buf->buf+h->from, h->to);
 				//ut8 *p = binfile->buf+h->addr;
@@ -415,7 +415,7 @@ static int bin_info (RCore *r, int mode) {
 			}
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int bin_dwarf (RCore *core, int mode) {
@@ -424,7 +424,7 @@ static int bin_dwarf (RCore *core, int mode) {
 	RList *list = NULL;
 	RBinFile *binfile = r_core_bin_cur (core);
 	RBinPlugin * plugin = r_bin_file_cur_plugin (binfile);
-	if (!binfile) return R_FALSE;
+	if (!binfile) return false;
 
 	if (plugin && plugin->lines) {
 		list = plugin->lines (binfile);
@@ -440,7 +440,7 @@ static int bin_dwarf (RCore *core, int mode) {
 			free (da);
 		}
 	}
-	if (!list) return R_FALSE;
+	if (!list) return false;
 	r_cons_break (NULL, NULL);
         r_list_foreach (list, iter, row) {
 		if (r_cons_singleton()->breaked) break;
@@ -469,7 +469,7 @@ static int bin_dwarf (RCore *core, int mode) {
 	r_cons_break_end ();
 	//r_list_purge (list);
 	r_list_free (list);
-	return R_TRUE;
+	return true;
 }
 
 static int bin_pdb (RCore *core, int mode) {
@@ -479,13 +479,13 @@ static int bin_pdb (RCore *core, int mode) {
 	pdb.cb_printf = r_cons_printf;
 	if (!init_pdb_parser (&pdb, core->bin->file)) {
 		//eprintf ("initialization error of pdb parser\n");
-		return R_FALSE;
+		return false;
 	}
 
 	if (!pdb.pdb_parse (&pdb)) {
 		eprintf ("pdb was not parsed\n");
 		pdb.finish_pdb_parse (&pdb);
-		return R_FALSE;
+		return false;
 	}
 
 	if (mode == R_CORE_BIN_JSON)
@@ -495,7 +495,7 @@ static int bin_pdb (RCore *core, int mode) {
 	case R_CORE_BIN_SET:
 		mode = 's';
 		r_core_cmd0 (core, ".iP*");
-		return R_TRUE;
+		return true;
 	case R_CORE_BIN_JSON:
 		mode = 'j';
 		break;
@@ -517,13 +517,13 @@ static int bin_pdb (RCore *core, int mode) {
 		r_cons_printf ("]");
 	pdb.finish_pdb_parse (&pdb);
 
-	return R_TRUE;
+	return true;
 }
 
 static int bin_main (RCore *r, int mode, int va) {
 	RBinAddr *binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN);
 	ut64 main_addr = 0LL;
-	if (!binmain) return R_FALSE;
+	if (!binmain) return false;
 
 	if (va) {
 		main_addr = r_bin_a2b (r->bin, binmain->vaddr);
@@ -547,7 +547,7 @@ static int bin_main (RCore *r, int mode, int va) {
 					main_addr, binmain->paddr);
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int bin_entry (RCore *r, int mode, ut64 laddr, int va) {
@@ -627,7 +627,7 @@ static int bin_entry (RCore *r, int mode, ut64 laddr, int va) {
 		}
 		if (!mode) r_cons_printf ("\n%i entrypoints\n", i);
 	}
-	return R_TRUE;
+	return true;
 }
 
 static const char *bin_reloc_type_name (RBinReloc *reloc) {
@@ -682,7 +682,7 @@ static int bin_relocs (RCore *r, int mode, int va) {
 	va = 1; // XXX relocs always vaddr?
 
 	if ((relocs = r_bin_get_relocs (r->bin)) == NULL)
-		return R_FALSE;
+		return false;
 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
@@ -817,7 +817,7 @@ static int bin_relocs (RCore *r, int mode, int va) {
 			r_cons_printf ("\n%i relocations\n", i);
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 #define MYDB 1
@@ -867,9 +867,9 @@ static ut64 impaddr(RBin *bin, int va, const char *name) {
 	char impname[512];
 	RList *symbols;
 	RBinSymbol *s;
-	if (!name || !*name) return R_FALSE;
+	if (!name || !*name) return false;
 	if (!(symbols = r_bin_get_symbols (bin))) {
-		return R_FALSE;
+		return false;
 	}
 	// TODO: avoid using snprintf here
 	snprintf (impname, sizeof (impname), "imp.%s", name);
@@ -982,7 +982,7 @@ static int bin_imports (RCore *r, int mode, int va, const char *name) {
 	sdb_free (mydb);
 	mydb = NULL;
 #endif
-	return R_TRUE;
+	return true;
 }
 
 static const char *getPrefixFor(const char *s) {
@@ -1279,7 +1279,7 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		if (!at && !mode) r_cons_printf ("\n%i symbols\n", i);
 	}
 	r_space_set (&r->anal->meta_spaces, NULL);
-	return R_TRUE;
+	return true;
 }
 
 static int bin_sections (RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum) {
@@ -1489,7 +1489,7 @@ static int bin_sections (RCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 		if (!at && !mode) r_cons_printf ("\n%i sections\n", i);
 	}
 
-	return R_TRUE;
+	return true;
 }
 
 static int bin_fields (RCore *r, int mode, int va) {
@@ -1503,7 +1503,7 @@ static int bin_fields (RCore *r, int mode, int va) {
 	ut64 baddr = r_bin_get_baddr (r->bin);
 
 	if ((fields = r_bin_get_fields (bin)) == NULL)
-		return R_FALSE;
+		return false;
 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
@@ -1545,7 +1545,7 @@ static int bin_fields (RCore *r, int mode, int va) {
 					baddr, size, size);
 		} else r_cons_printf ("\n%i fields\n", i);
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int bin_classes (RCore *r, int mode) {
@@ -1553,7 +1553,7 @@ static int bin_classes (RCore *r, int mode) {
 	RBinSymbol *sym;
 	RBinClass *c;
 	RList *cs = r_bin_get_classes (r->bin);
-	if (!cs) return R_FALSE;
+	if (!cs) return false;
 
 	// XXX: support for classes is broken and needs more love
 	if (mode & R_CORE_BIN_JSON) {
@@ -1574,7 +1574,7 @@ static int bin_classes (RCore *r, int mode) {
 		}
 	} else if (mode & R_CORE_BIN_SET) {
 		if (!r_config_get_i (r->config, "bin.classes")) {
-			return R_FALSE;
+			return false;
 		}
 		// Nothing to set.
 		r_flag_space_set (r->flags, "classes");
@@ -1627,7 +1627,7 @@ static int bin_classes (RCore *r, int mode) {
 			free (name);
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int bin_size (RCore *r, int mode) {
@@ -1639,7 +1639,7 @@ static int bin_size (RCore *r, int mode) {
 	else if ((mode & R_CORE_BIN_SET))
 		r_core_cmdf (r, "f bin_size @ %d\n", size);
 	else r_cons_printf ("%d\n", size);
-	return R_TRUE;
+	return true;
 }
 
 static int bin_libs (RCore *r, int mode) {
@@ -1649,7 +1649,7 @@ static int bin_libs (RCore *r, int mode) {
 	int i = 0;
 
 	if ((libs = r_bin_get_libs (r->bin)) == NULL)
-		return R_FALSE;
+		return false;
 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
@@ -1680,7 +1680,7 @@ static int bin_libs (RCore *r, int mode) {
 			}
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 static void bin_mem_print (RList *mems, int perms, int depth) {
@@ -1703,23 +1703,23 @@ static void bin_mem_print (RList *mems, int perms, int depth) {
 
 static int bin_mem (RCore *r, int mode) {
 	RList *mem = NULL;
-	if (!r)	return R_FALSE;
+	if (!r)	return false;
 	if (!((mode & R_CORE_BIN_RADARE) || (mode & R_CORE_BIN_SET)))
 		r_cons_printf ("[Memory]\n\n");
 	if (!(mem = r_bin_get_mem (r->bin)))
-		return R_FALSE;
+		return false;
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("TODO\n");
-		return R_FALSE;
+		return false;
 	}
 	if (!((mode & R_CORE_BIN_RADARE) || (mode & R_CORE_BIN_SET))) {
 		bin_mem_print (mem, 7, 0);
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
-	int ret = R_TRUE;
+	int ret = true;
 	const char *name = NULL;
 	ut64 at = 0, loadaddr = r_bin_get_laddr (core->bin);
 
@@ -1771,19 +1771,19 @@ R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arc
 	if (!name)
 		name = (cf && cf->desc) ? cf->desc->name : NULL;
 	if (!name)
-		return R_FALSE;
+		return false;
 
 	/* Check if the arch name is a valid name */
 	if (!r_asm_is_valid (r->assembler, arch))
-		return R_FALSE;
+		return false;
 
 	/* Find a file with the requested name/arch/bits */
 	binfile = r_bin_file_find_by_arch_bits (r->bin, arch, bits, name);
 	if (!binfile)
-		return R_FALSE;
+		return false;
 
 	if (!r_bin_use_arch (r->bin, arch, bits, name))
-		return R_FALSE;
+		return false;
 
 	r_core_bin_set_cur (r, binfile);
 	return r_core_bin_set_env (r, binfile);
@@ -1802,10 +1802,10 @@ R_API int r_core_bin_raise (RCore *core, ut32 binfile_idx, ut32 binobj_idx) {
 	RBinFile *binfile = NULL;
 
 	if (binfile_idx == UT32_MAX && binobj_idx == UT32_MAX) {
-		return R_FALSE;
+		return false;
 	}
 
-	if (!r_bin_select_by_ids (bin, binfile_idx, binobj_idx)) return R_FALSE;
+	if (!r_bin_select_by_ids (bin, binfile_idx, binobj_idx)) return false;
 	binfile = r_core_bin_cur (core);
 	if (binfile) {
 		r_io_raise (core->io, binfile->fd);
@@ -1819,9 +1819,9 @@ R_API int r_core_bin_delete (RCore *core, ut32 binfile_idx, ut32 binobj_idx) {
 	RBinFile *binfile = NULL;
 
 	if (binfile_idx == UT32_MAX && binobj_idx == UT32_MAX)
-		return R_FALSE;
+		return false;
 	if (!r_bin_object_delete (bin, binfile_idx, binobj_idx))
-		return R_FALSE;
+		return false;
 	binfile = r_core_bin_cur (core);
 	if (binfile)
 		r_io_raise (core->io, binfile->fd);
@@ -1839,7 +1839,7 @@ static int r_core_bin_file_print (RCore *core, RBinFile *binfile, int mode) {
 	ut32 bin_sz = binfile ? binfile->size : 0;
 // TODO:  TODO: handle mode to print in json and r2 commands
 
-	if (!binfile) return R_FALSE;
+	if (!binfile) return false;
 
 	switch (mode) {
 	case 'j':
@@ -1867,7 +1867,7 @@ static int r_core_bin_file_print (RCore *core, RBinFile *binfile, int mode) {
 		}
 		break;
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_core_bin_list(RCore *core, int mode) {
@@ -1878,7 +1878,7 @@ R_API int r_core_bin_list(RCore *core, int mode) {
 	RBin *bin = core->bin;
 	const RList *binfiles = bin ? bin->binfiles: NULL;
 
-	if (!binfiles) return R_FALSE;
+	if (!binfiles) return false;
 
 	if (mode=='j') r_cons_printf("[");
 	r_list_foreach (binfiles, iter, binfile) {

@@ -106,11 +106,11 @@ static int cmd_section(void *data, const char *input) {
 				if (!r_file_dump (file, buf, s->size, 0)) {
 					eprintf ("Cannot write '%s'\n", file);
 					free (buf);
-					return R_FALSE;
+					return false;
 				}
 				eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
 				free (buf);
-				return R_TRUE;
+				return true;
 			}
 		}
 		}
@@ -122,7 +122,7 @@ static int cmd_section(void *data, const char *input) {
 		RIOSection *s;
 		if (input[1] != ' ') {
 			eprintf ("Usage: Sl [file]\n");
-			return R_FALSE;
+			return false;
 		}
 		if (core->io->va || core->io->debug)
 			o = r_io_section_vaddr_to_maddr_try (core->io, o);
@@ -133,16 +133,16 @@ static int cmd_section(void *data, const char *input) {
 				// TODO: use mmap here. we need a portable implementation
 				if (!buf) {
 					eprintf ("Cannot allocate 0x%08"PFMT64x" bytes\n", s->size);
-					return R_FALSE;
+					return false;
 				}
 				r_io_write_at (core->io, s->vaddr, (const ut8*)buf, sz);
 				eprintf ("Loaded %d bytes into the map region at 0x%08"PFMT64x"\n", sz, s->vaddr);
 				free (buf);
-				return R_TRUE;
+				return true;
 			}
 		}
 		eprintf ("No debug region found here\n");
-		return R_FALSE;
+		return false;
 		}
 		break;
 	case '-':
@@ -232,10 +232,10 @@ static int cmd_section(void *data, const char *input) {
 		}
 		break;
 	case '\0':
-		r_io_section_list (core->io, core->offset, R_FALSE);
+		r_io_section_list (core->io, core->offset, false);
 		break;
 	case '*':
-		r_io_section_list (core->io, core->offset, R_TRUE);
+		r_io_section_list (core->io, core->offset, true);
 		break;
 	}
 	return 0;

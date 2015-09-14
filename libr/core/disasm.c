@@ -852,7 +852,7 @@ static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
 
 static int var_comparator (const RAnalVar *a, const RAnalVar *b){
 	if (a && b) return a->delta > b->delta;
-	return R_FALSE;
+	return false;
 }
 
 static void handle_show_functions (RCore *core, RDisasmState *ds) {
@@ -1677,7 +1677,7 @@ static int handle_print_middle (RCore *core, RDisasmState *ds, int ret) {
 static int handle_print_labels (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 	const char *label;
 	if (!core || !ds)
-		return R_FALSE;
+		return false;
 	if (!f) {
 		f = r_anal_get_fcn_in (core->anal, ds->at, 0);
 	}
@@ -2905,7 +2905,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
 #endif
 					r_cons_printf ("]");
-					return R_FALSE;
+					return false;
 #if BWRETRY
 				}
 #endif
@@ -3102,7 +3102,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	}
 	r_cons_printf ("]");
 	core->offset = old_offset;
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes) {

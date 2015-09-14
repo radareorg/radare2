@@ -14,19 +14,19 @@ static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
 static int cmd_egg_compile(REgg *egg) {
 	int i;
 	RBuffer *b;
-	int ret = R_FALSE;
+	int ret = false;
 	char *p = r_egg_option_get (egg, "egg.shellcode");
 	if (p && *p) {
 		if (!r_egg_shellcode (egg, p)) {
 			free (p);
-			return R_FALSE;
+			return false;
 		}
 		free (p);
 	}
 	r_egg_compile (egg);
 	if (!r_egg_assemble (egg)) {
 		eprintf ("r_egg_assemble: invalid assembly\n");
-		return R_FALSE;
+		return false;
 	}
 	p = r_egg_option_get (egg, "egg.padding");
 	if (p && *p) {
@@ -44,7 +44,7 @@ static int cmd_egg_compile(REgg *egg) {
 				r_cons_printf ("%02x", b->buf[i]);
 			r_cons_printf ("\n");
 		}
-		ret = R_TRUE;
+		ret = true;
 	}
 	// we do not own this buffer!!
 	// r_buf_free (b);
@@ -165,6 +165,6 @@ eprintf ("TODO: list options\n");
 		}
 		break;
 	}
-	return R_TRUE;
+	return true;
 }
 

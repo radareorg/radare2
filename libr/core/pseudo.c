@@ -18,7 +18,7 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 	if (!fcn) {
 		eprintf ("Cannot find function in 0x%08"PFMT64x"\n",
 			core->offset);
-		return R_FALSE;
+		return false;
 	}
 	r_config_set_i (core->config, "asm.pseudo", 1);
 	r_config_set_i (core->config, "asm.decode", 0);
@@ -184,5 +184,5 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.comments", asmcomments);
 	r_config_set_i (core->config, "asm.functions", asmfunctions);
 	sdb_free (db);
-	return R_TRUE;
+	return true;
 }

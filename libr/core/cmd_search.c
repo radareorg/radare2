@@ -7,7 +7,7 @@ static int searchhits = 0;
 static int maplist = 0;
 static int maxhits = 0;
 static int json = 0;
-static int first_hit = R_TRUE;
+static int first_hit = true;
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
 static unsigned int searchcount = 0;
@@ -153,7 +153,7 @@ static int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin,
 			void *v = (buf+i);
 			if (align && (from+i)%4)
 				continue;
-			match = R_FALSE;
+			match = false;
 			switch (vsize) {
 			case 1: match = (buf[i]>=vmin && buf[i]<=vmax); break;
 			case 2: v16 = *((ut16*)(v)); match = (v16>=vmin && v16<=vmax); break;
@@ -176,7 +176,7 @@ static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	searchhits ++; //= kw->count+1;
 	r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
 	preludecnt++;
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
@@ -255,18 +255,18 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 
 	if (!core) {
 		eprintf ("Error: Callback has an invalid RCore.\n");
-		return R_FALSE;
+		return false;
 	}
 	if (maxhits && searchhits>=maxhits) {
 		//eprintf ("Error: search.maxhits reached.\n");
-		return R_FALSE;
+		return false;
 	}
 
 	searchhits ++; ///= kw->count+1;
 	if (searchcount) {
 		if (!--searchcount) {
 			//eprintf ("\nsearch stop: search.count reached\n");
-			return R_FALSE;
+			return false;
 		}
 	}
 	if (searchshow && kw && kw->keyword_length > 0) {
@@ -330,18 +330,18 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		}
 	}
 	if (first_hit)
-		first_hit = R_FALSE;
+		first_hit = false;
 	if (searchflags) {
 		const char *flag = sdb_fmt (0, "%s%d_%d", searchprefix, kw->kwidx, kw->count);
 		r_flag_set (core->flags, flag, addr, kw->keyword_length, 1);
 	}
 	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
-		r_core_seek (core, addr, R_TRUE);
+		r_core_seek (core, addr, true);
 		r_core_cmd (core, cmdhit, 0);
-		r_core_seek (core, here, R_TRUE);
+		r_core_seek (core, here, true);
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int c = 0;
@@ -474,7 +474,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				if (!mask || (s->rwx & mask)) {
 					if (!list) {
 						list = r_list_newf (free);
-						maplist = R_TRUE;
+						maplist = true;
 					}
 					map = R_NEW0 (RIOMap);
 					if (!map) {
@@ -501,9 +501,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		if (core->io->debug) {
 			int mask = 0;
 			int add = 0;
-			int heap = R_FALSE;
-			int stack = R_FALSE;
-			int all = R_FALSE;
+			int heap = false;
+			int stack = false;
+			int all = false;
 			RListIter *iter;
 			RDebugMap *map;
 
@@ -518,11 +518,11 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					}
 				}
 			} else {
-				if (!strcmp (mode, "dbg.maps")) all = R_TRUE;
+				if (!strcmp (mode, "dbg.maps")) all = true;
 				if (!strcmp (mode, "dbg.maps.exec")) mask = R_IO_EXEC;
 				if (!strcmp (mode, "dbg.maps.write")) mask = R_IO_WRITE;
-				if (!strcmp (mode, "dbg.heap")) heap = R_TRUE;
-				if (!strcmp (mode, "dbg.stack")) stack = R_TRUE;
+				if (!strcmp (mode, "dbg.heap")) heap = true;
+				if (!strcmp (mode, "dbg.stack")) stack = true;
 
 				r_list_foreach (core->dbg->maps, iter, map) {
 					add = (stack && strstr(map->name, "stack"))? 1: 0;
@@ -532,7 +532,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					if ((mask && (map->perm & mask)) || add || all) {
 						if (!list) {
 							list = r_list_newf (free);
-							maplist = R_TRUE;
+							maplist = true;
 						}
 						RIOMap *nmap = R_NEW0 (RIOMap);
 						if (!nmap) break;
@@ -613,7 +613,7 @@ static boolt is_end_gadget(const RAnalOp* aop, const ut8 crop) {
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CALL:
-		return R_TRUE;
+		return true;
 	}
 	if (crop) { //if conditional jumps, calls and returns should be used for the gadget-search too
 		switch (aop->type) {
@@ -622,10 +622,10 @@ static boolt is_end_gadget(const RAnalOp* aop, const ut8 crop) {
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_UCCALL:
 		case R_ANAL_OP_TYPE_CRET:   //i'm a condret
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 //TODO: follow unconditional jumps
@@ -669,7 +669,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 	}
 
 	if (r_list_contains (badstart, (void*)(intptr_t)idx)) {
-		valid = R_FALSE;
+		valid = false;
 		goto ret;
 	}
 	while (nb_instr < max_instr) {
@@ -679,7 +679,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 			goto ret;
 		if (!strncasecmp (asmop.buf_asm, "invalid", strlen ("invalid")) ||
 				!strncasecmp (asmop.buf_asm, ".byte", strlen (".byte"))) {
-			valid = R_FALSE;
+			valid = false;
 			goto ret;
 		}
 
@@ -896,7 +896,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			eprintf ("For rop.len = 1, use /c to search for single "
 							"instructions. See /c? for help.\n");
 		}
-		return R_FALSE;
+		return false;
 	}
 
 	if (!strcmp (arch, "mips")) // MIPS has no jump-in-the-middle
@@ -948,14 +948,14 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			r_list_free (end_list);
 			r_list_free (badstart);
 			r_list_free (list);
-			return R_FALSE;
+			return false;
 		}
 		map->fd = core->io->desc->fd;
 		map->from = from;
 		map->to = to;
 		list = r_list_newf (free);
 		r_list_append (list, map);
-		maplist = R_TRUE;
+		maplist = true;
 	}
 
 	if (json)
@@ -979,7 +979,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				r_list_free (end_list);
 				r_list_free (badstart);
 				r_list_free (list);
-				return R_FALSE;
+				return false;
 			}
 		}
 
@@ -1110,7 +1110,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	r_list_free (badstart);
 	free (gregexp);
 
-	return R_TRUE;
+	return true;
 }
 
 static int esil_addrinfo(RAnalEsil *esil) {
@@ -1176,7 +1176,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				eprintf ("Cannot parse esil (%s)\n", input+2);
 				break;
 			}
-			hit_happens = R_FALSE;
+			hit_happens = false;
 			res = r_anal_esil_pop (core->anal->esil);
 			if (r_anal_esil_get_parm (core->anal->esil, res, &nres)) {
 				if (nres) {
@@ -1188,7 +1188,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 					kw.count++;
 					eprintf ("Hits: %d\r", kw.count);
 					kw.keyword_length = 0;
-					hit_happens = R_TRUE;
+					hit_happens = true;
 				}
 			} else {
 				eprintf ("Cannot parse esil (%s)\n", input+2);
@@ -1335,7 +1335,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		map->to = param->to;
 		param->boundaries = r_list_newf (free);
 		r_list_append (param->boundaries, map);
-		maplist = R_TRUE;
+		maplist = true;
 	}
 
 	if (json) r_cons_printf ("[");
@@ -1432,7 +1432,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			map->to = param->to;
 			param->boundaries = r_list_newf (free);
 			r_list_append (param->boundaries, map);
-			maplist = R_TRUE;
+			maplist = true;
 		}
 		buf = (ut8 *)malloc (core->blocksize);
 		bufsz = core->blocksize;
@@ -1459,7 +1459,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			if (param->bckwrds) {
 				if (param->to < param->from + bufsz) {
 					at = param->from;
-					param->do_bckwrd_srch = R_FALSE;
+					param->do_bckwrd_srch = false;
 				} else at = param->to - bufsz;
 			} else at = param->from;
 			/* bckwrds = false -> normal search -> must be at < to
@@ -1511,7 +1511,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					if (at > param->from + bufsz) {
 						at -= bufsz;
 					} else {
-						param->do_bckwrd_srch = R_FALSE;
+						param->do_bckwrd_srch = false;
 						at = param->from;
 					}
 				} else {
@@ -1556,10 +1556,10 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 
 static int cmd_search(void *data, const char *input) {
 	struct search_parameters param;
-	int ret = R_TRUE;
-	int i, len, dosearch = R_FALSE;
+	_Bool dosearch = false;
+	int i, len, ret = true;
 	RCore *core = (RCore *)data;
-	int ignorecase = R_FALSE;
+	int ignorecase = false;
 	int param_offset = 2;
 	char *inp;
 	ut64 n64, __from, __to;
@@ -1568,31 +1568,31 @@ static int cmd_search(void *data, const char *input) {
 	ut8 n8;
 	if (!core || !core->io || !core->io->desc) {
 		eprintf ("Can't search if we don't have an open file.\n");
-		return R_FALSE;
+		return false;
 	}
 	if (core->in_search) {
 		eprintf ("Can't search from within a search.\n");
-		return R_FALSE;
+		return false;
 	}
-	core->in_search = R_TRUE;
+	core->in_search = true;
 
 	r_flag_space_push(core->flags, "searches");
 
 	param.from = param.to = 0;
-	param.inverse = R_FALSE;
-	param.crypto_search = R_FALSE;
-	param.bckwrds = R_FALSE;
-	param.do_bckwrd_srch = R_FALSE;
-	param.aes_search = R_FALSE;
-	param.rsa_search = R_FALSE;
-	param.use_mread = R_FALSE;
-	param.do_bckwrd_srch = R_FALSE;
+	param.inverse = false;
+	param.crypto_search = false;
+	param.bckwrds = false;
+	param.do_bckwrd_srch = false;
+	param.aes_search = false;
+	param.rsa_search = false;
+	param.use_mread = false;
+	param.do_bckwrd_srch = false;
 
 	c = 0;
-	json = R_FALSE;
-	first_hit = R_TRUE;
+	json = false;
+	first_hit = true;
 	//core->search->n_kws = 0;
-	maplist = R_FALSE;
+	maplist = false;
 	__from = r_config_get_i (core->config, "search.from");
 	__to = r_config_get_i (core->config, "search.to");
 
@@ -1609,7 +1609,7 @@ static int cmd_search(void *data, const char *input) {
 	  for all search types
 	if (__to < __from) {
 		eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
-		return R_FALSE;
+		return false;
 	}
 	since the backward search will be implemented soon I'm not gonna stick
 	checks for every case in switch // jjdredd
@@ -1644,14 +1644,14 @@ static int cmd_search(void *data, const char *input) {
 		param.from = 0;
 		param.to = r_io_size (core->io);
 	}
-	core->search->bckwrds = R_FALSE;
+	core->search->bckwrds = false;
 
 	if (param.from == param.to) {
 		eprintf ("WARNING from == to?\n");
 	}
 	/* Quick & dirty check for json output */
 	if (input[0] && (input[1] == 'j') && (input[0] != ' ')) {
-		json = R_TRUE;
+		json = true;
 		param_offset++;
 	}
 
@@ -1659,7 +1659,7 @@ reread:
 	switch (*input) {
 	case '!':
 		input++;
-		param.inverse = R_TRUE;
+		param.inverse = true;
 		goto reread;
 	case 'B':
 		cmd_search_bin (core, param.from, param.to);
@@ -1669,7 +1669,7 @@ reread:
 			eprintf ("Usage: /b<command> [value] backward search, see '/?'\n");
 			goto beach;
 		}
-		core->search->bckwrds = param.bckwrds = param.do_bckwrd_srch = R_TRUE;
+		core->search->bckwrds = param.bckwrds = param.do_bckwrd_srch = true;
 		/* if backward search and __to wasn't specified
 		   search from the beginning */
 		if ((unsigned int)param.to ==  UT32_MAX){
@@ -1734,23 +1734,23 @@ reread:
 				r_search_keyword_new_hexmask (kwd, NULL));
 			r_search_begin (core->search);
 			free (kwd);
-			dosearch = R_TRUE;
+			dosearch = true;
 		} else {
-			ret = R_FALSE;
+			ret = false;
 			goto beach;
 		}
 		} break;
 	case 'C': {
-		dosearch = param.crypto_search = R_TRUE;
+		dosearch = param.crypto_search = true;
 		switch (input[1]) {
 			case 'a':
-				param.aes_search = R_TRUE;
+				param.aes_search = true;
 				break;
 			case 'r':
-				param.rsa_search = R_TRUE;
+				param.rsa_search = true;
 				break;
 			default:{
-				dosearch = param.crypto_search = R_FALSE;
+				dosearch = param.crypto_search = false;
 				const char* help_msg[] = {
 					"Usage: /C", "", "Search for crypto materials",
 					"/Ca", "" , "Search for AES keys",
@@ -1762,10 +1762,10 @@ reread:
 		} break;
 	case '/':
 		r_search_begin (core->search);
-		dosearch = R_TRUE;
+		dosearch = true;
 		break;
 	case 'm': // "/m"
-		dosearch = R_FALSE;
+		dosearch = false;
 		if (input[1]==' ' || input[1]=='\0') {
 			int ret;
 			const char *file = input[1]? input+2: NULL;
@@ -1774,7 +1774,7 @@ reread:
 			for (; addr<param.to; addr++) {
 				if (r_cons_singleton ()->breaked)
 					break;
-				ret = r_core_magic_at (core, file, addr, 99, R_FALSE);
+				ret = r_core_magic_at (core, file, addr, 99, false);
 				if (ret == -1) {
 					// something went terribly wrong.
 					break;
@@ -1824,7 +1824,7 @@ reread:
 	case 'v':
 		if (input[1]){
 			if (input[2] == 'j') {
-				json = R_TRUE;
+				json = true;
 				param_offset++;
 			}
 		}
@@ -1876,13 +1876,13 @@ reread:
 		}
 // TODO: Add support for /v4 /v8 /v2
 		r_search_begin (core->search);
-		dosearch = R_TRUE;
+		dosearch = true;
 		break;
 	case 'w': /* search wide string, includes ignorecase search functionality (/wi cmd)! */
 		if (input[1]) {
 			if (input[2]) {
-				if (input[1] == 'j' || input[2] == 'j') json = R_TRUE;
-				if (input[1] == 'i' || input[2] == 'i') ignorecase = R_TRUE;
+				if (input[1] == 'j' || input[2] == 'j') json = true;
+				if (input[1] == 'i' || input[2] == 'i') ignorecase = true;
 			}
 
 		if (input[1+json+ignorecase] == ' ') {
@@ -1909,7 +1909,7 @@ reread:
 				skw->icase = ignorecase;
 				r_search_kw_add (core->search, skw);
 				r_search_begin (core->search);
-				dosearch = R_TRUE;
+				dosearch = true;
 			} else {
 				eprintf ("Invalid keyword\n");
 				break;
@@ -1920,12 +1920,12 @@ reread:
 	case 'i':
 		if (input[param_offset-1]!= ' ') {
 			eprintf ("Missing ' ' after /i\n");
-			ret = R_FALSE;
+			ret = false;
 			goto beach;
 		}
-		ignorecase = R_TRUE;
+		ignorecase = true;
 	case 'j':
-		if (input[0] =='j') json = R_TRUE;
+		if (input[0] =='j') json = true;
 		/* pass-thru */
 	case ' ': /* search string */
 		inp = strdup (input+1+ignorecase+json);
@@ -1953,7 +1953,7 @@ reread:
 		}
 		}
 		r_search_begin (core->search);
-		dosearch = R_TRUE;
+		dosearch = true;
 		break;
 	case 'e': /* match regexp */
 		if (input[1]) {
@@ -1968,7 +1968,7 @@ reread:
 				r_config_get_i (core->config, "search.distance"));
 			r_search_kw_add (core->search, kw);
 			r_search_begin (core->search);
-			dosearch = R_TRUE;
+			dosearch = true;
 		} else eprintf ("Missing regex\n");
 		break;
 	case 'E':
@@ -1980,7 +1980,7 @@ reread:
 			r_search_kw_add (core->search,
 				r_search_keyword_new_hexmask (input+param_offset, NULL));
 			r_search_begin (core->search);
-			dosearch = R_TRUE;
+			dosearch = true;
 		} else eprintf ("Missing delta\n");
 		break;
 	case '#':
@@ -2038,7 +2038,7 @@ reread:
 				eprintf ("Searching %d bytes...\n",
 					kw->keyword_length);
 				r_search_begin (core->search);
-				dosearch = R_TRUE;
+				dosearch = true;
 			} else {
 				eprintf ("no keyword\n");
 			}
@@ -2075,7 +2075,7 @@ reread:
 			len = r_str_unescape (str);
 			ochunksize = chunksize = R_MIN (len, chunksize);
 			eprintf ("Using chunksize: %d\n", chunksize);
-			core->in_search = R_FALSE;
+			core->in_search = false;
 			for (i=0; i<len; i += chunksize) {
 				chunksize = ochunksize;
 				again:
@@ -2126,7 +2126,7 @@ reread:
 		r_search_kw_add (core->search,
 			r_search_keyword_new_hexmask ("00", NULL)); //XXX
 		r_search_begin (core->search);
-		dosearch = R_TRUE;
+		dosearch = true;
 		}
 		break;
 	default:{
@@ -2180,7 +2180,7 @@ reread:
 		do_string_search (core, &param);
 beach: 
 	core->num->value = searchhits;
-	core->in_search = R_FALSE;
+	core->in_search = false;
 	r_flag_space_pop (core->flags);
 	if (json) {
 		r_cons_newline ();

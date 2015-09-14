@@ -15,12 +15,10 @@ R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 	r_list_append (la, fa);
 	lb = r_list_new ();
 	r_list_append (lb, fb);
-
 	r_anal_diff_fcn (c->anal, la, lb);
-
 	r_list_free (la);
 	r_list_free (lb);
-	return R_FALSE;
+	return false;
 }
 
 /* Fingerprint functions and blocks, then diff.
@@ -33,7 +31,7 @@ R_API int r_core_gdiff(RCore *c, RCore *c2, int anal_all) {
 	int i;
 
 	if (!c || !c2)
-		return R_FALSE;
+		return false;
 	for (i = 0; i < 2; i++) {
 		if (anal_all>1)
 			r_core_cmd0 (cores[i], "aac");
@@ -53,7 +51,7 @@ R_API int r_core_gdiff(RCore *c, RCore *c2, int anal_all) {
 	/* Diff functions */
 	r_anal_diff_fcn (cores[0]->anal, cores[0]->anal->fcns, cores[1]->anal->fcns);
 
-	return R_TRUE;
+	return true;
 }
 
 /* copypasta from radiff2 */

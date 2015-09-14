@@ -111,7 +111,7 @@ R_API int r_core_task_cat (RCore *core, int id) {
 	RCoreTask *task = r_core_task_get (core, id);
 	r_cons_printf ("%s\n", task->msg->res);
 	r_core_task_del (core, id);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_core_task_del (RCore *core, int id) {
@@ -120,15 +120,15 @@ R_API int r_core_task_del (RCore *core, int id) {
 	if (id == -1) {
 		r_list_free (core->tasks);
 		core->tasks = r_list_new ();
-		return R_TRUE;
+		return true;
 	}
 	r_list_foreach (core->tasks, iter, task) {
 		if (task->id == id) {
 			r_list_delete (core->tasks, iter);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API RCoreTask *r_core_task_get (RCore *core, int id) {

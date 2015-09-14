@@ -211,7 +211,7 @@ static void reopen_in_debug(RCore *core) {
 		core->file->desc->referer = NULL;
 		r_core_file_reopen (core, newfile, 0, 2);
 		r_config_set_i (core->config, "asm.bits", bits);
-		r_config_set_i (core->config, "cfg.debug", R_TRUE);
+		r_config_set_i (core->config, "cfg.debug", true);
 		r_core_cmd0 (core, "sr pc");
 	}
 }
@@ -417,7 +417,7 @@ static int cmd_open(void *data, const char *input) {
 			if (!r_core_file_open (core, input+2, R_IO_READ, 0))
 				eprintf ("Cannot open file\n");
 			if (!r_core_bin_load (core, NULL, baddr))
-				r_config_set_i (core->config, "io.va", R_FALSE);
+				r_config_set_i (core->config, "io.va", false);
 		} else {
 			eprintf ("Missing argument\n");
 		}

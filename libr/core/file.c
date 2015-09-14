@@ -21,7 +21,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		r_bin_file_find_by_fd (core->bin, ofile->desc->fd) : NULL;
 	RIODesc *odesc = ofile ? ofile->desc : NULL;
 	char *ofilepath = NULL, *obinfilepath = bf ? strdup (bf->file) : NULL;
-	int newpid, ret = R_FALSE;
+	int newpid, ret = false;
 	ut64 origoff = core->offset;
 	if (odesc) {
 		if (odesc->referer) {
@@ -34,7 +34,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot reopen in sandbox\n");
 		free (obinfilepath);
-		return R_FALSE;
+		return false;
 	}
 #if 0
 	if (isdebug) {
@@ -48,7 +48,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		eprintf ("No file opened to reopen\n");
 		free (ofilepath);
 		free (obinfilepath);
-		return R_FALSE;
+		return false;
 	}
 	newpid = odesc ? odesc->fd : -1;
 
@@ -64,7 +64,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	if (!ofilepath) {
 		eprintf ("Unknown file path");
 		free (obinfilepath);
-		return R_FALSE;
+		return false;
 	}
 
 	// HACK: move last mapped address to higher place
@@ -107,7 +107,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		/*
 		if (core->bin->cur && file->desc) {
 			core->bin->cur->fd = file->desc->fd;
-			ret = R_TRUE;
+			ret = true;
 		}*/
 		// close old file
 	} else if (ofile) {
@@ -289,9 +289,9 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin;
 	int xtr_idx = 0; // if 0, load all if xtr is used
-	int treat_as_rawstr = R_FALSE;
+	int treat_as_rawstr = false;
 
-	if (!desc) return R_FALSE;
+	if (!desc) return false;
 	if (cf && desc) {
 		int newpid = desc->fd;
 		r_debug_select (r->dbg, newpid, newpid);
@@ -311,9 +311,9 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 	if (!r_bin_load (r->bin, filenameuri, baseaddr, UT64_MAX, xtr_idx, fd, treat_as_rawstr)) {
 		eprintf ("Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
-			treat_as_rawstr = R_TRUE;
+			treat_as_rawstr = true;
 			if (!r_bin_load (r->bin, filenameuri, baseaddr, UT64_MAX, xtr_idx, desc->fd, treat_as_rawstr)) {
-				return R_FALSE;
+				return false;
 			}
 		}
 	}
@@ -323,7 +323,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 	plugin = r_bin_file_cur_plugin (binfile);
 	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
 		// set use of raw strings
-		r_config_set_i (r->config, "io.va", R_FALSE);
+		r_config_set_i (r->config, "io.va", false);
 		//\\ r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
@@ -340,7 +340,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 	}
 
 	if (r_config_get_i (r->config, "file.analyze")) r_core_cmd0 (r, "aa");
-	return R_TRUE;
+	return true;
 }
 
 static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr) {
@@ -350,18 +350,18 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	int xtr_idx = 0; // if 0, load all if xtr is used
 	RBinPlugin * plugin;
 
-	if (!desc) return R_FALSE;
+	if (!desc) return false;
 	r_io_use_desc (r->io, desc);
 	if ( !r_bin_load_io (r->bin, desc, baseaddr, loadaddr, xtr_idx)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
-		return R_FALSE;
+		return false;
 	}
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
 	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
 		// set use of raw strings
-		r_config_set_i (r->config, "io.va", R_FALSE);
+		r_config_set_i (r->config, "io.va", false);
 		// r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
@@ -372,7 +372,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 			r_core_bin_set_arch_bits (r, binfile->file,
 				info->arch, info->bits);
 		} else {
-			r_config_set_i (r->config, "io.va", R_FALSE);
+			r_config_set_i (r->config, "io.va", false);
 		}
 	}
 
@@ -382,7 +382,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 
 	if (r_config_get_i (r->config, "file.analyze"))
 		r_core_cmd0 (r, "aa");
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
@@ -410,7 +410,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 
 	if (!filenameuri) {
 		eprintf ("r_core_bin_load: no file specified\n");
-		return R_FALSE;
+		return false;
 	}
 
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
@@ -437,7 +437,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (plugin && plugin->name && !strncmp (plugin->name, "any", 3)) {
 		// set use of raw strings
 		//r_config_set (r->config, "bin.rawstr", "true");
-		r_config_set_i (r->config, "io.va", R_FALSE);
+		r_config_set_i (r->config, "io.va", false);
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	} else if (binfile) {
@@ -455,7 +455,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (r_config_get_i (r->config, "file.analyze")) {
 		r_core_cmd0 (r, "aa");
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, ut64 loadaddr) {
@@ -625,7 +625,7 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 }
 
 R_API int r_core_files_free (const RCore *core, RCoreFile *cf) {
-	if (!core || !core->files || !cf) return R_FALSE;
+	if (!core || !core->files || !cf) return false;
 	return r_list_delete_data (core->files, cf);
 }
 
@@ -670,7 +670,7 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 	// TODO maybe using sdb to keep track of the allocated and
 	// deallocated files might be a good solutions
 	if (!r || !desc || r_list_empty (r->files))
-		return R_FALSE;
+		return false;
 
 	if (fh == r->file) r->file = NULL;
 
@@ -734,7 +734,7 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			overlapped = r_io_map_overlaps (core->io, f->desc, f->map);
 		} else {
 			from = 0LL;
-			overlapped = R_FALSE;
+			overlapped = false;
 		}
 		switch (mode) {
 		case 'j':
@@ -772,7 +772,7 @@ R_API int r_core_file_bin_raise (RCore *core, ut32 binfile_idx) {
 	RBin *bin = core->bin;
 	int v = binfile_idx > 1 ? binfile_idx : 1;
 	RBinFile *bf = r_list_get_n (bin->binfiles, v);
-	int res = R_FALSE;
+	int res = false;
 	if (bf) {
 		res = r_bin_file_set_cur_binfile (bin, bf);
 		if (res) r_io_raise (core->io, bf->fd);
@@ -790,7 +790,7 @@ R_API int r_core_file_binlist(RCore *core) {
 	RBin *bin = core->bin;
 	const RList *binfiles = bin ? bin->binfiles: NULL;
 
-	if (!binfiles) return R_FALSE;
+	if (!binfiles) return false;
 
 	r_list_foreach (binfiles, iter, binfile) {
 		int fd = binfile->fd;
@@ -820,10 +820,10 @@ R_API int r_core_file_close_fd(RCore *core, int fd) {
 			if (r_list_empty (core->files))
 				core->file = NULL;
 #endif
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_core_hash_load(RCore *r, const char *file) {
@@ -839,16 +839,16 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 		file = cf->desc->name;
 	}
 	if (!file) {
-		return R_FALSE;
+		return false;
 	}
 
 	limit = r_config_get_i (r->config, "cfg.hashlimit");
 	if (r_io_desc_size (r->io, cf->desc) > limit)
-		return R_FALSE;
+		return false;
 	buf = (ut8*)r_file_slurp (file, &buf_len);
 	if (buf==NULL)
-		return R_FALSE;
-	ctx = r_hash_new (R_TRUE, R_HASH_MD5);
+		return false;
+	ctx = r_hash_new (true, R_HASH_MD5);
 	md5 = r_hash_do_md5 (ctx, buf, buf_len);
 	p = hash;
 	for (i=0; i<R_HASH_SIZE_MD5; i++) {
@@ -858,7 +858,7 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	*p = 0;
 	r_config_set (r->config, "file.md5", hash);
 	r_hash_free (ctx);
-	ctx = r_hash_new (R_TRUE, R_HASH_SHA1);
+	ctx = r_hash_new (true, R_HASH_SHA1);
 	sha1 = r_hash_do_sha1 (ctx, buf, buf_len);
 	p = hash;
 	for (i=0; i<R_HASH_SIZE_SHA1; i++) {
@@ -869,7 +869,7 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	r_config_set (r->config, "file.sha1", hash);
 	r_hash_free (ctx);
 	free (buf);
-	return R_TRUE;
+	return true;
 }
 
 R_API RCoreFile * r_core_file_find_by_fd (RCore *core, ut64 fd) {
@@ -913,9 +913,9 @@ R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf) {
 			r_io_use_desc (core->io, desc);
 			r_core_bin_set_by_fd (core, desc->fd);
 		}
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API ut32 r_core_file_cur_fd (RCore *core) {

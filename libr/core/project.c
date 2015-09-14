@@ -128,7 +128,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	path = r_core_project_file (core, prjfile);
 	if (!path) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
-		return R_FALSE;
+		return false;
 	}
 	if (r_core_is_project (core, prjfile)) {
 		// rm project file
@@ -164,11 +164,11 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	int ret, close_current_session = 1;
 	char *prj, *filepath;
 	if (!prjfile || !*prjfile)
-		return R_FALSE;
+		return false;
 	prj = r_core_project_file (core, prjfile);
 	if (!prj) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
-		return R_FALSE;
+		return false;
 	}
 	filepath = r_core_project_info (core, prj);
 	//eprintf ("OPENING (%s) from %s\n", prj, r_config_get (core->config, "file.path"));
@@ -176,7 +176,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	if (!filepath) {
 		eprintf ("Cannot retrieve information for project '%s'\n", prj);
 		free (prj);
-		return R_FALSE;
+		return false;
 	}
 	if (!strstr (filepath, "://")) {
 		/* check if path exists */
@@ -184,7 +184,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 			eprintf ("Cannot find file '%s'\n", filepath);
 			free (prj);
 			free (filepath);
-			return R_FALSE;
+			return false;
 		}
 	}
 	if (!strcmp (prjfile, r_config_get (core->config, "file.project"))) {
@@ -193,7 +193,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 #if 0
 		free (prj);
 		free (filepath);
-		return R_FALSE;
+		return false;
 #endif
 	}
 	if (askuser) {
@@ -217,7 +217,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 			eprintf ("Cannot open file '%s'\n", filepath);
 			free (filepath);
 			free (prj);
-			return R_FALSE;
+			return false;
 		}
 		// TODO: handle load bin info or not
 		// TODO: handle base address
@@ -272,21 +272,21 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 }
 
 R_API int r_core_project_save(RCore *core, const char *file) {
-	int fd, fdold, tmp, ret = R_TRUE;
+	int fd, fdold, tmp, ret = true;
 	char *prj;
 
 	if (file == NULL || *file == '\0')
-		return R_FALSE;
+		return false;
 
 	prj = r_core_project_file (core, file);
 	if (!prj) {
 		eprintf ("Invalid project name '%s'\n", file);
-		return R_FALSE;
+		return false;
 	}
 	if (r_file_is_directory (prj)) {
 		eprintf ("Error: Target is a directory\n");
 		free (prj);
-		return R_FALSE;
+		return false;
 	}
 	r_core_project_init (core);
 	r_anal_project_save (core->anal, prj);
@@ -294,17 +294,17 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 	if (fd != -1) {
 		fdold = r_cons_singleton ()->fdout;
 		r_cons_singleton ()->fdout = fd;
-		r_cons_singleton ()->is_interactive = R_FALSE;
+		r_cons_singleton ()->is_interactive = false;
 		r_str_write (fd, "# r2 rdb project file\n");
 		r_str_write (fd, "# flags\n");
 		tmp = core->flags->space_idx;
 		core->flags->space_idx = -1;
-		r_flag_list (core->flags, R_TRUE, NULL);
+		r_flag_list (core->flags, true, NULL);
 		core->flags->space_idx = tmp;
 		r_cons_flush ();
 		r_str_write (fd, "# eval\n");
 		// TODO: r_str_writef (fd, "e asm.arch=%s", r_config_get ("asm.arch"));
-		r_config_list (core->config, NULL, R_TRUE);
+		r_config_list (core->config, NULL, true);
 		r_cons_flush ();
 		r_str_write (fd, "# sections\n");
 		r_io_section_list (core->io, core->offset, 1);
@@ -329,10 +329,10 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_cons_flush ();
 		close (fd);
 		r_cons_singleton ()->fdout = fdold;
-		r_cons_singleton ()->is_interactive = R_TRUE;
+		r_cons_singleton ()->is_interactive = true;
 	} else {
 		eprintf ("Cannot open '%s' for writing\n", prj);
-		ret = R_FALSE;
+		ret = false;
 	}
 	free (prj);
 	return ret;

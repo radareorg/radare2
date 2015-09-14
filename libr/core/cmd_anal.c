@@ -134,7 +134,7 @@ static int var_cmd(RCore *core, const char *str) {
 					eprintf ("Can not find variable in: '%s'\n", str);
 				} else eprintf ("Unknown variable in: '%s'\n", str);
 				free (ostr);
-				return R_FALSE;
+				return false;
 			} else eprintf ("Missing argument\n");
 			break;
 		case ' ':
@@ -172,7 +172,7 @@ static int var_cmd(RCore *core, const char *str) {
 	}
 	end:
 	free (ostr);
-	return R_TRUE;
+	return true;
 }
 
 static void print_trampolines(RCore *core, ut64 a, ut64 b, size_t element_size) {
@@ -222,7 +222,7 @@ static void cmd_syscall_do(RCore *core, int num) {
 	r_cons_printf ("%d = %s (", item->num, item->name);
 	// TODO: move this to r_syscall
 	for (i=0; i<item->args; i++) {
-		ut64 arg = r_debug_arg_get (core->dbg, R_TRUE, i+1);
+		ut64 arg = r_debug_arg_get (core->dbg, true, i+1);
 		if (item->sargs==NULL)
 			r_cons_printf ("0x%08"PFMT64x"", arg);
 		else
@@ -408,7 +408,7 @@ static int anal_fcn_list_bb (RCore *core, const char *input) {
 	}
 	fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (!fcn)
-		return R_FALSE;
+		return false;
 	switch (mode) {
 	case 'j':
 		r_cons_printf ("[");
@@ -449,7 +449,7 @@ static int anal_fcn_list_bb (RCore *core, const char *input) {
 	if (mode=='j') {
 		r_cons_printf ("]");
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int anal_fcn_add_bb (RCore *core, const char *input) {
@@ -473,7 +473,7 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 		if (!(diff = r_anal_diff_new ())) {
 			eprintf ("error: Cannot init RAnalDiff\n");
 			free (ptr);
-			return R_FALSE;
+			return false;
 		}
 		if (ptr2[0] == 'm')
 			diff->type = R_ANAL_DIFF_TYPE_MATCH;
@@ -512,7 +512,7 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 	}
 	r_anal_diff_free (diff);
 	free (ptr);
-	return R_TRUE;
+	return true;
 }
 
 static int setFunctionName(RCore *core, ut64 off, const char *name) {
@@ -594,7 +594,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					if (!(diff = r_anal_diff_new ())) {
 						eprintf ("error: Cannot init RAnalDiff\n");
 						free (ptr);
-						return R_FALSE;
+						return false;
 					}
 					if (ptr2[0] == 'm')
 						diff->type = R_ANAL_DIFF_TYPE_MATCH;
@@ -914,7 +914,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 }
 		 break;
 	case 'g': // "afg" - non-interactive VV
-		r_core_visual_graph (core, NULL, R_FALSE);
+		r_core_visual_graph (core, NULL, false);
 		break;
 	case '?':{ // "af?"
 		 const char* help_msg[] = {
@@ -954,7 +954,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			ut64 addr = core->offset;
 			if (input[1] == 'r') {
 				input ++;
-				analyze_recursively = R_TRUE;
+				analyze_recursively = true;
 			}
 
 			// first undefine
@@ -1013,7 +1013,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			flag_every_function (core);
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 static void __anal_reg_list (RCore *core, int type, int size, char mode) {
@@ -1258,9 +1258,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_color); // XXX detect which one is current usage
 		break;
 	case 'o': // "dro"
-		r_reg_arena_swap (core->dbg->reg, R_FALSE);
+		r_reg_arena_swap (core->dbg->reg, false);
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_color); // XXX detect which one is current usage
-		r_reg_arena_swap (core->dbg->reg, R_FALSE);
+		r_reg_arena_swap (core->dbg->reg, false);
 		break;
 	case '=': // "dr="
 		__anal_reg_list (core, type, size, 2);
@@ -1291,7 +1291,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				//	r_reg_get_value (core->dbg->reg, r));
 				r_reg_set_value (core->dbg->reg, r,
 					r_num_math (core->num, arg+1));
-				r_debug_reg_sync (core->dbg, -1, R_TRUE);
+				r_debug_reg_sync (core->dbg, -1, true);
 				//eprintf ("0x%08"PFMT64x"\n",
 				//	r_reg_get_value (core->dbg->reg, r));
 			} else {
@@ -2279,7 +2279,7 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 					break;
 				default:
 					free (ptr);
-					return R_FALSE;
+					return false;
 			}
 			r_anal_ref_add (core->anal, addr, at, input[0]);
 			free (ptr);
@@ -2291,7 +2291,7 @@ static boolt cmd_anal_refs(RCore *core, const char *input) {
 		break;
 	}
 
-	return R_TRUE;
+	return true;
 }
 /*
    in core/disasm we call
@@ -2468,7 +2468,7 @@ static void cmd_agraph_node (RCore *core, const char *input) {
 		//strdup cause there is double free in r_str_argv_free due to a realloc call
 		body = strdup (args[1]);
 		if (strncmp (body, "base64:", B_LEN) == 0) {
-			body = r_str_replace (body, "\\n", "", R_TRUE);
+			body = r_str_replace (body, "\\n", "", true);
 			newbody = (char *)r_base64_decode_dyn (body + B_LEN, 0);
 			free (body);
 			if (!newbody){
@@ -2879,9 +2879,9 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	}
 	free (ptr);
 
-	if (from == UT64_MAX && to == UT64_MAX) return R_FALSE;
-	if (from == 0 && to == 0) return R_FALSE;
-	if (to-from > r_io_size (core->io)) return R_FALSE;
+	if (from == UT64_MAX && to == UT64_MAX) return false;
+	if (from == 0 && to == 0) return false;
+	if (to-from > r_io_size (core->io)) return false;
 
 	return r_core_anal_search_xrefs (core, from, to, rad);
 }
@@ -2975,7 +2975,7 @@ static int cmd_anal_all (RCore *core, const char *input) {
 	default: r_core_cmd_help (core, help_msg_aa); break;
 	}
 
-	return R_TRUE;
+	return true;
 }
 
 static int cmd_anal(void *data, const char *input) {
@@ -3034,7 +3034,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'f':
 		if (!cmd_anal_fcn (core, input)) {
 			r_cons_break_end ();
-			return R_FALSE;
+			return false;
 		}
 		break;
 	case 'g':
@@ -3049,12 +3049,12 @@ static int cmd_anal(void *data, const char *input) {
 	case 'x':
 		if (!cmd_anal_refs (core, input+1)) {
 			r_cons_break_end ();
-			return R_FALSE;
+			return false;
 		}
 		break;
 	case 'a':
 		if (!cmd_anal_all (core, input + 1))
-			return R_FALSE;
+			return false;
 		break;
 	case 'c':
 		if (input[1]=='?') {
@@ -3070,10 +3070,10 @@ static int cmd_anal(void *data, const char *input) {
 			int li = r_config_get_i (core->config, "asm.lines");
 			int xr = r_config_get_i (core->config, "asm.xrefs");
 
-			r_config_set_i (core->config, "asm.cmtright", R_TRUE);
-			r_config_set_i (core->config, "asm.functions", R_FALSE);
-			r_config_set_i (core->config, "asm.lines", R_FALSE);
-			r_config_set_i (core->config, "asm.xrefs", R_FALSE);
+			r_config_set_i (core->config, "asm.cmtright", true);
+			r_config_set_i (core->config, "asm.functions", false);
+			r_config_set_i (core->config, "asm.lines", false);
+			r_config_set_i (core->config, "asm.xrefs", false);
 
 			r_cons_break (NULL, NULL);
 			hooks = r_core_anal_cycles (core, ccl); //analyse

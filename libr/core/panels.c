@@ -392,13 +392,13 @@ R_API int r_core_visual_panels(RCore *core) {
 	//can->color = 0; 
 	if (!can) {
 		eprintf ("Cannot create RCons.canvas context\n");
-		return R_FALSE;
+		return false;
 	}
 	n_panels = bbPanels (core, NULL);//&panels);
 	if (!panels) {
 		r_config_set_i (core->config, "scr.color", can->color);
 		free (can);
-		return R_FALSE;
+		return false;
 	}
 
 	if (w<140) {
@@ -421,7 +421,7 @@ repeat:
 	r_core_panels_refresh (core);
 	wheel = r_config_get_i (core->config, "scr.wheel");
 	if (wheel)
-		r_cons_enable_mouse (R_TRUE);
+		r_cons_enable_mouse (true);
 
 	// r_core_graph_inputhandle()
 	okey = r_cons_readchar ();
@@ -590,7 +590,7 @@ repeat:
 				RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 				if (fun) {
 					int ocolor = r_config_get_i (core->config, "scr.color");
-					r_core_visual_graph (core, NULL, R_TRUE);
+					r_core_visual_graph (core, NULL, true);
 					r_config_set_i (core->config, "scr.color", ocolor);
 				} else {
 					r_cons_message("Not in a function. Type 'df' to define it here");
@@ -599,9 +599,9 @@ repeat:
 				r_cons_set_raw (0);
 				r_sys_cmd ("$SHELL");
 			} else if (strstr (action, "Shell")) {
-				core->vmode = R_FALSE;
+				core->vmode = false;
 				r_core_visual_prompt_input (core);
-				core->vmode = R_TRUE;
+				core->vmode = true;
 			} else if (strstr (action, "License")) {
 				r_cons_message ("Copyright 2006-2015 - pancake - LGPL");
 			} else if (strstr (action, "Fortune")) {
@@ -662,9 +662,9 @@ repeat:
 		}
 		break;
 	case ':':
-		core->vmode = R_FALSE;
+		core->vmode = false;
 		r_core_visual_prompt_input (core);
-		core->vmode = R_TRUE;
+		core->vmode = true;
 		break;
 	case 'C':
 		can->color = !!!can->color;				//WTF
@@ -796,5 +796,5 @@ beach:
 	free (can);
 	r_config_set_i (core->config, "asm.comments", asm_comments);
 	r_config_set_i (core->config, "asm.bytes", asm_bytes);
-	return R_TRUE;
+	return true;
 }

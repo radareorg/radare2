@@ -95,7 +95,7 @@ static int print_addrinfo (void *user, const char *k, const char *v) {
 
 	offset = sdb_atoi (v);
 	if (!offset)
-		return R_TRUE;
+		return true;
 
 	subst = strdup (k);
 	colonpos = strchr (subst, '|');
@@ -107,7 +107,7 @@ static int print_addrinfo (void *user, const char *k, const char *v) {
 
 	free (subst);
 
-	return R_TRUE;
+	return true;
 }
 
 static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
@@ -132,8 +132,8 @@ static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
 static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	int ret;
 	ut64 offset = UT64_MAX; // use this as error value
-	int remove = R_FALSE;
-	int all = R_FALSE;
+	int remove = false;
+	int all = false;
 	const char *p = input;
 	char *colon, *space, *file_line = 0;
 
@@ -144,12 +144,12 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 
 	if (*p == '-') {
 		p++;
-		remove = R_TRUE;
+		remove = true;
 	}
 
 	if (*p == '*') {
 		p++;
-		all = R_TRUE;
+		all = true;
 	}
 
 	if (all) {
@@ -350,7 +350,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			s = strdup (s+1);
 		} else {
 			eprintf ("Usage\n");
-			return R_FALSE;
+			return false;
 		}
 		p = strchr (s, ' ');
 		if (p) *p++ = 0;
@@ -363,7 +363,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 						addr, 1, NULL);
 			} else eprintf ("Usage: CCa-[address]\n");
 			free (s);
-			return R_TRUE;
+			return true;
 		}
 		addr = r_num_math (core->num, s);
 		// Comment at
@@ -390,11 +390,11 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			}
 		} else eprintf ("Usage: CCa [address] [comment]\n");
 		free (s);
-		return R_TRUE;
+		return true;
 		}
 	}
 
-	return R_TRUE;
+	return true;
 }
 
 static int cmd_meta_hsdmf (RCore *core, const char *input) {
@@ -491,7 +491,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 					}
 			} else if (n<1) {
 				eprintf ("Invalid length %d\n", n);
-				return R_FALSE;
+				return false;
 			}
 		}
 		if (!n) n++;
@@ -505,7 +505,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 		break;
 	}
 
-	return R_TRUE;
+	return true;
 }
 
 static int cmd_meta(void *data, const char *input) {
@@ -639,5 +639,5 @@ static int cmd_meta(void *data, const char *input) {
 		 }
 		break;
 	}
-	return R_TRUE;
+	return true;
 }

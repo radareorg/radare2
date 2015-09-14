@@ -20,7 +20,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		if (addr >= core->offset && (addr+NAH) < (core->offset + core->blocksize)) {
 			delta = addr - core->offset;
 		} else {
-			r_core_seek (core, addr, R_TRUE);
+			r_core_seek (core, addr, true);
 		}
 #endif
 	}
@@ -155,5 +155,5 @@ static void r_core_magic(RCore *core, const char *file, int v) {
 	magicdepth = r_config_get_i (core->config, "magic.depth"); // TODO: do not use global var here
 	r_core_magic_at (core, file, addr, magicdepth, v);
 	if (addr != core->offset)
-		r_core_seek (core, addr, R_TRUE);
+		r_core_seek (core, addr, true);
 }
