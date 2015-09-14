@@ -940,8 +940,7 @@ static int bin_imports (RCore *r, int mode, int va, const char *name) {
 #endif
 	} else {
 		ut64 addr;
-		if (mode) r_cons_printf ("fs imports\n");
-		else r_cons_printf ("[Imports]\n");
+		r_cons_printf ("[Imports]\n");
 
 		r_list_foreach (imports, iter, import) {
 			if (name && strcmp (import->name, name))
@@ -1122,6 +1121,7 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
+		int lastfs = 's';
 		r_flag_space_set (r->flags, "symbols");
 		r_list_foreach (symbols, iter, symbol) {
 			SymName sn;
@@ -1138,6 +1138,15 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				r_anal_hint_set_bits (r->anal, addr, force_bits);
 			}
 
+			if (!strncmp (symbol->name, "imp.", 4)) {
+				if (lastfs != 'i')
+					r_flag_space_set (r->flags, "imports");
+				lastfs = 'i';
+			} else {
+				if (lastfs != 's')
+					r_flag_space_set (r->flags, "symbols");
+				lastfs = 's';
+			}
 			/* If that's a Classed symbol (method or so) */
 			if (sn.classname) {
 				RFlagItem *fi = NULL;
@@ -1178,6 +1187,7 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			snFini (&sn);
 		}
 	} else {
+		int lastfs = 's';
 		if (!at) {
 			if (mode) r_cons_printf ("fs symbols\n");
 			else r_cons_printf ("[Symbols]\n");
@@ -1220,6 +1230,15 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 								symbol->name, symbol->size);
 					}
 #endif
+					if (!strncmp (symbol->name, "imp.", 4)) {
+						if (lastfs != 'i')
+							r_cons_printf ("fs imports\n");
+						lastfs = 'i';
+					} else {
+						if (lastfs != 's')
+							r_cons_printf ("fs symbols\n");
+						lastfs = 's';
+					}
 					r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
 							symbol->name, symbol->size, addr);
 					 {
