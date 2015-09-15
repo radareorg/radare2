@@ -26,7 +26,7 @@ export IOSVER=8.3
 export IOSINC=$(pwd)/sys/ios-include
 export CFLAGS=-O2
 
-if false ; then
+if true ; then
 make clean
 ./configure --prefix=${PREFIX} --with-ostype=darwin \
 	--with-compiler=ios-sdk --target=arm-unknown-darwin
@@ -35,7 +35,7 @@ else
 fi
 
 if [ $? = 0 ]; then
-	time true # make -j4
+	time make -j4
 	if [ $? = 0 ]; then
 		( cd binr/radare2 ; make ios_sdk_sign )
 		rm -rf /tmp/r2ios

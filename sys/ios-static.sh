@@ -27,12 +27,14 @@ export IOSINC=$(pwd)/sys/ios-include
 export CFLAGS=-O2
 export USE_SIMULATOR=0
 
+
 if true ; then
 make clean
 cp -f plugins.tiny.cfg plugins.cfg
 ./configure --prefix=${PREFIX} --with-ostype=darwin \
-	--without-fork --without-pic --with-nonpic \
-	--disable-debugger --with-compiler=ios-sdk \
+	--without-debugger --without-fork \
+	--without-pic --with-nonpic \
+	--with-compiler=ios-sdk \
 	--target=arm-unknown-darwin
 fi
 

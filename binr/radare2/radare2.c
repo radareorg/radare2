@@ -320,7 +320,7 @@ int main(int argc, char **argv, char **envp) {
 #if DEBUGGER
 		case 'd': debug = 1; break;
 #else
-		case 'd': eprintf ("Sorry. No compiler backend available.\n"); return 1;
+		case 'd': eprintf ("Sorry. No debugger backend available.\n"); return 1;
 #endif
 		case 'D':
 			debug = 2;

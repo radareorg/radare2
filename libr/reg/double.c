@@ -16,7 +16,7 @@ R_API long double r_reg_get_double(RReg *reg, RRegItem *item) {
 	switch (item->size) {
 	case 80:
 		if (regset->arena->size-off-1>=0) {
-			memcpy (&vld, regset->arena->bytes+off, 10);
+			memcpy (&vld, regset->arena->bytes+off, sizeof (long double));
 			ret = vld;
 		}
 		break;
