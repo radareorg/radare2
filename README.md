@@ -122,7 +122,7 @@ Commands are small mnemonics of few characters and there is
 some extra syntax sugar that makes the shell much more pleasant
 for scripting and interacting with the apis.
 
-You could also checkout the [radare2 book](http://maijin.gitbooks.io/radare2book/content/).
+You could also checkout the [radare2 book](https://radare.gitbooks.io/radare2book/content/).
 
 # Coding Style
 
