@@ -205,7 +205,7 @@ static void reopen_in_debug(RCore *core) {
 		r_core_cmd0 (core, "oo");
 	} else {
 		int bits = core->assembler->bits;
-		const char *oldname = core->file->desc->uri;
+		const char *oldname = r_file_abspath (core->file->desc->uri);
 		char *newfile = r_str_newf ("dbg://%s", oldname);
 		core->file->desc->uri = newfile;
 		core->file->desc->referer = NULL;
