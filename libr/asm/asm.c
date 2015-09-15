@@ -335,8 +335,13 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (op->size <1 || !strcmp (op->buf_asm, "invalid")) {
 		if (a->invhex) {
 			eprintf ("ksajdf (%s)\n", op->buf_asm);
-				ut32 *b = (ut32 *)buf;
-				snprintf (op->buf_asm, sizeof (op->buf_asm), ".dword 0x%08x", *b);
+			ut32 b;
+			if(a->big_endian) {
+				b = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
+			} else {
+				b = buf[3] << 24 | buf[2] << 16 | buf[1] << 8 | buf[0];
+			}
+			snprintf (op->buf_asm, sizeof (op->buf_asm), ".dword 0x%08x", b);
 		} else {
 			strcpy (op->buf_asm, "invalid");
 		}
