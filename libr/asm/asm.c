@@ -334,7 +334,6 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	if (op->size <1 || !strcmp (op->buf_asm, "invalid")) {
 		if (a->invhex) {
-			eprintf ("ksajdf (%s)\n", op->buf_asm);
 			ut32 b;
 			if(a->big_endian) {
 				b = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
