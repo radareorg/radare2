@@ -205,7 +205,7 @@ static void reopen_in_debug(RCore *core) {
 		r_core_cmd0 (core, "oo");
 	} else {
 		int bits = core->assembler->bits;
-		const char *oldname = r_file_abspath (core->file->desc->uri);
+		char *oldname = r_file_abspath (core->file->desc->uri);
 		char *newfile = r_str_newf ("dbg://%s", oldname);
 		core->file->desc->uri = newfile;
 		core->file->desc->referer = NULL;
@@ -213,6 +213,7 @@ static void reopen_in_debug(RCore *core) {
 		r_config_set_i (core->config, "asm.bits", bits);
 		r_config_set_i (core->config, "cfg.debug", true);
 		r_core_cmd0 (core, "sr pc");
+		free (oldname);
 	}
 }
 

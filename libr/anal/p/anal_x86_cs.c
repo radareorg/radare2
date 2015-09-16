@@ -1213,7 +1213,7 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 	case 3:
 		{
 			char *dst = calloc (1, (size_t)edx);
-			read ((ut32)ebx, dst, (size_t)edx);
+			(void)read ((ut32)ebx, dst, (size_t)edx);
 			r_anal_esil_mem_write (esil, ecx, (ut8 *)dst, (int)edx);
 			free (dst);
 			return true;

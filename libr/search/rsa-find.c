@@ -34,7 +34,7 @@ static int check_rsa_fields(const ut8* start) {
 	ut32 len = 0;
 	int i;
 	// skip sequence field
-	ut8 const* ptr = ptr = parse_next_rsa_field (start, &len);
+	ut8 const* ptr = parse_next_rsa_field (start, &len);
 
 	if (!len || len > 1024)
 		return false;
