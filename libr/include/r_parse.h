@@ -65,6 +65,7 @@ extern struct r_parse_plugin_t r_parse_plugin_arm_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_mips_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_dalvik_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_mreplace;
+extern struct r_parse_plugin_t r_parse_plugin_ppc_pseudo;
 #endif
 
 #ifdef __cplusplus
