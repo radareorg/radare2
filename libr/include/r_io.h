@@ -141,7 +141,6 @@ typedef struct r_io_t {
 	RList *maps; /*<RIOMap>*/
 	RList *files;
 	RList *cache;
-	int zeromap;
 	RCache *buffer;
 	int buffer_enabled;
 	int ff;

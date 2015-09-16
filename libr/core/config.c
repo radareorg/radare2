@@ -761,13 +761,6 @@ static int cb_iova(void *user, void *data) {
 	return true;
 }
 
-static int cb_iozeromap(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->io->zeromap = node->i_value;
-	return true;
-}
-
 static int cb_ioraw(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1473,7 +1466,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
 	SETCB("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
 	SETCB("io.va", "true", &cb_iova, "Use virtual address layout");
-	SETCB("io.zeromap", "0", &cb_iozeromap, "Double map the last opened file to address zero");
 	SETCB("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
 	SETCB("io.vio", "false", &cb_iovio, "Enable the new vio (reading only) (WIP)");
 
