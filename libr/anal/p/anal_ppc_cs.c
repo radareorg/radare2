@@ -26,9 +26,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		} else {
 			op->size = insn->size;
 			switch (insn->id) {
+			case PPC_INS_MR:
 			case PPC_INS_LI:
 			case PPC_INS_LIS:
 				op->type = R_ANAL_OP_TYPE_MOV;
+				break;
+			case PPC_INS_RLWINM:
+				op->type = R_ANAL_OP_TYPE_ROL;
 				break;
 			case PPC_INS_SC:
 				op->type = R_ANAL_OP_TYPE_SWI;
@@ -36,6 +40,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case PPC_INS_NOP:
 				op->type = R_ANAL_OP_TYPE_NOP;
 				break;
+			case PPC_INS_STB:
+			case PPC_INS_STH:
 			case PPC_INS_STW:
 			case PPC_INS_STWBRX:
 			case PPC_INS_STWCX:
@@ -82,6 +88,29 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case PPC_INS_LWZUX:
 			case PPC_INS_LWZX:
 				op->type = R_ANAL_OP_TYPE_LOAD;
+				break;
+			case PPC_INS_SLW:
+			case PPC_INS_SLWI:
+				op->type = R_ANAL_OP_TYPE_SHL;
+				break;
+			case PPC_INS_SRW:
+			case PPC_INS_SRWI:
+				op->type = R_ANAL_OP_TYPE_SHR;
+				break;
+			case PPC_INS_CMPW:
+			case PPC_INS_CMPWI:
+			case PPC_INS_CMPLWI:
+				op->type = R_ANAL_OP_TYPE_CMP;
+				break;
+			case PPC_INS_MULLI:
+			case PPC_INS_MULLW:
+				op->type = R_ANAL_OP_TYPE_MUL;
+				break;
+			case PPC_INS_SUB:
+			case PPC_INS_SUBC:
+			case PPC_INS_SUBFIC:
+			case PPC_INS_SUBFZE:
+				op->type = R_ANAL_OP_TYPE_SUB;
 				break;
 			case PPC_INS_ADD:
 			case PPC_INS_ADDI:
