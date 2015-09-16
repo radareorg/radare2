@@ -52,7 +52,7 @@ static inline int gb_anal_esil_banksw (RAnalOp *op)							//remove that
 
 static void gb_anal_esil_call (RAnalOp *op)
 {
-	r_strbuf_setf (&op->esil, "2,sp,-=,%d,pc,+,sp,=[2],%"PFMT64d",pc,=", op->size, (op->jump & 0xffff));
+	r_strbuf_setf (&op->esil, "2,sp,-=,pc,sp,=[2],%"PFMT64d",pc,=", (op->jump & 0xffff));
 }
 
 static inline void gb_anal_esil_ccall (RAnalOp *op, const ut8 data)
@@ -67,8 +67,8 @@ static inline void gb_anal_esil_ccall (RAnalOp *op, const ut8 data)
 			cond = 'C';
 	}
 	if (op->cond == R_ANAL_COND_EQ)
-		r_strbuf_setf (&op->esil, "%c,?{,2,sp,-=,3,pc,+,sp,=[2],%"PFMT64d",pc,=,}", cond, (op->jump & 0xffff));
-	else	r_strbuf_setf (&op->esil, "%c,!,?{,2,sp,-=,3,pc,+,sp,=[2],%"PFMT64d",pc,=,}", cond, (op->jump & 0xffff));
+		r_strbuf_setf (&op->esil, "%c,?{,2,sp,-=,pc,sp,=[2],%"PFMT64d",pc,=,}", cond, (op->jump & 0xffff));
+	else	r_strbuf_setf (&op->esil, "%c,!,?{,2,sp,-=,pc,sp,=[2],%"PFMT64d",pc,=,}", cond, (op->jump & 0xffff));
 }
 
 static inline void gb_anal_esil_ret (RAnalOp *op)
