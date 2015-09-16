@@ -268,6 +268,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'S': RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS); break;
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS); break;
 		case 'l': RBININFO ("libs", R_CORE_BIN_ACC_LIBS); break;
+		case 'L': r_bin_list (core->bin); break;
 		case 's': RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS); break;
 		case 'R':
 		case 'r': RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS); break;
@@ -411,6 +412,7 @@ static int cmd_info(void *data, const char *input) {
 				"iI", "", "Binary info",
 				"ik", " [query]", "Key-value database from RBinObject",
 				"il", "", "Libraries",
+				"iL", "", "List all RBin plugins loaded",
 				"im", "", "Show info about predefined memory allocation",
 				"iM", "", "Show main address",
 				"io", " [file]", "Load info from file (or last opened) use bin.baddr",
