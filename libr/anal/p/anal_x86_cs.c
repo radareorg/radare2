@@ -891,12 +891,11 @@ SETL/SETNGE
 			if (a->decode) {
 				char* arg = getarg (&gop, 0, 0, NULL);
 				esilprintf (op,
-						"%d,%s,+,"
+						"%s,"
 						"%d,%s,-=,%s,"
 						"=[],"
 						"%s,%s,=",
-						op->size, pc,
-						rs, sp, sp, arg, pc);
+						pc, rs, sp, sp, arg, pc);
 				free (arg);
 			}
 			break;
