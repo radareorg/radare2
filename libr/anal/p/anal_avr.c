@@ -6,18 +6,19 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
+#define	AVR_SOFTCAST(x,y)	(x+(y*0x100))
+
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	short ofst;
 	ut8 kbuf[2];
-	ut16 *k = (ut16*)&kbuf;
-	ut16 *ins = (ut16*)buf;
+	ut16 ins = AVR_SOFTCAST(buf[0],buf[1]);
 
 	if (op == NULL)
 		return 2;
 	op->size = 2;
 	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_UNK;
-	if (*ins == 0) {
+	if (ins == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
 	}
@@ -99,11 +100,11 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			memcpy (kbuf, buf+2, 2);
 			op->size = 4;
 			//anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
-			op->jump = *k*2;
+			op->jump = AVR_SOFTCAST(kbuf[0],kbuf[1])*2;
 		} else {
 			op->size = 0;
 			return -1;
-			return op->size;
+			return op->size;		//WTF
 		}
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
 	}
@@ -111,7 +112,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // rcall (relative)
 		op->fail = (op->addr)+2;
-		ofst = *ins<<4;
+		ofst = ins<<4;
 		ofst>>=4;
 		ofst*=2;
 		op->jump = addr+ofst+2;
@@ -123,20 +124,20 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->fail = (op->addr)+4;
 		anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
 		// TODO: check return value
-		op->jump = *k*2;
+		op->jump = AVR_SOFTCAST(kbuf[0],kbuf[1])*2;
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
 	}
 	if ((buf[1] & 0xf0) == 0xc0) { // rjmp (relative)
 		op->addr=addr;
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->fail = (op->addr)+2;
-		ofst = *ins<<4;
+		ofst = ins<<4;
 		ofst>>=4;
 		ofst*=2;
 		op->jump = addr+ofst+2;
 		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
 	}
-	if (*ins == 0x9508 || *ins == 0x9518) { // ret || reti
+	if (ins == 0x9508 || ins == 0x9518) { // ret || reti
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->cycles = 4;			//5 for 22-bit bus
 		op->eob = R_TRUE;
