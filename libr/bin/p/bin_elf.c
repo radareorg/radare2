@@ -197,7 +197,6 @@ static RList* sections(RBinFile *arch) {
 	ptr = R_NEW0 (RBinSection);
 	if (ptr) {
 		ut64 ehdr_size = sizeof (obj->ehdr);
-
 		if (arch->size < ehdr_size) {
 			ehdr_size = arch->size;
 		}
@@ -354,7 +353,6 @@ static RList* libs(RBinFile *arch) {
 static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *rel, ut64 GOT) {
 	RBinReloc *r = NULL;
 	ut64 B, P;
-	//char *str;
 
 	if (!bin || !rel) return NULL;
 	B = bin->baddr;

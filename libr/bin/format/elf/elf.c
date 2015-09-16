@@ -938,6 +938,11 @@ int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	/* Hack for ARCompact */
 	if (bin->ehdr.e_machine == EM_ARC_A5)
 		return 16;
+	/* Hack for Thumb */
+	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
+	if (entry & 1) {
+		return 16;
+	}
 
 	switch (bin->ehdr.e_ident[EI_CLASS]) {
 	case ELFCLASS32:   return 32;
