@@ -253,6 +253,38 @@ R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int s
 	return false;
 }
 
+R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind) {
+	char *varlist;
+	int count = 0;
+	RList *list = r_list_new ();
+	if (!a|| !fcn)
+		return 0;
+	if (!kind) kind = 'v'; // by default show vars
+	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x".%c",
+		fcn->addr, kind), 0);
+	if (varlist) {
+		char *next, *ptr = varlist;
+		if (varlist && *varlist) {
+			do {
+				struct VarType vt;
+				char *word = sdb_anext (ptr, &next);
+				char *vardef = sdb_get (DB, sdb_fmt (1,
+					"var.0x%"PFMT64x".%c.%s",
+					fcn->addr, kind, word), 0);
+				int delta = atoi (word+2);
+				if (vardef) {
+					count ++;
+				} else {
+					eprintf ("Cannot find '%s'\n", word);
+				}
+				ptr = next;
+			} while (next);
+		}
+	}
+	free (varlist);
+	return count;
+}
+
 R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 	char *varlist;
 	RList *list = r_list_new ();

@@ -597,10 +597,10 @@ static void core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		sdb_set (DB, "name", fcn->name, 0);
 		sdb_set (DB, "ename", ename, 0);
 		free (ename);
-		if (fcn->nargs>0)
+		if (fcn->nargs > 0)
 			sdb_num_set (DB, "nargs", fcn->nargs, 0);
 		sdb_num_set (DB, "size", fcn->size, 0);
-		if (fcn->stack>0)
+		if (fcn->stack > 0)
 			sdb_num_set (DB, "stack", fcn->stack, 0);
 		sdb_set (DB, "pos", "0,0", 0); // needs to run layout
 		sdb_set (DB, "type", r_anal_fcn_type_tostring (fcn->type), 0);
@@ -610,7 +610,8 @@ static void core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		r_cons_printf ("{\"name\":\"%s\"", fcn->name);
 		r_cons_printf (",\"offset\":%"PFMT64d, fcn->addr);
 		r_cons_printf (",\"ninstr\":%"PFMT64d, fcn->ninstr);
-		r_cons_printf (",\"nargs\":%"PFMT64d, fcn->nargs);
+		r_cons_printf (",\"nargs\":%d", r_anal_var_count (core->anal, fcn, 'a'));
+		r_cons_printf (",\"locals\":%d", r_anal_var_count (core->anal, fcn, 'v'));
 		r_cons_printf (",\"size\":%d", fcn->size);
 		r_cons_printf (",\"stack\":%d", fcn->stack);
 		r_cons_printf (",\"type\":%d", fcn->type); // TODO: output string
