@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
 
 #include <stdio.h>
 #include <string.h>
@@ -190,12 +190,20 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bits, int bin) {
 }
 
 /* asm callback */
-static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
-	RAsmPlugin *hand = (struct r_asm_plugin_t *)data;
+static int __lib_asm_cb(RLibPlugin *pl, void *user, void *data) {
+	RAsmPlugin *hand = (RAsmPlugin*)data;
 	r_asm_add (a, hand);
 	return true;
 }
-static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return true; }
+static int __lib_asm_dt(RLibPlugin *pl, void *p, void *u) { return true; }
+
+/* anal callback */
+static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
+	RAnalPlugin *hand = (RAnalPlugin *)data;
+	r_anal_add (anal, hand);
+	return true;
+}
+static int __lib_anal_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return true; }
 
 int main(int argc, char *argv[]) {
 	const char *path;
@@ -215,6 +223,8 @@ int main(int argc, char *argv[]) {
 	l = r_lib_new ("radare_plugin");
 	r_lib_add_handler (l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
 		&__lib_asm_cb, &__lib_asm_dt, NULL);
+	r_lib_add_handler (l, R_LIB_TYPE_ANAL, "analysis/emulation plugins",
+		&__lib_anal_cb, &__lib_anal_dt, NULL);
 	path = r_sys_getenv ("LIBR_PLUGINS");
 	if (!path || !*path)
 		path = R2_LIBDIR"/radare2/"R2_VERSION;
