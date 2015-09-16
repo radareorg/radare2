@@ -270,7 +270,7 @@ typedef struct r_bin_section_t {
 	ut64 vsize;
 	ut64 vaddr;
 	ut64 paddr;
-	ut64 srwx;
+	ut32 srwx;
 	// per section platform info
 	const char *arch;
 	int bits;
@@ -539,6 +539,7 @@ extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
 extern RBinPlugin r_bin_plugin_zimg;
 extern RBinPlugin r_bin_plugin_omf;
 extern RBinPlugin r_bin_plugin_art;
+extern RBinPlugin r_bin_plugin_dol;
 
 #ifdef __cplusplus
 }

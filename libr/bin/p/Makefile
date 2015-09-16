@@ -11,7 +11,7 @@ ALL_TARGETS=
 FORMATS=any.mk elf.mk elf64.mk pe.mk pe64.mk te.mk mach0.mk
 FORMATS+=bios.mk mach064.mk fatmach0.mk dyldcache.mk java.mk
 FORMATS+=dex.mk fs.mk ningb.mk coff.mk ningba.mk xbe.mk zimg.mk
-FORMATS+=omf.mk cgc.mk
+FORMATS+=omf.mk cgc.mk dol.mk
 include $(FORMATS)
 
 all: ${ALL_TARGETS}

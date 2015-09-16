@@ -128,6 +128,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case PPC_INS_BL:
 			case PPC_INS_BLA:
 				op->type = R_ANAL_OP_TYPE_CALL;
+				op->jump = (ut64)(ut32)insn->detail->ppc.operands[0].imm;
+				op->fail = addr+4;
 				break;
 			case PPC_INS_BLR:
 			case PPC_INS_BLRL:
