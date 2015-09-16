@@ -2268,7 +2268,7 @@ R_API void r_core_cmd_repeat(RCore *core, int next) {
 		switch (core->lastcmd[1]) {
 		case 's':
 		case 'c':
-			r_core_cmd0 (core, "sr pc && pd 1");
+			r_core_cmd0 (core, "sr pc ; pd 1");
 		}
 		break;
 	case 'p': // print

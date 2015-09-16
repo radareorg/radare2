@@ -1476,6 +1476,7 @@ static int validAddress(RCore *core, ut64 addr) {
 	if (!r_config_get_i (core->config, "dbg.bpinmaps")) {
 		return core->num->value = 1;
 	}
+	r_debug_map_sync (core->dbg);
 	r_list_foreach (core->dbg->maps, iter, map) {
 		if (addr >= map->addr && addr < map->addr_end) {
 			return core->num->value = 1;
