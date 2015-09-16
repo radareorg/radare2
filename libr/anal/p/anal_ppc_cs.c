@@ -14,59 +14,37 @@ struct Getarg {
 #define esilprintf(op, fmt, arg...) r_strbuf_setf (&op->esil, fmt, ##arg)
 #define INSOPS insn->detail->ppc.op_count
 #define INSOP(n) insn->detail->ppc.operands[n]
-/**
- * Translates operand N to esil
- *
- * @param  handle  csh
- * @param  insn    cs_insn
- * @param  n       Operand index
- * @param  set     if 1 it adds set (=) to the operand
- * @param  setoper Extra operation for the set (^, -, +, etc...)
- * @return         char* with the esil operand
- */
-static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
+
+static char *getarg2(struct Getarg *gop, int n) {
 	csh handle = gop->handle;
 	cs_insn *insn = gop->insn;
-	char buf[64];
-	char *setarg = (set && setop)? setop : "";
 	cs_ppc_op op;
-	if (!insn->detail)
-		return NULL;
-	buf[0] = 0;
-	if (n<0 || n>=INSOPS)
+	static char words[3][64];
+	if (n<0 || n>=3)
 		return NULL;
 	op = INSOP (n);
 	switch (op.type) {
-	case PPC_OP_INVALID: // = CS_OP_INVALID (Uninitialized).
-		return strdup ("invalid");
-	case PPC_OP_REG: // = CS_OP_REG (Register operand).
-		return r_str_newf ("%s%s", cs_reg_name (handle, op.reg), setarg);
-	case PPC_OP_IMM: // = CS_OP_IMM (Immediate operand).
-		return r_str_newf ("0x%"PFMT64x"%s", (ut64)(ut32)op.imm, setarg);
-	case PPC_OP_MEM: // = CS_OP_MEM (Memory operand).
-		return r_str_newf ("%"PFMT64d",+,%"PFMT64d",[]", 
+	case PPC_OP_INVALID:
+		strcpy (words[n], "invalid");
+		break;
+	case PPC_OP_REG:
+		strcpy (words[n], cs_reg_name (handle, op.reg));
+		break;
+	case PPC_OP_IMM:
+		snprintf (words[n], sizeof (words[n]), 
+			"0x%"PFMT64x, (ut64)(ut32)op.imm);
+		break;
+	case PPC_OP_MEM:
+		snprintf (words[n], sizeof (words[n]), 
+			"%"PFMT64d",+,%"PFMT64d",[]", 
 			(ut64)op.mem.disp, (ut64)op.mem.base);
 	case PPC_OP_CRX: // Condition Register field
+		words[n][0] = 0;
 		break;
-#if 0
-	case PPC_OP_REG:
-		if (set == 1) {
-			return r_str_newf ( "%s,%s=",
-				cs_reg_name (handle, op.reg), setarg);
-		} else {
-			return strdup (cs_reg_name (handle, op.reg));
-		}
-	case X86_OP_IMM:
-		if (set == 1)
-			snprintf (buf, sizeof (buf), "%"PFMT64d",%s=[%d]",
-				(ut64)op.imm, setarg, op.size);
-		else
-			snprintf (buf, sizeof (buf), "%"PFMT64d, (ut64)op.imm);
-		return strdup (buf);
-#endif
 	}
-	return strdup ("PoP");
+	return words[n];
 }
+#define ARG(n) getarg2(&gop, n)
 
 static int set_reg_profile(RAnal *anal) {
 	const char *p = NULL;
@@ -78,12 +56,9 @@ static int set_reg_profile(RAnal *anal) {
 	"=a1	r4\n"
 	"=a2	r5\n"
 	"=a3	r6\n"
-#if 0
-	"=a4	r4\n"
-	"=a5	r5\n"
+	"=a4	r7\n"
+	"=a5	r8\n"
 	"=a6	r6\n"
-	"=a7	r7\n"
-#endif
 	"gpr	srr0	.32	0	0\n"
 	"gpr	srr1	.32	4	0\n"
 	"gpr	r0	.32	8	0\n"
@@ -167,11 +142,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case PPC_INS_LI:
 			case PPC_INS_LIS:
 				op->type = R_ANAL_OP_TYPE_MOV;
-				dst = getarg (&gop, 0, 0, NULL);
-				src = getarg (&gop, 1, 0, NULL);
-				esilprintf (op, "%s,%s,=", src, dst); break;
-				free (src);
-				free (dst);
+				esilprintf (op, "%s,%s,=", ARG(1), ARG(0)); break;
 				break;
 			case PPC_INS_RLWINM:
 				op->type = R_ANAL_OP_TYPE_ROL;
@@ -186,11 +157,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			case PPC_INS_STW:
 				op->type = R_ANAL_OP_TYPE_STORE;
-				dst = getarg (&gop, 0, 0, NULL);
-				src = getarg (&gop, 1, 0, NULL);
-				esilprintf (op, "%s,%s,=[4]", src, dst);
-				free (src);
-				free (dst);
+				esilprintf (op, "%s,%s,=[4]", ARG(0), ARG(1));
 				break;
 			case PPC_INS_STB:
 			case PPC_INS_STH:
@@ -272,13 +239,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case PPC_INS_ADDME:
 			case PPC_INS_ADDZE:
 				op->type = R_ANAL_OP_TYPE_ADD;
-				dst = getarg (&gop, 0, 0, NULL);
-				src2 = getarg (&gop, 1, 0, NULL);
-				src = getarg (&gop, 2, 0, NULL);
-				esilprintf (op, "%s,%s,+,%s,=", src, src2, dst);
-				free (src);
-				free (src2);
-				free (dst);
+				esilprintf (op, "%s,%s,+,%s,=", ARG(2), ARG(1), ARG(0));
 				break;
 			case PPC_INS_B:
 			case PPC_INS_BA:
@@ -302,13 +263,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case PPC_INS_XORI:
 			case PPC_INS_XORIS:
 				op->type = R_ANAL_OP_TYPE_XOR;
-				dst = getarg (&gop, 0, 0, NULL);
-				src2 = getarg (&gop, 1, 0, NULL);
-				src = getarg (&gop, 2, 0, NULL);
-				esilprintf (op, "%s,%s,^,%s,=", src, src2, dst);
-				free (src);
-				free (src2);
-				free (dst);
+				esilprintf (op, "%s,%s,^,%s,=", ARG(1), ARG(2), ARG(0));
 				break;
 			case PPC_INS_DIVD:
 			case PPC_INS_DIVDU:
@@ -321,9 +276,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				op->type = R_ANAL_OP_TYPE_CALL;
 				op->jump = (ut64)(ut32)insn->detail->ppc.operands[0].imm;
 				op->fail = addr+4;
-				src = getarg (&gop, 0, 0, NULL);
-				esilprintf (op, "pc,lr,=,%s,pc,=", src);
-				free (src);
+				esilprintf (op, "pc,lr,=,%s,pc,=", ARG(0));
 				break;
 			case PPC_INS_BLR:
 			case PPC_INS_BLRL:
@@ -341,13 +294,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case PPC_INS_ORI:
 			case PPC_INS_ORIS:
 				op->type = R_ANAL_OP_TYPE_OR;
-				dst = getarg (&gop, 0, 0, NULL);
-				src2 = getarg (&gop, 1, 0, NULL);
-				src = getarg (&gop, 2, 0, NULL);
-				esilprintf (op, "%s,%s,|,%s,=", src, src2, dst);
-				free (src);
-				free (src2);
-				free (dst);
+				esilprintf (op, "%s,%s,|,%s,=", ARG(2), ARG(1), ARG(0));
 				break;
 			}
 			cs_free (insn, n);
