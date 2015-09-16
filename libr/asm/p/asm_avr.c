@@ -14,7 +14,10 @@
 #include "../arch/avr/disasm.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	return op->size = avrdis (op->buf_asm, a->pc, buf, len);
+	int ret = op->size = avrdis (op->buf_asm, a->pc, buf, len);
+	if (op->buf_asm[0] == '.')
+		op->buf_asm[0] = 0;
+	return ret;
 }
 
 extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
@@ -41,12 +44,12 @@ specialregs RegsTable[REGS_TABLE] = {
 };
 
 static int parse_specialreg(const char *reg) {
-	int i, found = -1;
 	const int len = strlen (reg);
+	int i, found = -1;
 
 	if (len > 0) {
 		for (i = 0; i < REGS_TABLE; i++) {
-			if (strncmp(RegsTable[i].reg, reg, 4) == 0) {
+			if (!strncmp (RegsTable[i].reg, reg, 4)) {
 				found = RegsTable[i].operandType;
 				break;
 			}
@@ -80,7 +83,7 @@ static int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) 
 
 	for (i = 0; i < AVR_TOTAL_INSTRUCTIONS - 1; i++) {
 		// check instruction mnemonic
-		if (strncmp(instr[0], instructionSet[i].mnemonic, MAX_TOKEN_SIZE) == 0) {
+		if (!strncmp (instr[0], instructionSet[i].mnemonic, MAX_TOKEN_SIZE)) {
 			// in AVR instructions could have different opcodes based on number of arguments
 			if (instructionSet[i].numOperands == args) {
 				/* because st Z+ and st Z (and so on...) are instructions with DIFFERENT opcodes
@@ -134,7 +137,6 @@ static int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) 
 			}
 		}
 	}	
-
 	return -1;
 }
 

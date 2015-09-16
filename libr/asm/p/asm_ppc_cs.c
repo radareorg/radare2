@@ -29,6 +29,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	op->size = 0;
 	omode = mode;
+	op->buf_asm[0] = 0;
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_PPC, mode, &handle);
 		if (ret) return 0;
@@ -44,7 +45,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 		cs_free (insn, n);
 	}
-	if (op->size==4) {
+	if (op->size == 4) {
 		op->size = 4;
 		return op->size;
 	}

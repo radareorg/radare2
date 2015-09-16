@@ -81,7 +81,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			case PPC_INS_LWZU:
 			case PPC_INS_LWZUX:
 			case PPC_INS_LWZX:
-
 				op->type = R_ANAL_OP_TYPE_LOAD;
 				break;
 			case PPC_INS_ADD:

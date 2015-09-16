@@ -332,25 +332,24 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (oplen>len) oplen = len;
 	if (oplen<1) oplen = 1;
 
-	if (op->size <1 || !strcmp (op->buf_asm, "invalid")) {
+	if (!op->buf_asm[0] || op->size <1 || !strcmp (op->buf_asm, "invalid")) {
 		if (a->invhex) {
-			ut32 b;
-			if(a->big_endian) {
-				b = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
+			if (a->bits == 16) {
+				ut16 b;
+				r_mem_copyendian ((ut8*)&b, buf, 2, !a->big_endian);
+				snprintf (op->buf_asm, sizeof (op->buf_asm), ".word 0x%04x", b);
 			} else {
-				b = buf[3] << 24 | buf[2] << 16 | buf[1] << 8 | buf[0];
+				ut32 b;
+				r_mem_copyendian ((ut8*)&b, buf, 4, !a->big_endian);
+				snprintf (op->buf_asm, sizeof (op->buf_asm), ".dword 0x%08x", b);
 			}
-			snprintf (op->buf_asm, sizeof (op->buf_asm), ".dword 0x%08x", b);
+			// TODO: something for 64bits too?
 		} else {
 			strcpy (op->buf_asm, "invalid");
 		}
 	}
 	if (a->ofilter)
 		r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
-#if 0
-	//	r_hex_bin2str (buf, oplen, op->buf_hex);
-	} else ret = 0;
-#endif
 	r_mem_copyendian (op->buf, buf, oplen, !a->big_endian);
 	*op->buf_hex = 0;
 	if ((oplen*4) >= sizeof (op->buf_hex))
