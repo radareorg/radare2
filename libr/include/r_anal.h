@@ -1490,6 +1490,7 @@ extern RAnalPlugin r_anal_plugin_msp430;
 extern RAnalPlugin r_anal_plugin_cris;
 extern RAnalPlugin r_anal_plugin_v810;
 extern RAnalPlugin r_anal_plugin_6502;
+extern RAnalPlugin r_anal_plugin_snes;
 #ifdef __cplusplus
 }
 #endif
