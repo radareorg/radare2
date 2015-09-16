@@ -24,32 +24,32 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	r_strbuf_init (&op->esil);
 	op->size = 1;
 	switch (buf[0]) {
-	case '[': op->type = R_ANAL_OP_TYPE_CJMP;
-		  op->fail = addr+1;
-		  {
-			 const ut8 *p = buf + 1;
-			 int lev = 0, i = 1;
-			 while (i<len && *p) {
-				 if (*p == '[')
-					 lev++;
-				 if (*p == ']') {
-					 lev--;
-					 if (lev==-1) {
-						 dst = addr + (size_t)(p-buf);
-						 dst ++;
-						 op->jump = dst;
-						 r_strbuf_setf (&op->esil,
-							"pc,brk,=[1],brk,++=,"
-						 	"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
-						 break;
-					 }
-				 }
-				 p++;
-				 i++;
-			 }
-		  }
-	// ?1[ptr],pc=${NEW_PC
-	break;
+	case '[':
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->fail = addr+1;
+		{
+			const ut8 *p = buf + 1;
+			int lev = 0, i = 1;
+			while (i<len && *p) {
+				if (*p == '[')
+					lev++;
+				if (*p == ']') {
+					lev--;
+					if (lev==-1) {
+						dst = addr + (size_t)(p-buf);
+						dst ++;
+						op->jump = dst;
+						r_strbuf_setf (&op->esil,
+								"$$,brk,=[1],brk,++=,"
+								"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
+						break;
+					}
+				}
+				p++;
+				i++;
+			}
+		}
+		break;
 	case ']': op->type = R_ANAL_OP_TYPE_UJMP;
 		// XXX This is wrong esil
 		r_strbuf_set (&op->esil, "brk,--=,brk,[1],pc,=");
@@ -67,13 +67,11 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case '+':
 		op->size = countChar (buf, len, '+');
 		op->type = R_ANAL_OP_TYPE_ADD;
-		//r_strbuf_setf (&op->esil, "%d,ptr,[1],+,ptr,=[1]", op->size);
 		r_strbuf_setf (&op->esil, "%d,ptr,+=[1]", op->size);
 		break;
 	case '-':
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->size = countChar (buf, len, '-');
-		//r_strbuf_setf (&op->esil, "%d,ptr,[1],-,ptr,=[1]", op->size);
 		r_strbuf_setf (&op->esil, "%d,ptr,-=[1]", op->size);
 		break;
 	case '.':
