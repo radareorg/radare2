@@ -12,8 +12,10 @@
 /* internal helper functions */
 
 /* Returns the number that has bits+1 least significant bits set. */
-static inline ut64 mask (int bits) {
-	return (ut64)((((st64)2) << bits) - 1)>>1;
+static inline ut64 genmask (int bits) {
+	ut64 m = (ut64)(((2) << bits) - 1) >> 1;
+	if (!m) m = UT64_MAX;
+	return m;
 }
 
 static _Bool isnum (RAnalEsil *esil, const char *str, ut64 *num) {
@@ -227,12 +229,12 @@ static int internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 nu
 
 static int esil_internal_borrow_check (RAnalEsil *esil, ut8 bit) {
 	bit = ((bit & 0x3f) + 0x3f) & 0x3f;	//safer-sex version of -1
-	return ((esil->old & mask(bit)) < (esil->cur & mask (bit)));
+	return ((esil->old & genmask (bit)) < (esil->cur & genmask (bit)));
 }
 
 static int esil_internal_carry_check (RAnalEsil *esil, ut8 bit) {
 	bit &= 0x3f;				//say no to weird bitshifts
-	return ((esil->cur & mask (bit)) < (esil->old & mask (bit)));
+	return ((esil->cur & genmask (bit)) < (esil->old & genmask (bit)));
 }
 
 static int esil_internal_parity_check (RAnalEsil *esil) {
@@ -798,7 +800,7 @@ static int esil_ror(RAnalEsil *esil) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
 			ut64 mask = (regsize-1);
 			num2 &= mask;
-		        ut64 res= (num>>num2) | (num<<( (-num2)&mask ));
+		        ut64 res = (num>>num2) | (num<<( (-num2) & mask ));
 			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		} else {
@@ -1258,7 +1260,7 @@ static int esil_deceq (RAnalEsil *esil) {
 
 /* POKE */
 static int esil_poke_n(RAnalEsil *esil, int bits) {
-	int bitmask = mask (bits);
+	ut64 bitmask = genmask (bits);
 	ut64 num, addr;
 	union {
 		ut8 byte;
@@ -1269,7 +1271,7 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 	int bytes = bits / 8, ret = 0;
-	if (bits%8) {
+	if (bits % 8) {
 		free (src);
 		free (dst);
 		return 0;
@@ -1349,7 +1351,7 @@ static int esil_peek_n(RAnalEsil *esil, int bits) {
 		return 0;
 	}
 	if (dst && isregornum (esil, dst, &addr)) {
-		ut64 a, b, bitmask = mask (bits);
+		ut64 a, b, bitmask = genmask (bits);
 		ret = r_anal_esil_mem_read (esil, addr, (ut8*)&a, bytes);
 		r_mem_copyendian ((ut8 *)&b, (const ut8*)&a, bytes ,!esil->anal->big_endian);
 		snprintf (res, sizeof (res), "0x%"PFMT64x, b & bitmask);
