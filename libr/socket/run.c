@@ -338,18 +338,6 @@ R_API const char *r_run_help() {
 	"# nice=5\n";
 }
 
-#if __UNIX__
-static void parseinput (char *s) {
-	if (!*s) return;
-	while (*s++) {
-		if (s[0]=='\\' && s[1]=='n') {
-			*s = '\n';
-			memmove (s+1, s+2, strlen (s+2));
-		}
-	}
-}
-#endif
-
 R_API int r_run_start(RRunProfile *p) {
 #if __APPLE__
 	posix_spawnattr_t attr = {0};
@@ -500,12 +488,19 @@ R_API int r_run_start(RRunProfile *p) {
 			return 1;
 	}
 	if (p->_input) {
+		char *inp;
 		int f2[2];
 		pipe (f2);
 		close (0);
 		dup2 (f2[0], 0);
-		parseinput (p->_input);
-		write (f2[1], p->_input, strlen (p->_input));
+		inp = getstr (p->_input);
+		if (inp) {
+			write (f2[1], inp, strlen (inp));
+			close (f2[1]);
+			free (inp);
+		} else {
+			eprintf ("Invalid input\n");
+		}
 	}
 #endif
 	if (p->_r2preload) {
