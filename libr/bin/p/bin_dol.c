@@ -53,11 +53,17 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	bool has_dol_extension = false;
-	DolHeader * dol = R_NEW0 (DolHeader);
+	DolHeader * dol;
 	char *lowername, *ext;
-	lowername = strdup (arch->file);
-	if (sz < sizeof (DolHeader))
+	if (!arch) {
 		return NULL;
+	}
+	dol = R_NEW0 (DolHeader);
+	lowername = strdup (arch->file);
+	if (sz < sizeof (DolHeader)) {
+		free (dol);
+		return NULL;
+	}
 	r_str_case (lowername, 0);
 	ext = strstr (lowername, ".dol");
 	if (ext && ext[4] == 0) {
@@ -72,6 +78,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 		}
 		return (void*)dol;
 	}
+	free (dol);
 	return NULL;
 }
 

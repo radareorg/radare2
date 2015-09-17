@@ -257,8 +257,10 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind) {
 	char *varlist;
 	int count = 0;
 	RList *list = r_list_new ();
-	if (!a|| !fcn)
+	if (!a || !fcn) {
+		r_list_free (list);
 		return 0;
+	}
 	if (!kind) kind = 'v'; // by default show vars
 	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x".%c",
 		fcn->addr, kind), 0);

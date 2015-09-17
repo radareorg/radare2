@@ -22,7 +22,7 @@ static int mcs96_len (const ut8 buf)
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	strcpy (op->buf_asm, mcs96_op[buf[0]].ins);
+	strncpy (op->buf_asm, mcs96_op[buf[0]].ins, sizeof(op->buf_asm));
 	op->size = mcs96_len (buf[0]);
 	return op->size;
 }
