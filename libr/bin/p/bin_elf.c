@@ -282,6 +282,8 @@ static RList* symbols(RBinFile *arch) {
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
+
+		/* detect thumb */
 		ptr->bits = bin_bits;
 		if (bin->ehdr.e_machine == EM_ARM) {
 			if (ptr->vaddr & 1) {
