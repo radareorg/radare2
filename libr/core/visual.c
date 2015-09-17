@@ -1501,7 +1501,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case 'z':
-		r_config_swap (core->config, "asm.cmtfold");
+		r_config_toggle (core->config, "asm.cmtfold");
 		break;
 	case 'Z':
 		if (zoom && cursor) {

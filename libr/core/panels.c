@@ -668,7 +668,7 @@ repeat:
 		break;
 	case 'C':
 		can->color = !!!can->color;				//WTF
-		//r_config_swap (core->config, "scr.color");
+		//r_config_toggle (core->config, "scr.color");
 		// refresh graph
 	//	reloadPanels (core);
 		break;

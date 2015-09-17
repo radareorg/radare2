@@ -131,8 +131,7 @@ R_API const char *r_config_get(RConfig *cfg, const char *name) {
 	return NULL;
 }
 
-// rename to toggle?
-R_API int r_config_swap(RConfig *cfg, const char *name) {
+R_API int r_config_toggle(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node && node->flags & CN_BOOL) {
 		r_config_set_i (cfg, name, !node->i_value);

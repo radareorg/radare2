@@ -384,7 +384,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'C':
-			r_config_swap (core->config, "scr.color");
+			r_config_toggle (core->config, "scr.color");
 			break;
 		case 'J': option += 10; break;
 		case 'o': r_flag_sort (core->flags, 0); break;
