@@ -136,6 +136,7 @@ install love: install-doc install-man install-www
 	for a in ${DATADIRS} ; do \
 	(cd $$a ; ${MAKE} install LIBDIR="${LIBDIR}" PREFIX="${PREFIX}" DESTDIR="${DESTDIR}" ); \
 	done
+	rm -rf "${DLIBDIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DLIBDIR}/radare2/${VERSION}/hud"
 	cp -f doc/hud "${DLIBDIR}/radare2/${VERSION}/hud/main"
 	mkdir -p $(call rmdblslash,${DESTDIR}/${PREFIX}/share/radare2/${VERSION}/)

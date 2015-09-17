@@ -66,6 +66,7 @@ ${SDB}:
 .PHONY: all clean install install-symlink symstall
 
 install: ${F_SDB}
+	-rm -rf "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
 	mkdir -p "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
 	cp -f *.sdb "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
 

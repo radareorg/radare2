@@ -24,7 +24,11 @@ preload:
 
 install:
 	mkdir -p "${BFX}"
-	for a in ${BINS} ; do ${INSTALL_PROGRAM} "$$a/$$a" "${BFX}/$$a" ; done
+	for a in ${BINS} ; do \
+		rm "${BFX}/$$a" ; \
+		${INSTALL_PROGRAM} "$$a/$$a" "${BFX}/$$a" ; \
+	done
+	rm -f "${BFX}/ragg2-cc"
 	${INSTALL_SCRIPT} ragg2/ragg2-cc "${BFX}/ragg2-cc"
 	-cd "${BFX}" && rm -f r2 ; ln -fs radare2 r2
 	${INSTALL_LIB} "preload/libr2.$(EXT_SO)" "$(LFX)"

@@ -69,9 +69,13 @@ pkgcfg:
 
 install-pkgconfig:
 	${INSTALL_DIR} "${LFX}/pkgconfig"
-	for a in ../pkgcfg/*.pc ; do ${INSTALL_DATA} $$a "${LFX}/pkgconfig" ; done
+	for a in ../pkgcfg/*.pc ; do \
+		rm -f "${LFX}/pkgconfig/$$a" ; \
+		${INSTALL_DATA} $$a "${LFX}/pkgconfig" ; done
 
 install-includes:
+	@-rm -f ${IFX}/libr/sflib
+	@-rm -f ${IFX}/libr
 	${INSTALL_DIR} "${IFX}/libr"
 	(cd include && for a in *.h ; do ${INSTALL_DATA} $$a "${IFX}/libr" ; done)
 	${INSTALL_DIR} "${IFX}/libr/sflib"
@@ -116,6 +120,7 @@ install: install-includes install-pkgconfig
 	@${INSTALL_DIR} "${LFX}"
 	@$(foreach lib,$(shell find * -type f | grep -e '\.${EXT_SO}$$' | grep -Ev '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/), \
 	  echo " ${LFX}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
+	  rm -f "${LFX}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  ${INSTALL_LIB} "$(lib)" "${LFX}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  ( cd "${LFX}" ; ln -fs "$(call libpath-to-name-version,$(lib),${LIBVERSION})" "$(call libpath-to-name,$(lib))" ) ; \
 	)

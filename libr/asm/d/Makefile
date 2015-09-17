@@ -19,6 +19,7 @@ clean:
 OPDIR=${DESTDIR}${LIBDIR}/radare2/${VERSION}/opcodes
 
 install: ${F_SDB}
+	-rm -rf "${OPDIR}"
 	mkdir -p "${OPDIR}"
 	cp -f *.sdb "${OPDIR}"
 
