@@ -26,7 +26,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	}
 
 	len = snprintf (asm_buf, sizeof (asm_buf),
-			"BITS %i\nORG 0x%"PFMT64x"\n%s", a->bits, a->pc, buf);
+			"[BITS %i]\nORG 0x%"PFMT64x"\n%s\n", a->bits, a->pc, buf);
 	write (ifd, asm_buf, len);
 
 	close (ifd);

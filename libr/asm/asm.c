@@ -545,7 +545,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 
 	/* Stage 0-2: Parse labels*/
 	/* Stage 3: Assemble */
-// XXX: stages must be dinamic. until all equs have been resolved
+// XXX: stages must be dynamic. until all equs have been resolved
 #define STAGES 5
 	pc = a->pc;
 	for (stage = 0; stage < STAGES; stage++) {
@@ -556,7 +556,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				i <= ctr; i++, idx += ret) {
 			memset (buf_token, 0, R_ASM_BUFSIZE);
 			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE-1);
-			if (!strncmp(a->cur->arch, "avr", 3)) {
+			if (!strncmp (a->cur->arch, "avr", 3)) {
 				for (ptr_start = buf_token; *ptr_start &&
 					isavrseparator (*ptr_start); ptr_start++);
 			} else {
@@ -571,23 +571,37 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			ret = 0;
 			if (!*ptr_start)
 				continue;
-			//eprintf ("LINE %d %s\n", stage, ptr_start);
 			linenum ++;
-			if (labels) /* Labels */
-			if ((ptr = strchr (ptr_start, ':'))) {
-				char food[64];
-				//if (stage != 2) {
-					*ptr = 0;
-					snprintf (food, sizeof (food), "0x%"PFMT64x"", off);
-// TODO: warning when redefined
-					r_asm_code_set_equ (acode, ptr_start, food);
-				//}
-				ptr_start = ptr + 1;
+			/* labels */
+			if (labels && (ptr = strchr (ptr_start, ':'))) {
+				bool is_a_label = true;
+				char *q = ptr_start;
+				while (*q) {
+					if (*q==' ') {
+						is_a_label = false;
+						break;
+					}
+					q++;
+				}
+				if (is_a_label) {
+					//if (stage != 2) {
+					if (ptr_start[1] == 0 || ptr_start[1] == ' ') {
+						char food[64];
+						*ptr = 0;
+						snprintf (food, sizeof (food), "0x%"PFMT64x"", off);
+						// TODO: warning when redefined
+						r_asm_code_set_equ (acode, ptr_start, food);
+					}
+					//}
+					ptr_start = ptr + 1;
+				}
+				ptr = ptr_start;
 			}
 			if (*ptr_start == '\0') {
 				ret = 0;
 				continue;
-			} else if (*ptr_start == '.') { /* pseudo */
+			}
+			if (*ptr_start == '.') { /* pseudo */
 				ptr = ptr_start;
 				if (!strncmp (ptr, ".intel_syntax", 13))
 					a->syntax = R_ASM_SYNTAX_INTEL;
