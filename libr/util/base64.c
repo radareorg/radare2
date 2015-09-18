@@ -30,7 +30,10 @@ void b64_encode(const char* str, char* out, int len) {
 	unsigned char in[3];
 	int i, cur_len;
 	char* mystr = strdup (str);
-	mystr[len] = '\x00';
+	char* orig = mystr;
+	if (len <= strlen (str)) {
+		mystr[len] = '\x00';
+	}
 
 	out[0] = '\0';
 	while(*mystr) {
@@ -48,6 +51,7 @@ void b64_encode(const char* str, char* out, int len) {
 			out += 4;
 		}
 	}
+	free (orig);
 }
 
 static int b64_decode(const char in[4], ut8 out[3]) {
