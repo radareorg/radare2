@@ -17,12 +17,37 @@
 static const char cb64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char cd64[]="|$$$}rstuvwxyz{$$$$$$$>?@ABCDEFGHIJKLMNOPQRSTUVW$$$$$$XYZ[\\]^_`abcdefghijklmnopq";
 
-static void b64_encode(const ut8 in[3], char out[4], int len) {
-	if (len<1) return;
+static void b64_encode_block(const ut8 in[3], char out[5], int len) {
 	out[0] = cb64[ in[0] >> 2 ];
-	out[1] = cb64[ ((in[0] & 0x03) << 4) | ((len>1)?((in[1] & 0xf0) >> 4):0) ];
-	out[2] = (len > 1 ? cb64[ ((in[1] & 0x0f) << 2) | (len > 2 ? ((in[2] & 0xc0) >> 6) : 0) ] : '=');
-	out[3] = (len > 2 ? cb64[ in[2] & 0x3f ] : '=');
+	out[1] = cb64[ ((in[0] & 0x03) << 4) | ((in[1] & 0xf0) >> 4) ];
+	out[2] = (unsigned char) (len > 1 ? cb64[ ((in[1] & 0x0f) << 2) |
+			((in[2] & 0xc0) >> 6) ] : '=');
+	out[3] = (unsigned char) (len > 2 ? cb64[ in[2] & 0x3f ] : '=');
+	out[4] = '\0';
+}
+
+void b64_encode(const char* str, char* out, int len) {
+	unsigned char in[3];
+	int i, cur_len;
+	char* mystr = strdup (str);
+	mystr[len] = '\x00';
+
+	out[0] = '\0';
+	while(*mystr) {
+		cur_len = 0;
+		for(i=0; i<3; i++) {
+			in[i] = (unsigned char) *mystr;
+			if(*mystr) {
+				++mystr;
+				++cur_len;
+			}
+			else in[i] = 0;
+		}
+		if(cur_len) {
+			b64_encode_block (in, out, cur_len);
+			out += 4;
+		}
+	}
 }
 
 static int b64_decode(const char in[4], ut8 out[3]) {
@@ -69,9 +94,7 @@ R_API int r_base64_encode(char *bout, const ut8 *bin, int len) {
 	int in, out;
 	if (len<1)
 		len = strlen ((const char*)bin)+1;
-	for (in=out=0; in<len; in+=3,out+=4)
-		b64_encode (bin+in, (char*)bout+out,
-			(len-in)>3?3:len-in);
+	b64_encode (bin, bout, len);
 	bout[out] = 0;
 	return out;
 }
@@ -83,9 +106,6 @@ R_API char *r_base64_encode_dyn(const char *str, int len) {
 	if (len<1) len = strlen (str) +1;
 	bout = (char *)malloc ((len * 4)+1);
 	if (!bout) return NULL;
-	for (in=out=0; in<len; in+=3,out+=4)
-		b64_encode ((const ut8*)str+in, (char*)bout+out,
-			(len-in)>3?3:len-in);
-	bout[out] = 0;
+	b64_encode (str, bout, len);
 	return realloc (bout, out+1);
 }
