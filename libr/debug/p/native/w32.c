@@ -6,7 +6,7 @@
 #include <tchar.h>
 
 #ifndef NTSTATUS
-#define NTSTATUS
+#define NTSTATUS DWORD
 #endif
 #ifndef WINAPI
 #define WINAPI
