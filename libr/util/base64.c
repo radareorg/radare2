@@ -26,7 +26,7 @@ static void b64_encode_block(const ut8 in[3], char out[5], int len) {
 	out[4] = '\0';
 }
 
-void b64_encode(const char* str, char* out, int len) {
+static void b64_encode(const char* str, char* out, int len) {
 	unsigned char in[3];
 	int i, cur_len;
 	char* mystr = strdup (str);
