@@ -2468,7 +2468,7 @@ static void cmd_agraph_node (RCore *core, const char *input) {
 		body = strdup (args[1]);
 		if (strncmp (body, "base64:", B_LEN) == 0) {
 			body = r_str_replace (body, "\\n", "", true);
-			newbody = (char *)r_base64_decode_dyn (body + B_LEN, 0);
+			newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1);
 			free (body);
 			if (!newbody){
 				eprintf ("Not enough space to allocate %s at %d\n", __FILE__,__LINE__);
