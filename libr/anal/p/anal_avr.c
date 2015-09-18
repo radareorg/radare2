@@ -140,7 +140,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if (ins == 0x9508 || ins == 0x9518) { // ret || reti
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->cycles = 4;			//5 for 22-bit bus
-		op->eob = R_TRUE;
+		op->eob = true;
 	}
 	return op->size;
 }

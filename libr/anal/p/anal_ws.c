@@ -10,8 +10,7 @@
 #include "../../asm/arch/whitespace/wsdis.c"
 
 
-static ut64 ws_find_label(int l, RIOBind iob)
-{
+static ut64 ws_find_label(int l, RIOBind iob) {
 	ut64 cur = 0, size = iob.size(iob.io);
 	ut8 buf[128];
 	RAsmOp *aop;
@@ -31,12 +30,11 @@ static ut64 ws_find_label(int l, RIOBind iob)
 	return 0;
 }
 
-static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
-{
-	memset(op, '\0', sizeof(RAnalOp));
+static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+	RAsmOp *aop;
+	memset (op, '\0', sizeof(RAnalOp));
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
-	RAsmOp *aop;
 	aop = R_NEW0(RAsmOp);
 	op->size = wsdis(aop, data, len);
 	if(op->size) {

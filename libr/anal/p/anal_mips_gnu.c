@@ -184,19 +184,18 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = page_hack + address;
 			op->delay = 1;
-			r_strbuf_setf (&op->esil, "pc=0x%08x", address);
+			r_strbuf_setf (&op->esil, "0x%08x,pc,=", address);
 			break;
 		case 3: // jal
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = page_hack + address;
 			op->fail = addr+8;
 			op->delay = 1;
-			r_strbuf_setf (&op->esil, "lr=pc+4,pc=0x%08x", address);
+			r_strbuf_setf (&op->esil, "pc,lr,=,0x%08x,pc,=", (ut32)address);
 			break;
 		}
 		//family = 'J';
-	} else 
-	if ((optype & 0x10) == 0x1c) {
+	} else if ((optype & 0x10) == 0x1c) {
 #if 0
 	C-TYPE
 	======
@@ -531,7 +530,7 @@ struct r_anal_plugin_t r_anal_plugin_mips_gnu = {
 	.license = "LGPL3",
 	.arch = R_SYS_ARCH_MIPS,
 	.bits = 32,
-	.esil = R_TRUE,
+	.esil = true,
 	.init = NULL,
 	.fini = NULL,
 	.op = &mips_op,
