@@ -14,9 +14,41 @@ static void _6502_anal_esil_call(RAnalOp *op)
 	r_strbuf_setf (&op->esil, "2,sp,-=,pc,sp,=[2],0x%04x,pc,=", (op->jump & 0xffff));
 }
 
-static void _6502_anal_esil_ccall(RAnalOp *op)
+static void _6502_anal_esil_ccall(RAnalOp *op, ut8 data0)
 {
-	r_strbuf_setf (&op->esil, "0x%04x,pc,=", (op->jump & 0xffff));
+	char *flag;
+	switch(data0)
+	{
+	case 0x10: // bpl $ffff
+		flag = "N,!";
+		break;
+	case 0x30: // bmi $ffff
+		flag = "N";
+		break;
+	case 0x50: // bvc $ffff
+		flag = "V,!";
+		break;
+	case 0x70: // bvs $ffff
+		flag = "V";
+		break;
+	case 0x90: // bcc $ffff
+		flag = "C,!";
+		break;
+	case 0xb0: // bcs $ffff
+		flag = "C";
+		break;
+	case 0xd0: // bne $ffff
+		flag = "Z,!";
+		break;
+	case 0xf0: // beq $ffff
+		flag = "Z";
+		break;
+	default:
+		// FIXME: should not happen
+		flag = "unk";
+		break;
+	}
+	r_strbuf_setf (&op->esil, "%s,?{0x%04x,pc,=}", flag, (op->jump & 0xffff));
 }
 
 static void _6502_anal_esil_ret(RAnalOp *op)
@@ -39,9 +71,43 @@ static void _6502_anal_esil_load(RAnalOp *op)
 	r_strbuf_setf (&op->esil, "TODO");
 }
 
-static void _6502_anal_esil_mov(RAnalOp *op)
+static void _6502_anal_esil_mov(RAnalOp *op, ut8 data0)
 {
-	r_strbuf_setf (&op->esil, "TODO");
+	char* src="unk";
+	char* dst="unk";
+	switch(data0)
+	{
+	case 0xaa: // tax 
+		src="a";
+		dst="x";
+		break;
+	case 0x8a: // txa
+		src="x";
+		dst="a";
+		break;
+	case 0xa8: // tay 
+		src="a";
+		dst="y";
+		break;
+	case 0x98: // tya
+		src="y";
+		dst="a";
+		break;
+	case 0x9a: // txs
+		src="x";
+		dst="sp";
+		break;
+	case 0xba: // tsx
+		src="sp";
+		dst="x";
+		break;
+	default:
+		// FIXME: should not happen
+		break;
+
+	}
+	// FIXME: should also set Z and N
+	r_strbuf_setf (&op->esil, "%s,%s,=",src,dst);
 }
 
 static void _6502_anal_esil_push(RAnalOp *op)
@@ -84,9 +150,43 @@ static void _6502_anal_esil_cmp(RAnalOp *op)
 	r_strbuf_setf (&op->esil, "TODO");
 }
 
-static void _6502_anal_esil_flags(RAnalOp *op)
+static void _6502_anal_esil_flags(RAnalOp *op, ut8 data0)
 {
-	r_strbuf_setf (&op->esil, "TODO");
+	int enabled=0;
+	char flag ='u';
+	switch(data0)
+	{
+	case 0x78: // sei
+		enabled = 1;
+		flag = 'I';
+		break;
+	case 0x58: // cli
+		enabled = 0;
+		flag = 'I';
+		break;
+	case 0x38: // sec
+		enabled = 1;
+		flag = 'C';
+		break;
+	case 0x18: // clc
+		enabled = 0;
+		flag = 'C';
+		break;
+	case 0xf8: // sed
+		enabled = 1;
+		flag = 'D';
+		break;
+	case 0xd8: // cld
+		enabled = 0;
+		flag = 'D';
+		break;
+	case 0xb8: // clv
+		enabled = 0;
+		flag = 'V';
+		break;
+		break;
+	}
+	r_strbuf_setf (&op->esil, "%d,%c,=", enabled, flag);
 }
 
 static void _6502_anal_esil_add(RAnalOp *op)
@@ -239,7 +339,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->cycles = 2;
 			// FIXME: what opcode for this?
 			op->type = R_ANAL_OP_TYPE_NOP;
-			_6502_anal_esil_flags (op);
+			_6502_anal_esil_flags (op, data[0]);
 			break;
 
 		// ORA
@@ -452,7 +552,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->fail = addr + op->size;
 			// FIXME: add a type of conditional
 			// op->cond = R_ANAL_COND_LE;
-			_6502_anal_esil_ccall (op);
+			_6502_anal_esil_ccall (op, data[0]);
 			break;
 
 		// JSR
@@ -600,7 +700,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		case 0x98: // tya
 			op->type = R_ANAL_OP_TYPE_MOV;
 			op->cycles = 2;
-			_6502_anal_esil_mov (op);
+			_6502_anal_esil_mov (op, data[0]);
 			break;
 		case 0x9a: // txs
 			op->type = R_ANAL_OP_TYPE_MOV;
@@ -608,13 +708,13 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->stackop = R_ANAL_STACK_SET;
 			// FIXME: get register X a place it here
 			// op->stackptr = get_register_x();
-			_6502_anal_esil_mov (op);
+			_6502_anal_esil_mov (op, data[0]);
 			break;
 		case 0xba: // tsx
 			op->type = R_ANAL_OP_TYPE_MOV;
 			op->cycles = 2;
 			op->stackop = R_ANAL_STACK_GET;
-			_6502_anal_esil_mov (op);
+			_6502_anal_esil_mov (op, data[0]);
 			break;
 
 	}
@@ -631,14 +731,14 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	y	.8	2	0\n"
 
 		"gpr	flags	.8	3	0\n"
-		"flg	C	.1	.24	0\n"
-		"flg	Z	.1	.25	0\n"
-		"flg	I	.1	.26	0\n"
-		"flg	D	.1	.27	0\n"
-		"flg	B	.1	.28	0\n"
+		"gpr	C	.1	.24	0\n"
+		"gpr	Z	.1	.25	0\n"
+		"gpr	I	.1	.26	0\n"
+		"gpr	D	.1	.27	0\n"
+		"gpr	B	.1	.28	0\n"
 		// bit 5 (.29) is not used
-		"flg	V	.1	.30	0\n"
-		"flg	N	.1	.31	0\n"
+		"gpr	V	.1	.30	0\n"
+		"gpr	N	.1	.31	0\n"
 
 		"gpr	sp	.8	4	0\n"
 
