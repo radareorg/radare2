@@ -147,7 +147,7 @@ static int bin_strings (RCore *r, int mode, int va) {
 			ut64 paddr = string->paddr;
 			if (maxstr && string->length>maxstr)
 				continue;
-			q = r_base64_encode_dyn (string->string, 0);
+			q = r_base64_encode_dyn (string->string, -1);
 			if (string->length>minstr) {
 				r_cons_printf ("%s{\"vaddr\":%"PFMT64d
 				",\"paddr\":%"PFMT64d
