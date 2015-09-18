@@ -1087,7 +1087,7 @@ SETL/SETNGE
 				const char *r_ax = (width==2)?"ax": (width==4)?"eax":"rax";
 				const char *r_dx = (width==2)?"dx": (width==4)?"edx":"rdx";
 				// TODO update flags & handle signedness
-				esilprintf (op, "%s,%s,$,%s,=,%s,%s,/,%s,=",
+				esilprintf (op, "%s,%s,%%,%s,=,%s,%s,/,%s,=",
 					dst, r_ax, r_dx, dst, r_ax, r_ax);
 				free (dst);
 			}
