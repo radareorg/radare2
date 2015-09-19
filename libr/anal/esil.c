@@ -18,7 +18,7 @@ static inline ut64 genmask (int bits) {
 	return m;
 }
 
-static _Bool isnum (RAnalEsil *esil, const char *str, ut64 *num) {
+static bool isnum (RAnalEsil *esil, const char *str, ut64 *num) {
 	if (*str >= '0' && *str <= '9') {
 		if (num) *num = r_num_get (NULL, str);
 		return true;
@@ -27,7 +27,7 @@ static _Bool isnum (RAnalEsil *esil, const char *str, ut64 *num) {
 	return false;
 }
 
-static _Bool isregornum(RAnalEsil *esil, const char *str, ut64 *num) {
+static bool isregornum(RAnalEsil *esil, const char *str, ut64 *num) {
 	if (!r_anal_esil_reg_read (esil, str, num, NULL))
 		if (!isnum (esil, str, num))
 			return false;
@@ -35,10 +35,10 @@ static _Bool isregornum(RAnalEsil *esil, const char *str, ut64 *num) {
 }
 
 /* pop Register or Number */
-static _Bool popRN(RAnalEsil *esil, ut64 *n) {
+static bool popRN(RAnalEsil *esil, ut64 *n) {
 	char *str = r_anal_esil_pop (esil);
 	if (str) {
-		_Bool ret = isregornum (esil, str, n);
+		bool ret = isregornum (esil, str, n);
 		free (str);
 		return ret;
 	}
@@ -138,7 +138,7 @@ R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt) {
 	return false;
 }
 
-R_API _Bool r_anal_esil_set_pc (RAnalEsil *esil, ut64 addr) {
+R_API bool r_anal_esil_set_pc (RAnalEsil *esil, ut64 addr) {
 	if (esil) {
 		esil->address = addr;
 		return true;
@@ -269,7 +269,7 @@ static int esil_internal_parity_check (RAnalEsil *esil) {
 	return bits;
 }
 
-static _Bool esil_internal_sign_check (RAnalEsil *esil) {
+static bool esil_internal_sign_check (RAnalEsil *esil) {
 	// XXX we must rethink of how we set esil->lastsz (check the src)
 	// (a,a,^=,%%z,z,= esil->lastsz will be 1 here not sizeof(a))
 	if (!esil || !esil->lastsz)
@@ -277,7 +277,7 @@ static _Bool esil_internal_sign_check (RAnalEsil *esil) {
 	return !!((esil->cur & (1 << (esil->lastsz - 1))) >> (esil->lastsz - 1));
 }
 
-static _Bool esil_internal_overflow_check (RAnalEsil *esil) {
+static bool esil_internal_overflow_check (RAnalEsil *esil) {
 	if (!esil || (esil->lastsz < 2))
 		return false;
 	// According to wikipedia this should work
@@ -291,7 +291,7 @@ R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 	return r_anal_esil_push (esil, str);
 }
 
-R_API _Bool r_anal_esil_push(RAnalEsil *esil, const char *str) {
+R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str) {
 	if (!str || !esil || !*str || esil->stackptr>30)
 		return false;
 	esil->stack[esil->stackptr++] = strdup (str);
@@ -407,7 +407,7 @@ R_API int r_anal_esil_reg_write (RAnalEsil *esil, const char *dst, ut64 num) {
 }
 
 R_API int r_anal_esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
-	_Bool ret = false;
+	bool ret = false;
 	ut64 localnum; // XXX why is this necessary?
 	if (!strcmp (regname, "$$")) {
 		if (num) *num = esil->address;

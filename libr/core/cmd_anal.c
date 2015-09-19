@@ -1729,10 +1729,6 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			esil_step (core, until_addr, until_expr);
 		}
 		break;
-	case 'd': // "aed"
-		r_anal_esil_free (esil);
-		core->anal->esil = NULL;
-		break;
 	case 'i': // "aei"
 		switch (input [1]) {
 		case 's':
@@ -1744,6 +1740,13 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		case '?':
 			cmd_esil_mem (core, "?");
+			break;
+		case '-':
+			if (esil) {
+				sdb_reset (esil->stats);
+			}
+			r_anal_esil_free (esil);
+			core->anal->esil = NULL;
 			break;
 		case 0:
 			r_anal_esil_free (esil);
@@ -1778,11 +1781,6 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					free (out);
 				}
 			} else eprintf ("esil.stats is empty. Run 'aei'\n");
-			break;
-		case '-':
-			if (esil) {
-				sdb_reset (esil->stats);
-			}
 			break;
 		}
 		break;
@@ -1885,10 +1883,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				"Usage:", "ae[idesr?] [arg]", "ESIL code emulation",
 				"ae?", "", "show this help",
 				"ae??", "", "show ESIL help",
-				"aei", "", "initialize ESIL VM state",
+				"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
 				"aeim", "", "initialize ESIL VM stack (aeim- remove)",
 				"aeip", "", "initialize ESIL program counter to curseek", 
-				"aed", "", "deinitialize ESIL VM state",
 				"ae", " [expr]", "evaluate ESIL expression",
 				"aep", " [addr]", "change esil PC to this address",
 				"aef", " [addr]", "emulate function",
