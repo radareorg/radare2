@@ -540,6 +540,7 @@ extern RBinPlugin r_bin_plugin_zimg;
 extern RBinPlugin r_bin_plugin_omf;
 extern RBinPlugin r_bin_plugin_art;
 extern RBinPlugin r_bin_plugin_dol;
+extern RBinPlugin r_bin_plugin_nes;
 
 #ifdef __cplusplus
 }
