@@ -636,10 +636,10 @@ static int cb_hexpairs(void *user, void *data) {
 	return true;
 }
 
-static int r_core_esil_cmd(RAnalEsil *esil, const char *cmd, int intr) {
+static int r_core_esil_cmd(RAnalEsil *esil, const char *cmd, int a1, int a2) {
 	if (cmd && *cmd) {
 		RCore *core = esil->anal->user;
-		r_core_cmdf (core, "%s %d", cmd, intr);
+		r_core_cmdf (core, "%s %d %d", cmd, a1, a2);
 		return true;
 	}
 	return false;
@@ -651,6 +651,16 @@ static int cb_cmd_esil_intr(void *user, void *data) {
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = r_core_esil_cmd;
 		core->anal->esil->cmd_intr = node->value;
+	}
+	return true;
+}
+
+static int cb_cmd_esil_trap(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core && core->anal && core->anal->esil) {
+		core->anal->esil->cmd = r_core_esil_cmd;
+		core->anal->esil->cmd_trap = node->value;
 	}
 	return true;
 }
@@ -1312,6 +1322,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("cmd.vprompt", "", "Visual prompt commands");
 
 	SETCB("cmd.esil.intr", "", &cb_cmd_esil_intr, "Command to run when an esil interrupt happens");
+	SETCB("cmd.esil.trap", "", &cb_cmd_esil_trap, "Command to run when an esil trap happens");
 
 	/* filesystem */
 	SETCB("fs.view", "normal", &cb_fsview, "Set visibility options for filesystems");

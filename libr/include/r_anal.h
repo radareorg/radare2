@@ -962,7 +962,8 @@ typedef struct r_anal_esil_t {
 	RAnalEsilCallbacks cb;
 	RAnalReil *Reil;
 	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
-	int (*cmd)(ESIL *esil, const char *name, int interrupt);
+	char *cmd_trap; // r2 (external) command to run when an interrupt occurs
+	int (*cmd)(ESIL *esil, const char *name, int a0, int a1);
 } RAnalEsil;
 
 #undef ESIL
@@ -992,6 +993,7 @@ typedef int (*RAnalDiffEvalCallback)(RAnal *anal);
 typedef int (*RAnalEsilCB)(RAnalEsil *esil);
 typedef int (*RAnalEsilLoopCB)(RAnalEsil *esil, RAnalOp *op);
 typedef int (*RAnalEsilInterruptCB)(RAnalEsil *esil, int interrupt);
+typedef int (*RAnalEsilTrapCB)(RAnalEsil *esil, int trap_type, int trap_code);
 
 typedef struct r_anal_plugin_t {
 	char *name;
@@ -1067,11 +1069,10 @@ typedef struct r_anal_plugin_t {
 
 	RAnalEsilCB esil_init; // initialize esil-related stuff
 	RAnalEsilLoopCB esil_post_loop;	//cycle-counting, firing interrupts, ...
-	RAnalEsilCB esil_trap; // exceptions, breakpoints, traps
 	RAnalEsilInterruptCB esil_intr; // interrupts
+	RAnalEsilTrapCB esil_trap; // traps / exceptions
 	RAnalEsilCB esil_fini; // deinitialize
 } RAnalPlugin;
-
 
 
 #ifdef R_API

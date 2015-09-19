@@ -85,6 +85,29 @@ R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilIn
 	return true;
 }
 
+R_API int r_anal_esil_fire_trap (RAnalEsil *esil, int trap_type, int trap_code) {
+	if (!esil)
+		return false;
+	if (esil->cmd) {
+		if (esil->cmd (esil, esil->cmd_trap, trap_type, trap_code)) {
+			return true;
+		}
+	}
+	if (esil->anal) {
+		RAnalPlugin *ap = esil->anal->cur;
+		if (ap && ap->esil_trap) {
+			if (ap->esil_trap (esil, trap_type, trap_code))
+				return true;
+		}
+	}
+#if 0
+	RAnalEsilTrapCB icb;
+	icb = (RAnalEsilTrapCB)sdb_ptr_get (esil->traps, i, 0);
+	return icb (esil, trap_type, trap_code);
+#endif
+	return false;
+}
+
 R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt) {
 	char t[128];
 	char *i;
@@ -92,7 +115,7 @@ R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt) {
 	if (!esil)
 		return false;
 	if (esil->cmd) {
-		if (esil->cmd (esil, esil->cmd_intr, interrupt)) {
+		if (esil->cmd (esil, esil->cmd_intr, interrupt, 0)) {
 			return true;
 		}
 	}
@@ -110,8 +133,9 @@ R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt) {
 		eprintf ("Cannot find interrupt-handler for interrupt %d\n", interrupt);
 		return false;
 	}
-	icb = (RAnalEsilInterruptCB)(size_t)sdb_num_get (esil->interrupts, i, 0);
-	return icb (esil, interrupt);
+	icb = (RAnalEsilInterruptCB)sdb_ptr_get (esil->interrupts, i, 0);
+	if (icb) return icb (esil, interrupt);
+	return false;
 }
 
 R_API _Bool r_anal_esil_set_pc (RAnalEsil *esil, ut64 addr) {
@@ -599,7 +623,7 @@ static int esil_trap(RAnalEsil *esil) {
 	if (popRN (esil, &s) && popRN (esil, &d)) {
 		esil->trap = s;
 		esil->trap_code = d;
-		return true;
+		return r_anal_esil_fire_trap (esil, (int)s, (int)d);
 	}
 	eprintf ("esil_trap: missing parameters in stack\n");
 	return false;
