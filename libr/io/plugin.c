@@ -2,12 +2,11 @@
 
 /* TODO: write li->fds setter/getter helpers */
 // TODO: return true/false everywhere,, not -1 or 0
-// TODO: use RList here
 
 #include "r_io.h"
 #include "../config.h"
-#include "list.h"
 #include <stdio.h>
+#include <sdb.h>
 
 volatile static RIOPlugin *DEFAULT = NULL;
 static RIOPlugin *io_static_plugins[] =
@@ -15,22 +14,20 @@ static RIOPlugin *io_static_plugins[] =
 
 
 R_API int r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
-	struct r_io_list_t *li;
-	if (!plugin || !plugin->name)
+	if (!io || !io->plugins || !plugin)
 		return false;
-	li = R_NEW (struct r_io_list_t);
-	if (li == NULL)
-		return false;
-	li->plugin = plugin;
-	list_add_tail (&(li->list), &(io->io_list));
+	ls_append (io->plugins, plugin);
 	return true;
 }
 
 R_API int r_io_plugin_init(RIO *io) {
 	RIOPlugin *static_plugin;
 	int i;
+	if (!io)
+		return false;
+	io->plugins = r_list_new ();
+	io->plugins->free = free;
 
-	INIT_LIST_HEAD (&io->io_list);
 	for (i=0; io_static_plugins[i]; i++) {
 		if (!io_static_plugins[i]->name)
 			continue;
@@ -55,37 +52,20 @@ R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, ut8 many
 }
 
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, ut8 many) {
-	struct list_head *pos = NULL;
-	list_for_each_prev (pos, &io->io_list) {
-		struct r_io_list_t *il = list_entry (pos, struct r_io_list_t, list);
-		if (il->plugin == NULL)
+	SdbListIter *iter;
+	RIOPlugin *ret;
+	ls_foreach (io->plugins, iter, ret) {
+		if (ret == NULL)
 			continue;
-		if (il->plugin->plugin_open == NULL)
+		if (ret->plugin_open == NULL)
 			continue;
-		if (il->plugin->plugin_open (io, filename, many))
-			return il->plugin;
+		if (ret->plugin_open (io, filename, many))
+			return ret;
 	}
 	return NULL;
 }
 
 R_API int r_io_plugin_open(RIO *io, int fd, RIOPlugin *plugin) {
-#if 0
-	int i=0;
-	struct list_head *pos;
-	list_for_each_prev(pos, &io->io_list) {
-		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
-		if (plugin == il->plugin) {
-			for(i=0;i<R_IO_NFDS;i++) {
-				if (il->plugin->fds[i] == -1) {
-					il->plugin->fds[i] = fd;
-					return 0;
-				}
-			}
-			return -1;
-		}
-	}
-	return -1;
-#endif
 	return false;
 }
 
@@ -93,15 +73,22 @@ R_API int r_io_plugin_close(RIO *io, int fd, RIOPlugin *plugin) {
 	return false;
 }
 
-// TODO: must return an r_iter ator
 R_API int r_io_plugin_list(RIO *io) {
 	int n = 0;
-	struct list_head *pos;
-	io->cb_printf ("IO plugins:\n");
-	list_for_each_prev (pos, &io->io_list) {
-		struct r_io_list_t *il = list_entry (pos, struct r_io_list_t, list);
-		io->cb_printf (" - %s\n", il->plugin->name);
-		n++;
+	SdbListIter *iter;
+	RIOPlugin *plugin;
+	if (io) {
+		if (io->cb_printf)
+			io->cb_printf ("IO plugins:\n");
+	} else	return 0;
+	if (!io->plugins)
+		return 0;
+	r_list_foreach (io->plugins, iter, plugin)
+		if (plugin) {
+			if (plugin->name)
+				io->cb_printf (" - %s\n", plugin->name);
+			n++;
+		}
 	}
 	return n;
 }

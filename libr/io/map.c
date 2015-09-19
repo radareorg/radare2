@@ -37,42 +37,11 @@ void map_free (SIOMap *map)									//not-public-api
 	free (map);
 }
 
-<<<<<<< 5d874bc8d5dd55cf4b06ac56757002cb0e54163a
-R_API int r_io_map_write_update(RIO *io, int fd, ut64 addr, ut64 len) {
-	int res = false;
-	RIOMap *map = NULL;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, map) {
-		if (map->fd == fd) break;
-		map = NULL;
-	}
-
-	if (map && map->to < addr+len) {
-		res = true;
-		map->to = addr+len;
-	}
-	return res;
-}
-
-R_API int r_io_map_truncate_update(RIO *io, int fd, ut64 sz) {
-	int res = false;
-	RIOMap *map = NULL;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, map) {
-		if (map->fd == fd) break;
-		map = NULL;
-	}
-
-	if (map) {
-		res = true;
-		map->to = map->from+sz;
-=======
 R_API void r_io_map_init (RIO *io)
 {
 	if (io) {
 		io->maps = ls_new ();
 		io->maps->free = map_free;
->>>>>>> so it begins
 	}
 }
 
@@ -132,40 +101,6 @@ R_API int r_io_map_del (RIO *io, ut32 id)
 {
 	SdbListIter *iter;
 	RIOMap *map;
-<<<<<<< 5d874bc8d5dd55cf4b06ac56757002cb0e54163a
-	RListIter *iter, *tmp;
-	ut8 deleted = false;
-	if (io && io->maps) {
-		r_list_foreach_safe (io->maps, iter, tmp, map) {
-			if (fd==-1 || map->fd==fd) {
-				r_list_delete (io->maps, iter);
-				deleted = true;
-			}
-		}
-	}
-	return deleted;
-}
-
-R_API ut64 r_io_map_next(RIO *io, ut64 addr) {
-	ut64 next = UT64_MAX;
-	RIOMap *map;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, map) {
-		if (map->from > addr)
-			if (!next || map->from < next)
-				next = map->from;
-	}
-	return next;
-}
-
-R_API int r_io_map_del_at(RIO *io, ut64 addr) {
-	RIOMap *map;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, map) {
-		if (map->from <= addr && addr < map->to) {
-			r_list_delete (io->maps, iter);
-			return true;
-=======
 	if (!io || !io->maps)
 		return R_FALSE;
 	ls_foreach (io->maps, iter, map) {
@@ -177,7 +112,6 @@ R_API int r_io_map_del_at(RIO *io, ut64 addr) {
 			}
 			ls_prepend (io->freed_map_ids, (void *)(size_t)id);
 			return R_TRUE;
->>>>>>> so it begins
 		}
 	}
 	return false;
@@ -214,29 +148,6 @@ R_API int r_io_map_priorize (RIO *io, ut32 id)
 {
 	SdbListIter *iter;
 	RIOMap *map;
-<<<<<<< 5d874bc8d5dd55cf4b06ac56757002cb0e54163a
-	RListIter *iter;
-	ut64 end_addr = addr + size;
-	r_list_foreach (io->maps, iter, map) {
-		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000000
-		// keeping (fd, to, from) tuples as separate maps
-		if ( map->fd == fd && ((map->from <= addr && addr < map->to) ||
-			(map->from <= end_addr  && end_addr < map->to)) )
-			//return r_io_map_add(io, fd, flags, delta, map->to, size);
-			return NULL;
-	}
-	return r_io_map_new (io, fd, flags, delta, addr, size);
-}
-
-R_API int r_io_map_exists_for_offset (RIO *io, ut64 off) {
-	int res = false;
-	RIOMap *im = NULL;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, im) {
-		if (im->from <= off && off < im->to) {
-			res = true;
-			break;
-=======
 	if (!io || !io->maps)
 		return R_FALSE;
 	ls_foreach (io->maps, iter, map) {
@@ -254,7 +165,6 @@ R_API int r_io_map_exists_for_offset (RIO *io, ut64 off) {
 			io->maps->head = iter;
 			iter->p = NULL;
 			return R_TRUE;								//TRUE if the map could be priorized
->>>>>>> so it begins
 		}
 	}
 	return R_FALSE;										//FALSE if not
@@ -312,30 +222,15 @@ R_API int r_io_map_is_in_range (RIOMap *map, ut64 from, ut64 to)					//rename pl
 	return R_FALSE;
 }
 
-<<<<<<< 5d874bc8d5dd55cf4b06ac56757002cb0e54163a
-R_API _Bool r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
-	RListIter *iter;
-	RIOMap *im = NULL;
-	ut64 off = map->from;
-	if (!fd) return false;
-	r_list_foreach (io->maps, iter, im) {
-		if (im == map) continue;
-		if (off >= im->from && off < im->to) {
-			return true;
-		}
-	}
-	return false;
-=======
-R_API void s_io_map_set_name (SIOMap *map, const char *name)
+R_API void r_io_map_set_name (RIOMap *map, const char *name)
 {
 	if (!map || !name)
 		return;
 	free (map->name);
 	map->name = strdup (name);
->>>>>>> so it begins
 }
 
-R_API void s_io_map_del_name (SIOMap *map)
+R_API void r_io_map_del_name (RIOMap *map)
 {
 	if (!map)
 		return;

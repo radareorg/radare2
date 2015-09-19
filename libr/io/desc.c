@@ -10,10 +10,11 @@ R_API int r_io_desc_init (RIO *io)
 	return R_TRUE;
 }
 
-R_API RIODesc *r_io_desc_new (RIOCbs *cbs, int fd, char *uri, int flags, void *data)
+//shall be used by plugins for creating descs
+R_API RIODesc *r_io_desc_new (RIOPlugin *plugin, int fd, char *uri, int flags, void *data)
 {
 	RIODesc *desc = NULL;
-	if (!cbs || !uri)
+	if (!plugin || !uri)
 		return NULL;
 	desc = R_NEW0 (RIODesc);
 	desc->cbs = cbs;
@@ -45,25 +46,6 @@ R_API int r_io_desc_add (RIO *io, RIODesc *desc)
 	return sdb_num_exists (io->files, s);		//check if storage worked
 }
 
-<<<<<<< 5d874bc8d5dd55cf4b06ac56757002cb0e54163a
-R_API int r_io_desc_del(RIO *io, int fd) {
-	RListIter *iter;
-	RIODesc *d;
-	io->desc = NULL;
-	if (!r_list_empty (io->files)) {
-		io->desc = r_list_first (io->files);
-	}
-	/* No _safe loop necessary because we return immediately after the delete. */
-	r_list_foreach (io->files, iter, d) {
-		if (d->fd == fd || fd == -1) {
-			r_io_desc_free (d);
-			iter->data = NULL; // enforce free
-			r_list_delete (io->files, iter);
-			return true;
-		}
-	}
-	return false;
-=======
 R_API int r_io_desc_del (RIO *io, int fd)
 {
 	char s[64];
@@ -74,7 +56,6 @@ R_API int r_io_desc_del (RIO *io, int fd)
 	if ((ut64)io->desc == sdb_num_get (io->files, s, NULL))
 		io->desc = NULL;					//prevent evil segfaults
 	return sdb_unset (io->files, s, 0);
->>>>>>> so it begins
 }
 
 R_API RIODesc *r_io_desc_get (RIO *io, int fd)
@@ -113,26 +94,6 @@ R_API ut64 r_io_desc_size (RIODesc *desc)
 	return ret;
 }
 
-<<<<<<< 5d874bc8d5dd55cf4b06ac56757002cb0e54163a
-R_API void r_io_desc_list_visual(RIO *io, ut64 seek, ut64 len, int width, int use_color) {
-	ut64 mul, min = -1, max = -1;
-	RListIter *iter;
-	RIOMap *s;
-	int j, i;
-
-	width -= 52;
-	if (width<1)
-		width = 30;
-
-	seek = (io->va || io->debug) ? r_io_section_vaddr_to_maddr_try (io, seek) : seek;
-
-	r_list_foreach (io->maps, iter, s) {
-		if (min == -1 || s->from< min)
-			min = s->from;
-		if (max == -1 || s->to > max)
-			max = s->to;
-	}
-=======
 int desc_fini_cb (void *user, const char *fd, const char *cdesc)
 {
 //	RIO *io = (RIO *)user;							//unused
@@ -144,7 +105,6 @@ int desc_fini_cb (void *user, const char *fd, const char *cdesc)
 	r_io_desc_free (desc);
 	return R_TRUE;
 }
->>>>>>> so it begins
 
 //closes all descs and frees all descs and io->files
 R_API int r_io_desc_fini (RIO *io)
