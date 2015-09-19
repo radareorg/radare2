@@ -23,7 +23,22 @@ static void emit_init (REgg *egg) {
 }
 
 static char *emit_syscall (REgg *egg, int num) {
-	return strdup (": mov "R_AX", `.arg`\n: svc 0x0\n");
+	int svc = 0;
+	switch (egg->os) {
+	case R_EGG_OS_DARWIN:
+	case R_EGG_OS_OSX:
+	case R_EGG_OS_IOS:
+	case R_EGG_OS_MACOS:
+		svc = 0x80;
+		break;
+	case R_EGG_OS_WATCHOS:
+		svc = 0x8000;
+		break;
+	case R_EGG_OS_LINUX:
+		svc = 0;
+		break;
+	}
+	return r_str_newf (": mov "R_AX", `.arg`\n: svc 0x%x\n", svc);
 }
 
 static void emit_frame (REgg *egg, int sz) {
