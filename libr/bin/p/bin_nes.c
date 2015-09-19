@@ -1,4 +1,4 @@
-/* radare - LGPL - 2015 - maijin */
+/* radare - LGPL3 - 2015 - maijin */
 
 #include <r_bin.h>
 #include "nes/nes_specs.h"
@@ -88,7 +88,7 @@ static RList* entries(RBinFile *arch) { //Should be 3 offsets pointed by NMI, RE
 struct r_bin_plugin_t r_bin_plugin_nes = {
 	.name = "nes",
 	.desc = "NES",
-	.license = "BSD",
+	.license = "LGPL3",
 	.load_bytes = &load_bytes,
 	.check = &check,
 	.check_bytes = &check_bytes,
