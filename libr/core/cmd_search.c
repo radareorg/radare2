@@ -1641,8 +1641,9 @@ static int cmd_search(void *data, const char *input) {
 		param.to = R_MAX (param.from, param.to);
 		param.from = __from;
 	} else {
-		param.from = 0;
-		param.to = r_io_size (core->io);
+		ut64 rawsize = r_io_size (core->io);
+		param.from = R_MIN (param.from, rawsize);
+		param.to = R_MIN (param.to, rawsize);
 	}
 	core->search->bckwrds = false;
 
