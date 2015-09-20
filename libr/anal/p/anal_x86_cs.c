@@ -799,9 +799,12 @@ SETL/SETNGE
 		case X86_INS_JG:
 		case X86_INS_JGE:
 		case X86_INS_LOOP:
+		case X86_INS_LOOPE:
+		case X86_INS_LOOPNE:
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = INSOP(0).imm;
 			op->fail = addr+op->size;
+			const char *cnt = (a->bits==16)?"cx":(a->bits==32)?"ecx":"rcx";
 			if (a->decode) {
 				char *dst = getarg (&gop, 0, 2, NULL);
 				switch (insn->id) {
@@ -861,6 +864,17 @@ SETL/SETNGE
 					break;
 				case X86_INS_JRCXZ:
 					esilprintf (op, "rcx,!,?{,%s,%s,=,}", dst, pc);
+					break;
+				case X86_INS_LOOP:
+					esilprintf (op, "1,%s,-=,%s,?{,%s,%s,=,}", cnt, cnt, dst, pc);
+					break;
+				case X86_INS_LOOPE:
+					esilprintf (op, "1,%s,-=,%s,?{,zf,?{,%s,%s,=,},}",
+						cnt, cnt, dst, pc);
+					break;
+				case X86_INS_LOOPNE:
+					esilprintf (op, "1,%s,-=,%s,?{,zf,!,?{,%s,%s,=,},}",
+						cnt, cnt, dst, pc);
 					break;
 				}
 				free (dst);
