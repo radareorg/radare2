@@ -264,6 +264,9 @@ tests:
 	fi
 	cd $(R2R) ; ${MAKE}
 
+osx-sign:
+	$(MAKE) -C binr/radare2 osx-sign
+
 quality:
 	./sys/shellcheck.sh
 
