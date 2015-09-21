@@ -45,7 +45,6 @@ Reduce the delta where flag resolving by address is used with cfg.delta
 Disable these messages with 'e cfg.fortunes = false' in your ~/.radare2rc
 Change your fortune types with 'e cfg.fortunetype = fun,tips,nsfw' in your ~/.radare2rc
 Show offsets in graphs with 'e graph.offset = true'
-Follow a flag in disassembly view (avoids to disasemble out of the visibility of the flag) with asm.follow
 Execute a command every time a breakpoint is hit with 'e cmd.bp = !my-program'
 Disassemble in intel syntax with 'e asm.syntax = intel'.
 Change the UID of the debugged process with child.uid (requires root)
