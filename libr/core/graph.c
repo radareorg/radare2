@@ -2330,7 +2330,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		is_error = true;
 		goto err_graph_new;
 	}
-	// deprecate ?
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
 
 	grd = R_NEW (struct agraph_refresh_data);
@@ -2390,7 +2389,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				break;
 			}
 		} else {
-			movspeed = r_config_get_i (core->config, "graph.scroll");
+			movspeed = g->movspeed;
 		}
 
 		switch (key) {
