@@ -126,7 +126,7 @@ You could also checkout the [radare2 book](https://radare.gitbooks.io/radare2boo
 
 # Coding Style
 
-Look at [doc/syntax.md](https://github.com/radare/radare2/blob/master/doc/syntax.md).
+Look at [CODINGSTYLE.md](https://github.com/radare/radare2/blob/master/CODINGSTYLE.md).
 
 # Webserver
 
@@ -135,8 +135,8 @@ html/js interface that sends ajax queries to the core and
 aims to implement an usable UI for phones, tablets and desktops.
 
     $ r2 -c=H /bin/ls
-    
-To use the webserver on Windows, you require a cmd instance 
+
+To use the webserver on Windows, you require a cmd instance
 with administrator rights. To start the webserver use command
 in the project root.
 

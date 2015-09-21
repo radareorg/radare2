@@ -9,7 +9,9 @@ CODE STYLE
 In order to contribute with patches or plugins we encourage you to
 use the same coding style as the rest of the code base.
 
-You may find some notes on this topic in doc/syntax and doc/vim
+You may find some notes on this topic in
+[CODINGSTYLE.md](https://github.com/radare/radare2/blob/master/CODINGSTYLE.md)
+and doc/vim
 
 MODULES
 -------
