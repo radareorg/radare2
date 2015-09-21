@@ -73,38 +73,38 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #define R_DEBUG_STATE_T PPC_THREAD_STATE
 #define R_DEBUG_STATE_SZ PPC_THREAD_STATE_COUNT
 
-// iPhone5
+// iPhone > 5
 #elif __aarch64
-#include <mach/aarch64/thread_status.h>
-#ifndef AARCH64_THREAD_STATE
-#define AARCH64_THREAD_STATE                1
-#endif
-#ifndef AARCH64_THREAD_STATE64
-#define AARCH64_THREAD_STATE64              6
-#endif
+#	include <mach/aarch64/thread_status.h>
+#	ifndef AARCH64_THREAD_STATE
+#		define AARCH64_THREAD_STATE 1
+#	endif
+#	ifndef AARCH64_THREAD_STATE64
+#		define AARCH64_THREAD_STATE64 6
+#	endif
 #define R_DEBUG_REG_T aarch64_thread_state_t
 #define R_DEBUG_STATE_T AARCH64_THREAD_STATE
 #define R_DEBUG_STATE_SZ AARCH64_THREAD_STATE_COUNT
 
-// iPhone
+// iPhone < 5
 #elif __arm
-#include <mach/arm/thread_status.h>
-#ifndef ARM_THREAD_STATE
-#define ARM_THREAD_STATE                1
-#endif
+#	include <mach/arm/thread_status.h>
+#	ifndef ARM_THREAD_STATE
+#		define ARM_THREAD_STATE 1
+#	endif
 #ifndef ARM_THREAD_STATE64
-#define ARM_THREAD_STATE64              6
+#	define ARM_THREAD_STATE64 6
 #endif
 #define R_DEBUG_REG_T arm_thread_state_t
 #define R_DEBUG_STATE_T ARM_THREAD_STATE
 #define R_DEBUG_STATE_SZ ARM_THREAD_STATE_COUNT
 #elif __arm64
-#include <mach/arm/thread_status.h>
-#ifndef ARM_THREAD_STATE
-#define ARM_THREAD_STATE                1
-#endif
+#	include <mach/arm/thread_status.h>
+#	ifndef ARM_THREAD_STATE
+#		define ARM_THREAD_STATE 1
+#	endif
 #ifndef ARM_THREAD_STATE64
-#define ARM_THREAD_STATE64              6
+#	define ARM_THREAD_STATE64 6
 #endif
 #define R_DEBUG_REG_T arm_unified_thread_state_t
 #define R_DEBUG_STATE_T ARM_UNIFIED_THREAD_STATE
@@ -212,18 +212,14 @@ typedef struct {
 #define WCR_LOAD                ((uint32_t)(1u << 3))
 #define WCR_STORE               ((uint32_t)(1u << 4))
 
-//API
 #endif
-
-
-
 
 task_t pid_to_task (int pid);
 int xnu_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 int xnu_reg_write (RDebug *dgb, int type, const ut8 *buf, int size);
 const char *xnu_reg_profile (RDebug *dbg);
 int xnu_attach (RDebug *dbg, int pid);
-int xnu_step (RDebug *dbg);
+bool xnu_step (RDebug *dbg);
 int xnu_dettach (int pid);
 int xnu_continue (RDebug *dbg, int pid, int tid, int sig);
 RDebugMap *xnu_map_alloc (RDebug *dbg, ut64 addr, int size);
@@ -233,39 +229,3 @@ RDebugPid *xnu_get_pid (int pid);
 RList *xnu_dbg_maps (RDebug *dbg, int only_modules);
 RList *xnu_thread_list (RDebug *dbg, int pid, RList *list);
 RDebugInfo *xnu_info (RDebug *dbg, const char *arg);
-
-
-#if TARGET_OS_IPHONE
-
-void ios_hwstep_enable (RDebug *dbg, int enable);
-
-#endif
-
-
-
-
-
-
-/**
-* This is no longer necessary on modern OSXs, anyway it feels nice to keep
-* it here for future hacks
-* XXX intel specific -- generalize in r_reg..ease access
-*#define EFLAGS_TRAP_FLAG 0x100
-*static inline void debug_arch_x86_trap_set(RDebug *dbg, int foo) {
-*#if __i386__ || __x86_64__
-*        R_DEBUG_REG_T regs;
-*	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, (ut8*)&regs, sizeof (regs));
-*	if (dbg->bits == 64) {
-*		eprintf ("trap flag: %lld\n", (regs.x64[REG_PC]&0x100));
-*		if (foo) regs.x64[REG_FL] |= EFLAGS_TRAP_FLAG;
-*		else regs.x64[REG_FL] &= ~EFLAGS_TRAP_FLAG;
-*	} else {
-*		eprintf ("trap flag: %d\n", (regs.x32[REG_PC]&0x100));
-*		if (foo) regs.x32[REG_FL] |= EFLAGS_TRAP_FLAG;
-*		else regs.x32[REG_FL] &= ~EFLAGS_TRAP_FLAG;
-*	}
-*	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, (const ut8*)&regs, sizeof (regs));
-*#endif
-*}
-*
-*/

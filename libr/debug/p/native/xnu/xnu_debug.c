@@ -11,14 +11,13 @@
 
 #include "xnu_threads.c"
 
-
 static task_t task_for_pid_workaround(int Pid) {
 	host_t myhost = mach_host_self();
 	mach_port_t psDefault = 0;
 	mach_port_t psDefault_control = 0;
 	task_array_t tasks = NULL;
 	mach_msg_type_number_t numTasks = 0;
-	kern_return_t kr = -1;
+	kern_return_t kr;
 	int i;
 	if (Pid == -1) return -1;
 
@@ -50,23 +49,25 @@ static task_t task_for_pid_workaround(int Pid) {
 	return -1;
 }
 
-void ios_hwstep_enable(RDebug *dbg, int enable);
+static void ios_hwstep_enable(RDebug *dbg, bool enable);
 
-int xnu_step(RDebug *dbg) {
+bool xnu_step(RDebug *dbg) {
 	int ret = false;
 	int pid = dbg->pid;
 
 	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
 #if __arm__ || __arm64__ || __aarch64__
-	ios_hwstep_enable (dbg, 1);
+	ios_hwstep_enable (dbg, true);
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT
 	if (ret != 0) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		ret = false; /* do not wait for events */
-	} else ret = true;
-	ios_hwstep_enable (dbg, 0);
+	} else {
+		ret = true;
+	}
+	ios_hwstep_enable (dbg, false);
 #else
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT
 	if (ret != 0) {
@@ -91,8 +92,9 @@ int xnu_dettach(int pid) {
 }
 
 int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
-#if __arm__
-	return 1;
+#if __arm__ || __arm64__ || __aarch64__
+	// TODO: pt-cont and task-resume seems to hang, using detach as workaround
+	return xnu_dettach (pid);
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
@@ -132,21 +134,21 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 const char *xnu_reg_profile(RDebug *dbg) {
 #if __i386__ || __x86_64__
 	if (dbg->bits & R_SYS_BITS_32) {
-#include "reg/darwin-x86.h"
+#		include "reg/darwin-x86.h"
 	} else if (dbg->bits == R_SYS_BITS_64) {
-#include "reg/darwin-x64.h"
+#		include "reg/darwin-x64.h"
 	} else {
 		eprintf ("invalid bit size\n");
 		return NULL;
 	}
 #elif __POWERPC__
 #include "reg/darwin-ppc.h"
-#elif (defined(__arm64__) || __arm__) && __APPLE__
+#elif __APPLE__ && (__aarch64__ || __arm64__ || __arm__)
 	// arm64 aarch64
 	if (dbg->bits & R_SYS_BITS_64) {
-#include "reg/darwin-arm64.h"
+#		include "reg/darwin-arm64.h"
 	} else {
-#include "reg/darwin-arm.h"
+#		include "reg/darwin-arm.h"
 	}
 #else
 #error "Unsupported Apple architecture"
@@ -183,16 +185,16 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		switch (type) {
 		case R_REG_TYPE_DRX:
 			ret = THREAD_SET_STATE ((dbg->bits == R_SYS_BITS_64) ?
-						x86_DEBUG_STATE64 :
-						x86_DEBUG_STATE32);
+				x86_DEBUG_STATE64 : x86_DEBUG_STATE32);
 			break;
 		default:
 			ret = THREAD_SET_STATE ((dbg->bits == R_SYS_BITS_64) ?
-						x86_THREAD_STATE :
-						i386_THREAD_STATE);
-
+				x86_THREAD_STATE : i386_THREAD_STATE);
 			break;
 		}
+#elif __arm__ || __arm64__ || __aarch64__
+		gp_count = R_DEBUG_STATE_SZ;
+		ret = THREAD_SET_STATE (ARM_UNIFIED_THREAD_STATE);
 #else
 		ret = THREAD_SET_STATE(R_DEBUG_STATE_T);
 #endif
@@ -252,16 +254,7 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #elif __arm__ || __arm64__ || __aarch64__
 		arm_unified_thread_state_t state;
 		R_DEBUG_REG_T *regs = &state;
-		switch (type) {
-		case R_REG_TYPE_FLG:
-		case R_REG_TYPE_GPR:
-			ret = THREAD_GET_STATE (ARM_UNIFIED_THREAD_STATE);
-
-			break;
-		case R_REG_TYPE_DRX:
-			ret = THREAD_GET_STATE (ARM_UNIFIED_THREAD_STATE);
-			break;
-		}
+		ret = THREAD_GET_STATE (ARM_UNIFIED_THREAD_STATE);
 		if (ret == KERN_SUCCESS) {
 			if (state.ash.flavor == ARM_THREAD_STATE64) {
 				memcpy (buf, &state.ts_64,
@@ -621,25 +614,26 @@ extern int proc_regionfilename(int pid, uint64_t address,
 #define DYLD_INFO_64_COUNT 5
 #define DYLD_IMAGE_INFO_32_SIZE 12
 #define DYLD_IMAGE_INFO_64_SIZE 24
+
 typedef struct {
-  ut32 version;
-  ut32 info_array_count;
-  ut32 info_array;
+	ut32 version;
+	ut32 info_array_count;
+	ut32 info_array;
 } DyldAllImageInfos32;
 typedef struct {
-  ut32 image_load_address;
-  ut32 image_file_path;
-  ut32 image_file_mod_date;
+	ut32 image_load_address;
+	ut32 image_file_path;
+	ut32 image_file_mod_date;
 } DyldImageInfo32;
 typedef struct {
-  ut32 version;
-  ut32 info_array_count;
-  ut64 info_array;
+	ut32 version;
+	ut32 info_array_count;
+	ut64 info_array;
 } DyldAllImageInfos64;
 typedef struct {
-  ut64 image_load_address;
-  ut64 image_file_path;
-  ut64 image_file_mod_date;
+	ut64 image_load_address;
+	ut64 image_file_path;
+	ut64 image_file_mod_date;
 } DyldImageInfo64;
 
 static int xnu_get_bits (RDebug *dbg) {
@@ -798,7 +792,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 		return NULL;
 	}
 #endif
-	list = r_list_new();
+	list = r_list_new ();
 	if (!list) return NULL;
 	list->free = (RListFree)xnu_map_free;
 	kern_return_t kr;
@@ -885,7 +879,7 @@ static int isThumb32(ut16 op) {
 	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
 }
 
-static void ios_hwstep_enable64(task_t port, int enable) {
+static void ios_hwstep_enable64(task_t port, bool enable) {
 	ARMDebugState64 ds;
 	mach_msg_type_number_t count = ARM_DEBUG_STATE64_COUNT;
 
@@ -912,7 +906,7 @@ static void ios_hwstep_enable64(task_t port, int enable) {
 		count);
 }
 
-static void ios_hwstep_enable32(RDebug *dbg, task_t port, int enable) {
+static void ios_hwstep_enable32(RDebug *dbg, task_t port, bool enable) {
 	int i;
 	static ARMDebugState32 olds;
 	ARMDebugState32 ds;
@@ -927,9 +921,9 @@ static void ios_hwstep_enable32(RDebug *dbg, task_t port, int enable) {
 	if (enable) {
 		RIOBind *bio = &dbg->iob;
 		ut32 pc = r_reg_get_value (dbg->reg,
-		  r_reg_get (dbg->reg, "pc", R_REG_TYPE_GPR));
+			r_reg_get (dbg->reg, "pc", R_REG_TYPE_GPR));
 		ut32 cpsr = r_reg_get_value (dbg->reg,
-		  r_reg_get (dbg->reg, "cpsr", R_REG_TYPE_GPR));
+			r_reg_get (dbg->reg, "cpsr", R_REG_TYPE_GPR));
 
 		for (i = 0; i < 16 ; i++) {
 			ds.bcr[i] = ds.bvr[i] = 0;
@@ -965,10 +959,9 @@ static void ios_hwstep_enable32(RDebug *dbg, task_t port, int enable) {
 	  		ARM_DEBUG_STATE32,
 			(thread_state_t)&ds,
 			count);
-
 }
 
-void ios_hwstep_enable(RDebug *dbg, int enable) {
+static void ios_hwstep_enable(RDebug *dbg, bool enable) {
 	task_t port = pid_to_task (dbg->tid);
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 #if defined (__arm64__) || defined (__aarch64__)
