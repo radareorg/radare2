@@ -266,7 +266,7 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #elif __arm__ || __arm64__ || __aarch64__
 		arm_unified_thread_state_t state;
 		R_DEBUG_REG_T *regs = &state;
-		ret = THREAD_GET_STATE (ARM_UNIFIED_THREAD_STATE);
+		ret = THREAD_GET_STATE (R_DEBUG_STATE_T);
 		if (ret == KERN_SUCCESS) {
 			if (state.ash.flavor == ARM_THREAD_STATE64) {
 				memcpy (buf, &state.ts_64,
