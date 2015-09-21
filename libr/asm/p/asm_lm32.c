@@ -150,7 +150,7 @@ static bool is_pseudo_instr_raise(RAsmLm32Instruction *instr) {
 
 static int r_asm_lm32_decode(RAsmLm32Instruction *instr) {
 	instr->op = extract_opcode (instr->value);
-	if (instr->op > RAsmLm32OpcodeNumber) return -1;
+	if (instr->op >= RAsmLm32OpcodeNumber) return -1;
 	instr->op_decode = RAsmLm32OpcodeList[instr->op];
 
 	switch (instr->op_decode.type) {
