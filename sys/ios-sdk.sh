@@ -13,7 +13,7 @@ PREFIX="/usr"
 #)
 #fi
 case "$1" in
-arm|armv7)
+''|arm|armv7)
 	CPU=armv7
 	shift
 	;;
