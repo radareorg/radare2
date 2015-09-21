@@ -1,8 +1,6 @@
 #!/bin/sh
 
-CPU="$1"
-[ -z "$CPU" ] && CPU="armv7"
-
+DEFCPU=armv7
 BUILD=1
 PREFIX="/usr"
 # PREFIX=/var/mobile
@@ -14,20 +12,23 @@ PREFIX="/usr"
 #  tar xzvf ios-include.tar.gz
 #)
 #fi
-case "$CPU"  in
+case "$1" in
 arm|armv7)
 	CPU=armv7
+	shift
 	;;
-aarch64)
+arm64|aarch64)
 	CPU=arm64
+	shift
 	;;
-arm64)
+-s)
+	CPU=armv7
 	;;
 *)
 	echo "Valid values for CPU are: armv7 or arm64"
 	exit 1
 esac
-shift
+[ -z "$CPU" ] && CPU="$DEFCPU"
 
 export CPU="$CPU"
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
@@ -46,41 +47,44 @@ if [ "$1" = -s ]; then
 	exec $SHELL
 fi
 
+echo
+echo "BUILDING R2 FOR iOS CPU = $CPU"
+echo
+sleep 1
+
 if true ; then
-make clean
-cp -f plugins.tiny.cfg plugins.cfg
-./configure --prefix=${PREFIX} --with-ostype=darwin \
-  --without-pic --with-nonpic \
-  --with-compiler=ios-sdk --target=arm-unknown-darwin
-# --disable-debugger --with-compiler=ios-sdk
+	make clean
+	cp -f plugins.tiny.cfg plugins.cfg
+	./configure --prefix=${PREFIX} --with-ostype=darwin \
+	  --without-pic --with-nonpic \
+	  --with-compiler=ios-sdk --target=arm-unknown-darwin
+	# --disable-debugger --with-compiler=ios-sdk
 fi
 
 if [ $? = 0 ]; then
-  time make -j4
-  if [ $? = 0 ]; then
-    # Build and sign
-    ( cd binr/radare2 ; make ios_sdk_sign )
-    rm -rf /tmp/r2ios
-    make install DESTDIR=/tmp/r2ios
-    rm -rf /tmp/r2ios/usr/share/radare2/*/www/enyo/node_modules
-    ( cd /tmp/r2ios && tar czvf ../r2ios-${CPU}.tar.gz * )
-    # Prepare radare2
-    rm -rf sys/cydia/radare2/root
-    mkdir -p sys/cydia/radare2/root
-    sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/radare2/root
-    rm -rf sys/cydia/radare2-dev/root
-    # Prepare radare2-dev
-    mkdir -p sys/cydia/radare2-dev/root
-    mkdir -p sys/cydia/radare2-dev/root/usr/include
-    mv sys/cydia/radare2/root/usr/include/* sys/cydia/radare2-dev/root/usr/include
-    mkdir -p sys/cydia/radare2-dev/root/usr/lib
-    mv sys/cydia/radare2/root/usr/lib/lib* sys/cydia/radare2-dev/root/usr/lib
-    mv sys/cydia/radare2/root/usr/lib/pkgconfig sys/cydia/radare2-dev/root/usr/lib
-    (
-      cd sys/cydia/radare2/root/usr/bin ;
-      for a in * ; do strip $a ; done
-    )
-    ( cd sys/cydia/radare2 ; sudo make clean ; sudo make )
-    ( cd sys/cydia/radare2-dev ; sudo make clean ; sudo make )
-  fi
+	time make -j4 || exit 1
+	# Build and sign
+	( cd binr/radare2 ; make ios_sdk_sign )
+	rm -rf /tmp/r2ios
+	make install DESTDIR=/tmp/r2ios
+	rm -rf /tmp/r2ios/usr/share/radare2/*/www/enyo/node_modules
+	( cd /tmp/r2ios && tar czvf ../r2ios-${CPU}.tar.gz * )
+	# Prepare radare2
+	rm -rf sys/cydia/radare2/root
+	mkdir -p sys/cydia/radare2/root
+	sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/radare2/root
+	rm -rf sys/cydia/radare2-dev/root
+	# Prepare radare2-dev
+	mkdir -p sys/cydia/radare2-dev/root
+	mkdir -p sys/cydia/radare2-dev/root/usr/include
+	mv sys/cydia/radare2/root/usr/include/* sys/cydia/radare2-dev/root/usr/include
+	mkdir -p sys/cydia/radare2-dev/root/usr/lib
+	mv sys/cydia/radare2/root/usr/lib/lib* sys/cydia/radare2-dev/root/usr/lib
+	mv sys/cydia/radare2/root/usr/lib/pkgconfig sys/cydia/radare2-dev/root/usr/lib
+	(
+		cd sys/cydia/radare2/root/usr/bin ;
+		for a in * ; do strip $a ; done
+	)
+	( cd sys/cydia/radare2 ; sudo make clean ; sudo make )
+	( cd sys/cydia/radare2-dev ; sudo make clean ; sudo make )
 fi
