@@ -1,13 +1,11 @@
-//TODO much work remains to be done
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 typedef struct xnu_thread {
-	thread_t tid; //mach_port
-	char *name; //name of thread
-	thread_basic_info_data_t basic_info; //need this?
-	int stepping; // thread is stepping or not//TODO implement stepping
-
+	thread_t tid; // mach_port of the thread id
+	char *name;   // name of the thread
+	thread_basic_info_data_t basic_info; // need this?
+	int stepping; // thread is stepping or not
 } xnu_thread_t;
-
 
 static void xnu_thread_free (xnu_thread_t *thread) {
 	if (!thread) return;
@@ -18,7 +16,7 @@ static void xnu_thread_free (xnu_thread_t *thread) {
 static int xnu_fill_info_thread(RDebug *dbg, xnu_thread_t *thread) {
 #if TARGET_OS_IPHONE
 #warning not implement yet for iOS
-	return R_FALSE;
+	return false;
 #else
 	mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
 	struct proc_threadinfo proc_threadinfo;
@@ -30,14 +28,14 @@ static int xnu_fill_info_thread(RDebug *dbg, xnu_thread_t *thread) {
 			(thread_info_t)&thread->basic_info, &count);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("Fail to get thread_basic_info\n");
-		return R_FALSE;
+		return false;
 	}
         count = THREAD_IDENTIFIER_INFO_COUNT;
         kr = thread_info (thread->tid, THREAD_IDENTIFIER_INFO,
 			(thread_info_t)&identifier_info, &count);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("Fail to get thread_identifier_info\n");
-		return R_FALSE;
+		return false;
 	}
 	ret_proc = proc_pidinfo (dbg->pid, PROC_PIDTHREADINFO,
 				identifier_info.thread_handle,
@@ -47,9 +45,8 @@ static int xnu_fill_info_thread(RDebug *dbg, xnu_thread_t *thread) {
 	} else {
 		thread->name = strdup ("unknown");
 	}
-	return R_TRUE;
+	return true;
 #endif
-
 }
 
 
@@ -60,7 +57,7 @@ static xnu_thread_t *xnu_get_thread_with_info (RDebug *dbg, thread_t tid){
 	if (!thread) return NULL;
 	thread->tid = tid;
 	ret = xnu_fill_info_thread (dbg, thread);
-	if (ret == R_FALSE) {
+	if (ret == false) {
 		thread->name = strdup ("unknown");
 	}
 	return thread;
@@ -70,16 +67,16 @@ static int xnu_update_thread_info(RDebug *dbg, xnu_thread_t *thread) {
 	int ret;
 	free (thread->name);
 	ret = xnu_fill_info_thread (dbg, thread);
-	if (ret == R_FALSE) {
+	if (ret == false) {
 		thread->name = strdup ("unknown");
 	}
-	return R_TRUE;
+	return true;
 
 }
 
 static int thread_find(xnu_thread_t *a, thread_t *tid) {
 	if (a) return a->tid == *tid;
-	return R_FALSE;
+	return false;
 }
 
 static int xnu_update_thread_list(RDebug *dbg){
@@ -97,7 +94,7 @@ static int xnu_update_thread_list(RDebug *dbg){
 		if (!dbg->threads) {
 			eprintf ("Impossible to create the list dbg->threads"
 				" in xnu_update_thread_list\n");
-			return R_FALSE;
+			return false;
 		}
 		dbg->threads->free = (RListFree)&xnu_thread_free;
 	}
@@ -105,14 +102,13 @@ static int xnu_update_thread_list(RDebug *dbg){
 	kr = task_threads (pid_to_task (dbg->pid), &thread_list, &thread_count);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("Failed to get list of task's threads\n");
-		return R_FALSE;
+		return false;
 	}
 	if (r_list_empty (dbg->threads)) {
 		//it's the first time write all threads inside the list
 		for (i = 0; i < thread_count; i++) {
 			thread = xnu_get_thread_with_info (dbg, thread_list[i]);
-			kr = mach_port_deallocate (mach_task_self (),
-						thread_list[i]);
+			kr = mach_port_deallocate (mach_task_self (), thread_list[i]);
 			if (!thread) {
 				eprintf ("Failed to fill_thread\n");
 				continue;
@@ -165,7 +161,6 @@ static int xnu_update_thread_list(RDebug *dbg){
 			t = xnu_get_thread_with_info (dbg, thread_list[i]);
 			r_list_append (dbg->threads, t);
 		}
-
 	}
 
 	//once that is over we need to free the buffer
@@ -173,10 +168,7 @@ static int xnu_update_thread_list(RDebug *dbg){
 				thread_count * sizeof(thread_t));
 	if (kr != KERN_SUCCESS) {
 		eprintf ("error: vm_deallocate xnu_update_thread_list\n");
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
-
-
+	return true;
 }
-

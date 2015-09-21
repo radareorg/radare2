@@ -20,7 +20,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 #endif
 	switch (item->size) {
 	case 80: // long double
-		ret = (ut64)r_reg_get_double (reg, item);
+		ret = (ut64)r_reg_get_longdouble (reg, item);
 		eprintf ("precission loss\n");
 		break;
 	case 1:
@@ -40,8 +40,10 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		}
 		break;
 	case 32:
-		if (off+4<=regset->arena->size) {
-			r_mem_copyendian ((ut8*)&v32, (ut8*)regset->arena->bytes+off, 4, !reg->big_endian);
+		if (off+4 <= regset->arena->size) {
+			r_mem_copyendian ((ut8*)&v32,
+				(ut8*)regset->arena->bytes+off,
+				sizeof (ut32), !reg->big_endian);
 			ret = v32;
 		} else eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
 		break;
@@ -57,7 +59,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	return ret;
 }
 
-R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
+R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	ut64 v64;
 	ut32 v32;
 	ut16 v16;
@@ -70,7 +72,7 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	}
 	switch (item->size) {
 	case 80:
-		r_reg_set_double (reg, item, (long double) value);
+		r_reg_set_longdouble (reg, item, (long double) value);
 		break;
 	case 64:
 		r_mem_copyendian ((ut8*)&v64, (ut8*)&value, 8, !reg->big_endian);

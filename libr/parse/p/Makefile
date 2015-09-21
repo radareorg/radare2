@@ -1,4 +1,5 @@
 include ../../config.mk
+include ../../util/deps.mk
 
 CFLAGS+=-I../../include -Wall -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
 # XXX

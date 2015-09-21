@@ -25,7 +25,8 @@ arm64|aarch64)
 	CPU=armv7
 	;;
 *)
-	echo "Valid values for CPU are: armv7 or arm64"
+	echo "Valid values for CPU are: armv7 or arm64 (add -s to start a shell)"
+	echo "Run 'sys/rebuild.sh iosdbg' for quick rebuilds for the debugger"
 	exit 1
 esac
 [ -z "$CPU" ] && CPU="$DEFCPU"
@@ -44,6 +45,7 @@ export CFLAGS=-O2
 export USE_SIMULATOR=0
 
 if [ "$1" = -s ]; then
+	export PS1="\033[33m[ios-sdk-$CPU \w]> \033[0m"
 	exec $SHELL
 fi
 

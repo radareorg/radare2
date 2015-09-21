@@ -16,6 +16,7 @@ SIGN_LIBS=$(addsuffix /libr_*.dylib,$(FOOD_LIBS))
 
 include ../rules.mk
 CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
+#IOS_CERTID?=org.radare.radare2
 
 ios-sign iossign sign:
 	xcrun --sdk iphoneos codesign \

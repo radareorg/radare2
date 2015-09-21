@@ -26,6 +26,9 @@ endif
 plugins:
 	cd p && ${MAKE} all
 
+ios:
+	cd ../.. ; sys/rebuild.sh iosdbg
+
 include ../rules.mk
 
 libs: ${LIBSO} ${LIBAR}

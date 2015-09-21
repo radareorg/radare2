@@ -70,6 +70,7 @@ typedef struct r_reg_item_t {
 	int size; /* 8,16,32,64 ... 128/256 ??? */
 	int offset; // offset in data structure
 	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
+	bool is_float;
 	char *flags;
 } RRegItem;
 
@@ -90,18 +91,20 @@ typedef struct r_reg_t {
 	char *name[R_REG_NAME_LAST];
 	RRegSet regset[R_REG_TYPE_LAST];
 	int iters;
+	int arch;
 	int bits;
 	int size;
-	int big_endian;
+	bool is_thumb;
+	bool big_endian;
 } RReg;
 
 typedef struct r_reg_flags_t {
-	int s; // sign, negative number (msb)
-	int z; // zero
-	int a; // half-carry adjust (if carry happens at nibble level)
-	int c; // carry
-	int o; // overflow
-	int p; // parity (lsb)
+	bool s; // sign, negative number (msb)
+	bool z; // zero
+	bool a; // half-carry adjust (if carry happens at nibble level)
+	bool c; // carry
+	bool o; // overflow
+	bool p; // parity (lsb)
 } RRegFlags;
 
 
@@ -136,15 +139,27 @@ R_API int r_reg_cond_bits (RReg *r, int type, RRegFlags *f);
 R_API RRegFlags *r_reg_cond_retrieve (RReg *r, RRegFlags *);
 R_API int r_reg_cond (RReg *r, int type);
 
-/* value */
+/* integer value 8-64 bits */
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item);
-R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value);
+R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value);
+
+/* float */
 R_API float r_reg_get_float(RReg *reg, RRegItem *item);
-R_API int r_reg_set_float(RReg *reg, RRegItem *item, float value);
-R_API long double r_reg_get_double(RReg *reg, RRegItem *item);
-R_API int r_reg_set_double(RReg *reg, RRegItem *item, long double value);
+R_API bool r_reg_set_float(RReg *reg, RRegItem *item, float value);
+
+/* double */
+R_API double r_reg_get_double(RReg *reg, RRegItem *item);
+R_API bool r_reg_set_double(RReg *reg, RRegItem *item, double value);
+
+/* long double */
+R_API long double r_reg_get_longdouble(RReg *reg, RRegItem *item);
+R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value);
+
+/* boolean */
 R_API char *r_reg_get_bvalue(RReg *reg, RRegItem *item);
 R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str);
+
+/* packed registers */
 R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val);
 R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits);
 
