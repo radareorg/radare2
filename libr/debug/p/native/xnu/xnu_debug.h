@@ -106,9 +106,9 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #ifndef ARM_THREAD_STATE64
 #define ARM_THREAD_STATE64              6
 #endif
-#define R_DEBUG_REG_T arm_thread_state_t
-#define R_DEBUG_STATE_T ARM_THREAD_STATE
-#define R_DEBUG_STATE_SZ ARM_THREAD_STATE_COUNT
+#define R_DEBUG_REG_T arm_unified_thread_state_t
+#define R_DEBUG_STATE_T ARM_UNIFIED_THREAD_STATE
+#define R_DEBUG_STATE_SZ ARM_UNIFIED_THREAD_STATE_COUNT
 #else
 
 // iMac

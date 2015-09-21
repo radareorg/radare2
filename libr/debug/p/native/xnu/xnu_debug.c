@@ -215,7 +215,6 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int pid = dbg->pid;
 	thread_array_t inferior_threads = NULL;
 	unsigned int inferior_thread_count = 0;
-	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
 	unsigned int gp_count = R_DEBUG_STATE_SZ;
 	int tid = dbg->tid;
 
@@ -235,6 +234,7 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 
 		// XXX: kinda spaguetti coz multi-arch
 #if __i386__ || __x86_64__
+		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
 		switch (type) {
 		case R_REG_TYPE_SEG:
 		case R_REG_TYPE_FLG:
@@ -250,19 +250,26 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			break;
 		}
 #elif __arm__ || __arm64__ || __aarch64__
+		arm_unified_thread_state_t state;
+		R_DEBUG_REG_T *regs = &state;
 		switch (type) {
 		case R_REG_TYPE_FLG:
 		case R_REG_TYPE_GPR:
-			ret = THREAD_GET_STATE ((dbg->bits == R_SYS_BITS_64) ?
-						ARM_THREAD_STATE64 :
-						ARM_THREAD_STATE);
+			ret = THREAD_GET_STATE (ARM_UNIFIED_THREAD_STATE);
 
 			break;
 		case R_REG_TYPE_DRX:
-			ret = THREAD_GET_STATE ((dbg->bits == R_SYS_BITS_64) ?
-						ARM_DEBUG_STATE64 :
-						ARM_DEBUG_STATE32);
+			ret = THREAD_GET_STATE (ARM_UNIFIED_THREAD_STATE);
 			break;
+		}
+		if (ret == KERN_SUCCESS) {
+			if (state.ash.flavor == ARM_THREAD_STATE64) {
+				memcpy (buf, &state.ts_64,
+					MIN (sizeof (state.ts_64), size));
+			} else {
+				memcpy (buf, &state.ts_32,
+					MIN (sizeof (state.ts_32), size));
+			}
 		}
 #else
 		eprintf ("Unknown architecture\n");
@@ -351,7 +358,7 @@ RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
 #if __arm__
 	#define OSX_PC state.__pc
 #elif __arm64__
-	#define OSX_PC state.__pc
+	#define OSX_PC (dbg->bits == R_SYS_BITS_64) ? state.ts_64.__pc : state.ts_32.__pc
 #elif __POWERPC__
 	#define OSX_PC state.srr0
 #elif __x86_64__
