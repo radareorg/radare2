@@ -79,11 +79,9 @@ static int r_debug_handle_signals (RDebug *dbg) {
 #if __linux__
 	return linux_handle_signals (dbg);
 #else
-
 	return -1;
 #endif
 }
-
 
 //this is temporal
 #if __APPLE__ || __linux__
@@ -1262,15 +1260,15 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.arch = R_ASM_ARCH_X86,
 	.canstep = 1,
 #elif __arm__
-	.bits = R_SYS_BITS_32,
+	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = R_ASM_ARCH_ARM,
 	.canstep = 0, // XXX it's 1 on some platforms...
 #elif __aarch64__
-	.bits = R_SYS_BITS_64,
+	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = R_ASM_ARCH_ARM,
 	.canstep = 0, // XXX it's 1 on some platforms...
 #elif __mips__
-	.bits = R_SYS_BITS_64,
+	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = R_ASM_ARCH_MIPS,
 	.canstep = 0,
 #elif __powerpc__

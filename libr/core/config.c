@@ -257,7 +257,7 @@ static int cb_asmbits(void *user, void *data) {
 		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", (int)node->i_value);
 	}
 	core->print->bits = node->i_value;
-	if (core->dbg  && core->anal && core->anal->cur) {
+	if (core->dbg && core->anal && core->anal->cur) {
 		int load_from_debug = 0;
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, node->i_value);
 		if (r_config_get_i (core->config, "cfg.debug")) {

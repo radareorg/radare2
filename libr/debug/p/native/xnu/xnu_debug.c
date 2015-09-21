@@ -142,10 +142,9 @@ const char *xnu_reg_profile(RDebug *dbg) {
 		return NULL;
 	}
 #elif __POWERPC__
-#include "reg/darwin-ppc.h"
+#	include "reg/darwin-ppc.h"
 #elif __APPLE__ && (__aarch64__ || __arm64__ || __arm__)
-	// arm64 aarch64
-	if (dbg->bits & R_SYS_BITS_64) {
+	if (dbg->bits == R_SYS_BITS_64) {
 #		include "reg/darwin-arm64.h"
 	} else {
 #		include "reg/darwin-arm.h"
