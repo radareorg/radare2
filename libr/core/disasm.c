@@ -2269,7 +2269,7 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	r_reg_setv (core->anal->reg, pc, ds->at);
+	r_reg_setv (core->anal->reg, pc, ds->at + ds->analop.size);
 	show_slow = ds->show_slow; // hacky global
 	esil->cb.hook_reg_write = myregwrite;
 	likely = 0;
