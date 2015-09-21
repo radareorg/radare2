@@ -289,7 +289,7 @@ static int print_pseudo_instruction(RAsmLm32Instruction *instr, char *str) {
 		}
 		break;
 	//break, scall
-	case raise_instr:
+	case lm32_op_raise:
 		switch (instr->immediate) {
 		case 0x2: //break
 			strcpy (str, "break");
