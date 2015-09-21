@@ -27,6 +27,7 @@ arm64)
 	echo "Valid values for CPU are: armv7 or arm64"
 	exit 1
 esac
+shift
 
 export CPU="$CPU"
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH

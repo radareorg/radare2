@@ -20,6 +20,7 @@ CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
 ios-sign iossign sign:
 	xcrun --sdk iphoneos codesign \
 		-s- --entitlements radare2.xml radare2
+	# -f -s "$$IOS_CERTID" --entitlements radare2.xml radare2
 	#ldid -Sradare2.xml radare2
 
 ios_sdk_sign:
