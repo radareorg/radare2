@@ -167,7 +167,6 @@ const char *xnu_reg_profile(RDebug *dbg) {
 int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	thread_array_t inferior_threads = NULL;
 	unsigned int inferior_thread_count = 0;
-	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
 	unsigned int gp_count = R_DEBUG_STATE_SZ;
 	int ret = task_threads (pid_to_task (dbg->pid),
 		&inferior_threads, &inferior_thread_count);
@@ -179,10 +178,11 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 
 	/* TODO: thread cannot be selected */
 	if (inferior_thread_count > 0) {
-		gp_count = ((dbg->bits == R_SYS_BITS_64)) ? 44 : 16;
 		// XXX: kinda spaguetti coz multi-arch
 		int tid = inferior_threads[0];
 #if __i386__ || __x86_64__
+		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
+		gp_count = ((dbg->bits == R_SYS_BITS_64)) ? 44 : 16;
 		switch (type) {
 		case R_REG_TYPE_DRX:
 			ret = THREAD_SET_STATE ((dbg->bits == R_SYS_BITS_64) ?
@@ -194,10 +194,21 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 			break;
 		}
 #elif __arm__ || __arm64__ || __aarch64__
-		gp_count = R_DEBUG_STATE_SZ;
-		ret = THREAD_SET_STATE (ARM_UNIFIED_THREAD_STATE);
+		arm_unified_thread_state_t state;
+		R_DEBUG_REG_T *regs = &state;
+		memset (&state, 0, sizeof (state));
+		if (dbg->bits == R_SYS_BITS_64) {
+			state.ash.flavor = ARM_THREAD_STATE64;
+			memcpy (&state.ts_64, buf,
+				MIN (sizeof (state.ts_64), size));
+		} else {
+			state.ash.flavor = ARM_THREAD_STATE32;
+			memcpy (&state.ts_32, buf,
+				MIN (sizeof (state.ts_32), size));
+		}
+		ret = THREAD_SET_STATE (R_DEBUG_STATE_T);
 #else
-		ret = THREAD_SET_STATE(R_DEBUG_STATE_T);
+		ret = THREAD_SET_STATE (R_DEBUG_STATE_T);
 #endif
 		if (ret != KERN_SUCCESS) {
 			eprintf ("debug_setregs: Failed to set thread \
