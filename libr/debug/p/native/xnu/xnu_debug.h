@@ -73,39 +73,15 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #define R_DEBUG_STATE_T PPC_THREAD_STATE
 #define R_DEBUG_STATE_SZ PPC_THREAD_STATE_COUNT
 
-// iPhone > 5
-#elif __aarch64
-#	include <mach/aarch64/thread_status.h>
-#	ifndef AARCH64_THREAD_STATE
-#		define AARCH64_THREAD_STATE 1
-#	endif
-#	ifndef AARCH64_THREAD_STATE64
-#		define AARCH64_THREAD_STATE64 6
-#	endif
-#define R_DEBUG_REG_T aarch64_thread_state_t
-#define R_DEBUG_STATE_T AARCH64_THREAD_STATE
-#define R_DEBUG_STATE_SZ AARCH64_THREAD_STATE_COUNT
-
-// iPhone < 5
-#elif __arm
+// iPhone
+#elif __arm || __arm64 || __aarch64
 #	include <mach/arm/thread_status.h>
 #	ifndef ARM_THREAD_STATE
 #		define ARM_THREAD_STATE 1
 #	endif
-#ifndef ARM_THREAD_STATE64
-#	define ARM_THREAD_STATE64 6
-#endif
-#define R_DEBUG_REG_T arm_thread_state_t
-#define R_DEBUG_STATE_T ARM_THREAD_STATE
-#define R_DEBUG_STATE_SZ ARM_THREAD_STATE_COUNT
-#elif __arm64
-#	include <mach/arm/thread_status.h>
-#	ifndef ARM_THREAD_STATE
-#		define ARM_THREAD_STATE 1
+#	ifndef ARM_THREAD_STATE64
+#		define ARM_THREAD_STATE64 6
 #	endif
-#ifndef ARM_THREAD_STATE64
-#	define ARM_THREAD_STATE64 6
-#endif
 #define R_DEBUG_REG_T arm_unified_thread_state_t
 #define R_DEBUG_STATE_T ARM_UNIFIED_THREAD_STATE
 #define R_DEBUG_STATE_SZ ARM_UNIFIED_THREAD_STATE_COUNT
