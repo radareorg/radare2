@@ -70,7 +70,7 @@ rm -f plugins.cfg
 ./configure ${CFGARG} --prefix=${PREFIX} || exit 1
 ${MAKE} -s -j${MAKE_JOBS} MAKE_JOBS=${MAKE_JOBS} || exit 1
 if [ "`uname`" = Darwin ]; then
-	${MAKE} osx-sign CERTID="${CERTID}" || (
+	${MAKE} osx-sign osx-sign-libs CERTID="${CERTID}" || (
 		echo "CERTID not defined. If you want the bins signed to debug without root"
 		echo "follow the instructions described in doc/osx and run make osx-sign."
 	)
