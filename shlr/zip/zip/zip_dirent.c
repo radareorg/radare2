@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdint.h>
 
 #include "zipint.h"
 
