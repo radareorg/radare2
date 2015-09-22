@@ -57,6 +57,7 @@ bool xnu_step(RDebug *dbg) {
 
 	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
+	task_resume (pid_to_task (pid));
 #if __arm__ || __arm64__ || __aarch64__
 	ios_hwstep_enable (dbg, true);
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT
@@ -98,6 +99,7 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
+	task_resume (pid_to_task (pid));
 	return ptrace (PT_CONTINUE, pid, (void*)(size_t)1,
 			(int)(size_t)data) == 0;
 #endif

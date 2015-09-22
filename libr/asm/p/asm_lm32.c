@@ -8,6 +8,8 @@
 #include <r_asm.h>
 #include "../arch/lm32/lm32_isa.h"
 
+#define LM32_UNUSED 0
+
 //str has to be at least 8 chars elements long
 static int reg_number_to_string(ut8 reg, char *str) {
 	ut8 match_idx = 0xff;
@@ -24,6 +26,7 @@ static int reg_number_to_string(ut8 reg, char *str) {
 	return 0;
 }
 
+#if LM32_UNUSED
 static int string_to_reg_number(const char *str, ut8 *num) {
 	ut8 match_idx = 0xff;
 	int i;
@@ -36,22 +39,6 @@ static int string_to_reg_number(const char *str, ut8 *num) {
 	//register name string not found in array
 	if (match_idx == 0xff) return -1;
 	*num = RAsmLm32Regs[match_idx].number;
-	return 0;
-}
-
-//str has to be at least 8 chars elements long
-static int csr_number_to_string(ut8 csr, char *str) {
-	ut8 match_idx = 0xff;
-	int i;
-	for (i = 0; i < RAsmLm32CsrNumber; i++) {
-		if (RAsmLm32Csrs[i].number == csr) {
-			match_idx = i;
-			break;
-		}
-	}
-	//csr number not found in array
-	if (match_idx == 0xff) return -1;
-	strcpy (str, RAsmLm32Csrs[match_idx].name);
 	return 0;
 }
 
@@ -81,6 +68,23 @@ static int string_to_opcode(const char *str, ut8 *num) {
 	//string not found in array
 	if (tmp_num == 0xff) return -1;
 	*num = tmp_num;
+	return 0;
+}
+#endif
+
+//str has to be at least 8 chars elements long
+static int csr_number_to_string(ut8 csr, char *str) {
+	ut8 match_idx = 0xff;
+	int i;
+	for (i = 0; i < RAsmLm32CsrNumber; i++) {
+		if (RAsmLm32Csrs[i].number == csr) {
+			match_idx = i;
+			break;
+		}
+	}
+	//csr number not found in array
+	if (match_idx == 0xff) return -1;
+	strcpy (str, RAsmLm32Csrs[match_idx].name);
 	return 0;
 }
 
@@ -363,6 +367,8 @@ static int r_asm_lm32_stringify(RAsmLm32Instruction *instr, char *str) {
 	return 0;
 }
 
+#if 0
+
 static int r_asm_lm32_destringify(const char *string, RAsmLm32Instruction *instr) {
 	//TODO
 	return -1;
@@ -373,8 +379,14 @@ static int r_asm_lm32_encode(RAsmLm32Instruction *instr, ut32 *val) {
 	return -1;
 }
 
+static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
+	//TODO
+	return -1;
+}
 
-static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
+#endif
+
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	RAsmLm32Instruction instr;
 	//lm32 is big endian
 	a->big_endian = 1;
@@ -394,18 +406,13 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	return 4;
 }
 
-static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
-	//TODO
-	return -1;
-}
-
 RAsmPlugin r_asm_plugin_lm32 = {
 	.name = "lm32",
 	.arch = "lm32",
 	.desc = "disassembly plugin for Lattice Micro 32 ISA",
 	.license = "BSD",
 	.bits = 32,
-	.disassemble = &disassemble,
+	.disassemble = disassemble,
 	//.assemble = &assemble, TODO
 };
 

@@ -279,13 +279,15 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			 {
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
 				posix_spawn_file_actions_t fileActions;
-				ut32 ps_flags = POSIX_SPAWN_SETEXEC;
+				//ut32 ps_flags = POSIX_SPAWN_SETEXEC;
+				ut32 ps_flags = POSIX_SPAWN_SETEXEC | \
+						POSIX_SPAWN_SETSIGDEF | \
+						POSIX_SPAWN_SETSIGMASK;
 				posix_spawnattr_t attr = {0};
 				size_t copied = 1;
 				cpu_type_t cpu;
 				pid_t p = -1;
-				int ret;
-				int useASLR = io->aslr;
+				int ret, useASLR = io->aslr;
 				posix_spawnattr_init (&attr);
 				if (useASLR != -1) {
 					if (useASLR) {
@@ -301,6 +303,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				posix_spawn_file_actions_addinherit_np (&fileActions, STDOUT_FILENO);
 				posix_spawn_file_actions_addinherit_np (&fileActions, STDERR_FILENO);
 				ps_flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
+				ps_flags |= POSIX_SPAWN_START_SUSPENDED;
 
 				(void)posix_spawnattr_setflags (&attr, ps_flags);
 #if __i386__ || __x86_64__
@@ -373,9 +376,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #endif
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	if (!strncmp (file, "dbg://", 6) && file[6])
-		return true;
-	return false;
+	return (!strncmp (file, "dbg://", 6) && file[6]);
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
