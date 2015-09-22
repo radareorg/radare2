@@ -57,19 +57,24 @@ bool xnu_step(RDebug *dbg) {
 
 	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
-	task_resume (pid_to_task (pid));
 #if __arm__ || __arm64__ || __aarch64__
 	ios_hwstep_enable (dbg, true);
+	task_resume (pid_to_task (pid));
+#if 0
+	ptrace-step not supported on ios
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT
 	if (ret != 0) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		ret = false; /* do not wait for events */
 	} else {
+		eprintf ("step ok\n");
 		ret = true;
 	}
+#endif
 	ios_hwstep_enable (dbg, false);
 #else
+	task_resume (pid_to_task (pid));
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT
 	if (ret != 0) {
 		perror ("ptrace-step");
@@ -95,6 +100,7 @@ int xnu_dettach(int pid) {
 int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 #if __arm__ || __arm64__ || __aarch64__
 	// TODO: pt-cont and task-resume seems to hang, using detach as workaround
+	task_resume (pid_to_task (pid));
 	return xnu_dettach (pid);
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
