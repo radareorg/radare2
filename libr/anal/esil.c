@@ -13,7 +13,7 @@
 
 /* Returns the number that has bits+1 least significant bits set. */
 static inline ut64 genmask (int bits) {
-	ut64 m = (ut64)(((2) << bits) - 1) >> 1;
+	ut64 m = (ut64)(((2) << bits) - 1);
 	if (!m) m = UT64_MAX;
 	return m;
 }
@@ -1284,7 +1284,7 @@ static int esil_deceq (RAnalEsil *esil) {
 
 /* POKE */
 static int esil_poke_n(RAnalEsil *esil, int bits) {
-	ut64 bitmask = genmask (bits);
+	ut64 bitmask = genmask (bits-1);
 	ut64 num, addr;
 	union {
 		ut8 byte;
@@ -1370,12 +1370,12 @@ static int esil_peek_n(RAnalEsil *esil, int bits) {
 	ut64 addr;
 	int ret = 0, bytes = bits / 8;
 	char *dst = r_anal_esil_pop (esil);
-	if (bits % 8) {
+	if (bits & 7) {
 		free (dst);
 		return 0;
 	}
 	if (dst && isregornum (esil, dst, &addr)) {
-		ut64 a, b, bitmask = genmask (bits);
+		ut64 a, b, bitmask = genmask (bits-1);
 		ret = r_anal_esil_mem_read (esil, addr, (ut8*)&a, bytes);
 		r_mem_copyendian ((ut8 *)&b, (const ut8*)&a, bytes ,!esil->anal->big_endian);
 		snprintf (res, sizeof (res), "0x%"PFMT64x, b & bitmask);
