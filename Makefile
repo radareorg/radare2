@@ -266,6 +266,8 @@ tests:
 
 osx-sign:
 	$(MAKE) -C binr/radare2 osx-sign
+osx-sign-libs:
+	$(MAKE) -C binr/radare2 osx-sign-libs
 
 quality:
 	./sys/shellcheck.sh

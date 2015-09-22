@@ -62,7 +62,7 @@ Analyze socket connections with the socket plugin: 'radare2 socket://www.foo.com
 Setup dbg.fpregs to true to visualize the fpu registers in the debugger view.
 To debug a program, you can call r2 with 'dbg://<path-to-program>' or '-d <path..>'
 Use 'e' and 't' in Visual mode to edit configuration and track flags.
-Use 'rabin2 -rios' to get the import/export/other symbols of any binary.
+Use 'rabin2 -ris' to get the import/export symbols of any binary.
 Remember to maintain your ~/.radare_history
 Enable the PAGER with 'e scr.pager=less -R'
 Use 'e asm.offset=true' to show offsets in 16bit segment addressing mode.
