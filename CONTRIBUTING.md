@@ -1,5 +1,31 @@
-Syntax coding style guidelines
-==============================
+# How to report issues
+
+Before reporting an issue with GitHub, be sure that:
+* you are using the git version of radare2
+* you are using a clean installation
+* the issue was not already reported
+
+When the two conditions above are satisfied, feel free to submit an issue,
+trying to be as precise as possible. If you can, provide the problematic
+binary, the steps to reproduce the error and a backtrace in case of SEGFAULTs.
+Any information will help to fix the problem.
+
+# How to contribute
+
+There are a few guidelines that we need contributors to follow so that we can
+try to keep the codebase consistent and clean.
+
+## Getting Started
+
+* Make sure you have a GitHub account.
+* Fork the repository on GitHub.
+* Create a topic branch from master. Please avoid working directly on the ```master``` branch.
+* Makes commits of logical units.
+* Check for unnecessary whitespace with ```git diff --check``` and be sure to follow the CODINGSTYLE (more on this in the next section).
+* Submit the Pull Request(PR) on Github.
+* When relevant, write a test for [radare2-regressions](https://github.com/radare/radare2-regressions) and submit a PR also there.
+
+## Coding Style guidelines
 
 * Tabs are used for indentation. In a switch statement, the
   cases are indentend at the switch level.
@@ -120,3 +146,8 @@ a = (b << 3) * 5;
 
 * Never ever use %lld or %llx. This is not portable. Always use the PFMT64x
   macros. Those are similar to the ones in GLIB.
+
+# Additional resources
+
+* [README.md](https://github.com/radare/radare2/blob/master/README.md)
+* [DEVELOPERS.md](https://github.com/radare/radare2/blob/master/DEVELOPERS.md)
