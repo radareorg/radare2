@@ -232,7 +232,84 @@ static void trace_me () {
 
 // __UNIX__ (not windows)
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
+	bool runprofile = io->runprofile && *(io->runprofile);
 	char **argv;
+
+#if __APPLE__
+	if (!runprofile) {
+#define _POSIX_SPAWN_DISABLE_ASLR 0x0100
+		posix_spawn_file_actions_t fileActions;
+		ut32 ps_flags = POSIX_SPAWN_SETSIGDEF |
+				POSIX_SPAWN_SETSIGMASK;
+		posix_spawnattr_t attr = {0};
+		size_t copied = 1;
+		cpu_type_t cpu;
+		pid_t p = -1;
+		int ret, useASLR = io->aslr;
+
+		char *_cmd = strdup (cmd);
+		argv = r_str_argv (_cmd, NULL);
+		if (!argv) {
+			free (_cmd);
+			return -1;
+		}
+		if (!*argv) {
+			free (argv);
+			free (_cmd);
+			eprintf ("Invalid execvp\n");
+			return -1;
+		}
+
+		posix_spawnattr_init (&attr);
+		if (useASLR != -1) {
+			if (useASLR) {
+				// enable aslr if not enabled? really?
+			} else {
+				ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
+			}
+		}
+
+		posix_spawn_file_actions_init (&fileActions);
+		posix_spawn_file_actions_addinherit_np (&fileActions, STDIN_FILENO);
+		posix_spawn_file_actions_addinherit_np (&fileActions, STDOUT_FILENO);
+		posix_spawn_file_actions_addinherit_np (&fileActions, STDERR_FILENO);
+		ps_flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
+		ps_flags |= POSIX_SPAWN_START_SUSPENDED;
+
+		(void)posix_spawnattr_setflags (&attr, ps_flags);
+#if __i386__ || __x86_64__
+		cpu = CPU_TYPE_I386;
+		if (bits == 64)
+			cpu |= CPU_ARCH_ABI64;
+#else
+		cpu = CPU_TYPE_ANY;
+#endif
+		posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
+		ret = posix_spawnp (&p, argv[0], &fileActions, &attr, argv, NULL);
+		switch (ret) {
+		case 0:
+			eprintf ("Success\n");
+			break;
+		case 22:
+			eprintf ("posix_spawnp: Invalid argument\n");
+			break;
+		case 86:
+			eprintf ("Unsupported architecture\n");
+			break;
+		default:
+			eprintf ("posix_spawnp: unknown error %d\n", ret);
+			perror ("posix_spawnp");
+			break;
+		}
+		posix_spawn_file_actions_destroy (&fileActions);
+
+		free (argv);
+		free (_cmd);
+
+		return p;
+	}
+#endif
+
 	int ret, status, pid = r_sys_fork ();
 	switch (pid) {
 	case -1:
@@ -240,7 +317,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		break;
 	case 0:
 		trace_me ();
-		if (io->runprofile && *(io->runprofile)) {
+		if (runprofile) {
 			char *expr = NULL;
 			int i;
 			RRunProfile *rp = r_run_new (NULL);
@@ -275,80 +352,15 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				free (_cmd);
 				return -1;
 			}
-#if __APPLE__
-			 {
-#define _POSIX_SPAWN_DISABLE_ASLR 0x0100
-				posix_spawn_file_actions_t fileActions;
-				//ut32 ps_flags = POSIX_SPAWN_SETEXEC;
-				ut32 ps_flags = POSIX_SPAWN_SETEXEC | \
-						POSIX_SPAWN_SETSIGDEF | \
-						POSIX_SPAWN_SETSIGMASK;
-				posix_spawnattr_t attr = {0};
-				size_t copied = 1;
-				cpu_type_t cpu;
-				pid_t p = -1;
-				int ret, useASLR = io->aslr;
-				posix_spawnattr_init (&attr);
-				if (useASLR != -1) {
-					if (useASLR) {
-						// enable aslr if not enabled? really?
-					} else {
-						ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
-					}
-				}
-				// ps_flags |= POSIX_SPAWN_START_SUSPENDED;
-
-				posix_spawn_file_actions_init (&fileActions);
-				posix_spawn_file_actions_addinherit_np (&fileActions, STDIN_FILENO);
-				posix_spawn_file_actions_addinherit_np (&fileActions, STDOUT_FILENO);
-				posix_spawn_file_actions_addinherit_np (&fileActions, STDERR_FILENO);
-				ps_flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
-				ps_flags |= POSIX_SPAWN_START_SUSPENDED;
-
-				(void)posix_spawnattr_setflags (&attr, ps_flags);
-#if __i386__ || __x86_64__
-				cpu = CPU_TYPE_I386;
-				if (bits == 64)
-					cpu |= CPU_ARCH_ABI64;
-#else
-				cpu = CPU_TYPE_ANY;
-#endif
-				posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
-				ret = posix_spawnp (&p, argv[0], &fileActions, &attr, argv, NULL);
-				switch (ret) {
-				case 0:
-					eprintf ("Success\n");
-					break;
-				case 22:
-					eprintf ("posix_spawnp: Invalid argument\n");
-					break;
-				case 86:
-					eprintf ("Unsupported architecture\n");
-					break;
-				default:
-					eprintf ("posix_spawnp: unknown error %d\n", ret);
-					perror ("posix_spawnp");
-					break;
-				}
-				posix_spawn_file_actions_destroy (&fileActions);
-
-				/* only required if no SETEXEC called
-				   if (p != -1)
-				   wait (p);
-				 */
-				exit (MAGIC_EXIT); /* error */
-			 }
-#else
-			 if (argv && *argv) {
+			if (argv && *argv) {
 				int i;
 				for (i=3; i<1024; i++) {
 					(void)close (i);
 				}
-				 execvp (argv[0], argv);
-			 } else {
-				 eprintf ("Invalid execvp\n");
-			 }
-#endif
+				execvp (argv[0], argv);
+			} else {
+				eprintf ("Invalid execvp\n");
+			}
 			free (_cmd);
 		}
 		perror ("fork_and_attach: execv");
