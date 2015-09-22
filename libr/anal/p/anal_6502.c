@@ -13,19 +13,15 @@ static void _6502_anal_update_NZ(RAnalOp *op)
 {
 	// Z if zero
 	// N if bit7 enabled
-	r_strbuf_append (&op->esil, ",$z,Z,=,x,0x80,&,!,!,N,=");
+	// r_strbuf_append (&op->esil, ",$z,Z,=,x,0x80,&,!,!,N,=");
+	r_strbuf_append (&op->esil, ",$z,Z,=,$s,N,=");
 }
 
-static void _6502_anal_esil_call(RAnalOp *op)
-{
-	r_strbuf_setf (&op->esil, "2,sp,-=,pc,sp,=[2],0x%04x,pc,=", (op->jump & 0xffff));
-}
 
 static void _6502_anal_esil_ccall(RAnalOp *op, ut8 data0)
 {
 	char *flag;
-	switch(data0)
-	{
+	switch(data0) {
 	case 0x10: // bpl $ffff
 		flag = "N,!";
 		break;
@@ -58,28 +54,12 @@ static void _6502_anal_esil_ccall(RAnalOp *op, ut8 data0)
 	r_strbuf_setf (&op->esil, "%s,?{,0x%04x,pc,=,}", flag, (op->jump & 0xffff));
 }
 
-static void _6502_anal_esil_ret(RAnalOp *op)
-{
-	r_strbuf_append (&op->esil, "sp,[2],pc,=,2,sp,+=");
-}
-
-static void _6502_anal_esil_jmp(RAnalOp *op)
-{
-	r_strbuf_setf (&op->esil, "0x%04x,pc,=", (op->jump & 0xffff));
-}
-
-static void _6502_anal_esil_store(RAnalOp *op)
-{
-	r_strbuf_setf (&op->esil, "TODO");
-}
-
 // inc register
 static void _6502_anal_esil_inc_reg(RAnalOp *op, ut8 data0, char* sign)
 {
 	char* reg;
 
-	switch(data0)
-	{
+	switch(data0) {
 	case 0xe8: // inx
 	case 0xca: // dex
 		reg = "x";
@@ -89,52 +69,140 @@ static void _6502_anal_esil_inc_reg(RAnalOp *op, ut8 data0, char* sign)
 		reg = "y";
 		break;
 	}
-	r_strbuf_setf (&op->esil, "1,%s,%s=",reg, sign);
+	r_strbuf_setf (&op->esil, "%s,%s%s=",reg, sign, sign);
 	_6502_anal_update_NZ(op);
 }
 
 // inc memory
 static void _6502_anal_esil_inc_mem(RAnalOp *op, const ut8* data, char* sign)
 {
-	ut16 memory;
-	char index = '0';
-
-	switch(data[0])
-	{
-	case 0xf6: // inc $ff,x
-	case 0xd6: // dec $ff,x
-		// fallthrough
-		index = 'x';
+	switch(data[0]) {
 	case 0xe6: // inc $ff
 	case 0xc6: // dec $ff
-		memory = data[1];
+		r_strbuf_setf (&op->esil, "0x%02x,%s%s=[1]", data[1], sign, sign);
 		break;
-
-	case 0xfe: // inc $ffff,x
-	case 0xde: // dec $ffff,x
-		// fallthrough
-		index = 'x';
+	case 0xf6: // inc $ff,x
+	case 0xd6: // dec $ff,x
+		r_strbuf_setf (&op->esil, "x,0x%02x,+,%s%s=[1]", data[1], sign, sign);
+		break;
 	case 0xee: // inc $ffff
 	case 0xce: // dec $ffff
-		memory = data[1] * 8 + data[2];
+		r_strbuf_setf (&op->esil, "0x%04x,%s%s=[1]", data[1] + data[2]*256, sign, sign);
+		break;
+	case 0xfe: // inc $ffff,x
+	case 0xde: // dec $ffff,x
+		r_strbuf_setf (&op->esil, "x,0x%04x,+,%s%s=[1]", data[1] + data[2]*256, sign, sign);
 		break;
 	}
-	// inc $abcd,x = ((1, (0xabcd,[x],) +), 0xabcd),=[x]
-	r_strbuf_setf (&op->esil, "1,0x%04x,[%c],%c,0x%04x,=[%c]", memory, index, sign, memory, index);
 	_6502_anal_update_NZ(op);
 }
 
-static void _6502_anal_esil_load(RAnalOp *op)
+static void _6502_anal_esil_load(RAnalOp *op, const ut8* data)
 {
-	r_strbuf_setf (&op->esil, "TODO");
+	switch(data[0]) {
+	case 0xa9: // lda #$ff
+		r_strbuf_setf (&op->esil, "0x%02x,a,=", data[1]);
+		break;
+	case 0xa5: // lda $ff
+		r_strbuf_setf (&op->esil, "0x%02x,[1],a,=", data[1]);
+		break;
+	case 0xb5: // lda $ff,x
+		r_strbuf_setf (&op->esil, "x,0x%02x,+,[1],a,=", data[1]);
+		break;
+	case 0xad: // lda $ffff
+		r_strbuf_setf (&op->esil, "0x%04x,[1],a,=", data[1] + data[2]*256);
+		break;
+	case 0xbd: // lda $ffff,x
+		r_strbuf_setf (&op->esil, "x,0x%04x,+,[1],a,=", data[1] + data[2]*256);
+		break;
+	case 0xb9: // lda $ffff,y
+		r_strbuf_setf (&op->esil, "y,0x%04x,+,[1],a,=", data[1] + data[2]*256);
+		break;
+	case 0xa1: // lda ($ff,x)
+		r_strbuf_setf (&op->esil, "x,0x%02x,+,[2],[1],a,=", data[1]);
+		break;
+	case 0xb1: // lda ($ff),y
+		r_strbuf_setf (&op->esil, "y,0x%02x,[2],+,[1],a,=", data[1]);
+		break;
+	}
+	_6502_anal_update_NZ(op);
+}
+
+static void _6502_anal_esil_store(RAnalOp *op, const ut8* data)
+{
+	switch(data[0]) {
+	case 0x85: // sta $ff
+		r_strbuf_setf (&op->esil, "a,0x%02x,=[1]", data[1]);
+		break;
+	case 0x95: // sta $ff,x
+		r_strbuf_setf (&op->esil, "a,x,0x%02x,+,=[1]", data[1]);
+		break;
+	case 0x8d: // sta $ffff
+		r_strbuf_setf (&op->esil, "a,0x%04x,=[1]", data[1] + data[2]*256);
+		break;
+	case 0x9d: // sta $ffff,x
+		r_strbuf_setf (&op->esil, "a,x,0x%04x,+,=[1]", data[1] + data[2]*256);
+		break;
+	case 0x99: // sta $ffff,y
+		r_strbuf_setf (&op->esil, "a,y,0x%04x,+,=[1]", data[1] + data[2]*256);
+		break;
+	case 0x81: // sta ($ff,x)
+		r_strbuf_setf (&op->esil, "a,x,0x%02x,+,[2],=[1]", data[1]);
+		break;
+	case 0x91: // sta ($ff),y
+		r_strbuf_setf (&op->esil, "a,y,0x%02x,[2],+,=[1]", data[1]);
+		break;
+	}
+}
+
+static void _6502_anal_esil_load_xy(RAnalOp *op, const ut8* data, char reg)
+{
+	char not_reg = (reg=='x') ? 'y' : 'x';
+
+	// turn bit 1 on
+	switch(data[0] | 2) {
+	case 0xa2: // ldx/ldy #$ff
+		r_strbuf_setf (&op->esil, "0x%02x,%c,=", data[1], reg);
+		break;
+	case 0xa6: // ldx/ldy $ff
+		r_strbuf_setf (&op->esil, "0x%02x,[1],%c,=", data[1], reg);
+		break;
+	case 0xb6: // ldx/ldy $ff,y/x
+		r_strbuf_setf (&op->esil, "%c,0x%02x,+,[1],%c,=", not_reg, data[1], reg);
+		break;
+	case 0xae: // ldx/ldy $ffff
+		r_strbuf_setf (&op->esil, "0x%04x,[1],%c,=", data[1] + data[2]*256, reg);
+		break;
+	case 0xbe: // ldx/ldy $ffff,y/x
+		r_strbuf_setf (&op->esil, "%c,0x%04x,+,[1],%c,=", not_reg, data[1] + data[2]*256, reg);
+		break;
+	}
+	_6502_anal_update_NZ(op);
+}
+
+static void _6502_anal_esil_store_xy(RAnalOp *op, const ut8* data, char reg)
+{
+	char not_reg = (reg=='x') ? 'y' : 'x';
+
+	// turn bit 1 on
+	switch(data[0] | 2) {
+	case 0x86: // stx/sty $ff
+		r_strbuf_setf (&op->esil, "%c,0x%02x,=[1]", reg, data[1]);
+		break;
+	case 0x96: // stx/sty $ff,y/x
+		r_strbuf_setf (&op->esil, "%c,0x%02x,%c,+,=[1]", reg, data[1], not_reg);
+		break;
+	case 0x8e: // stx/sty $ffff
+		r_strbuf_setf (&op->esil, "%c,0x%04x,=[1]", reg, data[1] + data[2]*256);
+		break;
+	}
 }
 
 static void _6502_anal_esil_mov(RAnalOp *op, ut8 data0)
 {
 	char* src="unk";
 	char* dst="unk";
-	switch(data0)
-	{
+	switch(data0) {
 	case 0xaa: // tax 
 		src="a";
 		dst="x";
@@ -188,129 +256,86 @@ static void _6502_anal_esil_pop(RAnalOp *op, ut8 data0)
 	if (data0==0x68) _6502_anal_update_NZ(op);
 }
 
-static void _6502_anal_esil_or(RAnalOp *op, const ut8* data)
+static void _6502_anal_esil_logic_op(RAnalOp *op, const ut8* data, ut8 operation)
 {
-	char* index="0";
-	ut16 memory=0;
-
-	// register: a, x or y?
-	if (data[0]==0x05 || data[0]==0x0d) {
-		// ora $ff  ora $ffff
-		index = "0";
-	} else if (data[0]==0x15 || data[0]==0x1d) {
-		// ora $ff,x  ora $ffff,x
-		index = "x";
-	} else if (data[0]==0x19) {
-		// ora $ffff,y
-		index = "y";
+	// turn off bits 5 and 6
+	switch(data[0] & 0x9f) { // 0x9f = 10011111
+	case 0x09: // or-and-eor #$ff
+		r_strbuf_setf (&op->esil, "0x%02x,a,%c=", data[1], operation);
+		break;
+	case 0x05: // or-and-eor $ff
+		r_strbuf_setf (&op->esil, "0x%02x,[1],a,%c=", data[1], operation);
+		break;
+	case 0x15: // or-and-eor $ff,x
+		r_strbuf_setf (&op->esil, "x,0x%02x,+,[1],a,%c=", data[1], operation);
+		break;
+	case 0x0d: // or-and-eor $ffff
+		r_strbuf_setf (&op->esil, "0x%04x,[1],a,%c=", data[1] + data[2]*256, operation);
+		break;
+	case 0x1d: // or-and-eor $ffff,x
+		r_strbuf_setf (&op->esil, "x,0x%04x,+,[1],a,%c=", data[1] + data[2]*256, operation);
+		break;
+	case 0x19: // or-and-eor $ffff,y
+		r_strbuf_setf (&op->esil, "y,0x%04x,+,[1],a,%c=", data[1] + data[2]*256, operation);
+		break;
+	case 0x01: // or-and-eor ($ff,x)
+		r_strbuf_setf (&op->esil, "x,0x%02x,+,[2],[1],a,%c=", data[1], operation);
+		break;
+	case 0x11: // or-and-eor ($ff),y
+		r_strbuf_setf (&op->esil, "y,0x%02x,[2],+,[1],a,%c=", data[1], operation);
+		break;
 	}
-
-	// memory: 8-bit or 16-bit?
-	if (data[0]==0x05 || data[0]==0x15) {
-		// ora $ff, ora $ff,x
-		memory = data[1];
-	} else if(data[0]==0x0d || data[0]==0x1d || data[0]==0x19) {
-		// ora $ffff, ora $ffff,x ora $ffff,y
-		memory = data[1] + data[2] * 256;
-	}
-
-	if (data[0]==0x09) {
-		// ora #$ff
-		r_strbuf_setf (&op->esil, "%02x,a,|=", data[1]);
-	} else if (data[0]==0x01 || data[0]==0x11) {
-		// ora ($ff),x / ora ($ff,y)
-		r_strbuf_set (&op->esil, "TODO");
-	} else {
-		r_strbuf_setf (&op->esil, "0x%04x,[%c],a,|=", memory, index);
-	}
-	
 	_6502_anal_update_NZ(op);
 }
 
-static void _6502_anal_esil_and(RAnalOp *op, const ut8* data)
+static void _6502_anal_esil_shiftl(RAnalOp *op, const ut8* data)
 {
-	char* index="0";
-	ut16 memory=0;
+	ut16 mem16 = data[1] + data[2]*256;
 
-	// register: a, x or y?
-	if (data[0]==0x25 || data[0]==0x2d) {
-		// and $ff  and $ffff
-		index = "0";
-	} else if (data[0]==0x35 || data[0]==0x3d) {
-		// and $ff,x  and $ffff,x
-		index = "x";
-	} else if (data[0]==0x39) {
-		// and $ffff,y
-		index = "y";
+	// a,a,= is a HACK for $z (from anal_gb.c)
+	switch(data[0]) {
+	case 0x0a: // asl a
+		r_strbuf_setf (&op->esil, "1,a,<<=,$c7,C,=,a,a,=");
+		break;
+	case 0x06: // asl $ff
+		r_strbuf_setf (&op->esil, "1,0x%02x,[1],<<,0x%02x,=[1],$c7,C,=", data[1], data[1]);
+		break;
+	case 0x16: // asl $ff,x
+		r_strbuf_setf (&op->esil, "1,x,0x%02x,+,[1],<<,x,0x%02x,+,=[1],$c7,C,=", data[1], data[1]);
+		break;
+	case 0x0e: // asl $ffff
+		r_strbuf_setf (&op->esil, "1,0x%04x,[1],<<,0x%04x,=[1],$c7,C,=", mem16, mem16);
+		break;
+	case 0x1e: // asl $ffff,x
+		r_strbuf_setf (&op->esil, "1,x,0x%04x,+,[1],<<,x,0x%04x,+,=[1],$c7,C,=", mem16, mem16);
+		break;
 	}
-
-	// memory: 8-bit or 16-bit?
-	if (data[0]==0x25 || data[0]==0x35) {
-		// and $ff, and $ff,x
-		memory = data[1];
-	} else if(data[0]==0x2d || data[0]==0x3d || data[0]==0x39) {
-		// and $ffff, and $ffff,x and $ffff,y
-		memory = data[1] + data[2] * 256;
-	}
-
-	if (data[0]==0x29) {
-		// and #$ff
-		r_strbuf_setf (&op->esil, "%02x,a,&=", data[1]);
-	} else if (data[0]==0x21 || data[0]==0x31) {
-		// and ($ff),x / and ($ff,y)
-		r_strbuf_set (&op->esil, "TODO");
-	} else {
-		r_strbuf_setf (&op->esil, "0x%04x,[%c],a,&=", memory, index);
-	}
-	
 	_6502_anal_update_NZ(op);
 }
 
-static void _6502_anal_esil_xor(RAnalOp *op, const ut8* data)
+static void _6502_anal_esil_shiftr(RAnalOp *op, const ut8* data)
 {
-	char* index="0";
-	ut16 memory=0;
-
-	// register: a, x or y?
-	if (data[0]==0x45 || data[0]==0x4d) {
-		// eor $ff  eor $ffff
-		index = "0";
-	} else if (data[0]==0x55 || data[0]==0x5d) {
-		// eor $ff,x  eor $ffff,x
-		index = "x";
-	} else if (data[0]==0x59) {
-		// eor $ffff,y
-		index = "y";
+	switch(data[0]) {
+	case 0x4a: // lsr a
+		r_strbuf_setf (&op->esil, "1,a,&,C,=,1,a,>>=");
+		break;
+	case 0x46: // lsr $ff
+		r_strbuf_setf (&op->esil, "1,0x%02x,[1],&,C,=,1,0x%02x,[1],>>,0x%02x,=[1]", data[1], data[1], data[1]);
+		break;
+	case 0x56: // lsr $ff,x
+		r_strbuf_setf (&op->esil, "1,x,0x%02x,+,[1],&,C,=,1,x,0x%02x,+,[1],>>,x,0x%02x,+,=[1]", data[1], data[1], data[1]);
+		break;
+	case 0x4e: // lsr $ffff
+		r_strbuf_setf (&op->esil, "1,0x%04x,[1],&,C,=,1,0x%04x,[1],>>,0x%04x,=[1]", data[1]+data[2]*256, data[1]+data[2]*256, data[1]+data[2]*256);
+		break;
+	case 0x5e: // lsr $ffff,x
+		r_strbuf_setf (&op->esil, "1,x,0x%04x,+,[1],&,C,=,1,x,0x%04x,+,[1],>>,x,0x%04x,+,=[1]", data[1]+data[2]*256, data[1]+data[2]*256, data[1]+data[2]*256);
+		break;
 	}
-
-	// memory: 8-bit or 16-bit?
-	if (data[0]==0x45 || data[0]==0x55) {
-		// eor $ff, eor $ff,x
-		memory = data[1];
-	} else if(data[0]==0x4d || data[0]==0x5d || data[0]==0x59) {
-		// eor $ffff, eor $ffff,x eor $ffff,y
-		memory = data[1] + data[2] * 256;
-	}
-
-	if (data[0]==0x49) {
-		// eor #$ff
-		r_strbuf_setf (&op->esil, "%02x,a,^=", data[1]);
-	} else if (data[0]==0x41 || data[0]==0x51) {
-		// eor ($ff),x / eor ($ff,y)
-		r_strbuf_set (&op->esil, "TODO");
-	} else {
-		r_strbuf_setf (&op->esil, "0x%04x,[%c],a,^=", memory, index);
-	}
-	
 	_6502_anal_update_NZ(op);
 }
 
-static void _6502_anal_esil_shift(RAnalOp *op, const ut8* data)
-{
-	r_strbuf_setf (&op->esil, "TODO");
-}
-
-static void _6502_anal_esil_rol(RAnalOp *op, const ut8* data)
+static void _6502_anal_esil_rotate(RAnalOp *op, const ut8* data, const char* operation)
 {
 	r_strbuf_setf (&op->esil, "TODO");
 }
@@ -324,8 +349,7 @@ static void _6502_anal_esil_flags(RAnalOp *op, ut8 data0)
 {
 	int enabled=0;
 	char flag ='u';
-	switch(data0)
-	{
+	switch(data0) {
 	case 0x78: // sei
 		enabled = 1;
 		flag = 'I';
@@ -496,7 +520,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			// FIXME: Not sure if there is an opcode for this one
 			op->type = R_ANAL_OP_TYPE_UNK;		
 			// PC + 2 to Stack, P to Stack  B=1 D=0 I=1
-			r_strbuf_set (&op->esil, "3,sp,-=,pc,sp,=[2],flags,sp,=[3],1,B,=,0,D,=,1,I,=");
+			r_strbuf_set (&op->esil, "2,sp,-=,pc,sp,=[2],1,sp,-=,flags,sp,=[1],1,B,=,0,D,=,1,I,=");
 			break;
 
 		// FLAGS
@@ -525,7 +549,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			// FIXME: set correct cycles for each opcode
 			op->cycles = 5;
 			op->type = R_ANAL_OP_TYPE_OR;
-			_6502_anal_esil_or (op, data);
+			_6502_anal_esil_logic_op (op, data, '|');
 			break;
 
 		// AND
@@ -540,7 +564,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			// FIXME: set correct cycles for each opcode
 			op->cycles = 5;
 			op->type = R_ANAL_OP_TYPE_AND;
-			_6502_anal_esil_and (op, data);
+			_6502_anal_esil_logic_op (op, data, '&');
 			break;
 
 		// EOR
@@ -555,7 +579,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			// FIXME: set correct cycles for each opcode
 			op->cycles = 5;
 			op->type = R_ANAL_OP_TYPE_XOR;
-			_6502_anal_esil_xor (op, data);
+			_6502_anal_esil_logic_op (op, data, '^');
 			break;
 
 		// ASL 
@@ -567,7 +591,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			// FIXME: set correct cycles for each opcode
 			op->cycles = 7;
 			op->type = R_ANAL_OP_TYPE_SHL;
-			_6502_anal_esil_shift (op, data);
+			_6502_anal_esil_shiftl (op, data);
 			break;
 
 		// LSR
@@ -579,7 +603,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			// FIXME: set correct cycles for each opcode
 			op->cycles = 7;
 			op->type = R_ANAL_OP_TYPE_SHR;
-			_6502_anal_esil_shift (op, data);
+			_6502_anal_esil_shiftr (op, data);
 			break;
 
 		// ROL
@@ -591,7 +615,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			// FIXME: set correct cycles for each opcode
 			op->cycles = 7;
 			op->type = R_ANAL_OP_TYPE_ROL;
-			_6502_anal_esil_rol (op, data);
+			_6502_anal_esil_rotate (op, data, "<<<");
 			break;
 
 		// ROR
@@ -603,7 +627,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			// FIXME: set correct cycles for each opcode
 			op->cycles = 7;
 			op->type = R_ANAL_OP_TYPE_ROR;
-			_6502_anal_esil_rol (op, data);
+			_6502_anal_esil_rotate (op, data, ">>>");
 			break;
 
 		// INC
@@ -738,7 +762,9 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->jump = data[1] | data[2] << 8;
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = 2;
-			_6502_anal_esil_call (op);
+			// JSR pushes the address-1 of the next operation on to the stack before transferring program
+			// control to the following address
+			r_strbuf_setf (&op->esil, "2,sp,-=,pc,--=,pc,sp,=[2],0x%04x,pc,=", (op->jump & 0xffff));
 			break;
 
 		// JMP
@@ -746,13 +772,14 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->cycles = 3;
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = data[1] | data[2] << 8;
-			_6502_anal_esil_jmp (op);
+			r_strbuf_setf (&op->esil, "0x%04x,pc,=", (op->jump & 0xffff));
 			break;
 		case 0x6c: // jmp ($ffff)
 			op->cycles = 5;
 			op->type = R_ANAL_OP_TYPE_UJMP;
+			// FIXME: how to read memory?
 			// op->jump = data[1] | data[2] << 8;
-			_6502_anal_esil_jmp (op);
+			r_strbuf_setf (&op->esil, "0x%04x,[2],pc,=", (op->jump & 0xffff));
 			break;
 
 		// RTS
@@ -762,7 +789,8 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->cycles = 6;
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -2;
-			_6502_anal_esil_ret (op);
+			// Operation:  PC from Stack, PC + 1 -> PC
+			r_strbuf_set (&op->esil, "sp,[2],pc,=,pc,++=,2,sp,+=");
 			break;
 
 		// RTI
@@ -771,8 +799,9 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->type = R_ANAL_OP_TYPE_RET;
 			op->cycles = 6;
 			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = -3;		// pops PC and P
-			_6502_anal_esil_ret (op);
+			op->stackptr = -3;		
+			// Operation: P from Stack, PC from Stack
+			r_strbuf_set (&op->esil, "sp,[1],flags,=,1,sp,+=,sp,[2],pc,=,2,sp,+=");
 			break;
 
 		// NOP
@@ -793,7 +822,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		case 0xb1: // lda ($ff),y
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			op->cycles = 6; // FIXME
-			_6502_anal_esil_load (op);
+			_6502_anal_esil_load (op, data);
 			break;
 
 		// LDX
@@ -804,7 +833,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		case 0xbe: // ldx $ffff,y
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			op->cycles = 6; // FIXME
-			_6502_anal_esil_load (op);
+			_6502_anal_esil_load_xy (op, data, 'x');
 			break;
 
 		// LDY
@@ -815,7 +844,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		case 0xbc: // ldy $ffff,x
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			op->cycles = 6; // FIXME
-			_6502_anal_esil_load (op);
+			_6502_anal_esil_load_xy (op, data, 'y');
 			break;
 
 		// STA
@@ -828,7 +857,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		case 0x91: // sta ($ff),y
 			op->type = R_ANAL_OP_TYPE_STORE;
 			op->cycles = 6; // FIXME
-			_6502_anal_esil_store (op);
+			_6502_anal_esil_store (op, data);
 			break;
 
 		// STX
@@ -837,7 +866,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		case 0x8e: // stx $ffff
 			op->type = R_ANAL_OP_TYPE_STORE;
 			op->cycles = 6; // FIXME
-			_6502_anal_esil_store (op);
+			_6502_anal_esil_store_xy (op, data, 'x');
 			break;
 
 		// STY
@@ -846,7 +875,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		case 0x8c: // sty $ffff
 			op->type = R_ANAL_OP_TYPE_STORE;
 			op->cycles = 6; // FIXME
-			_6502_anal_esil_store (op);
+			_6502_anal_esil_store_xy (op, data, 'y');
 			break;
 
 		// PHP/PHA
@@ -926,7 +955,7 @@ static int set_reg_profile(RAnal *anal) {
 static int esil_gb_init (RAnalEsil *esil) {
 	if (esil->anal && esil->anal->reg) {		//initial values
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "pc", -1), 0x0000);
-		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "sp", -1), 0x200);
+		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "sp", -1), 0x1ff);
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "a", -1), 0x00);
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "x", -1), 0x00);
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "y", -1), 0x00);
