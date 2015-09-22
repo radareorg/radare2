@@ -4,9 +4,9 @@ include ../../shlr/zip/deps.mk
 
 CFLAGS+=-DLIBDIR=\"${LIBDIR}\" -I$(LTOP)/include
 BIRTH=$(shell date +%y-%m-%d)
-CFLAGS+=-DR2_BIRTH=\"$(BIRTH)\"
-CFLAGS+=-DR2_GITTIP=\"$(GIT_TIP)\"
-CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
+CFLAGS+=-DR2_BIRTH="\"$(BIRTH)\""
+CFLAGS+=-DR2_GITTIP="\"$(GIT_TIP)\""
+CFLAGS+=-DR2_GITTAP="\"$(GIT_TAP)\""
 
 ifeq (${COMPILER},emscripten)
 EXT_EXE=.js

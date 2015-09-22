@@ -15,11 +15,11 @@ LDFLAGS+=-ldl
 endif
 endif
 
-CFLAGS=-I ../../libr/include/
+CFLAGS=-I../../libr/include/
 CFLAGS+=-DLIBDIR="\"${LIBDIR}\""
-CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\"
-CFLAGS+=-DR2_GITTIP=\"$(GIT_TIP)\"
-CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
+CFLAGS+=-DR2_BIRTH="\"`date +%Y-%m-%d`\""
+CFLAGS+=-DR2_GITTIP="\"$(GIT_TIP)\""
+CFLAGS+=-DR2_GITTAP="\"$(GIT_TAP)\""
 
 #ifeq ($(STATIC_BUILD),1)
 ifeq ($(WITHNONPIC),1)

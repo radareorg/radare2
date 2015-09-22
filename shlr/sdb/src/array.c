@@ -38,13 +38,15 @@ static int astrcmp (const char *a, const char *b) {
 static inline int cstring_cmp(const void *a, const void *b) { 
 	const char **va = (const char **)a;
 	const char **vb = (const char **)b;
-	return astrcmp(*va, *vb);
+	return astrcmp (*va, *vb);
 }
 
 static inline int int_cmp(const void *a, const void *b) { 
-	const ut64 *va = (const ut64 *)a;
-	const ut64 *vb = (const ut64 *)b;
-	return (int)(*va  - *vb);
+	const ut64 va = *(const ut64 *)a;
+	const ut64 vb = *(const ut64 *)b;
+	if (va > vb) return 1;
+	if (va < vb) return -1;
+	return 0;
 } 
 
 SDB_API ut64 sdb_array_get_num(Sdb *s, const char *key, int idx, ut32 *cas) {
@@ -69,14 +71,14 @@ SDB_API char *sdb_array_get(Sdb *s, const char *key, int idx, ut32 *cas) {
 	char *o, *n;
 	int i, len;
 	if (!str || !*str) return NULL;
-	if (idx<0) {
+	if (idx < 0) {
 		int len = sdb_alen (str);
 		idx = -idx;
 		if (idx>len)
 			return NULL;
 		idx = (len-idx);
 	}
-	if (idx==0) {
+	if (idx == 0) {
 		n = strchr (str, SDB_RS);
 		if (!n) return strdup (str);
 		len = n-str;
@@ -85,7 +87,7 @@ SDB_API char *sdb_array_get(Sdb *s, const char *key, int idx, ut32 *cas) {
 		o[len] = 0;
 		return o;
 	}
-	for (i=0; i<idx; i++) {
+	for (i = 0; i < idx; i++) {
 		n = strchr (p, SDB_RS);
 		if (!n) return NULL;
 		p = n+1;
