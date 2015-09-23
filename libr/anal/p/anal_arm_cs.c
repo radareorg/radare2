@@ -807,6 +807,41 @@ static int set_reg_profile(RAnal *anal) {
 		"=of	vf\n"
 		"=cf	cf\n"
 		"=sn	ox0\n"
+
+		/* 32bit sub-registers */
+		"gpr	w0	.32	0	0\n"
+		"gpr	w1	.32	8	0\n"
+		"gpr	w2	.32	16	0\n"
+		"gpr	w3	.32	24	0\n"
+		"gpr	w4	.32	32	0\n"
+		"gpr	w5	.32	40	0\n"
+		"gpr	w6	.32	48	0\n"
+		"gpr	w7	.32	56	0\n"
+		"gpr	w8	.32	64	0\n"
+		"gpr	w9	.32	72	0\n"
+		"gpr	w10	.32	80	0\n"
+		"gpr	w11	.32	88	0\n"
+		"gpr	w12	.32	96	0\n"
+		"gpr	w13	.32	104	0\n"
+		"gpr	w14	.32	112	0\n"
+		"gpr	w15	.32	120	0\n"
+		"gpr	w16	.32	128	0\n"
+		"gpr	w17	.32	136	0\n"
+		"gpr	w18	.32	144	0\n"
+		"gpr	w19	.32	152	0\n"
+		"gpr	w20	.32	160	0\n"
+		"gpr	w21	.32	168	0\n"
+		"gpr	w22	.32	176	0\n"
+		"gpr	w23	.32	184	0\n"
+		"gpr	w24	.32	192	0\n"
+		"gpr	w25	.32	200	0\n"
+		"gpr	w26	.32	208	0\n"
+		"gpr	w27	.32	216	0\n"
+		"gpr	w28	.32	224	0\n"
+		"gpr	w29	.32	232	0\n"
+		"gpr	w30	.32	240	0\n"
+
+		/* 64bit */
 		"gpr	x0	.64	0	0\n" // x0
 		"gpr	x1	.64	8	0\n" // x0
 		"gpr	x2	.64	16	0\n" // x0
