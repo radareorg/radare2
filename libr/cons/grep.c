@@ -8,7 +8,7 @@
 
 R_API void r_cons_grep_help() {
 	eprintf (
-"|Usage: [command]~[modifier][word,word][[column][:line]\n"
+"|Usage: [command]~[modifier][word,word][[column]][:line]\n"
 "| modifiers\n"
 "|   &    all words must match to grep the line\n"
 "|   ^    words must be placed at the beginning of line\n"
@@ -18,7 +18,7 @@ R_API void r_cons_grep_help() {
 "|   {}   json indentation\n"
 "|   {}.. less json indentation\n"
 "| examples:\n"
-"|   i~:0   # show fist line o 'i' output\n"
+"|   i~:0   # show fist line of 'i' output\n"
 "|   pd~mov # disasm and grep for mov\n"
 "|   pi~[0] # show only opcode\n"
 	);
