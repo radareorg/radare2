@@ -1307,8 +1307,7 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 	return ret;
 }
 
-static void fill_symbol_bind_and_type (struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym){
-
+static void fill_symbol_bind_and_type (struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
 	#define s_bind(x) snprintf (ret->bind, ELF_STRING_LENGTH, x);
 	switch (ELF_ST_BIND(sym->st_info)) {
 	case STB_LOCAL:  s_bind ("LOCAL"); break;
@@ -1462,7 +1461,6 @@ done:
 	free (sym);
 	return ret;
 }
-
 
 struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type) {
 	ut32 shdr_size;
@@ -1652,7 +1650,7 @@ if (
 					return NULL;
 				}
 				{
-					int rest = R_MIN (ELF_STRING_LENGTH,128)-1; //strtab_section->sh_size - sym[k].st_name;
+					int rest = R_MIN (ELF_STRING_LENGTH, 128)-1; //strtab_section->sh_size - sym[k].st_name;
 					int st_name = sym[k].st_name;
 					int maxsize = R_MIN (bin->b->length, strtab_section->sh_size);
 					if (st_name<0 || st_name>=maxsize) {

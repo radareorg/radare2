@@ -808,6 +808,7 @@ R_API int r_core_init(RCore *core) {
 	core->cmd_depth = R_CORE_CMD_DEPTH+1;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->zerosep = false;
+	core->lastsearch = NULL;
 	core->incomment = false;
 	core->screen_bounds = 0LL;
 	core->config = NULL;
