@@ -1556,7 +1556,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 
 static int cmd_search(void *data, const char *input) {
 	struct search_parameters param;
-	_Bool dosearch = false;
+	bool dosearch = false;
 	int i, len, ret = true;
 	RCore *core = (RCore *)data;
 	int ignorecase = false;
@@ -1574,10 +1574,20 @@ static int cmd_search(void *data, const char *input) {
 		eprintf ("Can't search from within a search.\n");
 		return false;
 	}
+	if (input[0] == '/') {
+		if (core->lastsearch) {
+			input = core->lastsearch;
+		} else {
+			eprintf ("No previous search done\n");
+			return false;
+		}
+	} else {
+		free (core->lastsearch);
+		core->lastsearch = strdup (input);
+	}
+
 	core->in_search = true;
-
-	r_flag_space_push(core->flags, "searches");
-
+	r_flag_space_push (core->flags, "searches");
 	param.from = param.to = 0;
 	param.inverse = false;
 	param.crypto_search = false;
@@ -1763,10 +1773,6 @@ reread:
 				}
 			}
 		} break;
-	case '/':
-		r_search_begin (core->search);
-		dosearch = true;
-		break;
 	case 'm': // "/m"
 		dosearch = false;
 		if (input[1]==' ' || input[1]=='\0') {

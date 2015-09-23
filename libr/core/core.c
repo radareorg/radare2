@@ -964,6 +964,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	/* TODO: it leaks as shit */
 	//update_sdb (c);
 	// avoid double free
+	R_FREE (c->lastsearch);
 	c->cons->pager = NULL;
 	r_core_task_join (c, NULL);
 	free (c->cmdqueue);

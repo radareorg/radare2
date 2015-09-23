@@ -149,6 +149,7 @@ typedef struct r_core_t {
 	Sdb *sdb;
 	int incomment;
 	int cmdremote;
+	char *lastsearch;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);

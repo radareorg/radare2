@@ -6,8 +6,7 @@
 #include <r_lib.h>
 #include "../arch/mcs96/mcs96.h"
 
-static int mcs96_len (const ut8 buf)
-{
+static int mcs96_len (const ut8 buf) {
 	if (mcs96_op[buf].type & MCS96_6B)
 		return 6;
 	if (mcs96_op[buf].type & MCS96_5B)
@@ -22,7 +21,7 @@ static int mcs96_len (const ut8 buf)
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	strncpy (op->buf_asm, mcs96_op[buf[0]].ins, sizeof(op->buf_asm));
+	strncpy (op->buf_asm, mcs96_op[buf[0]].ins, sizeof (op->buf_asm)-1);
 	op->size = mcs96_len (buf[0]);
 	return op->size;
 }
