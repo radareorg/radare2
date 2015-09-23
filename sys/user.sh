@@ -46,7 +46,7 @@ if [ $? != 0 ]; then
 fi
 ${MAKE} user-install
 echo
-echo radare2 is now installed in ~/.radare2-prefix
+echo "radare2 is now installed in ${HOME}/bin"
 echo
-echo "Now add ${HOME}/bin to your ${PATH}"
+echo "Now add ${HOME}/bin to your PATH"
 echo
