@@ -947,7 +947,7 @@ int wind_write_at (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, cons
 	// LOG_REQ(rr);
 
 	if (rr->ret) {
-		WIN_DBG eprintf("%s : req returned %08x\n", __FUNCTION__, rr->ret);
+		WIND_DBG eprintf("%s : req returned %08x\n", __FUNCTION__, rr->ret);
 		free(pkt);
 		return 0;
 	}
