@@ -399,10 +399,10 @@ typedef struct {
 #define VARFILEINFO_UTF_16     "V\0a\0r\0F\0i\0l\0e\0I\0n\0f\0o\0\0"
 #define VS_VERSION_INFO_UTF_16 "V\0S\0_\0V\0E\0R\0S\0I\0O\0N\0_\0I\0N\0F\0O\0\0"
 
-#define STRINGFILEINFO_UTF_16_LEN  sizeof(STRINGFILEINFO_UTF_16)
-#define TRANSLATION_UTF_16_LEN     sizeof(TRANSLATION_UTF_16)
-#define VARFILEINFO_UTF_16_LEN     sizeof(VARFILEINFO_UTF_16)
-#define VS_VERSION_INFO_UTF_16_LEN sizeof(VS_VERSION_INFO_UTF_16)
+#define STRINGFILEINFO_UTF_16_LEN  23
+#define TRANSLATION_UTF_16_LEN     12
+#define VARFILEINFO_UTF_16_LEN     12
+#define VS_VERSION_INFO_UTF_16_LEN 25
 
 typedef struct {
 	ut16 wLength; //The length, in bytes, of this String structure.

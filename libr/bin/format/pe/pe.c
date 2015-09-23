@@ -1341,13 +1341,13 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj
 	}
 	curAddr += VS_VERSION_INFO_UTF_16_LEN;
 
-	if (memcmp(vs_VersionInfo->szKey, VS_VERSION_INFO_UTF_16, VS_VERSION_INFO_UTF_16_LEN) != 0) {
+	if (memcmp (vs_VersionInfo->szKey, VS_VERSION_INFO_UTF_16, VS_VERSION_INFO_UTF_16_LEN)) {
 		eprintf ("Error: check (VS_VERSIONINFO szKey)\n");
 		free_VS_VERSIONINFO(vs_VersionInfo);
 		return NULL;
 	}
 
-	align32(curAddr);
+	align32 (curAddr);
 
 	if (vs_VersionInfo->wValueLength) {
 		if (vs_VersionInfo->wValueLength != sizeof(*vs_VersionInfo->Value)) {
@@ -1370,7 +1370,8 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj
 		}
 
 		if (vs_VersionInfo->Value->dwSignature != 0xFEEF04BD) {
-			eprintf ("Error: check (PE_VS_FIXEDFILEINFO signature)\n");
+			eprintf ("Error: check (PE_VS_FIXEDFILEINFO signature) 0x%08x\n",
+				vs_VersionInfo->Value->dwSignature);
 			free_VS_VERSIONINFO(vs_VersionInfo);
 			return NULL;
 		}

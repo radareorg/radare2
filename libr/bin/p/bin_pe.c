@@ -145,7 +145,8 @@ static RList* symbols(RBinFile *arch) {
             //strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
             snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "%s", symbols[i].name);
             strncpy (ptr->forwarder, (char*)symbols[i].forwarder, R_BIN_SIZEOF_STRINGS);
-            strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+            //strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+            strncpy (ptr->bind, "GLOBAL", R_BIN_SIZEOF_STRINGS);
             strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
             ptr->size = 0;
             ptr->vaddr = symbols[i].vaddr;
