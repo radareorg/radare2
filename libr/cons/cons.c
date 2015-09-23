@@ -374,8 +374,8 @@ R_API void r_cons_reset() {
 	I.grep.nstrings = 0; // XXX
 	I.grep.line = -1;
 	I.grep.str = NULL;
-	I.grep.tokenfrom = 0;
-	I.grep.tokento = ST32_MAX;
+	memset (I.grep.tokens, 0, R_CONS_GREP_TOKENS);
+	I.grep.tokens_used = 0;
 }
 
 R_API const char *r_cons_get_buffer() {
@@ -384,7 +384,7 @@ R_API const char *r_cons_get_buffer() {
 
 R_API void r_cons_filter() {
 	/* grep*/
-	if (I.grep.nstrings>0||I.grep.tokenfrom!=0||I.grep.tokento!=ST32_MAX||I.grep.line!=-1 || I.grep.less || I.grep.json)
+	if (I.grep.nstrings>0 || I.grep.tokens_used || I.grep.line!=-1 || I.grep.less || I.grep.json)
 		r_cons_grepbuf (I.buffer, I.buffer_len);
 	/* html */
 	/* TODO */

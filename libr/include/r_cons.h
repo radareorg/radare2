@@ -38,6 +38,7 @@ extern "C" {
 
 #define R_CONS_GREP_WORDS 10
 #define R_CONS_GREP_WORD_SIZE 64
+#define R_CONS_GREP_TOKENS 64
 
 R_LIB_VERSION_HEADER(r_cons);
 
@@ -49,8 +50,8 @@ typedef struct r_cons_grep_t {
 	int less;
 	int json;
 	int line;
-	int tokenfrom;
-	int tokento;
+	int tokens[R_CONS_GREP_TOKENS];
+	int tokens_used;
 	int amp;
 	int neg;
 	int begin;
