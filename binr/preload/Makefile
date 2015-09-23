@@ -6,7 +6,6 @@ BINDEPS+=r_lang r_asm r_syscall r_db r_hash r_crypto
 BINDEPS+=r_magic r_socket r_flags r_util r_egg r_fs
 
 include ../rules.mk
-CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
 
 ifeq ($(OSTYPE),android)
 LDFLAGS+=${DL_LIBS} -lm

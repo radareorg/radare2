@@ -15,10 +15,8 @@ ZIP=zip
 ifeq ($(R2VC),)
 R2VC=9999999
 endif
-#binr/ragg2/d
 STRIP?=strip
-#ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
-ifneq ($(shell xz --help 2>/dev/null|grep improve),)
+ifneq ($(shell xz --help 2>/dev/null | grep improve),)
 TAR=tar -cvf
 TAREXT=tar.xz
 CZ=xz -f
@@ -38,9 +36,16 @@ all: plugins.cfg libr/include/r_version.h
 	${MAKE} -C binr
 
 .PHONY: libr/include/r_version.h
+GIT_TAP=$(shell git describe --tags 2>/dev/null || echo $(VERSION))
+GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
+GIT_NOW=$(shell date +%Y-%m-%d)
+
 libr/include/r_version.h:
 	echo "#define R2_VERSION_COMMIT $(R2VC)" > $@.tmp
 	cmp $@.tmp $@ > /dev/null 2>&1 || mv $@.tmp $@
+	echo '#define R2_GITTAP "$(GIT_TAP)"' >> $@
+	echo '#define R2_GITTIP "$(GIT_TIP)"' >> $@
+	echo '#define R2_BIRTH "$(GIT_NOW)"' >> $@
 
 plugins.cfg:
 	@if [ ! -e config-user.mk ]; then echo ; \
