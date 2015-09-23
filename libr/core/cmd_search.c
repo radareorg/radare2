@@ -2134,7 +2134,7 @@ reread:
 		break;
 	default:{
 		const char* help_msg[] = {
-			"Usage:", "/[amx/] [arg]", "Search",
+			"Usage:", "/[amx/] [arg]", "Search stuff (see 'e??search' for options)",
 			"/"," foo\\x00", "search for string 'foo\\0'",
 			"/j"," foo\\x00", "search for string 'foo\\0' (json output)",
 			"/!", " ff", "search for first occurrence not matching",
@@ -2165,6 +2165,7 @@ reread:
 			"/x"," ff0033", "search for hex string",
 			"/x"," ff43 ffd0", "search for hexpair with mask",
 			"/z"," min max", "search for strings of given size",
+#if 0
 			"\nConfiguration:", "", " (type `e??search.` for a complete list)",
 			"e", " cmd.hit = x", "command to execute on every search hit",
 			"e", " search.in = ?", "specify where to search stuff (depends on .from/.to)",
@@ -2172,6 +2173,7 @@ reread:
 			"e", " search.from = 0", "start address",
 			"e", " search.to = 0", "end address",
 			"e", " search.flags = true", "if enabled store flags on keyword hits",
+#endif
 			NULL};
 		r_core_cmd_help (core, help_msg);
 		}
