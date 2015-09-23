@@ -50,11 +50,15 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	static const char* lookup = "0123456789abcdef";
 	char tmpbuf[64], *os = NULL;
 	const int imax = 62;
-	int i = imax;
+	int i = imax, copy_string = 1;
 	if (s) {
 		*s = 0;
 	} else {
 		os = s = tmpbuf;
+	}
+	if (base < 0) {
+		copy_string = 0;
+		base = -base;
 	}
 	if ((base > 16) || (base < 1))
 		return NULL;
@@ -77,10 +81,13 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	if (os) {
 		return strdup (s+i+1);
 	}
-	// unnecessary memmove in case we use the return value
-	// return s + i + 1;
-	memmove (s, s+i+1, strlen (s+i+1)+1);
-	return s;
+	if (copy_string) {
+		// unnecessary memmove in case we use the return value
+		// return s + i + 1;
+		memmove (s, s+i+1, strlen (s+i+1)+1);
+		return s;
+	}
+	return s + i + 1;
 }
 
 SDB_API ut64 sdb_atoi(const char *s) {
