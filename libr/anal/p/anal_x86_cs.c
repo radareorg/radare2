@@ -81,8 +81,7 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 		if (set == 1)
 			snprintf (buf, sizeof (buf), "%"PFMT64d",%s=[%d]",
 				(ut64)op.imm, setarg, op.size);
-		else
-			snprintf (buf, sizeof (buf), "%"PFMT64d, (ut64)op.imm);
+		else snprintf (buf, sizeof (buf), "%"PFMT64d, (ut64)op.imm);
 		return strdup (buf);
 	case X86_OP_MEM:
 		{
@@ -179,8 +178,10 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 	return strdup ("PoP");
 }
 
+static csh handle = 0;
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	csh handle;
+	static int omode = 0;
 #if USE_ITER_API
 	static
 #endif
@@ -188,12 +189,22 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int mode = (a->bits==64)? CS_MODE_64:
 		(a->bits==32)? CS_MODE_32:
 		(a->bits==16)? CS_MODE_16: 0;
-	int n, ret = cs_open (CS_ARCH_X86, mode, &handle);
+	int n, ret;
 	int regsz = 4;
 
-	if (ret != CS_ERR_OK) {
-		return 0;
+	if (handle && mode != omode) {
+		cs_close (&handle);
+		handle = 0;
 	}
+	omode = mode;
+	if (handle == 0) {
+		ret = cs_open (CS_ARCH_X86, mode, &handle);
+		if (ret != CS_ERR_OK) {
+			handle = 0;
+			return 0;
+		}
+	}
+
 	switch (a->bits) {
 	case 64: regsz = 8; break;
 	case 16: regsz = 2; break;
@@ -1204,7 +1215,7 @@ SETL/SETNGE
 		cs_free (insn, n);
 #endif
 	}
-	cs_close (&handle);
+	//cs_close (&handle);
 	return op->size;
 }
 
