@@ -834,8 +834,9 @@ enum {
 	R_ANAL_TRAP_DIVBYZERO = 3,
 	R_ANAL_TRAP_WRITE_ERR = 4,
 	R_ANAL_TRAP_READ_ERR = 5,
-	R_ANAL_TRAP_TODO = 6,
-	R_ANAL_TRAP_HALT = 7,
+	R_ANAL_TRAP_EXEC_ERR = 6,
+	R_ANAL_TRAP_TODO = 7,
+	R_ANAL_TRAP_HALT = 8,
 };
 
 enum {
@@ -937,6 +938,7 @@ typedef struct r_anal_esil_t {
 	int skip;
 	int nowrite;
 	int iotrap;
+	int exectrap;
 	int repeat;
 	int parse_stop;
 	int parse_goto;

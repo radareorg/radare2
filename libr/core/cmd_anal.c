@@ -1337,8 +1337,10 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		int romem = r_config_get_i (core->config, "esil.romem");
 		int stats = r_config_get_i (core->config, "esil.stats");
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
+		int exectrap = r_config_get_i (core->config, "esil.exectrap");
 		core->anal->esil = r_anal_esil_new (iotrap);
 		r_anal_esil_setup (core->anal->esil, core->anal, romem, stats); // setup io
+		core->anal->esil->exectrap = exectrap;
 		RList *entries = r_bin_get_entries (core->bin);
 		RBinAddr *entry = NULL;
 		RBinInfo *info = NULL;
@@ -1365,6 +1367,15 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	}
 	if (core->anal->esil->delay)
 		addr = core->anal->esil->delay_addr;
+	if (core->anal->esil->exectrap) {
+		if (!(r_io_section_get_rwx (core->io, addr) & R_IO_EXEC)) {
+			RAnalEsil *esil = core->anal->esil;
+			esil->trap = R_ANAL_TRAP_EXEC_ERR;
+			esil->trap_code = addr;
+			eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
+			return 1;
+		}
+	}
 	r_io_read_at (core->io, addr, code, sizeof (code));
 	r_asm_set_pc (core->assembler, addr);
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
