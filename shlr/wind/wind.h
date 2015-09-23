@@ -32,18 +32,18 @@ typedef struct WindProc {
 // grep -e "^wind_" shlr/wind/wind.c | sed -e 's/ {$/;/' -e 's/^/int /'
 uint64_t wind_get_target_base (WindCtx *ctx);
 uint32_t wind_get_target (WindCtx *ctx);
-int wind_set_target (WindCtx *ctx, uint32_t pid);
+bool wind_set_target (WindCtx *ctx, uint32_t pid);
 RList *wind_list_process (WindCtx *ctx);
 int wind_get_cpus (WindCtx *ctx);
-int wind_set_cpu (WindCtx *ctx, int cpu);
+bool wind_set_cpu (WindCtx *ctx, int cpu);
 int wind_get_cpu (WindCtx *ctx);
 WindCtx * wind_ctx_new (void *io_ptr);
 void wind_ctx_free (WindCtx *ctx);
 int wind_wait_packet (WindCtx *ctx, const uint32_t type, kd_packet_t **p);
 int wind_sync (WindCtx *ctx);
-int wind_read_ver (WindCtx *ctx);
+bool wind_read_ver (WindCtx *ctx);
 int wind_continue (WindCtx *ctx);
-int wind_write_reg (WindCtx *ctx, const uint8_t *buf, int size);
+bool wind_write_reg (WindCtx *ctx, const uint8_t *buf, int size);
 int wind_read_reg (WindCtx *ctx, uint8_t *buf, int size);
 int wind_query_mem (WindCtx *ctx, const uint64_t addr, int *address_space, int *flags);
 int wind_bkpt (WindCtx *ctx, const uint64_t addr, const int set, const int hw, int *handle);
@@ -51,7 +51,7 @@ int wind_read_at (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int c
 int wind_read_at_phys (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count);
 int wind_write_at (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, const int count);
 int wind_write_at_phys (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, const int count);
-int wind_va_to_pa (WindCtx *ctx, uint64_t va, uint64_t *pa);
-int wind_break (WindCtx *ctx);
+bool wind_va_to_pa (WindCtx *ctx, uint64_t va, uint64_t *pa);
+bool wind_break (WindCtx *ctx);
 int wind_break_read(WindCtx *ctx);
 #endif
