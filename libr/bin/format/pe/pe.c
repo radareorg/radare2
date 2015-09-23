@@ -1334,7 +1334,7 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj
 		return NULL;
 	}
 
-	if (r_buf_read_at(bin->b, curAddr, (ut8*)vs_VersionInfo->szKey, VS_VERSION_INFO_UTF_16_LEN) != VS_VERSION_INFO_UTF_16_LEN) {
+	if (r_buf_read_at (bin->b, curAddr, (ut8*)vs_VersionInfo->szKey, VS_VERSION_INFO_UTF_16_LEN) != VS_VERSION_INFO_UTF_16_LEN) {
 		eprintf ("Error: read (VS_VERSIONINFO szKey)\n");
 		free_VS_VERSIONINFO(vs_VersionInfo);
 		return NULL;
@@ -1350,20 +1350,21 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj
 	align32 (curAddr);
 
 	if (vs_VersionInfo->wValueLength) {
-		if (vs_VersionInfo->wValueLength != sizeof(*vs_VersionInfo->Value)) {
+		if (vs_VersionInfo->wValueLength != sizeof (*vs_VersionInfo->Value)) {
 			eprintf ("Error: check (VS_VERSIONINFO wValueLength != sizeof PE_VS_FIXEDFILEINFO)\n");
-			free_VS_VERSIONINFO(vs_VersionInfo);
+			free_VS_VERSIONINFO (vs_VersionInfo);
 			return NULL;
 		}
 
 		vs_VersionInfo->Value = (PE_VS_FIXEDFILEINFO *) malloc (sizeof(*vs_VersionInfo->Value));
 		if (vs_VersionInfo->Value == NULL) {
 			eprintf ("Error: malloc (VS_VERSIONINFO Value)\n");
-			free_VS_VERSIONINFO(vs_VersionInfo);
+			free_VS_VERSIONINFO (vs_VersionInfo);
 			return NULL;
 		}
 
-		if (r_buf_read_at(bin->b, curAddr, (ut8*)vs_VersionInfo->Value, sizeof(*vs_VersionInfo->Value)) != sizeof(*vs_VersionInfo->Value)) {
+		const int sz = sizeof(*vs_VersionInfo->Value);
+		if (r_buf_read_at (bin->b, curAddr, (ut8*)vs_VersionInfo->Value, sz) != sz) {
 			eprintf ("Error: read (VS_VERSIONINFO Value)\n");
 			free_VS_VERSIONINFO(vs_VersionInfo);
 			return NULL;
