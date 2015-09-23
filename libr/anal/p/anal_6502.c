@@ -952,7 +952,7 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-static int esil_gb_init (RAnalEsil *esil) {
+static int esil_6502_init (RAnalEsil *esil) {
 	if (esil->anal && esil->anal->reg) {		//initial values
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "pc", -1), 0x0000);
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "sp", -1), 0x1ff);
@@ -964,7 +964,7 @@ static int esil_gb_init (RAnalEsil *esil) {
 	return true;
 }
 
-static int esil_gb_fini (RAnalEsil *esil) {
+static int esil_6502_fini (RAnalEsil *esil) {
 	return true;
 }
 
@@ -984,8 +984,8 @@ struct r_anal_plugin_t r_anal_plugin_6502 = {
 	.diff_eval = NULL,
 	.set_reg_profile = &set_reg_profile,
 	.esil = R_TRUE,
-	.esil_init = esil_gb_init,
-	.esil_fini = esil_gb_fini,
+	.esil_init = esil_6502_init,
+	.esil_fini = esil_6502_fini,
 };
 
 #ifndef CORELIB
