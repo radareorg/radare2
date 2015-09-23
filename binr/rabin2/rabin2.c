@@ -30,6 +30,7 @@
 #define ACTION_PDB       0x080000
 #define ACTION_PDB_DWNLD 0x100000
 #define ACTION_DLOPEN    0x200000
+#define ACTION_EXPORTS   0x400000
 
 static struct r_bin_t *bin = NULL;
 static char* output = NULL;
@@ -60,7 +61,7 @@ static int rabin_show_help(int v) {
 		" -d              show debug/dwarf information\n"
 		" -D lang name    demangle symbol name (-D all for bin.demangle=true)\n"
 		" -e              entrypoint\n"
-		" -E              show loading offset (useful for non-ASLR libraries)\n"
+		" -E              exports (global symbols, aka -s| grep GLOBAL)\n"
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
 		" -g              same as -SMResiz (show all info)\n"
@@ -70,8 +71,8 @@ static int rabin_show_help(int v) {
 		" -i              imports (symbols imported from libraries)\n"
 		" -I              binary info\n"
 		" -j              output in json\n"
-		" -K [algo]       calculate checksums (md5, sha1, ..)\n"
 		" -k [sdb-query]  run sdb query. for example: '*'\n"
+		" -K [algo]       calculate checksums (md5, sha1, ..)\n"
 		" -l              linked libraries\n"
 		" -L              list supported bin plugins\n"
 		" -m [addr]       show source line at addr\n"
@@ -84,6 +85,7 @@ static int rabin_show_help(int v) {
 		" -P              show debug/pdb information\n"
 		" -PP             download pdb file for binary\n"
 		" -q              be quiet, just show fewer data\n"
+		" -Q              show load address used by dlopen (non-aslr libs)\n"
 		" -r              radare output\n"
 		" -R              relocations\n"
 		" -s              symbols (exports)\n"
@@ -476,7 +478,8 @@ int main(int argc, char **argv) {
 			}
 			break;
 		case 'e': set_action (ACTION_ENTRIES); break;
-		case 'E': set_action (ACTION_DLOPEN); break;
+		case 'E': set_action (ACTION_EXPORTS); break;
+		case 'Q': set_action (ACTION_DLOPEN); break;
 		case 'M': set_action (ACTION_MAIN); break;
 		case 'l': set_action (ACTION_LIBS); break;
 		case 'R': set_action (ACTION_RELOCS); break;
@@ -821,6 +824,7 @@ int main(int argc, char **argv) {
 	run_action ("imports", ACTION_IMPORTS, R_CORE_BIN_ACC_IMPORTS);
 	run_action ("classes", ACTION_CLASSES, R_CORE_BIN_ACC_CLASSES);
 	run_action ("symbols", ACTION_SYMBOLS, R_CORE_BIN_ACC_SYMBOLS);
+	run_action ("exports", ACTION_EXPORTS, R_CORE_BIN_ACC_EXPORTS);
 	run_action ("strings", ACTION_STRINGS, R_CORE_BIN_ACC_STRINGS);
 	run_action ("info", ACTION_INFO, R_CORE_BIN_ACC_INFO);
 	run_action ("fields", ACTION_FIELDS, R_CORE_BIN_ACC_FIELDS);

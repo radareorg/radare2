@@ -264,6 +264,7 @@ static int cmd_info(void *data, const char *input) {
 				r_bin_list_archs (core->bin, 1);
 			}
 			break;
+		case 'E': RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS); break;
 		case 'Z': RBININFO ("size", R_CORE_BIN_ACC_SIZE); break;
 		case 'S': RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS); break;
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS); break;
@@ -407,6 +408,7 @@ static int cmd_info(void *data, const char *input) {
 				"id", "", "Debug information (source lines)",
 				"iD", " lang sym", "demangle symbolname for given language",
 				"ie", "", "Entrypoint",
+				"iE", "", "Exports (global symbols)",
 				"ih", "", "Headers",
 				"ii", "", "Imports",
 				"iI", "", "Binary info",

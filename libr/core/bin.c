@@ -1053,7 +1053,11 @@ static void snFini(SymName *sn) {
 	R_FREE (sn->methflag);
 }
 
-static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name) {
+static bool isAnExport(RBinSymbol *s) {
+	return (!strcmp (s->bind, "GLOBAL"));
+}
+
+static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	int is_arm = info && info->arch && !strcmp (info->arch, "arm");
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
@@ -1078,6 +1082,9 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			ut64 at = rva (r->bin, symbol->paddr, symbol->vaddr, va);
 			ut64 vaddr = rva_va (r->bin, symbol->paddr, symbol->vaddr);
 			SymName sn;
+			if (exponly && !isAnExport (symbol)) {
+				continue;
+			}
 
 			snInit (r, &sn, symbol, lang);
 
@@ -1102,6 +1109,9 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_list_foreach (symbols, iter, symbol) {
+			if (exponly && !isAnExport (symbol)) {
+				continue;
+			}
 			ut64 at = rva (r->bin, symbol->paddr, symbol->vaddr, va);
 			char *name = strdup (symbol->name);
 			if (bin_demangle) {
@@ -1125,6 +1135,9 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		int lastfs = 's';
 		r_flag_space_set (r->flags, "symbols");
 		r_list_foreach (symbols, iter, symbol) {
+			if (exponly && !isAnExport (symbol)) {
+				continue;
+			}
 			SymName sn;
 			ut64 addr = rva (r->bin, symbol->paddr, symbol->vaddr, va);
 
@@ -1190,11 +1203,19 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	} else {
 		int lastfs = 's';
 		if (!at) {
-			if (mode) r_cons_printf ("fs symbols\n");
-			else r_cons_printf ("[Symbols]\n");
+			if (exponly) {
+				if (mode) r_cons_printf ("fs exports\n");
+				else r_cons_printf ("[Exports]\n");
+			} else {
+				if (mode) r_cons_printf ("fs symbols\n");
+				else r_cons_printf ("[Symbols]\n");
+			}
 		}
 
 		r_list_foreach (symbols, iter, symbol) {
+			if (exponly && !isAnExport (symbol)) {
+				continue;
+			}
 			ut64 addr = va ? r_bin_get_vaddr (r->bin, symbol->paddr, symbol->vaddr) : symbol->paddr;
 			if (name && strcmp (symbol->name, name))
 				continue;
@@ -1236,8 +1257,13 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 							r_cons_printf ("fs imports\n");
 						lastfs = 'i';
 					} else {
-						if (lastfs != 's')
-							r_cons_printf ("fs symbols\n");
+						if (lastfs != 's') {
+							if (exponly) {
+								r_cons_printf ("fs exports\n");
+							} else {
+								r_cons_printf ("fs symbols\n");
+							}
+						}
 						lastfs = 's';
 					}
 					r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
@@ -1277,10 +1303,18 @@ static int bin_symbols (RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			}
 			i++;
 		}
-		if (!at && !mode) r_cons_printf ("\n%i symbols\n", i);
+		if (!at && !mode) r_cons_printf ("\n%i %s\n", i, exponly? "exports": "symbols");
 	}
 	r_space_set (&r->anal->meta_spaces, NULL);
 	return true;
+}
+
+static int bin_exports(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name) {
+	return bin_symbols_internal (r, mode, laddr, va, at, name, true);
+}
+
+static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name) {
+	return bin_symbols_internal (r, mode, laddr, va, at, name, false);
 }
 
 static int bin_sections (RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum) {
@@ -1748,6 +1782,8 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 		ret &= bin_relocs (core, mode, va);
 	if ((action & R_CORE_BIN_ACC_IMPORTS))
 		ret &= bin_imports (core, mode, va, name);
+	if ((action & R_CORE_BIN_ACC_EXPORTS))
+		ret &= bin_exports (core, mode, loadaddr, va, at, name);
 	if ((action & R_CORE_BIN_ACC_SYMBOLS))
 		ret &= bin_symbols (core, mode, loadaddr, va, at, name);
 	if ((action & R_CORE_BIN_ACC_SECTIONS))
