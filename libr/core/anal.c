@@ -1504,8 +1504,12 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	int count = 0;
 	RAnalOp op = {0};
 
-	if (from >= to) {
-		eprintf ("Invalid range (from >= to)\n");
+	if (from == to) {
+		return -1;
+	}
+	if (from > to) {
+		eprintf ("Invalid range (0x%"PFMT64x
+		" >= 0x%"PFMT64x")\n", from, to);
 		return -1;
 	}
 
