@@ -171,6 +171,7 @@ typedef struct r_run_profile_t {
 	char *_args[R_RUN_PROFILE_NARGS];
 	char *_system;
 	char *_program;
+	char *_stdio;
 	char *_stdin;
 	char *_stdout;
 	char *_stderr;
