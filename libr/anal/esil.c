@@ -13,7 +13,7 @@
 
 /* Returns the number that has bits+1 least significant bits set. */
 static inline ut64 genmask (int bits) {
-	ut64 m = (ut64)(((2) << bits) - 1);
+	ut64 m = (ut64)(((ut64)(2) << bits) - 1);
 	if (!m) m = UT64_MAX;
 	return m;
 }

@@ -814,16 +814,12 @@ RList* MACH0_(parse_classes)(RBinFile *arch)
 		get_class_t (p, arch, processed_class);
 
 		if (!processed_class->name) {
-			st8 *tmp = 0;
-
-			tmp = r_str_newf ("%s%llu", "UnnamedClass", num_of_unnamed_class);
-			processed_class->name = strdup(tmp);
+			processed_class->name = r_str_newf ("%s%llu", "UnnamedClass", num_of_unnamed_class);
 			if (!processed_class->name) {
 				goto get_classes_error;
 			}
 
 			num_of_unnamed_class++;
-			R_FREE (tmp);
 		}
 
 		r_list_append (ret, processed_class);

@@ -61,6 +61,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	dol = R_NEW0 (DolHeader);
 	lowername = strdup (arch->file);
 	if (sz < sizeof (DolHeader)) {
+		free (lowername);
 		free (dol);
 		return NULL;
 	}
