@@ -12,7 +12,7 @@ R2PM_INSTALL() {
 }
 
 R2PM_UNINSTALL() {
-	rm -f "${R2PM_PLUGDIR}/asm_ppcdisasm.*"
+	rm -f "${R2PM_PLUGDIR}/asm_ppc_disasm."*
 }
 
 R2PM_END

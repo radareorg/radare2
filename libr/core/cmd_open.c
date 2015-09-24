@@ -228,6 +228,7 @@ static int cmd_open(void *data, const char *input) {
 		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
 		"oo","","reopen current file (kill+fork in debugger)",
 		"oo","+","reopen current file in read-write",
+		"ood"," [args]","reopen in debugger mode (with args)",
 		"o"," 4","priorize io on fd 4 (bring to front)",
 		"o","-1","close file descriptor 1",
 		"o-","*","close all opened files",
