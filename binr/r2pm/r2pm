@@ -28,7 +28,7 @@ R2PM_DESC() {
 R2PM_List() {
 	cd "${R2PM_USRDIR}/pkg"
 	if [ -n "$1" ]; then
-		ls | grep "$1"
+		ls | grep -i "$1"
 	else
 		ls | cat
 	fi
@@ -37,7 +37,7 @@ R2PM_List() {
 R2PM_Search() {
 	cd "${R2PM_DBDIR}"
 	if [ -n "$1" ]; then
-		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf '\t'`," -e 's,",,g' | grep "$1"
+		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf '\t'`," -e 's,",,g' | grep -i "$1"
 	else
 		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf '\t'`," -e 's,",,g'
 	fi
