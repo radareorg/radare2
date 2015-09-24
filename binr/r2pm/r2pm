@@ -25,10 +25,6 @@ R2PM_DESC() {
 	:
 }
 
-GetDesc() {
-	grep R2PM_DESC $1 |cut -d ' ' -f 2- |xargs echo
-}
-
 R2PM_List() {
 	cd "${R2PM_USRDIR}/pkg"
 	if [ -n "$1" ]; then
@@ -39,20 +35,11 @@ R2PM_List() {
 }
 
 R2PM_Search() {
-	if [ -z "${R2PM_DBDIR}" ]; then
-		exit 1
-	fi # && (cd ${R2PM_DBDIR} ; ls | cat)
 	cd "${R2PM_DBDIR}"
 	if [ -n "$1" ]; then
-		for a in `ls` ; do
-			d=`GetDesc $a`
-			echo "$a    \t$d" | grep "$1"
-		done
+		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf '\t'`," -e 's,",,g' | grep "$1"
 	else
-		for a in `ls` ; do
-			d=`GetDesc $a`
-			echo "$a    \t$d"
-		done
+		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf '\t'`," -e 's,",,g'
 	fi
 }
 
@@ -155,7 +142,7 @@ case "$1" in
 *|help|-h)
 	echo "Usage: r2pm [cmd] [...]"
 	echo "Commands:"
-	echo " -i,info                 r2pm -i # packages info"
+	echo " -i,info                 r2pm -i # pkgs info"
 	echo " -i,install <pkgname>    r2pm -i baleful"
 	echo " -u,uninstall <pkgname>  r2pm -u baleful"
 	echo " -l,list                 list installed pkgs"
