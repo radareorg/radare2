@@ -396,7 +396,7 @@ int main(int argc, char **argv) {
 	/* load plugins everywhere */
 	r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
 	r_lib_opendir (l, homeplugindir);
-	r_lib_opendir (l, LIBDIR"/radare2/"R2_VERSION);
+	r_lib_opendir (l, R2_LIBDIR"/radare2/"R2_VERSION);
 
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |= x

@@ -490,7 +490,7 @@ static int meta_unset_cb(void *user, const char *k, const char *v) {
 	char nk[128], nv[4096];
 	RAnalMetaUserItem *ui = user;
 	RAnal *a = ui->anal;
-	RAnalMetaItem it;
+	RAnalMetaItem it = {0};
 	if (!strstr(k, ".0x"))
 		return 1;
 	deserialize (&it, k, v);
@@ -515,7 +515,7 @@ typedef struct {
 static int meta_count_cb(void *user, const char *k, const char *v) {
 	RAnalMetaUserItem *ui = user;
 	myMetaUser *mu = ui->user;
-	RAnalMetaItem it;
+	RAnalMetaItem it = {0};
 	if (!strstr(k, ".0x"))
 		return 1;
 	deserialize (&it, k, v);

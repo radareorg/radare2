@@ -12,7 +12,6 @@ endif
 
 ALL?=
 CFLAGS+=-I$(LIBR)/include
-CFLAGS+=-DGIT_TAP=\"${GIT_TAP}\"
 LINK+=$(addprefix -L../,$(subst r_,,$(BINDEPS)))
 LINK+=$(addprefix -l,$(BINDEPS))
 SRC=$(subst .o,.c,$(OBJ))

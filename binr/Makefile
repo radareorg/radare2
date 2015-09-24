@@ -32,7 +32,7 @@ install:
 	rm -f "${BFX}/ragg2-cc"
 	rm -rf "${PFX}/radare2/${VERSION}/r2pm"
 	mkdir -p "${PFX}/radare2/${VERSION}/r2pm"
-	cp -rf "`pwd`/r2pm/d/*" "${PFX}/radare2/${VERSION}/r2pm"
+	cp -rf r2pm/d/* "${PFX}/radare2/${VERSION}/r2pm"
 	${INSTALL_SCRIPT} ragg2/ragg2-cc "${BFX}/ragg2-cc"
 	-cd "${BFX}" && rm -f r2 ; ln -fs radare2 r2
 	${INSTALL_LIB} "preload/libr2.$(EXT_SO)" "$(LFX)"

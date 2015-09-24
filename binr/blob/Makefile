@@ -16,7 +16,6 @@ endif
 endif
 
 CFLAGS=-I../../libr/include/
-CFLAGS+=-DLIBDIR="\"${LIBDIR}\""
 
 #ifeq ($(STATIC_BUILD),1)
 ifeq ($(WITHNONPIC),1)

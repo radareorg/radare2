@@ -2,7 +2,7 @@ BINR_PROGRAM=1
 include ../../libr/config.mk
 include ../../shlr/zip/deps.mk
 
-CFLAGS+=-DLIBDIR=\"${LIBDIR}\" -I$(LTOP)/include
+CFLAGS+=-I$(LTOP)/include
 
 ifeq (${COMPILER},emscripten)
 EXT_EXE=.js
