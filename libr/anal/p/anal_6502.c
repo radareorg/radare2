@@ -1,6 +1,12 @@
 /* radare - LGPL - Copyright 2015 - condret, riq */
 
-/* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm */
+/* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm 
+ *
+ * Mnemonics logic based on:
+ *	http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
+ * and:
+ *	http://vice-emu.sourceforge.net/
+ */
 
 #include <string.h>
 #include <r_types.h>
@@ -343,10 +349,61 @@ static void _6502_anal_esil_shiftr(RAnalOp *op, const ut8* data)
 	_6502_anal_update_NZ(op);
 }
 
-static void _6502_anal_esil_rotate(RAnalOp *op, const ut8* data, const char* operation)
+static void _6502_anal_esil_rotatel(RAnalOp *op, const ut8* data)
 {
-	r_strbuf_setf (&op->esil, "TODO");
+	ut16 mem = 0; 
+	if (op->size == 2) mem += data[1];
+	if (op->size == 3) mem += data[2] << 8;
+
+	// a,a,= is a HACK for $z (from anal_gb.c)
+	switch(data[0]) {
+	case 0x2a: // rol a
+		r_strbuf_setf (&op->esil, "1,a,<<,C,|,a,=,$c7,C,=,a,a,=");
+		break;
+	case 0x26: // rol $ff
+		r_strbuf_setf (&op->esil, "1,0x%02x,[1],<<,C,|,0x%02x,=[1],$c7,C,=", mem, mem);
+		break;
+	case 0x36: // rol $ff,x
+		r_strbuf_setf (&op->esil, "1,x,0x%02x,+,[1],<<,C,|,x,0x%02x,+,=[1],$c7,C,=", mem, mem);
+		break;
+	case 0x2e: // rol $ffff
+		r_strbuf_setf (&op->esil, "1,0x%04x,[1],<<,C,|,0x%04x,=[1],$c7,C,=", mem, mem);
+		break;
+	case 0x3e: // rol $ffff,x
+		r_strbuf_setf (&op->esil, "1,x,0x%04x,+,[1],<<,C,|,x,0x%04x,+,=[1],$c7,C,=", mem, mem);
+		break;
+	}
+	_6502_anal_update_NZ(op);
 }
+
+static void _6502_anal_esil_rotater(RAnalOp *op, const ut8* data)
+{
+	ut16 mem = 0; 
+	if (op->size == 2) mem += data[1];
+	if (op->size == 3) mem += data[2] << 8;
+
+	// uses N as temporary to hold C value. but in fact,
+	// it is not temporary since in all ROR ops, N will have the value of C
+	switch(data[0]) {
+	case 0x6a: // ror a
+		r_strbuf_setf (&op->esil, "C,N,=,1,a,&,C,=,1,a,>>,7,N,<<,|,a,=");
+		break;
+	case 0x66: // ror $ff
+		r_strbuf_setf (&op->esil, "C,N,=,1,0x%02x,[1],&,C,=,1,0x%02x,[1],>>,7,N,<<,|,0x%02x,=[1]", mem, mem, mem);
+		break;
+	case 0x76: // ror $ff,x
+		r_strbuf_setf (&op->esil, "C,N,=,1,x,0x%02x,+,[1],&,C,=,1,x,0x%02x,+,[1],>>,7,N,<<,|,x,0x%02x,+,=[1]", mem, mem, mem);
+		break;
+	case 0x6e: // ror $ffff
+		r_strbuf_setf (&op->esil, "C,N,=,1,0x%04x,[1],&,C,=,1,0x%04x,[1],>>,7,N,<<,|,0x%04x,=[1]", mem, mem, mem);
+		break;
+	case 0x7e: // ror $ffff,x
+		r_strbuf_setf (&op->esil, "C,N,=,1,x,0x%04x,+,[1],&,C,=,1,x,0x%04x,+,[1],>>,7,N,<<,|,x,0x%04x,+,=[1]", mem, mem, mem);
+		break;
+	}
+	_6502_anal_update_NZ(op);
+}
+
 
 static void _6502_anal_esil_cmp(RAnalOp *op, const ut8* data)
 {
@@ -624,7 +681,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			// FIXME: set correct cycles for each opcode
 			op->cycles = 7;
 			op->type = R_ANAL_OP_TYPE_ROL;
-			_6502_anal_esil_rotate (op, data, "<<<");
+			_6502_anal_esil_rotatel (op, data);
 			break;
 
 		// ROR
@@ -636,7 +693,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			// FIXME: set correct cycles for each opcode
 			op->cycles = 7;
 			op->type = R_ANAL_OP_TYPE_ROR;
-			_6502_anal_esil_rotate (op, data, ">>>");
+			_6502_anal_esil_rotater (op, data);
 			break;
 
 		// INC
@@ -959,7 +1016,7 @@ static int set_reg_profile(RAnal *anal) {
 
 		"gpr	sp	.8	4	0\n"
 
-		"gpr	pc	.16	6	0\n";
+		"gpr	pc	.16	5	0\n";
 
 	return r_reg_set_profile_string (anal->reg, p);
 }
