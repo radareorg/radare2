@@ -78,10 +78,10 @@
           </button>
           <ul class="mdl-menu mdl-js-menu mdl-js-ripple-effect mdl-menu--bottom-right" for="hdrbtn">
             <li class="mdl-menu__item"><a target=_blank href="./">New Window</a></li>
-            <li class="mdl-menu__item"><a href='javascript:panelConsole()'>Console</a></li>
-            <li class="mdl-menu__item"><a href='javascript:panelSettings()'>Settings</a></li>
-            <li class="mdl-menu__item"><a href='javascript:panelAbout()'>About</a></li>
-            <li class="mdl-menu__item"><a href="mailto:pancake@nopcode.org">Contact</a></li>
+            <li onclick="panelConsole()" class="mdl-menu__item">Console</li>
+            <li onclick="panelSettings()" class="mdl-menu__item">Settings</li>
+            <li onclick="panelAbout()" class="mdl-menu__item">About</li>
+            <li onclick="mailto:pancake@nopcode.org" class="mdl-menu__item">Contact</li>
           </ul>
         </div>
       </header>
@@ -100,9 +100,9 @@
             </button>
             <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect" for="accbtn">
               <li class="mdl-menu__item"><a href="open.html">Open</a></li>
-              <li class="mdl-menu__item"><a href="javascript:saveProject()">Save</a></li>
-              <li class="mdl-menu__item"><a href="javascript:deleteProject()">Delete</a></li>
-              <li class="mdl-menu__item"><a href="javascript:closeProject()">Close</a></li>
+              <li onclick="saveProject()" class="mdl-menu__item">Save</li>
+              <li onclick="deleteProject()" class="mdl-menu__item">Delete</li>
+              <li onclick="closeProject()" class="mdl-menu__item">Close</li>
             </ul>
           </div>
         </header>
@@ -268,12 +268,13 @@
         </defs>
       </svg>
       <a href="javascript:seek()" id="view-source" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">seek</a>
-    <script type="application/javascript;version=1.7" src="material.min.js"></script>
 <!--
+    <script type="application/javascript;version=1.7" src="material.min.js"></script>
     <script type="application/javascript;version=1.7" src="r2.js"></script>
     <script type="application/javascript;version=1.7" src="index.js"></script>
     <script type="application/javascript;version=1.7" src="beautify.js"></script>
 -->
+    <script type="application/javascript" src="material.min.js"></script>
     <script type="application/javascript" src="r2.js"></script>
     <script type="application/javascript" src="index.js"></script>
     <script type="application/javascript" src="beautify.js"></script>

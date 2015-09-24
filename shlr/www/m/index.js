@@ -259,22 +259,47 @@ function configBits64() { r2.cmd("e asm.bits=64"); }
 function configColorTrue() { inColor = true; }
 function configColorFalse() { inColor = false; }
 
+var comboId = 0;
+
+function uiCombo(d) {
+	var fun_name = "combo"+(++comboId);
+	var fun = fun_name +' = function(e) {';
+	fun += ' var sel = document.getElementById("opt_'+fun_name+'");';
+	fun += ' var opt = sel.options[sel.selectedIndex].value;'
+	fun += ' switch (opt) {';
+	for (var a in d) {
+		fun += 'case "'+d[a].name+'": '+d[a].js+'();break;';
+	}
+	fun += '}}';
+	eval (fun);
+	var out = '<select id="opt_'+fun_name+'" onchange="'+fun_name+'()">';
+	for (var a in d) {
+		var def = (d[a].default)? " default": ""
+		out += '<option'+def+'>'+d[a].name+'</option>';
+	}
+	out += '</select>';
+	return out;
+}
+
+function uiSwitch(d) {
+// TODO: not yet done
+	var out = ''+d+
+'<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="switch-1">'+
+'<input type="checkbox" id="switch-1" class="mdl-switch__input" checked />'+
+'<span class="mdl-switch__label"></span>'+
+'</label>';
+	return out;
+}
+
 function uiBlock(d) {
-	var out = '<br /><div class="mdl-card__supporting-text mdl-color-text--blue-grey-50" style="color:black !important;background-color:white !important">';
+	var out = '<br /><div class="mdl-card__supporting-text mdl-shadow--2dp mdl-color-text--blue-grey-50 mdl-cell" style="display:inline-block;margin:5px;color:black !important;background-color:white !important">';
 	out += '<h3 style="color:black">'+d.name+'</h3>';
 	for (var i in d.blocks) {
 		var D = d.blocks[i];
 		out += '<br />'+D.name+': ';
-		for (var b in D.buttons) {
-			var B = D.buttons[b];
-if (B.default) {
-			out += uiButton('javascript:'+B.js+'()', B.name, 'active');
-} else {
-			out += uiButton('javascript:'+B.js+'()', B.name);
-}
-		}
+		out += uiCombo(D.buttons);
 	}
-	out += '</div><br />';
+	out += '</div>';
 	return out;
 }
 
@@ -294,10 +319,10 @@ function panelSettings() {
 			{ name: "dalvik", js: 'configArchDALVIK' },
 		]}, 
 	     { name: "Bits", buttons: [
-			{ name: "8", js: 'configBits8' },
-			{ name: "16", js: 'configBits16' },
-			{ name: "32", js: 'configBits32', default:true },
 			{ name: "64", js: 'configBits64' },
+			{ name: "32", js: 'configBits32', default:true },
+			{ name: "16", js: 'configBits16' },
+			{ name: "8", js: 'configBits8' },
 		]},
 	     { name: "OS", buttons: [
 			{ name: "Linux", js: 'configOS_LIN', default:true },
@@ -306,7 +331,7 @@ function panelSettings() {
 		]},
 	    ]
 	});
-	out += uiBlock({ name: 'Disassembly Options', blocks: [
+	out += uiBlock({ name: 'Disassembly', blocks: [
 		{
 		       name: 'Size', buttons: [
 			{ name: "S", js: 'smallDisasm' },
@@ -319,8 +344,13 @@ function panelSettings() {
 			{ name: 'Opcodes', js: 'configOpcodes' },
 			{ name: 'ATT', js: 'configATT' }
 		       ]},
-		{
-		       name: 'Colors', buttons: [
+		       {
+		    name: 'Colors', buttons: [
+		     { name: "Yes", js: 'configColorTrue', default:true },
+		     { name: "No", js: 'configColorFalse' },
+		    ]
+	     }, {
+		       name: 'Theme', buttons: [
 			{ name: 'Default', js: 'configColorDefault' },
 			{ name: 'Random', js: 'configColorRandom' },
 			{ name: 'Solarized', js: 'configColorTheme("solarized")' },
@@ -332,19 +362,15 @@ function panelSettings() {
 			]}
 					]
 	});
-	out += uiBlock({ name: 'Core', blocks: [
+	out += uiBlock({ name: 'Core/IO', blocks: [
 		{
 		    name: 'Mode', buttons: [
 		     { name: "PA", js: 'configPA' },
 		     { name: "VA", js: 'configVA' },
 		     { name: "Debug", js: 'configDebug' }
 		    ]
-		},{
-		    name: 'Colors', buttons: [
-		     { name: "Yes", js: 'configColorTrue', default:true },
-		     { name: "No", js: 'configColorFalse' },
-		    ]
-	     }]});
+		},
+]});
 	out += uiBlock({ name: 'Analysis', blocks: [
 		{
 		    name: 'HasNext', buttons: [
@@ -580,7 +606,7 @@ function panelScript() {
 	out += '<br /><div class="output" id="scriptOutput"></div><br />';
 	out += '<textarea rows=32 id="script" class="pre" style="width:100%">';
 	if (!localScript) {
-		localScript = 'r2.cmd("?e hello world", alert);';
+		localScript = 'r2.cmd("?V", log);';
 	}
 	out += localScript + '</textarea>';
 	c.innerHTML = out;
