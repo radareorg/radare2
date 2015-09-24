@@ -366,7 +366,7 @@ function _internal_cmd(c, cb) {
   }
   if (hascmd) {
     // TODO: use setTimeout for async?
-    if (typeof (r2plugin) != "undefined") {
+    if (typeof (r2plugin) != 'undefined') {
       // duktape
       cb (r2cmd(c));
     } else {
@@ -398,7 +398,7 @@ r2.cmd = function(c, cb) {
         cb (res);
       });
   } else {
-    _internal_cmd (c, cb);
+    return _internal_cmd (c, cb);
   }
 }
 

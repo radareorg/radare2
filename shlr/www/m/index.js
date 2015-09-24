@@ -532,9 +532,40 @@ function runSearch(text) {
 	}
 }
 
+function indentScript() {
+	var str = document.getElementById('script').value;
+	var indented = js_beautify (str);
+	document.getElementById('script').value = indented;
+	localStorage['script'] = indented;
+}
+
 function runScript() {
 	var str = document.getElementById('script').value;
-	eval (str);
+	localStorage['script'] = str;
+	document.getElementById('scriptOutput').innerHTML = '';
+	try {
+		var msg = "\"use strict\";"+
+		"function log(x){var a = "+
+		"document.getElementById('scriptOutput'); "+
+		"if (a) a.innerHTML += x + '\\n'; }\n";
+		eval (msg+str);
+	} catch (e) {
+		alert (e);
+	}
+}
+
+var foo = "";
+function toggleScriptOutput() {
+	var o = document.getElementById('scriptOutput');
+	if (o) {
+		if (foo == "") {
+			foo = o.innerHTML;
+			o.innerHTML = "";
+		} else {
+			o.innerHTML = foo;
+			foo = "";
+		}
+	}
 }
 
 function panelScript() {
@@ -542,9 +573,16 @@ function panelScript() {
 	document.getElementById('title').innerHTML = 'Script';
 	var c = document.getElementById("content");
 	c.style.backgroundColor = "#f0f0f0";
+	var localScript = localStorage.getItem('script');
 	var out = '<br />'+uiButton('javascript:runScript()', 'Run');
-	out += '<br /><br /><textarea rows=32 id="script" style="width:100%">';
-	out += 'r2.cmd("?e hello world", alert);</textarea>';
+	out += '&nbsp;'+uiButton('javascript:indentScript()', 'Indent');
+	out += '&nbsp;'+uiButton('javascript:toggleScriptOutput()', 'Output');
+	out += '<br /><div class="output" id="scriptOutput"></div><br />';
+	out += '<textarea rows=32 id="script" class="pre" style="width:100%">';
+	if (!localScript) {
+		localScript = 'r2.cmd("?e hello world", alert);';
+	}
+	out += localScript + '</textarea>';
 	c.innerHTML = out;
 }
 

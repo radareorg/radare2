@@ -259,3 +259,14 @@ input {
 td {
 	text-align:left !important;
 }
+
+.output {
+  border: 1px solid red;
+  margin-left: 16px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  background-color: white;
+  font-family: Console, Courier New, monospace;
+  white-space: pre;
+  display: inline-block;
+}
