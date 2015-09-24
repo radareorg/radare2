@@ -233,7 +233,12 @@ int main(int argc, char *argv[]) {
 		r_lib_opendir (l, R2_LIBDIR"/radare2-extras/"R2_VERSION);
 		r_lib_opendir (l, R2_LIBDIR"/radare2-bindings/"R2_VERSION);
 	}
-
+	if (1) {
+		char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
+		// eprintf ("OPENDIR (%s)\n", homeplugindir);
+		r_lib_opendir (l, homeplugindir);
+		free (homeplugindir);
+	}
 
 	r_asm_use (a, R_SYS_ARCH);
 	r_asm_set_big_endian (a, false);

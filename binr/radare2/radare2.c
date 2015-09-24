@@ -157,6 +157,7 @@ static int main_help(int line) {
 		" PREFIX       "R2_PREFIX"\n"
 		" INCDIR       "R2_INCDIR"\n"
 		" LIBDIR       "R2_LIBDIR"\n"
+		" LIBEXT       "R_LIB_EXT"\n"
 		);
 	return 0;
 }

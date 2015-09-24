@@ -28,7 +28,11 @@ install:
 		rm "${BFX}/$$a" ; \
 		${INSTALL_PROGRAM} "$$a/$$a" "${BFX}/$$a" ; \
 	done
+	${INSTALL_SCRIPT} "${PWD}/r2pm/r2pm" "${BFX}/r2pm"
 	rm -f "${BFX}/ragg2-cc"
+	rm -rf "${PFX}/radare2/${VERSION}/r2pm"
+	mkdir -p "${PFX}/radare2/${VERSION}/r2pm"
+	cp -rf "`pwd`/r2pm/d/*" "${PFX}/radare2/${VERSION}/r2pm"
 	${INSTALL_SCRIPT} ragg2/ragg2-cc "${BFX}/ragg2-cc"
 	-cd "${BFX}" && rm -f r2 ; ln -fs radare2 r2
 	${INSTALL_LIB} "preload/libr2.$(EXT_SO)" "$(LFX)"
@@ -40,6 +44,10 @@ symstall install-symlink:
 	mkdir -p "${BFX}"
 	for a in ${BINS} ; do ln -fs "${BTOP}/$$a/$$a" "${BFX}/$$a" ; done
 	ln -fs "${BTOP}/ragg2/ragg2-cc" "${BFX}/ragg2-cc"
+	ln -fs "${BTOP}/r2pm/r2pm" "${BFX}/r2pm"
+	rm -rf "${PFX}/share/radare2/${VERSION}/r2pm"
+	mkdir -p "${PFX}/share/radare2/${VERSION}/"
+	ln -fs "`pwd`/r2pm/d" "${PFX}/share/radare2/${VERSION}/r2pm"
 	-ln -fs "${PFX}/bin/radare2" "${BFX}/r2"
 	-ln -fs "${BTOP}/preload/libr2.$(EXT_SO)" "${LFX}/libr2.$(EXT_SO)"
 	-cd "$(LFX)" && \
@@ -48,6 +56,8 @@ symstall install-symlink:
 
 deinstall uninstall:
 	for a in ${BINS} ; do rm -f "${BFX}/$$a" ; done
+	-rm -f "${BFX}/ragg2-cc"
+	-rm -f "${BFX}/r2pm"
 	-rm -f "${BFX}/r2"
 
 clean:

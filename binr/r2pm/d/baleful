@@ -1,0 +1,19 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/radare/radare2-extras"
+R2PM_DESC "[RAsm+RAnal] for the Baleful VM"
+
+R2PM_INSTALL() {
+	./configure --prefix=/usr
+	cd baleful
+	make clean
+	make
+	make install
+}
+
+R2PM_UNINSTALL() {
+	cd baleful
+	make uninstall
+}
+
+R2PM_END

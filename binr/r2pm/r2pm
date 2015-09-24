@@ -1,0 +1,167 @@
+#!/bin/sh
+
+R2PM_PLUGDIR=${HOME}/.config/radare2/plugins
+R2PM_USRDIR=${HOME}/.config/radare2/r2pm
+LIBEXT=`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`
+PREFIX=`r2 -hh | grep PREFIX | awk '{print $2}' 2> /dev/null`
+if [ -z "${R2PM_DBDIR}" ]; then
+	if [ -d "${PREFIX}/share/radare2/last/r2pm" ]; then
+		R2PM_DBDIR="${PREFIX}/share/radare2/last/r2pm"
+	fi
+fi
+if [ -f "d/baleful" ]; then
+	R2PM_DBDIR=$(pwd)/d
+fi
+if [ ! -d "${R2PM_DBDIR}" ]; then
+	R2PM_DBDIR=""
+	echo "\$R2PM_DBDIR: No such file or directory."
+fi
+
+mkdir -p "${R2PM_USRDIR}/pkg"
+mkdir -p "${R2PM_USRDIR}/git"
+mkdir -p "${R2PM_PLUGDIR}"
+
+R2PM_DESC() {
+	:
+}
+
+GetDesc() {
+	grep R2PM_DESC $1 |cut -d ' ' -f 2- |xargs echo
+}
+
+R2PM_List() {
+	cd "${R2PM_USRDIR}/pkg"
+	if [ -n "$1" ]; then
+		ls | grep "$1"
+	else
+		ls | cat
+	fi
+}
+
+R2PM_Search() {
+	if [ -z "${R2PM_DBDIR}" ]; then
+		exit 1
+	fi # && (cd ${R2PM_DBDIR} ; ls | cat)
+	cd "${R2PM_DBDIR}"
+	if [ -n "$1" ]; then
+		for a in `ls` ; do
+			d=`GetDesc $a`
+			echo "$a    \t$d" | grep "$1"
+		done
+	else
+		for a in `ls` ; do
+			d=`GetDesc $a`
+			echo "$a    \t$d"
+		done
+	fi
+}
+
+R2PM_GIT() {
+	URL="$1"
+	DIR="`basename $1`"
+	cd "${R2PM_USRDIR}/git/"
+	if [ -d "${R2PM_USRDIR}/git/${DIR}" ]; then
+		cd "${DIR}"
+		git pull
+	else
+		git clone "${URL}" || R2PM_FAIL "Oops"
+		cd "${DIR}" || R2PM_FAIL "Oops"
+	fi
+}
+
+R2PM_FAIL() {
+	echo "\033[31mERROR: \033[32m$@\033[0m"
+	exit 1
+}
+
+R2PM_BEGIN() {
+	echo "Processing ${NAME} ..."
+	R2PM_GIT=""
+}
+
+R2PM_Info() {
+	if [ -n "${R2PM_DBDIR}" -a -d "${R2PM_DBDIR}" ]; then
+		echo "# Repository Database:"
+		cd "${R2PM_DBDIR}"
+		echo "# $(ls |wc -l) Packages" > /dev/stderr
+	fi
+	cd "${R2PM_USRDIR}/pkg"
+	echo "# Installed:"
+	printf "# $(ls |wc -l) Packages\n#  " > /dev/stderr
+	du -hs "${HOME}/.config/radare2" > /dev/stderr
+}
+
+R2PM_REGISTER() {
+	date > "${R2PM_USRDIR}/pkg/$NAME"
+}
+
+R2PM_UNREGISTER() {
+	rm -f "${R2PM_USRDIR}/pkg/$NAME"
+}
+
+R2PM_END() {
+	echo "${ACTION} Done For ${NAME}"
+}
+
+case "$1" in
+-i|install)
+	if [ -z "$2" ]; then
+		R2PM_Info
+	else
+		FILE="${R2PM_DBDIR}/$2"
+		if [ -f "${FILE}" ]; then
+			NAME="$2"
+			ACTION=Install
+			. "${FILE}"
+			R2PM_INSTALL
+			R2PM_REGISTER
+		else
+			echo "Cannot find file"
+		fi
+	fi
+	;;
+-u|uninstall)
+	FILE="${R2PM_DBDIR}/$2"
+	if [ -f "${FILE}" ]; then
+		NAME="$2"
+		ACTION=Uninstall
+		. "${FILE}"
+		R2PM_UNINSTALL
+		R2PM_UNREGISTER
+	else
+		echo "Cannot find file"
+	fi
+	;;
+-l|list)
+	R2PM_List "$2"
+	;;
+-s|search)
+	R2PM_Search "$2"
+	;;
+-v|version)
+	echo "r2pm v0.1"
+	;;
+-c|clean)
+	R2PM_List radare2 | grep radare2
+	if [ $? != 0 ]; then
+		rm -rf "${R2PM_USRDIR}/git/"
+		mkdir -p "${R2PM_USRDIR}/git/"
+	else
+		echo "r2 is installed with r2pm, do not clean the cache to avoid autodestruction"
+		echo "do not disassemble do not disasemble do not disassemble do not disassemble"
+		exit 1
+	fi
+	;;
+*|help|-h)
+	echo "Usage: r2pm [cmd] [...]"
+	echo "Commands:"
+	echo " -i,info                 r2pm -i # packages info"
+	echo " -i,install <pkgname>    r2pm -i baleful"
+	echo " -u,uninstall <pkgname>  r2pm -u baleful"
+	echo " -l,list                 list installed pkgs"
+	echo " -s,search [<keyword>]   search in database"
+	echo " -v,version              show version"
+	echo " -h,help                 show this message"
+	echo " -c,clean                clear source cache"
+	;;
+esac
