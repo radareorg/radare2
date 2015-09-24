@@ -364,22 +364,20 @@ static void xnu_free_threads_ports (RDebugPid *p) {
 }
 */
 
-
 RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
-#if __arm__
-	#define OSX_PC state.__pc
-#elif __arm64__
-	#define OSX_PC (dbg->bits == R_SYS_BITS_64) ? state.ts_64.__pc : state.ts_32.__pc
+#if __arm__ || __arm64__ || __aarch_64__
+	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
+		state.ts_64.__pc : state.ts_32.__pc
 #elif __POWERPC__
-	#define OSX_PC state.srr0
+	#define CPU_PC state.srr0
 #elif __x86_64__
-	#define OSX_PC state.__rip
-#undef OSX_PC
-#define OSX_PC state.x64[REG_PC]
+	//#define CPU_PC state.__rip
+	//#undef CPU_PC
+	#define CPU_PC state.x64[REG_PC]
 #else
-#define OSX_PC state.__eip
-#undef OSX_PC
-#define OSX_PC state.x32[REG_PC]
+	//#define CPU_PC state.__eip
+	//#undef CPU_PC
+	#define CPU_PC state.x32[REG_PC]
 #endif
 	RListIter *iter;
 	xnu_thread_t *thread;
@@ -389,12 +387,9 @@ RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
 	list->free = (RListFree)&r_debug_pid_free;
 	r_list_foreach (dbg->threads, iter, thread) {
 		r_list_append (list, r_debug_pid_new (thread->name,
-						thread->tid, 's',
-						OSX_PC));
+			thread->tid, 's', CPU_PC));
 	}
-
 	return list;
-
 }
 
 static vm_prot_t unix_prot_to_darwin(int prot) {
