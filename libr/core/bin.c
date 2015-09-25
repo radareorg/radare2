@@ -226,7 +226,7 @@ static const char* get_compile_time(Sdb *binFileSdb) {
 	Sdb *info_ns = sdb_ns(binFileSdb, "info", false);
 	const char *timeDateStamp_string = sdb_const_get (info_ns,
 		"image_file_header.TimeDateStamp_string", 0);
-	return timeDateStamp_string
+	return timeDateStamp_string;
 }
 
 static int bin_info(RCore *r, int mode) {
