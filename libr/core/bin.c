@@ -6,6 +6,11 @@
 #define VA_TRUE     1
 #define VA_NOREBASE 2
 
+#define IS_SET(mode) (mode & R_CORE_BIN_SET)
+#define IS_SIMPLE(mode) (mode & R_CORE_BIN_SIMPLE)
+#define IS_JSON(mode) (mode & R_CORE_BIN_JSON)
+#define IS_RADARE(mode) (mode & R_CORE_BIN_RADARE)
+
 // dup from cmd_info
 #define PAIR_WIDTH 9
 static void pair(const char *a, const char *b) {
@@ -128,10 +133,8 @@ static int bin_strings(RCore *r, int mode, int va) {
 
 	if (!plugin) return 0;
 	if (plugin->info && plugin->name) {
-		if (!strcmp (plugin->name, "any")) {
-			if (!rawstr) {
-				return false;
-			}
+		if (strcmp (plugin->name, "any") == 0 && !rawstr) {
+			return false;
 		}
 	}
 
@@ -140,56 +143,24 @@ static int bin_strings(RCore *r, int mode, int va) {
 
 	if ((list = r_bin_get_strings (bin)) == NULL) return false;
 
-	if ((mode & R_CORE_BIN_JSON)) {
-		r_cons_printf ("[");
-		r_list_foreach (list, iter, string) {
-			ut64 vaddr = r_bin_get_vaddr (bin,
-				string->vaddr, string->paddr);
-			ut64 paddr = string->paddr;
-
-			if (maxstr && string->length>maxstr) continue;
-
-			q = r_base64_encode_dyn (string->string, -1);
-			if (string->length > minstr) {
-				r_cons_printf ("%s{\"vaddr\":%"PFMT64d
-				",\"paddr\":%"PFMT64d
-				",\"length\":%d,\"size\":%d,"
-				"\"type\":\"%s\",\"string\":\"%s\"}",
-				iter->p? ",": "", vaddr, paddr,
-				string->length, string->size,
-				string->type == 'w' ? "wide" : "ascii", q);
-			}
-			free (q);
-		}
-		r_cons_printf ("]");
-	} else if ((mode & R_CORE_BIN_SIMPLE)) {
-		r_list_foreach (list, iter, string) {
-			ut64 addr = va? r_bin_get_vaddr (bin,
-				string->paddr, string->vaddr): string->paddr;
-
-			if (maxstr && string->length>maxstr) continue;
-			if (string->length>minstr) {
-				r_cons_printf ("0x%"PFMT64x" %d %d %s\n",
-					addr, string->size,
-					string->length, string->string);
-			}
-		}
-	} else
-	if ((mode & R_CORE_BIN_SET)) {
+	if (IS_SET (mode)) {
 		char *filtered_name;
+
 		if (r_config_get_i (r->config, "bin.strings")) {
 			r_flag_space_set (r->flags, "strings");
 		}
 		r_cons_break (NULL, NULL);
 		r_list_foreach (list, iter, string) {
-			ut64 addr = va ? string->vaddr : string->paddr;
+			ut64 paddr = string->paddr;
+			ut64 vaddr = r_bin_get_vaddr (bin, string->vaddr, paddr);
+			ut64 addr = va ? vaddr : string->paddr;
 
 			if (string->length < minstr) continue;
 			if (maxstr && string->length > maxstr) continue;
 
 			if (r_cons_singleton()->breaked) break;
 			r_meta_add (r->anal, R_META_TYPE_STRING, addr,
-				addr+string->size, string->string);
+				addr + string->size, string->string);
 			filtered_name = strdup (string->string);
 			r_name_filter (filtered_name, R_FLAG_NAME_SIZE);
 			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", filtered_name);
@@ -197,36 +168,57 @@ static int bin_strings(RCore *r, int mode, int va) {
 			free (filtered_name);
 		}
 		r_cons_break_end ();
-	} else {
-		if (mode) r_cons_printf ("fs strings\n");
-		r_list_foreach (list, iter, string) {
-			ut64 vaddr = string->vaddr;
-			ut64 paddr = string->paddr;
-			if (string->length<minstr) continue;
-			if (maxstr && string->length>maxstr) continue;
+		return true;
+	}
 
-			section = r_bin_get_section_at (r_bin_cur_object (bin), string->paddr, 0);
-			if (mode) {
-				char *filtered_name;
-				filtered_name = strdup (string->string);
-				r_name_filter (filtered_name, R_FLAG_NAME_SIZE);
-				snprintf (str, R_FLAG_NAME_SIZE, "str.%s", filtered_name);
-				r_cons_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
-					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
-					filtered_name, string->size, va? vaddr: paddr,
-					string->size, va? vaddr: paddr);
-				free (filtered_name);
-			} else {
-				r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x
-					" ordinal=%03u sz=%u len=%u section=%s type=%s string=%s\n",
-					vaddr, paddr, string->ordinal,
-					string->size, string->length,
-					section ? section->name : "unknown",
-					string->type== 'w' ? "wide" : "ascii",
-					string->string);
-			}
+	if (IS_JSON (mode)) r_cons_printf ("[");
+	if (IS_RADARE (mode)) r_cons_printf ("fs strings");
+	r_list_foreach (list, iter, string) {
+		const char *section_name, *type_string;
+		ut64 paddr = string->paddr;
+		ut64 vaddr = r_bin_get_vaddr (bin, string->vaddr, paddr);
+		ut64 addr = va ? vaddr : paddr;
+
+		if (string->length < minstr) continue;
+		if (maxstr && string->length > maxstr) continue;
+
+		section = r_bin_get_section_at (r_bin_cur_object (bin), paddr, 0);
+		section_name = section ? section->name : "unknown";
+		type_string = string->type == 'w' ? "wide" : "ascii";
+		if (IS_SIMPLE (mode)) {
+			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", addr,
+				string->size, string->length, string->string);
+		} else if (IS_JSON (mode)) {
+			q = r_base64_encode_dyn (string->string, -1);
+			r_cons_printf ("%s{\"vaddr\":%"PFMT64d
+				",\"paddr\":%"PFMT64d",\"ordinal\":%d,"
+				",\"size\":%d,\"length\":%d,\"section\":\"%s\","
+				"\"type\":\"%s\",\"string\":\"%s\"}",
+				iter->p ? ",": "",
+				vaddr, paddr, string->ordinal, string->size,
+				string->length, section_name, type_string, q);
+			free (q);
+		} else if (IS_RADARE (mode)) {
+			char *filtered_name;
+			filtered_name = strdup (string->string);
+			r_name_filter (filtered_name, R_FLAG_NAME_SIZE);
+			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", filtered_name);
+			r_cons_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
+				"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
+				filtered_name, string->size, addr,
+				string->size, addr);
+			free (filtered_name);
+		} else {
+			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"
+				PFMT64x" ordinal=%03u sz=%u len=%u "
+				"section=%s type=%s string=%s\n",
+				vaddr, paddr, string->ordinal, string->size,
+				string->length, section_name, type_string,
+				string->string);
 		}
 	}
+	if (IS_JSON (mode)) r_cons_printf ("]");
+
 	return true;
 }
 
