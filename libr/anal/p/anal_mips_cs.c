@@ -307,18 +307,29 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int n, ret, opsize = -1;
-	csh handle;
+	static csh handle = 0;
+	static int omode = -1;
+	static int obits = 32;
 	cs_insn* insn;
 	int mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 
 	mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
+	if (mode != omode || a->bits != obits) {
+		cs_close (&handle);
+		handle = 0;
+		omode = mode;
+		obits = a->bits;
+	}
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
-	ret = cs_open (CS_ARCH_MIPS, mode, &handle);
 	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_ILL;
 	op->size = 4;
-	if (ret != CS_ERR_OK) goto fin;
-	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
+	if (handle == 0) {
+		ret = cs_open (CS_ARCH_MIPS, mode, &handle);
+eprintf ("Plantilla\n");
+		if (ret != CS_ERR_OK) goto fin;
+		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
+	}
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n<1 || insn->size<1)
 		goto beach;
@@ -518,7 +529,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			r_strbuf_fini (&op->esil);
 	}
 	cs_free (insn, n);
-	cs_close (&handle);
+	//cs_close (&handle);
 	fin:
 	return opsize;
 }
