@@ -19,6 +19,7 @@ static inline ut64 genmask (int bits) {
 }
 
 static bool isnum (RAnalEsil *esil, const char *str, ut64 *num) {
+	if (!esil || !str) return false;
 	if (*str >= '0' && *str <= '9') {
 		if (num) *num = r_num_get (NULL, str);
 		return true;
@@ -409,6 +410,9 @@ R_API int r_anal_esil_reg_write (RAnalEsil *esil, const char *dst, ut64 num) {
 R_API int r_anal_esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
 	bool ret = false;
 	ut64 localnum; // XXX why is this necessary?
+	if (!esil || !regname) {
+		return false;
+	}
 	if (!strcmp (regname, "$$")) {
 		if (num) *num = esil->address;
 		if (size) *size = esil->anal->bits;
@@ -1990,7 +1994,7 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	int dorunword;
 	char word[64];
 	const char *ostr = str;
-	if (!esil)
+	if (!esil || !str || !*str)
 		return 0;
 	esil->trap = 0;
 loop:

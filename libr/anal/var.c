@@ -268,12 +268,10 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind) {
 		char *next, *ptr = varlist;
 		if (varlist && *varlist) {
 			do {
-				struct VarType vt;
 				char *word = sdb_anext (ptr, &next);
 				char *vardef = sdb_get (DB, sdb_fmt (1,
 					"var.0x%"PFMT64x".%c.%s",
 					fcn->addr, kind, word), 0);
-				int delta = atoi (word+2);
 				if (vardef) {
 					count ++;
 				} else {

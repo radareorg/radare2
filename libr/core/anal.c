@@ -2151,9 +2151,17 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return 0; // fallback
 }
 
+static bool esil_anal_stop = false;
+static void cccb(void*u) {
+	esil_anal_stop = true;
+	eprintf ("^C\n");
+	sleep (1);
+}
+
 R_API void r_core_anal_esil (RCore *core, const char *str) {
 	RAnalEsil *ESIL = core->anal->esil;
 	const char *pcname;
+	RAsmOp asmop;
 	RAnalOp op;
 	ut8 *buf = NULL;
 	int i, iend;
@@ -2203,62 +2211,67 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
 	pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	r_cons_break (NULL, NULL);
-	for (i=0; i<iend; i++) {
-		if (r_cons_is_breaked ()) {
+	esil_anal_stop = false;
+	r_cons_break (cccb, core);
+	//r_cons_break (NULL, NULL);
+	for (i=0; i < iend; i++) {
+		if (esil_anal_stop || r_cons_is_breaked ()) {
 			break;
 		}
 		cur = addr + i;
-		if (r_anal_op (core->anal, &op, cur, buf+i, iend-i)) {
-#if 0
-			RAsmOp asmop;
-			r_asm_set_pc (core->assembler, cur);
-			if (r_asm_disassemble (core->assembler, &asmop, buf+i, iend-i)>0) {
-				op.mnemonic = strdup (asmop.buf_asm);
-				eprintf ("0x%08"PFMT64x"  %s\n", cur, op.mnemonic); //R_STRBUF_SAFEGET (&op.esil));
+		if (!r_anal_op (core->anal, &op, cur, buf+i, iend-i)) {
+			i += minopsize - 1;
+		}
+		r_asm_set_pc (core->assembler, cur);
+		if (r_asm_disassemble (core->assembler, &asmop, buf+i, iend-i)>0) {
+			op.mnemonic = strdup (asmop.buf_asm);
+			//eprintf ("0x%08"PFMT64x"  %s\n", cur, op.mnemonic);
+		}
+		if (op.size<1) {
+			i++;
+			continue;
+		}
+		if (1) {
+			const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
+			r_anal_esil_set_pc (ESIL, cur);
+			if (!esilstr || !*esilstr) {
+				continue;
 			}
-#endif
-			if (op.size<1) {
-				i++;
-			} else {
-				const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
-				r_anal_esil_set_pc (ESIL, cur);
-				(void)r_anal_esil_parse (ESIL, esilstr); 
-				//r_anal_esil_dumpstack (ESIL);
-				r_anal_esil_stack_free (ESIL);
-				i += op.size -1;
-				switch (op.type) {
-				case R_ANAL_OP_TYPE_LOAD:
-					{
-					       ut64 dst = esilbreak_last_read;
+			(void)r_anal_esil_parse (ESIL, esilstr); 
+			// looks like ^C is handled by esil_parse !!!!
+			r_cons_break (cccb, core);
+			//r_anal_esil_dumpstack (ESIL);
+			r_anal_esil_stack_free (ESIL);
+			i += op.size -1;
+			switch (op.type) {
+			case R_ANAL_OP_TYPE_LOAD:
+				{
+				       ut64 dst = esilbreak_last_read;
+					if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+						// get pc
+						eprintf ("0x%08"PFMT64x" DATA 0x%08"PFMT64x"\n", cur, dst);
+						r_core_cmdf (core, "axd 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
+					} else {
+						eprintf ("Unknown LOAD at 0x%08"PFMT64x"\n", cur);
+					}
+				}
+				break;
+			case R_ANAL_OP_TYPE_UJMP:
+			case R_ANAL_OP_TYPE_UCALL:
+				{
+					if (pcname && *pcname) {
+						ut64 dst = r_reg_getv (core->anal->reg, pcname);
 						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
 							// get pc
-							eprintf ("0x%08"PFMT64x" DATA 0x%08"PFMT64x"\n", cur, dst);
-							r_core_cmdf (core, "axd 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
+							eprintf ("0x%08"PFMT64x" UCALL 0x%08"PFMT64x"\n", cur, dst);
+							r_core_cmdf (core, "axc 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
 						} else {
-							eprintf ("Unknown LOAD at 0x%08"PFMT64x"\n", cur);
+							eprintf ("Unknown JMP/CALL at 0x%08"PFMT64x"\n", cur);
 						}
 					}
-					break;
-				case R_ANAL_OP_TYPE_UJMP:
-				case R_ANAL_OP_TYPE_UCALL:
-					{
-						if (pcname && *pcname) {
-							ut64 dst = r_reg_getv (core->anal->reg, pcname);
-							if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
-								// get pc
-								eprintf ("0x%08"PFMT64x" UCALL 0x%08"PFMT64x"\n", cur, dst);
-								r_core_cmdf (core, "axc 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
-							} else {
-								eprintf ("Unknown JMP/CALL at 0x%08"PFMT64x"\n", cur);
-							}
-						}
-					}
-					break;
 				}
+				break;
 			}
-		} else {
-			i += minopsize - 1;
 		}
 	}
 	r_cons_break_end ();

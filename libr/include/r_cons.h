@@ -168,7 +168,7 @@ typedef struct r_cons_t {
 	int force_columns;
 	int fix_rows;
 	int fix_columns;
-	int breaked;
+	bool breaked;
 	int noflush;
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
@@ -346,7 +346,7 @@ R_API char *r_cons_lastline (void);
 typedef void (*RConsBreak)(void *);
 R_API void r_cons_break(RConsBreak cb, void *user);
 R_API void r_cons_break_end(void);
-R_API int r_cons_is_breaked();
+R_API bool r_cons_is_breaked();
 
 /* pipe */
 R_API int r_cons_pipe_open(const char *file, int fdn, int append);
