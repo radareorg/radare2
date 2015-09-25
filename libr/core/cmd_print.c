@@ -3124,9 +3124,9 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	}
-	/*if (tbs != core->blocksize)*/
-		/*r_core_block_size (core, tbs);*/
 beach:
+	if (tbs != core->blocksize)
+		r_core_block_size (core, tbs);
 	if (tmpseek != UT64_MAX) {
 		r_core_seek (core, tmpseek, SEEK_SET);
 	}
