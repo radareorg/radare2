@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <r_util.h>
 #include <r_socket.h>
+#include <sys/stat.h>
 #if __APPLE__
 #include <spawn.h>
 #include <util.h>
@@ -253,12 +254,18 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 		return handle_redirection_proc (cmd + 1, in, out, err);
 	} else {
 		// redirection to a file
-		int f, flag = 0;
+		int f, flag = 0, mode = 0;
 		flag |= in ? O_RDONLY : 0;
 		flag |= out ? O_WRONLY | O_CREAT : 0;
 		flag |= err ? O_WRONLY | O_CREAT : 0;
 
-		f = open (cmd, flag, S_IRUSR | S_IWUSR);
+#ifdef __WINDOWS__
+		mode = _S_IREAD | _S_IWRITE;
+#else
+		mode = S_IRUSR | S_IWUSR;
+#endif
+
+		f = open (cmd, flag, mode);
 		if (f < 0) {
 			eprintf("Cannot open: %s\n", cmd);
 			return 1;
