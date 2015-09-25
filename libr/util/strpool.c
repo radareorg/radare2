@@ -4,6 +4,7 @@
 
 R_API RStrpool* r_strpool_new (int sz) {
 	RStrpool *p = R_NEW (RStrpool);
+	if (!p) return NULL;
 	if (sz<1) sz = 1024;
 	p->size = sz;
 	p->len = 0;

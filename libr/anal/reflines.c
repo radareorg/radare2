@@ -93,7 +93,6 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 						item->to = caseop->jump;
 						item->index = index++;
 						r_list_append (list, item);
-						//list_add_tail (&(list2->list), &(list->list));
 						count++;
 					}
 				}

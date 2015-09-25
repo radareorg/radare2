@@ -51,6 +51,8 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	int i;
 
+	if (!addr) return -1;
+
 	/* Simplest case, the header provides the entrypoint address */
 	if (obj->hdr.f_opthdr) {
 		addr->paddr = obj->opt_hdr.entry;
