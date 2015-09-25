@@ -2,6 +2,7 @@ BINR_PROGRAM=1
 include ../../libr/config.mk
 include ../../shlr/zip/deps.mk
 
+CFLAGS+=-pie
 CFLAGS+=-I$(LTOP)/include
 
 ifeq (${COMPILER},emscripten)

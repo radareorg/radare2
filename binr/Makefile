@@ -25,7 +25,7 @@ preload:
 install:
 	mkdir -p "${BFX}"
 	for a in ${BINS} ; do \
-		rm "${BFX}/$$a" ; \
+		rm -f "${BFX}/$$a" ; \
 		${INSTALL_PROGRAM} "$$a/$$a" "${BFX}/$$a" ; \
 	done
 	${INSTALL_SCRIPT} "${PWD}/r2pm/r2pm" "${BFX}/r2pm"
