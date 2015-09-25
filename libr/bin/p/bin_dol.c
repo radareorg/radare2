@@ -55,13 +55,13 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	bool has_dol_extension = false;
 	DolHeader * dol;
 	char *lowername, *ext;
-	if (!arch) {
+	if (!arch || sz < sizeof (DolHeader)) {
 		return NULL;
 	}
 	dol = R_NEW0 (DolHeader);
+	if (!dol) return NULL;
 	lowername = strdup (arch->file);
-	if (sz < sizeof (DolHeader)) {
-		free (lowername);
+	if (!lowername) {
 		free (dol);
 		return NULL;
 	}

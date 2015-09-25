@@ -814,7 +814,9 @@ RList* MACH0_(parse_classes)(RBinFile *arch)
 		get_class_t (p, arch, processed_class);
 
 		if (!processed_class->name) {
-			processed_class->name = r_str_newf ("%s%llu", "UnnamedClass", num_of_unnamed_class);
+			processed_class->name = r_str_newf (
+				"UnnamedClass%"PFMT64d,
+				num_of_unnamed_class);
 			if (!processed_class->name) {
 				goto get_classes_error;
 			}

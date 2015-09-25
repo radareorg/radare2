@@ -19,6 +19,10 @@ R_API int r_name_validate_char(const char ch) {
 R_API int r_name_check(const char *name) {
 	if (!name || !*name)
 		return R_FALSE;
+	/* Cannot start by number */
+	if (*name>='0' && *name<='9')
+		return R_FALSE;
+	/* Cannot contain non-alphanumeric chars + [:._] */
 	for (;*name!='\0'; name++)
 		if (!r_name_validate_char (*name))
 			return R_FALSE;
