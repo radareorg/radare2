@@ -213,6 +213,10 @@ _:-ms-input-placeholder, :root .demo-graph {
   text-decoration: none;
 }
 
+a {
+  color: #a0bcd4 !important;
+}
+
 .demo-options h3 {
   margin: 0;
 }

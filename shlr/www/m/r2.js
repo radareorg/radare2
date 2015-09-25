@@ -109,7 +109,8 @@ function Ajax(method, uri, body, fn) {
   var x = new XMLHttpRequest ();
   if (!x)
     return false;
-  x.open (method, uri, false);
+  x.open (method, uri, false); // SYNC
+  //x.open (method, uri, true); // ASYNC
   x.setRequestHeader ('Accept', 'text/plain');
   x.setRequestHeader ('Accept', 'text/html');
   x.setRequestHeader ("Content-Type", "application/x-ww-form-urlencoded; charset=UTF-8");

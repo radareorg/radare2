@@ -78,6 +78,9 @@
           </button>
           <ul class="mdl-menu mdl-js-menu mdl-js-ripple-effect mdl-menu--bottom-right" for="hdrbtn">
             <li class="mdl-menu__item"><a target=_blank href="./">New Window</a></li>
+            <li onclick="singlePanel()" class="mdl-menu__item">Single Panel</li>
+            <li onclick="hSplit()" class="mdl-menu__item">Horiz Split</li>
+            <li onclick="vSplit()" class="mdl-menu__item">Vert Split</li>
             <li onclick="panelConsole()" class="mdl-menu__item">Console</li>
             <li onclick="panelSettings()" class="mdl-menu__item">Settings</li>
             <li onclick="panelAbout()" class="mdl-menu__item">About</li>
@@ -110,6 +113,7 @@
           <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons">home</i>Overview</a>
           <a class="mdl-navigation__link" href="javascript:panelHeaders()"><i class="mdl-color-text--blue-grey-400 material-icons">people</i>Headers</a>
           <a class="mdl-navigation__link" href="javascript:panelDisasm()"><i class="mdl-color-text--blue-grey-400 material-icons">inbox</i>Disassembly</a>
+          <a class="mdl-navigation__link" href="javascript:panelDebug()"><i class="mdl-color-text--blue-grey-400 material-icons">inbox</i>Debugger</a>
           <a class="mdl-navigation__link" href="javascript:panelHexdump()"><i class="mdl-color-text--blue-grey-400 material-icons">inbox</i>Hexdump</a>
           <a class="mdl-navigation__link" href="javascript:panelFunctions()"><i class="mdl-color-text--blue-grey-400 material-icons">list</i>Functions</a>
           <a class="mdl-navigation__link" href="javascript:panelFlags()"><i class="mdl-color-text--blue-grey-400 material-icons">flag</i>Flags</a>

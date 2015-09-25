@@ -11,8 +11,32 @@ if (type=='active') {
 }
 
 function clickableOffsets(x) {
-	x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a href='javascript:seek(\"0x$1\")'>0x$1</a>");
+	x = x.replace (/0x([a-zA-Z0-9]*)/g,
+		"<a href='javascript:seek(\"0x$1\")'>0x$1</a>");
+	x = x.replace (/sym\.([\.a-zA-Z0-9]*)/g,
+		"<a href='javascript:seek(\"sym.$1\")'>sym.$1</a>");
+	x = x.replace (/fcn\.([\.a-zA-Z0-9]*)/g,
+		"<a href='javascript:seek(\"fcn.$1\")'>fcn.$1</a>");
 	return x;
+}
+
+function write() {
+	var str = prompt ("hexpairs, quoted string or :assembly");
+	if (str != "") {
+		switch (str[0]) {
+		case ':':
+			str = str.substring(1);
+			r2.cmd ('"wa '+str+'"', update);
+			break;
+		case '"':
+			str = str.replace(/"/g, '');
+			r2.cmd ("w "+str, update);
+			break;
+		default:
+			r2.cmd ("wx "+str, update);
+			break;
+		}
+	}
 }
 
 function comment() {
@@ -68,6 +92,7 @@ function seek(x) {
 		} else {
 			panelDisasm();
 		}
+		document.getElementById('content').scrollTop = 0;
 		update();
 	}
 }
@@ -247,11 +272,7 @@ function configDebug() {
 	r2.cmd("e io.debug=true");
 }
 
-function configArchARM() { r2.cmd("e asm.arch=arm"); }
-function configArchX86() { r2.cmd("e asm.arch=x86"); }
-function configArchMIPS() { r2.cmd("e asm.arch=mips"); }
-function configArchDALVIK() { r2.cmd("e asm.arch=dalvik"); }
-function configArchJAVA() { r2.cmd("e asm.arch=java"); }
+function configArch(name) { r2.cmd("e asm.arch="+name); }
 function configBits8() { r2.cmd("e asm.bits=8"); }
 function configBits16() { r2.cmd("e asm.bits=16"); }
 function configBits32() { r2.cmd("e asm.bits=32"); }
@@ -268,7 +289,7 @@ function uiCombo(d) {
 	fun += ' var opt = sel.options[sel.selectedIndex].value;'
 	fun += ' switch (opt) {';
 	for (var a in d) {
-		fun += 'case "'+d[a].name+'": '+d[a].js+'();break;';
+		fun += 'case "'+d[a].name+'": '+d[a].js+'('+d[a].name+');break;';
 	}
 	fun += '}}';
 	eval (fun);
@@ -312,11 +333,47 @@ function panelSettings() {
 	c.style.backgroundColor = '#f0f0f0';
 	out += uiBlock({ name: 'Platform', blocks: [
 	     { name: "Arch", buttons: [
-			{ name: "x86", js: 'configArchX86', default:true },
-			{ name: "arm", js: 'configArchARM' },
-			{ name: "mips", js: 'configArchMIPS' },
-			{ name: "java", js: 'configArchJAVA' },
-			{ name: "dalvik", js: 'configArchDALVIK' },
+			{ name: "x86", js: 'configArch', default:true },
+			{ name: "arm", js: 'configArch' },
+			{ name: "mips", js: 'configArch' },
+			{ name: "java", js: 'configArch' },
+			{ name: "dalvik", js: 'configArch' },
+			{ name: "6502", js: 'configArch' },
+			{ name: "8051", js: 'configArch' },
+			{ name: "h8300", js: 'configArch' },
+			{ name: "hppa", js: 'configArch' },
+			{ name: "i4004", js: 'configArch' },
+			{ name: "i8008", js: 'configArch' },
+			{ name: "lh5801", js: 'configArch' },
+			{ name: "lm32", js: 'configArch' },
+			{ name: "m68k", js: 'configArch' },
+			{ name: "malbolge", js: 'configArch' },
+			{ name: "mcs96", js: 'configArch' },
+			{ name: "msp430", js: 'configArch' },
+			{ name: "nios2", js: 'configArch' },
+			{ name: "ppc", js: 'configArch' },
+			{ name: "rar", js: 'configArch' },
+			{ name: "sh", js: 'configArch' },
+			{ name: "snes", js: 'configArch' },
+			{ name: "sparc", js: 'configArch' },
+			{ name: "spc700", js: 'configArch' },
+			{ name: "sysz", js: 'configArch' },
+			{ name: "tms320", js: 'configArch' },
+			{ name: "v810", js: 'configArch' },
+			{ name: "v850", js: 'configArch' },
+			{ name: "ws", js: 'configArch' },
+			{ name: "xcore", js: 'configArch' },
+			{ name: "prospeller", js: 'configArch' },
+			{ name: "gb", js: 'configArch' },
+			{ name: "z80", js: 'configArch' },
+			{ name: "arc", js: 'configArch' },
+			{ name: "avr", js: 'configArch' },
+			{ name: "bf", js: 'configArch' },
+			{ name: "cr16", js: 'configArch' },
+			{ name: "cris", js: 'configArch' },
+			{ name: "csr", js: 'configArch' },
+			{ name: "dcpu16", js: 'configArch' },
+			{ name: "ebc", js: 'configArch' },
 		]}, 
 	     { name: "Bits", buttons: [
 			{ name: "64", js: 'configBits64' },
@@ -491,6 +548,16 @@ function consoleKey(e) {
 	}
 }
 
+function singlePanel() {
+	window.top.location.href = "/m/";
+}
+function hSplit() {
+	location.href = "/m/hsplit";
+}
+function vSplit() {
+	location.href = "/m/vsplit";
+}
+
 function panelConsole() {
 	update = panelConsole;
 	document.getElementById('title').innerHTML = 'Console';
@@ -616,8 +683,8 @@ function panelSearch() {
 	update = panelSearch;
 	document.getElementById('title').innerHTML = 'Search';
 	var c = document.getElementById("content");
-	var out = "<br />";
 	c.style.backgroundColor = "#f0f0f0";
+	var out = "<br />";
 	out += "<input style='z-index:9999;background-color:white !important;position:absolute;padding-left:10px;top:3.5em;height:1.8em;color:white' onkeypress='searchKey()' class='mdl-card--expand mdl-textfield__input' id='search_input'/>";
 	out+='<br />';
 	out+=uiButton('javascript:runSearch()', 'Hex');
@@ -732,7 +799,7 @@ function down() {
 }
 
 function panelHexdump() {
-	window.scrollTo(0, 0);
+	document.getElementById('content').scrollTop = 0;
 	update = panelHexdump;
 	lastView = 'px';
 	var c = document.getElementById("content");
@@ -745,6 +812,7 @@ function panelHexdump() {
 	out += uiRoundButton('javascript:down()', 'keyboard_arrow_down');
 	out += '&nbsp;';
 	out += uiButton('javascript:comment()', 'Comment');
+	out += uiButton('javascript:write()', 'Write');
 	out += uiButton('javascript:flag()', 'Flag');
 	out += uiButton('javascript:flagsize()', 'Size');
 	out += uiButton('javascript:block()', 'Block');
@@ -764,8 +832,9 @@ function uiRoundButton(a, b) {
 	out += '</button>';
 	return out;
 }
+
 function panelDisasm() {
-	window.scrollTo(0, 0);
+	document.getElementById('content').scrollTop = 0;
 	update = panelDisasm;
 	lastView = panelDisasm;
 	var c = document.getElementById("content");
@@ -781,12 +850,88 @@ function panelDisasm() {
 	out += uiButton('javascript:comment()', 'Comment');
 	out += uiButton('javascript:info()', 'Info');
 	out += uiButton('javascript:rename()', 'Rename');
+	out += uiButton('javascript:write()', 'Write');
 	c.innerHTML = out;
 	var tail = '';
 	if (inColor) {
 		tail = '@e:scr.color=1,scr.html=1';
 	}
 	r2.cmd ("pd 128"+tail, function (d) {
+		var dis = clickableOffsets (d);
+		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace;color:grey'>"+dis+"<pre>";
+	});
+}
+
+var nativeDebugger = false;
+
+function srpc() {
+	r2.cmd ("sr pc", update);
+}
+function stepi() {
+	if (nativeDebugger) {
+		r2.cmd ("ds", update);
+	} else {
+		r2.cmd ("aes", update);
+	}
+}
+function cont() {
+	if (nativeDebugger) {
+		r2.cmd ("dc", update);
+	} else {
+		r2.cmd ("aec", update);
+	}
+}
+function setbp() {
+	r2.cmd ("db $$", update);
+}
+function setreg() {
+	var expr = prompt ("comment");
+	if (expr != '') {
+		if (nativeDebugger) {
+			r2.cmd ("dr "+expr+";.dr*", update);
+		} else {
+			r2.cmd ("aer "+expr+";.ar*", update);
+		}
+	}
+}
+
+function panelDebug() {
+	r2.cmd("e cfg.debug", function (x) {
+		nativeDebugger = (x.trim() == 'true');
+	});
+	document.getElementById('content').scrollTop = 0;
+	update = panelDebug;
+	lastView = panelDebug;
+	var c = document.getElementById("content");
+	document.getElementById('title').innerHTML = 'Debugger';
+	if (inColor) {
+		c.style.backgroundColor = "#202020";
+	}
+	var out = "<br />";
+	out += uiRoundButton('javascript:up()', 'keyboard_arrow_up');
+	out += uiRoundButton('javascript:down()', 'keyboard_arrow_down');
+	out += '&nbsp;';
+	out += uiButton('javascript:srpc()', 'PC');
+	out += uiButton('javascript:stepi()', 'Step');
+	out += uiButton('javascript:cont()', 'Cont');
+	out += uiButton('javascript:setbp()', 'BP');
+	out += uiButton('javascript:setreg()', 'REG');
+	c.innerHTML = out;
+	var tail = '';
+	if (inColor) {
+		tail = '@e:scr.color=1,scr.html=1';
+	}
+	// stack
+	if (nativeDebugger) {
+		var rcmd = "dr";
+	} else {
+		var rcmd = "ar";
+	}
+        r2.cmd ("f cur;."+rcmd+"*;sr sp;px 64", function (d) {
+                var dis = clickableOffsets (d);
+                c.innerHTML += "<pre style='font-family:Console,Courier New,monospace;color:grey'>"+dis+"<pre>";
+        });
+	r2.cmd (rcmd+"=;s cur;f-cur;pd 128"+tail, function (d) {
 		var dis = clickableOffsets (d);
 		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace;color:grey'>"+dis+"<pre>";
 	});
@@ -820,7 +965,8 @@ function info() {
 	var out = "<br />"; //Version: "+d;
 	out += uiRoundButton('javascript:panelDisasm()', 'undo');
 	out += '&nbsp;';
-	out += uiButton ('javascript:pdf()', 'Pdf');
+	out += uiButton ('javascript:pdtext()', 'Full');
+	out += uiButton ('javascript:pdf()', 'Func');
 	out += uiButton ('javascript:graph()', 'Graph');
 	out += uiButton ('javascript:blocks()', 'Blocks');
 	out += uiButton ('javascript:decompile()', 'Decompile');
@@ -839,6 +985,20 @@ function blocks() {
 	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
 	var tail = inColor? '@e:scr.color=1,scr.html=1': '';
 	r2.cmd ("pdr"+tail, function (d) {
+		c.innerHTML += "<pre style='font-family:Console,Courier,monospace;color:"+color+"'>"+d+"<pre>";
+	});
+}
+
+function pdtext() {
+	document.getElementById('title').innerHTML = 'Function';
+	var c = document.getElementById('content');
+	c.style['overflow'] = 'none';
+	var color = inColor? "white": "black";
+	c.innerHTML = "<br />";
+	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
+	var tail = inColor? '@e:scr.color=1,scr.html=1,asm.lineswidth=0': '@e:asm.lineswidth=0';
+	r2.cmd("e scr.color=1;s entry0;s $S;pD $SS;e scr.color=0", function(d) {
+		d = clickableOffsets (d);
 		c.innerHTML += "<pre style='font-family:Console,Courier,monospace;color:"+color+"'>"+d+"<pre>";
 	});
 }
@@ -877,6 +1037,7 @@ function graph() {
 	c.innerHTML = '<br />&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a>';
 	var tail = inColor? '@e:scr.color=1,scr.html=1': '';
 	r2.cmd ("agf"+tail, function (d) {
+		d = clickableOffsets(d);
 		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace;color:"+color+"'>"+d+"<pre>";
 	});
 }
@@ -935,6 +1096,7 @@ document.body.onkeypress = function(e) {
 		const keys = [
 			panelConsole,
 			panelDisasm,
+			panelDebug,
 			panelHexdump,
 			panelFunctions,
 			panelFlags,

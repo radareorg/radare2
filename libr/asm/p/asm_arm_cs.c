@@ -73,15 +73,34 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	const int is_thumb = a->bits==16? 1: 0;
-	int opsize;
-	ut32 opcode = armass_assemble (buf, a->pc, is_thumb);
-	if (a->bits != 32 && a->bits != 16) {
-		eprintf ("Error: ARM assembler only supports 16 or 32 bits\n");
-		return -1;
+static bool arm64ass(const char *str, ut64 addr, ut32 *op) {
+	if (!strcmp (str, "movz w0, 0")) {
+		*op = 0x00008052;
+		return true;
 	}
-	if (opcode==UT32_MAX)
+	if (!strcmp (str, "ret")) {
+		*op = 0xc0035fd6;
+		return true;
+	}
+	return false;
+}
+
+static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+	const bool is_thumb = a->bits==16? true: false;
+	int opsize;
+	ut32 opcode;
+	if (a->bits == 64) {
+		if (!arm64ass (buf, a->pc, &opcode)) {
+			return -1;
+		}
+	} else {
+		opcode = armass_assemble (buf, a->pc, is_thumb);
+		if (a->bits != 32 && a->bits != 16) {
+			eprintf ("Error: ARM assembler only supports 16 or 32 bits\n");
+			return -1;
+		}
+	}
+	if (opcode == UT32_MAX)
 		return -1;
 	if (is_thumb) {
 		const int o = opcode>>16;
@@ -102,7 +121,7 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 	.cpus = "v8,cortex-m",
 	.license = "BSD",
 	.arch = "arm",
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
