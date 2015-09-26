@@ -6,10 +6,10 @@
 #define VA_TRUE     1
 #define VA_NOREBASE 2
 
-#define IS_SET(mode) (mode & R_CORE_BIN_SET)
-#define IS_SIMPLE(mode) (mode & R_CORE_BIN_SIMPLE)
-#define IS_JSON(mode) (mode & R_CORE_BIN_JSON)
-#define IS_RADARE(mode) (mode & R_CORE_BIN_RADARE)
+#define IS_MODE_SET(mode) (mode & R_CORE_BIN_SET)
+#define IS_MODE_SIMPLE(mode) (mode & R_CORE_BIN_SIMPLE)
+#define IS_MODE_JSON(mode) (mode & R_CORE_BIN_JSON)
+#define IS_MODE_RAD(mode) (mode & R_CORE_BIN_RADARE)
 
 // dup from cmd_info
 #define PAIR_WIDTH 9
@@ -143,9 +143,9 @@ static int bin_strings(RCore *r, int mode, int va) {
 
 	if ((list = r_bin_get_strings (bin)) == NULL) return false;
 
-	if (IS_JSON (mode)) r_cons_printf ("[");
-	if (IS_RADARE (mode)) r_cons_printf ("fs strings");
-	if (IS_SET (mode) && r_config_get_i (r->config, "bin.strings")) {
+	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
+	if (IS_MODE_RAD (mode)) r_cons_printf ("fs strings");
+	if (IS_MODE_SET (mode) && r_config_get_i (r->config, "bin.strings")) {
 		r_flag_space_set (r->flags, "strings");
 		r_cons_break (NULL, NULL);
 	}
@@ -161,7 +161,7 @@ static int bin_strings(RCore *r, int mode, int va) {
 		section = r_bin_get_section_at (r_bin_cur_object (bin), paddr, 0);
 		section_name = section ? section->name : "unknown";
 		type_string = string->type == 'w' ? "wide" : "ascii";
-		if (IS_SET (mode)) {
+		if (IS_MODE_SET (mode)) {
 			char *f_name;
 
 			if (r_cons_singleton()->breaked) break;
@@ -172,10 +172,10 @@ static int bin_strings(RCore *r, int mode, int va) {
 			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", f_name);
 			r_flag_set (r->flags, str, addr, string->size, 0);
 			free (f_name);
-		} else if (IS_SIMPLE (mode)) {
+		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", addr,
 				string->size, string->length, string->string);
-		} else if (IS_JSON (mode)) {
+		} else if (IS_MODE_JSON (mode)) {
 			q = r_base64_encode_dyn (string->string, -1);
 			r_cons_printf ("%s{\"vaddr\":%"PFMT64d
 				",\"paddr\":%"PFMT64d",\"ordinal\":%d,"
@@ -185,7 +185,7 @@ static int bin_strings(RCore *r, int mode, int va) {
 				vaddr, paddr, string->ordinal, string->size,
 				string->length, section_name, type_string, q);
 			free (q);
-		} else if (IS_RADARE (mode)) {
+		} else if (IS_MODE_RAD (mode)) {
 			char *f_name;
 
 			f_name = strdup (string->string);
@@ -205,8 +205,8 @@ static int bin_strings(RCore *r, int mode, int va) {
 				string->string);
 		}
 	}
-	if (IS_JSON (mode)) r_cons_printf ("]");
-	if (IS_SET (mode)) r_cons_break_end ();
+	if (IS_MODE_JSON (mode)) r_cons_printf ("]");
+	if (IS_MODE_SET (mode)) r_cons_break_end ();
 
 	return true;
 }
