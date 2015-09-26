@@ -1200,11 +1200,11 @@ static int esil_inceq (RAnalEsil *esil) {
 static int esil_sub (RAnalEsil *esil) {
 	ut64 s = 0, d = 0;
 	if (!popRN (esil, &d)) {
-		eprintf ("esil_sub: src is broken\n");
+		eprintf ("esil_sub: dst is broken\n");
 		return false;
 	}
 	if (!popRN (esil, &s)) {
-		eprintf ("esil_sub: dst is broken\n");
+		eprintf ("esil_sub: src is broken\n");
 		return false;
 	}
 	r_anal_esil_pushnum (esil, d-s);
