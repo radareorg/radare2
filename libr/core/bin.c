@@ -10,6 +10,7 @@
 #define IS_MODE_SIMPLE(mode) (mode & R_CORE_BIN_SIMPLE)
 #define IS_MODE_JSON(mode) (mode & R_CORE_BIN_JSON)
 #define IS_MODE_RAD(mode) (mode & R_CORE_BIN_RADARE)
+#define IS_MODE_NORMAL(mode) (mode == 0)
 
 // dup from cmd_info
 #define PAIR_WIDTH 9
@@ -490,71 +491,48 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va) {
 	int i = 0;
 	ut64 baddr = r_bin_get_baddr (r->bin);
 
-	if (mode & R_CORE_BIN_JSON) {
-		r_cons_printf ("[");
-		r_list_foreach (entries, iter, entry) {
-			ut64 paddr = entry->paddr;
-			ut64 vaddr = r_bin_get_vaddr (r->bin, paddr, entry->vaddr);
-			ut64 at = rva (r->bin, entry->paddr, entry->vaddr, va);
-			if (at > vaddr) {
-				vaddr = at;
-			}
-			if (!va) {
-				vaddr = paddr;
-			}
+	if (IS_MODE_RAD (mode)) r_cons_printf ("fs symbols\n");
+	else if (IS_MODE_JSON (mode)) r_cons_printf ("[");
+	else if (IS_MODE_NORMAL (mode)) r_cons_printf ("[Entrypoints]\n");
+
+	r_list_foreach (entries, iter, entry) {
+		ut64 paddr = entry->paddr;
+		ut64 at = rva (r->bin, paddr, entry->vaddr, va);
+		if (IS_MODE_SET (mode)) {
+			r_flag_space_set (r->flags, "symbols");
+			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i);
+			r_flag_set (r->flags, str, at, 1, 0);
+		} else if (IS_MODE_SIMPLE (mode)) {
+			r_cons_printf ("0x%08"PFMT64x"\n", at);
+		} else if (IS_MODE_JSON (mode)) {
 			r_cons_printf ("%s{\"vaddr\":%" PFMT64d ","
 				"\"paddr\":%" PFMT64d ","
 				"\"baddr\":%" PFMT64d ","
 				"\"laddr\":%" PFMT64d "}",
-				iter->p ? "," : "", vaddr, paddr, baddr, laddr);
+				iter->p ? "," : "", at, paddr, baddr, laddr);
+		} else if (IS_MODE_RAD (mode)) {
+			r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, at);
+			r_cons_printf ("s entry%i\n", i);
+		} else {
+			r_cons_printf (
+				 "vaddr=0x%08"PFMT64x
+				" paddr=0x%08"PFMT64x
+				" baddr=0x%08"PFMT64x
+				" laddr=0x%08"PFMT64x"\n",
+				at, paddr, baddr, laddr);
 		}
+		i++;
+	}
+	if (IS_MODE_SET (mode)) {
+		if (entry) {
+			ut64 at = rva (r->bin, entry->paddr, entry->vaddr, va);
+			r_core_seek (r, at, 0);
+		}
+	} else if (IS_MODE_JSON (mode)) {
 		r_cons_printf ("]");
 		r_cons_newline ();
-	} else if (mode & R_CORE_BIN_SIMPLE) {
-		r_list_foreach (entries, iter, entry) {
-			ut64 at = rva (r->bin, entry->paddr, entry->vaddr, va);
-			r_cons_printf ("0x%08"PFMT64x"\n", at);
-		}
-	} else if ((mode & R_CORE_BIN_SET)) {
-		r_list_foreach (entries, iter, entry) {
-			ut64 at = rva (r->bin, entry->paddr, entry->vaddr, va);
-			if (at == 0) at = entry->vaddr;
-			r_flag_space_set (r->flags, "symbols");
-			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i++);
-			r_flag_set (r->flags, str, at, 1, 0);
-		}
-		/* Seek to the last entry point */
-		if (entry) {
-			r_core_seek (r, va ? r_bin_a2b (r->bin, entry->vaddr) : entry->paddr, 0);
-		}
-	} else {
-		if (mode) r_cons_printf ("fs symbols\n");
-		else r_cons_printf ("[Entrypoints]\n");
-
-		r_list_foreach (entries, iter, entry) {
-			ut64 paddr = entry->paddr;
-			ut64 vaddr = r_bin_get_vaddr (r->bin, paddr, entry->vaddr);
-			ut64 at = rva (r->bin, entry->paddr, entry->vaddr, va);
-			if (at > vaddr) {
-				vaddr = at;
-			}
-			if (!va) {
-				vaddr = paddr;
-			}
-			if (mode) {
-				r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, vaddr);
-				r_cons_printf ("s entry%i\n", i);
-			} else {
-				r_cons_printf (
-					 "vaddr=0x%08"PFMT64x
-					" paddr=0x%08"PFMT64x
-					" baddr=0x%08"PFMT64x
-					" laddr=0x%08"PFMT64x"\n",
-					vaddr, paddr, baddr, laddr);
-			}
-			i++;
-		}
-		if (!mode) r_cons_printf ("\n%i entrypoints\n", i);
+	} else if (IS_MODE_NORMAL (mode)) {
+		r_cons_printf ("\n%i entrypoints\n", i);
 	}
 	return true;
 }
