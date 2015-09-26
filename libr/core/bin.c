@@ -13,15 +13,36 @@
 
 // dup from cmd_info
 #define PAIR_WIDTH 9
-static void pair(const char *a, const char *b) {
-	char ws[16];
-	int al = strlen (a);
-	if (!b) return;  //b = "";
-	memset (ws, ' ', sizeof (ws));
-	al = PAIR_WIDTH-al;
-	if (al<0) al = 0;
-	ws[al] = 0;
-	r_cons_printf ("%s%s%s\n", a, ws, b);
+static void pair(const char *a, const char *b, int mode, bool last) {
+	if (!b || !(*b)) return;
+
+	if (IS_MODE_JSON (mode)) {
+		const char *lst = last ? "" : ",";
+		r_cons_printf ("\"%s\":%s%s", a, b, lst);
+	} else {
+		char ws[16];
+		int al = strlen (a);
+
+		al = PAIR_WIDTH - al;
+		if (al < 0) al = 0;
+		memset (ws, ' ', al);
+		ws[al] = 0;
+		r_cons_printf ("%s%s%s\n", a, ws, b);
+	}
+}
+static void pair_bool (const char *a, bool t, int mode, bool last) {
+	pair (a, r_str_bool (t), mode, last);
+}
+static void pair_int (const char *a, int n, int mode, bool last) {
+	pair (a, sdb_fmt (0, "%d", n), mode, last);
+}
+static void pair_str (const char *a, const char *b, int mode, int last) {
+	if (IS_MODE_JSON (mode)) {
+		if (!b) b = "";
+		pair (a, sdb_fmt (0, "\"%s\"", b), mode, last);
+	} else {
+		pair (a, b, mode, last);
+	}
 }
 
 #define STR(x) (x)?(x):""
@@ -238,65 +259,9 @@ static int bin_info(RCore *r, int mode) {
 	snprintf (baddr_str, sizeof (baddr_str),
 		"%"PFMT64d,  info->baddr);
 
-	if (mode & R_CORE_BIN_JSON) {
-		r_cons_printf ("{\"bintype\":\"%s\","
-			"\"class\":\"%s\","
-			"\"endian\":\"%s\","
-			"\"machine\":\"%s\","
-			"\"arch\":\"%s\","
-			"\"os\":\"%s\","
-			"\"lang\":\"%s\","
-			"\"pic\":%s,"
-			"\"canary\":%s,"
-			"\"nx\":%s,"
-			"\"crypto\":%s,"
-			"\"va\":%s,"
-			"\"bits\":%d,"
-			"\"stripped\":%s,"
-			"\"static\":%s,"
-			"\"linenums\":%s,"
-			"\"lsyms\":%s,"
-			"\"relocs\":%s,"
-			"\"rpath\":\"%s\","
-			"\"baddr\":%s,"
-			"\"binsz\":%s,"
-			"\"subsys\":\"%s\","
-			"\"guid\":\"%s\","
-			"\"dbg_file\":\"%s\","
-			"\"compiled\":\"%s\"}",
-			STR(info->rclass), // type
-			STR(info->bclass), // class
-			info->big_endian? "big": "little",
-			STR(info->machine),
-			STR(info->arch),
-			STR(info->os),
-			info->lang?info->lang:"",
-			r_str_bool (info->has_pi),
-			r_str_bool (info->has_canary),
-			r_str_bool (info->has_nx),
-			r_str_bool (info->has_crypto),
-			r_str_bool (info->has_va),
-			info->bits,
-			r_str_bool ((R_BIN_DBG_STRIPPED & info->dbg_info)),
-			r_str_bool (r_bin_is_static (r->bin)),//R_BIN_DBG_STATIC (info->dbg_info)),
-			r_str_bool ((R_BIN_DBG_LINENUMS & info->dbg_info)),
-			r_str_bool ((R_BIN_DBG_SYMS &info->dbg_info)),
-			r_str_bool ((R_BIN_DBG_RELOCS &info->dbg_info)),
-			STR(info->rpath),
-			baddr_str,
-			size_str,
-			STR(info->subsystem),
-			info->guid ? info->guid : "",
-			info->debug_file_name ? info->debug_file_name : "",
-			compiled ? compiled : "");
-	} else if ((mode & R_CORE_BIN_SIMPLE)) {
-		r_cons_printf ("arch %s\n", info->arch);
-		r_cons_printf ("bits %d\n", info->bits);
-		r_cons_printf ("os %s\n", info->os);
-		r_cons_printf ("endian %s\n", info->big_endian? "big": "little");
-	} else if ((mode & R_CORE_BIN_SET)) {
+	if (IS_MODE_SET (mode)) {
 		r_config_set (r->config, "file.type", info->rclass);
-		r_config_set (r->config, "cfg.bigendian", info->big_endian?"true":"false");
+		r_config_set (r->config, "cfg.bigendian", info->big_endian ? "true" : "false");
 		if (info->rclass && !strcmp (info->rclass, "fs")) {
 			r_config_set (r->config, "asm.arch", info->arch);
 			r_core_cmdf (r, "m /root %s 0", info->arch);
@@ -310,90 +275,84 @@ static int bin_info(RCore *r, int mode) {
 			snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
 			r_config_set (r->config, "asm.bits", str);
 			r_config_set (r->config, "asm.dwarf",
-				(R_BIN_DBG_STRIPPED &info->dbg_info)?"false":"true");
+				(R_BIN_DBG_STRIPPED &info->dbg_info) ? "false" : "true");
+		}
+	} else if (IS_MODE_SIMPLE (mode)) {
+		r_cons_printf ("arch %s\n", info->arch);
+		r_cons_printf ("bits %d\n", info->bits);
+		r_cons_printf ("os %s\n", info->os);
+		r_cons_printf ("endian %s\n", info->big_endian? "big": "little");
+	} else if (IS_MODE_RAD (mode)) {
+		if (info->type && !strcmp (info->type, "fs")) {
+			r_cons_printf ("e file.type=fs\n");
+			r_cons_printf ("m /root %s 0\n", info->arch);
+		} else {
+			r_cons_printf ("e cfg.bigendian=%s\n"
+				"e asm.bits=%i\n"
+				"e asm.dwarf=%s\n",
+				r_str_bool (info->big_endian),
+				info->bits,
+				r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
+			if (info->lang && *info->lang) {
+				r_cons_printf ("e bin.lang=%s\n", info->lang);
+			}
+			if (info->rclass && *info->rclass) {
+				r_cons_printf ("e file.type=%s\n",
+					info->rclass);
+			}
+			if (info->os) {
+				r_cons_printf ("e asm.os=%s\n", info->os);
+			}
+			if (info->arch) {
+				r_cons_printf ("e asm.arch=%s\n", info->arch);
+			}
 		}
 	} else {
-		if (mode) {
-			if (info->type && !strcmp (info->type, "fs")) {
-				r_cons_printf ("e file.type=fs\n");
-				r_cons_printf ("m /root %s 0\n", info->arch);
-			} else {
-				// XXX: hack to disable io.va when loading an elf object
-				// XXX: this must be something generic for all filetypes
-				// XXX: needs new api in r_bin_has_va () or something..
-				//int has_va = (!strcmp (info->rclass, "elf-object"))? 0: 1;
-				//if (!strcmp (info->type, "REL"))...relocatable object..
-				r_cons_printf (
-					"e cfg.bigendian=%s\n"
-					"e asm.bits=%i\n"
-					"e asm.dwarf=%s\n",
-					r_str_bool (info->big_endian),
-					info->bits,
-					r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
-				if (info->lang && *info->lang) {
-					r_cons_printf ( "e bin.lang=%s\n",
-						info->lang);
-				}
-				if (info->rclass && *info->rclass) {
-					r_cons_printf ( "e file.type=%s\n",
-						info->rclass);
-				}
-				if (info->os) {
-					r_cons_printf ("e asm.os=%s\n", info->os);
-				}
-				if (info->arch) {
-					r_cons_printf ("e asm.arch=%s\n", info->arch);
-				}
-			}
-		} else {
-			// XXX: if type is 'fs' show something different?
-			pair ("pic", r_str_bool (info->has_pi));
-			pair ("canary", r_str_bool (info->has_canary));
-			pair ("nx", r_str_bool (info->has_nx));
-			pair ("crypto", r_str_bool (info->has_crypto));
-			pair ("va", r_str_bool (info->has_va));
-			pair ("bintype", info->rclass);
-			pair ("class", info->bclass);
-			pair ("lang", (info->lang && *info->lang)? info->lang: NULL);//"unknown");
-			pair ("arch", info->arch);
-			pair ("bits", sdb_fmt (0, "%d", info->bits));
-			pair ("machine", info->machine);
-			pair ("os", info->os);
-			pair ("subsys", info->subsystem);
-			pair ("endian", info->big_endian? "big": "little");
-			pair ("stripped", r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
-			pair ("static", r_str_bool (r_bin_is_static (r->bin)));
-			pair ("linenum", r_str_bool (R_BIN_DBG_LINENUMS &info->dbg_info));
-			pair ("lsyms", r_str_bool (R_BIN_DBG_SYMS &info->dbg_info));
-			pair ("relocs", r_str_bool (R_BIN_DBG_RELOCS &info->dbg_info));
-			pair ("rpath", info->rpath);
-			pair ("binsz", size_str);
-			pair ("compiled", compiled);
-			if (info->guid && *info->guid) {
-				pair ("guid", info->guid);
-			}
-			if (info->debug_file_name) {
-				pair ("dbg_file", info->debug_file_name);
-			}
+		// XXX: if type is 'fs' show something different?
+		if (IS_MODE_JSON (mode)) r_cons_printf ("{");
+		pair_bool ("pic", info->has_pi, mode, false);
+		pair_bool ("canary", info->has_canary, mode, false);
+		pair_bool ("nx", info->has_nx, mode, false);
+		pair_bool ("crypto", info->has_crypto, mode, false);
+		pair_bool ("va", info->has_va, mode, false);
+		pair_str ("bintype", info->rclass, mode, false);
+		pair_str ("class", info->bclass, mode, false);
+		pair_str ("lang", info->lang, mode, false);
+		pair_str ("arch", info->arch, mode, false);
+		pair_int ("bits", info->bits, mode, false);
+		pair_str ("machine", info->machine, mode, false);
+		pair_str ("os", info->os, mode, false);
+		pair_str ("subsys", info->subsystem, mode, false);
+		pair_str ("endian", info->big_endian ? "big" : "little", mode, false);
+		pair_bool ("stripped", R_BIN_DBG_STRIPPED & info->dbg_info, mode, false);
+		pair_bool ("static", r_bin_is_static (r->bin), mode, false);
+		pair_bool ("linenum", R_BIN_DBG_LINENUMS & info->dbg_info, mode, false);
+		pair_bool ("lsyms", R_BIN_DBG_SYMS & info->dbg_info, mode, false);
+		pair_bool ("relocs", R_BIN_DBG_RELOCS & info->dbg_info, mode, false);
+		pair_str ("rpath", info->rpath, mode, false);
+		pair_str ("binsz", size_str, mode, false);
+		pair_str ("compiled", compiled, mode, false);
+		pair_str ("guid", info->guid, mode, false);
+		pair_str ("dbg_file", info->debug_file_name, mode, true);
 
-			for (i = 0; info->sum[i].type; i++) {
-				int len;
+		for (i = 0; info->sum[i].type; i++) {
+			int len;
 
-				RBinHash *h = &info->sum[i];
-				ut64 hash = r_hash_name_to_bits (h->type);
-				RHash *rh = r_hash_new (true, hash);
-				len = r_hash_calculate (rh, hash, (const ut8*)
+			RBinHash *h = &info->sum[i];
+			ut64 hash = r_hash_name_to_bits (h->type);
+			RHash *rh = r_hash_new (true, hash);
+			len = r_hash_calculate (rh, hash, (const ut8*)
 					binfile->buf->buf+h->from, h->to);
-				if (len < 1) eprintf ("Invaild wtf\n");
-				r_hash_free (rh);
+			if (len < 1) eprintf ("Invaild wtf\n");
+			r_hash_free (rh);
 
-				r_cons_printf ("%s\t%d-%dc\t", h->type, h->from, h->to+h->from);
-				for (j = 0; j < h->len; j++) {
-					r_cons_printf ("%02x", h->buf[j]);
-				}
-				r_cons_newline ();
+			r_cons_printf ("%s\t%d-%dc\t", h->type, h->from, h->to+h->from);
+			for (j = 0; j < h->len; j++) {
+				r_cons_printf ("%02x", h->buf[j]);
 			}
+			r_cons_newline ();
 		}
+		if (IS_MODE_JSON (mode)) r_cons_printf ("}");
 	}
 	return true;
 }

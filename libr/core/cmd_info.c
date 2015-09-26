@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #define PAIR_WIDTH 9
+// TODO: reuse implementation in core/bin.c
 static void pair(const char *a, const char *b) {
 	char ws[16];
 	int al = strlen (a);
