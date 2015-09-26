@@ -780,89 +780,56 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 
 	imports = r_bin_get_imports (r->bin);
 
-	if (mode & R_CORE_BIN_JSON) {
-		ut64 addr;
-		r_cons_printf ("[");
-		r_list_foreach (imports, iter, import) {
-			if (name && strcmp (import->name, name))
-				continue;
+	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
+	else if (IS_MODE_RAD (mode)) r_cons_printf ("fs imports\n");
+	else if (IS_MODE_NORMAL (mode)) r_cons_printf ("[Imports]\n");
+	r_list_foreach (imports, iter, import) {
+		if (name && strcmp (import->name, name)) continue;
+
+		ut64 addr = impaddr (r->bin, va, import->name);
+		if (IS_MODE_SET (mode)) {
+			// TODO(eddyb) symbols that are imports.
+		} else if (IS_MODE_SIMPLE (mode)) {
+			r_cons_printf ("%s\n", import->name);
+		} else if (IS_MODE_JSON (mode)) {
 			str = r_str_utf16_encode (import->name, -1);
 			str = r_str_replace (str, "\"", "\\\"", 1);
 			addr = impaddr (r->bin, va, import->name);
-			r_cons_printf ("%s{\"name\":\"%s\", \"plt\":%"PFMT64d"}",
-				iter->p?",":"", str, addr);
-			free (str);
-		}
-		r_cons_printf ("]");
-	} else if ((mode & R_CORE_BIN_SIMPLE)) {
-		r_list_foreach (imports, iter, import)
-			r_cons_printf ("%s\n", import->name);
-	} else if ((mode & R_CORE_BIN_SET)) {
-		// TODO(eddyb) use the logic below for symbols that are imports.
-#if 0
-		char str[1024];
-		r_flag_space_set (r->flags, "imports");
-		r_list_foreach (imports, iter, import) {
-			r_name_filter (import->name, 128);
-			snprintf (str, R_FLAG_NAME_SIZE, "imp.%s", import->name);
-			if (import->size)
-				if (!r_anal_fcn_add (r->anal, va?baddr+import->vaddr:import->paddr,
-						import->size, str, R_ANAL_FCN_TYPE_IMP, NULL))
-					eprintf ("Cannot add function: %s (duplicated)\n", import->name);
-			r_flag_set (r->flags, str, va?baddr+import->vaddr:import->paddr,
-					import->size, 0);
-			iname = import->name;
-			p = strstr (iname+1, "__");
-			if (p) iname = p+1;
-			dname = r_bin_demangle (r->bin, iname);
-			if (dname) {
-				r_meta_add (r->anal->meta, R_META_TYPE_COMMENT,
-						va? baddr+import->vaddr: import->paddr,
-						import->size, dname);
-				free (dname);
+			r_cons_printf ("%s{\"ordinal\":%d,"
+				"\"bind\":\"%s\","
+				"\"type\":\"%s\",",
+				iter->p ? "," : "",
+				import->ordinal,
+				import->bind,
+				import->type);
+			if (import->classname[0]) {
+				r_cons_printf ("\"classname\":\"%s\","
+					"\"descriptor\":\"%s\",",
+					import->classname,
+					import->descriptor);
 			}
+			r_cons_printf("\"name\":\"%s\","
+				"\"plt\":%"PFMT64d"}",
+				str, addr);
+			free (str);
+		} else if (IS_MODE_RAD (mode)) {
+			// TODO(eddyb) symbols that are imports.
+		} else {
+			r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s",
+				import->ordinal, addr, import->bind, import->type);
+			if (import->classname[0]) {
+				r_cons_printf (" classname=%s", import->classname);
+			}
+			r_cons_printf (" name=%s", import->name);
+			if (import->classname[0]) {
+				r_cons_printf (" descriptor=%s", import->descriptor);
+			}
+			r_cons_printf ("\n");
 		}
-#endif
-	} else {
-		ut64 addr;
-		if (mode) r_cons_printf ("fs imports\n");
-		else r_cons_printf ("[Imports]\n");
-
-		r_list_foreach (imports, iter, import) {
-			if (name && strcmp (import->name, name))
-				continue;
-			addr = impaddr (r->bin, va, import->name);
-			if (mode) {
-				// TODO(eddyb) use the logic below for symbols that are imports.
-				/*r_name_filter (import->name, sizeof (import->name));
-				iname = import->name;
-				p = strstr (iname+1, "__");
-				if (p) iname = p+1;
-				mn = r_bin_demangle (r->bin, iname);
-				if (mn) {
-					//r_name_filter (mn, strlen (mn));
-					r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n",
-						import->paddr, mn);
-					free (mn);
-				}
-				if (import->size)
-					r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" imp.%s i\n",
-							va?baddr+import->vaddr:import->paddr,
-							import->size, import->name);
-				r_cons_printf ("f imp.%s @ 0x%08"PFMT64x"\n",
-						import->name, va?baddr+import->vaddr:import->paddr);*/
-			} else if (import->classname[0] != 0) {
-				r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s classname=%s name=%s descriptor=%s\n",
-					import->ordinal, addr, import->bind, import->type,
-					import->classname, import->name, import->descriptor);
-			} else r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s name=%s\n",
-				import->ordinal, addr,
-				import->bind, import->type,
-				import->name);
-			i++;
-		}
-		if (!mode) r_cons_printf ("\n%i imports\n", i);
+		i++;
 	}
+	if (IS_MODE_JSON (mode)) r_cons_printf ("]");
+	else if (IS_MODE_NORMAL (mode)) r_cons_printf ("\n%i imports\n", i);
 #if MYDB
 	osymbols = NULL;
 	sdb_free (mydb);
