@@ -567,153 +567,143 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	return (foo && *foo) ? foo : NULL;
 }
 
-static int bin_relocs(RCore *r, int mode, int va) {
+static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	const char *lang = r_config_get (r->config, "bin.lang");
-	char str[R_FLAG_NAME_SIZE];
+	char *demname = NULL;
+	bool is_pe = true;
+	int is_sandbox = r_sandbox_enable (0);
+
+	if (reloc->import && reloc->import->name[0]) {
+		char str[R_FLAG_NAME_SIZE];
+		RFlagItem *fi;
+
+		if (is_pe && !is_sandbox && strstr (reloc->import->name, "Ordinal")) {
+			const char *TOKEN = ".dll_Ordinal_";
+			char *module = strdup (reloc->import->name);
+			char *import = strstr (module, TOKEN);
+			if (import) {
+				char *filename;
+				int ordinal;
+				*import = 0;
+				import += strlen (TOKEN);
+				ordinal = atoi (import);
+				if (!*sdb_module || strcmp (module, *sdb_module)) {
+					sdb_free (*db);
+					*db = NULL;
+					free (*sdb_module);
+					*sdb_module = strdup (module);
+					filename = sdb_fmt (1, "%s.sdb", module);
+					if (r_file_exists (filename)) {
+						*db = sdb_new (NULL, filename, 0);
+					} else {
+#if __WINDOWS__
+						filename = sdb_fmt (1, "share/radare2/"R2_VERSION"/format/dll/%s.sdb", module);
+#else
+						filename = sdb_fmt (1, R2_PREFIX"/share/radare2/" R2_VERSION"/format/dll/%s.sdb", module);
+#endif
+						if (r_file_exists (filename)) {
+							*db = sdb_new (NULL, filename, 0);
+						}
+					}
+				}
+				if (*db) {
+					// ordinal-1 because we enumerate starting at 0
+					char *symname = resolveModuleOrdinal (*db, module, ordinal-1);
+					if (symname) {
+						snprintf (reloc->import->name,
+							sizeof (reloc->import->name),
+							"%s.%s", module, symname);
+					}
+				}
+			}
+			free (module);
+			r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
+			r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
+		}
+		snprintf (str, R_FLAG_NAME_SIZE,
+			"reloc.%s_%d", reloc->import->name, (int)(addr&0xff));
+		if (bin_demangle) {
+			demname = r_bin_demangle (r->bin->cur, lang, str);
+		}
+		r_name_filter (str, 0);
+		fi = r_flag_set (r->flags, str, addr, bin_reloc_size (reloc), 0);
+		if (demname) {
+			r_flag_item_set_name (fi, str,
+				sdb_fmt (0, "reloc.%s", demname));
+		}
+	} else {
+		// TODO(eddyb) implement constant relocs.
+	}
+}
+
+static int bin_relocs(RCore *r, int mode, int va) {
 	RList *relocs;
 	RListIter *iter;
 	RBinReloc *reloc;
+	Sdb *db = NULL;
+	char *sdb_module = NULL;
 	int i = 0;
 
-	va = 1; // XXX relocs always vaddr?
+	va = VA_TRUE; // XXX relocs always vaddr?
 
 	if ((relocs = r_bin_get_relocs (r->bin)) == NULL) return false;
 
-	if (mode & R_CORE_BIN_JSON) {
-		r_cons_printf ("[");
-		r_list_foreach (relocs, iter, reloc) {
+	if (IS_MODE_RAD (mode)) r_cons_printf ("fs relocs\n");
+	if (IS_MODE_NORMAL (mode)) r_cons_printf ("[Relocations]\n");
+	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
+	if (IS_MODE_SET (mode)) r_flag_space_set (r->flags, "relocs");
+	r_list_foreach (relocs, iter, reloc) {
+		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
+
+		if (IS_MODE_SET (mode)) {
+			set_bin_relocs (r, reloc, addr, &db, &sdb_module);
+		} else if (IS_MODE_SIMPLE (mode)) {
+			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr,
+				reloc->import ? reloc->import->name : "");
+		} else if (IS_MODE_RAD (mode)) {
 			if (reloc->import) {
-				r_cons_printf ("%s{\"name\":\"%s\",",
-					iter->p ? "," : "", reloc->import->name);
-			} else {
-				r_cons_printf ("%s{\"name\":null,",
-					iter->p ? "," : "");
-			}
-			r_cons_printf ("\"type\":\"%s\","
-				"\"vaddr\":%"PFMT64d","
-				"\"paddr\":%"PFMT64d"}",
-				bin_reloc_type_name (reloc),
-				reloc->vaddr, reloc->paddr);
-		}
-		r_cons_printf ("]");
-	} else if ((mode & R_CORE_BIN_SET)) {
-		int is_pe = 1; // TODO: optimize
-		int is_sandbox = r_sandbox_enable (0);
-		char *sdb_module = NULL;
-		RFlagItem *fi;
-		char *demname, *symname;
-		// TODO: if PE load pe.sdb
-		Sdb *db = NULL;
-		r_flag_space_set (r->flags, "relocs");
-		r_list_foreach (relocs, iter, reloc) {
-			ut64 addr = va? reloc->vaddr: reloc->paddr;
-			demname = NULL;
-			if (reloc->import && reloc->import->name[0]) {
-				if (is_pe && !is_sandbox && strstr (reloc->import->name, "Ordinal")) {
-					const char *TOKEN = ".dll_Ordinal_";
-					char *module = strdup (reloc->import->name);
-					char *import = strstr (module, TOKEN);
-					if (import) {
-						char *filename;
-						int ordinal;
-						*import = 0;
-						import += strlen (TOKEN);
-						ordinal = atoi (import);
-						if (!sdb_module || strcmp (module, sdb_module)) {
-							sdb_free (db);
-							db = NULL;
-							free (sdb_module);
-							sdb_module = strdup (module);
-							filename = sdb_fmt (1, "%s.sdb", module);
-							if (r_file_exists (filename)) {
-								db = sdb_new (NULL, filename, 0);
-							} else {
-#if __WINDOWS__
-								filename = sdb_fmt (1, "share/radare2/"R2_VERSION"/format/dll/%s.sdb", module);
-#else
-								filename = sdb_fmt (1, R2_PREFIX"/share/radare2/" R2_VERSION"/format/dll/%s.sdb", module);
-#endif
-								if (r_file_exists (filename)) {
-									db = sdb_new (NULL, filename, 0);
-								}
-							}
-						}
-						if (db) {
-							// ordinal-1 because we enumerate starting at 0
-							symname = resolveModuleOrdinal (db, module, ordinal-1);
-							if (symname) {
-								snprintf (reloc->import->name, 
-									sizeof (reloc->import->name),
-									"%s.%s", module, symname);
-							}
-						}
-					}
-					free (module);
-					r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
-					r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
-				}
-				snprintf (str, R_FLAG_NAME_SIZE,
-					"reloc.%s_%d", reloc->import->name, (int)(addr&0xff));
-				if (bin_demangle) {
-					demname = r_bin_demangle (r->bin->cur, lang, str);
-				}
-				r_name_filter (str, 0);
-				//r_str_replace_char (str, '$', '_');
-				fi = r_flag_set (r->flags, str, addr, bin_reloc_size (reloc), 0);
-				if (demname) {
-					r_flag_item_set_name (fi, str,
-						sdb_fmt (0, "reloc.%s", demname));
-				}
+				char *str = strdup (reloc->import->name);
+				r_str_replace_char (str, '$', '_');
+				r_cons_printf ("f reloc.%s_%d @ 0x%08"PFMT64x"\n",
+					str, (int)(addr & 0xff), addr);
+				free (str);
 			} else {
 				// TODO(eddyb) implement constant relocs.
 			}
-		}
-		sdb_free (db);
-		free (sdb_module);
-	} else if ((mode & R_CORE_BIN_SIMPLE)) {
-		r_list_foreach (relocs, iter, reloc) {
-			ut64 addr = va? reloc->vaddr: reloc->paddr;
-			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr,
-				reloc->import ? reloc->import->name : "");
-		}
-	} else {
-		if (mode) {
-			r_cons_printf ("fs relocs\n");
-			r_list_foreach (relocs, iter, reloc) {
-				ut64 addr = va? reloc->vaddr: reloc->paddr;
-				if (reloc->import) {
-					char *str = strdup (reloc->import->name);
-					r_str_replace_char (str, '$', '_');
-					r_cons_printf ("f reloc.%s_%d @ 0x%08"PFMT64x"\n", str, (int)(addr&0xff), addr);
-					free (str);
+		} else if (IS_MODE_JSON (mode)) {
+			const char *reloc_name = reloc->import ?
+				sdb_fmt (0, "\"%s\"", reloc->import->name) :
+				"null";
+			r_cons_printf ("%s{\"name\":%s,"
+				"\"type\":\"%s\","
+				"\"vaddr\":%"PFMT64d","
+				"\"paddr\":%"PFMT64d"}",
+				reloc_name,
+				bin_reloc_type_name (reloc),
+				reloc->vaddr, reloc->paddr);
+		} else if (IS_MODE_NORMAL (mode)) {
+			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" type=%s",
+				addr, reloc->paddr, bin_reloc_type_name (reloc));
+			if (reloc->import && reloc->import->name[0]) {
+				r_cons_printf (" %s", reloc->import->name);
+			}
+			if (reloc->addend) {
+				if (reloc->import && reloc->addend > 0) {
+					r_cons_printf (" +");
+				}
+				if (reloc->addend < 0) {
+					r_cons_printf (" - 0x%08"PFMT64x, -reloc->addend);
 				} else {
-					// TODO(eddyb) implement constant relocs.
+					r_cons_printf (" 0x%08"PFMT64x, reloc->addend);
 				}
-				i++;
 			}
-		} else {
-			r_cons_printf ("[Relocations]\n");
-			r_list_foreach (relocs, iter, reloc) {
-				ut64 addr = va? reloc->vaddr : reloc->paddr;
-				r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" type=%s",
-					addr, reloc->paddr, bin_reloc_type_name (reloc));
-				if (reloc->import && reloc->import->name[0])
-					r_cons_printf (" %s", reloc->import->name);
-				if (reloc->addend) {
-					if (reloc->import && reloc->addend > 0)
-						r_cons_printf (" +");
-					if (reloc->addend < 0)
-						r_cons_printf (" - 0x%08"PFMT64x, -reloc->addend);
-					else
-						r_cons_printf (" 0x%08"PFMT64x, reloc->addend);
-				}
-				r_cons_printf ("\n");
-				i++;
-			}
-			r_cons_printf ("\n%i relocations\n", i);
+			r_cons_printf ("\n");
 		}
+		i++;
 	}
+	if (IS_MODE_JSON (mode)) r_cons_printf ("]");
+	if (IS_MODE_NORMAL (mode)) r_cons_printf ("\n%i relocations\n", i);
 	return true;
 }
 
