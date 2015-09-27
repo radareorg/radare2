@@ -524,6 +524,8 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 	if (!ds->opstr) {
 		ds->opstr = strdup (ds->asmop.buf_asm);
 	}
+	/* initialize */
+	core->parser->hint = ds->hint;
 	if (ds->varsub && ds->opstr) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
 			ds->at, R_ANAL_FCN_TYPE_NULL);

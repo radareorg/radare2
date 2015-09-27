@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
 
 #ifndef R2_PARSE_H
 #define R2_PARSE_H
@@ -25,6 +25,7 @@ typedef struct r_parse_t {
 	int notin_flagspace;
 	struct r_parse_plugin_t *cur;
 	RAnal *anal; // weak anal ref
+	RAnalHint *hint; // weak anal ref
 	RList *parsers;
 	RAnalVarList varlist;
 } RParse;

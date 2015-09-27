@@ -168,6 +168,34 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 				return true;
 			}
 		}
+		if (p->hint) {
+			int immbase = p->hint->immbase;
+			char num[32];
+			switch (immbase) {
+			case 1:
+				r_num_to_bits (num, off);
+				strcat (num, "b");
+				break;
+			case 2: // hack for ascii
+				snprintf (num, sizeof(num), "'%c'", off);
+				break;
+			case 8:
+				snprintf (num, sizeof(num), "0%o", off);
+				break;
+			case 10:
+				snprintf (num, sizeof(num), "%d", off);
+				break;
+			case 16:
+				/* do nothing */
+			default:
+				snprintf (num, sizeof(num), "0x%x", off);
+				break;
+			}
+			*ptr = 0;
+			snprintf (str, len, "%s%s%s", data, num, 
+					(ptr!=ptr2)? ptr2: "");
+			return true;
+		}
 		ptr = ptr2;
 	}
 	strncpy (str, data, len);

@@ -37,7 +37,6 @@ static int visual_repeat_thread(RThread *th) {
 
 static void visual_repeat(RCore *core) {
 	int atport = r_config_get_i (core->config, "scr.atport");
-
 	if (atport) {
 #if __UNIX__ && !__APPLE__
 		int port = r_config_get_i (core->config, "http.port");
@@ -72,10 +71,8 @@ static void showcursor(RCore *core, int x) {
 		if (x) {
 			// TODO: cache this
 			int wheel = r_config_get_i (core->config, "scr.wheel");
-			if (wheel)
-				r_cons_enable_mouse (true);
-			else
-				r_cons_enable_mouse (false);
+			if (wheel) r_cons_enable_mouse (true);
+			else r_cons_enable_mouse (false);
 		} else {
 			r_cons_enable_mouse (false);
 		}
@@ -88,7 +85,6 @@ static int curset = 0, cursor = 0, ocursor=-1;
 static int color = 1;
 static int debug = 1;
 static int zoom = 0;
-
 static int marks_init = 0;
 static ut64 marks[UT8_MAX+1];
 

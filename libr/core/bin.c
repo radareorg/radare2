@@ -6,11 +6,11 @@
 #define VA_TRUE     1
 #define VA_NOREBASE 2
 
-#define IS_MODE_SET(mode) (mode & R_CORE_BIN_SET)
-#define IS_MODE_SIMPLE(mode) (mode & R_CORE_BIN_SIMPLE)
-#define IS_MODE_JSON(mode) (mode & R_CORE_BIN_JSON)
-#define IS_MODE_RAD(mode) (mode & R_CORE_BIN_RADARE)
-#define IS_MODE_NORMAL(mode) (mode == 0)
+#define IS_MODE_SET(mode) mode & R_CORE_BIN_SET
+#define IS_MODE_SIMPLE(mode) mode & R_CORE_BIN_SIMPLE
+#define IS_MODE_JSON(mode) mode & R_CORE_BIN_JSON
+#define IS_MODE_RAD(mode) mode & R_CORE_BIN_RADARE
+#define IS_MODE_NORMAL(mode) mode == 0
 
 // dup from cmd_info
 #define PAIR_WIDTH 9

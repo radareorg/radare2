@@ -1523,12 +1523,8 @@ R_API void r_core_visual_define (RCore *core) {
 	ut64 off = core->offset;
 	int n, ch, ntotal = 0;
 	ut8 *p = core->block;
-	int delta = 0;
-	ut64 here = core->offset;
-	if (core->print->cur_enabled)
-		delta = core->print->cur;
-	here += delta;
 	char *name;
+	int delta = 0;
 	if (core->print->cur_enabled) {
 		int cur = core->print->cur;
 		if (core->print->ocur != -1) {
@@ -1560,6 +1556,7 @@ R_API void r_core_visual_define (RCore *core) {
 		," e    end of function"
 		," f    analyze function"
 		," F    format"
+		," i    immediate base (1, 2, 8, 10, 16)"
 		," j    merge down (join this and next functions)"
 		," k    merge up (join this and previous function)"
 		," h    highlight word"
@@ -1606,6 +1603,17 @@ R_API void r_core_visual_define (RCore *core) {
 	case 'B':
 		r_meta_cleanup (core->anal, off, off+2);
 		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+2, "");
+		break;
+	case 'i':
+		{
+			char str[128];
+			r_cons_show_cursor (true);
+			r_line_set_prompt ("immbase: ");
+			if (r_cons_fgets (str, sizeof (str), 0, NULL) > 0) {
+				r_core_cmdf (core, "ahi %d @ 0x%"PFMT64x,
+					(int)r_num_math (core->num, str), off);
+			}
+		}
 		break;
 	case 'b':
 		r_meta_cleanup (core->anal, off, off+1);
@@ -1701,30 +1709,30 @@ R_API void r_core_visual_define (RCore *core) {
 		if (fcn) {
 			RAnalOp op;
 			ut64 size;
-			if (r_anal_op (core->anal, &op, here, core->block+delta,
+			if (r_anal_op (core->anal, &op, off, core->block+delta,
 					core->blocksize-delta)) {
-				size = here - fcn->addr + op.size;
+				size = off - fcn->addr + op.size;
 				r_anal_fcn_resize (fcn, size);
 			}
 		}
 		}
 		break;
 	case 'j':
-		r_core_cmdf (core, "afm $$+$F @0x%08"PFMT64x, here);
+		r_core_cmdf (core, "afm $$+$F @0x%08"PFMT64x, off);
 		break;
 	case 'k':
 		eprintf ("TODO: merge up\n");
 		r_cons_any_key (NULL);
 		break;
 	case 'h': // "Vdh"
-		r_core_cmdf (core, "?i highlight;e scr.highlight=`?y` @ 0x%08"PFMT64x, here);
+		r_core_cmdf (core, "?i highlight;e scr.highlight=`?y` @ 0x%08"PFMT64x, off);
 		break;
 	case 'r': // "Vdr"
-		r_core_cmdf (core, "?i new function name;afn `?y` @ 0x%08"PFMT64x, here);
+		r_core_cmdf (core, "?i new function name;afn `?y` @ 0x%08"PFMT64x, off);
 		break;
 	case 'R': // "VdR"
-		eprintf ("Finding references to 0x%08"PFMT64x" ...\n", here);
-		r_core_cmdf (core, "./r 0x%08"PFMT64x" @ $S", here);
+		eprintf ("Finding references to 0x%08"PFMT64x" ...\n", off);
+		r_core_cmdf (core, "./r 0x%08"PFMT64x" @ $S", off);
 		break;
 	case 'S':
 		do {

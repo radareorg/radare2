@@ -636,6 +636,7 @@ typedef struct r_anal_hint_t {
 	char *esil;
 	int size;
 	int bits;
+	int immbase;
 } RAnalHint;
 
 // mul*value+regbase+regidx+delta
@@ -1403,6 +1404,7 @@ R_API void r_anal_hint_free (RAnalHint *h);
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr);
 R_API void r_anal_hint_set_syntax (RAnal *a, ut64 addr, const char *syn);
 R_API void r_anal_hint_set_jump (RAnal *a, ut64 addr, ut64 ptr);
+R_API void r_anal_hint_set_immbase (RAnal *a, ut64 addr, int base);
 R_API void r_anal_hint_set_fail (RAnal *a, ut64 addr, ut64 ptr);
 R_API void r_anal_hint_set_length (RAnal *a, ut64 addr, int length);
 R_API void r_anal_hint_set_bits (RAnal *a, ut64 addr, int bits);
