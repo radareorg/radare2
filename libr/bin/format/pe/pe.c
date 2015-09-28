@@ -1767,7 +1767,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		ordinals_paddr = bin_pe_vaddr_to_paddr(bin,bin->export_directory->AddressOfOrdinals);
 		for (i=0;i<bin->export_directory->NumberOfFunctions;i++) {
 			// get vaddr from AddressOfFunctions array
-			r_buf_read_at (bin->b, functions_paddr + i * sizeof(PE_VWord),	(ut8*)&function_vaddr, sizeof(PE_VWord));
+			int ret = r_buf_read_at (bin->b, functions_paddr + i * sizeof(PE_VWord),
+				(ut8*)&function_vaddr, sizeof(PE_VWord));
+			if (!ret) break;
 			// have exports by name?
 			if (bin->export_directory->NumberOfNames!=0) {
 				// search for value of i into AddressOfOrdinals
