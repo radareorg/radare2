@@ -596,7 +596,6 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 }
 
 R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
-return NULL;
 	static char *hint_arch = NULL;
 	static char *hint_syntax = NULL;
 	static int hint_bits = 0;
