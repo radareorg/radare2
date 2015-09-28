@@ -1,0 +1,20 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/jpenalbae/r2-scripts"
+R2PM_DESC "[R2Pipe] RetDec Decompiler script"
+
+BIN="${R2PM_PLUGDIR}/../bin/retdec"
+
+R2PM_INSTALL() {
+	cd decompiler
+	npm install
+	echo '#!/bin/sh' > ${BIN}
+	echo "node `pwd`/decompile.js" >> ${BIN}
+	chmod +x "${BIN}"
+}
+
+R2PM_UNINSTALL() {
+	rm -f "${BIN}"
+}
+
+R2PM_END
