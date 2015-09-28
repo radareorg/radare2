@@ -159,7 +159,6 @@ R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind, cons
 	if (scope>0) { // local
 		SETKEY ("var.0x%"PFMT64x".%c.%d.%s", var_addr, kind, scope, old_name);
 		delta = sdb_num_get (DB, key, 0);
-		if (!delta) return 0;
 		sdb_unset (DB, key, 0);
 		SETKEY ("var.0x%"PFMT64x".%c.%d.%s", var_addr, kind, scope, new_name);
 		sdb_num_set (DB, key, delta, 0);
