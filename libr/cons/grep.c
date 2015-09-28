@@ -10,31 +10,32 @@ R_API void r_cons_grep_help() {
 	eprintf (
 "|Usage: [command]~[modifier][word,word][endmodifier][[column]][:line]\n"
 "| modifiers:\n"
-"|   &    all words must match to grep the line\n"
-"|   ^    words must be placed at the beginning of line\n"
-"|   !    negate grep\n"
-"|   ?    count number of matching lines\n"
-"|   ..   internal 'less'\n"
-"|   {}   json indentation\n"
-"|   {}.. less json indentation\n"
+"|   &        all words must match to grep the line\n"
+"|   ^        words must be placed at the beginning of line\n"
+"|   !        negate grep\n"
+"|   ?        count number of matching lines\n"
+"|   ..       internal 'less'\n"
+"|   {}       json indentation\n"
+"|   {}..     less json indentation\n"
 "| endmodifiers:\n"
-"|   $    words must be placed at the end of line\n"
+"|   $        words must be placed at the end of line\n"
 "| column:\n"
-"|   [n]   show only column n\n"
-"|   [n-m] show column n to m\n"
-"|   [n-]  show all columns starting from column n\n"
+"|   [n]      show only column n\n"
+"|   [n-m]    show column n to m\n"
+"|   [n-]     show all columns starting from column n\n"
 "| examples:\n"
-"|   i~:0     # show fist line of 'i' output\n"
-"|   pd~mov   # disasm and grep for mov\n"
-"|   pi~[0]   # show only opcode\n"
-"|   i~0x400$ # show lines ending with 0x400\n"
+"|   i~:0     show fist line of 'i' output\n"
+"|   pd~mov   disasm and grep for mov\n"
+"|   pi~[0]   show only opcode\n"
+"|   i~0x400$ show lines ending with 0x400\n"
 	);
 }
 
 #define R_CONS_GREP_BUFSIZE 4096
 
 R_API void r_cons_grep(const char *str) {
-	int wlen, len;
+	int wlen, len, flag1, flag2, fail = 0;
+	ut64 num1, num2;
 	RCons *cons;
 	char buf[R_CONS_GREP_BUFSIZE];
 	char *ptr, *optr, *ptr2, *ptr3;
@@ -53,8 +54,7 @@ R_API void r_cons_grep(const char *str) {
 	cons->grep.begin = 0;
 	cons->grep.counter = 0;
 	cons->grep.nstrings = 0;
-	cons->grep.tokenfrom = 0;
-	cons->grep.tokento = ST32_MAX;
+	memset (cons->grep.tokens, 0, R_CONS_GREP_TOKENS);
 
 	while (*str) {
 		switch (*str) {
@@ -76,7 +76,7 @@ R_API void r_cons_grep(const char *str) {
 			str++;
 			break;
 		case '&': str++; cons->grep.amp = 1; break;
-		case '^': str++; cons->grep.begin = 1;  break;
+		case '^': str++; cons->grep.begin = 1; break;
 		case '!': str++; cons->grep.neg = 1; break;
 		case '?': str++; cons->grep.counter = 1;
 			if (*str == '?') {
@@ -104,22 +104,58 @@ R_API void r_cons_grep(const char *str) {
 		cons->grep.end = 1;
 		buf[len] = 0;
 	}
+
 	ptr = buf;
-	ptr3 = strchr (ptr, '['); // column number
-	if (ptr3) {
-		ptr3[0] = '\0';
-		cons->grep.tokenfrom = r_num_get (cons->num, ptr3 + 1);
-		ptr3 = strchr (ptr3 + 1, '-');
-		if (ptr3) {
-			cons->grep.tokento = r_num_get (cons->num, ptr3 + 1);
-			if (cons->grep.tokento == 0)
-				cons->grep.tokento = ST32_MAX;
-		} else cons->grep.tokento = cons->grep.tokenfrom;
-		if (cons->grep.tokenfrom < 0)
-			cons->grep.tokenfrom = 0;
-		if (cons->grep.tokento < 0)
-			cons->grep.tokento = ST32_MAX;
+	ptr2 = strchr (ptr, '[');
+	ptr3 = strchr (ptr, ']');
+	flag1 = 0;  // indicates if processing a range
+	flag2 = 0;  // indicates if number is parsed
+	fail = 0;
+	num1 = num2 = -1;  // range start, range end
+
+	if (ptr2 || ptr3) {
+		ptr2[0] = '\0';
+		ptr2++;
+
+		for (; ptr2 <= ptr3; ++ptr2) {
+			if (fail) {
+				eprintf("%d columns max!", R_CONS_GREP_TOKENS);
+				memset (cons->grep.tokens, 0, R_CONS_GREP_TOKENS);
+				cons->grep.columns_used = 0;
+				fail = 0;
+				break;
+			}
+
+			switch (*ptr2) {
+			case '-':
+				flag1 = 1;
+				flag2 = 0;
+				break;
+			case ']':  // fallthrough to handle ']' like ','
+			case ',':
+				for (; num1 <= num2; num1++) {
+					if (num1 >= R_CONS_GREP_TOKENS) {
+						fail = 1;
+					}
+					cons->grep.tokens[num1] = 1;
+					cons->grep.columns_used = 1;
+				}
+				flag1 = 0;
+				flag2 = 0;
+				break;
+			default:
+				if (!flag2) {
+					if (flag1) {
+						num2 = r_num_get (cons->num, ptr2);
+					} else {
+						num1 = num2 = r_num_get (cons->num, ptr2);
+					}
+					flag2 = 1;
+				}
+			}
+		}
 	}
+
 	ptr2 = strchr (ptr, ':'); // line number
 	if (ptr2) {
 		*ptr2 = '\0';
@@ -160,8 +196,8 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	char *tline, *tbuf, *p, *out, *in = buf;
 	int ret, buffer_len = 0, l = 0, tl = 0;
 
-	if((len == 0 || buf == NULL || buf[0] == '\0')
-	   && (cons->grep.json || cons->grep.less)){
+	if((len == 0 || buf == NULL || buf[0] == '\0') &&
+	   (cons->grep.json || cons->grep.less)) {
 		cons->grep.json = 0;
 		cons->grep.less = 0;
 		return 0;
@@ -247,7 +283,8 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	const char delims[5][2] = { "|", ",", ";", "=", "\t" };
 	char *in, *out, *tok = NULL;
 	int hit = cons->grep.neg;
-	int i, j, outlen = 0;
+	int outlen = 0;
+	size_t i, j;
 
 	in = calloc (1, len + 1);
 	out = calloc (1, len + 2);
@@ -275,29 +312,33 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	} else hit = 1;
 
 	if (hit) {
-		if ((cons->grep.tokenfrom != 0 || cons->grep.tokento != ST32_MAX) &&
-			(cons->grep.line == -1 || cons->grep.line == cons->lines)) {
+		if ((cons->grep.line == -1 || cons->grep.line == cons->lines) &&
+		    cons->grep.columns_used) {
 			const int delims_count = sizeof (delims) / 2;
-			for (i = 0; i < len; i++) for (j = 0; j < delims_count; j++)
-				if (in[i] == delims[j][0])
-					in[i] = ' ';
-			for (i = 0; i <= cons->grep.tokento; i++) {
-				tok = (char *) strtok (i ? NULL : in, " ");
-				if (tok) {
-					if (i >= cons->grep.tokenfrom) {
-						int toklen = strlen (tok);
-						memcpy (out + outlen, tok, toklen);
-						memcpy (out + outlen + toklen, " ", 2);
-						outlen += toklen + 1;
+			for (i = 0; i < len; i++) {
+				for (j = 0; j < delims_count; j++) {
+					if (in[i] == delims[j][0]) {
+						in[i] = ' ';
 					}
-				} else {
+				}
+			}
+
+			for (i = 0; i < R_CONS_GREP_TOKENS; i++) {
+				tok = strtok (i ? NULL : in, " ");
+
+				if (cons->grep.tokens[i] && tok) {
+					int toklen = strlen (tok);
+					memcpy (out + outlen, tok, toklen);
+					memcpy (out + outlen + toklen, " ", 2);
+					outlen += toklen + 1;
 					if (!(*out)) {
 						free (in);
 						free (out);
 						return -1;
-					} else break;
+					}
 				}
 			}
+
 			outlen = outlen > 0 ? outlen - 1 : 0;
 			if (outlen > len) { // should never happen
 				eprintf ("r_cons_grep_line: wtf, how you reach this?\n");
@@ -305,6 +346,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 				free (out);
 				return -1;
 			}
+
 			memcpy (buf, out, len);
 			len = outlen;
 		}
