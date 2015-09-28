@@ -467,7 +467,7 @@ static void handle_deinit_ds (RCore *core, RDisasmState *ds) {
 		ds->oldbits = 0;
 	}
 	r_anal_op_fini (&ds->analop);
-	if (ds->hint) r_anal_hint_free (ds->hint);
+	r_anal_hint_free (ds->hint);
 	free (ds->comment);
 	free (ds->pre);
 	free (ds->line);
@@ -596,14 +596,11 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 }
 
 R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
-// XXX not here
+return NULL;
 	static char *hint_arch = NULL;
 	static char *hint_syntax = NULL;
 	static int hint_bits = 0;
-	if (hint) {
-		r_anal_hint_free (hint);
-		hint = NULL;
-	}
+	r_anal_hint_free (hint);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint_arch) {
 		r_config_set (core->config, "asm.arch", hint_arch);
@@ -2436,6 +2433,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	ds->buf = buf;
 	ds->len = len;
 	ds->addr = addr;
+	ds->hint = NULL;
 
 	handle_reflines_init (core->anal, ds);
 	core->inc = 0;
