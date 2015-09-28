@@ -854,15 +854,27 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 #endif
 		if (1) {
 			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
+			char maxperm[32];
+			char depthstr[32];
+			if (depth>0) {
+				snprintf (depthstr, sizeof (depthstr), "_%d", depth);
+			} else depthstr[0] = 0;
+
+			if (info.max_protection != info.protection) {
+				strcpy (maxperm, r_str_rwx_i (xwr2rwx (
+					info.max_protection)));
+			} else {
+				maxperm[0] = 0;
+			}
 			// XXX: if its shared, it cannot be read?
-			snprintf (buf, sizeof (buf), "%s %02x %s%s%s%s%s %s depth=%d",
-				r_str_rwx_i (xwr2rwx (info.max_protection)), i,
-				unparse_inheritance (info.inheritance),
-				info.user_tag? " user": "",
-				info.is_submap? " sub": "",
-				info.inheritance? " inherit": "",
-				info.is_submap ? " submap": "",
-				module_name, depth);
+			snprintf (buf, sizeof (buf), "%02x_%s%s%s%s%s%s%s%s",
+				//r_str_rwx_i (xwr2rwx (info.max_protection)), i,
+				i, unparse_inheritance (info.inheritance),
+				info.user_tag? "_user": "",
+				info.is_submap? "_sub": "",
+				"", // info.inheritance? " inherit": "",
+				info.is_submap ? "_submap": "",
+				module_name, maxperm, depthstr);
 				//info.shared ? "shar" : "priv",
 				//info.reserved ? "reserved" : "not-reserved",
 				//""); //module_name);

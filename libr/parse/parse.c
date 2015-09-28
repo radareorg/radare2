@@ -177,18 +177,18 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 				strcat (num, "b");
 				break;
 			case 2: // hack for ascii
-				snprintf (num, sizeof(num), "'%c'", off);
+				snprintf (num, sizeof(num), "'%c'", (char)off);
 				break;
 			case 8:
-				snprintf (num, sizeof(num), "0%o", off);
+				snprintf (num, sizeof(num), "0%o", (int)off);
 				break;
 			case 10:
-				snprintf (num, sizeof(num), "%d", off);
+				snprintf (num, sizeof(num), "%d", (int)off);
 				break;
 			case 16:
 				/* do nothing */
 			default:
-				snprintf (num, sizeof(num), "0x%x", off);
+				snprintf (num, sizeof(num), "0x%x", (ut32) off);
 				break;
 			}
 			*ptr = 0;

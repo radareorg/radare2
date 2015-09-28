@@ -1046,6 +1046,7 @@ static void ar_show_help(RCore *core) {
 		"ar", " 32", "Show 32 bit registers",
 		"ar", " all", "Show all bit registers",
 		"ar", " <type>", "Show all registers of given type",
+		"arr", "", "Show register references (telescoping)",
 		"ar=", "", "Show register values in columns",
 		"ar?"," <reg>", "Show register value",
 		"arb"," <type>", "Display hexdump of the given arena",
@@ -1099,6 +1100,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			ut64 off = r_reg_getv (core->anal->reg, str+1);
 			r_cons_printf ("0x%08"PFMT64x"\n", off);
 		} else ar_show_help (core);
+		break;
+	case 'r':
+		r_core_debug_rr (core, core->anal->reg);
 		break;
 	case 'S':
 		 {

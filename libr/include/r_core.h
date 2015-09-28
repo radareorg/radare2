@@ -253,6 +253,8 @@ R_API int r_core_set_file_by_name (RBin * bin, const char * name);
 R_API RBinFile * r_core_bin_cur (RCore *core);
 R_API ut32 r_core_file_cur_fd (RCore *core);
 
+R_API void r_core_debug_rr (RCore *core, RReg *reg);
+
 #define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
 R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen);

@@ -1048,9 +1048,9 @@ static int cb_searchin(void *user, void *data) {
  	RConfigNode *node = (RConfigNode*) data;
  	if (*node->value == '?') {
 		r_cons_printf ("raw\nblock\nfile\nio.maps\nio.maprange\nio.section\n" \
-							"io.sections\nio.sections.write\nio.sections.exec\n" \
-							"dbg.stack\ndbg.heap\ndbg.map\ndbg.maps\n"\
-							"dbg.maps.exec\ndbg.maps.write\nanal.fcn\nanal.bb\n");
+			"io.sections\nio.sections.write\nio.sections.exec\n" \
+			"dbg.stack\ndbg.heap\ndbg.map\ndbg.maps\n"\
+			"dbg.maps.exec\ndbg.maps.write\nanal.fcn\nanal.bb\n");
  		return false;
  	}
  	return true;
@@ -1269,6 +1269,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("stack.anotated", "false", "Show anotated hexdump in visual debug");
 	SETI("stack.size", 64,  "Size of anotated hexdump in visual debug");
 	SETI("stack.delta", 0,  "Delta for the stack dump");
+
+	SETPREF("dbg.slow", "false", "Show stack and regs in visual mode in a slow but verbose mode");
 
 	SETPREF("dbg.bpinmaps", "true", "Force breakpoints to be inside a valid map");
 	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");

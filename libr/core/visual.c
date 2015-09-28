@@ -3,16 +3,21 @@
 #include <r_core.h>
 
 #define NPF 7
+static int obs = 0;
 static int blocksize = 0;
+static int autoblocksize = 1;
 static ut64 last_printed_address = 0LL;
 static void r_core_visual_refresh (RCore *core);
+
+#define debugfmt_default "f tmp;sr sp;pxw 64;dr=;s-;s tmp;f-tmp;pd $r"
+const char *debugfmt_extra = "f tmp;sr sp;pxr 64;drr;s-;s tmp;f-tmp;pd $r";
+const char *debugfmt = NULL;
+
 static const char *printfmt[] = {
 	"x", "pd $r",
-	"f tmp;sr sp;pxw 64;dr=;s-;s tmp;f-tmp;pd $r",
+	debugfmt_default,
 	"pxw", "pc", "pxA", "pxa"
 };
-static int autoblocksize = 1;
-static int obs = 0;
 
 #undef USE_THREADS
 #define USE_THREADS 1
@@ -1649,6 +1654,11 @@ static void r_core_visual_refresh (RCore *core) {
 		} else {
 			r_config_set_i (core->config, "asm.bytes", 1);
 		}
+	}
+	if (r_config_get_i (core->config, "dbg.slow")) {
+		printfmt[2] = debugfmt_extra;
+	} else {
+		printfmt[2] = debugfmt_default;
 	}
 
 	/* hack to blank last line. move prompt here? */
