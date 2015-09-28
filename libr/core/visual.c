@@ -1039,13 +1039,18 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_core_cmd0 (core, "agv $$");
 		} else {
 			RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-			if (fun) {
-				int ocolor = r_config_get_i (core->config, "scr.color");
-				r_core_visual_graph (core, NULL, true);
-				r_config_set_i (core->config, "scr.color", ocolor);
-			} else {
+			int ocolor;
+
+			if (!fun) {
 				r_cons_message("Not in a function. Type 'df' to define it here");
+				break;
+			} else if (r_list_empty (fun->bbs)) {
+				r_cons_message("No basic blocks in this function. You may want to use 'afb+'.");
+				break;
 			}
+			ocolor = r_config_get_i (core->config, "scr.color");
+			r_core_visual_graph (core, NULL, true);
+			r_config_set_i (core->config, "scr.color", ocolor);
 		}
 		break;
 	case 'v':

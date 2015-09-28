@@ -36,7 +36,7 @@ static int mousemode = 0;
 #define hash_get_rlist(sdb,k) ((RList *)(size_t)hash_get (sdb, k))
 #define hash_get_int(sdb,k) ((int)hash_get (sdb, k))
 
-#define get_anode(gn) ((RANode *)gn->data)
+#define get_anode(gn) (gn ? (RANode *)gn->data : NULL)
 
 #define graph_foreach_anode(list, it, pos, anode) \
 	if (list) for (it = list->head; it && (pos = it->data) && (pos) && (anode = (RANode *)pos->data); it = it->n)
@@ -2570,10 +2570,15 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 				  agraph_toggle_callgraph(g);
 			  } else {
 				  // update seek based on current node
-				  RANode *n = get_anode (g->curnode);
-				  char *cmd = r_str_newf ("s %s", n->title);
-				  r_core_cmd0 (core, cmd);
-				  free (cmd);
+				  RANode *n;
+				  char *cmd;
+
+				  if (g->curnode) {
+					  n = get_anode (g->curnode);
+					  cmd = r_str_newf ("s %s", n->title);
+					  r_core_cmd0 (core, cmd);
+					  free (cmd);
+				  }
 				  exit_graph = true;
 			  }
 			  break;
