@@ -559,7 +559,7 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		}
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
 		r_cons_push ();
-		snprintf (cmd, sizeof (cmd), "pD %d @ 0x%08"PFMT64x,
+		snprintf (cmd, sizeof (cmd), "pD %d @e:asm.comments=0 @ 0x%08"PFMT64x,
 			bb->size, bb->addr);
 		cmdstr = r_core_cmd_str (core, cmd);
 		r_cons_pop ();
