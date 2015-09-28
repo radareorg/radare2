@@ -1362,6 +1362,7 @@ static void printraw (RCore *core, int len, int mode) {
 	if (restore_obsz) {
 		(void)r_core_block_size (core, obsz);
 	}
+	r_cons_newline ();
 }
 
 static int cmd_print(void *data, const char *input) {
