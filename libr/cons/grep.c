@@ -34,8 +34,8 @@ R_API void r_cons_grep_help() {
 #define R_CONS_GREP_BUFSIZE 4096
 
 R_API void r_cons_grep(const char *str) {
-	int wlen, len, flag1, flag2, fail = 0;
-	ut64 num1, num2;
+	int wlen, len, is_range, num_is_parsed, fail = 0;
+	ut64 range_begin, range_end;
 	RCons *cons;
 	char buf[R_CONS_GREP_BUFSIZE];
 	char *ptr, *optr, *ptr2, *ptr3;
@@ -55,6 +55,7 @@ R_API void r_cons_grep(const char *str) {
 	cons->grep.counter = 0;
 	cons->grep.nstrings = 0;
 	memset (cons->grep.tokens, 0, R_CONS_GREP_TOKENS);
+	cons->grep.tokens_used = 0;
 
 	while (*str) {
 		switch (*str) {
@@ -108,10 +109,10 @@ R_API void r_cons_grep(const char *str) {
 	ptr = buf;
 	ptr2 = strchr (ptr, '[');
 	ptr3 = strchr (ptr, ']');
-	flag1 = 0;  // indicates if processing a range
-	flag2 = 0;  // indicates if number is parsed
+	is_range = 0;
+	num_is_parsed = 0;
 	fail = 0;
-	num1 = num2 = -1;  // range start, range end
+	range_begin = range_end = -1;
 
 	if (ptr2 || ptr3) {
 		ptr2[0] = '\0';
@@ -119,38 +120,38 @@ R_API void r_cons_grep(const char *str) {
 
 		for (; ptr2 <= ptr3; ++ptr2) {
 			if (fail) {
-				eprintf("%d columns max!", R_CONS_GREP_TOKENS);
+				eprintf("%d tokenss max!", R_CONS_GREP_TOKENS);
 				memset (cons->grep.tokens, 0, R_CONS_GREP_TOKENS);
-				cons->grep.columns_used = 0;
+				cons->grep.tokens_used = 0;
 				fail = 0;
 				break;
 			}
 
 			switch (*ptr2) {
 			case '-':
-				flag1 = 1;
-				flag2 = 0;
+				is_range = 1;
+				num_is_parsed = 0;
 				break;
 			case ']':  // fallthrough to handle ']' like ','
 			case ',':
-				for (; num1 <= num2; num1++) {
-					if (num1 >= R_CONS_GREP_TOKENS) {
+				for (; range_begin <= range_end; range_begin++) {
+					if (range_begin >= R_CONS_GREP_TOKENS) {
 						fail = 1;
 					}
-					cons->grep.tokens[num1] = 1;
-					cons->grep.columns_used = 1;
+					cons->grep.tokens[range_begin] = 1;
+					cons->grep.tokens_used = 1;
 				}
-				flag1 = 0;
-				flag2 = 0;
+				is_range = 0;
+				num_is_parsed = 0;
 				break;
 			default:
-				if (!flag2) {
-					if (flag1) {
-						num2 = r_num_get (cons->num, ptr2);
+				if (!num_is_parsed) {
+					if (is_range) {
+						range_end = r_num_get (cons->num, ptr2);
 					} else {
-						num1 = num2 = r_num_get (cons->num, ptr2);
+						range_begin = range_end = r_num_get (cons->num, ptr2);
 					}
-					flag2 = 1;
+					num_is_parsed = 1;
 				}
 			}
 		}
@@ -313,7 +314,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 
 	if (hit) {
 		if ((cons->grep.line == -1 || cons->grep.line == cons->lines) &&
-		    cons->grep.columns_used) {
+		    cons->grep.tokens_used) {
 			const int delims_count = sizeof (delims) / 2;
 			for (i = 0; i < len; i++) {
 				for (j = 0; j < delims_count; j++) {
