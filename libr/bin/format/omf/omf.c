@@ -85,8 +85,11 @@ static int load_omf_lnames(OMF_record *record, const char *buf, ut64 buf_size) {
 	record->content = ret;
 
 	while (tmp_size < record->size - 1) {
+		int next;
 		ret->nb_elem++;
-		tmp_size += buf[3 + tmp_size] + 1;
+		next = buf[3 + tmp_size] + 1;
+		if (next<1) break;
+		tmp_size += next;
 	}
 	if (!(ret->elems = R_NEWS0 (char *, ret->nb_elem))) {
 		R_FREE(ret);
