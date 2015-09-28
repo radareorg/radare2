@@ -728,14 +728,13 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 	fi = r_flag_get_i (core->flags, value);
 	type = r_core_anal_address (core, value);
 	fcn = r_anal_get_fcn_in (core->anal, value, 0);
-	{
-		RDebugMap *map;
-		map = r_debug_map_get (core->dbg, value);
+	if (value && value != UT64_MAX) {
+		RDebugMap *map = r_debug_map_get (core->dbg, value);
 		if (map && map->name && map->name[0])
 			mapname = strdup (map->name);
 		else mapname = NULL;
-	}
-	sect = r_io_section_vget (core->io, value);
+	} else mapname = NULL;
+	sect = value? r_io_section_vget (core->io, value): NULL;
 
 	if (fi) {
 		r_strbuf_appendf (s, " %s", fi->name);

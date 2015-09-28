@@ -909,7 +909,10 @@ R_API void r_core_debug_rr (RCore *core, RReg *reg) {
 		} else {
 			r_cons_printf ("%6s 0x%08"PFMT64x, r->name, value);
 		}
-		r_cons_printf (" %s\n", rrstr);
+		if (rrstr) {
+			r_cons_printf (" %s\n", rrstr);
+			free (rrstr);
+		}
 	}
 }
 

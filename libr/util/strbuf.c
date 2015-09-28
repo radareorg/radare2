@@ -75,6 +75,7 @@ R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
 		sb->ptr = p;
 	}
 	sb->len += l;
+	sb->buf[sb->len] = 0;
 	return R_TRUE;
 }
 
