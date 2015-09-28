@@ -826,7 +826,18 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr) {
 	return NULL;
 }
 
+static void r_core_setenv (RCore *core) {
+	char *e = r_sys_getenv ("PATH");
+	char *h = r_str_home (".config/radare2/bin");
+	char *n = r_str_newf ("%s:%s", h, e);
+	r_sys_setenv ("PATH", n);
+	free (n);
+	free (h);
+	free (e);
+}
+
 R_API int r_core_init(RCore *core) {
+	r_core_setenv(core);
 	core->cmd_depth = R_CORE_CMD_DEPTH+1;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->zerosep = false;
