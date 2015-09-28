@@ -234,6 +234,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 }
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+	bool hascond = false;
 	int i;
 	char str[32][32];
 	r_strbuf_init (&op->esil);
@@ -243,10 +244,12 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// no condition
 		break;
 	case ARM_CC_EQ:
-		r_strbuf_setf (&op->esil, "zf,0,?,");
+		hascond = true;
+		r_strbuf_setf (&op->esil, "zf,?{,");
 		break;
 	case ARM_CC_NE:
-		r_strbuf_setf (&op->esil, "zf,!,0,?,");
+		r_strbuf_setf (&op->esil, "zf,!,?{,");
+		hascond = true;
 		break;
 	case ARM_CC_GT:
 	case ARM_CC_LE:
@@ -257,6 +260,21 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	// TODO: PREFIX CONDITIONAL
 
 	switch (insn->id) {
+	case ARM_INS_UDF:
+		r_strbuf_setf (&op->esil, "%s,TRAP", ARG(0));
+		break;
+	case ARM_INS_EOR:
+		r_strbuf_setf (&op->esil, "%s,%s,^=", ARG(1), ARG(0));
+		break;
+	case ARM_INS_ORR:
+		r_strbuf_setf (&op->esil, "%s,%s,|=", ARG(1), ARG(0));
+		break;
+	case ARM_INS_AND:
+		r_strbuf_setf (&op->esil, "%s,%s,&=", ARG(1), ARG(0));
+		break;
+	case ARM_INS_SVC:
+		r_strbuf_setf (&op->esil, "%s,$", ARG(0));
+		break;
 	case ARM_INS_PUSH:
 #if 0
 PUSH { r4, r5, r6, r7, lr }
@@ -282,6 +300,9 @@ PUSH { r4, r5, r6, r7, lr }
 			r_strbuf_appendf (&op->esil, "%s,%s,%d,+,=[4],",
 				REG (i), ARG (0), i*4);
 		}
+		break;
+	case ARM_INS_ASR:
+		r_strbuf_setf (&op->esil, "%s,%s,>>,%s,=", ARG(2), ARG(1), ARG(0));
 		break;
 	case ARM_INS_POP:
 #if 0
@@ -315,7 +336,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "%s,%s,>>=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_B:
-		r_strbuf_appendf (&op->esil, "%s,pc,=", ARG(0));
+		r_strbuf_appendf (&op->esil, "%s,pc,=%s", ARG(0), hascond? ",}":"");
 		break;
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
@@ -324,10 +345,17 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_MOVT:
 		r_strbuf_appendf (&op->esil, "16,%s,<<,%s,|=", ARG(1), REG(0));
 		break;
+	case ARM_INS_ADR:
 	case ARM_INS_MOV:
 	case ARM_INS_VMOV:
 	case ARM_INS_MOVW:
 		r_strbuf_appendf (&op->esil, "%s,%s,=", ARG(1), REG(0));
+		break;
+	case ARM_INS_CBZ:
+		r_strbuf_appendf (&op->esil, "zf,?{,%s,pc,=", ARG(0));
+		break;
+	case ARM_INS_CBNZ:
+		r_strbuf_appendf (&op->esil, "zf,!,?{,%s,pc,=", ARG(0));
 		break;
 	case ARM_INS_SSUB16:
 	case ARM_INS_SSUB8:
@@ -379,6 +407,10 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			}
 		}
 		break;
+	case ARM_INS_STRH:
+		r_strbuf_appendf (&op->esil, "%s,%s,%d,+,=[2]",
+			REG(0), MEMBASE(1), MEMDISP(1));
+		break;
 	case ARM_INS_STR:
 		r_strbuf_appendf (&op->esil, "%s,%s,%d,+,=[4]",
 			REG(0), MEMBASE(1), MEMDISP(1));
@@ -387,6 +419,13 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "%s,%s,%d,+,=[1]",
 			REG(0), MEMBASE(1), MEMDISP(1));
 		break;
+	case ARM_INS_TST:
+		r_strbuf_appendf (&op->esil, "%s,%s,==", ARG(1), ARG(0));
+		break;
+	case ARM_INS_LDRSB: // TODO: not handled properly
+	case ARM_INS_LDRSH: // TODO: not handled properly
+	case ARM_INS_LDRHT:
+	case ARM_INS_LDRH:
 	case ARM_INS_LDR:
 		addr &= ~3LL;
 		if (MEMDISP(1)<0) {
@@ -459,6 +498,7 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_FCSEL:
 		op->type = R_ANAL_OP_TYPE_CMOV;
 		break;
+	case ARM64_INS_ADR:
 	case ARM64_INS_MOV:
 	case ARM64_INS_MOVI:
 	case ARM64_INS_MOVK:
@@ -516,6 +556,7 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		}
 		break;
 	case ARM64_INS_LDR:
+	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		if (REGBASE64(1) == ARM64_REG_X29) {
