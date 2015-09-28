@@ -61,22 +61,21 @@ R_API int r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 
 R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
 	int l = strlen (s);
-	if ((sb->len+l+1)<sizeof (sb->buf)) {
-		memcpy (sb->buf+sb->len, s, l);
+	if ((sb->len+l+1) < sizeof (sb->buf)) {
+		memcpy (sb->buf+sb->len, s, l+1);
 		sb->ptr = NULL;
 	} else {
 		char *d, *p;
 		d = sb->ptr?sb->ptr:sb->buf;
-		p = malloc (sb->len+l);
-		if (!p) return R_FALSE;
+		p = malloc (sb->len+l+1);
+		if (!p) return false;
 		memcpy (p, d, sb->len);
-		memcpy (p+sb->len, s, l);
+		memcpy (p+sb->len, s, l+1);
 		free (sb->ptr);
 		sb->ptr = p;
 	}
 	sb->len += l;
-	sb->buf[sb->len] = 0;
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
@@ -86,11 +85,11 @@ R_API int r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 
 	va_start (ap, fmt);
 	ret = vsnprintf (string, sizeof (string), fmt, ap);
-	if (ret>=sizeof (string)) {
+	if (ret >= sizeof (string)) {
 		char *p = malloc (ret+2);
 		if (!p) {
 			va_end (ap);
-			return R_FALSE;
+			return false;
 		}
 		vsnprintf (p, ret+1, fmt, ap);
 		ret = r_strbuf_append (sb, p);

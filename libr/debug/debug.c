@@ -347,6 +347,7 @@ R_API int r_debug_wait(RDebug *dbg) {
 		//eprintf ("wait = %d\n", ret);
 		if (dbg->trace->enabled)
 			r_debug_trace_pc (dbg);
+		dbg->reason.type = ret;
 		if (ret == R_DEBUG_REASON_SIGNAL && dbg->reason.signum != -1) {
 			/* handle signal on continuations here */
 			int what = r_debug_signal_what (dbg, dbg->reason.signum);
