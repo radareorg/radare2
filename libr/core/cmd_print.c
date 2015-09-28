@@ -2719,14 +2719,16 @@ static int cmd_print(void *data, const char *input) {
 					bitsize = 32;
 				core->print->cols = 1;
 				core->print->flags |= R_PRINT_FLAGS_REFS;
-				r_print_hexdump (core->print, core->offset, core->block, len,
+				r_print_hexdump (core->print, core->offset,
+					core->block, len,
 					bitsize, bitsize/8);
 				core->print->flags &= ~R_PRINT_FLAGS_REFS;
 				core->print->cols = ocols;
 			}
 			break;
 		case 'h':
-			r_print_hexdump (core->print, core->offset, core->block, len, 32, 2);
+			r_print_hexdump (core->print, core->offset,
+				core->block, len, 32, 2);
 			break;
 		case 'H':
 			len = len - (len % 2);

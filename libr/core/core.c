@@ -721,11 +721,21 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 	RStrBuf *s = r_strbuf_new (NULL);
 	ut64 type;
+	RIOSection *sect;
+	char *mapname;
 	RAnalFunction *fcn;
 	RFlagItem *fi;
 	fi = r_flag_get_i (core->flags, value);
 	type = r_core_anal_address (core, value);
 	fcn = r_anal_get_fcn_in (core->anal, value, 0);
+	{
+		RDebugMap *map;
+		map = r_debug_map_get (core->dbg, value);
+		if (map && map->name && map->name[0])
+			mapname = strdup (map->name);
+		else mapname = NULL;
+	}
+	sect = r_io_section_vget (core->io, value);
 
 	if (fi) {
 		r_strbuf_appendf (s, " %s", fi->name);
@@ -755,17 +765,16 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 		if (type & R_ANAL_ADDR_TYPE_WRITE)
 			r_strbuf_appendf (s, " %sW%s", c, cend);
 		if (type & R_ANAL_ADDR_TYPE_EXEC) {
+			RAsmOp op;
+			ut8 buf[32];
 			r_strbuf_appendf (s, " %sX%s", c, cend);
-			{
-				RAsmOp op;
-				ut8 buf[32];
-				r_io_read_at (core->io, value, buf, sizeof (buf));
-				r_asm_set_pc (core->assembler, value);
-				r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
-				r_strbuf_appendf (s, " '%s'", op.buf_asm);
-			}
+			/* instruction disassembly */
+			r_io_read_at (core->io, value, buf, sizeof (buf));
+			r_asm_set_pc (core->assembler, value);
+			r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
+			r_strbuf_appendf (s, " '%s'", op.buf_asm);
 			/* get library name */
-			{
+			{ // NOTE: dup for mapname?
 				RDebugMap *map;
 				RListIter *iter;
 				r_list_foreach (core->dbg->maps, iter, map) {
@@ -778,6 +787,13 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 				}
 			}
 		}
+	}
+	if (sect && sect->name[0]) {
+		r_strbuf_appendf (s," (%s)", sect->name);
+	}
+	if (mapname) {
+		r_strbuf_appendf (s, " (%s)", mapname);
+		free (mapname);
 	}
 	{
 		char *rs = strdup (r_strbuf_get (s));

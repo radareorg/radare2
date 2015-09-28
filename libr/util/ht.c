@@ -179,8 +179,11 @@ R_API void ht_(free)(RHT *ht) {
 }
 
 R_API void *ht_(lookup)(RHT *ht, utH hash) {
-	RHTE *entry = ht_(search) (ht, hash);
-	return entry? entry->data : NULL;
+	if (ht) {
+		RHTE *entry = ht_(search) (ht, hash);
+		return entry? entry->data : NULL;
+	}
+	return NULL;
 }
 
 /**

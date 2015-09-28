@@ -892,99 +892,24 @@ static int cmd_debug_map(RCore *core, const char *input) {
 }
 
 R_API void r_core_debug_rr (RCore *core, RReg *reg) {
-	// also get section and map names
-	RIOSection *sect;
-	char *mapname = NULL;
-	ut64 type, value;
-	int i, bits = core->assembler->bits;
+	ut64 value;
+	int bits = core->assembler->bits;
 	RList *list = r_reg_get_list (reg, R_REG_TYPE_GPR);
-	RAnalFunction *fcn;
 	RListIter *iter;
-	RFlagItem *fi;
 	RRegItem *r;
 	r_debug_map_sync (core->dbg);
 	r_list_foreach (list, iter, r) {
+		char *rrstr;
 		if (r->size != bits)
 			continue;
 		value = r_reg_get_value (core->dbg->reg, r);
-		fi = r_flag_get_i2 (core->flags, value);
-		type = r_core_anal_address (core, value);
-		fcn = r_anal_get_fcn_in (core->anal, value, 0);
-		{
-			RDebugMap *map;
-			map = r_debug_map_get (core->dbg, value);
-			if (map && map->name && map->name[0])
-				mapname = strdup (map->name);
-			else mapname = NULL;
-		}
-		sect = r_io_section_vget (core->io, value);
+		rrstr = r_core_anal_hasrefs(core, value);
 		if (bits == 64) {
 			r_cons_printf ("%6s 0x%016"PFMT64x, r->name, value);
 		} else {
 			r_cons_printf ("%6s 0x%08"PFMT64x, r->name, value);
 		}
-		if (value && fi) {
-			if (strcmp (fi->name, r->name))
-				r_cons_printf (" %s", fi->name);
-		}
-		if (fcn) {
-			if (strcmp (fcn->name, r->name))
-				r_cons_printf (" %s", fcn->name);
-		}
-		if (type) {
-			const char *c = r_core_anal_optype_colorfor (core, value);
-			const char *cend = (c&&*c)? Color_RESET: "";
-			if (!c) c = "";
-			if (type & R_ANAL_ADDR_TYPE_HEAP) {
-				r_cons_printf (" %sheap%s", c, cend);
-			} else if (type & R_ANAL_ADDR_TYPE_STACK) {
-				r_cons_printf (" %sstack%s", c, cend);
-			}
-			if (type & R_ANAL_ADDR_TYPE_PROGRAM)
-				r_cons_printf (" %sprogram%s", c, cend);
-			if (type & R_ANAL_ADDR_TYPE_LIBRARY)
-				r_cons_printf (" %slibrary%s", c, cend);
-			if (type & R_ANAL_ADDR_TYPE_ASCII)
-				r_cons_printf (" %sascii%s", c, cend);
-			if (type & R_ANAL_ADDR_TYPE_SEQUENCE)
-				r_cons_printf (" %ssequence%s", c, cend);
-			if (type & R_ANAL_ADDR_TYPE_READ)
-				r_cons_printf (" %sR%s", c, cend);
-			if (type & R_ANAL_ADDR_TYPE_WRITE)
-				r_cons_printf (" %sW%s", c, cend);
-			if (type & R_ANAL_ADDR_TYPE_EXEC)
-				r_cons_printf (" %sX%s", c, cend);
-			{
-				int ret, len = 0;
-				int is_text = 0;
-				ut8 buf[128];
-				buf[0]=0;
-				ret = r_io_read_at (core->io, value, buf, sizeof (buf));
-				if (ret && buf[0] && buf[0] != 0xff)
-					for (i=0; i<sizeof(buf)-1; i++) {
-						if (buf[i]==0) {
-							is_text = len;
-							break;
-						}
-						if (!IS_PRINTABLE(buf[i])) {
-							is_text = 0;
-							break;
-						}
-						len++;
-					}
-				if (is_text) {
-					r_cons_printf (" \"%s\"", buf);
-				}
-			}
-		}
-		if (sect && sect->name[0]) {
-			r_cons_printf (" (%s)", sect->name);
-		}
-		if (mapname) {
-			r_cons_printf (" (%s)", mapname);
-			free (mapname);
-		}
-		r_cons_newline ();
+		r_cons_printf (" %s\n", rrstr);
 	}
 }
 

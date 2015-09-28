@@ -202,6 +202,7 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 	RList *list;
 #if USE_SDB
 	char buf[128];
+	if (!f) return NULL;
 	char * foo = sdb_get (db, sdb_itoa (off, buf, 16), 0);
 	return r_flag_get (f, foo);
 #else
@@ -266,7 +267,9 @@ R_API char *r_flag_get_liststr(RFlag *f, ut64 off) {
 
 #define R_FLAG_TEST 0
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
-	RList *list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
+	RList *list;
+	if (!f) return NULL;
+	list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
 //if (off == 0x4005c4) { eprintf ("FLAG GET IT %llx = %p\n", off, list); }
 	if (list) {
 		RFlagItem *item = r_list_get_top (list);
