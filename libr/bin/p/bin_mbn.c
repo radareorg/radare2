@@ -45,8 +45,11 @@ static int check_bytes(const ut8 *buf, ut64 bufsz) {
 		if (sb.vaddr < 0x100 || sb.psize > bufsz) { // NAND
 			return false;
 		}
-		if (sb.cert_sz > 0xf0000)
-			return false;
+		if (sb.cert_va < sb.vaddr) return false;
+		if (sb.cert_sz >= 0xf0000) return false;
+		if (sb.sign_va < sb.vaddr) return false;
+		if (sb.sign_sz >= 0xf0000) return false;
+		if (sb.load_index<0x10 || sb.load_index >0x40) return false; // should be 0x19 ?
 #if 0
 		eprintf ("V=%d\n", sb.version);
 		eprintf ("PA=0x%08x sz=0x%x\n", sb.paddr, sb.psize);
@@ -129,7 +132,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->vsize = sb.sign_sz;
 	ptr->paddr = sb.sign_va - sb.vaddr; 
 	ptr->vaddr = sb.sign_va;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r-x
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
 	ptr->has_strings = true;
 	r_list_append (ret, ptr);
 
@@ -141,7 +144,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vsize = sb.cert_sz;
 		ptr->paddr = sb.cert_va - sb.vaddr; 
 		ptr->vaddr = sb.cert_va;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r-x
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
 		ptr->has_strings = true;
 		r_list_append (ret, ptr);
 	}
@@ -168,12 +171,11 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->has_nx = false;
 	ret->big_endian = big_endian;
 	ret->dbg_info = 0;
-	ret->dbg_info = 0;
 	return ret;
 }
 
 static int size(RBinFile *arch) {
-	return 0x28; // XXX. proper size calculation
+	return sizeof (SBLHDR) + sb.psize;
 }
 
 struct r_bin_plugin_t r_bin_plugin_mbn = {
