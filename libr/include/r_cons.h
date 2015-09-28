@@ -202,6 +202,7 @@ typedef struct r_cons_t {
 	const char **vline;
 	int refcnt;
 	RConsClickCallback onclick;
+	bool newline;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */

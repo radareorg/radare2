@@ -50,8 +50,7 @@ static int r_coff_rebase_sym (struct r_bin_coff_obj *obj, RBinAddr *addr, struct
 RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	int i;
-
-	if (!addr) return -1;
+	if (!addr) return NULL;
 
 	/* Simplest case, the header provides the entrypoint address */
 	if (obj->hdr.f_opthdr) {

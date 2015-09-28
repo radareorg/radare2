@@ -44,8 +44,8 @@ static RBinInfo* info(RBinFile *arch) {
 }
 
 static RList* symbols(RBinFile *arch) {
-		RList *ret = NULL;
-	  RBinSymbol *ptr[2];
+	RList *ret = NULL;
+	RBinSymbol *ptr[3];
 	if (!(ret = r_list_new()))
 		return NULL;
 	ret->free = free;

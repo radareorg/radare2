@@ -266,21 +266,24 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 
 static int is_data_section(RBinFile *a, RBinSection *s) {
 	RBinObject *o = a->o;
+	if (s->has_strings) {
+		return true;
+	}
 	if (o && o->info && o->info->bclass && *o->info->bclass) {
 		if (strstr (o->info->bclass, "MACH0") && strstr (s->name, "_cstring")) // OSX
-			return 1;
+			return true;
 		if (strstr (o->info->bclass, "ELF") && strstr (s->name, "data") && !strstr (s->name, "rel")) // LINUX
-			return 1;
+			return true;
 #define X 1
 #define ROW (4|2)
-		if (strstr (o->info->bclass, "PE") && s->srwx & ROW && !(s->srwx&X) && s->size>0 ) {
+		if (strstr (o->info->bclass, "PE") && s->srwx & ROW && !(s->srwx&X) && s->size>0) {
 			if (!strcmp (s->name, ".rdata")) // Maybe other sections are interesting too?
-				return 1;
+				return true;
 		}
 	}
 	if (strstr (s->name, "_const")) // Rust
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
 static RList* get_strings(RBinFile *a, int min, int dump) {

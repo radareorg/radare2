@@ -245,7 +245,7 @@ struct r_bin_plugin_t r_bin_plugin_p9 = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
-	.data = &r_bin_plugin_pe,
+	.data = &r_bin_plugin_p9,
 	.version = R2_VERSION
 };
 #endif

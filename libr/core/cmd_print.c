@@ -1362,7 +1362,7 @@ static void printraw (RCore *core, int len, int mode) {
 	if (restore_obsz) {
 		(void)r_core_block_size (core, obsz);
 	}
-	r_cons_newline ();
+	core->cons->newline = true;
 }
 
 static int cmd_print(void *data, const char *input) {
@@ -3148,6 +3148,7 @@ static int lenof (ut64 off, int two) {
 
 	return strlen (buf);
 }
+
 // TODO : move to r_util? .. depends on r_cons...
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int delta) {
 	int show_color = p->flags & R_PRINT_FLAGS_COLOR;

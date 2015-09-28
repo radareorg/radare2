@@ -274,6 +274,7 @@ typedef struct r_bin_section_t {
 	// per section platform info
 	const char *arch;
 	int bits;
+	bool has_strings;
 } RBinSection;
 
 typedef struct r_bin_class_t {
@@ -541,6 +542,7 @@ extern RBinPlugin r_bin_plugin_omf;
 extern RBinPlugin r_bin_plugin_art;
 extern RBinPlugin r_bin_plugin_dol;
 extern RBinPlugin r_bin_plugin_nes;
+extern RBinPlugin r_bin_plugin_mbn;
 
 #ifdef __cplusplus
 }

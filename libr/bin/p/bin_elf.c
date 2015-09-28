@@ -731,7 +731,6 @@ RBinPlugin r_bin_plugin_elf = {
 	.symbols = &symbols,
 	.minstrlen = 4,
 	.imports = &imports,
-	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
 	.size = &size,
@@ -740,7 +739,6 @@ RBinPlugin r_bin_plugin_elf = {
 	.dbginfo = &r_bin_dbginfo_elf,
 	.create = &create,
 	.write = &r_bin_write_elf,
-	.get_vaddr = NULL,
 };
 
 #ifndef CORELIB

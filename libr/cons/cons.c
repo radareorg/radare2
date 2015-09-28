@@ -472,6 +472,10 @@ R_API void r_cons_flush() {
 	else r_cons_write (I.buffer, I.buffer_len);
 
 	r_cons_reset ();
+	if (I.newline) {
+		eprintf ("\n");
+		I.newline = false;
+	}
 }
 
 R_API void r_cons_visual_flush() {

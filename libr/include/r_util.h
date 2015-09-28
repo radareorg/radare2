@@ -117,7 +117,8 @@ typedef struct r_buf_t {
 	st64 cur;
 	ut64 base;
 	RMmap *mmap;
-	ut8 empty;
+	bool empty;
+	bool ro; // read-only
 	RList *sparse;
 } RBuffer;
 
@@ -373,6 +374,7 @@ R_API char* r_num_as_string(RNum *___, ut64 n);
 /* constructors */
 R_API RBuffer *r_buf_new(void);
 R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
+R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len);
 R_API RBuffer *r_buf_file (const char *file);
 R_API RBuffer *r_buf_mmap (const char *file, int flags);
 R_API RBuffer *r_buf_new_sparse();
