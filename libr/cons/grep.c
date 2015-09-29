@@ -124,7 +124,7 @@ R_API void r_cons_grep(const char *str) {
 			case ']':  // fallthrough to handle ']' like ','
 			case ',':
 				for (; range_begin <= range_end; range_begin++) {
-					if (range_begin >= R_CONS_GREP_TOKENS || range_begin < 0) {
+					if (range_begin >= R_CONS_GREP_TOKENS) {
 						fail = 1;
 						break;
 					}
