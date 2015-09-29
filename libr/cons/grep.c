@@ -44,18 +44,8 @@ R_API void r_cons_grep(const char *str) {
 		return;
 
 	cons = r_cons_singleton ();
-	cons->grep.str = NULL;
-	cons->grep.neg = 0;
-	cons->grep.amp = 0;
-	cons->grep.end = 0;
-	cons->grep.less = 0;
-	cons->grep.json = 0;
+	memset (&(cons->grep), 0, sizeof (cons->grep));
 	cons->grep.line = -1;
-	cons->grep.begin = 0;
-	cons->grep.counter = 0;
-	cons->grep.nstrings = 0;
-	memset (cons->grep.tokens, 0, R_CONS_GREP_TOKENS);
-	cons->grep.tokens_used = 0;
 
 	while (*str) {
 		switch (*str) {
