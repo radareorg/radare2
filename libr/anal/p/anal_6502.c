@@ -917,7 +917,7 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	Z	.1	.25	0\n"
 		"gpr	I	.1	.26	0\n"
 		"gpr	D	.1	.27	0\n"
-		// bit 4 (.28) is a real flag.
+		// bit 4 (.28) is NOT a real flag.
 		// "gpr	B	.1	.28	0\n"
 		// bit 5 (.29) is not used
 		"gpr	V	.1	.30	0\n"
