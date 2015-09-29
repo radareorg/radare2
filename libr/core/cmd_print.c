@@ -1642,7 +1642,7 @@ static int cmd_print(void *data, const char *input) {
 				eprintf ("Error: failed to malloc memory");
 				goto beach;
 			}
-			eprintf ("block = %d * %d\n", (int)nbsz, psz);
+			//eprintf ("block = %d * %d\n", (int)nbsz, psz);
 			p = malloc (core->blocksize);
 			if (!p) {
 				R_FREE (ptr);
@@ -1668,7 +1668,7 @@ static int cmd_print(void *data, const char *input) {
 				eprintf ("Error: failed to malloc memory");
 				goto beach;
 			}
-			eprintf ("block = %d * %d\n", (int)nbsz, (int)psz);
+			//eprintf ("block = %d * %d\n", (int)nbsz, (int)psz);
 			p = malloc (core->blocksize);
 			if (!p) {
 				eprintf ("Error: failed to malloc memory");

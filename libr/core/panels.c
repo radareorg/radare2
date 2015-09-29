@@ -11,6 +11,8 @@ typedef struct {
 	int h;
 	int depth;
 	int type;
+	int sx; // scroll-x
+	int sy; // scroll-y
 	ut64 addr;
 	char *cmd;
 	char *text;
@@ -58,7 +60,7 @@ static const char *menus_View[] = {
 };
 
 static const char *menus_Tools[] = {
-	"Assembler", "Calculator", "Shell", "System Shell",
+	"Assembler", "Calculator", "R2 Shell", "System Shell",
 	NULL
 };
 
@@ -80,7 +82,7 @@ static const char *menus_Analyze[] = {
 };
 
 static const char *menus_Help[] = {
-	"Fortune", "Commands", "License", "About",
+	"Fortune", "Commands", "2048", "License", "About",
 	NULL
 };
 
@@ -111,8 +113,8 @@ static int curnode = 0;
 
 static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 	char title[128];
-	int delta_x = 0;
-	int delta_y = 0;
+	int delta_x = n->sx;
+	int delta_y = n->sy;
 
 	if (!can)
 		return;
@@ -122,7 +124,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		if (cur) {
 			//F (n->x,n->y, n->w, n->h, '.');
 			snprintf (title, sizeof (title)-1,
-				Color_BLUE"[[ %s ]] "Color_RESET, n->text);
+				Color_BGREEN"[x] %s"Color_RESET, n->text);
 		} else {
 			snprintf (title, sizeof (title)-1,
 				"   %s   ", n->text);
@@ -130,14 +132,28 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		if (G (n->x+1, n->y+1))
 			W (title); // delta_x
 	}
-	(void)G (n->x+2+delta_x, n->y+2);
+	(void)G (n->x+2, n->y+2);
 	//if (
 // TODO: only refresh if n->refresh is set
 // TODO: temporary crop depending on out of screen offsets
 	if (n->cmd && *n->cmd) {
 		char *foo = r_core_cmd_str (_core, n->cmd);
-		char *text = r_str_crop (foo, 
-			delta_x, delta_y, n->w, n->h-2);
+		char *text;
+		if (delta_y < 0) delta_y = 0;
+		if (delta_x < 0) {
+			char white [128];
+			int idx = -delta_x;
+			memset (white, ' ', sizeof(white));
+			if (idx>=sizeof(white))
+				idx = sizeof (white)-1;
+			white[idx] = 0;
+			text = r_str_ansi_crop (foo, 
+				0, delta_y, n->w+delta_x, n->h-2 + delta_y);
+			text = r_str_prefix_all (text, white);
+		} else {
+			text = r_str_ansi_crop (foo, 
+				delta_x, delta_y, n->w+delta_x, n->h-2 + delta_y);
+		}
 		if (text) {
 			W (text);
 			free (text);
@@ -146,8 +162,8 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		}
 		free (foo);
 	} else {
-		char *text = r_str_crop (n->text,
-			delta_x, delta_y, n->w+5, n->h);
+		char *text = r_str_ansi_crop (n->text,
+			delta_x, delta_y, n->w+5, n->h - delta_y);
 		if (text) {
 			W (text);
 			free (text);
@@ -187,7 +203,7 @@ static void Layout_run(Panel *panels) {
 				panels[i].x = 0;
 				panels[i].y = 1;
 				if (panels[j+1].text) {
-					panels[i].w = colpos;
+					panels[i].w = colpos+1;
 				} else {
 					panels[i].w = w;
 				}
@@ -202,6 +218,10 @@ static void Layout_run(Panel *panels) {
 				panels[i].h = ph;
 				if (!panels[i+1].text) {
 					panels[i].h = h - panels[i].y;
+				}
+				if (j!=1) {
+					panels[i].y--;
+					panels[i].h++;
 				}
 			}
 			j++;
@@ -271,7 +291,7 @@ static int bbPanels (RCore *core, Panel **n) {
 // necessary
 static void r_core_panels_refresh(RCore *core) {
 	char title[1024];
-	const char *color = Color_BLUE;
+	const char *color = curnode? Color_BLUE: Color_BGREEN;
 	char str[1024];
 	int i, j, h, w = r_cons_get_size (&h);
 	r_cons_clear00 ();
@@ -280,6 +300,7 @@ static void r_core_panels_refresh(RCore *core) {
 	}
 	r_cons_canvas_resize (can, w, h);
 	r_cons_canvas_clear (can);
+	r_cons_flush ();
 	if (panels) {
 		if (menu_y>0) {
 			panels[menu_pos].x = menu_x * 6;
@@ -291,7 +312,6 @@ static void r_core_panels_refresh(RCore *core) {
 		panels[menu_pos].text = calloc (1, 1024); //r_str_newf ("%d", menu_y);
 		int maxsub = 0;
 		for (i=0; menus_sub[i]; i++) { maxsub = i; }
-#if 1
 		if (menu_x >= 0 && menu_x <= maxsub && menus_sub[menu_x]) {
 			for (j = 0; menus_sub[menu_x][j]; j++) {
 				if (menu_y-1 == j) {
@@ -304,7 +324,6 @@ static void r_core_panels_refresh(RCore *core) {
 				strcat (panels[menu_pos].text, "          \n");
 			}
 		}
-#endif
 		for (i=0; panels[i].text; i++) {
 			if (i != curnode) {
 				Panel_print (can, &panels[i], i==curnode);
@@ -387,14 +406,11 @@ R_API int r_core_visual_panels(RCore *core) {
 	can = r_cons_canvas_new (w, h);
 	can->linemode = 1;
 	can->color = r_config_get_i (core->config, "scr.color");
-	// disable colors in disasm because canvas doesnt supports ansi text yet
-	r_config_set_i (core->config, "scr.color", 0);
-	//can->color = 0; 
 	if (!can) {
 		eprintf ("Cannot create RCons.canvas context\n");
 		return false;
 	}
-	n_panels = bbPanels (core, NULL);//&panels);
+	n_panels = bbPanels (core, NULL);
 	if (!panels) {
 		r_config_set_i (core->config, "scr.color", can->color);
 		free (can);
@@ -587,21 +603,17 @@ repeat:
 			} else if (strstr (action, "FcnInfo")) {
 				addPanelFrame ("FcnInfo", "afi", 0);
 			} else if (strstr (action, "Graph")) {
-				RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-				if (fun) {
-					int ocolor = r_config_get_i (core->config, "scr.color");
-					r_core_visual_graph (core, NULL, true);
-					r_config_set_i (core->config, "scr.color", ocolor);
-				} else {
-					r_cons_message("Not in a function. Type 'df' to define it here");
-				}
+				addPanelFrame ("Graph", "agf", 0);
 			} else if (strstr (action, "System Shell")) {
 				r_cons_set_raw (0);
+				r_cons_flush ();
 				r_sys_cmd ("$SHELL");
-			} else if (strstr (action, "Shell")) {
+			} else if (strstr (action, "R2 Shell")) {
 				core->vmode = false;
 				r_core_visual_prompt_input (core);
 				core->vmode = true;
+			} else if (!strcmp (action, "2048")) {
+				r_cons_2048 ();
 			} else if (strstr (action, "License")) {
 				r_cons_message ("Copyright 2006-2015 - pancake - LGPL");
 			} else if (strstr (action, "Fortune")) {
@@ -618,7 +630,7 @@ repeat:
 			}
 		} else {
 			if (curnode>0) {
-				zoom();
+				zoom ();
 			} else {
 				menu_y = 1;
 			}
@@ -634,6 +646,8 @@ repeat:
 		" ?    - show this help\n"
 		" x    - close current panel\n"
 		" m    - open menubar\n"
+		" V    - view graph\n"
+		" C    - toggle color\n"
 		" M    - open new custom frame\n"
 		" hl   - toggle scr.color\n"
 		" HL   - move vertical column split\n"
@@ -667,13 +681,13 @@ repeat:
 		core->vmode = true;
 		break;
 	case 'C':
-		can->color = !!!can->color;				//WTF
+		can->color = !can->color;				//WTF
 		//r_config_toggle (core->config, "scr.color");
 		// refresh graph
 	//	reloadPanels (core);
 		break;
-	case '!':
-		r_cons_2048 ();
+	case 'R':
+		r_core_cmd0 (core, "ecr");
 		break;
 	case 'j':
 		if (curnode==0) {
@@ -682,7 +696,11 @@ repeat:
 					menu_y ++;
 			}
 		} else {
-			r_core_cmd0 (core, "s+4");
+			if (curnode == 1) {
+				r_core_cmd0 (core, "s+$l");
+			} else {
+				panels[curnode].sy ++;
+			}
 		}
 		break;
 	case 'k':
@@ -693,7 +711,11 @@ repeat:
 					menu_y = 0;
 			}
 		} else {
-			r_core_cmd0 (core, "s-4");
+			if (curnode == 1) {
+				r_core_cmd0 (core, "s-8");
+			} else {
+				panels[curnode].sy --;
+			}
 		}
 		break;
 	case '_':
@@ -757,6 +779,8 @@ repeat:
 				menu_y = menu_y?1:0;
 				r_core_panels_refresh (core);
 			}
+		} else {
+			panels[curnode].sx ++;
 		}
 		break;
 	case 'l':
@@ -766,8 +790,31 @@ repeat:
 				menu_y = menu_y?1:0;
 				r_core_panels_refresh (core);
 			}
+		} else {
+			panels[curnode].sx --;
 		}
 		break;
+	case 'V':
+		/* copypasta from visual.c */
+		if (r_config_get_i (core->config, "graph.web")) {
+			r_core_cmd0 (core, "agv $$");
+		} else {
+			RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+			int ocolor;
+
+			if (!fun) {
+				r_cons_message("Not in a function. Type 'df' to define it here");
+				break;
+			} else if (r_list_empty (fun->bbs)) {
+				r_cons_message("No basic blocks in this function. You may want to use 'afb+'.");
+				break;
+			}
+			ocolor = r_config_get_i (core->config, "scr.color");
+			r_core_visual_graph (core, NULL, true);
+			r_config_set_i (core->config, "scr.color", ocolor);
+		}
+		break;
+	case '!':
 	case 'q':
 	case -1: // EOF
 		if (menu_y>0) {

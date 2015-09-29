@@ -2460,7 +2460,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			r_cons_clear00 ();
 			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
 					" .      - center graph to the current node\n"
-					" !      - toggle scr.color\n"
+					" C      - toggle scr.color\n"
 					" hjkl   - move node\n"
 					" HJKL   - scroll canvas\n"
 					" tab    - select next node\n"
@@ -2511,6 +2511,9 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			/* TODO: reload only the body of the nodes to update colors */
 			break;
 		case '!':
+			r_core_visual_panels (core);
+			break;
+		case 'C':
 			r_config_set_i (core->config, "scr.color",
 					!r_config_get_i (core->config, "scr.color"));
 			g->need_reload_nodes = true;
