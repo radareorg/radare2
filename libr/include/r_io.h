@@ -1,8 +1,9 @@
 #ifndef R_IO_API
 #define R_IO_API
 
-#include <sdb.h>
+#include <r_db.h>
 #include <r_types.h>
+#include <r_list.h>
 
 #define R_IO_READ	4
 #define R_IO_WRITE	2
@@ -39,13 +40,15 @@ typedef struct r_io_undo_w_t {
 typedef struct r_io_t {
 	struct r_io_desc_t *desc;
 	ut64 off;
-	int va;
+	int va;		//all of this config stuff must be in 1 int
 	int ff;
 	int autofd;
+	int cached;
+	int cached_read;
 	ut32 map_id;
 	SdbList *freed_map_ids;
 	SdbList *maps;
-	//SdbList *cache;
+	RList *cache;	//sdblist?
 	Sdb *files;
 	RIOUndo undo;
 } RIO;
@@ -94,6 +97,15 @@ typedef struct r_io_map_t {
 	ut64 delta;
 	char *name;
 } RIOMap;
+
+typedef struct r_io_cache_t {
+	ut64 from;
+	ut64 to;
+	int size;
+	ut8 *data;
+	ut8 *odata;
+	int written;
+} RIOCache;
 
 //desc.c
 R_API int r_io_desc_init (RIO *io);
@@ -170,5 +182,15 @@ R_API void r_io_wundo_list(RIO *io);
 R_API int r_io_wundo_set_t(RIO *io, RIOUndoWrite *u, int set) ;
 R_API void r_io_wundo_set_all(RIO *io, int set);
 R_API int r_io_wundo_set(RIO *io, int n, int set);
+
+/* io/cache.c */
+R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to);
+R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to);
+R_API void r_io_cache_enable(RIO *io, int read, int write);
+R_API void r_io_cache_init(RIO *io);
+R_API int r_io_cache_list(RIO *io, int rad);
+R_API void r_io_cache_reset(RIO *io, int set);
+R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len);
+R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len);
 
 #endif
