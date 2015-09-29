@@ -179,23 +179,6 @@ static void _6502_anal_esil_ccall(RAnalOp *op, ut8 data0)
 	r_strbuf_setf (&op->esil, "%s,?{,0x%04x,pc,=,}", flag, (op->jump & 0xffff));
 }
 
-static void _6502_anal_esil_bit(RAnalOp *op, const ut8* data)
-{
-	char buf[64];
-
-	switch(data[0]) {
-	case 0x24: // bit $ff
-		op->cycles = 3;
-		snprintf(buf, sizeof(buf)-1, "0x%02x,[1]", data[1]);
-		break;
-	case 0x2c: // bit $ffff
-		op->cycles = 4;
-		snprintf(buf, sizeof(buf)-1, "0x%04x,[1]", data[1] | data[2] << 8);
-		break;
-	}
-	r_strbuf_setf (&op->esil, "a,%s,&,0x80,&,!,!,N,=,a,%s,&,0x40,&,!,!,V,=,a,%s,&,0xff,&,!,Z,=",buf, buf, buf);
-}
-
 // inc register
 static void _6502_anal_esil_inc_reg(RAnalOp *op, ut8 data0, char* sign)
 {
