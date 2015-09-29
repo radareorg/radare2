@@ -1309,45 +1309,43 @@ static int bin_fields(RCore *r, int mode, int va) {
 	if ((fields = r_bin_get_fields (bin)) == NULL)
 		return false;
 
-	if (mode & R_CORE_BIN_JSON) {
-		r_cons_printf ("[");
-		r_list_foreach (fields, iter, field) {
-			ut64 addr = va? r_bin_get_vaddr (bin, field->paddr,
-				field->vaddr): field->paddr;
+	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
+	else if (IS_MODE_RAD (mode)) r_cons_printf ("fs header\n");
+	else if (IS_MODE_NORMAL (mode)) r_cons_printf ("[Header fields]\n");
+	else if (IS_MODE_SET (mode)) {
+		// XXX: Need more flags??
+		// this will be set even if the binary does not have an ehdr
+		int fd = r_core_file_cur_fd(r);
+		r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr", 0, fd);
+	}
+	r_list_foreach (fields, iter, field) {
+		ut64 addr = rva (bin, field->paddr, field->vaddr, va);
+
+		if (IS_MODE_RAD (mode)) {
+			r_name_filter (field->name, sizeof (field->name));
+			r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n", field->name, addr);
+			r_cons_printf ("[%02i] vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" name=%s\n",
+				i, addr, field->paddr, field->name);
+		} else if (IS_MODE_JSON (mode)) {
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"paddr\":%"PFMT64d"}",
 				iter->p?",":"",
 				field->name, addr);
+		} else if (IS_MODE_NORMAL (mode)) {
+			r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" name=%s\n",
+				i, addr, field->paddr, field->name);
 		}
-		r_cons_printf ("]");
-	} else if ((mode & R_CORE_BIN_SET)) {
-		//XXX: Need more flags??
-		// this will be set even if the binary does not have an ehdr
-		int fd = r_core_file_cur_fd(r);
-		r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr", 0, fd);
-	} else {
-		if (mode) r_cons_printf ("fs header\n");
-		else r_cons_printf ("[Header fields]\n");
-
-		r_list_foreach (fields, iter, field) {
-			ut64 addr = va? r_bin_get_vaddr (bin, field->paddr,
-				field->vaddr): field->paddr;
-			if (mode) {
-				r_name_filter (field->name, sizeof (field->name));
-				r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n", field->name, addr);
-				r_cons_printf ("[%02i] vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" name=%s\n",
-						i, addr, field->paddr, field->name);
-			} else r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" name=%s\n",
-					i, addr, field->paddr, field->name);
-			i++;
-		}
-
-		if (mode) {
-			/* add program header section */
-			r_cons_printf ("S 0 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" ehdr rwx\n",
-					baddr, size, size);
-		} else r_cons_printf ("\n%i fields\n", i);
+		i++;
 	}
+	if (IS_MODE_JSON (mode)) r_cons_printf ("]");
+	else if (IS_MODE_RAD (mode)) {
+		/* add program header section */
+		r_cons_printf ("S 0 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" ehdr rwx\n",
+			baddr, size, size);
+	} else if (IS_MODE_NORMAL (mode)) {
+		r_cons_printf ("\n%i fields\n", i);
+	}
+
 	return true;
 }
 
@@ -1359,35 +1357,21 @@ static int bin_classes(RCore *r, int mode) {
 	if (!cs) return false;
 
 	// XXX: support for classes is broken and needs more love
-	if (mode & R_CORE_BIN_JSON) {
-		r_cons_printf ("[");
-		r_list_foreach (cs, iter, c) {
-			if (c->super)
-			r_cons_printf ("%s{\"name\":\"%s\",\"addr\":%"PFMT64d",\"index\":%"PFMT64d",\"super\":\"%s\"}",
-				iter->p?",":"", c->name, c->addr, c->index, c->super);
-			else
-			r_cons_printf ("%s{\"name\":\"%s\",\"addr\":%"PFMT64d",\"index\":%"PFMT64d"}",
-				iter->p?",":"", c->name, c->addr, c->index);
-		}
-		r_cons_printf ("]");
-	} else if (mode & R_CORE_BIN_SIMPLE) {
-		r_list_foreach (cs, iter, c) {
-			r_cons_printf ("0x%08"PFMT64x" %s%s%s\n",
-				c->addr, c->name, c->super?" ":"", c->super?c->super:"");
-		}
-	} else if (mode & R_CORE_BIN_SET) {
-		if (!r_config_get_i (r->config, "bin.classes")) {
-			return false;
-		}
-		// Nothing to set.
+	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
+	else if (IS_MODE_SET (mode)) {
+		if (!r_config_get_i (r->config, "bin.classes")) return false;
 		r_flag_space_set (r->flags, "classes");
-		r_list_foreach (cs, iter, c) {
-			char str[R_FLAG_NAME_SIZE+1];
-			char *name;
-			if (!c->name || !*c->name)
-				continue;
-			name = strdup (c->name);
-			r_name_filter (name, 0);
+	} else if (IS_MODE_RAD (mode)) r_cons_printf ("fs classes\n");
+	r_list_foreach (cs, iter, c) {
+		char *name;
+
+		if (!c->name || !c->name[0]) continue;
+		name = strdup (c->name);
+		r_name_filter (name, 0);
+
+		if (IS_MODE_SET (mode)) {
+			char str[R_FLAG_NAME_SIZE + 1];
+
 			snprintf (str, R_FLAG_NAME_SIZE, "class.%s", name);
 			r_flag_set (r->flags, str, c->addr, 1, 0);
 			r_list_foreach (c->methods, iter2, sym) {
@@ -1396,50 +1380,61 @@ static int bin_classes(RCore *r, int mode) {
 				r_name_filter (str, 0);
 				r_flag_set (r->flags, str, sym->vaddr, 1, 0);
 			}
-			free (name);
-		}
-	} else {
-		if (mode) r_cons_printf ("fs classes\n");
-		r_list_foreach (cs, iter, c) {
-			char *name = strdup (c->name);
-			r_name_filter (name, 0);
-			if (mode) {
-				r_cons_printf ("f class.%s = 0x%"PFMT64x"\n",
-					name, c->addr);
-				if (c->super)
-					r_cons_printf ("f super.%s.%s = %d\n",
-						c->name, c->super, c->index);
-				r_list_foreach (c->methods, iter2, sym) {
-					r_cons_printf ("f method.%s.%s = 0x%"PFMT64x"\n",
-						c->name, sym->name, sym->vaddr);
-				}
-			} else {
-				r_cons_printf ("0x%08"PFMT64x" class %d %s",
-					c->addr, c->index, c->name);
-				if (c->super)
-					r_cons_printf (" super: %s\n", c->super);
-				r_cons_newline();
-				int m = 0;
-				r_list_foreach (c->methods, iter2, sym) {
-					r_cons_printf ("0x%08"PFMT64x" method %d %s\n", sym->vaddr, m, sym->name);
-					m++;
-				}
-				r_cons_newline ();
+		} else if (IS_MODE_SIMPLE (mode)) {
+			r_cons_printf ("0x%08"PFMT64x" %s%s%s\n",
+				c->addr, c->name, c->super ? " " : "",
+				c->super ? c->super : "");
+		} else if (IS_MODE_RAD (mode)) {
+			r_cons_printf ("f class.%s = 0x%"PFMT64x"\n",
+				name, c->addr);
+			if (c->super) {
+				r_cons_printf ("f super.%s.%s = %d\n",
+					c->name, c->super, c->index);
 			}
-			// TODO: show belonging methods and fields
-			free (name);
+			r_list_foreach (c->methods, iter2, sym) {
+				r_cons_printf ("f method.%s.%s = 0x%"PFMT64x"\n",
+					c->name, sym->name, sym->vaddr);
+			}
+		} else if (IS_MODE_JSON (mode)) {
+			if (c->super) {
+				r_cons_printf ("%s{\"name\":\"%s\",\"addr\":%"PFMT64d",\"index\":%"PFMT64d",\"super\":\"%s\"}",
+					iter->p ? "," : "", c->name, c->addr,
+					c->index, c->super);
+			} else {
+				r_cons_printf ("%s{\"name\":\"%s\",\"addr\":%"PFMT64d",\"index\":%"PFMT64d"}",
+					iter->p ? "," : "", c->name, c->addr,
+					c->index);
+			}
+		} else {
+			r_cons_printf ("0x%08"PFMT64x" class %d %s",
+				c->addr, c->index, c->name);
+			if (c->super) {
+				r_cons_printf (" super: %s\n", c->super);
+			}
+			r_cons_newline();
+			int m = 0;
+			r_list_foreach (c->methods, iter2, sym) {
+				r_cons_printf ("0x%08"PFMT64x" method %d %s\n",
+					sym->vaddr, m, sym->name);
+				m++;
+			}
+			r_cons_newline ();
 		}
+
+		free (name);
 	}
+	if (IS_MODE_JSON (mode)) r_cons_printf ("]");
+
 	return true;
 }
 
 static int bin_size(RCore *r, int mode) {
 	int size = r_bin_get_size (r->bin);
-	if ((mode & R_CORE_BIN_SIMPLE) || mode & R_CORE_BIN_JSON) {
+	if (IS_MODE_SIMPLE (mode) || IS_MODE_JSON (mode)) {
 		r_cons_printf ("%d\n", size);
-	} else if ((mode & R_CORE_BIN_RADARE)) {
+	} else if (IS_MODE_RAD (mode)) {
 		r_cons_printf ("f bin_size @ %d\n", size);
-	} else if ((mode & R_CORE_BIN_SET)) {
+	} else if (IS_MODE_SET (mode)) {
 		r_core_cmdf (r, "f bin_size @ %d\n", size);
 	} else {
 		r_cons_printf ("%d\n", size);
@@ -1455,33 +1450,28 @@ static int bin_libs(RCore *r, int mode) {
 
 	if ((libs = r_bin_get_libs (r->bin)) == NULL) return false;
 
-	if (mode & R_CORE_BIN_JSON) {
-		r_cons_printf ("[");
-		r_list_foreach (libs, iter, lib) {
-			r_cons_printf ("%s\"%s\"", iter->p?",":"",lib);
-		}
-		r_cons_printf ("]");
-	} else if ((mode & R_CORE_BIN_RADARE)) {
-		r_list_foreach (libs, iter, lib) {
+	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
+	else if (IS_MODE_NORMAL (mode)) r_cons_printf ("[Linked libraries]\n");
+	r_list_foreach (libs, iter, lib) {
+		if (IS_MODE_SET (mode)) {
+			// Nothing to set.
+			// TODO: load libraries with iomaps?
+		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("CCa entry0 %s\n", lib);
-		}
-	} else if ((mode & R_CORE_BIN_SET)) {
-		// Nothing to set.
-		// TODO: load libraries with iomaps?
-	} else {
-		if (!mode) r_cons_printf ("[Linked libraries]\n");
-		r_list_foreach (libs, iter, lib) {
+		} else if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("%s\"%s\"", iter->p ? "," : "", lib);
+		} else {
+			// simple and normal print mode
 			r_cons_printf ("%s\n", lib);
-			i++;
 		}
-		if (!mode) {
-			if (i == 1) {
-				r_cons_printf ("\n%i library\n", i);
-			} else {
-				r_cons_printf ("\n%i libraries\n", i);
-			}
-		}
+		i++;
 	}
+	if (IS_MODE_JSON (mode)) r_cons_printf ("]");
+	else if (IS_MODE_NORMAL (mode)) {
+		if (i == 1) r_cons_printf ("\n%i library\n", i);
+		else r_cons_printf ("\n%i libraries\n", i);
+	}
+
 	return true;
 }
 
@@ -1509,17 +1499,17 @@ static void bin_mem_print(RList *mems, int perms, int depth) {
 static int bin_mem(RCore *r, int mode) {
 	RList *mem = NULL;
 	if (!r)	return false;
-	if (!((mode & R_CORE_BIN_RADARE) || (mode & R_CORE_BIN_SET))) {
+	if (!(IS_MODE_RAD (mode) || IS_MODE_SET (mode))) {
 		r_cons_printf ("[Memory]\n\n");
 	}
 	if (!(mem = r_bin_get_mem (r->bin))) {
 		return false;
 	}
-	if (mode & R_CORE_BIN_JSON) {
+	if (IS_MODE_JSON (mode)) {
 		r_cons_printf ("TODO\n");
 		return false;
 	}
-	if (!((mode & R_CORE_BIN_RADARE) || (mode & R_CORE_BIN_SET))) {
+	if (!(IS_MODE_RAD (mode) || IS_MODE_SET (mode))) {
 		bin_mem_print (mem, 7, 0);
 	}
 	return true;
