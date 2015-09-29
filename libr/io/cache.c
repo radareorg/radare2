@@ -28,8 +28,9 @@ R_API void r_io_cache_enable(RIO *io, int read, int write) {
 R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 	RListIter *iter;
 	RIOCache *c;
+
 	int ioc = io->cached;
-	io->cached = 2;
+	io->cached = 0;
 	r_list_foreach (io->cache, iter, c) {
 		if (c->from >= from && c->to <= to) {
 			if (!r_io_write_at (io, c->from, c->data, c->size))
@@ -56,7 +57,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 		r_list_foreach (io->cache, iter, c) {
 			if (c->from >= from && c->to <= to) {
 				int ioc = io->cached;
-				io->cached = 2; // magic number to skip caching this write
+				io->cached = 0;
 				r_io_write_at (io, c->from, c->odata, c->size);
 				io->cached = ioc;
 				if (!c->written)
@@ -78,61 +79,38 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 	r_list_foreach (io->cache, iter, c) {
 		if (rad) {
 			io->cb_printf ("wx ");
-			for (i=0; i < c->size; i++)
-				io->cb_printf ("%02x", (ut8)(c->data[i] & 0xff));
+			for (i=0; i<c->size; i++)
+				io->cb_printf ("%02x", c->data[i]);
 			io->cb_printf (" @ 0x%08"PFMT64x, c->from);
 			io->cb_printf (" # replaces: ");
-			for (i=0; i < c->size; i++)
-				io->cb_printf ("%02x", (ut8)(c->odata[i] & 0xff));
+			for (i=0; i<c->size; i++)
+				io->cb_printf ("%02x", c->odata[i]);
 			io->cb_printf ("\n");
 		} else {
 			io->cb_printf ("idx=%d addr=0x%08"PFMT64x" size=%d ",
 				j, c->from, c->size);
-			for (i=0; i < c->size; i++)
+			for (i=0; i<c->size; i++)
 				io->cb_printf ("%02x", c->odata[i]);
 			io->cb_printf (" -> ");
-			for (i=0; i < c->size; i++)
+			for (i=0; i<c->size; i++)
 				io->cb_printf ("%02x", c->data[i]);
-			io->cb_printf (" %s\n", c->written? "(written)": "(not written)");
+			io->cb_printf (" %s\n", c->written?"(written)":"(not written)");
 		}
 		j++;
 	}
 	return false;
 }
 
-R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
-//	int i;
+R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {		//Review this later
 	RIOCache *ch;
-	if (io->cached == 2) {
-		/* do not allow to use the cache write in debugger mode */
-		/* this is a hack to solve issues */
-		return 0;
-	}
-#if 0
-	for (i = 0; i<len; i++) {
-		if (buf[i] != 0xff)
-			break;
-	}
-	if (i == len) {
-		return -1;
-	}
-#endif
 	ch = R_NEW0 (RIOCache);
-	if (!ch) return 0;
 	ch->from = addr;
 	ch->to = addr + len;
 	ch->size = len;
 	ch->odata = (ut8*)malloc (len);
 	ch->data = (ut8*)malloc (len);
 	ch->written = io->cached? 0: 1;
-#if 1
-	// we must use raw io here to avoid calling to cacheread and get wrong reads
-	if (r_io_seek (io, addr, R_IO_SEEK_SET)==UT64_MAX)
-		memset (ch->odata, 0xff, len);
-	r_io_read_internal (io, ch->odata, len);
-#else
 	r_io_read_at (io, addr, ch->odata, len);
-#endif
 	memcpy (ch->data, buf, len);
 	r_list_append (io->cache, ch);
 	return len;
@@ -140,7 +118,6 @@ R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 
 R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int l, ret, da, db;
-	int covered = 0;
 	RListIter *iter;
 	RIOCache *c;
 
@@ -153,7 +130,7 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 			} else if (ret<0) {
 				da = 0;
 				db = -ret;
-				l = c->size - db;
+				l = c->size-db;
 			} else {
 				da = 0;
 				db = 0;
@@ -162,8 +139,7 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 			if ((l+da)>len) l = len-da;					//say hello to integer overflow, but this won't happen in realistic scenarios because malloc will fail befor
 			if (l<1) l = 1; // XXX: fail
 			else memcpy (buf+da, c->data+db, l);
-			covered += l;
 		}
 	}
-	return covered;
+	return len;
 }

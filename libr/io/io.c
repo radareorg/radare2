@@ -15,6 +15,7 @@ R_API RIO *r_io_init (RIO *io)
 		return NULL;
 	r_io_desc_init (io);
 	r_io_map_init (io);
+	r_io_cache_init (io);
 	r_io_plugin_init (io);
 	return io;
 }
@@ -131,17 +132,23 @@ R_API int r_io_vwrite_at (RIO *io, ut64 vaddr, ut8 *buf, int len)
 
 R_API int r_io_read_at (RIO *io, ut64 addr, ut8 *buf, int len)
 {
+	int ret;
 	if (!io || !buf || !len)
 		return 0;
 	if (io->va)
-		return r_io_vread_at (io, addr, buf, len);
-	return r_io_pread_at (io, addr, buf, len);
+		ret = r_io_vread_at (io, addr, buf, len);
+	else	ret = r_io_pread_at (io, addr, buf, len);
+	if (io->cached_read)
+		ret &= !!r_io_cache_read (io, addr, buf, len);
+	return ret;
 }
 
 R_API int r_io_write_at (RIO *io, ut64 addr, ut8 *buf, int len)
 {
 	if (!io || !buf || !len)
 		return 0;
+	if (io->cached)
+		return !!r_io_cache_write (io, addr, buf, len);
 	if (io->va)
 		return r_io_vwrite_at (io, addr, buf, len);
 	return r_io_pwrite_at (io, addr, buf, len);
@@ -154,6 +161,8 @@ R_API int r_io_fini (RIO *io)
 		return R_FALSE;
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
+	ls_free (io->plugins);
+	r_list_free (io->cache);
 	return R_TRUE;
 }
 
