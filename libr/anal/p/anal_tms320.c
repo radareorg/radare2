@@ -1,5 +1,5 @@
 /*
- * TMS320 disassembly analizer
+ * TMS320 disassembly analyzer
  *
  * Written by Ilya V. Matveychikov <i.matveychikov@milabs.ru>
  *
