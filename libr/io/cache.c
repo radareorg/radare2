@@ -30,7 +30,7 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 	RIOCache *c;
 
 	int ioc = io->cached;
-	io->cached = 2;
+	io->cached = 0;
 	r_list_foreach (io->cache, iter, c) {
 		if (c->from >= from && c->to <= to) {
 			if (!r_io_write_at (io, c->from, c->data, c->size))
@@ -57,7 +57,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 		r_list_foreach (io->cache, iter, c) {
 			if (c->from >= from && c->to <= to) {
 				int ioc = io->cached;
-				io->cached = 2; // magic number to skip caching this write
+				io->cached = 0;
 				r_io_write_at (io, c->from, c->odata, c->size);
 				io->cached = ioc;
 				if (!c->written)
@@ -101,10 +101,8 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 	return false;
 }
 
-R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
+R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {		//Review this later
 	RIOCache *ch;
-	if (io->cached == 2) // magic hackaround
-		return 0;
 	ch = R_NEW0 (RIOCache);
 	ch->from = addr;
 	ch->to = addr + len;
@@ -112,14 +110,7 @@ R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	ch->odata = (ut8*)malloc (len);
 	ch->data = (ut8*)malloc (len);
 	ch->written = io->cached? 0: 1;
-#if 1
-	// we must use raw io here to avoid calling to cacheread and get wrong reads
-	if (r_io_seek (io, addr, R_IO_SEEK_SET)==UT64_MAX)
-		memset (ch->odata, 0xff, len);
-	r_io_read_internal (io, ch->odata, len);
-#else
 	r_io_read_at (io, addr, ch->odata, len);
-#endif
 	memcpy (ch->data, buf, len);
 	r_list_append (io->cache, ch);
 	return len;

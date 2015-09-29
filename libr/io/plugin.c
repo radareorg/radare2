@@ -6,7 +6,7 @@
 #include "r_io.h"
 #include "../config.h"
 #include <stdio.h>
-#include <sdb.h>
+#include <r_db.h>
 
 volatile static RIOPlugin *DEFAULT = NULL;
 static RIOPlugin *io_static_plugins[] =
@@ -25,7 +25,7 @@ R_API int r_io_plugin_init(RIO *io) {
 	int i;
 	if (!io)
 		return false;
-	io->plugins = r_list_new ();
+	io->plugins = ls_new ();
 	io->plugins->free = free;
 
 	for (i=0; io_static_plugins[i]; i++) {
@@ -83,7 +83,7 @@ R_API int r_io_plugin_list(RIO *io) {
 	} else	return 0;
 	if (!io->plugins)
 		return 0;
-	r_list_foreach (io->plugins, iter, plugin)
+	ls_foreach (io->plugins, iter, plugin)
 		if (plugin) {
 			if (plugin->name)
 				io->cb_printf (" - %s\n", plugin->name);
