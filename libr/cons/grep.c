@@ -120,7 +120,6 @@ R_API void r_cons_grep(const char *str) {
 
 		for (; ptr2 <= ptr3; ++ptr2) {
 			if (fail) {
-				eprintf("%d tokenss max!", R_CONS_GREP_TOKENS);
 				memset (cons->grep.tokens, 0, R_CONS_GREP_TOKENS);
 				cons->grep.tokens_used = 0;
 				fail = 0;
@@ -135,8 +134,9 @@ R_API void r_cons_grep(const char *str) {
 			case ']':  // fallthrough to handle ']' like ','
 			case ',':
 				for (; range_begin <= range_end; range_begin++) {
-					if (range_begin >= R_CONS_GREP_TOKENS) {
+					if (range_begin >= R_CONS_GREP_TOKENS || range_begin < 0) {
 						fail = 1;
+						break;
 					}
 					cons->grep.tokens[range_begin] = 1;
 					cons->grep.tokens_used = 1;
@@ -281,11 +281,11 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 
 R_API int r_cons_grep_line(char *buf, int len) {
 	RCons *cons = r_cons_singleton ();
-	const char delims[5][2] = { "|", ",", ";", "=", "\t" };
+	const char *delims = " |,;=\t";
 	char *in, *out, *tok = NULL;
 	int hit = cons->grep.neg;
 	int outlen = 0;
-	size_t i, j;
+	size_t i;
 
 	in = calloc (1, len + 1);
 	out = calloc (1, len + 2);
@@ -315,28 +315,27 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	if (hit) {
 		if ((cons->grep.line == -1 || cons->grep.line == cons->lines) &&
 		    cons->grep.tokens_used) {
-			const int delims_count = sizeof (delims) / 2;
-			for (i = 0; i < len; i++) {
-				for (j = 0; j < delims_count; j++) {
-					if (in[i] == delims[j][0]) {
-						in[i] = ' ';
-					}
-				}
-			}
-
 			for (i = 0; i < R_CONS_GREP_TOKENS; i++) {
-				tok = strtok (i ? NULL : in, " ");
+				tok = strtok (i ? NULL : in, delims);
 
-				if (cons->grep.tokens[i] && tok) {
-					int toklen = strlen (tok);
-					memcpy (out + outlen, tok, toklen);
-					memcpy (out + outlen + toklen, " ", 2);
-					outlen += toklen + 1;
+				if (tok) {
+					if (cons->grep.tokens[i]) {
+						int toklen = strlen (tok);
+						memcpy (out + outlen, tok, toklen);
+						memcpy (out + outlen + toklen, " ", 2);
+						outlen += toklen + 1;
+						if (!(*out)) {
+							free (in);
+							free (out);
+							return -1;
+						}
+					}
+				} else {
 					if (!(*out)) {
 						free (in);
 						free (out);
 						return -1;
-					}
+					} else break;
 				}
 			}
 
