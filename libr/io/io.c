@@ -647,19 +647,21 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 	if (io->plugin) {
 		if (io->plugin->write) {
 			ret = io->plugin->write (io, io->desc, buf, len);
-		} else { 
+		} else {
 			eprintf ("r_io_write: io handler with no write callback\n");
 			ret = -1;
 		}
 	} else {
-		if (io->desc) {
-			ret = write (io->desc->fd, buf, len);
-		} else ret = -1;
+		ret = io->desc? write (io->desc->fd, buf, len): -1;
 	}
 	if (ret == -1) {
 		if (io->cached != 2) {
-			eprintf ("r_io_write: cannot write on fd %d\n",
-				io->desc? io->desc->fd: -1);
+			eprintf ("r_io_write: cannot write %d bytes "
+				"at 0x%"PFMT64x" (file=%s, fd=%d)\n",
+				len, io->off,
+				io->desc ? io->desc->uri : "unknown",
+				io->desc ? io->desc->fd : -1);
+			eprintf ("hint: try oo+ or e io.cache=true\n");
 			r_io_cache_invalidate (io, io->off, io->off+1);
 		}
 	} else {
