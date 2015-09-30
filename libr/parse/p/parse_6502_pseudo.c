@@ -70,15 +70,11 @@ static int replace(int argc, const char *argv[], char *newstr, ADDR_TYPE type) {
 		{0, "sei", "set_interrupt"},
 		{1, "jsr", "1()"},
 		{0, NULL}};
-	if (!newstr) {
-		return false;
-	}
+	if (!newstr) return false;
 
 	for (i = 0; ops[i].op != NULL; i++) {
 		if (ops[i].narg) {
-			if (argc - 1 != ops[i].narg) {
-				continue;
-			}
+			if (argc - 1 != ops[i].narg) continue;
 		}
 		if (!strcmp(ops[i].op, argv[0])) {
 			for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
@@ -88,13 +84,14 @@ static int replace(int argc, const char *argv[], char *newstr, ADDR_TYPE type) {
 						strcpy(newstr + k, w);
 						k += strlen(w) - 1;
 					}
-				} else
+				} else {
 					newstr[k] = ops[i].str[j];
+				}
 			}
 			newstr[k] = '\0';
 			if (argc == 4 && argv[2][0] == '[') {
-				strcat(newstr + k, "+");
-				strcat(newstr + k + 3, argv[3]);
+				strcat (newstr + k, "+");
+				strcat (newstr + k + 3, argv[2]);
 			}
 			return true;
 		}
@@ -103,18 +100,17 @@ static int replace(int argc, const char *argv[], char *newstr, ADDR_TYPE type) {
 	/* TODO: this is slow */
 	newstr[0] = '\0';
 	for (i = 0; i < argc; i++) {
-		strcat(newstr, argv[i]);
-		strcat(newstr, (i == 0 || i == argc - 1) ? " " : ",");
+		strcat (newstr, argv[i]);
+		strcat (newstr, (i == 0 || i == argc - 1) ? " " : ",");
 	}
 	return false;
 }
 
 static ADDR_TYPE addr_type(const char *str) {
 	if (strchr(str, '(')) {
-		char *e = strchr(str, ')');
-		if (!e)
-			return NORM;
-		char *o = strchr(e, ',');
+		char *e = strchr (str, ')');
+		if (!e) return NORM;
+		char *o = strchr (e, ',');
 		return (o) ? IND_IDX : IDX_IND;
 	}
 	return NORM;
@@ -122,58 +118,52 @@ static ADDR_TYPE addr_type(const char *str) {
 
 static int parse(RParse *p, const char *data, char *str) {
 	char w0[256], w1[256], w2[256];
-	int i, len = strlen(data);
+	int i, len = strlen (data);
 	char *buf, *ptr, *optr;
 	ADDR_TYPE atype;
 
-	if (len >= sizeof(w0)) {
-		return false;
-	}
+	if (len >= sizeof(w0)) return false;
 	// malloc can be slow here :?
-	if ((buf = malloc(len + 1)) == NULL) {
+	if ((buf = malloc (len + 1)) == NULL) {
 		return false;
 	}
-	memcpy(buf, data, len + 1);
+	memcpy (buf, data, len + 1);
 
 	if (*buf) {
-		atype = addr_type(buf);
-		r_str_replace_char(buf, '(', ' ');
-		r_str_replace_char(buf, ')', ' ');
+		atype = addr_type (buf);
+		r_str_replace_char (buf, '(', ' ');
+		r_str_replace_char (buf, ')', ' ');
 		*w0 = *w1 = *w2 = '\0';
-		ptr = strchr(buf, ' ');
-		if (ptr == NULL) {
-			ptr = strchr(buf, '\t');
-		}
+		ptr = strchr (buf, ' ');
+		if (ptr == NULL) ptr = strchr (buf, '\t');
 		if (ptr) {
 			*ptr = '\0';
 			for (++ptr; *ptr == ' '; ptr++)
 				;
-			strncpy(w0, buf, sizeof(w0) - 1);
-			strncpy(w1, ptr, sizeof(w1) - 1);
+			strncpy (w0, buf, sizeof(w0) - 1);
+			strncpy (w1, ptr, sizeof(w1) - 1);
 			optr = ptr;
-			ptr = strchr(ptr, ',');
+			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
 				for (++ptr; *ptr == ' '; ptr++)
 					;
-				strncpy(w1, optr, sizeof(w1) - 1);
-				strncpy(w2, ptr, sizeof(w2) - 1);
+				strncpy (w1, optr, sizeof(w1) - 1);
+				strncpy (w2, ptr, sizeof(w2) - 1);
 			}
 		} else {
-			strncpy(w0, buf, sizeof(w0) - 1);
+			strncpy (w0, buf, sizeof(w0) - 1);
 		}
 
 		const char *wa[] = {w0, w1, w2};
 		int nw = 0;
 		for (i = 0; i < 3; i++) {
-			if (wa[i][0]) {
-				nw++;
-			}
+			if (wa[i][0]) nw++;
 		}
-		replace(nw, wa, str, atype);
+		replace (nw, wa, str, atype);
 	}
 
-	free(buf);
+	free (buf);
 
 	return true;
 }

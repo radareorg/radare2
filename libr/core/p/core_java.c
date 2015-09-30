@@ -806,7 +806,7 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 		free (class_name);
 		free (new_class_name);
 		return true;
-	} 
+	}
 	for (idx = 1; idx <=obj->cp_count; idx++) {
 		RBinJavaCPTypeObj* cp_obj = r_bin_java_get_item_from_bin_cp_list (obj, idx);
 		char *name = NULL;
@@ -843,7 +843,7 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 				}
 				if (result) {
 					res = r_cmd_java_get_cp_bytes_and_write (
-						core, obj, idx, addr, 
+						core, obj, idx, addr,
 						(const ut8*)result, res_len);
 					if  (res == false) {
 						eprintf ("ERROR: r_cmd_java: Failed to write bytes or reload the binary.\n");
@@ -1053,7 +1053,7 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 			// check the return read on the read
 			if (r_sz == UT64_MAX || r_sz == 0) break;
 			res_size = r_bin_java_calc_class_size (buf, sz);
-			// if the data buffer contains a class starting 
+			// if the data buffer contains a class starting
 			// at address, then the res_size will be the size
 			// if the r_sz is less than the sz, then we are near
 			// the end of the core buffer, and there is no need
@@ -1100,7 +1100,7 @@ static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd) {
 			// check the return read on the read
 			if (r_sz == UT64_MAX || r_sz == 0) break;
 			res_size = r_bin_java_calc_class_size (buf, sz);
-			// if the data buffer contains a class starting 
+			// if the data buffer contains a class starting
 			// at address, then the res_size will be the size
 			// if the r_sz is less than the sz, then we are near
 			// the end of the core buffer, and there is no need
@@ -1494,8 +1494,8 @@ static int r_cmd_java_print_class_definitions( RBinJavaObj *obj ) {
 			* the_moffsets = r_bin_java_get_method_offsets (obj),
 			* the_foffsets = r_bin_java_get_field_offsets (obj);
 
-	char * class_name = r_bin_java_get_this_class_name(obj),
-		 * str = NULL;
+	char * class_name = r_bin_java_get_this_class_name(obj);
+	char * str = NULL;
 
 	r_cmd_java_print_import_definitions (obj);
 	r_cons_printf ("\nclass %s { // @0x%04"PFMT64x"\n", class_name, obj->loadaddr);
