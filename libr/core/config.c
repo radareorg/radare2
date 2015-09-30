@@ -563,11 +563,19 @@ static int cb_runprofile(void *user, void *data) {
 	RCore *r = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	free ((void*)r->io->runprofile);
-	if (!node || !*(node->value))
-		r->io->runprofile = NULL;
+	if (!node || !*(node->value)) r->io->runprofile = NULL;
 	else r->io->runprofile = strdup (node->value);
 	return true;
 }
+
+static int cb_dbg_args(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (!node || !*(node->value)) core->io->args = NULL;
+	else core->io->args = strdup (node->value);
+	return true;
+}
+
 
 static int cb_dbgstatus(void *user, void *data) {
 	RCore *r = (RCore*) user;
@@ -1097,6 +1105,7 @@ static int cb_anal_limits(void *user, RConfigNode *node) {
 	return 1;
 }
 
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -1279,6 +1288,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("dbg.clone", "false", &cb_dbg_clone, "Stop execution if new thread is created");
 	SETCB("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");
 	SETCB("dbg.profile", "", &cb_runprofile, "Path to RRunProfile file");
+	SETCB("dbg.args", "", &cb_dbg_args, "Set the args of the program to debug");
 	/* debug */
 	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr pc;pi 1;s-'");
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");

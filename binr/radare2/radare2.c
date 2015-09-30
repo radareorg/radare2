@@ -327,8 +327,9 @@ int main(int argc, char **argv, char **envp) {
 			debug = 2;
 			debugbackend = optarg;
 			break;
-		case 'e': r_config_eval (r.config, optarg);
-			  r_list_append (evals, optarg); break;
+		case 'e':
+			r_config_eval (r.config, optarg);
+			r_list_append (evals, optarg); break;
 		case 'f': fullfile = 1; break;
 		case 'F': forcebin = optarg; break;
 		case 'h': help++; break;
@@ -336,7 +337,7 @@ int main(int argc, char **argv, char **envp) {
 			if (cmdfilei+1 < (sizeof (cmdfile)/sizeof (*cmdfile)))
 				cmdfile[cmdfilei++] = optarg;
 			break;
-		case 'k': 
+		case 'k':
 			{
 				char *out = sdb_querys (r.sdb, NULL, 0, optarg);
 				if (out&& *out) {
@@ -380,8 +381,7 @@ int main(int argc, char **argv, char **envp) {
 	if (help > 0) {
 		r_list_free (evals);
 		r_list_free (cmds);
-		if (help > 1)
-			return main_help (2);
+		if (help > 1) return main_help (2);
 		return main_help (0);
 	}
 
@@ -475,7 +475,7 @@ int main(int argc, char **argv, char **envp) {
 			r_config_set_i (r.config, "io.va", false); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
 			perms = R_IO_READ | R_IO_WRITE;
-			if (optind>=argc) {
+			if (optind >= argc) {
 				eprintf ("No program given to -d\n");
 				return 1;
 			}

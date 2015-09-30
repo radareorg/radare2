@@ -147,6 +147,7 @@ typedef struct r_io_t {
 	int autofd;
 	int aslr;
 	char *runprofile;
+	char *args;
 	/* Core Callbacks  (used by rap) */
 	void *user;
 	int (*cb_core_cmd)(void *user, const char *str);

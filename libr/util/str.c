@@ -118,7 +118,7 @@ R_API int r_str_bits (char *strout, const ut8 *buf, int len, const char *bitz) {
 
 /**
  * function: r_str_bits_from_num
- * 
+ *
  */
 R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
 	ut64 out = 0LL;
@@ -451,9 +451,9 @@ R_API char *r_str_newf(const char *fmt, ...) {
 	va_list ap, ap2;
 	va_start (ap, fmt);
 	va_start (ap2, fmt);
-	ret = vsnprintf (string, sizeof (string)-1, fmt, ap);
+	ret = vsnprintf (string, sizeof (string) - 1, fmt, ap);
 	if (ret < 1 || ret >= sizeof (string)) {
-		p = malloc (ret+2);
+		p = malloc (ret + 2);
 		if (!p) {
 			va_end (ap2);
 			va_end (ap);
@@ -484,14 +484,13 @@ R_API char *r_str_chop(char *str) {
 		return NULL;
 
 	while (*str && iswhitechar (*str))
-		memmove (str, str+1, strlen (str+1)+1);
+		memmove (str, str + 1, strlen (str + 1) + 1);
 
 	len = strlen (str);
 
 	if (len>0)
-	for (ptr = str+len-1; ptr!=str; ptr--) {
-		if (iswhitechar (*ptr))
-			*ptr = '\0';
+	for (ptr = str + len-1; ptr != str; ptr--) {
+		if (iswhitechar (*ptr)) *ptr = '\0';
 		else break;
 	}
 	return str;
@@ -676,17 +675,13 @@ R_API char *r_str_concatlen(char *ptr, const char *string, int slen) {
 // TODO: use vararg here?
 R_API char *r_str_concat(char *ptr, const char *string) {
 	int slen, plen;
-	if (!string && !ptr)
-		return NULL;
-	if (!string && ptr)
-		return ptr;
-	if (string && !ptr)
-		return strdup (string);
+	if (!string && !ptr) return NULL;
+	if (!string && ptr) return ptr;
+	if (string && !ptr) return strdup (string);
 	plen = strlen (ptr);
 	slen = strlen (string);
 	ptr = realloc (ptr, slen + plen + 1);
-	if (ptr == NULL)
-		return NULL;
+	if (ptr == NULL) return NULL;
 	memcpy (ptr+plen, string, slen+1);
 	return ptr;
 }
@@ -697,7 +692,7 @@ R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
 	ret = vsnprintf (string, sizeof (string), fmt, ap);
-	if (ret>=sizeof (string)) {
+	if (ret >= sizeof (string)) {
 		char *p = malloc (ret+2);
 		if (!p) {
 			va_end (ap);
@@ -1261,7 +1256,7 @@ R_API char *r_str_arg_escape (const char *arg) {
 
 	if (!arg)
 		return NULL;
-	
+
 	str = malloc ((2 * strlen (arg) + 1) * sizeof (char)); // Worse case when every character need to be escaped
 	for (src_i = 0; arg[src_i] != '\0'; src_i++) {
 		char c = arg[src_i];
@@ -1271,10 +1266,10 @@ R_API char *r_str_arg_escape (const char *arg) {
 		case '\\':
 		case ' ':
 			str[dest_i++] = '\\';
-			break;	
+			break;
 		default:
 			str[dest_i++] = c;
-			break;	
+			break;
 		}
 	}
 	str[dest_i] = '\0';
@@ -1295,7 +1290,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 
 	argv = malloc (argv_len * sizeof (char *));
 	args = malloc (128 + strlen (cmdline) * sizeof (char)); // Unescaped args will be shorter, so strlen (cmdline) will be enough
-	do { 
+	do {
 		// States for parsing args
 		int escaped = 0;
 		int singlequoted = 0;
@@ -1333,7 +1328,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 				}
 				escaped = 0;
 			} else {
-				switch (c) { 
+				switch (c) {
 				case '\'':
 					if (doublequoted)
 						args[args_current++] = c;
