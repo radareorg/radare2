@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2015 - condret, riq */
 
-/* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm 
+/* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
  *
  * Mnemonics logic based on:
  *	http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
@@ -182,7 +182,7 @@ static void _6502_anal_esil_ccall(RAnalOp *op, ut8 data0)
 // inc register
 static void _6502_anal_esil_inc_reg(RAnalOp *op, ut8 data0, char* sign)
 {
-	char* reg;
+	char* reg = NULL;
 
 	switch(data0) {
 	case 0xe8: // inx
@@ -194,7 +194,7 @@ static void _6502_anal_esil_inc_reg(RAnalOp *op, ut8 data0, char* sign)
 		reg = "y";
 		break;
 	}
-	r_strbuf_setf (&op->esil, "%s,%s%s=",reg, sign, sign);
+	r_strbuf_setf (&op->esil, "%s,%s%s=", reg, sign, sign);
 	_6502_anal_update_flags (op, _6502_FLAGS_NZ);
 }
 
@@ -203,7 +203,7 @@ static void _6502_anal_esil_mov(RAnalOp *op, ut8 data0)
 	char* src="unk";
 	char* dst="unk";
 	switch(data0) {
-	case 0xaa: // tax 
+	case 0xaa: // tax
 		src="a";
 		dst="x";
 		break;
@@ -211,7 +211,7 @@ static void _6502_anal_esil_mov(RAnalOp *op, ut8 data0)
 		src="x";
 		dst="a";
 		break;
-	case 0xa8: // tay 
+	case 0xa8: // tay
 		src="a";
 		dst="y";
 		break;
@@ -234,7 +234,7 @@ static void _6502_anal_esil_mov(RAnalOp *op, ut8 data0)
 	}
 	r_strbuf_setf (&op->esil, "%s,%s,=",src,dst);
 
-	// don't update NZ on txs 
+	// don't update NZ on txs
 	if (data0 != 0x9a) _6502_anal_update_flags (op, _6502_FLAGS_NZ);
 }
 
@@ -416,7 +416,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			// undocumented or not-implemented opcodes for 6502.
 			// some of them might be implemented in 65816
 			op->size = 1;
-			op->type = R_ANAL_OP_TYPE_ILL;		
+			op->type = R_ANAL_OP_TYPE_ILL;
 			break;
 
 		// BRK
@@ -470,7 +470,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 				r_strbuf_setf (&op->esil, "%s,a,+=,C,DUP,$c7,C,=,a,+=,$c7,C,|=", addrbuf);
 			else	r_strbuf_setf (&op->esil, "%s,[1],a,+=,C,DUP,$c7,C,=,a,+=,$c7,C,|=", addrbuf);
 			_6502_anal_update_flags (op, _6502_FLAGS_NZ);
-			// fix Z 
+			// fix Z
 			r_strbuf_append (&op->esil, ",a,a,=,$z,Z,=");
 			break;
 
@@ -546,7 +546,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			_6502_anal_update_flags (op, _6502_FLAGS_NZ);
 			break;
 
-		// ASL 
+		// ASL
 		case 0x0a: // asl a
 		case 0x06: // asl $ff
 		case 0x16: // asl $ff,x
@@ -697,7 +697,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			r_strbuf_append (&op->esil, ",C,!,C,=");
 			break;
 
-		// BRANCHES 
+		// BRANCHES
 		case 0x10: // bpl $ffff
 		case 0x30: // bmi $ffff
 		case 0x50: // bvc $ffff
@@ -766,7 +766,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->type = R_ANAL_OP_TYPE_RET;
 			op->cycles = 6;
 			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = -3;		
+			op->stackptr = -3;
 			// Operation: P from Stack, PC from Stack
 			// stack is on page one and sp is an 8-bit reg: operations must be done like: sp + 0x100
 			r_strbuf_set (&op->esil, "0x101,sp,+,[1],flags,=,0x102,sp,+,[2],pc,=,3,sp,+=");
@@ -876,9 +876,9 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			break;
 
 		// TAX,TYA,...
-		case 0xaa: // tax 
+		case 0xaa: // tax
 		case 0x8a: // txa
-		case 0xa8: // tay 
+		case 0xa8: // tay
 		case 0x98: // tya
 			op->type = R_ANAL_OP_TYPE_MOV;
 			op->cycles = 2;

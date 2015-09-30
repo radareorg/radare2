@@ -23,10 +23,9 @@ R_API int r_strbuf_set(RStrBuf *sb, const char *s) {
 		return R_TRUE;
 	}
 	l = strlen (s);
-	if (l>=sizeof (sb->buf)) {
+	if (l >= sizeof (sb->buf)) {
 		char *ptr = malloc (l+1);
-		if (!ptr)
-			return R_FALSE;
+		if (!ptr) return R_FALSE;
 		free (sb->ptr);
 		sb->ptr = ptr;
 		memcpy (ptr, s, l+1);
@@ -45,7 +44,7 @@ R_API int r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 
 	va_start (ap, fmt);
 	ret = vsnprintf (string, sizeof (string), fmt, ap);
-	if (ret>=sizeof (string)) {
+	if (ret >= sizeof (string)) {
 		char *p = malloc (ret+2);
 		if (!p) {
 			va_end (ap);

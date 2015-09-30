@@ -271,6 +271,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 		if (in) dup2 (f, 0);
 		if (out) dup2 (f, 1);
 		if (err) dup2 (f, 2);
+		close (f);
 		return 0;
 	}
 }
@@ -336,8 +337,8 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	else if (!strcmp (b, "setegid")) p->_setegid = strdup (e);
 	else if (!strcmp (b, "nice")) p->_nice = atoi (e);
 	else if (!memcmp (b, "arg", 3)) {
-		int n = atoi (b+3);
-		if (n>=0 && n<R_RUN_PROFILE_NARGS) {
+		int n = atoi (b + 3);
+		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
 			p->_args[n] = getstr (e);
 		} else eprintf ("Out of bounds args index: %d\n", n);
 	} else if (!strcmp (b, "timeout")) {
@@ -347,8 +348,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 		FILE *fd = fopen (e, "r");
 		if (!fd) {
 			eprintf ("Cannot open '%s'\n", e);
-			if (must_free == true)
-				free (e);
+			if (must_free == true) free (e);
 			return 0;
 		}
 		for (;;) {
