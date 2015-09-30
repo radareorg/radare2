@@ -74,6 +74,7 @@ ld=LD Rd,Z+. load indirect and post-increment
 ld=LD Rd,-Z. load indirect and pre-decrement
 ld=LDD Rd,Z+q. load indirect and displacement
 ldd=LDI Rd,K. load immediate
+ldi=load immediate
 lds=LDS Rd,K. load direct from SRAM
 lpm=LPM. load programm memory
 lpm=LPM Rd,Z. load programm memory
