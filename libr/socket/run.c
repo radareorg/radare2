@@ -66,9 +66,6 @@ R_API int r_run_parse(RRunProfile *pf, const char *profile) {
 }
 
 R_API void r_run_free (RRunProfile *r) {
-	//int i;
-	//for (i=0;i<R_RUN_PROFILE_NARGS;i++)
-	//	free (r->_args[i]);
 	free (r->_system);
 	free (r->_program);
 	free (r->_stdio);
@@ -193,7 +190,7 @@ static void setASLR(int enabled) {
 	}
 #elif __APPLE__
 	// TOO OLD setenv ("DYLD_NO_PIE", "1", 1);
-	// disable this because its 
+	// disable this because its
 	//eprintf ("Patch mach0.hdr.flags with:\n"
 	//	"f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
 	// for osxver>=10.7

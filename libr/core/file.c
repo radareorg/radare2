@@ -181,7 +181,7 @@ R_API void r_core_sysenv_help(const RCore* core) {
 	"ARCH", "", "value of asm.arch",
 	"DEBUG", "", "debug mode enabled? (1,0)",
 	"IOVA", "", "is io.va true? virtual addressing (1,0)",
-	"BLOCK", "", "TODO: dump current block to tmp file", 
+	"BLOCK", "", "TODO: dump current block to tmp file",
 	"BYTES", "", "TODO: variable with bytes in curblock",
 	"PDB_SERVER", "", "e pdb.server",
 	NULL
@@ -659,7 +659,7 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 	RIODesc *desc = fh && fh->desc? fh->desc : NULL;
 	RCoreFile *prev_cf = r && r->file != fh ? r->file : NULL;
 
-	// TODO: This is not correclty done. because map and iodesc are 
+	// TODO: This is not correclty done. because map and iodesc are
 	// still referenced // we need to fully clear all R_IO structs
 	// related to a file as well as the ones needed for RBin.
 	//

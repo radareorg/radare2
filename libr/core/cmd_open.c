@@ -195,26 +195,31 @@ static void cmd_open_map (RCore *core, const char *input) {
 	r_core_block_read (core, 0);
 }
 
-static void reopen_in_debug(RCore *core) {
-	if (!core->file || !core->file->desc || !core->file->desc->uri) {
+static void reopen_in_debug(RCore *core, const char *args) {
+	RCoreFile *ofile = core->file;
+	RBinFile *bf = NULL;
+	char *binpath = NULL;
+	char *ofilepath = NULL;
+	if (!ofile || !ofile->desc || !ofile->desc->uri || !ofile->desc->fd) {
 		eprintf ("No file open?\n");
 		return;
 	}
-
-	if (strstr (core->file->desc->uri, "://") != NULL) {
-		r_core_cmd0 (core, "oo");
-	} else {
-		int bits = core->assembler->bits;
-		char *oldname = r_file_abspath (core->file->desc->uri);
-		char *newfile = r_str_newf ("dbg://%s", oldname);
-		core->file->desc->uri = newfile;
-		core->file->desc->referer = NULL;
-		r_core_file_reopen (core, newfile, 0, 2);
-		r_config_set_i (core->config, "asm.bits", bits);
-		r_config_set_i (core->config, "cfg.debug", true);
-		r_core_cmd0 (core, "sr pc");
-		free (oldname);
+	bf = r_bin_file_find_by_fd (core->bin, ofile->desc->fd);
+	binpath = bf ? strdup (bf->file) : NULL;
+	if (!binpath) {
+		eprintf ("No bin file open?\n");
+		return;
 	}
+	int bits = core->assembler->bits;
+	char *oldname = r_file_abspath (binpath);
+	char *newfile = r_str_newf ("dbg://%s %s", oldname, args);
+	core->file->desc->uri = newfile;
+	core->file->desc->referer = NULL;
+	r_core_file_reopen (core, newfile, 0, 2);
+	r_config_set_i (core->config, "asm.bits", bits);
+	r_config_set_i (core->config, "cfg.debug", true);
+	r_core_cmd0 (core, "sr pc");
+	free (oldname);
 }
 
 static int cmd_open(void *data, const char *input) {
@@ -386,19 +391,20 @@ static int cmd_open(void *data, const char *input) {
 	case 'o':
 		switch (input[1]) {
 		case 'd': // "ood" : reopen in debugger
-			reopen_in_debug (core);
+			reopen_in_debug (core, input + 2);
 			break;
 		case 'b': // "oob" : reopen with bin info
-			r_core_file_reopen (core, input+2, 0, 2);
+			r_core_file_reopen (core, input + 2, 0, 2);
 			break;
 		case 'n':
-			r_core_file_reopen (core, input+2, 0, 0);
+			r_core_file_reopen (core, input + 2, 0, 0);
 			break;
 		case '+':
-			r_core_file_reopen (core, input+2, R_IO_READ | R_IO_WRITE, 1);
+			r_core_file_reopen (core, input + 2,
+					R_IO_READ | R_IO_WRITE, 1);
 			break;
 		case 0: // "oo"
-			r_core_file_reopen (core, input+2, 0, 1);
+			r_core_file_reopen (core, input + 2, 0, 1);
 			break;
 		case '?':
 		default:

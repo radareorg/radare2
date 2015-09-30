@@ -55,10 +55,10 @@ static void inferior_abort_handler(int pid) {
 }
 #endif
 
-/* 
+/*
  * Creates a new process and returns the result:
  * -1 : error
- *  0 : ok 
+ *  0 : ok
  */
 #if __WINDOWS__
 #include <windows.h>
@@ -68,29 +68,27 @@ static void inferior_abort_handler(int pid) {
 
 static int setup_tokens() {
         HANDLE tok;
-        TOKEN_PRIVILEGES tp; 
+        TOKEN_PRIVILEGES tp;
         DWORD err;
 
         tok = NULL;
-        err = -1; 
+        err = -1;
 
         if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES, &tok))
-                goto err_enable;
+		goto err_enable;
 
         tp.PrivilegeCount = 1;
         if (!LookupPrivilegeValue (NULL,  SE_DEBUG_NAME, &tp.Privileges[0].Luid))
-                goto err_enable;
+		goto err_enable;
 
         //tp.Privileges[0].Attributes = enable ? SE_PRIVILEGE_ENABLED : 0;
         tp.Privileges[0].Attributes = 0; //SE_PRIVILEGE_ENABLED;
-        if (!AdjustTokenPrivileges (tok, 0, &tp, sizeof (tp), NULL, NULL)) 
-                goto err_enable;
+        if (!AdjustTokenPrivileges (tok, 0, &tp, sizeof (tp), NULL, NULL))
+		goto err_enable;
         err = 0;
 err_enable:
-        if (tok != NULL)
-                CloseHandle (tok);
-        if (err)
-		r_sys_perror ("setup_tokens");
+        if (tok != NULL) CloseHandle (tok);
+        if (err) r_sys_perror ("setup_tokens");
         return err;
 }
 
@@ -100,11 +98,11 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
         DEBUG_EVENT de;
 	int pid, tid;
 	HANDLE th = INVALID_HANDLE_VALUE;
-	if (!*cmd)
-		return -1;
+	if (!*cmd) return -1;
 	setup_tokens ();
-
-	char **argv = r_str_argv (cmd, NULL);
+	char *_cmd = io->args ? r_str_concatf (strdup (cmd), " %s", io->args) :
+				strdup (cmd);
+	char **argv = r_str_argv (_cmd, NULL);
 	// We need to build a command line with quoted argument and escaped quotes
 	int cmd_len = 0;
 	int i = 0;
@@ -128,7 +126,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			cmdline[cmd_i++] = ' ';
 
 		cmdline[cmd_i++] = '"';
-		
+
 		int arg_i = 0; // Index of current character in orginal argument
 		while (argv[i][arg_i]) {
 			char c = argv[i][arg_i];
@@ -144,16 +142,14 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 	cmdline[cmd_i] = '\0';
 
-        if (!CreateProcess (argv[0], cmdline,
-                        NULL, NULL, FALSE,
-                        CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
-                        NULL, NULL, &si, &pi)) {
-                r_sys_perror ("CreateProcess");
-                return -1;
+        if (!CreateProcess (argv[0], cmdline, NULL, NULL, FALSE,
+			CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
+			NULL, NULL, &si, &pi)) {
+			r_sys_perror ("CreateProcess");
+		return -1;
         }
 	free (cmdline);
 	r_str_argv_free (argv);
-
         /* get process id and thread id */
         pid = pi.dwProcessId;
         tid = pi.dwThreadId;
@@ -190,17 +186,15 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #endif
 
         /* catch create process event */
-        if (!WaitForDebugEvent (&de, 10000))
-                goto err_fork;
+        if (!WaitForDebugEvent (&de, 10000)) goto err_fork;
 
         /* check if is a create process debug event */
         if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
-                eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
-                goto err_fork;
+		eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
+		goto err_fork;
         }
 
-	if (th != INVALID_HANDLE_VALUE)
-		CloseHandle (th);
+	if (th != INVALID_HANDLE_VALUE) CloseHandle (th);
 
 	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
         return pid;
@@ -208,8 +202,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 err_fork:
 	eprintf ("ERRFORK\n");
         TerminateProcess (pi.hProcess, 1);
-	if (th != INVALID_HANDLE_VALUE)
-		CloseHandle (th);
+	if (th != INVALID_HANDLE_VALUE) CloseHandle (th);
         return -1;
 }
 #else // windows
@@ -246,27 +239,23 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		cpu_type_t cpu;
 		pid_t p = -1;
 		int ret, useASLR = io->aslr;
-
-		char *_cmd = strdup (cmd);
+		char *_cmd = io->args ?
+				r_str_concatf (strdup (cmd), " %s", io->args) :
+				strdup (cmd);
 		argv = r_str_argv (_cmd, NULL);
 		if (!argv) {
 			free (_cmd);
 			return -1;
 		}
 		if (!*argv) {
-			free (argv);
+			r_str_argv_free (argv);
 			free (_cmd);
 			eprintf ("Invalid execvp\n");
 			return -1;
 		}
-
 		posix_spawnattr_init (&attr);
 		if (useASLR != -1) {
-			if (useASLR) {
-				// enable aslr if not enabled? really?
-			} else {
-				ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
-			}
+			if (!useASLR) ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
 		}
 
 		posix_spawn_file_actions_init (&fileActions);
@@ -279,8 +268,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		(void)posix_spawnattr_setflags (&attr, ps_flags);
 #if __i386__ || __x86_64__
 		cpu = CPU_TYPE_I386;
-		if (bits == 64)
-			cpu |= CPU_ARCH_ABI64;
+		if (bits == 64) cpu |= CPU_ARCH_ABI64;
 #else
 		cpu = CPU_TYPE_ANY;
 #endif
@@ -302,10 +290,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			break;
 		}
 		posix_spawn_file_actions_destroy (&fileActions);
-
-		free (argv);
+		r_str_argv_free (argv);
 		free (_cmd);
-
 		return p;
 	}
 #endif
@@ -330,7 +316,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			rp->_dodebug = true;
 			if (io->runprofile && *io->runprofile) {
 				if (!r_run_parsefile (rp, io->runprofile)) {
-					eprintf ("Can't find profile '%s'\n", io->runprofile);
+					eprintf ("Can't find profile '%s'\n",
+						io->runprofile);
 					exit (MAGIC_EXIT);
 				}
 			}
@@ -342,8 +329,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			free (expr);
 			r_run_start (rp);
 			r_run_free (rp);
-			// double free wtf
-			//	r_str_argv_free (argv);
+			r_str_argv_free (argv);
 			exit (1);
 		} else {
 			char *_cmd = strdup (cmd);
@@ -354,13 +340,14 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			}
 			if (argv && *argv) {
 				int i;
-				for (i=3; i<1024; i++) {
+				for (i = 3; i < 1024; i++) {
 					(void)close (i);
 				}
 				execvp (argv[0], argv);
 			} else {
 				eprintf ("Invalid execvp\n");
 			}
+			r_str_argv_free (argv);
 			free (_cmd);
 		}
 		perror ("fork_and_attach: execv");
@@ -370,11 +357,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	default:
 		/* XXX: clean this dirty code */
 		do {
-                	ret = wait (&status);
-			if (ret == -1)
-				return -1;
-			if (ret != pid)
-				eprintf ("Wait event received by different pid %d\n", ret);
+			ret = wait (&status);
+			if (ret == -1) return -1;
+			if (ret != pid) eprintf ("Wait event received by "
+						"different pid %d\n", ret);
 		} while (ret != pid);
 		if (WIFSTOPPED (status))
 			eprintf ("Process with PID %d started...\n", (int)pid);

@@ -117,8 +117,7 @@ R_API int r_config_set_setter (RConfig *cfg, const char *key, RConfigCallback cb
 R_API const char *r_config_get(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
-		if (node->getter)
-			node->getter (cfg->user, node);
+		if (node->getter) node->getter (cfg->user, node);
 		cfg->last_notfound = 0;
 		if (node->flags & CN_BOOL)
 			return (const char *)
@@ -126,7 +125,9 @@ R_API const char *r_config_get(RConfig *cfg, const char *name) {
 				  || (!strcmp ("1", node->value)))?
 				  (const char *)"true":"false"); // XXX (char*)1 is ugly
 		return node->value;
-	} else eprintf ("r_config_get: variable '%s' not found\n", name);
+	} else {
+		eprintf ("r_config_get: variable '%s' not found\n", name);
+	}
 	cfg->last_notfound = 1;
 	return NULL;
 }
@@ -325,42 +326,39 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 	unsigned int len;
 	if (!str || !cfg) return false;
 	len = strlen (str)+1;
-	if (len >= sizeof (name))
-		return false;
+	if (len >= sizeof (name)) return false;
 	memcpy (name, str, len);
 	str = r_str_chop (name);
 
-	if (str == NULL)
-		return false;
+	if (str == NULL) return false;
 
-	if (str[0]=='\0' || !strcmp (str, "help")) {
+	if (str[0] == '\0' || !strcmp (str, "help")) {
 		r_config_list (cfg, NULL, 0);
 		return false;
 	}
 
-	if (str[0]=='-') {
-		r_config_rm (cfg, str+1);
+	if (str[0] == '-') {
+		r_config_rm (cfg, str + 1);
 		return false;
 	}
 
 	ptr = strchr (str, '=');
 	if (ptr) {
 		/* set */
-		ptr[0]='\0';
+		ptr[0] = '\0';
 		a = r_str_chop (name);
-		b = r_str_chop (ptr+1);
+		b = r_str_chop (ptr + 1);
 		r_config_set (cfg, a, b);
 	} else {
 		char *foo = r_str_chop (name);
-		if (foo[strlen(foo)-1]=='.') {
+		if (foo[strlen (foo) - 1]=='.') {
 			r_config_list (cfg, name, 0);
 			return false;
 		} else {
 			/* get */
 			const char *str = r_config_get(cfg, foo);
-			if (str)
-				cfg->cb_printf ("%s\n",
-					(((int)(size_t)str)==1)?"true":str);
+			if (str) cfg->cb_printf ("%s\n",
+					(((int)(size_t)str) == 1) ? "true" : str);
 		}
 	}
 	return true;
@@ -384,16 +382,15 @@ R_API int r_config_readonly (RConfig *cfg, const char *key) {
 
 R_API RConfig *r_config_new(void *user) {
 	RConfig *cfg = R_NEW (RConfig);
-	if (cfg) {
-		cfg->ht = r_hashtable_new ();
-		cfg->nodes = r_list_new ();
-		cfg->nodes->free = r_config_node_free;
-		cfg->user = user;
-		cfg->num = NULL;
-		cfg->n_nodes = 0;
-		cfg->lock = 0;
-		cfg->cb_printf = (void *)printf;
-	}
+	if (!cfg) return NULL;
+	cfg->ht = r_hashtable_new ();
+	cfg->nodes = r_list_new ();
+	cfg->nodes->free = r_config_node_free;
+	cfg->user = user;
+	cfg->num = NULL;
+	cfg->n_nodes = 0;
+	cfg->lock = 0;
+	cfg->cb_printf = (void *)printf;
 	return cfg;
 }
 
