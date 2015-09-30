@@ -1,4 +1,4 @@
-FILES=6502 x86 arm ppc z80 mips
+FILES=6502 x86 arm avr ppc z80 mips
 F_SDB=$(addsuffix .sdb,${FILES})
 SDB=../../../shlr/sdb/sdb
 include ../../../config-user.mk
