@@ -3165,6 +3165,9 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	idx = 0;
 	r_cons_break (NULL, NULL);
 	handle_print_esil_anal_init (core, ds);
+
+	if (core->io && core->io->debug)
+		r_debug_map_sync (core->dbg);
 	r_list_foreach (bb_list, bb_iter, bb) {
 		ut32 bb_size_consumed = 0;
 		// internal loop to consume bb that contain case-like operations

@@ -1994,6 +1994,8 @@ reread:
 		} else eprintf ("Missing regex\n");
 		break;
 	case 'E':
+		if (core->io && core->io->debug)
+			r_debug_map_sync (core->dbg);
 		do_esil_search (core, &param, input);
 		goto beach;
 	case 'd': /* search delta key */
