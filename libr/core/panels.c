@@ -603,7 +603,8 @@ repeat:
 			} else if (strstr (action, "FcnInfo")) {
 				addPanelFrame ("FcnInfo", "afi", 0);
 			} else if (strstr (action, "Graph")) {
-				addPanelFrame ("Graph", "agf", 0);
+				r_core_visual_graph (core, NULL, true);
+			//	addPanelFrame ("Graph", "agf", 0);
 			} else if (strstr (action, "System Shell")) {
 				r_cons_set_raw (0);
 				r_cons_flush ();
