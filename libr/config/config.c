@@ -120,10 +120,9 @@ R_API const char *r_config_get(RConfig *cfg, const char *name) {
 		if (node->getter) node->getter (cfg->user, node);
 		cfg->last_notfound = 0;
 		if (node->flags & CN_BOOL)
-			return (const char *)
-				(((!strcmp ("true", node->value))
-				  || (!strcmp ("1", node->value)))?
-				  (const char *)"true":"false"); // XXX (char*)1 is ugly
+			return (const char *) (((!strcmp ("true", node->value))
+					|| (!strcmp ("1", node->value)))?
+					(const char *)"true" : "false"); // XXX (char*)1 is ugly
 		return node->value;
 	} else {
 		eprintf ("r_config_get: variable '%s' not found\n", name);
@@ -174,35 +173,38 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 	RConfigNode *node;
 	char *ov = NULL;
 	ut64 oi;
-	if (!cfg || strnull (name))
-		return NULL;
+	if (!cfg || strnull (name)) return NULL;
 	node = r_config_node_get (cfg, name);
-	// TODO: store old value somewhere..
 	if (node) {
 		if (node->flags & CN_RO) {
 			eprintf ("(error: '%s' config key is read only)\n", name);
 			return node;
 		}
 		oi = node->i_value;
-		if (node->value)
+		if (node->value) {
 			ov = strdup (node->value);
-		else node->value = strdup ("");
-		free (node->value);
+		}
+		else {
+			free (node->value);
+			node->value = strdup ("");
+		}
 		if (node->flags & CN_BOOL) {
 			int b = (!strcmp (value,"true") || !strcmp (value,"1"));
-			node->i_value = (ut64)(b==0)?0:1;
-			node->value = strdup (b?"true":"false");
+			node->i_value = (ut64)(b == 0) ? 0:1;
+			node->value = strdup (b ? "true" : "false");
 		} else {
 			if (value == NULL) {
 				node->value = strdup ("");
 				node->i_value = 0;
 			} else {
 				node->value = strdup (value);
-				if (*value>='0' && *value<='9') {
+				if (*value >= '0' && *value <= '9') {
 					if (strchr (value, '/'))
 						node->i_value = r_num_get (cfg->num, value);
 					else node->i_value = r_num_math (cfg->num, value);
-				} else node->i_value = 0;
+				} else {
+					node->i_value = 0;
+				}
 				node->flags |= CN_INT;
 			}
 		}
@@ -222,14 +224,15 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 				}
 			} else
 				eprintf ("r_config_set: unable to create a new RConfigNode\n");
-		} else eprintf ("r_config_set: variable '%s' not found\n", name);
+		} else {
+			eprintf ("r_config_set: variable '%s' not found\n", name);
+		}
 	}
 
 	if (node && node->setter) {
 		int ret = node->setter (cfg->user, node);
 		if (ret == false) {
-			if (oi != UT64_MAX)
-				node->i_value = oi;
+			if (oi != UT64_MAX) node->i_value = oi;
 			free (node->value);
 			node->value = strdup (ov ? ov : "");
 			free (ov);
