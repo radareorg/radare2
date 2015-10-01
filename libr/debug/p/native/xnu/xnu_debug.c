@@ -444,7 +444,7 @@ task_t pid_to_task (int pid) {
 
 RDebugPid *xnu_get_pid (int pid) {
 	int psnamelen, foo, nargs, mib[3];
-	size_t size, argmax = 2048;
+	size_t size, argmax = 4096;
 	char *curr_arg, *start_args, *iter_args, *end_args;
 	char *procargs = NULL;
 	char psname[4096];
