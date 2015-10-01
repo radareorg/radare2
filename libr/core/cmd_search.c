@@ -747,6 +747,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 	RAnalOp analop = {0};
 	RAsmOp asmop;
 	int colorize = r_config_get_i (core->config, "scr.color");
+	int rop_comments = r_config_get_i (core->config, "rop.comments");
 
 	switch (mode) {
 	case 'j':
@@ -797,6 +798,8 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 	default:
 		// Print gadgets with new instruction on a new line.
 		r_list_foreach (hitlist, iter, hit) {
+			char *comment = rop_comments ?r_meta_get_string (core->anal,
+					R_META_TYPE_COMMENT, hit->addr) : NULL;
 			ut8 *buf = malloc (hit->len);
 			r_core_read_at (core, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
@@ -808,13 +811,23 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 				buf_hex = r_print_colorize_opcode (asmop.buf_hex,
 						core->cons->pal.reg, core->cons->pal.num);
 				otype = r_print_color_op_type (core->print, analop.type);
-				r_cons_printf ("  0x%08"PFMT64x" %s%18s  %s%s\n",
-						hit->addr, otype, buf_hex, buf_asm, Color_RESET);
+				if (comment) {
+					r_cons_printf ("  0x%08"PFMT64x" %s%18s  %s%s ; %s\n",
+							hit->addr, otype, buf_hex, buf_asm, Color_RESET, comment);
+				} else {
+					r_cons_printf ("  0x%08"PFMT64x" %s%18s  %s%s\n",
+							hit->addr, otype, buf_hex, buf_asm, Color_RESET);
+				}
 				free (buf_asm);
 				free (buf_hex);
 			} else {
+				if (comment) {
+					r_cons_printf ("  0x%08"PFMT64x" %18s  %s ; %s\n",
+							hit->addr, asmop.buf_hex, asmop.buf_asm, comment);
+				} else {
 				r_cons_printf ("  0x%08"PFMT64x" %18s  %s\n",
 						hit->addr, asmop.buf_hex, asmop.buf_asm);
+				}
 			}
 			free (buf);
 		}

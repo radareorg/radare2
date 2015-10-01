@@ -1477,6 +1477,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("rop.subchains", "false", "Display every length gadget from rop.len=X to 2 in /Rl");
 	SETPREF("rop.conditional", "false", "Include conditional jump, calls and returns in ropsearch");
 	SETPREF("rop.nx", "false", "Include NX/XN/XD sections in ropsearch");
+	SETPREF("rop.comments", "false", "Include NX/XN/XD sections in ropsearch");
 
 	/* io */
 	SETICB("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");
