@@ -101,11 +101,9 @@ static RList* entries(RBinFile *arch) {
 }
 
 static RList* sections(RBinFile *arch) {
-	bool big_endian = false;
 	RBinSection *ptr = NULL;
 	RList *ret = NULL;
 	int rc;
-	ut64 textsize;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -153,7 +151,7 @@ static RList* sections(RBinFile *arch) {
 
 static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
-	int bits = 16, big_endian = 0;
+	const int bits = 16;
 	if ((ret = R_NEW0 (RBinInfo)) == NULL)
 		return NULL;
 	ret->file = strdup (arch->file);
@@ -169,8 +167,8 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->has_crypto = true; // must be false if there' no sign or cert sections
 	ret->has_pi = false;
 	ret->has_nx = false;
-	ret->big_endian = big_endian;
-	ret->dbg_info = 0;
+	ret->big_endian = false;
+	ret->dbg_info = false;
 	return ret;
 }
 

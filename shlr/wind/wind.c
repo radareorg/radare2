@@ -121,7 +121,7 @@ struct _WindCtx {
 	int is_x64;
 	Profile *os_profile;
 	RList *plist_cache;
-	uint64_t dbg_addr;
+	ut64 dbg_addr;
 	WindProc *target;
 };
 
@@ -165,9 +165,9 @@ uint32_t wind_get_target (WindCtx *ctx) {
 	return ctx->target? ctx->target->uniqueid: 0;
 }
 
-uint64_t wind_get_target_base (WindCtx *ctx) {
-	uint64_t ppeb;
-	uint64_t base = 0;
+ut64 wind_get_target_base (WindCtx *ctx) {
+	ut64 ppeb;
+	ut64 base = 0;
 
 	if (!ctx || !ctx->io_ptr || !ctx->syncd || !ctx->target)
 		return 0;
@@ -289,9 +289,9 @@ typedef struct {
 } __attribute__((packed)) mmvad_short;
 
 int
-wind_walk_vadtree (WindCtx *ctx, uint64_t address, uint64_t parent) {
+wind_walk_vadtree (WindCtx *ctx, ut64 address, ut64 parent) {
 	mmvad_short entry = {{0}};
-	uint64_t start, end;
+	ut64 start, end;
 	int prot;
 
 	if (wind_read_at(ctx, (uint8_t *)&entry, address - 0x4, sizeof(mmvad_short)) != sizeof (mmvad_short)) {
@@ -322,7 +322,7 @@ wind_walk_vadtree (WindCtx *ctx, uint64_t address, uint64_t parent) {
 RList*
 wind_list_process (WindCtx *ctx) {
 	RList *ret;
-	uint64_t ptr, base;
+	ut64 ptr, base;
 
 	if (!ctx || !ctx->io_ptr || !ctx->syncd)
 		return NULL;
@@ -345,7 +345,7 @@ wind_list_process (WindCtx *ctx) {
 
 	do {
 		uint8_t buf[17];
-		uint64_t next;
+		ut64 next;
 
 		next = 0;
 		// Read the ActiveProcessLinks entry
@@ -359,10 +359,10 @@ wind_list_process (WindCtx *ctx) {
 		wind_read_at(ctx, (uint8_t *)&buf, ptr + O_(E_ImageFileName), 16);
 		buf[16] = '\0';
 
-		uint64_t vadroot = 0;
-		uint64_t uniqueid = 0;
-		uint64_t peb = 0;
-		uint64_t dir_base_table = 0;
+		ut64 vadroot = 0;
+		ut64 uniqueid = 0;
+		ut64 peb = 0;
+		ut64 dir_base_table = 0;
 
 		wind_read_at(ctx, (uint8_t *)&vadroot, ptr + O_(E_VadRoot), 4 << ctx->is_x64);
 		wind_read_at(ctx, (uint8_t *)&uniqueid, ptr + O_(E_UniqueProcessId), 4 << ctx->is_x64);
@@ -395,9 +395,9 @@ wind_list_process (WindCtx *ctx) {
 // http://blogs.msdn.com/b/ntdebugging/archive/2010/02/05/understanding-pte-part-1-let-s-get-physical.aspx
 // http://blogs.msdn.com/b/ntdebugging/archive/2010/04/14/understanding-pte-part2-flags-and-large-pages.aspx
 // http://blogs.msdn.com/b/ntdebugging/archive/2010/06/22/part-3-understanding-pte-non-pae-and-x64.aspx
-bool wind_va_to_pa (WindCtx *ctx, uint64_t va, uint64_t *pa) {
-	uint64_t pml4i, pdpi, pdi, pti;
-	uint64_t tmp, mask;
+bool wind_va_to_pa (WindCtx *ctx, ut64 va, ut64 *pa) {
+	ut64 pml4i, pdpi, pdi, pti;
+	ut64 tmp, mask;
 
 	// We shouldn't really reach this
 	if (!ctx->target)
@@ -540,7 +540,7 @@ bool wind_read_ver (WindCtx *ctx) {
 
 	ctx->is_x64 = (rr->r_ver.machine == KD_MACH_AMD64);
 
-	uint64_t ptr = 0;
+	ut64 ptr = 0;
 	if (!wind_read_at(ctx, (uint8_t *)&ptr, rr->r_ver.dbg_addr, 4 << ctx->is_x64)) {
 		free(pkt);
 		return false;
@@ -731,7 +731,7 @@ wind_read_reg (WindCtx *ctx, uint8_t *buf, int size) {
 }
 
 int
-wind_query_mem (WindCtx *ctx, const uint64_t addr, int *address_space, int *flags) {
+wind_query_mem (WindCtx *ctx, const ut64 addr, int *address_space, int *flags) {
 	kd_req_t req;
 	kd_packet_t *pkt;
 	int ret;
@@ -784,7 +784,7 @@ wind_query_mem (WindCtx *ctx, const uint64_t addr, int *address_space, int *flag
 
 }
 
-int wind_bkpt (WindCtx *ctx, const uint64_t addr, const int set, const int hw, int *handle) {
+int wind_bkpt (WindCtx *ctx, const ut64 addr, const int set, const int hw, int *handle) {
 	kd_req_t req = {0};
 	kd_packet_t *pkt;
 	int ret;
@@ -829,7 +829,7 @@ int wind_bkpt (WindCtx *ctx, const uint64_t addr, const int set, const int hw, i
 	return ret;
 }
 
-int wind_read_at_phys (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count) {
+int wind_read_at_phys (WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count) {
 	kd_req_t req = {0}, *rr;
 	kd_packet_t *pkt;
 	int ret;
@@ -874,7 +874,7 @@ int wind_read_at_phys (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const 
 	return ret;
 }
 
-int wind_read_at (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int count) {
+int wind_read_at (WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count) {
 	kd_req_t *rr, req = {0};
 	kd_packet_t *pkt;
 	int ret;
@@ -913,7 +913,7 @@ int wind_read_at (WindCtx *ctx, uint8_t *buf, const uint64_t offset, const int c
 	return ret;
 }
 
-int wind_write_at (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, const int count) {
+int wind_write_at (WindCtx *ctx, const uint8_t *buf, const ut64 offset, const int count) {
 	kd_packet_t *pkt;
 	kd_req_t req = {0}, *rr;
 	int payload, ret;
@@ -958,7 +958,7 @@ int wind_write_at (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, cons
 }
 
 int
-wind_write_at_phys (WindCtx *ctx, const uint8_t *buf, const uint64_t offset, const int count) {
+wind_write_at_phys (WindCtx *ctx, const uint8_t *buf, const ut64 offset, const int count) {
 	kd_packet_t *pkt;
 	kd_req_t req;
 	int ret;
