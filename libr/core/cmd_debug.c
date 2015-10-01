@@ -2717,6 +2717,24 @@ static int cmd_debug(void *data, const char *input) {
 			r_asm_code_free (acode);
 			}
 			break;
+		case 'e':
+			{
+			REgg *egg = core->egg;
+			RBuffer *b;
+			const char *asm_arch = r_config_get (core->config, "asm.arch");
+			int asm_bits = r_config_get_i (core->config, "asm.bits");
+			const char *asm_os = r_config_get (core->config, "asm.os");
+			r_egg_setup (egg, asm_arch, asm_bits, 0, asm_os);
+			r_egg_reset (egg);
+			r_egg_load (egg, input+1, 0);
+			r_egg_compile (egg);
+			b = r_egg_get_bin (egg);
+			r_asm_set_pc (core->assembler, core->offset);
+			r_reg_arena_push (core->dbg->reg);
+			r_debug_execute (core->dbg, b->buf, b->length, 0);
+			r_reg_arena_pop (core->dbg->reg);
+			}
+			break;
 		case 's':
 			if (input[2]) {
 				r_cons_push ();
@@ -2762,6 +2780,8 @@ static int cmd_debug(void *data, const char *input) {
 			const char* help_msg[] = {
 			"Usage: dx", "", " # Code injection commands",
 			"dx", " <opcode>...", "Inject opcodes",
+			"dxa", " nop", "Assemble code and inject",
+			"dxe", " egg-expr", "compile egg expression and inject it",
 			"dxr", " <opcode>...", "Inject opcodes and restore state",
 			"dxs", " write 1, 0x8048, 12", "Syscall injection (see gs)",
 			"\nExamples:", "", "",
