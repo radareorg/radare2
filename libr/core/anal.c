@@ -57,7 +57,8 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 		RDebugMap *map;
 		RListIter *iter;
 		// use 'dm'
-		r_debug_map_sync (core->dbg);
+		// XXX: this line makes r2 debugging MUCH slower
+		// r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				if (map->name && map->name[0] == '/') {
