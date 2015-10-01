@@ -112,7 +112,7 @@ static int sparse_limits(RList *l, ut64 *min, ut64 *max) {
 R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len) {
 	RBuffer *b = r_buf_new ();
 	if (bytes && (len > 0 && len != UT64_MAX)) {
-		b->buf = bytes;
+		b->buf = (ut8*)bytes;
 		b->length = len;
 		b->empty = false;
 		b->ro = true;

@@ -2051,8 +2051,26 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 		r_debug_esil_watch_reset (core->dbg);
 		break;
 	case 's':
-		if (input[1] == '?' || !input[1]) {
-			eprintf ("Usage: des [num-of-instructions]\n");
+		if (input[1] == 'u' && input[2] == ' ') { // "desu"
+			ut64 addr, naddr, fin = r_num_math (core->num, input+2);
+			r_core_cmd0 (core, "aei");
+			addr = r_debug_reg_get (core->dbg, "pc");
+			while (addr != fin) {
+				r_debug_esil_prestep (core->dbg, r_config_get_i (
+					core->config, "esil.prestep"));
+				r_debug_esil_step (core->dbg, 1);
+				naddr = r_debug_reg_get (core->dbg, "pc");
+				if (naddr == addr) {
+					eprintf ("Detected loophole\n");
+					break;
+				}
+				addr = naddr;
+			}
+		} else if (input[1] == '?' || !input[1]) {
+			// TODO: use r_core_help here
+			eprintf ("Usage: des[u] [arg]\n");
+			eprintf (" des [num-of-instructions]\n");
+			eprintf (" desu [address]\n");
 		} else {
 			r_core_cmd0 (core, "aei");
 			r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
@@ -2085,6 +2103,7 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 		eprintf ("> de x m FROM..TO  # stop when rip in range\n");
 		eprintf ("> dec              # continue execution until matching expression\n");
 		eprintf ("> des [num]        # step-in N instructions with esildebug\n");
+		eprintf ("> desu [addr]      # esildebug until specific address\n");
 		eprintf ("TODO: Add support for conditionals in expressions like rcx == 4 or rcx<10\n");
 		eprintf ("TODO: Turn on/off debugger trace of esil debugging\n");
 		break;

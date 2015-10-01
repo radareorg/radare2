@@ -1010,7 +1010,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d"}",
 				iter->p?",":"", str,
-				sn.demname,
+				sn.demname? sn.demname: "",
 				sn.nameflag,
 				symbol->size,
 				addr, symbol->paddr);
