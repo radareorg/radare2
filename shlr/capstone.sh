@@ -8,7 +8,7 @@ if [ -d capstone -a ! -d capstone/.git ]; then
 	echo "[capstone] release with no git?"
 else 
 	if [ ! -d capstone ]; then 
-		git clone "${CS_URL}" capstone
+		git clone "${CS_URL}" capstone || exit 1
 	fi
 	cd capstone || exit 1
 	if [ -n "${CS_REV}" ]; then
@@ -25,7 +25,7 @@ else
 	echo "TIP ${CS_TIP}"
 
 	git reset --hard @^^^
-	git checkout "${CS_BRA}"
+	git checkout "${CS_BRA}" || exit 1
 	git pull
 	if [ -n "${CS_TIP}" ]; then
 		git reset --hard "${CS_TIP}"

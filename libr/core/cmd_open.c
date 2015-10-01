@@ -199,7 +199,6 @@ static void reopen_in_debug(RCore *core, const char *args) {
 	RCoreFile *ofile = core->file;
 	RBinFile *bf = NULL;
 	char *binpath = NULL;
-	char *ofilepath = NULL;
 	if (!ofile || !ofile->desc || !ofile->desc->uri || !ofile->desc->fd) {
 		eprintf ("No file open?\n");
 		return;

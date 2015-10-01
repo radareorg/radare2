@@ -40,8 +40,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 				eprintf ("r_debug_reg: error reading registers\n");
 				free (buf);
 				return false;
-			} else
-				r_reg_set_bytes (dbg->reg, i, buf, R_MIN(size, bufsize));
+			} else r_reg_set_bytes (dbg->reg, i, buf, R_MIN(size, bufsize));
 
 			free (buf);
 		}

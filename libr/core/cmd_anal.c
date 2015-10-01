@@ -1534,6 +1534,7 @@ static void cmd_esil_mem (RCore *core, const char *input) {
 	char name[128];
 	RCoreFile *cf;
 	RFlagItem *fi;
+	const char *sp;
 	char uri[32];
 	char nomalloc[256];
 	char *p;
@@ -1582,7 +1583,8 @@ static void cmd_esil_mem (RCore *core, const char *input) {
 	//	PFMT64x"`", stack_size, stack_addr);
 	//r_core_cmdf (core, "f stack=0x%08"PFMT64x, stack_addr);
 	//r_core_cmdf (core, "dr %s=0x%08"PFMT64x, sp, stack_ptr);
-	//r_debug_reg_set (core->dbg, sp, stack_ptr);
+	sp = r_reg_get_name (core->dbg->reg, R_REG_NAME_SP);
+	r_debug_reg_set (core->dbg, sp, addr + (size/2));
 	//r_core_cmdf (core, "ar %s=0x%08"PFMT64x, sp, stack_ptr);
 	//r_core_cmdf (core, "f %s=%s", sp, sp);
 	r_core_seek (core, curoff, 0);
