@@ -1476,7 +1476,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("search.flags", "true", "All search results are flagged, otherwise only printed");
 	SETI("search.maxhits", 0, "Maximum number of hits (0: no limit)");
 	SETI("search.from", -1, "Search start address");
-	SETCB("search.in", "file", &cb_searchin, "Specify search boundaries (raw, block, file, section)");
+	SETCB("search.in", "file", &cb_searchin, "Specify search boundaries (raw, block, file, section, range)");
 	SETICB("search.kwidx", 0, &cb_search_kwidx, "Store last search index count");
 	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
 	SETPREF("search.show", "true", "Show search results");
