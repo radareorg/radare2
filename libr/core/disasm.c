@@ -721,7 +721,7 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 	const char *section = "";
 	if (ds->show_section)
 		section = getSectionName (core, ds->at);
-	if (ds->show_functions) {
+	if (ds->show_functions && ds->show_fcnlines) {
 		if (ds->show_color) {
 			r_cons_printf ("%s%s"Color_RESET, ds->color_fline, f?ds->pre:"  ");
 		} else {
@@ -883,8 +883,8 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 		}
 	} else {
 		const char *fmt = ds->show_color?
-			"%s%s "Color_RESET"%s(%s) %s"Color_RESET" %d\n":
-			"%s (%s) %s %d\n";
+			"%s%s%s"Color_RESET"%s(%s) %s"Color_RESET" %d\n":
+			"%s%s(%s) %s %d\n";
 #if SLOW_BUT_OK
 		int corner = (f->size <= ds->analop.size)? RDWN_CORNER: LINE_VERT;
 		corner = LINE_VERT; // 99% of cases
@@ -893,14 +893,15 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 		if (item)
 			corner = 0;
 #endif
+		const char *space = ds->show_fcnlines ? " " : "";
 		handle_set_pre (ds, core->cons->vline[RUP_CORNER]);
 		if (ds->show_color) {
-			r_cons_printf (fmt, ds->color_fline, ds->pre, ds->color_fname,
+			r_cons_printf (fmt, ds->color_fline, ds->pre, space, ds->color_fname,
 				(f->type==R_ANAL_FCN_TYPE_FCN || f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
 				(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
 				f->name, f->size);
 		} else {
-			r_cons_printf (fmt, ds->pre,
+			r_cons_printf (fmt, ds->pre, space,
 				(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
 				(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
 				f->name, f->size);
@@ -909,7 +910,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 	if (sign) r_cons_printf ("// %s\n", sign);
 	R_FREE (sign);
 	handle_set_pre (ds, core->cons->vline[LINE_VERT]);
-	ds->pre = r_str_concat (ds->pre, " ");
+	if (ds->show_fcnlines) ds->pre = r_str_concat (ds->pre, " ");
 	ds->stackptr = 0;
 	if (ds->vars) {
 		char spaces[32];
@@ -927,7 +928,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 			if (idx<0)idx = 0;
 			spaces[idx] = 0;
 			if (!ds->show_fcnlines) {
-				r_cons_printf (" %s", ds->refline2);
+				r_cons_printf ("%s", ds->refline2);
 			}
 			if (ds->show_color) {
 				if (ds->show_fcnlines) {
@@ -974,7 +975,9 @@ static void handle_print_pre (RCore *core, RDisasmState *ds) {
 				} else {
 					handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 				}
-				ds->pre = r_str_concat (ds->pre, " ");
+				if (ds->show_fcnlines) {
+					ds->pre = r_str_concat (ds->pre, " ");
+				}
 				if (ds->show_color) {
 					r_cons_printf ("%s%s"Color_RESET, ds->color_fline, ds->pre);
 				} else {
@@ -982,7 +985,9 @@ static void handle_print_pre (RCore *core, RDisasmState *ds) {
 				}
 			} else if (f->addr+f->size-ds->analop.size== ds->at) {
 				handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
-				ds->pre = r_str_concat (ds->pre, " ");
+				if (ds->show_fcnlines) {
+					ds->pre = r_str_concat (ds->pre, " ");
+				}
 				if (ds->show_color) {
 					r_cons_printf ("%s%s"Color_RESET, ds->color_fline, ds->pre);
 				} else {
@@ -990,7 +995,9 @@ static void handle_print_pre (RCore *core, RDisasmState *ds) {
 				}
 			} else if (ds->at > f->addr && ds->at < f->addr+f->size-1) {
 				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
-				ds->pre = r_str_concat (ds->pre, " ");
+				if (ds->show_fcnlines) {
+					ds->pre = r_str_concat (ds->pre, " ");
+				}
 				if (ds->show_color) {
 					r_cons_printf ("%s%s"Color_RESET, ds->color_fline, ds->pre);
 				} else {
@@ -1000,15 +1007,10 @@ static void handle_print_pre (RCore *core, RDisasmState *ds) {
 		} else {
 			if (ds->show_lines) {
 				r_cons_printf ("  ");
-			} else {
+			} else if (ds->show_fcnlines) {
 				r_cons_printf (" ");
 			}
 		}
-		// if (f && ds->at == f->addr+f->size-ds->analop.size) { // HACK
-		// 	//ds->pre = R_LINE_BOTTOM_DCORNER" ";
-		// 	handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
-		// 	ds->pre = r_str_concat (ds->pre, " ");
-		// }
 	}
 }
 
@@ -1103,11 +1105,13 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 
 static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 	if (ds->show_flags) {
-		const char *endch;
+		const char *beginch;
 		RFlagItem *flag;
 		RListIter *iter;
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		const RList /*RFlagList*/ *flaglist = r_flag_get_list (core->flags, ds->at);
+		bool printed = false;
+
 		r_list_foreach (flaglist, iter, flag) {
 			if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 				// do not show flags that have the same name as the function
@@ -1116,30 +1120,17 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 			beginline (core, ds, f);
 			if (ds->show_offset) r_cons_printf (";-- ");
 			if (ds->show_color) r_cons_strcat (ds->color_flag);
-			endch = (iter->n)? ", ": ":\n";
+			beginch = (iter->p && printed) ? ", " : "";
 			if (ds->asm_demangle) {
 				if (ds->show_functions) r_cons_printf ("%s:\n", flag->realname);
-				else r_cons_printf ("%s%s", flag->realname, endch);
+				else r_cons_printf ("%s%s", beginch, flag->realname);
 			} else {
 				if (ds->show_functions) r_cons_printf ("%s:\n", flag->name);
-				else r_cons_printf ("%s%s", flag->name, endch);
+				else r_cons_printf ("%s%s", beginch, flag->name);
 			}
+			printed = true;
 		}
-#if 0
-		RFlagItem *flag = r_flag_get_i (core->flags, ds->at);
-		if (flag && (!f || (f && strcmp (f->name, flag->name)))) {
-			beginline (core, ds, f);
-			if (ds->show_offset) r_cons_printf (";-- ");
-			if (ds->show_color) r_cons_strcat (ds->color_flag);
-			if (ds->asm_demangle) {
-				if (ds->show_functions) r_cons_printf ("%s:\n", flag->realname);
-				else r_cons_printf ("%s:\n", flag->realname);
-			} else {
-				if (ds->show_functions) r_cons_printf ("%s:\n", flag->name);
-				else r_cons_printf ("%s:\n", flag->name);
-			}
-		}
-#endif
+		if (printed && !ds->show_functions) r_cons_printf (":\n");
 	}
 }
 
@@ -1832,9 +1823,9 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 					if (cmtright) {
 						handle_comment_align (core, ds);
 						if (ds->show_color)
-							r_cons_printf (" "Color_RESET"%s;%s%s"Color_RESET,
+							r_cons_printf (" "Color_RESET"%s; %s%s"Color_RESET,
 								ds->pal_comment, ccstr, tmp);
-						else r_cons_printf (" ;%s%s", ccstr, tmp);
+						else r_cons_printf (" ; %s%s", ccstr, tmp);
 					} else {
 						if (ds->show_color)
 							r_cons_printf ("\n%s%s%s%s%s  "Color_RESET"^-%s %s%s"Color_RESET,
