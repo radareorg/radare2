@@ -12,7 +12,6 @@
 #include <sys/stat.h>
 #if __APPLE__
 #include <spawn.h>
-#include <util.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -38,6 +37,9 @@
 #if __linux__ && !__ANDROID__
 #include <sys/personality.h>
 #include <pty.h>
+#endif
+#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <util.h>
 #endif
 #endif
 
