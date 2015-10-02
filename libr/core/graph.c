@@ -1435,6 +1435,42 @@ static void set_layout(RAGraph *g) {
 	r_list_free (g->back_edges);
 }
 
+static char *get_body_bb (RCore *core, RAnalBlock *bb, bool is_simple_mode) {
+	char *body;
+	int o_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
+	int o_lines = r_config_get_i (core->config, "asm.lines");
+	int o_bytes = r_config_get_i (core->config, "asm.bytes");
+	int o_cmtcol = r_config_get_i (core->config, "asm.cmtcol");
+	int o_marks = r_config_get_i (core->config, "asm.marks");
+	int o_offset = r_config_get_i (core->config, "asm.offset");
+	int o_vmode = core->vmode;
+	// configure options
+	r_config_set_i (core->config, "asm.fcnlines", false);
+	r_config_set_i (core->config, "asm.lines", false);
+	r_config_set_i (core->config, "asm.cmtcol", 0);
+	r_config_set_i (core->config, "asm.marks", false);
+	core->vmode = false;
+
+	if (is_simple_mode) {
+		r_config_set_i (core->config, "asm.bytes", false);
+		r_config_set_i (core->config, "asm.offset", false);
+	} else {
+		r_config_set_i (core->config, "asm.offset", true);
+		r_config_set_i (core->config, "asm.bytes", true);
+	}
+	body = r_core_cmd_strf (core,
+		"pD %d @ 0x%08"PFMT64x, bb->size, bb->addr);
+	// restore original options
+	core->vmode = o_vmode;
+	r_config_set_i (core->config, "asm.fcnlines", o_fcnlines);
+	r_config_set_i (core->config, "asm.lines", o_lines);
+	r_config_set_i (core->config, "asm.bytes", o_bytes);
+	r_config_set_i (core->config, "asm.cmtcol", o_cmtcol);
+	r_config_set_i (core->config, "asm.marks", o_marks);
+	r_config_set_i (core->config, "asm.offset", o_offset);
+	return body;
+}
+
 static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
@@ -1446,13 +1482,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (bb->addr == UT64_MAX)
 			continue;
 
-		if (g->is_simple_mode) {
-			body = r_core_cmd_strf (core,
-					"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
-		} else {
-			body = r_core_cmd_strf (core,
-					"pDi %d @ 0x%08"PFMT64x, bb->size, bb->addr);
-		}
+		body = get_body_bb (core, bb, g->is_simple_mode);
 		title = get_title (bb->addr);
 		node = r_agraph_get_node (g, title);
 		if (node) {
@@ -1477,13 +1507,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (bb->addr == UT64_MAX)
 			continue;
 
-		if (g->is_simple_mode) {
-			body = r_core_cmd_strf (core,
-					"pI %d @ 0x%08"PFMT64x, bb->size, bb->addr);
-		} else {
-			body = r_core_cmd_strf (core,
-					"pDi %d @ 0x%08"PFMT64x, bb->size, bb->addr);
-		}
+		body = get_body_bb (core, bb, g->is_simple_mode);
 		title = get_title (bb->addr);
 
 		node = r_agraph_add_node (g, title, body);
@@ -2591,10 +2615,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			  r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
 			  break;
 		case ':':
-			  core->vmode = false;
-			  r_core_visual_prompt_input (core);
-			  core->vmode = true;
-			  break;
+		{
+			r_core_visual_prompt_input (core);
+			break;
+		}
 		case 'w':
 			  agraph_toggle_speed (g, core);
 			  break;
