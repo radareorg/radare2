@@ -2459,13 +2459,14 @@ static void agraph_print_edge (RANode *from, RANode *to) {
 	free (cmd);
 }
 
-static void cmd_agraph_node (RCore *core, const char *input) {
+static void cmd_agraph_node(RCore *core, const char *input) {
 	const char *help_msg[] = {
 		"Usage:", "agn [title] [body]", "",
 		"Examples:", "", "",
 		"agn", " title1 body1", "Add a node with title \"title1\" and body \"body1\"",
 		"agn", " \"title with space\" \"body with space\"", "Add a node with spaces in the title and in the body",
 		"agn", " title1 base64:Ym9keTE=", "Add a node with the body specified as base64",
+		"agn-", " title1", "Remove a node with title \"title1\"",
 		"agn?", "", "Show this help",
 		NULL};
 
@@ -2503,6 +2504,22 @@ static void cmd_agraph_node (RCore *core, const char *input) {
 		//free newbody it's not necessary since r_str_concat reallocate the space
 		break;
 	}
+	case '-':
+	{
+		char **args;
+		int n_args;
+
+		input++;
+		args = r_str_argv (input, &n_args);
+		if (n_args != 1) {
+			r_cons_printf ("Wrong arguments\n");
+			r_str_argv_free (args);
+			break;
+		}
+		r_agraph_del_node (core->graph, args[0]);
+		r_str_argv_free (args);
+		break;
+	}
 	case '?':
 	default:
 		r_core_cmd_help (core, help_msg);
@@ -2510,24 +2527,25 @@ static void cmd_agraph_node (RCore *core, const char *input) {
 	}
 }
 
-static void cmd_agraph_edge (RCore *core, const char *input) {
+static void cmd_agraph_edge(RCore *core, const char *input) {
 	const char *help_msg[] = {
 		"Usage:", "age [title1] [title2]", "",
 		"Examples:", "", "",
 		"age", " title1 title2", "Add an edge from the node with \"title1\" as title to the one with title \"title2\"",
 		"age", " \"title1 with spaces\" title2", "Add an edge from node \"title1 with spaces\" to node \"title2\"",
+		"age-", " title1 title2", "Remove an edge from the node with \"title1\" as title to the one with title \"title2\"",
 		"age?", "", "Show this help",
 		NULL};
 
 	switch (*input) {
 	case ' ':
+	case '-':
 	{
 		RANode *u, *v;
 		char **args;
 		int n_args;
 
-		input++;
-		args = r_str_argv (input, &n_args);
+		args = r_str_argv (input + 1, &n_args);
 		if (n_args != 2) {
 			r_cons_printf("Wrong arguments\n");
 			r_str_argv_free (args);
@@ -2541,7 +2559,11 @@ static void cmd_agraph_edge (RCore *core, const char *input) {
 			r_str_argv_free (args);
 			break;
 		}
-		r_agraph_add_edge (core->graph, u, v);
+		if (*input == ' ') {
+			r_agraph_add_edge (core->graph, u, v);
+		} else {
+			r_agraph_del_edge (core->graph, u, v);
+		}
 		r_str_argv_free (args);
 		break;
 	}
@@ -2552,7 +2574,7 @@ static void cmd_agraph_edge (RCore *core, const char *input) {
 	}
 }
 
-static void cmd_agraph_print (RCore *core, const char *input) {
+static void cmd_agraph_print(RCore *core, const char *input) {
 	switch (*input) {
 	case 'k':
 	{
@@ -2580,7 +2602,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	RList *list;
 	const char *arg;
 	const char* help_msg[] = {
-		"Usage:", "ag[?f]", "Graphviz Code",
+		"Usage:", "ag[?f]", "Graphviz/graph code",
 		"ag", " [addr]", "output graphviz code (bb at addr and children)",
 		"agj", " [addr]", "idem, but in JSON format",
 		"agk", " [addr]", "idem, but in SDB key-value format",
@@ -2591,8 +2613,8 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		"agt", " [addr]", "find paths from current offset to given address",
 		"agf", " [addr]", "Show ASCII art graph of given function",
 		"ag-", "", "Reset the current ASCII art graph",
-		"agn", " title body", "Add a node to the current ASCII art graph",
-		"age", " title1 title2", "Add an edge to the current ASCII art graph",
+		"agn", "[?] title body", "Add a node to the current ASCII art graph",
+		"age", "[?] title1 title2", "Add an edge to the current ASCII art graph",
 		"agg[k*]", "", "Print the current ASCII art graph",
 		"agv", "[acdltfl] [a]", "view function using graphviz",
 		NULL};
@@ -2649,29 +2671,6 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		break;
 	case 'v':
 		r_core_cmd0 (core, "=H /graph/");
-#if 0
-		{
-			int is_html = (r_config_get_i (core->config, "scr.html"));
-			const char *cmd = r_config_get (core->config, "cmd.graph");
-			//char *tmp = r_file_temp ("/tmp/a.dot");
-			char *tmp = strdup ("a.dot"); // XXX
-
-			if (!is_html && strstr (cmd, "htmlgraph")) {
-				is_html = 2;
-				r_config_set (core->config, "scr.html", "true");
-			}
-			r_cons_flush ();
-			int fd = r_cons_pipe_open (tmp, 0);
-			r_core_cmdf (core, "ag%s", input+1);
-			if (is_html==2)
-				r_config_set (core->config, "scr.html", "false");
-			r_cons_flush ();
-			r_cons_pipe_close (fd);
-			r_sys_setenv ("DOTFILE", tmp);
-			r_core_cmdf (core, "%s", cmd);
-			free (tmp);
-		}
-#endif
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);

@@ -134,7 +134,7 @@ R_API RGraphNode *r_graph_add_node (RGraph *t, void *data) {
 
 /* remove the node from the graph and free the node */
 /* users of this function should be aware they can't access n anymore */
-R_API void r_graph_del_node (RGraph *t, RGraphNode *n) {
+R_API void r_graph_del_node(RGraph *t, RGraphNode *n) {
 	RGraphNode *gn;
 	RListIter *it;
 
