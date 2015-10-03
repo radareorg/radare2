@@ -71,9 +71,13 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 }
 
 R_API int r_anal_var_delete (RAnal *a, ut64 addr, const char kind, int scope, int delta) {
+	RAnalVar *av;
 	if (delta<0)
 		delta = -delta;
-	RAnalVar *av = r_anal_var_get (a, addr, kind, scope, delta);
+	av = r_anal_var_get (a, addr, kind, scope, delta);
+	if (!av) {
+		return false;
+	}
 	if (scope>0) {
 		char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x".%c", addr, kind);
 		char *var_key = sdb_fmt (2, "var.0x%"PFMT64x".%c.%d.%d", addr, kind, scope, delta);
