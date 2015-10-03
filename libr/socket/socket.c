@@ -510,7 +510,6 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 		if (ret<1) break;
 		if (ret == len)
 			return len;
-		r_sys_usleep (100); // take breath, wtf
 		delta += ret;
 		len -= ret;
 	}
