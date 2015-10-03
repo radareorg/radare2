@@ -639,6 +639,14 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	// ARM
 	ut64 text = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
 	ut64 text_end = text + bin->size;
+
+	// ARM-Thumb-Linux
+	if (entry & 1 && !memcmp (buf, "\xf0\x00\x0b\x4f\xf0\x00", 6)) {
+		ut32 * ptr = (ut32*)(buf+40-1);
+		if (*ptr &1) {
+			return Elf_(r_bin_elf_v2p) (bin, *ptr -1);
+		}
+	}
 	if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
 		// endian stuff here
 		ut32 *addr = (ut32*)(buf+0x34);
