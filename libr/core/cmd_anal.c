@@ -1671,6 +1671,16 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case '?':
 			eprintf ("See: ae?~aes\n");
 			break;
+		case 'l': // "aesl"
+			{
+			       ut64 pc = r_debug_reg_get (core->dbg, "pc");
+				RAnalOp *op = r_core_anal_op (core, pc);
+				esil_step (core, UT64_MAX, NULL);
+				r_debug_reg_set (core->dbg, "pc", pc + op->size);
+                                r_anal_esil_set_pc (esil, pc + op->size);
+				r_core_cmd0 (core, ".ar*");
+			}
+			break;
 		case 'u': // "aesu"
 			if (input[2] == 'e') {
 				until_expr = input + 3;
