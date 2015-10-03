@@ -1204,6 +1204,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.varxs", "false", "Show accesses of local variables");
 	SETPREF("asm.varsub", "true", "Substitute variables in disassembly");
 	SETPREF("asm.cmtfold", "false", "Fold comments, toggle with Vz");
+	SETPREF("asm.family", "false", "Show family name in disasm");
 	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be used by asm");
 	SETCB("asm.features", "", &cb_asmfeatures, "Specify supported features by the target CPU (=? for help)");
 	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");

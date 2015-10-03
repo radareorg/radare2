@@ -367,10 +367,19 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case X86_INS_CLI:
 		case X86_INS_STI:
-		case X86_INS_CLC:
-		case X86_INS_STC:
 			op->type = R_ANAL_OP_TYPE_SWI;
 			op->family = R_ANAL_OP_FAMILY_PRIV;
+			break;
+		case X86_INS_CLC:
+		case X86_INS_STC:
+		case X86_INS_CLAC:
+		case X86_INS_CLGI:
+		case X86_INS_CLTS:
+		case X86_INS_CLWB:
+		case X86_INS_STAC:
+		case X86_INS_STGI:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			op->family = R_ANAL_OP_FAMILY_CPU;
 			break;
 		// cmov
 		case X86_INS_SETNE:
@@ -432,6 +441,7 @@ SETL/SETNGE
 			}
 			break;
 		// cmov
+		case X86_INS_MOVSS:
 		case X86_INS_CMOVA:
 		case X86_INS_CMOVAE:
 		case X86_INS_CMOVB:
@@ -471,7 +481,6 @@ SETL/SETNGE
 		case X86_INS_MOVSB:
 		case X86_INS_MOVSD:
 		case X86_INS_MOVSQ:
-		case X86_INS_MOVSS:
 		case X86_INS_MOVSX:
 		case X86_INS_MOVSXD:
 		case X86_INS_MOVSW:
@@ -1196,12 +1205,27 @@ SETL/SETNGE
 			break;
 			/* Direction flag */
 		case X86_INS_CLD:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			op->family = R_ANAL_OP_FAMILY_CPU;
 			if (a->decode)
 				esilprintf (op, "0,df,=");
 			break;
 		case X86_INS_STD:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			op->family = R_ANAL_OP_FAMILY_CPU;
 			if (a->decode)
 				esilprintf (op, "1,df,=");
+			break;
+		}
+		switch (insn->id) {
+		case X86_INS_MOVAPS: //cvtss2sd
+		case X86_INS_ADDSD: //cvtss2sd
+		case X86_INS_SUBSD: //cvtss2sd
+		case X86_INS_MULSD: //cvtss2sd
+		case X86_INS_CVTSS2SD: //cvtss2sd
+		case X86_INS_MOVSS:
+		case X86_INS_MOVSD:
+			op->family = R_ANAL_OP_FAMILY_MMX;
 			break;
 		}
 	}

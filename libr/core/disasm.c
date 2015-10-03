@@ -59,6 +59,7 @@ typedef struct r_disam_options_t {
 	int show_dwarf;
 	int show_size;
 	int show_trace;
+	int show_family;
 	int asm_describe;
 	int linesout;
 	int adistrick;
@@ -180,6 +181,7 @@ static void handle_control_flow_comments (RCore * core, RDisasmState *ds);
 static void handle_print_lines_right (RCore *core, RDisasmState *ds);
 static void handle_print_lines_left (RCore *core, RDisasmState *ds);
 static void handle_print_cycles(RCore *core, RDisasmState *ds);
+static void handle_print_family(RCore *core, RDisasmState *ds);
 static void handle_print_stackptr (RCore *core, RDisasmState *ds);
 static void handle_print_offset (RCore *core, RDisasmState *ds );
 static void handle_print_op_size (RCore *core, RDisasmState *ds);
@@ -315,6 +317,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_slow = r_config_get_i (core->config, "asm.slow");
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
+	ds->show_family = r_config_get_i (core->config, "asm.family");
 	ds->cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmtflgrefs");
 	ds->lines_update = r_config_get_i (core->config, "asm.linesup");
@@ -1165,7 +1168,6 @@ static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
 
 static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len) {
 	int ret;
-	// TODO : line analysis must respect data types! shouldnt be interpreted as code
 	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
 	if (ds->asmop.size<1) {
 		ds->asmop.size = 1;
@@ -1184,28 +1186,19 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 	}
 #endif
 	ds->oplen = ds->asmop.size;
-// replace buf_asm to highlight shit
 
-	if (ret<1) { // XXX: move to r_asm_disassemble ()
+	if (ret<1) {
 		ret = -1;
-		//eprintf ("** invalid opcode at 0x%08"PFMT64x" %d %d**\n",
-		//	core->assembler->pc + ret, l, len);
 #if HASRETRY
-//eprintf ("~~~~~~LEN~~~~ %d %d %d\n", l, len, lines);
 		if (!ds->cbytes && ds->tries>0) { //1||l < len)
-//eprintf ("~~~~~~~~~~~~~ %d %d\n", idx, core->blocksize);
 			ds->addr = core->assembler->pc;
 			ds->tries--;
-			//eprintf ("-- %d %d\n", len, r_core_read_at (core, ds->addr, buf, len));
-			//eprintf ("REtry 0x%llx -- %x %x\n", ds->addr, buf[0], buf[1]);
 			ds->idx = 0;
 			ds->retry = 1;
 			return ret;
 		}
 #endif
 		ds->lastfail = 1;
-		//strcpy (ds->asmop.buf_asm, "invalid");
-	//	sprintf (asmop.buf_hex, "%02x", buf[idx]);
 		ds->asmop.size = (ds->hint && ds->hint->size)?
 			ds->hint->size: 1;
 	} else {
@@ -1220,8 +1213,6 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
 	}
-
-	//highlight ("eax", ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm));
 
 	if (ds->acase)
 		r_str_case (ds->asmop.buf_asm, 1);
@@ -1265,6 +1256,13 @@ static void handle_print_lines_left (RCore *core, RDisasmState *ds){
 // XXX line is too long wtf
 			r_cons_printf ("%s%s"Color_RESET, ds->color_flow, ds->line);
 		} else r_cons_printf (ds->line);
+	}
+}
+
+static void handle_print_family (RCore *core, RDisasmState *ds) {
+	if (ds->show_family) {
+		const char *familystr = r_anal_op_family_to_string (ds->analop.family);
+		r_cons_printf ("%5s ", familystr);
 	}
 }
 
@@ -2575,6 +2573,7 @@ toro:
 		handle_print_op_size (core, ds);
 		handle_print_trace (core, ds);
 		handle_print_cycles (core, ds);
+		handle_print_family (core, ds);
 		handle_print_stackptr (core, ds);
 		ret = handle_print_meta_infos (core, ds, buf, len, idx);
 #if 0
@@ -3225,6 +3224,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_op_size (core, ds);
 			handle_print_trace (core, ds);
 			handle_print_cycles (core, ds);
+			handle_print_family (core, ds);
 			handle_print_stackptr (core, ds);
 			ret = handle_print_meta_infos (core, ds, buf, len, idx);
 			if (ds->mi_found) {

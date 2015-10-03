@@ -346,8 +346,8 @@ enum {
 
 // anal
 enum {
-	R_ANAL_OP_FAMILY_UNKNOWN = 0,
-	R_ANAL_OP_FAMILY_CPU,    /* normal cpu instruction */
+	R_ANAL_OP_FAMILY_UNKNOWN = -1,
+	R_ANAL_OP_FAMILY_CPU = 0,/* normal cpu instruction */
 	R_ANAL_OP_FAMILY_FPU,    /* fpu (floating point) */
 	R_ANAL_OP_FAMILY_MMX,    /* multimedia instruction (packed data) */
 	R_ANAL_OP_FAMILY_PRIV,   /* priviledged instruction */
