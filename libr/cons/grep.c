@@ -104,7 +104,7 @@ R_API void r_cons_grep(const char *str) {
 	fail = 0;
 	range_begin = range_end = -1;
 
-	if (ptr2 || ptr3) {
+	if (ptr2 && ptr3) {
 		ptr2[0] = '\0';
 		ptr2++;
 
