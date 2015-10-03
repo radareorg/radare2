@@ -653,7 +653,6 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	if (IS_MODE_SET (mode)) r_flag_space_set (r->flags, "relocs");
 	r_list_foreach (relocs, iter, reloc) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
-
 		if (IS_MODE_SET (mode)) {
 			set_bin_relocs (r, reloc, addr, &db, &sdb_module);
 		} else if (IS_MODE_SIMPLE (mode)) {
@@ -670,6 +669,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				// TODO(eddyb) implement constant relocs.
 			}
 		} else if (IS_MODE_JSON (mode)) {
+			const char *comma = iter->p? ",":"";
 			const char *reloc_name = reloc->import ?
 				sdb_fmt (0, "\"%s\"", reloc->import->name) :
 				"null";
@@ -677,7 +677,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d"}",
-				reloc_name,
+				comma, reloc_name,
 				bin_reloc_type_name (reloc),
 				reloc->vaddr, reloc->paddr);
 		} else if (IS_MODE_NORMAL (mode)) {
