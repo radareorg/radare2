@@ -1380,6 +1380,8 @@ free (rf);
 				}
 			} else eprintf ("Unknown register '%s'\n", string);
 			free (string);
+			// update flags here
+			r_core_cmd0 (core, ".dr*");
 			return;
 		} else {
 			ut64 off;
