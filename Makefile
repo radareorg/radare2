@@ -151,7 +151,7 @@ install love: install-doc install-man install-www
 
 # Remove make .d files. fixes build when .c files are removed
 rmd:
-	rm -vf `find . -type f -iname *.d`
+	rm -f `find . -type f -iname *.d`
 
 install-www:
 	rm -rf $(call rmdblslash,${DESTDIR}/${WWWROOT})
