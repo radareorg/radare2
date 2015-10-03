@@ -126,7 +126,7 @@ You could also checkout the [radare2 book](https://radare.gitbooks.io/radare2boo
 
 # Coding Style
 
-Look at [CODINGSTYLE.md](https://github.com/radare/radare2/blob/master/CODINGSTYLE.md).
+Look at [CONTRIBUTING.md](https://github.com/radare/radare2/blob/master/CONTRIBUTING.md).
 
 # Webserver
 
