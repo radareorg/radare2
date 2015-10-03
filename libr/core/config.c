@@ -698,8 +698,10 @@ static int cb_cmddepth(void *user, void *data) {
 }
 
 static int cb_hexcols(void *user, void *data) {
+	RCore *core = (RCore *)user;
 	int c = R_MIN (128, R_MAX (((RConfigNode*)data)->i_value, 0));
-	((RCore *)user)->print->cols = c & ~1;
+	core->print->cols = c & ~1;
+	core->dbg->regcols = c/5;
 	return true;
 }
 
@@ -836,8 +838,10 @@ static int cb_rgbcolors(void *user, void *data) {
 
 static int cb_scrcolumns(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
+	RCore *core = (RCore*) user;
 	int n = atoi (node->value);
-	((RCore *)user)->cons->force_columns = n;
+	core->cons->force_columns = n;
+	core->dbg->regcols = n/20;
 	return true;
 }
 

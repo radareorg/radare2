@@ -177,6 +177,7 @@ typedef struct r_debug_t {
 	/* select backtrace algorithm */
 	char *btalgo;
 	RNum *num;
+	int regcols;
 } RDebug;
 
 typedef struct r_debug_desc_plugin_t {

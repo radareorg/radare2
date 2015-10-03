@@ -1320,7 +1320,7 @@ free (rf);
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_color); // XXX detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, false);
 		break;
-	case '=':
+	case '=': // 'dr='
 		if (r_config_get_i (core->config, "cfg.debug")) {
 			if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // XXX detect which one is current usage

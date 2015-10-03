@@ -78,6 +78,9 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		cols = 4;
 		kwhites = "    ";
 	}
+	if (dbg->regcols) {
+		cols = dbg->regcols;
+	}
 	if (rad=='j')
 		dbg->cb_printf ("{");
 	if (type == -1) {
