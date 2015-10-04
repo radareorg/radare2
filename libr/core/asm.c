@@ -385,13 +385,14 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	RAsmOp op;
 	// len = n * 32;
 	// if (n > core->blocksize) n = core->blocksize;
-	ut8 *buf = (ut8 *)malloc(len);
-
+	ut8 *buf;
 	ut64 instrlen = 0, at = 0;
 	ut32 idx = 0, hit_count = 0;
 	int numinstr, asmlen, ii;
 	RAsmCode *c;
 
+	if (len<1) return NULL;
+	buf = (ut8 *)malloc (len);
 	if (hits == NULL || buf == NULL ){
 		if (hits) {
 			r_list_free (hits);
