@@ -522,8 +522,8 @@ bool wind_read_ver (WindCtx *ctx) {
 		eprintf("Protocol version : %i.%i\n", rr->r_ver.proto_major, rr->r_ver.proto_minor);
 		eprintf("Flags : %08x\n", rr->r_ver.flags);
 		eprintf("Machine : %08x\n", rr->r_ver.machine);
-		eprintf("Module list : %016"PFMT64x"\n", rr->r_ver.mod_addr);
-		eprintf("Debug block : %016"PFMT64x"\n", rr->r_ver.dbg_addr);
+		eprintf("Module list : %016"PFMT64x"\n", (ut64)rr->r_ver.mod_addr);
+		eprintf("Debug block : %016"PFMT64x"\n", (ut64)rr->r_ver.dbg_addr);
 	}
 
 	if (rr->r_ver.machine != KD_MACH_I386 && rr->r_ver.machine != KD_MACH_AMD64) {
