@@ -123,22 +123,10 @@ static inline int r_asm_pseudo_fill(RAsmOp *op, char *input) {
 R_API RAsm *r_asm_new() {
 	int i;
 	RAsmPlugin *static_plugin;
-	RAsm *a = R_NEW (RAsm);
+	RAsm *a = R_NEW0 (RAsm);
 	if (!a) return NULL;
-	a->pair = NULL;
-	a->num = NULL;
-	a->user = NULL;
-	a->cur = NULL;
-	a->features = NULL;
-	a->binb.bin = NULL;
 	a->bits = 32;
-	a->cpu = NULL;
-	a->big_endian = 0;
-	a->pc = 0;
-	a->ifilter = NULL;
-	a->ofilter = NULL;
 	a->syntax = R_ASM_SYNTAX_INTEL;
-	a->syscall = NULL;
 	a->plugins = r_list_new ();
 	if (!a->plugins){
 		free (a);
