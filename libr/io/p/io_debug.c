@@ -332,7 +332,9 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			r_str_argv_free (argv);
 			exit (1);
 		} else {
-			char *_cmd = strdup (cmd);
+			char *_cmd = io->args ?
+				r_str_concatf (strdup (cmd), " %s", io->args) :
+				strdup (cmd);
 			argv = r_str_argv (_cmd, NULL);
 			if (!argv) {
 				free (_cmd);
