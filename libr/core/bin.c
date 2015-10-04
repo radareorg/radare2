@@ -1006,14 +1006,14 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"demname\":\"%s\","
 				"\"flagname\":\"%s\","
-				"\"size\":%"PFMT64d","
+				"\"size\":%d,"
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d"}",
 				iter->p?",":"", str,
 				sn.demname? sn.demname: "",
 				sn.nameflag,
-				symbol->size,
-				addr, symbol->paddr);
+				(int)symbol->size,
+				(ut64)addr, (ut64)symbol->paddr);
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *name = strdup (symbol->name);
@@ -1029,8 +1029,8 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				}
 			}
 			r_name_filter (name, 80);
-			r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
-				addr, symbol->size, name);
+			r_cons_printf ("0x%08"PFMT64x" %d %s\n",
+				addr, (int)symbol->size, name);
 			free (name);
 		} else if (IS_MODE_RAD (mode)) {
 			RBinFile *binfile;
