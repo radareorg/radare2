@@ -9,7 +9,7 @@ SOVER=${EXT_SO}
 LDFLAGS+=-shared
 LDFLAGS_SHARED?=-shared
 else
-ifneq (,$(findstring ming32,${OSTYPE}))
+ifneq (,$(findstring mingw32,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
 EXT_SO=dll
 SOVER=${EXT_SO}
