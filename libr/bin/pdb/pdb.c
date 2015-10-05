@@ -3,8 +3,8 @@
 #include <r_pdb.h>
 #include <string.h>
 
-#include "stream_file.h"
 #include "types.h"
+#include "stream_file.h"
 #include "tpi.h"
 #include "dbi.h"
 #include "fpo.h"

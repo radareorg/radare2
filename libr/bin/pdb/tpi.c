@@ -1,6 +1,5 @@
-
+#include "types.h"
 #include "tpi.h"
-
 #include "stream_file.h"
 
 static unsigned int base_idx = 0;

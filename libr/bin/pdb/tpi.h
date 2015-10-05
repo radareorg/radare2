@@ -1,8 +1,6 @@
 #ifndef TPI_H
 #define TPI_H
 
-#include "types.h"
-
 ///////////////////////////////////////////////////////////////////////////////
 void init_tpi_stream(STpiStream *tpi_stream);
 
