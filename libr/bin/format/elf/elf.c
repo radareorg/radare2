@@ -119,7 +119,6 @@ static int init_phdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 		R_FREE (bin->phdr);
 		return false;
 	}
-	sdb_bool_set (bin->kv, "elf.relro", Elf_(r_bin_elf_has_relro)(bin), 0);
 	sdb_num_set (bin->kv, "elf_header_size.offset", sizeof (Elf_(Ehdr)), 0);
 	sdb_num_set (bin->kv, "elf_phdr_size.offset", sizeof (Elf_(Phdr)), 0);
 	sdb_num_set (bin->kv, "elf_shdr_size.offset", sizeof (Elf_(Shdr)), 0);
@@ -291,7 +290,7 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin){
 		}
 	}
 	if (!strtabaddr || strtabaddr > bin->size ||
-	  strsize > ST32_MAX || strsize == 0 || strsize > bin->size){
+	strsize > ST32_MAX || strsize == 0 || strsize > bin->size){
 		free (dyn);
 		return false;
 	}
@@ -315,6 +314,10 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin){
 	bin->dyn_entries = entries;
 	bin->strtab = strtab;
 	bin->strtab_size = strsize;
+	r = Elf_(r_bin_elf_has_relro)(bin);
+	if (r == 2) sdb_set (bin->kv, "elf.relro", "full relro", 0);
+	else if (r == 1) sdb_set (bin->kv, "elf.relro", "partial relro", 0);
+	else sdb_set (bin->kv, "elf.relro", "no relro", 0);
 	sdb_num_set (bin->kv, "elf_strtab.offset", strtabaddr, 0);
 	sdb_num_set (bin->kv, "elf_strtab.size", strsize, 0);
 	return true;
@@ -427,7 +430,7 @@ static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 			free (rel);
 			return -1;
 		}
-		len = r_buf_fread_at (bin->b, rel_shdr->sh_offset + j, 
+		len = r_buf_fread_at (bin->b, rel_shdr->sh_offset + j,
 			(ut8*)(&rel[k]),
 #if R_BIN_ELF64
 				      bin->endian?"2L":"2l",
@@ -536,6 +539,10 @@ int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
+	if (bin && bin->dyn_buf)
+		for (i = 0; i < bin->dyn_entries; i++)
+			if (bin->dyn_buf[i].d_tag == DT_BIND_NOW)
+				return 2;
 	if (bin && bin->phdr)
 		for (i = 0; i < bin->ehdr.e_phnum; i++)
 			if (bin->phdr[i].p_type == PT_GNU_RELRO)
@@ -628,7 +635,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (!bin)
 		return 0LL;
 
-	if (entry > bin->size || (entry + sizeof (buf)) > bin->size) 
+	if (entry > bin->size || (entry + sizeof (buf)) > bin->size)
 		return 0;
 
 	if (r_buf_read_at (bin->b, entry, buf, sizeof (buf)) == -1) {
@@ -1088,7 +1095,7 @@ static int read_reloc(struct Elf_(r_bin_elf_obj_t) *bin, struct r_bin_elf_reloc_
 	char *fmt;
 	st64 l1, l2, l3;
 	st32 i1, i2, i3;
-	
+
 	if (offset > bin->size)
 		return -1;
 
@@ -1239,7 +1246,7 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 	struct r_bin_elf_lib_t *ret = NULL;
 	int j, k;
 
-	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab || *(bin->strtab+1) == '0') 
+	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab || *(bin->strtab+1) == '0')
 		return NULL;
 
 	for (j = 0, k = 0; j < bin->dyn_entries; j++)
@@ -1364,8 +1371,8 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 	}
 	if (addr_sym_table){
 		//since ELF doesn't specify the symbol table size we are going to read until the end of the buffer
-		// this might be overkill. 
-		nsym = (int)(bin->b->length - addr_sym_table) / sizeof (Elf_(Sym)); 
+		// this might be overkill.
+		nsym = (int)(bin->b->length - addr_sym_table) / sizeof (Elf_(Sym));
 		if (nsym < 1)
 			return NULL;
 		sym = (Elf_(Sym)*) calloc (nsym, sizeof (Elf_(Sym)));
@@ -1396,7 +1403,7 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 			return NULL;
 		}
 		for (k = ret_ctr = 0 ; k < nsym ; k++){
-			if (k == 0) 
+			if (k == 0)
 				continue;
 			if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
 				if (sym[k].st_value)
@@ -1413,9 +1420,9 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 				free (sym);
 				return NULL;
 			}
-			
+
 			if (sym[k].st_name+2 > bin->strtab_size)
-				// Since we are reading beyond the symbol table what's happening 
+				// Since we are reading beyond the symbol table what's happening
 				// is that some entry is trying to dereference the strtab beyond its capacity
 				// is not a symbol so is the end
 				goto done;
@@ -1431,7 +1438,7 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 			   } else {
 					const int len = __strnlen (bin->strtab+st_name, rest);
 					memcpy (ret[ret_ctr].name, &bin->strtab[st_name], len);
-			   }	
+			   }
 			}
 			ret[ret_ctr].ordinal = k;
 			ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
@@ -1441,7 +1448,7 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 		}
 done:
 		{
-			struct r_bin_elf_symbol_t *p = 
+			struct r_bin_elf_symbol_t *p =
 				(struct r_bin_elf_symbol_t*)realloc (ret,
 				(ret_ctr+1) * sizeof (struct r_bin_elf_symbol_t));
 			if (!p) {
@@ -1451,7 +1458,7 @@ done:
 			}
 			ret = p;
 		}
-		ret[ret_ctr].last = 1; 
+		ret[ret_ctr].last = 1;
 		if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {
 			bin->imports_by_ord_size = ret_ctr;
 			if (ret_ctr > 0)
@@ -1459,7 +1466,7 @@ done:
 			else
 				bin->imports_by_ord = NULL;
 		} else if (type == R_BIN_ELF_SYMBOLS && !bin->symbols_by_ord_size) {
-			bin->symbols_by_ord_size = ret_ctr; 
+			bin->symbols_by_ord_size = ret_ctr;
 			if (ret_ctr > 0)
 				bin->symbols_by_ord = (RBinSymbol**)calloc (ret_ctr, sizeof (RBinSymbol*));
 			else
@@ -1483,7 +1490,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	ut64 section_text_offset = 0LL;
 
 	if (!bin || !bin->shdr || bin->ehdr.e_shnum == 0 || bin->ehdr.e_shnum == 0xffff)
-		//ok we don't give up 
+		//ok we don't give up
 		return get_symbols_from_phdr (bin, type);
 
 	if (bin->ehdr.e_type == ET_REL) {
@@ -1569,7 +1576,7 @@ if (
 				free (strtab);
 				return NULL;
 			}
-			
+
 			if ((sym = (Elf_(Sym) *)calloc (nsym, sizeof(Elf_(Sym)))) == NULL) {
 				eprintf ("calloc (syms)");
 				free (ret);
@@ -1582,14 +1589,14 @@ if (
 				free (sym);
 				return NULL;
 			}
-			if (size < 1 || size > bin->size || 
+			if (size < 1 || size > bin->size ||
 			  bin->shdr[i].sh_offset > bin->size || bin->shdr[i].sh_offset+size > bin->size){
 				free (ret);
 				free (strtab);
 				free (sym);
 				return NULL;
 			}
-				
+
 			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset, (ut8*)sym,
 #if R_BIN_ELF64
 					bin->endian? "I2cS2L": "i2cs2l",
@@ -1647,7 +1654,7 @@ if (
 				}
 #endif
 				ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
-				if (section_text) 
+				if (section_text)
 					ret[ret_ctr].offset += section_text_offset;
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name+2 > strtab_section->sh_size) {
