@@ -16,7 +16,7 @@ extern "C" {
 #define R_CMD_MAXLEN 4096
 
 #define r_cmd_callback(x) int (*x)(void *data, const char *input)
-#define r_cmd_nullcallback(x) int (*x)(void *data);
+#define r_cmd_nullcallback(x) int (*x)(void *data)
 
 typedef struct r_cmd_macro_label_t {
 	char name[80];
