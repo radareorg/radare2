@@ -900,10 +900,9 @@ R_API void r_core_debug_rr (RCore *core, RReg *reg) {
 	r_debug_map_sync (core->dbg);
 	r_list_foreach (list, iter, r) {
 		char *rrstr;
-		if (r->size != bits)
-			continue;
+		if (r->size != bits) continue;
 		value = r_reg_get_value (core->dbg->reg, r);
-		rrstr = r_core_anal_hasrefs(core, value);
+		rrstr = r_core_anal_hasrefs (core, value);
 		if (bits == 64) {
 			r_cons_printf ("%6s 0x%016"PFMT64x, r->name, value);
 		} else {
@@ -2181,7 +2180,7 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			}
 		}
 		free (name);
-	} else if (*input == 'j') {	
+	} else if (*input == 'j') {
 		r_debug_signal_list (core->dbg, 2);
 	} else if (!*input) {
 		r_debug_signal_list (core->dbg, 0);

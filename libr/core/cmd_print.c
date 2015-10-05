@@ -1101,7 +1101,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 						RAnalOp aop;
 						r_anal_op (core->anal, &aop, core->offset+i,
 							core->block+i, core->blocksize-i);
-						r_cons_printf ("%s%s"Color_RESET"\n", 
+						r_cons_printf ("%s%s"Color_RESET"\n",
 							r_print_color_op_type (core->print, aop.type),
 							      asmop.buf_asm);
 					} else {
@@ -1738,10 +1738,10 @@ static int cmd_print(void *data, const char *input) {
 				// XXX - print help message
 				//return false;
 			}
-		
+
 			if (new_arch == NULL) new_arch = strdup (old_arch);
 			if (new_bits == -1) new_bits = old_bits;
-			
+
 			if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
 				set_asm_configs (core, new_arch, new_bits, segoff);
 				settings_changed = true;
@@ -1916,7 +1916,7 @@ static int cmd_print(void *data, const char *input) {
 							r_anal_op (core->anal, &aop, addr, buf+i, l-i);
 							buf_asm = r_print_colorize_opcode (str,
 									core->cons->pal.reg, core->cons->pal.num);
-							r_cons_printf ("%s%s\n", 
+							r_cons_printf ("%s%s\n",
 									r_print_color_op_type (core->print, aop.type),
 									buf_asm);
 							free (buf_asm);
@@ -2440,8 +2440,8 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		default:
-			r_print_string (core->print, core->offset, core->block, len,
-				R_PRINT_STRING_ZEROEND);
+			r_print_string (core->print, core->offset, core->block,
+					 len, R_PRINT_STRING_ZEROEND);
 			break;
 		}
 		break;
@@ -2625,9 +2625,10 @@ static int cmd_print(void *data, const char *input) {
 			int i, c;
 			char buf[32];
 #define P(x) (IS_PRINTABLE(x)?x:'.')
-#define SPLIT_BITS(x) memmove (x+5, x+4, 5); x[4]=0
-			for (i=c=0; i<len; i++,c++) {
-				if (c==0) r_print_offset (core->print, core->offset+i, 0, 0, 0);
+#define SPLIT_BITS(x) memmove (x + 5, x + 4, 5); x[4]=0
+			for (i = c = 0; i < len; i++,c++) {
+				if (c == 0) r_print_offset (core->print,
+							core->offset+i, 0, 0, 0);
 				r_str_bits (buf, core->block+i, 8, NULL);
 				SPLIT_BITS (buf);
 				r_cons_printf ("%s.%s  ", buf, buf+5);
@@ -2636,21 +2637,24 @@ static int cmd_print(void *data, const char *input) {
 					#define K(x) (b[3-x]<<(8*x))
 					n = K (0) | K (1) | K (2) | K (3);
 					r_cons_printf ("0x%08x  %c%c%c%c\n",
-						n, P (b[0]), P (b[1]), P (b[2]), P (b[3]));
+						n, P (b[0]), P (b[1]), P (b[2]),
+						P (b[3]));
 					c = -1;
 				}
 			}
 			}
 			break;
 		case 'o': // "pxo"
-			r_print_hexdump (core->print, core->offset, core->block, len, 8, 1);
+			r_print_hexdump (core->print, core->offset,
+					core->block, len, 8, 1);
 			break;
 		case 'd': // "pxd"
 			r_print_hexdump (core->print, core->offset,
 				core->block, len, 10, 4);
 			break;
 		case 'w': // "pxw
-			r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
+			r_print_hexdump (core->print, core->offset, core->block,
+					len, 32, 4);
 			break;
 		case 'W': // "pxW"
 			len = len - (len%4);
@@ -2660,20 +2664,30 @@ static int cmd_print(void *data, const char *input) {
 				RPrint *p = core->print;
 				RFlagItem *f;
 				ut32 *v = (ut32*)((ut8*)core->block+i);
-				r_mem_copyendian ((ut8*)v, (ut8*)v, 4, !core->print->big_endian);
+				r_mem_copyendian ((ut8*)v, (ut8*)v, 4,
+						!core->print->big_endian);
 
 				if (p && p->colorfor) {
 					a = p->colorfor (p->user, *v);
-					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
-				} else { a = b = ""; }
+					if (a && *a) {
+						b = Color_RESET;
+					} else {
+						a = b = "";
+					}
+				} else {
+					a = b = "";
+				}
 				f = r_flag_get_at (core->flags, *v);
 				fn = NULL;
 				if (f) {
 					st64 delta = (*v - f->offset);
-					if (delta>=0 && delta<8192) {
+					if (delta >= 0 && delta < 8192) {
 						if (*v == f->offset) {
 							fn = strdup (f->name);
-						} else fn = r_str_newf ("%s+%d", f->name, *v-f->offset);
+						} else {
+							fn = r_str_newf ("%s+%d",
+								f->name, *v-f->offset);
+						}
 					}
 				}
 				r_cons_printf ("0x%08"PFMT64x" %s0x%08"PFMT64x"%s %s\n",
@@ -2693,7 +2707,9 @@ static int cmd_print(void *data, const char *input) {
 					ut64 *foo = (ut64*)(buf+i);
 					ut64 val = *foo;
 					if (base==32) val &= UT32_MAX;
-					r_cons_printf ("%s{\"addr\":%"PFMT64d",\"value\":%"PFMT64d, comma, addr, val);
+					r_cons_printf ("%s{\"addr\":%"PFMT64d",\
+							\"value\":%"PFMT64d,
+							comma, addr, val);
 					comma = ",";
 					// XXX: this only works in little endian
 					withref = 0;
@@ -2707,17 +2723,14 @@ static int cmd_print(void *data, const char *input) {
 							withref = 1;
 						}
 					}
-					if (!withref) {
-						r_cons_printf ("}");
-					}
+					if (!withref) r_cons_printf ("}");
 				}
 				r_cons_printf ("]\n");
 			} else {
 				const int ocols = core->print->cols;
 				int bitsize = core->assembler->bits;
 				/* Thumb is 16bit arm but handles 32bit data */
-				if (bitsize == 16)
-					bitsize = 32;
+				if (bitsize == 16) bitsize = 32;
 				core->print->cols = 1;
 				core->print->flags |= R_PRINT_FLAGS_REFS;
 				r_print_hexdump (core->print, core->offset,
