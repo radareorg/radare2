@@ -364,10 +364,8 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	ut64 paddr, last, last2;
 	int ms, ret, l = 0, olen = len, w = 0;
 
-	if (!io || !buf || len<0)
-		return 0;
-	if (io->vio)
-		return r_io_read_cr (io, addr, buf, len);
+	if (!io || !buf || len < 0) return 0;
+	if (io->vio) return r_io_read_cr (io, addr, buf, len);
 	if (io->sectonly && !r_list_empty (io->sections)) {
 		if (!r_io_section_exists_for_vaddr (io, addr, 0)) {
 			// find next sec
@@ -378,9 +376,10 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 				addr = next;
 				len -= delta;
 				buf += delta;
-			} else next = 0;
-			if (!next)
-				return 0;
+			} else {
+				next = 0;
+			}
+			if (!next) return 0;
 		}
 	}
 
@@ -396,8 +395,8 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	if (io->buffer_enabled) {
 		return r_io_buffer_read (io, addr, buf, len);
 	}
-	while (len>0) {
-		if ((addr+w)< ((addr+w)+len)) {
+	while (len > 0) {
+		if ((addr + w) < ((addr + w) + len)) {
 			// this code assumes that the IO backend knows
 			// 1) the size of a loaded file and its offset into the r2 data space
 			// 2) the sections with physical (offsets) and virtual addresses in r2 data space
@@ -415,8 +414,8 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			if (!exists && r_io_map_count (io) > 0) {
 				// XXX this will break if there is actually data at this location
 				// or within UT64_MAX - len
-				ut64 next_map_addr = UT64_MAX,
-				     next_sec_addr = UT64_MAX;
+				ut64 next_map_addr = UT64_MAX;
+				ut64 next_sec_addr = UT64_MAX;
 
 				RIOMap *next_map = NULL;
 				RIOSection * next_sec = NULL;
@@ -461,14 +460,14 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			// overflow //
 			l = UT64_MAX - addr + 1;
 		}
-		if (l<1) {
-			l = len;
-		}
+		if (l < 1) l = len;
 		if (addr != UT64_MAX) {
 			paddr = w? r_io_section_vaddr_to_maddr_try (io, addr+w): addr;
-		} else paddr = 0;
+		} else {
+			paddr = 0;
+		}
 		//if (!paddr || paddr==UT64_MAX)
-		if (paddr==UT64_MAX) {
+		if (paddr == UT64_MAX) {
 			paddr = r_io_map_select (io, addr); // XXX
 		}
 		if (paddr == UT64_MAX) {
@@ -485,10 +484,10 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		// XXX is this necessary?
 		ms = r_io_map_select (io, addr+w);
 		ret = r_io_read_internal (io, buf+w, l);
-		if (ret<1) {
+		if (ret < 1) {
 			memset (buf+w, 0xff, l); // reading out of file
 			ret = l;
-		} else if (ret<l) {
+		} else if (ret < l) {
 			l = ret;
 		}
 #if USE_CACHE

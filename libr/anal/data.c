@@ -5,18 +5,17 @@
 #define MINLEN 1
 static int is_string (const ut8 *buf, int size, int *len) {
 	int i;
-	if (size<1)
-		return 0;
-	if (size>3 && buf[0] &&!buf[1]&&buf[2]&&!buf[3]) {
+	if (size < 1) return 0;
+	if (size>3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
 		*len = 1; // XXX: TODO: Measure wide string length
 		return 2; // is wide
 	}
-	for (i=0; i<size; i++) {
-		if (!buf[i] && i>MINLEN) {
+	for (i = 0; i < size; i++) {
+		if (!buf[i] && i > MINLEN) {
 			*len = i;
 			return 1;
 		}
-		if (buf[i]==10||buf[i]==13||buf[i]==9) {
+		if (buf[i] == 10|| buf[i] == 13|| buf[i] == 9) {
 			continue;
 		}
 		if (buf[i]<32 || buf[i]>127) {
@@ -264,7 +263,7 @@ R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size) 
 	if (is_bin (buf, size))
 		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_HEADER, -1,
 				buf, word);
-	if (size>=word) {
+	if (size >= word) {
 		dst = is_pointer (&anal->iob, buf, endi, word);
 		if (dst) return r_anal_data_new (addr,
 			R_ANAL_DATA_TYPE_POINTER, dst, buf, word);

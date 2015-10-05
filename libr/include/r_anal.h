@@ -84,17 +84,17 @@ enum {
 
 // used from core/anal.c
 #define R_ANAL_ADDR_TYPE_EXEC      1
-#define R_ANAL_ADDR_TYPE_READ      1<<1
-#define R_ANAL_ADDR_TYPE_WRITE     1<<2
-#define R_ANAL_ADDR_TYPE_FLAG      1<<3
-#define R_ANAL_ADDR_TYPE_FUNC      1<<4
-#define R_ANAL_ADDR_TYPE_HEAP      1<<5
-#define R_ANAL_ADDR_TYPE_STACK     1<<6
-#define R_ANAL_ADDR_TYPE_REG       1<<7
-#define R_ANAL_ADDR_TYPE_PROGRAM   1<<8
-#define R_ANAL_ADDR_TYPE_LIBRARY   1<<9
-#define R_ANAL_ADDR_TYPE_ASCII     1<<10
-#define R_ANAL_ADDR_TYPE_SEQUENCE  1<<11
+#define R_ANAL_ADDR_TYPE_READ      1 << 1
+#define R_ANAL_ADDR_TYPE_WRITE     1 << 2
+#define R_ANAL_ADDR_TYPE_FLAG      1 << 3
+#define R_ANAL_ADDR_TYPE_FUNC      1 << 4
+#define R_ANAL_ADDR_TYPE_HEAP      1 << 5
+#define R_ANAL_ADDR_TYPE_STACK     1 << 6
+#define R_ANAL_ADDR_TYPE_REG       1 << 7
+#define R_ANAL_ADDR_TYPE_PROGRAM   1 << 8
+#define R_ANAL_ADDR_TYPE_LIBRARY   1 << 9
+#define R_ANAL_ADDR_TYPE_ASCII     1 << 10
+#define R_ANAL_ADDR_TYPE_SEQUENCE  1 << 11
 
 /* type = (R_ANAL_VAR_TYPE_BYTE & R_ANAL_VAR_TYPE_SIZE_MASK) |
  *			( RANAL_VAR_TYPE_SIGNED & RANAL_VAR_TYPE_SIGN_MASK) |

@@ -718,6 +718,35 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 	return ret;
 }
 
+#define MINLEN 1
+static int is_string (const ut8 *buf, int size, int *len) {
+	int i;
+	if (size < 1) return 0;
+	if (size > 3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
+		*len = 1; // XXX: TODO: Measure wide string length
+		return 2; // is wide
+	}
+	for (i = 0; i < size; i++) {
+		if (!buf[i] && i > MINLEN) {
+			*len = i;
+			return 1;
+		}
+		if (buf[i] == 10|| buf[i] == 13|| buf[i] == 9) {
+			continue;
+		}
+		if (buf[i] < 32 || buf[i] > 127) {
+			// not ascii text
+			return 0;
+		}
+		if (!IS_PRINTABLE (buf[i])) {
+			*len = i;
+			return 0;
+		}
+	}
+	*len = i;
+	return 1;
+}
+
 R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 	RStrBuf *s = r_strbuf_new (NULL);
 	ut64 type;
@@ -730,21 +759,20 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 	fcn = r_anal_get_fcn_in (core->anal, value, 0);
 	if (value && value != UT64_MAX) {
 		RDebugMap *map = r_debug_map_get (core->dbg, value);
-		if (map && map->name && map->name[0])
+		if (map && map->name && map->name[0]) {
 			mapname = strdup (map->name);
-		else mapname = NULL;
-	} else mapname = NULL;
+		} else {
+			mapname = NULL;
+		}
+	} else {
+		mapname = NULL;
+	}
 	sect = value? r_io_section_vget (core->io, value): NULL;
-
-	if (fi) {
-		r_strbuf_appendf (s, " %s", fi->name);
-	}
-	if (fcn) {
-		r_strbuf_appendf (s, " %s", fcn->name);
-	}
+	if (fi) r_strbuf_appendf (s, " %s", fi->name);
+	if (fcn) r_strbuf_appendf (s, " %s", fcn->name);
 	if (type) {
 		const char *c = r_core_anal_optype_colorfor (core, value);
-		const char *cend = (c&&*c)? Color_RESET: "";
+		const char *cend = (c && *c) ? Color_RESET: "";
 		if (!c) c = "";
 		if (type & R_ANAL_ADDR_TYPE_HEAP) {
 			r_strbuf_appendf (s, " %sheap%s", c, cend);
@@ -777,7 +805,8 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 				RDebugMap *map;
 				RListIter *iter;
 				r_list_foreach (core->dbg->maps, iter, map) {
-					if ((value >= map->addr) && (value<map->addr_end)) {
+					if ((value >= map->addr) &&
+						(value<map->addr_end)) {
 						const char *lastslash = r_str_lchr (map->name, '/');
 						r_strbuf_appendf (s, " '%s'", lastslash?
 							lastslash+1:map->name);
@@ -800,6 +829,30 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 	if (mapname) {
 		r_strbuf_appendf (s, " (%s)", mapname);
 		free (mapname);
+	}
+	{
+		ut8 buf[128], widebuf[256];
+		const char *c = core->cons->pal.ai_ascii;
+		const char *cend = Color_RESET;
+		int len, r;
+		r = r_io_read_at (core->io, value, buf, sizeof(buf));
+		if (r) {
+			switch (is_string (buf, sizeof(buf), &len)) {
+			case 1:
+				r_strbuf_appendf (s, " (%s%s%s)", c, buf, cend);
+				break;
+			case 2:
+				r = r_utf8_encode_str ((const RRune *)widebuf, buf,
+							sizeof(widebuf) - 1);
+				if (r == -1) {
+					eprintf ("Something was wrong %s-%d\n",
+						__FILE__, __LINE__);
+				}
+				r_strbuf_appendf (s, " (%s%s%s)", c, widebuf, cend);
+				break;
+			}
+		}
+
 	}
 	{
 		char *rs = strdup (r_strbuf_get (s));
