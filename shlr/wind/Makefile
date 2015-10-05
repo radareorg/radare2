@@ -1,20 +1,40 @@
 include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
 
-CFLAGS+=-I../../libr/include -fPIC
+ifneq (,$(findstring cygwin,${OSTYPE}))
+CFLAGS+=-D__CYGWIN__=1
+EXT_SO=dll
+SOVER=${EXT_SO}
+LDFLAGS+=-shared
+LDFLAGS_SHARED?=-shared
+else
+ifneq (,$(findstring mingw32,${OSTYPE}))
+CFLAGS+=-DMINGW32=1
+EXT_SO=dll
+SOVER=${EXT_SO}
+LDFLAGS+=-shared
+LDFLAGS_SHARED?=-shared
+else
+CFLAGS+=-fPIC
+endif
+endif
+
+CFLAGS+=-I../../libr/include
 LIBAR=libr_wind.a
 LDFLAGS+=-L../../libr/util
 LIBS=-lr_util
-OBJS=transport.o kd.o wind.o iob_pipe.o
+
+OFILES=transport.o kd.o wind.o iob_pipe.o
 
 all: libr_wind.a
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) -c $< -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) -c $< -o $@
 
-libr_wind.a: $(OBJS)
+libr_wind.a: $(OFILES)
 	rm -f libr_wind.a
-	${CC_AR} $(OBJS)
+	${AR} q libr_wind.a ${OFILES}
+	${RANLIB} libr_wind.a
 
 clean:
-	rm -f $(OBJS) libr_wind.a 
+	rm -f $(OBJS) libr_wind.a $(OFILES)
