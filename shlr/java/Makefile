@@ -28,7 +28,7 @@ CFLAGS+=-I../../libr/include
 LDFLAGS+=-L../../libr/util
 OBJS=code.o class.o ops.o dsojson.o
 
-all: out libr_java.a
+all: libr_java.a
 
 libr_java.a: ${OBJS}
 	rm -f libr_java.a

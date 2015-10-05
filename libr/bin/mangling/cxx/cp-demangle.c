@@ -115,7 +115,14 @@
 #  ifdef __GNUC__
 #   define alloca __builtin_alloca
 #  else
+#	ifdef __TINYC__
+#define alloca(x) _alloca_tcc(x)
+
+extern void * _alloca_tcc(unsigned x);
+extern void * __bound__alloca_tcc(unsigned x);
+#	else
 extern char *alloca ();
+#	endif /* __TINYC__ */
 #  endif /* __GNUC__ */
 # endif /* alloca */
 #endif /* HAVE_ALLOCA_H */
