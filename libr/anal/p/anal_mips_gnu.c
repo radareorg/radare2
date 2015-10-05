@@ -50,16 +50,16 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 	optype = (b[0]>>2);
 
 	if (optype == 0) {
-#if 0
+/*
 	R-TYPE
 	======
-	opcode (6)  rs (5)  rt (5)  rd (5)  sa (5)  function (6) 
+	opcode (6)  rs (5)  rt (5)  rd (5)  sa (5)  function (6)
 	rs = register source
 	rs = register target
 	rd = register destination
-	sa = 
+	sa =
 	fu =
-		
+
 		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
 		 1111 1111  1111 1111  1111 1111  1111 1111
 		 \_op__/\_rs__/\_rt_/  \_rd_/\_sa__/\_fun_/
@@ -67,7 +67,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		 b[0]>>2  |  (b[1]&31)   |      |   b[3]&63
 		          |          (b[2]>>3)  |
 		  (b[0]&3)<<3)+(b[1]>>5)   (b[2]&7)+(b[3]>>6)
-#endif
+*/
 #if WIP
 		int rs = ((b[0]&3)<<3) + (b[1]>>5);
 		int rt = b[1]&31;
@@ -149,16 +149,16 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 			break;
 		}
 		//family = 'R';
-	} else 
+	} else
 	if ((optype & 0x3e) == 2) {
-#if 0
+/*
 		// J-TYPE
 		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
 		 1111 1111  1111 1111  1111 1111  1111 1111
 		 \_op__/\______address____________________/
                    |             |
                (b[0]>>2)  ((b[0]&3)<<24)+(b[1]<<16)+(b[2]<<8)+b[3]
-#endif
+*/
 		// FIXME: what happens when addr is using a virtual map?
 		// ANS: address will be E 0x000000..0x0ffffffc
 		//      but addr could be anywhere
@@ -196,10 +196,10 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		}
 		//family = 'J';
 	} else if ((optype & 0x10) == 0x1c) {
-#if 0
+/*
 	C-TYPE
 	======
-	opcode (6) format (5) ft (5) fs (5) fd (5) function (6) 
+	opcode (6) format (5) ft (5) fs (5) fd (5) function (6)
 
 		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
 		 1111 1111  1111 1111  1111 1111  1111 1111
@@ -208,7 +208,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		 b[0]>>2  |  (b[1]&31)   |      |   b[3]&63
 		          |          (b[2]>>3)  |
 		  (b[0]&3)<<3)+(b[1]>>5)   (b[2]&7)+(b[3]>>6)
-#endif
+*/
 #if WIP
 		int fmt = ((b[0]&3)<<3) + (b[1]>>5);
 		int ft = (b[1]&31);
@@ -229,11 +229,11 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		// ....
 		}
 	} else {
-#if 0
+/*
 	I-TYPE
 	======
    	all opcodes but 000000 000001x and 0100xx
-	opcode (6)  rs (5)  rt (5) immediate (16) 
+	opcode (6)  rs (5)  rt (5) immediate (16)
 
 		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
 		 1111 1111  1111 1111  1111 1111  1111 1111
@@ -242,7 +242,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		 b[0]>>2  |  (b[1]&31)          |
 		          |                     |
 		 ((b[0]&3)<<3)+(b[1]>>5)   (b[2]<<8)+b[3]
-#endif
+*/
 		int rs = ((b[0]&3)<<3)+(b[1]>>5);
 		int rt = b[1]&31;
 		int imm = (b[2]<<8)+b[3];
@@ -335,10 +335,10 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 #endif
 	//eprintf ("MIPS: family=%c optype=%d oplen=%d op=>type=%d\n", family, optype, oplen, op->type);
 	return oplen;
-#if 0
+/*
  R - all instructions that only take registers as arguments (jalr, jr)
      opcode 000000
-     opcode (6) 	rs (5) 	rt (5) 	rd (5) 	sa (5) 	function (6) 
+     opcode (6) 	rs (5) 	rt (5) 	rd (5) 	sa (5) 	function (6)
 		add 	rd, rs, rt 	100000
 		addu 	rd, rs, rt 	100001
 		and 	rd, rs, rt 	100100
@@ -371,14 +371,14 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		sub 	rd, rs, rt 	100010
 		subu 	rd, rs, rt 	100011
 		syscall 		001100
-		xor 	rd, rs, rt 	100110 
+		xor 	rd, rs, rt 	100110
  I - instructions with immediate operand, load/store/..
      all opcodes but 000000 000001x and 0100xx
-     opcode (6) 	rs (5) 	rt (5) 	immediate (16) 
-		addi 	rt, rs, immediate 	001000 	
-		addiu 	rt, rs, immediate 	001001 	
-		andi 	rt, rs, immediate 	001100 	
-		beq 	rs, rt, label 	000100 	
+     opcode (6) 	rs (5) 	rt (5) 	immediate (16)
+		addi 	rt, rs, immediate 	001000
+		addiu 	rt, rs, immediate 	001001
+		andi 	rt, rs, immediate 	001100
+		beq 	rs, rt, label 	000100
 
 		bgez 	rs, label 	000001 	rt = 00001
 
@@ -386,35 +386,35 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		blez 	rs, label 	000110 	rt = 00000
 
 		bltz 	rs, label 	000001 	rt = 00000
-		bne 	rs, rt, label 	000101 	
-		lb 	rt, immediate(rs) 	100000 	
-		lbu 	rt, immediate(rs) 	100100 	
+		bne 	rs, rt, label 	000101
+		lb 	rt, immediate(rs) 	100000
+		lbu 	rt, immediate(rs) 	100100
 
-		lh 	rt, immediate(rs) 	100001 	
-		lhu 	rt, immediate(rs) 	100101 	
+		lh 	rt, immediate(rs) 	100001
+		lhu 	rt, immediate(rs) 	100101
 
-		lui 	rt, immediate 	 	001111 	
+		lui 	rt, immediate 	 	001111
 
-		lw 	rt, immediate(rs) 	100011 	
-		lwc1 	rt, immediate(rs) 	110001 	
+		lw 	rt, immediate(rs) 	100011
+		lwc1 	rt, immediate(rs) 	110001
 
-		ori 	rt, rs, immediate 	001101 	
-		sb 	rt, immediate(rs) 	101000 	
+		ori 	rt, rs, immediate 	001101
+		sb 	rt, immediate(rs) 	101000
 
-		slti 	rt, rs, immediate 	001010 	
-		sltiu 	rt, rs, immediate 	001011 	
-		sh 	rt, immediate(rs) 	101001 	
-		sw 	rt, immediate(rs) 	101011 	
-		swc1 	rt, immediate(rs) 	111001 	
-		xori 	rt, rs, immediate 	001110 	
+		slti 	rt, rs, immediate 	001010
+		sltiu 	rt, rs, immediate 	001011
+		sh 	rt, immediate(rs) 	101001
+		sw 	rt, immediate(rs) 	101011
+		swc1 	rt, immediate(rs) 	111001
+		xori 	rt, rs, immediate 	001110
  J - require memory address like j, jal
      00001x
-     opcode (6) 	target (26) 
+     opcode (6) 	target (26)
 		j 	label 	000010 	coded address of label
-		jal 	label 	000011 	coded address of label 
+		jal 	label 	000011 	coded address of label
  C - coprocessor insutrctions that use cp0, cp1, ..
      0100xx
-     opcode (6) 	format (5) 	ft (5) 	fs (5) 	fd (5) 	function (6) 
+     opcode (6) 	format (5) 	ft (5) 	fs (5) 	fd (5) 	function (6)
 		add.s 	fd, fs, ft 	000000 	10000
 		cvt.s.w	fd, fs, ft 	100000 	10100
 		cvt.w.s	fd, fs, ft 	100100 	10000
@@ -423,8 +423,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		mov.s 	fd, fs 		000110 	10000
 		mtc1 	ft, fs 		000000 	00100
 		mul.s 	fd, fs, ft 	000010 	10000
-		sub.s 	fd, fs, ft 	000001 	10000 
-#endif
+		sub.s 	fd, fs, ft 	000001 	10000
+*/
 	return op->size;
 }
 
