@@ -5,7 +5,8 @@ OBJS=socket.o proc.o http.o http_server.o
 OBJS+=rap_server.o run.o r2pipe.o
 DEPS=r_util
 
-ifneq (,$(findstring linux,${OSTYPE})$(findstring android,${OSTYPE}))
+ifneq (,$(findstring linux,${OSTYPE})$(findstring android,${OSTYPE})\
+	$(findstring bsd,${OSTYPE}))
 LDFLAGS+=-lutil
 endif
 ifneq (,$(findstring mingw32,${OSTYPE})$(findstring mingw64,${OSTYPE}))
