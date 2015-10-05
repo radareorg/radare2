@@ -169,7 +169,7 @@ R_API void r_graph_add_edge_at (RGraph *t, RGraphNode *from, RGraphNode *to, int
 }
 
 R_API void r_graph_del_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
-	if (!from || !to) return;
+	if (!from || !to || !r_graph_adjacent (t, from, to)) return;
 	r_list_delete_data (from->out_nodes, to);
 	r_list_delete_data (from->all_neighbours, to);
 	r_list_delete_data (to->in_nodes, from);
