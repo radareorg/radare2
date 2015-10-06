@@ -267,6 +267,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		}
 		switch (insn->id) {
 		case X86_INS_FNOP:
+			op->family = R_ANAL_OP_FAMILY_FPU;
 		case X86_INS_NOP:
 		case X86_INS_PAUSE:
 			op->type = R_ANAL_OP_TYPE_NOP;
@@ -318,6 +319,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_FUCOMPP:
 		case X86_INS_FUCOMP:
 		case X86_INS_FUCOM:
+		case X86_INS_FABS:
 			op->type = R_ANAL_OP_TYPE_SUB;
 			op->family = R_ANAL_OP_FAMILY_FPU;
 			break;
@@ -441,30 +443,31 @@ SETL/SETNGE
 			}
 			break;
 		// cmov
+		case X86_INS_FCMOVBE:
+		case X86_INS_FCMOVB:
+		case X86_INS_FCMOVNBE:
+		case X86_INS_FCMOVNB:
+		case X86_INS_FCMOVE:
+		case X86_INS_FCMOVNE:
+		case X86_INS_FCMOVNU:
+		case X86_INS_FCMOVU:
+			op->family = R_ANAL_OP_FAMILY_FPU;
 		case X86_INS_MOVSS:
 		case X86_INS_CMOVA:
 		case X86_INS_CMOVAE:
 		case X86_INS_CMOVB:
 		case X86_INS_CMOVBE:
-		case X86_INS_FCMOVBE:
-		case X86_INS_FCMOVB:
 		case X86_INS_CMOVE:
-		case X86_INS_FCMOVE:
 		case X86_INS_CMOVG:
 		case X86_INS_CMOVGE:
 		case X86_INS_CMOVL:
 		case X86_INS_CMOVLE:
-		case X86_INS_FCMOVNBE:
-		case X86_INS_FCMOVNB:
 		case X86_INS_CMOVNE:
-		case X86_INS_FCMOVNE:
 		case X86_INS_CMOVNO:
 		case X86_INS_CMOVNP:
-		case X86_INS_FCMOVNU:
 		case X86_INS_CMOVNS:
 		case X86_INS_CMOVO:
 		case X86_INS_CMOVP:
-		case X86_INS_FCMOVU:
 		case X86_INS_CMOVS:
 		// mov
 		case X86_INS_MOV:
