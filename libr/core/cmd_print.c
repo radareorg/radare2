@@ -1591,17 +1591,32 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '=': //p=
 		{
-		char input1 = 'b';
+		char *spc, input1 = 'b';
+		ut64 stblk = 0;
 		nbsz = core->blocksize;
+		fsz = 0;
 		if (input[0]) {
-			if (input[1] && input[1] != ' ') {
+			if (input[1] && input[1] != ' ')
 				input1 = input[1];
-				nbsz = r_num_get (core->num, input+2);
-			} else {
-				nbsz = r_num_get (core->num, input+1); //*input?input[1]?input+2:input+1:input);
+			spc = strchr (input, ' ');
+			if (spc) {
+				nbsz = r_num_get (core->num, spc+1);
+				if (nbsz<1)
+					nbsz = core->blocksize;
+
+				spc = strchr (spc+1, ' ');
+				if (spc) {
+					fsz = r_num_get (core->num, spc+1);
+
+					spc = strchr (spc+1, ' ');
+					if (spc) {
+						stblk = r_num_get (core->num, spc+1);
+					}
+				}
 			}
 		}
-		fsz = (core->file && core->io)? r_io_desc_size (core->io, core->file->desc): 0;
+		if (fsz<1)
+			fsz = (core->file && core->io)? r_io_desc_size (core->io, core->file->desc): 0;
 		if (nbsz) {
 			obsz = core->blocksize;
 			switch (input1) {
@@ -1617,7 +1632,7 @@ static int cmd_print(void *data, const char *input) {
 		switch (input1) {
 		case '?':{ // bars
 			const char* help_msg[] = {
-			"Usage:", "p=[bep?] [num-of-blocks]", "show entropy/printable chars/chars bars",
+			"Usage:", "p=[bep?] [num-of-blocks] ([len]) ([block-offset]) ", "show entropy/printable chars/chars bars",
 			"p=", "", "print bytes of current block in bars",
 			"p=", "b", "same as above",
 			"p=", "d", "print different bytes from block",
@@ -1649,9 +1664,9 @@ static int cmd_print(void *data, const char *input) {
 				eprintf ("Error: failed to malloc memory");
 				goto beach;
 			}
-			for (i=0; i<psz; i++) {
+			for (i=stblk; i<(psz+stblk); i++) {
 				r_core_read_at (core, i*nbsz, p, nbsz);
-				ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, core->blocksize));
+				ptr[i-stblk] = (ut8) (256 * r_hash_entropy_fraction (p, core->blocksize));
 			}
 			free (p);
 			r_print_fill (core->print, ptr, psz);
@@ -1675,13 +1690,13 @@ static int cmd_print(void *data, const char *input) {
 				R_FREE (ptr);
 				goto beach;
 			}
-			for (i=0; i<psz; i++) {
+			for (i=stblk; i<(psz+stblk); i++) {
 				r_core_read_at (core, i*nbsz, p, nbsz);
 				for (j=k=0; j<nbsz; j++) {
 					if (IS_PRINTABLE (p[j]))
 						k++;
 				}
-				ptr[i] = 256 * k / nbsz;
+				ptr[i-stblk] = 256 * k / nbsz;
 			}
 			free (p);
 			r_print_fill (core->print, ptr, psz);
@@ -3111,7 +3126,7 @@ static int cmd_print(void *data, const char *input) {
 	default: {
 		 const char* help_msg[] = {
 			 "Usage:", "p[=68abcdDfiImrstuxz] [arg|len]", "",
-			 "p=","[bep?] [blks]","show entropy/printable chars/chars bars",
+			 "p=","[bep?] [blks] [len] [blk]","show entropy/printable chars/chars bars",
 			 "p2"," [len]","8x8 2bpp-tiles",
 			 "p3"," [file]","print stereogram (3D)",
 			 "p6","[de] [len]", "base64 decode/encode",
