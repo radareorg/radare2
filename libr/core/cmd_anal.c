@@ -3017,8 +3017,8 @@ static int cmd_anal(void *data, const char *input) {
 		NULL
 	};
 	const char* help_msg[] = {
-		"Usage:", "a", "[8adefFghoprxstc] [...]",
-		"a8", " [hexpairs]", "analyze bytes",
+		"Usage:", "a", "[abdefFghoprxstc] [...]",
+		"ab", " [hexpairs]", "analyze bytes",
 		"aa", "", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 		"ac", " [cycles]", "analyze which op could be executed in [cycles]",
 		"ad", "", "analyze data trampoline (wip)",
@@ -3041,15 +3041,14 @@ static int cmd_anal(void *data, const char *input) {
 	r_cons_break (NULL, NULL);
 
 	switch (input[0]) {
-	case '8': // TODO: rename to 'ab'?
-		if (input[1]==' ') {
-			int len;
+	case 'b':
+		if (input[1]==' ' || input[1] == 'j') {
 			ut8 *buf = malloc (strlen (input)+1);
-			len = r_hex_str2bin (input+2, buf);
+			int len = r_hex_str2bin (input+2, buf);
 			if (len>0)
-				core_anal_bytes (core, buf, len, 0, 0);
+				core_anal_bytes (core, buf, len, 0, input[1]);
 			free (buf);
-		} else eprintf ("Usage: a8 [hexpair-bytes]\n");
+		} else eprintf ("Usage: ab [hexpair-bytes]\n");
 		break;
 	case 'i': cmd_anal_info (core, input+1); break; // "ai"
 	case 'r': cmd_anal_reg (core, input+1); break; // "ar"
