@@ -916,13 +916,6 @@ static int cb_ioautofd(void *user, void *data) {
 	return true;
 }
 
-static int cb_iovio(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->io->vio = node->i_value;
-	return true;
-}
-
 static int cb_pager(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1805,7 +1798,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
 	SETCB("io.va", "true", &cb_iova, "Use virtual address layout");
 	SETCB("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
-	SETCB("io.vio", "false", &cb_iovio, "Enable the new vio (reading only) (WIP)");
 
 	/* file */
 	SETPREF("file.analyze", "false", "Analyze file on load. Same as r2 -c aa ..");
