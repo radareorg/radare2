@@ -31,8 +31,7 @@ static void loganal(ut64 from, ut64 to) {
 R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 	ut64 types = 0;
 	RRegSet *rs = NULL;
-	if (!core)
-		return 0;
+	if (!core) return 0;
 	if (core->dbg && core->dbg->reg) {
 		rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
 	}
@@ -2238,7 +2237,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 			if (!esilstr || !*esilstr) {
 				continue;
 			}
-			(void)r_anal_esil_parse (ESIL, esilstr); 
+			(void)r_anal_esil_parse (ESIL, esilstr);
 			// looks like ^C is handled by esil_parse !!!!
 			r_cons_break (cccb, core);
 			//r_anal_esil_dumpstack (ESIL);

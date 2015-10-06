@@ -127,7 +127,7 @@ R_API char *r_print_stereogram_bytes(const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API void r_print_stereogram_print(RPrint *p, const char *ret) { 
+R_API void r_print_stereogram_print(RPrint *p, const char *ret) {
 	int i;
 	const int use_color = p->flags & R_PRINT_FLAGS_COLOR;
 	if (!ret) return;
@@ -555,8 +555,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		printfmt = (PrintfCallback) p->cb_printf;
 		stride = p->stride;
 	}
-	if (step<1) step = 1;
-	if (inc<1) inc = 1;
+	if (step < 1) step = 1;
+	if (inc < 1) inc = 1;
 	switch (base) {
 	case 8: fmt = "%03o"; pre = " "; break;
 	case 10: fmt = "%3d"; pre = " "; break;
@@ -565,7 +565,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 
 	// TODO: Use base to change %03o and so on
-	if ((base<32 && step != 2) && use_header) {
+	if ((base < 32 && step != 2) && use_header) {
 		ut32 opad = (ut32)(addr >> 32);
 		{ // XXX: use r_print_addr_header
 			int i, delta;
@@ -585,7 +585,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				printfmt (" ");
 				//printfmt (i+1==delta?" ":" "); // NOP WTF
 		}
-		printfmt (col==1?"|":" ");
+		printfmt (col == 1 ? "|" : " ");
 		opad >>= 4;
 		k = 0; // TODO: ??? SURE??? config.seek & 0xF;
 		/* extra padding for offsets > 8 digits */
@@ -593,12 +593,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			printfmt (pre);
 			printfmt (" %c", hex[(i+k)%16]);
 			if (i&1 || !pairs)
-				printfmt (col!=1?" ":((i+1)<inc)?" ":"|");
+				printfmt (col != 1 ? " " : ((i + 1) < inc) ? " " : "|");
 		}
-		printfmt ((col==2)? "|": " ");
-		for (i=0; i<inc; i++)
+		printfmt ((col == 2) ? "|" : " ");
+		for (i = 0; i < inc; i++)
 			printfmt ("%c", hex[(i+k)%16]);
-		printfmt (col==2?"|\n":"\n");
+		printfmt (col == 2 ? "|\n" : "\n");
 	}
 
 	if (p) p->interrupt = 0;
@@ -622,13 +622,18 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		if (use_offset)
 			r_print_addr (p, addr+j);
 		printfmt ((col==1)? "|": " ");
-		for (j=i; j<i+inc; j++) {
-			if (j>=len) {
-				if (col==1) {
-					if (j+1>=inc+i)
+		for (j = i; j < i + inc; j++) {
+			if (j >= len) {
+				if (col == 1) {
+					if (j+1 >= inc + i) {
 						printfmt (j%2?"  |":"| ");
-					else printfmt (j%2?"   ":"  ");
-				} else printfmt (j%2?"   ":"  ");
+					}
+					else {
+						printfmt (j%2?"   ":"  ");
+					}
+				} else {
+					printfmt (j%2?"   ":"  ");
+				}
 				continue;
 			}
 			if (p && (base == 32 || base == 64)) {
@@ -637,19 +642,20 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				ut64 n = 0;
 				size_t sz_n;
 
-				if (base == 64)
+				if (base == 64) {
 					sz_n = sizeof (ut64);
-				else
+				} else {
 					sz_n = step == 2 ? sizeof (ut16) : sizeof (ut32);
+				}
 				r_mem_copyendian ((ut8*)&n, buf+j, sz_n, !p->big_endian);
 				r_print_cursor (p, j, 1);
-
 				// stub for colors
 				if (p && p->colorfor) {
 					a = p->colorfor (p->user, n);
 					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
-				} else { a = b = ""; }
-
+				} else {
+					a = b = "";
+				}
 				if (base == 64)
 					printfmt ("%s0x%016"PFMT64x"%s  ", a, (ut64)n, b);
 				else if (step == 2)
@@ -676,16 +682,16 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 			}
 		}
-		printfmt ((col==2)? "|":" ");
-		for (j=i; j<i+inc; j++) {
+		printfmt ((col == 2)? "|" : " ");
+		for (j = i; j < i+inc; j++) {
 			if (j >= len) printfmt (" ");
 			else r_print_byte (p, "%c", j, buf[j]);
 		}
-		if (col==2) printfmt("|");
+		if (col == 2) printfmt("|");
 		if (p && p->flags & R_PRINT_FLAGS_REFS) {
 			ut64 *foo = (ut64*)(buf+i);
 			ut64 addr = *foo;
-			if (base==32) addr &= UT32_MAX;
+			if (base == 32) addr &= UT32_MAX;
 			if (p->hasrefs) {
 				const char *rstr = p->hasrefs (p->user, addr);
 				if (rstr && *rstr)
@@ -742,14 +748,14 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 			continue;
 		p->cb_printf ("0x%08"PFMT64x" ", aa+i);
 		for (j=0; j<min; j++) {
-			*fmt = color; 
+			*fmt = color;
 			r_print_cursor (p, i+j, 1);
 			p->cb_printf (BD (a, b));
 			r_print_cursor (p, i+j, 0);
 		}
 		p->cb_printf (" ");
 		for (j=0; j<min; j++) {
-			*fmt = color; 
+			*fmt = color;
 			r_print_cursor (p, i+j, 1);
 			p->cb_printf ("%s", CD (a, b));
 			r_print_cursor (p, i+j, 0);
@@ -757,14 +763,14 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 		if (scndcol) {
 			p->cb_printf (" %c 0x%08"PFMT64x" ", linediff, ba+i);
 			for (j=0; j<min; j++) {
-				*fmt = color; 
+				*fmt = color;
 				r_print_cursor (p, i+j, 1);
 				p->cb_printf (BD (b, a));
 				r_print_cursor (p, i+j, 0);
 			}
 			p->cb_printf (" ");
 			for (j=0; j<min; j++) {
-				*fmt = color; 
+				*fmt = color;
 				r_print_cursor (p, i+j, 1);
 				p->cb_printf ("%s", CD (b, a));
 				r_print_cursor (p, i+j, 0);
