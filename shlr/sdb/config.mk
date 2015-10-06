@@ -74,7 +74,11 @@ LDFLAGS_SHARED=-shared
 endif
 
 # create .d files
+ifeq (,$(findstring tcc,${CC}))
 CFLAGS+=-MMD
+else
+CFLAGS+=-MD
+endif
 
 ifeq (${OS},w32)
 OSTYPE=MINGW32
