@@ -375,7 +375,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_CLAC:
 		case X86_INS_CLGI:
 		case X86_INS_CLTS:
+#if CS_API_MAJOR >= 4
 		case X86_INS_CLWB:
+#endif
 		case X86_INS_STAC:
 		case X86_INS_STGI:
 			op->type = R_ANAL_OP_TYPE_MOV;
