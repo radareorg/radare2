@@ -396,6 +396,12 @@ int main(int argc, char **argv) {
 	r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
 	r_lib_opendir (l, homeplugindir);
 	r_lib_opendir (l, R2_LIBDIR"/radare2/"R2_VERSION);
+	
+	char *maxstrbuf = r_sys_getenv ("RABIN2_MAXSTRBUF");
+	if (maxstrbuf) {
+		r_config_set (core.config, "bin.maxstrbuf", maxstrbuf);
+		free(maxstrbuf);
+	}
 
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |= x
@@ -676,6 +682,8 @@ int main(int argc, char **argv) {
 	}
 
 	bin->minstrlen = r_config_get_i (core.config, "bin.minstr");
+	bin->maxstrbuf = r_config_get_i (core.config, "bin.maxstrbuf");
+
 	r_bin_force_plugin (bin, forcebin);
 	if (!r_bin_load (bin, file, baddr, laddr, xtr_idx, fd, rawstr)) {
 		if (!r_bin_load (bin, file, baddr, laddr, xtr_idx, fd, rawstr)) {

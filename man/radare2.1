@@ -100,7 +100,11 @@ To enter visual mode use the 'V' command. Then press '?' for help.
 .Sh DEBUGGER
 In r2 the debugger commands are implemented under the 'd' command. Type 'd?' for help.
 .Sh ENVIRONMENT
-These values can be used from scripts launched from inside radare ('!' command)
+ RHOMEDIR     ~/.config/radare2
+ RCFILE       ~/.radare2rc (user preferences, batch script)
+ MAGICPATH    /usr/lib/radare2/0.10.0-git/magic
+ R_DEBUG      if defined, show error messages and crash signal
+ VAPIDIR      path to extra vapi directory
 .Ar FILE
 path to the current working file.
 .Sh SEE ALSO
