@@ -177,6 +177,7 @@ typedef struct r_bin_t {
 	/* preconfigured values */
 	int minstrlen;
 	int maxstrlen;
+	ut64 maxstrbuf;
 	int rawstr;
 	Sdb *sdb;
 	RList/*<RBinPlugin>*/ *plugins;

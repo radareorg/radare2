@@ -1028,6 +1028,21 @@ static int cb_rawstr(void *user, void *data) {
 	return true;
 }
 
+static int cb_binmaxstrbuf(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core->bin) {
+		int v = node->i_value;
+		ut64 old_v = core->bin->maxstrbuf;
+		if (v<1) v = 4; // HACK
+		core->bin->maxstrbuf = v;
+		if (v>old_v)
+			r_core_bin_refresh_strings (core);
+		return true;
+	}
+	return true;
+}
+
 static int cb_binmaxstr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1235,6 +1250,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("bin.dwarf", "true", "Load dwarf information on startup if available");
 	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for r_bin");
 	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for r_bin");
+	SETICB("bin.maxstrbuf", 1024*1024*2, & cb_binmaxstrbuf, "Maximum size of range to load strings from");
 	SETCB("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETPREF("bin.strings", "true", "Load strings from rbin on startup");
 	SETPREF("bin.classes", "true", "Load classes from rbin on startup");

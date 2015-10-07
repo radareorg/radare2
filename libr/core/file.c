@@ -327,6 +327,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 		//\\ r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
 		RBinObject *obj = r_bin_get_object (r->bin);
 		RBinInfo * info = obj ? obj->info : NULL;
@@ -365,6 +366,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 		// r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
 		RBinObject *obj = r_bin_get_object (r->bin);
 		RBinInfo * info = obj ? obj->info : NULL;
@@ -414,6 +416,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+	r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	if (is_io_load) {
 		// TODO? necessary to restore the desc back?
 		// RIODesc *oldesc = desc;
@@ -440,6 +443,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		r_config_set_i (r->config, "io.va", false);
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
 		RBinObject *obj = r_bin_get_object (r->bin);
 		RBinInfo * info = obj ? obj->info : NULL;
