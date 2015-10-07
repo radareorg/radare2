@@ -847,8 +847,9 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 				if (r == -1) {
 					eprintf ("Something was wrong %s-%d\n",
 						__FILE__, __LINE__);
+				} else {
+					r_strbuf_appendf (s, " (%s%s%s)", c, widebuf, cend);
 				}
-				r_strbuf_appendf (s, " (%s%s%s)", c, widebuf, cend);
 				break;
 			}
 		}
