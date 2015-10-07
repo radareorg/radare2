@@ -14,36 +14,52 @@
 #if CAPSTONE_HAS_M68K
 
 static bool check_features(RAsm *a, cs_insn *insn);
-static csh cd;
+static csh cd = 0;
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	static int omode = -1;
+	static int obits = 32;
 	cs_insn* insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	if (mode != omode || a->bits != obits) {
+		cs_close (&cd);
+		cd = 0; // unnecessary
+		omode = mode;
+		obits = a->bits;
+	}
 
 	// replace this with the asm.features?
-	if (a->cpu && strstr (a->cpu, "mclass"))
-		mode |= CS_MODE_MCLASS;
-	if (a->cpu && strstr (a->cpu, "v8"))
-		mode |= CS_MODE_V8;
+	if (a->cpu && strstr (a->cpu, "68000"))
+		mode |= CS_MODE_M68K_000;
+	if (a->cpu && strstr (a->cpu, "68010"))
+		mode |= CS_MODE_M68K_010;
+	if (a->cpu && strstr (a->cpu, "68020"))
+		mode |= CS_MODE_M68K_020;
+	if (a->cpu && strstr (a->cpu, "68030"))
+		mode |= CS_MODE_M68K_030;
+	if (a->cpu && strstr (a->cpu, "68040"))
+		mode |= CS_MODE_M68K_040;
+	if (a->cpu && strstr (a->cpu, "68060"))
+		mode |= CS_MODE_M68K_060;
 	op->size = 4;
 	op->buf_asm[0] = 0;
-	ret = cs_open (CS_ARCH_M68K, mode, &cd);
-	if (ret) {
-		ret = -1;
-		goto beach;
+	if (cd == 0) {
+		ret = cs_open (CS_ARCH_M68K, mode, &cd);
+		if (ret) {
+			ret = -1;
+			goto beach;
+		}
 	}
-	if (a->syntax == R_ASM_SYNTAX_REGNUM) {
-		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
-	} else cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
 	if (a->features && *a->features) {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_ON);
 	} else {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
+	// XXX: passing ->pc crashes in capstone, will be back after fixed
 	n = cs_disasm (cd, buf, R_MIN (4, len),
-		a->pc, 1, &insn);
+		0, 1, &insn); //a->pc, 1, &insn);
 	if (n<1) {
 		ret = -1;
 		goto beach;
@@ -65,11 +81,18 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			insn->mnemonic,
 			insn->op_str[0]?" ":"",
 			insn->op_str);
-		r_str_rmch (op->buf_asm, '#');
+	}
+	{
+		char *p = r_str_replace (strdup (op->buf_asm),
+			"$", "0x", true);
+		if (p) {
+			strcpy (op->buf_asm, p);
+			free (p);
+		}
 	}
 	cs_free (insn, n);
 	beach:
-	cs_close (&cd);
+	//cs_close (&cd);
 	if (!op->buf_asm[0])
 		strcpy (op->buf_asm, "invalid");
 	return op->size;

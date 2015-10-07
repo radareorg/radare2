@@ -6,17 +6,22 @@
 #include "../arch/arm/asm-arm.h"
 
 static int check_features(RAsm *a, cs_insn *insn);
-static csh cd;
+static csh cd = 0;
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	static int omode = -1;
+	static int obits = 32;
 	cs_insn* insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
-	mode = (a->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
-	if (a->big_endian)
-		mode |= CS_MODE_BIG_ENDIAN;
-	else
-		mode |= CS_MODE_LITTLE_ENDIAN;
+	mode |= (a->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
+	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	if (mode != omode || a->bits != obits) {
+		cs_close (&cd);
+		cd = 0; // unnecessary
+		omode = mode;
+		obits = a->bits;
+	}
 
 	// replace this with the asm.features?
 	if (a->cpu && strstr (a->cpu, "mclass"))
@@ -25,12 +30,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		mode |= CS_MODE_V8;
 	op->size = 4;
 	op->buf_asm[0] = 0;
-	ret = (a->bits==64)?
-		cs_open (CS_ARCH_ARM64, mode, &cd):
-		cs_open (CS_ARCH_ARM, mode, &cd);
-	if (ret) {
-		ret = -1;
-		goto beach;
+	if (cd == 0) {
+		ret = (a->bits==64)?
+			cs_open (CS_ARCH_ARM64, mode, &cd):
+			cs_open (CS_ARCH_ARM, mode, &cd);
+		if (ret) {
+			ret = -1;
+			goto beach;
+		}
 	}
 	if (a->syntax == R_ASM_SYNTAX_REGNUM) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
@@ -67,7 +74,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	cs_free (insn, n);
 	beach:
-	cs_close (&cd);
+	//cs_close (&cd);
 	if (!op->buf_asm[0])
 		strcpy (op->buf_asm, "invalid");
 	return op->size;
