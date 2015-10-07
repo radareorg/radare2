@@ -1673,8 +1673,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		case 'l': // "aesl"
 			{
-			       ut64 pc = r_debug_reg_get (core->dbg, "pc");
+				ut64 pc = r_debug_reg_get (core->dbg, "pc");
 				RAnalOp *op = r_core_anal_op (core, pc);
+				if (!op) break;
 				esil_step (core, UT64_MAX, NULL);
 				r_debug_reg_set (core->dbg, "pc", pc + op->size);
                                 r_anal_esil_set_pc (esil, pc + op->size);

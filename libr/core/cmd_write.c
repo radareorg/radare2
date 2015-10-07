@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
-	ut8 *buf = malloc (strlen (pairs));
+	ut8 *buf = malloc (strlen (pairs) + 1);
 	int len = r_hex_str2bin (pairs, buf);
 	if (len != 0) {
 		if (len < 0)

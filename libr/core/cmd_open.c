@@ -219,6 +219,7 @@ static void reopen_in_debug(RCore *core, const char *args) {
 	r_config_set_i (core->config, "cfg.debug", true);
 	r_core_cmd0 (core, "sr pc");
 	free (oldname);
+	free (binpath);
 }
 
 static int cmd_open(void *data, const char *input) {
