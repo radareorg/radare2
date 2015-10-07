@@ -70,7 +70,8 @@ static const char *menus_Search[] = {
 };
 
 static const char *menus_Debug[] = {
-	"Registers", "DRX", "Breakpoints", "Watchpoints", "Maps",
+	"Registers", "RegisterRefs", "DRX", "Breakpoints",
+	"Watchpoints", "Maps",
 	"Continue", "Cont until.",
 	"Backtrace",
 	NULL
@@ -278,6 +279,7 @@ static int bbPanels (RCore *core, Panel **n) {
 	addPanelFrame ("Symbols", "isq", 0);
 	addPanelFrame ("Stack", "px 256@r:sp", 0);
 	addPanelFrame ("Registers", "dr=", 0);
+	addPanelFrame ("RegisterRefs", "drr", 0);
 	curnode = 0;
 
 	Layout_run (panels);
