@@ -326,7 +326,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->size = 4;
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_MIPS, mode, &handle);
-eprintf ("Plantilla\n");
 		if (ret != CS_ERR_OK) goto fin;
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}

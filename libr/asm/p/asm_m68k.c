@@ -43,8 +43,6 @@ RAsmPlugin r_asm_plugin_m68k = {
 	.license = "BSD",
 	.bits = 16|32,
 	.desc = "Motorola 68000",
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
 	.assemble = NULL
 };
