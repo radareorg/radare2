@@ -242,7 +242,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case '?': {
 		const char* help_msg[] = {
 			"Usage:", "CC[-+!*au] [base64:..|str] @ addr", "",
-			"CC", "", "list all comments in human friednly form",
+			"CC", "", "list all comments in human friendly form",
 			"CC*", "", "list all comments in r2 commands",
 			"CC.", "", "show comment at current offset",
 			"CC", " or maybe not", "append comment at current address",
@@ -266,6 +266,9 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		break;
 	case 0:
 		r_meta_list (core->anal, R_META_TYPE_COMMENT, 0);
+		break;
+	case 'j':
+		r_meta_list (core->anal, R_META_TYPE_COMMENT, 'j');
 		break;
 	case '!':
 		{
