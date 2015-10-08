@@ -159,7 +159,6 @@ typedef struct r_disam_options_t {
 	const ut8 *buf;
 	int len;
 
-	int counter;
 	int maxrefs;
 } RDisasmState;
 
@@ -1745,10 +1744,27 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_core_vmode (RCore *core, RDisasmState *ds) {
+static bool is_asmqjmps_valid (RCore *core) {
+	if (!core->asmqjmps) return false;
+	if (core->is_asmqjmps_letter) {
+		if (core->asmqjmps_count >= R_CORE_ASMQJMPS_MAX_LETTERS) {
+			return false;
+		}
+
+		if (core->asmqjmps_count >= core->asmqjmps_size - 2) {
+			core->asmqjmps_size *= 2;
+			core->asmqjmps = realloc (core->asmqjmps, core->asmqjmps_size * sizeof (ut64));
+			if (!core->asmqjmps) return false;
+		}
+	}
+
+	return core->asmqjmps_count < core->asmqjmps_size - 1;
+}
+
+static void handle_print_core_vmode(RCore *core, RDisasmState *ds) {
 	int i;
-	if (!ds->show_comments)
-		return;
+
+	if (!ds->show_comments) return;
 	if (core->vmode) {
 		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
@@ -1756,23 +1772,25 @@ static void handle_print_core_vmode (RCore *core, RDisasmState *ds) {
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
 			handle_comment_align (core, ds);
-			if (ds->show_color)
-				r_cons_strcat (ds->pal_comment);
-			if (ds->counter<9) {
+			if (ds->show_color) r_cons_strcat (ds->pal_comment);
+			if (is_asmqjmps_valid (core)) {
+				char t[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
 				int found = 0;
-				for (i=0; i<ds->counter+1; i++) {
+
+				for (i = 0; i < core->asmqjmps_count + 1; i++) {
 					if (core->asmqjmps[i] == ds->analop.jump) {
 						found = 1;
 						break;
 					}
 				}
-				if (!found)
-					i = ++ds->counter;
+				if (!found) i = ++core->asmqjmps_count;
 				core->asmqjmps[i] = ds->analop.jump;
-				r_cons_printf (" ;[%d]", i);
-			} else r_cons_strcat (" ;[?]");
-			if (ds->show_color)
-				r_cons_strcat (Color_RESET);
+				r_core_set_asmqjmps (core, t, sizeof (t), i);
+				r_cons_printf (" ;[%s]", t);
+			} else {
+				r_cons_strcat (" ;[?]");
+			}
+			if (ds->show_color) r_cons_strcat (Color_RESET);
 			break;
 		}
 	}
@@ -2425,11 +2443,17 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 
 	handle_reflines_init (core->anal, ds);
 	core->inc = 0;
-	/* reset jmp table if not a bad block */
-	ds->counter = 0;
-	if (buf[0] != 0xff) // hack
-		for (i=0; i<10; i++)
-			core->asmqjmps[i] = UT64_MAX;
+	/* reset jmp table if not asked to keep it */
+	if (!core->keep_asmqjmps) { // hack
+		core->asmqjmps_count = 0;
+		core->asmqjmps_size = R_CORE_ASMQJMPS_NUM;
+		core->asmqjmps = realloc (core->asmqjmps, core->asmqjmps_size * sizeof (ut64));
+		if (core->asmqjmps) {
+			for (i = 0; i < R_CORE_ASMQJMPS_NUM; i++) {
+				core->asmqjmps[i] = UT64_MAX;
+			}
+		}
+	}
 toro:
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, ds->addr+idx);

@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 #include <r_cons.h>
+#include <ctype.h>
 #include <limits.h>
 
 static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
@@ -1443,13 +1444,11 @@ static char *get_body_bb (RCore *core, RAnalBlock *bb, bool is_simple_mode) {
 	int o_cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 	int o_marks = r_config_get_i (core->config, "asm.marks");
 	int o_offset = r_config_get_i (core->config, "asm.offset");
-	int o_vmode = core->vmode;
 	// configure options
 	r_config_set_i (core->config, "asm.fcnlines", false);
 	r_config_set_i (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmtcol", 0);
 	r_config_set_i (core->config, "asm.marks", false);
-	core->vmode = false;
 
 	if (is_simple_mode) {
 		r_config_set_i (core->config, "asm.bytes", false);
@@ -1461,7 +1460,6 @@ static char *get_body_bb (RCore *core, RAnalBlock *bb, bool is_simple_mode) {
 	body = r_core_cmd_strf (core,
 		"pD %d @ 0x%08"PFMT64x, bb->size, bb->addr);
 	// restore original options
-	core->vmode = o_vmode;
 	r_config_set_i (core->config, "asm.fcnlines", o_fcnlines);
 	r_config_set_i (core->config, "asm.lines", o_lines);
 	r_config_set_i (core->config, "asm.bytes", o_bytes);
@@ -1475,6 +1473,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
 
+	core->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RANode *node;
 		char *title, *body;
@@ -1492,6 +1491,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 			free (body);
 		}
 		free (title);
+		core->keep_asmqjmps = true;
 	}
 }
 
@@ -1500,12 +1500,12 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
 
+	core->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RANode *node;
 		char *title, *body;
 
-		if (bb->addr == UT64_MAX)
-			continue;
+		if (bb->addr == UT64_MAX) continue;
 
 		body = get_body_bb (core, bb, g->is_simple_mode);
 		title = get_title (bb->addr);
@@ -1513,9 +1513,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		node = r_agraph_add_node (g, title, body);
 		free (body);
 		free (title);
-		if (!node) {
-			return false;
-		}
+		if (!node) return false;
+		core->keep_asmqjmps = true;
 	}
 
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -2354,7 +2353,43 @@ static void visual_offset (RCore *core) {
 	}
 }
 
+static void goto_asmqjmps(RCore *core) {
+	const char *h = "[Fast goto call/jmp]> ";
+	char obuf[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
+	int rows, i = 0;
+	bool cont;
+
+	r_cons_get_size (&rows);
+	r_cons_gotoxy (0, rows);
+	r_cons_printf (Color_RESET);
+	r_cons_printf (h);
+	r_cons_flush ();
+	r_cons_clear_line (0);
+	r_cons_gotoxy (strlen (h) + 1, rows);
+
+	do {
+		char ch;
+
+		ch = r_cons_readchar ();
+		obuf[i++] = ch;
+		r_cons_printf ("%c", ch);
+		r_cons_flush ();
+
+		cont = isalpha (ch) && !islower (ch);
+	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
+
+	obuf[i] = '\0';
+	ut64 addr = r_core_get_asmqjmps (core, obuf);
+	if (addr != UT64_MAX) {
+		char cmd[20];
+		snprintf(cmd, sizeof (cmd), "s %"PFMT64u, addr);
+		r_core_cmd0 (core, cmd);
+	}
+}
+
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interactive) {
+	int o_asmqjmps_letter = core->is_asmqjmps_letter;
+	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
 	struct agraph_refresh_data *grd;
 	int okey, key, wheel;
@@ -2387,6 +2422,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		goto err_graph_new;
 	}
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
+
+	/* we want letters as shortcuts for call/jmps */
+	core->is_asmqjmps_letter = true;
+	core->vmode = true;
 
 	grd = R_NEW (struct agraph_refresh_data);
 	grd->g = g;
@@ -2515,29 +2554,33 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
-					" .      - center graph to the current node\n"
-					" c      - toggle asm.comments\n"
-					" C      - toggle scr.color\n"
-					" hjkl   - move node\n"
-					" HJKL   - scroll canvas\n"
-					" tab    - select next node\n"
-					" TAB    - select previous node\n"
-					" t/f    - follow true/false edges\n"
-					" e      - toggle edge-lines style (diagonal/square)\n"
-					" O      - toggle disasm mode\n"
-					" r      - relayout\n"
-					" R      - randomize colors\n"
-					" o      - go/seek to given offset\n"
-					" u/U    - undo/redo seek\n"
-					" p      - toggle mini-graph\n"
-					" b      - select previous node\n"
-					" V      - toggle basicblock / call graphs\n"
-					" w      - toggle between movements speed 1 and graph.scroll\n"
-					" x/X    - jump to xref/ref\n"
-					" z/Z    - step / step over\n"
-					" +/-/0  - zoom in/out/default\n");
+					" .            - center graph to the current node\n"
+					" c            - toggle asm.comments\n"
+					" C            - toggle scr.color\n"
+					" hjkl         - move node\n"
+					" HJKL         - scroll canvas\n"
+					" tab          - select next node\n"
+					" TAB          - select previous node\n"
+					" t/f          - follow true/false edges\n"
+					" g([A-Za-z]*) - follow jmp/call identified by shortcut\n"
+					" e            - toggle edge-lines style (diagonal/square)\n"
+					" O            - toggle disasm mode\n"
+					" r            - relayout\n"
+					" R            - randomize colors\n"
+					" o            - go/seek to given offset\n"
+					" u/U          - undo/redo seek\n"
+					" p            - toggle mini-graph\n"
+					" b            - select previous node\n"
+					" V            - toggle basicblock / call graphs\n"
+					" w            - toggle between movements speed 1 and graph.scroll\n"
+					" x/X          - jump to xref/ref\n"
+					" z/Z          - step / step over\n"
+					" +/-/0        - zoom in/out/default\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
+			break;
+		case 'g':
+			goto_asmqjmps (core);
 			break;
 		case 'o':
 			visual_offset (core);
@@ -2660,6 +2703,9 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 
 	core->cons->event_data = NULL;
 	core->cons->event_resize = NULL;
+	core->vmode = o_vmode;
+	core->is_asmqjmps_letter = o_asmqjmps_letter;
+	core->keep_asmqjmps = false;
 
 	free (grd);
 	r_agraph_free(g);
