@@ -1622,6 +1622,10 @@ static int cmd_print(void *data, const char *input) {
 			switch (input1) {
 			case 'p':
 			case 'e':
+				if (fsz==UT64_MAX) {
+					eprintf ("Cannot determine file size\n");
+					goto beach;
+				}
 				nbsz = fsz / nbsz;
 				break;
 			}
