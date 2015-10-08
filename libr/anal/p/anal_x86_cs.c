@@ -313,14 +313,20 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_FISTTP:
 		case X86_INS_FSQRT:
 		case X86_INS_FXCH:
+			op->family = R_ANAL_OP_FAMILY_FPU;
+			op->type = R_ANAL_OP_TYPE_STORE;
+			break;
 		case X86_INS_FTST:
 		case X86_INS_FUCOMPI:
 		case X86_INS_FUCOMI:
 		case X86_INS_FUCOMPP:
 		case X86_INS_FUCOMP:
 		case X86_INS_FUCOM:
+			op->family = R_ANAL_OP_FAMILY_FPU;
+			op->type = R_ANAL_OP_TYPE_CMP;
+			break;
 		case X86_INS_FABS:
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = R_ANAL_OP_TYPE_ABS;
 			op->family = R_ANAL_OP_FAMILY_FPU;
 			break;
 		case X86_INS_FLDCW:
@@ -352,6 +358,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_FDIVR:
 		case X86_INS_FIDIVR:
 		case X86_INS_FDIVRP:
+			op->type = R_ANAL_OP_TYPE_DIV;
+			op->family = R_ANAL_OP_FAMILY_FPU;
+			break;
 		case X86_INS_FSUBR:
 		case X86_INS_FISUBR:
 		case X86_INS_FSUBRP:
