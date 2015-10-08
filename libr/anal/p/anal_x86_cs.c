@@ -252,7 +252,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		const char *bp = (a->bits==16)?"bp":
 			(a->bits==32)?"ebp":"rbp";
 		op->size = insn->size;
-		op->family = 0;
+		op->family = R_ANAL_OP_FAMILY_CPU; // almost everything is CPU
 		op->prefix = 0;
 		switch (insn->detail->x86.prefix[0]) {
 		case X86_PREFIX_REPNE:

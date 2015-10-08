@@ -2996,7 +2996,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			r_cons_printf (",\"esil\":\"%s\"", esil);
 		}
 		r_cons_printf (",\"bytes\":\"%s\"", asmop.buf_hex);
-		//r_cons_printf (",\"family\":\"%s\"", asmop.family);
+		r_cons_printf (",\"family\":\"%s\"",
+				r_anal_op_family_to_string (analop.family));
 		r_cons_printf (",\"type\":\"%s\"", r_anal_optype_to_string (analop.type));
 		// wanted the numerical values of the type information
 		r_cons_printf (",\"type_num\":%"PFMT64d, analop.type);
