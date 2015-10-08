@@ -2,7 +2,9 @@ BINR_PROGRAM=1
 include ../../libr/config.mk
 include ../../shlr/zip/deps.mk
 
+ifneq ($(OSTYPE),windows)
 CFLAGS+=-pie
+endif
 CFLAGS+=-I$(LTOP)/include
 
 ifeq (${COMPILER},emscripten)

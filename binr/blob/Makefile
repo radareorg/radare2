@@ -4,8 +4,10 @@ DESTDIR?=/
 BINS=rabin2 rarun2 rasm2 ragg2 rahash2 rax2 rafind2 radiff2
 BINS2=radare2 ${BINS}
 
+ifneq($(OSTYPE),windows)
 CFLAGS+=-pie -fPIC -fPIE
 LDFLAGS+=-pie
+endif
 SHLR=../../shlr
 include ../../config-user.mk
 include ../../shlr/zip/deps.mk
