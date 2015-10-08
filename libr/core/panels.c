@@ -188,6 +188,10 @@ static void Layout_run(Panel *panels) {
 	int h, w = r_cons_get_size (&h);
 	int i, j;
 	int colpos = w - COLW;
+	if (colpos<0) {
+		COLW = w;
+		colpos = 0;
+	}
 
 	can->sx = 0;
 	can->sy = 0;
