@@ -1157,7 +1157,7 @@ static ut64 read_uleb128(ulebr *r, ut8 *end) {
 		slice = *p & 0x7f;
 
 		if (bit > 63) {
-			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%0llX", bit, result);
+			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x, bit, result);
 		} else {
 			result |= (slice << bit);
 			bit += 7;

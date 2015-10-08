@@ -8,11 +8,13 @@
 #define R2P_INPUT(x) (((R2Pipe*)x->data)->input[0])
 #define R2P_OUTPUT(x) (((R2Pipe*)x->data)->output[1])
 
+#if !__WINDOWS__
 static void env(const char *s, int f) {
         char *a = r_str_newf ("%d", f);
         r_sys_setenv (s, a);
         free (a);
 }
+#endif
 
 R_API int r2p_close(R2Pipe *r2p) {
 #if __WINDOWS__
@@ -48,11 +50,10 @@ static int w32_createChildProcess(const char * szCmdline) {
 	PROCESS_INFORMATION piProcInfo;
 	STARTUPINFO siStartInfo;
 	BOOL bSuccess = FALSE;
-	DWORD dwWritten;
 	ZeroMemory (&piProcInfo, sizeof (PROCESS_INFORMATION));
 	ZeroMemory (&siStartInfo, sizeof (STARTUPINFO));
 	siStartInfo.cb = sizeof (STARTUPINFO);
-	bSuccess = CreateProcess (NULL, szCmdline, NULL, NULL,
+	bSuccess = CreateProcess (NULL, (LPSTR)szCmdline, NULL, NULL,
 		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
 	if (!bSuccess)
 		return false;
@@ -62,26 +63,17 @@ static int w32_createChildProcess(const char * szCmdline) {
 }
 
 static int w32_createPipe(R2Pipe *r2p, const char *cmd) {
-	DWORD dwRead, dwWritten;
 	CHAR buf[1024];
-	BOOL bSuccess = FALSE;
-	SECURITY_ATTRIBUTES saAttr;
-	int res = 0;
 	r2p->pipe = CreateNamedPipe ("\\\\.\\pipe\\R2PIPE_IN",
 		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
 		PIPE_READMODE_MESSAGE | \
 		PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 		sizeof (buf), sizeof (buf), 0, NULL);
-	if (w32_createChildProcess (cmd) != true) {
-		//eprintf("Error spawning process: %s\n",code);
-		return true;
+	if (w32_createChildProcess (cmd)) {
+		if (ConnectNamedPipe (r2p->pipe, NULL))
+			return true;
 	}
-	bSuccess = ConnectNamedPipe (r2p->pipe, NULL);
-	if (!bSuccess) {
-		//eprintf("Error connecting pipe.\n");
-		return true;
-	}
-	return true;
+	return false;
 }
 #endif
 

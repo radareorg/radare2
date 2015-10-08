@@ -1189,7 +1189,13 @@ free (rf);
 			if (item) {
 				if (eq) {
 					long double val = 0.0f;
+#if __WINDOWS__
+					double dval = 0.0f;
+					sscanf (eq, "%lf", (double*)&dval);
+					val = dval;
+#else
 					sscanf (eq, "%Lf", &val);
+#endif
 					r_reg_set_double (core->dbg->reg, item, val);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, true);

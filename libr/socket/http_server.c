@@ -2,9 +2,9 @@
 
 #include <r_socket.h>
 
-static int *breaked = NULL;
+static bool *breaked = NULL;
 
-R_API void r_socket_http_server_set_breaked(int *b) {
+R_API void r_socket_http_server_set_breaked(bool *b) {
 	breaked = b;
 }
 

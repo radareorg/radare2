@@ -267,7 +267,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	bb = appendBasicBlock (anal, fcn, addr);
 
 	VERBOSE_ANAL eprintf ("Append bb at 0x%08"PFMT64x
-		" (fcn 0x%08llx)\n", addr, fcn->addr);
+		" (fcn 0x%08"PFMT64x")\n", addr, fcn->addr);
 
 	while (idx < len) {
 		if (anal->limit) {

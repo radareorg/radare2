@@ -2155,7 +2155,7 @@ static bool esil_anal_stop = false;
 static void cccb(void*u) {
 	esil_anal_stop = true;
 	eprintf ("^C\n");
-	sleep (1);
+	r_sys_sleep (1);
 }
 
 R_API void r_core_anal_esil (RCore *core, const char *str) {

@@ -47,7 +47,7 @@ static ut64 at = 0LL;
 static RLib *l;
 
 static int rabin_show_help(int v) {
-	printf ("Usage: rabin2 [-AcdehHiIjlLMqrRsSvVxzZ] [-@ addr] [-a arch] [-b bits]\n"
+	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSvVxzZ] [-@ addr] [-a arch] [-b bits]\n"
 		"              [-B addr] [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M]\n"
 		"              [-o str] [-O str] [-k query] [-D lang symname] | file\n");
 	if (v) printf (
@@ -61,12 +61,12 @@ static int rabin_show_help(int v) {
 		" -d              show debug/dwarf information\n"
 		" -D lang name    demangle symbol name (-D all for bin.demangle=true)\n"
 		" -e              entrypoint\n"
-		" -E              exports (global symbols, aka -s| grep GLOBAL)\n"
+		" -E              globally exportable symbols\n"
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
 		" -g              same as -SMResiz (show all info)\n"
 		" -G [addr]       load address . offset to header\n"
-		" -h              this help\n"
+		" -h              this help message\n"
 		" -H              header fields\n"
 		" -i              imports (symbols imported from libraries)\n"
 		" -I              binary info\n"
@@ -88,7 +88,7 @@ static int rabin_show_help(int v) {
 		" -Q              show load address used by dlopen (non-aslr libs)\n"
 		" -r              radare output\n"
 		" -R              relocations\n"
-		" -s              symbols (exports)\n"
+		" -s              symbols\n"
 		" -S              sections\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
 		" -v              display version and quit\n"
@@ -144,7 +144,6 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 	}
 
 	// XXX: Wrong for w32 (/)
-
 	ptr = strrchr (path, DIRSEP);
 	if (ptr) {
 		*ptr++ = '\0';
