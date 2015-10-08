@@ -109,14 +109,10 @@
 extern "C" {
 #endif
 
-#ifndef GIT_TAP
-#define GIT_TAP R2_VERSION
-#endif
-
 #define R_LIB_VERSION_HEADER(x) \
 const char *x##_version()
 #define R_LIB_VERSION(x) \
-const char *x##_version () { return "" GIT_TAP; }
+const char *x##_version () { return "" R2_GITTAP; }
 
 #define TODO(x) eprintf(__FUNCTION__"  " x)
 
