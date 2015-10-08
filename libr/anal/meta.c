@@ -402,9 +402,7 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 	else it.str = strdup (it.str); // don't break in free
 	printmetaitem (ui->anal, &it, ui->rad);
 	free (it.str);
-
 beach:
-
 	return 1;
 }
 

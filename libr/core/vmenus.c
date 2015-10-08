@@ -284,6 +284,49 @@ R_API int r_core_visual_types(RCore *core) {
 	return true;
 }
 
+static int cmtcb(void *usr, const char *k, const char *v) {
+	if (!strncmp (k, "meta.C.", 7)) {
+		RList *list = (RList*)usr;
+		char *msg, *comma = strchr (v, ',');
+		if (comma) {
+			comma = strchr (comma+1, ',');
+			if (comma) {
+				msg = (char *)sdb_decode (comma+1, NULL);
+				if (msg) {
+					msg = r_str_replace (msg, "\n", "", true);
+					r_list_append (list, r_str_newf ("%s  %s", k+7, msg));
+					free (msg);
+				}
+			}
+		}
+	}
+	return 1;
+}
+
+R_API bool r_core_visual_hudstuff(RCore *core) {
+	RListIter *iter;
+	RFlagItem *flag;
+	ut64 addr;
+	char *res;
+	RList *list = r_list_new ();
+	list->free = free;
+	r_list_foreach (core->flags->flags, iter, flag) {
+		r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s",
+			flag->offset, flag->name));
+	}
+	sdb_foreach (core->anal->sdb_meta, cmtcb, list);
+	res = r_cons_hud(list, NULL);
+	if (res) {
+		char *p = strchr (res, ' ');
+		if (p) *p = 0;
+		addr = r_num_get (NULL, res);
+		r_core_seek (core, addr, true);
+		free (res);
+	}
+	r_list_free (list);
+	return res? true: false;
+}
+
 R_API int r_core_visual_trackflags(RCore *core) {
 	const char *fs = NULL, *fs2 = NULL;
 	int hit, i, j, ch;
@@ -385,6 +428,10 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		switch (ch) {
 		case 'C':
 			r_config_toggle (core->config, "scr.color");
+			break;
+		case '_':
+			if (r_core_visual_hudstuff (core))
+				return true;
 			break;
 		case 'J': option += 10; break;
 		case 'o': r_flag_sort (core->flags, 0); break;
@@ -517,6 +564,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			" r/R   - rename flag / Rename function\n"
 			" n     - sort flags by name\n"
 			" p/P   - rotate print format\n"
+			" _     - hud for flags and comments\n"
 			" :     - enter command\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
