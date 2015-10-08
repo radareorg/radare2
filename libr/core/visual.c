@@ -693,8 +693,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	}
 
 	// do we need hotkeys for data references? not only calls?
-	if (ch>='0'&& ch<='9') {
-		ut64 off = core->asmqjmps[ch-'0'];
+	if (ch >= '0'&& ch <= '9') {
+		char chbuf[2];
+		ut64 off;
+
+		chbuf[0] = ch;
+		chbuf[1] = '\0';
+		off = r_core_get_asmqjmps (core, chbuf);
 		if (off != UT64_MAX) {
 			int delta = R_ABS ((st64)off-(st64)offset);
 			r_io_sundo_push (core->io, offset);
