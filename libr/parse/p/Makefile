@@ -1,7 +1,8 @@
 include ../../config.mk
+include ../../../mk/platform.mk
 include ../../util/deps.mk
 
-CFLAGS+=-I../../include -Wall -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
+CFLAGS+=-I../../include -Wall ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
 # XXX
 CFLAGS+=-DLIL_ENDIAN=1
 # -D__UNIX__

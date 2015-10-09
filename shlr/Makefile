@@ -35,11 +35,7 @@ SDB_URL=git://github.com/radare/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
-ifneq (,$(findstring cygwin,${OSTYPE})$(findstring mingw32,${OSTYPE})$(findstring mingw64,${OSTYPE})$(findstring msys,${OSTYPE}))
-CFLAGS_SHARED=
-else
-CFLAGS_SHARED=-fPIC
-endif
+CFLAGS_SHARED=${PIC_CFLAGS}
 
 ifeq (${EXT_SO},)
 all:

@@ -3,6 +3,7 @@ LIBAR?=libr_java.a
 
 include ../../config-user.mk
 include ../../global.mk
+include ../../mk/platform.mk
 _INCLUDE_MK_GCC_=
 include ../../mk/${COMPILER}.mk
 SHLR?=..
@@ -15,13 +16,11 @@ all:
 	exit 1
 endif
 
-ifeq (,$(findstring cygwin,${OSTYPE}))
+CFLAGS+=${PIC_CFLAGS}
 ifeq (,$(findstring mingw32,${OSTYPE}))
-CFLAGS+=-fPIC -g
-else
 CFLAGS+=-DMINGW32=1
 endif
-endif
+
 
 #CFLAGS+=-g -ggdb
 CFLAGS+=-I../../libr/include

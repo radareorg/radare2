@@ -1,5 +1,6 @@
 include ../../../config-user.mk
 include ../../../libr/config.mk
+include ../../../mk/platform.mk
 include ../../../mk/${COMPILER}.mk
 
 ifneq (,$(findstring cygwin,${OSTYPE}))

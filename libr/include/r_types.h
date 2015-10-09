@@ -45,15 +45,13 @@
   #define __addr_t_defined
   #include <windows.h>
 #endif
-#if __WIN32__ || MINGW32
+#if __WIN32__ || MINGW32 && !__CYGWIN__
   #include <winsock.h>
   typedef int socklen_t;
-#if __WIN32__ || __CYGWIN__ || MINGW32
   #undef USE_SOCKETS
   #define __WINDOWS__ 1
   #undef __UNIX__
   #undef __BSD__
-#endif
 #endif
 
 #if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
