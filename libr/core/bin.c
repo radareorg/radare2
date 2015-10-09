@@ -818,7 +818,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 				r_cons_printf (" classname=%s", import->classname);
 			}
 			r_cons_printf (" name=%s", import->name);
-			if (import->classname[0]) {
+			if (import->descriptor[0]) {
 				r_cons_printf (" descriptor=%s", import->descriptor);
 			}
 			r_cons_printf ("\n");

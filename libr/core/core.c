@@ -842,7 +842,7 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 				r_strbuf_appendf (s, " (%s%s%s)", c, buf, cend);
 				break;
 			case 2:
-				r = r_utf8_encode_str ((const RRune *)widebuf, buf,
+				r = r_utf8_encode_str ((const RRune *)buf, widebuf,
 							sizeof(widebuf) - 1);
 				if (r == -1) {
 					eprintf ("Something was wrong %s-%d\n",
