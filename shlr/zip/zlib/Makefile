@@ -1,6 +1,9 @@
 include ../../../config-user.mk
 include ../../../libr/config.mk
+include ../../../mk/platform.mk
 include ../../../mk/${COMPILER}.mk
+
+CFLAGS+=${PIC_CFLAGS}
 
 ifneq (,$(findstring cygwin,${OSTYPE}))
 CFLAGS+=-D__CYGWIN__=1
@@ -16,15 +19,15 @@ SOVER=${EXT_SO}
 LDFLAGS+=-shared
 LDFLAGS_SHARED?=-shared
 else
-CFLAGS+=-fPIC
-LDFLAGS_SHARED?=-fPIC -shared
+LDFLAGS_SHARED?=-shared
+LDFLAGS_SHARED?=${PIC_CFLAGS} -shared
 endif
 endif
 ifeq (${OSTYPE},windows)
 EXT_SO=dll
 SOVER=${EXT_SO}
 LDFLAGS+=-shared
-LDFLAGS_SHARED?=-fPIC -shared
+LDFLAGS_SHARED?=${PIC_CFLAGS} -shared
 else
 ifeq (${OSTYPE},darwin)
 EXT_SO=dylib

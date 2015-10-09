@@ -3,6 +3,7 @@ LIBAR=librz.a
 
 include ../../config-user.mk
 include ../../libr/config.mk
+include ../../mk/platform.mk
 include ../../mk/${COMPILER}.mk
 
 ifeq ($(USE_LIB_ZIP),1)

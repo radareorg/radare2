@@ -2,6 +2,7 @@ include ../global.mk
 include ../config-user.mk
 # for EXT_EXE
 include ../libr/config.mk
+include ../mk/platform.mk
 _INCLUDE_MK_GCC_=
 include ../mk/${COMPILER}.mk
 

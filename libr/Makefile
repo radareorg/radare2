@@ -1,6 +1,7 @@
 include ../global.mk
 include config.mk
 include ../config-user.mk
+include ../mk/platform.mk
 include ../mk/${COMPILER}.mk
 
 DESTDIR:=$(call rmbdlslash,$(DESTDIR))

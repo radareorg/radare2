@@ -1,4 +1,5 @@
 include ../../config-user.mk
+include ../../mk/platform.mk
 include ../../mk/${COMPILER}.mk
 
 ifneq (,$(findstring cygwin,${OSTYPE}))
@@ -15,7 +16,12 @@ SOVER=${EXT_SO}
 LDFLAGS+=-shared
 LDFLAGS_SHARED?=-shared
 else
-CFLAGS+=-fPIC
+ifneq (,$(findstring mingw64,${OSTYPE})$(findstring msys,${OSTYPE}))
+LDFLAGS+=-shared
+LFDLAGS_SHARE?=-shared
+else
+CFLAGS+=${PIC_CFLAGS}
+endif
 endif
 endif
 

@@ -46,5 +46,6 @@ endif
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 -include $(TOP)/config-user.mk
+-include $(TOP)/mk/platform.mk
 -include $(TOP)/mk/${COMPILER}.mk
 endif
