@@ -268,6 +268,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		switch (insn->id) {
 		case X86_INS_FNOP:
 			op->family = R_ANAL_OP_FAMILY_FPU;
+			/* fallthru */
 		case X86_INS_NOP:
 		case X86_INS_PAUSE:
 			op->type = R_ANAL_OP_TYPE_NOP;
@@ -463,7 +464,8 @@ SETL/SETNGE
 		case X86_INS_FCMOVNU:
 		case X86_INS_FCMOVU:
 			op->family = R_ANAL_OP_FAMILY_FPU;
-		case X86_INS_MOVSS:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			break;
 		case X86_INS_CMOVA:
 		case X86_INS_CMOVAE:
 		case X86_INS_CMOVB:
@@ -480,7 +482,10 @@ SETL/SETNGE
 		case X86_INS_CMOVO:
 		case X86_INS_CMOVP:
 		case X86_INS_CMOVS:
+			op->type = R_ANAL_OP_TYPE_CMOV;
+			break;
 		// mov
+		case X86_INS_MOVSS:
 		case X86_INS_MOV:
 		case X86_INS_MOVAPS:
 		case X86_INS_MOVAPD:
