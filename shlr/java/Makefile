@@ -17,7 +17,7 @@ all:
 endif
 
 CFLAGS+=${PIC_CFLAGS}
-ifeq (,$(findstring mingw32,${OSTYPE}))
+ifneq (,$(findstring mingw32,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
 endif
 
