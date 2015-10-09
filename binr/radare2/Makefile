@@ -17,6 +17,13 @@ SIGN_LIBS=$(addsuffix /libr_*.dylib,$(FOOD_LIBS))
 include ../rules.mk
 #IOS_CERTID?=org.radare.radare2
 
+ios:
+	$(MAKE) -C ../../libr/io
+	$(MAKE) -C ../../libr/debug
+	rm -f radare2
+	$(MAKE)
+	$(MAKE) ios-sign
+
 ios-sign iossign sign:
 	xcrun --sdk iphoneos codesign \
 		-s- --entitlements radare2.xml radare2

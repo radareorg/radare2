@@ -2,8 +2,8 @@
 
 [ -z "${CPU}" ] && CPU="armv7"
 # CPU=arm64
-[ -z "${IOSINC}" ] && IOSINC="${CWD}/ios-include"
 CWD="$(dirname "$0")"
+[ -z "${IOSINC}" ] && IOSINC="${CWD}/ios-include"
 #CC="xcrun --sdk iphoneos gcc -arch armv7 -I${CWD}/ios-include"
 CC="xcrun --sdk iphoneos gcc -arch ${CPU} -I${IOSINC}"
 #CC="xcrun --sdk iphoneos gcc -arch arm64"
