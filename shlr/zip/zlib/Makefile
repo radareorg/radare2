@@ -20,20 +20,19 @@ LDFLAGS+=-shared
 LDFLAGS_SHARED?=-shared
 else
 LDFLAGS_SHARED?=-shared
-LDFLAGS_SHARED?=${PIC_CFLAGS} -shared
 endif
 endif
 ifeq (${OSTYPE},windows)
 EXT_SO=dll
 SOVER=${EXT_SO}
 LDFLAGS+=-shared
-LDFLAGS_SHARED?=${PIC_CFLAGS} -shared
+LDFLAGS_SHARED?= -shared
 else
 ifeq (${OSTYPE},darwin)
 EXT_SO=dylib
 SOVER=${EXT_SO}
 LDFLAGS+=-dynamic
-LDFLAGS_SHARED?=-fPIC -shared
+LDFLAGS_SHARED?=-shared
 # ifeq (${ARCH},i386)
    #CC+=-arch i386
 #   CC+=-arch x86_64
@@ -45,6 +44,8 @@ SOVER=${EXT_SO}
 LDFLAGS_SHARED+=-Wl,-soname,libr_z.${EXT_SO}
 endif
 endif
+
+LDFLAGS_SHARED+=${PIC_CFLAGS}
 
 OBJS = adler32.o crc32.o deflate.o infback.o \
 	inffast.o inflate.o inftrees.o trees.o \

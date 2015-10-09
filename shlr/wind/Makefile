@@ -2,6 +2,8 @@ include ../../config-user.mk
 include ../../mk/platform.mk
 include ../../mk/${COMPILER}.mk
 
+CFLAGS+=${PIC_CFLAGS}
+
 ifneq (,$(findstring cygwin,${OSTYPE}))
 CFLAGS+=-D__CYGWIN__=1
 EXT_SO=dll
@@ -19,8 +21,6 @@ else
 ifneq (,$(findstring mingw64,${OSTYPE})$(findstring msys,${OSTYPE}))
 LDFLAGS+=-shared
 LFDLAGS_SHARE?=-shared
-else
-CFLAGS+=${PIC_CFLAGS}
 endif
 endif
 endif
