@@ -28,7 +28,7 @@ install:
 		rm -f "${BFX}/$$a" ; \
 		${INSTALL_PROGRAM} "$$a/$$a" "${BFX}/$$a" ; \
 	done
-	${INSTALL_SCRIPT} "${PWD}/r2pm/r2pm" "${BFX}/r2pm"
+	${INSTALL_SCRIPT} "$(BTOP)/r2pm/r2pm" "${BFX}/r2pm"
 	rm -f "${BFX}/ragg2-cc"
 	rm -rf "${PFX}/radare2/${VERSION}/r2pm"
 	mkdir -p "${PFX}/radare2/${VERSION}/r2pm"
@@ -47,7 +47,7 @@ symstall install-symlink:
 	ln -fs "${BTOP}/r2pm/r2pm" "${BFX}/r2pm"
 	rm -rf "${PFX}/share/radare2/${VERSION}/r2pm"
 	mkdir -p "${PFX}/share/radare2/${VERSION}/"
-	ln -fs "`pwd`/r2pm/d" "${PFX}/share/radare2/${VERSION}/r2pm"
+	ln -fs "$(BTOP)/r2pm/d" "${PFX}/share/radare2/${VERSION}/r2pm"
 	-ln -fs "${PFX}/bin/radare2" "${BFX}/r2"
 	-ln -fs "${BTOP}/preload/libr2.$(EXT_SO)" "${LFX}/libr2.$(EXT_SO)"
 	-cd "$(LFX)" && \
