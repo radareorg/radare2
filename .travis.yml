@@ -98,8 +98,12 @@ script:
   - make install > /dev/null
   - export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
   - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
+  - export LIBR_INCLUDE=${TRAVIS_BUILD_DIR}/libr/include
+  - export LIBR_UTIL=${TRAVIS_BUILD_DIR}/libr/util
   - cd radare2-regressions
   - VERBOSE=1 make $TESTS   # Run the tests, report only regressions as errors.
+  - VERBOSE=1 make build.unit   # Run the tests, report only regressions as errors.
+  - VERBOSE=1 make run.unit   # Run the tests, report only regressions as errors.
 
 ##after_success: coveralls -r ${TRAVIS_BUILD_DIR} --exclude lib --exclude tests --gcov-options '\-lp'
 
