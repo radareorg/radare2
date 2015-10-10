@@ -204,7 +204,7 @@ static void setASLR(int enabled) {
 }
 
 static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err) {
-#if __UNIX__
+#if __UNIX__ && !__ANDROID__
 	// use PTY to redirect I/O because pipes can be problematic in
 	// case of interactive programs.
 	int fdm;
