@@ -47,8 +47,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
-	if (n<1 || insn->size<1)
+	if (n<1 || insn->size<1) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->size = 2;
+		opsize = -1;
 		goto beach;
+	}
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->delay = 0;
 	opsize = op->size = insn->size;
@@ -118,8 +122,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case M68K_INS_CHK:
 	case M68K_INS_CHK2:
 	case M68K_INS_CLR:
-	// TODO:
-	break;
+		// TODO:
+		break;
 	case M68K_INS_CMP:
 	case M68K_INS_CMPA:
 	case M68K_INS_CMPI:
@@ -501,8 +505,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 }
 
 static int set_reg_profile(RAnal *anal) {
-	// XXX : 64bit profile
-	char *p = "=pc    pc\n"
+	const char *p = \
+		"=pc    pc\n"
 		"=sp    sp\n"
 		"=a0    a0\n"
 		"=a1    a1\n"
@@ -518,53 +522,52 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	d7	.32	28	0\n"
 		"gpr	a0	.32	32	0\n"
 		"gpr	a1	.32	36	0\n"
-		"gpr	a1 	.32	40	0\n"
-		"gpr	a2 	.32	44	0\n"
-		"gpr	a3 	.32	48	0\n"
-		"gpr	a4	.32	52	0\n"
-		"gpr	a5 	.32	56	0\n"
-		"gpr	a6 	.32	60	0\n"
-		"gpr	a7	.32	64	0\n"
-		"gpr	fp0	.32	68	0\n"
-		"gpr	fp1	.32	72	0\n"
-		"gpr	fp2	.32	76	0\n"
-		"gpr	fp3 	.32	80	0\n"
-		"gpr	fp4 	.32	84	0\n"
-		"gpr	fp5 	.32	88	0\n"
-		"gpr	fp6 	.32	92	0\n"
-		"gpr	fp7 	.32	96	0\n"
-		"gpr	pc 	.32	100	0\n"
-		"gpr	sr 	.32	104	0\n"
-		"gpr	ccr 	.32	108	0\n"
-		"gpr	sfc 	.32	112	0\n"
-		"gpr	dfc	.32	116	0\n"
-		"gpr	usp	.32	120	0\n"
-		"gpr	vbr	.32	124	0\n"
-		"gpr	cacr	.32	128	0\n"
-		"gpr	caar	.32	132	0\n"
-		"gpr	msp	.32	136	0\n"
-		"gpr	isp	.32	140	0\n"
-		"gpr	tc	.32	144	0\n"
+		"gpr	a2 	.32	40	0\n"
+		"gpr	a3 	.32	44	0\n"
+		"gpr	a4 	.32	48	0\n"
+		"gpr	a5	.32	52	0\n"
+		"gpr	a6 	.32	56	0\n"
+		"gpr	a7 	.32	60	0\n"
+		"gpr	fp0	.32	64	0\n"
+		"gpr	fp1	.32	68	0\n"
+		"gpr	fp2	.32	72	0\n"
+		"gpr	fp3 	.32	76	0\n"
+		"gpr	fp4 	.32	80	0\n"
+		"gpr	fp5 	.32	84	0\n"
+		"gpr	fp6 	.32	88	0\n"
+		"gpr	fp7 	.32	92	0\n"
+		"gpr	pc 	.32	96	0\n"
+		"gpr	sr 	.32	100	0\n"
+		"gpr	ccr 	.32	104	0\n"
+		"gpr	sfc 	.32	108	0\n"
+		"gpr	dfc	.32	112	0\n"
+		"gpr	usp	.32	116	0\n"
+		"gpr	vbr	.32	120	0\n"
+		"gpr	cacr	.32	124	0\n"
+		"gpr	caar	.32	128	0\n"
+		"gpr	msp	.32	132	0\n"
+		"gpr	isp	.32	136	0\n"
+		"gpr	tc	.32	140	0\n"
 		"gpr	itt0	.32	144	0\n"
-		"gpr	itt1	.32	144	0\n"
-		"gpr	dtt0	.32	144	0\n"
-		"gpr	dtt1	.32	144	0\n"
-		"gpr	mmusr	.32	144	0\n"
-		"gpr	urp	.32	144	0\n"
-		"gpr	srp	.32	144	0\n"
-		"gpr	fpcr	.32	144	0\n"
-		"gpr	fpsr	.32	144	0\n"
-		"gpr	fpiar	.32	144	0\n";
+		"gpr	itt1	.32	148	0\n"
+		"gpr	dtt0	.32	156	0\n"
+		"gpr	dtt1	.32	160	0\n"
+		"gpr	mmusr	.32	164	0\n"
+		"gpr	urp	.32	168	0\n"
+		"gpr	srp	.32	172	0\n"
+		"gpr	fpcr	.32	176	0\n"
+		"gpr	fpsr	.32	180	0\n"
+		"gpr	fpiar	.32	184	0\n";
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
 RAnalPlugin r_anal_plugin_m68k_cs = {
-	.name = "m68k.mk",
+	.name = "m68k.cs",
 	.desc = "Capstone M68K analyzer",
 	.license = "BSD",
 	.esil = false,
 	.arch = R_SYS_ARCH_M68K,
-	.set_reg_profile = set_reg_profile,
+	.set_reg_profile = &set_reg_profile,
 	.bits = 32,
 	.op = &analop,
 };

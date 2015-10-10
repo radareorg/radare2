@@ -1314,7 +1314,7 @@ static int esil_x86_cs_fini (RAnalEsil *esil) {
 static int set_reg_profile(RAnal *anal) {
 	const char *p = NULL;
 	switch (anal->bits) {
-	case 16: p=
+	case 16: p =
 		"=pc	ip\n"
 		"=sp	sp\n"
 		"=bp	bp\n"

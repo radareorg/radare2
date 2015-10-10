@@ -59,7 +59,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	// XXX: passing ->pc crashes in capstone, will be back after fixed
 	n = cs_disasm (cd, buf, R_MIN (4, len),
-		0, 1, &insn); //a->pc, 1, &insn);
+		a->pc, 1, &insn);
 	if (n<1) {
 		ret = -1;
 		goto beach;
@@ -93,8 +93,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_free (insn, n);
 	beach:
 	//cs_close (&cd);
-	if (!op->buf_asm[0])
+	if (!strncmp (op->buf_asm, "dc.w", 4)) {
 		strcpy (op->buf_asm, "invalid");
+	}
 	return op->size;
 }
 
