@@ -31,6 +31,7 @@ script:
   - export LIBR_UTIL=${TRAVIS_BUILD_DIR}/libr/util
   - cd radare2-regressions
   - make all
+  - make unit_tests
 
 notifications:
   irc: "chat.freenode.net#radare"
