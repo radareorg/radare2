@@ -109,3 +109,5 @@ script:
 
 notifications:
   irc: "chat.freenode.net#radare"
+  on_success: change
+  on_failure: always
