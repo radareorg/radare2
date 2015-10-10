@@ -63,6 +63,8 @@ env:
   - TESTS=commands         # r2 commands related
   - TESTS=tools            # tools related 
 
+  - TESTS=unit_tests
+
 # Force build on container-based infrastructure
 sudo: false
 
@@ -102,8 +104,6 @@ script:
   - export LIBR_UTIL=${TRAVIS_BUILD_DIR}/libr/util
   - cd radare2-regressions
   - VERBOSE=1 make $TESTS   # Run the tests, report only regressions as errors.
-  - VERBOSE=1 make build.unit   # Run the tests, report only regressions as errors.
-  - VERBOSE=1 make run.unit   # Run the tests, report only regressions as errors.
 
 ##after_success: coveralls -r ${TRAVIS_BUILD_DIR} --exclude lib --exclude tests --gcov-options '\-lp'
 
