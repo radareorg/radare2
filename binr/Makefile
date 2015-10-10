@@ -28,7 +28,7 @@ install:
 		rm -f "${BFX}/$$a" ; \
 		${INSTALL_PROGRAM} "$$a/$$a" "${BFX}/$$a" ; \
 	done
-	${INSTALL_SCRIPT} "${PWD}/r2pm/r2pm" "${BFX}/r2pm"
+	${INSTALL_SCRIPT} r2pm/r2pm "${BFX}/r2pm"
 	rm -f "${BFX}/ragg2-cc"
 	rm -rf "${PFX}/radare2/${VERSION}/r2pm"
 	mkdir -p "${PFX}/radare2/${VERSION}/r2pm"
