@@ -3,7 +3,10 @@ include ../../libr/config.mk
 include ../../shlr/zip/deps.mk
 
 ifneq ($(OSTYPE),windows)
+# tcc doesn't recognize the -pie option
+ifeq (,$(findstring tcc,${CC}))
 CFLAGS+=-pie
+endif
 endif
 CFLAGS+=-I$(LTOP)/include
 
