@@ -133,8 +133,7 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int
 	int j, i;
 
 	width -= 52;
-	if (width<1)
-		width = 30;
+	if (width < 1) width = 30;
 
 	seek = (io->va || io->debug) ? r_io_section_vaddr_to_maddr_try (io, seek) : seek;
 	r_list_foreach (io->sections, iter, s) {
@@ -165,24 +164,24 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int
 			}
 			if (io->va) {
 				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						(seek>=s->offset && seek<s->offset+s->size)?'*':' ', 
-						//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ', 
+						(seek >= s->offset && seek < s->offset + s->size) ? '*' : ' ',
+						//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ',
 						color, s->vaddr, color_end);
 			} else {
 				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						(seek>=s->offset && seek<s->offset+s->size)?'*':' ', 
-						color, s->vaddr, color_end);
+						(seek >= s->offset && seek < s->offset + s->size) ? '*' : ' ',
+						color, s->offset, color_end);
 			}
-			for (j=0; j<width; j++) {
-				ut64 pos = min + (j*mul);
-				ut64 npos = min + ((j+1)*mul);
-				if (s->offset <npos && (s->offset+s->size)>pos)
+			for (j = 0; j < width; j++) {
+				ut64 pos = min + (j * mul);
+				ut64 npos = min + ((j + 1) * mul);
+				if (s->offset < npos && (s->offset + s->size) > pos)
 					io->cb_printf ("#");
 				else io->cb_printf ("-");
 			}
 			if (io->va) {
-				io->cb_printf ("| %s0x%08"PFMT64x"%s %s %s\n", 
-					color, s->vaddr+s->size, color_end,
+				io->cb_printf ("| %s0x%08"PFMT64x"%s %s %s\n",
+					color, s->vaddr + s->size, color_end,
 					r_str_rwx_i (s->rwx), s->name);
 			} else {
 				io->cb_printf ("| %s0x%08"PFMT64x"%s %s %s\n",
@@ -192,16 +191,15 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int
 			i++;
 		}
 		/* current seek */
-		if (i>0 && len != 0) {
-			if (seek == UT64_MAX)
-				seek = 0;
+		if (i > 0 && len != 0) {
+			if (seek == UT64_MAX) seek = 0;
 			//len = 8096;//r_io_size (io);
 			io->cb_printf ("=>  0x%08"PFMT64x" |", seek);
-			for (j=0;j<width;j++) {
+			for (j = 0; j < width; j++) {
 				io->cb_printf (
-					((j*mul)+min >= seek &&
-					 (j*mul)+min <= seek+len)
-					?"^":"-");
+					((j*mul) + min >= seek &&
+					(j*mul) + min <= seek + len)
+					? "^" : "-");
 			}
 			io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len);
 		}
