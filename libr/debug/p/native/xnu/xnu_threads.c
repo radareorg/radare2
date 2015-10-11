@@ -16,6 +16,7 @@ static void xnu_thread_free (xnu_thread_t *thread) {
 static int xnu_fill_info_thread(RDebug *dbg, xnu_thread_t *thread) {
 #if TARGET_OS_IPHONE
 #warning not implement yet for iOS
+	eprintf ("Cannot get thread info on iOS\n");
 	return false;
 #else
 	mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
@@ -48,7 +49,6 @@ static int xnu_fill_info_thread(RDebug *dbg, xnu_thread_t *thread) {
 	return true;
 #endif
 }
-
 
 static xnu_thread_t *xnu_get_thread_with_info (RDebug *dbg, thread_t tid){
 	xnu_thread_t *thread = NULL;
