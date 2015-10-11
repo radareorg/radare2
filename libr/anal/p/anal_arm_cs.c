@@ -747,40 +747,38 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BLX:
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = IMM(0);
+		op->fail = addr + op->size;
 		break;
 	case ARM_INS_CBZ:
 	case ARM_INS_CBNZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = IMM(1);
-		op->fail = addr+op->size;
+		op->fail = addr + op->size;
+		if (op->jump == op->fail) {
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->fail = UT64_MAX;
+		}
 		break;
 	case ARM_INS_B:
+		if (insn->detail->arm.cc == ARM_CC_INVALID) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+			op->fail = addr+op->size;
+		} else if (insn->detail->arm.cc == ARM_CC_AL) {
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->fail = UT64_MAX;
+		} else {
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->fail = addr+op->size;
+		}
+		op->jump = IMM(0);
+		break;
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
 		// BX LR == RET
 		if (insn->detail->arm.operands[0].reg == ARM_REG_LR) {
 			op->type = R_ANAL_OP_TYPE_RET;
-		} else if (insn->detail->arm.cc) {
-			if (insn->detail->arm.cc == ARM_CC_INVALID) {
-				op->type = R_ANAL_OP_TYPE_ILL;
-			} else if (insn->detail->arm.cc == ARM_CC_AL) {
-				op->type = R_ANAL_OP_TYPE_JMP;
-			} else {
-				op->type = R_ANAL_OP_TYPE_CJMP;
-			}
-			if (REGID(1)==ARM_REG_PC) {
-				op->jump = addr+op->size;
-			} else {
-				op->jump = (ut64) (ut32)IMM(0);
-			//	op->jump = addr+op->size;
-			}
-			op->fail = addr+op->size;
-			if (op->jump == op->fail) {
-				op->type = R_ANAL_OP_TYPE_JMP;
-				op->fail = UT64_MAX;
-			}
 		} else {
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ANAL_OP_TYPE_UJMP;
 			op->jump = IMM(0);
 		}
 		break;
