@@ -2484,28 +2484,44 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		}
 		break;
 	case 's':
-		addr = r_debug_reg_get (core->dbg, "pc");
-		r_reg_arena_swap (core->dbg->reg, true);
-		for (i = 0; i < times; i++) {
-			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-			r_io_read_at (core->io, addr, buf, sizeof (buf));
-			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
-			if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
-				eprintf ("Don't know how to skip this instruction\n");
-				break;
+		{
+			char delb[128] = {0};
+			addr = r_debug_reg_get (core->dbg, "pc");
+			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
+			sprintf(delb, "db 0x%"PFMT64x"", addr);
+			r_reg_arena_swap (core->dbg->reg, true);
+			for (i = 0; i < times; i++) {
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
+				r_io_read_at (core->io, addr, buf, sizeof (buf));
+				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
+					eprintf ("Don't know how to skip this instruction\n");
+					if (bpi) r_core_cmd0 (core, delb);
+					break;
+				}
+				addr += aop.size;
 			}
-			addr += aop.size;
-		}
-		r_debug_reg_set (core->dbg, "pc", addr);
-		break;
-	case 'o':
-		r_reg_arena_swap (core->dbg->reg, true);
-		r_debug_step_over (core->dbg, times);
-		if (checkbpcallback (core)) {
-			eprintf ("Interrupted by a breakpoint\n");
+			r_debug_reg_set (core->dbg, "pc", addr);
+			if (bpi) r_core_cmd0 (core, delb);
 			break;
 		}
-		break;
+	case 'o':
+		{
+			char delb[128] = {0};
+			addr = r_debug_reg_get (core->dbg, "pc");
+			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
+			sprintf(delb, "db 0x%"PFMT64x"", addr);
+			r_bp_del (core->dbg->bp, addr);
+			r_reg_arena_swap (core->dbg->reg, true);
+			r_debug_step_over (core->dbg, times);
+			if (checkbpcallback (core)) {
+				eprintf ("Interrupted by a breakpoint\n");
+				if (bpi) r_core_cmd0 (core, delb);
+				break;
+			}
+			if (bpi) r_core_cmd0 (core, delb);
+			break;
+		}
 	case 'l':
 		r_reg_arena_swap (core->dbg->reg, true);
 		step_line (core, times);
