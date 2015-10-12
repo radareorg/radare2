@@ -155,7 +155,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	return len; //(int)size;
 }
 
-static vm_address_t tsk_getpage(ut64 addr) {
+static vm_address_t tsk_getpagebase(ut64 addr) {
 	vm_address_t a = addr;
 	a >>= 12;
 	a <<= 12;
@@ -178,8 +178,13 @@ static int tsk_getperm(task_t task, vm_address_t addr) {
 	return 0;
 }
 
-static int tsk_pagesize(int len) {
+static int tsk_pagesize(RIO *io, int len) {
+#if __arm__ || __arm64__ || __aarch64__
+	int is_arm64 = (io && io->bits == 64);
+	int pagesize = is_arm64? 16384: 4096;
+#else
 	int pagesize = getpagesize();
+#endif
 	if (pagesize<1) pagesize = 4096;
 	if (len > pagesize) {
 		pagesize *= (1 + (len / pagesize));
@@ -187,12 +192,12 @@ static int tsk_pagesize(int len) {
 	return pagesize;
 }
 
-static bool tsk_setperm(task_t task, vm_address_t addr, int len, int perm) {
+static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int perm) {
 	mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT;
 	vm_region_flavor_t flavor = VM_REGION_BASIC_INFO;
 	vm_address_t region = (vm_address_t)addr;
 	vm_region_basic_info_data_t info;
-	vm_size_t region_size = tsk_pagesize(len);
+	vm_size_t region_size = tsk_pagesize(io, len);
 #if 1
 	task_t t;
 	vm_region_64 (task, &region, &region_size, flavor, (vm_region_info_t)&info,
@@ -207,7 +212,7 @@ static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
 	return vm_write (task, addr, _buf, _len) == KERN_SUCCESS;
 }
 
-static int mach_write_at(RIOMach *riom, const void *buf, int len, ut64 addr) {
+static int mach_write_at(RIO *io, RIOMach *riom, const void *buf, int len, ut64 addr) {
 	vm_address_t vaddr = addr;
 	vm_address_t pageaddr;
 	vm_size_t pagesize;
@@ -219,14 +224,14 @@ static int mach_write_at(RIOMach *riom, const void *buf, int len, ut64 addr) {
 	}
 	task = riom->task;
 
-	pageaddr = tsk_getpage (addr);
-	pagesize = tsk_pagesize (len);
+	pageaddr = tsk_getpagebase (addr);
+	pagesize = tsk_pagesize (io, len);
 
 	if (tsk_write (task, vaddr, buf, len)) {
 		return len;
 	}
 	operms = tsk_getperm (task, pageaddr);
-	if (!tsk_setperm (task, pageaddr, pagesize, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
+	if (!tsk_setperm (io, task, pageaddr, pagesize, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
 		perror ("setperm");
 		eprintf ("io.mach: cant set page perms for %d bytes at 0x%08"
 			PFMT64x"\n", (int)pagesize, (ut64)pageaddr);
@@ -238,7 +243,7 @@ static int mach_write_at(RIOMach *riom, const void *buf, int len, ut64 addr) {
 		len = -1;
 	}
 	if (operms) {
-		if (!tsk_setperm (task, pageaddr, pagesize, operms)) {
+		if (!tsk_setperm (io, task, pageaddr, pagesize, operms)) {
 			eprintf ("io.mach: cant restore page perms\n");
 			return -1;
 		}
@@ -247,7 +252,7 @@ static int mach_write_at(RIOMach *riom, const void *buf, int len, ut64 addr) {
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
-	return mach_write_at ((RIOMach*)fd->data, buf, len, io->off);
+	return mach_write_at (io, (RIOMach*)fd->data, buf, len, io->off);
 }
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
@@ -362,8 +367,8 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strncmp (cmd, "perm", 4)) {
 		int perm = r_str_rwx (cmd+4);
 		if (perm) {
-			int pagesize = tsk_pagesize(1);
-			tsk_setperm (riom->task, io->off, pagesize, perm);
+			int pagesize = tsk_pagesize(io, 1);
+			tsk_setperm (io, riom->task, io->off, pagesize, perm);
 		} else {
 			eprintf ("Usage: =!perm [rwx]\n");
 		}
