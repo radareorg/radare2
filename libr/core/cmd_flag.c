@@ -110,6 +110,27 @@ rep:
 			eprintf ("Usage: fa flagname flagalias\n");
 		}
 		break;
+	case 'V': // visual marks
+		switch(input[1]) {
+		case '-':
+			r_core_visual_mark_reset (core);
+			break;
+		case ' ':
+			{
+			const char *arg = strchr (input+2, ' ');
+			ut64 addr = arg? r_num_math (core->num, arg): core->offset;
+			r_core_visual_mark_set (core, atoi (input+1), addr);
+			}
+			break;
+		case '?':
+			eprintf ("Usage: fV[*-] [nkey] [offset]\n");
+			eprintf ("Dump/Restore visual marks (mK/'K)\n");
+			break;
+		default:
+			r_core_visual_mark_dump (core);
+			break;
+		}
+		break;
 	case 'm':
 		r_flag_move (core->flags, core->offset, r_num_math (core->num, input+1));
 		break;

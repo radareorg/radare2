@@ -90,8 +90,6 @@ static int curset = 0, cursor = 0, ocursor=-1;
 static int color = 1;
 static int debug = 1;
 static int zoom = 0;
-static int marks_init = 0;
-static ut64 marks[UT8_MAX+1];
 
 R_API int r_core_visual_hud(RCore *core) {
 	const char *c = r_config_get (core->config, "hud.path");
@@ -122,17 +120,6 @@ R_API int r_core_visual_hud(RCore *core) {
 	r_cons_flush ();
 	free (homehud);
 	return (int)(size_t)p;
-}
-
-static void r_core_visual_mark_seek(RCore *core, ut8 ch) {
-	if (!marks_init) {
-		int i;
-		for (i=0;i<UT8_MAX;i++)
-			marks[i] = 0;
-		marks_init = 1;
-	}
-	if (marks[ch])
-		r_core_seek (core, marks[ch], 1);
 }
 
 static void visual_help() {
@@ -191,16 +178,6 @@ static void visual_help() {
 	);
 	r_cons_flush ();
 	r_cons_clear00 ();
-}
-
-static void r_core_visual_mark(RCore *core, ut8 ch) {
-	if (!marks_init) {
-		int i;
-		for (i=0; i<UT8_MAX; i++)
-			marks[i] = 0;
-		marks_init = 1;
-	}
-	marks[ch] = core->offset;
 }
 
 static void prompt_read (const char *p, char *buf, int buflen) {
