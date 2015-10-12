@@ -13,6 +13,8 @@
 #endif
 
 
+static char *curlibname = NULL;
+
 // XXX remove
 #define WIN32_PI(x) x
 #if 0
@@ -530,6 +532,8 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			eprintf ("(%d) Loading library at %p (%s)\n",
 				pid, de.u.LoadDll.lpBaseOfDll, 
 				dllname ? dllname : "no name");
+			free (curlibname);
+			curlibname = strdup (dllname);
 			if (dllname) {
 				free (dllname);
 			}
@@ -749,6 +753,17 @@ void w32_break_process (void *d) {
 	}
 	CloseHandle (process);
 	CloseHandle (lib);
+}
+
+static RDebugInfo* w32_info (RDebug *dbg, const char *arg) {
+	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
+	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
+	rdi->pid = dbg->pid;
+	rdi->tid = dbg->tid;
+	rdi->uid = -1;// TODO
+	rdi->gid = -1;// TODO
+	rdi->libname = strdup (curlibname);
+	return rdi;
 }
 
 #include "maps/windows.c"

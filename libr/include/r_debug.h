@@ -197,6 +197,7 @@ typedef struct r_debug_info_t {
 	int gid;
 	char *exe;
 	char *cmdline;
+	char *libname;
 	char *cwd;
 	int status; // zombie, running, sleeping, ...
 	// retrieve mem/fd/core limits?
