@@ -998,6 +998,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 't':
 		r_core_visual_types (core);
 		break;
+	case 'B':
+		r_core_visual_classes (core);
+		break;
 	case 'F':
 		r_core_visual_trackflags (core);
 		break;
