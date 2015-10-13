@@ -721,6 +721,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "dm", " # Memory maps commands",
 		"dm", "", "List memory maps of target process",
+		"dm=", "", "List memory maps of target process (ascii-art bars)",
 		"dm", " <address> <size>", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
 		"dm.", "", "Show map name of current address",
 		"dm*", "", "List memmaps in radare commands",
@@ -886,6 +887,12 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'j':
 		r_debug_map_sync (core->dbg); // update process memory maps
 		r_debug_map_list (core->dbg, core->offset, input[0]);
+		break;
+	case '=':
+		r_debug_map_sync (core->dbg);
+		r_debug_map_list_visual (core->dbg, core->offset,
+					r_config_get_i (core->config,
+							"scr.color"));
 		break;
 	}
 	return true;
