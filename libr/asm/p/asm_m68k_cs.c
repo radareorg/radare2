@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <capstone/capstone.h>
 
-#if CS_API_MAJOR>=4 && CS_NEXT_VERSION>=3
+#ifdef CAPSTONE_M68K_H
 #define CAPSTONE_HAS_M68K 1
 #else
 #define CAPSTONE_HAS_M68K 0
