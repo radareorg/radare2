@@ -137,7 +137,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		return NULL;
 	}
 	b = r_bp_item_new (bp);
-	b->addr = addr;
+	b->addr = addr + bp->delta;
 	b->size = size;
 	b->enabled = true;
 	b->rwx = rwx;
@@ -234,9 +234,9 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	r_list_foreach (bp->bps, iter, b) {
 		switch (rad) {
 		case 0:
-			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" \
-				%d %c%c%c %s %s %s cmd=\"%s\" \
-				name=\"%s\"\n",
+			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x \
+				"%d %c%c%c %s %s %s cmd=\"%s\"" \
+				"name=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
 				(b->rwx & R_BP_PROT_READ) ? 'r' : '-',
 				(b->rwx & R_BP_PROT_WRITE) ? 'w' : '-',

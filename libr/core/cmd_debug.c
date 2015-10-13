@@ -1471,6 +1471,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbte", " <addr>", "Enable Breakpoint Trace",
 		"dbtd", " <addr>", "Disable Breakpoint Trace",
 		"dbts", " <addr>", "Swap Breakpoint Trace",
+		"dbm", " [<delta>]", "Define delta to be applied to all breakpoints (ASLR)",
 		"dbn", " [<name>]", "Show or set name for current breakpoint",
 		//
 		"dbi", "", "List breakpoint indexes",
@@ -1649,6 +1650,13 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		}
 		break;
+	case 'm': // "dbm"
+		if (input[2]) {
+			core->dbg->bp->delta = (st64)r_num_math (core->num, input+2);
+		} else {
+			r_cons_printf ("%"PFMT64d"\n", core->dbg->bp->delta);
+		}
+		break;
 	case 'j': r_bp_list (core->dbg->bp, 'j'); break;
 	case '*': r_bp_list (core->dbg->bp, 1); break;
 	case '\0': r_bp_list (core->dbg->bp, 0); break;
@@ -1688,7 +1696,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		r_bp_enable (core->dbg->bp, r_num_math (core->num,
 							input + 2), 0);
 		break;
-	case 'n':
+	case 'n': // "dbn"
 		bpi = r_bp_get_at (core->dbg->bp, core->offset);
 		if (input[2] == ' ') {
 			if (bpi) {
