@@ -2576,6 +2576,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			break;
 		case 'C':
 			r_config_toggle (core->config, "scr.color");
+			can->color = r_config_get_i (core->config, "scr.color");
 			g->need_reload_nodes = true;
 			break;
 		case 'r': agraph_set_layout (g, true); break;
