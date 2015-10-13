@@ -168,7 +168,7 @@ struct grub_jfs_inode
   union
   {
     /* The tree describing the extents of the file.  */
-    struct
+    struct _file_
     {
       struct grub_jfs_treehead tree;
       struct grub_jfs_tree_extent extents[16];

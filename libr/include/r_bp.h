@@ -72,6 +72,7 @@ typedef struct r_bp_t {
 	RList *bps; // list of breakpoints
 	RBreakpointItem **bps_idx;
 	int bps_idx_count;
+	st64 delta;
 } RBreakpoint;
 
 enum {

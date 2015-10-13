@@ -22,7 +22,7 @@ R_API RSign *r_sign_new() {
 }
 
 R_API void r_sign_ns(RSign *sig, const char *str) {
-    /*Set namespace*/
+	/*Set namespace*/
 	if (str) {
 		strncpy (sig->ns, str, sizeof (sig->ns)-1);
 		sig->ns[sizeof (sig->ns)-1] = '\0';
@@ -40,7 +40,7 @@ R_API _Bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, cons
 		return false;
 	si->type = type;
 	snprintf (si->name, sizeof (si->name), "%s.%c.%s",
-		*sig->ns? sig->ns: "sign", type, name);
+		*sig->ns? sig->ns: "sys", type, name);
 
 	switch (type) {
 	case R_SIGN_FUNC: // function signature
@@ -163,7 +163,6 @@ R_API void r_sign_item_free(void *_item) {
 		free (item);
 	}
 }
-
 
 R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len) {
 	RListIter *iter;

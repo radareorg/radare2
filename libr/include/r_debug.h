@@ -178,6 +178,8 @@ typedef struct r_debug_t {
 	char *btalgo;
 	RNum *num;
 	int regcols;
+	char *glob_libs;
+	char *glob_unlibs;
 } RDebug;
 
 typedef struct r_debug_desc_plugin_t {
@@ -197,8 +199,11 @@ typedef struct r_debug_info_t {
 	int gid;
 	char *exe;
 	char *cmdline;
+	char *libname;
 	char *cwd;
 	int status; // zombie, running, sleeping, ...
+	int signum;
+	void * lib;
 	// retrieve mem/fd/core limits?
 	// list of threads ? hasthreads? counter?
 	// environment?

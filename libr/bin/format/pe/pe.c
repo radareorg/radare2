@@ -1774,11 +1774,11 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			if (bin->export_directory->NumberOfNames!=0) {
 				// search for value of i into AddressOfOrdinals
 				name_vaddr=0;
-				for(n=0;n<bin->export_directory->NumberOfNames;n++) {
+				for (n=0; n<bin->export_directory->NumberOfNames;n++) {
 					int ret = r_buf_read_at (bin->b,
 						ordinals_paddr + n * sizeof(PE_Word),
 						(ut8*)&function_ordinal,sizeof (PE_Word));
-					if (!ret) break;
+					if (ret<1) break;
 					// if exist this index into AddressOfOrdinals
 					if (i==function_ordinal) {
 						// get the VA of export name  from AddressOfNames

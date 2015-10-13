@@ -177,6 +177,7 @@ typedef struct r_bin_t {
 	/* preconfigured values */
 	int minstrlen;
 	int maxstrlen;
+	ut64 maxstrbuf;
 	int rawstr;
 	Sdb *sdb;
 	RList/*<RBinPlugin>*/ *plugins;
@@ -187,7 +188,9 @@ typedef struct r_bin_t {
 	RIOBind iob;
 	char *force;
 	int is_debugger;
-	int filter;
+	int filter; // symbol filtering
+	char strfilter; // string filtering
+	int strpurge; // purge false positive strings
 } RBin;
 
 typedef int (*FREE_XTR)(void *xtr_obj);

@@ -155,73 +155,110 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	return len; //(int)size;
 }
 
-static int mach_write_at(RIOMach *riom, const void *buff, int len, ut64 addr) {
-	task_t task = riom->task;
-#if 0
-/* get paVM_PROT_EXECUTEge perms */
-        kern_return_t err;
-	int ret, _basic64[VM_REGION_BASIC_INFO_COUNT_64];
+static vm_address_t tsk_getpagebase(ut64 addr) {
+	vm_address_t a = addr;
+	a >>= 12;
+	a <<= 12;
+	return a;
+}
+
+static int tsk_getperm(task_t task, vm_address_t addr) {
+	vm_size_t pagesize = 1;
+	int _basic64[VM_REGION_BASIC_INFO_COUNT_64];
 	vm_region_basic_info_64_t basic64 = (vm_region_basic_info_64_t)_basic64;
-	mach_msg_type_number_t	infocnt;
-const int pagesize = 4096;
-vm_offset_t addrbase;
-	mach_port_t	objname;
-	vm_size_t size = pagesize;
+	mach_msg_type_number_t infocnt = VM_REGION_BASIC_INFO_COUNT_64;
+	mach_port_t objname;
+	kern_return_t rc;
 
-eprintf ("   0x%llx\n", addr);
-	infocnt = VM_REGION_BASIC_INFO_COUNT_64;
-addrbase = addr;
-size = len;
-	// intentionally use VM_REGION_BASIC_INFO and get up-converted
-	ret = vm_region_64 (task, &addrbase, &size, VM_REGION_BASIC_INFO_64,
-					 (vm_region_info_t)basic64, &infocnt, &objname);
-eprintf ("+ PERMS (%x) %llx\n", basic64->protection, addr);
-	if (ret == -1) {
-		eprintf ("Cant get vm region info\n");
+	rc = vm_region_64 (task, &addr, &pagesize, VM_REGION_BASIC_INFO,
+		(vm_region_info_t)basic64, &infocnt, &objname);
+	if (rc == KERN_SUCCESS) {
+		return basic64[0].protection;
 	}
+	return 0;
+}
 
+static int tsk_pagesize(RIO *io, int len) {
+#if __arm__ || __arm64__ || __aarch64__
+	int is_arm64 = (io && io->bits == 64);
+	int pagesize = is_arm64? 16384: 4096;
+#else
+	int pagesize = getpagesize();
 #endif
-/* get page perms */
-
-	// XXX SHOULD RESTORE PERMS LATER!!!
-	if (vm_protect (task, addr, len, 0, VM_PROT_COPY | VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE) != KERN_SUCCESS)
-		//if (mach_vm_protect (task, addr, len, 0, VM_PROT_READ | VM_PROT_WRITE) != KERN_SUCCESS)
-			if (vm_protect (task, addr, len, 0, VM_PROT_WRITE) != KERN_SUCCESS)
-				eprintf ("cant change page perms to rw at 0x%"PFMT64x" with len= %d\n", addr, len);
-	if (vm_write (task, (vm_address_t)addr,
-			(vm_offset_t)buff, (mach_msg_type_number_t)len) != KERN_SUCCESS)
-		eprintf ("cant write on memory\n");
-	//if (vm_read_overwrite(task, addr, 4, buff, &sz)) { eprintf ("cannot overwrite\n"); }
-
-#if 0
-eprintf ("addrbase: %x\n", addrbase);
-eprintf ("change prems to %x\n", basic64->protection);
-int prot = 0;
-if (basic64->protection & 1) prot |= VM_PROT_EXECUTE;
-if (basic64->protection & 2) prot |= VM_PROT_WRITE;
-if (basic64->protection & 4) prot |= VM_PROT_READ;
-printf ("%d vs %d\n", prot, basic64->protection);
-int prot = VM_PROT_READ | VM_PROT_EXECUTE;
-        if (vm_protect (task, addr, len, 0, prot) != KERN_SUCCESS) { //basic64->protection) != KERN_SUCCESS) {
-        	eprintf ("Oops (0x%"PFMT64x") error (%s)\n", addr,
-			MACH_ERROR_STRING (err));
-                eprintf ("cant change page perms to rx\n");
+	if (pagesize<1) pagesize = 4096;
+	if (len > pagesize) {
+		pagesize *= (1 + (len / pagesize));
 	}
+	return pagesize;
+}
+
+static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int perm) {
+	mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT;
+	vm_region_flavor_t flavor = VM_REGION_BASIC_INFO;
+	vm_address_t region = (vm_address_t)addr;
+	vm_region_basic_info_data_t info;
+	vm_size_t region_size = tsk_pagesize(io, len);
+#if 1
+	task_t t;
+	vm_region_64 (task, &region, &region_size, flavor, (vm_region_info_t)&info,
+			(mach_msg_type_number_t*)&info_count, (mach_port_t*)&t);
 #endif
+	return vm_protect (task, region, region_size, FALSE, perm) == KERN_SUCCESS;
+}
+
+static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
+	mach_msg_type_number_t _len = len;
+	vm_offset_t _buf = (vm_offset_t)buf;
+	return vm_write (task, addr, _buf, _len) == KERN_SUCCESS;
+}
+
+static int mach_write_at(RIO *io, RIOMach *riom, const void *buf, int len, ut64 addr) {
+	vm_address_t vaddr = addr;
+	vm_address_t pageaddr;
+	vm_size_t pagesize;
+	int operms = 0;
+	task_t task;
+
+	if (!riom || len <1) {
+		return 0;
+	}
+	task = riom->task;
+
+	pageaddr = tsk_getpagebase (addr);
+	pagesize = tsk_pagesize (io, len);
+
+	if (tsk_write (task, vaddr, buf, len)) {
+		return len;
+	}
+	operms = tsk_getperm (task, pageaddr);
+	if (!tsk_setperm (io, task, pageaddr, pagesize, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
+		perror ("setperm");
+		eprintf ("io.mach: cant set page perms for %d bytes at 0x%08"
+			PFMT64x"\n", (int)pagesize, (ut64)pageaddr);
+		//return -1;
+	}
+	if (!tsk_write (task, vaddr, buf, len)) {
+		perror ("write");
+		eprintf ("io.mach: cant write on memory\n");
+		len = -1;
+	}
+	if (operms) {
+		if (!tsk_setperm (io, task, pageaddr, pagesize, operms)) {
+			eprintf ("io.mach: cant restore page perms\n");
+			return -1;
+		}
+	}
 	return len;
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
-	return mach_write_at ((RIOMach*)fd->data, buf, len, io->off);
+	return mach_write_at (io, (RIOMach*)fd->data, buf, len, io->off);
 }
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	return (!strncmp (file, "attach://", 9) \
 		|| !strncmp (file, "mach://", 7));
 }
-
-//static task_t inferior_task = 0;
-//static int task = 0;
 
 // s/inferior_task/port/
 static int debug_attach(int pid) {
@@ -327,6 +364,16 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOMach *riom = (RIOMach*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
+	if (!strncmp (cmd, "perm", 4)) {
+		int perm = r_str_rwx (cmd+4);
+		if (perm) {
+			int pagesize = tsk_pagesize(io, 1);
+			tsk_setperm (io, riom->task, io->off, pagesize, perm);
+		} else {
+			eprintf ("Usage: =!perm [rwx]\n");
+		}
+		return 0;
+	}
 	if (!strncmp (cmd, "pid", 3)) {
 		const char *pidstr = cmd + 4;
 		int pid = -1;
@@ -351,7 +398,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			}
 		}
 		eprintf ("io_mach_system: Invalid pid %d\n", pid);
-	} else eprintf ("Try: '=!pid'\n");
+	} else eprintf ("Try: '=!pid' or '=!perm'\n");
 	return 1;
 }
 

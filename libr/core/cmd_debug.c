@@ -1471,6 +1471,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbte", " <addr>", "Enable Breakpoint Trace",
 		"dbtd", " <addr>", "Disable Breakpoint Trace",
 		"dbts", " <addr>", "Swap Breakpoint Trace",
+		"dbm", " [<delta>]", "Define delta to be applied to all breakpoints (ASLR)",
 		"dbn", " [<name>]", "Show or set name for current breakpoint",
 		//
 		"dbi", "", "List breakpoint indexes",
@@ -1649,6 +1650,13 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		}
 		break;
+	case 'm': // "dbm"
+		if (input[2]) {
+			core->dbg->bp->delta = (st64)r_num_math (core->num, input+2);
+		} else {
+			r_cons_printf ("%"PFMT64d"\n", core->dbg->bp->delta);
+		}
+		break;
 	case 'j': r_bp_list (core->dbg->bp, 'j'); break;
 	case '*': r_bp_list (core->dbg->bp, 1); break;
 	case '\0': r_bp_list (core->dbg->bp, 0); break;
@@ -1688,7 +1696,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		r_bp_enable (core->dbg->bp, r_num_math (core->num,
 							input + 2), 0);
 		break;
-	case 'n':
+	case 'n': // "dbn"
 		bpi = r_bp_get_at (core->dbg->bp, core->offset);
 		if (input[2] == ' ') {
 			if (bpi) {
@@ -2484,28 +2492,44 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		}
 		break;
 	case 's':
-		addr = r_debug_reg_get (core->dbg, "pc");
-		r_reg_arena_swap (core->dbg->reg, true);
-		for (i = 0; i < times; i++) {
-			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-			r_io_read_at (core->io, addr, buf, sizeof (buf));
-			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
-			if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
-				eprintf ("Don't know how to skip this instruction\n");
-				break;
+		{
+			char delb[128] = {0};
+			addr = r_debug_reg_get (core->dbg, "pc");
+			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
+			sprintf(delb, "db 0x%"PFMT64x"", addr);
+			r_reg_arena_swap (core->dbg->reg, true);
+			for (i = 0; i < times; i++) {
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
+				r_io_read_at (core->io, addr, buf, sizeof (buf));
+				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
+					eprintf ("Don't know how to skip this instruction\n");
+					if (bpi) r_core_cmd0 (core, delb);
+					break;
+				}
+				addr += aop.size;
 			}
-			addr += aop.size;
-		}
-		r_debug_reg_set (core->dbg, "pc", addr);
-		break;
-	case 'o':
-		r_reg_arena_swap (core->dbg->reg, true);
-		r_debug_step_over (core->dbg, times);
-		if (checkbpcallback (core)) {
-			eprintf ("Interrupted by a breakpoint\n");
+			r_debug_reg_set (core->dbg, "pc", addr);
+			if (bpi) r_core_cmd0 (core, delb);
 			break;
 		}
-		break;
+	case 'o':
+		{
+			char delb[128] = {0};
+			addr = r_debug_reg_get (core->dbg, "pc");
+			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
+			sprintf(delb, "db 0x%"PFMT64x"", addr);
+			r_bp_del (core->dbg->bp, addr);
+			r_reg_arena_swap (core->dbg->reg, true);
+			r_debug_step_over (core->dbg, times);
+			if (checkbpcallback (core)) {
+				eprintf ("Interrupted by a breakpoint\n");
+				if (bpi) r_core_cmd0 (core, delb);
+				break;
+			}
+			if (bpi) r_core_cmd0 (core, delb);
+			break;
+		}
 	case 'l':
 		r_reg_arena_swap (core->dbg->reg, true);
 		step_line (core, times);
@@ -2588,24 +2612,67 @@ static int cmd_debug(void *data, const char *input) {
 			r_debug_desc_list (core->dbg, 1);
 			break;
 		case 's':
-			// r_debug_desc_seek()
-			// TODO: handle read, readwrite, append
+			{
+			ut64 off = UT64_MAX;
+			int fd = atoi (input+2);
+			char *str = strchr (input+2, ' ');
+			if (str) off = r_num_math (core->num, str+1);
+			if (off == UT64_MAX || !r_debug_desc_seek (core->dbg, fd, off))
+				if (!r_core_syscallf (core, "lseek", "%d, 0x%"PFMT64x", %d", fd, off, 0))
+					eprintf ("Cannot seek\n");
+			}
 			break;
 		case 'd':
-			// r_debug_desc_dup()
+			{
+			ut64 newfd = UT64_MAX;
+			int fd = atoi (input+2);
+			char *str = strchr (input+2, ' ');
+			if (str) newfd = r_num_math (core->num, str+1);
+			if (newfd == UT64_MAX || !r_debug_desc_dup (core->dbg, fd, newfd))
+				if (!r_core_syscallf (core, "dup2", "%d, %d", fd, (int)newfd))
+					eprintf ("Cannot dup %d %d\n", fd, (int)newfd);
+			}
 			break;
 		case 'r':
-			// r_debug_desc_read()
+			{
+			ut64 off = UT64_MAX;
+			ut64 len = UT64_MAX;
+			int fd = atoi (input+2);
+			char *str = strchr (input+2, ' ');
+			if (str) off = r_num_math (core->num, str+1);
+			str = strchr (str+1, ' ');
+			if (str) len = r_num_math (core->num, str+1);
+			if (len == UT64_MAX || off == UT64_MAX || \
+					!r_debug_desc_read (core->dbg, fd, off, len))
+				if (!r_core_syscallf (core, "read", "%d, 0x%"PFMT64x", %d",
+						fd, off, (int)len))
+					eprintf ("Cannot read\n");
+			}
 			break;
 		case 'w':
-			// r_debug_desc_write()
+			{
+			ut64 off = UT64_MAX;
+			ut64 len = UT64_MAX;
+			int fd = atoi (input+2);
+			char *str = strchr (input+2, ' ');
+			if (str) off = r_num_math (core->num, str+1);
+			str = strchr (str+1, ' ');
+			if (str) len = r_num_math (core->num, str+1);
+			if (len == UT64_MAX || off == UT64_MAX || \
+					!r_debug_desc_write (core->dbg, fd, off, len))
+				if (!r_core_syscallf (core, "write", "%d, 0x%"PFMT64x", %d",
+						fd, off, (int)len))
+					eprintf ("Cannot write\n");
+			}
 			break;
 		case '-': // "dd-"
 			// close file
 			//r_core_syscallf (core, "close", "%d", atoi (input+2));
-			r_core_cmdf (core, "dxs close %d", (int)r_num_math (
-				core->num, input+2));
-			// TODO: run
+			{
+				int fd = atoi (input+2);
+				//r_core_cmdf (core, "dxs close %d", (int)r_num_math ( core->num, input+2));
+				r_core_syscallf (core, "close", "%d", fd);
+			}
 			break;
 		case ' ':
 			// TODO: handle read, readwrite, append

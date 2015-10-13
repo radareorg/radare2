@@ -312,12 +312,14 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_str_write (fd, "# meta\n");
 		r_meta_list (core->anal, R_META_TYPE_ANY, 1);
 		r_cons_flush ();
-		 {
+		{
 			char buf[1024];
 			snprintf (buf, sizeof (buf), "%s.d"R_SYS_DIR"xrefs", prj);
 			sdb_file (core->anal->sdb_xrefs, buf);
 			sdb_sync (core->anal->sdb_xrefs);
-		 }
+		}
+		r_core_cmd (core, "fV*", 0);
+		r_cons_flush ();
 		r_core_cmd (core, "ax*", 0);
 		r_cons_flush ();
 		r_core_cmd (core, "afl*", 0);

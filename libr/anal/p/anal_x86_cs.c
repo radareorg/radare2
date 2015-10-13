@@ -1011,7 +1011,7 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, "^");
-				esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,0,cf,=,0,of,=,$s,sf,=",
+				esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,0,cf,=,0,of,=",
 					src, dst);
 				free (src);
 				free (dst);

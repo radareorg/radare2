@@ -130,6 +130,89 @@ R_API RBinFile * r_core_bin_cur(RCore *core) {
 	return binfile;
 }
 
+static bool string_filter(RCore *core, const char *str) {
+	int i;
+	/* pointer/rawdata detection */
+	if (core->bin->strpurge) {
+		ut8 bo[0x100];
+		int up = 0;
+		int lo = 0;
+		int ot = 0;
+		int di = 0;
+		int ln = 0;
+		int sp = 0;
+		int nm = 0;
+		for (i = 0; i<0x100; i++) {
+			bo[i] = 0;
+		}
+		for (i = 0; str[i]; i++) {
+			if (str[i]>='0' && str[i]<='9')
+				nm++;
+			else if (str[i]>='a' && str[i]<='z')
+				lo++;
+			else if (str[i]>='A' && str[i]<='Z')
+				up++;
+			else ot++;
+			if (str[i]=='\\') ot++;
+			if (str[i]==' ') sp++;
+			bo[(ut8)str[i]] = 1;
+			ln++;
+		}
+		for (i = 0; i<0x100; i++) {
+			if (bo[i])
+				di++;
+		}
+		if (ln>2 && str[0] != '_') {
+			if (ln<10) return false;
+			if (ot >= (nm+up+lo))
+				return false;
+			if (lo <3)
+				return false;
+		}
+	}
+
+	switch (core->bin->strfilter) {
+	case 'a': // only alphanumeric - plain ascii
+		for (i = 0; str[i]; i++) {
+			char ch = str[i];
+			if (ch<0 || !IS_PRINTABLE (ch))
+				return false;
+		}
+		break;
+	case 'e': // emails
+		if (str && *str) {
+			if (!strstr (str+1, "@"))
+				return false;
+			if (!strstr (str+1, "."))
+				return false;
+		} else return false;
+		break;
+	case 'f': // format-string
+		if (str && *str) {
+			if (!strstr (str+1, "%"))
+				return false;
+		} else return false;
+		break;
+	case 'u': // URLs
+		if (!strstr (str, "://"))
+			return false;
+		break;
+	case 'p': // path
+		if (str[0] != '/')
+			return false;
+		break;
+	case '8': // utf8
+		for (i = 0; str[i]; i++) {
+			char ch = str[i];
+			if (ch<0)
+				return true;
+		}
+		return false;
+		break;
+	}
+	return true;
+}
+
 static int bin_strings(RCore *r, int mode, int va) {
 	char *q, str[R_FLAG_NAME_SIZE];
 	RBinSection *section;
@@ -171,9 +254,12 @@ static int bin_strings(RCore *r, int mode, int va) {
 	}
 	r_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
-		ut64 paddr = string->paddr;
-		ut64 vaddr = r_bin_get_vaddr (bin, paddr, string->vaddr);
-		ut64 addr = va ? vaddr : paddr;
+		ut64 paddr, vaddr, addr;
+		if (!string_filter (r, string->string))
+			continue;
+		paddr = string->paddr;
+		vaddr = r_bin_get_vaddr (bin, paddr, string->vaddr);
+		addr = va ? vaddr : paddr;
 
 		if (string->length < minstr) continue;
 		if (maxstr && string->length > maxstr) continue;

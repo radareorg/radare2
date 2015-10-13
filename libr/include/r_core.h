@@ -210,6 +210,7 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset);
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_visual_prompt_input (RCore *core);
+R_API int r_core_visual_classes(RCore *core);
 R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interactive);
@@ -222,6 +223,12 @@ R_API void r_core_visual_colors(RCore *core);
 R_API int r_core_visual_xrefs_x (RCore *core);
 R_API int r_core_visual_xrefs_X (RCore *core);
 R_API int r_core_visual_hud(RCore *core);
+/* visual marks */
+R_API void r_core_visual_mark_seek(RCore *core, ut8 ch);
+R_API void r_core_visual_mark(RCore *core, ut8 ch);
+R_API void r_core_visual_mark_set(RCore *core, ut8 ch, ut64 addr);
+R_API void r_core_visual_mark_dump(RCore *core);
+R_API void r_core_visual_mark_reset(RCore *core);
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
 R_API int r_core_serve(RCore *core, RIODesc *fd);

@@ -327,6 +327,147 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 	return res? true: false;
 }
 
+// TODO: skip N first elements
+// TODO: show only N elements of the list
+// TODO: wrap index when out of boundaries
+// TODO: Add support to show class fields too
+static void *show_class(RCore *core, int mode, int idx, RBinClass *_c) {
+	RListIter *iter;
+	RBinClass *c, *cur = NULL;
+	RBinSymbol *m, *mur = NULL;
+	RList *list;
+	int i = 0;
+
+	switch (mode) {
+	case 'c':
+		r_cons_printf("Classes:\n\n");
+		list = r_bin_get_classes (core->bin);
+		r_list_foreach (list, iter, c) {
+			r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
+				(i==idx)?">>":"- ", i, c->addr, c->name);
+			if (i++ == idx)
+				cur = c;
+		}
+		return cur;
+	case 'f':
+		// show fields
+		break;
+	case 'm':
+		// show methods
+		if (_c) {
+			r_cons_printf("MethodsFor: %s\n\n", _c->name);
+			r_list_foreach (_c->methods, iter, m) {
+				r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
+					(i==idx)?">>":"- ", i, m->vaddr, m->name);
+				if (i++ == idx)
+					mur = m;
+			}
+		} else {
+			eprintf ("Findus\n");
+		}
+		return mur;
+	}
+	return NULL;
+}
+
+R_API int r_core_visual_classes(RCore *core) {
+	int ch, option = 0;
+	char cmd[1024];
+	int format = 0;
+	int mode = 'c';
+	RBinClass *cur = NULL;
+	RBinSymbol *mur = NULL;
+	void *ptr;
+
+	for (;;) {
+		r_cons_clear00 ();
+
+		ptr = show_class (core, mode, option, cur);
+		switch (mode) {
+		case 'm':
+			mur = (RBinSymbol*)ptr;
+			break;
+		case 'c':
+			cur = (RBinClass*)ptr;
+			break;
+		}
+
+		r_cons_visual_flush ();
+		ch = r_cons_readchar ();
+		if (ch==-1 || ch==4) return false;
+		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		switch (ch) {
+		case 'C':
+			r_config_toggle (core->config, "scr.color");
+			break;
+		case 'J': option += 10; break;
+		case 'j': option++; break;
+		case 'k': if (--option<0) option = 0; break;
+		case 'K': option-=10; if (option<0) option = 0; break;
+		case 'h':
+		case 'b': // back
+		case 'q':
+			if (mode == 'c')
+				return true;
+			mode = 'c';
+			option = 0;
+			break;
+		case '*':
+			r_core_block_size (core, core->blocksize+16);
+			break;
+		case '/':
+			r_core_block_size (core, core->blocksize-16);
+			break;
+		case 'P': if (--format<0) format = MAX_FORMAT; break;
+		case 'p': format++; break;
+		case 'l':
+		case ' ':
+		case '\r':
+		case '\n':
+			if (mur && mode == 'm') {
+				r_core_seek (core, mur->vaddr, true);
+				return true;
+			} else {
+				if (cur) {
+					mode = 'm';
+				}
+			}
+			break;
+		case '?':
+			r_cons_clear00 ();
+			r_cons_printf (
+			"\nVF: Visual Classes help:\n\n"
+			" q     - quit menu\n"
+			" j/k   - down/up keys\n"
+			" h/b   - go back\n"
+			" C     - toggle colors\n"
+			" l/' ' - accept current selection\n"
+			" p/P   - rotate print format\n"
+			" :     - enter command\n");
+			r_cons_flush ();
+			r_cons_any_key (NULL);
+			break;
+		case ':':
+			r_cons_show_cursor (true);
+			r_cons_set_raw (0);
+			cmd[0]='\0';
+			r_line_set_prompt (":> ");
+			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) <0)
+				cmd[0]='\0';
+			//line[strlen(line)-1]='\0';
+			r_core_cmd (core, cmd, 1);
+			r_cons_set_raw (1);
+			r_cons_show_cursor (false);
+			if (cmd[0])
+				r_cons_any_key (NULL);
+			//cons_gotoxy(0,0);
+			r_cons_clear ();
+			break;
+		}
+	}
+	return true;
+}
+
 R_API int r_core_visual_trackflags(RCore *core) {
 	const char *fs = NULL, *fs2 = NULL;
 	int hit, i, j, ch;

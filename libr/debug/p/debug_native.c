@@ -216,18 +216,65 @@ static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
 	return ptrace (PTRACE_CONT, pid, NULL, data) == 0;
 #endif
 }
+static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
+#if __APPLE__
+	return xnu_info (dbg, arg);
+#elif __linux__
+	return linux_info (dbg, arg);
+#elif __WINDOWS__
+	return w32_info (dbg, arg);
+#else
+	return NULL;
+#endif
+}
+
+#if __WINDOWS__ && !__CYGWIN__
+static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
+	const char *needle = NULL;
+	if (mode) {
+		switch (mode[0]) {
+		case 'l': needle = dbg->glob_libs; break;
+		case 'u': needle = dbg->glob_unlibs; break;
+		}
+	}
+	eprintf ("(%d) %sing library at %p (%s) %s\n", item->pid, mode,
+		item->BaseOfDll, item->Path, item->Name);
+	return !mode || !needle || r_str_glob (item->Name, needle);
+}
+#endif
 
 static int r_debug_native_wait (RDebug *dbg, int pid) {
 	int status = -1;
 #if __WINDOWS__ && !__CYGWIN__
+	int mode = 0;
 	status = w32_dbg_wait (dbg, pid);
+	if (status == R_DEBUG_REASON_NEW_LIB) {
+		mode = 'l';
+	} else if (status == R_DEBUG_REASON_EXIT_LIB) {
+		mode = 'u';
+	} else {
+		mode = 0;
+	}
+	if (mode) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r && r->lib) {
+			if (tracelib (dbg, mode? "load":"unload", r->lib))
+				r_debug_native_continue (dbg, pid, dbg->tid, r->signum);
+		} else {
+			eprintf ("%soading unknown library.\n", mode?"L":"Unl");
+		}
+		r_debug_info_free (r);
+	}
 #else
-	int ret;
 	if (pid == -1) {
 		status = R_DEBUG_REASON_UNKNOWN;
 	} else {
+#if __APPLE__
+		// eprintf ("No waitpid here :D\n");
+		status = R_DEBUG_REASON_UNKNOWN;
+#else
 		// XXX: this is blocking, ^C will be ignored
-		ret = waitpid (pid, &status, 0);
+		int ret = waitpid (pid, &status, 0);
 		if (ret == -1) {
 			status = R_DEBUG_REASON_ERROR;
 		} else {
@@ -246,6 +293,7 @@ static int r_debug_native_wait (RDebug *dbg, int pid) {
 				else status = R_DEBUG_REASON_UNKNOWN;
 			}
 		}
+#endif
 	}
 #endif
 	dbg->reason.tid = pid;
@@ -349,25 +397,6 @@ static RList *r_debug_native_pids (int pid) {
 	return list;
 }
 
-static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
-#if __APPLE__
-	return xnu_info (dbg, arg);
-#elif __linux__
-	return linux_info (dbg, arg);
-#elif __WINDOWS__
-	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
-	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
-	rdi->pid = dbg->pid;
-	rdi->tid = dbg->tid;
-	rdi->uid = -1;// TODO
-	rdi->gid = -1;// TODO
-	rdi->cwd = NULL;// TODO : use readlink
-	rdi->exe = NULL;// TODO : use readlink!
-	rdi->cmdline = NULL;
-	return rdi;
-#endif
-	return NULL;
-}
 
 static RList *r_debug_native_threads (RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
@@ -685,12 +714,14 @@ static int r_debug_native_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 #endif
 }
 
+#if !__WINDOWS__ && !__APPLE__
 static void _map_free(RDebugMap *map) {
 	if (!map) return;
 	free (map->name);
 	free (map->file);
 	free (map);
 }
+#endif
 
 static RList *r_debug_native_map_get (RDebug *dbg) {
 	RList *list = NULL;
@@ -1046,12 +1077,12 @@ static RList *xnu_desc_list (int pid) {
 static RList *win_desc_list (int pid) {
 	RDebugDesc *desc;
 	RList *ret = r_list_new();
-	int i, nb, type = 0;
+	int i;
 	HANDLE processHandle;
 	PSYSTEM_HANDLE_INFORMATION handleInfo;
 	NTSTATUS status;
 	ULONG handleInfoSize = 0x10000;
-	LPVOID  buff;
+	LPVOID buff;
 	if (!(processHandle=w32_openprocess(0x0040,FALSE,pid))) {
 		eprintf("win_desc_list: Error opening process.\n");
 		return NULL;
@@ -1076,7 +1107,7 @@ static RList *win_desc_list (int pid) {
 			continue;
 		if (handle.ObjectTypeNumber != 0x1c)
 			continue;
-		if (w32_ntduplicateobject(processHandle, (HANDLE)handle.Handle, GetCurrentProcess(), &dupHandle, 0, 0, 0))
+		if (w32_ntduplicateobject (processHandle, &handle.Handle, GetCurrentProcess(), &dupHandle, 0, 0, 0))
 			continue;
 		objectTypeInfo = (POBJECT_TYPE_INFORMATION)malloc(0x1000);
 		if (w32_ntqueryobject(dupHandle,2,objectTypeInfo,0x1000,NULL)) {
@@ -1099,22 +1130,15 @@ static RList *win_desc_list (int pid) {
 			buff=malloc((objectName.Length/2)+1);
 			wcstombs(buff,objectName.Buffer,objectName.Length/2);
 			desc = r_debug_desc_new (handle.Handle,
-					buff,
-					0,
-					'?',
-					0);
+					buff, 0, '?', 0);
 			if (!desc) break;
 			r_list_append (ret, desc);
 			free(buff);
-		}
-		else {
+		} else {
 			buff=malloc((objectTypeInfo->Name.Length / 2)+1);
 			wcstombs(buff,objectTypeInfo->Name.Buffer,objectTypeInfo->Name.Length);
 			desc = r_debug_desc_new (handle.Handle,
-					buff,
-					0,
-					'?',
-					0);
+					buff, 0, '?', 0);
 			if (!desc) break;
 			r_list_append (ret, desc);
 			free(buff);

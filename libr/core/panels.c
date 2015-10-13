@@ -148,11 +148,11 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 			if (idx>=sizeof(white))
 				idx = sizeof (white)-1;
 			white[idx] = 0;
-			text = r_str_ansi_crop (foo, 
+			text = r_str_ansi_crop (foo,
 				0, delta_y, n->w+delta_x, n->h-2 + delta_y);
 			text = r_str_prefix_all (text, white);
 		} else {
-			text = r_str_ansi_crop (foo, 
+			text = r_str_ansi_crop (foo,
 				delta_x, delta_y, n->w+delta_x, n->h-2 + delta_y);
 		}
 		if (text) {
@@ -402,6 +402,7 @@ R_API int r_core_visual_panels(RCore *core) {
 	int w, h;
 	int asm_comments = 0;
 	int asm_bytes = 0;
+	int have_utf8 = 0;
 	n_panels = 0;
 	panels = NULL;
 	callgraph = 0;
@@ -430,9 +431,11 @@ R_API int r_core_visual_panels(RCore *core) {
 	reloadPanels (core);
 
 	asm_comments = r_config_get_i (core->config, "asm.comments");
+	have_utf8 = r_config_get_i (core->config, "scr.utf8");
 	r_config_set_i (core->config, "asm.comments", 0);
 	asm_bytes = r_config_get_i (core->config, "asm.bytes");
 	r_config_set_i (core->config, "asm.bytes", 0);
+	r_config_set_i (core->config, "scr.utf8", 0);
 
 repeat:
 	core->cons->event_data = core;
@@ -850,5 +853,6 @@ beach:
 	free (can);
 	r_config_set_i (core->config, "asm.comments", asm_comments);
 	r_config_set_i (core->config, "asm.bytes", asm_bytes);
+	r_config_set_i (core->config, "scr.utf8", have_utf8);
 	return true;
 }
