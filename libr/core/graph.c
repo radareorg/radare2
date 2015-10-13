@@ -2516,6 +2516,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			r_cons_clear00 ();
 			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
 					" .      - center graph to the current node\n"
+					" c      - toggle asm.comments\n"
 					" C      - toggle scr.color\n"
 					" hjkl   - move node\n"
 					" HJKL   - scroll canvas\n"
@@ -2569,9 +2570,12 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case '!':
 			r_core_visual_panels (core);
 			break;
+		case 'c':
+			r_config_toggle (core->config, "asm.comments");
+			g->need_reload_nodes = true;
+			break;
 		case 'C':
-			r_config_set_i (core->config, "scr.color",
-					!r_config_get_i (core->config, "scr.color"));
+			r_config_toggle (core->config, "scr.color");
 			g->need_reload_nodes = true;
 			break;
 		case 'r': agraph_set_layout (g, true); break;
