@@ -146,8 +146,10 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int
 	mul = (max-min) / width;
 	if (min != -1 && mul != 0) {
 		const char * color = "", *color_end = "";
+		char buf[128];
 		i = 0;
 		r_list_foreach (io->sections, iter, s) {
+			r_num_units (buf, s->size);
 			if (use_color) {
 				color_end = Color_RESET;
 				if (s->rwx & 1) { // exec bit
@@ -163,14 +165,14 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int
 				color_end = "";
 			}
 			if (io->va) {
-				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
+				io->cb_printf ("%02d%c %04s %s0x%08"PFMT64x"%s |", i,
 						(seek >= s->offset && seek < s->offset + s->size) ? '*' : ' ',
 						//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ',
-						color, s->vaddr, color_end);
+						buf, color, s->vaddr, color_end);
 			} else {
-				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
+				io->cb_printf ("%02d%c %04s %s0x%08"PFMT64x"%s |", i,
 						(seek >= s->offset && seek < s->offset + s->size) ? '*' : ' ',
-						color, s->offset, color_end);
+						buf, color, s->offset, color_end);
 			}
 			for (j = 0; j < width; j++) {
 				ut64 pos = min + (j * mul);
