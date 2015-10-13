@@ -34,41 +34,34 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	op->type = R_ANAL_OP_TYPE_UNK;
 	if (!strncmp (str, "st", 2)) {
 		op->type = R_ANAL_OP_TYPE_STORE;
-	} else
-	if (str[0] == 'm') {
+	} else if (str[0] == 'm') {
 		op->type = R_ANAL_OP_TYPE_MOV;
-	} else
-	if (str[0] == 'l') {
+	} else if (str[0] == 'l') {
 		op->type = R_ANAL_OP_TYPE_LOAD;
-	} else
-	if (str[0] == 's') {
+	} else if (str[0] == 's') {
 		op->type = R_ANAL_OP_TYPE_SUB;
-	} else
-	if (!strncmp (str, "ser ", 4)) {
+	} else if (!strncmp (str, "inv", 3)) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+	} else if (!strncmp (str, "ser ", 4)) {
 		op->type = R_ANAL_OP_TYPE_MOV;
-	} else
-	if (!strncmp (str, "and", 3)) {
+	} else if (!strncmp (str, "and", 3)) {
 		op->type = R_ANAL_OP_TYPE_AND;
-	} else
-	if (!strncmp (str, "mul", 3)) {
+	} else if (!strncmp (str, "mul", 3)) {
 		op->type = R_ANAL_OP_TYPE_MUL;
-	} else
-	if (!strncmp (str, "cp", 2)) {
+	} else if (!strncmp (str, "cp", 2)) {
 		op->type = R_ANAL_OP_TYPE_CMP;
-	} else
-	if (!strncmp (str, "or", 2)) {
+	} else if (!strncmp (str, "or", 2)) {
 		op->type = R_ANAL_OP_TYPE_OR;
-	} else
-	if (!strncmp (str, "eor ", 4)) {
+	} else if (!strncmp (str, "eor ", 4)) {
 		op->type = R_ANAL_OP_TYPE_XOR;
-	} else
-	if (!strncmp (str, "out ", 4)) {
+	} else if (!strncmp (str, "out ", 4)) {
 		op->type = R_ANAL_OP_TYPE_IO;
 		op->type2 = 1;
-	} else
-	if (!strncmp (str, "in ", 3)) {
+	} else if (!strncmp (str, "in ", 3)) {
 		op->type = R_ANAL_OP_TYPE_IO;
 		op->type2 = 0;
+	} else if (!strncmp (str, "push ", 5)) {
+		op->type = R_ANAL_OP_TYPE_PUSH;
 	}
 	if (ins == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -77,19 +70,19 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if ((buf[1] & 0xec) == 12) {		//ADD + ADC
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->cycles = 1;
-	}
+	} else
 	if ((buf[1] & 0xec) == 8) {		//SUB + SBC
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->cycles = 1;
-	}
+	} else
 	if (((buf[0] & 0xf) == 7) && ((buf[1] & 0xfe) == 0x94)) {
 		op->type = R_ANAL_OP_TYPE_ROR;
 		op->cycles = 1;
-	}
+	} else
 	if (buf[1] == 1) {			//MOVW
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->cycles = 1;
-	}
+	} else
 	if ((buf[1] & 0xf0) == 0xe0) {		//LDI
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->cycles = 1;
