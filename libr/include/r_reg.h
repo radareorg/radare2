@@ -32,6 +32,11 @@ enum {
 	R_REG_NAME_A4,
 	R_REG_NAME_A5,
 	R_REG_NAME_A6,
+	/* retval */
+	R_REG_NAME_R0, // arguments
+	R_REG_NAME_R1,
+	R_REG_NAME_R2,
+	R_REG_NAME_R3,
 	/* flags */
 	R_REG_NAME_ZF,
 	R_REG_NAME_SF,

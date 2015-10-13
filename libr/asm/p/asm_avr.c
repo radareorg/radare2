@@ -405,10 +405,8 @@ RAsmPlugin r_asm_plugin_avr = {
 	.name = "avr",
 	.arch = "avr",
 	.license = "GPL",
-	.bits = 16|32,
+	.bits = 8|16,
 	.desc = "AVR Atmel",
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
 	.assemble = &assemble
 };
