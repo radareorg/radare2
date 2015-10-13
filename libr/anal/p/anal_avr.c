@@ -93,7 +93,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 	// 0xf0 - 0xf7 BR
 	if ((buf[1] >= 0xf0 && buf[1] <= 0xf8)) {
-		int cond = (buf[0] & 7);
+		//int cond = (buf[0] & 7);
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = imm;
 		op->fail = addr + 2;
