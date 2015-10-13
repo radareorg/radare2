@@ -535,6 +535,22 @@ static int cb_dbg_btalgo(void *user, void *data) {
 	return true;
 }
 
+static int cb_dbg_libs(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	free (core->dbg->glob_libs);
+	core->dbg->glob_libs = strdup (node->value);
+	return true;
+}
+
+static int cb_dbg_unlibs(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	free (core->dbg->glob_unlibs);
+	core->dbg->glob_unlibs = strdup (node->value);
+	return true;
+}
+
 static int cb_dbg_forks(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -1300,6 +1316,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("stack.size", 64,  "Size of anotated hexdump in visual debug");
 	SETI("stack.delta", 0,  "Delta for the stack dump");
 
+	SETCB("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
+	SETCB("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
 	SETPREF("dbg.slow", "false", "Show stack and regs in visual mode in a slow but verbose mode");
 
 	SETPREF("dbg.bpinmaps", "true", "Force breakpoints to be inside a valid map");

@@ -12,9 +12,6 @@
 #define WINAPI
 #endif
 
-
-static char *curlibname = NULL;
-
 // XXX remove
 #define WIN32_PI(x) x
 #if 0
@@ -247,7 +244,7 @@ static int w32_dbg_init() {
 	w32_getthreadid = (DWORD WINAPI (*)(HANDLE))
 		GetProcAddress (GetModuleHandle ("kernel32"), "GetThreadId");
 	// from xp1
-	w32_getprocessid = (DWORD WINAPI (*)(HANDLE))  
+	w32_getprocessid = (DWORD WINAPI (*)(HANDLE))
 		GetProcAddress (GetModuleHandle ("kernel32"), "GetProcessId");
 	w32_queryfullprocessimagename = (BOOL WINAPI (*)(HANDLE, DWORD, LPTSTR, PDWORD))
 		GetProcAddress (GetModuleHandle ("kernel32"), "QueryFullProcessImageNameA");
@@ -272,7 +269,7 @@ static int w32_dbg_init() {
 	w32_ntqueryobject = (NTSTATUS WINAPI (*)(HANDLE, ULONG, PVOID, ULONG, PULONG))
 		GetProcAddress(lib,"NtQueryObject");
 
-	if (w32_detach == NULL || w32_openthread == NULL || w32_dbgbreak == NULL || 
+	if (w32_detach == NULL || w32_openthread == NULL || w32_dbgbreak == NULL ||
 	   gmbn == NULL || gmi == NULL) {
 		// OOPS!
 		eprintf ("debug_init_calls:\n"
@@ -322,8 +319,8 @@ static inline int w32_h2p(HANDLE h) {
 }
 
 static int w32_first_thread(int pid) {
-	HANDLE th; 
-	HANDLE thid; 
+	HANDLE th;
+	HANDLE thid;
 	THREADENTRY32 te32;
 	te32.dwSize = sizeof (THREADENTRY32);
 
@@ -331,7 +328,7 @@ static int w32_first_thread(int pid) {
 		eprintf("w32_thread_list: no w32_openthread?\n");
 		return -1;
 	}
-	th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid); 
+	th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
 	if (th == INVALID_HANDLE_VALUE) {
 		eprintf ("w32_thread_list: invalid handle\n");
 		return -1;
@@ -353,7 +350,7 @@ static int w32_first_thread(int pid) {
 			return te32.th32ThreadID;
 		}
 	} while (Thread32Next (th, &te32));
-err_load_th:    
+err_load_th:
 	eprintf ("Could not find an active thread for pid %d\n", pid);
 	CloseHandle (th);
 	return pid;
@@ -377,12 +374,12 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 		break;
 #if __MINGW64__
 	/* STATUS_WX86_BREAKPOINT */
-	case 0x4000001f: 
+	case 0x4000001f:
 		eprintf ("(%d) WOW64 loaded.\n", de->dwProcessId);
 		return 1;
 #endif
 	/* MS_VC_EXCEPTION */
-	case 0x406D1388: 
+	case 0x406D1388:
 		eprintf ("(%d) MS_VC_EXCEPTION (%x) in thread %d\n",
 			(int)de->dwProcessId, (int)code, (int)de->dwThreadId);
 		return 1;
@@ -399,7 +396,7 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 	TCHAR *filename = NULL;
 
 	DWORD file_size_high = 0;
-	DWORD file_size_low = GetFileSize (handle_file, &file_size_high); 
+	DWORD file_size_low = GetFileSize (handle_file, &file_size_high);
 	if (file_size_low == 0 && file_size_high == 0) {
 		return NULL;
 	}
@@ -414,13 +411,13 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 	/* Create a file mapping to get the file name. */
 	void* map = MapViewOfFile (handle_file_map, FILE_MAP_READ, 0, 0, 1);
 
-	if (!map) { 
+	if (!map) {
 		CloseHandle (handle_file_map);
 		return NULL;
 	}
 
-	if (!psapi_getmappedfilename (GetCurrentProcess (), 
-		map, 
+	if (!psapi_getmappedfilename (GetCurrentProcess (),
+		map,
 		filename,
 		MAX_PATH)) {
 
@@ -458,7 +455,7 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 
 				if (found) {
 					TCHAR temp_filename[MAX_PATH];
-					snprintf (temp_filename, MAX_PATH-1, "%s%s", 
+					snprintf (temp_filename, MAX_PATH-1, "%s%s",
 						drive, filename+name_length);
 					strncpy (filename, temp_filename, MAX_PATH-1);
 				}
@@ -472,6 +469,60 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 	return filename;
 }
 
+typedef struct{
+	int pid;
+	HANDLE hFile;
+	void* BaseOfDll;
+	char Path[MAX_PATH];
+	char Name[MAX_PATH];
+} LIB_ITEM, *PLIB_ITEM;
+LPVOID lstLib = 0;
+PLIB_ITEM lstLibPtr = 0;
+static char * r_debug_get_dll() {
+	return lstLibPtr->Path;
+}
+static  PLIB_ITEM  r_debug_get_lib_item() {
+	return lstLibPtr;
+}
+#define PLIB_MAX 512
+static void r_debug_lstLibAdd(DWORD pid,LPVOID lpBaseOfDll, HANDLE hFile,char * dllname) {
+	int x;
+	if (lstLib == 0)
+		lstLib = VirtualAlloc (0, PLIB_MAX * sizeof (LIB_ITEM), MEM_COMMIT, PAGE_READWRITE);
+	lstLibPtr = (PLIB_ITEM)lstLib;
+	for (x=0; x<PLIB_MAX; x++) {
+		if (lstLibPtr->hFile == NULL) {
+			lstLibPtr->pid = pid;
+			lstLibPtr->hFile = hFile; //DBGEvent->u.LoadDll.hFile;
+			lstLibPtr->BaseOfDll = lpBaseOfDll;//DBGEvent->u.LoadDll.lpBaseOfDll;
+			strncpy (lstLibPtr->Path,dllname,MAX_PATH-1);
+			int i = strlen (dllname);
+                        int n = i;
+                        while(dllname[i] != '\\' && i >= 0) {
+                             i--;
+                        }
+                        strncpy (lstLibPtr->Name, &dllname[i+1], n-i);
+			return;
+		}
+		lstLibPtr++;
+	}
+	eprintf("r_debug_lstLibAdd: Cant find slot\n");
+}
+
+static void * r_debug_findlib(void * BaseOfDll) {
+	PLIB_ITEM libPtr = NULL;
+	if (lstLib) {
+		libPtr = (PLIB_ITEM)lstLib;
+		while (libPtr->hFile != NULL){
+			if (libPtr->hFile != (HANDLE)-1)
+				if (libPtr->BaseOfDll == BaseOfDll)
+					return ((void*)libPtr);
+			libPtr = (PLIB_ITEM)((ULONG_PTR)libPtr + sizeof (LIB_ITEM));
+		}
+	}
+	return NULL;
+}
+
 static int w32_dbg_wait(RDebug *dbg, int pid) {
 	DEBUG_EVENT de;
 	int tid, next_event = 0;
@@ -479,7 +530,6 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 	char *dllname = NULL;
 	int ret = R_DEBUG_REASON_UNKNOWN;
 	static int exited_already = 0;
-
 	/* handle debug events */
 	do {
 		/* do not continue when already exited but still open for examination */
@@ -498,8 +548,8 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		/* TODO: DEBUG_CONTROL_C */
 		switch (code) {
 		case CREATE_PROCESS_DEBUG_EVENT:
-			eprintf ("(%d) created process (%d:%p)\n", 
-				pid, w32_h2t (de.u.CreateProcessInfo.hProcess), 
+			eprintf ("(%d) created process (%d:%p)\n",
+				pid, w32_h2t (de.u.CreateProcessInfo.hProcess),
 				de.u.CreateProcessInfo.lpStartAddress);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
@@ -529,23 +579,35 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
 			dllname = get_file_name_from_handle (de.u.LoadDll.hFile);
-			eprintf ("(%d) Loading library at %p (%s)\n",
-				pid, de.u.LoadDll.lpBaseOfDll, 
-				dllname ? dllname : "no name");
-			free (curlibname);
-			curlibname = strdup (dllname);
+			//eprintf ("(%d) Loading library at %p (%s)\n",pid, de.u.LoadDll.lpBaseOfDll, dllname ? dllname : "no name");
+			r_debug_lstLibAdd (pid,de.u.LoadDll.lpBaseOfDll,
+				de.u.LoadDll.hFile, dllname);
 			if (dllname) {
 				free (dllname);
 			}
+		        return R_DEBUG_REASON_NEW_LIB;
+			/*
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DEBUG_REASON_NEW_LIB;
+			*/
 			break;
 		case UNLOAD_DLL_DEBUG_EVENT:
-			eprintf ("(%d) Unloading library at %p\n", pid, de.u.UnloadDll.lpBaseOfDll);
+			//eprintf ("(%d) Unloading library at %p\n", pid, de.u.UnloadDll.lpBaseOfDll);
+			lstLibPtr=r_debug_findlib(de.u.UnloadDll.lpBaseOfDll);
+			if (lstLibPtr!=NULL) {
+				lstLibPtr->hFile = (HANDLE)-1;
+			} else {
+				r_debug_lstLibAdd(pid,de.u.UnloadDll.lpBaseOfDll,(HANDLE)-1,"not cached");
+				if (dllname)
+					free(dllname);
+			}
+			return R_DEBUG_REASON_EXIT_LIB;
+                        /*
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DEBUG_REASON_EXIT_LIB;
+			*/
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
 			eprintf ("(%d) Debug string\n", pid);
@@ -597,8 +659,8 @@ static HANDLE w32_open_thread (int pid, int tid) {
 }
 
 RList *w32_thread_list (int pid, RList *list) {
-        HANDLE th; 
-        HANDLE thid; 
+        HANDLE th;
+        HANDLE thid;
         THREADENTRY32 te32;
 
         te32.dwSize = sizeof(THREADENTRY32);
@@ -607,7 +669,7 @@ RList *w32_thread_list (int pid, RList *list) {
 		eprintf("w32_thread_list: no w32_openthread?\n");
 		return list;
 	}
-        th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid); 
+        th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid);
         if(th == INVALID_HANDLE_VALUE || !Thread32First (th, &te32))
                 goto err_load_th;
         do {
@@ -634,7 +696,7 @@ RList *w32_thread_list (int pid, RList *list) {
 			r_list_append (list, r_debug_pid_new ("???", te32.th32ThreadID, 's', 0));
                 }
         } while (Thread32Next (th, &te32));
-err_load_th:    
+err_load_th:
         if(th != INVALID_HANDLE_VALUE)
                 CloseHandle (th);
 	return list;
@@ -652,7 +714,7 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	image_name[0] = '\0';
 	DWORD length = MAX_PATH;
 
-	if (w32_queryfullprocessimagename (process, 0, 
+	if (w32_queryfullprocessimagename (process, 0,
 		image_name, (PDWORD)&length)) {
 		CloseHandle(process);
 		return r_debug_pid_new (image_name, pe->th32ProcessID, 's', 0);
@@ -668,7 +730,7 @@ RList *w32_pids (int pid, RList *list) {
 	pe.dwSize = sizeof (PROCESSENTRY32);
 	int show_all_pids = pid == 0;
 
-	process_snapshot = CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, pid); 
+	process_snapshot = CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, pid);
 	if (process_snapshot == INVALID_HANDLE_VALUE) {
 		print_lasterr ((char *)__FUNCTION__, "CreateToolhelp32Snapshot");
 		return list;
@@ -679,8 +741,8 @@ RList *w32_pids (int pid, RList *list) {
 		return list;
 	}
 	do {
-		if (show_all_pids || 
-			pe.th32ProcessID == pid || 
+		if (show_all_pids ||
+			pe.th32ProcessID == pid ||
 			pe.th32ParentProcessID == pid) {
 	
 			RDebugPid *debug_pid = build_debug_pid (&pe);
@@ -762,7 +824,8 @@ static RDebugInfo* w32_info (RDebug *dbg, const char *arg) {
 	rdi->tid = dbg->tid;
 	rdi->uid = -1;// TODO
 	rdi->gid = -1;// TODO
-	rdi->libname = strdup (curlibname);
+	rdi->libname = r_debug_get_dll();
+	rdi->lib = (void *) r_debug_get_lib_item();
 	return rdi;
 }
 
