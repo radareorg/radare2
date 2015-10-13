@@ -11,18 +11,65 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <r_asm.h>
 #include <r_anal.h>
 
+// hack to get avr disasm in anal, this must be fixed by merging both worlds
+#include "../asm/arch/avr/disasm.c"
+
 #define	AVR_SOFTCAST(x,y)	(x+(y*0x100))
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	short ofst;
+	int imm = 0;
 	ut8 kbuf[2];
 	ut16 ins = AVR_SOFTCAST(buf[0],buf[1]);
-
+	char *arg, str[32];
 	if (op == NULL)
 		return 2;
-	op->size = 2;
+	op->size = avrdis (str, addr, buf, len);
+	arg = strchr (str, ' ');
+	if (arg) {
+		arg++;
+		imm = (int)r_num_get (NULL, arg);
+	}
 	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_UNK;
+	if (!strncmp (str, "st", 2)) {
+		op->type = R_ANAL_OP_TYPE_STORE;
+	} else
+	if (str[0] == 'm') {
+		op->type = R_ANAL_OP_TYPE_MOV;
+	} else
+	if (str[0] == 'l') {
+		op->type = R_ANAL_OP_TYPE_LOAD;
+	} else
+	if (str[0] == 's') {
+		op->type = R_ANAL_OP_TYPE_SUB;
+	} else
+	if (!strncmp (str, "ser ", 4)) {
+		op->type = R_ANAL_OP_TYPE_MOV;
+	} else
+	if (!strncmp (str, "and", 3)) {
+		op->type = R_ANAL_OP_TYPE_AND;
+	} else
+	if (!strncmp (str, "mul", 3)) {
+		op->type = R_ANAL_OP_TYPE_MUL;
+	} else
+	if (!strncmp (str, "cp", 2)) {
+		op->type = R_ANAL_OP_TYPE_CMP;
+	} else
+	if (!strncmp (str, "or", 2)) {
+		op->type = R_ANAL_OP_TYPE_OR;
+	} else
+	if (!strncmp (str, "eor ", 4)) {
+		op->type = R_ANAL_OP_TYPE_XOR;
+	} else
+	if (!strncmp (str, "out ", 4)) {
+		op->type = R_ANAL_OP_TYPE_IO;
+		op->type2 = 1;
+	} else
+	if (!strncmp (str, "in ", 3)) {
+		op->type = R_ANAL_OP_TYPE_IO;
+		op->type2 = 0;
+	}
 	if (ins == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
@@ -50,6 +97,17 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if ((buf[1] & 0xec) == 4) {		//CP + CPC
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->cycles = 1;
+	}
+	// 0xf0 - 0xf7 BR
+	if ((buf[1] >= 0xf0 && buf[1] <= 0xf8)) {
+		int cond = (buf[0] & 7);
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = imm;
+		op->fail = addr + 2;
+	}
+	if ((buf[1] >= 0xc0 && buf[1] <= 0xcf)) { // rjmp
+		op->type = R_ANAL_OP_TYPE_JMP; // relative jump
+		op->jump = 0;
 	}
 	switch (buf[1] & 0xfc) {
 		case 0x10:			//CPSE

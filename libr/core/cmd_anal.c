@@ -352,6 +352,7 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 				printline ("refptr","%d\n", op.refptr);
 			printline ("size", "%d\n", size);
 			printline ("type","%s\n", r_anal_optype_to_string (op.type));
+			printline ("type2", "%d\n", op.type2);
 			if (*R_STRBUF_SAFEGET (&op.esil))
 				printline ("esil", "%s\n", R_STRBUF_SAFEGET (&op.esil));
 			if (hint && hint->jump != UT64_MAX)
