@@ -98,6 +98,12 @@ static int rabin_show_help(int v) {
 		" -zzz            dump raw strings to stdout (for huge files)\n"
 		" -Z              guess size of binary program\n"
 		);
+	if (v) {
+		printf ("Environment:\n"
+		" RABIN2_MAXSTRBUF: e bin.maxstrbuf  # specify maximum buffer size\n"
+		" RABIN2_STRFILTER: e bin.strfilter  # r2 -qe bin.strfilter=? -c '' --\n"
+		" RABIN2_STRPURGE:  e bin.strpurge   # try to purge false positives\n");
+	}
 	return 1;
 }
 
@@ -377,6 +383,7 @@ int main(int argc, char **argv) {
 	const char *op = NULL;
 	const char *chksum = NULL;
 	const char *forcebin = NULL;
+	char *tmp;
 	RCoreBinFilter filter;
 	RCore core;
 	RCoreFile *cf = NULL;
@@ -397,10 +404,17 @@ int main(int argc, char **argv) {
 	r_lib_opendir (l, homeplugindir);
 	r_lib_opendir (l, R2_LIBDIR"/radare2/"R2_VERSION);
 	
-	char *maxstrbuf = r_sys_getenv ("RABIN2_MAXSTRBUF");
-	if (maxstrbuf) {
-		r_config_set (core.config, "bin.maxstrbuf", maxstrbuf);
-		free(maxstrbuf);
+	if ((tmp = r_sys_getenv ("RABIN2_MAXSTRBUF"))) {
+		r_config_set (core.config, "bin.maxstrbuf", tmp);
+		free (tmp);
+	}
+	if ((tmp = r_sys_getenv ("RABIN2_STRFILTER"))) {
+		r_config_set (core.config, "bin.strfilter", tmp);
+		free (tmp);
+	}
+	if ((tmp = r_sys_getenv ("RABIN2_STRPURGE"))) {
+		r_config_set (core.config, "bin.strpurge", tmp);
+		free (tmp);
 	}
 
 #define is_active(x) (action&x)

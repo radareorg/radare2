@@ -392,6 +392,31 @@ static int cb_binfilter(void *user, void *data) {
 	return true;
 }
 
+static int cb_strpurge(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->bin->strpurge = node->i_value;
+	return true;
+}
+
+static int cb_strfilter(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->value[0] == '?') {
+		eprintf ("Valid values for bin.strfilter:\n");
+		eprintf ("a  only alphanumeric printable\n");
+		eprintf ("8  only strings with utf8 chars\n");
+		eprintf ("p  file/directory paths\n");
+		eprintf ("e  email-like addresses\n");
+		eprintf ("u  urls\n");
+		eprintf ("f  format-strings\n");
+		return false;
+	} else {
+		core->bin->strfilter = node->value[0];
+	}
+	return true;
+}
+
 static int cb_binforce(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -1255,6 +1280,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.demangle", "true", "Show demangled symbols in disasm");
 	SETPREF("asm.describe", "false", "Show opcode description");
 	SETPREF("asm.marks", "true", "Show marks before the disassembly");
+	SETCB("bin.strpurge", "false", &cb_strpurge, "Try to purge false positive strings");
+	SETCB("bin.strfilter", "", &cb_strfilter, "Filter strings (?:help, a:scii, e:mail, p:ath, u:rl, 8:utf8)");
 	SETCB("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");
@@ -1266,7 +1293,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("bin.dwarf", "true", "Load dwarf information on startup if available");
 	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for r_bin");
 	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for r_bin");
-	SETICB("bin.maxstrbuf", 1024*1024*2, & cb_binmaxstrbuf, "Maximum size of range to load strings from");
+	SETICB("bin.maxstrbuf", 1024*1024*10, & cb_binmaxstrbuf, "Maximum size of range to load strings from");
 	SETCB("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETPREF("bin.strings", "true", "Load strings from rbin on startup");
 	SETPREF("bin.classes", "true", "Load classes from rbin on startup");
