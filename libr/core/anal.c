@@ -1705,8 +1705,6 @@ R_API int r_core_anal_all(RCore *core) {
 	}
 	if ((list = r_bin_get_entries (core->bin)) != NULL)
 		r_list_foreach (list, iter, entry)
-			if (core->cons->breaked)
-				break;
 			r_core_anal_fcn (core, (offset + va) ? r_bin_a2b (core->bin, entry->vaddr)
 					: entry->paddr, -1, R_ANAL_REF_TYPE_NULL, depth);
 	/* Symbols (Imports are already analyzed by rabin2 on init) */
