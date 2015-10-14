@@ -1923,7 +1923,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				"ae??", "", "show ESIL help",
 				"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
 				"aeim", "", "initialize ESIL VM stack (aeim- remove)",
-				"aeip", "", "initialize ESIL program counter to curseek", 
+				"aeip", "", "initialize ESIL program counter to curseek",
 				"ae", " [expr]", "evaluate ESIL expression",
 				"aep", " [addr]", "change esil PC to this address",
 				"aef", " [addr]", "emulate function",
@@ -2036,6 +2036,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	}
 	addr = core->offset;
 	addr_end = addr + len;
+	r_cons_break (NULL, NULL);
 	while (addr < addr_end) {
 		if (core->cons->breaked)
 			break;
@@ -2740,7 +2741,7 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 			int stats = r_config_get_i (core->config, "esil.stats");
 			int iotrap = r_config_get_i (core->config, "esil.iotrap");
 			core->anal->esil = r_anal_esil_new (iotrap);
-			r_anal_esil_setup (core->anal->esil,	
+			r_anal_esil_setup (core->anal->esil,
 				core->anal, romem, stats);
 		}
 		switch (input[1]) {
@@ -2771,7 +2772,7 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 			break;
 		case ' ':
 			{
-				int idx = atoi (input+2);	
+				int idx = atoi (input+2);
 				r_anal_esil_trace_show (
 					core->anal->esil, idx);
 			}
