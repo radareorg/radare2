@@ -52,7 +52,6 @@ static inline int is_arm (struct PE_(r_bin_pe_obj_t)* bin) {
 	return 0;
 }
 
-
 struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin) {
 	struct r_bin_pe_addr_t *entry;
 	ut8 b[512];
@@ -136,7 +135,7 @@ static int PE_(r_bin_pe_get_delay_import_dirs_count)(struct PE_(r_bin_pe_obj_t) 
 }
 #endif
 
-static char *resolveModuleOrdinal (Sdb *sdb, const char *module, int ordinal) {
+static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 #if 0
 	char res[128], *foo;
 	Sdb *db = sdb_ns_path (sdb, "bin/pe", 0);
@@ -183,7 +182,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 			if (import_table & ILT_MASK1) {
 				import_ordinal = import_table & ILT_MASK2;
 				import_hint = 0;
-				snprintf (import_name, PE_NAME_LENGTH, "qq%s_Ordinal_%i",
+				snprintf (import_name, PE_NAME_LENGTH, "%s_Ordinal_%i",
 					dll_name, import_ordinal);
 				free (symdllname);
 				symdllname = strdup (dll_name);
@@ -220,6 +219,9 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 							PE_NAME_LENGTH,
 							"%s_%s", dll_name, symname);
 					}
+				} else  {
+					eprintf ("Cannot find %s\n", filename);
+
 				}
 			} else {
 				import_ordinal++;
