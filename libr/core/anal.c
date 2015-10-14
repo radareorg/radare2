@@ -1428,10 +1428,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	// ???
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
-	if (buf==NULL)
-		return -1;
+	if (buf == NULL) return -1;
 	r_io_use_desc (core->io, core->file->desc);
-	if (ref==0LL) {
+	if (ref == 0LL) {
 		eprintf ("Null reference search is not supported\n");
 		free (buf);
 		return -1;
@@ -1442,9 +1441,14 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			if (from + core->blocksize > to) {
 				at = from;
 				do_bckwrd_srch = false;
-			} else at = to - core->blocksize;
-		} else at = from;
+			} else {
+				at = to - core->blocksize;
+			}
+		} else {
+			at = from;
+		}
 		while ((!bckwrds && at < to) || bckwrds) {
+			eprintf ("\r[0x%08"PFMT64x"-0x%08"PFMT64x"]", at, to);
 			if (r_cons_singleton ()->breaked)
 				break;
 			// TODO: this can be probably enhaced
@@ -1455,27 +1459,41 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			     (!bckwrds && i < core->blocksize-OPSZ) || (bckwrds && i > 0);
 			     bckwrds ? i-- : i++) {
 				r_anal_op_fini (&op);
-				if (!r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i))
+				if (!r_anal_op (core->anal, &op, at+i, buf+i,
+						core->blocksize-i))
 					continue;
-				if (op.type == R_ANAL_OP_TYPE_JMP || op.type == R_ANAL_OP_TYPE_CJMP ||
-					op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_CCALL) {
+				switch (op.type) {
+				case R_ANAL_OP_TYPE_JMP:
+				case R_ANAL_OP_TYPE_CJMP:
+				case R_ANAL_OP_TYPE_CALL:
+				case R_ANAL_OP_TYPE_CCALL:
 					if (op.jump != -1 &&
-						core_anal_followptr (core, at+i, op.jump, ref, true, 0)) {
+						core_anal_followptr (core,
+							at + i, op.jump, ref,
+							true, 0)) {
 						count ++;
 					}
-				} else if (op.type == R_ANAL_OP_TYPE_UJMP || op.type == R_ANAL_OP_TYPE_UCALL ||
-					op.type == R_ANAL_OP_TYPE_UCJMP || op.type == R_ANAL_OP_TYPE_UCCALL) {
+					break;
+				case R_ANAL_OP_TYPE_UJMP:
+				case R_ANAL_OP_TYPE_UCALL:
+				case R_ANAL_OP_TYPE_UCJMP:
+				case R_ANAL_OP_TYPE_UCCALL:
 					if (op.ptr != -1 &&
-						core_anal_followptr (core, at+i, op.ptr, ref, true, 1)) {
+						core_anal_followptr (core,
+							at + i, op.ptr, ref,
+							true ,1)) {
 						count ++;
 					}
-				} else {
+					break;
+				default:
 					if (op.ptr != -1 &&
 						core_anal_followptr (core,
 							at+i, op.ptr, ref,
 							false, ptrdepth)) {
 						count ++;
 					}
+					break;
+
 				}
 			}
 			if (bckwrds) {
@@ -1490,7 +1508,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 				at += core->blocksize - OPSZ;
 			}
 		}
-	} else eprintf ("error: block size too small\n");
+	} else {
+		eprintf ("error: block size too small\n");
+	}
 	r_cons_break_end ();
 	free (buf);
 	r_anal_op_fini (&op);
