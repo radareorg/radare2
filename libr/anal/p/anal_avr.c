@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 - pancake, Roc Valles */
+/* radare - LGPL - Copyright 2011-2015 - pancake, Roc Valles, condret */
 
 #if 0
 http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
@@ -18,13 +18,14 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	short ofst;
-	int imm = 0;
+	int imm = 0, d;
 	ut8 kbuf[2];
 	ut16 ins = AVR_SOFTCAST(buf[0],buf[1]);
 	char *arg, str[32];
 	if (op == NULL)
 		return 2;
 	op->size = avrdis (str, addr, buf, len);
+	r_strbuf_init (&op->esil);
 	arg = strchr (str, ' ');
 	if (arg) {
 		arg++;
@@ -91,9 +92,30 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->cycles = 1;
 	}
-	if (((buf[0] & 0xf) == 4) && ((buf[1] & 0xfe) == 0x92)) {
-		op->type = R_ANAL_OP_TYPE_XCHG;
-		op->cycles = 1;
+	if ((buf[1] & 0xfe) == 0x92) {
+		d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
+		switch (buf[0] & 0xf) {
+			case 4:		//XCH
+				op->type = R_ANAL_OP_TYPE_XCHG;
+				op->cycles = 2;
+				r_strbuf_setf (&op->esil, "r%d,Z,^=[1],Z,[1],r%d,^=,r%d,Z,^=[1]", d, d, d);
+				break;
+			case 5:		//LAS
+				op->type = R_ANAL_OP_TYPE_LOAD;
+				op->cycles = 2;
+				r_strbuf_setf (&op->esil, "r%d,Z,[1],|,Z,[1],r%d,=,Z,=[1]", d, d);
+				break;
+			case 6:		//LAC
+				op->type = R_ANAL_OP_TYPE_LOAD;
+				op->cycles = 2;
+				r_strbuf_setf (&op->esil, "r%d,Z,[1],&,Z,[1],-,Z,[1],r%d,=,Z,=[1]", d, d);
+				break;
+			case 7:		//LAT
+				op->type = R_ANAL_OP_TYPE_LOAD;
+				op->cycles = 2;
+				r_strbuf_setf (&op->esil, "r%d,Z,[1],^,Z,[1],r%d,=,Z,=[1]", d, d);
+				break;
+		}
 	}
 	// 0xf0 - 0xf7 BR
 	if ((buf[1] >= 0xf0 && buf[1] <= 0xf8)) {
@@ -300,6 +322,7 @@ RAnalPlugin r_anal_plugin_avr = {
 	.desc = "AVR code analysis plugin",
 	.license = "LGPL3",
 	.arch = R_SYS_ARCH_AVR,
+	.esil = true,
 	.bits = 8|16, // 24 big regs conflicts
 	.op = &avr_op,
 	.set_reg_profile = &set_reg_profile,
