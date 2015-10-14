@@ -5,6 +5,8 @@
 #include <r_flags.h>
 #include <r_core.h>
 
+#include <string.h>
+
 //#define ANALBS 4096
 #define ANALBS 1024
 #define HASNEXT_FOREVER 1

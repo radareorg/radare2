@@ -2,6 +2,8 @@
 
 #include <r_core.h>
 
+#include <string.h>
+
 #define NPF 7
 static int obs = 0;
 static int blocksize = 0;

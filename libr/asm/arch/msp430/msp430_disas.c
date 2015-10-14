@@ -59,11 +59,11 @@ static ut8 get_ad(ut16 instr)
 	return (instr >> 7) & 1;
 }
 
-static int get_src(instr) {
+static int get_src(ut16 instr) {
 	return (instr >> 8) & 0xF;
 }
 
-static int get_dst(instr) {
+static int get_dst(ut16 instr) {
 	return instr & 0xF;
 }
 
