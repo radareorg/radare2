@@ -37,6 +37,7 @@ typedef struct r_sign_t {
 	char ns[32]; // namespace
 	PrintfCallback cb_printf;
 	RList *items;
+	int matches;
 } RSign;
 
 typedef int (*RSignCallback)(RSignItem *si, void *user);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_sign.h>
 #include <r_anal.h>
@@ -112,6 +112,7 @@ R_API void r_sign_list(RSign *sig, int rad) {
 		sig->cb_printf ("  %d byte signatures\n", sig->s_byte);
 		sig->cb_printf ("  %d head signatures\n", sig->s_head);
 		sig->cb_printf ("  %d func signatures\n", sig->s_func);
+		sig->cb_printf ("Found %d matches\n", sig->matches);
 	}
 }
 

@@ -164,7 +164,11 @@ static int cmd_zign(void *data, const char *input) {
 				} else eprintf ("Cannot read %d bytes at 0x%08"PFMT64x"\n", len, ini);
 				r_cons_break_end ();
 				free (buf);
-			} else eprintf ("Cannot alloc %d bytes\n", len);
+				core->sign->matches = count;
+			} else {
+				eprintf ("Cannot alloc %d bytes\n", len);
+				core->sign->matches = 0;
+			}
 		}
 		break;
 	case '\0':
