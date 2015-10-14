@@ -299,6 +299,12 @@ static int cb_asmbits(void *user, void *data) {
 			r_bp_use (core->dbg->bp, asmarch, core->anal->bits);
 		}
 	}
+
+	// set pcalign
+	{
+		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+		if (v != -1) r_config_set_i (core->config, "asm.pcalign", v);
+	}
 	return ret;
 }
 
