@@ -147,17 +147,26 @@ static int bin_is_executable (RBinObject *obj){
 
 static void cmd_info_bin(RCore *core, int va, int mode) {
 	RBinObject *obj = r_bin_cur_object (core->bin);
+	int array = 0;
 	if (core->file) {
-		if (mode == R_CORE_BIN_JSON)
+		if ((mode & R_CORE_BIN_JSON) && !(mode & R_CORE_BIN_ARRAY)) {
+			mode = R_CORE_BIN_JSON;
 			r_cons_printf ("{\"core\":");
+		}
+		if ((mode & R_CORE_BIN_JSON) && (mode & R_CORE_BIN_ARRAY)) {
+			mode = R_CORE_BIN_JSON;
+			array = 1;
+			r_cons_printf (",\"core\":");
+		}
 		r_core_file_info (core, mode);
 		if (obj && bin_is_executable (obj)) {
-				if (mode == R_CORE_BIN_JSON)
+				if ((mode & R_CORE_BIN_JSON)) {
 					r_cons_printf (",\"bin\":");
+				}
 				r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
 					mode, va, NULL, NULL);
 		}
-		if (mode == R_CORE_BIN_JSON)
+		if (mode == R_CORE_BIN_JSON && array == 0)
 			r_cons_printf ("}\n");
 	} else eprintf ("No selected file\n");
 }
@@ -438,6 +447,9 @@ static int cmd_info(void *data, const char *input) {
 			goto done;
 		case 'j':
 			mode = R_CORE_BIN_JSON;
+			if (is_array > 1) {
+				mode |= R_CORE_BIN_ARRAY;
+			}
 			cmd_info_bin (core, va, mode);
 			goto done;
 		default:

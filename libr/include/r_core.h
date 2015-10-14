@@ -397,6 +397,7 @@ R_API void r_core_sysenv_help(const RCore* core);
 #define R_CORE_BIN_SET		0x002
 #define R_CORE_BIN_SIMPLE	0x004
 #define R_CORE_BIN_JSON         0x008
+#define R_CORE_BIN_ARRAY 	0x010
 
 #define R_CORE_BIN_ACC_STRINGS	0x001
 #define R_CORE_BIN_ACC_INFO	0x002
