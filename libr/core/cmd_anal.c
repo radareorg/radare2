@@ -1034,6 +1034,15 @@ static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 	if (core->anal->cur->arch == R_SYS_ARCH_ARM && bits==16) {
 		bits = 32;
 	}
+	if (1 || mode == '=') {
+		int pcbits = 0;
+		const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+		RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
+		if (bits != reg->size)
+			pcbits = reg->size;
+		if (pcbits)
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
+	}
 	r_debug_reg_list (core->dbg, type, bits, mode, use_color);
 	core->dbg->reg = hack;
 }
