@@ -436,13 +436,13 @@ static void handle_reflines_update (RAnal *anal, RDisasmState *ds) {
 
 	anal->reflines = r_anal_reflines_get (anal,
 		ds->at, ds->buf + delta,
-		R_MIN (maxlen, ds->len),
+		R_MIN (maxlen, ds->len - delta),
 		R_MIN (maxlines, ds->l),
 		ds->linesout,
 		ds->show_lines_call);
 	anal->reflines2 = r_anal_reflines_get (anal,
 		ds->at, ds->buf + delta,
-		R_MIN (maxlen, ds->len),
+		R_MIN (maxlen, ds->len - delta),
 		R_MIN (maxlines, ds->l),
 		ds->linesout, 1);
 }
@@ -2503,7 +2503,7 @@ toro:
 	r_cons_break (NULL, NULL);
 	int inc = 0;
 	for (i=idx=ret=0; idx < len && ds->lines < ds->l;
-			idx += inc,i++, ds->index += inc, ds->lines++) {
+			idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		if (r_cons_singleton ()->breaked) {
 			dorepeat = 0;
@@ -2664,6 +2664,8 @@ toro:
 				inc = skip_bytes;
 			}
 		}
+		if (inc<1)
+			inc = 1;
 	}
 	if (nbuf == buf) {
 		free (buf);
