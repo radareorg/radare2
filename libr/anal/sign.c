@@ -90,7 +90,7 @@ R_API _Bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, cons
 	return false;
 }
 
-R_API void r_sign_list(RSign *sig, int rad) {
+R_API void r_sign_list(RSign *sig, int rad, int json) {
 	if (rad) {
 		int i;
 		RListIter *iter;
@@ -108,11 +108,20 @@ R_API void r_sign_list(RSign *sig, int rad) {
 			sig->cb_printf ("\n");
 		}
 	} else {
-		sig->cb_printf ("Loaded %d signatures\n", sig->s_byte + sig->s_anal + sig->s_func);
-		sig->cb_printf ("  %d byte signatures\n", sig->s_byte);
-		sig->cb_printf ("  %d head signatures\n", sig->s_head);
-		sig->cb_printf ("  %d func signatures\n", sig->s_func);
-		sig->cb_printf ("Found %d matches\n", sig->matches);
+		if (json) {
+			sig->cb_printf("{\"byte_signatures\":\"%d\","
+					"\"head_signatures\":\"%d\","
+					"\"func_signatures\":\"%d\","
+					"\"matches\":\"%d\"}\n", sig->s_byte, sig->s_head,
+					sig->s_func,sig->matches);
+		} else {
+			const int total = sig->s_byte + sig->s_anal + sig->s_func;
+			sig->cb_printf ("Loaded %d signatures\n", total);
+			sig->cb_printf ("  %d byte signatures\n", sig->s_byte);
+			sig->cb_printf ("  %d head signatures\n", sig->s_head);
+			sig->cb_printf ("  %d func signatures\n", sig->s_func);
+			sig->cb_printf ("Found %d matches\n", sig->matches);
+		}
 	}
 }
 

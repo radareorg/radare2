@@ -173,7 +173,10 @@ static int cmd_zign(void *data, const char *input) {
 		break;
 	case '\0':
 	case '*':
-		r_sign_list (core->sign, (*input=='*'));
+		r_sign_list (core->sign, (*input=='*'), 0);
+		break;
+	case 'j':
+		r_sign_list (core->sign, (*input=='*'), 1);
 		break;
 	case 'F': {
 		if (input[1] == 'd') {
