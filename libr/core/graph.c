@@ -2375,7 +2375,7 @@ static void goto_asmqjmps(RCore *core) {
 		r_cons_printf ("%c", ch);
 		r_cons_flush ();
 
-		cont = isalpha (ch) && !islower (ch);
+		cont = isalpha ((ut8)ch) && !islower ((ut8)ch);
 	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
 
 	obuf[i] = '\0';
