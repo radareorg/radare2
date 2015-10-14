@@ -48,7 +48,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		addr += sz;
 		// This can segflauta if opcode length and buffer check fails
 		r_anal_op_fini (&op);
-		sz = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr));
+		sz = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr - (sz*2)));
 		if (sz > 0) {
 			/* store data */
 			switch (op.type) {
