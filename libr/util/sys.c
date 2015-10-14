@@ -1,6 +1,8 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_userconf.h>
+#include <stdlib.h>
+#include <string.h>
 #if defined(__NetBSD__)
 # include <sys/param.h>
 # if __NetBSD_Prereq__(7,0,0)

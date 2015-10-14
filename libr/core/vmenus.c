@@ -2,6 +2,8 @@
 
 #include "r_core.h"
 
+#include <string.h>
+
 #define MAX_FORMAT 3
 
 typedef struct {

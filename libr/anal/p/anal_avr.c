@@ -340,7 +340,7 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	RAMPD	.8	40	0\n"
 		"gpr	EIND	.8	41	0\n"
 // status bit register stored in SREG
-#if 0
+/*
 C Carry flag. This is a borrow flag on subtracts.
 Z Zero flag. Set to 1 when an arithmetic result is zero.
 N Negative flag. Set to a copy of the most significant bit of an arithmetic result.
@@ -349,7 +349,7 @@ S Sign flag. Unique to AVR, this is always N⊕V, and shows the true sign of a c
 H Half carry. This is an internal carry from additions and is used to support BCD arithmetic.
 T Bit copy. Special bit load and bit store instructions use this bit.
 I Interrupt flag. Set when interrupts are enabled.
-#endif
+*/
 		"gpr	CF	.1	288	0\n" // 288 = (offsetof(SREG))*8= 36 * 8
 		"gpr	ZF	.1	289	0\n"
 		"gpr	NF	.1	290	0\n"

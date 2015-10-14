@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <r_types.h>
 
 #include "ins.h"

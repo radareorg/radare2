@@ -5,6 +5,11 @@
 #include <getopt.c>
 #include "../blob/version.c"
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <string.h>
+
+
 static int usage (int v) {
 	printf ("Usage: ragg2 [-FOLsrxvh] [-a arch] [-b bits] [-k os] [-o file] [-I /] [-i sc]\n"
 		"             [-e enc] [-B hex] [-c k=v] [-C file] [-dDw v] [-p pad] file|f.asm|-\n");

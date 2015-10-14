@@ -79,7 +79,7 @@ static int splitlines(const char *a, int len, struct line **lr) {
 	return i - 1;
 }
 
-static int inline cmp(struct line *a, struct line *b) {
+inline static int cmp(struct line *a, struct line *b) {
 	return a->h != b->h || a->len != b->len || memcmp(a->l, b->l, a->len);
 }
 

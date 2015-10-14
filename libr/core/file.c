@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *filenameuri);
