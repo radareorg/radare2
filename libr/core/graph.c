@@ -1752,10 +1752,15 @@ static void update_graph_sizes (RAGraph *g) {
 
 static void set_curnode (RAGraph *g, const RGraphNode *n) {
 	g->curnode = n;
-	if (n) {
-		RANode *a = get_anode (n);
-		if (a->title)
-			sdb_set (g->db, "agraph.curnode", a->title, 0);
+	RANode *a = get_anode (n);
+	if (a && a->title) {
+		sdb_set (g->db, "agraph.curnode", a->title, 0);
+	}
+}
+
+static void set_cur_anode (RAGraph *g, const RANode *an) {
+	if (an && an->gnode) {
+		set_curnode (g, an->gnode);
 	}
 }
 
@@ -1770,8 +1775,9 @@ static void agraph_set_layout(RAGraph *g, int is_interactive) {
 
 	set_layout(g);
 
-	if (is_interactive)
+	if (is_interactive) {
 		set_curnode (g, find_near_of (g, NULL, true));
+	}
 	update_graph_sizes (g);
 	graph_foreach_anode (r_graph_get_nodes (g->graph), it, n, a) {
 		const char *k;
@@ -1795,10 +1801,11 @@ static void agraph_update_seek(RAGraph *g, RANode *n, int force) {
 static void agraph_print_node(const RAGraph *g, RANode *n) {
 	const int cur = g->curnode && get_anode (g->curnode) == n;
 
-	if (g->is_small_nodes)
+	if (g->is_small_nodes) {
 		small_RANode_print(g, n, cur);
-	else
+	} else {
 		normal_RANode_print(g, n, cur);
+	}
 }
 
 static void agraph_print_nodes(const RAGraph *g) {
@@ -1808,13 +1815,13 @@ static void agraph_print_nodes(const RAGraph *g) {
 	RANode *n;
 
 	graph_foreach_anode (nodes, it, gn, n) {
-		if (gn != g->curnode)
+		if (gn != g->curnode) {
 			agraph_print_node (g, n);
+		}
 	}
 
 	/* draw current node now to make it appear on top */
-	if (g->curnode)
-		agraph_print_node (g, get_anode (g->curnode));
+	if (g->curnode) agraph_print_node (g, get_anode (g->curnode));
 }
 
 static int find_ascii_edge (const AEdge *a, const AEdge *b) {
@@ -2080,18 +2087,33 @@ static int agraph_print (RAGraph *g, int is_interactive,
 static int agraph_refresh(struct agraph_refresh_data *grd) {
 	RCore *core = grd->core;
 	RAGraph *g = grd->g;
-	RAnalFunction **fcn = grd->fcn;
-	RAnalFunction *f;
+	RAnalFunction *f, **fcn = grd->fcn;
+	RANode *an;
 
-	/* allow to change the current function during debugging */
-	if (g->is_instep && core->io->debug)
+	// allow to change the current function during debugging
+	if (g->is_instep && core->io->debug) {
 		r_core_cmd0 (core, "sr pc");
+	}
 
 	f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-	if (f && f != *fcn) {
+	if (!f) {
+		r_cons_message ("Not in a function. Type 'df' to define it here");
+		return 0;
+	} else if (f && f != *fcn) {
 		*fcn = f;
 		g->need_reload_nodes = true;
 		g->force_update_seek = true;
+	}
+	// check if we need to update the current node in the RAGraph
+	an = get_anode(g->curnode);
+	if (an) {
+		char *title = get_title (core->offset);
+		if (strcmp (title, an->title) != 0) {
+			RANode *cur = r_agraph_get_node (g, title);
+			set_cur_anode (g, cur);
+			g->update_seek_on = cur;
+		}
+		free (title);
 	}
 
 	return agraph_print (g, grd->fs, core, *fcn);
@@ -2441,7 +2463,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			RANode *an = r_agraph_get_node (g, bbtitle);
 
 			free (bbtitle);
-			set_curnode (g, an->gnode);
+			set_cur_anode (g, an);
 			agraph_update_seek (g, an, true);
 		}
 	} else {
@@ -2643,61 +2665,59 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'h': can->sx += movspeed * (invscroll ? -1 : 1); break;
 		case 'e': can->linemode = !!!can->linemode; break;
 		case 'p':
-			  agraph_toggle_small_nodes (g);
-			  agraph_update_seek (g, get_anode (g->curnode), true);
-			  break;
+			agraph_toggle_small_nodes (g);
+			agraph_update_seek (g, get_anode (g->curnode), true);
+			break;
 		case 'b':
-			  agraph_undo_node(g);
-			  break;
+			agraph_undo_node(g);
+			break;
 		case '.':
-			  agraph_update_seek (g, get_anode (g->curnode), true);
-			  g->is_instep = true;
-			  break;
+			agraph_update_seek (g, get_anode (g->curnode), true);
+			g->is_instep = true;
+			break;
 		case 't':
-			  agraph_follow_true (g);
-			  break;
+			agraph_follow_true (g);
+			break;
 		case 'f':
-			  agraph_follow_false (g);
-			  break;
+			agraph_follow_false (g);
+			break;
 		case '/':
-			  r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
-			  break;
+			r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
+			break;
 		case ':':
-		{
 			r_core_visual_prompt_input (core);
 			break;
-		}
 		case 'w':
-			  agraph_toggle_speed (g, core);
-			  break;
+			agraph_toggle_speed (g, core);
+			break;
 		case -1: // EOF
 		case ' ':
 		case 'q':
-			  if (g->is_callgraph) {
-				  agraph_toggle_callgraph(g);
-			  } else {
-				  // update seek based on current node
-				  RANode *n;
-				  char *cmd;
+			if (g->is_callgraph) {
+				agraph_toggle_callgraph(g);
+			} else {
+				// update seek based on current node
+				RANode *n;
+				char *cmd;
 
-				  if (g->curnode) {
-					  n = get_anode (g->curnode);
-					  cmd = r_str_newf ("s %s", n->title);
-					  r_core_cmd0 (core, cmd);
-					  free (cmd);
-				  }
-				  exit_graph = true;
-			  }
-			  break;
+				if (g->curnode) {
+					n = get_anode (g->curnode);
+					cmd = r_str_newf ("s %s", n->title);
+					r_core_cmd0 (core, cmd);
+					free (cmd);
+				}
+				exit_graph = true;
+			}
+			break;
 		case 27: // ESC
-			  if (r_cons_readchar () == 91) {
-				  if (r_cons_readchar () == 90) {
-					  agraph_prev_node (g);
-				  }
-			  }
-			  break;
+			if (r_cons_readchar () == 91) {
+				if (r_cons_readchar () == 90) {
+					agraph_prev_node (g);
+				}
+			}
+			break;
 		default:
-			  break;
+			break;
 		}
 	}
 
