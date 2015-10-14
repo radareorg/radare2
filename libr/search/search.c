@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 pancake */
+/* radare - LGPL - Copyright 2008-2015 pancake */
 
 #include <r_search.h>
 #include <r_list.h>
@@ -93,7 +93,7 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	RSearchHit* hit;
 	if (s->align && (addr%s->align)) {
 		eprintf ("0x%08"PFMT64x" unaligned\n", addr);
-		return false;
+		return true;
 	}
 	if (!s->contiguous) {
 		if (kw->last && addr == kw->last) {
