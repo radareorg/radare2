@@ -353,6 +353,16 @@ static int cb_asm_invhex(void *user, void *data) {
 	return true;
 }
 
+static int cb_asm_pcalign(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	int align = node->i_value;
+	if (align<0) align = 0;
+	core->assembler->pcalign = align;
+	core->anal->pcalign = align;
+	return true;
+}
+
 static int cb_asmos(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	int asmbits = r_config_get_i (core->config, "asm.bits");
@@ -1220,6 +1230,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.cmtflgrefs", "true", "Show comment flags associated to branch reference");
 	SETPREF("asm.cmtright", "true", "Show comments at right of disassembly if they fit in screen");
 	SETI("asm.cmtcol", 70, "Align comments at column 60");
+	SETICB("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
 	SETPREF("asm.calls", "true", "Show calling convention calls as comments in disasm");
 	SETPREF("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF("asm.slow", "true", "Perform slow analysis operations in disasm");

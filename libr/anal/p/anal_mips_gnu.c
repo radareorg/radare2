@@ -524,6 +524,10 @@ static int mips_set_reg_profile(RAnal* anal){
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 4;
+}
+
 struct r_anal_plugin_t r_anal_plugin_mips_gnu = {
 	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
@@ -531,15 +535,9 @@ struct r_anal_plugin_t r_anal_plugin_mips_gnu = {
 	.arch = R_SYS_ARCH_MIPS,
 	.bits = 32,
 	.esil = true,
-	.init = NULL,
-	.fini = NULL,
+	.archinfo = archinfo,
 	.op = &mips_op,
 	.set_reg_profile = mips_set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

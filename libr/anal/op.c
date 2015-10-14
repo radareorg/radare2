@@ -7,11 +7,11 @@
 R_API RAnalOp *r_anal_op_new () {
 	RAnalOp *op = R_NEW0 (RAnalOp);
 	if (!op) return NULL;
-	op->addr = -1;
-	op->jump = -1;
-	op->fail = -1;
-	op->ptr = -1;
-	op->val = -1;
+	op->addr = UT64_MAX;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
+	op->ptr = UT64_MAX;
+	op->val = UT64_MAX;
 	r_strbuf_init (&op->esil);
 	return op;
 }
@@ -48,7 +48,16 @@ R_API void r_anal_op_free(void *_op) {
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	int ret = false;
+	int ret = 0;
+	if (anal->pcalign) {
+		if (addr % anal->pcalign) {
+			memset (op, 0, sizeof (RAnalOp));
+			op->type = R_ANAL_OP_TYPE_ILL;
+			op->addr = addr;
+			op->size = 1;
+			return -1;
+		}
+	}
 	if (len>0 && anal && memset (op, 0, sizeof (RAnalOp)) &&
 		anal->cur && anal->cur->op) {
 		ret = anal->cur->op (anal, op, addr, data, len);

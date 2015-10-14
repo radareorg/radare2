@@ -433,21 +433,30 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p32);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	if (q == R_ANAL_ARCHINFO_ALIGN) {
+		return 4;
+	}
+	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
+		return 4;
+	}
+	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+		if (anal && anal->bits == 16)
+			return 2;
+		return 4;
+	}
+	return 4; // XXX
+}
+
 struct r_anal_plugin_t r_anal_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = R_SYS_ARCH_ARM,
 	.license = "LGPL3",
 	.bits = 16 | 32 | 64,
 	.desc = "ARM code analysis plugin",
-	.init = NULL,
-	.fini = NULL,
+	.archinfo = archinfo,
 	.op = &arm_op,
 	.set_reg_profile = set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB
