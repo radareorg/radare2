@@ -1034,7 +1034,7 @@ static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 	if (core->anal->cur->arch == R_SYS_ARCH_ARM && bits==16) {
 		bits = 32;
 	}
-	if (1 || mode == '=') {
+	if (mode == '=') {
 		int pcbits = 0;
 		const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 		RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
@@ -1292,7 +1292,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			*arg = 0;
 			ostr = r_str_chop (strdup (str+1));
 			regname = r_str_clean (ostr);
-			r = r_reg_get (core->dbg->reg, regname, -1); //R_REG_TYPE_GPR);
+			r = r_reg_get (core->dbg->reg, regname, -1);
 			if (!r) {
 				int type = r_reg_get_name_idx (regname);
 				if (type != -1) {
