@@ -82,11 +82,11 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
 		int len = strlen (str);
 
 		for (i = 0; i < len - 1; ++i) {
-			if (!isupper (str[i])) return UT64_MAX;
+			if (!isupper ((unsigned char)str[i])) return UT64_MAX;
 			pos *= R_CORE_ASMQJMPS_LETTERS;
 			pos += str[i] - 'A' + 1;
 		}
-		if (!islower (str[i])) return UT64_MAX;
+		if (!islower ((unsigned char)str[i])) return UT64_MAX;
 		pos *= R_CORE_ASMQJMPS_LETTERS;
 		pos += str[i] - 'a';
 		return core->asmqjmps[pos + 1];
