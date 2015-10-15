@@ -18,7 +18,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	short ofst;
-	int imm = 0, d, r;
+	int imm = 0, d, r, k;
 	ut8 kbuf[2];
 	ut16 ins = AVR_SOFTCAST(buf[0],buf[1]);
 	char *arg, str[32];
@@ -74,13 +74,18 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->cycles = 1;
 		r_strbuf_setf (&op->esil, "r%d,r%d,=,r%d,r%d,=", r, d, r+1, d+1);
-	} else
+	}
+	k = (buf[0] & 0xf) + ((buf[1] & 0xf) << 4);
+	d = ((buf[0] & 0xf0) >> 4) + 16;
 	if ((buf[1] & 0xf0) == 0xe0) {		//LDI
-		int k = (buf[0] & 0xf) + ((buf[1] & 0xf) << 4);
-		d = ((buf[0] & 0xf0) >> 4) + 16;
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->cycles = 1;
 		r_strbuf_setf (&op->esil, "0x%x,r%d,=", k, d);
+	}
+	if ((buf[1] & 0xf0) == 0x30) {		//CPI
+		op->type = R_ANAL_OP_TYPE_CMP;
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "0x%x,r%d,==,$z,ZF,=,$b3,HF,=,$b8,CF,=$o,VF,=,0x%x,r%d,-,0x80,&,!,!,NF,=,VF,NF,^,SF,=", k, d, k, d);		//check VF here
 	}
 	d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
 	r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
