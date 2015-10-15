@@ -269,7 +269,7 @@ static int r_debug_native_wait (RDebug *dbg, int pid) {
 	if (pid == -1) {
 		status = R_DEBUG_REASON_UNKNOWN;
 	} else {
-#if __APPLE__
+#if __APPLE__ && (__arm__ || __arm64__ || __aarch64__)
 		// eprintf ("No waitpid here :D\n");
 		status = R_DEBUG_REASON_UNKNOWN;
 #else
