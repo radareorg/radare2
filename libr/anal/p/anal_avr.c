@@ -69,19 +69,28 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->cycles = 1;
 	} else
 	if (buf[1] == 1) {			//MOVW
+		d = (buf[0] & 0xf0) >> 3;
+		r = (buf[0] & 0x0f) << 1;
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "r%d,r%d,=,r%d,r%d,=", r, d, r+1, d+1);
 	} else
 	if ((buf[1] & 0xf0) == 0xe0) {		//LDI
+		int k = (buf[0] & 0xf) + ((buf[1] & 0xf) << 4);
+		d = ((buf[0] & 0xf0) >> 4) + 16;
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->cycles = 1;
-	}
-	if ((buf[1] & 0xec) == 4) {		//CP + CPC
-		op->type = R_ANAL_OP_TYPE_CMP;
-		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "0x%x,r%d,=", k, d);
 	}
 	d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
 	r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
+	if ((buf[1] & 0xec) == 4) {		//CP + CPC
+		op->type = R_ANAL_OP_TYPE_CMP;
+		op->cycles = 1;
+		if (buf[1] & 0xf0)		//CP
+			r_strbuf_setf (&op->esil, "r%d,r%d,==,$z,ZF,=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,-,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, r, d);	//check VF here
+		else	r_strbuf_setf (&op->esil, "r%d,CF,r%d,-,0xff,&,-,0x80,&,!,!,NF,=,r%d,CF,r%d,-,0xff,&,==,$z,ZF,=,$b8,CF,=,$b3,HF,=,$o,VF,=,VF,NF,^,SF,=", r, d, r, d);
+	}
 	switch (buf[1] & 0xfc) {
 		case 0x10:	//CPSE
 			op->type = R_ANAL_OP_TYPE_CJMP;
