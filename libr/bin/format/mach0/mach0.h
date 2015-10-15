@@ -89,7 +89,7 @@ struct MACH0_(obj_t) {
 	} thread_state;
 	char (*libs)[R_BIN_MACH0_STRING_LENGTH];
 	int nlibs;
-	int size;
+	size_t size;
 	ut64 baddr;
 	ut64 entry;
 	int endian;

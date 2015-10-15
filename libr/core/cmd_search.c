@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+#include <string.h>
+
 static int preludecnt = 0;
 static int searchflags = 0;
 static int searchshow = 0;
