@@ -258,8 +258,8 @@ static int r_debug_native_wait (RDebug *dbg, int pid) {
 	if (mode) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->lib) {
-			if (tracelib (dbg, mode? "load":"unload", r->lib))
-				r_debug_native_continue (dbg, pid, dbg->tid, r->signum);
+			if (tracelib (dbg, mode=='l'? "load":"unload", r->lib))
+				status=R_DEBUG_REASON_TRAP;
 		} else {
 			eprintf ("%soading unknown library.\n", mode?"L":"Unl");
 		}
