@@ -2461,7 +2461,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	}
 }
 
-static void agraph_print_node (RANode *n) {
+static void agraph_print_node(RANode *n, void *user) {
 	char *encbody, *cmd;
 	int len = strlen (n->body);
 
@@ -2473,7 +2473,7 @@ static void agraph_print_node (RANode *n) {
 	free (encbody);
 }
 
-static void agraph_print_edge (RANode *from, RANode *to) {
+static void agraph_print_edge(RANode *from, RANode *to, void *user) {
 	char *cmd;
 
 	cmd = r_str_newf ("age \"%s\" \"%s\"\n", from->title, to->title);
@@ -2607,8 +2607,8 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		break;
 	}
 	case '*':
-		r_agraph_foreach (core->graph, agraph_print_node);
-		r_agraph_foreach_edge (core->graph, agraph_print_edge);
+		r_agraph_foreach (core->graph, agraph_print_node, NULL);
+		r_agraph_foreach_edge (core->graph, agraph_print_edge, NULL);
 		break;
 	default:
 		core->graph->can->linemode = 1;
