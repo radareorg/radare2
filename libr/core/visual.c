@@ -1121,8 +1121,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			offscreen = (core->cons->rows-3)*cols;
 			if (cursor>=offscreen) {
 				r_core_seek (core, core->offset+cols, 1);
-				cursor-=cols;
-				ocursor-=cols;
+				cursor -= cols;
+				ocursor -= cols;
 			}
 		} else r_core_seek_delta (core, 2);
 		break;
@@ -1140,7 +1140,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					cols = r_asm_disassemble (core->assembler,
 							&op, core->block, 32);
 					r_core_seek (core, core->offset+cols, 1);
-					cursor-=cols;
+					cursor -= cols;
 				}
 			} else { // every other printmode
 				if (cols<1) cols = 1;
@@ -1549,7 +1549,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		ut64 curpc = r_debug_reg_get (core->dbg, "pc");
-		if (curpc != oldpc) {
+		if (curpc && curpc != UT64_MAX && curpc != oldpc) {
 			// check dbg.follow here
 			int follow = (int)(st64)r_config_get_i (core->config, "dbg.follow");
 			if (follow>0) {
