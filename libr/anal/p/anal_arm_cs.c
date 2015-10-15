@@ -264,6 +264,13 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	// TODO: PREFIX CONDITIONAL
 
 	switch (insn->id) {
+	case ARM_INS_NOP:
+		r_strbuf_setf (&op->esil, ",");
+		break;
+	case ARM_INS_BX:
+	case ARM_INS_BXJ:
+		r_strbuf_setf (&op->esil, "%s,pc,=", ARG(0));
+		break;
 	case ARM_INS_UDF:
 		r_strbuf_setf (&op->esil, "%s,TRAP", ARG(0));
 		break;
@@ -379,6 +386,9 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 					ARG(2), ARG(1), ARG(0));
 			}
 		}
+		break;
+	case ARM_INS_MUL:
+		r_strbuf_appendf (&op->esil, "%s,%s,*,%s,=", ARG(2), ARG(1), ARG(0));
 		break;
 	case ARM_INS_SADD16:
 	case ARM_INS_SADD8:
