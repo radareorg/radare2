@@ -1216,6 +1216,38 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	return bin_symbols_internal (r, mode, laddr, va, at, name, false);
 }
 
+
+static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 datalen) {
+
+	char *chkstr = NULL, *aux, *ret = NULL;
+	char tmp[128];
+	const char *ptr = chksum;
+	int i;
+	do {
+		for (i = 0; *ptr && *ptr != ',' && i < sizeof(tmp) -1; i++)
+			tmp[i] = *ptr++;
+		tmp[i] = '\0';
+		chkstr = r_hash_to_string (NULL, tmp, data, datalen);
+		if (!chkstr) {
+			if (*ptr && *ptr == ',') ptr++;
+			continue;
+		}
+		if (IS_MODE_SIMPLE (mode)) {
+			aux = r_str_newf ("%s ", chkstr);
+		} else if (IS_MODE_JSON (mode)) {
+			aux = r_str_newf ("\"%s\":\"%s\",", tmp, chkstr);
+		} else {
+			aux = r_str_newf ("%s=%s ", tmp, chkstr);
+		}
+		ret = r_str_concat (ret, aux);
+		free (chkstr);
+		free (aux);
+		if (*ptr && *ptr == ',') ptr++;
+	} while (*ptr);
+
+	return ret;
+}
+
 static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum) {
 	char str[R_FLAG_NAME_SIZE];
 	RBinSection *section;
@@ -1294,34 +1326,34 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			r_io_section_add (r->io, section->paddr, addr, section->size,
 				section->vsize, section->srwx, section->name, 0, fd);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			char *chkstr = NULL;
+			char *hashstr = NULL;
 			if (chksum) {
 				ut8 *data = malloc (section->size);
+				if (!data) return false;
 				ut32 datalen = section->size;
 				r_io_pread (r->io, section->paddr, data, datalen);
-				chkstr = r_hash_to_string (NULL, chksum, data, datalen);
+				hashstr = build_hash_string (mode, chksum,
+							data, datalen);
 				free (data);
 			}
 			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x" %s %s%s%s\n",
 				addr, addr + section->size,
 				perms,
-				chkstr ? chkstr : "", chkstr ? " " : "",
+				hashstr ? hashstr : "", hashstr ? " " : "",
 				section->name
 			);
-			free (chkstr);
+			free (hashstr);
 		} else if (IS_MODE_JSON (mode)) {
 			char *hashstr = NULL;
-
 			if (chksum) {
-				char *chkstr;
 				ut8 *data = malloc (section->size);
+				if (!data) return false;
 				ut32 datalen = section->size;
 				r_io_pread (r->io, section->paddr, data, datalen);
-				chkstr = r_hash_to_string (NULL, chksum, data, datalen);
+				hashstr = build_hash_string (mode, chksum,
+							data, datalen);
 				free (data);
-				hashstr = malloc (strlen (chkstr)+strlen (chksum)+7);
-				sprintf (hashstr, "\"%s\":\"%s\",", chksum, chkstr);
-				free (chkstr);
+
 			}
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"size\":%"PFMT64d","
@@ -1366,16 +1398,14 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		} else {
 			char *hashstr = NULL, str[128];
 			if (chksum) {
-				char *chkstr;
 				ut8 *data = malloc (section->size);
+				if (!data) return false;
 				ut32 datalen = section->size;
 				// VA READ IS BROKEN?
 				r_io_pread (r->io, section->paddr, data, datalen);
-				chkstr = r_hash_to_string (NULL, chksum, data, datalen);
+				hashstr = build_hash_string (mode, chksum,
+							data, datalen);
 				free (data);
-				hashstr = malloc (strlen (chkstr)+strlen (chksum)+3);
-				sprintf (hashstr, "%s=%s ", chksum, chkstr);
-				free (chkstr);
 			}
 			if (section->arch || section->bits) {
 				const char *arch = section->arch;
@@ -1392,7 +1422,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		}
 		i++;
 	}
-	if (IS_MODE_JSON (mode)) r_cons_printf ("]");
+	if (IS_MODE_JSON (mode)) r_cons_printf ("]\n");
 	else if (IS_MODE_NORMAL (mode) && !at) r_cons_printf ("\n%i sections\n", i);
 
 	return true;
