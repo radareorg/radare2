@@ -99,7 +99,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_ADR:
 		// TODO: must be 21bit signed
 		r_strbuf_setf (&op->esil,
-			"pc,%d,+,%s,=",IMM64(1), REG64(0));
+			"%"PFMT64d",%s,=",IMM64(1), REG64(0));
 		break;
 	case ARM64_INS_MADD:
 		r_strbuf_setf (&op->esil,
@@ -118,7 +118,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			REG64(2), REG64(1), REG64(0));
 		break;
 	case ARM64_INS_NOP:
-		r_strbuf_setf (&op->esil, "");
+		r_strbuf_setf (&op->esil, ",");
 		break;
 	case ARM64_INS_FDIV:
 	case ARM64_INS_SDIV:
@@ -137,17 +137,20 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil, "pc,lr,=,%d,pc,=", IMM64 (0));
 		break;
 	case ARM64_INS_LDUR: // ldr x6, [x6,0xf90]
-	case ARM64_INS_LDR: // ldr x6, [x6,0xf90]
-		r_strbuf_setf (&op->esil, "%s,%d,+,[],%s,=",
-			MEMBASE64(1), MEMDISP64(1),  REG64(0));
+	case ARM64_INS_LDR: // ldr x6, 0xf90
+		r_strbuf_setf (&op->esil, "%"PFMT64d",[],%s,=",
+			IMM64(1), REG64(0));
 		break;
 	case ARM64_INS_LDRSB:
 	case ARM64_INS_LDRB: // ldr x6, [x6,0xf90]
 		r_strbuf_setf (&op->esil, "%s,%d,+,[1],%s,=",
 			MEMBASE64(1), MEMDISP64(1), REG64(0));
 		break;
+	case ARM64_INS_CCMP:
+	case ARM64_INS_CCMN:
 	case ARM64_INS_TST: // cmp w8, 0xd
 	case ARM64_INS_CMP: // cmp w8, 0xd
+	case ARM64_INS_CMN: // cmp w8, 0xd
 		// update esil, cpu flags
 		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,$z,=",
 			IMM64(1), REG64(0));
@@ -213,7 +216,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		break;
 	case ARM64_INS_ADRP:
-		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,=", IMM64 (1), REG64 (0));
+		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,=",
+				IMM64 (1), REG64 (0));
 		break;
 	case ARM64_INS_MOV:
 		r_strbuf_setf (&op->esil, "%s,%s,=", REG64 (1), REG64 (0));
@@ -485,6 +489,10 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 static void anop64 (RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 	switch (insn->id) {
+	case ARM64_INS_ADRP:
+	case ARM64_INS_ADR:
+		op->type = R_ANAL_OP_TYPE_LEA;
+		break;
 	case ARM64_INS_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;
@@ -498,7 +506,6 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_FCSEL:
 		op->type = R_ANAL_OP_TYPE_CMOV;
 		break;
-	case ARM64_INS_ADR:
 	case ARM64_INS_MOV:
 	case ARM64_INS_MOVI:
 	case ARM64_INS_MOVK:
@@ -526,6 +533,7 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
 	case ARM64_INS_CMP:
+	case ARM64_INS_CMN:
 	case ARM64_INS_TST:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
