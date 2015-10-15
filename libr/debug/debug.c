@@ -556,6 +556,9 @@ repeat:
 		if (retwait != R_DEBUG_REASON_DEAD) {
 			ret = dbg->tid;
 		}
+		if (retwait == R_DEBUG_REASON_NEW_LIB || retwait == R_DEBUG_REASON_EXIT_LIB) {
+			goto repeat;
+		}
 #endif
 		r_bp_restore (dbg->bp, false); // unset sw breakpoints
 		//r_debug_recoil (dbg);

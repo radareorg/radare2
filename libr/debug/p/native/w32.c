@@ -478,9 +478,11 @@ typedef struct{
 } LIB_ITEM, *PLIB_ITEM;
 LPVOID lstLib = 0;
 PLIB_ITEM lstLibPtr = 0;
+/*
 static char * r_debug_get_dll() {
 	return lstLibPtr->Path;
 }
+*/
 static  PLIB_ITEM  r_debug_get_lib_item() {
 	return lstLibPtr;
 }
@@ -585,6 +587,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			if (dllname) {
 				free (dllname);
 			}
+			next_event = 1;
 		        return R_DEBUG_REASON_NEW_LIB;
 			/*
 			r_debug_native_continue (dbg, pid, tid, -1);
@@ -602,6 +605,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 				if (dllname)
 					free(dllname);
 			}
+			next_event = 1;
 			return R_DEBUG_REASON_EXIT_LIB;
                         /*
 			r_debug_native_continue (dbg, pid, tid, -1);
@@ -822,10 +826,13 @@ static RDebugInfo* w32_info (RDebug *dbg, const char *arg) {
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
+	rdi->lib = (void *) r_debug_get_lib_item();
 	rdi->uid = -1;// TODO
 	rdi->gid = -1;// TODO
-	rdi->libname = r_debug_get_dll();
-	rdi->lib = (void *) r_debug_get_lib_item();
+	rdi->cwd = NULL;
+	rdi->exe = NULL;
+	rdi->cmdline = NULL;
+	rdi->libname = NULL;
 	return rdi;
 }
 
