@@ -80,7 +80,6 @@ static void print_debug_map_ascii_art(RList *maps, ut64 addr,
 				int bits) {
 	ut64 mul, min = -1, max = 0;
 	int width = r_cons_get_size (NULL) - 80;
-	const char *fmtstr;
 	RListIter *iter;
 	RDebugMap *map;
 	if (width < 1) width = 30;
@@ -222,4 +221,3 @@ R_API RList *r_debug_map_list_new() {
 	list->free = (RListFree)r_debug_map_free;
 	return list;
 }
-
