@@ -68,10 +68,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->cycles = 1;
 	} else
-	if (((buf[0] & 0xf) == 7) && ((buf[1] & 0xfe) == 0x94)) {
-		op->type = R_ANAL_OP_TYPE_ROR;
-		op->cycles = 1;
-	} else
 	if (buf[1] == 1) {			//MOVW
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->cycles = 1;
@@ -139,6 +135,45 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 				op->type = R_ANAL_OP_TYPE_LOAD;
 				op->cycles = 2;
 				r_strbuf_setf (&op->esil, "r%d,Z,[1],^,Z,[1],r%d,=,Z,=[1]", d, d);
+				break;
+		}
+	}
+	if ((buf[1] & 0xfe) == 0x94) {
+		switch (buf[0] & 0xf) {
+			case 0:		//COM
+				op->type = R_ANAL_OP_TYPE_CPL;
+				op->cycles = 1;
+				r_strbuf_setf (&op->esil, "r%d,0xff,-,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=,1,CF,=", d, d, d);
+				break;
+			case 1:		//NEG
+				op->type = R_ANAL_OP_TYPE_CPL;
+				op->cycles = 1;
+				r_strbuf_setf (&op->esil, "r%d,DUP,0,r%d,=,r%d,-=,$b3,HF,=,$b8,CF,=,CF,!,ZF,=,r%d,0x80,&,!,!,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d, d);	//Hack for accessing internal vars
+				break;
+			case 2:		//SWAP
+				op->type = R_ANAL_OP_TYPE_ROL;
+				op->cycles = 1;
+				r_strbuf_setf (&op->esil, "4,r%d,0xf,&,<<,4,r%d,0xf0,&,>>,|,r%d,=", d, d, d);
+				break;
+			case 3:		//INC
+				op->type = R_ANAL_OP_TYPE_ADD;
+				op->cycles = 1;
+				r_strbuf_setf (&op->esil, "r%d,1,+,0xff,&,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d, d);
+				break;
+			case 5:		//ASR
+				op->type = R_ANAL_OP_TYPE_SAR;
+				op->cycles = 1;
+				r_strbuf_setf (&op->esil, "r%d,1,&,CF,=,1,r%d,>>,0x80,r%d,&,|,r%d,=,$z,ZF,=,r%d,0x80,&,NF,=,CF,NF,^,VF,=,NF,VF,^,SF,=", d, d, d, d, d);
+				break;
+			case 6: 	//LSR
+				op->type = R_ANAL_OP_TYPE_SHR;
+				op->cycles = 1;
+				r_strbuf_setf (&op->esil, "r%d,1,&,CF,=,1,r%d,>>=,$z,ZF,=,0,NF,=,CF,VF,=,CF,SF,=", d, d);
+				break;
+			case 7:		//ROR
+				op->type = R_ANAL_OP_TYPE_ROR;
+				op->cycles = 1;
+				r_strbuf_setf (&op->esil, "CF,NF,=,r%d,1,&,7,CF,<<,1,r%d,>>,|,r%d,=,$z,ZF,=,CF,=,NF,CF,^,VF,=,NF,VF,^,SF,=", d, d, d);
 				break;
 		}
 	}

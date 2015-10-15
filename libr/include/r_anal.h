@@ -447,6 +447,7 @@ typedef enum {
 	R_ANAL_OP_TYPE_CAST = 42,
 	R_ANAL_OP_TYPE_NEW = 43,
 	R_ANAL_OP_TYPE_ABS = 44,
+	R_ANAL_OP_TYPE_CPL = 45,	/* complement */
 	//R_ANAL_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
 #if 0
 	R_ANAL_OP_TYPE_PRIV = 40, /* priviledged instruction */

@@ -201,6 +201,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_XCHG  : return "xchg";
 	case R_ANAL_OP_TYPE_XOR   : return "xor";
 	case R_ANAL_OP_TYPE_CASE  : return "case";
+	case R_ANAL_OP_TYPE_CPL   : return "cpl";
 	}
 	return "undefined";
 }
