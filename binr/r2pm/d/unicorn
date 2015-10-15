@@ -4,7 +4,7 @@ R2PM_GIT "https://github.com/radare/radare2-extras"
 R2PM_DESC "[RDebug] Unicorn emulator plugin for radare2"
 
 R2PM_INSTALL() {
-	make unicorn
+	make -C unicorn
 	make unicorn-install
 }
 
