@@ -30,7 +30,7 @@
 int avrdis (char *out, unsigned long long addr, const unsigned char *buf, int len);
 
 /* Total number of assembly instructions, Maximum number of operands */
-#define AVR_TOTAL_INSTRUCTIONS	141
+#define AVR_TOTAL_INSTRUCTIONS	145
 #define AVR_MAX_NUM_OPERANDS	2
 
 /* Enumeration for all types of AVR Operands */

@@ -311,6 +311,13 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len<1)
 		return 0;
 	op->buf_asm[0] = '\0';
+	if (a->pcalign) {
+		if (a->pc % a->pcalign) {
+			op->size = -1;
+			strcpy (op->buf_asm, "unaligned");
+			return -1;
+		}
+	}
 	if (a->cur && a->cur->disassemble)
 		ret = a->cur->disassemble (a, op, buf, len);
 	if (ret<0) ret = 0;

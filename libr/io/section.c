@@ -125,30 +125,40 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 }
 
 
-/* TODO: move to print ??? support pretty print of ranges following an array of offsetof */
-R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int use_color) {
+#define PRINT_CURRENT_SEEK \
+	if (i > 0 && len != 0) { \
+		if (seek == UT64_MAX) seek = 0; \
+		io->cb_printf ("=>  0x%08"PFMT64x" |", seek); \
+		for (j = 0; j < width; j++) { \
+			io->cb_printf ( \
+				((j*mul) + min >= seek && \
+				(j*mul) + min <= seek + len) \
+				? "^" : "-"); \
+		} \
+		io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len); \
+	}
+
+
+static void list_section_visual_vaddr (RIO *io, ut64 seek, ut64 len, int use_color) {
 	ut64 mul, min = -1, max = -1;
 	RListIter *iter;
 	RIOSection *s;
-	int j, i;
-
-	width -= 52;
-	if (width<1)
-		width = 30;
-
-	seek = (io->va || io->debug) ? r_io_section_vaddr_to_maddr_try (io, seek) : seek;
+	int j, i = 0;
+	int  width = r_cons_get_size (NULL) - 60;
+	if (width < 1) width = 30;
 	r_list_foreach (io->sections, iter, s) {
-		if (min == -1 || s->offset < min)
-			min = s->offset;
-		if (max == -1 || s->offset+s->size > max)
-			max = s->offset+s->size;
+		if (min == -1 || s->vaddr < min)
+			min = s->vaddr;
+		if (max == -1 || s->vaddr+s->size > max)
+			max = s->vaddr+s->size;
 	}
-
 	mul = (max-min) / width;
 	if (min != -1 && mul != 0) {
 		const char * color = "", *color_end = "";
+		char buf[128];
 		i = 0;
 		r_list_foreach (io->sections, iter, s) {
+			r_num_units (buf, s->size);
 			if (use_color) {
 				color_end = Color_RESET;
 				if (s->rwx & 1) { // exec bit
@@ -163,49 +173,85 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int width, int
 				color = "";
 				color_end = "";
 			}
-			if (io->va) {
-				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						(seek>=s->offset && seek<s->offset+s->size)?'*':' ', 
-						//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ', 
-						color, s->vaddr, color_end);
-			} else {
-				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						(seek>=s->offset && seek<s->offset+s->size)?'*':' ', 
-						color, s->vaddr, color_end);
-			}
-			for (j=0; j<width; j++) {
-				ut64 pos = min + (j*mul);
-				ut64 npos = min + ((j+1)*mul);
-				if (s->offset <npos && (s->offset+s->size)>pos)
+			io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
+					(seek >= s->vaddr && seek < s->vaddr + s->size) ? '*' : ' ',
+					//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ',
+					color, s->vaddr, color_end);
+			for (j = 0; j < width; j++) {
+				ut64 pos = min + (j * mul);
+				ut64 npos = min + ((j + 1) * mul);
+				if (s->vaddr < npos && (s->vaddr + s->size) > pos)
 					io->cb_printf ("#");
 				else io->cb_printf ("-");
 			}
-			if (io->va) {
-				io->cb_printf ("| %s0x%08"PFMT64x"%s %s %s\n", 
-					color, s->vaddr+s->size, color_end,
-					r_str_rwx_i (s->rwx), s->name);
-			} else {
-				io->cb_printf ("| %s0x%08"PFMT64x"%s %s %s\n",
-					color, s->offset+s->size, color_end,
-					r_str_rwx_i (s->rwx), s->name);
-			}
+			io->cb_printf ("| %s0x%08"PFMT64x"%s %s %s  %04s\n",
+				color, s->vaddr + s->size, color_end,
+				r_str_rwx_i (s->rwx), s->name, buf);
 			i++;
-		}
-		/* current seek */
-		if (i>0 && len != 0) {
-			if (seek == UT64_MAX)
-				seek = 0;
-			//len = 8096;//r_io_size (io);
-			io->cb_printf ("=>  0x%08"PFMT64x" |", seek);
-			for (j=0;j<width;j++) {
-				io->cb_printf (
-					((j*mul)+min >= seek &&
-					 (j*mul)+min <= seek+len)
-					?"^":"-");
 			}
-			io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len);
-		}
+		PRINT_CURRENT_SEEK;
 	}
+}
+
+static void list_section_visual_paddr (RIO *io, ut64 seek, ut64 len, int use_color) {
+	ut64 mul, min = -1, max = -1;
+	RListIter *iter;
+	RIOSection *s;
+	int j, i = 0;
+	int  width = r_cons_get_size (NULL) - 60;
+	if (width < 1) width = 30;
+	seek = r_io_section_vaddr_to_maddr_try (io, seek);
+	r_list_foreach (io->sections, iter, s) {
+		if (min == -1 || s->offset < min)
+			min = s->offset;
+		if (max == -1 || s->offset+s->size > max)
+			max = s->offset+s->size;
+	}
+	mul = (max-min) / width;
+	if (min != -1 && mul != 0) {
+		const char * color = "", *color_end = "";
+		char buf[128];
+		i = 0;
+		r_list_foreach (io->sections, iter, s) {
+			r_num_units (buf, s->size);
+			if (use_color) {
+				color_end = Color_RESET;
+				if (s->rwx & 1) { // exec bit
+					color = Color_GREEN;
+				} else if (s->rwx & 2) { // write bit
+					color = Color_RED;
+				} else {
+					color = "";
+					color_end = "";
+				}
+			} else {
+				color = "";
+				color_end = "";
+			}
+			io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
+					(seek >= s->offset && seek < s->offset + s->size) ? '*' : ' ',
+					color, s->offset, color_end);
+			for (j = 0; j < width; j++) {
+				ut64 pos = min + (j * mul);
+				ut64 npos = min + ((j + 1) * mul);
+				if (s->offset < npos && (s->offset + s->size) > pos)
+					io->cb_printf ("#");
+				else io->cb_printf ("-");
+			}
+			io->cb_printf ("| %s0x%08"PFMT64x"%s %s %s  %04s\n",
+				color, s->offset+s->size, color_end,
+				r_str_rwx_i (s->rwx), s->name, buf);
+
+			i++;
+			}
+		PRINT_CURRENT_SEEK;
+	}
+}
+
+/* TODO: move to print ??? support pretty print of ranges following an array of offsetof */
+R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int use_color) {
+	if (io->va) list_section_visual_vaddr (io, seek, len, use_color);
+	else list_section_visual_paddr (io, seek, len, use_color);
 }
 
 R_API RIOSection *r_io_section_vget(RIO *io, ut64 vaddr) {

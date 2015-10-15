@@ -2,6 +2,8 @@
 
 #include <r_core.h>
 
+#include <string.h>
+
 #define NPF 7
 static int obs = 0;
 static int blocksize = 0;
@@ -693,8 +695,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	}
 
 	// do we need hotkeys for data references? not only calls?
-	if (ch>='0'&& ch<='9') {
-		ut64 off = core->asmqjmps[ch-'0'];
+	if (ch >= '0'&& ch <= '9') {
+		char chbuf[2];
+		ut64 off;
+
+		chbuf[0] = ch;
+		chbuf[1] = '\0';
+		off = r_core_get_asmqjmps (core, chbuf);
 		if (off != UT64_MAX) {
 			int delta = R_ABS ((st64)off-(st64)offset);
 			r_io_sundo_push (core->io, offset);
@@ -1114,8 +1121,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			offscreen = (core->cons->rows-3)*cols;
 			if (cursor>=offscreen) {
 				r_core_seek (core, core->offset+cols, 1);
-				cursor-=cols;
-				ocursor-=cols;
+				cursor -= cols;
+				ocursor -= cols;
 			}
 		} else r_core_seek_delta (core, 2);
 		break;
@@ -1133,7 +1140,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					cols = r_asm_disassemble (core->assembler,
 							&op, core->block, 32);
 					r_core_seek (core, core->offset+cols, 1);
-					cursor-=cols;
+					cursor -= cols;
 				}
 			} else { // every other printmode
 				if (cols<1) cols = 1;
@@ -1542,7 +1549,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		ut64 curpc = r_debug_reg_get (core->dbg, "pc");
-		if (curpc != oldpc) {
+		if (curpc && curpc != UT64_MAX && curpc != oldpc) {
 			// check dbg.follow here
 			int follow = (int)(st64)r_config_get_i (core->config, "dbg.follow");
 			if (follow>0) {

@@ -721,6 +721,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "dm", " # Memory maps commands",
 		"dm", "", "List memory maps of target process",
+		"dm=", "", "List memory maps of target process (ascii-art bars)",
 		"dm", " <address> <size>", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
 		"dm.", "", "Show map name of current address",
 		"dm*", "", "List memmaps in radare commands",
@@ -886,6 +887,12 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'j':
 		r_debug_map_sync (core->dbg); // update process memory maps
 		r_debug_map_list (core->dbg, core->offset, input[0]);
+		break;
+	case '=':
+		r_debug_map_sync (core->dbg);
+		r_debug_map_list_visual (core->dbg, core->offset,
+					r_config_get_i (core->config,
+							"scr.color"));
 		break;
 	}
 	return true;
@@ -1326,15 +1333,30 @@ free (rf);
 		r_reg_arena_swap (core->dbg->reg, false);
 		break;
 	case '=': // 'dr='
+		{
+		int pcbits = 0;
+		{
+			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
+			if (reg) {
+				if (core->assembler->bits != reg->size)
+					pcbits = reg->size;
+			}
+		}
 		if (r_config_get_i (core->config, "cfg.debug")) {
 			if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
+				if (pcbits)
+					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // XXX detect which one is current usage
 			} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		} else {
 			RReg *orig = core->dbg->reg;
 			core->dbg->reg = core->anal->reg;
+			if (pcbits)
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // XXX detect which one is current usage
 			core->dbg->reg = orig;
+		}
 		}
 		break;
 	case '*':

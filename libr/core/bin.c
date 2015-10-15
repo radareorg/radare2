@@ -325,7 +325,7 @@ static const char* get_compile_time(Sdb *binFileSdb) {
 }
 
 static int bin_info(RCore *r, int mode) {
-	int i, j;
+	int i, j, v;
 	char str[R_FLAG_NAME_SIZE];
 	char size_str[32];
 	char baddr_str[32];
@@ -361,12 +361,20 @@ static int bin_info(RCore *r, int mode) {
 			r_config_set (r->config, "asm.bits", str);
 			r_config_set (r->config, "asm.dwarf",
 				(R_BIN_DBG_STRIPPED &info->dbg_info) ? "false" : "true");
+			v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
+			if (v != -1) r_config_set_i (r->config, "asm.pcalign", v);
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("arch %s\n", info->arch);
 		r_cons_printf ("bits %d\n", info->bits);
 		r_cons_printf ("os %s\n", info->os);
 		r_cons_printf ("endian %s\n", info->big_endian? "big": "little");
+		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+		if (v != -1) r_cons_printf ("minopsz %d\n", v);
+		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+		if (v != -1) r_cons_printf ("maxopsz %d\n", v);
+		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
+		if (v != -1) r_cons_printf ("pcalign %d\n", v);
 	} else if (IS_MODE_RAD (mode)) {
 		if (info->type && !strcmp (info->type, "fs")) {
 			r_cons_printf ("e file.type=fs\n");
@@ -391,6 +399,8 @@ static int bin_info(RCore *r, int mode) {
 			if (info->arch) {
 				r_cons_printf ("e asm.arch=%s\n", info->arch);
 			}
+			v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
+			if (v != -1) r_cons_printf ("e asm.pcalign=%d\n", v);
 		}
 	} else {
 		// XXX: if type is 'fs' show something different?
@@ -407,6 +417,12 @@ static int bin_info(RCore *r, int mode) {
 		pair_int ("bits", info->bits, mode, false);
 		pair_str ("machine", info->machine, mode, false);
 		pair_str ("os", info->os, mode, false);
+		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+		if (v != -1) pair_int ("minopsz", v, mode, false);
+		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+		if (v != -1) pair_int ("maxopsz", v, mode, false);
+		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
+		if (v != -1) pair_int ("pcalign", v, mode, false);
 		pair_str ("subsys", info->subsystem, mode, false);
 		pair_str ("endian", info->big_endian ? "big" : "little", mode, false);
 		pair_bool ("stripped", R_BIN_DBG_STRIPPED & info->dbg_info, mode, false);

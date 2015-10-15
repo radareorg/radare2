@@ -348,3 +348,16 @@ R_API int r_anal_purge (RAnal *anal) {
 	anal->types = r_anal_type_list_new ();
 	return 0;
 }
+
+R_API int r_anal_archinfo(RAnal *anal, int query) {
+	switch (query) {
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ANAL_ARCHINFO_ALIGN:
+		if (anal && anal->cur && anal->cur->archinfo) {
+			return anal->cur->archinfo (anal, query);
+		}
+		break;
+	}
+	return -1;
+}

@@ -231,6 +231,7 @@ R_API RList * r_anal_ex_perform_analysis( RAnal *anal, RAnalState *state, ut64 a
 }
 
 R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 addr ) {
+	ut64 consumed_iter = 0;
 	ut64 bytes_consumed = 0,
 		 len = r_anal_state_get_len (state, addr);
 
@@ -264,6 +265,7 @@ R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 ad
 			// TODO something special should happen here.
 
 			r_anal_ex_perform_revisit_bb_cb (anal, state, state->current_addr);
+			consumed_iter += state->current_bb->op_sz;
 			bytes_consumed += state->current_bb->op_sz;
 			if ( state->done) break;
 			continue;
@@ -309,6 +311,7 @@ R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 ad
 
 		if (state->current_bb) {
 			bytes_consumed += state->current_bb->op_sz;
+			consumed_iter += state->current_bb->op_sz;
 		}
 		state->current_addr = state->next_addr;
 		r_anal_op_free (state->current_op);
@@ -316,6 +319,11 @@ R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 ad
 		state->current_op = NULL;
 		state->current_bb = NULL;
 		IFDBG eprintf ("[=*=] Bytes consumed overall: %"PFMT64d" locally: %"PFMT64d" of %"PFMT64d"\n", state->bytes_consumed, bytes_consumed, len);
+		if (!consumed_iter) {
+			eprintf("No bytes consumed, bailing!\n");
+			break;
+		}
+		consumed_iter = 0;
 	}
 
 

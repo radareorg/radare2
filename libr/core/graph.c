@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 #include <r_cons.h>
+#include <ctype.h>
 #include <limits.h>
 
 static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
@@ -1443,13 +1444,11 @@ static char *get_body_bb (RCore *core, RAnalBlock *bb, bool is_simple_mode) {
 	int o_cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 	int o_marks = r_config_get_i (core->config, "asm.marks");
 	int o_offset = r_config_get_i (core->config, "asm.offset");
-	int o_vmode = core->vmode;
 	// configure options
 	r_config_set_i (core->config, "asm.fcnlines", false);
 	r_config_set_i (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmtcol", 0);
 	r_config_set_i (core->config, "asm.marks", false);
-	core->vmode = false;
 
 	if (is_simple_mode) {
 		r_config_set_i (core->config, "asm.bytes", false);
@@ -1461,7 +1460,6 @@ static char *get_body_bb (RCore *core, RAnalBlock *bb, bool is_simple_mode) {
 	body = r_core_cmd_strf (core,
 		"pD %d @ 0x%08"PFMT64x, bb->size, bb->addr);
 	// restore original options
-	core->vmode = o_vmode;
 	r_config_set_i (core->config, "asm.fcnlines", o_fcnlines);
 	r_config_set_i (core->config, "asm.lines", o_lines);
 	r_config_set_i (core->config, "asm.bytes", o_bytes);
@@ -1475,6 +1473,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
 
+	core->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RANode *node;
 		char *title, *body;
@@ -1492,6 +1491,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 			free (body);
 		}
 		free (title);
+		core->keep_asmqjmps = true;
 	}
 }
 
@@ -1500,12 +1500,12 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
 
+	core->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RANode *node;
 		char *title, *body;
 
-		if (bb->addr == UT64_MAX)
-			continue;
+		if (bb->addr == UT64_MAX) continue;
 
 		body = get_body_bb (core, bb, g->is_simple_mode);
 		title = get_title (bb->addr);
@@ -1513,9 +1513,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		node = r_agraph_add_node (g, title, body);
 		free (body);
 		free (title);
-		if (!node) {
-			return false;
-		}
+		if (!node) return false;
+		core->keep_asmqjmps = true;
 	}
 
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -1753,10 +1752,15 @@ static void update_graph_sizes (RAGraph *g) {
 
 static void set_curnode (RAGraph *g, const RGraphNode *n) {
 	g->curnode = n;
-	if (n) {
-		RANode *a = get_anode (n);
-		if (a->title)
-			sdb_set (g->db, "agraph.curnode", a->title, 0);
+	RANode *a = get_anode (n);
+	if (a && a->title) {
+		sdb_set (g->db, "agraph.curnode", a->title, 0);
+	}
+}
+
+static void set_cur_anode (RAGraph *g, const RANode *an) {
+	if (an && an->gnode) {
+		set_curnode (g, an->gnode);
 	}
 }
 
@@ -1771,8 +1775,9 @@ static void agraph_set_layout(RAGraph *g, int is_interactive) {
 
 	set_layout(g);
 
-	if (is_interactive)
+	if (is_interactive) {
 		set_curnode (g, find_near_of (g, NULL, true));
+	}
 	update_graph_sizes (g);
 	graph_foreach_anode (r_graph_get_nodes (g->graph), it, n, a) {
 		const char *k;
@@ -1796,10 +1801,11 @@ static void agraph_update_seek(RAGraph *g, RANode *n, int force) {
 static void agraph_print_node(const RAGraph *g, RANode *n) {
 	const int cur = g->curnode && get_anode (g->curnode) == n;
 
-	if (g->is_small_nodes)
+	if (g->is_small_nodes) {
 		small_RANode_print(g, n, cur);
-	else
+	} else {
 		normal_RANode_print(g, n, cur);
+	}
 }
 
 static void agraph_print_nodes(const RAGraph *g) {
@@ -1809,13 +1815,13 @@ static void agraph_print_nodes(const RAGraph *g) {
 	RANode *n;
 
 	graph_foreach_anode (nodes, it, gn, n) {
-		if (gn != g->curnode)
+		if (gn != g->curnode) {
 			agraph_print_node (g, n);
+		}
 	}
 
 	/* draw current node now to make it appear on top */
-	if (g->curnode)
-		agraph_print_node (g, get_anode (g->curnode));
+	if (g->curnode) agraph_print_node (g, get_anode (g->curnode));
 }
 
 static int find_ascii_edge (const AEdge *a, const AEdge *b) {
@@ -2006,12 +2012,28 @@ static int check_changes (RAGraph *g, int is_interactive,
 		int ret = agraph_reload_nodes (g, core, fcn);
 		if (!ret) return false;
 	}
-	if (fcn)
+	if (fcn) {
 		agraph_update_title (g, fcn);
-	if (g->need_update_dim || g->need_reload_nodes || !is_interactive)
+	}
+	if (g->need_update_dim || g->need_reload_nodes || !is_interactive) {
 		update_node_dimension (g->graph, g->is_small_nodes, g->zoom);
-	if (g->need_set_layout || g->need_reload_nodes || !is_interactive)
+	}
+	if (g->need_set_layout || g->need_reload_nodes || !is_interactive) {
 		agraph_set_layout (g, is_interactive);
+	}
+	if (g->need_seek_curoffset && core && fcn) {
+		// set current node based on the current offset
+		ut64 bbaddr = r_core_anal_get_bbaddr (core, core->offset);
+		if (r_anal_fcn_is_in_offset (fcn, bbaddr)) {
+			char *bbtitle = get_title (bbaddr);
+			RANode *an = r_agraph_get_node (g, bbtitle);
+
+			free (bbtitle);
+			set_cur_anode (g, an);
+			agraph_update_seek (g, an, true);
+		}
+		g->need_seek_curoffset = false;
+	}
 	if (g->update_seek_on || g->force_update_seek) {
 		RANode *n = g->update_seek_on;
 		if (!n && g->curnode) n = get_anode (g->curnode);
@@ -2078,18 +2100,35 @@ static int agraph_print (RAGraph *g, int is_interactive,
 	return true;
 }
 
+static void seek_on_curnode(RAGraph *g, RCore *core) {
+	// update seek based on current node
+	RANode *n;
+	char *cmd;
+
+	if (g->curnode) {
+		n = get_anode (g->curnode);
+		cmd = r_str_newf ("s %s", n->title);
+		r_core_cmd0 (core, cmd);
+		free (cmd);
+	}
+}
+
 static int agraph_refresh(struct agraph_refresh_data *grd) {
 	RCore *core = grd->core;
 	RAGraph *g = grd->g;
-	RAnalFunction **fcn = grd->fcn;
-	RAnalFunction *f;
+	RAnalFunction *f, **fcn = grd->fcn;
 
-	/* allow to change the current function during debugging */
-	if (g->is_instep && core->io->debug)
+	// allow to change the current function during debugging
+	if (g->is_instep && core->io->debug) {
+		seek_on_curnode (g, core);
 		r_core_cmd0 (core, "sr pc");
+	}
 
 	f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-	if (f && f != *fcn) {
+	if (!f) {
+		r_cons_message ("Not in a function. Type 'df' to define it here");
+		return 0;
+	} else if (f && f != *fcn) {
 		*fcn = f;
 		g->need_reload_nodes = true;
 		g->force_update_seek = true;
@@ -2338,7 +2377,7 @@ R_API RAGraph *r_agraph_new(RConsCanvas *can) {
 	return g;
 }
 
-static void visual_offset (RCore *core) {
+static void visual_offset (RAGraph *g, RCore *core) {
 	char buf[256];
 	int rows;
 	r_cons_get_size (&rows);
@@ -2350,11 +2389,57 @@ static void visual_offset (RCore *core) {
 		if (buf[2] == '.') {
 			buf[1] = '.';
 		}
+		seek_on_curnode (g, core);
 		r_core_cmd0 (core, buf);
 	}
 }
 
+static void goto_asmqjmps(RAGraph *g, RCore *core) {
+	const char *h = "[Fast goto call/jmp]> ";
+	char obuf[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
+	int rows, i = 0;
+	bool cont;
+
+	r_cons_get_size (&rows);
+	r_cons_gotoxy (0, rows);
+	r_cons_printf (Color_RESET);
+	r_cons_printf (h);
+	r_cons_flush ();
+	r_cons_clear_line (0);
+	r_cons_gotoxy (strlen (h) + 1, rows);
+
+	do {
+		char ch;
+
+		ch = r_cons_readchar ();
+		obuf[i++] = ch;
+		r_cons_printf ("%c", ch);
+		r_cons_flush ();
+
+		cont = isalpha ((ut8)ch) && !islower ((ut8)ch);
+	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
+
+	obuf[i] = '\0';
+	ut64 addr = r_core_get_asmqjmps (core, obuf);
+	if (addr != UT64_MAX) {
+		char *title = get_title (addr);
+		RANode *addr_node = r_agraph_get_node (g, title);
+		if (addr_node) {
+			set_curnode (g, addr_node->gnode);
+			agraph_update_seek (g, addr_node, true);
+		} else {
+			char cmd[20];
+
+			snprintf(cmd, sizeof (cmd), "s %"PFMT64u, addr);
+			seek_on_curnode (g, core);
+			r_core_cmd0 (core, cmd);
+		}
+	}
+}
+
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interactive) {
+	int o_asmqjmps_letter = core->is_asmqjmps_letter;
+	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
 	struct agraph_refresh_data *grd;
 	int okey, key, wheel;
@@ -2388,6 +2473,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	}
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
 
+	/* we want letters as shortcuts for call/jmps */
+	core->is_asmqjmps_letter = true;
+	core->vmode = true;
+
 	grd = R_NEW (struct agraph_refresh_data);
 	grd->g = g;
 	grd->fs = is_interactive;
@@ -2395,16 +2484,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	grd->fcn = &fcn;
 	ret = agraph_refresh (grd);
 	if (ret && is_interactive) {
-		// set current node based on the current offset
-		ut64 bbaddr = r_core_anal_get_bbaddr (core, core->offset);
-		if (r_anal_fcn_is_in_offset (fcn, bbaddr)) {
-			char *bbtitle = get_title (bbaddr);
-			RANode *an = r_agraph_get_node (g, bbtitle);
-
-			free (bbtitle);
-			set_curnode (g, an->gnode);
-			agraph_update_seek (g, an, true);
-		}
+		g->need_seek_curoffset = true;
 	} else {
 		r_cons_newline ();
 		exit_graph = true;
@@ -2515,48 +2595,59 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
-					" .      - center graph to the current node\n"
-					" c      - toggle asm.comments\n"
-					" C      - toggle scr.color\n"
-					" hjkl   - move node\n"
-					" HJKL   - scroll canvas\n"
-					" tab    - select next node\n"
-					" TAB    - select previous node\n"
-					" t/f    - follow true/false edges\n"
-					" e      - toggle edge-lines style (diagonal/square)\n"
-					" O      - toggle disasm mode\n"
-					" r      - relayout\n"
-					" R      - randomize colors\n"
-					" o      - go/seek to given offset\n"
-					" u/U    - undo/redo seek\n"
-					" p      - toggle mini-graph\n"
-					" b      - select previous node\n"
-					" V      - toggle basicblock / call graphs\n"
-					" w      - toggle between movements speed 1 and graph.scroll\n"
-					" x/X    - jump to xref/ref\n"
-					" z/Z    - step / step over\n"
-					" +/-/0  - zoom in/out/default\n");
+					" .            - center graph to the current node\n"
+					" c            - toggle asm.comments\n"
+					" C            - toggle scr.color\n"
+					" hjkl         - move node\n"
+					" HJKL         - scroll canvas\n"
+					" tab          - select next node\n"
+					" TAB          - select previous node\n"
+					" t/f          - follow true/false edges\n"
+					" g([A-Za-z]*) - follow jmp/call identified by shortcut\n"
+					" e            - toggle edge-lines style (diagonal/square)\n"
+					" O            - toggle disasm mode\n"
+					" r            - relayout\n"
+					" R            - randomize colors\n"
+					" o            - go/seek to given offset\n"
+					" u/U          - undo/redo seek\n"
+					" p            - toggle mini-graph\n"
+					" b            - select previous node\n"
+					" V            - toggle basicblock / call graphs\n"
+					" w            - toggle between movements speed 1 and graph.scroll\n"
+					" x/X          - jump to xref/ref\n"
+					" z/Z          - step / step over\n"
+					" +/-/0        - zoom in/out/default\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
 			break;
+		case 'g':
+			goto_asmqjmps (g, core);
+			break;
 		case 'o':
-			visual_offset (core);
+			visual_offset (g, core);
 			break;
 		case 'u':
-			{
+		{
 			ut64 off = r_io_sundo (core->io, core->offset);
-			if (off != UT64_MAX)
+			if (off != UT64_MAX) {
 				r_core_seek (core, off, 1);
-			else eprintf ("Can not undo\n");
+				g->need_seek_curoffset = true;
+			} else {
+				eprintf ("Can not undo\n");
 			}
 			break;
+		}
 		case 'U':
-			{
+		{
 			ut64 off = r_io_sundo_redo (core->io);
-			if (off != UT64_MAX) r_core_seek (core,off, 1);
-			else eprintf ("Cannot redo\n");
-			break;
+			if (off != UT64_MAX) {
+				r_core_seek (core, off, 1);
+				g->need_seek_curoffset = true;
+			} else {
+				eprintf ("Cannot redo\n");
 			}
+			break;
+		}
 		case 'R':
 			r_core_cmd0 (core, "ecr");
 			g->color_box = core->cons->pal.graph_box;
@@ -2576,6 +2667,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			break;
 		case 'C':
 			r_config_toggle (core->config, "scr.color");
+			can->color = r_config_get_i (core->config, "scr.color");
 			g->need_reload_nodes = true;
 			break;
 		case 'r': agraph_set_layout (g, true); break;
@@ -2599,66 +2691,58 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'h': can->sx += movspeed * (invscroll ? -1 : 1); break;
 		case 'e': can->linemode = !!!can->linemode; break;
 		case 'p':
-			  agraph_toggle_small_nodes (g);
-			  agraph_update_seek (g, get_anode (g->curnode), true);
-			  break;
+			agraph_toggle_small_nodes (g);
+			agraph_update_seek (g, get_anode (g->curnode), true);
+			break;
 		case 'b':
-			  agraph_undo_node(g);
-			  break;
+			agraph_undo_node(g);
+			break;
 		case '.':
-			  agraph_update_seek (g, get_anode (g->curnode), true);
-			  g->is_instep = true;
-			  break;
+			agraph_update_seek (g, get_anode (g->curnode), true);
+			g->is_instep = true;
+			break;
 		case 't':
-			  agraph_follow_true (g);
-			  break;
+			agraph_follow_true (g);
+			break;
 		case 'f':
-			  agraph_follow_false (g);
-			  break;
+			agraph_follow_false (g);
+			break;
 		case '/':
-			  r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
-			  break;
+			r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
+			break;
 		case ':':
-		{
 			r_core_visual_prompt_input (core);
 			break;
-		}
 		case 'w':
-			  agraph_toggle_speed (g, core);
-			  break;
+			agraph_toggle_speed (g, core);
+			break;
 		case -1: // EOF
 		case ' ':
 		case 'q':
-			  if (g->is_callgraph) {
-				  agraph_toggle_callgraph(g);
-			  } else {
-				  // update seek based on current node
-				  RANode *n;
-				  char *cmd;
-
-				  if (g->curnode) {
-					  n = get_anode (g->curnode);
-					  cmd = r_str_newf ("s %s", n->title);
-					  r_core_cmd0 (core, cmd);
-					  free (cmd);
-				  }
-				  exit_graph = true;
-			  }
-			  break;
+			if (g->is_callgraph) {
+				agraph_toggle_callgraph(g);
+			} else {
+				seek_on_curnode (g, core);
+				exit_graph = true;
+			}
+			break;
 		case 27: // ESC
-			  if (r_cons_readchar () == 91) {
-				  if (r_cons_readchar () == 90) {
-					  agraph_prev_node (g);
-				  }
-			  }
-			  break;
+			if (r_cons_readchar () == 91) {
+				if (r_cons_readchar () == 90) {
+					agraph_prev_node (g);
+				}
+			}
+			break;
 		default:
-			  break;
+			break;
 		}
 	}
 
 	core->cons->event_data = NULL;
 	core->cons->event_resize = NULL;
+	core->vmode = o_vmode;
+	core->is_asmqjmps_letter = o_asmqjmps_letter;
+	core->keep_asmqjmps = false;
 
 	free (grd);
 	r_agraph_free(g);

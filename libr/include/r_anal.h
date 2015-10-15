@@ -96,6 +96,10 @@ enum {
 #define R_ANAL_ADDR_TYPE_ASCII     1 << 10
 #define R_ANAL_ADDR_TYPE_SEQUENCE  1 << 11
 
+#define R_ANAL_ARCHINFO_MIN_OP_SIZE 0
+#define R_ANAL_ARCHINFO_MAX_OP_SIZE 1
+#define R_ANAL_ARCHINFO_ALIGN 2
+
 /* type = (R_ANAL_VAR_TYPE_BYTE & R_ANAL_VAR_TYPE_SIZE_MASK) |
  *			( RANAL_VAR_TYPE_SIGNED & RANAL_VAR_TYPE_SIGN_MASK) |
  *			( RANAL_VAR_TYPE_CONST & RANAL_VAR_TYPE_MODIFIER_MASK)
@@ -443,6 +447,8 @@ typedef enum {
 	R_ANAL_OP_TYPE_CAST = 42,
 	R_ANAL_OP_TYPE_NEW = 43,
 	R_ANAL_OP_TYPE_ABS = 44,
+	R_ANAL_OP_TYPE_CPL = 45,	/* complement */
+	R_ANAL_OP_TYPE_CRYPTO = 46,
 	//R_ANAL_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
 #if 0
 	R_ANAL_OP_TYPE_PRIV = 40, /* priviledged instruction */
@@ -594,6 +600,7 @@ typedef struct r_anal_t {
 	int maxreflines;
 	int trace;
 	int esil_goto_limit;
+	int pcalign;
 	RList *types;
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_esil_t *esil;
@@ -1011,6 +1018,7 @@ typedef struct r_anal_plugin_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*reset_counter) (RAnal *anal, ut64 start_addr);
+	int (*archinfo)(RAnal *anal, int query);
 
 	// legacy r_anal_functions
 	RAnalOpCallback op;
@@ -1117,6 +1125,7 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API void r_anal_plugin_free (RAnalPlugin *p);
 R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo);
 R_API int r_anal_list(RAnal *anal);
+R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API int r_anal_use(RAnal *anal, const char *name);
 R_API int r_anal_set_reg_profile(RAnal *anal);
 R_API int r_anal_set_bits(RAnal *anal, int bits);

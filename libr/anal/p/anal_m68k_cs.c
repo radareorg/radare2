@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <capstone/capstone.h>
 
-#if CS_API_MAJOR>=4 && CS_NEXT_VERSION>=3
+#ifdef CAPSTONE_M68K_H
 #define CAPSTONE_HAS_M68K 1
 #else
 #define CAPSTONE_HAS_M68K 0
@@ -571,23 +571,17 @@ RAnalPlugin r_anal_plugin_m68k_cs = {
 	.bits = 32,
 	.op = &analop,
 };
-
-#ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_m68k_cs,
-	.version = R2_VERSION
-};
-#endif
 #else
-static RAnalPlugin r_anal_plugin_m68k_cs = {
+RAnalPlugin r_anal_plugin_m68k_cs = {
 	.name = "m68k.cs (unsupported)",
 	.desc = "Capstone M68K analyzer (unsupported)",
 	.license = "BSD",
 	.arch = "m68k",
 	.bits = 32,
 };
+#endif
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_m68k_cs,

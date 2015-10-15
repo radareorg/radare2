@@ -9,7 +9,7 @@
 #define REIL_REG_PREFIX "R_"
 
 void reil_flag_spew_inst(RAnalEsil *esil, const char *flag);
-const static char *ops[] = { FOREACHOP(REIL_OP_STRING) };
+static const char *ops[] = { FOREACHOP(REIL_OP_STRING) };
 
 // Get size of a register.
 static ut8 esil_internal_sizeof_reg(RAnalEsil *esil, const char *r) {

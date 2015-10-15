@@ -323,6 +323,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_ILL;
+	if (len<4)
+		return -1;
 	op->size = 4;
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_MIPS, mode, &handle);
@@ -577,6 +579,10 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 4;
+}
+
 RAnalPlugin r_anal_plugin_mips_cs = {
 	.name = "mips",
 	.desc = "Capstone MIPS analyzer",
@@ -584,6 +590,7 @@ RAnalPlugin r_anal_plugin_mips_cs = {
 	.esil = true,
 	.arch = R_SYS_ARCH_MIPS,
 	.set_reg_profile = set_reg_profile,
+	.archinfo = archinfo,
 	.bits = 16|32|64,
 	.op = &analop,
 };

@@ -75,6 +75,71 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 	}
 }
 
+static void print_debug_map_ascii_art(RList *maps, ut64 addr,
+				int use_color, PrintfCallback cb_printf,
+				int bits) {
+	ut64 mul, min = -1, max = 0;
+	int width = r_cons_get_size (NULL) - 80;
+	RListIter *iter;
+	RDebugMap *map;
+	if (width < 1) width = 30;
+	r_list_foreach (maps, iter, map) {
+		if (map->addr < min)
+			min = map->addr;
+		if (map->addr_end > max)
+			max = map->addr_end;
+	}
+	mul = (max - min) / width;
+	if (min != -1 && mul != 0) {
+		const char *c = "", *c_end = "";
+		char buf[56];
+		const char *fmtstr;
+		int j;
+		r_list_foreach (maps, iter, map) {
+			r_num_units (buf, map->size);
+			if (use_color) {
+				c_end = Color_RESET;
+				if (map->perm & 1) c = Color_GREEN;
+				if (map->perm & 2) c = Color_RED;
+				else { c = "" ;  c_end = ""; }
+			} else {
+				c = "";
+				c_end = "";
+			}
+			fmtstr = bits & R_SYS_BITS_64 ?
+				"sys %04s %c %s0x%016"PFMT64x"%s |" :
+				"sys %04s %c %s0x%08"PFMT64x"%s |";
+			cb_printf (fmtstr, buf,
+				(addr >= map->addr && \
+				addr < map->addr_end) ? '*' : '-',
+				c, map->addr, c_end);
+			for (j = 0; j < width; j++) {
+				ut64 pos = min + (j * mul);
+				ut64 npos = min + ((j + 1) * mul);
+				if (map->addr < npos && map->addr_end > pos) {
+					cb_printf ("#");
+				} else {
+					cb_printf ("-");
+				}
+			}
+			fmtstr = bits & R_SYS_BITS_64 ?
+				"| %s0x%016"PFMT64x"%s %s %s\n" :
+				"| %s0x%08"PFMT64x"%s %s %s\n";
+			cb_printf (fmtstr, c, map->addr_end, c_end,
+				r_str_rwx_i (map->perm), map->name);
+
+		}
+	}
+}
+R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, int use_color ) {
+	if (dbg && dbg->maps) print_debug_map_ascii_art (dbg->maps, addr,
+							use_color, dbg->cb_printf,
+							dbg->bits);
+	if (dbg && dbg->maps_user) print_debug_map_ascii_art (dbg->maps_user,
+							addr, use_color,
+							dbg->cb_printf, dbg->bits);
+}
+
 R_API RDebugMap *r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user) {
 	RDebugMap *map;
 	if (name == NULL || addr >= addr_end) {

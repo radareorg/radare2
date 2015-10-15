@@ -1729,10 +1729,13 @@ reread:
 		} else r_core_search_rop (core, param.from, param.to, 0, input+1, 0);
 		goto beach;
 	case 'r': // "/r"
-		if (input[param_offset-1]==' ') {
+		if (input[param_offset - 1] == ' ') {
 			r_core_anal_search (core, param.from, param.to,
-				r_num_math (core->num, input+2));
-		} else r_core_anal_search (core, param.from, param.to, core->offset);
+					r_num_math (core->num, input+2));
+		} else {
+			r_core_anal_search (core, param.from, param.to,
+					core->offset);
+		}
 		break;
 	case 'A':
 		switch (input[1]) {
@@ -1818,7 +1821,7 @@ reread:
 					r_search_pattern (core->search, param.from, param.to);
 					r_cons_break_end ();
 					break;
-				} 
+				}
 			}
 			eprintf ("Invalid pattern size (must be >0)\n");
 		}
@@ -1869,7 +1872,7 @@ reread:
 				n8 = (ut8)r_num_math (core->num, input+param_offset);
 				r_search_kw_add (core->search,
 					r_search_keyword_new ((const ut8*)&n8, 1, NULL, 0, NULL));
-			} 
+			}
 			else eprintf ("Usage: /v1 value\n");
 			break;
 		case '2':
@@ -1879,7 +1882,7 @@ reread:
 					2, !core->assembler->big_endian);
 				r_search_kw_add (core->search,
 					r_search_keyword_new ((const ut8*)&n16, 2, NULL, 0, NULL));
-			} 
+			}
 			else eprintf ("Usage: /v2 value\n");
 			break;
 		default: // default size
@@ -1892,7 +1895,7 @@ reread:
 					r_search_kw_add (core->search,
 						r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
 				}
-			} 
+			}
 			else eprintf ("Usage: /v4 value\n");
 			break;
 		}
@@ -2204,7 +2207,7 @@ reread:
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch)
 		do_string_search (core, &param);
-beach: 
+beach:
 	core->num->value = searchhits;
 	core->in_search = false;
 	r_flag_space_pop (core->flags);

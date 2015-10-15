@@ -10,10 +10,10 @@
 #include <r_util.h>
 #include <r_socket.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #if __APPLE__
 #include <spawn.h>
 #include <sys/ptrace.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <mach/exception_types.h>
 #include <mach/mach_init.h>

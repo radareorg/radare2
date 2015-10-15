@@ -48,7 +48,7 @@ static bool popRN(RAnalEsil *esil, ut64 *n) {
 
 /* R_ANAL_ESIL API */
 
-R_API RAnalEsil *r_anal_esil_new(iotrap) {
+R_API RAnalEsil *r_anal_esil_new(int iotrap) {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
 	if (!esil) return NULL;
 	esil->parse_goto_count = R_ANAL_ESIL_GOTO_LIMIT;

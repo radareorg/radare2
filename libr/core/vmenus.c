@@ -2,6 +2,8 @@
 
 #include "r_core.h"
 
+#include <string.h>
+
 #define MAX_FORMAT 3
 
 typedef struct {
@@ -695,7 +697,8 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			r_cons_printf (
 			"\nVF: Visual Flags help:\n\n"
 			" q     - quit menu\n"
-			" j/k   - down/up keys\n"
+			" j/k   - line down/up keys\n"
+			" J/K   - page down/up keys\n"
 			" h/b   - go back\n"
 			" C     - toggle colors\n"
 			" l/' ' - accept current selection\n"

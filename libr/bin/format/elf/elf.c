@@ -1465,7 +1465,7 @@ done:
 				bin->imports_by_ord = (RBinImport**)calloc (ret_ctr, sizeof (RBinImport*));
 			else
 				bin->imports_by_ord = NULL;
-		} else if (type == R_BIN_ELF_SYMBOLS && !bin->symbols_by_ord_size) {
+		} else if (type == R_BIN_ELF_SYMBOLS && !bin->symbols_by_ord_size && ret_ctr) {
 			bin->symbols_by_ord_size = ret_ctr;
 			if (ret_ctr > 0)
 				bin->symbols_by_ord = (RBinSymbol**)calloc (ret_ctr, sizeof (RBinSymbol*));
@@ -1689,7 +1689,7 @@ if (
 			if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {
 				bin->imports_by_ord_size = nsym;
 				bin->imports_by_ord = (RBinImport**)calloc (nsym, sizeof (RBinImport*));
-			} else if (type == R_BIN_ELF_SYMBOLS && !bin->symbols_by_ord_size) {
+			} else if (type == R_BIN_ELF_SYMBOLS && !bin->symbols_by_ord_size && nsym) {
 				bin->symbols_by_ord_size = nsym;
 				bin->symbols_by_ord = (RBinSymbol**)calloc (nsym, sizeof (RBinSymbol*));
 			} else break;

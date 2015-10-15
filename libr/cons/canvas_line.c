@@ -29,6 +29,7 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 		c->attr = cons->pal.graph_trufae;
 		break;
 	}
+	if (!c->color) c->attr = Color_RESET;
 
 	switch (style->symbol) {
 	case LINE_UNCJMP:

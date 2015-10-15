@@ -55,6 +55,11 @@ R_API int r_reg_get_name_idx(const char *type) {
 		case 'a'+('4'<<8): return R_REG_NAME_A4;
 		case 'a'+('5'<<8): return R_REG_NAME_A5;
 		case 'a'+('6'<<8): return R_REG_NAME_A6;
+		/* return values */
+		case 'r'+('0'<<8): return R_REG_NAME_R0;
+		case 'r'+('1'<<8): return R_REG_NAME_R1;
+		case 'r'+('2'<<8): return R_REG_NAME_R2;
+		case 'r'+('3'<<8): return R_REG_NAME_R3;
 	}
 	return -1;
 }

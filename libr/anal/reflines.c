@@ -25,7 +25,9 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	if (!list) return NULL;
 
 	//end -= 8; // XXX Fix some segfaults when r_anal backends are buggy
-	if (ptr != (end - 8)) end -= 8;
+	if (ptr != (end - 8)) {
+		end -= 8;
+	}
 	/* analyze code block */
 	while (ptr<end) {
 		if (nlines != -1 && --nlines == 0)

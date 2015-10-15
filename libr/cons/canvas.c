@@ -321,12 +321,10 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	char *row = NULL, *row_ptr;
 	char corner = '=';
 
-	if (w < 1 || h<1) return;
-	//if (x > c->w*2) return;
-	//if (y > c->h*2) return;
+	if (w < 1 || h < 1) return;
 
-	if (color)
-		c->attr = color;
+	if (color) c->attr = color;
+	if (!c->color) c->attr = Color_RESET;
 	row = malloc (w+1);
 	if (!row)
 		return;
@@ -357,8 +355,7 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 		if (G(x+w-1, y+i)) W("|");
 	}
 	free (row);
-	if (color)
-		c->attr = Color_RESET;
+	if (color) c->attr = Color_RESET;
 }
 
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch, int replace) {

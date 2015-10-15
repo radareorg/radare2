@@ -558,6 +558,7 @@ typedef struct r_ascii_graph_t {
 
 	RStack *history;
 	RANode *update_seek_on;
+	int need_seek_curoffset;
 	int need_reload_nodes;
 	int need_set_layout;
 	int need_update_dim;

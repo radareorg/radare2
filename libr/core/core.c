@@ -11,6 +11,13 @@
 
 R_LIB_VERSION(r_core);
 
+static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
+	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
+	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
+	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
+	R_CORE_ASMQJMPS_LETTERS
+};
+
 static int on_fcn_new(void *_anal, void* _user, RAnalFunction *fcn) {
 	RCore *core = (RCore*)_user;
 	const char *cmd = r_config_get (core->config, "cmd.fcn.new");
@@ -60,6 +67,59 @@ static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 		r_core_cmd0 (core, cmdbp);
 	r_core_cmd0 (core, bpi->data);
 	core->cons->echo = oecho;
+}
+
+/* returns the address of a jmp/call given a shortcut by the user or UT64_MAX
+ * if there's no valid shortcut. When is_asmqjmps_letter is true, the string
+ * should be of the form XYZWu, where XYZW are uppercase letters and u is a
+ * lowercase one. If is_asmqjmps_letter is false, the string should be a number
+ * between 1 and 9 included. */
+R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
+	if (!core->asmqjmps) return UT64_MAX;
+
+	if (core->is_asmqjmps_letter) {
+		int i, pos = 0;
+		int len = strlen (str);
+
+		for (i = 0; i < len - 1; ++i) {
+			if (!isupper ((ut8)str[i])) return UT64_MAX;
+			pos *= R_CORE_ASMQJMPS_LETTERS;
+			pos += str[i] - 'A' + 1;
+		}
+		if (!islower ((ut8)str[i])) return UT64_MAX;
+		pos *= R_CORE_ASMQJMPS_LETTERS;
+		pos += str[i] - 'a';
+		return core->asmqjmps[pos + 1];
+	} else if (str[0] > '0' && str[1] <= '9') {
+		return core->asmqjmps[str[0] - '0'];
+	}
+	return UT64_MAX;
+}
+
+/* returns in str a string that represents the shortcut to access the asmqjmp
+ * at position pos. When is_asmqjmps_letter is true, pos is converted into a
+ * multiletter shortcut of the form XYWZu and returned (see r_core_get_asmqjmps
+ * for more info). Otherwise, the shortcut is the string representation of pos. */
+R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int pos) {
+	if (core->is_asmqjmps_letter) {
+		int i, j = 0;
+
+		pos -= 1;
+		for (i = 0; i < R_CORE_ASMQJMPS_LEN_LETTERS - 1; ++i) {
+			ut64 div = pos / letter_divs[i];
+			pos %= letter_divs[i];
+			if (div != 0 && j < len) {
+				str[j++] = 'A' + div - 1;
+			}
+		}
+		if (j < len) {
+			ut64 div = pos % R_CORE_ASMQJMPS_LETTERS;
+			str[j++] = 'a' + div;
+		}
+		str[j] = '\0';
+	} else {
+		snprintf (str, len, "%d", pos);
+	}
 }
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
@@ -997,6 +1057,8 @@ R_API int r_core_init(RCore *core) {
 	core->fs = r_fs_new ();
 	core->flags = r_flag_new ();
 	core->graph = r_agraph_new (r_cons_canvas_new (1, 1));
+	core->asmqjmps_size = R_CORE_ASMQJMPS_NUM;
+	core->asmqjmps = R_NEWS (ut64, core->asmqjmps_size);
 
 	r_bin_bind (core->bin, &(core->assembler->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
@@ -1087,6 +1149,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_lib_free (c->lib);
 	r_buf_free (c->yank_buf);
 	r_agraph_free (c->graph);
+	R_FREE (c->asmqjmps);
 	sdb_free (c->sdb);
 	return NULL;
 }

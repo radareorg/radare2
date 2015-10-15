@@ -992,11 +992,15 @@ SETL/SETNGE
 		case X86_INS_INSW:
 		case X86_INS_INSD:
 		case X86_INS_INSB:
+			op->type = R_ANAL_OP_TYPE_IO;
+			op->type2 = 0;
+			break;
 		case X86_INS_OUT:
 		case X86_INS_OUTSB:
 		case X86_INS_OUTSD:
 		case X86_INS_OUTSW:
 			op->type = R_ANAL_OP_TYPE_IO;
+			op->type2 = 1;
 			break;
 		case X86_INS_VXORPD:
 		case X86_INS_VXORPS:

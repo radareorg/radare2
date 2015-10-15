@@ -83,6 +83,10 @@ typedef struct r_core_file_t {
 } RCoreFile;
 
 #define R_CORE_ASMSTEPS 128
+#define R_CORE_ASMQJMPS_NUM 10
+#define R_CORE_ASMQJMPS_LETTERS 26
+#define R_CORE_ASMQJMPS_MAX_LETTERS (26 * 26 * 26 * 26 * 26)
+#define R_CORE_ASMQJMPS_LEN_LETTERS 5
 typedef struct r_core_asmsteps_t {
 	ut64 offset;
 	int cols;
@@ -133,7 +137,11 @@ typedef struct r_core_t {
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
 	int curasmstep;
 	RCoreAsmsteps asmsteps[R_CORE_ASMSTEPS];
-	ut64 asmqjmps[10];
+	ut64 *asmqjmps;
+	int asmqjmps_count;
+	int asmqjmps_size;
+	bool is_asmqjmps_letter;
+	bool keep_asmqjmps;
 	// visual
 	int http_up;
 	int printidx;
@@ -220,9 +228,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch);
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr);
 R_API void r_core_visual_asm(RCore *core, ut64 addr);
 R_API void r_core_visual_colors(RCore *core);
-R_API int r_core_visual_xrefs_x (RCore *core);
-R_API int r_core_visual_xrefs_X (RCore *core);
+R_API int r_core_visual_xrefs_x(RCore *core);
+R_API int r_core_visual_xrefs_X(RCore *core);
 R_API int r_core_visual_hud(RCore *core);
+R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str);
+R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int i);
 /* visual marks */
 R_API void r_core_visual_mark_seek(RCore *core, ut8 ch);
 R_API void r_core_visual_mark(RCore *core, ut8 ch);
@@ -387,6 +397,7 @@ R_API void r_core_sysenv_help(const RCore* core);
 #define R_CORE_BIN_SET		0x002
 #define R_CORE_BIN_SIMPLE	0x004
 #define R_CORE_BIN_JSON         0x008
+#define R_CORE_BIN_ARRAY 	0x010
 
 #define R_CORE_BIN_ACC_STRINGS	0x001
 #define R_CORE_BIN_ACC_INFO	0x002

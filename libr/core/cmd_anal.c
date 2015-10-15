@@ -352,6 +352,7 @@ static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int
 				printline ("refptr","%d\n", op.refptr);
 			printline ("size", "%d\n", size);
 			printline ("type","%s\n", r_anal_optype_to_string (op.type));
+			printline ("type2", "%s\n", r_anal_optype_to_string (op.type2));
 			if (*R_STRBUF_SAFEGET (&op.esil))
 				printline ("esil", "%s\n", R_STRBUF_SAFEGET (&op.esil));
 			if (hint && hint->jump != UT64_MAX)
@@ -1033,6 +1034,15 @@ static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 	if (core->anal->cur->arch == R_SYS_ARCH_ARM && bits==16) {
 		bits = 32;
 	}
+	if (mode == '=') {
+		int pcbits = 0;
+		const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+		RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
+		if (bits != reg->size)
+			pcbits = reg->size;
+		if (pcbits)
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
+	}
 	r_debug_reg_list (core->dbg, type, bits, mode, use_color);
 	core->dbg->reg = hack;
 }
@@ -1282,7 +1292,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			*arg = 0;
 			ostr = r_str_chop (strdup (str+1));
 			regname = r_str_clean (ostr);
-			r = r_reg_get (core->dbg->reg, regname, -1); //R_REG_TYPE_GPR);
+			r = r_reg_get (core->dbg->reg, regname, -1);
 			if (!r) {
 				int type = r_reg_get_name_idx (regname);
 				if (type != -1) {
@@ -1913,7 +1923,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				"ae??", "", "show ESIL help",
 				"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
 				"aeim", "", "initialize ESIL VM stack (aeim- remove)",
-				"aeip", "", "initialize ESIL program counter to curseek", 
+				"aeip", "", "initialize ESIL program counter to curseek",
 				"ae", " [expr]", "evaluate ESIL expression",
 				"aep", " [addr]", "change esil PC to this address",
 				"aef", " [addr]", "emulate function",
@@ -2026,6 +2036,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	}
 	addr = core->offset;
 	addr_end = addr + len;
+	r_cons_break (NULL, NULL);
 	while (addr < addr_end) {
 		if (core->cons->breaked)
 			break;
@@ -2730,7 +2741,7 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 			int stats = r_config_get_i (core->config, "esil.stats");
 			int iotrap = r_config_get_i (core->config, "esil.iotrap");
 			core->anal->esil = r_anal_esil_new (iotrap);
-			r_anal_esil_setup (core->anal->esil,	
+			r_anal_esil_setup (core->anal->esil,
 				core->anal, romem, stats);
 		}
 		switch (input[1]) {
@@ -2761,7 +2772,7 @@ static void cmd_anal_trace(RCore *core, const char *input)  {
 			break;
 		case ' ':
 			{
-				int idx = atoi (input+2);	
+				int idx = atoi (input+2);
 				r_anal_esil_trace_show (
 					core->anal->esil, idx);
 			}

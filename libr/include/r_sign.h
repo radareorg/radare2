@@ -37,6 +37,7 @@ typedef struct r_sign_t {
 	char ns[32]; // namespace
 	PrintfCallback cb_printf;
 	RList *items;
+	int matches;
 } RSign;
 
 typedef int (*RSignCallback)(RSignItem *si, void *user);
@@ -47,7 +48,7 @@ R_API _Bool r_sign_add(RSign *sig, RAnal *anal, int type,
 		const char *name, const char *arg);
 R_API RSign *r_sign_free(RSign *sig);
 R_API void r_sign_ns(RSign *sig, const char *str);
-R_API void r_sign_list(RSign *sig, int rad);
+R_API void r_sign_list(RSign *sig, int rad, int json);
 R_API void r_sign_reset(RSign *sig);
 R_API void r_sign_item_free(void *_item);
 R_API int r_sign_remove_ns(RSign* sig, const char* ns);
