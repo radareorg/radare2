@@ -724,7 +724,7 @@ struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file) {
 		return NULL;
 	memset (bin, 0, sizeof (struct MACH0_(obj_t)));
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
+	if (!(buf = (ut8*)r_file_slurp(file, (int*)&bin->size)))
 		return MACH0_(mach0_free)(bin);
 	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes(bin->b, buf, bin->size)) {

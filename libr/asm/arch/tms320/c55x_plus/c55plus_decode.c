@@ -1,7 +1,6 @@
 /* c55plus - LGPL - Copyright 2013 - th0rpe */
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <string.h>
 #include <r_types.h>

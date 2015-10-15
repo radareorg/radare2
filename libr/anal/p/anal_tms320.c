@@ -6,6 +6,7 @@
  * Distributed under LGPL
  */
 
+#include <string.h>
 #include <r_anal.h>
 
 #include "../../asm/arch/tms320/tms320_dasm.h"

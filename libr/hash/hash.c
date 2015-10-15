@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2007-2014 pancake */
 
+#include <string.h>
 #include "r_hash.h"
 #include "r_util.h"
 
