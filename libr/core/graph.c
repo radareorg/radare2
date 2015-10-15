@@ -2411,6 +2411,7 @@ static void seek_to_node(RANode *n, RCore *core) {
 
 R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interactive) {
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
+	int o_scrinteractive = r_config_get_i (core->config, "scr.interactive");
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
 	struct agraph_refresh_data *grd;
@@ -2437,6 +2438,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	}
 	can->linemode = 1;
 	can->color = r_config_get_i (core->config, "scr.color");
+	r_config_set_i (core->config, "scr.interactive", false);
 
 	g = r_agraph_new (can);
 	if (!g) {
@@ -2706,6 +2708,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	r_agraph_free(g);
 err_graph_new:
 	r_config_set_i (core->config, "scr.color", can->color);
+	r_config_set_i (core->config, "scr.interactive", o_scrinteractive);
 	r_cons_canvas_free (can);
 	return !is_error;
 }
