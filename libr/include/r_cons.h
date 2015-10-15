@@ -541,6 +541,9 @@ typedef struct r_ascii_node_t {
 	int klass;
 } RANode;
 
+typedef void (*RANodeCallback)(RANode *n, void *user);
+typedef void (*RAEdgeCallback)(RANode *from, RANode *to, void *user);
+
 typedef struct r_ascii_graph_t {
 	RConsCanvas *can;
 	RGraph *graph;
@@ -556,13 +559,15 @@ typedef struct r_ascii_graph_t {
 	int zoom;
 	int movspeed;
 
-	RStack *history;
 	RANode *update_seek_on;
-	int need_seek_curoffset;
 	int need_reload_nodes;
 	int need_set_layout;
 	int need_update_dim;
 	int force_update_seek;
+
+	/* events */
+	RANodeCallback on_curnode_change;
+	void *on_curnode_change_data;
 
 	int x, y;
 	int w, h;
@@ -574,15 +579,14 @@ typedef struct r_ascii_graph_t {
 	int n_layers;
 	RList *dists; /* RList<struct dist_t> */
 	RList *edges; /* RList<AEdge> */
+
+	/* colors */
 	const char *color_box;
 	const char *color_box2;
 	const char *color_box3;
 	const char *color_true;
 	const char *color_false;
 } RAGraph;
-
-typedef void (*RANodeCallback)(RANode *n);
-typedef void (*RAEdgeCallback)(RANode *from, RANode *to);
 
 #ifdef R_API
 R_API RAGraph *r_agraph_new(RConsCanvas *can);
@@ -597,8 +601,8 @@ R_API void r_agraph_add_edge_at(const RAGraph *g, RANode *a, RANode *b, int nth)
 R_API void r_agraph_del_edge(const RAGraph *g, RANode *a, RANode *b);
 R_API void r_agraph_print(RAGraph *g);
 R_API Sdb *r_agraph_get_sdb(RAGraph *g);
-R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb);
-R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb);
+R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user);
+R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
 #endif
 
 #ifdef __cplusplus
