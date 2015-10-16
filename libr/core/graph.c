@@ -2004,6 +2004,7 @@ static int check_changes(RAGraph *g, int is_interactive,
 		if ((is_interactive && !cur_anode) ||
 			(cur_anode && strcmp (cur_anode->title, title) != 0)) {
 			g->update_seek_on = r_agraph_get_node (g, title);
+			if (!g->update_seek_on) return false;
 			set_curnode (g, g->update_seek_on);
 			g->force_update_seek = true;
 		}
@@ -2399,7 +2400,8 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 }
 
 static void seek_to_node(RANode *n, RCore *core) {
-	char *title = get_title (core->offset);
+	ut64 off = r_core_anal_get_bbaddr (core, core->offset);
+	char *title = get_title (off);
 
 	if (strcmp (title, n->title) != 0) {
 		char *cmd = r_str_newf ("s %s", n->title);
@@ -2556,13 +2558,17 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			}
 			break;
 		case 'x':
-			if (r_core_visual_xrefs_x (core))
-				exit_graph = true;
-			break;
 		case 'X':
-			if (r_core_visual_xrefs_X (core))
-				exit_graph = true;
+		{
+			ut64 old_off = core->offset;
+			ut64 off = r_core_anal_get_bbaddr (core, core->offset);
+			r_core_seek (core, off, 0);
+			if ((key == 'x' && !r_core_visual_xrefs_x (core)) ||
+				(key == 'X' && !r_core_visual_xrefs_X (core))) {
+				r_core_seek(core, old_off, 0);
+			}
 			break;
+		}
 		case 9: // tab
 			agraph_next_node (g);
 			break;
