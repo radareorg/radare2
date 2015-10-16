@@ -173,9 +173,8 @@ R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int 
 	if (!algo) return NULL;
 	if (!ctx) ctx = r_hash_new (true, algo);
 	r_hash_do_begin (ctx, algo);
-	r_hash_calculate (ctx, algo, data, len);
+	digest_size = r_hash_calculate (ctx, algo, data, len);
 	r_hash_do_end (ctx, algo);
-	digest_size = r_hash_size (algo);
 	digest_hex = malloc ((digest_size *2)+1);
 	for (i = 0; i< digest_size; i++)
 		sprintf (digest_hex+(i*2), "%02x", ctx->digest[i]);
