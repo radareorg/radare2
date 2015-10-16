@@ -258,12 +258,12 @@ static int cmd_info(void *data, const char *input) {
 				r_core_bin_load (core, fn, baddr);
 			 }
 			break;
-	#define RBININFO(n,x) \
+	#define RBININFO(n,x,y) \
 	if (is_array) { \
 		if (is_array==1) is_array++; else r_cons_printf (","); \
 		r_cons_printf ("\"%s\":",n); \
 	}\
-	r_core_bin_info (core, x, mode, va, NULL, NULL);
+	r_core_bin_info (core, x, mode, va, NULL, y);
 		case 'A':
 			newline = 0;
 			if (input[1]=='j') {
@@ -274,21 +274,33 @@ static int cmd_info(void *data, const char *input) {
 				r_bin_list_archs (core->bin, 1);
 			}
 			break;
-		case 'E': RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS); break;
-		case 'Z': RBININFO ("size", R_CORE_BIN_ACC_SIZE); break;
-		case 'S': RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS); break;
-		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS); break;
-		case 'l': RBININFO ("libs", R_CORE_BIN_ACC_LIBS); break;
+		case 'E': RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, NULL); break;
+		case 'Z': RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL); break;
+		case 'S':
+			//we comes from ia or iS
+			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
+				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL);
+			} else  { //iS entropy,sha1
+				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 2);
+				//we move input until get '\0'
+				while (*(++input));
+				//input-- because we are inside a while that does input++
+				// oob read if not input--
+				input--;
+			}
+			break;
+		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL); break;
+		case 'l': RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL); break;
 		case 'L': r_bin_list (core->bin); break;
-		case 's': RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS); break;
+		case 's': RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, NULL); break;
 		case 'R':
-		case 'r': RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS); break;
-		case 'd': RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF); break;
-		case 'i': RBININFO ("imports",R_CORE_BIN_ACC_IMPORTS); break;
-		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO); break;
-		case 'e': RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES); break;
-		case 'M': RBININFO ("main", R_CORE_BIN_ACC_MAIN); break;
-		case 'm': RBININFO ("memory", R_CORE_BIN_ACC_MEM); break;
+		case 'r': RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL); break;
+		case 'd': RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL); break;
+		case 'i': RBININFO ("imports",R_CORE_BIN_ACC_IMPORTS, NULL); break;
+		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL); break;
+		case 'e': RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL); break;
+		case 'M': RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL); break;
+		case 'm': RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL); break;
 		case 'z':
 			if (input[1] == 'z') {
 				/* TODO: reimplement in C to avoid forks */
@@ -317,7 +329,7 @@ static int cmd_info(void *data, const char *input) {
 				free (ret);
 				input++;
 			} else {
-				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS);
+				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 			}
 			break;
 		case 'c': // for r2 `ic`
@@ -382,11 +394,11 @@ static int cmd_info(void *data, const char *input) {
 								r_cons_newline ();
 						}
 					} else {
-						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES);
+						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL);
 					}
 				}
 			} else {
-				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES);
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL);
 			}
 			break;
 		case 'D':
@@ -430,7 +442,7 @@ static int cmd_info(void *data, const char *input) {
 				"io", " [file]", "Load info from file (or last opened) use bin.baddr",
 				"ir|iR", "", "Relocs",
 				"is", "", "Symbols",
-				"iS", "", "Sections",
+				"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
 				"iz", "", "Strings in data sections",
 				"izz", "", "Search for Strings in the whole binary",
 				NULL
