@@ -1,5 +1,11 @@
-DESTDIR?=
 PREFIX?=/usr
+BINDIR=${PREFIX}/bin
+LIBDIR=${PREFIX}/lib
+DATADIR=${PREFIX}/share
+INCDIR=${PREFIX}/include
+VAPIDIR=${DATADIR}/vala/vapi/
+MANDIR=${DATADIR}/man/man1
+
 
 SDBVER=0.9.8
 
