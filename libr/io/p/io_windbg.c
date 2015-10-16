@@ -55,7 +55,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		return -1;
 
 	if (wind_get_target(fd->data)) {
-		uint64_t va;
+		ut64 va;
 		if (!wind_va_to_pa (fd->data, io->off, &va))
 			return -1;
 		return wind_write_at_phys (fd->data, buf, va, count);
@@ -73,7 +73,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 
 	if (wind_get_target(fd->data)) {
-		uint64_t va;
+		ut64 va;
 		if (!wind_va_to_pa (fd->data, io->off, &va))
 			return -1;
 		return wind_read_at_phys(fd->data, buf, va, count);
