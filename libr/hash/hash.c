@@ -168,12 +168,12 @@ R_API void r_hash_do_spice(RHash *ctx, int algo, int loops, RHashSeed *seed) {
 
 R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int len) {
 	char *digest_hex = NULL;
-	int i, digest_size, r;
+	int i, digest_size;
 	ut64 algo = r_hash_name_to_bits (name);
 	if (!algo) return NULL;
 	if (!ctx) ctx = r_hash_new (true, algo);
 	r_hash_do_begin (ctx, algo);
-	r = r_hash_calculate (ctx, algo, data, len);
+	r_hash_calculate (ctx, algo, data, len);
 	r_hash_do_end (ctx, algo);
 	digest_size = r_hash_size (algo);
 	digest_hex = malloc ((digest_size *2)+1);
