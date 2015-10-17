@@ -2582,6 +2582,10 @@ toro:
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ds->addr, 0);
 			if (handle_print_labels (core, ds, fcn)) {
 				handle_show_functions (core, ds);
+				handle_show_xrefs (core, ds);
+				handle_show_flags_option (core, ds);
+				handle_print_pre (core, ds);
+				handle_print_lines_left (core, ds);
 			}
 		}
 
