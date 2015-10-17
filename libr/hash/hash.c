@@ -171,8 +171,7 @@ R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int 
 	char *digest_hex = NULL;
 	RHash *myctx = NULL;
 	int i, digest_size;
-
-	if (!algo || !name || !data || len < 0) {
+	if (!algo || !data) {
 		return NULL;
 	}
 	if (!ctx) {
