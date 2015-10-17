@@ -63,11 +63,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if ((buf[1] & 0xec) == 12) {		//ADD + ADC
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->cycles = 1;
-	} else
-	if ((buf[1] & 0xec) == 8) {		//SUB + SBC
-		op->type = R_ANAL_OP_TYPE_SUB;
-		op->cycles = 1;
-	} else
+	}
 	if (buf[1] == 1) {			//MOVW
 		d = (buf[0] & 0xf0) >> 3;
 		r = (buf[0] & 0x0f) << 1;
@@ -89,6 +85,13 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 	d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
 	r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
+	if ((buf[1] & 0xec) == 4) {             //SUB + SBC
+		op->type = R_ANAL_OP_TYPE_SUB;
+		op->cycles = 1;
+		if (buf[1] & 0x10)
+			r_strbuf_setf (&op->esil, "r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, d, d, d);
+		else	r_strbuf_setf (&op->esil, "r%d,DUP,r%d,CF,+=,r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=,r%d,=", r, r, d, d, d, d, r);
+	}
 	if ((buf[1] & 0xec) == 4) {		//CP + CPC
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->cycles = 1;
