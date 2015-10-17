@@ -285,6 +285,37 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	return op->size;
 }
 
+static int avr_custom_des (RAnalEsil *esil) {
+	char *round;
+	ut64 key, text;
+	int r, enc;
+	if (!esil || !esil->anal || !esil->anal->reg)
+		return false;
+	round = r_anal_esil_pop (esil);
+	if (!round)
+		return false;
+	r_anal_esil_get_parm (esil, round, &key);
+	free (round);
+	r = (int)key;
+	r_anal_esil_reg_read (esil, "HF", &key, NULL);
+	enc = (int)key;
+	r_anal_esil_reg_read (esil, "deskey", &key, NULL);
+	r_anal_esil_reg_read (esil, "text", &text, NULL);
+	eprintf ("des - key: 0x%"PFMT64x" - text: 0x%"PFMT64x" - round: %d - %s\n", key, text, r, enc ? "decrypt" : "encrypt");
+	return true;
+}
+
+static int esil_avr_init (RAnalEsil *esil) {
+	if (!esil)
+		return false;
+	r_anal_esil_set_op (esil, "des", avr_custom_des);
+	return true;
+}
+
+static int esil_avr_fini (RAnalEsil *esil) {
+	return true;
+}
+
 static int set_reg_profile(RAnal *anal) {
 	char *p =
 		"=pc	PC\n"
@@ -312,6 +343,7 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r5	.8	5	0\n"
 		"gpr	r6	.8	6	0\n"
 		"gpr	r7	.8	7	0\n"
+		"gpr	text	.64	0	0\n"
 		"gpr	r8	.8	8	0\n"
 		"gpr	r9	.8	9	0\n"
 		"gpr	r10	.8	10	0\n"
@@ -320,6 +352,7 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r13	.8	13	0\n"
 		"gpr	r14	.8	14	0\n"
 		"gpr	r15	.8	15	0\n"
+		"gpr	deskey	.64	8	0\n"
 		"gpr	r16	.8	16	0\n"
 		"gpr	r17	.8	17	0\n"
 		"gpr	r18	.8	18	0\n"
@@ -384,6 +417,8 @@ RAnalPlugin r_anal_plugin_avr = {
 	.bits = 8|16, // 24 big regs conflicts
 	.op = &avr_op,
 	.set_reg_profile = &set_reg_profile,
+	.esil_init = esil_avr_init,
+	.esil_fini = esil_avr_fini,
 };
 
 #ifndef CORELIB
