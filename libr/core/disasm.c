@@ -2574,16 +2574,17 @@ toro:
 		handle_adistrick_comments (core, ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		handle_show_functions (core, ds);
+		handle_show_xrefs (core, ds);
+		handle_show_flags_option (core, ds);
+		handle_print_pre (core, ds);
+		handle_print_lines_left (core, ds);
 		{
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ds->addr, 0);
 			if (handle_print_labels (core, ds, fcn)) {
 				handle_show_functions (core, ds);
 			}
 		}
-		handle_show_xrefs (core, ds);
-		handle_show_flags_option (core, ds);
-		handle_print_pre (core, ds);
-		handle_print_lines_left (core, ds);
+
 		handle_print_offset (core, ds);
 		handle_print_op_size (core, ds);
 		handle_print_trace (core, ds);
