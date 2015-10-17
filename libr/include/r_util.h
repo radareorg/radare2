@@ -805,7 +805,7 @@ R_API void r_strbuf_init(RStrBuf *sb);
 
 R_API char **r_sys_get_environ (void);
 R_API void r_sys_set_environ (char **e);
-
+R_API ut64 des_round(ut64 plaintext, ut64 round_key);
 
 /* spaces */
 
@@ -819,6 +819,8 @@ R_API int r_space_set(RSpaces *f, const char *name);
 R_API int r_space_unset (RSpaces *f, const char *fs);
 R_API int r_space_list(RSpaces *f, int mode);
 R_API int r_space_rename (RSpaces *f, const char *oname, const char *nname);
+
+R_API void r_des_round(uint8_t* r[static 16],bool encrypt);
 
 /* Some "secured" functions, to do basic operation (mul, sub, add...) on integers */
 static inline int UT64_ADD(ut64 *r, ut64 a, ut64 b) {
