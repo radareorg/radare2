@@ -189,8 +189,13 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 				op->cycles = 1;
 				r_strbuf_setf (&op->esil, "CF,NF,=,r%d,1,&,7,CF,<<,1,r%d,>>,|,r%d,=,$z,ZF,=,CF,=,NF,CF,^,VF,=,NF,VF,^,SF,=", d, d, d);
 				break;
+			case 10:	//DEC
+				op->type = R_ANAL_OP_TYPE_SUB;
+				op->cycles = 1;
+				r_strbuf_setf (&op->esil, "1,r%d,-=,$z,ZF,=,r%d,0x80,&,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d);
+				break;
 			case 11:
-				if (d < 16) {
+				if (d < 16) {	//DES
 					op->type = R_ANAL_OP_TYPE_CRYPTO;
 					op->cycles = 1;		//redo this
 					r_strbuf_setf (&op->esil, "%d,des", d);
