@@ -1297,12 +1297,13 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 	eprintf ("syscall %d not implemented yet\n", syscall);
 	return false;
 }
-
+#if 0
 static int esil_x86_cs_intr (RAnalEsil *esil, int intr) {
 	if (!esil) return false;
 	eprintf ("INTERRUPT 0x%02x HAPPENS\n", intr);
 	return true;
 }
+#endif
 
 static int esil_x86_cs_init (RAnalEsil *esil) {
 	if (!esil) return false;
@@ -1675,7 +1676,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
-	.esil_intr = esil_x86_cs_intr,
+//	.esil_intr = esil_x86_cs_intr,
 };
 
 #ifndef CORELIB
