@@ -72,7 +72,7 @@ struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) 
 
 	/* Decode the jmp instruction, this gets the address of the 'main'
 	 * function for PE produced by a compiler whose name someone forgot to
-	 * write down. */ 
+	 * write down. */
 	if (b[367] == 0xe8) {
 		const ut32 jmp_dst = b[368] | (b[369]<<8) | (b[370]<<16) | (b[371]<<24);
 		entry->paddr += 367 + 5 + jmp_dst;
@@ -151,12 +151,17 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	return NULL;
 }
 
-static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, int* nimp, const char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk) {
+static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
+				struct r_bin_pe_import_t** importp, int* nimp,
+				const char* dll_name,
+				PE_DWord OriginalFirstThunk,
+				PE_DWord FirstThunk) {
+
 	char import_name[PE_NAME_LENGTH + 1];
 	char name[PE_NAME_LENGTH + 1];
 	PE_Word import_hint, import_ordinal = 0;
 	PE_DWord import_table = 0, off = 0;
-	int i = 0;
+	int i = 0, len;
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
 	char *symname;
@@ -171,10 +176,11 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 		return 0;
 
 	do {
-		if (import_ordinal >= UT16_MAX)
-			break;
-		else if (r_buf_read_at (bin->b, off + i * sizeof (PE_DWord),
-				(ut8*)&import_table, sizeof (PE_DWord)) == -1) {
+		if (import_ordinal >= UT16_MAX) break;
+		if (off + i * sizeof(PE_DWord) > bin->size) break;
+		len = r_buf_read_at (bin->b, off + i * sizeof (PE_DWord),
+				(ut8*)&import_table, sizeof (PE_DWord));
+		if (len == -1 || len == 0) {
 			eprintf("Error: read (import table)\n");
 			goto error;
 		}
@@ -215,7 +221,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 					// ordinal-1 because we enumerate starting at 0
 					symname = resolveModuleOrdinal (db, symdllname, import_ordinal-1);
 					if (symname) {
-						snprintf (import_name, 
+						snprintf (import_name,
 							PE_NAME_LENGTH,
 							"%s_%s", dll_name, symname);
 					}
@@ -226,13 +232,19 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe
 			} else {
 				import_ordinal++;
 				const ut64 off = bin_pe_vaddr_to_paddr(bin, import_table);
-				if (r_buf_read_at (bin->b, off, (ut8*)&import_hint, sizeof (PE_Word)) == -1) {
+				if (off > bin->size || (off + sizeof (PE_Word)) > bin->size) {
+					eprintf ("Error: off > bin->size\n");
+					goto error;
+				}
+				len = r_buf_read_at (bin->b, off, (ut8*)&import_hint, sizeof (PE_Word));
+				if (len == -1 || len == 0) {
 					eprintf ("Error: read import hint at 0x%08"PFMT64x"\n", off);
 					goto error;
 				}
 				name[0] = '\0';
-				if (r_buf_read_at (bin->b, bin_pe_vaddr_to_paddr(bin, import_table) + sizeof(PE_Word),
-							(ut8*)name, PE_NAME_LENGTH) == -1) {
+				len = r_buf_read_at (bin->b, off + sizeof(PE_Word),
+							(ut8*)name, PE_NAME_LENGTH);
+				if (len == -1 || len == 0) {
 					eprintf ("Error: read (import name)\n");
 					goto error;
 				} else if (!*name) {
@@ -340,7 +352,7 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 					  " (pe_machine)machine numberOfSections timeDateStamp pointerToSymbolTable"
 					  " numberOfSymbols sizeOfOptionalHeader (pe_characteristics)characteristics", 0);
 	sdb_set (bin->kv, "pe_image_data_directory.format", "xx virtualAddress size",0);
-	
+
 	// adding compile time to the SDB
 	 {
 		struct my_timezone {
@@ -702,7 +714,7 @@ static int bin_pe_init_exports(struct PE_(r_bin_pe_obj_t) *bin) {
 			ut16 n_desc;        /* description field */
 #if R_BIN_PE64
 			ut64 n_value;    /* value of symbol (bfd_vma) */
-#else	
+#else
 			ut32 n_value;    /* value of symbol (bfd_vma) */
 #endif
 		};
@@ -1790,7 +1802,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 				}
 				// have a address into name_vaddr?
 				if (name_vaddr) {
-					// get the name of the Export 
+					// get the name of the Export
 					name_paddr = bin_pe_vaddr_to_paddr(bin, name_vaddr);
 					if (-1 == r_buf_read_at(bin->b, name_paddr,(ut8*)function_name, PE_NAME_LENGTH)) {
 						eprintf("Error: read (function name)\n");
@@ -1804,7 +1816,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			}
 			else { // if dont export by name exist, get the ordinal taking in mind the Base value.
 				function_ordinal=i+bin->export_directory->Base;
-				snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", function_ordinal);				                     
+				snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", function_ordinal);
 			}
 			// check if VA are into export directory, this mean a forwarder export
 			if (function_vaddr >= export_dir_vaddr && function_vaddr < (export_dir_vaddr + export_dir_size)) {
