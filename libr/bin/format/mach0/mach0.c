@@ -49,7 +49,7 @@ static int init_hdr(struct MACH0_(obj_t)* bin) {
 	else if (magic == FAT_CIGAM)
 		bin->endian = LIL_ENDIAN;
 	else return false; // object files are magic == 0, but body is different :?
-	len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr, 
+	len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr,
 #if R_BIN_MACH064
 		bin->endian?"8I":"8i", 1
 #else
@@ -188,13 +188,14 @@ static int parse_symtab(struct MACH0_(obj_t)* bin, ut64 off) {
 			return false;
 		if (st.symoff > bin->size || st.symoff + size_sym > bin->size)
 			return false;
-		if (!(bin->symstr = malloc (st.strsize))) {
-			perror ("malloc (symstr)");
+		if (!(bin->symstr = calloc (1, st.strsize + 2))) {
+			perror ("calloc (symstr)");
 			return false;
 		}
 		bin->symstrlen = st.strsize;
-		if (r_buf_read_at (bin->b, st.stroff, (ut8*)bin->symstr,
-				st.strsize) == -1) {
+		len = r_buf_read_at (bin->b, st.stroff, (ut8*)bin->symstr,
+				st.strsize);
+		if (len == -1 || len == 0) {
 			eprintf ("Error: read (symstr)\n");
 			R_FREE (bin->symstr);
 			return false;
@@ -514,7 +515,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 
 		// TODO: a different format for each cmd
 		sdb_num_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.offset", i), off, 0);
-		sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.format", i), 
+		sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.format", i),
 			"xd cmd size", 0);
 
 		//eprintf ("%d\n", lc.cmd);
@@ -724,7 +725,7 @@ struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file) {
 		return NULL;
 	memset (bin, 0, sizeof (struct MACH0_(obj_t)));
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
+	if (!(buf = (ut8*)r_file_slurp(file, &bin->size)))
 		return MACH0_(mach0_free)(bin);
 	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes(bin->b, buf, bin->size)) {
@@ -819,15 +820,14 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 	symbol->addr = 0LL;
 	symbol->name[0] = '\0';
 
-	if (!bin || !bin->sects)
-		return false;
+	if (!bin || !bin->sects) return false;
 	for (i = 0; i < bin->nsects; i++) {
 		if ((bin->sects[i].flags & SECTION_TYPE) == S_SYMBOL_STUBS &&
 				bin->sects[i].reserved2 > 0) {
 			nsyms = (int)(bin->sects[i].size / bin->sects[i].reserved2);
 			if (nsyms > bin->size) {
 				eprintf ("mach0: Invalid symbol table size\n");
-			} else
+			}
 			for (j = 0; j < nsyms; j++) {
 				if (bin->sects)
 					if (bin->sects[i].reserved1 + j >= bin->nindirectsyms)
@@ -842,15 +842,17 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 				symbol->addr = bin->sects[i].addr + j * bin->sects[i].reserved2;
 				symbol->size = 0;
 				stridx = bin->symtab[idx].n_un.n_strx;
-				if (stridx>=0 && stridx<bin->symstrlen)
+				if (stridx >= 0 && stridx < bin->symstrlen) {
 					symstr = (char *)bin->symstr+stridx;
-				else symstr = "???";
+				} else {
+					symstr = "???";
+				}
 
 				// Remove the extra underscore that every import seems to have in Mach-O.
-				if (*symstr == '_')
-					symstr++;
+				if (*symstr == '_') symstr++;
 
-				snprintf (symbol->name, R_BIN_MACH0_STRING_LENGTH, "imp.%s", symstr);
+				snprintf (symbol->name, R_BIN_MACH0_STRING_LENGTH,
+					"imp.%s", symstr);
 				return true;
 			}
 		}
@@ -1238,7 +1240,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		len = r_buf_read_at (bin->b, bin->dyld_info->bind_off, opcodes, bind_size);
 		i = r_buf_read_at (bin->b, bin->dyld_info->lazy_bind_off, opcodes + bind_size, lazy_size);
 		if (len == 0 || len == -1 || i == 0 || i == -1) {
-			eprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n", 
+			eprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n",
 			(ut64)(size_t)bin->dyld_info->bind_off);
 			free (opcodes);
 			relocs[i].last = 1;
@@ -1255,7 +1257,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 #define ULEB() read_uleb128 (&ur,end)
 #define SLEB() read_sleb128 (&ur,end)
 			case BIND_OPCODE_DONE:
-				done = 1;	
+				done = 1;
 				break;
 			case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
 				lib_ord = imm;
@@ -1305,7 +1307,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 						" has unexistent segment %d\n", seg_idx);
 					addr = 0LL;
 				} else {
-					addr = bin->segs[seg_idx].vmaddr + ULEB(); 
+					addr = bin->segs[seg_idx].vmaddr + ULEB();
 					segmentAddress = bin->segs[seg_idx].vmaddr \
 							+ bin->segs[seg_idx].vmsize;
 				}
@@ -1514,7 +1516,7 @@ char* MACH0_(get_cputype)(struct MACH0_(obj_t)* bin) {
 	return strdup ("unknown");
 }
 
-// TODO: use const char* 
+// TODO: use const char*
 char* MACH0_(get_cpusubtype)(struct MACH0_(obj_t)* bin) {
 	if (bin)
 	switch (bin->hdr.cputype) {
