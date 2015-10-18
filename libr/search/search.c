@@ -272,15 +272,15 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 				//eprintf ("nhits = %d\n", s->nhits);
 				return -1;
 			}
-			for (j=0; j<=kw->distance; j++) {
+			for (j=0; j <= kw->distance; j++) {
 				/* TODO: refactor: hit = checkKeyword() */
 				// TODO: assert len(kw) == len(bm)
 				if (kw->binmask_length != 0) {
 					// CHECK THE WHOLE MASKED HEXPAIR HERE
 					if (kw->binmask_length < (len-i)) {
 						if (maskHits (buf+i, len-i, kw)) {
-							i += kw->keyword_length-1;
-							kw->idx[j] = kw->keyword_length-1;
+							i += kw->keyword_length - 1;
+							kw->idx[j] = kw->keyword_length - 1;
 							kw->distance = 0;
 							hit = true;
 						} else {
@@ -299,7 +299,7 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 					if (ch != ch2) {
 						if (s->inverse) {
 							if (!r_search_hit_new (s, kw, (ut64)
-										from+i-kw->keyword_length+1))
+									from + i - kw->keyword_length + 1))
 								return -1;
 							kw->idx[j] = 0;
 							//kw->idx[0] = 0;
@@ -314,7 +314,7 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 							kw->distance++;
 							hit = true;
 						} else {
-							kw->idx[0] = 0;
+						//	kw->idx[0] = 0;
 							kw->distance = 0;
 							hit = false;
 						}
