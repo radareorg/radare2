@@ -820,7 +820,15 @@ R_API int r_space_unset (RSpaces *f, const char *fs);
 R_API int r_space_list(RSpaces *f, int mode);
 R_API int r_space_rename (RSpaces *f, const char *oname, const char *nname);
 
-R_API void r_des_round(uint8_t* r[static 16],bool encrypt);
+R_API ut64 r_des_pc2 (ut64 k);
+R_API ut64 r_des_pc1 (ut64 k);
+R_API ut64 r_des_get_roundkey (ut64 key, int round, int enc);
+R_API ut64 r_des_round (ut64 plaintext, ut64 roundkey);
+R_API ut64 r_des_f (ut32 half, ut64 round_key);
+R_API ut32 r_des_sbox (ut8 in, const ut32* box);
+R_API ut64 r_des_ip (ut64 state, int inv);
+R_API ut64 r_des_expansion (ut32 half);
+R_API ut32 r_des_p (ut32 half);
 
 /* Some "secured" functions, to do basic operation (mul, sub, add...) on integers */
 static inline int UT64_ADD(ut64 *r, ut64 a, ut64 b) {
