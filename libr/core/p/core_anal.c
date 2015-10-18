@@ -327,6 +327,8 @@ static int r_cmd_anal_call(void *user, const char *input) {
 			break;
 		default:
 			eprintf ("Usage: a2f\n");
+			eprintf ("a2f is the new (experimental) analysis engine\n");
+			eprintf ("Use with caution.\n");
 			break;
 		}
 		return true;
