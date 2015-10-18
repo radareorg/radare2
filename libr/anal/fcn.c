@@ -5,7 +5,8 @@
 #include <r_list.h>
 
 
-#define FCN_DEPTH 16
+// XXX must be configurable by the user
+#define FCN_DEPTH 512
 
 #define JMP_IS_EOB 1
 #define JMP_IS_EOB_RANGE 32

@@ -1837,7 +1837,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'f':
+	case 'f': // "aef"
 		{
 			RListIter *iter;
 			RAnalBlock *bb;

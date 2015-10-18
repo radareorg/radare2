@@ -234,6 +234,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	ut64 *next = NULL;
 	ut8 *buf;
 
+
 	fcn = r_anal_fcn_new ();
 	if (!fcn) {
 		eprintf ("Error: new (fcn)\n");
@@ -951,7 +952,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 		return true;
 	}
-
 	return core_anal_fcn (core, at, from, reftype, depth);
 }
 
@@ -1146,6 +1146,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				r_cons_printf ("%s{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 						count>1? ",":"", fcn->addr, fcn->name, fcn->size);
 				r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
+				r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
 				r_cons_printf (",\"calltype\":\"%s\"", r_anal_cc_type2str (fcn->call));
 				r_cons_printf (",\"type\":\"%s\"",
 						fcn->type==R_ANAL_FCN_TYPE_SYM?"sym":
@@ -1235,6 +1236,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 							fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
 							fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 
+				r_cons_printf ("\n num-bbs: %d", r_list_length (fcn->bbs));
 				r_cons_printf ("\n call-refs: ");
 				r_list_foreach (fcn->refs, iter2, refi)
 					if (refi->type == R_ANAL_REF_TYPE_CODE ||
