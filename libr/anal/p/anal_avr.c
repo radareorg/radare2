@@ -7,6 +7,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 
 #include <string.h>
 #include <r_types.h>
+#include <r_util.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
@@ -309,7 +310,10 @@ static int avr_custom_des (RAnalEsil *esil) {
 	enc = (int)key;
 	r_anal_esil_reg_read (esil, "deskey", &key, NULL);
 	r_anal_esil_reg_read (esil, "text", &text, NULL);
-	eprintf ("des - key: 0x%"PFMT64x" - text: 0x%"PFMT64x" - round: %d - %s\n", key, text, r, enc ? "decrypt" : "encrypt");
+//	eprintf ("des - key: 0x%"PFMT64x" - text: 0x%"PFMT64x" - round: %d - %s\n", key, text, r, enc ? "decrypt" : "encrypt");
+	key = r_des_get_roundkey (key, r, enc);
+	text = r_des_round (text, key);
+	r_anal_esil_reg_write (esil, "text", text);
 	return true;
 }
 
