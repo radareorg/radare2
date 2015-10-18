@@ -516,23 +516,30 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 	return true;
 }
 
-static int setFunctionName(RCore *core, ut64 off, const char *name) {
-	char *oname;
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off,
+static bool setFunctionName(RCore *core, ut64 off, const char *name) {
+	char *oname, *nname = NULL;
+	RAnalFunction *fcn;
+	if (!core || !name)
+		return false;
+	fcn = r_anal_get_fcn_in (core->anal, off,
 		R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_LOC);
-	if (!fcn)
-		return 0;
-	//r_cons_printf ("fr %s %s@ 0x%"PFMT64x"\n",
-	//	 fcn->name, name, off);
-	r_core_cmdf (core, "fr %s %s@ 0x%"PFMT64x,
-		fcn->name, name, off);
+	if (!fcn) return false;
+	if (!strchr (name, '.')) {
+		nname = r_str_newf ("fcn.%s", name);
+	} else {
+		nname = strdup (name);
+	}
 	oname = fcn->name;
-	fcn->name = strdup (name);
+	r_core_cmdf (core, "fr %s %s@ 0x%"PFMT64x,
+		fcn->name, nname, off);
+	fcn->name = strdup (nname);
 	if (core->anal->cb.on_fcn_rename) {
-		core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, oname);
+		core->anal->cb.on_fcn_rename (core->anal,
+			core->anal->user, fcn, nname);
 	}
 	free (oname);
-	return 1;
+	free (nname);
+	return true;
 }
 
 static int cmd_anal_fcn(RCore *core, const char *input) {
