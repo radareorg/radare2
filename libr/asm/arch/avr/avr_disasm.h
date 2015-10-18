@@ -27,7 +27,7 @@
 #define AVR_DISASM_H
 
 #include <stdint.h>
-int avrdis (char *out, unsigned long long addr, const unsigned char *buf, int len);
+static int avrdis (char *out, unsigned long long addr, const unsigned char *buf, int len);
 
 /* Total number of assembly instructions, Maximum number of operands */
 #define AVR_TOTAL_INSTRUCTIONS	145
@@ -92,7 +92,7 @@ struct _disassembledInstruction {
 typedef struct _disassembledInstruction disassembledInstruction;
 
 /* Disassembles an assembled instruction, including its operands. */
-int disassembleInstruction(disassembledInstruction *dInstruction, const assembledInstruction aInstruction);
+static int disassembleInstruction(disassembledInstruction *dInstruction, const assembledInstruction aInstruction);
 
 #endif
 

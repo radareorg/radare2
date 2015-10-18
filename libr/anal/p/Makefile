@@ -23,6 +23,7 @@ mrproper: clean
 
 .PHONY: all clean mrproper
 else
-all:
-.PHONY: all
+all clean mrproper:
+
+.PHONY: all clean mrproper
 endif

@@ -23,8 +23,6 @@
  *
  */
 
-#include "avr_disasm.h"
-
 /* Sorted by number of operands so disassembler can find the most
  * simplifed form of an instruction first.
  * i.e. clr R16 instead of eor R16, R16 */
@@ -44,7 +42,7 @@
  * for a different operand type, because they are clearly written out 
  * in the instruction set data structure.
  */ 
-instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS] = {
+static instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS] = {
 	{"break", 0x9598, 0, {0x0000, 0x0000}, {OPERAND_NONE, OPERAND_NONE}},
 	{"clc", 0x9488, 0, {0x0000, 0x0000}, {OPERAND_NONE, OPERAND_NONE}},
 	{"clh", 0x94d8, 0, {0x0000, 0x0000}, {OPERAND_NONE, OPERAND_NONE}},
