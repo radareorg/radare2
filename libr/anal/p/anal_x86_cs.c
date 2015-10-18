@@ -482,6 +482,7 @@ SETL/SETNGE
 		case X86_INS_CMOVO:
 		case X86_INS_CMOVP:
 		case X86_INS_CMOVS:
+			op->family = R_ANAL_OP_FAMILY_CPU;
 			op->type = R_ANAL_OP_TYPE_CMOV;
 			break;
 		// mov

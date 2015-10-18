@@ -1507,6 +1507,7 @@ static void handle_instruction_mov_lea (RCore *core, RDisasmState *ds, int idx) 
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_LENGTH:
 	case R_ANAL_OP_TYPE_CAST:
+	case R_ANAL_OP_TYPE_CMOV:
 	case R_ANAL_OP_TYPE_MOV:
 		src = ds->analop.src[0];
 		if (src && src->memref>0 && src->reg) {

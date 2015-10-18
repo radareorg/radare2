@@ -1095,6 +1095,7 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_CAST:
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_CMOV: // TODO: add cmov cathegory?
 		return p->cons->pal.mov;
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH:
