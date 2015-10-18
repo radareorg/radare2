@@ -6,7 +6,6 @@
 R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 
 	if (len < 0)  return 0;
-	if (len == 0) return r_hash_size (algobit);
 	if (algobit & R_HASH_MD4) {
 		r_hash_do_md4 (ctx, buf, len);
 		return R_HASH_SIZE_MD4;
