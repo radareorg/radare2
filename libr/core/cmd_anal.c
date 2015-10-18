@@ -516,6 +516,14 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 	return true;
 }
 
+static bool fcnNeedsPrefix (const char *name) {
+	if (!strncmp (name, "entry", 5))
+		return false;
+	if (!strncmp (name, "main", 4))
+		return false;
+	return (!strchr (name, '.'));
+}
+
 static bool setFunctionName(RCore *core, ut64 off, const char *name) {
 	char *oname, *nname = NULL;
 	RAnalFunction *fcn;
@@ -524,7 +532,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *name) {
 	fcn = r_anal_get_fcn_in (core->anal, off,
 		R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_LOC);
 	if (!fcn) return false;
-	if (!strchr (name, '.')) {
+	if (fcnNeedsPrefix (name)) {
 		nname = r_str_newf ("fcn.%s", name);
 	} else {
 		nname = strdup (name);
