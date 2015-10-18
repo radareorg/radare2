@@ -165,7 +165,7 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 	if (outpath)
 		snprintf (outpath, outpath_sz, "%s.fat", ptr);
 
-	if (!outpath || !r_sys_rmkdir (outpath)) {
+	if (!outpath || !r_sys_mkdirp (outpath)) {
 		free (path);
 		free (outpath);
 		eprintf ("Error creating dir structure\n");

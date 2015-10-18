@@ -507,7 +507,7 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	return NULL;
 }
 
-R_API int r_sys_rmkdir(const char *dir) {
+R_API int r_sys_mkdirp(const char *dir) {
 	int ret = R_TRUE;
 	char slash = R_SYS_DIR[0];
 	char *path = strdup (dir), *ptr = path;
@@ -531,7 +531,7 @@ R_API int r_sys_rmkdir(const char *dir) {
 		if (!*ptr) break;
 		*ptr = 0;
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
-			eprintf ("r_sys_rmkdir: fail '%s' of '%s'\n", path, dir);
+			eprintf ("r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
 			free (path);
 			return R_FALSE;
 		}

@@ -622,7 +622,7 @@ R_API void r_sys_perror(const char *fun);
 #define r_sys_mkdir(x) (mkdir(x,0755)!=-1)
 #define r_sys_mkdir_failed() (errno != EEXIST)
 #endif
-R_API int r_sys_rmkdir(const char *dir);
+R_API int r_sys_mkdirp(const char *dir);
 R_API int r_sys_sleep(int secs);
 R_API int r_sys_usleep(int usecs);
 R_API char *r_sys_getenv(const char *key);
