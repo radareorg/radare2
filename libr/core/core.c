@@ -18,6 +18,26 @@ static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS
 };
 
+#define TMP_ARGV_SZ 512
+static const char *tmp_argv[TMP_ARGV_SZ];
+static bool tmp_argv_heap = false;
+
+static void r_core_free_autocomplete(RCore *core) {
+	int i;
+	RLine *line = core->cons->line;
+	if (tmp_argv_heap) {
+		int argc = line->completion.argc;
+		for (i = 0; i < argc; i++) {
+			free ((char*)tmp_argv[i]);
+			tmp_argv[i] = NULL;
+		}
+		tmp_argv_heap = false;
+	}
+	line->completion.argc = 0;
+	line->completion.argv = tmp_argv;
+}
+
+
 static int on_fcn_new(void *_anal, void* _user, RAnalFunction *fcn) {
 	RCore *core = (RCore*)_user;
 	const char *cmd = r_config_get (core->config, "cmd.fcn.new");
@@ -382,22 +402,19 @@ static const char *radare_argv[] = {
 	"y", "yy", "y?",
 	"wx", "ww", "w?",
 	"p6d", "p6e", "p8", "pb", "pc",
-	"pd", "pda", "pdj", "pdb", "pdr", "pdf", "pdi", "pdl",
-	"pD", "px", "pX", "po",
+	"pd", "pda", "pdb", "pdc", "pdj", "pdr", "pdf", "pdi", "pdl", "pds", "pdt",
+	"pD", "px", "pX", "po", "pf",
 	"pm", "pr", "pt", "ptd", "ptn", "pt?", "ps", "pz", "pu", "pU", "p?",
 	NULL
 };
 
-#define TMP_ARGV_SZ 256
-static const char *tmp_argv[TMP_ARGV_SZ];
 static int autocomplete(RLine *line) {
 	int pfree = 0;
 	RCore *core = line->user;
 	RListIter *iter;
 	RFlagItem *flag;
-	line->completion.argc = 0;
-	line->completion.argv = tmp_argv;
 	if (core) {
+		r_core_free_autocomplete (core);
 		char *ptr = strchr (line->buffer.data, '@');
 		if (ptr && line->buffer.data+line->buffer.index >= ptr) {
 			int sdelta, n, i = 0;
@@ -405,14 +422,30 @@ static int autocomplete(RLine *line) {
 			n = strlen (ptr);//(line->buffer.data+sdelta);
 			sdelta = (int)(size_t)(ptr - line->buffer.data);
 			r_list_foreach (core->flags->flags, iter, flag) {
-				if (!memcmp (flag->name, line->buffer.data+sdelta, n)) {
+				if (!strncmp (flag->name, line->buffer.data+sdelta, n)) {
 					tmp_argv[i++] = flag->name;
-					if (i==TMP_ARGV_SZ-1)
+					if (i == TMP_ARGV_SZ-1)
 						break;
 				}
 			}
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		} else
+		if ((!strncmp (line->buffer.data, "pf", 2))) {
+			RStrHT *sht = core->print->formats;
+			int *i, j = 0;
+			tmp_argv_heap = true;
+			r_list_foreach (sht->ls, iter, i) {
+				int idx = ((int)(size_t)i)-1;
+				const char *key = r_strpool_get (sht->sp, idx);
+				int len = strlen (line->buffer.data + 3);
+				if (!len || !strncmp (line->buffer.data + 3, key, len)) {
+					tmp_argv[j++] = r_str_newf ("pf.%s", key);
+				}
+			}
+			tmp_argv[j] = NULL;
+			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
 		} else
 		if ((!strncmp (line->buffer.data, "o ", 2)) ||
@@ -536,7 +569,7 @@ static int autocomplete(RLine *line) {
 				str += 2;
 				r_list_foreach (core->rcmd->macro.macros, iter, item) {
 					char *p = item->name;
-					if (!str || !*str || !memcmp (str, p, n)) {
+					if (!str || !*str || !strncmp (str, p, n)) {
 						snprintf (buf, sizeof (buf), "%c%c%s)",
 							line->buffer.data[0],
 							line->buffer.data[1],
@@ -585,7 +618,7 @@ static int autocomplete(RLine *line) {
 				(line->buffer.data[2]==' ')?3:4;
 			n = strlen (line->buffer.data+sdelta);
 			r_list_foreach (core->flags->flags, iter, flag) {
-				if (!memcmp (flag->name, line->buffer.data+sdelta, n)) {
+				if (!strncmp (flag->name, line->buffer.data+sdelta, n)) {
 					tmp_argv[i++] = flag->name;
 					if (i==TMP_ARGV_SZ)
 						break;
@@ -595,7 +628,7 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else
-		if (!memcmp (line->buffer.data, "-", 1)) {
+		if (!strncmp (line->buffer.data, "-", 1)) {
 			int count;
 			char **keys = r_cmd_alias_keys(core->rcmd, &count);
 			char *data = line->buffer.data;
@@ -641,9 +674,9 @@ static int autocomplete(RLine *line) {
 			line->completion.argv = tmp_argv;
 		}
 	} else {
-		int i,j;
+		int i, j;
 		for (i=j=0; i<CMDS && radare_argv[i]; i++)
-			if (!memcmp (radare_argv[i], line->buffer.data,
+			if (!strncmp (radare_argv[i], line->buffer.data,
 					line->buffer.index))
 				tmp_argv[j++] = radare_argv[i];
 		tmp_argv[j] = NULL;
@@ -1114,6 +1147,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	/* TODO: it leaks as shit */
 	//update_sdb (c);
 	// avoid double free
+	r_core_free_autocomplete(c);
 	R_FREE (c->lastsearch);
 	c->cons->pager = NULL;
 	r_core_task_join (c, NULL);
@@ -1155,8 +1189,10 @@ R_API RCore *r_core_fini(RCore *c) {
 }
 
 R_API RCore *r_core_free(RCore *c) {
-	if (c) r_core_fini (c);
-	free (c);
+	if (c) {
+		r_core_fini (c);
+		free (c);
+	}
 	return NULL;
 }
 

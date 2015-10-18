@@ -2053,7 +2053,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (log) r_line_hist_add (cstr);
 
 //eprintf ("DEPTH %d (%s)\n", core->cmd_depth, cstr);
-	if (core->cmd_depth<1) {
+	if (core->cmd_depth < 1) {
 		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
 		free (ocmd);
 		free (core->oobi);
