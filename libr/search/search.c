@@ -309,14 +309,18 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 							s->nhits++;
 							return 1; // only return 1 keyword if inverse mode
 						}
-						if (kw->distance<s->distance) {
+						if (kw->distance < s->distance) {
 							kw->idx[kw->distance+1] = kw->idx[kw->distance];
 							kw->distance++;
 							hit = true;
 						} else {
-						//	kw->idx[0] = 0;
+							kw->idx[j] = 0;
 							kw->distance = 0;
 							hit = false;
+							ch = kw->bin_keyword[kw->idx[j]];
+							if (ch == ch2) {
+								hit = true;
+							}
 						}
 					} else {
 						hit = true;
@@ -330,8 +334,9 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 							continue;
 						}
 						if (!r_search_hit_new (s, kw, (ut64)
-								from+i-kw->keyword_length+1))
+								from+i-kw->keyword_length+1)) {
 							return -1;
+						}
 						kw->idx[j] = 0;
 						kw->distance = 0;
 						kw->count++;
