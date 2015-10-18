@@ -1308,6 +1308,90 @@ static void restore_original_edges (const RAGraph *g) {
 	}
 }
 
+static void create_edge_from_dummies (const RAGraph *g, RANode *an, RList *toremove) {
+	RGraphNode *n = an->gnode;
+	RGraphNode *from = r_list_get_n (r_graph_innodes (g->graph, n), 0);
+	RANode *a_from = get_anode (from);
+	RListIter *(*add_to_list)(RList *, void *) = NULL;
+	AEdge *e = R_NEW0 (AEdge);
+
+	e->x = r_list_new ();
+	e->y = r_list_new ();
+	e->is_reversed = an->is_reversed;
+	if (e->is_reversed) {
+		e->to = a_from;
+		add_to_list = r_list_prepend;
+		add_to_list (e->x, (void *)(size_t)an->x);
+		add_to_list (e->y, (void *)(size_t)a_from->y);
+	} else {
+		e->from = a_from;
+		add_to_list = r_list_append;
+	}
+
+	while (an->is_dummy) {
+		add_to_list (toremove, n);
+
+		add_to_list (e->x, (void *)(size_t)an->x);
+		add_to_list (e->y, (void *)(size_t)an->y);
+
+		add_to_list (e->x, (void *)(size_t)an->x);
+		add_to_list (e->y, (void *)(size_t)
+				(an->y + g->layers[an->layer].height));
+
+		n = r_graph_nth_neighbour (g->graph, n, 0);
+		an = get_anode (n);
+	}
+
+	if (e->is_reversed) {
+		e->from = an;
+	} else {
+		e->to = an;
+	}
+	r_list_append (g->edges, e);
+}
+
+static void analyze_back_edges (const RAGraph *g, RANode *an) {
+	const RList *neigh = r_graph_get_neighbours (g->graph, an->gnode);
+	RListIter *itk;
+	RGraphNode *gk;
+	RANode *ak;
+	int j = 0, i = -1;
+
+	/* traverse all neighbours and analyze only the ones that create back
+	 * edges. */
+	graph_foreach_anode (neigh, itk, gk, ak) {
+		RGraphNode *fn, *ln;
+		RANode *first, *last;
+		const RList *tp;
+		AEdge *e;
+
+		i++;
+		if (ak->layer > an->layer) continue;
+		e = R_NEW0 (AEdge);
+		e->is_reversed = true;
+		e->from = an;
+		e->to = ak;
+		e->x = r_list_new ();
+		e->y = r_list_new ();
+
+		tp = r_graph_get_neighbours (g->graph, ak->gnode);
+		fn = r_list_get_bottom (tp);
+		ln = r_list_get_top (tp);
+		first = get_anode (fn);
+		last = get_anode (ln);
+
+		if (first == an) {
+			r_list_append (e->x, (void *)(size_t)(an->x - 2 - j));
+			r_list_append (e->y, (void *)(size_t)ak->y);
+		} else {
+			r_list_append (e->x, (void *)(size_t)(last->x + last->w + 2 + j));
+			r_list_append (e->y, (void *)(size_t)ak->y);
+		}
+		r_list_append (g->edges, e);
+		j++;
+	}
+}
+
 static void remove_dummy_nodes (const RAGraph *g) {
 	RGraphNode *gn;
 	const RListIter *it;
@@ -1315,50 +1399,16 @@ static void remove_dummy_nodes (const RAGraph *g) {
 	int i, j;
 
 	/* traverse all dummy nodes to keep track
-	 * of the path long edges should go by */
+	 * of the path long edges should go by.  */
 	for (i = 0; i < g->n_layers; ++i) {
 		for (j = 0; j < g->layers[i].n_nodes; ++j) {
 			RGraphNode *n = g->layers[i].nodes[j];
 			RANode *an = get_anode (n);
-			if (!an->is_dummy || r_list_contains (toremove, n)) continue;
-
-			RGraphNode *from = r_list_get_n (r_graph_innodes (g->graph, n), 0);
-			RANode *a_from = get_anode (from);
-			RListIter *(*add_to_list)(RList *, void *) = NULL;
-			AEdge *e = R_NEW0 (AEdge);
-
-			e->x = r_list_new ();
-			e->y = r_list_new ();
-			e->is_reversed = an->is_reversed;
-			if (e->is_reversed) {
-				e->to = a_from;
-				add_to_list = r_list_prepend;
-				add_to_list (e->x, (void *)(size_t)an->x);
-				add_to_list (e->y, (void *)(size_t)a_from->y);
-			} else {
-				e->from = a_from;
-				add_to_list = r_list_append;
+			if (an->is_dummy && !r_list_contains (toremove, n)) {
+				create_edge_from_dummies (g, an, toremove);
+			} else if (!an->is_dummy) {
+				analyze_back_edges (g, an);
 			}
-
-			while (an->is_dummy) {
-				add_to_list (toremove, n);
-
-				add_to_list (e->x, (void *)(size_t)an->x);
-				add_to_list (e->y, (void *)(size_t)an->y);
-
-				add_to_list (e->x, (void *)(size_t)an->x);
-				add_to_list (e->y, (void *)(size_t)
-						(an->y + g->layers[an->layer].height));
-
-				n = r_graph_nth_neighbour (g->graph, n, 0);
-				an = get_anode (n);
-			}
-
-			if (e->is_reversed)
-				e->from = an;
-			else
-				e->to = an;
-			r_list_append (g->edges, e);
 		}
 	}
 
@@ -1876,10 +1926,6 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	if (is_first && nth == 0 && x2 > x) {
 		xinc += 4;
 		x += 4;
-	}
-	if (a == b) {
-		x2 = a->x;
-		y2 = y - 3;
 	}
 	r_cons_canvas_line (g->can, x, y, x2, y2, &style);
 }
