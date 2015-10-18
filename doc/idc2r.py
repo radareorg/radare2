@@ -248,7 +248,7 @@ def generate_r2():
 		if l.name != "unknown" :
 			for f in functions :
 				if (l.address > f.address) and (l.address < (f.address + f.size)) :
-					print("f .{0}={1}".format(l.name, hex(l.address)))
+					print("f. {0} @ {1}".format(l.name, hex(l.address)))
 
 	for c in comments :
 		if c.text != "" :
