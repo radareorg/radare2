@@ -65,7 +65,7 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 	case 0:
 		if (!quiet)
 			printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %s: ",
-				from, to, hname);
+				from, to-1, hname);
 		do_hash_hexprint (c, dlen, ule, rad);
 		break;
 	case 1:
