@@ -196,14 +196,26 @@ R_API void r_core_syscmd_cat(const char *file) {
 }
 
 R_API void r_core_syscmd_mkdir(const char *dir) {
+	bool show_help = true;
 	const char *p = strchr (dir, ' ');
 	if (p) {
-		char *dirname = strdup (p+1);
-		dirname = r_str_chop (dirname);
-		if (!r_sys_mkdir (dirname)) {
+		int ret;
+		char *dirname;
+		if (!strncmp (p+1, "-p ", 3)) {
+			dirname = r_str_chop (strdup (p+3));
+			ret = r_sys_mkdirp (dirname);
+		} else {
+			dirname = r_str_chop (strdup (p+1));
+			ret = r_sys_mkdir (dirname);
+		}
+		if (!ret) {
 			if (r_sys_mkdir_failed ())
 				eprintf ("Cannot create \"%s\"\n", dirname);
 		}
 		free (dirname);
-	} else eprintf ("Usage: mkdir [directory]\n");
+		show_help = false;
+	}
+	if (show_help) {
+		eprintf ("Usage: mkdir [-p] [directory]\n");
+	}
 }
