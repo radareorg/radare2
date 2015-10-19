@@ -474,7 +474,6 @@ R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char
 R_API void r_bin_list_archs(RBin *bin, int mode);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
-R_API ut64 r_bin_get_offset (RBin *bin);
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 paddr, ut64 vaddr);
 R_API ut64 r_bin_a2b (RBin *bin, ut64 addr);
 R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd);
