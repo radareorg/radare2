@@ -8,7 +8,7 @@ static int cmd_section(void *data, const char *input) {
 		"S.","","show current section name",
 		"S*","","list sections (in radare commands)",
 		"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
-		"Sa","[-] [arch] [bits] [[off]]","Specify arch and bits for given section",
+		"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
 		"Sd"," [file]","dump current section to a file (see dmd)",
 		"Sl"," [file]","load contents of file into current section (see dml)",
 		"Sj","","list sections in JSON (alias for iSj)",
