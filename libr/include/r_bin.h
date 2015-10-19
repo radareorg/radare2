@@ -424,6 +424,7 @@ R_API char *r_bin_demangle_cxx(const char *str);
 R_API char *r_bin_demangle_msvc(const char *str);
 R_API char *r_bin_demangle_swift(const char *s);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
+R_API int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym);
 R_API int r_bin_lang_objc(RBinFile *binfile);
 R_API int r_bin_lang_swift(RBinFile *binfile);
 R_API int r_bin_lang_cxx(RBinFile *binfile);

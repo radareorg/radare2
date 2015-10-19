@@ -99,9 +99,7 @@ static RGraphNode *get_graphtrace_node (RGraph *g, Sdb *nodes, struct trace_node
 static void dot_trace_create_node (RTreeNode *n, RTreeVisitor *vis) {
 	struct dot_trace_ght *data = (struct dot_trace_ght *)vis->data;
 	struct trace_node *tn = n->data;
-
-	if (tn)
-		get_graphtrace_node (data->graph, data->graphnodes, tn);
+	if (tn) get_graphtrace_node (data->graph, data->graphnodes, tn);
 }
 
 static void dot_trace_discover_child (RTreeNode *n, RTreeVisitor *vis) {
@@ -1932,18 +1930,21 @@ static RTreeNode *add_trace_tree_child (Sdb *db, RTree *t, RTreeNode *cur, ut64 
 	return node;
 }
 
+static RCore *_core = NULL;
+
 static void trace_traverse_pre (RTreeNode *n, RTreeVisitor *vis) {
+	const char *name = "";
 	struct trace_node *tn = n->data;
 	unsigned int i;
-
-	if (!tn)
-		return;
-
+	if (!tn) return;
 	for (i = 0; i < n->depth - 1; ++i)
-		r_cons_printf ("   ");
-
-	r_cons_printf (" 0x%08"PFMT64x" refs %d\n",
-			tn->addr, tn->refs);
+		r_cons_printf ("  ");
+	if (_core) {
+		RFlagItem *f = r_flag_get_at (_core->flags, tn->addr);
+		if (f) name = f->name;
+	}
+	r_cons_printf (" 0x%08"PFMT64x" refs %d %s\n",
+			tn->addr, tn->refs, name);
 }
 
 static void trace_traverse (RTree *t) {
@@ -2097,7 +2098,7 @@ static void debug_trace_calls (RCore *core, const char *input) {
 	do_debug_trace_calls (core, from, to, final_addr);
 	if (bp_final)
 		r_bp_del (core->dbg->bp, final_addr);
-
+	_core = core;
 	trace_traverse (core->dbg->tree);
 	core->dbg->trace->enabled = t;
 	r_cons_break_end();

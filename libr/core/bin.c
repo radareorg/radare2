@@ -1124,22 +1124,20 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			char *name = strdup (symbol->name);
 			if (bin_demangle) {
 				const char *symname = name;
-				char *dname;
-				if (!strncmp (symname, "imp.", 4))
-					symname += 4;
-				dname = r_bin_demangle (r->bin->cur, lang, symname);
+				char *dname = r_bin_demangle (r->bin->cur, lang, symname);
 				if (dname) {
 					free (name);
 					name = dname;
 				}
 			}
-			r_name_filter (name, 80);
+			//r_name_filter (name, 80);
 			r_cons_printf ("0x%08"PFMT64x" %d %s\n",
 				addr, (int)symbol->size, name);
 			free (name);
 		} else if (IS_MODE_RAD (mode)) {
 			RBinFile *binfile;
 			RBinPlugin *plugin;
+			char *name;
 
 			if (!strcmp (symbol->type, "NOTYPE")) {
 				continue;
@@ -1149,11 +1147,15 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				if (mn) {
 					r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n",
 							symbol->paddr, mn);
-					free (mn);
+					name = mn;
+				} else {
+					name = strdup (symbol->name);
 				}
+			} else {
+				name = strdup (symbol->name);
 			}
-			r_name_filter (symbol->name, sizeof (symbol->name));
-			if (!strncmp (symbol->name, "imp.", 4)) {
+			r_name_filter (name, -1);
+			if (!strncmp (name, "imp.", 4)) {
 				if (lastfs != 'i')
 					r_cons_printf ("fs imports\n");
 				lastfs = 'i';
@@ -1168,7 +1170,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				lastfs = 's';
 			}
 			r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
-					symbol->name, symbol->size, addr);
+					name, symbol->size, addr);
 			binfile = r_core_bin_cur (r);
 			plugin = r_bin_file_cur_plugin (binfile);
 			if (plugin && plugin->name) {

@@ -2140,10 +2140,12 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 R_API int r_core_cmd_command(RCore *core, const char *command) {
 	int ret, len;
 	char *buf, *rcmd, *ptr;
-	rcmd = ptr = buf = r_sys_cmd_str (command, 0, &len);
+	char *cmd = r_core_sysenv_begin (core, command);
+	rcmd = ptr = buf = r_sys_cmd_str (cmd, 0, &len);
 	if (buf == NULL)
 		return -1;
 	ret = r_core_cmd (core, rcmd, 0);
+	r_core_sysenv_end (core, command);
 	free (buf);
 	return ret;
 }

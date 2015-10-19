@@ -174,6 +174,8 @@ R_API void r_core_sysenv_help(const RCore* core) {
 	"=!=", "", "disable remotecmd mode",
 	"\nEnvironment:", "", "",
 	"FILE", "", "file name",
+	"RABIN2_LANG", "", "assume this lang to demangle",
+	"RABIN2_DEMANGLE", "", "demangle or not",
 	"SIZE", "","file size",
 	"OFFSET", "", "10base offset 64bit value",
 	"XOFFSET", "", "same as above, but in 16 base",
@@ -225,7 +227,8 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	r_sys_setenv ("PDB_SERVER", r_config_get (core->config, "pdb.server"));
 	if (core->file && core->file->desc && core->file->desc->name) {
 		r_sys_setenv ("FILE", core->file->desc->name);
-		snprintf (buf, sizeof (buf), "%"PFMT64d, r_io_desc_size (core->io, core->file->desc));
+		snprintf (buf, sizeof (buf), "%"PFMT64d, r_io_desc_size
+			(core->io, core->file->desc));
 		r_sys_setenv ("SIZE", buf);
 		if (strstr (cmd, "BLOCK")) {
 			// replace BLOCK in RET string
@@ -236,6 +239,8 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 			}
 		}
 	}
+	r_sys_setenv ("RABIN2_LANG", r_config_get (core->config, "bin.lang"));
+	r_sys_setenv ("RABIN2_DEMANGLE", r_config_get (core->config, "bin.demangle"));
 	snprintf (buf, sizeof (buf), "%"PFMT64d, core->offset);
 	r_sys_setenv ("OFFSET", buf);
 	snprintf (buf, sizeof (buf), "0x%08"PFMT64x, core->offset);

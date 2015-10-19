@@ -104,17 +104,15 @@ R_API char *r_bin_demangle_java(const char *str) {
 	return ret;
 }
 
-R_API char *r_bin_demangle_msvc(const char *str)
-{
+R_API char *r_bin_demangle_msvc(const char *str) {
 	char *out = NULL;
 	SDemangler *mangler = 0;
 
-	create_demangler(&mangler);
-	if (init_demangler(mangler, (char *)str) == eDemanglerErrOK) {
+	create_demangler (&mangler);
+	if (init_demangler (mangler, (char *)str) == eDemanglerErrOK) {
 		mangler->demangle(mangler, &out/*demangled_name*/);
 	}
-	free_demangler(mangler);
-
+	free_demangler (mangler);
 	return out;
 }
 
@@ -317,30 +315,44 @@ R_API int r_bin_lang_rust(RBinFile *binfile) {
 	return haslang;
 }
 
-R_API int r_bin_lang_type(RBinFile *binfile, const char *def) {
+R_API int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	int type = 0;
 	RBinPlugin *plugin;
+	if (sym && sym[0] == sym[1] && sym[0] == '_') {
+		type = R_BIN_NM_CXX;
+	}
 	if (def && *def) {
 		type = r_bin_demangle_type (def);
 		if (type != R_BIN_NM_NONE)
 			return type;
 	}
 	plugin = r_bin_file_cur_plugin (binfile);
-	if (plugin && plugin->demangle_type)
+	if (plugin && plugin->demangle_type) {
 		type = plugin->demangle_type (def);
-	else {
+	} else {
 		if (binfile->o && binfile->o->info) {
 			type = r_bin_demangle_type (binfile->o->info->lang);
 		}
 	}
-	if (type == R_BIN_NM_NONE)
+	if (type == R_BIN_NM_NONE) {
 		type = r_bin_demangle_type (def);
+	}
 	return type;
 }
 
 R_API char *r_bin_demangle (RBinFile *binfile, const char *def, const char *str) {
+	int type = -1;
 	RBin *bin = binfile->rbin;
-	int type = r_bin_lang_type (binfile, def);
+	if (!strncmp (str, "imp.", 4)) {
+		str += 4;
+	}
+	if (!strncmp (str, "__", 2)) {
+		type = R_BIN_NM_CXX;
+		str++;
+	}
+	if (type == -1) {
+		type = r_bin_lang_type (binfile, def, str);
+	}
 	switch (type) {
 	case R_BIN_NM_JAVA: return r_bin_demangle_java (str);
 	/* rust uses the same mangling as c++ and appends a uniqueid */

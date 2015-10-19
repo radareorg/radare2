@@ -572,18 +572,18 @@ R_API void r_sys_perror(const char *fun) {
 }
 
 R_API int r_sys_arch_id(const char *arch) {
-    int i;
-    for (i=0; arch_bit_array[i].name; i++)
-        if (!strcmp (arch, arch_bit_array[i].name))
-            return arch_bit_array[i].bit;
-    return 0;
+	int i;
+	for (i=0; arch_bit_array[i].name; i++)
+		if (!strcmp (arch, arch_bit_array[i].name))
+			return arch_bit_array[i].bit;
+	return 0;
 }
 
 R_API const char *r_sys_arch_str(int arch) {
-    int i;
-    for (i=0; arch_bit_array[i].name; i++)
-        if (arch & arch_bit_array[i].bit)
-            return arch_bit_array[i].name;
+	int i;
+	for (i=0; arch_bit_array[i].name; i++)
+		if (arch & arch_bit_array[i].bit)
+			return arch_bit_array[i].name;
 	return "none";
 }
 
@@ -618,7 +618,8 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 #endif
 	if (pid<0) {
 		return cb ();
-	} else if (!pid) {
+	}
+	if (!pid) {
 		ret = cb ();
 		exit (ret);
 		return ret;
