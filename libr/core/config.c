@@ -1237,7 +1237,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.cmtright", "true", "Show comments at right of disassembly if they fit in screen");
 	SETI("asm.cmtcol", 70, "Align comments at column 60");
 	SETICB("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
-	SETPREF("asm.calls", "true", "Show calling convention calls as comments in disasm");
+	SETPREF("asm.calls", "false", "Show calling convention calls as comments in disasm");
 	SETPREF("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETPREF("asm.decode", "false", "Use code analysis as a disassembler");

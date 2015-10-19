@@ -540,6 +540,9 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		op->ptr = 0LL;
 		op->ptrsize = 2;
 		break;
+	case ARM64_INS_BRK:
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
 	case ARM64_INS_CMP:
@@ -566,6 +569,7 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_STRB:
 	case ARM64_INS_STR:
+	case ARM64_INS_STP:
 		op->type = R_ANAL_OP_TYPE_STORE;
 		if (REGBASE64(1) == ARM64_REG_X29) {
 			op->stackop = R_ANAL_STACK_SET;
@@ -574,6 +578,7 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		}
 		break;
 	case ARM64_INS_LDR:
+	case ARM64_INS_LDP:
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
 		op->type = R_ANAL_OP_TYPE_LOAD;
