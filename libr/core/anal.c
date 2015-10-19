@@ -1684,13 +1684,8 @@ R_API int r_core_anal_all(RCore *core) {
 	RBinAddr *binmain;
 	RBinAddr *entry;
 	RBinSymbol *symbol;
-	//ut64 baddr;
-	ut64 offset;
 	int depth = r_config_get_i (core->config, "anal.depth");
-	int va = core->io->va || core->io->debug;
 
-	//baddr = r_bin_get_baddr (core->bin);
-	offset = r_bin_get_offset (core->bin);
 	/* Analyze Functions */
 	/* Entries */
 	item = r_flag_get (core->flags, "entry0");
@@ -1704,23 +1699,28 @@ R_API int r_core_anal_all(RCore *core) {
 	r_cons_break (NULL, NULL);
 	/* Main */
 	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL) {
-		ut64 addr = va? binmain->vaddr: binmain->paddr;
+		ut64 addr = r_bin_get_vaddr (core->bin, binmain->paddr, binmain->vaddr);
 		r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
 	}
-	if ((list = r_bin_get_entries (core->bin)) != NULL)
-		r_list_foreach (list, iter, entry)
-			r_core_anal_fcn (core, (offset + va) ? r_bin_a2b (core->bin, entry->vaddr)
-					: entry->paddr, -1, R_ANAL_REF_TYPE_NULL, depth);
+	if ((list = r_bin_get_entries (core->bin)) != NULL) {
+		r_list_foreach (list, iter, entry) {
+			ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
+			r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
+		}
+	}
 	/* Symbols (Imports are already analyzed by rabin2 on init) */
-	if ((list = r_bin_get_symbols (core->bin)) != NULL)
+	if ((list = r_bin_get_symbols (core->bin)) != NULL) {
 		r_list_foreach (list, iter, symbol) {
 			if (core->cons->breaked)
 				break;
 			if (!strcmp (symbol->type, "FUNC")) {
-				r_core_anal_fcn (core, va? symbol->vaddr:symbol->paddr,
-						-1, R_ANAL_REF_TYPE_NULL, depth);
+				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr,
+					symbol->vaddr);
+				r_core_anal_fcn (core, addr, -1,
+					R_ANAL_REF_TYPE_NULL, depth);
 			}
 		}
+	}
 	/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (core->cons->breaked)

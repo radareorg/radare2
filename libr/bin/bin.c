@@ -1780,12 +1780,6 @@ R_API void r_bin_class_add_field (RBinFile *binfile, const char *classname, cons
 	//eprintf ("TODO add field: %s \n", name);
 }
 
-R_API ut64 r_bin_get_offset (RBin *bin) {
-	RBinFile *binfile = bin ? bin->cur : NULL;
-	if (binfile) return binfile->offset;
-	return UT64_MAX;
-}
-
 /* returns vaddr, rebased with the baseaddr of binfile, if va is enabled for
  * bin, paddr otherwise */
 R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 paddr, ut64 vaddr) {
