@@ -50,7 +50,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(char *argv0, int line) {
-	printf ("Usage: %s [-Xnzhv] [-a align] [-b sz] [-f/t from/to] [-[m|s|S|e] str] [-x hex] file ..\n", argv0);
+	printf ("Usage: %s [-mXnzhv] [-a align] [-b sz] [-f/t from/to] [-[m|s|S|e] str] [-x hex] file ..\n", argv0);
 	if (line) return 0;
 	printf (
 	" -a [align] only accept aligned hits\n"
@@ -58,7 +58,8 @@ static int show_help(char *argv0, int line) {
 	" -e [regex] search for regular expression string matches\n"
 	" -f [from]  start searching from address 'from'\n"
 	" -h         show this help\n"
-	" -m [str]   set a binary mask to be applied on keywords\n"
+	" -m         magic search, file-type carver\n"
+	" -M [str]   set a binary mask to be applied on keywords\n"
 	" -n         do not stop on read errors\n"
 	" -r         print using radare commands\n"
 	" -s [str]   search for a specific string (can be used multiple times)\n"
@@ -99,6 +100,20 @@ static int rafind_open(char *file) {
 		to = r_io_size(io);
 	if (mode == R_SEARCH_STRING) {
 		eprintf ("TODO: searchin stringz\n");
+	}
+	if (mode == R_SEARCH_MAGIC) {
+		char *tostr = (to && to != UT64_MAX)?
+			r_str_newf ("-e search.to=%"PFMT64d, to): "";
+		char *cmd = r_str_newf ("r2"
+			" -e search.in=range"
+			" -e search.align=%d"
+			" -e search.from=%"PFMT64d
+			" %s -qnc/m '%s'",
+			align, from, tostr, file);
+		system (cmd);
+		free (cmd);
+		free (tostr);
+		return 0;
 	}
 	if (mode == R_SEARCH_KEYWORD) {
 		r_list_foreach (keywords, iter, kw) {
@@ -148,7 +163,7 @@ int main(int argc, char **argv) {
 	int c;
 
 	keywords = r_list_new ();
-	while ((c = getopt(argc, argv, "a:e:b:m:s:S:x:Xzf:t:rnhvZ")) != -1) {
+	while ((c = getopt(argc, argv, "a:e:b:mM:s:S:x:Xzf:t:rnhvZ")) != -1) {
 		switch (c) {
 		case 'a':
 			align = r_num_math (NULL, optarg);
@@ -158,6 +173,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'n':
 			nonstop = 1;
+			break;
+		case 'm':
+			mode = R_SEARCH_MAGIC;
 			break;
 		case 'e':
 			mode = R_SEARCH_REGEXP;
@@ -185,7 +203,7 @@ int main(int argc, char **argv) {
 			widestr = 0;
 			r_list_append (keywords, optarg);
 			break;
-		case 'm':
+		case 'M':
 			// XXX should be from hexbin
 			mask = optarg;
 			break;
