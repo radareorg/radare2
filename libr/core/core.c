@@ -588,6 +588,26 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else
+		if (!strncmp (line->buffer.data, "fs ", 3)) {
+			const char *msg = line->buffer.data + 3;
+			RFlag *flag = core->flags;
+			int j, i = 0;
+			for (j=0; j<R_FLAG_SPACES_MAX; j++) {
+				if (flag->spaces[j] && flag->spaces[j][0]) {
+					if (i==TMP_ARGV_SZ)
+						break;
+					if (!strncmp (msg, flag->spaces[j], strlen (msg))) {
+						tmp_argv[i++] = flag->spaces[j];
+					}
+				}
+			}
+			if (!strncmp (msg, flag->spaces[j], strlen (msg))) {
+				tmp_argv[i++] = "*";
+			}
+			tmp_argv[i] = NULL;
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		} else
 		if ((!strncmp (line->buffer.data, "s ", 2)) ||
 		    (!strncmp (line->buffer.data, "ad ", 3)) ||
 		    (!strncmp (line->buffer.data, "bf ", 3)) ||
