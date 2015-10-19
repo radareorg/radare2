@@ -303,7 +303,10 @@ static int avr_custom_des (RAnalEsil *esil) {
 	round = r_anal_esil_pop (esil);
 	if (!round)
 		return false;
-	r_anal_esil_get_parm (esil, round, &key);
+	if(!r_anal_esil_get_parm (esil, round, &key)) {
+		free (round);
+		return false;
+	}
 	free (round);
 	r = (int)key;
 	r_anal_esil_reg_read (esil, "HF", &key, NULL);

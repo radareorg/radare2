@@ -49,6 +49,8 @@ R_API void r_anal_op_free(void *_op) {
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int ret = 0;
+	if (!anal)
+		return -1;
 	if (anal->pcalign) {
 		if (addr % anal->pcalign) {
 			memset (op, 0, sizeof (RAnalOp));

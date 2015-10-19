@@ -112,7 +112,8 @@ static int rafind_open(char *file) {
 			align, from, tostr, file);
 		system (cmd);
 		free (cmd);
-		free (tostr);
+		if (tostr)
+			free (tostr);
 		return 0;
 	}
 	if (mode == R_SEARCH_KEYWORD) {

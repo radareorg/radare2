@@ -594,7 +594,7 @@ static int autocomplete(RLine *line) {
 			const char *msg = line->buffer.data + 3;
 			RFlag *flag = core->flags;
 			int j, i = 0;
-			for (j=0; j<R_FLAG_SPACES_MAX; j++) {
+			for (j=0; j<R_FLAG_SPACES_MAX-1; j++) {
 				if (flag->spaces[j] && flag->spaces[j][0]) {
 					if (i==TMP_ARGV_SZ)
 						break;
