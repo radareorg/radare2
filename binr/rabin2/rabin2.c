@@ -100,6 +100,7 @@ static int rabin_show_help(int v) {
 		);
 	if (v) {
 		printf ("Environment:\n"
+		" RABIN2_DEMANGLE: e bin.demangle    # show symbols demangled\n"
 		" RABIN2_MAXSTRBUF: e bin.maxstrbuf  # specify maximum buffer size\n"
 		" RABIN2_STRFILTER: e bin.strfilter  # r2 -qe bin.strfilter=? -c '' --\n"
 		" RABIN2_STRPURGE:  e bin.strpurge   # try to purge false positives\n");
@@ -404,6 +405,10 @@ int main(int argc, char **argv) {
 	r_lib_opendir (l, homeplugindir);
 	r_lib_opendir (l, R2_LIBDIR"/radare2/"R2_VERSION);
 	
+	if ((tmp = r_sys_getenv ("RABIN2_DEMANGLE"))) {
+		r_config_set (core.config, "bin.demangle", tmp);
+		free (tmp);
+	}
 	if ((tmp = r_sys_getenv ("RABIN2_MAXSTRBUF"))) {
 		r_config_set (core.config, "bin.maxstrbuf", tmp);
 		free (tmp);
