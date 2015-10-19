@@ -148,7 +148,7 @@ R_API void r_cons_grep(const char *str) {
 	}
 
 	ptr2 = strchr (ptr, ':'); // line number
-	if (ptr2) {
+	if (ptr2 && ptr2[1] != ':') {
 		*ptr2 = '\0';
 		cons->grep.line = r_num_get (cons->num, ptr2 + 1);
 		if (cons->grep.line < 0)
