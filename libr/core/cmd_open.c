@@ -217,6 +217,13 @@ static void reopen_in_debug(RCore *core, const char *args) {
 	r_core_file_reopen (core, newfile, 0, 2);
 	r_config_set_i (core->config, "asm.bits", bits);
 	r_config_set_i (core->config, "cfg.debug", true);
+	ut64 new_baddr = r_debug_get_baddr (core, newfile);
+	ut64 old_baddr = r_config_get_i (core->config, "bin.baddr");
+	if (old_baddr != new_baddr) {
+		r_bin_set_baddr (core->bin, new_baddr);
+		r_config_set_i (core->config, "bin.baddr", new_baddr);
+		r_core_bin_load (core, newfile, new_baddr);
+	}
 	r_core_cmd0 (core, "sr pc");
 	free (oldname);
 	free (binpath);

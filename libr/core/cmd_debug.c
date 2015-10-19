@@ -15,6 +15,35 @@ struct trace_node {
 
 static int checkbpcallback(RCore *core);
 
+// Get base address from a loaded file.
+static ut64 r_debug_get_baddr(RCore *r, const char *file) {
+    char *abspath;
+    RListIter *iter;
+    RDebugMap *map;
+    if (!r || !r->io || !r->io->desc)
+        return 0LL;
+    r_debug_attach (r->dbg, r->io->desc->fd);
+    r_debug_map_sync (r->dbg);
+    abspath = r_file_abspath (file);
+    if (!abspath) abspath = strdup (file);
+    r_list_foreach (r->dbg->maps, iter, map) {
+        if (!strcmp (abspath, map->name)) {
+            free (abspath);
+            return map->addr;
+        }
+    }
+    free (abspath);
+    // fallback resolution (osx/w32?)
+    // we asume maps to be loaded in order, so lower addresses come first
+    r_list_foreach (r->dbg->maps, iter, map) {
+        if (map->perm == 5) { // r-x
+            return map->addr;
+        }
+    }
+    return 0LL;
+}
+
+
 static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 	// TODO : handle more than one stopping syscall
 	int i, *syscalls = NULL;
