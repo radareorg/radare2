@@ -589,9 +589,11 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BL: // bl 0x89480
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = IMM64(0);
+		op->fail = addr + 4;
 		break;
 	case ARM64_INS_BLR: // blr x0
 		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->fail = addr + 4;
 		//op->jump = IMM64(0);
 		break;
 	case ARM64_INS_CBZ:
