@@ -393,7 +393,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_STAC:
 		case X86_INS_STGI:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			op->family = R_ANAL_OP_FAMILY_CPU;
 			break;
 		// cmov
 		case X86_INS_SETNE:
@@ -482,7 +481,6 @@ SETL/SETNGE
 		case X86_INS_CMOVO:
 		case X86_INS_CMOVP:
 		case X86_INS_CMOVS:
-			op->family = R_ANAL_OP_FAMILY_CPU;
 			op->type = R_ANAL_OP_TYPE_CMOV;
 			break;
 		// mov
@@ -1230,13 +1228,11 @@ SETL/SETNGE
 			/* Direction flag */
 		case X86_INS_CLD:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			op->family = R_ANAL_OP_FAMILY_CPU;
 			if (a->decode)
 				esilprintf (op, "0,df,=");
 			break;
 		case X86_INS_STD:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			op->family = R_ANAL_OP_FAMILY_CPU;
 			if (a->decode)
 				esilprintf (op, "1,df,=");
 			break;
