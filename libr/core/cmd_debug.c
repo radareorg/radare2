@@ -1550,9 +1550,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case 't':
+	case 't': // "dbt"
 		switch (input[2]) {
-		case 'e':
+		case 'e': // "dbte"
 			for (p = input + 3; *p == ' '; p++) { /* nothing to do here */ }
 			if (*p == '*') {
 				r_bp_set_trace_all (core->dbg->bp,true);
@@ -1561,19 +1561,19 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				eprintf ("Cannot set tracepoint\n");
 			}
 			break;
-		case 'd':
+		case 'd': // "dbtd"
 			for (p = input + 3; *p==' ';p++);
 			if (*p == '*') {
 				r_bp_set_trace_all (core->dbg->bp,false);
 			} else if (!r_bp_set_trace (core->dbg->bp, addr, false))
 				eprintf ("Cannot unset tracepoint\n");
 			break;
-		case 's':
+		case 's': // "dbts"
 			bpi = r_bp_get_at (core->dbg->bp, addr);
 			if (bpi) bpi->trace = !!!bpi->trace;
 			else eprintf ("Cannot unset tracepoint\n");
 			break;
-		case 'j': // dbtj
+		case 'j': // "dbtj"
 			addr = UT64_MAX;
 			if (input[2] == ' ' && input[3])
 				addr = r_num_math (core->num, input+2);
@@ -1603,17 +1603,16 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_cons_newline ();
 			r_list_free (list);
 			break;
-		case 0:
+		case 0: // "dbt" -- backtrace
 			addr = UT64_MAX;
 			if (input[2] == ' ' && input[3])
 				addr = r_num_math (core->num, input + 2);
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
-			r_cons_printf ("#  Address  Size  [Func]  Desc1 Desc2\n");
 			r_list_foreach (list, iter, frame) {
 				char flagdesc[1024], flagdesc2[1024];
-				RFlagItem *f = r_flag_get_at (core->flags,
-							frame->addr);
+				RFlagItem *f = r_flag_get_at (core->flags, frame->addr);
+				flagdesc[0] = flagdesc2[0] = 0;
 				if (f) {
 					if (f->offset != addr) {
 						int delta = (int)(frame->addr - f->offset);
@@ -1640,7 +1639,10 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				} else {
 					flagdesc[0] = 0;
 				}
-				f = r_flag_get_at (core->flags, frame->addr-1);
+				f = r_flag_get_at (core->flags, frame->addr);
+				if (f && !strchr (f->name, '.')) {
+					f = r_flag_get_at (core->flags, frame->addr-1);
+				}
 				if (f) {
 					if (f->offset != addr) {
 						int delta = (int)(frame->addr - 1 - f->offset);
@@ -1661,7 +1663,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						}
 					} else {
 						snprintf (flagdesc2,
-							sizeof(flagdesc2),
+							sizeof (flagdesc2),
 							"%s", f->name);
 					}
 				} else {
@@ -1672,22 +1674,21 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				}
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
 				if (fcn) {
-					r_cons_printf ("%d  0x%08"PFMT64x"  %d \
-							[%s]  %s %s\n", i++,
+					r_cons_printf ("%d  0x%08"PFMT64x"  %d"
+							"[%s]  %s %s\n", i++,
 							frame->addr, frame->size,
 							fcn->name, flagdesc,
 							flagdesc2);
 				} else {
-					r_cons_printf ("%d  0x%08"PFMT64x"  %d  \
-							%s %s\n", i++, frame->addr,
-							frame->size, flagdesc,
-							flagdesc2);
+					r_cons_printf ("%d  0x%08"PFMT64x"  %d"
+							"   %s %s\n", (int)i++, (ut64)frame->addr,
+							(int)frame->size, flagdesc, flagdesc2);
 				}
 			}
 			r_list_free (list);
 			break;
 		default:
-			eprintf ("See db?\n");
+			r_core_cmd0 (core, "db?~dbt");
 			break;
 		}
 		break;
