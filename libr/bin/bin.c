@@ -1811,6 +1811,9 @@ R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 paddr, ut64 vaddr) {
 
 static ut64 binobj_a2b (RBinObject *o, ut64 addr) {
 	if (!o) return addr;
+	/* if bin is not PIE dot not allow to relocate */
+	if (o->info && !o->info->has_pi)
+		return addr;
 	return o->baddr_shift + addr;
 }
 

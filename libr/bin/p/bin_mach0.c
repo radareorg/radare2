@@ -59,12 +59,9 @@ static int destroy(RBinFile *arch) {
 
 static ut64 baddr(RBinFile *arch) {
 	struct MACH0_(obj_t) *bin;
-
 	if (!arch || !arch->o || !arch->o->bin_obj)
-		return 0;
-
+		return 0LL;
 	bin = arch->o->bin_obj;
-
 	return MACH0_(get_baddr)(bin);
 }
 

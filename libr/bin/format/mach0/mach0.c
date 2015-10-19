@@ -1229,10 +1229,10 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		if (bin->dyld_info->bind_off+bind_size+lazy_size > bin->size)
 			return NULL;
 		// NOTE(eddyb) it's a waste of memory, but we don't know the actual number of relocs.
-		if (!(relocs = malloc ((bind_size + lazy_size) * sizeof (struct reloc_t))))
+		if (!(relocs = calloc (1, (bind_size + lazy_size) * sizeof (struct reloc_t))))
 			return NULL;
 
-		opcodes = malloc (bind_size + lazy_size);
+		opcodes = calloc (1, bind_size + lazy_size);
 		if (!opcodes) {
 			free (relocs);
 			return NULL;
@@ -1408,7 +1408,7 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 
 	if (bin->entry) {
 		entry->addr = entry_to_vaddr(bin);
-		entry->offset = addr_to_offset(bin, entry->addr);
+		entry->offset = addr_to_offset (bin, entry->addr);
 	}
 
 	if (!bin->entry || entry->offset == 0) {
@@ -1455,7 +1455,6 @@ ut64 MACH0_(get_baddr)(struct MACH0_(obj_t)* bin) {
 	for (i = 0; i < bin->nsegs; ++i)
 		if (bin->segs[i].fileoff == 0 && bin->segs[i].filesize != 0)
 			return bin->segs[i].vmaddr;
-
 	return 0;
 }
 

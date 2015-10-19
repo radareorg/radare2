@@ -33,12 +33,15 @@ static void pair(const char *a, const char *b, int mode, bool last) {
 		r_cons_printf ("%s%s%s\n", a, ws, b);
 	}
 }
+
 static void pair_bool (const char *a, bool t, int mode, bool last) {
 	pair (a, r_str_bool (t), mode, last);
 }
+
 static void pair_int (const char *a, int n, int mode, bool last) {
 	pair (a, sdb_fmt (0, "%d", n), mode, last);
 }
+
 static void pair_str (const char *a, const char *b, int mode, int last) {
 	if (IS_MODE_JSON (mode)) {
 		if (!b) b = "";

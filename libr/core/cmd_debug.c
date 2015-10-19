@@ -686,6 +686,19 @@ static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
 	list = r_debug_modules_list (core->dbg);
 	r_list_foreach (list, iter, map) {
 		switch (mode) {
+		case ':':
+			if (addr >= map->addr && addr < map->addr_end) {
+				char *fn = strdup (map->file);
+				r_name_filter (fn, 0);
+				//r_cons_printf ("fs+module_%s\n", fn);
+				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
+					fn, map->addr);
+				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
+					map->addr, map->file);
+				//r_cons_printf ("fs-\n");
+				free (fn);
+			}
+			break;
 		case '.':
 			if (addr >= map->addr && addr < map->addr_end) {
 				r_cons_printf ("0x%08"PFMT64x" %s\n",
@@ -694,15 +707,19 @@ static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
 			}
 			break;
 		case 'j':
-			r_cons_printf ("{\"address\":%"PFMT64d",\"file\":\"%s\"}%s",
-				map->addr, map->file, iter->n?",":"");
+			r_cons_printf ("{\"address\":%"PFMT64d",\"name\":\"%s\",\"file\":\"%s\"}%s",
+				map->addr, map->name, map->file, iter->n?",":"");
 			break;
 		case '*':
 			{
 				char *fn = strdup (map->file);
 				r_name_filter (fn, 0);
+				//r_cons_printf ("fs+module_%s\n", fn);
 				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
 					fn, map->addr);
+				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
+					map->addr, map->file);
+				//r_cons_printf ("fs-\n");
 				free (fn);
 			}
 			break;
@@ -755,7 +772,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		}
 		break;
 	case 'm': // "dmm"
-		cmd_debug_modules (core, input[1]);
+		if (!strcmp (input+1, ".*")) {
+			cmd_debug_modules (core, ':');
+		} else cmd_debug_modules (core, input[1]);
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
