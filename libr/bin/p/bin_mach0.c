@@ -161,6 +161,26 @@ static RList* symbols(RBinFile *arch) {
 		}
 		r_list_append (ret, ptr);
 	}
+	//functions from LC_FUNCTION_STARTS
+	if (bin->func_start) {
+		ut64 value = 0, address = 0;
+		const ut8* temp = bin->func_start;
+		while (*temp) {
+			temp = r_uleb128_decode (temp, NULL, &value);
+			address += value;
+			ptr = R_NEW0 (RBinSymbol);
+			if (!ptr) break;
+			ptr->vaddr = bin->baddr + address;
+			ptr->paddr = address;
+			ptr->size = 0;
+			strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+			strncpy (ptr->name, r_str_newf ("func.%08"PFMT64x, ptr->vaddr), R_BIN_SIZEOF_STRINGS);
+			strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+			strncpy (ptr->bind, "LOCAL", R_BIN_SIZEOF_STRINGS);
+			ptr->ordinal = i++;
+			r_list_append (ret, ptr);
+		}
+	}
 	bin->lang = lang;
 	free (symbols);
 
@@ -279,7 +299,7 @@ static RBinInfo* info(RBinFile *arch) {
 	struct MACH0_(obj_t) *bin = NULL;
 	char *str;
 	RBinInfo *ret;
-	
+
 	if (!arch || !arch->o)
 		return NULL;
 
