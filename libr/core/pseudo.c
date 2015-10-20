@@ -63,7 +63,7 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 		//if (nindent != indent) {
 		//	r_cons_printf ("\n%s  loc_0x%llx:\n", indentstr, bb->addr);
 		//}
-			r_cons_printf ("\n%s  loc_0x%llx:\n", indentstr, bb->addr);
+		r_cons_printf ("\n%s  loc_0x%llx:\n", indentstr, bb->addr);
 		indentstr[(indent*I_TAB)-2] = 0;
 		r_cons_printf ("\n%s", code);
 		free (code);
@@ -87,7 +87,9 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 			} else {
 				r_cons_printf ("\n%s}", indentstr);
 			}
-			r_cons_printf ("\n%s  goto loc_0x%llx", indentstr, addr);
+			if (addr != bb->addr) {
+				r_cons_printf ("\n%s  goto loc_0x%llx", indentstr, addr);
+			}
 			bb = r_anal_bb_from_offset (core->anal, addr);
 			if (!bb) {
 				eprintf ("failed block\n");

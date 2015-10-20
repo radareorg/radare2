@@ -1028,7 +1028,7 @@ static bool isAnExport(RBinSymbol *s) {
 
 static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly) {
 	RBinInfo *info = r_bin_get_info (r->bin);
-	int is_arm = info && info->arch && !strcmp (info->arch, "arm");
+	int is_arm = info && info->arch && !strncmp (info->arch, "arm", 3);
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RBinSymbol *symbol;
 	const char *lang;
@@ -1174,11 +1174,8 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				lastfs = 'i';
 			} else {
 				if (lastfs != 's') {
-					if (exponly) {
-						r_cons_printf ("fs exports\n");
-					} else {
-						r_cons_printf ("fs symbols\n");
-					}
+					r_cons_printf ("fs %s\n",
+						exponly? "exports": "symbols");
 				}
 				lastfs = 's';
 			}
