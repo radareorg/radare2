@@ -874,6 +874,7 @@ static ut64 impaddr(RBin *bin, int va, const char *name) {
 }
 
 static int bin_imports(RCore *r, int mode, int va, const char *name) {
+	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RBinImport *import;
 	RListIter *iter;
 	RList *imports;
@@ -886,17 +887,26 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	else if (IS_MODE_RAD (mode)) r_cons_printf ("fs imports\n");
 	else if (IS_MODE_NORMAL (mode)) r_cons_printf ("[Imports]\n");
 	r_list_foreach (imports, iter, import) {
+		char *symname;
+		ut64 addr;
 		if (name && strcmp (import->name, name)) continue;
-
-		ut64 addr = impaddr (r->bin, va, import->name);
+		symname = strdup (import->name);
+		if (bin_demangle) {
+			char *dname = r_bin_demangle (r->bin->cur, NULL, symname);
+			if (dname) {
+				free (symname);
+				symname = dname;
+			}
+		}
+		addr = impaddr (r->bin, va, symname);
 		if (IS_MODE_SET (mode)) {
 			// TODO(eddyb) symbols that are imports.
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf ("%s\n", import->name);
+			r_cons_printf ("%s\n", symname);
 		} else if (IS_MODE_JSON (mode)) {
-			str = r_str_utf16_encode (import->name, -1);
+			str = r_str_utf16_encode (symname, -1);
 			str = r_str_replace (str, "\"", "\\\"", 1);
-			addr = impaddr (r->bin, va, import->name);
+			addr = impaddr (r->bin, va, symname);
 			r_cons_printf ("%s{\"ordinal\":%d,"
 				"\"bind\":\"%s\","
 				"\"type\":\"%s\",",
@@ -922,12 +932,13 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			if (import->classname[0]) {
 				r_cons_printf (" classname=%s", import->classname);
 			}
-			r_cons_printf (" name=%s", import->name);
+			r_cons_printf (" name=%s", symname);
 			if (import->descriptor[0]) {
 				r_cons_printf (" descriptor=%s", import->descriptor);
 			}
 			r_cons_printf ("\n");
 		}
+		free (symname);
 		i++;
 	}
 	if (IS_MODE_JSON (mode)) r_cons_printf ("]");
