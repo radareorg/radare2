@@ -1015,9 +1015,14 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	}
 
 	int len = (nb_opcodes + nb_bytes) * 5;
-	if (len>core->blocksize)
-		r_core_block_size (core, len);
-	r_core_block_read (core, 0);
+	if (core->fixedblock) {
+		len = core->blocksize;
+	} else {
+		if (len > core->blocksize) {
+			r_core_block_size (core, len);
+			r_core_block_read (core, 0);
+		}
+	}
 	r_cons_break (NULL, NULL);
 #define isTheEnd (nb_opcodes? nb_bytes? (j<nb_opcodes && i<nb_bytes) : j<nb_opcodes: i<nb_bytes)
 	for (i=j=0; isTheEnd; j++) {

@@ -1480,6 +1480,7 @@ next2:
 		}
 	}
 	// TODO must honor " and `
+	core->fixedblock = false;
 
 	/* grep the content */
 	ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
@@ -1569,6 +1570,7 @@ repeat_arroba:
 						len = r_hex_str2bin (ptr+2, buf);
 						r_core_block_size (core, len);
 						memcpy (core->block, buf, core->blocksize);
+						core->fixedblock = true;
 						free (buf);
 					} else eprintf ("cannot allocate\n");
 				} else eprintf ("Invalid @x: syntax\n");
@@ -1690,7 +1692,9 @@ if (addr != UT64_MAX) {
 		return ret;
 	}
 
-	return cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
+	bool rc = cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
+	core->fixedblock = false;
+	return rc;
 }
 
 static int foreach_comment(void *user, const char *k, const char *v) {
