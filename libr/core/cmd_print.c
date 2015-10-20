@@ -1019,7 +1019,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		r_core_block_size (core, len);
 	r_core_block_read (core, 0);
 	r_cons_break (NULL, NULL);
-#define isTheEnd (nb_opcodes? j<nb_opcodes: i<nb_bytes)
+#define isTheEnd (nb_opcodes? nb_bytes? (j<nb_opcodes && i<nb_bytes) : j<nb_opcodes: i<nb_bytes)
 	for (i=j=0; isTheEnd; j++) {
 		RFlagItem *item;
 		if (r_cons_singleton ()->breaked) {
@@ -2023,12 +2023,12 @@ static int cmd_print(void *data, const char *input) {
 		}
 
 		switch (input[1]) {
-		case 'c': // "pdc"
+		case 'c': // "pdc" // "pDc"
 			r_core_pseudo_code (core, input+2);
 			pd_result = 0;
 			processed_cmd = true;
 			break;
-		case 'i': // "pdi"
+		case 'i': // "pdi" // "pDi"
 			processed_cmd = true;
 			if (*input == 'D')
 				pdi (core, 0, l, 0);
