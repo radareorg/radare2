@@ -603,7 +603,8 @@ static int autocomplete(RLine *line) {
 					}
 				}
 			}
-			if (!strncmp (msg, flag->spaces[j], strlen (msg))) {
+			if (flag->spaces[j] && !strncmp (msg, flag->spaces[j],
+							strlen (msg))) {
 				tmp_argv[i++] = "*";
 			}
 			tmp_argv[i] = NULL;
