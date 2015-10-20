@@ -535,7 +535,7 @@ int main(int argc, char **argv) {
 		case 'p': va = false; break;
 		case 'r': rad = true; break;
 		case 'v': return blob_version ("rabin2");
-		case 'L': r_bin_list (bin); return 1;
+		case 'L': r_bin_list (bin, rad == R_CORE_BIN_JSON); return 1;
 		case 'G':
 			laddr = r_num_math (NULL, optarg);
 			if (laddr == UT64_MAX)
