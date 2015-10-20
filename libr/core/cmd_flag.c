@@ -408,9 +408,6 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			} break;
 		}
 		break;
-	case 'g':
-		r_core_cmd0 (core, "V");
-		break;
 	case 'c':
 		if (input[1]=='?') {
 			const char *help_msg[] = {
@@ -574,7 +571,6 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"fd"," addr","return flag+delta",
 		"fe-","","resets the enumerator counter",
 		"fe"," [name]","create flag name.#num# enumerated flag. See fe?",
-		"fg","","bring visual mode to foreground",
 		"fj","","list flags in JSON format",
 		"fl"," [flag] [size]","show or set flag length (size)",
 		"fm"," addr","move flag at current offset to new address",
