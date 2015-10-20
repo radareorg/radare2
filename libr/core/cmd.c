@@ -1692,7 +1692,7 @@ if (addr != UT64_MAX) {
 		return ret;
 	}
 
-	bool rc = cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
+	int rc = cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
 	core->fixedblock = false;
 	return rc;
 }
