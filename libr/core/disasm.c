@@ -496,7 +496,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
 
 	if (!(ds->show_color && ds->colorop))
-		return strdup(source);
+		return strdup (source);
 
 	r_cons_strcat (r_print_color_op_type (core->print, ds->analop.type));
 
@@ -507,8 +507,10 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 		char *scol1, *s1 = r_str_ndup (source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
 
-		scol1 = r_print_colorize_opcode (s1, ds->color_reg, ds->color_num); free(s1);
-		scol2 = r_print_colorize_opcode (s2, ds->color_reg, ds->color_num); free(s2);
+		scol1 = r_print_colorize_opcode (s1, ds->color_reg, ds->color_num);
+		free (s1);
+		scol2 = r_print_colorize_opcode (s2, ds->color_reg, ds->color_num);
+		free (s2);
 		if (!scol1) scol1 = strdup ("");
 		if (!scol2) scol2 = strdup ("");
 
@@ -2799,7 +2801,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			&ds->asmop, core->block+i, core->blocksize-i);
 		if (ds->show_color && !hasanal) {
 			r_anal_op (core->anal, &ds->analop, ds->at,
-				core->block+i, core->blocksize-i);
+				core->block + i, core->blocksize - i);
 			hasanal = 1;
 		}
 		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
@@ -2818,9 +2820,8 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 					free (ds->opstr);
 					ds->opstr = strdup (R_STRBUF_SAFEGET (&ds->analop.esil));
 				}
-#if 1
 			} else if (ds->filter) {
-				char *asm_str = colorize_asm_string (core, ds);
+				char *asm_str;
 				int ofs = core->parser->flagspace;
 				int fs = ds->flagspace_ports;
 				if (ds->analop.type == R_ANAL_OP_TYPE_IO) {
@@ -2835,19 +2836,19 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 						core->parser->flagspace = -1;
 					}
 				}
-#if 1
+				core->parser->hint = ds->hint;
 				r_parse_filter (core->parser, core->flags,
-						asm_str, ds->str, sizeof (ds->str));
+						ds->asmop.buf_asm, ds->str, sizeof (ds->str));
+				ds->opstr = strdup (ds->str);
+				asm_str = colorize_asm_string (core, ds);
 				core->parser->flagspace = ofs;
 				free (ds->opstr);
-				ds->opstr = strdup (ds->str);
-#else
-				ds->opstr = strdup (asm_str);
-#endif
+				ds->opstr = asm_str;
 				core->parser->flagspace = ofs; // ???
-				free (asm_str);
-#endif
-			} else if (ds->decode) {
+			} else {
+				ds->opstr = strdup (ds->asmop.buf_asm);
+			}
+			if (ds->decode) {
 				free (ds->opstr);
 				if (!hasanal) {
 					r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
@@ -2855,9 +2856,6 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 				}
 				tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 				ds->opstr = (tmpopstr)? tmpopstr: strdup (ds->asmop.buf_asm);
-			} else {
-				free (ds->opstr);
-				ds->opstr = strdup (ds->asmop.buf_asm);
 			}
 		}
 		if (ret<1) {
