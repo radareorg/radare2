@@ -5,6 +5,54 @@
 #include <r_util.h>
 #include "mach0.h"
 
+
+
+typedef struct _ulebr {
+	ut8 *p;
+} ulebr;
+
+static ut64 read_uleb128(ulebr *r, ut8 *end) {
+	ut64 result = 0;
+	int	 bit = 0;
+	ut64 slice = 0;
+	ut8 *p = r->p;
+	do {
+		if (p == end) {
+			eprintf ("malformed uleb128");
+		}
+		slice = *p & 0x7f;
+
+		if (bit > 63) {
+			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x, bit, result);
+		} else {
+			result |= (slice << bit);
+			bit += 7;
+		}
+	} while (*p++ & 0x80);
+	r->p = p;
+	return result;
+}
+
+static st64 read_sleb128(ulebr *r, ut8 *end) {
+	st64 result = 0;
+	int bit = 0;
+	ut8 byte;
+	ut8 *p = r->p;
+	do {
+		if (p == end)
+			eprintf ("malformed sleb128");
+		byte = *p++;
+		result |= (((st64)(byte & 0x7f)) << bit);
+		bit += 7;
+	} while (byte & 0x80);
+	// sign extend negative numbers
+	if ( (byte & 0x40) != 0 )
+		result |= (-1LL) << bit;
+	r->p = p;
+	return result;
+}
+
+
 static ut64 entry_to_vaddr(struct MACH0_(obj_t)* bin) {
 	switch (bin->main_cmd.cmd) {
 	case LC_MAIN:
@@ -452,6 +500,42 @@ wrong_read:
 	return false;
 }
 
+static int parse_function_starts (struct MACH0_(obj_t)* bin, ut64 off) {
+	struct linkedit_data_command fc;
+	ut8 *buf;
+	int len;
+	if (off > bin->size ||
+		off + sizeof(struct linkedit_data_command) > bin->size) {
+		eprintf ("Likely overflow while parsing"
+			" LC_FUNCTION_STARTS command\n");
+	}
+	len = r_buf_fread_at (bin->b, off, (ut8*)&fc, bin->endian ? "4I" : "4i", 1);
+	if (len == -1 || len == 0) {
+		eprintf ("Failed to get data while parsing"
+			" LC_FUNCTION_STARTS command\n");
+	}
+	buf = calloc (1, fc.datasize + 1);
+	if (!buf) {
+		eprintf ("Failed to allocate buffer\n");
+		return false;
+	}
+	if (fc.dataoff > bin->size || fc.dataoff + fc.datasize > bin->size) {
+		free (buf);
+		eprintf ("Likely overflow while parsing "
+			"LC_FUNCTION_STARTS command\n");
+		return false;
+	}
+	len = r_buf_read_at (bin->b, fc.dataoff, buf, fc.datasize);
+	if (len == 0 || len == -1) {
+		free (buf);
+		eprintf ("Failed to get data while parsing"
+			" LC_FUNCTION_STARTS\n");
+		return false;
+	}
+	bin->func_start = buf;
+	return true;
+}
+
 static int parse_dylib(struct MACH0_(obj_t)* bin, ut64 off) {
 	struct dylib_command dl;
 	int lib, len;
@@ -508,7 +592,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			eprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
 			return false;
 		}
-		if (lc.cmdsize<1 || off+lc.cmdsize>bin->size) {
+		if (lc.cmdsize < 1 || off + lc.cmdsize > bin->size) {
 			eprintf ("Warning: mach0_header %d = cmdsize<1.\n", i);
 			break;
 		}
@@ -674,8 +758,9 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			/* TODO */
 			break;
 		case LC_FUNCTION_STARTS:
-			/* compressed table of function start addresses */
-			//eprintf ("mach0: TODO: LC_FUNCTION_STARTS\n");
+			if (!parse_function_starts (bin, off)) {
+				eprintf ("Cannot parse LC_FUNCTION_STARTS\n");
+			}
 			break;
 		case LC_REEXPORT_DYLIB:
 			/* TODO */
@@ -712,6 +797,7 @@ void* MACH0_(mach0_free)(struct MACH0_(obj_t)* bin) {
 	free (bin->toc);
 	free (bin->modtab);
 	free (bin->libs);
+	free (bin->func_start);
 	r_buf_free (bin->b);
 	free (bin);
 	return NULL;
@@ -1143,50 +1229,6 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 }
 
 
-typedef struct _ulebr {
-	ut8 *p;
-} ulebr;
-
-static ut64 read_uleb128(ulebr *r, ut8 *end) {
-	ut64 result = 0;
-	int	 bit = 0;
-	ut64 slice = 0;
-	ut8 *p = r->p;
-	do {
-		if (p == end) {
-			eprintf ("malformed uleb128");
-		}
-		slice = *p & 0x7f;
-
-		if (bit > 63) {
-			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x, bit, result);
-		} else {
-			result |= (slice << bit);
-			bit += 7;
-		}
-	} while (*p++ & 0x80);
-	r->p = p;
-	return result;
-}
-
-static st64 read_sleb128(ulebr *r, ut8 *end) {
-	st64 result = 0;
-	int bit = 0;
-	ut8 byte;
-	ut8 *p = r->p;
-	do {
-		if (p == end)
-			eprintf ("malformed sleb128");
-		byte = *p++;
-		result |= (((st64)(byte & 0x7f)) << bit);
-		bit += 7;
-	} while (byte & 0x80);
-	// sign extend negative numbers
-	if ( (byte & 0x40) != 0 )
-		result |= (-1LL) << bit;
-	r->p = p;
-	return result;
-}
 
 struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 	struct reloc_t *relocs;

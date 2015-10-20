@@ -63,6 +63,7 @@ struct MACH0_(obj_t) {
 	int nsects;
 	struct MACH0_(nlist)* symtab;
 	ut8* symstr;
+	ut8* func_start; //buffer that hold the data from LC_FUNCTION_STARTS
 	int symstrlen;
 	int nsymtab;
 	ut32* indirectsyms;
