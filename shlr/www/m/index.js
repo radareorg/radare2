@@ -1129,6 +1129,11 @@ function ready() {
 	onClick('menu_script', panelScript);
 	onClick('menu_help', panelHelp);
 
+	/* left sub-menu */
+	onClick('menu_project_save', saveProject);
+	onClick('menu_project_delete', deleteProject);
+	onClick('menu_project_close', closeProject);
+
 	/* right menu */
 	onClick('menu_seek', seek);
 	onClick('menu_console', panelConsole);
