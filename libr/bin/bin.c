@@ -1170,17 +1170,31 @@ R_API void* r_bin_free(RBin *bin) {
 	return NULL;
 }
 
-R_API int r_bin_list(RBin *bin) {
+R_API int r_bin_list(RBin *bin, int json) {
 	RListIter *it;
 	RBinXtrPlugin *bp;
 	RBinXtrPlugin *bx;
-	r_list_foreach (bin->plugins, it, bp) {
-		printf ("bin  %-11s %s (%s)\n",
-			bp->name, bp->desc, bp->license);
-	}
-	r_list_foreach (bin->binxtrs, it, bx) {
-		printf ("xtr  %-11s %s (%s)\n", bx->name,
-			bx->desc, bx->license);
+	if (json) {
+		printf("{\"bin\":[");
+		r_list_foreach (bin->plugins, it, bp) {
+			printf ("{\"filetype\":\"%s\",\"name\":\"%s\",\"license\":\"%s\"}",
+					bp->name, bp->desc, bp->license);
+		}
+		printf("],\"xtr\":[");
+		r_list_foreach (bin->binxtrs, it, bx) {
+			printf ("{\"filetype\":\"%s\",\"name\":\"%s\",\"license\":\"%s\"}",
+					bx->name, bx->desc, bx->license);
+		}
+		printf("]}\n");
+	} else {
+		r_list_foreach (bin->plugins, it, bp) {
+			printf ("bin  %-11s %s (%s)\n",
+					bp->name, bp->desc, bp->license);
+		}
+		r_list_foreach (bin->binxtrs, it, bx) {
+			printf ("xtr  %-11s %s (%s)\n", bx->name,
+					bx->desc, bx->license);
+		}
 	}
 	return false;
 }

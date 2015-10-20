@@ -291,7 +291,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL); break;
 		case 'l': RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL); break;
-		case 'L': r_bin_list (core->bin); break;
+		case 'L': r_bin_list (core->bin, input[1]=='j'); break;
 		case 's': RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, NULL); break;
 		case 'R':
 		case 'r': RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL); break;
