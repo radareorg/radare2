@@ -1014,8 +1014,13 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		core->anal->cur->reset_counter (core->anal, core->offset);
 	}
 
+	int len = (nb_opcodes + nb_bytes) * 5;
+	if (len>core->blocksize)
+		r_core_block_size (core, len);
+	r_core_block_read (core, 0);
 	r_cons_break (NULL, NULL);
-	for (i=j=0; j<nb_opcodes; j++) {
+#define isTheEnd (nb_opcodes? j<nb_opcodes: i<nb_bytes)
+	for (i=j=0; isTheEnd; j++) {
 		RFlagItem *item;
 		if (r_cons_singleton ()->breaked) {
 			err = 1;
@@ -1039,7 +1044,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 			ut64 at = core->offset + i;
 			r_print_offset (core->print, at, 0, show_offseg, 0);
 		}
-		//			r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
+		// r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ret<1) {
 			err = 1;
 			ret = asmop.size;
@@ -1060,18 +1065,6 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 				if (fmt == 'e') { // pie
 					char *esil = (R_STRBUF_SAFEGET (&analop.esil));
 					r_cons_printf ("%s\n", esil);
-#if 0
-					char spaces[26];
-					char *code = asmop.buf_asm;
-					int j, wlen = sizeof (spaces)-strlen (code);
-					for (j=0; j<wlen; j++) {
-						spaces[j] = ' ';
-					}
-					if (!esil) esil = "";
-					spaces[R_MIN(sizeof (spaces)-1,j)] = 0;
-					r_cons_printf ("%s%s%s\n",
-						code, spaces, esil);
-#endif
 				} else {
 					if (decode) {
 						opstr = (tmpopstr)? tmpopstr: (asmop.buf_asm);
@@ -1111,8 +1104,10 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 			}
 		}
 		i += ret;
+#if 0
 		if ((nb_bytes && (nb_bytes <= i)) || (i >= core->blocksize))
 			break;
+#endif
 	}
 	r_cons_break_end ();
 	core->offset = old_offset;

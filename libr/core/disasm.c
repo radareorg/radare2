@@ -2754,6 +2754,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 	ds = handle_init_ds (core);
 	ds->len = nb_bytes;
 	ds->l = nb_opcodes;
+	ds->len = nb_opcodes * 8;
 
 	if (ds->len>core->blocksize)
 		r_core_block_size (core, ds->len);
@@ -2761,8 +2762,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 	if (ds->l == 0)
 		ds->l = ds->len;
 
+	r_core_block_read (core, 0);
 	r_cons_break (NULL, NULL);
-	for (i=j=0; i<bs && i<ds->len && j<ds->l; i+=ret, j++) {
+#define isTheEnd (nb_opcodes? j<nb_opcodes: i<nb_bytes)
+	for (i = j = 0; isTheEnd; i += ret, j++) {
 		ds->at = core->offset +i;
 		hasanal = 0;
 		r_core_seek_archbits (core, ds->at);
