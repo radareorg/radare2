@@ -268,10 +268,10 @@ static int **get_crossing_matrix (const RGraph *g,
 						ak = get_anode (gk);
 						at = get_anode (gt);
 						if (ak->layer != i || at->layer != i) {
-							 eprintf("\"%s\" (%d) or \"%s\" (%d) are not on the right layer (%d)\n",
-									 ak->title, ak->layer,
-									 at->title, at->layer,
-									 i);
+							 /* eprintf("\"%s\" (%d) or \"%s\" (%d) are not on the right layer (%d)\n", */
+									 /* ak->title, ak->layer, */
+									 /* at->title, at->layer, */
+									 /* i); */
 
 							 continue;
 						}
