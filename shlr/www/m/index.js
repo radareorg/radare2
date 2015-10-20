@@ -852,6 +852,8 @@ function panelDisasm() {
 	out += uiButton('javascript:rename()', 'Rename');
 	out += uiButton('javascript:write()', 'Write');
 	c.innerHTML = out;
+	c.style['font-size'] = '12px';
+	c.style.overflow = 'scroll';
 	var tail = '';
 	if (inColor) {
 		tail = '@e:scr.color=1,scr.html=1';
