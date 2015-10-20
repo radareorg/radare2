@@ -193,7 +193,9 @@ R_API void r_core_visual_prompt_input (RCore *core) {
 	int ret;
 	ut64 addr = core->offset;
 	ut64 bsze = core->blocksize;
-
+	int h;
+	(void)r_cons_get_size (&h);
+	r_cons_gotoxy (0, h-2);
 	r_cons_reset_colors();
 	r_cons_printf("\nPress <enter> to return to Visual mode.\n");
 
