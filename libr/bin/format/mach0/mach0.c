@@ -5,15 +5,13 @@
 #include <r_util.h>
 #include "mach0.h"
 
-
-
 typedef struct _ulebr {
 	ut8 *p;
 } ulebr;
 
 static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut64 result = 0;
-	int	 bit = 0;
+	int bit = 0;
 	ut64 slice = 0;
 	ut8 *p = r->p;
 	do {
@@ -1271,7 +1269,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		if (bin->dyld_info->bind_off+bind_size+lazy_size > bin->size)
 			return NULL;
 		// NOTE(eddyb) it's a waste of memory, but we don't know the actual number of relocs.
-		if (!(relocs = calloc (1, (bind_size + lazy_size) * sizeof (struct reloc_t))))
+		if (!(relocs = calloc (1, (1 + bind_size + lazy_size) * sizeof (struct reloc_t))))
 			return NULL;
 
 		opcodes = calloc (1, bind_size + lazy_size);
@@ -1357,16 +1355,14 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 			case BIND_OPCODE_ADD_ADDR_ULEB:
 				addr += ULEB();
 				break;
-
 #define DO_BIND() do {\
-if (sym_ord == -1 || seg_idx == -1)\
-	break;\
+if (sym_ord < 0 || seg_idx < 0 ) break;\
+if (i >= (bind_size + lazy_size)) break;\
 relocs[i].addr = addr;\
 relocs[i].offset = addr - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;\
 if (type == BIND_TYPE_TEXT_PCREL32)\
 	relocs[i].addend = addend - (bin->baddr + addr);\
-else\
-	relocs[i].addend = addend;\
+else relocs[i].addend = addend;\
 /* library ordinal ??? */ \
 relocs[i].ord = lib_ord;\
 relocs[i].ord = sym_ord;\
