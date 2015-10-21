@@ -260,6 +260,7 @@ static int cmd_open(void *data, const char *input) {
 		"oob", "", "reopen loading rbin info",
 		"ood", "", "reopen in debug mode",
 		"oon", "", "reopen without loading rbin info",
+		"oonn", "", "reopen without loading rbin info, but with header flags",
 		"oo+", "", "reopen in read-write",
 		NULL};
 	RCore *core = (RCore*)data;
@@ -405,6 +406,9 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		case 'n':
 			r_core_file_reopen (core, input + 2, 0, 0);
+			if (input[2] == 'n') {
+				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
+			}
 			break;
 		case '+':
 			r_core_file_reopen (core, input + 2,
