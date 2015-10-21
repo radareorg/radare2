@@ -1874,20 +1874,19 @@ static int cmd_print(void *data, const char *input) {
 	case 'I': // "pI"
 		switch (input[1]) {
 		case 'j': // "pIj" is the same as pDj
-		{
 			if (input[2]) {
 				cmd_pDj (core, input+2);
 			} else {
 				cmd_pDj (core, sdb_fmt(0, "%d", core->blocksize));
 			}
-		}
 			break;
-		case 'f':
+		case 'f': // "pIf"
 			{
 				const RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f) {
-					r_core_print_disasm_instructions (core, f->size, l);
+					r_core_print_disasm_instructions (core,
+						f->size, 0);
 					break;
 				}
 			}
