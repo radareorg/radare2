@@ -3735,7 +3735,7 @@ R_API RBinJavaAttrInfo* r_bin_java_local_variable_table_attr_new (ut8* buffer, u
 	attr->info.local_variable_table_attr.local_variable_table = \
 		r_list_newf (r_bin_java_local_variable_table_attr_entry_free);
 	for (i = 0; i < attr->info.local_variable_table_attr.table_length; i++) {
-		if (offset + 10 < sz) {
+		if (offset + 10 > sz) {
 			break;
 		}
 		cur_location = buf_offset + offset;
