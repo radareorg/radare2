@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake
-	2013-2015 - condret					*/
+/* radare - LGPL - Copyright 2012-2015 - pancake, condret */
 
 // fork of asm_z80.c
 
@@ -27,10 +26,7 @@ RAsmPlugin r_asm_plugin_gb = {
 	.arch = "z80",
 	.license = "LGPL3",
 	.bits = 16,
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
-	.modify = NULL,
 	.assemble = &assemble,
 };
 

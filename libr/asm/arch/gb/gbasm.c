@@ -3,14 +3,12 @@
 #include <r_asm.h>
 #include <string.h>
 
-static void str_op (char *c)
-{
+static void str_op(char *c) {
 	if ((c[0] <= 'Z') && (c[0] >= 'A'))
 		c[0] += 0x20;
 }
 
-static int gbAsm (RAsm *a, RAsmOp *op, const char *buf)
-{
+static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 	int mn_len, i, len = 1;
 	ut32 mn = 0;
 	if (!a || !op || !buf)

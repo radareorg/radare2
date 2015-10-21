@@ -7,5 +7,5 @@ ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_GB}
 
 ${TARGET_GB}: ${OBJ_GB}
-	${CC} ${call libname,asm_gb} ${CFLAGS} -o ${TARGET_GB} ${OBJ_GB}
+	${CC} ${call libname,asm_gb} ${CFLAGS} $(LDFLAGS) -o ${TARGET_GB} ${OBJ_GB}
 endif
