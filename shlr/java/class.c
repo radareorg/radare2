@@ -3721,6 +3721,8 @@ R_API RBinJavaAttrInfo* r_bin_java_local_variable_table_attr_new (ut8* buffer, u
 	ut64 cur_location = 0, offset = 0;
 	RBinJavaAttrInfo *attr;
 	ut32 i = 0;
+	if (sz<1)
+		return NULL;
 
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	offset += 6;
