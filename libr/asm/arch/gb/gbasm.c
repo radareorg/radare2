@@ -57,7 +57,26 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			op->buf[0] = 0x76;
 			break;
 		case 0x726574:			//ret
-			op->buf[0] = 0xc9;
+			if (strlen(op->buf_asm) < 5)
+				op->buf[0] = 0xc9;
+			else if (strlen (op->buf_asm) < 6) {	//there is no way that there can be "  " - we did r_str_replace
+				str_op(&op->buf_asm[4]);
+				if (op->buf_asm[4] == 'z')	//ret Z
+					op->buf[0] = 0xc8;
+				else if (op->buf_asm[4] == 'c')	//ret C
+					op->buf[0] = 0xd8;
+				else	return op->size = 0;
+			} else {
+				str_op(&op->buf_asm[4]);
+				if (op->buf_asm[4] != 'n')
+					return op->size = 0;
+				str_op(&op->buf_asm[5]);	//if (!(strlen(op->buf_asm) < 6)) => must be 6 or greater
+				if (op->buf_asm[5] == 'z')	//ret nZ
+					op->buf[0] = 0xc0;
+				else if (op->buf_asm[5] == 'c')	//ret nC
+					op->buf[0] = 0xd0;
+				else	return op->size = 0;
+			}
 			break;
 		case 0x72657469:		//reti
 			op->buf[0] = 0xd9;
