@@ -502,13 +502,14 @@ static int parse_function_starts (struct MACH0_(obj_t)* bin, ut64 off) {
 	struct linkedit_data_command fc;
 	ut8 *buf;
 	int len;
-	if (off > bin->size ||
-		off + sizeof(struct linkedit_data_command) > bin->size) {
+	if (off > bin->size || off + sizeof (struct
+			linkedit_data_command) > bin->size) {
 		eprintf ("Likely overflow while parsing"
 			" LC_FUNCTION_STARTS command\n");
 	}
+	bin->func_start = NULL;
 	len = r_buf_fread_at (bin->b, off, (ut8*)&fc, bin->endian ? "4I" : "4i", 1);
-	if (len == -1 || len == 0) {
+	if (len < 1) {
 		eprintf ("Failed to get data while parsing"
 			" LC_FUNCTION_STARTS command\n");
 	}
@@ -517,6 +518,7 @@ static int parse_function_starts (struct MACH0_(obj_t)* bin, ut64 off) {
 		eprintf ("Failed to allocate buffer\n");
 		return false;
 	}
+	bin->func_size = fc.datasize;
 	if (fc.dataoff > bin->size || fc.dataoff + fc.datasize > bin->size) {
 		free (buf);
 		eprintf ("Likely overflow while parsing "
@@ -524,12 +526,14 @@ static int parse_function_starts (struct MACH0_(obj_t)* bin, ut64 off) {
 		return false;
 	}
 	len = r_buf_read_at (bin->b, fc.dataoff, buf, fc.datasize);
-	if (len == 0 || len == -1) {
+	if (len != fc.datasize) {
 		free (buf);
 		eprintf ("Failed to get data while parsing"
 			" LC_FUNCTION_STARTS\n");
 		return false;
 	}
+	buf[fc.datasize] = 0; // null-terminated buffer
+eprintf ("%p %d\n", buf, buf[0]);
 	bin->func_start = buf;
 	return true;
 }

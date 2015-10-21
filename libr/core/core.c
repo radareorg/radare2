@@ -614,6 +614,7 @@ static int autocomplete(RLine *line) {
 		if ((!strncmp (line->buffer.data, "s ", 2)) ||
 		    (!strncmp (line->buffer.data, "ad ", 3)) ||
 		    (!strncmp (line->buffer.data, "bf ", 3)) ||
+		    (!strncmp (line->buffer.data, "dcu ", 4)) ||
 		    (!strncmp (line->buffer.data, "ag ", 3)) ||
 		    (!strncmp (line->buffer.data, "afi ", 4)) ||
 		    (!strncmp (line->buffer.data, "afb ", 4)) ||

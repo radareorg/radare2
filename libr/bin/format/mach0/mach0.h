@@ -103,6 +103,7 @@ struct MACH0_(obj_t) {
 	int dbg_info;
 	const char *lang;
 	int uuidn;
+	int func_size;
 };
 
 struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file);

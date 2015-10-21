@@ -165,7 +165,8 @@ static RList* symbols(RBinFile *arch) {
 	if (bin->func_start) {
 		ut64 value = 0, address = 0;
 		const ut8* temp = bin->func_start;
-		while (*temp) {
+		const ut8* temp_end = bin->func_start + bin->func_size;
+		while (*temp && temp+2 < temp_end) {
 			temp = r_uleb128_decode (temp, NULL, &value);
 			address += value;
 			ptr = R_NEW0 (RBinSymbol);
@@ -181,6 +182,7 @@ static RList* symbols(RBinFile *arch) {
 			r_list_append (ret, ptr);
 		}
 	}
+beach:
 	bin->lang = lang;
 	free (symbols);
 
