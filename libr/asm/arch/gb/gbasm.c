@@ -59,6 +59,9 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		case 0x726574:			//ret
 			op->buf[0] = 0xc9;
 			break;
+		case 0x72657469:		//reti
+			op->buf[0] = 0xd9;
+			break;
 		case 0x6469:			//di
 			op->buf[0] = 0xf3;
 			break;
@@ -72,6 +75,36 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			if ((num & 7) || ((num/8) > 7))
 				return op->size = 0;
 			op->buf[0] = (ut8)((num & 0xff) + 0xc7);
+			break;
+		case 0x70757368:		//push
+			if (strlen (op->buf_asm) < 7)
+				return op->size = 0;
+			str_op (&op->buf_asm[5]);
+			str_op (&op->buf_asm[6]);
+			if (op->buf_asm[5] == 'b' && op->buf_asm[6] == 'c') {
+				op->buf[0] = 0xc5;
+			} else if (op->buf_asm[5] == 'd' && op->buf_asm[6] == 'e') {
+				op->buf[0] = 0xd5;
+			} else if (op->buf_asm[5] == 'h' && op->buf_asm[6] == 'l') {
+				op->buf[0] = 0xe5;
+			} else if (op->buf_asm[5] == 'a' && op->buf_asm[6] == 'f') {
+				op->buf[0] = 0xf5;
+			} else len = 0;
+			break;
+		case 0x706f70:			//pop	
+			if (strlen (op->buf_asm) < 6)
+				return op->size = 0;
+			str_op (&op->buf_asm[4]);
+			str_op (&op->buf_asm[5]);
+			if (op->buf_asm[4] == 'b' && op->buf_asm[5] == 'c') {
+				op->buf[0] = 0xc1;
+			} else if (op->buf_asm[4] == 'd' && op->buf_asm[5] == 'e') {
+				op->buf[0] = 0xd1;
+			} else if (op->buf_asm[4] == 'h' && op->buf_asm[5] == 'l') {
+				op->buf[0] = 0xe1;
+			} else if (op->buf_asm[4] == 'a' && op->buf_asm[5] == 'f') {
+				op->buf[0] = 0xf1;
+			} else len = 0;
 			break;
 		default:
 			len = 0;
