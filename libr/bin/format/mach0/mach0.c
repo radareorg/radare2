@@ -1017,21 +1017,24 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			continue;
 #define OLD 1
 #if OLD
-		from = R_MIN (R_MAX (0, from), symbols_size/sizeof(struct symbol_t));
-		to = R_MIN (to , symbols_size/sizeof(struct symbol_t));
+		from = R_MIN (R_MAX (0, from), symbols_size / sizeof (struct symbol_t));
+		to = R_MIN (to , symbols_size / sizeof (struct symbol_t));
 		to = R_MIN (to, bin->nsymtab);
 #else
 		from = R_MIN (R_MAX (0, from), symbols_size/sizeof(struct symbol_t));
 		to = symbols_count; //symbols_size/sizeof(struct symbol_t);
 #endif
+		int maxsymbols = symbols_size / sizeof(struct symbol_t);
 		if (to>0x500000) {
 			eprintf ("WARNING: corrupted mach0 header: symbol table is too big %d\n", to);
 			free (symbols);
 			sdb_free (db);
 			return NULL;
 		}
+		if (symbols_count >= maxsymbols) {
+			symbols_count = maxsymbols - 1;
+		}
 		for (i = from; i < to && j < symbols_count; i++, j++) {
-// TODO: rename to vaddr / paddr
 			symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
 			symbols[j].addr = bin->symtab[i].n_value;
 			symbols[j].size = 0; /* TODO: Is it anywhere? */
