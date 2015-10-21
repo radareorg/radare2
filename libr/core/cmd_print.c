@@ -1364,6 +1364,40 @@ static void printraw (RCore *core, int len, int mode) {
 	}
 	core->cons->newline = true;
 }
+static void cmd_print_pv(RCore *core, const char *input) {
+	const char *stack[] = { "ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL };
+	int i, n = core->assembler->bits / 8;
+	int type = 'v';
+	// variables can be
+	switch (input[0]) {
+	case 'z':
+		type = 'z';
+		if (input[1]) {
+			input++;
+		} else {
+			r_core_cmdf (core, "ps");
+			break;
+		}
+		/* fallthrough */
+	case ' ':
+		for (i=0;stack[i]; i++) {
+			if (!strcmp (input+1, stack[i])) {
+				if (type == 'z') {
+					r_core_cmdf (core, "ps @ [`drn sp`+%d]", n * i);
+				} else {
+					r_core_cmdf (core, "?v [`drn sp`+%d]", n * i);
+				}
+			}
+		}
+		break;
+	case '?':
+		eprintf ("Usage: pv[z] [ret arg#]\n");
+		break;
+	default:
+		r_core_cmd0 (core, "?v [$$]");
+		break;
+	}
+}
 
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -1451,9 +1485,9 @@ static int cmd_print(void *data, const char *input) {
 		r_core_seek (core, off, SEEK_SET);
 	}
 	switch (*input) {
-	case 'w': //pw
+	case 'w': // "pw"
 		if (input[1]=='n') {
-			cmd_print_pwn(core);
+			cmd_print_pwn (core);
 		} else if (input[1]=='d') {
 			if (!r_sandbox_enable (0)) {
 				char *cwd = r_sys_getdir ();
@@ -1466,7 +1500,10 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_printf("| pwd               display current working directory\n");
 		}
 		break;
-	case 'v': //pv
+	case 'v': // "pv"
+		cmd_print_pv (core, input+1);
+		break;
+	case '-': // "p-"
 		mode = input[1];
 		w = len? len: core->print->cols * 4;
 		if (mode == 'j') r_cons_strcat ("{");
@@ -1482,9 +1519,9 @@ static int cmd_print(void *data, const char *input) {
 		case '?':{
 			const char* help_msg[] = {
 				"Usage:", "p%%[jh] [pieces]", "bar|json|histogram blocks",
-				"pv", "", "show ascii-art bar of metadata in file boundaries",
-				"pvj", "", "show json format",
-				"pvh", "", "show histogram analysis of metadata per block",
+				"p-", "", "show ascii-art bar of metadata in file boundaries",
+				"p-j", "", "show json format",
+				"p-h", "", "show histogram analysis of metadata per block",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			}
@@ -3148,7 +3185,8 @@ static int cmd_print(void *data, const char *input) {
 			 "ps","[pwz] [len]","print pascal/wide/zero-terminated strings",
 			 "pt","[dn?] [len]","print different timestamps",
 			 "pu","[w] [len]","print N url encoded bytes (w=wide)",
-			 "pv","[jh] [mode]","bar|json|histogram blocks (mode: e?search.in)",
+			 "pv","[jh] [mode]","show variable/pointer/value in memory",
+			 "p-","[jh] [mode]","bar|json|histogram blocks (mode: e?search.in)",
 			 "p","[xX][owq] [len]","hexdump of N bytes (o=octal, w=32bit, q=64bit)",
 			 "pz"," [len]","print zoom view (see pz? for help)",
 			 "pwd","","display current working directory",

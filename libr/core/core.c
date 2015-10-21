@@ -210,7 +210,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	case '[':
 {
 		ut64 n = 0LL;
-		int refsz = (core->assembler->bits & R_SYS_BITS_64)? 8: 4;
+		int refsz = core->assembler->bits / 8;
 		const char *p = NULL;
 		if (strlen (str)>5)
 			p = strchr (str+5, ':');
@@ -238,7 +238,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		// pop state
 		if (ok) *ok = 1;
-		ut32 num = 0;
+		ut64 num = 0;
 		switch (refsz) {
 		case 8:
 		case 4:
