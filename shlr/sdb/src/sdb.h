@@ -17,7 +17,11 @@ extern "C" {
 #include "sdb_version.h"
 
 #undef r_offsetof
-#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
+#if defined(__GNUC__)
+#define r_offsetof(type, member) offsetof(type, member)
+#else
+#define r_offsetof(type, member) ((size_t) &((type*)0)->member)
+#endif
 
 /* Key value sizes */
 #define SDB_MIN_VALUE 1
