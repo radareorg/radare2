@@ -661,7 +661,6 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		if (!end) { // We filter on a single opcode, so no ";"
 			end = start + strlen (grep);
 		}
-		if (grep_str) free (grep_str);
 		grep_str = calloc (1, end - start + 1);
 		strncpy (grep_str, start, end - start);
 		if (regex) {
