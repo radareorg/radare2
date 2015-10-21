@@ -77,7 +77,7 @@ R_API void r_bin_filter_classes (RList *list) {
 	r_list_foreach (list, iter, cls) {
 		if (!cls->name) continue;
 		namepad_len = strlen (cls->name) + 32;
-		*namepad = malloc (namepad_len);
+		namepad = calloc (1, namepad_len+1);
 		if (namepad) {
 			strcpy (namepad, cls->name);
 			r_bin_filter_name (db, cls->index, namepad, namepad_len);
