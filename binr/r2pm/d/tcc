@@ -1,0 +1,21 @@
+R2PM_BEGIN
+
+R2PM_GIT "http://repo.or.cz/tinycc"
+R2PM_DESC "[System] TinyCC compiler aka TCC"
+
+# if installation fails, just strace it, probably this will fix:
+# cp -f /usr/lib/crt* /usr/lib64/
+
+R2PM_INSTALL() {
+	make clean
+	./configure --prefix=/usr --sysroot=/usr/lib --libdir=/usr/lib \
+		--tccdir=/usr/lib/tcc --docdir=/usr/share/doc/tcc
+	make PREFIX=/usr CONFIG_SYSROOT=/usr/lib
+	sudo make install PREFIX=/usr
+}
+
+R2PM_UNINSTALL() {
+	sudo make uninstall PREFIX=/usr
+}
+
+R2PM_END
