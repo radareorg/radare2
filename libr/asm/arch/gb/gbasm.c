@@ -22,46 +22,46 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 	for (i = 0; i < mn_len; i++)
 		mn = (mn << 8) | op->buf_asm[i];
 	switch (mn) {
-		case (int)'nop':
+		case 0x6e6f70:
 			op->buf[0] = 0x00;
 			break;
-		case (int)'rlca':
+		case 0x726c6361:
 			op->buf[0] = 0x07;
 			break;
-		case (int)'rrca':
+		case 0x72726361:
 			op->buf[0] = 0xf0;
 			break;
-		case (int)'stop':
+		case 0x73746f70:
 			op->buf[0] = 0x10;
 			break;
-		case (int)'rla':
+		case 0x726c61:
 			op->buf[0] = 0x17;
 			break;
-		case (int)'rra':
+		case 0x727261:
 			op->buf[0] = 0x1f;
 			break;
-		case (int)'daa':
+		case 0x646161:
 			op->buf[0] = 0x27;
 			break;
-		case (int)'cpl':
+		case 0x63706c:
 			op->buf[0] = 0x2f;
 			break;
-		case (int)'scf':
+		case 0x736366:
 			op->buf[0] = 0x37;
 			break;
-		case (int)'ccf':
+		case 0x636366:
 			op->buf[0] = 0x3f;
 			break;
-		case (int)'halt':
+		case 0x68616c74:
 			op->buf[0] = 0x76;
 			break;
-		case (int)'ret':
+		case 0x726574:
 			op->buf[0] = 0xc9;
 			break;
-		case (int)'di':
+		case 0x6469:
 			op->buf[0] = 0xf3;
 			break;
-		case (int)'ei':
+		case 0x6569:
 			op->buf[0] = 0xfb;
 			break;
 		default:
