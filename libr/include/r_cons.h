@@ -89,6 +89,7 @@ typedef struct r_cons_palette_t {
 	char *pop;
 	char *prompt;
 	char *push;
+	char *crypto;
 	char *reg;
 	char *reset;
 	char *ret;

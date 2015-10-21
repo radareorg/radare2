@@ -45,6 +45,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.pop = Color_BMAGENTA;
 	cons->pal.prompt = Color_YELLOW;
 	cons->pal.push = Color_MAGENTA;
+	cons->pal.crypto = Color_BGBLUE;
 	cons->pal.reg = Color_CYAN;
 	cons->pal.reset = Color_RESET;
 	cons->pal.ret = Color_RED;
@@ -196,6 +197,7 @@ static struct {
 	{ "btext", r_offsetof (RConsPalette, btext) },
 	{ "push",  r_offsetof (RConsPalette, push) },
 	{ "pop", r_offsetof (RConsPalette, pop) },
+	{ "crypto", r_offsetof (RConsPalette, crypto) },
 	{ "jmp", r_offsetof (RConsPalette, jmp) },
 	{ "cjmp", r_offsetof (RConsPalette, cjmp) },
 	{ "call", r_offsetof (RConsPalette, call) },

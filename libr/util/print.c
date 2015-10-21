@@ -1067,6 +1067,7 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_SHR:
 	case R_ANAL_OP_TYPE_ROL:
 	case R_ANAL_OP_TYPE_ROR:
+	case R_ANAL_OP_TYPE_CPL:
 		return p->cons->pal.bin;
 	case R_ANAL_OP_TYPE_IO:
 		return p->cons->pal.swi;
@@ -1106,6 +1107,8 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_POP:
 	case R_ANAL_OP_TYPE_STORE:
 		return p->cons->pal.pop;
+	case R_ANAL_OP_TYPE_CRYPTO:
+		return p->cons->pal.crypto;
 	case R_ANAL_OP_TYPE_NULL:
 		return p->cons->pal.other;
 	case R_ANAL_OP_TYPE_UNK:
