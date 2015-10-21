@@ -1500,19 +1500,23 @@ static int bin_classes(RCore *r, int mode) {
 	RListIter *iter, *iter2;
 	RBinSymbol *sym;
 	RBinClass *c;
+	char *name;
 	RList *cs = r_bin_get_classes (r->bin);
 	if (!cs) return false;
 
 	// XXX: support for classes is broken and needs more love
 	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
 	else if (IS_MODE_SET (mode)) {
-		if (!r_config_get_i (r->config, "bin.classes")) return false;
+		if (!r_config_get_i (r->config, "bin.classes")) {
+			return false;
+		}
 		r_flag_space_set (r->flags, "classes");
-	} else if (IS_MODE_RAD (mode)) r_cons_printf ("fs classes\n");
-	r_list_foreach (cs, iter, c) {
-		char *name;
+	} else if (IS_MODE_RAD (mode)) {
+		r_cons_printf ("fs classes\n");
+	}
 
-		if (!c->name || !c->name[0]) continue;
+	r_list_foreach (cs, iter, c) {
+		if (!c || !c->name || !c->name[0]) continue;
 		name = strdup (c->name);
 		r_name_filter (name, 0);
 

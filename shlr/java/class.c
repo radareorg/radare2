@@ -2330,10 +2330,10 @@ R_API RList * r_bin_java_get_entrypoints(RBinJavaObj* bin) {
 			strcmp (fm_type->name, "<init>") == 0 ||
 			strcmp (fm_type->name, "<clinit>") == 0 ||
 			strstr (fm_type->flags_str, "static") != 0) {
-			addr = R_NEW (RBinAddr);
+			addr = R_NEW0 (RBinAddr);
 			if (addr) {
-				memset (addr, 0, sizeof (RBinAddr));
-				addr->vaddr = addr->paddr = r_bin_java_get_method_code_offset (fm_type) + bin->loadaddr;
+				addr->vaddr = addr->paddr = \
+					r_bin_java_get_method_code_offset (fm_type) + bin->loadaddr;
 			}
 			r_list_append (ret, addr);
 		}
@@ -3717,20 +3717,21 @@ R_API ut64 r_bin_java_local_variable_table_attr_calc_size(RBinJavaAttrInfo *attr
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_local_variable_table_attr_new (ut8* buffer, ut64 sz, ut64 buf_offset) {
-	RBinJavaAttrInfo *attr = NULL;
 	RBinJavaLocalVariableAttribute* lvattr;
 	ut64 cur_location = 0, offset = 0;
+	RBinJavaAttrInfo *attr;
+	ut32 i = 0;
+
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	offset += 6;
-	if (attr == NULL) {
-		// TODO eprintf
+	if (!attr) {
 		return attr;
 	}
-	ut32 i = 0;
 	attr->type = R_BIN_JAVA_ATTR_TYPE_LOCAL_VARIABLE_TABLE_ATTR;
 	attr->info.local_variable_table_attr.table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
-	attr->info.local_variable_table_attr.local_variable_table = r_list_newf (r_bin_java_local_variable_table_attr_entry_free);
+	attr->info.local_variable_table_attr.local_variable_table = \
+		r_list_newf (r_bin_java_local_variable_table_attr_entry_free);
 	for (i = 0; i < attr->info.local_variable_table_attr.table_length; i++) {
 		if (offset + 10 < sz) {
 			break;
@@ -3750,13 +3751,13 @@ R_API RBinJavaAttrInfo* r_bin_java_local_variable_table_attr_new (ut8* buffer, u
 		lvattr->file_offset = cur_location;
 		lvattr->name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, lvattr->name_idx);
 		lvattr->size = 10;
-		if(lvattr->name == NULL) {
-			lvattr->name = r_str_dup (NULL, "NULL");
+		if (!lvattr->name) {
+			lvattr->name = strdup ("NULL");
 			eprintf ("r_bin_java_local_variable_table_attr_new: Unable to find the name for %d index.\n", lvattr->name_idx);
 		}
 		lvattr->descriptor = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, lvattr->descriptor_idx);
-		if(lvattr->descriptor == NULL) {
-			lvattr->descriptor = r_str_dup (NULL, "NULL");
+		if (!lvattr->descriptor) {
+			lvattr->descriptor = strdup ("NULL");
 			eprintf ("r_bin_java_local_variable_table_attr_new: Unable to find the descriptor for %d index.\n", lvattr->descriptor_idx);
 		}
 		r_list_append (attr->info.local_variable_table_attr.local_variable_table, lvattr);
@@ -3797,8 +3798,7 @@ R_API RBinJavaAttrInfo* r_bin_java_local_variable_type_table_attr_new (ut8* buff
 	ut32 i = 0;
 	attr = r_bin_java_default_attr_new (buffer, sz, offset);
 	offset += 6;
-	if (attr == NULL) {
-		// TODO eprintf
+	if (!attr) {
 		return attr;
 	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_LOCAL_VARIABLE_TYPE_TABLE_ATTR;
