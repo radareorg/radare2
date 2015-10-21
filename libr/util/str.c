@@ -1847,6 +1847,17 @@ R_API const char * r_str_tok (const char *str1, const char b, size_t len) {
 	return p;
 }
 
+R_API int r_str_do_until_token (str_operation op, char *str, const char tok)
+{
+	int ret;
+	if (!str)
+		return -1;
+	if (!op)
+		for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { }
+	else	for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { op (str+ret); } 
+	return ret;
+}
+
 R_API const char *r_str_pad(const char ch, int sz) {
 	static char pad[1024];
 	if (sz<0) sz = 0;

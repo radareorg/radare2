@@ -1,5 +1,5 @@
 /* radare - LGPL - Copyright 2012-2014 - pancake
-	2013 - condret					*/
+	2013-2015 - condret					*/
 
 // fork of asm_z80.c
 
@@ -8,12 +8,17 @@
 #include <r_asm.h>
 #include <r_lib.h>
 #include "../arch/gb/gbdis.c"
+#include "../arch/gb/gbasm.c"
 
 static int disassemble(RAsm *a, RAsmOp *r_op, const ut8 *buf, int len) {
 	int dlen = gbDisass(r_op,buf,len);
 	if(dlen<0) dlen=0;
 	r_op->size = dlen;
 	return dlen;
+}
+
+static int assemble(RAsm *a, RAsmOp *r_op, const char *buf) {
+	return gbAsm (a, r_op, buf);
 }
 
 RAsmPlugin r_asm_plugin_gb = {
@@ -26,7 +31,7 @@ RAsmPlugin r_asm_plugin_gb = {
 	.fini = NULL,
 	.disassemble = &disassemble,
 	.modify = NULL,
-	.assemble = NULL,
+	.assemble = &assemble,
 };
 
 #ifndef CORELIB

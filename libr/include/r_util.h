@@ -548,6 +548,10 @@ R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
 R_API const char * r_str_tok (const char *str1, const char b, size_t len);
 
+typedef void (*str_operation)(char *c);
+
+R_API int r_str_do_until_token (str_operation op, char *str, const char tok);
+
 R_API int r_str_re_match(const char *str, const char *reg);
 R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
 R_API int r_str_unescape(char *buf);
