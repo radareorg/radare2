@@ -2721,7 +2721,6 @@ toro:
  * Set to 0 the parameter you don't use */
 R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_opcodes) {
 	RDisasmState *ds = NULL;
-	int bs = core->blocksize;
 	int i, j, ret, err = 0;
 	RAnalFunction *f;
 	char *tmpopstr;

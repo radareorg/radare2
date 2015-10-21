@@ -606,11 +606,7 @@ static void get_protocol_list_t (mach0_ut p, RBinFile *arch, RBinClass *processe
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_class_ro_t (mach0_ut p,
-							RBinFile *arch,
-							ut32 *is_meta_class,
-							RBinClass *processed_class)
-{
+static void get_class_ro_t (mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBinClass *processed_class) {
 	struct MACH0_(SClassRoT) cro;
 	ut64 r;
 	ut32 offset, left;
@@ -626,11 +622,8 @@ static void get_class_ro_t (mach0_ut p,
 	memset (&cro, '\0', sizeof (struct MACH0_(SClassRoT)));
 	if(left < sizeof (struct MACH0_(SClassRoT))){
 		r_buf_read_at (arch->buf, r, (ut8 *)&cro, left);
-	}
-	else {
-		r_buf_read_at (arch->buf, r,
-					(ut8 *)&cro,
-					sizeof (struct MACH0_(SClassRoT)));
+	} else {
+		r_buf_read_at (arch->buf, r, (ut8 *)&cro, sizeof (struct MACH0_(SClassRoT)));
 	}
 
 	r = get_pointer (cro.name, NULL, &left, arch);
@@ -642,8 +635,13 @@ static void get_class_ro_t (mach0_ut p,
 			processed_class->name = strdup ("some_encrypted_data");
 			left = strlen (processed_class->name) + 1;
 		} else {
-			processed_class->name = malloc (left);
-			r_buf_read_at (arch->buf, r, (ut8 *)processed_class->name, left);
+			char *name = malloc (left+1);
+			if (name) {
+				int rc = r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+				if (rc<1) rc = 0;
+				name[rc] = 0;
+				processed_class->name = name;
+			}
 		}
 	}
 
@@ -678,10 +676,7 @@ static void get_class_ro_t (mach0_ut p,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_class_t (mach0_ut p,
-						RBinFile *arch,
-						RBinClass *processed_class)
-{
+static void get_class_t (mach0_ut p, RBinFile *arch, RBinClass *processed_class) {
 	struct MACH0_(SClass) c;
 	mach0_ut r = 0;
 	ut32 offset = 0, left = 0;
@@ -696,17 +691,12 @@ static void get_class_t (mach0_ut p,
 	if (left < sizeof (struct MACH0_(SClass))) {
 		r_buf_read_at (arch->buf, r, (ut8 *)&c, left);
 	} else {
-		r_buf_read_at (arch->buf,
-					r,
-					(ut8 *)&c,
-					sizeof (struct MACH0_(SClass)));
+		r_buf_read_at (arch->buf, r, (ut8 *)&c,
+			sizeof (struct MACH0_(SClass)));
 	}
 
 	processed_class->addr = c.isa;
-	get_class_ro_t ((c.data) & ~0x3,
-					arch,
-					&is_meta_class,
-					processed_class);
+	get_class_ro_t ((c.data) & ~0x3, arch, &is_meta_class, processed_class);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
