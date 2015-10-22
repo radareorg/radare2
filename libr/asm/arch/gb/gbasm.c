@@ -138,9 +138,9 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 				op->buf[0] = 0xf1;
 			} else len = 0;
 			break;
-		case 0x6a70:
+		case 0x6a70:			//jp
 			{
-				char *q,*p = strchr (op->buf_asm, (int)',');
+				char *p = strchr (op->buf_asm, (int)',');
 				if (!p) {
 					str_op (&op->buf_asm[3]);
 					str_op (&op->buf_asm[4]);
@@ -169,8 +169,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 							op->buf[0] = 0xda;
 						else	return op->size = 0;
 					} else	return op->size = 0;
-					q = strrchr (p, (int)' ');
-					if (q)	p = q;
+					gb_str_replace (p, ", ", ",");
 					if (p[1] == '\0')
 						return op->size = 0;
 					num = r_num_get (NULL, p + 1);
@@ -179,7 +178,42 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 					len = 3;
 				}
 			}
-			break;		
+			break;
+		case 0x6a72:			//jr
+			if (strlen (op->buf_asm) < 4)
+				return op->size = 0;
+			{
+				char *p = strchr (op->buf_asm, (int)',');
+				if (!p) {
+					num = r_num_get (NULL, &op->buf_asm[3]);
+					len = 2;
+					op->buf[0] = 0x18;
+					op->buf[1] = (ut8)(num & 0xff);
+				} else {
+					str_op (p-2);
+					str_op (p-1);
+					if (*(p-2) == 'n') {
+						if (*(p-1) == 'z')
+							op->buf[0] = 0x20;
+						else if (*(p-1) == 'c')
+							op->buf[0] = 0x30;
+						else	return op->size = 0;
+					} else if (*(p-2) == ' ') {
+						if (*(p-1) == 'z')
+							op->buf[0] = 0x28;
+						else if (*(p-1) == 'c')
+							op->buf[0] = 0x38;
+						else	return op->size = 0;
+					} else	return op->size = 0;
+					gb_str_replace (p, ", ", ",");
+					if (p[1] == '\0')
+						return op->size = 0;
+					num = r_num_get (NULL, p + 1);
+					op->buf[1] = (ut8)(num & 0xff);
+					len = 2;
+				}
+			}
+			break;
 		default:
 			len = 0;
 			break;
