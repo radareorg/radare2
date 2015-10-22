@@ -125,6 +125,48 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 				op->buf[0] = 0xf1;
 			} else len = 0;
 			break;
+		case 0x6a70:
+			{
+				char *q,*p = strchr (op->buf_asm, (int)',');
+				if (!p) {
+					str_op (&op->buf_asm[3]);
+					str_op (&op->buf_asm[4]);
+					if (op->buf_asm[3] == 'h' && op->buf_asm[4] == 'l')
+						op->buf[0] = 0xe9;
+					else {
+						num = r_num_get (NULL, &op->buf_asm[3]);
+						len = 3;
+						op->buf[0] = 0xc3;
+						op->buf[1] = (ut8)(num & 0xff);
+						op->buf[2] = (ut8)((num & 0xff00) >> 8);
+					}
+				} else {
+					str_op (p-2);
+					str_op (p-1);
+					if (*(p-2) == 'n') {
+						if (*(p-1) == 'z')
+							op->buf[0] = 0xc2;
+						else if (*(p-1) == 'c')
+							op->buf[0] = 0xd2;
+						else	return op->size = 0;
+					} else if (*(p-2) == ' ') {
+						if (*(p-1) == 'z')
+							op->buf[0] = 0xca;
+						else if (*(p-1) == 'c')
+							op->buf[0] = 0xda;
+						else	return op->size = 0;
+					} else	return op->size = 0;
+					q = strrchr (p, (int)' ');
+					if (q)	p = q;
+					if (p[1] == '\0')
+						return op->size = 0;
+					num = r_num_get (NULL, p + 1);
+					op->buf[1] = (ut8)(num & 0xff);
+					op->buf[2] = (ut8)((num & 0xff00) >> 8);
+					len = 3;
+				}
+			}
+			break;		
 		default:
 			len = 0;
 			break;
