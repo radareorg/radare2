@@ -64,7 +64,6 @@ typedef struct r_anal_range_t {
 	ut64 from;
 	ut64 to;
 } RAnalRange;
-/* CPARSE stuff */
 
 #define R_ANAL_UNMASK_TYPE(x) (x&R_ANAL_VAR_TYPE_SIZE_MASK)
 #define R_ANAL_UNMASK_SIGN(x) (((x& R_ANAL_VAR_TYPE_SIGN_MASK)>> R_ANAL_VAR_TYPE_SIGN_SHIFT)==R_ANAL_VAR_TYPE_UNSIGNED)?0:1

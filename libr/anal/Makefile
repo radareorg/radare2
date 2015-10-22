@@ -3,7 +3,6 @@ include ../config.mk
 NAME=r_anal
 DEPS=r_util r_db r_reg r_syscall
 # r_core (commented as it would be recursive)
-CFLAGS*=HAVE_CPARSE=$(HAVE_CPARSE)
 CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
 
 LDFLAGS+=${BN_LIBS}
@@ -31,7 +30,7 @@ OBJLIBS+=anal_ex.o switch.o state.o cycles.o
 OBJLIBS+=esil_stats.o esil_trace.o flirt.o labels.o
 OBJLIBS+=esil2reil.o pin.o
 
-OBJS=${STATIC_OBJS} ${OBJLIBS} ${CPARSE_OBJS}
+OBJS=${STATIC_OBJS} ${OBJLIBS}
 
 test tests: tests-esil
 
