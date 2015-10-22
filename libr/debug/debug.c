@@ -156,8 +156,7 @@ R_API int r_debug_stop(RDebug *dbg) {
 
 R_API int r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 	if (arch && dbg && dbg->h) {
-		int rc = !strcmp (arch, dbg->h->arch);
-		if (!rc) rc = !!strstr (dbg->h->arch, arch);
+		bool rc = r_sys_arch_match (dbg->h->arch, arch);
 		if (rc) {
 			switch (bits) {
 			case 32:

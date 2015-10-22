@@ -75,7 +75,6 @@ int linux_step (RDebug *dbg) {
 		ret = R_TRUE;
 	}
 	return ret;
-
 }
 
 int linux_attach (RDebug *dbg, int pid) {
@@ -101,7 +100,6 @@ int linux_attach (RDebug *dbg, int pid) {
 	ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 	if (ret != -1) perror ("ptrace (PT_ATTACH)");
 	return pid;
-
 }
 
 RDebugInfo *linux_info (RDebug *dbg, const char *arg) {
@@ -119,9 +117,7 @@ RDebugInfo *linux_info (RDebug *dbg, const char *arg) {
 		"/proc/%d/cmdline", rdi->pid);
 	rdi->cmdline = r_file_slurp (procpid_cmdline, NULL);
 	return rdi;
-
 }
-
 
 RList *linux_thread_list (int pid, RList *list) {
 	int i, fd = -1, thid = 0;

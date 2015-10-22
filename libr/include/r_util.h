@@ -617,6 +617,7 @@ R_API int r_sys_getpid(void);
 R_API int r_sys_crash_handler(const char *cmd);
 R_API const char *r_sys_arch_str(int arch);
 R_API int r_sys_arch_id(const char *arch);
+R_API bool r_sys_arch_match(const char *archstr, const char *arch);
 R_API RList *r_sys_dir(const char *path);
 R_API void r_sys_perror(const char *fun);
 #if __WINDOWS__

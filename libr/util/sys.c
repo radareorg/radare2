@@ -571,6 +571,21 @@ R_API void r_sys_perror(const char *fun) {
 #endif
 }
 
+R_API bool r_sys_arch_match(const char *archstr, const char *arch) {
+	char *ptr;
+	if (!archstr || !arch || !*archstr || !*arch)
+		return true;
+	if (!strcmp (archstr, "*") || !strcmp (archstr, "any"))
+		return true;
+	if (!strcmp (archstr, arch))
+		return true;
+	if ((ptr = strstr (archstr, arch))) {
+		char p = ptr[strlen (arch)];
+		if (!p || p==',') return true;
+	}
+	return false;
+}
+
 R_API int r_sys_arch_id(const char *arch) {
 	int i;
 	for (i=0; arch_bit_array[i].name; i++)
