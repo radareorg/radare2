@@ -550,7 +550,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	// invalidate current object reference
 	bf->o = NULL;
 
-	// XXX - this needs to be reimplemented to account for 
+	// XXX - this needs to be reimplemented to account for
 	// performance impacts.
 	buf_bytes = NULL;
 
@@ -992,7 +992,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	o->baddr = baseaddr;
 	o->baddr_shift = 0;
 	// XXX - binfile could be null here meaning an improper load
-	// XXX - object size cant be set here and needs to be set where 
+	// XXX - object size cant be set here and needs to be set where
 	// where the object is created from.  The reason for this is to prevent
 	// mis-reporting when the file is loaded from impartial bytes or is extracted
 	// from a set of bytes in the file
