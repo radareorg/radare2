@@ -1533,7 +1533,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbs", " <addr>", "Toggle breakpoint",
 
 		"dbt", "", "Display backtrace based on dbg.btdepth and dbg.btalgo",
-		"dbt=", "", "Display backtrace in one line",
+		"dbt=", "", "Display backtrace in one line (see dbt=s and dbt=b for sp or bp)",
 		"dbtj", "", "Display backtrace in JSON",
 		"dbte", " <addr>", "Enable Breakpoint Trace",
 		"dbtd", " <addr>", "Disable Breakpoint Trace",
@@ -1619,8 +1619,20 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			list = r_debug_frames (core->dbg, addr);
 			r_list_reverse (list);
 			r_list_foreach (list, iter, frame) {
-				r_cons_printf ("%s0x%08"PFMT64x,
-						(i ? " > " : ""), frame->addr);
+				switch (input[3]) {
+				case 's':
+					r_cons_printf ("%s0x%08"PFMT64x,
+							(i ? " " : ""), frame->sp);
+					break;
+				case 'b':
+					r_cons_printf ("%s0x%08"PFMT64x,
+							(i ? " " : ""), frame->bp);
+					break;
+				default:
+					r_cons_printf ("%s0x%08"PFMT64x,
+							(i ? " " : ""), frame->addr);
+					break;
+				}
 				i++;
 			}
 			r_cons_newline ();
@@ -1636,7 +1648,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_cons_printf ("f-bt.*\n");
 			r_list_foreach (list, iter, frame) {
 				r_cons_printf ("f bt.frame%d = 0x%08"PFMT64x"\n", i, frame->addr);
-				r_cons_printf ("f bt.frame%d.stack = 0x%08"PFMT64x"\n", i, frame->sp);
+				r_cons_printf ("f bt.frame%d.stack %d 0x%08"PFMT64x"\n", i, frame->size, frame->sp);
 				i++;
 			}
 			r_list_free (list);
