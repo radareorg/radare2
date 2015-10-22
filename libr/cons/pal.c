@@ -257,51 +257,96 @@ R_API void r_cons_pal_load(const char *sdbfile) {
 R_API void r_cons_pal_save(const char *sdbfile) {
 }
 
-R_API void r_cons_pal_show () {
-	const int inc = 3;
-	int i, j, k, n = 0;
-	for (i=0; colors[i].name; i++) {
-		r_cons_printf ("%s%s__"Color_RESET" %s\n",
-			colors[i].code,
-			colors[i].bgcode,
-			colors[i].name);
-	}
+static void r_cons_pal_show_gs () {
+	int i, n;
+
 	r_cons_printf ("\nGreyscale:\n");
-	for (i=n=0; i<=0xf; i+=1) {
+	for (i = 0x08, n = 0;  i <= 0xee; i += 0xa) {
 		char fg[32], bg[32];
-		int r = i*16;
-		if (i<5) strcpy (fg, Color_WHITE);
-		else r_cons_rgb_str (fg, 0, 0, 0, 0);
-		r_cons_rgb_str (bg, r, r, r, 1);
-		r_cons_printf ("%s%s  rgb:%x%x%x  "
+
+		if (i < 0x76) strcpy (fg, Color_WHITE);
+		else strcpy(fg, Color_BLACK);
+		r_cons_rgb_str (bg, i, i, i, 1);
+		r_cons_printf ("%s%s rgb:%02x%02x%02x "
 			Color_RESET, fg, bg, i, i, i);
-		if (n++==5) {
+
+		if (n++ == 5) {
 			n = 0;
 			r_cons_newline();
 		}
 	}
-	r_cons_printf ("\n\nRGB:\n");
-	for (i=n=0; i<=0xf; i+=inc) {
-		for (k=0; k<=0xf; k+=inc) {
-			for (j=0; j<=0xf; j+=inc) {
+}
+
+static void r_cons_pal_show_256 () {
+	int r, g, b;
+
+	r_cons_printf ("\n\nXTerm colors:\n");
+	for (r = 0x00; r <= 0xff; r += 0x28) {
+		if (r == 0x28) r = 0x5f;
+		for (b = 0x00; b <= 0xff; b += 0x28) {
+			if (b == 0x28) b = 0x5f;
+			for (g = 0x00; g <= 0xff; g += 0x28) {
 				char fg[32], bg[32];
-				int r = i*16;
-				int g = j*16;
-				int b = k*16;
-				if ((i<6) && (j<5) )
-					strcpy (fg, Color_WHITE);
-				//if (i<2 && j<6 && k<13)
-				else r_cons_rgb_str (fg, 0, 0, 0, 0);
+
+				if (g == 0x28) g = 0x5f;
+				if ((r <= 0x5f) && (g <= 0x5f)) strcpy (fg, Color_WHITE);
+				else strcpy (fg, Color_BLACK);
 				r_cons_rgb_str (bg, r, g, b, 1);
-				r_cons_printf ("%s%s  rgb:%x%x%x  "Color_RESET,
-					fg, bg, i, j, k);
+				r_cons_printf ("%s%s rgb:%02x%02x%02x "Color_RESET,
+					fg, bg, r, g, b);
+
+				if (g==0xff) r_cons_newline();
+			}
+		}
+	}
+}
+
+static void r_cons_pal_show_rgb () {
+	const int inc = 3;
+	int i, j, k, n = 0;
+
+	r_cons_printf ("\n\nRGB:\n");
+	for (i = n = 0; i <= 0xf; i += inc) {
+		for (k = 0; k <= 0xf; k += inc) {
+			for (j = 0; j <= 0xf; j += inc) {
+				char fg[32], bg[32];
+				int r = i * 16;
+				int g = j * 16;
+				int b = k * 16;
+				if ((i < 6) && (j <5) ) strcpy (fg, Color_WHITE);
+				else strcpy (fg, Color_BLACK);
+				r_cons_rgb_str (bg, r, g, b, 1);
+				r_cons_printf ("%s%s rgb:%02x%02x%02x "Color_RESET,
+					fg, bg, r, g, b);
 				//if (n++==7) {
-				if (n++==5) {
+				if (n ++== 5) {
 					n = 0;
 					r_cons_newline();
 				}
 			}
 		}
+	}
+}
+
+R_API void r_cons_pal_show () {
+	int i = 0;
+
+	for (i = 0; colors[i].name; i++) {
+		r_cons_printf ("%s%s__"Color_RESET" %s\n",
+			colors[i].code,
+			colors[i].bgcode,
+			colors[i].name);
+	}
+
+	switch (r_cons_singleton()->truecolor) {
+	case 1: // 256 color palette
+		r_cons_pal_show_gs ();
+		r_cons_pal_show_256 ();
+		break;
+	case 2: // 16M
+		r_cons_pal_show_gs ();
+		r_cons_pal_show_rgb ();
+		break;
 	}
 }
 
