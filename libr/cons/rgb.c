@@ -37,22 +37,34 @@ static void init_color_table() {
 	}
 }
 
-static int gs (int rgb) {
-	return 232 + (double)rgb/(255/24.1);
+static int lookup_rgb (int r, int g, int b) {
+	int i;
+
+	int color = (r << 16) + (g << 8) + b;
+	for (i = 0; i < 256; ++i)
+		if (color_table[i] == color) return i;
+
+	return -1;
 }
 
-static int rgb(int r, int g, int b) {
+static int approximate_rgb (int r, int g, int b) {
 	const double k = (256.0/6.0);
 	int grey = 0;
 	if (r > 0 && r < 255 && r == g && r == b) grey = 1;
 	if (grey > 0) {
-		return gs(r);
+		return 232 + (double)r/(255/24.1);
 	} else {
 		r = R_DIM (r/k, 0, 6);
 		g = R_DIM (g/k, 0, 6);
 		b = R_DIM (b/k, 0, 6);
 		return 16 + (r*36) + (g*6) + b;
 	}
+}
+
+static int rgb (int r, int g, int b) {
+	int c = lookup_rgb(r, g, b);
+	if (c == -1) return approximate_rgb(r, g, b);
+	else return c;
 }
 
 static void unrgb(int color, int *r, int *g, int *b) {
@@ -132,18 +144,15 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 }
 
 R_API char *r_cons_rgb_str (char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
-	int k, fgbg = is_bg? 48: 38;
-	k = (r == g && g == b)?  gs (r): rgb (r, g, b);
-	//k = rgb (r, g, b);
+	int fgbg = is_bg? 48: 38;
 	if (!outstr) outstr = malloc (32);
 
 	switch (r_cons_singleton()->truecolor) {
 		case 1: // 256 color palette
-			sprintf (outstr, "\x1b[%d;5;%dm", fgbg, k);
+			sprintf (outstr, "\x1b[%d;5;%dm", fgbg, rgb(r, g, b));
 			break;
 		case 2: // 16M - xterm only
-			sprintf (outstr, "\x1b[%d;2;%d;%d;%dm", fgbg,
-					r&0xff, g&0xff, b&0xff);
+			sprintf (outstr, "\x1b[%d;2;%d;%d;%dm", fgbg, r, g, b);
 			break;
 		case 0: // ansi 16 colors
 		default:

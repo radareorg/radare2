@@ -100,10 +100,11 @@ struct {
 	{ NULL, NULL, NULL }
 };
 
-static inline ut8 rgbnum (const char ch) {
+static inline ut8 rgbnum (const char ch1, const char ch2) {
 	ut8 r = 0;
-	r_hex_to_byte (&r, ch);
-	return r*16;
+	r_hex_to_byte (&r, ch1);
+	r_hex_to_byte (&r, ch2);
+	return r;
 }
 
 R_API void r_cons_pal_random() {
@@ -116,10 +117,10 @@ R_API void r_cons_pal_random() {
 		k = r_cons_pal_get_i (i);
 		if (!k) break;
 		if (cons->truecolor>0) {
-			r = r_num_rand (0xf);
-			g = r_num_rand (0xf);
-			b = r_num_rand (0xf);
-			sprintf (val, "rgb:%x%x%x", r, g, b);
+			r = r_num_rand (0xff);
+			g = r_num_rand (0xff);
+			b = r_num_rand (0xff);
+			sprintf (val, "rgb:%02x%02x%02x", r, g, b);
 			r_cons_pal_set (k, val);
 		} else {
 			char *s = r_cons_color_random_string (0);
@@ -151,16 +152,30 @@ R_API char *r_cons_pal_parse(const char *str) {
 		return r_cons_color_random (0);
 	}
 	if (!strncmp (s, "rgb:", 4)) {
-		r = rgbnum (s[4]);
-		g = rgbnum (s[5]);
-		b = rgbnum (s[6]);
-		r_cons_rgb_str (out, r, g, b, 0);
+		if (strlen(s) == 7) {
+			r = rgbnum (s[4], '0');
+			g = rgbnum (s[5], '0');
+			b = rgbnum (s[6], '0');
+			r_cons_rgb_str (out, r, g, b, 0);
+		} else if (strlen(s) == 10) {
+			r = rgbnum (s[4], s[5]);
+			g = rgbnum (s[6], s[7]);
+			b = rgbnum (s[8], s[9]);
+			r_cons_rgb_str (out, r, g, b, 0);
+		}
 	}
 	if (p && !strncmp (p, "rgb:", 4)) {
-		r = rgbnum (p[4]);
-		g = rgbnum (p[5]);
-		b = rgbnum (p[6]);
-		r_cons_rgb_str (out+strlen (out), r, g, b, 1);
+		if (strlen(s) == 7) {
+			r = rgbnum (p[4], '0');
+			g = rgbnum (p[5], '0');
+			b = rgbnum (p[6], '0');
+			r_cons_rgb_str (out, r, g, b, 0);
+		} else if (strlen(s) == 10) {
+			r = rgbnum (p[4], p[5]);
+			g = rgbnum (p[6], p[7]);
+			b = rgbnum (p[8], p[9]);
+			r_cons_rgb_str (out, r, g, b, 0);
+		}
 	}
 	for (i=0; colors[i].name; i++) {
 		if (!strcmp (s, colors[i].name))
@@ -346,11 +361,8 @@ R_API void r_cons_pal_list (int rad) {
 			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
 			rgbstr[0] = 0;
 			r_cons_rgb_str (rgbstr, r, g, b, 0);
-			r >>= 4;
-			g >>= 4;
-			b >>= 4;
-			r_cons_printf ("ec %s rgb:%x%x%x\n",
-				keys[i].name, r&0xf, g&0xf, b&0xf);
+			r_cons_printf ("ec %s rgb:%02x%02x%02x\n",
+				keys[i].name, r, g, b);
 			break;
 		default:
 			r_cons_printf (" %s##"Color_RESET"  %s\n", *color, keys[i].name);
