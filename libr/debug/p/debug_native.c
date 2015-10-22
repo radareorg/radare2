@@ -1277,27 +1277,27 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.license = "LGPL3",
 #if __i386__
 	.bits = R_SYS_BITS_32,
-	.arch = R_ASM_ARCH_X86,
+	.arch = "x86",
 	.canstep = 1,
 #elif __x86_64__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
-	.arch = R_ASM_ARCH_X86,
+	.arch = "x86",
 	.canstep = 1,
 #elif __arm__
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
-	.arch = R_ASM_ARCH_ARM,
+	.arch = "arm",
 	.canstep = 0, // XXX it's 1 on some platforms...
 #elif __aarch64__
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
-	.arch = R_ASM_ARCH_ARM,
+	.arch = "arm",
 	.canstep = 0, // XXX it's 1 on some platforms...
 #elif __mips__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
-	.arch = R_ASM_ARCH_MIPS,
+	.arch = "mips",
 	.canstep = 0,
 #elif __powerpc__
 	.bits = R_SYS_BITS_32,
-	.arch = R_ASM_ARCH_PPC,
+	.arch = "ppc",
 	.canstep = 1,
 #else
 	.bits = 0,

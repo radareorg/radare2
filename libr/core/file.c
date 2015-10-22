@@ -324,6 +324,9 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 		}
 	}
 
+	if (*r_config_get (r->config, "dbg.libs")) {
+		r_core_cmd0 (r, ".dmm*");
+	}
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);

@@ -85,8 +85,8 @@ static int __esil_detach(int pid) {
 }
 
 static char *__esil_reg_profile(RDebug *dbg) {
-	eprintf ("TODO: esil %s\n", r_sys_arch_str (dbg->arch));
-	if (dbg->arch == R_SYS_ARCH_BF) {
+	eprintf ("TODO: esil %s\n", dbg->arch);
+	if (!strcmp (dbg->arch, "bf")) {
 		return strdup (
 			"=pc	pc\n"
 			"=sp	esp\n"
@@ -102,12 +102,10 @@ static char *__esil_reg_profile(RDebug *dbg) {
 			"gpr	mem	.32	28	0\n"
 			"gpr	memi	.32	32	0\n"
 		      );
-	} else if (dbg->arch == R_SYS_ARCH_X86) {
+	} else if (!strcmp (dbg->arch, "x86")) {
 		eprintf ("[DEBUGESIL] Missing regprofile for x86\n");
-		return NULL;
-	} else {
-		return NULL;
 	}
+	return NULL;
 }
 
 static int __esil_breakpoint (RBreakpointItem *bp, int set, void *user) {
@@ -127,10 +125,9 @@ static int __esil_stop(RDebug *dbg) {
 
 RDebugPlugin r_debug_plugin_esil = {
 	.name = "esil",
-	.license = "LGPL3",
-	/* TODO: Add support for more architectures here */
 	.keepio = 1,
-	.arch = R_ASM_ARCH_BF,
+	.license = "LGPL3",
+	.arch = "any", // TODO: exception!
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.init = __esil_init,
 	.step = __esil_step,
@@ -140,20 +137,10 @@ RDebugPlugin r_debug_plugin_esil = {
 	.attach = &__esil_attach,
 	.detach = &__esil_detach,
 	.wait = &__esil_wait,
-	.pids = NULL,
 	.stop = __esil_stop,
-	.tids = NULL,
-	.threads = NULL,
 	.kill = __esil_kill,
-	.frames = NULL,
 	.breakpoint = &__esil_breakpoint,
-	.reg_read = NULL, // &__esil_reg_read,
-	.reg_write = NULL, //&__esil_reg_write,
 	.reg_profile = __esil_reg_profile,
-	.map_get = NULL, //r_debug_native_map_get,
-//	.breakpoint = r_debug_native_bp,
-	//.ptr_write = &__esil_ptr_write,
-	//.ptr_read = &__esil_ptr_read,
 };
 
 #ifndef CORELIB

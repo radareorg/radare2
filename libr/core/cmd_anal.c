@@ -1046,7 +1046,7 @@ static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 	}
 	core->dbg->reg = core->anal->reg;
 	/* workaround for thumb */
-	if (core->anal->cur->arch == R_SYS_ARCH_ARM && bits==16) {
+	if (core->anal->cur->arch && !strcmp (core->anal->cur->arch, "arm") && bits==16) {
 		bits = 32;
 	}
 	if (mode == '=') {

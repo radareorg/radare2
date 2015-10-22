@@ -196,7 +196,8 @@ static int cb_asmarch(void *user, void *data) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 
-	r_debug_set_arch (core->dbg, r_sys_arch_id (node->value), bits);
+	//r_debug_set_arch (core->dbg, r_sys_arch_id (node->value), bits);
+	r_debug_set_arch (core->dbg, node->value, bits);
 	if (!r_config_set (core->config, "anal.arch", node->value)) {
 		char *p, *s = strdup (node->value);
 		p = strchr (s, '.');

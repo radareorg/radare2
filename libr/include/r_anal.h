@@ -32,7 +32,7 @@ R_LIB_VERSION_HEADER(r_anal);
 /* save memory:
    bb_has_ops=1 -> 600M
    bb_has_ops=0 -> 350MB
-*/
+ */
 #define R_ANAL_BB_HAS_OPS 0
 
 /* TODO: work in progress */
@@ -200,8 +200,8 @@ enum {
 	 *	and floating point types in st0.
 	 */
 	R_ANAL_CC_TYPE_SAFECALL, // Delphi and Free Pascal on Windows
-	R_ANAL_CC_TYPE_SYSV,
-	R_ANAL_CC_TYPE_THISCALL,
+		R_ANAL_CC_TYPE_SYSV,
+		R_ANAL_CC_TYPE_THISCALL,
 };
 
 #define R_ANAL_CC_ARGS 16
@@ -278,38 +278,38 @@ typedef struct r_anal_fcn_store_t {
 /* Store various function information,
  * variables, arguments, refs and even
  * description */
-typedef struct r_anal_type_function_t {
-	char* name;
-	char* dsc; // For producing nice listings
-	ut32 size;
-	int bits; // ((> bits 0) (set-bits bits))
-	short type;
-	/*item_list *rets; // Type of return value */
-	short rets;
-	short fmod; //  static, inline or volatile?
-	/* TODO: Change to RAnalCC ??? */
-	short call; // calling convention
-	char* attr; // __attribute__(()) list
-	ut64 addr;
-	int stack;
-	int ninstr;
-	int nargs; // Function arguments counter
-	int depth;
-	RAnalType *args; // list of arguments
+	typedef struct r_anal_type_function_t {
+		char* name;
+		char* dsc; // For producing nice listings
+		ut32 size;
+		int bits; // ((> bits 0) (set-bits bits))
+		short type;
+		/*item_list *rets; // Type of return value */
+		short rets;
+		short fmod; //  static, inline or volatile?
+		/* TODO: Change to RAnalCC ??? */
+		short call; // calling convention
+		char* attr; // __attribute__(()) list
+		ut64 addr;
+		int stack;
+		int ninstr;
+		int nargs; // Function arguments counter
+		int depth;
+		RAnalType *args; // list of arguments
 #if USE_VARSUBS
-	RAnalVarSub varsubs[R_ANAL_VARSUBS];
+		RAnalVarSub varsubs[R_ANAL_VARSUBS];
 #endif
-	ut8 *fingerprint; // TODO: make is fuzzy and smarter
-	RAnalDiff *diff;
-	RList *locs; // list of local variables
-	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
-	RList *bbs;
-	RList *vars;
+		ut8 *fingerprint; // TODO: make is fuzzy and smarter
+		RAnalDiff *diff;
+		RList *locs; // list of local variables
+		//RList *locals; // list of local labels -> moved to anal->sdb_fcns
+		RList *bbs;
+		RList *vars;
 #if FCN_OLD
-	RList *refs;
-	RList *xrefs;
+		RList *refs;
+		RList *xrefs;
 #endif
-} RAnalFunction;
+	} RAnalFunction;
 
 struct r_anal_type_t {
 	char *name;
@@ -362,34 +362,34 @@ enum {
 #if 0
 On x86 acording to Wikipedia
 
-     Prefix group 1
-        0xF0: LOCK prefix
-        0xF2: REPNE/REPNZ prefix
-        0xF3: REP or REPE/REPZ prefix
-    Prefix group 2
-        0x2E: CS segment override
-        0x36: SS segment override
-        0x3E: DS segment override
-        0x26: ES segment override
-        0x64: FS segment override
-        0x65: GS segment override
-        0x2E: Branch not taken    (hinting)
-        0x3E: Branch taken
-    Prefix group 3
-        0x66: Operand-size override prefix
-    Prefix group 4
-        0x67: Address-size override prefix
+	Prefix group 1
+	0xF0: LOCK prefix
+	0xF2: REPNE/REPNZ prefix
+	0xF3: REP or REPE/REPZ prefix
+	Prefix group 2
+	0x2E: CS segment override
+	0x36: SS segment override
+	0x3E: DS segment override
+	0x26: ES segment override
+	0x64: FS segment override
+	0x65: GS segment override
+	0x2E: Branch not taken    (hinting)
+	0x3E: Branch taken
+	Prefix group 3
+	0x66: Operand-size override prefix
+	Prefix group 4
+	0x67: Address-size override prefix
 #endif
 
-typedef enum {
-	R_ANAL_OP_PREFIX_COND     = 1,
-	R_ANAL_OP_PREFIX_REP      = 1<<1,
-	R_ANAL_OP_PREFIX_REPNE    = 1<<2,
-	R_ANAL_OP_PREFIX_LOCK     = 1<<3,
-	R_ANAL_OP_PREFIX_LIKELY   = 1<<4,
-	R_ANAL_OP_PREFIX_UNLIKELY = 1<<5
-	/* TODO: add segment override typemods? */
-} RAnalOpPrefix;
+	typedef enum {
+		R_ANAL_OP_PREFIX_COND     = 1,
+		R_ANAL_OP_PREFIX_REP      = 1<<1,
+		R_ANAL_OP_PREFIX_REPNE    = 1<<2,
+		R_ANAL_OP_PREFIX_LOCK     = 1<<3,
+		R_ANAL_OP_PREFIX_LIKELY   = 1<<4,
+		R_ANAL_OP_PREFIX_UNLIKELY = 1<<5
+			/* TODO: add segment override typemods? */
+	} RAnalOpPrefix;
 
 // XXX: this definition is plain wrong. use enum or empower bits
 typedef enum {
@@ -755,12 +755,12 @@ typedef struct r_anal_var_t {
 } RAnalVar;
 
 /*
-typedef struct r_anal_var_type_t {
-	char *name;
-	char *fmt;
-	ut32 size;
-} RAnalVarType;
-*/
+   typedef struct r_anal_var_type_t {
+   char *name;
+   char *fmt;
+   ut32 size;
+   } RAnalVarType;
+ */
 
 typedef enum {
 	R_ANAL_REF_TYPE_NULL = 0,
@@ -959,7 +959,7 @@ typedef struct r_anal_esil_t {
 	ut64 delay_addr;
 	int trap;
 	ut32 trap_code; // extend into a struct to store more exception info?
-// parity flag? done with cur
+	// parity flag? done with cur
 	ut64 old;	//used for carry-flagging and borrow-flagging
 	ut64 cur;	//used for carry-flagging and borrow-flagging
 	ut8 lastsz;	//in bits //used for signature-flag
@@ -1223,9 +1223,9 @@ R_API int r_anal_fcn_local_del_index(RAnal *anal, RAnalFunction *fcn, ut32 index
 #define R_ANAL_FCN_VARKIND_FASTARG 'A'
 
 #define r_anal_fcn_local_add(x,y,z,n,t) r_anal_fcn_var_add(x, y->addr, z,\
-	R_ANAL_FCN_VARKIND_LOCAL, n, t)
+R_ANAL_FCN_VARKIND_LOCAL, n, t)
 #define r_anal_fcn_local_del_index(x,y,z) r_anal_fcn_var_del_byindex(x, y,\
-	R_ANAL_FCN_VARKIND_LOCAL, z)
+R_ANAL_FCN_VARKIND_LOCAL, z)
 #define r_anal_fcn_local_del_name(x,y,z) error
 
 R_API int r_anal_fcn_arg_add (RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name);
@@ -1233,7 +1233,7 @@ R_API int r_anal_fcn_arg_add (RAnal *a, ut64 fna, int scope, int delta, const ch
 R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta);
 R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name);
 R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind,
-	int scope, ut32 idx);
+		int scope, ut32 idx);
 /* args */
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind);
 
@@ -1344,7 +1344,7 @@ R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 
 /* reflines.c */
 R_API RList* /*<RAnalRefline>*/ r_anal_reflines_get(RAnal *anal,
-	ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
+		ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
 R_API int r_anal_reflines_middle(RAnal *anal, RList *list, ut64 addr, int len);
 R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
 R_API RList *r_anal_reflines_fcn_get(struct r_anal_t *anal, RAnalFunction *fcn, int nlines, int linesout, int linescall);

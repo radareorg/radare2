@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2014 - pancake */
+/* radare - LGPL - Copyright 2011-2015 - pancake */
 
 #include <r_asm.h>
 #include <r_debug.h>
@@ -189,11 +189,9 @@ static int r_debug_bf_stop(RDebug *dbg) {
 
 RDebugPlugin r_debug_plugin_bf = {
 	.name = "bf",
+	.arch = "bf",
 	.license = "LGPL3",
-	/* TODO: Add support for more architectures here */
-	.arch = R_ASM_ARCH_BF,
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
-	.init = NULL,
 	.step = r_debug_bf_step,
 	.step_over = r_debug_bf_step_over,
 	.cont = r_debug_bf_continue,
@@ -201,20 +199,13 @@ RDebugPlugin r_debug_plugin_bf = {
 	.attach = &r_debug_bf_attach,
 	.detach = &r_debug_bf_detach,
 	.wait = &r_debug_bf_wait,
-	.pids = NULL,
 	.stop = r_debug_bf_stop,
-	.tids = NULL,
-	.threads = NULL,
 	.kill = r_debug_bf_kill,
-	.frames = NULL,
 	.breakpoint = &r_debug_bf_breakpoint,
 	.reg_read = &r_debug_bf_reg_read,
 	.reg_write = &r_debug_bf_reg_write,
 	.reg_profile = r_debug_bf_reg_profile,
 	.map_get = r_debug_native_map_get,
-//	.breakpoint = r_debug_native_bp,
-	//.ptr_write = &r_debug_bf_ptr_write,
-	//.ptr_read = &r_debug_bf_ptr_read,
 };
 
 #ifndef CORELIB

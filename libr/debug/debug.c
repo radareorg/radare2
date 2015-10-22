@@ -62,7 +62,7 @@ R_API RDebug *r_debug_new(int hard) {
 	RDebug *dbg = R_NEW0 (RDebug);
 	if (!dbg) return NULL;
 	// R_SYS_ARCH
-	dbg->arch = r_sys_arch_id (R_SYS_ARCH); // 0 is native by default
+	dbg->arch = strdup (R_SYS_ARCH);
 	dbg->bits = R_SYS_BITS;
 	dbg->trace_forks = 1;
 	dbg->trace_clone = 0;
@@ -123,6 +123,7 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 	//r_debug_plugin_free();
 	free (dbg->btalgo);
 	r_debug_trace_free (dbg);
+	free (dbg->arch);
 	free (dbg);
 	return NULL;
 }
@@ -153,11 +154,11 @@ R_API int r_debug_stop(RDebug *dbg) {
 	return false;
 }
 
-
-R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits) {
-	if (dbg && dbg->h) {
-		if (arch & dbg->h->arch) {
-			//eprintf ("arch supported by debug backend (%x)\n", arch);
+R_API int r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
+	if (arch && dbg && dbg->h) {
+		int rc = !strcmp (arch, dbg->h->arch);
+		if (!rc) rc = !!strstr (dbg->h->arch, arch);
+		if (rc) {
 			switch (bits) {
 			case 32:
 				if (dbg->h->bits & R_SYS_BITS_32) {
@@ -178,11 +179,10 @@ R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits) {
 					dbg->bits = R_SYS_BITS_32;
 				eprintf ("Invalid value for bits\n");
 			}
-			dbg->arch = arch;
+			free (dbg->arch);
+			dbg->arch = strdup (arch);
 			return true;
 		}
-		//eprintf ("arch (%s, %d) not supported by debug backend\n",
-		//	r_sys_arch_str (arch), bits);
 	}
 	return false;
 }

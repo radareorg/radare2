@@ -66,7 +66,6 @@ repeat:
 			len = 4;
 			goto repeat;
 		}
-		// TODO: this must be reworked to work better
 		/* if not found try to pad with the first one */
 		b = &bp->cur->bps[0];
 		if (len % b->length) {
@@ -96,7 +95,7 @@ R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int rwx) {
 	RListIter *iter;
 	r_list_foreach (bp->bps, iter, b) {
 		// eprintf ("---ataddr--- 0x%08"PFMT64x" %d %d %x\n", b->addr, b->size, b->recoil, b->rwx);
-		//Check addr within range and provided rwx matches (or null)
+		// Check addr within range and provided rwx matches (or null)
 		if (addr >= b->addr && addr <= (b->addr+b->size) && \
 			(!rwx || rwx&b->rwx))
 			return b;
@@ -235,7 +234,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 		switch (rad) {
 		case 0:
 			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x \
-				"%d %c%c%c %s %s %s cmd=\"%s\"" \
+				"%d %c%c%c %s %s %s cmd=\"%s\" " \
 				"name=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
 				(b->rwx & R_BP_PROT_READ) ? 'r' : '-',
