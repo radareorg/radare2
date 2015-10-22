@@ -265,7 +265,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	switch (insn->id) {
 	case ARM_INS_IT:
-		r_strbuf_setf (&op->esil, "");
+		// TODO: See #3486
 		break;
 	case ARM_INS_NOP:
 		r_strbuf_setf (&op->esil, ",");

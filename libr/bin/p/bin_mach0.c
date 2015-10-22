@@ -319,6 +319,7 @@ static RBinInfo* info(RBinFile *arch) {
 		ret->dbg_info = bin->dbg_info;
 		ret->lang = bin->lang;
 	}
+	ret->intrp = r_str_dup (NULL, MACH0_(get_intrp)(arch->o->bin_obj));
 	ret->rclass = strdup ("mach0");
 	ret->os = strdup (MACH0_(get_os)(arch->o->bin_obj));
 	ret->subsystem = strdup ("darwin");

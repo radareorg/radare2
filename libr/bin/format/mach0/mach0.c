@@ -533,7 +533,6 @@ static int parse_function_starts (struct MACH0_(obj_t)* bin, ut64 off) {
 		return false;
 	}
 	buf[fc.datasize] = 0; // null-terminated buffer
-eprintf ("%p %d\n", buf, buf[0]);
 	bin->func_start = buf;
 	return true;
 }
@@ -607,13 +606,16 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		//eprintf ("%d\n", lc.cmd);
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "data_in_code", 0);
 			// TODO table of non-instructions in __text
 			break;
 		case LC_RPATH:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "rpath", 0);
 			//eprintf ("--->\n");
 			break;
 		case LC_SEGMENT_64:
 		case LC_SEGMENT:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "segment", 0);
 			bin->nsegs++;
 			if (!parse_segments (bin, off)) {
 				eprintf ("error parsing segment\n");
@@ -622,31 +624,37 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			}
 			break;
 		case LC_SYMTAB:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "symtab", 0);
 			if (!parse_symtab (bin, off)) {
 				eprintf ("error parsing symtab\n");
 				return false;
 			}
 			break;
 		case LC_DYSYMTAB:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dysymtab", 0);
 			if (!parse_dysymtab(bin, off)) {
 				eprintf ("error parsing dysymtab\n");
 				return false;
 			}
 			break;
 		case LC_DYLIB_CODE_SIGN_DRS:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dylib_code_sign_drs", 0);
 			//eprintf ("[mach0] code is signed\n");
 			break;
 		case LC_VERSION_MIN_MACOSX:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "version_min_macosx", 0);
 			bin->os = 1;
 			// set OS = osx
 			//eprintf ("[mach0] Requires OSX >= x\n");
 			break;
 		case LC_VERSION_MIN_IPHONEOS:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "version_min_iphoneos", 0);
 			bin->os = 2;
 			// set OS = ios
 			//eprintf ("[mach0] Requires iOS >= x\n");
 			break;
 		case LC_UUID:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "uuid", 0);
 			{
 			struct uuid_command uc = {0};
 			if (off + sizeof (struct uuid_command) > bin->size) {
@@ -666,6 +674,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_ENCRYPTION_INFO_64:
 			/* TODO: the struct is probably different here */
 		case LC_ENCRYPTION_INFO:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "encryption_info", 0);
 			{
 			struct encryption_info_command eic = {0};
 			if (off + sizeof (struct encryption_info_command) > bin->size) {
@@ -682,7 +691,30 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			} }
 			break;
 		case LC_LOAD_DYLINKER:
-			//eprintf ("[mach0] load dynamic linker\n");
+			{
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dylinker", 0);
+				free (bin->intrp);
+				bin->intrp = NULL;
+				//eprintf ("[mach0] load dynamic linker\n");
+				struct dylinker_command dy = {0};
+				if (off + sizeof (struct dylinker_command) > bin->size){
+					eprintf ("Warning: Cannot parse dylinker command\n");
+					return false;
+				}
+				if (r_buf_fread_at (bin->b, off, (ut8*)&dy,
+							bin->endian?"3I":"3i", 1) == -1) {
+					eprintf ("Warning: read (LC_DYLD_INFO) at 0x%08"PFMT64x"\n", off);
+				} else {
+					int len = dy.cmdsize;
+					char *buf = malloc (len+1);
+					if (buf) {
+						r_buf_read_at (bin->b, off + 0xc, (ut8*)buf, len);
+						buf[len] = 0;
+						free (bin->intrp);
+						bin->intrp = buf;
+					}
+				}
+			}
 			break;
 		case LC_MAIN:
 			{
@@ -690,6 +722,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				ut64 eo;
 				ut64 ss;
 			} ep = {0};
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "main", 0);
 
 			if (!is_first_thread) {
 				eprintf("Error: LC_MAIN with other threads\n");
@@ -711,19 +744,21 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			}
 			break;
 		case LC_UNIXTHREAD:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "unixthread", 0);
 			if (!is_first_thread) {
 				eprintf("Error: LC_UNIXTHREAD with other threads\n");
 				return false;
 			}
 		case LC_THREAD:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "thread", 0);
 			if (!parse_thread(bin, &lc, off, is_first_thread)) {
 				eprintf ("Cannot parse thread\n");
 				return false;
 			}
-
 			is_first_thread = false;
 			break;
 		case LC_LOAD_DYLIB:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "load_dylib", 0);
 			bin->nlibs++;
 			if (!parse_dylib(bin, off)){
 				eprintf ("Cannot parse dylib\n");
@@ -733,6 +768,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			break;
 		case LC_DYLD_INFO:
 		case LC_DYLD_INFO_ONLY:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dyld_info", 0);
 			bin->dyld_info = malloc (sizeof(struct dyld_info_command));
 			if (off + sizeof (struct dyld_info_command) > bin->size){
 				eprintf ("Cannot parse dyldinfo\n");
@@ -747,24 +783,29 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			}
 			break;
 		case LC_CODE_SIGNATURE:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "signature", 0);
 			//eprintf ("mach0: TODO: show code signature\n");
 			/* ut32 dataoff
 			// ut32 datasize */
 			break;
 		case LC_SOURCE_VERSION:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "version", 0);
 			/* uint64_t  version;  */
 			/* A.B.C.D.E packed as a24.b10.c10.d10.e10 */
 			//eprintf ("mach0: TODO: Show source version\n");
 			break;
 		case LC_SEGMENT_SPLIT_INFO:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "split_info", 0);
 			/* TODO */
 			break;
 		case LC_FUNCTION_STARTS:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "function_starts", 0);
 			if (!parse_function_starts (bin, off)) {
 				eprintf ("Cannot parse LC_FUNCTION_STARTS\n");
 			}
 			break;
 		case LC_REEXPORT_DYLIB:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dylib", 0);
 			/* TODO */
 			break;
 		default:
@@ -1334,7 +1375,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 						if (stridx < 0 || stridx >= bin->symstrlen)
 							continue;
 					}
-					if (!strcmp((char *)bin->symstr + stridx, sym_name)) {
+					if (!strcmp ((char *)bin->symstr + stridx, sym_name)) {
 						sym_ord = j;
 						break;
 					}
@@ -1527,6 +1568,10 @@ int MACH0_(get_bits)(struct MACH0_(obj_t)* bin) {
 
 int MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin) {
 	return bin && bin->endian;
+}
+
+const char* MACH0_(get_intrp)(struct MACH0_(obj_t)* bin) {
+	return bin? bin->intrp: NULL;
 }
 
 const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin) {

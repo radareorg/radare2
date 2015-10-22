@@ -413,6 +413,7 @@ static int bin_info(RCore *r, int mode) {
 		pair_bool ("nx", info->has_nx, mode, false);
 		pair_bool ("crypto", info->has_crypto, mode, false);
 		pair_bool ("va", info->has_va, mode, false);
+		pair_str ("intrp", info->intrp, mode, false);
 		pair_str ("bintype", info->rclass, mode, false);
 		pair_str ("class", info->bclass, mode, false);
 		pair_str ("lang", info->lang, mode, false);

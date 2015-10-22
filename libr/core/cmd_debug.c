@@ -43,6 +43,10 @@ static ut64 r_debug_get_baddr(RCore *r, const char *file) {
     return 0LL;
 }
 
+static void cmd_debug_software_libs(RCore *core) {
+	// on linux:
+	//.!rabin2 -rsB 0x7f516ab31000 '/usr/lib/ld-2.22.so'
+}
 
 static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 	// TODO : handle more than one stopping syscall

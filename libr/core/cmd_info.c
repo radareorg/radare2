@@ -160,15 +160,15 @@ static void cmd_info_bin(RCore *core, int va, int mode) {
 		}
 		r_core_file_info (core, mode);
 		if (obj && bin_is_executable (obj)) {
-				if ((mode & R_CORE_BIN_JSON)) {
-					r_cons_printf (",\"bin\":");
-				}
-				r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
-					mode, va, NULL, NULL);
+			if ((mode & R_CORE_BIN_JSON)) {
+				r_cons_printf (",\"bin\":");
+			}
+			r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
+				mode, va, NULL, NULL);
 		}
 		if (mode == R_CORE_BIN_JSON && array == 0)
 			r_cons_printf ("}\n");
-	} else eprintf ("No selected file\n");
+	} else eprintf ("No file selected\n");
 }
 
 static int cmd_info(void *data, const char *input) {
@@ -246,6 +246,7 @@ static int cmd_info(void *data, const char *input) {
 			default:
 				eprintf ("Usage: ik [sdb-query]\n");
 			}
+			goto done;
 			break;
 		case 'o':
 			 {

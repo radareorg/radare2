@@ -553,6 +553,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->big_endian = Elf_(r_bin_elf_is_big_endian) (arch->o->bin_obj);
 	ret->has_va = Elf_(r_bin_elf_has_va) (arch->o->bin_obj);
 	ret->has_nx = Elf_(r_bin_elf_has_nx) (arch->o->bin_obj);
+	ret->intrp = Elf_(r_bin_elf_intrp) (arch->o->bin_obj);
 	ret->dbg_info = 0;
 	if (!Elf_(r_bin_elf_get_stripped) (arch->o->bin_obj))
 		ret->dbg_info |= R_BIN_DBG_LINENUMS | R_BIN_DBG_SYMS | R_BIN_DBG_RELOCS;
