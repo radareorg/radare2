@@ -297,6 +297,7 @@ static void print_format_help(RCore *core) {
 	"pfj.", "fmt_name", "Print format in JSON",
 	"pfv.", "fmt_name", "Print the value(s) only. Useful for one-liners",
 	"pf*.", "fmt_name", "Display flag commands",
+	"pfd.", "fmt_name", "Display graphviz commands",
 	NULL};
 	r_core_cmd_help (core, help_msg);
 }
@@ -369,6 +370,10 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 	case '*':
 		_input++;
 		mode = R_PRINT_SEEFLAGS;
+		break;
+	case 'd':
+		_input++;
+		mode = R_PRINT_DOT;
 		break;
 	case 'j':
 		_input++;

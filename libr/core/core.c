@@ -403,7 +403,7 @@ static const char *radare_argv[] = {
 	"wx", "ww", "w?",
 	"p6d", "p6e", "p8", "pb", "pc",
 	"pd", "pda", "pdb", "pdc", "pdj", "pdr", "pdf", "pdi", "pdl", "pds", "pdt",
-	"pD", "px", "pX", "po", "pf", "pv", "p=", "p-",
+	"pD", "px", "pX", "po", "pf", "pf.", "pf*", "pf*.", "pfd", "pfd.", "pv", "p=", "p-",
 	"pm", "pr", "pt", "ptd", "ptn", "pt?", "ps", "pz", "pu", "pU", "p?",
 	NULL
 };
@@ -432,16 +432,26 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else
-		if ((!strncmp (line->buffer.data, "pf", 2))) {
+		if ((!strncmp (line->buffer.data, "pf.", 3))
+		||  (!strncmp (line->buffer.data, "pf*.", 4))
+		||  (!strncmp (line->buffer.data, "pfd.", 4))) {
+			char pfx[2];
+			int chr = (line->buffer.data[2]=='.')? 3: 4;
+			if (chr==4) {
+				pfx[0] = line->buffer.data[2];
+				pfx[1] = 0;
+			} else {
+				*pfx = 0;
+			}
 			RStrHT *sht = core->print->formats;
 			int *i, j = 0;
 			tmp_argv_heap = true;
 			r_list_foreach (sht->ls, iter, i) {
 				int idx = ((int)(size_t)i)-1;
 				const char *key = r_strpool_get (sht->sp, idx);
-				int len = strlen (line->buffer.data + 3);
-				if (!len || !strncmp (line->buffer.data + 3, key, len)) {
-					tmp_argv[j++] = r_str_newf ("pf.%s", key);
+				int len = strlen (line->buffer.data + chr);
+				if (!len || !strncmp (line->buffer.data + chr, key, len)) {
+					tmp_argv[j++] = r_str_newf ("pf%s.%s", pfx, key);
 				}
 			}
 			tmp_argv[j] = NULL;
