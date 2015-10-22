@@ -104,7 +104,8 @@ static int rabin_show_help(int v) {
 		" RABIN2_DEMANGLE:  e bin.demangle   # show symbols demangled\n"
 		" RABIN2_MAXSTRBUF: e bin.maxstrbuf  # specify maximum buffer size\n"
 		" RABIN2_STRFILTER: e bin.strfilter  # r2 -qe bin.strfilter=? -c '' --\n"
-		" RABIN2_STRPURGE:  e bin.strpurge   # try to purge false positives\n");
+		" RABIN2_STRPURGE:  e bin.strpurge   # try to purge false positives\n"
+		" RABIN2_PREFIX:    e bin.prefix     # prefix symbols/sections/relocs with a specific string\n");
 	}
 	return 1;
 }
@@ -405,7 +406,7 @@ int main(int argc, char **argv) {
 	r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
 	r_lib_opendir (l, homeplugindir);
 	r_lib_opendir (l, R2_LIBDIR"/radare2/"R2_VERSION);
-	
+
 	if ((tmp = r_sys_getenv ("RABIN2_LANG"))) {
 		r_config_set (core.config, "bin.lang", tmp);
 		free (tmp);
@@ -675,9 +676,13 @@ int main(int argc, char **argv) {
 			if (r_file_dump (file, b->buf, b->length, 0)) {
 				eprintf ("Dumped %d bytes in '%s'\n", b->length, file);
 				r_file_chmod (file, "+x", 0);
-			} else eprintf ("Error dumping into a.out\n");
+			} else {
+				eprintf ("Error dumping into a.out\n");
+			}
 			r_buf_free (b);
-		} else eprintf ("Cannot create binary for this format '%s'.\n", create);
+		} else {
+			eprintf ("Cannot create binary for this format '%s'.\n", create);
+		}
 		r_core_fini (&core);
 		return 0;
 	}
@@ -691,7 +696,9 @@ int main(int argc, char **argv) {
 		if (addr) {
 			eprintf ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(size_t)(addr));
 			r_lib_dl_close (addr);
-		} else eprintf ("Cannot open the '%s' library\n", file);
+		} else {
+			eprintf ("Cannot open the '%s' library\n", file);
+		}
 		return 0;
 	}
 
@@ -847,6 +854,11 @@ int main(int argc, char **argv) {
 		free (path);
 		r_core_fini (&core);
 		return 0;
+	}
+
+	if ((tmp = r_sys_getenv ("RABIN2_PREFIX"))) {
+		r_config_set (core.config, "bin.prefix", tmp);
+		free (tmp);
 	}
 
 	run_action ("sections", ACTION_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
