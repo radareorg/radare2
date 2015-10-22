@@ -50,8 +50,8 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		break;
 	case 80: // long double
 	case 96: // long floating value
+		// FIXME: It is a precision loss, please implement me properly!
 		ret = (ut64)r_reg_get_longdouble (reg, item);
-		eprintf ("precission loss\n");
 		break;
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
