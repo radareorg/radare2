@@ -1849,6 +1849,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		"@@", "", " # foreach iterator command:",
 		"Repeat a command over a list of offsets", "", "",
 		"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
+		"x", " @@dbt[abs]", "run a command on every backtrace address, bp or sp",
 		"x", " @@.file", "\"\" over the offsets specified in the file (one offset per line)",
 		"x", " @@=off1 off2 ..", "manual list of offsets",
 		"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
@@ -1869,7 +1870,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_cons_printf ("# PID %d\n", p->pid);
 					r_debug_select (core->dbg, p->pid, p->pid);
 					r_core_cmd (core, cmd, 0);
-					r_cons_flush ();
+					r_cons_printf("\n");
 				}
 				r_list_free (list);
 			}
@@ -1896,6 +1897,36 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			r_core_cmd (core, cmd, 0);
 			r_cons_flush ();
 		} while (str != NULL);
+		break;
+	case 'd':
+		if (each[1] == 'b' && each[2] == 't') {
+			ut64 oseek = core->offset;
+			RDebugFrame *frame;
+			RListIter *iter;
+			RList *list;
+			list = r_debug_frames (core->dbg, UT64_MAX);
+			r_list_foreach (list, iter, frame) {
+				switch (each[3]) {
+				case 'b':
+					r_core_seek (core, frame->bp, 1);
+					break;
+				case 's':
+					r_core_seek (core, frame->sp, 1);
+					break;
+				default:
+				case 'a':
+					r_core_seek (core, frame->addr, 1);
+					break;
+				}
+				r_core_cmd (core, cmd, 0);
+				r_cons_printf("\n");
+				i++;
+			}
+			r_core_seek (core, oseek, 0);
+			r_list_free (list);
+		} else {
+			eprintf("Invalid for-each statement. Use @@=dbt[abs]\n");
+		}
 		break;
 	case 'k':
 		/* foreach list of items */
