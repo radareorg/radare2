@@ -19,10 +19,6 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		item->size, off, item->offset, (item->offset/8));
 #endif
 	switch (item->size) {
-	case 80: // long double
-		ret = (ut64)r_reg_get_longdouble (reg, item);
-		eprintf ("precission loss\n");
-		break;
 	case 1:
 		ret = (regset->arena->bytes[item->offset/8] & \
 			(1<<(item->offset%8)))?1:0;
@@ -52,6 +48,11 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 			r_mem_copyendian ((ut8*)&ret, (ut8*)regset->arena->bytes+off, 8, !reg->big_endian);
 		else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		break;
+	case 80: // long double
+	case 96: // long floating value
+		ret = (ut64)r_reg_get_longdouble (reg, item);
+		eprintf ("precission loss\n");
+		break;
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
 		break;
@@ -72,6 +73,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	}
 	switch (item->size) {
 	case 80:
+	case 96: // long floating value
 		r_reg_set_longdouble (reg, item, (long double) value);
 		break;
 	case 64:

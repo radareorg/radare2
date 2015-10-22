@@ -1533,6 +1533,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbs", " <addr>", "Toggle breakpoint",
 
 		"dbt", "", "Display backtrace based on dbg.btdepth and dbg.btalgo",
+		"dbt*", "", "Display backtrace in flags",
 		"dbt=", "", "Display backtrace in one line (see dbt=s and dbt=b for sp or bp)",
 		"dbtj", "", "Display backtrace in JSON",
 		"dbte", " <addr>", "Enable Breakpoint Trace",
