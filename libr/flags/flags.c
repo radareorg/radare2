@@ -523,16 +523,10 @@ R_API void r_flag_unset_all (RFlag *f) {
 	r_flag_space_unset (f, NULL);
 }
 
-static void unflag(RFlag *f, ut64 namehash) {
+static void unflag(RFlag *f, RFlagItem *me) {
 	RFlagItem *item;
 	RListIter *iter;
-	/* No _safe loop necessary because we return immediately after the delete. */
-	r_list_foreach (f->flags, iter, item) {
-		if (item->namehash == namehash) {
-			r_list_delete (f->flags, iter);
-			break;
-		}
-	}
+	r_list_delete_data (f->flags, me);
 }
 
 R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
@@ -541,34 +535,30 @@ R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 	RFlagItem *item2, *item = p;
 	ut64 hash = r_str_hash64 (name);
 	RList *list2, *list = r_hashtable64_lookup (f->ht_name, hash);
-// list = name hash
-// list2 = off hash
+	// list = name hash
+	// list2 = off hash
 	if (list && list->head) {
-		if (!item) item = r_list_pop (list);
-		if (!item) return false;
+		if (!item) item = r_list_pop (list); // removes element from list
+		if (!item) {
+			return false;
+		}
 		off = item->offset;
 
-		list2 = r_hashtable64_lookup (f->ht_off, XOROFF(off));
+		list2 = r_hashtable64_lookup (f->ht_off, XOROFF (off));
 		if (list2) {
 			/* delete flag by name */
-			/* No _safe loop necessary because we break immediately after the delete. */
-			r_list_foreach (list2, iter2, item2) {
-				if (hash == item2->namehash) {
-					r_list_delete (list2, iter2);
-					break;
-				}
-			}
+			r_list_delete_data (list2, item);
 			if (list2 && r_list_empty (list2)) {
 				r_list_free (list2);
 				r_hashtable64_remove (f->ht_off, XOROFF(off));
 			}
+			if (list && r_list_empty (list)) {
+				r_list_free (list);
+				r_hashtable64_remove (f->ht_name, hash);
+			}
 		}
 		/* delete from f->flags list */
-		unflag (f, hash);
-		if (list && r_list_empty (list)) {
-			r_list_free (list);
-			r_hashtable64_remove (f->ht_name, hash);
-		}
+		unflag (f, item);
 		return true;
 	}
 	return false;

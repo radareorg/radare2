@@ -1219,11 +1219,14 @@ R_API void r_str_filter(char *str, int len) {
 			str[i] = '.';
 }
 
-R_API int r_str_glob (const char* str, const char *glob) {
+R_API bool r_str_glob (const char* str, const char *glob) {
 	const char* cp = NULL, *mp = NULL;
+	if (glob && !strcmp (glob, "*")) {
+		return true;
+	}
 	while ((*str) && (*glob != '*')) {
 		if ((*glob != *str)) {
-			return R_FALSE;
+			return false;
 		}
 		++glob;
 		++str;
@@ -1231,7 +1234,7 @@ R_API int r_str_glob (const char* str, const char *glob) {
 	while (*str) {
 		if (*glob == '*') {
 			if (!*++glob) {
-				return R_TRUE;
+				return true;
 			}
 			mp = glob;
 			cp = str+1;
