@@ -192,6 +192,7 @@ typedef struct r_bin_t {
 	int filter; // symbol filtering
 	char strfilter; // string filtering
 	int strpurge; // purge false positive strings
+	char *prefix; // bin.prefix
 } RBin;
 
 typedef int (*FREE_XTR)(void *xtr_obj);
