@@ -524,7 +524,15 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 		} else {
 			char *name = strdup (input+(input[1]?2:1));
 			char *space = strchr (name, ' ');
-			char *eq = strchr (name, '='), *dot = strchr (name, '.');
+			char *eq = strchr (name, '=');
+			char *dot = strchr (name, '.');
+
+			if (eq && !dot) {
+				*eq = ' ';
+				space = eq;
+				eq = NULL;
+			}
+
 			/* store a new format */
 			if (space && (eq == NULL || space < eq)) {
 				char *fields = NULL;
@@ -540,7 +548,7 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 			}
 
 			if (strchr (name, '.') == NULL && r_strht_get (core->print->formats, name) == NULL) {
-				eprintf ("Warning: %s is not a valid format name\n", name);
+				eprintf ("Cannot find '%s' format.\n", name);
 				free (name);
 				free (input);
 				return;
