@@ -47,7 +47,7 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 		uid = sb.st_uid;
 		gid = sb.st_gid;
 		perm = sb.st_mode & 0777;
-		if (!(u_rwx = strdup(r_str_rwx_i(perm>>6)))) {
+		if (!(u_rwx = strdup(r_str_rwx_i (perm>>6)))) {
 			free(nn);
 			return;
 		}
@@ -68,13 +68,14 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 #else
 	fch = isdir? 'd': '-';
 #endif
+	u_rwx = strdup ("-");
 	if (printfmt == FMT_RAW) {
 		r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
-		isdir?'d':fch,
-		      u_rwx,
-		      r_str_rwx_i ((perm>>3)&7),
-		      r_str_rwx_i (perm&7),
-		      uid, gid, sz, nn);
+			isdir?'d':fch,
+			u_rwx? u_rwx:"-",
+			r_str_rwx_i ((perm>>3)&7),
+			r_str_rwx_i (perm&7),
+			uid, gid, sz, nn);
 	} else if (printfmt == FMT_JSON) {
 		if (nth > 0) r_cons_printf(",");
 		r_cons_printf("{\"name\":\"%s\",\"size\":%d,\"uid\":%d,"
