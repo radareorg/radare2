@@ -8,6 +8,24 @@ static void str_op(char *c) {
 		c[0] += 0x20;
 }
 
+static int gb_reg_idx (char r) {
+	if (r == 'b')
+		return 0;
+	if (r == 'c')
+		return 1;
+	if (r == 'd')
+		return 2;
+	if (r == 'e')
+		return 3;
+	if (r == 'h')
+		return 4;
+	if (r == 'l')
+		return 5;
+	if (r == 'a')
+		return 7;
+	return -1;
+}
+
 char *gb_str_replace (char *str, const char *key, const char *val) {
 	char *heaped;
 	int len;
@@ -59,6 +77,28 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			break;
 		case 0x63706c:			//cpl
 			op->buf[0] = 0x2f;
+			break;
+		case 0x6370:			//cp
+			if (strlen (op->buf_asm) < 4)
+				return op->size = 0;
+			op->buf[0] = 0xb8;
+			gb_str_replace (&op->buf_asm[3], "[ ", "[");
+			gb_str_replace (&op->buf_asm[3], " ]", "]");
+			r_str_do_until_token (str_op, op->buf_asm, ' ');
+			i = gb_reg_idx (op->buf_asm[3]);
+			if (i != (-1))
+				op->buf[0] |= (ut8)i;
+			else if (op->buf_asm[3] == '['
+				&& op->buf_asm[4] == 'h'
+				&& op->buf_asm[5] == 'l'
+				&& op->buf_asm[6] == ']' )
+				op->buf[0] = 0xbe;
+			else {
+				op->buf[0] = 0xfe;
+				num = r_num_get (NULL, &op->buf_asm[3]);
+				op->buf[1] = (ut8)(num & 0xff);
+				len = 2;
+			}
 			break;
 		case 0x736366:			//scf
 			op->buf[0] = 0x37;
