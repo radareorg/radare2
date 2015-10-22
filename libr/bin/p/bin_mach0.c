@@ -182,7 +182,6 @@ static RList* symbols(RBinFile *arch) {
 			r_list_append (ret, ptr);
 		}
 	}
-beach:
 	bin->lang = lang;
 	free (symbols);
 
