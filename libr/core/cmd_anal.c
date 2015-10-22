@@ -3075,7 +3075,7 @@ static int cmd_anal(void *data, const char *input) {
 			if (len>0)
 				core_anal_bytes (core, buf, len, 0, input[1]);
 			free (buf);
-		} else eprintf ("Usage: ab [hexpair-bytes]\n");
+		} else eprintf ("Usage: ab [hexpair-bytes]\n abj [hexpair-bytes] (json)");
 		break;
 	case 'i': cmd_anal_info (core, input+1); break; // "ai"
 	case 'r': cmd_anal_reg (core, input+1); break; // "ar"
