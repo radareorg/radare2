@@ -257,11 +257,13 @@ static int cmd_open(void *data, const char *input) {
 	const char* help_msg_oo[] = {
 		"Usage:", "oo[-] [arg]", " # map opened files",
 		"oo", "", "reopen current file",
+		"oo+", "", "reopen in read-write",
 		"oob", "", "reopen loading rbin info",
 		"ood", "", "reopen in debug mode",
 		"oon", "", "reopen without loading rbin info",
+		"oon+", "", "reopen in read-write mode without loading rbin info",
 		"oonn", "", "reopen without loading rbin info, but with header flags",
-		"oo+", "", "reopen in read-write",
+		"oonn+", "", "reopen in read-write mode without loading rbin info, but with",
 		NULL};
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
@@ -405,9 +407,13 @@ static int cmd_open(void *data, const char *input) {
 			r_core_file_reopen (core, input + 2, 0, 2);
 			break;
 		case 'n':
-			r_core_file_reopen (core, input + 2, 0, 0);
-			if (input[2] == 'n') {
+			if (input[2]=='n') {
+				perms = (input[3]=='+')? R_IO_READ|R_IO_WRITE: 0;
+				r_core_file_reopen (core, input + 4, perms, 0);
 				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
+			} else {
+				perms = (input[2]=='+')? R_IO_READ|R_IO_WRITE: 0;
+				r_core_file_reopen (core, input + 3, perms, 0);
 			}
 			break;
 		case '+':
