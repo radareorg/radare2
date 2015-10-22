@@ -66,6 +66,8 @@ enum {
 typedef struct r_debug_frame_t {
 	ut64 addr;
 	int size;
+	ut64 sp;
+	ut64 bp;
 } RDebugFrame;
 
 typedef struct r_debug_reason_t {

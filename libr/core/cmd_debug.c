@@ -17,30 +17,30 @@ static int checkbpcallback(RCore *core);
 
 // Get base address from a loaded file.
 static ut64 r_debug_get_baddr(RCore *r, const char *file) {
-    char *abspath;
-    RListIter *iter;
-    RDebugMap *map;
-    if (!r || !r->io || !r->io->desc)
-        return 0LL;
-    r_debug_attach (r->dbg, r->io->desc->fd);
-    r_debug_map_sync (r->dbg);
-    abspath = r_file_abspath (file);
-    if (!abspath) abspath = strdup (file);
-    r_list_foreach (r->dbg->maps, iter, map) {
-        if (!strcmp (abspath, map->name)) {
-            free (abspath);
-            return map->addr;
-        }
-    }
-    free (abspath);
-    // fallback resolution (osx/w32?)
-    // we asume maps to be loaded in order, so lower addresses come first
-    r_list_foreach (r->dbg->maps, iter, map) {
-        if (map->perm == 5) { // r-x
-            return map->addr;
-        }
-    }
-    return 0LL;
+	char *abspath;
+	RListIter *iter;
+	RDebugMap *map;
+	if (!r || !r->io || !r->io->desc)
+		return 0LL;
+	r_debug_attach (r->dbg, r->io->desc->fd);
+	r_debug_map_sync (r->dbg);
+	abspath = r_file_abspath (file);
+	if (!abspath) abspath = strdup (file);
+	r_list_foreach (r->dbg->maps, iter, map) {
+		if (!strcmp (abspath, map->name)) {
+			free (abspath);
+			return map->addr;
+		}
+	}
+	free (abspath);
+	// fallback resolution (osx/w32?)
+	// we asume maps to be loaded in order, so lower addresses come first
+	r_list_foreach (r->dbg->maps, iter, map) {
+		if (map->perm == 5) { // r-x
+			return map->addr;
+		}
+	}
+	return 0LL;
 }
 
 static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
@@ -1565,15 +1565,12 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 
 	switch (input[1]) {
 	case '.':
-		{
-			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, core->offset);
-			if (bpi) {
-				r_cons_printf ("breakpoint %s %s %s\n",
-						r_str_rwx_i (bpi->rwx),
-						bpi->enabled ?
-						"enabled" : "disabled",
-						bpi->name ? bpi->name : "");
-			}
+		bpi = r_bp_get_at (core->dbg->bp, core->offset);
+		if (bpi) {
+			r_cons_printf ("breakpoint %s %s %s\n",
+				r_str_rwx_i (bpi->rwx),
+				bpi->enabled ?  "enabled" : "disabled",
+				bpi->name ? bpi->name : "");
 		}
 		break;
 	case 't': // "dbt"
@@ -1608,7 +1605,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_cons_printf ("[");
 			r_list_foreach (list, iter, frame) {
 				r_cons_printf ("%s%08"PFMT64d,
-						(i ? "," : ""), frame->addr);
+					(i ? "," : ""), frame->addr);
 				i++;
 			}
 			r_cons_printf ("]\n");
@@ -1627,6 +1624,21 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				i++;
 			}
 			r_cons_newline ();
+			r_list_free (list);
+			break;
+		case '*': // dbt*
+			addr = UT64_MAX;
+			if (input[2] == ' ' && input[3])
+				addr = r_num_math (core->num, input+2);
+			i = 0;
+			list = r_debug_frames (core->dbg, addr);
+			r_list_reverse (list);
+			r_cons_printf ("f-bt.*\n");
+			r_list_foreach (list, iter, frame) {
+				r_cons_printf ("f bt.frame%d = 0x%08"PFMT64x"\n", i, frame->addr);
+				r_cons_printf ("f bt.frame%d.stack = 0x%08"PFMT64x"\n", i, frame->sp);
+				i++;
+			}
 			r_list_free (list);
 			break;
 		case 0: // "dbt" -- backtrace
@@ -1700,15 +1712,15 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				}
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
 				if (fcn) {
-					r_cons_printf ("%d  0x%08"PFMT64x"  %d"
+					r_cons_printf ("%d  0x%08"PFMT64x" sp: 0x%"PFMT64x"  %d"
 							"[%s]  %s %s\n", i++,
-							frame->addr, frame->size,
-							fcn->name, flagdesc,
+							frame->addr, frame->sp,
+							(int)frame->size, fcn->name, flagdesc,
 							flagdesc2);
 				} else {
-					r_cons_printf ("%d  0x%08"PFMT64x"  %d"
+					r_cons_printf ("%d  0x%08"PFMT64x"  sp: 0x%"PFMT64x"  %d"
 							"   %s %s\n", (int)i++, (ut64)frame->addr,
-							(int)frame->size, flagdesc, flagdesc2);
+							frame->sp, (int)frame->size, flagdesc, flagdesc2);
 				}
 			}
 			r_list_free (list);

@@ -84,6 +84,8 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 			RDebugFrame *frame = R_NEW0 (RDebugFrame);
 			frame->addr = addr;
 			frame->size = cursp - oldsp;
+			frame->sp = cursp;
+			frame->bp = oldsp; //addr + (i * wordsize); // -4 || -8
 			// eprintf ("--------------> 0x%llx (%d)\n", addr, frame->size);
 			r_list_append (list, frame);
 			oldsp = cursp;
