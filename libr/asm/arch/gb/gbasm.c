@@ -139,6 +139,8 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			} else len = 0;
 			break;
 		case 0x6a70:			//jp
+			if (strlen(op->buf_asm) < 4)
+				return op->size = 0;
 			{
 				char *p = strchr (op->buf_asm, (int)',');
 				if (!p) {
@@ -211,6 +213,43 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 					num = r_num_get (NULL, p + 1);
 					op->buf[1] = (ut8)(num & 0xff);
 					len = 2;
+				}
+			}
+			break;
+		case 0x63616c6c:		//call 
+			if (strlen(op->buf_asm) < 6)
+				return op->size = 0;
+			{
+				char *p = strchr (op->buf_asm, (int)',');
+				if (!p) {
+					num = r_num_get (NULL, &op->buf_asm[3]);
+					len = 3;
+					op->buf[0] = 0xcd;
+					op->buf[1] = (ut8)(num & 0xff);
+					op->buf[2] = (ut8)((num & 0xff00) >> 8);
+				} else {
+					str_op (p-2);
+					str_op (p-1);
+					if (*(p-2) == 'n') {
+						if (*(p-1) == 'z')
+							op->buf[0] = 0xc4;
+						else if (*(p-1) == 'c')
+							op->buf[0] = 0xd4;
+						else	return op->size = 0;
+					} else if (*(p-2) == ' ') {
+						if (*(p-1) == 'z')
+							op->buf[0] = 0xcc;
+						else if (*(p-1) == 'c')
+							op->buf[0] = 0xdc;
+						else	return op->size = 0;
+					} else	return op->size = 0;
+					gb_str_replace (p, ", ", ",");
+					if (p[1] == '\0')
+						return op->size = 0;
+					num = r_num_get (NULL, p + 1);
+					op->buf[1] = (ut8)(num & 0xff);
+					op->buf[2] = (ut8)((num & 0xff00) >> 8);
+					len = 3;
 				}
 			}
 			break;
