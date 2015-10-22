@@ -141,17 +141,10 @@ struct r_anal_plugin_t r_anal_plugin_ppc_gnu = {
 	.name = "ppc.gnu",
 	.desc = "PowerPC analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_PPC,
+	.arch = "ppc",
 	.bits = 32|64,
-	.init = NULL,
-	.fini = NULL,
 	.op = &ppc_op,
 	.set_reg_profile = &set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

@@ -379,7 +379,7 @@ static int set_reg_profile(RAnal *anal) {
 
 struct r_anal_plugin_t r_anal_plugin_dalvik = {
 	.name = "dalvik",
-	.arch = R_SYS_ARCH_DALVIK,
+	.arch = "dalvik",
 	.set_reg_profile = &set_reg_profile,
 	.license = "LGPL3",
 	.bits = 32,

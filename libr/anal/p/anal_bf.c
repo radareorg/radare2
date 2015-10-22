@@ -116,18 +116,11 @@ struct r_anal_plugin_t r_anal_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_BF,
+	.arch = "bf",
 	.bits = 8,
-	.init = NULL,
-	.fini = NULL,
 	.esil = true,
 	.op = &bf_op,
 	.set_reg_profile = set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

@@ -161,17 +161,9 @@ struct r_anal_plugin_t r_anal_plugin_v810 = {
 	.name = "v810",
 	.desc = "V810 code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_V810,
+	.arch = "v810",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
 	.op = v810_op,
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL,
 };
 
 #ifndef CORELIB

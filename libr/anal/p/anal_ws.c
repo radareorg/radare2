@@ -135,17 +135,9 @@ struct r_anal_plugin_t r_anal_plugin_ws = {
 	.name = "ws",
 	.desc = "Space, tab and linefeed analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_BF,
+	.arch = "ws",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
 	.op = &ws_anal,
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

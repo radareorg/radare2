@@ -43,17 +43,9 @@ struct r_anal_plugin_t r_anal_plugin_snes = {
 	.name = "snes",
 	.desc = "SNES analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_NONE,
+	.arch = "snes",
 	.bits = 16,
-	.init = NULL,
-	.fini = NULL,
 	.op = &snes_anop,
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

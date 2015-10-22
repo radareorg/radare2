@@ -192,17 +192,9 @@ struct r_anal_plugin_t r_anal_plugin_i8080 = {
 	.name = "i8080",
 	.desc = "I8080 CPU code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_I8080,
+	.arch = "i8080",
 	.bits = 16,
-	.init = NULL,
-	.fini = NULL,
 	.op = &i8080_op,
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

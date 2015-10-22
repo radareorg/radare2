@@ -606,17 +606,10 @@ RAnalPlugin r_anal_plugin_sparc_gnu = {
 	.name = "sparc.gnu",
 	.desc = "SPARC analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_SPARC,
+	.arch = "sparc",
 	.bits = 32 | 64,
-	.init = NULL,
-	.fini = NULL,
 	.op = &sparc_op,
 	.set_reg_profile = set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

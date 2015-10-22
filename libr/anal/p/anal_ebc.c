@@ -175,17 +175,9 @@ struct r_anal_plugin_t r_anal_plugin_ebc = {
 	.name = "ebc",
 	.desc = "EBC code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_EBC,
+	.arch = "ebc",
 	.bits = 64,
-	.init = NULL,
-	.fini = NULL,
 	.op = &ebc_op,
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB
