@@ -8,6 +8,19 @@ static void str_op(char *c) {
 		c[0] += 0x20;
 }
 
+char *gb_str_replace (char *str, const char *key, const char *val) {
+	char *heaped;
+	int len;
+	if (!str || !key || !val)
+		return NULL;
+	len = strlen (str);
+	heaped = strdup (str);
+	r_str_replace (heaped, key, val, R_TRUE);
+	strncpy (str, heaped, len);
+	free (heaped);
+	return str;
+}
+
 static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 	int mn_len, i, len = 1;
 	ut32 mn = 0;
@@ -15,8 +28,8 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 	if (!a || !op || !buf)
 		return 0;
 	strncpy (op->buf_asm, buf, R_ASM_BUFSIZE);
-	r_str_replace (op->buf_asm, "  ", " ", R_TRUE);
-	r_str_replace (op->buf_asm, " ,", ",", R_TRUE);
+	gb_str_replace (op->buf_asm, "  ", " ");
+	gb_str_replace (op->buf_asm, " ,", ",");
 	mn_len = r_str_do_until_token (str_op, op->buf_asm, ' ');
 	if (mn_len < 2 || mn_len > 4)
 		return 0;
@@ -59,7 +72,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		case 0x726574:			//ret
 			if (strlen(op->buf_asm) < 5)
 				op->buf[0] = 0xc9;
-			else if (strlen (op->buf_asm) < 6) {	//there is no way that there can be "  " - we did r_str_replace
+			else if (strlen (op->buf_asm) < 6) {	//there is no way that there can be "  " - we did gb_str_replace
 				str_op(&op->buf_asm[4]);
 				if (op->buf_asm[4] == 'z')	//ret Z
 					op->buf[0] = 0xc8;
