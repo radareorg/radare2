@@ -747,7 +747,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	char region[100], region2[100], perms[5];
 	FILE *fd;
 	if (dbg->pid == -1) {
-		eprintf ("r_debug_native_map_get: No selected pid (-1)\n");
+		//eprintf ("r_debug_native_map_get: No selected pid (-1)\n");
 		return NULL;
 	}
 #if __KFBSD__

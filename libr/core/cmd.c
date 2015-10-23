@@ -1562,6 +1562,7 @@ repeat_arroba:
 				}
 				break;
 			case 'b': // "@b:" // bits
+				tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 				r_config_set_i (core->config, "asm.bits",
 					r_num_math (core->num, ptr+2));
 				break;
