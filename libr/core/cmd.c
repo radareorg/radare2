@@ -341,7 +341,7 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 #if __WINDOWS__
 #define cmdstr(x) r_str_newf (x" %s", file);
 #else
-#define cmdstr(x) r_str_newf (x"'%s'", file);
+#define cmdstr(x) r_str_newf (x" '%s'", file);
 #endif
 			const char *p = r_str_lchr (file, '.');
 			if (p) {
