@@ -119,6 +119,15 @@ case "$1" in
 		echo "Cannot find file"
 	fi
 	;;
+-t|test)
+	TYPE=XX
+	JOB=86946292
+	[ -n "$2" ] && TYPE="$2"
+	[ -n "$3" ] && JOB="$3"
+	curl -s https://api.travis-ci.org/jobs/${JOB}/log.txt | \
+		grep -C 1 $TYPE | grep '\[ ' | sed -e 's,\[  \],['$TYPE'],g'
+
+	;;
 -l|list)
 	R2PM_List "$2"
 	;;
@@ -146,6 +155,7 @@ case "$1" in
 	echo " -i,install <pkgname>    r2pm -i baleful"
 	echo " -u,uninstall <pkgname>  r2pm -u baleful"
 	echo " -l,list                 list installed pkgs"
+	echo " -t,test FX,XX,BR BID    check in travis regressions"
 	echo " -s,search [<keyword>]   search in database"
 	echo " -v,version              show version"
 	echo " -h,help                 show this message"

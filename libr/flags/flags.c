@@ -177,11 +177,8 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 }
 
 static RFlagItem *evalFlag (RFlag *f, RFlagItem *item) {
-	if (item) {
-		if (item->alias) {
-			ut64 res = r_num_math (f->num, item->alias);
-			item->offset = res;
-		}
+	if (item && item->alias) {
+		item->offset = r_num_math (f->num, item->alias);
 	}
 	return item;
 }
@@ -189,8 +186,7 @@ static RFlagItem *evalFlag (RFlag *f, RFlagItem *item) {
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	RList *list = r_hashtable64_lookup (f->ht_name, r_str_hash64 (name));
 	if (list) {
-		RFlagItem *item = r_list_get_top (list);
-		return evalFlag (f, item);
+		return evalFlag (f, r_list_get_top (list));
 	}
 	return NULL;
 }
@@ -524,15 +520,12 @@ R_API void r_flag_unset_all (RFlag *f) {
 }
 
 static void unflag(RFlag *f, RFlagItem *me) {
-	RFlagItem *item;
-	RListIter *iter;
 	r_list_delete_data (f->flags, me);
 }
 
 R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 	ut64 off;
-	RListIter *iter2;
-	RFlagItem *item2, *item = p;
+	RFlagItem *item = p;
 	ut64 hash = r_str_hash64 (name);
 	RList *list2, *list = r_hashtable64_lookup (f->ht_name, hash);
 	// list = name hash
