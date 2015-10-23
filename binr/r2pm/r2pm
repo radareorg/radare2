@@ -1,5 +1,7 @@
 #!/bin/sh
 
+TRAVIS_TYPE=XX
+TRAVIS_JOB=86948888
 R2PM_PLUGDIR=${HOME}/.config/radare2/plugins
 R2PM_USRDIR=${HOME}/.config/radare2/r2pm
 LIBEXT=`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`
@@ -120,13 +122,20 @@ case "$1" in
 	fi
 	;;
 -t|test)
-	TYPE=XX
-	JOB=86946292
-	[ -n "$2" ] && TYPE="$2"
-	[ -n "$3" ] && JOB="$3"
-	curl -s https://api.travis-ci.org/jobs/${JOB}/log.txt | \
-		grep -C 1 $TYPE | grep '\[ ' | sed -e 's,\[  \],['$TYPE'],g'
-
+	[ -n "$2" ] && TRAVIS_TYPE="$2"
+	if [ -n "$3" ]; then
+		TRAVIS_JOB="$3"
+	else
+		TRAVIS_JOB=`curl -s https://api.travis-ci.org/repos?slug=radare%2Fradare2| jq .[0].last_build_id`
+		TRAVIS_JOB=$(($TRAVIS_JOB+1))
+	fi
+	echo $TRAVIS_JOB > /dev/stderr
+	# storage
+	curl -s https://s3.amazonaws.com/archive.travis-ci.org/jobs/${TRAVIS_JOB}/log.txt |\
+		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
+# wip
+	curl -s https://api.travis-ci.org/jobs/${TRAVIS_JOB}/log.txt |\
+		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
 	;;
 -l|list)
 	R2PM_List "$2"

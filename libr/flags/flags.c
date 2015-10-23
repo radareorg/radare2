@@ -520,7 +520,11 @@ R_API void r_flag_unset_all (RFlag *f) {
 }
 
 static void unflag(RFlag *f, RFlagItem *me) {
+	RListFree lf = f->flags->free;
+	f->flags->free = NULL;
+	memset (me, 0, sizeof (RFlagItem));
 	r_list_delete_data (f->flags, me);
+	f->flags->free = lf;
 }
 
 R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
