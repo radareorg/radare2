@@ -2,7 +2,7 @@ include config.mk
 VALADIR=bindings/vala
 
 PWD=$(shell pwd)
-PFX=${DESTDIR}${PREFIX}
+
 HGFILES=`find sdb-${SDBVER} -type f | grep -v hg | grep -v swp`
 MKDIR=mkdir
 

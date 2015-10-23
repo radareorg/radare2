@@ -1,6 +1,6 @@
 include ../../config.mk
 
-MAGICDIR=$(call rmdblslash,${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/magic)
+MAGICDIR=${DESTDIR}${LIBDIR}/radare2/${VERSION}/magic
 install: ${F_SDB}
 	-rm -rf "$(MAGICDIR)"
 	mkdir -p "$(MAGICDIR)"

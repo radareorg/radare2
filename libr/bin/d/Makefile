@@ -1,8 +1,8 @@
 include ../../../global.mk
 include ../../../config-user.mk
 
-SDBPATH=$(call rmdblslash,$(LTOP)/../shlr/sdb/)
-SDB=$(call rmdblslash,$(SDBPATH)/sdb)
+SDBPATH=$(LTOP)/../shlr/sdb/
+SDB=$(SDBPATH)/sdb
 
 P=${DESTDIR}${DATADIR}/radare2/${VERSION}/format
 

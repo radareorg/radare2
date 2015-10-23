@@ -121,8 +121,8 @@ build:
 	mv version.k version.c
 
 install:
-	mkdir -p ${DESTDIR}/${PREFIX}/bin
+	mkdir -p ${DESTDIR}${BINDIR}
 	for a in r2 ${BINS2} ; do \
-		rm -f ${DESTDIR}/${PREFIX}/bin/$$a ; \
-		cp -af $$a ${DESTDIR}/${PREFIX}/bin/$$a ; \
+		rm -f ${DESTDIR}${BINDIR}/$$a ; \
+		cp -af $$a ${DESTDIR}${BINDIR}/$$a ; \
 	done
