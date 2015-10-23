@@ -1910,6 +1910,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			RListIter *iter;
 			RList *list;
 			list = r_debug_frames (core->dbg, UT64_MAX);
+			i = 0;
 			r_list_foreach (list, iter, frame) {
 				switch (each[3]) {
 				case 'b':
@@ -1924,7 +1925,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					break;
 				}
 				r_core_cmd (core, cmd, 0);
-				r_cons_printf("\n");
+				r_cons_newline ();
 				i++;
 			}
 			r_core_seek (core, oseek, 0);

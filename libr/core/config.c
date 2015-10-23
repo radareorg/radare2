@@ -1092,11 +1092,12 @@ static int cb_binprefix(void *user, void *data) {
 	free (core->bin->prefix);
 	if (node->value && *node->value) {
 		if (!strcmp (node->value, "auto")) {
-			if (!core || !core->bin || !core->bin->file) {
+			if (!core->bin || !core->bin->file) {
 				//eprintf ("core->bin->file is null\n");
 				return false;
 			}
 			char *name = (char *)r_file_basename (core->bin->file);
+			r_name_filter (name, strlen (name));
 			r_str_filter (name, strlen (name));
 			core->bin->prefix = name;
 		} else {

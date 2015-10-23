@@ -1221,7 +1221,7 @@ R_API void r_str_filter(char *str, int len) {
 
 R_API bool r_str_glob (const char* str, const char *glob) {
 	const char* cp = NULL, *mp = NULL;
-	if (glob && !strcmp (glob, "*")) {
+	if (!glob || !strcmp (glob, "*")) {
 		return true;
 	}
 	while ((*str) && (*glob != '*')) {
@@ -1857,7 +1857,7 @@ R_API int r_str_do_until_token (str_operation op, char *str, const char tok)
 		return -1;
 	if (!op)
 		for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { }
-	else	for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { op (str+ret); } 
+	else	for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { op (str+ret); }
 	return ret;
 }
 
