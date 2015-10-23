@@ -1535,7 +1535,7 @@ struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin) {
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t)* bin) {
 	int i;
 
-	if (bin->hdr.filetype != MH_EXECUTE)
+	if (bin->hdr.filetype != MH_EXECUTE && bin->hdr.filetype != MH_DYLINKER)
 		return 0;
 
 	for (i = 0; i < bin->nsegs; ++i)
