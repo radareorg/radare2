@@ -78,6 +78,116 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		case 0x63706c:			//cpl
 			op->buf[0] = 0x2f;
 			break;
+		case 0x616463:			//adc
+			if (strlen (op->buf_asm) < 5)
+				return op->size = 0;
+			op->buf[0] = 0x88;
+			gb_str_replace (&op->buf_asm[4], "[ ", "[");
+			gb_str_replace (&op->buf_asm[4], " ]", "]");
+			r_str_do_until_token (str_op, op->buf_asm, ' ');
+			i = gb_reg_idx (op->buf_asm[4]);
+			if (i != (-1))
+				op->buf[0] |= (ut8)i;
+			else if (op->buf_asm[4] == '['
+				&& op->buf_asm[5] == 'h'
+				&& op->buf_asm[6] == 'l'
+				&& op->buf_asm[7] == ']' )
+				op->buf[0] = 0x8e;
+			else {
+				op->buf[0] = 0xce;
+				num = r_num_get (NULL, &op->buf_asm[4]);
+				op->buf[1] = (ut8)(num & 0xff);
+				len = 2;
+			}
+			break;
+		case 0x737562:			//sub
+			if (strlen (op->buf_asm) < 5)
+				return op->size = 0;
+			op->buf[0] = 0x90;
+			gb_str_replace (&op->buf_asm[4], "[ ", "[");
+			gb_str_replace (&op->buf_asm[4], " ]", "]");
+			r_str_do_until_token (str_op, op->buf_asm, ' ');
+			i = gb_reg_idx (op->buf_asm[4]);
+			if (i != (-1))
+				op->buf[0] |= (ut8)i;
+			else if (op->buf_asm[4] == '['
+				&& op->buf_asm[5] == 'h'
+				&& op->buf_asm[6] == 'l'
+				&& op->buf_asm[7] == ']' )
+				op->buf[0] = 0x96;
+			else {
+				op->buf[0] = 0xd6;
+				num = r_num_get (NULL, &op->buf_asm[4]);
+				op->buf[1] = (ut8)(num & 0xff);
+				len = 2;
+			}
+			break;
+		case 0x736263:			//sbc
+			if (strlen (op->buf_asm) < 5)
+				return op->size = 0;
+			op->buf[0] = 0x98;
+			gb_str_replace (&op->buf_asm[4], "[ ", "[");
+			gb_str_replace (&op->buf_asm[4], " ]", "]");
+			r_str_do_until_token (str_op, op->buf_asm, ' ');
+			i = gb_reg_idx (op->buf_asm[4]);
+			if (i != (-1))
+				op->buf[0] |= (ut8)i;
+			else if (op->buf_asm[4] == '['
+				&& op->buf_asm[5] == 'h'
+				&& op->buf_asm[6] == 'l'
+				&& op->buf_asm[7] == ']' )
+				op->buf[0] = 0x9e;
+			else {
+				op->buf[0] = 0xde;
+				num = r_num_get (NULL, &op->buf_asm[4]);
+				op->buf[1] = (ut8)(num & 0xff);
+				len = 2;
+			}
+			break;
+		case 0x616e64:			//and
+			if (strlen (op->buf_asm) < 5)
+				return op->size = 0;
+			op->buf[0] = 0xa0;
+			gb_str_replace (&op->buf_asm[4], "[ ", "[");
+			gb_str_replace (&op->buf_asm[4], " ]", "]");
+			r_str_do_until_token (str_op, op->buf_asm, ' ');
+			i = gb_reg_idx (op->buf_asm[4]);
+			if (i != (-1))
+				op->buf[0] |= (ut8)i;
+			else if (op->buf_asm[4] == '['
+				&& op->buf_asm[5] == 'h'
+				&& op->buf_asm[6] == 'l'
+				&& op->buf_asm[7] == ']' )
+				op->buf[0] = 0xa6;
+			else {
+				op->buf[0] = 0xe6;
+				num = r_num_get (NULL, &op->buf_asm[4]);
+				op->buf[1] = (ut8)(num & 0xff);
+				len = 2;
+			}
+			break;
+		case 0x786f72:			//xor
+			if (strlen (op->buf_asm) < 5)
+				return op->size = 0;
+			op->buf[0] = 0xa8;
+			gb_str_replace (&op->buf_asm[4], "[ ", "[");
+			gb_str_replace (&op->buf_asm[4], " ]", "]");
+			r_str_do_until_token (str_op, op->buf_asm, ' ');
+			i = gb_reg_idx (op->buf_asm[4]);
+			if (i != (-1))
+				op->buf[0] |= (ut8)i;
+			else if (op->buf_asm[4] == '['
+				&& op->buf_asm[5] == 'h'
+				&& op->buf_asm[6] == 'l'
+				&& op->buf_asm[7] == ']' )
+				op->buf[0] = 0xae;
+			else {
+				op->buf[0] = 0xee;
+				num = r_num_get (NULL, &op->buf_asm[4]);
+				op->buf[1] = (ut8)(num & 0xff);
+				len = 2;
+			}
+			break;
 		case 0x6370:			//cp
 			if (strlen (op->buf_asm) < 4)
 				return op->size = 0;
@@ -95,6 +205,28 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 				op->buf[0] = 0xbe;
 			else {
 				op->buf[0] = 0xfe;
+				num = r_num_get (NULL, &op->buf_asm[3]);
+				op->buf[1] = (ut8)(num & 0xff);
+				len = 2;
+			}
+			break;
+		case 0x6f72:			//or
+			if (strlen (op->buf_asm) < 4)
+				return op->size = 0;
+			op->buf[0] = 0xb0;
+			gb_str_replace (&op->buf_asm[3], "[ ", "[");
+			gb_str_replace (&op->buf_asm[3], " ]", "]");
+			r_str_do_until_token (str_op, op->buf_asm, ' ');
+			i = gb_reg_idx (op->buf_asm[3]);
+			if (i != (-1))
+				op->buf[0] |= (ut8)i;
+			else if (op->buf_asm[3] == '['
+				&& op->buf_asm[4] == 'h'
+				&& op->buf_asm[5] == 'l'
+				&& op->buf_asm[6] == ']' )
+				op->buf[0] = 0xb6;
+			else {
+				op->buf[0] = 0xf6;
 				num = r_num_get (NULL, &op->buf_asm[3]);
 				op->buf[1] = (ut8)(num & 0xff);
 				len = 2;
