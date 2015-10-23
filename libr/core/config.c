@@ -1097,6 +1097,7 @@ static int cb_binprefix(void *user, void *data) {
 				return false;
 			}
 			char *name = (char *)r_file_basename (core->bin->file);
+			r_name_filter (name, strlen (name));
 			r_str_filter (name, strlen (name));
 			core->bin->prefix = name;
 		} else {
