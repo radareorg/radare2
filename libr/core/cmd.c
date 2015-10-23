@@ -1925,7 +1925,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					break;
 				}
 				r_core_cmd (core, cmd, 0);
-				r_cons_printf("\n");
+				r_cons_newline ();
 				i++;
 			}
 			r_core_seek (core, oseek, 0);

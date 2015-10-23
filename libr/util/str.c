@@ -1221,7 +1221,7 @@ R_API void r_str_filter(char *str, int len) {
 
 R_API bool r_str_glob (const char* str, const char *glob) {
 	const char* cp = NULL, *mp = NULL;
-	if (glob && !strcmp (glob, "*")) {
+	if (!glob || !strcmp (glob, "*")) {
 		return true;
 	}
 	while ((*str) && (*glob != '*')) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - pancake */
+/* radare - LGPL - Copyright 2013-2015 - pancake, sghctoma */
 
 #include <r_cons.h>
 

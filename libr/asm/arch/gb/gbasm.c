@@ -45,7 +45,8 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 	ut64 num;
 	if (!a || !op || !buf)
 		return 0;
-	strncpy (op->buf_asm, buf, R_ASM_BUFSIZE);
+	strncpy (op->buf_asm, buf, R_ASM_BUFSIZE-1);
+	op->buf_asm[R_ASM_BUFSIZE-1] = 0;
 	gb_str_replace (op->buf_asm, "  ", " ");
 	gb_str_replace (op->buf_asm, " ,", ",");
 	mn_len = r_str_do_until_token (str_op, op->buf_asm, ' ');

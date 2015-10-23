@@ -1092,7 +1092,7 @@ static int cb_binprefix(void *user, void *data) {
 	free (core->bin->prefix);
 	if (node->value && *node->value) {
 		if (!strcmp (node->value, "auto")) {
-			if (!core || !core->bin || !core->bin->file) {
+			if (!core->bin || !core->bin->file) {
 				//eprintf ("core->bin->file is null\n");
 				return false;
 			}
