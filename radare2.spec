@@ -20,6 +20,8 @@ BuildRequires:  file-devel
 BuildRequires:  libzip-devel
 #BuildRequires:  capstone-devel >= 3.0.4
 
+#Assume more versions installed in paraller side-by-side
+%{!?_pkgdocdir: %global _pkgdocdir %{_docdir}/%{name}-%{version}}
 
 %description
 The %{name} is a reverse-engineering framework that is multi-architecture,
