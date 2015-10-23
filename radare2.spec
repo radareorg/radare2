@@ -1,6 +1,6 @@
 %global         gituser         radare
 %global         gitname         radare2
-#%global        commit          a093958b6d24015d82782eb20a2e10d8f4afcd85
+#global         commit          a093958b6d24015d82782eb20a2e10d8f4afcd85
 %global         commit          5a3dab0a86e1452c0bb0c13d869f95b41f50b9a9
 %global         shortcommit     %(c=%{commit}; echo ${c:0:7})
 
@@ -11,18 +11,13 @@ Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
 License:        LGPLv3
 URL:            http://radare.org/
-Source0:        https://github.com/%{gituser}/%{gitname}/archive/%{commit}/%{name}-%{version}-%{shortcommit}.tar.gz
 #Source0:        http://radare.org/get/%{name}-%{version}.tar.gz
 #Source0:        http://radare.org/get/%{name}-%{version}.tar.xz
+Source0:        https://github.com/%{gituser}/%{gitname}/archive/%{commit}/%{name}-%{version}-%{shortcommit}.tar.gz
 
 
 BuildRequires:  file-devel
 BuildRequires:  libzip-devel
-BuildRequires:  libewf-devel
-BuildRequires:  vala-devel
-BuildRequires:  valabind
-BuildRequires:  gmp-devel
-BuildRequires:  lua-devel
 #BuildRequires:  capstone-devel >= 3.0.4
 
 
@@ -50,7 +45,7 @@ information.
 
 
 %build
-%configure --enable-cparse --with-sysmagic --with-syszip --with-openssl #--with-syscapstone
+%configure --with-sysmagic --with-syszip #--with-syscapstone
 CFLAGS="%{optflags} -fPIC -I../include" make %{?_smp_mflags} LIBDIR=%{_libdir} PREFIX=%{_prefix} DATADIR=%{DATADIR}
 
 # Do not run the testsuite yet
