@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2015 pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -122,14 +122,12 @@ RIOPlugin r_io_plugin_shm = {
 	.read = shm__read,
         .plugin_open = shm__plugin_open,
 	.lseek = shm__lseek,
-	.system = NULL, // shm__system,
 	.init = shm__init,
 	.write = shm__write,
 };
 
 #else
 struct r_io_plugin_t r_io_plugin_shm = {
-        //void *plugin;
 	.name = "shm",
         .desc = "shared memory resources (not for w32)",
 };

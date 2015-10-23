@@ -416,8 +416,6 @@ RIOPlugin r_io_plugin_debug = {
 	.license = "LGPL3",
         .open = __open,
         .plugin_open = __plugin_open,
-	.lseek = NULL,
-	.system = NULL,
 	.isdbg = true,
 };
 #else

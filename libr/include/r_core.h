@@ -292,7 +292,7 @@ R_API int r_core_yank_file_all (RCore *core, const char *input);
 #define R_CORE_LOADLIBS_HOME 2
 #define R_CORE_LOADLIBS_SYSTEM 4
 #define R_CORE_LOADLIBS_CONFIG 8
-#define R_CORE_LOADLIBS_ALL -1
+#define R_CORE_LOADLIBS_ALL UT32_MAX
 
 R_API void r_core_loadlibs_init(RCore *core);
 R_API int r_core_loadlibs(RCore *core, int where, const char *path);

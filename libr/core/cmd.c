@@ -338,64 +338,69 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 			r_lang_use (core->lang, p->name);
 			ret = r_lang_run_file (core->lang, file);
 		} else {
+#if __WINDOWS__
+#define cmdstr(x) r_str_newf (x" %s", file);
+#else
+#define cmdstr(x) r_str_newf (x"'%s'", file);
+#endif
 			const char *p = r_str_lchr (file, '.');
 			if (p) {
 				const char *ext = p+1;
 				/* TODO: handle this inside r_lang_pipe with new APIs */
 				if (!strcmp (ext, "js")) {
-					char *cmd = r_str_newf ("node '%s'", file);
+					char *cmd = cmdstr("node");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "exe")) {
-#if __UNIX__
+#if __WINDOWS__
 					char *cmd = r_str_newf ("%s", file);
 #else
-					char *cmd = r_str_newf ("wine %s", file);
+					char *cmd = cmdstr("wine");
 #endif
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "d")) {
-					char *cmd = r_str_newf ("dmd -run '%s'", file);
+					char *cmd = cmdstr ("dmd -run");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "lsp")) {
-					char *cmd = r_str_newf ("newlisp -n '%s'", file);
+					char *cmd = cmdstr("newlisp -n");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "go")) {
-					char *cmd = r_str_newf ("go run '%s'", file);
+					char *cmd = cmdstr ("go run");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "es6")) {
-					char *cmd = r_str_newf ("babel-node '%s'", file);
+					char *cmd = cmdstr ("babel-node");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "rb")) {
-					char *cmd = r_str_newf ("ruby '%s'", file);
+					char *cmd = cmdstr ("ruby %s");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "pl")) {
-					char *cmd = r_str_newf ("perl '%s'", file);
+					char *cmd = cmdstr ("perl");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "py")) {
-					char *cmd = r_str_newf ("python '%s'", file);
+					char *cmd = cmdstr ("python");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);

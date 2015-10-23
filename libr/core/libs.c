@@ -64,9 +64,14 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 		free (homeplugindir);
 	}
 	if (where & R_CORE_LOADLIBS_SYSTEM) {
+#if __WINDOWS__
+		r_lib_opendir (core->lib, "plugins");
+		r_lib_opendir (core->lib, "share/radare2/"R2_VERSION"/plugins");
+#else
 		r_lib_opendir (core->lib, R2_LIBDIR"/radare2/"R2_VERSION);
 		r_lib_opendir (core->lib, R2_LIBDIR"/radare2-extras/"R2_VERSION);
 		r_lib_opendir (core->lib, R2_LIBDIR"/radare2-bindings/"R2_VERSION);
+#endif
 	}
 #endif
 	return true;
