@@ -1099,7 +1099,7 @@ static int cb_binprefix(void *user, void *data) {
 			char *name = (char *)r_file_basename (core->bin->file);
 			r_name_filter (name, strlen (name));
 			r_str_filter (name, strlen (name));
-			core->bin->prefix = name;
+			core->bin->prefix = strdup (name);
 		} else {
 			core->bin->prefix = node->value;
 		}
