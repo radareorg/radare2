@@ -22,6 +22,8 @@ static void test_or() {
 	RRegex *rx = r_regex_new ("(eax|ebx)", "e");
 	printf ("result (%s) = %d\n", "mov eax", r_regex_match("(eax|ebx)", "e", "mov eax"));
 	printf ("result (%s) = %d\n", "mov ebx", r_regex_match("(eax|ebx)", "e", "mov ebx"));
+	printf ("result (%s) = %d\n", "mov eax", r_regex_match("(eax|ebx)", "e", "mov ecx"));
+	printf ("result (%s) = %d\n", "mov ebx", r_regex_match("(eax|ecx)", "e", "mov ebx"));
 	printf ("result (%s) = %d\n", "mov eax", r_regex_check(rx, "mov eax"));
 	printf ("result (%s) = %d\n", "mov ebx", r_regex_check(rx, "mov ebx"));
 	printf ("result (%s) = %d\n", "mov eax", r_regex_exec(rx, "mov eax", 0, 0, 1));

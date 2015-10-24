@@ -140,9 +140,18 @@ static char nuls[10];		/* place to point scanner in event of error */
 R_API int r_regex_match (const char *pattern, const char *flags, const char *text) {
 	int ret;
 	RRegex rx;
-	if (r_regex_comp (&rx, pattern, r_regex_flags (flags)))
-		return -1;
-	ret = r_regex_exec (&rx, text, 0, 0, 0);
+	int re_flags = r_regex_flags (flags);
+	if (r_regex_comp (&rx, pattern, re_flags)) {
+		eprintf ("FAIL TO COMPILE %s\n", pattern);
+		return 0;
+	}
+	ret = r_regex_exec (&rx, text, 0, 0, re_flags);
+	if (!ret) {
+eprintf ("OK! (%s)\n", text);
+		if (!strstr (text, "raxq")) {
+			eprintf ("FALSE POSITIVE with (%s)\n", pattern);
+		}
+	}
 	r_regex_fini (&rx);
 	return ret? 0: 1;
 #if 0

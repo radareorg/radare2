@@ -696,7 +696,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		addr += asmop.size;
 		if (rx) {
 			//grep_find = r_regex_exec (rx, asmop.buf_asm, 0, 0, 0);
-			grep_find = r_regex_match (grep, "e", asmop.buf_asm);
+			grep_find = !r_regex_match (grep, "e", asmop.buf_asm);
 			search_hit = (end && grep && (grep_find < 1));
 		} else {
 			search_hit = (end && grep && strstr (asmop.buf_asm, grep_str));
