@@ -2880,9 +2880,6 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 		"aarj", " [sz]", "list found xrefs in JSON format",
 		"aar*", " [sz]", "list found xrefs in radare commands format",
 		NULL};
-	if (*input) {
-		input++;
-	}
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_aar);
 		return 0;
