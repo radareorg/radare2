@@ -26,6 +26,29 @@ static int gb_reg_idx (char r) {
 	return -1;
 }
 
+
+static bool gb_parse_cb1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
+	int i;
+	if (strlen (buf_asm) < minlen)
+		return 0;
+	buf[0] = base;
+	i = strlen (&buf_asm[minlen - 1]);
+	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, "[ ", "[", R_TRUE);
+	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, " ]", "]", R_TRUE);
+	r_str_do_until_token (str_op, buf_asm, ' ');
+	i = gb_reg_idx (buf_asm[minlen-1]);
+	if (i != (-1)) {
+		buf[0] |= (ut8)i;
+		return true;
+	} else if (buf_asm[minlen - 1] == '['
+		&& buf_asm[minlen] == 'h'
+		&& buf_asm[minlen + 1] == 'l'
+		&& buf_asm[minlen + 2] == ']' ) {
+		buf[0] |= 6;
+		return true;
+	} else 	return false;
+}
+
 static int gb_parse_arith1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base, ut8 alt) {
 	int i;
 	ut64 num;
@@ -307,6 +330,54 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 					len = 3;
 				}
 			}
+			break;
+		case 0x726c63:
+			op->buf[0] = 0xcb;
+			len = 2;
+			if (!gb_parse_cb1 (&op->buf[1], 5, op->buf_asm, 0x00))
+				len = 0;
+			break;
+		case 0x727263:
+			op->buf[0] = 0xcb;
+			len = 2;
+			if (!gb_parse_cb1 (&op->buf[1], 5, op->buf_asm, 0x08))
+				len = 0;
+			break;
+		case 0x726c:
+			op->buf[0] = 0xcb;
+			len = 2;
+			if (!gb_parse_cb1 (&op->buf[1], 4, op->buf_asm, 0x10))
+				len = 0;
+			break;
+		case 0x7272:
+			op->buf[0] = 0xcb;
+			len = 2;
+			if (!gb_parse_cb1 (&op->buf[1], 4, op->buf_asm, 0x18))
+				len = 0;
+			break;
+		case 0x736c61:
+			op->buf[0] = 0xcb;
+			len = 2;
+			if (!gb_parse_cb1 (&op->buf[1], 5, op->buf_asm, 0x20))
+				len = 0;
+			break;
+		case 0x737261:
+			op->buf[0] = 0xcb;
+			len = 2;
+			if (!gb_parse_cb1 (&op->buf[1], 5, op->buf_asm, 0x28))
+				len = 0;
+			break;
+		case 0x73776170:
+			op->buf[0] = 0xcb;
+			len = 2;
+			if (!gb_parse_cb1 (&op->buf[1], 6, op->buf_asm, 0x30))
+				len = 0;
+			break;
+		case 0x73726c:
+			op->buf[0] = 0xcb;
+			len = 2;
+			if (!gb_parse_cb1 (&op->buf[1], 5, op->buf_asm, 0x38))
+				len = 0;
 			break;
 		default:
 			len = 0;
