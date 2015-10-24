@@ -30,7 +30,7 @@ static int gb_reg_idx (char r) {
 static bool gb_parse_cb1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 	int i;
 	if (strlen (buf_asm) < minlen)
-		return 0;
+		return false;
 	buf[0] = base;
 	i = strlen (&buf_asm[minlen - 1]);
 	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, "[ ", "[", R_TRUE);
@@ -47,6 +47,43 @@ static bool gb_parse_cb1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 		buf[0] |= 6;
 		return true;
 	} else 	return false;
+}
+
+static bool gb_parse_cb2 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
+	ut64 num;
+	int i;
+	char *p, *q;
+	if ((i = strlen (buf_asm)) < minlen)
+		return false;
+	r_str_replace_in (buf_asm, (ut32)i, "[ ", "[", R_TRUE);
+	r_str_replace_in (buf_asm, (ut32)i, " ]", "]", R_TRUE);
+	r_str_replace_in (buf_asm, (ut32)i, ", ", ",", R_TRUE);
+	p = strchr (buf_asm, (int)' ');
+	q = strchr (p, (int)',');
+	q[0] = '\0';
+	if (p[1] == '\0' || q[1] == '\0') {
+		q[0] = ',';
+		return false;
+	}
+	num = r_num_get (NULL, &p[1]);
+	q[0] = ',';
+	if (num > 7)
+		return false;
+	buf[0] = base + (ut8)num * 8;
+	i = gb_reg_idx (q[1]);
+	if (i != (-1)) {
+		buf[0] |= (ut8)i;
+		return true;
+	}
+	if (strlen(&q[1]) < 4)
+		return false;
+	if (q[1] == '[' && q[2] == 'h'
+			&& q[3] == 'l'
+			&& q[4] == ']') {
+		buf[0] |= 6;
+		return true;
+	}
+	return false;
 }
 
 static int gb_parse_arith1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base, ut8 alt) {
@@ -85,7 +122,8 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 	strncpy (op->buf_asm, buf, R_ASM_BUFSIZE-1);
 	op->buf_asm[R_ASM_BUFSIZE-1] = 0;
 	i = strlen (op->buf_asm);
-	r_str_replace_in (op->buf_asm, (ut32)i, "  ", " ", R_TRUE);
+	while (strstr (op->buf_asm, "  "))
+		r_str_replace_in (op->buf_asm, (ut32)i, "  ", " ", R_TRUE);
 	r_str_replace_in (op->buf_asm, (ut32)i, " ,", ",", R_TRUE);
 	mn_len = r_str_do_until_token (str_op, op->buf_asm, ' ');
 	if (mn_len < 2 || mn_len > 4)
@@ -377,6 +415,24 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			op->buf[0] = 0xcb;
 			len = 2;
 			if (!gb_parse_cb1 (&op->buf[1], 5, op->buf_asm, 0x38))
+				len = 0;
+			break;
+		case 0x626974:
+			op->buf[0] = 0xcb;
+			len = 2;
+			if (!gb_parse_cb2 (&op->buf[1], 6, op->buf_asm, 0x40))
+				len = 0;
+			break;
+		case 0x726573:
+			op->buf[0] = 0xcb;
+			len = 2;
+			if (!gb_parse_cb2 (&op->buf[1], 6, op->buf_asm, 0x80))
+				len = 0;
+			break;
+		case 0x736574:
+			op->buf[0] = 0xcb;
+			len = 2;
+			if (!gb_parse_cb2 (&op->buf[1], 6, op->buf_asm, 0xc0))
 				len = 0;
 			break;
 		default:
