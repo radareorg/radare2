@@ -385,6 +385,12 @@ int main(int argc, char *argv[]) {
 				if (len && len>0 && len<length)
 					length = len;
 				content[length] = '\0';
+				if (skip && length>skip) {
+					if (bin) {
+						memmove (content, content+skip, length-skip);
+						length -= skip;
+					}
+				}
 				if (dis) ret = rasm_disasm (content, offset,
 					length, a->bits, ascii, bin, dis-1);
 				else ret = rasm_asm (content, offset, length, a->bits, bin);

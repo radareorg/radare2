@@ -66,9 +66,11 @@ R_API long double r_reg_get_longdouble(RReg *reg, RRegItem *item) {
 	off = BITS2BYTES (item->offset);
 	regset = &reg->regset[item->type];
 	switch (item->size) {
+	case 80:
+	case 96:
 	case 128:
 		if (regset->arena->size-off-1>=0) {
-			memcpy (&vld, regset->arena->bytes+off, sizeof (long double));
+			memcpy (&vld, regset->arena->bytes + off, sizeof (long double));
 			ret = vld;
 		}
 		break;
@@ -89,6 +91,7 @@ R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
 	}
 	switch (item->size) {
 	case 80:
+	case 96:
 	case 128:
 		r_mem_copyendian ( (ut8*)&vld, (ut8*)&value, 10, !reg->big_endian);
 		src = (ut8*)&vld;

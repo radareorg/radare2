@@ -82,6 +82,8 @@ static RList *backtrace_x86_64_anal(RDebug *dbg, ut64 at) {
 		frame = R_NEW0 (RDebugFrame);
 		frame->addr = _rip;
 		frame->size = 0;
+		frame->sp = _rbp;
+		frame->bp = _rbp + 8; // XXX
 		r_list_append (list, frame);
 	}
 
@@ -97,6 +99,8 @@ static RList *backtrace_x86_64_anal(RDebug *dbg, ut64 at) {
 		frame = R_NEW0 (RDebugFrame);
 		frame->addr = ptr;
 		frame->size = 0;
+		frame->sp = _rbp;
+		frame->bp = _rbp + 8;
 		//frame->name = (fcn && fcn->name) ? strdup (fcn->name) : NULL;
 		r_list_append (list, frame);
 		_rbp = ebp2;

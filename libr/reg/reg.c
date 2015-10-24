@@ -172,12 +172,12 @@ R_API RList *r_reg_get_list(RReg *reg, int type) {
 }
 
 R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item) {
+	RRegArena *dst, *src;
 	ut64 ret, ret2;
 	RListIter *it;
-	int ptr = !(reg->iters%2);
-	int len = (item->size/8); // TODO: must use r_mem_bitcmp or so.. flags not correctly checked
+	int ptr = !(reg->iters % 2);
+	int len = (item->size / 8); // TODO: must use r_mem_bitcmp or so.. flags not correctly checked
 	int off = BITS2BYTES (item->offset);
-	RRegArena *dst, *src;
 	it = r_list_head (reg->regset[item->type].pool);
 	if (!it || !it->n)
 		return UT64_MAX;
@@ -190,7 +190,7 @@ R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item) {
 		ret = r_reg_get_value (reg, item);
 		r_reg_arena_set (reg, !ptr, 0);
 		ret2 = r_reg_get_value (reg, item);
-		return ret-ret2;
+		return ret - ret2;
 	}
 	return 0LL;
 }
@@ -202,7 +202,7 @@ R_API RRegItem *r_reg_get_at (RReg *reg, int type, int regsize, int delta) {
 	RListIter *iter;
 	r_list_foreach (list, iter, ri) {
 		if (ri->size == regsize) {
-			if (BITS2BYTES(ri->offset) == delta)
+			if (BITS2BYTES (ri->offset) == delta)
 				return ri;
 		}
 	}

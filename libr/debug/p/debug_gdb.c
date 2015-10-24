@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, defragger */
+/* radare - LGPL - Copyright 2009-2015 - pancake, defragger */
 
 #include <r_asm.h>
 #include <r_debug.h>
@@ -54,10 +54,10 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			return -1;
 		buf_size = buflen;
 	}
-	memset (buf, 0, size);
-	memcpy (buf, desc->data, copy_size);
-	memset (reg_buf, 0, buflen);
-	memcpy (reg_buf, desc->data, copy_size);
+	memset ((volatile void*)buf, 0, size);
+	memcpy ((volatile void*)buf, desc->data, copy_size);
+	memset ((volatile void*)reg_buf, 0, buflen);
+	memcpy ((volatile void*)reg_buf, desc->data, copy_size);
 #if 0
 	int i;
 	//for(i=0;i<168;i++) {
@@ -129,8 +129,9 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 			RIOGdb *g = d->data;
 			support_sw_bp = UNKNOWN;
 			support_hw_bp = UNKNOWN;
+			int arch = r_sys_arch_id (dbg->arch);
 			if (( desc = &g->desc ))
-			switch (dbg->arch) {
+			switch (arch) {
 			case R_SYS_ARCH_X86:
 				if (dbg->anal->bits == 16 || dbg->anal->bits == 32) {
 					gdbr_set_architecture(&g->desc, X86_32);
@@ -145,7 +146,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				// TODO
 				break;
 			case R_SYS_ARCH_ARM:
-				if ( dbg->anal->bits == 32 ) {
+				if ( dbg->anal->bits == 32) {
 					gdbr_set_architecture(&g->desc, ARM_32);
 				} else if (dbg->anal->bits == 64) {
 					gdbr_set_architecture(&g->desc, ARM_64);
@@ -155,7 +156,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				}
 				break;
 			case R_SYS_ARCH_MIPS:
-				if ( dbg->anal->bits == 32 ) {
+				if ( dbg->anal->bits == 32) {
 					gdbr_set_architecture(&g->desc, MIPS);
 				} else {
 					eprintf("Not supported register profile\n");
@@ -185,7 +186,7 @@ static int r_debug_gdb_detach(int pid) {
 }
 
 static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
-	int arch = dbg->arch;
+	int arch = r_sys_arch_id(dbg->arch);
 	switch (arch) {
 	case R_SYS_ARCH_X86:
 		if ( dbg->anal->bits == 16 || dbg->anal->bits == 32) {
@@ -567,8 +568,8 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	r31	.8	31	0\n"
 			"gpr	sreg	.8	32	0\n"
 			"gpr	sp	.16	33	0\n"
-			"gpr	pc2	.32	35	0\n"
-			"gpr	pc	.32	39	0\n"
+			"gpr	pc	.32	35	0\n"
+	/*		"gpr	pc	.32	39	0\n" */
 	);
 
 	}
@@ -598,20 +599,14 @@ struct r_debug_plugin_t r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_X86 | R_SYS_ARCH_ARM | R_SYS_ARCH_SH | R_SYS_ARCH_MIPS | R_SYS_ARCH_AVR,
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
-	.init = NULL,
+	.arch = "x86,arm,sh,mips,avr",
+	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.step = r_debug_gdb_step,
 	.cont = r_debug_gdb_continue,
 	.attach = &r_debug_gdb_attach,
 	.detach = &r_debug_gdb_detach,
 	.canstep = 1,
 	.wait = &r_debug_gdb_wait,
-	.pids = NULL,
-	.tids = NULL,
-	.threads = NULL,
-	.kill = NULL,
-	.frames = NULL,
 	.map_get = r_debug_gdb_map_get,
 	.breakpoint = &r_debug_gdb_breakpoint,
 	.reg_read = &r_debug_gdb_reg_read,

@@ -292,6 +292,7 @@ function uiCombo(d) {
 		fun += 'case "'+d[a].name+'": '+d[a].js+'('+d[a].name+');break;';
 	}
 	fun += '}}';
+	// CSP violation here
 	eval (fun);
 	var out = '<select id="opt_'+fun_name+'" onchange="'+fun_name+'()">';
 	for (var a in d) {
@@ -638,10 +639,11 @@ function runScript() {
 	document.getElementById('scriptOutput').innerHTML = '';
 	try {
 		var msg = "\"use strict\";"+
-		"function log(x){var a = "+
+		"function log(x) { var a = "+
 		"document.getElementById('scriptOutput'); "+
 		"if (a) a.innerHTML += x + '\\n'; }\n";
-		eval (msg+str);
+		// CSP violation here
+		eval (msg + str);
 	} catch (e) {
 		alert (e);
 	}
@@ -852,6 +854,8 @@ function panelDisasm() {
 	out += uiButton('javascript:rename()', 'Rename');
 	out += uiButton('javascript:write()', 'Write');
 	c.innerHTML = out;
+	c.style['font-size'] = '12px';
+	c.style.overflow = 'scroll';
 	var tail = '';
 	if (inColor) {
 		tail = '@e:scr.color=1,scr.html=1';
@@ -1086,10 +1090,62 @@ function updateInfo() {
 		document.getElementById('info').innerHTML = body;
 	});
 }
-window.onload = function() {
+
+function onClick(a,b) {
+	var h = document.getElementById(a);
+	if (h) {
+		h.addEventListener('click', function() {
+			b();
+		});
+	} else {
+		console.error('onclick-error', a);
+	}
+}
+
+updateInfo();
+
+function panelHelp() {
+	alert ("TODO");
+}
+
+var twice = false;
+function ready() {
+	if (twice) {
+		return;
+	}
+	twice = true;
 	updateFortune();
 	updateInfo();
+
+	/* left menu */
+	onClick('menu_headers', panelHeaders);
+	onClick('menu_disasm', panelDisasm);
+	onClick('menu_debug', panelDebug);
+	onClick('menu_hexdump', panelHexdump);
+	onClick('menu_functions', panelFunctions);
+	onClick('menu_flags', panelFlags);
+	onClick('menu_search', panelSearch);
+	onClick('menu_comments', panelComments);
+	onClick('menu_script', panelScript);
+	onClick('menu_help', panelHelp);
+
+	/* left sub-menu */
+	onClick('menu_project_save', saveProject);
+	onClick('menu_project_delete', deleteProject);
+	onClick('menu_project_close', closeProject);
+
+	/* right menu */
+	onClick('menu_seek', seek);
+	onClick('menu_console', panelConsole);
+	onClick('menu_settings', panelSettings);
+	onClick('menu_about', panelAbout);
+	onClick('menu_mail', function() {
+		window.location = 'mailto:pancake@nopcode.org';
+        });
 }
+window.onload = ready
+
+document.addEventListener( "DOMContentLoaded", ready, false )
 
 document.body.onkeypress = function(e) {
 	if (e.ctrlKey) {

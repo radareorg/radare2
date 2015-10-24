@@ -98,9 +98,13 @@ ut64 analyzeIterative (RCore *core, Sdb *db, ut64 addr) {
 		op = r_core_anal_op (core, addr + cur);
 		if (!op) {
 			eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
-			return false;
+			break;
 		}
 		eprintf ("0x%08"PFMT64x"  %s\n", addr + cur, op->mnemonic);
+		if (op->mnemonic[0] == '?') {
+			eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
+			break;
+		}
 
 		bb_end += op->size;
 		fcn_size += op->size;
@@ -327,6 +331,8 @@ static int r_cmd_anal_call(void *user, const char *input) {
 			break;
 		default:
 			eprintf ("Usage: a2f\n");
+			eprintf ("a2f is the new (experimental) analysis engine\n");
+			eprintf ("Use with caution.\n");
 			break;
 		}
 		return true;

@@ -4,14 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *filenameuri);
 static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr);
-// After June 2014, if no problems delete r_core_file_do_load_for_hex
-//static int r_core_file_do_load_for_hex (RCore *r, ut64 baddr, ut64 loadaddr, const char *filenameuri);
 
-
-// TODO: add support for args
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbin) {
 	int isdebug = r_config_get_i (core->config, "cfg.debug");
 	char *path;
@@ -37,14 +32,6 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		free (obinfilepath);
 		return false;
 	}
-#if 0
-	if (isdebug) {
-		// if its in debugger mode we have to respawn a new process
-		// instead of reattaching
-		free (ofilepath);
-		ofilepath = r_str_newf ("dbg://%s", odesc->name);
-	}
-#endif
 	if (!core->file) {
 		eprintf ("No file opened to reopen\n");
 		free (ofilepath);
@@ -174,6 +161,8 @@ R_API void r_core_sysenv_help(const RCore* core) {
 	"=!=", "", "disable remotecmd mode",
 	"\nEnvironment:", "", "",
 	"FILE", "", "file name",
+	"RABIN2_LANG", "", "assume this lang to demangle",
+	"RABIN2_DEMANGLE", "", "demangle or not",
 	"SIZE", "","file size",
 	"OFFSET", "", "10base offset 64bit value",
 	"XOFFSET", "", "same as above, but in 16 base",
@@ -225,7 +214,8 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	r_sys_setenv ("PDB_SERVER", r_config_get (core->config, "pdb.server"));
 	if (core->file && core->file->desc && core->file->desc->name) {
 		r_sys_setenv ("FILE", core->file->desc->name);
-		snprintf (buf, sizeof (buf), "%"PFMT64d, r_io_desc_size (core->io, core->file->desc));
+		snprintf (buf, sizeof (buf), "%"PFMT64d, r_io_desc_size
+			(core->io, core->file->desc));
 		r_sys_setenv ("SIZE", buf);
 		if (strstr (cmd, "BLOCK")) {
 			// replace BLOCK in RET string
@@ -236,6 +226,8 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 			}
 		}
 	}
+	r_sys_setenv ("RABIN2_LANG", r_config_get (core->config, "bin.lang"));
+	r_sys_setenv ("RABIN2_DEMANGLE", r_config_get (core->config, "bin.demangle"));
 	snprintf (buf, sizeof (buf), "%"PFMT64d, core->offset);
 	r_sys_setenv ("OFFSET", buf);
 	snprintf (buf, sizeof (buf), "0x%08"PFMT64x, core->offset);
@@ -283,6 +275,24 @@ R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	return result;
 }
 
+static bool setbpint(RCore *r, const char *mode, const char *sym) {
+	RBreakpointItem *bp;
+	RFlagItem *fi = r_flag_get (r->flags, sym);
+	if (!fi) return false;
+	bp = r_bp_add_sw (r->dbg->bp, fi->offset, 1, R_BP_PROT_EXEC);
+	if (bp) {
+		bp->internal = true;
+#if __linux__
+		bp->data = r_str_newf ("?e %s: %s;dd", mode, sym);
+#else
+		bp->data = r_str_newf ("?e %s: %s;ps@rdi", mode, sym);
+#endif
+		return true;
+	}
+	eprintf ("Cannot set breakpoint at %s\n", sym);
+	return false;
+}
+
 // XXX - need to handle index selection during debugging
 static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *filenameuri) {
 	RCoreFile *cf = r_core_file_cur (r);
@@ -319,10 +329,22 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 		}
 	}
 
+	if (*r_config_get (r->config, "dbg.libs")) {
+		r_core_cmd0 (r, ".dmm*");
+#if __linux__
+		setbpint(r, "dbg.libs", "sym._dl_map_object_from_fd");
+		setbpint(r, "dbg.libs", "sym._dl_open");
+		setbpint(r, "dbg.unlibs", "sym._dl_unmap");
+		setbpint(r, "dbg.unlibs", "sym._dl_close");
+#elif __APPLE__
+		setbpint(r, "dbg.libs", "sym._dlopen");
+		setbpint(r, "dbg.libs", "sym._dlclose");
+#endif
+	}
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
-	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
+	if (plugin && !strncmp (plugin->name, "any", 5)) {
 		// set use of raw strings
 		r_config_set_i (r->config, "io.va", false);
 		//\\ r_config_set (r->config, "bin.rawstr", "true");

@@ -338,64 +338,69 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 			r_lang_use (core->lang, p->name);
 			ret = r_lang_run_file (core->lang, file);
 		} else {
+#if __WINDOWS__
+#define cmdstr(x) r_str_newf (x" %s", file);
+#else
+#define cmdstr(x) r_str_newf (x" '%s'", file);
+#endif
 			const char *p = r_str_lchr (file, '.');
 			if (p) {
 				const char *ext = p+1;
 				/* TODO: handle this inside r_lang_pipe with new APIs */
 				if (!strcmp (ext, "js")) {
-					char *cmd = r_str_newf ("node '%s'", file);
+					char *cmd = cmdstr("node");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "exe")) {
-#if __UNIX__
+#if __WINDOWS__
 					char *cmd = r_str_newf ("%s", file);
 #else
-					char *cmd = r_str_newf ("wine %s", file);
+					char *cmd = cmdstr("wine");
 #endif
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "d")) {
-					char *cmd = r_str_newf ("dmd -run '%s'", file);
+					char *cmd = cmdstr ("dmd -run");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "lsp")) {
-					char *cmd = r_str_newf ("newlisp -n '%s'", file);
+					char *cmd = cmdstr("newlisp -n");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "go")) {
-					char *cmd = r_str_newf ("go run '%s'", file);
+					char *cmd = cmdstr ("go run");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "es6")) {
-					char *cmd = r_str_newf ("babel-node '%s'", file);
+					char *cmd = cmdstr ("babel-node");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "rb")) {
-					char *cmd = r_str_newf ("ruby '%s'", file);
+					char *cmd = cmdstr ("ruby %s");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "pl")) {
-					char *cmd = r_str_newf ("perl '%s'", file);
+					char *cmd = cmdstr ("perl");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "py")) {
-					char *cmd = r_str_newf ("python '%s'", file);
+					char *cmd = cmdstr ("python");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
@@ -1480,6 +1485,7 @@ next2:
 		}
 	}
 	// TODO must honor " and `
+	core->fixedblock = false;
 
 	/* grep the content */
 	ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
@@ -1556,6 +1562,7 @@ repeat_arroba:
 				}
 				break;
 			case 'b': // "@b:" // bits
+				tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 				r_config_set_i (core->config, "asm.bits",
 					r_num_math (core->num, ptr+2));
 				break;
@@ -1569,6 +1576,7 @@ repeat_arroba:
 						len = r_hex_str2bin (ptr+2, buf);
 						r_core_block_size (core, len);
 						memcpy (core->block, buf, core->blocksize);
+						core->fixedblock = true;
 						free (buf);
 					} else eprintf ("cannot allocate\n");
 				} else eprintf ("Invalid @x: syntax\n");
@@ -1690,7 +1698,9 @@ if (addr != UT64_MAX) {
 		return ret;
 	}
 
-	return cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
+	int rc = cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
+	core->fixedblock = false;
+	return rc;
 }
 
 static int foreach_comment(void *user, const char *k, const char *v) {
@@ -1845,6 +1855,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		"@@", "", " # foreach iterator command:",
 		"Repeat a command over a list of offsets", "", "",
 		"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
+		"x", " @@dbt[abs]", "run a command on every backtrace address, bp or sp",
 		"x", " @@.file", "\"\" over the offsets specified in the file (one offset per line)",
 		"x", " @@=off1 off2 ..", "manual list of offsets",
 		"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
@@ -1865,7 +1876,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_cons_printf ("# PID %d\n", p->pid);
 					r_debug_select (core->dbg, p->pid, p->pid);
 					r_core_cmd (core, cmd, 0);
-					r_cons_flush ();
+					r_cons_printf("\n");
 				}
 				r_list_free (list);
 			}
@@ -1892,6 +1903,37 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			r_core_cmd (core, cmd, 0);
 			r_cons_flush ();
 		} while (str != NULL);
+		break;
+	case 'd':
+		if (each[1] == 'b' && each[2] == 't') {
+			ut64 oseek = core->offset;
+			RDebugFrame *frame;
+			RListIter *iter;
+			RList *list;
+			list = r_debug_frames (core->dbg, UT64_MAX);
+			i = 0;
+			r_list_foreach (list, iter, frame) {
+				switch (each[3]) {
+				case 'b':
+					r_core_seek (core, frame->bp, 1);
+					break;
+				case 's':
+					r_core_seek (core, frame->sp, 1);
+					break;
+				default:
+				case 'a':
+					r_core_seek (core, frame->addr, 1);
+					break;
+				}
+				r_core_cmd (core, cmd, 0);
+				r_cons_newline ();
+				i++;
+			}
+			r_core_seek (core, oseek, 0);
+			r_list_free (list);
+		} else {
+			eprintf("Invalid for-each statement. Use @@=dbt[abs]\n");
+		}
 		break;
 	case 'k':
 		/* foreach list of items */
@@ -2053,7 +2095,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (log) r_line_hist_add (cstr);
 
 //eprintf ("DEPTH %d (%s)\n", core->cmd_depth, cstr);
-	if (core->cmd_depth<1) {
+	if (core->cmd_depth < 1) {
 		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
 		free (ocmd);
 		free (core->oobi);
@@ -2140,10 +2182,14 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 R_API int r_core_cmd_command(RCore *core, const char *command) {
 	int ret, len;
 	char *buf, *rcmd, *ptr;
-	rcmd = ptr = buf = r_sys_cmd_str (command, 0, &len);
-	if (buf == NULL)
+	char *cmd = r_core_sysenv_begin (core, command);
+	rcmd = ptr = buf = r_sys_cmd_str (cmd, 0, &len);
+	if (buf == NULL) {
+		free (cmd);
 		return -1;
+	}
 	ret = r_core_cmd (core, rcmd, 0);
+	r_core_sysenv_end (core, command);
 	free (buf);
 	return ret;
 }

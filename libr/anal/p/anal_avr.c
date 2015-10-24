@@ -7,6 +7,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 
 #include <string.h>
 #include <r_types.h>
+#include <r_util.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
@@ -60,14 +61,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
 	}
-	if ((buf[1] & 0xec) == 12) {		//ADD + ADC
-		op->type = R_ANAL_OP_TYPE_ADD;
-		op->cycles = 1;
-	} else
-	if ((buf[1] & 0xec) == 8) {		//SUB + SBC
-		op->type = R_ANAL_OP_TYPE_SUB;
-		op->cycles = 1;
-	} else
 	if (buf[1] == 1) {			//MOVW
 		d = (buf[0] & 0xf0) >> 3;
 		r = (buf[0] & 0x0f) << 1;
@@ -89,6 +82,20 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 	d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
 	r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
+	if ((buf[1] & 0xec) == 12) {		//ADD + ADC
+		op->type = R_ANAL_OP_TYPE_ADD;
+		op->cycles = 1;
+		if (buf[1] & 0x10)
+			r_strbuf_setf (&op->esil, "r%d,r%d,+=,$c7,CF,=,$c3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, d, d, d);
+		else	r_strbuf_setf (&op->esil, "r%d,DUP,r%d,CF,+=,r%d,r%d,+=,$c7,CF,=,$c3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=,r%d,=", r, r, r, d, d, d, r);
+	}
+	if ((buf[1] & 0xec) == 8) {             //SUB + SBC
+		op->type = R_ANAL_OP_TYPE_SUB;
+		op->cycles = 1;
+		if (buf[1] & 0x10)
+			r_strbuf_setf (&op->esil, "r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, d, d, d);
+		else	r_strbuf_setf (&op->esil, "r%d,DUP,r%d,CF,+=,r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=,r%d,=", r, r, r, d, d, d, r);
+	}
 	if ((buf[1] & 0xec) == 4) {		//CP + CPC
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->cycles = 1;
@@ -189,8 +196,13 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 				op->cycles = 1;
 				r_strbuf_setf (&op->esil, "CF,NF,=,r%d,1,&,7,CF,<<,1,r%d,>>,|,r%d,=,$z,ZF,=,CF,=,NF,CF,^,VF,=,NF,VF,^,SF,=", d, d, d);
 				break;
+			case 10:	//DEC
+				op->type = R_ANAL_OP_TYPE_SUB;
+				op->cycles = 1;
+				r_strbuf_setf (&op->esil, "1,r%d,-=,$z,ZF,=,r%d,0x80,&,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d);
+				break;
 			case 11:
-				if (d < 16) {
+				if (d < 16) {	//DES
 					op->type = R_ANAL_OP_TYPE_CRYPTO;
 					op->cycles = 1;		//redo this
 					r_strbuf_setf (&op->esil, "%d,des", d);
@@ -285,6 +297,43 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	return op->size;
 }
 
+static int avr_custom_des (RAnalEsil *esil) {
+	char *round;
+	ut64 key, text;
+	int r, enc;
+	if (!esil || !esil->anal || !esil->anal->reg)
+		return false;
+	round = r_anal_esil_pop (esil);
+	if (!round)
+		return false;
+	if(!r_anal_esil_get_parm (esil, round, &key)) {
+		free (round);
+		return false;
+	}
+	free (round);
+	r = (int)key;
+	r_anal_esil_reg_read (esil, "HF", &key, NULL);
+	enc = (int)key;
+	r_anal_esil_reg_read (esil, "deskey", &key, NULL);
+	r_anal_esil_reg_read (esil, "text", &text, NULL);
+//	eprintf ("des - key: 0x%"PFMT64x" - text: 0x%"PFMT64x" - round: %d - %s\n", key, text, r, enc ? "decrypt" : "encrypt");
+	key = r_des_get_roundkey (key, r, enc);
+	text = r_des_round (text, key);
+	r_anal_esil_reg_write (esil, "text", text);
+	return true;
+}
+
+static int esil_avr_init (RAnalEsil *esil) {
+	if (!esil)
+		return false;
+	r_anal_esil_set_op (esil, "des", avr_custom_des);
+	return true;
+}
+
+static int esil_avr_fini (RAnalEsil *esil) {
+	return true;
+}
+
 static int set_reg_profile(RAnal *anal) {
 	char *p =
 		"=pc	PC\n"
@@ -312,6 +361,7 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r5	.8	5	0\n"
 		"gpr	r6	.8	6	0\n"
 		"gpr	r7	.8	7	0\n"
+		"gpr	text	.64	0	0\n"
 		"gpr	r8	.8	8	0\n"
 		"gpr	r9	.8	9	0\n"
 		"gpr	r10	.8	10	0\n"
@@ -320,6 +370,7 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r13	.8	13	0\n"
 		"gpr	r14	.8	14	0\n"
 		"gpr	r15	.8	15	0\n"
+		"gpr	deskey	.64	8	0\n"
 		"gpr	r16	.8	16	0\n"
 		"gpr	r17	.8	17	0\n"
 		"gpr	r18	.8	18	0\n"
@@ -379,11 +430,13 @@ RAnalPlugin r_anal_plugin_avr = {
 	.name = "avr",
 	.desc = "AVR code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_AVR,
+	.arch = "avr",
 	.esil = true,
 	.bits = 8|16, // 24 big regs conflicts
 	.op = &avr_op,
 	.set_reg_profile = &set_reg_profile,
+	.esil_init = esil_avr_init,
+	.esil_fini = esil_avr_fini,
 };
 
 #ifndef CORELIB

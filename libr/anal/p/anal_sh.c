@@ -807,17 +807,10 @@ struct r_anal_plugin_t r_anal_plugin_sh = {
 	.name = "sh",
 	.desc = "SH-4 code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_SH,
+	.arch = "sh",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
 	.op = &sh_op,
 	.set_reg_profile = &sh_set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

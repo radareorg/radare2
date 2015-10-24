@@ -164,7 +164,7 @@ static RList* sections(RBinFile *arch) {
 
 static RList* libs(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj;
-	int i, off, libs;
+	int i, off, libs, r;
 	xbe_lib lib;
 	RList *ret;
 	char *s;
@@ -180,25 +180,29 @@ static RList* libs(RBinFile *arch) {
 	} else {
 		off = obj->header->kernel_lib_addr - obj->header->base;
 	}
-	r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
+	r = r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
+	if (r == 0 || r == -1) return NULL;
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 	if (s) r_list_append (ret, s);
 
-	if ( obj->header->xapi_lib_addr < obj->header->base) {
+	if (obj->header->xapi_lib_addr < obj->header->base) {
 		off = 0;
 	} else {
 		off = obj->header->xapi_lib_addr - obj->header->base;
 	}
-	r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
+	r = r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
+	if (r == 0 || r == -1) return NULL;
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 	if (s) r_list_append (ret, s);
 
 	libs = obj->header->lib_versions;
 	if (libs<1) libs = 0;
 	for (i = 0; i < libs; i++) {
-		r_buf_read_at (arch->buf, obj->header->lib_versions_addr - \
+		r = r_buf_read_at (arch->buf, obj->header->lib_versions_addr - \
 			obj->header->base + (i * sizeof (xbe_lib)),
 			(ut8 *)&lib, sizeof (xbe_lib));
+
+		if (r == 0 || r == -1) continue;
 		s = r_str_newf ("%s %i.%i.%i", lib.name,
 			lib.major, lib.minor, lib.build);
 		if (s) r_list_append(ret, s);

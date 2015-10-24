@@ -66,6 +66,8 @@ enum {
 typedef struct r_debug_frame_t {
 	ut64 addr;
 	int size;
+	ut64 sp;
+	ut64 bp;
 } RDebugFrame;
 
 typedef struct r_debug_reason_t {
@@ -135,7 +137,7 @@ typedef struct r_debug_tracepoint_t {
 } RDebugTracepoint;
 
 typedef struct r_debug_t {
-	int arch;
+	char *arch;
 	int bits; /// XXX: MUST SET ///
 	int pid;    /* selected process id */
 	int tid;    /* selected thread id */
@@ -218,7 +220,7 @@ typedef struct r_debug_plugin_t {
 	const char *license;
 	//const char **archs; // MUST BE DEPREACTED!!!!
 	ut32 bits;
-	ut64 arch;
+	const char *arch;
 	int canstep;
 	int keepio;
 	/* life */
@@ -317,7 +319,7 @@ R_API RDebugPid *r_debug_pid_new(const char *path, int pid, char status, ut64 pc
 R_API RDebugPid *r_debug_pid_free(RDebugPid *pid);
 R_API RList *r_debug_pids(RDebug *dbg, int pid);
 
-R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits);
+R_API int r_debug_set_arch(RDebug *dbg, const char *arch, int bits);
 R_API int r_debug_use(RDebug *dbg, const char *str);
 
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg);

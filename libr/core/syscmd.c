@@ -47,7 +47,7 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 		uid = sb.st_uid;
 		gid = sb.st_gid;
 		perm = sb.st_mode & 0777;
-		if (!(u_rwx = strdup(r_str_rwx_i(perm>>6)))) {
+		if (!(u_rwx = strdup(r_str_rwx_i (perm>>6)))) {
 			free(nn);
 			return;
 		}
@@ -66,15 +66,16 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 			}
 	}
 #else
+	u_rwx = strdup ("-");
 	fch = isdir? 'd': '-';
 #endif
 	if (printfmt == FMT_RAW) {
 		r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
-		isdir?'d':fch,
-		      u_rwx,
-		      r_str_rwx_i ((perm>>3)&7),
-		      r_str_rwx_i (perm&7),
-		      uid, gid, sz, nn);
+			isdir?'d':fch,
+			u_rwx? u_rwx:"-",
+			r_str_rwx_i ((perm>>3)&7),
+			r_str_rwx_i (perm&7),
+			uid, gid, sz, nn);
 	} else if (printfmt == FMT_JSON) {
 		if (nth > 0) r_cons_printf(",");
 		r_cons_printf("{\"name\":\"%s\",\"size\":%d,\"uid\":%d,"
@@ -196,14 +197,26 @@ R_API void r_core_syscmd_cat(const char *file) {
 }
 
 R_API void r_core_syscmd_mkdir(const char *dir) {
+	bool show_help = true;
 	const char *p = strchr (dir, ' ');
 	if (p) {
-		char *dirname = strdup (p+1);
-		dirname = r_str_chop (dirname);
-		if (!r_sys_mkdir (dirname)) {
+		int ret;
+		char *dirname;
+		if (!strncmp (p+1, "-p ", 3)) {
+			dirname = r_str_chop (strdup (p+3));
+			ret = r_sys_mkdirp (dirname);
+		} else {
+			dirname = r_str_chop (strdup (p+1));
+			ret = r_sys_mkdir (dirname);
+		}
+		if (!ret) {
 			if (r_sys_mkdir_failed ())
 				eprintf ("Cannot create \"%s\"\n", dirname);
 		}
 		free (dirname);
-	} else eprintf ("Usage: mkdir [directory]\n");
+		show_help = false;
+	}
+	if (show_help) {
+		eprintf ("Usage: mkdir [-p] [directory]\n");
+	}
 }

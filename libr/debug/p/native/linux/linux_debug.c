@@ -75,7 +75,6 @@ int linux_step (RDebug *dbg) {
 		ret = R_TRUE;
 	}
 	return ret;
-
 }
 
 int linux_attach (RDebug *dbg, int pid) {
@@ -101,7 +100,6 @@ int linux_attach (RDebug *dbg, int pid) {
 	ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 	if (ret != -1) perror ("ptrace (PT_ATTACH)");
 	return pid;
-
 }
 
 RDebugInfo *linux_info (RDebug *dbg, const char *arg) {
@@ -119,9 +117,7 @@ RDebugInfo *linux_info (RDebug *dbg, const char *arg) {
 		"/proc/%d/cmdline", rdi->pid);
 	rdi->cmdline = r_file_slurp (procpid_cmdline, NULL);
 	return rdi;
-
 }
-
 
 RList *linux_thread_list (int pid, RList *list) {
 	int i, fd = -1, thid = 0;
@@ -205,7 +201,6 @@ RList *linux_thread_list (int pid, RList *list) {
 	eprintf ("foo = 0x%04lx          \n", (fpregs).foo);\
 	eprintf ("fos = 0x%04lx              ", (fpregs).fos)
 
-
 static void print_fpu (void *f, int r){
 #if __x86_64__ || __i386__
 	int i;
@@ -250,56 +245,53 @@ static void print_fpu (void *f, int r){
 #endif	// !__ANDROID__
 #elif __i386__
 	if (!r) {
-		#if !__ANDROID__
-			struct user_fpxregs_struct fpxregs = 
-											*(struct user_fpxregs_struct*)f;
-			eprintf ("---- x86-32 ----\n");
-			eprintf ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
-			eprintf ("swd = 0x%04x  ; status\n", fpxregs.swd);
-			eprintf ("twd = 0x%04x ", fpxregs.twd);
-			eprintf ("fop = 0x%04x\n", fpxregs.fop);
-			eprintf ("fip = 0x%08x\n", fpxregs.fip);
-			eprintf ("fcs = 0x%08x\n", fpxregs.fcs);
-			eprintf ("foo = 0x%08x\n", fpxregs.foo);
-			eprintf ("fos = 0x%08x\n", fpxregs.fos);
-			eprintf ("mxcsr = 0x%08x\n", fpxregs.mxcsr);
-			for(i = 0; i < 8; i++) {
-				ut32 *a = (ut32*)(&fpxregs.xmm_space);
-				ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
-				ut32 *c = (ut32*)&fpxregs.st_space;
-				float *f = (float *)&fpxregs.st_space;
-				a = a + (i * 4);
-				c = c + (i * 4);
-				f = f + (i * 4);
-				eprintf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
-					(int)a[1], (int)a[2], (int)a[3] );
-				eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) |\
-					%0.3f (0x%08x)\n", i,
-					(double)*((double*)(&fpxregs.st_space[i*4])), b[0],
-					f[0], c[0], f[1], c[1]);
-			}
+#if !__ANDROID__
+		struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct*)f;
+		eprintf ("---- x86-32 ----\n");
+		eprintf ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
+		eprintf ("swd = 0x%04x  ; status\n", fpxregs.swd);
+		eprintf ("twd = 0x%04x ", fpxregs.twd);
+		eprintf ("fop = 0x%04x\n", fpxregs.fop);
+		eprintf ("fip = 0x%08x\n", fpxregs.fip);
+		eprintf ("fcs = 0x%08x\n", fpxregs.fcs);
+		eprintf ("foo = 0x%08x\n", fpxregs.foo);
+		eprintf ("fos = 0x%08x\n", fpxregs.fos);
+		eprintf ("mxcsr = 0x%08x\n", fpxregs.mxcsr);
+		for(i = 0; i < 8; i++) {
+			ut32 *a = (ut32*)(&fpxregs.xmm_space);
+			ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
+			ut32 *c = (ut32*)&fpxregs.st_space;
+			float *f = (float *)&fpxregs.st_space;
+			a = a + (i * 4);
+			c = c + (i * 4);
+			f = f + (i * 4);
+			eprintf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
+				(int)a[1], (int)a[2], (int)a[3] );
+			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) |\
+				%0.3f (0x%08x)\n", i,
+				(double)*((double*)(&fpxregs.st_space[i*4])), b[0],
+				f[0], c[0], f[1], c[1]);
+		}
 #endif // !__ANDROID__
-			return;
-	}
-	eprintf ("---- x86-32-noxmm ----\n");
-	PRINT_FPU_NOXMM (fpregs);
-	for(i = 0; i < 8; i++) {
-		ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
-		double *d = (double*)b;
-		ut32 *c = (ut32*)&fpregs.st_space;
-		float *f = (float *)&fpregs.st_space;
-		c = c + (i * 4);
-		f = f + (i * 4);
-		eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | \
-			%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
+	} else {
+		eprintf ("---- x86-32-noxmm ----\n");
+		PRINT_FPU_NOXMM (fpregs);
+		for(i = 0; i < 8; i++) {
+			ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
+			double *d = (double*)b;
+			ut32 *c = (ut32*)&fpregs.st_space;
+			float *f = (float *)&fpregs.st_space;
+			c = c + (i * 4);
+			f = f + (i * 4);
+			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | \
+				%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
+		}
 	}
 #endif
 #else 
 #warning not implemented for this platform
 #endif
 }
-
-
 
 int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	int showfpu = R_FALSE;
@@ -419,20 +411,15 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 	if (type == R_REG_TYPE_DRX) {
 // XXX: this android check is only for arm
 #if !__ANDROID__
-		{
 		int i;
 		long *val = (long*)buf;
 		for (i = 0; i < 8; i++) { // DR0-DR7
 			if (i == 4 || i == 5) continue;
-			long ret = ptrace (PTRACE_POKEUSER, dbg->pid,
-					r_offsetof (struct user, u_debugreg[i]),
-					val[i]);
-			if (ret != 0) {
+			if (ptrace (PTRACE_POKEUSER, dbg->pid, r_offsetof (
+					struct user, u_debugreg[i]), val[i])) {
 				eprintf ("ptrace error for dr %d\n", i);
 				perror ("ptrace");
-				//return R_FALSE;
 			}
-		}
 		}
 		return sizeof(R_DEBUG_REG_T);
 #else
@@ -446,7 +433,6 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 	}
 	return R_FALSE;
 }
-
 
 RList *linux_desc_list (int pid) {
 	RList *ret = NULL;
@@ -501,6 +487,6 @@ RList *linux_desc_list (int pid) {
 		if (!desc) break;
 		r_list_append (ret, desc);
 	}
-	closedir(dd);
+	closedir (dd);
 	return ret;
 }

@@ -128,6 +128,10 @@
 
 #include "engine.c"
 
+
+R_API bool r_regex_check(const RRegex *rr, const char *str) {
+	return r_regex_exec (rr, str, 0, NULL, rr->re_flags);
+}
 /*
  - regexec - interface for matching
  *
@@ -137,7 +141,7 @@
  */
 int				/* 0 success, R_REGEX_NOMATCH failure */
 r_regex_exec(const RRegex *preg, const char *string, size_t nmatch,
-    RRegexMatch pmatch[], int eflags)
+	RRegexMatch pmatch[], int eflags)
 {
 	struct re_guts *g = preg->re_g;
 #ifdef REDEBUG
@@ -145,6 +149,8 @@ r_regex_exec(const RRegex *preg, const char *string, size_t nmatch,
 #else
 #	define	GOODFLAGS(f)	((f)&(R_REGEX_NOTBOL|R_REGEX_NOTEOL|R_REGEX_STARTEND))
 #endif
+	if (!preg || !string)
+		return R_REGEX_ASSERT;
 
 	if (preg->re_magic != MAGIC1 || g->magic != MAGIC2)
 		return(R_REGEX_BADPAT);

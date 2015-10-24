@@ -38,10 +38,11 @@
 
 #include <stdlib.h>
   /*
-    warning: implicit declaration of function `printf_unfiltered'
+    warning: implicit declaration of function `eprintf'
     if dbg is 1 then this definition is required
   */
-  void printf_unfiltered (const char *,...);
+//#define eprintf(x,y...) fprintf(stderr,x,##y)
+#include "r_types.h"
 
 #ifndef dbg
 #define dbg (0)
@@ -901,7 +902,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       fieldC = FIELDD (state->words[0]);
 
       if (dbg)
-	printf_unfiltered ("6:b reg %d %d c 0x%x  \n",
+	eprintf ("6:b reg %d %d c 0x%x  \n",
 			   fieldBisReg, fieldB, fieldC);
       state->_ea_present = 1;
       state->_offset = fieldC;
@@ -946,7 +947,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       fieldA = FIELDD(state->words[0]); /* shimm */
 
       /* [B,A offset] */
-      if (dbg) printf_unfiltered("7:b reg %d %x off %x\n",
+      if (dbg) eprintf("7:b reg %d %x off %x\n",
 				 fieldBisReg,fieldB,fieldA);
       state->_ea_present = 1;
       state->_offset = fieldA;

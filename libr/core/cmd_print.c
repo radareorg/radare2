@@ -297,6 +297,7 @@ static void print_format_help(RCore *core) {
 	"pfj.", "fmt_name", "Print format in JSON",
 	"pfv.", "fmt_name", "Print the value(s) only. Useful for one-liners",
 	"pf*.", "fmt_name", "Display flag commands",
+	"pfd.", "fmt_name", "Display graphviz commands",
 	NULL};
 	r_core_cmd_help (core, help_msg);
 }
@@ -369,6 +370,10 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 	case '*':
 		_input++;
 		mode = R_PRINT_SEEFLAGS;
+		break;
+	case 'd':
+		_input++;
+		mode = R_PRINT_DOT;
 		break;
 	case 'j':
 		_input++;
@@ -519,7 +524,15 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 		} else {
 			char *name = strdup (input+(input[1]?2:1));
 			char *space = strchr (name, ' ');
-			char *eq = strchr (name, '='), *dot = strchr (name, '.');
+			char *eq = strchr (name, '=');
+			char *dot = strchr (name, '.');
+
+			if (eq && !dot) {
+				*eq = ' ';
+				space = eq;
+				eq = NULL;
+			}
+
 			/* store a new format */
 			if (space && (eq == NULL || space < eq)) {
 				char *fields = NULL;
@@ -535,7 +548,7 @@ static void cmd_print_format (RCore *core, const char *_input, int len) {
 			}
 
 			if (strchr (name, '.') == NULL && r_strht_get (core->print->formats, name) == NULL) {
-				eprintf ("Warning: %s is not a valid format name\n", name);
+				eprintf ("Cannot find '%s' format.\n", name);
 				free (name);
 				free (input);
 				return;
@@ -1014,8 +1027,18 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		core->anal->cur->reset_counter (core->anal, core->offset);
 	}
 
+	int len = (nb_opcodes + nb_bytes) * 5;
+	if (core->fixedblock) {
+		len = core->blocksize;
+	} else {
+		if (len > core->blocksize) {
+			r_core_block_size (core, len);
+			r_core_block_read (core, 0);
+		}
+	}
 	r_cons_break (NULL, NULL);
-	for (i=j=0; j<nb_opcodes; j++) {
+#define isTheEnd (nb_opcodes? nb_bytes? (j<nb_opcodes && i<nb_bytes) : j<nb_opcodes: i<nb_bytes)
+	for (i=j=0; isTheEnd; j++) {
 		RFlagItem *item;
 		if (r_cons_singleton ()->breaked) {
 			err = 1;
@@ -1039,7 +1062,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 			ut64 at = core->offset + i;
 			r_print_offset (core->print, at, 0, show_offseg, 0);
 		}
-		//			r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
+		// r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ret<1) {
 			err = 1;
 			ret = asmop.size;
@@ -1060,18 +1083,6 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 				if (fmt == 'e') { // pie
 					char *esil = (R_STRBUF_SAFEGET (&analop.esil));
 					r_cons_printf ("%s\n", esil);
-#if 0
-					char spaces[26];
-					char *code = asmop.buf_asm;
-					int j, wlen = sizeof (spaces)-strlen (code);
-					for (j=0; j<wlen; j++) {
-						spaces[j] = ' ';
-					}
-					if (!esil) esil = "";
-					spaces[R_MIN(sizeof (spaces)-1,j)] = 0;
-					r_cons_printf ("%s%s%s\n",
-						code, spaces, esil);
-#endif
 				} else {
 					if (decode) {
 						opstr = (tmpopstr)? tmpopstr: (asmop.buf_asm);
@@ -1111,8 +1122,10 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 			}
 		}
 		i += ret;
+#if 0
 		if ((nb_bytes && (nb_bytes <= i)) || (i >= core->blocksize))
 			break;
+#endif
 	}
 	r_cons_break_end ();
 	core->offset = old_offset;
@@ -1364,6 +1377,40 @@ static void printraw (RCore *core, int len, int mode) {
 	}
 	core->cons->newline = true;
 }
+static void cmd_print_pv(RCore *core, const char *input) {
+	const char *stack[] = { "ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL };
+	int i, n = core->assembler->bits / 8;
+	int type = 'v';
+	// variables can be
+	switch (input[0]) {
+	case 'z':
+		type = 'z';
+		if (input[1]) {
+			input++;
+		} else {
+			r_core_cmdf (core, "ps");
+			break;
+		}
+		/* fallthrough */
+	case ' ':
+		for (i=0;stack[i]; i++) {
+			if (!strcmp (input+1, stack[i])) {
+				if (type == 'z') {
+					r_core_cmdf (core, "ps @ [`drn sp`+%d]", n * i);
+				} else {
+					r_core_cmdf (core, "?v [`drn sp`+%d]", n * i);
+				}
+			}
+		}
+		break;
+	case '?':
+		eprintf ("Usage: pv[z] [ret arg#]\n");
+		break;
+	default:
+		r_core_cmd0 (core, "?v [$$]");
+		break;
+	}
+}
 
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -1451,9 +1498,9 @@ static int cmd_print(void *data, const char *input) {
 		r_core_seek (core, off, SEEK_SET);
 	}
 	switch (*input) {
-	case 'w': //pw
+	case 'w': // "pw"
 		if (input[1]=='n') {
-			cmd_print_pwn(core);
+			cmd_print_pwn (core);
 		} else if (input[1]=='d') {
 			if (!r_sandbox_enable (0)) {
 				char *cwd = r_sys_getdir ();
@@ -1466,7 +1513,10 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_printf("| pwd               display current working directory\n");
 		}
 		break;
-	case 'v': //pv
+	case 'v': // "pv"
+		cmd_print_pv (core, input+1);
+		break;
+	case '-': // "p-"
 		mode = input[1];
 		w = len? len: core->print->cols * 4;
 		if (mode == 'j') r_cons_strcat ("{");
@@ -1482,9 +1532,9 @@ static int cmd_print(void *data, const char *input) {
 		case '?':{
 			const char* help_msg[] = {
 				"Usage:", "p%%[jh] [pieces]", "bar|json|histogram blocks",
-				"pv", "", "show ascii-art bar of metadata in file boundaries",
-				"pvj", "", "show json format",
-				"pvh", "", "show histogram analysis of metadata per block",
+				"p-", "", "show ascii-art bar of metadata in file boundaries",
+				"p-j", "", "show json format",
+				"p-h", "", "show histogram analysis of metadata per block",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			}
@@ -1874,20 +1924,19 @@ static int cmd_print(void *data, const char *input) {
 	case 'I': // "pI"
 		switch (input[1]) {
 		case 'j': // "pIj" is the same as pDj
-		{
 			if (input[2]) {
 				cmd_pDj (core, input+2);
 			} else {
 				cmd_pDj (core, sdb_fmt(0, "%d", core->blocksize));
 			}
-		}
 			break;
-		case 'f':
+		case 'f': // "pIf"
 			{
 				const RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f) {
-					r_core_print_disasm_instructions (core, f->size, l);
+					r_core_print_disasm_instructions (core,
+						f->size, 0);
 					break;
 				}
 			}
@@ -2028,12 +2077,12 @@ static int cmd_print(void *data, const char *input) {
 		}
 
 		switch (input[1]) {
-		case 'c': // "pdc"
+		case 'c': // "pdc" // "pDc"
 			r_core_pseudo_code (core, input+2);
 			pd_result = 0;
 			processed_cmd = true;
 			break;
-		case 'i': // "pdi"
+		case 'i': // "pdi" // "pDi"
 			processed_cmd = true;
 			if (*input == 'D')
 				pdi (core, 0, l, 0);
@@ -3149,7 +3198,8 @@ static int cmd_print(void *data, const char *input) {
 			 "ps","[pwz] [len]","print pascal/wide/zero-terminated strings",
 			 "pt","[dn?] [len]","print different timestamps",
 			 "pu","[w] [len]","print N url encoded bytes (w=wide)",
-			 "pv","[jh] [mode]","bar|json|histogram blocks (mode: e?search.in)",
+			 "pv","[jh] [mode]","show variable/pointer/value in memory",
+			 "p-","[jh] [mode]","bar|json|histogram blocks (mode: e?search.in)",
 			 "p","[xX][owq] [len]","hexdump of N bytes (o=octal, w=32bit, q=64bit)",
 			 "pz"," [len]","print zoom view (see pz? for help)",
 			 "pwd","","display current working directory",

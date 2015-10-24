@@ -164,17 +164,9 @@ RAnalPlugin r_anal_plugin_m68k = {
 	.name = "m68k",
 	.desc = "Motorola 68000",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_M68K,
+	.arch = "m68k",
 	.bits = 16|32,
-	.init = NULL,
-	.fini = NULL,
 	.op = &m68k_op,
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

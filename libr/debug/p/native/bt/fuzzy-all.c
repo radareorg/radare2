@@ -7,7 +7,7 @@ static int iscallret(RDebug *dbg, ut64 addr) {
 	/* check if region is executable */
 	/* check if previous instruction is a call */
 	/* if x86 expect CALL to be 5 byte length */
-	if (dbg->arch == R_SYS_ARCH_X86) {
+	if (dbg->arch && !strcmp (dbg->arch, "x86")) {
 		(void)dbg->iob.read_at (dbg->iob.io, addr-5, buf, 5);
 		if (buf[0] == 0xe8) return 1;
 		if (buf[3] == 0xff && (buf[4] & 0xf0)==0xd0) return 1;
@@ -84,6 +84,8 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 			RDebugFrame *frame = R_NEW0 (RDebugFrame);
 			frame->addr = addr;
 			frame->size = cursp - oldsp;
+			frame->sp = cursp;
+			frame->bp = oldsp; //addr + (i * wordsize); // -4 || -8
 			// eprintf ("--------------> 0x%llx (%d)\n", addr, frame->size);
 			r_list_append (list, frame);
 			oldsp = cursp;

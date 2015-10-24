@@ -68,13 +68,16 @@ R_API void r_bin_filter_sections (RList *list) {
 }
 
 R_API void r_bin_filter_classes (RList *list) {
+	int namepad_len;
+	char *namepad;
 	Sdb *db = sdb_new0 ();
 	RListIter *iter, *iter2;
 	RBinClass *cls;
 	RBinSymbol *sym;
 	r_list_foreach (list, iter, cls) {
-		int namepad_len = strlen (cls->name)+32;
-		char *namepad = malloc (namepad_len);
+		if (!cls->name) continue;
+		namepad_len = strlen (cls->name) + 32;
+		namepad = calloc (1, namepad_len+1);
 		if (namepad) {
 			strcpy (namepad, cls->name);
 			r_bin_filter_name (db, cls->index, namepad, namepad_len);

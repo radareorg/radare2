@@ -53,7 +53,7 @@ static char *r_core_project_file(RCore *core, const char *file) {
 static int r_core_project_init(RCore *core) {
 	char *prjdir = r_file_abspath (r_config_get (
 		core->config, "dir.projects"));
-	int ret = r_sys_rmkdir (prjdir);
+	int ret = r_sys_mkdirp (prjdir);
 	if (!ret) eprintf ("Cannot mkdir dir.projects\n");
 	free (prjdir);
 	return ret;

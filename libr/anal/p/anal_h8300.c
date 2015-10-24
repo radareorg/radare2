@@ -723,18 +723,11 @@ struct r_anal_plugin_t r_anal_plugin_h8300 = {
 	.name = "h8300",
 	.desc = "H8300 code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_H8300,
+	.arch = "h8300",
 	.bits = 16,
-	.init = NULL,
-	.fini = NULL,
 	.op = &h8300_op,
 	.esil = true,
 	.set_reg_profile = set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

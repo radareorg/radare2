@@ -299,7 +299,7 @@ R_API int r_line_hist_save(const char *file) {
 		p = (char*)r_str_lastbut (path, R_SYS_DIR[0], NULL); // TODO: use fs
 		if (p) {
 			*p = 0;
-			r_sys_rmkdir (path);
+			r_sys_mkdirp (path);
 			*p = R_SYS_DIR[0];
 		}
 		fd = fopen (path, "w");

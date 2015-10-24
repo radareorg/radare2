@@ -393,7 +393,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case X86_INS_STAC:
 		case X86_INS_STGI:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			op->family = R_ANAL_OP_FAMILY_CPU;
 			break;
 		// cmov
 		case X86_INS_SETNE:
@@ -1229,13 +1228,11 @@ SETL/SETNGE
 			/* Direction flag */
 		case X86_INS_CLD:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			op->family = R_ANAL_OP_FAMILY_CPU;
 			if (a->decode)
 				esilprintf (op, "0,df,=");
 			break;
 		case X86_INS_STD:
 			op->type = R_ANAL_OP_TYPE_MOV;
-			op->family = R_ANAL_OP_FAMILY_CPU;
 			if (a->decode)
 				esilprintf (op, "1,df,=");
 			break;
@@ -1297,12 +1294,13 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 	eprintf ("syscall %d not implemented yet\n", syscall);
 	return false;
 }
-
+#if 0
 static int esil_x86_cs_intr (RAnalEsil *esil, int intr) {
 	if (!esil) return false;
 	eprintf ("INTERRUPT 0x%02x HAPPENS\n", intr);
 	return true;
 }
+#endif
 
 static int esil_x86_cs_init (RAnalEsil *esil) {
 	if (!esil) return false;
@@ -1669,13 +1667,13 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.desc = "Capstone X86 analysis",
 	.esil = true,
 	.license = "BSD",
-	.arch = R_SYS_ARCH_X86,
+	.arch = "x86",
 	.bits = 16|32|64,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
-	.esil_intr = esil_x86_cs_intr,
+//	.esil_intr = esil_x86_cs_intr,
 };
 
 #ifndef CORELIB

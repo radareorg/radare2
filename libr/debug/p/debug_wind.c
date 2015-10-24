@@ -115,7 +115,7 @@ static int r_debug_wind_attach (RDebug *dbg, int pid) {
 	if (strncmp (desc->plugin->name, "windbg", 6))
 		return R_FALSE;
 
-	if (dbg->arch != R_SYS_ARCH_X86)
+	if (dbg->arch && strcmp (dbg->arch, "x86"))
 		return R_FALSE;
 
 	wctx = (WindCtx *)desc->data;
@@ -134,10 +134,8 @@ static int r_debug_wind_attach (RDebug *dbg, int pid) {
 		wind_ctx_free(wctx);
 		return R_FALSE;
 	}
-
 	// Make r_debug_is_dead happy
 	dbg->pid = 0;
-
 	return R_TRUE;
 }
 
@@ -146,7 +144,8 @@ static int r_debug_wind_detach (int pid) {
 }
 
 static char *r_debug_wind_reg_profile(RDebug *dbg) {
-	if (!dbg || dbg->arch != R_SYS_ARCH_X86)
+	if (!dbg) return NULL;
+	if (dbg->arch && strcmp (dbg->arch, "x86"))
 		return NULL;
 	if (dbg->bits == R_SYS_BITS_32) {
 #include "native/reg/windows-x86.h"
@@ -161,7 +160,7 @@ static int r_debug_wind_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	if (!bp) return R_FALSE;
 	// Use a 32 bit word here to keep this compatible with 32 bit hosts
 	tag = (int *)&bp->data;
-	return wind_bkpt(wctx, bp->addr, set, bp->hw, tag);
+	return wind_bkpt (wctx, bp->addr, set, bp->hw, tag);
 }
 
 static int r_debug_wind_init(RDebug *dbg) {
@@ -212,14 +211,13 @@ static int r_debug_wind_select (int pid, int tid) {
 	}
 
 	eprintf ("Process base is 0x%"PFMT64x"\n", base);
-
 	return R_TRUE;
 }
 
 struct r_debug_plugin_t r_debug_plugin_wind = {
 	.name = "wind",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_X86,
+	.arch = "x86",
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.pids = r_debug_wind_pids,
 	.select = r_debug_wind_select,

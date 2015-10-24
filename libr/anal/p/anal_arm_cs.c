@@ -264,6 +264,9 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	// TODO: PREFIX CONDITIONAL
 
 	switch (insn->id) {
+	case ARM_INS_IT:
+		// TODO: See #3486
+		break;
 	case ARM_INS_NOP:
 		r_strbuf_setf (&op->esil, ",");
 		break;
@@ -540,6 +543,9 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		op->ptr = 0LL;
 		op->ptrsize = 2;
 		break;
+	case ARM64_INS_BRK:
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
 	case ARM64_INS_CMP:
@@ -566,6 +572,7 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_STRB:
 	case ARM64_INS_STR:
+	case ARM64_INS_STP:
 		op->type = R_ANAL_OP_TYPE_STORE;
 		if (REGBASE64(1) == ARM64_REG_X29) {
 			op->stackop = R_ANAL_STACK_SET;
@@ -574,6 +581,7 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		}
 		break;
 	case ARM64_INS_LDR:
+	case ARM64_INS_LDP:
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
 		op->type = R_ANAL_OP_TYPE_LOAD;
@@ -589,9 +597,11 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BL: // bl 0x89480
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = IMM64(0);
+		op->fail = addr + 4;
 		break;
 	case ARM64_INS_BLR: // blr x0
 		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->fail = addr + 4;
 		//op->jump = IMM64(0);
 		break;
 	case ARM64_INS_CBZ:
@@ -1016,7 +1026,7 @@ RAnalPlugin r_anal_plugin_arm_cs = {
 	.desc = "Capstone ARM analyzer",
 	.license = "BSD",
 	.esil = true,
-	.arch = R_SYS_ARCH_ARM,
+	.arch = "arm",
 	.archinfo = archinfo,
 	.set_reg_profile = set_reg_profile,
 	.bits = 16 | 32 | 64,

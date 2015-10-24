@@ -15,6 +15,34 @@ struct trace_node {
 
 static int checkbpcallback(RCore *core);
 
+// Get base address from a loaded file.
+static ut64 r_debug_get_baddr(RCore *r, const char *file) {
+	char *abspath;
+	RListIter *iter;
+	RDebugMap *map;
+	if (!r || !r->io || !r->io->desc)
+		return 0LL;
+	r_debug_attach (r->dbg, r->io->desc->fd);
+	r_debug_map_sync (r->dbg);
+	abspath = r_file_abspath (file);
+	if (!abspath) abspath = strdup (file);
+	r_list_foreach (r->dbg->maps, iter, map) {
+		if (!strcmp (abspath, map->name)) {
+			free (abspath);
+			return map->addr;
+		}
+	}
+	free (abspath);
+	// fallback resolution (osx/w32?)
+	// we asume maps to be loaded in order, so lower addresses come first
+	r_list_foreach (r->dbg->maps, iter, map) {
+		if (map->perm == 5) { // r-x
+			return map->addr;
+		}
+	}
+	return 0LL;
+}
+
 static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 	// TODO : handle more than one stopping syscall
 	int i, *syscalls = NULL;
@@ -70,9 +98,7 @@ static RGraphNode *get_graphtrace_node (RGraph *g, Sdb *nodes, struct trace_node
 static void dot_trace_create_node (RTreeNode *n, RTreeVisitor *vis) {
 	struct dot_trace_ght *data = (struct dot_trace_ght *)vis->data;
 	struct trace_node *tn = n->data;
-
-	if (tn)
-		get_graphtrace_node (data->graph, data->graphnodes, tn);
+	if (tn) get_graphtrace_node (data->graph, data->graphnodes, tn);
 }
 
 static void dot_trace_discover_child (RTreeNode *n, RTreeVisitor *vis) {
@@ -686,6 +712,19 @@ static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
 	list = r_debug_modules_list (core->dbg);
 	r_list_foreach (list, iter, map) {
 		switch (mode) {
+		case ':':
+			if (addr >= map->addr && addr < map->addr_end) {
+				char *fn = strdup (map->file);
+				r_name_filter (fn, 0);
+				//r_cons_printf ("fs+module_%s\n", fn);
+				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
+					fn, map->addr);
+				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
+					map->addr, map->file);
+				//r_cons_printf ("fs-\n");
+				free (fn);
+			}
+			break;
 		case '.':
 			if (addr >= map->addr && addr < map->addr_end) {
 				r_cons_printf ("0x%08"PFMT64x" %s\n",
@@ -694,15 +733,19 @@ static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
 			}
 			break;
 		case 'j':
-			r_cons_printf ("{\"address\":%"PFMT64d",\"file\":\"%s\"}%s",
-				map->addr, map->file, iter->n?",":"");
+			r_cons_printf ("{\"address\":%"PFMT64d",\"name\":\"%s\",\"file\":\"%s\"}%s",
+				map->addr, map->name, map->file, iter->n?",":"");
 			break;
 		case '*':
 			{
 				char *fn = strdup (map->file);
 				r_name_filter (fn, 0);
+				//r_cons_printf ("fs+module_%s\n", fn);
 				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
 					fn, map->addr);
+				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
+					map->addr, map->file);
+				//r_cons_printf ("fs-\n");
 				free (fn);
 			}
 			break;
@@ -755,7 +798,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		}
 		break;
 	case 'm': // "dmm"
-		cmd_debug_modules (core, input[1]);
+		if (!strcmp (input+1, ".*")) {
+			cmd_debug_modules (core, ':');
+		} else cmd_debug_modules (core, input[1]);
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
@@ -1488,7 +1533,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbs", " <addr>", "Toggle breakpoint",
 
 		"dbt", "", "Display backtrace based on dbg.btdepth and dbg.btalgo",
-		"dbt=", "", "Display backtrace in one line",
+		"dbt*", "", "Display backtrace in flags",
+		"dbt=", "", "Display backtrace in one line (see dbt=s and dbt=b for sp or bp)",
 		"dbtj", "", "Display backtrace in JSON",
 		"dbte", " <addr>", "Enable Breakpoint Trace",
 		"dbtd", " <addr>", "Disable Breakpoint Trace",
@@ -1520,20 +1566,17 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 
 	switch (input[1]) {
 	case '.':
-		{
-			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, core->offset);
-			if (bpi) {
-				r_cons_printf ("breakpoint %s %s %s\n",
-						r_str_rwx_i (bpi->rwx),
-						bpi->enabled ?
-						"enabled" : "disabled",
-						bpi->name ? bpi->name : "");
-			}
+		bpi = r_bp_get_at (core->dbg->bp, core->offset);
+		if (bpi) {
+			r_cons_printf ("breakpoint %s %s %s\n",
+				r_str_rwx_i (bpi->rwx),
+				bpi->enabled ?  "enabled" : "disabled",
+				bpi->name ? bpi->name : "");
 		}
 		break;
-	case 't':
+	case 't': // "dbt"
 		switch (input[2]) {
-		case 'e':
+		case 'e': // "dbte"
 			for (p = input + 3; *p == ' '; p++) { /* nothing to do here */ }
 			if (*p == '*') {
 				r_bp_set_trace_all (core->dbg->bp,true);
@@ -1542,19 +1585,19 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				eprintf ("Cannot set tracepoint\n");
 			}
 			break;
-		case 'd':
+		case 'd': // "dbtd"
 			for (p = input + 3; *p==' ';p++);
 			if (*p == '*') {
 				r_bp_set_trace_all (core->dbg->bp,false);
 			} else if (!r_bp_set_trace (core->dbg->bp, addr, false))
 				eprintf ("Cannot unset tracepoint\n");
 			break;
-		case 's':
+		case 's': // "dbts"
 			bpi = r_bp_get_at (core->dbg->bp, addr);
 			if (bpi) bpi->trace = !!!bpi->trace;
 			else eprintf ("Cannot unset tracepoint\n");
 			break;
-		case 'j': // dbtj
+		case 'j': // "dbtj"
 			addr = UT64_MAX;
 			if (input[2] == ' ' && input[3])
 				addr = r_num_math (core->num, input+2);
@@ -1563,7 +1606,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_cons_printf ("[");
 			r_list_foreach (list, iter, frame) {
 				r_cons_printf ("%s%08"PFMT64d,
-						(i ? "," : ""), frame->addr);
+					(i ? "," : ""), frame->addr);
 				i++;
 			}
 			r_cons_printf ("]\n");
@@ -1577,24 +1620,50 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			list = r_debug_frames (core->dbg, addr);
 			r_list_reverse (list);
 			r_list_foreach (list, iter, frame) {
-				r_cons_printf ("%s0x%08"PFMT64x,
-						(i ? " > " : ""), frame->addr);
+				switch (input[3]) {
+				case 's':
+					r_cons_printf ("%s0x%08"PFMT64x,
+							(i ? " " : ""), frame->sp);
+					break;
+				case 'b':
+					r_cons_printf ("%s0x%08"PFMT64x,
+							(i ? " " : ""), frame->bp);
+					break;
+				default:
+					r_cons_printf ("%s0x%08"PFMT64x,
+							(i ? " " : ""), frame->addr);
+					break;
+				}
 				i++;
 			}
 			r_cons_newline ();
 			r_list_free (list);
 			break;
-		case 0:
+		case '*': // dbt*
+			addr = UT64_MAX;
+			if (input[2] == ' ' && input[3])
+				addr = r_num_math (core->num, input+2);
+			i = 0;
+			list = r_debug_frames (core->dbg, addr);
+			r_list_reverse (list);
+			r_cons_printf ("f-bt.*\n");
+			r_list_foreach (list, iter, frame) {
+				r_cons_printf ("f bt.frame%d = 0x%08"PFMT64x"\n", i, frame->addr);
+				r_cons_printf ("f bt.frame%d.stack %d 0x%08"PFMT64x"\n", i, frame->size, frame->sp);
+				i++;
+			}
+			r_list_free (list);
+			break;
+		case 0: // "dbt" -- backtrace
 			addr = UT64_MAX;
 			if (input[2] == ' ' && input[3])
 				addr = r_num_math (core->num, input + 2);
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
-			r_cons_printf ("#  Address  Size  [Func]  Desc1 Desc2\n");
 			r_list_foreach (list, iter, frame) {
 				char flagdesc[1024], flagdesc2[1024];
-				RFlagItem *f = r_flag_get_at (core->flags,
-							frame->addr);
+				RFlagItem *f = r_flag_get_at (core->flags, frame->addr);
+				flagdesc[0] = flagdesc2[0] = 0;
 				if (f) {
 					if (f->offset != addr) {
 						int delta = (int)(frame->addr - f->offset);
@@ -1621,7 +1690,10 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				} else {
 					flagdesc[0] = 0;
 				}
-				f = r_flag_get_at (core->flags, frame->addr-1);
+				f = r_flag_get_at (core->flags, frame->addr);
+				if (f && !strchr (f->name, '.')) {
+					f = r_flag_get_at (core->flags, frame->addr-1);
+				}
 				if (f) {
 					if (f->offset != addr) {
 						int delta = (int)(frame->addr - 1 - f->offset);
@@ -1642,7 +1714,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						}
 					} else {
 						snprintf (flagdesc2,
-							sizeof(flagdesc2),
+							sizeof (flagdesc2),
 							"%s", f->name);
 					}
 				} else {
@@ -1653,22 +1725,21 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				}
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
 				if (fcn) {
-					r_cons_printf ("%d  0x%08"PFMT64x"  %d \
-							[%s]  %s %s\n", i++,
-							frame->addr, frame->size,
-							fcn->name, flagdesc,
+					r_cons_printf ("%d  0x%08"PFMT64x" sp: 0x%"PFMT64x"  %d"
+							"[%s]  %s %s\n", i++,
+							frame->addr, frame->sp,
+							(int)frame->size, fcn->name, flagdesc,
 							flagdesc2);
 				} else {
-					r_cons_printf ("%d  0x%08"PFMT64x"  %d  \
-							%s %s\n", i++, frame->addr,
-							frame->size, flagdesc,
-							flagdesc2);
+					r_cons_printf ("%d  0x%08"PFMT64x"  sp: 0x%"PFMT64x"  %d"
+							"   %s %s\n", (int)i++, (ut64)frame->addr,
+							frame->sp, (int)frame->size, flagdesc, flagdesc2);
 				}
 			}
 			r_list_free (list);
 			break;
 		default:
-			eprintf ("See db?\n");
+			r_core_cmd0 (core, "db?~dbt");
 			break;
 		}
 		break;
@@ -1883,18 +1954,21 @@ static RTreeNode *add_trace_tree_child (Sdb *db, RTree *t, RTreeNode *cur, ut64 
 	return node;
 }
 
+static RCore *_core = NULL;
+
 static void trace_traverse_pre (RTreeNode *n, RTreeVisitor *vis) {
+	const char *name = "";
 	struct trace_node *tn = n->data;
 	unsigned int i;
-
-	if (!tn)
-		return;
-
+	if (!tn) return;
 	for (i = 0; i < n->depth - 1; ++i)
-		r_cons_printf ("   ");
-
-	r_cons_printf (" 0x%08"PFMT64x" refs %d\n",
-			tn->addr, tn->refs);
+		r_cons_printf ("  ");
+	if (_core) {
+		RFlagItem *f = r_flag_get_at (_core->flags, tn->addr);
+		if (f) name = f->name;
+	}
+	r_cons_printf (" 0x%08"PFMT64x" refs %d %s\n",
+			tn->addr, tn->refs, name);
 }
 
 static void trace_traverse (RTree *t) {
@@ -2048,7 +2122,7 @@ static void debug_trace_calls (RCore *core, const char *input) {
 	do_debug_trace_calls (core, from, to, final_addr);
 	if (bp_final)
 		r_bp_del (core->dbg->bp, final_addr);
-
+	_core = core;
 	trace_traverse (core->dbg->tree);
 	core->dbg->trace->enabled = t;
 	r_cons_break_end();

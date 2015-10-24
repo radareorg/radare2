@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -148,11 +148,13 @@ R_API void r_cons_grep(const char *str) {
 	}
 
 	ptr2 = strchr (ptr, ':'); // line number
-	if (ptr2) {
+	if (ptr2 && ptr2[1] != ':') {
 		*ptr2 = '\0';
 		cons->grep.line = r_num_get (cons->num, ptr2 + 1);
-		if (cons->grep.line < 0)
+		if (cons->grep.line < 0) {
+			eprintf ("Negative line grep not yet implented\n");
 			cons->grep.line = -1;
+		}
 	}
 	free (cons->grep.str);
 	if (*ptr) {
@@ -187,7 +189,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	char *tline, *tbuf, *p, *out, *in = buf;
 	int ret, buffer_len = 0, l = 0, tl = 0;
 
-	if((len == 0 || buf == NULL || buf[0] == '\0') &&
+	if ((len == 0 || buf == NULL || buf[0] == '\0') &&
 	   (cons->grep.json || cons->grep.less)) {
 		cons->grep.json = 0;
 		cons->grep.less = 0;

@@ -59,12 +59,9 @@ static int destroy(RBinFile *arch) {
 
 static ut64 baddr(RBinFile *arch) {
 	struct MACH0_(obj_t) *bin;
-
 	if (!arch || !arch->o || !arch->o->bin_obj)
-		return 0;
-
+		return 0LL;
 	bin = arch->o->bin_obj;
-
 	return MACH0_(get_baddr)(bin);
 }
 
@@ -163,6 +160,27 @@ static RList* symbols(RBinFile *arch) {
 			lang = "go";
 		}
 		r_list_append (ret, ptr);
+	}
+	//functions from LC_FUNCTION_STARTS
+	if (bin->func_start) {
+		ut64 value = 0, address = 0;
+		const ut8* temp = bin->func_start;
+		const ut8* temp_end = bin->func_start + bin->func_size;
+		while (*temp && temp+2 < temp_end) {
+			temp = r_uleb128_decode (temp, NULL, &value);
+			address += value;
+			ptr = R_NEW0 (RBinSymbol);
+			if (!ptr) break;
+			ptr->vaddr = bin->baddr + address;
+			ptr->paddr = address;
+			ptr->size = 0;
+			strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+			strncpy (ptr->name, r_str_newf ("func.%08"PFMT64x, ptr->vaddr), R_BIN_SIZEOF_STRINGS);
+			strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+			strncpy (ptr->bind, "LOCAL", R_BIN_SIZEOF_STRINGS);
+			ptr->ordinal = i++;
+			r_list_append (ret, ptr);
+		}
 	}
 	bin->lang = lang;
 	free (symbols);
@@ -282,7 +300,7 @@ static RBinInfo* info(RBinFile *arch) {
 	struct MACH0_(obj_t) *bin = NULL;
 	char *str;
 	RBinInfo *ret;
-	
+
 	if (!arch || !arch->o)
 		return NULL;
 
@@ -301,6 +319,7 @@ static RBinInfo* info(RBinFile *arch) {
 		ret->dbg_info = bin->dbg_info;
 		ret->lang = bin->lang;
 	}
+	ret->intrp = r_str_dup (NULL, MACH0_(get_intrp)(arch->o->bin_obj));
 	ret->rclass = strdup ("mach0");
 	ret->os = strdup (MACH0_(get_os)(arch->o->bin_obj));
 	ret->subsystem = strdup ("darwin");

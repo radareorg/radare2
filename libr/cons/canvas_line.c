@@ -97,10 +97,8 @@ loop:
 	c->attr=Color_RESET;
 }
 
-static void draw_horizontal_line (RConsCanvas *c,
-								  int x, int y,
-								  int width,
-								  int style) {
+static void draw_horizontal_line (RConsCanvas *c, int x, int y,
+		int width, int style) {
 	char *l_corner, *r_corner;
 	int i;
 
@@ -125,15 +123,19 @@ static void draw_horizontal_line (RConsCanvas *c,
 		break;
 	}
 
-	if (G (x, y))
+	if (G (x, y)) {
 		W (l_corner);
+	}
 
-	for (i = x + 1; i < x + width - 1; i++)
-		if (G (i, y))
+	for (i = x + 1; i < x + width - 1; i++) {
+		if (G (i, y)) {
 			W ("-");
+		}
+	}
 
-	if (G (x + width - 1, y))
+	if (G (x + width - 1, y)) {
 		W (r_corner);
+	}
 }
 
 static void draw_vertical_line (RConsCanvas *c, int x, int y, int height) {
@@ -164,10 +166,11 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 		draw_horizontal_line(c, min_x, y + hl + 1, w, style);
 	} else  {
 		if (y2 == y) {
-			draw_horizontal_line (c, min_x, y - 1, diff_x + 1, DOT_DOT);
+			draw_horizontal_line (c, min_x, y, diff_x + 1, DOT_DOT);
 		} else {
-			if (x != x2)
+			if (x != x2) {
 				draw_horizontal_line (c, min_x, y, diff_x + 1, REV_APEX_APEX);
+			}
 			draw_vertical_line (c, x2, y2, diff_y);
 		}
 	}

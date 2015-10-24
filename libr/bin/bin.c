@@ -550,7 +550,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	// invalidate current object reference
 	bf->o = NULL;
 
-	// XXX - this needs to be reimplemented to account for 
+	// XXX - this needs to be reimplemented to account for
 	// performance impacts.
 	buf_bytes = NULL;
 
@@ -897,8 +897,6 @@ R_API RBinPlugin * r_bin_get_binplugin_by_bytes (RBin *bin, const ut8* bytes, ut
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (plugin->check_bytes && plugin->check_bytes (bytes, sz) )
 			return plugin;
-		// must be set to null
-		plugin = NULL;
 	}
 	return NULL;
 }
@@ -992,7 +990,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	o->baddr = baseaddr;
 	o->baddr_shift = 0;
 	// XXX - binfile could be null here meaning an improper load
-	// XXX - object size cant be set here and needs to be set where 
+	// XXX - object size cant be set here and needs to be set where
 	// where the object is created from.  The reason for this is to prevent
 	// mis-reporting when the file is loaded from impartial bytes or is extracted
 	// from a set of bytes in the file
@@ -1170,17 +1168,31 @@ R_API void* r_bin_free(RBin *bin) {
 	return NULL;
 }
 
-R_API int r_bin_list(RBin *bin) {
+R_API int r_bin_list(RBin *bin, int json) {
 	RListIter *it;
 	RBinXtrPlugin *bp;
 	RBinXtrPlugin *bx;
-	r_list_foreach (bin->plugins, it, bp) {
-		printf ("bin  %-11s %s (%s)\n",
-			bp->name, bp->desc, bp->license);
-	}
-	r_list_foreach (bin->binxtrs, it, bx) {
-		printf ("xtr  %-11s %s (%s)\n", bx->name,
-			bx->desc, bx->license);
+	if (json) {
+		printf("{\"bin\":[");
+		r_list_foreach (bin->plugins, it, bp) {
+			printf ("{\"filetype\":\"%s\",\"name\":\"%s\",\"license\":\"%s\"}",
+					bp->name, bp->desc, bp->license);
+		}
+		printf("],\"xtr\":[");
+		r_list_foreach (bin->binxtrs, it, bx) {
+			printf ("{\"filetype\":\"%s\",\"name\":\"%s\",\"license\":\"%s\"}",
+					bx->name, bx->desc, bx->license);
+		}
+		printf("]}\n");
+	} else {
+		r_list_foreach (bin->plugins, it, bp) {
+			printf ("bin  %-11s %s (%s)\n",
+					bp->name, bp->desc, bp->license);
+		}
+		r_list_foreach (bin->binxtrs, it, bx) {
+			printf ("xtr  %-11s %s (%s)\n", bx->name,
+					bx->desc, bx->license);
+		}
 	}
 	return false;
 }
@@ -1780,12 +1792,6 @@ R_API void r_bin_class_add_field (RBinFile *binfile, const char *classname, cons
 	//eprintf ("TODO add field: %s \n", name);
 }
 
-R_API ut64 r_bin_get_offset (RBin *bin) {
-	RBinFile *binfile = bin ? bin->cur : NULL;
-	if (binfile) return binfile->offset;
-	return UT64_MAX;
-}
-
 /* returns vaddr, rebased with the baseaddr of binfile, if va is enabled for
  * bin, paddr otherwise */
 R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 paddr, ut64 vaddr) {
@@ -1938,16 +1944,14 @@ R_API void r_bin_force_plugin (RBin *bin, const char *name) {
 	} else bin->force = NULL;
 }
 
-R_API int r_bin_read_at (RBin *bin, ut64 addr, ut8 *buf, int size)
-{
+R_API int r_bin_read_at (RBin *bin, ut64 addr, ut8 *buf, int size) {
 	RIOBind *iob;
 	if (!bin || !(iob = &(bin->iob)))
 		return false;
 	return iob->read_at (iob->io, addr, buf, size);
 }
 
-R_API int r_bin_write_at (RBin *bin, ut64 addr, const ut8 *buf, int size)
-{
+R_API int r_bin_write_at (RBin *bin, ut64 addr, const ut8 *buf, int size) {
 	RIOBind *iob;
 	if (!bin || !(iob = &(bin->iob)))
 		return false;

@@ -53,6 +53,11 @@ R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max) {
 	return true;
 }
 
+R_API int r_search_magic_update(void *_s, ut64 from, const ut8 *buf, int len) {
+	eprintf ("TODO: import libr/core/cmd_search.c /m implementation into rsearch\n");
+	return false;
+}
+
 R_API int r_search_set_mode(RSearch *s, int mode) {
 	s->update = NULL;
 	switch (mode) {
@@ -62,6 +67,7 @@ R_API int r_search_set_mode(RSearch *s, int mode) {
 	case R_SEARCH_AES: s->update = r_search_aes_update; break;
 	case R_SEARCH_STRING: s->update = r_search_strings_update; break;
 	case R_SEARCH_DELTAKEY: s->update = r_search_deltakey_update; break;
+	case R_SEARCH_MAGIC: s->update = r_search_magic_update; break;
 	}
 	if (s->update || mode == R_SEARCH_PATTERN) {
 		s->mode = mode;
@@ -272,15 +278,15 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 				//eprintf ("nhits = %d\n", s->nhits);
 				return -1;
 			}
-			for (j=0; j<=kw->distance; j++) {
+			for (j=0; j <= kw->distance; j++) {
 				/* TODO: refactor: hit = checkKeyword() */
 				// TODO: assert len(kw) == len(bm)
 				if (kw->binmask_length != 0) {
 					// CHECK THE WHOLE MASKED HEXPAIR HERE
 					if (kw->binmask_length < (len-i)) {
 						if (maskHits (buf+i, len-i, kw)) {
-							i += kw->keyword_length-1;
-							kw->idx[j] = kw->keyword_length-1;
+							i += kw->keyword_length - 1;
+							kw->idx[j] = kw->keyword_length - 1;
 							kw->distance = 0;
 							hit = true;
 						} else {
@@ -299,7 +305,7 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 					if (ch != ch2) {
 						if (s->inverse) {
 							if (!r_search_hit_new (s, kw, (ut64)
-										from+i-kw->keyword_length+1))
+									from + i - kw->keyword_length + 1))
 								return -1;
 							kw->idx[j] = 0;
 							//kw->idx[0] = 0;
@@ -309,14 +315,18 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 							s->nhits++;
 							return 1; // only return 1 keyword if inverse mode
 						}
-						if (kw->distance<s->distance) {
+						if (kw->distance < s->distance) {
 							kw->idx[kw->distance+1] = kw->idx[kw->distance];
 							kw->distance++;
 							hit = true;
 						} else {
-							kw->idx[0] = 0;
+							kw->idx[j] = 0;
 							kw->distance = 0;
 							hit = false;
+							ch = kw->bin_keyword[kw->idx[j]];
+							if (ch == ch2) {
+								hit = true;
+							}
 						}
 					} else {
 						hit = true;
@@ -330,8 +340,9 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 							continue;
 						}
 						if (!r_search_hit_new (s, kw, (ut64)
-								from+i-kw->keyword_length+1))
+								from+i-kw->keyword_length+1)) {
 							return -1;
+						}
 						kw->idx[j] = 0;
 						kw->distance = 0;
 						kw->count++;

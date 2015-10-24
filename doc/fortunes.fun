@@ -101,7 +101,7 @@ Unk, unk, unk, unk
 Experts agree, security holes suck, and we fixed some of them!
 This is just an existentialist experiment.
 Nothing to see here. Move along.
-Select your character: RBin Wizard, Master Anal Paladin, or Assembly Wizard
+Select your character: RBin Wizard, Master Anal Paladin, or Assembly Warrior
 I accidentally radared my filesystem today.
 No fix, no sleep
 You see it, you fix it!
@@ -170,3 +170,5 @@ It's the year of radare2 on the desktop
 SSAbotage from ISIL
 "a collection of garbage" -- an r2 pro user
 A git pull a day keeps the segfault away
+Are you a wizard?
+Learn pancake as if you were radare!

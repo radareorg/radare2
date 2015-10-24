@@ -100,10 +100,10 @@ static int cmd_zign(void *data, const char *input) {
 			r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n", item->name, core->offset);
 		break;
 	case '-':
-		if (input[1] == '*')
+		if (input[1] == '*') {
 			r_sign_reset (core->sign);
-		else {
-			int i = r_sign_remove_ns(core->sign, input+1);
+		} else {
+			int i = r_sign_remove_ns (core->sign, input+1);
 			r_cons_printf ("%d zignatures removed\n", i);
 		}
 		break;
@@ -178,9 +178,9 @@ static int cmd_zign(void *data, const char *input) {
 	case 'j':
 		r_sign_list (core->sign, (*input=='*'), 1);
 		break;
-	case 'F': {
+	case 'F':
 		if (input[1] == 'd') {
-			if(input[2] != ' ') {
+			if (input[2] != ' ') {
 				eprintf("Usage: zFd <file>\n");
 				return R_FALSE;
 			}
@@ -192,7 +192,6 @@ static int cmd_zign(void *data, const char *input) {
 			}
 			r_sign_flirt_scan (core->anal, input + 2);
 		}
-	}
 		break;
 	default:
 	case '?':{

@@ -107,6 +107,7 @@ typedef struct r_bin_info_t {
 	ut64 dbg_info;
 	RBinHash sum[3];
 	ut64 baddr;
+	char *intrp;
 #if 0
 // stored in sdb
 	/* crypto (iOS bins) */
@@ -191,6 +192,7 @@ typedef struct r_bin_t {
 	int filter; // symbol filtering
 	char strfilter; // string filtering
 	int strpurge; // purge false positive strings
+	char *prefix; // bin.prefix
 } RBin;
 
 typedef int (*FREE_XTR)(void *xtr_obj);
@@ -408,7 +410,7 @@ R_API int r_bin_file_deref_by_bind (RBinBind * binb);
 R_API int r_bin_file_deref (RBin *bin, RBinFile * a);
 R_API int r_bin_file_ref_by_bind (RBinBind * binb);
 R_API int r_bin_file_ref (RBin *bin, RBinFile * a);
-R_API int r_bin_list(RBin *bin);
+R_API int r_bin_list(RBin *bin, int json);
 R_API RBinObject *r_bin_get_object(RBin *bin);
 R_API ut64 r_binfile_get_baddr (RBinFile *binfile);
 R_API ut64 r_bin_get_baddr(RBin *bin);
@@ -424,6 +426,7 @@ R_API char *r_bin_demangle_cxx(const char *str);
 R_API char *r_bin_demangle_msvc(const char *str);
 R_API char *r_bin_demangle_swift(const char *s);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
+R_API int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym);
 R_API int r_bin_lang_objc(RBinFile *binfile);
 R_API int r_bin_lang_swift(RBinFile *binfile);
 R_API int r_bin_lang_cxx(RBinFile *binfile);
@@ -473,7 +476,6 @@ R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char
 R_API void r_bin_list_archs(RBin *bin, int mode);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
-R_API ut64 r_bin_get_offset (RBin *bin);
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 paddr, ut64 vaddr);
 R_API ut64 r_bin_a2b (RBin *bin, ut64 addr);
 R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd);

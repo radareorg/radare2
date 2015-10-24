@@ -65,7 +65,7 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 	case 0:
 		if (!quiet)
 			printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %s: ",
-				from, to-1, hname);
+				from, to>0?to-1:0, hname);
 		do_hash_hexprint (c, dlen, ule, rad);
 		break;
 	case 1:
@@ -87,7 +87,7 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 
 static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int rad, int print, int le) {
 	int dlen;
-	if (len<1)
+	if (len<0)
 		return 0;
 	dlen = r_hash_calculate (ctx, hash, buf, len);
 	if (!dlen) return 0;
@@ -98,7 +98,7 @@ static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int r
 			eprintf ("entropy: %10f\n", e);
 		} else {
 			printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %10f: ",
-					from, to-1, e);
+					from, to>0?to-1:0, e);
 			r_print_progressbar (NULL, 12.5 * e, 60);
 			printf ("\n");
 		}
@@ -263,7 +263,7 @@ int main(int argc, char **argv) {
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
 	char *hashstr = NULL;
-	int hashstr_len = 0;
+	int hashstr_len = -1;
 	int hashstr_hex = 0;
 	ut64 algobit;
 	RHash *ctx;
@@ -351,8 +351,8 @@ int main(int argc, char **argv) {
 		} else {
 			to = hashstr_len;
 		}
-		hashstr = hashstr+from;
-		hashstr_len = to-from;
+		hashstr = hashstr + from;
+		hashstr_len = to - from;
 		hashstr[hashstr_len] = '\0';
 		hashstr_len = r_str_unescape (hashstr);
 		switch (b64mode) {

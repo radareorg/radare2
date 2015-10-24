@@ -875,7 +875,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 		} else contiguous = false;
 		//if (info.max_protection == oldprot && !contiguous) {
 #endif
-		if (1) {
+		if (true) {
 			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 			char maxperm[32];
 			char depthstr[32];
@@ -907,7 +907,9 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				break;
 			}
-			mr->file = strdup (module_name);
+			if (module_name && *module_name) {
+				mr->file = strdup (module_name);
+			}
 			i++;
 			r_list_append (list, mr);
 		}

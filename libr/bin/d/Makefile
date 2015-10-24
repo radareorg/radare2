@@ -21,9 +21,9 @@ install: ${F_SDB}
 	@echo "[i] Installing bin format files"
 	rm -rf "$P"
 	mkdir -p "$P"
-	-cp -f * "$P"
+	-cp -f * "$P" || true
 	mkdir -p "$P/dll"
-	cp -f dll/*.sdb "$P"
+	cp -f dll/*.sdb "$P/dll"
 
 CWD=$(shell pwd)
 symstall install-symlink:

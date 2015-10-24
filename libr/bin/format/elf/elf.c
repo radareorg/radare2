@@ -79,7 +79,6 @@ static int init_ehdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 		eprintf ("Warning: read (ehdr)\n");
 		return false;
 	}
-
 	return handle_e_ident (bin);
 }
 
@@ -775,6 +774,33 @@ int Elf_(r_bin_elf_get_stripped)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		if (bin->shdr[i].sh_type == SHT_SYMTAB)
 			return false;
 	return true;
+}
+
+char *Elf_(r_bin_elf_intrp)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	int i;
+	if (!bin || !bin->phdr)
+		return NULL;
+	for (i = 0; i < bin->ehdr.e_phnum; i++) {
+		if (bin->phdr[i].p_type == PT_INTERP) {
+			ut64 addr = bin->phdr[i].p_offset;
+			int sz = bin->phdr[i].p_memsz;
+			sdb_num_set (bin->kv, "elf_header.intrp_addr", addr, 0);
+			sdb_num_set (bin->kv, "elf_header.intrp_size", sz, 0);
+			if (sz <1) {
+				return NULL;
+			}
+			char *str = malloc (sz +1);
+			if (!str) return NULL;
+			if (r_buf_read_at (bin->b, addr, (ut8*)str, sz) == -1) {
+				eprintf ("Warning: read (main)\n");
+				return 0;
+			}
+			str[sz] = 0;
+			sdb_set (bin->kv, "elf_header.intrp", str, 0);
+			return str;
+		}
+	}
+	return NULL;
 }
 
 int Elf_(r_bin_elf_get_static)(struct Elf_(r_bin_elf_obj_t) *bin) {

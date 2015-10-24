@@ -10,7 +10,7 @@ R2PM_INSTALL() {
 	npm install
 	mkdir -p "${BINDIR}"
 	echo '#!/bin/sh' > "${BINDIR}/retdec"
-	echo "node `pwd`/decompile.js" >> "${BINDIR}/retdec"
+	echo "exec node '`pwd`'"'/decompile.js $*' >> "${BINDIR}/retdec"
 	chmod +x "${BINDIR}"/retdec
 }
 

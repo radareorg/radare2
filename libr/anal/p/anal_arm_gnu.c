@@ -452,7 +452,7 @@ static int archinfo(RAnal *anal, int q) {
 
 struct r_anal_plugin_t r_anal_plugin_arm_gnu = {
 	.name = "arm.gnu",
-	.arch = R_SYS_ARCH_ARM,
+	.arch = "arm",
 	.license = "LGPL3",
 	.bits = 16 | 32 | 64,
 	.desc = "ARM code analysis plugin",

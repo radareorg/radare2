@@ -4,7 +4,6 @@ CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
 
-ARG_ENABLE CPARSE cparse build with cparse support ;
 ARG_DISABLE DEBUGGER debugger disable native debugger features ;
 
 (( -ldl -dynamic ... ))

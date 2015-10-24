@@ -636,6 +636,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 	int branch_delay = end_gadget->delay_size;
 	RAsmOp asmop;
 	const char* start = NULL, *end = NULL;
+	char* grep_str = NULL;
 	RCoreAsmHit *hit = NULL;
 	RList *hitlist = r_core_asm_hit_list_new ();
 	ut8 nb_instr = 0;
@@ -660,9 +661,11 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		if (!end) { // We filter on a single opcode, so no ";"
 			end = start + strlen (grep);
 		}
+		grep_str = calloc (1, end - start + 1);
+		strncpy (grep_str, start, end - start);
 		if (regex) {
 			// get the first regexp.
-			if (r_list_length(rx_list) > 0) {
+			if (r_list_length (rx_list) > 0) {
 				rx = r_list_get_n(rx_list, count++);
 			}
 		}
@@ -692,10 +695,11 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		idx += asmop.size;
 		addr += asmop.size;
 		if (rx) {
-			grep_find = r_regex_exec(rx, asmop.buf_asm, 0, 0, 0);
+			//grep_find = r_regex_exec (rx, asmop.buf_asm, 0, 0, 0);
+			grep_find = !r_regex_match (grep, "e", asmop.buf_asm);
 			search_hit = (end && grep && (grep_find < 1));
 		} else {
-			search_hit = (end && grep && strstr (asmop.buf_asm, start));
+			search_hit = (end && grep && strstr (asmop.buf_asm, grep_str));
 		}
 
 		//Handle (possible) grep
@@ -704,6 +708,9 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 				start = end + 1; // skip the ;
 				end = strstr (start, ";");
 				end = end?end: start + strlen(start); //latest field?
+				free (grep_str);
+				grep_str = calloc (1, end - start + 1);
+				strncpy (grep_str, start, end - start);
 			} else end = NULL;
 			if (regex) rx = r_list_get_n(rx_list, count++);
 		}
@@ -715,6 +722,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		nb_instr++;
 	}
 ret:
+	free (grep_str);
 	if (regex && rx) {
 		r_list_free (hitlist);
 		r_list_free (localbadstart);

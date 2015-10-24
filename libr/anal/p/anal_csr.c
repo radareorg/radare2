@@ -219,17 +219,9 @@ struct r_anal_plugin_t r_anal_plugin_csr = {
 	.name = "csr",
 	.desc = "CSR code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_CSR,
+	.arch = "csr",
 	.bits = 16,
-	.init = NULL,
-	.fini = NULL,
 	.op = &csr_op,
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

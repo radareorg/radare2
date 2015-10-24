@@ -817,6 +817,15 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 	return str;
 }
 
+R_API char *r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g) {
+	char *heaped;
+	if (!str || !key || !val)
+		return NULL;
+	heaped = r_str_replace (strdup (str), key, val, g);
+	strncpy (str, heaped, sz);
+	free (heaped);
+	return str;
+}
 
 R_API char *r_str_clean(char *str) {
 	int len;
@@ -1219,11 +1228,14 @@ R_API void r_str_filter(char *str, int len) {
 			str[i] = '.';
 }
 
-R_API int r_str_glob (const char* str, const char *glob) {
+R_API bool r_str_glob (const char* str, const char *glob) {
 	const char* cp = NULL, *mp = NULL;
+	if (!glob || !strcmp (glob, "*")) {
+		return true;
+	}
 	while ((*str) && (*glob != '*')) {
 		if ((*glob != *str)) {
-			return R_FALSE;
+			return false;
 		}
 		++glob;
 		++str;
@@ -1231,7 +1243,7 @@ R_API int r_str_glob (const char* str, const char *glob) {
 	while (*str) {
 		if (*glob == '*') {
 			if (!*++glob) {
-				return R_TRUE;
+				return true;
 			}
 			mp = glob;
 			cp = str+1;
@@ -1845,6 +1857,17 @@ R_API const char * r_str_tok (const char *str1, const char b, size_t len) {
 	for ( ; i < len; i++,p++) if (*p == b) break;
 	if (i == len) p = NULL;
 	return p;
+}
+
+R_API int r_str_do_until_token (str_operation op, char *str, const char tok)
+{
+	int ret;
+	if (!str)
+		return -1;
+	if (!op)
+		for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { }
+	else	for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { op (str+ret); }
+	return ret;
 }
 
 R_API const char *r_str_pad(const char ch, int sz) {

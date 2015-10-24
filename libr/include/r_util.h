@@ -495,6 +495,7 @@ R_API const char *r_str_casestr(const char *a, const char *b);
 R_API const char *r_str_lastbut (const char *s, char ch, const char *but);
 R_API int r_str_split(char *str, char ch);
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g);
+R_API char *r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
 #define r_str_cpy(x,y) memmove(x,y,strlen(y)+1);
 R_API int r_str_bits (char *strout, const ut8 *buf, int len, const char *bitz);
 R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz);
@@ -548,6 +549,10 @@ R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
 R_API const char * r_str_tok (const char *str1, const char b, size_t len);
 
+typedef void (*str_operation)(char *c);
+
+R_API int r_str_do_until_token (str_operation op, char *str, const char tok);
+
 R_API int r_str_re_match(const char *str, const char *reg);
 R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
 R_API int r_str_unescape(char *buf);
@@ -571,7 +576,7 @@ R_API void r_str_truncate_cmd(char *string);
 R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 				  const char *key, const char *val, int g);
 R_API char *r_hex_from_c(const char *code);
-R_API int r_str_glob (const char *str, const char *glob);
+R_API bool r_str_glob (const char *str, const char *glob);
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);
 R_API int r_hex_pair2bin(const char *arg);
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask);
@@ -613,6 +618,7 @@ R_API int r_sys_getpid(void);
 R_API int r_sys_crash_handler(const char *cmd);
 R_API const char *r_sys_arch_str(int arch);
 R_API int r_sys_arch_id(const char *arch);
+R_API bool r_sys_arch_match(const char *archstr, const char *arch);
 R_API RList *r_sys_dir(const char *path);
 R_API void r_sys_perror(const char *fun);
 #if __WINDOWS__
@@ -622,7 +628,7 @@ R_API void r_sys_perror(const char *fun);
 #define r_sys_mkdir(x) (mkdir(x,0755)!=-1)
 #define r_sys_mkdir_failed() (errno != EEXIST)
 #endif
-R_API int r_sys_rmkdir(const char *dir);
+R_API int r_sys_mkdirp(const char *dir);
 R_API int r_sys_sleep(int secs);
 R_API int r_sys_usleep(int usecs);
 R_API char *r_sys_getenv(const char *key);
@@ -805,7 +811,7 @@ R_API void r_strbuf_init(RStrBuf *sb);
 
 R_API char **r_sys_get_environ (void);
 R_API void r_sys_set_environ (char **e);
-
+R_API ut64 des_round(ut64 plaintext, ut64 round_key);
 
 /* spaces */
 
@@ -819,6 +825,16 @@ R_API int r_space_set(RSpaces *f, const char *name);
 R_API int r_space_unset (RSpaces *f, const char *fs);
 R_API int r_space_list(RSpaces *f, int mode);
 R_API int r_space_rename (RSpaces *f, const char *oname, const char *nname);
+
+R_API ut64 r_des_pc2 (ut64 k);
+R_API ut64 r_des_pc1 (ut64 k);
+R_API ut64 r_des_get_roundkey (ut64 key, int round, int enc);
+R_API ut64 r_des_round (ut64 plaintext, ut64 roundkey);
+R_API ut64 r_des_f (ut32 half, ut64 round_key);
+R_API ut32 r_des_sbox (ut8 in, const ut32* box);
+R_API ut64 r_des_ip (ut64 state, int inv);
+R_API ut64 r_des_expansion (ut32 half);
+R_API ut32 r_des_p (ut32 half);
 
 /* Some "secured" functions, to do basic operation (mul, sub, add...) on integers */
 static inline int UT64_ADD(ut64 *r, ut64 a, ut64 b) {

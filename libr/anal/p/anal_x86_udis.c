@@ -753,18 +753,11 @@ struct r_anal_plugin_t r_anal_plugin_x86_udis = {
 	.name = "x86.udis",
 	.desc = "X86 analysis plugin (udis86 backend)",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_X86,
+	.arch = "x86",
 	.esil = true,
 	.bits = 16|32|64,
-	.init = NULL,
-	.fini = NULL,
 	.op = &x86_udis86_op,
 	.set_reg_profile = &set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

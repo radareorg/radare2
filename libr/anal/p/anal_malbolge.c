@@ -39,18 +39,10 @@ static int mal_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 struct r_anal_plugin_t r_anal_plugin_malbolge = {
 	.name = "malbolge",
 	.desc = "Malbolge analysis plugin",
-	.arch = R_SYS_ARCH_BF,
+	.arch = "malbolge",
 	.license = "LGPL3",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
 	.op = &mal_anal,
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

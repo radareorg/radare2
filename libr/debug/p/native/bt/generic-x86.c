@@ -77,7 +77,9 @@ static RList *backtrace_x86_32_anal(RDebug *dbg, ut64 at) {
 		if (buf[(ebp2-5)%4]==0xe8) {
 			frame = R_NEW0 (RDebugFrame);
 			frame->addr = ebp2;
-			frame->size = esp-_esp;
+			frame->size = esp - _esp;
+			frame->sp = _esp;
+			frame->bp = _esp + frame->size;
 			r_list_append (list, frame);
 		}
 		esp += 4;

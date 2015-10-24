@@ -258,8 +258,8 @@ static int r_debug_native_wait (RDebug *dbg, int pid) {
 	if (mode) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->lib) {
-			if (tracelib (dbg, mode? "load":"unload", r->lib))
-				r_debug_native_continue (dbg, pid, dbg->tid, r->signum);
+			if (tracelib (dbg, mode=='l'? "load":"unload", r->lib))
+				status=R_DEBUG_REASON_TRAP;
 		} else {
 			eprintf ("%soading unknown library.\n", mode?"L":"Unl");
 		}
@@ -747,7 +747,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	char region[100], region2[100], perms[5];
 	FILE *fd;
 	if (dbg->pid == -1) {
-		eprintf ("r_debug_native_map_get: No selected pid (-1)\n");
+		//eprintf ("r_debug_native_map_get: No selected pid (-1)\n");
 		return NULL;
 	}
 #if __KFBSD__
@@ -1277,27 +1277,27 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.license = "LGPL3",
 #if __i386__
 	.bits = R_SYS_BITS_32,
-	.arch = R_ASM_ARCH_X86,
+	.arch = "x86",
 	.canstep = 1,
 #elif __x86_64__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
-	.arch = R_ASM_ARCH_X86,
+	.arch = "x86",
 	.canstep = 1,
 #elif __arm__
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
-	.arch = R_ASM_ARCH_ARM,
+	.arch = "arm",
 	.canstep = 0, // XXX it's 1 on some platforms...
 #elif __aarch64__
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
-	.arch = R_ASM_ARCH_ARM,
+	.arch = "arm",
 	.canstep = 0, // XXX it's 1 on some platforms...
 #elif __mips__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
-	.arch = R_ASM_ARCH_MIPS,
+	.arch = "mips",
 	.canstep = 0,
 #elif __powerpc__
 	.bits = R_SYS_BITS_32,
-	.arch = R_ASM_ARCH_PPC,
+	.arch = "ppc",
 	.canstep = 1,
 #else
 	.bits = 0,

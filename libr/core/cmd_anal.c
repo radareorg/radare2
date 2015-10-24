@@ -516,23 +516,38 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 	return true;
 }
 
-static int setFunctionName(RCore *core, ut64 off, const char *name) {
-	char *oname;
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off,
+static bool fcnNeedsPrefix (const char *name) {
+	if (!strncmp (name, "entry", 5))
+		return false;
+	if (!strncmp (name, "main", 4))
+		return false;
+	return (!strchr (name, '.'));
+}
+
+static bool setFunctionName(RCore *core, ut64 off, const char *name) {
+	char *oname, *nname = NULL;
+	RAnalFunction *fcn;
+	if (!core || !name)
+		return false;
+	fcn = r_anal_get_fcn_in (core->anal, off,
 		R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_LOC);
-	if (!fcn)
-		return 0;
-	//r_cons_printf ("fr %s %s@ 0x%"PFMT64x"\n",
-	//	 fcn->name, name, off);
-	r_core_cmdf (core, "fr %s %s@ 0x%"PFMT64x,
-		fcn->name, name, off);
+	if (!fcn) return false;
+	if (fcnNeedsPrefix (name)) {
+		nname = r_str_newf ("fcn.%s", name);
+	} else {
+		nname = strdup (name);
+	}
 	oname = fcn->name;
-	fcn->name = strdup (name);
+	r_core_cmdf (core, "fr %s %s@ 0x%"PFMT64x,
+		fcn->name, nname, off);
+	fcn->name = strdup (nname);
 	if (core->anal->cb.on_fcn_rename) {
-		core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, oname);
+		core->anal->cb.on_fcn_rename (core->anal,
+			core->anal->user, fcn, nname);
 	}
 	free (oname);
-	return 1;
+	free (nname);
+	return true;
 }
 
 static int cmd_anal_fcn(RCore *core, const char *input) {
@@ -1031,7 +1046,7 @@ static void __anal_reg_list (RCore *core, int type, int size, char mode) {
 	}
 	core->dbg->reg = core->anal->reg;
 	/* workaround for thumb */
-	if (core->anal->cur->arch == R_SYS_ARCH_ARM && bits==16) {
+	if (core->anal->cur->arch && !strcmp (core->anal->cur->arch, "arm") && bits==16) {
 		bits = 32;
 	}
 	if (mode == '=') {
@@ -1822,7 +1837,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'f':
+	case 'f': // "aef"
 		{
 			RListIter *iter;
 			RAnalBlock *bb;
@@ -2461,7 +2476,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	}
 }
 
-static void agraph_print_node (RANode *n) {
+static void agraph_print_node(RANode *n, void *user) {
 	char *encbody, *cmd;
 	int len = strlen (n->body);
 
@@ -2473,7 +2488,7 @@ static void agraph_print_node (RANode *n) {
 	free (encbody);
 }
 
-static void agraph_print_edge (RANode *from, RANode *to) {
+static void agraph_print_edge(RANode *from, RANode *to, void *user) {
 	char *cmd;
 
 	cmd = r_str_newf ("age \"%s\" \"%s\"\n", from->title, to->title);
@@ -2607,8 +2622,8 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		break;
 	}
 	case '*':
-		r_agraph_foreach (core->graph, agraph_print_node);
-		r_agraph_foreach_edge (core->graph, agraph_print_edge);
+		r_agraph_foreach (core->graph, agraph_print_node, NULL);
+		r_agraph_foreach_edge (core->graph, agraph_print_edge, NULL);
 		break;
 	default:
 		core->graph->can->linemode = 1;
@@ -2865,9 +2880,6 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 		"aarj", " [sz]", "list found xrefs in JSON format",
 		"aar*", " [sz]", "list found xrefs in radare commands format",
 		NULL};
-	if (*input) {
-		input++;
-	}
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_aar);
 		return 0;
@@ -3060,7 +3072,7 @@ static int cmd_anal(void *data, const char *input) {
 			if (len>0)
 				core_anal_bytes (core, buf, len, 0, input[1]);
 			free (buf);
-		} else eprintf ("Usage: ab [hexpair-bytes]\n");
+		} else eprintf ("Usage: ab [hexpair-bytes]\n abj [hexpair-bytes] (json)");
 		break;
 	case 'i': cmd_anal_info (core, input+1); break; // "ai"
 	case 'r': cmd_anal_reg (core, input+1); break; // "ar"

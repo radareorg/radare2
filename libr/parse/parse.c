@@ -91,11 +91,8 @@ R_API int r_parse_parse(RParse *p, const char *data, char *str) {
 	(x)==','||(x)==';'||(x)=='['||(x)==']'|| \
 	(x)=='('||(x)==')'||(x)=='{'||(x)=='}'||(x)=='\x1b')
 
-static int isvalidflag(RFlagItem *flag) {
-	if (flag && strchr (flag->name, '.')) {
-		return 1; //strlen (flag->name)>3) {
-	}
-	return 0;
+static bool isvalidflag(RFlagItem *flag) {
+	return (flag && strchr (flag->name, '.'));
 }
 
 static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
@@ -109,7 +106,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 #if FILTER_DWORD
 	ptr2 = strstr (ptr, "dword ");
 	if (ptr2)
-		memmove (ptr2, ptr2+6, strlen (ptr2+6)+1);
+		memmove (ptr2, ptr2 + 6, strlen (ptr2+  6) + 1);
 #endif
 	ptr2 = NULL;
 // remove "dword" ?

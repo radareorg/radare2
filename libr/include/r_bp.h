@@ -46,6 +46,7 @@ typedef struct r_bp_item_t {
 	int rwx;
 	int hw;
 	int trace;
+	int internal; /* used for internal purposes */
 	int enabled;
 	int hits;
 	ut8 *obytes; /* original bytes */
