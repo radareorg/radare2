@@ -227,6 +227,29 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		case 0x63706c:			//cpl
 			op->buf[0] = 0x2f;
 			break;
+		case 0x616464:			//add
+			r_str_replace_in (op->buf_asm, strlen(op->buf_asm), ", ", ",", R_TRUE);
+			if (strlen(op->buf_asm) < 5)
+				return op->size = 0;
+			if (op->buf_asm[4] == 's'
+				&& op->buf_asm[5] == 'p'
+				&& op->buf_asm[6] == ','
+				&& op->buf_asm[7] != '\0') {
+				op->buf[0] = 0xe8;
+				num = r_num_get (NULL, &op->buf_asm[7]);
+				op->buf[1] = (ut8)(num & 0xff);
+				len = 2;
+			}
+			else if (!strcmp (op->buf_asm, "hl,bc"))
+				op->buf[0] = 0x09;
+			else if (!strcmp (&op->buf_asm[4], "hl,de"))
+				op->buf[0] = 0x19;
+			else if (!strcmp (&op->buf_asm[4], "hl,hl"))
+				op->buf[0] = 0x29;
+			else if (!strcmp (&op->buf_asm[4], "hl,sp"))
+				op->buf[0] = 0x39;
+			else	len = gb_parse_arith1 (op->buf, 5, op->buf_asm, 0x80, 0xc6);
+			break;
 		case 0x616463:			//adc
 			len = gb_parse_arith1 (op->buf, 5, op->buf_asm, 0x88, 0xce);
 			break;
