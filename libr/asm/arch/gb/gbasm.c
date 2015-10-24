@@ -134,6 +134,78 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		case 0x6e6f70:			//nop
 			op->buf[0] = 0x00;
 			break;
+		case 0x696e63:			//inc
+			if ((i = strlen (op->buf_asm)) < 5)
+				return op->size = 0;
+			r_str_replace_in (op->buf_asm, (ut32)i, "[ ", "[", R_TRUE);
+			r_str_replace_in (op->buf_asm, (ut32)i, " ]", "]", R_TRUE);
+			r_str_do_until_token (str_op, &op->buf_asm[4], '\0');
+			if (op->buf_asm[4] == 'b') {
+				if (op->buf_asm[5] == 'c')
+					op->buf[0] = 0x03;
+				else	op->buf[0] = 0x04;
+			} else if (op->buf_asm[4] == 'c')
+				op->buf[0] = 0x0c;
+			else if (op->buf_asm[4] == 'd') {
+				if (op->buf_asm[5] == 'e')
+					op->buf[0] = 0x13;
+				else	op->buf[0] = 0x14;
+			} else if (op->buf_asm[4] == 'e')
+				op->buf[0] = 0x1c;
+			else if (op->buf_asm[4] == 'h') {
+				if (op->buf_asm[5] == 'l')
+					op->buf[0] = 0x23;
+				else	op->buf[0] = 0x24;
+			} else if (op->buf_asm[4] == 'l')
+				op->buf[0] = 0x2c;
+			else if (op->buf_asm[4] == 'a')
+				op->buf[0] = 0x3c;
+			else if (op->buf_asm[4] == 's'
+				&& op->buf_asm[5] == 'p')
+				op->buf[0] = 0x33;
+			else if (op->buf_asm[4] == '['
+				&& op->buf_asm[5] == 'h'
+				&& op->buf_asm[6] == 'l'
+				&& op->buf_asm[7] == ']')
+				op->buf[0] = 0x34;
+			else	len = 0;	
+			break;
+		case 0x646563:			//dec
+			if ((i = strlen (op->buf_asm)) < 5)
+				return op->size = 0;
+			r_str_replace_in (op->buf_asm, (ut32)i, "[ ", "[", R_TRUE);
+			r_str_replace_in (op->buf_asm, (ut32)i, " ]", "]", R_TRUE);
+			r_str_do_until_token (str_op, &op->buf_asm[4], '\0');
+			if (op->buf_asm[4] == 'b') {
+				if (op->buf_asm[5] == 'c')
+					op->buf[0] = 0x0b;
+				else	op->buf[0] = 0x05;
+			} else if (op->buf_asm[4] == 'c')
+				op->buf[0] = 0x0d;
+			else if (op->buf_asm[4] == 'd') {
+				if (op->buf_asm[5] == 'e')
+					op->buf[0] = 0x1b;
+				else	op->buf[0] = 0x15;
+			} else if (op->buf_asm[4] == 'e')
+				op->buf[0] = 0x1d;
+			else if (op->buf_asm[4] == 'h') {
+				if (op->buf_asm[5] == 'l')
+					op->buf[0] = 0x2b;
+				else	op->buf[0] = 0x25;
+			} else if (op->buf_asm[4] == 'l')
+				op->buf[0] = 0x2d;
+			else if (op->buf_asm[4] == 'a')
+				op->buf[0] = 0x3d;
+			else if (op->buf_asm[4] == 's'
+				&& op->buf_asm[5] == 'p')
+				op->buf[0] = 0x3b;
+			else if (op->buf_asm[4] == '['
+				&& op->buf_asm[5] == 'h'
+				&& op->buf_asm[6] == 'l'
+				&& op->buf_asm[7] == ']')
+				op->buf[0] = 0x35;
+			else	len = 0;	
+			break;
 		case 0x726c6361:		//rlca
 			op->buf[0] = 0x07;
 			break;
