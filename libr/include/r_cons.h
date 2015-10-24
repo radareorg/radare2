@@ -205,6 +205,7 @@ typedef struct r_cons_t {
 	int refcnt;
 	RConsClickCallback onclick;
 	bool newline;
+	bool zerosep;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */

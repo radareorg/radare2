@@ -159,10 +159,12 @@ R_API RCore *r_core_cast(void *p) {
 	return (RCore*)p;
 }
 
+/*
 R_API void r_core_cmd_flush (RCore *core) {
 	// alias
 	r_cons_flush ();
 }
+*/
 
 static int core_cmd_callback (void *user, const char *cmd) {
 	RCore *core = (RCore *)user;
@@ -1021,7 +1023,6 @@ R_API int r_core_init(RCore *core) {
 	r_core_setenv(core);
 	core->cmd_depth = R_CORE_CMD_DEPTH+1;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
-	core->zerosep = false;
 	core->lastsearch = NULL;
 	core->incomment = false;
 	core->screen_bounds = 0LL;
@@ -1383,7 +1384,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 R_API int r_core_prompt_exec(RCore *r) {
 	int ret = r_core_cmd (r, r->cmdqueue, true);
 	r_cons_flush ();
-	if (r->zerosep)
+	if (r->cons->zerosep)
 		r_cons_zero ();
 	return ret;
 }

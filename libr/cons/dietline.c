@@ -93,6 +93,14 @@ static int r_line_readchar_win(int * vch) {  // this function handle the input i
 	ut8 buf[2];
 	HANDLE h;
 	int i;
+
+	if (I.zerosep) {
+		*vch = 0;
+		buf[0] = 0;
+		read (0, buf, 1);
+		return buf[0];
+	}
+
 	*buf = '\0';
 do_it_again:
 	h = GetStdHandle (STD_INPUT_HANDLE);
