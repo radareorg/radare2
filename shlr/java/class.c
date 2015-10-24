@@ -3612,9 +3612,13 @@ R_API RBinJavaAttrInfo* r_bin_java_line_number_table_attr_new (ut8 *buffer, ut64
 	attr->info.line_number_table_attr.line_number_table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.line_number_table_attr.line_number_table = r_list_newf (free);
-	for(i = 0; i < attr->info.line_number_table_attr.line_number_table_length; i++) {
-		cur_location = buf_offset+offset;
-		lnattr = R_NEW0(RBinJavaLineNumberAttribute);
+	for (i = 0; i < attr->info.line_number_table_attr.line_number_table_length; i++) {
+		if (offset+8 >= sz) {
+			eprintf ("r_bin_java_line_number_table_attr_new: avoid oob\n");
+			break;
+		}
+		cur_location = buf_offset + offset;
+		lnattr = R_NEW0 (RBinJavaLineNumberAttribute);
 		if (!lnattr) {
 			eprintf ("Handling Local Variable Table Attributes :Unable to allocate memory (%u bytes) for a new exception handler structure.\n", (int)sizeof (RBinJavaLocalVariableAttribute));
 			break;
