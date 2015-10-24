@@ -26,27 +26,15 @@ static int gb_reg_idx (char r) {
 	return -1;
 }
 
-char *gb_str_replace (char *str, const char *key, const char *val) {
-	char *heaped;
-	int len;
-	if (!str || !key || !val)
-		return NULL;
-	len = strlen (str);
-	heaped = strdup (str);
-	r_str_replace (heaped, key, val, R_TRUE);
-	strncpy (str, heaped, len);
-	free (heaped);
-	return str;
-}
-
 static int gb_parse_arith1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base, ut8 alt) {
 	int i;
 	ut64 num;
 	if (strlen (buf_asm) < minlen)
 		return 0;
 	buf[0] = base;
-	gb_str_replace (&buf_asm[minlen - 1], "[ ", "[");
-	gb_str_replace (&buf_asm[minlen - 1], " ]", "]");
+	i = strlen (&buf_asm[minlen - 1]);
+	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, "[ ", "[", R_TRUE);
+	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, " ]", "]", R_TRUE);
 	r_str_do_until_token (str_op, buf_asm, ' ');
 	i = gb_reg_idx (buf_asm[minlen-1]);
 	if (i != (-1))
@@ -73,8 +61,9 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		return 0;
 	strncpy (op->buf_asm, buf, R_ASM_BUFSIZE-1);
 	op->buf_asm[R_ASM_BUFSIZE-1] = 0;
-	gb_str_replace (op->buf_asm, "  ", " ");
-	gb_str_replace (op->buf_asm, " ,", ",");
+	i = strlen (op->buf_asm);
+	r_str_replace_in (op->buf_asm, (ut32)i, "  ", " ", R_TRUE);
+	r_str_replace_in (op->buf_asm, (ut32)i, " ,", ",", R_TRUE);
 	mn_len = r_str_do_until_token (str_op, op->buf_asm, ' ');
 	if (mn_len < 2 || mn_len > 4)
 		return 0;
@@ -106,32 +95,13 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			op->buf[0] = 0x2f;
 			break;
 		case 0x616463:			//adc
-			if (strlen (op->buf_asm) < 5)
-				return op->size = 0;
-			op->buf[0] = 0x88;
-			gb_str_replace (&op->buf_asm[4], "[ ", "[");
-			gb_str_replace (&op->buf_asm[4], " ]", "]");
-			r_str_do_until_token (str_op, op->buf_asm, ' ');
-			i = gb_reg_idx (op->buf_asm[4]);
-			if (i != (-1))
-				op->buf[0] |= (ut8)i;
-			else if (op->buf_asm[4] == '['
-				&& op->buf_asm[5] == 'h'
-				&& op->buf_asm[6] == 'l'
-				&& op->buf_asm[7] == ']' )
-				op->buf[0] = 0x8e;
-			else {
-				op->buf[0] = 0xce;
-				num = r_num_get (NULL, &op->buf_asm[4]);
-				op->buf[1] = (ut8)(num & 0xff);
-				len = 2;
-			}
+			len = gb_parse_arith1 (op->buf, 5, op->buf_asm, 0x88, 0xce);
 			break;
 		case 0x737562:			//sub
-			len = gb_parse_arith1 (op->buf, 5, op->buf_asm, 0x90, 0xde);
+			len = gb_parse_arith1 (op->buf, 5, op->buf_asm, 0x90, 0xd6);
 			break;
 		case 0x736263:			//sbc
-			len = gb_parse_arith1 (op->buf, 5, op->buf_asm, 0x98, 0x9e);
+			len = gb_parse_arith1 (op->buf, 5, op->buf_asm, 0x98, 0xde);
 			break;
 		case 0x616e64:			//and
 			len = gb_parse_arith1 (op->buf, 5, op->buf_asm, 0xa0, 0xe6);
@@ -157,7 +127,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		case 0x726574:			//ret
 			if (strlen(op->buf_asm) < 5)
 				op->buf[0] = 0xc9;
-			else if (strlen (op->buf_asm) < 6) {	//there is no way that there can be "  " - we did gb_str_replace
+			else if (strlen (op->buf_asm) < 6) {	//there is no way that there can be "  " - we did r_str_replace_in
 				str_op(&op->buf_asm[4]);
 				if (op->buf_asm[4] == 'z')	//ret Z
 					op->buf[0] = 0xc8;
@@ -256,7 +226,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 							op->buf[0] = 0xda;
 						else	return op->size = 0;
 					} else	return op->size = 0;
-					gb_str_replace (p, ", ", ",");
+					r_str_replace_in (p, strlen(p), ", ", ",", R_TRUE);
 					if (p[1] == '\0')
 						return op->size = 0;
 					num = r_num_get (NULL, p + 1);
@@ -292,7 +262,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 							op->buf[0] = 0x38;
 						else	return op->size = 0;
 					} else	return op->size = 0;
-					gb_str_replace (p, ", ", ",");
+					r_str_replace_in (p, strlen(p), ", ", ",", R_TRUE);
 					if (p[1] == '\0')
 						return op->size = 0;
 					num = r_num_get (NULL, p + 1);
@@ -328,7 +298,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 							op->buf[0] = 0xdc;
 						else	return op->size = 0;
 					} else	return op->size = 0;
-					gb_str_replace (p, ", ", ",");
+					r_str_replace_in (p, strlen(p), ", ", ",", R_TRUE);
 					if (p[1] == '\0')
 						return op->size = 0;
 					num = r_num_get (NULL, p + 1);
