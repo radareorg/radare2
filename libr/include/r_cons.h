@@ -205,7 +205,6 @@ typedef struct r_cons_t {
 	int refcnt;
 	RConsClickCallback onclick;
 	bool newline;
-	bool zerosep;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -498,6 +497,7 @@ struct r_line_t {
 	int (*hist_up)(void *user);
 	int (*hist_down)(void *user);
 	char *contents;
+	bool zerosep;
 }; /* RLine */
 
 #ifdef R_API

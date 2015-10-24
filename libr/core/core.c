@@ -1384,7 +1384,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 R_API int r_core_prompt_exec(RCore *r) {
 	int ret = r_core_cmd (r, r->cmdqueue, true);
 	r_cons_flush ();
-	if (r->cons->zerosep)
+	if (r->cons && r->cons->line && r->cons->line->zerosep)
 		r_cons_zero ();
 	return ret;
 }

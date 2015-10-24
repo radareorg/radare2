@@ -829,7 +829,7 @@ R_API void r_cons_set_title(const char *str) {
 }
 
 R_API void r_cons_zero() {
-	I.zerosep = true;
+	if (I.line) I.line->zerosep = true;
 	write (1, "", 1);
 }
 
