@@ -421,43 +421,6 @@ static int cmd_ls(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_mkdir(void *data, const char *input) {
-	r_core_syscmd_mkdir (input);
-	return 0;
-}
-
-static int cmd_mv(void *data, const char *input) {
-	if (strlen (input)<3) {
-		eprintf ("Usage: mv src dst\n");
-		return 0;
-	}
-	input = input + 2;
-	if (!r_sandbox_enable(0)) {
-#if __WINDOWS__
-		r_sys_cmdf ("move %s", input);
-#else
-		r_sys_cmdf ("mv %s", input);
-#endif
-	}
-	return 0;
-}
-
-static int cmd_cp(void *data, const char *input) {
-	if (strlen (input)<3) {
-		eprintf ("Usage: cp src dst\n");
-		return 0;
-	}
-	input = input + 2;
-	if (!r_sandbox_enable(0)) {
-#if __WINDOWS__
-		r_sys_cmdf ("copy %s", input);
-#else
-		r_sys_cmdf ("cp %s", input);
-#endif
-	}
-	return 0;
-}
-
 static int cmd_stdin(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (input[0]=='?') {
@@ -2385,6 +2348,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "flag",     "get/set flags", &cmd_flag);
 	r_cmd_add (core->rcmd, "g",        "egg manipulation", &cmd_egg);
 	r_cmd_add (core->rcmd, "debug",    "debugger operations", &cmd_debug);
+	r_cmd_add (core->rcmd, "ls",       "list files and directories", &cmd_ls);
 	r_cmd_add (core->rcmd, "info",     "get file info", &cmd_info);
 	r_cmd_add (core->rcmd, "cmp",      "compare memory", &cmd_cmp);
 	r_cmd_add (core->rcmd, "seek",     "seek to an offset", &cmd_seek);
@@ -2414,10 +2378,6 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, ".",        "interpret", &cmd_interpret);
 	r_cmd_add (core->rcmd, "/",        "search kw, pattern aes", &cmd_search);
 	r_cmd_add (core->rcmd, "-",        "open cfg.editor and run script", &cmd_stdin);
-	r_cmd_add (core->rcmd, "ls",       "list files and directories", &cmd_ls);
-	r_cmd_add (core->rcmd, "mv",       "move file or directory", &cmd_mv);
-	r_cmd_add (core->rcmd, "cp",       "copy file or directory", &cmd_cp);
-	r_cmd_add (core->rcmd, "mkdir",    "make directory", &cmd_mkdir);
 	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
 	r_cmd_add (core->rcmd, "quit",     "exit program session", &cmd_quit);
 }
