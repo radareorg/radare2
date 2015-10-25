@@ -225,7 +225,6 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	}
 	ret = r_core_cmd_file (core, prj);
 	r_anal_project_load (core->anal, prjfile);
-	r_core_cmd0 (core, "s entry0");
 	free (filepath);
 	free (prj);
 	return ret;
