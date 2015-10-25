@@ -493,6 +493,8 @@ static void r_print_format_octal (const RPrint* p, int endian, int mode,
 	updateAddr (buf, i, endian, &addr, NULL);
 	if (MUSTSET) {
 		p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
+	} else if (mode & R_PRINT_DOT) {
+		p->cb_printf ("0%"PFMT64o, addr);
 	} else if (MUSTSEE) {
 		ut32 addr32 = (ut32)addr;
 		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*4:0));
@@ -603,6 +605,9 @@ static int r_print_format_10bytes(const RPrint* p, int mode, const char* setval,
 	int j;
 	if (MUSTSET) {
 		p->cb_printf ("?e pf B not yet implemented\n");
+	} else if (mode & R_PRINT_DOT) {
+		for (; j<10; j++)
+			p->cb_printf ("%02x ", buf[j]);
 	} else if (MUSTSEE) {
 		if (!p->iob.read_at) {
 			printf ("(cannot read memory)\n");
@@ -645,12 +650,15 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode,
 	size = (size==-1) ? 1 : size;
 	if (MUSTSET) {
 		p->cb_printf ("?e pf X not yet implemented\n");
+	} else if (mode & R_PRINT_DOT) {
+		for (; j<size; j++)
+			p->cb_printf ("%02x", buf[i+j]);
 	} else if (MUSTSEE) {
 		size = (size < 1) ? 1 : size;
 		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 		j=0;
 		for (; j<size; j++)
-				p->cb_printf ("%02x ", buf[i+j]);
+			p->cb_printf ("%02x ", buf[i+j]);
 		if (!SEEVALUE) p->cb_printf (" ... (");
 		for (j=0; j<size; j++) {
 			if (!SEEVALUE) {
@@ -684,6 +692,9 @@ static void r_print_format_float(const RPrint* p, int endian, int mode,
 	updateAddr (buf, i, endian, &addr, NULL);
 	if (MUSTSET) {
 		p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
+	} else if (mode & R_PRINT_DOT) {
+		//p->cb_printf ("%s", setval);
+		p->cb_printf ("%f", (float)addr);
 	} else {
 		if (MUSTSEE)
 			if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*4:0));
@@ -721,11 +732,27 @@ static void r_print_format_word(const RPrint* p, int endian, int mode,
 	else addr = (*(buf+i+1))<<8 | (*(buf+i));
 	if (MUSTSET) {
 		p->cb_printf ("wx %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*2:0));
-	} else if (MUSTSEE) {
-		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*2:0));
+	} else if (mode & R_PRINT_DOT) {
 		if (size==-1)
 			p->cb_printf ("0x%04x", addr);
-		else {
+		while (size--) {
+			if (endian)
+				addr = (*(buf+i))<<8 | (*(buf+i+1));
+			else addr = (*(buf+i+1))<<8 | (*(buf+i));
+			if (elem == -1 || elem == 0) {
+				p->cb_printf ("%d", addr);
+				if (elem == 0) elem = -2;
+			}
+			if (size != 0 && elem == -1)
+				p->cb_printf (",");
+			if (elem > -1) elem--;
+			i+=2;
+		}
+	} else if (MUSTSEE) {
+		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*2:0));
+		if (size==-1) {
+			p->cb_printf ("0x%04x", addr);
+		} else {
 			if (!SEEVALUE) p->cb_printf ("[ ");
 			while (size--) {
 				if (endian)
@@ -738,7 +765,7 @@ static void r_print_format_word(const RPrint* p, int endian, int mode,
 				if (size != 0 && elem == -1)
 					p->cb_printf (", ");
 				if (elem > -1) elem--;
-				i+=2;
+				i += 2;
 			}
 			if (!SEEVALUE) p->cb_printf (" ]");
 		}
@@ -1039,8 +1066,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 		snprintf (namefmt, sizeof (namefmt), "%%%ds", 10+6*slide%STRUCTPTR);
 		if (fmt[0] == '0')
 			p->cb_printf (namefmt, "union");
-		else
-			p->cb_printf (namefmt, "struct");
+		else p->cb_printf (namefmt, "struct");
 		p->cb_printf ("<%s>\n", name);
 	}
 	r_print_format (p, seek, b, len, fmt, mode, setval, field);
@@ -1069,8 +1095,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (!formatname)
 		return 0;
 	fmt = r_strht_get (p->formats, formatname);
-	if (fmt == NULL)
-		fmt = formatname;
+	if (!fmt) fmt = formatname;
 	while (*fmt && iswhitechar (*fmt)) fmt++;
 	argend = fmt+strlen (fmt);
 	arg = fmt;
@@ -1100,7 +1125,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			eprintf ("No end bracket. Try pm {ecx}b @ esi\n");
 			goto beach;
 		}
-		*end='\0';
+		*end = '\0';
 		times = r_num_math (NULL, bracket+1);
 		arg = end + 1;
 	}

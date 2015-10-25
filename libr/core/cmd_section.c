@@ -13,7 +13,7 @@ static int cmd_section(void *data, const char *input) {
 		"Sl"," [file]","load contents of file into current section (see dml)",
 		"Sj","","list sections in JSON (alias for iSj)",
 		"Sr"," [name]","rename section on current seek",
-		"S"," off va sz vsz name rwx","add new section (if(!vsz)vsz=sz)",
+		"S"," off va sz vsz name mrwx","add new section (if(!vsz)vsz=sz)",
 		"S-","[id|0xoff|*]","remove this section definition",
 		NULL
 	};

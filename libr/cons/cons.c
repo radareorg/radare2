@@ -829,14 +829,15 @@ R_API void r_cons_set_title(const char *str) {
 }
 
 R_API void r_cons_zero() {
+	if (I.line) I.line->zerosep = true;
 	write (1, "", 1);
 }
 
 R_API void r_cons_highlight (const char *word) {
 	char *rword, *res, *clean;
-	char *inv[2] = {R_CONS_INVERT(true, true),
-			R_CONS_INVERT(false, true)};
-	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
+	char *inv[2] = {R_CONS_INVERT (true, true),
+			R_CONS_INVERT (false, true)};
+	int linv[2] = { strlen (inv[0]), strlen (inv[1]) };
 	int l, *cpos;
 
 	if (word && *word && I.buffer) {
