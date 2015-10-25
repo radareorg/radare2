@@ -275,8 +275,9 @@ R_API char * convert_string (const char * bytes, ut32 len) {
 	if (!cpy_buffer) return cpy_buffer;
 	// 4x is the increase from byte to \xHH where HH represents hexed byte
 	memset (cpy_buffer, 0, str_sz);
-	while (idx < len) {
+	while (idx < len && pos < len) {
 		if (dso_json_char_needs_hexing (bytes[idx])) {
+			if (pos + 2 < len) return NULL;
 			sprintf (cpy_buffer+pos, "\\x%02x", bytes[idx]);
 			pos += 4;
 		} else {
@@ -302,7 +303,7 @@ static ut8 R_BIN_JAVA_NULL_TYPE_INITTED = 0;
 // XXX - this is a global variable used while parsing the class file
 // if multi-threaded class parsing is enabled, this variable needs to
 // be guarded with a lock.
-static RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;	
+static RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;
 static RBinJavaAccessFlags FIELD_ACCESS_FLAGS[] = {
 	{"public", R_BIN_JAVA_FIELD_ACC_PUBLIC, 6},
 	{"private", R_BIN_JAVA_FIELD_ACC_PRIVATE, 7},
@@ -2606,7 +2607,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 	}
 	if (bin->methods_count > 0) {
 		section = R_NEW0 (RBinSection);
-		if (section){ 
+		if (section){
 			strcpy (section->name, "methods");
 			section->size = bin->methods_size;
 			section->paddr = bin->methods_offset + baddr;
@@ -3564,7 +3565,7 @@ R_API RBinJavaAttrInfo* r_bin_java_inner_classes_attr_new (ut8* buffer, ut64 sz,
 				icattr->name = r_str_dup (NULL, "NULL");
 				eprintf ("r_bin_java_inner_classes_attr: Unable to find the name for %d index.\n", icattr->inner_name_idx);
 			}
- 		}		
+ 		}
 
 		IFDBG eprintf ("r_bin_java_inner_classes_attr: Inner class name %d is %s.\n", icattr->inner_name_idx, icattr->name);
 		r_list_append (attr->info.inner_classes_attr.classes, (void *) icattr);
@@ -7419,7 +7420,7 @@ R_API RList * r_bin_java_find_cp_const_by_val(RBinJavaObj *bin_obj, const ut8 *b
 }
 
 //#if 0
-// Attempted to clean up these functions and remove them since they are "unused" but without 
+// Attempted to clean up these functions and remove them since they are "unused" but without
 // them there are some compile time warnings, because other projects actually depend on these
 // for some form of information.
 R_API void U(add_cp_objs_to_sdb)(RBinJavaObj *bin){
