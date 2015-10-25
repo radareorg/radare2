@@ -239,19 +239,20 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					goto error;
 				}
 				len = r_buf_read_at (bin->b, off, (ut8*)&import_hint, sizeof (PE_Word));
-				if (len == -1 || len == 0) {
+				if (len < 1) {
 					eprintf ("Warning: read import hint at 0x%08"PFMT64x"\n", off);
 					goto error;
 				}
 				name[0] = '\0';
 				len = r_buf_read_at (bin->b, off + sizeof(PE_Word),
 							(ut8*)name, PE_NAME_LENGTH);
-				if (len == -1 || len == 0) {
+				if (len < 1) {
 					eprintf ("Warning: read (import name)\n");
 					goto error;
 				} else if (!*name) {
 					break;
 				}
+				name[PE_NAME_LENGTH] = '\0';
 				snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
 			}
 			if (!(*importp = realloc (*importp, (*nimp + 1) * sizeof(struct r_bin_pe_import_t)))) {
