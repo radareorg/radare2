@@ -1,8 +1,11 @@
 /* radare - LGPL - Copyright 2014-2015 - pancake */
 
-#include <r_util.h>
+#include <stdlib.h>
+#include <string.h>
 #include <zlib.h>
-
+#include "r_types.h"
+#include "r_types_base.h"
+#include "zconf.h"
 
 // set a maximum output buffer of 50MB
 #define MAXOUT 50000000

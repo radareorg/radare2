@@ -11,12 +11,12 @@
  Based roughly on Python difflib
 */
 
-#include <r_util.h>
+#include <limits.h>
 #include <r_diff.h>
-
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 struct line {
 	int h, len, n, e;
@@ -320,7 +320,7 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 				if (!d->callback (d, d->user, &dop))
 					break;
 			}
-#if 0	
+#if 0
 			if (rlen > 0) {
 				//printf ("Remove %d bytes at %d\n", rlen, offa);
 				printf ("r-%d @ 0x%"PFMT64x"\n", rlen, (ut64)offa);

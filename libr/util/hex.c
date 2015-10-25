@@ -1,8 +1,11 @@
 /* radare - LGPL - Copyright 2007-2015 - pancake */
 
-#include "r_types.h"
-#include "r_util.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_types.h"
+#include "r_types_base.h"
+#include "r_util.h"
 
 /* int c; ret = hex_to_byet(&c, 'c'); */
 R_API int r_hex_to_byte(ut8 *val, ut8 c) {
@@ -230,11 +233,11 @@ R_API st64 r_hex_bin_truncate (ut64 in, int n) {
 		if ((in&UT8_GT0))
 			return UT64_8U|in;
 		return in&UT8_MAX;
-	case 2: 
+	case 2:
 		if ((in&UT16_GT0))
 			return UT64_16U|in;
 		return in&UT16_MAX;
-	case 4: 
+	case 4:
 		if ((in&UT32_GT0))
 			return UT64_32U|in;
 		return in&UT32_MAX;

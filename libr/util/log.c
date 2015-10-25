@@ -1,6 +1,8 @@
 /* radare - LGPL - Copyright 2007-2013 - pancake */
 
 #include <r_util.h>
+#include <stdio.h>
+#include "r_types.h"
 
 // XXX: This api is kinda ugly.. we need to redefine it
 

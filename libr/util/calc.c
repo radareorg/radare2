@@ -8,11 +8,12 @@
     ISBN: 0201700735
  */
 
+#include <ctype.h>
 #include <r_types.h>
 #include <r_util.h>
-#include <ctype.h>
 #include <stdio.h>
-#include <unistd.h>
+#include <string.h>
+#include "r_types_base.h"
 
 /* accessors */
 static inline RNumCalcValue Nset(ut64 v) { RNumCalcValue n; n.d = (double)v; n.n = v; return n; }

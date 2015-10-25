@@ -1,6 +1,13 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_diff.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include "r_types.h"
+#include "r_types_base.h"
+#include "r_util.h"
 
 //R_LIB_VERSION (r_diff);
 

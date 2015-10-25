@@ -1,6 +1,9 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_util.h>
+#include <string.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 

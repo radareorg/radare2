@@ -1,9 +1,11 @@
 /* radare - LGPL - Copyright 2013 - pancake */
 // -- work in progress -- //
 
-#include "r_util.h"
+#include <stdlib.h>
+#include "r_list.h"
 #include "r_slist.h"
-
+#include "r_types.h"
+#include "r_types_base.h"
 
 R_API RSList *r_slist_new () {
 	RSList *s = R_NEW0 (RSList);
@@ -156,7 +158,7 @@ OUTPUT
 
 #if 0
 typedef struct {
-	
+
 } SListStore;
 typedef struct {
 	IntArray news;
@@ -170,9 +172,9 @@ typedef struct {
 -+- QueueList # new additions are here
  `- idxlist   |_
 --- RangeCmp  # user provided comparator function
---- IndexList # 
+--- IndexList #
 --- Storage   # Heap Array storing all elements
-              | We always use 
+              | We always use
 --- StoreList # Heap Array of integers pointing to storage
               | we can probably just store a list of removed
               | items and the length

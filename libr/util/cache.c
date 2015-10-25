@@ -3,6 +3,10 @@
 // XXX: should use the same code as libr/io/cache.c
 // one malloc per write
 #include <r_util.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_types.h"
+#include "r_types_base.h"
 // TODO: optimize reallocs.. store RBuffer info.. wait. extend r_buf_ for that?
 
 R_API RCache *r_cache_new() {

@@ -1,6 +1,12 @@
 /* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
 
 #include <r_util.h>
+#include <stdlib.h>
+#include <string.h>
+#include "ht.h"
+#include "r_list.h"
+#include "r_types.h"
+#include "r_types_base.h"
 
 R_API RMixed *r_mixed_new () {
 	RMixed *m = R_NEW (RMixed);

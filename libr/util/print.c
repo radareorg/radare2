@@ -1,9 +1,18 @@
 /* radare - LGPL - Copyright 2007-2015 - pancake */
 
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "r_anal.h"
 #include "r_cons.h"
+#include "r_io.h"
 #include "r_print.h"
+#include "r_types.h"
+#include "r_types_base.h"
+#include "r_userconf.h"
 #include "r_util.h"
+#include "sdb/types.h"
 
 static int nullprinter(const char* a, ...) { return 0; }
 static int IsInterrupted = 0;

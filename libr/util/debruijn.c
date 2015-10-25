@@ -1,6 +1,9 @@
 /* radare - LGPL - Copyright 2014 - crowell */
 
-#include <r_util.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 // For information about the algorithm, see Joe Sawada and Frank Ruskey, "An
 // Efficient Algorithm for Generating Necklaces with Fixed Density"
@@ -121,7 +124,7 @@ R_API int r_debruijn_offset(ut64 value, int guest_endian) {
 	while (!needle[0])
 		needle++;
 
-	// we should not guess the endian. its already handled by other functions 
+	// we should not guess the endian. its already handled by other functions
 	// and configure by the user in cfg.bigendian
 	int n = 1;
 	// little endian if true

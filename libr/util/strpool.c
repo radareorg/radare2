@@ -1,6 +1,11 @@
 /* radare - LGPL - Copyright 2012 - pancake */
 
 #include <r_util.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 R_API RStrpool* r_strpool_new (int sz) {
 	RStrpool *p = R_NEW (RStrpool);

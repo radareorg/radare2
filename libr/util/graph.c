@@ -1,6 +1,11 @@
 /* radare - LGPL - Copyright 2007-2012 - pancake */
 
 #include <r_util.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include "r_list.h"
+#include "r_types.h"
+#include "r_types_base.h"
 
 enum {
 	WHITE_COLOR = 0,

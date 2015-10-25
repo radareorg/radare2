@@ -1,5 +1,9 @@
 /* radare - LGPL - Copyright 2011-2012 - pancake */
-#include <r_util.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 #define BITMAP_TEST 0
 

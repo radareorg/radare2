@@ -1,10 +1,13 @@
 /* radare - LGPL - Copyright 2007-2015 - pancake */
 
-#if __WINDOWS__ && MINGW32 && !__CYGWIN__
-#include <stdlib.h>
-#endif
-
 #include <r_util.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_types.h"
+#include "r_types_base.h"
+#include "r_userconf.h"
+
 #define R_NUM_USE_CALC 1
 
 R_API ut16 r_num_ntohs (ut16 foo) {
@@ -290,7 +293,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 					*p2 = '\0';
 					ret = r_num_op (op, ret, r_num_math_internal (num, p));
 					ret = r_num_op (op, ret, r_num_math (num, p2+1));
-					p = p2+1; 
+					p = p2+1;
 					continue;
 				} else eprintf ("WTF!\n");
 			} else ret = r_num_op (op, ret, r_num_math_internal (num, p));

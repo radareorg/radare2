@@ -1,6 +1,9 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
+#include <pthread.h>
 #include <r_th.h>
+#include <stdlib.h>
+#include "r_types.h"
 
 /* locks/mutex/sems */
 

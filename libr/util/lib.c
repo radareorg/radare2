@@ -1,10 +1,15 @@
 /* radare - LGPL - Copyright 2008-2015 - pancake */
 
-#include "r_types.h"
-#include "r_util.h"
-#include "r_lib.h"
-#include <stdio.h>
 #include <dirent.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_lib.h"
+#include "r_list.h"
+#include "r_types.h"
+#include "r_types_base.h"
+#include "r_userconf.h"
+#include "r_util.h"
 
 R_LIB_VERSION(r_lib);
 
@@ -47,7 +52,7 @@ R_API const char *r_lib_types_get(int idx) {
 R_API int r_lib_types_get_i(const char *str) {
 	int i;
 	for (i=0; r_lib_types[i]; i++) {
-		if (!strcmp (str, r_lib_types[i])) 
+		if (!strcmp (str, r_lib_types[i]))
 			return i;
 	}
 	return -1;

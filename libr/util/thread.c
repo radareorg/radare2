@@ -1,6 +1,11 @@
 /* radare - LGPL - Copyright 2009-2012 - pancake */
 
+#include <pthread.h>
 #include <r_th.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 static void *_r_th_launcher(void *_th) {
 	int ret;
@@ -39,7 +44,7 @@ R_API struct r_th_t *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
 	if (th) {
 		th->lock = r_th_lock_new();
 		th->running = R_FALSE;
-		th->fun = fun;	
+		th->fun = fun;
 		th->user = user;
 		th->delay = delay;
 		th->breaked = R_FALSE;

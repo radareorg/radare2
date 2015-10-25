@@ -1,6 +1,8 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <btree.h>
+#include <stdlib.h>
+#include "r_types_base.h"
 
 R_API void btree_init(struct btree_node **T) {
 	*T = NULL;
@@ -64,7 +66,7 @@ R_API void btree_traverse(struct btree_node *root, int reverse, void *context, B
 R_API int btree_del(struct btree_node *proot, void *x, BTREE_CMP(cmp), BTREE_DEL(del)) {
 	struct btree_node *p = btree_search (proot, x, cmp, 1);
 	if (p) {
-		// p->right = 
+		// p->right =
 		btree_remove (p->left, del);
 		return R_TRUE;
 	}

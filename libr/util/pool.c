@@ -2,6 +2,9 @@
 
 #include <r_util.h>
 #include <stdlib.h>
+#include <string.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 #define ALLOC_POOL_SIZE 1024
 #define ALLOC_POOL_COUNT 128
