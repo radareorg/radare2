@@ -156,7 +156,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 				int res_len = strlen (res) + 1;
 				for (i = 0; i < res_len; i++) {
 					dwWritten = 0;
-					int rc = WriteFile (hPipeInOut, res, res_len - i, &dwWritten, NULL);
+					int rc = WriteFile (hPipeInOut, res + i, res_len - i, &dwWritten, NULL);
 					if (!rc) {
 						eprintf ("WriteFile: failed 0x%x\n", (int)GetLastError());
 					}
