@@ -476,6 +476,7 @@ R_API char *r_str_newf(const char *fmt, ...) {
 	return (char*)fmt;
 }
 
+// TODO: rename to r_str_trim_inplace() or something like that
 R_API char *r_str_chop(char *str) {
 	int len;
 	char *ptr;
@@ -548,7 +549,7 @@ R_API char *r_str_trim(char *str) {
 	char *ptr;
 	if (str == NULL)
 		return NULL;
-	for (ptr=str, i=0;str[i]; i++)
+	for (ptr = str, i=0; str[i]; i++)
 		if (!iswhitechar (str[i]))
 			*ptr++ = str[i];
 	*ptr = '\0';
