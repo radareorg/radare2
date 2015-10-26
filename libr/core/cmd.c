@@ -338,64 +338,69 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 			r_lang_use (core->lang, p->name);
 			ret = r_lang_run_file (core->lang, file);
 		} else {
+#if __WINDOWS__
+#define cmdstr(x) r_str_newf (x" %s", file);
+#else
+#define cmdstr(x) r_str_newf (x" '%s'", file);
+#endif
 			const char *p = r_str_lchr (file, '.');
 			if (p) {
 				const char *ext = p+1;
 				/* TODO: handle this inside r_lang_pipe with new APIs */
 				if (!strcmp (ext, "js")) {
-					char *cmd = r_str_newf ("node '%s'", file);
+					char *cmd = cmdstr("node");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "exe")) {
-#if __UNIX__
+#if __WINDOWS__
 					char *cmd = r_str_newf ("%s", file);
 #else
-					char *cmd = r_str_newf ("wine %s", file);
+					char *cmd = cmdstr("wine");
 #endif
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "d")) {
-					char *cmd = r_str_newf ("dmd -run '%s'", file);
+					char *cmd = cmdstr ("dmd -run");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "lsp")) {
-					char *cmd = r_str_newf ("newlisp -n '%s'", file);
+					char *cmd = cmdstr("newlisp -n");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "go")) {
-					char *cmd = r_str_newf ("go run '%s'", file);
+					char *cmd = cmdstr ("go run");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "es6")) {
-					char *cmd = r_str_newf ("babel-node '%s'", file);
+					char *cmd = cmdstr ("babel-node");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "rb")) {
-					char *cmd = r_str_newf ("ruby '%s'", file);
+					char *cmd = cmdstr ("ruby %s");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "pl")) {
-					char *cmd = r_str_newf ("perl '%s'", file);
+					char *cmd = cmdstr ("perl");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "py")) {
-					char *cmd = r_str_newf ("python '%s'", file);
+					char *cmd = cmdstr ("python");
 					r_lang_use (core->lang, "pipe");
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
@@ -413,11 +418,6 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 
 static int cmd_ls(void *data, const char *input) {
 	r_core_syscmd_ls (input);
-	return 0;
-}
-
-static int cmd_mkdir(void *data, const char *input) {
-	r_core_syscmd_mkdir (input);
 	return 0;
 }
 
@@ -1557,6 +1557,7 @@ repeat_arroba:
 				}
 				break;
 			case 'b': // "@b:" // bits
+				tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 				r_config_set_i (core->config, "asm.bits",
 					r_num_math (core->num, ptr+2));
 				break;
@@ -1905,6 +1906,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			RListIter *iter;
 			RList *list;
 			list = r_debug_frames (core->dbg, UT64_MAX);
+			i = 0;
 			r_list_foreach (list, iter, frame) {
 				switch (each[3]) {
 				case 'b':
@@ -1919,7 +1921,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					break;
 				}
 				r_core_cmd (core, cmd, 0);
-				r_cons_printf("\n");
+				r_cons_newline ();
 				i++;
 			}
 			r_core_seek (core, oseek, 0);
@@ -2346,6 +2348,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "flag",     "get/set flags", &cmd_flag);
 	r_cmd_add (core->rcmd, "g",        "egg manipulation", &cmd_egg);
 	r_cmd_add (core->rcmd, "debug",    "debugger operations", &cmd_debug);
+	r_cmd_add (core->rcmd, "ls",       "list files and directories", &cmd_ls);
 	r_cmd_add (core->rcmd, "info",     "get file info", &cmd_info);
 	r_cmd_add (core->rcmd, "cmp",      "compare memory", &cmd_cmp);
 	r_cmd_add (core->rcmd, "seek",     "seek to an offset", &cmd_seek);
@@ -2375,8 +2378,6 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, ".",        "interpret", &cmd_interpret);
 	r_cmd_add (core->rcmd, "/",        "search kw, pattern aes", &cmd_search);
 	r_cmd_add (core->rcmd, "-",        "open cfg.editor and run script", &cmd_stdin);
-	r_cmd_add (core->rcmd, "ls",       "list files and directories", &cmd_ls);
-	r_cmd_add (core->rcmd, "mkdir",    "make directory", &cmd_mkdir);
 	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
 	r_cmd_add (core->rcmd, "quit",     "exit program session", &cmd_quit);
 }

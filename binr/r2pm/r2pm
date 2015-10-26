@@ -1,5 +1,7 @@
 #!/bin/sh
 
+TRAVIS_TYPE=XX
+TRAVIS_JOB=86948888
 R2PM_PLUGDIR=${HOME}/.config/radare2/plugins
 R2PM_USRDIR=${HOME}/.config/radare2/r2pm
 LIBEXT=`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`
@@ -119,6 +121,22 @@ case "$1" in
 		echo "Cannot find file"
 	fi
 	;;
+-t|test)
+	[ -n "$2" ] && TRAVIS_TYPE="$2"
+	if [ -n "$3" ]; then
+		TRAVIS_JOB="$3"
+	else
+		TRAVIS_JOB=`curl -s https://api.travis-ci.org/repos?slug=radare%2Fradare2| jq .[0].last_build_id`
+		TRAVIS_JOB=$(($TRAVIS_JOB+1))
+	fi
+	echo $TRAVIS_JOB > /dev/stderr
+	# storage
+	curl -s https://s3.amazonaws.com/archive.travis-ci.org/jobs/${TRAVIS_JOB}/log.txt |\
+		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
+# wip
+	curl -s https://api.travis-ci.org/jobs/${TRAVIS_JOB}/log.txt |\
+		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
+	;;
 -l|list)
 	R2PM_List "$2"
 	;;
@@ -146,6 +164,7 @@ case "$1" in
 	echo " -i,install <pkgname>    r2pm -i baleful"
 	echo " -u,uninstall <pkgname>  r2pm -u baleful"
 	echo " -l,list                 list installed pkgs"
+	echo " -t,test FX,XX,BR BID    check in travis regressions"
 	echo " -s,search [<keyword>]   search in database"
 	echo " -v,version              show version"
 	echo " -h,help                 show this message"

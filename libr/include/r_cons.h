@@ -497,6 +497,7 @@ struct r_line_t {
 	int (*hist_up)(void *user);
 	int (*hist_down)(void *user);
 	char *contents;
+	bool zerosep;
 }; /* RLine */
 
 #ifdef R_API
@@ -542,6 +543,13 @@ typedef struct r_ascii_node_t {
 	int klass;
 } RANode;
 
+#define R_AGRAPH_MODE_NORMAL 0
+#define R_AGRAPH_MODE_OFFSET 1
+#define R_AGRAPH_MODE_ESIL 2
+#define R_AGRAPH_MODE_ESIL_OFFSET 3
+#define R_AGRAPH_MODE_MINI 4
+#define R_AGRAPH_MODE_MAX 5
+
 typedef void (*RANodeCallback)(RANode *n, void *user);
 typedef void (*RAEdgeCallback)(RANode *from, RANode *to, void *user);
 
@@ -553,10 +561,9 @@ typedef struct r_ascii_graph_t {
 	Sdb *db;
 	Sdb *nodes; // Sdb with title(key)=RANode*(value)
 
-	int is_callgraph;
 	int is_instep;
-	int is_simple_mode;
-	int is_small_nodes;
+	int mode;
+	int is_callgraph;
 	int zoom;
 	int movspeed;
 

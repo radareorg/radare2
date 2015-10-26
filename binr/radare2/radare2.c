@@ -221,7 +221,7 @@ int main(int argc, char **argv, char **envp) {
 	int fullfile = 0;
 	int has_project;
 	int prefile = 0;
-	int zerosep = 0;
+	bool zerosep = false;
 	int help = 0;
 	int run_anal = 1;
 	int run_rc = 1;
@@ -775,7 +775,6 @@ int main(int argc, char **argv, char **envp) {
 		// no flagspace selected by default the beginning
 		r.flags->space_idx = -1;
 		for (;;) {
-			r.zerosep = zerosep;
 #if USE_THREADS
 			do {
 				int err = r_core_prompt (&r, false);
@@ -824,10 +823,10 @@ int main(int argc, char **argv, char **envp) {
 		}
 	}
 #if __UNIX__
-	if (isatty(0)) {
+	if (isatty (0)) {
 #endif
-		 if (r_config_get_i(r.config, "scr.histsave") &&
-				r_config_get_i(r.config, "scr.interactive") &&
+		 if (r_config_get_i (r.config, "scr.histsave") &&
+				r_config_get_i (r.config, "scr.interactive") &&
 				!r_sandbox_enable (0))
 			r_line_hist_save (R2_HOMEDIR"/history");
 #if __UNIX__

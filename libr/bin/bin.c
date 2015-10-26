@@ -550,7 +550,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	// invalidate current object reference
 	bf->o = NULL;
 
-	// XXX - this needs to be reimplemented to account for 
+	// XXX - this needs to be reimplemented to account for
 	// performance impacts.
 	buf_bytes = NULL;
 
@@ -897,8 +897,6 @@ R_API RBinPlugin * r_bin_get_binplugin_by_bytes (RBin *bin, const ut8* bytes, ut
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (plugin->check_bytes && plugin->check_bytes (bytes, sz) )
 			return plugin;
-		// must be set to null
-		plugin = NULL;
 	}
 	return NULL;
 }
@@ -992,7 +990,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 	o->baddr = baseaddr;
 	o->baddr_shift = 0;
 	// XXX - binfile could be null here meaning an improper load
-	// XXX - object size cant be set here and needs to be set where 
+	// XXX - object size cant be set here and needs to be set where
 	// where the object is created from.  The reason for this is to prevent
 	// mis-reporting when the file is loaded from impartial bytes or is extracted
 	// from a set of bytes in the file
@@ -1819,9 +1817,6 @@ R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 paddr, ut64 vaddr) {
 
 static ut64 binobj_a2b (RBinObject *o, ut64 addr) {
 	if (!o) return addr;
-	/* if bin is not PIE dot not allow to relocate */
-	if (o->info && !o->info->has_pi)
-		return addr;
 	return o->baddr_shift + addr;
 }
 

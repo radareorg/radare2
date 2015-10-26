@@ -4,7 +4,6 @@ CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
 
-ARG_ENABLE CPARSE cparse build with cparse support ;
 ARG_DISABLE DEBUGGER debugger disable native debugger features ;
 
 (( -ldl -dynamic ... ))
@@ -109,16 +108,16 @@ IFEQ USEROSTYPE auto ; {
 		DL_LIBS = -ldl ;
 	}{
 	IFEQ HOST_OS gnu/kfreebsd ; {
-		USEROSTYPE = gnulinux ;
+		USEROSTYPE = bsd ;
 	}{
 	IFEQ HOST_OS netbsd ; {
-		USEROSTYPE = gnulinux ;
+		USEROSTYPE = bsd ;
 	}{
 	IFEQ HOST_OS freebsd ; {
-		USEROSTYPE = gnulinux ;
+		USEROSTYPE = bsd ;
 	}{
 	IFEQ HOST_OS openbsd ; {
-		USEROSTYPE = gnulinux ;
+		USEROSTYPE = bsd ;
 	}{
 	IFEQ HOST_OS darwin ; {
 		USEROSTYPE = darwin ;

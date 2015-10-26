@@ -2,7 +2,9 @@
 ASAN="address leak memory undefined"
 ASAN="address"
 
+printf "\033[32m"
 echo "========================================================================="
+printf "\033[33m"
 echo "ASAN build script can be configured with the ASAN environment variable."
 echo "Use one of the following words to specify which build flags to use:"
 echo "  - address     - set by default, detect overflows"
@@ -16,7 +18,9 @@ echo "For example:"
 echo "  $ ASAN='leak memory address' sys/asan.sh"
 echo "Current value:"
 echo "  ASAN=${ASAN}"
+printf "\033[32m"
 echo "========================================================================="
+printf "\033[0m"
 sleep 1
 export LDFLAGS="-lasan"
 

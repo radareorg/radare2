@@ -68,13 +68,26 @@ w64dist:
 
 WINDIST=${WINBITS}dist
 
+C=$(shell printf "\033[32m")
+R=$(shell printf "\033[0m")
 windist:
+	@echo "${C}[WINDIST] Installing binaries and libraries${R}"
 	[ -n "${WINBITS}" ] || exit 1
 	rm -rf "radare2-${WINBITS}-${VERSION}" "${WINDIST}"
 	mkdir "${WINDIST}"
 	for FILE in `find libr | grep -e dll$$`; do cp "$$FILE" "${WINDIST}" ; done
 	for FILE in `find binr | grep -e exe$$`; do cp "$$FILE" "${WINDIST}" ; done
 	rm -f "${WINDIST}/plugin.dll"
+	@echo "${C}[WINDIST] Picking plugins from libraries${R}"
+	mkdir -p "${WINDIST}/libs"
+	mv "${WINDIST}/lib*.dll ${WINDIST}/libs"
+	mkdir -p "${WINDIST}/plugins"
+	mv ${WINDIST}/*.dll "${WINDIST}/plugins"
+	mv ${WINDIST}/libs/* "${WINDIST}"
+	@echo "${C}[WINDIST] Do not include plugins for now${R}"
+	rm -rf "${WINDIST}/libs"
+	rm -rf ${WINDIST}/plugins/*
+	@echo "${C}[WINDIST] Copying web interface${R}"
 	mkdir -p "${WINDIST}/www"
 	cp -rf shlr/www/* "${WINDIST}/www"
 	mkdir -p "${WINDIST}/radare2/${VERSION}/magic"
@@ -85,6 +98,7 @@ windist:
 	cp -f libr/asm/d/*.sdb "${WINDIST}/radare2/${VERSION}/opcodes"
 	mkdir -p "${WINDIST}/share/doc/radare2"
 	mkdir -p "${WINDIST}/include/libr/sdb"
+	@echo "${C}[WINDIST] Copying development files${R}"
 	cp -f libr/include/sdb/*.h "${WINDIST}/include/libr/sdb/"
 	cp -f libr/include/*.h "${WINDIST}/include/libr"
 	#mkdir -p "${WINDIST}/include/libr/sflib"

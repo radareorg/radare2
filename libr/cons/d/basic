@@ -1,0 +1,34 @@
+# optimized for windows
+ecd
+k one=cyan
+k two=white
+ec fname `k one`
+ec label `k one`
+ec fline `k one`
+ec flag `k one`
+ec offset `k two`
+ec comment red
+ec flow green
+ec b0x00 white
+ec b0xff red
+ec bin cyan
+ec b0x7f white
+ec other gray
+ec btext cyan
+ec invalid red
+ec trap red
+ec prompt white
+ec mov gray
+ec math gray
+ec push yellow
+ec reg white
+ec num cyan
+ec invalid red
+ec trap red
+ec swi cyan
+ec cmp yellow
+ec leave gray
+ec call cyan
+ec cjmp green
+ec jmp green
+ec pop yellow

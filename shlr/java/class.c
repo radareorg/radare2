@@ -275,8 +275,9 @@ R_API char * convert_string (const char * bytes, ut32 len) {
 	if (!cpy_buffer) return cpy_buffer;
 	// 4x is the increase from byte to \xHH where HH represents hexed byte
 	memset (cpy_buffer, 0, str_sz);
-	while (idx < len) {
+	while (idx < len && pos < len) {
 		if (dso_json_char_needs_hexing (bytes[idx])) {
+			if (pos + 2 < len) return NULL;
 			sprintf (cpy_buffer+pos, "\\x%02x", bytes[idx]);
 			pos += 4;
 		} else {
@@ -302,7 +303,7 @@ static ut8 R_BIN_JAVA_NULL_TYPE_INITTED = 0;
 // XXX - this is a global variable used while parsing the class file
 // if multi-threaded class parsing is enabled, this variable needs to
 // be guarded with a lock.
-static RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;	
+static RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;
 static RBinJavaAccessFlags FIELD_ACCESS_FLAGS[] = {
 	{"public", R_BIN_JAVA_FIELD_ACC_PUBLIC, 6},
 	{"private", R_BIN_JAVA_FIELD_ACC_PRIVATE, 7},
@@ -1961,22 +1962,23 @@ R_API RBinJavaAttrMetas* r_bin_java_get_attr_type_by_name(const char *name) {
 	return res;
 }
 
-R_API RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 offset, const ut8* buf, const ut64 len) {
+R_API RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 offset, const ut8* buf, const ut64 buf_len) {
 	RBinJavaAttrInfo* attr = NULL;
 	ut32 sz = 0;
 	ut8* buffer = NULL;
 	const ut8* a_buf = offset + buf;
 	ut8 attr_idx_len = 6;
-	if (offset +6 > len) {
+	if (offset +6 > buf_len) {
 		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile in Attribute offset "
-			"(0x%"PFMT64x") > len  of remaining bytes (0x%"PFMT64x").\n", offset, len);
+			"(0x%"PFMT64x") > len  of remaining bytes (0x%"PFMT64x").\n", offset, buf_len);
 		return attr;
 	}
 	// ut16 attr_idx, ut32 length of attr.
 	sz = R_BIN_JAVA_UINT (a_buf, 2) + attr_idx_len; //r_bin_java_read_int (bin, buf_offset+2) + attr_idx_len;
-	if (sz + offset > len) {
+	if (sz + offset > buf_len) {
 		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile in Attribute len "
-			"(0x%x) + offset (0x%"PFMT64x") exceeds length of buffer (0x%"PFMT64x").\n", sz, offset, len);
+			"(0x%x) + offset (0x%"PFMT64x") exceeds length of buffer (0x%"PFMT64x").\n",
+			sz, offset, buf_len);
 		return attr;
 	}
 	// when reading the attr bytes, need to also
@@ -1984,15 +1986,19 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 o
 	// are not included in the attribute length
 	//,
 	//	sz, buf_offset, buf_offset+sz);
-	buffer = r_bin_java_get_attr_buf (bin, sz, offset, buf, len);
-	attr = r_bin_java_read_next_attr_from_buffer (buffer, sz, offset);
-	free (buffer);
-	
-	if (!attr){
-		return NULL;
+	buffer = r_bin_java_get_attr_buf (bin, sz, offset, buf, buf_len);
+	//printf ("%d %d %d\n", sz, buf_len, offset);
+	if (offset < buf_len) {
+		attr = r_bin_java_read_next_attr_from_buffer (buffer, buf_len - offset, offset);
+		free (buffer);
+
+		if (!attr) {
+			return NULL;
+		}
+		attr->size = sz;
+	} else {
+		eprintf ("IS OOB\n");
 	}
-	
-	attr->size = sz;
 	return attr;
 }
 
@@ -2601,7 +2607,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 	}
 	if (bin->methods_count > 0) {
 		section = R_NEW0 (RBinSection);
-		if (section){ 
+		if (section){
 			strcpy (section->name, "methods");
 			section->size = bin->methods_size;
 			section->paddr = bin->methods_offset + baddr;
@@ -3559,7 +3565,7 @@ R_API RBinJavaAttrInfo* r_bin_java_inner_classes_attr_new (ut8* buffer, ut64 sz,
 				icattr->name = r_str_dup (NULL, "NULL");
 				eprintf ("r_bin_java_inner_classes_attr: Unable to find the name for %d index.\n", icattr->inner_name_idx);
 			}
- 		}		
+ 		}
 
 		IFDBG eprintf ("r_bin_java_inner_classes_attr: Inner class name %d is %s.\n", icattr->inner_name_idx, icattr->name);
 		r_list_append (attr->info.inner_classes_attr.classes, (void *) icattr);
@@ -3612,9 +3618,12 @@ R_API RBinJavaAttrInfo* r_bin_java_line_number_table_attr_new (ut8 *buffer, ut64
 	attr->info.line_number_table_attr.line_number_table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.line_number_table_attr.line_number_table = r_list_newf (free);
-	for(i = 0; i < attr->info.line_number_table_attr.line_number_table_length; i++) {
-		cur_location = buf_offset+offset;
-		lnattr = R_NEW0(RBinJavaLineNumberAttribute);
+	if (attr->info.line_number_table_attr.line_number_table_length > sz) {
+		return NULL;
+	}
+	for (i = 0; i < attr->info.line_number_table_attr.line_number_table_length; i++) {
+		cur_location = buf_offset + offset;
+		lnattr = R_NEW0 (RBinJavaLineNumberAttribute);
 		if (!lnattr) {
 			eprintf ("Handling Local Variable Table Attributes :Unable to allocate memory (%u bytes) for a new exception handler structure.\n", (int)sizeof (RBinJavaLocalVariableAttribute));
 			break;
@@ -7411,7 +7420,7 @@ R_API RList * r_bin_java_find_cp_const_by_val(RBinJavaObj *bin_obj, const ut8 *b
 }
 
 //#if 0
-// Attempted to clean up these functions and remove them since they are "unused" but without 
+// Attempted to clean up these functions and remove them since they are "unused" but without
 // them there are some compile time warnings, because other projects actually depend on these
 // for some form of information.
 R_API void U(add_cp_objs_to_sdb)(RBinJavaObj *bin){

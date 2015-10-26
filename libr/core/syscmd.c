@@ -47,7 +47,7 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 		uid = sb.st_uid;
 		gid = sb.st_gid;
 		perm = sb.st_mode & 0777;
-		if (!(u_rwx = strdup(r_str_rwx_i(perm>>6)))) {
+		if (!(u_rwx = strdup(r_str_rwx_i (perm>>6)))) {
 			free(nn);
 			return;
 		}
@@ -66,15 +66,16 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 			}
 	}
 #else
+	u_rwx = strdup ("-");
 	fch = isdir? 'd': '-';
 #endif
 	if (printfmt == FMT_RAW) {
 		r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
-		isdir?'d':fch,
-		      u_rwx,
-		      r_str_rwx_i ((perm>>3)&7),
-		      r_str_rwx_i (perm&7),
-		      uid, gid, sz, nn);
+			isdir?'d':fch,
+			u_rwx? u_rwx:"-",
+			r_str_rwx_i ((perm>>3)&7),
+			r_str_rwx_i (perm&7),
+			uid, gid, sz, nn);
 	} else if (printfmt == FMT_JSON) {
 		if (nth > 0) r_cons_printf(",");
 		r_cons_printf("{\"name\":\"%s\",\"size\":%d,\"uid\":%d,"
@@ -141,7 +142,7 @@ R_API void r_core_syscmd_ls(const char *input) {
 			memcpy (d, path, off);
 			path = (const char *)d;
 			pattern = strdup (p+1);
-		}else {
+		} else {
 			pattern = strdup (path);
 			path = ".";
 		}

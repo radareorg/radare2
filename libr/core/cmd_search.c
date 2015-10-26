@@ -665,7 +665,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		strncpy (grep_str, start, end - start);
 		if (regex) {
 			// get the first regexp.
-			if (r_list_length(rx_list) > 0) {
+			if (r_list_length (rx_list) > 0) {
 				rx = r_list_get_n(rx_list, count++);
 			}
 		}
@@ -695,7 +695,8 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		idx += asmop.size;
 		addr += asmop.size;
 		if (rx) {
-			grep_find = r_regex_exec(rx, asmop.buf_asm, 0, 0, 0);
+			//grep_find = r_regex_exec (rx, asmop.buf_asm, 0, 0, 0);
+			grep_find = !r_regex_match (grep, "e", asmop.buf_asm);
 			search_hit = (end && grep && (grep_find < 1));
 		} else {
 			search_hit = (end && grep && strstr (asmop.buf_asm, grep_str));
