@@ -407,8 +407,18 @@ static const char *radare_argv[] = {
 	"pd", "pda", "pdb", "pdc", "pdj", "pdr", "pdf", "pdi", "pdl", "pds", "pdt",
 	"pD", "px", "pX", "po", "pf", "pf.", "pf*", "pf*.", "pfd", "pfd.", "pv", "p=", "p-",
 	"pm", "pr", "pt", "ptd", "ptn", "pt?", "ps", "pz", "pu", "pU", "p?",
+	"#!pipe",
 	NULL
 };
+
+static int getsdelta(const char *data) {
+	int i;
+	for (i=1; data[i]; i++) {
+		if (data[i] == ' ')
+			return i + 1;
+	}
+	return 0;
+}
 
 static int autocomplete(RLine *line) {
 	int pfree = 0;
@@ -434,12 +444,29 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else
+		if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
+			int j = 0;
+			if (strchr (line->buffer.data + 7, ' ')) {
+				goto openfile;
+			}
+			tmp_argv_heap = false;
+#define ADDARG(x) if (!strncmp (line->buffer.data+7, x, strlen (line->buffer.data+7))) { tmp_argv[j++] = x; }
+			ADDARG("node");
+			ADDARG("vala");
+			ADDARG("ruby");
+			ADDARG("newlisp");
+			ADDARG("perl");
+			ADDARG("python");
+			tmp_argv[j] = NULL;
+			line->completion.argc = j;
+			line->completion.argv = tmp_argv;
+		} else
 		if ((!strncmp (line->buffer.data, "pf.", 3))
 		||  (!strncmp (line->buffer.data, "pf*.", 4))
 		||  (!strncmp (line->buffer.data, "pfd.", 4))) {
 			char pfx[2];
 			int chr = (line->buffer.data[2]=='.')? 3: 4;
-			if (chr==4) {
+			if (chr == 4) {
 				pfx[0] = line->buffer.data[2];
 				pfx[1] = 0;
 			} else {
@@ -486,11 +513,14 @@ static int autocomplete(RLine *line) {
 			char *str, *p, *path;
 			int n = 0, i = 0, isroot = 0, iscwd = 0;
 			RList *list;
-			int sdelta = (line->buffer.data[1]==' ')? 2:
-				(line->buffer.data[2]==' ')? 3:
-				(line->buffer.data[3]==' ')? 4: 5;
-			path = line->buffer.data[sdelta]?
-				strdup (line->buffer.data+sdelta):
+			int sdelta;
+openfile:
+			if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
+				sdelta = getsdelta (line->buffer.data + 7) + 7;
+			} else {
+				sdelta = getsdelta (line->buffer.data);
+			}
+			path = sdelta>0? strdup (line->buffer.data + sdelta):
 				r_sys_getdir ();
 			p = (char *)r_str_lchr (path, '/');
 			if (p) {
@@ -498,20 +528,20 @@ static int autocomplete(RLine *line) {
 					isroot = 1;
 					*p = 0;
 					p++;
-				} else if (p==path+1) { // ^./
+				} else if (p==path + 1) { // ^./
 					*p = 0;
-					iscwd=1;
+					iscwd = 1;
 					p++;
 				} else { // *
 					*p = 0;
 					p++;
 				}
 			} else {
-				iscwd=1;
+				iscwd = 1;
 				pfree = 1;
 				p = strdup (path);
 				free (path);
-				path = strdup ("."); //./");
+				path = strdup (".");
 			}
 			if (pfree) {
 				if (p) {
@@ -526,36 +556,39 @@ static int autocomplete(RLine *line) {
 				if (p) { if (*p) n = strlen (p); else p = ""; }
 			}
 			if (iscwd) {
-				list = r_sys_dir("./");
+				list = r_sys_dir ("./");
 			} else if (isroot) {
-				list = r_sys_dir("/");
+				const char *lastslash = r_str_lchr (path, '/');
+				if (lastslash && lastslash[1]) {
+					list = r_sys_dir (path);
+				} else {
+					list = r_sys_dir ("/");
+				}
 			} else {
 				if (*path=='~') { // if implicit home
-					char *lala = r_str_home (path+1);
+					char *lala = r_str_home (path + 1);
 					free (path);
 					path = lala;
 				} else if (*path!='.' && *path!='/') { // ifnot@home
-					char *o = malloc (strlen (path)+4);
+					char *o = malloc (strlen (path) + 4);
 					memcpy (o, "./", 2);
 					p = o+2;
 					n = strlen (path);
-					memcpy (o+2, path, strlen (path)+1);
+					memcpy (o + 2, path, strlen (path) + 1);
 					free (path);
 					path = o;
 				}
 				list = p? r_sys_dir (path): NULL;
 			}
+			i = 0;
 			if (list) {
-				int isroot = !strcmp (path, "/");
-				char buf[4096];
+			//	bool isroot = !strcmp (path, "/");
 				r_list_foreach (list, iter, str) {
 					if (*str == '.') // also list hidden files
 						continue;
 					if (!p || !*p || !strncmp (str, p, n)) {
-						snprintf (buf, sizeof (buf), "%s%s%s",
-							path, isroot?"":"/",str);
-						tmp_argv[i++] = strdup (buf);
-						if (i==TMP_ARGV_SZ) {
+						tmp_argv[i++] = r_str_newf ("%s/%s", path, str);
+						if (i == TMP_ARGV_SZ) {
 							i--;
 							break;
 						}
