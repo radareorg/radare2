@@ -13,9 +13,9 @@ install: ${F_SDB}
 CWD=$(shell pwd)
 symstall install-symlink:
 	mkdir -p "$P"
-	for a in * ; do \
-		if [ $$a != Makefile ]; then \
-			ln -fs "${CWD}/$$a" "$P/$$a" ; \
+	for FILE in * ; do \
+		if [ $$FILE != Makefile ]; then \
+			ln -fs "${CWD}/$$FILE" "$P/$$FILE" ; \
 		fi ; \
 	done
 

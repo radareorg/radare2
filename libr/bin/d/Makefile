@@ -1,8 +1,8 @@
 include ../../../global.mk
 include ../../../config-user.mk
 
-SDBPATH=$(call rmdblslash,$(LTOP)/../shlr/sdb/)
-SDB=$(call rmdblslash,$(SDBPATH)/sdb)
+SDBPATH=$(LTOP)/../shlr/sdb/
+SDB=$(SDBPATH)/sdb
 
 P=${DESTDIR}${DATADIR}/radare2/${VERSION}/format
 
@@ -28,9 +28,9 @@ install: ${F_SDB}
 CWD=$(shell pwd)
 symstall install-symlink:
 	mkdir -p "$P"
-	for a in * ; do \
-		if [ $$a != Makefile ]; then \
-			ln -fs "${CWD}/$$a" "$P/$$a" ; \
+	for FILE in * ; do \
+		if [ "$$FILE" != Makefile ]; then \
+			ln -fs "${CWD}/$$FILE" "$P/$$FILE" ; \
 		fi ; \
 	done
 

@@ -125,8 +125,8 @@ rm -rf ${PWD}/${D}/include
 rm -rf ${PWD}/${D}/lib/pkgconfig
 rm -rf ${PWD}/${D}/lib/libsdb.a
 
-echo rm -rf ${PWD}/${D}/${PREFIX}/bin/*
-rm -rf "${PWD}/${D}/${PREFIX}/bin/"*
+echo rm -rf ${PWD}/${D}/${BINDIR}/*
+rm -rf "${PWD}/${D}/${BINDIR}/"*
 
 #end build
 
@@ -141,12 +141,12 @@ mkdir -p ${HERE}/${D}/${PREFIX}/tmp
 :> ${HERE}/${D}/${PREFIX}/tmp/.empty
 cd ../..
 
-chmod +x "${HERE}/${D}/${PREFIX}/bin/"*
-find ${D}/${PREFIX}/share/radare2/*/www
+chmod +x "${HERE}/${D}/${BINDIR}/"*
+find ${D}/${DATADIR}/radare2/*/www
 # Remove development files
-rm -f ${HERE}/${D}/${PREFIX}/lib/radare2/*/*.so
-rm -f ${HERE}/${D}/${PREFIX}/lib/*.a
-rm -rf ${HERE}/${D}/${PREFIX}/share/radare2/*/www/*/node_modules
+rm -f ${HERE}/${D}/${LIBDIR}/radare2/*/*.so
+rm -f ${HERE}/${D}/${LIBDIR}/*.a
+rm -rf ${HERE}/${D}/${DATADIR}/radare2/*/www/*/node_modules
 rm -rf ${HERE}/${D}/${PREFIX}/include
 eval `grep ^VERSION= ${HERE}/config-user.mk`
 #WWWROOT="/data/data/org.radare2.installer/radare2/share/radare2/${VERSION}/www"

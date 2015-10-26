@@ -21,7 +21,7 @@ LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 BEXE=$(BIN)$(EXT_EXE)
 
 ifeq ($(USE_RPATH),1)
-LINK+=-Wl,-rpath "${PREFIX}/lib"
+LINK+=-Wl,-rpath "${LIBDIR}"
 endif
 
 ifeq (${OSTYPE},gnulinux)
