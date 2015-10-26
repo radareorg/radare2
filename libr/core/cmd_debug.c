@@ -943,7 +943,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	return true;
 }
 
-R_API void r_core_debug_rr (RCore *core, RReg *reg) {
+R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 	ut64 value;
 	int bits = core->assembler->bits;
 	RList *list = r_reg_get_list (reg, R_REG_TYPE_GPR);

@@ -1636,17 +1636,21 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
  * information */
 static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 #if FCN_OLD
+	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	RANode *node, *fcn_anode;
 	RListIter *iter;
 	RAnalRef *ref;
 	char *title, *body;
 
+	r_core_seek (core, f->addr, 1);
+
 	title = get_title (fcn->addr);
 	fcn_anode = r_agraph_add_node (g, title, "");
 
 	free (title);
-	if (!fcn_anode)
+	if (!fcn_anode) {
 		return false;
+	}
 
 	fcn_anode->x = 10;
 	fcn_anode->y = 3;
@@ -2154,7 +2158,19 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 
 	// allow to change the current function during debugging
 	if (g->is_instep && core->io->debug) {
-		r_core_cmd0 (core, "sr pc");
+		// seek only when the graph node changes
+		const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
+		RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
+		ut64 addr = r_reg_get_value (core->dbg->reg, r);
+		RANode *acur = get_anode (g->curnode);
+		char *title;
+
+		addr = r_core_anal_get_bbaddr (core, addr);
+		title = get_title (addr);
+
+		if (!acur || strcmp (acur->title, title) != 0) {
+			r_core_cmd0 (core, "sr pc");
+		}
 		g->is_instep = false;
 	}
 
@@ -2643,9 +2659,10 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
 					" .            - center graph to the current node\n"
 					" :cmd         - run radare command\n"
+					" ;            - toggle asm.comments\n"
 					" /            - highlight text\n"
 					" Page-UP/DOWN - go to the top/bottom of the canvas\n"
-					" C            - toggle asm.comments\n"
+					" C            - toggle scr.colors\n"
 					" hjkl         - move node\n"
 					" HJKL         - scroll canvas\n"
 					" tab          - select next node\n"
@@ -2658,6 +2675,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 					" u/U          - undo/redo seek\n"
 					" p/P          - rotate graph modes (normal, display offsets, esil, minigraph)\n"
 					" s/S          - step / step over\n"
+					" V            - toggle basicblock / call graphs\n"
 					" w            - toggle between movements speed 1 and graph.scroll\n"
 					" x/X          - jump to xref/ref\n"
 					" +/-/0        - zoom in/out/default\n");
@@ -2704,9 +2722,12 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case '!':
 			r_core_visual_panels (core);
 			break;
-		case 'C':
+		case ';':
 			r_config_toggle (core->config, "asm.comments");
 			g->need_reload_nodes = true;
+			break;
+		case 'C':
+			r_config_toggle (core->config, "scr.color");
 			break;
 		case 'r':
 			g->need_reload_nodes = true;
@@ -2795,7 +2816,6 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	free (grd);
 	r_agraph_free(g);
 err_graph_new:
-	r_config_set_i (core->config, "scr.color", can->color);
 	r_config_set_i (core->config, "scr.interactive", o_scrinteractive);
 	r_cons_canvas_free (can);
 	return !is_error;
