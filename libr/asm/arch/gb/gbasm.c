@@ -113,6 +113,59 @@ static int gb_parse_arith1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base,
 	return 1;
 }
 
+static bool gb_parse_ld1 (ut8 *buf, const int minlen, char *buf_asm) {
+	int i;
+	ut64 num;
+	r_str_replace_in (buf_asm, strlen(buf_asm), ", ", ",", R_TRUE);
+	if ((i = strlen(buf_asm)) < minlen)
+		return false;
+	r_str_do_until_token (str_op, buf_asm, '\0');
+	if (buf_asm[4] == ',') {
+		i = gb_reg_idx (buf_asm[3]);
+		if (i == (-1))
+			return false;
+		buf[0] = (ut8)(0x40 + (i * 8));
+		if ((i = gb_reg_idx (buf_asm[5])) == (-1))
+			return false;
+		buf[0] |= (ut8)i;
+	} else if (buf_asm[3] == '['
+		&& buf_asm[4] == 'h'
+		&& buf_asm[5] == 'l'
+		&& buf_asm[6] == ']'
+		&& buf_asm[7] == ',') {
+		if ((i = gb_reg_idx (buf_asm[8])) == (-1))
+			return false;
+		buf[0] = 0x70 | (ut8)i;
+	}
+	return true;
+}
+
+static bool gb_parse_ld2 (ut8 *buf, char *buf_asm) {
+	int i;
+	ut64 num;
+	if (strlen (buf_asm) < 6)
+		return false;
+	if (buf_asm[4] == ',') {
+		if ((i = gb_reg_idx (buf_asm[3])) == (-1))
+			return false;
+		buf[0] = 0x6 + (ut8)(i * 8);
+		num = r_num_get (NULL, &buf_asm[5]);
+		buf[1] = (ut8)(num & 0xff);
+		return true;
+	} else if (buf_asm[3] == '['
+		&& buf_asm[4] == 'h'
+		&& buf_asm[5] == 'l'
+		&& buf_asm[6] == ']'
+		&& buf_asm[7] == ','
+		&& buf_asm[8] != '\0') {
+		buf[0] = 0x36;
+		num = r_num_get (NULL, &buf_asm[8]);
+		buf[1] = (ut8)(num & 0xff);
+		return true;
+	}
+	return false;
+}
+
 static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 	int mn_len, i, len = 1;
 	ut32 mn = 0;
@@ -310,6 +363,13 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			break;
 		case 0x6569:			//ei
 			op->buf[0] = 0xfb;
+			break;
+		case 0x6c64:			//ld
+			if (!gb_parse_ld1 (op->buf, 6, op->buf_asm)) {
+				len++;
+				if (!gb_parse_ld2 (op->buf, op->buf_asm))
+					len = 0;
+			}
 			break;
 		case 0x727374:			//rst
 			if (strlen (op->buf_asm) < 5)
