@@ -19,6 +19,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	char *ofilepath = NULL, *obinfilepath = bf ? strdup (bf->file) : NULL;
 	int newpid, ret = false;
 	ut64 origoff = core->offset;
+	int obits = core->assembler->bits;
 	if (odesc) {
 		if (odesc->referer) {
 			ofilepath = odesc->referer;
@@ -383,8 +384,12 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
-	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
+	if (plugin && !strcmp (plugin->name, "any") ) {
+		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinInfo * info = obj ? obj->info : NULL;
 		// set use of raw strings
+			r_core_bin_set_arch_bits (r, binfile->file,
+				info->arch, info->bits);
 		r_config_set_i (r->config, "io.va", false);
 		// r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
@@ -471,9 +476,10 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		RBinObject *obj = r_bin_get_object (r->bin);
 		RBinInfo * info = obj ? obj->info : NULL;
 		if (plugin && plugin->name && info)
-			if (strcmp (plugin->name, "any"))
+			if (strcmp (plugin->name, "any")) {
 				r_core_bin_set_arch_bits (r, binfile->file,
 					info->arch, info->bits);
+			}
 	}
 	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ;"
