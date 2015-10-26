@@ -5,7 +5,7 @@ CFLAGS+=-DCORELIB
 include ../config.mk
 
 foo:
-	@for a in ${LIBSO} ${LIBAR} plugins ; do ${MAKE} $$a ; done
+	@for TARGET in ${LIBSO} ${LIBAR} plugins ; do ${MAKE} $$TARGET ; done
 
 include ${STATIC_CRYPTO_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst crypto_,p/crypto_,$(STATIC_OBJ)))

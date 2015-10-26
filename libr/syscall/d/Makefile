@@ -73,7 +73,7 @@ install: ${F_SDB}
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
 	mkdir -p "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
-	for a in *.sdb ; do ln -fs "${CWD}/$$a" "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall/$$a" ; done
+	for FILE in *.sdb ; do ln -fs "${CWD}/$$FILE" "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall/$$FILE" ; done
 
 uninstall:
 	rm -rf "${DESTDIR}${LIBDIR}/radare2/syscall"

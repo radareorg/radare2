@@ -17,16 +17,16 @@ BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarun2 ragg2 r2agent
 LIBR2=$(call libname-version,libr2.$(EXT_SO),${LIBVERSION})
 
 all: preload
-	@for a in ${BINS} ; do (cd $$a && ${MAKE} all) || exit 1; done
+	@for BINARY in ${BINS} ; do (cd $$BINARY && ${MAKE} all) || exit 1; done
 
 preload:
 	$(MAKE) -C preload
 
 install:
 	mkdir -p "${DESTDIR}${BINDIR}"
-	for a in ${BINS} ; do \
-		rm -f "${DESTDIR}${BINDIR}/$$a" ; \
-		${INSTALL_PROGRAM} "$$a/$$a" "${DESTDIR}${BINDIR}/$$a" ; \
+	for BINARY in ${BINS} ; do \
+		rm -f "${DESTDIR}${BINDIR}/$$BINARY" ; \
+		${INSTALL_PROGRAM} "$$BINARY/$$BINARY" "${DESTDIR}${BINDIR}/$$BINARY" ; \
 	done
 	${INSTALL_SCRIPT} "$(BTOP)/r2pm/r2pm" "${DESTDIR}${BINDIR}/r2pm"
 	rm -f "${DESTDIR}${BINDIR}/ragg2-cc"
@@ -42,7 +42,7 @@ install:
 
 symstall install-symlink:
 	mkdir -p "${DESTDIR}${BINDIR}"
-	for a in ${BINS} ; do ln -fs "${BTOP}/$$a/$$a" "${DESTDIR}${BINDIR}/$$a" ; done
+	for BINARY in ${BINS} ; do ln -fs "${BTOP}/$$BINARY/$$BINARY" "${DESTDIR}${BINDIR}/$$BINARY" ; done
 	ln -fs "${BTOP}/ragg2/ragg2-cc" "${DESTDIR}${BINDIR}/ragg2-cc"
 	ln -fs "${BTOP}/r2pm/r2pm" "${DESTDIR}${BINDIR}/r2pm"
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
@@ -55,13 +55,14 @@ symstall install-symlink:
 		ln -fs $(LIBR2) libr2.$(EXT_SO)
 
 deinstall uninstall:
-	for a in ${BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$a" ; done
+	for BINARY in ${BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$BINARY" ; done
 	-rm -f "${DESTDIR}${BINDIR}/ragg2-cc"
 	-rm -f "${DESTDIR}${BINDIR}/r2pm"
 	-rm -f "${DESTDIR}${BINDIR}/r2"
 
 clean:
-	@for a in preload ${BINS} ; do (cd $$a && ${MAKE} clean); done
+	@for DIR in preload ${BINS} ; do (cd $$DIR && ${MAKE} clean); done
 
 mrproper:
-	@for a in preload ${BINS} ; do (cd $$a && ${MAKE} mrproper); done
+	@for DIR in preload ${BINS} ; do (cd $$DIR && ${MAKE} mrproper); done
+

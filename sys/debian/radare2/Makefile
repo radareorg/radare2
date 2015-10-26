@@ -11,9 +11,9 @@ all:
 	${MAKE} clean
 	mkdir -p data
 	cp -aRf root/* data
-	rm -rf data/usr/lib/pkgconfig
-	rm -rf data/usr/lib/*.a
-	rm -rf data/usr/include
+	rm -rf data${LIBDIR}/pkgconfig
+	rm -rf data${LIBDIR}/*.a
+	rm -rf data${INCLUDEDIR}
 	${MAKE} control
 	${MAKE} deb
 
