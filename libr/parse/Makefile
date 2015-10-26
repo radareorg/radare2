@@ -7,9 +7,9 @@ LINK+=$(STOP)/tcc/libr_tcc.a
 CFLAGS+=-I$(STOP)/tcc/
 
 foo:
-	@for a in pre libr_parse.${EXT_SO} \
-	libr_parse.${EXT_AR} plugins bins \
-	; do ${MAKE} $$a ; done
+	@for TARGET in pre libr_parse.${EXT_SO} \
+	libr_parse.${EXT_AR} plugins bins ; do \
+	    ${MAKE} $$TARGET ; done
 
 CFLAGS+=-DCORELIB
 -include ${STATIC_PARSE_PLUGINS}

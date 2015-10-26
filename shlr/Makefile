@@ -44,9 +44,9 @@ all:
 endif
 
 preall: targets libwind capstone-build
-	@for a in ${MODS} ; do \
-		echo $(MAKE) -C $$a ; \
-		$(MAKE) -C $$a HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
+	@for MOD in ${MODS} ; do \
+		echo $(MAKE) -C $$MOD ; \
+		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
 SDBFILES=sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE} sdb/src/.sdb sdb/sdb
@@ -54,7 +54,7 @@ PREMODS=capstone gdb wind sdb
 
 clean mrproper:
 	rm -f ${SDBFILES}
-	@for a in ${PREMODS} ${MODS} ; do $(MAKE) -C $$a clean ; done
+	@for MOD in ${PREMODS} ${MODS} ; do $(MAKE) -C $$MOD clean ; done
 
 ifeq ($(BUILD_OS),windows)
 BUILD_EXT_EXE=.exe
@@ -74,7 +74,7 @@ SDB_TARGETS+=sdb/sdb${BUILD_EXT_EXE}
 endif
 
 targets:
-	for a in ${SDB_TARGETS} ; do ${MAKE} $$a ; done
+	for TARGET in ${SDB_TARGETS} ; do ${MAKE} $$TARGET ; done
 
 ${SDB_TARGETS}:
 	@echo
@@ -166,25 +166,25 @@ tcc-sync sync-tcc:
 	git clone --depth 1 git://repo.or.cz/tinycc.git _
 	cd _ ; ./configure --prefix=${PREFIX}
 	mkdir -p tcc
-	for a in ${CFILES} ${HFILES} ; do cp -f _/$$a tcc ; done
+	for FILE in ${CFILES} ${HFILES} ; do cp -f _/$$FILE tcc ; done
 	cp -f _/VERSION _/COPYING _/stab.def tcc
 	git add tcc
 	rm -rf _
 
-D=$(call rmdblslash,${DESTDIR}/${PREFIX})
+
 install:
-	#mkdir -p ${D}/lib
-	#cp -f tcc/libr_tcc* ${D}/lib
-	#cp -f zip/libr_z* ${D}/lib
+	#mkdir -p ${DESTDIR}${LIBDIR}
+	#cp -f tcc/libr_tcc* ${DESTDIR}${LIBDIR}
+	#cp -f zip/libr_z* ${DESTDIR}${LIBDIR}
 
 install-symlink symstall:
-	mkdir -p ${D}/lib
-	#cd tcc ; for a in libr_tcc* ; do \
-	#	ln -fs `pwd`/$$a ${D}/lib/$$a ; done
+	mkdir -p "${DESTDIR}${LIBDIR}"
+	#cd tcc ; for FILE in libr_tcc* ; do \
+	#	ln -fs `pwd`/$$FILE ${DESTDIR}${LIBDIR}/$$FILE ; done
 
 uninstall deinstall:
-	#rm -f ${D}/lib/libr_tcc*
-	#rm -f ${D}/lib/libr_z*
+	#rm -f ${DESTDIR}${LIBDIR}/libr_tcc*
+	#rm -f ${DESTDIR}${LIBDIR}/libr_z*
 
 ifeq ($(USE_CAPSTONE),1)
 # Do nothing here
@@ -203,7 +203,7 @@ capstone-sync:
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
 ifeq ($(CS_PATCHES),1)
 	cd capstone ; git reset --hard
-	cd capstone ; for a in ../capstone-patches/* ; do patch -p1 < $$a ; done
+	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
 endif
 
 .PHONY: capstone
@@ -218,7 +218,7 @@ capstone: capstone-$(CS_VER).tar.gz
 	tar xzvf capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
-	cd capstone ; for a in ../capstone-patches/* ; do patch -p1 < $$a ; done
+	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
 
 capstone-$(CS_VER).tar.gz:
 	$(WGET) --no-check-certificate -O capstone-$(CS_VER).tar.gz -c $(CS_TAR)
