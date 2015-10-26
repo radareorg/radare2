@@ -1404,17 +1404,21 @@ static void analyze_back_edges (const RAGraph *g, RANode *an) {
 		e->y = r_list_new ();
 
 		tp = r_graph_get_neighbours (g->graph, ak->gnode);
-		fn = r_list_get_bottom (tp);
-		ln = r_list_get_top (tp);
-		first = get_anode (fn);
-		last = get_anode (ln);
+		if (r_list_length (tp) > 0) {
+			fn = r_list_get_bottom (tp);
+			ln = r_list_get_top (tp);
+			first = get_anode (fn);
+			last = get_anode (ln);
 
-		if (first == an) {
-			r_list_append (e->x, (void *)(size_t)(an->x - 2 - j));
-			r_list_append (e->y, (void *)(size_t)ak->y);
-		} else {
-			r_list_append (e->x, (void *)(size_t)(last->x + last->w + 2 + j));
-			r_list_append (e->y, (void *)(size_t)ak->y);
+			if (first == an) {
+				r_list_append (e->x,
+					(void *)(size_t)(an->x - 2 - j));
+				r_list_append (e->y, (void *)(size_t)ak->y);
+			} else {
+				r_list_append (e->x,
+					(void *)(size_t)(last->x + last->w + 2 + j));
+				r_list_append (e->y, (void *)(size_t)ak->y);
+			}
 		}
 		r_list_append (g->edges, e);
 		j++;
