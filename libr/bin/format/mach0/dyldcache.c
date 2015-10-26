@@ -39,8 +39,12 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		perror ("malloc (ret)");
 		return NULL;
 	}
-	curoffset = bin->hdr.startaddr+idx*32;
-	libla = *(ut64*)(bin->b->buf+curoffset);
+	curoffset = bin->hdr.startaddr + idx * 32;
+	if (curoffset+8 >= bin->size) {
+		perror ("oob thing");
+		return NULL;
+	}
+	libla = *(ut64*)(bin->b->buf + curoffset);
 	liboff = libla - *(ut64*)&bin->b->buf[bin->hdr.baseaddroff];
 	if (liboff > bin->size) {
 		eprintf ("Corrupted file\n");

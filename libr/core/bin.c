@@ -1638,6 +1638,7 @@ static int bin_classes(RCore *r, int mode) {
 			r_list_foreach (c->methods, iter2, sym) {
 				snprintf (str, sizeof (str),
 					"method.%s.%s", c->name, sym->name);
+				str[sizeof(str)-1] = 0;
 				r_name_filter (str, 0);
 				r_flag_set (r->flags, str, sym->vaddr, 1, 0);
 			}

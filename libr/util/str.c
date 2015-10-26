@@ -481,18 +481,15 @@ R_API char *r_str_chop(char *str) {
 	int len;
 	char *ptr;
 
-	if (str == NULL)
-		return NULL;
-
+	if (!str) return NULL;
 	while (*str && iswhitechar (*str))
 		memmove (str, str + 1, strlen (str + 1) + 1);
-
 	len = strlen (str);
-
-	if (len>0)
-	for (ptr = str + len-1; ptr != str; ptr--) {
-		if (iswhitechar (*ptr)) *ptr = '\0';
-		else break;
+	if (len > 0) {
+		for (ptr = str + len-1; ptr != str; ptr--) {
+			if (!iswhitechar (*ptr)) break;
+			*ptr = '\0';
+		}
 	}
 	return str;
 }
@@ -547,8 +544,7 @@ R_API char *r_str_trim_head_tail(char *str) {
 R_API char *r_str_trim(char *str) {
 	int i;
 	char *ptr;
-	if (str == NULL)
-		return NULL;
+	if (!str) return NULL;
 	for (ptr = str, i=0; str[i]; i++)
 		if (!iswhitechar (str[i]))
 			*ptr++ = str[i];
