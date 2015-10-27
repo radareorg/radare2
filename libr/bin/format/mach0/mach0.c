@@ -107,6 +107,24 @@ static int init_hdr(struct MACH0_(obj_t)* bin) {
 		"xxxxddx "
 		"magic cputype cpusubtype filetype ncmds sizeofcmds flags", 0);
 	sdb_num_set (bin->kv, "mach0_header.offset", 0, 0); // wat about fatmach0?
+	sdb_set (bin->kv, "mach_filetype.cparse", "enum mach_filetype{MH_OBJECT=1,"
+			"MH_EXECUTE=2, MH_FVMLIB=3, MH_CORE=4, MH_PRELOAD=5, MH_DYLIB=6,"
+			"MH_DYLINKER=7, MH_BUNDLE=8, MH_DYLIB_STUB=9, MH_DSYM=10,"
+			"MH_KEXT_BUNDLE=11}"
+			,0);
+	sdb_set (bin->kv, "mach_flags.cparse", "enum mach_flags{MH_NOUNDEFS=1,"
+			"MH_INCRLINK=2,MH_DYLDLINK=4,MH_BINDATLOAD=8,MH_PREBOUND=0x10,"
+			"MH_SPLIT_SEGS=0x20,MH_LAZY_INIT=0x40,MH_TWOLEVEL=0x80,"
+			"MH_FORCE_FLAT=0x100,MH_NOMULTIDEFS=0x200,MH_NOFIXPREBINDING=0x400,"
+			"MH_PREBINDABLE=0x800, MH_ALLMODSBOUND=0x1000,"
+			"MH_SUBSECTIONS_VIA_SYMBOLS=0x2000,"
+			"MH_CANONICAL=0x4000,MH_WEAK_DEFINES=0x8000,"
+			"MH_BINDS_TO_WEAK=0x10000,MH_ALLOW_STACK_EXECUTION=0x20000,"
+			"MH_ROOT_SAFE=0x40000,MH_SETUID_SAFE=0x80000,"
+			"MH_NO_REEXPORTED_DYLIBS=0x100000,MH_PIE=0x200000,"
+			"MH_DEAD_STRIPPABLE_DYLIB=0x400000,"
+			"MH_HAS_TLV_DESCRIPTORS=0x800000,"
+			"MH_NO_HEAP_EXECUTION=0x1000000 }",0);
 	if (len == -1) {
 		eprintf ("Error: read (hdr)\n");
 		return false;

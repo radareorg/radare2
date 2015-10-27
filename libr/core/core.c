@@ -487,6 +487,26 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
 		} else
+		if ((!strncmp (line->buffer.data, "te ", 3))) {
+			int i = 0;
+			SdbList *l = sdb_foreach_list (core->anal->sdb_types);
+			SdbListIter *iter;
+			SdbKv *kv;
+			tmp_argv_heap = true;
+			int chr = 3;
+			ls_foreach (l, iter, kv) {
+				int len = strlen (line->buffer.data + chr);
+				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
+					if (!strncmp (kv->value, "0x", 2)) {
+						tmp_argv[i++] = strdup (kv->key);
+					}
+				}
+			}
+			tmp_argv[i] = NULL;
+			ls_free (l);
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		} else
 		if ((!strncmp (line->buffer.data, "o ", 2)) ||
 		     !strncmp (line->buffer.data, "o+ ", 3) ||
 		     !strncmp (line->buffer.data, "oc ", 3) ||
@@ -524,7 +544,7 @@ openfile:
 				r_sys_getdir ();
 			p = (char *)r_str_lchr (path, '/');
 			if (p) {
-				if (p==path) { // ^/
+				if (p == path) { // ^/
 					isroot = 1;
 					*p = 0;
 					p++;

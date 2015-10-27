@@ -107,7 +107,21 @@ static int cmd_type(void *data, const char *input) {
 	case 'e':
 		{
 		if (!input[1]) {
-			eprintf ("Missing value\n");
+			char *name = NULL;
+			SdbKv *kv;
+			SdbListIter *iter;
+                        SdbList *l = sdb_foreach_list (core->anal->sdb_types);
+			ls_foreach (l, iter, kv) {
+				if (!strcmp (kv->value, "enum")) {
+					if (!name || strcmp (kv->value, name)) {
+						free (name);
+						name = strdup (kv->key);
+						r_cons_printf ("%s\n", name);
+					}
+				}
+			}
+			free (name);
+			ls_free (l);
 			break;
 		}
 		char *p, *s = strdup (input+2);
@@ -125,7 +139,8 @@ static int cmd_type(void *data, const char *input) {
 				eprintf ("This is not an enum\n");
 			}
 		} else {
-			eprintf ("Missing value\n");
+			//eprintf ("Missing value\n");
+			r_core_cmdf (core, "t~&%s,=0x", s);
 		}
 		free (s);
 		}
@@ -186,8 +201,7 @@ static int cmd_type(void *data, const char *input) {
 				"Usage:", "td[...]", "",
 				"td", "[string]", "Load types from string",
 				NULL
-			 };
-
+			};
 			r_core_cmd_help(core, help_message);
 		} else
 		if (input[1] == '-') {
