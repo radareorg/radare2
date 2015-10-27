@@ -1641,7 +1641,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			} else if (rad == 'j') {
 				// Output JSON
 				if (count > 0) r_cons_printf (",");
-				r_cons_printf ("%"PFMT64d":%"PFMT64d, xref_to, xref_from);
+				r_cons_printf ("\"0x%"PFMT64x"\":\"0x%"PFMT64x"\"", xref_to, xref_from);
 			} else {
 				// Display in radare commands format
 				char *cmd;
