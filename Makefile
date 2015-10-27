@@ -80,7 +80,7 @@ windist:
 	rm -f "${WINDIST}/plugin.dll"
 	@echo "${C}[WINDIST] Picking plugins from libraries${R}"
 	mkdir -p "${WINDIST}/libs"
-	mv "${WINDIST}/lib*.dll ${WINDIST}/libs"
+	mv "${WINDIST}/"lib*.dll "${WINDIST}/libs"
 	mkdir -p "${WINDIST}/plugins"
 	mv ${WINDIST}/*.dll "${WINDIST}/plugins"
 	mv ${WINDIST}/libs/* "${WINDIST}"
