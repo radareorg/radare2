@@ -28,6 +28,63 @@ static HANDLE  myCreateChildProcess(const char * szCmdline) {
 	//CloseHandle (piProcInfo.hThread);
 	return bSuccess? piProcInfo.hProcess: NULL;
 }
+static BOOL bStopThread = FALSE;
+static HANDLE hPipeInOut = NULL;
+static HANDLE hproc = NULL;
+#define PIPE_BUF_SIZE 4096
+DWORD WINAPI ThreadFunction( LPVOID lpParam )
+{
+	RLang * lang = lpParam;
+	CHAR buf[PIPE_BUF_SIZE];
+	BOOL bSuccess = FALSE;
+	int i, res = 0;
+	DWORD dwRead, dwWritten;
+	r_cons_break (NULL, NULL);
+	res = ConnectNamedPipe(hPipeInOut, NULL);
+	do {
+		if (r_cons_singleton ()->breaked) {
+			TerminateProcess(hproc,0);
+			break;
+		}
+		memset (buf, 0, PIPE_BUF_SIZE);
+		bSuccess = ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL);
+                if (bStopThread)
+			break;
+		if (bSuccess && dwRead>0) {
+			buf[sizeof (buf)-1] = 0;
+			char *res = lang->cmd_str ((RCore*)lang->user, buf);
+			if (res) {
+				int res_len = strlen (res) + 1;
+				for (i = 0; i < res_len; i++) {
+					memset (buf, 0, PIPE_BUF_SIZE);
+					dwWritten = 0;
+					int writelen=res_len - i;
+					int rc = WriteFile (hPipeInOut, res + i, writelen>PIPE_BUF_SIZE?PIPE_BUF_SIZE:writelen, &dwWritten, 0);
+					if (bStopThread) {
+						free (res);
+						break;
+					}
+					if (!rc) {
+						eprintf ("WriteFile: failed 0x%x\n", (int)GetLastError());
+					}
+					if (dwWritten > 0) {
+						i += dwWritten - 1;
+					} else {
+						/* send null termination // chop */
+						eprintf ("w32-lang-pipe: %x \n",GetLastError());
+						//WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
+						//break;
+					}
+				}
+				free (res);
+			} else {
+				WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
+			}
+		}
+	} while(!bStopThread);
+	r_cons_break_end ();
+	return TRUE;
+}
 #else
 static void env(const char *s, int f) {
 	char *a = r_str_newf ("%d", f);
@@ -112,77 +169,29 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	return true;
 #else
 #if __WINDOWS__
-	HANDLE hPipeInOut = NULL;
-	HANDLE hproc=NULL;
-	DWORD dwRead, dwWritten;
-	CHAR buf[4096];
-	BOOL bSuccess = FALSE;
-	int i, res = 0;
+	DWORD hThread = 0;
+	char buf[512];
 	sprintf(buf,"R2PIPE_IN%x",_getpid());
 	SetEnvironmentVariable("R2PIPE_PATH",buf);
 	sprintf(buf,"\\\\.\\pipe\\R2PIPE_IN%x",_getpid());
 	hPipeInOut = CreateNamedPipe(buf,
 			PIPE_ACCESS_DUPLEX,
 			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
-			sizeof (buf),
-			sizeof (buf),
+			PIPE_BUF_SIZE,
+			PIPE_BUF_SIZE,
 			0,
 			NULL);
 	hproc = myCreateChildProcess (code);
 	if (!hproc) {
 		return false;
 	}
-	r_cons_break (NULL, NULL);
-	res = ConnectNamedPipe(hPipeInOut, NULL);
-	/*
-	for (;;) {
-		res = ConnectNamedPipe(hPipeInOut, NULL);
-		if (!res || GetLastError()==ERROR_PIPE_CONNECTED) {
-			//eprintf("new client\n");
-			break;
-		}
-		if (r_cons_singleton ()->breaked) {
-			TerminateProcess (hproc,0);
-			break;
-		}
-	}*/
-	for (;;) {
-		if (r_cons_singleton ()->breaked) {
-			TerminateProcess(hproc,0);
-			break;
-		}
-		memset (buf, 0, sizeof (buf));
-		bSuccess = ReadFile (hPipeInOut, buf, sizeof (buf), &dwRead, NULL);
-	  	if (bSuccess && dwRead>0) {
-			buf[sizeof (buf)-1] = 0;
-			char *res = lang->cmd_str ((RCore*)lang->user, buf);
-			if (res) {
-				int res_len = strlen (res) + 1;
-				for (i = 0; i < res_len; i++) {
-					memset (buf, 0, sizeof (buf));
-					dwWritten = 0;
-					int writelen=res_len - i;
-					int rc = WriteFile (hPipeInOut, res + i, writelen>sizeof(buf)?sizeof(buf):writelen, &dwWritten, 0);
-					if (!rc) {
-						eprintf ("WriteFile: failed 0x%x\n", (int)GetLastError());
-					}
-					if (dwWritten > 0) {
-						i += dwWritten - 1;
-					} else {
-						/* send null termination // chop */
-						eprintf ("w32-lang-pipe: %x \n",GetLastError());
-						//WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
-						//break;
-					}
-				}
-				free (res);
-			} else {
-				WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
-			}
-	  	}
-	}
-	CloseHandle(hPipeInOut);
-	r_cons_break_end ();
+	bStopThread=FALSE;
+	hThread = CreateThread (NULL, 0,ThreadFunction,lang, 0,0);
+	WaitForSingleObject (hproc, INFINITE );
+	bStopThread = TRUE;
+	DeleteFile (buf);
+	WaitForSingleObject (hThread, INFINITE);
+	CloseHandle (hPipeInOut);
 	return true;
 #endif
 #endif
