@@ -115,22 +115,26 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	HANDLE hPipeInOut = NULL;
 	HANDLE hproc=NULL;
 	DWORD dwRead, dwWritten;
-	CHAR buf[1024];
+	CHAR buf[4096];
 	BOOL bSuccess = FALSE;
 	int i, res = 0;
 	sprintf(buf,"R2PIPE_IN%x",_getpid());
 	SetEnvironmentVariable("R2PIPE_PATH",buf);
 	sprintf(buf,"\\\\.\\pipe\\R2PIPE_IN%x",_getpid());
 	hPipeInOut = CreateNamedPipe(buf,
-		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
-		PIPE_READMODE_MESSAGE | \
-		PIPE_NOWAIT,PIPE_UNLIMITED_INSTANCES,
-		sizeof (buf), sizeof (buf), 0, NULL);
+			PIPE_ACCESS_DUPLEX,
+			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
+			sizeof (buf),
+			sizeof (buf),
+			0,
+			NULL);
 	hproc = myCreateChildProcess (code);
 	if (!hproc) {
 		return false;
 	}
 	r_cons_break (NULL, NULL);
+	res = ConnectNamedPipe(hPipeInOut, NULL);
+	/*
 	for (;;) {
 		res = ConnectNamedPipe(hPipeInOut, NULL);
 		if (!res || GetLastError()==ERROR_PIPE_CONNECTED) {
@@ -141,7 +145,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			TerminateProcess (hproc,0);
 			break;
 		}
-	}
+	}*/
 	for (;;) {
 		if (r_cons_singleton ()->breaked) {
 			TerminateProcess(hproc,0);
@@ -155,8 +159,10 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			if (res) {
 				int res_len = strlen (res) + 1;
 				for (i = 0; i < res_len; i++) {
+					memset (buf, 0, sizeof (buf));
 					dwWritten = 0;
-					int rc = WriteFile (hPipeInOut, res + i, res_len - i, &dwWritten, NULL);
+					int writelen=res_len - i;
+					int rc = WriteFile (hPipeInOut, res + i, writelen>sizeof(buf)?sizeof(buf):writelen, &dwWritten, 0);
 					if (!rc) {
 						eprintf ("WriteFile: failed 0x%x\n", (int)GetLastError());
 					}
@@ -164,9 +170,9 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 						i += dwWritten - 1;
 					} else {
 						/* send null termination // chop */
-						eprintf ("w32-lang-pipe: \n");
-						WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
-						break;
+						eprintf ("w32-lang-pipe: %x \n",GetLastError());
+						//WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
+						//break;
 					}
 				}
 				free (res);
