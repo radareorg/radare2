@@ -24,8 +24,13 @@ int main(int argc, char **argv) {
 		for (i = *file?1:2; i<argc; i++)
 			r_run_parseline (p, argv[i]);
 	}
-	if (!p)
+	if (!p) return 1;
+
+	ret = r_run_config_env (p);
+	if (ret) {
+		printf("error while configuring the environment.\n");
 		return 1;
+	}
 	ret = r_run_start (p);
 	r_run_free (p);
 	return ret;

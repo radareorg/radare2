@@ -296,13 +296,14 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 #endif
 
-	int ret, status, pid = r_sys_fork ();
-	switch (pid) {
+	int ret, status, child_pid;
+
+	child_pid = r_sys_fork ();
+	switch (child_pid) {
 	case -1:
 		perror ("fork_and_ptraceme");
 		break;
 	case 0:
-		trace_me ();
 		if (runprofile) {
 			char *expr = NULL;
 			int i;
@@ -327,6 +328,11 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				r_run_parseline (rp, expr=strdup ("bits=32"));
 			}
 			free (expr);
+			if (r_run_config_env (rp)) {
+				eprintf ("Can't config the environment.\n");
+				exit (1);
+			}
+			trace_me ();
 			r_run_start (rp);
 			r_run_free (rp);
 			r_str_argv_free (argv);
@@ -335,6 +341,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			char *_cmd = io->args ?
 				r_str_concatf (strdup (cmd), " %s", io->args) :
 				strdup (cmd);
+
 			argv = r_str_argv (_cmd, NULL);
 			if (!argv) {
 				free (_cmd);
@@ -345,6 +352,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				for (i = 3; i < 1024; i++) {
 					(void)close (i);
 				}
+				trace_me ();
 				execvp (argv[0], argv);
 			} else {
 				eprintf ("Invalid execvp\n");
@@ -361,17 +369,19 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		do {
 			ret = wait (&status);
 			if (ret == -1) return -1;
-			if (ret != pid) eprintf ("Wait event received by "
-						"different pid %d\n", ret);
-		} while (ret != pid);
+			if (ret != child_pid) {
+				eprintf ("Wait event received by "
+					"different pid %d\n", ret);
+			}
+		} while (ret != child_pid);
 		if (WIFSTOPPED (status))
-			eprintf ("Process with PID %d started...\n", (int)pid);
+			eprintf ("Process with PID %d started...\n", (int)child_pid);
 		if (WEXITSTATUS (status) == MAGIC_EXIT)
-			pid = -1;
+			child_pid = -1;
 		// XXX kill (pid, SIGSTOP);
 		break;
 	}
-	return pid;
+	return child_pid;
 }
 #endif
 
