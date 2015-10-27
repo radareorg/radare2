@@ -424,12 +424,9 @@ R_API const char *r_run_help() {
 	"# nice=5\n";
 }
 
-R_API int r_run_start(RRunProfile *p) {
-#if __APPLE__
-	posix_spawnattr_t attr = {0};
-	pid_t pid = -1;
-#endif
+R_API int r_run_config_env(RRunProfile *p) {
 	int ret;
+
 	if (!p->_program && !p->_system) {
 		printf ("No program or system rule defined\n");
 		return 1;
@@ -623,6 +620,16 @@ R_API int r_run_start(RRunProfile *p) {
 		eprintf ("timeout not supported for this platform\n");
 #endif
 	}
+	return 0;
+}
+
+R_API int r_run_start(RRunProfile *p) {
+#if __APPLE__
+	posix_spawnattr_t attr = {0};
+	pid_t pid = -1;
+#endif
+	int ret;
+
 #if __APPLE__
 	posix_spawnattr_init (&attr);
 	if (p->_args[0]) {
