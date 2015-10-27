@@ -1777,14 +1777,16 @@ R_API RBinClass *r_bin_class_get (RBinFile *binfile, const char *name) {
 
 R_API int r_bin_class_add_method (RBinFile *binfile, const char *classname, const char *name, int nargs) {
 	RBinClass *c = r_bin_class_get (binfile, classname);
-	char *n = strdup (name);
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	if (!sym) return false;
+	r_str_cpy (sym->name, name);
 	if (c) {
-		r_list_append (c->methods, (void*)n);
+		r_list_append (c->methods, sym);
 		return true;
 	}
 	c = r_bin_class_new (binfile, classname, NULL, 0);
-	r_list_append (c->methods, (void*)n);
-	return false;
+	r_list_append (c->methods, sym);
+	return true;
 }
 
 R_API void r_bin_class_add_field (RBinFile *binfile, const char *classname, const char *name) {

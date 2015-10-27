@@ -190,18 +190,24 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 		}
 		if (node->flags & CN_BOOL) {
 			int b = (!strcmp (value,"true") || !strcmp (value,"1"));
-			node->i_value = (ut64)(b == 0) ? 0:1;
+			node->i_value = (ut64)(b == 0) ? 0 : 1;
+			free (node->value);
 			node->value = strdup (b ? "true" : "false");
 		} else {
 			if (value == NULL) {
+				free (node->value);
 				node->value = strdup ("");
 				node->i_value = 0;
 			} else {
+				free (node->value);
 				node->value = strdup (value);
 				if (*value >= '0' && *value <= '9') {
-					if (strchr (value, '/'))
+					if (strchr (value, '/')) {
 						node->i_value = r_num_get (cfg->num, value);
-					else node->i_value = r_num_math (cfg->num, value);
+					}
+					else {
+						node->i_value = r_num_math (cfg->num, value);
+					}
 				} else {
 					node->i_value = 0;
 				}
@@ -222,8 +228,9 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 					r_list_append (cfg->nodes, node);
 					cfg->n_nodes++;
 				}
-			} else
+			} else {
 				eprintf ("r_config_set: unable to create a new RConfigNode\n");
+			}
 		} else {
 			eprintf ("r_config_set: variable '%s' not found\n", name);
 		}
