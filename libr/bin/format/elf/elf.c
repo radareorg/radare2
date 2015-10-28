@@ -857,6 +857,8 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return strdup ("hppa");
 	case EM_PROPELLER:
 		return strdup ("propeller");
+	case EM_MICROBLAZE:
+		return strdup ("microblaze.gnu");
 	case EM_SH: return strdup ("sh");
 	default: return strdup ("x86");
 	}
@@ -942,6 +944,7 @@ char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_XTENSA:      return strdup ("Tensilica Xtensa Architecture");
 	case EM_AARCH64:     return strdup ("ARM aarch64");
 	case EM_PROPELLER:   return strdup ("Parallax Propeller");
+	case EM_MICROBLAZE:  return strdup ("Xilinx MicroBlaze");
 	default:             return r_str_newf ("<unknown>: 0x%x", bin->ehdr.e_machine);
 	}
 }

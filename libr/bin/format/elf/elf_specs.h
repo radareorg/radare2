@@ -297,6 +297,7 @@ typedef struct
    chances of collision with official or non-GNU unofficial values.  */
 
 #define EM_ALPHA	0x9026
+#define EM_MICROBLAZE 0xbd
 
 /* Legal values for e_version (version).  */
 
