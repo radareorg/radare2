@@ -29,7 +29,10 @@ static int format_output (char mode, const char *s) {
 	switch (mode) {
 	case 'I': printf ("%"PFMT64d"\n", n); break;
 	case '0': printf ("0x%"PFMT64x"\n", n); break;
-	case 'F': printf ("%ff\n", (float)(ut32)n); break;
+	case 'F': {
+		  float *f = (float*)&n;
+		printf ("%ff\n", *f);
+		} break;
 	case 'f': printf ("%.01lf\n", num->fvalue); break;
 	case 'O': printf ("%"PFMT64o"\n", n); break;
 	case 'B':
@@ -323,10 +326,10 @@ static int rax (char *str, int len, int last) {
 		out_mode = 'I';
 		str[strlen (str)-1] = 'b';
 	//TODO: Move print into format_output
-	} else if (str[strlen(str)-1]=='f') {
+	} else if (str[strlen (str)-1]=='f') {
 		ut8 *p = (ut8*)&f;
 		sscanf (str, "%f", &f);
-		printf ("Fx%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]);
+		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
 		return true;
 	}
 	while ((p = strchr (str, ' '))) {
