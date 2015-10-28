@@ -19,8 +19,11 @@ R_API int r_hex_to_byte(ut8 *val, ut8 c) {
  *    4123421b
  */
 R_API char *r_hex_from_c(const char *code) {
+	const char abc[] = "0123456789abcdefABCDEF";
+	bool parse_on = false;
+	int parse_mode = 0;
 	char *out, *ret;
-	int parse_on = 0, is_hexa = 0;
+	int is_hexa = 0;
 
 	if (code) {
 		ret = malloc (strlen (code) * 3);
@@ -31,27 +34,83 @@ R_API char *r_hex_from_c(const char *code) {
 	out = ret;
 	if (code) {
 		for (;*code; code++) {
-			if (*code == '"') {
-				parse_on = !!!parse_on;
+			if (!strncmp (code, "/*", 2)) {
+				/* skip comments */
+				char *end = strstr (code, "*/");
+				if (end) {
+					code = end + 1;
+				} else {
+					eprintf ("Missing closing comment\n");
+				}
+				continue;
+			}
+			if (!strncmp (code, "//", 2)) {
+				char *end = strchr (code, '\n');
+				if (end) {
+					code = end;
+				}
+				continue;
+			}
+			if (parse_on) {
+				if (*code == '}' || *code == '"') {
+					parse_on = false;
+					// stop parsing after the first string statement
+					break;
+				}
+			} else {
+				if (*code == '{') {
+					parse_mode = *code;
+					for (code++;*code; code++) {
+						if (IS_WHITESPACE (*code))
+							continue;
+						if (IS_NUMBER (*code)) {
+							parse_on = true;
+							break;
+						} else {
+							parse_on = false;
+							parse_mode = 0;
+							break;
+						}
+					}
+				}
+			}
+			if (parse_on && parse_mode == '{') {
+				char *comma = strchr (code, ',');
+				if (!comma) comma = strchr (code, '}');
+				if (comma) {
+					char *word = r_str_ndup (code, comma - code);
+					if (IS_NUMBER (*word)) {
+						ut8 n = (ut8)r_num_math (NULL, word);
+						*out++ = abc[(n >> 4) & 0xf];
+						*out++ = abc[n & 0xf];
+					} else {
+						parse_on = false;
+					}
+					code = comma;
+					free (word);
+				}
+			} else if (*code == '"') {
+				if (code[1] == '\\') {
+					parse_on = true;
+				} else {
+					parse_on = !parse_on;
+					parse_mode = *code;
+				}
 			} else if (parse_on) {
-					char abc[] = "0123456789abcdefABCDEF";
 				if (*code == '\\') {
 					code++;
 					switch (code[0]) {
 					case 'e': *out++='1';*out++='b';break;
 					case 'r': *out++='0';*out++='d';break;
 					case 'n': *out++='0';*out++='a';break;
-					case 'x': break;
-					default:
-						  goto error;
-						  break;
+					case 'x': is_hexa ++; break;
+					default: goto error;
 					}
-					is_hexa++;
 				} else {
 					if (is_hexa) {
 						if (strchr (abc, *code)) {
 							*out++ = *code;
-							if (++is_hexa==3)
+							if (++is_hexa == 3)
 								is_hexa = 0;
 						} else goto error;
 					} else {

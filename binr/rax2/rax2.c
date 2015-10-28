@@ -283,7 +283,7 @@ static int rax (char *str, int len, int last) {
 			free (out);
 		}
 		return true;
-	} else if (flags & 16384) { // -F
+	} else if (flags & 1<<14) { // -F
 		char *str = r_stdin_slurp (NULL);
 		if (str) {
 			char *res = r_hex_from_c (str);

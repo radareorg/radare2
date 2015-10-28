@@ -188,6 +188,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 // TODO: Make R_NEW_COPY be 1 arg, not two
 #define R_NEW_COPY(x,y) x=(void*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
+#define IS_NUMBER(x) (x>='0'&&x<='9')
 #define IS_WHITESPACE(x) (x==' '||x=='\t')
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
 
