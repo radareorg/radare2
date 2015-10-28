@@ -322,16 +322,6 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin){
 	return true;
 }
 
-static int elf_get_static(struct Elf_(r_bin_elf_obj_t) *bin) {
-	int i;
-	if (!bin->phdr)
-		return false;
-	for (i = 0; i < bin->ehdr.e_phnum; i++)
-		if (bin->phdr[i].p_type == PT_INTERP)
-			return false;
-	return true;
-}
-
 static int elf_init(struct Elf_(r_bin_elf_obj_t) *bin) {
 	bin->phdr = NULL;
 	bin->shdr = NULL;
@@ -351,7 +341,7 @@ static int elf_init(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (!init_strtab (bin))
 		eprintf ("Warning: Cannot initialize strings table\n");
 	bin->baddr = Elf_(r_bin_elf_get_baddr) (bin);
-	if (!init_dynamic_section (bin) && !elf_get_static(bin))
+	if (!init_dynamic_section (bin) && !Elf_(r_bin_elf_get_static)(bin))
 		eprintf ("Warning: Cannot initialize dynamic section\n");
 
 	bin->imports_by_ord_size = 0;
@@ -814,7 +804,15 @@ char *Elf_(r_bin_elf_intrp)(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 int Elf_(r_bin_elf_get_static)(struct Elf_(r_bin_elf_obj_t) *bin) {
-	return elf_get_static(bin);
+	int i;
+
+	if (!bin->phdr) return false;
+	for (i = 0; i < bin->ehdr.e_phnum; i++) {
+		if (bin->phdr[i].p_type == PT_INTERP) {
+			return false;
+		}
+	}
+	return true;
 }
 
 char* Elf_(r_bin_elf_get_data_encoding)(struct Elf_(r_bin_elf_obj_t) *bin) {
