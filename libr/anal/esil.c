@@ -253,21 +253,24 @@ static int internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 nu
 }
 
 static int esil_internal_borrow_check (RAnalEsil *esil, ut8 bit) {
-	bit = ((bit & 0x3f) + 0x3f) & 0x3f;	//safer-sex version of -1
+	bit = ((bit & 0x3f) + 0x3f) & 0x3f;
 	return ((esil->old & genmask (bit)) < (esil->cur & genmask (bit)));
 }
 
 static int esil_internal_carry_check (RAnalEsil *esil, ut8 bit) {
-	bit &= 0x3f;				//say no to weird bitshifts
+	bit &= 0x3f;
 	return ((esil->cur & genmask (bit)) < (esil->old & genmask (bit)));
 }
 
 static int esil_internal_parity_check (RAnalEsil *esil) {
-	// Set if the number of set bits in the least significant byte is not a multiple of 2.
-	int i, bits = esil->cur & 1;
-	for (i = 1; i < 8; i++)
-		bits ^= ((esil->cur & (1 << i)) >> i);
-	return bits;
+	// Set if the number of set bits in the least significant _byte_ is a multiple of 2.
+	//   - Taken from: https://graphics.stanford.edu/~seander/bithacks.html#ParityWith64Bits
+	ut64 c1 = 0x0101010101010101ULL;
+	ut64 c2 = 0x8040201008040201ULL;
+	ut64 c3 = 0x1FF;
+	// Take only the least significant byte.
+	ut64 lsb = esil->cur & 0xff;
+	return !((((lsb * c1) & c2) % c3) & 1);
 }
 
 static bool esil_internal_sign_check (RAnalEsil *esil) {
@@ -282,8 +285,8 @@ static bool esil_internal_overflow_check (RAnalEsil *esil) {
 	if (!esil || (esil->lastsz < 2))
 		return false;
 	// According to wikipedia this should work
-	return (esil_internal_carry_check (esil, esil->lastsz-1) \
-		^ esil_internal_carry_check (esil, esil->lastsz-2));
+	return (esil_internal_carry_check (esil, esil->lastsz - 1) \
+		^ esil_internal_carry_check (esil, esil->lastsz - 2));
 }
 
 R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
@@ -847,9 +850,9 @@ static int esil_rol(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_get_parm_size (esil, dst, &num, &regsize)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			ut64 mask = (regsize-1);
+			ut64 mask = (regsize - 1);
 			num2 &= mask;
-		        ut64 res= (num<<num2) | (num>>( (-num2)&mask ));
+			ut64 res = (num << num2) | (num >> ((-num2) & mask));
 			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		} else {
