@@ -199,8 +199,8 @@ enum {
 	 *	and floating point types in st0.
 	 */
 	R_ANAL_CC_TYPE_SAFECALL, // Delphi and Free Pascal on Windows
-		R_ANAL_CC_TYPE_SYSV,
-		R_ANAL_CC_TYPE_THISCALL,
+	R_ANAL_CC_TYPE_SYSV,
+	R_ANAL_CC_TYPE_THISCALL,
 };
 
 #define R_ANAL_CC_ARGS 16

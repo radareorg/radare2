@@ -19,7 +19,6 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	char *ofilepath = NULL, *obinfilepath = bf ? strdup (bf->file) : NULL;
 	int newpid, ret = false;
 	ut64 origoff = core->offset;
-	int obits = core->assembler->bits;
 	if (odesc) {
 		if (odesc->referer) {
 			ofilepath = odesc->referer;

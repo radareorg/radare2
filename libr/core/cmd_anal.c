@@ -223,9 +223,8 @@ static void cmd_syscall_do(RCore *core, int num) {
 	// TODO: move this to r_syscall
 	for (i=0; i<item->args; i++) {
 		ut64 arg = r_debug_arg_get (core->dbg, true, i+1);
-		if (item->sargs==NULL)
-			r_cons_printf ("0x%08"PFMT64x"", arg);
-		else
+//r_cons_printf ("%d:0x%llx", i, r_debug_arg_get (core->dbg, true, i+1));
+		if (item->sargs) {
 			switch (item->sargs[i]) {
 			case 'p': // pointer
 				r_cons_printf ("0x%08"PFMT64x"", arg);
@@ -240,10 +239,24 @@ static void cmd_syscall_do(RCore *core, int num) {
 				r_str_filter (str, strlen (str));
 				r_cons_printf ("\"%s\"", str);
 				break;
+			case 'Z':
+				{
+					ut64 len = r_debug_arg_get (core->dbg, true, i+2);
+					len = R_MIN (len+1, sizeof(str)-1);
+					if (len==0) len = 16; // override default
+					r_io_read_at (core->io, arg, (ut8*)str, len);
+					str[len] = 0;
+					r_str_filter (str, -1);
+					r_cons_printf ("\"%s\"", str);
+				}
+				break;
 			default:
 				r_cons_printf ("0x%08"PFMT64x"", arg);
 				break;
 			}
+		} else {
+			r_cons_printf ("0x%08"PFMT64x"", arg);
+		}
 		if (i+1<item->args)
 			r_cons_printf (", ");
 	}
@@ -2122,7 +2135,11 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		// JSON support
 		break;
 	case '\0':
-		n = (int)r_debug_reg_get (core->dbg, "oeax"); //XXX
+		n = (int)r_debug_reg_get (core->dbg, "oeax");
+		if (n == 0 || n == -1) {
+			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_A0);
+			n = (int)r_debug_reg_get (core->dbg, a0);
+		}
 		cmd_syscall_do (core, n);
 		break;
 	case ' ':
@@ -3094,7 +3111,7 @@ static int cmd_anal(void *data, const char *input) {
 		cmd_anal_trace (core, input+1);
 		break;
 	case 's': // "as"
-		cmd_anal_syscall(core, input+1);
+		cmd_anal_syscall (core, input+1);
 		break;
 	case 'x':
 		if (!cmd_anal_refs (core, input+1)) {
