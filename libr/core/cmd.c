@@ -887,8 +887,8 @@ static int cmd_thread(void *data, const char *input) {
 			"&", " &&", "run all tasks in background",
 			"&&", "", "run all pendings tasks (and join threads)",
 			"&&&", "", "run all pendings tasks until ^C",
-			"","","TODO: last command should honor asm.bits", 
-			"","","WARN: this feature is very experimental. Use it with caution", 
+			"","","TODO: last command should honor asm.bits",
+			"","","WARN: this feature is very experimental. Use it with caution",
 			NULL};
 		// TODO: integrate with =h& and bg anal/string/searchs/..
 		r_core_cmd_help (core, help_msg);
@@ -1064,6 +1064,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		child = r_sys_fork ();
 		if (child == -1) {
 			eprintf ("Cannot fork\n");
+			close (stdout_fd);
 		} else if (child) {
 			dup2 (fds[1], 1);
 			close (fds[1]);
@@ -1733,7 +1734,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 	case 'c':
 		switch (each[1]) {
 		case 'a': // call
-			break;	
+			break;
 		default:
 			r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, foreach_comment, (void*)cmd);
 			break;
@@ -1793,7 +1794,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 		break;
 	case 's':
 		// symbols
-		{	
+		{
 			RBinSymbol *sym;
 			ut64 offorig = core->offset;
 			list = r_bin_get_symbols (core->bin);

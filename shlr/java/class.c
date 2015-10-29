@@ -277,7 +277,10 @@ R_API char * convert_string (const char * bytes, ut32 len) {
 	memset (cpy_buffer, 0, str_sz);
 	while (idx < len && pos < len) {
 		if (dso_json_char_needs_hexing (bytes[idx])) {
-			if (pos + 2 < len) return NULL;
+			if (pos + 2 < len) {
+				free (cpy_buffer);
+				return NULL;
+			}
 			sprintf (cpy_buffer+pos, "\\x%02x", bytes[idx]);
 			pos += 4;
 		} else {

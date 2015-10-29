@@ -1642,6 +1642,8 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalRef *ref;
 	char *title, *body;
 
+	if (!f) return false;
+
 	r_core_seek (core, f->addr, 1);
 
 	title = get_title (fcn->addr);
@@ -2171,6 +2173,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		if (!acur || strcmp (acur->title, title) != 0) {
 			r_core_cmd0 (core, "sr pc");
 		}
+		free (title);
 		g->is_instep = false;
 	}
 
