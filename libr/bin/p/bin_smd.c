@@ -130,7 +130,7 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static void addsym(RList *ret, ut64 addr, const char *name) {
+static void addsym(RList *ret, const char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 	if (!ptr) return;
 	strncpy (ptr->name, name, R_BIN_SIZEOF_STRINGS);
@@ -157,10 +157,10 @@ static RList* symbols(RBinFile *arch) {
 	{
 		// TODO: store all this stuff in SDB
 		SMD_Header * hdr = (SMD_Header*)(arch->buf->buf + 0x100);
-		addsym(ret, hdr->RomStart, "rom_start");
-		addsym(ret, hdr->RomEnd, "rom_end");
-		addsym(ret, hdr->RamStart, "ram_start");
-		addsym(ret, hdr->RamEnd, "ram_start");
+		addsym(ret, "rom_start", hdr->RomStart);
+		addsym(ret, "rom_end", hdr->RomEnd);
+		addsym(ret, "ram_start", hdr->RamStart);
+		addsym(ret, "ram_end", hdr->RamEnd);
 		showstr ("Copyright", hdr->CopyRights, 32);
 		showstr ("DomesticName", hdr->DomesticName, 48);
 		showstr ("OverseasName", hdr->OverseasName, 48);
@@ -241,7 +241,7 @@ static RList* symbols(RBinFile *arch) {
 		}
 		if (!name) continue;
 		if (!vtable[i]) continue;
-		addsym(ret, vtable[i], name);
+		addsym(ret, name, vtable[i]);
 	}
 	return ret;
 }
@@ -266,18 +266,30 @@ static RList* sections(RBinFile *arch) {
 	ptr->size = ptr->vsize = sizeof (SMD_Header);
 	ptr->srwx = R_BIN_SCN_MAP;
 	r_list_append (ret, ptr);
+
+	if (!(ptr = R_NEW0 (RBinSection)))
+		return ret;
+	strcpy (ptr->name, "text");
+	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
+	{
+		SMD_Header * hdr = (SMD_Header*)(arch->buf->buf + 0x100);
+		ut64 baddr = hdr->RamStart;
+		ptr->vaddr += baddr;
+	}
+	ptr->size = ptr->vsize = arch->buf->length - ptr->paddr;
+	ptr->srwx = R_BIN_SCN_MAP;
+	r_list_append (ret, ptr);
 	return ret;
 }
 
 static RList* entries(RBinFile *arch) { //Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RList *ret;
-	ut32 *vtable = (ut32*)arch->buf->buf;
 	RBinAddr *ptr = NULL;
 	if (!(ret = r_list_new ()))
 		return NULL;
 	if (!(ptr = R_NEW0 (RBinAddr)))
 		return ret;
-	ptr->paddr = ptr->vaddr = vtable[1];
+	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header); //vtable[1];
 	r_list_append (ret, ptr);
 	return ret;
 }

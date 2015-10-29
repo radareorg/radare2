@@ -102,12 +102,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case M68K_INS_BGT:
 	case M68K_INS_BLE:
 		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = IMM(0) - 0x100; // XXX wtf capstone bug
+		op->fail = addr + 2;
 		break;
 	case M68K_INS_BRA:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		break;
 	case M68K_INS_BSR:
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = IMM(0) - 0x100; // XXX wtf capstone bug
+		op->fail = addr + 2;
 		break;
 	case M68K_INS_BCHG:
 	case M68K_INS_BCLR:
