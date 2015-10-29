@@ -192,6 +192,7 @@ typedef struct r_bin_t {
 	int filter; // symbol filtering
 	char strfilter; // string filtering
 	int strpurge; // purge false positive strings
+	char *srcdir; // dir.source
 	char *prefix; // bin.prefix
 } RBin;
 

@@ -521,6 +521,14 @@ static int cb_cfgdebug(void *user, void *data) {
 	return true;
 }
 
+static int cb_dirsrc(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	RCore *core = (RCore *)user;
+	free (core->bin->srcdir);
+	core->bin->srcdir = strdup (node->value);
+	return true;
+}
+
 static int cb_cfgsanbox(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	int ret = r_sandbox_enable (node->i_value);
@@ -1375,7 +1383,7 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETPREF("dir.plugins", R2_LIBDIR"/radare2/"R2_VERSION"/", "Path to plugin files to be loaded at startup");
 #endif
-	SETPREF("dir.source", "", "Path to find source files");
+	SETCB("dir.source", "", &cb_dirsrc, "Path to find source files");
 	SETPREF("dir.types", "/usr/include", "Default path to look for cparse type files");
 #if __ANDROID__
 	SETPREF("dir.projects", "/data/data/org.radare2.installer/radare2/projects", "Default path for projects");

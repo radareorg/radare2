@@ -1904,7 +1904,7 @@ static void handle_print_dwarf (RCore *core, RDisasmState *ds) {
 	if (ds->show_dwarf) {
 		ds->sl = r_bin_addr2text (core->bin, ds->at);
 		int len = strlen (ds->opstr);
-		if (len<30) len = 30-len;
+		if (len<30) len = 30 - len;
 		if (ds->sl) {
 			if ((!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
 				char *line = strdup (ds->sl);
@@ -1915,8 +1915,8 @@ static void handle_print_dwarf (RCore *core, RDisasmState *ds) {
 				// handle_set_pre (ds, "  ");
 				handle_comment_align (core, ds);
 				if (ds->show_color)
-					r_cons_printf ("%s  ; %s"Color_RESET, ds->pal_comment, line);
-				else r_cons_printf ("  ; %s", line);
+					r_cons_printf ("%s ; %s"Color_RESET, ds->pal_comment, line);
+				else r_cons_printf (" ; %s", line);
 				free (ds->osl);
 				ds->osl = ds->sl;
 				ds->sl = NULL;

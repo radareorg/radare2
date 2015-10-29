@@ -307,13 +307,12 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 				char *allocated_id = NULL;
 				if (id_idx > 0) {
 					include_dir = sdb_array_get (s, "includedirs", id_idx - 1, 0);
-
 					if (include_dir && include_dir[0] != '/') {
 						comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 						if (comp_dir) {
 							allocated_id = calloc(1,strlen(comp_dir) +
 									strlen(include_dir) + 8);
-							snprintf(allocated_id, strlen(comp_dir) + strlen(include_dir) + 8,
+							snprintf (allocated_id, strlen(comp_dir) + strlen(include_dir) + 8,
 									"%s/%s/", comp_dir, include_dir);
 							include_dir = allocated_id;
 						}
@@ -544,13 +543,12 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 	switch (opcode) {
 	case DW_LNS_copy:
 		if (f) {
-			fprintf(f, "Copy\n");
+			fprintf (f, "Copy\n");
 		}
-
 		if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
 			int fnidx = regs->file - 1;
 			if (fnidx>=0 && fnidx<hdr->file_names_count) {
-				add_sdb_addrline(binfile->sdb_addrinfo,
+				add_sdb_addrline (binfile->sdb_addrinfo,
 					regs->address,
 					hdr->file_names[fnidx].name,
 					regs->line, f, mode);
@@ -561,9 +559,8 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 	case DW_LNS_advance_pc:
 		buf = r_uleb128 (buf, ST32_MAX, &addr);
 		regs->address += addr * hdr->min_inst_len;
-
 		if (f) {
-			fprintf(f, "Advance PC by %"PFMT64d" to 0x%"PFMT64x"\n",
+			fprintf (f, "Advance PC by %"PFMT64d" to 0x%"PFMT64x"\n",
 				addr * hdr->min_inst_len, regs->address);
 		}
 		break;
