@@ -1380,7 +1380,6 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 					op->type = R_ANAL_OP_TYPE_OR;
 					break;			//set
 			}
-			r_strbuf_append (&op->esil, ",N=0,H=0");
 	}
 	if (op->type == R_ANAL_OP_TYPE_CALL)
 	{
