@@ -250,6 +250,7 @@ typedef struct r_anal_diff_t {
 	ut64 addr;
 	double dist;
 	char *name;
+  ut32 size;
 } RAnalDiff;
 
 typedef struct r_anal_locals_t {
