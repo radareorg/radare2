@@ -42,6 +42,8 @@ R_API int r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 	char string[4096];
 	va_list ap;
 
+	if (!sb || !fmt)
+		return 0;
 	va_start (ap, fmt);
 	ret = vsnprintf (string, sizeof (string), fmt, ap);
 	if (ret >= sizeof (string)) {
