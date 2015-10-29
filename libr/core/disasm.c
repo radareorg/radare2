@@ -2284,14 +2284,7 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
 	r_anal_esil_stack_free (esil);
 	if (ds->analop.type == R_ANAL_OP_TYPE_SWI) {
-		/* TODO: enhace syscall api to get a string instead ohaving to mess with rcons */
-		r_cons_push();
-		char *s = r_core_cmd_str (core, "as");
-		if (s && *s) {
-			char *nl = strchr (s, '\n');
-			if (nl) *nl = 0;
-		}
-		r_cons_pop();
+		char *s = cmd_syscall_dostr(core, -1);
 		if (s) {
 			r_cons_printf ("; %s", s);
 			free (s);

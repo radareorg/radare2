@@ -503,6 +503,8 @@ R_API void r_core_syscmd_ls(const char *input);
 R_API void r_core_syscmd_cat(const char *file);
 R_API void r_core_syscmd_mkdir(const char *dir);
 
+// TODO : move into debug or syscall++
+R_API char *cmd_syscall_dostr(RCore *core, int num);
 /* tasks */
 
 typedef void (*RCoreTaskCallback)(void *user, char *out);

@@ -211,15 +211,23 @@ static void cmd_anal_trampoline (RCore *core, const char *input) {
 	}
 }
 
-static void cmd_syscall_do(RCore *core, int num) {
+R_API char *cmd_syscall_dostr(RCore *core, int n) {
+	char *res = NULL;
 	int i;
 	char str[64];
-	RSyscallItem *item = r_syscall_get (core->anal->syscall, num, -1);
-	if (item == NULL) {
-		r_cons_printf ("%d = unknown ()", num);
-		return;
+	if (n == -1) {
+		n = (int)r_debug_reg_get (core->dbg, "oeax");
+		if (n == 0 || n == -1) {
+			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_A0);
+			n = (int)r_debug_reg_get (core->dbg, a0);
+		}
 	}
-	r_cons_printf ("%d = %s (", item->num, item->name);
+	RSyscallItem *item = r_syscall_get (core->anal->syscall, n, -1);
+	if (item == NULL) {
+		res = r_str_concatf (res, "%d = unknown ()", n);
+		return res;
+	}
+	res = r_str_concatf (res, "%d = %s (", item->num, item->name);
 	// TODO: move this to r_syscall
 	for (i=0; i<item->args; i++) {
 		ut64 arg = r_debug_arg_get (core->dbg, true, i+1);
@@ -227,17 +235,17 @@ static void cmd_syscall_do(RCore *core, int num) {
 		if (item->sargs) {
 			switch (item->sargs[i]) {
 			case 'p': // pointer
-				r_cons_printf ("0x%08"PFMT64x"", arg);
+				res = r_str_concatf (res, "0x%08"PFMT64x"", arg);
 				break;
 			case 'i':
-				r_cons_printf ("%"PFMT64d"", arg);
+				res = r_str_concatf (res, "%"PFMT64d"", arg);
 				break;
 			case 'z':
 				r_io_read_at (core->io, arg, (ut8*)str, sizeof (str));
 				// TODO: filter zero terminated string
 				str[63] = '\0';
 				r_str_filter (str, strlen (str));
-				r_cons_printf ("\"%s\"", str);
+				res = r_str_concatf (res, "\"%s\"", str);
 				break;
 			case 'Z':
 				{
@@ -247,20 +255,29 @@ static void cmd_syscall_do(RCore *core, int num) {
 					r_io_read_at (core->io, arg, (ut8*)str, len);
 					str[len] = 0;
 					r_str_filter (str, -1);
-					r_cons_printf ("\"%s\"", str);
+					res = r_str_concatf (res, "\"%s\"", str);
 				}
 				break;
 			default:
-				r_cons_printf ("0x%08"PFMT64x"", arg);
+				res = r_str_concatf (res, "0x%08"PFMT64x"", arg);
 				break;
 			}
 		} else {
-			r_cons_printf ("0x%08"PFMT64x"", arg);
+			res = r_str_concatf (res, "0x%08"PFMT64x"", arg);
 		}
 		if (i+1<item->args)
-			r_cons_printf (", ");
+			res = r_str_concatf (res, ", ");
 	}
-	r_cons_printf (")\n");
+	res = r_str_concatf (res, ")");
+	return res;
+}
+
+static void cmd_syscall_do(RCore *core, int n) {
+	char *msg = cmd_syscall_dostr (core, n);
+	if (msg) {
+		r_cons_printf ("%s\n", msg);
+		free (msg);
+	}
 }
 
 static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int fmt) {
@@ -2135,12 +2152,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		// JSON support
 		break;
 	case '\0':
-		n = (int)r_debug_reg_get (core->dbg, "oeax");
-		if (n == 0 || n == -1) {
-			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_A0);
-			n = (int)r_debug_reg_get (core->dbg, a0);
-		}
-		cmd_syscall_do (core, n);
+		cmd_syscall_do (core, -1); //n);
 		break;
 	case ' ':
 		cmd_syscall_do (core, (int)r_num_get (core->num, input+1));
