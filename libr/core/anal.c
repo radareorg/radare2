@@ -2099,7 +2099,7 @@ static int is_string (const ut8 *buf, int size, int *len) {
 	int i;
 	if (size<1)
 		return 0;
-	if (size>3 && buf[0] &&!buf[1]&&buf[2]&&!buf[3]) {
+	if (size>3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
 		*len = 1; // XXX: TODO: Measure wide string length
 		return 2; // is wide
 	}

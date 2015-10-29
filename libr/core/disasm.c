@@ -5,6 +5,7 @@
 
 #define HASRETRY 1
 #define HAVE_LOCALS 1
+#define DEFAULT_NARGS 4
 
 static const char* r_vline_a[] = {
 	"|", // LINE_VERT
@@ -66,6 +67,7 @@ typedef struct r_disam_options_t {
 	int asm_demangle;
 	int show_offset;
 	int show_emu;
+	int show_emu_write;
 	int show_section;
 	int show_offseg;
 	int show_flags;
@@ -308,6 +310,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
+	ds->show_emu_write = r_config_get_i (core->config, "asm.emuwrite");
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
@@ -2193,6 +2196,14 @@ static void handle_print_relocs (RCore *core, RDisasmState *ds) {
 static int likely = 0;
 static int show_slow = 0;
 
+static int mymemwrite0(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	return 0;
+}
+
+static int mymemwrite1(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	return 1;
+}
+
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
@@ -2264,7 +2275,7 @@ static void handle_print_esil_anal_fini(RCore *core, RDisasmState *ds) {
 static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	RAnalEsil *esil = core->anal->esil;
 	const char *pc;
-	int ioc;
+	int i, ioc, nargs;
 	if (!esil || !ds->show_comments) {
 		return;
 	}
@@ -2280,22 +2291,46 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	r_reg_setv (core->anal->reg, pc, ds->at + ds->analop.size);
 	show_slow = ds->show_slow; // hacky global
 	esil->cb.hook_reg_write = myregwrite;
+	if (ds->show_emu_write) {
+		esil->cb.hook_mem_write = mymemwrite0;
+	} else {
+		esil->cb.hook_mem_write = mymemwrite1;
+	}
 	likely = 0;
 	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
 	r_anal_esil_stack_free (esil);
-	if (ds->analop.type == R_ANAL_OP_TYPE_SWI) {
-		char *s = cmd_syscall_dostr(core, -1);
+	switch (ds->analop.type) {
+	case R_ANAL_OP_TYPE_SWI: {
+		char *s = cmd_syscall_dostr (core, -1);
 		if (s) {
 			r_cons_printf ("; %s", s);
 			free (s);
 		}
-	}
-	if (ds->analop.type == R_ANAL_OP_TYPE_CJMP) {
+		} break;
+	case R_ANAL_OP_TYPE_CJMP:
 		if (likely) {
 			r_cons_printf ("; likely");
 		} else {
 			r_cons_printf ("; unlikely");
 		}
+		break;
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_CALL:
+		{
+			ut64 pcv = r_reg_getv (core->anal->reg, pc);
+			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
+			if (fcn) {
+				nargs = fcn->nargs;
+			} else {
+				nargs = DEFAULT_NARGS;
+			}
+		}
+		r_cons_printf ("\n; CALL: ");
+		for (i = 0; i < nargs; i++) {
+			ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
+			r_cons_printf ("%s0x%"PFMT64x, i?", ":"", v);
+		}
+		break;
 	}
 	r_config_set_i (core->config, "io.cache", ioc);
 }

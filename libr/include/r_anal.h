@@ -277,38 +277,38 @@ typedef struct r_anal_fcn_store_t {
 /* Store various function information,
  * variables, arguments, refs and even
  * description */
-	typedef struct r_anal_type_function_t {
-		char* name;
-		char* dsc; // For producing nice listings
-		ut32 size;
-		int bits; // ((> bits 0) (set-bits bits))
-		short type;
-		/*item_list *rets; // Type of return value */
-		short rets;
-		short fmod; //  static, inline or volatile?
-		/* TODO: Change to RAnalCC ??? */
-		short call; // calling convention
-		char* attr; // __attribute__(()) list
-		ut64 addr;
-		int stack;
-		int ninstr;
-		int nargs; // Function arguments counter
-		int depth;
-		RAnalType *args; // list of arguments
+typedef struct r_anal_type_function_t {
+	char* name;
+	char* dsc; // For producing nice listings
+	ut32 size;
+	int bits; // ((> bits 0) (set-bits bits))
+	short type;
+	/*item_list *rets; // Type of return value */
+	short rets;
+	short fmod; //  static, inline or volatile?
+	/* TODO: Change to RAnalCC ??? */
+	short call; // calling convention
+	char* attr; // __attribute__(()) list
+	ut64 addr;
+	int stack;
+	int ninstr;
+	int nargs; // Function arguments counter
+	int depth;
+	RAnalType *args; // list of arguments
 #if USE_VARSUBS
-		RAnalVarSub varsubs[R_ANAL_VARSUBS];
+	RAnalVarSub varsubs[R_ANAL_VARSUBS];
 #endif
-		ut8 *fingerprint; // TODO: make is fuzzy and smarter
-		RAnalDiff *diff;
-		RList *locs; // list of local variables
-		//RList *locals; // list of local labels -> moved to anal->sdb_fcns
-		RList *bbs;
-		RList *vars;
+	ut8 *fingerprint; // TODO: make is fuzzy and smarter
+	RAnalDiff *diff;
+	RList *locs; // list of local variables
+	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
+	RList *bbs;
+	RList *vars;
 #if FCN_OLD
-		RList *refs;
-		RList *xrefs;
+	RList *refs;
+	RList *xrefs;
 #endif
-	} RAnalFunction;
+} RAnalFunction;
 
 struct r_anal_type_t {
 	char *name;

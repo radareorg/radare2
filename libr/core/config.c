@@ -1279,6 +1279,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.dwarf", "false", "Show dwarf comment at disassembly");
 	SETPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETPREF("asm.emu", "false", "Run ESIL emulation analysis on disasm");
+	SETPREF("asm.emuwrite", "false", "Allow asm.emu to modify memory (WARNING)");
 	SETPREF("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF("asm.fcnlines", "true", "Show function boundary lines");
 	SETPREF("asm.flags", "true", "Show flags");
