@@ -221,6 +221,7 @@ extern RAsmPlugin r_asm_plugin_hppa_gnu;
 extern RAsmPlugin r_asm_plugin_v810;
 extern RAsmPlugin r_asm_plugin_mcs96;
 extern RAsmPlugin r_asm_plugin_lm32;
+extern RAsmPlugin r_asm_plugin_riscv;
 #endif
 
 #ifdef __cplusplus

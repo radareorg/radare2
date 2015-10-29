@@ -13,11 +13,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 }
 
 RAsmPlugin r_asm_plugin_riscv = {
-	.name = "riscv.gnu",
+	.name = "riscv",
 	.desc = "RISC-V",
 	.arch = "riscv",
 	.bits = 32|64,
-	.license = "LGPL3",
+	.license = "GPL",
 	.disassemble = &disassemble,
 };
 
