@@ -386,9 +386,10 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	if (plugin && !strcmp (plugin->name, "any") ) {
 		RBinObject *obj = r_bin_get_object (r->bin);
 		RBinInfo * info = obj ? obj->info : NULL;
+		if (!info) return false;
 		// set use of raw strings
-			r_core_bin_set_arch_bits (r, binfile->file,
-				info->arch, info->bits);
+		r_core_bin_set_arch_bits (r, binfile->file,
+					info->arch, info->bits);
 		r_config_set_i (r->config, "io.va", false);
 		// r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
@@ -397,6 +398,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	} else if (binfile) {
 		RBinObject *obj = r_bin_get_object (r->bin);
 		RBinInfo * info = obj ? obj->info : NULL;
+		if (!info) return false;
 		if (plugin && strcmp (plugin->name, "any") && info) {
 			r_core_bin_set_arch_bits (r, binfile->file,
 				info->arch, info->bits);

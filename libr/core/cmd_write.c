@@ -204,17 +204,16 @@ static void cmd_write_value (RCore *core, const char *input) {
 static bool cmd_wf(RCore *core, const char *input) {
 	ut8 *buf;
 	int size;
-	const char *arg = input + ((input[1] == ' ')? 2: 1);
+	const char *arg = input + ((input[1] == ' ') ? 2 : 1);
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *p, *a = r_str_chop (strdup (arg));
 	// XXX: file names cannot contain spaces
 	p = strchr (a, ' ');
-	if (p) {
-		*p++ = 0;
-	}
-	if (*arg=='?' || !*arg) {
+	if (p) *p++ = 0;
+
+	if (*arg =='?' || !*arg) {
 		eprintf ("Usage: wf [file] ([size] ([offset]))\n");
-	} else
+	}
 	if (!strcmp (arg, "-")) {
 		char *out = r_core_editor (core, NULL, NULL);
 		if (out) {
@@ -222,17 +221,18 @@ static bool cmd_wf(RCore *core, const char *input) {
 				(ut8*)out, strlen (out));
 			free (out);
 		}
-	} else
+	}
 	if ((buf = (ut8*) r_file_slurp (a, &size))) {
 		int u_size = size;
 		int u_offset = 0;
 		u_size = r_num_math (core->num, p);
-		if (u_size<1) u_size = size;
+		if (u_size < 1) u_size = size;
 		if (p) {
 			*p++ = 0;
 			u_offset = r_num_math (core->num, p);
 			if (u_offset > size) {
 				eprintf ("Invalid offset\n");
+				free (buf);
 				return false;
 			}
 		}
@@ -241,7 +241,9 @@ static bool cmd_wf(RCore *core, const char *input) {
 		WSEEK (core, size);
 		free (buf);
 		r_core_block_read (core, 0);
-	} else eprintf ("Cannot open file '%s'\n", arg);
+	} else {
+		eprintf ("Cannot open file '%s'\n", arg);
+	}
 	return true;
 }
 

@@ -124,7 +124,7 @@ R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str) {
 	ut64 num = UT64_MAX;
 	if (item && item->flags && str) {
 		num = r_str_bits_from_string (str, item->flags);
-		if (num == UT64_MAX) 
+		if (num == UT64_MAX)
 			num = r_num_math (NULL, str);
 		r_reg_set_value (reg, item, num);
 	}
@@ -147,7 +147,7 @@ R_API R_HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
 /* packed registers */
 // packbits can be 8, 16, 32 or 64
 // result value is always casted into ut64
-// TODO: use item->packed_size 
+// TODO: use item->packed_size
 R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) {
 	int packbytes, packmod;
 	ut64 ret = 0LL;
