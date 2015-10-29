@@ -96,7 +96,7 @@ ut64 analyzeIterative (RCore *core, Sdb *db, ut64 addr) {
 
 	for (;;) {
 		op = r_core_anal_op (core, addr + cur);
-		if (!op) {
+		if (!op || !op->mnemonic) {
 			eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
 			break;
 		}

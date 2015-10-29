@@ -45,7 +45,6 @@ RAsmPlugin r_asm_plugin_m68k = {
 	.bits = 16|32,
 	.desc = "Motorola 68000",
 	.disassemble = &disassemble,
-	.assemble = NULL
 };
 
 #ifndef CORELIB
