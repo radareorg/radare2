@@ -462,6 +462,12 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (cf && binfile && desc)
 		binfile->fd = desc->fd;
 	binfile = r_bin_cur (r->bin);
+	if (r->bin->cur->curplugin && r->bin->cur->curplugin->strfilter) {
+		char msg[2];
+		msg[0] = r->bin->cur->curplugin->strfilter;
+		msg[1] = 0;
+		r_config_set (r->config, "bin.strfilter", msg);
+	}
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && plugin->name && !strncmp (plugin->name, "any", 3)) {

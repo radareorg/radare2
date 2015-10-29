@@ -175,6 +175,28 @@ static bool string_filter(RCore *core, const char *str) {
 	}
 
 	switch (core->bin->strfilter) {
+	case 'U': // only uppercase strings
+		for (i = 0; str[i]; i++) {
+			char ch = str[i];
+			if (ch == ' ') continue;
+			if (ch<'@'|| ch > 'Z') {
+	///			if (ch<'0' || ch>'9') {
+					return false;
+	//			}
+			}
+			if (ch<0 || !IS_PRINTABLE (ch))
+				return false;
+		}
+		if (str[0] && str[1]) {
+			for (i = 2; i<6 && str[i]; i++) {
+				if (str[i] == str[0])
+					return false;
+				if (str[i] == str[1])
+					return false;
+			}
+		}
+		if (str[0] == str[2]) return false; // rm false positives
+		break;
 	case 'a': // only alphanumeric - plain ascii
 		for (i = 0; str[i]; i++) {
 			char ch = str[i];

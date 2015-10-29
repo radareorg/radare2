@@ -267,6 +267,7 @@ typedef struct r_bin_plugin_t {
 	char* (*demangle)(const char *str);
 	/* default value if not specified by user */
 	int minstrlen;
+	char strfilter;
 	void *user;
 } RBinPlugin;
 
@@ -549,6 +550,7 @@ extern RBinPlugin r_bin_plugin_art;
 extern RBinPlugin r_bin_plugin_dol;
 extern RBinPlugin r_bin_plugin_nes;
 extern RBinPlugin r_bin_plugin_mbn;
+extern RBinPlugin r_bin_plugin_smd;
 
 #ifdef __cplusplus
 }
