@@ -391,7 +391,7 @@ R_API void r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
-R_API void r_cons_less_str(const char *str);
+R_API int r_cons_less_str(const char *str, const char *exitkeys);
 R_API void r_cons_less(void);
 R_API void r_cons_2048(void);
 R_API void r_cons_memset(char ch, int len);

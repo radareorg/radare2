@@ -124,16 +124,16 @@ R_API int r_core_visual_hud(RCore *core) {
 	return (int)(size_t)p;
 }
 
-static void visual_help() {
+static int visual_help() {
 	r_cons_clear00 ();
-	r_cons_less_str (
+	return r_cons_less_str (
 	"Visual mode help:\n"
-	" ?        show this help or manpage in cursor mode\n"
+	" ?        show this help or enter the userfriendly hud\n"
 	" &        rotate asm.bits between supported 8, 16, 32, 64\n"
 	" %        in cursor mode finds matching pair, otherwise toggle autoblocksz\n"
 	" @        set cmd.vprompt to run commands before the visual prompt\n"
 	" !        enter into the visual panels mode\n"
-	" _        enter the hud\n"
+	" _        enter the flag/comment/functions/.. hud (same as VF_)\n"
 	" =        set cmd.vprompt (top row)\n"
 	" |        set cmd.cprompt (right column)\n"
 	" .        seek to program counter\n"
@@ -176,8 +176,8 @@ static void visual_help() {
 	"  F2      toggle breakpoint\n"
 	"  F7      single step\n"
 	"  F8      step over\n"
-	"  F9      continue\n"
-	);
+	"  F9      continue\n",
+	"?");
 	r_cons_flush ();
 	r_cons_clear00 ();
 }
@@ -1430,7 +1430,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_visual_prompt_input (core);
 		break;
 	case '_':
-		r_core_visual_hud (core);
+		r_core_visual_hudstuff (core);
 		break;
 	case ';':
 		r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
@@ -1507,7 +1507,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		zoom = !zoom;
 		break;
 	case '?':
-		visual_help();
+		if (visual_help ()=='?')
+			r_core_visual_hud (core);
 		break;
 	case 0x1b:
 	case 'q':
