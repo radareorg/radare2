@@ -111,7 +111,8 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
 		pos += str[i] - 'a';
 		if (pos < core->asmqjmps_count) return core->asmqjmps[pos + 1];
 	} else if (str[0] > '0' && str[1] <= '9') {
-		return core->asmqjmps[str[0] - '0'];
+		int pos = str[0] - '0';
+		if (pos <= core->asmqjmps_count) return core->asmqjmps[pos];
 	}
 	return UT64_MAX;
 }
