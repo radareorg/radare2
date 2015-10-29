@@ -298,6 +298,7 @@ typedef struct
 
 #define EM_ALPHA	0x9026
 #define EM_MICROBLAZE 0xbd
+#define EM_RISCV 243
 
 /* Legal values for e_version (version).  */
 
