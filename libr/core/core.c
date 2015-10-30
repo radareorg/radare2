@@ -334,6 +334,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				R_ANAL_REF_TYPE_DATA);
 		case 'X': return getref (core, atoi (str+2), 'x',
 				R_ANAL_REF_TYPE_CALL);
+		case 'B':
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			return fcn? fcn->addr: 0;
 		case 'I':
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			return fcn? fcn->ninstr: 0;
