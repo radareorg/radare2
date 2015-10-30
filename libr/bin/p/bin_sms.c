@@ -91,6 +91,7 @@ static RBinInfo* info(RBinFile *arch) {
 		eprintf ("Region: International\n");
 		break;
 	}
+	int romsize = 0;
 	switch (hdr->RegionRomSize & 0xf) {
 	case 0xa: romsize = 8; break;
 	case 0xb: romsize = 16; break;
