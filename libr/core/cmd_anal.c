@@ -2107,7 +2107,9 @@ static void cmd_asf(RCore *core, const char *input) {
 	} else {
 		ret = sdb_querys (core->anal->sdb_fcnsign, NULL, 0, "*");
 	}
-	r_cons_printf ("%s\n", ret);
+	if (ret && *ret)
+		r_cons_printf ("%s\n", ret);
+	free (ret);
 }
 
 static void cmd_anal_syscall(RCore *core, const char *input) {
