@@ -342,6 +342,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				r_str_concatf (strdup (cmd), " %s", io->args) :
 				strdup (cmd);
 
+			trace_me ();
 			argv = r_str_argv (_cmd, NULL);
 			if (!argv) {
 				free (_cmd);
@@ -352,7 +353,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 				for (i = 3; i < 1024; i++) {
 					(void)close (i);
 				}
-				trace_me ();
 				execvp (argv[0], argv);
 			} else {
 				eprintf ("Invalid execvp\n");
