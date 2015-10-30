@@ -376,7 +376,7 @@ static int cb_asmos(void *user, void *data) {
 	RConfigNode *asmarch, *node = (RConfigNode*) data;
 
 	if (*node->value == '?') {
-		r_cons_printf ("dos\ndarwin\nlinux\nfreebsd\nopenbsd\nnetbsd\nwindows\n");
+		r_cons_printf ("ios\ndos\ndarwin\nlinux\nfreebsd\nopenbsd\nnetbsd\nwindows\n");
 		return 0;
 	}
 	if (!node->value[0]) {
@@ -389,6 +389,7 @@ static int cb_asmos(void *user, void *data) {
 				node->value, core->anal->bits);
 		__setsegoff (core->config, asmarch->value, asmbits);
 	}
+	r_anal_set_os (core->anal, node->value);
 	//if (!ret) eprintf ("asm.os: Cannot setup syscall os/arch for '%s'\n", node->value);
 	return true;
 }

@@ -576,6 +576,7 @@ typedef struct r_anal_options_t {
 
 typedef struct r_anal_t {
 	char *cpu;
+	char *os;
 	int bits;
 	int lineswidth; // wtf
 	int big_endian;
@@ -626,6 +627,7 @@ typedef struct r_anal_t {
 	// Sdb *sdb_ret;   // UNUSED
 #endif
 	Sdb *sdb_hints; // OK
+	Sdb *sdb_fcnsign; // OK
 	//RList *hints; // XXX use better data structure here (slist?)
 	RAnalCallbacks cb;
 	RAnalOptions opt;
@@ -1129,11 +1131,17 @@ R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API int r_anal_use(RAnal *anal, const char *name);
 R_API int r_anal_set_reg_profile(RAnal *anal);
 R_API int r_anal_set_bits(RAnal *anal, int bits);
+R_API int r_anal_set_os(RAnal *anal, const char *os);
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu);
 R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API char *r_anal_strmask (RAnal *anal, const char *data);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_fcn_type_tostring(int type);
+
+/* fcnsign */
+R_API int r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
+R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name);
+R_API const char *r_anal_get_fcnsign(RAnal *anal, const char *sym);
 
 /* bb.c */
 R_API RAnalBlock *r_anal_bb_new(void);

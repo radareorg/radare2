@@ -4,7 +4,7 @@ include global.mk
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
 R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm)
-DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d
+DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
 R2VC=$(shell git rev-list --all --count)
 USE_ZIP=YES
 ZIP=zip
@@ -94,6 +94,8 @@ windist:
 	cp -f libr/magic/d/default/* "${WINDIST}/share/radare2/${VERSION}/magic"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/syscall"
 	cp -f libr/syscall/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/syscall"
+	mkdir -p "${WINDIST}/share/radare2/${VERSION}/fcnsign"
+	cp -f libr/anal/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/fcnsign
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	cp -f libr/asm/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	mkdir -p "${WINDIST}/share/doc/radare2"
@@ -207,6 +209,7 @@ deinstall uninstall:
 	cd binr && ${MAKE} uninstall PARENT=1
 	cd shlr && ${MAKE} uninstall PARENT=1
 	cd libr/syscall/d && ${MAKE} uninstall PARENT=1
+	cd libr/anal/d && ${MAKE} uninstall PARENT=1
 	@echo
 	@echo "Run 'make purge' to also remove installed files from previous versions of r2"
 	@echo

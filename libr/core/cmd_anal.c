@@ -2100,6 +2100,16 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_asf(RCore *core, const char *input) {
+	char *ret;
+	if (input[0] == ' ') {
+		ret = sdb_querys (core->anal->sdb_fcnsign, NULL, 0, input+1);
+	} else {
+		ret = sdb_querys (core->anal->sdb_fcnsign, NULL, 0, "*");
+	}
+	r_cons_printf ("%s\n", ret);
+}
+
 static void cmd_anal_syscall(RCore *core, const char *input) {
 	RSyscallItem *si;
 	RListIter *iter;
@@ -2110,6 +2120,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		"Usage: as[ljk?]", "", "syscall name <-> number utility",
 		"as", "", "show current syscall and arguments",
 		"as", " 4", "show syscall 4 based on asm.os and current regs/mem",
+		"asf", " [k[=[v]]]", "list/set/unset pf function signatures (see fcnsign)",
 		"asj", "", "list of syscalls in JSON",
 		"asl", "", "list of syscalls by asm.os and asm.arch",
 		"asl", " close", "returns the syscall number for close",
@@ -2118,6 +2129,9 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		NULL};
 
 	switch (input[0]) {
+	case 'f': // "asf"
+		cmd_asf (core, input+1);
+		break;
 	case 'l': // "asl"
 		if (input[1] == ' ') {
 			if ((n = atoi (input+2))>0) {

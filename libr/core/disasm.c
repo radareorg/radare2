@@ -192,7 +192,7 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 static void handle_print_opstr (RCore *core, RDisasmState *ds);
 static void handle_print_color_reset (RCore *core, RDisasmState *ds);
 static int handle_print_middle (RCore *core, RDisasmState *ds, int ret);
-static int handle_print_labels (RCore *core, RDisasmState *ds, RAnalFunction *f);
+static bool handle_print_labels (RCore *core, RDisasmState *ds, RAnalFunction *f);
 static void handle_print_import_name (RCore *core, RDisasmState *ds);
 static void handle_print_fcn_name (RCore * core, RDisasmState *ds);
 static void handle_print_as_string(RCore *core, RDisasmState *ds);
@@ -705,6 +705,7 @@ static char *filter_refline(RCore *core, const char *str) {
 
 	return p;
 }
+
 #if 0
 static char *filter_refline(RCore *core, const char *str) {
 	char *p, *s = strdup (str);
@@ -1576,7 +1577,7 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 	}
 	if (flagstr) {
 		str = flagstr;
-		if (ds->nb>0) {
+		if (ds->nb > 0) {
 			k = ds->nb-strlen (flagstr)-1;
 			if (k<0) k = 0;
 			for (j=0; j<k; j++)
@@ -1653,7 +1654,7 @@ static void handle_print_color_reset (RCore *core, RDisasmState *ds) {
 		r_cons_strcat (Color_RESET);
 }
 
-static int handle_print_middle (RCore *core, RDisasmState *ds, int ret) {
+static int handle_print_middle(RCore *core, RDisasmState *ds, int ret) {
 	if (ds->middle != 0) {
 		ret -= ds->middle;
 		handle_comment_align (core, ds);
@@ -1666,25 +1667,19 @@ static int handle_print_middle (RCore *core, RDisasmState *ds, int ret) {
 	return ret;
 }
 
-static int handle_print_labels (RCore *core, RDisasmState *ds, RAnalFunction *f) {
+static bool handle_print_labels(RCore *core, RDisasmState *ds, RAnalFunction *f) {
 	const char *label;
-	if (!core || !ds)
-		return false;
-	if (!f) {
-		f = r_anal_get_fcn_in (core->anal, ds->at, 0);
-	}
+	if (!core || !ds) return false;
+	if (!f) f = r_anal_get_fcn_in (core->anal, ds->at, 0);
 	label = r_anal_fcn_label_at (core->anal, f, ds->at);
-	if (label) {
-		if (ds->show_color) {
-			r_cons_strcat (ds->color_label);
-			r_cons_printf (" .%s:\n", label);
-			handle_print_color_reset (core, ds);
-		} else {
-			r_cons_printf (" .%s:\n", label);
-		}
-		return 1;
-	}
-	return 0;
+	if (!label)
+		return false;
+	if (ds->show_color) {
+		r_cons_strcat (ds->color_label);
+		r_cons_printf (" .%s:\n", label);
+		handle_print_color_reset (core, ds);
+	} else r_cons_printf (" .%s:\n", label);
+	return true;
 }
 
 static void handle_print_import_name (RCore * core, RDisasmState *ds) {
@@ -2317,18 +2312,35 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_CALL:
 		{
+			const char *usefmt = NULL;
 			ut64 pcv = r_reg_getv (core->anal->reg, pc);
 			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
+			if (ds->analop.ptr) {
+				pcv = ds->analop.ptr; // call [reloc-addr] // windows style
+				fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
+			}
 			if (fcn) {
 				nargs = fcn->nargs;
+				usefmt = r_anal_get_fcnsign (core->anal, fcn->name);
 			} else {
-				nargs = DEFAULT_NARGS;
+				RFlagItem *item = r_flag_get_i (core->flags, pcv);
+				if (item) usefmt = r_anal_get_fcnsign (core->anal, item->name);
+				if (!usefmt) nargs = DEFAULT_NARGS;
 			}
-		}
-		r_cons_printf ("\n; CALL: ");
-		for (i = 0; i < nargs; i++) {
-			ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
-			r_cons_printf ("%s0x%"PFMT64x, i?", ":"", v);
+			if (usefmt) {
+				const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+				ut64 spv = r_reg_getv (core->anal->reg, sp);
+				spv += (core->anal->bits == 64)? 8: 4;
+				r_cons_newline ();
+				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, usefmt, spv);
+				r_cons_chop ();
+			} else {
+				r_cons_printf ("\n; CALL: ");
+				for (i = 0; i < nargs; i++) {
+					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
+					r_cons_printf ("%s0x%"PFMT64x, i?", ":"", v);
+				}
+			}
 		}
 		break;
 	}

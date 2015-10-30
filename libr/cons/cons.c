@@ -904,3 +904,21 @@ R_API char *r_cons_swap_ground(const char *col) {
 	}
 	return strdup (col);
 }
+
+R_API bool r_cons_drop (int n) {
+	if (n > I.buffer_len) {
+		I.buffer_len = 0;
+		return false;
+	}
+	I.buffer_len -= n;
+	return true;
+}
+
+R_API void r_cons_chop () {
+	while (I.buffer_len>0) {
+		char ch = I.buffer[I.buffer_len-1];
+		if (ch != '\n' && !IS_WHITESPACE (ch))
+			break;
+		I.buffer_len--;
+	}
+}
