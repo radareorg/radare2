@@ -18,8 +18,14 @@ Rebuild() {
 	cd -
 }
 
+Build() {
+	cd "$1" || exit 1
+	make -j8 || exit 1
+	cd -
+}
+
 RebuildIOSDebug() {
-	Rebuild libr/debug
+	Build libr/debug
 	Rebuild binr/radare2
 	make -C binr/radare2 ios-sign
 	if [ -n "${IOSIP}" ]; then

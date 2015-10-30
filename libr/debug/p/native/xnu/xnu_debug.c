@@ -11,6 +11,118 @@
 
 #include "xnu_threads.c"
 
+static thread_t getcurthread (RDebug *dbg, task_t *task) {
+	thread_array_t threads = NULL;
+	unsigned int n_threads = 0;
+	task_t t = pid_to_task (dbg->pid);
+	if (task) *task = t;
+	if (task_threads (t, &threads, &n_threads))
+		return -1;
+	if (n_threads < 1)
+		return -1;
+	if (n_threads > 1)
+		eprintf ("THREADS: %d\n", n_threads);
+	return threads[0];
+}
+
+#if TARGET_OS_IPHONE
+
+static int isThumb32(ut16 op) {
+	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
+}
+
+static bool ios_hwstep_enable64(RDebug *dbg, bool enable) {
+	ARMDebugState64 ds;
+	thread_t th = getcurthread (dbg, NULL);
+
+	mach_msg_type_number_t count = ARM_DEBUG_STATE64_COUNT;
+	if (thread_get_state (th, ARM_DEBUG_STATE64,
+			(thread_state_t)&ds, &count)) {
+		perror ("thread-get-state");
+		return false;
+	}
+	// The use of __arm64__ here is not ideal.  If debugserver is running on
+	// an armv8 device, regardless of whether it was built for arch arm or
+	// arch arm64, it needs to use the MDSCR_EL1 SS bit to single
+	// instruction step.
+
+	// MDSCR_EL1 single step bit at gpr.pc
+	if (enable) {
+		ds.mdscr_el1 |= 1LL;
+	} else {
+		ds.mdscr_el1 &= ~(1ULL);
+	}
+	if (thread_set_state (th, ARM_DEBUG_STATE64,
+			(thread_state_t)&ds, count)) {
+		perror ("thread-set-state");
+	}
+	return true;
+}
+
+static bool ios_hwstep_enable32(RDebug *dbg, bool enable) {
+	mach_msg_type_number_t count = ARM_DEBUG_STATE32_COUNT;
+	arm_unified_thread_state_t state = {{0}};
+	_STRUCT_ARM_DEBUG_STATE ds;
+	task_t task = 0;
+	thread_t th = getcurthread (dbg, &task);
+	int ret;
+
+	count = ARM_DEBUG_STATE_COUNT;
+	ret = thread_get_state (th, ARM_DEBUG_STATE, (thread_state_t)&ds, &count);
+	if (ret != KERN_SUCCESS) {
+		perror ("thread_get_state(debug)");
+	}
+
+	count = ARM_UNIFIED_THREAD_STATE_COUNT;
+	ret = thread_get_state (th, ARM_UNIFIED_THREAD_STATE, (thread_state_t)&state,  &count);
+	if (ret != KERN_SUCCESS) {
+		perror ("thread_get_state(unified)");
+	}
+	//eprintf ("PC = 0x%08x\n", state.ts_32.__pc);
+	if (enable) {
+		int i;
+		RIOBind *bio = &dbg->iob;
+		ut32 pc = state.ts_32.__pc;
+		ut32 cpsr = state.ts_32.__cpsr;
+		for (i = 0; i < 16 ; i++) {
+			ds.__bcr[i] = ds.__bvr[i] = 0;
+		}
+		ds.__bvr[i] = pc & (UT32_MAX >> 2) << 2;
+		ds.__bcr[i] = BCR_M_IMVA_MISMATCH | S_USER | BCR_ENABLE;
+		if (cpsr & 0x20) {
+			ut16 op;
+			if (pc & 2) {
+				ds.__bcr[i] |= BAS_IMVA_2_3;
+			} else {
+				ds.__bcr[i] |= BAS_IMVA_0_1;
+			}
+			/* check for thumb */
+			bio->read_at (bio->io, pc, (void *)&op, 2);
+			if (isThumb32 (op)) {
+				eprintf ("Thumb32 chain stepping not supported yet\n");
+			} else {
+				ds.__bcr[i] |= BAS_IMVA_ALL;
+			}
+		} else {
+			ds.__bcr[i] |= BAS_IMVA_ALL;
+		}
+	}
+	count = ARM_UNIFIED_THREAD_STATE_COUNT;
+	if (thread_set_state (th, ARM_UNIFIED_THREAD_STATE, (thread_state_t)&state, count)) {
+		perror ("thread_set_state");
+		return false;
+	}
+	return true;
+}
+
+static bool ios_hwstep_enable(RDebug *dbg, bool enable) {
+	if (dbg->bits == R_SYS_BITS_64)
+		return ios_hwstep_enable64 (dbg, enable);
+	return ios_hwstep_enable32 (dbg, enable);
+}
+
+#endif //TARGET_OS_IPHONE
+
 static task_t task_for_pid_workaround(int Pid) {
 	host_t myhost = mach_host_self();
 	mach_port_t psDefault = 0;
@@ -49,20 +161,17 @@ static task_t task_for_pid_workaround(int Pid) {
 	return -1;
 }
 
-static void ios_hwstep_enable(RDebug *dbg, bool enable);
-
 bool xnu_step(RDebug *dbg) {
 	int ret = false;
 	int pid = dbg->pid;
+	task_t task;
+	(void)getcurthread (dbg, &task);
 
-	//debug_arch_x86_trap_set (dbg, 1);
-	// TODO: not supported in all platforms. need dbg.swstep=
 #if __arm__ || __arm64__ || __aarch64__
 	ios_hwstep_enable (dbg, true);
-	task_t task = pid_to_task (dbg->tid);
-	if (task_resume (task) != KERN_SUCCESS) {
+	if (task<1) {
 		perror ("task_resume");
-		eprintf ("step failed\n");
+		eprintf ("step failed on task %d for pid %d\n", task, dbg->tid);
 	}
 #if 0
 	ptrace-step not supported on ios
@@ -76,12 +185,16 @@ bool xnu_step(RDebug *dbg) {
 		ret = true;
 	}
 #endif
+	if (task_resume (task)) {
+		perror ("task_resume");
+		ret = false;
+	} else ret = true;
 	ios_hwstep_enable (dbg, false);
 	ret = true;
 // wat :D
 	ptrace (PT_THUPDATE, pid, (void*)0, 0);
 #else
-	task_resume (pid_to_task (pid));
+	task_resume (task);
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT
 	if (ret != 0) {
 		perror ("ptrace-step");
@@ -106,7 +219,12 @@ int xnu_dettach(int pid) {
 
 int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 #if __arm__ || __arm64__ || __aarch64__
-int i;
+	task_t task;
+	thread_t th = getcurthread (dbg, &task);
+	task_resume (task);
+	thread_resume (th);
+#if 0
+	int i;
 	thread_array_t inferior_threads = NULL;
 	unsigned int inferior_thread_count = 0;
 	if (task_threads (pid_to_task (pid), &inferior_threads,
@@ -121,6 +239,8 @@ int i;
 	}
 	// TODO: pt-cont and task-resume seems to hang, using detach as workaround
 	return xnu_dettach (pid);
+#endif
+return true;
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
@@ -129,34 +249,6 @@ int i;
 			(int)(size_t)data) == 0;
 #endif
 }
-
-/*
-*TODO: Remove this pancake?
-*	int i, ret, status;
-*	thread_array_t inferior_threads = NULL;
-*	unsigned int inferior_thread_count = 0;
-*
-*	 XXX: detach is noncontrollable continue
-*       ptrace (PT_DETACH, pid, 0, 0);
-*        ptrace (PT_ATTACH, pid, 0, 0);
-*#if 0
-*	ptrace (PT_THUPDATE, pid, (void*)(size_t)1, 0); // 0 = send no signal TODO !! implement somewhere else
-*	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, 0); // 0 = send no signal TODO !! implement somewhere else
-*	task_resume (pid_to_task (pid));
-*	ret = waitpid (pid, &status, 0);
-*#endif
-**
-*    ptrace (PT_ATTACHEXC, pid, 0, 0);
-*
-*   	if (task_threads (pid_to_task (pid), &inferior_threads,
-*		&inferior_thread_count) != KERN_SUCCESS) {
-*                eprintf ("Failed to get list of task's threads.\n");
-*		return 0;
-*        }
-*        for (i = 0; i < inferior_thread_count; i++)
-*		thread_resume (inferior_threads[i]);
-*
-*/
 
 const char *xnu_reg_profile(RDebug *dbg) {
 #if __i386__ || __x86_64__
@@ -251,10 +343,10 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 
 int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int ret;
-	int pid = dbg->pid;
 	thread_array_t inferior_threads = NULL;
 	unsigned int inferior_thread_count = 0;
 	unsigned int gp_count = R_DEBUG_STATE_SZ;
+	int pid = dbg->pid;
 	int tid = dbg->tid;
 
 	ret = task_threads (pid_to_task (pid),
@@ -279,13 +371,11 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		case R_REG_TYPE_FLG:
 		case R_REG_TYPE_GPR:
 			ret = THREAD_GET_STATE ((dbg->bits == R_SYS_BITS_64) ?
-						x86_THREAD_STATE :
-						i386_THREAD_STATE);
+				x86_THREAD_STATE: i386_THREAD_STATE);
 			break;
 		case R_REG_TYPE_DRX:
 			ret = THREAD_GET_STATE ((dbg->bits == R_SYS_BITS_64) ?
-						x86_DEBUG_STATE64 :
-						x86_DEBUG_STATE32);
+				x86_DEBUG_STATE64: x86_DEBUG_STATE32);
 			break;
 		}
 #elif __arm__ || __arm64__ || __aarch64__
@@ -300,6 +390,8 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				memcpy (buf, &state.ts_32,
 					MIN (sizeof (state.ts_32), size));
 			}
+		} else {
+			eprintf ("Cannot read stuff\n");
 		}
 #else
 		eprintf ("Unknown architecture\n");
@@ -338,21 +430,16 @@ RDebugMap *xnu_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	r_debug_map_sync (dbg); // update process memory maps
 	map = r_debug_map_get (dbg, (ut64)base);
 	return map;
-
 }
 
 int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
-	int ret;
-	ret = vm_deallocate (pid_to_task (dbg->tid),
-			(vm_address_t)addr,
-			(vm_size_t)size);
-
+	int ret = vm_deallocate (pid_to_task (dbg->tid),
+		(vm_address_t)addr, (vm_size_t)size);
 	if (ret != KERN_SUCCESS) {
-		printf("vm_deallocate failed\n");
+		perror ("vm_deallocate");
 		return false;
 	}
 	return true;
-
 }
 
 RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
@@ -556,7 +643,6 @@ RDebugPid *xnu_get_pid (int pid) {
 			nargs--;
 		}
 	}
-
 #if 1
 	/*
 	 * curr_arg position should be further than the start of the argspace
@@ -572,7 +658,6 @@ RDebugPid *xnu_get_pid (int pid) {
 #endif
 	return r_debug_pid_new (psname, pid, 's', 0); // XXX 's' ??, 0?? must set correct values
 }
-
 
 kern_return_t mach_vm_region_recurse (
         vm_map_t target_task,
@@ -850,8 +935,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 		{
 			module_name[0] = 0;
 			int ret = proc_regionfilename (tid, address,
-							module_name,
-							sizeof(module_name));
+				module_name, sizeof(module_name));
 			module_name[ret] = 0;
 		}
 #if 0
@@ -907,7 +991,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				break;
 			}
-			if (module_name && *module_name) {
+			if (*module_name) {
 				mr->file = strdup (module_name);
 			}
 			i++;
@@ -923,121 +1007,3 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 	return list;
 }
 
-#if TARGET_OS_IPHONE
-
-static int isThumb32(ut16 op) {
-	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
-}
-
-static void ios_hwstep_enable64(RDebug *dbg, bool enable) {
-	task_t port = pid_to_task (dbg->tid);
-	ARMDebugState64 ds;
-	mach_msg_type_number_t count = ARM_DEBUG_STATE64_COUNT;
-
-	(void) thread_get_state (port,
-	  	ARM_DEBUG_STATE64,
-		(thread_state_t)&ds,
-		&count);
-
-	// The use of __arm64__ here is not ideal.  If debugserver is running on
-	// an armv8 device, regardless of whether it was built for arch arm or
-	// arch arm64, it needs to use the MDSCR_EL1 SS bit to single
-	// instruction step.
-
-	// MDSCR_EL1 single step bit at gpr.pc
-	if (enable) {
-		ds.mdscr_el1 |= 1LL;
-	} else {
-		ds.mdscr_el1 &= ~(1ULL);
-	}
-
-	(void) thread_set_state (port,
-	  	ARM_DEBUG_STATE64,
-		(thread_state_t)&ds,
-		count);
-}
-
-static void ios_hwstep_enable32(RDebug *dbg, bool enable) {
-	task_t task = pid_to_task (dbg->tid);
-	int i;
-	static ARMDebugState32 olds;
-	ARMDebugState32 ds;
-	thread_array_t inferior_threads = NULL;
-	unsigned int inferior_thread_count = 0;
-
-int 	ret = task_threads (task,
-			&inferior_threads,
-			&inferior_thread_count);
-eprintf ("RET %d\n", ret);
-
-	mach_msg_type_number_t count = ARM_DEBUG_STATE32_COUNT;
-#if 0
-unsigned int gp_count = 0;
-
-task = inferior_threads[0];
-		arm_unified_thread_state_t state;
-		R_DEBUG_REG_T *regs = &state;
-		ret = thread_get_state (task, R_DEBUG_STATE_T, (thread_state_t)&regs, &gp_count);
-eprintf ("RET =%d\n", ret);
-
-	if (thread_get_state (task,
-	  		ARM_DEBUG_STATE32,
-			(thread_state_t)&ds,
-			&count) != KERN_SUCCESS) {
-		eprintf ("Cannot getstate for %d (%d)\n", dbg->tid, task);
-	}
-#endif
-
-	//static ut64 chainstep = UT64_MAX;
-	if (enable) {
-		RIOBind *bio = &dbg->iob;
-		ut32 pc = r_reg_get_value (dbg->reg,
-			r_reg_get (dbg->reg, "pc", R_REG_TYPE_GPR));
-		ut32 cpsr = r_reg_get_value (dbg->reg,
-			r_reg_get (dbg->reg, "cpsr", R_REG_TYPE_GPR));
-
-		for (i = 0; i < 16 ; i++) {
-			ds.bcr[i] = ds.bvr[i] = 0;
-		}
-		olds = ds;
-		//chainstep = UT64_MAX;
-		// state = old_state;
-		ds.bvr[i] = pc & (UT32_MAX >> 2) << 2;
-		ds.bcr[i] = BCR_M_IMVA_MISMATCH | S_USER | BCR_ENABLE;
-		if (cpsr & 0x20) {
-			ut16 op;
-			if (pc & 2) {
-				ds.bcr[i] |= BAS_IMVA_2_3;
-			} else {
-				ds.bcr[i] |= BAS_IMVA_0_1;
-			}
-			/* check for thumb */
-			bio->read_at (bio->io, pc, (void *)&op, 2);
-			if (isThumb32 (op)) {
-				eprintf ("Thumb32 chain stepping not supported yet\n");
-				//chainstep = pc + 2;
-			} else {
-				ds.bcr[i] |= BAS_IMVA_ALL;
-			}
-		} else {
-			ds.bcr[i] |= BAS_IMVA_ALL;
-		}
-	} else {
-		//bcr[i] = BAS_IMVA_ALL;
-		ds = olds; //dbg = old_state;
-	}
-	(void) thread_set_state (task,
-	  		ARM_DEBUG_STATE32,
-			(thread_state_t)&ds,
-			count);
-}
-
-static void ios_hwstep_enable(RDebug *dbg, bool enable) {
-	if (dbg->bits == R_SYS_BITS_64) {
-		ios_hwstep_enable64 (dbg, enable);
-	} else {
-		ios_hwstep_enable32 (dbg, enable);
-	}
-}
-
-#endif //TARGET_OS_IPHONE
