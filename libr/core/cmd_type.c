@@ -94,7 +94,7 @@ static int cmd_type(void *data, const char *input) {
 		p = o = strdup (input+1);
 		for (;;) {
 			if (*p == '\0'){
-				eprintf ("Usage: ts <k>=<v> Set fields at curseek linked type\n");	
+				eprintf ("Usage: ts <k>=<v> Set fields at curseek linked type\n");
 				break;
 			}
 			q = strchr (p, ' ');
@@ -216,6 +216,13 @@ static int cmd_type(void *data, const char *input) {
 	case 'o':
 		if (input[1] == ' ') {
 			const char *filename = input + 2;
+			char *homefile = NULL;
+			if (*filename == '~') {
+				if (filename[1] && filename[2]) {
+					homefile = r_str_home (filename + 2);
+					filename = homefile;
+				}
+			}
 			if (!strcmp (filename, "-")) {
 				char *out, *tmp;
 				tmp = r_core_editor (core, NULL, "");
@@ -237,6 +244,7 @@ static int cmd_type(void *data, const char *input) {
 				}
 				//r_anal_type_loadfile (core->anal, filename);
 			}
+			free (homefile);
 		}
 		break;
 	// td - parse string with cparse engine and load types from it
