@@ -65,7 +65,6 @@ static int typelist (void *p, const char *k, const char *v) {
 		}
 		// names
 		for (i=0; i<16; i++) {
-			const char *fmt;
 			char *comma, *av = sdb_get (DB,
 				sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
 			if (!av) break;

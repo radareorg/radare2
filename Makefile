@@ -95,7 +95,7 @@ windist:
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/syscall"
 	cp -f libr/syscall/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/syscall"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/fcnsign"
-	cp -f libr/anal/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/fcnsign
+	cp -f libr/anal/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/fcnsign"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	cp -f libr/asm/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	mkdir -p "${WINDIST}/share/doc/radare2"
