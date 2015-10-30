@@ -511,6 +511,7 @@ static int autocomplete(RLine *line) {
 		if ((!strncmp (line->buffer.data, "o ", 2)) ||
 		     !strncmp (line->buffer.data, "o+ ", 3) ||
 		     !strncmp (line->buffer.data, "oc ", 3) ||
+		     !strncmp (line->buffer.data, "r2 ", 3) ||
 		     !strncmp (line->buffer.data, "cd ", 3) ||
 		     !strncmp (line->buffer.data, "on ", 3) ||
 		     !strncmp (line->buffer.data, "op ", 3) ||

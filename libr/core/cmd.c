@@ -733,6 +733,10 @@ static int cmd_resize(void *data, const char *input) {
 		oldsize = r_io_desc_size (core->io, core->file->desc);
 	else oldsize = 0;
 	switch (*input) {
+	case '2':
+		// TODO: use argv[0] instead of 'radare2'
+		r_sys_cmdf ("radare%s", input);
+		return true;
 	case 'm':
 		if (input[1]==' ')
 			r_file_rm (input+2);
@@ -767,6 +771,7 @@ static int cmd_resize(void *data, const char *input) {
 			"r-", "num", "remove num bytes, move following data down",
 			"r+", "num", "insert num bytes, move following data up",
 			"rm" ," [file]", "remove file",
+			"r2" ," [file]", "launch r2",
 			NULL};
 		r_core_cmd_help (core, help_msg);
 		}
