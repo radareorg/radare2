@@ -25,7 +25,7 @@ Build() {
 }
 
 RebuildIOSDebug() {
-	Build libr/debug
+	Rebuild libr/debug
 	Rebuild binr/radare2
 	make -C binr/radare2 ios-sign
 	if [ -n "${IOSIP}" ]; then
@@ -66,6 +66,6 @@ java)   RebuildJava ; ;;
 iosdbg) RebuildIOSDebug ; ;;
 capstone|cs) RebuildCapstone ; ;;
 *)
-	echo "Usage: sys/rebuild.sh [java|capstone|sdb]"
+	echo "Usage: sys/rebuild.sh [java|capstone|sdb|iosdbg|cs|sdb|bin]"
 	;;
 esac

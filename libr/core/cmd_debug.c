@@ -983,10 +983,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	const char *name;
 	char *arg;
 	switch (str[0]) {
-	case '-':
+	case '-': // "dr-"
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '-', 0);
 		break;
-	case '?':
+	case '?': // "dr?"
 		if (str[1]) {
 			const char *p = str+1;
 			ut64 off;
@@ -1036,7 +1036,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			r_core_cmd_help (core, help_message);
 		}
 		break;
-	case 'l':
+	case 'l': // "drl"
 		//r_core_cmd0 (core, "drp~[1]");
 		{
 			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
@@ -1049,7 +1049,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 		}
 		break;
-	case 'b':
+	case 'b': // "drb"
 		{ // WORK IN PROGRESS // DEBUG COMMAND
 		int len;
 		const ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
@@ -1057,7 +1057,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
 		}
 		break;
-	case 'c':
+	case 'c': // "drc"
 // TODO: set flag values with drc zf=1
 		{
 		RRegItem *r;
@@ -1102,7 +1102,7 @@ free (rf);
 		}
 		}
 		break;
-	case 'x':
+	case 'x': // "drx"
 		switch (str[1]) {
 		case '-':
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
@@ -2340,20 +2340,20 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	};
 	// TODO: we must use this for step 'ds' too maybe...
 	switch (input[1]) {
-	case '?':
+	case '?': // "dc?"
 		r_core_cmd_help (core, help_message);
 		return 0;
-	case 'a':
+	case 'a': // "dca"
 		eprintf ("TODO: dca\n");
 		break;
-	case 'f':
+	case 'f': // "dcf"
 		eprintf ("[+] Running 'dcs vfork' behind the scenes...\n");
 		// we should stop in fork and vfork syscalls
 		//TODO: multiple syscalls not handled yet
 		// r_core_cmd0 (core, "dcs vfork fork");
 		r_core_cmd0 (core, "dcs vfork fork");
 		break;
-	case 'c':
+	case 'c': // "dcc"
 		r_reg_arena_swap (core->dbg->reg, true);
 		if (input[2] == 'u') {
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
@@ -2922,9 +2922,9 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 's':
 			if (input[2]) {
+				char *str;
 				r_cons_push ();
-				char * str = r_core_cmd_str (core,
-					sdb_fmt (0, "gs %s", input + 2));
+				str = r_core_cmd_str (core, sdb_fmt (0, "gs %s", input + 2));
 				r_cons_pop ();
 				r_core_cmdf (core, "dx %s", str); //`gs %s`", input+2);
 				free (str);

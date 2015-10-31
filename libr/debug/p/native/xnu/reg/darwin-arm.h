@@ -39,4 +39,9 @@ return strdup (
 "gpr	r14	.32	56	0\n"
 "gpr	r15	.32	60	0\n"
 "gpr	cpsr	.32	64	0\n"
+"gpr	nf	.1	.512	0	sign\n" // msb bit of last op
+"gpr	zf	.1	.513	0	zero\n" // set if last op is 0
+"gpr	cf	.1	.514	0	carry\n" // set if last op carries
+"gpr	vf	.1	.515	0	overflow\n" // set if overflows
+"gpr	thumb	.1	.517	0	thumb\n"
 );

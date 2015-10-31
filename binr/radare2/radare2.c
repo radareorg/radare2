@@ -563,6 +563,7 @@ int main(int argc, char **argv, char **envp) {
 					r_core_cmd0 (&r, ".dm*");
 					// Set Thumb Mode if necessary
 					r_core_cmd0 (&r, "dr? thumb;?? e asm.bits=16");
+					r_cons_reset ();
 				}
 			}
 		}
