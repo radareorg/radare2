@@ -363,7 +363,7 @@ int r_bin_mdmp_init_directory(struct r_bin_mdmp_obj *obj, PMINIDUMP_DIRECTORY di
 				memcpy(m, p, i);
 			} else {
 				memcpy(m, p, sizeof(MINIDUMP_MISC_INFO_N));
-				eprintf("Warning in r_bin_mdmp_init_directory: PMINIDUMP_MISC_INFO structure bigger than expected, truncated from %d\n", i);
+				eprintf("Warning in r_bin_mdmp_init_directory: PMINIDUMP_MISC_INFO structure bigger than expected, truncated from %d\n", (int)i);
 			}
 			r_list_append(obj->misc_info, m);
 			break;
@@ -421,10 +421,9 @@ int r_bin_mdmp_init_directory(struct r_bin_mdmp_obj *obj, PMINIDUMP_DIRECTORY di
 }
 
 
-PMINIDUMP_STRING r_bin_mdmp_locate_string(struct r_bin_mdmp_obj *obj, RVA Rva)
-{
+PMINIDUMP_STRING r_bin_mdmp_locate_string(struct r_bin_mdmp_obj *obj, RVA Rva) {
 	if (Rva < obj->b->length)
 		return NULL;
-	return obj->b->buf + Rva;
+	return (PMINIDUMP_STRING)(obj->b->buf + Rva);
 }
 

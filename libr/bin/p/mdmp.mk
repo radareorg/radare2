@@ -5,7 +5,7 @@ STATIC_OBJ+=${OBJ_MDMP}
 TARGET_MDMP=bin_mdmp.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_MDMP}
-LDFLAGS+=-L.. -lr_db
+LDFLAGS+=-L../../db -lr_db
 
 ${TARGET_MDMP}: ${OBJ_MDMP}
 	${CC} $(call libname,bin_mdmp) ${CFLAGS} $(LDFLAGS) ${OBJ_MDMP}
