@@ -46,6 +46,9 @@ OBJS += p/bin_pe64.c format/pe/pe64.c ;
 # OMF
 OBJS += p/bin_omf.c format/omf/omf.c
 
+# MDMP
+OBJS += p/bin_mdmp.c format/mdmp/mdmp.c ;
+
 # DEX
 OBJS += p/bin_dex.c format/dex/dex.c ;
 EXTRA +=
@@ -68,7 +71,8 @@ lib r_bin : $(OBJS) :
     <include>../include
     <include>mangling
     <define>CORELIB
-    <library>../util 
+    <library>../util
+    <library>../lib
     <library>../db
     <library>../../shlr/sdb
     $(EXTRA)
