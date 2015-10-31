@@ -614,8 +614,7 @@ static int r_print_format_10bytes(const RPrint* p, int mode, const char* setval,
 			return -1;
 		} else p->iob.read_at (p->iob.io, (ut64)addr, buffer, 248);
 		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki);
-		j=0;
-		for (; j<10; j++)
+		for (j=0; j<10; j++)
 			p->cb_printf ("%02x ", buf[j]);
 		if (!SEEVALUE) p->cb_printf (" ... (");
 		for (j=0; j<10; j++) {
@@ -655,8 +654,7 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode,
 	} else if (MUSTSEE) {
 		size = (size < 1) ? 1 : size;
 		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki);
-		j=0;
-		for (; j<size; j++)
+		for (j=0; j<size; j++)
 			p->cb_printf ("%02x ", buf[i+j]);
 		if (!SEEVALUE) p->cb_printf (" ... (");
 		for (j=0; j<size; j++) {

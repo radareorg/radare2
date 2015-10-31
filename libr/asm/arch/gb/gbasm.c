@@ -9,23 +9,10 @@ static void str_op(char *c) {
 }
 
 static int gb_reg_idx (char r) {
-	if (r == 'b')
-		return 0;
-	if (r == 'c')
-		return 1;
-	if (r == 'd')
-		return 2;
-	if (r == 'e')
-		return 3;
-	if (r == 'h')
-		return 4;
-	if (r == 'l')
-		return 5;
-	if (r == 'a')
-		return 7;
-	return -1;
+	const char *rstr = "bcdehla";
+	const char *ptr = strchr (rstr, r);
+	return ptr?(int)(size_t)(ptr-rstr):-1;
 }
-
 
 static bool gb_parse_cb1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 	int i;
@@ -59,7 +46,9 @@ static bool gb_parse_cb2 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 	r_str_replace_in (buf_asm, (ut32)i, " ]", "]", R_TRUE);
 	r_str_replace_in (buf_asm, (ut32)i, ", ", ",", R_TRUE);
 	p = strchr (buf_asm, (int)' ');
+	if (!p) return false;
 	q = strchr (p, (int)',');
+	if (!q) return false;
 	q[0] = '\0';
 	if (p[1] == '\0' || q[1] == '\0') {
 		q[0] = ',';

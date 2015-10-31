@@ -244,6 +244,7 @@ R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
 	p->ssize = len/(size_t)2*(size_t)3 + (size_t)1;	/* ugh */
 	p->strip = (sop *)calloc(p->ssize, sizeof(sop));
 	if (!p->strip) {
+		free((char *)g);
 		return R_REGEX_ESPACE;
 	}
 	p->slen = 0;

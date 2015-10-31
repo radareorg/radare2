@@ -2002,6 +2002,7 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 o
 	} else {
 		eprintf ("IS OOB\n");
 	}
+	free (buffer);
 	return attr;
 }
 
@@ -3615,6 +3616,7 @@ R_API RBinJavaAttrInfo* r_bin_java_line_number_table_attr_new (ut8 *buffer, ut64
 	offset += 6;
 	if (attr == NULL) {
 		// TODO eprintf
+		free (attr);
 		return attr;
 	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_LINE_NUMBER_TABLE_ATTR;
