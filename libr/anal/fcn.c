@@ -671,7 +671,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 	fcn->addr = addr;
 	fcn->size = size;
 	free (fcn->name);
-	if (!name || !strncmp (name, "fcn.", 4)) {
+	if (!name) {
 		fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
 	} else {
 		fcn->name = strdup (name);
