@@ -37,17 +37,13 @@ static const char * const *riscv_gpr_names = riscv_gpr_names_abi;
 static const char * const *riscv_fpr_names = riscv_fpr_names_abi;
 static int init = 0;
 
-static void
-arg_p (char *buf, unsigned long val,
-  const char* const* array, size_t size) {
+static void arg_p (char *buf, unsigned long val, const char* const* array, size_t size) {
 	const char *s = val >= size || array[val] == NULL ? "unknown" : array[val];
 	sprintf (buf+strlen (buf), "%s", s);
 }
 
 /* Print insn arguments for 32/64-bit code.  */
-static void
-get_insn_args (char *buf, const char *d, insn_t l, uint64_t pc) {
-
+static void get_insn_args (char *buf, const char *d, insn_t l, uint64_t pc) {
 	int rs1 = (l >> OP_SH_RS1) & OP_MASK_RS1;
 	int rd = (l >> OP_SH_RD) & OP_MASK_RD;
 	uint64_t target;
@@ -130,11 +126,11 @@ get_insn_args (char *buf, const char *d, insn_t l, uint64_t pc) {
 				break;
 			case 'p':
 				target = EXTRACT_RVC_B_IMM (l) + pc;
-				sprintf (buf+strlen (buf), "0x%"PFMT64x, target);
+				sprintf (buf+strlen (buf), "0x%"PFMT64x, (ut64) target);
 				break;
 			case 'a':
 				target = EXTRACT_RVC_J_IMM (l) + pc;
-				sprintf (buf+strlen (buf), "0x%"PFMT64x, target);
+				sprintf (buf+strlen (buf), "0x%"PFMT64x, (ut64)target);
 				break;
 			case 'u':
 				sprintf (buf+strlen (buf), "0x%x",
@@ -202,57 +198,46 @@ get_insn_args (char *buf, const char *d, insn_t l, uint64_t pc) {
 			arg_p (buf, EXTRACT_OPERAND (SUCC, l),
 			  riscv_pred_succ, ARRAY_SIZE (riscv_pred_succ));
 			break;
-
 		case 'o':
 		case 'j':
 			sprintf (buf+strlen (buf), "%d", (int) EXTRACT_ITYPE_IMM (l));
 			break;
-
 		case 'q':
 			sprintf (buf+strlen (buf), "%d", (int) EXTRACT_STYPE_IMM (l));
 			break;
 		case 'a':
 			target = EXTRACT_UJTYPE_IMM (l) + pc;
-			sprintf (buf+strlen (buf), "0x%"PFMT64x, target);
+			sprintf (buf+strlen (buf), "0x%"PFMT64x, (ut64)target);
 			break;
-
 		case 'p':
 			target = EXTRACT_SBTYPE_IMM (l) + pc;
-			sprintf (buf+strlen (buf), "0x%"PFMT64x, target);
+			sprintf (buf+strlen (buf), "0x%"PFMT64x, (ut64)target);
 			break;
 		case 'd':
 			sprintf (buf+strlen (buf), "%s", riscv_gpr_names[rd]);
 			break;
-
 		case 'z':
 			sprintf (buf+strlen (buf), "%s", riscv_gpr_names[0]);
 			break;
-
 		case '>':
 			sprintf (buf+strlen (buf), "0x%x", (int) EXTRACT_OPERAND (SHAMT, l));
 			break;
-
 		case '<':
 			sprintf (buf+strlen (buf), "0x%x", (int) EXTRACT_OPERAND (SHAMTW, l));
 			break;
-
 		case 'S':
 		case 'U':
 			sprintf (buf+strlen (buf), "%s", riscv_fpr_names[rs1]);
 			break;
-
 		case 'T':
 			sprintf (buf+strlen (buf), "%s", riscv_fpr_names[EXTRACT_OPERAND (RS2, l)]);
 			break;
-
 		case 'D':
 			sprintf (buf+strlen (buf), "%s", riscv_fpr_names[rd]);
 			break;
-
 		case 'R':
 			sprintf (buf+strlen (buf), "%s", riscv_fpr_names[EXTRACT_OPERAND (RS3, l)]);
 			break;
-
 		case 'E':
 			{
 				const char* csr_name = NULL;
@@ -270,11 +255,9 @@ get_insn_args (char *buf, const char *d, insn_t l, uint64_t pc) {
 				}
 				break;
 			}
-
 		case 'Z':
 			sprintf (buf+strlen (buf), "%d", rs1);
 			break;
-
 		default:
 			/* xgettext:c-format */
 			sprintf (buf+strlen (buf), "# internal error, undefined modifier (%c)",
@@ -330,7 +313,7 @@ riscv_disassemble(RAsm *a, RAsmOp *rop, insn_t word, int xlen) {
 			sprintf (rop->buf_asm, "%s", op->name);
 			get_insn_args (rop->buf_asm, op->args, word, a->pc);
 		} else {
-			sprintf (rop->buf_asm, "invalid word(%"PFMT64x")", word);
+			sprintf (rop->buf_asm, "invalid word(%"PFMT64x")", (ut64)word);
 			return -1;
 		}
 	}
