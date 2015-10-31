@@ -1,1 +1,1 @@
-LDFLAGS+=${SHLR}/zip/librz.a
+include ${SHLR}/zip/deps.mk
