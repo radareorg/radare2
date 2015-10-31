@@ -25,20 +25,23 @@ static int check(RBinFile *arch) {
 	return check_bytes (bytes, sz);
 }
 
-static int check_bytes(const ut8 *buf, ut64 length) {
+#define CMP8(o,x) strncmp((const char*)bs+o,x,8)
+#define CMP4(o,x) strncmp((const char*)bs+o,x,4)
+static int check_bytes(const ut8 *bs, ut64 length) {
 	if (length > 0x2000) {
-		if (!strncmp (buf+0x1ff0, "TMR SEGA", 8) ||
-				!strncmp (buf+0x3ff0, "TMR SEGA", 8) ||
-				!strncmp (buf+0x7ff0, "TMR SEGA", 8) ||
-				!strncmp (buf+0x8ff0, "TMR SEGA", 8) ||
-				!strncmp (buf+0x7fe0, "SDSC", 4))
+		if (!CMP8(0x1ff0, "TMR SEGA") ||
+			!CMP8(0x3ff0, "TMR SEGA") ||
+			!CMP8(0x7ff0, "TMR SEGA") ||
+			!CMP8(0x8ff0, "TMR SEGA") ||
+			!CMP4(0x7fe0, "SDSC"))
 			return true;
 	}
 	return false;
 }
 
-
 static RBinInfo* info(RBinFile *arch) {
+	const char *bs;
+	SMS_Header *hdr;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
 
@@ -53,18 +56,17 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->arch = strdup ("z80");
 	ret->has_va = 1;
 	ret->bits = 8;
-
+	bs = (const char*)arch->buf->buf;
 	// TODO: figure out sections/symbols for this format and move this there
 	//       also add SDSC headers..and find entry
-	SMS_Header * hdr;
-	if (!strncmp (arch->buf->buf+0x1ff0, "TMR SEGA", 8))
-		hdr = (SMS_Header*)(arch->buf->buf + 0x1ff0);
-	if (!strncmp (arch->buf->buf+0x3ff0, "TMR SEGA", 8))
-		hdr = (SMS_Header*)(arch->buf->buf + 0x3ff0);
-	if (!strncmp (arch->buf->buf+0x7ff0, "TMR SEGA", 8))
-		hdr = (SMS_Header*)(arch->buf->buf + 0x7ff0);
-	if (!strncmp (arch->buf->buf+0x8ff0, "TMR SEGA", 8))
-		hdr = (SMS_Header*)(arch->buf->buf + 0x8ff0);
+	if (!CMP8(0x1ff0, "TMR SEGA"))
+		hdr = (SMS_Header*)(bs + 0x1ff0);
+	if (!CMP8(0x3ff0, "TMR SEGA"))
+		hdr = (SMS_Header*)(bs + 0x3ff0);
+	if (!CMP8(0x7ff0, "TMR SEGA"))
+		hdr = (SMS_Header*)(bs + 0x7ff0);
+	if (!CMP8(0x8ff0, "TMR SEGA"))
+		hdr = (SMS_Header*)(bs + 0x8ff0);
 
 	eprintf ("Checksum: 0x%04x\n", (ut32)hdr->CheckSum);
 	eprintf ("ProductCode: %02d%02X%02X\n", (hdr->Version >> 4), hdr->ProductCode[1],
