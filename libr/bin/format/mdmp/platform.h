@@ -1,38 +1,38 @@
-#ifdef MDMP_PLATFORM
+#ifndef MDMP_PLATFORM
+#error MDMP_PLATFORM not defined
+#endif
+#ifndef ARCH
+#error ARCH not defined
+#endif
 
-typedef struct MDMP_PLATFORM(_MINIDUMP_THREAD_CALLBACK, ARCH)
-{
-	ULONG ThreadId;
-	HANDLE ThreadHandle;
+typedef struct MDMP_PLATFORM(_MINIDUMP_THREAD_CALLBACK, ARCH) {
+	ut32 ThreadId;
+	void* ThreadHandle;
 	MDMP_PLATFORM(CONTEXT_TYPE, ARCH) Context;
-	ULONG SizeOfContext;
-	ULONG64 StackBase;
-	ULONG64 StackEnd;
+	ut32 SizeOfContext;
+	ut64 StackBase;
+	ut64 StackEnd;
 }
 MDMP_PLATFORM(MINIDUMP_THREAD_CALLBACK, ARCH), MDMP_PLATFORM(*PMINIDUMP_THREAD_CALLBACK, ARCH);
 
-
-typedef struct MDMP_PLATFORM(_MINIDUMP_THREAD_EX_CALLBACK, ARCH)
-{
-	ULONG ThreadId;
-	HANDLE ThreadHandle;
+typedef struct MDMP_PLATFORM(_MINIDUMP_THREAD_EX_CALLBACK, ARCH) {
+	ut32 ThreadId;
+	void* ThreadHandle;
 	MDMP_PLATFORM(CONTEXT_TYPE, ARCH) Context;
-	ULONG SizeOfContext;
-	ULONG64 StackBase;
-	ULONG64 StackEnd;
-	ULONG64 BackingStoreBase;
-	ULONG64 BackingStoreEnd;
+	ut32 SizeOfContext;
+	ut64 StackBase;
+	ut64 StackEnd;
+	ut64 BackingStoreBase;
+	ut64 BackingStoreEnd;
 }
 MDMP_PLATFORM(MINIDUMP_THREAD_EX_CALLBACK, ARCH), MDMP_PLATFORM(*PMINIDUMP_THREAD_EX_CALLBACK, ARCH);
 
-
-typedef struct MDMP_PLATFORM(_MINIDUMP_CALLBACK_INPUT, ARCH)
-{
-	ULONG ProcessId;
-	HANDLE ProcessHandle;
-	ULONG CallbackType;
+typedef struct MDMP_PLATFORM(_MINIDUMP_CALLBACK_INPUT, ARCH) {
+	ut32 ProcessId;
+	void* ProcessHandle;
+	ut32 CallbackType;
 	union {
-		HRESULT Status;
+		R2_HRESULT Status;
 		MDMP_PLATFORM(MINIDUMP_THREAD_CALLBACK, ARCH) Thread;
 		MDMP_PLATFORM(MINIDUMP_THREAD_EX_CALLBACK, ARCH) ThreadEx;
 		MINIDUMP_MODULE_CALLBACK Module;
@@ -40,13 +40,10 @@ typedef struct MDMP_PLATFORM(_MINIDUMP_CALLBACK_INPUT, ARCH)
 		MINIDUMP_INCLUDE_MODULE_CALLBACK IncludeModule;
 		MINIDUMP_IO_CALLBACK Io;
 		MINIDUMP_READ_MEMORY_FAILURE_CALLBACK ReadMemoryFailure;
-		ULONG SecondaryFlags;
+		ut32 SecondaryFlags;
 		MINIDUMP_VM_QUERY_CALLBACK VmQuery;
 		MINIDUMP_VM_PRE_READ_CALLBACK VmPreRead;
 		MINIDUMP_VM_POST_READ_CALLBACK VmPostRead;
 	};
 }
 MDMP_PLATFORM(MINIDUMP_CALLBACK_INPUT, ARCH), MDMP_PLATFORM(*PMINIDUMP_CALLBACK_INPUT, ARCH);
-
-
-#endif

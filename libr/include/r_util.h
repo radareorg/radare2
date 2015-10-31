@@ -375,6 +375,7 @@ R_API char* r_num_as_string(RNum *___, ut64 n);
 R_API RBuffer *r_buf_new(void);
 R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
 R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len);
+R_API RBuffer *r_buf_new_with_buf(RBuffer *b);
 R_API RBuffer *r_buf_file (const char *file);
 R_API RBuffer *r_buf_mmap (const char *file, int flags);
 R_API RBuffer *r_buf_new_sparse();

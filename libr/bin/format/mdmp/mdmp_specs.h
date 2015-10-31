@@ -5,233 +5,261 @@
 #define MDMP_PLATFORM(NAME, ARCH) MDMP_PLATFORM_PURE(NAME, ARCH)
 
 #define MINIDUMP_SIGNATURE 0x504d444d /* PMDM */
+#define EXCEPTION_MAXIMUM_PARAMETERS 15
+#define WINDOWS_MAX_PATH 260
 
-typedef DWORD RVA;
-typedef ULONG64 RVA64;
+#define R2_HRESULT long
 
+typedef ut32 RVA;
+typedef ut64 RVA64;
+
+
+#define WINDOWS_PROCESSOR_ARCHITECTURE_INTEL            0x0000
+#define WINDOWS_PROCESSOR_ARCHITECTURE_MIPS             0x0001
+#define WINDOWS_PROCESSOR_ARCHITECTURE_ALPHA            0x0002
+#define WINDOWS_PROCESSOR_ARCHITECTURE_PPC              0x0003
+#define WINDOWS_PROCESSOR_ARCHITECTURE_SHX              0x0004
+#define WINDOWS_PROCESSOR_ARCHITECTURE_ARM              0x0005
+#define WINDOWS_PROCESSOR_ARCHITECTURE_IA64             0x0006
+#define WINDOWS_PROCESSOR_ARCHITECTURE_ALPHA64          0x0007
+#define WINDOWS_PROCESSOR_ARCHITECTURE_MSIL             0x0008
+#define WINDOWS_PROCESSOR_ARCHITECTURE_AMD64            0x0009
+#define WINDOWS_PROCESSOR_ARCHITECTURE_IA32_ON_WIN64    0x000A
+#define WINDOWS_PROCESSOR_ARCHITECTURE_NEUTRAL          0x000B
+#define WINDOWS_PROCESSOR_ARCHITECTURE_UNKNOWN          0xFFFF
+
+#define WINDOWS_VER_NT_WORKSTATION              0x0000001
+#define WINDOWS_VER_NT_DOMAIN_CONTROLLER        0x0000002
+#define WINDOWS_VER_NT_SERVER                   0x0000003
+
+// XXX already in pe.h
+typedef struct {
+	ut32 dwSignature;
+	ut32 dwStrucVersion;
+	ut32 dwFileVersionMS;
+	ut32 dwFileVersionLS;
+	ut32 dwProductVersionMS;
+	ut32 dwProductVersionLS;
+	ut32 dwFileFlagsMask;
+	ut32 dwFileFlags;
+	ut32 dwFileOS;
+	ut32 dwFileType;
+	ut32 dwFileSubtype;
+	ut32 dwFileDateMS;
+	ut32 dwFileDateLS;
+} WINDOWS_VS_FIXEDFILEINFO;
 
 typedef struct _MINIDUMP_HEADER {
-	ULONG32 Signature;
-	ULONG32 Version;
-	ULONG32 NumberOfStreams;
+	ut32 Signature;
+	ut32 Version;
+	ut32 NumberOfStreams;
 	RVA StreamDirectoryRva;
-	ULONG32 CheckSum;
-	ULONG32 TimeDateStamp;
-	ULONG64 Flags;
+	ut32 CheckSum;
+	ut32 TimeDateStamp;
+	ut64 Flags;
 } MINIDUMP_HEADER, *PMINIDUMP_HEADER;
 
-
 typedef struct _MINIDUMP_LOCATION_DESCRIPTOR {
-	ULONG32 DataSize;
+	ut32 DataSize;
 	RVA Rva;
 } MINIDUMP_LOCATION_DESCRIPTOR;
 
 typedef struct _MINIDUMP_LOCATION_DESCRIPTOR64 {
-	ULONG64 DataSize;
+	ut64 DataSize;
 	RVA64 Rva;
 } MINIDUMP_LOCATION_DESCRIPTOR64;
 
-
 typedef struct _MINIDUMP_MEMORY_DESCRIPTOR {
-	ULONG64 StartOfMemoryRange;
+	ut64 StartOfMemoryRange;
 	MINIDUMP_LOCATION_DESCRIPTOR Memory;
 } MINIDUMP_MEMORY_DESCRIPTOR, *PMINIDUMP_MEMORY_DESCRIPTOR;
 
 typedef struct _MINIDUMP_MEMORY_DESCRIPTOR64 {
-	ULONG64 StartOfMemoryRange;
-	ULONG64 DataSize;
+	ut64 StartOfMemoryRange;
+	ut64 DataSize;
 } MINIDUMP_MEMORY_DESCRIPTOR64, *PMINIDUMP_MEMORY_DESCRIPTOR64;
 
-
 typedef enum _MINIDUMP_STREAM_TYPE {
-
 	UnusedStream			= 0,
 	ReservedStream0			= 1,
 	ReservedStream1			= 2,
-	ThreadListStream			= 3,
-	ModuleListStream			= 4,
-	MemoryListStream			= 5,
+	ThreadListStream		= 3,
+	ModuleListStream		= 4,
+	MemoryListStream		= 5,
 	ExceptionStream			= 6,
-	SystemInfoStream			= 7,
-	ThreadExListStream			= 8,
-	Memory64ListStream			= 9,
+	SystemInfoStream		= 7,
+	ThreadExListStream		= 8,
+	Memory64ListStream		= 9,
 	CommentStreamA			= 10,
 	CommentStreamW			= 11,
-	HandleDataStream			= 12,
-	FunctionTableStream			= 13,
-	UnloadedModuleListStream		= 14,
+	HandleDataStream		= 12,
+	FunctionTableStream		= 13,
+	UnloadedModuleListStream	= 14,
 	MiscInfoStream			= 15,
 	MemoryInfoListStream		= 16,
 	ThreadInfoListStream		= 17,
-	HandleOperationListStream		= 18,
-	TokenStream				= 19,
+	HandleOperationListStream	= 18,
+	TokenStream			= 19,
 	JavaScriptDataStream		= 20,
-
 	ceStreamNull			= 0x8000,
-	ceStreamSystemInfo			= 0x8001,
-	ceStreamException			= 0x8002,
-	ceStreamModuleList			= 0x8003,
-	ceStreamProcessList			= 0x8004,
-	ceStreamThreadList			= 0x8005,
-	ceStreamThreadContextList		= 0x8006,
-	ceStreamThreadCallStackList		= 0x8007,
-	ceStreamMemoryVirtualList		= 0x8008,
-	ceStreamMemoryPhysicalList		= 0x8009,
-	ceStreamBucketParameters		= 0x800A,
-	ceStreamProcessModuleMap		= 0x800B,
+	ceStreamSystemInfo		= 0x8001,
+	ceStreamException		= 0x8002,
+	ceStreamModuleList		= 0x8003,
+	ceStreamProcessList		= 0x8004,
+	ceStreamThreadList		= 0x8005,
+	ceStreamThreadContextList	= 0x8006,
+	ceStreamThreadCallStackList	= 0x8007,
+	ceStreamMemoryVirtualList	= 0x8008,
+	ceStreamMemoryPhysicalList	= 0x8009,
+	ceStreamBucketParameters	= 0x800A,
+	ceStreamProcessModuleMap	= 0x800B,
 	ceStreamDiagnosisList		= 0x800C,
-
-	LastReservedStream			= 0xffff
-
+	LastReservedStream		= 0xffff
 } MINIDUMP_STREAM_TYPE;
 
 typedef struct _MINIDUMP_DIRECTORY {
-	ULONG32 StreamType;
+	ut32 StreamType;
 	MINIDUMP_LOCATION_DESCRIPTOR Location;
 } MINIDUMP_DIRECTORY, *PMINIDUMP_DIRECTORY;
 
-
 typedef struct _MINIDUMP_STRING {
-	ULONG32 Length;
-	WCHAR   Buffer [0];
+	ut32 Length;
+	ut16 Buffer[0];
 } MINIDUMP_STRING, *PMINIDUMP_STRING;
 
 typedef union _CPU_INFORMATION {
-
 	struct {
-		ULONG32 VendorId [ 3 ];
-		ULONG32 VersionInformation;
-		ULONG32 FeatureInformation;
-		ULONG32 AMDExtendedCpuFeatures;
+		ut32 VendorId [ 3 ];
+		ut32 VersionInformation;
+		ut32 FeatureInformation;
+		ut32 AMDExtendedCpuFeatures;
 	} X86CpuInfo;
 	struct {
-		ULONG64 ProcessorFeatures [ 2 ];
+		ut64 ProcessorFeatures [ 2 ];
 	} OtherCpuInfo;
 } CPU_INFORMATION, *PCPU_INFORMATION;
 
 typedef struct _MINIDUMP_SYSTEM_INFO {
-	USHORT ProcessorArchitecture;
-	USHORT ProcessorLevel;
-	USHORT ProcessorRevision;
+	ut16 ProcessorArchitecture;
+	ut16 ProcessorLevel;
+	ut16 ProcessorRevision;
 
 	struct {
-		UCHAR NumberOfProcessors;
-		UCHAR ProductType;
+		ut8 NumberOfProcessors;
+		ut8 ProductType;
 	};
 
-	ULONG32 MajorVersion;
-	ULONG32 MinorVersion;
-	ULONG32 BuildNumber;
+	ut32 MajorVersion;
+	ut32 MinorVersion;
+	ut32 BuildNumber;
 
 	RVA CSDVersionRva;
 
 	union {
-		ULONG32 Reserved1;
+		ut32 Reserved1;
 		struct {
-			USHORT SuiteMask;
-			USHORT Reserved2;
+			ut16 SuiteMask;
+			ut16 Reserved2;
 		};
 	};
 
 	CPU_INFORMATION Cpu;
-
 } MINIDUMP_SYSTEM_INFO, *PMINIDUMP_SYSTEM_INFO;
 
 typedef struct _MINIDUMP_THREAD {
-	ULONG32 ThreadId;
-	ULONG32 SuspendCount;
-	ULONG32 PriorityClass;
-	ULONG32 Priority;
-	ULONG64 Teb;
+	ut32 ThreadId;
+	ut32 SuspendCount;
+	ut32 PriorityClass;
+	ut32 Priority;
+	ut64 Teb;
 	MINIDUMP_MEMORY_DESCRIPTOR Stack;
 	MINIDUMP_LOCATION_DESCRIPTOR ThreadContext;
 } MINIDUMP_THREAD, *PMINIDUMP_THREAD;
 
 typedef struct _MINIDUMP_THREAD_LIST {
-	ULONG32 NumberOfThreads;
+	ut32 NumberOfThreads;
 	MINIDUMP_THREAD Threads [0];
 } MINIDUMP_THREAD_LIST, *PMINIDUMP_THREAD_LIST;
 
 
 typedef struct _MINIDUMP_THREAD_EX {
-	ULONG32 ThreadId;
-	ULONG32 SuspendCount;
-	ULONG32 PriorityClass;
-	ULONG32 Priority;
-	ULONG64 Teb;
+	ut32 ThreadId;
+	ut32 SuspendCount;
+	ut32 PriorityClass;
+	ut32 Priority;
+	ut64 Teb;
 	MINIDUMP_MEMORY_DESCRIPTOR Stack;
 	MINIDUMP_LOCATION_DESCRIPTOR ThreadContext;
 	MINIDUMP_MEMORY_DESCRIPTOR BackingStore;
 } MINIDUMP_THREAD_EX, *PMINIDUMP_THREAD_EX;
 
 typedef struct _MINIDUMP_THREAD_EX_LIST {
-	ULONG32 NumberOfThreads;
+	ut32 NumberOfThreads;
 	MINIDUMP_THREAD_EX Threads [0];
 } MINIDUMP_THREAD_EX_LIST, *PMINIDUMP_THREAD_EX_LIST;
 
 
 typedef struct _MINIDUMP_EXCEPTION  {
-	ULONG32 ExceptionCode;
-	ULONG32 ExceptionFlags;
-	ULONG64 ExceptionRecord;
-	ULONG64 ExceptionAddress;
-	ULONG32 NumberParameters;
-	ULONG32 __unusedAlignment;
-	ULONG64 ExceptionInformation[EXCEPTION_MAXIMUM_PARAMETERS];
+	ut32 ExceptionCode;
+	ut32 ExceptionFlags;
+	ut64 ExceptionRecord;
+	ut64 ExceptionAddress;
+	ut32 NumberParameters;
+	ut32 __unusedAlignment;
+	ut64 ExceptionInformation[EXCEPTION_MAXIMUM_PARAMETERS];
 } MINIDUMP_EXCEPTION, *PMINIDUMP_EXCEPTION;
 
 
 typedef struct MINIDUMP_EXCEPTION_STREAM {
-	ULONG32 ThreadId;
-	ULONG32  __alignment;
+	ut32 ThreadId;
+	ut32  __alignment;
 	MINIDUMP_EXCEPTION ExceptionRecord;
 	MINIDUMP_LOCATION_DESCRIPTOR ThreadContext;
 } MINIDUMP_EXCEPTION_STREAM, *PMINIDUMP_EXCEPTION_STREAM;
 
 
 typedef struct _MINIDUMP_MODULE {
-	ULONG64 BaseOfImage;
-	ULONG32 SizeOfImage;
-	ULONG32 CheckSum;
-	ULONG32 TimeDateStamp;
+	ut64 BaseOfImage;
+	ut32 SizeOfImage;
+	ut32 CheckSum;
+	ut32 TimeDateStamp;
 	RVA ModuleNameRva;
-	VS_FIXEDFILEINFO VersionInfo;
+	WINDOWS_VS_FIXEDFILEINFO VersionInfo;
 	MINIDUMP_LOCATION_DESCRIPTOR CvRecord;
 	MINIDUMP_LOCATION_DESCRIPTOR MiscRecord;
-	ULONG64 Reserved0;
-	ULONG64 Reserved1;
+	ut64 Reserved0;
+	ut64 Reserved1;
 } MINIDUMP_MODULE, *PMINIDUMP_MODULE;
 
 typedef struct _MINIDUMP_MODULE_LIST {
-	ULONG32 NumberOfModules;
+	ut32 NumberOfModules;
 	MINIDUMP_MODULE Modules [ 0 ];
 } MINIDUMP_MODULE_LIST, *PMINIDUMP_MODULE_LIST;
 
 
 typedef struct _MINIDUMP_MEMORY_LIST {
-	ULONG32 NumberOfMemoryRanges;
+	ut32 NumberOfMemoryRanges;
 	MINIDUMP_MEMORY_DESCRIPTOR MemoryRanges [0];
 } MINIDUMP_MEMORY_LIST, *PMINIDUMP_MEMORY_LIST;
 
 typedef struct _MINIDUMP_MEMORY64_LIST {
-	ULONG64 NumberOfMemoryRanges;
+	ut64 NumberOfMemoryRanges;
 	RVA64 BaseRva;
 	MINIDUMP_MEMORY_DESCRIPTOR64 MemoryRanges [0];
 } MINIDUMP_MEMORY64_LIST, *PMINIDUMP_MEMORY64_LIST;
 
 typedef struct _MINIDUMP_EXCEPTION_INFORMATION {
-	DWORD ThreadId;
-	PEXCEPTION_POINTERS_i386 ExceptionPointers;
-	BOOL ClientPointers;
+	ut32 ThreadId;
+	PEXCEPTION_POINTERS_I386 ExceptionPointers;
+	ut32/*bool*/ ClientPointers;
 } MINIDUMP_EXCEPTION_INFORMATION, *PMINIDUMP_EXCEPTION_INFORMATION;
 
 typedef struct _MINIDUMP_EXCEPTION_INFORMATION64 {
-	DWORD ThreadId;
-	ULONG64 ExceptionRecord;
-	ULONG64 ContextRecord;
-	BOOL ClientPointers;
+	ut32 ThreadId;
+	ut64 ExceptionRecord;
+	ut64 ContextRecord;
+	ut32/*bool*/ ClientPointers;
 } MINIDUMP_EXCEPTION_INFORMATION64, *PMINIDUMP_EXCEPTION_INFORMATION64;
-
 
 typedef enum _MINIDUMP_HANDLE_OBJECT_INFORMATION_TYPE {
 	MiniHandleObjectInformationNone,
@@ -247,30 +275,30 @@ typedef enum _MINIDUMP_HANDLE_OBJECT_INFORMATION_TYPE {
 
 typedef struct _MINIDUMP_HANDLE_OBJECT_INFORMATION {
 	RVA NextInfoRva;
-	ULONG32 InfoType;
-	ULONG32 SizeOfInfo;
+	ut32 InfoType;
+	ut32 SizeOfInfo;
 } MINIDUMP_HANDLE_OBJECT_INFORMATION;
 
 typedef struct _MINIDUMP_HANDLE_DESCRIPTOR {
-	ULONG64 Handle;
+	ut64 Handle;
 	RVA TypeNameRva;
 	RVA ObjectNameRva;
-	ULONG32 Attributes;
-	ULONG32 GrantedAccess;
-	ULONG32 HandleCount;
-	ULONG32 PointerCount;
+	ut32 Attributes;
+	ut32 GrantedAccess;
+	ut32 HandleCount;
+	ut32 PointerCount;
 } MINIDUMP_HANDLE_DESCRIPTOR, *PMINIDUMP_HANDLE_DESCRIPTOR;
 
 typedef struct _MINIDUMP_HANDLE_DESCRIPTOR_2 {
-	ULONG64 Handle;
+	ut64 Handle;
 	RVA TypeNameRva;
 	RVA ObjectNameRva;
-	ULONG32 Attributes;
-	ULONG32 GrantedAccess;
-	ULONG32 HandleCount;
-	ULONG32 PointerCount;
+	ut32 Attributes;
+	ut32 GrantedAccess;
+	ut32 HandleCount;
+	ut32 PointerCount;
 	RVA ObjectInfoRva;
-	ULONG32 Reserved0;
+	ut32 Reserved0;
 } MINIDUMP_HANDLE_DESCRIPTOR_2, *PMINIDUMP_HANDLE_DESCRIPTOR_2;
 
 
@@ -278,53 +306,52 @@ typedef MINIDUMP_HANDLE_DESCRIPTOR_2 MINIDUMP_HANDLE_DESCRIPTOR_N;
 typedef MINIDUMP_HANDLE_DESCRIPTOR_N *PMINIDUMP_HANDLE_DESCRIPTOR_N;
 
 typedef struct _MINIDUMP_HANDLE_DATA_STREAM {
-	ULONG32 SizeOfHeader;
-	ULONG32 SizeOfDescriptor;
-	ULONG32 NumberOfDescriptors;
-	ULONG32 Reserved;
+	ut32 SizeOfHeader;
+	ut32 SizeOfDescriptor;
+	ut32 NumberOfDescriptors;
+	ut32 Reserved;
 } MINIDUMP_HANDLE_DATA_STREAM, *PMINIDUMP_HANDLE_DATA_STREAM;
 
 typedef struct _MINIDUMP_HANDLE_OPERATION_LIST {
-	ULONG32 SizeOfHeader;
-	ULONG32 SizeOfEntry;
-	ULONG32 NumberOfEntries;
-	ULONG32 Reserved;
+	ut32 SizeOfHeader;
+	ut32 SizeOfEntry;
+	ut32 NumberOfEntries;
+	ut32 Reserved;
 } MINIDUMP_HANDLE_OPERATION_LIST, *PMINIDUMP_HANDLE_OPERATION_LIST;
 
 
 typedef struct _MINIDUMP_FUNCTION_TABLE_DESCRIPTOR {
-	ULONG64 MinimumAddress;
-	ULONG64 MaximumAddress;
-	ULONG64 BaseAddress;
-	ULONG32 EntryCount;
-	ULONG32 SizeOfAlignPad;
+	ut64 MinimumAddress;
+	ut64 MaximumAddress;
+	ut64 BaseAddress;
+	ut32 EntryCount;
+	ut32 SizeOfAlignPad;
 } MINIDUMP_FUNCTION_TABLE_DESCRIPTOR, *PMINIDUMP_FUNCTION_TABLE_DESCRIPTOR;
 
 typedef struct _MINIDUMP_FUNCTION_TABLE_STREAM {
-	ULONG32 SizeOfHeader;
-	ULONG32 SizeOfDescriptor;
-	ULONG32 SizeOfNativeDescriptor;
-	ULONG32 SizeOfFunctionEntry;
-	ULONG32 NumberOfDescriptors;
-	ULONG32 SizeOfAlignPad;
+	ut32 SizeOfHeader;
+	ut32 SizeOfDescriptor;
+	ut32 SizeOfNativeDescriptor;
+	ut32 SizeOfFunctionEntry;
+	ut32 NumberOfDescriptors;
+	ut32 SizeOfAlignPad;
 } MINIDUMP_FUNCTION_TABLE_STREAM, *PMINIDUMP_FUNCTION_TABLE_STREAM;
 
 
 typedef struct _MINIDUMP_UNLOADED_MODULE {
-	ULONG64 BaseOfImage;
-	ULONG32 SizeOfImage;
-	ULONG32 CheckSum;
-	ULONG32 TimeDateStamp;
+	ut64 BaseOfImage;
+	ut32 SizeOfImage;
+	ut32 CheckSum;
+	ut32 TimeDateStamp;
 	RVA ModuleNameRva;
 } MINIDUMP_UNLOADED_MODULE, *PMINIDUMP_UNLOADED_MODULE;
 
 
 typedef struct _MINIDUMP_UNLOADED_MODULE_LIST {
-	ULONG32 SizeOfHeader;
-	ULONG32 SizeOfEntry;
-	ULONG32 NumberOfEntries;
+	ut32 SizeOfHeader;
+	ut32 SizeOfEntry;
+	ut32 NumberOfEntries;
 } MINIDUMP_UNLOADED_MODULE_LIST, *PMINIDUMP_UNLOADED_MODULE_LIST;
-
 
 #define MINIDUMP_MISC1_PROCESS_ID		0x00000001
 #define MINIDUMP_MISC1_PROCESS_TIMES		0x00000002
@@ -336,66 +363,66 @@ typedef struct _MINIDUMP_UNLOADED_MODULE_LIST {
 #define MINIDUMP_MISC4_BUILDSTRING		0x00000100
 
 typedef struct _MINIDUMP_MISC_INFO {
-	ULONG32 SizeOfInfo;
-	ULONG32 Flags1;
-	ULONG32 ProcessId;
-	ULONG32 ProcessCreateTime;
-	ULONG32 ProcessUserTime;
-	ULONG32 ProcessKernelTime;
+	ut32 SizeOfInfo;
+	ut32 Flags1;
+	ut32 ProcessId;
+	ut32 ProcessCreateTime;
+	ut32 ProcessUserTime;
+	ut32 ProcessKernelTime;
 } MINIDUMP_MISC_INFO, *PMINIDUMP_MISC_INFO;
 
 typedef struct _MINIDUMP_MISC_INFO_2 {
-	ULONG32 SizeOfInfo;
-	ULONG32 Flags1;
-	ULONG32 ProcessId;
-	ULONG32 ProcessCreateTime;
-	ULONG32 ProcessUserTime;
-	ULONG32 ProcessKernelTime;
-	ULONG32 ProcessorMaxMhz;
-	ULONG32 ProcessorCurrentMhz;
-	ULONG32 ProcessorMhzLimit;
-	ULONG32 ProcessorMaxIdleState;
-	ULONG32 ProcessorCurrentIdleState;
+	ut32 SizeOfInfo;
+	ut32 Flags1;
+	ut32 ProcessId;
+	ut32 ProcessCreateTime;
+	ut32 ProcessUserTime;
+	ut32 ProcessKernelTime;
+	ut32 ProcessorMaxMhz;
+	ut32 ProcessorCurrentMhz;
+	ut32 ProcessorMhzLimit;
+	ut32 ProcessorMaxIdleState;
+	ut32 ProcessorCurrentIdleState;
 } MINIDUMP_MISC_INFO_2, *PMINIDUMP_MISC_INFO_2;
 
 typedef struct _MINIDUMP_MISC_INFO_3 {
-	ULONG32 SizeOfInfo;
-	ULONG32 Flags1;
-	ULONG32 ProcessId;
-	ULONG32 ProcessCreateTime;
-	ULONG32 ProcessUserTime;
-	ULONG32 ProcessKernelTime;
-	ULONG32 ProcessorMaxMhz;
-	ULONG32 ProcessorCurrentMhz;
-	ULONG32 ProcessorMhzLimit;
-	ULONG32 ProcessorMaxIdleState;
-	ULONG32 ProcessorCurrentIdleState;
-	ULONG32 ProcessIntegrityLevel;
-	ULONG32 ProcessExecuteFlags;
-	ULONG32 ProtectedProcess;
-	ULONG32 TimeZoneId;
-	TIME_ZONE_INFORMATION TimeZone;
+	ut32 SizeOfInfo;
+	ut32 Flags1;
+	ut32 ProcessId;
+	ut32 ProcessCreateTime;
+	ut32 ProcessUserTime;
+	ut32 ProcessKernelTime;
+	ut32 ProcessorMaxMhz;
+	ut32 ProcessorCurrentMhz;
+	ut32 ProcessorMhzLimit;
+	ut32 ProcessorMaxIdleState;
+	ut32 ProcessorCurrentIdleState;
+	ut32 ProcessIntegrityLevel;
+	ut32 ProcessExecuteFlags;
+	ut32 ProtectedProcess;
+	ut32 TimeZoneId;
+	WINDOWS_TIME_ZONE_INFORMATION TimeZone;
 } MINIDUMP_MISC_INFO_3, *PMINIDUMP_MISC_INFO_3;
 
 typedef struct _MINIDUMP_MISC_INFO_4 {
-	ULONG32 SizeOfInfo;
-	ULONG32 Flags1;
-	ULONG32 ProcessId;
-	ULONG32 ProcessCreateTime;
-	ULONG32 ProcessUserTime;
-	ULONG32 ProcessKernelTime;
-	ULONG32 ProcessorMaxMhz;
-	ULONG32 ProcessorCurrentMhz;
-	ULONG32 ProcessorMhzLimit;
-	ULONG32 ProcessorMaxIdleState;
-	ULONG32 ProcessorCurrentIdleState;
-	ULONG32 ProcessIntegrityLevel;
-	ULONG32 ProcessExecuteFlags;
-	ULONG32 ProtectedProcess;
-	ULONG32 TimeZoneId;
-	TIME_ZONE_INFORMATION TimeZone;
-	WCHAR   BuildString[WINDOWS_MAX_PATH];
-	WCHAR   DbgBldStr[40];
+	ut32 SizeOfInfo;
+	ut32 Flags1;
+	ut32 ProcessId;
+	ut32 ProcessCreateTime;
+	ut32 ProcessUserTime;
+	ut32 ProcessKernelTime;
+	ut32 ProcessorMaxMhz;
+	ut32 ProcessorCurrentMhz;
+	ut32 ProcessorMhzLimit;
+	ut32 ProcessorMaxIdleState;
+	ut32 ProcessorCurrentIdleState;
+	ut32 ProcessIntegrityLevel;
+	ut32 ProcessExecuteFlags;
+	ut32 ProtectedProcess;
+	ut32 TimeZoneId;
+	WINDOWS_TIME_ZONE_INFORMATION TimeZone;
+	ut16 BuildString[WINDOWS_MAX_PATH];
+	ut16 DbgBldStr[40];
 } MINIDUMP_MISC_INFO_4, *PMINIDUMP_MISC_INFO_4;
 
 
@@ -403,21 +430,21 @@ typedef MINIDUMP_MISC_INFO_4 MINIDUMP_MISC_INFO_N;
 typedef MINIDUMP_MISC_INFO_N *PMINIDUMP_MISC_INFO_N;
 
 typedef struct _MINIDUMP_MEMORY_INFO {
-	ULONG64 BaseAddress;
-	ULONG64 AllocationBase;
-	ULONG32 AllocationProtect;
-	ULONG32 __alignment1;
-	ULONG64 RegionSize;
-	ULONG32 State;
-	ULONG32 Protect;
-	ULONG32 Type;
-	ULONG32 __alignment2;
+	ut64 BaseAddress;
+	ut64 AllocationBase;
+	ut32 AllocationProtect;
+	ut32 __alignment1;
+	ut64 RegionSize;
+	ut32 State;
+	ut32 Protect;
+	ut32 Type;
+	ut32 __alignment2;
 } MINIDUMP_MEMORY_INFO, *PMINIDUMP_MEMORY_INFO;
 
 typedef struct _MINIDUMP_MEMORY_INFO_LIST {
-	ULONG SizeOfHeader;
-	ULONG SizeOfEntry;
-	ULONG64 NumberOfEntries;
+	ut32 SizeOfHeader;
+	ut32 SizeOfEntry;
+	ut64 NumberOfEntries;
 } MINIDUMP_MEMORY_INFO_LIST, *PMINIDUMP_MEMORY_INFO_LIST;
 
 
@@ -429,53 +456,53 @@ typedef struct _MINIDUMP_MEMORY_INFO_LIST {
 #define MINIDUMP_THREAD_INFO_INVALID_TEB	0x00000020
 
 typedef struct _MINIDUMP_THREAD_INFO {
-	ULONG32 ThreadId;
-	ULONG32 DumpFlags;
-	ULONG32 DumpError;
-	ULONG32 ExitStatus;
-	ULONG64 CreateTime;
-	ULONG64 ExitTime;
-	ULONG64 KernelTime;
-	ULONG64 UserTime;
-	ULONG64 StartAddress;
-	ULONG64 Affinity;
+	ut32 ThreadId;
+	ut32 DumpFlags;
+	ut32 DumpError;
+	ut32 ExitStatus;
+	ut64 CreateTime;
+	ut64 ExitTime;
+	ut64 KernelTime;
+	ut64 UserTime;
+	ut64 StartAddress;
+	ut64 Affinity;
 } MINIDUMP_THREAD_INFO, *PMINIDUMP_THREAD_INFO;
 
 typedef struct _MINIDUMP_THREAD_INFO_LIST {
-	ULONG SizeOfHeader;
-	ULONG SizeOfEntry;
-	ULONG NumberOfEntries;
+	ut32 SizeOfHeader;
+	ut32 SizeOfEntry;
+	ut32 NumberOfEntries;
 } MINIDUMP_THREAD_INFO_LIST, *PMINIDUMP_THREAD_INFO_LIST;
 
 
 typedef struct _MINIDUMP_TOKEN_INFO_HEADER {
-	ULONG   TokenSize;
-	ULONG   TokenId;
-	ULONG64 TokenHandle;
+	ut32   TokenSize;
+	ut32   TokenId;
+	ut64 TokenHandle;
 } MINIDUMP_TOKEN_INFO_HEADER, *PMINIDUMP_TOKEN_INFO_HEADER;
 
 typedef struct _MINIDUMP_TOKEN_INFO_LIST {
-	ULONG TokenListSize;
-	ULONG TokenListEntries;
-	ULONG ListHeaderSize;
-	ULONG ElementHeaderSize;
+	ut32 TokenListSize;
+	ut32 TokenListEntries;
+	ut32 ListHeaderSize;
+	ut32 ElementHeaderSize;
 } MINIDUMP_TOKEN_INFO_LIST, *PMINIDUMP_TOKEN_INFO_LIST;
 
 typedef struct _MINIDUMP_USER_RECORD {
-	ULONG32 Type;
+	ut32 Type;
 	MINIDUMP_LOCATION_DESCRIPTOR Memory;
 } MINIDUMP_USER_RECORD, *PMINIDUMP_USER_RECORD;
 
 
 typedef struct _MINIDUMP_USER_STREAM {
-	ULONG32 Type;
-	ULONG BufferSize;
-	PVOID Buffer;
+	ut32 Type;
+	ut32 BufferSize;
+	void*Buffer;
 } MINIDUMP_USER_STREAM, *PMINIDUMP_USER_STREAM;
 
 
 typedef struct _MINIDUMP_USER_STREAM_INFORMATION {
-	ULONG UserStreamCount;
+	ut32 UserStreamCount;
 	PMINIDUMP_USER_STREAM UserStreamArray;
 } MINIDUMP_USER_STREAM_INFORMATION, *PMINIDUMP_USER_STREAM_INFORMATION;
 
@@ -504,7 +531,7 @@ typedef enum _MINIDUMP_CALLBACK_TYPE {
 } MINIDUMP_CALLBACK_TYPE;
 
 typedef struct _MINIDUMP_INCLUDE_THREAD_CALLBACK {
-	ULONG ThreadId;
+	ut32 ThreadId;
 } MINIDUMP_INCLUDE_THREAD_CALLBACK, *PMINIDUMP_INCLUDE_THREAD_CALLBACK;
 
 
@@ -519,21 +546,21 @@ typedef enum _THREAD_WRITE_FLAGS {
 } THREAD_WRITE_FLAGS;
 
 typedef struct _MINIDUMP_MODULE_CALLBACK {
-	PWCHAR FullPath;
-	ULONG64 BaseOfImage;
-	ULONG SizeOfImage;
-	ULONG CheckSum;
-	ULONG TimeDateStamp;
-	VS_FIXEDFILEINFO VersionInfo;
-	PVOID CvRecord;
-	ULONG SizeOfCvRecord;
-	PVOID MiscRecord;
-	ULONG SizeOfMiscRecord;
+	ut16 *FullPath;
+	ut64 BaseOfImage;
+	ut32 SizeOfImage;
+	ut32 CheckSum;
+	ut32 TimeDateStamp;
+	WINDOWS_VS_FIXEDFILEINFO VersionInfo;
+	void *CvRecord;
+	ut32 SizeOfCvRecord;
+	void *MiscRecord;
+	ut32 SizeOfMiscRecord;
 } MINIDUMP_MODULE_CALLBACK, *PMINIDUMP_MODULE_CALLBACK;
 
 
 typedef struct _MINIDUMP_INCLUDE_MODULE_CALLBACK {
-	ULONG64 BaseOfImage;
+	ut64 BaseOfImage;
 } MINIDUMP_INCLUDE_MODULE_CALLBACK, *PMINIDUMP_INCLUDE_MODULE_CALLBACK;
 
 
@@ -547,70 +574,68 @@ typedef enum _MODULE_WRITE_FLAGS {
 	ModuleWriteCodeSegs		= 0x0040
 } MODULE_WRITE_FLAGS;
 
-
 typedef struct _MINIDUMP_IO_CALLBACK {
-	HANDLE Handle;
-	ULONG64 Offset;
-	PVOID Buffer;
-	ULONG BufferBytes;
+	void* Handle;
+	ut64 Offset;
+	void *Buffer;
+	ut32 BufferBytes;
 } MINIDUMP_IO_CALLBACK, *PMINIDUMP_IO_CALLBACK;
 
 
 typedef struct _MINIDUMP_READ_MEMORY_FAILURE_CALLBACK {
-	ULONG64 Offset;
-	ULONG Bytes;
-	HRESULT FailureStatus;
+	ut64 Offset;
+	ut32 Bytes;
+	R2_HRESULT FailureStatus;
 } MINIDUMP_READ_MEMORY_FAILURE_CALLBACK,
 *PMINIDUMP_READ_MEMORY_FAILURE_CALLBACK;
 
 typedef struct _MINIDUMP_VM_QUERY_CALLBACK {
-	ULONG64 Offset;
+	ut64 Offset;
 } MINIDUMP_VM_QUERY_CALLBACK, *PMINIDUMP_VM_QUERY_CALLBACK;
 
 typedef struct _MINIDUMP_VM_PRE_READ_CALLBACK {
-	ULONG64 Offset;
-	PVOID Buffer;
-	ULONG Size;
+	ut64 Offset;
+	void *Buffer;
+	ut32 Size;
 } MINIDUMP_VM_PRE_READ_CALLBACK, *PMINIDUMP_VM_PRE_READ_CALLBACK;
 
 typedef struct _MINIDUMP_VM_POST_READ_CALLBACK {
-	ULONG64 Offset;
-	PVOID Buffer;
-	ULONG Size;
-	ULONG Completed;
-	HRESULT Status;
+	ut64 Offset;
+	void *Buffer;
+	ut32 Size;
+	ut32 Completed;
+	R2_HRESULT Status;
 } MINIDUMP_VM_POST_READ_CALLBACK, *PMINIDUMP_VM_POST_READ_CALLBACK;
 
 typedef struct _MINIDUMP_CALLBACK_OUTPUT {
 	union {
-		ULONG ModuleWriteFlags;
-		ULONG ThreadWriteFlags;
-		ULONG SecondaryFlags;
+		ut32 ModuleWriteFlags;
+		ut32 ThreadWriteFlags;
+		ut32 SecondaryFlags;
 		struct {
-			ULONG64 MemoryBase;
-			ULONG MemorySize;
+			ut64 MemoryBase;
+			ut32 MemorySize;
 		};
 		struct {
-			BOOL CheckCancel;
-			BOOL Cancel;
+			ut32/*bool*/ CheckCancel;
+			ut32/*bool*/ Cancel;
 		};
-		HANDLE Handle;
+		void *Handle;
 		struct {
 			MINIDUMP_MEMORY_INFO VmRegion;
-			BOOL Continue;
+			ut32/*bool*/ Continue;
 		};
 		struct {
-			HRESULT VmQueryStatus;
+			R2_HRESULT VmQueryStatus;
 			MINIDUMP_MEMORY_INFO VmQueryResult;
 		};
 		struct {
-			HRESULT VmReadStatus;
-			ULONG VmReadBytesCompleted;
+			R2_HRESULT VmReadStatus;
+			ut32 VmReadBytesCompleted;
 		};
-		HRESULT Status;
+		R2_HRESULT Status;
 	};
 } MINIDUMP_CALLBACK_OUTPUT, *PMINIDUMP_CALLBACK_OUTPUT;
-
 
 typedef enum _MINIDUMP_TYPE {
 	MiniDumpNormal				= 0x00000000,
@@ -638,15 +663,12 @@ typedef enum _MINIDUMP_TYPE {
 	MiniDumpValidTypeFlags			= 0x001fffff
 } MINIDUMP_TYPE;
 
-
 typedef enum _MINIDUMP_SECONDARY_FLAGS {
 	MiniSecondaryWithoutPowerInfo	= 0x00000001,
 	MiniSecondaryValidFlags		= 0x00000001
 } MINIDUMP_SECONDARY_FLAGS;
 
-
-
-#define ARCH i386
+#define ARCH I386
 #include "platform.h"
 #undef ARCH
 
@@ -661,7 +683,5 @@ typedef enum _MINIDUMP_SECONDARY_FLAGS {
 #define ARCH AMD64
 #include "platform.h"
 #undef ARCH
-
-
 
 #endif /* MDMP_SPECS_H */
