@@ -470,7 +470,7 @@ repeat:
 		break;
 	case '.':
 		if (r_config_get_i (core->config, "cfg.debug")) {
-			r_core_cmd0 (core, "sr pc");
+			r_core_cmd0 (core, "sr PC");
 			//r_core_seek (core, r_num_math (core->num, "entry0"), 1);
 		} else {
 			r_core_cmd0 (core, "s entry0; px");
@@ -673,14 +673,14 @@ repeat:
 		break;
 	case 's':
 		if (r_config_get_i (core->config, "cfg.debug")) {
-			r_core_cmd0 (core, "ds;.dr*"); //;sr pc");
+			r_core_cmd0 (core, "ds;.dr*"); //;sr PC");
 		} else {
 			r_core_cmd0 (core, "aes;.ar*");
 		}
 		break;
 	case 'S':
 		if (r_config_get_i (core->config, "cfg.debug")) {
-			r_core_cmd0 (core, "dso;.dr*"); //;sr pc");
+			r_core_cmd0 (core, "dso;.dr*"); //;sr PC");
 		} else {
 			r_core_cmd0 (core, "aeso;.ar*");
 		}

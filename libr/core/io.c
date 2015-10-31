@@ -32,9 +32,9 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend) {
                 r_core_cmdf (r, "dcu %s", bep);
 		}
 	}
-	r_core_cmd (r, "sr pc", 0);
+	r_core_cmd (r, "sr PC", 0);
 	if (r_config_get_i (r->config, "dbg.status")) {
-		r_config_set (r->config, "cmd.prompt", ".dr* ; drd ; sr pc;pi 1;s-");
+		r_config_set (r->config, "cmd.prompt", ".dr*;drd;sr PC;pi 1;s-");
 	} else r_config_set (r->config, "cmd.prompt", ".dr*");
 	r_config_set (r->config, "cmd.vprompt", ".dr*");
 	return true;

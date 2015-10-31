@@ -173,7 +173,7 @@ static void dot_trace_traverse(RCore *core, RTree *t) {
 
 static int checkbpcallback(RCore *core) ;
 static int step_until(RCore *core, ut64 addr) {
-	ut64 off = r_debug_reg_get (core->dbg, "pc");
+	ut64 off = r_debug_reg_get (core->dbg, "PC");
 	if (off == 0LL) {
 		eprintf ("Cannot 'drn pc'\n");
 		return false;
@@ -193,7 +193,7 @@ static int step_until(RCore *core, ut64 addr) {
 			eprintf ("Interrupted by a breakpoint\n");
 			break;
 		}
-		off = r_debug_reg_get (core->dbg, "pc");
+		off = r_debug_reg_get (core->dbg, "PC");
 		// check breakpoint here
 	} while (off != addr);
 	r_cons_break_end();
@@ -251,7 +251,7 @@ static int step_until_inst(RCore *core, const char *instr) {
 			break;
 		}
 		/* TODO: disassemble instruction and strstr */
-		pc = r_debug_reg_get (core->dbg, "pc");
+		pc = r_debug_reg_get (core->dbg, "PC");
 		r_asm_set_pc (core->assembler, pc);
 		// TODO: speedup if instructions are in the same block as the previous
 		r_io_read_at (core->io, pc, buf, sizeof (buf));
@@ -291,7 +291,7 @@ static int step_until_flag(RCore *core, const char *instr) {
 			eprintf ("Interrupted by a breakpoint\n");
 			break;
 		}
-		pc = r_debug_reg_get (core->dbg, "pc");
+		pc = r_debug_reg_get (core->dbg, "PC");
 		list = r_flag_get_list (core->flags, pc);
 		r_list_foreach (list, iter, f) {
 			if (!instr|| !*instr || strstr(f->realname, instr)) {
@@ -308,7 +308,7 @@ beach:
 
 /* until end of frame */
 static int step_until_eof(RCore *core) {
-	ut64 off, now = r_debug_reg_get (core->dbg, "sp");
+	ut64 off, now = r_debug_reg_get (core->dbg, "SP");
 	r_cons_break (NULL, NULL);
 	do {
 		if (r_cons_singleton ()->breaked)
@@ -319,7 +319,7 @@ static int step_until_eof(RCore *core) {
 			eprintf ("Interrupted by a breakpoint\n");
 			break;
 		}
-		off = r_debug_reg_get (core->dbg, "sp");
+		off = r_debug_reg_get (core->dbg, "SP");
 		// check breakpoint here
 	} while (off <= now);
 	r_cons_break_end();
@@ -330,7 +330,7 @@ static int step_line(RCore *core, int times) {
 	char file[512], file2[512];
 	int find_meta, line = -1, line2 = -1;
 	char *tmp_ptr = NULL;
-	ut64 off = r_debug_reg_get (core->dbg, "pc");
+	ut64 off = r_debug_reg_get (core->dbg, "PC");
 	if (off == 0LL) {
 		eprintf ("Cannot 'drn pc'\n");
 		return false;
@@ -353,7 +353,7 @@ static int step_line(RCore *core, int times) {
 			eprintf ("Interrupted by a breakpoint\n");
 			break;
 		}
-		off = r_debug_reg_get (core->dbg, "pc");
+		off = r_debug_reg_get (core->dbg, "PC");
 		if (!r_bin_addr2line (core->bin, off, file2, sizeof (file2), &line2)) {
 			if (find_meta)
 				continue;
@@ -492,7 +492,7 @@ static void cmd_debug_backtrace (RCore *core, const char *input) {
 				eprintf ("Interrupted by breakpoint\n");
 				break;
 			}
-			addr = r_debug_reg_get (core->dbg, "pc");
+			addr = r_debug_reg_get (core->dbg, "PC");
 			if (addr == 0LL) {
 				eprintf ("pc=0\n");
 				break;
@@ -1278,20 +1278,13 @@ free (rf);
 			RRegItem *r;
 			int i;
 			int first = 1;
-			static const char *types[R_REG_TYPE_LAST+1] = {
-				"gpr", "drx", "fpu", "mmx", "xmm", "flg", "seg", NULL
-			};
-			static const char *roles[R_REG_NAME_LAST+1] = {
-				"pc", "sp", "sr", "bp", "ao", "a1",
-				"a2", "a3", "a4", "a5", "a6", "zf",
-				"sf", "cf", "of", "sb", NULL
-			};
 			r_cons_printf ("{\"alias_info\":[");
 			for (i = 0; i < R_REG_NAME_LAST; i++) {
 				if (core->dbg->reg->name[i]) {
 					if (!first) r_cons_printf (",");
 					r_cons_printf ("{\"role\":%d,", i);
-					r_cons_printf ("\"role_str\":\"%s\",", roles[i]);
+					r_cons_printf ("\"role_str\":\"%s\",",
+						r_reg_get_role (i));
 					r_cons_printf ("\"reg\":\"%s\"}",
 						core->dbg->reg->name[i]);
 					first = 0;
@@ -1303,7 +1296,8 @@ free (rf);
 				r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
 					if (!first) r_cons_printf (",");
 					r_cons_printf ("{\"type\":%d,", r->type);
-					r_cons_printf ("\"type_str\":\"%s\",", types[r->type]);
+					r_cons_printf ("\"type_str\":\"%s\",",
+							r_reg_get_type (r->type));
 					r_cons_printf ("\"name\":\"%s\",", r->name);
 					r_cons_printf ("\"size\":%d,", r->size);
 					r_cons_printf ("\"offset\":%d}", r->offset);
@@ -1469,7 +1463,7 @@ free (rf);
 }
 
 static int checkbpcallback(RCore *core) {
-	ut64 pc = r_debug_reg_get (core->dbg, "pc");
+	ut64 pc = r_debug_reg_get (core->dbg, "PC");
 	RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, pc);
 	if (bpi) {
 		const char *cmdbp = r_config_get (core->config, "cmd.bp");
@@ -1486,7 +1480,7 @@ static int bypassbp(RCore *core) {
 	RBreakpointItem *bpi;
 	ut64 addr;
 	r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-	addr = r_debug_reg_get (core->dbg, "pc");
+	addr = r_debug_reg_get (core->dbg, "PC");
 	bpi = r_bp_get_at (core->dbg->bp, addr);
 	if (!bpi) return false;
 	/* XXX 2 if libr/debug/debug.c:226 is enabled */
@@ -2011,7 +2005,7 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 		debug_to = UT64_MAX;
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false))
 			break;
-		addr = r_debug_reg_get (dbg, "pc");
+		addr = r_debug_reg_get (dbg, "PC");
 		addr_in_range = addr >= from && addr < to;
 
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
@@ -2027,7 +2021,7 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 			// get pc
 			r_debug_step (dbg, 1);
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-			called_addr = r_debug_reg_get (dbg, "pc");
+			called_addr = r_debug_reg_get (dbg, "PC");
 			called_in_range = called_addr >= from && called_addr < to;
 			if (!called_in_range && addr_in_range && shallow_trace)
 				debug_to = addr;
@@ -2056,7 +2050,7 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 			// TODO: we must store ret value for each call in the graph path to do this check
 			r_debug_step (dbg, 1);
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-			addr = r_debug_reg_get (dbg, "pc");
+			addr = r_debug_reg_get (dbg, "PC");
 			// TODO: step into and check return address if correct
 			// if not correct we are hijacking the control flow (exploit!)
 #endif
@@ -2165,12 +2159,12 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 		if (input[1] == 'u' && input[2] == ' ') { // "desu"
 			ut64 addr, naddr, fin = r_num_math (core->num, input+2);
 			r_core_cmd0 (core, "aei");
-			addr = r_debug_reg_get (core->dbg, "pc");
+			addr = r_debug_reg_get (core->dbg, "PC");
 			while (addr != fin) {
 				r_debug_esil_prestep (core->dbg, r_config_get_i (
 					core->config, "esil.prestep"));
 				r_debug_esil_step (core->dbg, 1);
-				naddr = r_debug_reg_get (core->dbg, "pc");
+				naddr = r_debug_reg_get (core->dbg, "PC");
 				if (naddr == addr) {
 					eprintf ("Detected loophole\n");
 					break;
@@ -2423,7 +2417,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			do {
 				r_debug_step (core->dbg, 1);
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-				pc = r_debug_reg_get (core->dbg, "pc");
+				pc = r_debug_reg_get (core->dbg, "PC");
 				eprintf (" %d %"PFMT64x"\r", n++, pc);
 				s = r_io_section_vget (core->io, pc);
 				if (r_cons_singleton ()->breaked)
@@ -2448,7 +2442,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			do {
 				r_debug_step (core->dbg, 1);
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-				pc = r_debug_reg_get (core->dbg, "pc");
+				pc = r_debug_reg_get (core->dbg, "PC");
 				eprintf ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x"\n",
 						from, pc, to);
 			} while (pc < from || pc > to);
@@ -2570,7 +2564,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			ut64 addr;
 			RAnalOp aop;
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-			addr = r_debug_reg_get (core->dbg, "pc");
+			addr = r_debug_reg_get (core->dbg, "PC");
 			r_io_read_at (core->io, addr, buf, sizeof (buf));
 			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
 			if (aop.type == R_ANAL_OP_TYPE_CALL) {
@@ -2590,7 +2584,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	case 's':
 		{
 			char delb[128] = {0};
-			addr = r_debug_reg_get (core->dbg, "pc");
+			addr = r_debug_reg_get (core->dbg, "PC");
 			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
 			sprintf(delb, "db 0x%"PFMT64x"", addr);
 			r_reg_arena_swap (core->dbg->reg, true);
@@ -2605,14 +2599,14 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				}
 				addr += aop.size;
 			}
-			r_debug_reg_set (core->dbg, "pc", addr);
+			r_debug_reg_set (core->dbg, "PC", addr);
 			if (bpi) r_core_cmd0 (core, delb);
 			break;
 		}
 	case 'o':
 		{
 			char delb[128] = {0};
-			addr = r_debug_reg_get (core->dbg, "pc");
+			addr = r_debug_reg_get (core->dbg, "PC");
 			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
 			sprintf(delb, "db 0x%"PFMT64x"", addr);
 			r_bp_del (core->dbg->bp, addr);
@@ -3028,9 +3022,9 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	}
 	if (follow > 0) {
-		ut64 pc = r_debug_reg_get (core->dbg, "pc");
+		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		if ((pc < core->offset) || (pc > (core->offset + follow)))
-			r_core_cmd0 (core, "sr pc");
+			r_core_cmd0 (core, "sr PC");
 	}
 	return 0;
 }

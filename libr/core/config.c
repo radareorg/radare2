@@ -651,7 +651,7 @@ static int cb_dbgstatus(void *user, void *data) {
 	if (r_config_get_i (r->config, "cfg.debug")) {
 		if (node->i_value)
 			r_config_set (r->config, "cmd.prompt",
-				".dr* ; drd ; sr pc;pi 1;s-");
+				".dr*; drd; sr PC;pi 1;s-");
 		else r_config_set (r->config, "cmd.prompt", ".dr*");
 	}
 	return true;
@@ -1413,7 +1413,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("dbg.profile", "", &cb_runprofile, "Path to RRunProfile file");
 	SETCB("dbg.args", "", &cb_dbg_args, "Set the args of the program to debug");
 	/* debug */
-	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr pc;pi 1;s-'");
+	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;s-'");
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");
 	SETCB("dbg.bep", "loader", &cb_dbgbep, "break on entrypoint (loader, entry, constructor, main)");
 	if (core->cons->rows>30) // HACKY

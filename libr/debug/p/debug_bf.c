@@ -138,9 +138,9 @@ static int r_debug_bf_detach(int pid) {
 
 static char *r_debug_bf_reg_profile(RDebug *dbg) {
 	return strdup (
-	"=pc	pc\n"
-	"=sp	esp\n"
-	"=bp	ptr\n"
+	"=PC	pc\n"
+	"=SP	esp\n"
+	"=BP	ptr\n"
 	"gpr	pc	.32	0	0\n"
 	"gpr	ptr	.32	4	0\n"
 	"gpr	esp	.32	8	0\n"
@@ -155,13 +155,13 @@ static char *r_debug_bf_reg_profile(RDebug *dbg) {
 
 static int r_debug_bf_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	//r_io_system (dbg->iob.io, "db");
-	return R_FALSE;
+	return false;
 }
 
 static int r_debug_bf_kill(RDebug *dbg, int pid, int tid, int sig) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_reset (o->bfvm);
-	return R_TRUE;
+	return true;
 }
 
 static RList *r_debug_native_map_get(RDebug *dbg) {

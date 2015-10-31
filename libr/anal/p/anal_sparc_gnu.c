@@ -474,9 +474,10 @@ static int set_reg_profile(RAnal *anal) {
 	   See sys/procfs_isa.h on a Solaris10 Sparc machine and 
 	   'man 4 core' for reference.
 	 */
-	const char *p = "=pc	pc\n"
-	"=sp	o6\n"
-	"=bp	i6\n"
+	const char *p =
+	"=PC	pc\n"
+	"=SP	o6\n"
+	"=BP	i6\n"
 	/* prgregset_t for _LP64 */
 	"gpr	g0	.64	0	0\n"
 	"gpr	g1	.64	8	0\n"

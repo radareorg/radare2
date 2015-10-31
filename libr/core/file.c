@@ -134,7 +134,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	if (isdebug) {
 		r_core_cmd0 (core, ".dm*");
 		r_core_cmd0 (core, ".dr*");
-		r_core_cmd0 (core, "sr pc");
+		r_core_cmd0 (core, "sr PC");
 	}
 	// This is done to ensure that the file is correctly
 	// loaded into the view

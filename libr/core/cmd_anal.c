@@ -1262,20 +1262,13 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			RRegItem *r;
 			int i;
 			int first = 1;
-			static const char *types[R_REG_TYPE_LAST+1] = {
-				"gpr", "drx", "fpu", "mmx", "xmm", "flg", "seg", NULL
-			};
-			static const char *roles[R_REG_NAME_LAST+1] = {
-				"pc", "sp", "sr", "bp", "ao", "a1",
-				"a2", "a3", "a4", "a5", "a6", "zf",
-				"sf", "cf", "of", "sb", NULL
-			};
 			r_cons_printf ("{\"alias_info\":[");
 			for (i = 0; i < R_REG_NAME_LAST; i++) {
 				if (core->dbg->reg->name[i]) {
+					const char* rolestr = r_reg_get_role (i);
 					if (!first) r_cons_printf (",");
 					r_cons_printf ("{\"role\":%d,", i);
-					r_cons_printf ("\"role_str\":\"%s\",", roles[i]);
+					r_cons_printf ("\"role_str\":\"%s\",", rolestr);
 					r_cons_printf ("\"reg\":\"%s\"}",
 						core->dbg->reg->name[i]);
 					first = 0;
@@ -1287,7 +1280,8 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
 					if (!first) r_cons_printf (",");
 					r_cons_printf ("{\"type\":%d,", r->type);
-					r_cons_printf ("\"type_str\":\"%s\",", types[r->type]);
+					r_cons_printf ("\"type_str\":\"%s\",",
+						r_reg_get_role (r->type));
 					r_cons_printf ("\"name\":\"%s\",", r->name);
 					r_cons_printf ("\"size\":%d,", r->size);
 					r_cons_printf ("\"offset\":%d}", r->offset);
@@ -1466,9 +1460,9 @@ sleep (1);
 
 	ut64 follow = r_config_get_i (core->config, "dbg.follow");
 	if (follow>0) {
-		ut64 pc = r_debug_reg_get (core->dbg, "pc");
+		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		if ((pc<core->offset) || (pc > (core->offset+follow)))
-			r_core_cmd0 (core, "sr pc");
+			r_core_cmd0 (core, "sr PC");
 	}
 
 	if (core->dbg->trace->enabled) {
@@ -1728,11 +1722,11 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		case 'l': // "aesl"
 			{
-				ut64 pc = r_debug_reg_get (core->dbg, "pc");
+				ut64 pc = r_debug_reg_get (core->dbg, "PC");
 				RAnalOp *op = r_core_anal_op (core, pc);
 				if (!op) break;
 				esil_step (core, UT64_MAX, NULL);
-				r_debug_reg_set (core->dbg, "pc", pc + op->size);
+				r_debug_reg_set (core->dbg, "PC", pc + op->size);
                                 r_anal_esil_set_pc (esil, pc + op->size);
 				r_core_cmd0 (core, ".ar*");
 			}
@@ -1891,7 +1885,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 						r_asm_set_pc (core->assembler, pc);
 						ret = r_anal_op (core->anal, &op, addr, buf, 32); // read overflow
 						if (ret) {
-							r_reg_setv (core->anal->reg, "pc", pc);
+							r_reg_setv (core->anal->reg, "PC", pc);
 							r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
 							r_anal_esil_dumpstack (esil);
 							r_anal_esil_stack_free (esil);

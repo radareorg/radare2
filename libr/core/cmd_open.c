@@ -224,7 +224,7 @@ static void reopen_in_debug(RCore *core, const char *args) {
 		r_config_set_i (core->config, "bin.baddr", new_baddr);
 		r_core_bin_load (core, newfile, new_baddr);
 	}
-	r_core_cmd0 (core, "sr pc");
+	r_core_cmd0 (core, "sr PC");
 	free (oldname);
 	free (binpath);
 }

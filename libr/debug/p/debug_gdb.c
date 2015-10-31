@@ -191,14 +191,14 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	case R_SYS_ARCH_X86:
 		if ( dbg->anal->bits == 16 || dbg->anal->bits == 32) {
 			return strdup (
-					"=pc	eip\n"
-					"=sp	esp\n"
-					"=bp	ebp\n"
-					"=a0	eax\n"
-					"=a1	ebx\n"
-					"=a2	ecx\n"
-					"=a3	edi\n"
-					"=sn	oeax\n"
+				"=PC	eip\n"
+				"=SP	esp\n"
+				"=BP	ebp\n"
+				"=A0	eax\n"
+				"=A1	ebx\n"
+				"=A2	ecx\n"
+				"=A3	edi\n"
+				"=SN	oeax\n"
 				"gpr	eax	.32	0	0\n"
 				"gpr	ecx	.32	4	0\n"
 				"gpr	edx	.32	8	0\n"
@@ -246,14 +246,14 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 		}
 		else if ( dbg->anal->bits == 64) {
 			return strdup (
-					"=pc	rip\n"
-					"=sp	rsp\n"
-					"=bp	rbp\n"
-					"=a0	rax\n"
-					"=a1	rbx\n"
-					"=a2	rcx\n"
-					"=a3	rdx\n"
-					"=sn	orax\n"
+				"=PC	rip\n"
+				"=SP	rsp\n"
+				"=BP	rbp\n"
+				"=A0	rax\n"
+				"=A1	rbx\n"
+				"=A2	rcx\n"
+				"=A3	rdx\n"
+				"=SN	orax\n"
 				"gpr	rax	.64	0	0\n"
 				"gpr	rbx	.64	8	0\n"
 				"gpr	rcx	.64	16	0\n"
@@ -316,13 +316,13 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 					);
 		}
 		return strdup (
-		"=pc	eip\n"
-		"=sp	esp\n"
-		"=bp	ebp\n"
-		"=a0	eax\n"
-		"=a1	ebx\n"
-		"=a2	ecx\n"
-		"=a3	edi\n"
+		"=PC	eip\n"
+		"=SP	esp\n"
+		"=BP	ebp\n"
+		"=A0	eax\n"
+		"=A1	ebx\n"
+		"=A2	ecx\n"
+		"=A3	edi\n"
 		"gpr	eax	.32	0	0\n"
 		"gpr	ecx	.32	4	0\n"
 		"gpr	edx	.32	8	0\n"
@@ -343,12 +343,12 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	case R_SYS_ARCH_ARM:
 		if (dbg->bits == R_SYS_BITS_32) {
 			return strdup (
-				"=pc	r15\n"
-				"=sp	r14\n" // XXX
-				"=a0	r0\n"
-				"=a1	r1\n"
-				"=a2	r2\n"
-				"=a3	r3\n"
+				"=PC	r15\n"
+				"=SP	r14\n" // XXX
+				"=A0	r0\n"
+				"=A1	r1\n"
+				"=A2	r2\n"
+				"=A3	r3\n"
 				"gpr	lr	.32	56	0\n" // r14
 				"gpr	pc	.32	60	0\n" // r15
 				"gpr	r0	.32	0	0\n"
@@ -380,12 +380,12 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			);
 		} else if (dbg->bits == R_SYS_BITS_64) {
 			return strdup (
-			"=pc	pc\n"
-			"=sp	sp\n"
-			"=a0	r0\n"
-			"=a1	r1\n"
-			"=a2	r2\n"
-			"=a3	r3\n"
+			"=PC	pc\n"
+			"=SP	sp\n"
+			"=A0	r0\n"
+			"=A1	r1\n"
+			"=A2	r2\n"
+			"=A3	r3\n"
 			"gpr	x0	.64	0	0\n"
 			"gpr	x1	.64	8	0\n"
 			"gpr	x2	.64	16	0\n"
@@ -425,9 +425,9 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 		return NULL;
 	case R_SYS_ARCH_SH:
 		return strdup (
-			"=pc    pc\n"
-			"=sp    r15\n"
-			"=bp    r14\n"
+			"=PC    pc\n"
+			"=SP    r15\n"
+			"=BP    r14\n"
 			"gpr	r0	.32	0	0\n"
 			"gpr	r1	.32	4	0\n"
 			"gpr	r2	.32	8	0\n"
@@ -453,9 +453,9 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 		);
 	case R_SYS_ARCH_MIPS:
 		return strdup (
-			"=pc    pc\n"
-			"=sp    sp\n"
-			"=bp    gp\n"
+			"=PC    pc\n"
+			"=SP    sp\n"
+			"=BP    gp\n"
 			"gpr	zero	.32	0	0\n"
 			"gpr	at	.32	4	0\n"
 			"gpr	v0	.32	8	0\n"
@@ -532,8 +532,8 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 		);
 	case R_SYS_ARCH_AVR:
 		return strdup (
-			"=pc    pc\n"
-			"=sp    sp\n"
+			"=PC    pc\n"
+			"=SP    sp\n"
 			"gpr	r0	.8	0	0\n"
 			"gpr	r1	.8	1	0\n"
 			"gpr	r2	.8	2	0\n"

@@ -97,13 +97,13 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 
 static int set_reg_profile(RAnal *anal) {
 	const char *p = \
-		"=pc	pc\n"
-		"=bp	brk\n"
-		"=sp	ptr\n"
-		"=a0	rax\n"
-		"=a1	rbx\n"
-		"=a2	rcx\n"
-		"=a3	rdx\n"
+		"=PC	pc\n"
+		"=BP	brk\n"
+		"=SP	ptr\n"
+		"=A0	rax\n"
+		"=A1	rbx\n"
+		"=A2	rcx\n"
+		"=A3	rdx\n"
 		"gpr	ptr	.32	0	0\n" // data pointer
 		"gpr	pc	.32	4	0\n" // program counter
 		"gpr	brk	.32	8	0\n" // brackets

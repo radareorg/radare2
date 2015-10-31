@@ -88,9 +88,9 @@ static char *__esil_reg_profile(RDebug *dbg) {
 	eprintf ("TODO: esil %s\n", dbg->arch);
 	if (!strcmp (dbg->arch, "bf")) {
 		return strdup (
-			"=pc	pc\n"
-			"=sp	esp\n"
-			"=bp	ptr\n"
+			"=PC	pc\n"
+			"=SP	esp\n"
+			"=BP	ptr\n"
 			"gpr	rax	.32	0	0\n"
 			"gpr	pc	.32	0	0\n"
 			"gpr	ptr	.32	4	0\n"

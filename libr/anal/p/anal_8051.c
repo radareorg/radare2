@@ -440,9 +440,9 @@ static int esil_i8051_fini (RAnalEsil *esil) {
 }
 
 static int set_reg_profile(RAnal *anal) {
-	char *p =
-		"=pc	pc\n"
-		"=sp	sp\n"
+	const char *p =
+		"=PC	pc\n"
+		"=SP	sp\n"
 		"gpr	r0	.8	0	0\n"
 		"gpr	r1	.8	1	0\n"
 		"gpr	r2	.8	2	0\n"

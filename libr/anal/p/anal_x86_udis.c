@@ -12,59 +12,58 @@
 static st64 getval(ud_operand_t *op);
 // XXX Copypasta from udis
 #define UD_REG_TAB_SIZE (sizeof (ud_reg_tab)/sizeof (*ud_reg_tab))
-static const char* ud_reg_tab[] =
-{
-  "al",   "cl",   "dl",   "bl",
-  "ah",   "ch",   "dh",   "bh",
-  "spl",  "bpl",  "sil",  "dil",
-  "r8b",  "r9b",  "r10b", "r11b",
-  "r12b", "r13b", "r14b", "r15b",
+static const char* ud_reg_tab[] = {
+	"al",   "cl",   "dl",   "bl",
+	"ah",   "ch",   "dh",   "bh",
+	"spl",  "bpl",  "sil",  "dil",
+	"r8b",  "r9b",  "r10b", "r11b",
+	"r12b", "r13b", "r14b", "r15b",
 
-  "ax",   "cx",   "dx",   "bx",
-  "sp",   "bp",   "si",   "di",
-  "r8w",  "r9w",  "r10w", "r11w",
-  "r12w", "r13w", "r14w", "r15w",
+	"ax",   "cx",   "dx",   "bx",
+	"sp",   "bp",   "si",   "di",
+	"r8w",  "r9w",  "r10w", "r11w",
+	"r12w", "r13w", "r14w", "r15w",
 
-  "eax",  "ecx",  "edx",  "ebx",
-  "esp",  "ebp",  "esi",  "edi",
-  "r8d",  "r9d",  "r10d", "r11d",
-  "r12d", "r13d", "r14d", "r15d",
+	"eax",  "ecx",  "edx",  "ebx",
+	"esp",  "ebp",  "esi",  "edi",
+	"r8d",  "r9d",  "r10d", "r11d",
+	"r12d", "r13d", "r14d", "r15d",
 
-  "rax",  "rcx",    "rdx",    "rbx",
-  "rsp",  "rbp",    "rsi",    "rdi",
-  "r8",   "r9",     "r10",    "r11",
-  "r12",  "r13",    "r14",    "r15",
+	"rax",  "rcx",    "rdx",    "rbx",
+	"rsp",  "rbp",    "rsi",    "rdi",
+	"r8",   "r9",     "r10",    "r11",
+	"r12",  "r13",    "r14",    "r15",
 
-  "es",   "cs",   "ss",   "ds",
-  "fs",   "gs",
+	"es",   "cs",   "ss",   "ds",
+	"fs",   "gs",
 
-  "cr0",  "cr1",    "cr2",    "cr3",
-  "cr4",  "cr5",    "cr6",    "cr7",
-  "cr8",  "cr9",    "cr10",   "cr11",
-  "cr12", "cr13",   "cr14",   "cr15",
+	"cr0",  "cr1",    "cr2",    "cr3",
+	"cr4",  "cr5",    "cr6",    "cr7",
+	"cr8",  "cr9",    "cr10",   "cr11",
+	"cr12", "cr13",   "cr14",   "cr15",
 
-  "dr0",  "dr1",    "dr2",    "dr3",
-  "dr4",  "dr5",    "dr6",    "dr7",
-  "dr8",  "dr9",    "dr10",   "dr11",
-  "dr12", "dr13",   "dr14",   "dr15",
+	"dr0",  "dr1",    "dr2",    "dr3",
+	"dr4",  "dr5",    "dr6",    "dr7",
+	"dr8",  "dr9",    "dr10",   "dr11",
+	"dr12", "dr13",   "dr14",   "dr15",
 
-  "mm0",  "mm1",    "mm2",    "mm3",
-  "mm4",  "mm5",    "mm6",    "mm7",
+	"mm0",  "mm1",    "mm2",    "mm3",
+	"mm4",  "mm5",    "mm6",    "mm7",
 
-  "st0",  "st1",    "st2",    "st3",
-  "st4",  "st5",    "st6",    "st7",
+	"st0",  "st1",    "st2",    "st3",
+	"st4",  "st5",    "st6",    "st7",
 
-  "xmm0", "xmm1",   "xmm2",   "xmm3",
-  "xmm4", "xmm5",   "xmm6",   "xmm7",
-  "xmm8", "xmm9",   "xmm10",  "xmm11",
-  "xmm12","xmm13",  "xmm14",  "xmm15",
+	"xmm0", "xmm1",   "xmm2",   "xmm3",
+	"xmm4", "xmm5",   "xmm6",   "xmm7",
+	"xmm8", "xmm9",   "xmm10",  "xmm11",
+	"xmm12","xmm13",  "xmm14",  "xmm15",
 
-  "ymm0", "ymm1",   "ymm2",   "ymm3",
-  "ymm4", "ymm5",   "ymm6",   "ymm7",
-  "ymm8", "ymm9",   "ymm10",  "ymm11",
-  "ymm12","ymm13",  "ymm14",  "ymm15",
+	"ymm0", "ymm1",   "ymm2",   "ymm3",
+	"ymm4", "ymm5",   "ymm6",   "ymm7",
+	"ymm8", "ymm9",   "ymm10",  "ymm11",
+	"ymm12","ymm13",  "ymm14",  "ymm15",
 
-  "rip"
+	"rip"
 };
 
 static int getarg(char *src, struct ud *u, st64 mask, int idx, int regsz) {
@@ -572,14 +571,14 @@ default:
 static int set_reg_profile(RAnal *anal) {
 	const char *p = NULL;
 	switch (anal->bits) {
-	case 16: p=
-		"=pc	ip\n"
-		"=sp	sp\n"
-		"=bp	bp\n"
-		"=a0	ax\n"
-		"=a1	bx\n"
-		"=a2	cx\n"
-		"=a3	di\n"
+	case 16: p =
+		"=PC	ip\n"
+		"=SP	sp\n"
+		"=BP	bp\n"
+		"=A0	ax\n"
+		"=A1	bx\n"
+		"=A2	cx\n"
+		"=A3	di\n"
 		"gpr	ip	.16	48	0\n"
 		"gpr	ax	.16	24	0\n"
 		"gpr	ah	.8	24	0\n"
@@ -620,14 +619,14 @@ static int set_reg_profile(RAnal *anal) {
 		"drx	dr7	.32	28	0\n"
 #endif
 		break;
-	case 32: p=
-		"=pc	eip\n"
-		"=sp	esp\n"
-		"=bp	ebp\n"
-		"=a0	eax\n"
-		"=a1	ebx\n"
-		"=a2	ecx\n"
-		"=a3	edi\n"
+	case 32: p =
+		"=PC	eip\n"
+		"=SP	esp\n"
+		"=BP	ebp\n"
+		"=A0	eax\n"
+		"=A1	ebx\n"
+		"=A2	ecx\n"
+		"=A3	edi\n"
 		"gpr	eip	.32	48	0\n"
 		"gpr	ip	.16	48	0\n"
 		"gpr	oeax	.32	44	0\n"
@@ -681,14 +680,14 @@ static int set_reg_profile(RAnal *anal) {
 		"drx	dr6	.32	24	0\n"
 		"drx	dr7	.32	28	0\n";
 		 break;
-	default: p=
-		 "=pc	rip\n"
-		 "=sp	rsp\n"
-		 "=bp	rbp\n"
-		 "=a0	rax\n"
-		 "=a1	rbx\n"
-		 "=a2	rcx\n"
-		 "=a3	rdx\n"
+	default: p =
+		 "=PC	rip\n"
+		 "=SP	rsp\n"
+		 "=BP	rbp\n"
+		 "=A0	rax\n"
+		 "=A1	rbx\n"
+		 "=A2	rcx\n"
+		 "=A3	rdx\n"
 		 "# no profile defined for x86-64\n"
 		 "gpr	r15	.64	0	0\n"
 		 "gpr	r14	.64	8	0\n"

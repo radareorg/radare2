@@ -335,16 +335,16 @@ static int esil_avr_fini (RAnalEsil *esil) {
 }
 
 static int set_reg_profile(RAnal *anal) {
-	char *p =
-		"=pc	PC\n"
-		"=sp	SP\n"
+	const char *p =
+		"=PC	PC\n"
+		"=SP	SP\n"
 // explained in http://www.nongnu.org/avr-libc/user-manual/FAQ.html
 // and http://www.avrfreaks.net/forum/function-calling-convention-gcc-generated-assembly-file
-		"=a0	r25\n"
-		"=a1	r24\n"
-		"=a2	r23\n"
-		"=a3	r22\n"
-		"=r0	r24\n"
+		"=A0	r25\n"
+		"=A1	r24\n"
+		"=A2	r23\n"
+		"=A3	r22\n"
+		"=R0	r24\n"
 #if 0
 PC: 16- or 22-bit program counter
 SP: 8- or 16-bit stack pointer

@@ -2171,7 +2171,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		title = get_title (addr);
 
 		if (!acur || strcmp (acur->title, title) != 0) {
-			r_core_cmd0 (core, "sr pc");
+			r_core_cmd0 (core, "sr PC");
 		}
 		free (title);
 		g->is_instep = false;
