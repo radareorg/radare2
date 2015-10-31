@@ -5,7 +5,6 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../../asm/arch/riscv/riscv-opc.c"
 #include "../../asm/arch/riscv/riscv.h"
 
 #define NARGS_SEQ(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,\
