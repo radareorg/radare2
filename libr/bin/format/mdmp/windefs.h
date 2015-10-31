@@ -356,7 +356,7 @@ typedef struct _CONTEXT_TYPE_ARM {
 	ut32 Fpscr;
 	ut32 Padding;
 	union {
-		NEON128 Q[16];
+		WINDOWS_NEON128 Q[16];
 		ut64 D[32];
 		ut32 S[32];
 	};
@@ -382,8 +382,8 @@ typedef struct _XSAVE_FORMAT32 {
 	ut16 Reserved3;
 	ut32 MxCsr;
 	ut32 MxCsr_Mask;
-	M128A FloatRegisters[8];
-	M128A XmmRegisters[8];
+	WINDOWS_M128A FloatRegisters[8];
+	WINDOWS_M128A XmmRegisters[8];
 	ut8 Reserved4[224];
 } XSAVE_FORMAT32, *PXSAVE_FORMAT32;
 
@@ -437,28 +437,28 @@ typedef struct _CONTEXT_TYPE_AMD64 {
 	union {
 		XMM_SAVE_AREA32 FltSave;
 		struct {
-			M128A Header[2];
-			M128A Legacy[8];
-			M128A Xmm0;
-			M128A Xmm1;
-			M128A Xmm2;
-			M128A Xmm3;
-			M128A Xmm4;
-			M128A Xmm5;
-			M128A Xmm6;
-			M128A Xmm7;
-			M128A Xmm8;
-			M128A Xmm9;
-			M128A Xmm10;
-			M128A Xmm11;
-			M128A Xmm12;
-			M128A Xmm13;
-			M128A Xmm14;
-			M128A Xmm15;
+			WINDOWS_M128A Header[2];
+			WINDOWS_M128A Legacy[8];
+			WINDOWS_M128A Xmm0;
+			WINDOWS_M128A Xmm1;
+			WINDOWS_M128A Xmm2;
+			WINDOWS_M128A Xmm3;
+			WINDOWS_M128A Xmm4;
+			WINDOWS_M128A Xmm5;
+			WINDOWS_M128A Xmm6;
+			WINDOWS_M128A Xmm7;
+			WINDOWS_M128A Xmm8;
+			WINDOWS_M128A Xmm9;
+			WINDOWS_M128A Xmm10;
+			WINDOWS_M128A Xmm11;
+			WINDOWS_M128A Xmm12;
+			WINDOWS_M128A Xmm13;
+			WINDOWS_M128A Xmm14;
+			WINDOWS_M128A Xmm15;
 		};
 	};
 
-	M128A VectorRegister[26];
+	WINDOWS_M128A VectorRegister[26];
 	ut64 VectorControl;
 
 	ut64 DebugControl;
@@ -478,7 +478,7 @@ typedef struct _WINDOWS_EXCEPTION_RECORD32 {
 } WINDOWS_EXCEPTION_RECORD32, *WINDOWS_PEXCEPTION_RECORD32;
 
 typedef struct _EXCEPTION_POINTERS_I386 {
-	PEXCEPTION_RECORD32 ExceptionRecord;
+	WINDOWS_PEXCEPTION_RECORD32 ExceptionRecord;
 	PCONTEXT_TYPE_I386 ContextRecord;
 } EXCEPTION_POINTERS_I386, *PEXCEPTION_POINTERS_I386;
 
