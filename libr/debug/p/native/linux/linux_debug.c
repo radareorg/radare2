@@ -294,11 +294,11 @@ static void print_fpu (void *f, int r){
 }
 
 int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
-	int showfpu = R_FALSE;
+	bool showfpu = false;
 	int pid = dbg->pid;
 	int ret;
 	if (type < -1) {
-		showfpu = R_TRUE;
+		showfpu = true;
 		type = -type;
 	}
 	switch (type) {

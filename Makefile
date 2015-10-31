@@ -48,7 +48,7 @@ libr/include/r_version.h:
 plugins.cfg:
 	@if [ ! -e config-user.mk ]; then echo ; \
 	echo "  Please, run ./configure first" ; echo ; exit 1 ; fi
-	./configure-plugins
+	sh configure-plugins
 
 w32:
 	sys/mingw32.sh

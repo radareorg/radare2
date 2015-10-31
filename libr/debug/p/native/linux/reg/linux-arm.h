@@ -18,6 +18,7 @@ return strdup (
 "gpr	zf	.1	.513	0	zero\n" // set if last op is 0
 "gpr	cf	.1	.514	0	carry\n" // set if last op carries
 "gpr	vf	.1	.515	0	overflow\n" // set if overflows
+"gpr	thumb	.1	.516	0	thumb\n"
 
 "gpr	r0	.32	0	0\n"
 "gpr	r1	.32	4	0\n"

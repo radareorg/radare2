@@ -561,6 +561,8 @@ int main(int argc, char **argv, char **envp) {
 							eprintf ("bits %d\n", obj->info->bits);
 					}
 					r_core_cmd0 (&r, ".dm*");
+					// Set Thumb Mode if necessary
+					r_core_cmd0 (&r, "dr? thumb;?? e asm.bits=16");
 				}
 			}
 		}
