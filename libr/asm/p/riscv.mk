@@ -1,6 +1,7 @@
 OBJ_RISCV=asm_riscv.o
-OBJ_RISCV+=../arch/riscv/riscv.o
-OBJ_RISCV+=../arch/riscv/riscv-opc.o
+#implicitly included
+#OBJ_RISCV+=../arch/riscv/riscv.o
+#OBJ_RISCV+=../arch/riscv/riscv-opc.o
 
 STATIC_OBJ+=${OBJ_RISCV}
 TARGET_RISCV=asm_riscv.${EXT_SO}

@@ -338,6 +338,7 @@ enum
 };
 
 
+#if 0
 extern const char * const riscv_gpr_names_numeric[NGPR];
 extern const char * const riscv_gpr_names_abi[NGPR];
 extern const char * const riscv_fpr_names_numeric[NFPR];
@@ -347,6 +348,7 @@ extern const struct riscv_opcode riscv_builtin_opcodes[];
 extern const int bfd_riscv_num_builtin_opcodes;
 extern struct riscv_opcode *riscv_opcodes;
 extern int bfd_riscv_num_opcodes;
+#endif
 #define NUMOPCODES bfd_riscv_num_opcodes
 
 #endif /* _RISCV_H_ */

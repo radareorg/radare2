@@ -25,7 +25,7 @@
 
 /* Register names used by gas and objdump.  */
 
-const char * const riscv_gpr_names_numeric[32] =
+static const char * const riscv_gpr_names_numeric[32] =
 {
   "x0",   "x1",   "x2",   "x3",   "x4",   "x5",   "x6",   "x7",
   "x8",   "x9",   "x10",  "x11",  "x12",  "x13",  "x14",  "x15",
@@ -33,14 +33,14 @@ const char * const riscv_gpr_names_numeric[32] =
   "x24",  "x25",  "x26",  "x27",  "x28",  "x29",  "x30",  "x31"
 };
 
-const char * const riscv_gpr_names_abi[32] = {
+static const char * const riscv_gpr_names_abi[32] = {
   "zero", "ra", "sp",  "gp",  "tp", "t0",  "t1",  "t2",
   "s0",   "s1", "a0",  "a1",  "a2", "a3",  "a4",  "a5",
   "a6",   "a7", "s2",  "s3",  "s4", "s5",  "s6",  "s7",
   "s8",   "s9", "s10", "s11", "t3", "t4",  "t5",  "t6"
 };
 
-const char * const riscv_fpr_names_numeric[32] =
+static const char * const riscv_fpr_names_numeric[32] =
 {
   "f0",   "f1",   "f2",   "f3",   "f4",   "f5",   "f6",   "f7",
   "f8",   "f9",   "f10",  "f11",  "f12",  "f13",  "f14",  "f15",
@@ -48,7 +48,7 @@ const char * const riscv_fpr_names_numeric[32] =
   "f24",  "f25",  "f26",  "f27",  "f28",  "f29",  "f30",  "f31"
 };
 
-const char * const riscv_fpr_names_abi[32] = {
+static const char * const riscv_fpr_names_abi[32] = {
   "ft0", "ft1", "ft2",  "ft3",  "ft4", "ft5", "ft6",  "ft7",
   "fs0", "fs1", "fa0",  "fa1",  "fa2", "fa3", "fa4",  "fa5",
   "fa6", "fa7", "fs2",  "fs3",  "fs4", "fs5", "fs6",  "fs7",
@@ -119,7 +119,7 @@ static int match_c_lui(const struct riscv_opcode *op, insn_t insn)
   return match_rd_nonzero (op, insn) && (((insn & MASK_RD) >> OP_SH_RD) != 2);
 }
 
-const struct riscv_opcode riscv_builtin_opcodes[] =
+static const struct riscv_opcode riscv_builtin_opcodes[] =
 {
 /* name,      isa,   operands, match, mask, match_func, pinfo */
 {"unimp",     "C",   "",  0, 0xffffU,  match_opcode, 0 },
@@ -648,11 +648,11 @@ const struct riscv_opcode riscv_builtin_opcodes[] =
 
 #define RISCV_NUM_OPCODES \
   ((sizeof riscv_builtin_opcodes) / (sizeof (riscv_builtin_opcodes[0])))
-const int bfd_riscv_num_builtin_opcodes = RISCV_NUM_OPCODES;
+//const int bfd_riscv_num_builtin_opcodes = RISCV_NUM_OPCODES;
 
 /* Removed const from the following to allow for dynamic extensions to the
    built-in instruction set.  */
-struct riscv_opcode *riscv_opcodes =
+static struct riscv_opcode *riscv_opcodes =
   (struct riscv_opcode *) riscv_builtin_opcodes;
-int bfd_riscv_num_opcodes = RISCV_NUM_OPCODES;
+static int bfd_riscv_num_opcodes = RISCV_NUM_OPCODES;
 #undef RISCV_NUM_OPCODES

@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_asm.h>
 #include <r_lib.h>
+#include "../arch/riscv/riscv-opc.c"
 #include "../arch/riscv/riscv.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
