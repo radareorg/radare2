@@ -981,7 +981,7 @@ R_API int r_anal_esil_to_reil_setup(RAnalEsil *esil, RAnal *anal, int romem,
 	esil->Reil->skip = 0;
 
 	// Store the pc
-	const char *name = r_reg_get_name (esil->anal->reg, r_reg_get_name_idx ("pc"));
+	const char *name = r_reg_get_name (esil->anal->reg, r_reg_get_name_idx ("PC"));
 	strncpy (esil->Reil->pc, name, sizeof(esil->Reil->pc) - 1);
 
 	r_anal_esil_mem_ro(esil, romem);
