@@ -11,8 +11,8 @@ static int autoblocksize = 1;
 static ut64 last_printed_address = 0LL;
 static void r_core_visual_refresh (RCore *core);
 
-#define debugfmt_default "f tmp;sr sp;pxw 64;dr=;s-;s tmp;f-tmp;pd $r"
-const char *debugfmt_extra = "f tmp;sr sp;pxr 64;drr;s-;s tmp;f-tmp;pd $r";
+#define debugfmt_default "f tmp;sr SP;pxw 64;dr=;s-;s tmp;f-tmp;pd $r"
+const char *debugfmt_extra = "f tmp;sr SP;pxr 64;drr;s-;s tmp;f-tmp;pd $r";
 const char *debugfmt = NULL;
 
 static const char *printfmt[] = {
@@ -1412,10 +1412,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_core_seek (core, core->offset+cursor, 1);
 			cursor = 0;
 		} else {
-			ut64 addr = r_debug_reg_get (core->dbg, "pc");
+			ut64 addr = r_debug_reg_get (core->dbg, "PC");
 			if (addr) {
 				r_core_seek (core, addr, 1);
-				r_core_cmdf (core, "ar `arn pc`=0x%"PFMT64x, addr);
+				r_core_cmdf (core, "ar `arn PC`=0x%"PFMT64x, addr);
 			} else {
 				r_core_seek (core, r_num_get (core->num, "entry0"), 1);
 				//r_core_cmd (core, "s entry0", 0);
@@ -1551,7 +1551,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	}
 
 	if (r_config_get_i (core->config, "cfg.debug")) {
-		ut64 curpc = r_debug_reg_get (core->dbg, "pc");
+		ut64 curpc = r_debug_reg_get (core->dbg, "PC");
 		if (curpc && curpc != UT64_MAX && curpc != oldpc) {
 			// check dbg.follow here
 			int follow = (int)(st64)r_config_get_i (core->config, "dbg.follow");

@@ -1297,9 +1297,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		for (i=0; (name=r_reg_get_type (i)); i++)
 			r_cons_printf ("%s\n", name);
 		break;
-	case 'n': // "drn"
+	case 'n': // "drn" // "arn"
 		if (*(str+1) == '\0'){
-			eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
+			eprintf ("Oops. try drn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF\n");
 			break;
 		}
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str+2));

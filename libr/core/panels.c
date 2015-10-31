@@ -281,7 +281,7 @@ static int bbPanels (RCore *core, Panel **n) {
 	//panels = NULL;
 	addPanelFrame ("Disassembly", "pd 128", 0);
 	addPanelFrame ("Symbols", "isq", 0);
-	addPanelFrame ("Stack", "px 256@r:sp", 0);
+	addPanelFrame ("Stack", "px 256@r:SP", 0);
 	addPanelFrame ("Registers", "dr=", 0);
 	addPanelFrame ("RegisterRefs", "drr", 0);
 	curnode = 0;
