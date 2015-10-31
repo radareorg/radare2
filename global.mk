@@ -27,9 +27,6 @@ PREFIX=/usr/local
 
 rmdblslash=$(subst //,/,$(subst //,/,$(subst /$$,,$1)))
 
-
-
-
 LIBDIR=${PREFIX}/lib
 WWWROOT=${DATADIR}/radare2/${VERSION}/www
 
