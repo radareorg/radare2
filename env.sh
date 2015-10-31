@@ -47,5 +47,11 @@ if [ -z "$*" ]; then
 	echo "==> Back to system shell..."
 	echo
 else
-	eval $new_env $*
+	if [ $# -gt 1 ]; then 
+		par=""
+		for p in `seq 1 $(($#-1))`; do par=$par"\$$p "; done
+		eval $new_env $par "\"\$$#\""
+	else
+		eval $new_env $*
+	fi
 fi
