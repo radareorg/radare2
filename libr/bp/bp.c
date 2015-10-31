@@ -173,7 +173,7 @@ R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx
 	RBreakpointItem *item;
 	ut8 *bytes;
 	if (size < 1) size = 1;
-	bytes = calloc (1,size);
+	bytes = calloc (1, size);
 	if (bytes == NULL) return NULL;
 	if (bp->iob.read_at) bp->iob.read_at (bp->iob.io, addr, bytes, size);
 	else memset (bytes, 0, size);
