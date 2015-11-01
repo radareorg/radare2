@@ -65,10 +65,14 @@ endif
 	${CC} ${CFLAGS} $@.c ${OBJS} ${REAL_LDFLAGS} -o $@
 
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
+ifeq ($(WITHNONPIC),1)
+	${CC} -pie -static ${CFLAGS} $+ -L.. -o $@ $(REAL_LDFLAGS)
+else
 ifneq ($(SILENT),)
 	@echo LD $@
 endif
 	${CC} ${CFLAGS} $+ -L.. -o $@ $(REAL_LDFLAGS)
+endif
 endif
 
 # Dummy myclean rule that can be overriden by the t/ Makefile

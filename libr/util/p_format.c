@@ -1312,7 +1312,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			case 2:
 				// restore state after pointer seek
 				i = nexti;
-				seeki = seek+i;
 				memcpy (buf, b, len);
 				isptr = NOPTR;
 				arg--;
