@@ -942,6 +942,14 @@ static int cb_scrhighlight(void *user, void *data) {
 	return true;
 }
 
+#if __WINDOWS__ && !__CYGWIN__
+static int scr_ansicon(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton()->ansicon = node->i_value;
+	return true;
+}
+#endif
+
 static int cb_screcho(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton()->echo = node->i_value;
@@ -1556,6 +1564,10 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "scr.fgets", "Use fgets() instead of dietline for prompt input");
 	SETCB("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");
 	SETPREF("scr.colorops", "true", "Colorize numbers and registers in opcodes");
+#if __WINDOWS__ && !__CYGWIN__
+	SETCB("scr.ansicon", r_str_bool (r_cons_singleton()->ansicon),
+		&scr_ansicon, "Use ANSICON mode or not on Windows");
+#endif
 #if __ANDROID__
 	SETPREF("scr.responsive", "true", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
 #else

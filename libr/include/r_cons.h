@@ -205,6 +205,9 @@ typedef struct r_cons_t {
 	int refcnt;
 	RConsClickCallback onclick;
 	bool newline;
+#if __WINDOWS__ && !__CYGWIN__
+	bool ansicon;
+#endif
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
