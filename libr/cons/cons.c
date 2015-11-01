@@ -13,6 +13,9 @@
 R_LIB_VERSION (r_cons);
 
 static RCons r_cons_instance;
+#if __WINDOWS__ && !__CYGWIN__
+static int bAnsicon=0;
+#endif
 #define I r_cons_instance
 
 static void break_signal(int sig) {
@@ -24,10 +27,14 @@ static void break_signal(int sig) {
 
 static inline void r_cons_write (const char *buf, int len) {
 #if __WINDOWS__ && !__CYGWIN__
-	if (I.fdout == 1) {
-		r_cons_w32_print ((const ut8*)buf, len, 0);
+	if (bAnsicon) {
+		write (I.fdout, buf, len);
 	} else {
-		(void)write (I.fdout, buf, len);
+		if (I.fdout == 1) {
+			r_cons_w32_print ((const ut8*)buf, len, 0);
+		} else {
+			(void)write (I.fdout, buf, len);
+		}
 	}
 #else
 	if (write (I.fdout, buf, len) == -1) {
@@ -336,12 +343,16 @@ R_API void r_cons_fill_line() {
 
 R_API void r_cons_clear_line(int std_err) {
 #if __WINDOWS__
-	char white[1024];
-	memset (&white, ' ', sizeof (white));
-	if (I.columns<sizeof (white))
-		white[I.columns-1] = 0;
-	else white[sizeof (white)-1] = 0; // HACK
-	fprintf (std_err? stderr: stdout, "\r%s\r", white);
+	if (bAnsicon) {
+		fprintf (std_err? stderr: stdout,"\x1b[0K\r");
+	} else {
+		char white[1024];
+		memset (&white, ' ', sizeof (white));
+		if (I.columns<sizeof (white))
+			white[I.columns-1] = 0;
+		else white[sizeof (white)-1] = 0; // HACK
+		fprintf (std_err? stderr: stdout, "\r%s\r", white);
+	}
 #else
 	fprintf (std_err? stderr: stdout,"\x1b[0K\r");
 #endif
@@ -485,7 +496,11 @@ R_API void r_cons_visual_flush() {
 	if (!I.null) {
 /* TODO: this ifdef must go in the function body */
 #if __WINDOWS__ && !__CYGWIN__
-		r_cons_w32_print ((const ut8*)I.buffer, I.buffer_len, 1);
+		if (bAnsicon) {
+			r_cons_visual_write (I.buffer);
+		} else {
+			r_cons_w32_print ((const ut8*)I.buffer, I.buffer_len, 1);
+		}
 #else
 		r_cons_visual_write (I.buffer);
 #endif
@@ -668,10 +683,15 @@ R_API int r_cons_get_cursor(int *rows) {
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
 R_API int r_cons_get_size(int *rows) {
 #if __WINDOWS__ && !__CYGWIN__
+	char buffer[1024];
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
-	I.columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+	I.columns = (csbi.srWindow.Right - csbi.srWindow.Left) - 1;
 	I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top; // last row empty
+	if (GetEnvironmentVariable("ANSICON",buffer,sizeof(buffer)>0))
+		bAnsicon=1;
+	else
+		bAnsicon=0;
 #elif EMSCRIPTEN
 	I.columns = 80;
 	I.rows = 23;
@@ -797,9 +817,23 @@ R_API void r_cons_set_cup(int enable) {
 		write (2, code, strlen (code));
 	}
 	fflush (stdout);
-#else
-	/* not supported ? */
+#elif __WINDOWS__ && !__CYGWIN__
+	if (bAnsicon) {
+		if (enable) {
+			const char *code =
+				"\x1b[?1049h" // xterm
+				"\x1b" "7\x1b[?47h"; // xterm-color
+			write (2, code, strlen (code));
+		} else {
+			const char *code =
+				"\x1b[?1049l" // xterm
+				"\x1b[?47l""\x1b""8"; // xterm-color
+			write (2, code, strlen (code));
+		}
+		fflush (stdout);
+	}
 #endif
+	/* not supported ? */
 }
 
 R_API void r_cons_column(int c) {
