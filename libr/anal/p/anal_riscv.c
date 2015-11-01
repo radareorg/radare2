@@ -19,14 +19,17 @@ static int _is_any(int n, const char *str, ...) {
 	char *cur;
 	va_list va;
 	va_start (va, str);
-	
+
 	while (n-- > 0) {
 		cur = va_arg (va, char *);
-		if (!strcmp (str, cur)) return 1;
+		if (!strcmp (str, cur)) {
+			va_end (va);
+			return 1;
+		}
 	}
 
 	va_end (va);
-	
+
 	return 0;
 }
 
@@ -41,7 +44,7 @@ static struct riscv_opcode *get_opcode (insn_t word) {
 			if (!riscv_hash[OP_HASH_IDX (op->match)]) {
 				riscv_hash[OP_HASH_IDX (op->match)] = op;
 			}
-		} 
+		}
 		init = 1;
 	}
 
@@ -69,7 +72,6 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if ( !(o->match_func)(o, word) ) continue;
 		if ( no_alias && (o->pinfo & INSN_ALIAS) ) continue;
 		if ( isdigit (o->subset[0]) && atoi (o->subset) != xlen) continue;
-		if ( o == NULL) return op->size;
 		else break;
 	}
 #define is_any(...) _is_any(NARGS(__VA_ARGS__), o->name, __VA_ARGS__)
@@ -114,7 +116,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	} else if (is_any ("sd", "sb", "sh", "sw")) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 	} else if (is_any ("ld", "lw", "lwu", "lui", "li",
-			"lb", "lbu", "lh", "lhu", "la", "lla")) { 
+			"lb", "lbu", "lh", "lhu", "la", "lla")) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 	}
 
