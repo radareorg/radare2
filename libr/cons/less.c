@@ -153,6 +153,10 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		printpage (p, lines, mla, from, to, w);
 		ch = r_cons_readchar ();
 		if (exitkeys && strchr (exitkeys, ch)) {
+			for (i = 0; i < lines_count; i++) {
+				r_list_free(mla[i]);
+			}
+			free (mla);
 			return ch;
 		}
 		ch = r_cons_arrow_to_hjkl (ch);

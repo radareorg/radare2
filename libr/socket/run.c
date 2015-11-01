@@ -522,6 +522,8 @@ R_API int r_run_config_env(RRunProfile *p) {
 				}
 			}
 		}
+		r_socket_free (child);
+		r_socket_free (fd);
 	}
 	if (p->_r2sleep != 0) {
 		r_sys_sleep (p->_r2sleep);
