@@ -74,9 +74,10 @@ static char *strmatch (char *pos, char *buf) {
 }
 
 R_API char *r_cons_hud(RList *list, const char *prompt) {
+	const int buf_size = 128;
 	int ch, nch, first, n, j, i = 0;
 	int choose = 0;
-	char *p, buf[128];
+	char *p, buf[buf_size];
 	RListIter *iter;
 	char *match = NULL;
 	void *pos;
@@ -151,6 +152,9 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 			break;
 		default:
 			if (IS_PRINTABLE (ch)) {
+				if (i >= buf_size) {
+					break;
+				}
 				choose = 0;
 				buf[i++] = ch;
 				buf[i] = 0;
