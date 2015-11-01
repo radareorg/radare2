@@ -64,9 +64,10 @@ ifneq ($(SILENT),)
 endif
 	${CC} ${CFLAGS} $@.c ${OBJS} ${REAL_LDFLAGS} -o $@
 
+# -static fails because -ldl -lpthread static-gcc ...
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
 ifeq ($(WITHNONPIC),1)
-	${CC} -pie -static ${CFLAGS} $+ -L.. -o $@ $(REAL_LDFLAGS)
+	${CC} -pie ${CFLAGS} $+ -L.. -o $@ $(REAL_LDFLAGS)
 else
 ifneq ($(SILENT),)
 	@echo LD $@
