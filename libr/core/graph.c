@@ -2785,7 +2785,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			break;
 		case ':':
 			r_core_visual_prompt_input (core);
-			g->need_reload_nodes = true;
+			get_bbupdate (g, core, fcn);
 			break;
 		case 'w':
 			agraph_toggle_speed (g, core);
