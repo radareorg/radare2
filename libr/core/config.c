@@ -192,7 +192,7 @@ static int cb_asmarch(void *user, void *data) {
 	}
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
-	if (!(core->assembler->cur->bits & core->anal->bits)) {
+	if (core->assembler->cur && !(core->assembler->cur->bits & core->anal->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 

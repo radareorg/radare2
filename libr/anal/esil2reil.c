@@ -161,12 +161,14 @@ void reil_cast_size(RAnalEsil *esil, RAnalReilArg *src, RAnalReilArg *dst) {
 	ins->arg[0] = src;
 	ins->arg[1] = reil_pop_arg (esil);
 	ins->arg[2] = R_NEW0(RAnalReilArg);
-	get_next_temp_reg(esil, tmp_buf);
-	reil_make_arg(esil, ins->arg[2], tmp_buf);
-	ins->arg[2]->size = dst->size;
-	reil_print_inst(esil, ins);
-	reil_push_arg(esil, ins->arg[2]);
-	reil_free_inst(ins);
+	get_next_temp_reg (esil, tmp_buf);
+	reil_make_arg (esil, ins->arg[2], tmp_buf);
+	if (ins->arg[2])
+		ins->arg[2]->size = dst->size;
+	reil_print_inst (esil, ins);
+	if (ins->arg[2])
+		reil_push_arg (esil, ins->arg[2]);
+	reil_free_inst (ins);
 }
 
 // Here start translation functions!

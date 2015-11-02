@@ -602,7 +602,7 @@ static int dist_nodes (const RAGraph *g, const RGraphNode *a, const RGraphNode *
 
 	aa = get_anode (a);
 	ab = get_anode (b);
-	if (aa->layer == ab->layer) {
+	if (aa && ab && aa->layer == ab->layer) {
 		int i;
 
 		res = aa == ab && !aa->is_reversed ? HORIZONTAL_NODE_SPACING : 0;
@@ -1082,10 +1082,10 @@ static void collect_changes (const RAGraph *g, int l, const RGraphNode *b,
 		const RListIter *it;
 		int c = 0;
 
-		if (from_up)
-			neigh = r_graph_innodes (g->graph, vi);
-		else
-			neigh = r_graph_get_neighbours (g->graph, vi);
+		if (!avi) continue;
+		neigh = from_up
+		?	r_graph_innodes (g->graph, vi)
+		:	r_graph_get_neighbours (g->graph, vi);
 
 		graph_foreach_anode (neigh, it, v, av) {
 			if ((is_left && av->x >= avi->x) || (!is_left && av->x <= avi->x)) {
@@ -1104,7 +1104,7 @@ static void collect_changes (const RAGraph *g, int l, const RGraphNode *b,
 			}
 		}
 
-		cx = R_NEW (struct len_pos_t);
+		cx = R_NEW0 (struct len_pos_t);
 		cx->len = c;
 		cx->pos = avi->x;
 		if (is_left)
