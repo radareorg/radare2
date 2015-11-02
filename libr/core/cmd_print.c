@@ -2138,15 +2138,6 @@ static int cmd_print(void *data, const char *input) {
 					//r_list_sort (f->bbs, &r_anal_ex_bb_address_comparator);
 					r_list_foreach (f->bbs, iter, b) {
 						r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-						/*switch (control_type) {
-							case R_ANAL_OP_TYPE_CALL:
-								break;
-							case R_ANAL_OP_TYPE_JMP:
-								break;
-							case R_ANAL_OP_TYPE_CJMP:
-								break;
-							case R_ANAL_OP_TYPE_SWITCH:
-						}*/
 						if (b->jump != UT64_MAX)
 							r_cons_printf ("-[true]-> 0x%08"PFMT64x"\n", b->jump);
 						if (b->fail != UT64_MAX)
