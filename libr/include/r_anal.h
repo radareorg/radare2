@@ -778,6 +778,7 @@ typedef struct r_anal_ref_t {
 	ut64 at;
 } RAnalRef;
 
+/* represents a reference line from one address (from) to another (to) */
 typedef struct r_anal_refline_t {
 	ut64 from;
 	ut64 to;

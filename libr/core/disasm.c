@@ -1124,28 +1124,14 @@ static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
 static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len) {
 	int ret;
 	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
-	if (ds->asmop.size<1) {
-		ds->asmop.size = 1;
-	}
-#if 0
-	if (ds->asmop.size<1) {
-		ut32 n32 = len >= sizeof(ut32) ? *((ut32*)buf) : UT32_MAX;
-		ut64 n64 = len >= sizeof(ut64) ? *((ut64*)buf) : UT64_MAX;
-		// if arm or mips.. 32 or 64
-		snprintf (ds->asmop.buf_asm,
-			sizeof (ds->asmop.buf_asm),
-			"0x%08x", n32);
-		snprintf (ds->asmop.buf_asm,
-			sizeof (ds->asmop.buf_asm),
-			"0x%08"PFMT64x, n64);
-	}
-#endif
+	if (ds->asmop.size < 1) ds->asmop.size = 1;
+
 	ds->oplen = ds->asmop.size;
 
-	if (ret<1) {
+	if (ret < 1) {
 		ret = -1;
 #if HASRETRY
-		if (!ds->cbytes && ds->tries>0) { //1||l < len)
+		if (!ds->cbytes && ds->tries > 0) {
 			ds->addr = core->assembler->pc;
 			ds->tries--;
 			ds->idx = 0;
@@ -1154,23 +1140,24 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 		}
 #endif
 		ds->lastfail = 1;
-		ds->asmop.size = (ds->hint && ds->hint->size)?
-			ds->hint->size: 1;
+		ds->asmop.size = (ds->hint && ds->hint->size) ?
+			ds->hint->size : 1;
 	} else {
 		ds->lastfail = 0;
-		ds->asmop.size = (ds->hint && ds->hint->size)?
-			ds->hint->size: r_asm_op_get_size (&ds->asmop);
+		ds->asmop.size = (ds->hint && ds->hint->size) ?
+			ds->hint->size : r_asm_op_get_size (&ds->asmop);
 		ds->oplen = ds->asmop.size;
 	}
 	if (ds->pseudo) {
-		r_parse_parse (core->parser, ds->opstr?
-			ds->opstr: ds->asmop.buf_asm, ds->str);
+		r_parse_parse (core->parser, ds->opstr ?
+			ds->opstr : ds->asmop.buf_asm, ds->str);
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
 	}
 
-	if (ds->acase)
+	if (ds->acase) {
 		r_str_case (ds->asmop.buf_asm, 1);
+	}
 
 	return ret;
 }
@@ -2424,8 +2411,9 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal->cur && core->anal->cur->reset_counter)
+	if (core->anal->cur && core->anal->cur->reset_counter) {
 		core->anal->cur->reset_counter (core->anal, addr);
+	}
 
 	// TODO: All those ds must be print flags
 	ds = handle_init_ds (core);
@@ -2453,23 +2441,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 toro:
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, ds->addr+idx);
-#if 0
-	/* find last function else ds->stackptr=0 */
-	{
-		RAnalFunction *fcni;
-		RListIter *iter;
-
-		r_list_foreach (core->anal.fcns, iter, fcni) {
-			if (ds->addr >= fcni->addr && ds->addr<(fcni->addr+fcni->size)) {
-				stack_ptr = fcni->stack;
-				r_cons_printf ("/* function: %s (%d) */\n", fcni->name, fcni->size, stack_ptr);
-				break;
-			}
-		}
-	}
-#endif
-	core->cons->vline = r_config_get_i (core->config, "scr.utf8")?
-		r_vline_u: r_vline_a;
+	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ?
+		r_vline_u : r_vline_a;
 
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
@@ -2477,28 +2450,19 @@ toro:
 			buf+core->print->cur, (int)(len-core->print->cur))) {
 			// TODO: check for ds->analop.type and ret
 			ds->dest = ds->analop.jump;
-#if 0
-			switch (ds->analop.type) {
-			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_CALL:
-				ds->dest = ds->analop.jump;
-				break;
-			}
-#endif
 		}
 	} else {
 		/* highlight eip */
 		RFlagItem *item;
 		const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 		item = r_flag_get (core->flags, pc);
-		if (item)
-			ds->dest = item->offset;
+		if (item) ds->dest = item->offset;
 	}
 
 	handle_print_esil_anal_init (core, ds);
 	r_cons_break (NULL, NULL);
 	int inc = 0;
-	for (i=idx=ret=0; idx < len && ds->lines < ds->l;
+	for (i = idx = ret = 0; idx < len && ds->lines < ds->l;
 			idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		if (r_cons_singleton ()->breaked) {
@@ -2521,8 +2485,9 @@ toro:
 		if (!ds->hint || !ds->hint->bits) {
 			if (f) {
 				if (f->bits) {
-					if (!ds->oldbits)
+					if (!ds->oldbits) {
 						ds->oldbits = r_config_get_i (core->config, "asm.bits");
+					}
 					if (ds->oldbits != f->bits) {
 						r_config_set_i (core->config, "asm.bits", f->bits);
 					}
@@ -2547,17 +2512,19 @@ toro:
 		}
 		handle_atabs_option (core, ds);
 		// TODO: store previous oplen in core->dec
-		if (core->inc == 0)
+		if (core->inc == 0) {
 			core->inc = ds->oplen;
+		}
 
 		if (ds->analop.mnemonic) {
 			r_anal_op_fini (&ds->analop);
 		}
 
-		if (!ds->lastfail)
+		if (!ds->lastfail) {
 			r_anal_op (core->anal, &ds->analop, ds->at, buf+idx, (int)(len-idx));
+		}
 
-		if (ret<1) {
+		if (ret < 1) {
 			r_strbuf_init (&ds->analop.esil);
 			ds->analop.type = R_ANAL_OP_TYPE_ILL;
 		}
@@ -2574,15 +2541,14 @@ toro:
 		handle_show_flags_option (core, ds);
 		handle_print_pre (core, ds);
 		handle_print_lines_left (core, ds);
-		{
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ds->addr, 0);
-			if (handle_print_labels (core, ds, fcn)) {
-				handle_show_functions (core, ds);
-				handle_show_xrefs (core, ds);
-				handle_show_flags_option (core, ds);
-				handle_print_pre (core, ds);
-				handle_print_lines_left (core, ds);
-			}
+
+		f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
+		if (handle_print_labels (core, ds, f)) {
+			handle_show_functions (core, ds);
+			handle_show_xrefs (core, ds);
+			handle_show_flags_option (core, ds);
+			handle_print_pre (core, ds);
+			handle_print_lines_left (core, ds);
 		}
 
 		handle_print_offset (core, ds);
@@ -2592,12 +2558,7 @@ toro:
 		handle_print_family (core, ds);
 		handle_print_stackptr (core, ds);
 		ret = handle_print_meta_infos (core, ds, buf, len, idx);
-#if 0
-		if (ds->mi_found) {
-			ds->mi_found = 0;
-			continue;
-		}
-#endif
+
 		if (!ds->mi_found) {
 			/* show cursor */
 			handle_print_show_cursor (core, ds);
@@ -2621,24 +2582,14 @@ toro:
 			handle_print_cc_update (core, ds);
 		} else {
 			ds->mi_found = 0;
-			//continue;
 		}
 		handle_print_op_push_info (core, ds);
-#if 1
 		handle_print_ptr (core, ds, len+256, idx);
-#else
-		if (ds->analop.refptr) {
-			handle_print_refptr (core, ds);
-		} else {
-			handle_print_ptr (core, ds, len, idx);
-		}
-#endif
 		handle_print_comments_right (core, ds);
 		handle_print_esil_anal (core, ds);
-		if ( !(ds->show_comments &&
-			   ds->show_comment_right &&
-			   ds->comment))
+		if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
 			r_cons_newline ();
+		}
 
 		if (ds->line) {
 			if (ds->show_lines_ret && ds->analop.type == R_ANAL_OP_TYPE_RET) {
@@ -2662,8 +2613,7 @@ toro:
 				inc = skip_bytes;
 			}
 		}
-		if (inc<1)
-			inc = 1;
+		if (inc < 1) inc = 1;
 	}
 	if (nbuf == buf) {
 		free (buf);
@@ -2677,9 +2627,7 @@ toro:
 		if (len<4) len = 4;
 		buf = nbuf = malloc (len);
 		if (ds->tries>0) {
-			//ds->addr += idx;
 			if (r_core_read_at (core, ds->addr, buf, len) ) {
-			//	idx = 0;
 				goto toro;
 			}
 		}

@@ -11,101 +11,94 @@ R_API void r_anal_reflines_free (RAnalRefline *rl) {
 	}
 }
 
+/* returns a list of RAnalRefline for the code present in the buffer buf, of
+ * length len. A RAnalRefline exists from address A to address B if a jmp,
+ * conditional jmp or call instruction exists at address A and it targets
+ * address B.
+ *
+ * nlines - max number of lines of code to consider
+ * linesout - true if you want to display lines that go outside of the scope [addr;addr+len)
+ * linescall - true if you want to display call lines */
 R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
 	RList *list;
 	RAnalRefline *item;
 	RAnalOp op = {0};
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
+	int sz = 0, count = 0;
 	ut64 opc = addr;
-	int sz = 0, index = 0;
-	int count = 0;
 
 	list = r_list_new ();
 	if (!list) return NULL;
 
-	//end -= 8; // XXX Fix some segfaults when r_anal backends are buggy
-	if (ptr != (end - 8)) {
-		end -= 8;
-	}
 	/* analyze code block */
-	while (ptr<end) {
-		if (nlines != -1 && --nlines == 0)
-			break;
-		if (anal->maxreflines && count > anal->maxreflines)
-			break;
-#if 0
-		if (config.interrupted)
-			break;
-		int dt = data_type(config.seek+bsz);
-		if (dt != DATA_FUN && dt != DATA_CODE) {
-			ut64 sz = data_size (config.seek+bsz);
-			if (sz > 0) {
-				ptr += sz;
-				bsz += sz;
-				continue;
-			}
+	while (ptr < end) {
+		if (nlines != -1) {
+			nlines--;
+			if (nlines == 0) break;
 		}
-#endif
+		if (anal->maxreflines && count > anal->maxreflines) {
+			break;
+		}
+
 		addr += sz;
-		// This can segflauta if opcode length and buffer check fails
+		// This can segfault if opcode length and buffer check fails
 		r_anal_op_fini (&op);
 		sz = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr));
-		if (sz > 0) {
-			/* store data */
-			switch (op.type) {
-			case R_ANAL_OP_TYPE_CALL:
-				if (!linescall)
-					break;
-			case R_ANAL_OP_TYPE_CJMP:
-			case R_ANAL_OP_TYPE_JMP:
-				if (!linesout && (op.jump > opc+len || op.jump < opc))
-					goto __next;
-				if (op.jump == 0LL)
-					goto __next;
-				item = R_NEW0 (RAnalRefline);
-				if (!item) {
-					return NULL;
-				}
-				item->from = addr;
-				item->to = op.jump;
-				item->index = index++;
-				r_list_append (list, item);
-				count++;
-				break;
-			case R_ANAL_OP_TYPE_SWITCH:
-				//if (!linesout && (op.jump > opc+len || op.jump < opc))
-				//	goto __next;
-				//if (op.jump == 0LL)
-				//	goto __next;
-				// add caseops
-				if (op.switch_op) {
-					RAnalCaseOp *caseop;
-					RListIter *iter;
-					r_list_foreach (op.switch_op->cases, iter, caseop) {
-						if (!linesout && (op.jump > opc+len || op.jump < opc)) {
-							continue;
-						}
-						item = R_NEW0 (RAnalRefline);
-						if (!item) {
-							r_list_free (list);
-							return NULL;
-						}
-						item->from = op.switch_op->addr;
-						item->to = caseop->jump;
-						item->index = index++;
-						r_list_append (list, item);
-						count++;
-					}
-				}
+		if (sz <= 0) {
+			sz = 1;
+			goto __next;
+		}
+
+		/* store data */
+		switch (op.type) {
+		case R_ANAL_OP_TYPE_CALL:
+			if (!linescall) break;
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_JMP:
+			if ((!linesout && (op.jump > opc + len || op.jump < opc)) ||
+				op.jump == 0LL) {
 				break;
 			}
-		} else sz = 1;
+			item = R_NEW0 (RAnalRefline);
+			if (!item) goto list_err;
+
+			item->from = addr;
+			item->to = op.jump;
+			item->index = count++;
+			r_list_append (list, item);
+			break;
+		case R_ANAL_OP_TYPE_SWITCH:
+		{
+			RAnalCaseOp *caseop;
+			RListIter *iter;
+
+			// add caseops
+			if (!op.switch_op) break;
+
+			r_list_foreach (op.switch_op->cases, iter, caseop) {
+				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
+					continue;
+				}
+				item = R_NEW0 (RAnalRefline);
+				if (!item) goto list_err;
+
+				item->from = op.switch_op->addr;
+				item->to = caseop->jump;
+				item->index = count++;
+				r_list_append (list, item);
+			}
+			break;
+		}
+		}
 	__next:
 		ptr += sz;
 	}
 	r_anal_op_fini (&op);
 	return list;
+list_err:
+	r_list_free (list);
+	return NULL;
 }
 
 R_API RList*r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines, int linesout, int linescall) {
