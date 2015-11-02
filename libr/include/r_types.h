@@ -355,6 +355,7 @@ enum {
 	R_SYS_ARCH_CRIS =  0x10000000, // 1<<28
 	R_SYS_ARCH_HPPA =  0x20000000, // 1<<29
 	R_SYS_ARCH_V810 =  0x40000000, // 1<<30
+	R_SYS_ARCH_LM32 =  0x80000000, // 1<<31
 };
 
 /* os */
