@@ -99,6 +99,10 @@ static int load_omf_lnames(OMF_record *record, const char *buf, ut64 buf_size) {
 
 	tmp_size = 0;
 	while ((int)tmp_size < (int)(record->size - 1)) {
+		if (ct_name >= ret->nb_elem) {
+			eprintf ("load_omf_lnames: prevent overflow\n");
+			break;
+		}
 		// sometimes there is a name with a null size so we just skip it
 		if (!buf[3 + tmp_size]) {
 			names[ct_name++] = NULL;
@@ -499,12 +503,12 @@ static int get_omf_data_info(r_bin_omf_obj *obj) {
 			eprintf ("Invalid Ledata record (bad segment index)\n");
 			return false;
 		}
-		if (!(tmp_data = obj->sections[((OMF_data *)((OMF_record *)tmp)->content)->seg_idx - 1]->data))
+		OMF_segment *os = obj->sections[((OMF_data *)((OMF_record *)tmp)->content)->seg_idx - 1];
+		if (os && !(tmp_data = os->data)) {
 			obj->sections[((OMF_data *)((OMF_record *)tmp)->content)->seg_idx - 1]->data = ((OMF_record *)tmp)->content;
-		else {
+		} else {
 			while (tmp_data->next)
 				tmp_data = tmp_data->next;
-
 			tmp_data->next = ((OMF_record *)tmp)->content;
 		}
 		((OMF_record *)tmp)->content = NULL;

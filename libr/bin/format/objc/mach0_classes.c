@@ -158,12 +158,13 @@ static mach0_ut get_pointer (mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arc
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void copy_sym_name_with_namespace (char *class_name, char *read_name, RBinSymbol *sym)
-{
+static void copy_sym_name_with_namespace (char *class_name, char *read_name, RBinSymbol *sym) {
 	size_t len = 0;
 	char *tmp = 0;
+	if (!class_name)
+		class_name = "";
 
-	len = class_name ? strlen (class_name) : 0;
+	len = strlen (class_name);
 	memcpy (sym->classname, class_name,
 		(len < R_BIN_SIZEOF_STRINGS) ?
 		len : R_BIN_SIZEOF_STRINGS);
@@ -179,8 +180,7 @@ static void copy_sym_name_with_namespace (char *class_name, char *read_name, RBi
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_ivar_list_t (mach0_ut p, RBinFile *arch, RBinClass *processed_class)
-{
+static void get_ivar_list_t (mach0_ut p, RBinFile *arch, RBinClass *processed_class) {
 	struct MACH0_(SIVarList) il;
 	struct MACH0_(SIVar) i;
 	mach0_ut r;
