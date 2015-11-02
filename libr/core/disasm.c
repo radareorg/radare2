@@ -2858,8 +2858,8 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 		if (ret<1) {
 			err = 1;
 			ret = 1;
-			r_cons_printf ("invalid\n");
-		} else {
+		}
+		{
 			const char *opcolor = NULL;
 			if (ds->show_color) {
 				opcolor = r_print_color_op_type (core->print, ds->analop.type);

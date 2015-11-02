@@ -208,6 +208,12 @@ static int cb_asmarch(void *user, void *data) {
 		}
 		free (s);
 	}
+	// set pcalign
+	{
+		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+		if (v != -1) r_config_set_i (core->config, "asm.pcalign", v);
+		else r_config_set_i (core->config, "asm.pcalign", 0);
+	}
 	if (!r_syscall_setup (core->anal->syscall, node->value,
 				asmos, core->anal->bits)) {
 		//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
@@ -305,6 +311,7 @@ static int cb_asmbits(void *user, void *data) {
 	{
 		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 		if (v != -1) r_config_set_i (core->config, "asm.pcalign", v);
+		else r_config_set_i (core->config, "asm.pcalign", 0);
 	}
 	return ret;
 }
