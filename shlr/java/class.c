@@ -1172,8 +1172,11 @@ R_API char * retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_flag
 	ut16 i;
 	ut16 max_str_len = 0;
 	for (i = 0; access_flags[i].str != NULL; i++)
-		if (flags & access_flags[i].value)
+		if (flags & access_flags[i].value) {
 			max_str_len += (strlen (access_flags[i].str) + 1);
+			if (max_str_len < strlen (access_flags[i].str))
+				return NULL;
+		}
 	max_str_len++;
 	outbuffer = (char *) malloc (max_str_len);
 	if (outbuffer) {
@@ -3490,6 +3493,7 @@ R_API ut64 r_bin_java_enclosing_methods_attr_calc_size(RBinJavaAttrInfo *attr) {
 
 R_API RBinJavaAttrInfo* r_bin_java_exceptions_attr_new (ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut32 i = 0, offset = 0;
+	ut64 size;
 	RBinJavaAttrInfo* attr = NULL;
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	offset += 6;
@@ -3500,7 +3504,12 @@ R_API RBinJavaAttrInfo* r_bin_java_exceptions_attr_new (ut8 *buffer, ut64 sz, ut
 	attr->type = R_BIN_JAVA_ATTR_TYPE_LINE_NUMBER_TABLE_ATTR;
 	attr->info.exceptions_attr.number_of_exceptions = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
-	attr->info.exceptions_attr.exception_idx_table = (ut16 *) malloc (sizeof (ut16)* attr->info.exceptions_attr.number_of_exceptions);
+	size = sizeof (ut16) * attr->info.exceptions_attr.number_of_exceptions;
+	if (size < attr->info.exceptions_attr.number_of_exceptions) {
+		free (attr);
+		return NULL;
+	}
+	attr->info.exceptions_attr.exception_idx_table = (ut16 *) malloc (size);
 	for (i = 0; i < attr->info.exceptions_attr.number_of_exceptions; i++) {
 		attr->info.exceptions_attr.exception_idx_table[i] = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
@@ -4886,7 +4895,7 @@ R_API ut8 * r_bin_java_cp_get_4bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, cons
 }
 
 R_API ut8 * r_bin_java_cp_get_8bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, const ut64 len){
-	ut8 *buffer = malloc (9);
+	ut8 *buffer = malloc (10);
 	ut32 val = 0;
 	if (len < 8) {
 		*out_sz = 0;
@@ -8537,7 +8546,7 @@ R_API RBinJavaCPTypeMetas* U(r_bin_java_get_cp_meta_from_tag)(ut8 tag) {
 }
 
 R_API ut8 * U(r_bin_java_cp_append_ref_cname_fname_ftype) (RBinJavaObj *bin, ut32 *out_sz, ut8 tag, const char *cname, const ut32 c_len, const char *fname, const ut32 f_len, const char *tname, const ut32 t_len) {
-	ut32 cn_len = 0, fn_len = 0, ft_len = 0;
+	ut32 cn_len = 0, fn_len = 0, ft_len = 0, total_len;
 	ut16 cn_idx = 0, fn_idx = 0, ft_idx = 0;
 	ut8* bytes = NULL, *cn_bytes = NULL, *fn_bytes = NULL, *ft_bytes = NULL, *cref_bytes = NULL, *fref_bytes = NULL, *fnt_bytes = NULL;
 	*out_sz = 0;
@@ -8560,7 +8569,9 @@ R_API ut8 * U(r_bin_java_cp_append_ref_cname_fname_ftype) (RBinJavaObj *bin, ut3
 		fnt_idx = bin->cp_idx+4;
 		fref_bytes = r_bin_java_cp_get_2_ut16 (bin, &fref_len, tag, cref_idx, fnt_idx);
 		if (cref_bytes && fref_bytes && fnt_bytes) {
-			bytes = malloc (cn_len + fn_len + ft_len + cref_len + fnt_len + fref_len);
+			total_len = cn_len + fn_len + ft_len + cref_len + fnt_len + fref_len + 2;
+			if (total_len < cn_len) goto beach;
+			bytes = calloc (1, total_len);
 			// class name bytes
 			memcpy (bytes, cn_bytes + *out_sz, cn_len);
 			*out_sz += cn_len;
@@ -8581,6 +8592,7 @@ R_API ut8 * U(r_bin_java_cp_append_ref_cname_fname_ftype) (RBinJavaObj *bin, ut3
 			*out_sz += fref_len;
 		}
 	}
+beach:
 	free (cn_bytes);
 	free (ft_bytes);
 	free (fn_bytes);
