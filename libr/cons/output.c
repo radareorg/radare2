@@ -92,7 +92,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 			if (vmode) {
 				// TODO: Fix utf8 chop
 				/* only chop columns if necessary */
-				if (linelen+ll>cols) {
+				if (ll==linelen) {
+				} else 	if (ll+linelen >= cols) {
 					// chop line if too long
 					ll = (cols-linelen)-1;
 					if (ll<1)
@@ -135,11 +136,13 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				//lines--;
 				linelen = 0;
 			}
-			if (linelen+ll>cols) {
-				// chop line if too long
-				ll = (cols-linelen)-1;
-				// fix utf8 len here
-				ll = wrapline ((const char*)str, cols-linelen-1);
+			if (vmode) {
+				if (linelen+ll>=cols) {
+					// chop line if too long
+					ll = (cols-linelen)-1;
+					// fix utf8 len here
+					ll = wrapline ((const char*)str, cols-linelen-1);
+				}
 			}
 			if (ll>0) {
 				write (1, str, ll);
@@ -326,15 +329,6 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 		}
 		ret++;
 	}
-
-	/* the ending padding */ {
-		int ll = (size_t)(ptr-str);
-		if (ll>0) {
-			write (1, str, ll);
-			linelen += ll;
-		}
-	}
-
 	if (vmode) {
 		/* fill partial line */
 		int wlen = cols-linelen-1;
@@ -346,6 +340,13 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 		}
 		/* fill tail */
 		fill_tail(cols, lines);
+	}
+	else {
+		int ll = (size_t)(ptr-str);
+		if (ll>0) {
+			write (1, str, ll);
+			linelen += ll;
+		}
 	}
 	return ret;
 }
