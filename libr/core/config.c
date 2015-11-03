@@ -1303,7 +1303,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.flags", "true", "Show flags");
 	SETPREF("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF("asm.lines", "true", "Show ASCII-art lines at disassembly");
-	SETPREF("asm.linesup", "true", "Update ascii-art lines instead of single shot");
 	SETPREF("asm.lines.call", "false", "Enable call lines");
 	SETPREF("asm.lines.ret", "false", "Show separator lines after ret");
 	SETPREF("asm.linesout", "true", "Show out of block lines");

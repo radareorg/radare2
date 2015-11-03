@@ -82,7 +82,6 @@ typedef struct r_disam_options_t {
 	int cmtcol;
 	int show_fcnlines;
 	int show_calls;
-	int lines_update;
 	int show_cmtflgrefs;
 	int show_cycles;
 	int show_stackptr;
@@ -326,7 +325,6 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_family = r_config_get_i (core->config, "asm.family");
 	ds->cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmtflgrefs");
-	ds->lines_update = r_config_get_i (core->config, "asm.linesup");
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	ds->show_xrefs = r_config_get_i (core->config, "asm.xrefs");
@@ -403,55 +401,6 @@ static void handle_reflines_init (RAnal *anal, RDisasmState *ds) {
 			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, 1);
 	} else anal->reflines = anal->reflines2 = NULL;
-}
-
-static void handle_reflines_update (RAnal *anal, RDisasmState *ds) {
-	RListIter *iter;
-	RAnalRefline *ref;
-	int maxlen = 512;
-	int maxlines = 100;
-	int delta;
-	if (lastaddr == UT64_MAX) {
-		lastaddr = ds->addr;
-	}
-	delta = ds->at - lastaddr;
-	if (!ds->show_lines) {
-		anal->reflines = anal->reflines2 = NULL;
-		return;
-	}
-
-	r_list_foreach_prev (anal->reflines, iter, ref) {
-		ut64 a = R_MIN (ref->from, ref->to);
-		ut64 b = R_MAX (ref->from, ref->to);
-		if ((b-a)>512)
-			continue;
-		if (ds->at >= a && ds->at <= b) {
-			return;
-		}
-	}
-	if (r_list_empty (anal->reflines))
-		return;
-	{
-		RAnalRefline *ref = r_list_first (anal->reflines);
-		if (ds->at < ref->from)
-			return;
-		//r_cons_printf ("--- 0x%llx 0x%llx\n", ds->at, ref->from);
-	}
-
-	r_list_free (anal->reflines);
-	r_list_free (anal->reflines2);
-
-	anal->reflines = r_anal_reflines_get (anal,
-		ds->at, ds->buf + delta,
-		R_MIN (maxlen, ds->len - delta),
-		R_MIN (maxlines, ds->l),
-		ds->linesout,
-		ds->show_lines_call);
-	anal->reflines2 = r_anal_reflines_get (anal,
-		ds->at, ds->buf + delta,
-		R_MIN (maxlen, ds->len - delta),
-		R_MIN (maxlines, ds->l),
-		ds->linesout, 1);
 }
 
 static void handle_reflines_fcn_init (RCore *core, RDisasmState *ds,  RAnalFunction *fcn, ut8* buf) {
@@ -654,42 +603,18 @@ static char *filter_refline2(RCore *core, const char *str) {
 	if (!core || !str)
 		return NULL;
 	s = strdup (str);
-	for (p=s; *p; p++) {
+	for (p = s; *p; p++) {
 		switch (*p) {
-		case '`': *p = '|'; break;
+		case '`':
+			*p = '|'; break;
 		case '-':
 		case '>':
 		case '<':
 		case '.':
 		case '=':
-			  *p = ' '; break;
+			*p = ' '; break;
 		}
 	}
-// XXX fix this? or just deprecate this function?
-#if 0
-	char *p;
-	char n = '|';
-	for (p=s; *p; p++) {
-		if (!strncmp (p, core->cons->vline[LINE_VERT],
-			strlen (core->cons->vline[LINE_VERT]))) {
-				p += strlen(core->cons->vline[LINE_VERT]) - 1;
-				continue;
-			}
-		switch (*p) {
-		case '`':
-		case '|':
-			*p = n;
-			break;
-		case ',':
-			if (p[1]=='|') n = ' ';
-		default:
-			*p = ' ';
-			break;
-		}
-	}
-	s = r_str_replace (s, "|", core->cons->vline[LINE_VERT], 1);
-	s = r_str_replace (s, "`", core->cons->vline[LINE_VERT], 1);
-#endif
 	return s;
 }
 
@@ -710,22 +635,6 @@ static char *filter_refline(RCore *core, const char *str) {
 
 	return p;
 }
-
-#if 0
-static char *filter_refline(RCore *core, const char *str) {
-	char *p, *s = strdup (str);
-	p = s;
-	p = r_str_replace (strdup (p), "`",
-		core->cons->vline[LINE_VERT], 1); // "`" -> "|"
-	p = r_str_replace (p, core->cons->vline[LINE_HORIZ], " ", 1); // "-" -> " "
-	p = r_str_replace (p, core->cons->vline[LINE_HORIZ], core->cons->vline[LINE_VERT], 1); // "=" -> "|"
-	s = strstr (p, core->cons->vline[ARROW_RIGHT]);
-	if (s) p = r_str_replace (p, core->cons->vline[ARROW_RIGHT], " ", 0);
-	s = strstr (p, core->cons->vline[ARROW_LEFT]);
-	if (s) p = r_str_replace (p, core->cons->vline[ARROW_LEFT], " ", 0);
-	return p;
-}
-#endif
 
 static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 	const char *section = "";
@@ -2468,9 +2377,6 @@ toro:
 		if (r_cons_singleton ()->breaked) {
 			dorepeat = 0;
 			break;
-		}
-		if (ds->lines_update) {
-			handle_reflines_update (core->anal, ds);
 		}
 
 		r_core_seek_archbits (core, ds->at); // slow but safe
