@@ -368,7 +368,7 @@ typedef struct _CONTEXT_TYPE_ARM {
 	ut32 Padding2[2];
 } CONTEXT_TYPE_ARM, *PCONTEXT_TYPE_ARM;
 
-typedef struct _XSAVE_FORMAT32 {
+typedef struct _WINDOWS_XSAVE_FORMAT32 {
 	ut16 ControlWord;
 	ut16 StatusWord;
 	ut8 TagWord;
@@ -385,9 +385,9 @@ typedef struct _XSAVE_FORMAT32 {
 	WINDOWS_M128A FloatRegisters[8];
 	WINDOWS_M128A XmmRegisters[8];
 	ut8 Reserved4[224];
-} XSAVE_FORMAT32, *PXSAVE_FORMAT32;
+} WINDOWS_XSAVE_FORMAT32, *WINDOWS_PXSAVE_FORMAT32;
 
-typedef XSAVE_FORMAT32 XMM_SAVE_AREA32, *PXMM_SAVE_AREA32;
+typedef WINDOWS_XSAVE_FORMAT32 WINDOWS_XMM_SAVE_AREA32, *WINDOWS_PXMM_SAVE_AREA32;
 
 typedef struct _CONTEXT_TYPE_AMD64 {
 	ut64 P1Home;
@@ -435,7 +435,7 @@ typedef struct _CONTEXT_TYPE_AMD64 {
 	ut64 Rip;
 
 	union {
-		XMM_SAVE_AREA32 FltSave;
+		WINDOWS_XMM_SAVE_AREA32 FltSave;
 		struct {
 			WINDOWS_M128A Header[2];
 			WINDOWS_M128A Legacy[8];
