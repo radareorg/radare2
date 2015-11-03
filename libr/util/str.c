@@ -1528,13 +1528,14 @@ R_API char *r_str_uri_encode (const char *s) {
 
 R_API char *r_str_utf16_encode (const char *s, int len) {
 	int i;
-	char ch[4], *d, *od;
+	char ch[4], *d, *od, *tmp;
 	if (!s) return NULL;
-	if (len<0) len = strlen (s);
-	od = d = malloc (1+(len*7));
+	if (len < 0) len = strlen (s);
+	if ((len * 7) + 1 < len) return NULL;
+	od = d = malloc (1 + (len * 7));
 	if (!d) return NULL;
-	for (i=0; i<len; s++, i++) {
-		if ((*s>=0x20) && (*s<=126)) {
+	for (i = 0; i < len; s++, i++) {
+		if ((*s >= 0x20) && (*s <= 126)) {
 			*d++ = *s;
 		} else {
 			*d++ = '\\';
@@ -1548,7 +1549,12 @@ R_API char *r_str_utf16_encode (const char *s, int len) {
 		}
 	}
 	*d = 0;
-	return realloc (od, strlen (od)+1); // FIT
+	tmp = realloc (od, strlen (od)+1); // FIT
+	if (!tmp) {
+		free (od);
+		return NULL;
+	}
+	return tmp;
 }
 
 // TODO: merge print inside rutil

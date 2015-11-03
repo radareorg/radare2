@@ -541,12 +541,17 @@ static void create_layers (RAGraph *g) {
 
 	/* create a starting ordering of nodes for each layer */
 	g->n_layers++;
+	if (sizeof (struct layer_t) * g->n_layers < g->n_layers) return;
 	g->layers = R_NEWS0 (struct layer_t, g->n_layers);
 
 	graph_foreach_anode (nodes, it, gn, n)
 		g->layers[n->layer].n_nodes++;
 
 	for (i = 0; i < g->n_layers; ++i) {
+		if (sizeof(RGraphNode*) * g->layers[i].n_nodes < g->layers[i].n_nodes) {
+			//FIXME how to handle properly this error ret2libc?
+			continue;
+		}
 		g->layers[i].nodes = R_NEWS (RGraphNode *, g->layers[i].n_nodes);
 		g->layers[i].position = 0;
 	}

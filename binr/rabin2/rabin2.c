@@ -259,6 +259,7 @@ static int rabin_dump_sections(char *scnname) {
 	RBinSection *section;
 	ut8 *buf;
 	char *ret;
+	int r;
 
 	if ((sections = r_bin_get_sections (bin)) == NULL)
 		return false;
@@ -267,11 +268,27 @@ static int rabin_dump_sections(char *scnname) {
 		if (!strcmp (scnname, section->name)) {
 			if (!(buf = malloc (section->size)))
 				return false;
+			if ((section->size * 2) + 1 < section->size) {
+				free (buf);
+				return false;
+			}
 			if (!(ret = malloc (section->size*2+1))) {
 				free (buf);
 				return false;
 			}
-			r_buf_read_at (bin->cur->buf, section->paddr, buf, section->size);
+			if (section->paddr > bin->cur->buf->length ||
+			section->paddr + section->size > bin->cur->buf->length) {
+				free (buf);
+				free (ret);
+				return false;
+			}
+			r = r_buf_read_at (bin->cur->buf, section->paddr,
+					buf, section->size);
+			if (r < 1) {
+				free (buf);
+				free (ret);
+				return false;
+			}
 			if (output) {
 				r_file_dump (output, buf, section->size, 0);
 			} else {

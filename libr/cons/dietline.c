@@ -44,11 +44,13 @@ static inline int is_valid_char (unsigned char ch) {
 
 static int inithist() {
 	ZERO_FILL (I.history);
-	I.history.data = (char **)malloc ((I.history.size+1024)*sizeof(char *));
-	if (I.history.data==NULL)
+	if ((I.history.size + 1024) * sizeof(char *) < I.history.size)
+		return false;
+	I.history.data = (char **)malloc ((I.history.size + 1024) * sizeof(char *));
+	if (!I.history.data)
 		return false;
 	I.history.size = R_LINE_HISTSIZE;
-	memset (I.history.data, 0, I.history.size*sizeof(char *));
+	memset (I.history.data, 0, I.history.size * sizeof(char *));
 	return true;
 }
 
@@ -352,7 +354,7 @@ R_API void r_line_autocomplete() {
 		p++;
 		plen = sizeof (I.buffer.data)-(int)(size_t)(p-I.buffer.data);
 	} else {
-		p = I.buffer.data; // XXX: removes current buffer 
+		p = I.buffer.data; // XXX: removes current buffer
 		plen = sizeof (I.buffer.data);
 	}
 	/* autocomplete */
@@ -816,9 +818,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	I.buffer.index = I.buffer.length = 0;
 	I.buffer.data[0] = '\0';
 	if (I.contents) {
-		memmove (I.buffer.data, I.contents, 
+		memmove (I.buffer.data, I.contents,
 			R_MIN (strlen (I.contents)+1, R_LINE_BUFSIZE-1));
-		I.buffer.data[R_LINE_BUFSIZE-1] = '\0'; 
+		I.buffer.data[R_LINE_BUFSIZE-1] = '\0';
 		I.buffer.index = I.buffer.length = strlen (I.contents);
 	}
 	if (I.disable) {
@@ -909,7 +911,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				I.buffer.data[I.buffer.length] = 0; // probably unnecessary
 				tmp_ed_cmd = I.editor_cb (I.user, I.buffer.data);
 				if (tmp_ed_cmd) {
-					/* copied from yank (case 25) */ 
+					/* copied from yank (case 25) */
 					I.buffer.length = strlen (tmp_ed_cmd);
 					if (I.buffer.length < R_LINE_BUFSIZE) {
 						I.buffer.index = I.buffer.length;
@@ -918,9 +920,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					} else I.buffer.length -= strlen (tmp_ed_cmd);
 					free (tmp_ed_cmd);
 				}
-			} else I.buffer.index = I.buffer.length;  
+			} else I.buffer.index = I.buffer.length;
 			break;
-		case 3: // ^C 
+		case 3: // ^C
 			if (I.echo)
 				eprintf ("^C\n");
 			I.buffer.index = I.buffer.length = 0;

@@ -1184,7 +1184,12 @@ R_API int r_core_init(RCore *core) {
 	core->flags = r_flag_new ();
 	core->graph = r_agraph_new (r_cons_canvas_new (1, 1));
 	core->asmqjmps_size = R_CORE_ASMQJMPS_NUM;
-	core->asmqjmps = R_NEWS (ut64, core->asmqjmps_size);
+	if (sizeof(ut64) * core->asmqjmps_size < core->asmqjmps_size) {
+		core->asmqjmps_size = 0;
+		core->asmqjmps = NULL;
+	} else {
+		core->asmqjmps = R_NEWS (ut64, core->asmqjmps_size);
+	}
 
 	r_bin_bind (core->bin, &(core->assembler->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
