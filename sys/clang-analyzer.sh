@@ -23,9 +23,11 @@ PLUGINS="${PLUGINS} -enable-checker alpha.unix.cstring.OutOfBounds"
 PLUGINS="${PLUGINS} -enable-checker security.FloatLoopCounter"
 
 
-MAKE=make
-gmake --help >/dev/null 2>&1
-[ $? = 0 ] && MAKE=gmake
+if [ -z "${MAKE}" ]; then
+	MAKE=make
+	${MAKE} --help >/dev/null 2>&1
+	[ $? = 0 ] && MAKE=gmake
+fi
 scan-build echo >/dev/null
 [ $? = 0 ] || exit 1
 
