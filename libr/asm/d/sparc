@@ -6,7 +6,7 @@ bg=branch on greater
 bge=branch on greater or equal
 bgu=branch on greater unsigned
 bl=branch on less
-ble branch on less or equal
+ble=branch on less or equal
 bleu=branch on less or equal unsigned
 bn=branch never
 bne=branch on not equal
