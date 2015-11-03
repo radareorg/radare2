@@ -19,8 +19,9 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	char *out, *url, *hexbuf;
 	if (fd == NULL || fd->data == NULL)
 		return -1;
-
+	if (count * 3 < count) return -1;
 	hexbuf = malloc (count * 3);
+	if (!hexbuf) return -1;
 	hexbuf[0] = 0;
 	r_hex_bin2str (buf, count, hexbuf);
 	url = r_str_newf ("%s/wx%%20%s@%"PFMT64d,

@@ -60,18 +60,32 @@ static void printpage (const char *line, int *index, RList **mla,
 
 static int *splitlines (char *s, int *lines_count) {
 	int lines_size = 128;
-	int *lines = malloc (lines_size*sizeof(int));
+	int *lines = NULL;
 	int i, row = 0;
 	int sidx = 0;
+
+	if (lines_size * sizeof(int) < lines_size) return NULL;
+	lines = malloc (lines_size * sizeof(int));
+	if (!lines) return NULL;
 	lines[row++] = 0;
-	for (i=0; s[i]; i++) {
-		if (row>=lines_size) {
+	for (i = 0; s[i]; i++) {
+		if (row >= lines_size) {
+			int *tmp;
 			lines_size += 128;
-			lines = realloc (lines, lines_size*sizeof(int));
+			if (lines_size * sizeof(int) < lines_size) {
+				free (lines);
+				return NULL;
+			}
+			tmp = realloc (lines, lines_size * sizeof(int));
+			if (!tmp) {
+				free (lines);
+				return NULL;
+			}
+			lines = tmp;
 		}
-		if (s[i]=='\n') {
+		if (s[i] == '\n') {
 			s[i] = 0;
-			lines[row++] = i+1;
+			lines[row++] = i + 1;
 		}
 		sidx++;
 	}

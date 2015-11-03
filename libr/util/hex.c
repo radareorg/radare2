@@ -164,8 +164,12 @@ R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
 
 R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 	int i, idx;
-	char tmp[5], *out = malloc ((len+1)*2);
-	for (i=idx=0; i<len; i++, idx+=2)  {
+	char tmp[5], *out;
+
+	if ((len + 1) * 2 < len) return NULL;
+	out = malloc ((len + 1) * 2);
+	if (!out) return NULL;
+	for (i = idx = 0; i < len; i++, idx += 2)  {
 		snprintf (tmp, sizeof (tmp), "%02x", in[i]);
 		memcpy (out+idx, tmp, 2);
 	}
@@ -289,11 +293,11 @@ R_API st64 r_hex_bin_truncate (ut64 in, int n) {
 		if ((in&UT8_GT0))
 			return UT64_8U|in;
 		return in&UT8_MAX;
-	case 2: 
+	case 2:
 		if ((in&UT16_GT0))
 			return UT64_16U|in;
 		return in&UT16_MAX;
-	case 4: 
+	case 4:
 		if ((in&UT32_GT0))
 			return UT64_32U|in;
 		return in&UT32_MAX;

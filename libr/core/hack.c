@@ -139,10 +139,12 @@ R_API int r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 	const ut8 *b = core->block;
 	const int size = analop->size;
 	if (!strcmp (op, "nop")) {
-		char* str = malloc (size*2 + 1);
+		if (size * 2 + 1 < size) return false;
+		char *str = malloc (size * 2 + 1);
+		if (!str) return false;
 		int i;
-		for (i=0;i<size;i++)
-			memcpy(str+(i*2), "90", 2);
+		for (i = 0; i < size; i++)
+			memcpy(str + (i * 2), "90", 2);
 		str[size*2] = '\0';
 		r_core_cmdf(core, "wx %s\n", str);
 		free(str);

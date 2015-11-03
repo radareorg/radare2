@@ -37,7 +37,8 @@ static inline void **r_flist_init(void **it, int n) {
 
 static inline void **r_flist_new(int n) {
 	void **it;
-	if (!(it = (void **)malloc ((n+2) * sizeof (void*))))
+	if (((n + 2) * sizeof(void*)) < sizeof(void*)) return NULL;
+	if (!(it = (void **)malloc ((n + 2) * sizeof (void*))))
 		return NULL;
 	return r_flist_init (it, n);
 }
