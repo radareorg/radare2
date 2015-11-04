@@ -22,13 +22,10 @@
  * THE SOFTWARE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <getopt.h>
-#include <string.h>
-#include <errno.h>
 #include <ctype.h>
 #include <r_types.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 static int getc_nospace(FILE *f) {
 	int c;

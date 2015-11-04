@@ -1,9 +1,11 @@
 /* radare - LGPL - Copyright 2013 - pancake */
 // -- work in progress -- //
 
-#include "r_util.h"
+#include <stdlib.h>
+#include "r_list.h"
 #include "r_slist.h"
-
+#include "r_types.h"
+#include "r_types_base.h"
 
 R_API RSList *r_slist_new () {
 	RSList *s = R_NEW0 (RSList);

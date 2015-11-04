@@ -33,7 +33,12 @@
  * Else pictures would be too dense, and drawing the frame would
  * fail, too, because the key type would not fit in anymore.
  */
-#include <r_util.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 #define	FLDBASE		8
 #define	FLDSIZE_Y	(FLDBASE + 1)
@@ -51,7 +56,7 @@ R_API char *r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr)
 	ut32	 i, b;
 	int	 x, y;
 	size_t	 len = strlen(augmentation_string) - 1;
-	
+
 	// 2*(FLDSIZE_X+3) there are two for loops that iterate over this
 	// FLDSIZE_Y * (FLDSIZE_X+3) there is a loop that for each y iterates over the whole FLDSIZE_X
 	// The rest is counting the +--[0x%08"PFMT64x"]- and '\0'

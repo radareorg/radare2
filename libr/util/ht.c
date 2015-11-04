@@ -34,7 +34,10 @@
  *    pancake <nopcode.org>
  */
 
-#include <r_util.h>
+#include <stdlib.h>
+#include "ht.h"
+#include "r_types.h"
+#include "r_types_base.h"
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
@@ -45,12 +48,12 @@
  */
 #if HT64
 #define utH ut64
-#define ht_(name) r_hashtable64_##name 
+#define ht_(name) r_hashtable64_##name
 #define RHT RHashTable64
 #define RHTE RHashTable64Entry
 #else
 #define utH ut32
-#define ht_(name) r_hashtable_##name 
+#define ht_(name) r_hashtable_##name
 #define RHT RHashTable
 #define RHTE RHashTableEntry
 #endif

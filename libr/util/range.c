@@ -1,6 +1,12 @@
 /* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 #include <r_util.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_list.h"
+#include "r_types.h"
+#include "r_types_base.h"
 
 // TODO: use r_list instead of list.h
 // TODO: redesign this api.. why? :)
@@ -111,7 +117,7 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 		addr = r_num_get (NULL, p);
 		addr2 = r_num_get (NULL, p2);
 		r_range_add (rgs, addr, addr2, 1);
-	} else 
+	} else
 	if (p) {
 		addr = r_num_get (NULL, p);
 		r_range_add (rgs, addr, addr+1, 1);
@@ -330,7 +336,7 @@ int r_range_get_n(RRange *rgs, int n, ut64 *fr, ut64 *to) {
      .....|______________________|...
       |_____|  |____|  |_______|
     ---------------------------------
-            |__|    |__|       |_|      
+            |__|    |__|       |_|
 #endif
 RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 	ut64 total = 0;
@@ -360,7 +366,7 @@ RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 
 /*
 	return true if overlap
-	in *d 
+	in *d
 */
 // TODO: make it a macro
 // TODO: move to num.c ?

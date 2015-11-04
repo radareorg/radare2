@@ -1,11 +1,13 @@
 /* radare - LGPL - Copyright 2011-2012 - pancake */
 
-#include <r_util.h>
-#include <stdbool.h>
+#include <dirent.h>
+#include <fcntl.h>  // IWYU pragma: keep
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 #if __UNIX__
 static int chmodr(const char *, int recursive);

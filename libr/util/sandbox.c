@@ -1,7 +1,15 @@
 /* radare - LGPL - Copyright 2012-2015 - pancake */
 
-#include <r_util.h>
-#include <signal.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include "r_types.h"
+#include "r_types_base.h"
+#include "r_userconf.h"
 
 static int enabled = 0;
 static int disabled = 0;

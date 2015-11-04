@@ -1,17 +1,20 @@
 /* radare - LGPL - Copyright 2007-2015 - pancake */
 
-#include "r_types.h"
-#include "r_util.h"
-#include <stdio.h>
-#include <sys/time.h>
-#include <time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #if __UNIX__
 #include <sys/mman.h>
 #endif
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include "r_types.h"
+#include "r_types_base.h"
+#include "r_util.h"
 
 R_API boolt r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;
@@ -590,7 +593,7 @@ static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
 		PAGE_READONLY, 0, 0, NULL);
 		//m->rw?PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
 	if (m->fm != INVALID_HANDLE_VALUE) {
-		m->buf = MapViewOfFile (m->fm, 
+		m->buf = MapViewOfFile (m->fm,
 			// m->rw?(FILE_MAP_READ|FILE_MAP_WRITE):FILE_MAP_READ,
 			FILE_MAP_COPY,
 			UT32_HI (m->base), UT32_LO (m->base), 0);

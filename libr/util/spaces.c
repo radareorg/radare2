@@ -1,6 +1,12 @@
 /* radare - LGPL - Copyright 2015 - pancake */
 
-#include <r_anal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_list.h"
+#include "r_types.h"
+#include "r_types_base.h"
+#include "r_util.h"
 
 R_API int r_space_get(RSpaces *f, const char *name) {
 	int i;

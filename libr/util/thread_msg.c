@@ -1,6 +1,9 @@
 /* radare - LGPL - Copyright 2014 - pancake */
 
 #include <r_th.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_types.h"
 
 R_API RThreadMsg* r_th_msg_new (const char *cmd, void *cb) {
 	RThreadMsg *msg = R_NEW0 (RThreadMsg);

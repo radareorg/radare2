@@ -1,11 +1,16 @@
 /* radare - LGPL - Copyright 2007-2015 - pancake */
 
-#include "r_types.h"
-#include "r_util.h"
-#include <stdio.h>
-#include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include "r_types.h"
+#include "r_types_base.h"
+#include "r_util.h"
 
 /* stable code */
 static const char *nullstr = "";

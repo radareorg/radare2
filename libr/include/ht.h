@@ -1,5 +1,7 @@
 #ifndef R2_HT_H
 #define R2_HT_H
+#include <r_types.h>
+#include "r_types_base.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,24 +1,38 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+#include <dirent.h>
+#include <execinfo.h>
+#include <features.h>
+#include <r_types.h>
 #include <r_userconf.h>
+#include <r_util.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include "r_lib.h"
+#include "r_list.h"
+#include "r_types_base.h"
+
 #if defined(__NetBSD__)
 # include <sys/param.h>
 # if __NetBSD_Prereq__(7,0,0)
 #  define NETBSD_WITH_BACKTRACE
 # endif
 #endif
-#include <sys/types.h>
-#include <dirent.h>
-#include <r_types.h>
-#include <r_util.h>
+
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE)
-# include <execinfo.h>
+# include <execinfo.h>	// IWYU pragma: keep
 #endif
 #if __APPLE__
-#include <errno.h>
-#include <execinfo.h>
+#include <errno.h>		 // IWYU pragma: keep
+#include <execinfo.h>  // IWYU pragma: keep
 // iOS dont have this we cant hardcode
 // #include <crt_externs.h>
 extern char ***_NSGetEnviron(void);
@@ -30,10 +44,9 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 #endif
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 # include <sys/wait.h>
-# include <sys/stat.h>
-# include <errno.h>
-# include <signal.h>
-# include <unistd.h>
+# include <errno.h>  // IWYU pragma: keep
+# include <signal.h> // IWYU pragma: keep
+# include <unistd.h> // IWYU pragma: keep
 extern char **environ;
 
 #ifdef __HAIKU__

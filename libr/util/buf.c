@@ -1,8 +1,13 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+#include <r_io.h>
 #include <r_types.h>
 #include <r_util.h>
-#include <r_io.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_list.h"
+#include "r_types_base.h"
 
 // TODO: Optimize to use memcpy when buffers are not in range.. check buf boundaries and offsets and use memcpy or memmove
 
@@ -68,7 +73,7 @@ static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
 				// must realloc
 				ut8 *ndata = realloc (s->data, len + newlen);
 				if (ndata) {
-					s->data = ndata;	
+					s->data = ndata;
 				} else {
 					eprintf ("sparse write fail\n");
 					return -1;
@@ -89,7 +94,7 @@ static int sparse_limits(RList *l, ut64 *min, ut64 *max) {
 	RListIter *iter;
 
 	if (min) *min = UT64_MAX;
-	
+
 	r_list_foreach (l, iter, s) {
 		if (set) {
 			set = R_TRUE;
@@ -195,7 +200,7 @@ R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
 		switch (whence) {
 		case R_IO_SEEK_SET: b->cur = addr; break;
 		case R_IO_SEEK_CUR: b->cur = b->cur + addr; break;
-		case R_IO_SEEK_END: 
+		case R_IO_SEEK_END:
 			    if (sparse_limits (b->sparse, NULL, &max)) {
 				    return max; // -min
 			    }

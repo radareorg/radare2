@@ -1,9 +1,17 @@
 /* radare - LGPL - Copyright 2007-2015 - pancake & Skia */
 
-#include "r_cons.h"
-#include "r_util.h"
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include "r_io.h"
 #include "r_print.h"
 #include "r_reg.h"
+#include "r_types.h"
+#include "r_types_base.h"
+#include "r_util.h"
+#include "sdb/types.h"
 
 #define NOPTR 0
 #define PTRSEEK 1
@@ -1506,7 +1514,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if (!(mode & R_PRINT_ISFIELD)) nxtfield = MINUSONE;
 					else if (field) nxtfield = strchr (ofield, '.');
 					if (nxtfield != MINUSONE && nxtfield != NULL) nxtfield++;
-		
+
 					if (MUSTSEE)
 						if (!SEEVALUE) p->cb_printf ("\n");
 					if (MUSTSEEJSON) {

@@ -1,6 +1,9 @@
 /* radare - LGPL - Copyright 2007-2015 - ret2libc */
 
 #include <r_util.h>
+#include <stdlib.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 R_API RQueue *r_queue_new (int n) {
 	RQueue *q = R_NEW0 (RQueue);

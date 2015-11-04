@@ -1,6 +1,13 @@
 /* radare - LGPL - Copyright 2013 - pancake */
 
 #include <r_util.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include "ht.h"
+#include "r_list.h"
+#include "r_types.h"
+#include "r_types_base.h"
 
 static void r_strht_init(RStrHT *s) {
 	s->ht = r_hashtable_new ();

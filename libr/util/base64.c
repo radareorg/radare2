@@ -6,12 +6,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 #if !defined(MINGW32)
-#include <unistd.h>
+//#include <unistd.h>
 #endif
-
-#include <r_util.h>
 
 #define SZ 1024
 static const char cb64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

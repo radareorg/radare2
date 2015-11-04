@@ -1,6 +1,9 @@
 /* radare - LGPL - Copyright 2007-2015 - ret2libc */
 
 #include <r_util.h>
+#include <stdlib.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 R_API RStack *r_stack_new (unsigned int n) {
 	RStack *s = R_NEW0 (RStack);

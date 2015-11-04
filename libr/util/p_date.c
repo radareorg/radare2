@@ -1,14 +1,11 @@
 /* radare - LGPL - Copyright 2007-2015 - pancake */
 
-#include "r_print.h"
-#include "r_util.h"
-#if 1
-#include <unistd.h>
-#include <sys/time.h>
+#include <stdio.h>
 #include <time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#endif
+#include "r_print.h"
+#include "r_types.h"
+#include "r_types_base.h"
+#include "r_util.h"
 
 R_API int r_print_date_dos(RPrint *p, ut8 *buf, int len) {
 	ut8 _time[2] = { buf[0], buf[1] };
@@ -68,7 +65,7 @@ R_API int r_print_date_get_now(RPrint *p, char *str) {
 
         l = time(0);
         localtime_r (&l, &curt);
-	// XXX localtime is affected by the timezone. 
+	// XXX localtime is affected by the timezone.
 
         if ((curt.tm_wday >= 0 && curt.tm_wday < 7)
         &&  (curt.tm_mon >= 0 && curt.tm_mon < 12)) {

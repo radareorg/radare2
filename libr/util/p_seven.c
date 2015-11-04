@@ -1,5 +1,9 @@
 /* radare - LGPL - Copyright 2012-2013 - pancake */
-#include <r_print.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "r_types.h"
+#include "r_types_base.h"
 
 // TODO: work in progress
 

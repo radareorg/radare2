@@ -1,5 +1,5 @@
 #include <r_types.h>
-#include <r_util.h>
+#include "r_types_base.h"
 
 static const ut32 IP[] = {
 	58, 50, 42, 34, 26, 18, 10, 2,
@@ -121,6 +121,11 @@ const ut8 PC_2[] = {
 	44, 49, 39, 56, 34, 53,
 	46, 42, 50, 36, 29, 32
 };
+
+R_API ut64 r_des_pc1 (ut64 k);
+R_API ut64 r_des_pc2 (ut64 k);
+R_API ut64 r_des_ip (ut64 state, int inv);
+R_API ut64 r_des_f (ut32 half, ut64 round_key);
 
 ut64 des_rotl (ut64 k, int round)
 {

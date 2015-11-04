@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2009-2012 - pancake */
 
+#include <stddef.h>
+#include <sys/time.h>
+#include "r_types.h"
 #include "r_util.h"
 
 typedef struct timeval tv;

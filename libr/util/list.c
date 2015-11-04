@@ -2,17 +2,22 @@
 // TODO: RRef - reference counting
 
 #include <stdio.h>
-
+#include <stdlib.h>
+#include <string.h>
+#include "r_list.h"
+#include "r_types.h"
+#include "r_types_base.h"
 #define _R_LIST_C_
-#include "r_util.h"
 
 inline RListIter *r_list_iter_new () {
 	return malloc (sizeof (RListIter));
 }
 
+#if 0
 void r_list_iter_free (RListIter *list) {
 	/* do nothing? */
 }
+#endif
 
 RListIter *r_list_iter_get_next(RListIter *list) {
 	return list ? list->n : NULL;
@@ -23,9 +28,11 @@ void *r_list_iter_get_data(RListIter *list) {
 	return list->data;
 }
 
+#if 0
 RListIter *r_list_iterator (const RList *list) {
 	return list? list->head: NULL;
 }
+#endif
 
 RListIter *r_list_push (RList *list, void *item) {
 	return r_list_append (list, item);

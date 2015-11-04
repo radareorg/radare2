@@ -12,7 +12,8 @@ void** r_flist_get(void **x) {
 }
 // XXX: forced free?? We need RFlist struct here
 #include <r_types.h>
-//#include <r_flist.h>
+#include <stdlib.h>
+#include <string.h>
 // NOTE: reimplemnetation of r_flist in C (if no R_API defined)
 
 #if 1

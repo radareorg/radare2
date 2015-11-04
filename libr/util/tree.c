@@ -1,6 +1,9 @@
 /* radare - LGPL - Copyright 2007-2015 - ret2libc */
 
 #include <r_util.h>
+#include <stdlib.h>
+#include "r_list.h"
+#include "r_types.h"
 
 static void tree_dfs_node (RTreeNode *r, RTreeVisitor *vis) {
 	RStack *s;

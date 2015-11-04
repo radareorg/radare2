@@ -1,10 +1,12 @@
 /* radare - LGPL - Copyright 2007-2014 - pancake */
 
-#include <r_util.h>
 #include <stdlib.h>
+#include <string.h>
 #if __UNIX__
 #include <sys/mman.h>
 #endif
+#include "r_types.h"
+#include "r_types_base.h"
 
 // TODO: find better name (r_mem_length()); is this used somewhere?
 R_API int r_mem_count(const ut8 **addr) {
