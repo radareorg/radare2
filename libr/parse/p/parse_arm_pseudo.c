@@ -108,10 +108,13 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			for (j=k=0; ops[i].str[j]!='\0'; j++, k++) {
 				if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
-					const char *w = argv[ ops[i].str[j]-'0' ];
-					if (w != NULL) {
-						strcpy (newstr+k, w);
-						k += strlen(w)-1;
+					int idx = ops[i].str[j]-'0';
+					if (idx<argc) {
+						const char *w = argv[idx];
+						if (w) {
+							strcpy (newstr + k, w);
+							k += strlen (w) - 1;
+						}
 					}
 				} else newstr[k] = ops[i].str[j];
 			}
