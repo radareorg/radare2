@@ -104,7 +104,6 @@ static int gb_parse_arith1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base,
 
 static bool gb_parse_ld1 (ut8 *buf, const int minlen, char *buf_asm) {
 	int i;
-	ut64 num;
 	r_str_replace_in (buf_asm, strlen(buf_asm), ", ", ",", R_TRUE);
 	if ((i = strlen(buf_asm)) < minlen)
 		return false;

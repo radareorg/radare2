@@ -77,7 +77,7 @@ R_API int r_base64_encode(char *bout, const ut8 *bin, int len) {
 }
 
 R_API char *r_base64_encode_dyn(const char *str, int len) {
-	char *bout, *tmp;
+	char *bout;
 	int in, out;
 	if (!str) return NULL;
 	if (len < 0) len = strlen (str);
