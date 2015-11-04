@@ -28,14 +28,16 @@ static int check(RBinFile *arch) {
 #define CMP8(o,x) strncmp((const char*)bs+o,x,8)
 #define CMP4(o,x) strncmp((const char*)bs+o,x,4)
 static int check_bytes(const ut8 *bs, ut64 length) {
-	if (length > 0x2000) {
-		if (!CMP8(0x1ff0, "TMR SEGA") ||
-			!CMP8(0x3ff0, "TMR SEGA") ||
-			!CMP8(0x7ff0, "TMR SEGA") ||
-			!CMP8(0x8ff0, "TMR SEGA") ||
-			!CMP4(0x7fe0, "SDSC"))
-			return true;
-	}
+	if (length > 0x2000 && !CMP8(0x1ff0, "TMR SEGA"))
+		return true;
+	if (length > 0x4000 && !CMP8(0x3ff0, "TMR SEGA"))
+		return true;
+	if (length > 0x8000 && !CMP8(0x7ff0, "TMR SEGA"))
+		return true;
+	if (length > 0x9000 && !CMP8(0x8ff0, "TMR SEGA"))
+		return true;
+	if (length > 0x8000 && !CMP4(0x7fe0, "SDSC"))
+		return true;
 	return false;
 }
 
