@@ -101,6 +101,7 @@ static int rabin_show_help(int v) {
 	if (v) {
 		printf ("Environment:\n"
 		" RABIN2_LANG:      e bin.lang       # assume lang for demangling\n"
+		" RABIN2_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
 		" RABIN2_DEMANGLE:  e bin.demangle   # show symbols demangled\n"
 		" RABIN2_MAXSTRBUF: e bin.maxstrbuf  # specify maximum buffer size\n"
 		" RABIN2_STRFILTER: e bin.strfilter  # r2 -qe bin.strfilter=? -c '' --\n"
@@ -413,16 +414,22 @@ int main(int argc, char **argv) {
 
 	r_core_init (&core);
 	bin = core.bin;
-	l = r_lib_new ("radare_plugin");
-	r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
-			   &__lib_bin_cb, &__lib_bin_dt, NULL);
-	r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
-			   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
 
-	/* load plugins everywhere */
-	r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
-	r_lib_opendir (l, homeplugindir);
-	r_lib_opendir (l, R2_LIBDIR"/radare2/"R2_VERSION);
+	if ((tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
+		free (tmp);
+	} else {
+		l = r_lib_new ("radare_plugin");
+		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
+				   &__lib_bin_cb, &__lib_bin_dt, NULL);
+		r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
+				   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
+
+		/* load plugins everywhere */
+		r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
+		r_lib_opendir (l, homeplugindir);
+		r_lib_opendir (l, R2_LIBDIR"/radare2/"R2_VERSION);
+		free (tmp);
+	}
 
 	if ((tmp = r_sys_getenv ("RABIN2_LANG"))) {
 		r_config_set (core.config, "bin.lang", tmp);

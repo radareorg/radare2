@@ -153,6 +153,7 @@ static int main_help(int line) {
 		" MAGICPATH    "R_MAGIC_PATH"\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
 		" VAPIDIR      path to extra vapi directory\n"
+		" R2_NOPLUGINS do not load r2 shared plugins\n"
 		"Paths:\n"
 		" PREFIX       "R2_PREFIX"\n"
 		" INCDIR       "R2_INCDIR"\n"
@@ -209,7 +210,7 @@ int main(int argc, char **argv, char **envp) {
 	RThread *rabin_th = NULL;
 #endif
 	RListIter *iter;
-	char *cmdn;
+	char *cmdn, *tmp;
 	RCoreFile *fh = NULL;
 	const char *patchfile = NULL;
 	const char *prj = NULL;
@@ -385,6 +386,10 @@ int main(int argc, char **argv, char **envp) {
 		return main_help (0);
 	}
 
+	if ((tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
+		r_config_set_i (r.config, "cfg.plugins", 0);
+		free (tmp);
+	}
 	if (r_config_get_i (r.config, "cfg.plugins")) {
 		r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 	}
