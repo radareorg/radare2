@@ -52,7 +52,7 @@ static int rabin_show_help(int v) {
 		"              [-o str] [-O str] [-k query] [-D lang symname] | file\n");
 	if (v) printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
-		" -A              list archs\n"
+		" -A              list sub-binaries and their arch-bits pairs\n"
 		" -a [arch]       set arch (x86, arm, .. or <arch>_<bits>)\n"
 		" -b [bits]       set bits (32, 64 ...)\n"
 		" -B [addr]       override base address (pie bins)\n"
