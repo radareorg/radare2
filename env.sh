@@ -49,7 +49,12 @@ if [ -z "$*" ]; then
 else
 	if [ $# -gt 1 ]; then 
 		par=""
-		for p in `seq 1 $(($#-1))`; do par=$par"\$$p "; done
+		if command -v seq >/dev/null; then
+                    for p in `seq 1 $(($#-1))`; do par=$par"\$$p "; done
+                elif
+                   command -v jot >/dev/null; then
+                    for p in `jot $(($#-1)) 1`; do par=$par"\$$p "; done
+                fi
 		eval $new_env $par "\"\$$#\""
 	else
 		eval $new_env $*
