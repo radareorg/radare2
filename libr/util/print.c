@@ -637,6 +637,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				continue;
 			}
 			if (p && (base == 32 || base == 64)) {
+				int left = len - i;
 				/* TODO: check step. it should be 2/4 for base(32) and 8 for
 				 *       base(64) */
 				ut64 n = 0;
@@ -647,6 +648,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				} else {
 					sz_n = step == 2 ? sizeof (ut16) : sizeof (ut32);
 				}
+				sz_n = R_MIN (left, sz_n);
 				r_mem_copyendian ((ut8*)&n, buf+j, sz_n, !p->big_endian);
 				r_print_cursor (p, j, 1);
 				// stub for colors
