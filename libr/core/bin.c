@@ -1324,12 +1324,10 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	return bin_symbols_internal (r, mode, laddr, va, at, name, false);
 }
 
-
 static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 datalen) {
-
 	char *chkstr = NULL, *aux, *ret = NULL;
-	char tmp[128];
 	const char *ptr = chksum;
+	char tmp[128];
 	int i;
 	do {
 		for (i = 0; *ptr && *ptr != ',' && i < sizeof(tmp) -1; i++)

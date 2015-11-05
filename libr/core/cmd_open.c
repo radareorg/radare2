@@ -212,11 +212,14 @@ static void reopen_in_debug(RCore *core, const char *args) {
 	int bits = core->assembler->bits;
 	char *oldname = r_file_abspath (binpath);
 	char *newfile = r_str_newf ("dbg://%s %s", oldname, args);
+	char *newfile2 = strdup (newfile);
 	core->file->desc->uri = newfile;
 	core->file->desc->referer = NULL;
 	r_core_file_reopen (core, newfile, 0, 2);
 	r_config_set_i (core->config, "asm.bits", bits);
 	r_config_set_i (core->config, "cfg.debug", true);
+	newfile = newfile2;
+
 	ut64 new_baddr = r_debug_get_baddr (core, newfile);
 	ut64 old_baddr = r_config_get_i (core->config, "bin.baddr");
 	if (old_baddr != new_baddr) {
