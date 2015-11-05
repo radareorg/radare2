@@ -2277,8 +2277,7 @@ static int cmd_print(void *data, const char *input) {
 
 			if (bw_disassemble) {
 				block = malloc (core->blocksize);
-				if (l<0)
-					l = -l;
+				if (l<0) l = -l;
 				if (block) {
 					if (*input == 'D'){ //pD
 						r_core_read_at (core, addr-l, block, l); //core->blocksize);
@@ -3033,14 +3032,14 @@ static int cmd_print(void *data, const char *input) {
 		free (buf);
 		}
 		break;
-	case '8':
+	case '8': // "p8"
 		if (input[1] == '?') {
 			r_cons_printf("|Usage: p8[j] [len]     8bit hexpair list of bytes (see pcj)\n");
 		} else if (input[1] == 'j') {
 			r_core_cmdf (core, "pcj %s", input+2);
 		} else r_print_bytes (core->print, core->block, len, "%02x");
 		break;
-	case 'f':
+	case 'f': // "pf"
 		cmd_print_format (core, input, len);
 		break;
 	case 'k':

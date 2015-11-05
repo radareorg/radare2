@@ -31,9 +31,13 @@ static struct riscv_opcode *get_opcode (insn_t word) {
 	struct riscv_opcode *op = NULL;
 	static const struct riscv_opcode *riscv_hash[OP_MASK_OP + 1] = {0};
 
-#define OP_HASH_IDX(i) ((i) & (riscv_insn_length (i) == 2 ? 0x3 : OP_MASK_OP))
+#define OP_HASH_IDX(i) ((i) & (riscv_insn_length (i) == 2 ? 3 : OP_MASK_OP))
 
 	if (!init) {
+		int i;
+		for (i=0;i<OP_MASK_OP+1; i++) {
+			riscv_hash[i] = 0;
+		}
 		for (op=riscv_opcodes; op < &riscv_opcodes[NUMOPCODES]; op++) {
 			if (!riscv_hash[OP_HASH_IDX (op->match)]) {
 				riscv_hash[OP_HASH_IDX (op->match)] = op;
@@ -41,7 +45,6 @@ static struct riscv_opcode *get_opcode (insn_t word) {
 		}
 		init = true;
 	}
-
 	return (struct riscv_opcode *)riscv_hash[OP_HASH_IDX (word)];
 }
 
@@ -55,22 +58,31 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 
-	memcpy (&word, data, 4);
+	r_mem_copyendian ((void*)&word, (const void*)data, sizeof (word), true);
 	o = get_opcode (word);
-	if (!o) return op->size;
+	if (word == UT32_MAX) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return -1;
+	}
+	if (!o || !o->name) return op->size;
 
 	for(; o < &riscv_opcodes[NUMOPCODES]; o++) {
-		if ( !(o->match_func)(o, word) ) continue;
+		// XXX ASAN segfault if ( !(o->match_func)(o, word) ) continue;
 		if ( no_alias && (o->pinfo & INSN_ALIAS) ) continue;
 		if ( isdigit (o->subset[0]) && atoi (o->subset) != xlen) continue;
-		else break;
+		else {
+			break;
+		}
 	}
 
+	if (!o || !o->name) {
+		return -1;
+	}
 // branch/jumps/calls/rets
 	if (is_any ("jal")) {
 		// decide wether it's ret or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
-		op->type = (rd == 0) ? R_ANAL_OP_TYPE_RET : R_ANAL_OP_TYPE_CALL;
+		op->type = (rd == 0) ? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_CALL;
 		op->jump = EXTRACT_UJTYPE_IMM (word) + addr;
 		op->fail = addr + 4;
 	} else if (is_any ("jr")) {
@@ -79,6 +91,8 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_JMP;
 	} else if (is_any ("jalr", "ret")) { // ?
 		op->type = R_ANAL_OP_TYPE_UCALL;
+	} else if (is_any ("ret")) {
+		op->type = R_ANAL_OP_TYPE_RET;
 	} else if (is_any ("beqz", "beq", "blez", "bgez", "ble",
 			"bleu", "bge", "bgeu", "bltz", "bgtz", "blt", "bltu",
 			"bgt", "bgtu", "bnez", "bne")) {
@@ -86,7 +100,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->jump = EXTRACT_SBTYPE_IMM (word) + addr;
 		op->fail = addr + 4;
 // math
-	} else if (is_any ("addi", "addw", "addiw", "add")) {
+	} else if (is_any ("addi", "addw", "addiw", "add", "auipc")) {
 		op->type = R_ANAL_OP_TYPE_ADD;
 	} else if (is_any ("subi", "subw", "sub")) {
 		op->type = R_ANAL_OP_TYPE_SUB;
