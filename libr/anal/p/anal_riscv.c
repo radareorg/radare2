@@ -60,7 +60,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 	r_mem_copyendian ((void*)&word, (const void*)data, sizeof (word), true);
 	o = get_opcode (word);
-	if (word == UT32_MAX) {
+	if (word == UT64_MAX) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return -1;
 	}
