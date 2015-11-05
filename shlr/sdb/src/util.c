@@ -10,7 +10,7 @@
 
 // XXX deprecate or wtf? who uses this??
 SDB_API int sdb_check_value(const char *s) {
-	if (!s || *s=='$')
+	if (!s || *s == '$')
 		return 0;
 	// TODO: check value length
 #if 0
@@ -28,7 +28,7 @@ SDB_API int sdb_check_key(const char *s) {
 	const char *special_chars = "\"+-=[]:$;";
 	if (!s || !*s)
 		return 0;
-	if (strlen (s)>=SDB_KSZ)
+	if (strlen (s) >= SDB_KSZ)
 		return 0;
 	for (; *s; s++)
 		if (strchr (special_chars, *s))
@@ -40,7 +40,7 @@ SDB_API ut32 sdb_hash(const char *s) {
 	ut32 h = CDB_HASHSTART;
 	if (s)
 		while (*s)
-			h = (h+(h<<5))^*s++;
+			h = (h + (h << 5)) ^* s++;
 	return h;
 }
 
@@ -84,7 +84,7 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	if (copy_string) {
 		// unnecessary memmove in case we use the return value
 		// return s + i + 1;
-		memmove (s, s+i+1, strlen (s+i+1)+1);
+		memmove (s, s + i + 1, strlen (s + i + 1) + 1);
 		return s;
 	}
 	return s + i + 1;
@@ -93,7 +93,7 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 SDB_API ut64 sdb_atoi(const char *s) {
 	char *p;
 	ut64 ret;
-	if (!s || *s=='-')
+	if (!s || *s == '-')
 		return 0LL;
 	ret = strtoull (s, &p, 0);
 	if (!p) return 0LL;
@@ -107,9 +107,11 @@ SDB_API char *sdb_array_compact(char *p) {
 	while (*p) {
 		if (!strncmp (p, ",,", 2)) {
 			p++;
-			for (e=p+1; *e==','; e++) {};
-			memmove (p, e, strlen (e)+1);
-		} else p++;
+			for (e = p + 1; *e == ','; e++) {};
+			memmove (p, e, strlen (e) + 1);
+		} else {
+			p++;
+		}
 	}
 	return p;
 }
@@ -150,7 +152,7 @@ SDB_API int sdb_alen(const char *str) {
 	int len = 1;
 	const char *n, *p = str;
 	if (!p|| !*p) return 0;
-	for (len=0; ; len++) {
+	for (len = 0; ; len++) {
 		n = strchr (p, SDB_RS);
 		if (!n) break;
 		p = n+1;
@@ -163,7 +165,7 @@ SDB_API int sdb_alen_ignore_empty(const char *str) {
 	const char *n, *p = str;
 	if (!p || !*p) return 0;
 	while (*p == SDB_RS) p++;
-	for (len=0; ; ) {
+	for (len = 0; ; ) {
 		n = strchr (p, SDB_RS);
 		if (!n) break;
 		p = n+1;
