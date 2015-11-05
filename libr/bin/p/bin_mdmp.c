@@ -91,58 +91,56 @@ static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0(RBinInfo);
 	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)arch->o->bin_obj;
 
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
+	ret->file = strdup (arch->file);
+	ret->rpath = strdup ("NONE");
 
+	ret->big_endian = false;
 	switch (obj->system_info->ProcessorArchitecture) {
 	case WINDOWS_PROCESSOR_ARCHITECTURE_INTEL:
-		strncpy(ret->machine, "i386", R_BIN_SIZEOF_STRINGS);
-		strncpy(ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
+		ret->machine = strdup("i386");
+		ret->arch = strdup("x86");
 		ret->bits = 32;
-		ret->big_endian = R_FALSE;
 		break;
 	case WINDOWS_PROCESSOR_ARCHITECTURE_ARM:
-		strncpy(ret->machine, "ARM", R_BIN_SIZEOF_STRINGS);
-		strncpy(ret->arch, "h8300", R_BIN_SIZEOF_STRINGS);
+		ret->machine = strdup ("ARM");
+		ret->arch = strdup ("h8300");
 		ret->bits = 16;
-		ret->big_endian = R_FALSE;
+		ret->big_endian = false;
 		break;
 	case WINDOWS_PROCESSOR_ARCHITECTURE_IA64:
-		strncpy(ret->machine, "IA64", R_BIN_SIZEOF_STRINGS);
-		strncpy(ret->arch, "IA64", R_BIN_SIZEOF_STRINGS);
+		ret->machine = strdup ("IA64");
+		ret->arch = strdup ("IA64");
 		ret->bits = 64;
-		ret->big_endian = R_FALSE;
 		break;
 	case WINDOWS_PROCESSOR_ARCHITECTURE_AMD64:
-		strncpy(ret->machine, "AMD 64", R_BIN_SIZEOF_STRINGS);
-		strncpy(ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
+		ret->machine = strdup ("AMD 64");
+		ret->arch = strdup ("x86");
 		ret->bits = 64;
-		ret->big_endian = R_FALSE;
 		break;
 	default:
 		strncpy(ret->machine, "unknown", R_BIN_SIZEOF_STRINGS);
 	}
 	switch (obj->system_info->ProductType) {
 	case WINDOWS_VER_NT_WORKSTATION:
-		snprintf (ret->os, R_BIN_SIZEOF_STRINGS, "Windows NT Workstation %d.%d.%d",
+		ret->os = r_str_newf ("Windows NT Workstation %d.%d.%d",
 			obj->system_info->MajorVersion,
 			obj->system_info->MinorVersion,
 			obj->system_info->BuildNumber);
 		break;
 	case WINDOWS_VER_NT_DOMAIN_CONTROLLER:
-		snprintf (ret->os, R_BIN_SIZEOF_STRINGS, "Windows NT Server Domain Controller %d.%d.%d",
+		ret->os = r_str_newf ("Windows NT Server Domain Controller %d.%d.%d",
 			obj->system_info->MajorVersion,
 			obj->system_info->MinorVersion,
 			obj->system_info->BuildNumber);
 		break;
 	case WINDOWS_VER_NT_SERVER:
-		snprintf (ret->os, R_BIN_SIZEOF_STRINGS, "Windows NT Server %d.%d.%d",
+		ret->os = r_str_newf ("Windows NT Server %d.%d.%d",
 			obj->system_info->MajorVersion,
 			obj->system_info->MinorVersion,
 			obj->system_info->BuildNumber);
 		break;
 	default:
-		strncpy(ret->os, "unknown", R_BIN_SIZEOF_STRINGS);
+		ret->os = strdup ("unknown");
 	}
 	return ret;
 }
