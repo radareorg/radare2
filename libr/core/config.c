@@ -200,13 +200,15 @@ static int cb_asmarch(void *user, void *data) {
 	r_debug_set_arch (core->dbg, node->value, bits);
 	if (!r_config_set (core->config, "anal.arch", node->value)) {
 		char *p, *s = strdup (node->value);
-		p = strchr (s, '.');
-		if (p) *p = 0;
-		if (!r_config_set (core->config, "anal.arch", s)) {
-			/* fall back to the anal.null plugin */
-			r_config_set (core->config, "anal.arch", "null");
+		if (s) {
+			p = strchr (s, '.');
+			if (p) *p = 0;
+			if (!r_config_set (core->config, "anal.arch", s)) {
+				/* fall back to the anal.null plugin */
+				r_config_set (core->config, "anal.arch", "null");
+			}
+			free (s);
 		}
-		free (s);
 	}
 	// set pcalign
 	{

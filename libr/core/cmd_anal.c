@@ -1831,7 +1831,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			{
 				const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 				if (r_reg_getv (core->anal->reg, pc) == 0LL) {
-					r_core_cmd0 (core, "ar pc=$$");
+					r_core_cmd0 (core, "ar PC=$$");
 				}
 			}
 			iotrap = r_config_get_i (core->config, "esil.iotrap");
@@ -1841,8 +1841,14 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
 			esil->debug = (int)r_config_get_i (core->config, "esil.debug");
 			/* restore user settings for interrupt handling */
-			r_config_set (core->config, "cmd.esil.intr",
-				r_config_get (core->config, "cmd.esil.intr"));
+			{
+				const char *s = r_config_get (core->config, "cmd.esil.intr");
+				if (s) {
+					char *my = strdup (s);
+					r_config_set (core->config, "cmd.esil.intr", my);
+					free (my);
+				}
+			}
 			break;
 		}
 		break;
