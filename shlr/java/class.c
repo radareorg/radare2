@@ -1583,18 +1583,20 @@ R_API RBinJavaCPTypeObj* r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 	if (!cp_buf)
 		return java_obj;
 	memset (cp_buf, 0, buf_sz);
-	memcpy (cp_buf, (ut8*) buf+offset, buf_sz);
-	IFDBG eprintf ("Parsed the tag '%d':%s and create object from offset 0x%08"PFMT64x".\n",tag, R_BIN_JAVA_CP_METAS[tag].name, offset);
-	java_obj = (*java_constant_info->allocs->new_obj)(bin, cp_buf, buf_sz);
-	if (java_obj != NULL && java_obj->metas != NULL) {
-		java_obj->file_offset = offset;
-		//IFDBG eprintf ("java_obj->file_offset = 0x%08"PFMT64x".\n",java_obj->file_offset);
-	}else if(java_obj == NULL) {
-		eprintf ("Unable to parse the tag '%d' and create valid object.\n",tag);
-	}else if(java_obj->metas == NULL) {
-		eprintf ("Unable to parse the tag '%d' and create valid object.\n",tag);
-	}else{
-		eprintf ("Failed to set the java_obj->metas-file_offset for '%d' offset is(0x%08"PFMT64x").\n",tag, offset);
+	if (offset+0x20 < len) {
+		memcpy (cp_buf, (ut8*) buf+offset, buf_sz);
+		IFDBG eprintf ("Parsed the tag '%d':%s and create object from offset 0x%08"PFMT64x".\n",tag, R_BIN_JAVA_CP_METAS[tag].name, offset);
+		java_obj = (*java_constant_info->allocs->new_obj)(bin, cp_buf, buf_sz);
+		if (java_obj != NULL && java_obj->metas != NULL) {
+			java_obj->file_offset = offset;
+			//IFDBG eprintf ("java_obj->file_offset = 0x%08"PFMT64x".\n",java_obj->file_offset);
+		} else if (!java_obj) {
+			eprintf ("Unable to parse the tag '%d' and create valid object.\n",tag);
+		} else if (!java_obj->metas) {
+			eprintf ("Unable to parse the tag '%d' and create valid object.\n",tag);
+		} else {
+			eprintf ("Failed to set the java_obj->metas-file_offset for '%d' offset is(0x%08"PFMT64x").\n",tag, offset);
+		}
 	}
 	free (cp_buf);
 	return java_obj;
