@@ -141,6 +141,10 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 	int res = false;
 
 	if (!bf || !o || !filename ) return false;
+	if (bin_size == bf->size && bin_size) {
+		eprintf ("This is not a fat bin\n");
+		return false;
+	}
 	bytes = r_buf_buffer (bf->buf);
 	if (!bytes) {
 		eprintf ("error: BinFile buffer is empty\n");
@@ -210,7 +214,7 @@ static int rabin_extract(int all) {
 	if (!bf) return res;
 	if (all) {
 		int idx = 0;
-		RListIter *iter = NULL;
+		RListIter *iter;
 		r_list_foreach (bf->objs, iter, obj)
 			res = extract_binobj (bf, obj, idx++);
 	} else {
