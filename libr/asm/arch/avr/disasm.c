@@ -29,8 +29,8 @@ static int avrdis (char *out, ut64 addr, cut8 *buf, int len) {
 			return -1;
 		}
 		ins.address = addr;
-		ins.opcode = (buf[0] | buf[1]<<8) | (buf[2]<<16) | (buf[3]<<24);
-		//ins.opcode = (buf[3]<<8) | (buf[2]);
+		//ins.opcode = (buf[0] | buf[1]<<8) | (buf[2]<<16) | (buf[3]<<24);
+		ins.opcode = (buf[3]<<8) | (buf[2]);
 		/*
 			(buf[3]<<24) | (buf[2]<<16) | \
 			(buf[1]<<8) | (buf[0]);
