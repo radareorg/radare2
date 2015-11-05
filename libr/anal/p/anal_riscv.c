@@ -8,29 +8,23 @@
 #include "../../asm/arch/riscv/riscv-opc.c"
 #include "../../asm/arch/riscv/riscv.h"
 
-#define NARGS_SEQ(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,\
-_14,_15,_16,_17,_18,_19,_20, N,...) N
-#define NARGS(...) NARGS_SEQ(__VA_ARGS__,20,19,18,17,16,15,14,\
-13,12,11,10,9,8,7,6,5,4,3,2,1)
+static bool init = false;
 
-static int init = 0;
-
-static int _is_any(int n, const char *str, ...) {
+#define is_any(...) _is_any(o->name, __VA_ARGS__, NULL)
+static bool _is_any(const char *str, ...) {
 	char *cur;
 	va_list va;
 	va_start (va, str);
-
-	while (n-- > 0) {
+	while (true) {
 		cur = va_arg (va, char *);
+		if (!cur) break;
 		if (!strcmp (str, cur)) {
 			va_end (va);
-			return 1;
+			return true;
 		}
 	}
-
 	va_end (va);
-
-	return 0;
+	return false;
 }
 
 static struct riscv_opcode *get_opcode (insn_t word) {
@@ -45,14 +39,13 @@ static struct riscv_opcode *get_opcode (insn_t word) {
 				riscv_hash[OP_HASH_IDX (op->match)] = op;
 			}
 		}
-		init = 1;
+		init = true;
 	}
 
 	return (struct riscv_opcode *)riscv_hash[OP_HASH_IDX (word)];
 }
 
-static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
-{
+static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	const int no_alias = 1;
 	struct riscv_opcode *o = NULL;
 	insn_t word = 0;
@@ -64,9 +57,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 	memcpy (&word, data, 4);
 	o = get_opcode (word);
-	if (o == NULL) {
-		return op->size;
-	}
+	if (!o) return op->size;
 
 	for(; o < &riscv_opcodes[NUMOPCODES]; o++) {
 		if ( !(o->match_func)(o, word) ) continue;
@@ -74,7 +65,6 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if ( isdigit (o->subset[0]) && atoi (o->subset) != xlen) continue;
 		else break;
 	}
-#define is_any(...) _is_any(NARGS(__VA_ARGS__), o->name, __VA_ARGS__)
 
 // branch/jumps/calls/rets
 	if (is_any ("jal")) {
@@ -83,34 +73,34 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = (rd == 0) ? R_ANAL_OP_TYPE_RET : R_ANAL_OP_TYPE_CALL;
 		op->jump = EXTRACT_UJTYPE_IMM (word) + addr;
 		op->fail = addr + 4;
-	} else if(is_any ("jr")) {
+	} else if (is_any ("jr")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
-	} else if(is_any ("j", "jump")) {
+	} else if (is_any ("j", "jump")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
-	} else if(is_any ("jalr", "ret")) { // ?
+	} else if (is_any ("jalr", "ret")) { // ?
 		op->type = R_ANAL_OP_TYPE_UCALL;
-	} else if(is_any ("beqz", "beq", "blez", "bgez", "ble",
+	} else if (is_any ("beqz", "beq", "blez", "bgez", "ble",
 			"bleu", "bge", "bgeu", "bltz", "bgtz", "blt", "bltu",
 			"bgt", "bgtu", "bnez", "bne")) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = EXTRACT_SBTYPE_IMM (word) + addr;
 		op->fail = addr + 4;
 // math
-	} else if(is_any ("addi", "addw", "addiw", "add")) {
+	} else if (is_any ("addi", "addw", "addiw", "add")) {
 		op->type = R_ANAL_OP_TYPE_ADD;
-	} else if(is_any ("subi", "subw", "sub")) {
+	} else if (is_any ("subi", "subw", "sub")) {
 		op->type = R_ANAL_OP_TYPE_SUB;
-	} else if(is_any ("xori", "xor")) {
+	} else if (is_any ("xori", "xor")) {
 		op->type = R_ANAL_OP_TYPE_XOR;
-	} else if(is_any ("andi", "and")) {
+	} else if (is_any ("andi", "and")) {
 		op->type = R_ANAL_OP_TYPE_AND;
-	} else if(is_any ("ori", "or")) {
+	} else if (is_any ("ori", "or")) {
 		op->type = R_ANAL_OP_TYPE_OR;
-	} else if(is_any ("not")) {
+	} else if (is_any ("not")) {
 		op->type = R_ANAL_OP_TYPE_NOT;
-	} else if(is_any ("mul", "mulh", "mulhu", "mulhsu", "mulw")) {
+	} else if (is_any ("mul", "mulh", "mulhu", "mulhsu", "mulw")) {
 		op->type = R_ANAL_OP_TYPE_MUL;
-	} else if(is_any ("div", "divu", "divw", "divuw")) {
+	} else if (is_any ("div", "divu", "divw", "divuw")) {
 		op->type = R_ANAL_OP_TYPE_DIV;
 // memory
 	} else if (is_any ("sd", "sb", "sh", "sw")) {
@@ -119,7 +109,6 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			"lb", "lbu", "lh", "lhu", "la", "lla")) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 	}
-
 	return op->size;
 }
 

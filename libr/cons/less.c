@@ -171,6 +171,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 				r_list_free(mla[i]);
 			}
 			free (mla);
+			free (p);
 			return ch;
 		}
 		ch = r_cons_arrow_to_hjkl (ch);

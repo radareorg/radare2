@@ -156,6 +156,10 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 					break;
 				}
 				choose = 0;
+				if (i+1>=buf_size) {
+					// tOO MANy
+					break;
+				}
 				buf[i++] = ch;
 				buf[i] = 0;
 			}

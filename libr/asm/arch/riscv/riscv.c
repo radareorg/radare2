@@ -287,16 +287,13 @@ static struct riscv_opcode *get_opcode (insn_t word) {
 
 static int
 riscv_disassemble(RAsm *a, RAsmOp *rop, insn_t word, int xlen) {
-	const int no_alias = 1;
-	const struct riscv_opcode *op;
-
-	op = get_opcode (word);
-	if (op == NULL ) {
+	const bool no_alias = true;
+	const struct riscv_opcode *op = get_opcode (word);
+	if (!op) {
 		return -1;
 	}
 
 	for(; op < &riscv_opcodes[NUMOPCODES]; op++) {
-
 		if ( !(op->match_func)(op, word) ) {
 			continue;
 		}
@@ -309,8 +306,8 @@ riscv_disassemble(RAsm *a, RAsmOp *rop, insn_t word, int xlen) {
 			continue;
 		}
 
-		if (op != NULL) {
-			sprintf (rop->buf_asm, "%s", op->name);
+		if (op->name && op->args) {
+			snprintf (rop->buf_asm, sizeof (rop->buf_asm), "%s", op->name);
 			get_insn_args (rop->buf_asm, op->args, word, a->pc);
 		} else {
 			sprintf (rop->buf_asm, "invalid word(%"PFMT64x")", (ut64)word);
