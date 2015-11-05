@@ -1613,7 +1613,7 @@ static int handle_print_middle(RCore *core, RDisasmState *ds, int ret) {
 		ret -= ds->middle;
 		handle_comment_align (core, ds);
 		if (ds->show_color) r_cons_strcat (ds->pal_comment);
-		r_cons_printf (" ;  *middle* %d", ret);
+		r_cons_printf (" ; *middle* %d", ret);
 		if (ds->show_color) r_cons_strcat (Color_RESET);
 	}
 	return ret;
@@ -1885,20 +1885,20 @@ static void handle_print_asmop_payload (RCore *core, RDisasmState *ds) {
 		//r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
 		int v = ds->analop.ptr;
 		switch (ds->analop.stackop) {
-			case R_ANAL_STACK_GET:
-				if (v<0) {
-					r_cons_printf (" ; local.get %d", -v);
-				} else {
-					r_cons_printf (" ; arg.get %d", v);
-				}
-				break;
-			case R_ANAL_STACK_SET:
-				if (v<0) {
-					r_cons_printf (" ; local.set %d", -v);
-				} else {
-					r_cons_printf (" ; arg.set %d", v);
-				}
-				break;
+		case R_ANAL_STACK_GET:
+			if (v<0) {
+				r_cons_printf (" ; local.get %d", -v);
+			} else {
+				r_cons_printf (" ; arg.get %d", v);
+			}
+			break;
+		case R_ANAL_STACK_SET:
+			if (v<0) {
+				r_cons_printf (" ; local.set %d", -v);
+			} else {
+				r_cons_printf (" ; arg.set %d", v);
+			}
+			break;
 		}
 	}
 	if (ds->asmop.payload != 0)
@@ -2715,7 +2715,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 	RAnalFunction *f;
 	char *tmpopstr;
 	const ut64 old_offset = core->offset;
-	int hasanal = 0;
+	bool hasanal = false;
 
 	if (!nb_bytes) {
 		nb_bytes = core->blocksize;
@@ -2761,7 +2761,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 #define isTheEnd (nb_opcodes? j<nb_opcodes: i<nb_bytes)
 	for (i = j = 0; isTheEnd; i += ret, j++) {
 		ds->at = core->offset +i;
-		hasanal = 0;
+		hasanal = false;
 		r_core_seek_archbits (core, ds->at);
 		if (r_cons_singleton ()->breaked)
 			break;
@@ -2799,7 +2799,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 		if (ds->show_color && !hasanal) {
 			r_anal_op (core->anal, &ds->analop, ds->at,
 				core->block + i, core->blocksize - i);
-			hasanal = 1;
+			hasanal = true;
 		}
 		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ds->hint && ds->hint->size)
@@ -2810,8 +2810,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 		} else {
 			if (ds->use_esil) {
 				if (!hasanal) {
-					r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
-					hasanal = 1;
+					r_anal_op (core->anal, &ds->analop,
+						ds->at, core->block+i,
+						core->blocksize-i);
+					hasanal = true;
 				}
 				if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
 					free (ds->opstr);
@@ -2849,7 +2851,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 				free (ds->opstr);
 				if (!hasanal) {
 					r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
-					hasanal = 1;
+					hasanal = true;
 				}
 				tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 				ds->opstr = (tmpopstr)? tmpopstr: strdup (ds->asmop.buf_asm);
