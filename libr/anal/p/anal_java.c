@@ -732,7 +732,6 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 	ut64 offset = addr - java_get_method_start ();
 	ut8 pos = (offset+1)%4 ? 1 + 4 - (offset+1)%4 : 1;
 
-
 	if (op_byte == 0xaa) {
 		// handle a table switch condition
 		int min_val = (ut32)(UINT (data, pos + 4)),
@@ -751,18 +750,22 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 		}
 		pos += 12;
 
-		//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
-		for (cur_case = 0; cur_case <= max_val - min_val; pos+=4, cur_case++) {
-			//ut32 value = (ut32)(UINT (data, pos));
-			if (pos+4>=len) {
-				// switch is too big cant read further
-				break;
+		if (max_val > min_val) {
+			//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
+			for (cur_case = 0; cur_case <= max_val - min_val; pos+=4, cur_case++) {
+				//ut32 value = (ut32)(UINT (data, pos));
+				if (pos+4>=len) {
+					// switch is too big cant read further
+					break;
+				}
+				int offset = (int)(ut32)(R_BIN_JAVA_UINT (data, pos));
+				IFDBG eprintf ("offset value: 0x%04x, interpretted addr case: %d offset: 0x%04"PFMT64x"\n", offset, cur_case+min_val, addr+offset);
+				caseop = r_anal_switch_op_add_case (op->switch_op, addr+pos, cur_case+min_val, addr+offset);
+				caseop->bb_ref_to = addr+offset;
+				caseop->bb_ref_from = addr; // TODO figure this one out
 			}
-			int offset = (int)(ut32)(R_BIN_JAVA_UINT (data, pos));
-			IFDBG eprintf ("offset value: 0x%04x, interpretted addr case: %d offset: 0x%04"PFMT64x"\n", offset, cur_case+min_val, addr+offset);
-			caseop = r_anal_switch_op_add_case (op->switch_op, addr+pos, cur_case+min_val, addr+offset);
-			caseop->bb_ref_to = addr+offset;
-			caseop->bb_ref_from = addr; // TODO figure this one out
+		} else {
+			eprintf ("Invalid switch boundaries at 0x%"PFMT64x"\n", addr);
 		}
 	}
 	op->size = pos;
