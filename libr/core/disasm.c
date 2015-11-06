@@ -172,8 +172,6 @@ static void handle_comment_align (RCore *core, RDisasmState *ds);
 static RDisasmState * handle_init_ds (RCore * core);
 static void handle_set_pre (RDisasmState *ds, const char * str);
 static void handle_build_op_str (RCore *core, RDisasmState *ds);
-static char *filter_refline2(RCore *core, const char *str);
-static char *filter_refline(RCore *core, const char *str);
 static void handle_show_xrefs (RCore *core, RDisasmState *ds);
 static void handle_atabs_option(RCore *core, RDisasmState *ds);
 static void handle_show_functions (RCore *core, RDisasmState *ds);
@@ -597,45 +595,6 @@ R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 	return hint;
 }
 
-// this is another random hack for reflines.. crappy stuff
-static char *filter_refline2(RCore *core, const char *str) {
-	char *p, *s;
-	if (!core || !str)
-		return NULL;
-	s = strdup (str);
-	for (p = s; *p; p++) {
-		switch (*p) {
-		case '`':
-			*p = '|'; break;
-		case '-':
-		case '>':
-		case '<':
-		case '.':
-		case '=':
-			*p = ' '; break;
-		}
-	}
-	return s;
-}
-
-static char *filter_refline(RCore *core, const char *str) {
-	char *p;
-	if (!core || !str)
-		return NULL;
-	p = strdup (str);
-	p = r_str_replace (p, "`",
-		core->cons->vline[LINE_VERT], 1); // "`" -> "|"
-	p = r_str_replace (p,
-		core->cons->vline[LINE_HORIZ], " ", 1); // "-" -> " "
-	p = r_str_replace (p,
-		core->cons->vline[LINE_HORIZ],
-	    	core->cons->vline[LINE_VERT], 1); // "=" -> "|"
-	p = r_str_replace (p, core->cons->vline[ARROW_RIGHT], " ", 0);
-	p = r_str_replace (p, core->cons->vline[ARROW_LEFT], " ", 0);
-
-	return p;
-}
-
 static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 	const char *section = "";
 	if (ds->show_section) {
@@ -657,15 +616,12 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 	RAnalRef *refi;
 	RListIter *iter;
 	int count = 0;
-	if (!ds->show_xrefs) {
-		return;
-	}
-	if (!ds->show_comments)
-		return;
+	if (!ds->show_xrefs) return;
+	if (!ds->show_comments) return;
+
 	/* show xrefs */
 	xrefs = r_anal_xref_get (core->anal, ds->at);
-	if (!xrefs)
-		return;
+	if (!xrefs) return;
 
 	if (r_list_length (xrefs) > ds->maxrefs) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
@@ -833,8 +789,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 			spaces[idx] = 0;
 			if (!ds->show_fcnlines) {
 				r_cons_printf ("%s", ds->refline2);
-			}
-			if (ds->show_fcnlines) {
+			} else {
 				r_cons_printf ("%s%s %s%s",
 					COLOR (ds, color_fline),
 					core->cons->vline[LINE_VERT], ds->refline2,
@@ -1010,8 +965,9 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
 	if (ds->show_lines) {
 		ds->line = r_anal_reflines_str (core, ds->at, ds->linesopts);
-		ds->refline = filter_refline (core, ds->line);
-		ds->refline2 = filter_refline2 (core, ds->refline);
+		ds->refline = strdup (ds->line);
+		ds->refline2 = r_anal_reflines_str (core, ds->at,
+			ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE);
 		if (ds->line) {
 			if (strchr (ds->line, '<'))
 				ds->indent_level++;
@@ -1064,9 +1020,7 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 		ds->opstr = strdup (ds->str);
 	}
 
-	if (ds->acase) {
-		r_str_case (ds->asmop.buf_asm, 1);
-	}
+	if (ds->acase) r_str_case (ds->asmop.buf_asm, 1);
 
 	return ret;
 }
@@ -1217,9 +1171,10 @@ static void handle_print_trace (RCore *core, RDisasmState *ds) {
 }
 
 static void handle_adistrick_comments (RCore *core, RDisasmState *ds) {
-	if (ds->adistrick)
+	if (ds->adistrick) {
 		ds->middle = r_anal_reflines_middle (core->anal,
 			core->anal->reflines, ds->at, ds->analop.size);
+	}
 }
 
 static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, int len, int idx) {
@@ -2381,7 +2336,6 @@ toro:
 
 		r_core_seek_archbits (core, ds->at); // slow but safe
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
-		//if (!ds->cbytes && idx>=l) { break; }
 		r_asm_set_pc (core->assembler, ds->at);
 		handle_update_ref_lines (core, ds);
 		/* show type links */
