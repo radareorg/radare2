@@ -23,7 +23,6 @@ else
 fi
 
 type sudo || NOSUDO=1
-
 [ "$(id -u)" = 0 ] || SUDO=sudo
 [ -n "${NOSUDO}" ] && SUDO=
 
