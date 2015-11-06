@@ -706,6 +706,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				sdb_num_set (bin->kv, "cryptid", eic.cryptid, 0);
 				sdb_num_set (bin->kv, "cryptoff", eic.cryptoff, 0);
 				sdb_num_set (bin->kv, "cryptsize", eic.cryptsize, 0);
+				sdb_num_set (bin->kv, "cryptheader", off, 0);
 			} }
 			break;
 		case LC_LOAD_DYLINKER:
