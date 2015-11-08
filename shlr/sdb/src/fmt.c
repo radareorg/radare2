@@ -164,8 +164,8 @@ SDB_API ut64* sdb_fmt_array_num(const char *list) {
 	ut32 size;
 	const char *next, *ptr = list;
 	if (list && *list) {
-		int len = sdb_alen (list);
-		size = sizeof(ut64) * (len + 1);
+		ut32 len = (ut32) sdb_alen (list);
+		size = sizeof (ut64) * (len + 1);
 		if (size < len) return NULL;
 		retp = ret = (ut64*) malloc (size);
 		if (!ret)

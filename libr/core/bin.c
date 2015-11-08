@@ -239,7 +239,7 @@ static bool string_filter(RCore *core, const char *str) {
 }
 
 static int bin_strings(RCore *r, int mode, int va) {
-	char *q, str[R_FLAG_NAME_SIZE];
+	char *q;
 	RBinSection *section;
 	int hasstr, minstr, maxstr, rawstr;
 	RBinString *string;
@@ -293,20 +293,19 @@ static int bin_strings(RCore *r, int mode, int va) {
 		section_name = section ? section->name : "unknown";
 		type_string = string->type == 'w' ? "wide" : "ascii";
 		if (IS_MODE_SET (mode)) {
-			char *f_name;
-
+			char *f_name, *str;
 			if (r_cons_singleton()->breaked) break;
 			r_meta_add (r->anal, R_META_TYPE_STRING, addr,
 				addr + string->size, string->string);
 			f_name = strdup (string->string);
 			r_name_filter (f_name, R_FLAG_NAME_SIZE);
 			if (r->bin->prefix) {
-				snprintf (str, R_FLAG_NAME_SIZE, "%s.str.%s",
-					r->bin->prefix, f_name);
+				str = r_str_newf ("%s.str.%s", r->bin->prefix, f_name);
 			} else {
-				snprintf (str, R_FLAG_NAME_SIZE, "str.%s", f_name);
+				str = r_str_newf ("str.%s", f_name);
 			}
 			r_flag_set (r->flags, str, addr, string->size, 0);
+			free (str);
 			free (f_name);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", addr,
@@ -322,24 +321,23 @@ static int bin_strings(RCore *r, int mode, int va) {
 				string->length, section_name, type_string, q);
 			free (q);
 		} else if (IS_MODE_RAD (mode)) {
-			char *f_name;
-
+			char *f_name, *str;
 			f_name = strdup (string->string);
 			r_name_filter (f_name, R_FLAG_NAME_SIZE);
 			if (r->bin->prefix) {
-				snprintf (str, R_FLAG_NAME_SIZE, "%s.str.%s",
-					r->bin->prefix, f_name);
+				str = r_str_newf ("%s.str.%s", r->bin->prefix, f_name);
 				r_cons_printf ("f %s.str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
 					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
 					r->bin->prefix, f_name, string->size, addr,
 					string->size, addr);
 			} else {
-				snprintf (str, R_FLAG_NAME_SIZE, "str.%s", f_name);
+				str = r_str_newf ("str.%s", f_name);
 				r_cons_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
 					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
 					f_name, string->size, addr,
 					string->size, addr);
 			}
+			free (str);
 			free (f_name);
 		} else {
 			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"
@@ -1651,16 +1649,11 @@ static int bin_classes(RCore *r, int mode) {
 		r_name_filter (name, 0);
 
 		if (IS_MODE_SET (mode)) {
-			char str[R_FLAG_NAME_SIZE + 1];
-
-			snprintf (str, R_FLAG_NAME_SIZE, "class.%s", name);
-			r_flag_set (r->flags, str, c->addr, 1, 0);
+			const char *classname = sdb_fmt (0, "class.%s", name);
+			r_flag_set (r->flags, classname, c->addr, 1, 0);
 			r_list_foreach (c->methods, iter2, sym) {
-				snprintf (str, sizeof (str),
-					"method.%s.%s", c->name, sym->name);
-				str[sizeof(str)-1] = 0;
-				r_name_filter (str, 0);
-				r_flag_set (r->flags, str, sym->vaddr, 1, 0);
+				const char *method = sdb_fmt (1, "method.%s.%s", c->name, sym->name);
+				r_flag_set (r->flags, method, sym->vaddr, 1, 0);
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x" %s%s%s\n",

@@ -41,13 +41,15 @@ grub_fbfs_mount (grub_disk_t disk)
   struct grub_fb_data *data;
   int boot_base, boot_size, list_used, pri_size, ofs, i;
   char *fb_list, *p1, *p2;
+  grub_uint32_t *grub32;
 
   if (grub_disk_read (disk, 0, 0, sizeof (buf), buf))
     goto fail;
 
   m = (struct fb_mbr *) buf;
   d = (struct fb_data *) buf;
-  if (*((grub_uint32_t *) &buf) == FB_AR_MAGIC_LONG)
+  grub32 = (grub_uint32_t *)&buf;
+  if (*grub32 == FB_AR_MAGIC_LONG)
     {
       ofs = 0;
       boot_base = 0;

@@ -206,9 +206,11 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 	orig_x = c->x;
 	do {
 		const char *s_part = set_attr (c, s);
+		ch = 0;
 		piece_len = get_piece (s_part, &ch);
 		if (piece_len == 0 && ch == '\0' && s_part == s) break;
 
+		left = 0;
 		p = prefixline (c, &left);
 		slen = R_MIN (left, piece_len);
 		attr_len = slen <= 0 && s_part != s ? 1 : slen;

@@ -230,6 +230,7 @@ static void reopen_in_debug(RCore *core, const char *args) {
 	r_core_cmd0 (core, "sr PC");
 	free (oldname);
 	free (binpath);
+	free (newfile);
 }
 
 static int cmd_open(void *data, const char *input) {

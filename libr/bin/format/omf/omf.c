@@ -504,12 +504,12 @@ static int get_omf_data_info(r_bin_omf_obj *obj) {
 			return false;
 		}
 		OMF_segment *os = obj->sections[((OMF_data *)((OMF_record *)tmp)->content)->seg_idx - 1];
-		if (os && !(tmp_data = os->data)) {
-			obj->sections[((OMF_data *)((OMF_record *)tmp)->content)->seg_idx - 1]->data = ((OMF_record *)tmp)->content;
-		} else {
+		if (os && (tmp_data = os->data)) {
 			while (tmp_data->next)
 				tmp_data = tmp_data->next;
 			tmp_data->next = ((OMF_record *)tmp)->content;
+		} else {
+			obj->sections[((OMF_data *)((OMF_record *)tmp)->content)->seg_idx - 1]->data = ((OMF_record *)tmp)->content;
 		}
 		((OMF_record *)tmp)->content = NULL;
 		tmp = tmp->next;

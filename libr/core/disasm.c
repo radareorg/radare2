@@ -1108,7 +1108,7 @@ static void handle_print_offset (RCore *core, RDisasmState *ds) {
 		}
 	}
 	if (ds->show_offset) {
-		static RFlagItem sfi = {{0}};
+		static RFlagItem sfi = {0};
 		RFlagItem *fi;
 		int delta = 0;
 		if (ds->show_reloff) {

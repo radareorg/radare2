@@ -219,11 +219,11 @@ static void print_fpu (void *f, int r){
 			ut64 *b = (ut64*)&fpregs.st_space[i * 4];
 			ut32 *c = (ut32*)&fpregs.st_space;
 			float *f = (float *)&fpregs.st_space;
+			double *d = (double *)&fpregs.st_space[i*4];
 			c = c + (i * 4);
 			f = f + (i * 4);
-			eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  |\
-				%0.3f (%08x) \n", i,
-				(double)*((double*)&fpregs.st_space[i*4]), *b,
+			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  |\
+				%0.3f (%08x) \n", i, *d, *b,
 				(float)f[0], c[0], (float)f[1], c[1]);
 		} else {
 			eprintf ("\n");

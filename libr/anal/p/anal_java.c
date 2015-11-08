@@ -545,49 +545,39 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method, ut64 loadaddr) {
 	RBinJavaAttrInfo* code_attr = method ? r_bin_java_get_method_code_attribute(method) : NULL;
 	ut8 * code_buf = NULL;
-	char * name_buf = NULL;
 	int result = false;
+	ut64 code_length = 0;
+	ut64 code_addr = -1;
 
-	ut64 code_length = 0,
-		 code_addr = -1;
-
-
-	if (code_attr == NULL) {
+	if (!code_attr) {
 		fcn->name = strdup ("sym.UNKNOWN");
 		fcn->dsc = strdup ("unknown");
-
 		fcn->size = code_length;
 		fcn->type = R_ANAL_FCN_TYPE_FCN;
 		fcn->addr = 0;
-
 		return R_ANAL_RET_ERROR;
 	}
 
 	code_length = code_attr->info.code_attr.code_length;
 	code_addr = code_attr->info.code_attr.code_offset;
-
 	code_buf = malloc (code_length);
 
 	anal->iob.read_at (anal->iob.io, code_addr + loadaddr, code_buf, code_length);
 	result = analyze_from_code_buffer ( anal, fcn, code_addr+loadaddr, code_buf, code_length);
-
 	free (code_buf);
 
-	name_buf = (char *) malloc (R_FLAG_NAME_SIZE);
-	if (name_buf){
+	{
 		char *cname = NULL;
-		char *name = strdup(method->name);
+		char *name = strdup (method->name);
 		r_name_filter (name, 80);
+		free (fcn->name);
 		if (method->class_name) {
 			cname = strdup (method->class_name);
 			r_name_filter (cname, 50);
-			sprintf (name_buf, "sym.%s.%s", cname, name);
+			fcn->name = r_str_newf ("sym.%s.%s", cname, name);
 		} else {
-			sprintf (name_buf, "sym.%s", name);
+			fcn->name = r_str_newf ("sym.%s", name);
 		}
-		free (fcn->name);
-		fcn->name = strdup (name_buf);
-		free (name_buf);
 		free (cname);
 		free (name);
 	}
