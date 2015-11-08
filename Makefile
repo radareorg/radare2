@@ -32,7 +32,7 @@ all: plugins.cfg libr/include/r_version.h
 	${MAKE} -C binr
 
 .PHONY: libr/include/r_version.h
-GIT_TAP=$(shell git describe --tags 2>/dev/null || echo $(VERSION))
+GIT_TAP=$(shell git describe --tags --match "[0-9]*" 2>/dev/null || echo $(VERSION))
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
 GIT_NOW=$(shell date +%Y-%m-%d)
 
