@@ -585,7 +585,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 		return false;
 	}
 
-	r_bin_file_set_bytes (bf, buf_bytes, sz);
+	//r_bin_file_set_bytes (bf, buf_bytes, sz);
 	free (buf_bytes);
 
 	if (r_list_length (the_obj_list) == 1) {
@@ -961,7 +961,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 		if (sz<bsz) bsz = sz;
 		o->bin_obj = plugin->load_bytes (binfile, bytes+offset, sz, loadaddr, sdb);
 		if (!o->bin_obj) {
-			eprintf("Error in r_bin_object_new: load_bytes failed for %s plugin\n",
+			eprintf ("Error in r_bin_object_new: load_bytes failed for %s plugin\n",
 				plugin->name);
 			sdb_free (o->kv);
 			free (o);
@@ -1006,11 +1006,13 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 
 static int r_bin_file_set_bytes (RBinFile *binfile, const ut8 * bytes, ut64 sz) {
 	if (!bytes) return false;
-	if (binfile->buf) r_buf_free (binfile->buf);
-	binfile->buf = r_buf_new ();
+	r_buf_free (binfile->buf);
+	binfile->buf = r_buf_new_with_pointers (bytes, sz);
+#if 0
+	binfile->buf = r_buf_new();
 	r_buf_set_bytes (binfile->buf, bytes, sz);
-	binfile->size = sz;
-	return true;
+#endif
+	return binfile->buf != NULL;
 }
 
 static RBinFile * r_bin_file_new (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb) {
@@ -1075,8 +1077,7 @@ static int r_bin_file_object_new_from_xtr_data (RBin *bin, RBinFile *bf, ut64 ba
 	return true;
 }
 
-static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr,
-		 ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset) {
+static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset) {
 	RBinPlugin *plugin = NULL;
 	RBinXtrPlugin *xtr = NULL;
 	RBinFile *bf = NULL;
@@ -1100,7 +1101,7 @@ static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const 
 	if (bin->force) {
 		plugin = r_bin_get_binplugin_by_name (bin, bin->force);
 	}
-	if (plugin == NULL) {
+	if (!plugin) {
 		if (pluginname) plugin = r_bin_get_binplugin_by_name (bin, pluginname);
 		if (!plugin) plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
 		if (!plugin) plugin = r_bin_get_binplugin_any (bin);
@@ -1111,12 +1112,15 @@ static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const 
 	if (o && !o->size) o->size = file_sz;
 
 	if (!o) {
-		if (bf && binfile_created) r_list_delete_data (bin->binfiles, bf);
+		if (bf && binfile_created)
+			r_list_delete_data (bin->binfiles, bf);
 		return NULL;
 	}
+	/* WTF */
 	if (strcmp (plugin->name, "any") )
 		bf->narch = 1;
 
+	/* free unnecessary rbuffer (???) */
 	return bf;
 }
 
