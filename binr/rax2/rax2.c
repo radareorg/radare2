@@ -343,7 +343,7 @@ static int rax (char *str, int len, int last) {
 }
 
 static int use_stdin () {
-	static char buf[STDIN_BUFFER_SIZE];
+	char * buf = malloc (STDIN_BUFFER_SIZE);
 	int l, sflag = (flags & 5);
 	if (! (flags & 16384)) {
 		for (l=0; l>=0; l++) {
@@ -366,6 +366,7 @@ static int use_stdin () {
 	}
 	if (l>0)
 		rax (buf, l, 0);
+	free (buf);
 	return 0;
 }
 
