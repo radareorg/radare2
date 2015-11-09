@@ -1888,7 +1888,8 @@ R_API int r_core_bin_raise(RCore *core, ut32 binfile_idx, ut32 binobj_idx) {
 	if (binfile) {
 		r_io_raise (core->io, binfile->fd);
 	}
-	core->switch_file_view = 1;
+	// it should be 0 to use r_io_use_fd in r_core_block_read
+	core->switch_file_view = 0;
 	return binfile && r_core_bin_set_env (core, binfile) && r_core_block_read (core, 0);
 }
 
@@ -1903,7 +1904,7 @@ R_API int r_core_bin_delete(RCore *core, ut32 binfile_idx, ut32 binobj_idx) {
 	if (binfile) {
 		r_io_raise (core->io, binfile->fd);
 	}
-	core->switch_file_view = 1;
+	core->switch_file_view = 0;
 	return binfile && r_core_bin_set_env (core, binfile) && r_core_block_read (core, 0);
 }
 
@@ -1911,9 +1912,9 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 	RListIter *iter;
 	RBinObject *obj;
 	const char *name = binfile ? binfile->file : NULL;
+	RBinInfo *info = r_bin_get_info (core->bin);
 	ut32 id = binfile ? binfile->id : 0;
 	ut32 fd = binfile ? binfile->fd : 0;
-	ut32 obj_cnt = binfile ? r_list_length (binfile->objs) : 0;
 	ut32 bin_sz = binfile ? binfile->size : 0;
 	// TODO: handle mode to print in json and r2 commands
 
@@ -1921,8 +1922,8 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 
 	switch (mode) {
 	case 'j':
-		r_cons_printf("{\"name\":\"%s\",\"fd\":%d,\"id\":%d,\"objcnt\":%d,\"size\":%d,\"objs\":[",
-			name, fd, id, obj_cnt, bin_sz);
+		r_cons_printf("{\"name\":\"%s\",\"fd\":%d,\"id\":%d,\"size\":%d,\"objs\":[",
+			name, fd, id, bin_sz);
 		r_list_foreach (binfile->objs, iter, obj) {
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
@@ -1935,12 +1936,12 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 		r_cons_printf("]}");
 		break;
 	default:
-		r_cons_printf("%d %s %d %d 0x%04x\n", fd, name, id, obj_cnt, bin_sz );
+		r_cons_printf("binfile fd=%d name=%s id=%d\n", fd, name, id);
 		r_list_foreach (binfile->objs, iter, obj) {
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
 			const char *arch = info ? info->arch : "unknown";
-			r_cons_printf("- %d %s %d 0x%04"PFMT64x" 0x%04"PFMT64x"\n",
+			r_cons_printf("id=%d arch=%s bits=%d boffset=0x%04"PFMT64x" size=0x%04"PFMT64x"\n",
 					obj->id, arch, bits, obj->boffset, obj->obj_size );
 		}
 		break;
@@ -1958,12 +1959,12 @@ R_API int r_core_bin_list(RCore *core, int mode) {
 
 	if (!binfiles) return false;
 
-	if (mode=='j') r_cons_printf("[");
+	if (mode == 'j') r_cons_printf("[");
 	r_list_foreach (binfiles, iter, binfile) {
 		r_core_bin_file_print (core, binfile, mode);
-		if (iter->n && mode=='j') r_cons_printf(",");
+		if (iter->n && mode == 'j') r_cons_printf(",");
 	}
-	if (mode=='j') r_cons_printf("]\n");
+	if (mode == 'j') r_cons_printf("]\n");
 	//r_core_file_set_by_file (core, cur_cf);
 	//r_core_bin_bind (core, cur_bf);
 	return count;

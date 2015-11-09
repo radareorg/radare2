@@ -376,6 +376,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 
 	if (!desc) return false;
 	r_io_use_desc (r->io, desc);
+
 	if ( !r_bin_load_io (r->bin, desc, baseaddr, loadaddr, xtr_idx)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return false;
