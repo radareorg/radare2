@@ -453,7 +453,7 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 	case CPU_TYPE_POWERPC:
 	case CPU_TYPE_POWERPC64:
 		if (flavor == X86_THREAD_STATE32) {
-			if (ptr_thread + sizeof (struct ppc_thread_state32))
+			if (ptr_thread + sizeof (struct ppc_thread_state32) > bin->size)
 				return false;
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.ppc_32, bin->endian?"40I":"40i", 1)) == -1) {
@@ -463,7 +463,7 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 			pc = bin->thread_state.ppc_32.srr0;
 			pc_offset = ptr_thread + r_offsetof(struct ppc_thread_state32, srr0);
 		} else if (flavor == X86_THREAD_STATE64) {
-			if (ptr_thread + sizeof (struct ppc_thread_state64))
+			if (ptr_thread + sizeof (struct ppc_thread_state64) > bin->size)
 				return false;
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.ppc_64, bin->endian?"34LI3LI":"34li3li", 1)) == -1) {
