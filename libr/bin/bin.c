@@ -321,6 +321,7 @@ R_API int r_bin_dump_strings(RBinFile *a, int min) {
 	return 0;
 }
 
+/* This is very slow if there are lot of symbols */
 R_API int r_bin_load_languages(RBinFile *binfile) {
 	if (r_bin_lang_rust (binfile))
 		return R_BIN_NM_RUST;
@@ -1741,7 +1742,7 @@ R_API int r_bin_class_add_method (RBinFile *binfile, const char *classname, cons
 	RBinClass *c = r_bin_class_get (binfile, classname);
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (!sym) return false;
-	r_str_cpy (sym->name, name);
+	sym->name = strdup (name);
 	if (c) {
 		r_list_append (c->methods, sym);
 		return true;

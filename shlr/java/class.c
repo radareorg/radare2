@@ -1387,7 +1387,6 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 of
 		IFDBG eprintf ("MethodRef class name resolves to: %s\n", method->class_name);
 		if (method->class_name == NULL)
 			method->class_name = r_str_dup (NULL, "NULL");
-
 	} else {
 		// XXX - default to this class?
 		method->field_ref_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2.this_class);
@@ -2461,36 +2460,36 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 		sym = NULL;
 	}
 	if (sym) {
-		strncpy (sym->name, fm_type->name, R_BIN_SIZEOF_STRINGS);
+		sym->name = strdup (fm_type->name);
 		//strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
 		if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD){
-			strncpy (sym->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+			sym->type = r_str_const ("FUNC");
 			sym->paddr = r_bin_java_get_method_code_offset (fm_type);
 			sym->vaddr = r_bin_java_get_method_code_offset (fm_type) + baddr;
 			sym->size = r_bin_java_get_method_code_size (fm_type);
 		} else{
-			strncpy (sym->type, "FIELD", R_BIN_SIZEOF_STRINGS);
+			sym->type = r_str_const ("FIELD");
 			sym->paddr = fm_type->file_offset;//r_bin_java_get_method_code_offset (fm_type);
 			sym->vaddr = fm_type->file_offset + baddr;
 			sym->size = fm_type->size;
 		}
 		if (r_bin_java_is_fm_type_protected (fm_type)) {
-			strncpy (sym->bind, "LOCAL", R_BIN_SIZEOF_STRINGS);
+			sym->bind = r_str_const ("LOCAL");
 		} else if (r_bin_java_is_fm_type_private (fm_type)) {
-			strncpy (sym->bind, "LOCAL", R_BIN_SIZEOF_STRINGS);
+			sym->bind = r_str_const ("LOCAL");
 		} else if (r_bin_java_is_fm_type_protected (fm_type)) {
-			strncpy (sym->bind, "GLOBAL", R_BIN_SIZEOF_STRINGS);
+			sym->bind = r_str_const ("GLOBAL");
 		}
-		strncpy (sym->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+		sym->forwarder = r_str_const ("NONE");
 		if (fm_type->class_name) {
-			strncpy (sym->classname, fm_type->class_name, R_BIN_SIZEOF_STRINGS);
+			sym->classname = strdup (fm_type->class_name);
 		} else {
-			strncpy (sym->classname, "UNKNOWN", R_BIN_SIZEOF_STRINGS);
+			sym->classname = strdup ("UNKNOWN"); // dupped names?
 		}
 		sym->ordinal = fm_type->metas->ord;
 		sym->visibility = fm_type->flags;
 		if (fm_type->flags_str){
-			strncpy (sym->visibility_str, fm_type->flags_str, R_BIN_SIZEOF_STRINGS);
+			sym->visibility_str = strdup (fm_type->flags_str);
 		}
 	}
 	return sym;
@@ -2505,33 +2504,32 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *
 	if (sym) {
 		//ut32 new_name_len = strlen (fm_type->name) + strlen ("_meta") + 1;
 		//char *new_name = malloc (new_name_len);
-		snprintf (sym->name, R_BIN_SIZEOF_STRINGS, "meta_%s", fm_type->name);
+		sym->name = r_str_newf ("meta_%s", fm_type->name);
 		//strncpy (sym->name, fm_type->name, R_BIN_SIZEOF_STRINGS);
 		//strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
 		if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD)
-			snprintf (sym->type, R_BIN_SIZEOF_STRINGS, "%s", "FUNC_META");
-		else
-			snprintf (sym->type, R_BIN_SIZEOF_STRINGS, "%s", "FIELD_META");
+			sym->type = r_str_const ("FUNC_META");
+		else sym->type = r_str_const ("FIELD_META");
 		if (r_bin_java_is_fm_type_protected (fm_type)) {
-			snprintf (sym->bind, R_BIN_SIZEOF_STRINGS, "%s", "LOCAL");
+			sym->bind = r_str_const ("LOCAL");
 		} else if (r_bin_java_is_fm_type_private (fm_type)) {
-			snprintf (sym->bind, R_BIN_SIZEOF_STRINGS, "%s", "LOCAL");
+			sym->bind = r_str_const ("LOCAL");
 		} else if (r_bin_java_is_fm_type_protected (fm_type)) {
-			snprintf (sym->bind, R_BIN_SIZEOF_STRINGS, "%s", "GLOBAL");
+			sym->bind = r_str_const ("GLOBAL");
 		}
-		snprintf (sym->forwarder, R_BIN_SIZEOF_STRINGS, "%s", "NONE");
+		sym->forwarder = r_str_const ("NONE");
 		if (fm_type->class_name) {
-			snprintf (sym->classname, R_BIN_SIZEOF_STRINGS, "%s", fm_type->class_name);
+			sym->classname = strdup (fm_type->class_name);
 		} else {
-			snprintf (sym->classname, R_BIN_SIZEOF_STRINGS, "%s", "UNKNOWN");
+			sym->classname = strdup ("UNKNOWN");
 		}
 		sym->paddr = fm_type->file_offset;//r_bin_java_get_method_code_offset (fm_type);
 		sym->vaddr = fm_type->file_offset + baddr;
 		sym->ordinal = fm_type->metas->ord;
 		sym->size = fm_type->size;
 		sym->visibility = fm_type->flags;
-		if (fm_type->flags_str){
-			strncpy (sym->visibility_str, fm_type->flags_str, R_BIN_SIZEOF_STRINGS);
+		if (fm_type->flags_str) {
+			sym->visibility_str = strdup (fm_type->flags_str);
 		}
 	}
 	return sym;
@@ -2560,9 +2558,8 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, 
 			name = NULL;
 		}
 		if (type_name) {
-			strncpy (sym->type, type_name, R_BIN_SIZEOF_STRINGS);
-			free (type_name);
-			type_name = NULL;
+			sym->type = r_str_const (type_name);
+			R_FREE (type_name);
 		}
 		if (class_name)
 			strncpy (sym->classname, class_name, R_BIN_SIZEOF_STRINGS);
@@ -2760,7 +2757,7 @@ R_API RList* r_bin_java_get_classes(RBinJavaObj *bin) {
 	class_ = R_NEW0 (RBinClass);
 	class_->visibility = bin->cf2.access_flags;
 	if (bin->cf2.flags_str) {
-		class_->visibility_str = strdup(bin->cf2.flags_str);
+		class_->visibility_str = strdup (bin->cf2.flags_str);
 	}
 	class_->methods = r_bin_java_enum_class_methods (bin, bin->cf2.this_class);
 	class_->fields = r_bin_java_enum_class_fields (bin, bin->cf2.this_class);
@@ -2899,9 +2896,8 @@ R_API RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 		RList *imports = r_bin_java_get_imports (bin);
 		r_list_foreach (imports, iter, imp) {
 			sym = R_NEW0 (RBinSymbol);
-			strncpy (sym->name, sdb_fmt(0, "imp.%s", imp->name),
-				sizeof (sym->name)-1);
-			strcpy (sym->type, "import"); // TODO. use const string ptr assign
+			sym->name = strdup (sdb_fmt(0, "imp.%s", imp->name));
+			sym->type = r_str_const ("import");
 			sym->vaddr = sym->paddr = imp->ordinal;
 			sym->ordinal = imp->ordinal;
 			r_list_append (symbols, (void *)sym);

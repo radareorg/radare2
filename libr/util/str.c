@@ -1862,14 +1862,14 @@ R_API const char * r_str_tok (const char *str1, const char b, size_t len) {
 	return p;
 }
 
-R_API int r_str_do_until_token (str_operation op, char *str, const char tok)
-{
+R_API int r_str_do_until_token (str_operation op, char *str, const char tok) {
 	int ret;
-	if (!str)
-		return -1;
-	if (!op)
+	if (!str) return -1;
+	if (!op) {
 		for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { }
-	else	for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { op (str+ret); }
+	} else {
+		for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { op (str+ret); }
+	}
 	return ret;
 }
 
@@ -1881,4 +1881,34 @@ R_API const char *r_str_pad(const char ch, int sz) {
 		pad[sz] = 0;
 	pad[sizeof(pad)-1] = 0;
 	return pad;
+}
+
+static char **consts = NULL;
+
+R_API const char *r_str_const(const char *ptr) {
+	int ctr = 0;
+	if (consts) {
+		const char *p;
+		while ((p = consts[ctr])) {
+			if (ptr == p || !strcmp (ptr, p))
+				return p;
+			ctr ++;
+		}
+		consts = realloc (consts, (2+ctr) * sizeof(void*));
+	} else {
+		consts = malloc (sizeof (void*) * 2);
+	}
+	consts[ctr] = strdup (ptr);
+	consts[ctr+1] = NULL;
+	return consts[ctr];
+}
+
+R_API void r_str_const_free() {
+	int i;
+	if (consts) {
+		for (i = 0; consts[i]; i++) {
+			free (consts[i]);
+		}
+		R_FREE (consts);
+	}
 }

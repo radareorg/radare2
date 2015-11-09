@@ -58,7 +58,9 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 
-	r_mem_copyendian ((void*)&word, (const void*)data, sizeof (word), true);
+	if (len>=sizeof (word))
+		r_mem_copyendian ((void*)&word, (const void*)data, sizeof (word), true);
+	else r_mem_copyendian ((void*)&word, (const void*)data, 2, true); //sizeof (word), true);
 	o = get_opcode (word);
 	if (word == UT64_MAX) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -66,7 +68,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 	if (!o || !o->name) return op->size;
 
-	for(; o < &riscv_opcodes[NUMOPCODES]; o++) {
+	for (; o < &riscv_opcodes[NUMOPCODES]; o++) {
 		// XXX ASAN segfault if ( !(o->match_func)(o, word) ) continue;
 		if ( no_alias && (o->pinfo & INSN_ALIAS) ) continue;
 		if ( isdigit (o->subset[0]) && atoi (o->subset) != xlen) continue;

@@ -302,13 +302,15 @@ typedef struct r_bin_class_t {
 // bin.sections.get_by_name(SectionName, ".text");
 
 typedef struct r_bin_symbol_t {
-	char name[R_BIN_SIZEOF_STRINGS+1];
-	char forwarder[R_BIN_SIZEOF_STRINGS+1];
-	char bind[R_BIN_SIZEOF_STRINGS+1];
-	char type[R_BIN_SIZEOF_STRINGS+1];
-	char visibility_str[R_BIN_SIZEOF_STRINGS+1];
-	char classname[R_BIN_SIZEOF_STRINGS+1];
-	char descriptor[R_BIN_SIZEOF_STRINGS+1];
+	char *name; //[R_BIN_SIZEOF_STRINGS+1];
+	const char *forwarder; // r_str_const
+	const char *bind; // r_str_const
+	const char *type; // r_str_const
+	// USED ONLY BY JAVA
+	const char *visibility_str; //[R_BIN_SIZEOF_STRINGS+1];
+	// ----------------
+	char *classname;
+	//char descriptor[R_BIN_SIZEOF_STRINGS+1];
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 size;

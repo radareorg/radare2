@@ -130,24 +130,28 @@ static RList *symbols(RBinFile *arch) {
 			free (ptr);
 			break;
 		}
-		strncpy (ptr->name, coffname, R_BIN_SIZEOF_STRINGS);
-
-		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, "", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup (coffname);
+		ptr->forwarder = r_str_const ("NONE");
 
 		switch (obj->symbols[i].n_sclass) {
-			case COFF_SYM_CLASS_FUNCTION:
-				strcpy (ptr->type, "FUNC"); break;
-			case COFF_SYM_CLASS_FILE:
-				strcpy (ptr->type, "FILE"); break;
-			case COFF_SYM_CLASS_SECTION:
-				strcpy (ptr->type, "SECTION"); break;
-			case COFF_SYM_CLASS_EXTERNAL:
-				strcpy (ptr->type, "EXTERNAL"); break;
-			case COFF_SYM_CLASS_STATIC:
-				strcpy (ptr->type, "STATIC"); break;
-			default:
-				snprintf (ptr->type, R_BIN_SIZEOF_STRINGS, "%i", obj->symbols[i].n_sclass);
+		case COFF_SYM_CLASS_FUNCTION:
+			ptr->type = r_str_const ("FUNC");
+			break;
+		case COFF_SYM_CLASS_FILE:
+			ptr->type = r_str_const ("FILE");
+			break;
+		case COFF_SYM_CLASS_SECTION:
+			ptr->type = r_str_const ("SECTION");
+			break;
+		case COFF_SYM_CLASS_EXTERNAL:
+			ptr->type = r_str_const ("EXTERNAL");
+			break;
+		case COFF_SYM_CLASS_STATIC:
+			ptr->type = r_str_const ("STATIC");
+			break;
+		default:
+			ptr->type = r_str_const (sdb_fmt(0, "%i", obj->symbols[i].n_sclass));
+			break;
 		}
 
 		if (obj->symbols[i].n_scnum < obj->hdr.f_nscns) {

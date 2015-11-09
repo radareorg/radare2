@@ -995,8 +995,10 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		} else if (IS_MODE_RAD (mode)) {
 			// TODO(eddyb) symbols that are imports.
 		} else {
+			const char *bind = import->bind; if (!bind) bind = "";
+			const char *type = import->type; if (!type) type = "";
 			r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s",
-				import->ordinal, addr, import->bind, import->type);
+				import->ordinal, addr, bind, type);
 			if (import->classname[0]) {
 				r_cons_printf (" classname=%s", import->classname);
 			}
@@ -1047,11 +1049,13 @@ typedef struct {
 static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 #define MAXFLAG_LEN 128
 	int bin_demangle = lang != NULL;
-	const char *pfx = getPrefixFor (sym->type);
+	const char *pfx;
+	if (!r || !sym || !sym->name) return;
+	pfx = getPrefixFor (sym->type);
 	sn->name = strdup (sym->name);
 	sn->nameflag = r_str_newf ("%s.%s", pfx, sym->name);
 	r_name_filter (sn->nameflag, MAXFLAG_LEN);
-	if (sym->classname[0]) {
+	if (sym->classname && sym->classname[0]) {
 		sn->classname = strdup (sym->classname);
 		sn->classflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
 		r_name_filter (sn->classflag, MAXFLAG_LEN);
@@ -1288,18 +1292,22 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				}
 			}
 		} else {
+			const char *bind = symbol->bind;
+			const char *type = symbol->type;
 			const char *name = symbol->name;
+			const char *fwd = symbol->forwarder;
 			char *mn = NULL;
+			if (!bind) bind = "";
+			if (!type) type = "";
+			if (!fwd) fwd = "";
 			if (bin_demangle) {
 				mn = r_bin_demangle (r->bin->cur, lang, symbol->name);
 				if (mn) name = mn;
 			}
 			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
 				"fwd=%s sz=%u bind=%s type=%s name=%s\n",
-				addr, symbol->paddr,
-				symbol->ordinal, symbol->forwarder,
-				symbol->size, symbol->bind, symbol->type,
-				name);
+				addr, symbol->paddr, symbol->ordinal, fwd,
+				symbol->size, bind, type, name);
 			free (mn);
 		}
 		snFini (&sn);

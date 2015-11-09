@@ -236,10 +236,10 @@ static RList* symbols(RBinFile *arch) {
 
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
-		strncpy (ptr->name, symbol[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup (symbol[i].name);
+		ptr->forwarder = r_str_const ("NONE");
+		ptr->bind = r_str_const (symbol[i].bind);
+		ptr->type = r_str_const (symbol[i].type);
 		ptr->paddr = paddr;
 		ptr->vaddr = vaddr;
 		ptr->size = symbol[i].size;
@@ -273,10 +273,12 @@ static RList* symbols(RBinFile *arch) {
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
 		// TODO(eddyb) make a better distinction between imports and other symbols.
-		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "imp.%s", symbol[i].name);
-		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
+		//snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "imp.%s", symbol[i].name);
+		ptr->name = r_str_newf ("imp.%s", symbol[i].name);
+		ptr->forwarder = r_str_const ("NONE");
+		//strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+		ptr->bind = r_str_const (symbol[i].bind);
+		ptr->type = r_str_const (symbol[i].type);
 		ptr->paddr = paddr;
 		ptr->vaddr = vaddr;
 		ptr->size = symbol[i].size;

@@ -427,8 +427,8 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 		/* add symbol */
 		if (flag_name && *flag_name) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			strncpy (sym->name, flag_name, sizeof (sym->name)-1);
-			strcpy (sym->type, "FUNC");
+			sym->name = strdup (flag_name);
+			sym->type = r_str_const ("FUNC");
 			sym->paddr = sym->vaddr = MC;
 			if (MC>0) { /* avoid methods at 0 paddr */
 #if 0
@@ -555,8 +555,8 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				dprintf ("import %d (%s)\n", i, method_name);
 				if (method_name && *method_name) {
 					RBinSymbol *sym = R_NEW0 (RBinSymbol);
-					strncpy (sym->name, method_name, R_BIN_SIZEOF_STRINGS);
-					strcpy (sym->type, "FUNC");
+					sym->name = strdup (method_name);
+					sym->type = r_str_const ("FUNC");
 					sym->paddr = sym->vaddr = 0; // UNKNOWN
 					r_list_append (bin->imports_list, sym);
 				}
@@ -700,8 +700,8 @@ static RList* classes (RBinFile *arch) {
 			class->name = cn;
 			//class->addr = class_addr;
 
-		int *methods = parse_class (arch, bin, &entry, class);
-		free (methods);
+			int *methods = parse_class (arch, bin, &entry, class);
+			free (methods);
 
 			r_list_append (ret, class);
 			dprintf ("class.%s=%d\n", name[0]==12?name+1:name, entry.class_id);
@@ -897,17 +897,12 @@ struct r_bin_plugin_t r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
-	.destroy = NULL,
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
-	.binsym = NULL,
 	.entries = entries,
 	.classes = classes,
 	.sections = sections,
@@ -915,12 +910,7 @@ struct r_bin_plugin_t r_bin_plugin_dex = {
 	.imports = imports,
 	.strings = strings,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.dbginfo = NULL,
 	.size = &size,
-	.write = NULL,
 	.get_offset = &getoffset
 };
 

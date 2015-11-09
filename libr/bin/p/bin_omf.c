@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2015 - ampotos */
+
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -92,17 +94,16 @@ static RList *symbols(RBinFile *arch) {
 	ret->free = free;
 
 	while (ct_sym < ((r_bin_omf_obj *)arch->o->bin_obj)->nb_symbol) {
-		if (!(sym = R_NEW0(RBinSymbol)))
+		if (!(sym = R_NEW0 (RBinSymbol)))
 			return ret;
 		sym_omf = ((r_bin_omf_obj *)arch->o->bin_obj)->symbols[ct_sym++];
-		strncpy(sym->name, sym_omf->name, R_BIN_SIZEOF_STRINGS);
-		strncpy(sym->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-
+		sym->name = strdup (sym_omf->name);
+		sym->forwarder = r_str_const ("NONE");
 		sym->paddr = r_bin_omf_get_paddr_sym(arch->o->bin_obj, sym_omf);
 		sym->vaddr = r_bin_omf_get_vaddr_sym(arch->o->bin_obj, sym_omf); 
 		sym->ordinal = ct_sym;
 		sym->size = 0;
-		r_list_append(ret, sym);
+		r_list_append (ret, sym);
 	}
 	return ret;
 }

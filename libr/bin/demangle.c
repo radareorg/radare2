@@ -164,6 +164,8 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	int i, nargs = 0;
 	const char *type = NULL;
 
+	if (!binfile || !sym)
+		return NULL;
 	if (binfile && binfile->o && binfile->o->classes) {
 		binfile = NULL;
 	}
@@ -196,7 +198,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 		if (binfile) r_bin_class_add_field (binfile, clas, name);
 	}
 	/* methods */
-	if (sym[1] == '[') { // apple style
+	if (sym && sym[0] && sym[1] == '[') { // apple style
 		if (sym[0] == '+') type = "static";
 		else if (sym[0] == '-') type = "public";
 		if (type) {
@@ -301,7 +303,7 @@ R_API int r_bin_lang_rust(RBinFile *binfile) {
 
 	if (info) {
 		r_list_foreach (o->symbols, iter, sym) {
-			if (strstr (sym->name, "rust_stack_exhausted")) {
+			if (sym->name && strstr (sym->name, "rust_stack_exhausted")) {
 				haslang = true;
 				info->lang = "rust";
 				break;

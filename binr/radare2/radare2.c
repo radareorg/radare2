@@ -851,5 +851,6 @@ int main(int argc, char **argv, char **envp) {
 	r_core_fini (&r);
 	r_cons_set_raw (0);
 	free (file);
+	r_str_const_free ();
 	return ret;
 }

@@ -361,7 +361,7 @@ static Elf_(Shdr)* get_section_by_name(struct Elf_(r_bin_elf_obj_t) *bin, const 
 	if (!bin || !bin->shdr || !bin->shstrtab)
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
-		if(!UT32_SUB(&cur_strtab_len, bin->shstrtab_size, bin->shdr[i].sh_name))
+		if (!UT32_SUB (&cur_strtab_len, bin->shstrtab_size, bin->shdr[i].sh_name))
 			continue;
 		if (bin->shdr[i].sh_name > bin->shstrtab_size)
 			continue;
@@ -1507,7 +1507,7 @@ done:
 				bin->imports_by_ord = NULL;
 		}
 	}
-	free (sym);
+	//free (sym);
 	return ret;
 }
 

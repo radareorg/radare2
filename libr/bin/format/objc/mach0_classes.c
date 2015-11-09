@@ -159,24 +159,9 @@ static mach0_ut get_pointer (mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arc
 
 ///////////////////////////////////////////////////////////////////////////////
 static void copy_sym_name_with_namespace (char *class_name, char *read_name, RBinSymbol *sym) {
-	size_t len = 0;
-	char *tmp = 0;
-	if (!class_name)
-		class_name = "";
-
-	len = strlen (class_name);
-	memcpy (sym->classname, class_name,
-		(len < R_BIN_SIZEOF_STRINGS) ?
-		len : R_BIN_SIZEOF_STRINGS);
-
-	tmp = r_str_newf ("%s", read_name); //class_name, read_name);
-	if (tmp) {
-		len = strlen (tmp);
-		memcpy (sym->name, tmp,
-			(len < R_BIN_SIZEOF_STRINGS) ?
-			len : R_BIN_SIZEOF_STRINGS);
-		r_str_free (tmp);
-	}
+	if (!class_name) class_name = "";
+	sym->classname = strdup (class_name);
+	sym->name = strdup (read_name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
