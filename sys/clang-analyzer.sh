@@ -25,8 +25,9 @@ PLUGINS="${PLUGINS} -enable-checker security.FloatLoopCounter"
 
 if [ -z "${MAKE}" ]; then
 	MAKE=make
-	${MAKE} --help >/dev/null 2>&1
+	gmake --help >/dev/null 2>&1
 	[ $? = 0 ] && MAKE=gmake
+	export MAKE="${MAKE}"
 fi
 scan-build echo >/dev/null
 [ $? = 0 ] || exit 1
