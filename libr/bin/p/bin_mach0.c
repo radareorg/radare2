@@ -224,9 +224,9 @@ static RList* imports(RBinFile *arch) {
 		// Remove the extra underscore that every import seems to have in Mach-O.
 		if (*name == '_')
 			name++;
-		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS-1);
-		strncpy (ptr->name, name, R_BIN_SIZEOF_STRINGS-1);
-		strncpy (ptr->type, type, R_BIN_SIZEOF_STRINGS-1);
+		ptr->name = strdup (name);
+		ptr->bind = r_str_const ("NONE");
+		ptr->type = r_str_const (type);
 		ptr->ordinal = imports[i].ord;
 		if (bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size)
 			bin->imports_by_ord[ptr->ordinal] = ptr;

@@ -323,9 +323,9 @@ static RList* imports(RBinFile *arch) {
 	for (i = 0; !import[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
-		strncpy (ptr->name, import[i].name, sizeof(ptr->name)-1);
-		strncpy (ptr->bind, import[i].bind, sizeof(ptr->bind)-1);
-		strncpy (ptr->type, import[i].type, sizeof(ptr->type)-1);
+		ptr->name = strdup (import[i].name);
+		ptr->bind = r_str_const (import[i].bind);
+		ptr->type = r_str_const (import[i].type);
 		ptr->ordinal = import[i].ordinal;
 		setimpord (bin, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
@@ -495,7 +495,7 @@ static int has_canary(RBinFile *arch) {
 	RListIter *iter;
 	RBinImport *import;
 	r_list_foreach (imports_list, iter, import) {
-		if (!strcmp(import->name, "__stack_chk_fail") ) {
+		if (!strcmp (import->name, "__stack_chk_fail") ) {
 			r_list_free (imports_list);
 			return 1;
 		}

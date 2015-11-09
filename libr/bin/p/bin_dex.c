@@ -186,9 +186,9 @@ static RList* strings (RBinFile *arch) {
 		r_buf_read_at (bin->b, bin->strings[i], (ut8*)&buf, 6);
 		len = dex_read_uleb128 (buf);
 		if (len>1 && len < R_BIN_SIZEOF_STRINGS) {
+			ptr->string = malloc (len + 1);
 			r_buf_read_at (bin->b, bin->strings[i]+dex_uleb128_len (buf),
-					(ut8*)&ptr->string, len);
-			ptr->string[(int) len+1]='\0';
+					(ut8*)ptr->string, len);
 			ptr->vaddr = ptr->paddr = bin->strings[i];
 			ptr->size = len;
 			ptr->length = len;

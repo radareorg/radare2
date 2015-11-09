@@ -2822,23 +2822,20 @@ R_API RList* U(r_bin_java_get_fields)(RBinJavaObj* bin) {
 }
 
 R_API void r_bin_add_import (RBinJavaObj * bin, RBinJavaCPTypeObj *obj, const char * type) {
-	RBinImport * import = R_NEW0(RBinImport);
+	RBinImport * import = R_NEW0 (RBinImport);
 	char *class_name = r_bin_java_get_name_from_bin_cp_list (bin, obj->info.cp_method.class_idx);
 	char *name = r_bin_java_get_name_from_bin_cp_list (bin, obj->info.cp_method.name_and_type_idx);
 	char *descriptor = r_bin_java_get_desc_from_bin_cp_list (bin, obj->info.cp_method.name_and_type_idx);
 	class_name = class_name ? class_name : strdup ("INVALID CLASS NAME INDEX");
 	name = name ? name : strdup ("INVALID NAME INDEX");
 	descriptor = descriptor ? descriptor : strdup ("INVALID DESCRIPTOR INDEX");
-	snprintf (import->classname, R_BIN_SIZEOF_STRINGS, "%s", class_name);
-	snprintf (import->name, R_BIN_SIZEOF_STRINGS, "%s", name);
-	snprintf (import->bind, R_BIN_SIZEOF_STRINGS, "%s", "NONE");
-	snprintf (import->type, R_BIN_SIZEOF_STRINGS, "%s", type);
-	snprintf (import->descriptor, R_BIN_SIZEOF_STRINGS, "%s", descriptor);
+	import->classname = class_name;
+	import->name = name;
+	import->bind = r_str_const ("NONE");
+	import->type = r_str_const (type);
+	import->descriptor = descriptor;
 	import->ordinal = obj->idx;
 	r_list_append (bin->imports_list, import);
-	free (class_name);
-	free (name);
-	free (descriptor);
 }
 
 R_API void r_bin_java_set_imports(RBinJavaObj* bin) {
@@ -2915,16 +2912,13 @@ R_API RList* r_bin_java_get_strings(RBinJavaObj* bin) {
 	RBinJavaCPTypeObj *cp_obj = NULL;
 	r_list_foreach_safe (bin->cp_list, iter, iter_tmp, cp_obj) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_UTF8) {
-			str = (RBinString *) R_NEW0(RBinString);
+			str = (RBinString *) R_NEW0 (RBinString);
 			if(str) {
 				str->paddr = cp_obj->file_offset + bin->loadaddr;
 				str->ordinal = cp_obj->metas->ord;
 				str->size = cp_obj->info.cp_utf8.length + 3;
 				str->length = cp_obj->info.cp_utf8.length;
-				str->string[0] = 0;
-				if (str->size > 0)
-					strncpy ((char *) str->string, (const char *)
-						cp_obj->info.cp_utf8.bytes, R_BIN_JAVA_MAXSTR);
+				str->string = r_str_ndup (cp_obj->info.cp_utf8.bytes, R_BIN_JAVA_MAXSTR);
 				r_list_append (strings, (void *) str);
 			}
 		}

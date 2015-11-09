@@ -750,13 +750,11 @@ static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 					char *symname = resolveModuleOrdinal (*db, module, ordinal-1);
 					if (symname) {
 						if (r->bin->prefix) {
-							snprintf (reloc->import->name,
-								sizeof (reloc->import->name),
-								"%s.%s.%s", r->bin->prefix, module, symname);
+							reloc->import->name = r_str_newf
+								("%s.%s.%s", r->bin->prefix, module, symname);
 						} else {
-							snprintf (reloc->import->name,
-								sizeof (reloc->import->name),
-								"%s.%s", module, symname);
+							reloc->import->name = r_str_newf
+								("%s.%s", module, symname);
 						}
 					}
 				}
@@ -999,11 +997,11 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			const char *type = import->type; if (!type) type = "";
 			r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s",
 				import->ordinal, addr, bind, type);
-			if (import->classname[0]) {
+			if (import->classname && import->classname[0]) {
 				r_cons_printf (" classname=%s", import->classname);
 			}
 			r_cons_printf (" name=%s", escname);
-			if (import->descriptor[0]) {
+			if (import->descriptor && import->descriptor[0]) {
 				r_cons_printf (" descriptor=%s", import->descriptor);
 			}
 			r_cons_printf ("\n");

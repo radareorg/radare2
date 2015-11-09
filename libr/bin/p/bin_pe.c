@@ -208,9 +208,9 @@ static RList* imports(RBinFile *arch) {
 		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
 		filter_import (imports[i].name);
-		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ((char*)imports[i].name);
+		ptr->bind = r_str_const ("NONE");
+		ptr->type = r_str_const ("FUNC");
 		ptr->ordinal = imports[i].ordinal;
 		// NOTE(eddyb) a PE hint is just an optional possible DLL export table
 		// index for the import. There is no point in exposing it.

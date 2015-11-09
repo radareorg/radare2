@@ -264,7 +264,7 @@ static RList* symbols(RBinFile *arch) {
 
 		// Basic sanity checks
 		if (thunk_addr[i]&0x80000000 && thunk_index < XBE_MAX_THUNK) {
-			snprintf(sym->name, R_BIN_SIZEOF_STRINGS, "kt.%s\n", kt_name[thunk_index]);
+			sym->name = r_str_newf ("kt.%s", kt_name[thunk_index]);
 			sym->vaddr = (obj->header->kernel_thunk_addr ^ obj->kt_key) + (4 * i);
 			sym->paddr = sym->vaddr - obj->header->base;
 			sym->size = 4;

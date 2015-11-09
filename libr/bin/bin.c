@@ -207,8 +207,7 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 				new->size = needle - str_start;
 				new->ordinal = count++;
 				new->paddr = new->vaddr = str_start;
-				if (i < sizeof (new->string))
-					memcpy (new->string, tmp, i);
+				new->string = r_str_ndup ((const char *)tmp, i);
 				r_list_append (list, new);
 			} else {
 				// DUMP TO STDOUT. raw dumping for rabin2 -zzz

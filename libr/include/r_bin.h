@@ -320,11 +320,11 @@ typedef struct r_bin_symbol_t {
 } RBinSymbol;
 
 typedef struct r_bin_import_t {
-	char name[R_BIN_SIZEOF_STRINGS+1];
-	char bind[R_BIN_SIZEOF_STRINGS+1];
-	char type[R_BIN_SIZEOF_STRINGS+1];
-	char classname[R_BIN_SIZEOF_STRINGS+1];
-	char descriptor[R_BIN_SIZEOF_STRINGS+1];
+	char *name;
+	const char *bind;
+	const char *type;
+	char *classname;
+	char *descriptor;
 	ut32 ordinal;
 	ut32 visibility;
 } RBinImport;
@@ -342,7 +342,7 @@ typedef struct r_bin_reloc_t {
 
 typedef struct r_bin_string_t {
 	// TODO: rename string->name (avoid colisions)
-	char string[R_BIN_SIZEOF_STRINGS+1];
+	char *string;
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 ordinal;
