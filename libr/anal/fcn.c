@@ -159,6 +159,7 @@ R_API int r_anal_fcn_xref_del (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	}
 #endif
 #if FCN_SDB
+	// TODO
 	//sdb_array_delete_num (DB, key, at, 0);
 #endif
 	return false;

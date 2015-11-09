@@ -384,7 +384,7 @@ SDB_API SdbKv* sdb_kv_new (const char *k, const char *v) {
 		vl = 0;
 	}
 	kv = R_NEW (SdbKv);
-	strncpy (kv->key, k, sizeof (kv->key)-1);
+	kv->key = strdup (k);
 	kv->value_len = vl;
 	if (vl) {
 		kv->value = malloc (vl);
@@ -396,6 +396,7 @@ SDB_API SdbKv* sdb_kv_new (const char *k, const char *v) {
 }
 
 SDB_API void sdb_kv_free (SdbKv *kv) {
+	free (kv->key);
 	free (kv->value);
 	free (kv);
 }
@@ -476,7 +477,8 @@ static int sdb_foreach_list_cb(void *user, const char *k, const char *v) {
 	SdbList *list = (SdbList *)user;
 	list->free = free;
 	SdbKv *kv = R_NEW0 (SdbKv);
-	strncpy (kv->key, k, sizeof (kv->key)-1);
+	/* fake read-only */
+	kv->key = (char *)k;
 	kv->value = (char*)v;
 	ls_append (list, kv);
 	return 1;
