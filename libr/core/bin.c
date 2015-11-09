@@ -1659,7 +1659,8 @@ static int bin_classes(RCore *r, int mode) {
 			const char *classname = sdb_fmt (0, "class.%s", name);
 			r_flag_set (r->flags, classname, c->addr, 1, 0);
 			r_list_foreach (c->methods, iter2, sym) {
-				const char *method = sdb_fmt (1, "method.%s.%s", c->name, sym->name);
+				char *method = sdb_fmt (1, "method.%s.%s", c->name, sym->name);
+				r_name_filter (method, -1);
 				r_flag_set (r->flags, method, sym->vaddr, 1, 0);
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
@@ -1688,19 +1689,19 @@ static int bin_classes(RCore *r, int mode) {
 					c->index);
 			}
 		} else {
+			int m = 0;
 			r_cons_printf ("0x%08"PFMT64x" class %d %s",
 				c->addr, c->index, c->name);
 			if (c->super) {
 				r_cons_printf (" super: %s\n", c->super);
+			} else {
+				r_cons_newline ();
 			}
-			r_cons_newline();
-			int m = 0;
 			r_list_foreach (c->methods, iter2, sym) {
 				r_cons_printf ("0x%08"PFMT64x" method %d %s\n",
 					sym->vaddr, m, sym->name);
 				m++;
 			}
-			r_cons_newline ();
 		}
 
 		free (name);
