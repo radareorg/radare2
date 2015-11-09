@@ -581,7 +581,7 @@ static RList* fields(RBinFile *arch) {
 	for (i = 0; !field[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinField)))
 			break;
-		strncpy (ptr->name, field[i].name, R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup (field[i].name);
 		ptr->vaddr = field[i].offset;
 		ptr->paddr = field[i].offset;
 		r_list_append (ret, ptr);

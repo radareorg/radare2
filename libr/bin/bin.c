@@ -398,6 +398,33 @@ R_API void r_bin_info_free (RBinInfo *rb) {
 	free (rb);
 }
 
+R_API void r_bin_import_free(void* _imp) {
+	RBinImport *imp = (RBinImport*) _imp;
+	free (imp->name);
+	free (imp->classname);
+	free (imp->descriptor);
+	free (imp);
+}
+
+R_API void r_bin_symbol_free(void* _sym) {
+	RBinSymbol *sym = (RBinSymbol*) _sym;
+	free (sym->name);
+	free (sym->classname);
+	free (sym);
+}
+
+R_API void r_bin_string_free (void* _str) {
+	RBinString *str = (RBinString*) _str;
+	free (str->string);
+	free (str);
+}
+
+R_API void r_bin_field_free (void* _fld) {
+	RBinField *fld = (RBinField*) _fld;
+	free (fld->name);
+	free (fld);
+}
+
 static void r_bin_object_free (void /*RBinObject*/ *o_) {
 	RBinObject* o = o_;
 	if (!o) return;
@@ -453,16 +480,25 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	}
 	if (cp->fields) {
 		o->fields = cp->fields (binfile);
-		REBASE_PADDR (o, o->fields, RBinField);
+		if (o->fields) {
+			o->fields->free = r_bin_field_free;
+			REBASE_PADDR (o, o->fields, RBinField);
+		}
 	}
 	if (cp->imports) {
 		o->imports = cp->imports (binfile);
+		if (o->imports) {
+			o->imports->free = r_bin_import_free;
+		}
 	}
 	if (cp->symbols) {
 		o->symbols = cp->symbols (binfile);
-		REBASE_PADDR (o, o->symbols, RBinSymbol);
-		if (bin->filter)
-			r_bin_filter_symbols (o->symbols);
+		if (o->symbols) {
+			o->symbols->free = r_bin_symbol_free;
+			REBASE_PADDR (o, o->symbols, RBinSymbol);
+			if (bin->filter)
+				r_bin_filter_symbols (o->symbols);
+		}
 	}
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) o->libs = cp->libs (binfile);

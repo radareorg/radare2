@@ -21,10 +21,14 @@ static void hashify(char *s, ut64 vaddr) {
 // TODO: optimize this api:
 // - bin plugins should call r_bin_filter_name() before appending
 R_API void r_bin_filter_name(Sdb *db, ut64 vaddr, char *name, int maxlen) {
-	const char *uname = sdb_fmt (0, "%"PFMT64x".%s", vaddr, name);
-	ut32 vhash = sdb_hash (uname); // vaddr hash - unique
-	ut32 hash = sdb_hash (name); // name hash - if dupped and not in unique hash must insert
-	int count = sdb_num_inc (db, sdb_fmt (0, "%x", hash), 1, 0);
+	const char *uname;
+	ut32 vhash, hash;
+	int count;
+	if (!db || !name) return;
+	uname = sdb_fmt (0, "%"PFMT64x".%s", vaddr, name);
+	vhash = sdb_hash (uname); // vaddr hash - unique
+	hash = sdb_hash (name); // name hash - if dupped and not in unique hash must insert
+	count = sdb_num_inc (db, sdb_fmt (0, "%x", hash), 1, 0);
 	if (sdb_exists (db, sdb_fmt (1, "%x", vhash))) {
 		// TODO: symbol is dupped, so symbol can be removed!
 		return;
@@ -90,7 +94,7 @@ R_API void r_bin_filter_symbols (RList *list) {
 
 R_API void r_bin_filter_sections (RList *list) {
 	RBinSection *sec;
-	const int maxlen = sizeof (sec->name)-8;
+	const int maxlen = 256;
 	Sdb *db = sdb_new0 ();
 	RListIter *iter;
 	if (maxlen>0) {

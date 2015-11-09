@@ -302,14 +302,16 @@ typedef struct r_bin_class_t {
 // bin.sections.get_by_name(SectionName, ".text");
 
 typedef struct r_bin_symbol_t {
-	char *name; //[R_BIN_SIZEOF_STRINGS+1];
-	const char *forwarder; // r_str_const
-	const char *bind; // r_str_const
-	const char *type; // r_str_const
-	// USED ONLY BY JAVA
-	const char *visibility_str; //[R_BIN_SIZEOF_STRINGS+1];
-	// ----------------
+	/* heap-allocated */
+	char *name;
 	char *classname;
+	/* const-unique-strings */
+	const char *forwarder;
+	const char *bind;
+	const char *type;
+	/* only used by java */
+	const char *visibility_str;
+	// ----------------
 	//char descriptor[R_BIN_SIZEOF_STRINGS+1];
 	ut64 vaddr;
 	ut64 paddr;
@@ -352,14 +354,14 @@ typedef struct r_bin_string_t {
 } RBinString;
 
 typedef struct r_bin_field_t {
-	char name[R_BIN_SIZEOF_STRINGS+1];
+	char *name;
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 visibility;
 } RBinField;
 
 typedef struct r_bin_mem_t {	//new toy for esil-init
-	char name[R_BIN_SIZEOF_STRINGS+1];
+	char *name;
 	ut64 addr;
 	int size;
 	int perms;

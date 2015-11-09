@@ -48,14 +48,12 @@ struct MACH0_(SProtocolList) {
 struct MACH0_(SProtocol) {
 	mach0_ut isa;					/* id* (32/64-bit pointer) */
 	mach0_ut name;					/* const char * (32/64-bit pointer) */
-	mach0_ut protocols;				/* SProtocolList*
-									(32/64-bit pointer) */
+	mach0_ut protocols;				/* SProtocolList* (32/64-bit pointer) */
 	mach0_ut instanceMethods;		/* SMethodList* (32/64-bit pointer) */
 	mach0_ut classMethods;			/* SMethodList* (32/64-bit pointer) */
 	mach0_ut optionalInstanceMethods;	/* SMethodList* (32/64-bit pointer) */
 	mach0_ut optionalClassMethods;	/* SMethodList* (32/64-bit pointer) */
-	mach0_ut instanceProperties;	/* struct SObjcPropertyList*
-									(32/64-bit pointer) */
+	mach0_ut instanceProperties;	/* struct SObjcPropertyList* (32/64-bit pointer) */
 };
 
 struct MACH0_(SIVarList) {
@@ -112,8 +110,7 @@ static int is_thumb(RBinFile *arch) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static mach0_ut get_pointer (mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arch)
-{
+static mach0_ut get_pointer (mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arch) {
 	mach0_ut r;
 	mach0_ut addr;
 
@@ -238,7 +235,6 @@ static void get_ivar_list_t (mach0_ut p, RBinFile *arch, RBinClass *processed_cl
 
 		r = get_pointer (i.name, NULL, &left, arch);
 		if (r != 0) {
-			char *tmp = NULL;
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
 			int is_crypted = bin->has_crypto;
 			if (r + left < r) goto error;
@@ -252,11 +248,7 @@ static void get_ivar_list_t (mach0_ut p, RBinFile *arch, RBinClass *processed_cl
 				len = r_buf_read_at (arch->buf, r, (ut8 *)name, left);
 				if (len < 1) goto error;
 			}
-			tmp = r_str_newf ("%s::%s%s", processed_class->name,
-					"(ivar)", name);
-			strncpy (field->name, tmp, sizeof (field->name)-1);
-			field->name[sizeof(field->name)-1] = 0;
-			R_FREE (tmp);
+			field->name = r_str_newf ("%s::%s%s", processed_class->name, "(ivar)", name);
 			R_FREE (name);
 		}
 #if 0
@@ -351,8 +343,7 @@ static void get_objc_property_list (mach0_ut p, RBinFile *arch, RBinClass *proce
 		if (len < -1) goto error;
 
 		r = get_pointer (op.name, NULL, &left, arch);
-		if (r != 0) {
-			char *tmp = NULL;
+		if (r) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) arch->o->bin_obj;
 			int is_crypted = bin->has_crypto;
 
@@ -367,13 +358,8 @@ static void get_objc_property_list (mach0_ut p, RBinFile *arch, RBinClass *proce
 				len = r_buf_read_at (arch->buf, r, (ut8 *)name, left);
 				if (len == 0 || len == -1) goto error;
 			}
-
-			tmp = r_str_newf ("%s::%s%s", processed_class->name,
+			property->name = r_str_newf ("%s::%s%s", processed_class->name,
 					"(property)", name);
-
-			strncpy (property->name, tmp, sizeof (property->name)-1);
-
-			R_FREE (tmp);
 			R_FREE (name);
 		}
 #if 0
@@ -764,9 +750,12 @@ static void __r_bin_class_free (RBinClass *p) {
 	}
 
 	r_list_foreach (p->methods, iter, symbol) {
+		free (symbol->name);
+		free (symbol->classname);
 		R_FREE (symbol);
 	}
 	r_list_foreach (p->fields, iter, field) {
+		free (field->name);
 		R_FREE (field);
 	}
 

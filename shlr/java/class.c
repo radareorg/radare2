@@ -2446,7 +2446,7 @@ R_API RBinField* r_bin_java_allocate_rbinfield() {
 R_API RBinField* r_bin_java_create_new_rbinfield_from_field(RBinJavaField *fm_type, ut64 baddr) {
 	RBinField *field = r_bin_java_allocate_rbinfield ();
 	if (field) {
-		strncpy (field->name, fm_type->name, R_BIN_SIZEOF_STRINGS);
+		field->name = strdup (fm_type->name);
 		field->paddr = fm_type->file_offset + baddr;
 		field->visibility = fm_type->flags;
 	}
@@ -2505,8 +2505,6 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *
 		//ut32 new_name_len = strlen (fm_type->name) + strlen ("_meta") + 1;
 		//char *new_name = malloc (new_name_len);
 		sym->name = r_str_newf ("meta_%s", fm_type->name);
-		//strncpy (sym->name, fm_type->name, R_BIN_SIZEOF_STRINGS);
-		//strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
 		if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD)
 			sym->type = r_str_const ("FUNC_META");
 		else sym->type = r_str_const ("FIELD_META");
@@ -2553,8 +2551,7 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, 
 		type_name = r_bin_java_get_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN,
 			obj->info.cp_method.name_and_type_idx);
 		if (name) {
-			strncpy (sym->name, name, R_BIN_SIZEOF_STRINGS);
-			free (name);
+			sym->name = name;
 			name = NULL;
 		}
 		if (type_name) {
@@ -2562,7 +2559,7 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, 
 			R_FREE (type_name);
 		}
 		if (class_name)
-			strncpy (sym->classname, class_name, R_BIN_SIZEOF_STRINGS);
+			sym->classname = strdup (class_name);
 		sym->paddr = obj->file_offset + baddr;
 		sym->vaddr = obj->file_offset + baddr;
 		sym->ordinal = obj->metas->ord;

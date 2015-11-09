@@ -72,7 +72,7 @@ static RList *sections(RBinFile *arch) {
 	ut32 ct_omf_sect = 0;
 	r_bin_omf_obj *obj = arch->o->bin_obj;
 
-	if (!(ret = r_list_new()))
+	if (!(ret = r_list_new ()))
 		return NULL;
 
 	while (ct_omf_sect < obj->nb_section)
@@ -137,35 +137,17 @@ struct r_bin_plugin_t r_bin_plugin_omf = {
 	.name = "omf",
 	.desc = "omf bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
-	.get_sdb = NULL,
 	.load = &load,
 	.load_bytes = &load_bytes,
-	.size = NULL,
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
-	.binsym = NULL,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
-	.imports = NULL,
-	.strings = NULL,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.classes = NULL,
-	.mem = NULL,
-	.demangle_type = NULL,
-	.dbginfo = NULL,
-	.write = NULL,
-	.get_offset = NULL,
 	.get_vaddr = &get_vaddr,
-	.create = NULL,
 };
 
 #ifndef CORELIB

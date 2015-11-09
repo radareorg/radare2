@@ -107,7 +107,7 @@ static RList *mem (RBinFile *arch) {
 		r_list_free (ret);
 		return NULL;
 	}
-	strncpy (m->name, "RAM", R_BIN_SIZEOF_STRINGS);
+	m->name = strdup ("RAM");
 	m->addr = RAM_START_ADDRESS;
 	m->size = RAM_SIZE;
 	m->perms = r_str_rwx ("rwx");
@@ -117,7 +117,7 @@ static RList *mem (RBinFile *arch) {
 		m->mirrors = NULL;
 		return ret;
 	}
-	strncpy (n->name, "RAM_MIRROR_2", R_BIN_SIZEOF_STRINGS);
+	n->name = strdup ("RAM_MIRROR_2");
 	n->addr = RAM_MIRROR_2_ADDRESS;
 	n->size = RAM_MIRROR_2_SIZE;
 	n->perms = r_str_rwx ("rwx");
@@ -127,7 +127,7 @@ static RList *mem (RBinFile *arch) {
 		m->mirrors = NULL;
 		return ret;
 	}
-	strncpy (n->name, "RAM_MIRROR_3", R_BIN_SIZEOF_STRINGS);
+	n->name = strdup ("RAM_MIRROR_3");
 	n->addr = RAM_MIRROR_3_ADDRESS;
 	n->size = RAM_MIRROR_3_SIZE;
 	n->perms = r_str_rwx ("rwx");
@@ -136,7 +136,7 @@ static RList *mem (RBinFile *arch) {
 		r_list_free (ret);
 		return NULL;
 	}
-	strncpy (m->name, "PPU_REG", R_BIN_SIZEOF_STRINGS);
+	m->name = strdup ("PPU_REG");
 	m->addr = PPU_REG_ADDRESS;
 	m->size = PPU_REG_SIZE;
 	m->perms = r_str_rwx ("rwx");
@@ -148,8 +148,7 @@ static RList *mem (RBinFile *arch) {
 			m->mirrors = NULL;
 			return ret;
 		}
-		strncpy (m->name, "PPU_REG_MIRROR_", R_BIN_SIZEOF_STRINGS);
-		sprintf(m->name, "%d",i);
+		m->name = r_str_newf ("PPU_REG_MIRROR_%d", i);
 		m->addr = PPU_REG_ADDRESS+i*PPU_REG_SIZE;
 		m->size = PPU_REG_SIZE;
 		m->perms = r_str_rwx ("rwx");
@@ -159,7 +158,7 @@ static RList *mem (RBinFile *arch) {
 		r_list_free (ret);
 		return NULL;
 	}
-	strncpy (m->name, "APU_AND_IOREGS", R_BIN_SIZEOF_STRINGS);
+	m->name = strdup ("APU_AND_IOREGS");
 	m->addr = APU_AND_IOREGS_START_ADDRESS;
 	m->size = APU_AND_IOREGS_SIZE;
 	m->perms = r_str_rwx ("rwx");
@@ -168,7 +167,7 @@ static RList *mem (RBinFile *arch) {
 		r_list_free (ret);
 		return NULL;
 	}
-	strncpy (m->name, "SRAM", R_BIN_SIZEOF_STRINGS);
+	m->name = strdup ("SRAM");
 	m->addr = SRAM_START_ADDRESS;
 	m->size = SRAM_SIZE;
 	m->perms = r_str_rwx ("rwx");
