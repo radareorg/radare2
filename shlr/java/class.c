@@ -2915,7 +2915,9 @@ R_API RList* r_bin_java_get_strings(RBinJavaObj* bin) {
 				str->ordinal = cp_obj->metas->ord;
 				str->size = cp_obj->info.cp_utf8.length + 3;
 				str->length = cp_obj->info.cp_utf8.length;
-				str->string = r_str_ndup (cp_obj->info.cp_utf8.bytes, R_BIN_JAVA_MAXSTR);
+				if (str->size>0) {
+					str->string = r_str_ndup (cp_obj->info.cp_utf8.bytes, R_BIN_JAVA_MAXSTR);
+				}
 				r_list_append (strings, (void *) str);
 			}
 		}
