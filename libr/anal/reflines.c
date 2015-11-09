@@ -157,7 +157,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	}
 	r_anal_op_fini (&op);
 
-	free_levels = R_NEWS0 (ut8, r_list_length (list));
+	free_levels = R_NEWS0 (ut8, r_list_length (list) + 1);
 	if (!free_levels) goto sten_err;
 	int min = 0;
 
@@ -165,8 +165,8 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		if ((el->is_from && el->r->level == -1) || (!el->is_from && el->r->level == -1)) {
 			el->r->level = min + 1;
 			free_levels[min] = 1;
-			if (min>0) while (free_levels[++min] == 1);
-			else min++;
+			if (min < 0) min = 0;
+			while (free_levels[++min] == 1);
 		} else {
 			free_levels[el->r->level - 1] = 0;
 			if (min > el->r->level - 1) min = el->r->level - 1;
