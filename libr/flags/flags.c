@@ -398,7 +398,7 @@ R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment) {
 }
 
 R_API int r_flag_item_set_name(RFlagItem *item, const char *name, const char *realname) {
-	if (!item || !r_name_check (name))
+	if (!item) // || !r_name_check (name))
 		return false;
 	if (!realname) realname = name;
 
