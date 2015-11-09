@@ -437,9 +437,11 @@ R_API int r_core_block_read(RCore *core, int next) {
 	}
 	if (core->file && core->switch_file_view) {
 		r_io_use_desc (core->io, core->file->desc);
-		r_core_bin_set_by_fd (core, core->file->desc->fd);	//needed?
+		r_core_bin_set_by_fd (core, core->file->desc->fd); //needed?
 		core->switch_file_view = 0;
-	} else	r_io_use_fd (core->io, core->io->raised);		//possibly not needed
+	} else	{
+		r_io_use_fd (core->io, core->io->raised); //possibly not needed
+	}
 	return r_io_read_at (core->io, core->offset+((next)?core->blocksize:0), core->block, core->blocksize);
 }
 

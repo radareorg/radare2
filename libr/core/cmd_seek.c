@@ -19,7 +19,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_core_seek (core, off, 1);
 			}
 		} else eprintf ("|Usage| 'sr PC' seek to program counter register\n");
-	} else
+	}
 	if (*input) {
 		const char *inputnum = strchr (input, ' ');
 		int sign = 1;
