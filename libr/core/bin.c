@@ -298,7 +298,7 @@ static int bin_strings(RCore *r, int mode, int va) {
 			r_meta_add (r->anal, R_META_TYPE_STRING, addr,
 				addr + string->size, string->string);
 			f_name = strdup (string->string);
-			r_name_filter (f_name, R_FLAG_NAME_SIZE);
+			r_name_filter (f_name, -1);
 			if (r->bin->prefix) {
 				str = r_str_newf ("%s.str.%s", r->bin->prefix, f_name);
 			} else {
@@ -1060,7 +1060,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 
 		sn->methname = r_str_newf ("%s::%s", sn->classname, sym->name);
 		sn->methflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
-		r_name_filter (sn->methflag, MAXFLAG_LEN);
+		r_name_filter (sn->methflag, strlen (sn->methflag));
 	} else {
 		sn->classname = NULL;
 		sn->classflag = NULL;
@@ -1073,7 +1073,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name);
 		if (sn->demname) {
 			sn->demflag = r_str_newf ("%s.%s", pfx, sn->demname);
-			r_name_filter (sn->demflag, MAXFLAG_LEN);
+			r_name_filter (sn->demflag, -1);
 		}
 	}
 }
@@ -1159,6 +1159,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				if (r->bin->prefix) {
 					char *prname;
 					prname = r_str_newf ("%s.%s", r->bin->prefix, sn.methflag);
+					r_name_filter (sn.methflag, -1);
 					free (sn.methflag);
 					sn.methflag = prname;
 				}

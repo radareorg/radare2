@@ -189,6 +189,7 @@ static RList* strings (RBinFile *arch) {
 			ptr->string = malloc (len + 1);
 			r_buf_read_at (bin->b, bin->strings[i]+dex_uleb128_len (buf),
 					(ut8*)ptr->string, len);
+			ptr->string[len] = 0;
 			ptr->vaddr = ptr->paddr = bin->strings[i];
 			ptr->size = len;
 			ptr->length = len;
@@ -554,10 +555,10 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				char *method_name = dex_method_name (bin, i);
 				dprintf ("import %d (%s)\n", i, method_name);
 				if (method_name && *method_name) {
-					RBinSymbol *sym = R_NEW0 (RBinSymbol);
+					RBinImport *sym = R_NEW0 (RBinImport);
 					sym->name = strdup (method_name);
 					sym->type = r_str_const ("FUNC");
-					sym->paddr = sym->vaddr = 0; // UNKNOWN
+					//sym->paddr /= sym->vaddr = 0; // UNKNOWN
 					r_list_append (bin->imports_list, sym);
 				}
 				free (method_name);

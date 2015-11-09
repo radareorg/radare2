@@ -2910,7 +2910,7 @@ R_API RList* r_bin_java_get_strings(RBinJavaObj* bin) {
 	r_list_foreach_safe (bin->cp_list, iter, iter_tmp, cp_obj) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_UTF8) {
 			str = (RBinString *) R_NEW0 (RBinString);
-			if(str) {
+			if (str) {
 				str->paddr = cp_obj->file_offset + bin->loadaddr;
 				str->ordinal = cp_obj->metas->ord;
 				str->size = cp_obj->info.cp_utf8.length + 3;
