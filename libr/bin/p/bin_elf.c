@@ -86,7 +86,7 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		addr = Elf_(r_bin_elf_get_fini_offset) (arch->o->bin_obj);
 		break;
 	}
-	if (addr && (ret = R_NEW0 (RBinAddr))) {
+	if (addr && addr!= UT64_MAX && (ret = R_NEW0 (RBinAddr))) {
 		ret->paddr = addr;
 		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
 	}
