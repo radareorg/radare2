@@ -246,7 +246,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define HAVE_REGEXP 1
 #endif
 
-#if __WINDOWS__
+#if __WINDOWS__ && !defined(__CYGWIN__) && !defined(MINGW32)
 #define PFMT64x "I64x"
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
