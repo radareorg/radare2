@@ -512,7 +512,7 @@ R_API int r_sys_mkdirp(const char *dir) {
 	char slash = R_SYS_DIR[0];
 	char *path = strdup (dir), *ptr = path;
 	if (*ptr==slash) ptr++;
-#if __WINDOWS__
+#if __WINDOWS__ && !defined(__CYGWIN__)
 	{
 		char *p = strstr (ptr, ":\\");
 		if (p) {
