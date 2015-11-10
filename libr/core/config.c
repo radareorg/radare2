@@ -436,6 +436,7 @@ static int cb_strfilter(void *user, void *data) {
 		eprintf ("p  file/directory paths\n");
 		eprintf ("e  email-like addresses\n");
 		eprintf ("u  urls\n");
+		eprintf ("i  IPv4 address-like strings\n");
 		eprintf ("U  only uppercase strings\n");
 		eprintf ("f  format-strings\n");
 		return false;

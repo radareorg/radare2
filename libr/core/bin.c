@@ -222,6 +222,36 @@ static bool string_filter(RCore *core, const char *str) {
 		if (!strstr (str, "://"))
 			return false;
 		break;
+        case 'i': //IPV4
+                {
+                    int segment = 0;
+                    int segmentsum = 0;
+                    bool prevd = false;
+                    for (i = 0; str[i]; i++) {
+                            char ch = str[i];
+                            if (ch >= '0' && ch <='9') {
+                                segmentsum = segmentsum*10 + (ch - '0');
+                                if (segment == 3 )
+                                    return true;
+                                prevd = true;
+                            } else if (ch == '.') {
+                                if (prevd == true && segmentsum < 256){
+                                    segment++;
+                                    segmentsum = 0;
+                                } else {
+                                    segmentsum = 0;
+                                    segment = 0;
+                                }
+                                prevd = false;
+                            } else {
+                                segmentsum = 0;
+                                prevd = false;
+                                segment = 0;
+                            }
+                    }
+                    return false;
+                }
+
 	case 'p': // path
 		if (str[0] != '/')
 			return false;
@@ -980,7 +1010,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 				import->ordinal,
 				import->bind,
 				import->type);
-			if (import->classname && import->classname[0]) {
+			if (import->classname[0]) {
 				r_cons_printf ("\"classname\":\"%s\","
 					"\"descriptor\":\"%s\",",
 					import->classname,
