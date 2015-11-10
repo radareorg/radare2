@@ -1010,7 +1010,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 				import->ordinal,
 				import->bind,
 				import->type);
-			if (import->classname[0]) {
+			if (import->classname && import->classname[0]) {
 				r_cons_printf ("\"classname\":\"%s\","
 					"\"descriptor\":\"%s\",",
 					import->classname,
