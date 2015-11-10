@@ -160,13 +160,6 @@ R_API RCore *r_core_cast(void *p) {
 	return (RCore*)p;
 }
 
-/*
-R_API void r_core_cmd_flush (RCore *core) {
-	// alias
-	r_cons_flush ();
-}
-*/
-
 static int core_cmd_callback (void *user, const char *cmd) {
 	RCore *core = (RCore *)user;
 	return r_core_cmd0 (core, cmd);
@@ -684,7 +677,6 @@ openfile:
 		if ((!strncmp (line->buffer.data, "s ", 2)) ||
 		    (!strncmp (line->buffer.data, "ad ", 3)) ||
 		    (!strncmp (line->buffer.data, "bf ", 3)) ||
-		    (!strncmp (line->buffer.data, "dcu ", 4)) ||
 		    (!strncmp (line->buffer.data, "ag ", 3)) ||
 		    (!strncmp (line->buffer.data, "afi ", 4)) ||
 		    (!strncmp (line->buffer.data, "afb ", 4)) ||

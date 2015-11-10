@@ -520,27 +520,29 @@ static int get_omf_data_info(r_bin_omf_obj *obj) {
 static int get_omf_infos(r_bin_omf_obj *obj) {
 	// get all name defined in lnames records
 	obj->nb_name = count_omf_multi_record_type (obj, OMF_LNAMES);
-	if (!(obj->names = R_NEWS0 (char *, obj->nb_name)))
-		return false;
-	if (!cpy_omf_names (obj))
-		return false;
-
+	if (obj->nb_name>0) {
+		if (!(obj->names = R_NEWS0 (char *, obj->nb_name)))
+			return false;
+		if (!cpy_omf_names (obj))
+			return false;
+	}
 	// get all sections (segdef record)
 	obj->nb_section = count_omf_record_type (obj, OMF_SEGDEF);
-	if (!(obj->sections = R_NEWS0 (OMF_segment *, obj->nb_section)))
-		return false;
-	get_omf_section_info (obj);
-
+	if (obj->nb_section>0) {
+		if (!(obj->sections = R_NEWS0 (OMF_segment *, obj->nb_section)))
+			return false;
+		get_omf_section_info (obj);
+	}
 	// get all data (ledata record)
 	get_omf_data_info (obj);
-
 	// get all symbols (pubdef + lpubdef)
 	obj->nb_symbol = count_omf_multi_record_type (obj, OMF_PUBDEF);
-	if (!(obj->symbols = R_NEWS0 (OMF_symbol *, obj->nb_symbol)))
-		return false;
-	if (!get_omf_symbol_info (obj))
-		return false;
-
+	if (obj->nb_symbol>0) {
+		if (!(obj->symbols = R_NEWS0 (OMF_symbol *, obj->nb_symbol)))
+			return false;
+		if (!get_omf_symbol_info (obj))
+			return false;
+	}
 	return true;
 }
 
