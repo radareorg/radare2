@@ -110,17 +110,15 @@ static inline void gb_anal_esil_jmp (RAnalOp *op)
 	r_strbuf_setf (&op->esil, "0x%"PFMT64x",pc,=", (op->jump & 0xffff));
 }
 
-static inline void gb_anal_jmp_hl (RReg *reg, RAnalOp *op)
-{
+static inline void gb_anal_jmp_hl (RReg *reg, RAnalOp *op) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
-	op->dst->reg = r_reg_get (reg, "pc", R_REG_TYPE_GPR);
+	op->dst->reg = r_reg_get (reg, "PC", R_REG_TYPE_GPR);
 	op->src[0]->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
 	r_strbuf_set (&op->esil, "hl,pc,=");
 }
 
-static inline void gb_anal_id (RAnal *anal, RAnalOp *op, const ut8 data)				//inc + dec
-{
+static inline void gb_anal_id (RAnal *anal, RAnalOp *op, const ut8 data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->src[0]->imm = 1;
@@ -146,8 +144,7 @@ static inline void gb_anal_id (RAnal *anal, RAnalOp *op, const ut8 data)				//in
 	}
 }
 
-static inline void gb_anal_add_hl (RReg *reg, RAnalOp *op, const ut8 data)
-{
+static inline void gb_anal_add_hl (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->dst->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
@@ -155,8 +152,7 @@ static inline void gb_anal_add_hl (RReg *reg, RAnalOp *op, const ut8 data)
 	r_strbuf_setf (&op->esil, "%s,hl,+=,0,N,=", regs_16[((data & 0xf0)>>4)]);	//hl+=<reg>,N=0
 }
 
-static inline void gb_anal_add_sp (RReg *reg, RAnalOp *op, const ut8 data)
-{
+static inline void gb_anal_add_sp (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->dst->reg = r_reg_get (reg, "sp", R_REG_TYPE_GPR);
@@ -167,8 +163,7 @@ static inline void gb_anal_add_sp (RReg *reg, RAnalOp *op, const ut8 data)
 	r_strbuf_append (&op->esil, ",0,Z,=,0,N,=");
 }
 
-static void gb_anal_mov_imm (RReg *reg, RAnalOp *op, const ut8 *data)
-{
+static void gb_anal_mov_imm (RReg *reg, RAnalOp *op, const ut8 *data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	if (data[0] & 1) {
@@ -184,8 +179,7 @@ static void gb_anal_mov_imm (RReg *reg, RAnalOp *op, const ut8 *data)
 	op->val = op->src[0]->imm;
 }
 
-static inline void gb_anal_mov_sp_hl (RReg *reg, RAnalOp *op)
-{
+static inline void gb_anal_mov_sp_hl (RReg *reg, RAnalOp *op) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->dst->reg = r_reg_get (reg, "sp", R_REG_TYPE_GPR);
@@ -193,8 +187,7 @@ static inline void gb_anal_mov_sp_hl (RReg *reg, RAnalOp *op)
 	r_strbuf_set (&op->esil, "hl,sp,=");
 }
 
-static inline void gb_anal_mov_hl_sp (RReg *reg, RAnalOp *op, const ut8 data)
-{
+static inline void gb_anal_mov_hl_sp (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->src[1] = r_anal_value_new ();
@@ -207,8 +200,7 @@ static inline void gb_anal_mov_hl_sp (RReg *reg, RAnalOp *op, const ut8 data)
 	r_strbuf_append (&op->esil, ",0,Z,=,0,N,=");
 }
 
-static void gb_anal_mov_reg (RReg *reg, RAnalOp *op, const ut8 data)
-{
+static void gb_anal_mov_reg (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->dst->reg = r_reg_get (reg, regs_8[(data/8) - 8], R_REG_TYPE_GPR);
@@ -216,8 +208,7 @@ static void gb_anal_mov_reg (RReg *reg, RAnalOp *op, const ut8 data)
 	r_strbuf_setf (&op->esil, "%s,%s,=", regs_8[data & 7], regs_8[(data/8) - 8]);
 }
 
-static inline void gb_anal_mov_ime (RReg *reg, RAnalOp *op, const ut8 data)
-{
+static inline void gb_anal_mov_ime (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->dst->reg = r_reg_get (reg, "ime", R_REG_TYPE_GPR);
@@ -228,8 +219,7 @@ static inline void gb_anal_mov_ime (RReg *reg, RAnalOp *op, const ut8 data)
 		r_strbuf_append (&op->esil, ",");
 }
 
-static inline void gb_anal_mov_scf (RReg *reg, RAnalOp *op)
-{
+static inline void gb_anal_mov_scf (RReg *reg, RAnalOp *op) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->dst->reg = r_reg_get (reg, regs_1[3], R_REG_TYPE_GPR);
@@ -237,8 +227,7 @@ static inline void gb_anal_mov_scf (RReg *reg, RAnalOp *op)
 	r_strbuf_set (&op->esil, "1,C,=");
 }
 
-static inline void gb_anal_xor_cpl (RReg *reg, RAnalOp *op)			//cpl
-{
+static inline void gb_anal_xor_cpl (RReg *reg, RAnalOp *op) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->dst->reg = r_reg_get (reg, regs_8[7], R_REG_TYPE_GPR);
@@ -246,8 +235,7 @@ static inline void gb_anal_xor_cpl (RReg *reg, RAnalOp *op)			//cpl
 	r_strbuf_set (&op->esil, "0xff,a,^=,1,N,=,1,H,=");
 }
 
-static inline void gb_anal_xor_ccf (RReg *reg, RAnalOp *op)
-{
+static inline void gb_anal_xor_ccf (RReg *reg, RAnalOp *op) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->dst->reg = r_reg_get (reg, regs_1[3], R_REG_TYPE_GPR);
@@ -255,26 +243,25 @@ static inline void gb_anal_xor_ccf (RReg *reg, RAnalOp *op)
 	r_strbuf_set (&op->esil, "C,!=");
 }
 
-static inline void gb_anal_cond (RReg *reg, RAnalOp *op, const ut8 data)
-{
+static inline void gb_anal_cond (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->src[0]->imm = 1;
 	if (data & 0x8) op->cond = R_ANAL_COND_EQ;
 	else op->cond = R_ANAL_COND_NE;
 	switch (data) {
-		case 0x20:
-		case 0x28:
-		case 0xc0:
-		case 0xc2:
-		case 0xc4:
-		case 0xc8:
-		case 0xca:
-		case 0xcc:
-			op->dst->reg = r_reg_get (reg, regs_1[0], R_REG_TYPE_GPR);
-			break;
-		default:
-			op->dst->reg = r_reg_get (reg, regs_1[3], R_REG_TYPE_GPR);
+	case 0x20:
+	case 0x28:
+	case 0xc0:
+	case 0xc2:
+	case 0xc4:
+	case 0xc8:
+	case 0xca:
+	case 0xcc:
+		op->dst->reg = r_reg_get (reg, regs_1[0], R_REG_TYPE_GPR);
+		break;
+	default:
+		op->dst->reg = r_reg_get (reg, regs_1[3], R_REG_TYPE_GPR);
 	}
 }
 
@@ -291,8 +278,7 @@ static inline void gb_anal_pp (RReg *reg, RAnalOp *op, const ut8 data)		//push ,
 	}
 }
 
-static inline void gb_anal_and_res (RAnal *anal, RAnalOp *op, const ut8 data)	//res
-{
+static inline void gb_anal_and_res (RAnal *anal, RAnalOp *op, const ut8 data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->src[0]->imm = ((~(0x1 << ((data >> 3) & 7))) & 0xff);
@@ -303,8 +289,7 @@ static inline void gb_anal_and_res (RAnal *anal, RAnalOp *op, const ut8 data)	//
 	else	r_strbuf_setf (&op->esil, "0x%02x,%s,&=", op->src[0]->imm, regs_x[data & 7]);
 }
 
-static inline void gb_anal_and_bit (RReg *reg, RAnalOp *op, const ut8 data)
-{
+static inline void gb_anal_and_bit (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->src[0]->imm = 1<<((data>>3) & 7);
@@ -315,8 +300,7 @@ static inline void gb_anal_and_bit (RReg *reg, RAnalOp *op, const ut8 data)
 	else	r_strbuf_setf (&op->esil, "%i,%s,&,0,==,$z,Z,=,0,N,=,1,H,=", op->src[0]->imm, regs_x[data & 7]);
 }
 
-static inline void gb_anal_or_set (RAnal *anal, RAnalOp *op, const ut8 data)	//set
-{
+static inline void gb_anal_or_set (RAnal *anal, RAnalOp *op, const ut8 data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->src[0]->imm = (data>>3) & 7;
@@ -327,8 +311,7 @@ static inline void gb_anal_or_set (RAnal *anal, RAnalOp *op, const ut8 data)	//s
 	else	r_strbuf_setf (&op->esil, "0x%02x,%s,|=", op->src[0]->imm, regs_x[data & 7]);
 }
 
-static void gb_anal_xoaasc (RReg *reg, RAnalOp *op, const ut8 *data)
-{
+static void gb_anal_xoaasc (RReg *reg, RAnalOp *op, const ut8 *data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->dst->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
@@ -1380,7 +1363,6 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 					op->type = R_ANAL_OP_TYPE_OR;
 					break;			//set
 			}
-			r_strbuf_append (&op->esil, ",N=0,H=0");
 	}
 	if (op->type == R_ANAL_OP_TYPE_CALL)
 	{
@@ -1398,12 +1380,13 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 */
 
 static int set_reg_profile(RAnal *anal) {
-	const char *p = "=pc	mpc\n"
-		"=sp	sp\n"
-		"=a0	af\n"
-		"=a1	bc\n"
-		"=a2	de\n"
-		"=a3	hl\n"
+	const char *p =
+		"=PC	mpc\n"
+		"=SP	sp\n"
+		"=A0	af\n"
+		"=A1	bc\n"
+		"=A2	de\n"
+		"=A3	hl\n"
 
 		"gpr	mpc	.32	0	0\n"
 		"gpr	pc	.16	0	0\n"

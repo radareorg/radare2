@@ -18,8 +18,8 @@ static int cmd_seek(void *data, const char *input) {
 				core->dbg->reg = orig;
 				r_core_seek (core, off, 1);
 			}
-		} else eprintf ("|Usage| 'sr pc' seek to program counter register\n");
-	} else
+		} else eprintf ("|Usage| 'sr PC' seek to program counter register\n");
+	}
 	if (*input) {
 		const char *inputnum = strchr (input, ' ');
 		int sign = 1;

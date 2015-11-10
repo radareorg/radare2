@@ -164,11 +164,10 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	_Bool ret = false;
+	bool ret = false;
 	int off, version = 0;
-	if (buf && length>10)
-	if (!memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
-		memcpy (&off, buf+4*sizeof(int), sizeof(int));
+	if (buf && length>32 && !memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
+		memcpy (&off, buf + 4 * sizeof(int), sizeof(int));
 		version = buf[6] | (buf[7] <<8);
 		if (version>1024) {
 			r_mem_copyendian ((ut8*)&off,

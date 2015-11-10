@@ -19,11 +19,7 @@
 * refactor vmenus.c -> refresh function must be redefined for each menu
 // show hints for
     0x100005eca     ff2540130000     jmp qword [rip+0x1340] [1]             
-* highlight search hits in hexdump
 * Implement debugger backtrace properly
-* p7 : 7bit encoding (sms)
-  - variant for stego print? LSB, MSB, ...
-  - add base85 api
 * crackme mach0 happy with rbin
 * if no debugger supported, say so... r_io must ?
 * check search multiple keywords and signatures

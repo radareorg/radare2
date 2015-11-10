@@ -151,7 +151,7 @@ TODO:
 				free (rtrcmd (T, "dso;.dr*"));
 				break;
 			case '.':
-				free (rtrcmd (T, "s entry0;dr?rip;?? sr pc"));
+				free (rtrcmd (T, "s entry0;dr?rip;?? sr PC"));
 				break;
 			case ':':
 				{

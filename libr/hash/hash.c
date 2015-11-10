@@ -181,10 +181,14 @@ R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int 
 	digest_size = r_hash_calculate (ctx, algo, data, len);
 	r_hash_do_end (ctx, algo);
 	if (digest_size > 0) {
-		digest_hex = malloc ((digest_size * 2) + 1);
-		for (i = 0; i < digest_size; i++)
-			sprintf (digest_hex + (i * 2), "%02x", ctx->digest[i]);
-		digest_hex[digest_size * 2] = 0;
+		if (digest_size * 2 < digest_size) {
+			digest_hex = NULL;
+		} else {
+			digest_hex = malloc ((digest_size * 2) + 1);
+			for (i = 0; i < digest_size; i++)
+				sprintf (digest_hex + (i * 2), "%02x", ctx->digest[i]);
+			digest_hex[digest_size * 2] = 0;
+		}
 	}
 	if (myctx) {
 		r_hash_free (myctx);

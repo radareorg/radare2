@@ -109,9 +109,10 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
 		if (!islower ((ut8)str[i])) return UT64_MAX;
 		pos *= R_CORE_ASMQJMPS_LETTERS;
 		pos += str[i] - 'a';
-		return core->asmqjmps[pos + 1];
+		if (pos < core->asmqjmps_count) return core->asmqjmps[pos + 1];
 	} else if (str[0] > '0' && str[1] <= '9') {
-		return core->asmqjmps[str[0] - '0'];
+		int pos = str[0] - '0';
+		if (pos <= core->asmqjmps_count) return core->asmqjmps[pos];
 	}
 	return UT64_MAX;
 }
@@ -157,11 +158,6 @@ R_API RCore *r_core_ncast(ut64 p) {
 
 R_API RCore *r_core_cast(void *p) {
 	return (RCore*)p;
-}
-
-R_API void r_core_cmd_flush (RCore *core) {
-	// alias
-	r_cons_flush ();
 }
 
 static int core_cmd_callback (void *user, const char *cmd) {
@@ -331,6 +327,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				R_ANAL_REF_TYPE_DATA);
 		case 'X': return getref (core, atoi (str+2), 'x',
 				R_ANAL_REF_TYPE_CALL);
+		case 'B':
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			return fcn? fcn->addr: 0;
 		case 'I':
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			return fcn? fcn->ninstr: 0;
@@ -405,8 +404,18 @@ static const char *radare_argv[] = {
 	"pd", "pda", "pdb", "pdc", "pdj", "pdr", "pdf", "pdi", "pdl", "pds", "pdt",
 	"pD", "px", "pX", "po", "pf", "pf.", "pf*", "pf*.", "pfd", "pfd.", "pv", "p=", "p-",
 	"pm", "pr", "pt", "ptd", "ptn", "pt?", "ps", "pz", "pu", "pU", "p?",
+	"#!pipe",
 	NULL
 };
+
+static int getsdelta(const char *data) {
+	int i;
+	for (i=1; data[i]; i++) {
+		if (data[i] == ' ')
+			return i + 1;
+	}
+	return 0;
+}
 
 static int autocomplete(RLine *line) {
 	int pfree = 0;
@@ -432,12 +441,29 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else
+		if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
+			int j = 0;
+			if (strchr (line->buffer.data + 7, ' ')) {
+				goto openfile;
+			}
+			tmp_argv_heap = false;
+#define ADDARG(x) if (!strncmp (line->buffer.data+7, x, strlen (line->buffer.data+7))) { tmp_argv[j++] = x; }
+			ADDARG("node");
+			ADDARG("vala");
+			ADDARG("ruby");
+			ADDARG("newlisp");
+			ADDARG("perl");
+			ADDARG("python");
+			tmp_argv[j] = NULL;
+			line->completion.argc = j;
+			line->completion.argv = tmp_argv;
+		} else
 		if ((!strncmp (line->buffer.data, "pf.", 3))
 		||  (!strncmp (line->buffer.data, "pf*.", 4))
 		||  (!strncmp (line->buffer.data, "pfd.", 4))) {
 			char pfx[2];
 			int chr = (line->buffer.data[2]=='.')? 3: 4;
-			if (chr==4) {
+			if (chr == 4) {
 				pfx[0] = line->buffer.data[2];
 				pfx[1] = 0;
 			} else {
@@ -458,9 +484,30 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
 		} else
+		if ((!strncmp (line->buffer.data, "te ", 3))) {
+			int i = 0;
+			SdbList *l = sdb_foreach_list (core->anal->sdb_types);
+			SdbListIter *iter;
+			SdbKv *kv;
+			tmp_argv_heap = true;
+			int chr = 3;
+			ls_foreach (l, iter, kv) {
+				int len = strlen (line->buffer.data + chr);
+				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
+					if (!strncmp (kv->value, "0x", 2)) {
+						tmp_argv[i++] = strdup (kv->key);
+					}
+				}
+			}
+			tmp_argv[i] = NULL;
+			ls_free (l);
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		} else
 		if ((!strncmp (line->buffer.data, "o ", 2)) ||
 		     !strncmp (line->buffer.data, "o+ ", 3) ||
 		     !strncmp (line->buffer.data, "oc ", 3) ||
+		     !strncmp (line->buffer.data, "r2 ", 3) ||
 		     !strncmp (line->buffer.data, "cd ", 3) ||
 		     !strncmp (line->buffer.data, "on ", 3) ||
 		     !strncmp (line->buffer.data, "op ", 3) ||
@@ -484,32 +531,35 @@ static int autocomplete(RLine *line) {
 			char *str, *p, *path;
 			int n = 0, i = 0, isroot = 0, iscwd = 0;
 			RList *list;
-			int sdelta = (line->buffer.data[1]==' ')? 2:
-				(line->buffer.data[2]==' ')? 3:
-				(line->buffer.data[3]==' ')? 4: 5;
-			path = line->buffer.data[sdelta]?
-				strdup (line->buffer.data+sdelta):
+			int sdelta;
+openfile:
+			if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
+				sdelta = getsdelta (line->buffer.data + 7) + 7;
+			} else {
+				sdelta = getsdelta (line->buffer.data);
+			}
+			path = sdelta>0? strdup (line->buffer.data + sdelta):
 				r_sys_getdir ();
 			p = (char *)r_str_lchr (path, '/');
 			if (p) {
-				if (p==path) { // ^/
+				if (p == path) { // ^/
 					isroot = 1;
 					*p = 0;
 					p++;
-				} else if (p==path+1) { // ^./
+				} else if (p==path + 1) { // ^./
 					*p = 0;
-					iscwd=1;
+					iscwd = 1;
 					p++;
 				} else { // *
 					*p = 0;
 					p++;
 				}
 			} else {
-				iscwd=1;
+				iscwd = 1;
 				pfree = 1;
 				p = strdup (path);
 				free (path);
-				path = strdup ("."); //./");
+				path = strdup (".");
 			}
 			if (pfree) {
 				if (p) {
@@ -524,36 +574,39 @@ static int autocomplete(RLine *line) {
 				if (p) { if (*p) n = strlen (p); else p = ""; }
 			}
 			if (iscwd) {
-				list = r_sys_dir("./");
+				list = r_sys_dir ("./");
 			} else if (isroot) {
-				list = r_sys_dir("/");
+				const char *lastslash = r_str_lchr (path, '/');
+				if (lastslash && lastslash[1]) {
+					list = r_sys_dir (path);
+				} else {
+					list = r_sys_dir ("/");
+				}
 			} else {
 				if (*path=='~') { // if implicit home
-					char *lala = r_str_home (path+1);
+					char *lala = r_str_home (path + 1);
 					free (path);
 					path = lala;
 				} else if (*path!='.' && *path!='/') { // ifnot@home
-					char *o = malloc (strlen (path)+4);
+					char *o = malloc (strlen (path) + 4);
 					memcpy (o, "./", 2);
 					p = o+2;
 					n = strlen (path);
-					memcpy (o+2, path, strlen (path)+1);
+					memcpy (o + 2, path, strlen (path) + 1);
 					free (path);
 					path = o;
 				}
 				list = p? r_sys_dir (path): NULL;
 			}
+			i = 0;
 			if (list) {
-				int isroot = !strcmp (path, "/");
-				char buf[4096];
+			//	bool isroot = !strcmp (path, "/");
 				r_list_foreach (list, iter, str) {
 					if (*str == '.') // also list hidden files
 						continue;
 					if (!p || !*p || !strncmp (str, p, n)) {
-						snprintf (buf, sizeof (buf), "%s%s%s",
-							path, isroot?"":"/",str);
-						tmp_argv[i++] = strdup (buf);
-						if (i==TMP_ARGV_SZ) {
+						tmp_argv[i++] = r_str_newf ("%s/%s", path, str);
+						if (i == TMP_ARGV_SZ) {
 							i--;
 							break;
 						}
@@ -624,7 +677,6 @@ static int autocomplete(RLine *line) {
 		if ((!strncmp (line->buffer.data, "s ", 2)) ||
 		    (!strncmp (line->buffer.data, "ad ", 3)) ||
 		    (!strncmp (line->buffer.data, "bf ", 3)) ||
-		    (!strncmp (line->buffer.data, "dcu ", 4)) ||
 		    (!strncmp (line->buffer.data, "ag ", 3)) ||
 		    (!strncmp (line->buffer.data, "afi ", 4)) ||
 		    (!strncmp (line->buffer.data, "afb ", 4)) ||
@@ -1021,7 +1073,6 @@ R_API int r_core_init(RCore *core) {
 	r_core_setenv(core);
 	core->cmd_depth = R_CORE_CMD_DEPTH+1;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
-	core->zerosep = false;
 	core->lastsearch = NULL;
 	core->incomment = false;
 	core->screen_bounds = 0LL;
@@ -1125,7 +1176,12 @@ R_API int r_core_init(RCore *core) {
 	core->flags = r_flag_new ();
 	core->graph = r_agraph_new (r_cons_canvas_new (1, 1));
 	core->asmqjmps_size = R_CORE_ASMQJMPS_NUM;
-	core->asmqjmps = R_NEWS (ut64, core->asmqjmps_size);
+	if (sizeof(ut64) * core->asmqjmps_size < core->asmqjmps_size) {
+		core->asmqjmps_size = 0;
+		core->asmqjmps = NULL;
+	} else {
+		core->asmqjmps = R_NEWS (ut64, core->asmqjmps_size);
+	}
 
 	r_bin_bind (core->bin, &(core->assembler->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
@@ -1383,7 +1439,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 R_API int r_core_prompt_exec(RCore *r) {
 	int ret = r_core_cmd (r, r->cmdqueue, true);
 	r_cons_flush ();
-	if (r->zerosep)
+	if (r->cons && r->cons->line && r->cons->line->zerosep)
 		r_cons_zero ();
 	return ret;
 }

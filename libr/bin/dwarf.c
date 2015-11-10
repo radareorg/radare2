@@ -246,14 +246,18 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 		fprintf(f, "  opcode_base: %d\n", hdr->opcode_base);
 	}
 
-	hdr->std_opcode_lengths = calloc(sizeof(ut8), hdr->opcode_base);
+	if (hdr->opcode_base>0) {
+		hdr->std_opcode_lengths = calloc(sizeof(ut8), hdr->opcode_base);
 
-	for (i = 1; i <= hdr->opcode_base - 1; i++) {
-		if (buf+2>buf_end) break;
-		hdr->std_opcode_lengths[i] = READ (buf, ut8);
-		if (f) {
-			fprintf(f, " op %d %d\n", i, hdr->std_opcode_lengths[i]);
+		for (i = 1; i <= hdr->opcode_base - 1; i++) {
+			if (buf+2>buf_end) break;
+			hdr->std_opcode_lengths[i] = READ (buf, ut8);
+			if (f) {
+				fprintf(f, " op %d %d\n", i, hdr->std_opcode_lengths[i]);
+			}
 		}
+	} else {
+		hdr->std_opcode_lengths = NULL;
 	}
 
 	i = 0;
@@ -307,13 +311,12 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 				char *allocated_id = NULL;
 				if (id_idx > 0) {
 					include_dir = sdb_array_get (s, "includedirs", id_idx - 1, 0);
-
 					if (include_dir && include_dir[0] != '/') {
 						comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 						if (comp_dir) {
 							allocated_id = calloc(1,strlen(comp_dir) +
 									strlen(include_dir) + 8);
-							snprintf(allocated_id, strlen(comp_dir) + strlen(include_dir) + 8,
+							snprintf (allocated_id, strlen(comp_dir) + strlen(include_dir) + 8,
 									"%s/%s/", comp_dir, include_dir);
 							include_dir = allocated_id;
 						}
@@ -544,13 +547,12 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 	switch (opcode) {
 	case DW_LNS_copy:
 		if (f) {
-			fprintf(f, "Copy\n");
+			fprintf (f, "Copy\n");
 		}
-
 		if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
 			int fnidx = regs->file - 1;
 			if (fnidx>=0 && fnidx<hdr->file_names_count) {
-				add_sdb_addrline(binfile->sdb_addrinfo,
+				add_sdb_addrline (binfile->sdb_addrinfo,
 					regs->address,
 					hdr->file_names[fnidx].name,
 					regs->line, f, mode);
@@ -561,9 +563,8 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 	case DW_LNS_advance_pc:
 		buf = r_uleb128 (buf, ST32_MAX, &addr);
 		regs->address += addr * hdr->min_inst_len;
-
 		if (f) {
-			fprintf(f, "Advance PC by %"PFMT64d" to 0x%"PFMT64x"\n",
+			fprintf (f, "Advance PC by %"PFMT64d" to 0x%"PFMT64x"\n",
 				addr * hdr->min_inst_len, regs->address);
 		}
 		break;
@@ -1149,41 +1150,37 @@ static const ut8 *r_bin_dwarf_parse_attr_value (const ut8 *obuf, int obuf_len,
 
 	case DW_FORM_block2:
 		value->encoding.block.length = READ (buf, ut16);
-		value->encoding.block.data = calloc(sizeof(ut8),
-				value->encoding.block.length);
-
-		for (j = 0; j < value->encoding.block.length; j++) {
-			value->encoding.block.data[j] = READ (buf, ut8);
+		if (value->encoding.block.length>0) {
+			value->encoding.block.data = calloc(sizeof(ut8),
+					value->encoding.block.length);
+			for (j = 0; j < value->encoding.block.length; j++) {
+				value->encoding.block.data[j] = READ (buf, ut8);
+			}
 		}
 		break;
-
 	case DW_FORM_block4:
 		value->encoding.block.length = READ (buf, ut32);
-		value->encoding.block.data = calloc(sizeof(ut8),
-				value->encoding.block.length);
-
-		for (j = 0; j < value->encoding.block.length; j++) {
-			value->encoding.block.data[j] = READ (buf, ut8);
+		if (value->encoding.block.length>0) {
+			value->encoding.block.data = calloc(sizeof(ut8),
+					value->encoding.block.length);
+			for (j = 0; j < value->encoding.block.length; j++) {
+				value->encoding.block.data[j] = READ (buf, ut8);
+			}
 		}
 		break;
-
 	case DW_FORM_data2:
 		value->encoding.data = READ (buf, ut16);
 		break;
-
 	case DW_FORM_data4:
 		value->encoding.data = READ (buf, ut32);
 		break;
-
 	case DW_FORM_data8:
 		value->encoding.data = READ (buf, ut64);
 		break;
-
 	case DW_FORM_string:
 		value->encoding.str_struct.string = strdup((const char*)buf);
 		buf += (strlen((const char*)buf) + 1);
 		break;
-
 	case DW_FORM_block:
 		buf = r_uleb128 (buf, ST32_MAX, &value->encoding.block.length);
 
@@ -1194,7 +1191,6 @@ static const ut8 *r_bin_dwarf_parse_attr_value (const ut8 *obuf, int obuf_len,
 			value->encoding.block.data[j] = READ (buf, ut8);
 		}
 		break;
-
 	case DW_FORM_block1:
 		value->encoding.block.length = READ (buf, ut8);
 

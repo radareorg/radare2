@@ -29,13 +29,13 @@ PC = 272
 
 #endif
 	return strdup (
-	"=pc	pc\n"
-	"=sp	sp\n"
-	"=bp	fp\n"
-	"=a0	a0\n"
-	"=a1	a1\n"
-	"=a2	a2\n"
-	"=a3	a3\n"
+	"=PC	pc\n"
+	"=SP	sp\n"
+	"=BP	fp\n"
+	"=A0	a0\n"
+	"=A1	a1\n"
+	"=A2	a2\n"
+	"=A3	a3\n"
 	"gpr	zero	.64	0	0\n"
 	// XXX DUPPED CAUSES FAILURE "gpr	at	.32	8	0\n"
 	"gpr	at	.64	8	0\n"

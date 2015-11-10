@@ -74,6 +74,7 @@ R_API RAnal *r_anal_new() {
 	RAnalPlugin *static_plugin;
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) return NULL;
+	anal->os = strdup (R_SYS_OS);
 	anal->reflines = anal->reflines2 = NULL;
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
 	anal->limit = NULL;
@@ -179,6 +180,7 @@ R_API int r_anal_use(RAnal *anal, const char *name) {
 		if (!strcmp (h->name, name)) {
 			anal->cur = h;
 			r_anal_set_reg_profile (anal);
+			r_anal_set_fcnsign (anal, NULL);
 			if (anal->esil) {
 				r_anal_esil_free (anal->esil);
 				anal->esil = NULL;
@@ -195,6 +197,46 @@ R_API int r_anal_set_reg_profile(RAnal *anal) {
 	return false;
 }
 
+R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
+#define FCNSIGNPATH R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign"
+	char *file = NULL;
+	const char *arch;
+	if (anal->cur && anal->cur->arch) {
+		arch = anal->cur->arch;
+	} else arch = R_SYS_ARCH;
+	if (name && *name) {
+		file = sdb_fmt (0, "%s/%s.sdb", FCNSIGNPATH, name);
+	} else {
+		file = sdb_fmt (0, "%s/%s-%s-%d.sdb", FCNSIGNPATH,
+			anal->os, arch, anal->bits);
+	}
+	if (r_file_exists (file)) {
+		sdb_close (anal->sdb_fcnsign);
+		sdb_free (anal->sdb_fcnsign);
+		anal->sdb_fcnsign = sdb_new (0, file, 0);
+		return (anal->sdb_fcnsign != NULL);
+	}
+	return false;
+}
+
+R_API const char *r_anal_get_fcnsign(RAnal *anal, const char *sym) {
+	return sdb_const_get (anal->sdb_fcnsign, sym, 0);
+}
+
+R_API int r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits) {
+	if (!os || !*os) os = R_SYS_OS;
+	if (!arch || !*arch) arch = anal->cur? anal->cur->arch: R_SYS_ARCH;
+	if (bits<1) bits = anal->bits;
+	free (anal->os);
+	anal->os = strdup (os);
+	r_anal_set_bits (anal, bits);
+	return r_anal_use (anal, arch);
+}
+
+R_API int r_anal_set_os(RAnal *anal, const char *os) {
+	return r_anal_set_triplet (anal, os, NULL, -1);
+}
+
 R_API int r_anal_set_bits(RAnal *anal, int bits) {
 	switch (bits) {
 	case 8:
@@ -202,6 +244,7 @@ R_API int r_anal_set_bits(RAnal *anal, int bits) {
 	case 32:
 	case 64:
 		anal->bits = bits;
+		r_anal_set_fcnsign (anal, NULL);
 		r_anal_set_reg_profile (anal);
 		return true;
 	}

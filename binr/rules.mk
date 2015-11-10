@@ -15,7 +15,7 @@ EXT_EXE=.js
 endif
 
 ifeq ($(USE_RPATH),1)
-LDFLAGS+=-Wl,-rpath "${PREFIX}/lib"
+LDFLAGS+=-Wl,-rpath "${LIBDIR}"
 endif
 
 OBJ+=${BIN}.o
@@ -64,11 +64,16 @@ ifneq ($(SILENT),)
 endif
 	${CC} ${CFLAGS} $@.c ${OBJS} ${REAL_LDFLAGS} -o $@
 
+# -static fails because -ldl -lpthread static-gcc ...
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
+ifeq ($(WITHNONPIC),1)
+	${CC} -pie ${CFLAGS} $+ -L.. -o $@ $(REAL_LDFLAGS)
+else
 ifneq ($(SILENT),)
 	@echo LD $@
 endif
 	${CC} ${CFLAGS} $+ -L.. -o $@ $(REAL_LDFLAGS)
+endif
 endif
 
 # Dummy myclean rule that can be overriden by the t/ Makefile

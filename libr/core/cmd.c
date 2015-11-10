@@ -341,7 +341,7 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 #if __WINDOWS__
 #define cmdstr(x) r_str_newf (x" %s", file);
 #else
-#define cmdstr(x) r_str_newf (x"'%s'", file);
+#define cmdstr(x) r_str_newf (x" '%s'", file);
 #endif
 			const char *p = r_str_lchr (file, '.');
 			if (p) {
@@ -418,11 +418,6 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 
 static int cmd_ls(void *data, const char *input) {
 	r_core_syscmd_ls (input);
-	return 0;
-}
-
-static int cmd_mkdir(void *data, const char *input) {
-	r_core_syscmd_mkdir (input);
 	return 0;
 }
 
@@ -738,6 +733,10 @@ static int cmd_resize(void *data, const char *input) {
 		oldsize = r_io_desc_size (core->io, core->file->desc);
 	else oldsize = 0;
 	switch (*input) {
+	case '2':
+		// TODO: use argv[0] instead of 'radare2'
+		r_sys_cmdf ("radare%s", input);
+		return true;
 	case 'm':
 		if (input[1]==' ')
 			r_file_rm (input+2);
@@ -772,6 +771,7 @@ static int cmd_resize(void *data, const char *input) {
 			"r-", "num", "remove num bytes, move following data down",
 			"r+", "num", "insert num bytes, move following data up",
 			"rm" ," [file]", "remove file",
+			"r2" ," [file]", "launch r2",
 			NULL};
 		r_core_cmd_help (core, help_msg);
 		}
@@ -892,8 +892,8 @@ static int cmd_thread(void *data, const char *input) {
 			"&", " &&", "run all tasks in background",
 			"&&", "", "run all pendings tasks (and join threads)",
 			"&&&", "", "run all pendings tasks until ^C",
-			"","","TODO: last command should honor asm.bits", 
-			"","","WARN: this feature is very experimental. Use it with caution", 
+			"","","TODO: last command should honor asm.bits",
+			"","","WARN: this feature is very experimental. Use it with caution",
 			NULL};
 		// TODO: integrate with =h& and bg anal/string/searchs/..
 		r_core_cmd_help (core, help_msg);
@@ -1069,6 +1069,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		child = r_sys_fork ();
 		if (child == -1) {
 			eprintf ("Cannot fork\n");
+			close (stdout_fd);
 		} else if (child) {
 			dup2 (fds[1], 1);
 			close (fds[1]);
@@ -1562,6 +1563,7 @@ repeat_arroba:
 				}
 				break;
 			case 'b': // "@b:" // bits
+				tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 				r_config_set_i (core->config, "asm.bits",
 					r_num_math (core->num, ptr+2));
 				break;
@@ -1737,7 +1739,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 	case 'c':
 		switch (each[1]) {
 		case 'a': // call
-			break;	
+			break;
 		default:
 			r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, foreach_comment, (void*)cmd);
 			break;
@@ -1797,7 +1799,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 		break;
 	case 's':
 		// symbols
-		{	
+		{
 			RBinSymbol *sym;
 			ut64 offorig = core->offset;
 			list = r_bin_get_symbols (core->bin);
@@ -2313,7 +2315,7 @@ R_API void r_core_cmd_repeat(RCore *core, int next) {
 		switch (core->lastcmd[1]) {
 		case 's':
 		case 'c':
-			r_core_cmd0 (core, "sr pc ; pd 1");
+			r_core_cmd0 (core, "sr PC;pd 1");
 		}
 		break;
 	case 'p': // print
@@ -2352,6 +2354,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "flag",     "get/set flags", &cmd_flag);
 	r_cmd_add (core->rcmd, "g",        "egg manipulation", &cmd_egg);
 	r_cmd_add (core->rcmd, "debug",    "debugger operations", &cmd_debug);
+	r_cmd_add (core->rcmd, "ls",       "list files and directories", &cmd_ls);
 	r_cmd_add (core->rcmd, "info",     "get file info", &cmd_info);
 	r_cmd_add (core->rcmd, "cmp",      "compare memory", &cmd_cmp);
 	r_cmd_add (core->rcmd, "seek",     "seek to an offset", &cmd_seek);
@@ -2381,8 +2384,6 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, ".",        "interpret", &cmd_interpret);
 	r_cmd_add (core->rcmd, "/",        "search kw, pattern aes", &cmd_search);
 	r_cmd_add (core->rcmd, "-",        "open cfg.editor and run script", &cmd_stdin);
-	r_cmd_add (core->rcmd, "ls",       "list files and directories", &cmd_ls);
-	r_cmd_add (core->rcmd, "mkdir",    "make directory", &cmd_mkdir);
 	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
 	r_cmd_add (core->rcmd, "quit",     "exit program session", &cmd_quit);
 }

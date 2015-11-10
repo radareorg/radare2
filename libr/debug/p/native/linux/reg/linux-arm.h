@@ -1,15 +1,15 @@
 return strdup (
-"=pc	r15\n"
-"=sp	r14\n" // XXX
-"=a0	r0\n"
-"=a1	r1\n"
-"=a2	r2\n"
-"=a3	r3\n"
-"=zf	zf\n"
-"=sf	nf\n"
-"=of	vf\n"
-"=cf	cf\n"
-"=sn	or0\n"
+"=PC	r15\n"
+"=SP	r14\n" // XXX
+"=A0	r0\n"
+"=A1	r1\n"
+"=A2	r2\n"
+"=A3	r3\n"
+"=ZF	zf\n"
+"=SF	nf\n"
+"=OF	vf\n"
+"=CF	cf\n"
+"=SN	or0\n"
 "gpr	lr	.32	56	0\n" // r14
 "gpr	pc	.32	60	0\n" // r15
 "gpr	cpsr	.32	64	0\n" // r16
@@ -18,6 +18,7 @@ return strdup (
 "gpr	zf	.1	.513	0	zero\n" // set if last op is 0
 "gpr	cf	.1	.514	0	carry\n" // set if last op carries
 "gpr	vf	.1	.515	0	overflow\n" // set if overflows
+"gpr	thumb	.1	.516	0	thumb\n"
 
 "gpr	r0	.32	0	0\n"
 "gpr	r1	.32	4	0\n"

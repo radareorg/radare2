@@ -1,7 +1,32 @@
 #!/bin/sh
 
-MAKE_JOBS=12
-[ -z "${PREFIX}" ] && PREFIX=/usr
+MAKE=make
+gmake --help >/dev/null 2>&1
+[ $? = 0 ] && MAKE=gmake
+[ -z "${MAKE_JOBS}" ] && MAKE_JOBS=12
+
+# find root
+cd `dirname $PWD/$0` ; cd ..
+
+if [ "`uname`" = Darwin ]; then
+  DEFAULT_PREFIX=/usr/local
+  # purge previous installations on other common paths
+  if [ -f /usr/bin/r2 ]; then
+    type sudo || NOSUDO=1
+    [ "$(id -u)" = 0 ] || SUDO=sudo
+    [ -n "${NOSUDO}" ] && SUDO=
+    # purge first
+    echo "Purging r2 installation..."
+    ./configure --prefix=/usr > /dev/null
+    ${SUDO} ${MAKE} uninstall > /dev/null
+  fi
+else
+  DEFAULT_PREFIX=/usr
+  [ -n "${PREFIX}" -a "${PREFIX}" != /usr ] && \
+    CFGARG="${CFGARG} --with-rpath"
+fi
+
+[ -z "${PREFIX}" ] && PREFIX="${DEFAULT_PREFIX}"
 
 case "$1" in
 -h)
@@ -15,16 +40,6 @@ case "$1" in
 	PREFIX="$1"
 	;;
 esac
-
-[ ! "${PREFIX}" = /usr ] && \
-	CFGARG="${CFGARG} --with-rpath"
-
-MAKE=make
-gmake --help >/dev/null 2>&1
-[ $? = 0 ] && MAKE=gmake
-
-# find root
-cd `dirname $PWD/$0` ; cd ..
 
 ccache --help > /dev/null 2>&1
 if [ $? = 0 ]; then

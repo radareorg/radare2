@@ -199,8 +199,8 @@ enum {
 	 *	and floating point types in st0.
 	 */
 	R_ANAL_CC_TYPE_SAFECALL, // Delphi and Free Pascal on Windows
-		R_ANAL_CC_TYPE_SYSV,
-		R_ANAL_CC_TYPE_THISCALL,
+	R_ANAL_CC_TYPE_SYSV,
+	R_ANAL_CC_TYPE_THISCALL,
 };
 
 #define R_ANAL_CC_ARGS 16
@@ -250,6 +250,7 @@ typedef struct r_anal_diff_t {
 	ut64 addr;
 	double dist;
 	char *name;
+	ut32 size;
 } RAnalDiff;
 
 typedef struct r_anal_locals_t {
@@ -277,38 +278,38 @@ typedef struct r_anal_fcn_store_t {
 /* Store various function information,
  * variables, arguments, refs and even
  * description */
-	typedef struct r_anal_type_function_t {
-		char* name;
-		char* dsc; // For producing nice listings
-		ut32 size;
-		int bits; // ((> bits 0) (set-bits bits))
-		short type;
-		/*item_list *rets; // Type of return value */
-		short rets;
-		short fmod; //  static, inline or volatile?
-		/* TODO: Change to RAnalCC ??? */
-		short call; // calling convention
-		char* attr; // __attribute__(()) list
-		ut64 addr;
-		int stack;
-		int ninstr;
-		int nargs; // Function arguments counter
-		int depth;
-		RAnalType *args; // list of arguments
+typedef struct r_anal_type_function_t {
+	char* name;
+	char* dsc; // For producing nice listings
+	ut32 size;
+	int bits; // ((> bits 0) (set-bits bits))
+	short type;
+	/*item_list *rets; // Type of return value */
+	short rets;
+	short fmod; //  static, inline or volatile?
+	/* TODO: Change to RAnalCC ??? */
+	short call; // calling convention
+	char* attr; // __attribute__(()) list
+	ut64 addr;
+	int stack;
+	int ninstr;
+	int nargs; // Function arguments counter
+	int depth;
+	RAnalType *args; // list of arguments
 #if USE_VARSUBS
-		RAnalVarSub varsubs[R_ANAL_VARSUBS];
+	RAnalVarSub varsubs[R_ANAL_VARSUBS];
 #endif
-		ut8 *fingerprint; // TODO: make is fuzzy and smarter
-		RAnalDiff *diff;
-		RList *locs; // list of local variables
-		//RList *locals; // list of local labels -> moved to anal->sdb_fcns
-		RList *bbs;
-		RList *vars;
+	ut8 *fingerprint; // TODO: make is fuzzy and smarter
+	RAnalDiff *diff;
+	RList *locs; // list of local variables
+	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
+	RList *bbs;
+	RList *vars;
 #if FCN_OLD
-		RList *refs;
-		RList *xrefs;
+	RList *refs;
+	RList *xrefs;
 #endif
-	} RAnalFunction;
+} RAnalFunction;
 
 struct r_anal_type_t {
 	char *name;
@@ -522,7 +523,8 @@ enum {
 
 enum {
 	R_ANAL_REFLINE_TYPE_UTF8 = 1,
-	R_ANAL_REFLINE_TYPE_WIDE = 2
+	R_ANAL_REFLINE_TYPE_WIDE = 2,  /* reflines have a space between them */
+	R_ANAL_REFLINE_TYPE_MIDDLE = 4 /* do not consider starts/ends of reflines (used for comments lines) */
 };
 
 enum {
@@ -575,6 +577,7 @@ typedef struct r_anal_options_t {
 
 typedef struct r_anal_t {
 	char *cpu;
+	char *os;
 	int bits;
 	int lineswidth; // wtf
 	int big_endian;
@@ -625,6 +628,7 @@ typedef struct r_anal_t {
 	// Sdb *sdb_ret;   // UNUSED
 #endif
 	Sdb *sdb_hints; // OK
+	Sdb *sdb_fcnsign; // OK
 	//RList *hints; // XXX use better data structure here (slist?)
 	RAnalCallbacks cb;
 	RAnalOptions opt;
@@ -775,10 +779,12 @@ typedef struct r_anal_ref_t {
 	ut64 at;
 } RAnalRef;
 
+/* represents a reference line from one address (from) to another (to) */
 typedef struct r_anal_refline_t {
 	ut64 from;
 	ut64 to;
 	int index;
+	int level;
 } RAnalRefline;
 
 typedef struct r_anal_state_type_t {
@@ -1128,11 +1134,17 @@ R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API int r_anal_use(RAnal *anal, const char *name);
 R_API int r_anal_set_reg_profile(RAnal *anal);
 R_API int r_anal_set_bits(RAnal *anal, int bits);
+R_API int r_anal_set_os(RAnal *anal, const char *os);
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu);
 R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API char *r_anal_strmask (RAnal *anal, const char *data);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_fcn_type_tostring(int type);
+
+/* fcnsign */
+R_API int r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
+R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name);
+R_API const char *r_anal_get_fcnsign(RAnal *anal, const char *sym);
 
 /* bb.c */
 R_API RAnalBlock *r_anal_bb_new(void);
@@ -1508,6 +1520,7 @@ extern RAnalPlugin r_anal_plugin_cris;
 extern RAnalPlugin r_anal_plugin_v810;
 extern RAnalPlugin r_anal_plugin_6502;
 extern RAnalPlugin r_anal_plugin_snes;
+extern RAnalPlugin r_anal_plugin_riscv;
 #ifdef __cplusplus
 }
 #endif

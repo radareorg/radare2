@@ -98,7 +98,6 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		} else {
 			destaddrs = destaddr;
 		}
-
 		op->jump = addr + destaddrs;
 		op->fail = addr + 2;
 		op->type = R_ANAL_OP_TYPE_CJMP;

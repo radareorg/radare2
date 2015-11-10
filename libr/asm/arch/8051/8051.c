@@ -167,19 +167,24 @@ r_8051_op r_8051_decode(const ut8 *buf, int len) {
 static char *strdup_filter (const char *str, const ut8 *buf) {
 	char *o;
 	int i, j, len;
-	if (!str)
-		return NULL;
+	if (!str) return NULL;
 	len = strlen (str);
-	o = malloc (1+len*4);
-	for (i=j=0; i<len; i++) {
+	if ((len * 4) + 1 < len) return NULL;
+	o = malloc (1 + (len * 4));
+	if (!o) return NULL;
+	for (i = j = 0; i < len; i++) {
 		if (str[i] == '$') {
 			int n = str[i+1];
 			if (n>='0' && n<='9') {
 				n -= '0';
 				i++;
 				j += sprintf (o+j, "0x%02x", buf[n]);
-			} else eprintf ("strdup_filter: Internal bug\n");
-		} else o[j++] = str[i];
+			} else {
+				eprintf ("strdup_filter: Internal bug\n");
+			}
+		} else {
+			o[j++] = str[i];
+		}
 	}
 	o[j] = 0;
 	return o;

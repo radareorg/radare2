@@ -1066,7 +1066,7 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 	RListIter *iter;
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		r_cons_printf ("afb+ 0x%08"PFMT64x" 0x%08"PFMT64x" %04"PFMT64d" ",
+		r_cons_printf ("afb+ 0x%08"PFMT64x" 0x%08"PFMT64x" %d ",
 				fcn->addr, bbi->addr, bbi->size);
 		r_cons_printf ("0x%08"PFMT64x" ", bbi->jump);
 		r_cons_printf ("0x%08"PFMT64x" ", bbi->fail);
@@ -1641,7 +1641,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			} else if (rad == 'j') {
 				// Output JSON
 				if (count > 0) r_cons_printf (",");
-				r_cons_printf ("%"PFMT64d":%"PFMT64d, xref_to, xref_from);
+				r_cons_printf ("\"0x%"PFMT64x"\":\"0x%"PFMT64x"\"", xref_to, xref_from);
 			} else {
 				// Display in radare commands format
 				char *cmd;
@@ -1774,7 +1774,6 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 	memset (buf, 0xff, len);
 	r_io_read_at (core->io, addr, buf, len);
 	buf[len-1] = 0;
-	//}
 
 	for (i = j = 0; j<count; j++ ) {
 		if (i>=len) {
@@ -2099,7 +2098,7 @@ static int is_string (const ut8 *buf, int size, int *len) {
 	int i;
 	if (size<1)
 		return 0;
-	if (size>3 && buf[0] &&!buf[1]&&buf[2]&&!buf[3]) {
+	if (size>3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
 		*len = 1; // XXX: TODO: Measure wide string length
 		return 2; // is wide
 	}

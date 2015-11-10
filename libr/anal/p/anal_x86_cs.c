@@ -576,35 +576,67 @@ SETL/SETNGE
 			}
 			}
 			break;
+		case X86_INS_ROL:
+		case X86_INS_RCL:
+			// TODO: RCL Still does not work as intended
+			//  - Set flags
+			op->type = R_ANAL_OP_TYPE_ROL;
+			if (a->decode) {
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 0, NULL);
+				esilprintf (op, "%s,%s,<<<,%s,=", src, dst, dst);
+				free (src);
+				free (dst);
+			}
+			break;
+		case X86_INS_ROR:
+		case X86_INS_RCR:
+			// TODO: RCR Still does not work as intended
+			//  - Set flags
+			op->type = R_ANAL_OP_TYPE_ROR;
+			if (a->decode) {
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 0, NULL);
+				esilprintf (op, "%s,%s,>>>,%s,=", src, dst, dst);
+				free (src);
+				free (dst);
+			}
+			break;
 		case X86_INS_SHL:
 		case X86_INS_SHLD:
 		case X86_INS_SHLX:
+			// TODO: Set CF: Carry flag is the last bit shifted out due to
+			// this operation. It is undefined for SHL and SHR where the
+			// number of bits shifted is greater than the size of the
+			// destination.
 			op->type = R_ANAL_OP_TYPE_SHL;
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, "<<");
-				esilprintf (op, "%s,%s,$z,zf,=", src, dst);
+				esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=", src, dst);
 				free (src);
 				free (dst);
 			}
 			break;
 		case X86_INS_SAR:
 		case X86_INS_SARX:
+			// TODO: Set CF. See case X86_INS_SHL for more details.
 			op->type = R_ANAL_OP_TYPE_SAR;
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, ">>");
-				esilprintf (op, "%s,%s,$z,zf,=", src, dst);
+				esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=", src, dst);
 				free (src);
 				free (dst);
 			}
 			break;
 		case X86_INS_SAL:
+			// TODO: Set CF: See case X86_INS_SAL for more details.
 			op->type = R_ANAL_OP_TYPE_SAL;
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, "<<");
-				esilprintf (op, "%s,%s,$z,zf,=", src, dst);
+				esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -618,11 +650,12 @@ SETL/SETNGE
 		case X86_INS_SHR:
 		case X86_INS_SHRD:
 		case X86_INS_SHRX:
+			// TODO: Set CF: See case X86_INS_SAL for more details.
 			op->type = R_ANAL_OP_TYPE_SHR;
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 0, NULL);
-				esilprintf (op, "%s,%s,>>=,$z,zf,=", src, dst);
+				esilprintf (op, "%s,%s,>>=,$z,zf,=,$p,pf,=,$s,sf,=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -1021,34 +1054,40 @@ SETL/SETNGE
 			}
 			break;
 		case X86_INS_OR:
+			// The OF and CF flags are cleared; the SF, ZF, and PF flags are
+			// set according to the result. The state of the AF flag is
+			// undefined.
 			op->type = R_ANAL_OP_TYPE_OR;
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 0, NULL);
-				esilprintf (op, "%s,%s,|=", src, dst);
+				esilprintf (op, "%s,%s,|=,0,of,=,0,cf,=,$s,sf,=,$z,zf,=,$p,pf,=", src, dst);
 				free (src);
 				free (dst);
 			}
 			break;
 		case X86_INS_INC:
+			// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
+			// are set according to the result.
 			op->type = R_ANAL_OP_TYPE_ADD;
 			op->val = 1;
 			if (a->decode) {
 				char *src = getarg (&gop, 0, 0, NULL);
-				esilprintf (op, "%s,++=", src);
+				esilprintf (op, "%s,++=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
 				free (src);
 			}
 			break;
 		case X86_INS_DEC:
+			// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
+			// are set according to the result.
 			op->type = R_ANAL_OP_TYPE_SUB;
 			op->val = 1;
 			if (a->decode) {
 				char *src = getarg (&gop, 0, 0, NULL);
-				esilprintf (op, "%s,--=", src);
+				esilprintf (op, "%s,--=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
 				free (src);
 			}
 			break;
-		case X86_INS_SUB:
 		case X86_INS_PSUBB:
 		case X86_INS_PSUBW:
 		case X86_INS_PSUBD:
@@ -1061,8 +1100,21 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, "-");
-				esilprintf (op, "%s,%s,$c,cf,=,$z,zf,=,$s,sf,=,$o,of,=",
-					src, dst); // TODO: update flags
+				esilprintf (op, "%s,%s", src, dst);
+				free(src);
+				free(dst);
+			}
+			break;
+		case X86_INS_SUB:
+			op->type = R_ANAL_OP_TYPE_SUB;
+			if (a->decode) {
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 1, "-");
+				// Set OF, SF, ZF, AF, PF, and CF flags.
+				// We use $b rather than $c here as the carry flag really
+				// represents a "borrow"
+				esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$b,cf,=",
+					src, dst);
 				free (src);
 				free (dst);
 			}
@@ -1071,6 +1123,17 @@ SETL/SETNGE
 					op->stackop = R_ANAL_STACK_INC;
 					op->stackptr = INSOP(1).imm;
 				}
+			}
+			break;
+		case X86_INS_SBB:
+			// dst = dst - (src + cf)
+			op->type = R_ANAL_OP_TYPE_SUB;
+			if (a->decode) {
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 0, NULL);
+				esilprintf (op, "cf,%s,+,%s,-=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$b,cf,=", src, dst);
+				free (src);
+				free (dst);
 			}
 			break;
 		case X86_INS_LIDT:
@@ -1115,16 +1178,7 @@ SETL/SETNGE
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, "&");
-				// TODO: update of = cf = 0
-				// TODO: update sf, zf and pf
-				// TODO: af is undefined
-				esilprintf (op, "0,of,=,0,cf,=," // set carry and overflow flags
-					"%s,%s," // set reg value
-					"$z,zf,=,"  // update zero flag
-					"$s,sf,=,"  // update sign flag
-					"$o,pf,=",  // update parity flag
-					// TODO: add sign and parity flags here
-					src, dst);
+				esilprintf (op, "%s,%s,0,of,=,0,cf,=,$z,zf,=,$s,sf,=,$o,pf,=", src, dst);
 				free (src);
 				free (dst);
 			}
@@ -1191,7 +1245,6 @@ SETL/SETNGE
 		case X86_INS_FADDP:
 			op->family = R_ANAL_OP_FAMILY_FPU;
 			/* pass thru */
-		case X86_INS_ADD:
 		case X86_INS_ADDPS:
 		case X86_INS_ADDSD:
 		case X86_INS_ADDSS:
@@ -1199,13 +1252,14 @@ SETL/SETNGE
 		case X86_INS_ADDSUBPS:
 		case X86_INS_ADDPD:
 		case X86_INS_XADD:
+			// The OF, SF, ZF, AF, CF, and PF flags are set according to the
+			// result.
 			op->type = R_ANAL_OP_TYPE_ADD;
 			if (a->decode) {
 				if (INSOP(0).type == X86_OP_MEM) {
 					char *src = getarg (&gop, 1, 0, NULL);
 					char *src2 = getarg (&gop, 0, 0, NULL);
 					char *dst = getarg (&gop, 0, 1, NULL);
-					// TODO: update flags
 					esilprintf (op, "%s,%s,+,%s", src, src2, dst);
 					free (src);
 					free (src2);
@@ -1213,7 +1267,7 @@ SETL/SETNGE
 				} else {
 					char *src = getarg (&gop, 1, 0, NULL);
 					char *dst = getarg (&gop, 0, 1, "+");
-					esilprintf (op, "%s,%s", src, dst);		// TODO: update flags
+					esilprintf (op, "%s,%s", src, dst);
 					free (src);
 					free (dst);
 				}
@@ -1225,6 +1279,50 @@ SETL/SETNGE
 				}
 			}
 			break;
+		case X86_INS_ADD:
+			// The OF, SF, ZF, AF, CF, and PF flags are set according to the
+			// result.
+			op->type = R_ANAL_OP_TYPE_ADD;
+			if (a->decode) {
+				if (INSOP(0).type == X86_OP_MEM) {
+					char *src = getarg (&gop, 1, 0, NULL);
+					char *src2 = getarg (&gop, 0, 0, NULL);
+					char *dst = getarg (&gop, 0, 1, NULL);
+					esilprintf (op, "%s,%s,+,%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$c,cf,=", src, src2, dst);
+					free (src);
+					free (src2);
+					free (dst);
+				} else {
+					char *src = getarg (&gop, 1, 0, NULL);
+					char *dst = getarg (&gop, 0, 1, "+");
+					esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$c,cf,=", src, dst);
+					free (src);
+					free (dst);
+				}
+			}
+			if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
+				if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
+					op->stackop = R_ANAL_STACK_INC;
+					op->stackptr = -INSOP(1).imm;
+				}
+			}
+			break;
+		case X86_INS_ADC:
+			op->type = R_ANAL_OP_TYPE_ADD;
+			if (a->decode) {
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 0, NULL);
+				// dst = dst + src + cf
+				// NOTE: We would like to add the carry first before adding the
+				// source to ensure that the flag computation from $c belongs
+				// to the operation of adding dst += src rather than the one
+				// that adds carry (as esil only keeps track of the last
+				// addition to set the flags).
+				esilprintf (op, "cf,%s,+,%s,+=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$c,cf,=", src, dst);
+				free (src);
+				free (dst);
+			}
+				break;
 			/* Direction flag */
 		case X86_INS_CLD:
 			op->type = R_ANAL_OP_TYPE_MOV;
@@ -1317,13 +1415,15 @@ static int set_reg_profile(RAnal *anal) {
 	const char *p = NULL;
 	switch (anal->bits) {
 	case 16: p =
-		"=pc	ip\n"
-		"=sp	sp\n"
-		"=bp	bp\n"
-		"=a0	ax\n"
-		"=a1	bx\n"
-		"=a2	cx\n"
-		"=a3	di\n"
+		"=PC	ip\n"
+		"=SP	sp\n"
+		"=BP	bp\n"
+		"=A0	ax\n"
+		"=A1	bx\n"
+		"=A2	cx\n"
+		"=A3	dx\n"
+		"=A4	si\n"
+		"=A5	di\n"
 		"gpr	ip	.16	48	0\n"
 		"gpr	ax	.16	24	0\n"
 		"gpr	ah	.8	25	0\n"
@@ -1364,14 +1464,16 @@ static int set_reg_profile(RAnal *anal) {
 		"drx	dr7	.32	28	0\n"
 #endif
 		break;
-	case 32: p=
-		"=pc	eip\n"
-		"=sp	esp\n"
-		"=bp	ebp\n"
-		"=a0	eax\n"
-		"=a1	ebx\n"
-		"=a2	ecx\n"
-		"=a3	edi\n"
+	case 32: p =
+		"=PC	eip\n"
+		"=SP	esp\n"
+		"=BP	ebp\n"
+		"=A0	eax\n"
+		"=A1	ebx\n"
+		"=A2	ecx\n"
+		"=A3	edx\n"
+		"=A4	esi\n"
+		"=A5	edi\n"
 		"gpr	oeax	.32	44	0\n"
 		"gpr	eax	.32	24	0\n"
 		"gpr	ax	.16	24	0\n"
@@ -1404,18 +1506,20 @@ static int set_reg_profile(RAnal *anal) {
 		"seg	xcs	.32	52	0\n"
 		"seg	cs	.16	52	0\n"
 		"seg	xss	.32	52	0\n"
-		"gpr	eflags	.32	56	0	c1p.a.zstido.n.rv\n"
-		"gpr	flags	.16	56	0\n"
+		"gpr	eflags	.32	.448	0	c1p.a.zstido.n.rv\n"
+		"gpr	flags	.16	.448	0\n"
 		"gpr	cf	.1	.448	0\n"
-		"flg	pf	.1	.449	0\n"
-		"flg	af	.1	.450	0\n"
-		"gpr	zf	.1	.451	0\n"
-		"gpr	sf	.1	.452	0\n"
-		"flg	tf	.1	.453	0\n"
-		"flg	if	.1	.454	0\n"
-		"flg	df	.1	.455	0\n"
-		"flg	of	.1	.456	0\n"
-		"flg	rf	.1	.457	0\n"
+		"gpr	pf	.1	.450	0\n"
+		"gpr	af	.1	.452	0\n"
+		"gpr	zf	.1	.454	0\n"
+		"gpr	sf	.1	.455	0\n"
+		"gpr	tf	.1	.456	0\n"
+		"gpr	if	.1	.457	0\n"
+		"gpr	df	.1	.458	0\n"
+		"gpr	of	.1	.459	0\n"
+		"gpr	nt	.1	.462	0\n"
+		"gpr	rf	.1	.464	0\n"
+		"gpr	vm	.1	.465	0\n"
 		"drx	dr0	.32	0	0\n"
 		"drx	dr1	.32	4	0\n"
 		"drx	dr2	.32	8	0\n"
@@ -1427,16 +1531,16 @@ static int set_reg_profile(RAnal *anal) {
 		 break;
 	case 64:
 		 p =
-		 "=pc	rip\n"
-		 "=sp	rsp\n"
-		 "=bp	rbp\n"
-		 "=a0	rdi\n"
-		 "=a1	rsi\n"
-		 "=a2	rdx\n"
-		 "=a3	r10\n"
-		 "=a4	r8\n"
-		 "=a5	r9\n"
-		 "=sn	rax\n"
+		 "=PC	rip\n"
+		 "=SP	rsp\n"
+		 "=BP	rbp\n"
+		 "=A0	rdi\n"
+		 "=A1	rsi\n"
+		 "=A2	rdx\n"
+		 "=A3	r10\n"
+		 "=A4	r8\n"
+		 "=A5	r9\n"
+		 "=SN	rax\n"
 		 "# no profile defined for x86-64\n"
 		 "gpr	rax	.64	80	0\n"
 		 "gpr	eax	.32	80	0\n"
@@ -1594,13 +1698,13 @@ static int set_reg_profile(RAnal *anal) {
 		 break;
 #if 0
 	default: p= /* XXX */
-		 "=pc	rip\n"
-		 "=sp	rsp\n"
-		 "=bp	rbp\n"
-		 "=a0	rax\n"
-		 "=a1	rbx\n"
-		 "=a2	rcx\n"
-		 "=a3	rdx\n"
+		 "=PC	rip\n"
+		 "=SP	rsp\n"
+		 "=BP	rbp\n"
+		 "=A0	rax\n"
+		 "=A1	rbx\n"
+		 "=A2	rcx\n"
+		 "=A3	rdx\n"
 		 "# no profile defined for x86-64\n"
 		 "gpr	r15	.64	0	0\n"
 		 "gpr	r14	.64	8	0\n"

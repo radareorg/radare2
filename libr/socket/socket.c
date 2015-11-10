@@ -42,7 +42,7 @@ R_API int r_socket_is_connected (RSocket *s) {
 #endif
 }
 
-#if __UNIX__
+#if __UNIX__ || defined(__CYGWIN__)
 static int r_socket_unix_connect(RSocket *s, const char *file) {
 	struct sockaddr_un addr;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
@@ -151,7 +151,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 		return false;
 	}
 	return true;
-#elif __UNIX__
+#elif __UNIX__ || defined(__CYGWIN__)
 	if (!proto) proto = R_SOCKET_PROTO_TCP;
 	int gai, ret;
 	struct addrinfo hints, *res, *rp;
@@ -247,7 +247,7 @@ R_API int r_socket_close (RSocket *s) {
 	int ret = false;
 	if (!s) return false;
 	if (s->fd != -1) {
-#if __UNIX__
+#if __UNIX__ || defined(__CYGWIN__)
 		shutdown (s->fd, SHUT_RDWR);
 #endif
 		ret = close (s->fd);
@@ -284,7 +284,7 @@ R_API int r_socket_port_by_name(const char *name) {
 }
 
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
-#if __UNIX__
+#if __UNIX__ || defined(__CYGWIN__)
 	int optval = 1;
 	int ret;
 	struct linger linger = { 0 };
@@ -300,7 +300,7 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 #endif
 	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP))<0)
 		return false;
-#if __UNIX__
+#if __UNIX__ || defined(__CYGWIN__)
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
 	ret = setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (void*)&linger, sizeof (linger));
@@ -329,7 +329,7 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 		close (s->fd);
 		return false;
 	}
-#if __UNIX_
+#if __UNIX__ || defined(__CYGWIN__)
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	if (listen (s->fd, 32) < 0) {
@@ -395,11 +395,11 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 }
 
 R_API int r_socket_block_time (RSocket *s, int block, int sec) {
-#if __UNIX__
+#if __UNIX__ || defined(__CYGWIN__)
 	int ret, flags;
 #endif
 	if (!s) return false;
-#if __UNIX__
+#if __UNIX__ || defined(__CYGWIN__)
 	flags = fcntl (s->fd, F_GETFL, 0);
 	if (flags < 0)
 		return false;
@@ -436,7 +436,7 @@ R_API int r_socket_flush(RSocket *s) {
 /* waits secs until new data is received.     */
 /* returns -1 on error, 0 is false, 1 is true */
 R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
-#if __UNIX__
+#if __UNIX__ || defined(__CYGWIN__)
 	int msecs = usecs / 1000;
 	struct pollfd fds[1];
 	fds[0].fd = s->fd;
@@ -468,7 +468,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 	char *str = malloc (32);
 	snprintf (str, 31, "fd%d", s->fd);
 	return str;
-#elif __UNIX__
+#elif __UNIX__ || defined(__CYGWIN__)
 	char *str = NULL;
 	struct sockaddr sa;
 	socklen_t sl = sizeof (sa);
@@ -489,7 +489,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 /* Read/Write functions */
 R_API int r_socket_write(RSocket *s, void *buf, int len) {
 	int ret, delta = 0;
-#if __UNIX__
+#if __UNIX__ || defined(__CYGWIN__)
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	for (;;) {

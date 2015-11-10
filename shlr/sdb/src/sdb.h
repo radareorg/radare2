@@ -17,11 +17,7 @@ extern "C" {
 #include "sdb_version.h"
 
 #undef r_offsetof
-#if defined(__GNUC__)
-#define r_offsetof(type, member) offsetof(type, member)
-#else
-#define r_offsetof(type, member) ((size_t) &((type*)0)->member)
-#endif
+#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 
 /* Key value sizes */
 #define SDB_MIN_VALUE 1
@@ -61,11 +57,11 @@ extern char *strdup (const char *);
 #define SDB_KSZ 0xff
 
 typedef struct sdb_kv {
-	char key[SDB_KSZ];
+	char *key;
 	char *value;
 	int value_len;
-	ut64 expire;
 	ut32 cas;
+	ut64 expire;
 } SdbKv;
 
 typedef struct sdb_t {

@@ -8,6 +8,9 @@
 // XXX must be configurable by the user
 #define FCN_DEPTH 512
 
+// 16 KB is the maximum size for a basic block
+#define MAXBBSIZE 16 * 1024
+
 #define JMP_IS_EOB 1
 #define JMP_IS_EOB_RANGE 32
 #define CALL_IS_EOB 0
@@ -159,6 +162,7 @@ R_API int r_anal_fcn_xref_del (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	}
 #endif
 #if FCN_SDB
+	// TODO
 	//sdb_array_delete_num (DB, key, at, 0);
 #endif
 	return false;
@@ -205,8 +209,6 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 		fcn->size = 0; \
 		return R_ANAL_RET_ERROR; }
 
-#define MAXBBSIZE 8096
-
 #define VARPREFIX "local"
 //#define VARPREFIX "var"
 #define ARGPREFIX "arg"
@@ -228,7 +230,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END;
-	ut8 bbuf[MAXBBSIZE];
 	int overlapped = 0;
 	char *varname;
 	RAnalOp op = {0};
@@ -397,9 +398,12 @@ repeat:
 			// swapped parameters wtf
 			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, 'd');
 		}
-		#define recurseAt(x) \
-			anal->iob.read_at (anal->iob.io, x, bbuf, sizeof (bbuf));\
-			ret = fcn_recurse (anal, fcn, x, bbuf, sizeof (bbuf), depth-1);
+		#define recurseAt(x) { \
+			ut8 *bbuf = malloc (MAXBBSIZE);\
+			anal->iob.read_at (anal->iob.io, x, bbuf, MAXBBSIZE); \
+			ret = fcn_recurse (anal, fcn, x, bbuf, MAXBBSIZE, depth-1); \
+			free (bbuf); \
+		}
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_ILL:
 			if (anal->opt.nopskip && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
@@ -671,7 +675,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 	fcn->addr = addr;
 	fcn->size = size;
 	free (fcn->name);
-	if (!name || !strncmp (name, "fcn.", 4)) {
+	if (!name) {
 		fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
 	} else {
 		fcn->name = strdup (name);

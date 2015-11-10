@@ -1,15 +1,25 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+
+static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
+	RListIter *it;
+	RBinFile *bf;
+	r_list_foreach (bin->binfiles, it, bf) {
+		if (bf->fd == fd) return bf->id;
+	}
+	return UT32_MAX;
+
+}
+
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "ob", " # List open binary files backed by fd",
 		"ob", "", "List opened binfiles and bin objects",
-		"ob", " [binfile #]", "Same as obo.",
-		"obb", " [binfile #]", "Prioritize by binfile number with current selected object",
-		"ob-", " [binfile #]", "Delete binfile",
+		"ob", " [fd # bobj #]", "Prioritize by fd number and object number",
+		"obb", " [fd #]", "Prioritize by fd number with current selected object",
+		"ob-", " [fd #]", "Delete binfile by fd",
 		"obd", " [binobject #]", "Delete binfile object numbers, if more than 1 object is loaded",
 		"obo", " [binobject #]", "Prioritize by bin object number",
-		"obs", " [bf #] [bobj #]", "Prioritize by binfile and object numbers",
 		NULL};
 	const char *value = NULL;
 	ut32 binfile_num = -1, binobj_num = -1;
@@ -21,78 +31,101 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case '*':
 		r_core_bin_list (core, input[1]);
 		break;
-	case 's':
-		value = *(input+2) ? input+3 : NULL;
-		if (!value) {
-			eprintf ("Invalid binfile number.");
-			break;
-		}
-		binfile_num = *value && r_is_valid_input_num_value (core->num, value) ?
-			r_get_input_num_value (core->num, value) : UT32_MAX;
-
-		if (binfile_num == UT32_MAX) {
-			eprintf ("Invalid binfile number.");
-			break;
-		}
-
-		value = *(value+1) ? r_str_tok (value+1, ' ', -1) : NULL;
-		value = value && *(value+1) ? value+1 : NULL;
-
-		binobj_num = value && binfile_num != -1 &&
-			r_is_valid_input_num_value (core->num, value) ?
-			r_get_input_num_value (core->num, value) : UT32_MAX;
-
-		if (binobj_num == UT32_MAX) {
-			eprintf ("Invalid bin object number.");
-			break;
-		}
-		r_core_bin_raise (core, binfile_num, binobj_num);
-		break;
 	case 'b':
-		value = *(input+2) ? input+3 : NULL;
+	{
+		ut32 fd;
+		value = *(input + 3) ? input + 3 : NULL;
 		if (!value) {
-			eprintf ("Invalid binfile number.");
+			eprintf ("Invalid fd number.");
 			break;
 		}
-		binfile_num = *value && r_is_valid_input_num_value (core->num, value) ?
+		binfile_num = UT32_MAX;
+		fd = *value && r_is_valid_input_num_value (core->num, value) ?
 			r_get_input_num_value (core->num, value) : UT32_MAX;
-
+		binfile_num = find_binfile_id_by_fd (core->bin, fd);
 		if (binfile_num == UT32_MAX) {
-			eprintf ("Invalid binfile number.");
+			eprintf ("Invalid fd number.");
 			break;
 		}
-		value = *(value+1) ? r_str_tok (value+1, ' ', -1) : NULL;
-		value = value && *(value+1) ? value+1 : NULL;
 		r_core_bin_raise (core, binfile_num, -1);
 		break;
+	}
 	case ' ':
-	case 'o':
-		value = *(input+2) ? input+3 : NULL;
-		if (!value) {
-			eprintf ("Invalid binfile number.");
+	{
+		ut32 fd;
+		int n;
+		const char *tmp;
+		char *v;
+		v = input[2] ? strdup (input + 2) : NULL;
+		if (!v) {
+			eprintf ("Invalid arguments");
 			break;
 		}
-		binobj_num = *value && r_is_valid_input_num_value (core->num, value) ?
-			r_get_input_num_value (core->num, value) : UT32_MAX;
+		n = r_str_word_set0 (v);
+		if (n < 2 || n > 2) {
+			eprintf ("Invalid arguments\n");
+			eprintf ("usage: ob fd obj\n");
+			free (v);
+			break;
+		}
+		tmp = r_str_word_get0 (v, 0);
+		fd  = *v && r_is_valid_input_num_value (core->num, tmp) ?
+			r_get_input_num_value (core->num, tmp) : UT32_MAX;
+		tmp = r_str_word_get0 (v, 1);
+		binobj_num  = *v && r_is_valid_input_num_value (core->num, tmp) ?
+			r_get_input_num_value (core->num, tmp) : UT32_MAX;
+		binfile_num = find_binfile_id_by_fd (core->bin, fd);
+		r_core_bin_raise (core, binfile_num, binobj_num);
+		free (v);
+		break;
+	}
+	case 'o':
+		value = input[3] ? input + 3 : NULL;
+		if (!value) {
+			eprintf ("Invalid argument");
+			break;
+		}
+		binobj_num  = *value && r_is_valid_input_num_value (core->num, value) ?
+				r_get_input_num_value (core->num, value) : UT32_MAX;
 		if (binobj_num == UT32_MAX) {
-			eprintf ("Invalid bin object number.");
+			eprintf ("Invalid binobj_num");
 			break;
 		}
 		r_core_bin_raise (core, -1, binobj_num);
 		break;
 	case '-': // "ob-"
+		//FIXME this command doesn't remove nothing
 		if (input[2] == '*') {
-			r_cons_printf ("[i] Deleted %d binfiles\n", r_bin_file_delete_all (core->bin));
+			//FIXME this only delete from a list but it doesn't free any space
+			r_cons_printf ("[i] Deleted %d binfiles\n",
+					r_bin_file_delete_all (core->bin));
 		} else {
-			if (!r_bin_file_delete (core->bin, r_num_math (core->num, input+2))) {
-				eprintf ("Cant find an RBinFile associated with that fd.\n");
+			ut32 fd;
+			value = input[3] ? input + 3 : NULL;
+			if (!value) {
+				eprintf ("Invalid argument\n");
+				break;
+			}
+			fd  = *value && r_is_valid_input_num_value (core->num, value) ?
+					r_get_input_num_value (core->num, value) : UT32_MAX;
+
+			binfile_num = find_binfile_id_by_fd (core->bin, fd);
+			if (binfile_num == UT32_MAX) {
+				eprintf ("Invalid fd\n");
+				break;
+			}
+			if (r_core_bin_delete (core, binfile_num, -1)){
+				if (!r_bin_file_delete (core->bin, fd))
+					eprintf ("Cant find an RBinFile associated with that fd.\n");
+			} else {
+				eprintf ("Couldn't erase because there must be 1 bin object loaded\n");
 			}
 		}
 		break;
 	case 'd': // backward compat, must be deleted
-		value = *(input+2) ? input+2 : NULL;
+		value = input[2] ? input + 2 : NULL;
 		if (!value) {
-			eprintf ("Invalid binfile number.");
+			eprintf ("Invalid bin object number.");
 			break;
 		}
 		binobj_num = *value && r_is_valid_input_num_value (core->num, value) ?
@@ -212,11 +245,14 @@ static void reopen_in_debug(RCore *core, const char *args) {
 	int bits = core->assembler->bits;
 	char *oldname = r_file_abspath (binpath);
 	char *newfile = r_str_newf ("dbg://%s %s", oldname, args);
+	char *newfile2 = strdup (newfile);
 	core->file->desc->uri = newfile;
 	core->file->desc->referer = NULL;
 	r_core_file_reopen (core, newfile, 0, 2);
 	r_config_set_i (core->config, "asm.bits", bits);
 	r_config_set_i (core->config, "cfg.debug", true);
+	newfile = newfile2;
+
 	ut64 new_baddr = r_debug_get_baddr (core, newfile);
 	ut64 old_baddr = r_config_get_i (core->config, "bin.baddr");
 	if (old_baddr != new_baddr) {
@@ -224,9 +260,10 @@ static void reopen_in_debug(RCore *core, const char *args) {
 		r_config_set_i (core->config, "bin.baddr", new_baddr);
 		r_core_bin_load (core, newfile, new_baddr);
 	}
-	r_core_cmd0 (core, "sr pc");
+	r_core_cmd0 (core, "sr PC");
 	free (oldname);
 	free (binpath);
+	free (newfile);
 }
 
 static int cmd_open(void *data, const char *input) {

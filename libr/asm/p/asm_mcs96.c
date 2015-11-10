@@ -21,6 +21,8 @@ static int mcs96_len (const ut8 buf) {
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	if (len>1 && !memcmp (buf, "\xff\xff", 2))
+		return -1;
 	strncpy (op->buf_asm, mcs96_op[buf[0]].ins, sizeof (op->buf_asm)-1);
 	op->size = mcs96_len (buf[0]);
 	return op->size;
@@ -32,11 +34,7 @@ RAsmPlugin r_asm_plugin_mcs96 = {
 	.arch = "mcs96",
 	.license = "LGPL3",
 	.bits = 16,
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
-	.modify = NULL,
-	.assemble = NULL,
 };
 
 #ifndef CORELIB

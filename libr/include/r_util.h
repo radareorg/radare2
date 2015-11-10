@@ -375,6 +375,7 @@ R_API char* r_num_as_string(RNum *___, ut64 n);
 R_API RBuffer *r_buf_new(void);
 R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
 R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len);
+R_API RBuffer *r_buf_new_with_buf(RBuffer *b);
 R_API RBuffer *r_buf_file (const char *file);
 R_API RBuffer *r_buf_mmap (const char *file, int flags);
 R_API RBuffer *r_buf_new_sparse();
@@ -495,6 +496,7 @@ R_API const char *r_str_casestr(const char *a, const char *b);
 R_API const char *r_str_lastbut (const char *s, char ch, const char *but);
 R_API int r_str_split(char *str, char ch);
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g);
+R_API char *r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
 #define r_str_cpy(x,y) memmove(x,y,strlen(y)+1);
 R_API int r_str_bits (char *strout, const ut8 *buf, int len, const char *bitz);
 R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz);
@@ -551,6 +553,9 @@ R_API const char * r_str_tok (const char *str1, const char b, size_t len);
 typedef void (*str_operation)(char *c);
 
 R_API int r_str_do_until_token (str_operation op, char *str, const char tok);
+
+R_API void r_str_const_free();
+R_API const char *r_str_const(const char *ptr);
 
 R_API int r_str_re_match(const char *str, const char *reg);
 R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);

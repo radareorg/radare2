@@ -80,12 +80,13 @@ R_API char *r_base64_encode_dyn(const char *str, int len) {
 	char *bout;
 	int in, out;
 	if (!str) return NULL;
-	if (len<0) len = strlen (str);
-	bout = (char *)malloc ((len * 4)+1);
+	if (len < 0) len = strlen (str);
+	if ((len * 4) + 2 < len) return NULL;
+	bout = (char *)malloc ((len * 4) + 2);
 	if (!bout) return NULL;
-	for (in=out=0; in<len; in+=3,out+=4)
-		b64_encode ((const ut8*)str+in, (char*)bout+out,
-			(len-in)>3?3:len-in);
+	for (in = out = 0; in < len; in += 3, out += 4)
+		b64_encode ((const ut8*)str + in, (char*)bout + out,
+			(len - in) > 3 ? 3 : len - in);
 	bout[out] = 0;
-	return realloc (bout, out+1);
+	return bout;
 }

@@ -84,8 +84,8 @@ LDFLAGS+=${LINK}
 all: symlinks
 
 symlinks: build
-	for a in r2 ${BINS} ; do \
-		ln -fs radare2 $$a ; \
+	for FILE in r2 ${BINS} ; do \
+		ln -fs radare2 $$FILE ; \
 	done
 
 clean:
@@ -105,12 +105,12 @@ build:
 	rm -f *.[ch]
 	mv main.k main.c
 	mv version.k version.c
-	for a in ${BINS2} ; do cp ../$$a/*.[ch] . ; done
+	for FILE in ${BINS2} ; do cp ../$$FILE/*.[ch] . ; done
 	rm -f rwx.c xorhex.c rsc2.c
-	for a in ${BINS2} ; do \
-		mv $$a.c _$$a.c ;\
-		sed -e "s,^int main,int $${a}_main,g" _$$a.c > $$a.c ; \
-		rm -f _$$a ; \
+	for FILE in ${BINS2} ; do \
+		mv $${FILE}.c _$${FILE}.c ;\
+		sed -e "s,^int main,int $${FILE}_main,g" _$${FILE}.c > $${FILE}.c ; \
+		rm -f _$${FILE} ; \
 	done
 	rm -f _*
 	${CC} -o radare2 ${SOURCES} ${CFLAGS} ${LDFLAGS}
@@ -121,8 +121,9 @@ build:
 	mv version.k version.c
 
 install:
-	mkdir -p ${DESTDIR}/${PREFIX}/bin
-	for a in r2 ${BINS2} ; do \
-		rm -f ${DESTDIR}/${PREFIX}/bin/$$a ; \
-		cp -af $$a ${DESTDIR}/${PREFIX}/bin/$$a ; \
+	mkdir -p "${DESTDIR}${BINDIR}"
+	for FILE in r2 ${BINS2} ; do \
+		rm -f "${DESTDIR}${BINDIR}/$$FILE" ; \
+		cp -af "$$FILE" "${DESTDIR}${BINDIR}/$$FILE" ; \
 	done
+

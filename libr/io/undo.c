@@ -65,9 +65,10 @@ R_API ut64 r_io_sundo_redo(RIO *io) {
 }
 
 R_API void r_io_sundo_push(RIO *io, ut64 off) {
-	if (!io->undo.s_enable)
-		return;
-
+	if (!io->undo.s_enable) return;
+	//the first insert
+	if (io->undo.idx > 0)
+		if (io->undo.seek[io->undo.idx - 1] == off) return;
 	io->undo.seek[io->undo.idx] = off;
 	io->undo.idx = (io->undo.idx + 1) % R_IO_UNDOS;
 	/* Only R_IO_UNDOS - 1 undos can be used because r_io_sundo_undo () must

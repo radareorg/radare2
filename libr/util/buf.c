@@ -127,6 +127,10 @@ R_API RBuffer *r_buf_new_with_bytes (const ut8 *bytes, ut64 len) {
 	return b;
 }
 
+R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
+	return r_buf_new_with_bytes (b->buf, b->length);
+}
+
 R_API RBuffer *r_buf_new_sparse() {
 	RBuffer *b = r_buf_new ();
 	b->sparse = r_list_newf ((RListFree)free);

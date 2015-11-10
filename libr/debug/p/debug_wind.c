@@ -92,14 +92,14 @@ static int r_debug_wind_wait (RDebug *dbg, int pid) {
 		// Handle exceptions only
 		if (stc->state == STATE_EXCEPTION) {
 			wind_set_cpu (wctx, stc->cpu);
-			free (pkt);
 			dbg->reason.type = R_DEBUG_REASON_INT;
 			dbg->reason.addr = stc->pc;
 			dbg->reason.tid = stc->kthread;
 			dbg->reason.signum = stc->state;
+			free (pkt);
 			break;
 		} else wind_continue (wctx);
-		free(pkt);
+		free (pkt);
 	}
 	// TODO : Set the faulty process as target
 

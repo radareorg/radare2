@@ -747,7 +747,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	char region[100], region2[100], perms[5];
 	FILE *fd;
 	if (dbg->pid == -1) {
-		eprintf ("r_debug_native_map_get: No selected pid (-1)\n");
+		//eprintf ("r_debug_native_map_get: No selected pid (-1)\n");
 		return NULL;
 	}
 #if __KFBSD__
@@ -1286,7 +1286,11 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 #elif __arm__
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "arm",
+#if __linux__
 	.canstep = 0, // XXX it's 1 on some platforms...
+#else
+	.canstep = 1, // XXX it's 1 on some platforms...
+#endif
 #elif __aarch64__
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "arm",

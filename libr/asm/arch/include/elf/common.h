@@ -201,6 +201,8 @@
    unofficial e_machine number should eventually ask registry@caldera.com for
    an officially blessed number to be added to the list above.	*/
 
+#define EM_RISCV	243	/* RISC V */
+
 /* Old version of Sparc v9, from before the ABI;
    This should be removed shortly.  */
 #define EM_OLD_SPARCV9		11

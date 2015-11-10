@@ -68,7 +68,7 @@ static int cmd_log(void *data, const char *input) {
 		if (p) {
 			char *b = r_file_slurp (p+1, NULL);
 			if (b) {
-				r_cons_less_str (b);
+				r_cons_less_str (b, NULL);
 				free (b);
 			} else eprintf ("File not found\n");
 		} else eprintf ("Usage: less [filename]\n");

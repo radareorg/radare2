@@ -31,6 +31,53 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 	return 1;
 }
 
+static int typelist (void *p, const char *k, const char *v) {
+#define DB core->anal->sdb_types
+	RCore *core = (RCore*)p;
+	int i;
+	if (!strcmp (v, "func")) {
+		const char *rv = sdb_const_get (DB,
+			sdb_fmt (0, "func.%s.ret", k), 0);
+		r_cons_printf ("# %s %s(", rv, k);
+		for (i=0; i<16; i++) {
+			char *av = sdb_get (DB,
+				sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
+			if (!av) break;
+			r_str_replace_char (av, ',', ' ');
+			r_cons_printf ("%s%s", i?", ":"", av);
+			free (av);
+		}
+		r_cons_printf (");\n");
+		// signature in pf for asf
+		r_cons_printf ("asf %s=", k);
+		// formats
+		for (i=0; i<16; i++) {
+			const char *fmt;
+			char *comma, *av = sdb_get (DB,
+				sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
+			if (!av) break;
+			comma = strchr (av, ',');
+			if (comma) *comma = 0;
+			fmt = sdb_const_get (DB, sdb_fmt (0, "type.%s", av), 0);
+			r_cons_printf ("%s", fmt);
+			if (comma) *comma = ',';
+			free (av);
+		}
+		// names
+		for (i=0; i<16; i++) {
+			char *comma, *av = sdb_get (DB,
+				sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
+			if (!av) break;
+			comma = strchr (av, ',');
+			if (comma) *comma++ = 0;
+			r_cons_printf (" %s", comma);
+			free (av);
+		}
+		r_cons_newline();
+	}
+	return 1;
+}
+
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 
@@ -47,7 +94,7 @@ static int cmd_type(void *data, const char *input) {
 		p = o = strdup (input+1);
 		for (;;) {
 			if (*p == '\0'){
-				eprintf ("Usage: ts <k>=<v> Set fields at curseek linked type\n");	
+				eprintf ("Usage: ts <k>=<v> Set fields at curseek linked type\n");
 				break;
 			}
 			q = strchr (p, ' ');
@@ -107,7 +154,21 @@ static int cmd_type(void *data, const char *input) {
 	case 'e':
 		{
 		if (!input[1]) {
-			eprintf ("Missing value\n");
+			char *name = NULL;
+			SdbKv *kv;
+			SdbListIter *iter;
+                        SdbList *l = sdb_foreach_list (core->anal->sdb_types);
+			ls_foreach (l, iter, kv) {
+				if (!strcmp (kv->value, "enum")) {
+					if (!name || strcmp (kv->value, name)) {
+						free (name);
+						name = strdup (kv->key);
+						r_cons_printf ("%s\n", name);
+					}
+				}
+			}
+			free (name);
+			ls_free (l);
 			break;
 		}
 		char *p, *s = strdup (input+2);
@@ -125,7 +186,8 @@ static int cmd_type(void *data, const char *input) {
 				eprintf ("This is not an enum\n");
 			}
 		} else {
-			eprintf ("Missing value\n");
+			//eprintf ("Missing value\n");
+			r_core_cmdf (core, "t~&%s,=0x", s);
 		}
 		free (s);
 		}
@@ -144,18 +206,23 @@ static int cmd_type(void *data, const char *input) {
 		}
 	}
 		break;
-#if 0
 	// t* - list all types in 'pf' syntax
 	case '*':
-		r_anal_type_list (core->anal, R_ANAL_TYPE_ANY, 1);
+		sdb_foreach (core->anal->sdb_types, typelist, core);
 		break;
-#endif
 	case 0:
 		sdb_foreach (core->anal->sdb_types, sdbforcb, core);
 		break;
 	case 'o':
 		if (input[1] == ' ') {
 			const char *filename = input + 2;
+			char *homefile = NULL;
+			if (*filename == '~') {
+				if (filename[1] && filename[2]) {
+					homefile = r_str_home (filename + 2);
+					filename = homefile;
+				}
+			}
 			if (!strcmp (filename, "-")) {
 				char *out, *tmp;
 				tmp = r_core_editor (core, NULL, "");
@@ -177,6 +244,7 @@ static int cmd_type(void *data, const char *input) {
 				}
 				//r_anal_type_loadfile (core->anal, filename);
 			}
+			free (homefile);
 		}
 		break;
 	// td - parse string with cparse engine and load types from it
@@ -186,8 +254,7 @@ static int cmd_type(void *data, const char *input) {
 				"Usage:", "td[...]", "",
 				"td", "[string]", "Load types from string",
 				NULL
-			 };
-
+			};
 			r_core_cmd_help(core, help_message);
 		} else
 		if (input[1] == '-') {

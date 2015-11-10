@@ -46,9 +46,9 @@ osx-sign osxsign:
 #	sudo chmod 4755 radare2
 
 osx-sign-libs:
-	for a in ${SIGN_LIBS} ; do \
-		echo Signing $$a ; \
-		codesign -f -s ${CERTID} $$a ; \
+	for LIB in ${SIGN_LIBS} ; do \
+		echo Signing $$LIB ; \
+		codesign -f -s ${CERTID} $$LIB ; \
 	done
 #	xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} --entitlements $(ENTITL) radare2
 #	xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} radare2

@@ -126,6 +126,7 @@ R_API ut64 r_reg_getv(RReg *reg, const char *name);
 R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val);
 R_API const char *r_reg_get_type(int idx);
 R_API const char *r_reg_get_name(RReg *reg, int kind);
+R_API const char *r_reg_get_role(int role);
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type);
 R_API RList *r_reg_get_list(RReg *reg, int type);
 R_API RRegItem *r_reg_get_at (RReg *reg, int type, int regsize, int delta);

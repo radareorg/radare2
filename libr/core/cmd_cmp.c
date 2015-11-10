@@ -328,6 +328,22 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	return 0;
 }
 
+static int cmd_cp(void *data, const char *input) {
+	if (strlen (input)<3) {
+		eprintf ("Usage: cp src dst\n");
+		return 0;
+	}
+	input = input + 2;
+	if (!r_sandbox_enable(0)) {
+#if __WINDOWS__
+		r_sys_cmdf ("copy %s", input);
+#else
+		r_sys_cmdf ("cp %s", input);
+#endif
+	}
+	return 0;
+}
+
 static int cmd_cmp(void *data, const char *input) {
 	static char *oldcwd = NULL;
 	RCore *core = data;
@@ -340,6 +356,9 @@ static int cmd_cmp(void *data, const char *input) {
 	FILE *fd;
 
 	switch (*input) {
+	case 'p':
+		return cmd_cp (data, input);
+		break;
 	case 'a': r_core_syscmd_cat (input+1); break;
 	case 'w': cmd_cmp_watcher (core, input+1); break;
 	case ' ':

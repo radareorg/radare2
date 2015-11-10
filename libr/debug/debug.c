@@ -734,7 +734,7 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 			r_debug_reg_get (dbg, "pc"), reg, sysname);
 	for (i=0; i<args; i++) {
 		ut64 val;
-		snprintf (regname, sizeof (regname)-1, "a%d", i);
+		snprintf (regname, sizeof (regname)-1, "A%d", i);
 		val = r_debug_reg_get (dbg, regname);
 		if (((st64)val<0) && ((st64)val>-0xffff)) {
 			eprintf ("%"PFMT64d"%s", val, (i+1==args)?"":" ");
@@ -754,7 +754,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	if (!dbg->h->contsc) {
 		/* user-level syscall tracing */
 		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
-		return show_syscall (dbg, "a0");
+		return show_syscall (dbg, "A0");
 	}
 
 	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {

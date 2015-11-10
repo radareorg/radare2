@@ -476,22 +476,20 @@ R_API char *r_str_newf(const char *fmt, ...) {
 	return (char*)fmt;
 }
 
+// TODO: rename to r_str_trim_inplace() or something like that
 R_API char *r_str_chop(char *str) {
 	int len;
 	char *ptr;
 
-	if (str == NULL)
-		return NULL;
-
+	if (!str) return NULL;
 	while (*str && iswhitechar (*str))
 		memmove (str, str + 1, strlen (str + 1) + 1);
-
 	len = strlen (str);
-
-	if (len>0)
-	for (ptr = str + len-1; ptr != str; ptr--) {
-		if (iswhitechar (*ptr)) *ptr = '\0';
-		else break;
+	if (len > 0) {
+		for (ptr = str + len-1; ptr != str; ptr--) {
+			if (!iswhitechar (*ptr)) break;
+			*ptr = '\0';
+		}
 	}
 	return str;
 }
@@ -546,9 +544,8 @@ R_API char *r_str_trim_head_tail(char *str) {
 R_API char *r_str_trim(char *str) {
 	int i;
 	char *ptr;
-	if (str == NULL)
-		return NULL;
-	for (ptr=str, i=0;str[i]; i++)
+	if (!str) return NULL;
+	for (ptr = str, i=0; str[i]; i++)
 		if (!iswhitechar (str[i]))
 			*ptr++ = str[i];
 	*ptr = '\0';
@@ -617,7 +614,7 @@ R_API const char *r_str_get(const char *str) {
 
 R_API char *r_str_ndup(const char *ptr, int len) {
 	char *out = malloc (len+1);
-	memcpy (out, ptr, len);
+	strncpy (out, ptr, len);
 	out[len] = 0;
 	return out;
 }
@@ -817,6 +814,15 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 	return str;
 }
 
+R_API char *r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g) {
+	char *heaped;
+	if (!str || !key || !val)
+		return NULL;
+	heaped = r_str_replace (strdup (str), key, val, g);
+	strncpy (str, heaped, sz);
+	free (heaped);
+	return str;
+}
 
 R_API char *r_str_clean(char *str) {
 	int len;
@@ -1522,13 +1528,14 @@ R_API char *r_str_uri_encode (const char *s) {
 
 R_API char *r_str_utf16_encode (const char *s, int len) {
 	int i;
-	char ch[4], *d, *od;
+	char ch[4], *d, *od, *tmp;
 	if (!s) return NULL;
-	if (len<0) len = strlen (s);
-	od = d = malloc (1+(len*7));
+	if (len < 0) len = strlen (s);
+	if ((len * 7) + 1 < len) return NULL;
+	od = d = malloc (1 + (len * 7));
 	if (!d) return NULL;
-	for (i=0; i<len; s++, i++) {
-		if ((*s>=0x20) && (*s<=126)) {
+	for (i = 0; i < len; s++, i++) {
+		if ((*s >= 0x20) && (*s <= 126)) {
 			*d++ = *s;
 		} else {
 			*d++ = '\\';
@@ -1542,7 +1549,12 @@ R_API char *r_str_utf16_encode (const char *s, int len) {
 		}
 	}
 	*d = 0;
-	return realloc (od, strlen (od)+1); // FIT
+	tmp = realloc (od, strlen (od)+1); // FIT
+	if (!tmp) {
+		free (od);
+		return NULL;
+	}
+	return tmp;
 }
 
 // TODO: merge print inside rutil
@@ -1850,14 +1862,14 @@ R_API const char * r_str_tok (const char *str1, const char b, size_t len) {
 	return p;
 }
 
-R_API int r_str_do_until_token (str_operation op, char *str, const char tok)
-{
+R_API int r_str_do_until_token (str_operation op, char *str, const char tok) {
 	int ret;
-	if (!str)
-		return -1;
-	if (!op)
+	if (!str) return -1;
+	if (!op) {
 		for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { }
-	else	for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { op (str+ret); }
+	} else {
+		for (ret = 0; (str[ret] != tok) && str[ret]; ret++) { op (str+ret); }
+	}
 	return ret;
 }
 
@@ -1869,4 +1881,34 @@ R_API const char *r_str_pad(const char ch, int sz) {
 		pad[sz] = 0;
 	pad[sizeof(pad)-1] = 0;
 	return pad;
+}
+
+static char **consts = NULL;
+
+R_API const char *r_str_const(const char *ptr) {
+	int ctr = 0;
+	if (consts) {
+		const char *p;
+		while ((p = consts[ctr])) {
+			if (ptr == p || !strcmp (ptr, p))
+				return p;
+			ctr ++;
+		}
+		consts = realloc (consts, (2+ctr) * sizeof(void*));
+	} else {
+		consts = malloc (sizeof (void*) * 2);
+	}
+	consts[ctr] = strdup (ptr);
+	consts[ctr+1] = NULL;
+	return consts[ctr];
+}
+
+R_API void r_str_const_free() {
+	int i;
+	if (consts) {
+		for (i = 0; consts[i]; i++) {
+			free (consts[i]);
+		}
+		R_FREE (consts);
+	}
 }

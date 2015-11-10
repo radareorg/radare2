@@ -341,7 +341,7 @@ static int elf_init(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (!init_strtab (bin))
 		eprintf ("Warning: Cannot initialize strings table\n");
 	bin->baddr = Elf_(r_bin_elf_get_baddr) (bin);
-	if (!init_dynamic_section (bin))
+	if (!init_dynamic_section (bin) && !Elf_(r_bin_elf_get_static)(bin))
 		eprintf ("Warning: Cannot initialize dynamic section\n");
 
 	bin->imports_by_ord_size = 0;
@@ -361,7 +361,7 @@ static Elf_(Shdr)* get_section_by_name(struct Elf_(r_bin_elf_obj_t) *bin, const 
 	if (!bin || !bin->shdr || !bin->shstrtab)
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
-		if(!UT32_SUB(&cur_strtab_len, bin->shstrtab_size, bin->shdr[i].sh_name))
+		if (!UT32_SUB (&cur_strtab_len, bin->shstrtab_size, bin->shdr[i].sh_name))
 			continue;
 		if (bin->shdr[i].sh_name > bin->shstrtab_size)
 			continue;
@@ -628,6 +628,20 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return Elf_(r_bin_elf_v2p) (bin, bin->ehdr.e_entry);
 }
 
+static ut64 getmainsymbol(struct Elf_(r_bin_elf_obj_t) *bin) {
+	struct r_bin_elf_symbol_t *symbol;
+	int i;
+	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin, R_BIN_ELF_SYMBOLS)))
+		return UT64_MAX;
+	for (i = 0; !symbol[i].last; i++) {
+		if (!strcmp (symbol[i].name, "main")) {
+			ut64 paddr = symbol[i].offset;
+			return Elf_(r_bin_elf_p2v) (bin, paddr);
+		}
+	}
+	return UT64_MAX;
+}
+
 ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
 	ut8 buf[512];
@@ -641,6 +655,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		eprintf ("Warning: read (main)\n");
 		return 0;
 	}
+// find 'main' symbol first
 	// TODO: Use arch to identify arch before memcmp's
 	// ARM
 	ut64 text = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
@@ -720,10 +735,19 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 	// X86-PIE
+	if (buf[0x00] == 0x48 && buf[0x1e] == 0x8d && buf[0x11] == 0xe8) {
+		ut32 *main = (ut32*)(buf + 0x30);
+		ut64 vmain = Elf_(r_bin_elf_p2v) (bin, (ut64)*main);
+		ut64 ventry = Elf_(r_bin_elf_p2v) (bin, entry);
+		if (vmain>>16 == ventry>>16) {
+			return (ut64)vmain;
+		}
+	}
+	// X86-PIE
 	if (buf[0x1d] == 0x48 && buf[0x1e] == 0x8b) {
 		if (!memcmp (buf, "\x31\xed\x49\x89", 4)) {// linux
 			ut64 maddr, baddr;
-			ut32 n32, *num = (ut32 *)(buf+0x20);
+			ut32 n32, *num = (ut32 *)(buf + 0x20);
 			maddr = entry + 0x24 + *num;
 			if (r_buf_read_at (bin->b, maddr, (ut8*)&n32, sizeof (n32)) == -1) {
 				eprintf ("Warning: read (maddr) 2\n");
@@ -757,13 +781,24 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 #endif
-	/* linux64 pie main */
+	/* linux64 pie main -- probably buggy in some cases */
 	if (buf[29] == 0x48 && buf[30] == 0x8d) { // lea rdi, qword [rip-0x21c4]
-		ut8 *p = buf+29+3;
+		ut8 *p = buf + 32;
 		st32 maindelta = p[0] | p[1]<<8 | p[2]<<16 | p[3]<<24;
-		return (ut64)(entry + 29 + maindelta) + 7;
+		ut64 vmain = (ut64)(entry + 29 + maindelta) + 7;
+		ut64 ventry = Elf_(r_bin_elf_p2v) (bin, entry);
+		if (vmain>>16 == ventry>>16) {
+			return (ut64)vmain;
+		}
 	}
-	return 0;
+	/* find sym.main if possible */
+	{
+		ut64 main = getmainsymbol (bin);
+		if (main != UT64_MAX) {
+			return main;
+		}
+	}
+	return UT64_MAX;
 }
 
 int Elf_(r_bin_elf_get_stripped)(struct Elf_(r_bin_elf_obj_t) *bin) {
@@ -805,11 +840,13 @@ char *Elf_(r_bin_elf_intrp)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 int Elf_(r_bin_elf_get_static)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-	if (!bin->phdr)
-		return false;
-	for (i = 0; i < bin->ehdr.e_phnum; i++)
-		if (bin->phdr[i].p_type == PT_INTERP)
+
+	if (!bin->phdr) return false;
+	for (i = 0; i < bin->ehdr.e_phnum; i++) {
+		if (bin->phdr[i].p_type == PT_INTERP) {
 			return false;
+		}
+	}
 	return true;
 }
 
@@ -857,6 +894,10 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return strdup ("hppa");
 	case EM_PROPELLER:
 		return strdup ("propeller");
+	case EM_MICROBLAZE:
+		return strdup ("microblaze.gnu");
+	case EM_RISCV:
+		return strdup ("riscv");
 	case EM_SH: return strdup ("sh");
 	default: return strdup ("x86");
 	}
@@ -942,6 +983,8 @@ char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_XTENSA:      return strdup ("Tensilica Xtensa Architecture");
 	case EM_AARCH64:     return strdup ("ARM aarch64");
 	case EM_PROPELLER:   return strdup ("Parallax Propeller");
+	case EM_MICROBLAZE:  return strdup ("Xilinx MicroBlaze");
+	case EM_RISCV:       return strdup("RISC V");
 	default:             return r_str_newf ("<unknown>: 0x%x", bin->ehdr.e_machine);
 	}
 }
@@ -1499,7 +1542,7 @@ done:
 				bin->imports_by_ord = NULL;
 		}
 	}
-	free (sym);
+	//free (sym);
 	return ret;
 }
 
@@ -1596,27 +1639,28 @@ if (
 				free (strtab);
 				return NULL;
 			}
-			nsym = (int)(bin->shdr[i].sh_size/sizeof (Elf_(Sym)));
+			nsym = (int)(bin->shdr[i].sh_size / sizeof (Elf_(Sym)));
 			if (nsym < 1){
 				free (ret);
 				free (strtab);
 				return NULL;
 			}
 
-			if ((sym = (Elf_(Sym) *)calloc (nsym, sizeof(Elf_(Sym)))) == NULL) {
+			if (!(sym = (Elf_(Sym) *)calloc (nsym, sizeof (Elf_(Sym))))) {
 				eprintf ("calloc (syms)");
 				free (ret);
 				free (strtab);
 				return NULL;
 			}
-			if (!UT32_MUL (&size, nsym, sizeof (Elf_(Sym)))){
+			if (!UT32_MUL (&size, nsym, sizeof (Elf_(Sym)))) {
 				free (ret);
 				free (strtab);
 				free (sym);
 				return NULL;
 			}
 			if (size < 1 || size > bin->size ||
-			  bin->shdr[i].sh_offset > bin->size || bin->shdr[i].sh_offset+size > bin->size){
+					bin->shdr[i].sh_offset > bin->size ||
+					bin->shdr[i].sh_offset+size > bin->size) {
 				free (ret);
 				free (strtab);
 				free (sym);

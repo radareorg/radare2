@@ -87,6 +87,9 @@ static int rasm_show_help(int v) {
 		" -w           What's this instruction for? describe opcode\n"
 		" If '-l' value is greater than output length, output is padded with nops\n"
 		" If the last argument is '-' reads from stdin\n");
+	if (v) printf ("Environment:\n"
+		" RASM2_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
+		"");
 	return 0;
 }
 
@@ -210,7 +213,7 @@ int main(int argc, char *argv[]) {
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
 	char buf[R_ASM_BUFSIZE];
-	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL;
+	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL, *tmp;
 	ut64 offset = 0;
 	int fd =-1, dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
 	ut64 len = 0, idx = 0, skip = 0;
@@ -220,24 +223,30 @@ int main(int argc, char *argv[]) {
 
 	a = r_asm_new ();
 	anal = r_anal_new ();
-	l = r_lib_new ("radare_plugin");
-	r_lib_add_handler (l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
-		&__lib_asm_cb, &__lib_asm_dt, NULL);
-	r_lib_add_handler (l, R_LIB_TYPE_ANAL, "analysis/emulation plugins",
-		&__lib_anal_cb, &__lib_anal_dt, NULL);
-	path = r_sys_getenv ("LIBR_PLUGINS");
-	if (!path || !*path)
-		path = R2_LIBDIR"/radare2/"R2_VERSION;
-	r_lib_opendir (l, path);
-	if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
-		r_lib_opendir (l, R2_LIBDIR"/radare2-extras/"R2_VERSION);
-		r_lib_opendir (l, R2_LIBDIR"/radare2-bindings/"R2_VERSION);
-	}
-	if (1) {
-		char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
-		// eprintf ("OPENDIR (%s)\n", homeplugindir);
-		r_lib_opendir (l, homeplugindir);
-		free (homeplugindir);
+
+	if ((tmp = r_sys_getenv ("RASM2_NOPLUGINS"))) {
+		free (tmp);
+	} else {
+		l = r_lib_new ("radare_plugin");
+		r_lib_add_handler (l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
+			&__lib_asm_cb, &__lib_asm_dt, NULL);
+		r_lib_add_handler (l, R_LIB_TYPE_ANAL, "analysis/emulation plugins",
+			&__lib_anal_cb, &__lib_anal_dt, NULL);
+		path = r_sys_getenv ("LIBR_PLUGINS");
+		if (!path || !*path)
+			path = R2_LIBDIR"/radare2/"R2_VERSION;
+		r_lib_opendir (l, path);
+		if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
+			r_lib_opendir (l, R2_LIBDIR"/radare2-extras/"R2_VERSION);
+			r_lib_opendir (l, R2_LIBDIR"/radare2-bindings/"R2_VERSION);
+		}
+		if (1) {
+			char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
+			// eprintf ("OPENDIR (%s)\n", homeplugindir);
+			r_lib_opendir (l, homeplugindir);
+			free (homeplugindir);
+		}
+		free (tmp);
 	}
 
 	r_asm_use (a, R_SYS_ARCH);

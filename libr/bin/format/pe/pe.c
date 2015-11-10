@@ -191,7 +191,9 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 				snprintf (import_name, PE_NAME_LENGTH, "%s_Ordinal_%i",
 					dll_name, import_ordinal);
 				free (symdllname);
-				symdllname = strdup (dll_name);
+				strncpy (name, dll_name, sizeof (name)-1);
+				name[sizeof(name)-1] = 0;
+				symdllname = strdup (name);
 
 				// remove the trailling ".dll"
 				size_t len = strlen (symdllname);
@@ -237,19 +239,20 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					goto error;
 				}
 				len = r_buf_read_at (bin->b, off, (ut8*)&import_hint, sizeof (PE_Word));
-				if (len == -1 || len == 0) {
+				if (len < 1) {
 					eprintf ("Warning: read import hint at 0x%08"PFMT64x"\n", off);
 					goto error;
 				}
 				name[0] = '\0';
 				len = r_buf_read_at (bin->b, off + sizeof(PE_Word),
 							(ut8*)name, PE_NAME_LENGTH);
-				if (len == -1 || len == 0) {
+				if (len < 1) {
 					eprintf ("Warning: read (import name)\n");
 					goto error;
 				} else if (!*name) {
 					break;
 				}
+				name[PE_NAME_LENGTH] = '\0';
 				snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
 			}
 			if (!(*importp = realloc (*importp, (*nimp + 1) * sizeof(struct r_bin_pe_import_t)))) {
@@ -1987,15 +1990,15 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	char dll_name[PE_NAME_LENGTH + 1];
 	int nimp = 0;
 	PE_DWord dll_name_offset = 0;
+	PE_DWord paddr = 0;
 	PE_DWord import_func_name_offset;
 	PE_(image_import_directory) *curr_import_dir = NULL;
 	PE_(image_delay_import_directory) *curr_delay_import_dir = 0;
-	if (!bin)
-		return NULL;
 
-	if (bin->import_directory_offset + 32 >= bin->size) {
-		return NULL;
-	}
+	if (!bin) return NULL;
+	if (bin->import_directory_offset >= bin->size) return NULL;
+	if (bin->import_directory_offset + 32 >= bin->size) return NULL;
+
 	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
 		void *last;
 		curr_import_dir = (PE_(image_import_directory)*)(bin->b->buf + bin->import_directory_offset);
@@ -2014,14 +2017,19 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 				curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 				curr_import_dir->ForwarderChain != 0)) {
 			dll_name_offset = curr_import_dir->Name;
-			int rr = r_buf_read_at (bin->b,
-				bin_pe_vaddr_to_paddr(bin, dll_name_offset),
-				(ut8*)dll_name, PE_NAME_LENGTH);
+			paddr = bin_pe_vaddr_to_paddr (bin, dll_name_offset);
+			if (paddr > bin->size || paddr + PE_NAME_LENGTH > bin->size) {
+				eprintf ("Overflow detected\n");
+				return NULL;
+			}
+			int rr = r_buf_read_at (bin->b, paddr,
+						(ut8*)dll_name, PE_NAME_LENGTH);
 			if (rr != PE_NAME_LENGTH) {
 				eprintf ("Warning: read (magic)\n");
 				return NULL;
 			}
-			if (!bin_pe_parse_imports(bin, &imports, &nimp, dll_name,
+			dll_name[PE_NAME_LENGTH] = '\0';
+			if (!bin_pe_parse_imports (bin, &imports, &nimp, dll_name,
 					curr_import_dir->Characteristics,
 					curr_import_dir->FirstThunk)) {
 				break;
@@ -2045,12 +2053,18 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 		}
 
 		while ((curr_delay_import_dir->Name != 0) && (curr_delay_import_dir->DelayImportAddressTable !=0)) {
+			if (dll_name_offset > bin->size || dll_name_offset + PE_NAME_LENGTH > bin->size) {
+				eprintf ("Overflow detected\n");
+				return NULL;
+			}
 			int rr = r_buf_read_at (bin->b, dll_name_offset, (ut8*)dll_name, PE_NAME_LENGTH);
 			if (rr < 5) {
 				eprintf ("Warning: read (magic)\n");
 				return NULL;
 			}
-			if (!bin_pe_parse_imports(bin, &imports, &nimp, dll_name,
+
+			dll_name[PE_NAME_LENGTH] = '\0';
+			if (!bin_pe_parse_imports (bin, &imports, &nimp, dll_name,
 					import_func_name_offset,
 					curr_delay_import_dir->DelayImportAddressTable))
 				break;

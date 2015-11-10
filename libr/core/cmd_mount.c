@@ -1,4 +1,25 @@
-/* radare - LGPL - Copyright 2009-2014 // pancake */
+/* radare - LGPL - Copyright 2009-2015 // pancake */
+
+static int cmd_mkdir(void *data, const char *input) {
+	r_core_syscmd_mkdir (input);
+	return 0;
+}
+
+static int cmd_mv(void *data, const char *input) {
+	if (strlen (input)<3) {
+		eprintf ("Usage: mv src dst\n");
+		return 0;
+	}
+	input = input + 2;
+	if (!r_sandbox_enable(0)) {
+#if __WINDOWS__
+		r_sys_cmdf ("move %s", input);
+#else
+		r_sys_cmdf ("mv %s", input);
+#endif
+	}
+	return 0;
+}
 
 static int cmd_mount(void *data, const char *_input) {
 	ut64 off = 0;
@@ -10,6 +31,13 @@ static int cmd_mount(void *data, const char *_input) {
 	RFSPlugin *plug;
 	RFSPartition *part;
 	RCore *core = (RCore *)data;
+
+	if (!strncmp ("kdir", _input, 4)) {
+		return cmd_mkdir (data, _input);
+	}
+	if (!strncmp ("v", _input, 1)) {
+		return cmd_mv (data, _input);
+	}
 	input = oinput = strdup (_input);
 
 	switch (*input) {

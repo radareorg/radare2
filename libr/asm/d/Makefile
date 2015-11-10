@@ -1,4 +1,4 @@
-FILES=6502 x86 arm avr ppc z80 mips
+FILES=6502 x86 arm avr ppc z80 mips sparc
 F_SDB=$(addsuffix .sdb,${FILES})
 SDB=../../../shlr/sdb/sdb
 include ../../../config-user.mk
@@ -15,7 +15,6 @@ clean:
 .PHONY: all clean install install-symlink symstall uninstall
 
 # XXX rmdblslash not defined, but doesnt warns about it
-#OPDIR=$(call rmdblslash,${DESTDIR}${LIBDIR}/radare2/${VERSION}/opcodes)
 OPDIR=${DESTDIR}${LIBDIR}/radare2/${VERSION}/opcodes
 
 install: ${F_SDB}
@@ -27,7 +26,7 @@ install: ${F_SDB}
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
 	mkdir -p "${OPDIR}"
-	for a in *.sdb ; do ln -fs "${CWD}/$$a" "${OPDIR}/$$a" ; done
+	for FILE in *.sdb ; do ln -fs "${CWD}/$$FILE" "${OPDIR}/$$FILE" ; done
 
 uninstall:
 	rm -rf "${DESTDIR}${LIBDIR}/radare2/opcodes"

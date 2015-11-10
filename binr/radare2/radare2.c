@@ -153,6 +153,7 @@ static int main_help(int line) {
 		" MAGICPATH    "R_MAGIC_PATH"\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
 		" VAPIDIR      path to extra vapi directory\n"
+		" R2_NOPLUGINS do not load r2 shared plugins\n"
 		"Paths:\n"
 		" PREFIX       "R2_PREFIX"\n"
 		" INCDIR       "R2_INCDIR"\n"
@@ -209,7 +210,7 @@ int main(int argc, char **argv, char **envp) {
 	RThread *rabin_th = NULL;
 #endif
 	RListIter *iter;
-	char *cmdn;
+	char *cmdn, *tmp;
 	RCoreFile *fh = NULL;
 	const char *patchfile = NULL;
 	const char *prj = NULL;
@@ -221,7 +222,7 @@ int main(int argc, char **argv, char **envp) {
 	int fullfile = 0;
 	int has_project;
 	int prefile = 0;
-	int zerosep = 0;
+	bool zerosep = false;
 	int help = 0;
 	int run_anal = 1;
 	int run_rc = 1;
@@ -385,6 +386,10 @@ int main(int argc, char **argv, char **envp) {
 		return main_help (0);
 	}
 
+	if ((tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
+		r_config_set_i (r.config, "cfg.plugins", 0);
+		free (tmp);
+	}
 	if (r_config_get_i (r.config, "cfg.plugins")) {
 		r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 	}
@@ -561,6 +566,9 @@ int main(int argc, char **argv, char **envp) {
 							eprintf ("bits %d\n", obj->info->bits);
 					}
 					r_core_cmd0 (&r, ".dm*");
+					// Set Thumb Mode if necessary
+					r_core_cmd0 (&r, "dr? thumb;?? e asm.bits=16");
+					r_cons_reset ();
 				}
 			}
 		}
@@ -775,7 +783,6 @@ int main(int argc, char **argv, char **envp) {
 		// no flagspace selected by default the beginning
 		r.flags->space_idx = -1;
 		for (;;) {
-			r.zerosep = zerosep;
 #if USE_THREADS
 			do {
 				int err = r_core_prompt (&r, false);
@@ -824,10 +831,10 @@ int main(int argc, char **argv, char **envp) {
 		}
 	}
 #if __UNIX__
-	if (isatty(0)) {
+	if (isatty (0)) {
 #endif
-		 if (r_config_get_i(r.config, "scr.histsave") &&
-				r_config_get_i(r.config, "scr.interactive") &&
+		 if (r_config_get_i (r.config, "scr.histsave") &&
+				r_config_get_i (r.config, "scr.interactive") &&
 				!r_sandbox_enable (0))
 			r_line_hist_save (R2_HOMEDIR"/history");
 #if __UNIX__
@@ -844,5 +851,6 @@ int main(int argc, char **argv, char **envp) {
 	r_core_fini (&r);
 	r_cons_set_raw (0);
 	free (file);
+	r_str_const_free ();
 	return ret;
 }

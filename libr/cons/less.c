@@ -60,18 +60,32 @@ static void printpage (const char *line, int *index, RList **mla,
 
 static int *splitlines (char *s, int *lines_count) {
 	int lines_size = 128;
-	int *lines = malloc (lines_size*sizeof(int));
+	int *lines = NULL;
 	int i, row = 0;
 	int sidx = 0;
+
+	if (lines_size * sizeof(int) < lines_size) return NULL;
+	lines = malloc (lines_size * sizeof(int));
+	if (!lines) return NULL;
 	lines[row++] = 0;
-	for (i=0; s[i]; i++) {
-		if (row>=lines_size) {
+	for (i = 0; s[i]; i++) {
+		if (row >= lines_size) {
+			int *tmp;
 			lines_size += 128;
-			lines = realloc (lines, lines_size*sizeof(int));
+			if (lines_size * sizeof(int) < lines_size) {
+				free (lines);
+				return NULL;
+			}
+			tmp = realloc (lines, lines_size * sizeof(int));
+			if (!tmp) {
+				free (lines);
+				return NULL;
+			}
+			lines = tmp;
 		}
-		if (s[i]=='\n') {
+		if (s[i] == '\n') {
 			s[i] = 0;
-			lines[row++] = i+1;
+			lines[row++] = i + 1;
 		}
 		sidx++;
 	}
@@ -126,18 +140,18 @@ static int all_matches(const char *s, RRegex *rx, RList **mla,
 	return f;
 }
 
-R_API void r_cons_less_str(const char *str) {
+R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	int lines_count;
 	RRegex *rx = NULL;
 	int w, h, ch, to, ui = 1, from = 0, i;
 	const char *sreg;
 
-	if(str == NULL || str[0] == '\0') return;
+	if (str == NULL || str[0] == '\0') return 0;
 	char *p = strdup (str);
 	int *lines = splitlines (p, &lines_count);
 
 	RList **mla = malloc(lines_count * sizeof(RList *));
-	for(i = 0; i < lines_count; i++)
+	for (i = 0; i < lines_count; i++)
 		mla[i] = r_list_new();
 
 	r_cons_set_raw (true);
@@ -152,6 +166,15 @@ R_API void r_cons_less_str(const char *str) {
 		if (from<0) from = 0;
 		printpage (p, lines, mla, from, to, w);
 		ch = r_cons_readchar ();
+		if (exitkeys && strchr (exitkeys, ch)) {
+			for (i = 0; i < lines_count; i++) {
+				r_list_free(mla[i]);
+			}
+			free (mla);
+			free (p);
+			free (lines);
+			return ch;
+		}
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 		case ' ': from += h; break;
@@ -193,18 +216,21 @@ R_API void r_cons_less_str(const char *str) {
 			break;
 		}
 	}
-	for(i = 0; i < lines_count; i++) r_list_free(mla[i]);
-	free(mla);
-	if(rx) r_regex_free(rx);
+	for (i = 0; i < lines_count; i++) {
+		r_list_free(mla[i]);
+	}
+	free (mla);
+	if (rx) r_regex_free (rx);
 	free (lines);
 	free (p);
-	r_cons_reset_colors();
+	r_cons_reset_colors ();
 	r_cons_set_raw (false);
 	r_cons_show_cursor (true);
+	return 0;
 }
 
 R_API void r_cons_less() {
-	r_cons_less_str (r_cons_singleton ()->buffer);
+	r_cons_less_str (r_cons_singleton ()->buffer, NULL);
 }
 
 #if 0

@@ -738,9 +738,8 @@ R_API int r_asm_get_offset(RAsm *a, int type, int idx) { // link to rbin
 }
 
 R_API char *r_asm_describe(RAsm *a, const char* str) {
-	if (a->pair)
-		return sdb_get (a->pair, str, 0);
-	return NULL;
+	if (!a->pair) return NULL;
+	return sdb_get (a->pair, str, 0);
 }
 
 R_API RList* r_asm_get_plugins(RAsm *a) {

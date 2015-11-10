@@ -53,6 +53,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		opsize = -1;
 		goto beach;
 	}
+	if (!memcmp (buf, "\xff\xff", 2)) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->size = 2;
+		opsize = -1;
+		goto beach;
+	}
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->delay = 0;
 	opsize = op->size = insn->size;
@@ -96,12 +102,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case M68K_INS_BGT:
 	case M68K_INS_BLE:
 		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = IMM(0) - 0x100; // XXX wtf capstone bug
+		op->fail = addr + 2;
 		break;
 	case M68K_INS_BRA:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		break;
 	case M68K_INS_BSR:
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = IMM(0) - 0x100; // XXX wtf capstone bug
+		op->fail = addr + 2;
 		break;
 	case M68K_INS_BCHG:
 	case M68K_INS_BCLR:
@@ -506,12 +516,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 
 static int set_reg_profile(RAnal *anal) {
 	const char *p = \
-		"=pc    pc\n"
-		"=sp    sp\n"
-		"=a0    a0\n"
-		"=a1    a1\n"
-		"=a2    a2\n"
-		"=a3    a3\n"
+		"=PC    pc\n"
+		"=SP    sp\n"
+		"=A0    a0\n"
+		"=A1    a1\n"
+		"=A2    a2\n"
+		"=A3    a3\n"
 		"gpr	d0	.32	0	0\n"
 		"gpr	d1	.32	4	0\n"
 		"gpr	d2	.32	8	0\n"

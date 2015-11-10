@@ -53,16 +53,16 @@ static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
 static int set_reg_profile(RAnal *anal) {
 	const char *p = NULL;
 	p =
-	"=pc	pc\n"
-	"=sp	r1\n"
-	"=sr	srr1\n" // status register ??
-	"=a0	r3\n" // also for ret
-	"=a1	r4\n"
-	"=a2	r5\n"
-	"=a3	r6\n"
-	"=a4	r7\n"
-	"=a5	r8\n"
-	"=a6	r6\n"
+	"=PC	pc\n"
+	"=SP	r1\n"
+	"=SR	srr1\n" // status register ??
+	"=A0	r3\n" // also for ret
+	"=A1	r4\n"
+	"=A2	r5\n"
+	"=A3	r6\n"
+	"=A4	r7\n"
+	"=A5	r8\n"
+	"=A6	r6\n"
 	"gpr	srr0	.32	0	0\n"
 	"gpr	srr1	.32	4	0\n"
 	"gpr	r0	.32	8	0\n"

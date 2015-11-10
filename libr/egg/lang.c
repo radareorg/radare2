@@ -715,7 +715,7 @@ static void rcc_next(REgg *egg) {
 	int i;
 
 	if (setenviron) {
-		elem[elem_n-1] = 0;
+		elem[elem_n - 1] = 0;
 		r_sys_setenv (setenviron, elem);
 		R_FREE (setenviron);
 		return;
@@ -742,7 +742,9 @@ static void rcc_next(REgg *egg) {
 				r_egg_lang_parsechar (egg, *p);
 			free (q);
 			line = oline;
-		} else eprintf ("Cannot find '%s'\n", path);
+		} else {
+			eprintf ("Cannot find '%s'\n", path);
+		}
 		free (path);
 		return;
 	}
@@ -768,6 +770,7 @@ static void rcc_next(REgg *egg) {
 			//ocn = ptr+1; // what is the point of this?
 		}
 		ocn = skipspaces (callname);
+		if (!ocn) return;
 		str = r_egg_mkvar (egg, buf, ocn, 0);
 		if (!str) {
 			eprintf ("Cannot mkvar\n");
@@ -775,10 +778,9 @@ static void rcc_next(REgg *egg) {
 		}
 		if (*ocn=='.')
 			e->call (egg, str, 1);
-		else
 		if (!strcmp (str, "while")) {
 			char var[128];
-			if (lastctxdelta>=0)
+			if (lastctxdelta >= 0)
 				exit (eprintf ("ERROR: Unsupported while syntax\n"));
 			sprintf (var, "__begin_%d_%d_%d\n", nfunctions, CTX, nestedi[CTX-1]);
 			e->while_end (egg, var); //get_frame_label (1));
@@ -800,7 +802,7 @@ static void rcc_next(REgg *egg) {
 #endif
 			nargs = 0;
 		} else {
-			for (i=0; i<nsyscalls; i++) {
+			for (i = 0; i < nsyscalls; i++) {
 				if (!strcmp (str, syscalls[i].name)) {
 					p = syscallbody;
 					e->comment (egg, "set syscall args");
@@ -824,7 +826,7 @@ static void rcc_next(REgg *egg) {
 				}
 			}
 			if (docall)
-			for (i=0; i<ninlines; i++) {
+			for (i = 0; i < ninlines; i++) {
 				if (!strcmp (str, inlines[i].name)) {
 					p = inlines[i].body;
 					docall = 0;
@@ -841,7 +843,7 @@ static void rcc_next(REgg *egg) {
 				e->call (egg, str, 0);
 			}
 		}
-		if (nargs>0)
+		if (nargs > 0)
 			e->restore_stack (egg, nargs*e->size);
 		if (ocn) { // Used to call .var0()
 			/* XXX: Probably buggy and wrong */

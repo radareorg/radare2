@@ -34,32 +34,32 @@ R_API void r_reg_item_free(RRegItem *item) {
 }
 
 R_API int r_reg_get_name_idx(const char *type) {
-	if (type && *type != '\0')
-		switch (*type | (type[1]<<8)) {
-		/* flags */
-		case 'z'+('f'<<8): return R_REG_NAME_ZF;
-		case 's'+('f'<<8): return R_REG_NAME_SF;
-		case 'c'+('f'<<8): return R_REG_NAME_CF;
-		case 'o'+('f'<<8): return R_REG_NAME_OF;
-		/* gpr */
-		case 'p'+('c'<<8): return R_REG_NAME_PC;
-		case 's'+('r'<<8): return R_REG_NAME_SR;
-		case 's'+('p'<<8): return R_REG_NAME_SP;
-		case 'b'+('p'<<8): return R_REG_NAME_BP;
-		case 's'+('n'<<8): return R_REG_NAME_SN;
-		/* args */
-		case 'a'+('0'<<8): return R_REG_NAME_A0;
-		case 'a'+('1'<<8): return R_REG_NAME_A1;
-		case 'a'+('2'<<8): return R_REG_NAME_A2;
-		case 'a'+('3'<<8): return R_REG_NAME_A3;
-		case 'a'+('4'<<8): return R_REG_NAME_A4;
-		case 'a'+('5'<<8): return R_REG_NAME_A5;
-		case 'a'+('6'<<8): return R_REG_NAME_A6;
-		/* return values */
-		case 'r'+('0'<<8): return R_REG_NAME_R0;
-		case 'r'+('1'<<8): return R_REG_NAME_R1;
-		case 'r'+('2'<<8): return R_REG_NAME_R2;
-		case 'r'+('3'<<8): return R_REG_NAME_R3;
+	if (!type || !*type) return -1;
+	switch (*type | (type[1]<<8)) {
+	/* flags */
+	case 'Z'+('F'<<8): return R_REG_NAME_ZF;
+	case 'S'+('F'<<8): return R_REG_NAME_SF;
+	case 'C'+('F'<<8): return R_REG_NAME_CF;
+	case 'O'+('F'<<8): return R_REG_NAME_OF;
+	/* gpr */
+	case 'P'+('C'<<8): return R_REG_NAME_PC;
+	case 'S'+('R'<<8): return R_REG_NAME_SR;
+	case 'S'+('P'<<8): return R_REG_NAME_SP;
+	case 'B'+('P'<<8): return R_REG_NAME_BP;
+	case 'S'+('N'<<8): return R_REG_NAME_SN;
+	/* args */
+	case 'A'+('0'<<8): return R_REG_NAME_A0;
+	case 'A'+('1'<<8): return R_REG_NAME_A1;
+	case 'A'+('2'<<8): return R_REG_NAME_A2;
+	case 'A'+('3'<<8): return R_REG_NAME_A3;
+	case 'A'+('4'<<8): return R_REG_NAME_A4;
+	case 'A'+('5'<<8): return R_REG_NAME_A5;
+	case 'A'+('6'<<8): return R_REG_NAME_A6;
+	/* return values */
+	case 'R'+('0'<<8): return R_REG_NAME_R0;
+	case 'R'+('1'<<8): return R_REG_NAME_R1;
+	case 'R'+('2'<<8): return R_REG_NAME_R2;
+	case 'R'+('3'<<8): return R_REG_NAME_R3;
 	}
 	return -1;
 }
@@ -75,6 +75,18 @@ R_API int r_reg_set_name(RReg *reg, int role, const char *name) {
 R_API const char *r_reg_get_name(RReg *reg, int role) {
 	if (reg && role>=0 && role<R_REG_NAME_LAST)
 		return reg->name[role];
+	return NULL;
+}
+
+static const char *roles[R_REG_NAME_LAST+1] = {
+	"PC", "SP", "SR", "BP", "Ao", "A1",
+	"A2", "A3", "A4", "A5", "A6", "ZF",
+	"SF", "CF", "OF", "SB", NULL
+};
+
+R_API const char *r_reg_get_role(int role) {
+	if (role>=0 && role<R_REG_NAME_LAST)
+		return roles[role];
 	return NULL;
 }
 

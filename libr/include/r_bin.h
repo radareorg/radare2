@@ -192,6 +192,7 @@ typedef struct r_bin_t {
 	int filter; // symbol filtering
 	char strfilter; // string filtering
 	int strpurge; // purge false positive strings
+	char *srcdir; // dir.source
 	char *prefix; // bin.prefix
 } RBin;
 
@@ -266,6 +267,7 @@ typedef struct r_bin_plugin_t {
 	char* (*demangle)(const char *str);
 	/* default value if not specified by user */
 	int minstrlen;
+	char strfilter;
 	void *user;
 } RBinPlugin;
 
@@ -300,13 +302,17 @@ typedef struct r_bin_class_t {
 // bin.sections.get_by_name(SectionName, ".text");
 
 typedef struct r_bin_symbol_t {
-	char name[R_BIN_SIZEOF_STRINGS+1];
-	char forwarder[R_BIN_SIZEOF_STRINGS+1];
-	char bind[R_BIN_SIZEOF_STRINGS+1];
-	char type[R_BIN_SIZEOF_STRINGS+1];
-	char visibility_str[R_BIN_SIZEOF_STRINGS+1];
-	char classname[R_BIN_SIZEOF_STRINGS+1];
-	char descriptor[R_BIN_SIZEOF_STRINGS+1];
+	/* heap-allocated */
+	char *name;
+	char *classname;
+	/* const-unique-strings */
+	const char *forwarder;
+	const char *bind;
+	const char *type;
+	/* only used by java */
+	const char *visibility_str;
+	// ----------------
+	//char descriptor[R_BIN_SIZEOF_STRINGS+1];
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 size;
@@ -316,11 +322,11 @@ typedef struct r_bin_symbol_t {
 } RBinSymbol;
 
 typedef struct r_bin_import_t {
-	char name[R_BIN_SIZEOF_STRINGS+1];
-	char bind[R_BIN_SIZEOF_STRINGS+1];
-	char type[R_BIN_SIZEOF_STRINGS+1];
-	char classname[R_BIN_SIZEOF_STRINGS+1];
-	char descriptor[R_BIN_SIZEOF_STRINGS+1];
+	char *name;
+	const char *bind;
+	const char *type;
+	char *classname;
+	char *descriptor;
 	ut32 ordinal;
 	ut32 visibility;
 } RBinImport;
@@ -338,7 +344,7 @@ typedef struct r_bin_reloc_t {
 
 typedef struct r_bin_string_t {
 	// TODO: rename string->name (avoid colisions)
-	char string[R_BIN_SIZEOF_STRINGS+1];
+	char *string;
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 ordinal;
@@ -348,14 +354,14 @@ typedef struct r_bin_string_t {
 } RBinString;
 
 typedef struct r_bin_field_t {
-	char name[R_BIN_SIZEOF_STRINGS+1];
+	char *name;
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 visibility;
 } RBinField;
 
 typedef struct r_bin_mem_t {	//new toy for esil-init
-	char name[R_BIN_SIZEOF_STRINGS+1];
+	char *name;
 	ut64 addr;
 	int size;
 	int perms;
@@ -540,6 +546,7 @@ extern RBinPlugin r_bin_plugin_ningb;
 extern RBinPlugin r_bin_plugin_ningba;
 extern RBinPlugin r_bin_plugin_ninds;
 extern RBinPlugin r_bin_plugin_xbe;
+extern RBinPlugin r_bin_plugin_mdmp;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
 extern RBinPlugin r_bin_plugin_zimg;
@@ -548,6 +555,8 @@ extern RBinPlugin r_bin_plugin_art;
 extern RBinPlugin r_bin_plugin_dol;
 extern RBinPlugin r_bin_plugin_nes;
 extern RBinPlugin r_bin_plugin_mbn;
+extern RBinPlugin r_bin_plugin_smd;
+extern RBinPlugin r_bin_plugin_sms;
 
 #ifdef __cplusplus
 }

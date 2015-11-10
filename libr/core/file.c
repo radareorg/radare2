@@ -134,7 +134,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	if (isdebug) {
 		r_core_cmd0 (core, ".dm*");
 		r_core_cmd0 (core, ".dr*");
-		r_core_cmd0 (core, "sr pc");
+		r_core_cmd0 (core, "sr PC");
 	}
 	// This is done to ensure that the file is correctly
 	// loaded into the view
@@ -376,6 +376,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 
 	if (!desc) return false;
 	r_io_use_desc (r->io, desc);
+
 	if ( !r_bin_load_io (r->bin, desc, baseaddr, loadaddr, xtr_idx)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return false;
@@ -383,8 +384,13 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
-	if ( plugin && strncmp (plugin->name, "any", 5)==0 ) {
+	if (plugin && !strcmp (plugin->name, "any") ) {
+		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinInfo * info = obj ? obj->info : NULL;
+		if (!info) return false;
 		// set use of raw strings
+		r_core_bin_set_arch_bits (r, binfile->file,
+					info->arch, info->bits);
 		r_config_set_i (r->config, "io.va", false);
 		// r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
@@ -393,6 +399,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	} else if (binfile) {
 		RBinObject *obj = r_bin_get_object (r->bin);
 		RBinInfo * info = obj ? obj->info : NULL;
+		if (!info) return false;
 		if (plugin && strcmp (plugin->name, "any") && info) {
 			r_core_bin_set_arch_bits (r, binfile->file,
 				info->arch, info->bits);
@@ -458,6 +465,12 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (cf && binfile && desc)
 		binfile->fd = desc->fd;
 	binfile = r_bin_cur (r->bin);
+	if (r->bin->cur && r->bin->cur->curplugin && r->bin->cur->curplugin->strfilter) {
+		char msg[2];
+		msg[0] = r->bin->cur->curplugin->strfilter;
+		msg[1] = 0;
+		r_config_set (r->config, "bin.strfilter", msg);
+	}
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && plugin->name && !strncmp (plugin->name, "any", 3)) {
@@ -471,9 +484,10 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		RBinObject *obj = r_bin_get_object (r->bin);
 		RBinInfo * info = obj ? obj->info : NULL;
 		if (plugin && plugin->name && info)
-			if (strcmp (plugin->name, "any"))
+			if (strcmp (plugin->name, "any")) {
 				r_core_bin_set_arch_bits (r, binfile->file,
 					info->arch, info->bits);
+			}
 	}
 	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ;"

@@ -1,0 +1,4 @@
+sym.imp.user32.dll_LoadIconA=ps HINSTANCE:hInstance LPCTSTR:lpIconName
+sym.imp.msvcrt.dll_printf=s format
+sym.imp.kernel32.dll_CreateActCtxA=p PACTCTX:pActCtx
+sym.imp.user32.dll_LoadStringA=pxsi HINSTANCE:hInstance UINT:uID LPTSTR:lpBuffer int:nBufferMax

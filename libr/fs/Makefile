@@ -10,7 +10,7 @@ LDFLAGS+=$(SHLR)/grub/libgrubfs.a
 
 EXTRA_TARGETS=plugins
 foo:
-	for a in pre plugins ${LIBSO} ${LIBAR} ; do ${MAKE} $$a ; done
+	for TARGET in pre plugins ${LIBSO} ${LIBAR} ; do ${MAKE} $$TARGET ; done
 
 include ${STATIC_FS_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst fs_,p/fs_,$(STATIC_OBJ)))

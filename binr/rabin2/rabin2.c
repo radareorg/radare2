@@ -52,7 +52,7 @@ static int rabin_show_help(int v) {
 		"              [-o str] [-O str] [-k query] [-D lang symname] | file\n");
 	if (v) printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
-		" -A              list archs\n"
+		" -A              list sub-binaries and their arch-bits pairs\n"
 		" -a [arch]       set arch (x86, arm, .. or <arch>_<bits>)\n"
 		" -b [bits]       set bits (32, 64 ...)\n"
 		" -B [addr]       override base address (pie bins)\n"
@@ -101,6 +101,7 @@ static int rabin_show_help(int v) {
 	if (v) {
 		printf ("Environment:\n"
 		" RABIN2_LANG:      e bin.lang       # assume lang for demangling\n"
+		" RABIN2_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
 		" RABIN2_DEMANGLE:  e bin.demangle   # show symbols demangled\n"
 		" RABIN2_MAXSTRBUF: e bin.maxstrbuf  # specify maximum buffer size\n"
 		" RABIN2_STRFILTER: e bin.strfilter  # r2 -qe bin.strfilter=? -c '' --\n"
@@ -140,6 +141,10 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 	int res = false;
 
 	if (!bf || !o || !filename ) return false;
+	if (bin_size == bf->size && bin_size) {
+		eprintf ("This is not a fat bin\n");
+		return false;
+	}
 	bytes = r_buf_buffer (bf->buf);
 	if (!bytes) {
 		eprintf ("error: BinFile buffer is empty\n");
@@ -209,7 +214,7 @@ static int rabin_extract(int all) {
 	if (!bf) return res;
 	if (all) {
 		int idx = 0;
-		RListIter *iter = NULL;
+		RListIter *iter;
 		r_list_foreach (bf->objs, iter, obj)
 			res = extract_binobj (bf, obj, idx++);
 	} else {
@@ -259,6 +264,7 @@ static int rabin_dump_sections(char *scnname) {
 	RBinSection *section;
 	ut8 *buf;
 	char *ret;
+	int r;
 
 	if ((sections = r_bin_get_sections (bin)) == NULL)
 		return false;
@@ -267,11 +273,27 @@ static int rabin_dump_sections(char *scnname) {
 		if (!strcmp (scnname, section->name)) {
 			if (!(buf = malloc (section->size)))
 				return false;
+			if ((section->size * 2) + 1 < section->size) {
+				free (buf);
+				return false;
+			}
 			if (!(ret = malloc (section->size*2+1))) {
 				free (buf);
 				return false;
 			}
-			r_buf_read_at (bin->cur->buf, section->paddr, buf, section->size);
+			if (section->paddr > bin->cur->buf->length ||
+			section->paddr + section->size > bin->cur->buf->length) {
+				free (buf);
+				free (ret);
+				return false;
+			}
+			r = r_buf_read_at (bin->cur->buf, section->paddr,
+					buf, section->size);
+			if (r < 1) {
+				free (buf);
+				free (ret);
+				return false;
+			}
 			if (output) {
 				r_file_dump (output, buf, section->size, 0);
 			} else {
@@ -396,16 +418,22 @@ int main(int argc, char **argv) {
 
 	r_core_init (&core);
 	bin = core.bin;
-	l = r_lib_new ("radare_plugin");
-	r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
-			   &__lib_bin_cb, &__lib_bin_dt, NULL);
-	r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
-			   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
 
-	/* load plugins everywhere */
-	r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
-	r_lib_opendir (l, homeplugindir);
-	r_lib_opendir (l, R2_LIBDIR"/radare2/"R2_VERSION);
+	if ((tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
+		free (tmp);
+	} else {
+		l = r_lib_new ("radare_plugin");
+		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
+				   &__lib_bin_cb, &__lib_bin_dt, NULL);
+		r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
+				   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
+
+		/* load plugins everywhere */
+		r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
+		r_lib_opendir (l, homeplugindir);
+		r_lib_opendir (l, R2_LIBDIR"/radare2/"R2_VERSION);
+		free (tmp);
+	}
 
 	if ((tmp = r_sys_getenv ("RABIN2_LANG"))) {
 		r_config_set (core.config, "bin.lang", tmp);

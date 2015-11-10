@@ -32,9 +32,9 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend) {
                 r_core_cmdf (r, "dcu %s", bep);
 		}
 	}
-	r_core_cmd (r, "sr pc", 0);
+	r_core_cmd (r, "sr PC", 0);
 	if (r_config_get_i (r->config, "dbg.status")) {
-		r_config_set (r->config, "cmd.prompt", ".dr* ; drd ; sr pc;pi 1;s-");
+		r_config_set (r->config, "cmd.prompt", ".dr*;drd;sr PC;pi 1;s-");
 	} else r_config_set (r->config, "cmd.prompt", ".dr*");
 	r_config_set (r->config, "cmd.vprompt", ".dr*");
 	return true;
@@ -437,9 +437,11 @@ R_API int r_core_block_read(RCore *core, int next) {
 	}
 	if (core->file && core->switch_file_view) {
 		r_io_use_desc (core->io, core->file->desc);
-		r_core_bin_set_by_fd (core, core->file->desc->fd);	//needed?
+		r_core_bin_set_by_fd (core, core->file->desc->fd); //needed?
 		core->switch_file_view = 0;
-	} else	r_io_use_fd (core->io, core->io->raised);		//possibly not needed
+	} else	{
+		r_io_use_fd (core->io, core->io->raised); //possibly not needed
+	}
 	return r_io_read_at (core->io, core->offset+((next)?core->blocksize:0), core->block, core->blocksize);
 }
 

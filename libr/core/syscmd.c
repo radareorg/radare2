@@ -142,7 +142,7 @@ R_API void r_core_syscmd_ls(const char *input) {
 			memcpy (d, path, off);
 			path = (const char *)d;
 			pattern = strdup (p+1);
-		}else {
+		} else {
 			pattern = strdup (path);
 			path = ".";
 		}

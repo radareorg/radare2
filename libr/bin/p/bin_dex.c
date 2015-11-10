@@ -186,9 +186,10 @@ static RList* strings (RBinFile *arch) {
 		r_buf_read_at (bin->b, bin->strings[i], (ut8*)&buf, 6);
 		len = dex_read_uleb128 (buf);
 		if (len>1 && len < R_BIN_SIZEOF_STRINGS) {
+			ptr->string = malloc (len + 1);
 			r_buf_read_at (bin->b, bin->strings[i]+dex_uleb128_len (buf),
-					(ut8*)&ptr->string, len);
-			ptr->string[(int) len+1]='\0';
+					(ut8*)ptr->string, len);
+			ptr->string[len] = 0;
 			ptr->vaddr = ptr->paddr = bin->strings[i];
 			ptr->size = len;
 			ptr->length = len;
@@ -339,7 +340,6 @@ static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
 
 static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct dex_class_t *c, RBinClass *cls) {
 	int i, *methods;
-	char *name;
 	ut64 SF, IF, DM, VM;
 	const ut8 *p, *p_end;
 	char *class_name;
@@ -353,7 +353,7 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 	if (!class_name) {
 		return NULL;
 	}
-	methods = calloc (sizeof (ut32), bin->header.method_size);
+	methods = calloc (sizeof (int), bin->header.method_size);
 	if (!methods) {
 		free (class_name);
 		return false;
@@ -419,52 +419,55 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 		dprintf ("METHOD NAME %u\n", (ut32)MI);
 		if (!method_name) method_name = strdup ("unknown");
 		flag_name = flagname (class_name, method_name);
+		if (!flag_name)
+			continue;
 		dprintf ("f %s @ 0x%x\n", flag_name, (ut32)MC);
 		dprintf ("    { name: %d %d %s,\n", (ut32)MC, (ut32)MI, method_name);
 		dprintf ("      idx: %u,\n", (ut32)MI);
 		dprintf ("      access_flags: 0x%x,\n", (ut32)MA);
 		dprintf ("      code_offset: 0x%x },\n", (ut32)MC);
 		/* add symbol */
-		if (flag_name && *flag_name) {
+		if (*flag_name) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			strncpy (sym->name, flag_name, sizeof (sym->name)-1);
-			strcpy (sym->type, "FUNC");
+			sym->name = flag_name;
+			sym->type = r_str_const ("FUNC");
 			sym->paddr = sym->vaddr = MC;
 			if (MC>0) { /* avoid methods at 0 paddr */
 #if 0
-// TODO: use sdb+pf to show method header
-ut16 regsz;
-ut16 ins_size
-ut16 outs_size
-ut16 tries_size
-ut32 debug_info_off
-ut32 insns_size
-ut16[insn_size] insns;
-ut16 padding = 0
-try_item[tries_size] tries
-encoded_catch_handler_list handlers
+				// TODO: use sdb+pf to show method header
+				ut16 regsz;
+				ut16 ins_size
+				ut16 outs_size
+				ut16 tries_size
+				ut32 debug_info_off
+				ut32 insns_size
+				ut16[insn_size] insns;
+				ut16 padding = 0
+				try_item[tries_size] tries
+				encoded_catch_handler_list handlers
 #endif
 				sym->paddr += 0x10;
 				r_list_append (bin->methods_list, sym);
+// this causes an invalid flag name issue
 				if (cls) {
-					if (!cls->methods) {
+					if (!cls->methods)
 						cls->methods = r_list_new ();
-					}
 					r_list_append (cls->methods, sym);
 				}
 				/* cache in sdb */
 				if (!mdb) {
 					mdb = sdb_new0 ();
 				}
-				sdb_num_set (mdb, sdb_fmt(0, "method.%d", MI), sym->paddr, 0);
+				sdb_num_set (mdb, sdb_fmt (0, "method.%d", MI), sym->paddr, 0);
 			} else {
 				//r_list_append (bin->methods_list, sym);
 				// XXX memleak sym
 				free (sym);
 			}
+		} else {
+			free (flag_name);
 		}
 		free (method_name);
-		free (flag_name);
 	}
 	/* virtual methods */
 	dprintf ("  virtual methods: %u\n", (ut32)VM);
@@ -478,7 +481,7 @@ encoded_catch_handler_list handlers
 		if (MC>0 && bin->code_from>MC) bin->code_from = MC;
 		if (MC>0 && bin->code_to<MC) bin->code_to = MC;
 
-		name = dex_method_name (bin, MI);
+		char *name = dex_method_name (bin, MI);
 		dprintf ("    method name: %s\n", name);
 		dprintf ("    method_idx: %u\n", (ut32)MI);
 		dprintf ("    method access_flags: %u\n", (ut32)MA);
@@ -554,10 +557,10 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				char *method_name = dex_method_name (bin, i);
 				dprintf ("import %d (%s)\n", i, method_name);
 				if (method_name && *method_name) {
-					RBinSymbol *sym = R_NEW0 (RBinSymbol);
-					strncpy (sym->name, method_name, R_BIN_SIZEOF_STRINGS);
-					strcpy (sym->type, "FUNC");
-					sym->paddr = sym->vaddr = 0; // UNKNOWN
+					RBinImport *sym = R_NEW0 (RBinImport);
+					sym->name = strdup (method_name);
+					sym->type = r_str_const ("FUNC");
+					//sym->paddr /= sym->vaddr = 0; // UNKNOWN
 					r_list_append (bin->imports_list, sym);
 				}
 				free (method_name);
@@ -700,8 +703,8 @@ static RList* classes (RBinFile *arch) {
 			class->name = cn;
 			//class->addr = class_addr;
 
-		int *methods = parse_class (arch, bin, &entry, class);
-		free (methods);
+			int *methods = parse_class (arch, bin, &entry, class);
+			free (methods);
 
 			r_list_append (ret, class);
 			dprintf ("class.%s=%d\n", name[0]==12?name+1:name, entry.class_id);
@@ -897,17 +900,12 @@ struct r_bin_plugin_t r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
-	.destroy = NULL,
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
-	.binsym = NULL,
 	.entries = entries,
 	.classes = classes,
 	.sections = sections,
@@ -915,12 +913,7 @@ struct r_bin_plugin_t r_bin_plugin_dex = {
 	.imports = imports,
 	.strings = strings,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.dbginfo = NULL,
 	.size = &size,
-	.write = NULL,
 	.get_offset = &getoffset
 };
 

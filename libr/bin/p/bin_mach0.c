@@ -140,11 +140,11 @@ static RList* symbols(RBinFile *arch) {
 		if (!symbols[i].name[0] || symbols[i].addr<100) continue;
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
-		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, (symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
-			"LOCAL":"GLOBAL" , R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
+		ptr->name = strdup ((char*)symbols[i].name);
+		ptr->forwarder = r_str_const ("NONE");
+		ptr->bind = r_str_const ((symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
+			"LOCAL":"GLOBAL");
+		ptr->type = r_str_const ("FUNC");
 		ptr->vaddr = symbols[i].addr;
 		ptr->paddr = symbols[i].offset+obj->boffset;
 		ptr->size = symbols[i].size;
@@ -174,10 +174,10 @@ static RList* symbols(RBinFile *arch) {
 			ptr->vaddr = bin->baddr + address;
 			ptr->paddr = address;
 			ptr->size = 0;
-			strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
-			strncpy (ptr->name, r_str_newf ("func.%08"PFMT64x, ptr->vaddr), R_BIN_SIZEOF_STRINGS);
-			strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-			strncpy (ptr->bind, "LOCAL", R_BIN_SIZEOF_STRINGS);
+			ptr->name = r_str_newf ("func.%08"PFMT64x, ptr->vaddr);
+			ptr->type = r_str_const ("FUNC");
+			ptr->forwarder = r_str_const ("NONE");
+			ptr->bind = r_str_const ("LOCAL");
 			ptr->ordinal = i++;
 			r_list_append (ret, ptr);
 		}
@@ -224,9 +224,9 @@ static RList* imports(RBinFile *arch) {
 		// Remove the extra underscore that every import seems to have in Mach-O.
 		if (*name == '_')
 			name++;
-		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS-1);
-		strncpy (ptr->name, name, R_BIN_SIZEOF_STRINGS-1);
-		strncpy (ptr->type, type, R_BIN_SIZEOF_STRINGS-1);
+		ptr->name = strdup (name);
+		ptr->bind = r_str_const ("NONE");
+		ptr->type = r_str_const (type);
 		ptr->ordinal = imports[i].ord;
 		if (bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size)
 			bin->imports_by_ord[ptr->ordinal] = ptr;

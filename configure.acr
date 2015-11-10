@@ -108,16 +108,16 @@ IFEQ USEROSTYPE auto ; {
 		DL_LIBS = -ldl ;
 	}{
 	IFEQ HOST_OS gnu/kfreebsd ; {
-		USEROSTYPE = gnulinux ;
+		USEROSTYPE = bsd ;
 	}{
 	IFEQ HOST_OS netbsd ; {
-		USEROSTYPE = gnulinux ;
+		USEROSTYPE = bsd ;
 	}{
 	IFEQ HOST_OS freebsd ; {
-		USEROSTYPE = gnulinux ;
+		USEROSTYPE = bsd ;
 	}{
 	IFEQ HOST_OS openbsd ; {
-		USEROSTYPE = gnulinux ;
+		USEROSTYPE = bsd ;
 	}{
 	IFEQ HOST_OS darwin ; {
 		USEROSTYPE = darwin ;

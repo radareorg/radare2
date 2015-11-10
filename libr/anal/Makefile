@@ -1,8 +1,9 @@
 include ../config.mk
+EXTRA_TARGETS+=do
+EXTRA_CLEAN=doclean
 
 NAME=r_anal
 DEPS=r_util r_db r_reg r_syscall
-# r_core (commented as it would be recursive)
 CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
 
 LDFLAGS+=${BN_LIBS}
@@ -37,5 +38,13 @@ test tests: tests-esil
 tests-esil:
 	cd ../../radare2-regressions ; \
 		sh run_tests.sh t.esil
+
+.PHONY: do doclean
+
+do:
+	${MAKE} -C d
+
+doclean:
+	${MAKE} -C d clean
 
 include $(LTOP)/rules.mk

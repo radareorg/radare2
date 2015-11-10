@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2013 - nibble, pancake */
+/* radare2 - LGPL - Copyright 2009-2015 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -66,8 +66,10 @@ static RList* entries(RBinFile *arch) {
 static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
+	int big_endian = 0;
 	ut64 textsize, datasize, symssize, spszsize, pcszsize;
-	int big_endian = arch->o->info->big_endian;
+	if (!arch->o->info) return NULL;
+	big_endian = arch->o->info->big_endian;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -182,6 +184,7 @@ static int size(RBinFile *arch) {
 	int big_endian;
 	if (!arch->o->info)
 		arch->o->info = info (arch);
+	if (!arch->o->info) return 0;
 	big_endian = arch->o->info->big_endian;
 	// TODO: reuse section list
 	text = r_mem_get_num (arch->buf->buf+4, 4, big_endian);

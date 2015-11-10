@@ -39,8 +39,13 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		perror ("malloc (ret)");
 		return NULL;
 	}
-	curoffset = bin->hdr.startaddr+idx*32;
-	libla = *(ut64*)(bin->b->buf+curoffset);
+	curoffset = bin->hdr.startaddr + idx * 32;
+	if (curoffset + 8 >= bin->size) {
+		perror ("oob thing");
+		free (ret);
+		return NULL;
+	}
+	libla = *(ut64*)(bin->b->buf + curoffset);
 	liboff = libla - *(ut64*)&bin->b->buf[bin->hdr.baseaddroff];
 	if (liboff > bin->size) {
 		eprintf ("Corrupted file\n");
@@ -138,16 +143,14 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	/* Fill r_bin_dyldcache_lib_t ret */
 	ret->b = dbuf;
 	libname = (char*)(bin->b->buf+libpath);
-	strncpy (ret->path, libname, sizeof (ret->path)-1);
+	strncpy (ret->path, libname, sizeof (ret->path) - 1);
 	ret->size = libsz;
 	return ret;
 }
 
 void* r_bin_dyldcache_free(struct r_bin_dyldcache_obj_t* bin) {
-	if (!bin)
-		return NULL;
-	if (bin->b)
-		r_buf_free (bin->b);
+	if (!bin) return NULL;
+	if (bin->b) r_buf_free (bin->b);
 	free(bin);
 	return NULL;
 }
@@ -159,16 +162,16 @@ struct r_bin_dyldcache_obj_t* r_bin_dyldcache_new(const char* file) {
 		return NULL;
 	memset (bin, 0, sizeof (struct r_bin_dyldcache_obj_t));
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
-		return r_bin_dyldcache_free(bin);
+	if (!(buf = (ut8*)r_file_slurp (file, &bin->size)))
+		return r_bin_dyldcache_free (bin);
 	bin->b = r_buf_new();
-	if (!r_buf_set_bytes(bin->b, buf, bin->size)) {
+	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {
 		free (buf);
-		return r_bin_dyldcache_free(bin);
+		return r_bin_dyldcache_free (bin);
 	}
 	free (buf);
-	if (!r_bin_dyldcache_init(bin))
-		return r_bin_dyldcache_free(bin);
+	if (!r_bin_dyldcache_init (bin))
+		return r_bin_dyldcache_free (bin);
 	return bin;
 }
 
@@ -178,11 +181,11 @@ struct r_bin_dyldcache_obj_t* r_bin_dyldcache_from_bytes_new(const ut8* buf, ut6
 		return NULL;
 	memset (bin, 0, sizeof (struct r_bin_dyldcache_obj_t));
 	if (!buf)
-		return r_bin_dyldcache_free(bin);
+		return r_bin_dyldcache_free (bin);
 	bin->b = r_buf_new();
-	if (!r_buf_set_bytes(bin->b, buf, size))
-		return r_bin_dyldcache_free(bin);
-	if (!r_bin_dyldcache_init(bin))
-		return r_bin_dyldcache_free(bin);
+	if (!r_buf_set_bytes (bin->b, buf, size))
+		return r_bin_dyldcache_free (bin);
+	if (!r_bin_dyldcache_init (bin))
+		return r_bin_dyldcache_free (bin);
 	return bin;
 }

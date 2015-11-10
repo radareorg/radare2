@@ -201,6 +201,52 @@ static void cmd_write_value (RCore *core, const char *input) {
 	r_core_block_read (core, 0);
 }
 
+static bool cmd_wf(RCore *core, const char *input) {
+	ut8 *buf;
+	int size;
+	const char *arg = input + ((input[1] == ' ') ? 2 : 1);
+	int wseek = r_config_get_i (core->config, "cfg.wseek");
+	char *p, *a = r_str_chop (strdup (arg));
+	// XXX: file names cannot contain spaces
+	p = strchr (a, ' ');
+	if (p) *p++ = 0;
+
+	if (*arg =='?' || !*arg) {
+		eprintf ("Usage: wf [file] ([size] ([offset]))\n");
+	}
+	if (!strcmp (arg, "-")) {
+		char *out = r_core_editor (core, NULL, NULL);
+		if (out) {
+			r_io_write_at (core->io, core->offset,
+				(ut8*)out, strlen (out));
+			free (out);
+		}
+	}
+	if ((buf = (ut8*) r_file_slurp (a, &size))) {
+		int u_size = size;
+		int u_offset = 0;
+		u_size = r_num_math (core->num, p);
+		if (u_size < 1) u_size = size;
+		if (p) {
+			*p++ = 0;
+			u_offset = r_num_math (core->num, p);
+			if (u_offset > size) {
+				eprintf ("Invalid offset\n");
+				free (buf);
+				return false;
+			}
+		}
+		r_io_use_desc (core->io, core->file->desc);
+		r_io_write_at (core->io, core->offset, buf + u_offset, u_size);
+		WSEEK (core, size);
+		free (buf);
+		r_core_block_read (core, 0);
+	} else {
+		eprintf ("Cannot open file '%s'\n", arg);
+	}
+	return true;
+}
+
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input) {
 	int wseek, i, size, len = strlen (input);
@@ -752,22 +798,7 @@ static int cmd_write(void *data, const char *input) {
 		}
 		break;
 	case 'f':
-		arg = (const char *)(input+((input[1]==' ')?2:1));
-		if (!strcmp (arg, "-")) {
-			char *out = r_core_editor (core, NULL, NULL);
-			if (out) {
-				r_io_write_at (core->io, core->offset,
-					(ut8*)out, strlen (out));
-				free (out);
-			}
-		} else
-		if ((buf = (ut8*) r_file_slurp (arg, &size))) {
-			r_io_use_desc (core->io, core->file->desc);
-			r_io_write_at (core->io, core->offset, buf, size);
-			WSEEK (core, size);
-			free (buf);
-			r_core_block_read (core, 0);
-		} else eprintf ("Cannot open file '%s'\n", arg);
+		cmd_wf (core, input);
 		break;
 	case 'F': // wF
 		arg = (const char *)(input+((input[1]==' ')?2:1));

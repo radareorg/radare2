@@ -401,13 +401,14 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 
 static int set_reg_profile(RAnal *anal) {
 	// TODO: support 64bit profile
-	const char *p32 = "=pc	r15\n"
-		"=sp	r13\n" 
-		"=bp	r14\n" // XXX
-		"=a0	r0\n"
-		"=a1	r1\n"
-		"=a2	r2\n"
-		"=a3	r3\n"
+	const char *p32 =
+		"=PC	r15\n"
+		"=SP	r13\n" 
+		"=BP	r14\n" // XXX
+		"=A0	r0\n"
+		"=A1	r1\n"
+		"=A2	r2\n"
+		"=A3	r3\n"
 		"gpr	lr	.32	56	0\n" // r14
 		"gpr	pc	.32	60	0\n" // r15
 

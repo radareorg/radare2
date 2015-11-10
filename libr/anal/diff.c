@@ -11,6 +11,7 @@ R_API RAnalDiff *r_anal_diff_new() {
 		diff->addr = -1;
 		diff->dist = 0;
 		diff->name = NULL;
+		diff->size = 0;
 	}
 	return diff;
 }
@@ -135,6 +136,8 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) {
 			R_FREE (mbb2->fingerprint);
 			mbb->diff->addr = mbb2->addr;
 			mbb2->diff->addr = mbb->addr;
+			mbb->diff->size = mbb2->size;
+			mbb2->diff->size = mbb->size;
 		} else
 			fcn->diff->type = fcn2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
 	}
@@ -176,6 +179,8 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 			R_FREE (fcn2->fingerprint);
 			fcn->diff->addr = fcn2->addr;
 			fcn2->diff->addr = fcn->addr;
+			fcn->diff->size = fcn2->size;
+			fcn2->diff->size = fcn->size;
 			R_FREE (fcn->diff->name);
 			if (fcn2->name)
 				fcn->diff->name = strdup (fcn2->name);
@@ -239,6 +244,8 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 			R_FREE (mfcn2->fingerprint);
 			mfcn->diff->addr = mfcn2->addr;
 			mfcn2->diff->addr = mfcn->addr;
+			mfcn->diff->size = mfcn2->size;
+			mfcn2->diff->size = mfcn->size;
 			R_FREE (mfcn->diff->name);
 			if (mfcn2->name)
 				mfcn->diff->name = strdup (mfcn2->name);

@@ -537,12 +537,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 
 static int set_reg_profile(RAnal *anal) {
 	// XXX : 64bit profile
-	char *p = "=pc    pc\n"
-		"=sp    sp\n"
-		"=a0    a0\n"
-		"=a1    a1\n"
-		"=a2    a2\n"
-		"=a3    a3\n"
+	const char *p =
+		"=PC    pc\n"
+		"=SP    sp\n"
+		"=A0    a0\n"
+		"=A1    a1\n"
+		"=A2    a2\n"
+		"=A3    a3\n"
 		"gpr	zero	.32	0	0\n"
 		"gpr	at	.32	4	0\n"
 		"gpr	v0	.32	8	0\n"

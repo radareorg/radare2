@@ -118,7 +118,11 @@ R_API void r_slist_optimize (RSList *s) {
 	s->min = min;
 	s->max = max;
 	s->mod = ((max-min));
-	s->items = malloc (1+ (sizeof (void*) * s->nitems));
+	if (s->nitems * sizeof(void*) < s->nitems) {
+		s->items = NULL;
+	} else {
+		s->items = malloc (1 + (sizeof (void*) * s->nitems));
+	}
 	//eprintf ("MOD %d (block size)\n", s->mod);
 // store integers as indexes inside the allocated heap
 
@@ -156,7 +160,7 @@ OUTPUT
 
 #if 0
 typedef struct {
-	
+
 } SListStore;
 typedef struct {
 	IntArray news;
@@ -170,9 +174,9 @@ typedef struct {
 -+- QueueList # new additions are here
  `- idxlist   |_
 --- RangeCmp  # user provided comparator function
---- IndexList # 
+--- IndexList #
 --- Storage   # Heap Array storing all elements
-              | We always use 
+              | We always use
 --- StoreList # Heap Array of integers pointing to storage
               | we can probably just store a list of removed
               | items and the length

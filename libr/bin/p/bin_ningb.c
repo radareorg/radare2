@@ -25,14 +25,13 @@ static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
-
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	ut8 lict[48];
 	if (!buf || length < (0x104+48))
 		return 0;
-	memcpy (lict, buf+0x104, 48);
+	memcpy (lict, buf + 0x104, 48);
 	return (!memcmp (lict, lic, 48))? 1: 0;
 }
 
@@ -54,8 +53,7 @@ static ut64 baddr(RBinFile *arch) {
 	return 0LL;
 }
 
-static RBinAddr* binsym(RBinFile *arch, int type)
-{
+static RBinAddr* binsym(RBinFile *arch, int type) {
 	if (type == R_BIN_SYM_MAIN && arch && arch->buf) {
 		ut8 init_jmp[4];
 		RBinAddr *ret = R_NEW0 (RBinAddr);
@@ -70,8 +68,7 @@ static RBinAddr* binsym(RBinFile *arch, int type)
 	return NULL;
 }
 
-static RList* entries(RBinFile *arch)
-{
+static RList* entries(RBinFile *arch) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = NULL;
 
@@ -132,8 +129,7 @@ static RList* sections(RBinFile *arch){
 	return ret;
 }
 
-static RList* symbols(RBinFile *arch)
-{
+static RList* symbols(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSymbol *ptr[13];
 	int i;
@@ -240,7 +236,7 @@ RList *mem (RBinFile *arch) {
 		r_list_free (ret);
 		return NULL;
 	}
-	strncpy (m->name, "fastram", R_BIN_SIZEOF_STRINGS);
+	m->name = strdup ("fastram");
 	m->addr = 0xff80LL;
 	m->size = 0x80;
 	m->perms = r_str_rwx ("rwx");
@@ -248,7 +244,7 @@ RList *mem (RBinFile *arch) {
 
 	if (!(m = R_NEW0 (RBinMem)))
 		return ret;
-	strncpy (m->name, "ioports", R_BIN_SIZEOF_STRINGS);
+	m->name = strdup ("ioports");
 	m->addr = 0xff00LL;
 	m->size = 0x4c;
 	m->perms = r_str_rwx ("rwx");
@@ -256,7 +252,7 @@ RList *mem (RBinFile *arch) {
 
 	if (!(m = R_NEW0 (RBinMem)))
 		return ret;
-	strncpy (m->name, "oam", R_BIN_SIZEOF_STRINGS);
+	m->name = strdup ("oam");
 	m->addr = 0xfe00LL;
 	m->size = 0xa0;
 	m->perms = r_str_rwx ("rwx");
@@ -264,7 +260,7 @@ RList *mem (RBinFile *arch) {
 
 	if (!(m = R_NEW0 (RBinMem)))
 		return ret;
-	strncpy (m->name, "videoram", R_BIN_SIZEOF_STRINGS);
+	m->name = strdup ("videoram");
 	m->addr = 0x8000LL;
 	m->size = 0x2000;
 	m->perms = r_str_rwx ("rwx");
@@ -272,7 +268,7 @@ RList *mem (RBinFile *arch) {
 
 	if (!(m = R_NEW0 (RBinMem)))
 		return ret;
-	strncpy (m->name, "iram", R_BIN_SIZEOF_STRINGS);
+	m->name = strdup ("iram");
 	m->addr = 0xc000LL;
 	m->size = 0x2000;
 	m->perms = r_str_rwx ("rwx");
@@ -284,7 +280,7 @@ RList *mem (RBinFile *arch) {
 		m->mirrors = NULL;
 		return ret;
 	}
-	strncpy (n->name, "iram_echo", R_BIN_SIZEOF_STRINGS);
+	n->name = strdup ("iram_echo");
 	n->addr = 0xe000LL;
 	n->size = 0x1e00;
 	n->perms = r_str_rwx ("rx");
@@ -297,8 +293,6 @@ struct r_bin_plugin_t r_bin_plugin_ningb = {
 	.name = "ningb",
 	.desc = "Gameboy format r_bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -306,21 +300,12 @@ struct r_bin_plugin_t r_bin_plugin_ningb = {
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
-	.imports = NULL,
-	.strings = NULL,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
 	.mem = &mem,
-	.dbginfo = NULL,
-	.create = NULL,
-	.write = NULL,
 };
 
 #ifndef CORELIB

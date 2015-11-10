@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 - pancake */
+/* radare - LGPL - Copyright 2010-2015 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -7,8 +7,7 @@
 #include <r_anal.h>
 
 /* Return a mapping from the register number i.e. $0 .. $31 to string name */
-static const char* mips_reg_decode(unsigned reg_num)
-{
+static const char* mips_reg_decode(unsigned reg_num) {
 /* See page 36 of "See Mips Run Linux, 2e, D. Sweetman, 2007"*/
 	static const char *REGISTERS[32] = {
 		"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
@@ -432,12 +431,12 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 static int mips_set_reg_profile(RAnal* anal){
      const char *p =
 #if 0
-          "=pc    pc\n"
-	  "=sp    sp\n"
-	  "=a0    a0\n"
-	  "=a1    a1\n"
-	  "=a2    a2\n"
-	  "=a3    a3\n"
+          "=PC    pc\n"
+	  "=SP    sp\n"
+	  "=A0    a0\n"
+	  "=A1    a1\n"
+	  "=A2    a2\n"
+	  "=A3    a3\n"
 	  "gpr	zero	.32	0	0\n"
 	  "gpr	at	.32	4	0\n"
 	  "gpr	v0	.32	8	0\n"
@@ -473,13 +472,13 @@ static int mips_set_reg_profile(RAnal* anal){
 	  "gpr	pc	.32	128	0\n";
 #else
      // take the one from the debugger //
-	"=pc	pc\n"
-	"=sp	sp\n"
-	"=bp	fp\n"
-	"=a0	a0\n"
-	"=a1	a1\n"
-	"=a2	a2\n"
-	"=a3	a3\n"
+	"=PC	pc\n"
+	"=SP	sp\n"
+	"=BP	fp\n"
+	"=A0	a0\n"
+	"=A1	a1\n"
+	"=A2	a2\n"
+	"=A3	a3\n"
 	"gpr	zero	.64	0	0\n"
 	// XXX DUPPED CAUSES FAILURE "gpr	at	.32	8	0\n"
 	"gpr	at	.64	8	0\n"

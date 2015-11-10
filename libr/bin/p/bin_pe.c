@@ -24,8 +24,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = PE_(r_bin_pe_new_buf) (tbuf);
-	if (res)
-		sdb_ns_set (sdb, "info", res->kv);
+	if (res) sdb_ns_set (sdb, "info", res->kv);
 	r_buf_free (tbuf);
 	return res;
 }
@@ -142,12 +141,11 @@ static RList* symbols(RBinFile *arch) {
         for (i = 0; !symbols[i].last; i++) {
             if (!(ptr = R_NEW0 (RBinSymbol)))
                 break;
-            //strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-            snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "%s", symbols[i].name);
-            strncpy (ptr->forwarder, (char*)symbols[i].forwarder, R_BIN_SIZEOF_STRINGS);
+	    ptr->name = strdup ((char *)symbols[i].name);
+	    ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
             //strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-            strncpy (ptr->bind, "GLOBAL", R_BIN_SIZEOF_STRINGS);
-            strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
+            ptr->bind = r_str_const ("GLOBAL");
+            ptr->type = r_str_const ("FUNC");
             ptr->size = 0;
             ptr->vaddr = symbols[i].vaddr;
             ptr->paddr = symbols[i].paddr;
@@ -162,10 +160,10 @@ static RList* symbols(RBinFile *arch) {
             if (!(ptr = R_NEW0 (RBinSymbol)))
                 break;
             //strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-            snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "imp.%s", imports[i].name);
+	    ptr->name = r_str_newf ("imp.%s", imports[i].name);
             //strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
-            strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-            strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
+            ptr->bind = r_str_const ("NONE");
+            ptr->type = r_str_const ("FUNC");
             ptr->size = 0;
             ptr->vaddr = imports[i].vaddr;
             ptr->paddr = imports[i].paddr;
@@ -210,9 +208,9 @@ static RList* imports(RBinFile *arch) {
 		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
 		filter_import (imports[i].name);
-		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ((char*)imports[i].name);
+		ptr->bind = r_str_const ("NONE");
+		ptr->type = r_str_const ("FUNC");
 		ptr->ordinal = imports[i].ordinal;
 		// NOTE(eddyb) a PE hint is just an optional possible DLL export table
 		// index for the import. There is no point in exposing it.
@@ -472,8 +470,6 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -481,19 +477,14 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,
-	.strings = NULL,
 	.info = &info,
-	.fields = NULL,
 	.libs = &libs,
 	.relocs = &relocs,
-	.dbginfo = NULL,
-	.write = NULL,
 	.minstrlen = 4,
 	.create = &create,
 	.get_vaddr = &get_vaddr

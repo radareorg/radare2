@@ -67,21 +67,15 @@ R_API void r_flag_item_free (RFlagItem *item) {
 	free (item->comment);
 	free (item->alias);
 	item->cmd = item->comment = NULL;
+	/* release only one of the two pointers if they are the same */
+	if (item->name != item->realname)
+		free (item->name);
+	free (item->realname);
 	free (item);
 }
 
 R_API RFlag *r_flag_free(RFlag *f) {
 	int i;
-#if 0
-	RFlagItem *item;
-	RListIter *iter;
-	r_list_foreach (f->flags, iter, item) {
-		RList *list = r_hashtable64_lookup (f->ht_name, item->namehash);
-		// XXX r_list_free (list);
-		list = r_hashtable64_lookup (f->ht_off, item->offset);
-		// XXX: segfault sometimes wtf -- r_list_free (list);
-	}
-#endif
 	for (i=0; i<R_FLAG_SPACES_MAX; i++)
 		free (f->spaces[i]);
 	r_hashtable64_free (f->ht_off);
@@ -185,9 +179,7 @@ static RFlagItem *evalFlag (RFlag *f, RFlagItem *item) {
 
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	RList *list = r_hashtable64_lookup (f->ht_name, r_str_hash64 (name));
-	if (list) {
-		return evalFlag (f, r_list_get_top (list));
-	}
+	if (list) return evalFlag (f, r_list_get_top (list));
 	return NULL;
 }
 
@@ -195,52 +187,35 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 // TODO: this is buggy, do not use, must rewrite in sdb
 	RFlagItem *oitem = NULL;
 	RFlagItem *item = NULL;
-	RList *list;
 #if USE_SDB
 	char buf[128];
 	if (!f) return NULL;
 	char * foo = sdb_get (db, sdb_itoa (off, buf, 16), 0);
 	return r_flag_get (f, foo);
 #else
-       list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
-
-//if (off == 0x4005c4) { eprintf ("FLAG GET IT %llx = %p\n", off, list); }
-	if (list) {
-		RListIter *iter;
-		r_list_foreach (list, iter, item) {
-			// XXX: hack, because some times the hashtable is poluted by ghost values
-			if (item->offset != off)
-				continue;
-#define NEW_FILTER 1
-#if NEW_FILTER
-			/* catch sym. first */
-			if (!strncmp (item->name, "loc.", 4)) {
-				continue;
-			}
-			if (!strncmp (item->name, "fcn.", 4)) {
-				continue;
-			}
-			if (strlen (item->name)>4 && item->name[3]=='.') {
-				oitem = item;
-				break;
-			}
-			oitem = item;
-//			if (!strchr (item->name, '.'))
-//				oitem = item;
-//			if (!strchr (item->name, '.'))
-//				oitem = item;
-#else
-#if 0
-			if (!strchr (item->name, '.'))
-				oitem = item;
-#endif
-			if (strlen (item->name) < 5 || item->name[3]!='.')
-				continue;
-			oitem = item;
-#endif
+	RListIter *iter;
+	RList *list = r_hashtable64_lookup (f->ht_off, XOROFF (off));
+	if (!list) return NULL;
+	r_list_foreach (list, iter, item) {
+		// XXX: hack, because some times the hashtable is poluted by ghost values
+		if (item->offset != off)
+			continue;
+		/* catch sym. first */
+		if (!strncmp (item->name, "loc.", 4)) {
+			continue;
 		}
+		if (!strncmp (item->name, "fcn.", 4)) {
+			continue;
+		}
+		if (r_str_nlen(item->name, 5) > 4 && item->name[3] == '.') {
+			oitem = item;
+			break;
+		}
+		oitem = item;
+		if (strlen (item->name) < 5 || item->name[3]!='.')
+			continue;
+		oitem = item;
 	}
-//if (oitem) eprintf ("%s\n", oitem->name); eprintf ("FIN\n");
 	return oitem;
 #endif
 }
@@ -411,36 +386,36 @@ sdb_set (db, sdb_itoa (off, buf, 16), name, 0);
 R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias) {
 	if (item) {
 		free (item->alias);
-		item->alias = ISNULLSTR(alias)? NULL: strdup (alias);
+		item->alias = ISNULLSTR (alias)? NULL: strdup (alias);
 	}
 }
 
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment) {
 	if (item) {
 		free (item->comment);
-		item->comment = ISNULLSTR(comment)? NULL: strdup (comment);
+		item->comment = ISNULLSTR (comment)? NULL: strdup (comment);
 	}
 }
 
 R_API int r_flag_item_set_name(RFlagItem *item, const char *name, const char *realname) {
-	int len;
-	if (!item)
+	if (!item || !r_name_check (name))
 		return false;
-	if (!realname)
-		realname = name;
-	if (!r_name_check (name))
-		return false;
-	/* original name. maybe do some char mangling : printable*/
-	/* filtered name : typable */
-	strncpy (item->realname, realname, R_FLAG_NAME_SIZE-1);
-	item->realname[R_FLAG_NAME_SIZE-1] = 0;
-	strncpy (item->name, name, R_FLAG_NAME_SIZE-1);
-	item->name[R_FLAG_NAME_SIZE-1] = 0;
-	len = R_MIN (R_FLAG_NAME_SIZE, strlen (r_str_chop (item->name)) + 1);
-	memmove (item->name, r_str_chop (item->name), len);
-	r_name_filter (item->name, 0);
-	item->name[R_FLAG_NAME_SIZE-1]='\0';
+	if (!realname) realname = name;
+
+	/* realname is the original name of the flag */
+	item->realname = strdup (realname);
 	item->namehash = r_str_hash64 (item->realname);
+
+	/* the name contains only printable chars that doesn't conflict with r2 shell */
+	item->name = strdup (name);
+	r_str_chop (item->name);
+	r_name_filter (item->name, 0); // TODO: name_filter should be chopping already
+
+	/* avoid unnecessary dupped memory */
+	if (!strcmp (item->name, item->realname)) {
+		free (item->name);
+		item->name = item->realname;
+	}
 	return true;
 }
 
@@ -451,7 +426,7 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 		eprintf ("r_flag_rename: contract fail\n");
 		return false;
 	}
-	hash = r_str_hash64 (item->name);
+	hash = r_str_hash64 (item->realname);
 	list = r_hashtable64_lookup (f->ht_name, hash);
 	if (list) {
 		RFlagItem *item = r_list_get_top (list);
@@ -479,7 +454,7 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 R_API int r_flag_unset_i(RFlag *f, ut64 off, RFlagItem *p) {
 	RFlagItem *flag = r_flag_get_i (f, off);
 	if (flag) {
-		r_flag_unset (f, flag->name, NULL); //, flag);
+		r_flag_unset (f, flag->name, NULL);
 		return true;
 	}
 	return false;

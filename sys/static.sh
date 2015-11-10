@@ -23,27 +23,24 @@ if [ 1 = "${DOBUILD}" ]; then
 	if [ -f config-user.mk ]; then
 		${MAKE} mrproper > /dev/null 2>&1
 	fi
-	export CFLAGS="-fPIC -pie "
+	export CFLAGS="-fPIC"
 #-D__ANDROID__=1"
-	./configure-plugins
-	./configure --prefix="$PREFIX" --with-nonpic --without-pic --disable-loadlibs
+	./configure-plugins || exit 1
+	./configure --prefix="$PREFIX" --with-nonpic --without-pic --disable-loadlibs || exit 1
 fi
-${MAKE} -j 8
+${MAKE} -j 8 || exit 1
 BINS="rarun2 rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 rasign2 r2agent radiff2"
 # shellcheck disable=SC2086
 for a in ${BINS} ; do
 (
 	cd binr/$a
 	${MAKE} clean
-	if [ "`uname`" = Darwin ]; then
-		${MAKE} -j2
-	else
-		LDFLAGS=-static ${MAKE} -j2
-	fi
+	#LDFLAGS=-static ${MAKE} -j2
+	${MAKE} -j2 || exit 1
 	strip -s $a
 )
 done
 
 rm -rf r2-static
-mkdir r2-static
-${MAKE} install DESTDIR="${PWD}/r2-static"
+mkdir r2-static || exit 1
+exec ${MAKE} install DESTDIR="${PWD}/r2-static"

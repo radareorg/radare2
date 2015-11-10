@@ -86,7 +86,7 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		addr = Elf_(r_bin_elf_get_fini_offset) (arch->o->bin_obj);
 		break;
 	}
-	if (addr && (ret = R_NEW0 (RBinAddr))) {
+	if (addr && addr!= UT64_MAX && (ret = R_NEW0 (RBinAddr))) {
 		ret->paddr = addr;
 		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
 	}
@@ -236,10 +236,10 @@ static RList* symbols(RBinFile *arch) {
 
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
-		strncpy (ptr->name, symbol[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup (symbol[i].name);
+		ptr->forwarder = r_str_const ("NONE");
+		ptr->bind = r_str_const (symbol[i].bind);
+		ptr->type = r_str_const (symbol[i].type);
 		ptr->paddr = paddr;
 		ptr->vaddr = vaddr;
 		ptr->size = symbol[i].size;
@@ -273,10 +273,12 @@ static RList* symbols(RBinFile *arch) {
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
 		// TODO(eddyb) make a better distinction between imports and other symbols.
-		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "imp.%s", symbol[i].name);
-		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
+		//snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "imp.%s", symbol[i].name);
+		ptr->name = r_str_newf ("imp.%s", symbol[i].name);
+		ptr->forwarder = r_str_const ("NONE");
+		//strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+		ptr->bind = r_str_const (symbol[i].bind);
+		ptr->type = r_str_const (symbol[i].type);
 		ptr->paddr = paddr;
 		ptr->vaddr = vaddr;
 		ptr->size = symbol[i].size;
@@ -321,9 +323,9 @@ static RList* imports(RBinFile *arch) {
 	for (i = 0; !import[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
-		strncpy (ptr->name, import[i].name, sizeof(ptr->name)-1);
-		strncpy (ptr->bind, import[i].bind, sizeof(ptr->bind)-1);
-		strncpy (ptr->type, import[i].type, sizeof(ptr->type)-1);
+		ptr->name = strdup (import[i].name);
+		ptr->bind = r_str_const (import[i].bind);
+		ptr->type = r_str_const (import[i].type);
 		ptr->ordinal = import[i].ordinal;
 		setimpord (bin, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
@@ -493,7 +495,7 @@ static int has_canary(RBinFile *arch) {
 	RListIter *iter;
 	RBinImport *import;
 	r_list_foreach (imports_list, iter, import) {
-		if (!strcmp(import->name, "__stack_chk_fail") ) {
+		if (!strcmp (import->name, "__stack_chk_fail") ) {
 			r_list_free (imports_list);
 			return 1;
 		}
@@ -550,6 +552,8 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->arch = str;
 	ret->rclass = strdup ("elf");
 	ret->bits = Elf_(r_bin_elf_get_bits) (arch->o->bin_obj);
+	if (!strcmp (ret->arch, "avr"))
+		ret->bits = 16;
 	ret->big_endian = Elf_(r_bin_elf_is_big_endian) (arch->o->bin_obj);
 	ret->has_va = Elf_(r_bin_elf_has_va) (arch->o->bin_obj);
 	ret->has_nx = Elf_(r_bin_elf_has_nx) (arch->o->bin_obj);
@@ -577,7 +581,7 @@ static RList* fields(RBinFile *arch) {
 	for (i = 0; !field[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinField)))
 			break;
-		strncpy (ptr->name, field[i].name, R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup (field[i].name);
 		ptr->vaddr = field[i].offset;
 		ptr->paddr = field[i].offset;
 		r_list_append (ret, ptr);

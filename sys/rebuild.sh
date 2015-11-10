@@ -18,6 +18,12 @@ Rebuild() {
 	cd -
 }
 
+Build() {
+	cd "$1" || exit 1
+	make -j8 || exit 1
+	cd -
+}
+
 RebuildIOSDebug() {
 	Rebuild libr/debug
 	Rebuild binr/radare2
@@ -60,6 +66,6 @@ java)   RebuildJava ; ;;
 iosdbg) RebuildIOSDebug ; ;;
 capstone|cs) RebuildCapstone ; ;;
 *)
-	echo "Usage: sys/rebuild.sh [java|capstone|sdb]"
+	echo "Usage: sys/rebuild.sh [java|capstone|sdb|iosdbg|cs|sdb|bin]"
 	;;
 esac

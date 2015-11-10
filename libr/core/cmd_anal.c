@@ -211,43 +211,73 @@ static void cmd_anal_trampoline (RCore *core, const char *input) {
 	}
 }
 
-static void cmd_syscall_do(RCore *core, int num) {
+R_API char *cmd_syscall_dostr(RCore *core, int n) {
+	char *res = NULL;
 	int i;
 	char str[64];
-	RSyscallItem *item = r_syscall_get (core->anal->syscall, num, -1);
-	if (item == NULL) {
-		r_cons_printf ("%d = unknown ()", num);
-		return;
+	if (n == -1) {
+		n = (int)r_debug_reg_get (core->dbg, "oeax");
+		if (n == 0 || n == -1) {
+			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_A0);
+			n = (int)r_debug_reg_get (core->dbg, a0);
+		}
 	}
-	r_cons_printf ("%d = %s (", item->num, item->name);
+	RSyscallItem *item = r_syscall_get (core->anal->syscall, n, -1);
+	if (item == NULL) {
+		res = r_str_concatf (res, "%d = unknown ()", n);
+		return res;
+	}
+	res = r_str_concatf (res, "%d = %s (", item->num, item->name);
 	// TODO: move this to r_syscall
 	for (i=0; i<item->args; i++) {
 		ut64 arg = r_debug_arg_get (core->dbg, true, i+1);
-		if (item->sargs==NULL)
-			r_cons_printf ("0x%08"PFMT64x"", arg);
-		else
+//r_cons_printf ("%d:0x%llx", i, r_debug_arg_get (core->dbg, true, i+1));
+		if (item->sargs) {
 			switch (item->sargs[i]) {
 			case 'p': // pointer
-				r_cons_printf ("0x%08"PFMT64x"", arg);
+				res = r_str_concatf (res, "0x%08"PFMT64x"", arg);
 				break;
 			case 'i':
-				r_cons_printf ("%"PFMT64d"", arg);
+				res = r_str_concatf (res, "%"PFMT64d"", arg);
 				break;
 			case 'z':
 				r_io_read_at (core->io, arg, (ut8*)str, sizeof (str));
 				// TODO: filter zero terminated string
 				str[63] = '\0';
 				r_str_filter (str, strlen (str));
-				r_cons_printf ("\"%s\"", str);
+				res = r_str_concatf (res, "\"%s\"", str);
+				break;
+			case 'Z':
+				{
+					ut64 len = r_debug_arg_get (core->dbg, true, i+2);
+					len = R_MIN (len+1, sizeof(str)-1);
+					if (len==0) len = 16; // override default
+					r_io_read_at (core->io, arg, (ut8*)str, len);
+					str[len] = 0;
+					r_str_filter (str, -1);
+					res = r_str_concatf (res, "\"%s\"", str);
+				}
 				break;
 			default:
-				r_cons_printf ("0x%08"PFMT64x"", arg);
+				res = r_str_concatf (res, "0x%08"PFMT64x"", arg);
 				break;
 			}
+		} else {
+			res = r_str_concatf (res, "0x%08"PFMT64x"", arg);
+		}
 		if (i+1<item->args)
-			r_cons_printf (", ");
+			res = r_str_concatf (res, ", ");
 	}
-	r_cons_printf (")\n");
+	res = r_str_concatf (res, ")");
+	return res;
+}
+
+static void cmd_syscall_do(RCore *core, int n) {
+	char *msg = cmd_syscall_dostr (core, n);
+	if (msg) {
+		r_cons_printf ("%s\n", msg);
+		free (msg);
+	}
 }
 
 static void core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int fmt) {
@@ -1232,20 +1262,13 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			RRegItem *r;
 			int i;
 			int first = 1;
-			static const char *types[R_REG_TYPE_LAST+1] = {
-				"gpr", "drx", "fpu", "mmx", "xmm", "flg", "seg", NULL
-			};
-			static const char *roles[R_REG_NAME_LAST+1] = {
-				"pc", "sp", "sr", "bp", "ao", "a1",
-				"a2", "a3", "a4", "a5", "a6", "zf",
-				"sf", "cf", "of", "sb", NULL
-			};
 			r_cons_printf ("{\"alias_info\":[");
 			for (i = 0; i < R_REG_NAME_LAST; i++) {
 				if (core->dbg->reg->name[i]) {
+					const char* rolestr = r_reg_get_role (i);
 					if (!first) r_cons_printf (",");
 					r_cons_printf ("{\"role\":%d,", i);
-					r_cons_printf ("\"role_str\":\"%s\",", roles[i]);
+					r_cons_printf ("\"role_str\":\"%s\",", rolestr);
 					r_cons_printf ("\"reg\":\"%s\"}",
 						core->dbg->reg->name[i]);
 					first = 0;
@@ -1257,7 +1280,8 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
 					if (!first) r_cons_printf (",");
 					r_cons_printf ("{\"type\":%d,", r->type);
-					r_cons_printf ("\"type_str\":\"%s\",", types[r->type]);
+					r_cons_printf ("\"type_str\":\"%s\",",
+						r_reg_get_role (r->type));
 					r_cons_printf ("\"name\":\"%s\",", r->name);
 					r_cons_printf ("\"size\":%d,", r->size);
 					r_cons_printf ("\"offset\":%d}", r->offset);
@@ -1273,9 +1297,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		for (i=0; (name=r_reg_get_type (i)); i++)
 			r_cons_printf ("%s\n", name);
 		break;
-	case 'n': // "drn"
+	case 'n': // "drn" // "arn"
 		if (*(str+1) == '\0'){
-			eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
+			eprintf ("Oops. try drn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF\n");
 			break;
 		}
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str+2));
@@ -1436,9 +1460,9 @@ sleep (1);
 
 	ut64 follow = r_config_get_i (core->config, "dbg.follow");
 	if (follow>0) {
-		ut64 pc = r_debug_reg_get (core->dbg, "pc");
+		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		if ((pc<core->offset) || (pc > (core->offset+follow)))
-			r_core_cmd0 (core, "sr pc");
+			r_core_cmd0 (core, "sr PC");
 	}
 
 	if (core->dbg->trace->enabled) {
@@ -1698,11 +1722,11 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		case 'l': // "aesl"
 			{
-				ut64 pc = r_debug_reg_get (core->dbg, "pc");
+				ut64 pc = r_debug_reg_get (core->dbg, "PC");
 				RAnalOp *op = r_core_anal_op (core, pc);
 				if (!op) break;
 				esil_step (core, UT64_MAX, NULL);
-				r_debug_reg_set (core->dbg, "pc", pc + op->size);
+				r_debug_reg_set (core->dbg, "PC", pc + op->size);
                                 r_anal_esil_set_pc (esil, pc + op->size);
 				r_core_cmd0 (core, ".ar*");
 			}
@@ -1807,7 +1831,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			{
 				const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 				if (r_reg_getv (core->anal->reg, pc) == 0LL) {
-					r_core_cmd0 (core, "ar pc=$$");
+					r_core_cmd0 (core, "ar PC=$$");
 				}
 			}
 			iotrap = r_config_get_i (core->config, "esil.iotrap");
@@ -1817,8 +1841,14 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
 			esil->debug = (int)r_config_get_i (core->config, "esil.debug");
 			/* restore user settings for interrupt handling */
-			r_config_set (core->config, "cmd.esil.intr",
-				r_config_get (core->config, "cmd.esil.intr"));
+			{
+				const char *s = r_config_get (core->config, "cmd.esil.intr");
+				if (s) {
+					char *my = strdup (s);
+					r_config_set (core->config, "cmd.esil.intr", my);
+					free (my);
+				}
+			}
 			break;
 		}
 		break;
@@ -1861,7 +1891,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 						r_asm_set_pc (core->assembler, pc);
 						ret = r_anal_op (core->anal, &op, addr, buf, 32); // read overflow
 						if (ret) {
-							r_reg_setv (core->anal->reg, "pc", pc);
+							r_reg_setv (core->anal->reg, "PC", pc);
 							r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
 							r_anal_esil_dumpstack (esil);
 							r_anal_esil_stack_free (esil);
@@ -2070,6 +2100,18 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_asf(RCore *core, const char *input) {
+	char *ret;
+	if (input[0] == ' ') {
+		ret = sdb_querys (core->anal->sdb_fcnsign, NULL, 0, input+1);
+	} else {
+		ret = sdb_querys (core->anal->sdb_fcnsign, NULL, 0, "*");
+	}
+	if (ret && *ret)
+		r_cons_printf ("%s\n", ret);
+	free (ret);
+}
+
 static void cmd_anal_syscall(RCore *core, const char *input) {
 	RSyscallItem *si;
 	RListIter *iter;
@@ -2080,6 +2122,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		"Usage: as[ljk?]", "", "syscall name <-> number utility",
 		"as", "", "show current syscall and arguments",
 		"as", " 4", "show syscall 4 based on asm.os and current regs/mem",
+		"asf", " [k[=[v]]]", "list/set/unset pf function signatures (see fcnsign)",
 		"asj", "", "list of syscalls in JSON",
 		"asl", "", "list of syscalls by asm.os and asm.arch",
 		"asl", " close", "returns the syscall number for close",
@@ -2088,6 +2131,9 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		NULL};
 
 	switch (input[0]) {
+	case 'f': // "asf"
+		cmd_asf (core, input+1);
+		break;
 	case 'l': // "asl"
 		if (input[1] == ' ') {
 			if ((n = atoi (input+2))>0) {
@@ -2122,8 +2168,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		// JSON support
 		break;
 	case '\0':
-		n = (int)r_debug_reg_get (core->dbg, "oeax"); //XXX
-		cmd_syscall_do (core, n);
+		cmd_syscall_do (core, -1); //n);
 		break;
 	case ' ':
 		cmd_syscall_do (core, (int)r_num_get (core->num, input+1));
@@ -2880,9 +2925,6 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 		"aarj", " [sz]", "list found xrefs in JSON format",
 		"aar*", " [sz]", "list found xrefs in radare commands format",
 		NULL};
-	if (*input) {
-		input++;
-	}
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_aar);
 		return 0;
@@ -3097,7 +3139,7 @@ static int cmd_anal(void *data, const char *input) {
 		cmd_anal_trace (core, input+1);
 		break;
 	case 's': // "as"
-		cmd_anal_syscall(core, input+1);
+		cmd_anal_syscall (core, input+1);
 		break;
 	case 'x':
 		if (!cmd_anal_refs (core, input+1)) {

@@ -140,9 +140,18 @@ static char nuls[10];		/* place to point scanner in event of error */
 R_API int r_regex_match (const char *pattern, const char *flags, const char *text) {
 	int ret;
 	RRegex rx;
-	if (r_regex_comp (&rx, pattern, r_regex_flags (flags)))
-		return -1;
-	ret = r_regex_exec (&rx, text, 0, 0, 0);
+	int re_flags = r_regex_flags (flags);
+	if (r_regex_comp (&rx, pattern, re_flags)) {
+		eprintf ("FAIL TO COMPILE %s\n", pattern);
+		return 0;
+	}
+	ret = r_regex_exec (&rx, text, 0, 0, re_flags);
+	if (!ret) {
+eprintf ("OK! (%s)\n", text);
+		if (!strstr (text, "raxq")) {
+			eprintf ("FALSE POSITIVE with (%s)\n", pattern);
+		}
+	}
 	r_regex_fini (&rx);
 	return ret? 0: 1;
 #if 0
@@ -189,15 +198,11 @@ R_API void r_regex_fini(RRegex *preg) {
 	preg->re_magic = 0;		/* mark it invalid */
 	g->magic = 0;			/* mark it invalid */
 
-	if (g->strip != NULL)
-		free((char *)g->strip);
-	if (g->sets != NULL)
-		free((char *)g->sets);
-	if (g->setbits != NULL)
-		free((char *)g->setbits);
-	if (g->must != NULL)
-		free(g->must);
-	free((char *)g);
+	free(g->strip);
+	free(g->sets);
+	free(g->setbits);
+	free(g->must);
+	free(g);
 }
 
 R_API void r_regex_free(RRegex *preg) {
@@ -207,10 +212,9 @@ R_API void r_regex_free(RRegex *preg) {
 
 /*
  - regcomp - interface for parser and compilation
+ - 0 success, otherwise R_REGEX_something
  */
-R_API int			/* 0 success, otherwise R_REGEX_something */
-r_regex_comp(RRegex *preg, const char *pattern, int cflags)
-{
+R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
 	struct parse pa;
 	struct re_guts *g;
 	struct parse *p = &pa;
@@ -224,22 +228,25 @@ r_regex_comp(RRegex *preg, const char *pattern, int cflags)
 
 	cflags = GOODFLAGS(cflags);
 	if ((cflags&R_REGEX_EXTENDED) && (cflags&R_REGEX_NOSPEC))
-		return(R_REGEX_INVARG);
+		return R_REGEX_INVARG;
 
 	if (cflags&R_REGEX_PEND) {
 		if (preg->re_endp < pattern)
 			return(R_REGEX_INVARG);
 		len = preg->re_endp - pattern;
-	} else
-		len = strlen((char *)pattern);
+	} else len = strlen((char *)pattern);
 
 	/* do the mallocs early so failure handling is easy */
-	g = (struct re_guts *)malloc(sizeof(struct re_guts) +
-							(NC-1)*sizeof(cat_t));
+	g = (struct re_guts *)calloc(sizeof(struct re_guts) + (NC-1),sizeof(cat_t));
 	if (g == NULL)
-		return(R_REGEX_ESPACE);
+		return R_REGEX_ESPACE;
+	preg->re_flags = cflags;
 	p->ssize = len/(size_t)2*(size_t)3 + (size_t)1;	/* ugh */
 	p->strip = (sop *)calloc(p->ssize, sizeof(sop));
+	if (!p->strip) {
+		free((char *)g);
+		return R_REGEX_ESPACE;
+	}
 	p->slen = 0;
 	if (p->strip == NULL) {
 		free((char *)g);
@@ -268,19 +275,18 @@ r_regex_comp(RRegex *preg, const char *pattern, int cflags)
 	g->mlen = 0;
 	g->nsub = 0;
 	g->ncategories = 1;	/* category 0 is "everything else" */
-	g->categories = &g->catspace[-(CHAR_MIN)];
+	g->categories = &g->catspace[-(CHAR_MIN)]; // WTF
 	(void) memset((char *)g->catspace, 0, NC*sizeof(cat_t));
 	g->backrefs = 0;
 
 	/* do it */
 	EMIT(OEND, 0);
 	g->firststate = THERE();
-	if (cflags&R_REGEX_EXTENDED)
+	if (cflags & R_REGEX_EXTENDED)
 		p_ere(p, OUT);
-	else if (cflags&R_REGEX_NOSPEC)
-		p_str(p);
-	else
-		p_bre(p, OUT, OUT);
+	else if (cflags & R_REGEX_NOSPEC)
+		p_str (p);
+	else p_bre (p, OUT, OUT);
 	EMIT(OEND, 0);
 	g->laststate = THERE();
 
@@ -300,17 +306,15 @@ r_regex_comp(RRegex *preg, const char *pattern, int cflags)
 #endif
 
 	/* win or lose, we're done */
-	if (p->error != 0)	/* lose */
-		r_regex_fini(preg);
-	return(p->error);
+	if (p->error) /* lose */
+		r_regex_fini (preg);
+	return p->error;
 }
 
 /*
  - p_ere - ERE parser top level, concatenation and alternation
  */
-static void
-p_ere(struct parse *p, int stop)	/* character this ERE should end at */
-{
+static void p_ere(struct parse *p, int stop) { /* character this ERE should end at */
 	char c;
 	sopno prevback = 0;
 	sopno prevfwd = 0;
@@ -351,9 +355,7 @@ p_ere(struct parse *p, int stop)	/* character this ERE should end at */
 /*
  - p_ere_exp - parse one subERE, an atom possibly followed by a repetition op
  */
-static void
-p_ere_exp(struct parse *p)
-{
+static void p_ere_exp(struct parse *p) {
 	char c;
 	sopno pos;
 	int count;
@@ -486,9 +488,7 @@ p_ere_exp(struct parse *p)
 /*
  - p_str - string (no metacharacters) "parser"
  */
-static void
-p_str(struct parse *p)
-{
+static void p_str(struct parse *p) {
 	REQUIRE(MORE(), R_REGEX_EMPTY);
 	while (MORE())
 		ordinary(p, GETNEXT());
@@ -504,8 +504,7 @@ p_str(struct parse *p)
  * category in such cases.  This is fairly harmless; not worth fixing.
  * The amount of lookahead needed to avoid this kludge is excessive.
  */
-static void
-p_bre(struct parse *p,
+static void p_bre(struct parse *p,
     int end1,		/* first terminating character */
     int end2)		/* second terminating character */
 {
@@ -672,9 +671,7 @@ p_count(struct parse *p)
  * Note a significant property of this code:  if the allocset() did SETERROR,
  * no set operations are done.
  */
-static void
-p_bracket(struct parse *p)
-{
+static void p_bracket(struct parse *p) {
 	cset *cs;
 	int invert = 0;
 
@@ -744,16 +741,15 @@ p_bracket(struct parse *p)
 	if (nch(p, cs) == 1) {		/* optimize singleton sets */
 		ordinary(p, firstch(p, cs));
 		freeset(p, cs);
-	} else
+	} else {
 		EMIT(OANYOF, freezeset(p, cs));
+	}
 }
 
 /*
  - p_b_term - parse one term of a bracketed character list
  */
-static void
-p_b_term(struct parse *p, cset *cs)
-{
+static void p_b_term(struct parse *p, cset *cs) {
 	char c;
 	char start = 0, finish;
 	int i;
@@ -814,9 +810,7 @@ p_b_term(struct parse *p, cset *cs)
 /*
  - p_b_cclass - parse a character-class name and deal with it
  */
-static void
-p_b_cclass(struct parse *p, cset *cs)
-{
+static void p_b_cclass(struct parse *p, cset *cs) {
 	char *sp = p->next;
 	struct cclass *cp;
 	size_t len;
@@ -847,9 +841,7 @@ p_b_cclass(struct parse *p, cset *cs)
  *
  * This implementation is incomplete. xxx
  */
-static void
-p_b_eclass(struct parse *p, cset *cs)
-{
+static void p_b_eclass(struct parse *p, cset *cs) {
 	char c;
 
 	c = p_b_coll_elem(p, '=');
@@ -922,9 +914,7 @@ othercase(int ch)
  *
  * Boy, is this implementation ever a kludge...
  */
-static void
-bothcases(struct parse *p, int ch)
-{
+static void bothcases(struct parse *p, int ch) {
 	char *oldnext = p->next;
 	char *oldend = p->end;
 	char bracket[3];
@@ -1069,9 +1059,7 @@ seterr(struct parse *p, int e)
 /*
  - allocset - allocate a set of characters for []
  */
-static cset *
-allocset(struct parse *p)
-{
+static cset * allocset(struct parse *p) {
 	int no = p->g->ncsets++;
 	size_t nc;
 	size_t nbytes;
@@ -1128,9 +1116,7 @@ nomem:
 /*
  - freeset - free a now-unused set
  */
-static void
-freeset(struct parse *p, cset *cs)
-{
+static void freeset(struct parse *p, cset *cs) {
 	int i;
 	cset *top = &p->g->sets[p->g->ncsets];
 	size_t css = (size_t)p->g->csetsize;
@@ -1197,9 +1183,7 @@ firstch(struct parse *p, cset *cs)
 /*
  - nch - number of characters in a set
  */
-static int
-nch(struct parse *p, cset *cs)
-{
+static int nch(struct parse *p, cset *cs) {
 	int i;
 	size_t css = (size_t)p->g->csetsize;
 	int n = 0;
@@ -1213,9 +1197,7 @@ nch(struct parse *p, cset *cs)
 /*
  - mcadd - add a collating element to a cset
  */
-static void
-mcadd( struct parse *p, cset *cs, char *cp)
-{
+static void mcadd( struct parse *p, cset *cs, char *cp) {
 	size_t oldend = cs->smultis;
 	void *np;
 
@@ -1240,9 +1222,7 @@ mcadd( struct parse *p, cset *cs, char *cp)
  * is deferred.
  */
 /* ARGSUSED */
-static void
-mcinvert(struct parse *p, cset *cs)
-{
+static void mcinvert(struct parse *p, cset *cs) {
 	assert(cs->multis == NULL);	/* xxx */
 }
 
@@ -1253,9 +1233,7 @@ mcinvert(struct parse *p, cset *cs)
  * is deferred.
  */
 /* ARGSUSED */
-static void
-mccase(struct parse *p, cset *cs)
-{
+static void mccase(struct parse *p, cset *cs) {
 	assert(cs->multis == NULL);	/* xxx */
 }
 

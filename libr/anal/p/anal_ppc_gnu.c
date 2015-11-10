@@ -81,12 +81,13 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_bytes, int le
 }
 
 static int set_reg_profile(RAnal *anal) {
-    const char *p = "=pc	srr0\n"
-	"=sr	srr1\n" // status register
-	"=a0	r0\n"
-	"=a1	r1\n"
-	"=a2	r2\n"
-	"=a3	r3\n"
+    const char *p =
+	"=PC	srr0\n"
+	"=SR	srr1\n" // status register
+	"=A0	r0\n"
+	"=A1	r1\n"
+	"=A2	r2\n"
+	"=A3	r3\n"
 #if 0
 	"=a4	r4\n"
 	"=a5	r5\n"

@@ -11,6 +11,8 @@
 #include <list.h>
 #include "../config.h"
 
+#define DO_THE_PTR 1
+
 R_LIB_VERSION(r_bin);
 
 #define DB a->sdb;
@@ -205,8 +207,7 @@ static int string_scan_range (RList *list, const ut8 *buf, int min, const ut64 f
 				new->size = needle - str_start;
 				new->ordinal = count++;
 				new->paddr = new->vaddr = str_start;
-				if (i < sizeof (new->string))
-					memcpy (new->string, tmp, i);
+				new->string = r_str_ndup ((const char *)tmp, i);
 				r_list_append (list, new);
 			} else {
 				// DUMP TO STDOUT. raw dumping for rabin2 -zzz
@@ -319,6 +320,7 @@ R_API int r_bin_dump_strings(RBinFile *a, int min) {
 	return 0;
 }
 
+/* This is very slow if there are lot of symbols */
 R_API int r_bin_load_languages(RBinFile *binfile) {
 	if (r_bin_lang_rust (binfile))
 		return R_BIN_NM_RUST;
@@ -396,6 +398,33 @@ R_API void r_bin_info_free (RBinInfo *rb) {
 	free (rb);
 }
 
+R_API void r_bin_import_free(void* _imp) {
+	RBinImport *imp = (RBinImport*) _imp;
+	free (imp->name);
+	free (imp->classname);
+	free (imp->descriptor);
+	free (imp);
+}
+
+R_API void r_bin_symbol_free(void* _sym) {
+	RBinSymbol *sym = (RBinSymbol*) _sym;
+	free (sym->name);
+	free (sym->classname);
+	free (sym);
+}
+
+R_API void r_bin_string_free (void* _str) {
+	RBinString *str = (RBinString*) _str;
+	free (str->string);
+	free (str);
+}
+
+R_API void r_bin_field_free (void* _fld) {
+	RBinField *fld = (RBinField*) _fld;
+	free (fld->name);
+	free (fld);
+}
+
 static void r_bin_object_free (void /*RBinObject*/ *o_) {
 	RBinObject* o = o_;
 	if (!o) return;
@@ -451,16 +480,25 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	}
 	if (cp->fields) {
 		o->fields = cp->fields (binfile);
-		REBASE_PADDR (o, o->fields, RBinField);
+		if (o->fields) {
+			o->fields->free = r_bin_field_free;
+			REBASE_PADDR (o, o->fields, RBinField);
+		}
 	}
 	if (cp->imports) {
 		o->imports = cp->imports (binfile);
+		if (o->imports) {
+			o->imports->free = r_bin_import_free;
+		}
 	}
 	if (cp->symbols) {
 		o->symbols = cp->symbols (binfile);
-		REBASE_PADDR (o, o->symbols, RBinSymbol);
-		if (bin->filter)
-			r_bin_filter_symbols (o->symbols);
+		if (o->symbols) {
+			o->symbols->free = r_bin_symbol_free;
+			REBASE_PADDR (o, o->symbols, RBinSymbol);
+			if (bin->filter)
+				r_bin_filter_symbols (o->symbols);
+		}
 	}
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) o->libs = cp->libs (binfile);
@@ -550,10 +588,6 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	// invalidate current object reference
 	bf->o = NULL;
 
-	// XXX - this needs to be reimplemented to account for
-	// performance impacts.
-	buf_bytes = NULL;
-
 	sz = iob->desc_size (io, desc);
 	if (sz == UT64_MAX && desc->plugin && desc->plugin->isdbg) {
 		// attempt a local open and read
@@ -578,15 +612,18 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	}
 
 	if (!buf_bytes) {
+		sz = 0;
 		buf_bytes = iob->desc_read (io, desc, &sz);
 	}
-	if (!buf_bytes) {
-		free (buf_bytes);
+	if (!buf_bytes)
 		return false;
-	}
 
-	r_bin_file_set_bytes (bf, buf_bytes, sz);
-	free (buf_bytes);
+	if (!r_bin_file_set_bytes (bf, buf_bytes, sz))
+#if DO_THE_PTR
+	{ free (buf_bytes); }
+#else
+	{}; free (buf_bytes);
+#endif
 
 	if (r_list_length (the_obj_list) == 1) {
 		RBinObject *old_o = (RBinObject *) r_list_get_n (the_obj_list, 0);
@@ -662,7 +699,6 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	sz = R_MIN (file_sz, sz);
 	if (!buf_bytes) {
 		ut64 seekaddr = is_debugger ? baseaddr : loadaddr;
-
 		if (seekaddr == UT64_MAX) seekaddr = 0;
 		iob->desc_seek (io, desc, seekaddr);
 		buf_bytes = iob->desc_read (io, desc, &sz);
@@ -689,7 +725,6 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 						free (buf_bytes);
 						buf_bytes = iob->desc_read (io, desc, &sz);
 					}
-
 					binfile = r_bin_file_xtr_load_bytes (bin, xtr,
 						desc->name, buf_bytes, sz, file_sz,
 						baseaddr, loadaddr, xtr_idx,
@@ -704,12 +739,12 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		binfile = r_bin_file_new_from_bytes (bin, desc->name,
 			buf_bytes, sz, file_sz, bin->rawstr, baseaddr, loadaddr,
 			desc->fd, name, NULL, offset);
+		// RBinFile now owns buf_bytes,
+	} else {
+		free (buf_bytes); // ownership passed 
 	}
 
-	free (buf_bytes);
-
-	if (binfile) return r_bin_file_set_cur_binfile (bin, binfile);
-	return false;
+	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 
 R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name) {
@@ -726,32 +761,6 @@ R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr, ut
 
 	return res;
 }
-
-#if 0
-static int remove_bin_file_by_binfile (RBin *bin, RBinFile * binfile) {
-	RListIter *iter;
-	RBinFile *tmp_binfile = NULL;
-	int found_bin = false;
-	r_list_foreach (bin->binfiles, iter, tmp_binfile) {
-		if (tmp_binfile == binfile) {
-			r_list_delete (bin->binfiles, iter);
-			found_bin = true;
-			break;
-		}
-	}
-	return found_bin;
-}
-
-static void r_bin_free_bin_files (RBin *bin) {
-	RListIter *iter, *t_iter;
-	RBinFile *a;
-	r_list_foreach_safe (bin->binfiles, iter, t_iter, a) {
-		r_bin_file_free (a);
-		r_list_delete(bin->binfiles,iter);
-	}
-}
-#endif
-
 
 R_API int r_bin_file_deref_by_bind (RBinBind * binb) {
 	RBin *bin = binb ? binb->bin : NULL;
@@ -827,9 +836,8 @@ static int r_bin_file_object_add (RBinFile *binfile, RBinObject *o) {
 	return true;
 }
 
-static RBinFile * r_bin_file_create_append (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname) {
-	RBinFile *bf = NULL;
-	bf = r_bin_file_new (bin, file, bytes, sz, file_sz, rawstr, fd, xtrname, bin->sdb);
+static RBinFile *r_bin_file_create_append (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname) {
+	RBinFile *bf = r_bin_file_new (bin, file, bytes, sz, file_sz, rawstr, fd, xtrname, bin->sdb);
 	if (bf) r_list_append (bin->binfiles, bf);
 	return bf;
 }
@@ -897,8 +905,6 @@ R_API RBinPlugin * r_bin_get_binplugin_by_bytes (RBin *bin, const ut8* bytes, ut
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (plugin->check_bytes && plugin->check_bytes (bytes, sz) )
 			return plugin;
-		// must be set to null
-		plugin = NULL;
 	}
 	return NULL;
 }
@@ -963,7 +969,7 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 		if (sz<bsz) bsz = sz;
 		o->bin_obj = plugin->load_bytes (binfile, bytes+offset, sz, loadaddr, sdb);
 		if (!o->bin_obj) {
-			eprintf("Error in r_bin_object_new: load_bytes failed for %s plugin\n",
+			eprintf ("Error in r_bin_object_new: load_bytes failed for %s plugin\n",
 				plugin->name);
 			sdb_free (o->kv);
 			free (o);
@@ -1008,11 +1014,15 @@ static RBinObject * r_bin_object_new (RBinFile *binfile, RBinPlugin *plugin, ut6
 
 static int r_bin_file_set_bytes (RBinFile *binfile, const ut8 * bytes, ut64 sz) {
 	if (!bytes) return false;
-	if (binfile->buf) r_buf_free (binfile->buf);
-	binfile->buf = r_buf_new ();
+#if DO_THE_PTR
+	r_buf_free (binfile->buf);
+	binfile->buf = r_buf_new_with_pointers (bytes, sz);
+#else
+	r_buf_free (binfile->buf);
+	binfile->buf = r_buf_new();
 	r_buf_set_bytes (binfile->buf, bytes, sz);
-	binfile->size = sz;
-	return true;
+#endif
+	return binfile->buf != NULL;
 }
 
 static RBinFile * r_bin_file_new (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb) {
@@ -1038,9 +1048,7 @@ static RBinFile * r_bin_file_new (RBin *bin, const char *file, const ut8 * bytes
 	}
 
 	if (sdb) {
-		char fdkey[128];
-		snprintf (fdkey, sizeof (fdkey)-1, "fd.%i", fd);
-		binfile->sdb = sdb_ns (sdb, fdkey, 1);
+		binfile->sdb = sdb_ns (sdb, sdb_fmt (0, "fd.%d",fd), 1);
 		sdb_set (binfile->sdb, "archs", "0:0:x86:32", 0); // x86??
 		/* NOTE */
 		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all sub-namespaces */
@@ -1077,8 +1085,7 @@ static int r_bin_file_object_new_from_xtr_data (RBin *bin, RBinFile *bf, ut64 ba
 	return true;
 }
 
-static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr,
-		 ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset) {
+static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset) {
 	RBinPlugin *plugin = NULL;
 	RBinXtrPlugin *xtr = NULL;
 	RBinFile *bf = NULL;
@@ -1102,7 +1109,7 @@ static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const 
 	if (bin->force) {
 		plugin = r_bin_get_binplugin_by_name (bin, bin->force);
 	}
-	if (plugin == NULL) {
+	if (!plugin) {
 		if (pluginname) plugin = r_bin_get_binplugin_by_name (bin, pluginname);
 		if (!plugin) plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
 		if (!plugin) plugin = r_bin_get_binplugin_any (bin);
@@ -1113,12 +1120,15 @@ static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const 
 	if (o && !o->size) o->size = file_sz;
 
 	if (!o) {
-		if (bf && binfile_created) r_list_delete_data (bin->binfiles, bf);
+		if (bf && binfile_created)
+			r_list_delete_data (bin->binfiles, bf);
 		return NULL;
 	}
+	/* WTF */
 	if (strcmp (plugin->name, "any") )
 		bf->narch = 1;
 
+	/* free unnecessary rbuffer (???) */
 	return bf;
 }
 
@@ -1497,20 +1507,6 @@ static RBinFile* r_bin_file_find_by_object_id (RBin *bin, ut32 binobj_id) {
 	return NULL;
 }
 
-#if 0
-static RBinObject * r_bin_object_find_by_id (RBin *bin, ut32 binobj_id) {
-	RBinFile *binfile = NULL;
-	RBinObject *obj = NULL;
-	RListIter *iter = NULL;
-
-	r_list_foreach (bin->binfiles, iter, binfile) {
-		obj = r_bin_file_object_find_by_id (binfile, binobj_id);
-		if (obj) break;
-	}
-	return obj;
-}
-#endif
-
 static RBinFile * r_bin_file_find_by_id (RBin *bin, ut32 binfile_id) {
 	RBinFile *binfile = NULL;
 	RListIter *iter = NULL;
@@ -1779,14 +1775,16 @@ R_API RBinClass *r_bin_class_get (RBinFile *binfile, const char *name) {
 
 R_API int r_bin_class_add_method (RBinFile *binfile, const char *classname, const char *name, int nargs) {
 	RBinClass *c = r_bin_class_get (binfile, classname);
-	char *n = strdup (name);
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	if (!sym) return false;
+	sym->name = strdup (name);
 	if (c) {
-		r_list_append (c->methods, (void*)n);
+		r_list_append (c->methods, sym);
 		return true;
 	}
 	c = r_bin_class_new (binfile, classname, NULL, 0);
-	r_list_append (c->methods, (void*)n);
-	return false;
+	r_list_append (c->methods, sym);
+	return true;
 }
 
 R_API void r_bin_class_add_field (RBinFile *binfile, const char *classname, const char *name) {

@@ -20,7 +20,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	short ofst;
 	int imm = 0, d, r, k;
-	ut8 kbuf[2];
+	ut8 kbuf[4];
 	ut16 ins = AVR_SOFTCAST(buf[0],buf[1]);
 	char *arg, str[32];
 	if (op == NULL)
@@ -104,36 +104,36 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		else	r_strbuf_setf (&op->esil, "r%d,CF,r%d,-,0xff,&,-,0x80,&,!,!,NF,=,r%d,CF,r%d,-,0xff,&,==,$z,ZF,=,$b8,CF,=,$b3,HF,=,$o,VF,=,VF,NF,^,SF,=", r, d, r, d);
 	}
 	switch (buf[1] & 0xfc) {
-		case 0x10:	//CPSE
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->type2 = R_ANAL_OP_TYPE_CMP;
-			anal->iob.read_at (anal->iob.io, addr+2, kbuf, 4);
-			op->fail = addr + 2;
-			op->jump = op->fail + avrdis (str, op->fail, kbuf, 4);
-			op->failcycles = 1;
-			op->cycles = ((op->jump - op->fail) == 4) ? 3 : 2;
-			r_strbuf_setf (&op->esil, "r%d,r%d,==,$z,?{0x%"PFMT64x",PC,=,}", r, d, op->jump);
-			break;
-		case 0x20:	//AND
-			op->type = R_ANAL_OP_TYPE_AND;
-			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,r%d,&=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
-			break;
-		case 0x24:	//EOR
-			op->type = R_ANAL_OP_TYPE_XOR;
-			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,r%d,^=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
-			break;
-		case 0x28:	//OR
-			op->type = R_ANAL_OP_TYPE_OR;
-			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,r%d,|=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
-			break;
-		case 0x2c:	//MOV
-			op->type = R_ANAL_OP_TYPE_MOV;
-			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,r%d,=", r, d);
-			break;
+	case 0x10:	//CPSE
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type2 = R_ANAL_OP_TYPE_CMP;
+		anal->iob.read_at (anal->iob.io, addr+2, kbuf, 4);
+		op->fail = addr + 2;
+		op->jump = op->fail + avrdis (str, op->fail, kbuf, 4);
+		op->failcycles = 1;
+		op->cycles = ((op->jump - op->fail) == 4) ? 3 : 2;
+		r_strbuf_setf (&op->esil, "r%d,r%d,==,$z,?{0x%"PFMT64x",PC,=,}", r, d, op->jump);
+		break;
+	case 0x20:	//AND
+		op->type = R_ANAL_OP_TYPE_AND;
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "r%d,r%d,&=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
+		break;
+	case 0x24:	//EOR
+		op->type = R_ANAL_OP_TYPE_XOR;
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "r%d,r%d,^=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
+		break;
+	case 0x28:	//OR
+		op->type = R_ANAL_OP_TYPE_OR;
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "r%d,r%d,|=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
+		break;
+	case 0x2c:	//MOV
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "r%d,r%d,=", r, d);
+		break;
 	}
 	if ((buf[1] & 0xfe) == 0x92) {
 		switch (buf[0] & 0xf) {
@@ -276,7 +276,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->fail = (op->addr)+4;
 		anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
 		// TODO: check return value
-		op->jump = AVR_SOFTCAST(kbuf[0],kbuf[1])*2;
+		op->jump = AVR_SOFTCAST(kbuf[0], kbuf[1]) * 2;
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
 	}
 	if ((buf[1] & 0xf0) == 0xc0) { // rjmp (relative)
@@ -335,16 +335,16 @@ static int esil_avr_fini (RAnalEsil *esil) {
 }
 
 static int set_reg_profile(RAnal *anal) {
-	char *p =
-		"=pc	PC\n"
-		"=sp	SP\n"
+	const char *p =
+		"=PC	PC\n"
+		"=SP	SP\n"
 // explained in http://www.nongnu.org/avr-libc/user-manual/FAQ.html
 // and http://www.avrfreaks.net/forum/function-calling-convention-gcc-generated-assembly-file
-		"=a0	r25\n"
-		"=a1	r24\n"
-		"=a2	r23\n"
-		"=a3	r22\n"
-		"=r0	r24\n"
+		"=A0	r25\n"
+		"=A1	r24\n"
+		"=A2	r23\n"
+		"=A3	r22\n"
+		"=R0	r24\n"
 #if 0
 PC: 16- or 22-bit program counter
 SP: 8- or 16-bit stack pointer

@@ -161,10 +161,13 @@ static const char *sdb_anext2(const char *str, const char **next) {
 // TODO: move this into fmt?
 SDB_API ut64* sdb_fmt_array_num(const char *list) {
 	ut64 *retp, *ret = NULL;
+	ut32 size;
 	const char *next, *ptr = list;
 	if (list && *list) {
-		int len = sdb_alen (list);
-		retp = ret = (ut64*) malloc (sizeof(ut64)*(len+1));
+		ut32 len = (ut32) sdb_alen (list);
+		size = sizeof (ut64) * (len + 1);
+		if (size < len) return NULL;
+		retp = ret = (ut64*) malloc (size);
 		if (!ret)
 			return NULL;
 		*retp++ = len;

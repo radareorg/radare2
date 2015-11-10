@@ -1,14 +1,14 @@
-=pc	eip
-=sp	esp
-=bp	ebp
-=a0	eax
-=a1	ebx
-=a2	ecx
-=a3	edi
-=zf	zf
-=sf	sf
-=of	of
-=cf	cf
+=PC	eip
+=SP	esp
+=BP	ebp
+=A0	eax
+=A1	ebx
+=A2	ecx
+=A3	edi
+=ZF	zf
+=SF	sf
+=OF	of
+=CF	cf
 gpr	eip	.32	128	0
 gpr	ip	.16	128	0
 gpr	oeax	.32	120	0

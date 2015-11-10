@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2012-2014 pancake */
+/* radare2 - LGPL - Copyright 2012-2015 pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -29,8 +29,6 @@ RAsmPlugin r_asm_plugin_dcpu16 = {
 	.bits = 16,
 	.desc = "Mojang's DCPU-16",
 	.license = "PD",
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
 	.assemble = &assemble 
 };

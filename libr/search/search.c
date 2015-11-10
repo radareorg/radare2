@@ -320,7 +320,22 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 							kw->distance++;
 							hit = true;
 						} else {
-							kw->idx[j] = 0;
+							// Works for 0a0a0a0b
+							bool isTail = false;
+							int k = kw->idx[j];
+							if (k>0) {
+								int q = 1;
+								int model = kw->bin_keyword[0];
+								for (isTail=true; q<k; q++) {
+									if (kw->bin_keyword[q] != model)
+										isTail = false;
+								}
+							}
+							if (isTail) {
+								kw->idx[j]--;
+							} else {
+								kw->idx[j] = 0;
+							}
 							kw->distance = 0;
 							hit = false;
 							ch = kw->bin_keyword[kw->idx[j]];

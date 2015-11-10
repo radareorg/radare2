@@ -119,7 +119,7 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 }
 
 R_API int r_core_visual_types(RCore *core) {
-	RCoreVisualTypes vt = {core, 0, 0};	
+	RCoreVisualTypes vt = {core, 0, 0};
 	int i, j, ch;
 	int _option = 0;
 	int option = 0;
@@ -327,6 +327,37 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 	}
 	r_list_free (list);
 	return res? true: false;
+}
+
+static bool r_core_visual_config_hud(RCore *core) {
+	RListIter *iter;
+	RConfigNode *bt;
+	RList *list = r_list_new ();
+	char *res;
+	list->free = free;
+	r_list_foreach (core->config->nodes, iter, bt) {
+		r_list_append (list, r_str_newf("%s %s", bt->name, bt->value));
+	}
+	res = r_cons_hud (list, NULL);
+	if (res) {
+		const char *oldvalue = NULL;
+		char cmd[512];
+		char *p = strchr (res, ' ');
+		if (p) *p = 0;
+		oldvalue = r_config_get (core->config, res);
+		r_cons_show_cursor (true);
+		r_cons_set_raw (0);
+		cmd[0] = '\0';
+		eprintf ("set new value for %s (old=%s)\n", res, oldvalue);
+		r_line_set_prompt (":> ");
+		if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0)
+			cmd[0]='\0';
+		r_config_set (core->config, res, cmd);
+		r_cons_set_raw (1);
+		r_cons_show_cursor (false);
+	}
+	r_list_free (list);
+	return true;
 }
 
 // TODO: skip N first elements
@@ -1002,6 +1033,9 @@ R_API void r_core_visual_config(RCore *core) {
 		case 'b': // back
 			menu = 0;
 			option = _option;
+			break;
+		case '_':
+			r_core_visual_config_hud (core);
 			break;
 		case 'q':
 			if (menu<=0) return; menu--;

@@ -545,49 +545,39 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method, ut64 loadaddr) {
 	RBinJavaAttrInfo* code_attr = method ? r_bin_java_get_method_code_attribute(method) : NULL;
 	ut8 * code_buf = NULL;
-	char * name_buf = NULL;
 	int result = false;
+	ut64 code_length = 0;
+	ut64 code_addr = -1;
 
-	ut64 code_length = 0,
-		 code_addr = -1;
-
-
-	if (code_attr == NULL) {
+	if (!code_attr) {
 		fcn->name = strdup ("sym.UNKNOWN");
 		fcn->dsc = strdup ("unknown");
-
 		fcn->size = code_length;
 		fcn->type = R_ANAL_FCN_TYPE_FCN;
 		fcn->addr = 0;
-
 		return R_ANAL_RET_ERROR;
 	}
 
 	code_length = code_attr->info.code_attr.code_length;
 	code_addr = code_attr->info.code_attr.code_offset;
-
 	code_buf = malloc (code_length);
 
 	anal->iob.read_at (anal->iob.io, code_addr + loadaddr, code_buf, code_length);
 	result = analyze_from_code_buffer ( anal, fcn, code_addr+loadaddr, code_buf, code_length);
-
 	free (code_buf);
 
-	name_buf = (char *) malloc (R_FLAG_NAME_SIZE);
-	if (name_buf){
+	{
 		char *cname = NULL;
-		char *name = strdup(method->name);
+		char *name = strdup (method->name);
 		r_name_filter (name, 80);
+		free (fcn->name);
 		if (method->class_name) {
 			cname = strdup (method->class_name);
 			r_name_filter (cname, 50);
-			sprintf (name_buf, "sym.%s.%s", cname, name);
+			fcn->name = r_str_newf ("sym.%s.%s", cname, name);
 		} else {
-			sprintf (name_buf, "sym.%s", name);
+			fcn->name = r_str_newf ("sym.%s", name);
 		}
-		free (fcn->name);
-		fcn->name = strdup (name_buf);
-		free (name_buf);
 		free (cname);
 		free (name);
 	}
@@ -732,7 +722,6 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 	ut64 offset = addr - java_get_method_start ();
 	ut8 pos = (offset+1)%4 ? 1 + 4 - (offset+1)%4 : 1;
 
-
 	if (op_byte == 0xaa) {
 		// handle a table switch condition
 		int min_val = (ut32)(UINT (data, pos + 4)),
@@ -751,18 +740,22 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 		}
 		pos += 12;
 
-		//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
-		for (cur_case = 0; cur_case <= max_val - min_val; pos+=4, cur_case++) {
-			//ut32 value = (ut32)(UINT (data, pos));
-			if (pos+4>=len) {
-				// switch is too big cant read further
-				break;
+		if (max_val > min_val && ((max_val-min_val)<(UT16_MAX/4))) {
+			//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
+			for (cur_case = 0; cur_case <= max_val - min_val; pos+=4, cur_case++) {
+				//ut32 value = (ut32)(UINT (data, pos));
+				if (pos+4>=len) {
+					// switch is too big cant read further
+					break;
+				}
+				int offset = (int)(ut32)(R_BIN_JAVA_UINT (data, pos));
+				IFDBG eprintf ("offset value: 0x%04x, interpretted addr case: %d offset: 0x%04"PFMT64x"\n", offset, cur_case+min_val, addr+offset);
+				caseop = r_anal_switch_op_add_case (op->switch_op, addr+pos, cur_case+min_val, addr+offset);
+				caseop->bb_ref_to = addr+offset;
+				caseop->bb_ref_from = addr; // TODO figure this one out
 			}
-			int offset = (int)(ut32)(R_BIN_JAVA_UINT (data, pos));
-			IFDBG eprintf ("offset value: 0x%04x, interpretted addr case: %d offset: 0x%04"PFMT64x"\n", offset, cur_case+min_val, addr+offset);
-			caseop = r_anal_switch_op_add_case (op->switch_op, addr+pos, cur_case+min_val, addr+offset);
-			caseop->bb_ref_to = addr+offset;
-			caseop->bb_ref_from = addr; // TODO figure this one out
+		} else {
+			eprintf ("Invalid switch boundaries at 0x%"PFMT64x"\n", addr);
 		}
 	}
 	op->size = pos;

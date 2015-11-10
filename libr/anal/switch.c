@@ -38,7 +38,7 @@ R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp * swop, ut64 addr, ut
 	caseop->addr = addr;
 	caseop->value = value;
 	caseop->jump = jump;
-	r_list_append(swop->cases, caseop);
+	r_list_append (swop->cases, caseop);
 	return caseop;
 }
 

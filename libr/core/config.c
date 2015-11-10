@@ -192,7 +192,7 @@ static int cb_asmarch(void *user, void *data) {
 	}
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
-	if (!(core->assembler->cur->bits & core->anal->bits)) {
+	if (core->assembler->cur && !(core->assembler->cur->bits & core->anal->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 
@@ -200,13 +200,21 @@ static int cb_asmarch(void *user, void *data) {
 	r_debug_set_arch (core->dbg, node->value, bits);
 	if (!r_config_set (core->config, "anal.arch", node->value)) {
 		char *p, *s = strdup (node->value);
-		p = strchr (s, '.');
-		if (p) *p = 0;
-		if (!r_config_set (core->config, "anal.arch", s)) {
-			/* fall back to the anal.null plugin */
-			r_config_set (core->config, "anal.arch", "null");
+		if (s) {
+			p = strchr (s, '.');
+			if (p) *p = 0;
+			if (!r_config_set (core->config, "anal.arch", s)) {
+				/* fall back to the anal.null plugin */
+				r_config_set (core->config, "anal.arch", "null");
+			}
+			free (s);
 		}
-		free (s);
+	}
+	// set pcalign
+	{
+		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+		if (v != -1) r_config_set_i (core->config, "asm.pcalign", v);
+		else r_config_set_i (core->config, "asm.pcalign", 0);
 	}
 	if (!r_syscall_setup (core->anal->syscall, node->value,
 				asmos, core->anal->bits)) {
@@ -305,6 +313,7 @@ static int cb_asmbits(void *user, void *data) {
 	{
 		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 		if (v != -1) r_config_set_i (core->config, "asm.pcalign", v);
+		else r_config_set_i (core->config, "asm.pcalign", 0);
 	}
 	return ret;
 }
@@ -376,7 +385,7 @@ static int cb_asmos(void *user, void *data) {
 	RConfigNode *asmarch, *node = (RConfigNode*) data;
 
 	if (*node->value == '?') {
-		r_cons_printf ("dos\ndarwin\nlinux\nfreebsd\nopenbsd\nnetbsd\nwindows\n");
+		r_cons_printf ("ios\ndos\ndarwin\nlinux\nfreebsd\nopenbsd\nnetbsd\nwindows\n");
 		return 0;
 	}
 	if (!node->value[0]) {
@@ -389,6 +398,7 @@ static int cb_asmos(void *user, void *data) {
 				node->value, core->anal->bits);
 		__setsegoff (core->config, asmarch->value, asmbits);
 	}
+	r_anal_set_os (core->anal, node->value);
 	//if (!ret) eprintf ("asm.os: Cannot setup syscall os/arch for '%s'\n", node->value);
 	return true;
 }
@@ -426,6 +436,7 @@ static int cb_strfilter(void *user, void *data) {
 		eprintf ("p  file/directory paths\n");
 		eprintf ("e  email-like addresses\n");
 		eprintf ("u  urls\n");
+		eprintf ("U  only uppercase strings\n");
 		eprintf ("f  format-strings\n");
 		return false;
 	} else {
@@ -518,6 +529,14 @@ static int cb_cfgdebug(void *user, void *data) {
 		}
 	}
 	r_config_set (core->config, "io.raw", ioraw? "true": "false");
+	return true;
+}
+
+static int cb_dirsrc(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	RCore *core = (RCore *)user;
+	free (core->bin->srcdir);
+	core->bin->srcdir = strdup (node->value);
 	return true;
 }
 
@@ -641,7 +660,7 @@ static int cb_dbgstatus(void *user, void *data) {
 	if (r_config_get_i (r->config, "cfg.debug")) {
 		if (node->i_value)
 			r_config_set (r->config, "cmd.prompt",
-				".dr* ; drd ; sr pc;pi 1;s-");
+				".dr*; drd; sr PC;pi 1;s-");
 		else r_config_set (r->config, "cmd.prompt", ".dr*");
 	}
 	return true;
@@ -925,6 +944,14 @@ static int cb_scrhighlight(void *user, void *data) {
 	return true;
 }
 
+#if __WINDOWS__ && !__CYGWIN__
+static int scr_ansicon(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton()->ansicon = node->i_value;
+	return true;
+}
+#endif
+
 static int cb_screcho(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton()->echo = node->i_value;
@@ -1099,7 +1126,7 @@ static int cb_binprefix(void *user, void *data) {
 			char *name = (char *)r_file_basename (core->bin->file);
 			r_name_filter (name, strlen (name));
 			r_str_filter (name, strlen (name));
-			core->bin->prefix = name;
+			core->bin->prefix = strdup (name);
 		} else {
 			core->bin->prefix = node->value;
 		}
@@ -1270,12 +1297,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.dwarf", "false", "Show dwarf comment at disassembly");
 	SETPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETPREF("asm.emu", "false", "Run ESIL emulation analysis on disasm");
+	SETPREF("asm.emuwrite", "false", "Allow asm.emu to modify memory (WARNING)");
 	SETPREF("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF("asm.fcnlines", "true", "Show function boundary lines");
 	SETPREF("asm.flags", "true", "Show flags");
 	SETPREF("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF("asm.lines", "true", "Show ASCII-art lines at disassembly");
-	SETPREF("asm.linesup", "true", "Update ascii-art lines instead of single shot");
 	SETPREF("asm.lines.call", "false", "Enable call lines");
 	SETPREF("asm.lines.ret", "false", "Show separator lines after ret");
 	SETPREF("asm.linesout", "true", "Show out of block lines");
@@ -1375,7 +1402,7 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETPREF("dir.plugins", R2_LIBDIR"/radare2/"R2_VERSION"/", "Path to plugin files to be loaded at startup");
 #endif
-	SETPREF("dir.source", "", "Path to find source files");
+	SETCB("dir.source", "", &cb_dirsrc, "Path to find source files");
 	SETPREF("dir.types", "/usr/include", "Default path to look for cparse type files");
 #if __ANDROID__
 	SETPREF("dir.projects", "/data/data/org.radare2.installer/radare2/projects", "Default path for projects");
@@ -1402,7 +1429,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("dbg.profile", "", &cb_runprofile, "Path to RRunProfile file");
 	SETCB("dbg.args", "", &cb_dbg_args, "Set the args of the program to debug");
 	/* debug */
-	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr pc;pi 1;s-'");
+	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;s-'");
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");
 	SETCB("dbg.bep", "loader", &cb_dbgbep, "break on entrypoint (loader, entry, constructor, main)");
 	if (core->cons->rows>30) // HACKY
@@ -1538,6 +1565,10 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "scr.fgets", "Use fgets() instead of dietline for prompt input");
 	SETCB("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");
 	SETPREF("scr.colorops", "true", "Colorize numbers and registers in opcodes");
+#if __WINDOWS__ && !__CYGWIN__
+	SETCB("scr.ansicon", r_str_bool (r_cons_singleton()->ansicon),
+		&scr_ansicon, "Use ANSICON mode or not on Windows");
+#endif
 #if __ANDROID__
 	SETPREF("scr.responsive", "true", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
 #else
