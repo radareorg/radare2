@@ -1634,7 +1634,7 @@ static int bin_fields(RCore *r, int mode, int va) {
 		ut64 addr = rva (bin, field->paddr, field->vaddr, va);
 
 		if (IS_MODE_RAD (mode)) {
-			r_name_filter (field->name, sizeof (field->name));
+			r_name_filter (field->name, -1);
 			r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n", field->name, addr);
 			r_cons_printf ("[%02i] vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" name=%s\n",
 				i, addr, field->paddr, field->name);
