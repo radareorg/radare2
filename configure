@@ -160,8 +160,7 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "
-Optional Features:
+printf "\nOptional Features:
   --disable-debugger     disable native debugger features 
   --with-sysmagic        force to use system's magic 
   --disable-loadlibs     disable loading plugins 
@@ -177,10 +176,8 @@ Optional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku )  (USEROSTYPE=auto)
   --without-pic          do not build libr as a program independent location 
   --with-nonpic          build the library archives .a 
-  --with-libversion      specify different libversion  (LIBVERSION=xxx)
-"
-printf "
-Some influential environment variables:
+  --with-libversion      specify different libversion  (LIBVERSION=xxx)\n"
+printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CPPFLAGS    C preprocessor flags
@@ -188,10 +185,8 @@ Some influential environment variables:
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor
-"
-printf "
-Report bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor\n"
+printf "\nReport bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
@@ -357,8 +352,8 @@ else
 	echo "libc"
 fi
 printf "checking host endianness... "
-LIL_ENDIAN=$(printf I|od -to2|awk '{print substr($2,6,1);exit}')
-if [ "${LIL_ENDIAN}" = 1 ]; then
+LIL_ENDIAN=$(printf I|od|awk '{print substr($2,6,1);exit}')
+if [ 0 != 0 -o "${LIL_ENDIAN}" = 1 ]; then
 	BYTEORDER=1234
 	BIG_ENDIAN=0
 	echo little
@@ -454,7 +449,7 @@ LIL_ENDIAN="0"; fi
 check_library HAVE_LIB_LUA5_1 lua5.1 0 
 if [ "$USEROSTYPE" = "auto" ]; then
 if [ "$HOST_OS" = "mingw32_nt" ]; then
-USEROSTYPE="windows"
+USEROSTYPE="mingw32"
 else
 if [ "$HOST_OS" = "linux" ]; then
 USEROSTYPE="gnulinux"
