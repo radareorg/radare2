@@ -186,7 +186,6 @@ extern RAsmPlugin r_asm_plugin_ppc_cs;
 extern RAsmPlugin r_asm_plugin_sparc_gnu;
 extern RAsmPlugin r_asm_plugin_avr;
 extern RAsmPlugin r_asm_plugin_dalvik;
-extern RAsmPlugin r_asm_plugin_msil;
 extern RAsmPlugin r_asm_plugin_sh;
 extern RAsmPlugin r_asm_plugin_z80;
 extern RAsmPlugin r_asm_plugin_i8080;
