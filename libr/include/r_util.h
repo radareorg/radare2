@@ -136,7 +136,7 @@ typedef struct r_prof_t {
 } RProfile;
 
 /* numbers */
-#define R_NUMCALC_STRSZ 4096
+#define R_NUMCALC_STRSZ 1024
 
 typedef struct {
 	double d;
