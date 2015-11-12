@@ -634,6 +634,7 @@ typedef struct r_anal_t {
 	RAnalOptions opt;
 	RList *reflines;
 	RList *reflines2;
+	RList *noreturn;
 } RAnal;
 
 typedef struct r_anal_hint_t {
@@ -927,7 +928,13 @@ typedef struct r_anal_reil {
 	char pc[8];
 } RAnalReil;
 
-#define ESIL_INTERNAL_PREFIX	'$'		//must be a char
+typedef struct r_anal_noreturn_t {
+	char *name;
+	ut64 addr;
+} RAnalNoreturn;
+
+// must be a char
+#define ESIL_INTERNAL_PREFIX '$'
 #define ESIL struct r_anal_esil_t
 
 typedef struct r_anal_esil_callbacks_t {
@@ -1475,6 +1482,12 @@ R_API void r_anal_unset_limits(RAnal *anal);
 
 /* ESIL to REIL */
 R_API int r_anal_esil_to_reil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats);
+
+/* no-return stuff */
+R_API void r_anal_noreturn_list(RAnal *anal, int mode);
+R_API void r_anal_noreturn_free(RAnalNoreturn *nr);
+R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr);
+R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;

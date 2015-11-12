@@ -1991,6 +1991,52 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_anal_noreturn(RCore *core, const char *input) {
+	const char* help_msg[] = {
+		"Usage:", "an [-][0xaddr|symname]", " manage no-return marks",
+		"an[a]", " 0x3000", "stop function analysis if call/jmp to this address",
+		"an[n]", " sym.imp.exit", "same as above but for flag/fcn names",
+		"an", "-*", "remove all no-return references",
+		"an", "", "list them all",
+		"ao*", "", "display opcode in r commands",
+		NULL};
+	switch (input[0]) {
+	case '-':
+		r_anal_noreturn_drop (core->anal, input+1);
+		break;
+	case ' ':
+		if (input[1] == '0' && input[2] == 'x') {
+			r_anal_noreturn_add (core->anal, NULL,
+				r_num_math (core->num, input+1));
+		} else {
+			r_anal_noreturn_add (core->anal, input+1,
+				r_num_math (core->num, input+1));
+		}
+		break;
+	case 'a':
+		if (input[1] == ' ') {
+			r_anal_noreturn_add (core->anal, NULL,
+				r_num_math (core->num, input+1));
+		} else r_core_cmd_help (core, help_msg);
+		break;
+	case 'n':
+		if (input[1] == ' ') {
+		} else r_core_cmd_help (core, help_msg);
+		break;
+	case '*':
+	case 'r':
+		r_anal_noreturn_list (core->anal, 1);
+		break;
+	case 0:
+		r_anal_noreturn_list (core->anal, 0);
+		break;
+	default:
+	case '?':
+		r_core_cmd_help (core, help_msg);
+		break;
+	}
+}
+
 static void cmd_anal_opcode(RCore *core, const char *input) {
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
@@ -3099,6 +3145,7 @@ static int cmd_anal(void *data, const char *input) {
 		"ah", "[?lba-]", "analysis hints (force opcode size, ...)",
 		"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 		"ao", "[e?] [len]", "analyze Opcodes (or emulate it)",
+		"an", "[an-] [...]", "manage no-return addresses/symbols/functions",
 		"ar", "", "like 'dr' but for the esil vm. (registers)",
 		"ax", "[?ld-*]", "manage refs/xrefs (see also afx?)",
 		"as", " [num]", "analyze syscall using dbg.reg",
@@ -3123,6 +3170,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'r': cmd_anal_reg (core, input+1); break; // "ar"
 	case 'e': cmd_anal_esil (core, input+1); break; // "ae"
 	case 'o': cmd_anal_opcode (core, input+1); break;
+	case 'n': cmd_anal_noreturn (core, input+1); break; // "an"
 	case 'F':
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;

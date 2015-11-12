@@ -60,6 +60,7 @@ typedef struct r_flag_t {
 
 #include <r_flags.h> // compile time line, no linkage needed
 typedef RFlagItem* (*RFlagGet)(RFlag *f, const char *name);
+typedef RFlagItem* (*RFlagGetAt)(RFlag *f, ut64 addr);
 typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size, int dup);
 typedef int (*RFlagSetSpace)(RFlag *f, const char *name);
 
@@ -67,6 +68,7 @@ typedef struct r_flag_bind_t {
 	int init;
 	RFlag *f;
 	RFlagGet get;
+	RFlagGetAt get_at;
 	RFlagSet set;
 	RFlagSetSpace set_fs;
 } RFlagBind;
