@@ -2062,9 +2062,13 @@ static void agraph_update_title (RAGraph *g, RAnalFunction *fcn) {
  * and update what's necessary */
 static int check_changes(RAGraph *g, int is_interactive,
 		RCore *core, RAnalFunction *fcn) {
+	int oldpos[2] = {0,0};
 	if (g->need_reload_nodes && core) {
-		int ret = agraph_reload_nodes (g, core, fcn);
-		if (!ret) return false;
+		// save scroll here
+		oldpos[0] = g->can->sx;
+		oldpos[1] = g->can->sy;
+		if (!agraph_reload_nodes (g, core, fcn))
+			return false;
 	}
 	if (fcn) {
 		agraph_update_title (g, fcn);
@@ -2093,9 +2097,12 @@ static int check_changes(RAGraph *g, int is_interactive,
 	if (g->update_seek_on || g->force_update_seek) {
 		RANode *n = g->update_seek_on;
 		if (!n && g->curnode) n = get_anode (g->curnode);
-		if (n) update_seek(g->can, n, g->force_update_seek);
+		if (n) update_seek (g->can, n, g->force_update_seek);
 	}
-
+	if (oldpos[0] || oldpos[1]) {
+		g->can->sx = oldpos[0];
+		g->can->sy = oldpos[1];
+	}
 	g->need_reload_nodes = false;
 	g->need_update_dim = false;
 	g->need_set_layout = false;
