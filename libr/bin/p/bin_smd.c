@@ -133,7 +133,7 @@ static RBinInfo* info(RBinFile *arch) {
 static void addsym(RList *ret, const char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 	if (!ptr) return;
-	strncpy (ptr->name, name, R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup (name);
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = 0;
 	ptr->ordinal = 0;
