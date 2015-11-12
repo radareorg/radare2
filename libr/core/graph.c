@@ -2062,11 +2062,13 @@ static void agraph_update_title (RAGraph *g, RAnalFunction *fcn) {
  * and update what's necessary */
 static int check_changes(RAGraph *g, int is_interactive,
 		RCore *core, RAnalFunction *fcn) {
-	int oldpos[2] = {0,0};
+	int oldpos[2] = {0, 0};
 	if (g->need_reload_nodes && core) {
-		// save scroll here
-		oldpos[0] = g->can->sx;
-		oldpos[1] = g->can->sy;
+		if (!g->update_seek_on && !g->force_update_seek) {
+			// save scroll here
+			oldpos[0] = g->can->sx;
+			oldpos[1] = g->can->sy;
+		}
 		if (!agraph_reload_nodes (g, core, fcn))
 			return false;
 	}
@@ -2474,13 +2476,10 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	r_cons_gotoxy (strlen (h) + 1, rows);
 
 	do {
-		char ch;
-
-		ch = r_cons_readchar ();
+		char ch = r_cons_readchar ();
 		obuf[i++] = ch;
 		r_cons_printf ("%c", ch);
 		r_cons_flush ();
-
 		cont = isalpha ((ut8)ch) && !islower ((ut8)ch);
 	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
 
