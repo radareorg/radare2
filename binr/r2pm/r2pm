@@ -1,11 +1,26 @@
 #!/bin/sh
 
+# Honor user environment
+[ -z "${SUDO}" ] && SUDO=sudo
+if [ -z "${R2PM_PREFIX}" ]; then
+	if [ "`uname`" = Darwin ]; then
+		R2PM_PREFIX=/usr/local
+	else
+		R2PM_PREFIX=/usr/
+	fi
+fi
+
+# Global Vars
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
-R2PM_PLUGDIR=${HOME}/.config/radare2/plugins
-R2PM_USRDIR=${HOME}/.config/radare2/r2pm
+[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${HOME}/.config/radare2/plugins"
+R2PM_USRDIR="${HOME}/.config/radare2/r2pm"
 LIBEXT=`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`
 PREFIX=`r2 -hh | grep PREFIX | awk '{print $2}' 2> /dev/null`
+IS_SYSPKG=0
+
+# TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_PREFIX}/lib/radare2/last"
+
 if [ -z "${R2PM_DBDIR}" ]; then
 	if [ -d "${PREFIX}/share/radare2/last/r2pm" ]; then
 		R2PM_DBDIR="${PREFIX}/share/radare2/last/r2pm"
@@ -23,6 +38,10 @@ mkdir -p "${R2PM_USRDIR}/pkg"
 mkdir -p "${R2PM_USRDIR}/git"
 mkdir -p "${R2PM_PLUGDIR}"
 
+R2PM_SYSPKG() {
+	IS_SYSPKG="$1"
+}
+
 R2PM_DESC() {
 	:
 }
@@ -39,9 +58,9 @@ R2PM_List() {
 R2PM_Search() {
 	cd "${R2PM_DBDIR}"
 	if [ -n "$1" ]; then
-		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf '\t'`," -e 's,",,g' | grep -i "$1"
+		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g' | grep -i "$1"
 	else
-		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf '\t'`," -e 's,",,g'
+		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g'
 	fi
 }
 
@@ -169,5 +188,10 @@ case "$1" in
 	echo " -v,version              show version"
 	echo " -h,help                 show this message"
 	echo " -c,clean                clear source cache"
+	echo "Environment:"
+	echo "SUDO=sudo                use this tool as sudo"
+	echo "R2PM_PREFIX=/usr         prefix for syspkgs"
+	echo "R2PM_PLUGDIR=~/.config/radare2/plugins   # default value, home-install for plugins"
+	echo "R2PM_PLUGDIR=/usr/lib/radare2/last/      # for system-wide plugin installs"
 	;;
 esac

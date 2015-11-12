@@ -1,13 +1,13 @@
 R2PM_BEGIN
 
-R2PM_DESC "[R2Pipe] r2pipe API for NodeJS"
+R2PM_DESC "[syspkg-r2pipe] r2pipe API for NodeJS"
 
 R2PM_INSTALL() {
-	sudo npm install -g r2pipe
+	${SUDO} npm install -g r2pipe
 }
 
 R2PM_UNINSTALL() {
-	sudo npm uninstall -g r2pipe
+	${SUDO} npm uninstall -g r2pipe
 }
 
 R2PM_END

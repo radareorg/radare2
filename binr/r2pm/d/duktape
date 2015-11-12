@@ -1,10 +1,10 @@
 R2PM_BEGIN
 
 R2PM_GIT "https://github.com/radare/radare2-bindings"
-R2PM_DESC "[RLang] Duktape Javascript plugin #!duktape"
+R2PM_DESC "[r2-lang] Duktape Javascript plugin #!duktape"
 
 R2PM_INSTALL() {
-	./configure --prefix=/usr
+	./configure --prefix="${R2PM_PREFIX}"
 	cd libr/lang/p || R2PM_FAIL "Chdir"
 	make clean
 	make duktape || R2PM_FAIL "Damn"

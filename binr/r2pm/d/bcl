@@ -1,11 +1,11 @@
 R2PM_BEGIN
 
 R2PM_GIT "https://github.com/radare/radare2-extras"
-R2PM_DESC "[R2DNA] Bin/Asm/Anal plugs for BaseCall DNA sequences"
+R2PM_DESC "[r2-asm-anal-bin] BaseCall DNA sequence disassembler, analyzer"
 
 R2PM_INSTALL() {
-	export PKG_CONFIG_PATH=/usr/lib/pkgconfig
-	./configure --prefix=/usr
+	#export PKG_CONFIG_PATH="${R2PM_PREFIX}/lib/pkgconfig"
+	./configure --prefix=${R2PM_PREFIX}
 	make -C bcl
 	make -C bcl install
 }

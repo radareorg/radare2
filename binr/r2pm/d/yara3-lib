@@ -1,10 +1,10 @@
 R2PM_BEGIN
 
 R2PM_GIT "https://github.com/radare/radare2-extras"
-R2PM_DESC "[System] system-wide install of yara3 library"
+R2PM_DESC "[syspkg] yara3 library"
 
 R2PM_INSTALL() {
-	yara/install-yara2.sh
+	yara/install-yara3.sh
 }
 
 R2PM_UNINSTALL() {

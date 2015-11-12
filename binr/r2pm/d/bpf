@@ -1,7 +1,7 @@
 R2PM_BEGIN
 
 R2PM_GIT "https://github.com/mrmacete/r2scripts"
-R2PM_DESC "[RAsm] BPF disassembler, analyzer, emulator"
+R2PM_DESC "[r2-asm] BPF disassembler, analyzer, emulator"
 
 R2PM_INSTALL() {
 	cd bpf
@@ -9,7 +9,7 @@ R2PM_INSTALL() {
 	make
 	# home installation
 	EXT_SO=$(r2 -hh|grep LIBEXT|awk '{print $2}')
-	cp *.${EXT_SO} ~/.config/radare2/plugins
+	cp *.${EXT_SO} "${R2PM_PLUGDIR}"
 }
 
 R2PM_UNINSTALL() {
