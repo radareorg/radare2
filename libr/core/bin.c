@@ -1120,6 +1120,7 @@ static void snFini(SymName *sn) {
 }
 
 static bool isHidden(RBinSymbol *s) {
+	if (!s->bind || !s->type) return false;
 	return (!strcmp (s->bind, "LOCAL") && !strcmp (s->type, "NOTYPE"));
 }
 
