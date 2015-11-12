@@ -328,13 +328,26 @@ R_API _Bool r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
 	return false;
 }
 
-R_API void r_io_map_list (RIO *io) {
+R_API void r_io_map_list (RIO *io, int mode) {
 	RIOMap *map;
 	RListIter *iter;
 	if (io && io->maps && io->cb_printf) {
 		r_list_foreach (io->maps, iter, map) {
-			if (map)
-				io->cb_printf ("%i +0x%"PFMT64x" 0x%"PFMT64x" - 0x%"PFMT64x" ; %s\n", map->fd, map->delta, map->from, map->to, r_str_rwx_i (map->flags));
+			if (!map) continue;
+			switch (mode) {
+			case 1:
+			case 'r':
+				if (map->from) {
+					io->cb_printf ("omr 0x0 0x%"PFMT64x"\n", map->from);
+				}
+				break;
+			default:
+				io->cb_printf ("%i +0x%"PFMT64x" 0x%"PFMT64x
+						" - 0x%"PFMT64x" ; %s\n", map->fd,
+						map->delta, map->from, map->to,
+						r_str_rwx_i (map->flags));
+				break;
+			}
 		}
 	}
 }

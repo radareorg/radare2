@@ -149,6 +149,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 		"om", "-0x10000", "remove the map at given address",
 		"om", " fd addr [size]", "create new io map",
 		"omr", " fd|0xADDR ADDR", "relocate current map",
+		"om*", "", "show r2 commands to restore mapaddr",
 		NULL };
 	ut64 fd = 0LL;
 	ut64 addr = 0LL;
@@ -210,7 +211,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 		break;
 	case '-':
 		if (atoi (input+3)>0) {
-			r_io_map_del(core->io,
+			r_io_map_del (core->io,
 					r_num_math (core->num, input+2));
 		} else {
 			r_io_map_del_at (core->io,
@@ -218,12 +219,15 @@ static void cmd_open_map (RCore *core, const char *input) {
 		}
 		break;
 	case '\0':
-		r_io_map_list (core->io);
+		r_io_map_list (core->io, 0);
+		break;
+	case '*':
+		r_io_map_list (core->io, 'r');
 		break;
 	default:
 	case '?':
 		r_core_cmd_help (core, help_msg);
-		 break;
+		break;
 	}
 	r_core_block_read (core, 0);
 }

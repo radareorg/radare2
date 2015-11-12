@@ -305,6 +305,8 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		// TODO: r_str_writef (fd, "e asm.arch=%s", r_config_get ("asm.arch"));
 		r_config_list (core->config, NULL, true);
 		r_cons_flush ();
+		r_core_cmd (core, "om*", 0);
+		r_cons_flush ();
 		r_str_write (fd, "# sections\n");
 		r_io_section_list (core->io, core->offset, 1);
 		r_cons_flush ();
