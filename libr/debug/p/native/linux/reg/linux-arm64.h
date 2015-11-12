@@ -42,10 +42,9 @@ return strdup (
 "gpr	x28	.64	224	0\n" // x0
 "gpr	x29	.64	232	0\n" // x0
 "gpr	x30	.64	240	0\n" // x0
-"gpr	pc	.64	248	0\n" // x0
-"gpr	pstate	.64	256	0\n" // x0
-"gpr	ox0	.64	264	0\n" // x0
-"gpr	snr	.64	272	0\n" // x0
+"gpr	sp	.64	248	0\n" // x0
+"gpr	pc	.64	256	0\n" // x0
+"gpr	pstate	.64	264	0\n" // x0
 
 // probably wrong
 "gpr	nf	.1	.256	0	sign\n" // msb bit of last op

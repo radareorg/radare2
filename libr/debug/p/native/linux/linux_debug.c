@@ -56,7 +56,6 @@ int linux_handle_signals (RDebug *dbg) {
 		return R_TRUE;
 	}
 	return R_FALSE;
-
 }
 
 int linux_step (RDebug *dbg) {
