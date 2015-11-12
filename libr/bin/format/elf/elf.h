@@ -29,8 +29,8 @@ typedef struct r_bin_elf_symbol_t {
 	ut64 offset;
 	ut64 size;
 	ut32 ordinal;
-	char bind[ELF_STRING_LENGTH];
-	char type[ELF_STRING_LENGTH];
+	const char *bind;
+	const char *type;
 	char name[ELF_STRING_LENGTH];
 	int last;
 } RBinElfSymbol;

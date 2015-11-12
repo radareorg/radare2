@@ -200,7 +200,7 @@ static int init_strtab(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return false;
 	}
 
-	if (bin->shstrtab_section->sh_offset > bin->size){
+	if (bin->shstrtab_section->sh_offset > bin->size) {
 		R_FREE (bin->shstrtab);
 		return false;
 	}
@@ -225,7 +225,7 @@ static int init_strtab(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return true;
 }
 
-static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin){
+static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 	Elf_(Dyn) *dyn = NULL;
 	Elf_(Addr) strtabaddr = 0;
 	char *strtab = NULL;
@@ -237,14 +237,14 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin){
 	if (!bin || !bin->phdr || bin->ehdr.e_phnum == 0)
 		return false;
 
-	for (i = 0; i < bin->ehdr.e_phnum ; i++){
+	for (i = 0; i < bin->ehdr.e_phnum ; i++) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) break;
 	}
-	if (i == bin->ehdr.e_phnum){
+	if (i == bin->ehdr.e_phnum) {
 		// we didn't find the PT_DYNAMIC section
 		return false;
 	}
-	if (bin->phdr[i].p_filesz > bin->size){
+	if (bin->phdr[i].p_filesz > bin->size) {
 		return false;
 	}
 	if (bin->phdr[i].p_offset > bin->size)
@@ -264,7 +264,7 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin){
 		free (dyn);
 		return false;
 	}
-	if (bin->phdr[i].p_offset + dyn_size > bin->size){
+	if (bin->phdr[i].p_offset + dyn_size > bin->size) {
 		free (dyn);
 		return false;
 	}
@@ -277,34 +277,34 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin){
 #endif
 		entries);
 
-	if (r == -1 || r == 0){
+	if (r == -1 || r == 0) {
 		free (dyn);
 		return false;
 	}
 	for (i = 0; i < entries; i++) {
-		switch (dyn[i].d_tag){
+		switch (dyn[i].d_tag) {
 		case DT_STRTAB: strtabaddr = Elf_(r_bin_elf_v2p) (bin, dyn[i].d_un.d_ptr); break;
 		case DT_STRSZ: strsize = dyn[i].d_un.d_val; break;
 		default: break;
 		}
 	}
 	if (!strtabaddr || strtabaddr > bin->size ||
-	strsize > ST32_MAX || strsize == 0 || strsize > bin->size){
+	strsize > ST32_MAX || strsize == 0 || strsize > bin->size) {
 		free (dyn);
 		return false;
 	}
 	strtab = (char *)calloc (1, strsize+1);
-	if (!strtab){
+	if (!strtab) {
 		free (dyn);
 		return false;
 	}
-	if (strtabaddr + strsize > bin->size){
+	if (strtabaddr + strsize > bin->size) {
 		free (dyn);
 		free (strtab);
 		return false;
 	}
 	r = r_buf_read_at (bin->b, strtabaddr, (ut8 *)strtab, strsize);
-	if (r == 0 || r == -1){
+	if (r == 0 || r == -1) {
 		free (dyn);
 		free (strtab);
 		return false;
@@ -494,7 +494,7 @@ static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 						// do nothing
 					} else {
 						// ONLY FOR X86
-						if (of > bin->size || of + sizeof (Elf_(Addr)) > bin->size){
+						if (of > bin->size || of + sizeof (Elf_(Addr)) > bin->size) {
 							free (rel);
 							return -1;
 						}
@@ -1099,13 +1099,13 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab)
 		return NULL;
 
-	for (j = 0; j< bin->dyn_entries; j++){
-		if (bin->dyn_buf[j].d_tag == DT_RPATH || bin->dyn_buf[j].d_tag == DT_RUNPATH){
+	for (j = 0; j< bin->dyn_entries; j++) {
+		if (bin->dyn_buf[j].d_tag == DT_RPATH || bin->dyn_buf[j].d_tag == DT_RUNPATH) {
 			if ((ret = calloc (1,ELF_STRING_LENGTH)) == NULL) {
 				perror ("malloc (rpath)");
 				return NULL;
 			}
-			if (bin->dyn_buf[j].d_un.d_val > bin->strtab_size){
+			if (bin->dyn_buf[j].d_un.d_val > bin->strtab_size) {
 				free (ret);
 				return NULL;
 			}
@@ -1325,7 +1325,7 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 				perror ("realloc (libs)");
 				return NULL;
 			}
-			if (bin->dyn_buf[j].d_un.d_val > bin->strtab_size){
+			if (bin->dyn_buf[j].d_un.d_val > bin->strtab_size) {
 				free (ret);
 				return NULL;
 			}
@@ -1392,7 +1392,10 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 }
 
 static void fill_symbol_bind_and_type (struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
-	#define s_bind(x) snprintf (ret->bind, ELF_STRING_LENGTH, x);
+	//#define s_bind(x) snprintf (ret->bind, ELF_STRING_LENGTH, x);
+	// #define s_type(x) snprintf (ret->type, ELF_STRING_LENGTH, x);
+	#define s_bind(x) ret->bind = x
+	#define s_type(x) ret->type = x
 	switch (ELF_ST_BIND(sym->st_info)) {
 	case STB_LOCAL:  s_bind ("LOCAL"); break;
 	case STB_GLOBAL: s_bind ("GLOBAL"); break;
@@ -1403,7 +1406,6 @@ static void fill_symbol_bind_and_type (struct r_bin_elf_symbol_t *ret, Elf_(Sym)
 	case STB_HIPROC: s_bind ("HIPROC"); break;
 	default:         s_bind ("UNKNOWN");
 	}
-	#define s_type(x) snprintf (ret->type, ELF_STRING_LENGTH, x);
 	switch (ELF_ST_TYPE (sym->st_info)) {
 	case STT_NOTYPE:  s_type ("NOTYPE"); break;
 	case STT_OBJECT:  s_type ("OBJECT"); break;
@@ -1433,30 +1435,30 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 		return NULL;
 
 	for (j = 0; j < bin->dyn_entries; j++) {
-		if (bin->dyn_buf[j].d_tag == DT_SYMTAB){
+		if (bin->dyn_buf[j].d_tag == DT_SYMTAB) {
 			addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_buf[j].d_un.d_ptr);
 			break;
 		}
 	}
-	if (addr_sym_table){
+	if (addr_sym_table) {
 		//since ELF doesn't specify the symbol table size we are going to read until the end of the buffer
 		// this might be overkill.
 		nsym = (int)(bin->b->length - addr_sym_table) / sizeof (Elf_(Sym));
 		if (nsym < 1)
 			return NULL;
 		sym = (Elf_(Sym)*) calloc (nsym, sizeof (Elf_(Sym)));
-		if (!sym){
+		if (!sym) {
 			return NULL;
 		}
-		if (!UT32_MUL (&size, nsym, sizeof (Elf_(Sym)))){
+		if (!UT32_MUL (&size, nsym, sizeof (Elf_(Sym)))) {
 			free (sym);
 			return NULL;
 		}
-		if (size < 1){
+		if (size < 1) {
 			free (sym);
 			return NULL;
 		}
-		if (addr_sym_table > bin->size || addr_sym_table+size > bin->size){
+		if (addr_sym_table > bin->size || addr_sym_table+size > bin->size) {
 			free (sym);
 			return NULL;
 		}
@@ -1467,11 +1469,11 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 					bin->endian? "3I2cS": "3i2cs",
 #endif
 					nsym);
-		if (r == 0 || r == -1){
+		if (r == 0 || r == -1) {
 			free (sym);
 			return NULL;
 		}
-		for (k = ret_ctr = 0 ; k < nsym ; k++){
+		for (k = ret_ctr = 0 ; k < nsym ; k++) {
 			if (k == 0)
 				continue;
 			if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
@@ -1481,11 +1483,11 @@ static struct r_bin_elf_symbol_t* get_symbols_from_phdr (struct Elf_(r_bin_elf_o
 					toffset = 0;
 				tsize = 16;
 			} else if (type == R_BIN_ELF_SYMBOLS && sym[k].st_shndx != STN_UNDEF &&
-			  ELF_ST_TYPE(sym[k].st_info) != STT_SECTION && ELF_ST_TYPE(sym[k].st_info) != STT_FILE){
+			  ELF_ST_TYPE(sym[k].st_info) != STT_SECTION && ELF_ST_TYPE(sym[k].st_info) != STT_FILE) {
 				tsize = sym[k].st_size;
 				toffset = (ut64)sym[k].st_value;
 			} else continue;
-			if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL){
+			if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL) {
 				free (sym);
 				return NULL;
 			}
@@ -1618,7 +1620,7 @@ if (
 					return NULL;
 				}
 				if (strtab_section->sh_offset > bin->size ||
-				  strtab_section->sh_offset + strtab_section->sh_size > bin->size){
+				  strtab_section->sh_offset + strtab_section->sh_size > bin->size) {
 					free (ret);
 					free (strtab);
 					return NULL;
@@ -1640,7 +1642,7 @@ if (
 				return NULL;
 			}
 			nsym = (int)(bin->shdr[i].sh_size / sizeof (Elf_(Sym)));
-			if (nsym < 1){
+			if (nsym < 1) {
 				free (ret);
 				free (strtab);
 				return NULL;
@@ -1830,11 +1832,12 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 	if (!(buf = (ut8*)r_file_slurp (file, &bin->size)))
 		return Elf_(r_bin_elf_free) (bin);
 	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes (bin->b, buf, bin->size)){
+	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {
 		free (buf);
 		return Elf_(r_bin_elf_free) (bin);
 	}
 	if (!elf_init (bin)) {
+		free (buf);
 		return Elf_(r_bin_elf_free) (bin);
 	}
 	free (buf);
