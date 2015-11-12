@@ -51,6 +51,9 @@ static RList* symbols(RBinFile *arch) {
 	ret->free = free;
 	if (!(ptr[0] = R_NEW0 (RBinSymbol)))
 		return ret;
+  if (!ptr[0]->name) {
+    ptr[0]->name = calloc(1, R_BIN_SIZEOF_STRINGS);
+  }
 	strncpy (ptr[0]->name, "NMI_VECTOR_START_ADDRESS", R_BIN_SIZEOF_STRINGS);
 	ptr[0]->vaddr = NMI_VECTOR_START_ADDRESS;
 	ptr[0]->size = 2;
@@ -58,6 +61,9 @@ static RList* symbols(RBinFile *arch) {
 	r_list_append (ret, ptr[0]);
 	if (!(ptr[1] = R_NEW0 (RBinSymbol)))
 		return ret;
+  if (!ptr[1]->name) {
+    ptr[1]->name = calloc(1, R_BIN_SIZEOF_STRINGS);
+  }
 	strncpy (ptr[1]->name, "RESET_VECTOR_START_ADDRESS", R_BIN_SIZEOF_STRINGS);
 	ptr[1]->vaddr = RESET_VECTOR_START_ADDRESS;
 	ptr[1]->size = 2;
@@ -65,6 +71,9 @@ static RList* symbols(RBinFile *arch) {
 	r_list_append (ret, ptr[1]);
 	if (!(ptr[2] = R_NEW0 (RBinSymbol)))
 		return ret;
+  if (!ptr[2]->name) {
+    ptr[2]->name = calloc(1, R_BIN_SIZEOF_STRINGS);
+  }
 	strncpy (ptr[2]->name, "IRQ_VECTOR_START_ADDRESS", R_BIN_SIZEOF_STRINGS);
 	ptr[2]->vaddr = IRQ_VECTOR_START_ADDRESS;
 	ptr[2]->size = 2;

@@ -1713,7 +1713,7 @@ R_API int r_core_anal_all(RCore *core) {
 		r_list_foreach (list, iter, symbol) {
 			if (core->cons->breaked)
 				break;
-			if (!strcmp (symbol->type, "FUNC")) {
+			if (symbol->type && (!strcmp (symbol->type, "FUNC"))) {
 				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr,
 					symbol->vaddr);
 				r_core_anal_fcn (core, addr, -1,
