@@ -585,8 +585,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'f':
 		r_anal_fcn_fit_overlaps (core->anal, NULL);
 		break;
-	case '-':
-		 {
+	case '-': // "af-"
+		if (!input[2] || !strcmp (input+2, "*")) {
+			r_anal_fcn_del_locs (core->anal, UT64_MAX);
+			r_anal_fcn_del (core->anal, UT64_MAX);
+		} else {
 			ut64 addr = input[2]?
 			r_num_math (core->num, input+2): core->offset;
 			r_anal_fcn_del_locs (core->anal, addr);
