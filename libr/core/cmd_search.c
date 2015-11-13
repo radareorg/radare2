@@ -202,7 +202,6 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 			break;
 		}
 	}
-	eprintf ("Analized %d functions based on preludes\n", preludecnt);
 	free (b);
 	return preludecnt;
 }
@@ -236,17 +235,22 @@ R_API int r_core_search_preludes(RCore *core) {
 		switch (bits) {
 		case 32:
 			ret = r_core_search_prelude (core, from, to,
-				(const ut8 *)"\x55\x89\xe5", 3, NULL, 0);
+                (const ut8 *)"\x55\x89\xe5", 3, NULL, 0) +
+                  r_core_search_prelude (core, from, to,
+                (const ut8 *)"\x55\x8b\xec", 3, NULL, 0);
 			break;
 		case 64:
 			ret = r_core_search_prelude (core, from, to,
-				(const ut8 *)"\x55\x48\x89\xe5", 3, NULL, 0);
-			break;
+                (const ut8 *)"\x55\x48\x89\xe5", 4, NULL, 0);
+                  r_core_search_prelude (core, from, to,
+                (const ut8 *)"\x55\x48\x8b\xec", 4, NULL, 0);
+            break;
 		default:
 			eprintf ("ap: Unsupported bits: %d\n", bits);
 		}
 	} else eprintf ("ap: Unsupported asm.arch and asm.bits\n");
-	return ret;
+    eprintf ("Analyzed %d functions based on preludes\n", ret);
+    return ret;
 }
 
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
