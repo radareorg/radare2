@@ -109,7 +109,7 @@ do_it_again:
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
 	*vch = 0;
-	ret = ReadConsoleInput (h, irInBuf, sizeof (irInBuf), &out);
+	ret = ReadConsoleInput (h, irInBuf, 128, &out);
 	if (ret<1) {
 		return 0;
 	}
