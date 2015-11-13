@@ -507,7 +507,6 @@ R_API void r_core_visual_seek_animation (RCore *core, ut64 addr) {
 	r_cons_flush();
 	r_sys_usleep (90000);
 #endif
-	r_core_seek (core, addr, 1);
 }
 
 static void setprintmode (RCore *core, int n) {
@@ -1481,18 +1480,21 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'u':
 		{
 		ut64 off = r_io_sundo (core->io, core->offset);
-		if (off != UT64_MAX)
-			//r_core_seek (core, off, 1);
+		if (off != UT64_MAX) {
+			r_core_seek (core, off, 1);
 			r_core_visual_seek_animation (core, off);
-		else eprintf ("Cannot undo\n");
+		} else {
+			eprintf ("Cannot undo\n");
+		}
 		}
 		break;
 	case 'U':
 		{
 		ut64 off = r_io_sundo_redo (core->io);
-		if (off != UT64_MAX)
-			//r_core_seek (core, off, 1);
+		if (off != UT64_MAX) {
+			r_core_seek (core, off, 1);
 			r_core_visual_seek_animation (core, off);
+		}
 		}
 		break;
 	case 'z':
