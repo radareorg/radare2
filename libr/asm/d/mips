@@ -14,6 +14,7 @@ j=unconditionally jumps to the instruction at the specified address
 jal=used to call a subroutine, $31 holds the return address; returning from a subroutine is done by: jr $31. Return address is PC + 8, not PC + 4 due to the use of a branch delay slot which forces the instruction after the jump to be executed
 jr=jumps to the address contained in the specified register
 jraddiusp=increment stackpointer and jump to ra register
+li=load immediate (pseudoinstruction)
 lb=lb $t,C($s), loads the byte stored from: MEM[$s+C], sign is extended to width of register
 lh=lh $t,C($s), loads the halfword stored from: MEM[$s+C] and the following byte, sign is extended to width of register.
 lhu=lhu $t,C($s), loads the halfword stored from: MEM[$s+C] and the following byte.
@@ -22,6 +23,9 @@ lw=lw $t,C($s), loads the word stored from: MEM[$s+C] and the following 3 bytes.
 mfcZ=moves a 4 byte value from Coprocessor Z Control register to a general purpose register. Sign extension.
 mfhi=moves a value from HI to a register
 mflo=moves a value from LO to a register
+move=moves a register value into another register (pseudoinstruction).
+movn=conditional move.
+movz=conditional move.
 mtcZ=moves a 4 byte value from a general purpose register to a Coprocessor Z Control register. Sign extension.
 mult=int HI, int LO = (64-bit) $s * $t, trap on overflow
 multu=int HI, int LO = (64-bit) $s * $t
