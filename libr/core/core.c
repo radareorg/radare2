@@ -404,7 +404,7 @@ static const char *radare_argv[] = {
 	"pd", "pda", "pdb", "pdc", "pdj", "pdr", "pdf", "pdi", "pdl", "pds", "pdt",
 	"pD", "px", "pX", "po", "pf", "pf.", "pf*", "pf*.", "pfd", "pfd.", "pv", "p=", "p-",
 	"pm", "pr", "pt", "ptd", "ptn", "pt?", "ps", "pz", "pu", "pU", "p?",
-	"#!pipe",
+	"#!pipe", "z", "zf", "zF", "zFd", "zh", "zn", "zn-",
 	NULL
 };
 
@@ -509,6 +509,7 @@ static int autocomplete(RLine *line) {
 		     !strncmp (line->buffer.data, "oc ", 3) ||
 		     !strncmp (line->buffer.data, "r2 ", 3) ||
 		     !strncmp (line->buffer.data, "cd ", 3) ||
+		     !strncmp (line->buffer.data, "zF ", 3) ||
 		     !strncmp (line->buffer.data, "on ", 3) ||
 		     !strncmp (line->buffer.data, "op ", 3) ||
 		     !strncmp (line->buffer.data, ". ", 2) ||

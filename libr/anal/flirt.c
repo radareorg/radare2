@@ -324,17 +324,16 @@ static ut8 version; // version of the sig file being parsed
 unsigned short crc16 (const unsigned char *data_p, size_t length) {
 	unsigned char i;
 	unsigned int data;
-
-	if ( length == 0 )
-		return 0;
 	unsigned int crc = 0xFFFF;
+
+	if (length == 0)
+		return 0;
 	do {
 		data = *data_p++;
-		for ( i=0; i < 8; i++ ) {
+		for (i=0; i < 8; i++) {
 			if ( (crc ^ data) & 1 )
 				crc = (crc >> 1) ^ POLY;
-			else
-				crc >>= 1;
+			else crc >>= 1;
 			data >>= 1;
 		}
 	} while ( --length != 0 );
@@ -346,8 +345,8 @@ unsigned short crc16 (const unsigned char *data_p, size_t length) {
 }
 
 // this is ugly, but we can't afford to change the return size of read_byte
-static int buf_eof;
-static int buf_err;
+static bool buf_eof;
+static bool buf_err;
 
 static ut8 read_byte (RBuffer *b) {
 	ut8 r;
@@ -368,58 +367,48 @@ static ut8 read_byte (RBuffer *b) {
 static ut16 read_short (RBuffer *b) {
 	ut16 r = (read_byte (b) << 8);
 	r += read_byte (b);
-
 	return r;
 }
 
 static ut32 read_word (RBuffer *b) {
 	ut32 r = (read_short (b) << 16);
 	r += read_short (b);
-
 	return r;
 }
 
 static ut16 read_max_2_bytes (RBuffer *b) {
 	ut16 r = read_byte(b);
-	if ( r & 0x80 )
+	if (r & 0x80)
 		return ((r & 0x7f) << 8) + read_byte (b);
-
 	return r;
 }
 
 static ut32 read_multiple_bytes (RBuffer *b) {
-	ut32 r;
-
-	r = read_byte (b);
-
+	ut32 r = read_byte (b);
 	if ((r & 0x80) != 0x80)
 		return r;
-
 	if ((r & 0xc0) != 0xc0)
 		return ((r & 0x7f) << 8) + read_byte (b);
-
 	if ((r & 0xe0) != 0xe0) {
 		r = ((r & 0x3f) << 24) + (read_byte (b) << 16);
 		r += read_short (b);
-
 		return r;
 	}
-
 	return read_word (b);
 }
 
 static void module_free (RFlirtModule *module) {
 	if (!module) return;
 
-	if ( module->public_functions ) {
+	if (module->public_functions) {
 		module->public_functions->free = (RListFree)free;
 		r_list_free (module->public_functions);
 	}
-	if ( module->tail_bytes ) {
+	if (module->tail_bytes) {
 		module->tail_bytes->free = (RListFree)free;
 		r_list_free (module->tail_bytes);
 	}
-	if ( module->referenced_functions ) {
+	if (module->referenced_functions) {
 		module->referenced_functions->free = (RListFree)free;
 		r_list_free (module->referenced_functions);
 	}
@@ -431,17 +420,14 @@ static void node_free (RFlirtNode *node) {
 
 	free (node->variant_bool_array);
 	free (node->pattern_bytes);
-
 	if (node->module_list) {
 		node->module_list->free = (RListFree)module_free;
 		r_list_free (node->module_list);
 	}
-
 	if (node->child_list) {
 		node->child_list->free = (RListFree)node_free;
 		r_list_free (node->child_list);
 	}
-
 	free (node);
 }
 
@@ -480,7 +466,6 @@ static void print_module (const RAnal *anal, const RFlirtModule *module) {
 
 static void print_node_pattern (const RAnal *anal, const RFlirtNode *node) {
 	int i;
-
 	for (i = 0; i < node->length; i++) {
 		if (node->variant_bool_array[i])
 			anal->cb_printf ("..");
@@ -492,7 +477,7 @@ static void print_node_pattern (const RAnal *anal, const RFlirtNode *node) {
 
 static void print_indentation (const RAnal *anal, int indent) {
 	int i;
-	for (i = 0 ; i<indent ; i++) anal->cb_printf ("  ");
+	for (i = 0; i<indent ; i++) anal->cb_printf ("  ");
 }
 
 static void print_node (const RAnal *anal, const RFlirtNode *node, int indent) {
@@ -564,24 +549,20 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 	return true;
 }
 
+/* Returns true if b matches the pattern in node. */
+/* Returns false otherwise. */
 static int node_pattern_match (const RFlirtNode *node, ut8 *b, int buf_size) {
-	 /* Returns true if b matches the pattern in node. */
-	 /* Returns false otherwise. */
 	int i;
-
 	if (buf_size < node->length) return false;
-
 	for (i = 0; i < node->length; i++) {
 		if (! node->variant_bool_array[i])
 			if (node->pattern_bytes[i] != b[i])
 				return false;
 	}
-
 	return true;
 }
 
-static int node_match_buffer (const RAnal *anal, const RFlirtNode *node, ut8 *b,
-		ut64 address, int buf_size) {
+static int node_match_buffer (const RAnal *anal, const RFlirtNode *node, ut8 *b, ut64 address, int buf_size) {
 	RListIter *node_child_it, *module_it;
 	RFlirtNode *child;
 	RFlirtModule *module;
@@ -589,12 +570,12 @@ static int node_match_buffer (const RAnal *anal, const RFlirtNode *node, ut8 *b,
 	if (node_pattern_match(node, b, buf_size)) {
 		if (node->child_list) {
 			r_list_foreach(node->child_list, node_child_it, child) {
-				if(node_match_buffer(anal, child, b + node->length, address, buf_size - node->length))
+				if (node_match_buffer(anal, child, b + node->length, address, buf_size - node->length))
 					return true;
 			}
 		} else if (node->module_list) {
-			r_list_foreach(node->module_list, module_it, module) {
-				if(module_match_buffer(anal, module, b + node->length, address, buf_size - node->length))
+			r_list_foreach (node->module_list, module_it, module) {
+				if (module_match_buffer(anal, module, b + node->length, address, buf_size - node->length))
 					return true;
 			}
 		}

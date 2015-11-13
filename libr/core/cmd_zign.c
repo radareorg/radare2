@@ -181,14 +181,14 @@ static int cmd_zign(void *data, const char *input) {
 	case 'F':
 		if (input[1] == 'd') {
 			if (input[2] != ' ') {
-				eprintf("Usage: zFd <file>\n");
-				return R_FALSE;
+				eprintf ("Usage: zFd <flirt-sig-file>\n");
+				return false;
 			}
 			r_sign_flirt_dump (core->anal, input + 3);
 		} else {
 			if(input[1] != ' ') {
-				eprintf("Usage: zF <file>\n");
-				return R_FALSE;
+				eprintf ("Usage: zF <flirt-sig-file>\n");
+				return false;
 			}
 			r_sign_flirt_scan (core->anal, input + 2);
 		}
@@ -207,8 +207,8 @@ static int cmd_zign(void *data, const char *input) {
 			"zB", " size", "Generate zignatures for current offset/flag",
 			"zc", " @ fcn.foo", "flag signature if matching (.zc@@fcn)",
 			"zf", " name fmt", "define function zignature (fast/slow, args, types)",
-			"zF", " file", "Open a flirt signature file and scan opened file",
-			"zFd", " file", "Dump a flirt signature",
+			"zF", " file", "Open a FLIRT signature file and scan opened file",
+			"zFd", " file", "Dump a FLIRT signature",
 			"zg", " namespace [file]", "Generate zignatures for current file",
 			"zh", " name bytes", "define function header zignature",
 			"zn", " namespace", "Define namespace for following zignatures (until zn-)",
