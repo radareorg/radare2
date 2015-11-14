@@ -215,7 +215,6 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 
 static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	char ch = 0, c = 0;
-	int quote = 0;
 
 	do { if (!cin_get (num, nc, &ch)) return nc->curr_tok = RNCEND;
 	} while (ch!='\n' && isspace ((unsigned char)ch));

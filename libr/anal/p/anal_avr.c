@@ -426,13 +426,24 @@ I Interrupt flag. Set when interrupts are enabled.
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	if (q == R_ANAL_ARCHINFO_ALIGN)
+		return 2;
+	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE)
+		return 4;
+	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE)
+		return 2;
+	return 2; // XXX
+}
+
 RAnalPlugin r_anal_plugin_avr = {
 	.name = "avr",
 	.desc = "AVR code analysis plugin",
 	.license = "LGPL3",
 	.arch = "avr",
 	.esil = true,
-	.bits = 8|16, // 24 big regs conflicts
+	.archinfo = archinfo,
+	.bits = 8 | 16, // 24 big regs conflicts
 	.op = &avr_op,
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_avr_init,

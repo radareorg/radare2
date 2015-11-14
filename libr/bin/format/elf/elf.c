@@ -736,8 +736,8 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	// X86-PIE
 	if (buf[0x00] == 0x48 && buf[0x1e] == 0x8d && buf[0x11] == 0xe8) {
-		ut32 *main = (ut32*)(buf + 0x30);
-		ut64 vmain = Elf_(r_bin_elf_p2v) (bin, (ut64)*main);
+		ut32 *pmain = (ut32*)(buf + 0x30);
+		ut64 vmain = Elf_(r_bin_elf_p2v) (bin, (ut64)*pmain);
 		ut64 ventry = Elf_(r_bin_elf_p2v) (bin, entry);
 		if (vmain>>16 == ventry>>16) {
 			return (ut64)vmain;
@@ -793,10 +793,8 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	/* find sym.main if possible */
 	{
-		ut64 main = getmainsymbol (bin);
-		if (main != UT64_MAX) {
-			return main;
-		}
+		ut64 m = getmainsymbol (bin);
+		if (m != UT64_MAX) return m;
 	}
 	return UT64_MAX;
 }
