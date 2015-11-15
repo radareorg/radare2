@@ -865,15 +865,20 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		}
 		eprintf ("No debug region found here\n");
 		return false;
-	case 'i':
+	case 'i': // "dmi"
 		{ // Move to a separate function
 		RCoreBinFilter filter;
-		const char *libname = NULL, *symname = NULL;
-		char *ptr = strdup (r_str_trim_head ((char*)input+2));
+		const char *libname = NULL, *symname = NULL, *mode = "";
+		ut64 baddr = 0LL;
+		char *ptr;
 		int i;
-		ut64 baddr;
 
-		addr = 0LL;
+		if (input[1]=='*') {
+			ptr = strdup (r_str_trim_head ((char*)input+2));
+			mode = "-r ";
+		} else {
+			ptr= strdup (r_str_trim_head ((char*)input+1));
+		}
 		i = r_str_word_set0 (ptr);
 		switch (i) {
 		case 2: // get symname
@@ -881,6 +886,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		case 1: // get addr|libname
 			addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			if (!addr) libname = r_str_word_get0 (ptr, 0);
+			break;
 		}
 		r_debug_map_sync (core->dbg); // update process memory maps
 		r_list_foreach (core->dbg->maps, iter, map) {
@@ -890,10 +896,22 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				filter.offset = 0LL;
 				filter.name = (char *)symname;
 				baddr = r_bin_get_baddr (core->bin);
-				r_bin_set_baddr (core->bin, map->addr);
-				r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'),
-						true, &filter, NULL);
-				r_bin_set_baddr (core->bin, baddr);
+				if (libname) {
+					char *cmd, *res;
+					if (symname) {
+						cmd = r_str_newf ("rabin2 %s-B 0x%08"PFMT64x" -s %s | grep %s", mode, baddr, map->name, symname);
+					} else {
+						cmd = r_str_newf ("rabin2 %s-B 0x%08"PFMT64x" -s %s", mode, baddr, map->name);
+					}
+					res = r_sys_cmd_str (cmd, NULL, NULL);
+					r_cons_printf ("%s\n",res);
+					free (res);
+					free (cmd);
+				} else {
+					r_bin_set_baddr (core->bin, map->addr);
+					r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'), true, &filter, NULL);
+					r_bin_set_baddr (core->bin, baddr);
+				}
 				break;
 			}
 		}

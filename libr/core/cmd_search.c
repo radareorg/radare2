@@ -235,7 +235,7 @@ R_API int r_core_search_preludes(RCore *core) {
 		switch (bits) {
 		case 32:
 			r_core_search_prelude (core, from, to,
-				(const ut8 *)"\x55\x89\xe5", 3, NULL, 0) +
+				(const ut8 *)"\x55\x89\xe5", 3, NULL, 0);
 			r_core_search_prelude (core, from, to,
 				(const ut8 *)"\x55\x8b\xec", 3, NULL, 0);
 			break;
