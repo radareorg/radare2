@@ -886,7 +886,7 @@ static int set_reg_profile(RAnal *anal) {
 		"=SF	nf\n"
 		"=OF	vf\n"
 		"=CF	cf\n"
-		"=SN	ox0\n"
+		"=SN	x0\n"
 
 		/* 32bit sub-registers */
 		"gpr	w0	.32	0	0\n"
