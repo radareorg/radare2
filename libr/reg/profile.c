@@ -144,6 +144,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 			if (r) {
 				eprintf("%s: Parse error @ line %d (%s)\n",
 					__FUNCTION__, l, r);
+				//eprintf ("(%s)\n", str);
 				// Clean up
 				r_reg_free_internal (reg);
 				return false;

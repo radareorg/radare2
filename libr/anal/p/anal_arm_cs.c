@@ -957,13 +957,14 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	lr	.64	240	0\n" // lr = x30
 		"gpr	sp	.64	248	0\n"
 		"gpr	zr	.64	248	0\n" // zr = sp (x31)
-		"gpr	cpsr	.64	256	0\n"
-		"gpr	pc	.64	272	0\n"
+		"gpr	pc	.64	256	0\n"
+		"gpr	cpsr	.64	264	0\n"
+		"gpr	pstate	.64	264	0\n" // x0
 		// probably wrong
-		"gpr	nf	.1	.256	0	sign\n" // msb bit of last op
-		"gpr	zf	.1	.257	0	zero\n" // set if last op is 0
-		"gpr	cf	.1	.258	0	carry\n" // set if last op carries
-		"gpr	vf	.1	.515	0	overflow\n"; // set if overflows
+		"gpr	nf	.1	.264	0	sign\n" // msb bit of last op
+		"gpr	zf	.1	.265	0	zero\n" // set if last op is 0
+		"gpr	cf	.1	.268	0	carry\n" // set if last op carries
+		"gpr	vf	.1	.269	0	overflow\n"; // set if overflows
 	} else {
 		p = \
 		"=PC	r15\n"

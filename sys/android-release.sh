@@ -30,13 +30,13 @@ cd "$R2B"
 for a in ${ARCHS} ; do 
 	echo "Releasing $a ..."
 	git checkout android-${a} || exit 1
-	if [ ! -d "${R2T}/radare2-${v}-android-${a}.tar.gz" ]; then
+	if [ ! -f "${R2T}/radare2-${v}-android-${a}.tar.gz" ]; then
 		(
 		cd "${R2T}"
 		sys/android-${a}.sh
 		)
 	fi
-	if [ ! -d "${R2T}/radare2-${v}-android-${a}.tar.gz" ]; then
+	if [ ! -f "${R2T}/radare2-${v}-android-${a}.tar.gz" ]; then
 		echo "Build for $a failed"
 		exit 1
 	fi
