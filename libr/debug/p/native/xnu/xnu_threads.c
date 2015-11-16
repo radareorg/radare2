@@ -28,6 +28,7 @@ static int xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 	memcpy (&regs->uds, thread->state, thread->count);
 #elif __arm || __arm64 || __aarch64
 	/* not supported */
+	return false;
 #elif __POWERPC__
 	/* not supported */
 #ifndef PPC_DEBUG_STATE32
@@ -120,7 +121,7 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 		(thread_state_t)thread->state, &thread->count);
 	if (rc != KERN_SUCCESS) {
 		thread->count = 0;
-		eprintf ("Failed to get gpr registers\n");
+		perror ("thread_get_state");
 		return false;
 	}
 	return true;
@@ -142,6 +143,7 @@ static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
 	/* not supported yet */
 	thread->flavor = -1;
 	thread->count = 0;
+	return true;
 #endif
 	kern_return_t rc = thread_get_state (thread->tid, thread->flavor,
 		thread->state, &thread->count);

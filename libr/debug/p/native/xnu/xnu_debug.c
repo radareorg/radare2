@@ -161,44 +161,37 @@ static task_t task_for_pid_workaround(int Pid) {
 
 bool xnu_step(RDebug *dbg) {
 	int ret = false;
-	int pid = dbg->pid;
 	task_t task;
-	(void)getcurthread (dbg, &task);
 
 #if __arm__ || __arm64__ || __aarch64__
+	// op-not-permitted ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0); //SIGINT
 	ios_hwstep_enable (dbg, true);
+	task = pid_to_task (dbg->pid);
 	if (task<1) {
-		perror ("task_resume");
+		perror ("pid_to_task");
 		eprintf ("step failed on task %d for pid %d\n", task, dbg->tid);
 	}
-#if 0
-	ptrace-step not supported on ios
-	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT
-	if (ret != 0) {
-		perror ("ptrace-step");
-		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
-		ret = false; /* do not wait for events */
+	if (task_resume (task) != KERN_SUCCESS) {
+		perror ("thread_resume");
 	} else {
-		eprintf ("step ok\n");
 		ret = true;
+		waitpid (dbg->pid, NULL, 0);
 	}
+#if 0
+	if (thread_resume (dbg->tid) == KERN_SUCCESS) {
+		ret = true;
+	} else perror ("thread_resume");
 #endif
-	if (task_resume (task)) {
-		perror ("task_resume");
-		ret = false;
-	} else ret = true;
 	ios_hwstep_enable (dbg, false);
-	ret = true;
-// wat :D
-	ptrace (PT_THUPDATE, pid, (void*)0, 0);
+//	eprintf ("thu %d\n", ptrace (PT_THUPDATE, dbg->pid, (void*)0, 0));
 #else
+	thread_t th = getcurthread (dbg, &task);
 	task_resume (task);
-	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT
-	if (ret != 0) {
+	ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
+	if (!ret) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
-		ret = false; /* do not wait for events */
-	} else ret = true;
+	}
 	//TODO handle the signals here in xnu. Now is  only supported for linux
 	/*r_debug_handle_signals (dbg);*/
 #endif
@@ -226,7 +219,6 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 	//return xnu_dettach (pid);
 	return true;
 #else
-	//ut64 rip = r_debug_reg_get (dbg, "pc");
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	task_resume (pid_to_task (pid));
 	return ptrace (PT_CONTINUE, pid, (void*)(size_t)1,
@@ -308,8 +300,8 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		break;
 	}
 	if (!ret) {
-		eprintf ("Failed to read reg xnu_reg_read\n");
-		return false;
+		perror ("xnu_reg_read");
+		//	return false;
 	}
 	if (th->state) {
 		int rsz = R_MIN (th->state_size, size);

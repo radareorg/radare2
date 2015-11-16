@@ -255,15 +255,15 @@ R_API int r_debug_startv(struct r_debug_t *dbg, int argc, char **argv) {
 	return false;
 }
 
-R_API int r_debug_start(struct r_debug_t *dbg, const char *cmd) {
+R_API int r_debug_start(RDebug *dbg, const char *cmd) {
 	/* TODO: this argc/argv parser is done in r_io */
 	// TODO: parse cmd and generate argc and argv
 	return false;
 }
 
-R_API int r_debug_detach(struct r_debug_t *dbg, int pid) {
+R_API int r_debug_detach(RDebug *dbg, int pid) {
 	if (dbg->h && dbg->h->detach)
-		return dbg->h->detach(pid);
+		return dbg->h->detach (pid);
 	return false;
 }
 

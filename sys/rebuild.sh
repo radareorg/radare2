@@ -26,6 +26,8 @@ Build() {
 
 RebuildIOSDebug() {
 	Rebuild libr/debug
+	# Rebuild libr/util
+	# Rebuild libr/core
 	Rebuild binr/radare2
 	make -C binr/radare2 ios-sign
 	if [ -n "${IOSIP}" ]; then
