@@ -313,8 +313,12 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	op->buf_asm[0] = '\0';
 	if (a->pcalign) {
 		if (a->pc % a->pcalign) {
-			op->size = -1;
+			op->size = a->pcalign - (a->pc % a->pcalign);
 			strcpy (op->buf_asm, "unaligned");
+			*op->buf_hex = 0;
+			if ((op->size*4) >= sizeof (op->buf_hex))
+				oplen = (sizeof (op->buf_hex)/4)-1;
+			r_hex_bin2str (buf, op->size, op->buf_hex);
 			return -1;
 		}
 	}

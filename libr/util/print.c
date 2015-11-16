@@ -306,6 +306,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 			memcpy (d+2, " ",1);
 			d++;
 		}
+		if (!s[1]) break;
 	}
 	if (colors || p->cur_enabled)
 		memcpy (d, Color_RESET, strlen (Color_RESET)+1);
