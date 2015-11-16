@@ -65,13 +65,16 @@ static int xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	thread->state = regs = (R_REG_T*)&thread->gpr;
 	thread->state_size = sizeof (thread->gpr);
 #if __i386__ || __x86_64__
+	//thread->flavor is used in a switch+case but in regs->tsh.flavor we specify
+	thread->flavor = x86_THREAD_STATE;
+	thread->count = x86_THREAD_STATE_COUNT;
 	if (dbg->bits == R_SYS_BITS_64) {
-		thread->flavor = regs->tsh.flavor = x86_THREAD_STATE;
-		thread->count = regs->tsh.count = x86_THREAD_STATE_COUNT;
+		regs->tsh.flavor = x86_THREAD_STATE64;
+		regs->tsh.count = x86_THREAD_STATE64_COUNT;
 		//thread->count = R_MIN (thread->count, sizeof (regs->uts.ts64));
 	} else {
-		thread->flavor = regs->tsh.flavor = i386_THREAD_STATE;
-		thread->count = regs->tsh.count = i386_THREAD_STATE_COUNT;
+		regs->tsh.flavor = x86_THREAD_STATE32;
+		regs->tsh.count = x86_THREAD_STATE32_COUNT;
 		//thread->count = R_MIN (thread->count, sizeof (regs->uts.ts32));
 		//memcpy (&regs->uts, thread->state, thread->state_size);
 	}

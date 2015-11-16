@@ -286,7 +286,8 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		ret = xnu_thread_set_drx (dbg, th);
 		break;
 	default:
-		memcpy (&th->gpr, buf, R_MIN (size, sizeof (th->gpr)));
+		//th->gpr has a header and the state we should copy on the state only
+		memcpy (&th->gpr.uts, buf, R_MIN (size, sizeof (th->gpr.uts)));
 		ret = xnu_thread_set_gpr (dbg, th);
 		break;
 	}
