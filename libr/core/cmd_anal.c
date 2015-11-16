@@ -2109,6 +2109,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	int minop = 1; // 4
 	ut8 buf[32];
 	RBinFile *binfile;
+	const char *searchin = r_config_get (core->config, "search.in");
 	RAnalOp op;
 	ut64 addr, addr_end;
 	ut64 len = r_num_math (core->num, input);
@@ -2116,17 +2117,20 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		eprintf ("Too big\n");
 		return;
 	}
-	if (len<1) {
-		len = r_num_math (core->num, "$SS-($$-$S)"); // section size
-	}
 	binfile = r_core_bin_cur (core);
-	if (!binfile){
+	if (!binfile) {
 		eprintf ("cur binfile null\n");
 		return;
 	}
-	if (len > binfile->size){
-		eprintf ("section size greater than file size\n");
-		return;
+	if (searchin && !strcmp (searchin, "file")) {
+		len = binfile->size;
+	} else {
+		if (len<1) {
+			len = r_num_math (core->num, "$SS-($$-$S)"); // section size
+		}
+		if (core->offset + len > binfile->size) {
+			len = binfile->size - core->offset;
+		}
 	}
 	addr = core->offset;
 	addr_end = addr + len;
