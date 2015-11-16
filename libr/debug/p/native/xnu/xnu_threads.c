@@ -25,15 +25,11 @@ static int xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 		thread->flavor = regs->dsh.flavor = x86_DEBUG_STATE32;
 		thread->count = R_DEBUG_STATE_SZ; //R_MIN (thread->count, sizeof(regs->uds.ds32));
 	}
+	memcpy (&regs->uds, thread->state, thread->count);
 #elif __arm || __arm64 || __aarch64
-	if (dbg->bits == R_SYS_BITS_64) {
-		thread->flavor = regs->dsh.flavor = ARM_DEBUG_STATE64;
-		thread->count = R_MIN (thread->count, sizeof(regs->uds.ds64));
-	} else {
-		thread->flavor = regs->dsh.flavor = ARM_DEBUG_STATE32;
-		thread->count = R_MIN (thread->count, sizeof(regs->uds.ds64));
-	}
+	/* not supported */
 #elif __POWERPC__
+	/* not supported */
 #ifndef PPC_DEBUG_STATE32
 #define PPC_DEBUG_STATE32 1
 #endif
@@ -43,8 +39,6 @@ static int xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 	regs->dsh.flavor = 0;
 	thread->count = 0;
 #endif
-	memcpy (&regs->uds, thread->state, thread->count);
-	thread->flavor = regs->dsh.flavor;
 	kern_return_t rc = thread_set_state (thread->tid, thread->flavor,
 		(thread_state_t)thread->state, thread->count);
 	if (rc != KERN_SUCCESS) {
@@ -145,11 +139,12 @@ static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
 	thread->count = regs->dsh.count = R_DEBUG_STATE_SZ;
 	// XXX thread->state = regs->uds;
 #elif __arm || __arm64 || __aarch64
-	thread->flavor = regs->dsh.flavor = ARM_UNIFIED_THREAD_STATE;
-	thread->count = regs->dsh.count;
-	thread->state = regs->uds;
+	/* not supported yet */
+	thread->flavor = -1;
+	thread->count = 0;
 #endif
-	kern_return_t rc = thread_get_state (thread->tid, thread->flavor, thread->state, &thread->count);
+	kern_return_t rc = thread_get_state (thread->tid, thread->flavor,
+		thread->state, &thread->count);
 	if (rc != KERN_SUCCESS) {
 		thread->count = 0;
 		perror ("xnu_thread_get_drx");
@@ -159,10 +154,12 @@ static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
 }
 
 static bool xnu_fill_info_thread(RDebug *dbg, xnu_thread_t *thread) {
-	mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
+#if !TARGET_OS_IPHONE
 	struct proc_threadinfo proc_threadinfo;
-	thread_identifier_info_data_t identifier_info;
 	int ret_proc;
+#endif
+	mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
+	thread_identifier_info_data_t identifier_info;
 	kern_return_t kr = thread_info (thread->tid, THREAD_BASIC_INFO,
 		(thread_info_t)&thread->basic_info, &count);
 	if (kr != KERN_SUCCESS) {
