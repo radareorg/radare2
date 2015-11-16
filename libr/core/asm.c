@@ -74,7 +74,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 
 	if (!*input)
 		return NULL;
-	if (core->blocksize<=OPSZ) {
+	if (core->blocksize <= OPSZ) {
 		eprintf ("error: block size too small\n");
 		return NULL;
 	}
@@ -116,7 +116,12 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				matchcount = 0;
 				continue;
 			}
-			if (tokens[matchcount]) {
+			matches = true;
+			if (!strcmp (op.buf_asm, "unaligned"))
+				matches = false;
+			if (!strcmp (op.buf_asm, "invalid"))
+				matches = false;
+			if (matches && tokens[matchcount]) {
 				if (!regexp) matches = strstr(op.buf_asm, tokens[matchcount]) != NULL;
 				else {
 					rx = r_regex_new (tokens[matchcount], "");
