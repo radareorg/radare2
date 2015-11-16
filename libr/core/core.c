@@ -695,6 +695,7 @@ openfile:
 		    (!strncmp (line->buffer.data, "db ", 3)) ||
 		    (!strncmp (line->buffer.data, "db- ", 4)) ||
 		    (!strncmp (line->buffer.data, "f ", 2)) ||
+		    (!strncmp (line->buffer.data, "f- ", 3)) ||
 		    (!strncmp (line->buffer.data, "fr ", 3)) ||
 		    (!strncmp (line->buffer.data, "tf ", 3)) ||
 		    (!strncmp (line->buffer.data, "/a ", 3)) ||

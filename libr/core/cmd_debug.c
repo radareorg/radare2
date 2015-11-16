@@ -378,6 +378,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		"dp", " <pid>", "List children of pid",
 		"dp*", "", "List all attachable pids",
 		"dp=", "<pid>", "Select pid",
+		"dp-", " <pid>", "Dettach select pid",
 		"dpa", " <pid>", "Attach and select pid",
 		"dpe", "", "Show path to executable",
 		"dpf", "", "Attach to pid like file fd // HACK",
@@ -389,6 +390,13 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		"dpt=", "<thread>", "Attach to thread",
 		NULL};
 	switch (input[1]) {
+	case '-':
+		if (input[2]== ' ') {
+			r_debug_detach (core->dbg, r_num_math (core->num, input+2));
+		} else {
+			r_debug_detach (core->dbg, core->dbg->pid);
+		}
+		break;
 	case 'k':
 		/* stop, print, pass -- just use flags*/
 		/* XXX: not for threads? signal is for a whole process!! */
