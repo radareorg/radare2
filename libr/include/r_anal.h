@@ -1382,6 +1382,7 @@ R_API const char *r_anal_cc_type2str(int type);
 R_API int r_anal_cc_str2type (const char *str);
 //R_API int r_anal_cc_register (RAnal *anal, RAnalCC *cc);
 //R_API int r_anal_cc_unregister (RAnal *anal, RAnalCC *cc);
+R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr);
 
 typedef struct r_anal_data_t {
 	ut64 addr;

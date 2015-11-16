@@ -62,7 +62,7 @@ static int xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 		thread->count = 0;
 		return false;
 	}
-	thread->state = regs = (R_REG_T*)&thread->gpr;
+	thread->state = regs = (R_REG_T*)&thread->gpr.uts;
 	thread->state_size = sizeof (thread->gpr);
 #if __i386__ || __x86_64__
 	//thread->flavor is used in a switch+case but in regs->tsh.flavor we specify
