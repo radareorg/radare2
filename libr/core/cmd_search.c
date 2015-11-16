@@ -812,7 +812,12 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 		r_list_foreach (hitlist, iter, hit) {
 			char *comment = rop_comments ?r_meta_get_string (core->anal,
 					R_META_TYPE_COMMENT, hit->addr) : NULL;
-			ut8 *buf = malloc (hit->len);
+			if (hit->len<0) {
+				eprintf ("Invalid hit length here\n");
+				continue;
+			}
+			ut8 *buf = malloc (1 + hit->len);
+			buf[hit->len] = 0;
 			r_core_read_at (core, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
