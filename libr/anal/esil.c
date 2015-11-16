@@ -1351,6 +1351,7 @@ static int esil_poke_some(RAnalEsil *esil) {
 					isregornum (esil, foo, &num64);
 					/* TODO : implement peek here */
 					// read from $dst 
+					num32 = num64;
 					ret = r_anal_esil_mem_write (esil, ptr,
 						(const ut8*)&num32, sizeof (num32));
 					if (ret != sizeof (num32)) {
