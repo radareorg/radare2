@@ -11,7 +11,7 @@ return strdup (
 "=SF	nf\n"
 "=OF	vf\n"
 "=CF	cf\n"
-"=SN	x0\n"
+"=SN	ox0\n"
 "gpr	x0	.64	0	0\n" // x0
 "gpr	x1	.64	8	0\n" // x0
 "gpr	x2	.64	16	0\n" // x0
@@ -46,6 +46,9 @@ return strdup (
 "gpr	sp	.64	248	0\n" // x0
 "gpr	pc	.64	256	0\n" // x0
 "gpr	pstate	.64	264	0\n" // x0
+// extra linux regs in struct
+"gpr	ox0	.64	264	0\n" // x0
+"gpr	sysno	.64	264	0\n" // x0
 
 // probably wrong
 "gpr	nf	.1	.256	0	sign\n" // msb bit of last op
