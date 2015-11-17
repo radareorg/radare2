@@ -234,7 +234,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	ut64 *next = NULL;
 	ut8 *buf;
 
-
 	fcn = r_anal_fcn_new ();
 	if (!fcn) {
 		eprintf ("Error: new (fcn)\n");
@@ -950,6 +949,20 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			free (ref);
 		}
 		// we should analyze and add code ref otherwise aaa != aac
+		if (from != UT64_MAX) {
+			// We shuold not use fcn->xrefs .. because that should be only via api (on top of sdb)
+			// the concepts of refs and xrefs are a bit twisted in the old implementation
+			ref = r_anal_ref_new ();
+			if (ref) {
+				ref->addr = from;
+				ref->at = fcn->addr;
+				ref->type = reftype;
+				r_list_append (fcn->xrefs, ref);
+				// XXX this is creating dupped entries in the refs list with invalid reftypes, wtf?
+				r_anal_xrefs_set (core->anal, reftype, from, fcn->addr);
+			} else eprintf ("Error: new (xref)\n");
+		}
+		return true;
 	}
 	return core_anal_fcn (core, at, from, reftype, depth);
 }
