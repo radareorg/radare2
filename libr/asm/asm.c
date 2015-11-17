@@ -563,7 +563,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					isseparator (*ptr_start); ptr_start++);
 			}
 			ptr = strchr (ptr_start, '#'); /* Comments */
-			if (ptr && !R_BETWEEN ('0', ptr[1], '9'))
+			if (ptr && !R_BETWEEN ('0', ptr[1], '9') && ptr[1]!='-')
 				*ptr = '\0';
 			r_asm_set_pc (a, a->pc + ret);
 			off = a->pc;
