@@ -312,7 +312,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 					r_offsetof (struct user, u_debugreg[i]), 0);
 			memcpy (buf + (i * sizeof(ret)), &ret, sizeof(ret));
 		}
-		return sizeof(R_DEBUG_REG_T);
+		return sizeof (R_DEBUG_REG_T);
 	}
 #else
 	#warning Android X86 does not support DRX
@@ -404,7 +404,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			 * more ptrace queries.
 			 */
 			if (ret != 0) return R_FALSE;
-			if (sizeof(regs) < size) size = sizeof(regs);
+			if (sizeof (regs) < size) size = sizeof(regs);
 			memcpy (buf, &regs, size);
 			return sizeof (regs);
 		}

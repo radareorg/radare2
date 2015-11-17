@@ -2338,6 +2338,75 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 	}
 }
 
+static bool cmd_dcu (RCore *core, const char *input) {
+	const char *ptr = NULL;
+	ut64 from, to, pc;
+	bool dcu_range = false;
+	bool invalid = (!input[0] || !input[1] || !input[2]);
+	if (invalid || (input[2] != ' ' && input[2] != '.')) {
+		eprintf ("|Usage: dcu <address>\n");
+		eprintf ("|Usage: dcu[..tail]\n");
+		eprintf ("|Usage: dcu [from] [to]\n");
+		return false;
+	}
+	from = UT64_MAX;
+	if (input[2] == '.') {
+		ptr = strchr (input+3, ' ');
+		if (ptr) { // TODO: put '\0' in *ptr to avoid
+			from = r_num_tail (core->num, core->offset, input+2);
+			if (ptr[1]=='.') {
+				to = r_num_tail (core->num, core->offset, ptr+2);
+			} else {
+				to = r_num_math (core->num, ptr+1);
+			}
+			dcu_range = true;
+		} else {
+			from = r_num_tail (core->num, core->offset, input+2);
+		}
+	} else {
+		ptr = strchr (input+3, ' ');
+		if (ptr) { // TODO: put '\0' in *ptr to avoid
+			from = r_num_math (core->num, input+3);
+			if (ptr[1]=='.') {
+				to = r_num_tail (core->num, core->offset, ptr+2);
+			} else {
+				to = r_num_math (core->num, ptr+1);
+			}
+			dcu_range = true;
+		} else {
+			from = r_num_math (core->num, input+3);
+		}
+	}
+	if (from == UT64_MAX) {
+		eprintf ("Cannot continue until address 0\n");
+		return false;
+	}
+	if (dcu_range) {
+		// TODO : handle ^C here
+		r_cons_break (NULL, NULL);
+		do {
+			if (r_cons_is_breaked ())
+				break;
+			r_debug_step (core->dbg, 1);
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
+			pc = r_debug_reg_get (core->dbg, "PC");
+			eprintf ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x"\n",
+					from, pc, to);
+		} while (pc < from || pc > to);
+		r_cons_break_end ();
+	} else {
+		ut64 addr = from;
+		eprintf ("Continue until 0x%08"PFMT64x"\n", addr);
+		bypassbp (core);
+		r_reg_arena_swap (core->dbg->reg, true);
+		r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+		r_debug_continue (core->dbg);
+		checkbpcallback (core);
+		r_bp_del (core->dbg->bp, addr);
+	}
+	return true;
+}
+
 static int cmd_debug_continue (RCore *core, const char *input) {
 	int pid, old_pid, signum;
 	ut64 addr;
@@ -2357,8 +2426,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		"dcr", "", "Continue until ret (uses step over)",
 		"dcs", " <num>", "Continue until syscall",
 		"dct", " <len>", "Traptrace from curseek to len, no argument to list",
-		"dcu", " [addr]", "Continue until address",
-		"dcu", " <address> [end]", "Continue until given address range",
+		"dcu", "[..end|addr] ([end])", "Continue until address (or range)",
 		/*"TODO: dcu/dcr needs dbg.untilover=true??",*/
 		/*"TODO: same for only user/libs side, to avoid steping into libs",*/
 		/*"TODO: support for threads?",*/
@@ -2457,38 +2525,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			return 1;
 		}
 	case 'u':
-		if (input[2] != ' ') {
-			eprintf ("|Usage: dcu <address>\n");
-			return 1;
-		}
-		ptr = strchr (input+3, ' ');
-// TODO : handle ^C here
-		if (ptr) { // TODO: put '\0' in *ptr to avoid
-			ut64 from, to, pc;
-			from = r_num_math (core->num, input+3);
-			to = r_num_math (core->num, ptr+1);
-			do {
-				r_debug_step (core->dbg, 1);
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-				pc = r_debug_reg_get (core->dbg, "PC");
-				eprintf ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x"\n",
-						from, pc, to);
-			} while (pc < from || pc > to);
-			return 1;
-		}
-		addr = r_num_math (core->num, input+2);
-		if (addr) {
-			eprintf ("Continue until 0x%08"PFMT64x"\n", addr);
-			bypassbp (core);
-			r_reg_arena_swap (core->dbg->reg, true);
-			r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-			r_debug_continue (core->dbg);
-			checkbpcallback (core);
-			r_bp_del (core->dbg->bp, addr);
-		} else {
-			eprintf ("Cannot continue until address 0\n");
-			return 0;
-		}
+		cmd_dcu (core, input);
 		break;
 	case ' ':
 		old_pid = core->dbg->pid;
