@@ -278,7 +278,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 // TODO: Use r_cons primitives here
 #define memcat(x,y) { memcpy(x,y,strlen(y));x+=strlen(y); }
 	//for (s=str, d=dst; *s; s+=2, d+=2, i++) {
-	for (s=str, i=0 ; *s; s+=2, d+=2, i++) {
+	for (s=str, i=0 ; s[0]; s+=2, d+=2, i++) {
 		if (p->cur_enabled) {
 			if (i==ocur-n)
 				//memcat (d, "\x1b[27;47;30m");
@@ -294,19 +294,19 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 			else if (s[0]=='f' && s[1]=='f') lastcol = color_0xff;
 			else {
 				ch = r_hex_pair2bin (s);
+				if (ch==-1) break;
 				//sscanf (s, "%02x", &ch); // XXX can be optimized
-				if (IS_PRINTABLE (ch))
+				if (IS_PRINTABLE (ch)) {
 					lastcol = color_text;
-				else lastcol = color_other;
+				} else lastcol = color_other;
 			}
 			memcat (d, lastcol);
 		}
 		memcpy (d, s, 2);
 		if (bs) {
-			memcpy (d+2, " ",1);
+			memcpy (d + 2, " ", 1);
 			d++;
 		}
-		if (!s[1]) break;
 	}
 	if (colors || p->cur_enabled)
 		memcpy (d, Color_RESET, strlen (Color_RESET)+1);
