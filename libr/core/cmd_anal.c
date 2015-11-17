@@ -2119,17 +2119,16 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		eprintf ("cur binfile null\n");
 		return;
 	}
-	if (!len || (searchin && !strcmp (searchin, "file"))) {
-		len = binfile->size;
-	} else {
-		if (len<1) {
+	if (!len) {
+		if (searchin && !strcmp (searchin, "file")) {
+			len = binfile->size - core->offset;
+		} else {
 			len = r_num_math (core->num, "$SS-($$-$S)"); // section size
 		}
-		if (core->offset + len > binfile->size) {
-			len = binfile->size - core->offset;
-		}
 	}
-	len = binfile->size;
+	if (core->offset + len > binfile->size) {
+		len = binfile->size - core->offset;
+	}
 	addr = core->offset;
 	addr_end = addr + len;
 	r_cons_break (NULL, NULL);
