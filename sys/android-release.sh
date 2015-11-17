@@ -43,7 +43,7 @@ for a in ${ARCHS} ; do
 	cp -f "${R2T}/radare2-${v}-android-${a}.tar.gz" . || exit 1
 	rm -f README.md
 	make-readme $a > README.md
-	cat README
+	cat README.md
 	git add README.md
 	git commit -a -m 'Update tarball' || exit 1
 	git rebase -i @~2 || exit 1

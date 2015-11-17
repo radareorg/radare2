@@ -381,11 +381,19 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	case R_REG_TYPE_GPR:
 		{
 			R_DEBUG_REG_T regs;
-			memset (&regs, 0, sizeof(regs));
+			memset (&regs, 0, sizeof (regs));
 			memset (buf, 0, size);
-#if __powerpc__
+#if __arm64__ || __aarch64__
+			{
+			struct iovec io = {
+				.iov_base = &regs,
+				.iov_len = sizeof (regs)
+			};
+			ret = ptrace (PTRACE_GETREGSET, pid, NT_PRSTATUS, &io);
+			}
+#elif __powerpc__
 			ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
-#elif !__powerpc__
+#else
 			/* linux -{arm/x86/x86_64} */
 			ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
 #endif
@@ -426,8 +434,18 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 #endif
 	}
 	if (type == R_REG_TYPE_GPR) {
+#if __arm64__ || __aarch64__
+		struct iovec io = {
+			.iov_base = buf,
+			.iov_len = sizeof (R_DEBUG_REG_T)
+		};
+		int ret = ptrace (PTRACE_SETREGSET, dbg->pid, NT_PRSTATUS, &io);
+#elif __powerpc__
+		int ret = ptrace (PTRACE_SETREGS, dbg->pid, &regs, NULL);
+#else 
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid, 0, (void*)buf);
-		if (sizeof(R_DEBUG_REG_T) < size) size = sizeof(R_DEBUG_REG_T);
+#endif
+		if (size > sizeof (R_DEBUG_REG_T)) size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE : R_TRUE;
 	}
 	return R_FALSE;

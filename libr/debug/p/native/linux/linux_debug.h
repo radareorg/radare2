@@ -26,10 +26,11 @@ struct user_regs_struct_x86_32 {
 
 #if __arm64__ || __aarch64__
 #define R_DEBUG_REG_T struct user_pt_regs
-#undef PTRACE_GETREGS
-#define PTRACE_GETREGS PTRACE_GETREGSET
-#undef PTRACE_SETREGS
-#define PTRACE_SETREGS PTRACE_SETREGSET
+
+#ifndef NT_PRSTATUS
+#define NT_PRSTATUS 1
+#endif
+
 #else
 #define R_DEBUG_REG_T struct pt_regs
 #endif
@@ -41,10 +42,6 @@ struct user_regs_struct_x86_32 {
 #define R_DEBUG_REG_T struct user_regs_struct
 #elif __arm64__ || __aarch64__
 #define R_DEBUG_REG_T struct user_pt_regs
-#undef PTRACE_GETREGS
-#define PTRACE_GETREGS PTRACE_GETREGSET
-#undef PTRACE_SETREGS
-#define PTRACE_SETREGS PTRACE_SETREGSET
 #elif __arm__
 #define R_DEBUG_REG_T struct user_regs
 #elif __mips__
