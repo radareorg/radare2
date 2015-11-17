@@ -44,7 +44,7 @@ R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize) {
 	if (!fcn || newsize<1)
 		return false;
 	fcn->size = newsize;
-	eof = fcn->addr = fcn->size;
+	eof = fcn->addr + fcn->size;
 	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
 		if (bb->addr >= eof) {
 			// already called by r_list_delete r_anal_bb_free (bb);
