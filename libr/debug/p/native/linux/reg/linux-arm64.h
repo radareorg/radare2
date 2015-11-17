@@ -1,3 +1,4 @@
+// NGREG 34
 return strdup (
 "=PC	pc\n"
 "=BP	x29\n"
@@ -50,5 +51,5 @@ return strdup (
 "gpr	nf	.1	.256	0	sign\n" // msb bit of last op
 "gpr	zf	.1	.257	0	zero\n" // set if last op is 0
 "gpr	cf	.1	.258	0	carry\n" // set if last op carries
-"gpr	vf	.1	.515	0	overflow\n" // set if overflows
+"gpr	vf	.1	.259	0	overflow\n" // set if overflows
 );
