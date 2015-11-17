@@ -959,7 +959,7 @@ static char *r_str_escape_ (const char *buf, const int dot_nl) {
 				if (*p == '\0') goto out;
 				if (*p == '[')
 					for (p++; *p != 'm'; p++)
-						;
+						if (*p == '\0') goto out;
 				break;
 			default:
 				/* Outside the ASCII printable range */
