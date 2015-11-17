@@ -2106,8 +2106,8 @@ static void cmd_anal_jumps(RCore *core, const char *input) {
 }
 
 static void cmd_anal_calls(RCore *core, const char *input) {
-	int minop = 1; // 4
-	ut8 buf[32];
+	int bufi, minop = 1; // 4
+	ut8 *buf;
 	RBinFile *binfile;
 	const char *searchin = r_config_get (core->config, "search.in");
 	RAnalOp op;
@@ -2136,12 +2136,18 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	addr = core->offset;
 	addr_end = addr + len;
 	r_cons_break (NULL, NULL);
+	buf = malloc (4096);
+	if (!buf) return;
+	bufi = 0;
 	while (addr < addr_end) {
 		if (core->cons->breaked)
 			break;
 		// TODO: too many ioreads here
-		r_io_read_at (core->io, addr, buf, sizeof (buf));
-		if (r_anal_op (core->anal, &op, addr, buf, sizeof (buf))) {
+		if (bufi>4000) bufi = 0;
+		if (!bufi) {
+			r_io_read_at (core->io, addr, buf, 4096);
+		}
+		if (r_anal_op (core->anal, &op, addr, buf+bufi, 4096 - bufi)) {
 			if (op.size < 1) op.size = minop; // XXX must be +4 on arm/mips/.. like we do in disasm.c
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
 				r_core_anal_fcn (core, op.jump, UT64_MAX,
@@ -2151,7 +2157,9 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			op.size = minop;
 		}
 		addr += (op.size>0)? op.size: 1;
+		bufi += (op.size>0)? op.size: 1;
 	}
+	free (buf);
 }
 
 static void cmd_asf(RCore *core, const char *input) {
