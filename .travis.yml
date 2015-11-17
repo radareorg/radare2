@@ -35,6 +35,7 @@ script:
   - export LIBR_INCLUDE=${TRAVIS_BUILD_DIR}/libr/include
   - export LIBR_UTIL=${TRAVIS_BUILD_DIR}/libr/util
   - export NOOK=1
+  - export NOREPORT=1
   - cd radare2-regressions
   - VERBOSE=1 make -k all
   - make unit_tests
