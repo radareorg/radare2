@@ -204,12 +204,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			return 0;
 		}
 	}
-
+#if 0
+	if (len>3 && !memcmp (buf, "\xff\xff\xff\xff", 4))
+		return 0;
+#endif
 	switch (a->bits) {
 	case 64: regsz = 8; break;
 	case 16: regsz = 2; break;
-	default:
-	case 32: regsz = 4; break;
+	default: regsz = 4; break; // 32
 	}
 	memset (op, '\0', sizeof (RAnalOp));
 	op->cycles = 1; // aprox
