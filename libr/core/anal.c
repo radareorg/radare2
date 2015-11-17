@@ -949,8 +949,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		} else {
 			free (ref);
 		}
-
-		return true;
+		// we should analyze and add code ref otherwise aaa != aac
 	}
 	return core_anal_fcn (core, at, from, reftype, depth);
 }

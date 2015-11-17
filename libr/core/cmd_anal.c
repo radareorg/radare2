@@ -2122,7 +2122,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		eprintf ("cur binfile null\n");
 		return;
 	}
-	if (searchin && !strcmp (searchin, "file")) {
+	if (!len || (searchin && !strcmp (searchin, "file"))) {
 		len = binfile->size;
 	} else {
 		if (len<1) {
@@ -2132,16 +2132,17 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			len = binfile->size - core->offset;
 		}
 	}
+	len = binfile->size;
 	addr = core->offset;
 	addr_end = addr + len;
 	r_cons_break (NULL, NULL);
 	while (addr < addr_end) {
 		if (core->cons->breaked)
 			break;
+		// TODO: too many ioreads here
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
 		if (r_anal_op (core->anal, &op, addr, buf, sizeof (buf))) {
-			if (op.size<1)
-				op.size = minop; // XXX must be +4 on arm/mips/.. like we do in disasm.c
+			if (op.size < 1) op.size = minop; // XXX must be +4 on arm/mips/.. like we do in disasm.c
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
 				r_core_anal_fcn (core, op.jump, UT64_MAX,
 						R_ANAL_REF_TYPE_NULL, 16);
@@ -2149,7 +2150,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		} else {
 			op.size = minop;
 		}
-		addr += op.size;
+		addr += (op.size>0)? op.size: 1;
 	}
 }
 
@@ -3074,6 +3075,7 @@ static int cmd_anal_all (RCore *core, const char *input) {
 	case '\0': // "aa"
 	case 'a':
 		r_cons_break (NULL, NULL);
+		ut64 curseek = core->offset;
 		r_core_anal_all (core);
 		if (core->cons->breaked)
 			goto jacuzzi;
@@ -3086,6 +3088,7 @@ static int cmd_anal_all (RCore *core, const char *input) {
 			(void)r_core_anal_refs (core, input + 1); // "aar"
 			if (core->cons->breaked)
 				goto jacuzzi;
+			r_core_seek (core, curseek, 1);
 			(void)cmd_anal_calls (core, ""); // "aac"
 			if (core->cons->breaked)
 				goto jacuzzi;
