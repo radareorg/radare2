@@ -925,19 +925,21 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 	if (!bin || !bin->sects)
 		return NULL;
 	to = R_MIN (bin->nsects, 128); // limit number of sections here to avoid fuzzed bins
-	if (to<1)
+	if (to < 1)
 		return NULL;
 	if (!(sections = malloc ((bin->nsects + 1) * sizeof (struct section_t))))
 		return NULL;
-	for (i = 0; i<to; i++) {
+	for (i = 0; i < to; i++) {
 		sections[i].offset = (ut64)bin->sects[i].offset;
 		sections[i].addr = (ut64)bin->sects[i].addr;
 		sections[i].size = (ut64)bin->sects[i].size;
 		sections[i].align = bin->sects[i].align;
 		sections[i].flags = bin->sects[i].flags;
-		strncpy (segname, bin->sects[i].segname, sizeof (segname)-1);
-		strncpy (sectname, bin->sects[i].sectname, sizeof (sectname)-1);
+		r_str_ncpy (segname, bin->sects[i].segname, sizeof (segname)-1);
+		r_str_ncpy (sectname, bin->sects[i].sectname, sizeof (sectname)-1);
 		// hack to support multiple sections with same name
+		// ensure '\0' terminated
+		bin->sects[i].sectname[15] = '\0';
 		snprintf (segname, sizeof (segname), "%d", i); // wtf
 		snprintf (sectname, sizeof (sectname), "%s", bin->sects[i].sectname);
 		for (j=0; j<bin->nsegs; j++) {
