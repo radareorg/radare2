@@ -79,6 +79,7 @@ R_API int r_sandbox_system (const char *x, int n) {
 	}
 #if LIBC_HAVE_SYSTEM
 	if (n) return system (x);
+	return execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
 #else
 	#include <spawn.h>
 	if (n && !strchr (x, '|')) {
@@ -111,7 +112,6 @@ R_API int r_sandbox_system (const char *x, int n) {
 		eprintf ("Error parsing command arguments\n");
 		return -1;
 	}
-#endif
 	int child = fork();
 	if (child == -1) return -1;
 	if (child) {
@@ -119,6 +119,7 @@ R_API int r_sandbox_system (const char *x, int n) {
 	}
 	execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
 	exit (1);
+#endif
 	return -1;
 }
 
