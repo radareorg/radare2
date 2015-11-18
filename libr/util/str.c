@@ -1912,3 +1912,13 @@ R_API void r_str_const_free() {
 		R_FREE (consts);
 	}
 }
+
+R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffix) {
+	char *c0, *c1;
+	if (!cmt || !prefix || !suffix || !cmt || !*cmt) return NULL;
+	c0 = strstr (cmt, prefix);
+	if (!c0) return NULL;
+	c1 = strstr (c0 + strlen (prefix), suffix);
+	if (!c1) return NULL;
+	return r_str_ndup (c0 + strlen (prefix), (c1 - c0 - strlen (prefix)));
+}

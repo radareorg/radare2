@@ -532,23 +532,3 @@ R_API int r_meta_space_count_for(RAnal *a, int ctx) {
 	r_meta_list_cb (a, type, 0, meta_count_cb, &mu);
 	return mu.count;
 }
-
-#if 0
-R_API char *r_anal_meta_bar (RAnal *anal, ut64 from, ut64 to, int blocks) {
-	int i, n, blocksize;
-	char *res;
-	ut64 f, t;
-	if (blocks<1 || from > to)
-		return NULL;
-	blocksize = (to-from)/blocks;
-	res = malloc (blocks*4);
-	for (i=0; i< blocks; i++) {
-		f = from + (blocksize*i);
-		t = f+blocksize;
-		n = r_anal_fcn_count (anal, f, t);
-		if (n>0) res[i++] = 'f';
-		res[i++] = ',';
-	}
-	return res;
-}
-#endif

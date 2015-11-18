@@ -583,6 +583,8 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 R_API char *r_hex_from_c(const char *code);
 R_API bool r_str_glob (const char *str, const char *glob);
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);
+R_API char *r_str_between(const char *str, const char *prefix, const char *suffix);
+
 R_API int r_hex_pair2bin(const char *arg);
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask);
 R_API int r_hex_str2bin(const char *in, ut8 *out);

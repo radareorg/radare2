@@ -678,35 +678,28 @@ void SetWindow(int Width, int Height) {
 }
 #endif
 
-/* retrieves string between ',<' and '>' */
-static char *getcommafile(const char *cmt) {
-	char *c0, *c1;
-	if (!cmt || !*cmt) return NULL;
-	c0 = strstr (cmt, ",<");
-	if (!c0) return NULL;
-	c1 = strchr (c0+2, '>');
-	if (!c1) return NULL;
-	return r_str_ndup (c0+2, (c1-c0-2));
-}
-
-static void visual_comma(RCore *core) {
-	ut64 addr = core->offset; // + (ocursor!=-1)? ocursor: 0;
-	char *comment, *cwd, *cmtfile;
+// unnecesarily public
+char *getcommapath(RCore *core) {
+	char *cwd;
 	const char *dir = r_config_get (core->config, "dir.projects");
 	const char *prj = r_config_get (core->config, "file.project");
-	if (curset) {
-		addr += cursor;
-	}
-	comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-	cmtfile = getcommafile (comment);
 	if (dir && *dir && prj && *prj) {
 		/* use prjdir as base directory for comma-ent files */
 		cwd = r_str_newf ("%s"R_SYS_DIR"%s.d",
 			r_file_abspath (dir), prj);
 	} else {
 		/* use cwd as base directory for comma-ent files */
-		cwd = r_file_abspath (".");
+		cwd = r_sys_getdir ();
 	}
+	return cwd;
+}
+
+static void visual_comma(RCore *core) {
+	ut64 addr = core->offset + curset? cursor: 0;
+	char *comment, *cwd, *cmtfile;
+	comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+	cmtfile = r_str_between (comment, ",(", ")");
+	cwd = getcommapath (core);
 	if (!cmtfile) {
 		char *fn;
 		showcursor (core, true);
@@ -715,11 +708,11 @@ static void visual_comma(RCore *core) {
 		if (fn && *fn) {
 			cmtfile = strdup (fn);
 			if (!comment || !*comment) {
-				comment = r_str_newf (",<%s>", fn);
+				comment = r_str_newf (",(%s)", fn);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, comment);
 			} else {
 				// append filename in current comment
-				char *nc = r_str_newf ("%s ,<%s>", comment, fn);
+				char *nc = r_str_newf ("%s ,(%s)", comment, fn);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, nc);
 				free (nc);
 			}
@@ -735,7 +728,7 @@ static void visual_comma(RCore *core) {
 		free (odata);
 		free (cwf);
 	} else {
-		eprintf ("NO CMTFILE\n");
+		eprintf ("No commafile found.\n");
 	}
 	free (comment);
 }
