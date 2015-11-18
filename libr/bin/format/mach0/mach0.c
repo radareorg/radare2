@@ -939,6 +939,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 		r_str_ncpy (sectname, bin->sects[i].sectname, sizeof (sectname)-1);
 		// hack to support multiple sections with same name
 		// ensure '\0' terminated
+		bin->sects[i].sectname[15] = '\0';
 		snprintf (segname, sizeof (segname), "%d", i); // wtf
 		snprintf (sectname, sizeof (sectname), "%s", bin->sects[i].sectname);
 		for (j=0; j<bin->nsegs; j++) {
