@@ -935,12 +935,9 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 		sections[i].size = (ut64)bin->sects[i].size;
 		sections[i].align = bin->sects[i].align;
 		sections[i].flags = bin->sects[i].flags;
-		r_str_ncpy (segname, bin->sects[i].segname, sizeof (segname)-1);
 		r_str_ncpy (sectname, bin->sects[i].sectname, sizeof (sectname)-1);
 		// hack to support multiple sections with same name
-		// ensure '\0' terminated
 		snprintf (segname, sizeof (segname), "%d", i); // wtf
-		snprintf (sectname, sizeof (sectname), "%s", bin->sects[i].sectname);
 		for (j=0; j<bin->nsegs; j++) {
 			if (sections[i].addr >= bin->segs[j].vmaddr &&
 				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
