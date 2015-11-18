@@ -703,7 +703,7 @@ static void visual_comma(RCore *core) {
 	if (!cmtfile) {
 		char *fn;
 		showcursor (core, true);
-		fn = r_cons_input ("<commant-file> ");
+		fn = r_cons_input ("<comment-file> ");
 		showcursor (core, false);
 		if (fn && *fn) {
 			cmtfile = strdup (fn);
