@@ -951,7 +951,7 @@ function deleteProject() {
 	location.href = "open.html";
 }
 function closeProject() {
-	alert ("Project deleted");
+	alert ("Project closed");
 	location.href = "open.html";
 }
 function rename() {
