@@ -933,6 +933,8 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		increment = 4;
 	else if (!strcmp (arch, "arm")) // ARM has no jump-in-the-middle
 		increment = r_config_get_i(core->config, "asm.bits")==16?2:4;
+	else if (!strcmp (arch, "avr")) // AVR is halfword aligned.
+		increment = 2;
 
 	//Options, like JSON, linear, ...
 	grep_arg = strchr (grep, ' ');
