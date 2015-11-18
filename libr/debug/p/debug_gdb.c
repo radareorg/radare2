@@ -341,44 +341,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 		"seg	gs	.32	60	0\n"
 		);
 	case R_SYS_ARCH_ARM:
-		if (dbg->bits == R_SYS_BITS_32) {
-			return strdup (
-				"=PC	r15\n"
-				"=SP	r14\n" // XXX
-				"=A0	r0\n"
-				"=A1	r1\n"
-				"=A2	r2\n"
-				"=A3	r3\n"
-				"gpr	lr	.32	56	0\n" // r14
-				"gpr	pc	.32	60	0\n" // r15
-				"gpr	r0	.32	0	0\n"
-				"gpr	r1	.32	4	0\n"
-				"gpr	r2	.32	8	0\n"
-				"gpr	r3	.32	12	0\n"
-				"gpr	r4	.32	16	0\n"
-				"gpr	r5	.32	20	0\n"
-				"gpr	r6	.32	24	0\n"
-				"gpr	r7	.32	28	0\n"
-				"gpr	r8	.32	32	0\n"
-				"gpr	r9	.32	36	0\n"
-				"gpr	r10	.32	40	0\n"
-				"gpr	r11	.32	44	0\n"
-				"gpr	r12	.32	48	0\n"
-				"gpr	r13	.32	52	0\n"
-				"gpr	r14	.32	56	0\n"
-				"gpr	r15	.32	60	0\n"
-				"gpr	f0	.96	64	0\n"
-				"gpr	f1	.96	76	0\n"
-				"gpr	f2	.96	88	0\n"
-				"gpr	f3	.96	100	0\n"
-				"gpr	f4	.96	112	0\n"
-				"gpr	f5	.96	124	0\n"
-				"gpr	f6	.96	136	0\n"
-				"gpr	f7	.96	148	0\n"
-				"gpr	fps	.96	160	0\n"
-				"gpr	cpsr	.32	172	0\n"
-			);
-		} else if (dbg->bits == R_SYS_BITS_64) {
+		if (dbg->bits == R_SYS_BITS_64) {
 			return strdup (
 			"=PC	pc\n"
 			"=SP	sp\n"
@@ -421,8 +384,44 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	pc	.64	256	0\n"
 			"gpr	cpsr	.32	264	0\n"
 			);
+		} else {
+			return strdup (
+				"=PC	r15\n"
+				"=SP	r14\n" // XXX
+				"=A0	r0\n"
+				"=A1	r1\n"
+				"=A2	r2\n"
+				"=A3	r3\n"
+				"gpr	lr	.32	56	0\n" // r14
+				"gpr	pc	.32	60	0\n" // r15
+				"gpr	r0	.32	0	0\n"
+				"gpr	r1	.32	4	0\n"
+				"gpr	r2	.32	8	0\n"
+				"gpr	r3	.32	12	0\n"
+				"gpr	r4	.32	16	0\n"
+				"gpr	r5	.32	20	0\n"
+				"gpr	r6	.32	24	0\n"
+				"gpr	r7	.32	28	0\n"
+				"gpr	r8	.32	32	0\n"
+				"gpr	r9	.32	36	0\n"
+				"gpr	r10	.32	40	0\n"
+				"gpr	r11	.32	44	0\n"
+				"gpr	r12	.32	48	0\n"
+				"gpr	r13	.32	52	0\n"
+				"gpr	r14	.32	56	0\n"
+				"gpr	r15	.32	60	0\n"
+				"gpr	f0	.96	64	0\n"
+				"gpr	f1	.96	76	0\n"
+				"gpr	f2	.96	88	0\n"
+				"gpr	f3	.96	100	0\n"
+				"gpr	f4	.96	112	0\n"
+				"gpr	f5	.96	124	0\n"
+				"gpr	f6	.96	136	0\n"
+				"gpr	f7	.96	148	0\n"
+				"gpr	fps	.96	160	0\n"
+				"gpr	cpsr	.32	172	0\n"
+			);
 		}
-		return NULL;
 	case R_SYS_ARCH_SH:
 		return strdup (
 			"=PC    pc\n"

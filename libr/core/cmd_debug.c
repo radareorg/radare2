@@ -2409,7 +2409,6 @@ static bool cmd_dcu (RCore *core, const char *input) {
 
 static int cmd_debug_continue (RCore *core, const char *input) {
 	int pid, old_pid, signum;
-	ut64 addr;
 	char *ptr;
 	const char * help_message[] = {
 		"Usage: dc", "", "Execution continuation commands",
