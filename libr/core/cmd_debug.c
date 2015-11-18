@@ -1622,12 +1622,24 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 
 	switch (input[1]) {
 	case '.':
-		bpi = r_bp_get_at (core->dbg->bp, core->offset);
-		if (bpi) {
-			r_cons_printf ("breakpoint %s %s %s\n",
-				r_str_rwx_i (bpi->rwx),
-				bpi->enabled ?  "enabled" : "disabled",
-				bpi->name ? bpi->name : "");
+		if (input[2]) {
+			int bpsz = strcmp (core->dbg->arch, "arm")? 1: 4;
+			ut64 addr = r_num_tail (core->num, core->offset, input+2);
+			if (validAddress (core, addr)) {
+				bpi = hwbp
+				? r_bp_add_hw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
+				: r_bp_add_sw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+			} else {
+				eprintf ("Invalid address\n");
+			}
+		} else {
+			bpi = r_bp_get_at (core->dbg->bp, core->offset);
+			if (bpi) {
+				r_cons_printf ("breakpoint %s %s %s\n",
+					r_str_rwx_i (bpi->rwx),
+					bpi->enabled ?  "enabled" : "disabled",
+					bpi->name ? bpi->name : "");
+			}
 		}
 		break;
 	case 't': // "dbt"
@@ -3088,7 +3100,7 @@ static int cmd_debug(void *data, const char *input) {
 			if (!res) break;
 			r_sys_usleep (200);
 		}
-			r_cons_break_end();
+		r_cons_break_end ();
 		break;
 	case 'k':
 		r_core_debug_kill (core, input + 1);
@@ -3096,7 +3108,7 @@ static int cmd_debug(void *data, const char *input) {
 	case 'e':
 		r_core_debug_esil (core, input + 1);
 		break;
-	default:{
+	default: {
 			const char* help_msg[] = {
 			"Usage:", "d", " # Debug commands",
 			"db", "[?]", "Breakpoints commands",
