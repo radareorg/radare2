@@ -813,7 +813,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg);
 		break;
-	case 'p':
+	case 'p': // "dmp"
 		if (input[1] == ' ') {
 			int perms;
 			char *p, *q;
@@ -830,9 +830,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					eprintf ("(%s)(%s)(%s)\n", input+2, p, q);
 					eprintf ("0x%08"PFMT64x" %d %o\n", addr, (int) size, perms);
 					r_debug_map_protect (core->dbg, addr, size, perms);
-				} else eprintf ("See dm?\n");
-			} else eprintf ("See dm?\n");
-		} else eprintf ("See dm?\n");
+				} else eprintf ("See dmp?\n");
+			} else eprintf ("See dmp?\n");
+		} else eprintf ("See dmp?\n");
 		break;
 	case 'd':
 		switch (input[1]) {
@@ -993,10 +993,87 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 	}
 }
 
+static void cmd_reg_profile (RCore *core, const char *str) { // "arp" and "drp"
+	switch (str[1]) {
+	case 0:
+		if (core->dbg->reg->reg_profile_str) {
+			//core->anal->reg = core->dbg->reg;
+			r_cons_printf ("%s\n", core->dbg->reg->reg_profile_str);
+			//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
+		} else eprintf ("No register profile defined. Try 'dr.'\n");
+		break;
+	case '?':
+		{
+			eprintf ("Usage: drp[j] [regprofile-file]\n");
+			eprintf ("Usage: drps [newfakesize]\n");
+			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+			if (rs) {
+				eprintf ("size = %d\n", rs->arena->size);
+			}
+		}
+		break;
+	case 's':
+		if (str[2] == ' ') {
+			ut64 n = r_num_math (core->num, str+2);
+			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+			if (rs && n>0) {
+				free (rs->arena->bytes);
+				rs->arena->bytes = calloc (1, n);
+				rs->arena->size = n;
+			} else {
+				eprintf ("Invalid arena size\n");
+			}
+		} else {
+			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+			if (rs) {
+				r_cons_printf ("%d\n", rs->arena->size);
+			} else eprintf ("Cannot find GPR register arena.\n");
+		}
+		break;
+	case 'j': {
+			  // "drpj" .. dup from "arpj"
+			  RListIter *iter;
+			  RRegItem *r;
+			  int i;
+			  int first = 1;
+			  r_cons_printf ("{\"alias_info\":[");
+			  for (i = 0; i < R_REG_NAME_LAST; i++) {
+				  if (core->dbg->reg->name[i]) {
+					  if (!first) r_cons_printf (",");
+					  r_cons_printf ("{\"role\":%d,", i);
+					  r_cons_printf ("\"role_str\":\"%s\",",
+							  r_reg_get_role (i));
+					  r_cons_printf ("\"reg\":\"%s\"}",
+							  core->dbg->reg->name[i]);
+					  first = 0;
+				  }
+			  }
+			  r_cons_printf ("],\"reg_info\":[");
+			  first = 1;
+			  for (i = 0; i < R_REG_TYPE_LAST; i++) {
+				  r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
+					  if (!first) r_cons_printf (",");
+					  r_cons_printf ("{\"type\":%d,", r->type);
+					  r_cons_printf ("\"type_str\":\"%s\",",
+							  r_reg_get_type (r->type));
+					  r_cons_printf ("\"name\":\"%s\",", r->name);
+					  r_cons_printf ("\"size\":%d,", r->size);
+					  r_cons_printf ("\"offset\":%d}", r->offset);
+					  first = 0;
+				  }
+			  }
+			  r_cons_printf ("]}");
+		  } break;
+	default:
+		  r_reg_set_profile (core->dbg->reg, str+2);
+		  break;
+	}
+}
+
 static void cmd_debug_reg(RCore *core, const char *str) {
 	int size, i, type = R_REG_TYPE_GPR;
 	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
-	int use_colors = r_config_get_i(core->config, "scr.color");
+	int use_colors = r_config_get_i (core->config, "scr.color");
 	const char *use_color;
 	if (use_colors) {
 #undef ConsP
@@ -1292,48 +1369,7 @@ free (rf);
 		}
 		break;
 	case 'p': // "drp"
-		if (!str[1]) {
-			if (core->dbg->reg->reg_profile_str) {
-				//core->anal->reg = core->dbg->reg;
-				r_cons_printf ("%s\n", core->dbg->reg->reg_profile_str);
-				//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
-			} else eprintf ("No register profile defined. Try 'dr.'\n");
-		} else if (str[1] == 'j') {
-			// "drpj" .. dup from "arpj"
-			RListIter *iter;
-			RRegItem *r;
-			int i;
-			int first = 1;
-			r_cons_printf ("{\"alias_info\":[");
-			for (i = 0; i < R_REG_NAME_LAST; i++) {
-				if (core->dbg->reg->name[i]) {
-					if (!first) r_cons_printf (",");
-					r_cons_printf ("{\"role\":%d,", i);
-					r_cons_printf ("\"role_str\":\"%s\",",
-						r_reg_get_role (i));
-					r_cons_printf ("\"reg\":\"%s\"}",
-						core->dbg->reg->name[i]);
-					first = 0;
-				}
-			}
-			r_cons_printf ("],\"reg_info\":[");
-			first = 1;
-			for (i = 0; i < R_REG_TYPE_LAST; i++) {
-				r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
-					if (!first) r_cons_printf (",");
-					r_cons_printf ("{\"type\":%d,", r->type);
-					r_cons_printf ("\"type_str\":\"%s\",",
-							r_reg_get_type (r->type));
-					r_cons_printf ("\"name\":\"%s\",", r->name);
-					r_cons_printf ("\"size\":%d,", r->size);
-					r_cons_printf ("\"offset\":%d}", r->offset);
-					first = 0;
-				}
-			}
-			r_cons_printf ("]}");
-		} else {
-			r_reg_set_profile (core->dbg->reg, str+2);
-		}
+		cmd_reg_profile (core, str);
 		break;
 	case 't': // "drt"
 		switch (str[1]) {

@@ -1119,6 +1119,7 @@ static void ar_show_help(RCore *core) {
 	r_core_cmd_help (core, help_message);
 }
 
+// XXX dup from drp :OOO
 void cmd_anal_reg(RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
@@ -1248,53 +1249,10 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'p':  // drp
-		if (!str[1]) { // "drp"
-			if (core->dbg->reg->reg_profile_str) {
-				//core->anal->reg = core->dbg->reg;
-				r_cons_printf ("%s\n", core->dbg->reg->reg_profile_str);
-				//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
-			} else {
-				eprintf ("No register profile defined. Try 'dr.'\n");
-			}
-		} else if (str[1] == 'j') { // "drpj"
-			// drpj
-			RListIter *iter;
-			RRegItem *r;
-			int i;
-			int first = 1;
-			r_cons_printf ("{\"alias_info\":[");
-			for (i = 0; i < R_REG_NAME_LAST; i++) {
-				if (core->dbg->reg->name[i]) {
-					const char* rolestr = r_reg_get_role (i);
-					if (!first) r_cons_printf (",");
-					r_cons_printf ("{\"role\":%d,", i);
-					r_cons_printf ("\"role_str\":\"%s\",", rolestr);
-					r_cons_printf ("\"reg\":\"%s\"}",
-						core->dbg->reg->name[i]);
-					first = 0;
-				}
-			}
-			r_cons_printf ("],\"reg_info\":[");
-			first = 1;
-			for (i = 0; i < R_REG_TYPE_LAST; i++) {
-				r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
-					if (!first) r_cons_printf (",");
-					r_cons_printf ("{\"type\":%d,", r->type);
-					r_cons_printf ("\"type_str\":\"%s\",",
-						r_reg_get_role (r->type));
-					r_cons_printf ("\"name\":\"%s\",", r->name);
-					r_cons_printf ("\"size\":%d,", r->size);
-					r_cons_printf ("\"offset\":%d}", r->offset);
-					first = 0;
-				}
-			}
-			r_cons_printf ("]}");
-		} else {
-			r_reg_set_profile (core->dbg->reg, str+2);
-		}
+		cmd_reg_profile (core, str);
 		break;
 	case 't': // "drt"
-		for (i=0; (name=r_reg_get_type (i)); i++)
+		for (i=0; (name = r_reg_get_type (i)); i++)
 			r_cons_printf ("%s\n", name);
 		break;
 	case 'n': // "drn" // "arn"
@@ -1435,14 +1393,6 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	core->anal->esil->delay = op.delay;
 	if (core->anal->esil->delay)
 		core->anal->esil->delay_addr = addr + op.size;
-#if 0
-eprintf ("RET %d\n", ret);
-eprintf ("ADDR 0x%llx\n", addr);
-eprintf ("DATA %x %x %x %x\n", code[0], code[1], code[2], code[3]);
-eprintf ("ESIL %s\n", op.esil);
-eprintf ("EMULATE %s\n", R_STRBUF_SAFEGET (&op.esil));
-sleep (1);
-#endif
 	// Always increment pc register before executing op.esil
 	if (op.size<1) op.size = 1; // avoid inverted stepping
 	r_reg_setv (core->anal->reg, name, addr + op.size);
