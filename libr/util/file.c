@@ -115,11 +115,14 @@ R_API int r_file_is_abspath(const char *file) {
 }
 
 R_API char *r_file_abspath(const char *file) {
-	if (strstr (file, "://") != NULL) {
+	char *cwd, *ret = NULL;
+	if (!file || !strcmp (file, ".") || !strcmp (file, "./")) {
+		return r_sys_getdir ();
+	}
+	if (strstr (file, "://")) {
 		return strdup (file);
 	}
-	char *ret = NULL;
-	char *cwd = r_sys_getdir ();
+	cwd = r_sys_getdir ();
 	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
 		ret = r_str_home (file+2);
 	} else {
@@ -430,6 +433,7 @@ R_API boolt r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return R_FALSE;
 	}
+	if (len<0) len = strlen ((const char *)buf);
 	ret = fwrite (buf, 1, len, fd) == len;
 	if (!ret) eprintf ("r_file_dump: fwrite: error\n");
 	fclose (fd);
