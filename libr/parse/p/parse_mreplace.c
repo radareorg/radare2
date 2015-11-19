@@ -52,7 +52,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 #endif
 }
 
-struct r_parse_plugin_t r_parse_plugin_mreplace = {
+RParsePlugin r_parse_plugin_mreplace = {
 	.name = "mreplace",
 	.desc = "mreplace parsing plugin",
 	.parse = &parse,
