@@ -2069,22 +2069,35 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		eprintf ("cur binfile null\n");
 		return;
 	}
+	addr = core->offset;
 	if (!len) {
-		if (searchin && !strcmp (searchin, "file")) {
-			len = binfile->size - core->offset;
-		} else {
+		// ignore search.in to avoid problems. analysis != search
+		RIOSection *s = r_io_section_vget (core->io, addr);
+		if (s && s->rwx & 1) {
+			// search in current section
 			len = r_num_math (core->num, "$SS-($$-$S)"); // section size
+		} else {
+			// search in full file
+			ut64 o = r_io_section_vaddr_to_maddr (core->io, core->offset);
+			if (binfile->size > o) {
+				len = binfile->size - o;
+			} else {
+				len = 1024;
+				eprintf ("dafuck\n");
+			}
 		}
 	}
+	/*
 	if (core->offset + len > binfile->size) {
 		len = binfile->size - core->offset;
 	}
-	addr = core->offset;
+	*/
 	addr_end = addr + len;
 	r_cons_break (NULL, NULL);
 	buf = malloc (4096);
 	if (!buf) return;
 	bufi = 0;
+	eprintf ("%llx %llx\n", addr, addr_end);
 	while (addr < addr_end) {
 		if (core->cons->breaked)
 			break;
