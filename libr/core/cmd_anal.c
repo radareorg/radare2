@@ -2056,7 +2056,6 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	int bufi, minop = 1; // 4
 	ut8 *buf;
 	RBinFile *binfile;
-	const char *searchin = r_config_get (core->config, "search.in");
 	RAnalOp op;
 	ut64 addr, addr_end;
 	ut64 len = r_num_math (core->num, input);
@@ -2079,11 +2078,15 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		} else {
 			// search in full file
 			ut64 o = r_io_section_vaddr_to_maddr (core->io, core->offset);
-			if (binfile->size > o) {
+			if (o != UT64_MAX && binfile->size > o) {
 				len = binfile->size - o;
 			} else {
-				len = 1024;
-				eprintf ("dafuck\n");
+				if (binfile->size > core->offset) {
+					len = binfile->size - core->offset;
+				} else {
+					eprintf ("Oops invalid range\n");
+					len = 0;
+				}
 			}
 		}
 	}
@@ -2097,7 +2100,6 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	buf = malloc (4096);
 	if (!buf) return;
 	bufi = 0;
-	eprintf ("%llx %llx\n", addr, addr_end);
 	while (addr < addr_end) {
 		if (core->cons->breaked)
 			break;
