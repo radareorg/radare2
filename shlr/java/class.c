@@ -1959,14 +1959,13 @@ R_API RBinJavaAttrInfo* r_bin_java_default_attr_new(ut8* buffer, ut64 sz, ut64 b
 R_API RBinJavaAttrMetas* r_bin_java_get_attr_type_by_name(const char *name) {
 	// TODO: use sdb/hashtable here
 	RBinJavaAttrMetas* res = &RBIN_JAVA_ATTRS_METAS[R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR];
-	int i = 0;
+	int i;
 	for (i = 0; i < RBIN_JAVA_ATTRS_METAS_SZ; i++) {
 		if (!strcmp ((const char *) name, RBIN_JAVA_ATTRS_METAS[i].name)) {
-			res = &RBIN_JAVA_ATTRS_METAS[i];
-			break;
+			return &RBIN_JAVA_ATTRS_METAS[i];
 		}
 	}
-	return res;
+	return NULL;
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 offset, const ut8* buf, const ut64 buf_len) {
@@ -2014,6 +2013,7 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr_from_buffer (ut8 *buffer, st64
 	char* name = NULL;
 	ut64 offset = 0;
 	ut16 name_idx;
+	st64 nsz;
 	RBinJavaAttrMetas* type_info = NULL;
 
 	if (!buffer || ((int)sz)<4 || buf_offset<0) {
@@ -2022,7 +2022,7 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr_from_buffer (ut8 *buffer, st64
 	}
 	name_idx = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
-	sz = R_BIN_JAVA_UINT (buffer, offset);
+	nsz = R_BIN_JAVA_UINT (buffer, offset);
 	offset += 4;
 	name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, name_idx);
 	if (!name) name = strdup ("unknown");
@@ -2030,7 +2030,8 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr_from_buffer (ut8 *buffer, st64
 	type_info = r_bin_java_get_attr_type_by_name (name);
 	if (type_info) {
 		IFDBG eprintf ("Typeinfo: %s, was %s\n", type_info->name, name);
-		attr = type_info->allocs->new_obj (buffer, sz, buf_offset);
+		if (nsz>sz)nsz = sz;
+		attr = type_info->allocs->new_obj (buffer, nsz, buf_offset);
 		if (attr) {
 			attr->metas->ord = (R_BIN_JAVA_GLOBAL_BIN->attr_idx++);
 		}
@@ -3609,16 +3610,12 @@ R_API ut64 r_bin_java_inner_classes_attr_calc_size(RBinJavaAttrInfo *attr) {
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_line_number_table_attr_new (ut8 *buffer, ut64 sz, ut64 buf_offset) {
-	RBinJavaLineNumberAttribute *lnattr;
-	RBinJavaAttrInfo *attr = NULL;
 	ut32 i = 0;
 	ut64 cur_location, offset = 0;
-	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
+	RBinJavaLineNumberAttribute *lnattr;
+	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
+	if (!attr) return NULL;
 	offset += 6;
-	if (attr == NULL) {
-		// TODO eprintf
-		return attr;
-	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_LINE_NUMBER_TABLE_ATTR;
 	attr->info.line_number_table_attr.line_number_table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
@@ -3628,9 +3625,11 @@ R_API RBinJavaAttrInfo* r_bin_java_line_number_table_attr_new (ut8 *buffer, ut64
 	}
 	for (i = 0; i < attr->info.line_number_table_attr.line_number_table_length; i++) {
 		cur_location = buf_offset + offset;
+		if (cur_location + 8 >= sz)
+			break;
 		lnattr = R_NEW0 (RBinJavaLineNumberAttribute);
 		if (!lnattr) {
-			eprintf ("Handling Local Variable Table Attributes :Unable to allocate memory (%u bytes) for a new exception handler structure.\n", (int)sizeof (RBinJavaLocalVariableAttribute));
+			perror ("r_bin_java_line_number_table_attr_new");
 			break;
 		}
 		lnattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
