@@ -205,9 +205,9 @@ R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	return false;
 }
 
-R_API int r_parse_varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
+R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	if (p->cur && p->cur->varsub)
-		return p->cur->varsub (p, f, data, str, len);
+		return p->cur->varsub (p, f, addr, oplen, data, str, len);
 	return false;
 }
 

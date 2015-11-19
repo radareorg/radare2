@@ -290,6 +290,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->filter = r_config_get_i (core->config, "asm.filter");
 	ds->interactive = r_config_get_i (core->config, "scr.interactive");
 	ds->varsub = r_config_get_i (core->config, "asm.varsub");
+	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	ds->vars = r_config_get_i (core->config, "asm.vars");
 	ds->varxs = r_config_get_i (core->config, "asm.varxs");
 	ds->maxrefs = r_config_get_i (core->config, "asm.maxrefs");
@@ -488,15 +489,15 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 	if (ds->varsub && ds->opstr) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
 			ds->at, R_ANAL_FCN_TYPE_NULL);
-		if (f) {
+		//if (f) {
 			core->parser->varlist = r_anal_var_list;
-			r_parse_varsub (core->parser, f,
+			r_parse_varsub (core->parser, f, ds->at, ds->analop.size,
 				ds->opstr, ds->strsub, sizeof (ds->strsub));
 			if (*ds->strsub) {
 				free (ds->opstr);
 				ds->opstr = strdup (ds->strsub);
 			}
-		}
+		//}
 	}
 	asm_str = colorize_asm_string (core, ds);
 	if (ds->decode) {
@@ -750,7 +751,6 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 		default:
 			fcntype = "loc"; break;
 		}
-
 #if SLOW_BUT_OK
 		int corner = (f->size <= ds->analop.size) ? RDWN_CORNER : LINE_VERT;
 		corner = LINE_VERT; // 99% of cases
@@ -2807,7 +2807,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (ds->varsub && f) {
 			core->parser->varlist = r_anal_var_list;
-			r_parse_varsub (core->parser, f,
+			r_parse_varsub (core->parser, f, at, ds->analop.size,
 				asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
 		}
 		oplen = r_asm_op_get_size (&asmop);
