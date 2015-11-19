@@ -584,7 +584,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				}
 				if (is_a_label) {
 					//if (stage != 2) {
-					if (ptr_start[1] == 0 || ptr_start[1] == ' ') {
+					if (ptr_start[1] != 0 && ptr_start[1] != ' ') {
 						char food[64];
 						*ptr = 0;
 						snprintf (food, sizeof (food), "0x%"PFMT64x"", off);
