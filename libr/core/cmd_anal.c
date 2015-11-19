@@ -2073,8 +2073,13 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		RIOSection *s = r_io_section_vget (core->io, addr);
 		if (s && s->rwx & 1) {
 			// search in current section
-			addr = s->vaddr;
-			len = s->size;
+			if (s->size > binfile->size) {
+				addr = s->vaddr;
+				len = binfile->size - s->offset;
+			} else {
+				addr = s->vaddr;
+				len = s->size;
+			}
 		} else {
 			// search in full file
 			ut64 o = r_io_section_vaddr_to_maddr (core->io, core->offset);
