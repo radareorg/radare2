@@ -753,7 +753,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			} else {
 				r_core_visual_seek_animation (core, off);
 				cursor = 0;
-				r_core_seek (core, off, 1);
 			}
 			r_core_block_read (core, 1);
 		}
@@ -1525,7 +1524,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		{
 		ut64 off = r_io_sundo (core->io, core->offset);
 		if (off != UT64_MAX) {
-			r_core_seek (core, off, 1);
 			r_core_visual_seek_animation (core, off);
 		} else {
 			eprintf ("Cannot undo\n");
@@ -1536,7 +1534,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		{
 		ut64 off = r_io_sundo_redo (core->io);
 		if (off != UT64_MAX) {
-			r_core_seek (core, off, 1);
 			r_core_visual_seek_animation (core, off);
 		}
 		}
