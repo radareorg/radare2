@@ -2165,7 +2165,6 @@ static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
 				}
 				r_cons_strcat (" ; ");
 			}
-
 			//r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
 			r_cons_strcat (ds->comment);
 			if (ds->show_color) {
@@ -2450,7 +2449,6 @@ toro:
 		if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
 			r_cons_newline ();
 		}
-
 		if (ds->line) {
 			if (ds->show_lines_ret && ds->analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (ds->line, '>')) {

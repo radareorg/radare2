@@ -26,10 +26,11 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend) {
 		if (bep) {
 			if (!strcmp (bep, "loader")) {
 				/* do nothing here */
-			} else if (!strcmp (bep, "entry"))
+			} else if (!strcmp (bep, "entry")) {
 				r_core_cmd (r, "dcu entry0", 0);
-		    else
-                r_core_cmdf (r, "dcu %s", bep);
+			} else {
+				r_core_cmdf (r, "dcu %s", bep);
+			}
 		}
 	}
 	r_core_cmd (r, "sr PC", 0);
@@ -41,30 +42,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend) {
 }
 
 R_API int r_core_seek_base (RCore *core, const char *hex) {
-	int i;
-	ut64 n = 0;
-	ut64 addr = core->offset;
-	ut64 mask = 0LL;
-	char * p;
-
-	i = strlen (hex) * 4;
-	p = malloc (strlen (hex)+10);
-	if (p) {
-		strcpy (p, "0x");
-		strcpy (p+2, hex);
-		if (hex[0] >= '0' && hex[0] <= '9') {
-			n = r_num_math (core->num, p);
-		} else {
-			eprintf ("Invalid argument\n");
-			n = 0;
-		}
-		free (p);
-	}
-	if (!n) {
-		return false;
-	}
-	mask = UT64_MAX << i;
-	addr = (addr & mask) | n;
+	ut64 addr = r_num_tail (core->num, core->offset, hex);
 	return r_core_seek (core, addr, 1);
 }
 

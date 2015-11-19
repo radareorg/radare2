@@ -85,7 +85,7 @@ return strdup (
 "gpr	lr	.64	248	0\n" // r15
 "gpr	sp	.64	256	0\n" // r15
 "gpr	pc	.64	264	0\n" // r15
-"gpr	cpsr	.32	272	0\n" // r16
+"gpr	pstate	.64	272	0\n" // r16
 // TODO flags
 "gpr	nf	.1	.2176	0	sign\n" // XXX wrong offset
 );

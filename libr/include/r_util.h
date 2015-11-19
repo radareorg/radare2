@@ -369,6 +369,7 @@ R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize);
 R_API int r_num_is_valid_input(RNum *num, const char *input_value);
 R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
 R_API char* r_num_as_string(RNum *___, ut64 n);
+R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex);
 
 #define R_BUF_CUR UT64_MAX
 /* constructors */
@@ -582,6 +583,8 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 R_API char *r_hex_from_c(const char *code);
 R_API bool r_str_glob (const char *str, const char *glob);
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);
+R_API char *r_str_between(const char *str, const char *prefix, const char *suffix);
+
 R_API int r_hex_pair2bin(const char *arg);
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask);
 R_API int r_hex_str2bin(const char *in, ut8 *out);

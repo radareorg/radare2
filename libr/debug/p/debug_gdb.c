@@ -186,10 +186,10 @@ static int r_debug_gdb_detach(int pid) {
 }
 
 static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
-	int arch = r_sys_arch_id(dbg->arch);
+	int arch = r_sys_arch_id (dbg->arch);
 	switch (arch) {
 	case R_SYS_ARCH_X86:
-		if ( dbg->anal->bits == 16 || dbg->anal->bits == 32) {
+		if (dbg->anal->bits == 16 || dbg->anal->bits == 32) {
 			return strdup (
 				"=PC	eip\n"
 				"=SP	esp\n"
@@ -243,8 +243,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"gpr	mxcsr	.32	304	0\n"
 			*/
 				);
-		}
-		else if ( dbg->anal->bits == 64) {
+		} else if (dbg->anal->bits == 64) {
 			return strdup (
 				"=PC	rip\n"
 				"=SP	rsp\n"
@@ -313,72 +312,37 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"gpr	xmm15	.128	516	0\n"
 				"gpr	mxcsr	.32	532	0\n"
 			*/
-					);
-		}
-		return strdup (
-		"=PC	eip\n"
-		"=SP	esp\n"
-		"=BP	ebp\n"
-		"=A0	eax\n"
-		"=A1	ebx\n"
-		"=A2	ecx\n"
-		"=A3	edi\n"
-		"gpr	eax	.32	0	0\n"
-		"gpr	ecx	.32	4	0\n"
-		"gpr	edx	.32	8	0\n"
-		"gpr	ebx	.32	12	0\n"
-		"gpr	esp	.32	16	0\n"
-		"gpr	ebp	.32	20	0\n"
-		"gpr	esi	.32	24	0\n"
-		"gpr	edi	.32	28	0\n"
-		"gpr	eip	.32	32	0\n"
-		"gpr	eflags	.32	36	0\n"
-		"seg	cs	.32	40	0\n"
-		"seg	ss	.32	44	0\n"
-		"seg	ds	.32	48	0\n"
-		"seg	es	.32	52	0\n"
-		"seg	fs	.32	56	0\n"
-		"seg	gs	.32	60	0\n"
-		);
-	case R_SYS_ARCH_ARM:
-		if (dbg->bits == R_SYS_BITS_32) {
-			return strdup (
-				"=PC	r15\n"
-				"=SP	r14\n" // XXX
-				"=A0	r0\n"
-				"=A1	r1\n"
-				"=A2	r2\n"
-				"=A3	r3\n"
-				"gpr	lr	.32	56	0\n" // r14
-				"gpr	pc	.32	60	0\n" // r15
-				"gpr	r0	.32	0	0\n"
-				"gpr	r1	.32	4	0\n"
-				"gpr	r2	.32	8	0\n"
-				"gpr	r3	.32	12	0\n"
-				"gpr	r4	.32	16	0\n"
-				"gpr	r5	.32	20	0\n"
-				"gpr	r6	.32	24	0\n"
-				"gpr	r7	.32	28	0\n"
-				"gpr	r8	.32	32	0\n"
-				"gpr	r9	.32	36	0\n"
-				"gpr	r10	.32	40	0\n"
-				"gpr	r11	.32	44	0\n"
-				"gpr	r12	.32	48	0\n"
-				"gpr	r13	.32	52	0\n"
-				"gpr	r14	.32	56	0\n"
-				"gpr	r15	.32	60	0\n"
-				"gpr	f0	.96	64	0\n"
-				"gpr	f1	.96	76	0\n"
-				"gpr	f2	.96	88	0\n"
-				"gpr	f3	.96	100	0\n"
-				"gpr	f4	.96	112	0\n"
-				"gpr	f5	.96	124	0\n"
-				"gpr	f6	.96	136	0\n"
-				"gpr	f7	.96	148	0\n"
-				"gpr	fps	.96	160	0\n"
-				"gpr	cpsr	.32	172	0\n"
 			);
-		} else if (dbg->bits == R_SYS_BITS_64) {
+		} else {
+			return strdup (
+			"=PC	eip\n"
+			"=SP	esp\n"
+			"=BP	ebp\n"
+			"=A0	eax\n"
+			"=A1	ebx\n"
+			"=A2	ecx\n"
+			"=A3	edi\n"
+			"gpr	eax	.32	0	0\n"
+			"gpr	ecx	.32	4	0\n"
+			"gpr	edx	.32	8	0\n"
+			"gpr	ebx	.32	12	0\n"
+			"gpr	esp	.32	16	0\n"
+			"gpr	ebp	.32	20	0\n"
+			"gpr	esi	.32	24	0\n"
+			"gpr	edi	.32	28	0\n"
+			"gpr	eip	.32	32	0\n"
+			"gpr	eflags	.32	36	0\n"
+			"seg	cs	.32	40	0\n"
+			"seg	ss	.32	44	0\n"
+			"seg	ds	.32	48	0\n"
+			"seg	es	.32	52	0\n"
+			"seg	fs	.32	56	0\n"
+			"seg	gs	.32	60	0\n"
+			);
+		}
+		break;
+	case R_SYS_ARCH_ARM:
+		if (dbg->bits == R_SYS_BITS_64) {
 			return strdup (
 			"=PC	pc\n"
 			"=SP	sp\n"
@@ -419,10 +383,46 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	x30	.64	240	0\n"
 			"gpr	sp	.64	248	0\n"
 			"gpr	pc	.64	256	0\n"
-			"gpr	cpsr	.32	264	0\n"
+			"gpr	pstate	.64	264	0\n"
+			);
+		} else {
+			return strdup (
+			"=PC	r15\n"
+			"=SP	r14\n" // XXX
+			"=A0	r0\n"
+			"=A1	r1\n"
+			"=A2	r2\n"
+			"=A3	r3\n"
+			"gpr	lr	.32	56	0\n" // r14
+			"gpr	pc	.32	60	0\n" // r15
+			"gpr	r0	.32	0	0\n"
+			"gpr	r1	.32	4	0\n"
+			"gpr	r2	.32	8	0\n"
+			"gpr	r3	.32	12	0\n"
+			"gpr	r4	.32	16	0\n"
+			"gpr	r5	.32	20	0\n"
+			"gpr	r6	.32	24	0\n"
+			"gpr	r7	.32	28	0\n"
+			"gpr	r8	.32	32	0\n"
+			"gpr	r9	.32	36	0\n"
+			"gpr	r10	.32	40	0\n"
+			"gpr	r11	.32	44	0\n"
+			"gpr	r12	.32	48	0\n"
+			"gpr	r13	.32	52	0\n"
+			"gpr	r14	.32	56	0\n"
+			"gpr	r15	.32	60	0\n"
+			"gpr	f0	.96	64	0\n"
+			"gpr	f1	.96	76	0\n"
+			"gpr	f2	.96	88	0\n"
+			"gpr	f3	.96	100	0\n"
+			"gpr	f4	.96	112	0\n"
+			"gpr	f5	.96	124	0\n"
+			"gpr	f6	.96	136	0\n"
+			"gpr	f7	.96	148	0\n"
+			"gpr	fps	.96	160	0\n"
+			"gpr	cpsr	.32	172	0\n"
 			);
 		}
-		return NULL;
 	case R_SYS_ARCH_SH:
 		return strdup (
 			"=PC    pc\n"

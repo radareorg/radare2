@@ -813,7 +813,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg);
 		break;
-	case 'p':
+	case 'p': // "dmp"
 		if (input[1] == ' ') {
 			int perms;
 			char *p, *q;
@@ -830,9 +830,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					eprintf ("(%s)(%s)(%s)\n", input+2, p, q);
 					eprintf ("0x%08"PFMT64x" %d %o\n", addr, (int) size, perms);
 					r_debug_map_protect (core->dbg, addr, size, perms);
-				} else eprintf ("See dm?\n");
-			} else eprintf ("See dm?\n");
-		} else eprintf ("See dm?\n");
+				} else eprintf ("See dmp?\n");
+			} else eprintf ("See dmp?\n");
+		} else eprintf ("See dmp?\n");
 		break;
 	case 'd':
 		switch (input[1]) {
@@ -993,10 +993,87 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 	}
 }
 
+static void cmd_reg_profile (RCore *core, const char *str) { // "arp" and "drp"
+	switch (str[1]) {
+	case 0:
+		if (core->dbg->reg->reg_profile_str) {
+			//core->anal->reg = core->dbg->reg;
+			r_cons_printf ("%s\n", core->dbg->reg->reg_profile_str);
+			//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
+		} else eprintf ("No register profile defined. Try 'dr.'\n");
+		break;
+	case '?':
+		{
+			eprintf ("Usage: drp[j] [regprofile-file]\n");
+			eprintf ("Usage: drps [newfakesize]\n");
+			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+			if (rs) {
+				eprintf ("size = %d\n", rs->arena->size);
+			}
+		}
+		break;
+	case 's':
+		if (str[2] == ' ') {
+			ut64 n = r_num_math (core->num, str+2);
+			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+			if (rs && n>0) {
+				free (rs->arena->bytes);
+				rs->arena->bytes = calloc (1, n);
+				rs->arena->size = n;
+			} else {
+				eprintf ("Invalid arena size\n");
+			}
+		} else {
+			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+			if (rs) {
+				r_cons_printf ("%d\n", rs->arena->size);
+			} else eprintf ("Cannot find GPR register arena.\n");
+		}
+		break;
+	case 'j': {
+			  // "drpj" .. dup from "arpj"
+			  RListIter *iter;
+			  RRegItem *r;
+			  int i;
+			  int first = 1;
+			  r_cons_printf ("{\"alias_info\":[");
+			  for (i = 0; i < R_REG_NAME_LAST; i++) {
+				  if (core->dbg->reg->name[i]) {
+					  if (!first) r_cons_printf (",");
+					  r_cons_printf ("{\"role\":%d,", i);
+					  r_cons_printf ("\"role_str\":\"%s\",",
+							  r_reg_get_role (i));
+					  r_cons_printf ("\"reg\":\"%s\"}",
+							  core->dbg->reg->name[i]);
+					  first = 0;
+				  }
+			  }
+			  r_cons_printf ("],\"reg_info\":[");
+			  first = 1;
+			  for (i = 0; i < R_REG_TYPE_LAST; i++) {
+				  r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
+					  if (!first) r_cons_printf (",");
+					  r_cons_printf ("{\"type\":%d,", r->type);
+					  r_cons_printf ("\"type_str\":\"%s\",",
+							  r_reg_get_type (r->type));
+					  r_cons_printf ("\"name\":\"%s\",", r->name);
+					  r_cons_printf ("\"size\":%d,", r->size);
+					  r_cons_printf ("\"offset\":%d}", r->offset);
+					  first = 0;
+				  }
+			  }
+			  r_cons_printf ("]}");
+		  } break;
+	default:
+		  r_reg_set_profile (core->dbg->reg, str+2);
+		  break;
+	}
+}
+
 static void cmd_debug_reg(RCore *core, const char *str) {
 	int size, i, type = R_REG_TYPE_GPR;
 	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
-	int use_colors = r_config_get_i(core->config, "scr.color");
+	int use_colors = r_config_get_i (core->config, "scr.color");
 	const char *use_color;
 	if (use_colors) {
 #undef ConsP
@@ -1292,48 +1369,7 @@ free (rf);
 		}
 		break;
 	case 'p': // "drp"
-		if (!str[1]) {
-			if (core->dbg->reg->reg_profile_str) {
-				//core->anal->reg = core->dbg->reg;
-				r_cons_printf ("%s\n", core->dbg->reg->reg_profile_str);
-				//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
-			} else eprintf ("No register profile defined. Try 'dr.'\n");
-		} else if (str[1] == 'j') {
-			// "drpj" .. dup from "arpj"
-			RListIter *iter;
-			RRegItem *r;
-			int i;
-			int first = 1;
-			r_cons_printf ("{\"alias_info\":[");
-			for (i = 0; i < R_REG_NAME_LAST; i++) {
-				if (core->dbg->reg->name[i]) {
-					if (!first) r_cons_printf (",");
-					r_cons_printf ("{\"role\":%d,", i);
-					r_cons_printf ("\"role_str\":\"%s\",",
-						r_reg_get_role (i));
-					r_cons_printf ("\"reg\":\"%s\"}",
-						core->dbg->reg->name[i]);
-					first = 0;
-				}
-			}
-			r_cons_printf ("],\"reg_info\":[");
-			first = 1;
-			for (i = 0; i < R_REG_TYPE_LAST; i++) {
-				r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
-					if (!first) r_cons_printf (",");
-					r_cons_printf ("{\"type\":%d,", r->type);
-					r_cons_printf ("\"type_str\":\"%s\",",
-							r_reg_get_type (r->type));
-					r_cons_printf ("\"name\":\"%s\",", r->name);
-					r_cons_printf ("\"size\":%d,", r->size);
-					r_cons_printf ("\"offset\":%d}", r->offset);
-					first = 0;
-				}
-			}
-			r_cons_printf ("]}");
-		} else {
-			r_reg_set_profile (core->dbg->reg, str+2);
-		}
+		cmd_reg_profile (core, str);
 		break;
 	case 't': // "drt"
 		switch (str[1]) {
@@ -1586,12 +1622,24 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 
 	switch (input[1]) {
 	case '.':
-		bpi = r_bp_get_at (core->dbg->bp, core->offset);
-		if (bpi) {
-			r_cons_printf ("breakpoint %s %s %s\n",
-				r_str_rwx_i (bpi->rwx),
-				bpi->enabled ?  "enabled" : "disabled",
-				bpi->name ? bpi->name : "");
+		if (input[2]) {
+			int bpsz = strcmp (core->dbg->arch, "arm")? 1: 4;
+			ut64 addr = r_num_tail (core->num, core->offset, input+2);
+			if (validAddress (core, addr)) {
+				bpi = hwbp
+				? r_bp_add_hw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
+				: r_bp_add_sw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+			} else {
+				eprintf ("Invalid address\n");
+			}
+		} else {
+			bpi = r_bp_get_at (core->dbg->bp, core->offset);
+			if (bpi) {
+				r_cons_printf ("breakpoint %s %s %s\n",
+					r_str_rwx_i (bpi->rwx),
+					bpi->enabled ?  "enabled" : "disabled",
+					bpi->name ? bpi->name : "");
+			}
 		}
 		break;
 	case 't': // "dbt"
@@ -2338,9 +2386,77 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 	}
 }
 
+static bool cmd_dcu (RCore *core, const char *input) {
+	const char *ptr = NULL;
+	ut64 from, to, pc;
+	bool dcu_range = false;
+	bool invalid = (!input[0] || !input[1] || !input[2]);
+	if (invalid || (input[2] != ' ' && input[2] != '.')) {
+		eprintf ("|Usage: dcu <address>\n");
+		eprintf ("|Usage: dcu[..tail]\n");
+		eprintf ("|Usage: dcu [from] [to]\n");
+		return false;
+	}
+	from = UT64_MAX;
+	if (input[2] == '.') {
+		ptr = strchr (input+3, ' ');
+		if (ptr) { // TODO: put '\0' in *ptr to avoid
+			from = r_num_tail (core->num, core->offset, input+2);
+			if (ptr[1]=='.') {
+				to = r_num_tail (core->num, core->offset, ptr+2);
+			} else {
+				to = r_num_math (core->num, ptr+1);
+			}
+			dcu_range = true;
+		} else {
+			from = r_num_tail (core->num, core->offset, input+2);
+		}
+	} else {
+		ptr = strchr (input+3, ' ');
+		if (ptr) { // TODO: put '\0' in *ptr to avoid
+			from = r_num_math (core->num, input+3);
+			if (ptr[1]=='.') {
+				to = r_num_tail (core->num, core->offset, ptr+2);
+			} else {
+				to = r_num_math (core->num, ptr+1);
+			}
+			dcu_range = true;
+		} else {
+			from = r_num_math (core->num, input+3);
+		}
+	}
+	if (from == UT64_MAX) {
+		eprintf ("Cannot continue until address 0\n");
+		return false;
+	}
+	if (dcu_range) {
+		// TODO : handle ^C here
+		r_cons_break (NULL, NULL);
+		do {
+			if (r_cons_is_breaked ())
+				break;
+			r_debug_step (core->dbg, 1);
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
+			pc = r_debug_reg_get (core->dbg, "PC");
+			eprintf ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x"\n",
+					from, pc, to);
+		} while (pc < from || pc > to);
+		r_cons_break_end ();
+	} else {
+		ut64 addr = from;
+		eprintf ("Continue until 0x%08"PFMT64x"\n", addr);
+		bypassbp (core);
+		r_reg_arena_swap (core->dbg->reg, true);
+		r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+		r_debug_continue (core->dbg);
+		checkbpcallback (core);
+		r_bp_del (core->dbg->bp, addr);
+	}
+	return true;
+}
+
 static int cmd_debug_continue (RCore *core, const char *input) {
 	int pid, old_pid, signum;
-	ut64 addr;
 	char *ptr;
 	const char * help_message[] = {
 		"Usage: dc", "", "Execution continuation commands",
@@ -2357,8 +2473,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		"dcr", "", "Continue until ret (uses step over)",
 		"dcs", " <num>", "Continue until syscall",
 		"dct", " <len>", "Traptrace from curseek to len, no argument to list",
-		"dcu", " [addr]", "Continue until address",
-		"dcu", " <address> [end]", "Continue until given address range",
+		"dcu", "[..end|addr] ([end])", "Continue until address (or range)",
 		/*"TODO: dcu/dcr needs dbg.untilover=true??",*/
 		/*"TODO: same for only user/libs side, to avoid steping into libs",*/
 		/*"TODO: support for threads?",*/
@@ -2457,38 +2572,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			return 1;
 		}
 	case 'u':
-		if (input[2] != ' ') {
-			eprintf ("|Usage: dcu <address>\n");
-			return 1;
-		}
-		ptr = strchr (input+3, ' ');
-// TODO : handle ^C here
-		if (ptr) { // TODO: put '\0' in *ptr to avoid
-			ut64 from, to, pc;
-			from = r_num_math (core->num, input+3);
-			to = r_num_math (core->num, ptr+1);
-			do {
-				r_debug_step (core->dbg, 1);
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-				pc = r_debug_reg_get (core->dbg, "PC");
-				eprintf ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x"\n",
-						from, pc, to);
-			} while (pc < from || pc > to);
-			return 1;
-		}
-		addr = r_num_math (core->num, input+2);
-		if (addr) {
-			eprintf ("Continue until 0x%08"PFMT64x"\n", addr);
-			bypassbp (core);
-			r_reg_arena_swap (core->dbg->reg, true);
-			r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-			r_debug_continue (core->dbg);
-			checkbpcallback (core);
-			r_bp_del (core->dbg->bp, addr);
-		} else {
-			eprintf ("Cannot continue until address 0\n");
-			return 0;
-		}
+		cmd_dcu (core, input);
 		break;
 	case ' ':
 		old_pid = core->dbg->pid;
@@ -3016,7 +3100,7 @@ static int cmd_debug(void *data, const char *input) {
 			if (!res) break;
 			r_sys_usleep (200);
 		}
-			r_cons_break_end();
+		r_cons_break_end ();
 		break;
 	case 'k':
 		r_core_debug_kill (core, input + 1);
@@ -3024,7 +3108,7 @@ static int cmd_debug(void *data, const char *input) {
 	case 'e':
 		r_core_debug_esil (core, input + 1);
 		break;
-	default:{
+	default: {
 			const char* help_msg[] = {
 			"Usage:", "d", " # Debug commands",
 			"db", "[?]", "Breakpoints commands",

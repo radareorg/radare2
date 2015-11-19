@@ -662,21 +662,76 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 
 #if __WINDOWS__ && !__CYGWIN__
 void SetWindow(int Width, int Height) {
-    COORD coord;
-    coord.X = Width;
-    coord.Y = Height;
+	COORD coord;
+	coord.X = Width;
+	coord.Y = Height;
 
-    SMALL_RECT Rect;
-    Rect.Top = 0;
-    Rect.Left = 0;
-    Rect.Bottom = Height - 1;
-    Rect.Right = Width - 1;
+	SMALL_RECT Rect;
+	Rect.Top = 0;
+	Rect.Left = 0;
+	Rect.Bottom = Height - 1;
+	Rect.Right = Width - 1;
 
-    HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleScreenBufferSize(Handle, coord);
-    SetConsoleWindowInfo(Handle, TRUE, &Rect);
+	HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleScreenBufferSize(Handle, coord);
+	SetConsoleWindowInfo(Handle, TRUE, &Rect);
 }
 #endif
+
+// unnecesarily public
+char *getcommapath(RCore *core) {
+	char *cwd;
+	const char *dir = r_config_get (core->config, "dir.projects");
+	const char *prj = r_config_get (core->config, "file.project");
+	if (dir && *dir && prj && *prj) {
+		/* use prjdir as base directory for comma-ent files */
+		cwd = r_str_newf ("%s"R_SYS_DIR"%s.d",
+			r_file_abspath (dir), prj);
+	} else {
+		/* use cwd as base directory for comma-ent files */
+		cwd = r_sys_getdir ();
+	}
+	return cwd;
+}
+
+static void visual_comma(RCore *core) {
+	ut64 addr = core->offset + curset? cursor: 0;
+	char *comment, *cwd, *cmtfile;
+	comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+	cmtfile = r_str_between (comment, ",(", ")");
+	cwd = getcommapath (core);
+	if (!cmtfile) {
+		char *fn;
+		showcursor (core, true);
+		fn = r_cons_input ("<comment-file> ");
+		showcursor (core, false);
+		if (fn && *fn) {
+			cmtfile = strdup (fn);
+			if (!comment || !*comment) {
+				comment = r_str_newf (",(%s)", fn);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, comment);
+			} else {
+				// append filename in current comment
+				char *nc = r_str_newf ("%s ,(%s)", comment, fn);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, nc);
+				free (nc);
+			}
+		}
+		free (fn);
+	}
+	if (cmtfile) {
+		char *cwf = r_str_newf ("%s"R_SYS_DIR"%s", cwd, cmtfile);
+		char *odata = r_file_slurp (cwf, NULL);
+		char *data = r_core_editor (core, NULL, odata);
+		r_file_dump (cwf, (const ut8*)data, -1, 0);
+		free (data);
+		free (odata);
+		free (cwf);
+	} else {
+		eprintf ("No commafile found.\n");
+	}
+	free (comment);
+}
 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
@@ -886,6 +941,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			}
 		} }
 		showcursor (core, false);
+		break;
+	case ',':
+		visual_comma (core);
 		break;
 	case 'T':
 		if (r_sandbox_enable (0)) {
@@ -1444,7 +1502,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			ut64 addr = core->offset;
 			if (curset) {
 				addr += cursor;
-
 				r_core_seek (core, addr, 0);
 				r_core_cmdf (core, "s 0x%"PFMT64x, addr);
 			}

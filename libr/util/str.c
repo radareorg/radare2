@@ -959,7 +959,7 @@ static char *r_str_escape_ (const char *buf, const int dot_nl) {
 				if (*p == '\0') goto out;
 				if (*p == '[')
 					for (p++; *p != 'm'; p++)
-						;
+						if (*p == '\0') goto out;
 				break;
 			default:
 				/* Outside the ASCII printable range */
@@ -1911,4 +1911,14 @@ R_API void r_str_const_free() {
 		}
 		R_FREE (consts);
 	}
+}
+
+R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffix) {
+	char *c0, *c1;
+	if (!cmt || !prefix || !suffix || !cmt || !*cmt) return NULL;
+	c0 = strstr (cmt, prefix);
+	if (!c0) return NULL;
+	c1 = strstr (c0 + strlen (prefix), suffix);
+	if (!c1) return NULL;
+	return r_str_ndup (c0 + strlen (prefix), (c1 - c0 - strlen (prefix)));
 }

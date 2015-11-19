@@ -1,48 +1,20 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
-#if 0
-static void filter_line(char *line) {
-	char *a;
-
-	if (!line)
-		return;
-
-	for (a=line; *a; a++) {
-		switch (*a) {
-		case '%':
-		case '(':
-		case ')':
-		case '~':
-		case '|':
-		case '#':
-		case ';':
-		case '"':
-			*a = '_';
-			break;
-		}
-	}
-}
-#endif
 
 static int remove_meta_offset(RCore *core, ut64 offset) {
-	int ret;
-	char aoffset[64], *aoffsetptr;
-
-	aoffsetptr = sdb_itoa (offset, aoffset, 16);
-
+	char aoffset[64];
+	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
 	if (!aoffsetptr) {
 		eprintf ("Failed to convert %"PFMT64x" to a key", offset);
 		return -1;
 	}
-	ret = sdb_unset (core->bin->cur->sdb_addrinfo, aoffsetptr, 0);
-	return ret;
+	return sdb_unset (core->bin->cur->sdb_addrinfo, aoffsetptr, 0);
 }
 
-static int print_meta_offset(RCore *core, ut64 offset) {
+static void print_meta_offset(RCore *core, ut64 offset) {
 	int ret, line, line_old, i;
 	char file[1024];
 
 	ret = r_bin_addr2line (core->bin, offset, file, sizeof (file)-1, &line);
-
 	if (ret) {
 		r_cons_printf ("file %s\nline %d\n", file, line);
 		line_old = line;
@@ -63,16 +35,10 @@ static int print_meta_offset(RCore *core, ut64 offset) {
 		eprintf ("Cannot find meta information at 0x%08"
 			PFMT64x"\n", offset);
 	}
-
-	return 0;
 }
 
 static int remove_meta_fileline(RCore *core, const char *file_line) {
-	int ret;
-
-	ret = sdb_unset (core->bin->cur->sdb_addrinfo, file_line, 0);
-
-	return ret;
+	return sdb_unset (core->bin->cur->sdb_addrinfo, file_line, 0);
 }
 
 static int print_meta_fileline(RCore *core, const char *file_line) {
@@ -245,6 +211,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			"CC", "", "list all comments in human friendly form",
 			"CC*", "", "list all comments in r2 commands",
 			"CC.", "", "show comment at current offset",
+			"CC,", " [file]", "show or set comment file",
 			"CC", " or maybe not", "append comment at current address",
 			"CC+", " same as above", "append comment at current address",
 			"CC!", "", "edit comment using cfg.editor (vim, ..)",
@@ -254,6 +221,38 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			NULL};
 		r_core_cmd_help (core, help_msg);
 		} break;
+	case ',': // "CC,"
+		if (input[2]=='?') {
+			eprintf ("Usage: CC, [file]\n");
+		} else if (input[2]==' ') {
+			const char *fn = input+2;
+			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+			while (*fn== ' ')fn++;
+			if (comment && *comment) {
+				// append filename in current comment
+				char *nc = r_str_newf ("%s ,(%s)", comment, fn);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, nc);
+				free (nc);
+			} else {
+				char *comment = r_str_newf (",(%s)", fn);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, comment);
+				free (comment);
+			}
+		} else {
+			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+			if (comment && *comment) {
+				char *cmtfile = r_str_between (comment, ",(", ")");
+				if (cmtfile && *cmtfile) {
+					char *getcommapath(RCore *core);
+					char *cwd = getcommapath (core);
+					r_cons_printf ("%s"R_SYS_DIR"%s\n", cwd, cmtfile);
+					free (cwd);
+				}
+				free (cmtfile);
+			}
+			free (comment);
+		}
+		break;
 	case '.':
 		  {
 			  char *comment = r_meta_get_string (
@@ -524,7 +523,7 @@ static int cmd_meta(void *data, const char *input) {
 	case 'L':
 		cmd_meta_lineinfo (core, input + 1);
 		break;
-	case 'C':
+	case 'C': // "CC"
 		cmd_meta_comment (core, input);
 		break;
 	case 'h': /* comment */

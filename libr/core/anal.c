@@ -299,6 +299,18 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			(fcnlen == R_ANAL_RET_END && fcn->size < 1)) { /* Error analyzing function */
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
+			// resize function if overlaps
+			ut64 overlapped = -1;
+			RAnalFunction *fcn1 = NULL;
+			RListIter *iter1;
+			r_list_foreach (core->anal->fcns, iter1, fcn1) {
+				if (fcn1->addr >= (fcn->addr) &&
+					fcn1->addr < (fcn->addr + fcn->size))
+						if (overlapped > fcn1->addr)
+							overlapped = fcn1->addr;
+			}
+			if (overlapped != -1) r_anal_fcn_resize (fcn, overlapped - fcn->addr);
+
 			f = r_flag_get_i2 (core->flags, fcn->addr);
 			free (fcn->name);
 			if (f) { /* Check if it's already flagged */
@@ -886,9 +898,14 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
  * If the function has been already analyzed, it adds a
  * reference to that fcn */
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
-	int use_esil = r_config_get_i (core->config, "anal.esil");
 	RAnalFunction *fcn;
 	RListIter *iter;
+
+	/* resize function if overlaps */
+	fcn = r_anal_get_fcn_in (core->anal, at, 0);
+	if (fcn) r_anal_fcn_resize (fcn, at - fcn->addr);
+
+	int use_esil = r_config_get_i (core->config, "anal.esil");
 
 	if (core->io->va && !core->io->raw) {
 		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode))

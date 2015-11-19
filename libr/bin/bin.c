@@ -457,7 +457,6 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	binfile->o = o;
 	if (cp->baddr) {
 		ut64 old_baddr = o->baddr;
-
 		o->baddr = cp->baddr (binfile);
 		binobj_set_baddr (o, old_baddr);
 	}
@@ -1300,7 +1299,7 @@ R_API RList* r_bin_get_sections(RBin *bin) {
 	return NULL;
 }
 
-// TODO: MOve into section.c and rename it to r_io_section_get_at ()
+// TODO: Move into section.c and rename it to r_io_section_get_at ()
 R_API RBinSection* r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	RBinSection *section;
 	RListIter *iter;
@@ -1805,11 +1804,17 @@ R_API ut64 r_binfile_get_vaddr (RBinFile *binfile, ut64 paddr, ut64 vaddr) {
  * paddr otherwise */
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 paddr, ut64 vaddr) {
 	if (!bin || !bin->cur) return UT64_MAX;
-
-	// autodetect thumb
+	if (paddr == UT64_MAX) return UT64_MAX;
+	/* hack to realign thumb symbols */
 	if (bin->cur->o && bin->cur->o->info && bin->cur->o->info->arch) {
-		if (!strcmp (bin->cur->o->info->arch, "arm") && (vaddr & 1)) {
-			vaddr = (vaddr >> 1) << 1;
+		if (bin->cur->o->info->bits == 16) {
+			RBinSection *s = r_bin_get_section_at (bin->cur->o, paddr, false);
+			// autodetect thumb
+			if (s && s->srwx & 1) {
+				if (!strcmp (bin->cur->o->info->arch, "arm") && (vaddr & 1)) {
+					vaddr = (vaddr >> 1) << 1;
+				}
+			}
 		}
 	}
 	return r_binfile_get_vaddr (bin->cur, paddr, vaddr);
