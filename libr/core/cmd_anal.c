@@ -2071,14 +2071,13 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	}
 	if (!len) {
 		if (searchin && !strcmp (searchin, "file")) {
-			len = binfile->size - core->offset;
+			len = binfile->size;
 		} else {
 			len = r_num_math (core->num, "$SS-($$-$S)"); // section size
 		}
 	}
-	if (core->offset + len > binfile->size) {
-		len = binfile->size - core->offset;
-	}
+	if (len < 1) len = r_num_math (core->num, "$SS-($$-$S)");
+
 	addr = core->offset;
 	addr_end = addr + len;
 	r_cons_break (NULL, NULL);
