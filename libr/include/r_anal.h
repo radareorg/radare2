@@ -573,6 +573,7 @@ typedef struct r_anal_options_t {
 	int bbsplit;
 	int noncode;
 	int nopskip; // skip nops at the beginning of functions
+	int jmptbl; // analyze jump tables
 } RAnalOptions;
 
 typedef struct r_anal_t {

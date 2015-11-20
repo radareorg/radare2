@@ -1000,15 +1000,13 @@ SETL/SETNGE
 				break;
 			case X86_OP_MEM:
 				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->ptr = INSOP(0).mem.disp;
 				if (INSOP(0).mem.base == X86_REG_RIP) {
-					op->ptr = INSOP(0).mem.disp;
 					op->ptr += addr + insn->size;
 					op->refptr = 8;
 				} else {
 					cs_x86_op in = INSOP(0);
 					if (in.mem.index == 0 && in.mem.base == 0 && in.mem.scale == 1) {
-						op->type = R_ANAL_OP_TYPE_UJMP;
-						op->ptr = in.mem.disp;
 						if (a->decode) {
 							esilprintf (op, "0x%"PFMT64x",[],%s,=", op->ptr, pc);
 						}
