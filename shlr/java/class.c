@@ -3552,7 +3552,6 @@ R_API RBinJavaAttrInfo* r_bin_java_line_number_table_attr_new (ut8 *buffer, ut64
 	if (linenum_len > sz) {
 		return NULL;
 	}
-	eprintf ("LEN %d\n", linenum_len);
 	for (i = 0; i < linenum_len; i++) {
 		curpos = buf_offset + offset;
 	//	printf ("%llx %llx \n", curpos, sz);
@@ -4165,7 +4164,7 @@ R_API RBinJavaStackMapFrame* r_bin_java_default_stack_frame() {
 	return stack_frame;
 }
 
-R_API RBinJavaStackMapFrame* r_bin_java_build_sf_from_local_variable_table(RBinJavaObj *bin, RBinJavaAttrInfo *attr) {
+R_API RBinJavaStackMapFrame* r_bin_java_build_stack_frame_from_local_variable_table(RBinJavaObj *bin, RBinJavaAttrInfo *attr) {
 	RBinJavaStackMapFrame *sf = r_bin_java_default_stack_frame();
 	RBinJavaLocalVariableAttribute *lvattr = NULL;
 	RBinJavaVerificationObj *type_item;
@@ -4211,7 +4210,7 @@ R_API RBinJavaStackMapFrame* r_bin_java_build_sf_from_local_variable_table(RBinJ
 			}
 			break;
 		default:
-			eprintf ("r_bin_java_build_sf_from_local_variable_table: "
+			eprintf ("r_bin_java_build_stack_frame_from_local_variable_table: "
 			"not sure how to handle: name: %s, type: %s\n", lvattr->name, lvattr->descriptor);
 			type_item = r_bin_java_verification_info_from_type (bin, R_BIN_JAVA_STACKMAP_NULL, 0);
 		}
@@ -4219,7 +4218,9 @@ R_API RBinJavaStackMapFrame* r_bin_java_build_sf_from_local_variable_table(RBinJ
 		value_cnt++;
 	}
 	if (value_cnt != attr->info.local_variable_table_attr.table_length) {
-		IFDBG eprintf ("r_bin_java_build_sf_from_local_variable_table: Number of locals not accurate.  Expected %d but got %d", attr->info.local_variable_table_attr.table_length, value_cnt);
+		IFDBG eprintf ("r_bin_java_build_stack_frame_from_local_variable_table: "
+			"Number of locals not accurate.  Expected %d but got %d",
+			attr->info.local_variable_table_attr.table_length, value_cnt);
 	}
 	return sf;
 }

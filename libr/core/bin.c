@@ -1949,7 +1949,7 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 	RListIter *iter;
 	RBinObject *obj;
 	const char *name = binfile ? binfile->file : NULL;
-	RBinInfo *info = r_bin_get_info (core->bin);
+	(void)r_bin_get_info (core->bin); // XXX is this necssary for proper iniitialization
 	ut32 id = binfile ? binfile->id : 0;
 	ut32 fd = binfile ? binfile->fd : 0;
 	ut32 bin_sz = binfile ? binfile->size : 0;
