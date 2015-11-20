@@ -19,6 +19,9 @@
 // 256KB max function size
 #define MAX_FCN_SIZE (1024*256)
 
+#define MAX_JMPTBL_SIZE 1000
+#define MAX_JMPTBL_JMP 10000
+
 #define DB a->sdb_fcns
 #define EXISTS(x,y...) snprintf (key, sizeof(key)-1,x,##y),sdb_exists(DB,key)
 #define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x,##y);
@@ -601,6 +604,25 @@ repeat:
 #endif
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
+			// switch statement
+			if (op.ptr != UT64_MAX && anal->opt.jmptbl) {
+				ut8 *jmptbl = malloc(MAX_JMPTBL_SIZE);
+				ut64 offs, sz = anal->bits >> 3;
+				anal->iob.read_at (anal->iob.io, op.ptr, jmptbl, MAX_JMPTBL_SIZE);
+				for (offs = 0; offs < MAX_JMPTBL_SIZE; offs += sz) {
+					ut64 jmpptr = 0;
+					r_mem_copyendian ((ut8*)&jmpptr, jmptbl + offs, sz, !anal->big_endian);
+					if (anal->limit) {
+						if (jmpptr < anal->limit->from || jmpptr > anal->limit->to)
+							break;
+					}
+					if (jmpptr < addr + idx - MAX_JMPTBL_JMP ||
+							jmpptr > addr + idx + MAX_JMPTBL_JMP)
+							break;
+					recurseAt (jmpptr);
+				}
+				free(jmptbl);
+			}
 			if (continue_after_jump)
 				break;
 			/* fallthru */

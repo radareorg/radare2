@@ -1233,6 +1233,12 @@ static int cb_anal_limits(void *user, RConfigNode *node) {
 	return 1;
 }
 
+static int cb_anal_jmptbl(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.jmptbl = node->i_value;
+	return true;
+}
 
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
@@ -1272,6 +1278,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.trace", "false", &cb_anal_trace, "Record ESIL trace in log database");
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
+
+	SETCB("anal.jmptbl", "false", &cb_anal_jmptbl, "Analyze jump tables in switch statements");
 
 	SETPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETCB("esil.debug", "false", &cb_esildebug, "Show ESIL debug info");
