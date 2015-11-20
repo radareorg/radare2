@@ -1903,14 +1903,13 @@ R_API RBinJavaAttrInfo* r_bin_java_default_attr_new(ut8* buffer, ut64 sz, ut64 b
 
 R_API RBinJavaAttrMetas* r_bin_java_get_attr_type_by_name(const char *name) {
 	// TODO: use sdb/hashtable here
-	RBinJavaAttrMetas* res = &RBIN_JAVA_ATTRS_METAS[R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR];
 	int i;
 	for (i = 0; i < RBIN_JAVA_ATTRS_METAS_SZ; i++) {
 		if (!strcmp ((const char *) name, RBIN_JAVA_ATTRS_METAS[i].name)) {
 			return &RBIN_JAVA_ATTRS_METAS[i];
 		}
 	}
-	return NULL;
+	return &RBIN_JAVA_ATTRS_METAS[R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR];
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 offset, const ut8* buf, const ut64 buf_len) {
@@ -3603,14 +3602,14 @@ R_API ut64 r_bin_java_source_debug_attr_calc_size(RBinJavaAttrInfo *attr) {
 
 R_API ut64 r_bin_java_local_variable_table_attr_calc_size(RBinJavaAttrInfo *attr) {
 	ut64 size = 0;
-	ut64 offset = 0;
-	RListIter *iter, *iter_tmp;
+	//ut64 offset = 0;
+	RListIter *iter;
 	RBinJavaLocalVariableAttribute* lvattr = NULL;
 	if (!attr) return 0LL;
 	size += 6;
 	//attr->info.local_variable_table_attr.table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	size += 2;
-	r_list_foreach_safe (attr->info.local_variable_table_attr.local_variable_table, iter, iter_tmp, lvattr) {
+	r_list_foreach (attr->info.local_variable_table_attr.local_variable_table, iter, lvattr) {
 		//lvattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
 		size += 2;
 		//lvattr->length = R_BIN_JAVA_USHORT (buffer, offset);
@@ -3943,7 +3942,6 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 	RBinJavaStackMapFrame *stack_frame = r_bin_java_default_stack_frame ();
 	RBinJavaVerificationObj *se = NULL;
 	ut64 offset = 0;
-	int i = 0;
 	if (!stack_frame) return NULL;
 	stack_frame->tag = buffer[offset];
 	offset += 1;
@@ -4129,7 +4127,7 @@ R_API ut16 r_bin_java_find_cp_class_ref_from_name_idx (RBinJavaObj *bin, ut16 na
 	return (pos != len)? pos: 0;
 }
 
-R_API RBinJavaStackMapFrame* r_bin_java_default_sf() {
+R_API RBinJavaStackMapFrame* r_bin_java_default_stack_frame() {
 	RBinJavaStackMapFrame* sf = R_NEW0 (RBinJavaStackMapFrame);
 	if (!sf) return NULL;
 	sf->metas = R_NEW0 (RBinJavaMetaInfo);
@@ -4150,7 +4148,7 @@ R_API RBinJavaStackMapFrame* r_bin_java_build_stack_frame_from_local_variable_ta
 	RBinJavaStackMapFrame *sf = r_bin_java_default_stack_frame();
 	RBinJavaLocalVariableAttribute *lvattr = NULL;
 	RBinJavaVerificationObj *type_item;
-	RListIter *iter = NULL, *iter_tmp = NULL;
+	RListIter *iter = NULL;
 	ut32 value_cnt = 0;
 	ut8 value;
 	if (!sf || !bin || !attr || attr->type != R_BIN_JAVA_ATTR_TYPE_LOCAL_VARIABLE_TABLE_ATTR) {
@@ -4158,7 +4156,7 @@ R_API RBinJavaStackMapFrame* r_bin_java_build_stack_frame_from_local_variable_ta
 		return sf;
 	}
 	sf->number_of_locals = attr->info.local_variable_table_attr.table_length;
-	r_list_foreach_safe (attr->info.local_variable_table_attr.local_variable_table, iter, iter_tmp, lvattr) {
+	r_list_foreach (attr->info.local_variable_table_attr.local_variable_table, iter, lvattr) {
 		ut32 pos = 0;
 		// knock the array Types
 		while (lvattr->descriptor[pos] == '[') {
