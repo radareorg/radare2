@@ -1511,7 +1511,8 @@ R_API RBinJavaCPTypeObj* r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 			java_obj->file_offset = offset;
 			java_obj->loadaddr = bin->loadaddr;
 		}
-		return java_obj;
+		return NULL; // early error to avoid future overflows
+		//return java_obj;
 	}
 	java_constant_info = &R_BIN_JAVA_CP_METAS[tag];
 	if (java_constant_info->tag == 0 || java_constant_info->tag == 2) {
@@ -3194,7 +3195,6 @@ R_API ut64 r_bin_java_code_attr_calc_size(RBinJavaAttrInfo *attr) {
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf_offset) {
-	RBinJavaExceptionEntry *exc_entry = NULL;
 	RBinJavaAttrInfo *attr = NULL, *_attr = NULL;
 	ut32 k = 0, curpos;
 	ut64 offset = 0;
@@ -3236,20 +3236,20 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	attr->info.code_attr.exception_table = r_list_newf (free);
 	for (k = 0; k < attr->info.code_attr.exception_table_length; k++) {
 		curpos = buf_offset+offset;
-		if (curpos+8>sz)
+		if (curpos + 8 > sz)
 			return attr;
-		exc_entry = R_NEW0(RBinJavaExceptionEntry);
-		exc_entry->file_offset = curpos;
-		exc_entry->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
+		RBinJavaExceptionEntry *e = R_NEW0 (RBinJavaExceptionEntry);
+		e->file_offset = curpos;
+		e->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		exc_entry->end_pc = R_BIN_JAVA_USHORT (buffer,offset);
+		e->end_pc = R_BIN_JAVA_USHORT (buffer,offset);
 		offset += 2;
-		exc_entry->handler_pc = R_BIN_JAVA_USHORT (buffer,offset);
+		e->handler_pc = R_BIN_JAVA_USHORT (buffer,offset);
 		offset += 2;
-		exc_entry->catch_type = R_BIN_JAVA_USHORT (buffer, offset);
+		e->catch_type = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		r_list_append (attr->info.code_attr.exception_table, exc_entry);
-		exc_entry->size = 8;
+		r_list_append (attr->info.code_attr.exception_table, e);
+		e->size = 8;
 	}
 	attr->info.code_attr.attributes_count = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
@@ -3258,7 +3258,7 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	attr->info.code_attr.attributes = r_list_newf (r_bin_java_attribute_free);
 	if (attr->info.code_attr.attributes_count > 0) {
 		for (k = 0; k < attr->info.code_attr.attributes_count; k++) {
-			int size = (offset<sz)? sz-offset:0;
+			int size = (offset<sz)? sz - offset: 0;
 			if (size > sz || size <= 0) break;
 			_attr = r_bin_java_read_next_attr_from_buffer (buffer+offset, size, buf_offset+offset);
 			if (!_attr) {
@@ -3293,10 +3293,8 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_constant_value_attr_new (ut8 *buffer, ut64 sz, ut64 buf_offset) {
-	ut64 offset = 0;
-	RBinJavaAttrInfo* attr = NULL;
-	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
-	offset += 6;
+	ut64 offset = 6;
+	RBinJavaAttrInfo* attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	if (attr) {
 		attr->type = R_BIN_JAVA_ATTR_TYPE_CONST_VALUE_ATTR;
 		attr->info.constant_value_attr.constantvalue_idx = R_BIN_JAVA_USHORT (buffer, offset);
@@ -3308,12 +3306,7 @@ R_API RBinJavaAttrInfo* r_bin_java_constant_value_attr_new (ut8 *buffer, ut64 sz
 }
 
 R_API ut64 r_bin_java_constant_value_attr_calc_size(RBinJavaAttrInfo* attr) {
-	ut64 size = 0;
-	if (attr) {
-		size = 6;
-		size += 2;
-	}
-	return size;
+	return attr? 8: 0;
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_deprecated_attr_new (ut8 *buffer, ut64 sz, ut64 buf_offset) {
@@ -3330,31 +3323,23 @@ R_API RBinJavaAttrInfo* r_bin_java_deprecated_attr_new (ut8 *buffer, ut64 sz, ut
 }
 
 R_API ut64 r_bin_java_deprecated_attr_calc_size(RBinJavaAttrInfo* attr) {
-	ut64 size = 0;
-	if (attr) {
-		size = 6;
-	}
-	//IFDBG r_bin_java_print_deprecated_attr_summary(attr);
-	return size;
+	return attr? 6: 0;
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_signature_attr_new (ut8 *buffer, ut64 sz, ut64 buf_offset) {
-	ut64 offset = 0;
-	RBinJavaAttrInfo* attr = NULL;
-	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
-	offset += 6;
-	if (attr == NULL) {
-		// TODO eprintf allocation fail
-		return attr;
-	}
+	ut64 offset = 6;
+	RBinJavaAttrInfo* attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
+	if (!attr) return NULL;
 	attr->type = R_BIN_JAVA_ATTR_TYPE_SIGNATURE_ATTR;
 	//attr->info.source_file_attr.sourcefile_idx = R_BIN_JAVA_USHORT (buffer, offset);
 	//offset += 2;
 	attr->info.signature_attr.signature_idx = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
-	attr->info.signature_attr.signature = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, attr->info.signature_attr.signature_idx);
-	if (attr->info.signature_attr.signature == NULL)
-		eprintf ("r_bin_java_signature_attr_new: Unable to resolve the Signature UTF8 String Index: 0x%02x\n", attr->info.signature_attr.signature_idx);
+	attr->info.signature_attr.signature = r_bin_java_get_utf8_from_bin_cp_list (
+		R_BIN_JAVA_GLOBAL_BIN, attr->info.signature_attr.signature_idx);
+	if (!attr->info.signature_attr.signature)
+		eprintf ("r_bin_java_signature_attr_new: Unable to resolve the "
+			"Signature UTF8 String Index: 0x%02x\n", attr->info.signature_attr.signature_idx);
 	attr->size = offset;
 	//IFDBG r_bin_java_print_source_code_file_attr_summary(attr);
 	return attr;
@@ -3375,14 +3360,9 @@ R_API ut64 r_bin_java_signature_attr_calc_size(RBinJavaAttrInfo* attr) {
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_enclosing_methods_attr_new (ut8 *buffer, ut64 sz, ut64 buf_offset) {
-	ut64 offset = 0;
-	RBinJavaAttrInfo* attr = NULL;
-	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
-	offset += 6;
-	if (attr == NULL) {
-		// TODO eprintf
-		return attr;
-	}
+	ut64 offset = 6;
+	RBinJavaAttrInfo* attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
+	if (!attr) return NULL;
 	attr->type = R_BIN_JAVA_ATTR_TYPE_ENCLOSING_METHOD_ATTR;
 	attr->info.enclosing_method_attr.class_idx = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
@@ -3720,19 +3700,15 @@ R_API ut64 r_bin_java_local_variable_type_table_attr_calc_size(RBinJavaAttrInfo 
 
 R_API RBinJavaAttrInfo* r_bin_java_local_variable_type_table_attr_new (ut8* buffer, ut64 sz, ut64 buf_offset) {
 	RBinJavaLocalVariableTypeAttribute* lvattr;
-	RBinJavaAttrInfo* attr = NULL;
-	ut64 offset = 0;
+	ut64 offset = 6;
 	ut32 i = 0;
-	attr = r_bin_java_default_attr_new (buffer, sz, offset);
-	offset += 6;
-	if (!attr) {
-		return attr;
-	}
+	RBinJavaAttrInfo* attr = r_bin_java_default_attr_new (buffer, sz, 0);
+	if (!attr) return NULL;
 	attr->type = R_BIN_JAVA_ATTR_TYPE_LOCAL_VARIABLE_TYPE_TABLE_ATTR;
 	attr->info.local_variable_type_table_attr.table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.local_variable_type_table_attr.local_variable_table = r_list_newf (r_bin_java_local_variable_type_table_attr_entry_free);
-	for(i = 0; i < attr->info.local_variable_type_table_attr.table_length; i++) {
+	for (i = 0; i < attr->info.local_variable_type_table_attr.table_length; i++) {
 		ut64 curpos = buf_offset + offset;
 		lvattr = R_NEW0 (RBinJavaLocalVariableTypeAttribute);
 		lvattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
@@ -3818,75 +3794,72 @@ R_API RBinJavaInterfaceInfo* r_bin_java_interface_new (RBinJavaObj *bin, const u
 }
 
 R_API RBinJavaVerificationObj* r_bin_java_verification_info_from_type(RBinJavaObj *bin, R_BIN_JAVA_STACKMAP_TYPE type, ut32 value) {
-	RBinJavaVerificationObj *stack_element = R_NEW0 (RBinJavaVerificationObj);
-	if (!stack_element) return NULL;
-	stack_element->tag = type;
-	if (stack_element->tag == R_BIN_JAVA_STACKMAP_OBJECT) {
-		stack_element->info.obj_val_cp_idx = (ut16) value;
-	}
-	else if (stack_element->tag == R_BIN_JAVA_STACKMAP_UNINIT) {
+	RBinJavaVerificationObj *se = R_NEW0 (RBinJavaVerificationObj);
+	if (!se) return NULL;
+	se->tag = type;
+	if (se->tag == R_BIN_JAVA_STACKMAP_OBJECT) {
+		se->info.obj_val_cp_idx = (ut16) value;
+	} else if (se->tag == R_BIN_JAVA_STACKMAP_UNINIT) {
 		/*if (bin->offset_sz == 4) {
-			stack_element->info.uninit_offset = value;
+			se->info.uninit_offset = value;
 		} else {
-			stack_element->info.uninit_offset = (ut16) value;
+			se->info.uninit_offset = (ut16) value;
 		}*/
-		stack_element->info.uninit_offset = (ut16) value;
+		se->info.uninit_offset = (ut16) value;
 	}
-	return stack_element;
+	return se;
 }
 
 R_API RBinJavaVerificationObj* r_bin_java_read_from_buffer_verification_info_new (ut8* buffer, ut64 sz, ut64 buf_offset) {
 	ut64 offset = 0;
-	RBinJavaVerificationObj *stack_element = R_NEW0 (RBinJavaVerificationObj);
-	if (!stack_element) return NULL;
-	stack_element->file_offset = buf_offset;
-	stack_element->tag = buffer[offset];
+	RBinJavaVerificationObj *se = R_NEW0 (RBinJavaVerificationObj);
+	if (!se) return NULL;
+	se->file_offset = buf_offset;
+	se->tag = buffer[offset];
 	offset += 1;
-	if (stack_element->tag == R_BIN_JAVA_STACKMAP_OBJECT) {
+	if (se->tag == R_BIN_JAVA_STACKMAP_OBJECT) {
 		/*if((offset + 2) <= sz) {
-			stack_element->info.obj_val_cp_idx = R_BIN_JAVA_USHORT (buffer, offset);
+			se->info.obj_val_cp_idx = R_BIN_JAVA_USHORT (buffer, offset);
 			offset += 2;
 		} else {
 			eprintf ("rbin_java_read_next_verification_info: Failed to read bytes for StackMapTable R_BIN_JAVA_STACKMAP_OBJECT Object.\n");
-			//r_bin_java_verification_info_free (stack_element);
-			//return stack_element;
+			//r_bin_java_verification_info_free (se);
+			//return se;
 		}*/
-		stack_element->info.obj_val_cp_idx = R_BIN_JAVA_USHORT (buffer, offset);
+		se->info.obj_val_cp_idx = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-	} else if (stack_element->tag == R_BIN_JAVA_STACKMAP_UNINIT) {
+	} else if (se->tag == R_BIN_JAVA_STACKMAP_UNINIT) {
 		/*if((offset + 2) <= sz) {
-			stack_element->info.uninit_offset = R_BIN_JAVA_USHORT (buffer, offset);
+			se->info.uninit_offset = R_BIN_JAVA_USHORT (buffer, offset);
 			offset += 2;
 		} else {
 			eprintf ("rbin_java_read_next_verification_info: Failed to read bytes for StackMapTable R_BIN_JAVA_STACKMAP_UNINIT Object.\n");
-			//r_bin_java_verification_info_free (stack_element);
-			//return stack_element;
+			//r_bin_java_verification_info_free (se);
+			//return se;
 		}*/
-		stack_element->info.uninit_offset = R_BIN_JAVA_USHORT (buffer, offset);
+		se->info.uninit_offset = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 	}
-	if (R_BIN_JAVA_STACKMAP_UNINIT < stack_element->tag) {
-		eprintf ("rbin_java_read_next_verification_info: Unknown Tag: 0x%02x\n", stack_element->tag);
+	if (R_BIN_JAVA_STACKMAP_UNINIT < se->tag) {
+		eprintf ("rbin_java_read_next_verification_info: Unknown Tag: 0x%02x\n", se->tag);
 	}
-	stack_element->size = offset;
-	return stack_element;
+	se->size = offset;
+	return se;
 }
 
-R_API ut64 rbin_java_verification_info_calc_size(RBinJavaVerificationObj* stack_element) {
-	ut64 sz = 0;
-	if (stack_element == NULL) {
-		// eprintf error here
-		return sz;
-	}
-	// r_buf_read_at (bin->b, offset, (ut8*)(&stack_element->tag), 1)
-	sz += 1;
-	if (stack_element->tag == R_BIN_JAVA_STACKMAP_OBJECT) {
+R_API ut64 rbin_java_verification_info_calc_size(RBinJavaVerificationObj* se) {
+	ut64 sz = 1;
+	if (!se) return 0;
+	// r_buf_read_at (bin->b, offset, (ut8*)(&se->tag), 1)
+	switch (se->tag) {
+	case R_BIN_JAVA_STACKMAP_OBJECT:
 		//r_buf_read_at (bin->b, offset+1, (ut8*)buf, 2)
 		sz += 2;
-	}
-	else if (stack_element->tag == R_BIN_JAVA_STACKMAP_UNINIT) {
+		break;
+	case R_BIN_JAVA_STACKMAP_UNINIT:
 		//r_buf_read_at (bin->b, offset+1, (ut8*)buf, 2)
 		sz += 2;
+		break;
 	}
 	return sz;
 }
@@ -3910,47 +3883,57 @@ R_API RBinJavaStackMapFrameMetas* r_bin_java_determine_stack_frame_type(ut8 tag)
 	return &R_BIN_JAVA_STACK_MAP_FRAME_METAS[type_value];
 }
 
-R_API ut64 r_bin_java_stack_map_frame_calc_size(RBinJavaStackMapFrame *stack_frame) {
+R_API ut64 r_bin_java_stack_map_frame_calc_size(RBinJavaStackMapFrame *sf) {
 	ut64 size = 0;
 	RListIter *iter, *iter_tmp;
-	RBinJavaVerificationObj *stack_element;
-	if (stack_frame) {
-		//stack_frame->tag = buffer[offset];
+	RBinJavaVerificationObj *se;
+	if (sf) {
+		//sf->tag = buffer[offset];
 		size += 1;
-		if(stack_frame->type == R_BIN_JAVA_STACK_FRAME_SAME) {
+		switch (sf->type) {
+		case R_BIN_JAVA_STACK_FRAME_SAME:
 			// Nothing to read
-		}else if(stack_frame->type == R_BIN_JAVA_STACK_FRAME_SAME_LOCALS_1) {
-			r_list_foreach_safe (stack_frame->stack_items, iter, iter_tmp, stack_element) {
-				size += rbin_java_verification_info_calc_size (stack_element);
+			break;
+		case R_BIN_JAVA_STACK_FRAME_SAME_LOCALS_1:
+			r_list_foreach_safe (sf->stack_items, iter, iter_tmp, se) {
+				size += rbin_java_verification_info_calc_size (se);
 			}
-		}else if(stack_frame->type == R_BIN_JAVA_STACK_FRAME_CHOP) {
-			//stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
+			break;
+		case R_BIN_JAVA_STACK_FRAME_CHOP:
+			//sf->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
 			size += 2;
-		}else if(stack_frame->type == R_BIN_JAVA_STACK_FRAME_SAME_FRAME_EXTENDED) {
-			//stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
+			break;
+		case R_BIN_JAVA_STACK_FRAME_SAME_FRAME_EXTENDED:
+			//sf->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
 			size += 2;
-			r_list_foreach_safe (stack_frame->stack_items, iter, iter_tmp, stack_element) {
-				size += rbin_java_verification_info_calc_size (stack_element);
+			r_list_foreach_safe (sf->stack_items, iter, iter_tmp, se) {
+				size += rbin_java_verification_info_calc_size (se);
 			}
-		}else if(stack_frame->type == R_BIN_JAVA_STACK_FRAME_APPEND) {
-			//stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
+			break;
+		case R_BIN_JAVA_STACK_FRAME_APPEND:
+			//sf->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
 			size += 2 ;
-			r_list_foreach_safe (stack_frame->stack_items, iter, iter_tmp, stack_element) {
-				size += rbin_java_verification_info_calc_size (stack_element);
+			r_list_foreach_safe (sf->stack_items, iter, iter_tmp, se) {
+				size += rbin_java_verification_info_calc_size (se);
 			}
-		}else if(stack_frame->type == R_BIN_JAVA_STACK_FRAME_FULL_FRAME) {
-			//stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
+			break;
+		case R_BIN_JAVA_STACK_FRAME_FULL_FRAME:
+			//sf->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
 			size += 2;
-			//stack_frame->number_of_locals = R_BIN_JAVA_USHORT (buffer, offset);
+			//sf->number_of_locals = R_BIN_JAVA_USHORT (buffer, offset);
 			size += 2;
-			r_list_foreach_safe (stack_frame->local_items, iter, iter_tmp, stack_element) {
-				size += rbin_java_verification_info_calc_size (stack_element);
+			r_list_foreach_safe (sf->local_items, iter, iter_tmp, se) {
+				size += rbin_java_verification_info_calc_size (se);
 			}
-			//stack_frame->number_of_stack_items = R_BIN_JAVA_USHORT (buffer, offset);
+			//sf->number_of_stack_items = R_BIN_JAVA_USHORT (buffer, offset);
 			size += 2;
-			r_list_foreach_safe (stack_frame->stack_items, iter, iter_tmp, stack_element) {
-				size += rbin_java_verification_info_calc_size (stack_element);
+			r_list_foreach_safe (sf->stack_items, iter, iter_tmp, se) {
+				size += rbin_java_verification_info_calc_size (se);
 			}
+			break;
+		default:
+			eprintf ("Unknown type\n");
+			break;
 		}
 	}
 	return size;
@@ -3958,7 +3941,7 @@ R_API ut64 r_bin_java_stack_map_frame_calc_size(RBinJavaStackMapFrame *stack_fra
 
 R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 sz, RBinJavaStackMapFrame *p_frame, ut64 buf_offset) {
 	RBinJavaStackMapFrame *stack_frame = r_bin_java_default_stack_frame ();
-	RBinJavaVerificationObj *stack_element = NULL;
+	RBinJavaVerificationObj *se = NULL;
 	ut64 offset = 0;
 	int i = 0;
 	if (!stack_frame) return NULL;
@@ -3983,16 +3966,16 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 	case R_BIN_JAVA_STACK_FRAME_SAME_LOCALS_1:
 		// 1. Read the stack type
 		stack_frame->number_of_stack_items = 1;
-		stack_element = r_bin_java_read_from_buffer_verification_info_new (buffer+offset, sz-offset, buf_offset+offset);
+		se = r_bin_java_read_from_buffer_verification_info_new (buffer+offset, sz-offset, buf_offset+offset);
 		IFDBG eprintf ("r_bin_java_stack_map_frame_new: Parsed R_BIN_JAVA_STACK_FRAME_SAME_LOCALS_1.\n");
-		if (stack_element) {
-			offset += stack_element->size;
+		if (se) {
+			offset += se->size;
 		} else {
 			eprintf ("r_bin_java_stack_map_frame_new: Unable to parse the Stack Items for the stack frame.\n");
 			r_bin_java_stack_frame_free (stack_frame);
 			return NULL;
 		}
-		r_list_append (stack_frame->stack_items, (void *) stack_element);
+		r_list_append (stack_frame->stack_items, (void *) se);
 		// Maybe?  3. Copy the previous frames locals and set the locals count.
 		//copy_type_info_to_stack_frame_list_up_to_idx (p_frame->local_items, stack_frame->local_items, idx);
 		if (p_frame)
@@ -4030,15 +4013,15 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 		offset += 2;
 		// 2. Read the stack element type
 		stack_frame->number_of_stack_items = 1;
-		stack_element = r_bin_java_read_from_buffer_verification_info_new (buffer+offset, sz-offset, buf_offset+offset);
-		if(stack_element) {
-			offset += stack_element->size;
+		se = r_bin_java_read_from_buffer_verification_info_new (buffer+offset, sz-offset, buf_offset+offset);
+		if(se) {
+			offset += se->size;
 		} else {
 			eprintf ("r_bin_java_stack_map_frame_new: Unable to parse the Stack Items for the stack frame.\n");
 			r_bin_java_stack_frame_free (stack_frame);
 			return NULL;
 		}
-		r_list_append (stack_frame->stack_items, (void *) stack_element);
+		r_list_append (stack_frame->stack_items, (void *) se);
 		// Maybe? 3. Copy the previous frames locals to the current locals
 		//copy_type_info_to_stack_frame_list_up_to_idx (p_frame->local_items, stack_frame->local_items, idx);
 		if (p_frame) {
@@ -4063,16 +4046,16 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 		// 4. Read off the rest of the appended locals types
 		for (i=0; i < k; i++) {
 			IFDBG eprintf ("r_bin_java_stack_map_frame_new: Parsing verifying the k'th frame: %d of %d.\n", i, k);
-			stack_element = r_bin_java_read_from_buffer_verification_info_new (buffer+offset, sz-offset, buf_offset+offset);
+			se = r_bin_java_read_from_buffer_verification_info_new (buffer+offset, sz-offset, buf_offset+offset);
 			IFDBG eprintf ("r_bin_java_stack_map_frame_new: Completed Parsing\n");
-			if (stack_element) {
-				offset += stack_element->size;
+			if (se) {
+				offset += se->size;
 			} else {
 				eprintf ("r_bin_java_stack_map_frame_new: Unable to parse the locals for the stack frame.\n");
 				r_bin_java_stack_frame_free (stack_frame);
 				return NULL;
 			}
-			r_list_append (stack_frame->local_items, (void *) stack_element);
+			r_list_append (stack_frame->local_items, (void *) se);
 		}
 		IFDBG eprintf ("r_bin_java_stack_map_frame_new: Breaking out of loop");
 		IFDBG eprintf("p_frame: %p\n", p_frame);
@@ -4096,16 +4079,16 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 		IFDBG r_bin_java_print_stack_map_frame_summary(stack_frame);
 		// read the number of locals off the stack
 		for (i = 0; i < stack_frame->number_of_locals; i++) {
-			stack_element = r_bin_java_read_from_buffer_verification_info_new (buffer+offset, sz-offset, buf_offset+offset);
-			if (stack_element) {
-				offset += stack_element->size;
-				//r_list_append (stack_frame->local_items, (void *) stack_element);
+			se = r_bin_java_read_from_buffer_verification_info_new (buffer+offset, sz-offset, buf_offset+offset);
+			if (se) {
+				offset += se->size;
+				//r_list_append (stack_frame->local_items, (void *) se);
 			} else {
 				eprintf ("r_bin_java_stack_map_frame_new: Unable to parse the locals for the stack frame.\n");
 				r_bin_java_stack_frame_free (stack_frame);
 				return NULL;
 			}
-			r_list_append (stack_frame->local_items, (void *) stack_element);
+			r_list_append (stack_frame->local_items, (void *) se);
 		}
 		// Read the number of stack items based on the max size of stack
 		stack_frame->number_of_stack_items = R_BIN_JAVA_USHORT (buffer, offset);
@@ -4113,16 +4096,16 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 		//IFDBG eprintf ("r_bin_java_stack_map_frame_new: Max ustack items > 65535, read(%d bytes), number_of_locals = 0x%08x.\n", var_sz, stack_frame->number_of_stack_items);
 		// read the stack items
 		for (i = 0; i < stack_frame->number_of_stack_items; i++) {
-			stack_element = r_bin_java_read_from_buffer_verification_info_new (buffer+offset, sz-offset, buf_offset+offset);
-			if(stack_element) {
-				offset += stack_element->size;
-			//	r_list_append (stack_frame->stack_items, (void *) stack_element);
+			se = r_bin_java_read_from_buffer_verification_info_new (buffer+offset, sz-offset, buf_offset+offset);
+			if(se) {
+				offset += se->size;
+			//	r_list_append (stack_frame->stack_items, (void *) se);
 			} else {
 				eprintf ("r_bin_java_stack_map_frame_new: Unable to parse the the stack items for the stack frame.\n");
 				r_bin_java_stack_frame_free (stack_frame);
 				return NULL;
 			}
-			r_list_append (stack_frame->local_items, (void *) stack_element);
+			r_list_append (stack_frame->local_items, (void *) se);
 		}
 		break;
 	default:
@@ -4146,22 +4129,21 @@ R_API ut16 r_bin_java_find_cp_class_ref_from_name_idx (RBinJavaObj *bin, ut16 na
 	return (pos != len)? pos: 0;
 }
 
-R_API RBinJavaStackMapFrame* r_bin_java_default_stack_frame() {
-	RBinJavaStackMapFrame* stack_frame = R_NEW0 (RBinJavaStackMapFrame);
-	if(stack_frame == NULL)
-		return stack_frame;
-	stack_frame->metas = R_NEW0(RBinJavaMetaInfo);
-	if(stack_frame->metas == NULL) {
-		free (stack_frame);
+R_API RBinJavaStackMapFrame* r_bin_java_default_sf() {
+	RBinJavaStackMapFrame* sf = R_NEW0 (RBinJavaStackMapFrame);
+	if (!sf) return NULL;
+	sf->metas = R_NEW0 (RBinJavaMetaInfo);
+	if (!sf->metas) {
+		free (sf);
 		return NULL;
 	}
-	stack_frame->metas->type_info = (void *)  &R_BIN_JAVA_STACK_MAP_FRAME_METAS[R_BIN_JAVA_STACK_FRAME_IMPLICIT];
-	stack_frame->type = ((RBinJavaStackMapFrameMetas *) stack_frame->metas->type_info)->type;
-	stack_frame->local_items = r_list_newf (r_bin_java_verification_info_free);
-	stack_frame->stack_items = r_list_newf (r_bin_java_verification_info_free);
-	stack_frame->number_of_stack_items = 0;
-	stack_frame->number_of_locals = 0;
-	return stack_frame;
+	sf->metas->type_info = (void *) &R_BIN_JAVA_STACK_MAP_FRAME_METAS[R_BIN_JAVA_STACK_FRAME_IMPLICIT];
+	sf->type = ((RBinJavaStackMapFrameMetas *) sf->metas->type_info)->type;
+	sf->local_items = r_list_newf (r_bin_java_verification_info_free);
+	sf->stack_items = r_list_newf (r_bin_java_verification_info_free);
+	sf->number_of_stack_items = 0;
+	sf->number_of_locals = 0;
+	return sf;
 }
 
 R_API RBinJavaStackMapFrame* r_bin_java_build_stack_frame_from_local_variable_table(RBinJavaObj *bin, RBinJavaAttrInfo *attr) {
@@ -4228,7 +4210,7 @@ R_API RBinJavaStackMapFrame* r_bin_java_build_stack_frame_from_local_variable_ta
 R_API ut64 r_bin_java_stack_map_table_attr_calc_size(RBinJavaAttrInfo* attr) {
 	ut64 size = 0;
 	RListIter *iter, *iter_tmp;
-	RBinJavaStackMapFrame *stack_frame = NULL;
+	RBinJavaStackMapFrame *sf;
 	if (attr) {
 		//attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 		size += 6;
@@ -4236,8 +4218,8 @@ R_API ut64 r_bin_java_stack_map_table_attr_calc_size(RBinJavaAttrInfo* attr) {
 		// Current spec does not call for variable sizes.
 		//attr->info.stack_map_table_attr.number_of_entries = R_BIN_JAVA_USHORT (buffer, offset);
 		size +=  2;
-		r_list_foreach_safe (attr->info.stack_map_table_attr.stack_map_frame_entries, iter, iter_tmp, stack_frame) {
-			size += r_bin_java_stack_map_frame_calc_size (stack_frame);
+		r_list_foreach_safe (attr->info.stack_map_table_attr.stack_map_frame_entries, iter, iter_tmp, sf) {
+			size += r_bin_java_stack_map_frame_calc_size (sf);
 		}
 	}
 	return size;
