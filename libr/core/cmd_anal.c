@@ -1762,7 +1762,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			cmd_esil_mem (core, input+2);
 			break;
 		case 'p': // initialize pc = $$
-			r_core_cmd0 (core, "ar pc=$$");
+			r_core_cmd0 (core, "ar PC=$$");
 			break;
 		case '?':
 			cmd_esil_mem (core, "?");
@@ -1947,8 +1947,7 @@ static void cmd_anal_noreturn(RCore *core, const char *input) {
 		"an[n]", " sym.imp.exit", "same as above but for flag/fcn names",
 		"an", "-*", "remove all no-return references",
 		"an", "", "list them all",
-		"ao*", "", "display opcode in r commands",
-		NULL};
+		NULL };
 	switch (input[0]) {
 	case '-':
 		r_anal_noreturn_drop (core->anal, input+1);

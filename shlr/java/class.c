@@ -574,13 +574,14 @@ R_API char * r_bin_java_unmangle_method (const char *flags, const char *name, co
 	const char *fmt = flags ? "%s %s %s (%s)" : "%s%s %s (%s)";
 	char *str = NULL, *f_val_str = NULL, *r_val_str = NULL, *prototype = NULL, *p_val_str = NULL;
 	ut32 params_idx = 0, params_len = 0, prototype_len = 0;
-	extract_type_value (r_value, &r_val_str);
+	if (!extract_type_value (r_value, &r_val_str))
+		return NULL;
 	if (!r_val_str) r_val_str =  strdup ("UNKNOWN");
-	f_val_str = flags ? strdup(flags) : strdup ("");
+	f_val_str = strdup (flags? flags: "");
 	params_idx = 0;
 	r_list_foreach (the_list, iter, str) {
-		if (params_idx > 0) params_len += (strlen(str) + 2); // comma + space
-		else params_len += strlen(str);
+		params_len += strlen (str);
+		if (params_idx > 0) params_len += 2;
 		params_idx++;
 	}
 	if (params_len > 0) {
@@ -848,31 +849,22 @@ R_API char * r_bin_java_create_method_fq_str(const char *klass, const char* name
 }
 
 R_API char * r_bin_java_create_field_fq_str(const char *klass, const char* name, const char *signature) {
-	const char *fmt = "%s %s.%s";
-	char *res = NULL;
-	int res_len = 2;
 	if (!klass) klass = "null_class";
 	if (!name) name = "null_name";
 	if (!signature) signature = "null_signature";
-	res_len += strlen (klass) + strlen (name) + strlen (signature);
-
-	res = malloc (res_len);
-	if (res) snprintf (res, res_len, fmt, signature, klass, name);
-	return res;
+	return r_str_newf ("%s %s.%s", signature, klass, name);
 }
 
 R_API DsoJsonObj * r_bin_java_get_fm_type_definition_json (RBinJavaObj *bin, RBinJavaField *fm_type, int is_method) {
-	char *prototype = NULL,
-	     *fq_name = NULL;
-
-	ut64 addr = -1;
-	int is_native = ((fm_type->flags & R_BIN_JAVA_METHOD_ACC_NATIVE) != 0),
-		is_static = ((fm_type->flags & R_BIN_JAVA_METHOD_ACC_STATIC) != 0),
-	    is_synthetic = ((fm_type->flags & R_BIN_JAVA_METHOD_ACC_SYNTHETIC) != 0),
-	    is_private = ((fm_type->flags & R_BIN_JAVA_METHOD_ACC_PRIVATE) != 0),
-	    is_public = ((fm_type->flags & R_BIN_JAVA_METHOD_ACC_PUBLIC) != 0),
-	    is_protected = ((fm_type->flags & R_BIN_JAVA_METHOD_ACC_PROTECTED) != 0),
-	    is_super = ((fm_type->flags & R_BIN_JAVA_CLASS_ACC_SUPER) != 0);
+	ut64 addr = UT64_MAX;
+	char *prototype = NULL, *fq_name = NULL;
+	bool is_native = ((fm_type->flags & R_BIN_JAVA_METHOD_ACC_NATIVE) != 0);
+	bool is_static = ((fm_type->flags & R_BIN_JAVA_METHOD_ACC_STATIC) != 0);
+	bool is_synthetic = ((fm_type->flags & R_BIN_JAVA_METHOD_ACC_SYNTHETIC) != 0);
+	bool is_private = ((fm_type->flags & R_BIN_JAVA_METHOD_ACC_PRIVATE) != 0);
+	bool is_public = ((fm_type->flags & R_BIN_JAVA_METHOD_ACC_PUBLIC) != 0);
+	bool is_protected = ((fm_type->flags & R_BIN_JAVA_METHOD_ACC_PROTECTED) != 0);
+	bool is_super = ((fm_type->flags & R_BIN_JAVA_CLASS_ACC_SUPER) != 0);
 
 	DsoJsonObj *fm_type_dict = dso_json_dict_new ();
 	dso_json_dict_insert_str_key_num (fm_type_dict, "access_flags", fm_type->flags);
@@ -887,7 +879,7 @@ R_API DsoJsonObj * r_bin_java_get_fm_type_definition_json (RBinJavaObj *bin, RBi
 
 	addr = r_bin_java_get_method_code_offset (fm_type);
 	if (addr == 0) addr = fm_type->file_offset;
-	addr += + bin->loadaddr;
+	addr += bin->loadaddr;
 
 	dso_json_dict_insert_str_key_num (fm_type_dict, "addr", addr);
 	dso_json_dict_insert_str_key_num (fm_type_dict, "offset", fm_type->file_offset+bin->loadaddr);
@@ -907,13 +899,11 @@ R_API DsoJsonObj * r_bin_java_get_fm_type_definition_json (RBinJavaObj *bin, RBi
 }
 
 R_API char * r_bin_java_get_method_definition(RBinJavaField *fm_type) {
-	char * prototype = r_bin_java_unmangle (fm_type->flags_str, fm_type->name, fm_type->descriptor);
-	return prototype;
+	return r_bin_java_unmangle (fm_type->flags_str, fm_type->name, fm_type->descriptor);
 }
 
 R_API char * r_bin_java_get_field_definition(RBinJavaField *fm_type) {
-	char * prototype = r_bin_java_unmangle (fm_type->flags_str, fm_type->name, fm_type->descriptor);
-	return prototype;
+	return r_bin_java_unmangle (fm_type->flags_str, fm_type->name, fm_type->descriptor);
 }
 
 R_API DsoJsonObj * r_bin_java_get_method_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type) {
@@ -923,7 +913,6 @@ R_API DsoJsonObj * r_bin_java_get_method_json_definition(RBinJavaObj *bin, RBinJ
 R_API DsoJsonObj * r_bin_java_get_field_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type) {
 	return r_bin_java_get_fm_type_definition_json (bin, fm_type, 0);
 }
-
 
 R_API int r_bin_java_extract_reference_name (const char * input_str, char ** ref_str, ut8 array_cnt) {
 	char *new_str = NULL;
@@ -951,15 +940,15 @@ R_API int r_bin_java_extract_reference_name (const char * input_str, char ** ref
 		if (*new_str == '/') *new_str = '.';
 		new_str ++;
 	}
-	return len+2;
+	return len + 2;
 }
 
 R_API void UNUSED_FUNCTION(r_bin_java_print_prototypes) (RBinJavaObj *bin) {
-	RList * the_list = r_bin_java_get_method_definitions (bin);
-	char * str = NULL;
+	RList *the_list = r_bin_java_get_method_definitions (bin);
 	RListIter *iter;
+	char *str;
 	r_list_foreach (the_list, iter, str) {
-		eprintf("%s;\n", str);
+		eprintf ("%s;\n", str);
 	}
 	r_list_free (the_list);
 }
@@ -979,13 +968,15 @@ R_API int extract_type_value (const char *arg_str, char **output) {
 	ut8 found_one = 0, array_cnt = 0;
 	ut32 len = 0, consumed = 0;
 	char *str = NULL;
-	if (output == NULL) {
+	if (!arg_str || !output) {
 		return 0;
-	} else if (output && *output && *output != NULL) {
-		free(*output);
+	}
+	if (output && *output && *output != NULL) {
+		free (*output);
 		*output = NULL;
 	}
 	while (arg_str && *arg_str && !found_one) {
+		len = 0;
 		// handle the end of an object
 		switch (*arg_str) {
 		case 'V':
@@ -1039,7 +1030,9 @@ R_API int extract_type_value (const char *arg_str, char **output) {
 			break;
 		case '(': len = 1; str = strdup ("("); break;
 		case ')': len = 1; str = strdup (")"); break;
-		default : break;
+		default : 
+			eprintf ("Invalid char '%c' in '%s'\n", *arg_str, arg_str);
+			return 0;
 		}
 		if (len<1)
 			break;
@@ -1064,6 +1057,7 @@ R_API RList * r_bin_java_extract_type_values(const char *arg_str) {
 	while (str_cur_pos && *str_cur_pos) {
 		// handle the end of an object
 		len = extract_type_value (str_cur_pos, &str);
+		if (len<1) return NULL;
 		str_cur_pos += len;
 		r_list_append (list_args, str);
 		str = NULL;
@@ -2030,9 +2024,9 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr_from_buffer (ut8 *buffer, st64
 	type_info = r_bin_java_get_attr_type_by_name (name);
 	if (type_info) {
 		IFDBG eprintf ("Typeinfo: %s, was %s\n", type_info->name, name);
-		if (nsz>sz)nsz = sz;
-		attr = type_info->allocs->new_obj (buffer, nsz, buf_offset);
-		if (attr) {
+		//printf ("SZ %d %d %d\n", nsz, sz, buf_offset);
+		if (nsz>sz) nsz = sz;
+		if ((attr = type_info->allocs->new_obj (buffer, nsz, buf_offset))) {
 			attr->metas->ord = (R_BIN_JAVA_GLOBAL_BIN->attr_idx++);
 		}
 	} else {
@@ -3625,8 +3619,8 @@ R_API RBinJavaAttrInfo* r_bin_java_line_number_table_attr_new (ut8 *buffer, ut64
 	}
 	for (i = 0; i < attr->info.line_number_table_attr.line_number_table_length; i++) {
 		cur_location = buf_offset + offset;
-		if (cur_location + 8 >= sz)
-			break;
+	//	printf ("%llx %llx \n", cur_location, sz);
+		//if (cur_location + 8 >= sz) break;
 		lnattr = R_NEW0 (RBinJavaLineNumberAttribute);
 		if (!lnattr) {
 			perror ("r_bin_java_line_number_table_attr_new");
@@ -7780,7 +7774,8 @@ R_API RList * r_bin_java_extract_all_bin_type_values(RBinJavaObj * bin_obj) {
 	// get all field types
 	r_list_foreach (bin_obj->fields_list, fm_type_iter, fm_type) {
 		char *desc = NULL;
-		extract_type_value (fm_type->descriptor, &desc);
+		if (!extract_type_value (fm_type->descriptor, &desc))
+			return NULL;
 		IFDBG eprintf ("Adding field type: %s\n", desc);
 		r_list_append (all_types, desc);
 	}
