@@ -226,6 +226,51 @@ static char *get_varname (RAnal *a, const char *pfx, int idx) {
 	return s;
 }
 
+static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth);
+#define recurseAt(x) { \
+	ut8 *bbuf = malloc (MAXBBSIZE);\
+	anal->iob.read_at (anal->iob.io, x, bbuf, MAXBBSIZE); \
+	ret = fcn_recurse (anal, fcn, x, bbuf, MAXBBSIZE, depth-1); \
+	free (bbuf); \
+}
+
+static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr) {
+	int ret;
+	ut8 *jmptbl = malloc(MAX_JMPTBL_SIZE);
+	ut64 offs, sz = anal->bits >> 3;
+	anal->iob.read_at (anal->iob.io, ptr, jmptbl, MAX_JMPTBL_SIZE);
+	for (offs = 0; offs < MAX_JMPTBL_SIZE; offs += sz) {
+		ut64 jmpptr = 0;
+		r_mem_copyendian ((ut8*)&jmpptr, jmptbl + offs, sz, !anal->big_endian);
+		if (anal->limit) {
+			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to)
+				break;
+		}
+		if (jmpptr < ip - MAX_JMPTBL_JMP ||
+				jmpptr > ip + MAX_JMPTBL_JMP)
+				break;
+
+		recurseAt (jmpptr);
+	}
+	free(jmptbl);
+	return ret;
+}
+
+static int search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *regsz) {
+	ut64 offs, oplen;
+	RAnalOp op;
+	ut64 ret = UT64_MAX;
+	for (offs = 0; offs < len; offs += oplen) {
+		if ((oplen = r_anal_op (anal, &op, addr + offs, buf + offs, len - offs)) < 1) {
+			break;
+		}
+		if (op.dst && op.dst->reg && !strcmp(op.dst->reg->name, regsz)) {
+			if (op.src[0]) ret = op.src[0]->delta;
+		}
+	}
+	return ret;
+}
+
 #define gotoBeach(x) ret=x;goto beach;
 #define gotoBeachRet() goto beach;
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
@@ -363,7 +408,6 @@ repeat:
 		}
 		// Note: if we got two branch delay instructions in a row due to an
 		// compiler bug or junk or something it wont get treated as a delay
-
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
 		switch (op.stackop) {
 		case R_ANAL_STACK_INC:
@@ -401,12 +445,7 @@ repeat:
 			// swapped parameters wtf
 			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, 'd');
 		}
-		#define recurseAt(x) { \
-			ut8 *bbuf = malloc (MAXBBSIZE);\
-			anal->iob.read_at (anal->iob.io, x, bbuf, MAXBBSIZE); \
-			ret = fcn_recurse (anal, fcn, x, bbuf, MAXBBSIZE, depth-1); \
-			free (bbuf); \
-		}
+
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_ILL:
 			if (anal->opt.nopskip && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
@@ -605,23 +644,17 @@ repeat:
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
 			// switch statement
-			if (op.ptr != UT64_MAX && anal->opt.jmptbl) {
-				ut8 *jmptbl = malloc(MAX_JMPTBL_SIZE);
-				ut64 offs, sz = anal->bits >> 3;
-				anal->iob.read_at (anal->iob.io, op.ptr, jmptbl, MAX_JMPTBL_SIZE);
-				for (offs = 0; offs < MAX_JMPTBL_SIZE; offs += sz) {
-					ut64 jmpptr = 0;
-					r_mem_copyendian ((ut8*)&jmpptr, jmptbl + offs, sz, !anal->big_endian);
-					if (anal->limit) {
-						if (jmpptr < anal->limit->from || jmpptr > anal->limit->to)
-							break;
+			if (anal->opt.jmptbl) {
+				if (op.ptr != UT64_MAX) {	// direct jump
+					ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, op.ptr);
+
+				} else {	// indirect jump: table pointer is unknown
+					if (op.src[0]->reg) {
+						ut64 ptr = search_reg_val(anal, buf, idx, addr, op.src[0]->reg->name);
+						if (ptr && ptr != UT64_MAX)
+							ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, ptr);
 					}
-					if (jmpptr < addr + idx - MAX_JMPTBL_JMP ||
-							jmpptr > addr + idx + MAX_JMPTBL_JMP)
-							break;
-					recurseAt (jmpptr);
 				}
-				free(jmptbl);
 			}
 			if (continue_after_jump)
 				break;
