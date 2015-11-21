@@ -199,10 +199,12 @@ bool xnu_step(RDebug *dbg) {
 }
 
 int xnu_attach(RDebug *dbg, int pid) {
+#if TARGET_OS_MAC
 	if (pid != dbg->pid && ptrace (PT_ATTACH, pid, 0, 0) == -1) {
 		perror ("ptrace (PT_ATTACH)");
 		return -1;
 	}
+#endif
 	return pid;
 }
 
