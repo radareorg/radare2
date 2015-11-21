@@ -32,10 +32,10 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 		{
 			int disp = insn->detail->mips.operands[n].mem.disp;
 		if (disp<0) {
-		sprintf (buf, "%s,%"PFMT64d",-",
+		sprintf (buf, "%"PFMT64d",%s,-",
+			(ut64)-insn->detail->mips.operands[n].mem.disp,
 			cs_reg_name (*handle,
-				insn->detail->mips.operands[n].mem.base),
-			(ut64)-insn->detail->mips.operands[n].mem.disp);
+				insn->detail->mips.operands[n].mem.base));
 		} else {
 		sprintf (buf, "%s,%"PFMT64d",+",
 			cs_reg_name (*handle,
