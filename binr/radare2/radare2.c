@@ -379,6 +379,10 @@ int main(int argc, char **argv, char **envp) {
 		}
 	}
 
+	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
+	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
+	if (asmos) r_config_set (r.config, "asm.os", asmos);
+
 	if (help > 0) {
 		r_list_free (evals);
 		r_list_free (cmds);
@@ -662,9 +666,6 @@ int main(int argc, char **argv, char **envp) {
 			r_config_set_i (r.config, "scr.utf8", true);
 		}
 #endif
-		if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
-		if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
-		if (asmos) r_config_set (r.config, "asm.os", asmos);
 
 		(void)r_core_bin_update_arch_bits (&r);
 
