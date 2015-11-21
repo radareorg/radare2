@@ -58,21 +58,21 @@ static bool ios_hwstep_enable64(RDebug *dbg, bool enable) {
 }
 
 static bool ios_hwstep_enable32(RDebug *dbg, bool enable) {
-	mach_msg_type_number_t count = ARM_DEBUG_STATE32_COUNT;
+	mach_msg_type_number_t count;
 	arm_unified_thread_state_t state = {{0}};
 	_STRUCT_ARM_DEBUG_STATE ds;
 	task_t task = 0;
 	thread_t th = getcurthread (dbg, &task);
 	int ret;
 
-	count = ARM_DEBUG_STATE_COUNT;
-	ret = thread_get_state (th, ARM_DEBUG_STATE, (thread_state_t)&ds, &count);
+	count = ARM_DEBUG_STATE32_COUNT;
+	ret = thread_get_state (th, ARM_DEBUG_STATE32, (thread_state_t)&ds, &count);
 	if (ret != KERN_SUCCESS) {
 		perror ("thread_get_state(debug)");
 	}
 
 	count = ARM_UNIFIED_THREAD_STATE_COUNT;
-	ret = thread_get_state (th, ARM_UNIFIED_THREAD_STATE, (thread_state_t)&state,  &count);
+	ret = thread_get_state (th, ARM_UNIFIED_THREAD_STATE, (thread_state_t)&state, &count);
 	if (ret != KERN_SUCCESS) {
 		perror ("thread_get_state(unified)");
 	}
@@ -85,6 +85,7 @@ static bool ios_hwstep_enable32(RDebug *dbg, bool enable) {
 		for (i = 0; i < 16 ; i++) {
 			ds.__bcr[i] = ds.__bvr[i] = 0;
 		}
+		i = 0;
 		ds.__bvr[i] = pc & (UT32_MAX >> 2) << 2;
 		ds.__bcr[i] = BCR_M_IMVA_MISMATCH | S_USER | BCR_ENABLE;
 		if (cpsr & 0x20) {
@@ -105,8 +106,7 @@ static bool ios_hwstep_enable32(RDebug *dbg, bool enable) {
 			ds.__bcr[i] |= BAS_IMVA_ALL;
 		}
 	}
-	count = ARM_UNIFIED_THREAD_STATE_COUNT;
-	if (thread_set_state (th, ARM_UNIFIED_THREAD_STATE, (thread_state_t)&state, count)) {
+	if (thread_set_state (th, ARM_DEBUG_STATE32, (thread_state_t)&ds, ARM_DEBUG_STATE32_COUNT)) {
 		perror ("thread_set_state");
 		return false;
 	}
