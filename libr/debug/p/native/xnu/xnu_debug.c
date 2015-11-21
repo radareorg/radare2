@@ -289,7 +289,7 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 }
 
 int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	int ret;
+	bool ret;
 	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
 	switch (type) {
 	case R_REG_TYPE_SEG:
@@ -300,6 +300,8 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	case R_REG_TYPE_DRX:
 		ret = xnu_thread_get_drx (dbg, th);
 		break;
+	default:
+		return 0;
 	}
 	if (!ret) {
 		perror ("xnu_reg_read");
