@@ -196,9 +196,8 @@ R_API void r_core_visual_prompt_input (RCore *core) {
 	int h;
 	(void)r_cons_get_size (&h);
 	r_cons_gotoxy (0, h-2);
-	r_cons_reset_colors();
-	r_cons_printf("\nPress <enter> to return to Visual mode.\n");
-
+	r_cons_reset_colors ();
+	r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
 	r_cons_show_cursor (true);
 	core->vmode = false;
 	ut64 newaddr = addr;
@@ -478,20 +477,9 @@ R_API void r_core_visual_show_char (RCore *core, char ch) {
 }
 
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr) {
+	r_core_seek (core, addr, 1);
 	if (r_config_get_i (core->config, "scr.feedback")<1)
 		return;
-#if 0
-	int i, ns = 90000;
-	const char *scmd = (addr > core->offset)? "so": "s-4";
-	for (i=0;i<5;i++) {
-		r_core_cmd0 (core, scmd);
-		r_core_visual_refresh (core);
-		r_cons_flush();
-		r_sys_usleep (ns);
-		ns -= 1000;
-	}
-	r_core_seek (core, addr, 1);
-#else
 	if (core->offset == addr)
 		return;
 	r_cons_gotoxy (1, 2);
@@ -506,7 +494,6 @@ R_API void r_core_visual_seek_animation (RCore *core, ut64 addr) {
 	}
 	r_cons_flush();
 	r_sys_usleep (90000);
-#endif
 }
 
 static void setprintmode (RCore *core, int n) {
@@ -766,7 +753,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			} else {
 				r_core_visual_seek_animation (core, off);
 				cursor = 0;
-				r_core_seek (core, off, 1);
 			}
 			r_core_block_read (core, 1);
 		}
@@ -780,7 +766,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		SetWindow(81,40);
 		break;
 #endif
-	case 0x0d:
+	case 0x0d: // "enter" "\\n" "newline"
 		{
 			RAnalOp *op;
 			int wheel = r_config_get_i (core->config, "scr.wheel");
@@ -1538,7 +1524,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		{
 		ut64 off = r_io_sundo (core->io, core->offset);
 		if (off != UT64_MAX) {
-			r_core_seek (core, off, 1);
 			r_core_visual_seek_animation (core, off);
 		} else {
 			eprintf ("Cannot undo\n");
@@ -1549,7 +1534,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		{
 		ut64 off = r_io_sundo_redo (core->io);
 		if (off != UT64_MAX) {
-			r_core_seek (core, off, 1);
 			r_core_visual_seek_animation (core, off);
 		}
 		}

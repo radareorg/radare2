@@ -754,7 +754,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 	const char *otype;
 	RCoreAsmHit *hit = NULL;
 	RListIter *iter;
-	char *buf_asm, *buf_hex;
+	char *buf_asm;
 	unsigned int size = 0;
 	RAnalOp analop = {0};
 	RAsmOp asmop;
@@ -825,25 +825,22 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 			if (colorize) {
 				buf_asm = r_print_colorize_opcode (asmop.buf_asm,
 						core->cons->pal.reg, core->cons->pal.num);
-				buf_hex = r_print_colorize_opcode (asmop.buf_hex,
-						core->cons->pal.reg, core->cons->pal.num);
 				otype = r_print_color_op_type (core->print, analop.type);
 				if (comment) {
-					r_cons_printf ("  0x%08"PFMT64x" %s%18s  %s%s ; %s\n",
-							hit->addr, otype, buf_hex, buf_asm, Color_RESET, comment);
+					r_cons_printf ("  0x%08"PFMT64x" %18s%s  %s%s ; %s\n",
+							hit->addr, asmop.buf_hex, otype, buf_asm, Color_RESET, comment);
 				} else {
-					r_cons_printf ("  0x%08"PFMT64x" %s%18s  %s%s\n",
-							hit->addr, otype, buf_hex, buf_asm, Color_RESET);
+					r_cons_printf ("  0x%08"PFMT64x" %18s%s  %s%s\n",
+							hit->addr, asmop.buf_hex, otype, buf_asm, Color_RESET);
 				}
 				free (buf_asm);
-				free (buf_hex);
 			} else {
 				if (comment) {
 					r_cons_printf ("  0x%08"PFMT64x" %18s  %s ; %s\n",
 							hit->addr, asmop.buf_hex, asmop.buf_asm, comment);
 				} else {
-				r_cons_printf ("  0x%08"PFMT64x" %18s  %s\n",
-						hit->addr, asmop.buf_hex, asmop.buf_asm);
+					r_cons_printf ("  0x%08"PFMT64x" %18s  %s\n",
+							hit->addr, asmop.buf_hex, asmop.buf_asm);
 				}
 			}
 			free (buf);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2015 nibble */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +33,7 @@ static int assemble(RParse *p, char *data, char *str) {
 	return true;
 }
 
-static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
+static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 #if USE_VARSUBS
 	char *ptr, *ptr2;
 	int i;
@@ -52,15 +52,12 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 #endif
 }
 
-struct r_parse_plugin_t r_parse_plugin_mreplace = {
+RParsePlugin r_parse_plugin_mreplace = {
 	.name = "mreplace",
 	.desc = "mreplace parsing plugin",
-	.init = NULL,
-	.fini = NULL,
 	.parse = &parse,
 	.assemble = &assemble,
 	.varsub = &varsub,
-	.filter = NULL,
 };
 
 #else

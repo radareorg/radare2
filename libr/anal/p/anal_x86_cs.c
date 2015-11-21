@@ -546,6 +546,13 @@ SETL/SETNGE
 					}
 				}
 				break;
+			case X86_OP_REG:
+				op->dst = r_anal_value_new ();
+				op->dst->reg = r_reg_get (a->reg, getarg (&gop, 0, 0, NULL), R_REG_TYPE_GPR);
+				op->src[0] = r_anal_value_new ();
+				if (INSOP(1).type == X86_OP_MEM) {
+					op->src[0]->delta = INSOP(1).mem.disp;
+				}
 			default:
 				if (a->decode) {
 					char *src = getarg (&gop, 1, 0, NULL);
@@ -1000,15 +1007,13 @@ SETL/SETNGE
 				break;
 			case X86_OP_MEM:
 				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->ptr = INSOP(0).mem.disp;
 				if (INSOP(0).mem.base == X86_REG_RIP) {
-					op->ptr = INSOP(0).mem.disp;
 					op->ptr += addr + insn->size;
 					op->refptr = 8;
 				} else {
 					cs_x86_op in = INSOP(0);
 					if (in.mem.index == 0 && in.mem.base == 0 && in.mem.scale == 1) {
-						op->type = R_ANAL_OP_TYPE_UJMP;
-						op->ptr = in.mem.disp;
 						if (a->decode) {
 							esilprintf (op, "0x%"PFMT64x",[],%s,=", op->ptr, pc);
 						}
@@ -1016,9 +1021,12 @@ SETL/SETNGE
 				}
 				break;
 			case X86_OP_REG:
+				op->src[0] = r_anal_value_new ();
+				op->src[0]->reg = r_reg_get (a->reg, getarg (&gop, 0, 0, NULL), R_REG_TYPE_GPR);
 			case X86_OP_FP:
 			default: // other?
 				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->ptr = UT64_MAX;
 				break;
 			}
 			break;

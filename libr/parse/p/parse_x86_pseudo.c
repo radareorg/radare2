@@ -207,7 +207,7 @@ static inline int issegoff (const char *w) {
 }
 #endif
 
-static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
+static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 #if USE_VARSUBS
 	int i;
 	char *ptr, *ptr2;
@@ -228,8 +228,20 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	char *tstr = strdup (data);
 	RList *vars, *args;
 
+	if (p->relsub) {
+		char *rip = strstr (tstr, "[rip");
+		if (rip) {
+			char *ripend = strchr (rip+3, ']');
+			const char *plus = strchr (rip, '+');
+			const char *neg = strchr (rip, '-');
+			if (!ripend) ripend = "]";
+			if (plus) sprintf (rip+1, "0x%llx%s", oplen+addr + r_num_get (NULL, plus+1), ripend);
+			if (neg) sprintf (rip+1, "0x%llx%s", oplen+addr - r_num_get (NULL, neg+1), ripend);
+		}
+	}
+
 	if (!p->varlist) {
-                free(tstr);
+                free (tstr);
 		return false;
         }
 	vars = p->varlist (p->anal, f, 'v');
@@ -298,13 +310,10 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 #endif
 }
 
-struct r_parse_plugin_t r_parse_plugin_x86_pseudo = {
+RParsePlugin r_parse_plugin_x86_pseudo = {
 	.name = "x86.pseudo",
 	.desc = "X86 pseudo syntax",
-	.init = NULL,
-	.fini = NULL,
 	.parse = &parse,
-	.filter = NULL,
 	.varsub = &varsub,
 };
 

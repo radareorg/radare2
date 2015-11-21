@@ -901,10 +901,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	RAnalFunction *fcn;
 	RListIter *iter;
 
-	/* resize function if overlaps */
-	fcn = r_anal_get_fcn_in (core->anal, at, 0);
-	if (fcn) r_anal_fcn_resize (fcn, at - fcn->addr);
-
 	int use_esil = r_config_get_i (core->config, "anal.esil");
 
 	if (core->io->va && !core->io->raw) {
@@ -942,44 +938,49 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	fcn = r_anal_get_fcn_in (core->anal, at, 0);
 	if (fcn) {
-		RAnalRef *ref;
+		if (from >= fcn->addr && (from - fcn->addr) < fcn->size) {	// inner function
+			RAnalRef *ref;
 
-		// XXX: use r_anal-xrefs api and sdb
-		// If the xref is new, add it
-		// avoid dupes
-		r_list_foreach (fcn->xrefs, iter, ref)
-			if (from == ref->addr)
-				return true;
+			// XXX: use r_anal-xrefs api and sdb
+			// If the xref is new, add it
+			// avoid dupes
+			r_list_foreach (fcn->xrefs, iter, ref)
+				if (from == ref->addr)
+					return true;
 
-		ref = r_anal_ref_new ();
-		if (!ref) {
-			eprintf ("Error: new (xref)\n");
-			return false;
-		}
-		ref->addr = from;
-		ref->at = at;
-		ref->type = reftype;
-		if (reftype == R_ANAL_REF_TYPE_DATA) {
-			// XXX HACK TO AVOID INVALID REFS
-			r_list_append (fcn->xrefs, ref);
-		} else {
-			free (ref);
-		}
-		// we should analyze and add code ref otherwise aaa != aac
-		if (from != UT64_MAX) {
-			// We shuold not use fcn->xrefs .. because that should be only via api (on top of sdb)
-			// the concepts of refs and xrefs are a bit twisted in the old implementation
 			ref = r_anal_ref_new ();
-			if (ref) {
-				ref->addr = from;
-				ref->at = fcn->addr;
-				ref->type = reftype;
+			if (!ref) {
+				eprintf ("Error: new (xref)\n");
+				return false;
+			}
+			ref->addr = from;
+			ref->at = at;
+			ref->type = reftype;
+			if (reftype == R_ANAL_REF_TYPE_DATA) {
+				// XXX HACK TO AVOID INVALID REFS
 				r_list_append (fcn->xrefs, ref);
-				// XXX this is creating dupped entries in the refs list with invalid reftypes, wtf?
-				r_anal_xrefs_set (core->anal, reftype, from, fcn->addr);
-			} else eprintf ("Error: new (xref)\n");
+			} else {
+				free (ref);
+			}
+			// we should analyze and add code ref otherwise aaa != aac
+			if (from != UT64_MAX) {
+				// We shuold not use fcn->xrefs .. because that should be only via api (on top of sdb)
+				// the concepts of refs and xrefs are a bit twisted in the old implementation
+				ref = r_anal_ref_new ();
+				if (ref) {
+					ref->addr = from;
+					ref->at = fcn->addr;
+					ref->type = reftype;
+					r_list_append (fcn->xrefs, ref);
+					// XXX this is creating dupped entries in the refs list with invalid reftypes, wtf?
+					r_anal_xrefs_set (core->anal, reftype, from, fcn->addr);
+				} else eprintf ("Error: new (xref)\n");
+			}
+			return true;
+		} else {
+			// split function if overlaps
+			r_anal_fcn_resize (fcn, at - fcn->addr);
 		}
-		return true;
 	}
 	return core_anal_fcn (core, at, from, reftype, depth);
 }

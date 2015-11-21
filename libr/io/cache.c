@@ -78,7 +78,6 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 
 	r_list_foreach (io->cache, iter, c) {
 		if (rad) {
-			ut64 n;
 			io->cb_printf ("wx ");
 			for (i=0; i < c->size; i++)
 				io->cb_printf ("%02x", (ut8)(c->data[i] & 0xff));

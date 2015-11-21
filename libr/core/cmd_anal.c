@@ -62,7 +62,7 @@ static void var_help(RCore *core, char ch) {
 static int var_cmd(RCore *core, const char *str) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	char *p, *ostr;
-	int delta, type = *str;
+	int delta, type = *str, res = true;
 
 	ostr = p = strdup (str);
 	str = (const char *)ostr;
@@ -79,28 +79,29 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'a': // stack arg
 	case 'A': // fastcall arg
 		// XXX nested dup
+		if (!fcn && str[1] != 'j' && str[1] != '*') {
+			eprintf("Cannot find function here\n");
+			break;
+		}
+
 		/* Variable access CFvs = set fun var */
 		switch (str[1]) {
 		case '\0':
 		case '*':
 		case 'j':
 			r_anal_var_list_show (core->anal, fcn, type, str[1]);
-			goto end;
+			break;
 		case '?':
 			var_help (core, *str);
-			goto end;
+			break;
 		case '.':
 			r_anal_var_list_show (core->anal, fcn, core->offset, 0);
-			goto end;
+			break;
 		case '-':
-			if (fcn) {
-				r_anal_var_delete (core->anal, fcn->addr,
-					type, 1, (int)
-					r_num_math (core->num, str+1));
-			} else {
-				eprintf ("Cnnot find function here\n");
-			}
-			goto end;
+			r_anal_var_delete (core->anal, fcn->addr,
+				type, 1, (int)
+				r_num_math (core->num, str+1));
+			break;
 		case 'n':
 			str++;
 			for (str++;*str==' ';) str++;
@@ -116,28 +117,34 @@ static int var_cmd(RCore *core, const char *str) {
 				R_ANAL_VAR_SCOPE_LOCAL, (char)type,
 				old_name, new_name);
 			free (old_name);
-			goto end;
+			break;
 		case 's':
 		case 'g':
 			if (str[2]!='\0') {
-				if (fcn != NULL) {
-					int rw = 0; // 0 = read, 1 = write
-					RAnalVar *var = r_anal_var_get (core->anal, fcn->addr,
-						(char)type, atoi (str+2), R_ANAL_VAR_SCOPE_LOCAL);
-					if (var != NULL) {
-						int scope = (str[1]=='g')?0: 1;
-						r_anal_var_access (core->anal, fcn->addr, (char)type,
-							scope, atoi (str+2), rw, core->offset);
-						r_anal_var_free (var);
-						goto end;
-					}
+				int rw = 0; // 0 = read, 1 = write
+				RAnalVar *var = r_anal_var_get (core->anal, fcn->addr,
+					(char)type, atoi (str+2), R_ANAL_VAR_SCOPE_LOCAL);
+				if (!var) {
 					eprintf ("Can not find variable in: '%s'\n", str);
-				} else eprintf ("Unknown variable in: '%s'\n", str);
-				free (ostr);
-				return false;
+					res = false;
+					break;
+				}
+				if (var != NULL) {
+					int scope = (str[1] == 'g') ? 0 : 1;
+					r_anal_var_access (core->anal, fcn->addr, (char)type,
+						scope, atoi (str+2), rw, core->offset);
+					r_anal_var_free (var);
+					break;
+				}
 			} else eprintf ("Missing argument\n");
 			break;
 		case ' ':
+		{
+			const char *name;
+			char *vartype;
+			int size = 4;
+			int scope = 1;
+
 			for (str++; *str == ' '; ) str++;
 			p = strchr (str, ' ');
 			if (!p) {
@@ -146,33 +153,25 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			*p++ = 0;
 			delta = r_num_math (core->num, str);
-			 {
-				int size = 4;
-				int scope = 1; // 0 = global, 1 = LOCAL;
-				const char *name = p;
-				char *vartype = strchr (name, ' ');
-				if (vartype) {
-					*vartype++ = 0;
-					//eprintf ("SRC(%s)\n", p);
-					if (fcn) {
-						//eprintf ("ADD (type=%s)(name=%s)\n", vartype, name);
-						r_anal_var_add (core->anal, fcn->addr,
-								scope, delta, type,
-								vartype, size, name);
-					} else eprintf ("Cannot find function\n");
-				} else {
-					eprintf ("Missing name\n");
-				}
-			 }
+			name = p;
+			vartype = strchr (name, ' ');
+			if (vartype) {
+				*vartype++ = 0;
+				r_anal_var_add (core->anal, fcn->addr,
+					scope, delta, type,
+					vartype, size, name);
+			} else eprintf ("Missing name\n");
 			break;
+		}
 		default:
 			var_help (core, *str);
 			break;
 		}
+		break;
 	}
-	end:
+
 	free (ostr);
-	return true;
+	return res;
 }
 
 static void print_trampolines(RCore *core, ut64 a, ut64 b, size_t element_size) {
@@ -1614,7 +1613,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				// seek to this address
 				r_core_cmd0 (core, "aei");  // init vm
 				r_core_cmd0 (core, "aeim"); // init stack
-				r_core_cmdf (core, "ar pc=%s", input+3);
+				r_core_cmdf (core, "ar PC=%s", input+3);
 				r_core_cmd0 (core, ".ar*");
 			} else {
 				eprintf ("Missing argument\n");
@@ -1763,7 +1762,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			cmd_esil_mem (core, input+2);
 			break;
 		case 'p': // initialize pc = $$
-			r_core_cmd0 (core, "ar pc=$$");
+			r_core_cmd0 (core, "ar PC=$$");
 			break;
 		case '?':
 			cmd_esil_mem (core, "?");
@@ -1948,8 +1947,7 @@ static void cmd_anal_noreturn(RCore *core, const char *input) {
 		"an[n]", " sym.imp.exit", "same as above but for flag/fcn names",
 		"an", "-*", "remove all no-return references",
 		"an", "", "list them all",
-		"ao*", "", "display opcode in r commands",
-		NULL};
+		NULL };
 	switch (input[0]) {
 	case '-':
 		r_anal_noreturn_drop (core->anal, input+1);
@@ -2056,7 +2054,6 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	int bufi, minop = 1; // 4
 	ut8 *buf;
 	RBinFile *binfile;
-	const char *searchin = r_config_get (core->config, "search.in");
 	RAnalOp op;
 	ut64 addr, addr_end;
 	ut64 len = r_num_math (core->num, input);
@@ -2069,17 +2066,39 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		eprintf ("cur binfile null\n");
 		return;
 	}
+	addr = core->offset;
 	if (!len) {
-		if (searchin && !strcmp (searchin, "file")) {
-			len = binfile->size - core->offset;
+		// ignore search.in to avoid problems. analysis != search
+		RIOSection *s = r_io_section_vget (core->io, addr);
+		if (s && s->rwx & 1) {
+			// search in current section
+			if (s->size > binfile->size) {
+				addr = s->vaddr;
+				len = binfile->size - s->offset;
+			} else {
+				addr = s->vaddr;
+				len = s->size;
+			}
 		} else {
-			len = r_num_math (core->num, "$SS-($$-$S)"); // section size
+			// search in full file
+			ut64 o = r_io_section_vaddr_to_maddr (core->io, core->offset);
+			if (o != UT64_MAX && binfile->size > o) {
+				len = binfile->size - o;
+			} else {
+				if (binfile->size > core->offset) {
+					len = binfile->size - core->offset;
+				} else {
+					eprintf ("Oops invalid range\n");
+					len = 0;
+				}
+			}
 		}
 	}
+	/*
 	if (core->offset + len > binfile->size) {
 		len = binfile->size - core->offset;
 	}
-	addr = core->offset;
+	*/
 	addr_end = addr + len;
 	r_cons_break (NULL, NULL);
 	buf = malloc (4096);
