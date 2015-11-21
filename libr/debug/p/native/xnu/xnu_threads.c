@@ -100,10 +100,6 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 		return false;
 	}
 	regs = thread->state = (R_REG_T*)&thread->gpr;
-	if (!regs) {
-		eprintf ("no gpr ptr set\n");
-		return false;
-	}
 	thread->state_size = sizeof (thread->gpr);
 #if __arm || __arm64 || __aarch64
 	thread->flavor = regs->ash.flavor = ARM_UNIFIED_THREAD_STATE;
