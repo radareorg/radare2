@@ -74,13 +74,8 @@ static int xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 		//memcpy (&regs->uts, thread->state, thread->state_size);
 	}
 #elif __arm || __arm64 || __aarch64
-	if (dbg->bits == R_SYS_BITS_64) {
-		thread->flavor = regs->ash.flavor = ARM_THREAD_STATE64;
-		thread->count = R_MIN (thread->count, sizeof (regs->ts_64));
-	} else {
-		thread->flavor = regs->ash.flavor = ARM_THREAD_STATE32;
-		thread->count = R_MIN (thread->count, sizeof (regs->ts_32));
-	}
+	thread->flavor = regs->ash.flavor = ARM_UNIFIED_THREAD_STATE;
+	thread->count = regs->ash.count = ARM_UNIFIED_THREAD_STATE_COUNT;
 #endif
 	rc = thread_set_state (thread->tid, thread->flavor,
 		(thread_state_t)thread->state, thread->count);
@@ -99,22 +94,29 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 		thread->count = 0;
 		return false;
 	}
-	regs = thread->state = (R_REG_T*)&thread->gpr;
+	regs = &thread->gpr;
 	thread->state_size = sizeof (thread->gpr);
 #if __arm || __arm64 || __aarch64
+	thread->state = &regs->uts;
+	thread->state_size = (dbg->bits == R_SYS_BITS_64)
+		? sizeof (arm_thread_state64_t)
+		: sizeof (arm_thread_state32_t);
 	thread->flavor = regs->ash.flavor = ARM_UNIFIED_THREAD_STATE;
-	thread->count = regs->ash.count = R_DEBUG_STATE_SZ;
+	thread->count = regs->ash.count = ARM_UNIFIED_THREAD_STATE_COUNT;
 #elif __x86_64__ || __i386__
+	thread->state = &regs->uts;
 	if (dbg->bits == R_SYS_BITS_64) {
+		thread->state_size = sizeof (x86_thread_state64_t);
 		thread->flavor = regs->tsh.flavor = x86_THREAD_STATE;
 		thread->count = regs->tsh.count = x86_THREAD_STATE_COUNT;
 	} else {
+		thread->state_size = sizeof (x86_thread_state32_t);
 		thread->flavor = regs->tsh.flavor = i386_THREAD_STATE;
 		thread->count = regs->tsh.count = i386_THREAD_STATE_COUNT;
 	}
 #endif
 	rc = thread_get_state (thread->tid, thread->flavor,
-		(thread_state_t)thread->state, &thread->count);
+		(thread_state_t)regs, &thread->count);
 	if (rc != KERN_SUCCESS) {
 		thread->count = 0;
 		perror ("thread_get_state");
