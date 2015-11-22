@@ -110,7 +110,6 @@ static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int r
 	return 1;
 }
 
-
 static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int rad, int ule) {
 	ut64 j, fsize, algobit = r_hash_name_to_bits (algo);
 	RHash *ctx;
@@ -464,13 +463,27 @@ int main(int argc, char **argv) {
 			}
 			break;
 		default:
-			if (r_file_is_directory (argv[i])) {
-				eprintf ("rahash2: Cannot hash directories\n");
-				return 1;
-			}
-			if (!r_io_open_nomap (io, argv[i], 0, 0)) {
-				eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
-				return 1;
+			if (!strcmp (argv[i], "-")) {
+				int sz = 0;
+				ut8 *buf = (ut8*)r_stdin_slurp (&sz);
+				char *uri = r_str_newf ("malloc://%d", sz);
+				if (sz>0) {
+					if (!r_io_open_nomap (io, uri, 0, 0)) {
+						eprintf ("rahash2: Cannot open malloc://1024\n");
+						return 1;
+					}
+					r_io_pwrite (io, 0, buf, sz);
+				}
+				free (uri);
+			} else {
+				if (r_file_is_directory (argv[i])) {
+					eprintf ("rahash2: Cannot hash directories\n");
+					return 1;
+				}
+				if (!r_io_open_nomap (io, argv[i], 0, 0)) {
+					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
+					return 1;
+				}
 			}
 			ret |= do_hash (argv[i], algo, io, bsize, rad, ule);
 		}
