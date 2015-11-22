@@ -166,7 +166,7 @@ static RList* symbols(RBinFile *arch) {
 		ut64 value = 0, address = 0;
 		const ut8* temp = bin->func_start;
 		const ut8* temp_end = bin->func_start + bin->func_size;
-		while (*temp && temp+2 < temp_end) {
+		while (*temp && temp+3 < temp_end) {
 			temp = r_uleb128_decode (temp, NULL, &value);
 			address += value;
 			ptr = R_NEW0 (RBinSymbol);
