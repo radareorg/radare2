@@ -79,6 +79,10 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'a': // stack arg
 	case 'A': // fastcall arg
 		// XXX nested dup
+		if (str[1] == '?') {
+			var_help (core, *str);
+			break;
+		}
 		if (!fcn && str[1] != 'j' && str[1] != '*') {
 			eprintf("Cannot find function here\n");
 			break;
@@ -90,9 +94,6 @@ static int var_cmd(RCore *core, const char *str) {
 		case '*':
 		case 'j':
 			r_anal_var_list_show (core->anal, fcn, type, str[1]);
-			break;
-		case '?':
-			var_help (core, *str);
 			break;
 		case '.':
 			r_anal_var_list_show (core->anal, fcn, core->offset, 0);
