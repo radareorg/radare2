@@ -266,7 +266,7 @@ int main(int argc, char **argv) {
 		r_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
 		r_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
 		if (mode == MODE_GRAPH) {
-			char *words = strdup (addr);
+			char *words = strdup (addr? addr: "0");
 			char *second = strstr (words, ",");
 			if (second) {
 				ut64 off;

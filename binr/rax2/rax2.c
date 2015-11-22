@@ -347,7 +347,7 @@ static int use_stdin () {
 	int l, sflag = (flags & 5);
 	if (! (flags & 16384)) {
 		for (l=0; l>=0; l++) {
-			int n = read (0, buf+l, sizeof (buf)-l-1);
+			int n = read (0, buf+l, STDIN_BUFFER_SIZE-1);
 			if (n<1) break;
 			l+= n;
 			if (buf[l-1]==0) {
@@ -355,7 +355,7 @@ static int use_stdin () {
 				continue;
 			}
 			buf[n] = 0;
-			if (sflag && strlen (buf) < sizeof (buf)) // -S
+			if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
 				buf[strlen (buf)] = '\0';
 			else buf[strlen (buf)-1] = '\0';
 			if (!rax (buf, l, 0)) break;

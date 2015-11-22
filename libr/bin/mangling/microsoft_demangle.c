@@ -121,7 +121,7 @@ static void run_state(	SStateInfo *state_info,
 int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int copy_len)
 {
 	int res = 1; // all is OK
-	int str_for_copy_len = (copy_len == 0) ? strlen(str_for_copy) : copy_len;
+	int str_for_copy_len = (copy_len == 0 && str_for_copy) ? strlen (str_for_copy) : copy_len;
 	int free_space = type_code_str->type_str_len - type_code_str->curr_pos - 1;
 	char *dst = 0;
 

@@ -399,7 +399,7 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 	it.str = strchr (v2+1, ',');
 	if (it.str)
 		it.str = (char *)sdb_decode ((const char*)it.str+1, 0);
-	else it.str = strdup (it.str); // don't break in free
+	else it.str = strdup (it.str? it.str: ""); // don't break in free
 	printmetaitem (ui->anal, &it, ui->rad);
 	free (it.str);
 beach:

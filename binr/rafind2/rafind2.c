@@ -103,7 +103,7 @@ static int rafind_open(char *file) {
 	}
 	if (mode == R_SEARCH_MAGIC) {
 		char *tostr = (to && to != UT64_MAX)?
-			r_str_newf ("-e search.to=%"PFMT64d, to): "";
+			r_str_newf ("-e search.to=%"PFMT64d, to): strdup ("");
 		char *cmd = r_str_newf ("r2"
 			" -e search.in=range"
 			" -e search.align=%d"
@@ -112,8 +112,7 @@ static int rafind_open(char *file) {
 			align, from, tostr, file);
 		system (cmd);
 		free (cmd);
-		if (tostr)
-			free (tostr);
+		free (tostr);
 		return 0;
 	}
 	if (mode == R_SEARCH_KEYWORD) {

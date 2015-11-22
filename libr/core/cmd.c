@@ -563,9 +563,9 @@ static int cmd_kuery(void *data, const char *input) {
 		if (!r_config_get_i (core->config, "scr.interactive"))
 			return false;
 		if (input[1]==' ') {
-			char *n = n, *o, *p = strdup (input+2);
+			char *n, *o, *p = strdup (input+2);
 			// TODO: slash split here? or inside sdb_ns ?
-			for (o = p; n; o = n) {
+			for (n = o = p; n; o = n) {
 				n = strchr (o, '/'); // SDB_NS_SEPARATOR NAMESPACE
 				if (n) *n++ = 0;
 				s = sdb_ns (s, o, 1);

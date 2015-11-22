@@ -1194,8 +1194,8 @@ static const ut8 *r_bin_dwarf_parse_attr_value (const ut8 *obuf, int obuf_len,
 	case DW_FORM_block1:
 		value->encoding.block.length = READ (buf, ut8);
 
-		value->encoding.block.data = calloc(sizeof(ut8),
-				value->encoding.block.length);
+		value->encoding.block.data = calloc (sizeof (ut8),
+				value->encoding.block.length + 1);
 
 		for (j = 0; j < value->encoding.block.length; j++) {
 			value->encoding.block.data[j] = READ (buf, ut8);

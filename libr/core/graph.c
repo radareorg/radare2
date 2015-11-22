@@ -552,7 +552,8 @@ static void create_layers (RAGraph *g) {
 			//FIXME how to handle properly this error ret2libc?
 			continue;
 		}
-		g->layers[i].nodes = R_NEWS (RGraphNode *, g->layers[i].n_nodes);
+		g->layers[i].nodes = R_NEWS (RGraphNode *,
+			1 + g->layers[i].n_nodes);
 		g->layers[i].position = 0;
 	}
 	graph_foreach_anode (nodes, it, gn, n) {
@@ -980,10 +981,8 @@ static void adjust_directions (const RAGraph *g, int i, int from_up, Sdb *D, Sdb
 		const RANode *wpa, *vpa = get_anode (vp);
 
 		if (!vpa->is_dummy) continue;
-		if (from_up)
-			wp = r_list_get_n (r_graph_innodes (g->graph, vp), 0);
-		else
-			wp = r_graph_nth_neighbour (g->graph, vp, 0);
+		if (from_up) wp = r_list_get_n (r_graph_innodes (g->graph, vp), 0);
+		else wp = r_graph_nth_neighbour (g->graph, vp, 0);
 		wpa = get_anode (wp);
 		if (!wpa->is_dummy) continue;
 

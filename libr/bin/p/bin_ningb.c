@@ -7,9 +7,6 @@
 #include <string.h>
 #include "../format/nin/nin.h"
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static Sdb* get_sdb (RBinObject *o) {
 	if (!o) return NULL;
 	//struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
@@ -21,18 +18,18 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	return R_NOTNULL;
 }
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 static int check_bytes(const ut8 *buf, ut64 length) {
 	ut8 lict[48];
 	if (!buf || length < (0x104+48))
 		return 0;
 	memcpy (lict, buf + 0x104, 48);
 	return (!memcmp (lict, lic, 48))? 1: 0;
+}
+
+static int check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
 }
 
 static int load(RBinFile *arch) {

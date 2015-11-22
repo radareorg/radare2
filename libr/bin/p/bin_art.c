@@ -35,7 +35,7 @@ static int art_header_load(ARTHeader *art, RBuffer *buf, Sdb *db) {
 	sdb_set (db, "img.size", sdb_fmt (0, "0x%x", art->image_size), 0);
 	sdb_set (db, "art.checksum", sdb_fmt (0, "0x%x", art->checksum), 0);
 	sdb_set (db, "art.version", sdb_fmt (0, "%c%c%c",
-		art->version[0], art->version[1], art->version[2]), 0);
+				art->version[0], art->version[1], art->version[2]), 0);
 	sdb_set (db, "oat.begin", sdb_fmt (0, "0x%x", art->oat_begin), 0);
 	sdb_set (db, "oat.end", sdb_fmt (0, "0x%x", art->oat_end), 0);
 	sdb_set (db, "oat_data.begin", sdb_fmt (0, "0x%x", art->oat_data_begin), 0);

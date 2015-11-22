@@ -49,10 +49,10 @@ static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int or
 // to free the memory.
 static char* de_bruijn(const char* charset, int order, int maxlen) {
 	int size = strlen (charset);
-	int* prenecklace_a = calloc(size * order, sizeof(int));
-	char* sequence = calloc(maxlen + 1, sizeof(char));
-	de_bruijn_seq(1, 1, order, maxlen, size, prenecklace_a, sequence, charset);
-	free(prenecklace_a);
+	int* prenecklace_a = calloc (size * order, sizeof(int));
+	char* sequence = calloc (maxlen + 1, sizeof(char));
+	de_bruijn_seq (1, 1, order, maxlen, size, prenecklace_a, sequence, charset);
+	free (prenecklace_a);
 	return sequence;
 }
 

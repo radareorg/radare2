@@ -91,12 +91,11 @@ static int load_omf_lnames(OMF_record *record, const char *buf, ut64 buf_size) {
 		if (next<1) break;
 		tmp_size += next;
 	}
-	if (!(ret->elems = R_NEWS0 (char *, ret->nb_elem))) {
-		R_FREE(ret);
+	if (!(ret->elems = R_NEWS0 (char *, ret->nb_elem + 1))) {
+		R_FREE (ret);
 		return false;
 	}
 	names = (char **)ret->elems;
-
 	tmp_size = 0;
 	while ((int)tmp_size < (int)(record->size - 1)) {
 		if (ct_name >= ret->nb_elem) {
