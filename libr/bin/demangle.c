@@ -223,7 +223,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 			}
 		}
 	}
-	if (sym[0] == '_' && sym[2] == '_') { // gnu style
+	if (sym[0] == '_' && sym[1] && sym[2] == '_') { // gnu style
 		free (clas);
 		clas = strdup (sym + 3);
 		args = strstr (clas, "__");
