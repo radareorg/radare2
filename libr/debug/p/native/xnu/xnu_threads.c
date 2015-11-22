@@ -116,7 +116,7 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	}
 #endif
 	rc = thread_get_state (thread->tid, thread->flavor,
-		(thread_state_t)regs, &thread->count);
+		(thread_state_t)thread->state, &thread->count);
 	if (rc != KERN_SUCCESS) {
 		thread->count = 0;
 		perror ("thread_get_state");
@@ -161,13 +161,13 @@ static bool xnu_fill_info_thread(RDebug *dbg, xnu_thread_t *thread) {
 	mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
 	thread_identifier_info_data_t identifier_info;
 	kern_return_t kr = thread_info (thread->tid, THREAD_BASIC_INFO,
-		(thread_info_t)&thread->basic_info, &count);
+			(thread_info_t)&thread->basic_info, &count);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("Fail to get thread_basic_info\n");
 		return false;
 	}
-        count = THREAD_IDENTIFIER_INFO_COUNT;
-        kr = thread_info (thread->tid, THREAD_IDENTIFIER_INFO,
+	count = THREAD_IDENTIFIER_INFO_COUNT;
+	kr = thread_info (thread->tid, THREAD_IDENTIFIER_INFO,
 			(thread_info_t)&identifier_info, &count);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("Fail to get thread_identifier_info\n");
@@ -178,8 +178,8 @@ static bool xnu_fill_info_thread(RDebug *dbg, xnu_thread_t *thread) {
 	thread->name = strdup ("unknown");
 #else
 	ret_proc = proc_pidinfo (dbg->pid, PROC_PIDTHREADINFO,
-				identifier_info.thread_handle,
-				&proc_threadinfo, PROC_PIDTHREADINFO_SIZE);
+			identifier_info.thread_handle,
+			&proc_threadinfo, PROC_PIDTHREADINFO_SIZE);
 	if (ret_proc && proc_threadinfo.pth_name[0]) {
 		thread->name = strdup (proc_threadinfo.pth_name);
 	} else {
