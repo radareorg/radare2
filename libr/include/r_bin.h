@@ -556,6 +556,7 @@ extern RBinPlugin r_bin_plugin_nes;
 extern RBinPlugin r_bin_plugin_mbn;
 extern RBinPlugin r_bin_plugin_smd;
 extern RBinPlugin r_bin_plugin_sms;
+extern RBinPlugin r_bin_plugin_psxexe;
 
 #ifdef __cplusplus
 }

@@ -16,7 +16,7 @@
 
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
-static ut8 *bytes = NULL;
+static const ut8 *bytes = NULL;
 static int bytes_size = 0;
 
 static int vax_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
@@ -76,7 +76,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.buffer = bytes;
+	disasm_obj.buffer = (ut8*)bytes;
 	disasm_obj.read_memory_func = &vax_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;

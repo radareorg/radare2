@@ -12,6 +12,9 @@ OBJS += p/bin_bios.c ;
 OBJS += p/bin_rar.c ;
 OBJS += p/bin_xbe.c ;
 
+# PSX-EXE
+OBJS += p/bin_psxexe.c ;
+
 # Plan9
 OBJS += p/bin_p9.c format/p9/p9bin.c ;
 
