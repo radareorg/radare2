@@ -51,30 +51,21 @@ static RList* symbols(RBinFile *arch) {
 	ret->free = free;
 	if (!(ptr[0] = R_NEW0 (RBinSymbol)))
 		return ret;
-  if (!ptr[0]->name) {
-    ptr[0]->name = calloc(1, R_BIN_SIZEOF_STRINGS);
-  }
-	strncpy (ptr[0]->name, "NMI_VECTOR_START_ADDRESS", R_BIN_SIZEOF_STRINGS);
+	ptr[0]->name = strdup ("NMI_VECTOR_START_ADDRESS");
 	ptr[0]->vaddr = NMI_VECTOR_START_ADDRESS;
 	ptr[0]->size = 2;
 	ptr[0]->ordinal = 0;
 	r_list_append (ret, ptr[0]);
 	if (!(ptr[1] = R_NEW0 (RBinSymbol)))
 		return ret;
-  if (!ptr[1]->name) {
-    ptr[1]->name = calloc(1, R_BIN_SIZEOF_STRINGS);
-  }
-	strncpy (ptr[1]->name, "RESET_VECTOR_START_ADDRESS", R_BIN_SIZEOF_STRINGS);
+	ptr[1]->name = strdup ("RESET_VECTOR_START_ADDRESS");
 	ptr[1]->vaddr = RESET_VECTOR_START_ADDRESS;
 	ptr[1]->size = 2;
 	ptr[1]->ordinal = 1;
 	r_list_append (ret, ptr[1]);
 	if (!(ptr[2] = R_NEW0 (RBinSymbol)))
 		return ret;
-  if (!ptr[2]->name) {
-    ptr[2]->name = calloc(1, R_BIN_SIZEOF_STRINGS);
-  }
-	strncpy (ptr[2]->name, "IRQ_VECTOR_START_ADDRESS", R_BIN_SIZEOF_STRINGS);
+	ptr[2]->name = strdup ("IRQ_VECTOR_START_ADDRESS");
 	ptr[2]->vaddr = IRQ_VECTOR_START_ADDRESS;
 	ptr[2]->size = 2;
 	ptr[2]->ordinal = 2;
@@ -83,6 +74,8 @@ static RList* symbols(RBinFile *arch) {
 }
 
 static RList* sections(RBinFile *arch) {
+	RList *ret = NULL;
+	RBinSection *ptr = NULL;
 	ines_hdr ihdr;
 	memset (&ihdr, 0, INES_HDR_SIZE);
 	int reat = r_buf_read_at (arch->buf, 0, (ut8*)&ihdr, INES_HDR_SIZE);
@@ -90,8 +83,6 @@ static RList* sections(RBinFile *arch) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	RList *ret = NULL;
-	RBinSection *ptr = NULL;
 	if (!(ret = r_list_new ()))
 		return NULL;
 	if (!(ptr = R_NEW0 (RBinSection)))

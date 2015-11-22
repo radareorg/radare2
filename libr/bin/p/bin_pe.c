@@ -138,21 +138,21 @@ static RList* symbols(RBinFile *arch) {
 		return NULL;
 	ret->free = free;
 	if ((symbols = PE_(r_bin_pe_get_exports)(arch->o->bin_obj))) {
-        for (i = 0; !symbols[i].last; i++) {
-            if (!(ptr = R_NEW0 (RBinSymbol)))
-                break;
-	    ptr->name = strdup ((char *)symbols[i].name);
-	    ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
-            //strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-            ptr->bind = r_str_const ("GLOBAL");
-            ptr->type = r_str_const ("FUNC");
-            ptr->size = 0;
-            ptr->vaddr = symbols[i].vaddr;
-            ptr->paddr = symbols[i].paddr;
-            ptr->ordinal = symbols[i].ordinal;
-            r_list_append (ret, ptr);
-        }
-        free (symbols);
+		for (i = 0; !symbols[i].last; i++) {
+		    if (!(ptr = R_NEW0 (RBinSymbol)))
+			break;
+		    ptr->name = strdup ((char *)symbols[i].name);
+		    ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
+		    //strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		    ptr->bind = r_str_const ("GLOBAL");
+		    ptr->type = r_str_const ("FUNC");
+		    ptr->size = 0;
+		    ptr->vaddr = symbols[i].vaddr;
+		    ptr->paddr = symbols[i].paddr;
+		    ptr->ordinal = symbols[i].ordinal;
+		    r_list_append (ret, ptr);
+		}
+		free (symbols);
 	}
 
 	if ((imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj))) {

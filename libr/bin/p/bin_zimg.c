@@ -38,7 +38,6 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 size, ut64 loadadd
 static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 size = arch ? r_buf_size (arch->buf): 0;
-
 	if (!arch || !arch->o) return false;
 	arch->o->bin_obj = load_bytes (arch, bytes, size, arch->o->loadaddr, arch->sdb);
 	return arch->o->bin_obj ? true: false;
@@ -47,7 +46,6 @@ static int load(RBinFile *arch) {
 static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
-
 
 static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
@@ -67,7 +65,6 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static RBinInfo *info(RBinFile *arch) {
-	
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
 	ret->file = arch->file? strdup (arch->file): NULL;
@@ -86,36 +83,17 @@ static RBinInfo *info(RBinFile *arch) {
 	return ret;
 }
 
-
 struct r_bin_plugin_t r_bin_plugin_zimg = {
 	.name = "zimg",
 	.desc = "zimg format bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
-	.destroy = NULL,
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
-	.binsym = NULL,
-	.entries = NULL,
-	.classes = NULL,
-	.sections = NULL,
-	.symbols = NULL,
-	.imports = NULL,
-	.strings = NULL,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.dbginfo = NULL,
-	.size = NULL,//&size,
-	.write = NULL,
-	.get_offset = NULL//&getoffset
 };
 
 #ifndef CORELIB

@@ -147,30 +147,30 @@ static void showstr(const char *str, const ut8 *s, int len) {
 }
 
 static RList* symbols(RBinFile *arch) {
-	int i;
-	const char *name;
 	ut32 *vtable = (ut32*)arch->buf->buf;
+	const char *name;
+	SMD_Header *hdr;
+	int i;
 	RList *ret = NULL;
-	if (!(ret = r_list_new()))
+
+	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	{
-		// TODO: store all this stuff in SDB
-		SMD_Header * hdr = (SMD_Header*)(arch->buf->buf + 0x100);
-		addsym(ret, "rom_start", hdr->RomStart);
-		addsym(ret, "rom_end", hdr->RomEnd);
-		addsym(ret, "ram_start", hdr->RamStart);
-		addsym(ret, "ram_end", hdr->RamEnd);
-		showstr ("Copyright", hdr->CopyRights, 32);
-		showstr ("DomesticName", hdr->DomesticName, 48);
-		showstr ("OverseasName", hdr->OverseasName, 48);
-		showstr ("ProductCode", hdr->ProductCode, 14);
-		eprintf ("Checksum: 0x%04x\n", (ut32)hdr->CheckSum);
-		showstr ("Peripherials", hdr->Peripherials, 16);
-		showstr ("SramCode", hdr->CountryCode, 12);
-		showstr ("ModemCode", hdr->CountryCode, 12);
-		showstr ("CountryCode", hdr->CountryCode, 16);
-	}
+	// TODO: store all this stuff in SDB
+	hdr = (SMD_Header*)(arch->buf->buf + 0x100);
+	addsym (ret, "rom_start", hdr->RomStart);
+	addsym (ret, "rom_end", hdr->RomEnd);
+	addsym (ret, "ram_start", hdr->RamStart);
+	addsym (ret, "ram_end", hdr->RamEnd);
+	showstr ("Copyright", hdr->CopyRights, 32);
+	showstr ("DomesticName", hdr->DomesticName, 48);
+	showstr ("OverseasName", hdr->OverseasName, 48);
+	showstr ("ProductCode", hdr->ProductCode, 14);
+	eprintf ("Checksum: 0x%04x\n", (ut32)hdr->CheckSum);
+	showstr ("Peripherials", hdr->Peripherials, 16);
+	showstr ("SramCode", hdr->CountryCode, 12);
+	showstr ("ModemCode", hdr->CountryCode, 12);
+	showstr ("CountryCode", hdr->CountryCode, 16);
 	/* parse vtable */
 	for (i=0; i<64; i++) {
 		switch (i) {
@@ -239,9 +239,8 @@ static RList* symbols(RBinFile *arch) {
 		case 62: name = "Reserv3F"; break;
 		default: name = NULL;
 		}
-		if (!name) continue;
-		if (!vtable[i]) continue;
-		addsym(ret, name, vtable[i]);
+		if (!name || !vtable[i]) continue;
+		addsym (ret, name, vtable[i]);
 	}
 	return ret;
 }

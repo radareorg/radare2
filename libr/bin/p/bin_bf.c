@@ -124,8 +124,6 @@ struct r_bin_plugin_t r_bin_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -133,20 +131,9 @@ struct r_bin_plugin_t r_bin_plugin_bf = {
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
-	.binsym = NULL,
 	.entries = entries,
-	.sections = NULL,
-	.symbols = NULL,
-	.imports = NULL,
 	.strings = &strings,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.dbginfo = NULL,
-	.write = NULL,
-	.demangle_type = NULL
 };
 
 #ifndef CORELIB

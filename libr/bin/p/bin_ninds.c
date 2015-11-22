@@ -1,4 +1,4 @@
-/* radare - LGPL - 2014 - a0rtega */
+/* radare - LGPL - 2015 - a0rtega */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -150,9 +150,6 @@ struct r_bin_plugin_t r_bin_plugin_ninds = {
 	.name = "ninds",
 	.desc = "Nintendo DS format r_bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
-	.get_sdb = NULL,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
@@ -160,18 +157,9 @@ struct r_bin_plugin_t r_bin_plugin_ninds = {
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = &boffset,
-	.binsym = NULL,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = NULL,
-	.imports = NULL,
-	.strings = NULL,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.create = NULL,
-	.write = NULL,
 };
 
 #ifndef CORELIB

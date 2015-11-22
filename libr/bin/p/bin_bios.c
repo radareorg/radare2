@@ -116,8 +116,6 @@ struct r_bin_plugin_t r_bin_plugin_bios = {
 	.name = "bios",
 	.desc = "BIOS bin plugin",
 	.license = "LGPL",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -125,20 +123,10 @@ struct r_bin_plugin_t r_bin_plugin_bios = {
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
-	.binsym = NULL,
 	.entries = entries,
 	.sections = sections,
-	.symbols = NULL,
-	.imports = NULL,
 	.strings = &strings,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.dbginfo = NULL,
-	.write = NULL,
-	.demangle_type = NULL
 };
 
 #ifndef CORELIB

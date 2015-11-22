@@ -738,9 +738,9 @@ static int already_entry (RList *entries, ut64 vaddr) {
 static RList* entries(RBinFile *arch) {
 	RListIter *iter;
 	RBinDexObj *bin;
-	RList *ret;
-	RBinAddr *ptr;
 	RBinSymbol *m;
+	RBinAddr *ptr;
+	RList *ret;
 
 	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;

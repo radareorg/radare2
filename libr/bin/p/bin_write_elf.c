@@ -18,4 +18,3 @@ struct r_bin_write_t r_bin_write_elf = {
 	.rpath_del = &rpath_del,
 };
 #endif
-

@@ -164,8 +164,6 @@ RBinPlugin r_bin_plugin_te = {
 	.name = "te",
 	.desc = "TE bin plugin", // Terse Executable format
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -173,21 +171,11 @@ RBinPlugin r_bin_plugin_te = {
 	.check = &check,
 	.check_bytes = check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = NULL, // TE doesn't have exports data directory
-	.imports = NULL, // TE doesn't have imports data directory
-	.strings = NULL,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL, // TE doesn't have imports data directory
-	.relocs = NULL,
-	.dbginfo = NULL,
-	.write = NULL,
 	.minstrlen = 4,
-	.create = NULL,
 };
 
 #ifndef CORELIB

@@ -193,8 +193,6 @@ struct r_bin_plugin_t r_bin_plugin_art = {
 	.name = "art",
 	.desc = "Android Runtime",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -203,19 +201,9 @@ struct r_bin_plugin_t r_bin_plugin_art = {
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.sections = &sections,
-	.boffset = NULL,
-	.binsym = NULL,
 	.entries = entries,
-	.symbols = NULL,
-	.imports = NULL,
 	.strings = &strings,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.dbginfo = NULL,
-	.write = NULL,
-	.demangle_type = NULL
 };
 
 #ifndef CORELIB

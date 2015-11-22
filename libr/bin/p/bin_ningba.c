@@ -1,4 +1,4 @@
-/* radare - LGPL - 2014 - condret@runas-racer.com */
+/* radare - LGPL - 2014-2015 - condret@runas-racer.com */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -95,27 +95,14 @@ struct r_bin_plugin_t r_bin_plugin_ningba = {
 	.name = "ningba",
 	.desc = "Game Boy Advance format r_bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
-	.binsym = NULL,
 	.entries = &entries,
-	.sections = NULL,
-	.symbols = NULL,
-	.imports = NULL,
-	.strings = NULL,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.create = NULL,
-	.write = NULL,
 };
 
 #ifndef CORELIB

@@ -451,6 +451,8 @@ R_API char *r_str_newf(const char *fmt, ...) {
 	va_list ap, ap2;
 	va_start (ap, fmt);
 	va_start (ap2, fmt);
+	if (!strchr (fmt, "%"))
+		return strdup (fmt);
 	ret = vsnprintf (string, sizeof (string) - 1, fmt, ap);
 	if (ret < 1 || ret >= sizeof (string)) {
 		p = malloc (ret + 2);

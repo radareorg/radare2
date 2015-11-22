@@ -123,8 +123,6 @@ RBinPlugin r_bin_plugin_fs = {
 	.name = "fs",
 	.desc = "filesystem bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -132,20 +130,8 @@ RBinPlugin r_bin_plugin_fs = {
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
-	.binsym = NULL,
-	.entries = NULL,
-	.sections = NULL,
-	.symbols = NULL,
-	.imports = NULL,
 	.strings = &strings,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.dbginfo = NULL,
-	.write = NULL,
-	.demangle_type = NULL
 };
 
 #ifndef CORELIB
