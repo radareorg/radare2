@@ -142,12 +142,8 @@ static mach0_ut get_pointer (mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arc
 		}
 	}
 
-	if (offset != NULL) {
-		*offset = 0;
-	}
-	if (left != NULL) {
-		*left = 0;
-	}
+	if (offset) *offset = 0;
+	if (left) *left = 0;
 
 	r_list_free (sctns);
 
@@ -469,8 +465,9 @@ static void get_method_list_t (mach0_ut p, RBinFile *arch, char *class_name, RBi
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
-				name = malloc (left);
+				name = malloc (left+1);
 				len = r_buf_read_at (arch->buf, r, (ut8 *)name, left);
+				name[left] = 0;
 				if (len < 1) goto error;
 			}
 
