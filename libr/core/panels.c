@@ -114,7 +114,7 @@ static int curnode = 0;
 
 static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 	char title[128];
-	int delta_x, delta_x;
+	int delta_x, delta_y;
 	if (!n || !can)
 		return;
 	delta_x = n->sx;
