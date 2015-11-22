@@ -10,6 +10,12 @@
 #include "xnu_debug.h"
 #include "xnu_threads.c"
 
+#if TARGET_OS_IPHONE
+#define XNU_USE_PTRACE 0
+#else
+#define XNU_USE_PTRACE 1
+#endif
+
 static thread_t getcurthread (RDebug *dbg, task_t *task) {
 	thread_array_t threads = NULL;
 	unsigned int n_threads = 0;
@@ -162,7 +168,6 @@ static task_t task_for_pid_workaround(int Pid) {
 bool xnu_step(RDebug *dbg) {
 	int ret = false;
 	task_t task;
-
 #if __arm__ || __arm64__ || __aarch64__
 	// op-not-permitted ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0); //SIGINT
 	ios_hwstep_enable (dbg, true);
@@ -185,21 +190,22 @@ bool xnu_step(RDebug *dbg) {
 	ios_hwstep_enable (dbg, false);
 //	eprintf ("thu %d\n", ptrace (PT_THUPDATE, dbg->pid, (void*)0, 0));
 #else
-	thread_t th = getcurthread (dbg, &task);
-	task_resume (task);
+#if XNU_USE_PTRACE
 	ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
 	if (!ret) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 	}
-	//TODO handle the signals here in xnu. Now is  only supported for linux
-	/*r_debug_handle_signals (dbg);*/
+#else
+	thread_t th = getcurthread (dbg, &task);
+	task_resume (task);
+#endif
 #endif
 	return ret;
 }
 
 int xnu_attach(RDebug *dbg, int pid) {
-#if TARGET_OS_MAC
+#if XNU_USE_PTRACE
 	if (pid != dbg->pid && ptrace (PT_ATTACH, pid, 0, 0) == -1) {
 		perror ("ptrace (PT_ATTACH)");
 		return -1;
