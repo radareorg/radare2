@@ -91,7 +91,7 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	kern_return_t rc;
 	R_REG_T *regs;
 	if (!dbg || !thread) {
-		thread->count = 0;
+		//thread->count = 0;
 		return false;
 	}
 	regs = &thread->gpr;
