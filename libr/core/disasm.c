@@ -811,7 +811,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_pre (RCore *core, RDisasmState *ds) {
+static void handle_print_pre (RCore *core, RDisasmState *ds, bool tail) {
 	if (ds->show_functions) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f) {
@@ -829,6 +829,9 @@ static void handle_print_pre (RCore *core, RDisasmState *ds) {
 
 			if (ds->show_fcnlines) {
 				ds->pre = r_str_concat (ds->pre, " ");
+			}
+			if (tail) {
+				r_str_replace_char (ds->pre, '\\', ' ');
 			}
 			r_cons_printf ("%s%s%s", COLOR (ds, color_fline),
 				ds->pre, COLOR_RESET (ds));
@@ -2062,16 +2065,19 @@ static void handle_print_esil_anal_fini(RCore *core, RDisasmState *ds) {
 static void handle_print_bbline(RCore *core, RDisasmState *ds) {
 	if (ds->show_bbline) {
 		bool has_line = false;
-		if (strchr (ds->line, '>')) has_line = true;
-		switch (ds->analop.type) {
-		case R_ANAL_OP_TYPE_RET:
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_CJMP:
+		if (strchr (ds->line, '>')) {
 			has_line = true;
-			break;
+		} else {
+			switch (ds->analop.type) {
+			case R_ANAL_OP_TYPE_RET:
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_CJMP:
+				has_line = true;
+				break;
+			}
 		}
 		if (has_line) {
-			handle_print_pre (core, ds);
+			handle_print_pre (core, ds, true);
 
 			ds->at += ds->analop.size;
 			handle_update_ref_lines (core, ds);
@@ -2429,7 +2435,7 @@ toro:
 		handle_show_functions (core, ds);
 		handle_show_xrefs (core, ds);
 		handle_show_flags_option (core, ds);
-		handle_print_pre (core, ds);
+		handle_print_pre (core, ds, false);
 		handle_print_lines_left (core, ds);
 
 		f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
@@ -2437,7 +2443,7 @@ toro:
 			handle_show_functions (core, ds);
 			handle_show_xrefs (core, ds);
 			handle_show_flags_option (core, ds);
-			handle_print_pre (core, ds);
+			handle_print_pre (core, ds, false);
 			handle_print_lines_left (core, ds);
 		}
 
@@ -3077,7 +3083,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			}
 			handle_show_xrefs (core, ds);
 			handle_show_flags_option (core, ds);
-			handle_print_pre (core, ds);
+			handle_print_pre (core, ds, false);
 			handle_print_lines_left (core, ds);
 			handle_print_offset (core, ds);
 			handle_print_op_size (core, ds);
