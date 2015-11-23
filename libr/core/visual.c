@@ -1796,7 +1796,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 			const int bytes = r_config_get_i (core->config, "stack.bytes");
 			if (cmdvhex && *cmdvhex) {
 				snprintf (debugstr, sizeof(debugstr),
-					"f tmp;sr sp;%s;dr=;s-;"
+					"f tmp;sr SP;%s;dr=;s-;"
 					"s tmp;f-tmp;pd $r", cmdvhex);
 				debugstr[sizeof(debugstr)-1]=0;
 			} else {
@@ -1810,18 +1810,16 @@ R_API int r_core_visual(RCore *core, const char *input) {
 					default: pxw = "px"; break;
 					}
 				}
-				snprintf (debugstr, sizeof(debugstr),
-					"f tmp;sr sp;%s %d@$$-%d;dr=;s-;"
+				snprintf (debugstr, sizeof (debugstr),
+					"f tmp;sr SP;%s %d@$$-%d;dr=;s-;"
 					"s tmp;f-tmp;pd $r",
-					pxa?"pxa":pxw, size,
-					delta);
+					pxa? "pxa": pxw, size, delta);
 			}
 			printfmt[2] = debugstr;
 		}
 		wheel = r_config_get_i (core->config, "scr.wheel");
 		r_cons_show_cursor (false);
-		if (wheel)
-			r_cons_enable_mouse (true);
+		if (wheel) r_cons_enable_mouse (true);
 		core->cons->event_data = core;
 		core->cons->event_resize = (RConsEvent)r_core_visual_refresh;
 		flags = core->print->flags;

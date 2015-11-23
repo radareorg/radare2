@@ -68,7 +68,7 @@ static int rtr_visual (RCore *core, TextLog T, const char *cmd) {
 		}
 		r_cons_break_end ();
 	} else {
-		const char *cmds[] = { "px", "pd", "pxa", "dr", "sr sp;pxa", NULL };
+		const char *cmds[] = { "px", "pd", "pxa", "dr", "sr SP;pxa", NULL };
 		int cmdidx = 0;
 		char *ret, ch;
 		free (rtrcmd (T, "e scr.color=true"));
