@@ -95,17 +95,22 @@ static bool isvalidflag(RFlagItem *flag) {
 	return (flag && strchr (flag->name, '.'));
 }
 
-static char *findNextNumber(char *p) {
-	if (p) while (*p) {
-		if (*p == 0x1b) {
-			p++;
-			if (*p == '[') {
-				for (; *p && *p != 'J' && *p!='m' && *p != 'H'; p++);
+static char *findNextNumber(char *op) {
+	char *p = op;
+	if (p && *p) {
+		while (*p) {
+			if (*p == 0x1b) {
+				p++;
+				if (*p == '[') {
+					for (; *p && *p != 'J' && *p!='m' && *p != 'H'; p++);
+				}
+			} else {
+				const char *pp = p - 1;
+				bool is_space = (p != op && (*pp == ' ' || *pp == ','));
+				if (is_space && *p >= '0' && *p <= '9')
+					return p;
+				p++;
 			}
-		} else {
-			if (*p >= '0' && *p <= '9')
-				return p;
-			p++;
 		}
 	}
 	return NULL;
@@ -174,6 +179,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 			int immbase = p->hint->immbase;
 			char num[256];
 			switch (immbase) {
+			case 0:
+				// do nothing
+				break;
 			case 1:
 				r_num_to_bits (num, off);
 				strcat (num, "b");
