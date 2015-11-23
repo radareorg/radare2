@@ -2072,6 +2072,7 @@ static void handle_print_bbline(RCore *core, RDisasmState *ds) {
 			case R_ANAL_OP_TYPE_RET:
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
+			case R_ANAL_OP_TYPE_UJMP:
 				has_line = true;
 				break;
 			}
