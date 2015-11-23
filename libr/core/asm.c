@@ -14,19 +14,14 @@ static void add_hit_to_sorted_hits(RList* hits, ut64 addr, int len, ut8 is_valid
 static int prune_hits_in_addr_range(RList *hits, ut64 addr, ut64 len, ut8 is_valid);
 
 static int rcoreasm_address_comparator(RCoreAsmHit *a, RCoreAsmHit *b){
-	if (a->addr == b->addr)
-		return 0;
-	else if (a->addr < b->addr)
-		return -1;
-	// a->addr > b->addr
-	return 1;
+	if (a->addr == b->addr) return 0;
+	if (a->addr < b->addr) return -1;
+	return 1; /* a->addr > b->addr */
 }
 
 R_API RCoreAsmHit *r_core_asm_hit_new() {
-	RCoreAsmHit *hit = R_NEW (RCoreAsmHit);
+	RCoreAsmHit *hit = R_NEW0 (RCoreAsmHit);
 	if (!hit) return NULL;
-	hit->code = NULL;
-	hit->len = 0;
 	hit->addr = -1;
 	hit->valid = false;
 	return hit;
@@ -34,6 +29,7 @@ R_API RCoreAsmHit *r_core_asm_hit_new() {
 
 R_API RList *r_core_asm_hit_list_new() {
 	RList *list = r_list_new ();
+	if (!list) return NULL;
 	list->free = &r_core_asm_hit_free;
 	return list;
 }
@@ -129,7 +125,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					r_regex_free (rx);
 				}
 			}
-			if (align) {
+			if (align && align>1) {
 				if (addr % align) {
 					matches = false;
 				}
@@ -187,7 +183,6 @@ beach:
 	return hits;
 }
 
-
 static void add_hit_to_sorted_hits(RList* hits, ut64 addr, int len, ut8 is_valid) {
 	RCoreAsmHit *hit = r_core_asm_hit_new();
 	if (hit) {
@@ -216,14 +211,12 @@ static void add_hit_to_hits(RList* hits, ut64 addr, int len, ut8 is_valid) {
 }
 
 static int prune_hits_in_addr_range(RList *hits, ut64 addr, ut64 len, ut8 is_valid) {
-	RCoreAsmHit hit;
+	RCoreAsmHit hit = {0};
 	hit.addr = addr;
 	hit.len = len;
-	hit.code = NULL;
 	hit.valid = is_valid;
 	return prune_hits_in_hit_range(hits, &hit);
 }
-
 
 static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit){
 	RListIter *iter, *iter_tmp;
@@ -259,25 +252,23 @@ static RCoreAsmHit * find_addr(RList *hits, ut64 addr) {
 	return r_list_iter_get_data(addr_iter);
 }
 
-
 static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 len, ut64 current_buf_pos, ut64 current_instr_addr, ut64 end_addr){
+	RCoreAsmHit *hit = NULL, *found_addr = NULL;
 	// forward disassemble from the current instruction up to the end address
-	ut64 temp_instr_len = 0,
-		temp_instr_addr = current_instr_addr,
-		tmp_current_buf_pos = current_buf_pos,
-        start = 0,  end = 0,
-		start_range = current_instr_addr,
-		end_range = end_addr;
-
-    RAsmOp op;
-    RCoreAsmHit *hit = NULL, *found_addr = NULL;
-    ut8 is_valid = false;
+	ut64 temp_instr_addr = current_instr_addr;
+	ut64 tmp_current_buf_pos = current_buf_pos;
+	ut64 start_range = current_instr_addr;
+	ut64 end_range = end_addr;
+	ut64 temp_instr_len = 0;
+	ut64 start = 0, end = 0;
+	ut8 is_valid = false;
+	RAsmOp op;
 
 	if (end_addr < current_instr_addr)
 		return end_addr;
 
 	r_asm_set_pc (core->assembler, current_instr_addr);
-	while ( tmp_current_buf_pos < len && temp_instr_addr < end_addr) {
+	while (tmp_current_buf_pos < len && temp_instr_addr < end_addr) {
 		temp_instr_len = len - tmp_current_buf_pos;
 		IFDBG eprintf("Current position: %"PFMT64d" instr_addr: 0x%"PFMT64x"\n", tmp_current_buf_pos, temp_instr_addr);
 		temp_instr_len = r_asm_disassemble (core->assembler, &op, buf+tmp_current_buf_pos, temp_instr_len);
@@ -285,8 +276,7 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 		if (temp_instr_len == 0){
 			is_valid = false;
 			temp_instr_len = 1;
-		} else
-			is_valid = true;
+		} else is_valid = true;
 
 		// check to see if addr exits
 		found_addr = find_addr(hits, temp_instr_addr);
@@ -299,8 +289,7 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 			ut32 prune_results = 0;
 			prune_results = prune_hits_in_addr_range(hits, temp_instr_addr, temp_instr_len, is_valid);
 			add_hit_to_sorted_hits(hits, temp_instr_addr, temp_instr_len, is_valid);
-
-			if (prune_results ) {
+			if (prune_results) {
 				r_list_add_sorted (hits, hit, ((RListComparator)rcoreasm_address_comparator));
 				IFDBG eprintf("Pruned %u hits from list in fwd sweep.\n", prune_results);
 			} else {
@@ -474,7 +463,7 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 		return NULL;
 	}
 
-	if (len == 0){
+	if (len == 0) {
 		return hits;
 	}
 
@@ -587,11 +576,11 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 			last_num_invalid ++;
 		// disassembly perfect
 		} else if (current_buf_pos + current_instr_len == next_buf_pos) {
-            // i think this may be the only case where an invalid instruction will be
-            // added because handle_forward_disassemble and handle_disassembly_overlap
-            // are only called in cases where a valid instruction has been found.
-            // and they are lazy, since they purge the hit list
-            ut32 purge_results = 0;
+			// i think this may be the only case where an invalid instruction will be
+			// added because handle_forward_disassemble and handle_disassembly_overlap
+			// are only called in cases where a valid instruction has been found.
+			// and they are lazy, since they purge the hit list
+			ut32 purge_results = 0;
 			ut8 is_valid = true;
 			IFDBG eprintf(" handling underlap case: current_instr_addr: 0x%"PFMT64x".\n", current_instr_addr);
 			purge_results =  prune_hits_in_addr_range(hits, current_instr_addr, current_instr_len, /* is_valid */ true);

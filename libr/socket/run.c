@@ -629,10 +629,7 @@ R_API int r_run_start(RRunProfile *p) {
 #if __APPLE__
 	posix_spawnattr_t attr = {0};
 	pid_t pid = -1;
-#endif
 	int ret;
-
-#if __APPLE__
 	posix_spawnattr_init (&attr);
 	if (p->_args[0]) {
 		char **envp = r_sys_get_environ();
@@ -698,7 +695,7 @@ R_API int r_run_start(RRunProfile *p) {
 		{ int i; for (i=3; i<10; i++) close (i); }
 		// TODO: use posix_spawn
 		if (p->_setgid) {
-			ret = setgid (atoi (p->_setgid));
+			int ret = setgid (atoi (p->_setgid));
 			if (ret < 0)
 				return 1;
 		}

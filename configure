@@ -160,7 +160,8 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "\nOptional Features:
+printf "
+Optional Features:
   --disable-debugger     disable native debugger features 
   --with-sysmagic        force to use system's magic 
   --disable-loadlibs     disable loading plugins 
@@ -176,8 +177,10 @@ printf "\nOptional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku )  (USEROSTYPE=auto)
   --without-pic          do not build libr as a program independent location 
   --with-nonpic          build the library archives .a 
-  --with-libversion      specify different libversion  (LIBVERSION=xxx)\n"
-printf "\nSome influential environment variables:
+  --with-libversion      specify different libversion  (LIBVERSION=xxx)
+"
+printf "
+Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CPPFLAGS    C preprocessor flags
@@ -185,8 +188,10 @@ printf "\nSome influential environment variables:
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor\n"
-printf "\nReport bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor
+"
+printf "
+Report bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
@@ -448,6 +453,9 @@ if [ "$HAVE_BIGEND" = "1" ]; then
 LIL_ENDIAN="0"; fi
 check_library HAVE_LIB_LUA5_1 lua5.1 0 
 if [ "$USEROSTYPE" = "auto" ]; then
+if [ "$HOST_OS" = "mingw32_nt-6.2" ]; then
+USEROSTYPE="mingw32"
+else
 if [ "$HOST_OS" = "mingw32_nt" ]; then
 USEROSTYPE="mingw32"
 else
@@ -472,7 +480,7 @@ if [ "$HOST_OS" = "openbsd" ]; then
 USEROSTYPE="bsd"
 else
 if [ "$HOST_OS" = "darwin" ]; then
-USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi; fi
+USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
 if [ "$LIBVERSION" = "xxx" ]; then
 LIBVERSION="$VERSION"; fi
 SEDFLAGS=" -e '"

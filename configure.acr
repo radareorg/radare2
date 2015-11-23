@@ -95,6 +95,9 @@ ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin haiku )
 (( TODO: throw error if unknown ostype ))
 (( TODO: handle BSD os as different ostype? ))
 IFEQ USEROSTYPE auto ; {
+	IFEQ HOST_OS mingw32_nt-6.2 ; {
+		USEROSTYPE = mingw32 ;
+	}{
 	IFEQ HOST_OS mingw32_nt ; {
 		USEROSTYPE = mingw32 ;
 	}{
@@ -121,7 +124,7 @@ IFEQ USEROSTYPE auto ; {
 	}{
 	IFEQ HOST_OS darwin ; {
 		USEROSTYPE = darwin ;
-	} } } } } } } }
+	} } } } } } } } }
 }
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
