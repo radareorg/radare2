@@ -1111,13 +1111,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				} else {
 					offset += r_io_desc_size (core->io,
 							core->file->desc)
-						- core->blocksize + 2*scols;
+						- core->blocksize + 2 * scols;
 					ret = r_core_seek (core, offset, 1);
 				}
 			} else {
 				ret = r_core_seek (core,
 						r_io_desc_size (core->io, core->file->desc)
-						- core->blocksize + 2*scols, 1);
+						- core->blocksize + 2 * scols, 1);
 			}
 		} else {
 			ret = -1;
@@ -1348,8 +1348,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					r_core_cmd (core, ".dr*", 0);
 				}
 			} else {
-				/* step over not support for esil yet */
-				r_core_cmd (core, "aes", 0);
+				r_core_cmd (core, "aeso", 0);
 				r_core_cmd (core, ".ar*", 0);
 			}
 		}
