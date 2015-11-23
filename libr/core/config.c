@@ -1240,6 +1240,20 @@ static int cb_anal_jmptbl(void *user, void *data) {
 	return true;
 }
 
+static int cb_anal_cjmpref(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.cjmpref = node->i_value;
+	return true;
+}
+
+static int cb_anal_jmpref(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.jmpref = node->i_value;
+	return true;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -1280,6 +1294,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
 	SETCB("anal.jmptbl", "false", &cb_anal_jmptbl, "Analyze jump tables in switch statements");
+
+	SETCB("anal.cjmpref", "false", &cb_anal_cjmpref, "Create references for conditional jumps");
+	SETCB("anal.jmpref", "true", &cb_anal_jmpref, "Create references for unconditional jumps");
 
 	SETPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETCB("esil.debug", "false", &cb_esildebug, "Show ESIL debug info");
