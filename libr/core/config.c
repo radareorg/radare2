@@ -1298,6 +1298,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("asm.cmtcol", 70, "Align comments at column 60");
 	SETICB("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
 	SETPREF("asm.calls", "false", "Show calling convention calls as comments in disasm");
+	SETPREF("asm.bbline", "false", "Show empty line after every basic block");
 	SETPREF("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETPREF("asm.decode", "false", "Use code analysis as a disassembler");

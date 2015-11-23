@@ -70,6 +70,7 @@ typedef struct r_disam_options_t {
 	int adistrick;
 	int asm_demangle;
 	int show_offset;
+	int show_bbline;
 	int show_emu;
 	int show_emu_write;
 	int show_section;
@@ -310,6 +311,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->asm_demangle = r_config_get_i (core->config, "asm.demangle");
 	ds->asm_describe = r_config_get_i (core->config, "asm.describe");
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
+	ds->show_bbline = r_config_get_i (core->config, "asm.bbline");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
 	ds->show_emu_write = r_config_get_i (core->config, "asm.emuwrite");
@@ -2057,6 +2059,35 @@ static void handle_print_esil_anal_fini(RCore *core, RDisasmState *ds) {
 	regstate = NULL;
 }
 
+static void handle_print_bbline(RCore *core, RDisasmState *ds) {
+	if (ds->show_bbline) {
+		bool has_line = false;
+		if (strchr (ds->line, '>')) has_line = true;
+		switch (ds->analop.type) {
+		case R_ANAL_OP_TYPE_RET:
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_CJMP:
+			has_line = true;
+			break;
+		}
+		if (has_line) {
+			handle_print_pre (core, ds);
+
+			ds->at += ds->analop.size;
+			handle_update_ref_lines (core, ds);
+			r_str_replace_char (ds->line, '>', ' ');
+			r_str_replace_char (ds->line, '<', ' ');
+			r_str_replace_char (ds->line, '-', ' ');
+			r_str_replace_char (ds->line, '=', ' ');
+			r_str_replace_char (ds->line, '.', ' ');
+			r_str_replace_char (ds->line, '`', '|');
+			handle_print_lines_left (core, ds);
+
+			r_cons_printf("|\n");
+		}
+	}
+}
+
 static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	RAnalEsil *esil = core->anal->esil;
 	const char *pc;
@@ -2449,6 +2480,7 @@ toro:
 		if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
 			r_cons_newline ();
 		}
+		handle_print_bbline (core, ds);
 		if (ds->line) {
 			if (ds->show_lines_ret && ds->analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (ds->line, '>')) {
@@ -3100,6 +3132,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 				free (ds->refline2);
 				ds->line = ds->refline = ds->refline2 = NULL;
 			}
+			handle_print_bbline (core, ds);
 			bb_size_consumed += ds->oplen;
 			ds->index += ds->oplen;
 			idx += ds->oplen;
