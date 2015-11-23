@@ -9,24 +9,24 @@
 
 typedef struct psxexe_header
 {
-  unsigned char id[8];
-  ut32 text;                   
-  ut32 data;                    
-  ut32 pc0;
-  ut32 gp0;                     
-  ut32 t_addr;
-  ut32 t_size;
-  ut32 d_addr;                  
-  ut32 d_size;                  
-  ut32 b_addr;                  
-  ut32 b_size;                  
-  ut32 s_addr;
-  ut32 s_size;
-  ut32 SavedSP;
-  ut32 SavedFP;
-  ut32 SavedGP;
-  ut32 SavedRA;
-  ut32 SavedS0;
+	unsigned char id[8];
+	ut32 text;
+	ut32 data;
+	ut32 pc0;
+	ut32 gp0;
+	ut32 t_addr;
+	ut32 t_size;
+	ut32 d_addr;
+	ut32 d_size;
+	ut32 b_addr;
+	ut32 b_size;
+	ut32 s_addr;
+	ut32 s_size;
+	ut32 SavedSP;
+	ut32 SavedFP;
+	ut32 SavedGP;
+	ut32 SavedRA;
+	ut32 SavedS0;
 } psxexe_header;
 
 #endif // PSXEXE_H
