@@ -336,7 +336,7 @@ static void get_objc_property_list (mach0_ut p, RBinFile *arch, RBinClass *proce
 			len = r_buf_read_at (arch->buf, r, (ut8 *)&op,
 				sizeof (struct MACH0_(SObjcProperty)));
 		}
-		if (len < -1) goto error;
+		if (len < 1) goto error;
 
 		r = get_pointer (op.name, NULL, &left, arch);
 		if (r) {
@@ -350,9 +350,10 @@ static void get_objc_property_list (mach0_ut p, RBinFile *arch, RBinClass *proce
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
-				name = malloc (left);
+				name = calloc (1, left + 1);
+				if (!name) goto error;
 				len = r_buf_read_at (arch->buf, r, (ut8 *)name, left);
-				if (len == 0 || len == -1) goto error;
+				if (len < 1) goto error;
 			}
 			property->name = r_str_newf ("%s::%s%s", processed_class->name,
 					"(property)", name);
