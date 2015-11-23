@@ -336,6 +336,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		goto beach;
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->delay = 0;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
 	opsize = op->size = insn->size;
 	switch (insn->id) {
 	case MIPS_INS_INVALID:
@@ -414,7 +416,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->delay = 1;
 		op->jump = IMM(0);
-		op->fail = addr+4;
+		op->fail = addr+8;
 		break;
 	case MIPS_INS_MOVE:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -504,7 +506,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case MIPS_INS_BGTZ:
 	case MIPS_INS_BGTZL:
 	case MIPS_INS_BGTZC:
-		op->type = R_ANAL_OP_TYPE_JMP;
+		if (insn->id == MIPS_INS_J || insn->id == MIPS_INS_B ) {
+			op->type = R_ANAL_OP_TYPE_JMP;
+		} else {
+			op->type = R_ANAL_OP_TYPE_CJMP;
+		}
 		op->delay = 1;
 		if (OPERAND(0).type == MIPS_OP_IMM) {
 			op->jump = IMM(0);
@@ -513,13 +519,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		} else if (OPERAND(2).type == MIPS_OP_IMM) {
 			op->jump = IMM(2);
 		}
+		op->fail = addr+8;
 		break;
 	case MIPS_INS_JR:
 	case MIPS_INS_JRC:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->delay = 1;
-        // register 32 is $ra, so jmp is a return
-        if (insn->detail->mips.operands[0].reg == 32) {
+        // register is $ra, so jmp is a return
+        if (insn->detail->mips.operands[0].reg == MIPS_REG_RA) {
             op->type = R_ANAL_OP_TYPE_RET;
         }
 		break;
