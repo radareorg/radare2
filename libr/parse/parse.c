@@ -106,7 +106,7 @@ static char *findNextNumber(char *op) {
 				}
 			} else {
 				const char *pp = p - 1;
-				bool is_space = (p != op && (*pp == ' ' || *pp == ','));
+				bool is_space = (p != op && (*pp == ' ' || *pp == ',' || *pp == '['));
 				if (is_space && *p >= '0' && *p <= '9')
 					return p;
 				p++;
@@ -135,7 +135,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 		if (x86) for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);
 		else for (ptr2 = ptr; *ptr2 && (*ptr2!=']' || (*ptr2=='\x1b') || !isseparator (*ptr2)); ptr2++);
 		off = r_num_math (NULL, ptr);
-		if (off > 0xff && !strncmp (ptr, "0x", 2)) {
+		if (off > 0xff) {
 			fcn = r_anal_get_fcn_in (p->anal, off, 0);
 			if (fcn) {
 				if (fcn->addr == off) {
@@ -158,12 +158,10 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 					if (p->notin_flagspace != -1) {
 						if (p->flagspace == flag->space)
 							continue;
-					} else
-						if (p->flagspace != -1 && \
-								(p->flagspace != flag->space)) {
-							ptr = ptr2;
-							continue;
-						}
+					} else if (p->flagspace != -1 && (p->flagspace != flag->space)) {
+						ptr = ptr2;
+						continue;
+					}
 					*ptr = 0;
 					// hack to realign pointer for colours
 					ptr2--;
