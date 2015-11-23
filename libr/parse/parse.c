@@ -109,10 +109,10 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 		memmove (ptr2, ptr2 + 6, strlen (ptr2+  6) + 1);
 #endif
 	ptr2 = NULL;
-// remove "dword" ?
+	// remove "dword" 2
 	while ((ptr = strstr (ptr, "0x"))) {
 		if (x86) for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);
-		else for (ptr2 = ptr; *ptr2 && ((*ptr2=='\x1b')||!isseparator (*ptr2)); ptr2++);
+		else for (ptr2 = ptr; *ptr2 && (*ptr2!=']' || (*ptr2=='\x1b') || !isseparator (*ptr2)); ptr2++);
 		off = r_num_math (NULL, ptr);
 		// small numbers should not be replaced by flags
 		if (off <0xff) {
@@ -173,18 +173,18 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 				strcat (num, "b");
 				break;
 			case 2: // hack for ascii
-				snprintf (num, sizeof(num), "'%c'", (char)off);
+				snprintf (num, sizeof (num), "'%c'", (char)off);
 				break;
 			case 8:
-				snprintf (num, sizeof(num), "0%o", (int)off);
+				snprintf (num, sizeof (num), "0%o", (int)off);
 				break;
 			case 10:
-				snprintf (num, sizeof(num), "%d", (int)off);
+				snprintf (num, sizeof (num), "%d", (int)off);
 				break;
 			case 16:
 				/* do nothing */
 			default:
-				snprintf (num, sizeof(num), "0x%x", (ut32) off);
+				snprintf (num, sizeof (num), "0x%x", (ut32) off);
 				break;
 			}
 			*ptr = 0;
