@@ -166,7 +166,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 		}
 		if (p->hint) {
 			int immbase = p->hint->immbase;
-			char num[32];
+			char num[256];
 			switch (immbase) {
 			case 1:
 				r_num_to_bits (num, off);
