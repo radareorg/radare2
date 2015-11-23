@@ -311,7 +311,7 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	if (!ret) {
 		perror ("xnu_reg_read");
-		//	return false;
+		return 0;
 	}
 	if (th->state) {
 		int rsz = R_MIN (th->state_size, size);
