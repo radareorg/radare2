@@ -112,7 +112,6 @@ typedef struct r_reg_flags_t {
 	bool p; // parity (lsb)
 } RRegFlags;
 
-
 #ifdef R_API
 R_API void r_reg_free(RReg *reg);
 R_API void r_reg_free_internal(RReg *reg);

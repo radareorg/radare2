@@ -1097,6 +1097,7 @@ static void ar_show_help(RCore *core) {
 		"Usage: ar", "", "# Analysis Registers",
 		"ar", "", "Show 'gpr' registers",
 		"ar0", "", "Reset register arenas to 0",
+		"ara", "", "Manage register arenas",
 		"ar", " 16", "Show 16 bit registers",
 		"ar", " 32", "Show 32 bit registers",
 		"ar", " all", "Show all bit registers",
@@ -1136,7 +1137,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		use_color = NULL;
 	}
 	switch (str[0]) {
-	case 'l':
+	case 'l': // "arl"
 		{
 			RRegSet *rs = r_reg_regset_get (core->anal->reg, R_REG_TYPE_GPR);
 			if (rs) {
@@ -1148,8 +1149,35 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			}
 		}
 		break;
-	case '0':
+	case '0': // "ar"
 		r_reg_arena_zero (core->anal->reg);
+		break;
+	case 'a': // "ara"
+		switch (str[1]) {
+		case '+':
+			r_reg_arena_push (core->anal->reg);
+			break;
+		case '-':
+			r_reg_arena_pop (core->anal->reg);
+			break;
+		default:
+			{
+				int i, j;
+				RRegArena *a;
+				RListIter *iter;
+				for (i=0; i<R_REG_TYPE_LAST; i++) {
+					RRegSet *rs = &core->anal->reg->regset[i];
+					j = 0;
+					r_list_foreach (rs->pool, iter, a) {
+						r_cons_printf ("%s %p %d %d %s %d\n",
+							(a == rs->arena)? "*":".", a,
+							i, j, r_reg_get_type (i), a->size);
+						j++;
+					}
+				}
+			}
+			break;
+		}
 		break;
 	case '?':
 		if (str[1]) {

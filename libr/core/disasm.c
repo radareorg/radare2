@@ -992,8 +992,7 @@ static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
 }
 
 static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len) {
-	int ret;
-	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
+	int ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
 	if (ds->asmop.size < 1) ds->asmop.size = 1;
 
 	ds->oplen = ds->asmop.size;
@@ -1609,13 +1608,12 @@ static void handle_print_core_vmode(RCore *core, RDisasmState *ds) {
 	}
 }
 
+// modifies anal register state
 static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 	// declare static since this variable is reused locally, and needs to maintain
 	// state
 	static RAnalCC cc = {0};
-	if (!ds->show_comments)
-		return;
-	if (!ds->show_fcncalls)
+	if (!ds->show_comments || !ds->show_fcncalls)
 		return;
 	if (!r_anal_cc_update (core->anal, &cc, &ds->analop)) {
 		if (ds->show_functions) {
@@ -2041,7 +2039,7 @@ static ut8 *regstate = NULL;
 static void handle_print_esil_anal_init(RCore *core, RDisasmState *ds) {
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	opc = r_reg_getv (core->anal->reg, pc);
-	if (!opc) opc = core->offset;
+	if (!opc || opc==UT64_MAX) opc = core->offset;
 	if (!ds->show_emu) {
 		return;
 	}
@@ -2055,11 +2053,13 @@ static void handle_print_esil_anal_init(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_esil_anal_fini(RCore *core, RDisasmState *ds) {
-	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	r_reg_arena_poke (core->anal->reg, regstate);
-	r_reg_setv (core->anal->reg, pc, opc);
-	free (regstate);
-	regstate = NULL;
+	if (ds->show_emu && regstate) {
+		const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+		r_reg_arena_poke (core->anal->reg, regstate);
+		r_reg_setv (core->anal->reg, pc, opc);
+		free (regstate);
+		regstate = NULL;
+	}
 }
 
 static void handle_print_bbline(RCore *core, RDisasmState *ds) {
@@ -2095,14 +2095,12 @@ static void handle_print_bbline(RCore *core, RDisasmState *ds) {
 	}
 }
 
+// modifies anal register state
 static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	RAnalEsil *esil = core->anal->esil;
 	const char *pc;
 	int i, ioc, nargs;
-	if (!esil || !ds->show_comments) {
-		return;
-	}
-	if (!ds->show_emu) {
+	if (!esil || !ds->show_comments || !ds->show_emu) {
 		return;
 	}
 	ioc = r_config_get_i (core->config, "io.cache");
@@ -2305,11 +2303,11 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	RAnalFunction *f = NULL;
 	ut8 *nbuf = NULL;
 	RDisasmState *ds;
+r_reg_arena_push (core->anal->reg);
 	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces
 	// TODO: per-function register state trace
-
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
 	if (core->anal->cur && core->anal->cur->reset_counter) {
@@ -2370,7 +2368,6 @@ toro:
 			dorepeat = 0;
 			break;
 		}
-
 		r_core_seek_archbits (core, ds->at); // slow but safe
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
 		r_asm_set_pc (core->assembler, ds->at);
@@ -2412,15 +2409,12 @@ toro:
 		if (core->inc == 0) {
 			core->inc = ds->oplen;
 		}
-
 		if (ds->analop.mnemonic) {
 			r_anal_op_fini (&ds->analop);
 		}
-
 		if (!ds->lastfail) {
 			r_anal_op (core->anal, &ds->analop, ds->at, buf+idx, (int)(len-idx));
 		}
-
 		if (ret < 1) {
 			r_strbuf_init (&ds->analop.esil);
 			ds->analop.type = R_ANAL_OP_TYPE_ILL;
@@ -2447,7 +2441,6 @@ toro:
 			handle_print_pre (core, ds, false);
 			handle_print_lines_left (core, ds);
 		}
-
 		handle_print_offset (core, ds);
 		handle_print_op_size (core, ds);
 		handle_print_trace (core, ds);
@@ -2455,7 +2448,6 @@ toro:
 		handle_print_family (core, ds);
 		handle_print_stackptr (core, ds);
 		ret = handle_print_meta_infos (core, ds, buf, len, idx);
-
 		if (!ds->mi_found) {
 			/* show cursor */
 			handle_print_show_cursor (core, ds);
@@ -2548,6 +2540,7 @@ toro:
 	// TODO: this too (must review)
 	handle_print_esil_anal_fini (core, ds);
 	handle_deinit_ds (core, ds);
+r_reg_arena_pop (core->anal->reg);
 	return idx; //-ds->lastfail;
 }
 
@@ -2562,6 +2555,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 	const ut64 old_offset = core->offset;
 	bool hasanal = false;
 
+r_reg_arena_push (core->anal->reg);
 	if (!nb_bytes) {
 		nb_bytes = core->blocksize;
 		if (nb_opcodes < 0) {
@@ -2729,6 +2723,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 	}
 	handle_deinit_ds (core, ds);
 	core->offset = old_offset;
+r_reg_arena_pop (core->anal->reg);
 	return err;
 }
 
@@ -3025,7 +3020,6 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 
 	core->cons->vline = r_config_get_i (core->config, "scr.utf8")?
 			r_vline_u: r_vline_a;
-
 	i = 0;
 	idx = 0;
 	r_cons_break (NULL, NULL);

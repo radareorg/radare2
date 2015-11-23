@@ -226,7 +226,7 @@ R_API RListIter *r_list_insert(RList *list, int n, void *data) {
 R_API void *r_list_pop(RList *list) {
 	void *data = NULL;
 	RListIter *iter;
-	if (list){
+	if (list) {
 		if (list->tail) {
 			iter = list->tail;
 			if (list->head == list->tail) {
@@ -234,6 +234,26 @@ R_API void *r_list_pop(RList *list) {
 			} else {
 				list->tail = iter->p;
 				list->tail->n = NULL;
+			}
+			data = iter->data;
+			free (iter);
+		}
+		return data;
+	}
+	return NULL;
+}
+
+R_API void *r_list_pop_head(RList *list) {
+	void *data = NULL;
+	RListIter *iter;
+	if (list) {
+		if (list->head) {
+			iter = list->head;
+			if (list->head == list->tail) {
+				list->head = list->tail = NULL;
+			} else {
+				list->head = iter->n;
+				list->head->p = NULL;
 			}
 			data = iter->data;
 			free (iter);
@@ -274,6 +294,7 @@ R_API void *r_list_get_top(const RList *list) {
 		return list->tail->data;
 	return NULL;
 }
+
 R_API void *r_list_get_bottom(const RList *list) {
 	if (list && list->head)
 		return list->head->data;

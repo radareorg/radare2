@@ -182,12 +182,32 @@ R_API void r_reg_arena_free(RRegArena* ra) {
 }
 
 R_API void r_reg_arena_swap(RReg *reg, int copy) {
+// XXX this api should be deprecated
+	int i;
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
+		if (r_list_length (reg->regset[i].pool) > 1) {
+			RListIter *ia = reg->regset[i].pool->tail;
+			RListIter *ib = reg->regset[i].pool->tail->p;
+			void *tmp = ia->data;
+			ia->data = ib->data;
+			ib->data = tmp;
+		} else {
+			//eprintf ("Cannot pop more\n");
+			break;
+		}
+	}
+#if 0
 	int index = (++reg->iters)%2;
 	r_reg_arena_set (reg, index, copy);
+#endif
 }
 
 R_API int r_reg_arena_set(RReg *reg, int n, int copy) {
+// XXX this api should be deprecated
+return false;
+#if 0
 	int i;
+// XXX this shuoldnt be used at all
 	if (n>r_list_length (reg->regset[0].pool)) {
 		return R_FALSE;
 	}
@@ -214,15 +234,19 @@ R_API int r_reg_arena_set(RReg *reg, int n, int copy) {
 			r_reg_set_bytes (reg, i, o->bytes, a->size);
 	}
 	return R_TRUE;
+#endif
 }
 
 R_API void r_reg_arena_pop(RReg *reg) {
 	int i;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
-		if (r_list_length (reg->regset[i].pool)>0) {
-			RRegArena *arena = r_list_pop (reg->regset[i].pool);
-			//RRegArena *arena = (RRegArena*) r_list_head (reg->regset[i].pool);
-			reg->regset[i].arena = arena;
+		if (r_list_length (reg->regset[i].pool) > 1) {
+			RRegArena *a = r_list_pop (reg->regset[i].pool);
+			a = reg->regset[i].pool->tail->data;
+			if (a) {
+				reg->regset[i].arena = a;
+				//if (!i) { r_print_hexdump (NULL, 0, a->bytes, a->size, 16, 16); }
+			}
 		} else {
 			eprintf ("Cannot pop more\n");
 			break;
@@ -233,9 +257,13 @@ R_API void r_reg_arena_pop(RReg *reg) {
 R_API int r_reg_arena_push(RReg *reg) {
 	int i;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
-		if (!(reg->regset[i].arena = r_reg_arena_new (0)))
-			return 0;
-		r_list_push (reg->regset[i].pool, reg->regset[i].arena);
+		RRegArena *a = reg->regset[i].arena; // current arena
+		RRegArena *b = r_reg_arena_new (a->size); // new arena
+		if (!a || !b) continue;
+		// if (!i) { r_print_hexdump (NULL, 0, a->bytes, a->size, 16, 16); }
+		memcpy (b->bytes, a->bytes, a->size);
+		r_list_push (reg->regset[i].pool, b);
+		reg->regset[i].arena = b;
 	}
 	return r_list_length (reg->regset[0].pool);
 }
@@ -244,7 +272,7 @@ R_API void r_reg_arena_zero(RReg *reg) {
 	int i;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		RRegArena *a = reg->regset[i].arena;
-		if (a->size> 0)
+		if (a->size > 0)
 			memset (reg->regset[i].arena->bytes, 0, a->size);
 	}
 }

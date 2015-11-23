@@ -137,11 +137,13 @@ R_API RReg *r_reg_new() {
 		reg->regset[i].pool = r_list_newf ((RListFree)r_reg_arena_free);
 		reg->regset[i].regs = r_list_newf ((RListFree)r_reg_item_free);
 		reg->regset[i].arena = arena;
-		//r_list_append (reg->regset[i].pool, arena);
 	}
+	r_reg_arena_push (reg);
+#if 0
 	/* swap arena back and forth to avoid lost reg sets */
 	r_reg_arena_swap (reg, false);
 	r_reg_arena_swap (reg, false);
+#endif
 	return reg;
 }
 
