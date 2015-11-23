@@ -552,7 +552,7 @@ static void create_layers (RAGraph *g) {
 			//FIXME how to handle properly this error ret2libc?
 			continue;
 		}
-		g->layers[i].nodes = R_NEWS (RGraphNode *,
+		g->layers[i].nodes = R_NEWS0 (RGraphNode *,
 			1 + g->layers[i].n_nodes);
 		g->layers[i].position = 0;
 	}
