@@ -7,9 +7,8 @@
 
 #include <r_types.h>
 
-typedef struct psxexe_header
-{
-	unsigned char id[8];
+typedef struct psxexe_header {
+	ut8 id[8];
 	ut32 text;
 	ut32 data;
 	ut32 pc0;
@@ -20,8 +19,8 @@ typedef struct psxexe_header
 	ut32 d_size;
 	ut32 b_addr;
 	ut32 b_size;
-	ut32 s_addr;
-	ut32 s_size;
+	ut32 S_addr;
+	ut32 S_size;
 	ut32 SavedSP;
 	ut32 SavedFP;
 	ut32 SavedGP;
