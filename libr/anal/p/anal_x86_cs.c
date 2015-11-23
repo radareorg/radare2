@@ -1193,8 +1193,20 @@ SETL/SETNGE
 				free (dst);
 			}
 			break;
-		case X86_INS_DIV:
 		case X86_INS_IDIV:
+			op->type = R_ANAL_OP_TYPE_DIV;
+			if (a->decode) {
+				char *a0 = getarg (&gop, 0, 0, NULL);
+				char *a1 = getarg (&gop, 1, 0, NULL);
+				char *a2 = getarg (&gop, 2, 0, NULL);
+				// TODO update flags & handle signedness
+				esilprintf (op, "%s,%s,/,%s,=", a2, a1, a0);
+				free (a0);
+				free (a1);
+				free (a2);
+			}
+			break;
+		case X86_INS_DIV:
 			op->type = R_ANAL_OP_TYPE_DIV;
 			if (a->decode) {
 				int width = INSOP(0).size;
@@ -1205,6 +1217,19 @@ SETL/SETNGE
 				esilprintf (op, "%s,%s,%%,%s,=,%s,%s,/,%s,=",
 					dst, r_ax, r_dx, dst, r_ax, r_ax);
 				free (dst);
+			}
+			break;
+		case X86_INS_IMUL:
+			op->type = R_ANAL_OP_TYPE_MUL;
+			if (a->decode) {
+				char *a0 = getarg (&gop, 0, 0, NULL);
+				char *a1 = getarg (&gop, 1, 0, NULL);
+				char *a2 = getarg (&gop, 2, 0, NULL);
+				// TODO update flags & handle signedness
+				esilprintf (op, "%s,%s,*,%s,=", a2, a1, a0);
+				free (a0);
+				free (a1);
+				free (a2);
 			}
 			break;
 		case X86_INS_MUL:
