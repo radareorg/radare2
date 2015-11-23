@@ -28,7 +28,7 @@ linux-x86-32.sdb: linux-x86-32
 
 %.sdb:%
 ifneq ($(SILENT),)
-	@echo "SDB $<"
+	@echo SDB $<
 	@rm -f $<.sdb
 	@cat $< | ${SDB} $<.sdb =
 	@test -f $<.sdb

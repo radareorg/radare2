@@ -90,7 +90,7 @@ RAnalReilArg *reil_pop_arg(RAnalEsil *esil) {
 
 // Get the next available temp register.
 void get_next_temp_reg(RAnalEsil *esil, char *buf) {
-	snprintf (buf, REGBUFSZ, REIL_TEMP_PREFIX"_%02d",
+	snprintf (buf, REGBUFSZ, REIL_TEMP_PREFIX"_%02"PFMT64d,
 		esil->Reil->reilNextTemp);
 	esil->Reil->reilNextTemp++;
 }
