@@ -19,10 +19,10 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static int check(RBinFile *arch) {
-	if (!arch || !arch-buf)
+	if (!arch || !arch->buf)
 		return false;
 
-	return check_bytes (arch->buf, r_buf_size (arch->buf));
+	return check_bytes (r_buf_buffer (arch->buf), r_buf_size (arch->buf));
 }
 
 static RBinInfo* info(RBinFile* arch) {

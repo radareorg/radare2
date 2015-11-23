@@ -1,4 +1,4 @@
-OBJ_PSXEXE=bin_psxexe.o ../format/psxexe/psxexe.o
+OBJ_PSXEXE=bin_psxexe.o
 
 STATIC_OBJ+=${OBJ_PSXEXE}
 TARGET_PSXEXE=bin_psxexe.${EXT_SO}
