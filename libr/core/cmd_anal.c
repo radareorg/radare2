@@ -1359,11 +1359,9 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 			entry = (RBinAddr *) r_list_pop (entries);
 			info = r_bin_get_info (core->bin);
 			addr = info->has_va? entry->vaddr : entry->paddr;
-			//eprintf ("PC=entry0\n");
 			r_list_push (entries, entry);
 		} else {
 			addr = core->offset;
-			//eprintf ("PC=OFF\n");
 		}
 		r_reg_setv (core->anal->reg, name, addr);
 		// set memory read only
@@ -1408,7 +1406,7 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		r_anal_esil_stack_free (esil);
 	}
 
-	ut64 follow = r_config_get_i (core->config, "dbg.follow");
+	st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
 	if (follow>0) {
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		if ((pc<core->offset) || (pc > (core->offset+follow)))

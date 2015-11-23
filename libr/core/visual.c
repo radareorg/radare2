@@ -1654,14 +1654,8 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	if (color) r_cons_strcat (Color_RESET);
 }
 
-static void r_core_visual_refresh (RCore *core) {
-	int w, h;
-	const char *vi, *vcmd;
-	if (!core) return;
-	w = r_cons_get_size (&h);
-	r_print_set_cursor (core->print, curset, ocursor, cursor);
-	core->cons->blankline = true;
-
+static int r_core_visual_responsive (RCore *core) {
+	int h, w = r_cons_get_size (&h);
 	if (r_config_get_i (core->config, "scr.responsive")) {
 		if (w<110) {
 			r_config_set_i (core->config, "asm.cmtright", 0);
@@ -1692,22 +1686,29 @@ static void r_core_visual_refresh (RCore *core) {
 			r_config_set_i (core->config, "asm.bytes", 1);
 		}
 	}
+	return w;
+}
+
+static void r_core_visual_refresh (RCore *core) {
+	int w;
+	const char *vi, *vcmd;
+	if (!core) return;
+	r_print_set_cursor (core->print, curset, ocursor, cursor);
+	core->cons->blankline = true;
+
+	w = r_core_visual_responsive (core);
 	if (r_config_get_i (core->config, "dbg.slow")) {
 		printfmt[2] = debugfmt_extra;
 	} else {
 		printfmt[2] = debugfmt_default;
 	}
 
-	/* hack to blank last line. move prompt here? */
-	//r_cons_fill_line ();
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
-		r_cons_flush ();
 	} else {
 		r_cons_clear ();
-		r_cons_flush ();
 	}
-
+	r_cons_flush ();
 	r_cons_print_clear ();
 
 	vi = r_config_get (core->config, "cmd.cprompt");
