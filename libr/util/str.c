@@ -1008,7 +1008,7 @@ R_API int r_str_ansi_len(const char *str) {
 				for (++i; str[i]&&str[i]!='J'&& str[i]!='m'&&str[i]!='H';i++);
 			}
 		} else {
-		len++;
+			len++;
 #if 0
 			int olen = strlen (str);
 			int ulen = r_str_len_utf8 (str);
@@ -1017,7 +1017,7 @@ R_API int r_str_ansi_len(const char *str) {
 			} else len++;
 			//sub -= (r_str_len_utf8char (str+i, 4))-2;
 #endif
-		}//len++;
+		}
 		i++;
 	}
 	return len-sub;

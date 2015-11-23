@@ -56,10 +56,10 @@ R_API void r_anal_hint_set_fail(RAnal *a, ut64 addr, ut64 ptr) {
 }
 
 R_API void r_anal_hint_set_immbase (RAnal *a, ut64 addr, int base) {
-	if (base == 16 || base == 0) {
-		unsetHint (a, "immbase:", addr);
-	} else {
+	if (base) {
 		setHint (a, "immbase:", addr, NULL, (ut64)base);
+	} else {
+		unsetHint (a, "immbase:", addr);
 	}
 }
 
