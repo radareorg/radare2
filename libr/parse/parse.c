@@ -96,20 +96,38 @@ static bool isvalidflag(RFlagItem *flag) {
 }
 
 static char *findNextNumber(char *op) {
+	bool ansi_found = false;
 	char *p = op;
 	if (p && *p) {
+		const char *o = NULL;
 		while (*p) {
 			if (*p == 0x1b) {
 				p++;
+				if (!*p) break;
 				if (*p == '[') {
-					for (; *p && *p != 'J' && *p!='m' && *p != 'H'; p++);
+					p++;
+					if (p[0] && p[1] == ';') {
+						// "\x1b[%d;2;%d;%d;%dm", fgbg, r, g, b
+						// "\x1b[%d;5;%dm", fgbg, rgb (r, g, b)
+						for (; p[0] && p[1] && p[0] != 0x1b && p[1] != '\\'; p++);
+						if (p[1] == '\\') p++;
+					} else {
+						// "\x1b[%dm", 30 + k
+						for (; *p && *p != 'J' && *p != 'm' && *p != 'H'; p++);
+						if (*p) p++;
+					}
+					ansi_found = true;
 				}
+				o = p - 1;
 			} else {
-				const char *pp = p - 1;
-				bool is_space = (p != op && (*pp == ' ' || *pp == ',' || *pp == '['));
+				bool is_space = ansi_found;
+				ansi_found = false;
+				if (!is_space) {
+					is_space = (p != op && (*o == ' ' || *o == ',' || *o == '['));
+				}
 				if (is_space && *p >= '0' && *p <= '9')
 					return p;
-				p++;
+				o = p++;
 			}
 		}
 	}
