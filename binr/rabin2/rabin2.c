@@ -719,15 +719,20 @@ int main(int argc, char **argv) {
 	}
 	r_config_set_i (core.config, "bin.rawstr", rawstr);
 
+	if (!file) {
+		eprintf ("Missing file.\n");
+		return 1;
+	}
+
 	if (file && *file && action & ACTION_DLOPEN) {
 		void *addr = r_lib_dl_open (file);
 		if (addr) {
 			eprintf ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(size_t)(addr));
 			r_lib_dl_close (addr);
-		} else {
-			eprintf ("Cannot open the '%s' library\n", file);
+			return 0;
 		}
-		return 0;
+		eprintf ("Cannot open the '%s' library\n", file);
+		return 1;
 	}
 
 	if (file && *file) {

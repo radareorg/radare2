@@ -107,7 +107,7 @@ R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, i
 static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int mode) {
 	RIOPlugin *plugin;
 	RIODesc *desc = NULL;
-	char *uri = strdup (_uri);
+	char *uri = strdup (_uri? _uri: "");
 	char *redir = NULL;
 	for (;;) {
 		plugin = r_io_plugin_resolve (io, uri, 0);
