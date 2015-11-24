@@ -695,6 +695,17 @@ R_API void r_anal_fcn_fit_overlaps (RAnal *anal, RAnalFunction *fcn) {
 	}
 }
 
+void r_anal_trim_jmprefs(RAnalFunction *fcn) {
+	RAnalRef *ref;
+	RListIter *iter;
+	r_list_foreach (fcn->refs, iter, ref) {
+		if (ref->type == R_ANAL_REF_TYPE_CODE &&
+				ref->addr >= fcn->addr && (ref->addr - fcn->addr) < fcn->size) {
+			r_list_delete(fcn->refs, iter);
+		}
+	}
+}
+
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	fcn->size = 0;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
@@ -704,7 +715,9 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		int result = anal->cur->fcn (anal, fcn, addr, buf, len, reftype);
 		if (anal->cur->custom_fn_anal) return result;
 	}
-	return fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
+	int ret = fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
+	r_anal_trim_jmprefs(fcn);
+	return ret;
 }
 
 // TODO: need to implement r_anal_fcn_remove(RAnal *anal, RAnalFunction *fcn);
