@@ -167,9 +167,9 @@ static task_t task_for_pid_workaround(int Pid) {
 
 bool xnu_step(RDebug *dbg) {
 	int ret = false;
-	task_t task;
 #if __arm__ || __arm64__ || __aarch64__
 	// op-not-permitted ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0); //SIGINT
+	task_t task;
 	ios_hwstep_enable (dbg, true);
 	task = pid_to_task (dbg->pid);
 	if (task<1) {
@@ -205,7 +205,11 @@ bool xnu_step(RDebug *dbg) {
 }
 
 int xnu_attach(RDebug *dbg, int pid) {
+
+//this should be necessary
 #if XNU_USE_PTRACE
+	//XXX it seems that PT_ATTACH will be deprecated
+	//but using PT_ATTACHEXC throw errors
 	if (pid != dbg->pid && ptrace (PT_ATTACH, pid, 0, 0) == -1) {
 		perror ("ptrace (PT_ATTACH)");
 		return -1;

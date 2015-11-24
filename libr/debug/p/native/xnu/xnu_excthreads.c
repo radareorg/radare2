@@ -18,22 +18,21 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 	unsigned int state_count = R_REG_STATE_SZ;
   	kern_return_t kr;
 	ret = xnu_thread_get_gpr (dbg, th);
-	if (ret == R_FALSE) {
+	if (!ret) {
 		eprintf ("error to get gpr registers in trace bit intel\n");
 		return false;
 	}
-	state = (R_REG_T)th->gpr;
-	if (th->flavor == x86_THREAD_STATE32) {
+	state = (R_REG_T *)&th->gpr;
+	if (state->tsh.flavor == x86_THREAD_STATE32) {
 		state->uts.ts32.__eflags = (state->uts.ts32.__eflags & \
 					~0x100UL) | (enable ? 0x100UL : 0);
-	} else if (th->flavor == x86_THREAD_STATE64) {
+	} else if (state->tsh.flavor == x86_THREAD_STATE64) {
 		state->uts.ts64.__rflags = (state->uts.ts64.__rflags & \
 					~0x100UL) | (enable ? 0x100UL : 0);
 	} else {
 		eprintf ("Invalid bit size\n");
 		return false;
 	}
-	memcpy (th->state, state->uts, th->count);
 	if (!xnu_thread_set_gpr (dbg, th)) {
 		eprintf ("error xnu_thread_set_gpr in modify_trace_bit intel\n");
 		return false;
@@ -42,7 +41,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 }
 
 #elif __POWERPC__ //ppc processor
-
+//XXX poor support at this stage i don't care so much. Once intel and arm done it could be done
 //TODO add better support for ppc
 static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 	R_REG_T state;

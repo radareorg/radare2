@@ -64,6 +64,22 @@ return strdup (
 "drx	dr1	.64	8	0\n"
 "drx	dr2	.64	16	0\n"
 "drx	dr3	.64	24	0\n"
-"drx	dr6	.64	32	0\n"
-"drx	dr7	.64	40	0\n"
+"drx 	dr4	.64	32	0\n"
+"drx	dr5 	.64	40	0\n"
+"drx	dr6	.64	48	0\n"
+"drx	dr7	.64	56	0\n"
 );
+
+
+/*_STRUCT_X86_DEBUG_STATE64
+{
+	__uint64_t	dr0;
+	__uint64_t	dr1;
+	__uint64_t	dr2;
+	__uint64_t	dr3;
+	__uint64_t	dr4;
+	__uint64_t	dr5;
+	__uint64_t	dr6;
+	__uint64_t	dr7;
+};
+*/
