@@ -547,11 +547,15 @@ SETL/SETNGE
 				}
 				break;
 			case X86_OP_REG:
+				{
+				char *dst = getarg (&gop, 0, 0, NULL);
 				op->dst = r_anal_value_new ();
-				op->dst->reg = r_reg_get (a->reg, getarg (&gop, 0, 0, NULL), R_REG_TYPE_GPR);
+				op->dst->reg = r_reg_get (a->reg, dst, R_REG_TYPE_GPR);
 				op->src[0] = r_anal_value_new ();
 				if (INSOP(1).type == X86_OP_MEM) {
 					op->src[0]->delta = INSOP(1).mem.disp;
+				}
+				free (dst);
 				}
 			default:
 				if (a->decode) {
@@ -1021,8 +1025,13 @@ SETL/SETNGE
 				}
 				break;
 			case X86_OP_REG:
+				{
+				char *src = getarg (&gop, 0, 0, NULL);
 				op->src[0] = r_anal_value_new ();
-				op->src[0]->reg = r_reg_get (a->reg, getarg (&gop, 0, 0, NULL), R_REG_TYPE_GPR);
+				op->src[0]->reg = r_reg_get (a->reg, src, R_REG_TYPE_GPR);
+				free (src);
+				//XXX fallthrough
+				}
 			case X86_OP_FP:
 			default: // other?
 				op->type = R_ANAL_OP_TYPE_UJMP;
