@@ -1261,6 +1261,13 @@ static int cb_anal_jmpabove(void *user, void *data) {
 	return true;
 }
 
+static int cb_anal_followdatarefs(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.followdatarefs = node->i_value;
+	return true;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -1306,6 +1313,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.jmpref", "true", &cb_anal_jmpref, "Create references for unconditional jumps");
 
 	SETCB("anal.jmpabove", "true", &cb_anal_jmpabove, "Jump above function pointer");
+	SETCB("anal.followdatarefs", "true", &cb_anal_followdatarefs, "Follow data references for code coverage");
 
 	SETPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETCB("esil.debug", "false", &cb_esildebug, "Show ESIL debug info");
