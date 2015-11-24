@@ -197,6 +197,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	if (th != INVALID_HANDLE_VALUE) CloseHandle (th);
 
 	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
+	io->winbase = de.u.CreateProcessInfo.lpBaseOfImage;
         return pid;
 
 err_fork:

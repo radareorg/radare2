@@ -73,7 +73,22 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	RDebugMap *map;
 	if (!r || !r->io || !r->io->desc)
 		return 0LL;
+#if __WINDOWS__
+	typedef struct {
+		int pid;
+		int tid;
+		PROCESS_INFORMATION pi;
+	} RIOW32Dbg;
+	RIODesc *d = r->io->desc;
+	if (!strcmp ("w32dbg", d->plugin->name)) {
+		RIOW32Dbg *g = d->data;
+		r->io->desc->fd = g->pid;
+		//r_debug_attach (r->dbg,g->pid);  // no es necesario ya se hacen unos cuantos attach antes y despues ....
+	}
+	return r->io->winbase;
+#else
 	r_debug_attach (r->dbg, r->io->desc->fd);
+#endif
 	r_debug_map_sync (r->dbg);
 	abspath = r_file_abspath (file);
 	if (!abspath) abspath = strdup (file);

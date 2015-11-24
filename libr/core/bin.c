@@ -1403,7 +1403,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	RListIter *iter;
 	int i = 0;
 	int fd = -1;
-
 	sections = r_bin_get_sections (r->bin);
 
 	if (IS_MODE_JSON (mode)) r_cons_printf ("[");

@@ -305,10 +305,16 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 	if (!desc) return false;
 	if (cf && desc) {
 		int newpid = desc->fd;
+#if __WINDOWS__
+		r_debug_select (r->dbg, r->dbg->pid, r->dbg->tid);
+#else
 		r_debug_select (r->dbg, newpid, newpid);
+#endif
 	}
 #if !__linux__
+#if !__WINDOWS__
 	baseaddr = get_base_from_maps (r, filenameuri);
+#endif
 	if (baseaddr != UT64_MAX) {
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 	}

@@ -515,8 +515,13 @@ static int cb_cfgdebug(void *user, void *data) {
 		if (!strcmp (dbgbackend, "bf"))
 			r_config_set (core->config, "asm.arch", "bf");
 		if (core->file) {
+#if __WINDOWS__
+			r_debug_select (core->dbg, core->dbg->pid,
+					core->dbg->tid);
+#else
 			r_debug_select (core->dbg, core->file->desc->fd,
 					core->file->desc->fd);
+#endif
 		}
 	} else {
 		if (core->dbg) r_debug_use (core->dbg, NULL);
