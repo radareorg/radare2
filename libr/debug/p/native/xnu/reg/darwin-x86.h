@@ -46,6 +46,8 @@ return strdup (
 "drx	dr1	.32	4	0\n"
 "drx	dr2	.32	8	0\n"
 "drx	dr3	.32	12	0\n"
+"drx 	dr4	.32	16	0\n"
+"drx 	dr5	.32	20	0\n"
 "drx	dr6	.32	24	0\n"
 "drx	dr7	.32	28	0\n"
 "seg	cs	.32	44	0\n"
@@ -54,3 +56,18 @@ return strdup (
 "seg	fs	.32	56	0\n"
 "seg	gs	.32	60	0\n"
 );
+
+/*
+_STRUCT_X86_DEBUG_STATE32
+{
+	unsigned int	__dr0;
+	unsigned int	__dr1;
+	unsigned int	__dr2;
+	unsigned int	__dr3;
+	unsigned int	__dr4;
+	unsigned int	__dr5;
+	unsigned int	__dr6;
+	unsigned int	__dr7;
+};
+#else
+*/

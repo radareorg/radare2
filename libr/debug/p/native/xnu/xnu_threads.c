@@ -12,22 +12,22 @@ static void xnu_thread_free(xnu_thread_t *thread) {
 
 static int xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 	R_DEBUG_REG_T *regs;
-	if (!thread) {
-		thread->count = 0;
-		return false;
-	}
+	kern_return_t rc;
+	if (!dbg || !thread) return false;
 	regs = (R_DEBUG_REG_T*)&thread->drx;
+	if (!regs) return false;
 #if __i386__ || __x86_64__
+	thread->flavor = x86_DEBUG_STATE;
+	thread->count = x86_DEBUG_STATE_COUNT;
 	if (dbg->bits == R_SYS_BITS_64) {
-		thread->flavor = regs->dsh.flavor = x86_DEBUG_STATE64;
-		thread->count = R_DEBUG_STATE_SZ; //R_MIN (thread->count, sizeof(regs->uds.ds64));
+		regs->dsh.flavor = x86_DEBUG_STATE64;
+		regs->dsh.count = x86_DEBUG_STATE64_COUNT;
 	} else {
-		thread->flavor = regs->dsh.flavor = x86_DEBUG_STATE32;
-		thread->count = R_DEBUG_STATE_SZ; //R_MIN (thread->count, sizeof(regs->uds.ds32));
+		regs->dsh.flavor = x86_DEBUG_STATE32;
+		regs->dsh.count = x86_DEBUG_STATE32_COUNT;
 	}
-	memcpy (&regs->uds, thread->state, thread->count);
 #elif __arm || __arm64 || __aarch64
-	/* not supported */
+	//no supported yet but for no so long
 	return false;
 #elif __POWERPC__
 	/* not supported */
@@ -40,8 +40,8 @@ static int xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 	regs->dsh.flavor = 0;
 	thread->count = 0;
 #endif
-	kern_return_t rc = thread_set_state (thread->tid, thread->flavor,
-		(thread_state_t)thread->state, thread->count);
+	rc = thread_set_state (thread->tid, thread->flavor,
+			(thread_state_t)regs, thread->count);
 	if (rc != KERN_SUCCESS) {
 		perror ("thread_set_state");
 		thread->count = false;
@@ -123,26 +123,26 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
+
+//XXX this should work as long as in arm trace bit relies on this
 static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
+	kern_return_t rc;
 	R_DEBUG_REG_T *regs;
-	if (!thread) {
-		thread->count = 0;
-		return false;
-	}
-	thread->state = regs = (R_DEBUG_REG_T*)&thread->drx;
-	thread->state_size = sizeof (thread->drx);
+	if (!dbg || !thread) return false;
+	regs = (R_DEBUG_REG_T*)&thread->drx;
 #if __x86_64__ || __i386__
-	thread->flavor = regs->dsh.flavor = x86_DEBUG_STATE;
-	thread->count = regs->dsh.count = R_DEBUG_STATE_SZ;
+	thread->flavor = x86_DEBUG_STATE;
+	thread->count = x86_DEBUG_STATE_COUNT;
+	thread->state_size = (dbg->bits == R_SYS_BITS_64) ?
+			sizeof (x86_debug_state64_t) :
+			sizeof (x86_debug_state32_t);
 	// XXX thread->state = regs->uds;
 #elif __arm || __arm64 || __aarch64
-	/* not supported yet */
-	thread->flavor = -1;
-	thread->count = 0;
-	return true;
+	//no supported yet but not for so long
+	return false;
 #endif
-	kern_return_t rc = thread_get_state (thread->tid, thread->flavor,
-		thread->state, &thread->count);
+	rc = thread_get_state (thread->tid, thread->flavor,
+			(thread_state_t)regs, &thread->count);
 	if (rc != KERN_SUCCESS) {
 		thread->count = 0;
 		perror ("xnu_thread_get_drx");
