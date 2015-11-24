@@ -455,9 +455,10 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 			n = r_num_math (core->num, t);
 			if (type == 'f') {
 				p = strchr (t, ' ');
-				if (p)
+				if (p) {
 					n = r_print_format (core->print, addr, core->block,
-							core->blocksize, p+1, -1, NULL, NULL);
+							core->blocksize, p+1, 0, NULL, NULL);
+				}
 			}
 			if (type == 's') {
 				/* This is kept for compatibility with old projects.

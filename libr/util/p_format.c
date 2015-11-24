@@ -1094,8 +1094,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	ut8 *buf;
 
 	/* Load format from name into fmt */
-	if (!formatname)
-		return 0;
+	if (!formatname) return 0;
 	fmt = r_strht_get (p->formats, formatname);
 	if (!fmt) fmt = formatname;
 	while (*fmt && iswhitechar (*fmt)) fmt++;
@@ -1104,12 +1103,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 	nexti = nargs = i = j = 0;
 
-	if (len < 1)
-		return 0;
+	if (len < 1) return 0;
 	// len+2 to save space for the null termination in wide strings
-	buf = calloc (1,len+2);
-	if (!buf)
-		return 0;
+	buf = calloc (1,len + 2);
+	if (!buf) return 0;
 	memcpy (buf, b, len);
 	endian = p->big_endian;
 
@@ -1117,8 +1114,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 	/* get times */
 	otimes = times = atoi (arg);
-	if (times > 0)
-		while ((*arg>='0'&&*arg<='9')) arg++;
+	if (times > 0) {
+		while (*arg >= '0' && *arg <= '9') arg++;
+	}
 
 	bracket = strchr (arg,'{');
 	if (bracket) {
