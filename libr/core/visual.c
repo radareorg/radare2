@@ -671,9 +671,10 @@ char *getcommapath(RCore *core) {
 	const char *dir = r_config_get (core->config, "dir.projects");
 	const char *prj = r_config_get (core->config, "file.project");
 	if (dir && *dir && prj && *prj) {
+		const char *abspath = r_file_abspath (dir);
 		/* use prjdir as base directory for comma-ent files */
-		cwd = r_str_newf ("%s"R_SYS_DIR"%s.d",
-			r_file_abspath (dir), prj);
+		cwd = r_str_newf ("%s"R_SYS_DIR"%s.d", abspath, prj);
+		free (abspath);
 	} else {
 		/* use cwd as base directory for comma-ent files */
 		cwd = r_sys_getdir ();

@@ -908,7 +908,7 @@ typedef enum {
 typedef struct r_anal_reil_arg {
 	RAnalReilArgType type; // Type of the argument
 	ut8 size;              // Size of the argument in bytes
-	char name[15];         // Name of the argument
+	char name[32];         // Name of the argument
 } RAnalReilArg;
 
 // Instruction arg1, arg2, arg3

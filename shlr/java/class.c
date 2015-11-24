@@ -537,8 +537,10 @@ R_API char * r_bin_java_unmangle_method (const char *flags, const char *name, co
 	const char *fmt = flags ? "%s %s %s (%s)" : "%s%s %s (%s)";
 	char *str = NULL, *f_val_str = NULL, *r_val_str = NULL, *prototype = NULL, *p_val_str = NULL;
 	ut32 params_idx = 0, params_len = 0, prototype_len = 0;
-	if (!extract_type_value (r_value, &r_val_str))
+	if (!extract_type_value (r_value, &r_val_str)) {
+		r_list_free (the_list);
 		return NULL;
+	}
 	if (!r_val_str) r_val_str = strdup ("UNKNOWN");
 	f_val_str = strdup (flags? flags: "");
 	params_idx = 0;
@@ -986,7 +988,7 @@ R_API int extract_type_value (const char *arg_str, char **output) {
 			break;
 		case '(': len = 1; str = strdup ("("); break;
 		case ')': len = 1; str = strdup (")"); break;
-		default : 
+		default :
 			eprintf ("Invalid char '%c' in '%s'\n", *arg_str, arg_str);
 			return 0;
 		}
@@ -1013,7 +1015,10 @@ R_API RList * r_bin_java_extract_type_values(const char *arg_str) {
 	while (str_cur_pos && *str_cur_pos) {
 		// handle the end of an object
 		len = extract_type_value (str_cur_pos, &str);
-		if (len<1) return NULL;
+		if (len < 1) {
+			r_list_free (list_args);
+			return NULL;
+		}
 		str_cur_pos += len;
 		r_list_append (list_args, str);
 		str = NULL;
@@ -1505,6 +1510,8 @@ R_API RBinJavaCPTypeObj* r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 	tag = buf[offset];
 	if (tag > R_BIN_JAVA_CP_METAS_SZ) {
 		eprintf ("Invalid tag '%d' at offset 0x%08"PFMT64x"\n", tag, (ut64)offset);
+		return NULL;
+#if 0
 		java_obj = r_bin_java_unknown_cp_new (bin, &tag, 1);
 		if (java_obj != NULL && java_obj->metas != NULL) {
 			java_obj->file_offset = offset;
@@ -1512,6 +1519,7 @@ R_API RBinJavaCPTypeObj* r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 		}
 		return NULL; // early error to avoid future overflows
 		//return java_obj;
+#endif
 	}
 	java_constant_info = &R_BIN_JAVA_CP_METAS[tag];
 	if (java_constant_info->tag == 0 || java_constant_info->tag == 2) {
@@ -2696,7 +2704,10 @@ R_API RList* r_bin_java_get_classes(RBinJavaObj *bin) {
 	ut32 idx = 0;
 	RBinClass *k;
 	k = R_NEW0 (RBinClass);
-	if (!k) return NULL;
+	if (!k) {
+		r_list_free (classes);
+		return NULL;
+	}
 	k->visibility = bin->cf2.access_flags;
 	if (bin->cf2.flags_str) {
 		k->visibility_str = strdup (bin->cf2.flags_str);
@@ -4713,6 +4724,7 @@ R_API int r_bin_java_check_reset_cp_obj(RBinJavaCPTypeObj* cp_obj, ut8 tag) {
 
 R_API ut8 * r_bin_java_cp_get_4bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, const ut64 len) {
 	ut8 *buffer = malloc (5);
+	if (!buffer) return NULL;
 	ut32 val = 0;
 	if (!buffer || len < 4) {
 		if (out_sz) *out_sz = 0;
@@ -8282,6 +8294,7 @@ R_API int U(r_bin_java_utf8_cp_set)(RBinJavaObj *bin, ut16 idx, const ut8* buffe
 }
 
 R_API ut8 * r_bin_java_cp_get_bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, const ut64 len) {
+	if (!out_sz) return NULL;
 	if (out_sz) *out_sz = 0;
 	switch (tag) {
 	case R_BIN_JAVA_CP_INTEGER:
@@ -8490,8 +8503,8 @@ R_API void U(copy_type_info_to_stack_frame_list_up_to_idx)(RList *type_list, RLi
 
 R_API ut8 * r_bin_java_cp_get_idx_bytes(RBinJavaObj *bin, ut16 idx, ut32 *out_sz) {
 	RBinJavaCPTypeObj* cp_obj = r_bin_java_get_item_from_bin_cp_list (bin, idx);
+	if (!cp_obj || !out_sz) return NULL;
 	if (out_sz) *out_sz = 0;
-	if (!cp_obj) return NULL;
 	switch (cp_obj->tag) {
 	case R_BIN_JAVA_CP_INTEGER:
 	case R_BIN_JAVA_CP_FLOAT:

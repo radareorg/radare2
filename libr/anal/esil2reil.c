@@ -90,7 +90,7 @@ RAnalReilArg *reil_pop_arg(RAnalEsil *esil) {
 
 // Get the next available temp register.
 void get_next_temp_reg(RAnalEsil *esil, char *buf) {
-	snprintf (buf, REGBUFSZ, REIL_TEMP_PREFIX"_%02"PFMT64d,
+	snprintf (buf, REGBUFSZ, REIL_TEMP_PREFIX"_%02"PFMT64u,
 		esil->Reil->reilNextTemp);
 	esil->Reil->reilNextTemp++;
 }
@@ -177,7 +177,7 @@ static int reil_eq(RAnalEsil *esil) {
 	char tmp_buf[REGBUFSZ];
 	RAnalReilArgType src_type, dst_type;
 	RAnalReilArg *dst, *src;
-	
+
 	dst = reil_pop_arg (esil);
 	if (!dst) return false;
 	src = reil_pop_arg (esil);
@@ -271,7 +271,7 @@ static int reil_binop(RAnalEsil *esil, RAnalReilOpcode opcode) {
 	char tmp_buf[REGBUFSZ];
 	ut8 dst_size;
 	RAnalReilArg *op2, *op1;
-	
+
 	op2 = reil_pop_arg(esil);
 	if (!op2) return false;
 	op1 = reil_pop_arg(esil);
@@ -400,7 +400,7 @@ static int reil_smaller_equal(RAnalEsil *esil) {
 
 static int reil_larger(RAnalEsil *esil) {
 	RAnalReilArg *op2, *op1;
-	
+
 	op2 = reil_pop_arg(esil);
 	if (!op2) return false;
 	op1 = reil_pop_arg(esil);
@@ -419,7 +419,7 @@ static int reil_larger(RAnalEsil *esil) {
 
 static int reil_larger_equal(RAnalEsil *esil) {
 	RAnalReilArg *op2, *op1;
-	
+
 	op2 = reil_pop_arg(esil);
 	if (!op2) return false;
 	op1 = reil_pop_arg(esil);
@@ -541,7 +541,7 @@ static int reil_not(RAnalEsil *esil) {
 static int reil_if(RAnalEsil *esil) {
 	RAnalReilInst *ins;
 	RAnalReilArg *op2, *op1;
-	
+
 	op2 = reil_pop_arg(esil);
 	if (!op2) return false;
 	op1 = reil_pop_arg(esil);
@@ -623,7 +623,7 @@ static int reil_poken(RAnalEsil *esil, ut8 n) {
 	char tmp_buf[REGBUFSZ];
 	RAnalReilInst *ins;
 	RAnalReilArg *op2, *op1;
-	
+
 	op2 = reil_pop_arg(esil);
 	if (!op2) return false;
 	op1 = reil_pop_arg(esil);
@@ -686,7 +686,7 @@ static int reil_poke8(RAnalEsil *esil) { return reil_poken(esil, 8); }
 static int reil_mem_bineq_n(RAnalEsil *esil, RAnalReilOpcode opcode, ut8 size) {
 	int ret = 1;
 	RAnalReilArg *op2, *op1;
-	
+
 	op2 = reil_pop_arg(esil);
 	if (!op2) return false;
 	op1 = reil_pop_arg(esil);
