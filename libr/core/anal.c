@@ -209,12 +209,10 @@ static int cmpaddr (const void *_a, const void *_b) {
 	return (a->addr > b->addr);
 }
 
-#if 0
 static int iscodesection(RCore *core, ut64 addr) {
 	RIOSection *s = r_io_section_vget (core->io, addr);
 	return (s && s->rwx & R_IO_EXEC)? 1: 0;
 }
-#endif
 
 static ut64 *next_append (ut64 *next, int *nexti, ut64 v) {
 	next = realloc (next, sizeof (ut64) * (1 + *nexti));
@@ -379,7 +377,9 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				if (ref->addr != UT64_MAX) {
 					switch (ref->type) {
 					case 'd':
-						// XXX UNUSED iscodesection (core, ref->at);
+						if (iscodesection (core, ref->addr) && core->anal->opt.followdatarefs) {
+							r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth-1);
+						}
 						break;
 					case R_ANAL_REF_TYPE_CODE:
 					case R_ANAL_REF_TYPE_CALL:
