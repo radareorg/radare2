@@ -490,7 +490,10 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
-			if (r_anal_noreturn_at (anal, op.jump)) {
+			if (anal->opt.jmpref)
+				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
+			if (r_anal_noreturn_at (anal, op.jump) ||
+					(op.jump < fcn->addr && !anal->opt.jmpabove)) {
 				FITFCNSZ ();
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
@@ -504,8 +507,6 @@ repeat:
 				return R_ANAL_RET_END;
 			}
 			if (anal->opt.bbsplit) {
-				if (anal->opt.jmpref)
-					(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 				if (!overlapped) {
 					bb->jump = op.jump;
 					bb->fail = UT64_MAX;
@@ -513,8 +514,6 @@ repeat:
 				recurseAt (op.jump);
 				gotoBeachRet ();
 			} else {
-				if (anal->opt.jmpref)
-					(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 				if (continue_after_jump) {
 					recurseAt (op.jump);
 					recurseAt (op.fail);

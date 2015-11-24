@@ -568,6 +568,7 @@ typedef struct r_anal_callbacks_t {
 typedef struct r_anal_options_t {
 	int cjmpref;
 	int jmpref;
+	int jmpabove;
 	int afterjmp; // continue analysis after jmp eax or forward jmp // option
 	int recont; // continue on recurse analysis mode
 	int eobjmp; // option
