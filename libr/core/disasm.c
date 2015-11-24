@@ -2065,7 +2065,7 @@ static void handle_print_esil_anal_fini(RCore *core, RDisasmState *ds) {
 static void handle_print_bbline(RCore *core, RDisasmState *ds) {
 	if (ds->show_bbline) {
 		bool has_line = false;
-		if (strchr (ds->line, '>')) {
+		if (ds->line && strchr (ds->line, '>')) {
 			has_line = true;
 		} else {
 			switch (ds->analop.type) {
@@ -2082,12 +2082,14 @@ static void handle_print_bbline(RCore *core, RDisasmState *ds) {
 
 			ds->at += ds->analop.size;
 			handle_update_ref_lines (core, ds);
-			r_str_replace_char (ds->line, '>', ' ');
-			r_str_replace_char (ds->line, '<', ' ');
-			r_str_replace_char (ds->line, '-', ' ');
-			r_str_replace_char (ds->line, '=', ' ');
-			r_str_replace_char (ds->line, '.', ' ');
-			r_str_replace_char (ds->line, '`', '|');
+			if (ds->line) {
+				r_str_replace_char (ds->line, '>', ' ');
+				r_str_replace_char (ds->line, '<', ' ');
+				r_str_replace_char (ds->line, '-', ' ');
+				r_str_replace_char (ds->line, '=', ' ');
+				r_str_replace_char (ds->line, '.', ' ');
+				r_str_replace_char (ds->line, '`', '|');
+			}
 			handle_print_lines_left (core, ds);
 
 			r_cons_printf("|\n");
