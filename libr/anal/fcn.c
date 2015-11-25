@@ -3,7 +3,6 @@
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_list.h>
-#include <r_bin.h>
 
 // XXX must be configurable by the user
 #define FCN_DEPTH 512
@@ -234,8 +233,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	free (bbuf); \
 }
 
-static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr) {
-	int ret;
+static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr, int ret0) {
+	int ret = ret0;
 	ut8 *jmptbl = malloc(MAX_JMPTBL_SIZE);
 	ut64 offs, sz = anal->bits >> 3;
 	anal->iob.read_at (anal->iob.io, ptr, jmptbl, MAX_JMPTBL_SIZE);
@@ -646,13 +645,13 @@ repeat:
 			// switch statement
 			if (anal->opt.jmptbl) {
 				if (op.ptr != UT64_MAX) {	// direct jump
-					ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, op.ptr);
+					ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, op.ptr, ret);
 
 				} else {	// indirect jump: table pointer is unknown
 					if (op.src[0]->reg) {
 						ut64 ptr = search_reg_val(anal, buf, idx, addr, op.src[0]->reg->name);
 						if (ptr && ptr != UT64_MAX)
-							ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, ptr);
+							ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, ptr, ret);
 					}
 				}
 			}
