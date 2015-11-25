@@ -570,6 +570,7 @@ typedef struct r_anal_options_t {
 	int jmpref;
 	int jmpabove;
 	int followdatarefs;
+	int searchstringrefs;
 	int afterjmp; // continue analysis after jmp eax or forward jmp // option
 	int recont; // continue on recurse analysis mode
 	int eobjmp; // option
