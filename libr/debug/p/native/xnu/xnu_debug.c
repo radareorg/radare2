@@ -205,12 +205,11 @@ bool xnu_step(RDebug *dbg) {
 }
 
 int xnu_attach(RDebug *dbg, int pid) {
-
 //this should be necessary
 #if XNU_USE_PTRACE
 	//XXX it seems that PT_ATTACH will be deprecated
 	//but using PT_ATTACHEXC throw errors
-	if (pid != dbg->pid && ptrace (PT_ATTACH, pid, 0, 0) == -1) {
+	if (ptrace (PT_ATTACH, pid, 0, 0) == -1) {
 		perror ("ptrace (PT_ATTACH)");
 		return -1;
 	}

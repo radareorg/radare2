@@ -13,7 +13,7 @@ static void xnu_thread_free(xnu_thread_t *thread) {
 static int xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 	R_DEBUG_REG_T *regs;
 	kern_return_t rc;
-	if (!dbg || !thread) return false;
+	if (!dbg || !thread) return false;
 	regs = (R_DEBUG_REG_T*)&thread->drx;
 	if (!regs) return false;
 #if __i386__ || __x86_64__
@@ -128,7 +128,7 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
 	kern_return_t rc;
 	R_DEBUG_REG_T *regs;
-	if (!dbg || !thread) return false;
+	if (!dbg || !thread) return false;
 	regs = (R_DEBUG_REG_T*)&thread->drx;
 #if __x86_64__ || __i386__
 	thread->flavor = x86_DEBUG_STATE;

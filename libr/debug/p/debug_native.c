@@ -131,8 +131,10 @@ static int r_debug_native_step (RDebug *dbg) {
 
 // return thread id
 static int r_debug_native_attach (RDebug *dbg, int pid) {
+#if 0
 	if (!dbg || pid == dbg->pid)
 		return dbg->tid;
+#endif
 #if __linux__
 	return linux_attach (dbg, pid);
 #elif __WINDOWS__ && !__CYGWIN__
