@@ -1433,7 +1433,7 @@ free (rf);
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_color); // XXX detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, false);
 		break;
-	case '=': // 'dr='
+	case '=': // "dr="
 		{
 		int pcbits = 0;
 		{
@@ -1446,14 +1446,14 @@ free (rf);
 		}
 		if (r_config_get_i (core->config, "cfg.debug")) {
 			if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
-				if (pcbits)
+				if (pcbits && pcbits != bits)
 					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // XXX detect which one is current usage
 			} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		} else {
 			RReg *orig = core->dbg->reg;
 			core->dbg->reg = core->anal->reg;
-			if (pcbits)
+			if (pcbits && pcbits != bits)
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // XXX detect which one is current usage
 			core->dbg->reg = orig;

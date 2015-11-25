@@ -113,9 +113,11 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 }
 
 /* Entry mask handling.  */
+#if 0
 static unsigned int  entry_addr_occupied_slots = 0;
 static unsigned int  entry_addr_total_slots = 0;
 static bfd_vma *     entry_addr = NULL;
+#endif
 
 /* Parse the VAX specific disassembler options.  These contain function
    entry addresses, which can be useful to disassemble ROM images, since
@@ -290,7 +292,7 @@ print_insn_arg (const char *d,
 int
 print_insn_vax (bfd_vma memaddr, disassemble_info *info)
 {
-  static bfd_boolean parsed_disassembler_options = FALSE;
+  //static bfd_boolean parsed_disassembler_options = FALSE;
   const struct vot *votp;
   const char *argp;
   unsigned char *arg;
