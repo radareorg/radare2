@@ -30,7 +30,6 @@ R_API ut8* r_reg_get_bytes(RReg *reg, int type, int *size) {
 		if (size) *size = sz;
 		return buf;
 	}
-
 	if (type < 0 || type > (R_REG_TYPE_LAST-1))
 		return NULL;
 	sz = reg->regset[type].arena->size;
@@ -44,16 +43,16 @@ R_API ut8* r_reg_get_bytes(RReg *reg, int type, int *size) {
 }
 
 /* reduce number of return statements */
-R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len) {
-	int i, ret = R_FALSE;
+R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len) {
+	int i, ret = false;
 	struct r_reg_set_t *regset;
 	RRegArena *arena;
 	int off = 0;
 	if (len<0 || !buf)
-		return R_FALSE;
+		return false;
 
 	if (type == -1) {
-		ret = R_TRUE;
+		ret = true;
 		/* deserialize ALL register types in a single buffer */
 		for (i=0; i<R_REG_TYPE_LAST; i++) {
 			if (reg->regset[i].arena) {
@@ -72,7 +71,7 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len) {
 				R_MIN (len-off, arena->size));
 			off += arena->size;
 			if (off>len) {
-				ret = R_FALSE;
+				ret = false;
 				break;
 			}
 		}
@@ -85,7 +84,7 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len) {
 				arena->bytes = malloc (len);
 				if (!arena->bytes) {
 					arena->size = 0;
-					return R_FALSE;
+					return false;
 				}
 				arena->size = len;
 			}
@@ -96,7 +95,7 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len) {
 					arena->bytes = buf;
 				} else {
 					eprintf ("Error resizing arena to %d\n", len);
-					return R_FALSE;
+					return false;
 				}
 			}
 			if (arena->bytes) {
@@ -104,8 +103,8 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len) {
 				//len = R_MIN (len, arena->size);
 				memset (arena->bytes, 0, arena->size);
 				memcpy (arena->bytes, buf, len);
-				ret = R_TRUE;
-			} else ret = R_FALSE;
+				ret = true;
+			} else ret = false;
 		}
 	}
 	return ret;
@@ -191,6 +190,7 @@ R_API void r_reg_arena_swap(RReg *reg, int copy) {
 			void *tmp = ia->data;
 			ia->data = ib->data;
 			ib->data = tmp;
+			reg->regset[i].arena = ia->data;
 		} else {
 			//eprintf ("Cannot pop more\n");
 			break;
@@ -203,8 +203,8 @@ R_API void r_reg_arena_swap(RReg *reg, int copy) {
 }
 
 R_API int r_reg_arena_set(RReg *reg, int n, int copy) {
-// XXX this api should be deprecated
-return false;
+	// XXX this api should be deprecated
+	return false;
 #if 0
 	int i;
 // XXX this shuoldnt be used at all
@@ -238,19 +238,15 @@ return false;
 }
 
 R_API void r_reg_arena_pop(RReg *reg) {
+	RRegArena *a;
 	int i;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
-		if (r_list_length (reg->regset[i].pool) > 1) {
-			RRegArena *a = r_list_pop (reg->regset[i].pool);
-			a = reg->regset[i].pool->tail->data;
-			if (a) {
-				reg->regset[i].arena = a;
-				//if (!i) { r_print_hexdump (NULL, 0, a->bytes, a->size, 16, 16); }
-			}
-		} else {
-			eprintf ("Cannot pop more\n");
-			break;
-		}
+		if (r_list_length (reg->regset[i].pool) < 2)
+			continue;
+		a = r_list_pop (reg->regset[i].pool);
+		r_reg_arena_free (a);
+		a = reg->regset[i].pool->tail->data;
+		if (a) reg->regset[i].arena = a;
 	}
 }
 

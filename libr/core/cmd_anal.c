@@ -1124,6 +1124,17 @@ static void ar_show_help(RCore *core) {
 	r_core_cmd_help (core, help_message);
 }
 
+static void cmd_ara_help(RCore *core) {
+	const char* help_msg[] = {
+		"Usage:", "ara[+-s]", "Register Arena Push/Pop/Swap",
+		"ara", "", "show all register arenas allocated",
+		"ara", "+", "push a new register arena for each type",
+		"ara", "-", "pop last register arena",
+		"aras", "", "swap last two register arenas",
+		NULL };
+	r_core_cmd_help (core, help_msg);
+}
+
 // XXX dup from drp :OOO
 void cmd_anal_reg(RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;
@@ -1158,6 +1169,12 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case 'a': // "ara"
 		switch (str[1]) {
+		case '?':
+			cmd_ara_help (core);
+			break;
+		case 's':
+			r_reg_arena_swap (core->anal->reg, false);
+			break;
 		case '+':
 			r_reg_arena_push (core->anal->reg);
 			break;

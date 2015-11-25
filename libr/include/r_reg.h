@@ -170,7 +170,7 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits);
 
 /* byte arena */
 R_API ut8* r_reg_get_bytes(RReg *reg, int type, int *size);
-R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len);
+R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len);
 R_API RRegArena *r_reg_arena_new (int size);
 R_API void r_reg_arena_free(RRegArena* ra);
 R_API int r_reg_fit_arena(RReg *reg);

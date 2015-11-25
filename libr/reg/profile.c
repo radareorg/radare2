@@ -87,6 +87,8 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str))
 		return true;
 
+	// we should reset all the arenas before setting the new reg profile
+	r_reg_arena_pop (reg);
 	// Purge the old registers
 	r_reg_free_internal (reg);
 
@@ -157,6 +159,10 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 		reg->size += 8 - (reg->size&7);
 	reg->size >>= 3; // bits to bytes (divide by 8)
 	r_reg_fit_arena (reg);
+
+	// dup the last arena to allow regdiffing
+	r_reg_arena_push (reg);
+	// reset arenas
 	return true;
 }
 
