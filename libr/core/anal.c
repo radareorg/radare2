@@ -4,6 +4,7 @@
 #include <r_list.h>
 #include <r_flags.h>
 #include <r_core.h>
+#include <r_bin.h>
 
 #include <string.h>
 
@@ -222,6 +223,16 @@ static ut64 *next_append (ut64 *next, int *nexti, ut64 v) {
 	return next;
 }
 
+static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
+	RListIter *iter;
+	RAnalRef *ref;
+	r_list_foreach (fcn->refs, iter, ref) {
+		if (ref->type == R_ANAL_REF_TYPE_DATA &&
+				r_bin_is_string(core->bin, ref->addr))
+			ref->type = R_ANAL_REF_TYPE_STRING;
+	}
+}
+
 static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	int has_next = r_config_get_i (core->config, "anal.hasnext");
 	RAnalFunction *fcn;
@@ -272,6 +283,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		if (r_cons_singleton ()->breaked)
 			break;
 		fcnlen = r_anal_fcn (core->anal, fcn, at+delta, buf, buflen, reftype);
+		if (core->anal->opt.searchstringrefs) r_anal_set_stringrefs(core, fcn);
 		if (fcnlen<0) {
 			switch (fcnlen) {
 			case R_ANAL_RET_ERROR:

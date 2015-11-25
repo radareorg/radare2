@@ -3,7 +3,7 @@
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_list.h>
-
+#include <r_bin.h>
 
 // XXX must be configurable by the user
 #define FCN_DEPTH 512
@@ -444,7 +444,7 @@ repeat:
 
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX && op.type > R_ANAL_OP_TYPE_NOP) {
 			// swapped parameters wtf
-			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, 'd');
+			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
 		}
 
 		switch (op.type) {
