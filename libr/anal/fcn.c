@@ -441,7 +441,7 @@ repeat:
 			break;
 		}
 
-		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX && op.type > R_ANAL_OP_TYPE_NOP) {
+		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
 			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
 		}
