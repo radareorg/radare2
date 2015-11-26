@@ -19,6 +19,7 @@ static int mousemode = 0;
 #define MIN_NODE_HEIGTH BORDER_HEIGHT
 #define TITLE_LEN 128
 #define DEFAULT_SPEED 1
+#define PAGEKEY_SPEED 15
 #define SMALLNODE_TEXT_CUR "<@@@@@@>"
 #define SMALLNODE_MIN_WIDTH 8
 #define SMALLNODE_TITLE_LEN 4
@@ -2758,8 +2759,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'J':
 			if (okey == 27 && r_cons_readchar () == 126) {
 				// handle page down key
-				const RGraphNode *gn = find_near_of (g, NULL, false);
-				g->update_seek_on = get_anode (gn);
+				can->sy -= PAGEKEY_SPEED * (invscroll ? -1 : 1);
 			} else {
 				get_anode(g->curnode)->y += movspeed;
 			}
@@ -2767,13 +2767,27 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case 'K':
 			if (okey == 27 && r_cons_readchar () == 126) {
 				// handle page up key
-				const RGraphNode *gn = find_near_of (g, NULL, true);
-				g->update_seek_on = get_anode (gn);
+				can->sy += PAGEKEY_SPEED * (invscroll ? -1 : 1);
 			} else {
 				get_anode(g->curnode)->y -= movspeed;
 			}
 			break;
-		case 'H': get_anode(g->curnode)->x -= movspeed; break;
+		case 'F':
+			if (okey == 27) {
+				// handle end key
+				const RGraphNode *gn = find_near_of (g, NULL, false);
+				g->update_seek_on = get_anode (gn);
+			}
+			break;
+		case 'H':
+			if (okey == 27) {
+				// handle home key
+				const RGraphNode *gn = find_near_of (g, NULL, true);
+				g->update_seek_on = get_anode (gn);
+			} else {
+				get_anode(g->curnode)->x -= movspeed;
+			}
+			break;
 		case 'L': get_anode(g->curnode)->x += movspeed; break;
 		case 'j': can->sy -= movspeed * (invscroll ? -1 : 1); break;
 		case 'k': can->sy += movspeed * (invscroll ? -1 : 1); break;
