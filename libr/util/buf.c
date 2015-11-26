@@ -142,10 +142,7 @@ R_API RBuffer *r_buf_new() {
 }
 
 R_API const ut8 *r_buf_buffer (RBuffer *b) {
-	if (!b) return NULL;
-	if (b->sparse)
-		return NULL;
-	return b->buf;
+	return if (b && !b->sparse)? b->buf: NULL;
 }
 
 R_API ut64 r_buf_size (RBuffer *b) {
@@ -157,9 +154,7 @@ R_API ut64 r_buf_size (RBuffer *b) {
 		}
 		return 0LL;
 	}
-	if (b->empty) return 0;
-	else return b->length;
-	return UT64_MAX;
+	return b->empty? 0: b->length;
 }
 
 // rename to new?

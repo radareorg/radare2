@@ -5,7 +5,6 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-//__attribute__((__aligned__(4)))
 typedef struct __packed art_header_t {
 	ut8 magic[4];
 	ut8 version[4];
@@ -27,9 +26,10 @@ typedef struct {
 	ARTHeader art;
 } ArtObj;
 
-
 static int art_header_load(ARTHeader *art, RBuffer *buf, Sdb *db) {
 	/* TODO: handle read errors here */
+	if (r_buf_size (buf) < sizeof (ARTHeader))
+		return false;
 	(void)r_buf_fread_at (buf, 0, (ut8*)art, "IIiiiiiiiiiii", 1);
 	sdb_set (db, "img.base", sdb_fmt (0, "0x%x", art->image_base), 0);
 	sdb_set (db, "img.size", sdb_fmt (0, "0x%x", art->image_size), 0);
@@ -45,9 +45,6 @@ static int art_header_load(ARTHeader *art, RBuffer *buf, Sdb *db) {
 	return true;
 }
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static Sdb* get_sdb (RBinObject *o) {
 	ArtObj *ao;
 	if (!o) return NULL;
@@ -58,7 +55,9 @@ static Sdb* get_sdb (RBinObject *o) {
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb){
 	ArtObj *ao = R_NEW0 (ArtObj);
+	if (!ao) return NULL;
 	ao->kv = sdb_new0 ();
+	if (!ao->kv) return NULL;
 	art_header_load (&ao->art, arch->buf, ao->kv);
 	sdb_ns_set (sdb, "info", ao->kv);
 	return ao;
@@ -74,7 +73,7 @@ static int destroy(RBinFile *arch) {
 
 static ut64 baddr(RBinFile *arch) {
 	ArtObj *ao = arch->o->bin_obj;
-	return ao?ao->art.image_base:0x00;
+	return ao? ao->art.image_base: 0;
 }
 
 static RList *strings(RBinFile *arch) {
@@ -82,15 +81,16 @@ static RList *strings(RBinFile *arch) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
-	ArtObj *ao = arch->o->bin_obj;
+	ArtObj *ao;
 	RBinInfo *ret;
-	if (!ao) return NULL;
-
+	if (!arch || !arch->o || !arch->o->bin_obj)
+		return NULL;
 	ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
 
 	//art_header_load (&art, arch->buf);
 
+	ao = arch->o->bin_obj;
 	ret->lang = NULL;
 	ret->file = arch->file? strdup (arch->file): NULL;
 	ret->type = strdup ("ART");
@@ -111,14 +111,14 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
+static int check_bytes(const ut8 *buf, ut64 length) {
+	return (buf && length>3 && !strncmp ((const char *)buf, "art\n", 4));
+}
+
 static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
-	return (buf && !strncmp ((const char *)buf, "art\n", R_MIN (4, length)));
 }
 
 static RList* entries(RBinFile *arch) {
