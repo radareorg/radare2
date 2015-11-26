@@ -5,7 +5,7 @@
 static void pair(const char *a, const char *b) {
 	char ws[16];
 	int al = strlen (a);
-	if (!b) return; // b = "";
+	if (!b) return;
 	memset (ws, ' ', sizeof (ws));
 	al = PAIR_WIDTH - al;
 	if (al<0) al = 0;
@@ -13,7 +13,7 @@ static void pair(const char *a, const char *b) {
 	r_cons_printf ("%s%s%s\n", a, ws, b);
 }
 
-static int demangle_internal(RCore *core, const char *lang, const char *s) {
+static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	char *res = NULL;
 	int type = r_bin_demangle_type (lang);
 	switch (type) {
@@ -24,15 +24,14 @@ static int demangle_internal(RCore *core, const char *lang, const char *s) {
 	case R_BIN_NM_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
 	default:
 		r_bin_demangle_list (core->bin);
-		return 1;
+		return true;
 	}
 	if (res) {
-		if (*res)
-			printf ("%s\n", res);
+		if (*res) printf ("%s\n", res);
 		free (res);
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 static int demangle(RCore *core, const char *s) {

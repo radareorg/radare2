@@ -142,7 +142,7 @@ R_API RBuffer *r_buf_new() {
 }
 
 R_API const ut8 *r_buf_buffer (RBuffer *b) {
-	return if (b && !b->sparse)? b->buf: NULL;
+	return (b && !b->sparse)? b->buf: NULL;
 }
 
 R_API ut64 r_buf_size (RBuffer *b) {

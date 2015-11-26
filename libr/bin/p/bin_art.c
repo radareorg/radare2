@@ -13,12 +13,15 @@ typedef struct __packed art_header_t {
 	ut32 bitmap_offset;
 	ut32 bitmap_size;
 	ut32 checksum; /* adler32 */
-	ut32 oat_begin;
+	ut32 oat_file_begin; // oat_file_begin
 	ut32 oat_data_begin;
 	ut32 oat_data_end;
-	ut32 oat_end;
-	ut32 patch_delta;
+	ut32 oat_file_end;
+	/* patch_delta is the amount of the base address the image is relocated */
+	st32 patch_delta;
+	/* image_roots: address of an array of objects needed to initialize */
 	ut32 image_roots;
+	ut32 compile_pic;
 } ARTHeader;
 
 typedef struct {
@@ -30,18 +33,19 @@ static int art_header_load(ARTHeader *art, RBuffer *buf, Sdb *db) {
 	/* TODO: handle read errors here */
 	if (r_buf_size (buf) < sizeof (ARTHeader))
 		return false;
-	(void)r_buf_fread_at (buf, 0, (ut8*)art, "IIiiiiiiiiiii", 1);
+	(void)r_buf_fread_at (buf, 0, (ut8*)art, "IIiiiiiiiiiiii", 1);
 	sdb_set (db, "img.base", sdb_fmt (0, "0x%x", art->image_base), 0);
 	sdb_set (db, "img.size", sdb_fmt (0, "0x%x", art->image_size), 0);
 	sdb_set (db, "art.checksum", sdb_fmt (0, "0x%x", art->checksum), 0);
 	sdb_set (db, "art.version", sdb_fmt (0, "%c%c%c",
 				art->version[0], art->version[1], art->version[2]), 0);
-	sdb_set (db, "oat.begin", sdb_fmt (0, "0x%x", art->oat_begin), 0);
-	sdb_set (db, "oat.end", sdb_fmt (0, "0x%x", art->oat_end), 0);
+	sdb_set (db, "oat.begin", sdb_fmt (0, "0x%x", art->oat_file_begin), 0);
+	sdb_set (db, "oat.end", sdb_fmt (0, "0x%x", art->oat_file_end), 0);
 	sdb_set (db, "oat_data.begin", sdb_fmt (0, "0x%x", art->oat_data_begin), 0);
 	sdb_set (db, "oat_data.end", sdb_fmt (0, "0x%x", art->oat_data_end), 0);
 	sdb_set (db, "patch_delta", sdb_fmt (0, "0x%x", art->patch_delta), 0);
 	sdb_set (db, "image_roots", sdb_fmt (0, "0x%x", art->image_roots), 0);
+	sdb_set (db, "compile_pic", sdb_fmt (0, "0x%x", art->compile_pic), 0);
 	return true;
 }
 
@@ -105,6 +109,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->machine = strdup ("arm");
 	ret->arch = strdup ("arm");
 	ret->has_va = 1;
+	ret->has_pi = ao->art.compile_pic;
 	ret->bits = 16; // 32? 64?
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
@@ -170,8 +175,8 @@ static RList* sections(RBinFile *arch) {
 		return ret;
 	strncpy (ptr->name, "oat", R_BIN_SIZEOF_STRINGS);
 	ptr->paddr = art.bitmap_offset;
-	ptr->vaddr = art.oat_begin;
-	ptr->size = art.oat_end - art.oat_begin;
+	ptr->vaddr = art.oat_file_begin;
+	ptr->size = art.oat_file_end - art.oat_file_begin;
 	ptr->vsize = ptr->size;
 	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
 	r_list_append (ret, ptr);
