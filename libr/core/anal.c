@@ -233,6 +233,17 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 	}
 }
 
+void r_anal_trim_jmprefs(RAnalFunction *fcn) {
+	RAnalRef *ref;
+	RListIter *iter;
+	r_list_foreach (fcn->refs, iter, ref) {
+		if (ref->type == R_ANAL_REF_TYPE_CODE &&
+				ref->addr >= fcn->addr && (ref->addr - fcn->addr) < fcn->size) {
+			r_list_delete(fcn->refs, iter);
+		}
+	}
+}
+
 static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	int has_next = r_config_get_i (core->config, "anal.hasnext");
 	RAnalFunction *fcn;
@@ -320,6 +331,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 							overlapped = fcn1->addr;
 			}
 			if (overlapped != -1) r_anal_fcn_resize (fcn, overlapped - fcn->addr);
+			r_anal_trim_jmprefs(fcn);
 
 			f = r_flag_get_i2 (core->flags, fcn->addr);
 			free (fcn->name);
@@ -389,8 +401,17 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				if (ref->addr != UT64_MAX) {
 					switch (ref->type) {
 					case 'd':
-						if (iscodesection (core, ref->addr) && core->anal->opt.followdatarefs) {
-							r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth-1);
+						if (core->anal->opt.followdatarefs && iscodesection (core, ref->addr)) {
+							RIOSection *sec = r_io_section_vget (core->io, ref->addr);
+							ut8 *buf1 = malloc (100);
+							if (!buf1) {
+								eprintf ("Error: malloc (buf1)\n");
+								goto error;
+							}
+							r_io_read_at (core->io, ref->addr, buf1, 100);
+							if (check_fcn(core->anal, buf1, 100, ref->addr, sec->vaddr, sec->vaddr + sec->vsize))
+								r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth-1);
+							free(buf1);
 						}
 						break;
 					case R_ANAL_REF_TYPE_CODE:

@@ -257,9 +257,10 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 
 static int search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *regsz) {
 	ut64 offs, oplen;
-	RAnalOp op;
+	RAnalOp op = {0};
 	ut64 ret = UT64_MAX;
 	for (offs = 0; offs < len; offs += oplen) {
+		r_anal_op_fini (&op);
 		if ((oplen = r_anal_op (anal, &op, addr + offs, buf + offs, len - offs)) < 1) {
 			break;
 		}
@@ -673,6 +674,54 @@ beach:
 	return ret;
 }
 
+static int check_preludes(ut8 *buf, unsigned bufsz) {
+	if (bufsz < 10) return false;
+	if (!memcmp(buf, (const ut8 *)"\x55\x89\xe5", 3))
+		return true;
+	else if (!memcmp(buf, (const ut8 *)"\x55\x8b\xec", 3))
+		return true;
+	else if (!memcmp(buf, (const ut8 *)"\x8b\xff", 2))
+		return true;
+	else if (!memcmp(buf, (const ut8 *)"\x55\x48\x89\xe5", 4))
+		return true;
+	else if (!memcmp(buf, (const ut8 *)"\x55\x48\x8b\xec", 4))
+		return true;
+	return false;
+}
+
+R_API int check_fcn(RAnal *anal, ut8 *buf, unsigned bufsz, ut64 addr, ut64 low, ut64 high) {
+	RAnalOp op = {0};
+	int i, oplen, opcnt = 0, pushcnt = 0, movcnt = 0;
+	if (check_preludes(buf, bufsz)) return true;
+	for (i = 0; i < bufsz && opcnt < 10; i += oplen, opcnt++) {
+		r_anal_op_fini (&op);
+		if ((oplen = r_anal_op (anal, &op, addr+i, buf+i, bufsz-i)) < 1) {
+			return false;
+		}
+		switch (op.type) {
+		case R_ANAL_OP_TYPE_PUSH:
+		case R_ANAL_OP_TYPE_UPUSH:
+			pushcnt++;
+			break;
+		case R_ANAL_OP_TYPE_MOV:
+		case R_ANAL_OP_TYPE_CMOV:
+			movcnt++;
+			break;
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_CALL:
+			if (op.jump < low || op.jump >= high) return false;
+			break;
+		case R_ANAL_OP_TYPE_UNK:
+			return false;
+		}
+	}
+	if (pushcnt + movcnt > 5)
+		return true;
+	else
+		return false;
+}
+
 static void fcnfit (RAnal *a, RAnalFunction *f) {
 	// find next function
 	RAnalFunction *next = r_anal_fcn_next (a, f->addr);
@@ -695,17 +744,6 @@ R_API void r_anal_fcn_fit_overlaps (RAnal *anal, RAnalFunction *fcn) {
 	}
 }
 
-void r_anal_trim_jmprefs(RAnalFunction *fcn) {
-	RAnalRef *ref;
-	RListIter *iter;
-	r_list_foreach (fcn->refs, iter, ref) {
-		if (ref->type == R_ANAL_REF_TYPE_CODE &&
-				ref->addr >= fcn->addr && (ref->addr - fcn->addr) < fcn->size) {
-			r_list_delete(fcn->refs, iter);
-		}
-	}
-}
-
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	fcn->size = 0;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
@@ -715,9 +753,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		int result = anal->cur->fcn (anal, fcn, addr, buf, len, reftype);
 		if (anal->cur->custom_fn_anal) return result;
 	}
-	int ret = fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
-	r_anal_trim_jmprefs(fcn);
-	return ret;
+	return fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
 }
 
 // TODO: need to implement r_anal_fcn_remove(RAnal *anal, RAnalFunction *fcn);
