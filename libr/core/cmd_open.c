@@ -243,6 +243,10 @@ static void reopen_in_debug(RCore *core, const char *args) {
 	bf = r_bin_file_find_by_fd (core->bin, ofile->desc->fd);
 	binpath = bf ? strdup (bf->file) : NULL;
 	if (!binpath) {
+		if (r_file_exists (ofile->desc->name))
+			binpath = strdup (ofile->desc->name);
+	}
+	if (!binpath) {
 		eprintf ("No bin file open?\n");
 		return;
 	}
