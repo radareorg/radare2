@@ -403,6 +403,7 @@ static const char *radare_argv[] = {
 	"p6d", "p6e", "p8", "pb", "pc",
 	"pd", "pda", "pdb", "pdc", "pdj", "pdr", "pdf", "pdi", "pdl", "pds", "pdt",
 	"pD", "px", "pX", "po", "pf", "pf.", "pf*", "pf*.", "pfd", "pfd.", "pv", "p=", "p-",
+	"pfj", "pfj.", "pfv", "pfv.",
 	"pm", "pr", "pt", "ptd", "ptn", "pt?", "ps", "pz", "pu", "pU", "p?",
 	"#!pipe", "z", "zf", "zF", "zFd", "zh", "zn", "zn-",
 	NULL
@@ -440,8 +441,7 @@ static int autocomplete(RLine *line) {
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-		} else
-		if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
+		} else if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
 			int j = 0;
 			if (strchr (line->buffer.data + 7, ' ')) {
 				goto openfile;
@@ -457,10 +457,11 @@ static int autocomplete(RLine *line) {
 			tmp_argv[j] = NULL;
 			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
-		} else
-		if ((!strncmp (line->buffer.data, "pf.", 3))
+		} else if ((!strncmp (line->buffer.data, "pf.", 3))
 		||  (!strncmp (line->buffer.data, "pf*.", 4))
-		||  (!strncmp (line->buffer.data, "pfd.", 4))) {
+		||  (!strncmp (line->buffer.data, "pfd.", 4))
+		||  (!strncmp (line->buffer.data, "pfv.", 4))
+		||  (!strncmp (line->buffer.data, "pfj.", 4))) {
 			char pfx[2];
 			int chr = (line->buffer.data[2]=='.')? 3: 4;
 			if (chr == 4) {
@@ -471,7 +472,6 @@ static int autocomplete(RLine *line) {
 			}
 			RStrHT *sht = core->print->formats;
 			int *i, j = 0;
-			tmp_argv_heap = true;
 			r_list_foreach (sht->ls, iter, i) {
 				int idx = ((int)(size_t)i)-1;
 				const char *key = r_strpool_get (sht->sp, idx);
@@ -480,6 +480,7 @@ static int autocomplete(RLine *line) {
 					tmp_argv[j++] = r_str_newf ("pf%s.%s", pfx, key);
 				}
 			}
+			if (j > 0) tmp_argv_heap = true;
 			tmp_argv[j] = NULL;
 			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
@@ -505,13 +506,11 @@ static int autocomplete(RLine *line) {
 			tmp_argv[j] = NULL;
 			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
-		} else
-		if ((!strncmp (line->buffer.data, "te ", 3))) {
+		} else if ((!strncmp (line->buffer.data, "te ", 3))) {
 			int i = 0;
 			SdbList *l = sdb_foreach_list (core->anal->sdb_types);
 			SdbListIter *iter;
 			SdbKv *kv;
-			tmp_argv_heap = true;
 			int chr = 3;
 			ls_foreach (l, iter, kv) {
 				int len = strlen (line->buffer.data + chr);
@@ -521,12 +520,12 @@ static int autocomplete(RLine *line) {
 					}
 				}
 			}
+			if (i > 0) tmp_argv_heap = true;
 			tmp_argv[i] = NULL;
 			ls_free (l);
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-		} else
-		if ((!strncmp (line->buffer.data, "o ", 2)) ||
+		} else if ((!strncmp (line->buffer.data, "o ", 2)) ||
 		     !strncmp (line->buffer.data, "o+ ", 3) ||
 		     !strncmp (line->buffer.data, "oc ", 3) ||
 		     !strncmp (line->buffer.data, "r2 ", 3) ||
@@ -561,7 +560,7 @@ openfile:
 			} else {
 				sdelta = getsdelta (line->buffer.data);
 			}
-			path = sdelta>0? strdup (line->buffer.data + sdelta):
+			path = sdelta > 0 ? strdup (line->buffer.data + sdelta):
 				r_sys_getdir ();
 			p = (char *)r_str_lchr (path, '/');
 			if (p) {
@@ -637,15 +636,16 @@ openfile:
 				}
 				r_list_purge (list);
 				free (list);
-			} else eprintf ("\nInvalid directory (%s)\n", path);
+			} else {
+				eprintf ("\nInvalid directory (%s)\n", path);
+			}
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 			free (path);
 			if (pfree)
 				free (p);
-		} else
-		if((!strncmp (line->buffer.data, ".(", 2))  ||
+		} else if ((!strncmp (line->buffer.data, ".(", 2))  ||
 		   (!strncmp (line->buffer.data, "(-", 2))) {
 			const char *str = line->buffer.data;
 			RCmdMacroItem *item;
@@ -675,8 +675,7 @@ openfile:
 			tmp_argv[(i-1>0)?i-1:0] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-		} else
-		if (!strncmp (line->buffer.data, "fs ", 3)) {
+		} else if (!strncmp (line->buffer.data, "fs ", 3)) {
 			const char *msg = line->buffer.data + 3;
 			RFlag *flag = core->flags;
 			int j, i = 0;
@@ -696,8 +695,7 @@ openfile:
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-		} else
-		if ((!strncmp (line->buffer.data, "s ", 2)) ||
+		} else if ((!strncmp (line->buffer.data, "s ", 2)) ||
 		    (!strncmp (line->buffer.data, "ad ", 3)) ||
 		    (!strncmp (line->buffer.data, "bf ", 3)) ||
 		    (!strncmp (line->buffer.data, "ag ", 3)) ||
@@ -737,8 +735,7 @@ openfile:
 			tmp_argv[i>255?255:i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-		} else
-		if (!strncmp (line->buffer.data, "-", 1)) {
+		} else if (!strncmp (line->buffer.data, "-", 1)) {
 			int count;
 			char **keys = r_cmd_alias_keys(core->rcmd, &count);
 			char *data = line->buffer.data;
@@ -756,8 +753,7 @@ openfile:
 				line->completion.argc = 0;
 				line->completion.argv = NULL;
 			}
-		} else
-		if ( (!strncmp (line->buffer.data, "e ", 2))
+		} else if ( (!strncmp (line->buffer.data, "e ", 2))
 		   || (!strncmp (line->buffer.data, "e? ", 3))
 		   || (!strncmp (line->buffer.data, "e! ", 3))) {
 			const char p = line->buffer.data[1];
@@ -777,7 +773,7 @@ openfile:
 			line->completion.argv = tmp_argv;
 		} else {
 			int i, j;
-			for (i=j=0; i<CMDS && radare_argv[i]; i++)
+			for (i = j = 0; i < CMDS && radare_argv[i]; i++)
 				if (!strncmp (radare_argv[i], line->buffer.data,
 						line->buffer.index))
 					tmp_argv[j++] = radare_argv[i];
