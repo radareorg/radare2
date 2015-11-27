@@ -716,10 +716,7 @@ R_API int check_fcn(RAnal *anal, ut8 *buf, unsigned bufsz, ut64 addr, ut64 low, 
 			return false;
 		}
 	}
-	if (pushcnt + movcnt > 5)
-		return true;
-	else
-		return false;
+	return (pushcnt + movcnt > 5);
 }
 
 static void fcnfit (RAnal *a, RAnalFunction *f) {

@@ -1349,7 +1349,7 @@ R_API int r_bin_is_string(RBin *bin, ut64 va) {
 	r_list_foreach (list, iter, string) {
 		if (string->vaddr == va)
 			return true;
-		else if (string->vaddr > va)
+		if (string->vaddr > va)
 			return false;
 	}
 	return false;
