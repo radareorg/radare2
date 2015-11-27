@@ -52,7 +52,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 			}
 		}
 		if (i >= MACHINES_MAX) {
-			eprintf("invalid machine: %s\n", machine);
+			eprintf("Unsupported machine: %s\n", machine);
 			free(res);
 			return NULL;
 		}
@@ -82,7 +82,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 			} else if (memcmp(module.module_name, VICE_MAINCPU, sizeof(VICE_MAINCPU)-1) == 0 && module.major == 1) {
 				res->maincpu = (struct vsf_maincpu*)&arch->buf->buf[offset + read];
 			} else {
-				eprintf("unkown module: %s\n", module.module_name);
+//				eprintf("unkown module: %s\n", module.module_name);
 			}
 
 			offset += module.length;
