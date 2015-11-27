@@ -700,17 +700,25 @@ static void handle_atabs_option(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
-	char res[] = "   ";
+	char res[] = "    ";
 	void *p;
 	int q;
 	if (!core || !ds || !ds->show_marks)
 		return;
 	q = core->print->cur_enabled &&
 		ds->cursor >= ds->index &&
-		ds->cursor < (ds->index+ds->asmop.size);
+		ds->cursor < (ds->index + ds->asmop.size);
 	p = r_bp_get_at (core->dbg->bp, ds->at);
 	if (p) res[0] = 'b';
-	if (q) res[1] = '*';
+	if (q) {
+		if (ds->cursor == ds->index) {
+			res[1] = '*';
+		} else {
+			int i = 1, diff = ds->cursor - ds->index;
+			if (diff > 9) res[i++] = '0' + (diff / 10);
+			res[i] = '0' + (diff % 10);
+		}
+	}
 	r_cons_strcat (res);
 }
 
