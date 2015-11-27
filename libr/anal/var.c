@@ -181,10 +181,6 @@ R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind, cons
 	return 1;
 }
 
-#define R_ANAL_VAR_KIND_ARG 'a'
-#define R_ANAL_VAR_KIND_VAR 'v'
-#define R_ANAL_VAR_KIND_REG 'r'
-
 // avr
 R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int delta, int xs_type, ut64 xs_addr) {
 	const char *var_global;
