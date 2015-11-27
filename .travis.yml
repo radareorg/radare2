@@ -23,12 +23,14 @@ addons:
       - dc
       - cabextract
 
-install:
-  - git clone `doc/repo REGRESSIONS`
+cache:
+  - ccache
+  - apt
 
 script:
+  - git clone --depth 1 `doc/repo REGRESSIONS`
   - ./configure --prefix=`pwd`/install > /dev/null
-  - make -s > /dev/null
+  - make -s -j2 > /dev/null
   - make install > /dev/null
   - export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
   - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
