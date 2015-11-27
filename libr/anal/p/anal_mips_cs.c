@@ -277,7 +277,6 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		break;
 	case MIPS_INS_SUBU:
-	case MIPS_INS_NEGU:
 	case MIPS_INS_DSUB:
 	case MIPS_INS_DSUBU:
 		{
@@ -288,6 +287,12 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			arg2, arg1, arg0);
 		}
 		break;
+	case MIPS_INS_NEG:
+	case MIPS_INS_NEGU:
+		r_strbuf_appendf (&op->esil, "%s,0,-,%s,=,",
+			ARG (1), ARG (0));
+		break;
+
 	/** signed -- sets overflow flag */
 	case MIPS_INS_ADD:
 		{
