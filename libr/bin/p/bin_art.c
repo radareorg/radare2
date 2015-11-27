@@ -61,7 +61,10 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 la, Sdb *
 	ArtObj *ao = R_NEW0 (ArtObj);
 	if (!ao) return NULL;
 	ao->kv = sdb_new0 ();
-	if (!ao->kv) return NULL;
+	if (!ao->kv) {
+		free (ao);
+		return NULL;
+	}
 	art_header_load (&ao->art, arch->buf, ao->kv);
 	sdb_ns_set (sdb, "info", ao->kv);
 	return ao;
