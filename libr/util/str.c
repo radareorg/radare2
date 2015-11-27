@@ -400,6 +400,20 @@ R_API const char *r_str_lchr(const char *str, char chr) {
 	return NULL;
 }
 
+/* find the last char chr in the substring str[start:end] with end not included */
+R_API const char *r_sub_str_lchr(const char *str, int start, int end, char chr) {
+	do {
+		end--;
+	} while (str[end] != chr && end >= start);
+	return str[end] == chr ? &str[end] : NULL;
+}
+
+/* find the first char chr in the substring str[start:end] with end not included */
+R_API const char *r_sub_str_rchr(const char *str, int start, int end, char chr) {
+	while (str[start] != chr && start < end) start++;
+	return str[start] == chr ? &str[start] : NULL;
+}
+
 R_API const char *r_str_rchr(const char *base, const char *p, int ch) {
 	if (!base) return NULL;
 	if (!p) p = base + strlen (base);
