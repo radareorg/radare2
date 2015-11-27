@@ -561,6 +561,7 @@ extern RBinPlugin r_bin_plugin_smd;
 extern RBinPlugin r_bin_plugin_sms;
 extern RBinPlugin r_bin_plugin_psxexe;
 extern RBinPlugin r_bin_plugin_spc700;
+extern RBinPlugin r_bin_plugin_vsf;
 
 #ifdef __cplusplus
 }

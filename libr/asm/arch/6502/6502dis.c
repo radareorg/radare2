@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - condret, Ricardo Quesada, qnix */
+/* radare - LGPL - Copyright 2015 - condret, riq, qnix */
 #include <r_asm.h>
 #include <r_lib.h>
 #include <string.h>
