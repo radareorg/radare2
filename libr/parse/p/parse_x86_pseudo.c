@@ -231,12 +231,20 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	if (p->relsub) {
 		char *rip = strstr (tstr, "[rip");
 		if (rip) {
-			char *ripend = strchr (rip+3, ']');
+			char *ripend = strchr (rip + 3, ']');
 			const char *plus = strchr (rip, '+');
 			const char *neg = strchr (rip, '-');
+			char *tstr_new;
+			ut64 repl_num = oplen + addr;
+
 			if (!ripend) ripend = "]";
-			if (plus) sprintf (rip+1, "0x%llx%s", oplen+addr + r_num_get (NULL, plus+1), ripend);
-			if (neg) sprintf (rip+1, "0x%llx%s", oplen+addr - r_num_get (NULL, neg+1), ripend);
+			if (plus) repl_num += r_num_get (NULL, plus + 1);
+			if (neg) repl_num -= r_num_get (NULL, neg + 1);
+
+			rip[1] = '\0';
+			tstr_new = r_str_newf ("%s0x%"PFMT64x"%s", tstr, repl_num, ripend);
+			free (tstr);
+			tstr = tstr_new;
 		}
 	}
 
