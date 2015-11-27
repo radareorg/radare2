@@ -527,15 +527,11 @@ static void handle_build_op_str (RCore *core, RDisasmState *ds) {
 					core->parser->flagspace = -1;
 				}
 			}
-#if 1
 			r_parse_filter (core->parser, core->flags,
 				asm_str, ds->str, sizeof (ds->str));
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
 			ds->opstr = strdup (ds->str);
-#else
-			ds->opstr = strdup (asm_str);
-#endif
 			core->parser->flagspace = ofs; // ???
 		} else {
 			if (!ds->opstr)
@@ -704,6 +700,7 @@ static void handle_atabs_option(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
+	char res[] = "   ";
 	void *p;
 	int q;
 	if (!core || !ds || !ds->show_marks)
@@ -712,10 +709,9 @@ static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
 		ds->cursor >= ds->index &&
 		ds->cursor < (ds->index+ds->asmop.size);
 	p = r_bp_get_at (core->dbg->bp, ds->at);
-	if (p && q) r_cons_strcat ("b*");
-	else if (p) r_cons_strcat ("b ");
-	else if (q) r_cons_strcat ("* ");
-	else r_cons_strcat ("  ");
+	if (p) res[0] = 'b';
+	if (q) res[1] = '*';
+	r_cons_strcat (res);
 }
 
 
@@ -1408,7 +1404,6 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 					p[0] = '.';
 					p[1] = '\0';
 				}
-				*extra = 0;
 			}
 			ds->p->cur_enabled = (ds->cursor != -1);
 			nstr = r_print_hexpair (ds->p, str, ds->index);
@@ -1434,9 +1429,9 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 		}
 	}
 	if (ds->show_color) {
-		r_cons_printf ("%s %s %s"Color_RESET, pad, str, extra);
+		r_cons_printf ("%s%s %s"Color_RESET, pad, str, extra);
 	} else {
-		r_cons_printf ("%s %s %s", pad, str, extra);
+		r_cons_printf ("%s%s %s", pad, str, extra);
 	}
 	free (str);
 }
