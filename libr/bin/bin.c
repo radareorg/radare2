@@ -1341,6 +1341,20 @@ R_API RList* r_bin_get_strings(RBin *bin) {
 	return o? o->strings: NULL;
 }
 
+R_API int r_bin_is_string(RBin *bin, ut64 va) {
+	RBinString *string;
+	RListIter *iter;
+	RList *list;
+	if ((list = r_bin_get_strings (bin)) == NULL) return false;
+	r_list_foreach (list, iter, string) {
+		if (string->vaddr == va)
+			return true;
+		else if (string->vaddr > va)
+			return false;
+	}
+	return false;
+}
+
 R_API RList* r_bin_get_symbols(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
 	return o? o->symbols: NULL;

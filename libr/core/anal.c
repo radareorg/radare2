@@ -4,6 +4,7 @@
 #include <r_list.h>
 #include <r_flags.h>
 #include <r_core.h>
+#include <r_bin.h>
 
 #include <string.h>
 
@@ -209,12 +210,10 @@ static int cmpaddr (const void *_a, const void *_b) {
 	return (a->addr > b->addr);
 }
 
-#if 0
 static int iscodesection(RCore *core, ut64 addr) {
 	RIOSection *s = r_io_section_vget (core->io, addr);
 	return (s && s->rwx & R_IO_EXEC)? 1: 0;
 }
-#endif
 
 static ut64 *next_append (ut64 *next, int *nexti, ut64 v) {
 	next = realloc (next, sizeof (ut64) * (1 + *nexti));
@@ -222,6 +221,27 @@ static ut64 *next_append (ut64 *next, int *nexti, ut64 v) {
 	(*nexti)++;
 
 	return next;
+}
+
+static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
+	RListIter *iter;
+	RAnalRef *ref;
+	r_list_foreach (fcn->refs, iter, ref) {
+		if (ref->type == R_ANAL_REF_TYPE_DATA &&
+				r_bin_is_string(core->bin, ref->addr))
+			ref->type = R_ANAL_REF_TYPE_STRING;
+	}
+}
+
+void r_anal_trim_jmprefs(RAnalFunction *fcn) {
+	RAnalRef *ref;
+	RListIter *iter;
+	r_list_foreach (fcn->refs, iter, ref) {
+		if (ref->type == R_ANAL_REF_TYPE_CODE &&
+				ref->addr >= fcn->addr && (ref->addr - fcn->addr) < fcn->size) {
+			r_list_delete(fcn->refs, iter);
+		}
+	}
 }
 
 static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
@@ -274,6 +294,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		if (r_cons_singleton ()->breaked)
 			break;
 		fcnlen = r_anal_fcn (core->anal, fcn, at+delta, buf, buflen, reftype);
+		if (core->anal->opt.searchstringrefs) r_anal_set_stringrefs(core, fcn);
 		if (fcnlen<0) {
 			switch (fcnlen) {
 			case R_ANAL_RET_ERROR:
@@ -310,6 +331,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 							overlapped = fcn1->addr;
 			}
 			if (overlapped != -1) r_anal_fcn_resize (fcn, overlapped - fcn->addr);
+			r_anal_trim_jmprefs(fcn);
 
 			f = r_flag_get_i2 (core->flags, fcn->addr);
 			free (fcn->name);
@@ -379,7 +401,18 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				if (ref->addr != UT64_MAX) {
 					switch (ref->type) {
 					case 'd':
-						// XXX UNUSED iscodesection (core, ref->at);
+						if (core->anal->opt.followdatarefs && iscodesection (core, ref->addr)) {
+							RIOSection *sec = r_io_section_vget (core->io, ref->addr);
+							ut8 *buf1 = malloc (100);
+							if (!buf1) {
+								eprintf ("Error: malloc (buf1)\n");
+								goto error;
+							}
+							r_io_read_at (core->io, ref->addr, buf1, 100);
+							if (check_fcn(core->anal, buf1, 100, ref->addr, sec->vaddr, sec->vaddr + sec->vsize))
+								r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth-1);
+							free(buf1);
+						}
 						break;
 					case R_ANAL_REF_TYPE_CODE:
 					case R_ANAL_REF_TYPE_CALL:

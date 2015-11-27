@@ -4,7 +4,6 @@
 #include <r_util.h>
 #include <r_list.h>
 
-
 // XXX must be configurable by the user
 #define FCN_DEPTH 512
 
@@ -234,8 +233,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	free (bbuf); \
 }
 
-static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr) {
-	int ret;
+static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr, int ret0) {
+	int ret = ret0;
 	ut8 *jmptbl = malloc(MAX_JMPTBL_SIZE);
 	ut64 offs, sz = anal->bits >> 3;
 	anal->iob.read_at (anal->iob.io, ptr, jmptbl, MAX_JMPTBL_SIZE);
@@ -258,9 +257,10 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 
 static int search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *regsz) {
 	ut64 offs, oplen;
-	RAnalOp op;
+	RAnalOp op = {0};
 	ut64 ret = UT64_MAX;
 	for (offs = 0; offs < len; offs += oplen) {
+		r_anal_op_fini (&op);
 		if ((oplen = r_anal_op (anal, &op, addr + offs, buf + offs, len - offs)) < 1) {
 			break;
 		}
@@ -441,9 +441,10 @@ repeat:
 			free (varname);
 			break;
 		}
+
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
-			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, 'd');
+			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
 		}
 
 		switch (op.type) {
@@ -490,7 +491,10 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
-			if (r_anal_noreturn_at (anal, op.jump)) {
+			if (anal->opt.jmpref)
+				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
+			if (r_anal_noreturn_at (anal, op.jump) ||
+					(op.jump < fcn->addr && !anal->opt.jmpabove)) {
 				FITFCNSZ ();
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
@@ -504,8 +508,6 @@ repeat:
 				return R_ANAL_RET_END;
 			}
 			if (anal->opt.bbsplit) {
-				if (anal->opt.jmpref)
-					(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 				if (!overlapped) {
 					bb->jump = op.jump;
 					bb->fail = UT64_MAX;
@@ -513,8 +515,6 @@ repeat:
 				recurseAt (op.jump);
 				gotoBeachRet ();
 			} else {
-				if (anal->opt.jmpref)
-					(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 				if (continue_after_jump) {
 					recurseAt (op.jump);
 					recurseAt (op.fail);
@@ -646,13 +646,13 @@ repeat:
 			// switch statement
 			if (anal->opt.jmptbl) {
 				if (op.ptr != UT64_MAX) {	// direct jump
-					ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, op.ptr);
+					ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, op.ptr, ret);
 
 				} else {	// indirect jump: table pointer is unknown
 					if (op.src[0]->reg) {
 						ut64 ptr = search_reg_val(anal, buf, idx, addr, op.src[0]->reg->name);
 						if (ptr && ptr != UT64_MAX)
-							ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, ptr);
+							ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, ptr, ret);
 					}
 				}
 			}
@@ -672,6 +672,54 @@ beach:
 	r_anal_op_fini (&op);
 	FITFCNSZ ();
 	return ret;
+}
+
+static int check_preludes(ut8 *buf, unsigned bufsz) {
+	if (bufsz < 10) return false;
+	if (!memcmp(buf, (const ut8 *)"\x55\x89\xe5", 3))
+		return true;
+	else if (!memcmp(buf, (const ut8 *)"\x55\x8b\xec", 3))
+		return true;
+	else if (!memcmp(buf, (const ut8 *)"\x8b\xff", 2))
+		return true;
+	else if (!memcmp(buf, (const ut8 *)"\x55\x48\x89\xe5", 4))
+		return true;
+	else if (!memcmp(buf, (const ut8 *)"\x55\x48\x8b\xec", 4))
+		return true;
+	return false;
+}
+
+R_API int check_fcn(RAnal *anal, ut8 *buf, unsigned bufsz, ut64 addr, ut64 low, ut64 high) {
+	RAnalOp op = {0};
+	int i, oplen, opcnt = 0, pushcnt = 0, movcnt = 0;
+	if (check_preludes(buf, bufsz)) return true;
+	for (i = 0; i < bufsz && opcnt < 10; i += oplen, opcnt++) {
+		r_anal_op_fini (&op);
+		if ((oplen = r_anal_op (anal, &op, addr+i, buf+i, bufsz-i)) < 1) {
+			return false;
+		}
+		switch (op.type) {
+		case R_ANAL_OP_TYPE_PUSH:
+		case R_ANAL_OP_TYPE_UPUSH:
+			pushcnt++;
+			break;
+		case R_ANAL_OP_TYPE_MOV:
+		case R_ANAL_OP_TYPE_CMOV:
+			movcnt++;
+			break;
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_CALL:
+			if (op.jump < low || op.jump >= high) return false;
+			break;
+		case R_ANAL_OP_TYPE_UNK:
+			return false;
+		}
+	}
+	if (pushcnt + movcnt > 5)
+		return true;
+	else
+		return false;
 }
 
 static void fcnfit (RAnal *a, RAnalFunction *f) {
