@@ -60,7 +60,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 				insn->detail->mips.operands[n].reg));
 		break;
 	case MIPS_OP_IMM:
-		sprintf (buf, "%"PFMT64d, (ut64)insn->detail->mips.operands[n].imm);
+		sprintf (buf, "%"PFMT64u, (ut64)insn->detail->mips.operands[n].imm);
 		break;
 	case MIPS_OP_MEM:
 		{
