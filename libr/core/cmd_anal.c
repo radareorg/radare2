@@ -66,10 +66,6 @@ static int var_cmd(RCore *core, const char *str) {
 
 	ostr = p = strdup (str);
 	str = (const char *)ostr;
-	if (!fcn) {
-		free (ostr);
-		return false;
-	}
 
 	switch (type) {
 	case 'V': // show vars in human readable format
