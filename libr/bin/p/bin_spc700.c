@@ -67,6 +67,19 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
+static RList* entries(RBinFile *arch) {
+	RList *ret;
+	RBinAddr *ptr = NULL;
+	if (!(ret = r_list_new ()))
+		return NULL;
+	if (!(ptr = R_NEW0 (RBinAddr)))
+		return ret;
+	ptr->paddr = RAM_START_ADDRESS;
+	ptr->vaddr = 0x0;
+	r_list_append (ret, ptr);
+	return ret;
+}
+
 struct r_bin_plugin_t r_bin_plugin_spc700 = {
 	.name = "spc700",
 	.desc = "SNES-SPC700 Sound File Data",
@@ -74,6 +87,7 @@ struct r_bin_plugin_t r_bin_plugin_spc700 = {
 	.load_bytes = &load_bytes,
 	.check = &check,
 	.check_bytes = &check_bytes,
+	.entries = &entries,
 	.sections = &sections,
 	.info = &info,
 };
