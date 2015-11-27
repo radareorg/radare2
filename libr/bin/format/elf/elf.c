@@ -89,10 +89,8 @@ static int init_phdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (bin->ehdr.e_phnum == 0)
 		return false;
 	if (bin->phdr) return true;
-
 	if (!UT32_MUL (&phdr_size, bin->ehdr.e_phnum, sizeof (Elf_(Phdr))))
 		return false;
-
 	if (!phdr_size)
 		return false;
 	if (phdr_size > bin->size)
@@ -101,7 +99,6 @@ static int init_phdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return false;
 	if (bin->ehdr.e_phoff + phdr_size > bin->size)
 		return false;
-
 	if ((bin->phdr = calloc (phdr_size, 1)) == NULL) {
 		perror ("malloc (phdr)");
 		return false;
@@ -181,8 +178,7 @@ static int init_strtab(struct Elf_(r_bin_elf_obj_t) *bin) {
             (bin->ehdr.e_shstrndx >= SHN_LORESERVE && bin->ehdr.e_shstrndx <= SHN_HIRESERVE)))
             return false;
 
-	/* sh_size must be lower than UT32_MAX and not equal to zero, to avoid bugs
-	   on malloc() */
+	/* sh_size must be lower than UT32_MAX and not equal to zero, to avoid bugs on malloc() */
 	if (bin->shdr[bin->ehdr.e_shstrndx].sh_size > UT32_MAX)
 		return false;
 	if (!bin->shdr[bin->ehdr.e_shstrndx].sh_size)
@@ -1366,19 +1362,18 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 		//memset (ret[i].name, 0, sizeof (ret[i].name));
 		nidx = bin->shdr[i].sh_name;
 #define SHNAME (int)bin->shdr[i].sh_name
-#define SHNLEN ELF_STRING_LENGTH-4
+#define SHNLEN ELF_STRING_LENGTH - 4
 #define SHSIZE (int)bin->shstrtab_size
 		if (nidx<0 || !bin->shstrtab_section ||
 			!bin->shstrtab_size|| nidx > bin->shstrtab_size) {
-			snprintf(invalid_s, sizeof(invalid_s)-4, "invalid%d", invalid_c);
+			snprintf (invalid_s, sizeof (invalid_s) - 4, "invalid%d", invalid_c);
 			strncpy (ret[i].name, invalid_s, SHNLEN);
 			invalid_c++;
-		}
-		else {
+		} else {
 			if (bin->shstrtab && (SHNAME > 0) && (SHNAME+8 < SHSIZE)) {
 				strncpy (ret[i].name, &bin->shstrtab[SHNAME], SHNLEN);
 			} else {
-				snprintf(unknown_s, sizeof(unknown_s)-4, "unknown%d", unknown_c);
+				snprintf (unknown_s, sizeof (unknown_s)-4, "unknown%d", unknown_c);
 				strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
 				unknown_c++;
 			}

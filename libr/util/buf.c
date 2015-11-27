@@ -451,7 +451,7 @@ R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 
 //ret 0 or -1 if failed; ret copied length if success
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
-	if (!b) return 0;
+	if (!b || !buf || len < 1) return 0;
 	if (b->empty) {
 		b->empty = 0;
 		free (b->buf);

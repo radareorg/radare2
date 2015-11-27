@@ -347,10 +347,22 @@ static int rabin_do_operation(const char *op) {
 			goto _rabin_do_operation_error;
 		}
 		break;
+	case 'R':
+		r_bin_wr_rpath_del (bin);
+		break;
 	case 'r':
 		r_bin_wr_scn_resize (bin, ptr, r_num_math (NULL, ptr2));
 		if (!output) output = "out";
 		r_bin_wr_output (bin, output);
+		break;
+	case 'p':
+		{
+			int perms = r_num_math (NULL, ptr2);
+			if (!perms) perms = r_str_rwx (ptr2);
+			r_bin_wr_scn_perms (bin, ptr, perms);
+			if (!output) output = "out";
+			r_bin_wr_output (bin, output);
+		}
 		break;
 	default:
 	_rabin_do_operation_error:
@@ -548,13 +560,15 @@ int main(int argc, char **argv) {
 			set_action (ACTION_OPERATION);
 			if (op && !strcmp (op, "help")) {
 				printf ("Operation string:\n"
-						"  Dump symbols: d/s/1024\n"
-						"  Dump section: d/S/.text\n"
-						"  Resize section: r/.data/1024\n");
+					"  Dump symbols: d/s/1024\n"
+					"  Dump section: d/S/.text\n"
+					"  Resize section: r/.data/1024\n"
+					"  Remove RPATH: R\n"
+					"  Change permissions: p/.data/rwx\n");
 				r_core_fini (&core);
 				return 0;
 			}
-			if (optind==argc) {
+			if (optind == argc) {
 				eprintf ("Missing filename\n");
 				r_core_fini (&core);
 				return 1;
@@ -913,7 +927,7 @@ int main(int argc, char **argv) {
 		rabin_show_srcline (at);
 	if (action&ACTION_EXTRACT)
 		rabin_extract ((arch==NULL && arch_name==NULL && bits==0));
-	if (op != NULL && action&ACTION_OPERATION)
+	if (op != NULL && action & ACTION_OPERATION)
 		rabin_do_operation (op);
 	if (isradjson)
 		printf ("}");

@@ -15,14 +15,23 @@ R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size) {
 	return R_FALSE;
 }
 
-R_API int r_bin_wr_rpath_del(RBin *bin) {
+R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms) {
+	RBinFile *binfile = r_bin_cur (bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
+	if (plugin && plugin->write && plugin->write->scn_perms) {
+		return plugin->write->scn_perms (bin->cur, name, perms);
+	}
+	return false;
+}
+
+R_API bool r_bin_wr_rpath_del(RBin *bin) {
 	RBinFile *binfile = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && plugin->write &&
 		plugin->write->rpath_del){
 		return plugin->write->rpath_del (bin->cur);
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_bin_wr_output(RBin *bin, const char *filename) {
