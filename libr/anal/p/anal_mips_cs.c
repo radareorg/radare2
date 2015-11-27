@@ -797,7 +797,7 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	ra	.32	124	0\n"
 		"gpr	pc	.32	128	0\n"
 		"gpr	hi	.64	132	0\n"
-		"gpr	lo	.64	140	0\n";
+		"gpr	lo	.64	140	0\n"
 		"gpr	t	.32	148	0\n";
 	return r_reg_set_profile_string (anal->reg, p);
 }
