@@ -337,7 +337,7 @@ R_API void r_line_autocomplete() {
 	int argc = 0;
 	char *p;
 	const char **argv = NULL;
-	int i, j, opt, plen, len = 0;
+	int i, j, opt = 0, plen, len = 0;
 	int cols = r_cons_get_size (NULL)*0.82;
 
 	/* prepare argc and argv */
@@ -345,11 +345,12 @@ R_API void r_line_autocomplete() {
 		I.completion.run (&I);
 		opt = argc = I.completion.argc;
 		argv = I.completion.argv;
-	} else opt = 0;
+	}
 
-	p = (char *)r_str_lchr (I.buffer.data, ' ');
-	if (!p)
-		p = (char *)r_str_lchr (I.buffer.data, '@'); // HACK FOR r2
+	p = (char *)r_sub_str_lchr (I.buffer.data, 0, I.buffer.index, ' ');
+	if (!p) {
+		p = (char *)r_sub_str_lchr (I.buffer.data, 0, I.buffer.index, '@'); // HACK FOR r2
+	}
 	if (p) {
 		p++;
 		plen = sizeof (I.buffer.data)-(int)(size_t)(p-I.buffer.data);
@@ -358,54 +359,73 @@ R_API void r_line_autocomplete() {
 		plen = sizeof (I.buffer.data);
 	}
 	/* autocomplete */
-	if (argc==1) {
+	if (argc == 1) {
+		const char *t = I.buffer.data + I.buffer.index;
 		int largv0 = strlen (argv[0]);
-		if (largv0+3 < plen) {
+		size_t len_t = strlen (t);
+
+		if ((p - I.buffer.data) + largv0 + 1 + len_t < plen) {
+			if (len_t > 0) {
+				int tt = largv0;
+				if (*t != ' ') p[tt++] = ' ';
+				memmove (p + tt, t, len_t);
+			}
 			memcpy (p, argv[0], largv0);
-			memcpy (p+largv0, " ", 2);
-			I.buffer.length = I.buffer.index = strlen (I.buffer.data);
+			p[largv0] = ' ';
+			if (len_t == 0) p[largv0 + 1] = '\0';
+			I.buffer.length = strlen (I.buffer.data);
+			I.buffer.index = (p - I.buffer.data) + largv0;
 		}
-	} else
-	if (argc>0) {
+	} else if (argc > 0) {
 		if (*p) {
 			// TODO: avoid overflow
+			const char *t = I.buffer.data + I.buffer.index;
 			const char *root = argv[0];
 			int min_common_len = strlen(root);
+			size_t len_t = strlen (t);
 
 			// try to autocomplete argument
-			for (i=0; i<argc; i++) {
+			for (i = 0; i < argc; i++) {
 				j = 0;
 				if (!argv[i]) break;
-				while (argv[i][j]==root[j] && root[j] != '\0') j++;
-				if (j < min_common_len)
+				while (argv[i][j] == root[j] && root[j] != '\0') j++;
+				if (j < min_common_len) {
 					min_common_len = j;
+				}
 				root = argv[i];
 			}
-			memmove (p, root, strlen (root)+1);
-			if (min_common_len<strlen (root))
-				p[min_common_len] = 0;
-			I.buffer.index = I.buffer.length = strlen (I.buffer.data);
+			if (len_t > 0) {
+				int tt = min_common_len;
+				if (*t != ' ') p[tt++] = ' ';
+				memmove (p + tt, t, len_t);
+				p[tt + len_t] = '\0';
+			}
+			memmove (p, root, min_common_len);
+			if (len_t == 0) p[min_common_len] = '\0';
+			I.buffer.length = strlen (I.buffer.data);
+			I.buffer.index = (p - I.buffer.data) + min_common_len;
 		}
 	}
 
 	/* show options */
-	if (opt>1 && I.echo) {
+	if (opt > 1 && I.echo) {
 		const int sep = 3;
 		int slen, col = 10;
 		printf ("%s%s\n", I.prompt, I.buffer.data);
-		for (i=0; i<argc && argv[i]; i++) {
+		for (i = 0; i < argc && argv[i]; i++) {
 			int l = strlen (argv[i]);
-			if ((sep+l)>col)
-				col = sep+l;
-			if (col>(cols>>1)) {
-				col = (cols>>1);
+			if (sep + l > col) {
+				col = sep + l;
+			}
+			if (col > (cols >> 1)) {
+				col = (cols >> 1);
 				break;
 			}
 		}
-		for (len=i=0; i<argc && argv[i]; i++) {
+		for (len = i = 0; i < argc && argv[i]; i++) {
 			slen = strlen (argv[i]);
-			len += (slen>col)? (slen+sep): col+sep;
-			if (len+col>cols) {
+			len += (slen > col) ? (slen + sep) : (col + sep);
+			if (len + col > cols) {
 				printf ("\n");
 				len = 0;
 			}

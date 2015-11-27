@@ -745,6 +745,10 @@ typedef struct r_anal_var_access_t {
 	int set;
 } RAnalVarAccess;
 
+#define R_ANAL_VAR_KIND_ARG 'a'
+#define R_ANAL_VAR_KIND_VAR 'v'
+#define R_ANAL_VAR_KIND_REG 'r'
+
 // generic for args and locals
 typedef struct r_anal_var_t {
 	char *name;		/* name of the variable */

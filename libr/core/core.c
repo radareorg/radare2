@@ -385,7 +385,7 @@ static const char *radare_argv[] = {
 	"#!python", "#!perl", "#!vala",
 	"V",
 	"aa", "ab", "af", "ar", "ag", "at", "a?", "ax", "ad",
-	"af", "afc", "afi", "afb", "afbb", "afr", "afs", "af*",
+	"af", "afa", "afan", "afc", "afi", "afb", "afbb", "afn", "afr", "afs", "af*", "afv", "afvn",
 	"aga", "agc", "agd", "agl", "agfl",
 	"e", "e-", "e*", "e!", "e?", "env ",
 	"i", "ii", "iI", "is", "iS", "iz",
@@ -478,6 +478,28 @@ static int autocomplete(RLine *line) {
 				int len = strlen (line->buffer.data + chr);
 				if (!len || !strncmp (line->buffer.data + chr, key, len)) {
 					tmp_argv[j++] = r_str_newf ("pf%s.%s", pfx, key);
+				}
+			}
+			tmp_argv[j] = NULL;
+			line->completion.argc = j;
+			line->completion.argv = tmp_argv;
+		} else if ((!strncmp (line->buffer.data, "afvn ", 5))) {
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			RList *vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_VAR);
+			const char *f_ptr, *l_ptr;
+			RAnalVar *var;
+			int j = 0, len = strlen (line->buffer.data);
+
+			f_ptr = r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, ' ');
+			f_ptr = f_ptr != NULL ? f_ptr + 1 : line->buffer.data;
+			l_ptr = r_sub_str_rchr (line->buffer.data, line->buffer.index, len, ' ');
+			if (l_ptr == NULL) {
+				l_ptr = line->buffer.data + strlen (line->buffer.data);
+			}
+
+			r_list_foreach (vars, iter, var) {
+				if (!strncmp (f_ptr, var->name, l_ptr - f_ptr)) {
+					tmp_argv[j++] = strdup(var->name);
 				}
 			}
 			tmp_argv[j] = NULL;
@@ -736,8 +758,10 @@ openfile:
 			}
 		} else
 		if ( (!strncmp (line->buffer.data, "e ", 2))
-		   ||(!strncmp (line->buffer.data, "e? ", 3))) {
-			int m = (line->buffer.data[1] == '?')? 3: 2;
+		   || (!strncmp (line->buffer.data, "e? ", 3))
+		   || (!strncmp (line->buffer.data, "e! ", 3))) {
+			const char p = line->buffer.data[1];
+			int m = (p == '?' || p == '!') ? 3 : 2;
 			int i = 0, n = strlen (line->buffer.data+m);
 			RConfigNode *bt;
 			RListIter *iter;
