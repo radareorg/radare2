@@ -67,7 +67,7 @@ struct r_bin_vsf_obj {
 	void* rom;		/* ptr to C64/C128 rom */
 	void* mem;		/* ptr to C64/C128 ram */
 	struct vsf_maincpu* maincpu;
-	Sdb *kv;
+	Sdb* kv;
 };
 
 #endif /* VSF_SPECS_H */

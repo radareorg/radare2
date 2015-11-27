@@ -27,12 +27,12 @@ static const int MACHINES_MAX = sizeof(_machines) / sizeof(_machines[0]);
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
-//static Sdb* get_sdb (RBinObject *o) {
-//	if (!o || !o->bin_obj) return NULL;
-//	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) o->bin_obj;
-//	if (bin->kv) return bin->kv;
-//	return NULL;
-//}
+static Sdb* get_sdb (RBinObject *o) {
+	if (!o || !o->bin_obj) return NULL;
+	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) o->bin_obj;
+	if (bin->kv) return bin->kv;
+	return NULL;
+}
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 
@@ -52,7 +52,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 			}
 		}
 		if (i >= MACHINES_MAX) {
-			eprintf("invalid machine: %s\n", machine);
+			eprintf("Unsupported machine: %s\n", machine);
 			free(res);
 			return NULL;
 		}
@@ -82,17 +82,17 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 			} else if (memcmp(module.module_name, VICE_MAINCPU, sizeof(VICE_MAINCPU)-1) == 0 && module.major == 1) {
 				res->maincpu = (struct vsf_maincpu*)&arch->buf->buf[offset + read];
 			} else {
-				eprintf("unkown module: %s\n", module.module_name);
+//				eprintf("unkown module: %s\n", module.module_name);
 			}
 
 			offset += module.length;
 		}
 	}
 
-//	if (res) {
-//		res->kv = sdb_new0 ();
-//		sdb_ns_set (sdb, "info", res->kv);
-//	}
+	if (res) {
+		res->kv = sdb_new0 ();
+		sdb_ns_set (sdb, "info", res->kv);
+	}
 
 	// res will be assigned to arch->o->bin_obj by the callee
 	return res;
@@ -116,7 +116,7 @@ static RList *mem(RBinFile *arch) {
 	if (!vsf_obj) return NULL;
 
 	RList *ret;
-	RBinMem *m, *n;
+	RBinMem *m;
 	if (!(ret = r_list_new()))
 		return NULL;
 	ret->free = free;
@@ -150,7 +150,7 @@ static RList* sections(RBinFile* arch) {
 	// and the RAM section won't overwrite the ROM since it was added last.
 	if (vsf_obj->rom) {
 		if (vsf_obj->machine_idx == 0) {
-            // Commodore 128 ROMS
+			// Commodore 64 ROMS
 			// BASIC (0xa000 - 0xbfff)
 			if (!(ptr = R_NEW0 (RBinSection)))
 				return ret;
@@ -268,7 +268,6 @@ static RList* sections(RBinFile* arch) {
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
 			r_list_append (ret, ptr);
 		}
-
 	}
 
 	return ret;
@@ -299,13 +298,13 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->bits = 8;
 	ret->has_va = true;
 
-//	sdb_num_set (vsf_obj->kb, "vsf.reg_a", vsf_obj->maincpu->ac, 0);
-//	sdb_num_set (vsf_obj->kb, "vsf.reg_x", vsf_obj->maincpu->xr, 0);
-//	sdb_num_set (vsf_obj->kb, "vsf.reg_y", vsf_obj->maincpu->yr, 0);
-//	sdb_num_set (vsf_obj->kb, "vsf.reg_sp", vsf_obj->maincpu->sp, 0);
-//	sdb_num_set (vsf_obj->kb, "vsf.reg_pc", vsf_obj->maincpu->pc, 0);
-//	sdb_num_set (vsf_obj->kb, "vsf.reg_st", vsf_obj->maincpu->st, 0);
-//	sdb_num_set (vsf_obj->kb, "vsf.clock", vsf_obj->maincpu->clk, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.reg_a", vsf_obj->maincpu->ac, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.reg_x", vsf_obj->maincpu->xr, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.reg_y", vsf_obj->maincpu->yr, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.reg_sp", vsf_obj->maincpu->sp, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.reg_pc", vsf_obj->maincpu->pc, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.reg_st", vsf_obj->maincpu->st, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.clock", vsf_obj->maincpu->clk, 0);
 
 	return ret;
 }
@@ -316,12 +315,13 @@ static RList* symbols(RBinFile *arch) {
 		const ut16 address;
 		const char* symbol_name;
 	} _symbols[] = {
-		{0xfffa, "NMI_VECTOR_LSB"},
-		{0xfffb, "NMI_VECTOR_MSB"},
-		{0xfffe, "IRQ_VECTOR_LSB"},
-		{0xffff, "IRQ_VECTOR_MSB"},
+//		{0xfffa, "NMI_VECTOR_LSB"},
+//		{0xfffb, "NMI_VECTOR_MSB"},
+//		{0xfffe, "IRQ_VECTOR_LSB"},
+//		{0xffff, "IRQ_VECTOR_MSB"},
 
-		// VIC macros. Taken from c64.inc from cc65
+		// Defines taken from c64.inc from cc65
+		// I/O: VIC
 		{0xd000, "VIC_SPR0_X"},
 		{0xd001, "VIC_SPR0_Y"},
 		{0xd002, "VIC_SPR1_X"},
@@ -380,7 +380,68 @@ static RList* symbols(RBinFile *arch) {
 		{0xd02F, "VIC_KBD_128"},
 		{0xd030, "VIC_CLK_128"},
 
+		// I/O: SID
+		{0xD400, "SID_S1Lo"},
+		{0xD401, "SID_S1Hi"},
+		{0xD402, "SID_PB1Lo"},
+		{0xD403, "SID_PB1Hi"},
+		{0xD404, "SID_Ctl1"},
+		{0xD405, "SID_AD1"},
+		{0xD406, "SID_SUR1"},
 
+		{0xD407, "SID_S2Lo"},
+		{0xD408, "SID_S2Hi"},
+		{0xD409, "SID_PB2Lo"},
+		{0xD40A, "SID_PB2Hi"},
+		{0xD40B, "SID_Ctl2"},
+		{0xD40C, "SID_AD2"},
+		{0xD40D, "SID_SUR2"},
+
+		{0xD40E, "SID_S3Lo"},
+		{0xD40F, "SID_S3Hi"},
+		{0xD410, "SID_PB3Lo"},
+		{0xD411, "SID_PB3Hi"},
+		{0xD412, "SID_Ctl3"},
+		{0xD413, "SID_AD3"},
+		{0xD414, "SID_SUR3"},
+
+		{0xD415, "SID_FltLo"},
+		{0xD416, "SID_FltHi"},
+		{0xD417, "SID_FltCtl"},
+		{0xD418, "SID_Amp"},
+		{0xD419, "SID_ADConv1"},
+		{0xD41A, "SID_ADConv2"},
+		{0xD41B, "SID_Noise"},
+		{0xD41C, "SID_Read3"},
+
+		// I/O: VDC (128 only)
+		{0xd600, "VDC_INDEX"},
+		{0xd601, "VDC_DATA"},
+
+		// I/O: CIAs
+		{0xDC00, "CIA1_PRA"},
+		{0xDC01, "CIA1_PRB"},
+		{0xDC02, "CIA1_DDRA"},
+		{0xDC03, "CIA1_DDRB"},
+		{0xDC08, "CIA1_TOD10"},
+		{0xDC09, "CIA1_TODSEC"},
+		{0xDC0A, "CIA1_TODMIN"},
+		{0xDC0B, "CIA1_TODHR"},
+		{0xDC0D, "CIA1_ICR"},
+		{0xDC0E, "CIA1_CRA"},
+		{0xDC0F, "CIA1_CRB"},
+
+		{0xDD00, "CIA2_PRA"},
+		{0xDD01, "CIA2_PRB"},
+		{0xDD02, "CIA2_DDRA"},
+		{0xDD03, "CIA2_DDRB"},
+		{0xDD08, "CIA2_TOD10"},
+		{0xDD09, "CIA2_TODSEC"},
+		{0xDD0A, "CIA2_TODMIN"},
+		{0xDD0B, "CIA2_TODHR"},
+		{0xDD0D, "CIA2_ICR"},
+		{0xDD0E, "CIA2_CRA"},
+		{0xDD0F, "CIA2_CRB"},
 	};
 
 	static const int SYMBOLS_MAX = sizeof(_symbols) / sizeof(_symbols[0]);
@@ -397,7 +458,8 @@ static RList* symbols(RBinFile *arch) {
 		return NULL;
 	ret->free = free;
 
-	for (int i=0; i<SYMBOLS_MAX; i++)
+	int i;
+	for (i=0; i<SYMBOLS_MAX; i++)
 	{
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			return ret;
@@ -440,20 +502,20 @@ static RList* entries(RBinFile *arch) {
 	r_list_append (ret, ptr);
 
 	// IRQ: 0xFFFE or 0x0314 ?
-	if (!(ptr = R_NEW0 (RBinAddr)))
-		return ret;
-	ptr->paddr = (vsf_obj->mem + offset) - (void*) arch->buf->buf;
-	ptr->vaddr = 0x314; // or 0xfffe ?
-	r_list_append (ret, ptr);
+//	if (!(ptr = R_NEW0 (RBinAddr)))
+//		return ret;
+//	ptr->paddr = (vsf_obj->mem + offset) - (void*) arch->buf->buf;
+//	ptr->vaddr = 0x314; // or 0xfffe ?
+//	r_list_append (ret, ptr);
 
-    return ret;
+	return ret;
 }
 
 struct r_bin_plugin_t r_bin_plugin_vsf = {
 	.name = "vsf",
 	.desc = "VICE Snapshot File",
 	.license = "LGPL3",
-//	.get_sdb = &get_sdb,
+	.get_sdb = &get_sdb,
 	.load_bytes = &load_bytes,
 	.check = &check,
 	.check_bytes = &check_bytes,
