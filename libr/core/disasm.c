@@ -699,22 +699,42 @@ static void handle_atabs_option(RCore *core, RDisasmState *ds) {
 	}
 }
 
+static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
+	RFlagItem *fi;
+	int i;
+	for (i = 1; i < ds->oplen; i++) {
+		fi = r_flag_get_i (core->flags, ds->at + i);
+		if (fi) {
+			if (!strncmp (fi->name, "reloc.", 6)) {
+				if (print) {
+					r_cons_printf ("(%s)\n", fi->name);
+				}
+				continue;
+			}
+			return i;
+		}
+	}
+	return 0;
+}
+
 static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
-	char res[] = "    ";
+	char res[] = "     ";
 	void *p;
-	int q;
+	int q, t;
 	if (!core || !ds || !ds->show_marks)
 		return;
 	q = core->print->cur_enabled &&
 		ds->cursor >= ds->index &&
 		ds->cursor < (ds->index + ds->asmop.size);
 	p = r_bp_get_at (core->dbg->bp, ds->at);
+	t = ds->midflags && handleMidFlags (core, ds, false) > 0;
 	if (p) res[0] = 'b';
+	if (t) res[1] = '~';
 	if (q) {
 		if (ds->cursor == ds->index) {
-			res[1] = '*';
+			res[2] = '*';
 		} else {
-			int i = 1, diff = ds->cursor - ds->index;
+			int i = 2, diff = ds->cursor - ds->index;
 			if (diff > 9) res[i++] = '0' + (diff / 10);
 			res[i] = '0' + (diff % 10);
 		}
@@ -2252,22 +2272,6 @@ static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 
 }
 #endif
 
-static int handleMidFlags(RCore *core, RDisasmState *ds) {
-	RFlagItem *fi;
-	int i;
-	for (i = 1; i < ds->oplen; i++) {
-		fi = r_flag_get_i (core->flags, ds->at + i);
-		if (fi) {
-			if (!strncmp (fi->name, "reloc.", 6)) {
-				r_cons_printf ("(%s)\n", fi->name);
-				continue;
-			}
-			return i;
-		}
-	}
-	return 0;
-}
-
 static void handle_print_as_string(RCore *core, RDisasmState *ds) {
 	char *str = r_num_as_string (NULL, ds->analop.ptr);
 	if (str) {
@@ -2502,7 +2506,7 @@ toro:
 		ds->opstr = NULL;
 		inc = ds->oplen;
 		if (ds->midflags) {
-			int skip_bytes = handleMidFlags (core, ds);
+			int skip_bytes = handleMidFlags (core, ds, true);
 			if (skip_bytes > 0) {
 				inc = skip_bytes;
 			}
