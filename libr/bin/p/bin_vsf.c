@@ -150,7 +150,7 @@ static RList* sections(RBinFile* arch) {
 	// and the RAM section won't overwrite the ROM since it was added last.
 	if (vsf_obj->rom) {
 		if (vsf_obj->machine_idx == 0) {
-            // Commodore 128 ROMS
+			// Commodore 64 ROMS
 			// BASIC (0xa000 - 0xbfff)
 			if (!(ptr = R_NEW0 (RBinSection)))
 				return ret;
@@ -268,7 +268,6 @@ static RList* sections(RBinFile* arch) {
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
 			r_list_append (ret, ptr);
 		}
-
 	}
 
 	return ret;
@@ -316,12 +315,13 @@ static RList* symbols(RBinFile *arch) {
 		const ut16 address;
 		const char* symbol_name;
 	} _symbols[] = {
-		{0xfffa, "NMI_VECTOR_LSB"},
-		{0xfffb, "NMI_VECTOR_MSB"},
-		{0xfffe, "IRQ_VECTOR_LSB"},
-		{0xffff, "IRQ_VECTOR_MSB"},
+//		{0xfffa, "NMI_VECTOR_LSB"},
+//		{0xfffb, "NMI_VECTOR_MSB"},
+//		{0xfffe, "IRQ_VECTOR_LSB"},
+//		{0xffff, "IRQ_VECTOR_MSB"},
 
-		// VIC macros. Taken from c64.inc from cc65
+		// Defines taken from c64.inc from cc65
+		// I/O: VIC
 		{0xd000, "VIC_SPR0_X"},
 		{0xd001, "VIC_SPR0_Y"},
 		{0xd002, "VIC_SPR1_X"},
@@ -380,7 +380,68 @@ static RList* symbols(RBinFile *arch) {
 		{0xd02F, "VIC_KBD_128"},
 		{0xd030, "VIC_CLK_128"},
 
+		// I/O: SID
+		{0xD400, "SID_S1Lo"},
+		{0xD401, "SID_S1Hi"},
+		{0xD402, "SID_PB1Lo"},
+		{0xD403, "SID_PB1Hi"},
+		{0xD404, "SID_Ctl1"},
+		{0xD405, "SID_AD1"},
+		{0xD406, "SID_SUR1"},
 
+		{0xD407, "SID_S2Lo"},
+		{0xD408, "SID_S2Hi"},
+		{0xD409, "SID_PB2Lo"},
+		{0xD40A, "SID_PB2Hi"},
+		{0xD40B, "SID_Ctl2"},
+		{0xD40C, "SID_AD2"},
+		{0xD40D, "SID_SUR2"},
+
+		{0xD40E, "SID_S3Lo"},
+		{0xD40F, "SID_S3Hi"},
+		{0xD410, "SID_PB3Lo"},
+		{0xD411, "SID_PB3Hi"},
+		{0xD412, "SID_Ctl3"},
+		{0xD413, "SID_AD3"},
+		{0xD414, "SID_SUR3"},
+
+		{0xD415, "SID_FltLo"},
+		{0xD416, "SID_FltHi"},
+		{0xD417, "SID_FltCtl"},
+		{0xD418, "SID_Amp"},
+		{0xD419, "SID_ADConv1"},
+		{0xD41A, "SID_ADConv2"},
+		{0xD41B, "SID_Noise"},
+		{0xD41C, "SID_Read3"},
+
+		// I/O: VDC (128 only)
+		{0xd600, "VDC_INDEX"},
+		{0xd601, "VDC_DATA"},
+
+		// I/O: CIAs
+		{0xDC00, "CIA1_PRA"},
+		{0xDC01, "CIA1_PRB"},
+		{0xDC02, "CIA1_DDRA"},
+		{0xDC03, "CIA1_DDRB"},
+		{0xDC08, "CIA1_TOD10"},
+		{0xDC09, "CIA1_TODSEC"},
+		{0xDC0A, "CIA1_TODMIN"},
+		{0xDC0B, "CIA1_TODHR"},
+		{0xDC0D, "CIA1_ICR"},
+		{0xDC0E, "CIA1_CRA"},
+		{0xDC0F, "CIA1_CRB"},
+
+		{0xDD00, "CIA2_PRA"},
+		{0xDD01, "CIA2_PRB"},
+		{0xDD02, "CIA2_DDRA"},
+		{0xDD03, "CIA2_DDRB"},
+		{0xDD08, "CIA2_TOD10"},
+		{0xDD09, "CIA2_TODSEC"},
+		{0xDD0A, "CIA2_TODMIN"},
+		{0xDD0B, "CIA2_TODHR"},
+		{0xDD0D, "CIA2_ICR"},
+		{0xDD0E, "CIA2_CRA"},
+		{0xDD0F, "CIA2_CRB"},
 	};
 
 	static const int SYMBOLS_MAX = sizeof(_symbols) / sizeof(_symbols[0]);
@@ -441,13 +502,13 @@ static RList* entries(RBinFile *arch) {
 	r_list_append (ret, ptr);
 
 	// IRQ: 0xFFFE or 0x0314 ?
-	if (!(ptr = R_NEW0 (RBinAddr)))
-		return ret;
-	ptr->paddr = (vsf_obj->mem + offset) - (void*) arch->buf->buf;
-	ptr->vaddr = 0x314; // or 0xfffe ?
-	r_list_append (ret, ptr);
+//	if (!(ptr = R_NEW0 (RBinAddr)))
+//		return ret;
+//	ptr->paddr = (vsf_obj->mem + offset) - (void*) arch->buf->buf;
+//	ptr->vaddr = 0x314; // or 0xfffe ?
+//	r_list_append (ret, ptr);
 
-    return ret;
+	return ret;
 }
 
 struct r_bin_plugin_t r_bin_plugin_vsf = {
