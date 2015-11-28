@@ -81,6 +81,7 @@ struct Elf_(r_bin_elf_obj_t) {
 
 	Elf_(Dyn) *dyn_buf;
 	int dyn_entries;
+	int is_rela;
 
 	RBinImport **imports_by_ord;
 	size_t imports_by_ord_size;
