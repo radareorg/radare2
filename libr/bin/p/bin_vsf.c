@@ -27,12 +27,12 @@ static const int MACHINES_MAX = sizeof(_machines) / sizeof(_machines[0]);
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
-//static Sdb* get_sdb (RBinObject *o) {
-//	if (!o || !o->bin_obj) return NULL;
-//	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) o->bin_obj;
-//	if (bin->kv) return bin->kv;
-//	return NULL;
-//}
+static Sdb* get_sdb (RBinObject *o) {
+	if (!o || !o->bin_obj) return NULL;
+	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) o->bin_obj;
+	if (bin->kv) return bin->kv;
+	return NULL;
+}
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 
@@ -89,10 +89,10 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 		}
 	}
 
-//	if (res) {
-//		res->kv = sdb_new0 ();
-//		sdb_ns_set (sdb, "info", res->kv);
-//	}
+	if (res) {
+		res->kv = sdb_new0 ();
+		sdb_ns_set (sdb, "info", res->kv);
+	}
 
 	// res will be assigned to arch->o->bin_obj by the callee
 	return res;
@@ -116,7 +116,7 @@ static RList *mem(RBinFile *arch) {
 	if (!vsf_obj) return NULL;
 
 	RList *ret;
-	RBinMem *m, *n;
+	RBinMem *m;
 	if (!(ret = r_list_new()))
 		return NULL;
 	ret->free = free;
@@ -299,13 +299,13 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->bits = 8;
 	ret->has_va = true;
 
-//	sdb_num_set (vsf_obj->kb, "vsf.reg_a", vsf_obj->maincpu->ac, 0);
-//	sdb_num_set (vsf_obj->kb, "vsf.reg_x", vsf_obj->maincpu->xr, 0);
-//	sdb_num_set (vsf_obj->kb, "vsf.reg_y", vsf_obj->maincpu->yr, 0);
-//	sdb_num_set (vsf_obj->kb, "vsf.reg_sp", vsf_obj->maincpu->sp, 0);
-//	sdb_num_set (vsf_obj->kb, "vsf.reg_pc", vsf_obj->maincpu->pc, 0);
-//	sdb_num_set (vsf_obj->kb, "vsf.reg_st", vsf_obj->maincpu->st, 0);
-//	sdb_num_set (vsf_obj->kb, "vsf.clock", vsf_obj->maincpu->clk, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.reg_a", vsf_obj->maincpu->ac, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.reg_x", vsf_obj->maincpu->xr, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.reg_y", vsf_obj->maincpu->yr, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.reg_sp", vsf_obj->maincpu->sp, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.reg_pc", vsf_obj->maincpu->pc, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.reg_st", vsf_obj->maincpu->st, 0);
+	sdb_num_set (vsf_obj->kv, "vsf.clock", vsf_obj->maincpu->clk, 0);
 
 	return ret;
 }
@@ -397,7 +397,8 @@ static RList* symbols(RBinFile *arch) {
 		return NULL;
 	ret->free = free;
 
-	for (int i=0; i<SYMBOLS_MAX; i++)
+	int i;
+	for (i=0; i<SYMBOLS_MAX; i++)
 	{
 		if (!(ptr = R_NEW0 (RBinSymbol)))
 			return ret;
@@ -453,7 +454,7 @@ struct r_bin_plugin_t r_bin_plugin_vsf = {
 	.name = "vsf",
 	.desc = "VICE Snapshot File",
 	.license = "LGPL3",
-//	.get_sdb = &get_sdb,
+	.get_sdb = &get_sdb,
 	.load_bytes = &load_bytes,
 	.check = &check,
 	.check_bytes = &check_bytes,
