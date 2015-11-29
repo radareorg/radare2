@@ -35,7 +35,7 @@ code, debugging programs, attaching to remote gdb servers, ..
 
    * **File Formats:**
 	* bios, CGC, dex, elf, elf64, filesystem, java, fatmach0, mach0,
-   mach0-64, MZ, PE, PE+, TE, COFF, plan9, dyldcache,
+   mach0-64, MZ, PE, PE+, TE, COFF, plan9, dyldcache, Commodore VICE emulator, 
    Gameboy and Nintendo DS ROMs
 
    * **Operating Systems:**
