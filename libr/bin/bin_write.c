@@ -36,8 +36,7 @@ R_API bool r_bin_wr_rpath_del(RBin *bin) {
 
 R_API int r_bin_wr_output(RBin *bin, const char *filename) {
 	RBinFile *binfile = r_bin_cur (bin);
-
-	if (!binfile || !binfile->buf) return R_FALSE;
+	if (!filename || !binfile || !binfile->buf) return R_FALSE;
 	return r_file_dump (filename, binfile->buf->buf,
 			binfile->buf->length, 0);
 }

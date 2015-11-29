@@ -14,7 +14,7 @@
 .Op Fl f Ar subbin
 .Op Fl k Ar query
 .Op Fl K Ar algo
-.Op Fl O Ar str
+.Op Fl O Ar binop
 .Op Fl o Ar str
 .Op Fl m Ar addr
 .Op Fl @ Ar addr
@@ -75,8 +75,8 @@ Force minimum and maximum number of chars per string (see -z and -zz). if (strle
 Show information (symbol, section, import) at string offset
 .It Fl o Ar str
 Output file/folder for write operations (out by default)
-.It Fl O Ar str
-Write/extract operations (\-O help)
+.It Fl O Ar binop
+Perform binary operation on target binary (dump, resize, change sections, ...) see '-O help' for more information
 .It Fl p
 Disable VA. Show physical addresses
 .It Fl q

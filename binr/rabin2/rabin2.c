@@ -127,7 +127,15 @@ static void __sdb_prompt(Sdb *sdb) {
 	}
 }
 
-static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
+static bool isBinopHelp(const char *op) {
+	if (!op) return false;
+	if (!strcmp (op, "help")) return true;
+	if (!strcmp (op, "?")) return true;
+	if (!strcmp (op, "h")) return true;
+	return false;
+}
+
+static bool extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 	ut64 boffset = o ? o->boffset : 0;
 	ut64 bin_size = o ? o->obj_size : 0;
 	const ut8 *bytes;
@@ -138,7 +146,7 @@ static int extract_binobj (const RBinFile *bf, const RBinObject *o, int idx) {
 	const char *filename = bf ? bf->file : NULL;
 	char *path = NULL, *outpath = NULL, *outfile = NULL, *ptr = NULL;
 	ut32 outfile_sz = 0, outpath_sz = 0;
-	int res = false;
+	bool res = false;
 
 	if (!bf || !o || !filename ) return false;
 	if (bin_size == bf->size && bin_size) {
@@ -305,37 +313,37 @@ static int rabin_dump_sections(char *scnname) {
 			break;
 		}
 	}
-
 	return true;
 }
 
 static int rabin_do_operation(const char *op) {
 	char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
+	bool rc = true;
 
 	/* Implement alloca with fixed-size buffer? */
 	if (!(arg = strdup (op)))
 		return false;
 
 	if ((ptr = strchr (arg, '/'))) {
-		ptr[0] = '\0';
-		ptr++;
+		*ptr++ = 0;
 		if ((ptr2 = strchr (ptr, '/'))) {
 			ptr2[0] = '\0';
 			ptr2++;
 		}
 	}
+	if (!output) output = file;
 
 	switch (arg[0]) {
 	case 'd':
-		if (!ptr)
-			goto _rabin_do_operation_error;
+		if (!ptr) goto _rabin_do_operation_error;
 		switch (*ptr) {
 		case 's':
 			if (ptr2) {
 				if (!rabin_dump_symbols (r_num_math (NULL, ptr2)))
 					goto error;
-			} else if (!rabin_dump_symbols (0))
+			} else if (!rabin_dump_symbols (0)) {
 				goto error;
+			}
 			break;
 		case 'S':
 			if (!ptr2)
@@ -349,19 +357,18 @@ static int rabin_do_operation(const char *op) {
 		break;
 	case 'R':
 		r_bin_wr_rpath_del (bin);
+		rc = r_bin_wr_output (bin, output);
 		break;
 	case 'r':
 		r_bin_wr_scn_resize (bin, ptr, r_num_math (NULL, ptr2));
-		if (!output) output = "out";
-		r_bin_wr_output (bin, output);
+		rc = r_bin_wr_output (bin, output);
 		break;
 	case 'p':
 		{
-			int perms = r_num_math (NULL, ptr2);
+			int perms = (int)r_num_math (NULL, ptr2);
 			if (!perms) perms = r_str_rwx (ptr2);
 			r_bin_wr_scn_perms (bin, ptr, perms);
-			if (!output) output = "out";
-			r_bin_wr_output (bin, output);
+			rc = r_bin_wr_output (bin, output);
 		}
 		break;
 	default:
@@ -369,10 +376,11 @@ static int rabin_do_operation(const char *op) {
 		eprintf ("Unknown operation. use -O help\n");
 		goto error;
 	}
-
+	if (!rc) {
+		eprintf ("Cannot dump :(\n");
+	}
 	free (arg);
 	return true;
-
 error:
 	free (arg);
 	return false;
@@ -412,21 +420,32 @@ static int __lib_bin_xtr_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 	return true;
 }
 
+static char *demangleAs(int type) {
+	char *res = NULL;
+	switch (type) {
+	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (file); break;
+	case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
+	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
+	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file); break;
+	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc(file); break;
+	}
+	return res;
+}
+
 int main(int argc, char **argv) {
 	const char *query = NULL;
 	int c, bits = 0, actions_done = 0, actions = 0, action = ACTION_UNK;
 	char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
-	char *ptr, *arch = NULL, *arch_name = NULL;
-	const char *op = NULL;
-	const char *chksum = NULL;
+	char *tmp, *ptr, *arch = NULL, *arch_name = NULL;
 	const char *forcebin = NULL;
-	char *tmp;
+	const char *chksum = NULL;
+	const char *op = NULL;
 	RCoreBinFilter filter;
-	RCore core;
 	RCoreFile *cf = NULL;
 	int xtr_idx = 0; // load all files if extraction is necessary.
-	int fd = -1;
 	int rawstr = 0;
+	int fd = -1;
+	RCore core;
 
 	r_core_init (&core);
 	bin = core.bin;
@@ -439,7 +458,6 @@ int main(int argc, char **argv) {
 				   &__lib_bin_cb, &__lib_bin_dt, NULL);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
 				   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
-
 		/* load plugins everywhere */
 		r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
 		r_lib_opendir (l, homeplugindir);
@@ -558,7 +576,7 @@ int main(int argc, char **argv) {
 		case 'O':
 			op = optarg;
 			set_action (ACTION_OPERATION);
-			if (op && !strcmp (op, "help")) {
+			if (isBinopHelp (op)) {
 				printf ("Operation string:\n"
 					"  Dump symbols: d/s/1024\n"
 					"  Dump section: d/S/.text\n"
@@ -622,15 +640,10 @@ int main(int argc, char **argv) {
 			for (;;) {
 				file = stdin_gets();
 				if (!file || !*file) break;
-				switch (type) {
-				case R_BIN_NM_CXX: res = r_bin_demangle_cxx (file); break;
-				case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
-				case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
-				case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file); break;
-				case R_BIN_NM_MSVC: res = r_bin_demangle_msvc(file); break;
-				default:
-				    eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
-				    return 1;
+				res = demangleAs(type);
+				if (!res) {
+					eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
+					return 1;
 				}
 				if (res && *res) {
 					printf ("%s\n", res);
@@ -641,15 +654,10 @@ int main(int argc, char **argv) {
 				R_FREE (file);
 			}
 		} else {
-			switch (type) {
-			case R_BIN_NM_CXX: res = r_bin_demangle_cxx (file); break;
-			case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
-			case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
-			case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file); break;
-			case R_BIN_NM_MSVC: res = r_bin_demangle_msvc(file); break;
-			default:
-			    eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
-			    return 1;
+			res = demangleAs(type);
+			if (!res) {
+				eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
+				return 1;
 			}
 			if (res && *res) {
 				printf ("%s\n", res);
@@ -705,7 +713,7 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 		codelen = r_hex_str2bin (p, code);
-		if (!arch) arch = "x86";
+		if (!arch) arch = R_SYS_ARCH;
 		if (!bits) bits = 32;
 
 		if (!r_bin_use_arch (bin, arch, bits, create)) {
@@ -849,13 +857,13 @@ int main(int argc, char **argv) {
 	}
 	if (action & ACTION_PDB_DWNLD) {
 		int ret;
+		char *path;
+		SPDBDownloaderOpt opt;
+		SPDBDownloader pdb_downloader;
+		RBinInfo *info = r_bin_get_info (core.bin);
 		char *env_pdbserver = r_sys_getenv ("PDB_SERVER");
 		char *env_pdbextract = r_sys_getenv("PDB_EXTRACT");
 		char *env_useragent = r_sys_getenv("PDB_USER_AGENT");
-		SPDBDownloader pdb_downloader;
-		SPDBDownloaderOpt opt;
-		RBinInfo *info = r_bin_get_info (core.bin);
-		char *path;
 
 		if (!info || !info->debug_file_name) {
 			eprintf ("Can't find debug filename\n");
@@ -923,11 +931,11 @@ int main(int argc, char **argv) {
 	run_action ("dwarf", ACTION_DWARF, R_CORE_BIN_ACC_DWARF);
 	run_action ("pdb", ACTION_PDB, R_CORE_BIN_ACC_PDB);
 	run_action ("size", ACTION_SIZE, R_CORE_BIN_ACC_SIZE);
-	if (action&ACTION_SRCLINE)
+	if (action & ACTION_SRCLINE)
 		rabin_show_srcline (at);
-	if (action&ACTION_EXTRACT)
-		rabin_extract ((arch==NULL && arch_name==NULL && bits==0));
-	if (op != NULL && action & ACTION_OPERATION)
+	if (action & ACTION_EXTRACT)
+		rabin_extract ((!arch && !arch_name&& !bits));
+	if (op && action & ACTION_OPERATION)
 		rabin_do_operation (op);
 	if (isradjson)
 		printf ("}");

@@ -322,24 +322,17 @@ R_API int r_bin_dump_strings(RBinFile *a, int min) {
 
 /* This is very slow if there are lot of symbols */
 R_API int r_bin_load_languages(RBinFile *binfile) {
-	if (r_bin_lang_rust (binfile))
-		return R_BIN_NM_RUST;
-	if (r_bin_lang_swift (binfile))
-		return R_BIN_NM_SWIFT;
-	if (r_bin_lang_objc (binfile))
-		return R_BIN_NM_OBJC;
-	if (r_bin_lang_cxx (binfile))
-		return R_BIN_NM_CXX;
-	if (r_bin_lang_dlang (binfile))
-		return R_BIN_NM_DLANG;
-	if (r_bin_lang_msvc (binfile))
-		return R_BIN_NM_MSVC;
+	if (r_bin_lang_rust (binfile)) return R_BIN_NM_RUST;
+	if (r_bin_lang_swift (binfile)) return R_BIN_NM_SWIFT;
+	if (r_bin_lang_objc (binfile)) return R_BIN_NM_OBJC;
+	if (r_bin_lang_cxx (binfile)) return R_BIN_NM_CXX;
+	if (r_bin_lang_dlang (binfile)) return R_BIN_NM_DLANG;
+	if (r_bin_lang_msvc (binfile)) return R_BIN_NM_MSVC;
 	return R_BIN_NM_NONE;
 }
 
 static void mem_free (void *data) {
-	RBinMem *mem;
-	mem = (RBinMem *)data;
+	RBinMem *mem = (RBinMem *)data;
 	if (mem && mem->mirrors) {
 		mem->mirrors->free = mem_free;
 		r_list_free (mem->mirrors);
@@ -363,7 +356,6 @@ static void r_bin_object_delete_items (RBinObject *o) {
 	r_list_free (o->lines);
 	if (o->mem) o->mem->free = mem_free;
 	r_list_free (o->mem);
-
 	o->entries = NULL;
 	o->fields = NULL;
 	o->imports = NULL;
@@ -623,7 +615,6 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 #else
 	{}; free (buf_bytes);
 #endif
-
 	if (r_list_length (the_obj_list) == 1) {
 		RBinObject *old_o = (RBinObject *) r_list_get_n (the_obj_list, 0);
 		res = r_bin_load_io_at_offset_as (bin, desc, baseaddr,
@@ -790,13 +781,11 @@ R_API int r_bin_file_ref_by_bind (RBinBind * binb) {
 
 R_API int r_bin_file_ref (RBin *bin, RBinFile * a) {
 	RBinObject *o = r_bin_cur_object (bin);
-	int res = false;
-	if (!a) return false;
-	if (o) {
+	if (a && o) {
 		o->referenced--;
-		res = true;
+		return true;
 	}
-	return res;
+	return false;
 }
 
 static void r_bin_file_free (void /*RBinFile*/ *bf_) {
@@ -1082,11 +1071,11 @@ static int r_bin_file_object_new_from_xtr_data (RBin *bin, RBinFile *bf, ut64 ba
 }
 
 static RBinFile * r_bin_file_new_from_bytes (RBin *bin, const char *file, const ut8 * bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset) {
+	ut8 binfile_created = false;
 	RBinPlugin *plugin = NULL;
 	RBinXtrPlugin *xtr = NULL;
-	RBinFile *bf = NULL;
 	RBinObject *o = NULL;
-	ut8 binfile_created = false;
+	RBinFile *bf = NULL;
 
 	if (xtrname) xtr = r_bin_get_xtrplugin_by_name (bin, xtrname);
 
@@ -1163,7 +1152,6 @@ R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 
 R_API void* r_bin_free(RBin *bin) {
 	if (!bin) return NULL;
-
 	bin->file = NULL;
 	free (bin->force);
 	//r_bin_free_bin_files (bin);
@@ -1238,39 +1226,30 @@ R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
 
 R_API ut64 r_bin_get_boffset(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return o->boffset;
-	return UT64_MAX;
+	return o? o->boffset: UT64_MAX;
 }
 
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym) {
 	RBinObject *o = r_bin_cur_object (bin);
 	if (sym<0 || sym>=R_BIN_SYM_LAST)
 		return NULL;
-	if (o)
-		return o->binsym[sym];
-	return NULL;
+	return o? o->binsym[sym]: NULL;
 }
 
 // XXX: those accessors are redundant
 R_API RList* r_bin_get_entries(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return o->entries;
-	return NULL;
+	return o? o->entries: NULL;
 }
 
 R_API RList* r_bin_get_fields(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o)
-		return o->fields;
-	return NULL;
+	return o? o->fields: NULL;
 }
 
 R_API RList* r_bin_get_imports(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return o->imports;
-	return NULL;
+	return o? o->imports: NULL;
 }
 
 R_API RBinInfo* r_bin_get_info(RBin *bin) {
@@ -1280,20 +1259,17 @@ R_API RBinInfo* r_bin_get_info(RBin *bin) {
 
 R_API RList* r_bin_get_libs(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return o->libs;
-	return NULL;
+	return o? o->libs: NULL;
 }
 
 R_API RList* r_bin_get_relocs(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return o->relocs;
-	return NULL;
+	return o? o->relocs: NULL;
 }
 
 R_API RList* r_bin_get_sections(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return o->sections;
-	return NULL;
+	return o? o->sections: NULL;
 }
 
 // TODO: Move into section.c and rename it to r_io_section_get_at ()
@@ -1301,7 +1277,6 @@ R_API RBinSection* r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	RBinSection *section;
 	RListIter *iter;
 	ut64 from, to;
-
 	if (o) {
 		// TODO: must be O(1) .. use sdb here
 		r_list_foreach (o->sections, iter, section) {
@@ -1520,7 +1495,6 @@ static RBinFile* r_bin_file_find_by_object_id (RBin *bin, ut32 binobj_id) {
 static RBinFile * r_bin_file_find_by_id (RBin *bin, ut32 binfile_id) {
 	RBinFile *binfile = NULL;
 	RListIter *iter = NULL;
-
 	r_list_foreach (bin->binfiles, iter, binfile) {
 		if (binfile->id == binfile_id) break;
 		binfile = NULL;

@@ -158,9 +158,9 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	r_buf_set_bytes (bin->b, (ut8*)buf, (int)(rsz_offset+rsz_size+rest_size));
 
 	printf("COPY FROM 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_osize));
-	r_buf_read_at (bin->b, rsz_offset+rsz_osize, (ut8*)buf, rest_size);
+	r_buf_read_at (bin->b, rsz_offset + rsz_osize, (ut8*)buf, rest_size);
 	printf("COPY TO 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_size));
-	r_buf_write_at (bin->b, rsz_offset+rsz_size, (ut8*)buf, rest_size);
+	r_buf_write_at (bin->b, rsz_offset + rsz_size, (ut8*)buf, rest_size);
 	printf("Shifted %d bytes\n", (int)delta);
 	free(buf);
 	bin->size = bin->b->length;
@@ -211,8 +211,7 @@ bool Elf_(r_bin_elf_section_perms)(struct Elf_(r_bin_elf_obj_t) *bin, const char
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
 	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
 	const char *strtab = bin->shstrtab;
-	int patchoff;
-	int i;
+	int i, patchoff;
 
 	/* calculate delta */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
@@ -236,6 +235,7 @@ bool Elf_(r_bin_elf_section_perms)(struct Elf_(r_bin_elf_obj_t) *bin, const char
 			patchoff += ((const ut8*)shdrp - (const ut8*)bin->shdr);
 			patchoff += r_offsetof (Elf_(Shdr), sh_flags);
 			printf ("wx %02x @ 0x%x\n", newperms, patchoff);
+eprintf ("PATCH %p\n", bin->b);
 			r_buf_write_at (bin->b, patchoff, (ut8*)&newperms, 1);
 			return true;
 		}

@@ -1820,7 +1820,6 @@ void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
 struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 	ut8 *buf;
 	struct Elf_(r_bin_elf_obj_t) *bin = R_NEW0 (struct Elf_(r_bin_elf_obj_t));
-
 	if (!bin) return NULL;
 	memset (bin, 0, sizeof (struct Elf_(r_bin_elf_obj_t)));
 	bin->file = file;
@@ -1839,7 +1838,7 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 	return bin;
 }
 
-struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(struct r_buf_t *buf) {
+struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(RBuffer *buf) {
 	struct Elf_(r_bin_elf_obj_t) *bin = R_NEW0 (struct Elf_(r_bin_elf_obj_t));
 	bin->kv = sdb_new0 ();
 	bin->b = r_buf_new ();
