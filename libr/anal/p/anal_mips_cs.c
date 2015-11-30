@@ -85,14 +85,14 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 #define ARG(x) (*str[x]!=0)?str[x]:arg(handle, insn, str[x], x)
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
-	char str[32][32];
+	char str[8][32];
 	int i;
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 
 	if (insn) {
 		// caching operands
-		for (i=0; i<insn->detail->mips.op_count && i<32; i++) {
+		for (i=0; i<insn->detail->mips.op_count && i<8; i++) {
 			*str[i]=0;
 			ARG (i);
 		}
