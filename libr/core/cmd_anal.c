@@ -2100,6 +2100,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	RBinFile *binfile;
 	RAnalOp op;
 	ut64 addr, addr_end;
+	int depth = r_config_get_i (core->config, "anal.depth");
 	ut64 len = r_num_math (core->num, input);
 	if (len > 0xffffff) {
 		eprintf ("Too big\n");
@@ -2160,7 +2161,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			if (op.size < 1) op.size = minop; // XXX must be +4 on arm/mips/.. like we do in disasm.c
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
 				r_core_anal_fcn (core, op.jump, UT64_MAX,
-						R_ANAL_REF_TYPE_NULL, 16);
+						R_ANAL_REF_TYPE_NULL, depth);
 			}
 		} else {
 			op.size = minop;
