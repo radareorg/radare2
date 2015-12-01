@@ -23,7 +23,6 @@ typedef struct r_fs_t {
 	void *ptr;
 } RFS;
 
-
 typedef struct r_fs_partition_plugin_t {
 	const char *name;
 } RFSPartitionPlugin;
