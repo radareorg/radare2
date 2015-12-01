@@ -29,7 +29,7 @@ R_API void r_sign_ns(RSign *sig, const char *str) {
 	} else sig->ns[0] = '\0';
 }
 
-R_API _Bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {
+R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {
 	int len;
 	char *data = NULL, *ptr;
 	RSignItem *si; // TODO: like in r_search.. we need r_sign_item_new ()

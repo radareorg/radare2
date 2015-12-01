@@ -6,7 +6,7 @@
 
 static csh handle = 0;
 
-static _Bool the_end(void *p) {
+static bool the_end(void *p) {
 	if (handle) {
 		cs_close (&handle);
 		handle = 0;
@@ -59,10 +59,8 @@ RAsmPlugin r_asm_plugin_ppc_cs = {
 	.license = "BSD",
 	.arch = "ppc",
 	.bits = 32|64,
-	.init = NULL,
 	.fini = the_end,
 	.disassemble = &disassemble,
-	.assemble = NULL
 };
 
 #ifndef CORELIB

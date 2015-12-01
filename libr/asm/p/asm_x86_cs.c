@@ -10,7 +10,7 @@ static csh cd = 0;
 static int n = 0;
 static cs_insn *insn = NULL;
 
-static _Bool the_end(void *p) {
+static bool the_end(void *p) {
 #if !USE_ITER_API
 	if (insn) {
 		cs_free (insn, n);

@@ -86,7 +86,7 @@ R_API const ut8 * r_anal_state_get_buf_by_addr (RAnalState *state, ut64 addr) {
 	return NULL;
 }
 
-R_API _Bool r_anal_state_addr_is_valid (RAnalState *state, ut64 addr) {
+R_API bool r_anal_state_addr_is_valid (RAnalState *state, ut64 addr) {
 	return (addr < state->end  && addr >= state->start);
 }
 

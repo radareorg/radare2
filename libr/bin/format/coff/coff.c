@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2008-2014 pancake, inisider */
+/* radare - LGPL - Copyright 2008-2015 pancake, inisider */
 
 #include <r_util.h>
 
 #include "coff.h"
 
-_Bool r_coff_supported_arch (const ut8 *buf) {
+bool r_coff_supported_arch (const ut8 *buf) {
 	ut16 arch = *(ut16*)buf;
 	switch (arch) {
 	case COFF_FILE_MACHINE_AMD64:

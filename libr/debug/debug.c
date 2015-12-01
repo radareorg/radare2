@@ -804,7 +804,7 @@ R_API int r_debug_continue_syscall(RDebug *dbg, int sc) {
 
 // TODO: remove from here? this is code injection!
 R_API int r_debug_syscall(RDebug *dbg, int num) {
-	_Bool ret = false;
+	bool ret = false;
 	if (dbg->h->contsc) {
 		ret = dbg->h->contsc (dbg, dbg->pid, num);
 	} else {

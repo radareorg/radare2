@@ -2,18 +2,16 @@
 
 #include <r_bin.h>
 
-static int is_cxx_symbol (const char *name) {
-	if (*name == '?')
-		return 1;
-	return 0;
+static bool is_cxx_symbol (const char *name) {
+	return (*name == '?');
 }
 
-R_API int r_bin_lang_msvc(RBinFile *binfile) {
+R_API bool r_bin_lang_msvc(RBinFile *binfile) {
 	RBinObject *o = binfile ? binfile->o : NULL;
 	RBinInfo *info = o ? o->info : NULL;
 	RBinSymbol *sym;
 	RListIter *iter;
-	_Bool hascxx = false;
+	bool hascxx = false;
 	if (info) {
 		r_list_foreach (o->symbols, iter, sym) {
 			if (is_cxx_symbol (sym->name)) {
@@ -24,5 +22,5 @@ R_API int r_bin_lang_msvc(RBinFile *binfile) {
 		if (hascxx)
 			info->lang = "msvc";
 	}
-	return (int)hascxx;
+	return hascxx;
 }

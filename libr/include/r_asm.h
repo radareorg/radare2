@@ -116,8 +116,8 @@ typedef struct r_asm_plugin_t {
 	char *license;
 	void *user; // user data pointer
 	int bits;
-	_Bool (*init)(void *user);
-	_Bool (*fini)(void *user);
+	bool (*init)(void *user);
+	bool (*fini)(void *user);
 	int (*disassemble)(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
 	int (*assemble)(RAsm *a, RAsmOp *op, const char *buf);
 	RAsmModifyCallback modify;

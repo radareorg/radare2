@@ -287,7 +287,7 @@ R_API int r_core_yank_cat (RCore *core, ut64 pos) {
 
 R_API int r_core_yank_hud_file (RCore *core, const char *input) {
 	char *buf = NULL;
-	_Bool res = false;
+	bool res = false;
 	ut32 len = 0;
 	if (!input || !*input) return false;
 	for (input++; *input==' '; input++) ;

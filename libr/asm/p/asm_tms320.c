@@ -28,11 +28,11 @@ static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static _Bool tms320_init(void * user) {
+static bool tms320_init(void * user) {
 	return tms320_dasm_init (&engine);
 }
 
-static _Bool tms320_fini(void * user) {
+static bool tms320_fini(void * user) {
 	return tms320_dasm_fini (&engine);
 }
 

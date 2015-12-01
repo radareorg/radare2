@@ -314,7 +314,7 @@ R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 off, int fd) {
 	return paddr;
 }
 
-R_API _Bool r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
+R_API bool r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
 	RListIter *iter;
 	RIOMap *im = NULL;
 	ut64 off = map->from;

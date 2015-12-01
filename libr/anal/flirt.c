@@ -885,7 +885,7 @@ static ut8 read_node_variant_mask (RFlirtNode *node, RBuffer *b) {
 	return true;
 }
 
-static _Bool read_node_bytes (RFlirtNode *node, RBuffer *b) {
+static bool read_node_bytes (RFlirtNode *node, RBuffer *b) {
 	/*Reads the node bytes, and also sets the variant bytes in variant_bool_array*/
 	/*returns false on parsing error*/
 	int i;

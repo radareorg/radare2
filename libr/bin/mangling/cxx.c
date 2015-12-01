@@ -2,20 +2,20 @@
 
 #include <r_bin.h>
 
-static int is_cxx_symbol (const char *name) {
+static bool is_cxx_symbol (const char *name) {
 	if (!strncmp (name, "_Z", 2)) 
-		return 1;
+		return true;
 	if (!strncmp (name, "__Z", 3))
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
-R_API int r_bin_lang_cxx(RBinFile *binfile) {
+R_API bool r_bin_lang_cxx(RBinFile *binfile) {
 	RBinObject *o = binfile ? binfile->o : NULL;
 	RBinInfo *info = o ? o->info : NULL;
 	RBinSymbol *sym;
 	RListIter *iter;
-	int hascxx = false;
+	bool hascxx = false;
 	const char *lib;
 
 	if (!info)

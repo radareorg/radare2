@@ -136,7 +136,7 @@ enum lh5801_insn_format {
 #define LH5801_IFMT_IMMS(f)  ((f)&LH5801_IFMT_IMM_MASK)
 #define LH5801_IFMT_RMODE(f) ((f)&LH5801_IFMT_RMODE_MASK)
 
-static _Bool lh5801_ifmt_fd_matches(enum lh5801_insn_format fmt, int fd) {
+static bool lh5801_ifmt_fd_matches(enum lh5801_insn_format fmt, int fd) {
 	switch (fmt & LH5801_IFMT_FD_MASK) {
 	case LH5801_IFMT_FD_NO: 	return !fd;
 	case LH5801_IFMT_FD_YES:	return fd;

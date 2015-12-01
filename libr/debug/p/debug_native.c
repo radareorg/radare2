@@ -755,9 +755,9 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 #if __KFBSD__
 	list = r_debug_native_sysctl_map (dbg);
 	if (list != NULL) return list;
-	snprintf (path, sizeof(path), "/proc/%d/map", dbg->pid);
+	snprintf (path, sizeof (path), "/proc/%d/map", dbg->pid);
 #else
-	snprintf (path, sizeof(path), "/proc/%d/maps", dbg->pid);
+	snprintf (path, sizeof (path), "/proc/%d/maps", dbg->pid);
 #endif
 	fd = fopen (path, "r");
 	if (!fd) {
@@ -813,7 +813,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 					r_num_get (NULL, region),
 					r_num_get (NULL, region2),
 					perm, 0);
-		if (map == NULL) break;
+		if (!map) break;
 		map->file = strdup (path);
 		r_list_append (list, map);
 	}
@@ -878,23 +878,6 @@ static RList *r_debug_native_modules_get (RDebug *dbg) {
 	return last;
 }
 
-// TODO: deprecate???
-#if 0
-static int r_debug_native_bp_write(int pid, ut64 addr, int size, int hw, int rwx) {
-	if (hw) {
-		/* implement DRx register handling here */
-		return true;
-	}
-	return false;
-}
-
-/* TODO: rethink */
-static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
-	return true;
-}
-#endif
-
-// TODO: implement own-defined signals
 static int r_debug_native_kill (RDebug *dbg, int pid, int tid, int sig) {
 	int ret = false;
 	if (pid == 0) pid = dbg->pid;
@@ -1075,6 +1058,7 @@ static RList *xnu_desc_list (int pid) {
 #endif
 }
 #endif
+
 #if __WINDOWS__
 static RList *win_desc_list (int pid) {
 	RDebugDesc *desc;

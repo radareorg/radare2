@@ -294,7 +294,7 @@ R_API int r_bin_demangle_type (const char *str) {
 	return R_BIN_NM_NONE;
 }
 
-R_API int r_bin_lang_rust(RBinFile *binfile) {
+R_API bool r_bin_lang_rust(RBinFile *binfile) {
 	RBinObject *o = binfile ? binfile->o : NULL;
 	RBinInfo *info = o ? o->info : NULL;
 	RBinSymbol *sym;
