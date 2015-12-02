@@ -741,7 +741,25 @@ R_API void r_anal_fcn_fit_overlaps (RAnal *anal, RAnalFunction *fcn) {
 	}
 }
 
+static int cmpaddr (const void *_a, const void *_b) {
+	const RAnalBlock *a = _a, *b = _b;
+	return (a->addr > b->addr);
+}
+
+void r_anal_trim_jmprefs(RAnalFunction *fcn) {
+	RAnalRef *ref;
+	RListIter *iter;
+	r_list_foreach (fcn->refs, iter, ref) {
+		if (ref->type == R_ANAL_REF_TYPE_CODE &&
+				ref->addr >= fcn->addr && (ref->addr - fcn->addr) < fcn->size) {
+			r_list_delete(fcn->refs, iter);
+		}
+	}
+}
+
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
+	int ret;
+
 	fcn->size = 0;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 			R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
@@ -750,7 +768,34 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		int result = anal->cur->fcn (anal, fcn, addr, buf, len, reftype);
 		if (anal->cur->custom_fn_anal) return result;
 	}
-	return fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
+	ret = fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
+
+	if (ret == R_ANAL_RET_END && fcn->size) {	// cfg analysis completed
+		RListIter *iter;
+		RAnalBlock *bb;
+		ut64 endaddr = fcn->addr;
+		ut64 overlapped = -1;
+		RAnalFunction *fcn1 = NULL;
+
+		// set function size as length of continuous sequence of bbs
+		r_list_sort (fcn->bbs, &cmpaddr);
+		r_list_foreach (fcn->bbs, iter, bb) {
+			if (endaddr != bb->addr) break;
+			endaddr += bb->size;
+		}
+		r_anal_fcn_resize(fcn, endaddr - fcn->addr);
+
+		// resize function if overlaps
+		r_list_foreach (anal->fcns, iter, fcn1) {
+			if (fcn1->addr >= (fcn->addr) &&
+				fcn1->addr < (fcn->addr + fcn->size))
+					if (overlapped > fcn1->addr)
+						overlapped = fcn1->addr;
+		}
+		if (overlapped != -1) r_anal_fcn_resize (fcn, overlapped - fcn->addr);
+		r_anal_trim_jmprefs(fcn);
+	}
+	return ret;
 }
 
 // TODO: need to implement r_anal_fcn_remove(RAnal *anal, RAnalFunction *fcn);
