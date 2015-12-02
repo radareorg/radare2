@@ -205,11 +205,6 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 	return NULL;
 }
 
-static int cmpaddr (const void *_a, const void *_b) {
-	const RAnalBlock *a = _a, *b = _b;
-	return (a->addr > b->addr);
-}
-
 static int iscodesection(RCore *core, ut64 addr) {
 	RIOSection *s = r_io_section_vget (core->io, addr);
 	return (s && s->rwx & R_IO_EXEC)? 1: 0;
@@ -230,17 +225,6 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 		if (ref->type == R_ANAL_REF_TYPE_DATA &&
 				r_bin_is_string(core->bin, ref->addr))
 			ref->type = R_ANAL_REF_TYPE_STRING;
-	}
-}
-
-void r_anal_trim_jmprefs(RAnalFunction *fcn) {
-	RAnalRef *ref;
-	RListIter *iter;
-	r_list_foreach (fcn->refs, iter, ref) {
-		if (ref->type == R_ANAL_REF_TYPE_CODE &&
-				ref->addr >= fcn->addr && (ref->addr - fcn->addr) < fcn->size) {
-			r_list_delete(fcn->refs, iter);
-		}
 	}
 }
 
@@ -320,19 +304,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			(fcnlen == R_ANAL_RET_END && fcn->size < 1)) { /* Error analyzing function */
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
-			// resize function if overlaps
-			ut64 overlapped = -1;
-			RAnalFunction *fcn1 = NULL;
-			RListIter *iter1;
-			r_list_foreach (core->anal->fcns, iter1, fcn1) {
-				if (fcn1->addr >= (fcn->addr) &&
-					fcn1->addr < (fcn->addr + fcn->size))
-						if (overlapped > fcn1->addr)
-							overlapped = fcn1->addr;
-			}
-			if (overlapped != -1) r_anal_fcn_resize (fcn, overlapped - fcn->addr);
-			r_anal_trim_jmprefs(fcn);
-
 			f = r_flag_get_i2 (core->flags, fcn->addr);
 			free (fcn->name);
 			if (f) { /* Check if it's already flagged */
@@ -358,7 +329,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			} else {
 				fcn->depth = 256 - fcn->depth;
 			}
-			r_list_sort (fcn->bbs, &cmpaddr);
 
 			/* New function: Add initial xref */
 			if (from != UT64_MAX) {
