@@ -1434,26 +1434,17 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	r_io_read_at (core->io, addr, code, sizeof (code));
 	r_asm_set_pc (core->assembler, addr);
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
-	core->anal->esil->delay = op.delay && !core->anal->esil->delay;
+	core->anal->esil->delay = op.delay && !core->anal->esil->delay && ret;
 	if (core->anal->esil->delay) {
 		// analyze and execute the delayed instruction first
 		// and save the actual instruction addr for later
 		core->anal->esil->delay_addr = addr;
-		addr += op.size;
-		r_io_read_at (core->io, addr, code, sizeof (code));
-		r_asm_set_pc (core->assembler, addr);
-		ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
+		r_reg_setv (core->anal->reg, name, addr + op.size);
+		goto repeat;
 	}
 	// Always increment pc register before executing op.esil
 	if (op.size<1) op.size = 1; // avoid inverted stepping
-
-	if (core->anal->esil->delay){
-		r_reg_setv (core->anal->reg, name, addr);
-	} else {
-		r_reg_setv (core->anal->reg, name, addr + op.size);
-	}
-	
-
+	r_reg_setv (core->anal->reg, name, addr + op.size);
 	if (ret) {
 		//r_anal_esil_eval (core->anal, input+2);
 		RAnalEsil *esil = core->anal->esil;
