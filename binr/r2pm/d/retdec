@@ -7,7 +7,8 @@ BINDIR="${R2PM_PLUGDIR}/../bin"
 
 R2PM_INSTALL() {
 	cd decompiler
-	npm install
+	node --version || exit 1
+	npm install || exit 1
 	mkdir -p "${BINDIR}"
 	echo '#!/bin/sh' > "${BINDIR}/retdec"
 	echo "exec node '`pwd`'"'/decompile.js $*' >> "${BINDIR}/retdec"
