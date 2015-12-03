@@ -228,11 +228,44 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 	}
 }
 
+static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
+	RListIter *iter;
+	RAnalRef *ref;
+	r_list_foreach (fcn->refs, iter, ref) {
+		if (ref->addr != UT64_MAX) {
+			switch (ref->type) {
+			case 'd':
+				if (core->anal->opt.followdatarefs && iscodesection (core, ref->addr)) {
+					RIOSection *sec = r_io_section_vget (core->io, ref->addr);
+					ut8 *buf1 = malloc (100);
+					if (!buf1) {
+						eprintf ("Error: malloc (buf1)\n");
+						return 0;
+					}
+					r_io_read_at (core->io, ref->addr, buf1, 100);
+					if (check_fcn(core->anal, buf1, 100, ref->addr, sec->vaddr, sec->vaddr + sec->vsize))
+						r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth-1);
+					free(buf1);
+				}
+				break;
+			case R_ANAL_REF_TYPE_CODE:
+			case R_ANAL_REF_TYPE_CALL:
+				r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth-1);
+				break;
+			default:
+				break;
+			}
+			// TODO: fix memleak here, fcn not freed even though it is
+			// added in core->anal->fcns which is freed in r_anal_free()
+		}
+	}
+	return 1;
+}
+
 static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	int has_next = r_config_get_i (core->config, "anal.hasnext");
 	RAnalFunction *fcn;
 	RAnalHint *hint;
-	RListIter *iter;
 	int buflen, fcnlen;
 	int i, nexti = 0;
 	ut64 *next = NULL;
@@ -302,6 +335,8 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && fcn->size < 1)) { /* Error analyzing function */
+			if (core->anal->opt.followbrokenfcnsrefs)
+				r_anal_analyze_fcn_refs(core, fcn, depth);
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			f = r_flag_get_i2 (core->flags, fcn->addr);
@@ -367,34 +402,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 					}
 				}
 			}
-			r_list_foreach (fcn->refs, iter, ref) {
-				if (ref->addr != UT64_MAX) {
-					switch (ref->type) {
-					case 'd':
-						if (core->anal->opt.followdatarefs && iscodesection (core, ref->addr)) {
-							RIOSection *sec = r_io_section_vget (core->io, ref->addr);
-							ut8 *buf1 = malloc (100);
-							if (!buf1) {
-								eprintf ("Error: malloc (buf1)\n");
-								goto error;
-							}
-							r_io_read_at (core->io, ref->addr, buf1, 100);
-							if (check_fcn(core->anal, buf1, 100, ref->addr, sec->vaddr, sec->vaddr + sec->vsize))
-								r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth-1);
-							free(buf1);
-						}
-						break;
-					case R_ANAL_REF_TYPE_CODE:
-					case R_ANAL_REF_TYPE_CALL:
-						r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth-1);
-						break;
-					default:
-						break;
-					}
-					// TODO: fix memleak here, fcn not freed even though it is
-					// added in core->anal->fcns which is freed in r_anal_free()
-				}
-			}
+			if (!r_anal_analyze_fcn_refs(core, fcn, depth)) goto error;
 		}
 	} while (fcnlen != R_ANAL_RET_END);
 	R_FREE (buf);

@@ -1280,6 +1280,13 @@ static int cb_anal_searchstringrefs(void *user, void *data) {
 	return true;
 }
 
+static int cb_anal_followbrokenfcnsrefs(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.followbrokenfcnsrefs = node->i_value;
+	return true;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -1326,6 +1333,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	SETCB("anal.jmpabove", "true", &cb_anal_jmpabove, "Jump above function pointer");
 	SETCB("anal.followdatarefs", "false", &cb_anal_followdatarefs, "Follow data references for code coverage");
+	SETCB("anal.followbrokenfcnsrefs", "false", &cb_anal_followbrokenfcnsrefs, "Follow function references as well if function analysis was failed");
 
 	SETCB("anal.searchstringrefs", "false", &cb_anal_searchstringrefs, "Search string references in data references");
 
