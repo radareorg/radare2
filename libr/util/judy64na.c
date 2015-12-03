@@ -889,7 +889,7 @@ JudySlot *judy_last (Judy *judy, JudySlot next, uint off, uint depth)
 JudySlot *table, *inner;
 uint keysize, size;
 JudySlot *node;
-int slot, cnt;
+int slot, cnt, test;
 uchar *base;
 
 	while( next ) {
@@ -916,10 +916,11 @@ uchar *base;
 			judy->stack[judy->level].slot = --slot;
 
 #if BYTE_ORDER != BIG_ENDIAN
-			if( !judy->depth && !base[slot * keysize] || judy->depth && ++depth == judy->depth )
+			test = !judy->depth && !base[slot * keysize] || judy->depth && ++depth == judy->depth;
 #else
-			if( !judy->depth && !base[slot * keysize + keysize - 1] || judy->depth && ++depth == judy->depth )
+			test = !judy->depth && !base[slot * keysize + keysize - 1] || judy->depth && ++depth == judy->depth;
 #endif
+			if (test)
 				return &node[-slot-1];
 
 			next = node[-slot-1];
@@ -974,7 +975,7 @@ JudySlot *judy_end (Judy *judy)
 JudySlot *judy_nxt (Judy *judy)
 {
 JudySlot *table, *inner;
-int slot, size, cnt;
+int slot, size, cnt, test;
 JudySlot *node;
 JudySlot next;
 uint keysize;
@@ -1008,10 +1009,11 @@ uint off;
 			base = (uchar *)(next & JUDY_mask);
 			if( ++slot < cnt )
 #if BYTE_ORDER != BIG_ENDIAN
-				if( !judy->depth && !base[slot * keysize] || judy->depth && ++depth == judy->depth )
+				test = !judy->depth && !base[slot * keysize] || judy->depth && ++depth == judy->depth;
 #else
-				if( !judy->depth && !base[slot * keysize + keysize - 1] || judy->depth && ++depth == judy->depth )
+				test = !judy->depth && !base[slot * keysize + keysize - 1] || judy->depth && ++depth == judy->depth;
 #endif
+				if (test)
 				{
 					judy->stack[judy->level].slot = slot;
 					return &node[-slot - 1];
@@ -1056,7 +1058,7 @@ uint off;
 
 JudySlot *judy_prv (Judy *judy)
 {
-int slot, size, keysize;
+int slot, size, keysize, test;
 JudySlot *table, *inner;
 JudySlot *node, next;
 uchar *base;
@@ -1094,10 +1096,11 @@ uint off;
 			keysize = JUDY_key_size - (off & JUDY_key_mask);
 
 #if BYTE_ORDER != BIG_ENDIAN
-			if( !judy->depth && !base[(slot - 1) * keysize] || judy->depth && ++depth == judy->depth )
+			test = !judy->depth && !base[(slot - 1) * keysize] || judy->depth && ++depth == judy->depth;
 #else
-			if( !judy->depth && !base[(slot - 1) * keysize + keysize - 1] || judy->depth && ++depth == judy->depth )
+			test = !judy->depth && !base[(slot - 1) * keysize + keysize - 1] || judy->depth && ++depth == judy->depth;
 #endif
+			if (test)
 				return &node[-slot];
 			return judy_last (judy, node[-slot], (off | JUDY_key_mask) + 1, depth);
 
