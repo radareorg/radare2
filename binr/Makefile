@@ -30,9 +30,9 @@ install:
 	done
 	${INSTALL_SCRIPT} "$(BTOP)/r2pm/r2pm" "${DESTDIR}${BINDIR}/r2pm"
 	rm -f "${DESTDIR}${BINDIR}/ragg2-cc"
-	rm -rf "${DESTDIR}${PREFIX}/radare2/${VERSION}/r2pm"
-	mkdir -p "${DESTDIR}${PREFIX}/radare2/${VERSION}/r2pm"
-	cp -rf r2pm/d/* "${DESTDIR}${PREFIX}/radare2/${VERSION}/r2pm"
+	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
+	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
+	cp -rf r2pm/d/* "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
 	${INSTALL_SCRIPT} ragg2/ragg2-cc "${DESTDIR}${BINDIR}/ragg2-cc"
 	-cd "${DESTDIR}${BINDIR}" && rm -f r2 ; ln -fs radare2 r2
 	${INSTALL_LIB} "preload/libr2.$(EXT_SO)" "${DESTDIR}${LIBDIR}"

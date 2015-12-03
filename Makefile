@@ -155,6 +155,10 @@ install love: install-doc install-man install-www
 	for DIR in ${DATADIRS} ; do \
 		(cd "$$DIR" ; ${MAKE} install ); \
 	done
+	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
+		rm -f last ; ln -fs $(VERSION) last
+	cd "$(DESTDIR)$(DATADIR)/radare2/" ;\
+		rm -f last ; ln -fs $(VERSION) last
 	rm -rf "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud"
 	cp -f doc/hud "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud/main"
@@ -198,7 +202,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	mkdir -p "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud"
 	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
-	cd "$(DESTDIR)$(PREFIX)/share/radare2/" ;\
+	cd "$(DESTDIR)$(DATADIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
 	ln -fs "${PWD}/doc/hud" "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
