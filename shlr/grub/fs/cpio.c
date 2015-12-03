@@ -165,18 +165,20 @@ grub_cpio_mount (grub_disk_t disk)
 {
   struct head hd;
   struct grub_cpio_data *data;
+  int test;
 
   if (grub_disk_read (disk, 0, 0, sizeof (hd), &hd))
     goto fail;
 
 #ifndef MODE_USTAR
   grub_cpio_convert_header (&hd);
-  if (hd.magic != MAGIC_BCPIO)
+  test = hd.magic != MAGIC_BCPIO;
 #else
-  if (grub_memcmp (hd.magic, MAGIC_USTAR,
-		   sizeof (MAGIC_USTAR) - 1))
+  test = grub_memcmp (hd.magic, MAGIC_USTAR,
+		   sizeof (MAGIC_USTAR) - 1);
 #endif
-    goto fail;
+    if (test)
+    	goto fail;
 
   data = (struct grub_cpio_data *) grub_malloc (sizeof (*data));
   if (!data)
