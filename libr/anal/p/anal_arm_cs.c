@@ -774,13 +774,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = IMM(0);
+		op->jump = IMM(0) & UT32_MAX;
 		op->fail = addr + op->size;
 		break;
 	case ARM_INS_CBZ:
 	case ARM_INS_CBNZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = IMM(1);
+		op->jump = IMM(1) & UT32_MAX;
 		op->fail = addr + op->size;
 		if (op->jump == op->fail) {
 			op->type = R_ANAL_OP_TYPE_JMP;
@@ -798,7 +798,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->fail = addr+op->size;
 		}
-		op->jump = IMM(0);
+		op->jump = IMM(0) & UT32_MAX;
 		break;
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
