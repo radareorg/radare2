@@ -817,7 +817,7 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 				r_cons_printf ("%s", ds->refline2);
 			} else {
 				r_cons_printf ("%s%s %s%s",
-					COLOR (ds, color_fline),
+					COLOR (ds, color_flow),
 					core->cons->vline[LINE_VERT], ds->refline2,
 					COLOR_RESET (ds));
 			}
