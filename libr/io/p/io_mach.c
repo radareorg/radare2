@@ -263,8 +263,9 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 // s/inferior_task/port/
 static int debug_attach(int pid) {
 	task_t task = pid_to_task (pid);
-	if (task == -1)
+	if (task == -1) {
 		return -1;
+	}
 	eprintf ("pid: %d\ntask: %d\n", pid, task);
 #if 0
 	// TODO : move this code into debug
@@ -320,6 +321,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 	task = debug_attach (pid);
 	if ((int)task == -1) {
+		if (pid>0 && io->referer && !strncmp (io->referer, "dbg://", 6)) {
+			kill (pid, 9);
+		}
 		switch (errno) {
 		case EPERM:
 			eprintf ("Operation not permitted\n");

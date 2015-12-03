@@ -228,7 +228,6 @@ static void trace_me () {
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	bool runprofile = io->runprofile && *(io->runprofile);
 	char **argv;
-
 #if __APPLE__
 	if (!runprofile) {
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
