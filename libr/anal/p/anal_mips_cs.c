@@ -14,7 +14,46 @@
 #define MEMINDEX(x) insn->detail->mips.operands[x].mem.index
 #define MEMDISP(x) insn->detail->mips.operands[x].mem.disp
 #define OPCOUNT() insn->detail->mips.op_count
-// TODO scale and disp	
+// TODO scale and disp
+
+#define SET_VAL(op,i) \
+	if (i<OPCOUNT() && OPERAND(i).type == MIPS_OP_IMM) {\
+		op->val = OPERAND(i).imm;\
+	}
+
+#define CREATE_SRC_DST_3(op) \
+	(op)->src[0] = r_anal_value_new ();\
+	(op)->src[1] = r_anal_value_new ();\
+	(op)->dst = r_anal_value_new ();
+
+#define CREATE_SRC_DST_2(op) \
+	(op)->src[0] = r_anal_value_new ();\
+	(op)->dst = r_anal_value_new ();
+
+#define SET_SRC_DST_3_REGS(op) \
+	CREATE_SRC_DST_3 (op);\
+	(op)->dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
+	(op)->src[0]->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
+	(op)->src[1]->reg = r_reg_get (anal->reg, REG (2), R_REG_TYPE_GPR);
+
+#define SET_SRC_DST_3_IMM(op) \
+	CREATE_SRC_DST_3 (op);\
+	(op)->dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
+	(op)->src[0]->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
+	(op)->src[1]->imm = IMM (2);
+
+#define SET_SRC_DST_2_REGS(op) \
+	CREATE_SRC_DST_2 (op);\
+	(op)->dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
+	(op)->src[0]->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);
+
+#define SET_SRC_DST_3_REG_OR_IMM(op) \
+	if (OPERAND(2).type == MIPS_OP_IMM) {\
+		SET_SRC_DST_3_IMM (op);\
+	} else if (OPERAND(2).type == MIPS_OP_REG) {\
+		SET_SRC_DST_3_REGS (op);\
+	}
+
 
 // ESIL macros:
 
@@ -490,20 +529,21 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return 0;
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int n, ret, opsize = -1;
-	static csh handle = 0;
+	static csh hndl = 0;
+	static csh *handle = &hndl;
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn;
-	int mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	int mode = anal->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 
-	mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
-	if (mode != omode || a->bits != obits) {
-		cs_close (&handle);
-		handle = 0;
+	mode |= (anal->bits==64)? CS_MODE_64: CS_MODE_32;
+	if (mode != omode || anal->bits != obits) {
+		cs_close (&hndl);
+		hndl = 0;
 		omode = mode;
-		obits = a->bits;
+		obits = anal->bits;
 	}
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->delay = 0;
@@ -511,12 +551,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	if (len<4)
 		return -1;
 	op->size = 4;
-	if (handle == 0) {
-		ret = cs_open (CS_ARCH_MIPS, mode, &handle);
+	if (hndl == 0) {
+		ret = cs_open (CS_ARCH_MIPS, mode, &hndl);
 		if (ret != CS_ERR_OK) goto fin;
-		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option (hndl, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (hndl, (ut8*)buf, len, addr, 1, &insn);
 	if (n<1 || insn->size<1)
 		goto beach;
 	op->type = R_ANAL_OP_TYPE_NULL;
@@ -548,7 +588,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		switch (OPERAND(1).type) {
 		case MIPS_OP_MEM:
 			if (OPERAND(1).mem.base == MIPS_REG_GP) {
-				op->ptr = a->gp + OPERAND(1).mem.disp;
+				op->ptr = anal->gp + OPERAND(1).mem.disp;
 				op->refptr = 4;
 			}
 			break;
@@ -622,6 +662,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 
 	case MIPS_INS_MOVE:
 		op->type = R_ANAL_OP_TYPE_MOV;
+		SET_SRC_DST_2_REGS (op);
 		break;
 	case MIPS_INS_ADD:
 	case MIPS_INS_ADDI:
@@ -629,7 +670,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case MIPS_INS_DADD:
 	case MIPS_INS_DADDI:
 	case MIPS_INS_DADDIU:
+		SET_VAL (op,2);
+		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_ADD;
+		
 		break;
 	case MIPS_INS_SUB:
 	case MIPS_INS_SUBV:
@@ -643,6 +687,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case MIPS_INS_SUBS_U:
 	case MIPS_INS_SUBUH:
 	case MIPS_INS_SUBUH_R:
+		SET_VAL (op,2);
+		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case MIPS_INS_MULV:
@@ -656,10 +702,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case MIPS_INS_XOR:
 	case MIPS_INS_XORI:
+		SET_VAL (op,2);
+		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_XOR;
 		break;
 	case MIPS_INS_AND:
 	case MIPS_INS_ANDI:
+		SET_VAL (op,2);
+		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_AND;
 		break;
 	case MIPS_INS_NOT:
@@ -667,6 +717,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case MIPS_INS_OR:
 	case MIPS_INS_ORI:
+		SET_VAL (op,2);
+		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_OR;
 		break;
 	case MIPS_INS_DIV:
@@ -676,6 +728,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case MIPS_INS_FDIV:
 	case MIPS_INS_DIV_S:
 	case MIPS_INS_DIV_U:
+		SET_SRC_DST_3_REGS (op);
 		op->type = R_ANAL_OP_TYPE_DIV;
 		break;
 	case MIPS_INS_CMPGDU:
@@ -747,10 +800,38 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
             op->type = R_ANAL_OP_TYPE_RET;
         }
 		break;
+	case MIPS_INS_SLTI:
+	case MIPS_INS_SLTIU:
+		SET_SRC_DST_3_IMM (op);
+		SET_VAL (op,2);
+		break;
+
+	case MIPS_INS_SHRAV:
+	case MIPS_INS_SHRAV_R:
+	case MIPS_INS_SHRA:
+	case MIPS_INS_SHRA_R:
+	case MIPS_INS_SRA:
+		op->type = R_ANAL_OP_TYPE_SAR;
+		SET_SRC_DST_3_REG_OR_IMM (op);
+		SET_VAL (op,2);
+		break;
+	case MIPS_INS_SHRL:
+	case MIPS_INS_SRLV:
+	case MIPS_INS_SRL:
+		op->type = R_ANAL_OP_TYPE_SHR;
+		SET_SRC_DST_3_REG_OR_IMM (op);
+		SET_VAL (op,2);
+		break;
+	case MIPS_INS_SLLV:
+	case MIPS_INS_SLL:
+		op->type = R_ANAL_OP_TYPE_SHL;
+		SET_SRC_DST_3_REG_OR_IMM (op);
+		SET_VAL (op,2);
+		break;
 	}
 	beach:
-	if (a->decode) {
-		if (analop_esil (a, op, addr, buf, len, &handle, insn) != 0)
+	if (anal->decode) {
+		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0)
 			r_strbuf_fini (&op->esil);
 	}
 	cs_free (insn, n);
