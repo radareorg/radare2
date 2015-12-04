@@ -237,7 +237,7 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 	if (!refdepth) return 1;
 	sec = r_io_section_vget (core->io, ref->addr);
 	if (!sec) return 1;
-	buf = calloc (bufsz);
+	buf = calloc (bufsz, 1);
 	if (!buf) {
 		eprintf ("Error: malloc (buf)\n");
 		return 0;
