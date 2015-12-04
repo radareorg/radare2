@@ -64,7 +64,7 @@ R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len) {
 			}
 			if (!arena->bytes) {
 				arena->size = 0;
-				return R_FALSE;
+				return false;
 			}
 			memset (arena->bytes, 0, arena->size);
 			memcpy (arena->bytes, buf+off,
@@ -79,7 +79,7 @@ R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8* buf, const int len) {
 		if (type >= 0 && type <= (R_REG_TYPE_LAST-1)) {
 			regset = &reg->regset[type];
 			arena = regset->arena;
-			if (len<1) return R_FALSE;
+			if (len<1) return false;
 			if ((arena->size !=len) || (arena->bytes == NULL)) {
 				arena->bytes = malloc (len);
 				if (!arena->bytes) {
@@ -156,7 +156,7 @@ R_API int r_reg_fit_arena(RReg *reg) {
 			}
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API RRegArena *r_reg_arena_new (int size) {
@@ -233,7 +233,7 @@ R_API int r_reg_arena_set(RReg *reg, int n, int copy) {
 		if (copy)
 			r_reg_set_bytes (reg, i, o->bytes, a->size);
 	}
-	return R_TRUE;
+	return true;
 #endif
 }
 

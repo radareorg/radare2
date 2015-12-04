@@ -171,22 +171,23 @@ static DWORD WINAPI (*psapi_getmappedfilename)(HANDLE, LPVOID, LPTSTR, DWORD) = 
 static NTSTATUS WINAPI (*w32_ntquerysysteminformation)(ULONG, PVOID, ULONG, PULONG) = NULL;
 static NTSTATUS WINAPI (*w32_ntduplicateobject)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG) =NULL;
 static NTSTATUS WINAPI (*w32_ntqueryobject)(HANDLE, ULONG, PVOID, ULONG, PULONG) = NULL;
-static int w32dbg_SeDebugPrivilege() {
+
+static bool w32dbg_SeDebugPrivilege() {
 	/////////////////////////////////////////////////////////
 	//   Note: Enabling SeDebugPrivilege adapted from sample
 	//     MSDN @ http://msdn.microsoft.com/en-us/library/aa446619%28VS.85%29.aspx
 	// Enable SeDebugPrivilege
-	int ret = R_TRUE;
+	bool ret = true;
 	TOKEN_PRIVILEGES tokenPriv;
 	HANDLE hToken = NULL;
 	LUID luidDebug;
 	if (!OpenProcessToken (GetCurrentProcess (),
 			TOKEN_ADJUST_PRIVILEGES, &hToken))
-		return R_FALSE;
+		return false;
 		
 	if (!LookupPrivilegeValue (NULL, SE_DEBUG_NAME, &luidDebug)) {
 		CloseHandle (hToken);
-		return R_FALSE;
+		return false;
 	}
 
 	tokenPriv.PrivilegeCount = 1;
@@ -201,7 +202,7 @@ static int w32dbg_SeDebugPrivilege() {
 		// XXX if we cant get the token nobody tells?? wtf
 	} else {
 		eprintf ("Failed to change token privileges 0x%x\n", (int)GetLastError());
-		ret = R_FALSE;
+		ret = false;
 	}
 	CloseHandle (hToken);
 	return ret;
@@ -222,7 +223,6 @@ static void print_lasterr (const char *caller, char *cause) {
 		eprintf ("Error detected in %s/%s: %s\n", r_str_get (caller), r_str_get (cause), r_str_get (cbuffer));
 	}
 }
-
 
 static int w32_dbg_init() {
 	HANDLE lib;
@@ -252,7 +252,7 @@ static int w32_dbg_init() {
 	lib = LoadLibrary ("psapi.dll");
 	if(lib == NULL) {
 		eprintf ("Cannot load psapi.dll. Aborting\n");
-		return R_FALSE;
+		return false;
 	}
 	psapi_getmappedfilename = (DWORD WINAPI (*)(HANDLE, LPVOID, LPTSTR, DWORD))
 		GetProcAddress (lib, "GetMappedFileNameA");
@@ -278,9 +278,9 @@ static int w32_dbg_init() {
 			"DebugBreakProcess: 0x%p\n"
 			"GetThreadId: 0x%p\n",
 			w32_detach, w32_openthread, w32_dbgbreak, w32_getthreadid);
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 }
 
 static HANDLE w32_open_process (DWORD access, BOOL inherit, DWORD pid) {
@@ -763,7 +763,7 @@ RList *w32_pids (int pid, RList *list) {
 int w32_terminate_process (RDebug *dbg, int pid) {
 	HANDLE process = w32_open_process(PROCESS_TERMINATE | SYNCHRONIZE , FALSE, pid);
 	if (process == INVALID_HANDLE_VALUE) {
-		return R_FALSE;
+		return false;
 	}
 
 	/* stop debugging if we are still attached */
@@ -773,7 +773,7 @@ int w32_terminate_process (RDebug *dbg, int pid) {
 	if (TerminateProcess (process, 1) == 0) {
 		print_lasterr ((char *)__FUNCTION__, "TerminateProcess");
 		CloseHandle (process);
-		return R_FALSE;
+		return false;
 
 	}
 	DWORD ret_wait;
@@ -782,15 +782,15 @@ int w32_terminate_process (RDebug *dbg, int pid) {
 	if (ret_wait == WAIT_FAILED) {
 		print_lasterr ((char *)__FUNCTION__, "WaitForSingleObject");
 		CloseHandle (process);
-		return R_FALSE;
+		return false;
 	}
 	if (ret_wait == WAIT_TIMEOUT) {
 		eprintf ("(%d) Waiting for process to terminate timed out.\n", pid);
 		CloseHandle (process);
-		return R_FALSE;
+		return false;
 	}
 
-	return R_TRUE;
+	return true;
 }
 
 void w32_break_process (void *d) {

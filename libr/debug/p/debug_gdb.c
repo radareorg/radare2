@@ -20,7 +20,7 @@ static int support_hw_bp = UNKNOWN;
 
 static int r_debug_gdb_step(RDebug *dbg) {
 	gdbr_step(desc, -1); // TODO handle thread specific step?
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
@@ -106,23 +106,23 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 		int bytes = bits / 8;
 		gdbr_write_reg (desc, current->name, (char*)&val, bytes);
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
-	gdbr_continue(desc, -1);
-	return R_TRUE;
+	gdbr_continue (desc, -1);
+	return true;
 }
 
 static int r_debug_gdb_wait(RDebug *dbg, int pid) {
 	/* do nothing */
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
 	// TODO: the core must update the dbg.swstep config var when this var is changed
-	dbg->swstep = R_FALSE;
+	dbg->swstep = false;
 	//eprintf ("XWJSTEP TOFALSE\n");
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp ("gdb", d->plugin->name)) {
@@ -139,7 +139,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 					gdbr_set_architecture(&g->desc, X86_64);
 				} else {
 					eprintf("Not supported register profile\n");
-					return R_FALSE;
+					return false;
 				}
 				break;
 			case R_SYS_ARCH_SH:
@@ -152,7 +152,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 					gdbr_set_architecture(&g->desc, ARM_64);
 				} else {
 					eprintf("Not supported register profile\n");
-					return R_FALSE;
+					return false;
 				}
 				break;
 			case R_SYS_ARCH_MIPS:
@@ -160,7 +160,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 					gdbr_set_architecture(&g->desc, MIPS);
 				} else {
 					eprintf("Not supported register profile\n");
-					return R_FALSE;
+					return false;
 				}
 				break;
 			case R_SYS_ARCH_AVR:
@@ -168,7 +168,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 					gdbr_set_architecture(&g->desc, AVR);
 				} else {
 					eprintf("Not supported register profile\n");
-					return R_FALSE;
+					return false;
 				}
 				break;
 			}
@@ -176,13 +176,13 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 			eprintf ("ERROR: Underlaying IO descriptor is not a GDB one..\n");
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_gdb_detach(int pid) {
 	gdbr_disconnect(desc);
 	if (reg_buf) free (reg_buf);
-	return R_TRUE;
+	return true;
 }
 
 static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
@@ -578,10 +578,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 
 static int r_debug_gdb_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	int ret;
-
-	if (!bp)
-		return R_FALSE;
-
+	if (!bp) return false;
 	// TODO handle rwx and conditions
 	if (set)
 		ret = bp->hw?
@@ -591,8 +588,7 @@ static int r_debug_gdb_breakpoint (RBreakpointItem *bp, int set, void *user) {
 		ret = bp->hw?
 			gdbr_remove_hwbp (desc, bp->addr):
 			gdbr_remove_bp (desc, bp->addr);
-
-	return ret? R_FALSE: R_TRUE;
+	return !ret;
 }
 
 struct r_debug_plugin_t r_debug_plugin_gdb = {

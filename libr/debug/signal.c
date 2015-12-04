@@ -106,7 +106,7 @@ static int siglistjsoncb (void *p, const char *k, const char *v) {
 		}
 		r_cons_strcat ("}");
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API void r_debug_signal_list(RDebug *dbg, int mode) {
@@ -132,7 +132,7 @@ R_API int r_debug_signal_resolve(RDebug *dbg, const char *signame) {
 	if (strchr (signame, '.'))
 		return 0;
 	name = strdup (signame);
-	r_str_case (name, R_TRUE);
+	r_str_case (name, true);
 	if (strncmp (name, "SIG", 3))
 		name = r_str_prefix (name, "SIG");
 	ret = (int)sdb_num_get (DB, name, 0);
@@ -181,5 +181,5 @@ R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action) {
 		return dbg->h->kill_setup (dbg, sig, action);
 #endif
 	// TODO: implement r_debug_kill_setup
-	return R_FALSE;
+	return false;
 }

@@ -314,8 +314,8 @@ R_API RDebugPid *r_debug_pid_new(const char *path, int pid, char status, ut64 pc
 R_API RDebugPid *r_debug_pid_free(RDebugPid *pid);
 R_API RList *r_debug_pids(RDebug *dbg, int pid);
 
-R_API int r_debug_set_arch(RDebug *dbg, const char *arch, int bits);
-R_API int r_debug_use(RDebug *dbg, const char *str);
+R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits);
+R_API bool r_debug_use(RDebug *dbg, const char *str);
 
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg);
 R_API void r_debug_info_free (RDebugInfo *rdi);
@@ -342,10 +342,10 @@ R_API int r_debug_continue_kill(RDebug *dbg, int signal);
 R_API int r_debug_select(RDebug *dbg, int pid, int tid);
 
 /* handle.c */
-R_API int r_debug_plugin_init(RDebug *dbg);
+R_API void r_debug_plugin_init(RDebug *dbg);
 R_API int r_debug_plugin_set(RDebug *dbg, const char *str);
 R_API int r_debug_plugin_list(RDebug *dbg);
-R_API int r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo);
+R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo);
 
 /* memory */
 R_API RList *r_debug_modules_list(RDebug*);

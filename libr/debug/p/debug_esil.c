@@ -9,14 +9,14 @@ static int is_io_esil(RDebug *dbg) {
 	RIODesc *d = dbg->iob.io->desc;
 	if (d && d->plugin && d->plugin->name)
 		if (!strcmp ("esil", d->plugin->name))
-			return R_TRUE;
-	return R_FALSE;
+			return true;
+	return false;
 }
 #endif
 
 static int __esil_step_over(RDebug *dbg) {
 	eprintf ("TODO: ESIL STEP OVER\n");
-	return R_TRUE;
+	return true;
 }
 
 static int __esil_step(RDebug *dbg) {
@@ -38,36 +38,36 @@ eprintf ("READ 0x%08"PFMT64x" %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
 		}
 	}
 	eprintf ("TODO: ESIL STEP\n");
-	return R_TRUE;
+	return true;
 }
 
 static int __esil_init(RDebug *dbg) {
 	dbg->tid = dbg->pid = 1;
 	eprintf ("TODO: ESIL INIT\n");
-	return R_TRUE;
+	return true;
 }
 
 static int __esil_continue(RDebug *dbg, int pid, int tid, int sig) {
 	eprintf ("ESIL continue\n");
-	return R_TRUE;
+	return true;
 }
 
 static int __esil_continue_syscall(RDebug *dbg, int pid, int num) {
 	eprintf ("ESIL continue until syscall\n");
-	return R_TRUE;
+	return true;
 }
 
 static int __esil_wait(RDebug *dbg, int pid) {
 	/* do nothing */
-	return R_TRUE;
+	return true;
 }
 
 static int __esil_attach(RDebug *dbg, int pid) {
 	eprintf ("OK attach\n");
-	return R_TRUE;
+	return true;
 #if 0
 	if (!is_io_esil (dbg))
-		return R_FALSE;
+		return false;
 #endif
 #if 0
 	RIOBdescbg *o;
@@ -76,12 +76,12 @@ eprintf ("base = %llx\n", o->bfvm->base);
 eprintf ("screen = %llx\n", o->bfvm->screen);
 eprintf ("input = %llx\n", o->bfvm->input);
 #endif
-	return R_TRUE;
+	return true;
 }
 
 static int __esil_detach(int pid) {
 	// reset vm?
-	return R_TRUE;
+	return true;
 }
 
 static char *__esil_reg_profile(RDebug *dbg) {
@@ -110,17 +110,17 @@ static char *__esil_reg_profile(RDebug *dbg) {
 
 static int __esil_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	//r_io_system (dbg->iob.io, "db");
-	return R_FALSE;
+	return false;
 }
 
 static int __esil_kill(RDebug *dbg, int pid, int tid, int sig) {
 	// TODO: ESIL reset
-	return R_TRUE;
+	return true;
 }
 
 static int __esil_stop(RDebug *dbg) {
 	eprintf ("ESIL: stop\n");
-	return R_TRUE;
+	return true;
 }
 
 RDebugPlugin r_debug_plugin_esil = {
