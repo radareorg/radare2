@@ -232,7 +232,7 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 
 static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refdepth) {
 	ut8 *buf;
-	unsigned bufsz = 100;
+	unsigned bufsz = 1000;
 	RIOSection *sec;
 	if (!refdepth) return 1;
 	sec = r_io_section_vget (core->io, ref->addr);
