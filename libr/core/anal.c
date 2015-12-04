@@ -232,20 +232,20 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 
 static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refdepth) {
 	ut8 *buf;
+	unsigned bufsz = 100;
 	RIOSection *sec;
 	if (!refdepth) return 1;
 	sec = r_io_section_vget (core->io, ref->addr);
 	if (!sec) return 1;
-	buf = malloc (100);
+	buf = calloc (bufsz);
 	if (!buf) {
 		eprintf ("Error: malloc (buf)\n");
 		return 0;
 	}
-	memset(buf, 0, 100);
-	r_io_read_at (core->io, ref->addr, buf, 100);
+	r_io_read_at (core->io, ref->addr, buf, bufsz);
 
 	if (sec->rwx & R_IO_EXEC &&
-			check_fcn (core->anal, buf, 100, ref->addr, sec->vaddr, sec->vaddr + sec->vsize)) {
+			check_fcn (core->anal, buf, bufsz, ref->addr, sec->vaddr, sec->vaddr + sec->vsize)) {
 		if (core->anal->limit) {
 			if (ref->addr < core->anal->limit->from || ref->addr > core->anal->limit->to) {
 				free(buf);
@@ -260,7 +260,7 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 		ref1.type = R_ANAL_REF_TYPE_DATA;
 		ref1.at = ref->addr;
 		ref1.addr = 0;
-		for (offs = 0; offs < 100; offs += sz, ref1.at += sz) {
+		for (offs = 0; offs < bufsz; offs += sz, ref1.at += sz) {
 			r_mem_copyendian ((ut8*)&ref1.addr, buf + offs, sz, !core->anal->big_endian);
 			r_anal_try_get_fcn (core, &ref1, fcndepth, refdepth-1);
 		}
