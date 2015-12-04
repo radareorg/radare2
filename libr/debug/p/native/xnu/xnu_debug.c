@@ -1,5 +1,20 @@
 /* radare - LGPL - Copyright 2015 - pancake */
 
+#if TARGET_OS_IPHONE
+#define XNU_USE_PTRACE 0
+#else
+#define XNU_USE_PTRACE 1
+#endif
+
+#if 1
+#undef XNU_USE_PTRACE
+#define XNU_USE_PTRACE 1
+#define XNU_USE_EXCTHR 0
+#endif
+
+
+// ------------------------------------
+
 #include <r_debug.h>
 #include <r_asm.h>
 #include <r_reg.h>
@@ -10,11 +25,12 @@
 #include "xnu_debug.h"
 #include "xnu_threads.c"
 
-#if TARGET_OS_IPHONE
-#define XNU_USE_PTRACE 0
-#else
-#define XNU_USE_PTRACE 1
+#if XNU_USE_EXCTHR
+#include "xnu_excthreads.c"
 #endif
+
+#include "trap_x86.c"
+#include "trap_arm.c"
 
 static thread_t getcurthread (RDebug *dbg, task_t *task) {
 	thread_array_t threads = NULL;
@@ -30,102 +46,9 @@ static thread_t getcurthread (RDebug *dbg, task_t *task) {
 	return threads[0];
 }
 
-#if TARGET_OS_IPHONE
-static int isThumb32(ut16 op) {
-	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
+static bool hwstep_enable(RDebug *dbg, bool enable) {
+	return xnu_native_hwstep_enable (dbg, enable);
 }
-
-static bool ios_hwstep_enable64(RDebug *dbg, bool enable) {
-	ARMDebugState64 ds;
-	thread_t th = getcurthread (dbg, NULL);
-
-	mach_msg_type_number_t count = ARM_DEBUG_STATE64_COUNT;
-	if (thread_get_state (th, ARM_DEBUG_STATE64,
-			(thread_state_t)&ds, &count)) {
-		perror ("thread-get-state");
-		return false;
-	}
-	// The use of __arm64__ here is not ideal.  If debugserver is running on
-	// an armv8 device, regardless of whether it was built for arch arm or
-	// arch arm64, it needs to use the MDSCR_EL1 SS bit to single
-	// instruction step.
-
-	// MDSCR_EL1 single step bit at gpr.pc
-	if (enable) {
-		ds.mdscr_el1 |= 1LL;
-	} else {
-		ds.mdscr_el1 &= ~(1ULL);
-	}
-	if (thread_set_state (th, ARM_DEBUG_STATE64,
-			(thread_state_t)&ds, count)) {
-		perror ("thread-set-state");
-	}
-	return true;
-}
-
-static bool ios_hwstep_enable32(RDebug *dbg, bool enable) {
-	mach_msg_type_number_t count;
-	arm_unified_thread_state_t state = {{0}};
-	_STRUCT_ARM_DEBUG_STATE ds;
-	task_t task = 0;
-	thread_t th = getcurthread (dbg, &task);
-	int ret;
-
-	count = ARM_DEBUG_STATE32_COUNT;
-	ret = thread_get_state (th, ARM_DEBUG_STATE32, (thread_state_t)&ds, &count);
-	if (ret != KERN_SUCCESS) {
-		perror ("thread_get_state(debug)");
-	}
-
-	count = ARM_UNIFIED_THREAD_STATE_COUNT;
-	ret = thread_get_state (th, ARM_UNIFIED_THREAD_STATE, (thread_state_t)&state, &count);
-	if (ret != KERN_SUCCESS) {
-		perror ("thread_get_state(unified)");
-	}
-	//eprintf ("PC = 0x%08x\n", state.ts_32.__pc);
-	if (enable) {
-		int i;
-		RIOBind *bio = &dbg->iob;
-		ut32 pc = state.ts_32.__pc;
-		ut32 cpsr = state.ts_32.__cpsr;
-		for (i = 0; i < 16 ; i++) {
-			ds.__bcr[i] = ds.__bvr[i] = 0;
-		}
-		i = 0;
-		ds.__bvr[i] = pc & (UT32_MAX >> 2) << 2;
-		ds.__bcr[i] = BCR_M_IMVA_MISMATCH | S_USER | BCR_ENABLE;
-		if (cpsr & 0x20) {
-			ut16 op;
-			if (pc & 2) {
-				ds.__bcr[i] |= BAS_IMVA_2_3;
-			} else {
-				ds.__bcr[i] |= BAS_IMVA_0_1;
-			}
-			/* check for thumb */
-			bio->read_at (bio->io, pc, (void *)&op, 2);
-			if (isThumb32 (op)) {
-				eprintf ("Thumb32 chain stepping not supported yet\n");
-			} else {
-				ds.__bcr[i] |= BAS_IMVA_ALL;
-			}
-		} else {
-			ds.__bcr[i] |= BAS_IMVA_ALL;
-		}
-	}
-	if (thread_set_state (th, ARM_DEBUG_STATE32, (thread_state_t)&ds, ARM_DEBUG_STATE32_COUNT)) {
-		perror ("thread_set_state");
-		return false;
-	}
-	return true;
-}
-
-static bool ios_hwstep_enable(RDebug *dbg, bool enable) {
-	if (dbg->bits == R_SYS_BITS_64)
-		return ios_hwstep_enable64 (dbg, enable);
-	return ios_hwstep_enable32 (dbg, enable);
-}
-
-#endif //TARGET_OS_IPHONE
 
 static task_t task_for_pid_workaround(int Pid) {
 	host_t myhost = mach_host_self();
@@ -170,7 +93,7 @@ bool xnu_step(RDebug *dbg) {
 #if __arm__ || __arm64__ || __aarch64__
 	// op-not-permitted ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0); //SIGINT
 	task_t task;
-	ios_hwstep_enable (dbg, true);
+	hwstep_enable (dbg, true);
 	task = pid_to_task (dbg->pid);
 	if (task<1) {
 		perror ("pid_to_task");
@@ -187,7 +110,7 @@ bool xnu_step(RDebug *dbg) {
 		ret = true;
 	} else perror ("thread_resume");
 #endif
-	ios_hwstep_enable (dbg, false);
+	hwstep_enable (dbg, false);
 //	eprintf ("thu %d\n", ptrace (PT_THUPDATE, dbg->pid, (void*)0, 0));
 #else
 #if XNU_USE_PTRACE
@@ -197,8 +120,31 @@ bool xnu_step(RDebug *dbg) {
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 	}
 #else
+#if 0
+	task_t task;
 	thread_t th = getcurthread (dbg, &task);
 	task_resume (task);
+#endif
+	task_t task = pid_to_task (dbg->pid);
+	if (task<1) {
+		perror ("pid_to_task");
+		eprintf ("step failed on task %d for pid %d\n", task, dbg->tid);
+	}
+	hwstep_enable (dbg, true);
+	if (task_resume (task) != KERN_SUCCESS) {
+		perror ("thread_resume");
+	} else {
+		ret = true;
+		waitpid (dbg->pid, NULL, 0);
+	}
+#if 0
+	if (thread_resume (dbg->tid) == KERN_SUCCESS) {
+		ret = true;
+	} else perror ("thread_resume");
+	int rc = ptrace (PT_THUPDATE, dbg->pid, thport, );
+	if (rc) perror ("PT_THUPDATE");
+#endif
+	hwstep_enable (dbg, false);
 #endif
 #endif
 	return ret;
@@ -213,6 +159,12 @@ int xnu_attach(RDebug *dbg, int pid) {
 		perror ("ptrace (PT_ATTACH)");
 		return -1;
 	}
+	int rc = ptrace (PT_ATTACHEXC, pid, 0, 0);
+	if (rc) perror ("PT_THUPDATE");
+	// TODO: move into attach
+#if XNU_USE_EXCTHR
+	xnu_create_exception_thread(dbg);
+#endif
 #endif
 	return pid;
 }

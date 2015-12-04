@@ -42,6 +42,7 @@ typedef struct _exception_info {
 	exception_behavior_t behaviors[EXC_TYPES_COUNT];
 	thread_state_flavor_t flavors[EXC_TYPES_COUNT];
 	mach_msg_type_number_t count;
+	pthread_t thread;
 } xnu_exception_info;
 
 typedef struct _xnu_thread {

@@ -1,6 +1,8 @@
 //FIXME improve how we set registers
 //FIXME refactor the how we process errors
 
+#include "xnu_threads.h"
+
 #define set_trace_bit(dbg, thread) modify_trace_bit (dbg, thread, 1)
 #define clear_trace_bit(dbg, thread) modify_trace_bit (dbg, thread, 0)
 
@@ -12,11 +14,9 @@
    ENABLE is a boolean, indicating whether to set (1) the Trap Flag
    or clear it (0).  */
 
-static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
+static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	R_REG_T *state;
 	int ret;
-	unsigned int state_count = R_REG_STATE_SZ;
-  	kern_return_t kr;
 	ret = xnu_thread_get_gpr (dbg, th);
 	if (!ret) {
 		eprintf ("error to get gpr registers in trace bit intel\n");
@@ -182,38 +182,40 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 		return false;
 	}
 	return true;
+}
 
 #elif __POWERPC__
 	// no need to do this here
-	return false;
+static int modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
+	return true;
+}
 #else
 #error "unknown architecture"
 #endif
-}
 
 //TODO implement current thread
 //TODO logic to step
+static xnu_exception_info ex = { { 0 } };
 
 //FIXME this will not compile
 static bool xnu_save_exception_ports (RDebug *dbg) {
 	kern_return_t kr;
 	task_t task = pid_to_task (dbg->pid);
-	dbg->ex->count = (sizeof (dbg->ex->ports) / sizeof (dbg->ex->ports[0]));
-	if (task == -1) {
-		perror ("xnu_save_exception_ports: pid_to_task:");
+	ex.count = (sizeof (ex.ports) / sizeof (ex.ports[0]));
 		return false;
-	}
 	kr = task_get_exception_ports (task, EXC_MASK_ALL,
-		dbg->ex->masks, &dbg->ex->count, dbg->ex->ports,
-		dbg->ex->behaviors, dbg->ex->flavors);
+		ex.masks, &ex.count, ex.ports,
+		ex.behaviors, ex.flavors);
 	return (kr == KERN_SUCCESS);
 }
 
-static void xnu_exception_thread (void *arg) {
+static void *xnu_exception_thread (void *arg) {
 	// here comes the important thing
+	eprintf ("xnu.exception.thread started\n");
+	return NULL;
 }
 
-static bool xnu_create_exception_thread(RDebug *dbg) {
+bool xnu_create_exception_thread(RDebug *dbg) {
 	kern_return_t kr;
 	int ret;
 	mach_port_t exception_port = MACH_PORT_NULL;
@@ -252,7 +254,7 @@ static bool xnu_create_exception_thread(RDebug *dbg) {
         // Create the exception thread
 	//TODO where to save the exception thread
 	//TODO see options pthread_create
-        ret = pthread_create (&dbg->ex->thread, NULL, xnu_exception_thread, dbg);
+        ret = pthread_create (&ex.thread, NULL, &xnu_exception_thread, dbg);
 	if (ret) {
 		perror ("pthread_create");
 		return false;

@@ -123,7 +123,6 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-
 //XXX this should work as long as in arm trace bit relies on this
 static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
 	kern_return_t rc;

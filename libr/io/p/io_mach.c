@@ -322,6 +322,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	task = debug_attach (pid);
 	if ((int)task == -1) {
 		if (pid>0 && io->referer && !strncmp (io->referer, "dbg://", 6)) {
+			eprintf ("Child killed\n");
 			kill (pid, 9);
 		}
 		switch (errno) {
