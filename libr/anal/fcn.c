@@ -691,7 +691,7 @@ static int check_preludes(ut8 *buf, unsigned bufsz) {
 
 R_API int check_fcn(RAnal *anal, ut8 *buf, unsigned bufsz, ut64 addr, ut64 low, ut64 high) {
 	RAnalOp op = {0};
-	int i, oplen, opcnt = 0, pushcnt = 0, movcnt = 0;
+	int i, oplen, opcnt = 0, pushcnt = 0, movcnt = 0, brcnt = 0;
 	if (check_preludes(buf, bufsz)) return true;
 	for (i = 0; i < bufsz && opcnt < 10; i += oplen, opcnt++) {
 		r_anal_op_fini (&op);
@@ -711,12 +711,13 @@ R_API int check_fcn(RAnal *anal, ut8 *buf, unsigned bufsz, ut64 addr, ut64 low, 
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 			if (op.jump < low || op.jump >= high) return false;
+			brcnt++;
 			break;
 		case R_ANAL_OP_TYPE_UNK:
 			return false;
 		}
 	}
-	return (pushcnt + movcnt > 5);
+	return (pushcnt + movcnt + brcnt > 5);
 }
 
 static void fcnfit (RAnal *a, RAnalFunction *f) {
