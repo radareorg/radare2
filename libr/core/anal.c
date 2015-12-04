@@ -205,10 +205,12 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 	return NULL;
 }
 
+/*
 static int iscodesection(RCore *core, ut64 addr) {
 	RIOSection *s = r_io_section_vget (core->io, addr);
 	return (s && s->rwx & R_IO_EXEC)? 1: 0;
 }
+*/
 
 static ut64 *next_append (ut64 *next, int *nexti, ut64 v) {
 	next = realloc (next, sizeof (ut64) * (1 + *nexti));
@@ -228,24 +230,56 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 	}
 }
 
+static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refdepth) {
+	ut8 *buf;
+	RIOSection *sec;
+	if (!refdepth) return 1;
+	sec = r_io_section_vget (core->io, ref->addr);
+	if (!sec) return 1;
+	buf = malloc (100);
+	if (!buf) {
+		eprintf ("Error: malloc (buf)\n");
+		return 0;
+	}
+	memset(buf, 0, 100);
+	r_io_read_at (core->io, ref->addr, buf, 100);
+
+	if (sec->rwx & R_IO_EXEC &&
+			check_fcn (core->anal, buf, 100, ref->addr, sec->vaddr, sec->vaddr + sec->vsize)) {
+		if (core->anal->limit) {
+			if (ref->addr < core->anal->limit->from || ref->addr > core->anal->limit->to) {
+				free(buf);
+				return 1;
+			}
+		}
+		r_core_anal_fcn (core, ref->addr, ref->at, ref->type, fcndepth-1);
+
+	} else {
+		ut64 offs, sz = core->anal->bits >> 3;
+		RAnalRef ref1;
+		ref1.type = R_ANAL_REF_TYPE_DATA;
+		ref1.at = ref->addr;
+		ref1.addr = 0;
+		for (offs = 0; offs < 100; offs += sz, ref1.at += sz) {
+			r_mem_copyendian ((ut8*)&ref1.addr, buf + offs, sz, !core->anal->big_endian);
+			r_anal_try_get_fcn (core, &ref1, fcndepth, refdepth-1);
+		}
+	}
+
+	free(buf);
+	return 1;
+}
+
 static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 	RListIter *iter;
 	RAnalRef *ref;
+
 	r_list_foreach (fcn->refs, iter, ref) {
 		if (ref->addr != UT64_MAX) {
 			switch (ref->type) {
 			case 'd':
-				if (core->anal->opt.followdatarefs && iscodesection (core, ref->addr)) {
-					RIOSection *sec = r_io_section_vget (core->io, ref->addr);
-					ut8 *buf1 = malloc (100);
-					if (!buf1) {
-						eprintf ("Error: malloc (buf1)\n");
-						return 0;
-					}
-					r_io_read_at (core->io, ref->addr, buf1, 100);
-					if (check_fcn(core->anal, buf1, 100, ref->addr, sec->vaddr, sec->vaddr + sec->vsize))
-						r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth-1);
-					free(buf1);
+				if (core->anal->opt.followdatarefs) {
+					r_anal_try_get_fcn (core, ref, depth, 2);
 				}
 				break;
 			case R_ANAL_REF_TYPE_CODE:
@@ -259,6 +293,7 @@ static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 			// added in core->anal->fcns which is freed in r_anal_free()
 		}
 	}
+
 	return 1;
 }
 
