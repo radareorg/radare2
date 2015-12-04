@@ -2377,9 +2377,12 @@ int PE_(r_bin_pe_is_pie)(struct PE_(r_bin_pe_obj_t)* bin) {
 }
 
 int PE_(r_bin_pe_is_big_endian)(struct PE_(r_bin_pe_obj_t)* bin) {
+	/*
 	if (!bin || !bin->nt_headers)
 		return false;
 	return HASCHR (PE_IMAGE_FILE_BYTES_REVERSED_HI);
+	*/
+	return false;	// this flag is deprecated, see ms specs
 }
 
 int PE_(r_bin_pe_is_stripped_relocs)(struct PE_(r_bin_pe_obj_t)* bin) {
