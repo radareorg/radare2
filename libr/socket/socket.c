@@ -152,9 +152,9 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	}
 	return true;
 #elif __UNIX__ || defined(__CYGWIN__)
-	if (!proto) proto = R_SOCKET_PROTO_TCP;
 	int gai, ret;
 	struct addrinfo hints, *res, *rp;
+	if (!proto) proto = R_SOCKET_PROTO_TCP;
 	signal (SIGPIPE, SIG_IGN);
 	if (proto == R_SOCKET_PROTO_UNIX) {
 		if (!r_socket_unix_connect (s, host))

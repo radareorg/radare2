@@ -216,8 +216,9 @@ R_API DIR* r_sandbox_opendir (const char *path) {
 }
 
 R_API int r_sys_stop () {
+	int pid;
 	if (enabled) return R_FALSE;
-	int pid = r_sys_getpid ();
+	pid = r_sys_getpid ();
 #ifndef SIGSTOP
 #define SIGSTOP 19
 #endif

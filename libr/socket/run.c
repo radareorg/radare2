@@ -131,9 +131,9 @@ static char *getstr(const char *src) {
 		{
 			char *pat = strchr (src+1, '@');
 			if (pat) {
+				int i, len, rep = atoi (src+1);
 				*pat++ = 0;
-				int i, rep = atoi (src+1);
-				int len = strlen (pat);
+				len = strlen (pat);
 				if (rep>0) {
 					char *buf = malloc (rep);
 					for(i=0;i<rep;i++) {

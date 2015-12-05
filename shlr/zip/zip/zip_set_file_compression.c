@@ -42,6 +42,7 @@ zip_set_file_compression(struct zip *za, zip_uint64_t idx,
 			 zip_int32_t method, zip_uint32_t flags)
 {
     struct zip_entry *e;
+    zip_int32_t old_method;
 
     if (idx >= za->nentry) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
@@ -60,7 +61,7 @@ zip_set_file_compression(struct zip *za, zip_uint64_t idx,
 
     e = za->entry+idx;
     
-    zip_int32_t old_method = (e->orig == NULL ? ZIP_CM_DEFAULT : e->orig->comp_method);
+    old_method = (e->orig == NULL ? ZIP_CM_DEFAULT : e->orig->comp_method);
     
     /* XXX: revisit this when flags are supported, since they may require a recompression */
     

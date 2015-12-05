@@ -796,6 +796,7 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 	slen = strlen (str) + 1;
 
 	for (i = 0; i < clen; ) {
+		int newo;
 		bias = 0;
 		p = (char *)r_mem_mem (
 			(const ut8*)clean + i, clen - i,
@@ -806,7 +807,7 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 		 * we need delta to keep track of it*/
 		str_p = str + thunk[i] + delta;
 
-		int newo = thunk[i + klen] - thunk[i];
+		newo = thunk[i + klen] - thunk[i];
 		r_str_ansi_filter(str_p, NULL, NULL, newo);
 		scnd = strdup (str_p + newo);
 		bias = vlen - newo;

@@ -108,6 +108,8 @@ static char* cyclic_pattern_long() {
 R_API int r_debruijn_offset(ut64 value, int guest_endian) {
 	ut64 needle_l[2];  // Hold the value as a string.
 	char* needle, *pattern;
+	int n, host_endian, retval;
+	char* pch;
 
 	if (value == 0)
 		return -1;
@@ -123,14 +125,14 @@ R_API int r_debruijn_offset(ut64 value, int guest_endian) {
 
 	// we should not guess the endian. its already handled by other functions 
 	// and configure by the user in cfg.bigendian
-	int n = 1;
+	n = 1;
 	// little endian if true
-	int host_endian = (*(char*)&n == 1) ? 1 : 0;
+	host_endian = (*(char*)&n == 1) ? 1 : 0;
 	if (host_endian != guest_endian)
 		reverse_string (needle);
 
-	char* pch = strstr (pattern, needle);
-	int retval = -1;
+	pch = strstr (pattern, needle);
+	retval = -1;
 	if (pch != NULL)
 		retval = (int)(pch - pattern);
 	free (pattern);
