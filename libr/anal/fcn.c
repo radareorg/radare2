@@ -750,7 +750,8 @@ static int cmpaddr (const void *_a, const void *_b) {
 void r_anal_trim_jmprefs(RAnalFunction *fcn) {
 	RAnalRef *ref;
 	RListIter *iter;
-	r_list_foreach (fcn->refs, iter, ref) {
+	RListIter *tmp;
+	r_list_foreach_safe (fcn->refs, iter, tmp, ref) {
 		if (ref->type == R_ANAL_REF_TYPE_CODE &&
 				ref->addr >= fcn->addr && (ref->addr - fcn->addr) < fcn->size) {
 			r_list_delete(fcn->refs, iter);
