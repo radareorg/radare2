@@ -172,7 +172,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #elif R_INLINE
   #define R_API inline
 #else
-  #if defined(__GNUC__)
+  #if defined(__GNUC__) && __GNUC__ >= 4
     #define R_API __attribute__((visibility("default")))
   #else
     #define R_API
