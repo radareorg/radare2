@@ -475,8 +475,8 @@ SDB_API int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 
 static int sdb_foreach_list_cb(void *user, const char *k, const char *v) {
 	SdbList *list = (SdbList *)user;
-	list->free = free;
 	SdbKv *kv = R_NEW0 (SdbKv);
+	list->free = free;
 	/* fake read-only */
 	kv->key = (char *)k;
 	kv->value = (char*)v;

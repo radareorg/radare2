@@ -36,11 +36,11 @@ static int r_print_stereogram_private(const char *bump, int w, int h, char *out,
 	const char *string = "Az+|.-=/^@_pT";
 	const int string_len = strlen (string);
 
-	if (!bump || !out)
-		return 0;
 	int x, y, s, l = 0, l2 = 0, ch;
 	int skip = 7;
 	int bumpi = 0, outi = 0;
+	if (!bump || !out)
+		return 0;
 	for (y = 0; bump[bumpi] && outi<size; y++) {
 		l = l2 = 0;
 		for (x = 0; bump[bumpi] && outi<size && x<w; x++) {
@@ -994,8 +994,8 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size) {
 	p->cb_printf ("\n");
 	for (i=0; i<size; i++) {
 		ut8 next = (i+1<size)? arr[i+1]:0;
-		p->cb_printf ("%02x %04x |", i, arr[i]);
 			int base = 0;
+		p->cb_printf ("%02x %04x |", i, arr[i]);
 			if (next<INC) base = 1;
 		if (next<arr[i]) {
 			//if (arr[i]>0 && i>0) p->cb_printf ("  ");

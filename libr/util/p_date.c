@@ -56,7 +56,6 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 
 R_API int r_print_date_get_now(RPrint *p, char *str) {
 	int ret = 0;
-        *str = 0;
 #if __UNIX__
         struct tm curt; /* current time */
         time_t l;
@@ -66,6 +65,7 @@ R_API int r_print_date_get_now(RPrint *p, char *str) {
 		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
+        *str = 0;
         l = time(0);
         localtime_r (&l, &curt);
 	// XXX localtime is affected by the timezone. 
@@ -81,6 +81,7 @@ R_API int r_print_date_get_now(RPrint *p, char *str) {
 		ret = sizeof(time_t);
 	}
 #else
+        *str = 0;
 #warning r_print_date_now NOT IMPLEMENTED FOR THIS PLATFORM
 #endif
 	return ret;
