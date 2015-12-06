@@ -977,8 +977,9 @@ typedef struct r_anal_esil_t {
 	int debug;
 	ut64 flags;
 	ut64 address;
-	int delay;
-	ut64 delay_addr;
+	int delay; 				// mapped to $ds in ESIL
+	ut64 jump_target; 		// mapped to $jt in ESIL
+	int jump_target_set; 	// mapped to $js in ESIL
 	int trap;
 	ut32 trap_code; // extend into a struct to store more exception info?
 	// parity flag? done with cur

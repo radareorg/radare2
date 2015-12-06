@@ -1382,6 +1382,7 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	int ret;
 	ut8 code[256];
 	RAnalOp op;
+	RAnalEsil *esil = core->anal->esil;
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	ut64 addr = r_reg_getv (core->anal->reg, name);
 	repeat:
@@ -1389,14 +1390,15 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		eprintf ("[+] ESIL emulation interrupted at 0x%08"PFMT64x"\n", addr);
 		return 0;
 	}
-	if (!core->anal->esil) {
+	if (!esil) {
 		int romem = r_config_get_i (core->config, "esil.romem");
 		int stats = r_config_get_i (core->config, "esil.stats");
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		int exectrap = r_config_get_i (core->config, "esil.exectrap");
 		core->anal->esil = r_anal_esil_new (iotrap);
-		r_anal_esil_setup (core->anal->esil, core->anal, romem, stats); // setup io
-		core->anal->esil->exectrap = exectrap;
+		esil = core->anal->esil;
+		r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
+		esil->exectrap = exectrap;
 		RList *entries = r_bin_get_entries (core->bin);
 		RBinAddr *entry = NULL;
 		RBinInfo *info = NULL;
@@ -1411,7 +1413,7 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		r_reg_setv (core->anal->reg, name, addr);
 		// set memory read only
 	} else {
-		core->anal->esil->trap = 0;
+		esil->trap = 0;
 		addr = r_reg_getv (core->anal->reg, name);
 		//eprintf ("PC=0x%llx\n", (ut64)addr);
 	}
@@ -1419,12 +1421,8 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		eprintf ("esil pin called\n");
 		return 1;
 	}
-	if (core->anal->esil->delay) {
-		addr = core->anal->esil->delay_addr;
-	}
-	if (core->anal->esil->exectrap) {
+	if (esil->exectrap) {
 		if (!(r_io_section_get_rwx (core->io, addr) & R_IO_EXEC)) {
-			RAnalEsil *esil = core->anal->esil;
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
@@ -1434,26 +1432,53 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	r_io_read_at (core->io, addr, code, sizeof (code));
 	r_asm_set_pc (core->assembler, addr);
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
-	core->anal->esil->delay = op.delay && !core->anal->esil->delay && ret;
-	if (core->anal->esil->delay) {
-		// analyze and execute the delayed instruction first
-		// and save the actual instruction addr for later
-		core->anal->esil->delay_addr = addr;
-		r_reg_setv (core->anal->reg, name, addr + op.size);
-		goto repeat;
-	}
-	// Always increment pc register before executing op.esil
 	if (op.size<1) op.size = 1; // avoid inverted stepping
 	r_reg_setv (core->anal->reg, name, addr + op.size);
 	if (ret) {
-		//r_anal_esil_eval (core->anal, input+2);
-		RAnalEsil *esil = core->anal->esil;
+		ut64 delay_slot = 0;
+		r_anal_esil_reg_read (esil, "$ds", &delay_slot, NULL);
+		if (delay_slot > 0) {
+			if (op.type >= R_ANAL_OP_TYPE_JMP && 
+				op.type <= R_ANAL_OP_TYPE_CRET) {
+				// branches are illegal in a delay slot
+				esil->trap = R_ANAL_TRAP_EXEC_ERR;
+				esil->trap_code = addr;
+				eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
+				return 1;
+			}
+		}
+
 		r_anal_esil_set_pc (esil, addr);
 		r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
 		if (core->anal->cur && core->anal->cur->esil_post_loop)
 			core->anal->cur->esil_post_loop (esil, &op);
 		r_anal_esil_dumpstack (esil);
 		r_anal_esil_stack_free (esil);
+
+		delay_slot--;
+
+		if (((st64)delay_slot) >= 0) {
+			// save decreased delay slot counter
+			r_anal_esil_reg_write (esil, "$ds", delay_slot);
+		}
+
+		if (((st64)delay_slot) <= 0) {
+			// no delay slot, or just consumed
+			ut64 jump_target_set = 0;
+			r_anal_esil_reg_read (esil, "$js", &jump_target_set, NULL);
+			if (jump_target_set) {
+				// perform the branch
+				ut64 jump_target = 0;
+				r_anal_esil_reg_read (esil, "$jt", &jump_target, NULL);
+				r_anal_esil_reg_write (esil, "$js", 0);
+				r_reg_setv (core->anal->reg, name, jump_target);
+			}
+		}
+
+		if (((st64)delay_slot)>=0 && !esil->trap) {
+			// emulate the instruction and its delay slots in the same 'aes' step
+			goto repeat;
+		}
 	}
 
 	st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
@@ -1477,7 +1502,7 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 		} else goto repeat;
 	}
 	// check esil
-	if (core->anal->esil->trap) {
+	if (esil->trap) {
 		eprintf ("TRAP\n");
 		return 0;
 	}

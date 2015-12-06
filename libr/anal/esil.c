@@ -364,6 +364,59 @@ static int esil_internal_read (RAnalEsil *esil, const char *str, ut64 *num) {
 	case 's':						//sign
 		*num = esil_internal_sign_check (esil);
 		break;
+	case 'd':						//delay slot state
+		switch (str[2]) {
+		case 's':
+			*num = esil->delay;
+			break;
+		default:
+			return false;
+		}
+		break;
+	case 'j':						// jump target
+		switch (str[2]) {
+		case 't':
+			*num = esil->jump_target;
+			break;
+		case 's':
+			*num = esil->jump_target_set;
+			break;
+		default:
+			return false;
+		}
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+static int esil_internal_write (RAnalEsil *esil, const char *str, ut64 num) {
+	if (!str || !*str) {
+		return false;
+	}
+	switch (str[1]) {
+	case 'd':						//delay slot state
+		switch (str[2]) {
+		case 's':
+			esil->delay = num;
+			break;
+		default:
+			return false;
+		}
+		break;
+	case 'j':						// jump target
+		switch (str[2]) {
+		case 't':
+			esil->jump_target = num;
+			esil->jump_target_set = 1;
+			break;
+		case 's':
+			esil->jump_target_set = num;
+			break;
+		default:
+			return false;
+		}
 	default:
 		return false;
 	}
@@ -404,6 +457,9 @@ R_API int r_anal_esil_reg_write (RAnalEsil *esil, const char *dst, ut64 num) {
 	if (esil->cb.hook_reg_write) {
 		ret = esil->cb.hook_reg_write (esil, dst, num);
 	}
+	if (!ret && dst[0] == ESIL_INTERNAL_PREFIX && dst[1]) {
+		ret = esil_internal_write (esil, dst, num);
+	}
 	if (!ret && esil->cb.reg_write) {
 		ret = esil->cb.reg_write (esil, dst, num);
 	}
@@ -416,10 +472,9 @@ R_API int r_anal_esil_reg_read (RAnalEsil *esil, const char *regname, ut64 *num,
 	if (!esil || !regname) {
 		return false;
 	}
-	if (!strcmp (regname, "$$")) {
-		if (num) *num = esil->address;
+	if (regname[0] == ESIL_INTERNAL_PREFIX && regname[1]) {
 		if (size) *size = esil->anal->bits;
-		return true;
+		return esil_internal_read(esil, regname, num);
 	}
 	if (!num) num = &localnum;
 	*num = 0LL;
@@ -438,14 +493,15 @@ static int esil_eq (RAnalEsil *esil) {
 	ut64 num, num2;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
+
 	if (src && dst && r_anal_esil_reg_read (esil, dst, &num, NULL)) {
 		if (r_anal_esil_get_parm (esil, src, &num2)) {
-			if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {	//necessary for some flag-things
+			ret = r_anal_esil_reg_write (esil, dst, num2);
+			if (ret && r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {	//necessary for some flag-things
 				esil->cur = num2;
 				esil->old = num;
 				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 			}
-			ret = r_anal_esil_reg_write (esil, dst, num2);
 		} else {
 			IFDBG eprintf ("esil_eq: invalid src\n");
 		}
