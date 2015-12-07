@@ -397,6 +397,8 @@ static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 		return -1;
 	if (bin->is_rela == DT_REL) {
 		rel_sec = get_section_by_name(bin, ".rel.plt");
+		if (!rel_sec)
+			rel_sec = get_section_by_name (bin, ".rela.plt");
 		tsize = sizeof(Elf_(Rel));
 	} else if (bin->is_rela == DT_RELA) {
 		rel_sec = get_section_by_name(bin, ".rela.plt");
