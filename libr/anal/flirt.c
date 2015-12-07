@@ -507,7 +507,7 @@ static void print_node (const RAnal *anal, const RFlirtNode *node, int indent) {
 }
 
 static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
-		ut8 *b, ut64 address, int buf_size, int buf_idx) {
+		ut8 *b, ut64 address, int buf_size) {
 	/* Returns true if module matches b, according to the signatures infos.
 	 * Return false otherwise.
 	 * The buffer starts from the first byte after the pattern */
@@ -522,7 +522,8 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 
 	if (module->tail_bytes) {
 		r_list_foreach (module->tail_bytes, tail_byte_it, tail_byte) {
-			if (b[buf_idx + module->crc_length + tail_byte->offset] != tail_byte->value)
+			if (32 + module->crc_length + tail_byte->offset + tail_byte->value < buf_size &&
+				b[32 + module->crc_length + tail_byte->offset] != tail_byte->value)
 				return false;
 		}
 	}
@@ -576,7 +577,7 @@ static int node_match_buffer (const RAnal *anal, const RFlirtNode *node, ut8 *b,
 			}
 		} else if (node->module_list) {
 			r_list_foreach (node->module_list, module_it, module) {
-				if (module_match_buffer(anal, module, b, address, buf_size, buf_idx + node->length))
+				if (module_match_buffer(anal, module, b, address, buf_size))
 					return true;
 			}
 		}
