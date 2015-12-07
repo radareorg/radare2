@@ -1457,11 +1457,6 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 
 		delay_slot--;
 
-		if (((st64)delay_slot) >= 0) {
-			// save decreased delay slot counter
-			r_anal_esil_reg_write (esil, "$ds", delay_slot);
-		}
-
 		if (((st64)delay_slot) <= 0) {
 			// no delay slot, or just consumed
 			ut64 jump_target_set = 0;
@@ -1475,9 +1470,13 @@ static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 			}
 		}
 
-		if (((st64)delay_slot)>=0 && !esil->trap) {
-			// emulate the instruction and its delay slots in the same 'aes' step
-			goto repeat;
+		if (((st64)delay_slot)>=0) {
+			// save decreased delay slot counter
+			r_anal_esil_reg_write (esil, "$ds", delay_slot);
+			if (!esil->trap) {
+				// emulate the instruction and its delay slots in the same 'aes' step
+				goto repeat;
+			}
 		}
 	}
 
