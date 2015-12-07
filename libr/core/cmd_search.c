@@ -274,8 +274,8 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		}
 	}
 
-        if (core->section && (core->section->rwx & R_IO_MAP))
-               addr += core->section->offset;
+	if (core->section && (core->section->rwx & R_IO_MAP))
+		base_addr = core->section->offset;
 
 	if (searchshow && kw && kw->keyword_length > 0) {
 		int len, i, extra, mallocsize;
@@ -286,7 +286,8 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
 			str = malloc (kw->keyword_length + 20);
-			r_core_read_at (core, addr, (ut8*)str, kw->keyword_length);
+			r_core_read_at (core, base_addr + addr,
+				(ut8*)str, kw->keyword_length);
 			p = r_str_utf16_encode (str, kw->keyword_length);
 			s = r_str_newf ("\"%s\"", p);
 			free (p);
@@ -298,10 +299,10 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			if (str) {
 				p = str;
 				memset (str, 0, len);
-				r_core_read_at (core, addr, buf, kw->keyword_length);
+				r_core_read_at (core, base_addr + addr, buf, kw->keyword_length);
 				if (json) {
 					strcpy (str, "0x");
-					p = str+2;
+					p = str + 2;
 				}
 				for (i=0; i<len; i++) {
 					sprintf (p, "%02x", buf[i]);
