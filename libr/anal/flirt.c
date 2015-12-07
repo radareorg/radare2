@@ -507,7 +507,7 @@ static void print_node (const RAnal *anal, const RFlirtNode *node, int indent) {
 }
 
 static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
-		ut8 *b, ut64 address, int buf_size) {
+		ut8 *b, ut64 address, int buf_size, int buf_idx) {
 	/* Returns true if module matches b, according to the signatures infos.
 	 * Return false otherwise.
 	 * The buffer starts from the first byte after the pattern */
@@ -516,12 +516,13 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 	RListIter *tail_byte_it, *flirt_func_it;
 	RFlirtTailByte *tail_byte;
 
-	if (module->crc16 != crc16 (b, module->crc_length))
+	if (32 + module->crc_length < buf_size &&
+			module->crc16 != crc16 (b + 32, module->crc_length))
 		return false;
 
 	if (module->tail_bytes) {
 		r_list_foreach (module->tail_bytes, tail_byte_it, tail_byte) {
-			if (b[module->crc_length + tail_byte->offset] != tail_byte->value)
+			if (b[buf_idx + module->crc_length + tail_byte->offset] != tail_byte->value)
 				return false;
 		}
 	}
@@ -562,20 +563,20 @@ static int node_pattern_match (const RFlirtNode *node, ut8 *b, int buf_size) {
 	return true;
 }
 
-static int node_match_buffer (const RAnal *anal, const RFlirtNode *node, ut8 *b, ut64 address, int buf_size) {
+static int node_match_buffer (const RAnal *anal, const RFlirtNode *node, ut8 *b, ut64 address, int buf_size, int buf_idx) {
 	RListIter *node_child_it, *module_it;
 	RFlirtNode *child;
 	RFlirtModule *module;
 
-	if (node_pattern_match(node, b, buf_size)) {
+	if (node_pattern_match(node, b + buf_idx, buf_size - buf_idx)) {
 		if (node->child_list) {
 			r_list_foreach(node->child_list, node_child_it, child) {
-				if (node_match_buffer(anal, child, b + node->length, address, buf_size - node->length))
+				if (node_match_buffer(anal, child, b, address, buf_size, buf_idx + node->length))
 					return true;
 			}
 		} else if (node->module_list) {
 			r_list_foreach (node->module_list, module_it, module) {
-				if (module_match_buffer(anal, module, b + node->length, address, buf_size - node->length))
+				if (module_match_buffer(anal, module, b, address, buf_size, buf_idx + node->length))
 					return true;
 			}
 		}
@@ -614,7 +615,7 @@ static int node_match_functions (const RAnal *anal, const RFlirtNode *root_node)
 			goto exit;
 		}
 		r_list_foreach (root_node->child_list, node_child_it, child) {
-			if (node_match_buffer (anal, child, func_buf, func->addr, func->size)) {
+			if (node_match_buffer (anal, child, func_buf, func->addr, func->size, 0)) {
 				break;
 			}
 		}
