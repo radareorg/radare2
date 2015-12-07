@@ -536,11 +536,12 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 
 		next_module_function = r_anal_get_fcn_at((RAnal*) anal, address + flirt_func->offset, 0);
 		if (next_module_function) {
-			if (!strncmp("?", flirt_func->name, 1)) // ignore functions named '?'
-				continue;
+			int name_offs = 0;
+			while (flirt_func->name[name_offs] == '?') // skip '?' chars
+				name_offs++;
 
 			free (next_module_function->name);
-			next_module_function->name = r_str_newf("flirt.%s", flirt_func->name);
+			next_module_function->name = r_str_newf("flirt.%s", flirt_func->name + name_offs);
 			anal->flb.set (anal->flb.f, next_module_function->name,
 				next_module_function->addr, next_module_function->size, 0);
 
