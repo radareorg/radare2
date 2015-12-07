@@ -273,6 +273,10 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			return false;
 		}
 	}
+
+        if (core->section && (core->section->rwx & R_IO_MAP))
+               addr += core->section->offset;
+
 	if (searchshow && kw && kw->keyword_length > 0) {
 		int len, i, extra, mallocsize;
 		ut32 buf_sz = kw->keyword_length;
