@@ -539,6 +539,7 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 			int name_offs = 0;
 			while (flirt_func->name[name_offs] == '?') // skip '?' chars
 				name_offs++;
+			if (!flirt_func->name[name_offs]) continue;
 
 			free (next_module_function->name);
 			next_module_function->name = r_str_newf("flirt.%s", flirt_func->name + name_offs);
@@ -556,10 +557,9 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 /* Returns false otherwise. */
 static int node_pattern_match (const RFlirtNode *node, ut8 *b, int buf_size) {
 	int i;
-	if (buf_size < node->length) return false;
 	for (i = 0; i < node->length; i++) {
 		if (! node->variant_bool_array[i])
-			if (node->pattern_bytes[i] != b[i])
+			if (i < node->length && node->pattern_bytes[i] != b[i])
 				return false;
 	}
 	return true;
