@@ -121,7 +121,7 @@ typedef struct r_io_t {
 	int raised;
 	int va;
 	int raw;
-	int vio;		//remove that when vio replaces the old stuff
+	int vio; // remove that when vio replaces the old stuff
 	int sectonly;
 	char *referer;
 	char *redirect;

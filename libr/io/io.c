@@ -626,7 +626,11 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 
 	/* apply write binary mask */
 	if (io->write_mask_fd != -1) {
-		data = malloc (len);
+		data = (len>0)? malloc (len): NULL;
+		if (!data) {
+			eprintf ("malloc failed in write_mask_fd");
+			return -1;
+		}
 		r_io_seek (io, io->off, R_IO_SEEK_SET);
 		r_io_read (io, data, len);
 		r_io_seek (io, io->off, R_IO_SEEK_SET);
@@ -641,6 +645,12 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 		ut64 addr = io->off;
 		r_io_map_select (io, io->off);
 		io->off = addr;
+	}
+	{
+		RIOMap *map = r_io_map_get (io, io->off);
+		if (map) {
+			io->off -= map->from;
+		}
 	}
 
 	if (io->plugin) {
