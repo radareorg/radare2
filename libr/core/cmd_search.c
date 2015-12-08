@@ -274,8 +274,9 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		}
 	}
 
-	if (core->section && (core->section->rwx & R_IO_MAP))
-		base_addr = core->section->offset;
+	// reverting fix for bug 3788 since it breaks search in some cases
+//	if (core->section && (core->section->rwx & R_IO_MAP))
+//		base_addr = core->section->offset;
 
 	if (searchshow && kw && kw->keyword_length > 0) {
 		int len, i, extra, mallocsize;
