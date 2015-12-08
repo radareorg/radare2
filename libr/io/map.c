@@ -76,9 +76,9 @@ R_API RIOMap *r_io_map_get(RIO *io, ut64 addr) {
 	RIOMap *map;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
-		if (map->from == map->to && map >= map->from) {
+		if (map->from == map->to && addr >= map->from) {
 			return map;
-		} else if (map >= map->from && map < map->to) {
+		} else if (addr >= map->from && addr < map->to) {
 			return map;
 		}
 	}
