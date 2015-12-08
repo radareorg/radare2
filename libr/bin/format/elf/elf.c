@@ -367,15 +367,13 @@ ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const
 
 ut64 Elf_(r_bin_elf_get_section_addr)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
 	RBinElfSection *section = get_section_by_name (bin, section_name);
-	if (!section) return UT64_MAX;
-	return section->rva;
+	return section? section->rva: UT64_MAX;
 }
 
-#define REL is_rela ? rela : rel
+#define REL (is_rela ? (void*)rela : (void*)rel)
 #define REL_BUF is_rela ? (ut8*)(&rela[k]) : (ut8*)(&rel[k])
 #define REL_OFFSET is_rela ? rela[k].r_offset : rel[k].r_offset
 #define REL_TYPE is_rela ? rela[k].r_info  : rel[k].r_info
-
 
 static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	Elf_(Rel) *rel = NULL;
@@ -399,11 +397,11 @@ static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 		rel_sec = get_section_by_name(bin, ".rel.plt");
 		if (!rel_sec)
 			rel_sec = get_section_by_name (bin, ".rela.plt");
-		tsize = sizeof(Elf_(Rel));
+		tsize = sizeof (Elf_(Rel));
 	} else if (bin->is_rela == DT_RELA) {
-		rel_sec = get_section_by_name(bin, ".rela.plt");
+		rel_sec = get_section_by_name (bin, ".rela.plt");
 		is_rela = true;
-		tsize = sizeof(Elf_(Rela));
+		tsize = sizeof (Elf_(Rela));
 	}
 	if (!rel_sec) return -1;
 	if (rel_sec->size < 1) return -1;
@@ -419,14 +417,12 @@ static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	for (j = k = 0; j < rel_sec->size && k < nrel; j += tsize, k++) {
 		if (rel_sec->offset + j > bin->size) goto out;
 		if (rel_sec->offset + j + tsize > bin->size) goto out;
-
 #if R_BIN_ELF64
 		len = r_buf_fread_at (bin->b, rel_sec->offset + j, REL_BUF,
 					bin->endian ? "2L" : "2l", 1);
 #else
 		len = r_buf_fread_at (bin->b, rel_sec->offset + j, REL_BUF,
 					bin->endian ? "2I" : "2i", 1);
-
 #endif
 		if (len < 1) goto out;
 		int reloc_type = ELF_R_TYPE (REL_TYPE);
@@ -1087,8 +1083,7 @@ static size_t get_relocs_num(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 }
 
-static int read_reloc(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *r,
-			int is_rela, ut64 offset) {
+static int read_reloc(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	int len;
 	if (offset > bin->size) return -1;
 	if (is_rela) {
@@ -1126,7 +1121,6 @@ static int read_reloc(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *r,
 		r->sym = ELF_R_SYM(rel.r_info);
 		r->last = 0;
 		return sizeof(Elf_(Rel));
-
 	}
 }
 

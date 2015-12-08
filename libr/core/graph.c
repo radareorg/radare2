@@ -1695,10 +1695,8 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 }
 
 static int reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
-	int ret;
 	int is_c = g->is_callgraph;
-	ret = is_c ? get_cgnodes (g, core, fcn) : get_bbnodes (g, core, fcn);
-	return ret;
+	return is_c ? get_cgnodes (g, core, fcn) : get_bbnodes (g, core, fcn);
 }
 
 static void update_seek(RConsCanvas *can, RANode *n, int force) {
@@ -2113,28 +2111,22 @@ static int check_changes(RAGraph *g, int is_interactive,
 	return true;
 }
 
-static int agraph_print(RAGraph *g, int is_interactive,
-                          RCore *core, RAnalFunction *fcn) {
-	int title_len;
+static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFunction *fcn) {
 	int h, w = r_cons_get_size (&h);
-	int ret;
-
-	ret = check_changes (g, is_interactive, core, fcn);
+	int ret = check_changes (g, is_interactive, core, fcn);
 	if (!ret) return false;
 
 	if (is_interactive) {
 		r_cons_clear00 ();
-	}
-
-	/* TODO: limit to screen size when the output is not redirected to file */
-	if (!is_interactive) {
+	} else {
+		/* TODO: limit to screen size when the output is not redirected to file */
 		update_graph_sizes (g);
 	}
 
 	h = is_interactive ? h : g->h + 1;
 	w = is_interactive ? w : g->w;
 	r_cons_canvas_resize (g->can, w, h);
-	r_cons_canvas_clear (g->can);
+	//r_cons_canvas_clear (g->can);
 	if (!is_interactive) {
 		g->can->sx = -g->x;
 		g->can->sy = -g->y + 1;
@@ -2146,8 +2138,8 @@ static int agraph_print(RAGraph *g, int is_interactive,
 	/* print the graph title */
 	(void)G (-g->can->sx, -g->can->sy);
 	W (g->title);
-	title_len = strlen (g->title);
 	if (is_interactive) {
+		int title_len = strlen (g->title);
 		r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
 				w - title_len, 1, ' ', true);
 	}
@@ -2156,14 +2148,13 @@ static int agraph_print(RAGraph *g, int is_interactive,
 
 	if (is_interactive) {
 		const char *cmdv;
-
 		cmdv = r_config_get (core->config, "cmd.gprompt");
 		if (cmdv && *cmdv) {
 			r_cons_gotoxy (0, 1);
 			r_core_cmd0 (core, cmdv);
 		}
+		r_cons_flush ();
 	}
-	r_cons_flush ();
 	return true;
 }
 
@@ -2431,16 +2422,14 @@ R_API void r_agraph_free(RAGraph *g) {
 	agraph_free_nodes (g);
 	r_agraph_set_title (g, NULL);
 	sdb_free (g->db);
-	free(g);
+	free (g);
 }
 
 R_API RAGraph *r_agraph_new(RConsCanvas *can) {
 	RAGraph *g = R_NEW0 (RAGraph);
 	if (!g) return NULL;
-
 	g->can = can;
-
-	agraph_init(g);
+	agraph_init (g);
 	agraph_sdb_init (g);
 	return g;
 }
@@ -2577,7 +2566,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			break;
 		}
 
-		r_cons_show_cursor(false);
+		r_cons_show_cursor (false);
 		wheel = r_config_get_i (core->config, "scr.wheel");
 		if (wheel)
 			r_cons_enable_mouse (true);
@@ -2842,7 +2831,7 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 	core->keep_asmqjmps = false;
 
 	free (grd);
-	r_agraph_free(g);
+	r_agraph_free (g);
 err_graph_new:
 	r_config_set_i (core->config, "scr.interactive", o_scrinteractive);
 	r_cons_canvas_free (can);

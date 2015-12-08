@@ -837,6 +837,9 @@ static int cb_iobuffer(void *user, void *data) {
 static int cb_iocache(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
+	if (!node->i_value) {
+		r_io_cache_reset (core->io, node->i_value);
+	}
 	r_io_cache_enable (core->io, node->i_value, node->i_value);
 	return true;
 }

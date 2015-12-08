@@ -148,7 +148,7 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		// in this case we fallback reopening in raw mode
 		return -1;
 	}
-	if (io->off==UT64_MAX) {
+	if (io->off == UT64_MAX) {
 		memset (buf, 0xff, count);
 		return count;
 	}

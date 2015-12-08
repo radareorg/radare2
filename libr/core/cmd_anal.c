@@ -2803,7 +2803,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		NULL};
 
 	switch (input[0]) {
-	case 'f':
+	case 'f': // "agf"
 		r_core_cmd0 (core, "afg"); // afg should be deprecated imho
 		break;
 	case '-':

@@ -2,8 +2,6 @@
 
 #include <r_util.h>
 
-#define IS_PRINTABLE(x) (x >= ' ' && x <= '~')
-
 R_API int r_name_validate_char(const char ch) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9'))
 		return R_TRUE;

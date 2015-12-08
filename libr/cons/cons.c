@@ -238,11 +238,7 @@ R_API RCons *r_cons_new () {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__ && !__CYGWIN__
-	{
-	char buffer[128];
-	I.ansicon = GetEnvironmentVariable("ANSICON",
-		buffer, sizeof (buffer) > 0);
-	}
+	I.ansicon = r_sys_getenv ("ANSICON");
 #endif
 #if EMSCRIPTEN
 	/* do nothing here :? */
@@ -525,6 +521,14 @@ R_API void r_cons_visual_flush() {
 	}
 }
 
+static int real_strlen(const char *ptr, int len) {
+	int utf8len = r_str_len_utf8 (ptr);
+	int ansilen = r_str_ansi_len (ptr);
+	int diff = len-utf8len;
+	if (diff) diff--;
+	return ansilen - diff;
+}
+
 R_API void r_cons_visual_write (char *buffer) {
 	char white[1024];
 	int cols = I.columns;
@@ -540,13 +544,7 @@ R_API void r_cons_visual_write (char *buffer) {
 		int len = ((int)(size_t)(nl-ptr))+1;
 
 		*nl = 0;
-		{
-			int utf8len = r_str_len_utf8 (ptr);
-			int ansilen = r_str_ansi_len (ptr);
-			int diff = len-utf8len;
-			if (diff) diff--;
-			alen = ansilen - diff;
-		}
+		alen = real_strlen (ptr, len);
 		*nl = '\n';
 		pptr = ptr > buffer ? ptr - 1 : ptr;
 		plen = ptr > buffer ? len : len - 1;

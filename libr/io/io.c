@@ -51,7 +51,12 @@ R_API int r_io_is_listener(RIO *io) {
 
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len) {
 	RBuffer *b = R_NEW0 (RBuffer);
+	if (!b) return NULL;
 	b->buf = malloc (len);
+	if (!b->buf) {
+		free (b);
+		return NULL;
+	}
 	len = r_io_read_at (io, addr, b->buf, len);
 	b->length = (len<0)?0:len;
 	return b;
@@ -291,26 +296,37 @@ R_API RIODesc *r_io_use_fd (RIO *io, int fd) {
 	return desc;
 }
 
+static bool readcache = false;
+
 R_API int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 	int bytes_read = 0;
-	const char *read_from = NULL;
-	if (io->desc && io->desc->plugin && io->desc->plugin->read){
-		read_from = io->desc->plugin->name;
+	const char *source = NULL;
+	if (io->desc && io->desc->plugin && io->desc->plugin->read) {
+		source = io->desc->plugin->name;
 		bytes_read = io->desc->plugin->read (io, io->desc, buf, len);
+#if 1
+		if (readcache) {
+			if (bytes_read>0) {
+				readcache=false;
+				bytes_read = r_io_cache_write (io, io->off, buf, len);
+				readcache=true;
+			}
+		}
+#endif
 	} else if (!io->desc) {
 		if (io->files && r_list_length (io->files) != 0) {
 			eprintf ("Something really bad has happened, and r2 is going to die soon. sorry! :-(\n");
 		}
-		read_from = "FAILED";
+		source = "FAILED";
 		bytes_read = 0;
 	} else {
-		read_from = "File";
+		source = "File";
 		bytes_read = read (io->desc->fd, buf, len);
 	}
 	IO_IFDBG {
 		if (io->desc) eprintf ("Data source: %s\n", io->desc->name);
 		eprintf ("Asked for %d bytes, provided %d from %s\n",
-			len, bytes_read, read_from);
+			len, bytes_read, source);
 	}
 	return bytes_read;
 }
@@ -483,6 +499,14 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		}
 		// XXX is this necessary?
 		ms = r_io_map_select (io, addr+w);
+		if (readcache) {
+			if (r_io_cache_read (io, io->off, buf+w, l) == l) {
+				eprintf ("CACHED\n");
+				w += l;
+				len -= l;
+				continue;
+			}
+		}
 		ret = r_io_read_internal (io, buf+w, l);
 		if (ret < 1) {
 			memset (buf+w, 0xff, l); // reading out of file
@@ -490,9 +514,17 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		} else if (ret < l) {
 			l = ret;
 		}
+		if (readcache) {
+			r_io_cache_write (io, io->off, buf+w, len);
+		}
 #if USE_CACHE
 		if (io->cached) {
 			r_io_cache_read (io, addr+w, buf+w, len); //-w);
+			#if 0
+			int cov = r_io_cache_write (io, addr+w, buf+w, len); //-w);
+			if (cov != len) {
+			}
+			#endif
 		} else if (r_list_length (io->maps) >1) {
 			if (!io->debug && ms>0) {
 				//eprintf ("FAIL MS=%d l=%d d=%d\n", ms, l, d);
@@ -631,6 +663,7 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 			eprintf ("malloc failed in write_mask_fd");
 			return -1;
 		}
+		//memset (data, 0xff, len);
 		r_io_seek (io, io->off, R_IO_SEEK_SET);
 		r_io_read (io, data, len);
 		r_io_seek (io, io->off, R_IO_SEEK_SET);
@@ -674,6 +707,10 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 			r_io_cache_invalidate (io, io->off, io->off+1);
 		}
 	} else {
+		if (readcache) {
+			//r_io_cache_invalidate (io, io->off, io->off + len);
+			r_io_cache_write (io, io->off, buf, len);
+		}
 		if (io->desc) {
 			r_io_map_write_update (io, io->desc->fd, io->off, ret);
 			io->off += ret;

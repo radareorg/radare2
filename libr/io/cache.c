@@ -28,7 +28,6 @@ R_API void r_io_cache_enable(RIO *io, int read, int write) {
 R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 	RListIter *iter;
 	RIOCache *c;
-
 	int ioc = io->cached;
 	io->cached = 2;
 	r_list_foreach (io->cache, iter, c) {
@@ -102,9 +101,22 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 }
 
 R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
+//	int i;
 	RIOCache *ch;
-	if (io->cached == 2) // magic hackaround
+	if (io->cached == 2) {
+		/* do not allow to use the cache write in debugger mode */
+		/* this is a hack to solve issues */
 		return 0;
+	}
+#if 0
+	for (i = 0; i<len; i++) {
+		if (buf[i] != 0xff)
+			break;
+	}
+	if (i == len) {
+		return -1;
+	}
+#endif
 	ch = R_NEW0 (RIOCache);
 	if (!ch) return 0;
 	ch->from = addr;
@@ -128,11 +140,13 @@ R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 
 R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int l, ret, da, db;
+	int covered = 0;
 	RListIter *iter;
 	RIOCache *c;
 
 	r_list_foreach (io->cache, iter, c) {
 		if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {
+//eprintf ("CHKCD 0x%llx %d\n", addr, len);
 			if (ret>0) {
 				da = ret;
 				db = 0;
@@ -140,7 +154,7 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 			} else if (ret<0) {
 				da = 0;
 				db = -ret;
-				l = c->size-db;
+				l = c->size - db;
 			} else {
 				da = 0;
 				db = 0;
@@ -149,7 +163,8 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 			if ((l+da)>len) l = len-da;					//say hello to integer overflow, but this won't happen in realistic scenarios because malloc will fail befor
 			if (l<1) l = 1; // XXX: fail
 			else memcpy (buf+da, c->data+db, l);
+			covered += l;
 		}
 	}
-	return len;
+	return covered;
 }
