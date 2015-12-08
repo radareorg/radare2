@@ -31,12 +31,13 @@ indentFile() {
 		echo "Cannot find $IFILE"
 		return
 	fi
+	echo "Indenting ${IFILE} ..." > /dev/stderr
 	cp -f doc/clang-format ${CWD}/.clang-format
 	(
 	cd "$CWD"
 	clang-format "${IFILE}"  > .tmp-format
 	# fix ternary conditional indent
-	cat .tmp-format | sed -e 's, \? ,? ,g' > .tmp-format2
+	perl -ne 's/ \? /? /g;print' < .tmp-format > .tmp-format2
 	cat .tmp-format2 | sed -e 's, : ,: ,g' > .tmp-format
 	mv .tmp-format .tmp-format2
 	# do not space before parenthesis on function signatures
