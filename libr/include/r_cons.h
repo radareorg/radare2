@@ -512,6 +512,8 @@ R_API RLine *r_line_singleton(void);
 R_API void r_line_free(void);
 R_API char *r_line_get_prompt (void);
 R_API void r_line_set_prompt(const char *prompt);
+R_API int r_line_dietline_init();
+R_API void r_line_hist_free();
 
 typedef int (RLineReadCallback) (void *user, const char *line);
 R_API const char *r_line_readline(void);
