@@ -335,18 +335,18 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			if (searchflags)
 				r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
 			else r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
-				kw->kwidx, kw->count, kw->keyword_length, addr);
+				kw->kwidx, kw->count, kw->keyword_length, base_addr + addr);
 		}
 	}
 	if (first_hit)
 		first_hit = false;
 	if (searchflags) {
 		const char *flag = sdb_fmt (0, "%s%d_%d", searchprefix, kw->kwidx, kw->count);
-		r_flag_set (core->flags, flag, addr, kw->keyword_length, 1);
+		r_flag_set (core->flags, flag, base_addr + addr, kw->keyword_length, 1);
 	}
 	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
-		r_core_seek (core, addr, true);
+		r_core_seek (core, base_addr + addr, true);
 		r_core_cmd (core, cmdhit, 0);
 		r_core_seek (core, here, true);
 	}
