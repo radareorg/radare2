@@ -674,7 +674,7 @@ beach:
 	return ret;
 }
 
-static int check_preludes(ut8 *buf, unsigned bufsz) {
+static int check_preludes(ut8 *buf, ut16 bufsz) {
 	if (bufsz < 10) return false;
 	if (!memcmp(buf, (const ut8 *)"\x55\x89\xe5", 3))
 		return true;
@@ -689,7 +689,7 @@ static int check_preludes(ut8 *buf, unsigned bufsz) {
 	return false;
 }
 
-R_API int check_fcn(RAnal *anal, ut8 *buf, unsigned bufsz, ut64 addr, ut64 low, ut64 high) {
+R_API int check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {
 	RAnalOp op = {0};
 	int i, oplen, opcnt = 0, pushcnt = 0, movcnt = 0, brcnt = 0;
 	if (check_preludes(buf, bufsz)) return true;
