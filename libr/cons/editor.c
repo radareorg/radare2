@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2008-2015 - pancake */
 
 #include <r_cons.h>
-#define I r_cons_singleton()
+#define I r_cons_singleton ()
 
 /* TODO: remove global vars */
 static char *path = NULL;
@@ -15,13 +15,13 @@ static void setnewline(int old) {
 	snprintf (prompt, sizeof (prompt), "%d: ", _n);
 	r_line_set_prompt (prompt);
 	strncpy (I->line->buffer.data, r_str_word_get0 (lines, _n),
-			sizeof (I->line->buffer.data) - 1);
+		sizeof (I->line->buffer.data) - 1);
 	I->line->buffer.data[sizeof (I->line->buffer.data) - 1] = '\0';
 	I->line->buffer.index = I->line->buffer.length = strlen (I->line->buffer.data);
 	I->line->contents = I->line->buffer.data;
 }
 
-static void saveline (int n, const char *str) {
+static void saveline(int n, const char *str) {
 	char *out;
 	if (!str) return;
 	out = r_str_word_get0set (lines, bytes, _n, str, &bytes);
@@ -31,50 +31,46 @@ static void saveline (int n, const char *str) {
 
 static int up(void *n) {
 	int old = _n;
-	if (_n>0) _n--;
+	if (_n > 0) _n--;
 	setnewline (old);
 	return -1;
 }
 
 static int down(void *n) {
-	int old = _n;
-#if 0
-	if (_n<(nlines-1))
-#endif
-		_n++;
+	int old = _n++;
 	setnewline (old);
 	return -1;
 }
 
-static void filesave () {
+static void filesave() {
 	char buf[128];
 	int i;
 	if (!path) {
 		eprintf ("File: ");
 		buf[0] = 0;
-		fgets (buf, sizeof(buf)-1, stdin);
-		buf[sizeof(buf)-1] = 0;
+		fgets (buf, sizeof (buf) - 1, stdin);
+		buf[sizeof (buf) - 1] = 0;
 		i = strlen (buf);
-		if (i>0) {
-			buf[i-1] = 0;
+		if (i > 0) {
+			buf[i - 1] = 0;
 			free (path);
 			path = strdup (buf);
 		}
 	}
 	if (lines) {
-		for (i=0; i<bytes; i++) {
-			if (lines[i]=='\0')
-				lines[i]='\n';
+		for (i = 0; i < bytes; i++) {
+			if (lines[i] == '\0')
+				lines[i] = '\n';
 		}
 	}
-	if (r_file_dump (path, (const ut8*)lines, bytes, 0))
+	if (r_file_dump (path, (const ut8 *)lines, bytes, 0))
 		eprintf ("File '%s' saved (%d bytes)\n", path, bytes);
 	else eprintf ("Cannot save file\n");
 	// restore back zeroes
 	nlines = r_str_split (lines, '\n');
 }
 
-R_API char *r_cons_editor (const char *file, const char *str) {
+R_API char *r_cons_editor(const char *file, const char *str) {
 	const char *line;
 	_n = 0;
 	if (I->editor) {
@@ -87,7 +83,7 @@ R_API char *r_cons_editor (const char *file, const char *str) {
 		lines = r_file_slurp (file, &bytes);
 		nlines = r_str_split (lines, '\n');
 		eprintf ("Loaded %d lines on %d bytes\n",
-			(nlines?(nlines-1):0), bytes);
+			(nlines? (nlines - 1): 0), bytes);
 	} else path = NULL;
 	I->line->hist_up = up;
 	I->line->hist_down = down;
@@ -102,7 +98,7 @@ R_API char *r_cons_editor (const char *file, const char *str) {
 		if (!line) break;
 	}
 	filesave ();
-	I->line->hist_up = 
+	I->line->hist_up = NULL;
 	I->line->hist_down = NULL;
 	I->line->contents = NULL;
 	return lines;

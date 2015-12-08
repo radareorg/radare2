@@ -112,8 +112,7 @@ R_API void r_cons_2048() {
 	twok_add ();
 	while (twok_fin ()) {
 		r_cons_clear00 ();
-		r_cons_printf ("[r2048] score: %d   moves: %d\n",
-			       score, moves);
+		r_cons_printf ("[r2048] score: %d   moves: %d\n", score, moves);
 		r_cons_flush ();
 		twok_print ();
 		ch = r_cons_readchar ();

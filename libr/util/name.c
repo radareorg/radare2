@@ -2,10 +2,10 @@
 
 #include <r_util.h>
 
-#define IS_PRINTABLE(x) (x>=' '&&x<='~')
+#define IS_PRINTABLE(x) (x >= ' ' && x <= '~')
 
 R_API int r_name_validate_char(const char ch) {
-	if ((ch>='a' && ch<='z') || (ch>='A' && ch<='Z') || (ch>='0' && ch<='9'))
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9'))
 		return R_TRUE;
 	switch (ch) {
 	case ':':
@@ -20,10 +20,10 @@ R_API int r_name_check(const char *name) {
 	if (!name || !*name)
 		return R_FALSE;
 	/* Cannot start by number */
-	if (*name>='0' && *name<='9')
+	if (*name >= '0' && *name <= '9')
 		return R_FALSE;
 	/* Cannot contain non-alphanumeric chars + [:._] */
-	for (;*name!='\0'; name++)
+	for (; *name != '\0'; name++)
 		if (!r_name_validate_char (*name))
 			return R_FALSE;
 	return R_TRUE;
@@ -32,18 +32,18 @@ R_API int r_name_check(const char *name) {
 R_API int r_name_filter(char *name, int maxlen) {
 	int i;
 	char *oname;
-	if (maxlen<0) {
+	if (maxlen < 0) {
 		maxlen = strlen (name);
 	}
 	name = oname = r_str_trim_head_tail (name);
-	for (i=0; *name; name++, i++) {
-		if (maxlen && i>maxlen) {
+	for (i = 0; *name; name++, i++) {
+		if (maxlen && i > maxlen) {
 			*name = '\0';
 			break;
 		}
 		if (!r_name_validate_char (*name)) {
 			*name = '_';
-	//		r_str_ccpy (name, name+1, 0);
+			//		r_str_ccpy (name, name+1, 0);
 			//name--;
 		}
 	}
@@ -56,7 +56,7 @@ R_API char *r_name_filter2(const char *name) {
 	while (!IS_PRINTABLE (*name))
 		name++;
 	res = strdup (name);
-	for (i=0; res[i]; i++) {
+	for (i = 0; res[i]; i++) {
 		if (!r_name_validate_char (res[i])) {
 			res[i] = '_';
 		}

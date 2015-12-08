@@ -202,7 +202,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 	if (!c || !s || !*s) return;
 
 	/* split the string into pieces of non-ANSI chars and print them normally,
-	 * using the ANSI chars to set the attr of the canvas */
+	** using the ANSI chars to set the attr of the canvas */
 	orig_x = c->x;
 	do {
 		const char *s_part = set_attr (c, s);
@@ -246,8 +246,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 
 	if (!c) return NULL;
 	b = c->b;
-	o = calloc (sizeof (char),
-		    (c->w * (c->h + 1)) * (CONS_MAX_ATTR_SZ));
+	o = calloc (1, (c->w * (c->h + 1)) * (CONS_MAX_ATTR_SZ));
 	if (!o) return NULL;
 	for (y = 0; y < c->h; y++) {
 		if (!is_first) {

@@ -53,6 +53,9 @@ indentFile() {
 	# struct initializers with spaces wtf
 	mv .tmp-format .tmp-format2
 	awk '{gsub(/\{0\}/, "{ 0 }");print}' < .tmp-format2 > .tmp-format
+	# do not place spaces after tabs
+	mv .tmp-format .tmp-format2
+	perl -ne 's,\t[ +],\t,g;print' < .tmp-format2 > .tmp-format
 
 	if [ "$UNIFIED" = 1 ]; then
 		diff -ru "${IFILE}" .tmp-format
