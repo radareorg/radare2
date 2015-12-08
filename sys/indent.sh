@@ -3,15 +3,16 @@
 IFILE="$1"
 
 if [ -z "${IFILE}" ]; then
-	echo "Usage: indent.sh [-i|-u] [file]"
-	echo " -i - indent in place (modify file"
-	echo " -u - indent in place (modify file"
+	echo "Usage: indent.sh [-i|-u] [file] [...]"
+	echo " -i    indent in place (modify file)"
+	echo " -u    unified diff of the file"
 	exit 1
 fi
 
 CWD="$PWD"
 INPLACE=0
 UNIFIED=0
+ROOTDIR=/
 
 if [ "${IFILE}" = "-i" ]; then
 	shift
@@ -25,29 +26,57 @@ if [ "${IFILE}" = "-u" ]; then
 	IFILE="$1"
 fi
 
+indentFile() {
+	if [ ! -f "${IFILE}" ]; then
+		echo "Cannot find $IFILE"
+		return
+	fi
+	cp -f doc/clang-format ${CWD}/.clang-format
+	(
+	cd "$CWD"
+	clang-format "${IFILE}"  > .tmp-format
+	# fix ternary conditional indent
+	cat .tmp-format | sed -e 's, \? ,? ,g' > .tmp-format2
+	cat .tmp-format2 | sed -e 's, : ,: ,g' > .tmp-format
+	mv .tmp-format .tmp-format2
+	# do not space before parenthesis on function signatures
+	awk '{if (/^static/ || /^R_API/) { gsub(/ \(/,"("); }; print;}' \
+		< .tmp-format2 > .tmp-format
+	# allow oneliner else statements
+	mv .tmp-format .tmp-format2
+	perl -ne 's/\telse\n[ \t]*/\telse /g;print' < .tmp-format2 | \
+		awk '{if (/\telse \t+/) {gsub(/\telse \t+/, "\telse ");} print;}' > .tmp-format
+	mv .tmp-format .tmp-format2
+	perl -ne 's/} else\n[ \t]*/} else /g;print' < .tmp-format2 | \
+		awk '{if (/} else \t+/) {gsub(/} else \t+/, "} else ");} print;}' > .tmp-format
+	# struct initializers with spaces wtf
+	mv .tmp-format .tmp-format2
+	awk '{gsub(/\{0\}/, "{ 0 }");print}' < .tmp-format2 > .tmp-format
+
+	if [ "$UNIFIED" = 1 ]; then
+		diff -ru "${IFILE}" .tmp-format
+		rm .tmp-format
+	elif [ "$INPLACE" = 1 ]; then
+		mv .tmp-format "${IFILE}"
+	else
+		cat .tmp-format
+		rm .tmp-format
+	fi
+	rm -f .tmp-format2
+	)
+	rm -f ${CWD}/.clang-format
+}
+
 while : ; do
 	[ "$PWD" = / ] && break
-	if [ -f doc/clang-format ]; then
-		cp -f doc/clang-format ${CWD}/.clang-format
-		(
-		cd "$CWD"
-		clang-format "${IFILE}"  > .tmp-format
-		# fix ternary conditional indent
-		cat .tmp-format | sed -e 's, \? ,? ,g' > .tmp-format2
-		# do not space before parenthesis on function signatures
-		awk '{if (/^static/ || /^R_API/) { gsub(/ \(/,"("); }; print;}' \
-			< .tmp-format2 > .tmp-format
-		if [ "$UNIFIED" = 1 ]; then
-			diff -ru "${IFILE}" .tmp-format
-			rm .tmp-format
-		elif [ "$INPLACE" = 1 ]; then
-			mv .tmp-format $a
-		else
-			cat .tmp-format
-			rm .tmp-format
+		if [ -f doc/clang-format ]; then
+			ROOTDIR=$PWD
+			while : ; do
+				[ -z "${IFILE}" ] && break
+				indentFile
+				shift
+				IFILE="$1"
+			done
 		fi
-		)
-		rm -f ${CWD}/.clang-format
-	fi
-	cd ..
+		cd ..
 done
