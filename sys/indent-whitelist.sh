@@ -1,5 +1,6 @@
 #!/bin/sh
 FILES="
+libr/io/io.c
 libr/cons/hud.c
 libr/cons/2048.c
 libr/cons/line.c
@@ -12,9 +13,14 @@ libr/util/slist.c
 libr/util/log.c
 libr/util/cache.c
 "
-if [ "$1" = commit ]; then
+case "$1" in
+"commit")
 	sys/indent.sh -i ${FILES}
 	git commit sys/indent* ${FILES}
-else
+	;;
+"apply")
+	sys/indent.sh -i ${FILES}
+	;;
+*)
 	sys/indent.sh -u ${FILES}
-fi
+esac

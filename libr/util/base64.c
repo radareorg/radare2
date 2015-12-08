@@ -71,7 +71,7 @@ R_API int r_base64_encode(char *bout, const ut8 *bin, int len) {
 		len = strlen ((const char *)bin);
 	for (in = out = 0; in < len; in += 3, out += 4)
 		b64_encode (bin + in, (char *)bout + out,
-			   (len - in) > 3? 3: len - in);
+			(len - in) > 3? 3: len - in);
 	bout[out] = 0;
 	return out;
 }
@@ -86,7 +86,7 @@ R_API char *r_base64_encode_dyn(const char *str, int len) {
 	if (!bout) return NULL;
 	for (in = out = 0; in < len; in += 3, out += 4)
 		b64_encode ((const ut8 *)str + in, (char *)bout + out,
-			   (len - in) > 3? 3: len - in);
+			(len - in) > 3? 3: len - in);
 	bout[out] = 0;
 	return bout;
 }
