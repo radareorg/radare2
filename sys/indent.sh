@@ -55,17 +55,20 @@ indentFile() {
 	perl -ne 's,\t[ ]+,\t,g;print' < .tmp-format2 > .tmp-format
 	# drop spaces an multiline backslashes
 	mv .tmp-format .tmp-format2
-	perl -ne 's/[ ]+\\$/ \\/g;print' < .tmp-format2 > .tmp-format
+	perl -ne 's/[ ]+\\$/\\/g;print' < .tmp-format2 > .tmp-format
 	# spaces in { brackets
 	mv .tmp-format .tmp-format2
 	#perl -ne 's/{\s/{ /g;print' < .tmp-format2 > .tmp-format
 	perl -ne 's/{([^\n])/{ \1/g if(!/"/);print' < .tmp-format2 > .tmp-format
 	# spaces in } brackets
 	mv .tmp-format .tmp-format2
-	perl -ne 's/([^\t])}/\1 }/g if(!/"/);print' < .tmp-format2 > .tmp-format
+	perl -ne 's/([^\t])}/$1 }/g if(!/"/);print' < .tmp-format2 > .tmp-format
 	# _( macro
 	mv .tmp-format .tmp-format2
 	perl -ne 's/_\s\(/_(/g;print' < .tmp-format2 > .tmp-format
+	# 0xa0
+	mv .tmp-format .tmp-format2
+	perl -ne 's/[\xa0\xc2]//g;print' < .tmp-format2 > .tmp-format
 
 	if [ "$UNIFIED" = 1 ]; then
 		diff -ru "${IFILE}" .tmp-format

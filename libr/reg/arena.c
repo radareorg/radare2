@@ -256,7 +256,7 @@ R_API int r_reg_arena_push(RReg *reg) {
 		RRegArena *a = reg->regset[i].arena;      // current arena
 		RRegArena *b = r_reg_arena_new (a->size); // new arena
 		if (!a || !b) continue;
-		// if (!i) {  r_print_hexdump (NULL, 0, a->bytes, a->size, 16, 16);  }
+		// if (!i) {    r_print_hexdump (NULL, 0, a->bytes, a->size, 16, 16);    }
 		memcpy (b->bytes, a->bytes, a->size);
 		r_list_push (reg->regset[i].pool, b);
 		reg->regset[i].arena = b;

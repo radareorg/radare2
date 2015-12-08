@@ -16,18 +16,19 @@
 R_LIB_VERSION (r_bin);
 
 #define DB a->sdb;
-#define RBINLISTFREE(x) \
-	if (x) {  \
-		r_list_free (x); \
-		x = NULL; \
+#define RBINLISTFREE(x)\
+	if (x) { \
+		r_list_free (x);\
+		x = NULL;\
 	}
-#define REBASE_PADDR(o, l, type_t) \
-	do {  \
-		RListIter *_it; \
-		type_t *_el; \
-		r_list_foreach ((l), _it, _el) {  \
-			_el->paddr += (o)->loadaddr; \
-		} \
+#define REBASE_PADDR(o, l, type_t)\
+	do { \
+		RListIter *_it;\
+		type_t *_el;\
+		r_list_foreach ((l), _it, _el) { \
+			_el->paddr += (o)->loadaddr;\
+		}\
+\
 	} while (0)
 
 #define ARCHS_KEY "archs"
@@ -146,7 +147,7 @@ static int string_scan_range(RList *list, const ut8 *buf, int min, const ut64 fr
 		str_type = type;
 
 		if (str_type == R_STRING_TYPE_DETECT) {
-			char *w = buf + needle + rc;
+			char *w = (char *)buf + needle + rc;
 			bool is_wide = needle + rc + 2 < to && !w[0] && w[1] && !w[2];
 			str_type = is_wide? R_STRING_TYPE_WIDE: R_STRING_TYPE_ASCII;
 		}

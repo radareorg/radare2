@@ -475,7 +475,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 			R_FREE (name);
 		}
 #if OBJC_UNNECESSARY
-		/* @12@0:4^{ _xmlAttr=^vi*^{ _xmlNode }^{ _xmlNode }^{ _xmlNode }^{ _xmlAttr }^{ _xmlAttr }^{ _xmlDoc }^{ _xmlNs }i^v }8) */
+		/* @12@0:4^{   _xmlAttr=^vi*^{   _xmlNode   }^{   _xmlNode   }^{   _xmlNode   }^{   _xmlAttr   }^{   _xmlAttr   }^{   _xmlDoc   }^{   _xmlNs   }i^v   }8) */
 		/* @8@0:4 */
 		r = get_pointer (m.types, NULL, &left, arch);
 		if (r != 0) {

@@ -13,10 +13,7 @@ static const char *parse_alias(RReg *reg, char **tok, const int n) {
 
 // Sizes prepended with a dot are expressed in bits
 // strtoul with base 0 allows the input to be in decimal/octal/hex format
-#define parse_size(c) \
-	((c)[0] == '.')? \
-		strtoul ((c) + 1, &end, 10): \
-		strtoul ((c), &end, 0) << 3;
+#define parse_size(c) ((c)[0] == '.')? strtoul ((c) + 1, &end, 10): strtoul ((c), &end, 0) << 3;
 
 static const char *parse_def(RReg *reg, char **tok, const int n) {
 	RRegItem *item;
