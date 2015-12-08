@@ -1,6 +1,11 @@
 #!/bin/sh
 FILES="
-libr/io/io.c
+libr/include/r_list.h
+libr/include/r_reg.h
+libr/config/config.c
+libr/config/callback.c
+libr/config/t/test.c
+libr/fs/fs.c
 libr/reg/reg.c
 libr/reg/arena.c
 libr/reg/double.c

@@ -59,10 +59,10 @@ indentFile() {
 	# spaces in { brackets
 	mv .tmp-format .tmp-format2
 	#perl -ne 's/{\s/{ /g;print' < .tmp-format2 > .tmp-format
-	perl -ne 's/{([^\n])/{ \1/g if(!/"/);print' < .tmp-format2 > .tmp-format
+	perl -ne 's/{([^ \n])/{ \1/g if(!/"/);print' < .tmp-format2 > .tmp-format
 	# spaces in } brackets
 	mv .tmp-format .tmp-format2
-	perl -ne 's/([^\t])}/$1 }/g if(!/"/);print' < .tmp-format2 > .tmp-format
+	perl -ne 's/([^ \t])}/$1 }/g if(!/"/);print' < .tmp-format2 > .tmp-format
 	# _( macro
 	mv .tmp-format .tmp-format2
 	perl -ne 's/_\s\(/_(/g;print' < .tmp-format2 > .tmp-format

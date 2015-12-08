@@ -597,7 +597,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 		}
 		buf_bytes = iob->desc_read (io, tdesc, &len_bytes);
 		iob->desc_close (io, tdesc);
-	} else if (sz == UT64_MAX || sz > (64 * 1024 * 1024)) {  // too big, probably wrong
+	} else if (sz == UT64_MAX || sz > (64 * 1024 * 1024)) { // too big, probably wrong
 		eprintf ("Too big\n");
 		return false;
 	} else {
