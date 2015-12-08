@@ -3,21 +3,22 @@
 #include <r_reg.h>
 #include <r_util.h>
 
-static const char *parse_alias (RReg *reg, char **tok, const int n) {
+static const char *parse_alias(RReg *reg, char **tok, const int n) {
 	if (n != 2) return "Invalid syntax";
 	int role = r_reg_get_name_idx (tok[0] + 1);
 	return r_reg_set_name (reg, role, tok[1]) ?
-		NULL : "Invalid alias";
+		NULL :
+		"Invalid alias";
 }
 
 // Sizes prepended with a dot are expressed in bits
 // strtoul with base 0 allows the input to be in decimal/octal/hex format
-#define parse_size(c) \
-	((c)[0] == '.') ? \
-		strtoul((c) + 1, &end, 10) : \
-		strtoul((c), &end, 0) << 3;
+#define parse_size(c) \
+	((c)[0] == '.')? \
+		strtoul ((c) + 1, &end, 10): \
+		strtoul ((c), &end, 0) << 3;
 
-static const char *parse_def (RReg *reg, char **tok, const int n) {
+static const char *parse_def(RReg *reg, char **tok, const int n) {
 	RRegItem *item;
 	char *end;
 	int type;
@@ -44,7 +45,7 @@ static const char *parse_def (RReg *reg, char **tok, const int n) {
 		r_reg_item_free (item);
 		return "Invalid offset";
 	}
-	item->packed_size = parse_size (tok[4]); 
+	item->packed_size = parse_size (tok[4]);
 	if (*end != '\0') {
 		r_reg_item_free (item);
 		return "Invalid packed size";
@@ -122,10 +123,10 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 				break;
 			// Gather a handful of chars
 			// Use isgraph instead of isprint because the latter considers ' ' printable
-			for (i = 0; isgraph ((const unsigned char)*p) && i < sizeof(tmp) - 1;)
+			for (i = 0; isgraph ((const unsigned char)*p) && i < sizeof (tmp) - 1;)
 				tmp[i++] = *p++;
 			tmp[i] = '\0';
-			// Limit the number of tokens 
+			// Limit the number of tokens
 			if (j > PARSER_MAX_TOKENS - 1)
 				break;
 			// Save the token
@@ -133,18 +134,18 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 		}
 		// Empty line, eww
 		if (j) {
-			// Do the actual parsing 
+			// Do the actual parsing
 			char *first = tok[0];
 			// Check whether it's defining an alias or a register
 			const char *r = (*first == '=') ?
-				parse_alias (reg, tok, j) :
-				parse_def (reg, tok, j);
+						parse_alias (reg, tok, j) :
+						parse_def (reg, tok, j);
 			// Clean up
 			for (i = 0; i < j; i++)
-				free(tok[i]);
+				free (tok[i]);
 			// Warn the user if something went wrong
 			if (r) {
-				eprintf("%s: Parse error @ line %d (%s)\n",
+				eprintf ("%s: Parse error @ line %d (%s)\n",
 					__FUNCTION__, l, r);
 				//eprintf ("(%s)\n", str);
 				// Clean up
@@ -155,8 +156,8 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	} while (*p++);
 
 	// Align to byte boundary if needed
-	if (reg->size&7)
-		reg->size += 8 - (reg->size&7);
+	if (reg->size & 7)
+		reg->size += 8 - (reg->size & 7);
 	reg->size >>= 3; // bits to bytes (divide by 8)
 	r_reg_fit_arena (reg);
 
@@ -184,7 +185,7 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 		eprintf ("r_reg_set_profile: Cannot find '%s'\n", profile);
 		return false;
 	}
-	
+
 	ret = r_reg_set_profile_string (reg, str);
 	free (str);
 	return ret;

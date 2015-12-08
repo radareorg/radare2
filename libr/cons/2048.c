@@ -80,11 +80,12 @@ static void twok_print() {
 	char val2[32];
 	char val3[32];
 	int i;
-#define VAL(x)                                                \
-	if (twok_buf[i][x]) {                                 \
-		sprintf (val##x, "%4d", 1 << twok_buf[i][x]); \
-	} else                                                \
-		strcpy (val##x, "    ");
+#define VAL(x) \
+	if (twok_buf[i][x]) {  \
+		sprintf (val##x, "%4d", 1 << twok_buf[i][x]); \
+	} else {  \
+		strcpy (val##x, "    "); \
+	}
 	printf ("  +------+------+------+------+\n");
 	for (i = 0; i < 4; i++) {
 		VAL (0);
