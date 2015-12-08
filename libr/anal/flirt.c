@@ -507,7 +507,7 @@ static void print_node (const RAnal *anal, const RFlirtNode *node, int indent) {
 }
 
 static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
-		ut8 *b, ut64 address, int buf_size) {
+		ut8 *b, ut64 address, ut32 buf_size) {
 	/* Returns true if module matches b, according to the signatures infos.
 	 * Return false otherwise.
 	 * The buffer starts from the first byte after the pattern */
@@ -565,7 +565,7 @@ static int node_pattern_match (const RFlirtNode *node, ut8 *b, int buf_size) {
 	return true;
 }
 
-static int node_match_buffer (const RAnal *anal, const RFlirtNode *node, ut8 *b, ut64 address, int buf_size, int buf_idx) {
+static int node_match_buffer (const RAnal *anal, const RFlirtNode *node, ut8 *b, ut64 address, ut32 buf_size, ut32 buf_idx) {
 	RListIter *node_child_it, *module_it;
 	RFlirtNode *child;
 	RFlirtModule *module;
