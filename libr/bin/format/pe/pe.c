@@ -2377,12 +2377,13 @@ int PE_(r_bin_pe_is_pie)(struct PE_(r_bin_pe_obj_t)* bin) {
 }
 
 int PE_(r_bin_pe_is_big_endian)(struct PE_(r_bin_pe_obj_t)* bin) {
-	/*
+	ut16 arch;
 	if (!bin || !bin->nt_headers)
 		return false;
+	arch = bin->nt_headers->file_header.Machine;
+	if (arch == PE_IMAGE_FILE_MACHINE_I386 ||
+			arch == PE_IMAGE_FILE_MACHINE_AMD64) return false;
 	return HASCHR (PE_IMAGE_FILE_BYTES_REVERSED_HI);
-	*/
-	return false;	// this flag is deprecated, see ms specs
 }
 
 int PE_(r_bin_pe_is_stripped_relocs)(struct PE_(r_bin_pe_obj_t)* bin) {
