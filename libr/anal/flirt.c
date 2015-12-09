@@ -522,7 +522,7 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 
 	if (module->tail_bytes) {
 		r_list_foreach (module->tail_bytes, tail_byte_it, tail_byte) {
-			if (32 + module->crc_length + tail_byte->offset + tail_byte->value < buf_size &&
+			if (32 + module->crc_length + tail_byte->offset < buf_size &&
 				b[32 + module->crc_length + tail_byte->offset] != tail_byte->value)
 				return false;
 		}
@@ -536,6 +536,38 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 
 		next_module_function = r_anal_get_fcn_at((RAnal*) anal, address + flirt_func->offset, 0);
 		if (next_module_function) {
+			// get function size from flirt signature
+			ut64 flirt_fcn_size = module->length - flirt_func->offset;
+			RFlirtFunction *next_flirt_func;
+			RListIter *next_flirt_func_it = flirt_func_it->n;
+			while (next_flirt_func_it) {
+				next_flirt_func = next_flirt_func_it->data;
+				if (!next_flirt_func->is_local && !next_flirt_func->negative_offset) {
+					flirt_fcn_size = next_flirt_func->offset - flirt_func->offset;
+					break;
+				}
+				next_flirt_func_it = next_flirt_func_it->n;
+			}
+			// resize function if needed
+			if (next_module_function->size < flirt_fcn_size) {
+				RListIter *iter;
+				RAnalFunction *fcn;
+				r_list_foreach(anal->fcns, iter, fcn) {
+					if (fcn->addr >= next_module_function->addr + next_module_function->size &&
+							fcn->addr < next_module_function->addr + flirt_fcn_size) {
+						r_list_join(next_module_function->refs, fcn->refs);
+						r_list_join(next_module_function->xrefs, fcn->xrefs);
+						r_list_join(next_module_function->bbs, fcn->bbs);
+						r_list_join(next_module_function->locs, fcn->locs);
+						r_list_join(next_module_function->vars, fcn->vars);
+						next_module_function->ninstr += fcn->ninstr;
+						r_anal_fcn_del((RAnal*) anal, fcn->addr);
+					}
+				}
+				r_anal_fcn_resize(next_module_function, flirt_fcn_size);
+				r_anal_trim_jmprefs(next_module_function);
+			}
+
 			int name_offs = 0;
 			while (flirt_func->name[name_offs] == '?') // skip '?' chars
 				name_offs++;
