@@ -731,7 +731,9 @@ static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 #endif
 	if (!is_meta_class) {
 		mach0_ut isa_n_value = get_isa_value ();
+		ut64 tmp = klass->addr;
 		get_class_t (c.isa + isa_n_value, arch, klass);
+		klass->addr = tmp;
 	}
 }
 
