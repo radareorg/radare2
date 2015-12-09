@@ -31,13 +31,13 @@ struct MACH0_(SClassRoT) {
 #ifdef R_BIN_MACH064
 	ut32 reserved;
 #endif
-	mach0_ut ivarLayout;     /* const uint8_t* (32/64-bit pointer) */
+	mach0_ut ivarLayout;	/* const uint8_t* (32/64-bit pointer) */
 	mach0_ut name;		/* const char* (32/64-bit pointer) */
-	mach0_ut baseMethods;    /* const SMEthodList* (32/64-bit pointer) */
-	mach0_ut baseProtocols;  /* const SProtocolList* (32/64-bit pointer) */
+	mach0_ut baseMethods;	/* const SMEthodList* (32/64-bit pointer) */
+	mach0_ut baseProtocols;	/* const SProtocolList* (32/64-bit pointer) */
 	mach0_ut ivars;		/* const SIVarList* (32/64-bit pointer) */
-	mach0_ut weakIvarLayout; /* const uint8_t * (32/64-bit pointer) */
-	mach0_ut baseProperties; /* const SObjcPropertyList* (32/64-bit pointer) */
+	mach0_ut weakIvarLayout;/* const uint8_t * (32/64-bit pointer) */
+	mach0_ut baseProperties;/* const SObjcPropertyList* (32/64-bit pointer) */
 };
 
 struct MACH0_(SProtocolList) {
@@ -621,37 +621,42 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 
 ///////////////////////////////////////////////////////////////////////////////
 static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBinClass *klass) {
+	struct MACH0_(obj_t) *bin;
 	struct MACH0_(SClassRoT) cro = { 0 };
 	ut32 offset, left;
+	ut64 r, s;
 	int len;
-	ut64 r;
 
 	if (!arch || !arch->o || !arch->o->bin_obj) {
-		eprintf ("uncorrect RBinFile pointer\n");
+		eprintf ("Invalid RBinFile pointer\n");
 		return;
 	}
 
-	if (!(r = get_pointer (p, &offset, &left, arch)))
+	bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
+	if (!(r = get_pointer (p, &offset, &left, arch))) {
+		eprintf ("No pointer\n");
 		return;
+	}
 
-	if (r + left < r || r + sizeof (struct MACH0_(SClassRoT)) < r) return;
+	if (r + left < r || r + sizeof (cro) < r) return;
 	if (r > arch->size || r + left > arch->size) return;
-	if (r + sizeof (struct MACH0_(SClassRoT)) > arch->size) return;
+	if (r + sizeof (cro) > arch->size) return;
 
 	// TODO: use r_buf_fread to avoid endianness issues
-	if (left < sizeof (struct MACH0_(SClassRoT))) {
-		len = r_buf_read_at (arch->buf, r, (ut8 *)&cro, left);
-	} else {
-		len = r_buf_read_at (arch->buf, r, (ut8 *)&cro,
-				sizeof (struct MACH0_(SClassRoT)));
+	if (left < sizeof (cro)) {
+		eprintf ("Not enough data for SClassRoT\n");
+		return;
 	}
-	if (len < 1) return;
+	len = r_buf_read_at (arch->buf, r, (ut8 *)&cro, sizeof (cro));
+	if (len < 1) {
+		return;
+	}
 
+	s = r;
 	if ((r = get_pointer (cro.name, NULL, &left, arch))) {
-		struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
 		int is_crypted = bin->has_crypto;
 
-		if (r + left < r) return;
+		if (left < 1 || r + left < r) return;
 		if (r > arch->size || r + left > arch->size) return;
 
 		if (is_crypted == 1) {
@@ -667,7 +672,14 @@ static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBin
 				free (name);
 			}
 		}
+		//eprintf ("0x%x  %s\n", s, klass->name);
+		sdb_num_set (bin->kv, sdb_fmt (0, "objc_class_%s.offset", klass->name), s, 0);
 	}
+#ifdef R_BIN_MACH064
+	sdb_set (bin->kv, sdb_fmt (0, "objc_class.format", 0), "lllll isa super cache vtable data", 0);
+#else
+	sdb_set (bin->kv, sdb_fmt (0, "objc_class.format", 0), "xxxxx isa super cache vtable data", 0);
+#endif
 
 	if (cro.baseMethods > 0) {
 		get_method_list_t (cro.baseMethods, arch, klass->name, klass);
@@ -686,13 +698,14 @@ static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBin
 	}
 
 	if (is_meta_class) {
-		*is_meta_class = (cro.flags & RO_META)? 1: 0;
+		*is_meta_class = !!(cro.flags & RO_META);
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	struct MACH0_(SClass) c = { 0 };
+	const int size = sizeof (struct MACH0_(SClass));
 	mach0_ut r = 0;
 	ut32 offset = 0, left = 0;
 	ut32 is_meta_class = 0;
@@ -700,16 +713,16 @@ static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 
 	if (!(r = get_pointer (p, &offset, &left, arch)))
 		return;
-	if (r + left < r || r + sizeof (struct MACH0_(SClass)) < r) return;
+	if ((r + left) < r || (r + size) < r) return;
 	if (r > arch->size || r + left > arch->size) return;
-	if (r + sizeof (struct MACH0_(SClass)) > arch->size) return;
+	if (r + size > arch->size) return;
 
-	if (left < sizeof (struct MACH0_(SClass))) {
-		len = r_buf_read_at (arch->buf, r, (ut8 *)&c, left);
-	} else {
-		len = r_buf_read_at (arch->buf, r, (ut8 *)&c,
-				sizeof (struct MACH0_(SClass)));
+	if (left < size) {
+		eprintf ("Cannot parse obj class info out of bounds\n");
+		return;
 	}
+	// TODO: use buf_fread here to avoid endianness issues
+	len = r_buf_read_at (arch->buf, r, (ut8 *)&c, size);
 	if (len < 1) return;
 
 	klass->addr = c.isa;
@@ -809,7 +822,11 @@ RList *MACH0_(parse_classes) (RBinFile *arch) {
 		p = 0;
 
 		left = s->size - i;
-		size = left < sizeof (mach0_ut)? left: sizeof (mach0_ut);
+		if (left < sizeof (mach0_ut)) {
+			eprintf ("Chopped classlist data\n");
+			break;
+		}
+		size = sizeof (mach0_ut);
 
 		if (s->paddr > arch->size || s->paddr + size > arch->size) {
 			goto get_classes_error;
@@ -818,7 +835,7 @@ RList *MACH0_(parse_classes) (RBinFile *arch) {
 		}
 
 		// TODO: unnecessary slow sequential read? use fread for endianness
-		len = r_buf_read_at (arch->buf, s->paddr + i, (ut8 *)&p, size);
+		len = r_buf_fread_at (arch->buf, s->paddr + i, (ut8 *)&p, "i", 1);
 		if (len < 1) goto get_classes_error;
 
 		get_class_t (p, arch, klass);

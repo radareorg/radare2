@@ -618,8 +618,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 
 		// TODO: a different format for each cmd
 		sdb_num_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.offset", i), off, 0);
-		sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.format", i),
-			"xd cmd size", 0);
+		sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.format", i), "xd cmd size", 0);
 
 		//eprintf ("%d\n", lc.cmd);
 		switch (lc.cmd) {
