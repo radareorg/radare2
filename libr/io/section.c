@@ -330,9 +330,9 @@ R_API ut64 r_io_section_vaddr_to_maddr(RIO *io, ut64 vaddr) {
 
 	r_list_foreach (io->sections, iter, s) {
 		if (!(s->rwx & R_IO_MAP)) continue;
-		if ((vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) &&
-		    /* TODO: find a better workaround for bug 3788 */
-		    (s->vaddr < s->offset && vaddr < s->offset)) {
+		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
+//			if (vaddr <= s->vaddr && s->vaddr < s->offset)
+//				return UT64_MAX;
 			return (vaddr - s->vaddr + s->offset);
 		}
 	}
