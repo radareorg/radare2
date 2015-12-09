@@ -2,6 +2,7 @@ Language: Cpp
 MaxEmptyLinesToKeep: 1
 SpaceBeforeParens: Always
 SpaceInEmptyParentheses: false
+SpacesInContainerLiterals: true
 BasedOnStyle: LLVM
 ContinuationIndentWidth: 8
 IndentCaseLabels: false

@@ -21,6 +21,7 @@ addons:
   apt:
     packages:
       - dc
+      - binutils
       - cabextract
 
 cache:

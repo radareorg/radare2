@@ -74,23 +74,26 @@ static void twok_move(int u, int v) {
 	}
 }
 
+static void getval(char *val0, int i, int x) {
+	if (twok_buf[i][x]) {
+		sprintf (val0, "%4d", 1 << twok_buf[i][x]);
+	} else {
+		strcpy (val0, "    ");
+	}
+}
+
 static void twok_print() {
 	char val0[32];
 	char val1[32];
 	char val2[32];
 	char val3[32];
 	int i;
-#define VAL(x)                                                \
-	if (twok_buf[i][x]) {                                 \
-		sprintf (val##x, "%4d", 1 << twok_buf[i][x]); \
-	} else                                                \
-		strcpy (val##x, "    ");
 	printf ("  +------+------+------+------+\n");
 	for (i = 0; i < 4; i++) {
-		VAL (0);
-		VAL (1);
-		VAL (2);
-		VAL (3);
+		getval (val0, i, 0);
+		getval (val1, i, 1);
+		getval (val2, i, 2);
+		getval (val3, i, 3);
 		printf ("  |      |      |      |      |\n");
 		printf ("  | %s | %s | %s | %s |\n",
 			val0, val1, val2, val3);
