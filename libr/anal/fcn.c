@@ -749,7 +749,7 @@ static int cmpaddr (const void *_a, const void *_b) {
 	return (a->addr > b->addr);
 }
 
-void r_anal_trim_jmprefs(RAnalFunction *fcn) {
+R_API void r_anal_trim_jmprefs(RAnalFunction *fcn) {
 	RAnalRef *ref;
 	RListIter *iter;
 	RListIter *tmp;
