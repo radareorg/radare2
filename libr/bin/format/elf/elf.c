@@ -348,7 +348,6 @@ static int elf_init(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return true;
 }
 
-//XXX get_section_by_name shouldn't trust on section headers
 static RBinElfSection* get_section_by_name(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
 	int i;
 	if (!g_sections) return NULL;
@@ -400,6 +399,8 @@ static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 		tsize = sizeof (Elf_(Rel));
 	} else if (bin->is_rela == DT_RELA) {
 		rel_sec = get_section_by_name (bin, ".rela.plt");
+		if (!rel_sec)
+			rel_sec = get_section_by_name (bin, ".rel.plt");
 		is_rela = true;
 		tsize = sizeof (Elf_(Rela));
 	}
