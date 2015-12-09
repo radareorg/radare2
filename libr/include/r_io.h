@@ -386,6 +386,7 @@ R_API RIOSection *r_io_section_get_name(RIO *io, const char *name);
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx);
 R_API RIOSection *r_io_section_getv(RIO *io, ut64 vaddr);
 R_API RIOSection *r_io_section_mget(RIO *io, ut64 maddr);
+R_API RIOSection *r_io_section_mget_prev(RIO *io, ut64 maddr);
 R_API RIOSection *r_io_section_vget(RIO *io, ut64 addr);
 R_API RIOSection *r_io_section_pget(RIO *io, ut64 addr);
 R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bits);

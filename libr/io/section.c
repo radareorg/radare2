@@ -274,6 +274,16 @@ R_API RIOSection *r_io_section_mget(RIO *io, ut64 maddr) {
 	return NULL;
 }
 
+R_API RIOSection *r_io_section_mget_prev(RIO *io, ut64 maddr) {
+	RIOSection *s;
+	RListIter *iter;
+	r_list_foreach_prev (io->sections, iter, s) {
+		if ((maddr >= s->offset && maddr < (s->offset + s->size)))
+			return s;
+	}
+	return NULL;
+}
+
 // XXX: rename this
 R_API ut64 r_io_section_get_offset(RIO *io, ut64 maddr) {
 	RIOSection *s = r_io_section_mget (io, maddr);
@@ -321,7 +331,9 @@ R_API ut64 r_io_section_vaddr_to_maddr_try(RIO *io, ut64 vaddr) {
 }
 
 /* returns the conversion from vaddr to maddr if the given vaddr is in a mapped
- * region, UT64_MAX otherwise */
+ * region, UT64_MAX otherwise.
+ * Special case for when s->vaddr
+ */
 R_API ut64 r_io_section_vaddr_to_maddr(RIO *io, ut64 vaddr) {
 	RListIter *iter;
 	RIOSection *s;
@@ -338,7 +350,7 @@ R_API ut64 r_io_section_vaddr_to_maddr(RIO *io, ut64 vaddr) {
 /* returns the conversion from file offset to vaddr if the given offset is
  * mapped somewhere, UT64_MAX otherwise */
 R_API ut64 r_io_section_maddr_to_vaddr(RIO *io, ut64 offset) {
-	RIOSection *s = r_io_section_mget (io, offset);
+	RIOSection *s = r_io_section_mget_prev (io, offset);
 	if (s) {
 		io->section = s;
 		return (s->vaddr + offset - s->offset);
