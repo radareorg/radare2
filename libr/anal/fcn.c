@@ -645,6 +645,8 @@ repeat:
 		case R_ANAL_OP_TYPE_UJMP:
 			// switch statement
 			if (anal->opt.jmptbl) {
+				RAnalRef *last_ref = fcn->refs->tail->data;
+				last_ref->type = R_ANAL_REF_TYPE_NULL;
 				if (op.ptr != UT64_MAX) {	// direct jump
 					ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, op.ptr, ret);
 
