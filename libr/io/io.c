@@ -340,7 +340,10 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	if (io->enforce_rwx & R_IO_READ)
 		if (!(r_io_section_get_rwx (io, io->off) & R_IO_READ))
 			return -1;
-	ret = r_io_read_at (io, io->off, buf, len);
+	/* io->off is in maddr, but r_io_read_at works in vaddr */
+	ut64 vaddr = r_io_section_maddr_to_vaddr(io, io->off);
+	vaddr = (vaddr == UT64_MAX) ? io->off : vaddr;
+	ret = r_io_read_at (io, vaddr, buf, len);
 	if (ret > 0) io->off += ret;
 	return ret;
 }
