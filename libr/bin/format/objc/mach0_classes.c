@@ -227,11 +227,10 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		r = get_pointer (i.name, NULL, &left, arch);
 		if (r != 0) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
-			int is_crypted = bin->has_crypto;
 			if (r + left < r) goto error;
 			if (r > arch->size || r + left > arch->size) goto error;
 
-			if (is_crypted == 1) {
+			if (bin->has_crypto) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
@@ -264,7 +263,6 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 			R_FREE (name);
 		}
 #endif
-
 		r_list_append (klass->fields, field);
 		p += sizeof (struct MACH0_(SIVar));
 		offset += sizeof (struct MACH0_(SIVar));
@@ -338,12 +336,10 @@ static void get_objc_property_list(mach0_ut p, RBinFile *arch, RBinClass *klass)
 		r = get_pointer (op.name, NULL, &left, arch);
 		if (r) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
-			int is_crypted = bin->has_crypto;
-
 			if (r > arch->size || r + left > arch->size) goto error;
 			if (r + left < r) goto error;
 
-			if (is_crypted == 1) {
+			if (bin->has_crypto) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
@@ -455,12 +451,11 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 		r = get_pointer (m.name, NULL, &left, arch);
 		if (r != 0) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
-			int is_crypted = bin->has_crypto;
 
 			if (r + left < r) goto error;
 			if (r > arch->size || r + left > arch->size) goto error;
 
-			if (is_crypted == 1) {
+			if (bin->has_crypto) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
@@ -480,12 +475,11 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 		r = get_pointer (m.types, NULL, &left, arch);
 		if (r != 0) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
-			bool is_crypted = bin->has_crypto;
 
 			if (r + left < r) goto error;
 			if (r > arch->size || r + left > arch->size) goto error;
 
-			if (is_crypted == 1) {
+			if (bin->has_crypto) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
@@ -587,12 +581,11 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		if (r != 0) {
 			char *name = NULL;
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
-			int is_crypted = bin->has_crypto;
 
 			if (r + left < r) return;
 			if (r > arch->size || r + left > arch->size) return;
 
-			if (is_crypted == 1) {
+			if (bin->has_crypto) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
@@ -654,12 +647,10 @@ static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBin
 
 	s = r;
 	if ((r = get_pointer (cro.name, NULL, &left, arch))) {
-		int is_crypted = bin->has_crypto;
-
 		if (left < 1 || r + left < r) return;
 		if (r > arch->size || r + left > arch->size) return;
 
-		if (is_crypted == 1) {
+		if (bin->has_crypto) {
 			klass->name = strdup ("some_encrypted_data");
 			left = strlen (klass->name) + 1;
 		} else {
@@ -698,8 +689,13 @@ static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBin
 	}
 
 	if (is_meta_class) {
-		*is_meta_class = !!(cro.flags & RO_META);
+		*is_meta_class = (cro.flags & RO_META)? 1: 0;
 	}
+}
+
+static mach0_ut get_isa_value() {
+	// TODO: according to otool sources this is taken from relocs
+	return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -726,19 +722,28 @@ static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	if (len < 1) return;
 
 	klass->addr = c.isa;
-	get_class_ro_t ((c.data) & ~0x3, arch, &is_meta_class, klass);
+	get_class_ro_t (c.data & ~0x3, arch, &is_meta_class, klass);
+
+#if SWIFT_SUPPORT
+	if (q (c.data + n_value) & 7) {
+		eprintf ("This is a Swift class");
+	}
+#endif
+	if (!is_meta_class) {
+		mach0_ut isa_n_value = get_isa_value ();
+		get_class_t (c.isa + isa_n_value, arch, klass);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static void __r_bin_class_free(RBinClass *p) {
-	RListIter *iter = NULL;
 	RBinSymbol *symbol = NULL;
 	RBinField *field = NULL;
+	RListIter *iter = NULL;
 
 	if (!p) {
 		return;
 	}
-
 	r_list_foreach (p->methods, iter, symbol) {
 		free (symbol->name);
 		free (symbol->classname);
@@ -748,7 +753,6 @@ static void __r_bin_class_free(RBinClass *p) {
 		free (field->name);
 		R_FREE (field);
 	}
-
 	r_list_free (p->methods);
 	r_list_free (p->fields);
 	r_bin_class_free (p);
@@ -835,14 +839,17 @@ RList *MACH0_(parse_classes) (RBinFile *arch) {
 		}
 
 		// TODO: unnecessary slow sequential read? use fread for endianness
+#ifdef R_BIN_MACH064
+		len = r_buf_fread_at (arch->buf, s->paddr + i, (ut8 *)&p, "l", 1);
+#else
 		len = r_buf_fread_at (arch->buf, s->paddr + i, (ut8 *)&p, "i", 1);
+#endif
 		if (len < 1) goto get_classes_error;
 
 		get_class_t (p, arch, klass);
 
 		if (!klass->name) {
-			klass->name = r_str_newf (
-				"UnnamedClass%" PFMT64d,
+			klass->name = r_str_newf ("UnnamedClass%" PFMT64d,
 				num_of_unnamed_class);
 			if (!klass->name) {
 				goto get_classes_error;
