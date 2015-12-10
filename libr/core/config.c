@@ -1290,6 +1290,13 @@ static int cb_anal_followbrokenfcnsrefs(void *user, void *data) {
 	return true;
 }
 
+static int cb_anal_bbs_alignment(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.bbs_alignment = node->i_value;
+	return true;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -1339,6 +1346,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.followbrokenfcnsrefs", "false", &cb_anal_followbrokenfcnsrefs, "Follow function references as well if function analysis was failed");
 
 	SETCB("anal.searchstringrefs", "false", &cb_anal_searchstringrefs, "Search string references in data references");
+	SETCB("anal.bbs_alignment", "0x10", &cb_anal_bbs_alignment, "Possible space between basic blocks");
 
 	SETPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETCB("esil.debug", "false", &cb_esildebug, "Show ESIL debug info");
