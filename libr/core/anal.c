@@ -15,9 +15,9 @@
 #define in_function(fn,y) ((y) >= (fn)->addr && (y) < ((fn)->addr + (fn)->size))
 
 #define HINTCMD_ADDR(hint,x,y) if(hint->x) \
-	r_cons_printf (y"@0x%"PFMT64x"\n", hint->x, hint->addr)
-#define HINTCMD(hint,x,y) if(hint->x) \
-	r_cons_printf (y"\n", hint->x)
+	r_cons_printf (y" @ 0x%"PFMT64x"\n", hint->x, hint->addr)
+#define HINTCMD(hint,x,y,json) if(hint->x) \
+	r_cons_printf (y"%s", hint->x, json ? "" : "\n")
 
 typedef struct {
 	RAnal *a;
@@ -541,29 +541,34 @@ static int cb(void *p, const char *k, const char *v) {
 	case '*':
 		HINTCMD_ADDR (hint, arch, "aha %s");
 		HINTCMD_ADDR (hint, bits, "ahb %d");
-		HINTCMD_ADDR (hint, size, "ahl %d");
+		HINTCMD_ADDR (hint, size, "ahs %d");
 		HINTCMD_ADDR (hint, opcode, "aho %s");
-		HINTCMD_ADDR (hint, opcode, "ahs %s");
-		HINTCMD_ADDR (hint, opcode, "ahp %s");
+		HINTCMD_ADDR (hint, syntax, "ahS %s");
+		HINTCMD_ADDR (hint, immbase, "ahi %d");
+		HINTCMD_ADDR (hint, esil, "ahe %s");
 		break;
 	case 'j':
 		r_cons_printf ("%s{\"from\":%"PFMT64d",\"to\":%"PFMT64d,
 			hls->count>0?",":"", hint->addr, hint->addr+hint->size);
-		HINTCMD (hint, arch, ",\"arch\":\"%s\""); // XXX: arch must not contain strange chars
-		HINTCMD (hint, bits, ",\"bits\":%d");
-		HINTCMD (hint, size, ",\"size\":%d");
-		HINTCMD (hint, opcode, ",\"opcode\":\"%s\"");
-		HINTCMD (hint, esil, ",\"esil\":\"%s\"");
-		HINTCMD (hint, ptr, ",\"ptr\":\"0x%"PFMT64x"x\"");
+		HINTCMD (hint, arch, ",\"arch\":\"%s\"", true); // XXX: arch must not contain strange chars
+		HINTCMD (hint, bits, ",\"bits\":%d", true);
+		HINTCMD (hint, size, ",\"size\":%d", true);
+		HINTCMD (hint, opcode, ",\"opcode\":\"%s\"", true);
+		HINTCMD (hint, syntax, ",\"syntax\":\"%s\"", true);
+		HINTCMD (hint, immbase, ",\"immbase\":%d", true);
+		HINTCMD (hint, esil, ",\"esil\":\"%s\"", true);
+		HINTCMD (hint, ptr, ",\"ptr\":\"0x%"PFMT64x"x\"", true);
 		r_cons_printf ("}");
 		break;
 	default:
-		r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x, hint->addr, hint->addr+hint->size);
-		HINTCMD (hint, arch, " arch='%s'");
-		HINTCMD (hint, bits, " bits=%d");
-		HINTCMD (hint, size, " length=%d");
-		HINTCMD (hint, opcode, " opcode='%s'");
-		HINTCMD (hint, esil, " esil='%s'");
+		r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", hint->addr, hint->addr+hint->size);
+		HINTCMD (hint, arch, " arch='%s'", false);
+		HINTCMD (hint, bits, " bits=%d", false);
+		HINTCMD (hint, size, " size=%d", false);
+		HINTCMD (hint, opcode, " opcode='%s'", false);
+		HINTCMD (hint, syntax, " syntax='%s'", false);
+		HINTCMD (hint, immbase, " immbase=%d", false);
+		HINTCMD (hint, esil, " esil='%s'", false);
 		r_cons_newline ();
 	}
 	hls->count++;
