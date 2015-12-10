@@ -1,4 +1,4 @@
-/* Copyright radare2 2014-2015 - Author: pancake, ret2libc */
+/* Copyright radare2 - 2014-2015 - pancake, ret2libc */
 
 #include <r_core.h>
 #include <r_cons.h>
@@ -777,18 +777,14 @@ static RGraphNode *get_sibling (const RAGraph *g, const RANode *n, int is_left, 
 	return res;
 }
 
-static int adjust_class_val (const RAGraph *g, const RGraphNode *gn,
-							 const RGraphNode *sibl, Sdb *res, int is_left) {
-	if (is_left)
-		return hash_get_int (res, sibl) - hash_get_int (res, gn) - dist_nodes (g, gn, sibl);
-	else
-		return hash_get_int (res, gn) - hash_get_int (res, sibl) - dist_nodes (g, sibl, gn);
+static int adjust_class_val (const RAGraph *g, const RGraphNode *gn, const RGraphNode *sibl, Sdb *res, int is_left) {
+	if (is_left) return hash_get_int (res, sibl) - hash_get_int (res, gn) - dist_nodes (g, gn, sibl);
+	return hash_get_int (res, gn) - hash_get_int (res, sibl) - dist_nodes (g, sibl, gn);
 }
 
 /* adjusts the position of previously placed left/right classes */
 /* tries to place classes as close as possible */
-static void adjust_class (const RAGraph *g, int is_left,
-		RList **classes, Sdb *res, int c) {
+static void adjust_class (const RAGraph *g, int is_left, RList **classes, Sdb *res, int c) {
 	const RGraphNode *gn;
 	const RListIter *it;
 	const RANode *an;
@@ -841,26 +837,19 @@ static void adjust_class (const RAGraph *g, int is_left,
 	}
 }
 
-static int place_nodes_val (const RAGraph *g, const RGraphNode *gn,
-		const RGraphNode *sibl, Sdb *res, int is_left) {
-	if (is_left)
-		return hash_get_int (res, sibl) + dist_nodes (g, sibl, gn);
+static int place_nodes_val (const RAGraph *g, const RGraphNode *gn, const RGraphNode *sibl, Sdb *res, int is_left) {
+	if (is_left) return hash_get_int (res, sibl) + dist_nodes (g, sibl, gn);
 	return hash_get_int (res, sibl) - dist_nodes (g, gn, sibl);
 }
 
 static int place_nodes_sel_p (int newval, int oldval, int is_first, int is_left) {
-	if (is_first)
-		return newval;
-
-	if (is_left)
-		return R_MAX (oldval, newval);
-	else
-		return R_MIN (oldval, newval);
+	if (is_first) return newval;
+	if (is_left) return R_MAX (oldval, newval);
+	return R_MIN (oldval, newval);
 }
 
 /* places left/right the nodes of a class */
-static void place_nodes (const RAGraph *g, const RGraphNode *gn, int is_left,
-						 Sdb *v_nodes, RList **classes, Sdb *res, Sdb *placed) {
+static void place_nodes (const RAGraph *g, const RGraphNode *gn, int is_left, Sdb *v_nodes, RList **classes, Sdb *res, Sdb *placed) {
 	const RList *lv = hash_get_rlist (v_nodes, gn);
 	int p = 0, v, is_first = true;
 	const RGraphNode *gk;
@@ -1068,8 +1057,7 @@ static int RP_listcmp (const struct len_pos_t *a, const struct len_pos_t *b) {
 	return a->pos >= b->pos;
 }
 
-static void collect_changes (const RAGraph *g, int l, const RGraphNode *b,
-							 int from_up, int s, int e, RList *list, int is_left) {
+static void collect_changes (const RAGraph *g, int l, const RGraphNode *b, int from_up, int s, int e, RList *list, int is_left) {
 	const RGraphNode *vt = g->layers[l].nodes[e - 1];
 	const RGraphNode *vtp = g->layers[l].nodes[s];
 	RListComparator lcmp;
@@ -1112,10 +1100,8 @@ static void collect_changes (const RAGraph *g, int l, const RGraphNode *b,
 		cx = R_NEW0 (struct len_pos_t);
 		cx->len = c;
 		cx->pos = avi->x;
-		if (is_left)
-			cx->pos += dist_nodes (g, vi, vt);
-		else
-			cx->pos -= dist_nodes (g, vtp, vi);
+		if (is_left) cx->pos += dist_nodes (g, vi, vt);
+		else cx->pos -= dist_nodes (g, vtp, vi);
 		r_list_add_sorted (list, cx, lcmp);
 	}
 
@@ -1125,17 +1111,13 @@ static void collect_changes (const RAGraph *g, int l, const RGraphNode *b,
 		cx = R_NEW (struct len_pos_t);
 		cx->len = is_left ? INT_MAX : INT_MIN;
 		cx->pos = ab->x;
-		if (is_left)
-			cx->pos += dist_nodes (g, b, vt);
-		else
-			cx->pos -= dist_nodes (g, vtp, b);
+		if (is_left) cx->pos += dist_nodes (g, b, vt);
+		else cx->pos -= dist_nodes (g, vtp, b);
 		r_list_add_sorted (list, cx, lcmp);
 	}
 }
 
-static void combine_sequences (const RAGraph *g, int l,
-							   const RGraphNode *bm, const RGraphNode *bp,
-							   int from_up, int a, int r) {
+static void combine_sequences (const RAGraph *g, int l, const RGraphNode *bm, const RGraphNode *bp, int from_up, int a, int r) {
 	RList *Rm = r_list_new (), *Rp = r_list_new ();
 	const RGraphNode *vt, *vtp;
 	RANode *at, *atp;
@@ -1186,14 +1168,12 @@ static void combine_sequences (const RAGraph *g, int l,
 	for (i = t - 2; i >= a; --i) {
 		const RGraphNode *gv = g->layers[l].nodes[i];
 		RANode *av = get_anode (gv);
-
 		av->x = R_MIN (av->x, at->x - dist_nodes (g, gv, vt));
 	}
 
 	for (i = t + 1; i < r; ++i) {
 		const RGraphNode *gv = g->layers[l].nodes[i];
 		RANode *av = get_anode (gv);
-
 		av->x = R_MAX (av->x, atp->x + dist_nodes (g, vtp, gv));
 	}
 }
@@ -1203,9 +1183,7 @@ static void combine_sequences (const RAGraph *g, int l,
  * neighbours in the "previous" layer. Those neighbours are considered as
  * "fixed". The previous layer depends on the direction used during the layers
  * traversal */
-static void place_sequence (const RAGraph *g, int l,
-							const RGraphNode *bm, const RGraphNode *bp,
-							int from_up, int va, int vr) {
+static void place_sequence (const RAGraph *g, int l, const RGraphNode *bm, const RGraphNode *bp, int from_up, int va, int vr) {
 	int vt;
 
 	if (vr == va + 1) {
@@ -1563,7 +1541,6 @@ static char *get_body (RCore *core, ut64 addr, int size, bool with_offset,
 static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
-
 	core->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RANode *node;
@@ -1858,7 +1835,7 @@ static void agraph_set_layout(RAGraph *g, bool is_interactive) {
 	RGraphNode *n;
 	RANode *a;
 
-	set_layout(g);
+	set_layout (g);
 
 	update_graph_sizes (g);
 	graph_foreach_anode (r_graph_get_nodes (g->graph), it, n, a) {
@@ -1884,9 +1861,9 @@ static void agraph_print_node(const RAGraph *g, RANode *n) {
 	const int cur = g->curnode && get_anode (g->curnode) == n;
 
 	if (is_mini (g)) {
-		small_RANode_print(g, n, cur);
+		small_RANode_print (g, n, cur);
 	} else {
-		normal_RANode_print(g, n, cur);
+		normal_RANode_print (g, n, cur);
 	}
 }
 
@@ -2024,13 +2001,13 @@ static void follow_nth(RAGraph *g, int nth) {
 }
 
 static void agraph_follow_true(RAGraph *g) {
-	follow_nth(g, 0);
-	agraph_update_seek(g, get_anode (g->curnode), false);
+	follow_nth (g, 0);
+	agraph_update_seek (g, get_anode (g->curnode), false);
 }
 
 static void agraph_follow_false(RAGraph *g) {
-	follow_nth(g, 1);
-	agraph_update_seek(g, get_anode (g->curnode), false);
+	follow_nth (g, 1);
+	agraph_update_seek (g, get_anode (g->curnode), false);
 }
 
 /* seek the next node in visual order */
@@ -2046,8 +2023,7 @@ static void agraph_prev_node(RAGraph *g) {
 }
 
 static void agraph_update_title (RAGraph *g, RAnalFunction *fcn) {
-	const char *mode_str = g->is_callgraph ? mode2str(g, "CG") :
-		mode2str (g, "BB");
+	const char *mode_str = g->is_callgraph ? mode2str(g, "CG") : mode2str (g, "BB");
 	char *new_title = r_str_newf(
 			"[0x%08"PFMT64x"]> VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
 			fcn->addr, fcn->name, g->graph->n_nodes, g->graph->n_edges,
@@ -2271,8 +2247,8 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 	if (res) return res;
 	res = R_NEW0 (RANode);
 	if (!res) return NULL;
-	res->title = title ? strdup(title) : strdup("");
-	res->body = body ? strdup(body) : strdup("");
+	res->title = title ? strdup(title) : strdup ("");
+	res->body = body ? strdup(body) : strdup ("");
 	res->layer = -1;
 	res->pos_in_layer = -1;
 	res->is_dummy = false;
@@ -2318,9 +2294,8 @@ R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
 
 	innodes = r_graph_innodes (g->graph, res->gnode);
 	graph_foreach_anode (innodes, it, gn, an) {
-		sdb_array_remove (g->db,
-			sdb_fmt (2, "agraph.nodes.%s.neighbours", an->title),
-			res->title, 0);
+		const char *key = sdb_fmt (2, "agraph.nodes.%s.neighbours", an->title);
+		sdb_array_remove (g->db, key, res->title, 0);
 	}
 
 	r_graph_del_node (g->graph, res->gnode);
@@ -2330,8 +2305,7 @@ R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
 	return true;
 }
 
-static int user_node_cb(struct g_cb *user, const char *k UNUSED,
-		const char *v) {
+static int user_node_cb(struct g_cb *user, const char *k UNUSED, const char *v) {
 	RANodeCallback cb = user->node_cb;
 	void *user_data = user->data;
 	RANode *n = (RANode *)(size_t)sdb_atoi (v);
@@ -2339,8 +2313,7 @@ static int user_node_cb(struct g_cb *user, const char *k UNUSED,
 	return 1;
 }
 
-static int user_edge_cb(struct g_cb *user, const char *k UNUSED,
-		const char *v) {
+static int user_edge_cb(struct g_cb *user, const char *k UNUSED, const char *v) {
 	RAEdgeCallback cb = user->edge_cb;
 	RAGraph *g = user->graph;
 	void *user_data = user->data;

@@ -2662,25 +2662,29 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 
 		input++;
 		args = r_str_argv (input, &n_args);
-		if (n_args != 2) {
+		if (n_args < 1 || n_args>2) {
 			r_cons_printf ("Wrong arguments\n");
 			r_str_argv_free (args);
 			break;
 		}
 		//strdup cause there is double free in r_str_argv_free due to a realloc call
-		body = strdup (args[1]);
-		if (strncmp (body, "base64:", B_LEN) == 0) {
-			body = r_str_replace (body, "\\n", "", true);
-			newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1);
-			free (body);
-			if (!newbody){
-				eprintf ("Not enough space to allocate %s at %d\n", __FILE__,__LINE__);
-				r_str_argv_free (args);
-				break;
+		if (n_args>1) {
+			body = strdup (args[1]);
+			if (strncmp (body, "base64:", B_LEN) == 0) {
+				body = r_str_replace (body, "\\n", "", true);
+				newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1);
+				free (body);
+				if (!newbody){
+					eprintf ("Not enough space to allocate %s at %d\n", __FILE__,__LINE__);
+					r_str_argv_free (args);
+					break;
+				}
+				body = newbody;
 			}
-			body = newbody;
+			body = r_str_concat (body, "\n");
+		} else {
+			body = strdup ("");
 		}
-		body = r_str_concat (body, "\n");
 		r_agraph_add_node (core->graph, args[0], body);
 		r_str_argv_free (args);
 		free (body);
@@ -2809,13 +2813,13 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case '-':
 		r_agraph_reset (core->graph);
 		break;
-	case 'n':
+	case 'n': // "agn"
 		cmd_agraph_node (core, input + 1);
 		break;
-	case 'e':
+	case 'e': // "age"
 		cmd_agraph_edge (core, input + 1);
 		break;
-	case 'g':
+	case 'g': // "agg"
 		cmd_agraph_print (core, input + 1);
 		break;
 	case 't':
