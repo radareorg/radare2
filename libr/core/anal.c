@@ -8,8 +8,6 @@
 
 #include <string.h>
 
-//#define ANALBS 4096
-#define ANALBS 1024
 #define HASNEXT_FOREVER 1
 
 #define in_function(fn,y) ((y) >= (fn)->addr && (y) < ((fn)->addr + (fn)->size))
@@ -320,7 +318,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	fcn->addr = at;
 	fcn->size = 0;
 	fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
-	buf = malloc (ANALBS);
+	buf = malloc (core->anal->opt.bb_max_size);
 	if (!buf) {
 		eprintf ("Error: malloc (buf)\n");
 		goto error;
@@ -337,7 +335,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		}
 		// real read.
 		// this is unnecessary if its contiguous
-		buflen = r_io_read_at (core->io, at+delta, buf, ANALBS);
+		buflen = r_io_read_at (core->io, at+delta, buf, core->anal->opt.bb_max_size);
 		if (core->io->va && !core->io->raw) {
 			if (!r_io_is_valid_offset (core->io, at+delta, !core->anal->opt.noncode)) {
 				goto error;
@@ -849,7 +847,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 
 	if (ret == R_ANAL_RET_NEW) { /* New bb */
 		// XXX: use static buffer size of 512 or so
-		buf = malloc (ANALBS);
+		buf = malloc (core->anal->opt.bb_max_size);
 		if (!buf)
 			goto error;
 
@@ -857,10 +855,10 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 			// check io error
 			if (r_io_read_at (core->io, at+bblen, buf, 4) != 4) // ETOOSLOW
 				goto error;
-			r_core_read_at (core, at+bblen, buf, ANALBS);
+			r_core_read_at (core, at+bblen, buf, core->anal->opt.bb_max_size);
 			if (!r_io_is_valid_offset (core->io, at+bblen, !core->anal->opt.noncode))
 				goto error;
-			buflen = ANALBS;
+			buflen = core->anal->opt.bb_max_size;
 			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head);
 			if (bblen == R_ANAL_RET_ERROR ||
 				(bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
