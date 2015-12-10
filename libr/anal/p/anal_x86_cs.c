@@ -1234,11 +1234,19 @@ SETL/SETNGE
 				char *a0 = getarg (&gop, 0, 0, NULL);
 				char *a1 = getarg (&gop, 1, 0, NULL);
 				char *a2 = getarg (&gop, 2, 0, NULL);
-				// TODO update flags & handle signedness
-				esilprintf (op, "%s,%s,*,%s,=", a2, a1, a0);
+				if (a2) {
+					// TODO update flags & handle signedness
+					esilprintf (op, "%s,%s,*,%s,=", a2, a1, a0);
+					free (a2);
+				} else {
+					if (a1) {
+						esilprintf (op, "%s,%s,*=", a1, a0);
+						free (a1);
+					} else {
+						esilprintf (op, "%s,%s,*=", a0, "rax");
+					}
+				}
 				free (a0);
-				free (a1);
-				free (a2);
 			}
 			break;
 		case X86_INS_MUL:
