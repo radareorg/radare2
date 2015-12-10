@@ -536,6 +536,9 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 
 		next_module_function = r_anal_get_fcn_at((RAnal*) anal, address + flirt_func->offset, 0);
 		if (next_module_function) {
+			char *name;
+			int name_offs = 0;
+
 			// get function size from flirt signature
 			ut64 flirt_fcn_size = module->length - flirt_func->offset;
 			RFlirtFunction *next_flirt_func;
@@ -568,17 +571,19 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 				r_anal_trim_jmprefs(next_module_function);
 			}
 
-			int name_offs = 0;
+
 			while (flirt_func->name[name_offs] == '?') // skip '?' chars
 				name_offs++;
 			if (!flirt_func->name[name_offs]) continue;
+			name = r_name_filter2(flirt_func->name + name_offs);
 
 			free (next_module_function->name);
-			next_module_function->name = r_str_newf("flirt.%s", flirt_func->name + name_offs);
+			next_module_function->name = r_str_newf("flirt.%s", name);
 			anal->flb.set (anal->flb.f, next_module_function->name,
 				next_module_function->addr, next_module_function->size, 0);
 
 			anal->cb_printf ("Found %s\n", next_module_function->name);
+			free(name);
 		}
 	}
 
