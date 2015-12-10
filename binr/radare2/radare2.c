@@ -705,10 +705,12 @@ int main(int argc, char **argv, char **envp) {
 			char *path = strdup (r_config_get (r.config, "file.path"));
 			char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
 			has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
-			if (has_project)
+			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
-			if (r_core_hash_load (&r, r.file->desc->name) == false)
-				{} //eprintf ("WARNING: File hash not calculated\n");
+			}
+			if (r_core_hash_load (&r, r.file->desc->name) == false) {
+				//eprintf ("WARNING: File hash not calculated\n");
+			}
 			nsha1 = r_config_get (r.config, "file.sha1");
 			npath = r_config_get (r.config, "file.path");
 			if (sha1 && *sha1 && strcmp (sha1, nsha1))
@@ -717,6 +719,11 @@ int main(int argc, char **argv, char **envp) {
 				eprintf ("WARNING: file.path change: %s => %s\n", path, npath);
 			free (sha1);
 			free (path);
+			if (has_project && !zerosep) {
+				r_config_set_i (r.config, "scr.interactive", true);
+				r_config_set_i (r.config, "scr.prompt", true);
+				r_config_set_i (r.config, "scr.color", true);
+			}
 		}
 
 		r_list_foreach (evals, iter, cmdn) {
