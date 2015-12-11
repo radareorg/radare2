@@ -795,8 +795,13 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		// set function size as length of continuous sequence of bbs
 		r_list_sort (fcn->bbs, &cmpaddr);
 		r_list_foreach (fcn->bbs, iter, bb) {
-			if (endaddr < bb->addr - anal->opt.bbs_alignment) break;
-			endaddr += bb->size;
+			if (endaddr == bb->addr) {
+				endaddr += bb->size;
+			} else if (endaddr < bb->addr &&
+					   bb->addr - endaddr < anal->opt.bbs_alignment &&
+					   !(bb->addr & (anal->opt.bbs_alignment - 1))) {
+				endaddr = bb->addr + bb->size;
+			} else break;
 		}
 		r_anal_fcn_resize(fcn, endaddr - fcn->addr);
 
