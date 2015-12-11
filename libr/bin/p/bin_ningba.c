@@ -36,6 +36,7 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	if (!arch || !arch->o) return false;
+	arch->rbin->maxstrbuf = 0x20000000;
 	return check_bytes (bytes, sz);
 }
 
@@ -43,10 +44,6 @@ static int destroy(RBinFile *arch) {
 	r_buf_free (arch->buf);
 	arch->buf = NULL;
 	return true;
-}
-
-static ut64 baddr(RBinFile *arch) {
-	return 0LL;
 }
 
 static RList* entries(RBinFile *arch) {
@@ -59,7 +56,7 @@ static RList* entries(RBinFile *arch) {
 		ret->free = free;
 		if (!(ptr = R_NEW0 (RBinAddr)))
 			return ret;
-		ptr->paddr = ptr->vaddr = 0x0;
+		ptr->paddr = ptr->vaddr = 0x8000000;
 		r_list_append (ret, ptr);
 	}
 	return ret;
@@ -91,6 +88,24 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
+static RList* sections(RBinFile *arch) {
+	RList *ret = NULL;
+	RBinSection* s = R_NEW0 (RBinSection);
+	ut64 sz = r_buf_size (arch->buf);
+
+	if (!(ret = r_list_new ()))
+		return NULL;
+	strcpy (s->name, "ROM");
+	s->paddr = 0;
+	s->vaddr = 0x8000000;
+	s->size = sz;
+	s->vsize = 0x2000000;
+	s->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+
+	r_list_append (ret, s);
+	return ret;
+}
+
 struct r_bin_plugin_t r_bin_plugin_ningba = {
 	.name = "ningba",
 	.desc = "Game Boy Advance format r_bin plugin",
@@ -100,9 +115,9 @@ struct r_bin_plugin_t r_bin_plugin_ningba = {
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,
-	.baddr = &baddr,
 	.entries = &entries,
 	.info = &info,
+	.sections = &sections,
 };
 
 #ifndef CORELIB
