@@ -2382,7 +2382,7 @@ static int cmd_print(void *data, const char *input) {
 					case 'w' : type = "wide" ; break;
 					case 'a' : type = "ascii"; break;
 					case 'u' : type = "utf" ; break;
-					default : type = "unkown" ; break;
+					default : type = "unknown" ; break;
 				}
 				r_cons_printf (",\"type\":\"%s\"}", type);
 				r_cons_newline ();

@@ -149,6 +149,7 @@ static RList* sections(RBinFile *arch) {
 		item->vaddr = sect[i].vaddr;
 		item->size  = sect[i].size;
 		item->vsize = sect[i].vsize;
+		item->add = true;
 
 		item->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
 		if (sect[i].flags & SECT_FLAG_X)

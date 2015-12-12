@@ -112,6 +112,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
+		ptr->add = true;
 		ptr->srwx = R_BIN_SCN_MAP;
 		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags))
 			ptr->srwx |= R_BIN_SCN_EXECUTABLE;

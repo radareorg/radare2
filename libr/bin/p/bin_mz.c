@@ -122,6 +122,7 @@ static RList * sections(RBinFile *arch) {
 		ptr->paddr = segments[i].paddr;
 		ptr->vaddr = segments[i].paddr;
 		ptr->srwx = r_str_rwx ("mrwx");
+		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	free ((void *)segments);

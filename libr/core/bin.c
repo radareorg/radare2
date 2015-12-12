@@ -1489,8 +1489,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 
 			}
 			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
-			r_io_section_add (r->io, section->paddr, addr, section->size,
-				section->vsize, section->srwx, section->name, 0, fd);
+			if (section->add)
+				r_io_section_add (r->io, section->paddr, addr, section->size,
+					section->vsize, section->srwx, section->name, 0, fd);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
 			if (chksum) {
