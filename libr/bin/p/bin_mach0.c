@@ -106,6 +106,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vsize = sections[i].size;
 		ptr->paddr = sections[i].offset + obj->boffset;
 		ptr->vaddr = sections[i].addr;
+		ptr->add = true;
 		if (ptr->vaddr == 0)
 			ptr->vaddr = ptr->paddr;
 		ptr->srwx = sections[i].srwx | R_BIN_SCN_MAP;

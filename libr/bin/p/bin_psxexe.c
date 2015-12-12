@@ -72,6 +72,7 @@ static RList* sections(RBinFile* arch) {
 	sect->vaddr = psxheader.t_addr;
 	sect->vsize = psxheader.t_size;
 	sect->srwx = R_BIN_SCN_MAP | R_BIN_SCN_EXECUTABLE;
+	sect->add = true;
 
 	r_list_append (ret, sect);
 	return ret;

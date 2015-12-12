@@ -282,6 +282,7 @@ typedef struct r_bin_section_t {
 	const char *arch;
 	int bits;
 	bool has_strings;
+	bool add; // indicates when you want to add the section to io `S` command
 } RBinSection;
 
 typedef struct r_bin_class_t {

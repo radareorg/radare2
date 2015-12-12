@@ -88,11 +88,12 @@ static RList *sections(RBinFile *arch) {
 		}
 
 		ptr = R_NEW0 (RBinSection);
-		strncpy (ptr->name, coffname, R_BIN_SIZEOF_STRINGS); 
+		strncpy (ptr->name, coffname, R_BIN_SIZEOF_STRINGS);
 
 		ptr->size = obj->scn_hdrs[i].s_size;
 		ptr->vsize = obj->scn_hdrs[i].s_size;
 		ptr->paddr = obj->scn_hdrs[i].s_scnptr;
+		ptr->add = true;
 
 		ptr->srwx = R_BIN_SCN_MAP;
 		if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_READ)
@@ -155,7 +156,7 @@ static RList *symbols(RBinFile *arch) {
 		}
 
 		if (obj->symbols[i].n_scnum < obj->hdr.f_nscns) {
-			ptr->paddr = obj->scn_hdrs[obj->symbols[i].n_scnum].s_scnptr + 
+			ptr->paddr = obj->scn_hdrs[obj->symbols[i].n_scnum].s_scnptr +
 				obj->symbols[i].n_value;
 		}
 
@@ -269,7 +270,7 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 #if 0
 TODO: do more checks here to avoid false positives
 
-ut16 MACHINE 
+ut16 MACHINE
 ut16 NSECTIONS
 ut32 DATE
 ut32 PTRTOSYMTABLE

@@ -160,6 +160,7 @@ static RList* sections(RBinFile* arch) {
 			ptr->vaddr = 0xa000;
 			ptr->vsize = 1024 * 8;	// BASIC size (8k)
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+			ptr->add = true;
 			r_list_append (ret, ptr);
 
 			// KERNAL (0xe000 - 0xffff)
@@ -171,6 +172,7 @@ static RList* sections(RBinFile* arch) {
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8;	// KERNAL size (8k)
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+			ptr->add = true;
 			r_list_append (ret, ptr);
 
 			// CHARGEN section ignored
@@ -185,6 +187,7 @@ static RList* sections(RBinFile* arch) {
 			ptr->vaddr = 0x4000;
 			ptr->vsize = 1024 * 28;	// BASIC size (28k)
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+			ptr->add = true;
 			r_list_append (ret, ptr);
 
 			// MONITOR (0xb000 - 0xbfff)
@@ -197,6 +200,7 @@ static RList* sections(RBinFile* arch) {
 			ptr->vaddr = 0xb000;
 			ptr->vsize = 1024 * 4;	// BASIC size (4k)
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+			ptr->add = true;
 			r_list_append (ret, ptr);
 
 			// EDITOR (0xc000 - 0xcfff)
@@ -208,6 +212,7 @@ static RList* sections(RBinFile* arch) {
 			ptr->vaddr = 0xc000;
 			ptr->vsize = 1024 * 4;	// BASIC size (4k)
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+			ptr->add = true;
 			r_list_append (ret, ptr);
 
 			// KERNAL (0xe000 - 0xffff)
@@ -219,6 +224,7 @@ static RList* sections(RBinFile* arch) {
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8;	// KERNAL size (8k)
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+			ptr->add = true;
 			r_list_append (ret, ptr);
 
 			// CHARGEN section ignored
@@ -240,6 +246,7 @@ static RList* sections(RBinFile* arch) {
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+			ptr->add = true;
 			r_list_append (ret, ptr);
 		} else {
 			// RAM C128 (0x0000 - 0xffff): Bank 0
@@ -256,6 +263,7 @@ static RList* sections(RBinFile* arch) {
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+			ptr->add = true;
 			r_list_append (ret, ptr);
 
 			if (!(ptr = R_NEW0 (RBinSection)))
@@ -266,6 +274,7 @@ static RList* sections(RBinFile* arch) {
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+			ptr->add = true;
 			r_list_append (ret, ptr);
 		}
 	}
@@ -375,7 +384,7 @@ static RList* symbols(RBinFile *arch) {
 		{0xd022, "VIC_BG_COLOR1"},
 		{0xd023, "VIC_BG_COLOR2"},
 		{0xd024, "VIC_BG_COLOR3"},
-		
+
 		// 128 stuff
 		{0xd02F, "VIC_KBD_128"},
 		{0xd030, "VIC_CLK_128"},

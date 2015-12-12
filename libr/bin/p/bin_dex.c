@@ -406,7 +406,7 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 		omi = MI;
 		// the mi is diff
 #if 0
-		index into the method_ids list for the identity of this method (includes the name and descriptor), represented as a difference from the index of previous element in the list. The index of the first element in a list is represented directly. 
+		index into the method_ids list for the identity of this method (includes the name and descriptor), represented as a difference from the index of previous element in the list. The index of the first element in a list is represented directly.
 #endif
 		p = r_uleb128 (p, p_end-p, &MA);
 		p = r_uleb128 (p, p_end-p, &MC);
@@ -692,7 +692,7 @@ static RList* classes (RBinFile *arch) {
 		class = R_NEW0 (RBinClass);
 		// get source file name (ClassName.java)
 		// TODO: use RConstr here
-		//class->name = strdup (name[0]<0x41? name+1: name); 
+		//class->name = strdup (name[0]<0x41? name+1: name);
 		class->name = dex_class_name_byid (bin, entry.class_id);
 		// find reference to this class instance
 		char *cn = getClassName(class->name);
@@ -851,6 +851,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->size = ptr->vsize = sizeof (struct dex_header_t);
 		ptr->paddr= ptr->vaddr = 0;
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
@@ -859,6 +860,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
 		ptr->size = bin->code_from - ptr->vaddr; // fix size
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
@@ -866,6 +868,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vaddr = ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
 		ptr->size = bin->code_to - ptr->paddr;
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
@@ -882,6 +885,7 @@ static RList* sections(RBinFile *arch) {
 			//ptr->size = ptr->vsize = 1024;
 		}
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; //|2;
+		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	return ret;

@@ -107,6 +107,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr;
 		ptr->srwx = R_BIN_SCN_MAP;
+		ptr->add = true;
 		if (R_BIN_TE_SCN_IS_EXECUTABLE (sections[i].flags))
 			ptr->srwx |= R_BIN_SCN_EXECUTABLE;
 		if (R_BIN_TE_SCN_IS_WRITABLE (sections[i].flags))

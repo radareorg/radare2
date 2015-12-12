@@ -696,6 +696,7 @@ int r_bin_omf_send_sections(RList *list, OMF_segment *section, r_bin_omf_obj *ob
 		new->vaddr = section->vaddr + data->offset + OMF_BASE_ADDR;
 		new->srwx = R_BIN_SCN_EXECUTABLE | R_BIN_SCN_WRITABLE |
 			R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+		new->add = true;
 		r_list_append (list, new);
 		data = data->next;
 	}

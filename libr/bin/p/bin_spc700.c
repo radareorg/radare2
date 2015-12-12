@@ -63,6 +63,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->vaddr = 0x0;
 	ptr->vsize = RAM_SIZE;
 	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
 }

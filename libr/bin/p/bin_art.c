@@ -162,6 +162,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->paddr = 0;
 	ptr->vaddr = art.image_base;
 	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
+	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (!(ptr = R_NEW0 (RBinSection)))
@@ -172,6 +173,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.image_base + art.bitmap_offset;
 	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
+	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (!(ptr = R_NEW0 (RBinSection)))
@@ -182,6 +184,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->size = art.oat_file_end - art.oat_file_begin;
 	ptr->vsize = ptr->size;
 	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
+	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (!(ptr = R_NEW0 (RBinSection)))
@@ -192,6 +195,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->size = art.oat_data_end - art.oat_data_begin;
 	ptr->vsize = ptr->size;
 	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
+	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	return ret;

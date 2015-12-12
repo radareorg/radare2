@@ -121,6 +121,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->paddr = sb.paddr + 40;
 	ptr->vaddr = sb.vaddr;
 	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
+	ptr->add = true;
 	ptr->has_strings = true;
 	r_list_append (ret, ptr);
 
@@ -133,6 +134,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->vaddr = sb.sign_va;
 	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
 	ptr->has_strings = true;
+	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (sb.cert_sz && sb.cert_va > sb.vaddr) {
@@ -145,6 +147,7 @@ static RList* sections(RBinFile *arch) {
 		ptr->vaddr = sb.cert_va;
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
 		ptr->has_strings = true;
+		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	return ret;

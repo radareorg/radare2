@@ -7,7 +7,11 @@
 #include <r_util.h>
 #include "elf.h"
 
+#define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000
+#define ELF_PAGE_SIZE 12
+
 static RBinElfSection *g_sections;
+
 
 static inline int __strnlen(const char *str, int len) {
 	int l = 0;
@@ -206,12 +210,13 @@ static int init_strtab(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return false;
 	}
 	if (r_buf_read_at (bin->b, bin->shstrtab_section->sh_offset, (ut8*)bin->shstrtab,
-				bin->shstrtab_section->sh_size) < 1) {
+				bin->shstrtab_section->sh_size + 1) < 1) {
 		eprintf ("Warning: read (shstrtab) at 0x%"PFMT64x"\n",
 				(ut64) bin->shstrtab_section->sh_offset);
 		R_FREE (bin->shstrtab);
 		return false;
 	}
+	bin->shstrtab[bin->shstrtab_section->sh_size] = '\0';
 
 	sdb_num_set (bin->kv, "elf_shstrtab.offset", bin->shstrtab_section->sh_offset, 0);
 	sdb_num_set (bin->kv, "elf_shstrtab.size", bin->shstrtab_section->sh_size, 0);
@@ -534,27 +539,40 @@ int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return 0;
 }
 
+/*
+To compute the base address, one determines the memory
+address associated with the lowest p_vaddr value for a
+PT_LOAD segment. One then btains the base address by
+truncating the memory address to the nearest multiple
+of the maximum page size
+*/
+
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-	/* hopefully.. the first PT_LOAD is base */
+	ut64 tmp, base = UT64_MAX;
 	if (bin && bin->phdr) {
 		for (i = 0; i < bin->ehdr.e_phnum; i++) {
 			if (bin->phdr[i].p_type == PT_LOAD) {
-				return (ut64)bin->phdr[i].p_vaddr;
+				tmp = (ut64)bin->phdr[i].p_vaddr & ELF_PAGE_MASK;
+				tmp = tmp - (tmp % (1 << ELF_PAGE_SIZE));
+				if (tmp < base) base = tmp;
 			}
 		}
 	}
-	return 0;
+	return base == UT64_MAX ? 0 : base;
 }
 
 ut64 Elf_(r_bin_elf_get_boffset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-	/* hopefully.. the first PT_LOAD is base */
+	ut64 tmp, base = UT64_MAX;
 	if (bin && bin->phdr)
 		for (i = 0; i < bin->ehdr.e_phnum; i++)
-			if (bin->phdr[i].p_type == PT_LOAD)
-				return (ut64) bin->phdr[i].p_offset;
-	return 0;
+			if (bin->phdr[i].p_type == PT_LOAD) {
+				tmp =  (ut64)bin->phdr[i].p_offset & ELF_PAGE_MASK;
+				tmp = tmp - (tmp % (1 << ELF_PAGE_SIZE));
+				if (tmp < base) base = tmp;
+			}
+	return base == UT64_MAX ? 0 : base;
 }
 
 ut64 Elf_(r_bin_elf_get_init_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
@@ -1313,7 +1331,7 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin) 
 			strncpy (ret[i].name, invalid_s, SHNLEN);
 			invalid_c++;
 		} else {
-			if (bin->shstrtab && (SHNAME > 0) && (SHNAME + 8 < SHSIZE)) {
+			if (bin->shstrtab && (SHNAME > 0) && (SHNAME < SHSIZE)) {
 				strncpy (ret[i].name, &bin->shstrtab[SHNAME], SHNLEN);
 			} else {
 				snprintf (unknown_s, sizeof (unknown_s)-4, "unknown%d", unknown_c);

@@ -93,6 +93,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->vaddr = ROM_START_ADDRESS;
 	ptr->vsize = ROM_SIZE;
 	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
 }

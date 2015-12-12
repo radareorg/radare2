@@ -77,6 +77,7 @@ static RList* sections(RBinFile *arch) {
 	ptr9->paddr = loaded_header.arm9_rom_offset;
 	ptr9->vaddr = loaded_header.arm9_ram_address;
 	ptr9->srwx = r_str_rwx ("mrwx");
+	ptr9->add = true;
 	r_list_append (ret, ptr9);
 
 	strncpy (ptr7->name, "arm7", 5);
@@ -85,6 +86,7 @@ static RList* sections(RBinFile *arch) {
 	ptr7->paddr = loaded_header.arm7_rom_offset;
 	ptr7->vaddr = loaded_header.arm7_ram_address;
 	ptr7->srwx = r_str_rwx ("mrwx");
+	ptr7->add = true;
 	r_list_append (ret, ptr7);
 
 	return ret;

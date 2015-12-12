@@ -116,6 +116,7 @@ static RList* sections(RBinFile *arch) {
 		s->size = dol->text_size[i];
 		s->vsize = s->size;
 		s->srwx = r_str_rwx ("mr-x");
+		s->add = true;
 		r_list_append (ret, s);
 	}
 	/* data sections */
@@ -129,6 +130,7 @@ static RList* sections(RBinFile *arch) {
 		s->size = dol->data_size[i];
 		s->vsize = s->size;
 		s->srwx = r_str_rwx ("mr--");
+		s->add = true;
 		r_list_append (ret, s);
 	}
 	/* bss section */
@@ -139,6 +141,7 @@ static RList* sections(RBinFile *arch) {
 	s->size = dol->bss_size;
 	s->vsize = s->size;
 	s->srwx = r_str_rwx ("-rw-");
+	s->add = true;
 	r_list_append (ret, s);
 
 	return ret;

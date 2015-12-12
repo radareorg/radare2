@@ -256,6 +256,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
 	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (!(ptr = R_NEW0 (RBinSection)))
@@ -264,6 +265,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof (SMD_Header);
 	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (!(ptr = R_NEW0 (RBinSection)))
@@ -277,6 +279,7 @@ static RList* sections(RBinFile *arch) {
 	}
 	ptr->size = ptr->vsize = arch->buf->length - ptr->paddr;
 	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
 }
