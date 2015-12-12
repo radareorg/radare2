@@ -1973,7 +1973,31 @@ static int esil_dup(RAnalEsil *esil) {
 	if (!r_anal_esil_get_parm (esil, dup_me, &dup))
 		return false;
 	free (dup_me);
+	if (!r_anal_esil_pushnum (esil, dup))
+		return false;
 	return r_anal_esil_pushnum (esil, dup);
+}
+
+static int esil_swap (RAnalEsil *esil) {
+	char *first;
+	ut64 first_v;
+	char *second;
+	ut64 second_v;
+	if (!esil)
+		return false;
+	second = r_anal_esil_pop (esil);
+	if (!r_anal_esil_get_parm (esil, second, &second_v))
+		return false;
+	free (second);
+
+	first = r_anal_esil_pop (esil);
+	if (!r_anal_esil_get_parm (esil, first, &first_v))
+		return false;
+	free (first);
+
+	if (!r_anal_esil_pushnum (esil, second_v))
+		return false;
+	return r_anal_esil_pushnum (esil, first_v);
 }
 
 /* in case of fail, we must set some var */
@@ -2366,6 +2390,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("BREAK", esil_break);
 	OP ("CLEAR", esil_clear);
 	OP ("DUP", esil_dup);
+	OP ("SWAP", esil_swap);
 	OP ("TRAP", esil_trap);
 }
 
