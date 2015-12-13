@@ -115,7 +115,7 @@ html, body {
 }
 .demo-layout .demo-navigation .mdl-navigation__link:hover {
   background-color: #00BCD4;
-  color: #37474F;
+  color: #37474F !important;
 }
 .mdl-navigation__link:hover {
   cursor: pointer;
