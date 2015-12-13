@@ -4,15 +4,15 @@
 static char * lpTmpBuffer; //[0x2800u];
 static char * cmdBuff;//[128];
 int sizeSend=0;
-
-DWORD WINAPI MyThLector_(LPVOID lpParam)
+#define SIZE_BUF 0x5600 * 2
+/*DWORD WINAPI MyThLector_(LPVOID lpParam)
 {
 	libbochs_t * a = lpParam;
 	DWORD NumberOfBytesRead;
 	do
 	{
-		ZeroMemory(lpTmpBuffer, 0x2800u);
-		if (!ReadFile(a->hReadPipeIn, lpTmpBuffer, 0x2800u, &NumberOfBytesRead, 0))
+		ZeroMemory(lpTmpBuffer, SIZE_BUF);
+		if (!ReadFile(a->hReadPipeIn, lpTmpBuffer, SIZE_BUF, &NumberOfBytesRead, 0))
 		{
 			printf("\n\n!!ERROR Leyendo datos del pipe\n\n");
 			break;
@@ -28,7 +28,8 @@ DWORD WINAPI MyThLector_(LPVOID lpParam)
 	return 0;
 
 }
-DWORD WINAPI MyThEscritor_(LPVOID lpParam)
+
+  DWORD WINAPI MyThEscritor_(LPVOID lpParam)
 {
 	libbochs_t * a = lpParam;
 	DWORD dwWritten;
@@ -42,6 +43,7 @@ DWORD WINAPI MyThEscritor_(LPVOID lpParam)
 	return 0;
 
 }
+*/
 int EjecutaThreadRemoto_(libbochs_t* b, LPVOID lpBuffer, DWORD dwSize, int a4, LPDWORD lpExitCode)
 {
 	LPVOID pProcessMemory;
@@ -77,7 +79,7 @@ int EjecutaThreadRemoto_(libbochs_t* b, LPVOID lpBuffer, DWORD dwSize, int a4, L
 }
 void ResetBuffer_(libbochs_t* b)
 {
-	ZeroMemory(b->data, 0x2800u);
+	ZeroMemory(b->data, SIZE_BUF);
 	b->punteroBuffer = 0;
 }
 BOOL CommandStop_(libbochs_t * b) {
@@ -101,13 +103,36 @@ BOOL CommandStop_(libbochs_t * b) {
 	return ExitCode;
 }
 
-VOID EnviaComando_(libbochs_t* b, char * comando) {
+/*VOID EnviaComando_(libbochs_t* b, char * comando) {
 	//eprintf("Enviando comando: %s\n",comando);
 	ResetBuffer_(b);
 	ZeroMemory(cmdBuff,128);
 	sizeSend=sprintf(cmdBuff,"%s\n",comando);
 	SetEvent(b->ghWriteEvent);
 	Sleep(10);
+}*/
+VOID EnviaComando_(libbochs_t* b, char * comando) {
+	//eprintf("Enviando comando: %s\n",comando);
+	DWORD aval,leftm,dwWritten,dwRead;
+	ResetBuffer_(b);
+	ZeroMemory(cmdBuff,128);
+	sizeSend=sprintf(cmdBuff,"%s\n",comando);
+	WriteFile(b->hWritePipeOut, cmdBuff, strlen(cmdBuff), &dwWritten, NULL);
+	Sleep(10);
+	while(PeekNamedPipe(b->hReadPipeIn,NULL,NULL,NULL,&aval,&leftm)) {
+		if (aval>0) {
+			if (!ReadFile(b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0))
+			{
+				printf("\n\n!!ERROR Leyendo datos del pipe\n\n");
+				break;
+			}
+			//eprintf("mythreadlector: %x %x\n",NumberOfBytesRead,punteroBuffer);
+			if (dwRead)
+				b->punteroBuffer +=dwRead; 
+		}
+		else
+			break;
+	}
 }
 int bochs_read_(libbochs_t* b,ut64 addr,int count,ut8 * buf) {
 	char buff[128];
@@ -153,9 +178,10 @@ BOOL bochs_open_(libbochs_t* b ,char * rutaBochs, char * rutaConfig) {
 	BOOL result;
 	char commandline[1024];
 	int veces;
+	DWORD aval,dwRead,leftm;
 	// alojamos el buffer de datos
-	b->data = malloc(2800u);
-	lpTmpBuffer = malloc(0x2800u);
+	b->data = malloc(SIZE_BUF);
+	lpTmpBuffer = malloc(SIZE_BUF);
 	cmdBuff = malloc(128);
 	eprintf("bochs_open: invocado\n"); 
 	// creamos los pipes
@@ -164,8 +190,8 @@ BOOL bochs_open_(libbochs_t* b ,char * rutaBochs, char * rutaConfig) {
 	PipeAttributes.lpSecurityDescriptor = 0;
 	//
 	result = FALSE;
-	if (CreatePipe(&b->hReadPipeIn, &b->hReadPipeOut, &PipeAttributes, 0) && 
-	    CreatePipe(&b->hWritePipeIn, &b->hWritePipeOut, &PipeAttributes, 0)
+	if (CreatePipe(&b->hReadPipeIn, &b->hReadPipeOut, &PipeAttributes, SIZE_BUF) && 
+	    CreatePipe(&b->hWritePipeIn, &b->hWritePipeOut, &PipeAttributes, SIZE_BUF)
 	   ) {
 		//  Inicializamos las estructuras
 		ZeroMemory(&b->info, sizeof(STARTUPINFO));
@@ -178,18 +204,35 @@ BOOL bochs_open_(libbochs_t* b ,char * rutaBochs, char * rutaConfig) {
 		b->info.dwFlags |=  STARTF_USESTDHANDLES;
 		// Creamos el proceso
 		sprintf(commandline, "\"%s\" -f \"%s\" -q ",rutaBochs,rutaConfig);
-		printf("*** Creando proces: %s\n",commandline);
+		eprintf("*** Creando proces: %s\n",commandline);
 		if (CreateProcessA(NULL, commandline, NULL, NULL,TRUE, CREATE_NEW_CONSOLE , NULL, NULL, &b->info, &b->processInfo)) {
-			printf("Proceso spawneado\n");
+			eprintf("Proceso spawneado\n");
 			WaitForInputIdle(b->processInfo.hProcess, INFINITE);
-			printf("Entrada inicializada\n");
+			eprintf("Entrada inicializada\n");
 
 			b->bEjecuta=TRUE;
-			CreateThread(NULL, 0, MyThLector_, b, 0, 0);
-			b->ghWriteEvent = CreateEvent(NULL, TRUE, FALSE, TEXT("WriteEvent"));
-			CreateThread(NULL, 0, MyThEscritor_, b, 0, 0);
-			eprintf("Esperando inicializacion de bochs.\n");
+			//CreateThread(NULL, 0, MyThLector_, b, 0, 0);
+			//b->ghWriteEvent = CreateEvent(NULL, TRUE, FALSE, TEXT("WriteEvent"));
+			//CreateThread(NULL, 0, MyThEscritor_, b, 0, 0);
 			ResetBuffer_(b);
+			eprintf("Esperando inicializacion de bochs.\n");
+			while(PeekNamedPipe(b->hReadPipeIn,NULL,NULL,NULL,&aval,&leftm)) {
+				if (aval>0) {
+					if (!ReadFile(b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0))
+					{
+						printf("\n\n!!ERROR Leyendo datos del pipe\n\n");
+						break;
+					}
+					//eprintf("mythreadlector: %x %x\n",NumberOfBytesRead,punteroBuffer);
+					if (dwRead)
+						b->punteroBuffer +=dwRead; 
+				}
+				else
+					break;
+			}
+			
+			eprintf(" leido = %s\n",b->data);
+
 			veces=100; // reintenta durante 10 segundos
 			do {
 				if (strstr(b->data, "<bochs:1>")) {
