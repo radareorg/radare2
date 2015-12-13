@@ -11,8 +11,9 @@
 
 
 static int usage (int v) {
-	printf ("Usage: ragg2 [-FOLsrxvh] [-a arch] [-b bits] [-k os] [-o file] [-I /] [-i sc]\n"
-		"             [-e enc] [-B hex] [-c k=v] [-C file] [-dDw v] [-p pad] file|f.asm|-\n");
+	printf ("Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
+		"             [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
+		"             [-q off] [-dDw off:hex] file|f.asm|-\n");
 	if (v) printf (
 	" -a [arch]       select architecture (x86, mips, arm)\n"
 	" -b [bits]       register size (32, 64, ..)\n"
@@ -123,8 +124,6 @@ int main(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-	//egg->bin = r_buf_new ();
-
         while ((c = getopt (argc, argv, "n:N:he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:")) != -1) {
                 switch (c) {
 		case 'a':
@@ -190,10 +189,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'D':
 			{
-			ut64 off, n;
 			char *p = strchr (optarg, ':');
 			if (p) {
-				off = r_num_math (NULL, optarg);
+				ut64 n, off = r_num_math (NULL, optarg);
 				n = r_num_math (NULL, p+1);
 				// TODO: honor endianness here
 				r_egg_patch (egg, off, (const ut8*)&n, 8);
