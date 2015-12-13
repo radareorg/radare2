@@ -48,6 +48,10 @@ ul.jqtree-tree .jqtree-element {
     margin-left: 0;
 }
 
+span.addr {
+    cursor: default;
+}
+
 ul.jqtree-tree li.jqtree-folder {
     margin-bottom: 4px;
 }
