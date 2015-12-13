@@ -622,7 +622,9 @@ static int cb_dbg_forks(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_forks = node->i_value;
-	r_debug_attach (core->dbg, core->dbg->pid);
+	if (core->io->debug) {
+		r_debug_attach (core->dbg, core->dbg->pid);
+	}
 	return true;
 }
 
@@ -630,7 +632,9 @@ static int cb_dbg_execs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_execs = node->i_value;
-	r_debug_attach (core->dbg, core->dbg->pid);
+	if (core->io->debug) {
+		r_debug_attach (core->dbg, core->dbg->pid);
+	}
 	return true;
 }
 
@@ -638,7 +642,9 @@ static int cb_dbg_clone(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_clone = node->i_value;
-	r_debug_attach (core->dbg, core->dbg->pid);
+	if (core->io->debug) {
+		r_debug_attach (core->dbg, core->dbg->pid);
+	}
 	return true;
 }
 

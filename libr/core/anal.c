@@ -297,14 +297,12 @@ static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 
 static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	int has_next = r_config_get_i (core->config, "anal.hasnext");
-	RAnalFunction *fcn;
 	RAnalHint *hint;
-	int buflen, fcnlen;
+	ut8 *buf = NULL;
 	int i, nexti = 0;
 	ut64 *next = NULL;
-	ut8 *buf;
-
-	fcn = r_anal_fcn_new ();
+	int buflen, fcnlen;
+	RAnalFunction *fcn = r_anal_fcn_new ();
 	if (!fcn) {
 		eprintf ("Error: new (fcn)\n");
 		return false;
