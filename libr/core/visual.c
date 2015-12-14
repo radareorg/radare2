@@ -1193,7 +1193,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				cursor += cols;
 				ocursor = -1;
 				offscreen = (core->cons->rows - 3) * cols;
-				if (cursor > offscreen ) {
+				if (cursor > offscreen) {
 					r_core_seek (core, core->offset+cols, 1);
 					cursor-=cols;
 				}
@@ -1203,12 +1203,23 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (times<1) times = 1;
 			while (times--) {
 				if (core->printidx == 1 || core->printidx == 2) {
-					cols = r_asm_disassemble (core->assembler,
-							&op, core->block, 32);
+					RAnalFunction *f = NULL;
+					if (true) {
+						f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+					}
+					if (f && f->folded) {
+						if (core->offset <= f->addr) {
+							cols = core->offset - f->addr + f->size;
+						} else cols = 1;
+					} else {
+						r_asm_set_pc (core->assembler, core->offset);
+						cols = r_asm_disassemble (core->assembler,
+								&op, core->block, 32);
+					}
 					if (cols<1) cols = op.size;
 					if (cols<1) cols = 1;
 				}
-				r_core_seek (core, core->offset+cols, 1);
+				r_core_seek (core, core->offset + cols, 1);
 			}
 		}
 		break;
@@ -1242,12 +1253,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'k':
 		if (curset) {
 			if (core->printidx == 1 || core->printidx == 2)
-				cols = prevopsz (core, core->offset+cursor);
+				cols = prevopsz (core, core->offset + cursor);
 			cursor -= cols;
 			ocursor = -1;
 			if (cursor<0) {
-				if (core->offset>=cols) {
-					r_core_seek (core, core->offset-cols, 1);
+				if (core->offset >= cols) {
+					r_core_seek (core, core->offset - cols, 1);
 					cursor += cols;
 				}
 			}
@@ -1256,11 +1267,17 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (times<1) times = 1;
 			while (times--) {
 				if (core->printidx == 1 || core->printidx == 2) {
-					cols = prevopsz (core, core->offset);
-				}
-				if (core->offset >= cols)
-					r_core_seek (core, core->offset-cols, 1);
-				else r_core_seek (core, 0, 1);
+					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+					if (f && f->folded) {
+						cols = core->offset - f->addr; // + f->size;
+						if (cols<1) {
+							cols = 4;
+						}
+					} else {
+						cols = prevopsz (core, core->offset);
+					}
+				} else cols = 1;
+				r_core_seek (core, core->offset - cols, 1);
 			}
 		}
 		break;
@@ -1539,7 +1556,21 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case 'z':
-		r_config_toggle (core->config, "asm.cmtfold");
+		{
+		RAnalFunction *fcn;
+		if (curset) {
+			fcn = r_anal_get_fcn_in (core->anal,
+				core->offset+cursor, R_ANAL_FCN_TYPE_NULL);
+		} else {
+			fcn = r_anal_get_fcn_in (core->anal,
+				core->offset, R_ANAL_FCN_TYPE_NULL);
+		}
+		if (fcn) {
+			fcn->folded = !fcn->folded;
+		} else {
+			r_config_toggle (core->config, "asm.cmtfold");
+		}
+		}
 		break;
 	case 'Z':
 		if (zoom && cursor) {

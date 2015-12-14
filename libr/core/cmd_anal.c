@@ -984,6 +984,16 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'g': // "afg" - non-interactive VV
 		r_core_visual_graph (core, NULL, false);
 		break;
+	case 'F':// "afF"
+		{
+			RAnalFunction *fcn;
+			int val = input[2] && r_num_math (core->num, input+2);
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+			if (fcn) {
+				fcn->folded = input[2]? val: !fcn->folded;
+			}
+		}
+		break;
 	case '?':{ // "af?"
 		 const char* help_msg[] = {
 		 "Usage:", "af", "",
@@ -999,6 +1009,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		 "afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
 		 "afC[a]", " type @[addr]", "set calling convention for function (afC?=list cc types)",
 		 "aff", "", "re-adjust function boundaries to fit",
+		 "afF", "[1|0|]", "fold/unfold/toggle",
 		 "afg", "", "non-interactive ascii-art basic-block graph (See VV)",
 		 "afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 		 "afl", "[*] [fcn name]", "list functions (addr, size, bbs, name)",

@@ -2306,22 +2306,13 @@ static void handle_print_refptr (RCore *core, RDisasmState *ds) {
 
 // int l is for lines
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes) {
-	int ret, idx = 0, i;
 	int continueoninvbreak = (len == l) && invbreak;
-	int dorepeat = 1;
+	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
+	int ret, idx = 0, i;
+	int dorepeat = 1;
 	ut8 *nbuf = NULL;
 	RDisasmState *ds;
-r_reg_arena_push (core->anal->reg);
-	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
-	// TODO: import values from debugger is possible
-	// TODO: allow to get those register snapshots from traces
-	// TODO: per-function register state trace
-	// XXX - is there a better way to reset a the analysis counter so that
-	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal->cur && core->anal->cur->reset_counter) {
-		core->anal->cur->reset_counter (core->anal, addr);
-	}
 
 	// TODO: All those ds must be print flags
 	ds = handle_init_ds (core);
@@ -2332,6 +2323,19 @@ r_reg_arena_push (core->anal->reg);
 	ds->len = len;
 	ds->addr = addr;
 	ds->hint = NULL;
+	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
+	// TODO: import values from debugger is possible
+	// TODO: allow to get those register snapshots from traces
+	// TODO: per-function register state trace
+	// XXX - is there a better way to reset a the analysis counter so that
+	// when code is disassembled, it can actually find the correct offsets
+	if (ds->show_emu) {
+		r_reg_arena_push (core->anal->reg);
+	}
+	if (core->anal->cur && core->anal->cur->reset_counter) {
+		core->anal->cur->reset_counter (core->anal, addr);
+	}
+
 
 	handle_reflines_init (core->anal, ds);
 	core->inc = 0;
@@ -2385,6 +2389,28 @@ toro:
 		r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
 
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		if (f && f->folded && ds->at >= f->addr && ds->at < f->addr+f->size) {
+			int delta = (ds->addr <= f->addr)? (ds->addr - f->addr + f->size): 0;
+			if (of != f) {
+				r_cons_printf ("%s%s%s (fcn) %s%s\n", COLOR (ds, color_fline), core->cons->vline[RUP_CORNER], COLOR (ds, color_fname), f->name, COLOR_RESET (ds));
+				handle_print_pre (core, ds, false);
+				handle_print_lines_left (core, ds);
+				handle_print_offset (core, ds);
+				r_cons_printf ("(%d byte folded function)\n", f->size);
+				r_cons_printf ("%s%s%s\n", COLOR (ds, color_fline), core->cons->vline[RDWN_CORNER], COLOR_RESET (ds));
+				ds->addr += delta;
+				r_io_read_at (core->io, ds->addr, buf, len);
+				inc = 0; //delta;
+				idx = 0;
+				of = f;
+				continue;
+			} else {
+				ds->lines--;
+			//	 r_cons_printf ("delta %d fsize %d\n", delta, f->size);
+				inc = 1;
+				continue;
+			}
+		}
 		if (!ds->hint || !ds->hint->bits) {
 			if (f) {
 				if (f->bits) {
@@ -2549,7 +2575,9 @@ toro:
 	// TODO: this too (must review)
 	handle_print_esil_anal_fini (core, ds);
 	handle_deinit_ds (core, ds);
-r_reg_arena_pop (core->anal->reg);
+	if (ds->show_emu) {
+		r_reg_arena_pop (core->anal->reg);
+	}
 	return idx; //-ds->lastfail;
 }
 

@@ -295,6 +295,7 @@ typedef struct r_anal_type_function_t {
 	int ninstr;
 	int nargs; // Function arguments counter
 	int depth;
+	bool folded;
 	RAnalType *args; // list of arguments
 #if USE_VARSUBS
 	RAnalVarSub varsubs[R_ANAL_VARSUBS];
