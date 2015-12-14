@@ -251,7 +251,7 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 
 		recurseAt (jmpptr);
 	}
-	free(jmptbl);
+	free (jmptbl);
 	return ret;
 }
 
@@ -659,10 +659,16 @@ repeat:
 							ret = try_walkthrough_jmptbl (anal, fcn, depth, addr + idx, ptr, ret);
 					}
 				}
-			}
-			if (!anal->opt.eobjmp) {
-				if (!anal->opt.jmptbl) {
-					break;
+			} else {
+				if (!anal->opt.eobjmp) {
+					if (continue_after_jump) {
+					#if 0
+						FITFCNSZ ();
+						r_anal_op_fini (&op);
+						return R_ANAL_RET_END;
+					#endif
+						break;
+					}
 				}
 			}
 			/* fallthru */
