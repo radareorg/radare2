@@ -2219,7 +2219,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		if (r_anal_op (core->anal, &op, addr, buf+bufi, 4096 - bufi)) {
 			if (op.size < 1) op.size = minop; // XXX must be +4 on arm/mips/.. like we do in disasm.c
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
-				r_core_anal_fcn (core, op.jump, UT64_MAX,
+				r_core_anal_fcn (core, op.jump, addr,
 						R_ANAL_REF_TYPE_NULL, depth);
 			}
 		} else {
