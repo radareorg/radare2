@@ -856,6 +856,7 @@ static void handle_print_pre (RCore *core, RDisasmState *ds, bool tail) {
 			}
 			if (tail) {
 				r_str_replace_char (ds->pre, '\\', ' ');
+				r_str_replace_char (ds->pre, '|', '\\');
 			}
 			r_cons_printf ("%s%s%s", COLOR (ds, color_fline),
 				ds->pre, COLOR_RESET (ds));
@@ -2390,15 +2391,16 @@ toro:
 
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f && f->folded && ds->at >= f->addr && ds->at < f->addr+f->size) {
-			int delta = (ds->addr <= f->addr)? (ds->addr - f->addr + f->size): 0;
+			int delta = (ds->at <= f->addr)? (ds->at - f->addr + f->size): 0;
 			if (of != f) {
 				r_cons_printf ("%s%s%s (fcn) %s%s\n", COLOR (ds, color_fline), core->cons->vline[RUP_CORNER], COLOR (ds, color_fname), f->name, COLOR_RESET (ds));
-				handle_print_pre (core, ds, false);
+				handle_print_pre (core, ds, true);
 				handle_print_lines_left (core, ds);
 				handle_print_offset (core, ds);
 				r_cons_printf ("(%d byte folded function)\n", f->size);
-				r_cons_printf ("%s%s%s\n", COLOR (ds, color_fline), core->cons->vline[RDWN_CORNER], COLOR_RESET (ds));
-				ds->addr += delta;
+				//r_cons_printf ("%s%s%s\n", COLOR (ds, color_fline), core->cons->vline[RDWN_CORNER], COLOR_RESET (ds));
+				if (delta<0) delta = -delta;
+				ds->addr += delta + idx;
 				r_io_read_at (core->io, ds->addr, buf, len);
 				inc = 0; //delta;
 				idx = 0;
