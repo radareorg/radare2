@@ -816,9 +816,9 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 			if (!ds->show_fcnlines) {
 				r_cons_printf ("%s", ds->refline2);
 			} else {
-				r_cons_printf ("%s%s %s%s",
-					COLOR (ds, color_flow),
-					core->cons->vline[LINE_VERT], ds->refline2,
+				r_cons_printf ("%s%s %s%s%s",
+					COLOR (ds, color_fline), core->cons->vline[LINE_VERT],
+					COLOR (ds, color_flow), ds->refline2,
 					COLOR_RESET (ds));
 			}
 			r_cons_printf ("%s; %s %s %s %s@ %s%s0x%x%s\n",
