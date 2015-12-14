@@ -31,13 +31,13 @@ struct MACH0_(SClassRoT) {
 #ifdef R_BIN_MACH064
 	ut32 reserved;
 #endif
-	mach0_ut ivarLayout;	/* const uint8_t* (32/64-bit pointer) */
+	mach0_ut ivarLayout;     /* const uint8_t* (32/64-bit pointer) */
 	mach0_ut name;		/* const char* (32/64-bit pointer) */
-	mach0_ut baseMethods;	/* const SMEthodList* (32/64-bit pointer) */
-	mach0_ut baseProtocols;	/* const SProtocolList* (32/64-bit pointer) */
+	mach0_ut baseMethods;    /* const SMEthodList* (32/64-bit pointer) */
+	mach0_ut baseProtocols;  /* const SProtocolList* (32/64-bit pointer) */
 	mach0_ut ivars;		/* const SIVarList* (32/64-bit pointer) */
-	mach0_ut weakIvarLayout;/* const uint8_t * (32/64-bit pointer) */
-	mach0_ut baseProperties;/* const SObjcPropertyList* (32/64-bit pointer) */
+	mach0_ut weakIvarLayout; /* const uint8_t * (32/64-bit pointer) */
+	mach0_ut baseProperties; /* const SObjcPropertyList* (32/64-bit pointer) */
 };
 
 struct MACH0_(SProtocolList) {
@@ -614,7 +614,7 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 
 ///////////////////////////////////////////////////////////////////////////////
 static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBinClass *klass) {
-	struct MACH0_(obj_t) *bin;
+	struct MACH0_(obj_t) * bin;
 	struct MACH0_(SClassRoT) cro = { 0 };
 	ut32 offset, left;
 	ut64 r, s;
@@ -760,7 +760,7 @@ static void __r_bin_class_free(RBinClass *p) {
 	r_bin_class_free (p);
 }
 
-RList *MACH0_(parse_classes) (RBinFile *arch) {
+RList *MACH0_(parse_classes)(RBinFile *arch) {
 	RList /*<RBinClass>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
 	RBinClass *klass = NULL;
@@ -840,7 +840,7 @@ RList *MACH0_(parse_classes) (RBinFile *arch) {
 			goto get_classes_error;
 		}
 
-		// TODO: unnecessary slow sequential read? use fread for endianness
+// TODO: unnecessary slow sequential read? use fread for endianness
 #ifdef R_BIN_MACH064
 		len = r_buf_fread_at (arch->buf, s->paddr + i, (ut8 *)&p, "l", 1);
 #else
@@ -852,7 +852,7 @@ RList *MACH0_(parse_classes) (RBinFile *arch) {
 
 		if (!klass->name) {
 			klass->name = r_str_newf ("UnnamedClass%" PFMT64d,
-				num_of_unnamed_class);
+						num_of_unnamed_class);
 			if (!klass->name) {
 				goto get_classes_error;
 			}

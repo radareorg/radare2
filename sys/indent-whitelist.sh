@@ -2,6 +2,9 @@
 FILES="
 libr/include/r_list.h
 libr/include/r_reg.h
+libr/anal/cycles.c
+libr/anal/esil.c
+libr/anal/data.c
 libr/config/config.c
 libr/config/callback.c
 libr/config/t/test.c

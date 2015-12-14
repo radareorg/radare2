@@ -12,7 +12,7 @@ extern "C" {
 
 #ifndef _INCLUDE_R_LIST_HEAD_H_
 #define _INCLUDE_R_LIST_HEAD_H_
-typedef void (*RListFree) (void *ptr);
+typedef void (*RListFree)(void *ptr);
 
 typedef struct r_list_iter_t {
 	void *data;
@@ -25,7 +25,7 @@ typedef struct r_list_t {
 	RListFree free;
 } RList;
 
-typedef int (*RListComparator) (const void *a, const void *b);
+typedef int (*RListComparator)(const void *a, const void *b);
 
 #define ROFList_Parent RList
 typedef struct r_oflist_t {
@@ -117,8 +117,7 @@ R_API RListIter *r_list_find(const RList *list, const void *p, RListComparator c
 		int idx = 0;\
 		void *ptr;\
 		RListIter *iter;\
-		r_list_foreach (x, iter, ptr)\
-			r_flist_set (x->array, idx++, ptr);\
+		r_list_foreach (x, iter, ptr) r_flist_set (x->array, idx++, ptr);\
 	}\
 	x->array;
 #endif

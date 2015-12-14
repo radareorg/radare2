@@ -189,7 +189,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 		}
 		if (node->flags & CN_BOOL) {
 			int b = (!strcmp (value, "true") || !strcmp (value, "1"));
-			node->i_value = (ut64) (b == 0)? 0: 1;
+			node->i_value = (ut64)(b == 0)? 0: 1;
 			free (node->value);
 			node->value = strdup (b? "true": "false");
 		} else {
