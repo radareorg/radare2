@@ -2329,7 +2329,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// TODO: per-function register state trace
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
-	if (ds->show_emu) {
+	if (true || ds->show_emu) {
 		r_reg_arena_push (core->anal->reg);
 	}
 	if (core->anal->cur && core->anal->cur->reset_counter) {
@@ -2575,7 +2575,7 @@ toro:
 	// TODO: this too (must review)
 	handle_print_esil_anal_fini (core, ds);
 	handle_deinit_ds (core, ds);
-	if (ds->show_emu) {
+	if (true || ds->show_emu) {
 		r_reg_arena_pop (core->anal->reg);
 	}
 	return idx; //-ds->lastfail;
