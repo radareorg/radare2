@@ -102,7 +102,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		if (ret != core->blocksize)
 			break;
 		idx = 0, matchcount = 0;
-		while (idx<core->blocksize) {
+		while (idx < core->blocksize) {
 			ut64 addr = at + idx;
 			r_asm_set_pc (core->assembler, addr);
 			op.buf_asm[0] = 0;
@@ -142,7 +142,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						goto beach;
 					}
 					hit->addr = addr;
-					hit->len = idx+len-tidx;
+					hit->len = idx + len - tidx;
 					if (hit->len == -1) {
 						r_core_asm_hit_free (hit);
 						goto beach;
@@ -174,6 +174,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				matchcount = 0;
 			}
 		}
+
+		at += OPSZ;
 	}
 	r_asm_set_pc (core->assembler, toff);
 beach:

@@ -1383,7 +1383,6 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		if (outmode == 0) hits = NULL;
 		else hits = r_core_asm_strsearch (core, input+2,
 				param->from, param->to, maxhits, regexp);
-
 		if (hits) {
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_singleton()->breaked)
@@ -1405,9 +1404,8 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 					break;
 				}
 				if (searchflags) {
-					char flag[64];
-					snprintf (flag, sizeof (flag), "%s%d_%d", searchprefix, kwidx, count);
-					r_flag_set (core->flags, flag, hit->addr, hit->len, 1);
+					const char *flagname = sdb_fmt (0, "%s%d_%d", searchprefix, kwidx, count);
+					r_flag_set (core->flags, flagname, hit->addr, hit->len, 1);
 				}
 				count++;
 			}
