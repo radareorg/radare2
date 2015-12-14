@@ -554,8 +554,9 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 			// resize function if needed
 			if (next_module_function->size < flirt_fcn_size) {
 				RListIter *iter;
+				RListIter *iter_tmp;
 				RAnalFunction *fcn;
-				r_list_foreach(anal->fcns, iter, fcn) {
+				r_list_foreach_safe (anal->fcns, iter, iter_tmp, fcn) {
 					if (fcn->addr >= next_module_function->addr + next_module_function->size &&
 							fcn->addr < next_module_function->addr + flirt_fcn_size) {
 						r_list_join(next_module_function->refs, fcn->refs);
