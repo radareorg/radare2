@@ -39,6 +39,7 @@ static void var_help(RCore *core, char ch) {
 		 "afa*", "", "list function arguments in commands",
 		 "afa", " [idx] [name] ([type])", "define argument N with name and type",
 		 "afan", " [old_name] [new_name]", "rename function argument",
+		 "afat", " [name] [new_type]", "change type for given argument",
 		 "afaj", "", "return list of function arguments in JSON format",
 		 "afa-", " [idx]", "delete argument at the given index",
 		 "afag", " [idx] [addr]", "define var get reference",
@@ -46,6 +47,7 @@ static void var_help(RCore *core, char ch) {
 		 "afv", "", "list function local variables",
 		 "afv", " [idx] [name] ([type])", "define variable N with name and type",
 		 "afvn", " [old_name] [new_name]", "rename local variable",
+		 "afvt", " [name] [new_type]", "change type for given variable",
 		 "afvj", "", "return list of function local variables in JSON format",
 		 "afv-", " [idx]", "delete variable at the given index",
 		 "afvg", " [idx] [addr]", "define var get reference",
@@ -104,8 +106,9 @@ static int var_cmd(RCore *core, const char *str) {
 				r_num_math (core->num, str+1));
 			break;
 		case 'n':
+			{
 			str++;
-			for (str++;*str==' ';) str++;
+			for (str++; *str==' '; ) str++;
 			char *new_name = strchr (str, ' ');
 			if (!new_name) {
 				var_help (core, type);
@@ -113,11 +116,27 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			*new_name++ = 0;
 			char *old_name = strdup (str);
-			r_str_split(old_name, ' ');
+			r_str_split (old_name, ' ');
 			r_anal_var_rename (core->anal, fcn->addr,
 				R_ANAL_VAR_SCOPE_LOCAL, (char)type,
 				old_name, new_name);
 			free (old_name);
+			}
+			break;
+		case 't':
+			{
+			const char *name = str+1;
+			for (name++; *name==' '; ) name++;
+			char *new_type = strchr (name, ' ');
+			if (!new_type) {
+				var_help (core, type);
+				break;
+			}
+			*new_type ++ = 0;
+			r_anal_var_retype (core->anal, fcn->addr,
+				R_ANAL_VAR_SCOPE_LOCAL, -1, (char)str[0],
+				new_type, -1, name);
+			}
 			break;
 		case 's':
 		case 'g':
