@@ -2652,6 +2652,18 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	}
 }
 
+static void agraph_print_node_dot(RANode *n, void *user) {
+	char *label = strdup (n->body);
+	label = r_str_replace (label, "\n", "\\l", 1);
+	if (!label || !*label) {
+		free (label);
+		label = strdup (n->title);
+	}
+	r_cons_printf ("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
+		n->title, n->title, label);
+	free (label);
+}
+
 static void agraph_print_node(RANode *n, void *user) {
 	char *encbody, *cmd;
 	int len = strlen (n->body);
@@ -2664,12 +2676,12 @@ static void agraph_print_node(RANode *n, void *user) {
 	free (encbody);
 }
 
-static void agraph_print_edge(RANode *from, RANode *to, void *user) {
-	char *cmd;
+static void agraph_print_edge_dot(RANode *from, RANode *to, void *user) {
+	r_cons_printf ("\"%s\" -> \"%s\"\n", from->title, to->title);
+}
 
-	cmd = r_str_newf ("age \"%s\" \"%s\"\n", from->title, to->title);
-	r_cons_printf (cmd);
-	free (cmd);
+static void agraph_print_edge(RANode *from, RANode *to, void *user) {
+	r_cons_printf ("age \"%s\" \"%s\"\n", from->title, to->title);
 }
 
 static void cmd_agraph_node(RCore *core, const char *input) {
@@ -2793,7 +2805,7 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 
 static void cmd_agraph_print(RCore *core, const char *input) {
 	switch (*input) {
-	case 'k':
+	case 'k': // "aggk"
 	{
 		Sdb *db = r_agraph_get_sdb (core->graph);
 		char *o = sdb_querys (db, "NULL", 0, "*");
@@ -2801,7 +2813,15 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		free (o);
 		break;
 	}
-	case '*':
+	case 'd': // "aggd" - dot format
+		r_cons_printf ("digraph code {\ngraph [bgcolor=white];\n"
+			"node [color=lightgray, style=filled shape=box "
+			"fontname=\"Courier\" fontsize=\"8\"];\n");
+		r_agraph_foreach (core->graph, agraph_print_node_dot, NULL);
+		r_agraph_foreach_edge (core->graph, agraph_print_edge_dot, NULL);
+		r_cons_printf ("}\n");
+		break;
+	case '*': // "agg*" -
 		r_agraph_foreach (core->graph, agraph_print_node, NULL);
 		r_agraph_foreach_edge (core->graph, agraph_print_edge, NULL);
 		break;
@@ -2832,7 +2852,8 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		"ag-", "", "Reset the current ASCII art graph",
 		"agn", "[?] title body", "Add a node to the current ASCII art graph",
 		"age", "[?] title1 title2", "Add an edge to the current ASCII art graph",
-		"agg[k*]", "", "Print the current ASCII art graph",
+		"agg[k*]", "", "Print the current graph in ASCII art",
+		"aggd", "", "Print the current graph in GRAPHVIZ dot format",
 		"agv", "[acdltfl] [a]", "view function using graphviz",
 		NULL};
 
