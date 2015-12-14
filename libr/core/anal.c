@@ -269,10 +269,10 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 }
 
 static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
-	RListIter *iter;
+	RListIter *iter, *tmp;
 	RAnalRef *ref;
 
-	r_list_foreach (fcn->refs, iter, ref) {
+	r_list_foreach_safe (fcn->refs, iter, tmp, ref) {
 		if (ref->addr != UT64_MAX) {
 			switch (ref->type) {
 			case 'd':
@@ -985,6 +985,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	fcn = r_anal_get_fcn_in (core->anal, at, 0);
 	if (fcn) {
+		if (fcn->addr == at) return 0;  // already analyzed function
 		if (from >= fcn->addr && (from - fcn->addr) < fcn->size) {	// inner function
 			RAnalRef *ref;
 
