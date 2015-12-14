@@ -73,12 +73,13 @@ static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 
 static int is_bin(const ut8 *buf, int size) {
 	// TODO: add more
-	if ((size >= 4 && !memcmp (buf, "\xcf\xfa\xed\xfe", 4)) || (size >= 4 && !memcmp (buf, "\x7e"
-											"ELF",
-											4)) ||
-	(size >= 2 && !memcmp (buf, "MZ", 2)))
-		return 1;
-	return 0;
+	if ((size >= 4 && !memcmp (buf, "\xcf\xfa\xed\xfe", 4)))
+		return true;
+	if ((size >= 4 && !memcmp (buf, "\x7eELF", 4)))
+		return true;
+	if ((size >= 2 && !memcmp (buf, "MZ", 2)))
+		return true;
+	return false;
 }
 
 // TODO: add is_flag, is comment?
