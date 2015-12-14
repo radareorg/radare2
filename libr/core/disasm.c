@@ -2408,8 +2408,12 @@ toro:
 				continue;
 			} else {
 				ds->lines--;
+				ds->addr += 1;
+				r_io_read_at (core->io, ds->addr, buf, len);
+				inc = 0; //delta;
+				idx = 0;
 			//	 r_cons_printf ("delta %d fsize %d\n", delta, f->size);
-				inc = 1;
+			//	inc = 1;
 				continue;
 			}
 		}

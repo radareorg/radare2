@@ -721,6 +721,10 @@ static void visual_comma(RCore *core) {
 	free (comment);
 }
 
+static bool isDisasmPrint(int mode) {
+	return (mode == 1 || mode == 2);
+}
+
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
 	ut64 offset = core->offset;
@@ -1174,7 +1178,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'j':
 		if (curset) {
-			if (core->printidx == 1 || core->printidx == 2) { // these are dis modes
+			if (isDisasmPrint (core->printidx)) {
 				// we read the size of the current mnemonic
 				cols = r_asm_disassemble (core->assembler,
 					&op, core->block+cursor, 32);
@@ -1202,15 +1206,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			int times = wheelspeed;
 			if (times<1) times = 1;
 			while (times--) {
-				if (core->printidx == 1 || core->printidx == 2) {
+				if (isDisasmPrint(core->printidx)) {
 					RAnalFunction *f = NULL;
 					if (true) {
-						f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+						f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 					}
 					if (f && f->folded) {
-						if (core->offset <= f->addr) {
-							cols = core->offset - f->addr + f->size;
-						} else cols = 1;
+						cols = core->offset - f->addr + f->size;
 					} else {
 						r_asm_set_pc (core->assembler, core->offset);
 						cols = r_asm_disassemble (core->assembler,
@@ -1225,14 +1227,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'J':
 		if (curset) {
-			if (core->printidx == 1 || core->printidx == 2) {
+			if (isDisasmPrint (core->printidx)) {
 				cols = r_asm_disassemble (core->assembler,
 					&op, core->block+cursor, 32);
 				if (cols<1) cols = 1;
 			}
 			if (ocursor==-1) ocursor = cursor;
 			cursor += cols;
-			if (core->printidx == 1 || core->printidx == 2) {
+			if (isDisasmPrint (core->printidx)) {
 				if (cursor + core->offset > last_printed_address) {
 					// we seek with the size of the first mnemo
 					cols = r_asm_disassemble (core->assembler,
@@ -1252,8 +1254,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'k':
 		if (curset) {
-			if (core->printidx == 1 || core->printidx == 2)
+			if (isDisasmPrint (core->printidx)) {
 				cols = prevopsz (core, core->offset + cursor);
+			}
 			cursor -= cols;
 			ocursor = -1;
 			if (cursor<0) {
@@ -1266,7 +1269,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			int times = wheelspeed;
 			if (times<1) times = 1;
 			while (times--) {
-				if (core->printidx == 1 || core->printidx == 2) {
+				if (isDisasmPrint (core->printidx)) {
 					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 					if (f && f->folded) {
 						cols = core->offset - f->addr; // + f->size;
@@ -1283,9 +1286,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'K':
 		if (curset) {
-			if (ocursor==-1) ocursor=cursor;
-			if (core->printidx == 1 || core->printidx == 2)
+			if (ocursor==-1) ocursor = cursor;
+			if (isDisasmPrint (core->printidx)) {
 				cols = prevopsz (core, core->offset+cursor);
+			}
 			cursor -= cols;
 			if (cursor<0) {
 				if (core->offset>=cols) {
