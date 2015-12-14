@@ -649,26 +649,27 @@ repeat:
 					RAnalRef *last_ref = fcn->refs->tail->data;
 					last_ref->type = R_ANAL_REF_TYPE_NULL;
 				}
+
 				if (op.ptr != UT64_MAX) {	// direct jump
 					ret = try_walkthrough_jmptbl (anal, fcn, depth, addr + idx, op.ptr, ret);
 
 				} else {	// indirect jump: table pointer is unknown
-					if (op.src[0]->reg) {
+					if (op.src[0] && op.src[0]->reg) {
 						ut64 ptr = search_reg_val(anal, buf, idx, addr, op.src[0]->reg->name);
 						if (ptr && ptr != UT64_MAX)
 							ret = try_walkthrough_jmptbl (anal, fcn, depth, addr + idx, ptr, ret);
 					}
 				}
-			} else {
-				if (!anal->opt.eobjmp) {
-					if (continue_after_jump) {
-					#if 0
-						FITFCNSZ ();
-						r_anal_op_fini (&op);
-						return R_ANAL_RET_END;
-					#endif
-						break;
-					}
+
+			}
+			if (!anal->opt.eobjmp) {
+				if (continue_after_jump) {
+				#if 0
+					FITFCNSZ ();
+					r_anal_op_fini (&op);
+					return R_ANAL_RET_END;
+				#endif
+					break;
 				}
 			}
 			/* fallthru */
