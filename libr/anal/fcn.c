@@ -650,18 +650,21 @@ repeat:
 					last_ref->type = R_ANAL_REF_TYPE_NULL;
 				}
 				if (op.ptr != UT64_MAX) {	// direct jump
-					ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, op.ptr, ret);
+					ret = try_walkthrough_jmptbl (anal, fcn, depth, addr + idx, op.ptr, ret);
 
 				} else {	// indirect jump: table pointer is unknown
 					if (op.src[0]->reg) {
 						ut64 ptr = search_reg_val(anal, buf, idx, addr, op.src[0]->reg->name);
 						if (ptr && ptr != UT64_MAX)
-							ret = try_walkthrough_jmptbl(anal, fcn, depth, addr + idx, ptr, ret);
+							ret = try_walkthrough_jmptbl (anal, fcn, depth, addr + idx, ptr, ret);
 					}
 				}
 			}
-			if (continue_after_jump)
-				break;
+			if (!anal->opt.eobjmp) {
+				if (!anal->opt.jmptbl) {
+					break;
+				}
+			}
 			/* fallthru */
 		case R_ANAL_OP_TYPE_RET:
 			VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n",
