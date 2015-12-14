@@ -235,8 +235,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 
 static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr, int ret0) {
 	int ret = ret0;
-	ut8 *jmptbl = malloc(MAX_JMPTBL_SIZE);
+	ut8 *jmptbl = malloc (MAX_JMPTBL_SIZE);
 	ut64 offs, sz = anal->bits >> 3;
+	if (!jmptbl) return 0;
 	anal->iob.read_at (anal->iob.io, ptr, jmptbl, MAX_JMPTBL_SIZE);
 	for (offs = 0; offs < MAX_JMPTBL_SIZE; offs += sz) {
 		ut64 jmpptr = 0;
@@ -245,17 +246,16 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to)
 				break;
 		}
-		if (jmpptr < ip - MAX_JMPTBL_JMP ||
-				jmpptr > ip + MAX_JMPTBL_JMP)
-				break;
-
+		if (jmpptr < ip - MAX_JMPTBL_JMP || jmpptr > ip + MAX_JMPTBL_JMP) {
+			break;
+		}
 		recurseAt (jmpptr);
 	}
 	free (jmptbl);
 	return ret;
 }
 
-static int search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *regsz) {
+static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *regsz) {
 	ut64 offs, oplen;
 	RAnalOp op = {0};
 	ut64 ret = UT64_MAX;
