@@ -17,6 +17,7 @@ static void env(const char *s, int f) {
 #endif
 
 R_API int r2p_close(R2Pipe *r2p) {
+	if (!r2p) return 0;
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	if (r2p->pipe) {
 		CloseHandle (r2p->pipe);
@@ -177,7 +178,10 @@ R_API char *r2p_cmdf(R2Pipe *r2p, const char *fmt, ...) {
 }
 
 R_API int r2p_write(R2Pipe *r2p, const char *str) {
-	int ret, len = strlen (str)+1; /* include \x00 */
+	int ret, len;
+	if (!r2p || !str)
+		return -1;
+	len = strlen (str)+1; /* include \x00 */
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	DWORD dwWritten = -1;
 	WriteFile (r2p->pipe, str, len, &dwWritten, NULL);
@@ -191,6 +195,7 @@ R_API int r2p_write(R2Pipe *r2p, const char *str) {
 /* TODO: add timeout here ? */
 R_API char *r2p_read(R2Pipe *r2p) {
 	char buf[1024];
+	if (!r2p) return NULL;
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	BOOL bSuccess = FALSE;
 	DWORD dwRead = 0;
