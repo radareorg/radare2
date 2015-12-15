@@ -2393,6 +2393,7 @@ toro:
 		if (f && f->folded && ds->at >= f->addr && ds->at < f->addr+f->size) {
 			int delta = (ds->at <= f->addr)? (ds->at - f->addr + f->size): 0;
 			if (of != f) {
+				handle_show_comments_right (core, ds);
 				r_cons_printf ("%s%s%s (fcn) %s%s\n", COLOR (ds, color_fline), core->cons->vline[RUP_CORNER], COLOR (ds, color_fname), f->name, COLOR_RESET (ds));
 				handle_print_pre (core, ds, true);
 				handle_print_lines_left (core, ds);
