@@ -116,10 +116,24 @@ R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kin
 	return true;
 }
 
+R_API int r_anal_var_delete_all (RAnal *a, ut64 addr, const char kind) {
+	RAnalFunction *fcn;
+	fcn = r_anal_get_fcn_in (a, addr, 0);
+	if (fcn) {
+		RAnalVar *v;
+		RListIter *iter;
+		RList *list = r_anal_var_list (a, fcn, kind);
+		r_list_foreach (list, iter, v) {
+			//r_anal_var_delete (a, addr, kind, v->scope, v->delta);
+			r_anal_var_delete (a, addr, kind, 1, v->delta);
+		}
+		r_list_free (list);
+	}
+}
+
 R_API int r_anal_var_delete (RAnal *a, ut64 addr, const char kind, int scope, int delta) {
 	RAnalVar *av;
-	if (delta<0)
-		delta = -delta;
+	if (delta<0) delta = -delta;
 	av = r_anal_var_get (a, addr, kind, scope, delta);
 	if (!av) {
 		return false;
