@@ -78,37 +78,39 @@ static int w32_createPipe(R2Pipe *r2p, const char *cmd) {
 }
 #endif
 
+static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
+#if __UNIX__ || defined(__CYGWIN__)
+	char *out = r_sys_getenv ("R2PIPE_IN");
+	char *in = r_sys_getenv ("R2PIPE_OUT");
+	int done = false;
+	if (in && out) {
+		int i_in = atoi (in);
+		int i_out = atoi (out);
+		if (i_in>=0 && i_out>=0) {
+			r2p->input[0] = r2p->input[1] = i_in;
+			r2p->output[0] = r2p->output[1] = i_out;
+			done = true;
+		}
+	}
+	if (!done) {
+		eprintf ("Cannot find R2PIPE_IN or R2PIPE_OUT environment\n");
+		R_FREE (r2p);
+	}
+	free (in);
+	free (out);
+	return r2p;
+#else
+	eprintf ("r2p_open(NULL) not supported on windows\n");
+	return NULL;
+#endif
+}
+
 R_API R2Pipe *r2p_open(const char *cmd) {
 	R2Pipe *r2p = R_NEW0 (R2Pipe);
 	r2p->magic = R2P_MAGIC;
-	if (cmd == NULL) {
+	if (!cmd) {
 		r2p->child = -1;
-#if __UNIX__ || defined(__CYGWIN__)
-		 {
-			char *out = r_sys_getenv ("R2PIPE_IN");
-			char *in = r_sys_getenv ("R2PIPE_OUT");
-			int done = false;
-			if (in && out) {
-				int i_in = atoi (in);
-				int i_out = atoi (out);
-				if (i_in>=0 && i_out>=0) {
-					r2p->input[0] = r2p->input[1] = i_in;
-					r2p->output[0] = r2p->output[1] = i_out;
-					done = true;
-				}
-			}
-			if (!done) {
-				eprintf ("Cannot find R2PIPE_IN or R2PIPE_OUT environment\n");
-				R_FREE (r2p);
-			}
-			free (in);
-			free (out);
-		 }
-		return r2p;
-#else
-		eprintf ("r2p_open(NULL) not supported on windows\n");
-		return NULL;
-#endif
+		return r2p_open_spawn (r2p, cmd);
 	}
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	w32_createPipe (r2p, cmd);
@@ -126,10 +128,17 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 
 	if (r2p->child) {
 		eprintf ("Child is %d\n", r2p->child);
+		char ch;
+		read (r2p->output[0], &ch, 1);
 	} else {
 		int rc = 0;
-		if (cmd && *cmd)
-			rc = r_sandbox_system (cmd, 1);
+		if (cmd && *cmd) {
+			close (0);
+			close (1);
+			dup2 (r2p->input[0], 0);
+			dup2 (r2p->output[1], 1);
+			rc = r_sandbox_system (cmd, 0);
+		}
 		r2p_close (r2p);
 		exit (rc);
 		return NULL;
@@ -178,45 +187,64 @@ R_API char *r2p_cmdf(R2Pipe *r2p, const char *fmt, ...) {
 }
 
 R_API int r2p_write(R2Pipe *r2p, const char *str) {
+	char *cmd;
 	int ret, len;
 	if (!r2p || !str)
 		return -1;
-	len = strlen (str)+1; /* include \x00 */
+	len = strlen (str) + 1; /* include \x00 */
+	cmd = malloc (len + 1);
+	memcpy (cmd, str, len);
+	cmd[len++] = '\n';
+	cmd[len] = 0;
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	DWORD dwWritten = -1;
-	WriteFile (r2p->pipe, str, len, &dwWritten, NULL);
+	WriteFile (r2p->pipe, cmd, len, &dwWritten, NULL);
 	ret = (dwWritten == len);
 #else
-	ret = (write (r2p->input[1], str, len) == len);
+	ret = (write (r2p->input[1], cmd, len) == len);
 #endif
+	free (cmd);
 	return ret;
 }
 
 /* TODO: add timeout here ? */
 R_API char *r2p_read(R2Pipe *r2p) {
-	char buf[1024];
+	int bufsz = 0;
+	char *newbuf, *buf = NULL;
 	if (!r2p) return NULL;
+	bufsz = 4096;
+	buf = calloc (1, bufsz);
+	if (!buf) return NULL;
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	BOOL bSuccess = FALSE;
 	DWORD dwRead = 0;
-	memset (buf, 0, sizeof (buf));
-	bSuccess = ReadFile (r2p->pipe, buf, sizeof (buf), &dwRead, NULL);
+	// TODO: handle > 4096 buffers here
+	bSuccess = ReadFile (r2p->pipe, buf, bufsz, &dwRead, NULL);
 	if (!bSuccess || !buf[0]) {
 		return NULL;
 	}
 	if (dwRead>0) {
 		buf[dwRead] = 0;
 	}
-	buf[sizeof (buf)-1] = 0;
+	buf[bufsz-1] = 0;
 #else
 	int i, rv;
-	for (i=0; i<sizeof (buf)-1; i++) {
-		rv = read (r2p->output[0], buf+i, 1);
+	for (i=0; i<bufsz; i++) {
+		rv = read (r2p->output[0], buf + i, 1);
+		if (i+2 >= bufsz) {
+			bufsz += 4096;
+			newbuf = realloc (buf, bufsz);
+			if (!newbuf) {
+				free (buf);
+				buf = NULL;
+				break;
+			}
+		}
 		if (rv != 1 || !buf[i]) break;
 	}
 	buf[i] = 0;
 #endif
-	return strdup (buf);
+	return buf;
 }
 
 R_API void r2p_free (R2Pipe *r2p) {
