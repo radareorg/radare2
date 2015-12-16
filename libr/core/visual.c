@@ -1472,18 +1472,16 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_io_sundo_push (core->io, core->offset);
 		break;
 	case '.':
+		r_io_sundo_push (core->io, core->offset);
 		if (curset) {
-			r_io_sundo_push (core->io, core->offset);
 			r_core_seek (core, core->offset+cursor, 1);
 			cursor = 0;
 		} else {
 			ut64 addr = r_debug_reg_get (core->dbg, "PC");
 			if (addr) {
-				r_io_sundo_push (core->io, core->offset);
 				r_core_seek (core, addr, 1);
 				r_core_cmdf (core, "ar `arn PC`=0x%"PFMT64x, addr);
 			} else {
-				r_io_sundo_push (core->io, core->offset);
 				r_core_seek (core, r_num_get (core->num, "entry0"), 1);
 				//r_core_cmd (core, "s entry0", 0);
 			}
