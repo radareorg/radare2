@@ -734,7 +734,7 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 		size = mach0_size (dbg, addr);
 		mr = r_debug_map_new (file_path, addr, addr + size, 7, 0);
 		if (mr == NULL) {
-			free (info_array);
+			//free (info_array);
 			eprintf ("Cannot create r_debug_map_new\n");
 			break;
 		}
