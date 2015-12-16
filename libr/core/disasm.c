@@ -2337,7 +2337,6 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		core->anal->cur->reset_counter (core->anal, addr);
 	}
 
-
 	handle_reflines_init (core->anal, ds);
 	core->inc = 0;
 	/* reset jmp table if not asked to keep it */
@@ -2406,6 +2405,9 @@ toro:
 				inc = 0; //delta;
 				idx = 0;
 				of = f;
+				if (len == l) {
+					break;
+				}
 				continue;
 			} else {
 				ds->lines--;
