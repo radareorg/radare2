@@ -1297,6 +1297,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				if (fcn->call != R_ANAL_CC_TYPE_NONE)
 					r_cons_printf ("afC %s @ 0x%08"PFMT64x"\n",
 							r_anal_cc_type2str (fcn->call), fcn->addr);
+				if (fcn->folded)
+					r_cons_printf ("afF @ 0x%08"PFMT64x"\n", fcn->addr);
 				fcn_list_bbs (fcn);
 				/* show variables  and arguments */
 				r_core_cmdf (core, "afa* @ 0x%"PFMT64x"\n", fcn->addr);
