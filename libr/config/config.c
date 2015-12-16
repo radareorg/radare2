@@ -432,3 +432,9 @@ R_API void r_config_visual_hit_i(RConfig *cfg, const char *name, int delta) {
 	if (node && (node->flags & CN_INT || node->flags & CN_OFFT))
 		r_config_set_i (cfg, name, r_config_get_i (cfg, name) + delta);
 }
+
+R_API void r_config_bump(RConfig *cfg, const char *key) {
+	char *orig = strdup (r_config_get (cfg, key));
+	r_config_set (cfg, key, orig);
+	free (orig);
+}
