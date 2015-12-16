@@ -1472,6 +1472,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_io_sundo_push (core->io, core->offset);
 		break;
 	case '.':
+		r_io_sundo_push (core->io, core->offset);
 		if (curset) {
 			r_core_seek (core, core->offset+cursor, 1);
 			cursor = 0;
