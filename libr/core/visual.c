@@ -174,6 +174,7 @@ static int visual_help() {
 	" Enter    follow address of jump/call\n"
 	"Function Keys: (See 'e key.'), defaults to:\n"
 	"  F2      toggle breakpoint\n"
+	"  F4      run to cursor\n"
 	"  F7      single step\n"
 	"  F8      step over\n"
 	"  F9      continue\n",
