@@ -606,7 +606,7 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 	if (ds->show_lines && !ds->linesright) {
 		r_cons_printf ("%s%s%s%s",
 			section, COLOR (ds, color_flow),
-			ds->refline2, COLOR_RESET (ds));
+			f ? ds->refline2 : "  ", COLOR_RESET (ds));
 	}
 }
 
@@ -702,7 +702,7 @@ static void handle_atabs_option(RCore *core, RDisasmState *ds) {
 static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 	RFlagItem *fi;
 	int i;
-	for (i = 1; i < ds->oplen; i++) {
+	for (i = 0; i < ds->oplen; i++) {
 		fi = r_flag_get_i (core->flags, ds->at + i);
 		if (fi) {
 			if (!strncmp (fi->name, "reloc.", 6)) {
@@ -714,7 +714,7 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			return i;
 		}
 	}
-	return 0;
+	return -1;
 }
 
 static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
@@ -2467,13 +2467,23 @@ toro:
 			if (ds->hint->size) ds->analop.size = ds->hint->size;
 			if (ds->hint->ptr) ds->analop.ptr = ds->hint->ptr;
 		}
+		if (ds->midflags) {
+			int skip_bytes = handleMidFlags (core, ds, true);
+			if (skip_bytes >= 0) {
+				ds->at += skip_bytes;
+				handle_show_flags_option (core, ds);
+				ds->at -= skip_bytes;
+			}
+		} else {
+			handle_show_flags_option (core, ds);
+		}
+
 		handle_instruction_mov_lea (core, ds, idx);
 		handle_control_flow_comments (core, ds);
 		handle_adistrick_comments (core, ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		handle_show_functions (core, ds);
 		handle_show_xrefs (core, ds);
-		handle_show_flags_option (core, ds);
 		handle_print_pre (core, ds, false);
 		handle_print_lines_left (core, ds);
 
@@ -2481,7 +2491,6 @@ toro:
 		if (handle_print_labels (core, ds, f)) {
 			handle_show_functions (core, ds);
 			handle_show_xrefs (core, ds);
-			handle_show_flags_option (core, ds);
 			handle_print_pre (core, ds, false);
 			handle_print_lines_left (core, ds);
 		}
@@ -2540,12 +2549,6 @@ toro:
 		free (ds->opstr);
 		ds->opstr = NULL;
 		inc = ds->oplen;
-		if (ds->midflags) {
-			int skip_bytes = handleMidFlags (core, ds, true);
-			if (skip_bytes > 0) {
-				inc = skip_bytes;
-			}
-		}
 		if (inc < 1) inc = 1;
 	}
 	if (nbuf == buf) {
