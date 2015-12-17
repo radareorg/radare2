@@ -1495,8 +1495,15 @@ static int option = 0;
 
 static void r_core_visual_anal_refresh_column (RCore *core) {
 	const ut64 addr = level? core->offset: var_functions_show (core, option, 0);
+	RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	int h;
+	r_cons_get_size (&h);
+	int sz = fcn->size;
+	sz = sz > h ? h : sz;
+	char cmdf[64];
 	r_cons_printf ("Visual code analysis manipulation\n");
-	r_core_cmdf (core, "pd @ 0x%"PFMT64x"!16", addr);
+	sprintf(cmdf, "pd @ 0x%"PFMT64x"!%d", addr, sz);
+	r_core_cmdf (core, cmdf, addr);
 }
 
 static ut64 r_core_visual_anal_refresh (RCore *core) {
