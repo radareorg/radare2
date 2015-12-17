@@ -1119,10 +1119,6 @@ static void snFini(SymName *sn) {
 	R_FREE (sn->methflag);
 }
 
-static bool isHidden(RBinSymbol *s) {
-	if (!s->bind || !s->type) return false;
-	return (!strcmp (s->bind, "LOCAL") && !strcmp (s->type, "NOTYPE"));
-}
 
 static bool isAnExport(RBinSymbol *s) {
 	/* workaround for some bin plugs */
@@ -1168,8 +1164,6 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		snInit (r, &sn, symbol, lang);
 
 		if (IS_MODE_SET (mode)) {
-			if (isHidden (symbol))
-				continue;
 			if (is_arm) {
 				int force_bits = 0;
 				if (va && symbol->bits == 16)
@@ -1268,8 +1262,6 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			RBinPlugin *plugin;
 			char *name;
 
-			if (isHidden (symbol))
-				continue;
 			if (bin_demangle) {
 				char *mn = r_bin_demangle (r->bin->cur, lang, symbol->name);
 				if (mn) {

@@ -7,6 +7,9 @@
 #define HAVE_LOCALS 1
 #define DEFAULT_NARGS 4
 
+#define R_MIDFLAGS_SHOW 1
+#define R_MIDFLAGS_REALIGN 2
+
 #define COLOR(ds, field) (ds->show_color ? ds->field : "")
 #define COLOR_CONST(ds, color) (ds->show_color ? Color_ ## color : "")
 #define COLOR_RESET(ds) COLOR_CONST(ds, RESET)
@@ -606,7 +609,7 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
 	if (ds->show_lines && !ds->linesright) {
 		r_cons_printf ("%s%s%s%s",
 			section, COLOR (ds, color_flow),
-			ds->refline2, COLOR_RESET (ds));
+			f ? ds->refline2 : "  ", COLOR_RESET (ds));
 	}
 }
 
@@ -2334,7 +2337,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int continueoninvbreak = (len == l) && invbreak;
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
-	int ret, idx = 0, i;
+	int ret, i, skip_bytes = 0, idx = 0;
 	int dorepeat = 1;
 	ut8 *nbuf = NULL;
 	RDisasmState *ds;
@@ -2491,13 +2494,20 @@ toro:
 			if (ds->hint->size) ds->analop.size = ds->hint->size;
 			if (ds->hint->ptr) ds->analop.ptr = ds->hint->ptr;
 		}
+		if (ds->midflags) {
+			skip_bytes = handleMidFlags (core, ds, true);
+			if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW)
+				ds->at += skip_bytes;
+		}
+		handle_show_flags_option (core, ds);
+		if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW)
+			ds->at -= skip_bytes;
 		handle_instruction_mov_lea (core, ds, idx);
 		handle_control_flow_comments (core, ds);
 		handle_adistrick_comments (core, ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		handle_show_functions (core, ds);
 		handle_show_xrefs (core, ds);
-		handle_show_flags_option (core, ds);
 		handle_print_pre (core, ds, false);
 		handle_print_lines_left (core, ds);
 
@@ -2505,7 +2515,6 @@ toro:
 		if (handle_print_labels (core, ds, f)) {
 			handle_show_functions (core, ds);
 			handle_show_xrefs (core, ds);
-			handle_show_flags_option (core, ds);
 			handle_print_pre (core, ds, false);
 			handle_print_lines_left (core, ds);
 		}
@@ -2564,12 +2573,8 @@ toro:
 		free (ds->opstr);
 		ds->opstr = NULL;
 		inc = ds->oplen;
-		if (ds->midflags) {
-			int skip_bytes = handleMidFlags (core, ds, true);
-			if (skip_bytes > 0) {
-				inc = skip_bytes;
-			}
-		}
+		if (ds->midflags == R_MIDFLAGS_REALIGN && skip_bytes)
+			inc = skip_bytes;
 		if (inc < 1) inc = 1;
 	}
 	if (nbuf == buf) {
