@@ -2858,7 +2858,7 @@ static int cmd_debug(void *data, const char *input) {
 			int fd = atoi (input+2);
 			char *str = strchr (input+2, ' ');
 			if (str) off = r_num_math (core->num, str+1);
-			str = strchr (str+1, ' ');
+			if (str) str = strchr (str+1, ' ');
 			if (str) len = r_num_math (core->num, str+1);
 			if (len == UT64_MAX || off == UT64_MAX || \
 					!r_debug_desc_write (core->dbg, fd, off, len))
