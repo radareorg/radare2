@@ -10,8 +10,7 @@
 #define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000
 #define ELF_PAGE_SIZE 12
 
-static RBinElfSection *g_sections;
-
+static RBinElfSection *g_sections = NULL;
 
 static inline int __strnlen(const char *str, int len) {
 	int l = 0;
@@ -1676,11 +1675,11 @@ RBinElfField* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t) *bin) {
 void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
 	int i;
 	if (!bin) return NULL;
-	if (bin->phdr) free (bin->phdr);
-	if (bin->shdr) free (bin->shdr);
-	if (bin->strtab) free (bin->strtab);
-	if (bin->dyn_buf) free (bin->dyn_buf);
-	if (bin->shstrtab) free (bin->shstrtab);
+	free (bin->phdr);
+	free (bin->shdr);
+	free (bin->strtab);
+	free (bin->dyn_buf);
+	free (bin->shstrtab);
 	//free (bin->strtab_section);
 	if (bin->imports_by_ord) {
 		for (i=0; i<bin->imports_by_ord_size; i++)
@@ -1694,7 +1693,7 @@ void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
 	}
 	r_buf_free (bin->b);
 	free (bin);
-	free (g_sections);
+	R_FREE (g_sections);
 	return NULL;
 }
 
