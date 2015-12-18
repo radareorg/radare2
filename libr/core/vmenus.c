@@ -1499,10 +1499,10 @@ static void r_core_visual_anal_refresh_column (RCore *core) {
 	int h;
 	char* output;
 	int i;
+	int sz = 16;
 	r_cons_get_size (&h);
-	int sz = fcn->size;
+	if (fcn) sz = fcn->size;
 	char cmdf[64];
-	if (sz <= 1) sz = 17;
 	sprintf (cmdf, "pD %d @ 0x%"PFMT64x, sz, addr);
 	output = r_core_cmd_str (core, cmdf);
 	if (!output) return;
