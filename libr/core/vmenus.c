@@ -1503,11 +1503,11 @@ static void r_core_visual_anal_refresh_column (RCore *core) {
 	int sz = fcn->size;
 	char cmdf[64];
 	if (sz <= 1) sz = 17;
-	sprintf (cmdf, "pd @ 0x%"PFMT64x"!%d", addr, sz - 1);
+	sprintf (cmdf, "pD %d @ 0x%"PFMT64x, sz, addr);
 	output = r_core_cmd_str (core, cmdf);
 	if (!output) return;
 	sz = strlen (output);
-	h -= 10;
+	h -= 5;
 	if (h <= 0) { h = 5; }
 	for (i = 0; i < sz; ++i) {
 		if (h <= 1) break;
@@ -1515,6 +1515,7 @@ static void r_core_visual_anal_refresh_column (RCore *core) {
 	}
 	output[i] = '\x00';
 	r_cons_printf ("\n\nVisual code analysis manipulation\n\n%s", output);
+	R_FREE (output);
 }
 
 static ut64 r_core_visual_anal_refresh (RCore *core) {
