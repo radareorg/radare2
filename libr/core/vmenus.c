@@ -1467,7 +1467,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 
 	// Adjust the windows size automaticaly
 	(void)r_cons_get_size (&window);
-	window-=5; // Size of printed things
+	window-=8; // Size of printed things
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		if (i>=wdelta) {
@@ -1514,7 +1514,7 @@ static void r_core_visual_anal_refresh_column (RCore *core) {
 		if (output[i] == '\n') --h;
 	}
 	output[i] = '\x00';
-	r_cons_printf ("\n\nVisual code analysis manipulation\n\n%s", output);
+	r_cons_printf ("Visual code analysis manipulation\n%s", output);
 	R_FREE (output);
 }
 
