@@ -1207,7 +1207,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				offscreen = (core->cons->rows - 3) * cols;
 				if (cursor > offscreen) {
 					r_core_seek (core, core->offset+cols, 1);
-					cursor-=cols;
+					cursor -= cols;
 				}
 			}
 		} else {
@@ -1287,7 +1287,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					} else {
 						cols = prevopsz (core, core->offset);
 					}
-				} else cols = 1;
+				}
 				r_core_seek (core, core->offset - cols, 1);
 			}
 		}
