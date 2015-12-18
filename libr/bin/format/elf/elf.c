@@ -1694,7 +1694,7 @@ void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
 	}
 	r_buf_free (bin->b);
 	free (bin);
-	free (g_sections);
+	R_FREE (g_sections);
 	return NULL;
 }
 
