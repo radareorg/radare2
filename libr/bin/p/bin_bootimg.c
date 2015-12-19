@@ -42,21 +42,29 @@ typedef struct {
 	BootImage bi;
 } BootImageObj;
 
-
 static int bootimg_header_load(BootImage *bi, RBuffer *buf, Sdb *db) {
+	char *n;
 	int i;
-	if (r_buf_size (buf) < sizeof (BootImage))
+	if (r_buf_size (buf) < sizeof (BootImage)) {
 		return false;
+	}
 	// TODO make it endian-safe (void)r_buf_fread_at (buf, 0, (ut8*)bi, "IIiiiiiiiiiiii", 1);
 	(void)r_buf_read_at (buf, 0, (ut8*)bi, sizeof (BootImage)); 
-	sdb_set (db, "name", (const char *)bi->name, 0);
-	// XXX not null terminated
-	sdb_set (db, "cmdline", (const char*)bi->cmdline, 0);
+	if ((n = r_str_ndup ((char*)bi->name, BOOT_NAME_SIZE))) {
+		sdb_set (db, "name", n, 0);
+		free (n);
+	}
+	if ((n = r_str_ndup ((char*)bi->cmdline, BOOT_ARGS_SIZE))) {
+		sdb_set (db, "cmdline", n, 0);
+		free (n);
+	}
 	for (i=0; i<8; i++) {
 		sdb_num_set (db, "id", (ut64)bi->id[i], 0);
 	}
-	// XXX not null terminated
-	sdb_set (db, "extra_cmdline", (const char *)bi->extra_cmdline, 0);
+	if ((n = r_str_ndup ((char*)bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE))) {
+		sdb_set (db, "extra_cmdline", n, 0);
+		free (n);
+	}
 	return true;
 }
 
