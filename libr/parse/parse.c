@@ -193,7 +193,15 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 		}
 		if (p->hint) {
 			int immbase = p->hint->immbase;
-			char num[256];
+			char num[256], *n;
+			strcpy (num, ptr);
+			for (n=num; *n; n++) {
+				if (*n>='0' && *n<='9')
+					continue;
+				if (*n=='x') continue;
+				break;
+			}
+			*n = 0;
 			switch (immbase) {
 			case 0:
 				// do nothing

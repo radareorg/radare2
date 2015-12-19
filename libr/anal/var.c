@@ -129,6 +129,7 @@ R_API int r_anal_var_delete_all (RAnal *a, ut64 addr, const char kind) {
 		}
 		r_list_free (list);
 	}
+	return 0;
 }
 
 R_API int r_anal_var_delete (RAnal *a, ut64 addr, const char kind, int scope, int delta) {
