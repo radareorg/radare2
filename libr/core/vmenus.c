@@ -1501,14 +1501,13 @@ static void r_core_visual_anal_refresh_column (RCore *core) {
 	int i;
 	int sz = 16;
 	r_cons_get_size (&h);
-	if (fcn) sz = fcn->size;
+	if (fcn) sz = R_MIN(fcn->size, h * 15); // max instr is 15 bytes.
 	char cmdf[64];
 	sprintf (cmdf, "pD %d @ 0x%"PFMT64x, sz, addr);
 	output = r_core_cmd_str (core, cmdf);
 	if (!output) return;
 	sz = strlen (output);
-	h -= 5;
-	if (h <= 0) { h = 5; }
+	h -= 2;
 	for (i = 0; i < sz; ++i) {
 		if (h <= 1) break;
 		if (output[i] == '\n') --h;
