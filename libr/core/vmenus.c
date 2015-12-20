@@ -1460,7 +1460,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 	int i = 0;
 	ut64 seek = core->offset;
 	ut64 addr = core->offset;
-	int window ;
+	int window;
 	int wdelta = (idx>5)?idx-5:0;
 	RListIter *iter;
 	RAnalFunction *fcn;
@@ -1577,6 +1577,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 R_API void r_core_visual_anal(RCore *core) {
 	char old[218];
 	int ch, _option = 0;
+	int nfcns = r_list_length (core->anal->fcns);
 	RConsEvent olde = core->cons->event_resize;
 	core->cons->event_resize = (RConsEvent) r_core_visual_anal_refresh;
 	level = 0;
@@ -1667,7 +1668,10 @@ R_API void r_core_visual_anal(RCore *core) {
 		case 'x': level = 3; break;
 		case 'c': level = 2; break;
 		case 'v': level = 1; break;
-		case 'j': option++; break;
+		case 'j':
+			option++;
+			if (option >= nfcns) --option;
+			break;
 		case 'k': option = (option<=0)? 0: option-1; break;
 		case 'g':
 			r_core_seek (core, addr, SEEK_SET);
