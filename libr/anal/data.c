@@ -218,7 +218,7 @@ R_API RAnalData *r_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, in
 R_API void r_anal_data_free(RAnalData *d) {
 	if (d) {
 		if (d->buf != (ut8 *)&(d->sbuf)) free (d->buf);
-		if (d->str != NULL) free (d->str);
+		free (d->str);
 		free (d);
 	}
 }

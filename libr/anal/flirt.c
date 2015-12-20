@@ -663,7 +663,7 @@ static int node_match_functions (const RAnal *anal, const RFlirtNode *root_node)
 	}
 
 exit:
-	if (func_buf) free (func_buf);
+	free (func_buf);
 	return ret;
 }
 
@@ -706,7 +706,7 @@ static ut8 read_module_tail_bytes (RFlirtModule *module, RBuffer *b) {
 	return true;
 
 err_exit:
-	if (tail_byte) free (tail_byte);
+	free (tail_byte);
 	return false;
 }
 
@@ -766,7 +766,7 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b) {
 	return true;
 
 err_exit:
-	if (ref_function) free (ref_function);
+	free (ref_function);
 	return false;
 }
 
@@ -837,7 +837,7 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 	return true;
 
 err_exit:
-	if (function) free (function);
+	free (function);
 	return false;
 }
 

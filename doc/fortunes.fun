@@ -174,3 +174,5 @@ Are you a wizard?
 Learn pancake as if you were radare!
 r2 is a great OS, but a terrible hex editor
 THE CAKE IS A PIE
+radare2 0.9.7 is so old, my grandfarther was using it with his enigma in WWII
+Have you seen the latest radare2 TV spot?

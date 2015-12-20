@@ -1596,17 +1596,17 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 		title = get_title (bb->addr);
 		u = r_agraph_get_node (g, title);
-		if (title) free (title);
+		free (title);
 		if (bb->jump != UT64_MAX) {
 			title = get_title (bb->jump);
 			v = r_agraph_get_node (g, title);
-			if (title) free (title);
+			free (title);
 			r_agraph_add_edge (g, u, v);
 		}
 		if (bb->fail != UT64_MAX) {
 			title = get_title (bb->fail);
 			v = r_agraph_get_node (g, title);
-			if (title) free (title);
+			free (title);
 			r_agraph_add_edge (g, u, v);
 		}
 	}
@@ -1646,7 +1646,7 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		title = get_title (ref->addr);
 		if (r_agraph_get_node (g, title) != NULL)
 				continue;
-		if (title) free (title);
+		free (title);
 
 		body = get_body (core, ref->addr, 4, is_offset (g),
 			is_esil (g), true);
@@ -2237,7 +2237,7 @@ R_API void r_agraph_print (RAGraph *g) {
 }
 
 R_API void r_agraph_set_title (RAGraph *g, const char *title) {
-	if (g->title) free (g->title);
+	free (g->title);
 	g->title = title ? strdup (title) : NULL;
 	sdb_set (g->db, "agraph.title", g->title, 0);
 }

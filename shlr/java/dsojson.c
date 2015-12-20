@@ -148,7 +148,7 @@ static int cmpDsoStr_to_str (DsoJsonStr *dsoStr1, char *dsoStr2) {
 }
 
 static void allocDsoStr (DsoJsonStr *dsoStr, unsigned int sz) {
-	if (dsoStr->data) free (dsoStr->data);
+	free (dsoStr->data);
 	if (sz > 0) dsoStr->data = json_new0 (sz);
 	else dsoStr->data = json_new0 (10);
 	dsoStr->len = sz;

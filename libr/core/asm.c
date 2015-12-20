@@ -567,7 +567,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 			else
 				eprintf("op.buf_asm: <invalid>\n");
 
-			if (hex_str) free(hex_str);
+			free(hex_str);
 		}
 
 		// disassembly invalid
