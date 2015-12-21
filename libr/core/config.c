@@ -21,7 +21,7 @@ static int __init_lines_cache(RCore *core, ut64 start_addr, ut64 end_addr) {
 	if (core->lines_cache != NULL)
 		R_FREE(core->lines_cache);
 
-	core->lines_cache = calloc(bsz, sizeof (ut64));
+	core->lines_cache = R_NEWS0(ut64, bsz);
 	if (core->lines_cache == NULL) return -1;
 
 	line_count = 1;
@@ -1349,7 +1349,7 @@ static int cb_linesto(void *user, void *data) {
 		r_cons_printf("ERROR: \"lines.to\" can't exceed addr 0x%08"PFMT64x"\n", io_sz);
 		return true;
 	}
-	if (node->i_value > from && from >= 0) {
+	if (node->i_value > from) {
 		core->lines_cache_sz = __init_lines_cache (core, from, (ut64)node->i_value);
 		if (core->lines_cache_sz == -1) r_cons_printf("ERROR: Can't allocate memory\n");
 	}
