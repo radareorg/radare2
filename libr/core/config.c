@@ -12,6 +12,42 @@
 #define CFG_BIGENDIAN "true"
 #endif
 
+static int __init_lines_cache(RCore *core, ut64 start_addr, ut64 end_addr) {
+	int i, line_count;
+	int bsz = core->blocksize;
+	char buf[bsz];
+	ut64 off = start_addr;
+
+	if (core->lines_cache != NULL)
+		free(core->lines_cache);
+
+	core->lines_cache = calloc(bsz, sizeof (ut64));
+	if (core->lines_cache == NULL) return -1;
+
+	line_count = 1;
+	while (off<end_addr) {
+		r_io_read_at (core->io, off, (ut8*)buf, sizeof (buf));
+		for (i=0; i<bsz; i++) {
+			if (buf[i] == '\n') {
+				core->lines_cache[line_count] = off+i+1;
+				line_count++;
+				if (line_count % bsz == 0) {
+					ut64 *tmp = realloc (core->lines_cache, (line_count+bsz)*sizeof(ut64));
+					if (tmp != NULL) {
+						core->lines_cache = tmp;
+					} else {
+						free(core->lines_cache);	
+						return -1;
+					}
+				}
+			}
+		}
+		off += bsz;
+	}
+	return line_count;
+}
+
+
 static const char *has_esil(RCore *core, const char *name) {
 	RListIter *iter;
 	RAnalPlugin *h;
@@ -1304,6 +1340,22 @@ static int cb_anal_bb_max_size(void *user, void *data) {
 	return true;
 }
 
+static int cb_linesto(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	ut64 from = (ut64)r_config_get_i (core->config, "lines.from");
+	int io_sz = r_io_size (core->io);
+	if (node->i_value > io_sz) {
+		r_cons_printf("ERROR: \"lines.to\" can't exceed addr 0x%08"PFMT64x"\n", io_sz);
+		return true;
+	}
+	if (node->i_value > from && from >= 0) {
+		core->lines_cache_sz = __init_lines_cache (core, from, (ut64)node->i_value);
+		if (core->lines_cache_sz == -1) r_cons_printf("ERROR: Can't allocate memory\n");
+	}
+	return true;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -1774,6 +1826,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("zoom.from", 0, "Zoom start address");
 	SETI("zoom.maxsz", 512, "Zoom max size of block");
 	SETI("zoom.to", 0, "Zoom end address");
+
+	/* lines */
+	SETI("lines.from", -1, "Start address for line seek");
+	SETICB("lines.to", -1, &cb_linesto, "End address for line seek");
 
 	r_config_lock (cfg, true);
 	return true;
