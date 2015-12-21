@@ -1,5 +1,23 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+static int __curr_line (RCore *core) {
+	int imin = 0;
+	int imax = core->lines_cache_sz;
+	int imid = 0;
+
+	while (imin <= imax) {
+		imid = imin + ((imax - imin) / 2);
+		if (core->lines_cache[imid] == core->offset) {
+			return imid;
+		}
+		else if (core->lines_cache[imid] < core->offset)
+			imin = imid + 1;
+		else
+			imax = imid - 1;
+	}
+	return imin;
+}
+
 static int cmd_seek(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *cmd, *p;
@@ -263,6 +281,45 @@ static int cmd_seek(void *data, const char *input) {
 			else r_core_seek (core, r_io_desc_size (core->io, core->file->desc), 1);
 			}
 			break;
+		case 'l':
+			{
+			ut64 off = UT64_MAX;
+			int curr;
+			int sl_arg = r_num_math (core->num, input+2);
+			if (core->lines_cache == NULL) {
+				r_cons_printf("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
+				break;
+			}
+			switch (input[1]) {
+			case ' ':
+				if (sl_arg < 1 || sl_arg > core->lines_cache_sz-1) {
+					r_cons_printf("ERROR: Line must be between 1 and %d\n", core->lines_cache_sz-1);
+					break;
+				}
+				off = core->lines_cache[sl_arg-1];
+				r_core_seek (core, off, 1);
+				break;
+			case '-':
+				curr = __curr_line (core);
+				if (curr-sl_arg < 0) {
+					r_cons_printf("ERROR: Line must be > 1\n");
+					break;
+				}
+				off = core->lines_cache[curr-sl_arg];
+				r_core_seek (core, off, 1);
+				break;
+			case '+':
+				curr = __curr_line (core);
+				if (curr+sl_arg >= core->lines_cache_sz-1) {
+					r_cons_printf("ERROR: Line must be < %d\n", core->lines_cache_sz-1);
+					break;
+				}
+				off = core->lines_cache[curr+sl_arg];
+				r_core_seek (core, off, 1);
+				break;
+			}
+			}
+			break;
 		case '?': {
 			const char * help_message[] = {
 			"Usage: s", "", " # Seek commands",
@@ -284,6 +341,7 @@ static int cmd_seek(void *data, const char *input) {
 			"sf", "", "Seek to next function (f->addr+f->size)",
 			"sf", " function", "Seek to address of specified function",
 			"sg/sG", "", "Seek begin (sg) or end (sG) of section or file",
+			"sl", "[+-]line", "Seek to line",
 			"sn/sp", "", "Seek next/prev scr.nkey",
 			"so", " [N]", "Seek to N next opcode(s)",
 			"sr", " pc", "Seek to register",
