@@ -1296,7 +1296,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_buf_free (c->yank_buf);
 	r_agraph_free (c->graph);
 	R_FREE (c->asmqjmps);
-	free (c->lines_cache);
+	R_FREE (c->lines_cache);
 	sdb_free (c->sdb);
 	return NULL;
 }

@@ -19,7 +19,7 @@ static int __init_lines_cache(RCore *core, ut64 start_addr, ut64 end_addr) {
 	ut64 off = start_addr;
 
 	if (core->lines_cache != NULL)
-		free(core->lines_cache);
+		R_FREE(core->lines_cache);
 
 	core->lines_cache = calloc(bsz, sizeof (ut64));
 	if (core->lines_cache == NULL) return -1;
@@ -36,7 +36,7 @@ static int __init_lines_cache(RCore *core, ut64 start_addr, ut64 end_addr) {
 					if (tmp != NULL) {
 						core->lines_cache = tmp;
 					} else {
-						free(core->lines_cache);	
+						R_FREE(core->lines_cache);
 						return -1;
 					}
 				}

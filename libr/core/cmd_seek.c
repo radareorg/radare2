@@ -282,43 +282,44 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			break;
 		case 'l':
-            {
-            ut64 off = UT64_MAX;
-            int curr;
+			{
+			ut64 off = UT64_MAX;
+			int curr;
+			int sl_arg = r_num_math (core->num, input+2);
 			if (core->lines_cache == NULL) {
 				r_cons_printf("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
 				break;
 			}
-            switch (input[1]) {
-            case ' ':
-				if (atoi(input+2) < 1 || atoi(input+2) > core->lines_cache_sz-1) {
+			switch (input[1]) {
+			case ' ':
+				if (sl_arg < 1 || sl_arg > core->lines_cache_sz-1) {
 					r_cons_printf("ERROR: Line must be between 1 and %d\n", core->lines_cache_sz-1);
 					break;
 				}
-				off = core->lines_cache[atoi(input+2)-1];
-                r_core_seek (core, off, 1);
-                break;
-            case '-':
-                curr = __curr_line (core);
-				if (curr-atoi(input+2) < 0) {
+				off = core->lines_cache[sl_arg-1];
+				r_core_seek (core, off, 1);
+				break;
+			case '-':
+				curr = __curr_line (core);
+				if (curr-sl_arg < 0) {
 					r_cons_printf("ERROR: Line must be > 1\n");
 					break;
 				}
-				off = core->lines_cache[curr-atoi(input+2)];
-                r_core_seek (core, off, 1);
-                break;
-            case '+':
-                curr = __curr_line (core);
-				if (curr+atoi(input+2) >= core->lines_cache_sz-1) {
+				off = core->lines_cache[curr-sl_arg];
+				r_core_seek (core, off, 1);
+				break;
+			case '+':
+				curr = __curr_line (core);
+				if (curr+sl_arg >= core->lines_cache_sz-1) {
 					r_cons_printf("ERROR: Line must be < %d\n", core->lines_cache_sz-1);
 					break;
 				}
-				off = core->lines_cache[curr+atoi(input+2)];
-                r_core_seek (core, off, 1);
-                break;
-            }
-            }
-            break;
+				off = core->lines_cache[curr+sl_arg];
+				r_core_seek (core, off, 1);
+				break;
+			}
+			}
+			break;
 		case '?': {
 			const char * help_message[] = {
 			"Usage: s", "", " # Seek commands",
