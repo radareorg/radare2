@@ -1376,6 +1376,134 @@ static void printraw (RCore *core, int len, int mode) {
 	}
 	core->cons->newline = true;
 }
+
+// TODO: this is just a PoC, the disasm loop should be rewritten
+static void disasm_strings(RCore *core, const char *input) {
+#define MYPAL(x) (core->cons && core->cons->pal.x)? core->cons->pal.x: ""
+	const char *linecolor = NULL;
+	char *ox, *qo, *string;
+	char *line, *s, *str;
+	char *string2 = NULL;
+	int i, count;
+	int use_color = r_config_get_i (core->config, "scr.color");
+
+	if (!strncmp (input, "dsf", 3)) {
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+		if (fcn) {
+			line = s = r_core_cmd_str (core, "pdf");
+		} else {
+			eprintf ("Cannot find function.\n");
+			return;
+		}
+	} else {
+		line = s = r_core_cmd_str (core, "pd");
+	}
+	count = r_str_split (s, '\n');
+	if (!line || !*line || count <1) {
+		return;
+	}
+	for (i=0; i<count; i++) {
+		ut64 addr = UT64_MAX;
+		ox = strstr (line, "0x");
+		qo = strstr (line, "\"");
+		string = NULL;
+		if (ox) {
+			addr = r_num_get (NULL, ox);
+		}
+		if (qo) {
+			char *qoe = strchr (qo+1, '"');
+			if (qoe) {
+				int len = qoe - qo - 1;
+				if (len>2) {
+					string = r_str_ndup (qo, len+2);
+				}
+				linecolor = MYPAL(comment);
+			}
+		}
+		ox = strstr (line, "; 0x");
+		if (!ox) ox = strstr (line, "@ 0x");
+		if (ox) {
+			char *qoe = strchr (ox+3, ' ');
+			if (!qoe) qoe = strchr(ox+3, '\x1b');
+			int len = qoe? qoe-ox: strlen (ox+3);
+			string2 = r_str_ndup (ox+2, len-1);
+			if (r_num_get (NULL, string2) < 0x100) {
+				R_FREE (string2);
+			}
+		}
+		str = strstr (line, " str.");
+		if (str) {
+			char *qoe = NULL;
+			if (!qoe) qoe = strchr(str+1, '\x1b');
+			if (!qoe) qoe = strchr(str+1, ';');
+			if (!qoe) qoe = strchr (str+1, ' ');
+			if (qoe) {
+				string2 = r_str_ndup (str+1, qoe-str-1);
+			} else {
+				string2 = strdup (str+1);
+			}
+			if (!string && string2) {
+				string = string2;
+				string2 = NULL;
+			}
+			if (string && string2 && !strcmp (string, string2)) {
+			}
+		}
+		str = strstr (line, "sym.");
+		if (!str) str = strstr (line, "fcn.");
+		if (str) {
+			char *qoe = strchr (str, ' ');
+			if (qoe) {
+				string2 = r_str_ndup (str, qoe - str);
+			} else {
+				qoe = strchr (str, ')');
+				if (!qoe) qoe = strchr (str, '(');
+				if (qoe) {
+					string2 = r_str_ndup (str, qoe - str);
+				} else {
+					string2 = strdup (str);
+				}
+			}
+			linecolor = MYPAL(call);
+		}
+		if (!string && string2) {
+			string = string2;
+			string2 = NULL;
+		}
+
+		if (addr != UT64_MAX && string && *string) {
+			const char *str = NULL;
+			if (string && !strncmp (string, "0x", 2)) str = string;
+			if (string2 && !strncmp (string2, "0x", 2)) str = string2;
+			RFlagItem *flag = str? r_flag_get_i2 (core->flags, r_num_math (NULL, str)): NULL;
+			if (!flag) {
+				if (string && !strncmp (string, "0x", 2)) {
+					R_FREE (string);
+				}
+				if (string2 && !strncmp (string2, "0x", 2)) {
+					R_FREE (string2);
+				}
+			}
+			if (string) {
+				if (use_color) {
+					r_cons_printf ("%s0x%08"PFMT64x"%s %s%s%s%s%s%s%s\n",
+						MYPAL(offset), addr, Color_RESET,
+						linecolor? linecolor: "",
+						string2?string2:"", string2?" ":"", string,
+						flag?" ":"", flag?flag->name:"", Color_RESET);
+				} else {
+					r_cons_printf ("0x%08"PFMT64x" %s%s%s%s%s\n", addr,
+						string2?string2:"", string2?" ":"", string,
+						flag?" ":"", flag?flag->name:"");
+				}
+			}
+		}
+		line = line + strlen (line) + 1;
+	}
+	//r_cons_printf ("%s", s);
+	free (s);
+}
+
 static void cmd_print_pv(RCore *core, const char *input) {
 	const char *stack[] = { "ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL };
 	int i, n = core->assembler->bits / 8;
@@ -2170,6 +2298,10 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
+		case 's': // "pds"
+			disasm_strings (core, input);
+			processed_cmd = true;
+			break;
 		case 'f': // "pdf"
 			processed_cmd = true;
 			{
@@ -2255,7 +2387,8 @@ static int cmd_print(void *data, const char *input) {
 				"pdf", "", "disassemble function",
 				"pdi", "", "like 'pi', with offset and bytes",
 				"pdl", "", "show instruction sizes",
-				"pds", "", "disassemble with back sweep (greedy disassembly backwards)",
+				//"pds", "", "disassemble with back sweep (greedy disassembly backwards)",
+				"pds", "", "disassemble only strings (see pdsf)",
 				"pdt", "", "disassemble the debugger traces (see atd)",
 				NULL};
 				r_core_cmd_help (core, help_msg);

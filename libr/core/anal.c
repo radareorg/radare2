@@ -183,19 +183,21 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 		}
 		// TODO: append counter if name already exists
 		if (use_getopt) {
+			RFlagItem *item = r_flag_get (core->flags, "main");
 			free (do_call);
 			// if referenced from entrypoint. this should be main
+			if (item->offset == addr)
+				return strdup ("main"); // main?
 			return strdup ("parse_args"); // main?
 		}
 		if (use_isatty) {
 			char *ret = r_str_newf ("sub.setup_tty_%s_%x",
-				do_call, addr&0xfff);
+				do_call, addr & 0xfff);
 			free (do_call);
 			return ret;
 		}
 		if (do_call) {
-			char *ret = r_str_newf ("sub.%s_%x",
-				do_call, addr &0xfff);
+			char *ret = r_str_newf ("sub.%s_%x", do_call, addr & 0xfff);
 			free (do_call);
 			return ret;
 		}
