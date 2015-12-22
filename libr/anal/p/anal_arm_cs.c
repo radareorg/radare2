@@ -202,6 +202,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			REG64(0), MEMBASE64(2), abs, sign, 
 			REG64(1), MEMBASE64(2), abs, sign, 8);
 		}
+		if (!strcmp ("sp", MEMBASE64(2))) {
+			op->stackop = R_ANAL_STACK_SET;
+			op->stackptr = 0;
+			op->ptr = -MEMDISP64(2);
+		}
 		break;
 	case ARM64_INS_LDP: // ldp x29, x30, [sp], 0x10
 		{
@@ -213,6 +218,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			"%s,%s,%"PFMT64d",%c,%d,+,=[]",
 			REG64(0), MEMBASE64(2), abs, sign, 
 			REG64(1), MEMBASE64(2), abs, sign, 8);
+		}
+		if (!strcmp ("sp", MEMBASE64(2))) {
+			op->stackop = R_ANAL_STACK_SET;
+			op->stackptr = 0;
+			op->ptr = -MEMDISP64(2);
 		}
 		break;
 	case ARM64_INS_ADRP:
