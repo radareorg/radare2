@@ -158,8 +158,6 @@ typedef struct r_core_t {
 	int cmdremote;
 	char *lastsearch;
 	bool fixedblock;
-	ut64* lines_cache;
-	int lines_cache_sz;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -181,7 +179,6 @@ R_API RBin *r_core_get_bin (RCore *core);
 R_API RConfig *r_core_get_config (RCore *core);
 R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr);
 R_API int r_core_init(RCore *core);
-R_API int r_core_init_lines_cache(RCore *core, ut64 start_addr, ut64 end_addr);
 R_API RCore *r_core_new(void);
 R_API RCore *r_core_free(RCore *core);
 R_API RCore *r_core_fini(RCore *c);
@@ -190,6 +187,8 @@ R_API RCore *r_core_cast(void *p);
 R_API int r_core_config_init(RCore *core);
 R_API int r_core_prompt(RCore *core, int sync);
 R_API int r_core_prompt_exec(RCore *core);
+R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr);
+R_API int r_core_lines_currline (RCore *core);
 R_API void r_core_prompt_loop(RCore *core);
 R_API int r_core_cmd(RCore *core, const char *cmd, int log);
 R_API void r_core_cmd_repeat(RCore *core, int next);

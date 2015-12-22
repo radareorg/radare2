@@ -8,6 +8,24 @@
 static int nullprinter(const char* a, ...) { return 0; }
 static int IsInterrupted = 0;
 
+R_API int r_util_lines_getline (ut64 *lines_cache, int lines_cache_sz, ut64 off) {
+	int imin = 0;
+	int imax = lines_cache_sz;
+	int imid = 0;
+
+	while (imin <= imax) {
+		imid = imin + ((imax - imin) / 2);
+		if (lines_cache[imid] == off) {
+			return imid + 1;
+		}
+		else if (lines_cache[imid] < off)
+			imin = imid + 1;
+		else
+			imax = imid - 1;
+	}
+	return imin;
+}
+
 R_API int r_print_is_interrupted() {
 	return IsInterrupted;
 }
@@ -171,6 +189,7 @@ R_API RPrint *r_print_new() {
 	p->reg = NULL;
 	p->get_register = NULL;
 	p->get_register_value = NULL;
+	p->lines_cache = NULL;
 	return p;
 }
 
@@ -183,6 +202,7 @@ R_API RPrint *r_print_free(RPrint *p) {
 		free (p->zoom);
 		p->zoom = NULL;
 	}
+	R_FREE (p->lines_cache);
 	free (p);
 	return NULL;
 }
@@ -824,12 +844,20 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlin
 		}
 	} else if (offlines) {
 		const ut8 *o, *q;
-		int i, mustbreak = 0, linenum = 1;
+		ut64 off;
+		int i, linenum_abs, mustbreak = 0, linenum = 1;
 		o = q = buf;
 		i = 0;
 		do {
-			p->cb_printf ("%d 0x%08x ", linenum,
-				addr + (int)(size_t)(q-buf));
+			off = addr + (int)(size_t)(q-buf);
+			linenum_abs = r_util_lines_getline (p->lines_cache, p->lines_cache_sz, off); 
+			if (p->lines_cache_sz > 0) {
+				p->cb_printf ("%d 0x%08"PFMT64x" ", linenum_abs,
+					off);
+			} else {
+				p->cb_printf ("+%d 0x%08"PFMT64x" ", linenum,
+					off);
+			}
 			for (; i<len && *q && *q != '\n'; q++, i++) {
 				// just loop
 			}

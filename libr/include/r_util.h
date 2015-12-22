@@ -846,6 +846,8 @@ R_API ut64 r_des_ip (ut64 state, int inv);
 R_API ut64 r_des_expansion (ut32 half);
 R_API ut32 r_des_p (ut32 half);
 
+R_API int r_util_lines_getline (ut64 *lines_cache, int lines_cache_sz, ut64 off);
+
 /* Some "secured" functions, to do basic operation (mul, sub, add...) on integers */
 static inline int UT64_ADD(ut64 *r, ut64 a, ut64 b) {
 	if(UT64_MAX - a < b)
