@@ -1,21 +1,118 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
-static int __curr_line (RCore *core) {
+static void __init_seek_line (RCore *core) {
+	ut64 from, to;
+	int lines = 0;
+
+	r_config_bump (core->config, "lines.to");
+	from = r_config_get_i (core->config, "lines.from");
+	to = r_config_get_i (core->config, "lines.to");
+	lines = r_core_lines_initcache (core, from, to);
+	if (lines == -1) {
+		eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
+	} else {
+		eprintf ("Found %d lines\n", lines);
+	}
+}
+
+static void __get_current_line (RCore *core) {
+	if (core->print->lines_cache_sz > 0) {
+		int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
+		r_cons_printf ("%d\n", curr);
+	}
+}
+
+static void __seek_line_absolute (RCore *core, int numline) {
+	if (numline < 1 || numline > core->print->lines_cache_sz - 1) {
+		eprintf ("ERROR: Line must be between 1 and %d\n", core->print->lines_cache_sz-1);
+	} else {
+		r_core_seek (core, core->print->lines_cache[numline-1], 1);
+	}
+}
+
+static void __seek_line_relative (RCore *core, int numlines) {
+	int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
+	if (numlines > 0 && curr+numlines >= core->print->lines_cache_sz-1) {
+		eprintf ("ERROR: Line must be < %d\n", core->print->lines_cache_sz-1);
+	} else if (numlines < 0 && curr+numlines < 1) {
+		eprintf ("ERROR: Line must be > 1\n");
+	} else {
+		r_core_seek (core, core->print->lines_cache[curr+numlines-1], 1);
+	}
+}
+
+static void __clean_lines_cache (RCore *core) {
+	core->print->lines_cache_sz = -1;
+	R_FREE (core->print->lines_cache);
+}
+
+R_API int r_core_lines_currline (RCore *core) { // make priv8 again
 	int imin = 0;
-	int imax = core->lines_cache_sz;
+	int imax = core->print->lines_cache_sz;
 	int imid = 0;
 
 	while (imin <= imax) {
 		imid = imin + ((imax - imin) / 2);
-		if (core->lines_cache[imid] == core->offset) {
+		if (core->print->lines_cache[imid] == core->offset) {
 			return imid;
 		}
-		else if (core->lines_cache[imid] < core->offset)
+		else if (core->print->lines_cache[imid] < core->offset)
 			imin = imid + 1;
 		else
 			imax = imid - 1;
 	}
 	return imin;
+}
+
+R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
+	int i, line_count;
+	int bsz = core->blocksize;
+	char *buf;
+	ut64 off = start_addr;
+	if (start_addr == UT64_MAX || end_addr == UT64_MAX) {
+		return -1;
+	}
+
+	free (core->print->lines_cache);
+	core->print->lines_cache = R_NEWS0 (ut64, bsz);
+	if (!core->print->lines_cache) {
+		return -1;
+	}
+
+	line_count = 1;
+	r_cons_break (NULL, NULL);
+	buf = malloc (bsz);
+	if (!buf) return -1;
+	while (off < end_addr) {
+		if (r_cons_singleton ()->breaked) {
+			break;
+		}
+		r_io_read_at (core->io, off, (ut8*)buf, bsz);
+		for (i=0; i<bsz; i++) {
+			if (buf[i] == '\n') {
+				core->print->lines_cache[line_count] = off+i+1;
+				line_count++;
+				if (line_count % bsz == 0) {
+					ut64 *tmp = realloc (core->print->lines_cache,
+						(line_count+bsz)*sizeof(ut64));
+					if (tmp) {
+						core->print->lines_cache = tmp;
+					} else {
+						R_FREE (core->print->lines_cache);
+						goto beach;
+					}
+				}
+			}
+		}
+		off += bsz;
+	}
+	free (buf);
+	r_cons_break_end ();
+	return line_count;
+beach:
+	free (buf);
+	r_cons_break_end();
+	return -1;
 }
 
 static int cmd_seek(void *data, const char *input) {
@@ -283,63 +380,34 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case 'l': // "sl"
 			{
-			ut64 off = UT64_MAX;
-			int curr;
 			int sl_arg = r_num_math (core->num, input+2);
-			if (!core->lines_cache) {
-				core->config->num = core->num;
-				r_config_bump (core->config, "lines.to");
-				ut64 from = r_config_get_i (core->config, "lines.from");
-				ut64 to = r_config_get_i (core->config, "lines.to");
-				int lines = r_core_init_lines_cache (core, from, to);
-				if (lines == -1) {
-					eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
-				} else {
-					eprintf ("Found %d lines\n", lines);
-				}
+			const char *help_msg[] = {
+				"Usage:", "sl+ or sl- or slc", "",
+				"sl", " [line]", "Seek to absolute line",
+				"sl", "[+-][line]", "Seek to relative line",
+				"slc", "", "Clear line cache",
+				NULL };
+			if (!core->print->lines_cache) {
+				__init_seek_line (core);
 			}
 			switch (input[1]) {
 			case 0:
-				if (core->lines_cache_sz > 0) {
-					int i;
-					for (i=0; i<core->lines_cache_sz; i++) {
-						off = core->lines_cache[i];
-						if (core->offset == off) {
-							r_cons_printf ("%d\n", i+1);
-							break;
-						}
-						if (core->offset < off) {
-							r_cons_printf ("%d\n", i);
-							break;
-						}
-					}
-				}
+				__get_current_line (core);
 				break;
 			case ' ':
-				if (sl_arg < 1 || sl_arg > core->lines_cache_sz - 1) {
-					eprintf ("ERROR: Line must be between 1 and %d\n", core->lines_cache_sz-1);
-					break;
-				}
-				off = core->lines_cache[sl_arg-1];
-				r_core_seek (core, off, 1);
+				__seek_line_absolute (core, sl_arg);
 				break;
 			case '-':
-				curr = __curr_line (core);
-				if (curr-sl_arg < 0) {
-					eprintf ("ERROR: Line must be > 1\n");
-					break;
-				}
-				off = core->lines_cache[curr-sl_arg];
-				r_core_seek (core, off, 1);
+				__seek_line_relative (core, -sl_arg);
 				break;
 			case '+':
-				curr = __curr_line (core);
-				if (curr+sl_arg >= core->lines_cache_sz-1) {
-					eprintf ("ERROR: Line must be < %d\n", core->lines_cache_sz-1);
-					break;
-				}
-				off = core->lines_cache[curr+sl_arg];
-				r_core_seek (core, off, 1);
+				__seek_line_relative (core, sl_arg);
+				break;
+			case 'c':
+				__clean_lines_cache (core);
+				break;
+			case '?':
+				r_core_cmd_help (core, help_msg);
 				break;
 			}
 			}
