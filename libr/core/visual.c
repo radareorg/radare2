@@ -1510,26 +1510,33 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		showcursor (core, true);
 		r_cons_flush ();
 		r_cons_set_raw (false);
-		strcpy (buf, "\"CC ");
 		r_line_set_prompt ("comment: ");
+		strcpy (buf, "\"CC ");
 		i = strlen (buf);
-		if (r_cons_fgets (buf+i, sizeof (buf)-i-1, 0, NULL) >1) {
-			ut64 orig = core->offset;
-			ut64 addr = core->offset;
+		if (r_cons_fgets (buf+i, sizeof (buf)-i-1, 0, NULL) > 0) {
+			ut64 addr, orig;
+			addr = orig = core->offset;
 			if (curset) {
 				addr += cursor;
 				r_core_seek (core, addr, 0);
 				r_core_cmdf (core, "s 0x%"PFMT64x, addr);
 			}
-			switch (buf[i]) {
-			case '-':
-				strcpy (buf, "\"CC-");
-				break;
-			case '!':
-				strcpy (buf, "\"CC!");
-				break;
+			if (!strcmp (buf+i, "-")) {
+				strcpy (buf, "CC-");
+			} else {
+				switch (buf[i]) {
+				case '-':
+					strncpy (buf, "\"CC-", 4);
+					break;
+				case '!':
+					strncpy (buf, "\"CC!", 4);
+					break;
+				default:
+					memcpy (buf, "\"CC ", 4);
+					break;
+				}
+				strcat (buf, "\"");
 			}
-			strcat (buf, "\"");
 			r_core_cmd (core, buf, 1);
 			if (curset) r_core_seek (core, orig, 1);
 		}
