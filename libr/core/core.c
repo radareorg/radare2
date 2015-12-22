@@ -1123,6 +1123,7 @@ R_API int r_core_init(RCore *core) {
 	core->oobi = NULL;
 	core->oobi_len = 0;
 	core->printidx = 0;
+	core->lines_cache = NULL;
 	core->lastcmd = NULL;
 	core->cmdqueue = NULL;
 	core->cmdrepeat = true;
