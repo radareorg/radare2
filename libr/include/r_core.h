@@ -181,6 +181,7 @@ R_API RBin *r_core_get_bin (RCore *core);
 R_API RConfig *r_core_get_config (RCore *core);
 R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr);
 R_API int r_core_init(RCore *core);
+R_API int r_core_init_lines_cache(RCore *core, ut64 start_addr, ut64 end_addr);
 R_API RCore *r_core_new(void);
 R_API RCore *r_core_free(RCore *core);
 R_API RCore *r_core_fini(RCore *c);

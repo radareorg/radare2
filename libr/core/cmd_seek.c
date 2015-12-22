@@ -227,7 +227,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_io_sundo_push (core->io, core->offset);
 			r_core_anal_bb_seek (core, off);
 			break;
-		case 'f':
+		case 'f': // "sf"
 			if (strlen(input) > 2 && input[1]==' ') {
 				RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, input+2);
 				if (fcn) {
@@ -240,7 +240,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_core_seek (core, fcn->addr+fcn->size, 1);
 			}
 			break;
-		case 'o':
+		case 'o': // "so"
 			{
 			RAnalOp op;
 			int val=0, ret, i, n = r_num_math (core->num, input+1);
@@ -265,14 +265,14 @@ static int cmd_seek(void *data, const char *input) {
 			core->num->value = val;
 			}
 			break;
-		case 'g':
+		case 'g': // "sg"
 			{
 			RIOSection *s = r_io_section_vget (core->io, core->offset);
 			if (s) r_core_seek (core, s->vaddr, 1);
 			else r_core_seek (core, 0, 1);
 			}
 			break;
-		case 'G':
+		case 'G': // "sG"
 			{
 			if (!core->file) break;
 			RIOSection *s = r_io_section_vget (core->io, core->offset);
@@ -281,19 +281,43 @@ static int cmd_seek(void *data, const char *input) {
 			else r_core_seek (core, r_io_desc_size (core->io, core->file->desc), 1);
 			}
 			break;
-		case 'l':
+		case 'l': // "sl"
 			{
 			ut64 off = UT64_MAX;
 			int curr;
 			int sl_arg = r_num_math (core->num, input+2);
-			if (core->lines_cache == NULL) {
-				r_cons_printf("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
-				break;
+			if (!core->lines_cache) {
+				core->config->num = core->num;
+				r_config_bump (core->config, "lines.to");
+				ut64 from = r_config_get_i (core->config, "lines.from");
+				ut64 to = r_config_get_i (core->config, "lines.to");
+				int lines = r_core_init_lines_cache (core, from, to);
+				if (lines == -1) {
+					eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
+				} else {
+					eprintf ("Found %d lines\n", lines);
+				}
 			}
 			switch (input[1]) {
+			case 0:
+				if (core->lines_cache_sz > 0) {
+					int i;
+					for (i=0; i<core->lines_cache_sz; i++) {
+						off = core->lines_cache[i];
+						if (core->offset == off) {
+							r_cons_printf ("%d\n", i+1);
+							break;
+						}
+						if (core->offset < off) {
+							r_cons_printf ("%d\n", i);
+							break;
+						}
+					}
+				}
+				break;
 			case ' ':
-				if (sl_arg < 1 || sl_arg > core->lines_cache_sz-1) {
-					r_cons_printf("ERROR: Line must be between 1 and %d\n", core->lines_cache_sz-1);
+				if (sl_arg < 1 || sl_arg > core->lines_cache_sz - 1) {
+					eprintf ("ERROR: Line must be between 1 and %d\n", core->lines_cache_sz-1);
 					break;
 				}
 				off = core->lines_cache[sl_arg-1];
@@ -302,7 +326,7 @@ static int cmd_seek(void *data, const char *input) {
 			case '-':
 				curr = __curr_line (core);
 				if (curr-sl_arg < 0) {
-					r_cons_printf("ERROR: Line must be > 1\n");
+					eprintf ("ERROR: Line must be > 1\n");
 					break;
 				}
 				off = core->lines_cache[curr-sl_arg];
@@ -311,7 +335,7 @@ static int cmd_seek(void *data, const char *input) {
 			case '+':
 				curr = __curr_line (core);
 				if (curr+sl_arg >= core->lines_cache_sz-1) {
-					r_cons_printf("ERROR: Line must be < %d\n", core->lines_cache_sz-1);
+					eprintf ("ERROR: Line must be < %d\n", core->lines_cache_sz-1);
 					break;
 				}
 				off = core->lines_cache[curr+sl_arg];

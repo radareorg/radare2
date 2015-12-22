@@ -12,41 +12,56 @@
 #define CFG_BIGENDIAN "true"
 #endif
 
-static int __init_lines_cache(RCore *core, ut64 start_addr, ut64 end_addr) {
+R_API int r_core_init_lines_cache(RCore *core, ut64 start_addr, ut64 end_addr) {
 	int i, line_count;
 	int bsz = core->blocksize;
-	char buf[bsz];
+	char *buf;
 	ut64 off = start_addr;
+	if (start_addr == UT64_MAX || end_addr == UT64_MAX) {
+		return -1;
+	}
 
-	if (core->lines_cache != NULL)
-		R_FREE(core->lines_cache);
-
-	core->lines_cache = R_NEWS0(ut64, bsz);
-	if (core->lines_cache == NULL) return -1;
+	free (core->lines_cache);
+	core->lines_cache = R_NEWS0 (ut64, bsz);
+	if (!core->lines_cache) {
+		return -1;
+	}
 
 	line_count = 1;
-	while (off<end_addr) {
-		r_io_read_at (core->io, off, (ut8*)buf, sizeof (buf));
+	r_cons_break (NULL, NULL);
+	buf = malloc (bsz);
+	if (!buf) return -1;
+	while (off < end_addr) {
+		if (r_cons_singleton ()->breaked) {
+			break;
+		}
+		r_io_read_at (core->io, off, (ut8*)buf, bsz);
 		for (i=0; i<bsz; i++) {
 			if (buf[i] == '\n') {
 				core->lines_cache[line_count] = off+i+1;
 				line_count++;
 				if (line_count % bsz == 0) {
-					ut64 *tmp = realloc (core->lines_cache, (line_count+bsz)*sizeof(ut64));
-					if (tmp != NULL) {
+					ut64 *tmp = realloc (core->lines_cache,
+						(line_count+bsz)*sizeof(ut64));
+					if (tmp) {
 						core->lines_cache = tmp;
 					} else {
-						R_FREE(core->lines_cache);
-						return -1;
+						R_FREE (core->lines_cache);
+						goto beach;
 					}
 				}
 			}
 		}
 		off += bsz;
 	}
+	free (buf);
+	r_cons_break_end ();
 	return line_count;
+beach:
+	free (buf);
+	r_cons_break_end();
+	return -1;
 }
-
 
 static const char *has_esil(RCore *core, const char *name) {
 	RListIter *iter;
@@ -1351,13 +1366,21 @@ static int cb_linesto(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	ut64 from = (ut64)r_config_get_i (core->config, "lines.from");
 	int io_sz = r_io_size (core->io);
-	if (node->i_value > io_sz) {
-		r_cons_printf("ERROR: \"lines.to\" can't exceed addr 0x%08"PFMT64x"\n", io_sz);
+	ut64 to = r_num_math (core->num, node->value);
+	if (to == 0) {
+		core->lines_cache_sz = -1; //r_core_init_lines_cache (core, from, to);
+		return false;
+	}
+	if (to > io_sz) {
+		eprintf ("ERROR: \"lines.to\" can't exceed addr 0x%08"PFMT64x
+			" 0x%08"PFMT64x" %d\n", from, to, io_sz);
 		return true;
 	}
-	if (node->i_value > from) {
-		core->lines_cache_sz = __init_lines_cache (core, from, (ut64)node->i_value);
-		if (core->lines_cache_sz == -1) r_cons_printf("ERROR: Can't allocate memory\n");
+	if (to > from) {
+		core->lines_cache_sz = r_core_init_lines_cache (core, from, to);
+		//if (core->lines_cache_sz == -1) { eprintf ("ERROR: Can't allocate memory\n"); }
+	} else {
+		eprintf ("Invalid range 0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", from, to);
 	}
 	return true;
 }
@@ -1834,8 +1857,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("zoom.to", 0, "Zoom end address");
 
 	/* lines */
-	SETI("lines.from", -1, "Start address for line seek");
-	SETICB("lines.to", -1, &cb_linesto, "End address for line seek");
+	SETI("lines.from", 0, "Start address for line seek");
+	SETCB("lines.to", "$s", &cb_linesto, "End address for line seek");
 
 	r_config_lock (cfg, true);
 	return true;
