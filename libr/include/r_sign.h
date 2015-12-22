@@ -22,7 +22,7 @@ enum {
 /* signature struct */
 typedef struct r_sign_item_t {
 	int type;
-	char name[32];
+	char *name;
 	int size;
 	ut64 addr;
 	ut8 *bytes;
@@ -34,7 +34,7 @@ typedef struct r_sign_t {
 	int s_byte;
 	int s_head;
 	int s_func; // TODO: this must be an array count[N]
-	char ns[32]; // namespace
+	char *ns;
 	PrintfCallback cb_printf;
 	RList *items;
 	int matches;

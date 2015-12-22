@@ -8,11 +8,9 @@ R_LIB_VERSION (r_sign);
 R_API RSign *r_sign_new() {
 	RSign *sig = R_NEW0 (RSign);
 	if (sig) {
-		sig->s_byte = sig->s_anal = 0;
-		sig->ns[0] = '\0';
 		sig->cb_printf = (PrintfCallback) printf;
 		sig->items = r_list_new ();
-		if (!sig->items){
+		if (!sig->items) {
 			free (sig);
 			return NULL;
 		}
@@ -24,9 +22,9 @@ R_API RSign *r_sign_new() {
 R_API void r_sign_ns(RSign *sig, const char *str) {
 	/*Set namespace*/
 	if (str) {
-		strncpy (sig->ns, str, sizeof (sig->ns)-1);
-		sig->ns[sizeof (sig->ns)-1] = '\0';
-	} else sig->ns[0] = '\0';
+		free (sig->ns);
+		sig->ns = strdup (str);
+	} else sig->ns = NULL;
 }
 
 R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {
@@ -39,8 +37,7 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 	if (!(si = R_NEW0 (RSignItem)))
 		return false;
 	si->type = type;
-	snprintf (si->name, sizeof (si->name), "%s.%c.%s",
-		*sig->ns? sig->ns: "sys", type, name);
+	si->name = r_str_newf ("%s.%c.%s", *sig->ns? sig->ns: "sys", type, name);
 
 	switch (type) {
 	case R_SIGN_FUNC: // function signature
@@ -161,6 +158,7 @@ R_API int r_sign_remove_ns(RSign* sig, const char* ns) {
 R_API RSign *r_sign_free(RSign *sig) {
 	if (!sig) return NULL;
 	r_list_free (sig->items);
+	free (sig->ns);
 	free (sig);
 	return NULL;
 }
@@ -170,6 +168,7 @@ R_API void r_sign_item_free(void *_item) {
 		RSignItem *item = _item;
 		free (item->bytes);
 		free (item->mask);
+		free (item->name);
 		free (item);
 	}
 }
