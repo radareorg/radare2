@@ -341,6 +341,15 @@ static int cmd_seek(void *data, const char *input) {
 				off = core->lines_cache[curr+sl_arg];
 				r_core_seek (core, off, 1);
 				break;
+			case 'c':
+				R_FREE (core->lines_cache);
+				break;
+			case '?':
+				eprintf ("Usage: sl+ or sl- or slc\n");
+				eprintf (" sl [line]    - Seek to absolute line\n");
+				eprintf (" sl[+-][line] - Seek to relative line\n");
+				eprintf (" slc          - Clear line cache\n");
+				break;
 			}
 			}
 			break;
