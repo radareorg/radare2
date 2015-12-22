@@ -195,7 +195,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 			int immbase = p->hint->immbase;
 			char num[256], *n;
 			strcpy (num, ptr);
-			for (n=num; *n; n++) {
+			for (n = num; *n; n++) {
 				if (*n>='0' && *n<='9')
 					continue;
 				if (*n=='x') continue;
@@ -217,7 +217,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 				snprintf (num, sizeof (num), "0%o", (int)off);
 				break;
 			case 10:
-				snprintf (num, sizeof (num), "%d", (int)off);
+				snprintf (num, sizeof (num), "%" PFMT64d, (st64)off);
 				break;
 			case 16:
 				/* do nothing */
