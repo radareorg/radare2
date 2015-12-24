@@ -176,3 +176,7 @@ r2 is a great OS, but a terrible hex editor
 THE CAKE IS A PIE
 radare2 0.9.7 is so old, my grandfarther was using it with his enigma in WWII
 Have you seen the latest radare2 TV spot?
+scp ~/.idapro/ida.key radare.org:/var/www/radare.org/pub/losers/
+Too bad there is no gif support in r2. Yet. -- @r2gif
+Almost 5am, maybe you should go to bed.
+Jingle sploits, jingle sploits, ropchain all the way.
