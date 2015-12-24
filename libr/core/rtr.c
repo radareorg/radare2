@@ -426,11 +426,9 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		return 1;
 	}
 	if (launch=='H') {
-		char cmd[128];
 		const char *browser = r_config_get (core->config, "http.browser");
-		snprintf (cmd, sizeof (cmd)-1, "%s http://%s:%d/%s &",
+		r_sys_cmdf ("%s http://%s:%d/%s &",
 			browser, host, atoi (port), path? path:"");
-		r_sys_cmd (cmd);
 	}
 
 	origcfg = core->config;

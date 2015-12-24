@@ -37,7 +37,7 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 	if (!(si = R_NEW0 (RSignItem)))
 		return false;
 	si->type = type;
-	si->name = r_str_newf ("%s.%c.%s", *sig->ns? sig->ns: "sys", type, name);
+	si->name = r_str_newf ("%s.%c.%s", sig->ns? sig->ns: "sys", type, name);
 
 	switch (type) {
 	case R_SIGN_FUNC: // function signature
