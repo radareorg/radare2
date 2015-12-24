@@ -297,15 +297,15 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		r_str_unescape (nc);
 		if (comment) {
 			text = malloc (strlen (comment)+strlen (newcomment)+2);
-			strcpy (text, comment);
-			strcat (text, "\n");
-			strcat (text, nc);
-			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-					addr, text);
-			free (text);
+			if (text) {
+				strcpy (text, comment);
+				strcat (text, "\n");
+				strcat (text, nc);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, text);
+				free (text);
+			} else perror ("malloc");
 		} else {
-			r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-					addr, nc);
+			r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, nc);
 		}
 		free (nc);
 		}
@@ -313,14 +313,14 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case '*':
 		r_meta_list (core->anal, R_META_TYPE_COMMENT, 1);
 		break;
-	case '-':
+	case '-': // "CC-"
 		r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1, NULL);
 		break;
 	case 'u':
 		//
 		{
 		char *newcomment;
-		const char *arg = input+2;
+		const char *arg = input + 2;
 		while (*arg && *arg == ' ') arg++;
 		if (!strncmp (arg, "base64:", 7)) {
 			char *s = (char *)sdb_decode (arg+7, NULL);

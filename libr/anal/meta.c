@@ -164,17 +164,22 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 		return false;
 	}
 	meta_inrange_del (a, addr, size);
-	snprintf (key, sizeof (key)-1, type==R_META_TYPE_COMMENT ?
+	snprintf (key, sizeof (key)-1, type == R_META_TYPE_COMMENT ?
 		"meta.C.0x%"PFMT64x : "meta.0x%"PFMT64x, addr);
 	ptr = sdb_const_get (DB, key, 0);
 	if (ptr) {
+		sdb_unset (DB, key, 0);
+		#if 0
+		// This code is wrong, but i guess it's necessary in case type is ANY
 		for (i=0; ptr[i]; i++) {
 			if (ptr[i] != SDB_RS) {
 				snprintf (key2, sizeof (key2)-1,
 					"meta.%c.0x%"PFMT64x, ptr[i], addr);
+					printf ("UNSET (%s)\n", key2);
 				sdb_unset (DB, key2, 0);
 			}
 		}
+		#endif
 	}
 	sdb_unset (DB, key, 0);
 	return false;
