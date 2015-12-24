@@ -86,7 +86,7 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 	switch (rwx) {
 		case 1: rwx=0; break;
 		case 2: rwx=1; break;
-		case 4: rwx=2; break;
+		case 4: rwx=3; break;
 		default:
 			rwx=0;
 	}
