@@ -1123,7 +1123,6 @@ R_API int r_core_init(RCore *core) {
 	core->oobi = NULL;
 	core->oobi_len = 0;
 	core->printidx = 0;
-	core->lines_cache = NULL;
 	core->lastcmd = NULL;
 	core->cmdqueue = NULL;
 	core->cmdrepeat = true;
@@ -1297,7 +1296,6 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_buf_free (c->yank_buf);
 	r_agraph_free (c->graph);
 	R_FREE (c->asmqjmps);
-	R_FREE (c->lines_cache);
 	sdb_free (c->sdb);
 	return NULL;
 }

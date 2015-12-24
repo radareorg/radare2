@@ -69,6 +69,8 @@ typedef struct r_print_t {
 	RReg *reg;
 	RRegItem* (*get_register)(RReg *reg, const char *name, int type);
 	ut64 (*get_register_value)(RReg *reg, RRegItem *item);
+	ut64* lines_cache;
+	int lines_cache_sz;
 } RPrint;
 
 #ifdef R_API
