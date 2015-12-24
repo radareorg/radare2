@@ -54,6 +54,7 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 		break;
 	case R_SIGN_HEAD: // function prefix (push ebp..)
 	case R_SIGN_BYTE: // function mask
+	case R_SIGN_BODY: // function body
 		if (!(data = r_anal_strmask (anal, arg))) {
 			r_sign_item_free (si);
 			break;
@@ -75,6 +76,8 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 				sig->s_head++;
 			else if (type==R_SIGN_BYTE)
 				sig->s_byte++;
+			else if(type == R_SIGN_BODY)
+				sig->s_func++;
 		}
 		break;
 	default:
@@ -181,7 +184,7 @@ R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len) {
 		return NULL;
 
 	r_list_foreach (sig->items, iter, si) {
-		if (si->type == R_SIGN_BYTE) {
+		if ((si->type == R_SIGN_BYTE) || (si->type == R_SIGN_BODY)) {
 			int l = (len>si->size)?si->size:len;
 			if (!r_mem_cmp_mask (buf, si->bytes, si->mask, l))
 				return si;

@@ -84,6 +84,7 @@ static int cmd_zign(void *data, const char *input) {
 	case 'b':
 	case 'h':
 	case 'f':
+	case 'p':
 		if (*(input+1) == '\0' || *(input+2) == '\0')
 			eprintf ("Usage: z%c [name] [arg]\n", *input);
 		else{
@@ -156,6 +157,9 @@ static int cmd_zign(void *data, const char *input) {
 							if (si->type == 'f')
 								r_cons_printf ("f sign.fun_%s_%d @ 0x%08"PFMT64x"\n",
 									si->name, idx, ini+idx); //core->offset);
+							else if(si->type == 'p')
+								r_cons_printf ("afn sign.fun_%s_%d 0x%08"PFMT64x"\n",
+										si->name, idx, ini+idx);
 							else r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n",
 								si->name, ini+idx); //core->offset+idx);
 							eprintf ("- Found %d matching function signatures\r", count);
@@ -214,6 +218,7 @@ static int cmd_zign(void *data, const char *input) {
 			"zn", " namespace", "Define namespace for following zignatures (until zn-)",
 			"zn", "", "Display current namespace",
 			"zn-", "", "Unset namespace",
+			"zp", " name bytes", "define new zignature for function body",
 			"NOTE:", "", "bytes can contain '.' (dots) to specify a binary mask",
 			NULL};
 			r_core_cmd_help (core, help_msg);

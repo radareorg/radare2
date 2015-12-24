@@ -17,6 +17,7 @@ enum {
 	R_SIGN_FUNC = 'f',
 	R_SIGN_HEAD = 'h',
 	R_SIGN_ANAL = 'a',
+	R_SIGN_BODY = 'p',
 };
 
 /* signature struct */
