@@ -117,6 +117,11 @@ static int cmd_zign(void *data, const char *input) {
 			RSignItem *si;
 			RIOSection *s;
 			if (input[1]) {
+				if(input[1] != ' ') {
+					eprintf ("Usage: z%c [ini] [end]\n", *input);
+					return R_FALSE;
+				}
+
 				char *ptr = strchr (input+2, ' ');
 				if (ptr) {
 					*ptr = '\0';
