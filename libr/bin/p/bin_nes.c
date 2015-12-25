@@ -92,7 +92,7 @@ static RList* sections(RBinFile *arch) {
 	ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
 	ptr->vaddr = ROM_START_ADDRESS;
 	ptr->vsize = ROM_SIZE;
-	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
