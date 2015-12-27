@@ -24,7 +24,10 @@ static bool tmp_argv_heap = false;
 
 static void r_core_free_autocomplete(RCore *core) {
 	int i;
-	RLine *line = core->cons->line;
+	RLine *line;
+	if (!core || !core->cons || !core->cons->line)
+		return;
+	line = core->cons->line;
 	if (tmp_argv_heap) {
 		int argc = line->completion.argc;
 		for (i = 0; i < argc; i++) {
