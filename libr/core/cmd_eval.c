@@ -166,6 +166,7 @@ static int cmd_eval(void *data, const char *input) {
 			"e-", "", "reset config vars",
 			"e*", "", "dump config vars in r commands",
 			"e!", "a", "invert the boolean value of 'a' var",
+			"ee", "var", "open editor to change the value of var",
 			"er", " [key]", "set config key as readonly. no way back",
 			"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
 			"e", " a", "get value of var 'a'",
