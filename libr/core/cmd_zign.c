@@ -117,6 +117,11 @@ static int cmd_zign(void *data, const char *input) {
 			RSignItem *si;
 			RIOSection *s;
 			if (input[1]) {
+				if(input[1] != ' ') {
+					eprintf ("Usage: z%c [ini] [end]\n", *input);
+					return R_FALSE;
+				}
+
 				char *ptr = strchr (input+2, ' ');
 				if (ptr) {
 					*ptr = '\0';
@@ -203,9 +208,9 @@ static int cmd_zign(void *data, const char *input) {
 			"Usage:", "z[abcp/*-] [arg]", "Zignatures",
 			"z", "", "show status of zignatures",
 			"z*", "", "display all zignatures",
-			"z-", "namespace", "Unload zignatures in namespace",
+			"z-", " namespace", "Unload zignatures in namespace",
 			"z-*", "", "unload all zignatures",
-			"z/", "[ini] [end]", "search zignatures between these regions",
+			"z/", " [ini] [end]", "search zignatures between these regions",
 			"za", " ...", "define new zignature for analysis",
 			"zb", " name bytes", "define zignature for bytes",
 			"zB", " size", "Generate zignatures for current offset/flag",
