@@ -45,6 +45,7 @@ static void var_help(RCore *core, char ch) {
 		"afag", " [idx] [addr]", "define var get reference",
 		"afas", " [idx] [addr]", "define var set reference",
 		"afv", "", "list function local variables",
+		"afv*", "", "list function local variables in commands",
 		"afv", " [idx] [name] ([type])", "define variable N with name and type",
 		"afvn", " [old_name] [new_name]", "rename local variable",
 		"afvt", " [name] [new_type]", "change type for given variable",
