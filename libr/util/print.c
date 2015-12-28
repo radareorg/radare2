@@ -851,7 +851,7 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlin
 		do {
 			off = addr + (int)(size_t)(q-buf);
 			linenum_abs = r_util_lines_getline (p->lines_cache, p->lines_cache_sz, off); 
-			if (p->lines_cache_sz > 0) {
+			if (p->lines_cache_sz > 0 && p->lines_abs) {
 				p->cb_printf ("%d 0x%08"PFMT64x" ", linenum_abs,
 					off);
 			} else {

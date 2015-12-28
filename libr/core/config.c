@@ -1334,6 +1334,23 @@ static int cb_linesto(void *user, void *data) {
 	return true;
 }
 
+static int cb_linesabs(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->print->lines_abs = node->i_value;
+	if (core->print->lines_abs && core->print->lines_cache_sz <= 0) {
+		ut64 from = (ut64)r_config_get_i (core->config, "lines.from");
+		ut64 to = (ut64)r_config_get_i (core->config, "lines.to");
+		core->print->lines_cache_sz = r_core_lines_initcache (core, from, to);
+		if (core->print->lines_cache_sz == -1) {
+			eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
+		} else {
+			eprintf ("Found %d lines\n", core->print->lines_cache_sz-1);
+		}
+	}
+	return true;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -1808,6 +1825,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* lines */
 	SETI("lines.from", 0, "Start address for line seek");
 	SETCB("lines.to", "$s", &cb_linesto, "End address for line seek");
+	SETCB("lines.abs", "false", &cb_linesabs, "Enable absolute line numbers");
 
 	r_config_lock (cfg, true);
 	return true;
