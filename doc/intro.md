@@ -18,7 +18,7 @@
 They can be used in evaluations:`? ${asm.tabs}`
 
 ```
-e: Returs configuration properties
+e: Returns configuration properties
 e <property>: Checks a specific property:
 	e asm.tabs => false
 e <property>=<value>: Change property value
@@ -67,7 +67,7 @@ Command syntax: `[.][times][cmd][~grep][@[@iter]addr!size][|>pipe]`
 ```
 * `.cmd` Interprets command output
 ```
-is* prints symbolos
+is* prints symbols
 .is* interprets output and define the symbols in radare (normally they are already loaded if r2 was not invoked with -n)
 ```
 * `..` repeats last commands (same as enter \n)
@@ -523,7 +523,7 @@ continue with F9
 =H: Start server and browser
 ```
 
-# Radare2 suite commandRadare2 suite commands
+# Radare2 suite commands
 All suite commands include a `-r` flag to generate instructions for r2
 
 ## rax2 - Base conversion
