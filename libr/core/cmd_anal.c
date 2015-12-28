@@ -63,9 +63,9 @@ static void var_help(RCore *core, char ch) {
 }
 
 static int var_cmd(RCore *core, const char *str) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	char *p, *ostr;
 	int delta, type = *str, res = true;
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 
 	ostr = p = strdup (str);
 	str = (const char *)ostr;
@@ -101,12 +101,16 @@ static int var_cmd(RCore *core, const char *str) {
 		case '.':
 			r_anal_var_list_show (core->anal, fcn, core->offset, 0);
 			break;
-		case '-':
+		case '-': // "afv-"
 			if (str[2] == '*') {
 				r_anal_var_delete_all (core->anal, fcn->addr, type);
 			} else {
-				r_anal_var_delete (core->anal, fcn->addr,
-						type, 1, (int)r_num_math (core->num, str + 1));
+				if (IS_NUMBER (str[2])) {
+					r_anal_var_delete (core->anal, fcn->addr,
+							type, 1, (int)r_num_math (core->num, str + 1));
+				} else {
+					r_anal_var_delete_byname (core->anal, fcn, type, str + 2);
+				}
 			}
 			break;
 		case 'n': {

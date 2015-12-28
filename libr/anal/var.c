@@ -156,6 +156,50 @@ R_API int r_anal_var_delete (RAnal *a, ut64 addr, const char kind, int scope, in
 	return true;
 }
 
+R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int kind, const char *name) {
+	char *varlist;
+	RList *list;
+	if (!a || !fcn) {
+		return false;
+	}
+	list = r_list_new ();
+	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x".%c",
+		fcn->addr, kind), 0);
+	if (varlist) {
+		char *next, *ptr = varlist;
+		if (varlist && *varlist) {
+			do {
+				char *word = sdb_anext (ptr, &next);
+				char *vardef = sdb_get (DB, sdb_fmt (1,
+					"var.0x%"PFMT64x".%c.%s",
+					fcn->addr, kind, word), 0);
+				int delta = strlen(word)<3? -1: atoi (word+2);
+				if (vardef) {
+					const char *p = strchr (vardef, ',');
+					if (p) {
+						p = strchr (p + 1, ',');
+						if (p) {
+							p = strchr (p + 1, ',');
+							if (p) {
+								int mykind = vardef[0];
+								if (!strcmp (p+1, name)) {
+									return r_anal_var_delete (a, fcn->addr,
+										mykind, 1, delta);
+								}
+							}
+						}
+					}
+				} else {
+					eprintf ("Inconsistent Sdb storage, Cannot find '%s'\n", word);
+				}
+				ptr = next;
+			} while (next);
+		}
+	}
+	free (varlist);
+	return false;
+}
+
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int delta) {
 	RAnalVar *av;
 	struct VarType vt;
