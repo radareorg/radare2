@@ -39,7 +39,23 @@ endif
 
 # looks hacky :D
 #AR=arm-linux-androideabi-ar
+
 libr.a:
+	rm -rf .libr
+	mkdir .libr
+	for FILE in */libr_*.a ../shlr/*/*.a ; do \
+		mkdir -p .libr/$$FILE ; \
+		cp -f $$FILE .libr/$$FILE ; \
+		(cd .libr/$$FILE ; ${AR} x *.a ; rm -f *.a ) ; \
+		done
+	cd .libr ; ${AR} qv libr.a `find * -iname *.o`
+	mv .libr/libr.a libr.a
+	${RANLIB} libr.a
+	rm -rf .libr
+
+AR=xcrun --sdk iphoneos ar
+RANLIB=xcrun --sdk iphoneos ranlib
+a:
 	rm -rf .libr
 	mkdir .libr
 	for FILE in */libr_*.a ; do \
@@ -47,7 +63,10 @@ libr.a:
 		cp -f $$FILE .libr/$$FILE ; \
 		(cd .libr/$$FILE ; ${AR} x *.a ; rm -f *.a ) ; \
 		done
-	${AR} qv libr.a `find .libr/ | grep '\\.o$$'`
+	cd .libr ; ${AR} qv libr.a `find * -iname *.o`
+	mv .libr/libr.a libr.a
+	${RANLIB} libr.a
+	lipo -info libr.a
 	rm -rf .libr
 
 gnu_libr.a: $(shell ls */libr_*.a 2>/dev/null)

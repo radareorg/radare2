@@ -5,7 +5,7 @@ else
 CS_CFLAGS=-I../../shlr/capstone/include
 CS_CFLAGS+=-I../../../shlr/capstone/include
 CS_LDFLAGS=$(SHLR)/capstone/libcapstone.a
-SHARED_OBJ+=${CS_LDFLAGS}
+#SHARED_OBJ+=${CS_LDFLAGS}
 endif
 
 ifeq ($(CS_CFLAGS_INCLUDED),)

@@ -7,6 +7,7 @@ CFLAGS+=-I../../include -Wall ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
 CFLAGS+=-DLIL_ENDIAN=1
 # -D__UNIX__
 CFLAGS+=-DCORELIB
+LDFLAGS+=${LINK}
 
 foo: all
 

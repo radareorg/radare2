@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2015 - pancake */
 
+#include <r_userconf.h>
+#if DEBUGGER
+
 #if TARGET_OS_IPHONE
 #define XNU_USE_PTRACE 0
 #else
@@ -29,9 +32,6 @@
 #include "xnu_excthreads.c"
 #endif
 
-#include "trap_x86.c"
-#include "trap_arm.c"
-
 static thread_t getcurthread (RDebug *dbg, task_t *task) {
 	thread_array_t threads = NULL;
 	unsigned int n_threads = 0;
@@ -45,6 +45,9 @@ static thread_t getcurthread (RDebug *dbg, task_t *task) {
 		eprintf ("THREADS: %d\n", n_threads);
 	return threads[0];
 }
+
+#include "trap_x86.c"
+#include "trap_arm.c"
 
 static bool hwstep_enable(RDebug *dbg, bool enable) {
 	return xnu_native_hwstep_enable (dbg, enable);
@@ -866,3 +869,4 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 	}
 	return list;
 }
+#endif
