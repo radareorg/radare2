@@ -29,3 +29,12 @@ index 034e254..09bd6c3 100644
  ifeq ($(IS_MINGW),1)
  EXT = dll
  AR_EXT = lib
+@@ -322,7 +322,7 @@ else
+ EXT = so
+ VERSION_EXT = $(EXT).$(API_MAJOR)
+ AR_EXT = a
+-$(LIBNAME)_LDFLAGS += -Wl,-soname,lib$(LIBNAME).$(VERSION_EXT)
++#$(LIBNAME)_LDFLAGS += -Wl,-soname,lib$(LIBNAME).$(VERSION_EXT)
+ endif
+ endif
+ endif

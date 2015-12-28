@@ -23,7 +23,7 @@ OBJS+=mangling/microsoft_demangle.o
 OBJS+=mangling/objc.o mangling/cxx.o mangling/msvc.o
 OBJS+=mangling/swift.o mangling/swift-sd.o
 OBJS+=mangling/dlang.o
-OBJS+=pdb/pdb_downloader.o pdb/omap.o pdb/pe.o pdb/gdata.o
+OBJS+=pdb/pdb_downloader.o pdb/omap.o pdb/stream_pe.o pdb/gdata.o
 OBJS+=pdb/fpo.o pdb/dbi.o pdb/tpi.o pdb/stream_file.o pdb/pdb.o
 LINK+=$(SHLR)/java/libr_java.a
 

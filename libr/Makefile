@@ -53,19 +53,19 @@ libr.a:
 	${RANLIB} libr.a
 	rm -rf .libr
 
-AR=xcrun --sdk iphoneos ar
-RANLIB=xcrun --sdk iphoneos ranlib
+__AR=xcrun --sdk iphoneos ar
+__RANLIB=xcrun --sdk iphoneos ranlib
 a:
 	rm -rf .libr
 	mkdir .libr
 	for FILE in */libr_*.a ; do \
 		mkdir -p .libr/$$FILE ; \
 		cp -f $$FILE .libr/$$FILE ; \
-		(cd .libr/$$FILE ; ${AR} x *.a ; rm -f *.a ) ; \
+		(cd .libr/$$FILE ; ${__AR} x *.a ; rm -f *.a ) ; \
 		done
-	cd .libr ; ${AR} qv libr.a `find * -iname *.o`
+	cd .libr ; ${__AR} qv libr.a `find * -iname *.o`
 	mv .libr/libr.a libr.a
-	${RANLIB} libr.a
+	${__RANLIB} libr.a
 	lipo -info libr.a
 	rm -rf .libr
 

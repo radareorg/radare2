@@ -32,6 +32,11 @@ export CFLAGS=-O2
 export USE_SIMULATOR=1
 export RANLIB="xcrun --sdk iphoneos ranlib"
 
+if [ "$1" = "-s" ]; then
+	exec bash
+	exit $?
+fi
+
 if true ; then
 # make clean
 cp -f ${PLGCFG} plugins.cfg

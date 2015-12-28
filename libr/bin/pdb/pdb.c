@@ -4,12 +4,12 @@
 #include <string.h>
 
 #include "types.h"
+#include "stream_pe.h"
 #include "stream_file.h"
 #include "tpi.h"
 #include "dbi.h"
 #include "fpo.h"
 #include "gdata.h"
-#include "pe.h"
 #include "omap.h"
 
 #define PDB2_SIGNATURE "Microsoft C/C++ program database 2.00\r\n\032JG\0\0"

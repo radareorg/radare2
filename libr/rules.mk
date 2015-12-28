@@ -75,6 +75,7 @@ $(LIBAR): ${OBJS}
 ifneq ($(SILENT),)
 	echo "CC_AR $(LIBAR)"
 endif
+	rm -f $(LIBAR)
 	${CC_AR} ${OBJS} ${SHARED_OBJ}
 	${RANLIB} $(LIBAR)
 else

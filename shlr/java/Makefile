@@ -21,13 +21,14 @@ ifneq (,$(findstring mingw32,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
 endif
 
-
 CFLAGS+=-g -ggdb
 CFLAGS+=-I../../libr/include
 LDFLAGS+=-L../../libr/util
 OBJS=code.o class.o ops.o dsojson.o
 
 all: libr_java.a
+
+RANLIB?=ranlib
 
 libr_java.a: ${OBJS}
 	rm -f libr_java.a
