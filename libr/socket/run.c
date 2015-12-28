@@ -204,7 +204,7 @@ static void setASLR(int enabled) {
 }
 
 static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err) {
-#if __UNIX__ && !__ANDROID__
+#if __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK
 	// use PTY to redirect I/O because pipes can be problematic in
 	// case of interactive programs.
 	int fdm;
@@ -626,7 +626,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 }
 
 R_API int r_run_start(RRunProfile *p) {
-#if __APPLE__
+#if __APPLE__ && LIBC_HAVE_FORK
 	posix_spawnattr_t attr = {0};
 	pid_t pid = -1;
 	int ret;
@@ -720,7 +720,10 @@ R_API int r_run_start(RRunProfile *p) {
 			eprintf ("nice not supported for this platform\n");
 #endif
 		}
+// TODO: must be HAVE_EXECVE
+#if LIBC_HAVE_FORK
 		exit (execv (p->_program, (char* const*)p->_args));
+#endif
 	}
 	return 0;
 }

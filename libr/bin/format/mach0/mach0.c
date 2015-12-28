@@ -670,6 +670,14 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			// set OS = ios
 			//eprintf ("[mach0] Requires iOS >= x\n");
 			break;
+		case LC_VERSION_MIN_TVOS:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "version_min_tvos", 0);
+			bin->os = 4;
+			break;
+		case LC_VERSION_MIN_WATCHOS:
+			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "version_min_watchos", 0);
+			bin->os = 3;
+			break;
 		case LC_UUID:
 			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "uuid", 0);
 			{
@@ -1596,6 +1604,8 @@ const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin) {
 	switch (bin->os) {
 	case 1: return "osx";
 	case 2: return "ios";
+	case 3: return "watchos";
+	case 4: return "tvos";
 	}
 	return "darwin";
 }

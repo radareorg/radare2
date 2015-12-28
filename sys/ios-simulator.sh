@@ -1,13 +1,20 @@
 #!/bin/sh
 
 if [ -z "${CPU}" ]; then
-export CPU=arm64+armv7
-export CPU=arm64
-export CPU=armv7
+	export CPU=arm64+armv7
+	export CPU=arm64
+	export CPU=armv7
 fi
 
 export CPU=arm64+armv7
+export CPU=arm64+armv7
 export PLGCFG=plugins.tiny.cfg
+
+export CPU=x86_64
+export SDK=iphonesimulator
+
+export CPU=arm64
+export SDK=appletvos
 
 export BUILD=1
 PREFIX="/usr"

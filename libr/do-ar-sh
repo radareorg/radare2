@@ -12,7 +12,12 @@ rm -rf ${TMP}
 mkdir -p ${TMP}
 for a in ${LIBS} ; do
 	${RANLIB} $a
-	ARCHS=`lipo -info $a | cut -d : -f 3-`
+	file "$a" | grep -q universal
+	if [ $? = 0 ]; then
+		ARCHS=`lipo -info $a | cut -d : -f 3-`
+	else
+		ARCHS=""
+	fi
 	if [ -n "${ARCHS}" ]; then
 		for b in ${ARCHS} ; do
 			mkdir -p "$TMP/$a/$b"
@@ -20,6 +25,7 @@ for a in ${LIBS} ; do
 			lipo -thin $b -output $a.$b $a
 			echo "cd $TMP/$a/$b : ar x $ORIG"
 			( cd $TMP/$a/$b ; ar x $ORIG )
+			rm -f $a.$b
 		done
 	else
 		mkdir -p "${TMP}/${a}"

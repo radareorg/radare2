@@ -3,12 +3,6 @@
 #include <r_util.h>
 #include <signal.h>
 
-#if __IPHONE_8_0 && TARGET_OS_IPHONE
-#define LIBC_HAVE_SYSTEM 0
-#else
-#define LIBC_HAVE_SYSTEM 1
-#endif
-
 static int enabled = 0;
 static int disabled = 0;
 
@@ -77,6 +71,7 @@ R_API int r_sandbox_system (const char *x, int n) {
 		eprintf ("sandbox: system call disabled\n");
 		return -1;
 	}
+#if LIBC_HAVE_SPAWN
 #if LIBC_HAVE_SYSTEM
 	if (n) return system (x);
 	return execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
@@ -119,6 +114,7 @@ R_API int r_sandbox_system (const char *x, int n) {
 	}
 	execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
 	exit (1);
+#endif
 #endif
 	return -1;
 }

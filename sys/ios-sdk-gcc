@@ -10,7 +10,9 @@ CPU=`echo $CPU | sed -e 's,+, ,g'`
 for a in `IFS=+ echo ${CPU}` ; do
 	CPUS="-arch $a ${CPUS}"
 done
-CC="xcrun --sdk iphoneos gcc ${CPUS} -I${IOSINC}"
+[ -z "${SDK}" ] && SDK=iphoneos
+APPLE_SDK=`echo ${SDK} |tr a-z A-Z`
+CC="xcrun --sdk ${SDK} gcc ${CPUS} -DAPPLE_SDK_${APPLE_SDK}=1 -I${IOSINC}"
 echo $CC $*
 #CC="xcrun --sdk iphoneos gcc -arch arm64"
 ${CC} $*

@@ -118,7 +118,11 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 #else
 	pipe (r2p->input);
 	pipe (r2p->output);
+#if LIBC_HAVE_FORK
 	r2p->child = fork ();
+#else
+	r2p->child = -1;
+#endif
 	if (r2p->child == -1) {
 		r2p_close (r2p);
 		return NULL;

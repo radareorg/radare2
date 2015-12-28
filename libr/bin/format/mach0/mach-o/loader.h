@@ -296,6 +296,12 @@ struct load_command {
 #define LC_SOURCE_VERSION 0x2A /* source version used to build binary */
 #define LC_DYLIB_CODE_SIGN_DRS 0x2B /* Code signing DRs copied from linked dylibs */
 
+/* included in iOS9 for new platforms */
+#define LC_LINKER_OPTION 0x2D /* linker options in MH_OBJECT files */
+#define LC_LINKER_OPTIMIZATION_HINT 0x2E /* optimization hints in MH_OBJECT files */
+#define LC_VERSION_MIN_TVOS 0x2F /* build for AppleTV min OS version */
+#define LC_VERSION_MIN_WATCHOS 0x30 /* build for Watch min OS version */
+
 
 /*
  * A variable length string in a load command is represented by an lc_str

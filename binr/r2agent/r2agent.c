@@ -54,7 +54,11 @@ int main(int argc, char **argv) {
 	if (optind != argc)
 		return usage (1);
 	if (dodaemon) {
+#if LIBC_HAVE_FORK
 		int pid = fork ();
+#else
+		int pid = -1;
+#endif
 		if (pid >0) {
 			printf ("%d\n", pid);
 			return 0;

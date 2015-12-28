@@ -120,6 +120,7 @@ clean: rmd
 
 distclean mrproper:
 	-rm -f `find . -type f -name '*.d'`
+	rm -f `find . -type f -name '*.o'`
 	for DIR in libr binr shlr ; do ( cd "$$DIR" ; ${MAKE} mrproper) ; done
 	rm -f config-user.mk plugins.cfg libr/config.h
 	rm -f libr/include/r_userconf.h libr/config.mk

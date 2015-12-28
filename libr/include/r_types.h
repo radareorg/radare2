@@ -12,6 +12,18 @@
 #undef mips
 #define mips mips
 
+#if __IPHONE_8_0 && TARGET_OS_IPHONE
+#define LIBC_HAVE_SYSTEM 0
+#else
+#define LIBC_HAVE_SYSTEM 1
+#endif
+
+#if APPLE_SDK_APPLETVOS || APPLE_SDK_WATCHOS
+#define LIBC_HAVE_FORK 0
+#else
+#define LIBC_HAVE_FORK 1
+#endif
+
 #ifdef __GNUC__
 #  define UNUSED_FUNCTION(x) __attribute__((__unused__)) UNUSED_ ## x
 #else

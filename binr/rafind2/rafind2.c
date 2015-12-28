@@ -110,7 +110,7 @@ static int rafind_open(char *file) {
 			" -e search.from=%"PFMT64d
 			" %s -qnc/m '%s'",
 			align, from, tostr, file);
-		system (cmd);
+		r_sandbox_system (cmd, 1);
 		free (cmd);
 		free (tostr);
 		return 0;
