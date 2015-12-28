@@ -2087,37 +2087,61 @@ static void handle_print_esil_anal_fini(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_bbline(RCore *core, RDisasmState *ds) {
-	if (ds->show_bbline) {
-		bool has_line = false;
-		if (ds->line && strchr (ds->line, '>')) {
+	if (!ds->show_bbline) return;
+	bool has_line = false;
+	if (ds->line && strchr (ds->line, '>')) {
+		has_line = true;
+	} else {
+		switch (ds->analop.type) {
+		case R_ANAL_OP_TYPE_RET:
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_UJMP:
 			has_line = true;
-		} else {
-			switch (ds->analop.type) {
-			case R_ANAL_OP_TYPE_RET:
-			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_CJMP:
-			case R_ANAL_OP_TYPE_UJMP:
-				has_line = true;
-				break;
-			}
+			break;
 		}
-		if (has_line) {
-			handle_print_pre (core, ds, true);
+	}
+	if (has_line) {
+		handle_print_pre (core, ds, true);
 
-			ds->at += ds->analop.size;
-			handle_update_ref_lines (core, ds);
-			if (ds->line) {
-				r_str_replace_char (ds->line, '>', ' ');
-				r_str_replace_char (ds->line, '<', ' ');
-				r_str_replace_char (ds->line, '-', ' ');
-				r_str_replace_char (ds->line, '=', ' ');
-				r_str_replace_char (ds->line, '.', ' ');
-				r_str_replace_char (ds->line, '`', '|');
-			}
+		ds->at += ds->analop.size;
+		handle_update_ref_lines (core, ds);
+		if (!ds->line) {
 			handle_print_lines_left (core, ds);
-
 			r_cons_printf("|\n");
+			return;
 		}
+
+		if (ds->show_utf8) {
+			RCons *c = core->cons;
+			ds->line = r_str_replace (ds->line,
+						  c->vline[ARROW_LEFT],
+						  " ", 1);
+			ds->line = r_str_replace (ds->line,
+						  c->vline[ARROW_RIGHT],
+						  " ", 1);
+			ds->line = r_str_replace (ds->line,
+						  c->vline[LINE_UP],
+						  " ", 1);
+			ds->line = r_str_replace (ds->line,
+						  c->vline[LINE_HORIZ],
+						  " ", 1);
+			ds->line = r_str_replace (ds->line,
+						  c->vline[LUP_CORNER],
+						  " ", 1);
+			ds->line = r_str_replace (ds->line,
+						  c->vline[LDWN_CORNER],
+						  c->vline[LINE_VERT], 1);
+		} else {
+			r_str_replace_char (ds->line, '>', ' ');
+			r_str_replace_char (ds->line, '<', ' ');
+			r_str_replace_char (ds->line, '-', ' ');
+			r_str_replace_char (ds->line, '=', ' ');
+			r_str_replace_char (ds->line, '.', ' ');
+			r_str_replace_char (ds->line, '`', '|');
+		}
+		handle_print_lines_left (core, ds);
+		r_cons_printf("|\n");
 	}
 }
 
