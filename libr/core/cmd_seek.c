@@ -11,7 +11,7 @@ static void __init_seek_line (RCore *core) {
 	if (lines == -1) {
 		eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
 	} else {
-		eprintf ("Found %d lines\n", lines);
+		eprintf ("Found %d lines\n", lines-1);
 	}
 }
 
