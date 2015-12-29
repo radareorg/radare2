@@ -79,7 +79,7 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 		return -1;
 	}
 
-	line_count = 1;
+	line_count = start_addr ? 0 : 1;
 	r_cons_break (NULL, NULL);
 	buf = malloc (bsz);
 	if (!buf) return -1;
