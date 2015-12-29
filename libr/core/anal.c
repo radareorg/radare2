@@ -175,9 +175,11 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 				if (!strncmp (f->name, "sym.imp.", 8)) {
 					free (do_call);
 					do_call = strdup (f->name+8);
+					break;
 				} else if (!strncmp (f->name, "reloc.", 6)) {
 					free (do_call);
 					do_call = strdup (f->name+6);
+					break;
 				}
 			}
 		}
