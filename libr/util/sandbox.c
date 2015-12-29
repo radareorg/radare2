@@ -71,7 +71,7 @@ R_API int r_sandbox_system (const char *x, int n) {
 		eprintf ("sandbox: system call disabled\n");
 		return -1;
 	}
-#if LIBC_HAVE_SPAWN
+#if LIBC_HAVE_FORK
 #if LIBC_HAVE_SYSTEM
 	if (n) return system (x);
 	return execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
