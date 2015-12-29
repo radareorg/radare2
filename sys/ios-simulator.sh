@@ -13,6 +13,19 @@ export PLGCFG=plugins.tiny.cfg
 export CPU=x86_64
 export SDK=iphonesimulator
 
+#export CPU=arm64
+export CPU=x86_64
+export SDK=appletvsimulator
+
+export CPU=x86_64
+export SDK=watchsimulator
+
+export CPU=armv7k
+export SDK=watchos
+
+export CPU=i386
+export SDK=watchsimulator
+
 export CPU=arm64
 export SDK=appletvos
 
