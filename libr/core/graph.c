@@ -2635,7 +2635,8 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
 					" .            - center graph to the current node\n"
 					" :cmd         - run radare command\n"
-					" ;            - toggle asm.comments\n"
+					" '            - toggle asm.comments\n"
+					" ;            - add comment in current basic block\n"
 					" /            - highlight text\n"
 					" Page-UP/DOWN - go to the top/bottom of the canvas\n"
 					" C            - toggle scr.colors\n"
@@ -2698,9 +2699,19 @@ R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interacti
 		case '!':
 			r_core_visual_panels (core);
 			break;
-		case ';':
+		case '\'':
 			r_config_toggle (core->config, "asm.comments");
 			g->need_reload_nodes = true;
+			break;
+		case ';':
+			{
+				char buf[256];
+				r_line_set_prompt ("[comment]> ");
+				if (r_cons_fgets (buf, sizeof (buf) - 1, 0, NULL) > 0) {
+					r_core_cmdf (core, "\"CC %s\"", buf);
+				}
+				g->need_reload_nodes = true;
+			}
 			break;
 		case 'C':
 			r_config_toggle (core->config, "scr.color");
