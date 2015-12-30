@@ -588,6 +588,7 @@ static int cmd_help(void *data, const char *input) {
 		"S","", "Io section manipulation information",
 		"t","", "Cparse types management",
 		"T"," [-] [num|msg]", "Text log utility",
+		"u","", "uname/undo seek/write",
 		"V","", "Enter visual mode (vcmds=visualvisual  keystrokes)",
 		"w"," [str]", "Multiple write operations",
 		"x"," [len]", "Alias for 'px' (print hexadecimal)",

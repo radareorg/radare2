@@ -90,6 +90,38 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	return op;
 }
 
+static int cmd_uname(void *data, const char *input) {
+	const char* help_msg[] = {
+		"Usage:", "u", "uname or undo write/seek",
+		"u", "", "show system uname",
+		"uw", "", "alias for wc (requires: e io.cache=true)",
+		"us", "", "alias for s- (seek history)",
+		NULL};
+	switch (input[0]) {
+	case '?':
+		r_core_cmd_help (data, help_msg);
+		return 1;
+	case 's':
+		r_core_cmdf (data, "s-%s", input+1);
+		return 1;
+	case 'w':
+		r_core_cmdf (data, "wc%s", input+1);
+		return 1;
+	}
+#if __UNIX__
+#include <sys/utsname.h>
+	struct utsname un;
+	uname (&un);
+	r_cons_printf ("%s %s %s %s\n", un.sysname,
+		un.nodename, un.release, un.machine);
+#elif __WINDOWS__
+	r_cons_printf ("windows\n");
+#else
+	r_cons_printf ("unknown\n");
+#endif
+	return 0;
+}
+
 static int cmd_alias(void *data, const char *input) {
 	int i;
 	char *def, *q, *desc, *buf;
@@ -2385,5 +2417,6 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "/",        "search kw, pattern aes", &cmd_search);
 	r_cmd_add (core->rcmd, "-",        "open cfg.editor and run script", &cmd_stdin);
 	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
+	r_cmd_add (core->rcmd, "u",        "uname/undo", &cmd_uname);
 	r_cmd_add (core->rcmd, "quit",     "exit program session", &cmd_quit);
 }
