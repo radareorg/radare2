@@ -72,7 +72,7 @@ static inline _sfsyscall0( pid_t, getpid )
 // sendfile
 static inline _sfsyscall3(int, socket, int,domain, int,type, int,protocol)
 static inline _sfsyscall3(int,connect, int,sockfd, const struct sockaddr *,serv_addr, socklen_t,addrlen)
-static inline _sfsyscall3(int, accept, int,s, struct sockaddr *,addr, socklen_t,addrlen);
+static inline _sfsyscall3(int, accept, int,s, struct sockaddr *,addr, socklen_t *,addrlen);
 static inline _sfsyscall6(ssize_t, sendto, int, s, const void *, msg, size_t, len, int, flags, const struct sockaddr *, to, socklen_t, tolen)
 static inline _sfsyscall6(ssize_t, recvfrom, int, s, void * , buf, size_t, len, int, flags, struct sockaddr * , from, socklen_t * , fromlen)
 // sendmsg
