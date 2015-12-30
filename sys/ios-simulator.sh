@@ -29,6 +29,9 @@ export SDK=watchsimulator
 export CPU=arm64
 export SDK=appletvos
 
+export CPU=armv7k
+export SDK=watchos
+
 export BUILD=1
 PREFIX="/usr"
 # PREFIX=/var/mobile
@@ -43,7 +46,7 @@ fi
 
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
 export PATH=$(pwd)/sys:${PATH}
-export CC=$(pwd)/sys/ios-sdk-gcc
+export CC="$(pwd)/sys/ios-sdk-gcc"
 # set only for arm64, otherwise it is armv7
 # select ios sdk version
 export IOSVER=9.1
