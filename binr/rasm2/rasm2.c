@@ -125,10 +125,10 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 		len = clen;
 
 	if (hex == 2) {
-		RAnalOp aop;
+		RAnalOp aop = {0};
 		while (ret < len) {
 			aop.size = 0;
-			if (r_anal_op (anal, &aop, offset, data + ret, len - ret)) {
+			if (r_anal_op (anal, &aop, offset, data + ret, len - ret) > 0) {
 				printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
 			}
 			if (aop.size<1) {
@@ -368,6 +368,7 @@ int main(int argc, char *argv[]) {
 	}
 	r_asm_set_cpu (a, cpu);
 	r_asm_set_bits (a, (env_bits && *env_bits)? atoi (env_bits): bits);
+	r_anal_set_bits (anal, (env_bits && *env_bits)? atoi (env_bits): bits);
 	a->syscall = r_syscall_new ();
 	r_syscall_setup (a->syscall, arch, kernel, bits);
 
