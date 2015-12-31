@@ -1,6 +1,7 @@
 return strdup (
+"=SP	r13\n"
+"=LR	r14\n"
 "=PC	r15\n"
-"=SP	r14\n" // XXX
 "=A0	r0\n"
 "=A1	r1\n"
 "=A2	r2\n"

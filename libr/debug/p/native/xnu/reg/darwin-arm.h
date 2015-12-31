@@ -16,6 +16,7 @@ VFP: FPU
 #endif
 return strdup (
 "=PC	r15\n"
+"=LR	r14\n"
 "=SP	r13\n"
 "=BP	fp\n"
 "=A0	r0\n"

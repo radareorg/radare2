@@ -978,8 +978,9 @@ static int set_reg_profile(RAnal *anal) {
 	} else {
 		p = \
 		"=PC	r15\n"
-		"=SP	r14\n" // XXX
-		"=BP	fp\n" // XXX
+		"=LR	r14\n"
+		"=SP	r13\n"
+		"=BP	fp\n"
 		"=A0	r0\n"
 		"=A1	r1\n"
 		"=A2	r2\n"

@@ -24,6 +24,7 @@ enum {
 	R_REG_NAME_SP, // stack pointer
 	R_REG_NAME_SR, // status register
 	R_REG_NAME_BP, // base pointer
+	R_REG_NAME_LR, // link register
 	/* args */
 	R_REG_NAME_A0, // arguments
 	R_REG_NAME_A1,
