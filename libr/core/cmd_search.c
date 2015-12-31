@@ -2172,7 +2172,7 @@ reread:
 		dosearch = true;
 		}
 		break;
-	default:{
+	case '?':{
 		const char* help_msg[] = {
 			"Usage:", "/[amx/] [arg]", "Search stuff (see 'e??search' for options)",
 			"/"," foo\\x00", "search for string 'foo\\0'",
@@ -2217,6 +2217,9 @@ reread:
 			NULL};
 		r_core_cmd_help (core, help_msg);
 		}
+		break;
+	default:
+		eprintf ("See /? for help.\n");
 		break;
 	}
 	searchhits = 0;
