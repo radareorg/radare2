@@ -5,13 +5,13 @@
 .Nd radare2 assembler and disassembler tool
 .Sh SYNOPSIS
 .Nm rasm2
-.Op Fl dDfBCLevw
-.Op Fl F Ar in:out
-.Op Fl o Ar offset
-.Op Fl O Ar ofile
+.Op Fl BdDeEfCLvw
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl c Ar cpu
+.Op Fl F Ar in:out
+.Op Fl o Ar offset
+.Op Fl O Ar ofile
 .Op Fl s Ar syntax
 .Op Fl i Ar int
 .Op Fl l Ar int
@@ -36,6 +36,8 @@ Disassemble hexpair bytes. rasm2 \-d 9090
 Disassemble showing hexpair and opcode
 .It Fl e
 Use big endian (or swap endianness if used more than once)
+.It Fl E
+Output disassembled instructions in ESIL format.
 .It Fl f
 Read data from file instead of ARG.
 .It Fl F Ar in:out
