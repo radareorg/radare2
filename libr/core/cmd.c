@@ -90,6 +90,10 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	return op;
 }
 
+#if __UNIX__
+#include <sys/utsname.h>
+#endif
+
 static int cmd_uname(void *data, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "u", "uname or undo write/seek",
@@ -109,7 +113,6 @@ static int cmd_uname(void *data, const char *input) {
 		return 1;
 	}
 #if __UNIX__
-#include <sys/utsname.h>
 	struct utsname un;
 	uname (&un);
 	r_cons_printf ("%s %s %s %s\n", un.sysname,
