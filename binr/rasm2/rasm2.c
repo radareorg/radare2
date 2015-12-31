@@ -352,11 +352,7 @@ int main(int argc, char *argv[]) {
 			ret = 0;
 			goto beach;
 		}
-		if (!r_anal_use (anal, arch)) {
-			eprintf ("rasm2: Unknown anal plugin '%s'\n", arch);
-			ret = 0;
-			goto beach;
-		}
+		r_anal_use (anal, arch);
 		if (!strcmp (arch, "bf"))
 			ascii = 1;
 	} else if (env_arch) {
