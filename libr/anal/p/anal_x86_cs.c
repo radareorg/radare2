@@ -1241,12 +1241,12 @@ SETL/SETNGE
 				} else {
 					if (a1) {
 						esilprintf (op, "%s,%s,*=", a1, a0);
-						free (a1);
 					} else {
 						esilprintf (op, "%s,%s,*=", a0, "rax");
 					}
 				}
 				free (a0);
+				free (a1);
 			}
 			break;
 		case X86_INS_MUL:

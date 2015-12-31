@@ -131,9 +131,13 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 	env ("R2PIPE_OUT", r2p->output[1]);
 
 	if (r2p->child) {
-		eprintf ("Child is %d\n", r2p->child);
 		char ch;
-		read (r2p->output[0], &ch, 1);
+		eprintf ("Child is %d\n", r2p->child);
+		if (read (r2p->output[0], &ch, 1) != 1) {
+			eprintf ("Failed to read 1 byte\n");
+			r2p_close (r2p);
+			return NULL;
+		}
 	} else {
 		int rc = 0;
 		if (cmd && *cmd) {
@@ -243,10 +247,11 @@ R_API char *r2p_read(R2Pipe *r2p) {
 				buf = NULL;
 				break;
 			}
+			buf = newbuf;
 		}
 		if (rv != 1 || !buf[i]) break;
 	}
-	buf[i] = 0;
+	if (buf) buf[i] = 0;
 #endif
 	return buf;
 }

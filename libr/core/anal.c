@@ -188,7 +188,7 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 			RFlagItem *item = r_flag_get (core->flags, "main");
 			free (do_call);
 			// if referenced from entrypoint. this should be main
-			if (item->offset == addr)
+			if (item && item->offset == addr)
 				return strdup ("main"); // main?
 			return strdup ("parse_args"); // main?
 		}

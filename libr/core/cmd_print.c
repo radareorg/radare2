@@ -1381,7 +1381,7 @@ static void printraw (RCore *core, int len, int mode) {
 static void disasm_strings(RCore *core, const char *input) {
 #define MYPAL(x) (core->cons && core->cons->pal.x)? core->cons->pal.x: ""
 	const char *linecolor = NULL;
-	char *ox, *qo, *string;
+	char *ox, *qo, *string = NULL;
 	char *line, *s, *str;
 	char *string2 = NULL;
 	int i, count;
@@ -1400,13 +1400,14 @@ static void disasm_strings(RCore *core, const char *input) {
 	}
 	count = r_str_split (s, '\n');
 	if (!line || !*line || count <1) {
+		free (line);
 		return;
 	}
 	for (i=0; i<count; i++) {
 		ut64 addr = UT64_MAX;
 		ox = strstr (line, "0x");
 		qo = strstr (line, "\"");
-		string = NULL;
+		R_FREE (string);
 		if (ox) {
 			addr = r_num_get (NULL, ox);
 		}
@@ -1417,7 +1418,7 @@ static void disasm_strings(RCore *core, const char *input) {
 				if (len>2) {
 					string = r_str_ndup (qo, len+2);
 				}
-				linecolor = MYPAL(comment);
+				linecolor = MYPAL (comment);
 			}
 		}
 		ox = strstr (line, "; 0x");
@@ -1434,8 +1435,8 @@ static void disasm_strings(RCore *core, const char *input) {
 		str = strstr (line, " str.");
 		if (str) {
 			char *qoe = NULL;
-			if (!qoe) qoe = strchr(str+1, '\x1b');
-			if (!qoe) qoe = strchr(str+1, ';');
+			if (!qoe) qoe = strchr (str+1, '\x1b');
+			if (!qoe) qoe = strchr (str+1, ';');
 			if (!qoe) qoe = strchr (str+1, ' ');
 			if (qoe) {
 				string2 = r_str_ndup (str+1, qoe-str-1);
@@ -1446,8 +1447,10 @@ static void disasm_strings(RCore *core, const char *input) {
 				string = string2;
 				string2 = NULL;
 			}
+#if 0
 			if (string && string2 && !strcmp (string, string2)) {
 			}
+#endif
 		}
 		str = strstr (line, "sym.");
 		if (!str) str = strstr (line, "fcn.");
@@ -1501,6 +1504,8 @@ static void disasm_strings(RCore *core, const char *input) {
 		line = line + strlen (line) + 1;
 	}
 	//r_cons_printf ("%s", s);
+	free (string2);
+	free (string);
 	free (s);
 }
 

@@ -88,6 +88,7 @@ R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kin
 				}
 			}
 		}
+		r_list_free (list);
 	}
 	switch (kind) {
 	case 'a':
@@ -158,11 +159,9 @@ R_API int r_anal_var_delete (RAnal *a, ut64 addr, const char kind, int scope, in
 
 R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int kind, const char *name) {
 	char *varlist;
-	RList *list;
 	if (!a || !fcn) {
 		return false;
 	}
-	list = r_list_new ();
 	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x".%c",
 		fcn->addr, kind), 0);
 	if (varlist) {

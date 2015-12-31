@@ -1226,9 +1226,9 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 static RBinElfSection* get_sections_from_phdr (struct Elf_(r_bin_elf_obj_t) *bin) {
 	RBinElfSection *ret;
-	int i,num_sections = 0;
+	int i, num_sections = 0;
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
-	ut64 reldynsz, relasz, pltgotsz;
+	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
 	if (!bin || !bin->phdr || bin->ehdr.e_phnum == 0)
 		return NULL;
 
@@ -1472,10 +1472,9 @@ done:
 			bin->imports_by_ord = NULL;
 	} else if (type == R_BIN_ELF_SYMBOLS && !bin->symbols_by_ord_size && ret_ctr) {
 		bin->symbols_by_ord_size = ret_ctr;
-		if (ret_ctr > 0)
+		if (ret_ctr > 0) {
 			bin->symbols_by_ord = (RBinSymbol**)calloc (ret_ctr, sizeof (RBinSymbol*));
-		else
-			bin->imports_by_ord = NULL;
+		}
 	}
 	return ret;
 beach:

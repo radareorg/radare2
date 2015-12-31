@@ -194,9 +194,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 		if (p->hint) {
 			int immbase = p->hint->immbase;
 			char num[256], *n;
-			strcpy (num, ptr);
+			strncpy (num, ptr, sizeof (num)-2);
 			for (n = num; *n; n++) {
-				if (*n>='0' && *n<='9')
+				if (IS_NUMBER (*n))
 					continue;
 				if (*n=='x') continue;
 				break;

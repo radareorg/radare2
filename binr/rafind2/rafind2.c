@@ -145,8 +145,9 @@ static int rafind_open(char *file) {
 		//	fprintf(stderr, "Error reading at 0x%08"PFMT64x"\n", cur);
 			return 1;
 		}
-		if (ret != bsize)
+		if (ret != bsize && ret > 0) {
 			bsize = ret;
+		}
 
 		if (r_search_update (rs, &cur, buf, ret) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x"\n", cur);

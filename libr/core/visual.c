@@ -1513,7 +1513,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_line_set_prompt ("comment: ");
 		strcpy (buf, "\"CC ");
 		i = strlen (buf);
-		if (r_cons_fgets (buf+i, sizeof (buf)-i-1, 0, NULL) > 0) {
+		if (r_cons_fgets (buf + i, sizeof (buf) - i - 1, 0, NULL) > 0) {
 			ut64 addr, orig;
 			addr = orig = core->offset;
 			if (curset) {
@@ -1521,15 +1521,15 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				r_core_seek (core, addr, 0);
 				r_core_cmdf (core, "s 0x%"PFMT64x, addr);
 			}
-			if (!strcmp (buf+i, "-")) {
+			if (!strcmp (buf + i, "-")) {
 				strcpy (buf, "CC-");
 			} else {
 				switch (buf[i]) {
 				case '-':
-					strncpy (buf, "\"CC-", 4);
+					memcpy (buf, "\"CC-", 4);
 					break;
 				case '!':
-					strncpy (buf, "\"CC!", 4);
+					memcpy (buf, "\"CC!", 4);
 					break;
 				default:
 					memcpy (buf, "\"CC ", 4);

@@ -93,8 +93,10 @@ static RList* sections(RBinFile *arch) {
 	RBinSection* s = R_NEW0 (RBinSection);
 	ut64 sz = r_buf_size (arch->buf);
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
+		free (s);
 		return NULL;
+	}
 	strcpy (s->name, "ROM");
 	s->paddr = 0;
 	s->vaddr = 0x8000000;
