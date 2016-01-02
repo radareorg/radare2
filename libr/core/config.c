@@ -1332,7 +1332,7 @@ static int cb_linesto(void *user, void *data) {
 		core->print->lines_cache_sz = -1; //r_core_lines_initcache (core, from, to);
 		return false;
 	}
-	if (to > io_sz) {
+	if (to > from+io_sz) {
 		eprintf ("ERROR: \"lines.to\" can't exceed addr 0x%08"PFMT64x
 			" 0x%08"PFMT64x" %d\n", from, to, io_sz);
 		return true;
