@@ -480,7 +480,14 @@ if [ "$HOST_OS" = "openbsd" ]; then
 USEROSTYPE="bsd"
 else
 if [ "$HOST_OS" = "darwin" ]; then
-USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
+	USEROSTYPE="darwin"; 
+	[ -z "$R2_XNU_PTRACE" ] && R2_XNU_PTRACE=1
+	if [ "$R2_XNU_PTRACE" == "1" ]; then
+		CFLAGS+=-DXNU_USE_PTRACE=1
+	else
+		CFLAGS+=-DXNU_USE_PTRACE=0
+	fi
+fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
 if [ "$LIBVERSION" = "xxx" ]; then
 LIBVERSION="$VERSION"; fi
 SEDFLAGS=" -e '"

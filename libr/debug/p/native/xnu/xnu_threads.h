@@ -35,7 +35,6 @@
 #define RETURN_ON_MACH_ERROR(msg, retval)\
         if (kr != KERN_SUCCESS) {mach_error (msg, kr); return ((retval));}
 
-//FIXME include this in RDebug How?? sdb??
 typedef struct _exception_info {
 	exception_mask_t masks[EXC_TYPES_COUNT];
 	mach_port_t ports[EXC_TYPES_COUNT];
@@ -43,6 +42,7 @@ typedef struct _exception_info {
 	thread_state_flavor_t flavors[EXC_TYPES_COUNT];
 	mach_msg_type_number_t count;
 	pthread_t thread;
+	mach_port_t exception_port;
 } xnu_exception_info;
 
 typedef struct _xnu_thread {
@@ -61,5 +61,27 @@ typedef struct _xnu_thread {
 	int flavor;
 	unsigned int count;
 } xnu_thread_t;
+
+typedef struct _exc_msg {
+	mach_msg_header_t hdr;
+	/* start of the kernel processed data */
+	mach_msg_body_t msg_body;
+	mach_msg_port_descriptor_t thread;
+	mach_msg_port_descriptor_t task;
+	/* end of the kernel processed data */
+	NDR_record_t NDR;
+	exception_type_t exception;
+	mach_msg_type_number_t code_cnt;
+	mach_exception_data_t code;
+	/* some times RCV_TO_LARGE probs */
+	char pad[512];
+} exc_msg;
+
+typedef struct _rep_msg {
+	mach_msg_header_t hdr;
+	NDR_record_t NDR;
+	kern_return_t ret_code;
+} rep_msg;
+
 
 #endif

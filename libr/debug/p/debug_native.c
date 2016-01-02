@@ -907,6 +907,8 @@ static int r_debug_native_init (RDebug *dbg) {
 	dbg->h->desc = r_debug_desc_plugin_native;
 #if __WINDOWS__ && !__CYGWIN__
 	return w32_dbg_init ();
+#elif __APPLE__
+	return xnu_init ();
 #else
 	return true;
 #endif

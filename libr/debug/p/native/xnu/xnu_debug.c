@@ -3,19 +3,11 @@
 #include <r_userconf.h>
 #if DEBUGGER
 
-#if TARGET_OS_IPHONE
-#define XNU_USE_PTRACE 0
-#else
-#define XNU_USE_PTRACE 1
-#endif
-
-#if 1
-#undef XNU_USE_PTRACE
-#define XNU_USE_PTRACE 1
+#if XNU_USE_PTRACE
 #define XNU_USE_EXCTHR 0
+#else
+#define XNU_USE_EXCTHR 1
 #endif
-
-
 // ------------------------------------
 
 #include <r_debug.h>
@@ -25,18 +17,23 @@
 #include <r_anal.h>
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
+
+//we will this pipe to communicate with xnu_exception_thread
+static int exc_pipe[2];
+
 #include "xnu_debug.h"
 #include "xnu_threads.c"
-
 #if XNU_USE_EXCTHR
 #include "xnu_excthreads.c"
 #endif
 
-static thread_t getcurthread (RDebug *dbg, task_t *task) {
+//TODO dbg->tid is update accordingly for mulithreaded applications??
+
+
+static thread_t getcurthread (RDebug *dbg) {
 	thread_array_t threads = NULL;
 	unsigned int n_threads = 0;
 	task_t t = pid_to_task (dbg->pid);
-	if (task) *task = t;
 	if (task_threads (t, &threads, &n_threads))
 		return -1;
 	if (n_threads < 1)
@@ -46,11 +43,26 @@ static thread_t getcurthread (RDebug *dbg, task_t *task) {
 	return threads[0];
 }
 
-#include "trap_x86.c"
-#include "trap_arm.c"
 
-static bool hwstep_enable(RDebug *dbg, bool enable) {
-	return xnu_native_hwstep_enable (dbg, enable);
+static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
+	RListIter *it = NULL;
+	if (!dbg) return false;
+	if (!xnu_update_thread_list (dbg)) {
+		eprintf ("Failed to update thread_list xnu_reg_write\n");
+		return NULL;
+	}
+	//TODO get the current thread
+	it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
+			  (RListComparator)&thread_find);
+	if (it)
+		return (xnu_thread_t *)it->data;
+	tid = dbg->tid = getcurthread (dbg);
+	it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
+			  (RListComparator)&thread_find);
+	if (it)
+		return (xnu_thread_t *)it->data;
+	eprintf ("Thread not found xnu_reg_write\n");
+	return NULL;
 }
 
 static task_t task_for_pid_workaround(int Pid) {
@@ -61,10 +73,12 @@ static task_t task_for_pid_workaround(int Pid) {
 	mach_msg_type_number_t numTasks = 0;
 	kern_return_t kr;
 	int i;
-	if (Pid == -1) return -1;
+	if (Pid == -1)
+		return -1;
 
 	kr = processor_set_default (myhost, &psDefault);
-	if (kr != KERN_SUCCESS) return -1;
+	if (kr != KERN_SUCCESS)
+		return -1;
 
 	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
@@ -81,114 +95,109 @@ static task_t task_for_pid_workaround(int Pid) {
 	}
 
 	/* kernel task */
-	if (Pid == 0) return tasks[0];
+	if (Pid == 0)
+		return tasks[0];
 
 	for (i = 0; i < numTasks; i++) {
 		int pid;
 		pid_for_task (i, &pid);
-		if (pid == Pid) return (tasks[i]);
+		if (pid == Pid)
+			return (tasks[i]);
 	}
 	return -1;
 }
 
 bool xnu_step(RDebug *dbg) {
-	int ret = false;
-#if __arm__ || __arm64__ || __aarch64__
-	// op-not-permitted ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0); //SIGINT
-	task_t task;
-	hwstep_enable (dbg, true);
-	task = pid_to_task (dbg->pid);
-	if (task<1) {
-		perror ("pid_to_task");
-		eprintf ("step failed on task %d for pid %d\n", task, dbg->tid);
-	}
-	if (task_resume (task) != KERN_SUCCESS) {
-		perror ("thread_resume");
-	} else {
-		ret = true;
-		waitpid (dbg->pid, NULL, 0);
-	}
-#if 0
-	if (thread_resume (dbg->tid) == KERN_SUCCESS) {
-		ret = true;
-	} else perror ("thread_resume");
-#endif
-	hwstep_enable (dbg, false);
-//	eprintf ("thu %d\n", ptrace (PT_THUPDATE, dbg->pid, (void*)0, 0));
-#else
 #if XNU_USE_PTRACE
-	ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
+	int ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
 	if (!ret) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 	}
+	return ret;
+
 #else
-#if 0
-	task_t task;
-	thread_t th = getcurthread (dbg, &task);
-	task_resume (task);
-#endif
+	int ret = 0;
+	int exc;
+	//we must find a way to get the current thread not just the firt one
 	task_t task = pid_to_task (dbg->pid);
-	if (task<1) {
+	task_suspend (task);
+	if (task < 1) {
 		perror ("pid_to_task");
 		eprintf ("step failed on task %d for pid %d\n", task, dbg->tid);
+		return false;
 	}
-	hwstep_enable (dbg, true);
-	if (task_resume (task) != KERN_SUCCESS) {
-		perror ("thread_resume");
-	} else {
-		ret = true;
-		waitpid (dbg->pid, NULL, 0);
+	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
+	if (!th)
+		return false;
+	ret = set_trace_bit (dbg, th);
+	if (!ret) {
+		eprintf ("xnu_step modificy_trace_bit error\n");
+		return false;
 	}
-#if 0
-	if (thread_resume (dbg->tid) == KERN_SUCCESS) {
-		ret = true;
-	} else perror ("thread_resume");
-	int rc = ptrace (PT_THUPDATE, dbg->pid, thport, );
-	if (rc) perror ("PT_THUPDATE");
-#endif
-	hwstep_enable (dbg, false);
-#endif
-#endif
+	thread_resume (th->tid);
 	return ret;
+#endif
 }
 
 int xnu_attach(RDebug *dbg, int pid) {
-//this should be necessary
 #if XNU_USE_PTRACE
-	//XXX it seems that PT_ATTACH will be deprecated
-	//but using PT_ATTACHEXC throw errors
-	if (ptrace (PT_ATTACH, pid, 0, 0) == -1) {
-		perror ("ptrace (PT_ATTACH)");
+        if (ptrace (PT_ATTACH, pid, 0, 0) == -1) {
+                perror ("ptrace (PT_ATTACH)");
+                return -1;
+        }
+	return pid;
+#else
+	int ret, exc;
+	task_t task = pid_to_task (pid);
+	dbg->pid = pid;
+	ret = xnu_create_exception_thread (dbg);
+	if (!ret) {
+		eprintf ("error setting up exception thread\n");
 		return -1;
 	}
-	int rc = ptrace (PT_ATTACHEXC, pid, 0, 0);
-	if (rc) perror ("PT_THUPDATE");
-	// TODO: move into attach
-#if XNU_USE_EXCTHR
-	xnu_create_exception_thread(dbg);
-#endif
-#endif
+	if (ptrace (PT_ATTACHEXC, pid, 0, 0) == -1) {
+		perror ("ptrace (PT_ATTACHEXC)");
+		return -1;
+	}
+	usleep(250000);
 	return pid;
+#endif
 }
 
 int xnu_dettach(int pid) {
+#if XNU_USE_PTRACE
 	return ptrace (PT_DETACH, pid, NULL, 0);
+#else
+	//do the cleanup necessary
+	//XXX check for errors
+	(void)xnu_restore_exception_ports (pid);
+	ptrace (PT_DETACH, pid, NULL, 0);
+#endif
 }
 
 int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
-#if __arm__ || __arm64__ || __aarch64__
-	task_t task;
-	thread_t th = getcurthread (dbg, &task);
-	task_resume (task);
-	thread_resume (th);
-	//return xnu_dettach (pid);
-	return true;
-#else
+#if XNU_USE_PTRACE
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	task_resume (pid_to_task (pid));
 	return ptrace (PT_CONTINUE, pid, (void*)(size_t)1,
 			(int)(size_t)data) == 0;
+#else
+	xnu_thread_t *th  = get_xnu_thread (dbg, getcurthread (dbg));
+	if (!th) {
+		eprintf ("failed to get thread in xnu_continue\n");
+		return false;
+	}
+	//disable trace bit if enable
+	if (th->stepping) {
+		if (!clear_trace_bit (dbg, th)) {
+			eprintf ("error clearing trace bit\n");
+			return false;
+		}
+	}
+	task_resume (pid_to_task (pid));
+	thread_resume (th->tid);
+	return true;
 #endif
 }
 
@@ -215,29 +224,12 @@ const char *xnu_reg_profile(RDebug *dbg) {
 #endif
 }
 
-static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
-	task_t task;
-	RListIter *it = NULL;
-	if (!dbg) return false;
-	if (!xnu_update_thread_list (dbg)) {
-		eprintf ("Failed to update thread_list xnu_reg_write\n");
-		return NULL;
-	}
-	//TODO get the current thread
-	it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
-		(RListComparator)&thread_find);
-	if (it) return (xnu_thread_t *)it->data;
-	tid = dbg->tid = getcurthread (dbg, &task);
-	it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
-		(RListComparator)&thread_find);
-	if (it) return (xnu_thread_t *)it->data;
-	eprintf ("Thread not found xnu_reg_write\n");
-	return NULL;
-}
-
+//using getcurthread has some drawbacks. You lose the ability to select
+//the thread you want to write or read from. but how that feature
+//is not implemented yet i don't care so much
 int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	int ret;
-	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
+	bool ret;
+	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	switch (type) {
 	case R_REG_TYPE_DRX:
 		memcpy (&th->drx, buf, R_MIN (size, sizeof (th->drx)));
@@ -254,7 +246,7 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 
 int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	bool ret;
-	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
+	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	switch (type) {
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:
@@ -619,44 +611,10 @@ typedef struct {
 	ut64 image_file_mod_date;
 } DyldImageInfo64;
 
-#if 0
-static int xnu_get_bits (RDebug *dbg) {
-	struct task_dyld_info info;
-	mach_msg_type_number_t count;
-	kern_return_t kr;
-	count = TASK_DYLD_INFO_COUNT;
-	task_t task = pid_to_task (dbg->tid);
-
-	kr = task_info (task, TASK_DYLD_INFO, (task_info_t) &info, &count);
-	if (kr != KERN_SUCCESS) return 0;
-
-	if (info.all_image_info_format == TASK_DYLD_ALL_IMAGE_INFO_64) {
-		return 64;
-	}
-	return 32; // 16 for ARM?
-}
-#endif
 
 // TODO: Implement mach0 size.. maybe copypasta from rbin?
 static int mach0_size (RDebug *dbg, ut64 addr) {
 	return 4096;
-#if 0
-	int size = 4096;
-	ut8 header[MAX_MACH_HEADER_SIZE];
-
-	dbg->iob.read_at (dbg->iob.io, addr, header, sizeof (header));
-	p = first_command;
-	for (cmd_index = 0; cmd_index != header->ncmds; cmd_index++) {
-		const struct load_command * lc = (struct load_command *) p;
-		if (lc->cmd == GUM_LC_SEGMENT) {
-			gum_segment_command_t * sc = (gum_segment_command_t *) lc;
-			size += sc->vmsize;
-		}
-
-		p += lc->cmdsize;
-	}
-	return size;
-#endif
 }
 
 static void xnu_map_free(RDebugMap *map) {
@@ -797,57 +755,31 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 		}
 		{
 			module_name[0] = 0;
-			int ret = proc_regionfilename (tid, address,
-				module_name, sizeof(module_name));
+			int ret = proc_regionfilename (tid, address, module_name,
+						     sizeof (module_name));
 			module_name[ret] = 0;
 		}
-#if 0
-		oldprot = info.protection;
-		oldmaxprot = info.max_protection;
-// contiguous pages seems to hide some map names
-		if (mr) {
-			if (address == mr->addr + mr->size) {
-				if (oldmaxprot == info.max_protection) {
-					contiguous = false;
-				} else if (oldprot != UT32_MAX && oldprot == info.protection) {
-					/* expand region */
-					mr->size += size;
-					contiguous = true;
-				} else {
-					contiguous = false;
-				}
-			} else {
-				contiguous = false;
-			}
-		} else contiguous = false;
-		//if (info.max_protection == oldprot && !contiguous)
-#endif
 		if (true) {
 			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 			char maxperm[32];
 			char depthstr[32];
-			if (depth>0) {
+			if (depth>0)
 				snprintf (depthstr, sizeof (depthstr), "_%d", depth);
-			} else depthstr[0] = 0;
+			else 
+				depthstr[0] = 0;
 
-			if (info.max_protection != info.protection) {
+			if (info.max_protection != info.protection)
 				strcpy (maxperm, r_str_rwx_i (xwr2rwx (
 					info.max_protection)));
-			} else {
+			else
 				maxperm[0] = 0;
-			}
 			// XXX: if its shared, it cannot be read?
 			snprintf (buf, sizeof (buf), "%02x_%s%s%s%s%s%s%s%s",
-				//r_str_rwx_i (xwr2rwx (info.max_protection)), i,
 				i, unparse_inheritance (info.inheritance),
 				info.user_tag? "_user": "",
 				info.is_submap? "_sub": "",
-				"", // info.inheritance? " inherit": "",
-				info.is_submap ? "_submap": "",
+				"", info.is_submap ? "_submap": "",
 				module_name, maxperm, depthstr);
-				//info.shared ? "shar" : "priv",
-				//info.reserved ? "reserved" : "not-reserved",
-				//""); //module_name);
 			mr = r_debug_map_new (buf, address, address+size,
 					xwr2rwx (info.protection), 0);
 			if (mr == NULL) {
@@ -869,4 +801,12 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 	}
 	return list;
 }
+
+//TODO xnu_deinit
+int xnu_init (void) {
+	if (pipe (exc_pipe) == -1)
+		eprintf ("failed to create pipe for communication");
+	return true;
+}
+
 #endif
