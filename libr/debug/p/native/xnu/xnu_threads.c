@@ -263,23 +263,23 @@ static int xnu_update_thread_list(RDebug *dbg){
 					break;
 				}
 			}
-			//it is not longer alive so remove from the list
-			if (flag) r_list_delete (dbg->threads, iter);
-			//otherwise update the info
-			else xnu_update_thread_info (dbg, thread);
+			if (flag) 
+				//it is not longer alive so remove from the list
+				r_list_delete (dbg->threads, iter);
+			else 
+				//otherwise update the info
+				xnu_update_thread_info (dbg, thread);
 		}
 		//ok now we have to insert those threads that we don't have
 		for (i = 0; i < thread_count; i++) {
 			xnu_thread_t *t;
 			iter = r_list_find (dbg->threads, &thread_list[i],
 					(RListComparator)&thread_find);
-#if 0
 			kr = mach_port_deallocate (mach_task_self (), thread_list[i]);
 			if (kr != KERN_SUCCESS) {
 				eprintf ("Failed to deallocate port\n");
 				continue;
 			}
-#endif
 			//it means is already in our list
 			if (iter) continue;
 			//otherwise insert it
@@ -287,7 +287,6 @@ static int xnu_update_thread_list(RDebug *dbg){
 			r_list_append (dbg->threads, t);
 		}
 	}
-#if 0
 	//once that is over we need to free the buffer
 	kr = vm_deallocate (mach_task_self (), (mach_vm_address_t)thread_list,
 				thread_count * sizeof (thread_t));
@@ -295,6 +294,5 @@ static int xnu_update_thread_list(RDebug *dbg){
 		eprintf ("error: vm_deallocate xnu_update_thread_list\n");
 		return false;
 	}
-#endif
 	return true;
 }

@@ -251,7 +251,7 @@ R_API RCoreFile * r_core_file_cur (RCore *r);
 R_API int r_core_file_set_by_fd(RCore *core, ut64 fd);
 R_API int r_core_file_set_by_name(RCore *core, const char * name);
 R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf);
-R_API int r_core_setup_debugger (RCore *r, const char *debugbackend);
+R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach);
 
 R_API int r_core_files_free(const RCore *core, RCoreFile *cf);
 R_API void r_core_file_free(RCoreFile *cf);

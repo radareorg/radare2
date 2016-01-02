@@ -112,7 +112,8 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		// XXX - select the right backend
 		if (core->file && core->file->desc)
 			newpid = core->file->desc->fd;
-		r_core_setup_debugger (core, "native");
+		//reopen and attach
+		r_core_setup_debugger (core, "native", true);
 		r_debug_select (core->dbg, newpid, newpid);
 	}
 
@@ -633,7 +634,8 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 				return NULL;
 			if (!(fd = r_io_open_nomap (r->io, file, flags, 0644)))
 				return NULL;
-		} else return NULL;
+		} else 
+			return NULL;
 	}
 	if (r_io_is_listener (r->io)) {
 		r_core_serve (r, fd);
@@ -670,7 +672,7 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 	return fh;
 }
 
-R_API int r_core_files_free (const RCore *core, RCoreFile *cf) {
+R_API int r_core_files_free(const RCore *core, RCoreFile *cf) {
 	if (!core || !core->files || !cf) return false;
 	return r_list_delete_data (core->files, cf);
 }

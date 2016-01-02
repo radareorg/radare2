@@ -323,9 +323,8 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 // s/inferior_task/port/
 static int debug_attach(int pid) {
 	task_t task = pid_to_task (pid);
-	if (task == -1) {
+	if (task == -1)
 		return -1;
-	}
 	eprintf ("pid: %d\ntask: %d\n", pid, task);
 #if 0
 	// TODO : move this code into debug
@@ -473,7 +472,8 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			}
 		}
 		eprintf ("io_mach_system: Invalid pid %d\n", pid);
-	} else eprintf ("Try: '=!pid' or '=!perm'\n");
+	} else 
+		eprintf ("Try: '=!pid' or '=!perm'\n");
 	return 1;
 }
 

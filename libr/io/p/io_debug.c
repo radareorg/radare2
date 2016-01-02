@@ -154,37 +154,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
         pid = pi.dwProcessId;
         tid = pi.dwThreadId;
 
-#if 0
-        /* load thread list */
-	{
-		HANDLE h;
-		THREADENTRY32 te32;
-		HANDLE WINAPI (*win32_openthread)(DWORD, BOOL, DWORD) = NULL;
-		win32_openthread = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
-			GetProcAddress (GetModuleHandle ("kernel32"), "OpenThread");
-
-		th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
-		if (th == INVALID_HANDLE_VALUE || !Thread32First(th, &te32))
-			r_sys_perror ("CreateToolhelp32Snapshot");
-
-		do {
-			if (te32.th32OwnerProcessID == pid) {
-				h = win32_openthread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
-				if (h == NULL) r_sys_perror ("OpenThread");
-				else eprintf ("HANDLE=%p\n", h);
-			}
-		} while (Thread32Next (th, &te32));
-	}
-#endif
-
-#if 0
-	// Access denied here :?
-	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
-		r_sys_perror ("ContinueDebugEvent");
-		goto err_fork;
-	}
-#endif
-
         /* catch create process event */
         if (!WaitForDebugEvent (&de, 10000)) goto err_fork;
 
@@ -234,6 +203,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		posix_spawn_file_actions_t fileActions;
 		ut32 ps_flags = POSIX_SPAWN_SETSIGDEF |
 				POSIX_SPAWN_SETSIGMASK;
+   		sigset_t no_signals;
+    		sigset_t all_signals;
+    		sigemptyset (&no_signals);
+    		sigfillset (&all_signals);
 		posix_spawnattr_t attr = {0};
 		size_t copied = 1;
 		cpu_type_t cpu;
@@ -264,6 +237,9 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		posix_spawn_file_actions_addinherit_np (&fileActions, STDERR_FILENO);
 		ps_flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
 		ps_flags |= POSIX_SPAWN_START_SUSPENDED;
+
+   		posix_spawnattr_setsigmask(&attr, &no_signals);
+    		posix_spawnattr_setsigdefault(&attr, &all_signals);
 
 		(void)posix_spawnattr_setflags (&attr, ps_flags);
 #if __i386__ || __x86_64__
@@ -327,11 +303,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 					exit (MAGIC_EXIT);
 				}
 			}
-			if (bits == 64) {
+			if (bits == 64)
 				r_run_parseline (rp, expr=strdup ("bits=64"));
-			} else if (bits == 32) {
+			else if (bits == 32)
 				r_run_parseline (rp, expr=strdup ("bits=32"));
-			}
 			free (expr);
 			if (r_run_config_env (rp)) {
 				eprintf ("Can't config the environment.\n");
@@ -355,9 +330,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			}
 			if (argv && *argv) {
 				int i;
-				for (i = 3; i < 1024; i++) {
+				for (i = 3; i < 1024; i++)
 					(void)close (i);
-				}
 				execvp (argv[0], argv);
 			} else {
 				eprintf ("Invalid execvp\n");

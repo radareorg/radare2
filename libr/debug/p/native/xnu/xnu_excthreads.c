@@ -1,5 +1,4 @@
-//FIXME improve how we set registers
-//FIXME refactor the how we process errors
+//FIXME deallocate all the port when they are not longer needed
 
 #include "xnu_threads.h"
 
@@ -193,31 +192,179 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 #error "unknown architecture"
 #endif
 
-//TODO implement current thread
-//TODO logic to step
 static xnu_exception_info ex = { { 0 } };
 
-//FIXME this will not compile
-static bool xnu_save_exception_ports (RDebug *dbg) {
+static bool xnu_save_exception_ports (int pid) {
 	kern_return_t kr;
-	task_t task = pid_to_task (dbg->pid);
+	task_t task = pid_to_task (pid);
 	ex.count = (sizeof (ex.ports) / sizeof (ex.ports[0]));
-		return false;
 	kr = task_get_exception_ports (task, EXC_MASK_ALL,
 		ex.masks, &ex.count, ex.ports,
 		ex.behaviors, ex.flavors);
 	return (kr == KERN_SUCCESS);
 }
 
+static bool xnu_restore_exception_ports (int pid) {
+	kern_return_t kr;
+	int i;
+	task_t task = pid_to_task (pid);
+	for (i = 0; i < ex.count; i++) {
+		kr = task_set_exception_ports (task, ex.masks[i], ex.ports[i],
+					       ex.behaviors[i], ex.flavors[i]);
+		if (kr != KERN_SUCCESS) {
+			eprintf ("fail to restore exception ports\n");
+			return false;
+		}
+	}
+	return true;
+}
+
+static void encode_reply(mig_reply_error_t *reply, mach_msg_header_t *hdr, int code) {
+	mach_msg_header_t *rh = &reply->Head;
+	rh->msgh_bits = MACH_MSGH_BITS (MACH_MSGH_BITS_REMOTE (hdr->msgh_bits), 0);
+	rh->msgh_remote_port = hdr->msgh_remote_port;
+	rh->msgh_size = (mach_msg_size_t) sizeof (mig_reply_error_t);
+	rh->msgh_local_port = MACH_PORT_NULL;
+	rh->msgh_id = hdr->msgh_id + 100;
+	reply->NDR = NDR_record;
+	reply->RetCode = code;
+}
+
+static void decode_exception_type(int exception) {
+	switch (exception) {
+	case EXC_BAD_ACCESS:
+		eprintf ("EXC_BAD_ACCESS\n");
+		break;
+	case EXC_BAD_INSTRUCTION:
+		eprintf ("EXC_BAD_INSTRUCTION\n");
+		break;
+	case EXC_ARITHMETIC:
+		eprintf ("EXC_ARITHMETIC\n");
+		break;
+	case EXC_EMULATION:
+		eprintf ("EXC_EMULATION\n");
+		break;
+	case EXC_SOFTWARE:
+		eprintf ("EXC_SOFTWARE\n");
+		break;
+	case EXC_BREAKPOINT:
+		eprintf ("EXC_BREAKPOINT\n");
+		break;
+	default:
+		eprintf ("UNKNOWN\n");
+		break;
+	}
+
+}
+
+static bool decode_exception_message (RDebug *dbg, exc_msg *msg) {
+	kern_return_t kret;
+	int ret;
+	/* check if the message is for us */
+	if (msg->hdr.msgh_local_port != ex.exception_port)
+		return false;
+	//XXX gdb from apple check this dunno why
+	/* check message header. */
+	if (!(msg->hdr.msgh_bits & MACH_MSGH_BITS_COMPLEX))
+		return false;
+	/* check descriptors.  */
+	if (msg->hdr.msgh_size <
+	    sizeof (mach_msg_header_t) + sizeof (mach_msg_body_t) +
+		    2 * sizeof (mach_msg_port_descriptor_t) +
+		    sizeof (NDR_record_t) + sizeof (exception_type_t) +
+		    sizeof (mach_msg_type_number_t) +
+		    sizeof (mach_exception_data_t))
+		return false;
+	/* check data representation.  */
+	if (msg->NDR.mig_vers != NDR_PROTOCOL_2_0 ||
+	    msg->NDR.if_vers != NDR_PROTOCOL_2_0 ||
+	    msg->NDR.mig_encoding != NDR_record.mig_encoding ||
+	    msg->NDR.int_rep != NDR_record.int_rep ||
+	    msg->NDR.char_rep != NDR_record.char_rep ||
+	    msg->NDR.float_rep != NDR_record.float_rep)
+		return -1;
+	/* We got new rights to the task, get rid of it.*/
+	kret = mach_port_deallocate (mach_task_self (), msg->task.name);
+	if (kret != KERN_SUCCESS) {
+		eprintf ("faild to deallocate task port "
+			"decode_exception_message\n");
+	}
+	if (pid_to_task (dbg->pid) != msg->task.name) {
+		//we receive a exception from an unkown process this could
+		//happen if the child fork, as the created process will inherit
+		//its exception port
+		//XXX should we manage this in somehow?
+		mig_reply_error_t reply;
+		kret = mach_port_deallocate (mach_task_self (), msg->thread.name);
+		if (kret != KERN_SUCCESS) {
+			eprintf ("failed to deallocate thread port "
+				"decode_exception_message\n");
+			return false;
+		}
+		encode_reply (&reply, &msg->hdr, KERN_SUCCESS);
+		kret = mach_msg (&reply.Head, MACH_SEND_MSG | MACH_SEND_INTERRUPT,
+				reply.Head.msgh_size, 0,
+				MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE,
+				MACH_PORT_NULL);
+		if (kret != KERN_SUCCESS) {
+			eprintf ("failed to reply decode_exception_message\n");
+			return false;
+		}
+	}
+
+	kret = mach_port_deallocate (mach_task_self (), msg->thread.name);
+	if (kret != KERN_SUCCESS) {
+		eprintf ("failed to deallocate thread port "
+			"decode_exception_message two\n");
+		return false;
+	}
+	decode_exception_type (msg->exception);
+	ret = write (exc_pipe[1], &msg->exception, sizeof(int));
+	if (ret == -1)
+		eprintf ("failed to write exception into the pipe\n");
+	return true;
+
+}
+
+//handle exception as gdb-2381 does and avoid mach_exc_server
+//using continue with ptrace we receive the exception so the 
+//issue is ours, in the way we are setting the trace bit since 
+//for some reason it doesn't work as it should
+
+
 static void *xnu_exception_thread (void *arg) {
 	// here comes the important thing
-	eprintf ("xnu.exception.thread started\n");
-	return NULL;
+	RDebug *dbg;
+	kern_return_t kret;
+	exc_msg msg;
+	if (!arg)
+		return NULL;
+	dbg = (RDebug *)arg;
+	for (;;) {
+		//wait for a incoming messages
+		kret = mach_msg (&msg.hdr, MACH_RCV_MSG | MACH_RCV_INTERRUPT, 0,
+				 sizeof (exc_msg), ex.exception_port, 0,
+				 MACH_PORT_NULL);
+		if (kret != KERN_SUCCESS) {
+			eprintf ("fail to retrieve message exception thread\n");
+			break;
+		}
+		if (msg.hdr.msgh_id == 2401)
+			eprintf ("exception raise\n");
+		else if (msg.hdr.msgh_id == 2405)
+			eprintf ("mach exception raise\n");
+		else
+			eprintf ("unknown msgh_id");
+		(void)decode_exception_message (dbg, &msg);
+	}
 }
+
+
+
 
 bool xnu_create_exception_thread(RDebug *dbg) {
 	kern_return_t kr;
-	int ret;
+	bool ret;
 	mach_port_t exception_port = MACH_PORT_NULL;
         // Got the mach port for the current process
 	mach_port_t task_self = mach_task_self ();
@@ -237,27 +384,26 @@ bool xnu_create_exception_thread(RDebug *dbg) {
 				&exception_port);
 	RETURN_ON_MACH_ERROR ("error to allocate mach_port exception\n", R_FALSE);
         // Add the ability to send messages on the new exception port
-        kr  = mach_port_insert_right (task_self, exception_port,
-				exception_port, MACH_MSG_TYPE_MAKE_SEND);
+	kr = mach_port_insert_right (task_self, exception_port, exception_port,
+				     MACH_MSG_TYPE_MAKE_SEND);
 	RETURN_ON_MACH_ERROR ("error to allocate insert right\n", R_FALSE);
         // Save the original state of the exception ports for our child process
-        ret = xnu_save_exception_ports (dbg);
+        ret = xnu_save_exception_ports (dbg->pid);
 	if (ret == R_FALSE) {
 		eprintf ("error to save exception port info\n");
 		return false;
 	}
         // Set the ability to get all exceptions on this port
 	kr = task_set_exception_ports (task, EXC_MASK_ALL, exception_port,
-				EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES,
-				THREAD_STATE_NONE);
+				       EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES,
+				       THREAD_STATE_NONE);
 	RETURN_ON_MACH_ERROR ("error to set port to receive exceptions\n", R_FALSE);
         // Create the exception thread
-	//TODO where to save the exception thread
-	//TODO see options pthread_create
         ret = pthread_create (&ex.thread, NULL, &xnu_exception_thread, dbg);
 	if (ret) {
 		perror ("pthread_create");
 		return false;
 	}
+	ex.exception_port = exception_port;
 	return true;
 }

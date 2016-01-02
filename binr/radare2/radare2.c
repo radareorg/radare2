@@ -69,6 +69,7 @@ static int verify_version(int show) {
 // r_debug_get_baddr
 static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	char *abspath;
+	int ret;
 	RListIter *iter;
 	RDebugMap *map;
 	if (!r || !r->io || !r->io->desc)
@@ -87,7 +88,9 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	}
 	return r->io->winbase;
 #else
-	r_debug_attach (r->dbg, r->io->desc->fd);
+	ret = r_debug_attach (r->dbg, r->io->desc->fd);
+	if (ret == -1)
+		return 0LL;
 #endif
 	r_debug_map_sync (r->dbg);
 	abspath = r_file_abspath (file);
@@ -511,9 +514,8 @@ int main(int argc, char **argv, char **envp) {
 					pfile = argv[optind++];
 					perms = R_IO_READ; // XXX. should work with rw too
 					debug = 2;
-					if (!strstr (pfile, "://")) {
+					if (!strstr (pfile, "://"))
 						optind--; // take filename
-					}
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
 					r_config_set (r.config, "io.raw", "false");
 /*
@@ -534,15 +536,12 @@ int main(int argc, char **argv, char **envp) {
 					if (strchr (f, '/') != NULL) {
 						// f is a path
 						path = strdup (f);
-					}
-					else {
+					} else {
 						// f is a filename
-						if (r_file_exists (f)) {
+						if (r_file_exists (f))
 							path = r_str_prefix (strdup (f), "./");
-						}
-						else {
+						else
 							path = r_file_path (f);
-						}
 					}
 					escaped_path = r_str_arg_escape (path);
 					file = r_str_concat (file, escaped_path);
@@ -567,9 +566,10 @@ int main(int argc, char **argv, char **envp) {
 				}
 				{
 					char *diskfile = strstr (file, "://");
-					if (diskfile) {
+					if (diskfile)
 						diskfile += 3;
-					} else diskfile = file;
+					else
+						diskfile = file;
 					fh = r_core_file_open (&r, file, perms, mapaddr);
 					if (fh != NULL)
 						r_debug_use (r.dbg, is_gdb? "gdb": debugbackend);
@@ -593,20 +593,19 @@ int main(int argc, char **argv, char **envp) {
 			}
 		}
 
-		if (!debug || debug==2) {
-			if (optind<argc) {
+		if (!debug || debug == 2) {
+			if (optind < argc) {
 				while (optind < argc) {
 					pfile = argv[optind++];
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					if (perms & R_IO_WRITE) {
-						if (!fh) {
-							if (r_io_create (r.io, pfile, 0644, 0))
-								fh = r_core_file_open (&r, pfile, perms, mapaddr);
-							else eprintf ("r_io_create: Permission denied.\n");
-						}
+					if (perms & R_IO_WRITE & !fh) {
+						if (r_io_create (r.io, pfile, 0644, 0))
+							fh = r_core_file_open (&r, pfile, perms, mapaddr);
+						else
+							eprintf ("r_io_create: Permission denied.\n");
 					}
 					if (fh) {
-						if (run_anal>0) {
+						if (run_anal > 0) {
 #if USE_THREADS
 							if (!rabin_th)
 #endif
@@ -639,8 +638,10 @@ int main(int argc, char **argv, char **envp) {
 				const char *prj = r_config_get (r.config, "file.project");
 				if (prj && *prj) {
 					pfile = r_core_project_info (&r, prj);
-					if (pfile) fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					else	eprintf ("Cannot find project file\n");
+					if (pfile)
+						fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					else
+						eprintf ("Cannot find project file\n");
 				}
 			}
 		}
@@ -691,7 +692,12 @@ int main(int argc, char **argv, char **envp) {
 		debug = r.file && r.file->desc && r.file->desc->plugin && \
 			r.file->desc->plugin->isdbg;
 		if (debug) {
-			r_core_setup_debugger (&r, debugbackend);
+			if (baddr != UT64_MAX) 
+				//setup without attach again because there is dpa call
+				//producing two attach and it's annoying
+				r_core_setup_debugger (&r, debugbackend, false);
+			else
+				r_core_setup_debugger (&r, debugbackend, true);
 		}
 
 		if (!debug && r_flag_get (r.flags, "entry0"))
