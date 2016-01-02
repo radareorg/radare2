@@ -12,9 +12,6 @@ static ut64 last_printed_address = 0LL;
 static void r_core_visual_refresh (RCore *core);
 
 #define debugfmt_default "f tmp;sr SP;pxw 64;dr=;s-;s tmp;f-tmp;pd $r"
-const char *debugfmt_extra = "f tmp;sr SP;pxr 64;drr;s-;s tmp;f-tmp;pd $r";
-const char *debugfmt = NULL;
-
 static const char *printfmt[] = {
 	"x", "pd $r",
 	debugfmt_default,
@@ -1749,11 +1746,6 @@ static void r_core_visual_refresh (RCore *core) {
 	core->cons->blankline = true;
 
 	w = r_core_visual_responsive (core);
-	if (r_config_get_i (core->config, "dbg.slow")) {
-		printfmt[2] = debugfmt_extra;
-	} else {
-		printfmt[2] = debugfmt_default;
-	}
 
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
@@ -1843,18 +1835,22 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		if (core->printidx == 2) {
 			static char debugstr[512];
 			const char *cmdvhex = r_config_get (core->config, "cmd.stack");
+			const int ref = r_config_get_i (core->config, "dbg.slow");
 			const int pxa = r_config_get_i (core->config, "stack.anotated"); // stack.anotated
 			const int size = r_config_get_i (core->config, "stack.size");
 			const int delta = r_config_get_i (core->config, "stack.delta");
 			const int bytes = r_config_get_i (core->config, "stack.bytes");
 			if (cmdvhex && *cmdvhex) {
 				snprintf (debugstr, sizeof(debugstr),
-					"f tmp;sr SP;%s;dr=;s-;"
-					"s tmp;f-tmp;pd $r", cmdvhex);
+					"f tmp;sr SP;%s;%s;s-;"
+					"s tmp;f-tmp;pd $r", cmdvhex,
+					ref? "drr": "dr=");
 				debugstr[sizeof(debugstr)-1]=0;
 			} else {
 				const char *pxw;
-				if (bytes) {
+				if (ref) {
+					pxw = "pxr";
+				} else if (bytes) {
 					pxw = "px";
 				} else {
 					switch (core->assembler->bits) {
@@ -1864,9 +1860,10 @@ R_API int r_core_visual(RCore *core, const char *input) {
 					}
 				}
 				snprintf (debugstr, sizeof (debugstr),
-					"f tmp;sr SP;%s %d@$$-%d;dr=;s-;"
+					"f tmp;sr SP;%s %d@$$-%d;%s;s-;"
 					"s tmp;f-tmp;pd $r",
-					pxa? "pxa": pxw, size, delta);
+					pxa? "pxa": pxw, size, delta,
+					ref? "drr": "dr=");
 			}
 			printfmt[2] = debugstr;
 		}
