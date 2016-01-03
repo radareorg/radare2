@@ -30,6 +30,23 @@ R_API RIOSection *r_io_section_get_name(RIO *io, const char *name) {
 	return NULL;
 }
 
+static RIOSection *findMatching (RIO *io, ut64 paddr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name) {
+	RListIter *iter;
+	RIOSection *s;
+	r_list_foreach (io->sections, iter, s) {
+		if (s->offset != paddr) continue;
+		if (s->vaddr != vaddr) continue;
+		s->size = size;
+		s->vsize = vsize;
+		s->rwx = rwx;
+		if (name && strcmp (name, s->name)) {
+			strcpy (s->name, name); /// XXX overflow here
+		}
+		return s;
+	}
+	return NULL;
+}
+
 R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd) {
 	int update = 0;
 	RIOSection *s;
@@ -38,6 +55,10 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, 
 			eprintf ("Invalid size (0x%08"PFMT64x") for section '%s' at 0x%08"PFMT64x"\n",
 			size, name, vaddr);
 		return NULL;
+	}
+	s = findMatching (io, offset, vaddr, size, vsize, rwx, name);
+	if (s) {
+		return s;
 	}
 	s = r_io_section_get_name (io, name);
 	if (s == NULL) {

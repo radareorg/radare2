@@ -320,6 +320,8 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 			sdb_file (core->anal->sdb_xrefs, buf);
 			sdb_sync (core->anal->sdb_xrefs);
 		}
+		r_core_cmd (core, "S*", 0);
+		r_cons_flush ();
 		r_core_cmd (core, "fV*", 0);
 		r_cons_flush ();
 		r_core_cmd (core, "ax*", 0);
