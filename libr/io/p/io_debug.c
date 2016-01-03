@@ -273,6 +273,12 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		cpu = CPU_TYPE_ANY;
 #endif
 		posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
+		{
+			char *dst = r_file_readlink (argv[0]);
+			if (dst) {
+				argv[0] = dst;
+			}
+		}
 		ret = posix_spawnp (&p, argv[0], &fileActions, &attr, argv, NULL);
 		switch (ret) {
 		case 0:
@@ -295,7 +301,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		return p;
 	}
 #endif
-
 	int ret, status, child_pid;
 
 	child_pid = r_sys_fork ();

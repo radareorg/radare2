@@ -80,7 +80,7 @@ R_API void r_list_free (RList *list) {
 	}
 }
 
-R_API boolt r_list_delete_data (RList *list, void *ptr) {
+R_API bool r_list_delete_data (RList *list, void *ptr) {
 	void *p;
 	RListIter *iter;
 	r_list_foreach (list, iter, p) {

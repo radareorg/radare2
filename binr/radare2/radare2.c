@@ -463,6 +463,10 @@ int main(int argc, char **argv, char **envp) {
 		}
 	}
 	if (argv[optind] && r_file_is_directory (argv[optind])) {
+		if (debug) {
+			eprintf ("Error: Cannot debug directories, yet.\n");
+			return 1;
+		}
 		if (chdir (argv[optind])) {
 			eprintf ("Cannot open directory\n");
 			return 1;

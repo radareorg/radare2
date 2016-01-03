@@ -13,7 +13,7 @@
 #include <sys/mman.h>
 #endif
 
-R_API boolt r_file_truncate (const char *filename, ut64 newsize) {
+R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;
 	if (r_file_is_directory (filename))
 		return R_FALSE;
@@ -65,7 +65,7 @@ R_API char *r_file_dirname (const char *path) {
 	return newpath;
 }
 
-R_API boolt r_file_is_regular(const char *str) {
+R_API bool r_file_is_regular(const char *str) {
 	struct stat buf = {0};
 	if (!str||!*str)
 		return R_FALSE;
@@ -74,7 +74,7 @@ R_API boolt r_file_is_regular(const char *str) {
 	return ((S_IFREG & buf.st_mode)==S_IFREG)? R_TRUE: R_FALSE;
 }
 
-R_API boolt r_file_is_directory(const char *str) {
+R_API bool r_file_is_directory(const char *str) {
 	struct stat buf = {0};
 	if (!str||!*str)
 		return R_FALSE;
@@ -85,7 +85,7 @@ R_API boolt r_file_is_directory(const char *str) {
 	return (S_IFDIR==(S_IFDIR & buf.st_mode))? R_TRUE: R_FALSE;
 }
 
-R_API boolt r_file_fexists(const char *fmt, ...) {
+R_API bool r_file_fexists(const char *fmt, ...) {
 	int ret;
 	char string[1024];
 	va_list ap;
@@ -96,7 +96,7 @@ R_API boolt r_file_fexists(const char *fmt, ...) {
 	return ret;
 }
 
-R_API boolt r_file_exists(const char *str) {
+R_API bool r_file_exists(const char *str) {
 	struct stat buf = {0};
 	if (str && *str && stat (str, &buf)==-1)
 		return R_FALSE;
@@ -416,7 +416,7 @@ R_API char *r_file_root(const char *root, const char *path) {
 	return ret;
 }
 
-R_API boolt r_file_dump(const char *file, const ut8 *buf, int len, int append) {
+R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 	int ret;
 	FILE *fd;
 	if (!file || !*file || !buf) {
@@ -440,7 +440,7 @@ R_API boolt r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 	return ret;
 }
 
-R_API boolt r_file_rm(const char *file) {
+R_API bool r_file_rm(const char *file) {
 	if (r_sandbox_enable (0)) return R_FALSE;
 	if (r_file_is_directory (file)) {
 #if __WINDOWS__
@@ -455,6 +455,25 @@ R_API boolt r_file_rm(const char *file) {
 		return (unlink (file)==0)? R_TRUE: R_FALSE;
 #endif
 	}
+}
+
+R_API char *r_file_readlink(const char *path) {
+	if (!r_sandbox_enable (0)) {
+#if __UNIX__
+		int ret;
+		char pathbuf[4096];
+		strcpy (pathbuf, path);
+		repeat:
+		ret = readlink (path, pathbuf, sizeof (pathbuf)-1);
+		if (ret != -1) {
+			pathbuf[ret] = 0;
+			path = pathbuf;
+			goto repeat;
+		}
+		return strdup (pathbuf);
+#endif
+	}
+	return NULL;
 }
 
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len) {
@@ -621,9 +640,8 @@ static RMmap *r_file_mmap_other (RMmap *m) {
 }
 #endif
 
-
 // TODO: add rwx support?
-R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base) {
+R_API RMmap *r_file_mmap (const char *file, bool rw, ut64 base) {
 	RMmap *m = NULL;
 	int fd = -1;
 	if (!rw && !r_file_exists (file)) return m;
