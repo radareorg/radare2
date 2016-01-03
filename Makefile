@@ -37,15 +37,15 @@ GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
 GIT_NOW=$(shell date +%Y-%m-%d)
 
 libr/include/r_version.h:
-	echo "#ifndef R_VERSION_H" > $@.tmp
-	echo "#define R_VERSION_H 1" >> $@.tmp
-	echo "#define R2_VERSION_COMMIT $(R2VC)" >> $@.tmp
-	echo '#define R2_GITTAP "$(GIT_TAP)"' >> $@.tmp
-	echo '#define R2_GITTIP "$(GIT_TIP)"' >> $@.tmp
-	echo '#define R2_BIRTH "$(GIT_NOW)"' >> $@.tmp
-	echo '#endif' >> $@.tmp
-	diff -q $@.tmp $@ || mv -f $@.tmp $@
-	rm -f $@.tmp
+	@echo "#ifndef R_VERSION_H" > $@.tmp
+	@echo "#define R_VERSION_H 1" >> $@.tmp
+	@echo "#define R2_VERSION_COMMIT $(R2VC)" >> $@.tmp
+	@echo '#define R2_GITTAP "$(GIT_TAP)"' >> $@.tmp
+	@echo '#define R2_GITTIP "$(GIT_TIP)"' >> $@.tmp
+	@echo '#define R2_BIRTH "$(GIT_NOW)"' >> $@.tmp
+	@echo '#endif' >> $@.tmp
+	@cmp -s $@.tmp $@ || (mv -f $@.tmp $@ && echo "Update libr/include/r_version.h")
+	@rm -f $@.tmp
 
 plugins.cfg:
 	@if [ ! -e config-user.mk ]; then echo ; \
