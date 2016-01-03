@@ -2,16 +2,12 @@
 
 static void __init_seek_line (RCore *core) {
 	ut64 from, to;
-	int lines = 0;
 
 	r_config_bump (core->config, "lines.to");
 	from = r_config_get_i (core->config, "lines.from");
 	to = r_config_get_i (core->config, "lines.to");
-	lines = r_core_lines_initcache (core, from, to);
-	if (lines == -1) {
+	if (r_core_lines_initcache (core, from, to) == -1) {
 		eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
-	} else {
-		eprintf ("Found %d lines\n", lines-1);
 	}
 }
 
@@ -69,6 +65,7 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 	int bsz = core->blocksize;
 	char *buf;
 	ut64 off = start_addr;
+	ut64 baddr; 
 	if (start_addr == UT64_MAX || end_addr == UT64_MAX) {
 		return -1;
 	}
@@ -79,7 +76,11 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 		return -1;
 	}
 
+	RIOSection *s = r_io_section_mget (core->io, core->offset);
+	baddr = s ? s->offset : r_config_get_i (core->config, "bin.baddr");
+
 	line_count = start_addr ? 0 : 1;
+	core->print->lines_cache[0] = start_addr ? 0 : baddr;
 	r_cons_break (NULL, NULL);
 	buf = malloc (bsz);
 	if (!buf) return -1;
@@ -90,7 +91,7 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 		r_io_read_at (core->io, off, (ut8*)buf, bsz);
 		for (i=0; i<bsz; i++) {
 			if (buf[i] == '\n') {
-				core->print->lines_cache[line_count] = off+i+1;
+				core->print->lines_cache[line_count] = start_addr ? off+i+1 : off+i+1+baddr;
 				line_count++;
 				if (line_count % bsz == 0) {
 					ut64 *tmp = realloc (core->print->lines_cache,
@@ -386,25 +387,41 @@ static int cmd_seek(void *data, const char *input) {
 				"sl", " [line]", "Seek to absolute line",
 				"sl", "[+-][line]", "Seek to relative line",
 				"slc", "", "Clear line cache",
+				"sll", "", "Show total number of lines",
 				NULL };
-			if (!core->print->lines_cache) {
-				__init_seek_line (core);
-			}
 			switch (input[1]) {
 			case 0:
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
 				__get_current_line (core);
 				break;
 			case ' ':
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
 				__seek_line_absolute (core, sl_arg);
 				break;
 			case '-':
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
 				__seek_line_relative (core, -sl_arg);
 				break;
 			case '+':
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
 				__seek_line_relative (core, sl_arg);
 				break;
 			case 'c':
 				__clean_lines_cache (core);
+				break;
+			case 'l':
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
+				eprintf ("%d lines\n", core->print->lines_cache_sz-1);
 				break;
 			case '?':
 				r_core_cmd_help (core, help_msg);
