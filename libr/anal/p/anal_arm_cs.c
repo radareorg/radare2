@@ -251,6 +251,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	bool hascond = false;
 	int i;
 	char str[32][32];
+	int msr_flags;
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 	switch (insn->detail->arm.cc) {
@@ -502,6 +503,23 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_LDRB:
 		r_strbuf_appendf (&op->esil, "%s,%d,+,[1],%s,=",
 			MEMBASE(1), MEMDISP(1), REG(0));
+		break;
+	case ARM_INS_MSR:
+		msr_flags = insn->detail->arm.operands[0].reg >> 4;
+		r_strbuf_appendf (&op->esil, "0,",REG(1));
+		if (msr_flags & 1) {
+			r_strbuf_appendf (&op->esil, "0xFF,|,");
+		}
+		if (msr_flags & 2) {
+			r_strbuf_appendf (&op->esil, "0xFF00,|,");
+		}
+		if (msr_flags & 4) {
+			r_strbuf_appendf (&op->esil, "0xFF0000,|,");
+		}
+		if (msr_flags & 8) {
+			r_strbuf_appendf (&op->esil, "0xFF000000,|,");
+		}
+		r_strbuf_appendf (&op->esil, "DUP,!,SWAP,&,%s,SWAP,cpsr,&,|,cpsr,=",REG(1));
 		break;
 	default:
 		break;
