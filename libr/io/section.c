@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake, nibble */
+/* radare2 - LGPL - Copyright 2008-2015 - pancake, nibble */
 
 #include "r_io.h"
 
@@ -10,6 +10,7 @@ R_API void r_io_section_init(RIO *io) {
 	io->enforce_rwx = 0; // do not enforce RWX section permissions by default
 	io->enforce_seek = 0; // do not limit seeks out of the file by default
 	io->sections = r_list_new ();
+	io->sections->free = r_io_section_free;
 }
 
 #if 0
@@ -46,7 +47,7 @@ static RIOSection *findMatching (RIO *io, ut64 paddr, ut64 vaddr, ut64 size, ut6
 #endif
 		s->rwx = rwx;
 		if (name && strcmp (name, s->name)) {
-			strcpy (s->name, name); /// XXX overflow here
+			s->name = strdup (name);
 		}
 		return s;
 	}
@@ -68,7 +69,7 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, 
 	}
 	s = r_io_section_get_name (io, name);
 	if (s == NULL) {
-		s = R_NEW (RIOSection);
+		s = R_NEW0 (RIOSection);
 		s->id = io->next_section_id++;
 	} else update = 1;
 	s->offset = offset;
@@ -80,8 +81,8 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, 
 	s->bin_id = bin_id;
 	s->fd = fd;
 	if (!update) {
-		if (name) strncpy (s->name, name, sizeof (s->name)-4);
-		else *s->name = '\0';
+		if (name) s->name = strdup (name);
+		else s->name = strdup ("");
 		r_list_append (io->sections, s);
 	}
 	return s;
@@ -113,10 +114,18 @@ R_API int r_io_section_rm_all (RIO *io, int fd) {
 	return true;
 }
 
+R_API void r_io_section_free(void *ptr) {
+	RIOSection *s = (RIOSection*)ptr;
+	if (s) {
+		free (s->name);
+		free (s);
+	}
+}
+
 R_API void r_io_section_clear(RIO *io) {
 	r_list_free (io->sections);
 	io->sections = r_list_new ();
-	io->sections->free = free;
+	io->sections->free = r_io_section_free;
 }
 
 // TODO: implement as callback
@@ -291,7 +300,8 @@ R_API RIOSection *r_io_section_vget(RIO *io, ut64 vaddr) {
 	return NULL;
 }
 
-R_API RIOSection *r_io_section_mget(RIO *io, ut64 maddr) {
+// maddr == section->offset
+R_API RIOSection *r_io_section_mget_in(RIO *io, ut64 maddr) {
 	RIOSection *s;
 	RListIter *iter;
 	r_list_foreach (io->sections, iter, s) {
@@ -313,19 +323,19 @@ R_API RIOSection *r_io_section_mget_prev(RIO *io, ut64 maddr) {
 
 // XXX: rename this
 R_API ut64 r_io_section_get_offset(RIO *io, ut64 maddr) {
-	RIOSection *s = r_io_section_mget (io, maddr);
+	RIOSection *s = r_io_section_mget_in (io, maddr);
 	return s? s->offset: UT64_MAX;
 }
 
 // XXX: must be renamed, this is confusing
 R_API ut64 r_io_section_get_vaddr(RIO *io, ut64 maddr) {
-	RIOSection *s = r_io_section_mget (io, maddr);
+	RIOSection *s = r_io_section_mget_in (io, maddr);
 	return s? s->vaddr: UT64_MAX;
 }
 
 // TODO: deprecate
 R_API int r_io_section_get_rwx(RIO *io, ut64 offset) {
-	RIOSection *s = r_io_section_mget (io, offset);
+	RIOSection *s = r_io_section_mget_in (io, offset);
 	return s?s->rwx:R_IO_READ|R_IO_WRITE|R_IO_EXEC;
 }
 
@@ -387,7 +397,7 @@ R_API ut64 r_io_section_maddr_to_vaddr(RIO *io, ut64 offset) {
 
 // TODO: deprecate ?
 R_API int r_io_section_exists_for_paddr (RIO *io, ut64 paddr, int hasperm) {
-	RIOSection *s = r_io_section_mget (io, paddr);
+	RIOSection *s = r_io_section_mget_in (io, paddr);
 	if (!s) return false;
 	if (hasperm) return (s->rwx & hasperm)? true: false;
 	return true;
@@ -441,6 +451,7 @@ R_API RList *r_io_section_get_in_paddr_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOSection *s;
 	RListIter *iter;
 	RList *sections = r_list_new ();
+	sections->free = r_io_section_free;
 	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, s) {
 		if (!(s->rwx & R_IO_MAP)) continue;
@@ -457,6 +468,7 @@ R_API RList *r_io_section_get_in_vaddr_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOSection *s;
 	RListIter *iter;
 	RList *sections = r_list_new ();
+	sections->free = r_io_section_free;
 	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, s) {
 		if (!(s->rwx & R_IO_MAP)) continue;

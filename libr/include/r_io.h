@@ -48,8 +48,8 @@ typedef struct r_io_map_t {
 } RIOMap;
 
 typedef struct r_io_section_t {
-	char name[64]; // use strpool
-	ut64 offset; // TODO: rename to paddr
+	char *name;
+	ut64 offset; // TODO: rename to paddr or maddr?
 	ut64 vaddr;
 	ut64 size;
 	ut64 vsize;
@@ -175,7 +175,7 @@ typedef struct r_io_plugin_t {
 	int (*close)(RIODesc *desc);
 	int (*resize)(RIO *io, RIODesc *fd, ut64 size);
 	int (*extend)(RIO *io, RIODesc *fd, ut64 size);
-	int (*accept)(RIO *io, RIODesc *desc, int fd);
+	bool (*accept)(RIO *io, RIODesc *desc, int fd);
 	int (*create)(RIO *io, const char *file, int mode, int type);
 	int (*plugin_open)(RIO *io, const char *, ut8 many);
 } RIOPlugin;
@@ -381,11 +381,12 @@ R_API void r_io_map_list (RIO *io, int rad);
 
 /* io/section.c */
 R_API void r_io_section_init(RIO *io);
+R_API void r_io_section_free(void *ptr);
 R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 R_API RIOSection *r_io_section_get_name(RIO *io, const char *name);
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx);
 R_API RIOSection *r_io_section_getv(RIO *io, ut64 vaddr);
-R_API RIOSection *r_io_section_mget(RIO *io, ut64 maddr);
+R_API RIOSection *r_io_section_mget_in(RIO *io, ut64 maddr);
 R_API RIOSection *r_io_section_mget_prev(RIO *io, ut64 maddr);
 R_API RIOSection *r_io_section_vget(RIO *io, ut64 addr);
 R_API RIOSection *r_io_section_pget(RIO *io, ut64 addr);
