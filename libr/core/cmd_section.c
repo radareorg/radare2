@@ -1,5 +1,59 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+static int __dump_sections_to_disk(RCore *core) {
+	char file[128];
+	RListIter *iter;
+	RIOSection *s;
+
+	r_list_foreach (core->io->sections, iter, s) {
+		ut8 *buf = malloc (s->size);
+		r_io_read_at (core->io, s->offset, buf, s->size);
+		snprintf (file, sizeof(file),
+			"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
+			s->vaddr, s->vaddr+s->size,
+			r_str_rwx_i (s->rwx));
+		if (!r_file_dump (file, buf, s->size, 0)) {
+			eprintf ("Cannot write '%s'\n", file);
+			free (buf);
+			return false;
+		}
+		eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
+		free (buf);
+	}
+	return false;
+}
+
+static int __dump_section_to_disk(RCore *core, char *file) {
+	ut64 o = core->offset;
+	RListIter *iter;
+	RIOSection *s;
+	int len = 128;
+	if (core->io->va || core->io->debug)
+		o = r_io_section_vaddr_to_maddr_try (core->io, o);
+	r_list_foreach (core->io->sections, iter, s) {
+		if (o >= s->offset && o < s->offset + s->size) {
+			ut8 *buf = malloc (s->size);
+			r_io_read_at (core->io, s->offset, buf, s->size);
+			if (!file) {
+				file = (char *)malloc(len * sizeof(char));
+				snprintf (file, len,
+					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
+					s->vaddr, s->vaddr+s->size,
+					r_str_rwx_i (s->rwx));
+			}
+			if (!r_file_dump (file, buf, s->size, 0)) {
+				eprintf ("Cannot write '%s'\n", file);
+				free (buf);
+				return false;
+			}
+			eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
+			free (buf);
+			return true;
+		}
+	}
+	return false;
+}
+
 static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char* help_msg[] = {
@@ -9,7 +63,7 @@ static int cmd_section(void *data, const char *input) {
 		"S*","","list sections (in radare commands)",
 		"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
 		"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
-		"Sd"," [file]","dump current section to a file (see dmd)",
+		"Sd[a]"," [file]","dump current (all) section to a file (see dmd)",
 		"Sl"," [file]","load contents of file into current section (see dml)",
 		"Sj","","list sections in JSON (alias for iSj)",
 		"Sr"," [name]","rename section on current seek",
@@ -100,34 +154,23 @@ static int cmd_section(void *data, const char *input) {
 		break;
 	case 'd':
 		{
-		char file[128];
-		ut64 o = core->offset;
-		RListIter *iter;
-		RIOSection *s;
-		if (core->io->va || core->io->debug)
-			o = r_io_section_vaddr_to_maddr_try (core->io, o);
-		r_list_foreach (core->io->sections, iter, s) {
-			if (o >= s->offset && o < s->offset + s->size) {
-				ut8 *buf = malloc (s->size);
-				r_io_read_at (core->io, s->offset, buf, s->size);
-				if (input[1] == ' ' && input[2]) {
-					snprintf (file, sizeof(file),
-						"%s", input + 2);
-				} else {
-					snprintf (file, sizeof(file),
-						"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
-						s->vaddr, s->vaddr+s->size,
-						r_str_rwx_i (s->rwx));
-				}
-				if (!r_file_dump (file, buf, s->size, 0)) {
-					eprintf ("Cannot write '%s'\n", file);
-					free (buf);
-					return false;
-				}
-				eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
-				free (buf);
-				return true;
+		char *file = NULL;
+		int len = 128;
+		switch (input[1]) {
+		case 0:
+			__dump_section_to_disk (core, NULL);
+			break;
+		case ' ':
+			if (input[2]) {
+				file = (char *)malloc(len * sizeof(char));
+				snprintf (file, len,
+					"%s", input + 2);
 			}
+			__dump_section_to_disk (core, file);
+			break;
+		case 'a':
+			__dump_sections_to_disk (core);
+			break;
 		}
 		}
 		break;
