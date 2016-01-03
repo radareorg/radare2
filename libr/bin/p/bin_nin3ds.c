@@ -31,8 +31,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o)
-		return false;
+	if (!arch || !arch->o) return false;
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return check_bytes (bytes, sz);
 }
@@ -48,8 +47,7 @@ static RList* sections(RBinFile *arch) {
 	RBinSection *sections[4] = {NULL, NULL, NULL, NULL};
 	int i, corrupt = R_FALSE;
 
-	if (!(ret = r_list_new ()))
-		return NULL;
+	if (!(ret = r_list_new ())) return NULL;
 
 	/* FIRM has always 4 sections, normally the 4th section is not used */
 	for (i=0; i<4; i++) {
@@ -77,10 +75,8 @@ static RList* sections(RBinFile *arch) {
 	/* Append sections or free them if file is corrupt to avoid memory leaks */
 	for (i=0; i<4; i++) {
 		if (sections[i]) {
-			if (corrupt)
-				free(sections[i]);
-			else
-				r_list_append(ret, sections[i]);
+			if (corrupt) free(sections[i]);
+			else r_list_append(ret, sections[i]);
 		}
 	}
 	if (corrupt) {
@@ -96,8 +92,7 @@ static RList* entries(RBinFile *arch) {
 	RBinAddr *ptr9 = NULL, *ptr11 = NULL;
 
 	if (arch && arch->buf) {
-		if (!ret)
-			return NULL;
+		if (!ret) return NULL;
 		ret->free = free;
 		if (!(ptr9 = R_NEW0 (RBinAddr))) {
 			r_list_free (ret);
