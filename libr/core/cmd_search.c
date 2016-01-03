@@ -752,7 +752,7 @@ ret:
 	return hitlist;
 }
 
-static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) {
+static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first) {
 	const char *otype;
 	RCoreAsmHit *hit = NULL;
 	RListIter *iter;
@@ -766,9 +766,8 @@ static void print_rop (RCore *core, RList *hitlist, char mode, int *json_first) 
 	switch (mode) {
 	case 'j':
 		//Handle comma between gadgets
-		if (*json_first == 0)
-			r_cons_strcat (",");
-		else *json_first = 0;
+		if (!*json_first) r_cons_strcat (",");
+		else *json_first = false;
 
 		r_cons_printf ("{\"opcodes\":[");
 		r_list_foreach (hitlist, iter, hit) {
@@ -1110,7 +1109,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 						continue;
 					}
 					if (json) mode = 'j';
-
 					if ((mode == 'l') && subchain) {
 						do {
 							print_rop (core, hitlist, mode, &json_first);
@@ -1120,7 +1118,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 						print_rop (core, hitlist, mode, &json_first);
 					}
 				}
-
 				if (increment != 1)
 					i = next;
 			}
