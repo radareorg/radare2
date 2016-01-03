@@ -65,7 +65,7 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 	int bsz = core->blocksize;
 	char *buf;
 	ut64 off = start_addr;
-	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+	ut64 baddr; 
 	if (start_addr == UT64_MAX || end_addr == UT64_MAX) {
 		return -1;
 	}
@@ -75,6 +75,9 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 	if (!core->print->lines_cache) {
 		return -1;
 	}
+
+	RIOSection *s = r_io_section_mget (core->io, core->offset);
+	baddr = s ? s->offset : r_config_get_i (core->config, "bin.baddr");
 
 	line_count = start_addr ? 0 : 1;
 	core->print->lines_cache[0] = start_addr ? 0 : baddr;
