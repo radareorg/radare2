@@ -26,8 +26,7 @@
  * TMS320 disassembly engine implementation
  */
 
-int run_f_list(tms320_dasm_t * dasm)
-{
+int run_f_list(tms320_dasm_t * dasm) {
 	ut32 temp;
 	insn_flag_t * flag;
 
@@ -611,7 +610,7 @@ void decode_braces(tms320_dasm_t * dasm)
 	}
 
 	if (field_valid(dasm, uu)) {
-		boolt parallel = !!strstr(dasm->syntax, "::");
+		bool parallel = !!strstr (dasm->syntax, "::");
 
 		// first
 		replace(dasm->syntax, "[uns(]", "%s", field_value(dasm, uu) & 2 ? "uns(" : "");

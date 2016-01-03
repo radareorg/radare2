@@ -20,7 +20,7 @@ static RFSFile* FSP(_open)(RFSRoot *root, const char *path) {
 	return file;
 }
 
-static boolt FSP(_read)(RFSFile *file, ut64 addr, int len) {
+static bool FSP(_read)(RFSFile *file, ut64 addr, int len) {
 	GrubFS *gfs = file->ptr;
 	grubfs_bind_io (NULL, file->root->delta);
 	gfs->file->fs->read (gfs->file, (char*)file->data, len);

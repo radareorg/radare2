@@ -154,7 +154,7 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 	return strdup (str);
 }
 
-R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
+R_API bool r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
 	RRegItem *it;
 	cc->off = op->addr;
 	switch (op->type) {

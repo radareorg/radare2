@@ -38,7 +38,7 @@ static int rap__write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count)
 	return ret;
 }
 
-static boolt rap__accept(RIO *io, RIODesc *desc, int fd) {
+static bool rap__accept(RIO *io, RIODesc *desc, int fd) {
 	RIORap *rap = desc->data;
 	if (rap) {
 		rap->client = r_socket_new_from_fd (fd);

@@ -21,7 +21,7 @@ static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
 	return file;
 }
 
-static boolt fs_posix_read(RFSFile *file, ut64 addr, int len) {
+static bool fs_posix_read(RFSFile *file, ut64 addr, int len) {
 	free (file->data);
 	file->data = (void*)r_file_slurp_range (file->name, 0, len, NULL);
 	return false;

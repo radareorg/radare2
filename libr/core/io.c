@@ -245,7 +245,7 @@ R_API int r_core_seek_archbits (RCore *core, ut64 addr) {
 	return 0;
 }
 
-R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
+R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 	RIOSection *newsection;
 	ut64 old = core->offset;
 	ut64 ret;

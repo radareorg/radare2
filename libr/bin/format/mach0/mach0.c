@@ -387,7 +387,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 	return true;
 }
 
-static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64 off, boolt is_first_thread) {
+static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64 off, bool is_first_thread) {
 	ut64 ptr_thread, pc = UT64_MAX, pc_offset = UT64_MAX;
 	ut32 flavor, count;
 	int len;
@@ -587,7 +587,7 @@ static int parse_dylib(struct MACH0_(obj_t)* bin, ut64 off) {
 
 static int init_items(struct MACH0_(obj_t)* bin) {
 	struct load_command lc = {0, 0};
-	boolt is_first_thread = true;
+	bool is_first_thread = true;
 	ut64 off = 0LL;
 	int i, len;
 

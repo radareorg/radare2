@@ -613,7 +613,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	ut64 fend = UT64_MAX;
 	char *comment;
 	int i, j, low, max, here, rows;
-	boolt marks = false, setcolor = true, hascolor = false;
+	bool marks = false, setcolor = true, hascolor = false;
 	ut8 ch;
 	const char **colors = (const char **)&core->cons->pal.list;
 #if 0

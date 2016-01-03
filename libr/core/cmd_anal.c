@@ -2293,7 +2293,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	}
 }
 
-static boolt cmd_anal_refs(RCore *core, const char *input) {
+static bool cmd_anal_refs(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	const char *help_msg[] = {
 		"Usage:", "ax[?d-l*]", " # see also 'afx?'",

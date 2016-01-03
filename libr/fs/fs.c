@@ -135,7 +135,7 @@ static inline int r_fs_match(const char *root, const char *path, int len) {
 	return (!strncmp (path, root, len));
 }
 
-R_API int r_fs_umount(RFS *fs, const char *path) {
+R_API bool r_fs_umount(RFS *fs, const char *path) {
 	int len;
 	RFSRoot *root;
 	RListIter *iter, *riter = NULL;
