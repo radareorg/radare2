@@ -819,7 +819,7 @@ static void rcc_next(REgg *egg) {
 							for (q=s; *q; q++)
 								r_egg_lang_parsechar (egg, *q);
 							free (s);
-						} else eprintf ("Cant get @syscall payload\n");
+						} else eprintf ("Cannot get @syscall payload\n");
 					}
 					docall = 0;
 					break;

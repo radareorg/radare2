@@ -461,7 +461,7 @@ R_API void r_egg_finalize(REgg *egg) {
 		} else {
 			// TODO: use r_buf_cpy_buf or what
 			if (b->length+b->cur > egg->bin->length) {
-				eprintf ("Fuck this shit. Cant patch outside\n");
+				eprintf ("Fuck this shit. Cannot patch outside\n");
 				return;
 			}
 			memcpy (egg->bin->buf + b->cur, b->buf, b->length);
