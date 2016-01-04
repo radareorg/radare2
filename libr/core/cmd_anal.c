@@ -974,7 +974,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 	case 'g': // "afg" - non-interactive VV
-		r_core_visual_graph (core, NULL, false);
+		r_core_visual_graph (core, NULL, NULL, false);
 		break;
 	case 'F': // "afF"
 	{
@@ -2791,6 +2791,18 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		free (o);
 		break;
 	}
+	case 'i': // "aggi" - open current core->graph in interactive mode
+	{
+		RANode *ran = r_agraph_get_first_node (core->graph);
+
+		r_agraph_set_title (core->graph, r_config_get (core->config, "graph.title"));
+		r_agraph_set_curnode (core->graph, ran);
+		core->graph->force_update_seek = true;
+		core->graph->need_set_layout = true;
+		core->graph->need_update_dim = true;
+		r_core_visual_graph(core, core->graph, NULL, true);
+		break;
+	}
 	case 'd': // "aggd" - dot format
 		r_cons_printf ("digraph code {\ngraph [bgcolor=white];\n"
 			"node [color=lightgray, style=filled shape=box "
@@ -2807,7 +2819,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		core->graph->can->linemode = 1;
 		core->graph->can->color = r_config_get_i (core->config, "scr.color");
 		r_agraph_set_title (core->graph,
-				r_config_get (core->config, "graph.title"));
+			r_config_get (core->config, "graph.title"));
 		r_agraph_print (core->graph);
 		break;
 	}

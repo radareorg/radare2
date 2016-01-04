@@ -608,6 +608,7 @@ R_API RAGraph *r_agraph_new(RConsCanvas *can);
 R_API void r_agraph_free(RAGraph *g);
 R_API void r_agraph_reset(RAGraph *g);
 R_API void r_agraph_set_title(RAGraph *g, const char *title);
+R_API RANode *r_agraph_get_first_node(const RAGraph *g);
 R_API RANode *r_agraph_get_node(const RAGraph *g, const char *title);
 R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char *body);
 R_API bool r_agraph_del_node(const RAGraph *g, const char *title);
@@ -618,6 +619,7 @@ R_API void r_agraph_print(RAGraph *g);
 R_API Sdb *r_agraph_get_sdb(RAGraph *g);
 R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user);
 R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
+R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
 #endif
 
 #ifdef __cplusplus
