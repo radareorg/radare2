@@ -180,3 +180,4 @@ scp ~/.idapro/ida.key radare.org:/var/www/radare.org/pub/losers/
 Too bad there is no gif support in r2. Yet. -- @r2gif
 Almost 5am, maybe you should go to bed.
 Jingle sploits, jingle sploits, ropchain all the way.
+Mind that the 'g' in radare is silent
