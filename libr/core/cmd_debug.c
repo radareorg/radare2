@@ -1864,7 +1864,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				free (bpi->name);
 				bpi->name = strdup (input + 3);
 			} else {
-				eprintf ("Cant find breakpoint at "
+				eprintf ("Cannot find breakpoint at "
 					"0x%08"PFMT64x"\n", core->offset);
 			}
 		} else {
@@ -1936,7 +1936,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						"'%s'\n", input+2);
 				}
 			} else {
-				eprintf ("Can't place a breakpoint here. "
+				eprintf ("Cannot place a breakpoint here. "
 					"No mapped memory\n");
 			}
 		}

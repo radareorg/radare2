@@ -2130,7 +2130,7 @@ R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
 	RAnalFunction *f1 = r_anal_get_fcn_at (core->anal, addr, 0);
 	RAnalFunction *f2 = r_anal_get_fcn_at (core->anal, addr2, 0);
 	if (!f1 || !f2) {
-		eprintf ("Cant find function\n");
+		eprintf ("Cannot find function\n");
 		return;
 	}
 	// join all basic blocks from f1 into f2 if they are not

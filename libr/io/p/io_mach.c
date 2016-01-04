@@ -233,18 +233,18 @@ static int mach_write_at(RIO *io, RIOMach *riom, const void *buf, int len, ut64 
 	operms = tsk_getperm (task, pageaddr);
 	if (!tsk_setperm (io, task, pageaddr, pagesize, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
 		perror ("setperm");
-		eprintf ("io.mach: cant set page perms for %d bytes at 0x%08"
+		eprintf ("io.mach: Cannot set page perms for %d bytes at 0x%08"
 			PFMT64x"\n", (int)pagesize, (ut64)pageaddr);
 		//return -1;
 	}
 	if (!tsk_write (task, vaddr, buf, len)) {
 		perror ("write");
-		eprintf ("io.mach: cant write on memory\n");
+		eprintf ("io.mach: Cannot write on memory\n");
 		len = -1;
 	}
 	if (operms) {
 		if (!tsk_setperm (io, task, pageaddr, pagesize, operms)) {
-			eprintf ("io.mach: cant restore page perms\n");
+			eprintf ("io.mach: Cannot restore page perms\n");
 			return -1;
 		}
 	}
@@ -279,7 +279,7 @@ static int debug_attach(int pid) {
 
 #if SUSPEND
 	if (task_suspend (this->port) != KERN_SUCCESS) {
-		eprintf ("cannot suspend task\n");
+		eprintf ("Cannot suspend task\n");
 		return -1; // false
 	}
 #endif

@@ -116,7 +116,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 			if (r_core_bin_delete (core, binfile_num, -1)){
 				if (!r_bin_file_delete (core->bin, fd))
-					eprintf ("Cant find an RBinFile associated with that fd.\n");
+					eprintf ("Cannot find an RBinFile associated with that fd.\n");
 			} else {
 				eprintf ("Couldn't erase because there must be 1 bin object loaded\n");
 			}
