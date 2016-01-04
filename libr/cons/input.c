@@ -487,7 +487,7 @@ R_API char *r_cons_input(const char *msg) {
 		r_line_set_prompt ("");
 	}
 	buf[0] = 0;
-	r_cons_fgets (buf, sizeof(buf), 0, NULL);
+	r_cons_fgets (buf, sizeof (buf), 0, NULL);
 	r_line_set_prompt (oprompt);
 	free (oprompt);
 	return strdup (buf);
