@@ -223,7 +223,7 @@ R_API bool r_core_visual_hudstuff(RCore *core);
 R_API int r_core_visual_classes(RCore *core);
 R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
-R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interactive);
+R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive);
 R_API int r_core_fcn_graph(RCore *core, RAnalFunction *_fcn);
 R_API int r_core_visual_panels(RCore *core);
 R_API int r_core_visual_cmd(RCore *core, int ch);

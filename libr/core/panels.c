@@ -612,7 +612,7 @@ repeat:
 			} else if (strstr (action, "FcnInfo")) {
 				addPanelFrame ("FcnInfo", "afi", 0);
 			} else if (strstr (action, "Graph")) {
-				r_core_visual_graph (core, NULL, true);
+				r_core_visual_graph (core, NULL, NULL, true);
 			//	addPanelFrame ("Graph", "agf", 0);
 			} else if (strstr (action, "System Shell")) {
 				r_cons_set_raw (0);
@@ -820,7 +820,7 @@ repeat:
 				break;
 			}
 			ocolor = r_config_get_i (core->config, "scr.color");
-			r_core_visual_graph (core, NULL, true);
+			r_core_visual_graph (core, NULL, NULL, true);
 			r_config_set_i (core->config, "scr.color", ocolor);
 		}
 		break;

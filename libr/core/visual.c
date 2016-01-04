@@ -1091,7 +1091,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				break;
 			}
 			ocolor = r_config_get_i (core->config, "scr.color");
-			r_core_visual_graph (core, NULL, true);
+			r_core_visual_graph (core, NULL, NULL, true);
 			r_config_set_i (core->config, "scr.color", ocolor);
 		}
 		break;
