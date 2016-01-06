@@ -336,7 +336,7 @@ static int cmd_type(void *data, const char *input) {
 					free (fmt);
 				}// else eprintf ("Cannot find '%s' type\n", input+1);
 				r_cons_printf ("}\n");
-			} //else eprintf ("Cant find type at 0x%llx\n", addr);
+			} //else eprintf ("Cannot find type at 0x%llx\n", addr);
 		 }
 		break;
 	case '?':

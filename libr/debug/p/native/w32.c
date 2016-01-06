@@ -508,7 +508,7 @@ static void r_debug_lstLibAdd(DWORD pid,LPVOID lpBaseOfDll, HANDLE hFile,char * 
 		}
 		lstLibPtr++;
 	}
-	eprintf("r_debug_lstLibAdd: Cant find slot\n");
+	eprintf("r_debug_lstLibAdd: Cannot find slot\n");
 }
 
 static void * r_debug_findlib(void * BaseOfDll) {

@@ -122,7 +122,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	char *path;
 	if (r_sandbox_enable (0)) {
-		eprintf ("Cant delete project in sandbox mode\n");
+		eprintf ("Cannot delete project in sandbox mode\n");
 		return 0;
 	}
 	path = r_core_project_file (core, prjfile);

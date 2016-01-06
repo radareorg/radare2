@@ -149,7 +149,7 @@ static int var_cmd(RCore *core, const char *str) {
 				RAnalVar *var = r_anal_var_get (core->anal, fcn->addr,
 								(char)type, atoi (str + 2), R_ANAL_VAR_SCOPE_LOCAL);
 				if (!var) {
-					eprintf ("Can not find variable in: '%s'\n", str);
+					eprintf ("Cannot find variable in: '%s'\n", str);
 					res = false;
 					break;
 				}
@@ -918,7 +918,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						r_cons_printf ("%c 0x%08" PFMT64x " -> 0x%08" PFMT64x "\n",
 							ref->type, ref->at, ref->addr);
 					}
-				} else eprintf ("Cant find function\n");
+				} else eprintf ("Cannot find function\n");
 			}
 #else
 #warning TODO_ FCNOLD sdbize xrefs here
@@ -2980,7 +2980,7 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 					core->anal->esil->db_trace = sdb_new0 ();
 				}
 			} else {
-				eprintf ("TODO: ate- cant delete specific logs. Use ate-*\n");
+				eprintf ("TODO: ate- cannot delete specific logs. Use ate-*\n");
 			}
 			break;
 		case ' ': {
