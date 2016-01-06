@@ -58,10 +58,10 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 	}
 	return buf;
 }
+
 #define ARG(x) arg(a, handle, insn, str[x], x)
-
-
 #define OPCALL(opchar) arm64math(a, op, addr, buf, len, handle, insn, opchar)
+
 static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar) {
 	const char *r0 = REG64(0);
 	const char *r1 = REG64(1);
@@ -507,8 +507,13 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 					r_strbuf_appendf (&op->esil, "%d,%s,+,%d,%s,<<,+,[4],%s,=",
 						pcdelta, MEMBASE(1), LSHIFT(1), MEMINDEX(1), REG(0));
 				} else {
-					r_strbuf_appendf (&op->esil, "%d,%s,+,%s,+,[4],%s,=",
-						pcdelta, MEMBASE(1), MEMINDEX(1), REG(0));
+					if (ISREG(1)) {
+						r_strbuf_appendf (&op->esil, "%d,%s,+,%s,+,[4],%s,=",
+							pcdelta, MEMBASE(1), MEMINDEX(1), REG(0));
+					} else {
+						r_strbuf_appendf (&op->esil, "%d,%s,+,%d,+,[4],%s,=",
+							pcdelta, MEMBASE(1), MEMDISP(1), REG(0));
+					}
 				}
 			} else {
 				r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
