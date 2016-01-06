@@ -193,15 +193,18 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 		}
 		if (p->hint) {
 			int immbase = p->hint->immbase;
-			char num[256], *n;
+			int endian = 0;
+			char num[256], *pnum;
 			strncpy (num, ptr, sizeof (num)-2);
-			for (n = num; *n; n++) {
-				if (IS_NUMBER (*n))
+			for (pnum = num; *pnum; pnum++) {
+				if (IS_NUMBER (*pnum))
 					continue;
-				if (*n=='x') continue;
+				if (*pnum=='x') continue;
 				break;
 			}
-			*n = 0;
+			*pnum = 0;
+			if (p->anal && p->anal->big_endian)
+				endian = 1;
 			switch (immbase) {
 			case 0:
 				// do nothing
@@ -211,7 +214,40 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 				strcat (num, "b");
 				break;
 			case 2: // hack for ascii
-				snprintf (num, sizeof (num), "'%c'", (char)off);
+
+				memset(num, 0, sizeof(num));
+				pnum = num;
+				*pnum++ = '\'';
+
+				// Convert *off* to ascii string, byte by byte.
+				// Since *num* is 256 bytes long, we can omit
+				// overflow checks.
+				while (off) {
+					unsigned char ch;
+
+					if (endian) {
+						ch = off >> (8 * (sizeof(off) - 1));
+						off <<= 8;
+					} else {
+						ch = off & 0xff;
+						off >>= 8;
+					}
+
+					//Skip first '\x00' bytes
+					if (num[1] == '\0' && ch == '\0') continue;
+
+					if (IS_PRINTABLE(ch)) {
+						*pnum++ = ch;
+					} else {
+						int sz;
+
+						sz = sprintf(pnum, "\\x%2.2x", ch);
+						if (sz < 0) break;
+						pnum += sz;
+					}
+				}
+				*pnum++ = '\'';
+				*pnum = '\0';
 				break;
 			case 8:
 				snprintf (num, sizeof (num), "0%o", (int)off);
