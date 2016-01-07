@@ -1076,12 +1076,11 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 }
 
 #define MINUSONE ((void*)(size_t)-1)
-//#define MUSTSET (setval && field && isfield && mode == R_PRINT_MUSTSET)
-//#define MUSTSEE (ofield != MINUSONE && (field == NULL || (setval == NULL && isfield)) && mode == R_PRINT_MUSTSEE)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
+	const int old_bits = p->bits;
 	char *args = NULL, *bracket, tmp, last = 0;
 	ut64 addr = 0, addr64 = 0, seeki = 0;
 	static int slide = 0, oldslide = 0;
@@ -1200,6 +1199,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			seeki = seek+i;
 			addr = 0LL;
 			invalid = 0;
+			p->bits = old_bits;
 			if (arg[0] == '[') {
 				char *end = strchr (arg,']');
 				if (end == NULL) {
@@ -1280,7 +1280,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 		feed_me_again:
 			switch (isptr) {
-			case 1:
+			case PTRSEEK:
 				{
 				nexti = i + (p->bits/8);
 				i = 0;
@@ -1307,7 +1307,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				}
 				}
 				break;
-			case 2:
+			case PTRBACK:
 				// restore state after pointer seek
 				i = nexti;
 				memcpy (buf, b, len);
@@ -1340,7 +1340,21 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				else i+=size;
 				continue;
 			case 'p': // pointer reference
-				tmp = (p->bits == 64)? 'q': 'x';
+				if (*(arg+1) == '2') {
+					p->bits = 16;
+					arg++;
+				} else if (*(arg+1) == '4') {
+					p->bits = 32;
+					arg++;
+				} else if (*(arg+1) == '8') {
+					p->bits = 64;
+					arg++;
+				}
+				switch (p->bits) {
+					case 16: tmp = 'w'; break;
+					case 32: tmp = 'x'; break;
+					default: tmp = 'q'; break;
+				}
 				break;
 			}
 
@@ -1504,7 +1518,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if (!(mode & R_PRINT_ISFIELD)) nxtfield = MINUSONE;
 					else if (field) nxtfield = strchr (ofield, '.');
 					if (nxtfield != MINUSONE && nxtfield != NULL) nxtfield++;
-		
+
 					if (MUSTSEE)
 						if (!SEEVALUE) p->cb_printf ("\n");
 					if (MUSTSEEJSON) {
