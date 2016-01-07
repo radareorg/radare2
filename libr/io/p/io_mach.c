@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_userconf.h>
 
@@ -14,6 +14,7 @@
 //no available for ios #include <mach/mach_vm.h>
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
+#include <mach/mach_vm.h>
 #include <mach/mach_init.h>
 #include <mach/mach_port.h>
 #include <mach/mach_traps.h>
@@ -107,20 +108,82 @@ static task_t pid_to_task(int pid) {
 	return task;
 }
 
+static ut64 the_lower = 0LL;
+
+static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
+	struct vm_region_submap_info_64 info;
+	mach_vm_address_t address = MACH_VM_MIN_ADDRESS;
+	mach_vm_size_t size = (mach_vm_size_t) 0;
+	mach_vm_size_t osize = (mach_vm_size_t) 0;
+	natural_t depth = 0;
+	kern_return_t kr;
+	int tid = RIOMACH_PID (fd->data);
+	task_t task = pid_to_task (tid);
+	ut64 lower = addr;
+#if __arm64__ || __aarch64__
+	size = osize = 16384; // acording to frida
+#else
+	size = osize = 4096;
+#endif
+	if (the_lower) {
+		if (addr < the_lower) {
+			return the_lower;
+		}
+		return addr;
+	}
+
+	for (;;) {
+		mach_msg_type_number_t info_count;
+		info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
+		memset (&info, 0, sizeof (info));
+		kr = mach_vm_region_recurse (task, &address, &size,
+			&depth, (vm_region_recurse_info_t) &info, &info_count);
+		if (kr != KERN_SUCCESS) {
+			break;
+		}
+		if (lower == addr) {
+			lower = address;
+		}
+		if (info.is_submap) {
+			depth++;
+			continue;
+		}
+		if (addr >= address && addr < address + size) {
+			return addr;
+		}
+		if (address < lower) {
+			lower = address;
+		}
+		if (size < 1) {
+			size = osize; // fuck
+		}
+		address += size;
+		size = 0;
+	}
+	the_lower = lower;
+	return lower;
+}
+
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	vm_size_t size = 0;
 	int blen, err, copied = 0;
 	int blocksize = 32;
+
+	memset (buf, 0xff, len);
 	if (RIOMACH_PID (fd->data) == 0) {
-		if (io->off<4096)
+		if (io->off < 4096)
 			return len;
 	}
-	memset (buf, 0xff, len);
-	while (copied<len) {
-		blen = R_MIN ((len-copied), blocksize);
+
+	copied = getNextValid(io, fd, io->off) - io->off;
+	if (copied<0) copied = 0;
+
+	while (copied < len) {
+		blen = R_MIN ((len - copied), blocksize);
 		//blen = len;
 		err = vm_read_overwrite (RIOMACH_TASK (fd->data),
-			(ut64)io->off+copied, blen, (pointer_t)buf+copied, &size);
+			(ut64)io->off + copied, blen,
+			(pointer_t)buf + copied, &size);
 		switch (err) {
 		case KERN_PROTECTION_FAILURE:
 			//eprintf ("r_io_mach_read: kern protection failure.\n");
@@ -133,26 +196,23 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 			blocksize = 1;
 			blen = 1;
 			buf[copied] = 0xff;
-			//eprintf("invaddr %d\n",len);
 			break;
 		}
-		if (err == -1) {
-			//eprintf ("Cannot read\n");
+		if (err == -1 || size < 1) {
 			return -1;
 		}
-		if (size==0) {
+		if (size == 0) {
 			if (blocksize == 1) {
 				memset (buf+copied, 0xff, len-copied);
-				return len; //size+copied;
+				return len;
 			}
 			blocksize = 1;
 			blen = 1;
 			buf[copied] = 0xff;
 		}
-		//if (size != blen) { return size+copied; }
 		copied += blen;
 	}
-	return len; //(int)size;
+	return len;
 }
 
 static vm_address_t tsk_getpagebase(ut64 addr) {
