@@ -237,7 +237,7 @@ R_API char *r2p_read(R2Pipe *r2p) {
 	buf[bufsz-1] = 0;
 #else
 	int i, rv;
-	for (i=0; i<bufsz; i++) {
+	for (i=0; i < bufsz; i++) {
 		rv = read (r2p->output[0], buf + i, 1);
 		if (i+2 >= bufsz) {
 			bufsz += 4096;
@@ -251,7 +251,10 @@ R_API char *r2p_read(R2Pipe *r2p) {
 		}
 		if (rv != 1 || !buf[i]) break;
 	}
-	if (buf) buf[i] = 0;
+	if (buf) {
+		int zpos = (i<bufsz)? i: i - 1;
+		buf[zpos] = 0;
+	}
 #endif
 	return buf;
 }

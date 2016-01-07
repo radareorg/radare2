@@ -24,6 +24,7 @@ static int __dump_sections_to_disk(RCore *core) {
 }
 
 static int __dump_section_to_disk(RCore *core, char *file) {
+	char *heapfile = NULL;
 	ut64 o = core->offset;
 	RListIter *iter;
 	RIOSection *s;
@@ -35,7 +36,11 @@ static int __dump_section_to_disk(RCore *core, char *file) {
 			ut8 *buf = malloc (s->size);
 			r_io_read_at (core->io, s->offset, buf, s->size);
 			if (!file) {
-				file = (char *)malloc(len * sizeof(char));
+				heapfile = (char *)malloc (len * sizeof(char));
+				if (!heapfile) {
+					return false;
+				}
+				file = heapfile;
 				snprintf (file, len,
 					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
 					s->vaddr, s->vaddr+s->size,
@@ -44,10 +49,12 @@ static int __dump_section_to_disk(RCore *core, char *file) {
 			if (!r_file_dump (file, buf, s->size, 0)) {
 				eprintf ("Cannot write '%s'\n", file);
 				free (buf);
+				free (heapfile);
 				return false;
 			}
 			eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
 			free (buf);
+			free (heapfile);
 			return true;
 		}
 	}
@@ -167,6 +174,7 @@ static int cmd_section(void *data, const char *input) {
 					"%s", input + 2);
 			}
 			__dump_section_to_disk (core, file);
+			free (file);
 			break;
 		case 'a':
 			__dump_sections_to_disk (core);

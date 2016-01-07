@@ -462,7 +462,8 @@ R_API char *r_file_readlink(const char *path) {
 #if __UNIX__
 		int ret;
 		char pathbuf[4096];
-		strcpy (pathbuf, path);
+		strncpy (pathbuf, path, sizeof (pathbuf)-1);
+		pathbuf[sizeof (pathbuf)-1] = 0;
 		repeat:
 		ret = readlink (path, pathbuf, sizeof (pathbuf)-1);
 		if (ret != -1) {

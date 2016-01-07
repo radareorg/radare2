@@ -2510,12 +2510,12 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 
 	if (!g) {
 		graph_allocated = true;
-		g = r_agraph_new (can);
 		fcn = _fcn ? _fcn : r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (!fcn) {
 			eprintf ("No function in current seek\n");
 			return false;
 		}
+		g = r_agraph_new (can);
 		if (!g) {
 			is_error = true;
 			goto err_graph_new;
