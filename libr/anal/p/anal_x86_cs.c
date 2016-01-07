@@ -1293,6 +1293,34 @@ SETL/SETNGE
 			op->type = R_ANAL_OP_TYPE_ADD;
 			op->family = R_ANAL_OP_FAMILY_MMX;
 			break;
+		case X86_INS_XCHG:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			op->family = R_ANAL_OP_FAMILY_CPU;
+			{
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 1, NULL);
+				esilprintf (op, "%s,%s,%s,=,%s,=", src, dst, src, dst);
+				free (src);
+				free (dst);
+			}
+			break;
+		case X86_INS_XADD: /* xchg + add */
+			op->type = R_ANAL_OP_TYPE_ADD;
+			op->family = R_ANAL_OP_FAMILY_CPU;
+			{
+				char *src = getarg (&gop, 1, 0, NULL);
+				char *dst = getarg (&gop, 0, 1, NULL);
+				if (src == dst) {
+					esilprintf (op, "%s,%s,+,%s", src, dst, dst);
+				} else {
+					esilprintf (op, "%s,%s,%s,=,%s,=," "%s,%s,+,%s",
+							src, dst, src, dst,
+							src, dst, dst);
+				}
+				free (src);
+				free (dst);
+			}
+			break;
 		case X86_INS_FADD:
 		case X86_INS_FADDP:
 			op->family = R_ANAL_OP_FAMILY_FPU;
@@ -1303,7 +1331,6 @@ SETL/SETNGE
 		case X86_INS_ADDSUBPD:
 		case X86_INS_ADDSUBPS:
 		case X86_INS_ADDPD:
-		case X86_INS_XADD:
 			// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 			// result.
 			op->type = R_ANAL_OP_TYPE_ADD;
