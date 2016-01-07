@@ -4,7 +4,7 @@
 #include "r_util.h"
 #include <stdio.h>
 
-/* int c; ret = hex_to_byet(&c, 'c'); */
+/* int c; ret = hex_to_byte(&c, 'c'); */
 R_API int r_hex_to_byte(ut8 *val, ut8 c) {
 	if ('0' <= c && c <= '9')      *val = (ut8)(*val) * 16 + (c-'0');
 	else if (c >= 'A' && c <= 'F') *val = (ut8)(*val) * 16 + (c-'A'+10);
