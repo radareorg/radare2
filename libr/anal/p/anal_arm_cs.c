@@ -26,6 +26,7 @@
 #define ISREG64(x) insn->detail->arm64.operands[x].type == ARM64_OP_REG
 #define ISMEM(x) insn->detail->arm.operands[x].type == ARM_OP_MEM
 #define LSHIFT(x) insn->detail->arm.operands[x].mem.lshift
+#define LSHIFT2(x) insn->detail->arm.operands[x].shift.value
 
 /* arm64 */
 
@@ -503,9 +504,9 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 					op->refptr = 4;
 					break;
 				}
-				if (ISMEM(1) && LSHIFT(1)) {
+				if (ISMEM(1) && LSHIFT2(1)) {
 					r_strbuf_appendf (&op->esil, "%d,%s,+,%d,%s,<<,+,[4],%s,=",
-						pcdelta, MEMBASE(1), LSHIFT(1), MEMINDEX(1), REG(0));
+						pcdelta, MEMBASE(1), LSHIFT2(1), MEMINDEX(1), REG(0));
 				} else {
 					if (ISREG(1)) {
 						r_strbuf_appendf (&op->esil, "%d,%s,+,%s,+,[4],%s,=",
