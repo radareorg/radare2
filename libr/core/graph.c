@@ -567,21 +567,25 @@ static void create_layers (RAGraph *g) {
 /* it permutes each layer, trying to find the best ordering for each layer
  * to minimize the number of crossing edges */
 static void minimize_crossings (const RAGraph *g) {
-	int i, cross_changed;
+	int i, cross_changed, max_changes = 4096;
 
 	do {
 		cross_changed = false;
+		--max_changes;
 
 		for (i = 0; i < g->n_layers; ++i)
 			cross_changed |= layer_sweep (g->graph, g->layers, g->n_layers, i, true);
-	} while (cross_changed);
+	} while (cross_changed && max_changes);
+
+	max_changes = 4096;
 
 	do {
 		cross_changed = false;
+		--max_changes;
 
 		for (i = g->n_layers - 1; i >= 0; --i)
 			cross_changed |= layer_sweep (g->graph, g->layers, g->n_layers, i, false);
-	} while (cross_changed);
+	} while (cross_changed && max_changes);
 }
 
 static int find_dist (const struct dist_t *a, const struct dist_t *b) {
