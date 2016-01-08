@@ -1022,8 +1022,8 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 			ut8 buf[32];
 			ut32 *n32 = (ut32 *)buf;
 			ut64 *n64 = (ut64*)buf;
-			ut64 n = (core->assembler->bits == 64)? *n64: *n32;
 			r_io_read_at (core->io, value, buf, sizeof (buf));
+			ut64 n = (core->assembler->bits == 64)? *n64: *n32;
 			r_strbuf_appendf (s, " [0]=0x%"PFMT64x, n);
 		}
 	}
