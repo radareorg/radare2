@@ -189,6 +189,15 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		data[l++] = 0x0b;
 		return l;
 	}
+	if (!strncmp (op, "neg ", 4)) {
+		const char *arg = op + 4;
+		int arg0 = getreg (arg);
+		if (a->bits == 64 && *arg == 'r')
+			data[l++] = 0x48;
+		data[l++] = 0xf7;
+		data[l++] = 0xd8 | arg0;
+		return l;
+	}
 	if (!strcmp (op, "rdtsc")) {
 		data[l++] = 0x0f;
 		data[l++] = 0x31;
