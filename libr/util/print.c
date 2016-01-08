@@ -295,18 +295,18 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	d = dst;
 #endif
 	// XXX: overflow here
-// TODO: Use r_cons primitives here
+	// TODO: Use r_cons primitives here
 #define memcat(x,y) { memcpy(x,y,strlen(y));x+=strlen(y); }
-	//for (s=str, d=dst; *s; s+=2, d+=2, i++) {
-	for (s=str, i=0 ; s[0]; s+=2, d+=2, i++) {
+	for (s=str, i=0 ; s[0]; i++) {
+		int d_inc = 2;
 		if (p->cur_enabled) {
-			if (i==ocur-n)
-				//memcat (d, "\x1b[27;47;30m");
-				//memcat (d, "\x1b[0m");//27;47;30m");
-				memcat (d, "\x1b[0m");
-				memcat (d, lastcol);
-			if (i>=cur-n && i<ocur-n)
-				memcat (d, "\x1b[7m");
+			if (i == ocur-n) {
+				memcat (d, Color_RESET);
+			}
+			memcat (d, lastcol);
+			if (i >= cur-n && i < ocur-n) {
+				memcat (d, Color_INVERT);
+			}
 		}
 		if (colors) {
 			if (s[0]=='0' && s[1]=='0') lastcol = color_0x00;
@@ -315,22 +315,20 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 			else {
 				ch = r_hex_pair2bin (s);
 				if (ch==-1) break;
-				//sscanf (s, "%02x", &ch); // XXX can be optimized
 				if (IS_PRINTABLE (ch)) {
 					lastcol = color_text;
 				} else lastcol = color_other;
 			}
 			memcat (d, lastcol);
 		}
-		memcpy (d, s, 2);
-		if (bs) {
-			memcpy (d + 2, " ", 1);
-			d++;
-		}
+		if (s[0] == '.') d_inc = 1;
+		memcpy (d, s, d_inc);
+		d += d_inc;
+		s += d_inc;
+		if (bs) memcat (d, " ");
 	}
-	if (colors || p->cur_enabled)
-		memcpy (d, Color_RESET, strlen (Color_RESET)+1);
-	else *d = 0;
+	if (colors || p->cur_enabled) memcat (d, Color_RESET);
+	*d = '\0';
 	return dst;
 }
 
