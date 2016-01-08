@@ -1440,13 +1440,14 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 			ds->p->cur_enabled = (ds->cursor != -1);
 			nstr = r_print_hexpair (ds->p, str, ds->index);
 			if (ds->p->bytespace) {
-				k = (ds->nb + (ds->nb/2)) - r_str_ansi_len (nstr);
+				k = (ds->nb + (ds->nb / 2)) - r_str_ansi_len (nstr) + 2;
 			} else {
 				k = ds->nb - r_str_ansi_len (nstr)+1;
 			}
-			if (k>0) {
-				for (j=0; j<k; j++)
+			if (k > 0) {
+				for (j = 0; j < k; j++) {
 					pad[j] = ' ';
+				}
 				pad[j] = 0;
 				if (ds->lbytes) {
 					// hack to align bytes left
