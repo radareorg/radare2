@@ -42,6 +42,7 @@ typedef struct r_flag_t {
 	st64 base;
 	int space_idx;
 	int space_idx2;
+	bool space_strict;
 	char *spaces[R_FLAG_SPACES_MAX];
 	RNum *num;
 #if USE_HT

@@ -551,6 +551,8 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off) {
 	RListIter *iter;
 
 	r_list_foreach (f->flags, iter, item) {
+		if (f->space_strict && (f->space_idx != -1) && (item->space != f->space_idx))
+			continue;
 		if (item->offset == off)
 			return item;
 		if (off > item->offset) {

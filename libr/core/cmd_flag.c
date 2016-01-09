@@ -538,7 +538,9 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 				addr = r_num_math (core->num, input+2);
 				break;
 			}
+			core->flags->space_strict = true;
 			f = r_flag_get_at (core->flags, addr);
+			core->flags->space_strict = false;
 			if (f) {
 				if (f->offset != addr) {
 					r_cons_printf ("%s + %d\n", f->name,
