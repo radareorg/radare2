@@ -977,6 +977,16 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		mapname = NULL;
 	}
 	sect = value? r_io_section_vget (core->io, value): NULL;
+	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ){
+		// Do not repeat "stack" or "heap" words unnecessarily.
+		if (sect && sect->name[0]) {
+			r_strbuf_appendf (s," (%s)", sect->name);
+		}
+		if (mapname) {
+			r_strbuf_appendf (s, " (%s)", mapname);
+			free (mapname);
+		}
+	}
 	if (fi) r_strbuf_appendf (s, " %s", fi->name);
 	if (fcn) r_strbuf_appendf (s, " %s", fcn->name);
 	if (type) {
@@ -1029,15 +1039,8 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			ut64 *n64 = (ut64*)buf;
 			r_io_read_at (core->io, value, buf, sizeof (buf));
 			ut64 n = (core->assembler->bits == 64)? *n64: *n32;
-			r_strbuf_appendf (s, " [0]=0x%"PFMT64x, n);
+			r_strbuf_appendf (s, " 0x%"PFMT64x, n);
 		}
-	}
-	if (sect && sect->name[0]) {
-		r_strbuf_appendf (s," (%s)", sect->name);
-	}
-	if (mapname) {
-		r_strbuf_appendf (s, " (%s)", mapname);
-		free (mapname);
 	}
 	{
 		ut8 buf[128], widebuf[256];
@@ -1071,11 +1074,11 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		ut64 *n64 = (ut64*)buf;
 		r_io_read_at (core->io, value, buf, sizeof (buf));
 		ut64 n = (core->assembler->bits == 64)? *n64: *n32;
-		if(n != value){
-			char* rrstr=r_core_anal_hasrefs_to_depth(core, n, depth-1);
-			if(rrstr){
-				if(rrstr[0]){
-					r_strbuf_appendf(s, " --> %s", rrstr);
+		if(n != value) {
+			char* rrstr = r_core_anal_hasrefs_to_depth (core, n, depth-1);
+			if(rrstr) {
+				if(rrstr[0]) {
+					r_strbuf_appendf (s, " -->%s", rrstr);
 				}
 				free(rrstr);
 			}
