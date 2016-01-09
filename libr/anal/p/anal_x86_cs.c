@@ -1610,6 +1610,16 @@ static int set_reg_profile(RAnal *anal) {
 		 break;
 	case 64:
 		 p =
+		"# RAX     return value\n"
+		"# RCX     argument 1\n"
+		"# RDX     argument 2\n"
+		"# R8      argument 3\n"
+		"# R9      argument 4\n"
+		"# R10-R11 syscall/sysret\n"
+		"# R12-R15 GP preserved\n"
+		"# RSI     preserved source\n"
+		"# RDI     preserved destination\n"
+		"# RSP     stack pointer\n"
 		 "=PC	rip\n"
 		 "=SP	rsp\n"
 		 "=BP	rbp\n"
@@ -1620,7 +1630,6 @@ static int set_reg_profile(RAnal *anal) {
 		 "=A4	r8\n"
 		 "=A5	r9\n"
 		 "=SN	rax\n"
-		 "# no profile defined for x86-64\n"
 		 "gpr	rax	.64	80	0\n"
 		 "gpr	eax	.32	80	0\n"
 		 "gpr	ax	.16	80	0\n"

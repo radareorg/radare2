@@ -1086,6 +1086,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	const char *name;
 	char *arg;
 	switch (str[0]) {
+	case 'C': // "drC"
+		if (core->dbg->reg->reg_profile_cmt) {
+			r_cons_printf ("%s\n", core->dbg->reg->reg_profile_cmt);
+		}
+		break;
 	case '-': // "dr-"
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '-', 0);
 		break;
@@ -1109,6 +1114,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"dr=", "", "Show registers in columns",
 				"dr?", "<register>", "Show value of given register",
 				"drb", " [type]", "Display hexdump of gpr arena (WIP)",
+				"drC", "", "Show register profile comments",
 				"drc", " [name]", "Related to conditional flag registers",
 				"drd", "", "Show only different registers",
 				"drl", "", "List all register names",

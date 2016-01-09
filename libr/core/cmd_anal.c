@@ -1123,6 +1123,7 @@ static void ar_show_help(RCore *core) {
 		"ar", " 32", "Show 32 bit registers",
 		"ar", " all", "Show all bit registers",
 		"ar", " <type>", "Show all registers of given type",
+		"arC", "", "Display register profile comments",
 		"arr", "", "Show register references (telescoping)",
 		"ar=", "", "Show register values in columns",
 		"ar?", " <reg>", "Show register value",
@@ -1182,6 +1183,11 @@ void cmd_anal_reg (RCore *core, const char *str) {
 	} break;
 	case '0': // "ar"
 		r_reg_arena_zero (core->anal->reg);
+		break;
+	case 'C': // "ara"
+		if (core->anal->reg->reg_profile_cmt) {
+			r_cons_printf ("%s\n", core->anal->reg->reg_profile_cmt);
+		}
 		break;
 	case 'a': // "ara"
 		switch (str[1]) {

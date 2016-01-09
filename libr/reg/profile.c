@@ -101,8 +101,12 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 		l++;
 		// Skip comment lines
 		if (*p == '#') {
-			while (*p != '\n')
-				p++;
+			const char *q = p;
+			while (*q != '\n')
+				q++;
+			reg->reg_profile_cmt = r_str_concatlen (
+				reg->reg_profile_cmt, p, (int)(q - p) + 1);
+			p = q;
 			continue;
 		}
 		j = 0;

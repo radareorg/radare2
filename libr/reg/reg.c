@@ -95,8 +95,8 @@ R_API const char *r_reg_get_role(int role) {
 R_API void r_reg_free_internal(RReg *reg) {
 	int i;
 
-	free (reg->reg_profile_str);
-	reg->reg_profile_str = NULL;
+	R_FREE (reg->reg_profile_str);
+	R_FREE (reg->reg_profile_cmt);
 
 	for (i = 0; i < R_REG_NAME_LAST; i++) {
 		if (reg->name[i]) {
