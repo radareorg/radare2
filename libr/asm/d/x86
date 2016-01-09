@@ -47,10 +47,12 @@ clts=clear task-switched flag in cr0
 cmc=complement carry flag
 cmovb=conditional move - below/not above or equal/carry (cf=1)
 cmovbe=conditional move - below or equal/not above (cf=1 and zf=1)
+cmove=conditional move - if equal (zf=1)
 cmovl=conditional move - less/not greater (sf!=of)
 cmovle=conditional move - less or equal/not greater ((zf=1) or (sf!=of))
 cmovnb=conditional move - not below/above or equal/not carry (cf=0)
 cmovnbe=conditional move - not below or equal/above (cf=0 and zf=0)
+cmovne=conditional move - if not equal (zf=0)
 cmovnl=conditional move - not less/greater or equal (sf=of)
 cmovnle=conditional move - not less nor equal/greater ((zf=0) and (sf=of))
 cmovno=conditional move - not overflow (of=0)
@@ -91,7 +93,7 @@ cvtsd2si=convert scalar double-fp value to dw integer
 cvtsd2ss=convert scalar double-fp value to scalar single-fp value
 cvtsi2sd=convert dw integer to scalar double-fp value
 cvtsi2ss=convert dw integer to scalar single-fp value
-cvtss2sd=convert scalar single-fp value to scalar double-fp value 
+cvtss2sd=convert scalar single-fp value to scalar double-fp value
 cvtss2si=convert scalar single-fp value to dw integer
 cvttpd2dq=convert with trunc. packed double-fp values to dw integers
 cvttpd2pi=convert with trunc. packed double-fp values to dw integers
@@ -243,6 +245,8 @@ invvpid=invalidate translations based on vpid
 iret=return from interrupt
 iretd=interrupt return
 iretq=interrupt return (64 bit)
+ja=jump short if above (cf=0 and zf=0)
+jae=jump short if above or equal (cf=0)
 jb=jump short if below/not above or equal/carry (cf=1)
 jbe=jump short if below or equal/not above (cf=1 and zf=1)
 jcxz=jump short if ecx register is 0
@@ -309,6 +313,7 @@ minsd=return minimum scalar double-fp value
 minss=return minimum scalar single-fp value
 monitor=set up monitor address
 mov=moves data from src to dst
+movabs=absolute data moves
 movapd=move aligned packed double-fp values
 movaps=move aligned packed single-fp values
 movbe=move data after swapping bytes
@@ -505,6 +510,7 @@ rdpmc=read performance-monitoring counters
 rdtsc=read time-stamp counter
 rdtscp=read time-stamp counter and processor id
 rep=repeats next instruction ECX times
+repe=repeat string
 repnz=repeat string operation prefix
 repz=repeat string operation prefix
 ret=return from subroutine. pop 4 bytes from esp and jump there.
@@ -546,6 +552,7 @@ scasb=cmp al, ES:[edi++]
 scasw=cmp ax, ES:[edi+=2]
 setb=set byte on condition - below/not above or equal/carry (cf=1)
 setbe=set byte on condition - below or equal/not above (cf=1 and zf=1)
+sete=set byte if equal (zf=1)
 setl=set byte on condition - less/not greater (sf!=of)
 setle=set byte on condition - less or equal/not greater ((zf=1) or (sf!=of))
 setnb=set byte on condition - not below/above or equal/not carry (cf=0)
