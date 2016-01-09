@@ -951,7 +951,12 @@ static int is_string (const ut8 *buf, int size, int *len) {
 	return 1;
 }
 
+static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth);
 R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
+	return r_core_anal_hasrefs_to_depth(core, value, 5);
+}
+
+static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	RStrBuf *s = r_strbuf_new (NULL);
 	ut64 type;
 	RIOSection *sect;
@@ -1022,8 +1027,8 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 			ut8 buf[32];
 			ut32 *n32 = (ut32 *)buf;
 			ut64 *n64 = (ut64*)buf;
-			ut64 n = (core->assembler->bits == 64)? *n64: *n32;
 			r_io_read_at (core->io, value, buf, sizeof (buf));
+			ut64 n = (core->assembler->bits == 64)? *n64: *n32;
 			r_strbuf_appendf (s, " [0]=0x%"PFMT64x, n);
 		}
 	}
@@ -1058,6 +1063,23 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 			}
 		}
 
+	}
+	if ((type & R_ANAL_ADDR_TYPE_READ) && !(type & R_ANAL_ADDR_TYPE_EXEC) && depth) {
+		// Try to telescope further, but only several levels deep.
+		ut8 buf[32];
+		ut32 *n32 = (ut32 *)buf;
+		ut64 *n64 = (ut64*)buf;
+		r_io_read_at (core->io, value, buf, sizeof (buf));
+		ut64 n = (core->assembler->bits == 64)? *n64: *n32;
+		if(n != value){
+			char* rrstr=r_core_anal_hasrefs_to_depth(core, n, depth-1);
+			if(rrstr){
+				if(rrstr[0]){
+					r_strbuf_appendf(s, " --> %s", rrstr);
+				}
+				free(rrstr);
+			}
+		}
 	}
 	{
 		char *rs = strdup (r_strbuf_get (s));
