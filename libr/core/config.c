@@ -1636,6 +1636,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("hex.pairs", "true", &cb_hexpairs, "Show bytes paired in 'px' hexdump");
 	SETI("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");
 	SETICB("hex.cols", 16, &cb_hexcols, "Number of columns in hexdump");
+	SETI("hex.depth", 5, "Maximal level of recurrence while telescoping memory");
 	SETPREF("hex.onechar", "false", "Number of columns in hexdump");
 	SETICB("hex.stride", 0, &cb_hexstride, "Line stride in hexdump (default is 0)");
 
