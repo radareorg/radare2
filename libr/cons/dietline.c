@@ -451,6 +451,8 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 	int ch, i=0; /* grep completion */
 	int vch=0;
 	char *tmp_ed_cmd, prev = 0;
+	HANDLE hClipBoard;
+	char *clipText;
 
 	I.buffer.index = I.buffer.length = 0;
 	I.buffer.data[0] = '\0';
@@ -660,6 +662,24 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			I.buffer.data[0] = '\0';
 			I.buffer.length = 0;
 			I.buffer.index = 0;
+			break;
+		case 22: // ^V - Paste from windows clipboard
+			if (OpenClipboard(NULL)) {
+				hClipBoard = GetClipboardData(CF_TEXT);
+				if (hClipBoard) {
+					clipText = GlobalLock(hClipBoard);
+					if (clipText) {
+						I.buffer.length += strlen(clipText);
+						if (I.buffer.length < R_LINE_BUFSIZE) {
+							I.buffer.index = I.buffer.length;
+							strcat (I.buffer.data, clipText);
+						} else I.buffer.length -= strlen (I.clipboard);
+
+					}
+					GlobalUnlock(hClipBoard);
+				}
+				CloseClipboard();
+			}
 			break;
 		case 23: // ^W ^w
 			if (I.buffer.index>0) {
