@@ -6,7 +6,7 @@ SDB=$(SDBPATH)/sdb
 
 P=${DESTDIR}${DATADIR}/radare2/${VERSION}/format
 
-DLLS=WS2_32 OLEAUT32 WSOCK32 MSI CSMFPAPI
+DLLS=WS2_32 OLEAUT32 WSOCK32 MSI CSMFPAPI MSVBVM60
 DLL_SDB=$(addsuffix .sdb,$(addprefix dll/,$(DLLS)))
 #-include $(OBJS:.o=.d)
 
