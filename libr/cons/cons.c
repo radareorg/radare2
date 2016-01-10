@@ -536,10 +536,8 @@ R_API void r_cons_visual_write (char *buffer) {
 	const char *endptr;
 	char *nl, *ptr = buffer, *pptr;
 
-	if (I.null)
-		return;
+	if (I.null) return;
 	memset (&white, ' ', sizeof (white));
-
 	while ((nl = strchr (ptr, '\n'))) {
 		int len = ((int)(size_t)(nl-ptr))+1;
 
@@ -550,23 +548,27 @@ R_API void r_cons_visual_write (char *buffer) {
 		plen = ptr > buffer ? len : len - 1;
 
 		if (alen > cols) {
+			int olen = len;
 			endptr = r_str_ansi_chrn (ptr, cols);
 			endptr++;
-			len = (endptr-ptr);
+			len = endptr - ptr;
 			plen = ptr > buffer ? len : len - 1;
-			if (lines > 0)
+			if (lines > 0) {
 				r_cons_write (pptr, plen);
+				if (len != olen) {
+					r_cons_write (Color_RESET,strlen (Color_RESET));
+				}
+			}
 		} else {
 			if (lines > 0) {
 				int w = cols - alen;
 				r_cons_write (pptr, plen);
 				if (I.blankline && w>0) {
-					if (w>sizeof (white)-1)
-						w = sizeof (white)-1;
+					if (w > sizeof (white) - 1)
+						w = sizeof (white) - 1;
 					r_cons_write (white, w);
 				}
 			}
-
 			// TRICK to empty columns.. maybe buggy in w32
 			if (r_mem_mem ((const ut8*)ptr, len, (const ut8*)"\x1b[0;0H", 6)) {
 				lines = I.rows;
@@ -578,7 +580,7 @@ R_API void r_cons_visual_write (char *buffer) {
 	}
 	/* fill the rest of screen */
 	if (lines>0) {
-		if (cols>sizeof (white))
+		if (cols > sizeof (white))
 			cols = sizeof (white);
 		while (--lines >= 0)
 			r_cons_write (white, cols);

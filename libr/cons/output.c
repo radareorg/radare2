@@ -164,39 +164,37 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 			continue;
 		} else
 		if (esc == 2) {
-			{
-				int x, y;
-				const char *ptr2 = NULL;
-				int i, state = 0;
-				for (i=0; ptr[i] && state>=0; i++) {
-					switch (state) {
-					case 0:
-						if (ptr[i]==';') {
-							y = atoi ((const char *)ptr);
-							state = 1;
-							ptr2 = (const char *)ptr+i+1;
-						} else
-						if (ptr[i] >='0' && ptr[i]<='9') {
-							// ok
-						} else state = -1; // END FAIL
-						break;
-					case 1:
-						if (ptr[i]=='H') {
-							x = atoi (ptr2);
-							state = -2; // END OK
-						} else
-						if (ptr[i] >='0' && ptr[i]<='9') {
-							// ok
-						} else state = -1; // END FAIL
-						break;
-					}
+			int x, y;
+			const char *ptr2 = NULL;
+			int i, state = 0;
+			for (i=0; ptr[i] && state>=0; i++) {
+				switch (state) {
+				case 0:
+					if (ptr[i]==';') {
+						y = atoi ((const char *)ptr);
+						state = 1;
+						ptr2 = (const char *)ptr+i+1;
+					} else
+					if (ptr[i] >='0' && ptr[i]<='9') {
+						// ok
+					} else state = -1; // END FAIL
+					break;
+				case 1:
+					if (ptr[i]=='H') {
+						x = atoi (ptr2);
+						state = -2; // END OK
+					} else
+					if (ptr[i] >='0' && ptr[i]<='9') {
+						// ok
+					} else state = -1; // END FAIL
+					break;
 				}
-				if (state == -2) {
-					w32_gotoxy (x, y);
-					ptr += i;
-					str = ptr + 1;// + i-2;
-					continue;
-				}
+			}
+			if (state == -2) {
+				w32_gotoxy (x, y);
+				ptr += i;
+				str = ptr + 1;// + i-2;
+				continue;
 			}
 			if (ptr[0]=='0'&&ptr[1]==';'&&ptr[2]=='0') {
 				// \x1b[0;0H
