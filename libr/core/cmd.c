@@ -666,7 +666,7 @@ static int cmd_kuery(void *data, const char *input) {
 			eprintf ("Usage: kd [file] [namepsace]\n");
 		}
 		break;
-	case '?':{
+	case '?': {
 			const char* help_msg[] = {
 			"Usage:", "k[s] [key[=value]]", "Sdb Query",
 			"k", " foo=bar", "set value",
@@ -1041,7 +1041,7 @@ static int cmd_system(void *data, const char *input) {
 		break;
 	default:
 		n = atoi (input);
-		if (*input=='0' || n>0) {
+		if (*input=='0' || n > 0) {
 			const char *cmd = r_line_hist_get (n);
 			if (cmd) r_core_cmd0 (core, cmd);
 			//else eprintf ("Error setting up system environment\n");
@@ -1179,18 +1179,22 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 	} else colon = NULL;
 	if (rep>0) {
-		while (*cmd>='0' && *cmd<='9')
+		while (*cmd >= '0' && *cmd <= '9')
 			cmd++;
 		// do not repeat null cmd
 		if (!*cmd) goto beach;
 	}
 	if (rep<1) rep = 1;
 	// XXX if output is a pipe then we dont want to be interactive
-	if (rep>INTERACTIVE_MAX_REP) {
-		if (r_config_get_i (core->config, "scr.interactive")) {
-			if (!r_cons_yesno ('n',
-				"Are you sure to repeat this %d times? (y/N)", rep))
-				goto beach;
+	if (rep > 1 && r_sandbox_enable (0)) {
+		eprintf ("Command repeat sugar disabled in sandbox mode (%s)\n", cmd);
+		goto beach;
+	} else {
+		if (rep > INTERACTIVE_MAX_REP) {
+			if (r_config_get_i (core->config, "scr.interactive")) {
+				if (!r_cons_yesno ('n', "Are you sure to repeat this %d times? (y/N)", rep))
+					goto beach;
+			}
 		}
 	}
 	// TODO: store in core->cmdtimes to speedup ?
@@ -2048,11 +2052,11 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		i = 0;
 		while (str[i]) {
 			j = i;
-			for (;str[j]&&str[j]==' ';j++); // skip spaces
-			for (i=j;str[i]&&str[i]!=' ';i++); // find EOS
+			for (; str[j] && str[j] == ' '; j++); // skip spaces
+			for (i = j; str[i] && str[i] != ' '; i++); // find EOS
 			ch = str[i];
 			str[i] = '\0';
-			word = strdup (str+j);
+			word = strdup (str + j);
 			if (word == NULL)
 				break;
 			str[i] = ch;
@@ -2102,10 +2106,8 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		}
 	}
 
-	if (cstr==NULL)
-		return false;
-	if (*cstr == '|') {
-		// RAW COMMENT
+	if (!cstr || *cstr == '|') {
+		// raw comment syntax
 		return false;
 	}
 	if (!strncmp (cstr, "/*", 2)) {
@@ -2120,19 +2122,18 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	}
 	if (core->incomment)
 		return false;
+
 	if (log && *cstr && *cstr!='.') {
 		free (core->lastcmd);
 		core->lastcmd = strdup (cstr);
 	}
 
-	ocmd = cmd = malloc (strlen (cstr)+4096);
-	if (ocmd == NULL)
-		return false;
+	ocmd = cmd = malloc (strlen (cstr) + 4096);
+	if (!ocmd) return false;
 	r_str_cpy (cmd, cstr);
 
 	if (log) r_line_hist_add (cstr);
 
-//eprintf ("DEPTH %d (%s)\n", core->cmd_depth, cstr);
 	if (core->cmd_depth < 1) {
 		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
 		free (ocmd);
@@ -2152,7 +2153,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 			break;
 		}
 		if (!ptr) break;
-		rcmd = ptr+1;
+		rcmd = ptr + 1;
 	}
 	core->cmd_depth ++;
 	free (ocmd);
@@ -2343,7 +2344,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 
 R_API void r_core_cmd_repeat(RCore *core, int next) {
 	// Fix for backtickbug px`~`
-	if (core->cmd_depth+1<R_CORE_CMD_DEPTH)
+	if (core->cmd_depth + 1 < R_CORE_CMD_DEPTH)
 		return;
 	if (core->lastcmd)
 	switch (*core->lastcmd) {
