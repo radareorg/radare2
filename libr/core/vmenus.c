@@ -1017,10 +1017,10 @@ R_API void r_core_visual_config(RCore *core) {
 		}
 
 		if (fs && !strncmp (fs, "asm.", 4))
-			r_core_cmd (core, "pd 5", 0);
+			r_core_cmd (core, "pd $r", 0);
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
-		if (ch==4||ch==-1)
+		if (ch==4 || ch==-1)
 			return;
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 
