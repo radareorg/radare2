@@ -73,8 +73,8 @@ static int i4004dis (RAsmOp *op, const ut8 *buf, int len) {
 			else	snprintf (basm, basz, "fim r%d, 0x%02x", (low & 0xe), buf[1]);
 			break;
 		case 3: snprintf (basm, basz, "fin r%d", (low & 0xe)); break;
-		case 4: snprintf (basm, basz, "jun %03x", ((ut16)(low<<8) | buf[1])); break;
-		case 5: snprintf (basm, basz, "jms %03x", ((ut16)(low<<8) | buf[1])); break;
+		case 4: snprintf (basm, basz, "jun 0x%03x", ((ut16)(low<<8) | buf[1])); break;
+		case 5: snprintf (basm, basz, "jms 0x%03x", ((ut16)(low<<8) | buf[1])); break;
 		case 6: snprintf (basm, basz, "inc r%d", low); break;
 		case 7: snprintf (basm, basz, "isz r%d, 0x%02x", low, buf[1]); break;
 		case 8: snprintf (basm, basz, "add r%d", low); break;
