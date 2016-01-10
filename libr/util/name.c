@@ -30,6 +30,7 @@ R_API int r_name_check(const char *name) {
 R_API int r_name_filter(char *name, int maxlen) {
 	int i;
 	char *oname;
+	if (!name) return 0;
 	if (maxlen < 0) {
 		maxlen = strlen (name);
 	}

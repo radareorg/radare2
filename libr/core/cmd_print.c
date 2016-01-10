@@ -12,7 +12,7 @@ static char get_string_type (const ut8 *buf, ut64 len){
 
 	while (needle < len){
 		rc = r_utf8_decode (buf+needle, len-needle, NULL);
-		if (!rc){
+		if (!rc) {
 			needle++;
 			continue;
 		}
@@ -2429,6 +2429,10 @@ static int cmd_print(void *data, const char *input) {
 				const int bs = core->blocksize;
 				// XXX: issue with small blocks
 				if (*input == 'D' && l>0) {
+					if (l < 1) {
+						//eprintf ("Block size too small\n");
+						return 1;
+					}
 					if (l>R_CORE_MAX_DISASM) { // pD
 						eprintf ("Block size too big\n");
 						return 1;

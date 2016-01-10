@@ -427,7 +427,7 @@ static int bin_info(RCore *r, int mode) {
 			snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
 			r_config_set (r->config, "asm.bits", str);
 			r_config_set (r->config, "asm.dwarf",
-				(R_BIN_DBG_STRIPPED &info->dbg_info) ? "false" : "true");
+				(R_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
 			v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
 			if (v != -1) r_config_set_i (r->config, "asm.pcalign", v);
 		}
@@ -1221,7 +1221,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 					}
 					r_flag_item_set_name (fi, fn, n);
 				} else {
-					eprintf ("== Can't find flag (%s)\n", fn);
+					if (fn) eprintf ("[Warning] Can't find flag (%s)\n", fn);
 				}
 			}
 			if (sn.demname) {

@@ -176,7 +176,7 @@ static void cmd_info_bin(RCore *core, int va, int mode) {
 
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int newline = r_config_get_i (core->config, "scr.interactive");
+	bool newline = r_config_get_i (core->config, "scr.interactive");
 	RBinObject *o = r_bin_cur_object (core->bin);
 	RCoreFile *cf = core->file;
 	int i, va = core->io->va || core->io->debug;
@@ -206,7 +206,7 @@ static int cmd_info(void *data, const char *input) {
 	}
 	while (*input) {
 		switch (*input) {
-		case 'b':
+		case 'b': // "ib"
 			{
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 			if (input[1]==' ')
@@ -217,6 +217,7 @@ static int cmd_info(void *data, const char *input) {
 			// TODO: Might be nice to reload a bin at a specified offset?
 			r_core_bin_reload (core, NULL, baddr);
 			r_core_block_read (core, 0);
+			newline = false;
 			}
 			break;
 		case 'k':
@@ -269,7 +270,7 @@ static int cmd_info(void *data, const char *input) {
 	}\
 	r_core_bin_info (core, x, mode, va, NULL, y);
 		case 'A':
-			newline = 0;
+			newline = false;
 			if (input[1]=='j') {
 				r_cons_printf ("{");
 				r_bin_list_archs (core->bin, 'j');

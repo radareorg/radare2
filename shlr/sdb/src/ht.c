@@ -83,8 +83,8 @@ static const struct {
 };
 
 #define entry_is_free(x) (!x || !x->data)
-#define entry_is_deleted(x) x->data==&deleted_data
-#define entry_is_present(x) (x->data && x->data != &deleted_data)
+#define entry_is_deleted(x) (!x || x->data == &deleted_data)
+#define entry_is_present(x) (x && x->data && x->data != &deleted_data)
 
 /**
  * Finds a hash table entry with the given key and hash of that key.

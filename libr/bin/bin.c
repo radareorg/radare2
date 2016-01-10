@@ -563,13 +563,13 @@ R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr, ut64 loadadd
 R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob? iob->get_io (iob): NULL;
+	RList *the_obj_list;
+	int res = false;
 	RBinFile *bf = NULL;
 	ut8 *buf_bytes = NULL;
 	ut64 len_bytes = UT64_MAX, sz = UT64_MAX;
 
 	if (!io) return false;
-	RList *the_obj_list;
-	int res = false;
 
 	if (!desc || !io) return false;
 

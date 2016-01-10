@@ -407,10 +407,17 @@ R_API int r_flag_item_set_name(RFlagItem *item, const char *name, const char *re
 
 	/* realname is the original name of the flag */
 	item->realname = strdup (realname);
+	if (!item->realname) {
+		return false;
+	}
 	item->namehash = r_str_hash64 (item->realname);
 
 	/* the name contains only printable chars that doesn't conflict with r2 shell */
 	item->name = strdup (name);
+	if (!item->name) {
+		free (item->realname);
+		return false;
+	}
 	r_str_chop (item->name);
 	r_name_filter (item->name, 0); // TODO: name_filter should be chopping already
 
