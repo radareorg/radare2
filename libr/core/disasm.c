@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake, dso */
+/* radare - LGPL - Copyright 2009-2016 - nibble, pancake, dso */
 
 #include "r_core.h"
 #include "r_cons.h"
@@ -169,6 +169,10 @@ typedef struct r_disam_options_t {
 	int len;
 
 	int maxrefs;
+
+	char *prev_ins;
+	bool prev_ins_eq;
+	bool show_nodup;
 } RDisasmState;
 
 static void handle_reflines_init (RAnal *anal, RDisasmState *ds);
@@ -281,6 +285,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
+	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
 	ds->colorop = r_config_get_i (core->config, "scr.colorops");
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
@@ -1023,6 +1028,20 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 	int ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
 	if (ds->asmop.size < 1) ds->asmop.size = 1;
 
+	if (ds->show_nodup) {
+		if (ds->prev_ins && !strcmp (ds->prev_ins, ds->asmop.buf_asm)) {
+			if (!ds->prev_ins_eq) {
+				r_cons_printf ("...\n");
+			}
+			ds->prev_ins_eq = true;
+			return -31337;
+		}
+		ds->prev_ins_eq = false;
+		if (ds->prev_ins) {
+			R_FREE (ds->prev_ins);
+		}
+		ds->prev_ins = strdup (ds->asmop.buf_asm);
+	}
 	ds->oplen = ds->asmop.size;
 
 	if (ret < 1) {
@@ -2472,6 +2491,10 @@ toro:
 		}
 		handle_show_comments_right (core, ds);
 		ret = perform_disassembly (core, ds, buf+idx, len-idx);
+		if (ret == -31337) {
+			inc = ds->oplen;
+			continue;
+		}
 		if (ds->retry) {
 			ds->retry = 0;
 			goto retry;
@@ -2571,8 +2594,7 @@ toro:
 			free (ds->refline2);
 			ds->line = ds->refline = ds->refline2 = NULL;
 		}
-		free (ds->opstr);
-		ds->opstr = NULL;
+		R_FREE (ds->opstr);
 		inc = ds->oplen;
 		if (ds->midflags == R_MIDFLAGS_REALIGN && skip_bytes)
 			inc = skip_bytes;
