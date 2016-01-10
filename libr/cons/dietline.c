@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2015 - pancake */
+/* radare - LGPL - Copyright 2007-2016 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
@@ -46,11 +46,10 @@ static int inithist() {
 	ZERO_FILL (I.history);
 	if ((I.history.size + 1024) * sizeof(char *) < I.history.size)
 		return false;
-	I.history.data = (char **)malloc ((I.history.size + 1024) * sizeof(char *));
+	I.history.data = (char **)calloc ((I.history.size + 1024), sizeof(char *));
 	if (!I.history.data)
 		return false;
 	I.history.size = R_LINE_HISTSIZE;
-	memset (I.history.data, 0, I.history.size * sizeof(char *));
 	return true;
 }
 
@@ -200,11 +199,14 @@ do_it_again:
 R_API int r_line_hist_add(const char *line) {
 	if (!I.history.data)
 		inithist ();
-	if (I.history.top>=I.history.size)
+	if (I.history.top >= I.history.size)
 		I.history.top = I.history.index = 0; // workaround
 	/* ignore dup */
-	if (I.history.index>0 && !strcmp (line, I.history.data[I.history.index-1]))
+	{
+	const char *data = I.history.data[I.history.index - 1];
+	if (I.history.index > 0 && data && !strcmp (line, data))
 		return false;
+	}
 	if (line && *line) { // && I.history.index < I.history.size) {
 		I.history.data[I.history.top++] = strdup (line);
 		I.history.index = I.history.top;
@@ -276,8 +278,7 @@ R_API void r_line_hist_free() {
 		free (I.history.data[i]);
 		I.history.data[i] = NULL;
 	}
-	free (I.history.data);
-	I.history.data = NULL;
+	R_FREE (I.history.data);
 	I.history.index = 0;
 }
 
@@ -614,16 +615,14 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			} else I.buffer.index = I.buffer.length;
 			break;
 		case 3: // ^C
-			if (I.echo)
-				eprintf ("^C\n");
+			if (I.echo) eprintf ("^C\n");
 			I.buffer.index = I.buffer.length = 0;
 			*I.buffer.data = '\0';
 			r_cons_singleton()->breaked = true;
 			goto _end;
 		case 4: // ^D
 			if (!I.buffer.data[0]) { /* eof */
-				if (I.echo)
-					printf ("^D\n");
+				if (I.echo) printf ("^D\n");
 				r_cons_set_raw (false);
 				return NULL;
 			}
@@ -652,9 +651,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			break;
 		case 19: // ^S -- backspace
 			if (gcomp) gcomp--;
-			else {
-				I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
-			}
+			else I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
 			break;
 		case 21: // ^U - cut
 			free (I.clipboard);
@@ -664,7 +661,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			I.buffer.index = 0;
 			break;
 		case 22: // ^V - Paste from windows clipboard
-			if (OpenClipboard(NULL)) {
+			if (OpenClipboard (NULL)) {
 				hClipBoard = GetClipboardData(CF_TEXT);
 				if (hClipBoard) {
 					clipText = GlobalLock(hClipBoard);
