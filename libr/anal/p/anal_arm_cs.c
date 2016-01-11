@@ -43,7 +43,7 @@ static const ut32 bitmask_by_width[] = {
 static const char *decode_shift(arm_shifter shift) {
 	static const char *E_OP_SR = ">>";
 	static const char *E_OP_SL = "<<";
-	static const char *E_OP_RR = ">>>";
+	//static const char *E_OP_RR = ">>>"; // UNUSED
 	static const char *E_OP_VOID = "";
 
 	switch (shift) {
@@ -1100,7 +1100,7 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	sp	.64	248	0\n"
 		"gpr	zr	.64	248	0\n" // zr = sp (x31)
 		"gpr	pc	.64	256	0\n"
-		"gpr	cpsr	.64	264	0\n"
+		"gpr	cpsr	.64	264	0	_____tfiae_____________j__qvczn\n"
 		"gpr	pstate	.64	264	0\n" // x0
 		// probably wrong
 		"gpr	nf	.1	.264	0	sign\n" // msb bit of last op
@@ -1143,7 +1143,21 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	r15	.32	60	0\n"
 		"gpr	r16	.32	64	0\n"
 		"gpr	r17	.32	68	0\n"
-		"gpr	cpsr	.32	72	0\n";
+		"gpr	cpsr	.32	72	0\n"
+		"gpr	tf	.1	72.5	0	thumb\n" // +5
+		"gpr	ef	.1	72.9	0	endian\n" // +9
+		// ...
+		"gpr	jf	.1	72.24	0	java\n" // +24
+		// ...
+		"gpr	qf	.1	72.27	0	sticky_overflow\n" // +27
+		"gpr	vf	.1	72.28	0	overflow\n" // +28
+		"gpr	cf	.1	72.29	0	carry\n" // +29
+		"gpr	zf	.1	72.30	0	zero\n" // +30
+		"gpr	nf	.1	72.31	0	negative\n" // +31
+		// if-then-counter
+		"gpr	itc	.4	72.10	0	if_then_count\n" // +10
+		"gpr	gef	.4	72.16	0	great_or_equal\n" // +16
+		;
 	}
 
 	return r_reg_set_profile_string (anal->reg, p);

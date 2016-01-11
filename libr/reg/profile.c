@@ -13,7 +13,23 @@ static const char *parse_alias(RReg *reg, char **tok, const int n) {
 
 // Sizes prepended with a dot are expressed in bits
 // strtoul with base 0 allows the input to be in decimal/octal/hex format
-#define parse_size(c) ((c)[0] == '.')? strtoul ((c) + 1, &end, 10): strtoul ((c), &end, 0) << 3;
+
+static ut64 parse_size(char *s, char **end) {
+	ut64 r = 0;
+	if (*s == '.') {
+		r = strtoul (s+1, end, 10);
+	} else {
+		char *has_dot = strchr (s, '.');
+		if (has_dot) {
+			*has_dot = 0;
+			r = strtoul (s, end, 0) << 3;
+			r += strtoul (has_dot + 1, end, 0);
+		} else {
+			r = strtoul (s, end, 0) << 3;
+		}
+	}
+	return r;
+}
 
 static const char *parse_def(RReg *reg, char **tok, const int n) {
 	RRegItem *item;
@@ -32,17 +48,17 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	item->type = type;
 	item->name = strdup (tok[1]);
 	// All the numeric arguments are strictly checked
-	item->size = parse_size (tok[2]);
+	item->size = parse_size (tok[2], &end);
 	if (*end != '\0' || !item->size) {
 		r_reg_item_free (item);
 		return "Invalid size";
 	}
-	item->offset = parse_size (tok[3]);
+	item->offset = parse_size (tok[3], &end);
 	if (*end != '\0') {
 		r_reg_item_free (item);
 		return "Invalid offset";
 	}
-	item->packed_size = parse_size (tok[4]);
+	item->packed_size = parse_size (tok[4], &end);
 	if (*end != '\0') {
 		r_reg_item_free (item);
 		return "Invalid packed size";
