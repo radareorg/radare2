@@ -100,7 +100,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				if (!strcmp (item->name, "tf")) {
 					bool is_thumb = r_reg_get_value (dbg->reg, item);
 					int new_bits = is_thumb? 16: 32;
-					if (dbg->bits != new_bits)
+					if (dbg->anal->bits != new_bits)
 						dbg->cb_printf ("e asm.bits=%d\n", new_bits);
 				}
 				continue;
