@@ -992,7 +992,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afr", " ([name]) ([addr])", "analyze functions recursively",
 			"af+", " addr size name [type] [diff]", "hand craft a function (requires afb+)",
 			"af-", " [addr]", "clean all function analysis data (or function at addr)",
-			"afa", "[?] [idx] [type] [name]", "add function argument",
+			"afa", "[?] [idx] [name] ([type])", "add function argument",
 			"af[aAv?]", "[arg]", "manipulate args, fastargs and variables in function",
 			"afb+", " fa a sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 			"afb", " [addr]", "List basic blocks of given function",
