@@ -172,6 +172,7 @@ typedef struct r_disam_options_t {
 
 	char *prev_ins;
 	bool prev_ins_eq;
+	int prev_ins_count;
 	bool show_nodup;
 } RDisasmState;
 
@@ -1029,13 +1030,19 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 	if (ds->asmop.size < 1) ds->asmop.size = 1;
 
 	if (ds->show_nodup) {
-		if (ds->prev_ins && !strcmp (ds->prev_ins, ds->asmop.buf_asm)) {
+		const char *opname = (ret < 1)? "invalid": ds->asmop.buf_asm;
+		if (ds->prev_ins && !strcmp (ds->prev_ins, opname)) {
 			if (!ds->prev_ins_eq) {
-				r_cons_printf ("...\n");
+				ds->prev_ins_eq = true;
+				r_cons_printf ("...");
 			}
-			ds->prev_ins_eq = true;
+			ds->prev_ins_count ++;
 			return -31337;
 		}
+		if (ds->prev_ins_eq) {
+			r_cons_printf ("dup (%d)\n", ds->prev_ins_count);
+		}
+		ds->prev_ins_count = 0;
 		ds->prev_ins_eq = false;
 		if (ds->prev_ins) {
 			R_FREE (ds->prev_ins);
