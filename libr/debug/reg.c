@@ -89,11 +89,23 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		from = type;
 		to = from +1;
 	}
+	bool is_arm = dbg->arch && strstr (dbg->arch, "arm");
 	for (i = from; i < to; i++) {
 		head = r_reg_get_list (dbg->reg, i);
 		if (!head) continue;
 		r_list_foreach (head, iter, item) {
 			ut64 value;
+
+			if (is_arm && (rad == 1 || rad == '*') && item->size == 1) {
+				if (!strcmp (item->name, "tf")) {
+					bool is_thumb = r_reg_get_value (dbg->reg, item);
+					int new_bits = is_thumb? 16: 32;
+					if (dbg->bits != new_bits)
+						dbg->cb_printf ("e asm.bits=%d\n", new_bits);
+				}
+				continue;
+			}
+
 			if (type != -1) {
 				if (type != item->type) continue;
 				if (size != 0 && size != item->size) continue;

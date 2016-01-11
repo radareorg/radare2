@@ -25,6 +25,12 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 			1 :
 			0;
 		break;
+	case 4:
+		if (regset->arena->size - off - 1 >= 0) {
+			memcpy (&v8, regset->arena->bytes + off, 1);
+			ret = v8 & 0xF;
+		}
+		break;
 	case 8:
 		if (regset->arena->size - off - 1 >= 0) {
 			memcpy (&v8, regset->arena->bytes + off, 1);
