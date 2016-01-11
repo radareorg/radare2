@@ -202,10 +202,10 @@ R_API int r_line_hist_add(const char *line) {
 	if (I.history.top >= I.history.size)
 		I.history.top = I.history.index = 0; // workaround
 	/* ignore dup */
-	{
-	const char *data = I.history.data[I.history.index - 1];
-	if (I.history.index > 0 && data && !strcmp (line, data))
-		return false;
+	if (I.history.index > 0) {
+		const char *data = I.history.data[I.history.index - 1];
+		if (data && !strcmp (line, data))
+			return false;
 	}
 	if (line && *line) { // && I.history.index < I.history.size) {
 		I.history.data[I.history.top++] = strdup (line);
