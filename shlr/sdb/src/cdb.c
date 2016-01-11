@@ -47,13 +47,13 @@ int cdb_init(struct cdb *c, int fd) {
 #if USE_MMAN
 		char *x = mmap (0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 		if (!x) {
-			eprintf ("Cannot mmap %d\n", st.st_size);
+			eprintf ("Cannot mmap %d\n", (int)st.st_size);
 			return 0;
 		}
 #else
 		char *x = calloc (1, st.st_size);
 		if (!x) {
-			eprintf ("Cannot malloc %d\n", st.st_size);
+			eprintf ("Cannot malloc %d\n", (int)st.st_size);
 			return 0;
 		}
 		read (fd, x, st.st_size); // TODO: handle return value

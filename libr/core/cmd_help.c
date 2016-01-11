@@ -186,10 +186,16 @@ static int cmd_help(void *data, const char *input) {
 			if (core->num->dbz) {
 				eprintf ("RNum ERROR: Division by Zero\n");
 			}
-			asnum  = r_num_as_string (NULL, n);
 			n32 = (ut32)n;
+			{
+				ut64 nn;
+				int be = core->assembler->big_endian;
+				r_mem_copyendian ((ut8*)&nn, (ut8*)&n, sizeof(n), !be);
+				asnum  = r_num_as_string (NULL, nn);
+			}
 			memcpy (&f, &n32, sizeof (f));
 			memcpy (&d, &n, sizeof (d));
+
 			/* decimal, hexa, octal */
 			s = n>>16<<12;
 			a = n & 0x0fff;
