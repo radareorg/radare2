@@ -180,7 +180,17 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil, "%s,%s,/=", REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_B:
-		r_strbuf_setf (&op->esil, "%"PFMT64d",pc,=", (ut64)addr + IMM64 (0));
+		switch (insn->detail->arm.cc) {
+		case 0:
+			r_strbuf_setf (&op->esil, "%"PFMT64d",pc,=", (ut64)addr + IMM64 (0));
+			break;
+		case ARM_CC_EQ:
+			r_strbuf_setf (&op->esil, "zf,{,%"PFMT64d",pc,=,}", (ut64)addr + IMM64 (0));
+			break;
+		case ARM_CC_NE:
+			r_strbuf_setf (&op->esil, "zf,!,{,%"PFMT64d",pc,=,}", (ut64)addr + IMM64 (0));
+			break;
+		}
 		break;
 	case ARM64_INS_BL:
 		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64d",pc,=", addr + IMM64 (0));
@@ -205,7 +215,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_CMP: // cmp w8, 0xd
 	case ARM64_INS_CMN: // cmp w8, 0xd
 		// update esil, cpu flags
-		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,$z,=",
+		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,$z,zf,=",
 			IMM64(1), REG64(0));
 		break;
 	case ARM64_INS_FCSEL:
