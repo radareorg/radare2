@@ -2450,10 +2450,10 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		r_cons_break_end ();
 	} else {
 		ut64 addr = from;
-		eprintf ("Continue until 0x%08"PFMT64x"\n", addr);
+		eprintf ("Continue until 0x%08"PFMT64x" using %d bpsize\n", addr, core->dbg->bpsize);
 		bypassbp (core);
 		r_reg_arena_swap (core->dbg->reg, true);
-		r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+		r_bp_add_sw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC);
 		r_debug_continue (core->dbg);
 		checkbpcallback (core);
 		r_bp_del (core->dbg->bp, addr);
