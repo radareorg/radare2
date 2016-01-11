@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -55,9 +55,6 @@ RAsmPlugin r_asm_plugin_x86_nasm = {
 	.arch = "x86",
 	// NOTE: 64bits is not supported on OSX's nasm :(
 	.bits = 16|32|64,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = NULL,
 	.assemble = &assemble, 
 };
 
