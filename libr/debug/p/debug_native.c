@@ -761,7 +761,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 #endif
 	fd = fopen (path, "r");
 	if (!fd) {
-		perror ("debug_init_maps: /proc");
+		perror (sdb_fmt (0, "Cannot open '%s'", path));
 		return NULL;
 	}
 

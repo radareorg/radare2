@@ -131,12 +131,13 @@ static char *getstr(const char *src) {
 		{
 			char *pat = strchr (src+1, '@');
 			if (pat) {
-				int i, len, rep = atoi (src+1);
+				int i, len, rep;
 				*pat++ = 0;
+				rep = atoi (src + 1);
 				len = strlen (pat);
 				if (rep>0) {
 					char *buf = malloc (rep);
-					for(i=0;i<rep;i++) {
+					for(i=0; i < rep;i++) {
 						buf[i] = pat[i%len];
 					}
 					return buf;
@@ -248,7 +249,20 @@ static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err
 static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 	if (!cmd || cmd[0] == '\0') return 0;
 
-	if (cmd[0] == '!') {
+	if (cmd[0] == '"') {
+		if (in) {
+			int pipes[2];
+			if (pipe (pipes) != -1) {
+				write (pipes[1], cmd+1, strlen (cmd)-2);
+				write (pipes[1], "\n", 1);
+				close (0);
+				dup2 (pipes[0], 0);
+			} else {
+				eprintf ("[ERROR] rarun2: Cannot create pipe\n");
+			}
+		}
+		return 0;
+	} else if (cmd[0] == '!') {
 		// redirection to a process
 		return handle_redirection_proc (cmd + 1, in, out, err);
 	} else {
@@ -257,22 +271,20 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 		flag |= in ? O_RDONLY : 0;
 		flag |= out ? O_WRONLY | O_CREAT : 0;
 		flag |= err ? O_WRONLY | O_CREAT : 0;
-
 #ifdef __WINDOWS__
 		mode = _S_IREAD | _S_IWRITE;
 #else
 		mode = S_IRUSR | S_IWUSR;
 #endif
-
 		f = open (cmd, flag, mode);
 		if (f < 0) {
-			eprintf("Cannot open: %s\n", cmd);
+			eprintf ("[ERROR] rarun2: Cannot open: %s\n", cmd);
 			return 1;
 		}
-
-		if (in) dup2 (f, 0);
-		if (out) dup2 (f, 1);
-		if (err) dup2 (f, 2);
+#define DUP(x) { close(x); dup2(f,x); }
+		if (in) DUP(0);
+		if (out) DUP(1);
+		if (err) DUP(2);
 		close (f);
 		return 0;
 	}
