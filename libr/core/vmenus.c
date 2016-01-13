@@ -1472,11 +1472,9 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		if (i>=wdelta) {
 			if (i> window+wdelta) {
-				r_cons_printf("...\n");
+				r_cons_printf ("...\n");
 				break;
-			}
-			//if (seek >= fcn->addr && seek <= fcn->addr+fcn->size)
-			if (idx == i)
+			} else if (idx == i)
 				addr = fcn->addr;
 			if (show)
 				r_cons_printf ("%c%c 0x%08llx (%s)\n",
@@ -1485,6 +1483,41 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 					fcn->addr, fcn->name);
 		}
 		i++;
+	}
+	return addr;
+}
+
+static ut64 var_variables_show(RCore* core, int idx, int show) {
+	int i = 0;
+	ut64 addr = core->offset;
+	int window;
+	int wdelta = (idx > 5) ? idx - 5 : 0;
+	RListIter *iter;
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+	RList* list = r_anal_var_list (core->anal, fcn, 0);
+	RAnalVar* var;
+	// Adjust the window size automatically.
+	(void)r_cons_get_size (&window);
+	window -= 8;  // Size of printed things.
+
+	r_list_foreach (list, iter, var) {
+		if (i >= wdelta) {
+			if (i > window + wdelta) {
+				r_cons_printf ("...\n");
+				break;
+			} else if (idx == 1) {
+				addr = fcn->addr;
+			}
+			if (show) {
+				r_cons_printf ("%s %s %s @ %s%s0x%x\n",
+						var->kind=='v'?"var":"arg",
+						var->type, var->name,
+						core->anal->reg->name[R_REG_NAME_BP],
+						(var->kind=='v')?"-":"+",
+						var->delta);
+			}
+		}
+		++i;
 	}
 	return addr;
 }
@@ -1552,7 +1585,8 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 			"(a) add     (x)xrefs  \n"
 			"(m) modify  (g)go     \n"
 			"(d) delete  (q)quit   \n", addr);
-		var_index_show (core->anal, fcn, addr, option);
+		addr = var_variables_show (core, option, 1);
+		// var_index_show (core->anal, fcn, addr, option);
 		break;
 	case 2:
 		r_cons_printf ("Press 'q' to quit call refs\n");
