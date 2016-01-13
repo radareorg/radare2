@@ -194,10 +194,10 @@ R_API int r_core_visual_types(RCore *core) {
 		case 'b': // back
 		case -1: // EOF
 		case 'q':
-			  if (optword) {
-				  R_FREE (optword);
-				  break;
-			  }
+			if (optword) {
+				R_FREE (optword);
+				break;
+			}
 			if (menu<=0) return true; menu--;
 			option = _option;
 			if (menu==0) {
@@ -1488,9 +1488,10 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 }
 
 // In visual mode, display the variables.
-static ut64 var_variables_show(RCore* core, RAnalFunction* fcn, int idx, int show) {
+static ut64 var_variables_show(RCore* core, int idx, int show) {
 	int i = 0;
-	ut64 addr = core->offset;
+	const ut64 addr = var_functions_show (core, idx, 0);
+	RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	int window;
 	int wdelta = (idx > 5) ? idx - 5 : 0;
 	RListIter *iter;
@@ -1512,10 +1513,7 @@ static ut64 var_variables_show(RCore* core, RAnalFunction* fcn, int idx, int sho
 			if (i > window + wdelta) {
 				r_cons_printf ("...\n");
 				break;
-			} else if (idx == 1) {
-				addr = fcn->addr;
-			}
-			if (show) {
+			} if (show) {
 				r_cons_printf ("%s %s %s @ %s%s0x%x\n",
 						var->kind=='v'?"var":"arg",
 						var->type, var->name,
@@ -1536,7 +1534,9 @@ static ut64 addr = 0;
 static int option = 0;
 
 static void r_core_visual_anal_refresh_column (RCore *core) {
-	const ut64 addr = level? core->offset: var_functions_show (core, option, 0);
+	const ut64 addr = (level != 0 && level != 1)  ?
+										core->offset :
+										var_functions_show (core, option, 0);
 	RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	int h;
 	char* output;
@@ -1594,7 +1594,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 			"(a) add     (x)xrefs  \n"
 			"(m) modify  (g)go     \n"
 			"(d) delete  (q)quit   \n", addr);
-		addr = var_variables_show (core, fcn, option, 1);
+		addr = var_variables_show (core, option, 1);
 		// var_index_show (core->anal, fcn, addr, option);
 		break;
 	case 2:
