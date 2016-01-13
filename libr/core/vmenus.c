@@ -1487,18 +1487,25 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 	return addr;
 }
 
-static ut64 var_variables_show(RCore* core, int idx, int show) {
+// In visual mode, display the variables.
+static ut64 var_variables_show(RCore* core, RAnalFunction* fcn, int idx, int show) {
 	int i = 0;
 	ut64 addr = core->offset;
 	int window;
 	int wdelta = (idx > 5) ? idx - 5 : 0;
 	RListIter *iter;
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-	RList* list = r_anal_var_list (core->anal, fcn, 0);
+	// arguments.
+	RList* list2 = r_anal_var_list (core->anal, fcn, 'v');
+	// variables.
+	RList* list = r_anal_var_list (core->anal, fcn, 'a');
+	r_list_join (list, list2);
 	RAnalVar* var;
 	// Adjust the window size automatically.
 	(void)r_cons_get_size (&window);
 	window -= 8;  // Size of printed things.
+
+	// A new line so this looks reasonable.
+	r_cons_printf ("\n");
 
 	r_list_foreach (list, iter, var) {
 		if (i >= wdelta) {
@@ -1519,6 +1526,8 @@ static ut64 var_variables_show(RCore* core, int idx, int show) {
 		}
 		++i;
 	}
+	r_list_free (list);
+	r_list_free (list2);
 	return addr;
 }
 
@@ -1585,7 +1594,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 			"(a) add     (x)xrefs  \n"
 			"(m) modify  (g)go     \n"
 			"(d) delete  (q)quit   \n", addr);
-		addr = var_variables_show (core, option, 1);
+		addr = var_variables_show (core, fcn, option, 1);
 		// var_index_show (core->anal, fcn, addr, option);
 		break;
 	case 2:
