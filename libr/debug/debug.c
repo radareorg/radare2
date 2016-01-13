@@ -763,7 +763,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	}
 	{
 		int err;
-		reg = (int)r_debug_reg_get_err (dbg, "sn", &err);
+		reg = (int)r_debug_reg_get_err (dbg, "SN", &err);
 		if (err) {
 			eprintf ("Cannot find 'sn' register for current arch-os.\n");
 			return -1;
@@ -783,7 +783,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 			eprintf ("--> cannot sync regs, process is probably dead\n");
 			return -1;
 		}
-		reg = show_syscall (dbg, "sn");
+		reg = show_syscall (dbg, "SN");
 		if (n_sc == -1)
 			continue;
 		if (n_sc == 0) {
