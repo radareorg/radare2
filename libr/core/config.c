@@ -1442,6 +1442,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETPREF("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
 	SETPREF("asm.emu", "false", "Run ESIL emulation analysis on disasm");
+	SETPREF("asm.emustr", "false", "Show only strings if any in the asm.emu output");
 	SETPREF("asm.emuwrite", "false", "Allow asm.emu to modify memory (WARNING)");
 	SETPREF("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF("asm.fcnlines", "true", "Show function boundary lines");

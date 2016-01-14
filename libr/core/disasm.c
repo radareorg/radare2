@@ -75,6 +75,7 @@ typedef struct r_disam_options_t {
 	int show_offset;
 	int show_bbline;
 	int show_emu;
+	int show_emu_str;
 	int show_emu_write;
 	int show_section;
 	int show_offseg;
@@ -323,6 +324,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_bbline = r_config_get_i (core->config, "asm.bbline");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
+	ds->show_emu_str = r_config_get_i (core->config, "asm.emustr");
 	ds->show_emu_write = r_config_get_i (core->config, "asm.emuwrite");
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
@@ -2037,6 +2039,7 @@ static void handle_print_relocs (RCore *core, RDisasmState *ds) {
 
 static int likely = 0;
 static int show_slow = 0;
+static int show_emu_str = 0;
 
 static int mymemwrite0(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return 0;
@@ -2070,18 +2073,24 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 			} else {
 				str[0] = 0;
 				if (*n32 == 0) {
-					msg = strdup ("NULL");
+					// msg = strdup ("NULL");
 				} else if (*n32 == UT32_MAX) {
 					/* nothing */
 				} else {
-					msg = r_str_newf ("-> 0x%x", *n32);
+					if (!show_emu_str) {
+						msg = r_str_newf ("-> 0x%x", *n32);
+					}
 				}
 			}
 		} else {
 			msg = r_str_newf ("%s", str);
 		}
 	}
-	r_cons_printf ("; %s=0x%"PFMT64x" %s", name, val, msg? msg: "");
+	if (show_emu_str) {
+		if (msg && *msg) r_cons_printf ("; %s", msg);
+	} else {
+		r_cons_printf ("; %s=0x%"PFMT64x" %s", name, val, msg? msg: "");
+	}
 	free (msg);
 	return 0;
 }
@@ -2191,6 +2200,7 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pc, ds->at + ds->analop.size);
 	show_slow = ds->show_slow; // hacky global
+	show_emu_str = ds->show_emu_str; // hacky global
 	esil->cb.hook_reg_write = myregwrite;
 	if (ds->show_emu_write) {
 		esil->cb.hook_mem_write = mymemwrite0;
