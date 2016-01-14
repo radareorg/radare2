@@ -48,7 +48,6 @@ Show offsets in graphs with 'e graph.offset = true'
 Execute a command every time a breakpoint is hit with 'e cmd.bp = !my-program'
 Disassemble in intel syntax with 'e asm.syntax = intel'.
 Change the UID of the debugged process with child.uid (requires root)
-Find cp850 strings with 'e cfg.encoding=cp850' and '/s'
 Enhace your graphs by increasing the size of the block and graph.depth eval variable.
 Control the height of the terminal on serial consoles with e scr.height
 Emulate the base address of a file with e file.baddr.
