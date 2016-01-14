@@ -722,13 +722,13 @@ static int cb_esildebug (void *user, void *data) {
 
 static int cb_fixrows(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->fix_rows = node->i_value;
+	r_cons_singleton ()->fix_rows = (int)node->i_value;
 	return true;
 }
 
 static int cb_fixcolumns(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->fix_columns = node->i_value;
+	r_cons_singleton ()->fix_columns = atoi (node->value);
 	return true;
 }
 
