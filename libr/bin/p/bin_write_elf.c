@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_bin.h>
@@ -31,10 +31,20 @@ static int rpath_del(RBinFile *arch) {
 	return ret;
 }
 
+static bool chentry(RBinFile *arch, ut64 addr) {
+	struct Elf_(r_bin_elf_obj_t) *obj = arch->o->bin_obj;
+	int ret = Elf_(r_bin_elf_entry_write) (arch->o->bin_obj, addr);
+	r_buf_free (arch->buf);
+	arch->buf = obj->b;
+	obj->b = NULL;
+	return ret;
+}
+
 #if !R_BIN_ELF64
 RBinWrite r_bin_write_elf = {
 	.scn_resize = &scn_resize,
 	.scn_perms = &scn_perms,
 	.rpath_del = &rpath_del,
+	.entry = &chentry,
 };
 #endif

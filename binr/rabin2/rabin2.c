@@ -334,6 +334,10 @@ static int rabin_do_operation(const char *op) {
 	if (!output) output = file;
 
 	switch (arg[0]) {
+	case 'e':
+		rc = r_bin_wr_entry (bin, r_num_math (NULL, ptr));
+		if (rc) rc = r_bin_wr_output (bin, output);
+		break;
 	case 'd':
 		if (!ptr) goto _rabin_do_operation_error;
 		switch (*ptr) {
@@ -578,6 +582,7 @@ int main(int argc, char **argv) {
 			set_action (ACTION_OPERATION);
 			if (isBinopHelp (op)) {
 				printf ("Operation string:\n"
+					"  Change Entrypoint: e/0x8048000\n"
 					"  Dump symbols: d/s/1024\n"
 					"  Dump section: d/S/.text\n"
 					"  Resize section: r/.data/1024\n"

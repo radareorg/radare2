@@ -235,10 +235,22 @@ bool Elf_(r_bin_elf_section_perms)(struct Elf_(r_bin_elf_obj_t) *bin, const char
 			patchoff += ((const ut8*)shdrp - (const ut8*)bin->shdr);
 			patchoff += r_offsetof (Elf_(Shdr), sh_flags);
 			printf ("wx %02x @ 0x%x\n", newperms, patchoff);
-eprintf ("PATCH %p\n", bin->b);
 			r_buf_write_at (bin->b, patchoff, (ut8*)&newperms, 1);
 			return true;
 		}
 	}
 	return false;
+}
+
+bool Elf_(r_bin_elf_entry_write)(struct Elf_(r_bin_elf_obj_t) *bin, ut64 addr) {
+	int patchoff = 0x18;
+#if R_BIN_ELF64
+	printf ("wv8 0x%"PFMT64x" @ 0x%x\n", addr, patchoff);
+	eprintf ("%d\n", r_buf_write_at (bin->b, patchoff, (ut8*)&addr, sizeof (addr)));
+#else
+	ut32 addr32 = (ut32)addr;
+	printf ("wv4 0x%x @ 0x%x\n", addr32, patchoff);
+	r_buf_write_at (bin->b, patchoff, (ut8*)&addr32, sizeof (addr32));
+#endif
+	return true;
 }

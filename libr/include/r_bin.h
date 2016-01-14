@@ -377,6 +377,7 @@ typedef struct r_bin_write_t {
 	ut64 (*scn_resize)(RBinFile *arch, const char *name, ut64 size);
 	bool (*scn_perms)(RBinFile *arch, const char *name, int perms);
 	int (*rpath_del)(RBinFile *arch);
+	bool (*entry)(RBinFile *arch, ut64 addr);
 } RBinWrite;
 
 // TODO: deprecate r_bin_is_big_endian
@@ -506,6 +507,7 @@ R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr);
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms);
 R_API bool r_bin_wr_rpath_del(RBin *bin);
+R_API bool r_bin_wr_entry(RBin *bin, ut64 addr);
 R_API int r_bin_wr_output(RBin *bin, const char *filename);
 R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode);
 R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode);
