@@ -1696,6 +1696,7 @@ static int set_reg_profile(RAnal *anal) {
 		 "gpr	rbp	.64	32	0\n"
 		 "gpr	ebp	.32	32	0\n"
 		 "gpr	bp	.16	32	0\n"
+		 "gpr	bpl	.8	32	0\n"
 		 "seg	cs	.64	136	0\n"
 		 "gpr	rflags	.64	144	0	c1p.a.zstido.n.rv\n"
 		 "gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
@@ -1712,6 +1713,9 @@ static int set_reg_profile(RAnal *anal) {
 		 "gpr	of	.1	.1163	0	overflow\n"
 
 		 "gpr	rsp	.64	152	0\n"
+		 "gpr	esp	.32	152	0\n"
+		 "gpr	sp	.16	152	0\n"
+		 "gpr	spl	.8	152	0\n"
 		 "seg	ss	.64	160	0\n"
 		 "seg	fs_base	.64	168	0\n"
 		 "seg	gs_base	.64	176	0\n"
