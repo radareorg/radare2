@@ -1703,6 +1703,24 @@ static void esil_fini(RCore *core) {
 	R_FREE (regstate);
 }
 
+typedef struct {
+	RList *regs;
+	RList *regread;
+	RList *regwrite;
+} AeaStats;
+
+static void aea_stats_init (AeaStats *stats) {
+	stats->regs = r_list_newf (free);
+	stats->regread = r_list_newf (free);
+	stats->regwrite = r_list_newf (free);
+}
+
+static void aea_stats_fini (AeaStats *stats) {
+	R_FREE (stats->regs);
+	R_FREE (stats->regread);
+	R_FREE (stats->regwrite);
+}
+
 static bool contains(RList *list, const char *name) {
 	RListIter *iter;
 	const char *n;
@@ -1713,27 +1731,54 @@ static bool contains(RList *list, const char *name) {
 	return false;
 }
 
+static char *oldregread = NULL;
+
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
-	RList *list = esil->user;
-	if (!contains (list, name)) {
-		r_list_append (list, strdup (name));
+	AeaStats *stats = esil->user;
+	if (oldregread && !strcmp (name, oldregread)) {
+		r_list_pop (stats->regread);
+		R_FREE (oldregread)
+	}
+	if (!IS_NUMBER (*name)) {
+		if (!contains (stats->regs, name)) {
+			r_list_push (stats->regs, strdup (name));
+		}
+		if (!contains (stats->regwrite, name)) {
+			r_list_push (stats->regwrite, strdup (name));
+		}
 	}
 	return 0;
 }
 
 static int myregread(RAnalEsil *esil, const char *name, ut64 *val, int *len) {
-	RList *list = esil->user;
-	if (!IS_NUMBER (*name))
-		if (!contains (list, name)) {
-			r_list_append (list, strdup (name));
+	AeaStats *stats = esil->user;
+	if (!IS_NUMBER (*name)) {
+		if (!contains (stats->regs, name)) {
+			r_list_push (stats->regs, strdup (name));
 		}
+		if (!contains (stats->regread, name)) {
+			r_list_push (stats->regread, strdup (name));
+		}
+	}
 	return 0;
 }
 
+static void showregs (RList *list) {
+	if (!r_list_empty (list)) {
+		char *reg;
+		RListIter *iter;
+		r_list_foreach (list, iter, reg) {
+			r_cons_printf ("%s", reg);
+			if (iter->n) r_cons_printf (" ");
+		}
+		r_cons_newline();
+	}
+}
 static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
+	RAnalEsil *esil;
 	int ptr, ops, ops_end, len, buf_sz, maxopsize;
 	ut64 addr_end;
-	RList *regs;
+	AeaStats stats;
 	const char *esilstr;
 	RAnalOp aop = {0};
 	ut8 *buf;
@@ -1741,16 +1786,14 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		return false;
 	maxopsize = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 	if (maxopsize < 1) maxopsize = 16;
-	switch (mode) {
-	case 0: // number of instructions / opcodes
-		ops = 0;
+	if (mode & 1) {
+		// number of bytes / length
+		buf_sz = length;
+	} else {
+		// number of instructions / opcodes
 		ops_end = length;
 		if (ops_end < 1) ops_end = 1;
 		buf_sz = ops_end * maxopsize;
-		break;
-	case 1: // number of bytes / length
-		buf_sz = length;
-		break;
 	}
 	if (buf_sz < 1) {
 		buf_sz = maxopsize;
@@ -1761,11 +1804,16 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		return false;
 	}
 	(void)r_io_read_at (core->io, addr, (ut8 *)buf, buf_sz);
-	regs = r_list_newf (free);
+	aea_stats_init (&stats);
+
 	esil_init (core);
-#	define hasNext(x) x?(addr<addr_end) : (ops<ops_end)
-	for (ops = ptr = 0; hasNext (mode); ops++, ptr += len) {
-		RAnalEsil *esil = core->anal->esil;
+	esil = core->anal->esil;
+#	define hasNext(x) (x&1) ? (addr<addr_end) : (ops<ops_end)
+	esil->user = &stats;
+	esil->cb.hook_reg_write = myregwrite;
+	esil->cb.hook_reg_read = myregread;
+	esil->nowrite = true;
+	for (ops = ptr = 0; ptr < buf_sz && hasNext (mode); ops++, ptr += len) {
 		len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr);
 		esilstr = R_STRBUF_SAFEGET (&aop.esil);
 		if (len < 1) {
@@ -1773,28 +1821,65 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 				addr + ptr, buf[ptr], buf[ptr + 1]);
 			break;
 		}
-		esil->user = regs;
-		esil->cb.hook_reg_write = myregwrite;
-		esil->cb.hook_reg_read = myregread;
-		esil->nowrite = true;
 		r_anal_esil_parse (esil, esilstr);
 		r_anal_esil_stack_free (esil);
-		esil->nowrite = false;
 	}
+	esil->nowrite = false;
+	esil->cb.hook_reg_write = NULL;
+	esil->cb.hook_reg_read = NULL;
 	esil_fini (core);
-	/* show registers used for reading */
-	if (!r_list_empty (regs)) {
-		char *reg;
+
+	/* show registers used */
+	if ((mode >> 1) & 1) {
+		showregs (stats.regread);
+	} else if ((mode >> 2) & 1) {
+		showregs (stats.regwrite);
+	} else if ((mode >> 3) & 1) {
 		RListIter *iter;
-		r_list_foreach (regs, iter, reg) {
-			r_cons_printf ("%s", reg);
-			if (iter->n) r_cons_printf (" ");
+		char *reg;
+		r_list_foreach (stats.regs, iter, reg) {
+			if (!contains (stats.regwrite, reg)) {
+				r_cons_printf ("%s", reg);
+				if (iter->n) r_cons_printf (" ");
+			}
 		}
 		r_cons_newline();
+	} else {
+		r_cons_printf ("A: ");
+		showregs (stats.regs);
+		r_cons_printf ("R: ");
+		showregs (stats.regread);
+		r_cons_printf ("W: ");
+		showregs (stats.regwrite);
+		r_cons_printf ("N: ");
+		{
+			RListIter *iter;
+			char *reg;
+			r_list_foreach (stats.regs, iter, reg) {
+				if (!contains (stats.regwrite, reg)) {
+					r_cons_printf ("%s", reg);
+					if (iter->n) r_cons_printf (" ");
+				}
+			}
+			r_cons_newline();
+		}
 	}
-	r_list_free (regs);
+	aea_stats_fini (&stats);
 	free (buf);
 	return true;
+}
+
+static void aea_help(RCore *core) {
+	const char *help_msg[] = {
+		"Examples:", "aea", " show regs used in a range",
+		"aea", " [ops]", "Show regs used in N instructions",
+		"aeaf", "", "Show regs used in current function",
+		"aear", " [ops]", "Show regs read in N instructions",
+		"aeaw", " [ops]", "Show regs written in N instructions",
+		"aean", " [ops]", "Show regs not written in N instructions",
+		"aeA", " [len]", "Show regs used in N bytes (subcommands are the same)",
+		NULL };
+	r_core_cmd_help (core, help_msg);
 }
 
 static void cmd_anal_esil(RCore *core, const char *input) {
@@ -2079,17 +2164,32 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'A': // "aea"
-		if (input[1] == 'f') {
+	case 'A': // "aeA"
+		if (input[1] == '?') {
+			aea_help (core);
+		} else if (input[1] == 'r') {
+			cmd_aea (core, 1 + (1<<1), core->offset, r_num_math (core->num, input+2));
+		} else if (input[1] == 'w') {
+			cmd_aea (core, 1 + (1<<2), core->offset, r_num_math (core->num, input+2));
+		} else if (input[1] == 'n') {
+			cmd_aea (core, 1 + (1<<3), core->offset, r_num_math (core->num, input+2));
+		} else if (input[1] == 'f') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 			if (fcn) cmd_aea (core, 1, fcn->addr, fcn->size);
 		} else {
 			cmd_aea (core, 1, core->offset, (int)r_num_math (core->num, input+2));
-			//cmd_aea (core, 1, input+2);
 		}
 		break;
 	case 'a': // "aea"
-		if (input[1] == 'f') {
+		if (input[1] == '?') {
+			aea_help (core);
+		} else if (input[1] == 'r') {
+			cmd_aea (core, 1<<1, core->offset, r_num_math (core->num, input+2));
+		} else if (input[1] == 'w') {
+			cmd_aea (core, 1<<2, core->offset, r_num_math (core->num, input+2));
+		} else if (input[1] == 'n') {
+			cmd_aea (core, 1<<3, core->offset, r_num_math (core->num, input+2));
+		} else if (input[1] == 'f') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 			if (fcn) cmd_aea (core, 1, fcn->addr, fcn->size);
 		} else {
@@ -2141,7 +2241,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			"aeim", "", "initialize ESIL VM stack (aeim- remove)",
 			"aeip", "", "initialize ESIL program counter to curseek",
 			"ae", " [expr]", "evaluate ESIL expression",
-			"aea", " [count]", "analyse esil accesses (regs, mem..)",
+			"ae[aA]", "[f] [count]", "analyse esil accesses (regs, mem..)",
 			"aep", " [addr]", "change esil PC to this address",
 			"aef", " [addr]", "emulate function",
 			"aek", " [query]", "perform sdb query on ESIL.info",
