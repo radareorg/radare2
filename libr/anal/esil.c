@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2015 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2016 - pancake, condret */
 
 #include <r_anal.h>
 #include <r_types.h>
@@ -1966,6 +1966,23 @@ static int esil_mem_deceq(RAnalEsil *esil) {
 	return esil_mem_deceq_n (esil, esil->anal->bits);
 }
 
+/* get value of register or memory reference and push the value */
+static int esil_num(RAnalEsil *esil) {
+	char *dup_me;
+	ut64 dup;
+	if (!esil)
+		return false;
+	dup_me = r_anal_esil_pop (esil);
+	if (!r_anal_esil_get_parm (esil, dup_me, &dup))
+		return false;
+	free (dup_me);
+	return r_anal_esil_pushnum (esil, dup);
+}
+
+// XXX this is conflicting with NUM, because it can be interesting
+// XXX to push the register name instead of its value
+
+/* duplicate the value of the last element in the stack */
 static int esil_dup(RAnalEsil *esil) {
 	char *dup_me;
 	ut64 dup;
@@ -2392,6 +2409,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("BREAK", esil_break);
 	OP ("CLEAR", esil_clear);
 	OP ("DUP", esil_dup);
+	OP ("NUM", esil_num);
 	OP ("SWAP", esil_swap);
 	OP ("TRAP", esil_trap);
 }
