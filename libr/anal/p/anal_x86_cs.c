@@ -1860,6 +1860,18 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 0;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 16;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	}
+	return 0;
+}
+
 RAnalPlugin r_anal_plugin_x86_cs = {
 	.name = "x86",
 	.desc = "Capstone X86 analysis",
@@ -1868,6 +1880,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.arch = "x86",
 	.bits = 16|32|64,
 	.op = &analop,
+	.archinfo = archinfo,
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,

@@ -1001,6 +1001,7 @@ typedef struct r_anal_esil_t {
 	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
 	char *cmd_trap; // r2 (external) command to run when an interrupt occurs
 	int (*cmd)(ESIL *esil, const char *name, int a0, int a1);
+	void *user;
 } RAnalEsil;
 
 #undef ESIL
