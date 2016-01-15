@@ -276,6 +276,21 @@ static int is_dot_net(RBinFile *arch) {
 	return false;
 }
 
+static int is_vb6(RBinFile *arch) {
+	struct r_bin_pe_lib_t *libs = NULL;
+	int i;
+	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj)))
+		return false;
+	for (i = 0; !libs[i].last; i++) {
+		if (!strcmp (libs[i].name, "msvbvm60.dll")) {
+			free (libs);
+			return true;
+		}
+	}
+	free (libs);
+	return false;
+}
+
 static int has_canary(RBinFile *arch) {
 	const RList* imports_list = imports (arch);
 	RListIter *iter;
@@ -320,6 +335,9 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->subsystem = PE_(r_bin_pe_get_subsystem) (arch->o->bin_obj);
 	if (is_dot_net (arch)) {
 		ret->lang = "msil";
+	}
+	if (is_vb6 (arch)) {
+		ret->lang = "vb";
 	}
 	if (PE_(r_bin_pe_is_dll) (arch->o->bin_obj))
 		ret->type = strdup ("DLL (Dynamic Link Library)");
