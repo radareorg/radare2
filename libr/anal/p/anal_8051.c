@@ -205,7 +205,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	OP_GROUP_INPLACE_LHS_4(0x90, A, ".")
 
 	case 0xA4:
-		/* mul */ emit("8,A,B,*,DUP,>>,DUP,!,!,OV,=,B,=,A,=,0,C,="); break;
+		/* mul */ emit("8,A,B,*,NUM,>>,NUM,!,!,OV,=,B,=,A,=,0,C,="); break;
 	case 0xA5: /* ??? */ emit("0,TRAP"); break;
 	case 0xA6: case 0xA7:
 		j (XR(IB1) XW(R0I)) break;

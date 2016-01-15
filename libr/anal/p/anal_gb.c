@@ -401,7 +401,7 @@ static void gb_anal_xoaasc_imm (RReg *reg, RAnalOp *op, const ut8 *data)	//xor ,
 			if (data[0] == 0xce) {					//adc
 				op->src[1] = r_anal_value_new ();
 				op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
-				r_strbuf_append (&op->esil, "a,+=,C,DUP,$c7,C,=,$c3,H,=,a,+=,$c7,C,|=,$c3,H,|=,a,a,=,$z,Z,=,0,N,=");
+				r_strbuf_append (&op->esil, "a,+=,C,NUM,$c7,C,=,$c3,H,=,a,+=,$c7,C,|=,$c3,H,|=,a,a,=,$z,Z,=,0,N,=");
 			} else	r_strbuf_append (&op->esil, "a,+=,$c3,H,=,$c7,C,=,0,N,=,a,a,=,$z,Z,=");
 		break;
 		case R_ANAL_OP_TYPE_SUB:
@@ -409,7 +409,7 @@ static void gb_anal_xoaasc_imm (RReg *reg, RAnalOp *op, const ut8 *data)	//xor ,
 			if (data[0] == 0xde) {					//sbc
 				op->src[1] = r_anal_value_new ();
 				op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
-				r_strbuf_append (&op->esil, "a,-=,C,DUP,$b8,C,=,$b4,H,=,a,-=,$b8,C,|=,$b4,H,|=,a,a,=,$z,Z,=,1,N,=");
+				r_strbuf_append (&op->esil, "a,-=,C,NUM,$b8,C,=,$b4,H,=,a,-=,$b8,C,|=,$b4,H,|=,a,a,=,$z,Z,=,1,N,=");
 			} else	r_strbuf_append (&op->esil, "a,-=,$b4,H,=,$b8,C,=,1,N,=,a,a,=,$z,Z,=");
 		break;
 		case R_ANAL_OP_TYPE_CMP:

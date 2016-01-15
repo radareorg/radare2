@@ -87,14 +87,14 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->cycles = 1;
 		if (buf[1] & 0x10)
 			r_strbuf_setf (&op->esil, "r%d,r%d,+=,$c7,CF,=,$c3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, d, d, d);
-		else	r_strbuf_setf (&op->esil, "r%d,DUP,r%d,CF,+=,r%d,r%d,+=,$c7,CF,=,$c3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=,r%d,=", r, r, r, d, d, d, r);
+		else	r_strbuf_setf (&op->esil, "r%d,NUM,r%d,CF,+=,r%d,r%d,+=,$c7,CF,=,$c3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=,r%d,=", r, r, r, d, d, d, r);
 	}
 	if ((buf[1] & 0xec) == 8) {             //SUB + SBC
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->cycles = 1;
 		if (buf[1] & 0x10)
 			r_strbuf_setf (&op->esil, "r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, d, d, d);
-		else	r_strbuf_setf (&op->esil, "r%d,DUP,r%d,CF,+=,r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=,r%d,=", r, r, r, d, d, d, r);
+		else	r_strbuf_setf (&op->esil, "r%d,NUM,r%d,CF,+=,r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=,r%d,=", r, r, r, d, d, d, r);
 	}
 	if ((buf[1] & 0xec) == 4) {		//CP + CPC
 		op->type = R_ANAL_OP_TYPE_CMP;
@@ -169,7 +169,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			case 1:		//NEG
 				op->type = R_ANAL_OP_TYPE_CPL;
 				op->cycles = 1;
-				r_strbuf_setf (&op->esil, "r%d,DUP,0,r%d,=,r%d,-=,$b3,HF,=,$b8,CF,=,CF,!,ZF,=,r%d,0x80,&,!,!,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d, d);	//Hack for accessing internal vars
+				r_strbuf_setf (&op->esil, "r%d,NUM,0,r%d,=,r%d,-=,$b3,HF,=,$b8,CF,=,CF,!,ZF,=,r%d,0x80,&,!,!,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d, d);	//Hack for accessing internal vars
 				break;
 			case 2:		//SWAP
 				op->type = R_ANAL_OP_TYPE_ROL;

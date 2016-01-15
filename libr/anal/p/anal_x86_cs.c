@@ -530,7 +530,7 @@ SETL/SETNGE
 						const char *dst = cs_reg_name(handle, INSOP(0).mem.base);
 						const char *counter = (a->bits==16)?"cx":
 							(a->bits==32)?"ecx":"rcx";
-						esilprintf (op, "%s,!,?{,BREAK,},%s,DUP,%s,DUP,"\
+						esilprintf (op, "%s,!,?{,BREAK,},%s,NUM,%s,NUM,"\
 								"%s,[%d],%s,=[%d],df,?{,%d,%s,-=,%d,%s,-=,},"\
 								"df,!,?{,%d,%s,+=,%d,%s,+=,},%s,--=,%s," \
 								"?{,8,GOTO,},%s,=,%s,=",

@@ -454,8 +454,8 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_ADD;
 		_6502_anal_esil_get_addr_pattern1 (op, data, addrbuf, buffsize);
 		if (data[0] == 0x69) // immediate mode
-			r_strbuf_setf (&op->esil, "%s,a,+=,C,DUP,$c7,C,=,a,+=,$c7,C,|=", addrbuf);
-		else	r_strbuf_setf (&op->esil, "%s,[1],a,+=,C,DUP,$c7,C,=,a,+=,$c7,C,|=", addrbuf);
+			r_strbuf_setf (&op->esil, "%s,a,+=,C,NUM,$c7,C,=,a,+=,$c7,C,|=", addrbuf);
+		else	r_strbuf_setf (&op->esil, "%s,[1],a,+=,C,NUM,$c7,C,=,a,+=,$c7,C,|=", addrbuf);
 		_6502_anal_update_flags (op, _6502_FLAGS_NZ);
 		// fix Z
 		r_strbuf_append (&op->esil, ",a,a,=,$z,Z,=");
