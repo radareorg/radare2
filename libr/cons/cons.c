@@ -2,6 +2,7 @@
 
 #include <r_cons.h>
 #include <r_print.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -286,15 +287,24 @@ R_API RCons *r_cons_free () {
 
 #define MOAR 4096*8
 static void palloc(int moar) {
+	void *temp;
+	if (moar <= 0) return;
+
 	if (I.buffer == NULL) {
-		I.buffer_sz = moar+MOAR;
-		I.buffer = (char *)malloc (I.buffer_sz);
+		int new_sz;
+		if ((INT_MAX - MOAR) < moar) return;
+		new_sz = moar+MOAR;
+		temp = malloc(new_sz);
+		if (!temp) return;
+		I.buffer_sz = new_sz;
+		I.buffer = temp;
 		I.buffer[0] = '\0';
 	} else if (moar + I.buffer_len >= I.buffer_sz) {
 		char *new_buffer;
 		int old_buffer_sz = I.buffer_sz;
+		if ((INT_MAX - MOAR - moar) < I.buffer_sz) return;
 		I.buffer_sz += moar+MOAR;
-		new_buffer = (char *)realloc (I.buffer, I.buffer_sz);
+		new_buffer = realloc (I.buffer, I.buffer_sz);
 		if (new_buffer)
 			I.buffer = new_buffer;
 		else I.buffer_sz = old_buffer_sz;
