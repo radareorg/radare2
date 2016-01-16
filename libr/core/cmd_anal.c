@@ -2812,9 +2812,25 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			free (ptr);
 		} else eprintf ("Missing argument\n");
 		break;
-	case 'i':
-		r_anal_hint_set_immbase (core->anal, core->offset,
-					(int)r_num_math (core->num, input + 1));
+	case 'i': //ahi
+        if (input[1] == '?') {
+            const char* help_msg[] = {
+                "Usage", "ahi [sbodh] [@ offset]", " Define numeric base",
+                "ahi", " b", "set base to binary",
+                "ahi", " d", "set base to decimal",
+                "ahi", " h", "set base to hexadecimal",
+                "ahi", " o", "set base to octal",
+                "ahi", " s", "set base to string",
+                NULL};
+            r_core_cmd_help (core, help_msg);
+        } else {
+            const int base =
+                (input[2] == 'b') ? 1 :
+                (input[2] == 's') ? 2 :
+                (input[2] == 'o') ? 8 :
+                (input[2] == 'd') ? 10 : 16;
+            r_anal_hint_set_immbase (core->anal, core->offset, base);
+        }
 		break;
 	case 'c':
 		r_anal_hint_set_jump (core->anal, core->offset,
