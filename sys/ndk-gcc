@@ -1,5 +1,14 @@
 #!/bin/sh
 # android gcc wrapper
+
+if [ -z "${NDK}" ]; then
+	NDK=~/Downloads/android-ndk-r10e
+	if [ ! -d "${NDK}" ]; then
+		echo "Invalid path in NDK environment"
+		exit 1
+	fi
+fi
+
 if [ -n "${NDK_ARCH}" ]; then
 	ARCH=${NDK_ARCH}
 else
