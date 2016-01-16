@@ -4,6 +4,7 @@ MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 [ -z "${MAKE_JOBS}" ] && MAKE_JOBS=12
+[ -z "${CERTID}" ] && CERTID=org.radare.radare2
 
 # find root
 cd `dirname $PWD/$0` ; cd ..
