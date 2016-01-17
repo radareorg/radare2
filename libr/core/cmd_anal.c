@@ -2775,7 +2775,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		"ahb", " 16 @ $$", "force 16bit for current instruction",
 		"ahc", " 0x804804", "override call/jump address",
 		"ahf", " 0x804840", "override fallback address for call",
-		"ahi", " 10", "define numeric base for immediates (1,8,10,16)",
+		"ahi", " 10", "define numeric base for immediates (1, 8, 10, 16, s)",
 		"ahs", " 4", "set opcode size=4",
 		"ahS", " jz", "set asm.syntax=jz for this opcode",
 		"aho", " foo a0,33", "replace opcode string",
@@ -2816,6 +2816,11 @@ static void cmd_anal_hint(RCore *core, const char *input) {
         if (input[1] == '?') {
             const char* help_msg[] = {
                 "Usage", "ahi [sbodh] [@ offset]", " Define numeric base",
+                "ahi", " 1", "set base to binary",
+                "ahi", " 2", "set base to string",
+                "ahi", " 8", "set base to octal",
+                "ahi", " 10", "set base to decimal",
+                "ahi", " 16", "set base to hexadecimal",
                 "ahi", " b", "set base to binary",
                 "ahi", " d", "set base to decimal",
                 "ahi", " h", "set base to hexadecimal",
@@ -2824,11 +2829,14 @@ static void cmd_anal_hint(RCore *core, const char *input) {
                 NULL};
             r_core_cmd_help (core, help_msg);
         } else {
+            // You can either specify immbase with letters, or numbers
             const int base =
                 (input[2] == 'b') ? 1 :
                 (input[2] == 's') ? 2 :
                 (input[2] == 'o') ? 8 :
-                (input[2] == 'd') ? 10 : 16;
+                (input[2] == 'd') ? 10 :
+                (input[2] == 'h') ? 16 :
+                (int)r_num_math (core->num, input + 1);
             r_anal_hint_set_immbase (core->anal, core->offset, base);
         }
 		break;
