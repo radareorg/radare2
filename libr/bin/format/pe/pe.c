@@ -225,8 +225,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					}
 				}
 				if (db) {
-					// ordinal-1 because we enumerate starting at 0
-					symname = resolveModuleOrdinal (db, symdllname, import_ordinal-1);
+					symname = resolveModuleOrdinal (db, symdllname, import_ordinal);
 					if (symname) {
 						snprintf (import_name,
 							PE_NAME_LENGTH,
