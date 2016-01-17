@@ -1849,7 +1849,7 @@ R_API void r_core_visual_define (RCore *core) {
 		," e    end of function"
 		," f    analyze function"
 		," F    format"
-		," i    immediate base (1, 2, 8, 10, 16)"
+		," i    immediate base (b(in), o(ct), d(ec), h(ex), s(tr)"
 		," j    merge down (join this and next functions)"
 		," k    merge up (join this and previous function)"
 		," h    highlight word"
