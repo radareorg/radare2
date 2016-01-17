@@ -201,6 +201,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 
 				// remove the trailling ".dll"
 				size_t len = strlen (symdllname);
+				r_str_case(symdllname, 0);
 				len = len < 4 ? 0 : len - 4;
 				symdllname[len] = 0;
 

@@ -6,11 +6,11 @@ SDB=$(SDBPATH)/sdb
 
 P=${DESTDIR}${DATADIR}/radare2/${VERSION}/format
 
-DLLS=WS2_32 OLEAUT32 WSOCK32 MSI CSMFPAPI MSVBVM60 KERNEL32
-DLLS+=ACLUI ACTIVEDS ATL BORLNDMM BROWSEUI COMCTL32 DSOUND
-DLLS+=MFC42 MFC42U MSTLSAPI MSVBVM50 ODBC32 OLECLI32 OLEDLG
-DLLS+=OLEPRO32 OLESVR32 SHDOCVW SHELL32 SHLWAPI UXTHEME
-DLLS+=VB40032 VSSAPI WINMM
+DLLS=ws2_32 oleaut32 wsock32 msi csmfpapi msvbvm60 kernel32
+DLLS+=aclui activeds atl borlndmm browseui comctl32 dsound
+DLLS+=mfc42 mfc42u mstlsapi msvbvm50 odbc32 olecli32 oledlg
+DLLS+=olepro32 olesvr32 shdocvw shell32 shlwapi uxtheme
+DLLS+=vb40032 vssapi winmm
 DLL_SDB=$(addsuffix .sdb,$(addprefix dll/,$(DLLS)))
 #-include $(OBJS:.o=.d)
 
