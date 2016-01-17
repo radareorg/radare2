@@ -2816,11 +2816,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
         if (input[1] == '?') {
             const char* help_msg[] = {
                 "Usage", "ahi [sbodh] [@ offset]", " Define numeric base",
-                "ahi", " 1", "set base to binary",
-                "ahi", " 2", "set base to string",
-                "ahi", " 8", "set base to octal",
-                "ahi", " 10", "set base to decimal",
-                "ahi", " 16", "set base to hexadecimal",
+                "ahi", " [base]", "set base to `base",
                 "ahi", " b", "set base to binary",
                 "ahi", " d", "set base to decimal",
                 "ahi", " h", "set base to hexadecimal",
