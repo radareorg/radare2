@@ -935,10 +935,12 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 		return NULL;
 	}
 	r_list_foreach (anal->fcns, iter, fcn) {
-		if (!type || (fcn->type & type)) {
-			if (addr == fcn->addr || (ret == NULL &&
-			   ((addr > fcn->addr) && (addr < fcn->addr+fcn->size))))
+		if (!type || (fcn && fcn->type & type)) {
+			if (addr == fcn->addr ||
+			    (ret == NULL && ((addr > fcn->addr) &&
+			    (addr < fcn->addr + fcn->size))))
 				ret = fcn;
+
 		}
 	}
 	return ret;
