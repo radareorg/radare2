@@ -1,0 +1,3 @@
+104=DllCanUnloadNow
+108=DllGetClassObject
+109=DllGetVersion

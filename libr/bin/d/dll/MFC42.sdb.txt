@@ -1,0 +1,8 @@
+1452=?AfxFreeLibrary@@YAHPEAUHINSTANCE__@@@Z
+1494=?AfxLoadLibrary@@YAPEAUHINSTANCE__@@PEBD@Z
+1497=?AfxLockGlobals@@YAXH@Z
+1587=?AfxUnlockGlobals@@YAXH@Z
+7=DllCanUnloadNow
+8=DllGetClassObject
+9=DllRegisterServer
+10=DllUnregisterServer

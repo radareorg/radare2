@@ -1,0 +1,8 @@
+1=CreateSecurityPage
+5=EditConditionalAceClaims
+4=EditResourceCondition
+2=EditSecurity
+3=EditSecurityAdvanced
+6=GetLocalizedStringForCondition
+7=GetTlsIndexForClaimDictionary
+16=IID_ISecurityInformation
