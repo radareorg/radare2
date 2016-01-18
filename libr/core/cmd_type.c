@@ -214,37 +214,41 @@ static int cmd_type(void *data, const char *input) {
 		sdb_foreach (core->anal->sdb_types, sdbforcb, core);
 		break;
 	case 'o':
-		if (input[1] == ' ') {
-			const char *filename = input + 2;
-			char *homefile = NULL;
-			if (*filename == '~') {
-				if (filename[1] && filename[2]) {
-					homefile = r_str_home (filename + 2);
-					filename = homefile;
+		if (!r_sandbox_enable (0)) {
+			if (input[1] == ' ') {
+				const char *filename = input + 2;
+				char *homefile = NULL;
+				if (*filename == '~') {
+					if (filename[1] && filename[2]) {
+						homefile = r_str_home (filename + 2);
+						filename = homefile;
+					}
 				}
-			}
-			if (!strcmp (filename, "-")) {
-				char *out, *tmp;
-				tmp = r_core_editor (core, NULL, "");
-				if (tmp) {
-					out = r_parse_c_string (tmp);
+				if (!strcmp (filename, "-")) {
+					char *out, *tmp;
+					tmp = r_core_editor (core, NULL, "");
+					if (tmp) {
+						out = r_parse_c_string (tmp);
+						if (out) {
+							//		r_cons_strcat (out);
+							sdb_query_lines (core->anal->sdb_types, out);
+							free (out);
+						}
+						free (tmp);
+					}
+				} else {
+					char *out = r_parse_c_file (filename);
 					if (out) {
-				//		r_cons_strcat (out);
+						//r_cons_strcat (out);
 						sdb_query_lines (core->anal->sdb_types, out);
 						free (out);
 					}
-					free (tmp);
+					//r_anal_type_loadfile (core->anal, filename);
 				}
-			} else {
-				char *out = r_parse_c_file (filename);
-				if (out) {
-				//	r_cons_strcat (out);
-					sdb_query_lines (core->anal->sdb_types, out);
-					free (out);
-				}
-				//r_anal_type_loadfile (core->anal, filename);
+				free (homefile);
 			}
-			free (homefile);
+		} else {
+			eprintf ("Sandbox: system call disabled\n");
 		}
 		break;
 	// td - parse string with cparse engine and load types from it
