@@ -104,6 +104,7 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	r_strbuf_init (&op->esil);
 	ut8 high = (*buf & 0xf0)>>4;
 	ut8 low = (*buf & 0xf);
+	basm[0] = 0;
 
 	if (rlen > len)	return op->size = 0;
 	switch (high) {

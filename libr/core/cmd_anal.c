@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include "r_util.h"
 
@@ -1774,9 +1774,10 @@ static void showregs (RList *list) {
 		r_cons_newline();
 	}
 }
+
 static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	RAnalEsil *esil;
-	int ptr, ops, ops_end, len, buf_sz, maxopsize;
+	int ptr, ops, ops_end = 0, len, buf_sz, maxopsize;
 	ut64 addr_end;
 	AeaStats stats;
 	const char *esilstr;

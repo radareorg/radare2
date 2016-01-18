@@ -1216,10 +1216,11 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				fn = sn.demflag? sn.demflag: sn.nameflag;
 				fi = r_flag_set (r->flags, fn, addr, symbol->size, 0);
 				if (fi) {
-					if (r->bin->prefix) {
-						fn  = r_str_newf ("%s.%s", r->bin->prefix, fn);
-					}
-					r_flag_item_set_name (fi, fn, n);
+					char *fnp = (r->bin->prefix)?
+						r_str_newf ("%s.%s", r->bin->prefix, fn):
+						strdup (fn);
+					r_flag_item_set_name (fi, fnp, n);
+					free (fnp);
 				} else {
 					if (fn) eprintf ("[Warning] Can't find flag (%s)\n", fn);
 				}
@@ -1464,18 +1465,20 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			if (section->arch || section->bits) {
 				const char *arch = section->arch;
 				int bits = section->bits;
-				if (!arch) arch = info->arch;
-				if (!bits) bits = info->bits;
+				if (info) {
+					if (!arch) arch = info->arch;
+					if (!bits) bits = info->bits;
+				}
 				//r_io_section_set_archbits (r->io, addr, arch, bits);
 			}
 			if (r->bin->prefix) {
-				snprintf (str, sizeof (str)-1, "[%i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"
-					PFMT64d" vsz=%"PFMT64d" rwx=%s %s.%s",
+				snprintf (str, sizeof (str)-1, "[%i] va=0x%08"PFMT64x" pa=0x%08"
+					PFMT64x" sz=%" PFMT64d" vsz=%"PFMT64d" rwx=%s %s.%s",
 					i, addr, section->paddr, section->size, section->vsize,
 					perms, r->bin->prefix, section->name);
 			} else {
-				snprintf (str, sizeof (str)-1, "[%i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"
-					PFMT64d" vsz=%"PFMT64d" rwx=%s %s",
+				snprintf (str, sizeof (str)-1, "[%i] va=0x%08"PFMT64x" pa=0x%08"
+					PFMT64x" sz=%" PFMT64d" vsz=%"PFMT64d" rwx=%s %s",
 					i, addr, section->paddr, section->size, section->vsize,
 					perms, section->name);
 
@@ -1548,8 +1551,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			if (section->arch || section->bits) {
 				const char *arch = section->arch;
 				int bits = section->bits;
-				if (!arch) arch = info->arch;
-				if (!bits) bits = info->bits;
+				if (info) {
+					if (!arch) arch = info->arch;
+					if (!bits) bits = info->bits;
+				}
 				r_cons_printf ("Sa %s %d @ 0x%08"
 					PFMT64x"\n", arch, bits, addr);
 			}
