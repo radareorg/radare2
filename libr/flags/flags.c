@@ -433,7 +433,6 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	ut64 hash;
 	RList *list;
 	if (!f || !item || !name || !*name) {
-		eprintf ("r_flag_rename: contract fail\n");
 		return false;
 	}
 	hash = r_str_hash64 (item->realname);

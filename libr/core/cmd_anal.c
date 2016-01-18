@@ -590,8 +590,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *name) {
 		nname = strdup (name);
 	}
 	oname = fcn->name;
-	r_core_cmdf (core, "fr %s %s@ 0x%" PFMT64x,
-		fcn->name, nname, off);
+r_flag_rename (core->flags, r_flag_get (core->flags, fcn->name), nname);
 	fcn->name = strdup (nname);
 	if (core->anal->cb.on_fcn_rename) {
 		core->anal->cb.on_fcn_rename (core->anal,
@@ -3542,7 +3541,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'F':
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;
-	case 'f':
+	case 'f': // "af"
 		if (!cmd_anal_fcn (core, input)) {
 			r_cons_break_end ();
 			return false;

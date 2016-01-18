@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - condret@runas-racer.com */
+/* radare - LGPL - Copyright 2014-2016 - condret@runas-racer.com */
 
 #include <r_asm.h>
 #include <r_types.h>
@@ -6,11 +6,11 @@
 #include <stdio.h>
 
 /* That 3 is a hack */
-const int i4004_ins_len[16] = {
+static const int i4004_ins_len[16] = {
 	1, 2, 3, 1, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
-const char *i4004_e[16] = {
+static const char *i4004_e[16] = {
 	"wrm",
 	"wmp",
 	"wrr",
@@ -29,7 +29,7 @@ const char *i4004_e[16] = {
 	"rd3"
 };
 
-const char *i4004_f[16] = {
+static const char *i4004_f[16] = {
 	"clb",
 	"clc",
 	"iac",
