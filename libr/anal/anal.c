@@ -206,6 +206,9 @@ R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
 	if (anal->cur && anal->cur->arch) {
 		arch = anal->cur->arch;
 	} else arch = R_SYS_ARCH;
+	if (!arch) {
+		return false;
+	}
 	if (name && *name) {
 		file = sdb_fmt (0, "%s/%s.sdb", FCNSIGNPATH, name);
 	} else {
