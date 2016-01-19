@@ -302,7 +302,7 @@ R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 }
 
 R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str) {
-	if (!str || !esil || !*str || esil->stackptr > 30)
+	if (!str || !esil || !*str || esil->stackptr > (ESIL_STACK_SIZE - 2))
 		return false;
 	esil->stack[esil->stackptr++] = strdup (str);
 	return true;
@@ -1982,7 +1982,7 @@ static int esil_num(RAnalEsil *esil) {
 
 /* duplicate the last element in the stack */
 static int esil_dup(RAnalEsil *esil) {
-	if (!esil || !esil->stack || esil->stackptr < 1 || esil->stackptr > 30)
+	if (!esil || !esil->stack || esil->stackptr < 1 || esil->stackptr > (ESIL_STACK_SIZE - 2))
 		return false;
 	return r_anal_esil_push (esil, esil->stack[esil->stackptr-1]);
 }

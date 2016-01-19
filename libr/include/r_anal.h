@@ -965,9 +965,11 @@ typedef struct r_anal_esil_callbacks_t {
 	int (*reg_write)(ESIL *esil, const char *name, ut64 val);
 } RAnalEsilCallbacks;
 
+#define ESIL_STACK_SIZE 32
+
 typedef struct r_anal_esil_t {
 	RAnal *anal;
-	char *stack[32];
+	char *stack[ESIL_STACK_SIZE];
 	int stackptr;
 	int skip;
 	int nowrite;
