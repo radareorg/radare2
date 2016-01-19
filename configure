@@ -116,12 +116,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='radare2' ; VERSION='0.10.0-git' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2' ; VERSION='0.10.0' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
                 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-0.10.0-git to adapt to many kinds of systems.
+'configure' configures radare2-0.10.0 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -204,7 +204,7 @@ take_environ() {
 }
 
 show_version() {
-echo "radare2-0.10.0-git configuration script done with acr v0.9.9.
+echo "radare2-0.10.0 configuration script done with acr v0.9.9.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -228,7 +228,7 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:   radare2"
-echo "VERSION:   0.10.0-git"
+echo "VERSION:   0.10.0"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic"
@@ -480,14 +480,7 @@ if [ "$HOST_OS" = "openbsd" ]; then
 USEROSTYPE="bsd"
 else
 if [ "$HOST_OS" = "darwin" ]; then
-	USEROSTYPE="darwin"; 
-	[ -z "$R2_XNU_PTRACE" ] && R2_XNU_PTRACE=1
-	if [ "$R2_XNU_PTRACE" == "1" ]; then
-		CFLAGS+=-DXNU_USE_PTRACE=1
-	else
-		CFLAGS+=-DXNU_USE_PTRACE=0
-	fi
-fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
+USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
 if [ "$LIBVERSION" = "xxx" ]; then
 LIBVERSION="$VERSION"; fi
 SEDFLAGS=" -e '"
