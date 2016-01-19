@@ -639,7 +639,7 @@ R_API void r_sys_perror(const char *fun);
 #define r_sys_mkdir(x) (mkdir(x,0755)!=-1)
 #define r_sys_mkdir_failed() (errno != EEXIST)
 #endif
-R_API int r_sys_mkdirp(const char *dir);
+R_API bool r_sys_mkdirp(const char *dir);
 R_API int r_sys_sleep(int secs);
 R_API int r_sys_usleep(int usecs);
 R_API char *r_sys_getenv(const char *key);
@@ -755,7 +755,7 @@ R_API DIR* r_sandbox_opendir (const char *path);
 R_API int r_sandbox_enable (int e);
 R_API int r_sandbox_disable (int e);
 R_API int r_sandbox_system (const char *x, int fork);
-R_API int r_sandbox_creat (const char *path, int mode);
+R_API bool r_sandbox_creat (const char *path, int mode);
 R_API int r_sandbox_open (const char *path, int mode, int perm);
 R_API FILE *r_sandbox_fopen (const char *path, const char *mode);
 R_API int r_sandbox_chdir (const char *path);

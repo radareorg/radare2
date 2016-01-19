@@ -119,9 +119,9 @@ R_API int r_sandbox_system (const char *x, int n) {
 	return -1;
 }
 
-R_API int r_sandbox_creat (const char *path, int mode) {
+R_API bool r_sandbox_creat (const char *path, int mode) {
 	if (enabled) {
-		return -1;
+		return false;
 #if 0
 		if (mode & O_CREAT) return -1;
 		if (mode & O_RDWR) return -1;
@@ -129,7 +129,12 @@ R_API int r_sandbox_creat (const char *path, int mode) {
 			return -1;
 #endif
 	}
-	return creat (path, mode);
+	int fd = open (path, O_CREAT | O_TRUNC | O_WRONLY, mode);
+	if (fd != -1) {
+		close (fd);
+		return true;
+	}
+	return false;
 }
 
 static char *expand_home(const char *p) {

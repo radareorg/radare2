@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -106,7 +106,6 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 		free (mmo);
 		return NULL;
 	}
-
 	if (!r_io_def_mmap_refresh_def_mmap_buf (mmo)) {
 		mmo->rawio = 1;
 		if (!r_io_def_mmap_refresh_def_mmap_buf (mmo)) {
@@ -126,9 +125,8 @@ static void r_io_def_mmap_free (RIOMMapFileObj *mmo) {
 }
 
 static int r_io_def_mmap_close(RIODesc *fd) {
-	if (!fd || !fd->data)
-		return -1;
-	r_io_def_mmap_free ( (RIOMMapFileObj *) fd->data);
+	if (!fd || !fd->data) return -1;
+	r_io_def_mmap_free ((RIOMMapFileObj *) fd->data);
 	fd->data = NULL;
 	return 0;
 }
@@ -265,19 +263,16 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 }
 
 static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int flags, int mode) {
-	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (
-		io, file, mode, flags);
+	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, mode, flags);
 	if (!mmo) return NULL;
-	return r_io_desc_new (&r_io_plugin_default, mmo->fd,
-				mmo->filename, flags, mode, mmo);
+	return r_io_desc_new (&r_io_plugin_default, mmo->fd, mmo->filename, flags, mode, mmo);
 }
 
 static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
 	ut64 seek_val = UT64_MAX;
 
 	if (!mmo) return UT64_MAX;
-	if (mmo->rawio)
-		return lseek (mmo->fd, offset, whence);
+	if (mmo->rawio) return lseek (mmo->fd, offset, whence);
 	if (!mmo->buf) return UT64_MAX;
 
 	seek_val = mmo->buf->cur;
@@ -297,19 +292,16 @@ static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int wh
 }
 
 static ut64 r_io_def_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	if (!fd || !fd->data)
-		return -1;
+	if (!fd || !fd->data) return UT64_MAX;
 	return r_io_def_mmap_seek (io, (RIOMMapFileObj *)fd->data, offset, whence);
 }
 
 static int r_io_def_mmap_truncate(RIOMMapFileObj *mmo, ut64 size) {
 	int res = r_file_truncate (mmo->filename, size);
-
 	if (res && !r_io_def_mmap_refresh_def_mmap_buf (mmo) ) {
 		eprintf ("r_io_def_mmap_truncate: Error trying to refresh the def_mmap'ed file.");
 		res = false;
-	}
-	else if (!res) eprintf ("r_io_def_mmap_truncate: Error trying to resize the file.");
+	} else if (!res) eprintf ("r_io_def_mmap_truncate: Error trying to resize the file.");
 	return res;
 }
 

@@ -507,17 +507,15 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	return NULL;
 }
 
-R_API int r_sys_mkdirp(const char *dir) {
-	int ret = R_TRUE;
+R_API bool r_sys_mkdirp(const char *dir) {
+	bool ret = true;
 	char slash = R_SYS_DIR[0];
 	char *path = strdup (dir), *ptr = path;
-	if (*ptr==slash) ptr++;
+	if (*ptr == slash) ptr++;
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	{
 		char *p = strstr (ptr, ":\\");
-		if (p) {
-			ptr = p + 2;
-		}
+		if (p) ptr = p + 2;
 	}
 #endif
 	for (;;) {
@@ -533,13 +531,13 @@ R_API int r_sys_mkdirp(const char *dir) {
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
 			eprintf ("r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
 			free (path);
-			return R_FALSE;
+			return false;
 		}
 		*ptr = slash;
 		ptr++;
 	}
 	if (!r_sys_mkdir (path) && r_sys_mkdir_failed ())
-		ret = R_FALSE;
+		ret = false;
 	free (path);
 	return ret;
 }

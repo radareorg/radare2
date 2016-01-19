@@ -961,7 +961,7 @@ R_API int r_io_create(RIO *io, const char *file, int mode, int type) {
 		return io->plugin->create (io, file, mode, type);
 	if (type == 'd' || type == 1)
 		return r_sys_mkdir (file);
-	return r_sandbox_creat (file, mode)? false: true;
+	return r_sandbox_creat (file, mode);
 }
 
 R_API void r_io_sort_maps(RIO *io) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #define USE_THREADS 1
 
@@ -598,11 +598,10 @@ int main(int argc, char **argv, char **envp) {
 				while (optind < argc) {
 					pfile = argv[optind++];
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					if (perms & R_IO_WRITE & !fh) {
-						if (r_io_create (r.io, pfile, 0644, 0))
+					if ((perms & R_IO_WRITE) || !fh) {
+						if (r_io_create (r.io, pfile, 0644, 0)) {
 							fh = r_core_file_open (&r, pfile, perms, mapaddr);
-						else
-							eprintf ("r_io_create: Permission denied.\n");
+						} else eprintf ("r_io_create: Permission denied.\n");
 					}
 					if (fh) {
 						if (run_anal > 0) {
