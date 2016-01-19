@@ -2108,7 +2108,8 @@ static void handle_print_esil_anal_init(RCore *core, RDisasmState *ds) {
 	}
 	if (!core->anal->esil) {
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
-		core->anal->esil = r_anal_esil_new (iotrap);
+		int stacksize = r_config_get_i (core->config, "esil.stacksize");
+		core->anal->esil = r_anal_esil_new (stacksize, iotrap);
 		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0);
 	}
 	free (regstate);

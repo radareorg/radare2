@@ -208,7 +208,7 @@ R_API int r_debug_esil_stepi (RDebug *d) {
 	int ret = 1;
 	dbg = d;
 	if (!ESIL) {
-		ESIL = r_anal_esil_new (R_TRUE);
+		ESIL = r_anal_esil_new (32, R_TRUE);
 		// TODO setup something?
 	}
 

@@ -720,6 +720,15 @@ static int cb_esildebug (void *user, void *data) {
 	return true;
 }
 
+static int cb_esilstacksize (void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->i_value < 3) {
+		eprintf ("esil.stacksize must be greater than 2\n");
+		node->i_value = 32;
+	}
+	return true;
+}
+
 static int cb_fixrows(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->fix_rows = (int)node->i_value;
@@ -1418,6 +1427,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETCB("esil.debug", "false", &cb_esildebug, "Show ESIL debug info");
 	SETICB("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
+	SETICB("esil.stacksize", 32, &cb_esilstacksize, "Number of elements that can be pushed on the esilstack");
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it

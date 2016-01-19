@@ -53,9 +53,14 @@ static bool popRN(RAnalEsil *esil, ut64 *n) {
 
 /* R_ANAL_ESIL API */
 
-R_API RAnalEsil *r_anal_esil_new(int iotrap) {
+R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap) {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
-	if (!esil) return NULL;
+	if (!esil || stacksize < 3) return NULL;
+	if (!(esil->stack = malloc (sizeof(char *) * stacksize))) {
+		free (esil);
+		return NULL;
+	}
+	esil->stacksize = stacksize;
 	esil->parse_goto_count = R_ANAL_ESIL_GOTO_LIMIT;
 	esil->ops = sdb_new0 ();
 	esil->iotrap = iotrap;
@@ -161,6 +166,7 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	sdb_free (esil->stats);
 	esil->stats = NULL;
 	r_anal_esil_stack_free (esil);
+	free (esil->stack);
 	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_fini)
 		esil->anal->cur->esil_fini (esil);
 	free (esil);
@@ -302,7 +308,7 @@ R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 }
 
 R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str) {
-	if (!str || !esil || !*str || esil->stackptr > (ESIL_STACK_SIZE - 2))
+	if (!str || !esil || !*str || esil->stackptr > (esil->stacksize - 1))
 		return false;
 	esil->stack[esil->stackptr++] = strdup (str);
 	return true;
@@ -1982,7 +1988,7 @@ static int esil_num(RAnalEsil *esil) {
 
 /* duplicate the last element in the stack */
 static int esil_dup(RAnalEsil *esil) {
-	if (!esil || !esil->stack || esil->stackptr < 1 || esil->stackptr > (ESIL_STACK_SIZE - 2))
+	if (!esil || !esil->stack || esil->stackptr < 1 || esil->stackptr > (esil->stacksize - 1))
 		return false;
 	return r_anal_esil_push (esil, esil->stack[esil->stackptr-1]);
 }
@@ -2251,6 +2257,7 @@ repeat:
 	return 1;
 }
 
+//frees all elements from the stack, not the stack itself
 R_API void r_anal_esil_stack_free(RAnalEsil *esil) {
 	int i;
 	if (esil) {
