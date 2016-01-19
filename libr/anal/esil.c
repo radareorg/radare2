@@ -1972,51 +1972,31 @@ static int esil_num(RAnalEsil *esil) {
 	ut64 dup;
 	if (!esil)
 		return false;
-	dup_me = r_anal_esil_pop (esil);
+	if (!(dup_me = r_anal_esil_pop (esil)))
+		return false;
 	if (!r_anal_esil_get_parm (esil, dup_me, &dup))
 		return false;
 	free (dup_me);
 	return r_anal_esil_pushnum (esil, dup);
 }
 
-// XXX this is conflicting with NUM, because it can be interesting
-// XXX to push the register name instead of its value
-
-/* duplicate the value of the last element in the stack */
+/* duplicate the last element in the stack */
 static int esil_dup(RAnalEsil *esil) {
-	char *dup_me;
-	ut64 dup;
-	if (!esil)
+	if (!esil || !esil->stack || esil->stackptr < 1 || esil->stackptr > 30)
 		return false;
-	dup_me = r_anal_esil_pop (esil);
-	if (!r_anal_esil_get_parm (esil, dup_me, &dup))
-		return false;
-	free (dup_me);
-	if (!r_anal_esil_pushnum (esil, dup))
-		return false;
-	return r_anal_esil_pushnum (esil, dup);
+	return r_anal_esil_push (esil, esil->stack[esil->stackptr]);
 }
 
 static int esil_swap (RAnalEsil *esil) {
-	char *first;
-	ut64 first_v;
-	char *second;
-	ut64 second_v;
-	if (!esil)
+	char *tmp;
+	if (!esil || !esil->stack || esil->stackptr < 2)
 		return false;
-	second = r_anal_esil_pop (esil);
-	if (!r_anal_esil_get_parm (esil, second, &second_v))
+	if (!esil->stack[esil->stackptr] || !esil->stack[esil->stackptr-1])
 		return false;
-	free (second);
-
-	first = r_anal_esil_pop (esil);
-	if (!r_anal_esil_get_parm (esil, first, &first_v))
-		return false;
-	free (first);
-
-	if (!r_anal_esil_pushnum (esil, second_v))
-		return false;
-	return r_anal_esil_pushnum (esil, first_v);
+	tmp = esil->stack[esil->stackptr];
+	esil->stack[esil->stackptr] = esil->stack[esil->stackptr-1];
+	esil->stack[esil->stackptr-1] = tmp;
+	return true;
 }
 
 /* in case of fail, we must set some var */
