@@ -965,11 +965,10 @@ typedef struct r_anal_esil_callbacks_t {
 	int (*reg_write)(ESIL *esil, const char *name, ut64 val);
 } RAnalEsilCallbacks;
 
-#define ESIL_STACK_SIZE 32
-
 typedef struct r_anal_esil_t {
 	RAnal *anal;
-	char *stack[ESIL_STACK_SIZE];
+	char **stack;
+	int stacksize;
 	int stackptr;
 	int skip;
 	int nowrite;
@@ -1192,7 +1191,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr,
 		const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
-R_API RAnalEsil *r_anal_esil_new (int iotrap);
+R_API RAnalEsil *r_anal_esil_new (int stacksize, int iotrap);
 R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op);
 R_API void r_anal_esil_trace_list (RAnalEsil *esil);
 R_API void r_anal_esil_trace_show (RAnalEsil *esil, int idx);
