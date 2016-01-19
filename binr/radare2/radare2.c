@@ -566,10 +566,7 @@ int main(int argc, char **argv, char **envp) {
 				}
 				{
 					char *diskfile = strstr (file, "://");
-					if (diskfile)
-						diskfile += 3;
-					else
-						diskfile = file;
+					diskfile = diskfile? diskfile + 3: file;
 					fh = r_core_file_open (&r, file, perms, mapaddr);
 					if (fh != NULL)
 						r_debug_use (r.dbg, is_gdb? "gdb": debugbackend);
@@ -598,7 +595,7 @@ int main(int argc, char **argv, char **envp) {
 				while (optind < argc) {
 					pfile = argv[optind++];
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					if ((perms & R_IO_WRITE) || !fh) {
+					if ((perms & R_IO_WRITE) && !fh) {
 						if (r_io_create (r.io, pfile, 0644, 0)) {
 							fh = r_core_file_open (&r, pfile, perms, mapaddr);
 						} else eprintf ("r_io_create: Permission denied.\n");
