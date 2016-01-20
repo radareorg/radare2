@@ -156,9 +156,10 @@ rm -rf ${HERE}/${D}/${DATADIR}/radare2/*/www/*/node_modules
 rm -rf ${HERE}/${D}/${PREFIX}/include
 eval `grep ^VERSION= ${HERE}/config-user.mk`
 WWWROOT="/data/data/org.radare2.installer/radare2/share/radare2/${VERSION}/www"
-ln -fs ${WWWROOT} ${HERE}/${D}/data/data/org.radare2.installer/www
-mkdir -p "${WWWROOT}"
-cp -rf ${HERE}/shlr/www/* "${WWWROOT}"
+WWWWOOT="${HERE}/${D}/data/data/org.radare2.installer/www"
+ln -fs "${WWWROOT}" "${WWWWOOT}"
+# mkdir -p "${WWWROOT}"
+cp -rf ${HERE}/shlr/www/* "${WWWWOOT}"
 chmod -R o+rx ${HERE}/${D}/data/data/org.radare2.installer/www
 cd ${D}
 find $HERE/$D | grep www

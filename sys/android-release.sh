@@ -5,7 +5,7 @@ R2B="${PWD}/../radare2-bin"
 R2T="${PWD}"
 
 ARCHS="arm mips aarch64 x86"
-v=0.10.0-git
+v=0.10.0
 
 if [ -n "$1" ]; then
 	ARCHS="$@"
@@ -40,7 +40,8 @@ for a in ${ARCHS} ; do
 		echo "Build for $a failed"
 		exit 1
 	fi
-	cp -f "${R2T}/radare2-${v}-android-${a}.tar.gz" . || exit 1
+	# cp -f "${R2T}/radare2-${v}-android-${a}.tar.gz" . || exit 1
+	cp -f "${R2T}/radare2-${v}-android-${a}.tar.gz" . # || exit 1
 	rm -f README.md
 	make-readme $a > README.md
 	cat README.md
