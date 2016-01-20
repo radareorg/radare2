@@ -9,9 +9,28 @@ ESIL aims to describe a Forth-like representation for every target CPU opcode se
 
 Each command of an ESIL expression is separated by a comma
 
-.IP <source>,<source>,<operation>
+.IP <source0>,<source1>,<operation>
 .IP <source>,<destination>,<operation>
 .IP <source_destination>,<operation>
+
+.SH BASIC OPERATIONS
+
+These operations should be enough to emulate most instructions of any architecture
+
+.IP =
+sets the value of the destination to the value of the source
+.IP +
+adds the values of source0 and source1 and pushes the result on the esil stack
+.IP -
+subtracts the value of source0 from the value of source1 and pushes the result on the esil stack
+.IP *
+multiplies the values of source0 and source1 and pushes the result on the esil stack
+.IP /
+divides the value of source1 by the value of source0
+
+.SH BASIC OPERATIONS EXAMPLES (x86)
+
+.IP "jmp eax -> eax,eip,="
 
 .SH "SEE ALSO"
 .BR radare2 (1)
