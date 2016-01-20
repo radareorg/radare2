@@ -1,6 +1,8 @@
 -include config-user.mk
 include global.mk
 
+PREVIOUS_RELEASE=0.9.9
+
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
 R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm)
@@ -267,13 +269,14 @@ purge: purge-doc purge-dev
 
 dist:
 	-[ configure -nt config-user.mk ] && ./configure "--prefix=${PREFIX}"
-	git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
+	#git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
+	git log $$(git show-ref | grep ${PREVIOUS_RELEASE} | awk '{print $$1}')..HEAD > ChangeLog
 	cd shlr && ${MAKE} capstone-sync
 	DIR=`basename "$$PWD"` ; \
 	FILES=`git ls-files | sed -e "s,^,radare2-${VERSION}/,"` ; \
 	CS_FILES=`cd shlr/capstone ; git ls-files | grep -v pdf | grep -v xcode | grep -v msvc | grep -v suite | grep -v bindings | grep -v tests | sed -e "s,^,radare2-${VERSION}/shlr/capstone/,"` ; \
 	cd .. && mv "$${DIR}" "radare2-${VERSION}" && \
-	${TAR} "radare2-${VERSION}.tar" $${FILES} $${CS_FILES} "radare2-${VERSION}/ChangeLog" ;\
+	${TAR} "radare2-${VERSION}.tar" $${FILES} $${CS_FILES} "radare2-${VERSION}/ChangeLog" ; \
 	${CZ} "radare2-${VERSION}.tar" ; \
 	mv "radare2-${VERSION}" "$${DIR}"
 
