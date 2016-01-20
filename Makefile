@@ -133,14 +133,19 @@ pkgcfg:
 
 install-man:
 	mkdir -p "${DESTDIR}${MANDIR}/man1"
+	mkdir -p "${DESTDIR}${MANDIR}/man7"
 	for FILE in man/*.1 ; do ${INSTALL_MAN} "$$FILE" "${DESTDIR}${MANDIR}/man1" ; done
 	cd "${DESTDIR}${MANDIR}/man1" && ln -fs radare2.1 r2.1
+	for FILE in man/*.7 ; do ${INSTALL_MAN} "$$FILE" "${DESTDIR}${MANDIR}/man7" ; done
 
 install-man-symlink:
 	mkdir -p "${DESTDIR}${MANDIR}/man1"
+	mkdir -p "${DESTDIR}${MANDIR}/man7"
 	cd man && for FILE in *.1 ; do \
 		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man1/$$FILE" ; done
 	cd "${DESTDIR}${MANDIR}/man1" && ln -fs radare2.1 r2.1
+	for FILE in *.7 ; do \
+		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man7/$$FILE" ; done
 
 install-doc:
 	${INSTALL_DIR} "${DESTDIR}${DATADIR}/doc/radare2"
