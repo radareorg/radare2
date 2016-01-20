@@ -1414,7 +1414,8 @@ repeat:
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		int exectrap = r_config_get_i (core->config, "esil.exectrap");
 		int stacksize = r_config_get_i (core->config, "esil.stacksize");
-		core->anal->esil = r_anal_esil_new (stacksize, iotrap);
+		if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap)))
+			return 0;
 		esil = core->anal->esil;
 		r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
 		esil->exectrap = exectrap;
@@ -1690,7 +1691,10 @@ static void esil_init (RCore *core) {
 	if (!core->anal->esil) {
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		int stacksize = r_config_get_i (core->config, "esil.stacksize");
-		core->anal->esil = r_anal_esil_new (stacksize, iotrap);
+		if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
+			R_FREE (regstate);
+			return;
+		}
 		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0);
 	}
 	free (regstate);
@@ -1948,7 +1952,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case ' ':
 		//r_anal_esil_eval (core->anal, input+1);
 		if (!esil) {
-			core->anal->esil = esil = r_anal_esil_new (stacksize, iotrap);
+			if (!(core->anal->esil = esil = r_anal_esil_new (stacksize, iotrap)))
+				return;
 		}
 		r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
 		r_anal_esil_set_pc (esil, core->offset);
@@ -2078,7 +2083,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					r_core_cmd0 (core, "ar PC=$$");
 				}
 			}
-			esil = core->anal->esil = r_anal_esil_new (stacksize, iotrap);
+			if (!(esil = core->anal->esil = r_anal_esil_new (stacksize, iotrap)))
+				return;
 			r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
 			esil->debug = (int)r_config_get_i (core->config, "esil.debug");
 			/* restore user settings for interrupt handling */
@@ -2086,7 +2092,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				const char *s = r_config_get (core->config, "cmd.esil.intr");
 				if (s) {
 					char *my = strdup (s);
-					r_config_set (core->config, "cmd.esil.intr", my);
+					if (my)
+						r_config_set (core->config, "cmd.esil.intr", my);
 					free (my);
 				}
 			}
@@ -2150,6 +2157,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		{
 			// anal ESIL to REIL.
 			RAnalEsil *esil = r_anal_esil_new (stacksize, iotrap);
+			if (!esil)
+				return;
 			r_anal_esil_to_reil_setup (esil, core->anal, romem, stats);
 			r_anal_esil_set_pc (esil, core->offset);
 			r_anal_esil_parse (esil, input + 2);
@@ -3217,7 +3226,8 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 			int romem = r_config_get_i (core->config, "esil.romem");
 			int stats = r_config_get_i (core->config, "esil.stats");
 			int iotrap = r_config_get_i (core->config, "esil.iotrap");
-			core->anal->esil = r_anal_esil_new (stacksize, iotrap);
+			if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap)))
+				return;
 			r_anal_esil_setup (core->anal->esil,
 					core->anal, romem, stats);
 		}

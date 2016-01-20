@@ -211,6 +211,8 @@ R_API int r_debug_esil_stepi (RDebug *d) {
 		ESIL = r_anal_esil_new (32, R_TRUE);
 		// TODO setup something?
 	}
+	if (!ESIL)
+		return 0;
 
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
 	opc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);

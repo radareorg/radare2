@@ -1171,6 +1171,8 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		r_cons_break (NULL, NULL);
 		if (!core->anal->esil)
 			core->anal->esil = r_anal_esil_new (stacksize, iotrap);
+		if (!core->anal->esil)
+			return;
 		/* hook addrinfo */
 		core->anal->esil->cb.user = core;
 		r_anal_esil_set_op (core->anal->esil, "AddrInfo", esil_addrinfo);
