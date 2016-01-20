@@ -157,10 +157,20 @@ rm -rf ${HERE}/${D}/${PREFIX}/include
 eval `grep ^VERSION= ${HERE}/config-user.mk`
 WWWROOT="/data/data/org.radare2.installer/radare2/share/radare2/${VERSION}/www"
 WWWWOOT="${HERE}/${D}/data/data/org.radare2.installer/www"
-ln -fs "${WWWROOT}" "${WWWWOOT}"
-# mkdir -p "${WWWROOT}"
-cp -rf ${HERE}/shlr/www/* "${WWWWOOT}"
-chmod -R o+rx ${HERE}/${D}/data/data/org.radare2.installer/www
+WWWSOOT="${HERE}/${D}/data/data/org.radare2.installer/radare2/share/radare2/${VERSION}/www"
+echo WWWROOT="${WWWROOT}"
+echo WWWROOT="${WWWWOOT}"
+echo WWWROOT="${WWWSOOT}"
+(
+	rm -rf "${WWWWOOT}"
+	mkdir -p "${WWWWOOT}"
+	mv "${WWWSOOT}"/* "${WWWWOOT}"
+	# pax doesnt like symlinks when making it compatible with the java tar
+	#cd "${WWWWOOT}/.."
+	#ln -fs "../radare2/share/radare2/${VERSION}/www" www
+	#ln -fs "${WWWROOT}" "${WWWWOOT}"
+)
+chmod -R o+rx "${WWWWOOT}"
 cd ${D}
 find $HERE/$D | grep www
 sleep 4
