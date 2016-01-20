@@ -46,8 +46,11 @@ typedef struct r_io_t {
 	int cached;
 	int cached_read;
 	ut32 map_id;
+	ut32 sec_id;
 	SdbList *freed_map_ids;
+	SdbList *freed_sec_ids;
 	SdbList *maps;
+	SdbList *sections;
 	RList *cache;	//sdblist?
 	Sdb *files;
 	RIOUndo undo;
@@ -97,6 +100,27 @@ typedef struct r_io_map_t {
 	ut64 delta;
 	char *name;
 } RIOMap;
+
+typedef struct r_io_section_t {
+	char *name;
+	ut64 addr;
+	ut64 size;
+	ut64 vaddr;
+	ut64 vsize;
+	int rwx;
+	ut32 id;
+	ut32 bin_id;
+	int arch;
+	int bits;
+	int fd;
+	ut32 filemap;
+	ut32 memmap;
+} RIOSection:
+
+typedef enum {
+	R_IO_SECTION_APPLY_FOR_PATCHING,
+	R_IO_SECTION_APPLY_AS_MAPPING,
+} RIOSectionApplyMethod;
 
 typedef struct r_io_cache_t {
 	ut64 from;
@@ -192,5 +216,19 @@ R_API int r_io_cache_list(RIO *io, int rad);
 R_API void r_io_cache_reset(RIO *io, int set);
 R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len);
+
+/* io/section.c */
+R_API void r_io_section_init (RIO *io);
+R_API void r_io_section_fini (RIO *io);
+R_API int r_io_section_exists_for_id (RIO *io, ut32 id);
+R_API RIOSection *r_io_section_add (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
+R_API RIOSection *r_io_section_get_i (RIO *io, ut32 id);
+R_API int r_io_section_rm (RIO *io, ut32 id);
+R_API SdbList *r_io_section_bin_get (RIO *io, ut32 bin_id);
+R_API int r_io_section_bin_rm (RIO *io, ut32 bin_id);
+R_API int r_io_section_set_archbits (RIO *io, ut32 id, const char *arch, int bits);
+R_API char *r_io_section_get_archbits (RIO *io, ut32 id, int *bits);
+R_API int r_io_section_bin_set_archbits (RIO *io, ut32 bin_id, const char *arch, int bits);
+R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method);
 
 #endif
