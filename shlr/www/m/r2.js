@@ -20,8 +20,8 @@ function isFirefoxOS() {
 }
 
 // Valid options: sync, async or sasync
-r2.asyncMode = 'sasync';
-//r2.asyncMode = 'sync';
+//r2.asyncMode = 'sasync';
+r2.asyncMode = 'sync';
 
 if (isFirefoxOS()) {
   /* Requires CORS or SystemXHR */
@@ -406,6 +406,11 @@ r2.cmds = function(cmds, cb) {
   r2.cmd (cmd, lala);
 }
 
+function stackTrace() {
+    var err = new Error();
+    return err.stack;
+}
+
 function _internal_cmd(c, cb) {
   if (typeof (r2cmd) != 'undefined') {
     hascmd = r2cmd;
@@ -414,7 +419,7 @@ function _internal_cmd(c, cb) {
     // TODO: use setTimeout for async?
     if (typeof (r2plugin) != 'undefined') {
       // duktape
-      cb (r2cmd(c));
+      return cb (r2cmd(c));
     } else {
       // node
       return hascmd (c, cb);
@@ -440,9 +445,9 @@ r2.cmd = function(c, cb) {
         loop.next ();
       });
     }, function() {
-        // all iterations done
-        cb (res);
-      });
+      // all iterations done
+      cb (res);
+    });
   } else {
     return _internal_cmd (c, cb);
   }
