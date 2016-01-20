@@ -250,6 +250,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 	if (!cmd || cmd[0] == '\0') return 0;
 
 	if (cmd[0] == '"') {
+#if __UNIX__
 		if (in) {
 			int pipes[2];
 			if (pipe (pipes) != -1) {
@@ -261,6 +262,9 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 				eprintf ("[ERROR] rarun2: Cannot create pipe\n");
 			}
 		}
+#else
+#warning quoted string redirection handle not yet done
+#endif
 		return 0;
 	} else if (cmd[0] == '!') {
 		// redirection to a process
