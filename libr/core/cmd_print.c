@@ -2329,11 +2329,10 @@ static int cmd_print(void *data, const char *input) {
 					} else {
 						eprintf ("cannot allocate %d bytes\n", f->size);
 					}
-					r_cons_printf ("}");
-					r_cons_newline ();
+					r_cons_printf ("}\n");
 					pd_result = 0;
 				} else if (f) {
-					r_core_cmdf (core, "pD %d @ 0x%08llx", f->size, f->addr);
+					r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->size, f->addr);
 					pd_result = 0;
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
