@@ -2227,13 +2227,13 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				"<", "=", "compare for smaller or equal",
 				">", "", "compare for bigger",
 				">", "=", "compare bigger for or equal",
-				"?{", "", "if poped value != 0 run the block until }",
+				"?{", "", "if popped value != 0 run the block until }",
 				"POP", "", "drops last element in the esil stack",
 				"TODO", "", "the instruction is not yet esilized",
 				"STACK", "", "show contents of stack",
 				"CLEAR", "", "clears the esil stack",
 				"BREAK", "", "terminates the string parsing",
-				"GOTO", "", "jump to the Nth word poped from the stack",
+				"GOTO", "", "jump to the Nth word popped from the stack",
 				NULL };
 			r_core_cmd_help (core, help_msg);
 			break;
