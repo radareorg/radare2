@@ -27,12 +27,14 @@ PWD=$(shell pwd)
 
 # For echo without quotes
 ifneq ($(OSTYPE),mingw32)
-    Q='
-    ESC=
+	Q='
+	ESC=
 else
 ifeq ($(BUILD_OS),windows)
-    Q=
-    ESC=^
+	Q=
+	ESC=^
+	LC_ALL=C
+	export LC_ALL
 endif
 endif
 
