@@ -27,7 +27,7 @@ PWD=$(shell pwd)
 
 # For echo without quotes
 ifneq ($(OSTYPE),mingw32)
-    Q="
+    Q=\"
     ESC=
 else
 ifeq ($(BUILD_OS),windows)
@@ -50,13 +50,13 @@ GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
 GIT_NOW=$(shell date +%Y-%m-%d)
 
 libr/include/r_version.h:
-	@echo $(Q)#ifndef R_VERSION_H$(Q) > $@.tmp
-	@echo $(Q)#define R_VERSION_H 1$(Q) >> $@.tmp
-	@echo $(Q)#define R2_VERSION_COMMIT $(R2VC)$(Q) >> $@.tmp
-	@echo $(Q)#define R2_GITTAP $(ESC)"$(GIT_TAP)$(ESC)"$(Q) >> $@.tmp
-	@echo $(Q)#define R2_GITTIP $(ESC)"$(GIT_TIP)$(ESC)"$(Q) >> $@.tmp
-	@echo $(Q)#define R2_BIRTH $(ESC)"$(GIT_NOW)$(ESC)"$(Q) >> $@.tmp
-	@echo $(Q)#endif$(Q) >> $@.tmp
+	@echo "#ifndef R_VERSION_H" > $@.tmp
+	@echo "#define R_VERSION_H 1" >> $@.tmp
+	@echo "#define R2_VERSION_COMMIT $(R2VC)" >> $@.tmp
+	@echo "#define R2_GITTAP $(ESC)$(Q)$(GIT_TAP)$(ESC)$(Q)" >> $@.tmp
+	@echo "#define R2_GITTIP $(ESC)$(Q)$(GIT_TIP)$(ESC)$(Q)" >> $@.tmp
+	@echo "#define R2_BIRTH $(ESC)$(Q)$(GIT_NOW)$(ESC)$(Q)" >> $@.tmp
+	@echo "#endif" >> $@.tmp
 	@cmp -s $@.tmp $@ || (mv -f $@.tmp $@ && echo "Update libr/include/r_version.h")
 	@rm -f $@.tmp
 
