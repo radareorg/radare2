@@ -28,7 +28,17 @@ static int format_output (char mode, const char *s) {
 	}
 	switch (mode) {
 	case 'I': printf ("%"PFMT64d"\n", n); break;
-	case '0': printf ("0x%"PFMT64x"\n", n); break;
+	case '0': {
+		if (s[strlen(s)-1]=='f') {
+			float f = (float) num->fvalue;
+			ut8 *p = (ut8*)&f;
+			printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
+		}
+		else {
+			printf ("0x%"PFMT64x"\n", n);
+		}
+		}
+		break;
 	case 'F': {
 		  float *f = (float*)&n;
 		printf ("%ff\n", *f);
