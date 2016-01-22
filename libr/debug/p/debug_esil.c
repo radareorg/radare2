@@ -79,7 +79,7 @@ eprintf ("input = %llx\n", o->bfvm->input);
 	return true;
 }
 
-static int __esil_detach(int pid) {
+static int __esil_detach(RDebug *dbg, int pid) {
 	// reset vm?
 	return true;
 }

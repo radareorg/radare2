@@ -130,7 +130,8 @@ R_API int r_bp_stepy_continuation(RBreakpoint *bp) {
 static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx) {
 	int ret;
 	RBreakpointItem *b;
-	if (addr == UT64_MAX || size < 1) return NULL;
+	if (addr == UT64_MAX || size < 1)
+		return NULL;
 	if (r_bp_get_in (bp, addr, rwx)) {
 		eprintf ("Breakpoint already set at this address.\n");
 		return NULL;
@@ -172,11 +173,15 @@ R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int rwx) {
 R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx) {
 	RBreakpointItem *item;
 	ut8 *bytes;
-	if (size < 1) size = 1;
+	if (size < 1)
+		size = 1;
 	bytes = calloc (1, size);
-	if (bytes == NULL) return NULL;
-	if (bp->iob.read_at) bp->iob.read_at (bp->iob.io, addr, bytes, size);
-	else memset (bytes, 0, size);
+	if (bytes == NULL)
+		return NULL;
+	if (bp->iob.read_at)
+		bp->iob.read_at (bp->iob.io, addr, bytes, size);
+	else
+		memset (bytes, 0, size);
 	item = r_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, rwx);
 	free (bytes);
 	return item;

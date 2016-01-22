@@ -1574,6 +1574,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("stack.delta", 0,  "Delta for the stack dump");
 
 	SETCB("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
+	SETI("dbg.hwbp", 0, "Set HW or SW breakpoints");
 	SETCB("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
 	SETPREF("dbg.slow", "false", "Show stack and regs in visual mode in a slow but verbose mode");
 

@@ -18,22 +18,19 @@
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
 
-//we will this pipe to communicate with xnu_exception_thread
-static int exc_pipe[2];
-
+static task_t task_dbg = -1;
 #include "xnu_debug.h"
 #include "xnu_threads.c"
 #if XNU_USE_EXCTHR
 #include "xnu_excthreads.c"
 #endif
 
-//TODO dbg->tid is update accordingly for mulithreaded applications??
-
-
 static thread_t getcurthread (RDebug *dbg) {
 	thread_array_t threads = NULL;
 	unsigned int n_threads = 0;
 	task_t t = pid_to_task (dbg->pid);
+	if (!t)
+		return -1;
 	if (task_threads (t, &threads, &n_threads))
 		return -1;
 	if (n_threads < 1)
@@ -46,7 +43,10 @@ static thread_t getcurthread (RDebug *dbg) {
 
 static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 	RListIter *it = NULL;
-	if (!dbg) return false;
+	if (!dbg)
+		return NULL;
+	if (tid < 0)
+		return NULL;
 	if (!xnu_update_thread_list (dbg)) {
 		eprintf ("Failed to update thread_list xnu_reg_write\n");
 		return NULL;
@@ -61,7 +61,7 @@ static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 			  (RListComparator)&thread_find);
 	if (it)
 		return (xnu_thread_t *)it->data;
-	eprintf ("Thread not found xnu_reg_write\n");
+	eprintf ("Thread not found get_xnu_thread\n");
 	return NULL;
 }
 
@@ -74,24 +74,24 @@ static task_t task_for_pid_workaround(int Pid) {
 	kern_return_t kr;
 	int i;
 	if (Pid == -1)
-		return -1;
+		return 0;
 
 	kr = processor_set_default (myhost, &psDefault);
 	if (kr != KERN_SUCCESS)
-		return -1;
+		return 0;
 
 	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
 		//mach_error ("host_processor_set_priv",kr);
-		return -1;
+		return 0;
 	}
 
 	numTasks = 0;
 	kr = processor_set_tasks (psDefault_control, &tasks, &numTasks);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("processor_set_tasks failed with error %x\n", kr);
-		return -1;
+		return 0;
 	}
 
 	/* kernel task */
@@ -104,7 +104,7 @@ static task_t task_for_pid_workaround(int Pid) {
 		if (pid == Pid)
 			return (tasks[i]);
 	}
-	return -1;
+	return 0;
 }
 
 bool xnu_step(RDebug *dbg) {
@@ -118,15 +118,13 @@ bool xnu_step(RDebug *dbg) {
 
 #else
 	int ret = 0;
-	int exc;
 	//we must find a way to get the current thread not just the firt one
 	task_t task = pid_to_task (dbg->pid);
-	task_suspend (task);
-	if (task < 1) {
-		perror ("pid_to_task");
+	if (!task) {
 		eprintf ("step failed on task %d for pid %d\n", task, dbg->tid);
 		return false;
 	}
+	task_suspend (task);
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th)
 		return false;
@@ -135,7 +133,7 @@ bool xnu_step(RDebug *dbg) {
 		eprintf ("xnu_step modificy_trace_bit error\n");
 		return false;
 	}
-	thread_resume (th->tid);
+	thread_resume (th->th_port);
 	return ret;
 #endif
 }
@@ -148,31 +146,39 @@ int xnu_attach(RDebug *dbg, int pid) {
         }
 	return pid;
 #else
-	int ret, exc;
-	task_t task = pid_to_task (pid);
 	dbg->pid = pid;
-	ret = xnu_create_exception_thread (dbg);
-	if (!ret) {
+	if (!xnu_create_exception_thread (dbg)) {
 		eprintf ("error setting up exception thread\n");
 		return -1;
 	}
+	//task_suspend (pid_to_task (pid));
+#if 0
 	if (ptrace (PT_ATTACHEXC, pid, 0, 0) == -1) {
 		perror ("ptrace (PT_ATTACHEXC)");
 		return -1;
 	}
 	usleep(250000);
+#endif
 	return pid;
 #endif
 }
 
-int xnu_dettach(int pid) {
+int xnu_detach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
 	return ptrace (PT_DETACH, pid, NULL, 0);
 #else
+	kern_return_t kr;
 	//do the cleanup necessary
-	//XXX check for errors
+	//XXX check for errors and ref counts
 	(void)xnu_restore_exception_ports (pid);
-	ptrace (PT_DETACH, pid, NULL, 0);
+	kr = mach_port_deallocate (mach_task_self (), task_dbg);
+	if (kr != KERN_SUCCESS) {
+		eprintf ("failed to deallocate port %s-%d\n",
+			__FILE__, __LINE__);
+	}
+	//we mark the task as not longer available since we deallocated the ref
+	task_dbg = -2;
+	r_list_free (dbg->threads);
 #endif
 }
 
@@ -183,6 +189,9 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return ptrace (PT_CONTINUE, pid, (void*)(size_t)1,
 			(int)(size_t)data) == 0;
 #else
+	task_t task = pid_to_task (pid);
+	if (!task)
+		return false;
 	xnu_thread_t *th  = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th) {
 		eprintf ("failed to get thread in xnu_continue\n");
@@ -191,12 +200,11 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 	//disable trace bit if enable
 	if (th->stepping) {
 		if (!clear_trace_bit (dbg, th)) {
-			eprintf ("error clearing trace bit\n");
+			eprintf ("error clearing trace bit in xnu_continue\n");
 			return false;
 		}
 	}
-	task_resume (pid_to_task (pid));
-	thread_resume (th->tid);
+	task_resume (task);
 	return true;
 #endif
 }
@@ -230,6 +238,8 @@ const char *xnu_reg_profile(RDebug *dbg) {
 int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	bool ret;
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
+	if (!th)
+		return 0;
 	switch (type) {
 	case R_REG_TYPE_DRX:
 		memcpy (&th->drx, buf, R_MIN (size, sizeof (th->drx)));
@@ -247,6 +257,8 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	bool ret;
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
+	if (!th)
+		return 0;
 	switch (type) {
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:
@@ -274,15 +286,14 @@ int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 RDebugMap *xnu_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	kern_return_t ret;
 	ut8 *base = (ut8 *)addr;
+	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
 	bool anywhere = !VM_FLAGS_ANYWHERE;
-
-	if (addr == -1) anywhere = VM_FLAGS_ANYWHERE;
-
-	ret = vm_allocate (pid_to_task (dbg->tid),
-			(vm_address_t*)&base,
-			(vm_size_t)size,
-			anywhere);
-
+	if (!th)
+		return NULL;
+	if (addr == -1)
+		anywhere = VM_FLAGS_ANYWHERE;
+	ret = vm_allocate (th->th_port, (vm_address_t *)&base,
+			  (vm_size_t)size, anywhere);
 	if (ret != KERN_SUCCESS) {
 		printf("vm_allocate failed\n");
 		return NULL;
@@ -292,7 +303,10 @@ RDebugMap *xnu_map_alloc(RDebug *dbg, ut64 addr, int size) {
 }
 
 int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
-	int ret = vm_deallocate (pid_to_task (dbg->tid),
+	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
+	if (!th)
+		return false;
+	int ret = vm_deallocate (th->th_port,
 		(vm_address_t)addr, (vm_size_t)size);
 	if (ret != KERN_SUCCESS) {
 		perror ("vm_deallocate");
@@ -349,7 +363,7 @@ RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
 		thread->state_size = sizeof (thread->gpr);
 		memcpy (&state, &thread->gpr, sizeof (R_REG_T));
 		r_list_append (list, r_debug_pid_new (thread->name,
-			thread->tid, 's', CPU_PC));
+			thread->th_port, 's', CPU_PC));
 	}
 	return list;
 }
@@ -365,11 +379,12 @@ static vm_prot_t unix_prot_to_darwin(int prot) {
 int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 	int ret;
 	// TODO: align pointers
-	ret = vm_protect (pid_to_task (dbg->tid),
-			(vm_address_t)addr,
-			(vm_size_t)size,
-			(boolean_t)0, /* maximum protection */
-			VM_PROT_COPY|perms); //unix_prot_to_darwin (perms));
+	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
+	if (!th)
+		return false;
+	ret = vm_protect (th->th_port, (vm_address_t)addr,
+			 (vm_size_t)size, (boolean_t)0,
+			 VM_PROT_COPY | perms);
 	if (ret != KERN_SUCCESS) {
 		printf("vm_protect failed\n");
 		return false;
@@ -378,19 +393,20 @@ int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 }
 
 task_t pid_to_task (int pid) {
-	static task_t old_task = -1;
-	static task_t old_pid = -1;
+	static int old_pid = -1;
 	task_t task = -1;
 	int err;
 
-	/* xlr8! */
-	if (old_task != -1 && old_pid == pid)
-		return old_task;
+	/* it means that we are done with the task*/
+	if (task_dbg == -2)
+		return 0;
+	if (task_dbg != -1 && old_pid == pid)
+		return task_dbg;
 
 	err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		task = task_for_pid_workaround (pid);
-		if (task == -1) {
+		if (task == 0) {
 			eprintf ("Failed to get task %d for pid %d.\n",
 				(int)task, (int)pid);
 			eprintf ("Reason: 0x%x: %s\n", err,
@@ -398,11 +414,11 @@ task_t pid_to_task (int pid) {
 			eprintf ("You probably need to run as root or sign "
 				"the binary.\n Read doc/ios.md || doc/osx.md\n"
 				" make -C binr/radare2 ios-sign || osx-sign\n");
-			return -1;
+			return 0;
 		}
 	}
 	old_pid = pid;
-	old_task = task;
+	task_dbg = task;
 	return task;
 }
 
@@ -552,17 +568,20 @@ vm_address_t get_kernel_base(task_t ___task) {
 	int count;
 
 	ret = task_for_pid (mach_task_self(), 0, &task);
-	if (ret != KERN_SUCCESS) return 0;
+	if (ret != KERN_SUCCESS)
+		return 0;
 	ut64 naddr;
 	eprintf ("%d vs %d\n", task, ___task);
-	for (count=128; count; count--) {
+	for (count = 128; count; count--) {
 		// get next memory region
 		naddr = addr;
 		ret = vm_region_recurse_64 (task, (vm_address_t*)&naddr,
 					   (vm_size_t*)&size, &depth,
 					   (vm_region_info_t)&info, &info_count);
-		if (ret != KERN_SUCCESS) break;
-		if (size<1) break;
+		if (ret != KERN_SUCCESS)
+			break;
+		if (size < 1)
+			break;
 		if (addr == naddr) {
 			addr += size;
 			continue;
@@ -576,6 +595,9 @@ vm_address_t get_kernel_base(task_t ___task) {
 		}
 		addr += size;
 	}
+	ret = mach_port_deallocate (mach_task_self (), 0);
+	if (ret != KERN_SUCCESS)
+		eprintf ("leaking kernel port %s-%d\n", __FILE__, __LINE__);
 	return (vm_address_t)0;
 }
 
@@ -638,6 +660,8 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 	ut64 addr, file_path_address;
 	RDebugMap *mr = NULL;
 	RList *list = NULL;
+	if (!task)
+		return NULL;
 
 	kr = task_info (task, TASK_DYLD_INFO, (task_info_t) &info, &count);
 	if (kr != KERN_SUCCESS)
@@ -720,7 +744,10 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 	RDebugMap *mr = NULL;
 	RList *list = NULL;
 	int i = 0;
-	if (only_modules) return xnu_dbg_modules (dbg);
+	if (!task)
+		return NULL;
+	if (only_modules)
+		return xnu_dbg_modules (dbg);
 
 #if __arm64__ || __aarch64__
 	size = osize = 16384; // acording to frida
@@ -765,7 +792,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 			char depthstr[32];
 			if (depth>0)
 				snprintf (depthstr, sizeof (depthstr), "_%d", depth);
-			else 
+			else
 				depthstr[0] = 0;
 
 			if (info.max_protection != info.protection)
@@ -800,13 +827,6 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 		size = 0;
 	}
 	return list;
-}
-
-//TODO xnu_deinit
-int xnu_init (void) {
-	if (pipe (exc_pipe) == -1)
-		eprintf ("failed to create pipe for communication");
-	return true;
 }
 
 #endif

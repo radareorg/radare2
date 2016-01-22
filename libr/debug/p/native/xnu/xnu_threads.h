@@ -45,21 +45,23 @@ typedef struct _exception_info {
 	mach_port_t exception_port;
 } xnu_exception_info;
 
+
+//XXX use radare types
 typedef struct _xnu_thread {
-	thread_t tid; //mach_port // XXX bad naming here
+	thread_t th_port; //mach_port // XXX bad naming here
 	char *name; //name of thread
 	thread_basic_info_data_t basic_info; //need this?
-	int stepping; // thread is stepping or not //TODO implement stepping
+	ut8 stepping; // thread is stepping or not //TODO implement stepping
 	R_REG_T gpr; // type R_REG_T using unified API XXX bad naming
 	R_DEBUG_REG_T drx; // type R_DEBUG_REG_T using unified API
 	//task_t thtask;
 	void *state;
-	int state_size;
+	ut32 state_size;
 #if __arm || __arm64 || __aarch64
 	void *oldstate;
 #endif
-	int flavor;
-	unsigned int count;
+	ut16 flavor;
+	ut32 count;
 } xnu_thread_t;
 
 typedef struct _exc_msg {

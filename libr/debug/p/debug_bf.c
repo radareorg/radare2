@@ -131,7 +131,7 @@ eprintf ("input = %llx\n", o->bfvm->input);
 	return true;
 }
 
-static int r_debug_bf_detach(int pid) {
+static int r_debug_bf_detach(RDebug *dbg, int pid) {
 	// reset vm?
 	return true;
 }

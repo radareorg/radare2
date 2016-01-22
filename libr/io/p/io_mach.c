@@ -90,21 +90,31 @@ static task_t task_for_pid_workaround(int Pid) {
 }
 
 static task_t pid_to_task(int pid) {
-	task_t task = -1;
+	task_t task = 0;
+	static task_t old_task = 0;
+	static int old_pid = -1;
+	kern_return_t kr;
+	if (old_task != 0 && old_pid == pid) {
+		return old_task;
+	} else if (old_task != 0 && old_pid != pid) {
+		//we changed the process pid so deallocate a ref from the old_task
+		//since we are going to get a new task
+		kr = mach_port_deallocate (mach_task_self (), old_task);
+		if (kr != KERN_SUCCESS) {
+			eprintf ("fail to deallocate port %s-%d\n", __FILE__, __LINE__);
+			return 0;
+		}
+	}
 	int err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		task = task_for_pid_workaround (pid);
 		if (task == -1) {
 			eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
 			eprintf ("Missing priviledges? 0x%x: %s\n", err, MACH_ERROR_STRING (err));
-#if 0
-			eprintf ("You probably need to add user to procmod group.\n"
-					" Or chmod g+s radare && chown root:procmod radare\n");
-			eprintf ("FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
-#endif
 			return -1;
 		}
 	}
+	old_task = task;
 	return task;
 }
 
@@ -321,46 +331,11 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 }
 
 // s/inferior_task/port/
-static int debug_attach(int pid) {
+static unsigned int debug_attach(int pid) {
 	task_t task = pid_to_task (pid);
-	if (task == -1)
-		return -1;
+	if (!task)
+		return 0;
 	eprintf ("pid: %d\ntask: %d\n", pid, task);
-#if 0
-	// TODO : move this code into debug
-        if (task_threads (task, &inferior_threads, &inferior_thread_count)
-			!= KERN_SUCCESS) {
-                eprintf ("Failed to get list of task's threads.\n");
-                return -1;
-        }
-        eprintf ("Thread count: %d\n", inferior_thread_count);
-#endif
-
-#if SUSPEND
-	if (task_suspend (this->port) != KERN_SUCCESS) {
-		eprintf ("Cannot suspend task\n");
-		return -1; // false
-	}
-#endif
-	/* is this required for arm ? */
-#if EXCEPTION_PORT
-	int exception_port;
-	if (mach_port_allocate (mach_task_self (), MACH_PORT_RIGHT_RECEIVE,
-			&exception_port) != KERN_SUCCESS) {
-		eprintf ("Failed to create exception port.\n");
-		return -1;
-	}
-	if (mach_port_insert_right(mach_task_self(), exception_port,
-			exception_port, MACH_MSG_TYPE_MAKE_SEND) != KERN_SUCCESS) {
-		eprintf ("Failed to acquire insertion rights on the port.\n");
-		return -1;
-	}
-	if (task_set_exception_ports(inferior_task, EXC_MASK_ALL, exception_port,
-			EXCEPTION_DEFAULT, THREAD_STATE_NONE) != KERN_SUCCESS) {
-		eprintf ("Failed to set the inferior's exception ports.\n");
-		return -1;
-	}
-#endif
 	return task;
 }
 
@@ -373,14 +348,14 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	task_t task;
 	if (!__plugin_open (io, file, 0))
 		return NULL;
-	pidfile = file+(file[0]=='a'?9:7);
+	pidfile = file + (file[0] == 'a' ? 9:7);
 	pid = (int)strtol (pidfile, &endptr, 10);
 	if (endptr == pidfile || pid < 0)
 		return NULL;
 
 	task = debug_attach (pid);
-	if ((int)task == -1) {
-		if (pid>0 && io->referer && !strncmp (io->referer, "dbg://", 6)) {
+	if (!task) {
+		if (pid > 0 && io->referer && !strncmp (io->referer, "dbg://", 6)) {
 			eprintf ("Child killed\n");
 			kill (pid, 9);
 		}
@@ -472,7 +447,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			}
 		}
 		eprintf ("io_mach_system: Invalid pid %d\n", pid);
-	} else 
+	} else
 		eprintf ("Try: '=!pid' or '=!perm'\n");
 	return 1;
 }

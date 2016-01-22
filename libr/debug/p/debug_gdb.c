@@ -179,7 +179,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static int r_debug_gdb_detach(int pid) {
+static int r_debug_gdb_detach(RDebug *dbg, int pid) {
 	gdbr_disconnect(desc);
 	free (reg_buf);
 	return true;
