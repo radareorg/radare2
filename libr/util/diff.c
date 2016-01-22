@@ -199,8 +199,10 @@ R_API int r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b,
 		return R_FALSE;
 
 	if (la == lb && !memcmp (a, b, la)) {
-		*distance = 0;
-		*similarity = 1.0;
+		if (distance != NULL)
+			*distance = 0;
+		if (similarity != NULL)
+			*similarity = 1.0;
 		return R_TRUE;
 	}
 	totalsz = sizeof(int*) * (lb+1);
