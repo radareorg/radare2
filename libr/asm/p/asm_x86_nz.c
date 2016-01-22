@@ -77,12 +77,22 @@ static int bits8 (const char *p) {
 	return -1;
 }
 
+static bool is64reg(const char *str) {
+	int i;
+	const char *regs[] = { "r8", "r9", "r10","r11", "r12", "r13", "r14", "r15", NULL };
+	for (i=0; regs[i]; i++)
+		if (!strcmp (regs[i], str))
+			return true;
+	return false;
+}
+
 static ut8 getreg(const char *str) {
 	int i;
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL };
 //	const char *regs16[] = { "al", "ah", "cl", "ch", "dl", "dh", "bl", "bh", NULL };
 	const char *regs16[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL };
 	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL };
+	const char *regs64_2[] = { "r8", "r9", "r10","r11", "r12", "r13", "r14", "r15", NULL };
 	if (!str)
 		return 0xff;
 	for (i=0; regs[i]; i++)
@@ -90,6 +100,9 @@ static ut8 getreg(const char *str) {
 			return i;
 	for (i=0; regs64[i]; i++)
 		if (!strncmp (regs64[i], str, strlen (regs64[i])))
+			return i;
+	for (i=0; regs64_2[i]; i++)
+		if (!strcmp (regs64_2[i], str))
 			return i;
 	for (i=0; regs16[i]; i++)
 		if (!strncmp (regs16[i], str, strlen (regs16[i])))
@@ -715,6 +728,9 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					eprintf ("Invalid register name (%s)\n", arg);
 					return 0;
 				}
+				if (is64reg(arg)) {
+					data[l++] = 0x41;
+				}
 				data[l++] = ch;
 				return l;
 			}
@@ -790,6 +806,9 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			if (dst == 0) {
 				ut8 r = getreg (arg);
 				if (r==(ut8)-1) return 0;
+				if (is64reg(arg)) {
+					data[l++] = 0x41;
+				}
 				data[l++] = r | 0x58;
 				return l;
 			}
