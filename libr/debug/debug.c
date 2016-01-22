@@ -263,7 +263,7 @@ R_API int r_debug_start(RDebug *dbg, const char *cmd) {
 
 R_API int r_debug_detach(RDebug *dbg, int pid) {
 	if (dbg->h && dbg->h->detach)
-		return dbg->h->detach (pid);
+		return dbg->h->detach (dbg, pid);
 	return false;
 }
 
@@ -555,7 +555,8 @@ repeat:
 		if (retwait != R_DEBUG_REASON_DEAD) {
 			ret = dbg->tid;
 		}
-		if (retwait == R_DEBUG_REASON_NEW_LIB || retwait == R_DEBUG_REASON_EXIT_LIB) {
+		if (retwait == R_DEBUG_REASON_NEW_LIB ||
+		    retwait == R_DEBUG_REASON_EXIT_LIB) {
 			goto repeat;
 		}
 #endif

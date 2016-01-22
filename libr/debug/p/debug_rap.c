@@ -41,7 +41,7 @@ static int r_debug_rap_attach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static int r_debug_rap_detach(int pid) {
+static int r_debug_rap_detach(RDebug *dbg, int pid) {
 // XXX TODO PID must be a socket here !!1
 //	close (pid);
 	//XXX Maybe we should continue here?

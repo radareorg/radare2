@@ -222,7 +222,7 @@ typedef struct r_debug_plugin_t {
 	RDebugInfo* (*info)(RDebug *dbg, const char *arg);
 	int (*startv)(int argc, char **argv);
 	int (*attach)(RDebug *dbg, int pid);
-	int (*detach)(int pid);
+	int (*detach)(RDebug *dbg, int pid);
 	int (*select)(int pid, int tid);
 	RList *(*threads)(RDebug *dbg, int pid);
 	RList *(*pids)(int pid);

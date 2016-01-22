@@ -177,7 +177,7 @@ int xnu_reg_write (RDebug *dgb, int type, const ut8 *buf, int size);
 const char *xnu_reg_profile (RDebug *dbg);
 int xnu_attach (RDebug *dbg, int pid);
 bool xnu_step (RDebug *dbg);
-int xnu_dettach (int pid);
+int xnu_detach (RDebug *dbg, int pid);
 int xnu_continue (RDebug *dbg, int pid, int tid, int sig);
 RDebugMap *xnu_map_alloc (RDebug *dbg, ut64 addr, int size);
 int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size);

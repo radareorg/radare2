@@ -165,14 +165,14 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 #endif
 }
 
-static int r_debug_native_detach (int pid) {
+static int r_debug_native_detach (RDebug *dbg, int pid) {
 #if __WINDOWS__ && !__CYGWIN__
 	return w32_detach (pid)? 0 : -1;
 #elif __CYGWIN__
 	#warning "r_debug_native_detach not supported on this platform"
 	return -1;
 #elif __APPLE__
-	return xnu_dettach (pid);
+	return xnu_detach (dbg, pid);
 #elif __BSD__
 	return ptrace (PT_DETACH, pid, NULL, 0);
 #else
@@ -907,8 +907,6 @@ static int r_debug_native_init (RDebug *dbg) {
 	dbg->h->desc = r_debug_desc_plugin_native;
 #if __WINDOWS__ && !__CYGWIN__
 	return w32_dbg_init ();
-#elif __APPLE__
-	return xnu_init ();
 #else
 	return true;
 #endif

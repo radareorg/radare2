@@ -1550,7 +1550,8 @@ static int bypassbp(RCore *core) {
 	r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 	addr = r_debug_reg_get (core->dbg, "PC");
 	bpi = r_bp_get_at (core->dbg->bp, addr);
-	if (!bpi) return false;
+	if (!bpi)
+		return false;
 	/* XXX 2 if libr/debug/debug.c:226 is enabled */
 	r_debug_step (core->dbg, 1);
 	return true;
@@ -1629,8 +1630,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	switch (input[1]) {
 	case '.':
 		if (input[2]) {
-			int bpsz = strcmp (core->dbg->arch, "arm")? 1: 4;
-			ut64 addr = r_num_tail (core->num, core->offset, input+2);
+			int bpsz = strcmp (core->dbg->arch, "arm") ? 1 : 4;
+			ut64 addr = r_num_tail (core->num, core->offset, input +2);
 			if (validAddress (core, addr)) {
 				bpi = hwbp
 				? r_bp_add_hw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
@@ -1742,23 +1743,17 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 					if (f->offset != addr) {
 						int delta = (int)(frame->addr - f->offset);
 						if (delta > 0) {
-							snprintf (flagdesc,
-								sizeof(flagdesc),
-								"%s+%d",
-								f->name, delta);
+							snprintf (flagdesc, sizeof(flagdesc),
+								"%s+%d", f->name, delta);
 						} else if (delta < 0) {
-							snprintf (flagdesc,
-								sizeof(flagdesc),
-								"%s%d",
-								f->name, delta);
+							snprintf (flagdesc, sizeof(flagdesc),
+								"%s%d", f->name, delta);
 						} else {
-							snprintf (flagdesc,
-								sizeof(flagdesc),
+							snprintf (flagdesc, sizeof(flagdesc),
 								"%s", f->name);
 						}
 					} else {
-						snprintf (flagdesc,
-							sizeof(flagdesc),
+						snprintf (flagdesc, sizeof(flagdesc),
 							"%s", f->name);
 					}
 				} else {
@@ -1772,23 +1767,17 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 					if (f->offset != addr) {
 						int delta = (int)(frame->addr - 1 - f->offset);
 						if (delta > 0) {
-							snprintf (flagdesc2,
-								sizeof(flagdesc2),
-								"%s+%d",
-								f->name, delta + 1);
+							snprintf (flagdesc2, sizeof(flagdesc2),
+								"%s+%d", f->name, delta + 1);
 						} else if (delta<0) {
-							snprintf (flagdesc2,
-								sizeof(flagdesc2),
-								"%s%d",
-								f->name, delta + 1);
+							snprintf (flagdesc2, sizeof(flagdesc2),
+								"%s%d", f->name, delta + 1);
 						} else {
-							snprintf (flagdesc2,
-								sizeof(flagdesc2),
+							snprintf (flagdesc2, sizeof(flagdesc2),
 								"%s+1", f->name);
 						}
 					} else {
-						snprintf (flagdesc2,
-							sizeof (flagdesc2),
+						snprintf (flagdesc2, sizeof (flagdesc2),
 							"%s", f->name);
 					}
 				} else {
@@ -2582,7 +2571,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		break;
 	case ' ':
 		old_pid = core->dbg->pid;
-		pid = atoi (input+2);
+		pid = atoi (input + 2);
 		bypassbp (core);
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_select (core->dbg, pid, core->dbg->tid);

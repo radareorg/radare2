@@ -135,7 +135,7 @@ static int r_debug_wind_attach (RDebug *dbg, int pid) {
 	return true;
 }
 
-static int r_debug_wind_detach (int pid) {
+static int r_debug_wind_detach (RDebug *dbg, int pid) {
 	return true;
 }
 
