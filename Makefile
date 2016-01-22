@@ -25,6 +25,17 @@ CZ=gzip -f
 endif
 PWD=$(shell pwd)
 
+# For echo without quotes
+ifneq ($(OSTYPE),mingw32)
+    Q="
+    ESC=
+else
+ifeq ($(BUILD_OS),windows)
+    Q=
+    ESC=^
+endif
+endif
+
 all: plugins.cfg libr/include/r_version.h
 	${MAKE} -C shlr/zip
 	${MAKE} -C libr/util
@@ -39,13 +50,13 @@ GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
 GIT_NOW=$(shell date +%Y-%m-%d)
 
 libr/include/r_version.h:
-	@echo "#ifndef R_VERSION_H" > $@.tmp
-	@echo "#define R_VERSION_H 1" >> $@.tmp
-	@echo "#define R2_VERSION_COMMIT $(R2VC)" >> $@.tmp
-	@echo '#define R2_GITTAP "$(GIT_TAP)"' >> $@.tmp
-	@echo '#define R2_GITTIP "$(GIT_TIP)"' >> $@.tmp
-	@echo '#define R2_BIRTH "$(GIT_NOW)"' >> $@.tmp
-	@echo '#endif' >> $@.tmp
+	@echo $(Q)#ifndef R_VERSION_H$(Q) > $@.tmp
+	@echo $(Q)#define R_VERSION_H 1$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION_COMMIT $(R2VC)$(Q) >> $@.tmp
+	@echo $(Q)#define R2_GITTAP $(ESC)"$(GIT_TAP)$(ESC)"$(Q) >> $@.tmp
+	@echo $(Q)#define R2_GITTIP $(ESC)"$(GIT_TIP)$(ESC)"$(Q) >> $@.tmp
+	@echo $(Q)#define R2_BIRTH $(ESC)"$(GIT_NOW)$(ESC)"$(Q) >> $@.tmp
+	@echo $(Q)#endif$(Q) >> $@.tmp
 	@cmp -s $@.tmp $@ || (mv -f $@.tmp $@ && echo "Update libr/include/r_version.h")
 	@rm -f $@.tmp
 
