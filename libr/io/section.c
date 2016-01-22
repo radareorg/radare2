@@ -91,6 +91,8 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, 
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {
 	RListIter *iter;
 	RIOSection *s;
+	if (!io || !io->sections)
+		return NULL;
 	r_list_foreach (io->sections, iter, s) {
 		if (s->id == idx)
 			return s;
@@ -99,7 +101,17 @@ R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {
 }
 
 R_API int r_io_section_rm(RIO *io, int idx) {
-	return r_list_del_n (io->sections, idx);
+	RListIter *iter;
+	RIOSection *s;
+	if (!io || !io->sections)
+		return false;
+	r_list_foreach (io->sections, iter, s) {
+		if (s->id == idx) {
+			r_list_delete (io->sections, iter);
+			return true;
+		}
+	}
+	return false;
 }
 
 R_API int r_io_section_rm_all (RIO *io, int fd) {
