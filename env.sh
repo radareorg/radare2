@@ -7,7 +7,7 @@ getabsolutepath() {
 
 pfx=$(getabsolutepath "$1")
 
-if [ -z "$pfx" ]; then
+if [ -z "$1" ]; then
 	echo "Usage: ./env.sh [destdir|prefix] [program]"
 	exit 1
 fi
