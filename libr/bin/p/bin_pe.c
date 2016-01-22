@@ -374,12 +374,13 @@ static RBinInfo* info(RBinFile *arch) {
 		ret->dbg_info |= R_BIN_DBG_RELOCS;
 
 	if (PE_(r_bin_pe_get_debug_data)(arch->o->bin_obj, &di)) {
-		ret->guid = malloc (GUIDSTR_LEN+1);
-		strncpy (ret->guid, di.guidstr, GUIDSTR_LEN);
-		ret->guid[GUIDSTR_LEN] = 0;
-		ret->debug_file_name = malloc (DBG_FILE_NAME_LEN+1);
-		strncpy (ret->debug_file_name, di.file_name, DBG_FILE_NAME_LEN);
-		ret->debug_file_name[DBG_FILE_NAME_LEN] = 0;
+		ret->guid = r_str_ndup (di.guidstr, GUIDSTR_LEN);
+		if (ret->guid) {
+			ret->debug_file_name = r_str_ndup (di.file_name, DBG_FILE_NAME_LEN);
+			if (!ret->debug_file_name) {
+				R_FREE (ret->guid);
+			}
+		}
 	}
 
 	return ret;
