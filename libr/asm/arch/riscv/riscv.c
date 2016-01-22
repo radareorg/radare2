@@ -302,7 +302,7 @@ riscv_disassemble(RAsm *a, RAsmOp *rop, insn_t word, int xlen) {
 			continue;
 		}
 
-		if (isdigit (op->subset[0]) && atoi(op->subset) != xlen ) {
+		if (isdigit ((ut8)op->subset[0]) && atoi(op->subset) != xlen ) {
 			continue;
 		}
 
