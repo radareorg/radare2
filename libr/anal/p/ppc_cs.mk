@@ -1,6 +1,7 @@
 OBJ_PPC_CS=anal_ppc_cs.o
 
-#include p/capstone.mk
+include $(CURDIR)capstone.mk
+
 STATIC_OBJ+=${OBJ_PPC_CS}
 TARGET_PPC_CS=anal_ppc_cs.${EXT_SO}
 

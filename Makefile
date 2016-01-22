@@ -72,7 +72,7 @@ depgraph.png:
 	cd libr ; perl depgraph.pl | dot -Tpng -odepgraph.png
 
 android:
-	@if [ -z "$(NDK_ARCH)" ]; then echo "Set NDK_ARCH=[arm|mips|x86]" ; false; fi
+	@if [ -z "$(NDK_ARCH)" ]; then echo "Set NDK_ARCH=[arm|arm64|mips|x86]" ; false; fi
 	sys/android-${NDK_ARCH}.sh
 
 w32dist:
@@ -314,6 +314,7 @@ tests:
 
 osx-sign:
 	$(MAKE) -C binr/radare2 osx-sign
+
 osx-sign-libs:
 	$(MAKE) -C binr/radare2 osx-sign-libs
 

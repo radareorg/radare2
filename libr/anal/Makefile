@@ -1,4 +1,5 @@
 include ../config.mk
+
 EXTRA_TARGETS+=do
 EXTRA_CLEAN=doclean
 

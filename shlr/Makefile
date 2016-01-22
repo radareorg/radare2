@@ -6,9 +6,17 @@ include ../mk/platform.mk
 _INCLUDE_MK_GCC_=
 include ../mk/${COMPILER}.mk
 
+# Build against last capstone release or next
+CS_RELEASE=0
+
 WGET?=wget
-CS_VER=3.0
-CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
+
+ifeq ($(CS_RELEASE),1)
+CS_VER=3.0.4
+CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
+#CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
+CS_PATCHES=0
+else
 CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
 CS_UPD=20160120
@@ -18,6 +26,7 @@ CS_TIP=3722c74f69ffa5b705d36cd49c19acdf958a9b7a
 CS_REV=
 #21b9b25e9dae4af0ef309d4089a54e53b8f5b479
 CS_PATCHES=1
+endif
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwind
 
@@ -196,7 +205,26 @@ capstone-build:
 
 else
 
-ifeq ($(CS_TAR),)
+ifeq ($(CS_RELEASE),1)
+capstone-sync: capstone
+
+capstone-clean:
+	cd capstone ; $(MAKE) clean
+
+capstone: capstone-$(CS_VER).tar.gz
+	tar xzvf capstone-$(CS_VER).tar.gz
+	rm -rf capstone
+	mv capstone-$(CS_VER) capstone
+ifeq ($(CS_PATCHES),1)
+	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
+endif
+	mkdir -p capstone/include/capstone
+	cp -rf capstone/include/*.h capstone/include/capstone
+
+capstone-$(CS_VER).tar.gz:
+	$(WGET) --no-check-certificate -O capstone-$(CS_VER).tar.gz -c $(CS_TAR)
+else
+
 capstone: capstone-sync
 
 capstone-sync:
@@ -207,21 +235,6 @@ ifeq ($(CS_PATCHES),1)
 endif
 
 .PHONY: capstone
-else
-
-capstone-sync: capstone
-
-capstone-clean:
-	cd capstone ; $(MAKE) clean
-
-capstone: capstone-$(CS_VER).tar.gz
-	tar xzvf capstone-$(CS_VER).tar.gz
-	rm -rf capstone
-	mv capstone-$(CS_VER) capstone
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
-
-capstone-$(CS_VER).tar.gz:
-	$(WGET) --no-check-certificate -O capstone-$(CS_VER).tar.gz -c $(CS_TAR)
 endif
 
 CAPSTONE_CFLAGS=-g
