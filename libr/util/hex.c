@@ -189,7 +189,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 		}
 
 		/* read hex digits */
-		while (!r_hex_to_byte(out ? &out[nibbles/2] : &tmp, *in)) {
+		while (!r_hex_to_byte (out ? &out[nibbles/2] : &tmp, *in)) {
 			nibbles++;
 			in++;
 		}
@@ -212,7 +212,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 	}
 
 	if (nibbles % 2) {
-		if (out) r_hex_to_byte(&out[nibbles/2], '0');
+		if (out) r_hex_to_byte (&out[nibbles/2], '0');
 		return -(nibbles+1)/2;
 	}
 
