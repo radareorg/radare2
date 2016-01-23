@@ -37,6 +37,8 @@ R_LIB_VERSION_HEADER(r_util);
 #define R_REFCTR_REF(x) x->refctr++
 #define R_REFCTR_UNREF(x) if (--x->refctr<=0) x->ref_free(x)
 
+#define R_STATIC_ASSERT(x) switch (0) {case 0: case (x):;}
+
 #if 0
 typedef struct {
 	R_REFCTR_CLASS;
