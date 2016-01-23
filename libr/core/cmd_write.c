@@ -5,9 +5,9 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	int len = r_hex_str2bin (pairs, buf);
 	if (len != 0) {
 		if (len < 0)
-			len = -len + 1;
+			len = -len;
 		if (len<core->blocksize)
-			buf[len] = (core->block[len] & 0xf) | (buf[len] & 0xf0);
+			buf[len-1] |= core->block[len-1] & 0xf;
 		r_core_write_at (core, core->offset, buf, len);
 		if (r_config_get_i (core->config, "cfg.wseek"))
 			r_core_seek_delta (core, len);
@@ -16,7 +16,7 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 		eprintf ("Error: invalid hexpair string\n");
 	free (buf);
 
-	return !!!len;
+	return !len;
 }
 
 static void cmd_write_bits(RCore *core, int set, ut64 val) {
@@ -370,7 +370,7 @@ static int cmd_write(void *data, const char *input) {
 				{
 				ut8 *bin_buf = malloc(str_len);
 				const int bin_len = r_hex_str2bin(str, bin_buf);
-				if (bin_len == 0) {
+				if (bin_len <= 0) {
 					fail = 1;
 				} else {
 					buf = malloc(str_len * 4 + 1);

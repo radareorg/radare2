@@ -449,7 +449,7 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr) {
 	if (!(buf = malloc (1+strlen (hexstr))))
 		return NULL;
 	len = r_hex_str2bin (hexstr, buf);
-	if (len == -1) {
+	if (len < 1) {
 		free (buf);
 		return NULL;
 	}

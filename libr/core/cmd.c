@@ -1616,7 +1616,7 @@ repeat_arroba:
 					buf = malloc (strlen (ptr+2)+1);
 					if (buf) {
 						len = r_hex_str2bin (ptr+2, buf);
-						r_core_block_size (core, len);
+						r_core_block_size (core, R_ABS(len));
 						memcpy (core->block, buf, core->blocksize);
 						core->fixedblock = true;
 						free (buf);
