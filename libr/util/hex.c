@@ -178,95 +178,45 @@ R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 }
 
 R_API int r_hex_str2bin(const char *in, ut8 *out) {
-	int len = 0, j = 0;
-	const char *ptr;
-	ut8 c = 0, d = 0;
-	int outbuf = 0;
+	long nibbles = 0;
 
-	if (!in || !*in)
-		return 0;
-	if (!strncmp (in, "0x", 2))
-		in += 2;
-	if (!out) {
-		outbuf = 1;
-		out = malloc (strlen (in)+1);
-	}
-	for (ptr = in; ; ptr++) {
+	while (in && *in) {
+		ut8 tmp;
+
+		/* skip hex prefix */
+		if (*in == '0' && in[1] == 'x') {
+			in += 2;
+		}
+
+		/* read hex digits */
+		while (!r_hex_to_byte (out ? &out[nibbles/2] : &tmp, *in)) {
+			nibbles++;
+			in++;
+		}
+		if (*in == '\0') break;
+
 		/* comments */
-		if (*ptr=='#') {
-			while (*ptr && *ptr != '\n') ptr++;
-			if (!ptr[0])
-				break;
-			ptr--;
+		if (*in == '#' || (*in == '/' && in[1] == '/')) {
+			if ((in = strchr (in, '\n')))
+				in++;
 			continue;
 		}
-		if (*ptr == '/' && ptr[1]=='*') {
-			while (*ptr && ptr[1]) {
-				if (*ptr == '*' && ptr[1]=='/')
-					break;
-				ptr++;
-			}
-			if (!ptr[0] || !ptr[1])
-				break;
-			ptr++;
+		if (*in == '/' && in[1] == '*') {
+			if ((in = strstr (in, "*/")))
+				in += 2;
 			continue;
-		}
-		/* ignored chars */
-		if (*ptr==':' || *ptr=='\n' || *ptr=='\t' || *ptr=='\r' || *ptr==' ')
-			continue;
-
-		if (j==2) {
-			out[len] = c;
-			len++;
-			c = j = 0;
-			if (ptr[0]==' ')
-				continue;
 		}
 
-		/* break after len++ */
-		if (ptr[0] == '\0') break;
+		/* ignore character */
+		in++;
+	}
 
-		d = c;
-		if (ptr[0]=='0' && ptr[1]=='x' ){ //&& c==0) {
-			ut64 addr = r_num_get (NULL, ptr);
-			unsigned int addr32 = (ut32) addr;
-			if (addr>>32) {
-				// 64 bit fun
-			} else {
-				// 32 bit fun
-				ut8 *addrp = (ut8*) &addr32;
-				// XXX always copy in native endian?
-				out[len++] = addrp[0];
-				out[len++] = addrp[1];
-				out[len++] = addrp[2];
-				out[len++] = addrp[3];
-				while (*ptr && *ptr!=' ' && *ptr!='\t')
-					ptr++;
-				j = 0;
-			}
-			/* Go back one character, the loop head does ptr++. */
-			ptr--;
-			continue;
-		}
-		if (r_hex_to_byte (&c, ptr[0])) {
-			//eprintf("binstr: Invalid hexa string at %d ('0x%02x') (%s).\n", (int)(ptr-in), ptr[0], in);
-			goto beach;
-		}
-		c |= d;
-		if (j++ == 0) c <<= 4;
+	if (nibbles % 2) {
+		if (out) r_hex_to_byte (&out[nibbles/2], '0');
+		return -(nibbles+1)/2;
 	}
-	// has nibbles. requires a mask
-beach:
-	if (j) {
-		out[len] = c;
-		len = -len;
-	}
-	if (outbuf) {
-		free (out);
-	} else {
-		out[R_ABS(len)] = 0;
-	}
-	return (int)len;
+
+	return nibbles/2;
 }
 
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
@@ -276,13 +226,14 @@ R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	memcpy (out, in, ilen);
 	for (ptr=out; *ptr; ptr++) if (*ptr=='.') *ptr = '0';
 	len = r_hex_str2bin ((char*)out, out);
-	if (len<0) { has_nibble = 1; len = -len; }
+	if (len<0) { has_nibble = 1; len = -(len+1); }
 	if (len != -1) {
 		memcpy (mask, in, ilen);
 		if (has_nibble)
 			memcpy (mask+ilen, "f0", 3);
 		for (ptr=mask; *ptr; ptr++) *ptr = (*ptr=='.')?'0':'f';
 		len = r_hex_str2bin ((char*)mask, mask);
+		if (len<0) len++;
 	}
 	return len;
 }

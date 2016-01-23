@@ -108,7 +108,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	memcpy (buf, core->block, core->blocksize);
 	if (op!='e') {
 		len = r_hex_str2bin (arg, (ut8 *)str);
-		if (len==-1) {
+		if (len < 0) {
 			eprintf ("Invalid hexpair string\n");
 			goto beach;
 		}
