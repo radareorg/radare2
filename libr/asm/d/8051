@@ -23,6 +23,7 @@ jz=jump if accumulator zero
 lcall=long call
 ljmp=long jump
 mov=move
+movc=moves a byte from the code or program memory to the accumulator
 movx=move external
 nop=no operation
 orl=logical-or
