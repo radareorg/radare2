@@ -4,10 +4,11 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	ut8 *buf = malloc (strlen (pairs) + 1);
 	int len = r_hex_str2bin (pairs, buf);
 	if (len != 0) {
-		if (len < 0)
+		if (len < 0) {
 			len = -len;
-		if (len<core->blocksize)
-			buf[len-1] |= core->block[len-1] & 0xf;
+			if (len < core->blocksize)
+				buf[len-1] |= core->block[len-1] & 0xf;
+		}
 		r_core_write_at (core, core->offset, buf, len);
 		if (r_config_get_i (core->config, "cfg.wseek"))
 			r_core_seek_delta (core, len);
