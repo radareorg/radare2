@@ -216,7 +216,7 @@ capstone: capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
 ifeq ($(CS_PATCHES),1)
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
+	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
 endif
 	mkdir -p capstone/include/capstone
 	cp -rf capstone/include/*.h capstone/include/capstone
@@ -231,7 +231,7 @@ capstone-sync:
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
 ifeq ($(CS_PATCHES),1)
 	cd capstone ; git reset --hard
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
+	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
 endif
 
 .PHONY: capstone
