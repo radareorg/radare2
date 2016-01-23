@@ -216,7 +216,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'v':
-		n = (input[1] != '\0') ? r_num_math (core->num, input+2) : 0;
+	        n = (input[1] != '\0') ? r_num_math (core->num, input+2) : r_num_math (core->num, "$?");
 		if (core->num->dbz) {
 			eprintf ("RNum ERROR: Division by Zero\n");
 		}
@@ -227,7 +227,7 @@ static int cmd_help(void *data, const char *input) {
 				"|?vi will show in decimal instead of hex\n");
 			break;
 		case '\0':
-			r_cons_printf ("%d\n", core->num->value);
+		        r_cons_printf ("%d\n", (st32)n);
 			break;
 		case 'i':
 			if (n>>32) r_cons_printf ("%"PFMT64d"\n", (st64)n);
