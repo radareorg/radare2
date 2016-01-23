@@ -31,6 +31,7 @@ static int format_output (char mode, const char *s) {
 	case '0': {
 		int len = strlen(s);
 		if (len > 0 && s[len-1]=='f') {
+			switch (0) {case 0 : case sizeof(float) == 4:;}
 			float f = (float) num->fvalue;
 			ut8 *p = (ut8*)&f;
 			printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
