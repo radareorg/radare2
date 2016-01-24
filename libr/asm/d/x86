@@ -251,6 +251,7 @@ jb=jump short if below/not above or equal/carry (cf=1)
 jbe=jump short if below or equal/not above (cf=1 and zf=1)
 jcxz=jump short if ecx register is 0
 je=jump short if equal (zf=1)
+jecxz=jump short if ecx is 0
 jg=jump short if greater (zf=0 and sf=of)
 jge=jump short if greater or equal (sf=of)
 jl=jump short if less/not greater (sf!=of)
@@ -258,9 +259,12 @@ jle=jump short if less or equal/not greater ((zf=1) or (sf!=of))
 jmp=jump
 jmpe=jump to ia-64 instruction set
 jmpf=jump
+jna=jump short if not above/equal (cf=1 and zf=1)
+jnae=jump short if not above or equal/below (cf=1)
 jnb=jump short if not below/above or equal/not carry (cf=0)
 jnbe=jump short if not below or equal/above (cf=0 and zf=0)
 jne=jump short if not equal (zf=0)
+jnge=jump short if not greater/less (sf!=of)
 jnl=jump short if not less/greater or equal (sf=of)
 jnle=jump short if not less nor equal/greater ((zf=0) and (sf=of))
 jno=jump short if not overflow (of=0)
@@ -269,6 +273,8 @@ jns=jump short if not sign (sf=0)
 jnz=jump short if not zero/not equal (zf=1)
 jo=jump short if overflow (of=1)
 jp=jump short if parity/parity even (pf=1)
+jpe=jump short if parity even/parity (pf=1)
+jpo=jump short if parity odd/not parity
 jrcxz=jump short if rcx register is 0
 js=jump short if sign (sf=1)
 jz=jump short if zero/equal (zf=0)
@@ -292,9 +298,10 @@ loadalld=loads All Registers from memory address es:edi
 lock=instruction prefix to setup the LOCK pin
 lods=load string
 lodsb=Load string byte
-lodsw=Load string word
 lodsq=Load string quadword (added with x86-64)
+lodsw=Load string word
 loop=decrement count; jump short if ecx!=0
+loopne=decrement count; jump short if ecx!=0 and zf=0
 loopnz=decrement count; jump short if ecx!=0 and zf=0
 loopz=decrement count; jump short if ecx!=0 and zf=1
 lsl=load segment limit
@@ -630,6 +637,7 @@ xadd=exchange and add
 xchg=exchange register/memory with register
 xgetbv=get value of extended control register
 xlat=table look-up translation
+xlatb=table look-up translation
 xor=logical exclusive or
 xorpd=bitwise logical xor for double-fp values
 xorps=bitwise logical xor for single-fp values
