@@ -3524,6 +3524,7 @@ static int cmd_anal(void *data, const char *input) {
 		"ao", "[e?] [len]", "analyze Opcodes (or emulate it)",
 		"an", "[an-] [...]", "manage no-return addresses/symbols/functions",
 		"ar", "", "like 'dr' but for the esil vm. (registers)",
+		"ap", "", "find prelude for current offset",
 		"ax", "[?ld-*]", "manage refs/xrefs (see also afx?)",
 		"as", " [num]", "analyze syscall using dbg.reg",
 		"at", "[trd+-%*?] [.]", "analyze execution traces",
@@ -3533,6 +3534,34 @@ static int cmd_anal(void *data, const char *input) {
 	r_cons_break (NULL, NULL);
 
 	switch (input[0]) {
+	case 'p': // "ap"
+		{
+			const ut8 *prelude = (const ut8*)"\xe9\x2d"; //:fffff000";
+			const int prelude_sz = 2;
+			const int bufsz = 4096;
+			ut8 *buf = calloc (1, bufsz);
+			ut64 off = core->offset;
+			if (input[1] == ' ') {
+				off = r_num_math (core->num, input+1);
+				r_io_read_at (core->io, off - bufsz + prelude_sz, buf, bufsz);
+			} else {
+				r_io_read_at (core->io, off - bufsz + prelude_sz, buf, bufsz);
+			}
+			//const char *prelude = "\x2d\xe9\xf0\x47"; //:fffff000";
+			r_mem_reverse (buf, bufsz);
+			//r_print_hexdump (NULL, off, buf, bufsz, 16, -16);
+			const ut8 *pos = r_mem_mem (buf, bufsz, prelude, prelude_sz);
+			if (pos) {
+				int delta = (size_t)(pos - buf);
+				eprintf ("POS = %d\n", delta);
+				eprintf ("HIT = 0x%"PFMT64x"\n", off - delta);
+				r_cons_printf ("0x%08"PFMT64x"\n", off - delta);
+			} else {
+				eprintf ("Cannot find prelude\n");
+			}
+			free (buf);
+		}
+		break;
 	case 'b':
 		if (input[1] == ' ' || input[1] == 'j') {
 			ut8 *buf = malloc (strlen (input) + 1);

@@ -1477,7 +1477,9 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				fd = core->io->desc->fd;
 			}
 			if (!json) {
-				eprintf ("# %d [0x%"PFMT64x"-0x%"PFMT64x"]\n", fd, param->from, param->to);
+				RSearchKeyword *kw = r_list_first (core->search->kws);
+				eprintf ("Searching %d bytes in [0x%"PFMT64x"-0x%"PFMT64x"]\n",
+					kw? kw->keyword_length: 0, param->from, param->to);
 			}
 			if (r_sandbox_enable (0)) {
 				if ((param->to - param->from) > 1024*64) {
@@ -2078,8 +2080,7 @@ reread:
 			}
 			if (kw) {
 				r_search_kw_add (core->search, kw);
-				eprintf ("Searching %d bytes...\n",
-					kw->keyword_length);
+				//eprintf ("Searching %d bytes...\n", kw->keyword_length);
 				r_search_begin (core->search);
 				dosearch = true;
 			} else {

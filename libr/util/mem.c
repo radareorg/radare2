@@ -247,3 +247,13 @@ R_API void *r_mem_dup (void *s, int l) {
 	memcpy (d, s, l);
 	return d;
 }
+
+R_API void r_mem_reverse(ut8 *b, int l) {
+	ut8 tmp;
+	int i, end = l / 2;
+	for (i = 0; i < end; i++) {
+		tmp = b[i];
+		b[i] = b[l-i-1];
+		b[l-i-1] = tmp;
+	}
+}
