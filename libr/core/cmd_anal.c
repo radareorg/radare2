@@ -3436,39 +3436,43 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'p':
 		if (*input == '?') {
 			// TODO: accept parameters for ranges
-			r_cons_printf ("Usage: /aap   ; find in memory for function preludes");
+			eprintf ("Usage: /aap   ; find in memory for function preludes");
 		} else {
 			r_core_search_preludes (core);
 		}
 		break;
 	case '\0': // "aa"
 	case 'a':
-		r_cons_break (NULL, NULL);
-		ut64 curseek = core->offset;
-		r_core_anal_all (core);
-		if (core->cons->breaked)
-			goto jacuzzi;
-		r_cons_clear_line (1);
-		r_cons_break_end ();
-		if (*input == 'a') { // "aaa"
-			int c = r_config_get_i (core->config, "anal.calls");
-			r_config_set_i (core->config, "anal.calls", 1);
-			r_core_cmd0 (core, "s $S");
-			(void)r_core_anal_refs (core, input + 1); // "aar"
+		if (input[1] == '?' || (input[1] && input[2] == '?')) {
+			eprintf ("Usage: See aa? for more help\n");
+		} else {
+			r_cons_break (NULL, NULL);
+			ut64 curseek = core->offset;
+			r_core_anal_all (core);
 			if (core->cons->breaked)
 				goto jacuzzi;
-			r_core_seek (core, curseek, 1);
-			(void)cmd_anal_calls (core, ""); // "aac"
-			if (core->cons->breaked)
-				goto jacuzzi;
-			r_config_set_i (core->config, "anal.calls", c);
-			r_core_cmd0 (core, ".afna @@ fcn.*");
-			if (core->cons->breaked)
-				goto jacuzzi;
-			r_core_cmd0 (core, "s-");
+			r_cons_clear_line (1);
+			r_cons_break_end ();
+			if (*input == 'a') { // "aaa"
+				int c = r_config_get_i (core->config, "anal.calls");
+				r_config_set_i (core->config, "anal.calls", 1);
+				r_core_cmd0 (core, "s $S");
+				(void)r_core_anal_refs (core, input + 1); // "aar"
+				if (core->cons->breaked)
+					goto jacuzzi;
+				r_core_seek (core, curseek, 1);
+				(void)cmd_anal_calls (core, ""); // "aac"
+				if (core->cons->breaked)
+					goto jacuzzi;
+				r_config_set_i (core->config, "anal.calls", c);
+				r_core_cmd0 (core, ".afna @@ fcn.*");
+				if (core->cons->breaked)
+					goto jacuzzi;
+				r_core_cmd0 (core, "s-");
+			}
+		jacuzzi:
+			flag_every_function (core);
 		}
-	jacuzzi:
-		flag_every_function (core);
 		break;
 	case 't': {
 		ut64 cur = core->offset;
