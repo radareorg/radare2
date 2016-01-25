@@ -200,7 +200,7 @@ R_API int r2p_write(R2Pipe *r2p, const char *str) {
 	if (!r2p || !str)
 		return -1;
 	len = strlen (str) + 1; /* include \x00 */
-	cmd = malloc (len + 1);
+	cmd = malloc (len + 2);
 	memcpy (cmd, str, len);
 	cmd[len++] = '\n';
 	cmd[len] = 0;
