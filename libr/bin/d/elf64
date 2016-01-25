@@ -1,4 +1,4 @@
 pfo elf_enums
 pf.elf_header [16]z[2]E[2]Exqqqxwwwwww ident (elf_type)type (elf_machine)machine version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
-pf.elf_phdr xxqqqqqq type flags offset vaddr paddr filesz memsz align
-pf.elf_shdr xxqqqqxxqq name type flags addr offset size link info addralign entsize
+pf.elf_phdr [4]E[4]Eqqqqqq (elf_p_type)type (elf_p_flags)flags offset vaddr paddr filesz memsz align
+pf.elf_shdr x[4]E[8]Eqqqxxqq name (elf_s_type)type (elf_s_flags_64)flags addr offset size link info addralign entsize
