@@ -149,7 +149,7 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case '-':
 		r_core_config_init (core);
-		eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
+		//eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
 		break;
 	case 'v': eprintf ("Invalid command '%s'. Use 'e?'\n", input); break;
 	case '*': r_config_list (core->config, NULL, 1); break;
