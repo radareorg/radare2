@@ -26,16 +26,16 @@ endif
 PWD=$(shell pwd)
 
 # For echo without quotes
-ifneq ($(OSTYPE),mingw32)
-	Q='
-	ESC=
-else
 ifeq ($(BUILD_OS),windows)
+ifeq $(OSTYPE),mingw32
 	Q=
 	ESC=^
 	LC_ALL=C
 	export LC_ALL
 endif
+else
+	Q='
+	ESC=
 endif
 
 all: plugins.cfg libr/include/r_version.h
@@ -52,6 +52,7 @@ GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
 GIT_NOW=$(shell date +%Y-%m-%d)
 
 libr/include/r_version.h:
+	@echo Generating r_version.h file
 	@echo $(Q)#ifndef R_VERSION_H$(Q) > $@.tmp
 	@echo $(Q)#define R_VERSION_H 1$(Q) >> $@.tmp
 	@echo $(Q)#define R2_VERSION_COMMIT $(R2VC)$(Q) >> $@.tmp
