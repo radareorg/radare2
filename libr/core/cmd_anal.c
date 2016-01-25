@@ -510,15 +510,20 @@ static bool anal_fcn_del_bb(RCore *core, const char *input) {
 	if (!addr) addr = core->offset;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (fcn) {
-		RAnalBlock *b;
-		RListIter *iter;
-		r_list_foreach (fcn->bbs, iter, b) {
-			if (b->addr == addr) {
-				r_list_delete (fcn->bbs, iter);
-				return true;
+		if (!strcmp (input, "*")) {
+			r_list_free (fcn->bbs);
+			fcn->bbs = NULL;
+		} else {
+			RAnalBlock *b;
+			RListIter *iter;
+			r_list_foreach (fcn->bbs, iter, b) {
+				if (b->addr == addr) {
+					r_list_delete (fcn->bbs, iter);
+					return true;
+				}
 			}
+			eprintf ("Cannot find basic block\n");
 		}
-		eprintf ("Cannot find basic block\n");
 	} else {
 		eprintf ("Cannot find function\n");
 	}
@@ -829,10 +834,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'b': // "afb"
 		switch (input[2]) {
-		case 0:
 		case '-':
 			anal_fcn_del_bb (core, input +3);
 			break;
+		case 0:
 		case ' ':
 		case 'q':
 		case 'r':
@@ -3529,17 +3534,16 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	if (fcn) {
 		int i;
-		bool bitmap_mode = false;
-		ut64 bitmap_addr = UT64_MAX;
+		bool gap = false;
+		ut64 gap_addr = UT64_MAX;
 		char *bitmap = calloc (1, fcn->size);
 		if (bitmap) {
-			ut64 fcn_end = fcn->addr + fcn->size;
 			RAnalBlock *b;
 			RListIter *iter;
 			r_list_foreach (fcn->bbs, iter, b) {
 				int f = b->addr - fcn->addr;
-				int t = R_MIN (f + b->size, fcn_end);
-				if (f >= fcn->addr) {
+				int t = R_MIN (f + b->size, fcn->size);
+				if (f>=0) {
 					while (f < t) {
 						bitmap[f++] = 1;
 					}
@@ -3549,14 +3553,21 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 		for (i=0; i<fcn->size; i++) {
 			ut64 here = fcn->addr + i;
 			if (bitmap[i]) {
-				if (bitmap_mode) {
-					bitmap_mode = false;
-					r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", here - bitmap_addr, bitmap_addr);
+				if (gap) {
+					r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", here - gap_addr, gap_addr);
+					gap = false;
 				}
+				gap_addr = UT64_MAX;
 			} else {
-				bitmap_mode = true;
-				bitmap_addr = UT64_MAX;
+				if (!gap) {
+					gap = true;
+					gap_addr = here;
+				}
 			}
+		}
+		if (gap) {
+			r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", fcn->addr + fcn->size - gap_addr, gap_addr);
+			gap = false;
 		}
 		free (bitmap);
 		return true;
