@@ -38,7 +38,7 @@ static ut64 num_callback (RNum *user, const char *name, int *ok) {
 
 R_API RFlag * r_flag_new() {
 	int i;
-	RFlag *f = R_NEW (RFlag);
+	RFlag *f = R_NEW0 (RFlag);
 	if (!f) return NULL;
 #if USE_SDB
 	db = sdb_new0 ();
