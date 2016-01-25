@@ -77,6 +77,7 @@ cmpxchg=compare and exchange
 comisd=compare scalar ordered double-fp values and set eflags
 comiss=compare scalar ordered single-fp values and set eflags
 cpuid=cpu identification
+cqo=sign extends rax into rdx (convert quadword to double-quadword)
 crc32=accumulate crc32 value
 cs=cs segment override prefix
 cvtdq2pd=convert packed dw integers to double-fp values
@@ -554,17 +555,23 @@ sal=arithmetic left shift
 salc=set al if carry
 sar=arithmetic right shift
 sbb=integer subtraction with borrow
+scacd=cmp eax, ES:[edi+=2]
 scas=scan string
 scasb=cmp al, ES:[edi++]
+scasq=cmp rax, ES:[rdi+=2]
 scasw=cmp ax, ES:[edi+=2]
 setb=set byte on condition - below/not above or equal/carry (cf=1)
 setbe=set byte on condition - below or equal/not above (cf=1 and zf=1)
 sete=set byte if equal (zf=1)
 setl=set byte on condition - less/not greater (sf!=of)
 setle=set byte on condition - less or equal/not greater ((zf=1) or (sf!=of))
+setna=set byte on condition - below or not above/equal (cf=1 and zf=1)
+setnae=set byte on condition - not above or equal/below/carry (cf=1)
 setnb=set byte on condition - not below/above or equal/not carry (cf=0)
 setnbe=set byte on condition - not below or equal/above (cf=0 and zf=0)
 setne=set byte on condition - not zero/not equal (zf=0)
+setng=set byte on condition - not greater/less or equal ((zf=1) or (sf!=of))
+setnge=set byte on condition - not greater/less (sf!=of)
 setnl=set byte on condition - not less/greater or equal (sf=of)
 setnle=set byte on condition - not less nor equal/greater ((zf=0) and (sf=of))
 setno=set byte on condition - not overflow (of=0)
