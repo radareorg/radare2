@@ -146,12 +146,6 @@ R_API int r_regex_match (const char *pattern, const char *flags, const char *tex
 		return 0;
 	}
 	ret = r_regex_exec (&rx, text, 0, 0, re_flags);
-	if (!ret) {
-eprintf ("OK! (%s)\n", text);
-		if (!strstr (text, "raxq")) {
-			eprintf ("FALSE POSITIVE with (%s)\n", pattern);
-		}
-	}
 	r_regex_fini (&rx);
 	return ret? 0: 1;
 #if 0
