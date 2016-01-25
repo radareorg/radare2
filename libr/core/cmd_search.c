@@ -897,6 +897,8 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	int max_count = r_config_get_i(core->config, "search.count");
+	ut64 search_from = r_config_get_i (core->config, "search.from");
+	ut64 search_to = r_config_get_i (core->config, "search.to");
 	int i=0, end=0, mode=0, increment=1, ret;
 	RList/*<endlist_pair>*/ *end_list = r_list_newf(free);
 	RList/*<intptr_t>*/ *badstart = r_list_new();
@@ -925,6 +927,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 							"instructions. See /c? for help.\n");
 		}
 		return false;
+	}
+	if (search_from == UT64_MAX) {
+		search_from = 0;
 	}
 
 	if (!strcmp (arch, "mips")) // MIPS has no jump-in-the-middle
@@ -995,6 +1000,18 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	r_list_foreach (list, itermap, map) {
 		from = map->from;
 		to = map->to;
+		if (to > search_to) {
+			if (to < from) {
+				continue;
+			}
+			to = search_to;
+		}
+		if (from < search_from) {
+			if (search_from > to) {
+				continue;
+			}
+			from = search_from;
+		}
 
 		if (from>to) {
 			eprintf ("Invalid range 0x%"PFMT64x" - 0x%"PFMT64x"\n", from, to);
