@@ -1,4 +1,4 @@
-FILES=6502 8051 m68k x86 arc arm avr lh5801 ppc z80 mips sparc sh
+FILES=6502 8051 m68k x86 arc arm avr lh5801 ppc z80 mips sparc sh malbolge
 F_SDB=$(addsuffix .sdb,${FILES})
 SDB=../../../shlr/sdb/sdb
 include ../../../config-user.mk
