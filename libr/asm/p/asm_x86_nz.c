@@ -1373,6 +1373,14 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 		} else
 		if (!strcmp (op, "nop")) {
 			data[l++] = 0x90;
+		} else
+		if (!strcmp (op, "clac")) {
+			memcpy (data+l, "\x0f\x01\xca", 3);
+			l += 3;
+		} else
+		if (!strcmp (op, "stac")) {
+			memcpy (data+l, "\x0f\x01\xcb", 3);
+			l += 3;
 		}
 		return l;
 	}
