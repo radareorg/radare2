@@ -77,7 +77,6 @@ cmpxchg=compare and exchange
 comisd=compare scalar ordered double-fp values and set eflags
 comiss=compare scalar ordered single-fp values and set eflags
 cpuid=cpu identification
-cqo=sign extends rax into rdx (convert quadword to double-quadword)
 crc32=accumulate crc32 value
 cs=cs segment override prefix
 cvtdq2pd=convert packed dw integers to double-fp values
@@ -237,7 +236,6 @@ in=input from port
 insb=input from port to string
 ins=input from port to string
 int1=call to interrupt procedure
-int3=int 3, software breakpoint
 int=call to interrupt procedure
 into=call to interrupt if overflow
 invd=invalidate internal caches
@@ -251,9 +249,7 @@ jae=jump short if above or equal (cf=0)
 ja=jump short if above (cf=0 and zf=0)
 jbe=jump short if below or equal/not above (cf=1 and zf=1)
 jb=jump short if below/not above or equal/carry (cf=1)
-jc=jump short if carry (cf=1)
 jcxz=jump short if ecx register is 0
-jecxz=jump short if ecx is 0
 je=jump short if equal (zf=1)
 jge=jump short if greater or equal (sf=of)
 jg=jump short if greater (zf=0 and sf=of)
@@ -262,14 +258,9 @@ jl=jump short if less/not greater (sf!=of)
 jmpe=jump to ia-64 instruction set
 jmpf=jump
 jmp=jump
-jnae=jump short if not above or equal/below (cf=1)
-jna=jump short if not above/equal (cf=1 and zf=1)
 jnbe=jump short if not below or equal/above (cf=0 and zf=0)
 jnb=jump short if not below/above or equal/not carry (cf=0)
-jnc=jump short if not carry (cf=0)
 jne=jump short if not equal (zf=0)
-jnge=jump short if not greater/less (sf!=of)
-jng=jump short if not greater/less or equal ((zf=1) or (sf!=of))
 jnle=jump short if not less nor equal/greater ((zf=0) and (sf=of))
 jnl=jump short if not less/greater or equal (sf=of)
 jno=jump short if not overflow (of=0)
@@ -277,9 +268,7 @@ jnp=jump short if not parity/parity odd
 jns=jump short if not sign (sf=0)
 jnz=jump short if not zero/not equal (zf=1)
 jo=jump short if overflow (of=1)
-jpe=jump short if parity even/parity (pf=1)
 jp=jump short if parity/parity even (pf=1)
-jpo=jump short if parity odd/not parity
 jrcxz=jump short if rcx register is 0
 js=jump short if sign (sf=1)
 jz=jump short if zero/equal (zf=0)
@@ -302,15 +291,10 @@ loadalld=loads All Registers from memory address es:edi
 loadall=load all of the cpu registers
 lock=instruction prefix to setup the LOCK pin
 lodsb=Load string byte
-lodsd=Load string doubleword
 lods=load string
 lodsq=Load string quadword (added with x86-64)
 lodsw=Load string word
 loop=decrement count; jump short if ecx!=0
-loope=decrement count; jump short if ecx!=0 and zf=1
-loopne=decrement count; jump short if ecx!=0 and zf=0
-loopne=decrement count; jump short if ecx!=0 and zf=0
-loopnz=decrement count; jump short if ecx!=0 and zf=0
 loopnz=decrement count; jump short if ecx!=0 and zf=0
 loopz=decrement count; jump short if ecx!=0 and zf=1
 lsl=load segment limit
@@ -380,10 +364,7 @@ or=logical inclusive or
 orpd=bitwise logical or of double-fp values
 orps=bitwise logical or of single-fp values
 out=output to port
-outsb=Output string byte to port
-outsd=Output string doubleword to port
 outs=output string to port
-outsw=Output string word to port
 pabsb=packed absolute value
 pabsd=packed absolute value
 pabsw=packed absolute value
@@ -467,7 +448,6 @@ pmulld=multiply packed signed dword integers and store low result
 pmullw=multiply packed signed integers and store low result
 pmuludq=multiply packed unsigned dw integers
 popad=pop all general-purpose registers
-popal=pop all general-purpose registers 
 popa=pop all general-purpose registers
 popcnt=bit population count
 popfd=pop stack into eflags register
@@ -515,7 +495,6 @@ punpckldq=unpack low data
 punpcklqdq=unpack low data
 punpcklwd=unpack low data
 pushad=push all general-purpose registers
-pushal=push all general-purpose registers 
 pusha=push all general-purpose registers
 pushfd=push eflags register onto the stack
 pushf=push flags register onto the stack
@@ -531,7 +510,6 @@ rdpmc=read performance-monitoring counters
 rdtscp=read time-stamp counter and processor id
 rdtsc=read time-stamp counter
 repe=repeat string
-repne=repeat string operation prefix
 repnz=repeat string operation prefix
 rep=repeats next instruction ECX times
 repz=repeat string operation prefix
@@ -569,25 +547,17 @@ sal=arithmetic left shift
 salc=set al if carry
 sar=arithmetic right shift
 sbb=integer subtraction with borrow
-scacd=cmp eax, ES:[edi+=2]
 scasb=cmp al, ES:[edi++]
-scasq=cmp rax, ES:[rdi+=2]
 scas=scan string
 scasw=cmp ax, ES:[edi+=2]
 setbe=set byte on condition - below or equal/not above (cf=1 and zf=1)
 setb=set byte on condition - below/not above or equal/carry (cf=1)
-setc=set byte on condition - carry (cf=1)
 sete=set byte if equal (zf=1)
 setle=set byte on condition - less or equal/not greater ((zf=1) or (sf!=of))
 setl=set byte on condition - less/not greater (sf!=of)
-setnae=set byte on condition - not above or equal/below/carry (cf=1)
-setna=set byte on condition - below or not above/equal (cf=1 and zf=1)
 setnbe=set byte on condition - not below or equal/above (cf=0 and zf=0)
 setnb=set byte on condition - not below/above or equal/not carry (cf=0)
-setnc=set byte on condition - carry (cf=1)
 setne=set byte on condition - not zero/not equal (zf=0)
-setnge=set byte on condition - not greater/less (sf!=of)
-setng=set byte on condition - not greater/less or equal ((zf=1) or (sf!=of))
 setnle=set byte on condition - not less nor equal/greater ((zf=0) and (sf=of))
 setnl=set byte on condition - not less/greater or equal (sf=of)
 setno=set byte on condition - not overflow (of=0)
@@ -595,8 +565,6 @@ setnp=set byte on condition - not parity/parity odd
 setns=set byte on condition - not sign (sf=0)
 setnz=set byte on condition - not zero/not equal (zf=1)
 seto=set byte on condition - overflow (of=1)
-setpe=set byte on condition - parity/parity even (pf=1)
-setpo=set byte on condition - parity odd/not parity
 setp=set byte on condition - parity/parity even (pf=1)
 sets=set byte on condition - sign (sf=1)
 setz=set byte on condition - zero/equal (zf=0)
@@ -661,7 +629,6 @@ wrmsr=write to model specific register
 xadd=exchange and add
 xchg=exchange register/memory with register
 xgetbv=get value of extended control register
-xlatb=table look-up translation
 xlat=table look-up translation
 xor=logical exclusive or
 xorpd=bitwise logical xor for double-fp values
@@ -669,3 +636,4 @@ xorps=bitwise logical xor for single-fp values
 xrstor=restore processor extended states
 xsave=save processor extended states
 xsetbv=set extended control register
+
