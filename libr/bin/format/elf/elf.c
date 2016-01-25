@@ -1014,9 +1014,24 @@ int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (bin->ehdr.e_machine == EM_ARC_A5) return 16;
 	/* Hack for Thumb */
 	if (bin->ehdr.e_machine == EM_ARM) {
-		ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
-		if (entry & 1) {
-			return 16;
+		if (bin->ehdr.e_type != ET_EXEC) {
+			struct r_bin_elf_symbol_t *symbol;
+			if ((symbol = Elf_(r_bin_elf_get_symbols) (bin, R_BIN_ELF_SYMBOLS))) {
+				int i;
+				for (i = 0; !symbol[i].last; i++) {
+					ut64 paddr = symbol[i].offset;
+					if (paddr & 1) {
+						return 16;
+					}
+					break;
+				}
+			}
+		}
+		{
+			ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
+			if (entry & 1) {
+				return 16;
+			}
 		}
 	}
 	switch (bin->ehdr.e_ident[EI_CLASS]) {
