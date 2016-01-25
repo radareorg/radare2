@@ -505,6 +505,26 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 	return true;
 }
 
+static bool anal_fcn_del_bb(RCore *core, const char *input) {
+	ut64 addr = r_num_math (core->num, input);
+	if (!addr) addr = core->offset;
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
+	if (fcn) {
+		RAnalBlock *b;
+		RListIter *iter;
+		r_list_foreach (fcn->bbs, iter, b) {
+			if (b->addr == addr) {
+				r_list_delete (fcn->bbs, iter);
+				return true;
+			}
+		}
+		eprintf ("Cannot find basic block\n");
+	} else {
+		eprintf ("Cannot find function\n");
+	}
+	return false;
+}
+
 static int anal_fcn_add_bb(RCore *core, const char *input) {
 	// fcn_addr bb_addr bb_size [jump] [fail]
 	char *ptr;
@@ -810,6 +830,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'b': // "afb"
 		switch (input[2]) {
 		case 0:
+		case '-':
+			anal_fcn_del_bb (core, input +3);
+			break;
 		case ' ':
 		case 'q':
 		case 'r':
