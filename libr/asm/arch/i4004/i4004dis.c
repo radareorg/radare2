@@ -69,7 +69,7 @@ static int i4004dis (RAsmOp *op, const ut8 *buf, int len) {
 		case 1: snprintf (basm, basz, "jcn %d 0x%02x", low, buf[1]); break;
 		case 2:
 			if (rlen == 1)
-				snprintf (basm, basz, "scr r%d", (low & 0xe));
+				snprintf (basm, basz, "src r%d", (low & 0xe));
 			else	snprintf (basm, basz, "fim r%d, 0x%02x", (low & 0xe), buf[1]);
 			break;
 		case 3: snprintf (basm, basz, "fin r%d", (low & 0xe)); break;
