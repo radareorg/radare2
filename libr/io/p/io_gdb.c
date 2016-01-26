@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 pancake */
+/* radare - LGPL - Copyright 2010-2016 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -18,29 +18,49 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	return (!strncmp (file, "gdb://", 6));
 }
 
+/* hacky cache to speedup gdb io a bit */
+/* reading in a different place clears the previous cache */
+static ut64 c_addr = UT64_MAX;
+static ut32 c_size = UT32_MAX;
+static ut8 *c_buff = NULL;
+
 static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
 	ut32 size_max = 500;
 	ut32 packets = sz / size_max;
 	ut32 last = sz % size_max;
 	ut32 x;
+	if (c_buff && addr != UT64_MAX && addr == c_addr) {
+		memcpy (buf, c_buff, sz);
+		return sz;
+	}
 	if (sz < 1 || addr >= UT64_MAX) return -1;
 	for (x = 0; x < packets; x++) {
-		gdbr_read_memory(desc, addr + x * size_max, size_max);
-		memcpy((buf + x * size_max), desc->data + x * size_max, size_max);
+		gdbr_read_memory (desc, addr + x * size_max, size_max);
+		memcpy ((buf + x * size_max), desc->data + x * size_max, size_max);
 	}
 	if (last) {
-		gdbr_read_memory(desc, addr + x * size_max, last);
-		memcpy((buf + x * size_max), desc->data + x * size_max, last);
+		gdbr_read_memory (desc, addr + x * size_max, last);
+		memcpy ((buf + x * size_max), desc->data + x * size_max, last);
 	}
+	c_addr = addr;
+	c_size = sz;
+	free (c_buff);
+	c_buff = r_mem_dup (buf, sz);
 	return sz;
 }
 
 static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
-	ut32 size_max = 500;
+	ut32 x, size_max = 500;
 	ut32 packets = sz / size_max;
 	ut32 last = sz % size_max;
-	ut32 x;
-	if (sz < 1 || addr >= UT64_MAX) return -1;
+
+	if (sz < 1 || addr >= UT64_MAX) {
+		return -1;
+	}
+	if (c_addr != UT64_MAX && addr >= c_addr && c_addr + sz < (c_addr + c_size)) {
+		R_FREE (c_buff);
+		c_addr = UT64_MAX;
+	}
 	for (x = 0; x < packets; x++) {
 		gdbr_write_memory (desc, addr + x * size_max,
 			(const uint8_t*)(buf + x * size_max), size_max);
@@ -73,7 +93,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	*port = '\0';
 	port++;
 	p = strchr (port, '/');
-	if (p) *p=0;
+	if (p) *p = 0;
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: Cannot use network\n");

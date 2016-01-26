@@ -1468,8 +1468,15 @@ free (rf);
 		break;
 	case '*':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
+			int pcbits = core->anal->bits;
+			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
+			if (reg) {
+				if (core->assembler->bits != reg->size)
+					pcbits = reg->size;
+			}
 			r_cons_printf ("fs+regs\n");
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '*', use_color);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, '*', use_color);
 			r_flag_space_pop (core->flags);
 			r_cons_printf ("fs-\n");
 		}

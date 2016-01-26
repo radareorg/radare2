@@ -82,7 +82,13 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	}
 	int buflen = 0;
 	int bits = dbg->anal->bits;
-	free(r_reg_get_bytes(dbg->reg, type, &buflen));
+	const char *pcname = r_reg_get_name (dbg->anal->reg, R_REG_NAME_PC);
+	RRegItem *reg = r_reg_get (dbg->anal->reg, pcname, 0);
+	if (reg) {
+		if (dbg->anal->bits != reg->size)
+			bits = reg->size;
+	}
+	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	// some implementations of the gdb protocol are acting weird.
 	// so winedbg is not able to write registers through the <G> packet
 	// and also it does not return the whole gdb register profile after

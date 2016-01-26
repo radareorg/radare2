@@ -72,7 +72,6 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 
 #endif /* IF DEBUGGER */
 
-
 /* begin of debugger code */
 #if DEBUGGER
 static int r_debug_handle_signals (RDebug *dbg) {
