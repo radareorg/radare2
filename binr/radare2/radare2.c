@@ -273,7 +273,7 @@ int main(int argc, char **argv, char **envp) {
 		r_list_free (evals);
 		return main_help (1);
 	}
-	if (argc==2 && !strcmp (argv[1], "-p")) {
+	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		char *path = r_str_home (R2_HOMEDIR"/projects/");
 		DIR *d = r_sandbox_opendir (path);
 		if (d) {

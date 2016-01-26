@@ -54,13 +54,17 @@ static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+	RIOGdb *riog;
 	char host[128], *port, *p;
+
 	if (!__plugin_open (io, file, 0))
 		return NULL;
-	RIOGdb *riog;
-	if (riogdb != NULL) return riogdb; // FIX: Don't allocate more than one gdb RIODesc
+	if (riogdb) {
+		// FIX: Don't allocate more than one gdb RIODesc
+		return riogdb;
+	}
 	strncpy (host, file+6, sizeof (host)-1);
-	host [sizeof(host)-1] = '\0';
+	host [sizeof (host)-1] = '\0';
 	port = strchr (host , ':');
 	if (!port) {
 		eprintf ("Port not specified. Please use gdb://[host]:[port]\n");
@@ -75,10 +79,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		eprintf ("sandbox: Cannot use network\n");
 		return NULL;
 	}
-	riog = R_NEW (RIOGdb);
-	gdbr_init(&riog->desc);
+	riog = R_NEW0 (RIOGdb);
+	gdbr_init (&riog->desc);
 	int i_port = atoi(port);
-	if (gdbr_connect(&riog->desc, host, i_port) == 0) {
+	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
 		desc = &riog->desc;
 		riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
 		return riogdb;
@@ -111,7 +115,17 @@ static int __close(RIODesc *fd) {
 }
 
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
-	return -1;
+        //printf("ptrace io command (%s)\n", cmd);
+        /* XXX ugly hack for testing purposes */
+        if (!strcmp (cmd, "help")) {
+                eprintf ("Usage: =!cmd args\n"
+                        " =!pid      - show targeted pid\n");
+	} else if (!strncmp (cmd, "pid", 3)) {
+		int pid = 1234;
+		io->cb_printf ("%d\n", pid);
+		return pid;
+	} else eprintf ("Try: '=!pid'\n");
+        return true;
 }
 
 RIOPlugin r_io_plugin_gdb = {

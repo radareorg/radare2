@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_core.h>
 
@@ -67,8 +67,8 @@ static void rasm2_list(RCore *core, const char *arch) {
 }
 
 static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
-	if (!strcmp (asmarch, "x86"))
-		r_config_set (cfg, "asm.segoff", (asmbits==16)?"true":"false");
+	int autoseg = (!strncmp (asmarch, "x86", 3) && asmbits==16);
+	r_config_set (cfg, "asm.segoff", r_str_bool (autoseg));
 }
 
 static int cb_analeobjmp(void *user, void *data) {

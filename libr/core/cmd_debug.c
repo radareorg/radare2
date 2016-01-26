@@ -1480,7 +1480,14 @@ free (rf);
 	case 'j':
 	case '\0':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0], use_color);
+			int pcbits = core->anal->bits;
+			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
+			if (reg) {
+				if (core->assembler->bits != reg->size)
+					pcbits = reg->size;
+			}
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, str[0], use_color);
 		} else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case ' ':
