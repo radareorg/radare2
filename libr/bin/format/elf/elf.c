@@ -61,6 +61,7 @@ static int init_ehdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 			" EM_V850=87, EM_M32R=88, EM_MN10300=89, EM_MN10200=90, EM_PJ=91,"
 			" EM_OPENRISC=92, EM_ARC_A5=93, EM_XTENSA=94, EM_NUM=95};", 0);
 	sdb_num_set (bin->kv, "elf_header.offset", 0, 0);
+	sdb_num_set (bin->kv, "elf_header_size.offset", sizeof (Elf_(Ehdr)), 0);
 #if R_BIN_ELF64
 	sdb_set (bin->kv, "elf_header.format", "[16]z[2]E[2]Exqqqxwwwwww"
 		" ident (elf_type)type (elf_machine)machine version entry phoff shoff flags ehsize"
@@ -85,6 +86,9 @@ static int init_ehdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return false;
 	}
 	return handle_e_ident (bin);
+	// Usage example:
+	// > td `k bin/cur/info/elf_type.cparse`; td `k bin/cur/info/elf_machine.cparse`
+	// > pf `k bin/cur/info/elf_header.format` @ `k bin/cur/info/elf_header.offset`
 }
 
 static int init_phdr(struct Elf_(r_bin_elf_obj_t) *bin) {
@@ -120,24 +124,27 @@ static int init_phdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 		R_FREE (bin->phdr);
 		return false;
 	}
-	sdb_num_set (bin->kv, "elf_header_size.offset", sizeof (Elf_(Ehdr)), 0);
+	sdb_num_set (bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0);
 	sdb_num_set (bin->kv, "elf_phdr_size.offset", sizeof (Elf_(Phdr)), 0);
-	sdb_num_set (bin->kv, "elf_shdr_size.offset", sizeof (Elf_(Shdr)), 0);
+	sdb_set (bin->kv, "elf_p_type.cparse", "enum elf_p_type {PT_NULL=0,PT_LOAD=1,PT_DYNAMIC=2,"
+			"PT_INERP=3,PT_NOTE=4,PT_SHLIB=5,PT_PHDR=6,PT_LOOS=0x60000000,"
+			"PT_HIOS=0x6fffffff,PT_LOPROC=0x70000000,PT_HIPROC=0x7fffffff};", 0);
+	sdb_set (bin->kv, "elf_p_flags.cparse", "enum elf_p_flags {PF_None=0,PF_Exec=1,"
+			"PF_Write=2,PF_Write_Exec=3,PF_Read=4,PF_Read_Exec=5,PF_Read_Write=6,"
+			"PF_Read_Write_Exec=7};", 0);
 #if R_BIN_ELF64
-	sdb_num_set (bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0);
-	sdb_set (bin->kv, "elf_phdr.format", "[4]E[4]Eqqqqqq (elf_p_type)type (elf_p_flags)flags offset vaddr paddr filesz memsz align", 0);
-	sdb_num_set (bin->kv, "elf_shdr.offset", bin->ehdr.e_shoff, 0);
-	sdb_set (bin->kv, "elf_shdr.format", "x[4]E[8]Eqqqxxqq name (elf_s_type)type (elf_s_flags_64)flags addr offset size link info addralign entsize", 0);
+	sdb_set (bin->kv, "elf_phdr.format", "[4]E[4]Eqqqqqq (elf_p_type)type (elf_p_flags)flags"
+			" offset vaddr paddr filesz memsz align", 0);
 #else
-	sdb_num_set (bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0);
-	sdb_set (bin->kv, "elf_phdr.format", "[4]Exxxxx[4]Ex (elf_p_type)type offset vaddr paddr filesz memsz (elf_p_flags)flags align", 0);
-	sdb_num_set (bin->kv, "elf_shdr.offset", bin->ehdr.e_shoff, 0);
-	sdb_set (bin->kv, "elf_shdr.format", "x[4]E[4]Exxxxxxx name (elf_s_type)type (elf_s_flags_32)flags addr offset size link info addralign entsize", 0);
+	sdb_set (bin->kv, "elf_phdr.format", "[4]Exxxxx[4]Ex (elf_p_type)type offset vaddr paddr"
+			" filesz memsz (elf_p_flags)flags align", 0);
 #endif
-	// Usage example:
-	// > pf `k bin/cur/info/elf.phdr.format` @ `k bin/cur/info/elf.phdr.offset`
 	return true;
+	// Usage example:
+	// > td `k bin/cur/info/elf_p_type.cparse`; td `k bin/cur/info/elf_p_flags.cparse`
+	// > pf `k bin/cur/info/elf_phdr.format` @ `k bin/cur/info/elf_phdr.offset`
 }
+
 
 static int init_shdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut32 shdr_size;
@@ -158,20 +165,39 @@ static int init_shdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 		perror ("malloc (shdr)");
 		return false;
 	}
+	sdb_num_set (bin->kv, "elf_shdr.offset", bin->ehdr.e_shoff, 0);
+	sdb_num_set (bin->kv, "elf_shdr_size.offset", sizeof (Elf_(Shdr)), 0);
+	sdb_set (bin->kv, "elf_s_type.cparse", "enum elf_s_type {SHT_NULL=0,SHT_PROGBITS=1,"
+			"SHT_SYMTAB=2,SHT_STRTAB=3,SHT_RELA=4,SHT_HASH=5,SHT_DYNAMIC=6,SHT_NOTE=7,"
+			"SHT_NOBITS=8,SHT_REL=9,SHT_SHLIB=10,SHT_DYNSYM=11,SHT_LOOS=0x60000000,"
+			"SHT_HIOS=0x6fffffff,SHT_LOPROC=0x70000000,SHT_HIPROC=0x7fffffff};", 0);
 #if R_BIN_ELF64
+	sdb_set (bin->kv, "elf_s_flags_64.cparse", "enum elf_s_flags_64 {SF64_None=0,SF64_Exec=1,"
+			"SF64_Alloc=2,SF64_Alloc_Exec=3,SF64_Write=4,SF64_Write_Exec=5,"
+			"SF64_Write_Alloc=6,SF64_Write_Alloc_Exec=7};", 0);
+	sdb_set (bin->kv, "elf_shdr.format", "x[4]E[8]Eqqqxxqq name (elf_s_type)type"
+			" (elf_s_flags_64)flags addr offset size link info addralign entsize", 0);
 	len = r_buf_fread_at (bin->b, bin->ehdr.e_shoff, (ut8*)bin->shdr,
 			bin->endian ? "2I4L2I2L" : "2i4l2i2l", bin->ehdr.e_shnum);
 #else
+	sdb_set (bin->kv, "elf_s_flags_32.cparse", "enum elf_s_flags_32 {SF32_None=0,SF32_Exec=1,"
+			"SF32_Alloc=2,SF32_Alloc_Exec=3,SF32_Write=4,SF32_Write_Exec=5,"
+			"SF32_Write_Alloc=6,SF32_Write_Alloc_Exec=7};", 0);
+	sdb_set (bin->kv, "elf_shdr.format", "x[4]E[4]Exxxxxxx name (elf_s_type)type"
+			" (elf_s_flags_32)flags addr offset size link info addralign entsize", 0);
 	len = r_buf_fread_at (bin->b, bin->ehdr.e_shoff, (ut8*)bin->shdr,
 			bin->endian ? "10I" : "10i", bin->ehdr.e_shnum);
-
 #endif
 	if (len < 1) {
 		eprintf ("Warning: read (shdr) at 0x%"PFMT64x"\n", (ut64) bin->ehdr.e_shoff);
 		R_FREE (bin->shdr);
 		return false;
 	}
+
 	return true;
+	// Usage example:
+	// > td `k bin/cur/info/elf_s_type.cparse`; td `k bin/cur/info/elf_s_flags_64.cparse`
+	// > pf `k bin/cur/info/elf_shdr.format` @ `k bin/cur/info/elf_shdr.offset`
 }
 
 static int init_strtab(struct Elf_(r_bin_elf_obj_t) *bin) {
