@@ -19,7 +19,7 @@ static const char *two_op_instrs[] = {
 };
 
 static const char *one_op_instrs[] = {
-	[MSP430_RCR]	= "rcr",
+	[MSP430_RRC]	= "rrc",
 	[MSP430_SWPB]	= "swpb",
 	[MSP430_RRA]	= "rra",
 	[MSP430_SXT]	= "sxt",
@@ -370,7 +370,7 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 	cmd->opcode = get_oneop_opcode(instr);
 
 	switch (get_oneop_opcode(instr)) {
-	case MSP430_RCR:
+	case MSP430_RRC:
 	case MSP430_SWPB:
 	case MSP430_RRA:
 	case MSP430_SXT:

@@ -28,7 +28,7 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case MSP430_ONEOP:
 		switch (cmd.opcode) {
 		case MSP430_RRA:
-		case MSP430_RCR:
+		case MSP430_RRC:
 			op->type = R_ANAL_OP_TYPE_ROR; break;
 		case MSP430_PUSH:
 			op->type = R_ANAL_OP_TYPE_PUSH; break;

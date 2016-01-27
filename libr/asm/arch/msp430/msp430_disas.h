@@ -4,7 +4,7 @@
 #define MSP430_INSTR_MAXLEN	32
 
 enum msp430_oneop_opcodes {
-	MSP430_RCR,
+	MSP430_RRC,
 	MSP430_SWPB,
 	MSP430_RRA,
 	MSP430_SXT,
