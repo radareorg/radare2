@@ -2559,11 +2559,13 @@ toro:
 		handle_print_pre (core, ds, false);
 		handle_print_lines_left (core, ds);
 
-		if (ds->show_comments && !ds->show_comment_right ) {
-			handle_print_esil_anal (core, ds);
-			r_cons_newline ();
-			handle_print_pre (core, ds, false);
-			handle_print_lines_left (core, ds);
+		if (ds->show_comments && !ds->show_comment_right) {
+			if (ds->show_emu) {
+				handle_print_esil_anal (core, ds);
+				r_cons_newline ();
+				handle_print_pre (core, ds, false);
+				handle_print_lines_left (core, ds);
+			}
 		}
 
 		f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
