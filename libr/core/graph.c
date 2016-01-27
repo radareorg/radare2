@@ -2531,12 +2531,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
 	g->on_curnode_change = (RANodeCallback)seek_to_node;
 	g->on_curnode_change_data = core;
+	int asm_comments = r_config_get_i (core->config, "asm.comments");
+	r_config_set (core->config, "asm.comments", r_str_bool (false));
 
 	/* we want letters as shortcuts for call/jmps */
 	core->is_asmqjmps_letter = true;
 	core->vmode = true;
 
-	grd = R_NEW (struct agraph_refresh_data);
+	grd = R_NEW0 (struct agraph_refresh_data);
 	grd->g = g;
 	grd->fs = is_interactive;
 	grd->core = core;
@@ -2839,6 +2841,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		}
 	}
 
+	r_config_set (core->config, "asm.comments", r_str_bool (asm_comments));
 	core->cons->event_data = NULL;
 	core->cons->event_resize = NULL;
 	core->vmode = o_vmode;

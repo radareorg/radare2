@@ -83,6 +83,7 @@ typedef struct r_disam_options_t {
 	int show_bytes;
 	int show_reloff;
 	int show_comments;
+	int show_jmphints;
 	int show_slow;
 	int cmtcol;
 	int show_fcnlines;
@@ -332,6 +333,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_reloff = r_config_get_i (core->config, "asm.reloff");
 	ds->show_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
+	ds->show_jmphints = r_config_get_i (core->config, "asm.jmphints");
 	ds->show_slow = r_config_get_i (core->config, "asm.slow");
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
 	ds->show_family = r_config_get_i (core->config, "asm.family");
@@ -1632,7 +1634,7 @@ static bool is_asmqjmps_valid (RCore *core) {
 static void handle_print_core_vmode(RCore *core, RDisasmState *ds) {
 	int i;
 
-	if (!ds->show_comments) return;
+	if (!ds->show_jmphints) return;
 	if (core->vmode) {
 		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
