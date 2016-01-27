@@ -178,6 +178,7 @@ typedef struct r_disam_options_t {
 	bool show_nodup;
 } RDisasmState;
 
+static void handle_print_esil_anal(RCore *core, RDisasmState *ds);
 static void handle_reflines_init (RAnal *anal, RDisasmState *ds);
 static void handle_comment_align (RCore *core, RDisasmState *ds);
 static RDisasmState * handle_init_ds (RCore * core);
@@ -2558,6 +2559,13 @@ toro:
 		handle_print_pre (core, ds, false);
 		handle_print_lines_left (core, ds);
 
+		if (!(ds->show_comments && !ds->show_comment_right && ds->comment)) {
+			handle_print_esil_anal (core, ds);
+			r_cons_newline ();
+			handle_print_pre (core, ds, false);
+			handle_print_lines_left (core, ds);
+		}
+
 		f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
 		if (handle_print_labels (core, ds, f)) {
 			handle_show_functions (core, ds);
@@ -2597,11 +2605,11 @@ toro:
 			ds->mi_found = 0;
 		}
 		handle_print_op_push_info (core, ds);
-		handle_print_ptr (core, ds, len+256, idx);
+		handle_print_ptr (core, ds, len + 256, idx);
 		handle_print_comments_right (core, ds);
-		handle_print_esil_anal (core, ds);
 		if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
-			r_cons_newline ();
+			if (!ds->show_comment_right)
+				r_cons_newline ();
 		}
 		handle_print_bbline (core, ds);
 		if (ds->line) {
