@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2015 - pancake */
+/* radare2 - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_cons.h>
 // TWOK is a C implemnetation of 2048 game
@@ -47,7 +47,7 @@ static bool twok_fin() {
 
 static void twok_move(int u, int v) {
 	int i, j, k;
-	int nKI, nKJ, nIK, nJK;
+	int nKI = 0, nKJ = 0, nIK = 0, nJK = 0;
 	int moved = 0;
 	for (k = 0; k < 4; ++k) {
 		for (i = 0; i < 4; ++i) {

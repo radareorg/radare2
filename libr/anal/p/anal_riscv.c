@@ -71,7 +71,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	for (; o < &riscv_opcodes[NUMOPCODES]; o++) {
 		// XXX ASAN segfault if ( !(o->match_func)(o, word) ) continue;
 		if ( no_alias && (o->pinfo & INSN_ALIAS) ) continue;
-		if ( isdigit ((ut8)o->subset[0]) && atoi (o->subset) != xlen) continue;
+		if ( isdigit ((int)(o->subset[0])) && atoi (o->subset) != xlen) continue;
 		else {
 			break;
 		}

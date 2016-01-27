@@ -151,18 +151,22 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		" q        - quit\n"
 		" ?        - show this help\n"
 		"\n";
-	int lines_count;
+	int lines_count = 0;
 	RRegex *rx = NULL;
 	int w, h, ch, to, ui = 1, from = 0, i;
 	const char *sreg;
+	RList **mla;
 
 	if (str == NULL || str[0] == '\0') return 0;
 	char *p = strdup (str);
 	int *lines = splitlines (p, &lines_count);
-
-	RList **mla = malloc(lines_count * sizeof(RList *));
+	if (lines_count<1) {
+		mla = NULL;
+	} else {
+		mla = calloc (lines_count, sizeof (RList *));
+	}
 	for (i = 0; i < lines_count; i++)
-		mla[i] = r_list_new();
+		mla[i] = r_list_new ();
 
 	r_cons_set_raw (true);
 	r_cons_show_cursor (false);
@@ -178,7 +182,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		ch = r_cons_readchar ();
 		if (exitkeys && strchr (exitkeys, ch)) {
 			for (i = 0; i < lines_count; i++) {
-				r_list_free(mla[i]);
+				r_list_free (mla[i]);
 			}
 			free (mla);
 			free (p);

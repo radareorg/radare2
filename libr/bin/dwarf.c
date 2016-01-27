@@ -526,7 +526,7 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 	return buf;
 }
 
-static const ut8* r_bin_dwarf_parse_std_opcode(
+static const ut8* r_bin_dwarf_parse_std_opcode (
 		const RBin *a, const ut8 *obuf, size_t len,
 		const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs,
 		ut8 opcode, FILE *f, int mode) {
@@ -547,7 +547,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 		}
 		if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
 			int fnidx = regs->file - 1;
-			if (fnidx>=0 && fnidx<hdr->file_names_count) {
+			if (fnidx >= 0 && fnidx < hdr->file_names_count) {
 				add_sdb_addrline (binfile->sdb_addrinfo,
 					regs->address,
 					hdr->file_names[fnidx].name,
@@ -688,7 +688,7 @@ static void r_bin_dwarf_set_regs_default (const RBinDwarfLNPHeader *hdr,
 
 R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 		size_t len, int mode) {
-	RBinDwarfLNPHeader hdr;
+	RBinDwarfLNPHeader hdr = {0};
 	const ut8 *buf = NULL, *buf_tmp = NULL, *buf_end = NULL;
 	RBinDwarfSMRegisters regs;
 	int tmplen;
