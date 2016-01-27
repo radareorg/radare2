@@ -1,6 +1,8 @@
-/* libgdbr - LGPL - Copyright 2014 - defragger */
+/* libgdbr - LGPL - Copyright 2014-2016 - defragger */
 
 #include "packet.h"
+
+#define DELTA_CHECK 0
 
 char get_next_token(parsing_object_t* po) {
 	return po->buffer[po->position++];
@@ -58,13 +60,15 @@ int unpack_data(char* dst, char* src, uint64_t len) {
 	char last = 0;
 	int ret_len = 0;
 	char* p_dst = dst;
-	while ( i < len) {
+	while (i < len) {
 		if (src[i] == '*') {
-			if (++i >= len ) fprintf (stderr, "Runlength decoding error\n");
+			if (++i >= len) {
+				eprintf ("Runlength decoding error\n");
+			}
 			char size = src[i++];
 			uint8_t runlength = size - 29;
 			ret_len += runlength - 2;
-			while ( i < len && runlength-- > 0) {
+			while (i < len && runlength-- > 0) {
 				*(p_dst++) = last;
 			}
 			continue;
@@ -86,6 +90,12 @@ int parse_packet(libgdbr_t* g, int data_offset) {
 		handle_packet (&new);
 		new.start += data_offset;
 		po_size = new.end - new.start;
+#if DELTA_CHECK
+		if (po_size + target_pos > 4096) {
+			po_size = 4096 - target_pos;
+			if (po_size > 4096) break;
+		}
+#endif
 		runlength = unpack_data (g->data + target_pos,
 			new.buffer + new.start, po_size);
 		target_pos += po_size + runlength;
@@ -97,22 +107,47 @@ int parse_packet(libgdbr_t* g, int data_offset) {
 
 int send_packet(libgdbr_t* g) {
 	if (!g) {
-		fprintf (stderr, "Initialize libgdbr_t first\n");
+		eprintf ("Initialize libgdbr_t first\n");
 		return -1;
 	}
 	return r_socket_write (g->sock, g->send_buff, g->send_len);
 }
 
+
+// XXX hardcoded 4096 buff size
 int read_packet(libgdbr_t* g) {
-	int po_size = 0;
+	int rc, po_size = 0;
 	if (!g) {
-		fprintf (stderr, "Initialize libgdbr_t first\n");
+		eprintf ("Initialize libgdbr_t first\n");
 		return -1;
 	}
 	while (r_socket_ready (g->sock, 0, 250 * 1000) > 0) {
-		po_size += r_socket_read (g->sock, (
-			(ut8*)g->read_buff + po_size),
-			(g->read_max - po_size));
+		int szdelta = (int)((st64)g->read_max - (st64)po_size);
+#if DELTA_CHECK
+		if (szdelta < 1) {
+			break;
+		}
+		if (po_size + szdelta > 4096) {
+			if (po_size < 4096) {
+				szdelta = g->read_max - po_size;
+			} else {
+				szdelta = -1;
+			}
+			if (szdelta < 1) {
+				break;
+			}
+		}
+		rc = r_socket_read (g->sock,
+			((ut8*)g->read_buff + po_size), szdelta);
+		//if (rc < 1) break;
+		po_size += rc;
+		if (po_size > g_read_max) {
+			break;
+		}
+#else
+		po_size += r_socket_read (g->sock,
+			((ut8*)g->read_buff + po_size), szdelta);
+#endif
 	}
 	g->read_len = po_size;
 	return po_size;
