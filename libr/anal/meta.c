@@ -135,7 +135,10 @@ R_API char *r_meta_get_string(RAnal *a, int type, ut64 addr) {
 }
 
 R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) {
-	char key[100], key2[100], *dtr, *s, *p, *next;
+	char key[100], *dtr, *s, *p, *next;
+#if 0
+	char key2[100];
+#endif
 	const char *ptr;
 	int i;
 	if (size == UT64_MAX) {

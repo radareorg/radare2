@@ -97,9 +97,8 @@ static int rasm_show_help(int v) {
 static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int bin, int hex) {
 	RAsmCode *acode;
 	ut8 *data = NULL;
-	char *ptr = buf;
 	int ret = 0;
-	ut64 word = 0, clen = 0; 
+	ut64 clen = 0; 
 	if (bits == 1)
 		len /= 8;
 

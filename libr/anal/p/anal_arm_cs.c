@@ -195,6 +195,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		case ARM_CC_NE:
 			r_strbuf_setf (&op->esil, "zf,!,{,%"PFMT64d",pc,=,}", (ut64)addr + IMM64 (0));
 			break;
+		default:
+			//TODO
+			break;
 		}
 		break;
 	case ARM64_INS_BL:
