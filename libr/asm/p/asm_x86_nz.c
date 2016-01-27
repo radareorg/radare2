@@ -866,8 +866,13 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			} else pfx = 0xc0;
 			arg0 = getreg (arg);
 			if (a->bits==64) {
-				if (*arg=='r')
-					data[l++] = 0x48;
+				if (*arg=='r') {
+					if (arg[1]>'7' || (arg[2] >= '0' && arg[2]<='9')) {
+						data[l++] = 0x4d;
+					} else {
+						data[l++] = 0x48;
+					}
+				}
 				data[l++] = 0x31; // NOTE: 0x33 is also a valid encoding for xor.. polimorfi?
 				data[l++] = arg0 | (getreg(arg2)<<3) | pfx;
 			} else {
