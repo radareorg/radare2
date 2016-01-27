@@ -2609,17 +2609,17 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			free (p);
 		}
 	} break;
-	case 'k':
+	case 'k': // "axk"
 		if (input[1] == ' ') {
 			sdb_query (core->anal->sdb_xrefs, input + 2);
 		} else eprintf ("|ERROR| Usage: axk [query]\n");
 		break;
 	case '\0':
-	case 'j':
-	case '*':
+	case 'j': // "axj"
+	case '*': // "ax*"
 		r_core_anal_ref_list (core, input[0]);
 		break;
-	case 't': {
+	case 't': { // "axt"
 		const int size = 12;
 		RList *list;
 		RAnalRef *ref;
@@ -2656,8 +2656,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			} else if (input[1] == '*') { // axt*
 				// TODO: implement multi-line comments
 				r_list_foreach (list, iter, ref)
-					r_cons_printf ("CCa 0x%" PFMT64x " \"XREF from 0x%" PFMT64x "\n",
-						ref->addr, ref->type, asmop.buf_asm, iter->n? ",": "");
+					r_cons_printf ("CCa 0x%" PFMT64x " \"XREF type %d at 0x%" PFMT64x"%s\n",
+						ref->addr, ref->type, addr, iter->n? ",": "");
 			} else { // axt
 				int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 				char str[512];

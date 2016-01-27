@@ -2559,7 +2559,7 @@ toro:
 		handle_print_pre (core, ds, false);
 		handle_print_lines_left (core, ds);
 
-		if (!(ds->show_comments && !ds->show_comment_right && ds->comment)) {
+		if (ds->show_comments && !ds->show_comment_right ) {
 			handle_print_esil_anal (core, ds);
 			r_cons_newline ();
 			handle_print_pre (core, ds, false);
@@ -2608,8 +2608,8 @@ toro:
 		handle_print_ptr (core, ds, len + 256, idx);
 		handle_print_comments_right (core, ds);
 		if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
-			if (!ds->show_comment_right)
-				r_cons_newline ();
+			handle_print_esil_anal (core, ds);
+			r_cons_newline ();
 		}
 		handle_print_bbline (core, ds);
 		if (ds->line) {
