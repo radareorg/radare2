@@ -365,7 +365,7 @@ R_API void r_line_autocomplete() {
 			I.buffer.index, strlen(I.buffer.data), ' ');
 		const char *t = end_word != NULL ?
 			end_word : I.buffer.data + I.buffer.index;
-		int largv0 = strlen (argv[0]);
+		int largv0 = strlen (argv[0]? argv[0]: "");
 		size_t len_t = strlen (t);
 
 		if ((p - I.buffer.data) + largv0 + 1 + len_t < plen) {

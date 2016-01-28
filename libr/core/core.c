@@ -665,17 +665,18 @@ openfile:
 							line->buffer.data[0],
 							line->buffer.data[1],
 							p);
-						eprintf ("------ %p\n", tmp_argv[i]);
+						// eprintf ("------ %p (%s) = %s\n", tmp_argv[i], buf, p);
 						if (r_is_heap ((void*)tmp_argv[i]))
 							free ((char *)tmp_argv[i]);
 						tmp_argv[i] = strdup (buf); // LEAKS
 						i++;
-						if (i==TMP_ARGV_SZ)
+						if (i == TMP_ARGV_SZ)
 							break;
 					}
 				}
 			}
-			tmp_argv[(i-1>0)?i-1:0] = NULL;
+			//tmp_argv[(i-1>0)?i-1:0] = NULL;
+			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "fs ", 3)) {
