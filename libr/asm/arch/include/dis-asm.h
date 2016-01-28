@@ -35,6 +35,11 @@ extern "C" {
 #include <stdio.h>
 #include "mybfd.h"
 
+#define bfd_zalloc calloc
+#define bfd_malloc malloc
+#define xmalloc malloc
+
+
   typedef int (*fprintf_ftype) (void *, const char*, ...) ATTRIBUTE_FPTR_PRINTF_2;
 
 enum dis_insn_type
