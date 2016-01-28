@@ -688,7 +688,7 @@ static void r_bin_dwarf_set_regs_default (const RBinDwarfLNPHeader *hdr,
 
 R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 		size_t len, int mode) {
-	RBinDwarfLNPHeader hdr = {0};
+	RBinDwarfLNPHeader hdr = {{0}};
 	const ut8 *buf = NULL, *buf_tmp = NULL, *buf_end = NULL;
 	RBinDwarfSMRegisters regs;
 	int tmplen;

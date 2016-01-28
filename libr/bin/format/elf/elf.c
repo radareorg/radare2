@@ -917,6 +917,8 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return strdup ("riscv");
 	case EM_VAX:
 		return strdup ("vax");
+	case EM_XTENSA:
+		return strdup ("xtensa");
 	case EM_SH: return strdup ("sh");
 	default: return strdup ("x86");
 	}
