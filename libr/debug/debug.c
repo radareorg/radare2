@@ -827,26 +827,26 @@ R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return ret;
 }
 
-R_API RList *r_debug_frames (RDebug *dbg, ut64 at) {
+R_API RList *r_debug_frames(RDebug *dbg, ut64 at) {
 	if (dbg && dbg->h && dbg->h->frames)
 		return dbg->h->frames (dbg, at);
 	return NULL;
 }
 
 /* TODO: Implement fork and clone */
-R_API int r_debug_child_fork (RDebug *dbg) {
+R_API int r_debug_child_fork(RDebug *dbg) {
 	//if (dbg && dbg->h && dbg->h->frames)
 		//return dbg->h->frames (dbg);
 	return 0;
 }
 
-R_API int r_debug_child_clone (RDebug *dbg) {
+R_API int r_debug_child_clone(RDebug *dbg) {
 	//if (dbg && dbg->h && dbg->h->frames)
 		//return dbg->h->frames (dbg);
 	return 0;
 }
 
-R_API int r_debug_is_dead (RDebug *dbg) {
+R_API int r_debug_is_dead(RDebug *dbg) {
 	int is_dead = (dbg->pid == -1);
 	if (is_dead) {
 		dbg->reason.type = R_DEBUG_REASON_DEAD;
@@ -854,24 +854,24 @@ R_API int r_debug_is_dead (RDebug *dbg) {
 	return is_dead;
 }
 
-R_API int r_debug_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
+R_API int r_debug_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 	if (dbg && dbg->h && dbg->h->map_protect)
 		return dbg->h->map_protect (dbg, addr, size, perms);
 	return false;
 }
 
-R_API void r_debug_drx_list (RDebug *dbg) {
+R_API void r_debug_drx_list(RDebug *dbg) {
 	if (dbg && dbg->h && dbg->h->drx)
 		dbg->h->drx (dbg, 0, 0, 0, 0, 0);
 }
 
-R_API int r_debug_drx_set (RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g) {
+R_API int r_debug_drx_set(RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g) {
 	if (dbg && dbg->h && dbg->h->drx)
 		return dbg->h->drx (dbg, idx, addr, len, rwx, g);
 	return false;
 }
 
-R_API int r_debug_drx_unset (RDebug *dbg, int idx) {
+R_API int r_debug_drx_unset(RDebug *dbg, int idx) {
 	if (dbg && dbg->h && dbg->h->drx)
 		return dbg->h->drx (dbg, idx, 0, -1, 0, 0);
 	return false;
