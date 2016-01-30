@@ -1558,6 +1558,7 @@ extern RAnalPlugin r_anal_plugin_snes;
 extern RAnalPlugin r_anal_plugin_riscv;
 extern RAnalPlugin r_anal_plugin_vax;
 extern RAnalPlugin r_anal_plugin_i4004;
+extern RAnalPlugin r_anal_plugin_xtensa;
 #ifdef __cplusplus
 }
 #endif

@@ -60,8 +60,6 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	op->buf_asm[0]='\0';
-	if (len<4)
-		return -1;
 	buf_global = op->buf_asm;
 	Offset = a->pc;
 	memcpy (bytes, buf, 4); // TODO handle thumb
