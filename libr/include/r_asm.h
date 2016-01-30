@@ -223,6 +223,7 @@ extern RAsmPlugin r_asm_plugin_lm32;
 extern RAsmPlugin r_asm_plugin_riscv;
 extern RAsmPlugin r_asm_plugin_vax;
 extern RAsmPlugin r_asm_plugin_xtensa;
+extern RAsmPlugin r_asm_plugin_tricore;
 #endif
 
 #ifdef __cplusplus

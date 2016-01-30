@@ -19,6 +19,9 @@
    MA 02110-1301, USA.  */
 
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include "dis-asm.h"
 #include "sysdep.h"
 //#include "bfd.h"
@@ -26,6 +29,7 @@
 #include "xtensa-isa.h"
 #include "xtensa-isa-internal.h"
 
+extern int filename_cmp (const char *s1, const char *s2);
 xtensa_isa_status xtisa_errno;
 char xtisa_error_msg[1024];
 
