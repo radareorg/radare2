@@ -112,7 +112,7 @@ RAsmPlugin r_asm_plugin_tricore = {
 	.arch = "tricore",
 	.license = "GPL3",
 	.bits = 32,
-	.desc = "TriCore CPU",
+	.desc = "Siemens TriCore CPU",
 	.disassemble = &disassemble,
 	0
 };

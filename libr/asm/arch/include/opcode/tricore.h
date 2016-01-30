@@ -163,8 +163,8 @@ struct tricore_opcode
   const unsigned long lose;	/* Mask for bits that must not be set.  */
   const tricore_fmt format;	/* The instruction format.  */
   const int nr_operands;	/* The number of operands.  */
-  const unsigned char *args;	/* Kinds of operands (see below).  */
-  const unsigned char *fields;	/* Where to put the operands (see below).  */
+  const char *args;	/* Kinds of operands (see below).  */
+  const char *fields;	/* Where to put the operands (see below).  */
   const tricore_isa isa;	/* Instruction set architecture.  */
   int insind;			/* The insn's index (computed at runtime).  */
   int inslast;			/* Index of last insn w/ that name (dito).  */
@@ -185,7 +185,7 @@ struct pcp_opcode
   const int fmt_group;		/* The group ID of the instruction format.  */
   const int ooo;		/* 1 if operands may be given out of order.  */
   const int nr_operands;	/* The number of operands.  */
-  const unsigned char *args;	/* Kinds of operands (see below),  */
+  const char *args;	/* Kinds of operands (see below),  */
   const tricore_isa isa;	/* PCP instruction set architecture.  */
   int insind;			/* The insn's index (computed at runtime).  */
   int inslast;			/* Index of last insn w/ that name (dito).  */
