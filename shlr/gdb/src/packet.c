@@ -147,6 +147,9 @@ int read_packet(libgdbr_t* g) {
 #else
 		po_size += r_socket_read (g->sock,
 			((ut8*)g->read_buff + po_size), szdelta);
+
+		if (po_size > 3 && g->read_buff[po_size - 3] == '#')
+			break;
 #endif
 	}
 	g->read_len = po_size;
