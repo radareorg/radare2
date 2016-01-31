@@ -13,6 +13,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#if __UNIX__ || defined(__CYGWIN__)
+#include <netinet/tcp.h>
+#endif
+
 R_LIB_VERSION(r_socket);
 
 #if EMSCRIPTEN
@@ -169,9 +173,19 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 			return false;
 		}
 		for (rp = res; rp != NULL; rp = rp->ai_next) {
+			int flag = 1;
+
 			s->fd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 			if (s->fd == -1)
 				continue;
+
+			ret = setsockopt (s->fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag));
+			if (ret < 0) {
+				close (s->fd);
+				s->fd = -1;
+				continue;
+			}
+
 			if (timeout>0) {
 				r_socket_block_time (s, 1, timeout);
 				//fcntl (s->fd, F_SETFL, O_NONBLOCK, 1);
