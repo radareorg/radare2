@@ -24,7 +24,7 @@ static ut64 decodeRelative (ut64 addr, const ut8 *buf) {
 	return res;
 }
 
-// XXX the branch calculation code is wrong. this is just an initial PoC
+//Not all instructions implemented yet.
 static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	if (op == NULL)
 		return 1;
@@ -35,22 +35,39 @@ static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	bool is_call = (buf[0] & 0xf) == 5;
 	bool is_jmp = (buf[0] & 0xf) == 6;
 	bool is_jmp2 = (buf[0]>=0x80 && (buf[0] & 0xf) == 0xc);
-	//bool is_bl = (buf[0] & 0xf) == 7;
+        bool is_bbxi = (buf[0] & 0xf) == 7;
 	if (is_call) {
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = decodeRelative (addr, buf);
 		op->fail = addr + op->size;
 	} else if (is_jmp2) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + buf[1] + 4;
+		ut8 offset = 0;
+		offset = (buf[0] & 0x30);
+		offset = offset | (buf[1] & 0xf0) >> 4;
+		op->jump = addr + offset + 4;
 		op->fail = addr + op->size;
+	} else if (is_bbxi) {
+                op->type = R_ANAL_OP_TYPE_CJMP;
+                op->jump = addr + buf[2] + 4;
+                op->fail = addr + op->size;
 	} else if (is_jmp) {
 		if (((buf[0] >> 4)&0x3) == 0) {
 			op->type = R_ANAL_OP_TYPE_JMP;
 			if (buf[0] == 0x86) {
 				op->jump = addr + (buf[1] * 4 ) + (buf[0]&0xf) + (buf[2]<<8);
 			}else {
-				op->jump = addr + 0x10 - (buf[1] + (buf[2]<<8)) + 1;
+				int64_t offset = 0;
+				offset = buf[2] << 10;
+				offset = offset + (buf[1] << 2);
+				offset = offset + ( (buf[0] & 0xc0) >> 6 );
+				//Handle negative differently.
+				if( buf[2] & 0x80){
+					offset = offset ^ (0x3ffff);
+					op->jump = addr - offset + 3;
+				} else{
+					op->jump = addr + offset + 4;
+				}
 			}
 		} else {
 			op->type = R_ANAL_OP_TYPE_CJMP;
