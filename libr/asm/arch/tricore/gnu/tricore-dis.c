@@ -1,6 +1,6 @@
 /* Disassemble TriCore and PCP instructions.
    Copyright (C) 1998-2003 Free Software Foundation, Inc.
-   Contributed by Michael Schumacher (mike@hightec-rt.com).
+   Contributed by Michael Schumacher (mike@hightec-rt.com), condret (2016).
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -1493,7 +1493,7 @@ print_decoded_insn (memaddr, info)
 	  break;
 
 	case 'S':
-	  DPRINT (DFILE, "["REGPREFIX"a15]", dec_insn.regs[i]);
+	  DPRINT (DFILE, "["REGPREFIX"a15]"); 
 	  need_comma = 0;
 	  break;
 	}
@@ -1646,7 +1646,7 @@ decode_pcp_insn (memaddr, buffer, info)
 
 	    case 'c':
 	      val = (insn >> 5) & 0x3;
-	      DPRINT (DFILE, "cnc=%d", val);
+	      DPRINT (DFILE, "cnc=%lu", val);
 	      break;
 
 	    case 'n':
@@ -1660,12 +1660,12 @@ decode_pcp_insn (memaddr, buffer, info)
 		  else if (val == 3)
 		    val = 4;
 		}
-	      DPRINT (DFILE, "cnt0=%d", val);
+	      DPRINT (DFILE, "cnt0=%lu", val);
 	      break;
 
 	    case 'f':
 	      val = 8 << (insn & 0x3);
-	      DPRINT (DFILE, "size=%d", val);
+	      DPRINT (DFILE, "size=%lu", val);
 	      break;
 
 	    case 'a':
@@ -1676,22 +1676,22 @@ decode_pcp_insn (memaddr, buffer, info)
 
 	    case 'g':
 	      val = (insn >> 10) & 0x1;
-	      DPRINT (DFILE, "st=%d", val);
+	      DPRINT (DFILE, "st=%lu", val);
 	      break;
 
 	    case 'i':
 	      val = (insn >> 9) & 0x1;
-	      DPRINT (DFILE, "int=%d", val);
+	      DPRINT (DFILE, "int=%lu", val);
 	      break;
 
 	    case 'j':
 	      val = (insn >> 8) & 0x1;
-	      DPRINT (DFILE, "ep=%d", val);
+	      DPRINT (DFILE, "ep=%lu", val);
 	      break;
 
 	    case 'h':
 	      val = (insn >> 7) & 0x1;
-	      DPRINT (DFILE, "ec=%d", val);
+	      DPRINT (DFILE, "ec=%lu", val);
 	      break;
 
 	    default:
@@ -1707,13 +1707,13 @@ decode_pcp_insn (memaddr, buffer, info)
       rb = (insn >> 6) & 0x7;
       ra = (insn >> 3) & 0x7;
       val = 8 << (insn & 0x3);
-      DPRINT (DFILE, "r%d, [r%d], size=%d", rb, ra, val);
+      DPRINT (DFILE, "r%d, [r%d], size=%lu", rb, ra, val);
       break;
 
     case 2:
       ra = (insn >> 6) & 0x7;
       val = insn & 0x3f;
-      DPRINT (DFILE, "r%d, [%d]", ra, val);
+      DPRINT (DFILE, "r%d, [%lu]", ra, val);
       break;
 
     case 3:
@@ -1730,14 +1730,14 @@ decode_pcp_insn (memaddr, buffer, info)
       ra = (insn >> 6) & 0x7;
       val = insn & 0x3f;
       if (!strcmp (pop->name, "chkb"))
-        DPRINT (DFILE, "r%d, %d, %s", ra, val & 0x1f,
+        DPRINT (DFILE, "r%d, %lu, %s", ra, val & 0x1f,
 		(val & 0x20) ? "set" : "clr");
       else if (!strcmp (pop->name, "ldl.il"))
         DPRINT (DFILE, "r%d, 0x....%04lx", ra, insn2);
       else if (!strcmp (pop->name, "ldl.iu"))
         DPRINT (DFILE, "r%d, 0x%04lx....", ra, insn2);
       else
-        DPRINT (DFILE, "r%d, %d", ra, val);
+        DPRINT (DFILE, "r%d, %lu", ra, val);
       break;
 
     case 5:
@@ -1745,10 +1745,10 @@ decode_pcp_insn (memaddr, buffer, info)
       val = 8 << (((insn >> 5) & 0x1) | ((insn >> 8) & 0x2));
       if ((!strcmp (pop->name, "set.f") || !strcmp (pop->name, "clr.f"))
           && ((insn & 0x1f) >= val))
-        DPRINT (DFILE, "[r%d], %d ***ILLEGAL VALUE***, size=%d", ra,
+        DPRINT (DFILE, "[r%d], %lu ***ILLEGAL VALUE***, size=%lu", ra,
 		insn & 0x1f, val);
       else
-        DPRINT (DFILE, "[r%d], %d, size=%d", ra, insn & 0x1f, val);
+        DPRINT (DFILE, "[r%d], %lu, size=%lu", ra, insn & 0x1f, val);
       break;
 
     case 6:
@@ -1767,11 +1767,11 @@ decode_pcp_insn (memaddr, buffer, info)
 	    {
 	    case 'r':
 	    case 'R':
-	      DPRINT (DFILE, "[r%d]", (insn >> 3) & 0x7);
+	      DPRINT (DFILE, "[r%lu]", (insn >> 3) & 0x7);
 	      break;
 
 	    case 'm':
-	      DPRINT (DFILE, "dac=%d", (insn >> 3) & 0x1);
+	      DPRINT (DFILE, "dac=%lu", (insn >> 3) & 0x1);
 	      break;
 
 	    case 'a':
@@ -1780,15 +1780,15 @@ decode_pcp_insn (memaddr, buffer, info)
 	      break;
 
 	    case 'o':
-	      DPRINT (DFILE, "rta=%d", (insn >> 2) & 0x1);
+	      DPRINT (DFILE, "rta=%lu", (insn >> 2) & 0x1);
 	      break;
 
 	    case 'p':
-	      DPRINT (DFILE, "eda=%d", (insn >> 1) & 0x1);
+	      DPRINT (DFILE, "eda=%lu", (insn >> 1) & 0x1);
 	      break;
 
 	    case 'q':
-	      DPRINT (DFILE, "sdb=%d", insn & 1);
+	      DPRINT (DFILE, "sdb=%lu", insn & 1);
 	      break;
 
 	    case 'e':

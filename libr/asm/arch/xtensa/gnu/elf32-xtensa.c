@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <strings.h>
+#include <string.h>
 
 #include "bfdlink.h"
 //#include "libbfd.h"
