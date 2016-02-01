@@ -408,6 +408,7 @@ int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 	if (!ret) return -1;
 	ret = r_socket_connect_tcp (g->sock, host, tmp, 200);
 	if (!ret) return -1;
+	read_packet (g);
 	g->connected = 1;
 	// TODO add config possibility here
 	ret = send_command (g, message);
