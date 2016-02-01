@@ -553,9 +553,9 @@ static void DecodeIM(int constsize,int sxt,int type) {
     if (i!=0 && symbolic!=0) {
       strcpy(da->result+nresult,name); nresult+=i; }
     else if (type==IMU || type==IMS || type==IM2 || data>=0 || data<NEGLIMIT)
-      nresult+=sprintf(da->result+nresult,"0x"LFMT,data);
+      nresult+=sprintf(da->result+nresult,""LFMT,data);
     else
-      nresult+=sprintf(da->result+nresult,"-0x"LFMT,-data);
+      nresult+=sprintf(da->result+nresult,"-"LFMT,-data);
     if (addcomment && comment[0]!='\0') strcpy(da->comment,comment);
   };
 };
@@ -576,7 +576,7 @@ static void DecodeVX(void) {
   if (mode>=DISASM_FILE && da->error==DAE_NOERR) {
     if ((data & 0x00008000)!=0 && memicmp("VxDCall",da->result,7)==0)
       memcpy(da->result,lowercase?"vxdjump":"VxDJump",7);
-    nresult+=sprintf(da->result+nresult,"0x"LFMT,data);
+    nresult+=sprintf(da->result+nresult,""LFMT,data);
   };
 };
 
