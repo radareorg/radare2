@@ -18,7 +18,7 @@
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
 
-static task_t task_dbg = -1;
+static task_t task_dbg = 0;
 #include "xnu_debug.h"
 #include "xnu_threads.c"
 #if XNU_USE_EXCTHR
@@ -107,6 +107,10 @@ static task_t task_for_pid_workaround(int Pid) {
 	return 0;
 }
 
+int xnu_wait(RDebug *dbg, int pid) {
+	return __xnu_wait (dbg, pid);
+}
+
 bool xnu_step(RDebug *dbg) {
 #if XNU_USE_PTRACE
 	int ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
@@ -151,14 +155,6 @@ int xnu_attach(RDebug *dbg, int pid) {
 		eprintf ("error setting up exception thread\n");
 		return -1;
 	}
-	//task_suspend (pid_to_task (pid));
-#if 0
-	if (ptrace (PT_ATTACHEXC, pid, 0, 0) == -1) {
-		perror ("ptrace (PT_ATTACHEXC)");
-		return -1;
-	}
-	usleep(250000);
-#endif
 	return pid;
 #endif
 }
@@ -177,7 +173,7 @@ int xnu_detach(RDebug *dbg, int pid) {
 			__FILE__, __LINE__);
 	}
 	//we mark the task as not longer available since we deallocated the ref
-	task_dbg = -2;
+	task_dbg = 0;
 	r_list_free (dbg->threads);
 #endif
 }
@@ -192,6 +188,7 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 	task_t task = pid_to_task (pid);
 	if (!task)
 		return false;
+	//TODO free refs count threads
 	xnu_thread_t *th  = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th) {
 		eprintf ("failed to get thread in xnu_continue\n");
@@ -394,15 +391,23 @@ int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 
 task_t pid_to_task (int pid) {
 	static int old_pid = -1;
+	kern_return_t kr;
 	task_t task = -1;
 	int err;
 
 	/* it means that we are done with the task*/
-	if (task_dbg == -2)
-		return 0;
-	if (task_dbg != -1 && old_pid == pid)
+	if (task_dbg != 0 && old_pid == pid) {
 		return task_dbg;
+	} else if (task_dbg != 0 && old_pid != pid) {
+		//we changed the process pid so deallocate a ref from the old_task
+		//since we are going to get a new task
+		kr = mach_port_deallocate (mach_task_self (), task_dbg);
+		if (kr != KERN_SUCCESS) {
+			eprintf ("fail to deallocate port %s:%d\n", __FILE__, __LINE__);
+			return 0;
+		}
 
+	}
 	err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		task = task_for_pid_workaround (pid);

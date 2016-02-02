@@ -115,6 +115,7 @@ static task_t pid_to_task(int pid) {
 		}
 	}
 	old_task = task;
+	old_pid = pid;
 	return task;
 }
 
@@ -186,7 +187,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	}
 
 	copied = getNextValid(io, fd, io->off) - io->off;
-	if (copied<0) copied = 0;
+	if (copied < 0) copied = 0;
 
 	while (copied < len) {
 		blen = R_MIN ((len - copied), blocksize);
@@ -225,95 +226,111 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	return len;
 }
 
-static vm_address_t tsk_getpagebase(ut64 addr) {
-	vm_address_t a = addr;
-	a >>= 12;
-	a <<= 12;
-	return a;
+
+static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
+	kern_return_t kr;
+	mach_port_t object;
+	int prot;
+
+	if (io->bits == 32) {
+		vm_region_flavor_t flavor = VM_REGION_BASIC_INFO;
+		mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT;
+		vm_region_basic_info_data_t info;
+		mach_vm_size_t vmsize;
+		kr = mach_vm_region (task, &addr, &vmsize, flavor, (vm_region_info_t)&info, &info_count, &object);
+		return (kr != KERN_SUCCESS ? 0 : info.protection);
+	} else {
+		mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT_64;
+		vm_region_flavor_t flavor = VM_REGION_BASIC_INFO_64;
+		vm_region_basic_info_data_64_t info;
+		vm_size_t vmsize;
+		kr = vm_region_64 (task, &addr, &vmsize, flavor, (vm_region_info_t)&info, &info_count, &object);
+		return (kr != KERN_SUCCESS ? 0 : info.protection);
+	}
+
 }
 
-static int tsk_getperm(task_t task, vm_address_t addr) {
-	vm_size_t pagesize = 1;
-	int _basic64[VM_REGION_BASIC_INFO_COUNT_64];
-	vm_region_basic_info_64_t basic64 = (vm_region_basic_info_64_t)_basic64;
-	mach_msg_type_number_t infocnt = VM_REGION_BASIC_INFO_COUNT_64;
-	mach_port_t objname;
-	kern_return_t rc;
-
-	rc = vm_region_64 (task, &addr, &pagesize, VM_REGION_BASIC_INFO,
-		(vm_region_info_t)basic64, &infocnt, &objname);
-	if (rc == KERN_SUCCESS) {
-		return basic64[0].protection;
-	}
-	return 0;
-}
-
-static int tsk_pagesize(RIO *io, int len) {
-#if __arm__ || __arm64__ || __aarch64__
-	int is_arm64 = (io && io->bits == 64);
-	int pagesize = is_arm64? 16384: 4096;
-#else
-	int pagesize = getpagesize();
-#endif
-	if (pagesize<1) pagesize = 4096;
-	if (len > pagesize) {
-		pagesize *= (1 + (len / pagesize));
-	}
+static int tsk_pagesize(RIOMach *riom) {
+	//cache the pagesize
+	static ut64 pagesize = 0;
+	kern_return_t kr;
+	task_vm_info_data_t task_vm_info;
+	mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
+	if (pagesize)
+		return pagesize;
+	kr = task_info (riom->task, TASK_VM_INFO, (task_info_t)&task_vm_info, &count);
+	if (kr != KERN_SUCCESS)
+		perror ("task_info");
+	pagesize = task_vm_info.page_size;
 	return pagesize;
 }
 
+static vm_address_t tsk_getpagebase(RIOMach *riom, ut64 addr) {
+	vm_address_t pagesize = tsk_pagesize (riom);
+	return (addr & ~(pagesize - 1));
+}
+
+
 static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int perm) {
-	mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT;
-	vm_region_flavor_t flavor = VM_REGION_BASIC_INFO;
-	vm_address_t region = (vm_address_t)addr;
-	vm_region_basic_info_data_t info;
-	vm_size_t region_size = tsk_pagesize(io, len);
-#if 1
-	task_t t;
-	vm_region_64 (task, &region, &region_size, flavor, (vm_region_info_t)&info,
-			(mach_msg_type_number_t*)&info_count, (mach_port_t*)&t);
-#endif
-	return vm_protect (task, region, region_size, FALSE, perm) == KERN_SUCCESS;
+	kern_return_t kr;
+	kr = vm_protect (task, addr, len, 0, perm);
+	if (kr != KERN_SUCCESS) {
+		eprintf ("failed to change perm %s:%d\n", __FILE__, __LINE__);
+		perror ("tsk_setperm");
+		return false;
+	}
+	return true;
 }
 
 static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
+	kern_return_t kr;
 	mach_msg_type_number_t _len = len;
 	vm_offset_t _buf = (vm_offset_t)buf;
-	return vm_write (task, addr, _buf, _len) == KERN_SUCCESS;
+	unsigned int count = 0;
+	kr = mach_port_get_refs (mach_task_self(), task, MACH_PORT_RIGHT_SEND, &count);
+	if (kr != KERN_SUCCESS)
+		perror ("get refs");
+	eprintf ("refs = %d\n", count);
+	kr = vm_write (task, addr, _buf, _len);
+	if (kr != KERN_SUCCESS)
+		//the memory is not mapped
+		return false;
+	return true;
 }
 
 static int mach_write_at(RIO *io, RIOMach *riom, const void *buf, int len, ut64 addr) {
 	vm_address_t vaddr = addr;
 	vm_address_t pageaddr;
 	vm_size_t pagesize;
+	vm_size_t total_size;
 	int operms = 0;
 	task_t task;
 
-	if (!riom || len <1) {
+	if (!riom || len < 1) {
 		return 0;
 	}
 	task = riom->task;
+	pageaddr = tsk_getpagebase (riom, addr);
+	pagesize = tsk_pagesize (riom);
+	if (len > pagesize)
+		total_size = pagesize * (1 + (len / pagesize));
+	else
+		total_size = pagesize;
 
-	pageaddr = tsk_getpagebase (addr);
-	pagesize = tsk_pagesize (io, len);
-
-	if (tsk_write (task, vaddr, buf, len)) {
+	if (tsk_write (task, vaddr, buf, len))
 		return len;
-	}
-	operms = tsk_getperm (task, pageaddr);
-	if (!tsk_setperm (io, task, pageaddr, pagesize, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
-		perror ("setperm");
+	operms = tsk_getperm (io, task, pageaddr);
+	if (!tsk_setperm (io, task, pageaddr, total_size, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE)) {
 		eprintf ("io.mach: Cannot set page perms for %d bytes at 0x%08"
 			PFMT64x"\n", (int)pagesize, (ut64)pageaddr);
-		//return -1;
+		return -1;
 	}
 	if (!tsk_write (task, vaddr, buf, len)) {
-		perror ("write");
 		eprintf ("io.mach: Cannot write on memory\n");
 		len = -1;
 	}
 	if (operms) {
-		if (!tsk_setperm (io, task, pageaddr, pagesize, operms)) {
+		if (!tsk_setperm (io, task, pageaddr, total_size, operms)) {
 			eprintf ("io.mach: Cannot restore page perms\n");
 			return -1;
 		}
@@ -377,13 +394,12 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	riom->pid = pid;
 	riom->task = task;
 	// sleep 1s to get proper path (program name instead of ls) (racy)
-	if (pid == 0) {
+	if (!pid)
 		pidpath = strdup ("kernel");
-	} else {
+	else
 		pidpath = r_sys_pid_to_path (pid);
-	}
 	ret = r_io_desc_new (&r_io_plugin_mach, riom->pid,
-		pidpath, rw | R_IO_EXEC, mode, riom);
+			    pidpath, rw | R_IO_EXEC, mode, riom);
 	free (pidpath);
 	return ret;
 }
@@ -404,19 +420,22 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __close(RIODesc *fd) {
-	int pid = RIOMACH_PID (fd->data);
+	RIOMach *riom= (RIOMach*)fd->data;
+	kern_return_t kr;
+	kr = mach_port_deallocate (mach_task_self (), riom->task);
+	if (kr != KERN_SUCCESS)
+		perror ("__close io_mach");
 	R_FREE (fd->data);
-	return ptrace (PT_DETACH, pid, 0, 0);
+	return kr == KERN_SUCCESS;
 }
 
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOMach *riom = (RIOMach*)fd->data;
-	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strncmp (cmd, "perm", 4)) {
-		int perm = r_str_rwx (cmd+4);
+		int perm = r_str_rwx (cmd + 4);
 		if (perm) {
-			int pagesize = tsk_pagesize(io, 1);
+			int pagesize = tsk_pagesize(riom);
 			tsk_setperm (io, riom->task, io->off, pagesize, perm);
 		} else {
 			eprintf ("Usage: =!perm [rwx]\n");
@@ -447,8 +466,9 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			}
 		}
 		eprintf ("io_mach_system: Invalid pid %d\n", pid);
-	} else
+	} else {
 		eprintf ("Try: '=!pid' or '=!perm'\n");
+	}
 	return 1;
 }
 
