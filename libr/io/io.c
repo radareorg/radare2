@@ -64,23 +64,23 @@ R_API RIODesc *r_io_open_at (RIO *io, char *uri, int flags, int mode, ut64 at)
 	if (!desc)
 		 return NULL;
 	size = r_io_desc_size (desc);
-	if (size && ((UT64_MAX - size + 1) < at)) {										//second map
+	if (size && ((UT64_MAX - size + 1) < at)) {		//second map
 		r_io_map_new (io, desc->fd, desc->flags, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1);			//split map into 2 maps if only 1 big map results into interger overflow
-		size = UT64_MAX - at + 1;											//someone pls take a look at this confusing stuff
+		size = UT64_MAX - at + 1;						//someone pls take a look at this confusing stuff
 	}
-	r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size);								//first map
+	r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size);			//first map
 	return desc;
 }
 
 R_API int r_io_close (RIO *io, int fd)
 {
 	RIODesc *desc = r_io_desc_get (io, fd);
-	if (!desc || !desc->cbs || !desc->cbs->close)										//check for cb
+	if (!desc || !desc->plugin || !desc->plugin->close)			//check for cb
 		return R_FALSE;
-	if (!desc->cbs->close (desc))												//close fd
+	if (!desc->plugin->close (desc))					//close fd
 		return R_FALSE;
-	r_io_desc_del (io, fd);													//remove entry from sdb-instance and free the desc-struct
-	r_io_map_cleanup (io);													//remove all dead maps
+	r_io_desc_del (io, fd);								//remove entry from sdb-instance and free the desc-struct
+	r_io_map_cleanup (io);								//remove all dead maps
 	return R_TRUE;
 }
 
@@ -90,18 +90,20 @@ R_API int r_io_pread_at (RIO *io, ut64 paddr, ut8 *buf, int len)
 		return 0;
 	if (io->ff)
 		memset (buf, 0xff, len);
-	if (!io->desc || !(io->desc->flags & R_IO_READ) || !io->desc->cbs || !io->desc->cbs->read || !len)			//check pointers and permissions
+	if (!io->desc || !(io->desc->flags & R_IO_READ) || !io->desc->plugin ||
+			!io->desc->plugin->read || !len)			//check pointers and permissions
 		return 0;
 	r_io_desc_seek (io->desc, paddr, R_IO_SEEK_SET);
-	return io->desc->cbs->read (io, io->desc, buf, len);
+	return io->desc->plugin->read (io, io->desc, buf, len);
 }
 
 R_API int r_io_pwrite_at (RIO *io, ut64 paddr, ut8 *buf, int len)
 {
-	if (!io || !buf || !io->desc || !(io->desc->flags & R_IO_WRITE) || !io->desc->cbs || !io->desc->cbs->write || !len)	//check pointers and permissions
+	if (!io || !buf || !io->desc || !(io->desc->flags & R_IO_WRITE) ||
+			!io->desc->plugin || !io->desc->plugin->write || !len)	//check pointers and permissions
 		return 0;
 	r_io_desc_seek (io->desc, paddr, R_IO_SEEK_SET);
-	return io->desc->cbs->write (io, io->desc, buf, len);
+	return io->desc->plugin->write (io, io->desc, buf, len);
 }
 
 R_API int r_io_vread_at (RIO *io, ut64 vaddr, ut8 *buf, int len)
