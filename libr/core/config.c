@@ -540,6 +540,7 @@ static int cb_cfgdebug(void *user, void *data) {
 		core->bin->is_debugger = false;
 	}
 	if (core->io) {
+		r_config_set (core->config, "io.va", "true");
 		if (core->dbg && core->dbg->h) {
 			ioraw = core->dbg->h->keepio? 0: 1;
 		} else {

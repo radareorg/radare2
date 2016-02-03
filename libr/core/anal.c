@@ -333,6 +333,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 
 		// XXX hack slow check io error
 		if ((buflen = r_io_read_at (core->io, at+delta, buf, 4) != 4)) {
+			eprintf ("read errro\n");
 			goto error;
 		}
 		// real read.

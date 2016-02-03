@@ -295,11 +295,13 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	}
 
 	if (depth<1) {
+		eprintf ("That's too deep\n");
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
 	// check if address is readable //:
 	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
+		eprintf ("Invalid address. Try with io.va=true\n");
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
@@ -775,9 +777,8 @@ R_API void r_anal_trim_jmprefs(RAnalFunction *fcn) {
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	int ret;
-
 	fcn->size = 0;
-	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
+	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE)?
 			R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
 	if (fcn->addr == UT64_MAX) fcn->addr = addr;
 	if (anal->cur && anal->cur->fcn) {
@@ -804,7 +805,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 				endaddr = bb->addr + bb->size;
 			} else break;
 		}
-		r_anal_fcn_resize(fcn, endaddr - fcn->addr);
+		r_anal_fcn_resize (fcn, endaddr - fcn->addr);
 
 		// resize function if overlaps
 		r_list_foreach (anal->fcns, iter, fcn1) {
@@ -814,7 +815,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 						overlapped = fcn1->addr;
 		}
 		if (overlapped != -1) r_anal_fcn_resize (fcn, overlapped - fcn->addr);
-		r_anal_trim_jmprefs(fcn);
+		r_anal_trim_jmprefs (fcn);
 	}
 	return ret;
 }

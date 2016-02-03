@@ -3511,7 +3511,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			int hasnext = r_config_get_i (core->config, "anal.hasnext");
 			r_core_seek (core, s->vaddr, 1);
 			r_config_set_i (core->config, "anal.hasnext", 1);
-			r_core_cmd0 (core, "af");
+			(void)cmd_anal_fcn (core, "");
 			r_config_set_i (core->config, "anal.hasnext", hasnext);
 		} else {
 			// TODO: honor search.in? support dbg.maps?
