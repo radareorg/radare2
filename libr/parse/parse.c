@@ -267,7 +267,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 					si = r_syscall_get (p->anal->syscall, off, -1);
 					if (si)
 						snprintf (num, sizeof (num), "%s()", si->name);
-					else eprintf ("Unknown syscall number\n");
+					else snprintf (num, sizeof (num), "unknown()");
 				}
 				break;
 			case 16:
