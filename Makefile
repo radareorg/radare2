@@ -27,7 +27,7 @@ PWD=$(shell pwd)
 
 # For echo without quotes
 ifeq ($(BUILD_OS),windows)
-ifeq $(OSTYPE),mingw32
+ifeq ($(OSTYPE),mingw32)
 	Q=
 	ESC=^
 	LC_ALL=C
