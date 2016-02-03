@@ -9,6 +9,7 @@ include ../mk/${COMPILER}.mk
 # Build against last capstone release or next
 CS_RELEASE=0
 
+GIT?=git
 WGET?=wget
 
 ifeq ($(CS_RELEASE),1)
@@ -172,14 +173,13 @@ HFILES+=elf.h libtcc.h config.h i386-tok.h
 .PHONY: sdb-sync sync-sdb sdbclean
 tcc-sync sync-tcc:
 	rm -rf _
-	git clone --depth 1 git://repo.or.cz/tinycc.git _
+	$(GIT) clone --depth 1 git://repo.or.cz/tinycc.git _
 	cd _ ; ./configure --prefix=${PREFIX}
 	mkdir -p tcc
 	for FILE in ${CFILES} ${HFILES} ; do cp -f _/$$FILE tcc ; done
 	cp -f _/VERSION _/COPYING _/stab.def tcc
-	git add tcc
+	$(GIT) add tcc
 	rm -rf _
-
 
 install:
 	#mkdir -p ${DESTDIR}${LIBDIR}
@@ -230,7 +230,7 @@ capstone: capstone-sync
 capstone-sync:
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
 ifeq ($(CS_PATCHES),1)
-	cd capstone ; git reset --hard
+	-cd capstone ; $(GIT) reset --hard
 	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
 endif
 
