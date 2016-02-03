@@ -254,6 +254,13 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 			case 10:
 				snprintf (num, sizeof (num), "%" PFMT64d, (st64)off);
 				break;
+			case 32:
+				{
+					ut32 ip32 = off;
+					ut8 *ip = (ut8*)&ip32;
+					snprintf (num, sizeof (num), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+				}
+				break;
 			case 16:
 				/* do nothing */
 			default:

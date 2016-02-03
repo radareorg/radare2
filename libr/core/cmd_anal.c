@@ -2858,6 +2858,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				"ahi", " d", "set base to decimal (10)",
 				"ahi", " h", "set base to hexadecimal (16)",
 				"ahi", " o", "set base to octal (8)",
+				"ahi", " i", "set base to IP address (32)",
 				"ahi", " s", "set base to string (2)",
 				NULL };
 			r_core_cmd_help (core, help_msg);
@@ -2869,6 +2870,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				(input[2] == 'o') ? 8 :
 				(input[2] == 'd') ? 10 :
 				(input[2] == 'h') ? 16 :
+				(input[2] == 'i') ? 32 : // ip address
 				(int) r_num_math (core->num, input + 1);
 			r_anal_hint_set_immbase (core->anal, core->offset, base);
 		}

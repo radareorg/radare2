@@ -1027,7 +1027,7 @@ static void cmd_reg_profile (RCore *core, const char *str) { // "arp" and "drp"
 						arena->bytes = newbytes;
 						arena->size = n;
 					} else {
-						eprintf ("Cannot allocate %d\n", n);
+						eprintf ("Cannot allocate %d\n", (int)n);
 					}
 				}
 			} else {
