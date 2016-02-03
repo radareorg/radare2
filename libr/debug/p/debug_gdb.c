@@ -261,6 +261,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"=A2	rcx\n"
 				"=A3	rdx\n"
 				"=SN	orax\n"
+				"gpr	fake	.64	795	0\n"
 				"gpr	rax	.64	0	0\n"
 				"gpr	rbx	.64	8	0\n"
 				"gpr	rcx	.64	16	0\n"

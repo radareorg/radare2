@@ -1015,11 +1015,21 @@ static void cmd_reg_profile (RCore *core, const char *str) { // "arp" and "drp"
 	case 's':
 		if (str[2] == ' ') {
 			ut64 n = r_num_math (core->num, str+2);
+			// TODO: move this thing into the r_reg API
 			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
 			if (rs && n>0) {
-				free (rs->arena->bytes);
-				rs->arena->bytes = calloc (1, n);
-				rs->arena->size = n;
+				RListIter *iter;
+				RRegArena *arena;
+				r_list_foreach (rs->pool, iter, arena) {
+					ut8 *newbytes = calloc (1, n);
+					if (newbytes) {
+						free (arena->bytes);
+						arena->bytes = newbytes;
+						arena->size = n;
+					} else {
+						eprintf ("Cannot allocate %d\n", n);
+					}
+				}
 			} else {
 				eprintf ("Invalid arena size\n");
 			}
@@ -1122,6 +1132,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"dro", "", "Show previous (old) values of registers",
 				"drp", " <file>", "Load register metadata file",
 				"drp", "", "Display current register profile",
+				"drps", "", "Fake register profile size",
 				"drr", "", "Show registers references (telescoping)",
 				"drs", " [?]", "Stack register states",
 				"drt", "", "Show all register types",
@@ -1425,11 +1436,16 @@ free (rf);
 			break;
 		}
 		break;
-	case 'n':
-		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str+2));
-		if (name && *name)
-			r_cons_printf ("%s\n", name);
-		else eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
+	case 'n': // "drn"
+		{
+			char *foo = strdup (str+2);
+			r_str_case (foo, true);
+			name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (foo));
+			if (name && *name) {
+				r_cons_printf ("%s\n", name);
+			} else eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
+			free (foo);
+		}
 		break;
 	case 'd':
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_color); // XXX detect which one is current usage

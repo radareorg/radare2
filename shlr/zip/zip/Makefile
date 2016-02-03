@@ -98,7 +98,6 @@ endif
 	${CC} $(CFLAGS) ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS} ${LINKFLAGS}
 
 ${LIBAR}: ${OFILES}
-	#${CC_AR} $(LIBAR) ${OFILES}
 	${CC_AR} ${OFILES}
 	${RANLIB} ${LIBAR}
 
