@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2015 - nibble, pancake, maijin */
 
 #include <stdio.h>
 
@@ -259,6 +259,15 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 					ut32 ip32 = off;
 					ut8 *ip = (ut8*)&ip32;
 					snprintf (num, sizeof (num), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+				}
+				break;
+			case 80:
+				{
+					RSyscallItem *si;
+					si = r_syscall_get (p->anal->syscall, off, -1);
+					if (si)
+						snprintf (num, sizeof (num), "%s()", si->name);
+					else eprintf ("Unknown syscall number\n");
 				}
 				break;
 			case 16:

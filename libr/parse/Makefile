@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_parse
-DEPS=r_flags r_util r_anal
+DEPS=r_flags r_util r_anal r_syscall
 
 LINK+=$(STOP)/tcc/libr_tcc.a
 CFLAGS+=-I$(STOP)/tcc/

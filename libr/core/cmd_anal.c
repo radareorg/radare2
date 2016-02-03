@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake, maijin */
 
 #include "r_util.h"
 
@@ -2859,6 +2859,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				"ahi", " h", "set base to hexadecimal (16)",
 				"ahi", " o", "set base to octal (8)",
 				"ahi", " i", "set base to IP address (32)",
+				"ahi", " S", "set base to syscall (80)",
 				"ahi", " s", "set base to string (2)",
 				NULL };
 			r_core_cmd_help (core, help_msg);
@@ -2871,6 +2872,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				(input[2] == 'd') ? 10 :
 				(input[2] == 'h') ? 16 :
 				(input[2] == 'i') ? 32 : // ip address
+				(input[2] == 'S') ? 80 : // syscall
 				(int) r_num_math (core->num, input + 1);
 			r_anal_hint_set_immbase (core->anal, core->offset, base);
 		}
