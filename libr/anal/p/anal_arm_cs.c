@@ -25,6 +25,8 @@
 #define ISREG(x) insn->detail->arm.operands[x].type == ARM_OP_REG
 #define ISREG64(x) insn->detail->arm64.operands[x].type == ARM64_OP_REG
 #define ISMEM(x) insn->detail->arm.operands[x].type == ARM_OP_MEM
+#define ISMEM64(x) insn->detail->arm64.operands[x].type == ARM64_OP_MEM
+
 #if CS_API_MAJOR > 3
 #define LSHIFT(x) insn->detail->arm.operands[x].mem.lshift
 #define LSHIFT2(x) insn->detail->arm.operands[x].shift.value
@@ -48,7 +50,7 @@ static const ut32 bitmask_by_width[] = {
 static const char *decode_shift(arm_shifter shift) {
 	static const char *E_OP_SR = ">>";
 	static const char *E_OP_SL = "<<";
-	//static const char *E_OP_RR = ">>>"; // UNUSED
+	static const char *E_OP_RR = ">>>";
 	static const char *E_OP_VOID = "";
 
 	switch (shift) {
@@ -66,7 +68,7 @@ static const char *decode_shift(arm_shifter shift) {
 	case ARM_SFT_RRX:
 	case ARM_SFT_ROR_REG:
 	case ARM_SFT_RRX_REG:
-		return E_OP_SR;
+		return E_OP_RR;
 
 	default:
 		break;
@@ -209,8 +211,18 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	case ARM64_INS_LDUR: // ldr x6, [x6,0xf90]
 	case ARM64_INS_LDR: // ldr x6, 0xf90
-		r_strbuf_setf (&op->esil, "%"PFMT64d",[],%s,=",
-			IMM64(1), REG64(0));
+		if (ISMEM64(1)) {
+			r_strbuf_setf (&op->esil, "%s,%d,+,[8],%s,=",
+					MEMBASE64(1), MEMDISP64(1), REG64(0));
+		} else {
+			if (ISREG64(1)) {
+				r_strbuf_setf (&op->esil, "%s,[],%s,=",
+					REG64(1), REG64(0));
+			} else {
+				r_strbuf_setf (&op->esil, "%"PFMT64d",[],%s,=",
+					IMM64(1), REG64(0));
+			}
+		}
 		break;
 	case ARM64_INS_LDRSB:
 	case ARM64_INS_LDRB: // ldr x6, [x6,0xf90]
