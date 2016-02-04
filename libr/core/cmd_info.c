@@ -101,7 +101,7 @@ static void r_core_file_info (RCore *core, int mode) {
 		r_cons_printf (",\"file\":\"%s\"", uri);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
-			ut64 fsz = r_io_desc_size (core->io, cf->desc);
+			ut64 fsz = r_io_desc_size (cf->desc);
 			r_cons_printf (",\"fd\":%d", cf->desc->fd);
 			if (fsz != UT64_MAX) {
 				r_cons_printf (",\"size\":%"PFMT64d, fsz);
@@ -129,7 +129,7 @@ static void r_core_file_info (RCore *core, int mode) {
 		pair ("file", fn ? fn : cf->desc->uri);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		if (cf->desc) {
-			ut64 fsz = r_io_desc_size (core->io, cf->desc);
+			ut64 fsz = r_io_desc_size (cf->desc);
 			if (cf->desc->referer && *cf->desc->referer)
 				pair ("referer", cf->desc->referer);
 			pair ("fd", sdb_fmt (0, "%d", cf->desc->fd));

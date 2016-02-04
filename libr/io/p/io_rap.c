@@ -91,7 +91,6 @@ static int rap__close(RIODesc *fd) {
 	if (RIORAP_IS_VALID (fd)) {
 		if (RIORAP_FD (fd) != NULL) {
 			RIORap *r = fd->data;
-			fd->state = R_IO_DESC_TYPE_CLOSED;
 			ret = r_socket_close (r->fd);
 			ret = r_socket_close (r->client);
 			//ret = r_socket_close (r->client);
@@ -190,7 +189,7 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 				return NULL;
 			}
 		}
-		return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd,
+		return r_io_desc_new (io, &r_io_plugin_rap,
 			pathname, rw, mode, rior);
 	}
 	if (!(rap_fd = r_socket_new (is_ssl))) {
@@ -249,7 +248,7 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 		//return NULL;
 	}
 	//r_socket_free (rap_fd);
-	return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd,
+	return r_io_desc_new (io, &r_io_plugin_rap,
 		pathname, rw, mode, rior);
 }
 

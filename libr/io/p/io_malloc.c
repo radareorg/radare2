@@ -81,7 +81,6 @@ static int __close(RIODesc *fd) {
 	riom->buf = NULL;
 	free (fd->data);
 	fd->data = NULL;
-	fd->state = R_IO_DESC_TYPE_CLOSED;
 	return 0;
 }
 
@@ -110,11 +109,9 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
-	if (__check (io, pathname, 0)) {
-		RIOMalloc *mal = R_NEW0 (RIOMalloc);
-		if (!mal) return NULL;
-		rw = 7; // RWX
-		mal->fd = -2; /* causes r_io_desc_new() to set the correct fd */
+	if (__check (io, pathname,0)) {
+		RIOMalloc *mal = R_NEW (RIOMalloc);
+//		mal->fd = -2; /* causes r_io_desc_new() to set the correct fd */
 		if (!strncmp (pathname, "hex://", 6)) {
 			mal->size = strlen (pathname);
 			mal->buf = malloc (mal->size + 1);
@@ -139,8 +136,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			mal->buf = calloc (1, mal->size + 1);
 		}
 		if (mal->buf) {
-			RETURN_IO_DESC_NEW (&r_io_plugin_malloc,
-				mal->fd, pathname, rw, mode, mal);
+			mal->fd = (int) mal->buf;
+			return r_io_desc_new (io, &r_io_plugin_malloc,
+				 pathname, rw, mode,mal);
 		}
 		eprintf ("Cannot allocate (%s) %d bytes\n", pathname + 9, mal->size);
 		free (mal);

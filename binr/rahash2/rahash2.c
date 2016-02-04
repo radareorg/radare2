@@ -178,9 +178,9 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					do_hash_internal (ctx,
 						hashbit, s.buf, s.len, rad, 0, ule);
 				}
-				for (j = from; j < to; j+= bsize) {
-					int len = ((j + bsize) > to) ? (to - j) : bsize;
-					r_io_pread (io, j, buf, len);
+				for (j=from; j<to; j+=bsize) {
+					int len = ((j+bsize)>to)? (to-j): bsize;
+					r_io_pread_at (io, j, buf, len);
 					do_hash_internal (ctx, hashbit, buf,
 						len, rad, 0, ule);
 				}
@@ -222,6 +222,11 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				for (j = f; j < t; j += bsize) {
 					int nsize = (j + bsize < fsize) ? bsize : (fsize - j);
 					r_io_pread (io, j, buf, bsize);
+=======
+				for (j=f; j<t; j+=bsize) {
+					int nsize = (j+bsize<fsize)? bsize: (fsize-j);
+					r_io_pread_at (io, j, buf, bsize);
+>>>>>>> fix a few build issues
 					from = j;
 					to = j + bsize;
 					if (to > fsize)
@@ -632,7 +637,7 @@ int main(int argc, char **argv) {
 						eprintf ("rahash2: Cannot open malloc://1024\n");
 						return 1;
 					}
-					r_io_pwrite (io, 0, buf, sz);
+					r_io_pwrite_at (io, 0, buf, sz);
 				}
 				free (uri);
 			} else {

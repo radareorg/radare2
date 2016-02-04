@@ -90,7 +90,7 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 			}
 			riop->pid = pid;
 			riop->fd = fd;
-			return r_io_desc_new (&r_io_plugin_procpid, -1, file, true, 0, riop);
+			return r_io_desc_new (io, &r_io_plugin_procpid, file, true, 0, riop);
 		}
 		/* kill children */
 		eprintf ("Cannot open /proc/%d/mem of already attached process\n", pid);
