@@ -697,7 +697,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		buf_bytes = iob->desc_read (io, desc, &sz);
 	}
 
-	if (!name && 0) {
+	if (!name) {
 		// XXX - for the time being this is fine, but we may want to change the name to something like
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
