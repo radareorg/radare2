@@ -23,7 +23,7 @@ R_API RIO *r_io_init (RIO *io)
 R_API RIODesc *r_io_open_nomap (RIO *io, char *uri, int flags, int mode)
 {
 	RIODesc *desc;
-	RIOplugin *plugin;
+	RIOPlugin *plugin;
 	if (!io || !io->files ||!uri)
 		return NULL;
 	plugin = r_io_plugin_resolve (io, uri, 0);
@@ -154,6 +154,31 @@ R_API int r_io_write_at (RIO *io, ut64 addr, ut8 *buf, int len)
 	if (io->va)
 		return r_io_vwrite_at (io, addr, buf, len);
 	return r_io_pwrite_at (io, addr, buf, len);
+}
+
+RIO *bind_get_io (RIOBind *iob)
+{
+	if (!iob)
+		return NULL;
+	return iob->io;
+}
+
+R_API int r_io_bind (RIO *io, RIOBind *bnd)
+{
+	if (!io || !bnd)
+		return false;
+	bnd->io = io;
+	bnd->init = true;
+	bnd->get_io = bind_get_io;
+	bnd->desc_use = r_io_desc_use;
+	bnd->desc_get = r_io_desc_get;
+	bnd->desc_size = r_io_desc_size;
+	bnd->open = r_io_open_nomap;
+	bnd->open_at = r_io_open_at;
+	bnd->close = r_io_close;
+	bnd->read_at = r_io_read_at;
+	bnd->write_at = r_io_write_at;
+	return true;
 }
 
 //remove all descs and maps
