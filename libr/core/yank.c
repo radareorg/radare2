@@ -59,7 +59,7 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 				addr += loadaddr;
 			} else if (yankfd) {
 				eprintf ("Unable to map the opened file: %s", filename);
-				r_io_close (core->io, yankfd);
+				r_io_close (core->io, yankfd->fd);
 				yankfd = NULL;
 			} else {
 				eprintf ("Unable to open the file: %s", filename);
@@ -111,11 +111,11 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 				PFMT64x ") > file_sz (0x%"PFMT64x ")\n", addr+len,
 				yank_file_sz );
 		}
-		r_io_close (core->io, yankfd);
+		r_io_close (core->io, yankfd->fd);
 		free (buf);
 	}
 	if (fd != -1) {
-		r_io_raise (core->io, fd);
+		r_io_desc_use (core->io, fd);
 		core->switch_file_view = 1;
 		r_core_block_read (core);
 	}

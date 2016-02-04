@@ -112,7 +112,7 @@ static int cmd_zign(void *data, const char *input) {
 					size = 1;
 				}
 			}
-			if (r_io_read_at (core->io, core->offset, buf, sizeof (buf)) == sizeof (buf)) {
+			if (r_io_read_at (core->io, core->offset, buf, sizeof (buf))) {
 				RFlagItem *flag = r_flag_get_i (core->flags, addr);
 				if (flag) {
 					name = flag->name;
@@ -164,7 +164,7 @@ static int cmd_zign(void *data, const char *input) {
 					return false;
 				}
 				/* XXX this is wrong. we must read for each basic block not the whole function length */
-				if (r_io_read_at (core->io, fcni->addr, buf, len) == len) {
+				if (!r_io_read_at (core->io, fcni->addr, buf, len)) {
 					RFlagItem *flag = r_flag_get_i (core->flags, fcni->addr);
 					if (flag) {
 						name = flag->name;

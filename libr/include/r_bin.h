@@ -227,7 +227,7 @@ typedef struct r_bin_t {
 	int maxstrlen;
 	ut64 maxstrbuf;
 	int rawstr;
-	Sdb *sdb;
+	Sdb *sdb; //rename this pls
 	RList/*<RBinPlugin>*/ *plugins;
 	RList/*<RBinXtrPlugin>*/ *binxtrs;
 	RList/*<RBinFile>*/ *binfiles;

@@ -691,23 +691,23 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	if (!io->cached) {
-	   	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
+	   	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");	//wat?
 		return relocs (r_bin_cur (b));
 	}
-	r_list_foreach (io->sections, iter, s) {
-		if (s->offset > offset) {
-			offset = s->offset;
+	ls_foreach (io->sections, iter, s) {
+		if (s->addr > offset) {
+			offset = s->addr;
 			g = s;
 		}
 	}
 	if (!g) {
 		return NULL;
 	}
-	n_off = g->offset + g->size;
+	n_off = g->addr + g->size;
 	n_vaddr = g->vaddr + g->vsize;
 	//reserve at least that space
 	size = bin->reloc_num * 4;
-	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_BIN_SCN_READABLE|R_BIN_SCN_MAP, ".got.r2", 0, io->desc->fd)) {
+	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_BIN_SCN_READABLE|R_BIN_SCN_MAP, ".got.r2", 0, io->desc->fd)) {		//XXX binid is wrong
 		return NULL;
 	}
 	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin))) {

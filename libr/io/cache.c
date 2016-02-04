@@ -93,7 +93,6 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 				j, c->from, c->size);
 			for (i=0; i<c->size; i++)
 				io->cb_printf ("%02x", c->odata[i]);
-			}
 			io->cb_printf (" -> ");
 			for (i=0; i<c->size; i++)
 				io->cb_printf ("%02x", c->data[i]);

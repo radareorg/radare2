@@ -2674,6 +2674,20 @@ static int cmd_print(void *data, const char *input) {
 						r_cons_memcat ("_", 1);
 					}
 				}
+			}
+		}
+		if (fsz<1)
+			fsz = (core->file && core->io)? r_io_desc_size (core->file->desc): 0;
+		if (nbsz) {
+			obsz = core->blocksize;
+			switch (input1) {
+			case 'p':
+			case 'e':
+				if (fsz==UT64_MAX) {
+					eprintf ("Cannot determine file size\n");
+					goto beach;
+				}
+				nbsz = fsz / nbsz;
 				break;
 			}
 		}
@@ -3350,6 +3364,7 @@ static int cmd_print(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg);
 			}
 			break;
+#if 0
 		case 'j':
 			if (l > 0) {
 				char *str, *type;
@@ -3390,6 +3405,7 @@ static int cmd_print(void *data, const char *input) {
 				free (str);
 			}
 			break;
+#endif
 		case 'i': //psi
 			if (l > 0) {
 			ut8 *buf = malloc (1024);

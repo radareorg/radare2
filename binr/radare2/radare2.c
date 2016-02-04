@@ -239,6 +239,22 @@ static int main_print_var(const char *var_name) {
 	return 0;
 }
 
+static void list_io_plugins(RIO *io) {
+	SdbListIter *iter;
+	RIOPlugin *plugin;
+	char str[4];
+	ls_foreach (io->plugins, iter, plugin){
+		// read, write, debug, proxy
+		str[0] = 'r';
+		str[1] = plugin->write? 'w': '_';
+		str[2] = plugin->isdbg? 'd': '_';
+		str[3] = 0;
+		printf ("%s  %-11s %s (%s)\n", str, plugin->name,
+			plugin->desc, plugin->license);
+	}
+	return 0;
+}
+
 // Load the binary information from rabin2
 // TODO: use thread to load this, split contents line, per line and use global lock
 #if USE_THREADS
@@ -633,7 +649,7 @@ int main(int argc, char **argv, char **envp) {
 			r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 		}
 		run_commands (cmds, files, quiet);
-		r_io_plugin_list (r.io);
+		list_io_plugins (r.io);
 		r_cons_flush ();
 		r_list_free (evals);
 		r_list_free (files);
@@ -1003,9 +1019,7 @@ int main(int argc, char **argv, char **envp) {
 			}
 		}
 
-		if (fullfile) {
-			r_core_block_size (&r, r_io_desc_size (r.io, r.file->desc));
-		}
+		if (fullfile) r_core_block_size (&r, r_io_desc_size (r.file->desc));
 
 		r_core_seek (&r, r.offset, 1); // read current block
 
