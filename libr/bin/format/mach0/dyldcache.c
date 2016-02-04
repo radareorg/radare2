@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 - nibble, pancake  */
+/* radare - LGPL - Copyright 2010-2016 - nibble, pancake  */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -23,16 +23,24 @@ static int r_bin_dyldcache_apply_patch (struct r_buf_t* buf, ut32 data, ut64 off
 
 /* TODO: Needs more testing and ERROR HANDLING */
 struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj_t* bin, int idx, int *nlib) {
+	ut64 curoffset, liboff, libla, libpath, linkedit_offset;
 	struct r_bin_dyldcache_lib_t *ret = NULL;
 	struct mach_header *mh;
-	RBuffer* dbuf;
-	ut64 curoffset, liboff, libla, libpath, linkedit_offset;
 	ut8 *data, *cmdptr;
-	char *libname;
 	int cmd, libsz = 0;
+	RBuffer* dbuf;
+	char *libname;
 
-	if (bin->nlibs < 0 || idx < 0 || idx > bin->nlibs)
+	if (!bin) {
 		return NULL;
+	}
+	if (bin->size < 1) {
+		eprintf ("Empty file? (%s)\n", bin->file? bin->file: "(null)");
+		return NULL;
+	}
+	if (bin->nlibs < 0 || idx < 0 || idx > bin->nlibs) {
+		return NULL;
+	}
 	*nlib = bin->nlibs;
 	ret = R_NEW0 (struct r_bin_dyldcache_lib_t);
 	if (!ret) {
@@ -41,7 +49,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	}
 	curoffset = bin->hdr.startaddr + idx * 32;
 	if (curoffset + 8 >= bin->size) {
-		perror ("oob thing");
+		eprintf ("curoffset %d >= binsize %d\n", (ut32)curoffset, (ut32)bin->size);
 		free (ret);
 		return NULL;
 	}
@@ -150,21 +158,21 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 
 void* r_bin_dyldcache_free(struct r_bin_dyldcache_obj_t* bin) {
 	if (!bin) return NULL;
-	if (bin->b) r_buf_free (bin->b);
-	free(bin);
+	r_buf_free (bin->b);
+	free (bin);
 	return NULL;
 }
 
 struct r_bin_dyldcache_obj_t* r_bin_dyldcache_new(const char* file) {
 	struct r_bin_dyldcache_obj_t *bin;
 	ut8 *buf;
-	if (!(bin = malloc (sizeof (struct r_bin_dyldcache_obj_t))))
+	if (!(bin = R_NEW0 (struct r_bin_dyldcache_obj_t)))
 		return NULL;
-	memset (bin, 0, sizeof (struct r_bin_dyldcache_obj_t));
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp (file, &bin->size)))
+	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) {
 		return r_bin_dyldcache_free (bin);
-	bin->b = r_buf_new();
+	}
+	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {
 		free (buf);
 		return r_bin_dyldcache_free (bin);

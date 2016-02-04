@@ -220,11 +220,11 @@ typedef struct r_bin_xtr_plugin_t {
 	int (*check)(RBin *bin);
 // XXX: ut64 for size is maybe too much, what about st64? signed sizes are useful for detecting errors
 	int (*check_bytes)(const ut8 *bytes, ut64 sz);
-	RBinXtrData * (*extract_from_bytes)(const ut8 *buf, ut64 size, int idx);
-	RList * (*extractall_from_bytes)(const ut8 *buf, ut64 size);
+	RBinXtrData * (*extract_from_bytes)(RBin *bin, const ut8 *buf, ut64 size, int idx);
+	RList * (*extractall_from_bytes)(RBin *bin, const ut8 *buf, ut64 size);
 	RBinXtrData * (*extract)(RBin *bin, int idx);
 	RList * (*extractall)(RBin *bin);
-	int (*load)(RBin *bin);
+	bool (*load)(RBin *bin);
 	int (*size)(RBin *bin);
 	int (*destroy)(RBin *bin);
 	int (*free_xtr)(void *xtr_obj);
@@ -554,7 +554,7 @@ extern RBinPlugin r_bin_plugin_ninds;
 extern RBinPlugin r_bin_plugin_nin3ds;
 extern RBinPlugin r_bin_plugin_xbe;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
-extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
+extern RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache;
 extern RBinPlugin r_bin_plugin_zimg;
 extern RBinPlugin r_bin_plugin_omf;
 extern RBinPlugin r_bin_plugin_art;
@@ -567,6 +567,7 @@ extern RBinPlugin r_bin_plugin_sms;
 extern RBinPlugin r_bin_plugin_psxexe;
 extern RBinPlugin r_bin_plugin_spc700;
 extern RBinPlugin r_bin_plugin_vsf;
+extern RBinPlugin r_bin_plugin_dyldcache;
 
 #ifdef __cplusplus
 }

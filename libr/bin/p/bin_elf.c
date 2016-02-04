@@ -40,8 +40,9 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = Elf_(r_bin_elf_new_buf) (tbuf);
-	if (res)
+	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
+	}
 	r_buf_free (tbuf);
 	return res;
 }
@@ -86,7 +87,7 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		addr = Elf_(r_bin_elf_get_fini_offset) (arch->o->bin_obj);
 		break;
 	}
-	if (addr && addr!= UT64_MAX && (ret = R_NEW0 (RBinAddr))) {
+	if (addr && addr != UT64_MAX && (ret = R_NEW0 (RBinAddr))) {
 		ret->paddr = addr;
 		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
 	}

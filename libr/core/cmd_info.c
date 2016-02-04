@@ -138,7 +138,7 @@ static void r_core_file_info (RCore *core, int mode) {
 static int bin_is_executable (RBinObject *obj){
 	RListIter *it;
 	RBinSection* sec;
-	if (obj->info->arch) {
+	if (obj && obj->info && obj->info->arch) {
 		return true;
 	}
 	r_list_foreach (obj->sections, it, sec){

@@ -219,12 +219,14 @@ static int rabin_extract(int all) {
 	RBinObject *obj = NULL;
 	int res = false;
 	RBinFile *bf = r_bin_cur (bin);
+
 	if (!bf) return res;
 	if (all) {
 		int idx = 0;
 		RListIter *iter;
-		r_list_foreach (bf->objs, iter, obj)
+		r_list_foreach (bf->objs, iter, obj) {
 			res = extract_binobj (bf, obj, idx++);
+		}
 	} else {
 		obj = r_bin_cur_object (bin);
 		if (!obj) return res;
@@ -798,7 +800,6 @@ int main(int argc, char **argv) {
 			Sdb *db = sdb_ns (bin->cur->sdb, "info", 0);
 			char *flagname;
 			if (db) {
-
 				SdbListIter *iter;
 				SdbKv *kv;
 				printf ("fs format\n");
@@ -808,19 +809,17 @@ int main(int argc, char **argv) {
 					char *v = kv->value;
 					char *dup = strdup (k);
 
-					if ((flagname=strstr (dup, ".offset"))) {
+					if ((flagname = strstr (dup, ".offset"))) {
 						*flagname = 0;
 						flagname = dup;
-
 						printf ("f %s @ %s\n", flagname, v);
 					}
-					if ((flagname=strstr (dup, ".cparse"))) {
+					if ((flagname = strstr (dup, ".cparse"))) {
 						printf ("\"td %s\"\n", v);
 					}
-					if ((flagname=strstr (dup, ".format"))) {
+					if ((flagname = strstr (dup, ".format"))) {
 						*flagname = 0;
 						flagname = dup;
-
 						printf ("pf.%s %s\n", flagname, v);
 					}
 					free (dup);
@@ -937,10 +936,20 @@ int main(int argc, char **argv) {
 	run_action ("dwarf", ACTION_DWARF, R_CORE_BIN_ACC_DWARF);
 	run_action ("pdb", ACTION_PDB, R_CORE_BIN_ACC_PDB);
 	run_action ("size", ACTION_SIZE, R_CORE_BIN_ACC_SIZE);
-	if (action & ACTION_SRCLINE)
+	if (action & ACTION_SRCLINE) {
 		rabin_show_srcline (at);
-	if (action & ACTION_EXTRACT)
-		rabin_extract ((!arch && !arch_name&& !bits));
+	}
+	if (action & ACTION_EXTRACT) {
+		RListIter *iter;
+		RBinXtrPlugin *xtr;
+		r_list_foreach (bin->binxtrs, iter, xtr) {
+			if (xtr->check (bin)) {
+				// xtr->extractall (bin);
+				rabin_extract ((!arch && !arch_name && !bits));
+				break;
+			}
+		}
+	}
 	if (op && action & ACTION_OPERATION)
 		rabin_do_operation (op);
 	if (isradjson)

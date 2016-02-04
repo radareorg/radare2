@@ -55,7 +55,7 @@ static RList* entries(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if ((ptr = R_NEW (RBinAddr))) {
+	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = 8*4;
 		ptr->vaddr = 8*4;// + baddr (arch);
 		r_list_append (ret, ptr);
