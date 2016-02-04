@@ -15,6 +15,7 @@
 #define R_IO_SEEK_END	2
 
 #define R_IO_UNDOS 64
+
 typedef struct r_io_undo_t {
 	int s_enable;
 	int w_enable;
@@ -115,7 +116,7 @@ typedef struct r_io_section_t {
 	int fd;
 	ut32 filemap;
 	ut32 memmap;
-} RIOSection:
+} RIOSection;
 
 typedef enum {
 	R_IO_SECTION_APPLY_FOR_PATCHING,
@@ -131,9 +132,35 @@ typedef struct r_io_cache_t {
 	int written;
 } RIOCache;
 
+struct r_io_bind_t;
+
+typedef RIO *(*RIOGetIO) (struct r_io_bind_t *iob);
+typedef int (*RIODescUse) (RIO *io, int fd);
+typedef RIODesc *(*RIODescGet) (RIO *io, int fd);
+typedef ut64 (*RIODescSize) (RIODesc *desc);
+typedef RIODesc *(*RIOOpen) (RIO *io, char *uri, int flags, int mode);
+typedef RIODesc *(*RIOOpenAt) (RIO *io, char *uri, int flags, int mode, ut64 at);
+typedef int (*RIOClose) (RIO *io, int fd);
+typedef int (*RIOReadAt) (RIO *io, ut64 paddr, ut8 *buf, int len);
+typedef int (*RIOWriteAt) (RIO *io, ut64 paddr, ut8 *buf, int len);
+
+typedef struct r_io_bind_t {
+	int init;
+	RIO *io;
+	RIOGetIO get_io;
+	RIODescUse desc_use;
+	RIODescGet desc_get;
+	RIODescSize desc_size;
+	RIOOpen open;
+	RIOOpenAt open_at;
+	RIOClose close;
+	RIOReadAt read_at;
+	RIOWriteAt write_at;
+} RIOBind;
+
 //desc.c
 R_API int r_io_desc_init (RIO *io);
-R_API RIODesc *r_io_desc_new (RIOPlugin *plugin, int fd, char *uri, int flags, void *data);
+R_API RIODesc *r_io_desc_new (RIOPlugin *plugin, int fd, char *uri, int flags, int mode, void *data);
 R_API void r_io_desc_free (RIODesc *desc);
 R_API int r_io_desc_add (RIO *io, RIODesc *desc);
 R_API int r_io_desc_del (RIO *io, int fd);
@@ -172,8 +199,10 @@ R_API int r_io_vread_at (RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_vwrite_at (RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_read_at (RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_write_at (RIO *io, ut64 paddr, ut8 *buf, int len);
+R_API int r_io_bind (RIO *io, RIOBind *bnd);
 R_API int r_io_fini (RIO *io);
 R_API void r_io_free (RIO *io);
+#define r_io_bind_init(x) memset(&x,0,sizeof(x))
 
 R_API int r_io_plugin_init(RIO *io);
 R_API int r_io_plugin_open(RIO *io, int fd, RIOPlugin *plugin);
@@ -231,5 +260,28 @@ R_API char *r_io_section_get_archbits (RIO *io, ut32 id, int *bits);
 R_API int r_io_section_bin_set_archbits (RIO *io, ut32 bin_id, const char *arch, int bits);
 R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method);
 R_API int r_io_section_reapply (RIO *io, ut32 id, RIOSectionApplyMethod method);
+
+extern RIOPlugin r_io_plugin_procpid;
+extern RIOPlugin r_io_plugin_malloc;
+extern RIOPlugin r_io_plugin_sparse;
+extern RIOPlugin r_io_plugin_ptrace;
+extern RIOPlugin r_io_plugin_w32dbg;
+extern RIOPlugin r_io_plugin_mach;
+extern RIOPlugin r_io_plugin_debug;
+extern RIOPlugin r_io_plugin_shm;
+extern RIOPlugin r_io_plugin_gdb;
+extern RIOPlugin r_io_plugin_rap;
+extern RIOPlugin r_io_plugin_http;
+extern RIOPlugin r_io_plugin_bfdbg;
+extern RIOPlugin r_io_plugin_w32;
+extern RIOPlugin r_io_plugin_zip;
+extern RIOPlugin r_io_plugin_mmap;
+extern RIOPlugin r_io_plugin_default;
+extern RIOPlugin r_io_plugin_ihex;
+extern RIOPlugin r_io_plugin_self;
+extern RIOPlugin r_io_plugin_gzip;
+extern RIOPlugin r_io_plugin_windbg;
+extern RIOPlugin r_io_plugin_r2pipe;
+extern RIOPlugin r_io_plugin_r2web;
 
 #endif

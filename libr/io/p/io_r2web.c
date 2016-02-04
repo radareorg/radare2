@@ -63,7 +63,6 @@ static int __close(RIODesc *fd) {
 	riom->url = NULL;
 	free (fd->data);
 	fd->data = NULL;
-	fd->state = R_IO_DESC_TYPE_CLOSED;
 	return 0;
 }
 
