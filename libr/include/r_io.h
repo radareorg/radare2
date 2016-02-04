@@ -230,5 +230,6 @@ R_API int r_io_section_set_archbits (RIO *io, ut32 id, const char *arch, int bit
 R_API char *r_io_section_get_archbits (RIO *io, ut32 id, int *bits);
 R_API int r_io_section_bin_set_archbits (RIO *io, ut32 bin_id, const char *arch, int bits);
 R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method);
+R_API int r_io_section_reapply (RIO *io, ut32 id, RIOSectionApplyMethod method);
 
 #endif

@@ -212,11 +212,11 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 		if (sec->addr == sec->vaddr) {
 			if (sec->vsize > sec->size) {
 				if (!sec->memmap) {
-					at = sec->vaddr + sec->size;			//TODO: harden this, handle mapslit
+					at = sec->vaddr + sec->size;		//TODO: harden this, handle mapslit
 					snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize - sec->size);
 					desc = r_io_open_at (io, uri, sec->flags, 664, at);
 					if (!desc) return R_FALSE;
-					map = r_io_map_get (io, at);			//this works, because new maps are allways born on the top
+					map = r_io_map_get (io, at);		//this works, because new maps are allways born on the top
 					if (!map) {
 						r_io_close (io, desc->fd);
 						return R_FALSE;
@@ -234,7 +234,7 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 				sec->filemap = sec->memmap = map->id;
 				return R_TRUE;
 			}
-			sec->memmap = sec->filemap
+			sec->memmap = 0;
 			return R_FALSE;
 		}
 		if (!sec->filemap && !sec->memmap) {
@@ -243,7 +243,7 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 			map = r_io_map_add (io, sec->fd, desc->flags, sec->addr, sec->vaddr, sec->size);
 			if (!map) return R_FALSE;
 			sec->filemap = map->id;
-			at = sec->vaddr + sec->size;					//TODO: harden this, handle mapslit
+			at = sec->vaddr + sec->size;				//TODO: harden this, handle mapslit
 			snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize - sec->size);
 			desc = r_io_open_at (io, uri, sec->flags, 664, at);
 			if (!desc) return R_FALSE;
@@ -270,11 +270,120 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 		r_io_pread_at (io, sec->addr, buf, (int)size);
 		r_io_desc_use (io, (r_io_open_at (io, uri, sec->flags | R_IO_WRITE, 664, sec->vaddr))->fd);
 		r_io_pwrite_at (io, 0LL, buf, (int)size);
-		R_FREE (buf);
+		free (buf);
 		r_io_map_get (io, sec->vaddr);
 		map->flags = sec->flags;
 		r_io_desc_use (desc->fd);
 		sec->filemap = sec->memmap = map->id;
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
+R_API int r_io_section_reapply (RIO *io, ut32 id, RIOSectionApplyMethod method)
+{
+	RIOSection *sec;
+	RIOMap *m, *map = NULL;
+	SdbListIter *iter;
+	if (!io || !io->sections || !io->maps)
+		return R_FALSE;
+	if (!(sec = r_io_section_get_i (io, id)))
+		return R_FALSE;
+	r_io_map_cleanup (io);
+	if (method == R_IO_SECTION_APPLY_FOR_PATCHING) {
+		if (sec->memmap) {
+			ls_foreach (io->maps, iter, m) {
+				if (m->id == sec->memmap) {
+					r_io_close (io, m->fd);
+					break;
+				}
+			}
+			r_io_map_del (io, sec->memmap);
+		}
+		r_io_map_del (io, sec->filemap);
+		return r_io_section_apply (io, id, method);
+	}
+	if (method == R_IO_SECTION_APPLY_AS_MAPPING) {
+		char uri[64];
+		ut8 *buf = NULL;
+		size_t size;
+		if (sec->filemap != sec->memmap) {
+			if (!sec->memmap) {
+				r_io_map_del (io, sec->filemap);
+				sec->filemap = 0;
+				return r_io_section_apply (io, id, method);
+			}
+			ls_foreach (io->maps, iter, m) {
+				if (m->id == sec->memmap) {
+					map = m;
+					break;
+				}
+			}
+			if (!map) {
+				r_io_map_del (io, sec->filemap);
+				sec->filemap = sec->memmap = 0;
+				return r_io_section_apply (io, id, method);
+			}
+			size = (size_t)(map->to - map->from + 1);
+			buf = malloc (size);
+			desc = io->desc;
+			r_io_desc_use (io, map->fd);
+			r_io_pread_at (io, map->delta, buf, (int)size);
+			r_io_close (io, map->fd);
+			if (sec->size > sec->vsize)
+				size = 0;
+			else if (size > (size_t)(sec->vsize - sec->size))
+				size = (size_t)(sec->vsize - sec->size);
+			snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize);
+			r_io_open_at (io, uri, sec->flags | R_IO_WRITE, 664, sec->vaddr);
+			map = r_io_map_get (io, sec->vaddr);
+			r_io_desc_use (io, map->fd);
+			r_io_pwrite_at (io, sec->size, buf, (int)size);
+			free (buf);
+			if (sec->size > sec->vsize)
+				size = (size_t)sec->vsize;
+			else	size = (size_t)sec->size;
+			buf = malloc (size);
+			r_io_desc_use (io, sec->fd);
+			r_io_pread_at (io, sec->addr, buf, (int)size);
+			r_io_desc_use (io, map->fd);
+			r_io_pwrite_at (io, 0LL, buf, (int)size);
+			free (buf);
+			if (desc)
+				r_io_desc_use (io, desc->fd);
+			sec->filemap = sec->memmap = map->id;
+			return R_TRUE;
+		}
+		if (!sec->filemap)
+			return r_io_section_apply (io, id, method);
+		ls_foreach (io->maps, iter, m) {
+			if (m->id == sec->memmap) {
+				map = m;
+				break;
+			}
+		}
+		if (!map)
+			return r_io_section_apply (io, id, method);
+		size = (size_t)(map->to - map->from + 1);
+		desc = io->desc;
+		r_io_desc_use (io, map->fd);
+		if (desc == io->desc)
+			desc = NULL;
+		buf = malloc (size);
+		r_io_pread_at (io, map->delta, buf, (int)size);
+		r_io_close (io, map->fd);
+		r_io_map_cleanup (io);
+		if (sec->vsize < (ut64)size)
+			size = (size_t)sec->vsize;
+		snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize);
+		r_io_open_at (io, uri, sec->flags | R_IO_WRITE, 664, sec->vaddr);
+		map = r_io_map_get (io, sec->vaddr);
+		r_io_desc_use (io, map->fd);
+		r_io_pwrite_at (io, 0LL, buf, (int)size);
+		free (buf);
+		map->flags = sec->flags;
+		if (desc)
+			r_io_desc_use (io, desc->fd);
 		return R_TRUE;
 	}
 	return R_FALSE;
