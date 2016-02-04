@@ -271,7 +271,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 			memcpy (buf, data.buff, len);
 			ret = len;
 		} else {
-			garbage = io->ff ? io->Oxff : 0xff;
+			garbage = 0xff;
 			flag = 0;
 			offset = 0;
 			pagesize = getpagesize();

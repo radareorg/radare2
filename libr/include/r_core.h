@@ -74,9 +74,9 @@ typedef struct r_core_log_t {
 } RCoreLog;
 
 typedef struct r_core_file_t {
-	RIOMap *map;
+	RIOMap *map;	//TODO: replace with mapid
 	int dbg;
-	RIODesc *desc;
+	RIODesc *desc;	//TODO: replace with fd
 	RBinBind binb;
 	const struct r_core_t *core;
 	ut8 alive;
@@ -508,7 +508,7 @@ R_API int r_core_visual_comments (RCore *core);
 R_API int r_core_visual_prompt (RCore *core);
 R_API int r_core_search_preludes(RCore *core);
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
-R_API RList* /*<RIOMap*>*/ r_core_get_boundaries_prot (RCore *core, int protection, const char *mode, ut64 *from, ut64 *to);
+R_API SdbList* /*<RIOMap*>*/ r_core_get_boundaries_prot (RCore *core, int protection, const char *mode, ut64 *from, ut64 *to);
 R_API RList* /*<RIOMap*>*/ r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to);
 R_API RList* r_core_get_boundaries_ok(RCore *core);
 

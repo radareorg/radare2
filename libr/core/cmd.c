@@ -890,7 +890,7 @@ static int cmd_resize(void *data, const char *input) {
 	int grow, ret;
 
 	if (core->file && core->file->desc)
-		oldsize = r_io_desc_size (core->io, core->file->desc);
+		oldsize = r_io_desc_size (core->file->desc);
 	else oldsize = 0;
 	switch (*input) {
 	case '2':

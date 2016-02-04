@@ -634,34 +634,53 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'P':
 		if (core->io->va) {
+			SdbList *secs;
+			RIOSection *sec;
 			ut64 o, n = (input[0] && input[1])?
 				r_num_math (core->num, input+2): core->offset;
-			o = r_io_section_maddr_to_vaddr (core->io, n);
-			r_cons_printf ("0x%08"PFMT64x"\n", o);
-		} else {
-			eprintf ("io.va is false\n");
-		}
+			secs = r_io_section_get_secs_at (core->io, n);
+			sec = secs ? (RIOSection *)ls_pop (secs) : NULL;
+			ls_free (secs);
+			if (sec) {
+				o = n + sec->vaddr - sec->addr;
+				r_cons_printf ("0x%08"PFMT64x"\n", o);
+			} else 	eprintf ("no sections at 0x%08"PFMT64x"\n", n);
+		} else eprintf ("io.va is false\n");
 		break;
 	case 'p':
 		if (core->io->va) {
 			// physical address
+			SdbList *secs;
+			RIOSection *sec;
 			ut64 o, n = (input[0] && input[1])?
-				r_num_math (core->num, input + 2): core->offset;
-			o = r_io_section_vaddr_to_maddr (core->io, n);
-			r_cons_printf ("0x%08"PFMT64x"\n", o);
-		} else {
-			eprintf ("Virtual addresses not enabled!\n");
-		}
+				r_num_math (core->num, input+2): core->offset;
+			secs = r_io_section_vget_secs_at (core->io, n);
+			sec = secs ? ls_pop (secs) : NULL;
+			ls_free (secs);
+			if (sec) {
+				o = n - sec->vaddr + sec->addr;
+				r_cons_printf ("0x%08"PFMT64x"\n", o);
+			} else eprintf ("no section at 0x%08"PFMT64x"\n", n);
+		} else eprintf ("Virtual addresses not enabled!\n");
 		break;
 	case 'S': {
 		// section name
 		RIOSection *s;
+		SdbList *sections;
+		SdbListIter *iter;
 		ut64 n = (input[0] && input[1])?
 			r_num_math (core->num, input+2): core->offset;
+#if 0
 		n = r_io_section_vaddr_to_maddr_try (core->io, n);
 		s = r_io_section_mget_in (core->io, n);
 		if (s && *(s->name)) {
 			r_cons_println (s->name);
+		}
+#endif
+		if ((sections = r_io_section_get_secs_at (core->io, n))) {
+			ls_foreach (sections, iter, s)
+				r_cons_printf ("%s\n", s->name);
+			ls_free (sections);
 		}
 		break;
 		}

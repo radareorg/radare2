@@ -83,10 +83,13 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 		return -1;
 	}
 
+#if 0				//TODO: check this stuff
 	{
 		RIOSection *s = r_io_section_mget_in (core->io, core->offset);
-		baddr = s ? s->offset : r_config_get_i (core->config, "bin.baddr");
+		baddr = s ? s->addr : r_config_get_i (core->config, "bin.baddr");
 	}
+#endif
+	baddr = r_config_get_i (core->config, "bin.baddr");
 
 	line_count = start_addr ? 0 : 1;
 	core->print->lines_cache[0] = start_addr ? 0 : baddr;
@@ -398,18 +401,22 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case 'g': // "sg"
 			{
-			RIOSection *s = r_io_section_vget (core->io, core->offset);
-			if (s) r_core_seek (core, s->vaddr, 1);
-			else r_core_seek (core, 0, 1);
+				SdbList *secs = r_io_section_vget_secs_at (core->io, core->offset);
+				RIOSection *s = secs ? ls_pop (secs) : NULL;
+				ls_free (secs);
+				if (s) r_core_seek (core, s->vaddr, 1);
+				else r_core_seek (core, 0, 1);
 			}
 			break;
 		case 'G': // "sG"
 			{
-			if (!core->file) break;
-			RIOSection *s = r_io_section_vget (core->io, core->offset);
-			// XXX: this +2 is a hack. must fix gap between sections
-			if (s) r_core_seek (core, s->vaddr+s->size+2, 1);
-			else r_core_seek (core, r_io_desc_size (core->io, core->file->desc), 1);
+				if (!core->file) break;				//broken concept
+				SdbList *secs = r_io_section_vget_secs_at (core->io, core->offset);
+				RIOSection *s = secs ? ls_pop (secs) : NULL;
+				ls_free (secs);
+				// XXX: this +2 is a hack. must fix gap between sections
+				if (s) r_core_seek (core, s->vaddr+s->size+2, 1);
+				else r_core_seek (core, r_io_desc_size (core->file->desc), 1);
 			}
 			break;
 		case 'l': // "sl"

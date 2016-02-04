@@ -1695,10 +1695,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 	case 'g':
 		if (core->io->va) {
-			ut64 offset = r_io_section_get_vaddr (core->io, 0);
-			if (offset == -1) {
-				offset = 0;
-			}
+			ut64 offset;
+			SdbList *secs;
+			if (secs = r_io_section_get_secs_at (core->io, 0LL)) {
+				offset = ((RIOSection *)ls_pop (secs))->vaddr;
+				ls_free (secs);
+			} else	offset = 0LL;
 			r_core_seek (core, offset, 1);
 		} else {
 			r_core_seek (core, 0, 1);
@@ -1710,21 +1712,22 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		int scols = r_config_get_i (core->config, "hex.cols");
 		if (core->file) {
 			if (core->io->va) {
-				ut64 offset = r_io_section_get_vaddr (core->io, 0);
-				if (offset == UT64_MAX) {
-					offset = r_io_desc_size (core->io,
-							core->file->desc)
-						- core->blocksize + 2*scols;
-					ret = r_core_seek (core, offset, 1);
-				} else {
-					offset += r_io_desc_size (core->io,
-							core->file->desc)
+				ut64 offset;
+				SdbList *secs;
+				if (!(secs = r_io_section_get_secs_at (core->io, 0LL))) {
+					offset = r_io_desc_size (core->file->desc)
 						- core->blocksize + 2 * scols;
 					ret = r_core_seek (core, offset, 1);
+				} else {
+					offset = ((RIOSection *)ls_pop (secs))->vaddr
+						+ r_io_desc_size (core->file->desc)
+						- core->blocksize + 2 * scols;
+					ret = r_core_seek (core, offset, 1);
+					ls_free (secs);
 				}
 			} else {
 				ret = r_core_seek (core,
-						r_io_desc_size (core->io, core->file->desc)
+						r_io_desc_size (core->file->desc)
 						- core->blocksize + 2 * scols, 1);
 			}
 		} else {
@@ -2348,8 +2351,13 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	bar[11] = '.'; // chop cmdfmt
 	bar[12] = 0; // chop cmdfmt
 	{
-		ut64 sz = r_io_size (core->io);
-		ut64 pa = r_io_section_vaddr_to_maddr_try (core->io, core->offset);
+		SdbList *secs;
+		RIOSection *s;
+		ut64 pa, sz = r_io_size (core->io);
+		secs = r_io_section_vget_secs_at (core->io, core->offset);
+		s = secs ? ls_pop (secs) : NULL;
+		ls_free (secs);
+		pa = s ? core->offset - s->vaddr + s->addr : core->offset;
 		if (sz == UT64_MAX) {
 			pcs[0] = 0;
 		} else {
