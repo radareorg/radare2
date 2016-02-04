@@ -495,7 +495,7 @@ int main(int argc, char **argv) {
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |= x
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgqAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSIHeElRwO:o:pPrvLhuxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSIHeElRwO:o:pPqQrvLhuxzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);

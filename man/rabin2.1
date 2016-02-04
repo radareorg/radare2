@@ -5,7 +5,7 @@
 .Nd Binary program info extractor
 .Sh SYNOPSIS
 .Nm rabin2
-.Op Fl AceghHiIsSMzlpRrLxvh
+.Op Fl AceghHiIsSMzlpRrLxvhqQ
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl B Ar addr
@@ -81,6 +81,8 @@ Perform binary operation on target binary (dump, resize, change sections, ...) s
 Disable VA. Show physical addresses
 .It Fl q
 Be quiet, just show fewer data
+.It Fl Q
+ show load address used by dlopen (non-aslr libs)
 .It Fl R
 Show realocations
 .It Fl r
