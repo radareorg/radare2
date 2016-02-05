@@ -4,6 +4,7 @@
 #include <r_db.h>
 #include <r_types.h>
 #include <r_list.h>
+#include <r_socket.h>
 
 #define R_IO_READ	4
 #define R_IO_WRITE	2
@@ -41,6 +42,7 @@ typedef struct r_io_undo_w_t {
 typedef struct r_io_t {
 	struct r_io_desc_t *desc;
 	ut64 off;
+	int bits;
 	int va;		//all of this config stuff must be in 1 int
 	int ff;
 	int autofd;
@@ -55,17 +57,43 @@ typedef struct r_io_t {
 	RList *cache;	//sdblist?
 	Sdb *files;
 	RIOUndo undo;
+	SdbList *plugins;
+	char *runprofile;
+	char *args;
+	void *user;
+	void (*cb_printf)(const char *str, ...);
+	int (*cb_core_cmd)(void *user, const char *str);
+	char* (*cb_core_cmdstr)(void *user, const char *str);
 } RIO;
 
 typedef struct r_io_desc_t {
 	int fd;
 	int flags;
+	int obsz;	//optimal blocksize// do we really need this here?
 	char *uri;
 	char *name;
+	char *referer;
 	void *data;
 	struct r_io_plugin_t *plugin;
 	RIO *io;
 } RIODesc;
+
+#warning move RIORap somewhere else
+typedef struct {
+	RSocket *fd;
+	RSocket *client;
+	int listener;
+} RIORap;
+
+#define RMT_MAX    4096
+#define RMT_OPEN   0x01
+#define RMT_READ   0x02
+#define RMT_WRITE  0x03
+#define RMT_SEEK   0x04
+#define RMT_CLOSE  0x05
+#define RMT_SYSTEM 0x06
+#define RMT_CMD    0x07
+#define RMT_REPLY  0x80
 
 typedef struct r_io_plugin_t {
 	void *plugin;
@@ -108,7 +136,7 @@ typedef struct r_io_section_t {
 	ut64 size;
 	ut64 vaddr;
 	ut64 vsize;
-	int rwx;
+	int flags;
 	ut32 id;
 	ut32 bin_id;
 	int arch;

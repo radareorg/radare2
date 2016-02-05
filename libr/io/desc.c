@@ -17,7 +17,7 @@ R_API RIODesc *r_io_desc_new (RIOPlugin *plugin, int fd, char *uri, int flags, i
 	if (!plugin || !uri)
 		return NULL;
 	desc = R_NEW0 (RIODesc);
-	desc->cbs = cbs;
+	desc->plugin = plugin;
 	desc->fd = fd;
 	desc->data = data;
 	desc->flags = flags;
@@ -29,7 +29,8 @@ R_API void r_io_desc_free (RIODesc *desc)
 {
 	if (desc) {
 		free (desc->uri);
-//		free (desc->cbs);
+		free (desc->referer);
+//		free (desc->plugin);
 	}
 	free (desc);
 }
@@ -78,19 +79,19 @@ R_API int r_io_desc_use (RIO *io, int fd)
 
 R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence)
 {
-	if (!desc || !desc->cbs || !desc->cbs->lseek)
+	if (!desc || !desc->plugin || !desc->plugin->lseek)
 		return (ut64)-1;
-	return desc->cbs->lseek (desc->io, desc, offset, whence);
+	return desc->plugin->lseek (desc->io, desc, offset, whence);
 }
 
 R_API ut64 r_io_desc_size (RIODesc *desc)
 {
 	ut64 off, ret;
-	if (desc || !desc->cbs || !desc->cbs->lseek)
+	if (desc || !desc->plugin || !desc->plugin->lseek)
 		return 0LL;
-	off = desc->cbs->lseek (desc->io, desc, 0LL, R_IO_SEEK_CUR);
-	ret = desc->cbs->lseek (desc->io, desc, 0LL, R_IO_SEEK_END);
-	desc->cbs->lseek (desc->io, desc, off, R_IO_SEEK_CUR);			//what to do if that seek fails?
+	off = desc->plugin->lseek (desc->io, desc, 0LL, R_IO_SEEK_CUR);
+	ret = desc->plugin->lseek (desc->io, desc, 0LL, R_IO_SEEK_END);
+	desc->plugin->lseek (desc->io, desc, off, R_IO_SEEK_CUR);			//what to do if that seek fails?
 	return ret;
 }
 
@@ -100,8 +101,8 @@ int desc_fini_cb (void *user, const char *fd, const char *cdesc)
 	RIODesc *desc = (RIODesc *)(size_t)sdb_atoi (cdesc);
 	if (!desc)
 		return true;
-	if (desc->cbs && desc->cbs->close)
-		desc->cbs->close (desc);
+	if (desc->plugin && desc->plugin->close)
+		desc->plugin->close (desc);
 	r_io_desc_free (desc);
 	return true;
 }

@@ -15,14 +15,14 @@
 #endif
 
 #if DEBUGGER && DEBUGGER_SUPPORTED
-
+#if 0
 static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 	free (io->referer);
 	io->referer = ref? strdup (ref): NULL;
 	free (io->redirect);
 	io->redirect = file? strdup (file): NULL;
 }
-
+#endif
 #define MAGIC_EXIT 123
 
 #include <signal.h>
@@ -370,6 +370,7 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char uri[128];
+	RIODesc *ret = NULL;
 	if (__plugin_open (io, file,  0)) {
 		const char *pidfile = file + 6;
 		char *endptr;
@@ -388,15 +389,15 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			// TODO: use io_procpid here? faster or what?
 			sprintf (uri, "ptrace://%d", pid);
 #endif
-			my_io_redirect (io, file, uri);
+			ret = r_io_open_nomap (io, uri, rw, mode);
 		} else {
 			sprintf (uri, "attach://%d", pid);
-			my_io_redirect (io, file, uri);
+			ret = r_io_open_nomap (io, uri, rw, mode);
 		}
-		return NULL;
+		if (ret)
+			ret->referer = strdup (file);
 	}
-	my_io_redirect (io, file, NULL);
-	return NULL;
+	return ret;
 }
 
 RIOPlugin r_io_plugin_debug = {

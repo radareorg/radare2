@@ -190,12 +190,17 @@ R_API int r_io_fini (RIO *io)
 	r_io_map_fini (io);
 	ls_free (io->plugins);
 	r_list_free (io->cache);
+	if (io->runprofile)
+		R_FREE (io->runprofile);
 	return true;
 }
 
 R_API void r_io_free (RIO *io)
 {
-	r_io_fini (io);
+	if (r_io_fini (io)) {
+		R_FREE (io->runprofile);
+		R_FREE (io->args);
+	}
 	free (io);
 }
 
