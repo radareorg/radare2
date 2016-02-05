@@ -45,7 +45,7 @@ R_API int r_io_section_exists_for_id (RIO *io, ut32 id)
 	return false;
 }
 
-R_API RIOSection *r_io_section_add (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd)
+R_API RIOSection *r_io_section_add (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int flags, const char *name, ut32 bin_id, int fd)
 {
 	RIOSection *sec;
 	if (!io || !io->sections || !r_io_desc_get (io, fd) || !size || (UT64_MAX - size) < addr || (UT64_MAX - vsize) < vaddr)
@@ -55,7 +55,7 @@ R_API RIOSection *r_io_section_add (RIO *io, ut64 addr, ut64 vaddr, ut64 size, u
 	sec = R_NEW0 (RIOSection);
 	if (io->freed_sec_ids) {
 		sec->id = (ut32)(size_t) ls_pop (io->freed_sec_ids);
-		if (!io->freed_sec_ids->lenght) {
+		if (!io->freed_sec_ids->length) {
 			ls_free (io->freed_sec_ids);
 			io->freed_sec_ids = NULL;
 		}
@@ -67,7 +67,7 @@ R_API RIOSection *r_io_section_add (RIO *io, ut64 addr, ut64 vaddr, ut64 size, u
 	sec->vaddr = vaddr;
 	sec->size = size;
 	sec->vsize = vsize;
-	sec->rwx = rwx;
+	sec->flags = flags;
 	sec->bin_id = bin_id;
 	sec->fd = fd;
 	if (!name) {
@@ -151,10 +151,10 @@ R_API int r_io_section_bin_rm (RIO *io, ut32 bin_id)
 			ls_prepend (io->freed_sec_ids, (void *)(size_t)s->id);
 			section_free (s);
 			free (iter);
-			io->sections->lenght--;
+			io->sections->length--;
 		}
 	}
-	return (!(lenght == io->sections->length));
+	return (!(length == io->sections->length));
 }
 
 R_API int r_io_section_set_archbits (RIO *io, ut32 id, const char *arch, int bits)
@@ -192,7 +192,7 @@ R_API int r_io_section_bin_set_archbits (RIO *io, ut32 bin_id, const char *arch,
 	else	a = r_sys_arch_id (arch);
 	ls_foreach (bin_sections, iter, s) {
 		s->arch = a;
-		a->bits = s;
+		s->bits = bits;
 	}
 	bin_sections->free = NULL;		//maybe not needed
 	ls_free (bin_sections);
@@ -264,16 +264,16 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 			size = (size_t)sec->vsize;
 		else	size = (size_t)sec->size;
 		buf = malloc (size);
-		snprintf (uri, 64, "malloc://%"PFTM64u"", sec->vsize);
+		snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize);
 		desc = io->desc;
 		r_io_desc_use (io, sec->fd);
 		r_io_pread_at (io, sec->addr, buf, (int)size);
 		r_io_desc_use (io, (r_io_open_at (io, uri, sec->flags | R_IO_WRITE, 664, sec->vaddr))->fd);
 		r_io_pwrite_at (io, 0LL, buf, (int)size);
 		free (buf);
-		r_io_map_get (io, sec->vaddr);
+		map = r_io_map_get (io, sec->vaddr);
 		map->flags = sec->flags;
-		r_io_desc_use (desc->fd);
+		r_io_desc_use (io, desc->fd);
 		sec->filemap = sec->memmap = map->id;
 		return true;
 	}
@@ -284,6 +284,7 @@ R_API int r_io_section_reapply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 {
 	RIOSection *sec;
 	RIOMap *m, *map = NULL;
+	RIODesc *desc;
 	SdbListIter *iter;
 	if (!io || !io->sections || !io->maps)
 		return false;

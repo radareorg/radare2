@@ -83,7 +83,7 @@ R_API int r_io_plugin_list(RIO *io) {
 	} else	return 0;
 	if (!io->plugins)
 		return 0;
-	ls_foreach (io->plugins, iter, plugin)
+	ls_foreach (io->plugins, iter, plugin) {
 		if (plugin) {
 			if (plugin->name)
 				io->cb_printf (" - %s\n", plugin->name);
