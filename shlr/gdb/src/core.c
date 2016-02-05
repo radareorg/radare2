@@ -346,7 +346,6 @@ int gdbr_init(libgdbr_t* g) {
 		R_FREE (g->send_buff);
 		return -1;
 	}
-	g->read_len = 0;
 	g->sock = r_socket_new (0);
 	g->last_code = MSG_OK;
 	g->connected = 0;
@@ -395,7 +394,6 @@ int gdbr_cleanup(libgdbr_t* g) {
 	free (g->send_buff);
 	g->send_len = 0;
 	free (g->read_buff);
-	g->read_len = 0;
 	return 0;
 }
 
@@ -431,8 +429,7 @@ int gdbr_read_registers(libgdbr_t* g) {
 	if (ret < 0)
 		return ret;
 
-	if (read_packet (g) > 0) {
-		parse_packet (g, 0);
+	if (read_packet (g) >= 0) {
 		return handle_g (g);
 	}
 	return -1;
@@ -450,8 +447,7 @@ int gdbr_read_memory(libgdbr_t* g, ut64 address, ut64 len) {
 	if (ret < 0)
 		return ret;
 
-	if (read_packet (g) > 0) { 
-		parse_packet (g, 0);
+	if (read_packet (g) >= 0) {
 		return handle_m (g);
 	}
 	return -1;
@@ -476,8 +472,7 @@ int gdbr_write_memory(libgdbr_t* g, ut64 address, const uint8_t* data, ut64 len)
 	if (ret < 0)
 		return ret;
 
-	if (read_packet (g) > 0) {
-		parse_packet (g, 0);
+	if (read_packet (g) >= 0) {
 		return handle_M (g);
 	}
 	return -1;
@@ -503,8 +498,7 @@ int gdbr_send_command(libgdbr_t* g, char* command) {
 	free (cmd);
 	if (ret < 0) return ret;
 
-	if (read_packet (g) > 0) {
-		parse_packet (g, 1);
+	if (read_packet (g) >= 0) {
 		return handle_cmd (g);
 	}
 	return -1;
@@ -538,8 +532,7 @@ int gdbr_write_register(libgdbr_t* g, int index, char* value, int len) {
 	pack_hex (value, len, (command + ret));
 	if (send_command (g, command) < 0)
 		return -1;
-	if (read_packet (g) > 0) {
-		parse_packet (g, 0);
+	if (read_packet (g) >= 0) {
 		handle_P (g);
 	}
 	return 0;
@@ -666,8 +659,7 @@ int send_vcont(libgdbr_t* g, const char* command, int thread_id) {
 	if (ret < 0) return ret;
 	ret = send_command (g, tmp);
 	if (ret < 0) return ret;
-	if (read_packet (g) > 0) { 
-		parse_packet (g, 0);
+	if (read_packet (g) >= 0) {
 		return handle_cont (g);
 	}
 	return 0;
@@ -699,8 +691,7 @@ int set_bp(libgdbr_t* g, ut64 address, const char* conditions, enum Breakpoint t
 	ret = send_command (g, tmp);
 	if (ret < 0) return ret;
 
-	if (read_packet (g) > 0) {
-		parse_packet (g, 0);
+	if (read_packet (g) >= 0) {
 		return handle_setbp (g);
 	}
 	return 0;
@@ -746,8 +737,7 @@ int remove_bp(libgdbr_t* g, ut64 address, enum Breakpoint type) {
 	ret = send_command (g, tmp);
 	if (ret < 0) return ret;
 
-	if (read_packet (g) > 0) {
-		parse_packet (g, 0);
+	if (read_packet (g) >= 0) {
 		return handle_removebp (g);
 	}
 	return 0;
