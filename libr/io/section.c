@@ -37,12 +37,12 @@ R_API int r_io_section_exists_for_id (RIO *io, ut32 id)
 	SdbListIter *iter;
 	RIOSection *sec;
 	if (!io || !io->sections)
-		return R_FALSE;
+		return false;
 	ls_foreach (io->sections, iter, sec) {
 		if (sec->id == id)
-			return R_TRUE;
+			return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API RIOSection *r_io_section_add (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd)
@@ -97,7 +97,7 @@ R_API int r_io_section_rm (RIO *io, ut32 id)
 	SdbListIter *iter;
 	RIOSection *s;
 	if (!io || !io->sections)
-		return R_FALSE;
+		return false;
 	ls_foreach (io->sections, iter, s) {
 		if (s->id == id) {
 			ls_delete (io->sections, iter);
@@ -106,10 +106,10 @@ R_API int r_io_section_rm (RIO *io, ut32 id)
 				io->freed_sec_ids->free = NULL;
 			}
 			ls_prepend (io->freed_map_ids, (void *)(size_t)id);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API SdbList *r_io_section_bin_get (RIO *io, ut32 bin_id)
@@ -135,7 +135,7 @@ R_API int r_io_section_bin_rm (RIO *io, ut32 bin_id)
 	SdbListIter *iter;
 	int length;
 	if (!io || !io->sections || !io->sections->head)
-		return R_FALSE;
+		return false;
 	length = io->sections->length;
 	for (iter = io->sections->head; iter; iter = iter->n) {
 		s = (RIOSection *)iter->data;
@@ -161,12 +161,12 @@ R_API int r_io_section_set_archbits (RIO *io, ut32 id, const char *arch, int bit
 {
 	RIOSection *s;
 	if (!(s = r_io_section_get_i(io, id)))
-		return R_FALSE;
+		return false;
 	if (arch) {
 		s->arch = r_sys_arch_id (arch);
 		s->bits = bits;
 	} else	s->arch = s->bits = 0;
-	return R_TRUE;
+	return true;
 }
 
 R_API char *r_io_section_get_archbits (RIO *io, ut32 id, int *bits)
@@ -186,7 +186,7 @@ R_API int r_io_section_bin_set_archbits (RIO *io, ut32 bin_id, const char *arch,
 	RIOSection *s;
 	int a;
 	if (!(bin_sections = r_io_section_bin_get (io, bin_id)))
-		return R_FALSE;
+		return false;
 	if (!arch)
 		a = bits = 0;
 	else	a = r_sys_arch_id (arch);
@@ -196,7 +196,7 @@ R_API int r_io_section_bin_set_archbits (RIO *io, ut32 bin_id, const char *arch,
 	}
 	bin_sections->free = NULL;		//maybe not needed
 	ls_free (bin_sections);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
@@ -207,7 +207,7 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 	ut64 at;
 	char uri[64];
 	if (!(sec = r_io_section_get_i (io, id)))
-		return R_FALSE;
+		return false;
 	if (method == R_IO_SECTION_APPLY_FOR_PATCHING) {
 		if (sec->addr == sec->vaddr) {
 			if (sec->vsize > sec->size) {
@@ -215,51 +215,51 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 					at = sec->vaddr + sec->size;		//TODO: harden this, handle mapslit
 					snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize - sec->size);
 					desc = r_io_open_at (io, uri, sec->flags, 664, at);
-					if (!desc) return R_FALSE;
+					if (!desc) return false;
 					map = r_io_map_get (io, at);		//this works, because new maps are allways born on the top
 					if (!map) {
 						r_io_close (io, desc->fd);
-						return R_FALSE;
+						return false;
 					}
 					sec->memmap = map->id;
-					return R_TRUE;
-				} else return R_FALSE;
-			} else return R_TRUE;
+					return true;
+				} else return false;
+			} else return true;
 		}
 		if (!sec->filemap && sec->size >= sec->vsize) {
 			desc = r_io_desc_get (io, sec->fd);
-			if (!desc) return R_FALSE;
+			if (!desc) return false;
 			map = r_io_map_add (io, sec->fd, desc->flags, sec->addr, sec->vaddr, sec->vsize);
 			if (map) {
 				sec->filemap = sec->memmap = map->id;
-				return R_TRUE;
+				return true;
 			}
 			sec->memmap = 0;
-			return R_FALSE;
+			return false;
 		}
 		if (!sec->filemap && !sec->memmap) {
 			desc = r_io_desc_get (io, sec->fd);
-			if (!desc) return R_FALSE;
+			if (!desc) return false;
 			map = r_io_map_add (io, sec->fd, desc->flags, sec->addr, sec->vaddr, sec->size);
-			if (!map) return R_FALSE;
+			if (!map) return false;
 			sec->filemap = map->id;
 			at = sec->vaddr + sec->size;				//TODO: harden this, handle mapslit
 			snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize - sec->size);
 			desc = r_io_open_at (io, uri, sec->flags, 664, at);
-			if (!desc) return R_FALSE;
+			if (!desc) return false;
 			map = r_io_map_get (io, at);
 			if (!map) {
 				r_io_close (io, desc->fd);
-				return R_FALSE;
+				return false;
 			}
 			sec->memmap = map->id;
-			return R_TRUE;
+			return true;
 		}
 	}
 	if (method == R_IO_SECTION_APPLY_AS_MAPPING) {				//needed for emulation
 		size_t size;
 		ut8 *buf = NULL;
-		if (sec->memmap) return R_FALSE;
+		if (sec->memmap) return false;
 		if (sec->size > sec->vsize)
 			size = (size_t)sec->vsize;
 		else	size = (size_t)sec->size;
@@ -275,9 +275,9 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 		map->flags = sec->flags;
 		r_io_desc_use (desc->fd);
 		sec->filemap = sec->memmap = map->id;
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_io_section_reapply (RIO *io, ut32 id, RIOSectionApplyMethod method)
@@ -286,9 +286,9 @@ R_API int r_io_section_reapply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 	RIOMap *m, *map = NULL;
 	SdbListIter *iter;
 	if (!io || !io->sections || !io->maps)
-		return R_FALSE;
+		return false;
 	if (!(sec = r_io_section_get_i (io, id)))
-		return R_FALSE;
+		return false;
 	r_io_map_cleanup (io);
 	if (method == R_IO_SECTION_APPLY_FOR_PATCHING) {
 		if (sec->memmap) {
@@ -352,7 +352,7 @@ R_API int r_io_section_reapply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 			if (desc)
 				r_io_desc_use (io, desc->fd);
 			sec->filemap = sec->memmap = map->id;
-			return R_TRUE;
+			return true;
 		}
 		if (!sec->filemap)
 			return r_io_section_apply (io, id, method);
@@ -384,7 +384,7 @@ R_API int r_io_section_reapply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 		map->flags = sec->flags;
 		if (desc)
 			r_io_desc_use (io, desc->fd);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }

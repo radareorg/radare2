@@ -5,9 +5,9 @@
 R_API int r_io_desc_init (RIO *io)
 {
 	if (!io || io->files)
-		return R_FALSE;
+		return false;
 	io->files = sdb_new0 ();
-	return R_TRUE;
+	return true;
 }
 
 //shall be used by plugins for creating descs
@@ -38,10 +38,10 @@ R_API int r_io_desc_add (RIO *io, RIODesc *desc)
 {
 	char s[64];
 	if (!io || !io->files || !desc)
-		return R_FALSE;
+		return false;
 	sdb_itoa ((ut64)desc->fd, s, 10);
 	if (sdb_num_exists (io->files, s))		//check if fd already exists in db
-		return R_FALSE;
+		return false;
 	sdb_num_set (io->files, s, (ut64)desc, 0);
 	return sdb_num_exists (io->files, s);		//check if storage worked
 }
@@ -50,7 +50,7 @@ R_API int r_io_desc_del (RIO *io, int fd)
 {
 	char s[64];
 	if (!io || !io->files)
-		return R_FALSE;
+		return false;
 	sdb_itoa ((ut64)fd, s, 10);
 	r_io_desc_free ((RIODesc *)sdb_num_get (io->files, s, NULL));
 	if ((ut64)io->desc == sdb_num_get (io->files, s, NULL))
@@ -71,9 +71,9 @@ R_API int r_io_desc_use (RIO *io, int fd)
 {
 	RIODesc *desc;
 	if (!(desc = r_io_desc_get (io, fd)))
-		return R_FALSE;
+		return false;
 	io->desc = desc;
-	return R_TRUE;
+	return true;
 }
 
 R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence)
@@ -99,11 +99,11 @@ int desc_fini_cb (void *user, const char *fd, const char *cdesc)
 //	RIO *io = (RIO *)user;							//unused
 	RIODesc *desc = (RIODesc *)(size_t)sdb_atoi (cdesc);
 	if (!desc)
-		return R_TRUE;
+		return true;
 	if (desc->cbs && desc->cbs->close)
 		desc->cbs->close (desc);
 	r_io_desc_free (desc);
-	return R_TRUE;
+	return true;
 }
 
 //closes all descs and frees all descs and io->files
@@ -111,7 +111,7 @@ R_API int r_io_desc_fini (RIO *io)
 {
 	int ret;
 	if (!io || !io->files)
-		return R_FALSE;
+		return false;
 	ret = sdb_foreach (io->files, desc_fini_cb, io);
 	sdb_free (io->files);
 	io->files = NULL;

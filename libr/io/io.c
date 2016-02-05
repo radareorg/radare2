@@ -76,12 +76,12 @@ R_API int r_io_close (RIO *io, int fd)
 {
 	RIODesc *desc = r_io_desc_get (io, fd);
 	if (!desc || !desc->plugin || !desc->plugin->close)			//check for cb
-		return R_FALSE;
+		return false;
 	if (!desc->plugin->close (desc))					//close fd
-		return R_FALSE;
+		return false;
 	r_io_desc_del (io, fd);								//remove entry from sdb-instance and free the desc-struct
 	r_io_map_cleanup (io);								//remove all dead maps
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_io_pread_at (RIO *io, ut64 paddr, ut8 *buf, int len)
@@ -109,27 +109,27 @@ R_API int r_io_pwrite_at (RIO *io, ut64 paddr, ut8 *buf, int len)
 R_API int r_io_vread_at (RIO *io, ut64 vaddr, ut8 *buf, int len)
 {
 	if (!io || !buf)
-		return R_FALSE;
+		return false;
 	if (!len)
-		return R_TRUE;
+		return true;
 	r_io_map_cleanup (io);
 	if (!io->maps)
 		return r_io_pread_at (io, vaddr, buf, len);
 	operate_on_itermap (io->maps->tail, io, vaddr, buf, len, R_IO_READ, r_io_pread_at);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_io_vwrite_at (RIO *io, ut64 vaddr, ut8 *buf, int len)
 {
 	if (!io || !buf)
-		return R_FALSE;
+		return false;
 	if (!len)
-		return R_TRUE;
+		return true;
 	r_io_map_cleanup (io);
 	if (!io->maps)
 		return r_io_pwrite_at (io, vaddr, buf, len);
 	operate_on_itermap (io->maps->tail, io, vaddr, buf, len, R_IO_WRITE, r_io_pwrite_at);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_io_read_at (RIO *io, ut64 addr, ut8 *buf, int len)
@@ -185,12 +185,12 @@ R_API int r_io_bind (RIO *io, RIOBind *bnd)
 R_API int r_io_fini (RIO *io)
 {
 	if (!io)
-		return R_FALSE;
+		return false;
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
 	ls_free (io->plugins);
 	r_list_free (io->cache);
-	return R_TRUE;
+	return true;
 }
 
 R_API void r_io_free (RIO *io)

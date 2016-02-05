@@ -52,12 +52,12 @@ R_API int r_io_map_exists (RIO *io, RIOMap *map)
 	SdbListIter *iter;
 	RIOMap *m;
 	if (!io || !io->maps || !map)
-		return R_FALSE;
+		return false;
 	ls_foreach (io->maps, iter, m) {
 		if (!memcmp (m, map, sizeof(RIOMap)))
-			return R_TRUE;
+			return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 //check if a map with specified id exists
@@ -66,12 +66,12 @@ R_API int r_io_map_exists_for_id (RIO *io, ut32 id)
 	SdbListIter *iter;
 	RIOMap *map;
 	if (!io || !io->maps)
-		return R_FALSE;
+		return false;
 	ls_foreach (io->maps, iter, map) {
 		if (map->id == id)
-			return R_TRUE;
+			return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 //add new map
@@ -103,7 +103,7 @@ R_API int r_io_map_del (RIO *io, ut32 id)
 	SdbListIter *iter;
 	RIOMap *map;
 	if (!io || !io->maps)
-		return R_FALSE;
+		return false;
 	ls_foreach (io->maps, iter, map) {
 		if (map->id == id) {
 			ls_delete (io->maps, iter);
@@ -112,7 +112,7 @@ R_API int r_io_map_del (RIO *io, ut32 id)
 				io->freed_map_ids->free = NULL;
 			}
 			ls_prepend (io->freed_map_ids, (void *)(size_t)id);
-			return R_TRUE;
+			return true;
 		}
 	}
 	return false;
@@ -123,7 +123,7 @@ R_API int r_io_map_del_for_fd (RIO *io, int fd)
 {
 	SdbListIter *iter, *ator;
 	RIOMap *map;
-	int ret = R_FALSE;
+	int ret = false;
 	if (!io || !io->maps)
 		return ret;
 	for (iter = io->maps->head; iter != NULL; iter = ator) {
@@ -132,7 +132,7 @@ R_API int r_io_map_del_for_fd (RIO *io, int fd)
 		if (!map) {									//this is done in r_io_map_cleanup too, but preventing some segfaults here too won't hurt
 			ls_delete (io->maps, iter);
 		} else if (map->fd == fd) {
-			ret = R_TRUE;								//a map with (map->fd == fd) existed/was found and will be deleted now
+			ret = true;								//a map with (map->fd == fd) existed/was found and will be deleted now
 			if (!io->freed_map_ids) {
 				io->freed_map_ids = ls_new ();
 				io->freed_map_ids->free = NULL;
@@ -150,11 +150,11 @@ R_API int r_io_map_priorize (RIO *io, ut32 id)
 	SdbListIter *iter;
 	RIOMap *map;
 	if (!io || !io->maps)
-		return R_FALSE;
+		return false;
 	ls_foreach (io->maps, iter, map) {
 		if (map->id == id) {								//search for iter with the correct map
 			if (io->maps->head == iter)						//check if map is allready at the top
-				return R_TRUE;
+				return true;
 			if (iter->n)								//bring iter with correct map to the front
 				iter->n->p = iter->p;
 			if (iter->p)
@@ -165,10 +165,10 @@ R_API int r_io_map_priorize (RIO *io, ut32 id)
 			iter->n = io->maps->head;
 			io->maps->head = iter;
 			iter->p = NULL;
-			return R_TRUE;								//TRUE if the map could be priorized
+			return true;								//TRUE if the map could be priorized
 		}
 	}
-	return R_FALSE;										//FALSE if not
+	return false;										//FALSE if not
 }
 
 //may fix some inconsistencies in io->maps
@@ -216,11 +216,11 @@ R_API void r_io_map_fini (RIO *io)
 R_API int r_io_map_is_in_range (RIOMap *map, ut64 from, ut64 to)					//rename pls
 {
 	if (!map || (to < from))
-		return R_FALSE;
-	if (map->from <= from && from <= map->to)	return R_TRUE;
-	if (map->from <= to && to <= map->to)		return R_TRUE;
-	if (map->from > from && to > map->to)		return R_TRUE;
-	return R_FALSE;
+		return false;
+	if (map->from <= from && from <= map->to)	return true;
+	if (map->from <= to && to <= map->to)		return true;
+	if (map->from > from && to > map->to)		return true;
+	return false;
 }
 
 R_API void r_io_map_set_name (RIOMap *map, const char *name)
