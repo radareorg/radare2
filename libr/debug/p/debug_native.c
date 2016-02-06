@@ -203,7 +203,11 @@ static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
 	}
 	return tid;
 #elif __APPLE__
-	return xnu_continue (dbg, pid, tid, sig);
+	bool ret;
+	ret = xnu_continue (dbg, pid, tid, sig);
+	if (!ret)
+		return -1;
+	return tid;
 #elif __BSD__
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	ut64 pc = r_debug_reg_get (dbg, "pc");
@@ -270,9 +274,9 @@ static int r_debug_native_wait (RDebug *dbg, int pid) {
 	if (pid == -1) {
 		status = R_DEBUG_REASON_UNKNOWN;
 	} else {
-#if __APPLE__ && (__arm__ || __arm64__ || __aarch64__)
+#if __APPLE__
 		// eprintf ("No waitpid here :D\n");
-		status = R_DEBUG_REASON_UNKNOWN;
+		status = xnu_wait (dbg, pid);
 #else
 		// XXX: this is blocking, ^C will be ignored
 		int ret = waitpid (pid, &status, 0);
@@ -541,7 +545,7 @@ static int bsd_reg_read (RDebug *dbg, int type, ut8* buf, int size) {
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
 static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
-	if (size<1)
+	if (size < 1)
 		return false;
 #if __WINDOWS__ && !__CYGWIN__
 	return windows_reg_read (dbg, type, buf, size);

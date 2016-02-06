@@ -228,9 +228,11 @@ static bool xnu_restore_exception_ports (int pid) {
 	return true;
 }
 
+
+//TODO review more closely we are failing here
 static void encode_reply(mig_reply_error_t *reply, mach_msg_header_t *hdr, int code) {
 	mach_msg_header_t *rh = &reply->Head;
-	rh->msgh_bits = MACH_MSGH_BITS (MACH_MSGH_BITS_REMOTE (hdr->msgh_bits), 0);
+	rh->msgh_bits = MACH_MSGH_BITS (MACH_MSGH_BITS_REMOTE(hdr->msgh_bits), 0);
 	rh->msgh_remote_port = hdr->msgh_remote_port;
 	rh->msgh_size = (mach_msg_size_t) sizeof (mig_reply_error_t);
 	rh->msgh_local_port = MACH_PORT_NULL;
@@ -239,39 +241,17 @@ static void encode_reply(mig_reply_error_t *reply, mach_msg_header_t *hdr, int c
 	reply->RetCode = code;
 }
 
-static void decode_exception_type(int exception) {
-	switch (exception) {
-	case EXC_BAD_ACCESS:
-		eprintf ("EXC_BAD_ACCESS\n");
-		break;
-	case EXC_BAD_INSTRUCTION:
-		eprintf ("EXC_BAD_INSTRUCTION\n");
-		break;
-	case EXC_ARITHMETIC:
-		eprintf ("EXC_ARITHMETIC\n");
-		break;
-	case EXC_EMULATION:
-		eprintf ("EXC_EMULATION\n");
-		break;
-	case EXC_SOFTWARE:
-		eprintf ("EXC_SOFTWARE\n");
-		break;
-	case EXC_BREAKPOINT:
-		eprintf ("EXC_BREAKPOINT\n");
-		break;
-	default:
-		eprintf ("UNKNOWN\n");
-		break;
-	}
-
-}
 static bool validate_mach_message (RDebug *dbg, exc_msg *msg) {
-	kern_return_t kret;
+	kern_return_t kr;
 	/*check if the message is for us*/
 	if (msg->hdr.msgh_local_port != ex.exception_port)
 		return false;
 	/*gdb from apple check this so why not us*/
 	if (!(msg->hdr.msgh_bits & MACH_MSGH_BITS_COMPLEX))
+		return false;
+	/*mach exception we are interested*/
+	//XXX for i386 this id seems to be different
+	if (msg->hdr.msgh_id > 2405 || msg->hdr.msgh_id < 2401)
 		return false;
 	/* check descriptors.  */
 	if (msg->hdr.msgh_size <
@@ -289,18 +269,18 @@ static bool validate_mach_message (RDebug *dbg, exc_msg *msg) {
 	    msg->NDR.char_rep != NDR_record.char_rep ||
 	    msg->NDR.float_rep != NDR_record.float_rep)
 		return false;
-	/*we got new rights to the task, get rid of it.*/
-	kret = mach_port_deallocate (mach_task_self (), msg->task.name);
-	if (kret != KERN_SUCCESS) {
-		eprintf ("failed to deallocate task port %s-%d\n",
-			__FILE__, __LINE__);
-	}
 	if (pid_to_task (dbg->pid) != msg->task.name) {
 		//we receive a exception from an unknown process this could
 		//happen if the child fork, as the created process will inherit
 		//its exception port
-		kret = mach_port_deallocate (mach_task_self (), msg->thread.name);
-		if (kret != KERN_SUCCESS) {
+		/*we got new rights to the task, get rid of it.*/
+		kr = mach_port_deallocate (mach_task_self (), msg->task.name);
+		if (kr != KERN_SUCCESS) {
+			eprintf ("failed to deallocate task port %s-%d\n",
+				__FILE__, __LINE__);
+		}
+		kr = mach_port_deallocate (mach_task_self (), msg->thread.name);
+		if (kr != KERN_SUCCESS) {
 			eprintf ("failed to deallocated task port %s-%d\n",
 				__FILE__, __LINE__);
 		}
@@ -308,62 +288,124 @@ static bool validate_mach_message (RDebug *dbg, exc_msg *msg) {
 	}
 	return true;
 }
-static bool handle_exception_message (RDebug *dbg, exc_msg *msg) {
-	kern_return_t kret;
-	decode_exception_type (msg->exception);
-	kret = mach_port_deallocate (mach_task_self (), msg->thread.name);
-	if (kret != KERN_SUCCESS) {
+
+static bool handle_dead_notify (RDebug *dbg, exc_msg *msg) {
+	if (msg->hdr.msgh_id == 0x48) {
+		dbg->pid = -1;
+		return true;
+	}
+	return false;
+}
+static int handle_exception_message (RDebug *dbg, exc_msg *msg) {
+	int ret = R_DEBUG_REASON_UNKNOWN;
+	kern_return_t kr;
+	switch (msg->exception) {
+	case EXC_BAD_ACCESS:
+		eprintf ("EXC_BAD_ACCESS\n");
+		ret = R_DEBUG_REASON_SEGFAULT;
+		break;
+	case EXC_BAD_INSTRUCTION:
+		eprintf ("EXC_BAD_INSTRUCTION\n");
+		break;
+	case EXC_ARITHMETIC:
+		eprintf ("EXC_ARITHMETIC\n");
+		break;
+	case EXC_EMULATION:
+		eprintf ("EXC_EMULATION\n");
+		break;
+	case EXC_SOFTWARE:
+		eprintf ("EXC_SOFTWARE\n");
+		break;
+	case EXC_BREAKPOINT:
+		kr = task_suspend (msg->task.name);
+		if (kr != KERN_SUCCESS)
+			eprintf ("failed to suspend task breakpoint\n");
+		ret = R_DEBUG_REASON_BREAKPOINT;
+		eprintf ("EXC_BREAKPOINT\n");
+		break;
+	default:
+		eprintf ("UNKNOWN\n");
+		break;
+	}
+	kr = mach_port_deallocate (mach_task_self (), msg->task.name);
+	if (kr != KERN_SUCCESS) {
+		eprintf ("failed to deallocate task port %s-%d\n",
+			__FILE__, __LINE__);
+	}
+	kr = mach_port_deallocate (mach_task_self (), msg->thread.name);
+	if (kr != KERN_SUCCESS) {
 		eprintf ("failed to deallocated task port %s-%d\n",
 			__FILE__, __LINE__);
 	}
-	return KERN_SUCCESS;
+	return ret;
 }
 
-static void *xnu_exception_thread (void *arg) {
+//TODO improve this code
+static int __xnu_wait (RDebug *dbg, int pid) {
 	// here comes the important thing
-	RDebug *dbg;
-	kern_return_t kret;
+	kern_return_t kr;
+	int reason = R_DEBUG_REASON_UNKNOWN;
 	mig_reply_error_t reply;
 	bool ret;
 	exc_msg msg;
-	if (!arg)
-		return NULL;
-	dbg = (RDebug *)arg;
+	if (!dbg)
+		return reason;
+	msg.hdr.msgh_local_port = ex.exception_port;
+	msg.hdr.msgh_size = sizeof (exc_msg);
 	for (;;) {
-		//wait for a incoming messages
-		//XXX what to do on failure; do we continue processing or stop ?
-		//XXX some layer for error handling and review ports leak
-		kret = mach_msg (&msg.hdr, MACH_RCV_MSG | MACH_RCV_INTERRUPT, 0,
-				 sizeof (exc_msg), ex.exception_port, 0,
-				 MACH_PORT_NULL);
-		if (kret != KERN_SUCCESS) {
-			eprintf ("fail to retrieve message exception thread\n");
+		kr = mach_msg (
+			&msg.hdr,
+			MACH_RCV_MSG | MACH_RCV_TIMEOUT, 0,
+			sizeof (exc_msg), ex.exception_port, 10, MACH_PORT_NULL);
+		if (kr == MACH_RCV_INTERRUPTED ) {
+			eprintf ("message interrupted\n");
 			break;
 		}
+		if (kr == MACH_RCV_TIMED_OUT) {
+			eprintf ("message timed out\n");
+			break;
+		}
+		if (kr != MACH_MSG_SUCCESS) {
+			eprintf ("message didn't succeded\n");
+			break;
+		}
+		eprintf ("Received exception\n");
 		ret = validate_mach_message (dbg, &msg);
-		if (!ret || msg.hdr.msgh_id != 2405 || msg.hdr.msgh_id != 2401) {
+		if (!ret) {
+			ret = handle_dead_notify (dbg, &msg);
+			if (ret) {
+				reason = R_DEBUG_REASON_DEAD;
+				break;
+			}
+		}
+		if (!ret) {
 			encode_reply (&reply, &msg.hdr, KERN_FAILURE);
-			kret = mach_msg (&reply.Head, MACH_SEND_MSG | MACH_SEND_INTERRUPT,
+			kr = mach_msg (&reply.Head, MACH_SEND_MSG | MACH_SEND_INTERRUPT,
 					reply.Head.msgh_size, 0,
 					MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE,
 					MACH_PORT_NULL);
-			if (kret != KERN_SUCCESS)
-				eprintf ("failed to reply mach_msg %s-%d\n", __FILE__, __LINE__);
+			if (reply.Head.msgh_remote_port != 0 && kr != MACH_MSG_SUCCESS) {
+				kr = mach_port_deallocate(mach_task_self (), reply.Head.msgh_remote_port);
+				if (kr != KERN_SUCCESS)
+					eprintf ("failed to deallocate reply port\n");
+			}
 			continue;
 		}
 
-		kret = handle_exception_message (dbg, &msg);
-		if (kret == KERN_FAILURE)
-			eprintf ("failed to handle exception");
-		encode_reply (&reply, &msg.hdr, kret);
-		kret = mach_msg (&reply.Head, MACH_SEND_MSG | MACH_SEND_INTERRUPT,
+		reason = handle_exception_message (dbg, &msg);
+		encode_reply (&reply, &msg.hdr, KERN_SUCCESS);
+		kr = mach_msg (&reply.Head, MACH_SEND_MSG | MACH_SEND_INTERRUPT,
 				reply.Head.msgh_size, 0,
-				MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE,
+				MACH_PORT_NULL, 0,
 				MACH_PORT_NULL);
-		if (kret != KERN_SUCCESS)
-			eprintf ("failed to reply mach_msg %s-%d\n", __FILE__, __LINE__);
+		eprintf ("REPLIED\n");
+		if (reply.Head.msgh_remote_port != 0 && kr != MACH_MSG_SUCCESS) {
+			kr = mach_port_deallocate(mach_task_self (), reply.Head.msgh_remote_port);
+			if (kr != KERN_SUCCESS)
+				eprintf ("failed to deallocate reply port\n");
+		}
 	}
-	return NULL;
+	return reason;
 }
 
 
@@ -372,6 +414,7 @@ bool xnu_create_exception_thread(RDebug *dbg) {
 	kern_return_t kr;
 	bool ret;
 	mach_port_t exception_port = MACH_PORT_NULL;
+	mach_port_t req_port;
         // Got the mach port for the current process
 	mach_port_t task_self = mach_task_self ();
 	task_t task = pid_to_task (dbg->pid);
@@ -404,12 +447,14 @@ bool xnu_create_exception_thread(RDebug *dbg) {
 				       EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES,
 				       THREAD_STATE_NONE);
 	RETURN_ON_MACH_ERROR ("error to set port to receive exceptions\n", R_FALSE);
-        // Create the exception thread
-        ret = pthread_create (&ex.thread, NULL, &xnu_exception_thread, dbg);
-	if (ret) {
-		perror ("pthread_create");
-		return false;
-	}
+	//get notification when process die
+	kr = mach_port_request_notification (task_self, pid_to_task (dbg->pid),
+					 MACH_NOTIFY_DEAD_NAME, 0,
+					 exception_port,
+					 MACH_MSG_TYPE_MAKE_SEND_ONCE,
+					 &req_port);
+	if (kr != KERN_SUCCESS)
+		eprintf ("Termination notification request failed\n");
 	ex.exception_port = exception_port;
 	return true;
 }

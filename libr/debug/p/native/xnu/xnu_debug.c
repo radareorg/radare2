@@ -18,7 +18,7 @@
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
 
-static task_t task_dbg = -1;
+static task_t task_dbg = 0;
 #include "xnu_debug.h"
 #include "xnu_threads.c"
 #if XNU_USE_EXCTHR
@@ -56,7 +56,7 @@ static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 			  (RListComparator)&thread_find);
 	if (it)
 		return (xnu_thread_t *)it->data;
-	tid = dbg->tid = getcurthread (dbg);
+	tid = getcurthread (dbg);
 	it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
 			  (RListComparator)&thread_find);
 	if (it)
@@ -107,6 +107,14 @@ static task_t task_for_pid_workaround(int Pid) {
 	return 0;
 }
 
+int xnu_wait(RDebug *dbg, int pid) {
+#if XNU_USE_PTRACE
+	return R_DEBUG_REASON_UNKNOWN;
+#else
+	return __xnu_wait (dbg, pid);
+#endif
+}
+
 bool xnu_step(RDebug *dbg) {
 #if XNU_USE_PTRACE
 	int ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
@@ -118,13 +126,12 @@ bool xnu_step(RDebug *dbg) {
 
 #else
 	int ret = 0;
-	//we must find a way to get the current thread not just the firt one
+	//we must find a way to get the current thread not just the first one
 	task_t task = pid_to_task (dbg->pid);
 	if (!task) {
 		eprintf ("step failed on task %d for pid %d\n", task, dbg->tid);
 		return false;
 	}
-	task_suspend (task);
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th)
 		return false;
@@ -133,7 +140,8 @@ bool xnu_step(RDebug *dbg) {
 		eprintf ("xnu_step modificy_trace_bit error\n");
 		return false;
 	}
-	thread_resume (th->th_port);
+	th->stepping = true;
+	task_resume (task);
 	return ret;
 #endif
 }
@@ -151,14 +159,6 @@ int xnu_attach(RDebug *dbg, int pid) {
 		eprintf ("error setting up exception thread\n");
 		return -1;
 	}
-	//task_suspend (pid_to_task (pid));
-#if 0
-	if (ptrace (PT_ATTACHEXC, pid, 0, 0) == -1) {
-		perror ("ptrace (PT_ATTACHEXC)");
-		return -1;
-	}
-	usleep(250000);
-#endif
 	return pid;
 #endif
 }
@@ -175,10 +175,12 @@ int xnu_detach(RDebug *dbg, int pid) {
 	if (kr != KERN_SUCCESS) {
 		eprintf ("failed to deallocate port %s-%d\n",
 			__FILE__, __LINE__);
+		return false;
 	}
 	//we mark the task as not longer available since we deallocated the ref
-	task_dbg = -2;
+	task_dbg = 0;
 	r_list_free (dbg->threads);
+	return true;
 #endif
 }
 
@@ -190,8 +192,10 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 			(int)(size_t)data) == 0;
 #else
 	task_t task = pid_to_task (pid);
+	kern_return_t kr;
 	if (!task)
 		return false;
+	//TODO free refs count threads
 	xnu_thread_t *th  = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th) {
 		eprintf ("failed to get thread in xnu_continue\n");
@@ -204,7 +208,9 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 			return false;
 		}
 	}
-	task_resume (task);
+	kr = task_resume (task);
+	if (kr != KERN_SUCCESS)
+		eprintf ("Failed to resume task xnu_continue\n");
 	return true;
 #endif
 }
@@ -232,6 +238,7 @@ const char *xnu_reg_profile(RDebug *dbg) {
 #endif
 }
 
+//r_debug_select 
 //using getcurthread has some drawbacks. You lose the ability to select
 //the thread you want to write or read from. but how that feature
 //is not implemented yet i don't care so much
@@ -394,15 +401,23 @@ int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 
 task_t pid_to_task (int pid) {
 	static int old_pid = -1;
+	kern_return_t kr;
 	task_t task = -1;
 	int err;
 
 	/* it means that we are done with the task*/
-	if (task_dbg == -2)
-		return 0;
-	if (task_dbg != -1 && old_pid == pid)
+	if (task_dbg != 0 && old_pid == pid) {
 		return task_dbg;
+	} else if (task_dbg != 0 && old_pid != pid) {
+		//we changed the process pid so deallocate a ref from the old_task
+		//since we are going to get a new task
+		kr = mach_port_deallocate (mach_task_self (), task_dbg);
+		if (kr != KERN_SUCCESS) {
+			eprintf ("fail to deallocate port %s:%d\n", __FILE__, __LINE__);
+			return 0;
+		}
 
+	}
 	err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		task = task_for_pid_workaround (pid);
