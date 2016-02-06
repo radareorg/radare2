@@ -108,7 +108,11 @@ static task_t task_for_pid_workaround(int Pid) {
 }
 
 int xnu_wait(RDebug *dbg, int pid) {
+#if XNU_USE_PTRACE
+	return R_DEBUG_REASON_UNKNOWN;
+#else
 	return __xnu_wait (dbg, pid);
+#endif
 }
 
 bool xnu_step(RDebug *dbg) {
