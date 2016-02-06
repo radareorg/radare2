@@ -330,6 +330,9 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_cons_flush ();
 		r_core_cmd (core, "ah*", 0);
 		r_cons_flush ();
+		r_str_write (fd, "# macros\n");
+		r_core_cmd (core, "(*", 0);
+		r_cons_flush ();
 		r_cons_printf ("# seek\n"
 			"s 0x%08"PFMT64x"\n", core->offset);
 		r_cons_flush ();
