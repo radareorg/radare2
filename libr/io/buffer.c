@@ -8,18 +8,15 @@ R_API void r_io_buffer_close(RIO* io) {
 }
 
 R_API int r_io_buffer_load(RIO* io, ut64 addr, int len) {
-	ut64 at;
-	int i, r;
 	ut8 buf[512];
+	int i;
 	if (len<1) return false;
 	io->buffer_enabled = 0;
 	for (i=0; i<len; i+=sizeof (buf)) {
-		at = addr+i;
-		r_io_seek (io, at, R_IO_SEEK_SET);
 		memset (buf, 0xff, sizeof (buf));
-		r = r_io_read (io, buf, sizeof (buf));
-		if (r<1) break;
-		r_cache_set (io->buffer, at, buf, sizeof (buf));
+		if (!r_io_read_at (io, addr + i, buf, sizeof (buf)))
+			break;
+		r_cache_set (io->buffer, addr + i, buf, sizeof (buf));
 	}
 	io->buffer_enabled = 1;
 	return true;

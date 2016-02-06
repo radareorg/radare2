@@ -48,12 +48,14 @@ typedef struct r_io_t {
 	int autofd;
 	int cached;
 	int cached_read;
+	int buffer_enabled;
 	ut32 map_id;
 	ut32 sec_id;
 	SdbList *freed_map_ids;
 	SdbList *freed_sec_ids;
 	SdbList *maps;
 	SdbList *sections;
+	RCache *buffer;
 	RList *cache;	//sdblist?
 	Sdb *files;
 	RIOUndo undo;

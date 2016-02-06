@@ -137,6 +137,8 @@ R_API int r_io_read_at (RIO *io, ut64 addr, ut8 *buf, int len)
 	int ret;
 	if (!io || !buf || !len)
 		return 0;
+	if (io->buffer_enabled)
+		return !!r_io_buffer_read (io, addr, buf, len);
 	if (io->va)
 		ret = r_io_vread_at (io, addr, buf, len);
 	else	ret = r_io_pread_at (io, addr, buf, len);
