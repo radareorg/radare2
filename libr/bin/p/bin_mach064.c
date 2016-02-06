@@ -44,7 +44,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	B ("\xcf\xfa\xed\xfe", 4); // header
 	D (7 | 0x01000000); // cpu type (x86) | ABI64
 	//D (3); // subtype (i386-all)
-	D(0x80000003); // unknown subtype issue
+	D(0x80000003); // x86-64 subtype
 	D (2); // filetype (executable)
 
 	ncmds = (data && datalen>0)? 3: 2;

@@ -50,8 +50,7 @@ static int check_bytes(const ut8* bytes, ut64 sz) {
 
 	h = bytes;
 	if (sz>=0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
-		memcpy (&off, h+4*sizeof (int), sizeof (int));
-		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
+		r_mem_copyendian ((ut8*)&off, (ut8*)h+4*sizeof(int), sizeof(int), !LIL_ENDIAN);
 		if (off > 0 && off < sz) {
 			memcpy (buf, h+off, 4);
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
