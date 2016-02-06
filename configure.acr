@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 0.10.0-git
+VERSION 0.10.1-git
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -9,6 +9,8 @@ ARG_DISABLE DEBUGGER debugger disable native debugger features ;
 (( -ldl -dynamic ... ))
 USE_DL
 
+CHKPRG! PATCH patch
+CHKPRG GIT git
 CHECK_ENDIAN
 CHKLIB magic
 ARG_WITH USE_MAGIC sysmagic force to use system's magic ;
