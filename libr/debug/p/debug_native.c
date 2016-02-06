@@ -204,7 +204,11 @@ static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
 	}
 	return tid;
 #elif __APPLE__
-	return xnu_continue (dbg, pid, tid, sig);
+	bool ret;
+	ret = xnu_continue (dbg, pid, tid, sig);
+	if (!ret)
+		return -1;
+	return tid;
 #elif __BSD__
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	ut64 pc = r_debug_reg_get (dbg, "pc");
@@ -542,7 +546,7 @@ static int bsd_reg_read (RDebug *dbg, int type, ut8* buf, int size) {
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
 static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
-	if (size<1)
+	if (size < 1)
 		return false;
 #if __WINDOWS__ && !__CYGWIN__
 	return windows_reg_read (dbg, type, buf, size);

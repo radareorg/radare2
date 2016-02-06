@@ -56,7 +56,7 @@ static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 			  (RListComparator)&thread_find);
 	if (it)
 		return (xnu_thread_t *)it->data;
-	tid = dbg->tid = getcurthread (dbg);
+	tid = getcurthread (dbg);
 	it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
 			  (RListComparator)&thread_find);
 	if (it)
@@ -122,13 +122,12 @@ bool xnu_step(RDebug *dbg) {
 
 #else
 	int ret = 0;
-	//we must find a way to get the current thread not just the firt one
+	//we must find a way to get the current thread not just the first one
 	task_t task = pid_to_task (dbg->pid);
 	if (!task) {
 		eprintf ("step failed on task %d for pid %d\n", task, dbg->tid);
 		return false;
 	}
-	task_suspend (task);
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th)
 		return false;
@@ -137,7 +136,8 @@ bool xnu_step(RDebug *dbg) {
 		eprintf ("xnu_step modificy_trace_bit error\n");
 		return false;
 	}
-	thread_resume (th->th_port);
+	th->stepping = true;
+	task_resume (task);
 	return ret;
 #endif
 }
@@ -171,10 +171,12 @@ int xnu_detach(RDebug *dbg, int pid) {
 	if (kr != KERN_SUCCESS) {
 		eprintf ("failed to deallocate port %s-%d\n",
 			__FILE__, __LINE__);
+		return false;
 	}
 	//we mark the task as not longer available since we deallocated the ref
 	task_dbg = 0;
 	r_list_free (dbg->threads);
+	return true;
 #endif
 }
 
@@ -186,6 +188,7 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 			(int)(size_t)data) == 0;
 #else
 	task_t task = pid_to_task (pid);
+	kern_return_t kr;
 	if (!task)
 		return false;
 	//TODO free refs count threads
@@ -201,7 +204,9 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 			return false;
 		}
 	}
-	task_resume (task);
+	kr = task_resume (task);
+	if (kr != KERN_SUCCESS)
+		eprintf ("Failed to resume task xnu_continue\n");
 	return true;
 #endif
 }
@@ -229,6 +234,7 @@ const char *xnu_reg_profile(RDebug *dbg) {
 #endif
 }
 
+//r_debug_select 
 //using getcurthread has some drawbacks. You lose the ability to select
 //the thread you want to write or read from. but how that feature
 //is not implemented yet i don't care so much

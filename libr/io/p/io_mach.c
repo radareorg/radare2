@@ -290,7 +290,8 @@ static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
 	kr = mach_port_get_refs (mach_task_self(), task, MACH_PORT_RIGHT_SEND, &count);
 	if (kr != KERN_SUCCESS)
 		perror ("get refs");
-	eprintf ("refs = %d\n", count);
+	if (count == 0)
+		return false;
 	kr = vm_write (task, addr, _buf, _len);
 	if (kr != KERN_SUCCESS)
 		//the memory is not mapped
@@ -420,8 +421,10 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __close(RIODesc *fd) {
-	RIOMach *riom= (RIOMach*)fd->data;
+	RIOMach *riom = (RIOMach*)fd->data;
 	kern_return_t kr;
+	if (!riom)
+		return false;
 	kr = mach_port_deallocate (mach_task_self (), riom->task);
 	if (kr != KERN_SUCCESS)
 		perror ("__close io_mach");
