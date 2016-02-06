@@ -3443,7 +3443,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case '\0': // "aa"
 	case 'a':
-		if (input[1] == '?' || (input[1] && input[2] == '?')) {
+		if (input[0] && (input[1] == '?' || (input[1] && input[2] == '?'))) {
 			eprintf ("Usage: See aa? for more help\n");
 		} else {
 			r_cons_break (NULL, NULL);
