@@ -1555,6 +1555,7 @@ static int cmd_print(void *data, const char *input) {
 	ut64 n, nbsz, obsz, fsz;
 	ut64 tmpseek = UT64_MAX;
 
+	r_print_init_rowoffsets (core->print);
 	off = UT64_MAX;
 	l = len = core->blocksize;
 	if (input[0] && input[1]) {
