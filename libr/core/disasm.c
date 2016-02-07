@@ -628,20 +628,23 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 	RList *xrefs;
 	RAnalRef *refi;
 	RListIter *iter;
+	bool demangle = r_config_get_i (core->config, "bin.demangle");
+	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
+	char *name, *tmp;
 	int count = 0;
-	if (!ds->show_xrefs) return;
-	if (!ds->show_comments) return;
-
+	if (!ds->show_xrefs)
+		return;
+	if (!ds->show_comments)
+		return;
 	/* show xrefs */
 	xrefs = r_anal_xref_get (core->anal, ds->at);
 	if (!xrefs) return;
-
 	if (r_list_length (xrefs) > ds->maxrefs) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
-			ds->at, R_ANAL_FCN_TYPE_NULL);
+						ds->at, R_ANAL_FCN_TYPE_NULL);
 		beginline (core, ds, f);
 		r_cons_printf ("%s; XREFS: ", ds->show_color?
-			ds->pal_comment: "");
+				ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
 			r_cons_printf ("%s 0x%08"PFMT64x"  ",
 				r_anal_xrefs_type_tostring (refi->type), refi->addr);
@@ -664,14 +667,23 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 		if (refi->at == ds->at) {
 			RAnalFunction *fun = r_anal_get_fcn_in (
 				core->anal, refi->at, -1);
+			name = strdup (fun ? fun->name : "unk");
+			if (demangle) {
+				tmp = r_bin_demangle (core->bin->cur, lang, name);
+				if (tmp) {
+					free (name);
+					name = tmp; 
+				}
+			}
 
 			beginline (core, ds, fun);
 			r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)%s\n",
 				COLOR (ds, pal_comment),
 				r_anal_xrefs_type_tostring (refi->type),
 				refi->addr,
-				fun ? fun->name : "unk",
+				name,
 				COLOR_RESET (ds));
+			R_FREE (name);
 		}
 	}
 	r_list_free (xrefs);
@@ -764,20 +776,30 @@ static int var_comparator (const RAnalVar *a, const RAnalVar *b){
 
 static void handle_show_functions (RCore *core, RDisasmState *ds) {
 	RAnalFunction *f;
+	bool demangle = r_config_get_i (core->config, "bin.demangle");
+	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
+	char *fcn_name;
 	char *sign;
 	if (!core || !ds || !ds->show_functions)
 		return;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-	if (!f) return;
-	if (f->addr != ds->at) {
+	if (!f)
 		return;
+	if (f->addr != ds->at)
+		return;
+	if (demangle) {
+		fcn_name = r_bin_demangle (core->bin->cur, lang, f->name);
+		if (!fcn_name)
+			fcn_name = strdup (f->name);
+	} else {
+		fcn_name = f->name;
 	}
 	sign = r_anal_fcn_to_string (core->anal, f);
 	if (f->type == R_ANAL_FCN_TYPE_LOC) {
 		r_cons_printf ("%s%s ", COLOR (ds, color_fline),
 			core->cons->vline[LINE_CROSS]); // |-
 		r_cons_printf ("%s%s%s %d\n", COLOR (ds, color_floc),
-			f->name, COLOR_RESET (ds), f->size);
+			fcn_name, COLOR_RESET (ds), f->size);
 	} else {
 		const char *space = ds->show_fcnlines ? " " : "";
 		const char *fcntype;
@@ -804,12 +826,14 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 		r_cons_printf ("%s%s%s%s%s(%s) %s%s %d\n",
 			COLOR (ds, color_fline), ds->pre,
 			space, COLOR_RESET (ds), COLOR (ds, color_fname),
-			fcntype, f->name, COLOR_RESET (ds), f->size);
+			fcntype, fcn_name, COLOR_RESET (ds), f->size);
 	}
-	if (sign) r_cons_printf ("// %s\n", sign);
+	if (sign)
+		r_cons_printf ("// %s\n", sign);
 	R_FREE (sign);
 	handle_set_pre (ds, core->cons->vline[LINE_VERT]);
-	if (ds->show_fcnlines) ds->pre = r_str_concat (ds->pre, " ");
+	if (ds->show_fcnlines)
+		ds->pre = r_str_concat (ds->pre, " ");
 	ds->stackptr = 0;
 	if (ds->vars) {
 		char spaces[32];
@@ -847,6 +871,8 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 		// it's already empty, but rlist instance is still there
 		r_list_free (args);
 	}
+	if (demangle)
+		free (fcn_name);
 }
 
 static void handle_print_pre (RCore *core, RDisasmState *ds, bool tail) {
@@ -985,24 +1011,33 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 		bool printed = false;
 
 		r_list_foreach (flaglist, iter, flag) {
-			if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
+			if (f && f->addr == flag->offset && !strcmp (flag->name, f->name))
 				// do not show flags that have the same name as the function
 				continue;
-			}
 			beginline (core, ds, f);
-			if (ds->show_offset) r_cons_printf (";-- ");
-			if (ds->show_color) r_cons_strcat (ds->color_flag);
+			if (ds->show_offset)
+				r_cons_printf (";-- ");
+			if (ds->show_color)
+				r_cons_strcat (ds->color_flag);
 			beginch = (iter->p && printed) ? ", " : "";
 			if (ds->asm_demangle) {
-				if (ds->show_functions) r_cons_printf ("%s:\n", flag->realname);
-				else r_cons_printf ("%s%s", beginch, flag->realname);
+				const char *lang = r_config_get (core->config, "bin.lang");
+				char *name = r_bin_demangle (core->bin->cur, lang, flag->realname);
+				if (!name)
+					name = strdup (flag->realname);
+				if (ds->show_functions)
+					r_cons_printf ("%s:\n", name);
+				else
+					r_cons_printf ("%s%s", beginch, name);
+				R_FREE (name);
 			} else {
 				if (ds->show_functions) r_cons_printf ("%s:\n", flag->name);
 				else r_cons_printf ("%s%s", beginch, flag->name);
 			}
 			printed = true;
 		}
-		if (printed && !ds->show_functions) r_cons_printf (":\n");
+		if (printed && !ds->show_functions)
+			r_cons_printf (":\n");
 	}
 }
 
@@ -2475,9 +2510,8 @@ toro:
 				inc = 0; //delta;
 				idx = 0;
 				of = f;
-				if (len == l) {
+				if (len == l)
 					break;
-				}
 				continue;
 			} else {
 				ds->lines--;
@@ -2631,7 +2665,8 @@ toro:
 		inc = ds->oplen;
 		if (ds->midflags == R_MIDFLAGS_REALIGN && skip_bytes)
 			inc = skip_bytes;
-		if (inc < 1) inc = 1;
+		if (inc < 1)
+			inc = 1;
 	}
 	if (nbuf == buf) {
 		free (buf);
@@ -2829,7 +2864,7 @@ r_reg_arena_push (core->anal->reg);
 				ds->opstr = (tmpopstr)? tmpopstr: strdup (ds->asmop.buf_asm);
 			}
 		}
-		if (ret<1) {
+		if (ret < 1) {
 			err = 1;
 			ret = 1;
 		}
