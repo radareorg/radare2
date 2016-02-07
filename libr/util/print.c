@@ -176,7 +176,7 @@ R_API RPrint *r_print_new() {
 	p->col = 0;
 	p->width = 78;
 	p->cols = 16;
-	p->cur_enabled = R_FALSE;
+	p->cur_enabled = false;
 	p->cur = p->ocur = -1;
 	p->formats = r_strht_new ();
 	p->addrmod = 4;

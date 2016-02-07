@@ -1141,8 +1141,8 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	int cols = r_config_get_i (core->config, "hex.cols");
 	int show_color = r_config_get_i (core->config, "scr.color");
 	int onechar = r_config_get_i (core->config, "hex.onechar");
-	int show_cursor = core->print->cur_enabled;
 	int bgcolor_in_heap = false;
+	bool show_cursor = core->print->cur_enabled;
 	char buf[2];
 	char *bgcolor, *fgcolor, *text;
 	ut64 i, c, oi;
