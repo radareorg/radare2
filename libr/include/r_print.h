@@ -49,10 +49,14 @@ typedef struct r_print_t {
 	int width;
 	int limit;
 	int bits;
-	int cur_enabled;
+	// true if the cursor is enabled, false otherwise
+	bool cur_enabled;
+	// offset of the selected byte from the first displayed one
 	int cur;
-	int cols;
+	// offset of the selected byte from the first displayed one, when a
+	// range of bytes is selected.
 	int ocur;
+	int cols;
 	int flags;
 	int addrmod;
 	int col;
