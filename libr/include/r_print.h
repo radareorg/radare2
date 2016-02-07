@@ -76,6 +76,12 @@ typedef struct r_print_t {
 	ut64* lines_cache;
 	int lines_cache_sz;
 	int lines_abs;
+
+	// offset of the first byte of each printed row.
+	// Last elements is marked with a UT32_MAX.
+	ut32 *row_offsets;
+	// size of row_offsets
+	int row_offsets_sz;
 } RPrint;
 
 #ifdef R_API
@@ -135,6 +141,10 @@ R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles);
 R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num);
 R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type);
 R_API void r_print_set_interrupted(int i);
+R_API void r_print_init_rowoffsets(RPrint *p);
+R_API ut32 r_print_rowoff(RPrint *p, int i);
+R_API void r_print_set_rowoff(RPrint *p, int i, ut32 offset);
+R_API int r_print_row_at_off(RPrint *p, ut32 offset);
 // WIP
 R_API int r_print_unpack7bit(const char *src, char *dest);
 R_API int r_print_pack7bit(const char *src, char *dest);
