@@ -1242,30 +1242,27 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (section_text_offset == -1) section_text_offset = 0;
 
 	for (i = 0, rel = 0; !g_sections[i].last && rel < reloc_num ; i++) {
-		if (!strncmp (g_sections[i].name, ".rela.", strlen (".rela."))) {
-			for (j = 0; j < g_sections[i].size; j += res) {
-				if (g_sections[i].size > bin->size) break;
-				if (g_sections[i].offset > bin->size) break;
-				if (&ret[rel] + 1 > ret + reloc_num) break;
-				res = read_reloc (bin, &ret[rel], 1, g_sections[i].offset + j);
-				ret[rel].rva = ret[rel].offset + section_text_offset;
-				ret[rel].sto = section_text_offset;
-				ret[rel].offset = Elf_(r_bin_elf_v2p) (bin, ret[rel].offset);
-				ret[rel].last = 0;
-				if (res < 0) break;
-				rel++;
+		bool is_rela = 0 == strncmp (g_sections[i].name, ".rela.", strlen (".rela."));
+		bool is_rel  = 0 == strncmp (g_sections[i].name, ".rel.",  strlen (".rel."));
+		if (!is_rela && !is_rel)
+			continue;
+		for (j = 0; j < g_sections[i].size; j += res) {
+			if (g_sections[i].size > bin->size) break;
+			if (g_sections[i].offset > bin->size) break;
+			res = read_reloc (bin, &ret[rel], is_rela, g_sections[i].offset + j);
+			ret[rel].rva = ret[rel].offset;
+			if (is_rela) {
+				if (ret[rel].type != R_386_IRELATIVE && ret[rel].type != R_X86_64_IRELATIVE) {
+					// IREL relocations are not really RELA, the addend field is just
+					// repurposed for the ifunc pointer.
+					ret[rel].rva += section_text_offset;
+					ret[rel].sto = section_text_offset;
+				}
 			}
-		} else if (!strncmp (g_sections[i].name, ".rel.", strlen (".rel."))) {
-			for (j = 0; j < g_sections[i].size; j += res) {
-				if (g_sections[i].size > bin->size) break;
-				if (g_sections[i].offset > bin->size) break;
-				res = read_reloc (bin, &ret[rel], 0, g_sections[i].offset + j);
-				ret[rel].rva = ret[rel].offset;
-				ret[rel].offset = Elf_(r_bin_elf_v2p) (bin, ret[rel].offset);
-				ret[rel].last = 0;
-				if (res < 0) break;
-				rel++;
-			}
+			ret[rel].offset = Elf_(r_bin_elf_v2p) (bin, ret[rel].offset);
+			ret[rel].last = 0;
+			if (res < 0) break;
+			rel++;
 		}
 	}
 	ret[reloc_num].last = 1;

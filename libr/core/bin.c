@@ -738,6 +738,23 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	return (foo && *foo) ? foo : NULL;
 }
 
+static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
+	char *reloc_name = NULL;
+	int ret = -1;
+	if (reloc->import) {
+		reloc_name = r_str_newf ("reloc.%s_%d",
+				reloc->import->name, (int)(addr & 0xff));
+		if (!reloc_name) return NULL;
+		r_str_replace_char (reloc_name, '$', '_');
+	} else if (reloc->is_ifunc) {
+		// addend is the function pointer for the resolving ifunc
+		reloc_name = r_str_newf ("reloc.ifunc_%"PFMT64x, reloc->addend);
+	} else {
+		// TODO(eddyb) implement constant relocs.
+	}
+	return reloc_name;
+}
+
 static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	const char *lang = r_config_get (r->config, "bin.lang");
@@ -821,7 +838,10 @@ static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 			r_flag_item_set_realname (fi, realname);
 		}
 	} else {
-		// TODO(eddyb) implement constant relocs.
+		char *reloc_name = get_reloc_name (reloc, addr);
+		if (reloc_name) {
+			r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
+		}
 	}
 }
 
@@ -849,19 +869,14 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr,
 				reloc->import ? reloc->import->name : "");
 		} else if (IS_MODE_RAD (mode)) {
-			if (reloc->import) {
-				char *str = strdup (reloc->import->name);
-				r_str_replace_char (str, '$', '_');
-				if (r->bin->prefix) {
-					r_cons_printf ("f %s.reloc.%s_%d @ 0x%08"PFMT64x"\n",
-						r->bin->prefix, str, (int)(addr & 0xff), addr);
-				} else {
-					r_cons_printf ("f reloc.%s_%d @ 0x%08"PFMT64x"\n",
-						str, (int)(addr & 0xff), addr);
-				}
-				free (str);
-			} else {
-				// TODO(eddyb) implement constant relocs.
+			char *reloc_name = get_reloc_name (reloc, addr);
+			if (reloc_name) {
+				r_cons_printf ("f %s%s%s @ 0x%08"PFMT64x"\n",
+					r->bin->prefix ? r->bin->prefix : "",
+					r->bin->prefix ? "." : "",
+					reloc_name,
+					addr);
+				free (reloc_name);
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			const char *comma = iter->p? ",":"";
@@ -871,10 +886,12 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			r_cons_printf ("%s{\"name\":%s,"
 				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
-				"\"paddr\":%"PFMT64d"}",
+				"\"paddr\":%"PFMT64d","
+				"\"is_ifunc\":%s}",
 				comma, reloc_name,
 				bin_reloc_type_name (reloc),
-				reloc->vaddr, reloc->paddr);
+				reloc->vaddr, reloc->paddr,
+				r_str_bool (reloc->is_ifunc));
 		} else if (IS_MODE_NORMAL (mode)) {
 			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" type=%s",
 				addr, reloc->paddr, bin_reloc_type_name (reloc));
@@ -890,6 +907,9 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				} else {
 					r_cons_printf (" 0x%08"PFMT64x, reloc->addend);
 				}
+			}
+			if (reloc->is_ifunc) {
+				r_cons_printf (" (ifunc)");
 			}
 			r_cons_printf ("\n");
 		}

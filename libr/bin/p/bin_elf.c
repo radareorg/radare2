@@ -396,6 +396,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 
 	r->import = NULL;
 	r->symbol = NULL;
+	r->is_ifunc = false;
 	r->addend = rel->addend;
 	if (rel->sym) {
 		if (rel->sym < bin->imports_by_ord_size && bin->imports_by_ord[rel->sym])
@@ -431,6 +432,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_386_8:        ADD(8,  0);
 		case R_386_PC8:      ADD(8, -P);
 		case R_386_COPY:     ADD(64, 0); // XXX: copy symbol at runtime
+		case R_386_IRELATIVE: r->is_ifunc = true; SET(32);
 		default: break; //eprintf("TODO(eddyb): uninmplemented ELF/x86 reloc type %i\n", rel->type);
 		}
 		break;
@@ -451,6 +453,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_X86_64_PC8:	ADD(8, -P);
 		case R_X86_64_GOTPCREL:	ADD(64, GOT-P);
 		case R_X86_64_COPY:	ADD(64, 0); // XXX: copy symbol at runtime
+		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
 		default: break; ////eprintf("TODO(eddyb): uninmplemented ELF/x64 reloc type %i\n", rel->type);
 		}
 		break;

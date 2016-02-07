@@ -342,6 +342,12 @@ typedef struct r_bin_reloc_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 visibility;
+	/* is_ifunc: indirect function, `addend` points to a resolver function
+	 * that returns the actual relocation value, e.g. chooses
+	 * an optimized version depending on the CPU.
+	 * cf. https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
+	 */
+	bool is_ifunc;
 } RBinReloc;
 
 typedef struct r_bin_string_t {
