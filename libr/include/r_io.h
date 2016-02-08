@@ -173,6 +173,7 @@ typedef RIODesc *(*RIOOpenAt) (RIO *io, char *uri, int flags, int mode, ut64 at)
 typedef int (*RIOClose) (RIO *io, int fd);
 typedef int (*RIOReadAt) (RIO *io, ut64 paddr, ut8 *buf, int len);
 typedef int (*RIOWriteAt) (RIO *io, ut64 paddr, ut8 *buf, int len);
+typedef int (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
 
 typedef struct r_io_bind_t {
 	int init;
@@ -186,6 +187,7 @@ typedef struct r_io_bind_t {
 	RIOClose close;
 	RIOReadAt read_at;
 	RIOWriteAt write_at;
+	RIOIsValidOff is_valid_offset;
 } RIOBind;
 
 //desc.c

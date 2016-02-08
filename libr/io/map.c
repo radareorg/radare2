@@ -79,7 +79,7 @@ R_API RIOMap *r_io_map_add (RIO *io, int fd, int flags, ut64 delta, ut64 addr, u
 {
 	RIODesc *desc = r_io_desc_get (io, fd);							//check if desc exists
 	if (desc)
-		return r_io_map_new (io, fd, flags & desc->flags, delta, addr, size);		//a map cannot have higher permissions than the desc belonging to it
+		return r_io_map_new (io, fd, (flags & desc->flags) | (flags & R_IO_EXEC), delta, addr, size);	//a map cannot have higher permissions than the desc belonging to it
 	return NULL;
 }
 
