@@ -15,6 +15,7 @@ R_API RIO *r_io_init (RIO *io)
 		return NULL;
 	r_io_desc_init (io);
 	r_io_map_init (io);
+	r_io_section_init (io);
 	r_io_cache_init (io);
 	r_io_plugin_init (io);
 	return io;
@@ -208,6 +209,7 @@ R_API int r_io_fini (RIO *io)
 		return false;
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
+	r_io_section_fini (io);
 	ls_free (io->plugins);
 	r_list_free (io->cache);
 	if (io->runprofile)
@@ -217,10 +219,8 @@ R_API int r_io_fini (RIO *io)
 
 R_API void r_io_free (RIO *io)
 {
-	if (r_io_fini (io)) {
-		R_FREE (io->runprofile);
+	if (r_io_fini (io))
 		R_FREE (io->args);
-	}
 	free (io);
 }
 
