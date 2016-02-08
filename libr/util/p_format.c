@@ -1075,6 +1075,19 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 	return r_print_format_struct_size(fmt, p, mode);
 }
 
+static void* get_args_offset( const char *arg ) {
+    char *args = strchr (arg, ' ');
+    char *sq_bracket = strchr (arg, '[');
+    int max = 30;
+    if (args && sq_bracket) {
+        char *csq_bracket = strchr(arg, ']');
+        while (args && csq_bracket && csq_bracket > args && max--) {
+            args = strchr (csq_bracket, ' ');
+        }
+    }
+    return args;
+}
+
 #define MINUSONE ((void*)(size_t)-1)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
@@ -1134,7 +1147,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	}
 
 	/* get args */
-	args = strchr (arg, ' ');
+	args = get_args_offset (arg);
 	if (args) {
 		int l=0, maxl = 0;
 		argend = args;
@@ -1586,7 +1599,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (s)
 					p->cb_printf ("*(%s)", s);
 			}
-			if (tmp != 'D' && !invalid && fmtname==NULL && MUSTSEE && !SEEVALUE)
+			if (tmp != 'D' && !invalid && fmtname==NULL && MUSTSEE)
 				p->cb_printf ("\n");
 			last = tmp;
 		}
