@@ -8,7 +8,6 @@
 static int obs = 0;
 static int blocksize = 0;
 static int autoblocksize = 1;
-static ut64 last_printed_address = 0LL;
 static void r_core_visual_refresh (RCore *core);
 
 #define debugfmt_default "f tmp;sr SP;pxw 64;dr=;s-;s tmp;f-tmp;pd $r"
@@ -789,7 +788,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 							op->type == R_ANAL_OP_TYPE_CCALL) {
 						if (core->print->cur_enabled) {
 							int delta = R_ABS ((st64)op->jump-(st64)offset);
-							if ( op->jump < core->offset || op->jump > last_printed_address) {
+							if ( op->jump < core->offset || op->jump >= core->screen_bounds) {
 								r_io_sundo_push (core->io, offset);
 								r_core_visual_seek_animation (core, op->jump);
 								core->print->cur = 0;
@@ -1191,15 +1190,15 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (isDisasmPrint (core->printidx)) {
 				// we read the size of the current mnemonic
 				cols = r_asm_disassemble (core->assembler,
-					&op, core->block+core->print->cur, 32);
-				if (cols<1) cols = 1;
+					&op, core->block + core->print->cur, 32);
+				if (cols < 1) cols = 1;
 				core->print->cur += cols; // we move the core->print->cur sizeof the current mnemonic
 				core->print->ocur = -1;
-				if (core->print->cur + core->offset > last_printed_address) {
+				if (core->print->cur + core->offset >= core->screen_bounds) {
 					// we seek with the size of the first mnemo
 					cols = r_asm_disassemble (core->assembler,
 							&op, core->block, 32);
-					r_core_seek (core, core->offset+cols, 1);
+					r_core_seek (core, core->offset + cols, 1);
 					core->print->cur -= cols;
 				}
 			} else { // every other printmode
@@ -1245,18 +1244,18 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (core->print->ocur==-1) core->print->ocur = core->print->cur;
 			core->print->cur += cols;
 			if (isDisasmPrint (core->printidx)) {
-				if (core->print->cur + core->offset > last_printed_address) {
+				if (core->print->cur + core->offset >= core->screen_bounds) {
 					// we seek with the size of the first mnemo
 					cols = r_asm_disassemble (core->assembler,
 							&op, core->block, 32);
-					r_core_seek (core, core->offset+cols, 1);
-					core->print->cur-=cols;
-					core->print->ocur-=cols;
+					r_core_seek (core, core->offset + cols, 1);
+					core->print->cur -= cols;
+					core->print->ocur -= cols;
 				}
 			}
 		} else {
-			if (last_printed_address && last_printed_address > core->offset) {
-				r_core_seek (core, last_printed_address, 1);
+			if (core->screen_bounds && core->screen_bounds >= core->offset) {
+				r_core_seek (core, core->screen_bounds, 1);
 			} else {
 				r_core_seek (core, core->offset+obs, 1);
 			}
@@ -1312,10 +1311,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				}
 			}
 		} else {
-			if (last_printed_address > core->offset) {
-				int delta = (last_printed_address - core->offset);
-				if (core->offset >delta)
-					r_core_seek (core, core->offset-delta, 1);
+			if (core->screen_bounds >= core->offset) {
+				int delta = (core->screen_bounds - core->offset);
+				if (core->offset >= delta)
+					r_core_seek (core, core->offset - delta, 1);
 				else
 					r_core_seek (core, 0, 1);
 			} else {
@@ -1788,21 +1787,21 @@ static void r_core_visual_refresh (RCore *core) {
 		r_core_visual_title (core, color);
 	}
 
-	core->screen_bounds = 1LL;
 	vcmd = r_config_get (core->config, "cmd.visual");
 	if (vcmd && *vcmd) {
+		// disable screen bounds when it's a user-defined command
+		// because it can cause some issues
+		core->screen_bounds = 0;
 		r_core_cmd (core, vcmd, 0);
 	} else {
+		core->screen_bounds = 1LL;
 		if (zoom) r_core_cmd0 (core, "pz");
 		else r_core_cmd0 (core, printfmt[PIDX]);
 	}
-// TODO: rename screen_bounds to offset_last ?
 	if (core->screen_bounds != 1LL) {
-		last_printed_address = core->screen_bounds;
 		r_cons_printf ("[0x%08"PFMT64x"..0x%08"PFMT64x"]\n",
 			core->offset, core->screen_bounds);
 	}
-	core->screen_bounds = 0LL; // disable screen bounds
 	blocksize = core->num->value? core->num->value : core->blocksize;
 
 	/* this is why there's flickering */

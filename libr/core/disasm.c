@@ -1160,14 +1160,13 @@ static void handle_print_stackptr (RCore *core, RDisasmState *ds) {
 
 static void handle_print_offset (RCore *core, RDisasmState *ds) {
 	if (core->screen_bounds) {
-		int r, R;
-		(void)r_cons_get_size (&R);
-		(void)r_cons_get_cursor (&r);
-		//r_cons_printf ("(%d,%d)/(%d,%d) ", r,c, R, C);
-		if (r+1>=R) {
-			//	r_cons_printf ("LAST (0x%llx)\n", ds->at);
-			if (core->screen_bounds == 1LL)
-				core->screen_bounds = ds->at;
+		int r, rc;
+
+		(void)r_cons_get_size (&r);
+		(void)r_cons_get_cursor (&rc);
+
+		if (rc > r - 1 && core->screen_bounds == 1) {
+			core->screen_bounds = ds->at;
 		}
 	}
 	if (ds->show_offset) {
