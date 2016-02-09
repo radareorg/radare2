@@ -11,7 +11,7 @@
 //    "A%sB$nC-(D;)Ea0Fb1Gc2Hd3Ie4Jf5Kg6Lh7Mi8Nj9OkPlQmRnSoTpUqVrWsXtYuZvwxyz";
 
 //TODO(crowell): Make charset configurable, to allow banning characters.
-static const char* debruijn_charset = "ABCDEFGHIJKLMNOPQRSTUVWZYZabcdefghijklmnopqrstuvwxyz1234567890";
+static const char* debruijn_charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
 
 // Generate a De Bruijn sequence.
 static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int order,
