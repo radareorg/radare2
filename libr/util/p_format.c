@@ -1075,7 +1075,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 	return r_print_format_struct_size(fmt, p, mode);
 }
 
-static void* get_args_offset( const char *arg ) {
+static char* get_args_offset( const char *arg ) {
     char *args = strchr (arg, ' ');
     char *sq_bracket = strchr (arg, '[');
     int max = 30;
