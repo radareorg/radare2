@@ -2685,8 +2685,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					} else {
 						buf_fcn = r_str_newf ("%s", fcn ? fcn->name : "unknown function");
 					}
-					r_cons_printf ("%c 0x%" PFMT64x " %s in %s\n",
-							ref->type, ref->addr, buf_asm, buf_fcn);
+					r_cons_printf ("%s 0x%" PFMT64x " %s in %s\n",
+						r_anal_ref_to_string (core->anal, ref->type),
+						ref->addr, buf_asm, buf_fcn);
 					free (buf_asm);
 					free (buf_fcn);
 				}

@@ -1142,7 +1142,7 @@ static int esil_diveq(RAnalEsil *esil) {
 			eprintf ("esil_diveq: empty stack\n");
 		}
 	} else {
-		eprintf ("esil_diveq: invalid parameters");
+		eprintf ("0x08%"PFMT64x" esil_diveq: invalid parameters\n", esil->address);
 	}
 	free (src);
 	free (dst);
@@ -1162,7 +1162,7 @@ static int esil_mul(RAnalEsil *esil) {
 			eprintf ("esil_mul: empty stack\n");
 		}
 	} else {
-		eprintf ("esil_mul: invalid parameters");
+		eprintf ("esil_mul: invalid parameters\n");
 	}
 	free (src);
 	free (dst);
@@ -1290,7 +1290,7 @@ static int esil_sub(RAnalEsil *esil) {
 			r_anal_esil_pushnum (esil, d-s);
 			ret = true;
 		} else {
-			eprintf ("esil_sub: invalid parameters");
+			eprintf ("esil_sub: invalid parameters\n");
 		}
 	} else {
 		eprintf ("esil_sub: invalid parameters\n");

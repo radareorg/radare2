@@ -771,14 +771,6 @@ typedef struct r_anal_var_t {
 	RList/*RAnalValue*/ *stores;   /* where this */
 } RAnalVar;
 
-/*
-   typedef struct r_anal_var_type_t {
-   char *name;
-   char *fmt;
-   ut32 size;
-   } RAnalVarType;
- */
-
 typedef enum {
 	R_ANAL_REF_TYPE_NULL = 0,
 	R_ANAL_REF_TYPE_CODE = 'c', // code ref
@@ -1313,6 +1305,7 @@ R_API RList* r_anal_get_fcns (RAnal *anal);
 R_API RAnalRef *r_anal_ref_new(void);
 R_API RList *r_anal_ref_list_new(void);
 R_API void r_anal_ref_free(void *ref);
+R_API const char *r_anal_ref_to_string(RAnal *anal, int type);
 R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type);
 R_API int r_anal_ref_del(RAnal *anal, ut64 at, ut64 addr);
 R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr);
