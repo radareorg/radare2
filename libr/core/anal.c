@@ -1483,13 +1483,13 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	return true;
 }
 
-static int core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int code, int depth) {
+static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 ref, int code, int depth) {
 	ut64 dataptr;
 	int wordsize, endian;
 
 	if (ptr == ref) {
-		if (code) r_cons_printf ("ax 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-			(ut64)ref, (ut64)at);
+		if (code) r_cons_printf ("ax%c 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+			type? type: "", (ut64)ref, (ut64)at);
 		else r_cons_printf ("axd 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 			(ut64)ref, (ut64)at);
 		return true;
@@ -1502,7 +1502,7 @@ static int core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int cod
 	wordsize = (int)(core->anal->bits/8);
 	if ((dataptr = r_io_read_i (core->io, ptr, wordsize, endian)) == -1)
 		return false;
-	return core_anal_followptr (core, at, dataptr, ref, code, depth-1);
+	return core_anal_followptr (core, type, at, dataptr, ref, code, depth - 1);
 }
 
 #define OPSZ 8
@@ -1544,12 +1544,12 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			ret = r_io_read_at (core->io, at, buf, core->blocksize);
 			if (ret != core->blocksize)
 				break;
-			for (i = bckwrds ? (core->blocksize-OPSZ - 1) : 0;
-			     (!bckwrds && i < core->blocksize-OPSZ) || (bckwrds && i > 0);
+			for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;
+			     (!bckwrds && i < core->blocksize - OPSZ) || (bckwrds && i > 0);
 			     bckwrds ? i-- : i++) {
 				r_anal_op_fini (&op);
-				if (!r_anal_op (core->anal, &op, at+i, buf+i,
-						core->blocksize-i))
+				if (!r_anal_op (core->anal, &op, at + i, buf+i,
+						core->blocksize - i))
 					continue;
 				switch (op.type) {
 				case R_ANAL_OP_TYPE_JMP:
@@ -1557,18 +1557,25 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 				case R_ANAL_OP_TYPE_CALL:
 				case R_ANAL_OP_TYPE_CCALL:
 					if (op.jump != -1 &&
-						core_anal_followptr (core,
+						core_anal_followptr (core, 'C',
 							at + i, op.jump, ref,
 							true, 0)) {
 						count ++;
 					}
 					break;
-				case R_ANAL_OP_TYPE_UJMP:
-				case R_ANAL_OP_TYPE_UCALL:
 				case R_ANAL_OP_TYPE_UCJMP:
+				case R_ANAL_OP_TYPE_UJMP:
+					if (op.ptr != -1 &&
+						core_anal_followptr (core, 'c',
+							at + i, op.ptr, ref,
+							true ,1)) {
+						count ++;
+					}
+					break;
+				case R_ANAL_OP_TYPE_UCALL:
 				case R_ANAL_OP_TYPE_UCCALL:
 					if (op.ptr != -1 &&
-						core_anal_followptr (core,
+						core_anal_followptr (core, 'C',
 							at + i, op.ptr, ref,
 							true ,1)) {
 						count ++;
@@ -1576,13 +1583,12 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 					break;
 				default:
 					if (op.ptr != -1 &&
-						core_anal_followptr (core,
+						core_anal_followptr (core, 'd',
 							at+i, op.ptr, ref,
 							false, ptrdepth)) {
 						count ++;
 					}
 					break;
-
 				}
 			}
 			if (bckwrds) {

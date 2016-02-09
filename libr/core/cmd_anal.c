@@ -2750,9 +2750,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'F':
 		find_refs (core, input + 1);
 		break;
-	case 'C':
-	case 'c':
-	case 'd':
+	case 'C': // "axC"
+	case 'c': // "axc"
+	case 'd': // "axd"
 	case ' ': {
 		char *ptr = strdup (r_str_trim_head ((char *)input + 1));
 		int n = r_str_word_set0 (ptr);
@@ -2761,6 +2761,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		switch (n) {
 		case 2: // get at
 			at = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+			/* fall through */
 		case 1: // get addr
 			addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			break;
