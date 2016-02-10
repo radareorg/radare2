@@ -733,6 +733,10 @@ typedef struct r_anal_bb_t {
 #endif
 	RAnalCond *cond;
 	RAnalSwitchOp *switch_op;
+	// offsets of instructions in this block
+	ut16 *op_pos;
+	// size of the op_pos array
+	int n_op_pos;
 	ut8 *op_bytes;
 	ut8 op_sz;
 	ut64 eflags;
@@ -1168,7 +1172,10 @@ R_API void r_anal_bb_free(RAnalBlock *bb);
 R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb,
 		ut64 addr, ut8 *buf, ut64 len, int head);
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off);
-R_API int r_anal_bb_is_in_offset (RAnalBlock *bb, ut64 addr);
+R_API int r_anal_bb_is_in_offset(RAnalBlock *bb, ut64 addr);
+R_API void r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v);
+R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i);
+R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 addr);
 
 /* op.c */
 R_API const char *r_anal_stackop_tostring (int s);

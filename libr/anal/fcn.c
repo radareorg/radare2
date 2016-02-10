@@ -355,14 +355,17 @@ repeat:
 				//return R_ANAL_RET_END;
 			}
 		}
-		idx += oplen;
-		delay.un_idx = idx;
 		if (!overlapped) {
+			r_anal_bb_set_offset (bb, bb->ninstr, addr + idx - bb->addr);
 			bb->size += oplen;
+			bb->ninstr++;
+
 			fcn->ninstr++;
 		//	FITFCNSZ(); // defer this, in case this instruction is a branch delay entry
 		//	fcn->size += oplen; /// XXX. must be the sum of all the bblocks
 		}
+		idx += oplen;
+		delay.un_idx = idx;
 		if (op.delay>0 && delay.pending == 0) {
 			// Handle first pass through a branch delay jump:
 			// Come back and handle the current instruction later.
@@ -1014,9 +1017,11 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 		return 0;
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		if (addr == bbi->addr)
-			return R_ANAL_RET_DUP;
+		if (addr == bbi->addr) return R_ANAL_RET_DUP;
+
 		if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
+			int new_bbi_instr, i;
+
 			bb = appendBasicBlock (anal, fcn, addr);
 			bb->size = bbi->addr + bbi->size - addr;
 			bb->jump = bbi->jump;
@@ -1027,13 +1032,29 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 			bbi->jump = addr;
 			bbi->fail = -1;
 			bbi->conditional = false;
-			if (bbi->type&R_ANAL_BB_TYPE_HEAD) {
-				bb->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
+			if (bbi->type & R_ANAL_BB_TYPE_HEAD) {
+				bb->type = bbi->type ^ R_ANAL_BB_TYPE_HEAD;
 				bbi->type = R_ANAL_BB_TYPE_HEAD;
 			} else {
 				bb->type = bbi->type;
 				bbi->type = R_ANAL_BB_TYPE_BODY;
 			}
+
+			// recalculate offset of instructions in both bb and bbi
+			i = 0;
+			while (i < bbi->ninstr && r_anal_bb_offset_inst (bbi, i) < bbi->size) i++;
+			new_bbi_instr = i;
+			if (bb->addr - bbi->addr == r_anal_bb_offset_inst (bbi, i)) {
+				bb->ninstr = 0;
+				while (i < bbi->ninstr) {
+					ut16 off_op = r_anal_bb_offset_inst (bbi, i);
+					if (off_op >= bbi->size + bb->size) break;
+					r_anal_bb_set_offset (bb, bb->ninstr, off_op - bbi->size);
+					bb->ninstr++;
+					i++;
+				}
+			}
+			bbi->ninstr = new_bbi_instr;
 #if R_ANAL_BB_HAS_OPS
 			if (bbi->ops) {
 				r_list_foreach (bbi->ops, iter, opi) {
