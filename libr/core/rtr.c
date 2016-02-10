@@ -369,12 +369,18 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	RConfig *newcfg = NULL, *origcfg = NULL;
 	int iport, timeout = r_config_get_i (core->config, "http.timeout");
 	const char *host = r_config_get (core->config, "http.bind");
+	const char *root = r_config_get (core->config, "http.root");
 	const char *port = r_config_get (core->config, "http.port");
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
 	char *dir;
 	int ret = 0;
 	char headers[128] = {0};
+
+	if (!r_file_is_directory (root)) {
+		eprintf ("Cannot find http.root '%s'\n", root);
+		return false;
+	}
 
 	if (path && atoi (path)) {
 		port = path;
