@@ -523,26 +523,42 @@ static void setprintmode (RCore *core, int n) {
 }
 
 #define OPDELTA 32
-static int prevopsz (RCore *core, ut64 addr) {
-	ut64 target = addr;
-	ut64 base = target-OPDELTA;
-	int len, ret, i;
-	ut8 buf[OPDELTA*2];
+static ut64 prevop_addr (RCore *core, ut64 addr) {
+	ut8 buf[OPDELTA * 2];
+	ut64 target, base;
+	RAnalBlock *bb;
 	RAnalOp op;
+	int len, ret, i;
 
+	// let's see if we can use anal info to get the previous instruction
+	// TODO: look in the current basicblock, then in the current function
+	// and search in all functions only as a last chance, to try to speed
+	// up the process.
+	bb = r_anal_bb_from_offset (core->anal, addr - 1);
+	if (bb) {
+		ut64 res = r_anal_bb_opaddr_at (bb, addr - 1);
+		if (res != UT64_MAX) {
+			return res;
+		}
+	}
+
+	// if we anal info didn't help then fallback to the dumb solution.
+	target = addr;
+	base = target - OPDELTA;
 	r_core_read_at (core, base, buf, sizeof (buf));
-	for (i=0; i<sizeof (buf); i++) {
-		ret = r_anal_op (core->anal, &op, base+i,
-			buf+i, sizeof (buf)-i);
+	for (i = 0; i < sizeof (buf); i++) {
+		ret = r_anal_op (core->anal, &op, base + i,
+			buf + i, sizeof (buf) - i);
 		if (!ret) continue;
 		len = op.size;
 		r_anal_op_fini (&op); // XXX
-		if (len<1) continue;
-		i += len-1;
-		if (target == base+i+1)
-			return len;
+		if (len < 1) continue;
+		if (target == base + i + len) {
+			return base + i;
+		}
+		i += len - 1;
 	}
-	return 4;
+	return target - 4;
 }
 static void visual_offset (RCore *core) {
 	char buf[256];
@@ -552,6 +568,11 @@ static void visual_offset (RCore *core) {
 		if (buf[2]=='.')buf[1]='.';
 		r_core_cmd0 (core, buf);
 	}
+}
+
+static int prevopsz(RCore *core, ut64 addr) {
+	ut64 prev_addr = prevop_addr (core, addr);
+	return addr - prev_addr;
 }
 
 R_API int r_core_visual_xrefs_x (RCore *core) {
@@ -788,10 +809,13 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 		prev_roff = row > 0 ? r_print_rowoff (p, row - 1) : UT32_MAX;
 		delta = p->cur - roff;
 		if (prev_roff == UT32_MAX) {
-			prev_sz = prevopsz (core, core->offset + roff);
+			ut64 prev_addr = prevop_addr (core, core->offset + roff);
+			RAsmOp op;
+
 			prev_roff = 0;
-			if (prev_sz < 1) prev_sz = 1;
-			r_core_seek (core, core->offset + roff - prev_sz, 1);
+			r_core_seek (core, prev_addr, 1);
+			prev_sz = r_asm_disassemble (core->assembler, &op,
+				core->block, 32);
 		} else {
 			prev_sz = roff - prev_roff;
 		}
