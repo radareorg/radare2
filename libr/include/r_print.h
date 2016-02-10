@@ -82,6 +82,8 @@ typedef struct r_print_t {
 	ut32 *row_offsets;
 	// size of row_offsets
 	int row_offsets_sz;
+	// when true it makes visual mode flush the buffer to screen
+	bool vflush;
 } RPrint;
 
 #ifdef R_API
