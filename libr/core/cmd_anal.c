@@ -3467,7 +3467,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd0 (core, "af @ entry0");
 		break;
 	case 'n': r_core_cmd0 (core, ".afna @@ fcn.*"); break;
-	case 'p':
+	case 'p': // "aap"
 		if (*input == '?') {
 			// TODO: accept parameters for ranges
 			eprintf ("Usage: /aap   ; find in memory for function preludes");

@@ -410,16 +410,17 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 		break;
 	case '-':
 		switch (input[2]) {
-			case '*':
-				core->num->value = r_meta_del (core->anal,
-						input[0], 0, UT64_MAX, NULL);
-				break;
-			case ' ':
-				addr = r_num_math (core->num, input+3);
-			default:
-				core->num->value = r_meta_del (core->anal,
-						input[0], addr, 1, NULL);
-				break;
+		case '*':
+			core->num->value = r_meta_del (core->anal,
+					input[0], 0, UT64_MAX, NULL);
+			break;
+		case ' ':
+			addr = r_num_math (core->num, input+3);
+			/* fallthrough */
+		default:
+			core->num->value = r_meta_del (core->anal,
+					input[0], addr, 1, NULL);
+			break;
 		}
 		break;
 	case '*':
@@ -450,7 +451,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 		t = strdup (input+2);
 		p = NULL;
 		n = 0;
-		strncpy (name, t, sizeof (name)-1);
+		strncpy (name, t, sizeof (name) - 1);
 		if (*input != 'C') {
 			n = r_num_math (core->num, t);
 			if (type == 'f') {
@@ -466,10 +467,9 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 				 * save and reload.
 				 */
 				p = strchr (t, ' ');
-				if (p)
-					addr = r_num_math (core->num, p+1);
+				if (p) addr = r_num_math (core->num, p+1);
 			}
-			if (!*t || n>0) {
+			if (!*t || n > 0) {
 				RFlagItem *fi;
 				p = strchr (t, ' ');
 				if (p) {
@@ -478,15 +478,16 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 				} else
 					switch (type) {
 					case 'z':
-						type='s';
+						type = 's';
+						/* fallthrough */
 					case 's':
 						// TODO: filter \n and so on :)
 						strncpy (name, t, sizeof (name)-1);
 						name[sizeof (name)-1] = '\0';
 						r_core_read_at (core, addr, (ut8*)name, sizeof (name)-1);
-						if (n < sizeof(name))
+						if (n < sizeof (name)) {
 							name[n] = '\0';
-						else name[sizeof (name)-1] = '\0';
+						} else name[sizeof (name)-1] = '\0';
 						break;
 					default:
 						fi = r_flag_get_i (core->flags, addr);

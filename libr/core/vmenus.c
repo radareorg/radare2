@@ -1829,7 +1829,7 @@ R_API void r_core_visual_define (RCore *core) {
 		p += cur;
 	}
 	{
-		int h;
+		int h = 0;
 		(void)r_cons_get_size (&h);
 		h-=19;
 		if (h<0) {
@@ -1986,11 +1986,8 @@ R_API void r_core_visual_define (RCore *core) {
 		}
 		break;
 	case 'W':
-		{
-		int asmbits = 64; //r_config_get_i (core->config, "asm.bits");
-		r_meta_cleanup (core->anal, off, off+plen);
-		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+(asmbits/8), "");
-		}
+		r_meta_cleanup (core->anal, off, off + plen);
+		r_meta_add (core->anal, R_META_TYPE_DATA, off, off + (64 / 8), "");
 		break;
 	case 'e':
 		// set function size

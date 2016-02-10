@@ -1335,9 +1335,9 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 					break;
 				case 8:
 					{
-					ut64 *data = (ut64*)(buf+idx);
-					r_mem_copyendian((ut8*)data, (ut8*)data, 8, !core->print->big_endian);
-					r_cons_printf (".qword 0x%016x", *data);
+					ut64 *data = (ut64*)(buf + idx);
+					r_mem_copyendian ((ut8*)data, (const ut8*)data, 8, !core->print->big_endian);
+					r_cons_printf (".qword 0x%016"PFMT64x, *data);
 					}
 					break;
 				default:
