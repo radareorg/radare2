@@ -194,6 +194,7 @@ R_API RPrint *r_print_new() {
 	p->lines_cache = NULL;
 	p->row_offsets_sz = 0;
 	p->row_offsets = NULL;
+	p->vflush = true;
 	return p;
 }
 
