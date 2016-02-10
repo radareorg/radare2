@@ -298,7 +298,7 @@ static RList* entries(RBinFile *arch) { //Should be 3 offsets pointed by NMI, RE
 
 struct r_bin_plugin_t r_bin_plugin_smd = {
 	.name = "smd",
-	.desc = "SEGA Gesmdis/Megadrive",
+	.desc = "SEGA Genesis/Megadrive",
 	.license = "LGPL3",
 	.load_bytes = &load_bytes,
 	.check = &check,
