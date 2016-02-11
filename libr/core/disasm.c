@@ -2575,7 +2575,7 @@ toro:
 			if (ds->hint->size) ds->analop.size = ds->hint->size;
 			if (ds->hint->ptr) ds->analop.ptr = ds->hint->ptr;
 		}
-		r_print_set_rowoff (core->print, ds->lines, ds->at - ds->addr);
+		r_print_set_rowoff (core->print, ds->lines, ds->at - addr);
 		if (ds->midflags) {
 			skip_bytes = handleMidFlags (core, ds, true);
 			if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW)
