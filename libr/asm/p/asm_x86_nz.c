@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2015 - pancake */
+/* Copyright (C) 2008-2016 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -865,6 +865,9 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				pfx = 0;
 			} else pfx = 0xc0;
 			arg0 = getreg (arg);
+			if (!arg2) {
+				return -1;
+			}
 			if (a->bits==64) {
 				if (*arg=='r' || *arg2=='r') {
 					bool a = is64reg (arg);
