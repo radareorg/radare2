@@ -23,7 +23,7 @@ static ut64 num_callback (RNum *user, const char *name, int *ok) {
 	RList *list;
 
 	if (ok) *ok = 0;
-	
+
 	list = r_hashtable64_lookup (f->ht_name, r_str_hash64 (name));
 	if (list) {
 		RFlagItem *item = r_list_get_top (list);
@@ -130,7 +130,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 			 }
 			 if (flag->alias) {
 				 r_cons_printf ("fa %s %s\n", flag->name, flag->alias);
-				 if (flag->comment && *flag->comment) 
+				 if (flag->comment && *flag->comment)
 					 r_cons_printf ("\"fC %s %s\"\n",
 						flag->name, flag->comment);
 			 } else {
@@ -189,28 +189,30 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 	RFlagItem *item = NULL;
 #if USE_SDB
 	char buf[128];
-	if (!f) return NULL;
+	if (!f)
+		return NULL;
 	char * foo = sdb_get (db, sdb_itoa (off, buf, 16), 0);
 	return r_flag_get (f, foo);
 #else
 	RListIter *iter;
 	RList *list = r_hashtable64_lookup (f->ht_off, XOROFF (off));
-	if (!list) return NULL;
+	if (!list)
+		return NULL;
 	r_list_foreach (list, iter, item) {
 		// XXX: hack, because some times the hashtable is poluted by ghost values
 		if (item->offset != off)
 			continue;
+		if (!item->name)
+			continue;
 		/* catch sym. first */
-		if (!strncmp (item->name, "loc.", 4)) {
+		if (!strncmp (item->name, "loc.", 4))
 			continue;
-		}
-		if (!strncmp (item->name, "fcn.", 4)) {
+		if (!strncmp (item->name, "fcn.", 4))
 			continue;
-		}
-		if (!strncmp (item->name, "section.", 4)) {
+		if (!strncmp (item->name, "section.", 4))
 			continue;
-		}
-		if (r_str_nlen(item->name, 5) > 4 && item->name[3] == '.') {
+		if (r_str_nlen(item->name, 5) > 4 &&
+		    item->name[3] == '.') {
 			oitem = item;
 			break;
 		}
@@ -282,7 +284,7 @@ sdb_set (db, sdb_itoa (off, buf, 16), name, 0);
 	if (!name || !*name)
 		return NULL;
 	if (dup) {
-// XXX: doesnt works well 
+// XXX: doesnt works well
 		item = R_NEW0 (RFlagItem);
 		if (!r_flag_item_set_name (item, name, NULL)) {
 			eprintf ("Invalid flag name '%s'.\n", name);
