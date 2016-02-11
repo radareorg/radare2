@@ -1816,6 +1816,7 @@ R_API void r_core_visual_define (RCore *core) {
 	ut64 off = core->offset;
 	int n, ch, ntotal = 0;
 	ut8 *p = core->block;
+	int rep = -1;
 	char *name;
 	int delta = 0;
 	if (core->print->cur_enabled) {
@@ -1875,6 +1876,7 @@ R_API void r_core_visual_define (RCore *core) {
 	r_cons_flush ();
 
 	// get ESC+char, return 'hjkl' char
+repeat:
 	ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
 
 	switch (ch) {
@@ -1980,14 +1982,21 @@ R_API void r_core_visual_define (RCore *core) {
 		break;
 	case 'w':
 		{
-		int asmbits = 32; //r_config_get_i (core->config, "asm.bits");
-		r_meta_cleanup (core->anal, off, off+plen);
-		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+(asmbits/8), "");
+		int i = 0;
+		r_meta_cleanup (core->anal, off, off + plen);
+		if (rep < 0) rep = 1;
+		for (i = 0; i < rep; i++, off+= 4)
+			r_meta_add (core->anal, R_META_TYPE_DATA, off, off + 4, "");
 		}
 		break;
 	case 'W':
+		{
+		int i = 0;
 		r_meta_cleanup (core->anal, off, off + plen);
-		r_meta_add (core->anal, R_META_TYPE_DATA, off, off + (64 / 8), "");
+		if (rep < 0) rep = 1;
+		for (i = 0; i < rep; i++, off += 8)
+			r_meta_add (core->anal, R_META_TYPE_DATA, off, off + 8, "");
+		}
 		break;
 	case 'e':
 		// set function size
@@ -2072,13 +2081,6 @@ R_API void r_core_visual_define (RCore *core) {
 		break;
 	case 'u':
 		r_core_anal_undefine (core, off);
-#if 0
-		r_flag_unset_i (core->flags, off, NULL);
-		f = r_anal_get_fcn_in (core->anal, off, 0);
-		r_anal_fcn_del_locs (core->anal, off);
-		if (f) r_meta_del (core->anal, R_META_TYPE_ANY, off, f->size, "");
-		r_anal_fcn_del (core->anal, off);
-#endif
 		break;
 	case 'f':
 		{
@@ -2107,6 +2109,11 @@ R_API void r_core_visual_define (RCore *core) {
 		break;
 	case 'q':
 	default:
+		if (ch >= '0' && ch <= '9') {
+			if (rep < 0) rep = 0;
+			rep = rep * 10 + atoi ((char *)&ch);
+			goto repeat;
+		}
 		break;
 	}
 }
