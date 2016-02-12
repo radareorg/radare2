@@ -1778,6 +1778,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("search.count", 0, "Start index number at search hits");
 	SETI("search.distance", 0, "Search string distance");
 	SETPREF("search.flags", "true", "All search results are flagged, otherwise only printed");
+	SETPREF("search.overlap", "false", "Look for overlapped search hits");
 	SETI("search.maxhits", 0, "Maximum number of hits (0: no limit)");
 	SETI("search.from", -1, "Search start address");
 	SETCB("search.in", "file", &cb_searchin, "Specify search boundaries (raw, block, file, section, range)");

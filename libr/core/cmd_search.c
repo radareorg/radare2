@@ -261,7 +261,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		eprintf ("Error: Callback has an invalid RCore.\n");
 		return false;
 	}
-	if (maxhits && searchhits>=maxhits) {
+	if (maxhits && searchhits >= maxhits) {
 		//eprintf ("Error: search.maxhits reached.\n");
 		return false;
 	}
@@ -292,7 +292,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		default:
 			len = kw->keyword_length; // 8 byte context
 			mallocsize = (len*2)+extra;
-			str = (len>0xffff)?  NULL: malloc (mallocsize);
+			str = (len > 0xffff)? NULL: malloc (mallocsize);
 			if (str) {
 				p = str;
 				memset (str, 0, len);
@@ -1686,6 +1686,7 @@ static int cmd_search(void *data, const char *input) {
 */
 	maxhits = r_config_get_i (core->config, "search.maxhits");
 	searchprefix = r_config_get (core->config, "search.prefix");
+	core->search->overlap = r_config_get_i (core->config, "search.overlap");
 	// TODO: get ranges from current IO section
 	/* XXX: Think how to get the section ranges here */
 	if (param.from == 0LL) param.from = core->offset;

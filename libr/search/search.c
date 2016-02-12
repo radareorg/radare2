@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 pancake */
+/* radare - LGPL - Copyright 2008-2016 pancake */
 
 #include <r_search.h>
 #include <r_list.h>
@@ -23,6 +23,7 @@ R_API RSearch *r_search_new(int mode) {
 	s->align = 0;
 	s->distance = 0;
 	s->contiguous = 0;
+	s->overlap = false;
 	s->pattern_size = 0;
 	s->string_max = 255;
 	s->string_min = 3;
@@ -139,7 +140,7 @@ R_API int r_search_deltakey_update(void *_s, ut64 from, const ut8 *buf, int len)
 					kw->idx[j]++;
 					if (kw->idx[j] == kw->keyword_length) {
 						if (!r_search_hit_new (s, kw, (ut64)
-							from+i-kw->keyword_length+1))
+							from + i - kw->keyword_length + 1))
 							return -1;
 						kw->idx[j] = 0;
 						//kw->idx[0] = 0;
@@ -355,13 +356,18 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 							continue;
 						}
 						if (!r_search_hit_new (s, kw, (ut64)
-								from+i-kw->keyword_length+1)) {
+								from + i - kw->keyword_length + 1)) {
 							return -1;
 						}
 						kw->idx[j] = 0;
 						kw->distance = 0;
 						kw->count++;
 						count++;
+						if (s->overlap) {
+							if (kw->keyword_length > 1) {
+								i -= kw->keyword_length - 1;
+							}
+						}
 						//s->nhits++;
 					}
 				}

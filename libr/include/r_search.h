@@ -65,6 +65,7 @@ typedef struct r_search_t {
 	RMemoryPool *pool;
 	int distance;
 	int inverse;
+	bool overlap;
 	int contiguous;
 	int align;
 	RSearchUpdate update;
