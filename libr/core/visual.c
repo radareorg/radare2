@@ -1703,8 +1703,18 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		break;
 	case 1: // pd
 	case 2: // pd+dbg
-		r_core_block_size (core, core->cons->rows * 5); // this is hacky
+	{
+		int bsize = core->cons->rows * 5;
+
+		if (core->screen_bounds > 1) {
+			// estimate new blocksize with the size of the last
+			// printed instructions
+			int new_sz = core->screen_bounds - core->offset + 32;
+			if (new_sz > bsize) bsize = new_sz;
+		}
+		r_core_block_size (core, bsize);
 		break;
+	}
 	case 5: // pxA
 		r_core_block_size (core, hexcols * core->cons->rows * 8);
 		break;
