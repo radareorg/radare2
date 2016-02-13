@@ -183,6 +183,7 @@ RDebugMap *xnu_map_alloc (RDebug *dbg, ut64 addr, int size);
 int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size);
 int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms);
 int xnu_init (void);
+int xnu_wait (RDebug *dbg, int pid);
 RDebugPid *xnu_get_pid (int pid);
 RList *xnu_dbg_maps (RDebug *dbg, int only_modules);
 RList *xnu_thread_list (RDebug *dbg, int pid, RList *list);

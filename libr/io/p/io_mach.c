@@ -230,14 +230,13 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
 	kern_return_t kr;
 	mach_port_t object;
-	int prot;
 
 	if (io->bits == 32) {
 		vm_region_flavor_t flavor = VM_REGION_BASIC_INFO;
 		mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT;
 		vm_region_basic_info_data_t info;
 		mach_vm_size_t vmsize;
-		kr = mach_vm_region (task, &addr, &vmsize, flavor, (vm_region_info_t)&info, &info_count, &object);
+		kr = mach_vm_region (task, (mach_vm_address_t*)&addr, &vmsize, flavor, (vm_region_info_t)&info, &info_count, &object);
 		return (kr != KERN_SUCCESS ? 0 : info.protection);
 	} else {
 		mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT_64;
