@@ -426,13 +426,13 @@ R_API void r_line_autocomplete() {
 			}
 		}
 		for (len = i = 0; i < argc && argv[i]; i++) {
-			slen = strlen (argv[i]);
-			len += (slen > col) ? (slen + sep) : (col + sep);
 			if (len + col > cols) {
 				printf ("\n");
 				len = 0;
 			}
-			printf ("%-*s   ", col-sep, argv[i]);
+			printf ("%-*s   ", col - sep, argv[i]);
+			slen = strlen (argv[i]);
+			len += (slen > col) ? (slen + sep) : (col + sep);
 		}
 		printf ("\n");
 	}
