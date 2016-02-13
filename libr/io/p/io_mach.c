@@ -251,16 +251,11 @@ static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
 
 static int tsk_pagesize(RIOMach *riom) {
 	//cache the pagesize
-	static ut64 pagesize = 0;
+	static vm_size_t pagesize = 0;
 	kern_return_t kr;
-	task_vm_info_data_t task_vm_info;
-	mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
-	if (pagesize)
-		return pagesize;
-	kr = task_info (riom->task, TASK_VM_INFO, (task_info_t)&task_vm_info, &count);
+	kr = host_page_size (mach_host_self (), &pagesize);
 	if (kr != KERN_SUCCESS)
-		perror ("task_info");
-	pagesize = task_vm_info.page_size;
+		pagesize = 4096;
 	return pagesize;
 }
 
