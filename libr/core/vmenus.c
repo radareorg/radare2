@@ -6,6 +6,13 @@
 
 #define MAX_FORMAT 3
 
+enum {
+	R_BYTE_DATA  = 1,
+	R_WORD_DATA  = 2,
+	R_DWORD_DATA = 4,
+	R_QWORD_DATA = 8
+};
+
 typedef struct {
 	RCore *core;
 	int t_idx;
@@ -1811,6 +1818,17 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 		r_core_seek (core, next, 1);
 }
 
+//define the data at offset according to the type (byte, word...) n times
+static void define_data_ntimes (RCore *core, ut64 off, int times, int type) {
+	int i = 0;
+	r_meta_cleanup (core->anal, off, off + core->blocksize);
+	if (times < 0)
+		times = 1;
+	for (i = 0; i < times; i++, off += type)
+		r_meta_add (core->anal, R_META_TYPE_DATA, off, off + type, "");
+
+}
+
 R_API void r_core_visual_define (RCore *core) {
 	int plen = core->blocksize;
 	ut64 off = core->offset;
@@ -1896,8 +1914,7 @@ repeat:
 		}
 		break;
 	case 'B':
-		r_meta_cleanup (core->anal, off, off+2);
-		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+2, "");
+		define_data_ntimes (core, off, rep, R_WORD_DATA);
 		break;
 	case 'i':
 		{
@@ -1911,8 +1928,7 @@ repeat:
 		}
 		break;
 	case 'b':
-		r_meta_cleanup (core->anal, off, off+1);
-		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+1, "");
+		define_data_ntimes (core, off, rep, R_BYTE_DATA);
 		break;
 	case 'm':
 		{
@@ -1981,22 +1997,10 @@ repeat:
 		}
 		break;
 	case 'w':
-		{
-		int i = 0;
-		r_meta_cleanup (core->anal, off, off + plen);
-		if (rep < 0) rep = 1;
-		for (i = 0; i < rep; i++, off+= 4)
-			r_meta_add (core->anal, R_META_TYPE_DATA, off, off + 4, "");
-		}
+		define_data_ntimes (core, off, rep, R_DWORD_DATA);
 		break;
 	case 'W':
-		{
-		int i = 0;
-		r_meta_cleanup (core->anal, off, off + plen);
-		if (rep < 0) rep = 1;
-		for (i = 0; i < rep; i++, off += 8)
-			r_meta_add (core->anal, R_META_TYPE_DATA, off, off + 8, "");
-		}
+		define_data_ntimes (core, off, rep, R_QWORD_DATA);
 		break;
 	case 'e':
 		// set function size
