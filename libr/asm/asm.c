@@ -402,6 +402,7 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 }
 
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
+	RStrBuf *buf_asm;
 	RAsmCode *acode;
 	int ret, slen;
 	RAsmOp op;
@@ -412,31 +413,26 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	if (!(acode->buf = malloc (1+len)))
 		return r_asm_code_free (acode);
 	memcpy (acode->buf, buf, len);
-	if (!(acode->buf_hex = malloc (2*len+1)))
+	if (!(acode->buf_hex = malloc (2 * len+1)))
 		return r_asm_code_free (acode);
 	r_hex_bin2str (buf, len, acode->buf_hex);
 	if (!(acode->buf_asm = malloc (4)))
 		return r_asm_code_free (acode);
 
+	buf_asm = r_strbuf_new (NULL);
 	for (idx = ret = slen = 0, acode->buf_asm[0] = '\0'; idx < len; idx+=ret) {
 		r_asm_set_pc (a, a->pc + ret);
 		ret = r_asm_disassemble (a, &op, buf+idx, len-idx);
 		if (ret<1) {
-// TODO: this warning is sometimes useful
-//			eprintf ("disassemble error at offset %"PFMT64d"\n", idx);
-			//ret = 1;
 			ret = 1;
-			//acode->buf_asm[0] = 0;
-			//return acode;
 		}
 		if (a->ofilter)
 			r_parse_parse (a->ofilter, op.buf_asm, op.buf_asm);
-		slen += strlen (op.buf_asm) + 2;
-		if (!(acode->buf_asm = realloc (acode->buf_asm, slen)))
-			return r_asm_code_free (acode);
-		strcat (acode->buf_asm, op.buf_asm);
-		strcat (acode->buf_asm, "\n");
+		r_strbuf_append (buf_asm, op.buf_asm);
+		r_strbuf_append (buf_asm, "\n");
 	}
+	acode->buf_asm = r_strbuf_drain (buf_asm);
+
 	acode->len = idx;
 	return acode;
 }

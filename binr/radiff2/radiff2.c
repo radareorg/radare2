@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_diff.h>
 #include <r_core.h>
@@ -15,6 +15,8 @@ enum {
 	MODE_COLS
 };
 
+static char *file = NULL;
+static char *file2 = NULL;
 static ut32 count = 0;
 static int showcount = 0;
 static int useva = true;
@@ -22,6 +24,27 @@ static int delta = 0;
 static int showbare = false;
 static int json_started = 0;
 static int diffmode = 0; 
+static bool disasm = false;
+static RCore *core = NULL;
+static const char *arch = NULL;
+static int bits = 0;
+
+static RCore* opencore(const char *f) {
+	const ut64 baddr = UT64_MAX;
+	RCore *c = r_core_new ();
+	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
+	r_config_set_i (c->config, "io.va", useva);
+	r_config_set_i (c->config, "anal.split", true);
+	if (f) {
+		if (r_core_file_open (c, f, 0, 0) == NULL) {
+			r_core_free (c);
+			return NULL;
+		}
+		r_core_bin_load (c, NULL, baddr);
+	}
+	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
+	return c;
+}
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i; //, diffmode = (int)(size_t)user;
@@ -31,6 +54,9 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	}
 	switch (diffmode) {
 	case 'r':
+		if (disasm) {
+			eprintf ("r2cmds (-r) + disasm (-D) not yet implemented\n");
+		}
 		if (op->a_len == op->b_len) {
 			printf ("wx ");
 			for (i=0; i<op->b_len; i++)
@@ -52,6 +78,9 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		}
 		return 1;
 	case 'j':
+		if (disasm) {
+			eprintf ("JSON (-j) + disasm (-D) not yet implemented\n");
+		}
 		if (json_started)
 			printf(",\n");
 		json_started = 1;
@@ -66,30 +95,45 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		return 1;
 	case 0:
 	default:
-		printf ("0x%08"PFMT64x" ", op->a_off);
-		for (i = 0;i<op->a_len;i++)
-			printf ("%02x", op->a_buf[i]);
-		printf (" => ");
-		for (i=0; i<op->b_len; i++)
-			printf ("%02x", op->b_buf[i]);
-		printf (" 0x%08"PFMT64x"\n", op->b_off);
+		if (disasm) {
+			printf ("--- 0x%08"PFMT64x"\n", op->a_off);
+			if (!core) {
+				core = opencore (file);
+				if (arch) {
+					r_config_set (core->config, "asm.arch", arch);
+				}
+				if (bits) {
+					r_config_set_i (core->config, "asm.bits", bits);
+				}
+			}
+			if (core) {
+				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->a_buf, op->a_len);
+				printf ("%s\n", ac->buf_asm);
+				r_asm_code_free (ac);
+			}
+		} else {
+			printf ("0x%08"PFMT64x" ", op->a_off);
+			for (i = 0; i < op->a_len; i++)
+				printf ("%02x", op->a_buf[i]);
+		}
+		if (disasm) {
+			printf ("+++ 0x%08"PFMT64x"\n", op->b_off);
+			if (!core) {
+				core = opencore (NULL);
+			}
+			if (core) {
+				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->b_buf, op->b_len);
+				printf ("%s\n", ac->buf_asm);
+				r_asm_code_free (ac);
+			}
+		} else {
+			printf (" => ");
+			for (i=0; i < op->b_len; i++)
+				printf ("%02x", op->b_buf[i]);
+			printf (" 0x%08"PFMT64x"\n", op->b_off);
+		}
 		return 1;
 	}
-}
-
-static RCore* opencore(const char *f) {
-	const ut64 baddr = UT64_MAX;
-	RCore *c = r_core_new ();
-	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
-	r_config_set_i (c->config, "io.va", useva);
-	r_config_set_i (c->config, "anal.split", true);
-	if (r_core_file_open (c, f, 0, 0) == NULL) {
-		r_core_free (c);
-		return NULL;
-	}
-	r_core_bin_load (c, NULL, baddr);
-	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
-	return c;
 }
 
 static int show_help(int v) {
@@ -160,9 +204,6 @@ int main(int argc, char **argv) {
 	const char *addr = NULL;
 	RCore *c, *c2;
 	RDiff *d;
-	const char *arch = NULL;
-	int bits = 0;
-	char *file, *file2;
 	ut8 *bufa, *bufb;
 	int o, sza, szb, /*diffmode = 0,*/ delta = 0;
 	int mode = MODE_DIFF;
@@ -171,7 +212,7 @@ int main(int argc, char **argv) {
 	int gdiff_mode = 0;
 	double sim;
 
-	while ((o = getopt (argc, argv, "a:b:Cnpg:Ojrhcdsvxt:")) != -1) {
+	while ((o = getopt (argc, argv, "a:b:CDnpg:Ojrhcdsvxt:")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -208,6 +249,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'd':
 			delta = 1;
+			break;
+		case 'D':
+			disasm = true;
 			break;
 		case 'h':
 			return show_help (1);

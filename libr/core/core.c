@@ -1085,11 +1085,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			}
 		}
 	}
-	{
-		char *rs = strdup (r_strbuf_get (s));
-		r_strbuf_free (s);
-		return rs;
-	}
+	return r_strbuf_drain (s);
 }
 
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr) {
