@@ -921,6 +921,8 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return strdup ("vax");
 	case EM_XTENSA:
 		return strdup ("xtensa");
+	case EM_LANAI:
+		return strdup ("lanai");
 	case EM_SH: return strdup ("sh");
 	default: return strdup ("x86");
 	}
@@ -973,6 +975,7 @@ char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_ST100:       return strdup ("STMicroelectronic ST100 processor");
 	case EM_TINYJ:       return strdup ("Advanced Logic Corp. Tinyj emb.fam");
 	case EM_X86_64:      return strdup ("AMD x86-64 architecture");
+	case EM_LANAI:       return strdup ("32bit LANAI architecture");
 	case EM_PDSP:        return strdup ("Sony DSP Processor");
 	case EM_FX66:        return strdup ("Siemens FX66 microcontroller");
 	case EM_ST9PLUS:     return strdup ("STMicroelectronics ST9+ 8/16 mc");

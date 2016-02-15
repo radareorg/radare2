@@ -291,6 +291,7 @@ typedef struct
 #define EM_MCST_ELBRUS  175
 #define EM_AARCH64      183		/* ARMv8 */
 #define EM_PROPELLER	0x5072
+#define EM_LANAI	0x8123
 
 /* If it is necessary to assign new unofficial EM_* values, please
    pick large random numbers (0x8523, 0xa7f2, etc.) to minimize the
