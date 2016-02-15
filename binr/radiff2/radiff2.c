@@ -145,6 +145,7 @@ static int show_help(int v) {
 		"  -C         graphdiff code (columns: off-A, match-ratio, off-B)\n"
 		"  -CC        same as above but run `aac` to find more functions\n"
 		"  -d         use delta diffing\n"
+		"  -D         show disasm instead of hexpairs\n"
 		"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
 		"  -j         output in json format\n"
 		"  -n         print bare addresses only (diff.bare=1)\n"
