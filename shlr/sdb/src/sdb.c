@@ -598,9 +598,10 @@ static int getbytes(Sdb *s, char *b, int len) {
 }
 
 SDB_API void sdb_dump_begin (Sdb* s) {
-	if (s->fd != -1)
-		seek_set (s->fd, (s->pos=2048));
-	else s->pos = 0;
+	if (s->fd != -1) {
+		s->pos = sizeof (((struct cdb_make *)0)->final);
+		seek_set (s->fd, s->pos);
+	} else s->pos = 0;
 }
 
 SDB_API SdbKv *sdb_dump_next (Sdb* s) {

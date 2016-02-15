@@ -113,16 +113,22 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, ut32 len) {
 	if (c->fd == -1) return -1;
 	c->hslots = 0;
 	if (!c->loop) {
-		if (!cdb_read (c, buf, sizeof (buf), (u << 3) & 2047)) {
+		int bufsz = ((u+1) & 0xFF) ? sizeof (buf) : sizeof (buf) / 2;
+		if (!cdb_read (c, buf, bufsz, (u << 2) & 1023))
 			return -1;
-		}
-		ut32_unpack (buf + 4, &c->hslots);
-		if (!c->hslots) {
-			return 0;
-		}
+
+		/* hslots = (hpos_next - hpos) / 8 */
 		ut32_unpack (buf, &c->hpos);
+		if (bufsz == sizeof (buf))
+			ut32_unpack (buf+4, &pos);
+		else pos = c->size;
+
+		if (pos < c->hpos) return -1;
+		c->hslots = (pos - c->hpos) / (2 * sizeof (ut32));
+		if (!c->hslots) return 0;
+
 		c->khash = u;
-		u = ((u>>8)%c->hslots)<<3;
+		u = ((u >> 8) % c->hslots) << 3;
 		c->kpos = c->hpos + u;
 	}
 	while (c->loop < c->hslots) {
