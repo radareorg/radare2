@@ -426,11 +426,13 @@ repeat:
 				varname = get_varname (anal, ARGPREFIX, R_ABS(op.ptr));
 				r_anal_var_add (anal, fcn->addr, 1, op.ptr,
 						'a', NULL, anal->bits/8, varname);
+				r_anal_var_access (anal, fcn->addr, 'a', 1, op.ptr, 1, op.addr);
 				// TODO: DIR_IN?
 			} else {
 				varname = get_varname (anal, VARPREFIX, R_ABS(op.ptr));
 				r_anal_var_add (anal, fcn->addr, 1, -op.ptr,
 						'v', NULL, anal->bits/8, varname);
+				r_anal_var_access (anal, fcn->addr, 'v', 1, -op.ptr, 1, op.addr);
 			}
 			free (varname);
 			break;
@@ -439,11 +441,11 @@ repeat:
 			if (((int)op.ptr) > 0) {
 				varname = get_varname (anal, ARGPREFIX, R_ABS(op.ptr));
 				r_anal_var_add (anal, fcn->addr, 1, op.ptr, 'a', NULL, anal->bits/8, varname);
-				r_anal_var_access (anal, fcn->addr, 'a', 0, op.ptr, 0, op.addr);
+				r_anal_var_access (anal, fcn->addr, 'a', 1, op.ptr, 0, op.addr);
 			} else {
 				varname = get_varname (anal, VARPREFIX, R_ABS(op.ptr));
 				r_anal_var_add (anal, fcn->addr, 1, -op.ptr, 'v', NULL, anal->bits/8, varname);
-				r_anal_var_access (anal, fcn->addr, 'v', 0, -op.ptr, 0, -op.addr);
+				r_anal_var_access (anal, fcn->addr, 'v', 1, -op.ptr, 0, op.addr);
 			}
 			free (varname);
 			break;

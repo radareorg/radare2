@@ -660,6 +660,30 @@ typedef struct r_anal_hint_t {
 	int immbase;
 } RAnalHint;
 
+typedef struct r_anal_var_access_t {
+	ut64 addr;
+	int set;
+} RAnalVarAccess;
+
+#define R_ANAL_VAR_KIND_ARG 'a'
+#define R_ANAL_VAR_KIND_VAR 'v'
+#define R_ANAL_VAR_KIND_REG 'r'
+
+// generic for args and locals
+typedef struct r_anal_var_t {
+	char *name;		/* name of the variable */
+	char *type; // cparse type of the variable
+	char kind; // 'a'rg, 'v'ar ..
+	ut64 addr;		// not used correctly?
+	ut64 eaddr;		// not used correctly?
+	int size;
+	int delta;		/* delta offset inside stack frame */
+	int scope;		/* global, local... | in, out... */
+	/* probably dupped or so */
+	RList/*RAnalVarAccess*/ *accesses; /* list of accesses for this var */
+	RList/*RAnalValue*/ *stores;   /* where this */
+} RAnalVar;
+
 // mul*value+regbase+regidx+delta
 typedef struct r_anal_value_t {
 	int absolute; // if true, unsigned cast is used
@@ -698,6 +722,7 @@ typedef struct r_anal_op_t {
 	int ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr;  /* stack pointer */
 	int refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
+	RAnalVar *var;  /* local var/arg used by this instruction */
 	RAnalValue *src[3];
 	RAnalValue *dst;
 	struct r_anal_op_t *next; // XXX deprecate
@@ -750,30 +775,6 @@ typedef struct r_anal_bb_t {
 	struct r_anal_bb_t *jumpbb;
 	RList /*struct r_anal_bb_t*/ *cases;
 } RAnalBlock;
-
-typedef struct r_anal_var_access_t {
-	ut64 addr;
-	int set;
-} RAnalVarAccess;
-
-#define R_ANAL_VAR_KIND_ARG 'a'
-#define R_ANAL_VAR_KIND_VAR 'v'
-#define R_ANAL_VAR_KIND_REG 'r'
-
-// generic for args and locals
-typedef struct r_anal_var_t {
-	char *name;		/* name of the variable */
-	char *type; // cparse type of the variable
-	char kind; // 'a'rg, 'v'ar ..
-	ut64 addr;		// not used correctly?
-	ut64 eaddr;		// not used correctly?
-	int size;
-	int delta;		/* delta offset inside stack frame */
-	int scope;		/* global, local... | in, out... */
-	/* probably dupped or so */
-	RList/*RAnalVarAccess*/ *accesses; /* list of accesses for this var */
-	RList/*RAnalValue*/ *stores;   /* where this */
-} RAnalVar;
 
 typedef enum {
 	R_ANAL_REF_TYPE_NULL = 0,

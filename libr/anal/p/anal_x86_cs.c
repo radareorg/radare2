@@ -517,7 +517,6 @@ SETL/SETNGE
 				if (INSOP(0).mem.base == X86_REG_RIP) {
 					op->ptr += addr + insn->size;
 				} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
-					op->ptr = UT64_MAX;
 					op->stackop = R_ANAL_STACK_SET;
 					op->stackptr = regsz;
 				} else {

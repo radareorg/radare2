@@ -4,6 +4,14 @@
 #include <r_util.h>
 #include <r_list.h>
 
+#define SDB_VARUSED_FMT "qzdq"
+struct VarUsedType {
+	ut64 fcn_addr;
+	char *type;
+	ut32 scope;
+	st64 delta;
+};
+
 R_API RAnalOp *r_anal_op_new () {
 	RAnalOp *op = R_NEW0 (RAnalOp);
 	if (!op) return NULL;
@@ -32,6 +40,7 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	if (((ut64)(size_t)op->mnemonic) == UT64_MAX) {
 		return;
 	}
+	r_anal_var_free (op->var);
 	r_anal_value_free (op->src[0]);
 	r_anal_value_free (op->src[1]);
 	r_anal_value_free (op->src[2]);
@@ -45,6 +54,19 @@ R_API void r_anal_op_free(void *_op) {
 	if (!_op) return;
 	r_anal_op_fini (_op);
 	free (_op);
+}
+
+static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
+	char *inst_key = sdb_fmt (0, "inst.0x%"PFMT64x".vars", op->addr);
+	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+	struct VarUsedType vut;
+	RAnalVar *res;
+
+	if (!var_def) return NULL;
+	sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut);
+	res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
+	sdb_fmt_free (&vut, SDB_VARUSED_FMT);
+	return res;
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
@@ -64,6 +86,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		anal->cur && anal->cur->op && strcmp (anal->cur->name, "null")) {
 		ret = anal->cur->op (anal, op, addr, data, len);
 		op->addr = addr;
+		op->var = get_used_var (anal, op);
 		if (ret < 1) op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
 		if (!memcmp (data, "\xff\xff\xff\xff", R_MIN(4, len))) {

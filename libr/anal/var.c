@@ -233,9 +233,11 @@ R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int d
 }
 
 R_API void r_anal_var_free (RAnalVar *av) {
-	free (av->name);
-	free (av->type);
-	free (av);
+	if (av) {
+		free (av->name);
+		free (av->type);
+		free (av);
+	}
 }
 
 /* (columns) elements in the array value */
@@ -323,6 +325,10 @@ R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int 
 	if (scope>0) { // local
 		char *var_local = sdb_fmt (0, "var.0x%"PFMT64x".%d.%d.%s",
 			var_addr, scope, delta, xs_type_str);
+		char *inst_key = sdb_fmt (1, "inst.0x%"PFMT64x".vars", xs_addr);
+		char *var_def = sdb_fmt(2, "0x%"PFMT64x",%c,0x%x,0x%x", var_addr,
+			kind, scope, delta);
+		sdb_set (DB, inst_key, var_def, 0);
 		return sdb_array_add_num (DB, var_local, xs_addr, 0);
 	}
 	// global
