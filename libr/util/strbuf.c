@@ -67,23 +67,30 @@ R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 
 R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
 	int l = strlen (s);
+	if (l<1) return false;
 	if ((sb->len + l + 1) < sizeof (sb->buf)) {
 		memcpy (sb->buf + sb->len, s, l + 1);
-		sb->ptr = NULL;
+		R_FREE (sb->ptr);
 	} else {
 		int newlen = sb->len + l + 128;
 		char *p = sb->ptr;
+		bool allocated = true;
 		if (!sb->ptr) {
 			p = malloc (newlen);
-		} else if (newlen > sb->ptrlen) {
+			if (p && sb->len > 0) {
+				memcpy (p, sb->buf, sb->len);
+			}
+		} else if (sb->len + l + 1 > sb->ptrlen) {
 			p = realloc (sb->ptr, newlen);
+		} else {
+			allocated = false;
 		}
-		if (!p) return false;
-		sb->ptr = p;
-		sb->ptrlen = newlen;
+		if (allocated) {
+			if (!p) return false;
+			sb->ptr = p;
+			sb->ptrlen = newlen;
+		}
 		memcpy (p + sb->len, s, l + 1);
-		free (sb->ptr);
-		sb->ptr = p;
 	}
 	sb->len += l;
 	return true;

@@ -109,7 +109,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			if (core) {
 				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->a_buf, op->a_len);
 				printf ("%s\n", ac->buf_asm);
-				r_asm_code_free (ac);
+				//r_asm_code_free (ac);
 			}
 		} else {
 			printf ("0x%08"PFMT64x" ", op->a_off);
@@ -124,7 +124,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			if (core) {
 				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->b_buf, op->b_len);
 				printf ("%s\n", ac->buf_asm);
-				r_asm_code_free (ac);
+				//r_asm_code_free (ac);
 			}
 		} else {
 			printf (" => ");
