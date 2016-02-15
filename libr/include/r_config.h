@@ -34,6 +34,8 @@ typedef struct r_config_node_t {
 	char *desc;
 } RConfigNode;
 
+R_API const char *r_config_node_type(RConfigNode *node);
+
 typedef struct r_config_t {
 	int lock;
 	int last_notfound;

@@ -1,9 +1,22 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare2 - LGPL - Copyright 2009-2016 - pancake */
 
 static int cmd_eval(void *data, const char *input) {
 	char *p;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
+	case 't': // env
+		if (input[1]==' ' && input[2]) {
+			RConfigNode *node = r_config_node_get (core->config, input+2);
+			if (node) {
+				const char *type = r_config_node_type (node);
+				if (type && *type) {
+					r_cons_printf ("%s\n", type);
+				}
+			}
+		} else {
+			eprintf ("Usage: et [varname]  ; show type of eval var\n");
+		}
+		break;
 	case 'n': // env
 		if (!strchr (input, '=')) {
 			char *var, *p;
@@ -169,6 +182,7 @@ static int cmd_eval(void *data, const char *input) {
 			"ee", "var", "open editor to change the value of var",
 			"er", " [key]", "set config key as readonly. no way back",
 			"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
+			"et", " [key]", "show type of given config variable",
 			"e", " a", "get value of var 'a'",
 			"e", " a=b", "set var 'a' the 'b' value",
 			"env", " [k[=v]]", "get/set environment variable",

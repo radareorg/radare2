@@ -14,7 +14,6 @@ R_API RConfigNode *r_config_node_new(const char *name, const char *value) {
 	node->value = strdup (value? value: "");
 	node->flags = CN_RW | CN_STR;
 	node->i_value = r_num_get (NULL, value);
-	;
 	return node;
 }
 
@@ -150,6 +149,17 @@ R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 		return (ut64)r_num_math (cfg->num, node->value);
 	}
 	return (ut64)0LL;
+}
+
+R_API const char *r_config_node_type(RConfigNode *node) {
+	if (node) {
+		int f = node->flags;
+		if (f & CN_BOOL) return "bool";
+		if (f & CN_STR) return "str";
+		if (f & CN_OFFT) return "addr";
+		if (f & CN_INT) return "int";
+	}
+	return "";
 }
 
 R_API RConfigNode *r_config_set_cb(RConfig *cfg, const char *name, const char *value, RConfigCallback cb) {
