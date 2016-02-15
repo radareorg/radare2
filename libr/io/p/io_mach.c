@@ -14,7 +14,6 @@
 //no available for ios #include <mach/mach_vm.h>
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
-#include <mach/mach_vm.h>
 #include <mach/mach_init.h>
 #include <mach/mach_port.h>
 #include <mach/mach_traps.h>
@@ -123,9 +122,9 @@ static ut64 the_lower = 0LL;
 
 static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 	struct vm_region_submap_info_64 info;
-	mach_vm_address_t address = MACH_VM_MIN_ADDRESS;
-	mach_vm_size_t size = (mach_vm_size_t) 0;
-	mach_vm_size_t osize = (mach_vm_size_t) 0;
+	vm_address_t address = MACH_VM_MIN_ADDRESS;
+	vm_size_t size = (vm_size_t) 0;
+	vm_size_t osize = (vm_size_t) 0;
 	natural_t depth = 0;
 	kern_return_t kr;
 	int tid = RIOMACH_PID (fd->data);
@@ -147,7 +146,7 @@ static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 		mach_msg_type_number_t info_count;
 		info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
 		memset (&info, 0, sizeof (info));
-		kr = mach_vm_region_recurse (task, &address, &size,
+		kr = vm_region_recurse_64 (task, &address, &size,
 			&depth, (vm_region_recurse_info_t) &info, &info_count);
 		if (kr != KERN_SUCCESS) {
 			break;
@@ -226,26 +225,17 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	return len;
 }
 
-
+//XXX this could not compile on 32 bit machines
 static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
 	kern_return_t kr;
 	mach_port_t object;
+	vm_size_t vmsize;
+	mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT_64;
+	vm_region_flavor_t flavor = VM_REGION_BASIC_INFO_64;
+	vm_region_basic_info_data_64_t info;
+	kr = vm_region_64 (task, &addr, &vmsize, flavor, (vm_region_info_t)&info, &info_count, &object);
+	return (kr != KERN_SUCCESS ? 0 : info.protection);
 
-	if (io->bits == 32) {
-		vm_region_flavor_t flavor = VM_REGION_BASIC_INFO;
-		mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT;
-		vm_region_basic_info_data_t info;
-		mach_vm_size_t vmsize;
-		kr = mach_vm_region (task, (mach_vm_address_t*)&addr, &vmsize, flavor, (vm_region_info_t)&info, &info_count, &object);
-		return (kr != KERN_SUCCESS ? 0 : info.protection);
-	} else {
-		mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT_64;
-		vm_region_flavor_t flavor = VM_REGION_BASIC_INFO_64;
-		vm_region_basic_info_data_64_t info;
-		vm_size_t vmsize;
-		kr = vm_region_64 (task, &addr, &vmsize, flavor, (vm_region_info_t)&info, &info_count, &object);
-		return (kr != KERN_SUCCESS ? 0 : info.protection);
-	}
 
 }
 

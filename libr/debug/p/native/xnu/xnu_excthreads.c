@@ -62,7 +62,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 	return true;
 }
 
-#elif __arm || __arm64  || __aarch64//arm processor
+#elif __arm || __arm64 || __aarch64//arm processor
 
 // BCR address match type
 #define BCR_M_IMVA_MATCH        ((uint32_t)(0u << 21))
@@ -103,47 +103,44 @@ static bool is_thumb_32(ut16 op) {
 	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
 }
 
-static int modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
-	R_DEBUG_REG_T *state;
-  	kern_return_t kr;
-	int ret;
-	ret = xnu_thread_get_drx (dbg, th);
-	if (ret == R_FALSE) {
+static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
+	int ret = xnu_thread_get_drx (dbg, th);
+	if (!ret) {
 		eprintf ("error to get drx registers modificy_trace_bit arm\n");
 		return R_FALSE;
 	}
-	state = (R_DEBUG_REG_T)th->drx;
-	if (state->flavor == ARM_DEBUG_STATE64) {
-		state->uds.ds64.__mdscr_el1 = (state->uds64.__mdscr_el1 \
-					& SS_ENABLE) & (enable ? SS_ENABLE : 0);
-
-	} else if (state->flavor == ARM_DEBUG_STATE32) {
+	if (th->flavor == ARM_DEBUG_STATE64) {
+		arm_debug_state64_t *state = &th->debug.drx64;
+		state->__mdscr_el1 = (state->__mdscr_el1 & SS_ENABLE) & (enable ? SS_ENABLE : 0);
+	} else if (th->flavor == ARM_DEBUG_STATE32) {
+		arm_debug_state32_t *state = &th->debug.drx32;
 		R_REG_T *regs;
 		ret = xnu_thread_get_gpr (dbg, th);
-		if (ret == R_FALSE) {
+		if (!ret) {
 			eprintf ("error to get gpr register modificy_trace_bit arm\n");
 			return R_FALSE;
 		}
-		regs = (R_REG_T)th->gpr;
+		regs = (R_REG_T*)&th->gpr;
 		if (enable) {
-			int r, i = 0;
-			RIOBind *bio = &dbg->io;
-			(R_DEBUG_REG_T)th->oldstate = state;
+			int i = 0;
+			RIOBind *bio = &dbg->iob;
+			memcpy ((void *)&th->oldstate, (void *)&th->debug.drx32, sizeof (arm_debug_state32_t));
 			//set a breakpoint that will stop when the PC doesn't
 			//match the current one
 			//set the current PC as the breakpoint address
-			state->uds.ds32.__bvr[i] = regs->ts_32.__pc;
-			state->uds.ds32.__bcr[i] = BCR_M_IMVA_MISMATCH | //stop on address mismatch
-				S_USER | //stop only in user mode
-				BCR_ENABLE; // enable this breakpoint
+			state->__bvr[i] = regs->ts_32.__pc & 0xFFFFFFFCu;
+			state->__bcr[i] = BCR_M_IMVA_MISMATCH |  // stop on
+								 // address
+								 // mismatch
+					  S_USER |  // stop only in user mode
+					  BCR_ENABLE;  // enable this breakpoint
 			if (regs->ts_32.__cpsr & 0x20) {
 				ut16 op;
 				// Thumb breakpoint
-				if (regs->ts_32.__pc & 2) {
-					state->uds.ds32.__bcr[i] |= BAS_IMVA_2_3;
-				} else {
-					state->uds.ds32.__bcr[i] |= BAS_IMVA_0_1;
-				}
+				if (regs->ts_32.__pc & 2)
+					state->__bcr[i] |= BAS_IMVA_2_3;
+				else
+					state->__bcr[i] |= BAS_IMVA_0_1;
 				if (bio->read_at (bio->io, regs->ts_32.__pc,
 						(void *)&op, 2) < 1) {
 					eprintf ("Failed to read opcode modify_trace_bit\n");
@@ -154,28 +151,27 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 					return false;
 				} else {
 					// Extend the number of bits to ignore for the mismatch
-					state->uds.ds32.__bcr[i] |= BAS_IMVA_ALL;
+					state->__bcr[i] |= BAS_IMVA_ALL;
 				}
 			} else {
 				// ARM breakpoint
-				state->uds.ds32.__bcr[i] |= BAS_IMVA_ALL; // Stop when any address bits change
+				state->__bcr[i] |= BAS_IMVA_ALL; // Stop when any address bits change
 			}
 			//disable bits
 			for (i = i + 1; i < 16; i++) {
 				//Disable all others
-				state->uds.ds32.__bcr[i] = 0;
-				state->uds.ds32.__bvr[i] = 0;
+				state->__bcr[i] = 0;
+				state->__bvr[i] = 0;
 			}
 		} else {
-			state->uds.ds32 = ((R_DEBUG_REG_T)th->oldstate)->uds.ds32; //we set the old state
+			//we set the old state
+			memcpy ((void *)&th->debug.drx32, (void *)&th->oldstate, sizeof (arm_debug_state32_t));
 		}
 	} else {
 		eprintf ("Bad flavor modificy_trace_bit arm\n");
 		return false;
 	}
 	//set state
-	th->count = state->dsh.count;
-	memcpy (th->state, state->uds, th->count);
 	if (!xnu_thread_set_drx (dbg, th)) {
 		eprintf ("error to set drx modificy_trace_bit arm\n");
 		return false;

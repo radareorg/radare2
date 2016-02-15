@@ -238,7 +238,7 @@ const char *xnu_reg_profile(RDebug *dbg) {
 #endif
 }
 
-//r_debug_select 
+//r_debug_select
 //using getcurthread has some drawbacks. You lose the ability to select
 //the thread you want to write or read from. but how that feature
 //is not implemented yet i don't care so much
@@ -249,7 +249,14 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		return 0;
 	switch (type) {
 	case R_REG_TYPE_DRX:
+#if __x86_64__ || __i386__
 		memcpy (&th->drx, buf, R_MIN (size, sizeof (th->drx)));
+#elif __arm || __arm64 || __aarch64
+		if (dbg->bits == R_SYS_BITS_32)
+			memcpy (&th->debug.drx32, buf, R_MIN (size, sizeof (th->debug.drx32)));
+		else
+			memcpy (&th->debug.drx64, buf, R_MIN (size, sizeof (th->debug.drx64)));
+#endif
 		ret = xnu_thread_set_drx (dbg, th);
 		break;
 	default:
@@ -299,7 +306,7 @@ RDebugMap *xnu_map_alloc(RDebug *dbg, ut64 addr, int size) {
 		return NULL;
 	if (addr == -1)
 		anywhere = VM_FLAGS_ANYWHERE;
-	ret = vm_allocate (th->th_port, (vm_address_t *)&base,
+	ret = vm_allocate (th->port, (vm_address_t *)&base,
 			  (vm_size_t)size, anywhere);
 	if (ret != KERN_SUCCESS) {
 		printf("vm_allocate failed\n");
@@ -313,7 +320,7 @@ int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
 	if (!th)
 		return false;
-	int ret = vm_deallocate (th->th_port,
+	int ret = vm_deallocate (th->port,
 		(vm_address_t)addr, (vm_size_t)size);
 	if (ret != KERN_SUCCESS) {
 		perror ("vm_deallocate");
@@ -370,7 +377,7 @@ RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
 		thread->state_size = sizeof (thread->gpr);
 		memcpy (&state, &thread->gpr, sizeof (R_REG_T));
 		r_list_append (list, r_debug_pid_new (thread->name,
-			thread->th_port, 's', CPU_PC));
+			thread->port, 's', CPU_PC));
 	}
 	return list;
 }
@@ -389,7 +396,7 @@ int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
 	if (!th)
 		return false;
-	ret = vm_protect (th->th_port, (vm_address_t)addr,
+	ret = vm_protect (th->port, (vm_address_t)addr,
 			 (vm_size_t)size, (boolean_t)0,
 			 VM_PROT_COPY | perms);
 	if (ret != KERN_SUCCESS) {
