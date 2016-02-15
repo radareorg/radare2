@@ -224,6 +224,7 @@ extern RAsmPlugin r_asm_plugin_riscv;
 extern RAsmPlugin r_asm_plugin_vax;
 extern RAsmPlugin r_asm_plugin_lanai_gnu;
 extern RAsmPlugin r_asm_plugin_xtensa;
+extern RAsmPlugin r_asm_plugin_vc4;
 extern RAsmPlugin r_asm_plugin_tricore;
 #endif
 
