@@ -24,7 +24,7 @@ R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
 	l = strlen (s);
 	if (l >= sizeof (sb->buf)) {
 		char *ptr = sb->ptr;
-		if (l+1 > sb->ptrlen) {
+		if (!ptr || l+1 > sb->ptrlen) {
 			ptr = malloc (l + 1);
 			if (!ptr) return false;
 			sb->ptrlen = l + 1;
@@ -72,11 +72,10 @@ R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
 		sb->ptr = NULL;
 	} else {
 		int newlen = sb->len + l + 128;
-		char *p;
+		char *p = sb->ptr;
 		if (!sb->ptr) {
 			p = malloc (newlen);
-		}
-		if (sb->len + l + 1 > sb->ptrlen) {
+		} else if (newlen > sb->ptrlen) {
 			p = realloc (sb->ptr, newlen);
 		}
 		if (!p) return false;
@@ -111,14 +110,8 @@ R_API int r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 	return ret;
 }
 
-// TODO: rename to tostring()
 R_API char *r_strbuf_get(RStrBuf *sb) {
-	if (sb) {
-		if (sb->ptr)
-			return sb->ptr;
-		return sb->buf;
-	}
-	return NULL;
+	return sb? (sb->ptr? sb->ptr: sb->buf) : NULL;
 }
 
 R_API char *r_strbuf_drain(RStrBuf *sb) {

@@ -432,7 +432,6 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		r_strbuf_append (buf_asm, "\n");
 	}
 	acode->buf_asm = r_strbuf_drain (buf_asm);
-
 	acode->len = idx;
 	return acode;
 }
