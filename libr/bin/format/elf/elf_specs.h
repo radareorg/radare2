@@ -293,6 +293,11 @@ typedef struct
 #define EM_PROPELLER	0x5072
 #define EM_LANAI	0x8123
 
+/* VideoCore */
+#define EM_VIDEOCORE    95 // XXX dupe for EM_NUM
+#define EM_VIDEOCORE3   137
+#define EM_VIDEOCORE4   200
+
 /* If it is necessary to assign new unofficial EM_* values, please
    pick large random numbers (0x8523, 0xa7f2, etc.) to minimize the
    chances of collision with official or non-GNU unofficial values.  */
