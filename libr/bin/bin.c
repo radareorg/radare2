@@ -1574,6 +1574,7 @@ R_API int r_bin_select_idx(RBin *bin, const char *name, int idx) {
 R_API void r_bin_list_archs(RBin *bin, int mode) {
 	RListIter *iter;
 	int i = 0;
+	char unk[128];
 	char archline[128];
 	RBinFile *binfile = r_bin_cur (bin);
 	RBinObject *obj = NULL;
@@ -1606,7 +1607,6 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 
 		i++;
 		if (!arch) {
-			char unk[128];
 			snprintf (unk, sizeof (unk), "unk_%d", i);
 			arch = unk;
 		}

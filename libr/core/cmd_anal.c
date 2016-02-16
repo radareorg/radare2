@@ -3558,7 +3558,7 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 		}
 		for (i=0; i<fcn->size; i++) {
 			ut64 here = fcn->addr + i;
-			if (bitmap[i]) {
+			if (bitmap && bitmap[i]) {
 				if (gap) {
 					r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", here - gap_addr, gap_addr);
 					gap = false;

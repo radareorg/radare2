@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2016 - nibble, pancake, maijin */
 
 #include <stdio.h>
 
@@ -262,7 +262,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 				}
 				break;
 			case 80:
-				{
+				if (p && p->anal && p->anal->syscall) {
 					RSyscallItem *si;
 					si = r_syscall_get (p->anal->syscall, off, -1);
 					if (si)

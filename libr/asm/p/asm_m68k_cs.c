@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015 - pancake */
+/* radare2 - LGPL - Copyright 2015-2016 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -85,7 +85,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		char *p = r_str_replace (strdup (op->buf_asm),
 			"$", "0x", true);
 		if (p) {
-			strcpy (op->buf_asm, p);
+			strncpy (op->buf_asm, p, R_ASM_BUFSIZE-1);
 			free (p);
 		}
 	}

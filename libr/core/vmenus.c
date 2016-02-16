@@ -1255,7 +1255,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 						if (file->type == 'd') {
 							strncat (path, file->name, sizeof (path)-strlen (path)-1);
 							r_str_chop_path (path);
-							if (!root || strncmp (root, path, strlen (root)-1))
+							if (root && strncmp (root, path, strlen (root)-1))
 								strncpy (path, root, sizeof (path)-1);
 						} else {
 							r_core_cmdf (core, "s 0x%"PFMT64x, file->off);

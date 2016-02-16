@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare2 - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_core.h>
 #include <r_socket.h>
@@ -390,7 +390,7 @@ static const char *radare_argv[] = {
 	"aa", "ab", "af", "ar", "ag", "at", "a?", "ax", "ad",
 	"af", "afa", "afan", "afc", "afi", "afb", "afbb", "afn", "afr", "afs", "af*", "afv", "afvn",
 	"aga", "agc", "agd", "agl", "agfl",
-	"e", "e-", "e*", "e!", "e?", "env ",
+	"e", "et", "e-", "e*", "e!", "e?", "env ",
 	"i", "ii", "iI", "is", "iS", "iz",
 	"q", "q!",
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
@@ -758,6 +758,7 @@ openfile:
 				line->completion.argv = NULL;
 			}
 		} else if ( (!strncmp (line->buffer.data, "e ", 2))
+		   || (!strncmp (line->buffer.data, "et ", 3))
 		   || (!strncmp (line->buffer.data, "e? ", 3))
 		   || (!strncmp (line->buffer.data, "e! ", 3))) {
 			const char p = line->buffer.data[1];

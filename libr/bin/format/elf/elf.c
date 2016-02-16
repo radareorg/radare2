@@ -1055,13 +1055,11 @@ int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		if (bin->ehdr.e_type != ET_EXEC) {
 			struct r_bin_elf_symbol_t *symbol;
 			if ((symbol = Elf_(r_bin_elf_get_symbols) (bin, R_BIN_ELF_SYMBOLS))) {
-				int i;
-				for (i = 0; !symbol[i].last; i++) {
-					ut64 paddr = symbol[i].offset;
+				if (!symbol[0].last) {
+					ut64 paddr = symbol[0].offset;
 					if (paddr & 1) {
 						return 16;
 					}
-					break;
 				}
 			}
 		}

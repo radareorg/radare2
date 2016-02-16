@@ -10,7 +10,6 @@ static int check_bytes(const ut8 *buf, ut64 length);
 
 static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-eprintf ("CHE2\n");
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
 }
@@ -20,8 +19,8 @@ static bool dyld64 = false;
 static int check_bytes(const ut8 *buf, ut64 length) {
 	bool rc = false;
 	if (buf && length >= 32) {
-		char arch[8] = {0};
-		strncpy (arch, (const char *)buf+9, R_MIN (length, sizeof (arch)));
+		char arch[9] = {0};
+		strncpy (arch, (const char *)buf+9, R_MIN (length, sizeof (arch)-1));
 		rc = !memcmp (buf, "\x64\x79\x6c\x64", 4);
 		if (rc) {
 			dyld64 = strstr (arch, "64") != NULL;

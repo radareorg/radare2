@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #define PAIR_WIDTH 9
 // TODO: reuse implementation in core/bin.c
@@ -138,12 +138,14 @@ static void r_core_file_info (RCore *core, int mode) {
 static int bin_is_executable (RBinObject *obj){
 	RListIter *it;
 	RBinSection* sec;
-	if (obj && obj->info && obj->info->arch) {
-		return true;
-	}
-	r_list_foreach (obj->sections, it, sec){
-		if (R_BIN_SCN_EXECUTABLE & sec->srwx)
+	if (obj) {
+		if (obj->info && obj->info->arch) {
 			return true;
+		}
+		r_list_foreach (obj->sections, it, sec){
+			if (R_BIN_SCN_EXECUTABLE & sec->srwx)
+				return true;
+		}
 	}
 	return false;
 }

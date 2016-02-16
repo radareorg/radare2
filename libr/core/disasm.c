@@ -776,12 +776,14 @@ static int var_comparator (const RAnalVar *a, const RAnalVar *b){
 
 static void handle_show_functions (RCore *core, RDisasmState *ds) {
 	RAnalFunction *f;
-	bool demangle = r_config_get_i (core->config, "bin.demangle");
-	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
+	bool demangle;
+	const char *lang;
 	char *fcn_name;
 	char *sign;
 	if (!core || !ds || !ds->show_functions)
 		return;
+	demangle = r_config_get_i (core->config, "bin.demangle");
+	lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (!f)
 		return;

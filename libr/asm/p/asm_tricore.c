@@ -42,7 +42,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	int flen, glen;
 	char *escaped = NULL;
 	va_list ap;
-	char *tmp;
+	char *tmp = NULL;
 	va_start (ap, format);
 	if (buf_global == NULL) {
 		return 0;
@@ -76,6 +76,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 		va_end (ap);
 		return 0;
 	}
+	free (tmp);
 	va_end (ap);
 	return -1;
 }

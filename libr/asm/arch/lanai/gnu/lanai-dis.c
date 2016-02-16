@@ -233,7 +233,7 @@ print_insn_lanai (memaddr, info)
 		  case 'k':
 		    /* This should never happen */
 		    (*info->fprintf_func) (stream, "***ERROR***");
-
+			break;
 		  case 'o':
 		    imm = SEX (X_C16(insn), 16);
 		    if (X_RS1 (insn) == 0) goto print_address;
