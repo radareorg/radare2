@@ -486,12 +486,16 @@ repeat:
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_NOP:
 			if (anal->opt.nopskip) {
-				if ((addr + delay.un_idx-oplen) == fcn->addr) {
-					fcn->addr += oplen;
-					bb->size -= oplen;
-					bb->addr += oplen;
-					idx = delay.un_idx;
-					goto repeat;
+				RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
+				// do not skip nops if there's a flag at starting address
+				if (!fi || strncmp (fi->name, "sym.", 4)) {
+					if ((addr + delay.un_idx - oplen) == fcn->addr) {
+						fcn->addr += oplen;
+						bb->size -= oplen;
+						bb->addr += oplen;
+						idx = delay.un_idx;
+						goto repeat;
+					}
 				}
 			}
 			break;
