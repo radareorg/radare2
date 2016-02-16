@@ -1829,6 +1829,10 @@ static void define_data_ntimes (RCore *core, ut64 off, int times, int type) {
 
 }
 
+static bool isDisasmPrint(int mode) {
+	return (mode == 1 || mode == 2);
+}
+
 R_API void r_core_visual_define (RCore *core) {
 	int plen = core->blocksize;
 	ut64 off = core->offset;
@@ -1873,6 +1877,7 @@ R_API void r_core_visual_define (RCore *core) {
 		," k    merge up (join this and previous function)"
 		," h    highlight word"
 		," m    manpage for current call"
+		," n    rename flag used at cursor"
 		," q    quit/cancel operation"
 		," r    rename function"
 		," R    find references /r"
@@ -1961,6 +1966,44 @@ repeat:
 			r_cons_any_key (NULL);
 		}
 		break;
+	case 'n':
+	{
+		RAnalOp op;
+		char *q = NULL;
+		ut64 tgt_addr = UT64_MAX;
+		if (!isDisasmPrint (core->printidx)) break;
+
+		// TODO: get the aligned instruction even if the cursor is in
+		//       the middle of it.
+		r_anal_op (core->anal, &op, off,
+			core->block + off - core->offset, 32);
+
+		tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
+		if (op.var) {
+			q = r_str_newf ("?i Rename variable %s to;afvn %s `?y`",
+				op.var->name, op.var->name);
+		} else if (tgt_addr != UT64_MAX) {
+			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, tgt_addr, R_ANAL_FCN_TYPE_NULL);
+			RFlagItem *f = r_flag_get_i (core->flags, tgt_addr);
+			if (fcn) {
+				q = r_str_newf ("?i Rename function %s to;afn `?y` 0x%"PFMT64x,
+					fcn->name, tgt_addr);
+			} else if (f) {
+				q = r_str_newf ("?i Rename flag %s to;fr %s `?y`",
+					f->name, f->name);
+			} else {
+				q = r_str_newf ("?i Create flag at 0x%"PFMT64x" named;f `?y` @ 0x%"PFMT64x,
+					tgt_addr, tgt_addr);
+			}
+		}
+
+		if (q) {
+			r_core_cmd0 (core, q);
+			free (q);
+		}
+		r_anal_op_fini (&op);
+		break;
+	}
 	case 'C':
 		{
 			RFlagItem *item = r_flag_get_i (core->flags, off);
