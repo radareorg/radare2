@@ -251,11 +251,13 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	case R_REG_TYPE_DRX:
 #if __x86_64__ || __i386__
 		memcpy (&th->drx, buf, R_MIN (size, sizeof (th->drx)));
+
 #elif __arm || __arm64 || __aarch64
-		if (dbg->bits == R_SYS_BITS_32)
-			memcpy (&th->debug.drx32, buf, R_MIN (size, sizeof (th->debug.drx32)));
-		else
-			memcpy (&th->debug.drx64, buf, R_MIN (size, sizeof (th->debug.drx64)));
+#if defined (ARM_DEBUG_STATE32) && (defined (__arm64__) || defined (__aarch64__))
+	memcpy (&th->debug.drx32, buf, R_MIN (size, sizeof (th->debug.drx32)));
+#else
+	memcpy (&th->debug.drx, buf, R_MIN (size, sizeof (th->debug.drx)));
+#endif
 #endif
 		ret = xnu_thread_set_drx (dbg, th);
 		break;

@@ -109,11 +109,11 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		eprintf ("error to get drx registers modificy_trace_bit arm\n");
 		return R_FALSE;
 	}
-	if (th->flavor == ARM_DEBUG_STATE64) {
-		arm_debug_state64_t *state = &th->debug.drx64;
-		state->__mdscr_el1 = (state->__mdscr_el1 & SS_ENABLE) & (enable ? SS_ENABLE : 0);
-	} else if (th->flavor == ARM_DEBUG_STATE32) {
+	if (th->flavor == ARM_DEBUG_STATE32) {
 		arm_debug_state32_t *state = &th->debug.drx32;
+		state->__mdscr_el1 = (state->__mdscr_el1 & SS_ENABLE) & (enable ? SS_ENABLE : 0);
+	} else if (th->flavor == ARM_DEBUG_STATE) {
+		arm_debug_state_t *state = &th->debug.drx;
 		R_REG_T *regs;
 		ret = xnu_thread_get_gpr (dbg, th);
 		if (!ret) {
@@ -124,7 +124,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		if (enable) {
 			int i = 0;
 			RIOBind *bio = &dbg->iob;
-			memcpy ((void *)&th->oldstate, (void *)&th->debug.drx32, sizeof (arm_debug_state32_t));
+			memcpy ((void *)&th->oldstate, (void *)state, sizeof (arm_debug_state_t));
 			//set a breakpoint that will stop when the PC doesn't
 			//match the current one
 			//set the current PC as the breakpoint address
@@ -141,8 +141,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 					state->__bcr[i] |= BAS_IMVA_2_3;
 				else
 					state->__bcr[i] |= BAS_IMVA_0_1;
-				if (bio->read_at (bio->io, regs->ts_32.__pc,
-						(void *)&op, 2) < 1) {
+				if (bio->read_at (bio->io, regs->ts_32.__pc, (void *)&op, 2) < 1) {
 					eprintf ("Failed to read opcode modify_trace_bit\n");
 					return false;
 				}
@@ -165,7 +164,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 			}
 		} else {
 			//we set the old state
-			memcpy ((void *)&th->debug.drx32, (void *)&th->oldstate, sizeof (arm_debug_state32_t));
+			memcpy ((void *)&th->debug.drx, (void *)&th->oldstate, sizeof (arm_debug_state32_t));
 		}
 	} else {
 		eprintf ("Bad flavor modificy_trace_bit arm\n");
