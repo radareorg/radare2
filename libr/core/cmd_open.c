@@ -455,6 +455,7 @@ static int cmd_open(void *data, const char *input) {
 			if (input[2]=='n') {
 				perms = (input[3]=='+')? R_IO_READ|R_IO_WRITE: 0;
 				r_core_file_reopen (core, input + 4, perms, 0);
+				// TODO: Use API instead of !rabin2 -rk
 				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
 			} else {
 				perms = (input[2]=='+')? R_IO_READ|R_IO_WRITE: 0;
@@ -462,8 +463,7 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		case '+':
-			r_core_file_reopen (core, input + 2,
-					R_IO_READ | R_IO_WRITE, 1);
+			r_core_file_reopen (core, input + 2, R_IO_READ | R_IO_WRITE, 1);
 			break;
 		case 0: // "oo"
 			r_core_file_reopen (core, input + 2, 0, 1);
