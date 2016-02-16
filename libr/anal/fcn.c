@@ -669,7 +669,7 @@ repeat:
 			}
 			if (!anal->opt.eobjmp) {
 				if (continue_after_jump) {
-				#if 0
+				#if 1
 					FITFCNSZ ();
 					r_anal_op_fini (&op);
 					return R_ANAL_RET_END;
