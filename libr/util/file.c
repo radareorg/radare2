@@ -522,13 +522,14 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 	return len;
 #elif __UNIX__
 	int fd = r_sandbox_open (file, O_RDWR|O_SYNC, 0644);
-	const int pagesize = 4096;
-	int mmlen = len+pagesize;
-	int rest = addr%pagesize;
+	const int pagesize = getpagesize ();
+	int mmlen = len + pagesize;
+	int rest = addr % pagesize;
         ut8 *mmap_buf;
 	if (fd == -1) return -1;
+	if ((st64)addr < 0) return -1;
 	mmap_buf = mmap (NULL, mmlen*2, PROT_READ|PROT_WRITE,
-		MAP_SHARED, fd, (off_t)addr-rest);
+		MAP_SHARED, fd, (off_t)addr - rest);
         if (((int)(size_t)mmap_buf)==-1)
                 return -1;
         memcpy (mmap_buf+rest, buf, len);
