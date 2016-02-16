@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake */
+/* radare - LGPL - Copyright 2010-2016 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -131,9 +131,9 @@ static char *getrange(char *s) {
 			*p=0;
 		}
 		if (*s=='[' || *s==']')
-			memmove (s, s+1, strlen (s+1));
+			memmove (s, s+1, strlen (s+1)+1);
 		if (*s=='}')
-			*s=0;
+			*s = 0;
 		s++;
 	}
 	while (p && *p==' ') p++;
@@ -159,9 +159,11 @@ static int getreg(const char *str) {
 		return -1;
 	if (*str=='r')
 		return atoi (str+1);
-	for (i=0; aliases[i]; i++)
-		if (!strcmpnull (str, aliases[i]))
-			return 10+i;
+	for (i=0; aliases[i]; i++) {
+		if (!strcmpnull (str, aliases[i])) {
+			return 10 + i;
+}
+	}
 	return -1;
 }
 
@@ -436,9 +438,22 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		return 2;
 	} else
 	if (!strncmp (ao->op, "ldr", 3)) {
+		char ch = (ao->op[3] == '.')? ao->op[4]: ao->op[3];
 		getrange (ao->a[1]);
 		getrange (ao->a[2]);
-		switch (ao->op[3]) {
+		switch (ch) {
+		case 'w': {
+			int a0 = getreg (ao->a[0]);
+			int a1 = getreg (ao->a[1]);
+			int a2 = getnum (ao->a[2]);
+			ao->o = 0xd0f80000;
+			ao->o |= ((a2 & 0xff) << 8);
+			ao->o |= (((a2>>8) & 0xff));
+			ao->o |= (a0 <<4);
+			ao->o |= (a1 <<24);
+			return 4;
+			}
+			break;
 		case 'h': {
 			int a0 = getreg (ao->a[0]);
 			int a1 = getreg (ao->a[1]);
@@ -880,15 +895,14 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 	int i, j;
 	char buf[128];
 	ArmOpcode aop = {.off = off};
-	for (i=j=0; i<sizeof (buf)-1 && str[i]; i++, j++) {
+	for (i=j=0; i < sizeof (buf)-1 && str[i]; i++, j++) {
 		if (str[j]=='#') { i--; continue; }
-		buf[i] = tolower ((const unsigned char)str[j]);
+		buf[i] = tolower ((const ut8)str[j]);
 	}
 	buf[i] = 0;
 	arm_opcode_parse (&aop, buf);
 	aop.off = off;
-	if (thumb <0 || thumb>1) {
-		eprintf("bad bool!!\n");
+	if (thumb < 0 || thumb > 1) {
 		return -1;
 	}
 	if (!assemble[thumb] (&aop, buf)) {

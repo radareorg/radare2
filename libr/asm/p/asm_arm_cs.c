@@ -110,8 +110,8 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (opcode == UT32_MAX)
 		return -1;
 	if (is_thumb) {
-		const int o = opcode>>16;
-		opsize = (o&0x80 && ((o&0xe0)==0xe0))? 4: 2;
+		const int o = opcode >> 16;
+		opsize = o>0? 4: 2; //(o&0x80 && ((o&0xe0)==0xe0))? 4: 2;
 		r_mem_copyendian (op->buf, (void *)&opcode,
 			opsize, a->big_endian);
 	} else {
