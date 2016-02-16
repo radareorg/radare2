@@ -2966,7 +2966,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			dis_opcodes = 1;
 			r_core_read_at (core, addr, buf, nb_bytes);
 		}
-	} else { // Dissasemble `nb_bytes` bytes
+	} else { // Disasemble `nb_bytes` bytes
 		if (nb_bytes < 0) {
 			//Backward disassembly of `nb_bytes` bytes
 			nb_bytes = -nb_bytes;

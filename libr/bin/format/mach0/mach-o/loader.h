@@ -233,7 +233,7 @@ struct load_command {
  * After MacOS X 10.1 when a new load command is added that is required to be
  * understood by the dynamic linker for the image to execute properly the
  * LC_REQ_DYLD bit will be or'ed into the load command constant.  If the dynamic
- * linker sees such a load command it it does not understand will issue a
+ * linker sees such a load command it does not understand, it will issue a
  * "unknown load command required for execution" error and refuse to use the
  * image.  Other load commands without this bit that are not understood will
  * simply be ignored.
@@ -976,7 +976,7 @@ struct dysymtab_command {
      * this requires the r_address field to be something other than a section
      * offset to identify the item to be relocated.  In this case r_address is
      * set to the offset from the vmaddr of the first LC_SEGMENT command.
-     * For MH_SPLIT_SEGS images r_address is set to the the offset from the
+     * For MH_SPLIT_SEGS images r_address is set to the offset from the
      * vmaddr of the first read-write LC_SEGMENT command.
      *
      * The relocation entries are grouped by module and the module table
@@ -1104,7 +1104,7 @@ struct twolevel_hints_command {
  * isub_image field is an index into the sub-images (sub-frameworks and
  * sub-umbrellas list) that made up the two-level image that the undefined
  * symbol was found in when it was built by the static link editor.  If
- * isub-image is 0 the the symbol is expected to be defined in library and not
+ * isub-image is 0 the symbol is expected to be defined in library and not
  * in the sub-images.  If isub-image is non-zero it is an index into the array
  * of sub-images for the umbrella with the first index in the sub-images being
  * 1. The array of sub-images is the ordered list of sub-images of the umbrella

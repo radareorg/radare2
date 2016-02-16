@@ -85,7 +85,7 @@ extern "C" {
 #define ZIP_FL_ENC_CP437     4096u /* string is CP437 encoded */
 #define ZIP_FL_OVERWRITE     8192u /* zip_file_add: if file with name exists, overwrite (replace) it */
 
-/* archive global flags flags */
+/* archive global flags */
 
 #define ZIP_AFL_TORRENT		1u /* torrent zipped */
 #define ZIP_AFL_RDONLY		2u /* read only -- cannot be cleared */

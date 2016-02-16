@@ -2121,7 +2121,7 @@ extern bfd_boolean _sh_elf_set_mach_from_flags
     }									\
   while (0)
 
-/* Will a symbol be bound to the the definition within the shared
+/* Will a symbol be bound to the definition within the shared
    library, if any.  */
 #define SYMBOLIC_BIND(INFO, H) \
     ((INFO)->symbolic || ((INFO)->dynamic && !(H)->dynamic))
