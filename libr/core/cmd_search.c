@@ -206,6 +206,10 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	return preludecnt;
 }
 
+static int count_functions (RCore *core) {
+	return r_list_length (core->anal->fcns);
+}
+
 R_API int r_core_search_preludes(RCore *core) {
 	int ret = -1;
 	const char *prelude = r_config_get (core->config, "anal.prelude");
@@ -213,6 +217,9 @@ R_API int r_core_search_preludes(RCore *core) {
 	int bits = r_config_get_i (core->config, "asm.bits");
 	ut64 from = core->offset;
 	ut64 to = core->offset+0xffffff; // hacky!
+	int fc0, fc1;
+
+	fc0 = count_functions (core);
 	if (prelude && *prelude) {
 		ut8 *kw = malloc (strlen (prelude)+1);
 		int kwlen = r_hex_str2bin (prelude, kw);
@@ -222,10 +229,20 @@ R_API int r_core_search_preludes(RCore *core) {
 		ret = r_core_search_prelude (core, from, to,
 			(const ut8 *)"\x7c\x08\x02\xa6", 4, NULL, 0);
 	} else if (strstr (arch, "arm")) {
-		if (bits == 16) {
+		switch (bits) {
+		case 16:
 			ret = r_core_search_prelude (core, from, to,
 				(const ut8 *)"\xf0\xb5", 2, NULL, 0);
-		} else {
+			break;
+		case 64:
+			r_core_search_prelude (core, from, to,
+				(const ut8 *)"\xf6\x57\xbd\xa9", 4, NULL, 0);
+			r_core_search_prelude (core, from, to,
+				(const ut8 *)"\xfd\x7b\xbf\xa9", 4, NULL, 0);
+			r_core_search_prelude (core, from, to,
+				(const ut8 *)"\xfc\x6f\xbe\xa9", 4, NULL, 0);
+			break;
+		default:
 			eprintf ("ap: Unsupported bits: %d\n", bits);
 		}
 	} else if (strstr (arch, "mips")) {
@@ -249,7 +266,8 @@ R_API int r_core_search_preludes(RCore *core) {
 			eprintf ("ap: Unsupported bits: %d\n", bits);
 		}
 	} else eprintf ("ap: Unsupported asm.arch and asm.bits\n");
-	eprintf ("Analyzed %d functions based on preludes\n", ret);
+	fc1 = count_functions (core);
+	eprintf ("Analyzed %d functions based on preludes\n", fc1 - fc0);
 	return ret;
 }
 

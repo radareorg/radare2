@@ -743,6 +743,7 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_SHR;
 		break;
 	case ARM64_INS_STRB:
+	case ARM64_INS_STURB:
 	case ARM64_INS_STUR:
 	case ARM64_INS_STR:
 	case ARM64_INS_STP:
@@ -754,6 +755,8 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		}
 		break;
 	case ARM64_INS_LDUR:
+	case ARM64_INS_LDURB:
+	case ARM64_INS_LDRSW:
 	case ARM64_INS_LDR:
 	case ARM64_INS_LDP:
 	case ARM64_INS_LDRH:
