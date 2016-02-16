@@ -1367,6 +1367,10 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 					ut32 *data = (ut32*)(buf+idx);
 					r_mem_copyendian ((ut8*)data, (ut8*)data, 4, !core->print->big_endian);
 					r_cons_printf (".dword 0x%08x", *data);
+					{
+						RFlagItem *fi = r_flag_get_i (core->flags, (ut64)*data);
+						if (fi) r_cons_printf (" ; %s", fi->name);
+					}
 					}
 					break;
 				case 8:
@@ -1374,6 +1378,10 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 					ut64 *data = (ut64*)(buf + idx);
 					r_mem_copyendian ((ut8*)data, (const ut8*)data, 8, !core->print->big_endian);
 					r_cons_printf (".qword 0x%016"PFMT64x, *data);
+					{
+						RFlagItem *fi = r_flag_get_i (core->flags, *data);
+						if (fi) r_cons_printf (" ; %s", fi->name);
+					}
 					}
 					break;
 				default:
