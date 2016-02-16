@@ -1509,7 +1509,7 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 
 	if (ptr == ref) {
 		if (code) r_cons_printf ("ax%c 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-			type? type: "", (ut64)ref, (ut64)at);
+			type? type: 'c', (ut64)ref, (ut64)at);
 		else r_cons_printf ("axd 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 			(ut64)ref, (ut64)at);
 		return true;

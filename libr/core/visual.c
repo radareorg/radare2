@@ -584,23 +584,51 @@ R_API int r_core_visual_xrefs_x (RCore *core) {
 	RAnalRef *refi;
 	RListIter *iter;
 	RAnalFunction *fun;
+	int skip = 0;
+	int idx = 0;
+	char cstr[32];
 
+repeat:
 	if ((xrefs = r_anal_xref_get (core->anal, core->offset))) {
+		r_cons_clear00 ();
 		r_cons_gotoxy (1, 1);
-		r_cons_printf ("[GOTO XREF]> \n");
+		r_cons_printf ("[GOTO XREF]> 0x%08"PFMT64x"\n", core->offset);
 		if (r_list_empty (xrefs)) {
 			r_cons_printf ("\tNo XREF found at 0x%"PFMT64x"\n", core->offset);
 			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 		} else {
+			int lines;
+			(void)r_cons_get_size (&lines);
+			idx = 0;
+			count = 0;
+			lines -= 3;
 			r_list_foreach (xrefs, iter, refi) {
-				fun = r_anal_get_fcn_in (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
-				r_cons_printf (" [%i] 0x%08"PFMT64x" %s XREF 0x%08"PFMT64x" (%s)                      \n", count,
-					refi->at,
-					      refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-					      refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
-					      fun?fun->name:"unk");
-				if (++count > 9) break;
+				if (idx >= skip) {
+					if (count>9) {
+						strcpy (cstr, "?");
+					} else {
+						snprintf (cstr, sizeof (cstr), "%d", count);
+					}
+					fun = r_anal_get_fcn_in (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
+#if 0
+					r_cons_printf (" %d [%s] 0x%08"PFMT64x" %s XREF 0x%08"PFMT64x" (%s)                      \n",
+							idx, cstr, refi->at,
+							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
+							fun?fun->name:"unk");
+#endif
+					r_cons_printf (" %d [%s] 0x%08"PFMT64x" %s XREF (%s)\n",
+							idx, cstr, refi->addr,
+							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA",
+							fun?fun->name:"unk");
+					if (++count >= lines) {
+						r_cons_printf ("...\n");
+						break;
+					}
+				}
+				idx++;
 			}
 		}
 	} else xrefs = NULL;
@@ -610,8 +638,20 @@ R_API int r_core_visual_xrefs_x (RCore *core) {
 	}
 	r_cons_flush ();
 	ch = r_cons_readchar ();
-	if (ch >= '0' && ch <= '9') {
-		refi = r_list_get_n (xrefs, ch-0x30);
+	if (ch == 'j') {
+		skip++;
+		goto repeat;
+	} else if (ch == 'k') {
+		skip--;
+		goto repeat;
+	} else if (ch == ' ' || ch == '\n' || ch == '\r') {
+		refi = r_list_get_n (xrefs, skip);
+		if (refi) {
+			r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
+			ret = 1;
+		}
+	} else if (ch >= '0' && ch <= '9') {
+		refi = r_list_get_n (xrefs, ch - 0x30);
 		if (refi) {
 			r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
 			ret = 1;
