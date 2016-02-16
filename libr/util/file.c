@@ -480,6 +480,7 @@ R_API char *r_file_readlink(const char *path) {
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len) {
 #if __WINDOWS__
 	HANDLE fh;
+	DWORD written = 0;
 	if (r_sandbox_enable (0)) return -1;
 	fh = CreateFile (file, GENERIC_READ|GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -512,7 +513,7 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 	CloseHandle (fm);
 #else
 	SetFilePointer (fh, addr, NULL, FILE_BEGIN);
-	if (!WriteFile (fh, buf, len, NULL, NULL)) {
+	if (!WriteFile (fh, buf, len,  &written, NULL)) {
 		r_sys_perror ("WriteFile");
 		len = -1;
 	}
