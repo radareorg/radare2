@@ -83,6 +83,7 @@ if [ -d shlr/capstone/.git ]; then
 fi
 [ "`uname`" = Linux ] && export LDFLAGS="-Wl,--as-needed ${LDFLAGS}"
 rm -f plugins.cfg
+unset DEPS
 ./configure ${CFGARG} --prefix=${PREFIX} || exit 1
 ${MAKE} -s -j${MAKE_JOBS} MAKE_JOBS=${MAKE_JOBS} || exit 1
 if [ "`uname`" = Darwin ]; then
