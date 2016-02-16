@@ -2306,7 +2306,7 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
     case AARCH64_OPND_Ra:
     case AARCH64_OPND_Rt_SYS:
       /* The optional-ness of <Xt> in e.g. IC <ic_op>{, <Xt>} is determined by
-	 the <ic_op>, therefore we we use opnd->present to override the
+	 the <ic_op>, therefore we use opnd->present to override the
 	 generic optional-ness information.  */
       if (opnd->type == AARCH64_OPND_Rt_SYS && !opnd->present)
 	break;
