@@ -1879,6 +1879,7 @@ R_API void r_core_visual_define (RCore *core) {
 		," s    set string"
 		," S    set strings in current block"
 		," u    undefine metadata here"
+		," x    find xrefs to current address (./r)"
 		," w    set as 32bit word"
 		," W    set as 64bit word"
 		," q    quit this menu"
@@ -1912,6 +1913,9 @@ repeat:
 				r_cons_show_cursor (false);
 			}
 		}
+		break;
+	case 'x':
+		r_core_cmd0 (core, "./r");
 		break;
 	case 'B':
 		define_data_ntimes (core, off, rep, R_WORD_DATA);
