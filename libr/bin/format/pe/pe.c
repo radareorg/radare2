@@ -1807,7 +1807,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 						break;
 					}
 				}
-				// have a address into name_vaddr?
+				// have an address into name_vaddr?
 				if (name_vaddr) {
 					// get the name of the Export
 					name_paddr = bin_pe_rva_to_paddr(bin, name_vaddr);

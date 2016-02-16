@@ -14,7 +14,7 @@ static void show_help(RCore *core) {
 		"td",  " <string>","Load types from string",
 		"td-", "<name>",   "Undefine type by name",
 		"tf",  " <addr>",  "View linked type at given address",
-		"tl",  "[?]",      "Show/Link type to a address",
+		"tl",  "[?]",      "Show/Link type to an address",
 		//"to",  "",         "List opened files",
 		"to",  " -",       "Open cfg.editor to load types",
 		"to",  " <path>",  "Load types from C header file",

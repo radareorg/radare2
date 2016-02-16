@@ -4116,7 +4116,7 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 				offset += se->size;
 			//	r_list_append (stack_frame->stack_items, (void *) se);
 			} else {
-				eprintf ("r_bin_java_stack_map_frame_new: Unable to parse the the stack items for the stack frame.\n");
+				eprintf ("r_bin_java_stack_map_frame_new: Unable to parse the stack items for the stack frame.\n");
 				r_bin_java_stack_frame_free (stack_frame);
 				return NULL;
 			}
@@ -4270,7 +4270,7 @@ R_API RBinJavaAttrInfo* r_bin_java_stack_map_table_attr_new (ut8* buffer, ut64 s
 			r_list_append (attr->info.stack_map_table_attr.stack_map_frame_entries, (void *) new_stack_frame);
 			stack_frame = new_stack_frame;
 		} else {
-		 	eprintf ("r_bin_java_stack_map_table_attr_new: Unable to parse the the stack the stack frame for the stack map table.\n");
+		    eprintf ("r_bin_java_stack_map_table_attr_new: Unable to parse the stack frame for the stack map table.\n");
 			r_bin_java_stack_map_table_attr_free (attr);
 			attr = NULL;
 			break;
