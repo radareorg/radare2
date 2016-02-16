@@ -1197,6 +1197,18 @@ R_API int r_core_init(RCore *core) {
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
+
+	/* default noreturn functions */
+	/* osx */
+	r_anal_noreturn_add (core->anal, "sym.imp.__assert_rtn", UT64_MAX);
+	r_anal_noreturn_add (core->anal, "sym.imp.exit", UT64_MAX);
+	r_anal_noreturn_add (core->anal, "sym.imp._exit", UT64_MAX);
+	r_anal_noreturn_add (core->anal, "sym.imp.__stack_chk_fail", UT64_MAX);
+	/* linux */
+	r_anal_noreturn_add (core->anal, "sym.__assert_fail", UT64_MAX);
+	r_anal_noreturn_add (core->anal, "sym.abort", UT64_MAX);
+	r_anal_noreturn_add (core->anal, "sym.exit", UT64_MAX);
+
 	core->anal->meta_spaces.cb_printf = r_cons_printf;
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;

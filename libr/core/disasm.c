@@ -640,6 +640,9 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 	xrefs = r_anal_xref_get (core->anal, ds->at);
 	if (!xrefs) return;
 	if (r_list_length (xrefs) > ds->maxrefs) {
+		int cols = r_cons_get_size (NULL);
+		cols -= 15;
+		cols /= 23;
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
 						ds->at, R_ANAL_FCN_TYPE_NULL);
 		beginline (core, ds, f);
@@ -648,7 +651,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 		r_list_foreach (xrefs, iter, refi) {
 			r_cons_printf ("%s 0x%08"PFMT64x"  ",
 				r_anal_xrefs_type_tostring (refi->type), refi->addr);
-			if (count == 2) {
+			if (count == cols) {
 				if (iter->n) {
 					r_cons_newline ();
 					beginline (core, ds, f);

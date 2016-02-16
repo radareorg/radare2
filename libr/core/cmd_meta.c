@@ -449,9 +449,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 			char *rep = strchr (input + 2, '[');
 			if (!rep) rep = strchr (input + 2, ' ');
 			if (rep) {
-				rep++;
-				repeat = r_num_get (core->num, rep);
-				*rep = 0;
+				repeat = r_num_get (core->num, rep+1);
 			}
 		}
 		int repcnt = 0;
