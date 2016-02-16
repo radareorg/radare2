@@ -51,7 +51,7 @@ typedef struct _xnu_thread {
 	arm_debug_state32_t oldstate;
 	union {
 		arm_debug_state32_t drx32;
-		arm_debug_state64_t drx64;
+		arm_debug_state_t drx;
 	} debug;
 #elif __x86_64__ || __i386__
 	x86_debug_state_t drx;
