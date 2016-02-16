@@ -26,16 +26,17 @@ endif
 PWD=$(shell pwd)
 
 # For echo without quotes
+Q='
+ESC=
 ifeq ($(BUILD_OS),windows)
 ifeq ($(OSTYPE),mingw32)
+ifneq ($(APPVEYOR),True)
 	Q=
 	ESC=^
 	LC_ALL=C
 	export LC_ALL
 endif
-else
-	Q='
-	ESC=
+endif
 endif
 
 all: plugins.cfg libr/include/r_version.h
