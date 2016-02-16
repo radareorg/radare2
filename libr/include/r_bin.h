@@ -280,6 +280,7 @@ typedef struct r_bin_section_t {
 	ut32 srwx;
 	// per section platform info
 	const char *arch;
+	char *format;
 	int bits;
 	bool has_strings;
 	bool add; // indicates when you want to add the section to io `S` command

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -101,6 +101,15 @@ static RList* sections(RBinFile *arch) {
 		if (!(ptr = R_NEW0 (RBinSection)))
 			break;
 		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
+		if (strstr (ptr->name, "la_symbol_ptr")) {
+#ifndef R_BIN_MACH064
+			const int sz = 4;
+#else
+			const int sz = 8;
+#endif
+			int len = sections[i].size / sz;
+			ptr->format = r_str_newf ("Cd %d[%d]", sz, len);
+		}
 		ptr->name[R_BIN_SIZEOF_STRINGS] = 0;
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].size;
