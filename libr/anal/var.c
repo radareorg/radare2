@@ -287,42 +287,12 @@ R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind, cons
 	return 1;
 }
 
-// afvt local_48 int
-#if 0
-R_API int r_anal_var_retype(RAnal *a, ut64 var_addr, int scope, char kind, const char *old_name, const char *new_type) {
-	char key[128];
-	char *stored_name;
-	int delta;
-	if (!r_anal_var_check_name (old_name))
-		return 0;
-	if (scope>0) { // local
-		SETKEY ("var.0x%"PFMT64x".%c.%d.%s", var_addr, kind, scope, old_name);
-		delta = sdb_num_get (DB, key, 0);
-		sdb_unset (DB, key, 0);
-		SETKEY ("var.0x%"PFMT64x".%c.%d.%s", var_addr, kind, scope, old_name);
-		sdb_num_set (DB, key, delta, 0);
-		SETKEY ("var.0x%"PFMT64x".%s.%d.%d", var_addr, new_type, scope, delta);
-		sdb_array_set (DB, key, R_ANAL_VAR_SDB_NAME, old_name, 0);
-	} else { // global
-		SETKEY ("var.0x%"PFMT64x, var_addr);
-		stored_name = sdb_array_get (DB, key, R_ANAL_VAR_SDB_NAME, 0);
-		if (!stored_name) return 0;
-		if (stored_name != old_name) return 0;
-		sdb_unset (DB, key, 0);
-		SETKEY ("var.0x%"PFMT64x, var_addr);
-		//sdb_array_set (DB, key, R_ANAL_VAR_SDB_NAME, new_name, 0);
-	}
-	// var.sdb_hash(old_name)=var_addr.scope.delta
-	return 1;
-}
-#endif
-
 // avr
 R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int delta, int xs_type, ut64 xs_addr) {
 	const char *var_global;
 	const char *xs_type_str = xs_type? "writes": "reads";
-// TODO: kind is not used
-	if (scope>0) { // local
+	// TODO: kind is not used
+	if (scope > 0) { // local
 		char *var_local = sdb_fmt (0, "var.0x%"PFMT64x".%d.%d.%s",
 			var_addr, scope, delta, xs_type_str);
 		char *inst_key = sdb_fmt (1, "inst.0x%"PFMT64x".vars", xs_addr);
@@ -349,34 +319,6 @@ R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int delt
 	sdb_unset (DB, key, 0);
 	sdb_unset (DB, key2, 0);
 }
-
-#if 0
-#if FCN_SDB
-#if 0
-  fcn.0x80480.v=8,16,24
-  fcn.0x80480.v.8=name,type
-#endif
-	char key[1024], val[1024], *e;
-	if (EXISTS("fcn.0x%08"PFMT64x, fna)) {
-		SETKEY("fcn.0x%08"PFMT64x".%c", fna, kind);
-		if (sdb_array_contains_num (DB, key, delta, 0))
-			return false;
-		e = sdb_encode (name, -1);
-		if (e) {
-			sdb_array_push (DB, key, e, 0);
-			sdb_array_push_num (DB, key, delta, 0);
-			free (e);
-		} else {
-			eprintf ("Cannot encode string\n");
-		}
-	} else {
-		eprintf ("r_anal_fcn_local_add: cannot find function.\n");
-		return false;
-	}
-#endif
-	return true;
-}
-#endif
 
 R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta) {
 	int idx;

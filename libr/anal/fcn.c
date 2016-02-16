@@ -212,17 +212,9 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 		return R_ANAL_RET_ERROR; }
 
 #define VARPREFIX "local"
-//#define VARPREFIX "var"
 #define ARGPREFIX "arg"
 static char *get_varname (RAnal *a, const char *pfx, int idx) {
-	char *s;
-	int word = a->bits / 8;
-	if (idx%word) {
-		s = r_str_newf ("%s_%d_%d", pfx, idx/word, R_ABS(idx%word));
-	} else {
-		s = r_str_newf ("%s_%d", pfx, idx/word);
-	}
-	return s;
+	return r_str_newf ("%s_%xh", pfx, idx);
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth);
