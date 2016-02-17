@@ -123,12 +123,18 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		regs = (R_REG_T*)&th->gpr;
 		if (enable) {
 			int i = 0;
+			static chained_address = 0;
 			RIOBind *bio = &dbg->iob;
 			memcpy ((void *)&th->oldstate, (void *)state, sizeof (arm_debug_state_t));
 			//set a breakpoint that will stop when the PC doesn't
 			//match the current one
 			//set the current PC as the breakpoint address
-			state->__bvr[i] = regs->ts_32.__pc & 0xFFFFFFFCu;
+			if (chained_address) {
+				state->__bvr[i] = chained_address & 0xFFFFFFFCu;
+				chained_address = 0;
+			} else {
+				state->__bvr[i] = regs->ts_32.__pc & 0xFFFFFFFCu;
+			}
 			state->__bcr[i] = BCR_M_IMVA_MISMATCH |  // stop on
 								 // address
 								 // mismatch
@@ -146,8 +152,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 					return false;
 				}
 				if (is_thumb_32 (op)) {
-					eprintf ("Thumb32 chain stepping not supported yet\n");
-					return false;
+					chained_address = regs->ts_32.__pc + 2;
 				} else {
 					// Extend the number of bits to ignore for the mismatch
 					state->__bcr[i] |= BAS_IMVA_ALL;
@@ -316,7 +321,6 @@ static int handle_exception_message (RDebug *dbg, exc_msg *msg) {
 		if (kr != KERN_SUCCESS)
 			eprintf ("failed to suspend task breakpoint\n");
 		ret = R_DEBUG_REASON_BREAKPOINT;
-		eprintf ("EXC_BREAKPOINT\n");
 		break;
 	default:
 		eprintf ("UNKNOWN\n");
@@ -364,7 +368,6 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 			eprintf ("message didn't succeded\n");
 			break;
 		}
-		eprintf ("Received exception\n");
 		ret = validate_mach_message (dbg, &msg);
 		if (!ret) {
 			ret = handle_dead_notify (dbg, &msg);
@@ -393,7 +396,6 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 				reply.Head.msgh_size, 0,
 				MACH_PORT_NULL, 0,
 				MACH_PORT_NULL);
-		eprintf ("REPLIED\n");
 		if (reply.Head.msgh_remote_port != 0 && kr != MACH_MSG_SUCCESS) {
 			kr = mach_port_deallocate(mach_task_self (), reply.Head.msgh_remote_port);
 			if (kr != KERN_SUCCESS)

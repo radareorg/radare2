@@ -268,18 +268,21 @@ static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int pe
 
 static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
 	kern_return_t kr;
-	mach_msg_type_number_t _len = len;
-	vm_offset_t _buf = (vm_offset_t)buf;
 	unsigned int count = 0;
 	kr = mach_port_get_refs (mach_task_self(), task, MACH_PORT_RIGHT_SEND, &count);
 	if (kr != KERN_SUCCESS)
 		perror ("get refs");
-	if (count == 0)
+	if (count == 0) {
+		eprintf ("REFS drop to 0\n");
 		return false;
-	kr = vm_write (task, addr, _buf, _len);
-	if (kr != KERN_SUCCESS)
+	}
+	eprintf ("address %u\n", addr);
+	kr = vm_write (task, addr, (vm_offset_t)buf, (mach_msg_type_number_t)len);
+	if (kr != KERN_SUCCESS) {
 		//the memory is not mapped
+		eprintf ("error when writing to memory , code: %d\n", kr);
 		return false;
+	}
 	return true;
 }
 
@@ -302,10 +305,13 @@ static int mach_write_at(RIO *io, RIOMach *riom, const void *buf, int len, ut64 
 	else
 		total_size = pagesize;
 
+	eprintf ("BASE ADDR %u\n", pageaddr);
+	eprintf ("PAGE SIZE %d\n", pagesize);
+
 	if (tsk_write (task, vaddr, buf, len))
 		return len;
 	operms = tsk_getperm (io, task, pageaddr);
-	if (!tsk_setperm (io, task, pageaddr, total_size, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE)) {
+	if (!tsk_setperm (io, task, pageaddr, total_size, VM_PROT_WRITE | VM_PROT_COPY)) {
 		eprintf ("io.mach: Cannot set page perms for %d bytes at 0x%08"
 			PFMT64x"\n", (int)pagesize, (ut64)pageaddr);
 		return -1;
