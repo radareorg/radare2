@@ -1628,7 +1628,7 @@ insert_offset (arc_insn insn,long *ex ATTRIBUTE_UNUSED,
   return insn;
 }
 
-/* Used in st insns to do final disasemble syntax check.  */
+/* Used in st insns to do final disassemble syntax check.  */
 
 static long
 extract_st_syntax (arc_insn *insn,
