@@ -172,7 +172,7 @@ case "$1" in
 		mkdir -p "${R2PM_USRDIR}/git/"
 	else
 		echo "r2 is installed with r2pm, do not clean the cache to avoid autodestruction"
-		echo "do not disassemble do not disasemble do not disassemble do not disassemble"
+		echo "do not disassemble do not disassemble do not disassemble do not disassemble"
 		exit 1
 	fi
 	;;
