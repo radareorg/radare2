@@ -1,14 +1,6 @@
 #ifndef R2_FLAGS_H
 #define R2_FLAGS_H
 
-#define USE_BTREE 0
-/* FUCK YEAH */
-#define USE_HT 1
-
-#if USE_BTREE
-#include <btree.h>
-#endif
-
 #include <r_types.h>
 #include <r_util.h>
 #include <r_list.h>
@@ -25,41 +17,29 @@ R_LIB_VERSION_HEADER(r_flag);
 #define R_FLAG_SPACES_MAX 128
 
 typedef struct r_flag_item_t {
-	char *name;
-	char *realname;
-	ut64 namehash;
-	ut64 offset;
-	ut64 size;
-	int format; // ???
-	int space;
-	char *cmd;
-	char *color;
-	char *comment;
-	char *alias;
+	char *name;     /* unique name, escaped to avoid issues with r2 shell */
+	char *realname; /* real name, without any escaping */
+	ut64 namehash;  /* hash of the name, to be used as the key of the hashtable */
+	ut64 offset;    /* offset flagged by this item */
+	ut64 size;      /* size of the flag item */
+	int space;      /* flag space this item belongs to */
+	char *color;    /* item color */
+	char *comment;  /* item comment */
 } RFlagItem;
 
 typedef struct r_flag_t {
-	st64 base;
-	int space_idx;
-	int space_idx2;
-	bool space_strict;
-	char *spaces[R_FLAG_SPACES_MAX];
-	RNum *num;
-#if USE_HT
-	RHashTable64 *ht_off;
-	RHashTable64 *ht_name;
-#endif
-#if USE_BTREE
-	struct btree_node *tree; /* index by offset */
-	struct btree_node *ntree; /* index by name */
-#endif
-	RList *flags;
+	st64 base;         /* base address for all flag items */
+	int space_idx;     /* index of the selected space in spaces array */
+	bool space_strict; /* when true returned flag items must belong to the selected space */
+	char *spaces[R_FLAG_SPACES_MAX]; /* array of flag spaces */
+	RHashTable64 *ht_off; /* hashmap key=item name, value=RList of items */
+	RHashTable64 *ht_name; /* hashmap key=item name, value=RList of items */
+	RList *flags;   /* list of RFlagItem contained in the flag */
 	RList *spacestack;
 } RFlag;
 
 /* compile time dependency */
 
-#include <r_flags.h> // compile time line, no linkage needed
 typedef RFlagItem* (*RFlagGet)(RFlag *f, const char *name);
 typedef RFlagItem* (*RFlagGetAt)(RFlag *f, ut64 addr);
 typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size, int dup);
@@ -84,6 +64,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx);
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
 R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off);
+R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off);
 R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off);
 R_API char *r_flag_get_liststr(RFlag *f, ut64 off);
 R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p);
@@ -92,12 +73,10 @@ R_API void r_flag_unset_all (RFlag *f);
 R_API RFlagItem *r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup);
 R_API int r_flag_sort(RFlag *f, int namesort);
 R_API int r_flag_item_set_name(RFlagItem *item, const char *name, const char *realname);
-R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
 R_API void r_flag_item_free (RFlagItem *item);
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment);
 R_API int r_flag_unset_glob(RFlag *f, const char *name);
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);
-R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off);
 R_API int r_flag_relocate (RFlag *f, ut64 off, ut64 off_mask, ut64 to);
 R_API int r_flag_move (RFlag *f, ut64 at, ut64 to);
 R_API const char *r_flag_color(RFlag *f, RFlagItem *it, const char *color);

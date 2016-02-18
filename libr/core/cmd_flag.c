@@ -48,7 +48,6 @@ static int cmd_flag(void *data, const char *input) {
 	ut64 off = core->offset;
 	char *ptr, *str = NULL;
 	RFlagItem *item;
-	char *name = NULL;
 	st64 base;
 
 	// TODO: off+=cursor
@@ -84,30 +83,6 @@ rep:
 		default:
 			flagbars (core);
 			break;
-		}
-		break;
-	case 'a':
-		if (input[1]==' '){
-			RFlagItem *fi;
-			R_FREE (str);
-			str = strdup (input+2);
-			ptr = strchr (str, '=');
-			if (!ptr)
-				ptr = strchr (str, ' ');
-			if (ptr) *ptr++ = 0;
-			name = (char *)r_str_chop_ro (str);
-			ptr = (char *)r_str_chop_ro (ptr);
-			fi = r_flag_get (core->flags, name);
-			if (!fi)
-				fi = r_flag_set (core->flags, name,
-					core->offset, 1, 0);
-			if (fi) {
-				r_flag_item_set_alias (fi, ptr);
-			} else {
-				eprintf ("Cannot find flag '%s'\n", name);
-			}
-		} else {
-			eprintf ("Usage: fa flagname flagalias\n");
 		}
 		break;
 	case 'V': // visual marks
@@ -568,7 +543,6 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"f-","name","remove flag 'name'",
 		"f-","@addr","remove flag at address expression",
 		"f."," fname","list all local labels for the given function",
-		"fa"," [name] [alias]","alias a flag to evaluate an expression",
 		"fb"," [addr]","set base address for new flags",
 		"fb"," [addr] [flag*]","move flags matching 'flag' to relative addr",
 		"fc"," [name] [color]","set color for given flag",
