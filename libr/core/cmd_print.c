@@ -1,6 +1,6 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
-#define R_CORE_MAX_DISASM (1024*1024*1)
+#define R_CORE_MAX_DISASM (1024*1024*8)
 
 static char get_string_type (const ut8 *buf, ut64 len){
 	ut64 needle = 0;
@@ -2437,7 +2437,7 @@ static int cmd_print(void *data, const char *input) {
 						//eprintf ("Block size too small\n");
 						return 1;
 					}
-					if (l>R_CORE_MAX_DISASM) { // pD
+					if (l > R_CORE_MAX_DISASM) { // pD
 						eprintf ("Block size too big\n");
 						return 1;
 					}
