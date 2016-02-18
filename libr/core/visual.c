@@ -1383,10 +1383,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (core->print->cur_enabled) {
 			cursor_nextrow (core, true);
 		} else {
-			if (core->screen_bounds && core->screen_bounds >= core->offset) {
+			if (core->screen_bounds > 1 && core->screen_bounds >= core->offset) {
 				r_core_seek (core, core->screen_bounds, 1);
 			} else {
-				r_core_seek (core, core->offset+obs, 1);
+				r_core_seek (core, core->offset + obs, 1);
 			}
 		}
 		break;
