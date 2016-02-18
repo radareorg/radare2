@@ -19,7 +19,8 @@
 #define REGBASE(x) insn->detail->arm.operands[x].mem.base
 #define REGBASE64(x) insn->detail->arm64.operands[x].mem.base
 #define MEMINDEX(x) cs_reg_name(*handle, insn->detail->arm.operands[x].mem.index)
-#define MEMINDEX64(x) insn->detail->arm64.operands[x].mem.index
+#define MEMINDEX64(x) cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index)
+#define HASMEMINDEX64(x) insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) insn->detail->arm64.operands[x].mem.disp
 #define ISREG(x) insn->detail->arm.operands[x].type == ARM_OP_REG
@@ -30,11 +31,14 @@
 #if CS_API_MAJOR > 3
 #define LSHIFT(x) insn->detail->arm.operands[x].mem.lshift
 #define LSHIFT2(x) insn->detail->arm.operands[x].shift.value
+#define LSHIFT2_64(x) insn->detail->arm64.operands[x].shift.value
 #else
 #define LSHIFT(x) 0
 #define LSHIFT2(x) 0
+#define LSHIFT2_64(x) 0
 #endif
 #define OPCOUNT() insn->detail->arm.op_count
+#define OPCOUNT64() insn->detail->arm64.op_count
 #define ISSHIFTED(x) (insn->detail->arm.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm.operands[x].shift.value != 0)
 
 static const ut32 bitmask_by_width[] = {
@@ -77,6 +81,26 @@ static const char *decode_shift(arm_shifter shift) {
 }
 
 #define DECODE_SHIFT(x) decode_shift(insn->detail->arm.operands[x].shift.type)
+
+static int regsize64(cs_insn *insn, int n) {
+	unsigned int reg = insn->detail->arm64.operands[n].reg;
+	if ( (reg >= ARM64_REG_S0 && reg <= ARM64_REG_S31) ||
+		(reg >= ARM64_REG_W0 && reg <= ARM64_REG_W30)) {
+		return 4;
+	}
+	if (reg >= ARM64_REG_B0 && reg <= ARM64_REG_B31) {
+		return 1;
+	}
+	if (reg >= ARM64_REG_H0 && reg <= ARM64_REG_H31) {
+		return 2;
+	}
+	if (reg >= ARM64_REG_Q0 && reg <= ARM64_REG_Q31) {
+		return 16;
+	}
+	return 8;
+}
+
+#define REGSIZE64(x) regsize64 (insn, x)
 
 /* arm64 */
 
@@ -209,25 +233,58 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		// XXX
 		r_strbuf_setf (&op->esil, "pc,lr,=,%d,pc,=", IMM64 (0));
 		break;
-	case ARM64_INS_LDUR: // ldr x6, [x6,0xf90]
-	case ARM64_INS_LDR: // ldr x6, 0xf90
-		if (ISMEM64(1)) {
-			r_strbuf_setf (&op->esil, "%s,%d,+,[8],%s,=",
-					MEMBASE64(1), MEMDISP64(1), REG64(0));
-		} else {
-			if (ISREG64(1)) {
-				r_strbuf_setf (&op->esil, "%s,[],%s,=",
-					REG64(1), REG64(0));
+	case ARM64_INS_LDUR:
+	case ARM64_INS_LDR:
+	case ARM64_INS_LDRSB:
+	case ARM64_INS_LDRB:
+	case ARM64_INS_LDRSW:
+		{
+			int size = REGSIZE64(0);
+			switch (insn->id) {
+			case ARM64_INS_LDRSB:
+			case ARM64_INS_LDRB:
+				size = 1;
+				break;
+			case ARM64_INS_LDRSW:
+				size = 4;
+				break;
+			default:
+				break;
+
+			}
+			if (ISMEM64(1)) {
+				if (HASMEMINDEX64(1)) {
+					r_strbuf_appendf (&op->esil, "%s,%d,%s,<<,+,[%d],%s,=",
+							MEMBASE64(1), LSHIFT2_64(1), MEMINDEX64(1), size, REG64(0));
+				} else {
+					r_strbuf_appendf (&op->esil, "%s,%d,%d,<<,+,[%d],%s,=",
+							MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), size, REG64(0));
+				}
 			} else {
-				r_strbuf_setf (&op->esil, "%"PFMT64d",[],%s,=",
-					IMM64(1), REG64(0));
+				if (ISREG64(1)) {
+					if (OPCOUNT64() == 2) {
+						r_strbuf_setf (&op->esil, "%s,[%d],%s,=",
+							REG64(1), size, REG64(0));
+					} else if (OPCOUNT64() == 3) {
+						/* 
+							This seems like a capstone bug:
+							instructions like
+								ldr x16, [x13, x9]
+								ldrb w2, [x19, x23]
+							are not detected as ARM64_OP_MEM type and 
+							fall in this case instead.
+						*/
+						if (ISREG64(2)) {
+							r_strbuf_setf (&op->esil, "%s,%s,+,[%d],%s,=",
+								REG64(1), REG64(2), size, REG64(0));
+						}
+					}
+				} else {
+					r_strbuf_setf (&op->esil, "%"PFMT64d",[%d],%s,=",
+						IMM64(1), size, REG64(0));
+				}
 			}
 		}
-		break;
-	case ARM64_INS_LDRSB:
-	case ARM64_INS_LDRB: // ldr x6, [x6,0xf90]
-		r_strbuf_setf (&op->esil, "%s,%d,+,[1],%s,=",
-			MEMBASE64(1), MEMDISP64(1), REG64(0));
 		break;
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
