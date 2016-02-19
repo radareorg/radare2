@@ -421,6 +421,7 @@ R_API void r_core_sysenv_help(const RCore* core);
 #define R_CORE_BIN_ACC_SIZE     0x1000
 #define R_CORE_BIN_ACC_MEM	0x4000
 #define R_CORE_BIN_ACC_EXPORTS  0x8000
+#define R_CORE_BIN_ACC_VERSIONINFO 0x10000
 #define R_CORE_BIN_ACC_ALL	0x4FFF
 
 typedef struct r_core_bin_filter_t {

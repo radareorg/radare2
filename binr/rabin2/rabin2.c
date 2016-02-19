@@ -31,6 +31,7 @@
 #define ACTION_PDB_DWNLD 0x100000
 #define ACTION_DLOPEN    0x200000
 #define ACTION_EXPORTS   0x400000
+#define ACTION_VERSIONINFO 0x800000
 
 static struct r_bin_t *bin = NULL;
 static char* output = NULL;
@@ -495,7 +496,7 @@ int main(int argc, char **argv) {
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |= x
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSIHeElRwO:o:pPqQrvLhuxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeElRwO:o:pPqQrvLhuxzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (ACTION_CLASSES);
@@ -511,7 +512,9 @@ int main(int argc, char **argv) {
 			set_action (ACTION_MAIN);
 			set_action (ACTION_LIBS);
 			set_action (ACTION_RELOCS);
+			set_action (ACTION_VERSIONINFO);
 			break;
+		case 'V': set_action (ACTION_VERSIONINFO); break;
 		case 'q': rad = R_CORE_BIN_SIMPLE; break;
 		case 'j': rad = R_CORE_BIN_JSON; break;
 		case 'A': set_action (ACTION_LISTARCHS); break;
@@ -936,6 +939,7 @@ int main(int argc, char **argv) {
 	run_action ("dwarf", ACTION_DWARF, R_CORE_BIN_ACC_DWARF);
 	run_action ("pdb", ACTION_PDB, R_CORE_BIN_ACC_PDB);
 	run_action ("size", ACTION_SIZE, R_CORE_BIN_ACC_SIZE);
+	run_action ("versioninfo", ACTION_VERSIONINFO, R_CORE_BIN_ACC_VERSIONINFO);
 	if (action & ACTION_SRCLINE) {
 		rabin_show_srcline (at);
 	}
