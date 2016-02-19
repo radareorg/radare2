@@ -348,6 +348,97 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 	return true;
 }
 
+static RBinElfSection* get_section_by_name(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
+	int i;
+	if (!g_sections) return NULL;
+	for (i = 0; !g_sections[i].last; i++) {
+		if (!strncmp (g_sections[i].name, section_name, ELF_STRING_LENGTH-1))
+			return &g_sections[i];
+	}
+	return NULL;
+}
+
+//static int offset_from_vaddr(struct Elf_(r_bin_elf_obj_t) *bin, int size) {
+//}
+
+static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
+	int i;
+	const char *section_name = &bin->shstrtab[shdr->sh_name];
+	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
+	const char *link_section_name = &bin->shstrtab[link_shdr->sh_name];
+	int num_entries = shdr->sh_size / sizeof (Elf_(Versym));
+	ut8 *data = calloc (num_entries, sizeof (short));
+	printf ("Version symbols section '%s' contains %d entries:\n", section_name, num_entries);
+	printf (" Addr: %p  Offset: %#x  Link: %x (%s)\n",
+		(void*)shdr->sh_addr, shdr->sh_offset, shdr->sh_link, link_section_name);
+	for (i = num_entries; i--;) {
+		//r_buf_read_at (bin->b, , &data[i], 1);
+	}
+	for (i = 0; i < num_entries; i += 4) {
+		int j;
+		printf("  %03x:", i);
+		for (j = 0; (j < 4) && (i + j) < num_entries; ++j) {
+			if (data[i + j] == 0) {
+				printf ("   0 (*local*)    ");
+			} else if (data[i + j] == 1) {
+				printf ("   1 (*global*)    ");
+			} else {
+				printf ("%4x%c", data[i + j] & 0x7FFF, data[i + j] & 0x8000 ? 'h' : ' ');
+			}
+		}
+		printf("\n");
+	}
+	free (data);
+}
+
+static void store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
+	Elf_(Verdef) *defs = NULL;
+	const char *section_name = &bin->shstrtab[shdr->sh_name];
+	printf ("Version definition section '%s' contains %d entries:\n", section_name, shdr->sh_info);
+}
+
+static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
+	ut8 *need = malloc(shdr->sh_size);
+	const char *section_name = &bin->shstrtab[shdr->sh_name];
+	int i;
+	int cnt;
+	printf ("Version needs section '%s' contains %d entries:\n", section_name, shdr->sh_info);
+	printf (" Addr: %p", (void*)shdr->sh_addr);
+	printf("  Offset: %#x  Link to section: %x (%s)\n", shdr->sh_offset, shdr->sh_link, section_name);
+	//int num_verneed = shdr->sh_size / sizeof (Elf_(Verneed));
+	r_buf_read_at (bin->b, shdr->sh_offset, need, shdr->sh_size);
+	for (i = 0, cnt = 0; cnt < shdr->sh_info; ++cnt) {
+		int j;
+		int isum;
+		ut8 *vstart = need + i;
+		Elf_(Verneed) *entry = (Elf_(Verneed)*)(vstart);
+		printf("  %#x: Version: %d", i, entry->vn_version);
+		printf("  Cnt: %d\n", entry->vn_cnt);
+		vstart += entry->vn_aux;
+		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt; ++j) {
+			Elf_(Vernaux) *aux = (Elf_(Vernaux)*)(vstart);
+			printf("  Flags: %s  Version: %d\n", aux->vna_flags, aux->vna_other);
+			isum += aux->vna_next;
+			vstart += aux->vna_next;
+		}
+		i += entry->vn_next;
+	}
+	free(need);
+}
+
+static void store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
+	int i;
+	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
+		if (bin->shdr[i].sh_type == SHT_GNU_verdef) {
+			store_versioninfo_gnu_verdef (bin, &bin->shdr[i]);
+		} else if (bin->shdr[i].sh_type == SHT_GNU_verneed) {
+			store_versioninfo_gnu_verneed (bin, &bin->shdr[i]);
+		} else if (bin->shdr[i].sh_type == SHT_GNU_versym) {
+			store_versioninfo_gnu_versym (bin, &bin->shdr[i]);
+		}
+	}
+}
+
 static int elf_init(struct Elf_(r_bin_elf_obj_t) *bin) {
 	bin->phdr = NULL;
 	bin->shdr = NULL;
@@ -378,17 +469,9 @@ static int elf_init(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
 
-	return true;
-}
+	store_versioninfo (bin);
 
-static RBinElfSection* get_section_by_name(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
-	int i;
-	if (!g_sections) return NULL;
-	for (i = 0; !g_sections[i].last; i++) {
-		if (!strncmp (g_sections[i].name, section_name, ELF_STRING_LENGTH-1))
-			return &g_sections[i];
-	}
-	return NULL;
+	return true;
 }
 
 ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {

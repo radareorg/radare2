@@ -1836,6 +1836,68 @@ static int bin_mem(RCore *r, int mode) {
 	return true;
 }
 
+static void bin_pe_versioninfo(RCore *r) {
+	Sdb *sdb = NULL;
+	int num_version = 0;
+	int num_stringtable = 0;
+	int num_string = 0;
+	const char *format_version = "bin/cur/info/vs_version_info/VS_VERSIONINFO%d";
+	const char *format_stringtable = "%s/string_file_info/stringtable%d";
+	const char *format_string = "%s/string%d";
+	do {
+		char path_version[256] = {0};
+		snprintf (path_version, sizeof (path_version), format_version, num_version);
+		sdb = sdb_ns_path (r->sdb, path_version, 0);
+		for (num_stringtable = 0; sdb; ++num_stringtable) {
+			char path_stringtable[256] = {0};
+			snprintf (path_stringtable, sizeof (path_stringtable), format_stringtable, path_version, num_stringtable);
+			sdb = sdb_ns_path (r->sdb, path_stringtable, 0);
+			for (num_string = 0; sdb; ++num_string) {
+				char path_string[256] = {0};
+				snprintf (path_string, sizeof (path_string), format_string, path_stringtable, num_string);
+				sdb = sdb_ns_path (r->sdb, path_string, 0);
+				if (sdb) {
+					int lenkey = 0;
+					int lenval = 0;
+					ut8 *key_utf16 = sdb_decode (sdb_const_get (sdb, "key", 0), &lenkey);
+					ut8 *val_utf16 = sdb_decode (sdb_const_get (sdb, "value", 0), &lenval);
+					char *key = r_str_utf16_decode (key_utf16, lenkey);
+					char *val = r_str_utf16_decode (val_utf16, lenval);
+					r_cons_printf ("%s: %s\n", key, val);
+					free (key_utf16);
+					free (val_utf16);
+					free (key);
+					free (val);
+				}
+			}
+		}
+		++num_version;
+	} while (sdb);
+}
+
+static void bin_elf_versioninfo(RCore *r) {
+}
+
+static void bin_mach0_versioninfo(RCore *r) {
+}
+
+static int bin_versioninfo(RCore *r, int mode) {
+	const RBinInfo *info = r_bin_get_info (r->bin);
+
+	if (!strncmp ("pe", info->rclass, 2)) {
+		bin_pe_versioninfo (r);
+	} else if (!strncmp ("elf", info->rclass, 3)) {
+		bin_elf_versioninfo (r);
+	} else if (!strncmp ("mach0", info->rclass, 5)) {
+		bin_mach0_versioninfo (r);
+	} else {
+		r_cons_printf("Unknown format\n");
+		return false;
+	}
+
+	return true;
+}
+
 R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	int ret = true;
 	const char *name = NULL;
@@ -1879,6 +1941,8 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		ret &= bin_size (core, mode);
 	if ((action & R_CORE_BIN_ACC_MEM))
 		ret &= bin_mem (core, mode);
+	if ((action & R_CORE_BIN_ACC_VERSIONINFO))
+		ret &= bin_versioninfo (core, mode);
 	return ret;
 }
 
