@@ -200,7 +200,7 @@ RAnalPlugin r_anal_plugin_i4004 = {
 #ifndef CORELIB
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_avr,
+	.data = &r_anal_plugin_i4004,
 	.version = R2_VERSION
 };
 #endif
