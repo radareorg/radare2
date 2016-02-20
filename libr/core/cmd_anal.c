@@ -1684,7 +1684,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		if (*input == '-') {
 			cf = r_core_file_get_by_fd (core, fi->offset);
 			r_core_file_close (core, cf);
-			r_flag_unset (core->flags, name, NULL);
+			r_flag_unset_name (core->flags, name);
 			eprintf ("Deinitialized %s\n", name);
 			return;
 		}
