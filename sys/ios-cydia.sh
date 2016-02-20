@@ -17,14 +17,7 @@ if [ ! -d sys/ios-include ]; then
 )
 fi
 
-export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
-export PATH=$(pwd)/sys:${PATH}
-export CC=$(pwd)/sys/ios-sdk-gcc
-# set only for arm64, otherwise it is armv7
-# select ios sdk version
-export IOSVER=8.3
-export IOSINC=$(pwd)/sys/ios-include
-export CFLAGS=-O2
+. sys/ios-env.sh
 
 makeDeb() {
 	( cd binr/radare2 ; make ios_sdk_sign )
@@ -38,18 +31,26 @@ makeDeb() {
 	( cd sys/cydia/radare2 ; sudo make clean ; sudo make )
 }
 
-if true ; then
-	make clean
-	./configure --prefix=${PREFIX} --with-ostype=darwin \
-		--with-compiler=ios-sdk --target=arm-unknown-darwin
-	if [ $? = 0 ]; then
+fromscratch=1
+onlymakedeb=0
+
+if [ $onlymakedeb = 1 ]; then
+	makeDeb
+else
+	if [ $fromscratch = 1 ]; then
+		make clean
+		./configure --prefix=${PREFIX} --with-ostype=darwin \
+			--with-compiler=ios-sdk --target=arm-unknown-darwin
+		RV=$?
+	else
+		RV=0
+	fi
+	if [ $RV = 0 ]; then
 		time make -j4
 		if [ $? = 0 ]; then
 			makeDeb
 		fi
 	fi
-else
-	makeDeb
 fi
 
 
