@@ -150,7 +150,7 @@ R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num, int endian) {
 
 /* XXX TODO check and use system endian */
 // TODO: rename to r_mem_swap() */
-R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian) {
+R_API void r_mem_copyendian(ut8 *dest, const ut8 *orig, int size, int endian) {
 	ut8 buffer[8];
 	if (endian) {
 		if (dest != orig)
