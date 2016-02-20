@@ -1198,7 +1198,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 					r_flag_item_set_name (fi, sn.methflag, sn.methname);
 					if ((fi->offset - r->flags->base) == addr) {
 						comment = fi->comment ? strdup (fi->comment) : NULL;
-						r_flag_unset (r->flags, sn.methflag, fi);
+						r_flag_unset (r->flags, fi);
 						fi = NULL;
 					}
 				} else {

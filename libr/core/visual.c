@@ -1118,7 +1118,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			}
 			range = max-min+1;
 			if (!strcmp (n, "-")) {
-				r_flag_unset_i (core->flags, core->offset + core->print->cur, NULL);
+				r_flag_unset_off (core->flags, core->offset + core->print->cur);
 			} else if (*n=='.') {
 				if (n[1]=='-') {
 					//unset
@@ -1127,7 +1127,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					r_core_cmdf (core, "f.%s@0x%"PFMT64x, n+1, core->offset+min);
 				}
 			} else if (*n=='-') {
-				if (*n) r_flag_unset (core->flags, n+1, NULL);
+				if (*n) r_flag_unset_name (core->flags, n+1);
 			} else {
 				if (range<1) range = 1;
 				if (*n) r_flag_set (core->flags, n,
