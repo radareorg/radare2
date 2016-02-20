@@ -37,9 +37,20 @@ extern xtensa_isa xtensa_default_isa;
 #define MAX(a,b) (a > b ? a : b)
 #endif
 
+#if 1
+static void nothing() {
+	return;
+}
+
+#define OPCODES_SIGJMP_BUF              void*
+#define OPCODES_SIGSETJMP(buf)          nothing()
+#define OPCODES_SIGLONGJMP(buf,val)     nothing()
+#else
+
 #define OPCODES_SIGJMP_BUF              sigjmp_buf
 #define OPCODES_SIGSETJMP(buf)          sigsetjmp((buf), 0)
 #define OPCODES_SIGLONGJMP(buf,val)     siglongjmp((buf), (val))
+#endif
 
 int show_raw_fields;
 
@@ -71,6 +82,7 @@ fetch_data (struct disassemble_info *info, bfd_vma memaddr)
     }
   (*info->memory_error_func) (status, memaddr, info);
   OPCODES_SIGLONGJMP (priv->bailout, 1);
+return -1;
   /*NOTREACHED*/
 }
 
@@ -179,9 +191,11 @@ print_insn_xtensa (bfd_vma memaddr, struct disassemble_info *info)
   priv.byte_buf = byte_buf;
 
   info->private_data = (void *) &priv;
+#if 0
   if (OPCODES_SIGSETJMP (priv.bailout) != 0)
       /* Error return.  */
       return -1;
+#endif
 
   /* Don't set "isa" before the setjmp to keep the compiler from griping.  */
   isa = xtensa_default_isa;
