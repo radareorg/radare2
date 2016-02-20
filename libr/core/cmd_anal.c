@@ -27,7 +27,7 @@ static void flag_every_function(RCore *core) {
 	r_flag_space_push (core->flags, "functions");
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_flag_set (core->flags, fcn->name,
-			fcn->addr, fcn->size, 0);
+			fcn->addr, fcn->size);
 	}
 	r_flag_space_pop (core->flags);
 }
@@ -1697,7 +1697,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	}
 	snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
 	cf = r_core_file_open (core, uri, R_IO_RW, addr);
-	if (cf) r_flag_set (core->flags, name, addr, size, 0);
+	if (cf) r_flag_set (core->flags, name, addr, size);
 	//r_core_cmdf (core, "f stack_fd=`on malloc://%d 0x%08"
 	//	PFMT64x"`", stack_size, stack_addr);
 	//r_core_cmdf (core, "f stack=0x%08"PFMT64x, stack_addr);
