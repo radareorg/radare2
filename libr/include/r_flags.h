@@ -42,7 +42,7 @@ typedef struct r_flag_t {
 
 typedef RFlagItem* (*RFlagGet)(RFlag *f, const char *name);
 typedef RFlagItem* (*RFlagGetAt)(RFlag *f, ut64 addr);
-typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size, int dup);
+typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size);
 typedef int (*RFlagSetSpace)(RFlag *f, const char *name);
 
 typedef struct r_flag_bind_t {
@@ -71,7 +71,7 @@ R_API int r_flag_unset(RFlag *f, RFlagItem *item);
 R_API int r_flag_unset_name(RFlag *f, const char *name);
 R_API int r_flag_unset_off(RFlag *f, ut64 addr);
 R_API void r_flag_unset_all (RFlag *f);
-R_API RFlagItem *r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup);
+R_API RFlagItem *r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size);
 R_API int r_flag_sort(RFlag *f, int namesort);
 R_API int r_flag_item_set_name(RFlagItem *item, const char *name, const char *realname);
 R_API void r_flag_item_free (RFlagItem *item);

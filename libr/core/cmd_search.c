@@ -357,7 +357,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		first_hit = false;
 	if (searchflags) {
 		const char *flag = sdb_fmt (0, "%s%d_%d", searchprefix, kw->kwidx, kw->count);
-		r_flag_set (core->flags, flag, base_addr + addr, kw->keyword_length, 1);
+		r_flag_set (core->flags, flag, base_addr + addr, kw->keyword_length);
 	}
 	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
@@ -1349,7 +1349,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 					char flag[64];
 					snprintf (flag, sizeof (flag), "%s%d_%d",
 						searchprefix, kwidx, count);
-					r_flag_set (core->flags, flag, at, ret, 1);
+					r_flag_set (core->flags, flag, at, ret);
 				}
 				count++;
 				if (maxhits && count >= maxhits)
@@ -1440,7 +1440,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 				}
 				if (searchflags) {
 					const char *flagname = sdb_fmt (0, "%s%d_%d", searchprefix, kwidx, count);
-					r_flag_set (core->flags, flagname, hit->addr, hit->len, 1);
+					r_flag_set (core->flags, flagname, hit->addr, hit->len);
 				}
 				count++;
 			}

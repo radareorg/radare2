@@ -60,7 +60,7 @@ rep:
 		case ' ':
 			ptr = r_str_newf ("%s.%d", input+2, flagenum);
 			(void)r_flag_set (core->flags, ptr,
-					core->offset, 1, 0);
+					core->offset, 1);
 			flagenum++;
 			free (ptr);
 			break;
@@ -202,7 +202,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			if (fcn) r_anal_var_add (core->anal, fcn->addr, 0, off, 'v', "int", 4, str+1);
 			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 #endif
-		} else r_flag_set (core->flags, str, off, bsze, (*input=='+'));
+		} else r_flag_set (core->flags, str, off, bsze);
 		}
 		break;
 	case '-':
