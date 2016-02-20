@@ -123,9 +123,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 /* return the flag item with name "name" in the RFlag "f", if it exists.
  * Otherwise, NULL is returned. */
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
-	RList *list = r_hashtable64_lookup (f->ht_name, r_str_hash64 (name));
-	if (list) return r_list_get_top (list);
-	return NULL;
+	return r_hashtable64_lookup (f->ht_name, r_str_hash64 (name));
 }
 
 /* return the first flag item that can be found at offset "off", or NULL otherwise */
@@ -282,12 +280,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int
 		item->offset = off + f->base;
 		item->size = size;
 
-		list = r_hashtable64_lookup (f->ht_name, item->namehash);
-		if (!list) {
-			list = r_list_new ();
-			r_hashtable64_insert (f->ht_name, item->namehash, list);
-		}
-		r_list_append (list, item);
+		r_hashtable64_insert (f->ht_name, item->namehash, item);
 
 		list2 = r_hashtable64_lookup (f->ht_off, XOROFF(off));
 		if (list2 == NULL) {
@@ -341,28 +334,19 @@ R_API int r_flag_item_set_name(RFlagItem *item, const char *name, const char *re
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	ut64 hash;
 	RList *list;
+	RFlagItem *p;
 
 	if (!f || !item || !name || !*name) return false;
 	hash = r_str_hash64 (item->realname);
-	list = r_hashtable64_lookup (f->ht_name, hash);
-	if (list) {
-		RFlagItem *item = r_list_get_top (list);
-		if (r_list_empty (list)) {
-			r_hashtable64_remove (f->ht_name, hash);
-		} else {
-			r_hashtable64_remove (f->ht_name, hash);
-			r_list_delete_data (list, item);
-		}
+	p = r_hashtable64_lookup (f->ht_name, hash);
+	if (p) {
+		RFlagItem *item = p;
+		r_hashtable64_remove (f->ht_name, hash);
 		if (!r_flag_item_set_name (item, name, NULL)) {
-			r_list_append (list, item);
+			r_hashtable64_insert (f->ht_name, hash, item);
 			return false;
 		}
-		list = r_hashtable64_lookup (f->ht_name, item->namehash);
-		if (!list) {
-			list = r_list_new ();
-			r_hashtable64_insert (f->ht_name, item->namehash, list);
-		}
-		r_list_append (list, item);
+		r_hashtable64_insert (f->ht_name, item->namehash, item);
 	}
 	return true;
 }
@@ -429,14 +413,12 @@ R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 	ut64 off;
 	RFlagItem *item = p;
 	ut64 hash = r_str_hash64 (name);
-	RList *list2, *list = r_hashtable64_lookup (f->ht_name, hash);
-	// list = name hash
+	RList *list2, *list;
+	RFlagItem *tmp = r_hashtable64_lookup (f->ht_name, hash);
 	// list2 = off hash
-	if (list && list->head) {
-		if (!item) item = r_list_pop (list); // removes element from list
-		if (!item) {
-			return false;
-		}
+	if (tmp) {
+		if (!item) item = tmp;
+		if (!item) return false;
 		off = item->offset;
 
 		list2 = r_hashtable64_lookup (f->ht_off, XOROFF (off));
@@ -447,10 +429,7 @@ R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 				r_list_free (list2);
 				r_hashtable64_remove (f->ht_off, XOROFF(off));
 			}
-			if (list && r_list_empty (list)) {
-				r_list_free (list);
-				r_hashtable64_remove (f->ht_name, hash);
-			}
+			r_hashtable64_remove (f->ht_name, hash);
 		}
 		/* delete from f->flags list */
 		unflag (f, item);
