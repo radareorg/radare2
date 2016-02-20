@@ -276,7 +276,7 @@ static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
 		eprintf ("REFS drop to 0\n");
 		return false;
 	}
-	eprintf ("address %u\n", addr);
+	eprintf ("address 0x%"PFMT64x"\n", (ut64)addr);
 	kr = vm_write (task, addr, (vm_offset_t)buf, (mach_msg_type_number_t)len);
 	if (kr != KERN_SUCCESS) {
 		//the memory is not mapped
@@ -305,8 +305,8 @@ static int mach_write_at(RIO *io, RIOMach *riom, const void *buf, int len, ut64 
 	else
 		total_size = pagesize;
 
-	eprintf ("BASE ADDR %u\n", pageaddr);
-	eprintf ("PAGE SIZE %d\n", pagesize);
+	eprintf ("BASE ADDR 0x%"PFMT64x"\n", (ut64)pageaddr);
+	eprintf ("PAGE SIZE %d\n", (ut32)pagesize);
 
 	if (tsk_write (task, vaddr, buf, len))
 		return len;

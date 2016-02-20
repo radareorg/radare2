@@ -425,38 +425,22 @@ R_API int r_io_section_exists_for_vaddr (RIO *io, ut64 vaddr, int hasperm) {
 
 // dupped in vio.c
 R_API ut64 r_io_section_next(RIO *io, ut64 o) {
-	int oset = 0;
-	ut64 newsec = 0LL;
 	RListIter *iter;
 	RIOSection *s;
+	ut64 addr, newsec = UT64_MAX;
 
 	r_list_foreach (io->sections, iter, s) {
-		ut64 addr = s->vaddr;
-		if (!(s->rwx & R_IO_MAP)) continue;
-		if (o < addr) {
-			if (newsec) {
-				if (addr<newsec)
-					newsec = addr;//s->offset;//addr;
-			} else newsec = addr; //s->offset; //addr;
+		addr = s->vaddr;
+		if (s->vaddr > o && s->vaddr < newsec) {
+			newsec = s->vaddr;
 		}
-		if (o >= s->offset && o < (s->offset + s->size)) {
-			ut64 n = s->offset + s->size;
-			if (n>o) {
-				o = n;
-				oset = 1;
-			}
-		}
-		if (o >= s->vaddr && o < (s->vaddr + s->size)) {
-			ut64 n = s->vaddr + s->size;
-			if (n>o) {
-				o = n;
-				oset = 1;
-			}
+		addr = s->vaddr + s->vsize;
+		if (addr > o && addr < newsec) {
+			newsec = s->vaddr;
 		}
 	}
-	//eprintf ("Newsec %d %llx\n", oset, newsec);
-	if (oset) return o;
-	return newsec? newsec: o;
+
+	return newsec;
 }
 
 R_API RList *r_io_section_get_in_paddr_range(RIO *io, ut64 addr, ut64 endaddr) {
