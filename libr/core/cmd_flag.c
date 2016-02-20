@@ -219,9 +219,9 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			} else {
 				if (strchr (flagname, '*'))
 					r_flag_unset_glob (core->flags, flagname);
-				else r_flag_unset (core->flags, flagname, NULL);
+				else r_flag_unset_name (core->flags, flagname);
 			}
-		} else r_flag_unset_i (core->flags, off, NULL);
+		} else r_flag_unset_off (core->flags, off);
 		break;
 	case '.':
 		if (input[1]==' ') input++;
