@@ -581,7 +581,7 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 			free (next_module_function->name);
 			next_module_function->name = r_str_newf("flirt.%s", name);
 			anal->flb.set (anal->flb.f, next_module_function->name,
-				next_module_function->addr, next_module_function->size, 0);
+				next_module_function->addr, next_module_function->size);
 
 			anal->cb_printf ("Found %s\n", next_module_function->name);
 			free(name);

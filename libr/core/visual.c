@@ -1131,7 +1131,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			} else {
 				if (range<1) range = 1;
 				if (*n) r_flag_set (core->flags, n,
-					core->offset + min, range, 1);
+					core->offset + min, range);
 			}
 		} }
 		showcursor (core, false);

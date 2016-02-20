@@ -334,7 +334,7 @@ static int bin_strings(RCore *r, int mode, int va) {
 			} else {
 				str = r_str_newf ("str.%s", f_name);
 			}
-			r_flag_set (r->flags, str, addr, string->size, 0);
+			r_flag_set (r->flags, str, addr, string->size);
 			free (str);
 			free (f_name);
 		} else if (IS_MODE_SIMPLE (mode)) {
@@ -634,7 +634,7 @@ static int bin_main(RCore *r, int mode, int va) {
 
 	if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, "symbols");
-		r_flag_set (r->flags, "main", addr, r->blocksize, 0);
+		r_flag_set (r->flags, "main", addr, r->blocksize);
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("%"PFMT64d, addr);
 	} else if (IS_MODE_RAD (mode)) {
@@ -669,7 +669,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va) {
 		if (IS_MODE_SET (mode)) {
 			r_flag_space_set (r->flags, "symbols");
 			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i);
-			r_flag_set (r->flags, str, at, 1, 0);
+			r_flag_set (r->flags, str, at, 1);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"\n", at);
 		} else if (IS_MODE_JSON (mode)) {
@@ -806,7 +806,7 @@ static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 			demname = r_bin_demangle (r->bin->cur, lang, str);
 		}
 		r_name_filter (str, 0);
-		fi = r_flag_set (r->flags, str, addr, bin_reloc_size (reloc), 0);
+		fi = r_flag_set (r->flags, str, addr, bin_reloc_size (reloc));
 		if (demname) {
 			if (r->bin->prefix) {
 				r_flag_item_set_name (fi, str,
@@ -1202,7 +1202,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 						fi = NULL;
 					}
 				} else {
-					fi = r_flag_set (r->flags, sn.methflag, addr, symbol->size, 0);
+					fi = r_flag_set (r->flags, sn.methflag, addr, symbol->size);
 					comment = fi->comment ? strdup (fi->comment) : NULL;
 					if (comment) {
 						r_flag_item_set_comment (fi, comment);
@@ -1214,7 +1214,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				RFlagItem *fi;
 				n = sn.demname? sn.demname: sn.name;
 				fn = sn.demflag? sn.demflag: sn.nameflag;
-				fi = r_flag_set (r->flags, fn, addr, symbol->size, 0);
+				fi = r_flag_set (r->flags, fn, addr, symbol->size);
 				if (fi) {
 					char *fnp = (r->bin->prefix)?
 						r_str_newf ("%s.%s", r->bin->prefix, fn):
@@ -1456,7 +1456,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				snprintf (str, sizeof(str)-1, "section.%s", section->name);
 
 			}
-			r_flag_set (r->flags, str, addr, section->size, 0);
+			r_flag_set (r->flags, str, addr, section->size);
 			if (r->bin->prefix) {
 				snprintf (str, sizeof(str)-1, "%s.section_end.%s",
 					r->bin->prefix, section->name);
@@ -1464,7 +1464,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				snprintf (str, sizeof(str)-1, "section_end.%s", section->name);
 			}
 
-			r_flag_set (r->flags, str, addr + section->size, 0, 0);
+			r_flag_set (r->flags, str, addr + section->size, 0);
 			if (section->arch || section->bits) {
 				const char *arch = section->arch;
 				int bits = section->bits;
@@ -1693,11 +1693,11 @@ static int bin_classes(RCore *r, int mode) {
 
 		if (IS_MODE_SET (mode)) {
 			const char *classname = sdb_fmt (0, "class.%s", name);
-			r_flag_set (r->flags, classname, c->addr, 1, 0);
+			r_flag_set (r->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
 				char *method = sdb_fmt (1, "method.%s.%s", c->name, sym->name);
 				r_name_filter (method, -1);
-				r_flag_set (r->flags, method, sym->vaddr, 1, 0);
+				r_flag_set (r->flags, method, sym->vaddr, 1);
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x" %s%s%s\n",
