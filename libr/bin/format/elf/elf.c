@@ -399,6 +399,10 @@ ut64 Elf_(r_bin_elf_get_section_addr)(struct Elf_(r_bin_elf_obj_t) *bin, const c
 	return section? section->rva: UT64_MAX;
 }
 
+ut64 Elf_(r_bin_elf_get_section_addr_end)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
+	RBinElfSection *section = get_section_by_name (bin, section_name);
+	return section? section->rva + section->size: UT64_MAX;
+}
 #define REL (is_rela ? (void*)rela : (void*)rel)
 #define REL_BUF is_rela ? (ut8*)(&rela[k]) : (ut8*)(&rel[k])
 #define REL_OFFSET is_rela ? rela[k].r_offset : rel[k].r_offset
@@ -525,6 +529,19 @@ static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 					free (REL);
 					return of;
 					break;
+				}
+				break;
+			case 8:
+				// MIPS32 BIG ENDIAN relocs
+				{
+					RBinElfSection *s = get_section_by_name(bin, ".rela.plt");
+					if (s) {
+						plt_addr = s->rva + s->size;
+						plt_addr += 108;
+						plt_addr += k * 16;
+						free (REL);
+						return plt_addr;
+					}
 				}
 				break;
 			default:
