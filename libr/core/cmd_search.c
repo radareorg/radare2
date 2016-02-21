@@ -234,6 +234,10 @@ R_API int r_core_search_preludes(RCore *core) {
 			ret = r_core_search_prelude (core, from, to,
 				(const ut8 *)"\xf0\xb5", 2, NULL, 0);
 			break;
+		case 32:
+			ret = r_core_search_prelude (core, from, to,
+				(const ut8 *)"\x00\x48\x2d\xe9", 4, NULL, 0);
+			break;
 		case 64:
 			r_core_search_prelude (core, from, to,
 				(const ut8 *)"\xf6\x57\xbd\xa9", 4, NULL, 0);
