@@ -14,11 +14,12 @@
 .Op Fl f Ar from
 .Op Fl x Ar hexstr
 .Op Fl t Ar to
+.Op Fl c Ar hash
 .Op [file] ...
 .Sh DESCRIPTION
 This program is part of the radare project.
 .Pp
-Hasher allows you to calculate, check and show the hash values of each block of a target file. The block size is 32768 bytes by default. It's allowed to hash from stdin using '-' as a target file.
+Hasher allows you to calculate, check and show the hash values of each block of a target file. The block size is 32768 bytes by default. It's allowed to hash from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
 .Pp
 You can hash big files by hashing each block and later determine what part of it has been modified. Useful for filesystem analysis.
 .Pp
@@ -30,6 +31,8 @@ This is the command used by the '#' command of radare.
 Select an algorithm for the hashing. Valid values are listed in: rahash2 -L
 .It Fl b Ar blocksize
 Define the block size
+.It Fl c Ar hash
+Compare the computed hash with this one. Allowed only when a single hash is computed.
 .It Fl d
 encoDe base64 string or file
 .It Fl D
@@ -60,6 +63,11 @@ Hash the given hexpair string instead of using the 'source' and 'hash-file' argu
 Show version information
 .It Fl h
 Show usage help message.
+.El
+.Sh DIAGNOSTICS
+.Ex -std
+.Pp
+When -c is used, exit status 0 indicates a match between the expected and computed hashes.
 .El
 .Sh SEE ALSO
 .Pp
