@@ -38,8 +38,6 @@ RAsmPlugin r_asm_plugin_java = {
 	.arch = "java",
 	.license = "Apache",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
 	.assemble = &assemble
 };

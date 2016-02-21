@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2015 - pancake */
+/* radare2 - LGPL - Copyright 2011-2016 - pancake */
 
 #include <r_fs.h>
 #include "../config.h"

@@ -27,6 +27,7 @@ CB (asm, assembler)
 CB (parse, parser)
 CB (bin, bin)
 CB (egg, egg)
+CB (fs, fs)
 
 R_API void r_core_loadlibs_init(RCore *core) {
 #define DF(x,y,z) r_lib_add_handler(core->lib, R_LIB_TYPE_##x,y,&__lib_##z##_cb, &__lib_##z##_dt, core);
@@ -41,6 +42,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);
+	DF (FS, "fs plugins", fs);
 }
 
 R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
