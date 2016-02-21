@@ -296,15 +296,24 @@ static bool handle_dead_notify (RDebug *dbg, exc_msg *msg) {
 	}
 	return false;
 }
-static int handle_exception_message (RDebug *dbg, exc_msg *msg) {
+static int handle_exception_message (RDebug *dbg, exc_msg *msg, int ret_code) {
 	int ret = R_DEBUG_REASON_UNKNOWN;
 	kern_return_t kr;
 	switch (msg->exception) {
 	case EXC_BAD_ACCESS:
-		eprintf ("EXC_BAD_ACCESS\n");
 		ret = R_DEBUG_REASON_SEGFAULT;
+		ret_code = KERN_FAILURE;
+		kr = task_suspend (msg->task.name);
+		if (kr != KERN_SUCCESS)
+			eprintf ("failed to suspend task bad access\n");
+		eprintf ("EXC_BAD_ACCESS\n");
 		break;
 	case EXC_BAD_INSTRUCTION:
+		ret = R_DEBUG_REASON_ILLEGAL;
+		ret_code = KERN_FAILURE;
+		kr = task_suspend (msg->task.name);
+		if (kr != KERN_SUCCESS)
+			eprintf ("failed to suspend task bad instruction\n");
 		eprintf ("EXC_BAD_INSTRUCTION\n");
 		break;
 	case EXC_ARITHMETIC:
@@ -317,6 +326,7 @@ static int handle_exception_message (RDebug *dbg, exc_msg *msg) {
 		eprintf ("EXC_SOFTWARE\n");
 		break;
 	case EXC_BREAKPOINT:
+		ret_code = KERN_SUCCESS;
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS)
 			eprintf ("failed to suspend task breakpoint\n");
@@ -343,7 +353,7 @@ static int handle_exception_message (RDebug *dbg, exc_msg *msg) {
 static int __xnu_wait (RDebug *dbg, int pid) {
 	// here comes the important thing
 	kern_return_t kr;
-	int reason = R_DEBUG_REASON_UNKNOWN;
+	int ret_code, reason = R_DEBUG_REASON_UNKNOWN;
 	mig_reply_error_t reply;
 	bool ret;
 	exc_msg msg;
@@ -390,8 +400,8 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 			continue;
 		}
 
-		reason = handle_exception_message (dbg, &msg);
-		encode_reply (&reply, &msg.hdr, KERN_SUCCESS);
+		reason = handle_exception_message (dbg, &msg, &ret_code);
+		encode_reply (&reply, &msg.hdr, ret_code);
 		kr = mach_msg (&reply.Head, MACH_SEND_MSG | MACH_SEND_INTERRUPT,
 				reply.Head.msgh_size, 0,
 				MACH_PORT_NULL, 0,
@@ -428,14 +438,14 @@ bool xnu_create_exception_thread(RDebug *dbg) {
         // Allocate an exception port that we will use to track our child process
         kr = mach_port_allocate (task_self, MACH_PORT_RIGHT_RECEIVE,
 				&exception_port);
-	RETURN_ON_MACH_ERROR ("error to allocate mach_port exception\n", R_FALSE);
+	RETURN_ON_MACH_ERROR ("error to allocate mach_port exception\n", false);
         // Add the ability to send messages on the new exception port
 	kr = mach_port_insert_right (task_self, exception_port, exception_port,
 				     MACH_MSG_TYPE_MAKE_SEND);
-	RETURN_ON_MACH_ERROR ("error to allocate insert right\n", R_FALSE);
+	RETURN_ON_MACH_ERROR ("error to allocate insert right\n", false);
         // Save the original state of the exception ports for our child process
         ret = xnu_save_exception_ports (dbg->pid);
-	if (ret == R_FALSE) {
+	if (!ret) {
 		eprintf ("error to save exception port info\n");
 		return false;
 	}
@@ -443,7 +453,7 @@ bool xnu_create_exception_thread(RDebug *dbg) {
 	kr = task_set_exception_ports (task, EXC_MASK_ALL, exception_port,
 				       EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES,
 				       THREAD_STATE_NONE);
-	RETURN_ON_MACH_ERROR ("error to set port to receive exceptions\n", R_FALSE);
+	RETURN_ON_MACH_ERROR ("error to set port to receive exceptions\n", false);
 	//get notification when process die
 	kr = mach_port_request_notification (task_self, pid_to_task (dbg->pid),
 					 MACH_NOTIFY_DEAD_NAME, 0,

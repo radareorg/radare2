@@ -88,6 +88,7 @@ static task_t task_for_pid_workaround(int Pid) {
 	return -1;
 }
 
+
 static task_t pid_to_task(int pid) {
 	task_t task = 0;
 	static task_t old_task = 0;
@@ -118,6 +119,20 @@ static task_t pid_to_task(int pid) {
 	return task;
 }
 
+
+static bool task_is_dead (int pid) {
+	kern_return_t kr;
+	unsigned int count = 0;
+	kr = mach_port_get_refs (mach_task_self(), pid_to_task (pid), MACH_PORT_RIGHT_SEND, &count);
+	if (kr != KERN_SUCCESS)
+		return true;
+	if (!count)
+		return false;
+	return false;
+}
+
+
+
 static ut64 the_lower = 0LL;
 
 static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
@@ -136,9 +151,8 @@ static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 	size = osize = 4096;
 #endif
 	if (the_lower) {
-		if (addr < the_lower) {
+		if (addr < the_lower)
 			return the_lower;
-		}
 		return addr;
 	}
 
@@ -178,6 +192,10 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	vm_size_t size = 0;
 	int blen, err, copied = 0;
 	int blocksize = 32;
+	RIOMach *riom = (RIOMach *)fd->data;
+
+	if (task_is_dead (riom->pid))
+		return -1;
 
 	memset (buf, 0xff, len);
 	if (RIOMACH_PID (fd->data) == 0) {
@@ -225,7 +243,6 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	return len;
 }
 
-//XXX this could not compile on 32 bit machines
 static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
 	kern_return_t kr;
 	mach_port_t object;
@@ -243,6 +260,8 @@ static int tsk_pagesize(RIOMach *riom) {
 	//cache the pagesize
 	static vm_size_t pagesize = 0;
 	kern_return_t kr;
+	if (pagesize)
+		return pagesize;
 	kr = host_page_size (mach_host_self (), &pagesize);
 	if (kr != KERN_SUCCESS)
 		pagesize = 4096;
@@ -267,20 +286,9 @@ static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int pe
 }
 
 static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
-	kern_return_t kr;
-	unsigned int count = 0;
-	kr = mach_port_get_refs (mach_task_self(), task, MACH_PORT_RIGHT_SEND, &count);
-	if (kr != KERN_SUCCESS)
-		perror ("get refs");
-	if (count == 0) {
-		eprintf ("REFS drop to 0\n");
-		return false;
-	}
-	eprintf ("address 0x%"PFMT64x"\n", (ut64)addr);
-	kr = vm_write (task, addr, (vm_offset_t)buf, (mach_msg_type_number_t)len);
+	kern_return_t kr = vm_write (task, addr, (vm_offset_t)buf, (mach_msg_type_number_t)len);
 	if (kr != KERN_SUCCESS) {
 		//the memory is not mapped
-		eprintf ("error when writing to memory , code: %d\n", kr);
 		return false;
 	}
 	return true;
@@ -294,9 +302,10 @@ static int mach_write_at(RIO *io, RIOMach *riom, const void *buf, int len, ut64 
 	int operms = 0;
 	task_t task;
 
-	if (!riom || len < 1) {
+	if (!riom || len < 1)
 		return 0;
-	}
+	if (task_is_dead (riom->pid))
+		return 0;
 	task = riom->task;
 	pageaddr = tsk_getpagebase (riom, addr);
 	pagesize = tsk_pagesize (riom);
@@ -305,13 +314,10 @@ static int mach_write_at(RIO *io, RIOMach *riom, const void *buf, int len, ut64 
 	else
 		total_size = pagesize;
 
-	eprintf ("BASE ADDR 0x%"PFMT64x"\n", (ut64)pageaddr);
-	eprintf ("PAGE SIZE %d\n", (ut32)pagesize);
-
 	if (tsk_write (task, vaddr, buf, len))
 		return len;
 	operms = tsk_getperm (io, task, pageaddr);
-	if (!tsk_setperm (io, task, pageaddr, total_size, VM_PROT_WRITE | VM_PROT_COPY)) {
+	if (!tsk_setperm (io, task, pageaddr, total_size, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
 		eprintf ("io.mach: Cannot set page perms for %d bytes at 0x%08"
 			PFMT64x"\n", (int)pagesize, (ut64)pageaddr);
 		return -1;
