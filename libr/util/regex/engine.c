@@ -493,7 +493,7 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 	size_t len;
 	int hard;
 	sop s;
-	regoff_t offsave;
+	ut64 offsave;
 	cset *cs;
 
 	AT("back", start, stop, startst, stopst);
