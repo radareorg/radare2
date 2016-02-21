@@ -16,6 +16,19 @@ static int iterations = 0;
 static int quiet = 0;
 static RHashSeed s = {0}, *_s = NULL;
 
+void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int *ret) {
+	if (compare) {
+		// algobit has only 1 bit set
+		if (memcmp (ctx->digest, compare, length)) {
+			eprintf ("rahash2: Computed hash doesn't match the expected one.\n");
+			*ret = 1;
+		}
+		else {
+			printf ("rahash2: Computed hash matches the expected one.\n");
+		}
+	}
+}
+
 static void do_hash_seed(const char *seed) {
 	const char *sptr = seed;
 	if (!seed) {
@@ -110,10 +123,11 @@ static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int r
 	return 1;
 }
 
-static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int rad, int ule) {
+static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int rad, int ule, const ut8 *compare) {
 	ut64 j, fsize, algobit = r_hash_name_to_bits (algo);
 	RHash *ctx;
 	ut8 *buf;
+	int ret = 0;
 	int i, first = 1;
 	if (algobit == R_HASH_NONE) {
 		eprintf ("rahash2: Invalid hashing algorithm specified\n");
@@ -209,18 +223,21 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 	}
 	if (rad == 'j')
 		printf ("]\n");
+
+	compare_hashes(ctx, compare, r_hash_size (algobit), &ret);
 	r_hash_free (ctx);
 	free (buf);
-	return 0;
+	return ret;
 }
 
 static int do_help(int line) {
-	printf ("Usage: rahash2 [-rBhLkv] [-b sz] [-a algo] [-s str] [-f from] [-t to] [file] ...\n");
+	printf ("Usage: rahash2 [-rBhLkv] [-b sz] [-a algo] [-c hash] [-s str] [-f from] [-t to] [file] ...\n");
 	if (line) return 0;
 	printf (
 	" -a algo     comma separated list of algorithms (default is 'sha256')\n"
 	" -b bsize    specify the size of the block (instead of full file)\n"
 	" -B          show per-block hash\n"
+	" -c hash     compare with this hash\n"
 	" -e          swap endian (use little endian)\n"
 	" -d / -D     encode/decode base64 string (-s) or file to stdout\n"
 	" -f from     start hashing at given address\n"
@@ -257,18 +274,24 @@ static void algolist() {
 	hashstr = x;\
 }
 
+int is_power_of_two(const ut64 x) {
+    return ((x != 0) && ((x & (~x + 1)) == x));
+}
+
 int main(int argc, char **argv) {
 	int i, ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0, b64mode = 0;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
 	char *hashstr = NULL;
+	const char *compareStr = NULL;
+	ut8 *compareBin = NULL;
 	int hashstr_len = -1;
 	int hashstr_hex = 0;
 	ut64 algobit;
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "jdDrvea:i:S:s:x:b:nBhf:t:kLq")) != -1) {
+	while ((c = getopt (argc, argv, "jdDrvea:i:S:s:x:b:nBhf:t:kLqc:")) != -1) {
 		switch (c) {
 		case 'q': quiet = 1; break;
 		case 'i':
@@ -297,8 +320,42 @@ int main(int argc, char **argv) {
 		case 'h': return do_help (0);
 		case 's': setHashString (optarg, 0); break;
 		case 'x': setHashString (optarg, 1); break;
+		case 'c': compareStr = optarg; break;
 			break;
 		default: eprintf ("rahash2: Unknown flag\n"); return 1;
+		}
+	}
+	if (compareStr) {
+		int compareBin_len;
+		if (bsize && !incremental) {
+			eprintf ("rahash2: Option -c incompatible with -b and -B options.\n");
+			return 1;
+		}
+		if (b64mode) {
+			eprintf ("rahash2: Option -c incompatible with -d or -D options.\n");
+			return 1;
+		}
+		algobit = r_hash_name_to_bits(algo);
+		if (!is_power_of_two(algobit)) {
+			eprintf ("rahash2: Option -c incompatible with multiple algorithms in -a.\n");
+			return 1;
+		}
+		compareBin = malloc ((strlen (compareStr) + 1) * 2);
+		if (!compareBin)
+			return 1;
+		compareBin_len = r_hex_str2bin (compareStr, compareBin);
+		if (compareBin_len < 1) {
+			eprintf ("Invalid -c hex hash\n");
+			free (compareBin);
+			return 1;
+		}
+		else if (compareBin_len != r_hash_size(algobit)) {
+			eprintf (
+				"rahash2: Given -c hash has %d bytes but the selected algorithm returns %d bytes.\n",
+				compareBin_len,
+				r_hash_size(algobit));
+			free (compareBin);
+			return 1;
 		}
 	}
 	if ((st64)from>=0 && (st64)to<0) {
@@ -313,6 +370,7 @@ int main(int argc, char **argv) {
 	do_hash_seed (seed);
 	if (hashstr) {
 #define INSIZE 32768
+		ret = 0;
 		if (!strcmp (hashstr, "-")) {
 			int res = 0;
 			hashstr = malloc (INSIZE);
@@ -403,6 +461,7 @@ int main(int argc, char **argv) {
 					       to = strsz;
 					       do_hash_internal (ctx, hashbit,
 						       (const ut8*)str, strsz, rad, 1, ule);
+					       compare_hashes(ctx, compareBin, r_hash_size (algobit), &ret);
 					       r_hash_free (ctx);
 				       }
 			       }
@@ -412,7 +471,7 @@ int main(int argc, char **argv) {
 			       }
 			}
 		}
-		return 0;
+		return ret;
 	}
 	if (optind>=argc)
 		return do_help (1);
@@ -485,10 +544,11 @@ int main(int argc, char **argv) {
 					return 1;
 				}
 			}
-			ret |= do_hash (argv[i], algo, io, bsize, rad, ule);
+			ret |= do_hash (argv[i], algo, io, bsize, rad, ule, compareBin);
 		}
 	}
 	free (hashstr);
 	r_io_free (io);
+
 	return ret;
 }
