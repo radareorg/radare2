@@ -569,7 +569,7 @@ PUSH { r4, r5, r6, r7, lr }
 		}
 		break;
 	case ARM_INS_ASR:
-		r_strbuf_setf (&op->esil, "%s,%s,>>,%s,=", ARG(2), ARG(1), ARG(0));
+		r_strbuf_setf (&op->esil, "%s,%s,=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_POP:
 #if 0

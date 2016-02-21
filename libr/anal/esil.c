@@ -141,7 +141,8 @@ R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, int interrupt) {
 		return false;
 	i = sdb_itoa ((ut64)interrupt, t, 16);
 	if (!sdb_num_exists (esil->interrupts, i)) {
-		eprintf ("Cannot find interrupt-handler for interrupt %d\n", interrupt);
+		eprintf ("0x%08"PFMT64x" Cannot find interrupt-handler for interrupt %d\n",
+			esil->address, interrupt);
 		return false;
 	}
 	icb = (RAnalEsilInterruptCB)sdb_ptr_get (esil->interrupts, i, 0);
@@ -542,7 +543,7 @@ static int esil_neg(RAnalEsil *esil) {
 			}
 		}
 	} else {
-		eprintf ("esil_neg: empty stack\n");
+		eprintf ("0x%08"PFMT64x"  esil_neg: empty stack\n", esil->address);
 	}
 	free (src);
 	return ret;
@@ -860,7 +861,7 @@ static int esil_lsr(RAnalEsil *esil) {
 			r_anal_esil_pushnum (esil, res);
 			ret = 1;
 		} else {
-			eprintf ("esil_lsr: empty stack\n");
+			eprintf ("0x%08"PFMT64x"  esil_lsr: empty stack\n", esil->address);
 		}
 	}
 	free (src);
@@ -1433,7 +1434,7 @@ static int esil_poke_some(RAnalEsil *esil) {
 					ret = r_anal_esil_mem_write (esil, ptr,
 								(const ut8 *)&num32, sizeof (num32));
 					if (ret != sizeof (num32)) {
-						eprintf ("Cannot write at 0x%08" PFMT64x "\n", ptr);
+						//eprintf ("Cannot write at 0x%08" PFMT64x "\n", ptr);
 						esil->trap = 1;
 					}
 					ptr += 4;

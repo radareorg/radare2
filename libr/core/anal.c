@@ -1508,10 +1508,14 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 	int wordsize, endian;
 
 	if (ptr == ref) {
-		if (code) r_cons_printf ("ax%c 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-			type? type: 'c', (ut64)ref, (ut64)at);
-		else r_cons_printf ("axd 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-			(ut64)ref, (ut64)at);
+		if (code) {
+			r_anal_ref_add (core->anal, ref, at, type? type: 'c');
+//			r_cons_printf ("ax%c 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+			//	type? type: 'c', (ut64)ref, (ut64)at);
+		} else {
+			r_anal_ref_add (core->anal, ref, at, 'd');
+			//r_cons_printf ("axd 0x%08"PFMT64x" 0x%08"PFMT64x"\n", (ut64)ref, (ut64)at);
+		}
 		return true;
 	}
 	if (depth < 1)
@@ -1558,8 +1562,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 		}
 		while ((!bckwrds && at < to) || bckwrds) {
 			eprintf ("\r[0x%08"PFMT64x"-0x%08"PFMT64x"]", at, to);
-			if (r_cons_singleton ()->breaked)
+			if (r_cons_is_breaked ())
 				break;
+			r_cons_break (NULL, NULL);
 			// TODO: this can be probably enhaced
 			ret = r_io_read_at (core->io, at, buf, core->blocksize);
 			if (ret != core->blocksize)
@@ -1567,6 +1572,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;
 			     (!bckwrds && i < core->blocksize - OPSZ) || (bckwrds && i > 0);
 			     bckwrds ? i-- : i++) {
+				if (r_cons_is_breaked ())
+					break;
+				r_cons_break (NULL, NULL);
 				r_anal_op_fini (&op);
 				if (!r_anal_op (core->anal, &op, at + i, buf+i,
 						core->blocksize - i))
@@ -1762,7 +1770,6 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				case R_ANAL_REF_TYPE_DATA: cmd = "axd"; break;
 				default: cmd = "ax"; break;
 				}
-
 				r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 						cmd, xref_to, xref_from);
 			}
@@ -2281,7 +2288,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
 				esil->address, addr);
 		}
-		eprintf ("%s\n", cmd);
+		//eprintf ("%s\n", cmd);
 		r_core_cmd0 (mycore, cmd);
 	}
 	return 0; // fallback
@@ -2291,7 +2298,6 @@ static bool esil_anal_stop = false;
 static void cccb(void*u) {
 	esil_anal_stop = true;
 	eprintf ("^C\n");
-	r_sys_sleep (1);
 }
 
 R_API void r_core_anal_esil (RCore *core, const char *str) {
@@ -2354,6 +2360,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		if (esil_anal_stop || r_cons_is_breaked ()) {
 			break;
 		}
+		r_cons_break (cccb, core);
 		cur = addr + i;
 		if (!r_anal_op (core->anal, &op, cur, buf+i, iend-i)) {
 			i += minopsize - 1;
@@ -2384,11 +2391,11 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 				{
 				       ut64 dst = esilbreak_last_read;
 					if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
-						// get pc
-						eprintf ("0x%08"PFMT64x" DATA 0x%08"PFMT64x"\n", cur, dst);
-						r_core_cmdf (core, "axd 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
+						r_anal_ref_add (core->anal, dst, cur, 'd');
+						//eprintf ("0x%08"PFMT64x" DATA 0x%08"PFMT64x"\n", cur, dst);
+						//r_core_cmdf (core, "axd 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
 					} else {
-						eprintf ("Unknown LOAD at 0x%08"PFMT64x"\n", cur);
+						//eprintf ("Unknown LOAD at 0x%08"PFMT64x"\n", cur);
 					}
 				}
 				break;
@@ -2400,9 +2407,10 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
 							// get pc
 							eprintf ("0x%08"PFMT64x" UCALL 0x%08"PFMT64x"\n", cur, dst);
-							r_core_cmdf (core, "axc 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
+							//r_core_cmdf (core, "axc 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
+							r_anal_ref_add (core->anal, dst, cur, 'c');
 						} else {
-							eprintf ("Unknown JMP/CALL at 0x%08"PFMT64x"\n", cur);
+							//eprintf ("Unknown JMP/CALL at 0x%08"PFMT64x"\n", cur);
 						}
 					}
 				}

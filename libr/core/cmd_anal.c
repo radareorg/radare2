@@ -3524,7 +3524,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_seek (core, cur, 1);
 		break;
 	}
-	case 'e':
+	case 'e': // "aae"
 		r_core_anal_esil (core, input + 1);
 		break;
 	case 'r':
