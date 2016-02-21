@@ -434,41 +434,42 @@ int main(int argc, char **argv) {
 				free (out);
 			}
 			}
-		       break;
+			break;
 		default:
 			{
-			       char *str = (char *)hashstr;
-			       int strsz = hashstr_len;
-			       if (_s) {
-				       // alloc/concat/resize
-				       str = malloc (strsz + s.len);
-				       if (s.prefix) {
-					       memcpy (str, s.buf, s.len);
-					       memcpy (str+s.len, hashstr, hashstr_len);
-				       } else {
-					       memcpy (str, hashstr, hashstr_len);
-					       memcpy (str+strsz, s.buf, s.len);
-				       }
-				       strsz += s.len;
-				       str[strsz] = 0;
-			       }
-			       algobit = r_hash_name_to_bits (algo);
-			       for (i=1; i<0x800000; i<<=1) {
-				       if (algobit & i) {
-					       int hashbit = i & algobit;
-					       ctx = r_hash_new (R_TRUE, hashbit);
-					       from = 0;
-					       to = strsz;
-					       do_hash_internal (ctx, hashbit,
-						       (const ut8*)str, strsz, rad, 1, ule);
-					       compare_hashes (ctx, compareBin, r_hash_size (algobit), &ret);
-					       r_hash_free (ctx);
-				       }
-			       }
-			       if (_s) {
-				       free (str);
-				       free (s.buf);
-			       }
+				char *str = (char *)hashstr;
+				int strsz = hashstr_len;
+				if (_s) {
+					// alloc/concat/resize
+					str = malloc (strsz + s.len);
+					if (s.prefix) {
+						memcpy (str, s.buf, s.len);
+						memcpy (str+s.len, hashstr, hashstr_len);
+					} else {
+						memcpy (str, hashstr, hashstr_len);
+						memcpy (str+strsz, s.buf, s.len);
+					}
+					strsz += s.len;
+					str[strsz] = 0;
+				}
+				algobit = r_hash_name_to_bits (algo);
+				for (i=1; i<0x800000; i<<=1) {
+					if (algobit & i) {
+						int hashbit = i & algobit;
+						ctx = r_hash_new (R_TRUE, hashbit);
+						from = 0;
+						to = strsz;
+						do_hash_internal (ctx, hashbit,
+							(const ut8*)str, strsz, rad, 1, ule);
+						compare_hashes (ctx, compareBin,
+							r_hash_size (algobit), &ret);
+						r_hash_free (ctx);
+					}
+				}
+				if (_s) {
+					free (str);
+					free (s.buf);
+				}
 			}
 		}
 		return ret;
