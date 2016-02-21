@@ -224,7 +224,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 	if (rad == 'j')
 		printf ("]\n");
 
-	compare_hashes(ctx, compare, r_hash_size (algobit), &ret);
+	compare_hashes (ctx, compare, r_hash_size (algobit), &ret);
 	r_hash_free (ctx);
 	free (buf);
 	return ret;
@@ -275,7 +275,7 @@ static void algolist() {
 }
 
 int is_power_of_two(const ut64 x) {
-    return ((x != 0) && ((x & (~x + 1)) == x));
+    return (x != 0) && ((x & (~x + 1)) == x);
 }
 
 int main(int argc, char **argv) {
@@ -321,7 +321,6 @@ int main(int argc, char **argv) {
 		case 's': setHashString (optarg, 0); break;
 		case 'x': setHashString (optarg, 1); break;
 		case 'c': compareStr = optarg; break;
-			break;
 		default: eprintf ("rahash2: Unknown flag\n"); return 1;
 		}
 	}
@@ -336,7 +335,8 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 		algobit = r_hash_name_to_bits(algo);
-		if (!is_power_of_two(algobit)) {
+		// if algobit represents a single algorithm then it's a power of 2
+		if (!is_power_of_two (algobit)) {
 			eprintf ("rahash2: Option -c incompatible with multiple algorithms in -a.\n");
 			return 1;
 		}
@@ -345,11 +345,11 @@ int main(int argc, char **argv) {
 			return 1;
 		compareBin_len = r_hex_str2bin (compareStr, compareBin);
 		if (compareBin_len < 1) {
-			eprintf ("Invalid -c hex hash\n");
+			eprintf ("rahash2: Invalid -c hex hash\n");
 			free (compareBin);
 			return 1;
 		}
-		else if (compareBin_len != r_hash_size(algobit)) {
+		else if (compareBin_len != r_hash_size (algobit)) {
 			eprintf (
 				"rahash2: Given -c hash has %d bytes but the selected algorithm returns %d bytes.\n",
 				compareBin_len,
@@ -461,7 +461,7 @@ int main(int argc, char **argv) {
 					       to = strsz;
 					       do_hash_internal (ctx, hashbit,
 						       (const ut8*)str, strsz, rad, 1, ule);
-					       compare_hashes(ctx, compareBin, r_hash_size (algobit), &ret);
+					       compare_hashes (ctx, compareBin, r_hash_size (algobit), &ret);
 					       r_hash_free (ctx);
 				       }
 			       }
