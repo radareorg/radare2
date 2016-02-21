@@ -204,6 +204,22 @@ R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int
 	return NULL;
 }
 
+// TODO: rename to r_mem_mem and refactor all calls to this function
+R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *needle, int nlen, int align) {
+	int i, until = hlen-nlen+1;
+	if (align < 1) align = 1;
+	if (hlen<1 || nlen<1)
+		return NULL;
+	if (align>1) {
+		until -= (until % align);
+	}
+	for (i=0; i<until; i+=align) {
+		if (!memcmp (haystack+i, needle, nlen))
+			return haystack+i;
+	}
+	return NULL;
+}
+
 // TODO: implement pack/unpack helpers use vararg or wtf?
 R_API int r_mem_pack() {
 	// TODO: copy this from r_buf??

@@ -536,8 +536,17 @@ static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 				{
 					RBinElfSection *s = get_section_by_name(bin, ".rela.plt");
 					if (s) {
+						ut8 buf[1024];
+						const ut8 *base;
 						plt_addr = s->rva + s->size;
-						plt_addr += 108;
+						len = r_buf_read_at (bin->b, s->offset + s->size, buf, sizeof (buf));
+						len = sizeof (buf); //
+						base = r_mem_mem_aligned (buf, sizeof (buf), (const ut8*)"\x3c\x0f\x00", 3, 4);
+						if (base) {
+							plt_addr += (int)(size_t)(base - buf);
+						} else {
+							plt_addr += 108 + 8; // HARDCODED HACK
+						}
 						plt_addr += k * 16;
 						free (REL);
 						return plt_addr;

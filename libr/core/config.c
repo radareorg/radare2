@@ -1735,6 +1735,7 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETPREF("scr.responsive", "false", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
 #endif
+	SETPREF("scr.wheelnkey", "false", "Use sn/sp and scr.nkey on wheel instead of scroll");
 	SETPREF("scr.wheel", "true", "Mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
 	SETPREF("scr.atport", "false", "V@ starts a background http server and spawns an r2 -C");
 	SETI("scr.wheelspeed", 4, "Mouse wheel speed");
@@ -1749,7 +1750,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("scr.interactive", "true", &cb_scrint, "Start in interactive mode");
 	SETI("scr.feedback", 1, "Set visual feedback level (1=arrow on jump, 2=every key (useful for videos))");
 	SETCB("scr.html", "false", &cb_scrhtml, "Disassembly uses HTML syntax");
-	SETCB("scr.nkey", "fun", &cb_scrnkey, "Select the seek mode in visual");
+	SETCB("scr.nkey", "flag", &cb_scrnkey, "Select the seek mode in visual");
 	SETCB("scr.pager", "", &cb_pager, "Select pager program (when output overflows the window)");
 	SETPREF("scr.pipecolor", "false", "Enable colors when using pipes");
 	SETPREF("scr.promptfile", "false", "Show user prompt file (used by r2 -q)");

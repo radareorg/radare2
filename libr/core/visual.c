@@ -1357,25 +1357,29 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (core->print->cur_enabled) {
 			cursor_nextrow (core, false);
 		} else {
-			int times = wheelspeed;
-			if (times<1) times = 1;
-			while (times--) {
-				if (isDisasmPrint(core->printidx)) {
-					RAnalFunction *f = NULL;
-					if (true) {
-						f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			if (r_config_get_i (core->config, "scr.wheelnkey")) {
+				r_core_cmd0 (core, "sn");
+			} else {
+				int times = wheelspeed;
+				if (times<1) times = 1;
+				while (times--) {
+					if (isDisasmPrint(core->printidx)) {
+						RAnalFunction *f = NULL;
+						if (true) {
+							f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+						}
+						if (f && f->folded) {
+							cols = core->offset - f->addr + f->size;
+						} else {
+							r_asm_set_pc (core->assembler, core->offset);
+							cols = r_asm_disassemble (core->assembler,
+									&op, core->block, 32);
+						}
+						if (cols<1) cols = op.size;
+						if (cols<1) cols = 1;
 					}
-					if (f && f->folded) {
-						cols = core->offset - f->addr + f->size;
-					} else {
-						r_asm_set_pc (core->assembler, core->offset);
-						cols = r_asm_disassemble (core->assembler,
-								&op, core->block, 32);
-					}
-					if (cols<1) cols = op.size;
-					if (cols<1) cols = 1;
+					r_core_seek (core, core->offset + cols, 1);
 				}
-				r_core_seek (core, core->offset + cols, 1);
 			}
 		}
 		break;
@@ -1394,21 +1398,25 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (core->print->cur_enabled) {
 			cursor_prevrow (core, false);
 		} else {
-			int times = wheelspeed;
-			if (times<1) times = 1;
-			while (times--) {
-				if (isDisasmPrint (core->printidx)) {
-					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-					if (f && f->folded) {
-						cols = core->offset - f->addr; // + f->size;
-						if (cols<1) {
-							cols = 4;
+			if (r_config_get_i (core->config, "scr.wheelnkey")) {
+				r_core_cmd0(core, "sp");
+			} else {
+				int times = wheelspeed;
+				if (times<1) times = 1;
+				while (times--) {
+					if (isDisasmPrint (core->printidx)) {
+						RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+						if (f && f->folded) {
+							cols = core->offset - f->addr; // + f->size;
+							if (cols<1) {
+								cols = 4;
+							}
+						} else {
+							cols = prevopsz (core, core->offset);
 						}
-					} else {
-						cols = prevopsz (core, core->offset);
 					}
+					r_core_seek (core, core->offset - cols, 1);
 				}
-				r_core_seek (core, core->offset - cols, 1);
 			}
 		}
 		break;
