@@ -178,11 +178,11 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 #define SHIFTED_REG64_APPEND(sb, n) shifted_reg64_append(sb, handle, insn, n)
 
 
-static char* shifted_reg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n) {
+static void shifted_reg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n) {
 	if (insn->detail->arm64.operands[n].shift.type != ARM64_SFT_ASR) {
 		r_strbuf_appendf (sb, "%d,%s,%s", LSHIFT2_64(n), REG64(n), DECODE_SHIFT64(n));
 	} else {
-		/* ASR: add the missing zeroes if negative */
+		/* ASR: add the missing ones if negative */
 		ut64 missing_ones = bitmask_by_width[LSHIFT2_64(n)-1] << (REGSIZE64(n)*8 - LSHIFT2_64(n));
 		r_strbuf_appendf (sb, "%d,%s,%s,1,%s,<<<,1,&,?{,%"PFMT64u",}{,0,},|", 
 			LSHIFT2_64(n), REG64(n), DECODE_SHIFT64(n), REG64(n), missing_ones);
