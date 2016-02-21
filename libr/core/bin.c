@@ -808,15 +808,14 @@ static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 		r_name_filter (str, 0);
 		fi = r_flag_set (r->flags, str, addr, bin_reloc_size (reloc));
 		if (demname) {
+			char *realname;
 			if (r->bin->prefix) {
-				r_flag_item_set_name (fi, str,
-						sdb_fmt (0, "%s.reloc.%s",
-							r->bin->prefix, demname));
+				realname = sdb_fmt (0, "%s.reloc.%s",
+					r->bin->prefix, demname);
 			} else {
-				r_flag_item_set_name (fi, str,
-						sdb_fmt (0, "reloc.%s", demname));
-
+				realname = sdb_fmt (0, "reloc.%s", demname);
 			}
+			r_flag_item_set_realname (fi, realname);
 		}
 	} else {
 		// TODO(eddyb) implement constant relocs.
@@ -1195,7 +1194,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 					sn.methflag = prname;
 				}
 				if (fi) {
-					r_flag_item_set_name (fi, sn.methflag, sn.methname);
+					r_flag_item_set_realname (fi, sn.methname);
 					if ((fi->offset - r->flags->base) == addr) {
 						comment = fi->comment ? strdup (fi->comment) : NULL;
 						r_flag_unset (r->flags, fi);
@@ -1212,18 +1211,18 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			} else {
 				const char *fn, *n;
 				RFlagItem *fi;
-				n = sn.demname? sn.demname: sn.name;
-				fn = sn.demflag? sn.demflag: sn.nameflag;
-				fi = r_flag_set (r->flags, fn, addr, symbol->size);
+				n = sn.demname ? sn.demname : sn.name;
+				fn = sn.demflag ? sn.demflag : sn.nameflag;
+				char *fnp = (r->bin->prefix) ?
+					r_str_newf ("%s.%s", r->bin->prefix, fn):
+					strdup (fn);
+				fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 				if (fi) {
-					char *fnp = (r->bin->prefix)?
-						r_str_newf ("%s.%s", r->bin->prefix, fn):
-						strdup (fn);
-					r_flag_item_set_name (fi, fnp, n);
-					free (fnp);
+					r_flag_item_set_realname (fi, n);
 				} else {
 					if (fn) eprintf ("[Warning] Can't find flag (%s)\n", fn);
 				}
+				free (fnp);
 			}
 			if (sn.demname) {
 				r_meta_add (r->anal, R_META_TYPE_COMMENT,

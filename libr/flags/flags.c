@@ -25,6 +25,20 @@ static void remove_offsetmap(RFlag *f, RFlagItem *item) {
 	}
 }
 
+static int set_name(RFlagItem *item, const char *name) {
+	if (item->name != item->realname) {
+		free (item->name);
+	}
+	item->name = strdup (name);
+	if (!item->name) return false;
+	r_str_chop (item->name);
+	r_name_filter (item->name, 0); // TODO: name_filter should be chopping already
+	item->namehash = r_str_hash64 (item->name);
+	free (item->realname);
+	item->realname = item->name;
+	return true;
+}
+
 R_API RFlag * r_flag_new() {
 	RFlag *f;
 	int i;
@@ -231,7 +245,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 		remove_offsetmap (f, item);
 	} else {
 		item = R_NEW0 (RFlagItem);
-		if (!r_flag_item_set_name (item, name, NULL)) {
+		if (!set_name (item, name)) {
 			eprintf ("Invalid flag name '%s'.\n", name);
 			free (item);
 			return NULL;
@@ -261,52 +275,29 @@ R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment) {
 	}
 }
 
-/* add/replace/remove the name and/or the realname of a flag item */
-R_API int r_flag_item_set_name(RFlagItem *item, const char *name, const char *realname) {
-	if (!item || !r_name_check (name)) return false;
-	if (!realname) realname = name;
-
-	/* realname is the original name of the flag */
-	item->realname = strdup (realname);
-	if (!item->realname) return false;
-	item->namehash = r_str_hash64 (item->realname);
-
-	/* the name contains only printable chars that doesn't conflict with r2 shell */
-	item->name = strdup (name);
-	if (!item->name) goto err_name;
-	r_str_chop (item->name);
-	r_name_filter (item->name, 0); // TODO: name_filter should be chopping already
-
-	/* avoid unnecessary dupped memory */
-	if (!strcmp (item->name, item->realname)) {
-		free (item->name);
-		item->name = item->realname;
+/* add/replace/remove the realname of a flag item */
+R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
+	if (item) {
+		if (item->realname != item->name) {
+			free (item->realname);
+		}
+		item->realname = ISNULLSTR (realname) ? NULL : strdup (realname);
 	}
-	return true;
-
-err_name:
-	free (item->realname);
-	return false;
 }
 
-/* change the name of a flag item.
+/* change the name of a flag item, if the new name is available.
  * true is returned if everything works well, false otherwise */
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
-	ut64 hash;
 	RFlagItem *p;
+	ut64 hash;
 
 	if (!f || !item || !name || !*name) return false;
-	hash = r_str_hash64 (item->realname);
+	hash = r_str_hash64 (name);
 	p = r_hashtable64_lookup (f->ht_name, hash);
-	if (p) {
-		RFlagItem *item = p;
-		r_hashtable64_remove (f->ht_name, hash);
-		if (!r_flag_item_set_name (item, name, NULL)) {
-			r_hashtable64_insert (f->ht_name, hash, item);
-			return false;
-		}
-		r_hashtable64_insert (f->ht_name, item->namehash, item);
-	}
+	if (p) return false;
+	if (!set_name (item, name)) return false;
+	r_hashtable64_remove (f->ht_name, hash);
+	r_hashtable64_insert (f->ht_name, item->namehash, item);
 	return true;
 }
 
