@@ -313,6 +313,9 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	if (!strtabaddr || strtabaddr > bin->size ||
 	strsize > ST32_MAX || strsize == 0 || strsize > bin->size) {
+		if (!strtabaddr) {
+			eprintf ("Warning: section.shstrtab not found or invalid\n");
+		}
 		free (dyn);
 		return false;
 	}

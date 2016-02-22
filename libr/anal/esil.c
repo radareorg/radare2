@@ -701,7 +701,7 @@ static int esil_trap(RAnalEsil *esil) {
 		esil->trap_code = d;
 		return r_anal_esil_fire_trap (esil, (int)s, (int)d);
 	}
-	eprintf ("esil_trap: missing parameters in stack\n");
+	eprintf ("0x%08"PFMT64x" esil_trap: missing parameters in stack\n", esil->address);
 	return false;
 }
 
@@ -1272,11 +1272,11 @@ static int esil_inceq(RAnalEsil *esil) {
 static int esil_sub(RAnalEsil *esil) {
 	ut64 s = 0, d = 0;
 	if (!popRN (esil, &d)) {
-		eprintf ("esil_sub: dst is broken\n");
+		eprintf ("0x%08"PFMT64x" esil_sub: dst is broken\n", esil->address);
 		return false;
 	}
 	if (!popRN (esil, &s)) {
-		eprintf ("esil_sub: src is broken\n");
+		eprintf ("0x%08"PFMT64x" esil_sub: src is broken\n", esil->address);
 		return false;
 	}
 	r_anal_esil_pushnum (esil, d - s);
@@ -2027,11 +2027,11 @@ static int esil_smaller(RAnalEsil *esil) { // 'src < dst' => 'src,dst,<'
 static int esil_bigger(RAnalEsil *esil) { // 'src > dst' => 'src,dst,>'
 	ut64 s, d;
 	if (!popRN (esil, &d)) {
-		eprintf ("esil_bigger: src is broken\n");
+		eprintf ("0x%08"PFMT64x" esil_bigger: src is broken\n", esil->address);
 		return false;
 	}
 	if (!popRN (esil, &s)) {
-		eprintf ("esil_bigger: dst is broken\n");
+		eprintf ("0x%08"PFMT64x" esil_bigger: dst is broken\n", esil->address);
 		return false;
 	}
 	r_anal_esil_pushnum (esil, (d > s));
