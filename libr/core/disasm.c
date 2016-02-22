@@ -2428,7 +2428,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int continueoninvbreak = (len == l) && invbreak;
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
-	int ret, i, skip_bytes = 0, idx = 0;
+	int ret, i, inc, skip_bytes = 0, idx = 0;
 	int dorepeat = 1;
 	ut8 *nbuf = NULL;
 	RDisasmState *ds;
@@ -2491,7 +2491,10 @@ toro:
 
 	handle_print_esil_anal_init (core, ds);
 	r_cons_break (NULL, NULL);
-	int inc = 0;
+	inc = 0;
+	if (ds->l == 0) {
+		ds->l = 1;
+	}
 	for (i = idx = ret = 0; idx < len && ds->lines < ds->l;
 			idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
