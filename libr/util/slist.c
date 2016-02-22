@@ -112,7 +112,7 @@ R_API void r_slist_optimize(RSList *s) {
 		}
 	}
 
-	eprintf ("MIN %d\nMAX %d\n", (int)min, (int)max);
+	//eprintf ("MIN %d\nMAX %d\n", (int)min, (int)max);
 
 	s->min = min;
 	s->max = max;

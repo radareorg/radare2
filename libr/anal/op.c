@@ -229,6 +229,9 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	char *r0 = r_anal_value_to_string (op->dst);
 	char *a0 = r_anal_value_to_string (op->src[0]);
 	char *a1 = r_anal_value_to_string (op->src[1]);
+	if (!r0) r0 = strdup ("?");
+	if (!a0) a0 = strdup ("?");
+	if (!a1) a1 = strdup ("?");
 
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_MOV:
