@@ -47,17 +47,16 @@ if [ -z "$*" ]; then
 	echo "==> Back to system shell..."
 	echo
 else
-	s='$'
 	if [ "$#" -gt 1 ]; then
 		par=""
 		p=0
 		while : ; do
 			p=$(($p+1))
 			[ $p -gt $# ] && break
-			a=`eval echo "$s$p"`
+			a=`eval echo "\$\{$p\}"`
 			par="$par$a "
 		done
-		eval $new_env $par "\"\$$#\""
+		eval $new_env $par "\"\${$#}\""
 	else
 		eval $new_env $*
 	fi
