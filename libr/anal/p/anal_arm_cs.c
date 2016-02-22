@@ -586,9 +586,13 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			4 * insn->detail->arm.op_count);
 		break;
 	case ARM_INS_LDM:
+		{
+		const char *comma = "";
 		for (i=1; i<insn->detail->arm.op_count; i++) {
-			r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
-				ARG (0), i*4, REG (i));
+			r_strbuf_appendf (&op->esil, "%s%s,%d,+,[4],%s,=",
+				comma, ARG (0), i*4, REG (i));
+			comma = ",";
+		}
 		}
 		break;
 	case ARM_INS_CMP:

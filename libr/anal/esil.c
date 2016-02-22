@@ -141,7 +141,7 @@ R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, int interrupt) {
 		return false;
 	i = sdb_itoa ((ut64)interrupt, t, 16);
 	if (!sdb_num_exists (esil->interrupts, i)) {
-		eprintf ("0x%08"PFMT64x" Cannot find interrupt-handler for interrupt %d\n",
+		eprintf ("0x%08"PFMT64x" Invalid interrupt/syscall 0x%08x\n",
 			esil->address, interrupt);
 		return false;
 	}
@@ -1103,7 +1103,7 @@ static int esil_div(RAnalEsil *esil) {
 	if (src && r_anal_esil_get_parm (esil, src, &s)) {
 		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
-				eprintf ("esil_div: Division by zero!\n");
+				eprintf ("0x%08"PFMT64x" esil_div: Division by zero!\n", esil->address);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
@@ -1112,7 +1112,7 @@ static int esil_div(RAnalEsil *esil) {
 			ret = 1;
 		}
 	} else {
-		eprintf ("esil_div: invalid parameters");
+		eprintf ("0x%08"PFMT64x" esil_div: invalid parameters\n", esil->address);
 	}
 	free (src);
 	free (dst);
@@ -1134,7 +1134,7 @@ static int esil_diveq(RAnalEsil *esil) {
 				}
 				r_anal_esil_reg_write (esil, dst, d / s);
 			} else {
-				eprintf ("esil_diveq: Division by zero!\n");
+				// eprintf ("0x%08"PFMT64x" esil_diveq: Division by zero!\n", esil->address);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			}
@@ -1206,7 +1206,7 @@ static int esil_add(RAnalEsil *esil) {
 			ret = true;
 		}
 	} else {
-		eprintf ("esil_add: invalid parameters\n");
+		eprintf ("0x%08"PFMT64x" esil_add: invalid parameters\n", esil->address);
 	}
 	free (src);
 	free (dst);
@@ -1256,14 +1256,14 @@ static int esil_inceq(RAnalEsil *esil) {
 	ut64 sd;
 	char *src_dst = r_anal_esil_pop (esil);
 	if (src_dst && (r_anal_esil_get_parm_type (esil, src_dst) == R_ANAL_ESIL_PARM_REG) && r_anal_esil_get_parm (esil, src_dst, &sd)) {
-		esil->old = sd;
-		sd++;
+		// inc rax
+		esil->old = sd++;
 		esil->cur = sd;
 		r_anal_esil_reg_write (esil, src_dst, sd);
 		esil->lastsz = esil_internal_sizeof_reg (esil, src_dst);
 		ret = true;
 	} else {
-		eprintf ("esil_inceq: invalid parameters\n");
+		eprintf ("0x%08"PFMT64x" esil_inceq: invalid parameters\n", esil->address);
 	}
 	free (src_dst);
 	return ret;
@@ -1352,7 +1352,7 @@ static int esil_deceq(RAnalEsil *esil) {
 		esil->lastsz = esil_internal_sizeof_reg (esil, src_dst);
 		ret = true;
 	} else {
-		eprintf ("esil_deceq: invalid parameters\n");
+		eprintf ("0x%08"PFMT64x" esil_deceq: invalid parameters\n", esil->address);
 	}
 	free (src_dst);
 	return ret;

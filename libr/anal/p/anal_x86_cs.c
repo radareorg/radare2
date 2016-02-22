@@ -1092,7 +1092,13 @@ SETL/SETNGE
 			op->val = 1;
 			if (a->decode) {
 				char *src = getarg (&gop, 0, 0, NULL);
-				esilprintf (op, "%s,++=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
+				if (strchr (src, '[')) {
+					char *dst = r_str_replace (strdup (src), "[", "=[", 1);
+					esilprintf (op, "1,%s,++,%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src, dst);
+					free (dst);
+				} else {
+					esilprintf (op, "%s,++=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
+				}
 				free (src);
 			}
 			break;
@@ -1103,7 +1109,8 @@ SETL/SETNGE
 			op->val = 1;
 			if (a->decode) {
 				char *src = getarg (&gop, 0, 0, NULL);
-				esilprintf (op, "%s,--=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
+				//esilprintf (op, "%s,--=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
+				esilprintf (op, "1,%s,[4],-,%s,=[4],$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src, src);
 				free (src);
 			}
 			break;
@@ -1209,7 +1216,15 @@ SETL/SETNGE
 				char *a1 = getarg (&gop, 1, 0, NULL);
 				char *a2 = getarg (&gop, 2, 0, NULL);
 				// TODO update flags & handle signedness
-				esilprintf (op, "%s,%s,/,%s,=", a2, a1, a0);
+				if (!a2 && !a1) {
+					// TODO: IDIV rbx not implemented. this is just a workaround
+// http://www.tptp.cc/mirrors/siyobik.info/instruction/IDIV.html
+// Divides (signed) the value in the AX, DX:AX, or EDX:EAX registers (dividend) by the source operand (divisor) and stores the result in the AX (AH:AL), DX:AX, or EDX:EAX registers. The source operand can be a general-purpose register or a memory location. The action of this instruction depends on the operand size (dividend/divisor), as shown in the following table:
+// IDIV RBX    ==   RDX:RAX /= RBX
+					esilprintf (op, "%s,%s,/=", a0, "rax");
+				} else {
+					esilprintf (op, "%s,%s,/,%s,=", a2, a1, a0);
+				}
 				free (a0);
 				free (a1);
 				free (a2);
@@ -1634,18 +1649,22 @@ static int set_reg_profile(RAnal *anal) {
 		 "gpr	eax	.32	80	0\n"
 		 "gpr	ax	.16	80	0\n"
 		 "gpr	al	.8	80	0\n"
+		 "gpr	ah	.8	81	0\n"
 		 "gpr	rbx	.64	40	0\n"
 		 "gpr	ebx	.32	40	0\n"
 		 "gpr	bx	.16	40	0\n"
 		 "gpr	bl	.8	40	0\n"
+		 "gpr	bh	.8	41	0\n"
 		 "gpr	rcx	.64	88	0\n"
 		 "gpr	ecx	.32	88	0\n"
 		 "gpr	cx	.16	88	0\n"
 		 "gpr	cl	.8	88	0\n"
+		 "gpr	ch	.8	89	0\n"
 		 "gpr	rdx	.64	96	0\n"
 		 "gpr	edx	.32	96	0\n"
 		 "gpr	dx	.16	96	0\n"
 		 "gpr	dl	.8	96	0\n"
+		 "gpr	dh	.8	97	0\n"
 		 "gpr	rsi	.64	104	0\n"
 		 "gpr	esi	.32	104	0\n"
 		 "gpr	si	.16	104	0\n"

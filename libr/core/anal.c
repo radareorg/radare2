@@ -2280,7 +2280,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 				if (refptr) {
 					snprintf (cmd2, sizeof (cmd2), "axd 0x%"PFMT64x" 0x%"PFMT64x,
 						esil->address, addr);
-					eprintf ("%s\n", cmd2);
+					//eprintf ("%s\n", cmd2);
 					r_core_cmd0 (mycore, cmd2);
 				}
 			}
@@ -2406,7 +2406,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 						ut64 dst = r_reg_getv (core->anal->reg, pcname);
 						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
 							// get pc
-							eprintf ("0x%08"PFMT64x" UCALL 0x%08"PFMT64x"\n", cur, dst);
+							//eprintf ("0x%08"PFMT64x" UCALL 0x%08"PFMT64x"\n", cur, dst);
 							//r_core_cmdf (core, "axc 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
 							r_anal_ref_add (core->anal, dst, cur, 'c');
 						} else {
