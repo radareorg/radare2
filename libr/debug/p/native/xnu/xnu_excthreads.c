@@ -104,6 +104,7 @@ static bool is_thumb_32(ut16 op) {
 }
 
 static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
+	int i = 0;
 	int ret = xnu_thread_get_drx (dbg, th);
 	if (!ret) {
 		eprintf ("error to get drx registers modificy_trace_bit arm\n");
@@ -122,10 +123,8 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		}
 		regs = (R_REG_T*)&th->gpr;
 		if (enable) {
-			int i = 0;
 			static chained_address = 0;
 			RIOBind *bio = &dbg->iob;
-			memcpy ((void *)&th->oldstate, (void *)state, sizeof (arm_debug_state_t));
 			//set a breakpoint that will stop when the PC doesn't
 			//match the current one
 			//set the current PC as the breakpoint address
@@ -168,8 +167,10 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 				state->__bvr[i] = 0;
 			}
 		} else {
-			//we set the old state
-			memcpy ((void *)&th->debug.drx, (void *)&th->oldstate, sizeof (arm_debug_state32_t));
+			if (state->__bcr[i] & BCR_ENABLE) {
+				state->__bvr[i] = 0;
+				state->__bcr[i] = 0;
+			}
 		}
 	} else {
 		eprintf ("Bad flavor modificy_trace_bit arm\n");
@@ -296,13 +297,14 @@ static bool handle_dead_notify (RDebug *dbg, exc_msg *msg) {
 	}
 	return false;
 }
-static int handle_exception_message (RDebug *dbg, exc_msg *msg, int ret_code) {
+static int handle_exception_message (RDebug *dbg, exc_msg *msg, int *ret_code) {
 	int ret = R_DEBUG_REASON_UNKNOWN;
 	kern_return_t kr;
+	*ret_code = KERN_SUCCESS;
 	switch (msg->exception) {
 	case EXC_BAD_ACCESS:
 		ret = R_DEBUG_REASON_SEGFAULT;
-		ret_code = KERN_FAILURE;
+		*ret_code = KERN_FAILURE;
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS)
 			eprintf ("failed to suspend task bad access\n");
@@ -310,7 +312,7 @@ static int handle_exception_message (RDebug *dbg, exc_msg *msg, int ret_code) {
 		break;
 	case EXC_BAD_INSTRUCTION:
 		ret = R_DEBUG_REASON_ILLEGAL;
-		ret_code = KERN_FAILURE;
+		*ret_code = KERN_FAILURE;
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS)
 			eprintf ("failed to suspend task bad instruction\n");
@@ -326,7 +328,6 @@ static int handle_exception_message (RDebug *dbg, exc_msg *msg, int ret_code) {
 		eprintf ("EXC_SOFTWARE\n");
 		break;
 	case EXC_BREAKPOINT:
-		ret_code = KERN_SUCCESS;
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS)
 			eprintf ("failed to suspend task breakpoint\n");
@@ -370,10 +371,8 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 			eprintf ("message interrupted\n");
 			break;
 		}
-		if (kr == MACH_RCV_TIMED_OUT) {
-			eprintf ("message timed out\n");
+		if (kr == MACH_RCV_TIMED_OUT)
 			break;
-		}
 		if (kr != MACH_MSG_SUCCESS) {
 			eprintf ("message didn't succeded\n");
 			break;

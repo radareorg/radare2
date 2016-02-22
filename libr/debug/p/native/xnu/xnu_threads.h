@@ -48,7 +48,6 @@ typedef struct _xnu_thread {
 	void *state;
 	ut32 state_size;
 #if __arm || __arm64 || __aarch64
-	arm_debug_state32_t oldstate;
 	union {
 		arm_debug_state32_t drx32;
 		arm_debug_state_t drx;

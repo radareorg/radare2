@@ -57,12 +57,12 @@ static bool xnu_thread_get_drx (RDebug *dbg, xnu_thread_t *thread) {
 
 static int xnu_thread_set_drx (RDebug *dbg, xnu_thread_t *thread) {
 	kern_return_t rc;
-	if (!dbg || !thread) 
+	if (!dbg || !thread)
 		return false;
 #if __i386__ || __x86_64__
 	x86_debug_state_t *regs;
 	regs = &thread->drx;
-	if (!regs) 
+	if (!regs)
 		return false;
 	thread->flavor = x86_DEBUG_STATE;
 	thread->count = x86_DEBUG_STATE_COUNT;
