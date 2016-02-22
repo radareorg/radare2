@@ -2493,7 +2493,7 @@ toro:
 	r_cons_break (NULL, NULL);
 	inc = 0;
 	if (ds->l == 0) {
-		ds->l = 1;
+		len = ds->l = core->blocksize;
 	}
 	for (i = idx = ret = 0; idx < len && ds->lines < ds->l;
 			idx += inc, i++, ds->index += inc, ds->lines++) {
