@@ -119,19 +119,12 @@ static task_t pid_to_task(int pid) {
 	return task;
 }
 
-
 static bool task_is_dead (int pid) {
-	kern_return_t kr;
 	unsigned int count = 0;
-	kr = mach_port_get_refs (mach_task_self(), pid_to_task (pid), MACH_PORT_RIGHT_SEND, &count);
-	if (kr != KERN_SUCCESS)
-		return true;
-	if (!count)
-		return false;
-	return false;
+	kern_return_t kr = mach_port_get_refs (mach_task_self(),
+		pid_to_task (pid), MACH_PORT_RIGHT_SEND, &count);
+	return (kr != KERN_SUCCESS || !count);
 }
-
-
 
 static ut64 the_lower = 0LL;
 
