@@ -310,24 +310,26 @@ static int cmd_info(void *data, const char *input) {
 		case 'm': RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL); break;
 		case 'z':
 			if (input[1] == 'z') {
+				char *ret;
+				const int min = core->bin->minstrlen;
+				const int max = core->bin->maxstrlen;
 				/* TODO: reimplement in C to avoid forks */
 				if (!core->file) {
 					eprintf ("Core file not open\n");
 					return 0;
 				}
-				char *ret;
 				switch (input[2]) {
 				case '*':
-					ret = r_sys_cmd_strf ("rabin2 -rzz '%s'", core->file->desc->name);
+					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -rzz '%s'", min, max, core->file->desc->name);
 					break;
 				case 'q':
-					ret = r_sys_cmd_strf ("rabin2 -qzz '%s'", core->file->desc->name);
+					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qzz '%s'", min, max, core->file->desc->name);
 					break;
 				case 'j':
-					ret = r_sys_cmd_strf ("rabin2 -jzz '%s'", core->file->desc->name);
+					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -jzz '%s'", min, max, core->file->desc->name);
 					break;
 				default:
-					ret = r_sys_cmd_strf ("rabin2 -zz '%s'", core->file->desc->name);
+					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -zz '%s'", min, max, core->file->desc->name);
 					break;
 				}
 				if (ret && *ret) {

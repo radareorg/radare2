@@ -299,6 +299,9 @@ static int bin_strings(RCore *r, int mode, int va) {
 	bin->minstrlen = minstr;
 	minstr = bin->minstrlen;
 
+	bin->maxstrlen = maxstr;
+	maxstr = bin->maxstrlen;
+
 	if ((list = r_bin_get_strings (bin)) == NULL) return false;
 
 	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
