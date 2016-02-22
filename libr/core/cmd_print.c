@@ -2174,13 +2174,20 @@ static int cmd_print(void *data, const char *input) {
 		segoff = r_config_get_i (core->config, "asm.segoff");
 		old_bits = r_config_get_i (core->config, "asm.bits");
 
+		if (input[1] && input[2]) {
+			int len = (int)r_num_math (core->num, input+2);
+			if (len == 0) {
+				break;
+			}
+		}
 		// XXX - this is necessay b/c radare will automatically
 		// swap flags if arch is x86 and bits == 16 see: __setsegoff in config.c
 
 		// get to the space
-		if (input[0])
+		if (input[0]) {
 			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
 				if (input[pos] == ' ') break;
+		}
 
 		if (!process_input (core, input+pos, &use_blocksize, &new_arch, &new_bits)) {
 			// XXX - print help message
@@ -2365,7 +2372,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'j': //pdj
 			processed_cmd = true;
-			if (*input == 'D'){
+			if (*input == 'D') {
 				cmd_pDj (core, input+2);
 			} else cmd_pdj (core, input+2);
 			r_cons_newline ();
@@ -2543,7 +2550,7 @@ static int cmd_print(void *data, const char *input) {
 			if (!buf) return 0;
 			if (core->offset<delta)
 				delta = core->offset;
-			p = buf+delta;
+			p = buf + delta;
 			r_core_read_at (core, core->offset-delta, buf, 1024);
 			for (b = p; b>buf; b--) {
 				if (!IS_PRINTABLE (*b)) {
