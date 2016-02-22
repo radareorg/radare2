@@ -23,18 +23,6 @@ R_API const char *r_flag_space_cur(RFlag *f) {
 	return r_flag_space_get_i (f, f->space_idx);
 }
 
-#if 0
-void flag_space_init(struct r_flag_t *f) {
-	static int init = 0;
-	int i;
-	if (init)
-		return;
-	init = 1;
-	for(i=0;i<R_FLAG_SPACES_MAX;i++)
-		f->space[i] = NULL;
-}
-#endif
-
 R_API int r_flag_space_push(RFlag *f, const char *name) {
 	int ret = false;
 	if (name && *name) {
@@ -68,8 +56,7 @@ R_API int r_flag_space_set(RFlag *f, const char *name) {
 	}
 
 	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
-		if (f->spaces[i] != NULL)
-		if (!strcmp (name, f->spaces[i])) {
+		if (f->spaces[i] != NULL && !strcmp (name, f->spaces[i])) {
 			f->space_idx = i;
 			return f->space_idx;
 		}
@@ -94,9 +81,6 @@ R_API int r_flag_space_unset (RFlag *f, const char *fs) {
 		if (!fs || !strcmp (fs, f->spaces[i])) {
 			if (f->space_idx == i) {
 				f->space_idx = -1;
-			}
-			if (f->space_idx2 == i) {
-				f->space_idx2 = -1;
 			}
 			R_FREE (f->spaces[i]);
 			// remove all flags space references
