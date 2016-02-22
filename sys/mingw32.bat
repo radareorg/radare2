@@ -9,6 +9,6 @@ if "%APPVEYOR%" == "True" (
      appveyor DownloadFile https://raw.githubusercontent.com/radare/radare2-win-installer/master/radare2.iss
      appveyor DownloadFile https://raw.githubusercontent.com/radare/radare2-win-installer/master/radare2.ico
      dir %APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.0-git
-     7z.exe a -tzip %APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.0.zip %APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.0
-     iscc -DRadare2Location=%APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.0\* -DLicenseLocation=%APPVEYOR_BUILD_FOLDER%\COPYING.LESSER -DIcoLocation=%APPVEYOR_BUILD_FOLDER%\radare2.ico radare2.iss
+     7z.exe a -tzip %APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.0-git.zip %APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.0-git
+     iscc -DRadare2Location=%APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.0-git\* -DLicenseLocation=%APPVEYOR_BUILD_FOLDER%\COPYING.LESSER -DIcoLocation=%APPVEYOR_BUILD_FOLDER%\radare2.ico radare2.iss
 )
