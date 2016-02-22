@@ -984,7 +984,7 @@ static char *r_str_escape_ (const char *buf, const int dot_nl) {
 				break;
 			default:
 				/* Outside the ASCII printable range */
-				if (*p < ' ' && *p > 0x7E) {
+				if (!IS_PRINTABLE (*p)) {
 					*q++ = '\\';
 					*q++ = 'x';
 					*q++ = '0'+((*p)>>4);
