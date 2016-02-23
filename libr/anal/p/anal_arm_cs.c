@@ -273,6 +273,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_EOR: OPCALL("^"); break;
 	case ARM64_INS_ORN: OPCALL_NEG("|"); break;
 	case ARM64_INS_EON: OPCALL_NEG("^"); break;
+	case ARM64_INS_LSR: OPCALL(">>"); break;
+	case ARM64_INS_LSL: OPCALL("<<"); break;
 
 
 	case ARM64_INS_STURB: // sturb wzr, [x9, 0xffffffffffffffff]
@@ -1257,6 +1259,7 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	w28	.32	224	0\n"
 		"gpr	w29	.32	232	0\n"
 		"gpr	w30	.32	240	0\n"
+		"gpr	wzr	.32	272	0\n"
 
 		/* 64bit */
 		"gpr	x0	.64	0	0\n" // x0
@@ -1293,8 +1296,9 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	x30	.64	240	0\n"
 		"gpr	lr	.64	240	0\n" // lr = x30
 		"gpr	sp	.64	248	0\n"
-		"gpr	zr	.64	248	0\n" // zr = sp (x31)
 		"gpr	pc	.64	256	0\n"
+		"gpr	zr	.64	272	0\n"
+		"gpr	xzr	.64	272	0\n"
 		"gpr	cpsr	.64	264	0	_____tfiae_____________j__qvczn\n"
 		"gpr	pstate	.64	264	0\n" // x0
 		// probably wrong
