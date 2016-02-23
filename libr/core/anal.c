@@ -361,12 +361,18 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				continue;
 			}
 		}
-		f = r_flag_get_i (core->flags, fcn->addr);
+		f = r_flag_get_i2 (core->flags, fcn->addr);
 		free (fcn->name);
-		if (f && *f->name)
+		if (f && *f->name) {
 			fcn->name = strdup (f->name);
-		else
-			fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
+		} else {
+			f = r_flag_get_i (core->flags, fcn->addr);
+			if (f && *f->name) {
+				fcn->name = strdup (f->name);
+			} else {
+				fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
+			}
+		}
 
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && fcn->size < 1)) { /* Error analyzing function */

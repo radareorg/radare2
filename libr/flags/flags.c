@@ -217,8 +217,6 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 	if (!list) return NULL;
 
 	r_list_foreach (list, iter, item) {
-		// XXX: hack, because some times the hashtable is poluted by ghost values
-		if (item->offset != off) continue;
 		if (!item->name) continue;
 		/* catch sym. first */
 		if (!strncmp (item->name, "loc.", 4)) continue;
