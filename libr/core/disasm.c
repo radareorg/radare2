@@ -166,6 +166,7 @@ typedef struct r_disam_options_t {
 	ut8 mi_found, retry, toro;
 	RAsmOp asmop;
 	RAnalOp analop;
+	RAnalFunction *fcn;
 
 	const ut8 *buf;
 	int len;
@@ -2180,24 +2181,13 @@ static void handle_print_esil_anal_fini(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_bbline(RCore *core, RDisasmState *ds) {
-	if (!ds->show_bbline) return;
-	bool has_line = false;
-	if (ds->line && strchr (ds->line, '>')) {
-		has_line = true;
-	} else {
-		switch (ds->analop.type) {
-		case R_ANAL_OP_TYPE_RET:
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_UJMP:
-			has_line = true;
-			break;
-		}
-	}
-	if (has_line) {
-		handle_print_pre (core, ds, false);
+	RAnalBlock *bb;
 
-		ds->at += ds->analop.size;
+	if (!ds->show_bbline || !ds->fcn) return;
+
+	bb = r_anal_fcn_bbget (ds->fcn, ds->at);
+	if (bb) {
+		handle_print_pre (core, ds, false);
 		handle_update_ref_lines (core, ds);
 		if (!ds->linesright && ds->show_lines && ds->line) {
 			r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
@@ -2479,6 +2469,7 @@ toro:
 		r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
 
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		ds->fcn = f;
 		if (f && f->folded && ds->at >= f->addr && ds->at < f->addr+f->size) {
 			int delta = (ds->at <= f->addr)? (ds->at - f->addr + f->size): 0;
 			if (of != f) {
@@ -2560,6 +2551,7 @@ toro:
 			if (ds->hint->size) ds->analop.size = ds->hint->size;
 			if (ds->hint->ptr) ds->analop.ptr = ds->hint->ptr;
 		}
+		handle_print_bbline (core, ds);
 		r_print_set_rowoff (core->print, ds->lines, ds->at - addr);
 		if (ds->midflags) {
 			skip_bytes = handleMidFlags (core, ds, true);
@@ -2632,7 +2624,6 @@ toro:
 			handle_print_esil_anal (core, ds);
 			r_cons_newline ();
 		}
-		handle_print_bbline (core, ds);
 		if (ds->line) {
 			if (ds->show_lines_ret && ds->analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (ds->line, '>')) {
@@ -3155,6 +3146,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	ds->buf = buf;
 	ds->len = fcn->size;
 	ds->addr = fcn->addr;
+	ds->fcn = fcn;
 
 	r_list_foreach (fcn->bbs, bb_iter, bb) {
 		r_list_add_sorted (bb_list, bb, cmpaddr);
