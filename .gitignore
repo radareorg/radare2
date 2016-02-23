@@ -6,6 +6,7 @@
 *.sdb
 *.dylib
 *.dll
+*.dSYM
 supported.*
 config.mk
 plugins.cfg
