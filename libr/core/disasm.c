@@ -2195,45 +2195,14 @@ static void handle_print_bbline(RCore *core, RDisasmState *ds) {
 		}
 	}
 	if (has_line) {
-		handle_print_pre (core, ds, true);
+		handle_print_pre (core, ds, false);
 
 		ds->at += ds->analop.size;
 		handle_update_ref_lines (core, ds);
-		if (!ds->line) {
-			handle_print_lines_left (core, ds);
-			r_cons_printf("|\n");
-			return;
+		if (!ds->linesright && ds->show_lines && ds->line) {
+			r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
+				ds->refline2, COLOR_RESET (ds));
 		}
-
-		if (ds->show_utf8) {
-			RCons *c = core->cons;
-			ds->line = r_str_replace (ds->line,
-						  c->vline[ARROW_LEFT],
-						  " ", 1);
-			ds->line = r_str_replace (ds->line,
-						  c->vline[ARROW_RIGHT],
-						  " ", 1);
-			ds->line = r_str_replace (ds->line,
-						  c->vline[LINE_UP],
-						  " ", 1);
-			ds->line = r_str_replace (ds->line,
-						  c->vline[LINE_HORIZ],
-						  " ", 1);
-			ds->line = r_str_replace (ds->line,
-						  c->vline[LUP_CORNER],
-						  " ", 1);
-			ds->line = r_str_replace (ds->line,
-						  c->vline[LDWN_CORNER],
-						  c->vline[LINE_VERT], 1);
-		} else {
-			r_str_replace_char (ds->line, '>', ' ');
-			r_str_replace_char (ds->line, '<', ' ');
-			r_str_replace_char (ds->line, '-', ' ');
-			r_str_replace_char (ds->line, '=', ' ');
-			r_str_replace_char (ds->line, '.', ' ');
-			r_str_replace_char (ds->line, '`', '|');
-		}
-		handle_print_lines_left (core, ds);
 		r_cons_printf("|\n");
 	}
 }
