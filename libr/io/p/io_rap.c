@@ -111,7 +111,7 @@ static ut64 rap__lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) 
 		eprintf ("Unexpected lseek reply\n");
 		return -1;
 	}
-	r_mem_copyendian ((ut8 *)&offset, tmp+1, 8, !ENDIAN);
+	r_mem_copyendian ((ut8 *)&offset, tmp+1, 8, ENDIAN);
 	return offset;
 }
 
@@ -252,14 +252,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	int op, ret;
 	unsigned int i, j = 0;
 
-	// send
-	if (*command=='!') {
-		op = RMT_SYSTEM;
-		command++;
-	} else {
-		op = RMT_CMD;
-	}
-	buf[0] = op;
+	buf[0] = RMT_CMD;
 	i = strlen (command)+1;
 	if (i>RMT_MAX-5) {
 		eprintf ("Command too long\n");
@@ -278,7 +271,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		}
 		/* system back in the middle */
 		/* TODO: all pkt handlers should check for reverse queries */
-		if (buf[0] == RMT_SYSTEM || buf[0] == RMT_CMD) {
+		if (buf[0] == RMT_CMD) {
 			char *res, *str;
 			ut32 reslen = 0, cmdlen = 0;
 			// run io->cmdstr
