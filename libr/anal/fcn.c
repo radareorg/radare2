@@ -1220,3 +1220,15 @@ R_API int r_anal_fcn_count (RAnal *anal, ut64 from, ut64 to) {
 			return n++;
 	return n;
 }
+
+/* return the basic block in fcn found at the given address.
+ * NULL is returned if such basic block doesn't exist. */
+R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->addr == addr) return bb;
+	}
+	return NULL;
+}
