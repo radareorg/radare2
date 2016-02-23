@@ -29,8 +29,8 @@ R_LIB_VERSION(r_lib);
 
 /* XXX : this must be registered in runtime */
 static const char *r_lib_types[] = {
-	"io", "dbg", "lang", "asm", "anal", "parse", "bin", //"bininfo",
-	"bp", "syscall", "fastcall", "crypto", "cmd", "egg", NULL
+	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bin_xtr",
+	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", NULL
 };
 
 static int __has_debug = 0;
