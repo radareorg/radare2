@@ -285,7 +285,20 @@ purge: purge-doc purge-dev user-uninstall
 	rm -rf "${DESTDIR}${LIBDIR}/radare2"
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr"
 
+R=radare2-${VERSION}
+
 dist:
+	git clone . $R
+	cd $R && [ configure -nt config-user.mk ] && ./configure "--prefix=${PREFIX}"
+	cd $R ; git log $$(git show-ref | grep ${PREVIOUS_RELEASE} | awk '{print $$1}')..HEAD > ChangeLog
+	cd $R/shlr && ${MAKE} capstone-sync
+	DIR=`basename "$$PWD"` ; \
+	FILES=`cd $R; git ls-files | sed -e "s,^,$R/,"` ; \
+	CS_FILES=`cd $R/shlr/capstone ; git ls-files | grep -v pdf | grep -v xcode | grep -v msvc | grep -v suite | grep -v bindings | grep -v tests | sed -e "s,^,$R/shlr/capstone/,"` ; \
+	${TAR} "radare2-${VERSION}.tar" $${FILES} $${CS_FILES} "$R/ChangeLog" ; \
+	${CZ} "radare2-${VERSION}.tar"
+
+olddist:
 	-[ configure -nt config-user.mk ] && ./configure "--prefix=${PREFIX}"
 	#git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
 	git log $$(git show-ref | grep ${PREVIOUS_RELEASE} | awk '{print $$1}')..HEAD > ChangeLog
