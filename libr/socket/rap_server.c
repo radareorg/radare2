@@ -104,7 +104,7 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 			i = rap_s->buf[1];
 			r_mem_copyendian ((ut8*)&offset, &rap_s->buf[2], 8, !endian);
 			offset = rap_s->seek (rap_s->user, offset, i);
-            r_mem_copyendian (&rap_s->buf[2], (ut8*)&offset, 8, !endian);
+			r_mem_copyendian (&rap_s->buf[2], (ut8*)&offset, 8, !endian);
 			rap_s->buf[0] = RAP_RMT_SEEK | RAP_RMT_REPLY;
 			r_socket_write (rap_s->fd, rap_s->buf, 9);
 			r_socket_flush (rap_s->fd);
