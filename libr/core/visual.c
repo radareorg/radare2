@@ -675,6 +675,7 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 
 	fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	if (fun) {
+		r_cons_clear00 ();
 		r_cons_gotoxy (1, 1);
 		r_cons_printf ("[GOTO REF]> \n");
 		if (r_list_empty (fun->refs)) {
@@ -683,10 +684,14 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 			r_cons_clear00 ();
 		} else {
 			r_list_foreach (fun->refs, iter, refi) {
-				r_cons_printf (" [%i] 0x%08"PFMT64x" %s XREF 0x%08"PFMT64x" (%s)  \n", count,
+				RFlagItem *f = r_flag_get_at (core->flags, refi->addr);
+				if (f) {
+					eprintf ("%s\n", f->name);
+				}
+				r_cons_printf (" [%i] 0x%08"PFMT64x" %s XREF 0x%08"PFMT64x" (%s)(%s)  \n", count,
 					refi->at,
 					      refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-					      refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr, fun->name);
+					      refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr, fun->name, f?f->name:"");
 				if (++count > 9) break;
 			}
 		}

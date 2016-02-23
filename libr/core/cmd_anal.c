@@ -2569,6 +2569,56 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	}
 }
 
+static void anal_axg (RCore *core, const char *input, int level, Sdb *db) {
+	char arg[32], pre[128];
+	RList *xrefs;
+	RListIter *iter;
+	RAnalRef *ref;
+	ut64 addr = core->offset;
+	if (input && *input) {
+		addr = r_num_math (core->num, input);
+	}
+	int spaces = (level+1) * 2;
+	if (spaces > sizeof (pre)-4) {
+		spaces = sizeof(pre)-4;
+	}
+	memset (pre, ' ', sizeof(pre));
+	strcpy (pre+spaces, "- ");
+
+	xrefs = r_anal_xrefs_get (core->anal, addr);
+	if (!r_list_empty (xrefs)) {
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
+		if (fcn) {
+			//if (sdb_add (db, fcn->name, "1", 0)) {
+				r_cons_printf ("%s0x%08"PFMT64x" fcn 0x%08"PFMT64x" %s\n",
+					pre+2, addr, fcn->addr, fcn->name);
+			//}
+		} else {
+			//snprintf (arg, sizeof (arg), "0x%08"PFMT64x, addr);
+			//if (sdb_add (db, arg, "1", 0)) {
+				r_cons_printf ("%s0x%08"PFMT64x"\n", pre+2, addr);
+			//}
+		}
+	}
+	r_list_foreach (xrefs, iter, ref) {
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, -1);
+		//assert (ref->at == addr);
+		if (fcn) {
+			r_cons_printf ("%s0x%08"PFMT64x" fcn 0x%08"PFMT64x" %s\n", pre, ref->addr, fcn->addr, fcn->name);
+			if (sdb_add (db, fcn->name, "1", 0)) {
+				snprintf (arg, sizeof (arg), "0x%08"PFMT64x, fcn->addr);
+				anal_axg (core, arg, level+1, db);
+			}
+		} else {
+			r_cons_printf ("%s0x%08"PFMT64x" ???\n", pre, ref->addr);
+			snprintf (arg, sizeof (arg), "0x%08"PFMT64x, ref->addr);
+			if (sdb_add (db, arg, "1", 0)) {
+				anal_axg (core, arg, level +1, db);
+			}
+		}
+	}
+}
+
 static bool cmd_anal_refs(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	const char *help_msg[] = {
@@ -2576,6 +2626,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
 		"axc", " addr [at]", "add code jmp ref // unused?",
 		"axC", " addr [at]", "add code call ref",
+		"axg", " addr", "show xrefs graph to reach current function",
 		"axd", " addr [at]", "add data ref",
 		"axj", "", "list refs in json format",
 		"axF", " [flg-glob]", "find data/code references of flags",
@@ -2609,6 +2660,13 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			free (p);
 		}
 	} break;
+	case 'g': // "axg"
+		{
+			Sdb *db = sdb_new0();
+			anal_axg (core, input+2, 0, db);
+			sdb_free (db);
+		}
+		break;
 	case 'k': // "axk"
 		if (input[1] == ' ') {
 			sdb_query (core->anal->sdb_xrefs, input + 2);

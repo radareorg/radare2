@@ -13,7 +13,7 @@ R_API int r_io_map_count (RIO *io) {
 
 R_API RIOMap * r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
 	RIOMap *map = R_NEW (RIOMap);
-	if (!map || ((UT64_MAX - size) < addr)) {					//prevent interger-overflow
+	if (!map || ((UT64_MAX - size) < addr)) { //prevent interger-overflow
 		free (map);
 		return NULL;
 	}
@@ -32,9 +32,9 @@ R_API void r_io_map_init(RIO *io) {
 
 R_API int r_io_map_sort(void *_a, void *_b) {
 	RIOMap *a = _a, *b = _b;
-	if (a->from == b->from ){
-		ut64 a_sz = a->to - a->from,
-			b_sz = b->to - b->from;
+	if (a->from == b->from) {
+		ut64 a_sz = a->to - a->from;
+		ut64 b_sz = b->to - b->from;
 		return a_sz < b_sz;
 	}
 	return a->from < b->from;
@@ -48,7 +48,6 @@ R_API int r_io_map_write_update(RIO *io, int fd, ut64 addr, ut64 len) {
 		if (map->fd == fd) break;
 		map = NULL;
 	}
-
 	if (map && map->to < addr+len) {
 		res = true;
 		map->to = addr+len;
@@ -64,7 +63,6 @@ R_API int r_io_map_truncate_update(RIO *io, int fd, ut64 sz) {
 		if (map->fd == fd) break;
 		map = NULL;
 	}
-
 	if (map) {
 		res = true;
 		map->to = map->from+sz;
@@ -78,7 +76,8 @@ R_API RIOMap *r_io_map_get(RIO *io, ut64 addr) {
 	r_list_foreach (io->maps, iter, map) {
 		if (map->from == map->to && addr >= map->from) {
 			return map;
-		} else if (addr >= map->from && addr < map->to) {
+		}
+		if (addr >= map->from && addr < map->to) {
 			return map;
 		}
 	}
