@@ -86,7 +86,7 @@ R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 	}
 	free (val0);
 	free (val1);
-	return out;
+	return out? out: strdup ("?");
 }
 
 R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {

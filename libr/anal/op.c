@@ -267,7 +267,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 			cstr = r_anal_cond_to_string (bb->cond);
 			snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
 			free (cstr);
-		} else snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, "unk", op->jump);
+		} else snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, "?", op->jump);
 		}
 		break;
 	case R_ANAL_OP_TYPE_JMP:
