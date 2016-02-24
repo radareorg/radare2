@@ -399,15 +399,15 @@ static BOOL bochs_open_(libbochs_t* b ,char * rutaBochs, char * rutaConfig) {
 	b->data = malloc(2800u);
 	lpTmpBuffer = malloc(0x2800u);
 	cmdBuff = malloc(128);
-	 
+	eprintf("bochs_open: invocado\n"); 
 	// creamos los pipes
 	PipeAttributes.nLength = 12;
 	PipeAttributes.bInheritHandle = 1;
 	PipeAttributes.lpSecurityDescriptor = 0;
 	//
 	result = FALSE;
-	if (CreatePipe(b->hReadPipeIn, b->hReadPipeOut, &PipeAttributes, 0) && 
-	    CreatePipe(b->hWritePipeIn, b->hWritePipeOut, &PipeAttributes, 0)
+	if (CreatePipe(&b->hReadPipeIn, &b->hReadPipeOut, &PipeAttributes, 0) && 
+	    CreatePipe(&b->hWritePipeIn, &b->hWritePipeOut, &PipeAttributes, 0)
 	   ) {
 		//  Inicializamos las estructuras
 		ZeroMemory(&b->info, sizeof(STARTUPINFO));
@@ -427,9 +427,9 @@ static BOOL bochs_open_(libbochs_t* b ,char * rutaBochs, char * rutaConfig) {
 			printf("Entrada inicializada\n");
 
 			b->bEjecuta=TRUE;
-			CreateThread(NULL, 0, MyThLector_, &b, 0, 0);
+			CreateThread(NULL, 0, MyThLector_, b, 0, 0);
 			b->ghWriteEvent = CreateEvent(NULL, TRUE, FALSE, TEXT("WriteEvent"));
-			CreateThread(NULL, 0, MyThEscritor_, &b, 0, 0);
+			CreateThread(NULL, 0, MyThEscritor_, b, 0, 0);
 			eprintf("Esperando inicializacion de bochs.\n");
 			ResetBuffer_(b);
 			veces=100; // reintenta durante 10 segundos
@@ -456,13 +456,16 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	eprintf("io_open\n");
 	if (!__plugin_open (io, file, 0))
 		return NULL;
-		return NULL;
+	if (riobochs) {
+		// FIX: Don't allocate more than one gdb RIODesc
+		return riobochs;
+	}
 	riob = R_NEW0 (RIOBochs);
 	// Inicializamos
 	//gdbr_init (&riog->desc);
 	//if (gdbr_connect (&riog->desc, host, i_port) == 0) {
 	//if (bochs_open(&riob->desc,"f:\\VMs\\vmware\\cidox\\bochs\\bochsdbg.exe", "f:\\VMs\\vmware\\cidox\\bochs\\cidoxx32.bxrc") == FALSE)
-	if (bochs_open_(&riob->desc,"f:\\VMs\\vmware\\cidox\\bochs\\bochsdbg.exe", "f:\\VMs\\vmware\\cidox\\bochs\\cidoxx32.bxrc") == FALSE)
+	if (bochs_open_(&riob->desc,"f:\\VMs\\vmware\\cidox\\bochs\\bochsdbg.exe", "f:\\VMs\\vmware\\cidox\\bochs\\cidoxx32.bxrc") == TRUE)
 	{
 		desc = &riob->desc;
 		riobochs = r_io_desc_new (&r_io_plugin_bochs, -1, file, rw, mode, riob);

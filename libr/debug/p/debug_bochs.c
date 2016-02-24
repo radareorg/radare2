@@ -3,13 +3,27 @@
 #include <r_asm.h>
 #include <r_debug.h>
 
+typedef struct libbochs_t {
+	char * data;
+	int punteroBuffer;
+	int sizeSend;
+	HANDLE hReadPipeIn;
+	HANDLE hReadPipeOut;
+	HANDLE hWritePipeIn;
+	HANDLE hWritePipeOut;
+	HANDLE ghWriteEvent;
+	PROCESS_INFORMATION processInfo;
+	STARTUPINFO info;
+	BOOL bEjecuta;
+} libbochs_t;
+
 typedef struct {
 	//libgdbr_t desc;
-	void * desc; // borrame
+	libbochs_t desc; 
 } RIOBochs;
 
 //static libgdbr_t *desc = NULL;
-
+static libbochs_t *desc = NULL;
 
 static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	return false;
@@ -41,6 +55,7 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 }
 
 static int r_debug_bochs_attach(RDebug *dbg, int pid) {
+	eprintf("r_debug_bochs_attach: invocado\n");
 	RIODesc *d = dbg->iob.io->desc;
 	dbg->swstep = false;
 	if (d && d->plugin && d->plugin->name && d->data) {
@@ -48,9 +63,9 @@ static int r_debug_bochs_attach(RDebug *dbg, int pid) {
 			RIOBochs *g = d->data;
 			int arch = r_sys_arch_id (dbg->arch);
 			int bits = dbg->anal->bits;
-			//if (( desc = &g->desc )) {
-			//	eprintf("bochs attach: ok");
-			//}
+			if (( desc = &g->desc )) {
+				eprintf("bochs attach: ok");
+			}
 		}
 	}
 	return true;
