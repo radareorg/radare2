@@ -61,6 +61,9 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->jump = addr + cmd.jmp_addr;
 		op->fail = addr + 2;
 		break;
+	case MSP430_INV:
+		op->type = R_ANAL_OP_TYPE_ILL;
+		break;
 	default:
 		op->type = R_ANAL_OP_TYPE_UNK;
 	}
