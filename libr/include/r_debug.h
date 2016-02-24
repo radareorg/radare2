@@ -441,7 +441,7 @@ extern RDebugPlugin r_debug_plugin_rap;
 extern RDebugPlugin r_debug_plugin_gdb;
 extern RDebugPlugin r_debug_plugin_bf;
 extern RDebugPlugin r_debug_plugin_wind;
-
+extern RDebugPlugin r_debug_plugin_bochs;
 #endif
 
 #ifdef __cplusplus
