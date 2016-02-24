@@ -3,6 +3,14 @@
 #include <r_asm.h>
 #include <r_debug.h>
 
+typedef struct {
+	//libgdbr_t desc;
+	void * desc; // borrame
+} RIOBochs;
+
+//static libgdbr_t *desc = NULL;
+
+
 static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	return false;
 }
@@ -33,6 +41,18 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 }
 
 static int r_debug_bochs_attach(RDebug *dbg, int pid) {
+	RIODesc *d = dbg->iob.io->desc;
+	dbg->swstep = false;
+	if (d && d->plugin && d->plugin->name && d->data) {
+		if (!strcmp ("bochs", d->plugin->name)) {
+			RIOBochs *g = d->data;
+			int arch = r_sys_arch_id (dbg->arch);
+			int bits = dbg->anal->bits;
+			//if (( desc = &g->desc )) {
+			//	eprintf("bochs attach: ok");
+			//}
+		}
+	}
 	return true;
 }
 
