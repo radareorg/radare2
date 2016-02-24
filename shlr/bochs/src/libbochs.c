@@ -1,45 +1,6 @@
-// 
-// Copyright (c) 2014, The Lemon Man, All rights reserved.
+/* libgdbr - LGPL - Copyright 2014 - defragger */
 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library.
-
-#include <r_io.h>
-#include <r_lib.h>
-#include <r_util.h>
-#include <libbochs.h>
-/*typedef struct libbochs_t {
-	char * data;
-	int punteroBuffer;
-	int sizeSend;
-	HANDLE hReadPipeIn;
-	HANDLE hReadPipeOut;
-	HANDLE hWritePipeIn;
-	HANDLE hWritePipeOut;
-	HANDLE ghWriteEvent;
-	PROCESS_INFORMATION processInfo;
-	STARTUPINFO info;
-	BOOL bEjecuta;
-} libbochs_t;
-*/
-
-typedef struct {
-	libbochs_t desc;        //libgdbr_t desc;
-} RIOBochs;
-
-static libbochs_t *desc = NULL; //static libgdbr_t *desc = NULL;
-static RIODesc *riobochs = NULL;
-/*
+#include "libbochs.h"
 static char * lpTmpBuffer; //[0x2800u];
 static char * cmdBuff;//[128];
 int sizeSend=0;
@@ -114,12 +75,12 @@ int EjecutaThreadRemoto_(libbochs_t* b, LPVOID lpBuffer, DWORD dwSize, int a4, L
 	}
 	return result;
 }
-static void ResetBuffer_(libbochs_t* b)
+void ResetBuffer_(libbochs_t* b)
 {
 	ZeroMemory(b->data, 0x2800u);
 	b->punteroBuffer = 0;
 }
-static BOOL CommandStop_(libbochs_t * b) {
+BOOL CommandStop_(libbochs_t * b) {
 	HMODULE hKernel;
 	DWORD ExitCode;
 	DWORD apiOffset = 0;
@@ -140,7 +101,7 @@ static BOOL CommandStop_(libbochs_t * b) {
 	return ExitCode;
 }
 
-static VOID EnviaComando_(libbochs_t* b, char * comando) {
+VOID EnviaComando_(libbochs_t* b, char * comando) {
 	//eprintf("Enviando comando: %s\n",comando);
 	ResetBuffer_(b);
 	ZeroMemory(cmdBuff,128);
@@ -148,7 +109,7 @@ static VOID EnviaComando_(libbochs_t* b, char * comando) {
 	SetEvent(b->ghWriteEvent);
 	Sleep(100);
 }
-static int bochs_read_(libbochs_t* b,ut64 addr,int count,ut8 * buf) {
+int bochs_read_(libbochs_t* b,ut64 addr,int count,ut8 * buf) {
 	char buff[128];
 	int lenRec = 0,i = 0,ini = 0, fin = 0, pbuf = 0;
 	sprintf(buff,"xp /%imb 0x%016"PFMT64x"",count,addr);
@@ -172,7 +133,7 @@ static int bochs_read_(libbochs_t* b,ut64 addr,int count,ut8 * buf) {
 	return 0;
 }
 	
-static void bochs_close_(libbochs_t* b) {
+void bochs_close_(libbochs_t* b) {
 	b->bEjecuta=FALSE;
 	CloseHandle(b->hReadPipeIn);
 	CloseHandle(b->hReadPipeOut);
@@ -187,7 +148,7 @@ static void bochs_close_(libbochs_t* b) {
 }
 
 
-static BOOL bochs_open_(libbochs_t* b ,char * rutaBochs, char * rutaConfig) {
+BOOL bochs_open_(libbochs_t* b ,char * rutaBochs, char * rutaConfig) {
 	struct _SECURITY_ATTRIBUTES PipeAttributes;
 	BOOL result;
 	char commandline[1024];
@@ -245,99 +206,4 @@ static BOOL bochs_open_(libbochs_t* b ,char * rutaBochs, char * rutaConfig) {
 	}
 	return result;
 }
-*/
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	return !strncmp (file, "bochs://", strlen ("bochs://"));
-}
 
-static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
-	RIOBochs  *riob;
-	eprintf("io_open\n");
-	if (!__plugin_open (io, file, 0))
-		return NULL;
-	if (riobochs) {
-		return riobochs;
-	}
-	riob = R_NEW0 (RIOBochs);
-	// Inicializamos
-	//gdbr_init (&riog->desc);
-	//if (gdbr_connect (&riog->desc, host, i_port) == 0) {
-	//if (bochs_open(&riob->desc,"f:\\VMs\\vmware\\cidox\\bochs\\bochsdbg.exe", "f:\\VMs\\vmware\\cidox\\bochs\\cidoxx32.bxrc") == FALSE)
-	if (bochs_open_(&riob->desc,"f:\\VMs\\vmware\\cidox\\bochs\\bochsdbg.exe", "f:\\VMs\\vmware\\cidox\\bochs\\cidoxx32.bxrc") == TRUE)
-	{
-		desc = &riob->desc;
-		riobochs = r_io_desc_new (&r_io_plugin_bochs, -1, file, rw, mode, riob);
-		//riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
-		return riobochs;
-	}
-	eprintf ("bochsio.open: Cannot connect to bochs.\n");
-	free (riob);
-//	return r_io_desc_new (&r_io_plugin_bochs, -1, file, true, mode, 0);
-	return NULL;
-}
-
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	eprintf("io_write\n");
-	return -1;
-}
-
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	// eprintf("io_seek %016"PFMT64x" \n",offset);
-	return offset;
-}
-
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	memset (buf, 0xff, count);
-	ut64 addr = io->off;
-	if (!desc || !desc->data) return -1;
-	// eprintf("io_read ofs= %016"PFMT64x" count= %x\n",io->off,count);
-	//bochs_read(addr,count,buf);
-	bochs_read_(desc,addr,count,buf);
-	return count;
-}
-
-static int __close(RIODesc *fd) {
-	// eprintf("io_close\n");
-	//bochs_close();
-	bochs_close_(desc);
-	return true;
-}
-	
-static int __system(RIO *io, RIODesc *fd, const char *cmd) {
-        printf("system command (%s)\n", cmd);
-        if (!strcmp (cmd, "help")) {
-                eprintf ("Usage: =!cmd args\n"
-                        " =!:<bochscmd>      - Send a bochs command.\n"
-                        " =!dobreak          - pause bochs.\n");
-			
-	} else if (!strncmp (cmd, ":", 1)) {
-		eprintf("Enviando comando bochs\n");
-		//EnviaComando_(&cmd[1]);
-		//io->cb_printf ("%s\n", lpBuffer);
-		EnviaComando_(desc,&cmd[1]);
-		io->cb_printf ("%s\n", desc->data);
-		return 1;
-	} else if (!strncmp (cmd, "dobreak", 7)) {
-
-		//CommandStop(processInfo.hProcess);
-		//io->cb_printf ("%s\n", lpBuffer);
-		CommandStop_(desc);
-		io->cb_printf ("%s\n", desc->data);
-		return 1;
-	}         
-        return true;
-}
-
-RIOPlugin r_io_plugin_bochs  = {
-	.name = "bochs",
-	.desc = "Attach to a BOCHS debugger",
-	.license = "LGPL3",
-	.open = __open,
-	.close = __close,
-	.read = __read,
-	.write = __write,
-	.plugin_open = __plugin_open,
-	.lseek = __lseek,
-	.system = __system,
-	.isdbg = true
-};

@@ -1,0 +1,10 @@
+OBJS = 
+src/core.c
+src/libgdbr.c
+src/messages.c
+src/packet.c
+src/utils.c
+;
+
+lib zip : $(OBJS) : <link>static <include>include <cflags>-fPIC 
+  <include>../../libr/include ;

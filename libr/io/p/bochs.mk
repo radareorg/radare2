@@ -4,9 +4,9 @@ STATIC_OBJ+=${OBJ_BOCHS}
 TARGET_BOCHS=io_bochs.${EXT_SO}
 ALL_TARGETS+=${TARGET_BOCHS}
 
-LIB_PATH=
-CFLAGS+=
-LDFLAGS+=
+LIB_PATH=$(SHLR)/bochs/
+CFLAGS+=-I$(SHLR)/bochs/include/
+LDFLAGS+=$(SHLR)/bochs/lib/libbochs.a
 
 include $(LIBR)/socket/deps.mk
 
