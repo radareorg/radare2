@@ -7,6 +7,7 @@ DBG_OBJS +=
   p/debug_gdb.c
   p/debug_native.c
   p/debug_rap.c
+  p/debug_bochs.c
 ;
 
 lib r_debug : $(DBG_OBJS) :
