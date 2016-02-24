@@ -63,13 +63,9 @@ static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	int fmt_len, i, ct = 0;
 	RAnalVar *res;
 
-	if (!var_def) return NULL;
-	// ensure that var_def is properly formatted.
-	for (i = 0; i < strlen (var_def); ++i) {
-		if (var_def == ',') ++ct;
+	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) != 2) {
+		return NULL;
 	}
-	if (ct != 2) return NULL;
-	sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut);
 	res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
 	sdb_fmt_free (&vut, SDB_VARUSED_FMT);
 	return res;

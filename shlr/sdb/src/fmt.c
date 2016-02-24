@@ -82,12 +82,12 @@ SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 
 // TODO: return false if array length != fmt length
 SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
-	int n, items, idx = 0;
+	int n, idx = 0;
 	char *next, *str, *ptr, *word, *e_str;
 	if (!_str || !*_str || !fmt)
 		return 0;
 	str = ptr = strdup (_str);
-	for (items = 0; *fmt; fmt++, items++) {
+	for (; *fmt; fmt++) {
 		word = sdb_anext (ptr, &next);
 		if (!word || !*word)
 			break;
@@ -99,7 +99,8 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 		case 'h': *((short*)(stru + idx)) = (short)sdb_atoi (word); break;
 		case 's':
 			e_str = (char*)sdb_decode (word, 0);
-			*((char**)(stru + idx)) = e_str? e_str: strdup (word);
+			*((char**)(stru + idx)) = (char*)strdup (e_str?e_str:word);
+			free (e_str);
 			break;
 		case 'z':
 			*((char**)(stru + idx)) = (char*)strdup (word);
@@ -107,13 +108,13 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 		case 'p': *((void**)(stru + idx)) = (void*)(size_t)sdb_atoi (word);
 			break;
 		}
-		idx += R_MAX ((long) sizeof (void*), n); // align
+		idx += R_MAX((long)sizeof (void*), n); // align
 		if (!next)
 			break;
 		ptr = next;
 	}
 	free (str);
-	return items;
+	return 1;
 }
 
 SDB_API void sdb_fmt_free (void *stru, const char *fmt) {
