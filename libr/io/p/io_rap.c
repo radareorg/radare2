@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 - pancake */
+/* radare - LGPL - Copyright 2011-2016 - pancake */
 
 // TODO: implement the rap API in r_socket ?
 #include "r_io.h"
@@ -249,7 +249,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	RSocket *s = RIORAP_FD (fd);
 	ut8 buf[RMT_MAX];
 	char *ptr;
-	int op, ret;
+	int ret;
 	unsigned int i, j = 0;
 
 	buf[0] = RMT_CMD;
@@ -303,8 +303,8 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	ret = r_socket_read_block (s, buf+1, 4);
 	if (ret != 4)
 		return -1;
-	if (buf[0] != (op | RMT_REPLY)) {
-		eprintf ("Unexpected system reply\n");
+	if (buf[0] != (RMT_CMD | RMT_REPLY)) {
+		eprintf ("Unexpected rap cmd reply\n");
 		return -1;
 	}
 
