@@ -35,7 +35,7 @@ static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	bool is_call = (buf[0] & 0xf) == 5;
 	bool is_jmp = (buf[0] & 0xf) == 6;
 	bool is_jmp2 = (buf[0]>=0x80 && (buf[0] & 0xf) == 0xc);
-        bool is_bbxi = (buf[0] & 0xf) == 7;
+	bool is_bbxi = (buf[0] & 0xf) == 7;
 	if (is_call) {
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = decodeRelative (addr, buf);
@@ -48,9 +48,10 @@ static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->jump = addr + offset + 4;
 		op->fail = addr + op->size;
 	} else if (is_bbxi) {
-                op->type = R_ANAL_OP_TYPE_CJMP;
-                op->jump = addr + buf[2] + 4;
-                op->fail = addr + op->size;
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addr + (buf[2] & 0x7f) + 4;
+		if (buf[2] & 0x80) op->jump -= 0x80;
+		op->fail = addr + op->size;
 	} else if (is_jmp) {
 		if (((buf[0] >> 4)&0x3) == 0) {
 			op->type = R_ANAL_OP_TYPE_JMP;
