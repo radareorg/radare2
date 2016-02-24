@@ -482,5 +482,13 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 	r_mem_copyendian((ut8*)&operand1, in + 2, sizeof(ut16), LIL_ENDIAN);
 	ret = decode_oneop_opcode(instr, operand1, cmd);
 
+	/* if ret < 0, it's an invalid opcode.Say so and return 2 since
+	 * all MSP430 opcodes are of 16 bits,valid or invalid */
+	if (ret < 0) {
+		cmd->type = MSP430_INV;
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "invalid opcode");
+		ret = 2;
+	}
+
 	return ret;
 }
