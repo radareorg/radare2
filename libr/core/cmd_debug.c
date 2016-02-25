@@ -1081,10 +1081,12 @@ static void cmd_reg_profile (RCore *core, const char *str) { // "arp" and "drp"
 }
 
 static void cmd_debug_reg(RCore *core, const char *str) {
+	char *arg;
+	struct r_reg_item_t *r;
+	const char *name, *use_color;
 	int size, i, type = R_REG_TYPE_GPR;
 	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
 	int use_colors = r_config_get_i (core->config, "scr.color");
-	const char *use_color;
 	if (use_colors) {
 #undef ConsP
 #define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
@@ -1092,9 +1094,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	} else {
 		use_color = NULL;
 	}
-	struct r_reg_item_t *r;
-	const char *name;
-	char *arg;
 	switch (str[0]) {
 	case 'C': // "drC"
 		if (core->dbg->reg->reg_profile_cmt) {
@@ -1152,7 +1151,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				NULL
 			};
 			// TODO: 'drs' to swap register arenas and display old register valuez
-
 			r_core_cmd_help (core, help_message);
 		}
 		break;

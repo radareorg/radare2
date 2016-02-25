@@ -1,5 +1,6 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
+#include <r_core.h> // just to get the RPrint instance
 #include <r_debug.h>
 #include <r_cons.h>
 #include <r_reg.h>
@@ -57,7 +58,14 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	RListIter *iter;
 	RRegItem *item;
 	RList *head;
+	RPrint *pr = NULL;
 	ut64 diff;
+	{
+		RCore *core = dbg->corebind.core;
+		if (core) {
+			pr = core->print;
+		}
+	}
 
 	if (!dbg || !dbg->reg)
 		return false;
@@ -68,12 +76,12 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	//if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
 	if (dbg->bits & R_SYS_BITS_64) {
 		fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt2 = "%4s 0x%08"PFMT64x"%s";
+		fmt2 = "%s%4s%s 0x%08"PFMT64x"%s";
 		cols = 3;
 		kwhites = "         ";
 	} else {
 		fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt2 = "%4s 0x%08"PFMT64x"%s";
+		fmt2 = "%s%4s%s 0x%08"PFMT64x"%s";
 		cols = 4;
 		kwhites = "    ";
 	}
@@ -90,6 +98,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		to = from +1;
 	}
 	bool is_arm = dbg->arch && strstr (dbg->arch, "arm");
+	int itmidx = -1;
 	for (i = from; i < to; i++) {
 		head = r_reg_get_list (dbg->reg, i);
 		if (!head) continue;
@@ -115,6 +124,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			diff = r_reg_get_value (dbg->reg, item);
 			r_reg_arena_swap (dbg->reg, false);
 			delta = value-diff;
+			itmidx++;
 
 			switch (rad) {
 			case 'j':
@@ -132,36 +142,40 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			case 'd':
 			case 2:
 				{
-					char *str, whites[16], content[128];
-					int len;
+					int len, highlight = use_color && pr->cur_enabled && itmidx == pr->cur;
+					char *str, whites[32], content[128];
+					const char *a = "", *b = "";
+					if (highlight) {
+						a = Color_INVERT;
+						b = Color_INVERT_RESET;
+					}
 					strcpy (whites, kwhites);
 					if (delta && use_color)
 						dbg->cb_printf (use_color);
 					if (item->flags) {
 						str = r_reg_get_bvalue (dbg->reg, item);
-						len = strlen (str);
-						strcpy (whites, "        ");
-						len = (len > 9) ? 9: (9 - len);
+						len = 12 - strlen (str);
+						memset (whites, ' ', sizeof (whites));
 						whites[len] = 0;
-						dbg->cb_printf (" %s = %s%s", item->name,
+						dbg->cb_printf (" %s%s%s %s%s", a, item->name, b,
 							str, ((n+1)%cols)? whites: "\n");
 						free (str);
 					} else {
-						snprintf (content, sizeof(content),
-							fmt2, item->name, value, "");
-						len = strlen (content);
-						len -= 4;
-						if (len > 10) {
-							len -= 10;
-							len = (len > 9) ? 9 : (9 - len);
-							whites[len] = 0;
-						}
-						dbg->cb_printf (fmt2, item->name, value,
+						snprintf (content, sizeof (content),
+							fmt2, "", item->name, "", value, "");
+						len = 20 - strlen (content);
+						if (len < 0) len = 0;
+						memset (whites, ' ', sizeof (whites));
+						whites[len] = 0;
+						dbg->cb_printf (fmt2, a, item->name, b, value,
 							((n+1)%cols)? whites: "\n");
-
 					}
-					if (delta && use_color)
+					if (highlight) {
+						dbg->cb_printf (Color_INVERT_RESET);
+					}
+					if (delta && use_color) {
 						dbg->cb_printf (Color_RESET);
+					}
 				}
 				break;
 			case 3:

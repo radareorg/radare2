@@ -1,7 +1,9 @@
+/* radare2 - LGPL - Copyright 2015-2016 - pancake */
 #ifndef R2_BIND_H
 #define R2_BIND_H
 
 // TODO: move riobind here too?
+// TODO: move rprint here too
 
 typedef int (*RCoreCmd)(void *core, const char *cmd);
 typedef int (*RCoreDebugBpHit)(void *core, void *bp);
@@ -12,7 +14,7 @@ typedef struct r_core_bind_t {
 	void *core;
 	RCoreCmd cmd;
 	RCoreCmdStr cmdstr;
-	RCorePuts puts ;
+	RCorePuts puts;
 	RCoreDebugBpHit bphit;
 } RCoreBind;
 
