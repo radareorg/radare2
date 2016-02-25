@@ -10,7 +10,7 @@ static int blocksize = 0;
 static int autoblocksize = 1;
 static void r_core_visual_refresh (RCore *core);
 
-#define debugfmt_default "f tmp;sr SP;pxw 64;dr=;s-;s tmp;f-tmp;pd $r"
+#define debugfmt_default "?0;f tmp;sr SP;pxw 64;?1;dr=;?1;s-;s tmp;f-tmp;pd $r"
 static const char *printfmt[] = {
 	"x", "pd $r",
 	debugfmt_default,
@@ -1005,17 +1005,25 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case 9: // tab
-		{ // XXX: unify diff mode detection
-		ut64 f = r_config_get_i (core->config, "diff.from");
-		ut64 t = r_config_get_i (core->config, "diff.to");
-		if (f == t && f == 0) {
-			core->print->col = core->print->col==1? 2: 1;
+		core->curtab = 0;
+		if (core->printidx == 2) {
+			core->print->cur = 0;
+			core->seltab ++;
+			if (core->seltab>2) {
+				core->seltab = 0;
+			}
 		} else {
-			ut64 delta = offset - f;
-			r_core_seek (core, t+delta, 1);
-			r_config_set_i (core->config, "diff.from", t);
-			r_config_set_i (core->config, "diff.to", f);
-		}
+			core->seltab = 0;
+			ut64 f = r_config_get_i (core->config, "diff.from");
+			ut64 t = r_config_get_i (core->config, "diff.to");
+			if (f == t && f == 0) {
+				core->print->col = core->print->col==1? 2: 1;
+			} else {
+				ut64 delta = offset - f;
+				r_core_seek (core, t+delta, 1);
+				r_config_set_i (core->config, "diff.from", t);
+				r_config_set_i (core->config, "diff.to", f);
+			}
 		}
 		break;
 	case 'a':
@@ -1886,6 +1894,7 @@ static void r_core_visual_refresh (RCore *core) {
 	}
 	r_cons_flush ();
 	r_cons_print_clear ();
+	//core->curtab = 0;
 
 	vi = r_config_get (core->config, "cmd.cprompt");
 	if (vi && *vi) {
@@ -1923,8 +1932,7 @@ static void r_core_visual_refresh (RCore *core) {
 		r_core_cmd (core, vcmd, 0);
 	} else {
 		core->screen_bounds = 1LL;
-		if (zoom) r_core_cmd0 (core, "pz");
-		else r_core_cmd0 (core, printfmt[PIDX]);
+		r_core_cmd0 (core, zoom? "pz": printfmt[PIDX]);
 	}
 	if (core->screen_bounds != 1LL) {
 		r_cons_printf ("[0x%08"PFMT64x"..0x%08"PFMT64x"]\n",
@@ -1939,6 +1947,8 @@ static void r_core_visual_refresh (RCore *core) {
 		r_cons_reset ();
 	}
 	core->cons->blankline = true;
+	core->curtab = 0; // which command are we focusing
+	//core->seltab = 0; // user selected tab
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {
@@ -1984,11 +1994,11 @@ R_API int r_core_visual(RCore *core, const char *input) {
 			const int delta = r_config_get_i (core->config, "stack.delta");
 			const int bytes = r_config_get_i (core->config, "stack.bytes");
 			if (cmdvhex && *cmdvhex) {
-				snprintf (debugstr, sizeof(debugstr),
-					"f tmp;sr SP;%s;%s;s-;"
+				snprintf (debugstr, sizeof (debugstr),
+					"?0;f tmp;sr SP;%s;?1;%s;?1;s-;"
 					"s tmp;f-tmp;pd $r", cmdvhex,
 					ref? "drr": "dr=");
-				debugstr[sizeof(debugstr)-1]=0;
+				debugstr[sizeof (debugstr)-1]=0;
 			} else {
 				const char *pxw;
 				if (ref) {
@@ -2003,8 +2013,9 @@ R_API int r_core_visual(RCore *core, const char *input) {
 					}
 				}
 				snprintf (debugstr, sizeof (debugstr),
-					"f tmp;sr SP;%s %d@$$-%d;%s;s-;"
-					"s tmp;f-tmp;pd $r",
+					"?0;f tmp;sr SP;%s %d@$$-%d;"
+					"?1;%s;s-;"
+					"?1;s tmp;f-tmp;pd $r",
 					pxa? "pxa": pxw, size, delta,
 					ref? "drr": "dr=");
 			}

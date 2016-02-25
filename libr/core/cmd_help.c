@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 static const char* findBreakChar(const char *s) {
 	while (*s) {
@@ -8,6 +8,7 @@ static const char* findBreakChar(const char *s) {
 	}
 	return s;
 }
+
 static char *filter_flags(RCore *core, const char *msg) {
 	const char *dollar, *end;
 	char *word, *buf = NULL;
@@ -56,6 +57,14 @@ static int cmd_help(void *data, const char *input) {
 	RList *tmp;
 
 	switch (input[0]) {
+	case '0':
+		core->curtab = 0;
+		break;
+	case '1':
+		if (core->curtab < 0)
+			core->curtab = 0;
+		core->curtab ++;
+		break;
 	case ':':
 		{
 		RListIter *iter;

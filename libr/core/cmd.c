@@ -1140,8 +1140,8 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 	RStrBuf *buf;
 	char *s = strdup (str);
 	buf = r_strbuf_new ("");
-	int i, argc = r_str_split(s, ',');
-	for (i = 0; i<argc; i++) {
+	int i, argc = r_str_split (s, ',');
+	for (i = 0; i < argc; i++) {
 		char *eq, *kv = (char *)r_str_word_get0 (s, i);
 		if (!kv) break;
 		eq = strchr (kv, '=');
@@ -1200,7 +1200,15 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	// TODO: store in core->cmdtimes to speedup ?
 	cmdrep = r_config_get (core->config, "cmd.times");
 	orep = rep;
+
+	int ocur_enabled = core->print->cur_enabled;
 	while (rep-- && *cmd) {
+		core->print->cur_enabled = false;
+		if (ocur_enabled && core->seltab >= 0) {
+			if (core->seltab == core->curtab) {
+				core->print->cur_enabled = true;
+			}
+		}
 		char *cr = strdup (cmdrep);
 		ret = r_core_cmd_subst_i (core, cmd, colon);
 		if (ret && *cmd=='q') {
@@ -1218,6 +1226,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 		free (cr);
 	}
+	core->print->cur_enabled = ocur_enabled;
 	if (colon && colon[1]) {
 		for (++colon; *colon==';'; colon++);
 		r_core_cmd_subst (core, colon);

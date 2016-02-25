@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #ifndef R2_CORE_H
 #define R2_CORE_H
@@ -157,6 +157,8 @@ typedef struct r_core_t {
 	ut8 switch_file_view;
 	Sdb *sdb;
 	int incomment;
+	int curtab; // current tab
+	int seltab; // selected tab
 	int cmdremote;
 	char *lastsearch;
 	bool fixedblock;
