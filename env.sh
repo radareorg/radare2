@@ -54,9 +54,9 @@ else
 			p=$(($p+1))
 			[ $p -gt $# ] && break
 			a=`eval echo "\$\{$p\}"`
-			par="$par$a "
+			par="$par\"$a\" "
 		done
-		eval $new_env $par "\"\${$#}\""
+		eval $new_env $par
 	else
 		eval $new_env $*
 	fi
