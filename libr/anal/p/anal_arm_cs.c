@@ -640,6 +640,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		break;
 	case ARM_INS_SSUB16:
 	case ARM_INS_SSUB8:
+	case ARM_INS_SUBW:
 	case ARM_INS_SUB:
 		if (!strcmp (ARG(2), "")) {
 			if (!strcmp (ARG(0), ARG(1))) {
