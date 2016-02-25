@@ -269,6 +269,12 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		if (strstr (tstr, oldstr) != NULL) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
+		} else {
+			r_str_case (oldstr, false);
+			if (strstr (tstr, oldstr) != NULL) {
+				tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				break;
+			}
 		}
 		// Try with no spaces
 		snprintf (oldstr, sizeof (oldstr)-1, "[%s+0x%x]",
@@ -279,24 +285,30 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			break;
 		}
 	}
+
+	char bp[32];
+	strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], 31);
+	if (isupper (*str)) {
+		r_str_case (bp, true);
+	}
+	bp[31] = 0;
+
 	r_list_foreach (vars, variter, var) {
-		if (var->delta < 10) snprintf (oldstr, sizeof (oldstr)-1,
-			"[%s - %d]",
-			p->anal->reg->name[R_REG_NAME_BP],
-			var->delta);
-		else snprintf (oldstr, sizeof (oldstr)-1,
-			"[%s - 0x%x]",
-			p->anal->reg->name[R_REG_NAME_BP],
-			var->delta);
-		snprintf (newstr, sizeof (newstr)-1, "[%s-%s]",
-			p->anal->reg->name[R_REG_NAME_BP],
-			var->name);
+		if (var->delta < 10) snprintf (oldstr, sizeof (oldstr)-1, "[%s - %d]", bp, var->delta);
+		else snprintf (oldstr, sizeof (oldstr)-1, "[%s - 0x%x]", bp, var->delta);
+		snprintf (newstr, sizeof (newstr)-1, "[%s - %s]", bp, var->name);
 		if (strstr (tstr, oldstr) != NULL) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
+		} else {
+			r_str_case (oldstr, true);
+			if (strstr (tstr, oldstr) != NULL) {
+				tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				break;
+			}
 		}
 		// Try with no spaces
-		snprintf (oldstr, sizeof (oldstr)-1, "[%s-0x%x]",
+		snprintf (oldstr, sizeof (oldstr)-1, "[%s - 0x%x]",
 			p->anal->reg->name[R_REG_NAME_BP],
 			var->delta);
 		if (strstr (tstr, oldstr) != NULL) {
