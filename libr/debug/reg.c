@@ -60,15 +60,15 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	RList *head;
 	RPrint *pr = NULL;
 	ut64 diff;
-	{
-		RCore *core = dbg->corebind.core;
-		if (core) {
-			pr = core->print;
-		}
+
+	if (!dbg || !dbg->reg || !dbg->corebind)
+		return false;
+
+	RCore *core = dbg->corebind.core;
+	if (core) {
+		pr = core->print;
 	}
 
-	if (!dbg || !dbg->reg)
-		return false;
 	if (!(dbg->reg->bits & size)) {
 		// TODO: verify if 32bit exists, otherwise use 64 or 8?
 		size = 32;
@@ -97,6 +97,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		from = type;
 		to = from +1;
 	}
+
 	bool is_arm = dbg->arch && strstr (dbg->arch, "arm");
 	int itmidx = -1;
 	for (i = from; i < to; i++) {
