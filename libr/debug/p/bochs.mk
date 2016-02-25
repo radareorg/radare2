@@ -1,8 +1,8 @@
 #include ../../config.mk
 #BINDEPS=r_reg r_bp r_util r_io r_anal
 
-CFLAGS+=-I$(SHLR)/gdb/include/
-LIB_PATH=$(SHRL)/gdb/
+CFLAGS+=-I$(SHLR)/bochs/include/
+LIB_PATH=$(SHRL)/bochs/
 
 ifeq (${OSTYPE},windows)
 LDFLAGS+=-lwsock32

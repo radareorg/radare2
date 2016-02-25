@@ -107,7 +107,7 @@ VOID EnviaComando_(libbochs_t* b, char * comando) {
 	ZeroMemory(cmdBuff,128);
 	sizeSend=sprintf(cmdBuff,"%s\n",comando);
 	SetEvent(b->ghWriteEvent);
-	Sleep(100);
+	Sleep(10);
 }
 int bochs_read_(libbochs_t* b,ut64 addr,int count,ut8 * buf) {
 	char buff[128];
