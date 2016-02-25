@@ -274,7 +274,7 @@ static void algolist() {
 }
 
 int is_power_of_two(const ut64 x) {
-    return (x != 0) && ((x & (~x + 1)) == x);
+	return v && !(v & (v - 1));
 }
 
 int main(int argc, char **argv) {
