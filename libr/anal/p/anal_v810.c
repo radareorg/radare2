@@ -290,18 +290,20 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		break;
 	case V810_JAL:
 	case V810_JR:
-		jumpdisp = DISP26(word1, word2);
-		op->jump = addr + jumpdisp;
-		op->fail = addr + 4;
+		if (op->size == 4) {
+			// word2 undetermined for 2-byte instructions
+			jumpdisp = DISP26(word1, word2);
+			op->jump = addr + jumpdisp;
+			op->fail = addr + 4;
 
-		if (opcode == V810_JAL) {
-			op->type = R_ANAL_OP_TYPE_CALL;
-			r_strbuf_appendf (&op->esil, "$$,4,+,r31,=,", jumpdisp);
-		} else {
-			op->type = R_ANAL_OP_TYPE_JMP;
+			if (opcode == V810_JAL) {
+				op->type = R_ANAL_OP_TYPE_CALL;
+				r_strbuf_appendf (&op->esil, "$$,4,+,r31,=,", jumpdisp);
+			} else {
+				op->type = R_ANAL_OP_TYPE_JMP;
+			}
+			r_strbuf_appendf (&op->esil, "$$,%d,+,pc,=", jumpdisp);
 		}
-
-		r_strbuf_appendf (&op->esil, "$$,%d,+,pc,=", jumpdisp);
 		break;
 	case V810_BCOND:
 		cond = COND(word1);
