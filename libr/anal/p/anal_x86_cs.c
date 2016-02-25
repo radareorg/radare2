@@ -519,9 +519,7 @@ SETL/SETNGE
 				} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
 					op->stackop = R_ANAL_STACK_SET;
 					op->stackptr = regsz;
-				} else {
-					op->ptr = UT64_MAX;
-				}
+				} 
 				if (a->decode) {
 					if (op->prefix & R_ANAL_OP_PREFIX_REP) {
 						int width = INSOP(0).size;
