@@ -1087,9 +1087,11 @@ int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 				if (!symbol[0].last) {
 					ut64 paddr = symbol[0].offset;
 					if (paddr & 1) {
+						free (symbol);
 						return 16;
 					}
 				}
+				free (symbol);
 			}
 		}
 		{
