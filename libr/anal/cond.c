@@ -79,9 +79,11 @@ R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 			if ((out = malloc (val0len)))
 				snprintf (out, val0len, "%s%s", cnd, val0);
 		} else {
-			int val0len = strlen (val0) + strlen (val1)+10;
-			if ((out = malloc (val0len)))
-				snprintf (out, val0len, "%s %s %s", val0, cnd, val1);
+			if (val1) {
+				int val0len = strlen (val0) + strlen (val1) + 10;
+				if ((out = malloc (val0len)))
+					snprintf (out, val0len, "%s %s %s", val0, cnd, val1);
+			}
 		}
 	}
 	free (val0);
