@@ -12,7 +12,7 @@ static int xtensa_length(const ut8 *insn) {
 	return length_table[*insn & 0xf];
 }
 
-ut64 xtensa_offset (ut64 addr, const ut8 *buf) {
+static inline ut64 xtensa_offset (ut64 addr, const ut8 *buf) {
 	ut32 offset;
 
 	offset = ((buf[0] >> 4) & 0xc) | (((ut32)buf[1]) << 4) | (((ut32)buf[2]) << 12);
@@ -23,7 +23,7 @@ ut64 xtensa_offset (ut64 addr, const ut8 *buf) {
 		return (addr + 4 + offset) & ~3;
 }
 
-ut64 xtensa_imm18s (ut64 addr, const ut8 *buf) {
+static inline ut64 xtensa_imm18s (ut64 addr, const ut8 *buf) {
 	ut32 offset;
 
 	offset = (buf[0] >> 6) | (((ut32)buf[1]) << 2) | (((ut32)buf[2]) << 10);
@@ -34,7 +34,7 @@ ut64 xtensa_imm18s (ut64 addr, const ut8 *buf) {
 		return addr + 4 + offset;
 }
 
-ut64 xtensa_imm6s (ut64 addr, const ut8 *buf) {
+static inline ut64 xtensa_imm6s (ut64 addr, const ut8 *buf) {
 	ut8 imm6 = (buf[1] >> 4) | (buf[0] & 0x30);
 
 	if (imm6 & 0x20)
@@ -43,14 +43,14 @@ ut64 xtensa_imm6s (ut64 addr, const ut8 *buf) {
 		return (addr + 4 + imm6);
 }
 
-ut64 xtensa_imm8s (ut64 addr, ut8 imm8) {
+static inline ut64 xtensa_imm8s (ut64 addr, ut8 imm8) {
 	if (imm8 & 0x80)
 		return (addr + 4 + imm8 - 0x100);
 	else
 		return (addr + 4 + imm8);
 }
 
-ut64 xtensa_imm12s (ut64 addr, const ut8 *buf) {
+static inline ut64 xtensa_imm12s (ut64 addr, const ut8 *buf) {
 	ut16 imm12 = (buf[1] >> 4) | (((ut16)buf[2]) << 4);
 
 	if (imm12 & 0x800)
