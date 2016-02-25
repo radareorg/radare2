@@ -148,6 +148,7 @@ typedef struct r_debug_t {
 	RDebugTrace *trace;
 	int stop_all_threads;
 	RReg *reg;
+	const char *creg; // current register value
 	RBreakpoint *bp;
 	int bpsize;
 	int btdepth;

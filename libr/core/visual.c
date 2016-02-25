@@ -9,6 +9,7 @@ static int obs = 0;
 static int blocksize = 0;
 static int autoblocksize = 1;
 static void r_core_visual_refresh (RCore *core);
+#define PIDX (R_ABS(core->printidx%NPF))
 
 #define debugfmt_default "?0;f tmp;sr SP;pxw 64;?1;dr=;?1;s-;s tmp;f-tmp;pd $r"
 static const char *printfmt[] = {
@@ -178,6 +179,7 @@ static int visual_help() {
 }
 
 static void prompt_read (const char *p, char *buf, int buflen) {
+	if (buf) *buf = 0;
 	r_line_set_prompt (p);
 	showcursor (NULL, true);
 	r_cons_fgets (buf, buflen, 0, NULL);
@@ -810,6 +812,13 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 	RAsmOp op;
 
 	cursor_ocur (core, use_ocur);
+	if (PIDX == 2) {
+		if (core->seltab == 1) {
+			const int cols = core->dbg->regcols;
+			p->cur += cols>0? cols: 3;
+			return;
+		}
+	}
 
 	if (p->row_offsets != NULL) {
 		// FIXME: cache the current row
@@ -839,6 +848,13 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 	int row;
 	ut32 roff, prev_roff;
 
+	if (PIDX == 2) {
+		if (core->seltab == 1) {
+			const int cols = core->dbg->regcols;
+			p->cur -= cols>0? cols: 4;
+			return;
+		}
+	}
 	cursor_ocur (core, use_ocur);
 
 	if (p->row_offsets != NULL) {
@@ -871,11 +887,24 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 }
 
 static void cursor_left(RCore *core, bool use_ocur) {
+	if (PIDX == 2) {
+		if (core->seltab == 1) {
+
+	core->print->cur--;
+			return;
+		}
+	}
 	cursor_ocur (core, use_ocur);
 	core->print->cur--;
 }
 
 static void cursor_right(RCore *core, bool use_ocur) {
+	if (PIDX == 2) {
+		if (core->seltab == 1) {
+			core->print->cur++;
+			return;
+		}
+	}
 	cursor_ocur (core, use_ocur);
 	core->print->cur++;
 }
@@ -1168,6 +1197,17 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'i':
 	case 'I':
+		if (PIDX == 2 && core->seltab == 1) {
+			char buf[128];
+			prompt_read ("new-reg-value> ", buf, sizeof (buf));
+			if (*buf) {
+				const char *creg = core->dbg->creg;
+				if (creg) {
+					r_core_cmdf (core, "dr %s = %s\n", creg, buf);
+				}
+			}
+			return true;
+		}
 		if (core->file && core->file->desc &&!(core->file->desc->flags & 2)) {
 			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
 			r_cons_any_key (NULL);
@@ -1741,7 +1781,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	return true;
 }
 
-#define PIDX (R_ABS(core->printidx%NPF))
 R_API void r_core_visual_title (RCore *core, int color) {
 	static ut64 oldpc = 0;
 	const char *BEGIN = core->cons->pal.prompt;

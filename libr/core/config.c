@@ -812,7 +812,7 @@ static int cb_hexcols(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	int c = R_MIN (128, R_MAX (((RConfigNode*)data)->i_value, 0));
 	core->print->cols = c & ~1;
-	core->dbg->regcols = c/5;
+	core->dbg->regcols = c/4;
 	return true;
 }
 

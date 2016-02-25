@@ -55,6 +55,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
 	int i, delta, from, to, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
+	int colwidth = 20;
 	RListIter *iter;
 	RRegItem *item;
 	RList *head;
@@ -73,17 +74,18 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		// TODO: verify if 32bit exists, otherwise use 64 or 8?
 		size = 32;
 	}
-	//if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
 	if (dbg->bits & R_SYS_BITS_64) {
 		fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt2 = "%s%4s%s 0x%08"PFMT64x"%s";
-		cols = 3;
 		kwhites = "         ";
+		colwidth = dbg->regcols? 20: 25;
+		cols = 3;
 	} else {
 		fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt2 = "%s%4s%s 0x%08"PFMT64x"%s";
-		cols = 4;
 		kwhites = "    ";
+		colwidth = 20;
+		cols = 4;
 	}
 	if (dbg->regcols) {
 		cols = dbg->regcols;
@@ -100,6 +102,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 
 	bool is_arm = dbg->arch && strstr (dbg->arch, "arm");
 	int itmidx = -1;
+	dbg->creg = NULL;
 	for (i = from; i < to; i++) {
 		head = r_reg_get_list (dbg->reg, i);
 		if (!head) continue;
@@ -149,10 +152,12 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					if (highlight) {
 						a = Color_INVERT;
 						b = Color_INVERT_RESET;
+						dbg->creg = item->name;
 					}
 					strcpy (whites, kwhites);
-					if (delta && use_color)
+					if (delta && use_color) {
 						dbg->cb_printf (use_color);
+					}
 					if (item->flags) {
 						str = r_reg_get_bvalue (dbg->reg, item);
 						len = 12 - strlen (str);
@@ -164,7 +169,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					} else {
 						snprintf (content, sizeof (content),
 							fmt2, "", item->name, "", value, "");
-						len = 20 - strlen (content);
+						len = colwidth - strlen (content);
 						if (len < 0) len = 0;
 						memset (whites, ' ', sizeof (whites));
 						whites[len] = 0;
