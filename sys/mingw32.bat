@@ -4,7 +4,7 @@ sh.exe -c "export PATH=/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x
 sh.exe -c "uname | tr 'A-Z' 'a-z'"
 sh.exe -c "echo ${CC}"
 sh.exe -c "sed -i '/xtensa/d' plugins.def.cfg"
-sh.exe -c "export PATH=/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x86\)/Git/bin:${PATH} ; ./configure --with-ostype=mingw32 --build=i686-unknown-windows-gnu ; mingw32-make -j1 CC='gcc -static-libgcc'; mingw32-make w32dist USE_ZIP=NO"
+sh.exe -c "export PATH=/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x86\)/Git/bin:${PATH} ; ./configure --with-ostype=mingw32 --build=i686-unknown-windows-gnu ; make -j1 CC='gcc -static-libgcc'; make w32dist USE_ZIP=NO"
 if "%APPVEYOR%" == "True" (
      appveyor DownloadFile https://raw.githubusercontent.com/radare/radare2-win-installer/master/radare2.iss
      appveyor DownloadFile https://raw.githubusercontent.com/radare/radare2-win-installer/master/radare2.ico

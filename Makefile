@@ -30,11 +30,13 @@ Q='
 ESC=
 ifeq ($(BUILD_OS),windows)
 ifeq ($(OSTYPE),mingw32)
+ifneq (,$(findstring mingw32-make,$(MAKE)))
 ifneq ($(APPVEYOR),True)
 	Q=
 	ESC=^
 	LC_ALL=C
 	export LC_ALL
+endif
 endif
 endif
 endif
