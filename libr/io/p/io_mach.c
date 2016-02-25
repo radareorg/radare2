@@ -63,7 +63,7 @@ static task_t task_for_pid_workaround(int Pid) {
 	}
 	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
+//		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
 		//mach_error ("host_processor_set_priv",kr);
 		return -1;
 	}
@@ -71,7 +71,7 @@ static task_t task_for_pid_workaround(int Pid) {
 	numTasks = 0;
 	kr = processor_set_tasks (psDefault_control, &tasks, &numTasks);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("processor_set_tasks failed with error %x\n", kr);
+//		eprintf ("processor_set_tasks failed with error %x\n", kr);
 		return -1;
 	}
 	if (Pid == 0) {
@@ -109,8 +109,8 @@ static task_t pid_to_task(int pid) {
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		task = task_for_pid_workaround (pid);
 		if (task == -1) {
-			eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
-			eprintf ("Missing priviledges? 0x%x: %s\n", err, MACH_ERROR_STRING (err));
+			//eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
+			//eprintf ("Missing priviledges? 0x%x: %s\n", err, MACH_ERROR_STRING (err));
 			return -1;
 		}
 	}
@@ -342,7 +342,7 @@ static unsigned int debug_attach(int pid) {
 	task_t task = pid_to_task (pid);
 	if (!task)
 		return 0;
-	eprintf ("pid: %d\ntask: %d\n", pid, task);
+	//eprintf ("pid: %d\ntask: %d\n", pid, task);
 	return task;
 }
 
@@ -361,6 +361,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 
 	task = debug_attach (pid);
+	if (task == -1) {
+		return NULL;
+	}
 	if (!task) {
 		if (pid > 0 && io->referer && !strncmp (io->referer, "dbg://", 6)) {
 			eprintf ("Child killed\n");

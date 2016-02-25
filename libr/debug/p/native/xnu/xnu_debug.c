@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2016 - pancake, alvaro_fe */
 
 #include <r_userconf.h>
 #if DEBUGGER
@@ -431,10 +431,12 @@ task_t pid_to_task (int pid) {
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		task = task_for_pid_workaround (pid);
 		if (task == 0) {
-			eprintf ("Failed to get task %d for pid %d.\n",
-				(int)task, (int)pid);
-			eprintf ("Reason: 0x%x: %s\n", err,
-				(char *)MACH_ERROR_STRING (err));
+			if (pid != -1) {
+				eprintf ("Failed to get task %d for pid %d.\n",
+						(int)task, (int)pid);
+				eprintf ("Reason: 0x%x: %s\n", err,
+						(char *)MACH_ERROR_STRING (err));
+			}
 			eprintf ("You probably need to run as root or sign "
 				"the binary.\n Read doc/ios.md || doc/osx.md\n"
 				" make -C binr/radare2 ios-sign || osx-sign\n");

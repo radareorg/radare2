@@ -130,7 +130,7 @@ R_API int r_debug_attach(RDebug *dbg, int pid) {
 	if (dbg && dbg->h && dbg->h->attach) {
 		ret = dbg->h->attach (dbg, pid);
 		if (ret != -1) {
-			eprintf ("Attached debugger to pid = %d, tid = %d\n", pid, ret);
+			//eprintf ("Attached debugger to pid = %d, tid = %d\n", pid, ret);
 			r_debug_select (dbg, pid, ret); //dbg->pid, dbg->tid);
 		}
 	}
@@ -263,7 +263,7 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 
 	if (pid != -1 && tid != -1) {
 		if (pid != dbg->pid || tid != dbg->tid)
-			eprintf ("Debugging pid = %d, tid = %d now\n", pid, tid);
+			eprintf ("attach %d %d\n", pid, tid);
 	} else {
 		if (dbg->pid != -1)
 			eprintf ("Child %d is dead\n", dbg->pid);

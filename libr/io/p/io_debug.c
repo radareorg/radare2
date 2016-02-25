@@ -258,7 +258,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		ret = posix_spawnp (&p, argv[0], &fileActions, &attr, argv, NULL);
 		switch (ret) {
 		case 0:
-			eprintf ("Success\n");
+			// eprintf ("Success\n");
 			break;
 		case 22:
 			eprintf ("posix_spawnp: Invalid argument\n");
