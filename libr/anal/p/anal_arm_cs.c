@@ -734,7 +734,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				case 16:
 					pcdelta = op->size;
 					op->refptr = 4;
-					op->ptr = addr + pcdelta - MEMDISP(1);
+					op->ptr = addr + pcdelta - 4 - MEMDISP(1);
 					break;
 				}
 				r_strbuf_appendf (&op->esil, "%d,%s,+,%d,-,[4],%s,=",
