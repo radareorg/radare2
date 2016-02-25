@@ -55,7 +55,11 @@ static bool popRN(RAnalEsil *esil, ut64 *n) {
 
 R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap) {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
-	if (!esil || stacksize < 3) return NULL;
+	if (!esil) return NULL;
+	if (stacksize < 3) {
+		free (esil);
+		return NULL;
+	}
 	if (!(esil->stack = malloc (sizeof(char *) * stacksize))) {
 		free (esil);
 		return NULL;
