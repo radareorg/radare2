@@ -726,31 +726,23 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		addr &= ~3LL;
 		if (MEMDISP(1)<0) {
 			if (REGBASE(1) == ARM_REG_PC) {
-				int pcdelta = 8;
-				switch (a->bits) {
-				case 32:
-					op->ptr = addr + 8 - MEMDISP(1);
-					break;
-				case 16:
-					pcdelta = op->size;
-					op->refptr = 4;
-					op->ptr = addr + pcdelta - 4 - MEMDISP(1);
-					break;
-				}
-				r_strbuf_appendf (&op->esil, "%d,%s,+,%d,-,[4],%s,=",
-					pcdelta, MEMBASE(1), -MEMDISP(1), REG(0));
+				op->refptr = 4;
+				op->ptr = addr + op->size - MEMDISP(1);
+				r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
+					MEMBASE(1), MEMDISP(1), REG(0));
 			} else {
-				r_strbuf_appendf (&op->esil, "%s,%d,-,[4],%s,=",
-					MEMBASE(1), -MEMDISP(1), REG(0));
+				r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
+					MEMBASE(1), +MEMDISP(1), REG(0));
 			}
 		} else {
 			if (REGBASE(1) == ARM_REG_PC) {
 				int pcdelta = 8;
 				switch (a->bits) {
 				case 16:
-					pcdelta = op->size * 2;
+					pcdelta = 4; // op->size * 2;
 					op->refptr = 4;
 					op->ptr = addr + pcdelta + MEMDISP(1);
+					pcdelta = 0; // not needed for esil
 					break;
 				case 32:
 					pcdelta = 8;
