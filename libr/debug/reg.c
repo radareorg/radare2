@@ -61,12 +61,12 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	RPrint *pr = NULL;
 	ut64 diff;
 
-	if (!dbg || !dbg->reg || !dbg->corebind)
+	if (!dbg || !dbg->reg) {
 		return false;
+	}
 
-	RCore *core = dbg->corebind.core;
-	if (core) {
-		pr = core->print;
+	if (dbg->corebind.core) {
+		pr = ((RCore*)dbg->corebind.core)->print;
 	}
 
 	if (!(dbg->reg->bits & size)) {
