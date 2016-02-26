@@ -292,10 +292,9 @@ R2V=radare2-${VERSION}
 dist:
 	rm -rf $(R2V)
 	git clone . $(R2V)
-	cd $(R2V) && [ configure -nt config-user.mk ] && ./configure "--prefix=${PREFIX}"
+	-cd $(R2V) && [ ! -f config-user.mk -o configure -nt config-user.mk ] && ./configure "--prefix=${PREFIX}"
 	cd $(R2V) ; git log $$(git show-ref | grep ${PREVIOUS_RELEASE} | awk '{print $$1}')..HEAD > ChangeLog
-	cd $(R2V)/shlr && ${MAKE} capstone-sync
-	DIR=`basename "$$PWD"` ; \
+	$(MAKE) -C $(R2V)/shlr capstone-sync
 	FILES=`cd $(R2V); git ls-files | sed -e "s,^,$(R2V)/,"` ; \
 	CS_FILES=`cd $(R2V)/shlr/capstone ; git ls-files | grep -v pdf | grep -v xcode | grep -v msvc | grep -v suite | grep -v bindings | grep -v tests | sed -e "s,^,$(R2V)/shlr/capstone/,"` ; \
 	${TAR} "radare2-${VERSION}.tar" $${FILES} $${CS_FILES} "$(R2V)/ChangeLog" ; \
