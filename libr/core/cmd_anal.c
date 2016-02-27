@@ -3556,6 +3556,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				(void)cmd_anal_calls (core, ""); // "aac"
 				if (core->cons->breaked)
 					goto jacuzzi;
+				r_core_anal_esil (core, input + 1); //aae
 				r_config_set_i (core->config, "anal.calls", c);
 				r_core_cmd0 (core, ".afna @@ fcn.*");
 				if (core->cons->breaked)
