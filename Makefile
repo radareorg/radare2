@@ -7,12 +7,14 @@ R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
 R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm)
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
-R2VC=$(shell git rev-list --all --count)
 USE_ZIP=YES
 ZIP=zip
+
+R2VC=$(shell git rev-list --all --count 2>/dev/null)
 ifeq ($(R2VC),)
 R2VC=9999999
 endif
+
 STRIP?=strip
 ifneq ($(shell xz --help 2>/dev/null | grep improve),)
 TAR=tar -cvf
