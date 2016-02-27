@@ -755,7 +755,7 @@ SF - sign flag
 	sf = ((st64)num)<0)?1:0;
 OF - overflow flag
 	if (a>0&&b>0 && (a+b)<0)
-    Set if result is too large a positive number or too small a negative number (excluding sign bit) to fit in destination operand; cleared otherwise 
+    Set if result is too large a positive number or too small a negative number (excluding sign bit) to fit in destination operand; cleared otherwise
 
 JBE: CF = 1 || ZF = 1
 
@@ -2247,7 +2247,9 @@ repeat:
 			str++;
 		}
 		word[wordi++] = *str;
-		str++;
+		//is *str is '\0' in the next iteration the condition will be true
+		//reading beyond the boundaries
+		if (*str) str++;
 	}
 	word[wordi] = 0;
 	if (*word) {
