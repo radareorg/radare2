@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <r_types.h>
 #include <r_util.h>
 #include "elf.h"
@@ -1171,16 +1172,21 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 static size_t get_relocs_num(struct Elf_(r_bin_elf_obj_t) *bin) {
 	size_t i, ret = 0;
 
+	/* we need to be careful here, in malformed files the section size might
+	 * not be a multiple of a Rel/Rela size; round up so we allocate enough
+	 * space.
+	 */
+#define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize)+(entrysize)-1)/(entrysize))
 	if (!g_sections) return 0;
 	for (i = 0; !g_sections[i].last; i++) {
 		if (!strncmp (g_sections[i].name, ".rela.", strlen (".rela."))) {
-			ret += g_sections[i].size / sizeof(Elf_(Rela));
+			ret += NUMENTRIES_ROUNDUP (g_sections[i].size, sizeof(Elf_(Rela)));
 		} else if (!strncmp (g_sections[i].name, ".rel.", strlen (".rel."))){
-			ret += g_sections[i].size / sizeof(Elf_(Rel));
+			ret += NUMENTRIES_ROUNDUP (g_sections[i].size, sizeof(Elf_(Rel)));
 		}
 	}
 	return ret;
-
+#undef NUMENTRIES_ROUNDUP
 }
 
 static int read_reloc(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
@@ -1236,7 +1242,7 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	reloc_num = get_relocs_num (bin);
 	if (!reloc_num)	return NULL;
 
-	ret = (RBinElfReloc*)calloc ((size_t)reloc_num + 2, sizeof(RBinElfReloc));
+	ret = (RBinElfReloc*)calloc ((size_t)reloc_num + 1, sizeof(RBinElfReloc));
 	if (!ret) return NULL;
 	section_text_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".text");
 	if (section_text_offset == -1) section_text_offset = 0;
@@ -1249,7 +1255,15 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		for (j = 0; j < g_sections[i].size; j += res) {
 			if (g_sections[i].size > bin->size) break;
 			if (g_sections[i].offset > bin->size) break;
+			if (rel >= reloc_num) {
+				eprintf ("Internal error: ELF relocation buffer too small,"
+				         "please file a bug report.");
+				break;
+			}
 			res = read_reloc (bin, &ret[rel], is_rela, g_sections[i].offset + j);
+			if (j + res > g_sections[i].size) {
+				eprintf ("Warning: malformed file, relocation entry #%u is partially beyond the end of section %u.\n", rel, i);
+			}
 			ret[rel].rva = ret[rel].offset;
 			if (is_rela) {
 				if (ret[rel].type != R_386_IRELATIVE && ret[rel].type != R_X86_64_IRELATIVE) {
