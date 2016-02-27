@@ -302,7 +302,8 @@ static int rax (char *str, int len, int last) {
 		return true;
 	} else if (flags & 8192) { // -D
 		const int len = strlen (str);
-		ut8* out = calloc (sizeof(ut8), ((len+1)/4)*3);
+		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
+		ut8* out = calloc (sizeof(ut8), ((len+2)/3)*4);
 		if (out) {
 			r_base64_decode (out, str, len);
 			printf ("%s\n", out);
