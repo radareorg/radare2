@@ -239,6 +239,10 @@ static int cmd_help(void *data, const char *input) {
 		switch (input[1]) {
 		case '?':
 			r_cons_printf ("|Usage: ?v[id][ num]  # Show value\n"
+				"|?vi1 200    -> 1 byte size value (char)\n"
+				"|?vi2 0xffff -> 2 byte size value (short)\n"
+				"|?vi4 0xffff -> 4 byte size value (int)\n"
+				"|?vi8 0xffff -> 8 byte size value (st64)\n"
 				"| No argument shows $? value\n"
 				"|?vi will show in decimal instead of hex\n");
 			break;

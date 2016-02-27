@@ -590,7 +590,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 
 	// TODO: Use base to change %03o and so on
-	if ((base < 32 && step != 2) && use_header) {
+	if (step == 1 && base < 0) {
+		use_header = false;
+	}
+	if ((base>0 && base < 32 && step != 2) && use_header) {
 		ut32 opad = (ut32)(addr >> 32);
 		{ // XXX: use r_print_addr_header
 			int i, delta;
@@ -652,8 +655,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				if (col == 1) {
 					if (j+1 >= inc + i) {
 						printfmt (j%2?"  |":"| ");
-					}
-					else {
+					} else {
 						printfmt (j%2?"   ":"  ");
 					}
 				} else {
@@ -691,10 +693,19 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt ("%s0x%016"PFMT64x"%s  ", a, (ut64)n, b);
 				else if (step == 2)
 					printfmt ("%s0x%04x%s ", a, (ut16)n, b);
-				else
-					printfmt ("%s0x%08x%s ", a, (ut32)n, b);
+				else printfmt ("%s0x%08x%s ", a, (ut32)n, b);
 				r_print_cursor (p, j, 0);
 				j += step - 1;
+			} else if (base == -8) {
+				printfmt("    %d=%c=%X ", -base, 0x3d, 13);
+				j += 3;
+			} else if (base == -1) {
+				st8 *w = (st8*)(buf+j);
+				printfmt ("%4d ", *w);
+			} else if (base == -10) {
+				st16 *w = (st16*)(buf+j);
+				printfmt ("%7d ", *w);
+				j += 1;
 			} else if (base == 10) {
 				int *w = (int*)(buf+j);
 				printfmt ("%13d ", *w);

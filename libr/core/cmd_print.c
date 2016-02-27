@@ -2786,7 +2786,7 @@ static int cmd_print(void *data, const char *input) {
 				"pxa", "", "show annotated hexdump",
 				"pxA", "", "show op analysis color map",
 				"pxb", "", "dump bits in hexdump form",
-				"pxd", "", "decimal (base 10) dump",
+				"pxd", "[124]", "signed integer dump (1 byte, 2 and 4)",
 				"pxe", "", "emoji hexdump! :)",
 				"pxf", "", "show hexdump of current function",
 				"pxh", "", "show hexadecimal half-words dump (16bit)",
@@ -2859,8 +2859,27 @@ static int cmd_print(void *data, const char *input) {
 					core->block, len, 8, 1);
 			break;
 		case 'd': // "pxd"
-			r_print_hexdump (core->print, core->offset,
-				core->block, len, 10, 4);
+			switch (input[2]) {
+			case '1':
+				// 1 byte signed words (byte)
+				r_print_hexdump (core->print, core->offset,
+					core->block, len, -1, 4);
+				break;
+			case '2':
+				// 2 byte signed words (short)
+				r_print_hexdump (core->print, core->offset,
+					core->block, len, -10, 2);
+				break;
+			case '8':
+				r_print_hexdump (core->print, core->offset,
+					core->block, len, -8, 4);
+				break;
+			case '4':
+			default:
+				// 4 byte signed words
+				r_print_hexdump (core->print, core->offset,
+					core->block, len, 10, 4);
+			}
 			break;
 		case 'w': // "pxw
 			r_print_hexdump (core->print, core->offset, core->block,
