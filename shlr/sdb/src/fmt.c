@@ -82,15 +82,15 @@ SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 
 // TODO: return false if array length != fmt length
 SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
-	int n, idx = 0;
+	int n, idx = 0, items = 0;
 	char *next, *str, *ptr, *word, *e_str;
-	if (!_str || !*_str || !fmt)
-		return 0;
+	if (!_str || !*_str || !fmt) return 0;
 	str = ptr = strdup (_str);
 	for (; *fmt; fmt++) {
 		word = sdb_anext (ptr, &next);
 		if (!word || !*word)
 			break;
+		items++;
 		n = 4; // ALIGN
 		switch (*fmt) {
 		case 'b': *((ut8*)(stru + idx)) = (ut8)sdb_atoi (word); break;
@@ -99,13 +99,13 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 		case 'h': *((short*)(stru + idx)) = (short)sdb_atoi (word); break;
 		case 's':
 			e_str = (char*)sdb_decode (word, 0);
-			*((char**)(stru + idx)) = (char*)strdup (e_str?e_str:word);
-			free (e_str);
+			*((char**)(stru + idx)) = e_str? e_str: strdup (word);
 			break;
 		case 'z':
 			*((char**)(stru + idx)) = (char*)strdup (word);
 			break;
-		case 'p': *((void**)(stru + idx)) = (void*)(size_t)sdb_atoi (word);
+		case 'p':
+			*((void**)(stru + idx)) = (void*)(size_t)sdb_atoi (word);
 			break;
 		}
 		idx += R_MAX((long)sizeof (void*), n); // align
@@ -114,7 +114,7 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 		ptr = next;
 	}
 	free (str);
-	return 1;
+	return items;
 }
 
 SDB_API void sdb_fmt_free (void *stru, const char *fmt) {
