@@ -24,7 +24,7 @@ else
 	echo "HEAD ${HEAD}"
 	echo "TIP ${CS_TIP}"
 
-	git reset --hard @^^^
+	git reset --hard HEAD^^^
 	git checkout "${CS_BRA}" || exit 1
 	git pull
 	if [ -n "${CS_TIP}" ]; then
