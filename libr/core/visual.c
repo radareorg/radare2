@@ -179,7 +179,9 @@ static int visual_help() {
 }
 
 static void prompt_read (const char *p, char *buf, int buflen) {
-	if (buf) *buf = 0;
+	if (!buf || buflen < 1)
+		return;
+	*buf = 0;
 	r_line_set_prompt (p);
 	showcursor (NULL, true);
 	r_cons_fgets (buf, buflen, 0, NULL);
