@@ -1514,6 +1514,7 @@ static char *get_body (RCore *core, ut64 addr, int size, bool with_offset,
 	int o_marks = r_config_get_i (core->config, "asm.marks");
 	int o_offset = r_config_get_i (core->config, "asm.offset");
 	int o_esil = r_config_get_i (core->config, "asm.esil");
+	int o_cursor = core->print->cur_enabled;
 	const char *cmd = disasm_insts ? "pd" : "pD";
 	// configure options
 	r_config_set_i (core->config, "asm.fcnlines", false);
@@ -1521,6 +1522,7 @@ static char *get_body (RCore *core, ut64 addr, int size, bool with_offset,
 	r_config_set_i (core->config, "asm.cmtcol", 0);
 	r_config_set_i (core->config, "asm.marks", false);
 	r_config_set_i (core->config, "asm.esil", is_esil);
+	core->print->cur_enabled = false;
 
 	if (with_offset) {
 		r_config_set_i (core->config, "asm.offset", true);
@@ -1532,6 +1534,7 @@ static char *get_body (RCore *core, ut64 addr, int size, bool with_offset,
 	body = r_core_cmd_strf (core,
 		"%s %d @ 0x%08"PFMT64x, cmd, size, addr);
 	// restore original options
+	core->print->cur_enabled = o_cursor;
 	r_config_set_i (core->config, "asm.esil", o_esil);
 	r_config_set_i (core->config, "asm.fcnlines", o_fcnlines);
 	r_config_set_i (core->config, "asm.lines", o_lines);
