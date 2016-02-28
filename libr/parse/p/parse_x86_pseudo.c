@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -287,11 +287,15 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	}
 
 	char bp[32];
-	strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], 31);
-	if (isupper (*str)) {
-		r_str_case (bp, true);
+	if (p->anal->reg->name[R_REG_NAME_BP]) {
+		strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], 31);
+		if (isupper (*str)) {
+			r_str_case (bp, true);
+		}
+		bp[31] = 0;
+	} else {
+		bp[0] = 0;
 	}
-	bp[31] = 0;
 
 	r_list_foreach (vars, variter, var) {
 		if (var->delta < 10) snprintf (oldstr, sizeof (oldstr)-1, "[%s - %d]", bp, var->delta);
