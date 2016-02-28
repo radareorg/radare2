@@ -1959,8 +1959,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						"'%s'\n", input+2);
 				}
 			} else {
-				eprintf ("Cannot place a breakpoint here. "
-					"No mapped memory\n");
+				eprintf ("Cannot place a breakpoint on unmapped memory. See dbg.bpinmaps\n");
 			}
 		}
 		break;
