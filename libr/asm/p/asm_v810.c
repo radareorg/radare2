@@ -14,7 +14,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		.operands = ""
 	};
 	if (len < 2) return -1;
-	int ret = v810_decode_command (buf, &cmd);
+	int ret = v810_decode_command (buf, len, &cmd);
 	if (ret > 0) {
 		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s",
 			  cmd.instr, cmd.operands);

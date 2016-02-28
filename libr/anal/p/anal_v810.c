@@ -33,7 +33,7 @@ static void clear_flags(RAnalOp *op, int flags) {
 static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int ret;
 	ut8 opcode, reg1, reg2, imm5, cond;
-	ut16 word1, word2;
+	ut16 word1, word2 = 0;
 	st32 jumpdisp;
 	struct v810_cmd cmd;
 
@@ -42,7 +42,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 
-	ret = op->size = v810_decode_command (buf, &cmd);
+	ret = op->size = v810_decode_command (buf, len, &cmd);
 	if (ret <= 0) return ret;
 
 	r_mem_copyendian ((ut8*)&word1, buf, 2, LIL_ENDIAN);
@@ -290,20 +290,18 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		break;
 	case V810_JAL:
 	case V810_JR:
-		if (op->size == 4) {
-			// word2 undetermined for 2-byte instructions
-			jumpdisp = DISP26(word1, word2);
-			op->jump = addr + jumpdisp;
-			op->fail = addr + 4;
+		jumpdisp = DISP26(word1, word2);
+		op->jump = addr + jumpdisp;
+		op->fail = addr + 4;
 
-			if (opcode == V810_JAL) {
-				op->type = R_ANAL_OP_TYPE_CALL;
-				r_strbuf_appendf (&op->esil, "$$,4,+,r31,=,", jumpdisp);
-			} else {
-				op->type = R_ANAL_OP_TYPE_JMP;
-			}
-			r_strbuf_appendf (&op->esil, "$$,%d,+,pc,=", jumpdisp);
+		if (opcode == V810_JAL) {
+			op->type = R_ANAL_OP_TYPE_CALL;
+			r_strbuf_appendf (&op->esil, "$$,4,+,r31,=,", jumpdisp);
+		} else {
+			op->type = R_ANAL_OP_TYPE_JMP;
 		}
+
+		r_strbuf_appendf (&op->esil, "$$,%d,+,pc,=", jumpdisp);
 		break;
 	case V810_BCOND:
 		cond = COND(word1);
