@@ -59,7 +59,9 @@ R_API void r_fs_add(RFS *fs, RFSPlugin *p) {
 	// TODO: find coliding plugin name
 	if (p && p->init)
 		p->init ();
-	r_list_append (fs->plugins, p);
+	RFSPlugin *sp = R_NEW (RFSPlugin);
+	memcpy (sp, p, sizeof (RFSPlugin));
+	r_list_append (fs->plugins, sp);
 }
 
 R_API void r_fs_del(RFS *fs, RFSPlugin *p) {
