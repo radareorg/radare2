@@ -3,18 +3,18 @@
 
 #define V810_INSTR_MAXLEN     24
 
-#define OPCODE(instr) ((instr >> 10) & 0x3F)
-#define REG1(instr) (instr & 0x1F)
-#define REG2(instr) ((instr >> 5) & 0x1F)
-#define IMM5(instr) REG1(instr)
-#define COND(instr) ((instr >> 9) & 0xF)
+#define OPCODE(instr) (((instr) >> 10) & 0x3F)
+#define REG1(instr) ((instr) & 0x1F)
+#define REG2(instr) (((instr) >> 5) & 0x1F)
+#define IMM5(instr) REG1((instr))
+#define COND(instr) (((instr) >> 9) & 0xF)
 
-#define SEXT5(imm) ((imm & 0x10) ? (imm | 0xE0) : imm)
-#define SEXT9(imm) ((imm & 0x100) ? (imm | 0xFFFFFE00) : imm)
-#define SEXT26(imm) ((imm & 0x2000000) ? (imm | 0xFC000000) : imm)
+#define SEXT5(imm) (((imm) & 0x10) ? (imm) | 0xE0 : (imm))
+#define SEXT9(imm) (((imm) & 0x100) ? (imm) | 0xFFFFFE00 : (imm))
+#define SEXT26(imm) (((imm) & 0x2000000) ? (imm) | 0xFC000000 : (imm))
 
-#define DISP9(instr) SEXT9(word1 & 0x1FE)
-#define DISP26(word1, word2) SEXT26(((word1 & 0x3FF) << 16) | word2)
+#define DISP9(word1) SEXT9((word1) & 0x1FE)
+#define DISP26(word1, word2) SEXT26((((word1) & 0x3FF) << 16) | (word2))
 
 enum v810_cmd_opcodes {
 	V810_MOV		= 0x0,
@@ -141,6 +141,6 @@ struct v810_cmd {
 	char operands[V810_INSTR_MAXLEN];
 };
 
-int v810_decode_command(const ut8 *instr, struct v810_cmd *cmd);
+int v810_decode_command(const ut8 *instr, int len, struct v810_cmd *cmd);
 
 #endif /* R2_V810_DISASM_H */
