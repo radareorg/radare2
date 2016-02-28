@@ -8,7 +8,7 @@ sh.exe -c "export PATH=/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x
 if "%APPVEYOR%" == "True" (
      appveyor DownloadFile https://raw.githubusercontent.com/radare/radare2-win-installer/master/radare2.iss
      appveyor DownloadFile https://raw.githubusercontent.com/radare/radare2-win-installer/master/radare2.ico
-     dir %APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.0-git
-     7z.exe a -tzip %APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.0-git.zip %APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.0-git
-     iscc -DRadare2Location=%APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.0-git\* -DLicenseLocation=%APPVEYOR_BUILD_FOLDER%\COPYING.LESSER -DIcoLocation=%APPVEYOR_BUILD_FOLDER%\radare2.ico radare2.iss
+     dir %APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.1-git
+     7z.exe a -tzip %APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.1-git.zip %APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.1-git
+     iscc -DRadare2Location=%APPVEYOR_BUILD_FOLDER%\radare2-w32-0.10.1-git\* -DLicenseLocation=%APPVEYOR_BUILD_FOLDER%\COPYING.LESSER -DIcoLocation=%APPVEYOR_BUILD_FOLDER%\radare2.ico radare2.iss
 )
