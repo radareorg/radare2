@@ -281,6 +281,7 @@ static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int pe
 static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
 	kern_return_t kr = vm_write (task, addr, (vm_offset_t)buf, (mach_msg_type_number_t)len);
 	if (kr != KERN_SUCCESS) {
+		// perror ("vm_write");
 		//the memory is not mapped
 		return false;
 	}
