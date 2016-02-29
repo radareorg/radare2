@@ -11,11 +11,9 @@ foo:
 include ../config.mk
 include ${STATIC_DEBUG_PLUGINS}
 
-ifeq (${COMPILER},ios-sdk)
-XNU_USE_PTRACE=0
-else
-XNU_USE_PTRACE?=1
-endif
+# Enable pure-MACH debugging by default.
+# The ptrace one will be deprecated at some point
+XNU_USE_PTRACE?=0
 CFLAGS+=-DXNU_USE_PTRACE=$(XNU_USE_PTRACE)
 
 STATIC_OBJS=$(subst ..,p/..,$(subst debug_,p/debug_,$(STATIC_OBJ)))
