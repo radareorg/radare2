@@ -1470,7 +1470,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 							cols = prevopsz (core, core->offset);
 						}
 					}
-					r_core_seek (core, core->offset - cols, 1);
+					r_core_seek_delta (core, -cols);
 				}
 			}
 		}
