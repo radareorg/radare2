@@ -13,7 +13,7 @@
 |----------|---------------------------------------------------------------------|
 | **Jenkins**  	| [![Build Status](http://ci.rada.re/buildStatus/icon?job=radare2)](http://ci.rada.re/job/radare2)|
 | **TravisCI** 	| [![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)](https://travis-ci.org/radare/radare2)|
-| **AppVeyor**  | [![Build Status](https://ci.appveyor.com/api/projects/status/github/radare/radare2?branch=master&svg=true)](https://ci.appveyor.com/project/radare/radare2)|
+| **AppVeyor**  | [![Build Status](https://ci.appveyor.com/api/projects/status/v9bxvsb1p6c3cmf9/branch/master?svg=true)](https://ci.appveyor.com/project/radare/radare2-shvdd)|
 | **Coverity** 	| [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) |
 # Introduction
 
