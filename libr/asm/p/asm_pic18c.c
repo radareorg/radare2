@@ -102,7 +102,7 @@ static struct {
 	{0x5, 0x5, "push", NO_ARG},
 	{0x4, 0x4, "clrwdt", NO_ARG},
 	{0x3, 0x3, "sleep", NO_ARG},
-	{0x0, 0x0, "NOP", NO_ARG},
+	{0x0, 0x0, "nop", NO_ARG},
 	{-1, -1, "invalid", NO_ARG},
 };
 
