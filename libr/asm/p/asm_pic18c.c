@@ -158,7 +158,7 @@ static int pic_disassem(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 		}
 		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s 0x%x, %d", ops[i].name,
 			(dword_instr & 0xff) |
-				(dword_instr >> 8 & 0xffff00),
+				(dword_instr >> 8 & 0xfff00),
 			(dword_instr >> 8) & 0x1);
 		break;
 	}
