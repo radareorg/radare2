@@ -212,8 +212,8 @@ static int pic_disassem (RAsm *a, RAsmOp *op,const ut8 *b, int l){
 		}
 		ut8 reg_n = (dword_instr>>4)&0b11;
 		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s %s, %d",ops[i].name,
-			fsr[reg_n],(dword_instr&0b1111)<<8 |
-			((dword_instr>>16)&0b11111111));
+			fsr[reg_n],(dword_instr&0xf)<<8 |
+			((dword_instr>>16)&0xff));
 		break;
 		}
 	default:
