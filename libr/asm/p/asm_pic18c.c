@@ -108,34 +108,38 @@ static int pic_disassem (RAsm *a, RAsmOp *op,const ut8 *b, int l){
 	for(i=0;ops[i].opmin!=-1 &&!(
 	    ops[i].opmin == (ops[i].opmin&instr)&& 
 	    ops[i].opmax == (ops[i].opmax|instr) );i++ );
-	strcpy(op->buf_asm,ops[i].name);
 	if(ops[i].opmin ==-1){
+		strncpy(op->buf_asm,ops[i].name,R_ASM_BUFSIZE);
 		op->size =2;
 		return -1;
 	}
-	char arg[32];
 	op->size = 2;
 	switch(ops[i].optype){
 	case NO_ARG:
+		strncpy(op->buf_asm,ops[i].name,R_ASM_BUFSIZE);
 		return 2;
 	case N_T:
 	case K_T:
-		sprintf(arg," 0x%x",instr & 0b11111111 );
+		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x",
+			ops[i].name,instr & 0b11111111 );
 		break;
 	case DAF_T:
-		sprintf(arg," 0x%x, %d, %d",
-			instr & 0b11111111,(instr>>9)&1,(instr>>8)&1 );
+		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x, %d, %d",
+			ops[i].name,instr & 0b11111111,
+			(instr>>9)&1,(instr>>8)&1 );
 		break;
 	case AF_T:
-		sprintf(arg," 0x%x, %d",instr & 0b11111111,(instr>>8)&1 );
+		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x, %d",ops[i].name,
+			instr & 0b11111111,(instr>>8)&1 );
 		break;
 
 	case BAF_T:
-		sprintf(arg," 0x%x, %d, %d",
+		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x, %d, %d",ops[i].name,
 			instr & 0b11111111,(instr>>9)&0b111,(instr>>8)&1);
 		break;
 	case NEX_T:
-		sprintf(arg," 0x%x",instr &0b11111111111 );
+		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x",
+			ops[i].name,instr &0b11111111111 );
 		break;
 	case CALL_T:if(1){
 		if(l<4){
@@ -150,8 +154,10 @@ static int pic_disassem (RAsm *a, RAsmOp *op,const ut8 *b, int l){
 			strcpy(op->buf_asm,"invalid");
 			return -1;
 		}
-		sprintf(arg," 0x%x, %d", dword_instr& 0b11111111|
-					(dword_instr>>8 & 0b111111111111111100000000),(dword_instr>>8)&1);
+		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x, %d",ops[i].name,
+			dword_instr& 0b11111111|
+			(dword_instr>>8 & 0b111111111111111100000000),
+			(dword_instr>>8)&0x1);
 		break;
 		}
 	case GOTO_T:if(1){
@@ -165,8 +171,9 @@ static int pic_disassem (RAsm *a, RAsmOp *op,const ut8 *b, int l){
 			strcpy(op->buf_asm,"invalid");
 			return -1;
 		}
-		sprintf(arg," 0x%x",(dword_instr&0b111111111111)<<12 |
-			       (dword_instr>>16)&0b111111111111);
+		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x",ops[i].name,
+			(dword_instr&0b111111111111)<<12 |
+			(dword_instr>>16)&0b111111111111);
 		break;
 		}
 	case F32_T:if(1){
@@ -180,15 +187,18 @@ static int pic_disassem (RAsm *a, RAsmOp *op,const ut8 *b, int l){
 			strcpy(op->buf_asm,"invalid");
 			return -1;
 		}
-		sprintf(arg," 0x%x, 0x%x",dword_instr &0b111111111111,
-				 (dword_instr>>16) & 0b111111111111);
+		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x, 0x%x",ops[i].name,
+			dword_instr &0b111111111111,
+			(dword_instr>>16) & 0b111111111111);
 		break;
 	}
 	case SHK_T:
-		sprintf(arg," 0x%x",instr & 0b1111 );
+		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x",ops[i].name,
+			instr & 0b1111 );
 		break;
 	case S_T:
-		sprintf(arg," %d",instr&0b1);
+		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s %d",
+			ops[i].name,instr&0b1);
 		break;
 	case LFSR_T:
 		if(1){
@@ -199,13 +209,14 @@ static int pic_disassem (RAsm *a, RAsmOp *op,const ut8 *b, int l){
 			return -1;
 		}
 		ut8 reg_n = (dword_instr>>4)&0b11;
-		sprintf(arg," %s, %d",fsr[reg_n],(dword_instr&0b1111)<<8 | ((dword_instr>>16)&0b11111111));
+		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s %s, %d",ops[i].name,
+			fsr[reg_n],(dword_instr&0b1111)<<8 |
+			((dword_instr>>16)&0b11111111));
 		break;
 		}
 	default:
-		sprintf(arg,"unknown args");
+		sprintf(op->buf_asm,"unknown args");
 	};
-	strcat(op->buf_asm,arg);
 	return op->size;
 }
 RAsmPlugin r_asm_plugin_pic18c = {
@@ -214,7 +225,7 @@ RAsmPlugin r_asm_plugin_pic18c = {
 	.arch = "pic18c",
 	.license = "LGPL3",
 	.bits = 16,
-	.desc = "pic disassembler"
+	.desc = "pic18c disassembler"
 };
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
