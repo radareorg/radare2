@@ -1,7 +1,9 @@
-/*oddcoder 2016*/
+/* radare - LGPL - Copyright 2015-2016 - oddcoder */
 #include <r_asm.h>
 #include <r_lib.h>
 //PIC18CXXX instruction set
+
+//instruction classification according to the argument types
 #define NO_ARG 0
 #define DAF_T 1
 #define F32_T 2
@@ -15,7 +17,9 @@
 #define SHK_T 10
 #define S_T 11
 #define LFSR_T 12
+
 static char* fsr[]={"fsr0","fsr1","fsr2","reserved"};
+
 static struct{
 	ut16 opmin;
 	ut16 opmax;
@@ -100,7 +104,7 @@ static struct{
 	{0x3,0x3,"sleep",NO_ARG},
 	{0x0,0x0,"NOP",NO_ARG},
 	{-1,-1,"invalid",NO_ARG},
-	};
+};
 
 static int pic_disassem (RAsm *a, RAsmOp *op,const ut8 *b, int l){
 	int i;
