@@ -125,25 +125,24 @@ static int pic_disassem (RAsm *a, RAsmOp *op,const ut8 *b, int l){
 	case N_T:
 	case K_T:
 		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x",
-			ops[i].name,instr & 0b11111111 );
+			ops[i].name,instr & 0xff);
 		break;
 	case DAF_T:
 		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x, %d, %d",
-			ops[i].name,instr & 0b11111111,
-			(instr>>9)&1,(instr>>8)&1 );
+			ops[i].name,instr & 0bxff,(instr>>9)&1,(instr>>8)&1);
 		break;
 	case AF_T:
 		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x, %d",ops[i].name,
-			instr & 0b11111111,(instr>>8)&1 );
+			instr & 0xff,(instr>>8)&1 );
 		break;
 
 	case BAF_T:
 		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x, %d, %d",ops[i].name,
-			instr & 0b11111111,(instr>>9)&0b111,(instr>>8)&1);
+			instr & 0xff,(instr>>9)&0x7,(instr>>8)&0x1);
 		break;
 	case NEX_T:
 		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x",
-			ops[i].name,instr &0b11111111111 );
+			ops[i].name,instr &0x7ff );
 		break;
 	case CALL_T:if(1){
 		if(l<4){
@@ -154,13 +153,13 @@ static int pic_disassem (RAsm *a, RAsmOp *op,const ut8 *b, int l){
 		ut32 dword_instr = *(ut32*)b;
 		//I dont even know how the bits are arranged but it works !!!
 		//`the wierdness of little endianess`
-		if(dword_instr>>28 != 0b1111){
+		if(dword_instr>>28 != 0xf){
 			strcpy(op->buf_asm,"invalid");
 			return -1;
 		}
 		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x, %d",ops[i].name,
-			dword_instr& 0b11111111|
-			(dword_instr>>8 & 0b111111111111111100000000),
+			(dword_instr& 0xff)|
+			(dword_instr>>8 & 0xffff00),
 			(dword_instr>>8)&0x1);
 		break;
 		}
@@ -176,8 +175,7 @@ static int pic_disassem (RAsm *a, RAsmOp *op,const ut8 *b, int l){
 			return -1;
 		}
 		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x",ops[i].name,
-			(dword_instr&0b111111111111)<<12 |
-			(dword_instr>>16)&0b111111111111);
+			(dword_instr&0bfff)<<12 |((dword_instr>>16)&0xfff));
 		break;
 		}
 	case F32_T:if(1){
@@ -187,28 +185,28 @@ static int pic_disassem (RAsm *a, RAsmOp *op,const ut8 *b, int l){
 		}
 		op->size=4;
 		ut32 dword_instr = *(ut32*)b;
-		if(dword_instr>>28 != 0b1111){
+		if(dword_instr>>28 != 0xf){
 			strcpy(op->buf_asm,"invalid");
 			return -1;
 		}
 		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x, 0x%x",ops[i].name,
-			dword_instr &0b111111111111,
-			(dword_instr>>16) & 0b111111111111);
+			dword_instr &0xfff,
+			(dword_instr>>16) & 0xfff);
 		break;
 	}
 	case SHK_T:
-		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x",ops[i].name,
-			instr & 0b1111 );
+		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s 0x%x",
+			ops[i].name,instr & 0xf );
 		break;
 	case S_T:
 		snprintf(op->buf_asm,R_ASM_BUFSIZE,"%s %d",
-			ops[i].name,instr&0b1);
+			ops[i].name,instr&0x1);
 		break;
 	case LFSR_T:
 		if(1){
 		op->size=4;
 		ut32 dword_instr= *(ut32*)b;
-		if(dword_instr>>28 != 0b1111){
+		if(dword_instr>>28 != 0xf){
 			strcpy(op->buf_asm,"invalid");
 			return -1;
 		}
