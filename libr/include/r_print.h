@@ -54,7 +54,7 @@ typedef struct r_print_t {
 	// offset of the selected byte from the first displayed one
 	int cur;
 	// offset of the selected byte from the first displayed one, when a
-	// range of bytes is selected.
+	// range of bytes is selected. -1 is used if no bytes are selected.
 	int ocur;
 	int cols;
 	int flags;

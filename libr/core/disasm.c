@@ -2675,7 +2675,7 @@ toro:
 		r_config_set_i (core->config, "asm.bits", ds->oldbits);
 		ds->oldbits = 0;
 	}
-	r_print_set_rowoff (core->print, ds->lines, ds->at);
+	r_print_set_rowoff (core->print, ds->lines, ds->at - addr);
 	r_print_set_rowoff (core->print, ds->lines + 1, UT32_MAX);
 	// TODO: this should be called from deinit_ds()
 	r_anal_op_fini (&ds->analop);

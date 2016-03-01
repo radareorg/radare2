@@ -564,13 +564,20 @@ static ut64 prevop_addr (RCore *core, ut64 addr) {
 	}
 	return target - 4;
 }
-static void visual_offset (RCore *core) {
+
+static void reset_print_cur(RPrint *p) {
+	p->cur = 0;
+	p->ocur = -1;
+}
+
+static void visual_offset(RCore *core) {
 	char buf[256];
 	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
 	if (r_cons_fgets (buf+2, sizeof (buf)-3, 0, NULL) >0) {
 		if (buf[2]=='.')buf[1]='.';
 		r_core_cmd0 (core, buf);
+		reset_print_cur (core->print);
 	}
 }
 
@@ -814,12 +821,10 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 	RAsmOp op;
 
 	cursor_ocur (core, use_ocur);
-	if (PIDX == 2) {
-		if (core->seltab == 1) {
-			const int cols = core->dbg->regcols;
-			p->cur += cols>0? cols: 3;
-			return;
-		}
+	if (PIDX == 2 && core->seltab == 1) {
+		const int cols = core->dbg->regcols;
+		p->cur += cols > 0 ? cols: 3;
+		return;
 	}
 
 	if (p->row_offsets != NULL) {
@@ -847,15 +852,13 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 
 static void cursor_prevrow(RCore *core, bool use_ocur) {
 	RPrint *p = core->print;
-	int row;
 	ut32 roff, prev_roff;
+	int row;
 
-	if (PIDX == 2) {
-		if (core->seltab == 1) {
-			const int cols = core->dbg->regcols;
-			p->cur -= cols>0? cols: 4;
-			return;
-		}
+	if (PIDX == 2 && core->seltab == 1) {
+		const int cols = core->dbg->regcols;
+		p->cur -= cols>0? cols: 4;
+		return;
 	}
 	cursor_ocur (core, use_ocur);
 
@@ -916,6 +919,7 @@ static bool fix_cursor(RCore *core) {
 	int offscreen = (core->cons->rows - 3) * p->cols;
 	bool res = false;
 
+	if (!core->print->cur_enabled) return false;
 	if (core->screen_bounds > 1) {
 		bool off_is_visible = core->offset < core->screen_bounds;
 		bool cur_is_visible = core->offset + p->cur < core->screen_bounds;
@@ -925,8 +929,7 @@ static bool fix_cursor(RCore *core) {
 			// when the cursor is not visible and it's far from the
 			// last visible byte, just seek there.
 			r_core_seek (core, core->offset + p->cur, 1);
-			p->cur = 0;
-			p->ocur = -1;
+			reset_print_cur (p);
 		} else if ((!cur_is_visible && is_close) || !off_is_visible) {
 			RAsmOp op;
 			int sz = r_asm_disassemble (core->assembler,
@@ -1343,6 +1346,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				r_cons_message("No basic blocks in this function. You may want to use 'afb+'.");
 				break;
 			}
+			reset_print_cur (core->print);
 			ocolor = r_config_get_i (core->config, "scr.color");
 			r_core_visual_graph (core, NULL, NULL, true);
 			r_config_set_i (core->config, "scr.color", ocolor);
@@ -1731,6 +1735,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		ut64 off = r_io_sundo (core->io, core->offset);
 		if (off != UT64_MAX) {
 			r_core_visual_seek_animation (core, off);
+			reset_print_cur (core->print);
 		} else {
 			eprintf ("Cannot undo\n");
 		}
@@ -1741,6 +1746,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		ut64 off = r_io_sundo_redo (core->io);
 		if (off != UT64_MAX) {
 			r_core_visual_seek_animation (core, off);
+			reset_print_cur (core->print);
 		}
 		}
 		break;
@@ -2020,11 +2026,8 @@ R_API int r_core_visual(RCore *core, const char *input) {
 
 	core->print->flags |= R_PRINT_FLAGS_ADDRMOD;
 	do {
-		skip = false;
-		if (core->print->cur_enabled) {
-			// update the cursor when it's not visible anymore
-			skip |= fix_cursor (core);
-		}
+		// update the cursor when it's not visible anymore
+		skip = fix_cursor (core);
 
 		if (core->printidx == 2) {
 			static char debugstr[512];
