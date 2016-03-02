@@ -87,8 +87,6 @@ BOOL CommandStop_(libbochs_t * b) {
 	HMODULE hKernel;
 	DWORD ExitCode;
 	DWORD apiOffset = 0;
-	DWORD dwRead,aval,leftm;
-	int veces = 100;
 	char buffer[] = { 0x68, 0x00, 0x00, 0x00, 0x00,	//		push    0
 		0x68, 0x00, 0x00, 0x00, 0x00,	//      push    0
 		0xE8, 0x00, 0x00, 0x00, 0x00,	//      call    $ + 5
@@ -102,11 +100,15 @@ BOOL CommandStop_(libbochs_t * b) {
 	apiOffset = (DWORD)GetProcAddress(hKernel, "GenerateConsoleCtrlEvent");
 	*((DWORD *)&buffer[20]) = apiOffset;
 	ExitCode = EjecutaThreadRemoto_(b, &buffer, 0x1Eu, 0, &ExitCode) && ExitCode;
+	return ExitCode;
+}
+BOOL EsperaRespuesta_(libbochs_t *b) {
+	int veces = 0;
+	DWORD dwRead,aval,leftm;
+	veces = 100; // reintenta durante 10 segundos
 	ResetBuffer_(b);	
-	eprintf("Esperando parada.\n");
-	veces=100; // reintenta durante 10 segundos
 	do {
-		while(PeekNamedPipe(b->hReadPipeIn,NULL,NULL,NULL,&aval,&leftm)) {
+		while(PeekNamedPipe(b->hReadPipeIn,NULL,0,NULL,&aval,&leftm)) {
 			if (aval>0) {
 				if (!ReadFile(b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0))
 				{
@@ -123,54 +125,25 @@ BOOL CommandStop_(libbochs_t * b) {
 		if (strstr(b->data, "<bochs:")) {
 			break;
 		}
-		Sleep(100);
+		Sleep(10);
 	} while(--veces);
-	return ExitCode;
+	return TRUE;
 }
-
-/*VOID EnviaComando_(libbochs_t* b, char * comando) {
+VOID EnviaComando_(libbochs_t* b, char * comando, BOOL bWait) {
 	//eprintf("Enviando comando: %s\n",comando);
-	ResetBuffer_(b);
-	ZeroMemory(cmdBuff,128);
-	sizeSend=sprintf(cmdBuff,"%s\n",comando);
-	SetEvent(b->ghWriteEvent);
-	Sleep(10);
-}*/
-VOID EnviaComando_(libbochs_t* b, char * comando) {
-	//eprintf("Enviando comando: %s\n",comando);
-	DWORD aval,leftm,dwWritten,dwRead;
-	int veces = 100;
+	DWORD dwWritten;
 	ResetBuffer_(b);
 	ZeroMemory(cmdBuff,128);
 	sizeSend=sprintf(cmdBuff,"%s\n",comando);
 	WriteFile(b->hWritePipeOut, cmdBuff, strlen(cmdBuff), &dwWritten, NULL);
-	Sleep(10);
-	do {
-		while(PeekNamedPipe(b->hReadPipeIn,NULL,NULL,NULL,&aval,&leftm)) {
-			if (aval>0) {
-				if (!ReadFile(b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0))
-				{
-					printf("\n\n!!ERROR Leyendo datos del pipe\n\n");
-					break;
-				}
-				//eprintf("mythreadlector: %x %x\n",NumberOfBytesRead,punteroBuffer);
-				if (dwRead)
-					b->punteroBuffer +=dwRead; 
-			}
-			else
-				break;
-		}
-		if (strstr(b->data, "<bochs:")) {
-			break;
-		}
-		Sleep(100);
-	} while(--veces);
+	if (bWait)
+		EsperaRespuesta_(b);
 }
 int bochs_read_(libbochs_t* b,ut64 addr,int count,ut8 * buf) {
 	char buff[128];
 	int lenRec = 0,i = 0,ini = 0, fin = 0, pbuf = 0;
 	sprintf(buff,"xp /%imb 0x%016"PFMT64x"",count,addr);
-	EnviaComando_(b,buff);
+	EnviaComando_(b,buff,TRUE);
 	lenRec=strlen(b->data);
 	if (!strncmp(b->data, "[bochs]:", 8)) {
 		i += 10; // nos sitiamos en la siguiente linea.
@@ -250,7 +223,7 @@ BOOL bochs_open_(libbochs_t* b ,char * rutaBochs, char * rutaConfig) {
 			eprintf("Esperando inicializacion de bochs.\n");
 			veces=100; // reintenta durante 10 segundos
 			do {
-				while(PeekNamedPipe(b->hReadPipeIn,NULL,NULL,NULL,&aval,&leftm)) {
+				while(PeekNamedPipe(b->hReadPipeIn,NULL,0,NULL,&aval,&leftm)) {
 					if (aval>0) {
 						if (!ReadFile(b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0))
 						{

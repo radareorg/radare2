@@ -26,7 +26,7 @@ static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	if (set) {
 		//eprintf("[set] bochs_breakpoint %016"PFMT64x"\n",bp->addr);
 		sprintf(cmd,"lb 0x%x",(DWORD)bp->addr);
-		EnviaComando_(desc,cmd);
+		EnviaComando_(desc,cmd,TRUE);
 		bCapturaRegs = TRUE;
 	}
 	else
@@ -38,7 +38,7 @@ static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 		  2 lbreakpoint    keep y   0x0000000000007c00
 		<bochs:39>
 		*/
-		EnviaComando_(desc,"blist");
+		EnviaComando_(desc,"blist",TRUE);
 		lenRec = strlen(desc->data);
 		a=-1;
 		if (!strncmp(desc->data, "Num Type", 8))
@@ -64,7 +64,7 @@ static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 		{
 			sprintf(bufcmd,"d %i",n);
 			//eprintf("[unset] Break point localizado indice = %x (%x) %s \n",n,(DWORD)a,bufcmd);
-			EnviaComando_(desc,bufcmd);
+			EnviaComando_(desc,bufcmd,TRUE);
 		}
 
 	}
@@ -80,7 +80,7 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	ut64 val=0, valRIP = 0;
 	ut16 val1=0;
 	if (bCapturaRegs == TRUE) {
-		EnviaComando_(desc,"regs");
+		EnviaComando_(desc,"regs",TRUE);
 		//r14: 00000000_00000000 r15: 00000000_00000000
 		//rip: 00000000_0000e07b
 		//eflags 0x00000046: id vip vif ac vm rf nt IOPL=0 of df if tf sf ZF af PF cf
@@ -114,7 +114,7 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				i++;
 		}
 
-		EnviaComando_(desc,"info cpu");
+		EnviaComando_(desc,"info cpu",TRUE);
 		if (strstr(desc->data,"PC_32"))
 		{
 			bAjusta = TRUE;
@@ -150,7 +150,7 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		   gdtr:base=0x0000000000000000, limit=0xffff
 		   idtr:base=0x0000000000000000, limit=0xffff
 		*/
-		EnviaComando_(desc,"sreg");
+		EnviaComando_(desc,"sreg",TRUE);
 		
 		pos = 0x38;	
 		char * s [] = { "es:0x", "cs:0x","ss:0x","ds:0x","fs:0x","gs:0x",0};
@@ -263,7 +263,7 @@ static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
 
 static int r_debug_bochs_step(RDebug *dbg) {
 	//eprintf("bochs_step\n");
-	EnviaComando_(desc,"s");
+	EnviaComando_(desc,"s",TRUE);
 	bCapturaRegs = TRUE;
 	bStep = TRUE;
 	return true;
@@ -271,7 +271,7 @@ static int r_debug_bochs_step(RDebug *dbg) {
 
 static int r_debug_bochs_continue(RDebug *dbg, int pid, int tid, int sig) {
 	//eprintf("bochs_continue:\n");
-	EnviaComando_(desc,"c");
+	EnviaComando_(desc,"c",FALSE);
 	bCapturaRegs = TRUE;
 	bBreak = FALSE;
 	return true;
@@ -287,36 +287,33 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 	//eprintf("bochs_wait:\n");
 	char strIP[19];
 	int ini = 0, fin = 0, i = 0;
-	r_cons_break (bochs_debug_break, dbg);
-	i =500;
-	do {
-	   	if (bStep) {
-		    if (!strncmp(desc->data,"Next at t=",10)) {
-			//eprintf("parada por STEP  %s\n",desc->data);
-		    	bStep = FALSE;
-			break;
-		    }
-		}
-		else if (bBreak) {
-		    if (desc->data[0]!=0) {
-			//eprintf("parada por ctrl+c  %s\n",desc->data);
-		    	bBreak = FALSE;
-			break;
-		    }
-		    i--;
-		    if (!i) {
-		    	bBreak = FALSE;
-			eprintf("parada por ctrl+c sin respuesta.\n");
-			break;
-		    }
-		}
-		// leer buffer para comprobar si hay parada por breakpoint
-		else if(desc->data[0]!=0) {	
-			//eprintf("parada por break point %s\n",desc->data);
-			break;
-		}
-		Sleep(100);
-	} while(1);
+	if (bStep) {
+		bStep = FALSE;
+	} else {
+		r_cons_break (bochs_debug_break, dbg);
+		i =500;
+		do {
+			EsperaRespuesta_(desc);
+			if (bBreak) {
+				if (desc->data[0]!=0) {
+					//eprintf("parada por ctrl+c  %s\n",desc->data);
+					bBreak = FALSE;
+					break;
+				}
+				i--;
+				if (!i) {
+					bBreak = FALSE;
+					eprintf("parada por ctrl+c sin respuesta.\n");
+					break;
+				}
+			}
+			// leer buffer para comprobar si hay parada por breakpoint
+			else if(desc->data[0]!=0) {	
+				//eprintf("parada por break point %s\n",desc->data);
+				break;
+			}
+		} while(1);
+	}
 	i=0;
 	// Next at t=394241428
 	// (0) [0x000000337635] 0020:0000000000337635 (unk. ctxt): add eax, esi              ; 03c6	

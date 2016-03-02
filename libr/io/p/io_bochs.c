@@ -118,7 +118,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf("Enviando comando bochs\n");
 		//EnviaComando_(&cmd[1]);
 		//io->cb_printf ("%s\n", lpBuffer);
-		EnviaComando_(desc,&cmd[1]);
+		EnviaComando_(desc,&cmd[1],TRUE);
 		io->cb_printf ("%s\n", desc->data);
 		return 1;
 	} else if (!strncmp (cmd, "dobreak", 7)) {

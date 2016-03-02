@@ -19,10 +19,11 @@ typedef struct libbochs_t {
 
 //DWORD WINAPI MyThLector_(LPVOID lpParam)
 //DWORD WINAPI MyThEscritor_(LPVOID lpParam)
+BOOL EsperaRespuesta_(libbochs_t *b);
 int EjecutaThreadRemoto_(libbochs_t* b, LPVOID lpBuffer, DWORD dwSize, int a4, LPDWORD lpExitCode);
 void ResetBuffer_(libbochs_t* b);
 BOOL CommandStop_(libbochs_t * b);
-VOID EnviaComando_(libbochs_t* b, char * comando);
+VOID EnviaComando_(libbochs_t* b, char * comando,BOOL bWait);
 int bochs_read_(libbochs_t* b,ut64 addr,int count,ut8 * buf);
 void bochs_close_(libbochs_t* b);
 BOOL bochs_open_(libbochs_t* b ,char * rutaBochs, char * rutaConfig);
