@@ -1,3 +1,4 @@
+
 /* libgdbr - LGPL - Copyright 2014 - defragger */
 
 #include "libbochs.h"
@@ -86,6 +87,8 @@ BOOL CommandStop_(libbochs_t * b) {
 	HMODULE hKernel;
 	DWORD ExitCode;
 	DWORD apiOffset = 0;
+	DWORD dwRead,aval,leftm;
+	int veces = 100;
 	char buffer[] = { 0x68, 0x00, 0x00, 0x00, 0x00,	//		push    0
 		0x68, 0x00, 0x00, 0x00, 0x00,	//      push    0
 		0xE8, 0x00, 0x00, 0x00, 0x00,	//      call    $ + 5
@@ -100,6 +103,28 @@ BOOL CommandStop_(libbochs_t * b) {
 	*((DWORD *)&buffer[20]) = apiOffset;
 	ExitCode = EjecutaThreadRemoto_(b, &buffer, 0x1Eu, 0, &ExitCode) && ExitCode;
 	ResetBuffer_(b);	
+	eprintf("Esperando parada.\n");
+	veces=100; // reintenta durante 10 segundos
+	do {
+		while(PeekNamedPipe(b->hReadPipeIn,NULL,NULL,NULL,&aval,&leftm)) {
+			if (aval>0) {
+				if (!ReadFile(b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0))
+				{
+					printf("\n\n!!ERROR Leyendo datos del pipe\n\n");
+					break;
+				}
+				//eprintf("mythreadlector: %x %x\n",NumberOfBytesRead,punteroBuffer);
+				if (dwRead)
+					b->punteroBuffer +=dwRead; 
+			}
+			else
+				break;
+		}
+		if (strstr(b->data, "<bochs:")) {
+			break;
+		}
+		Sleep(100);
+	} while(--veces);
 	return ExitCode;
 }
 
@@ -114,25 +139,32 @@ BOOL CommandStop_(libbochs_t * b) {
 VOID EnviaComando_(libbochs_t* b, char * comando) {
 	//eprintf("Enviando comando: %s\n",comando);
 	DWORD aval,leftm,dwWritten,dwRead;
+	int veces = 100;
 	ResetBuffer_(b);
 	ZeroMemory(cmdBuff,128);
 	sizeSend=sprintf(cmdBuff,"%s\n",comando);
 	WriteFile(b->hWritePipeOut, cmdBuff, strlen(cmdBuff), &dwWritten, NULL);
 	Sleep(10);
-	while(PeekNamedPipe(b->hReadPipeIn,NULL,NULL,NULL,&aval,&leftm)) {
-		if (aval>0) {
-			if (!ReadFile(b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0))
-			{
-				printf("\n\n!!ERROR Leyendo datos del pipe\n\n");
-				break;
+	do {
+		while(PeekNamedPipe(b->hReadPipeIn,NULL,NULL,NULL,&aval,&leftm)) {
+			if (aval>0) {
+				if (!ReadFile(b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0))
+				{
+					printf("\n\n!!ERROR Leyendo datos del pipe\n\n");
+					break;
+				}
+				//eprintf("mythreadlector: %x %x\n",NumberOfBytesRead,punteroBuffer);
+				if (dwRead)
+					b->punteroBuffer +=dwRead; 
 			}
-			//eprintf("mythreadlector: %x %x\n",NumberOfBytesRead,punteroBuffer);
-			if (dwRead)
-				b->punteroBuffer +=dwRead; 
+			else
+				break;
 		}
-		else
+		if (strstr(b->data, "<bochs:")) {
 			break;
-	}
+		}
+		Sleep(100);
+	} while(--veces);
 }
 int bochs_read_(libbochs_t* b,ut64 addr,int count,ut8 * buf) {
 	char buff[128];
@@ -216,25 +248,25 @@ BOOL bochs_open_(libbochs_t* b ,char * rutaBochs, char * rutaConfig) {
 			//CreateThread(NULL, 0, MyThEscritor_, b, 0, 0);
 			ResetBuffer_(b);
 			eprintf("Esperando inicializacion de bochs.\n");
-			while(PeekNamedPipe(b->hReadPipeIn,NULL,NULL,NULL,&aval,&leftm)) {
-				if (aval>0) {
-					if (!ReadFile(b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0))
-					{
-						printf("\n\n!!ERROR Leyendo datos del pipe\n\n");
-						break;
-					}
-					//eprintf("mythreadlector: %x %x\n",NumberOfBytesRead,punteroBuffer);
-					if (dwRead)
-						b->punteroBuffer +=dwRead; 
-				}
-				else
-					break;
-			}
-			
-			eprintf(" leido = %s\n",b->data);
-
 			veces=100; // reintenta durante 10 segundos
 			do {
+				while(PeekNamedPipe(b->hReadPipeIn,NULL,NULL,NULL,&aval,&leftm)) {
+					if (aval>0) {
+						if (!ReadFile(b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0))
+						{
+							printf("\n\n!!ERROR Leyendo datos del pipe\n\n");
+							break;
+						}
+						//eprintf("mythreadlector: %x %x\n",NumberOfBytesRead,punteroBuffer);
+						if (dwRead)
+							b->punteroBuffer +=dwRead; 
+					}
+					else
+						break;
+				}
+
+				eprintf(" leido = %s\n",b->data);
+
 				if (strstr(b->data, "<bochs:1>")) {
 					eprintf("Inicializacion completada.\n%s\n",b->data);
 					break;

@@ -307,6 +307,7 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 		    if (!i) {
 		    	bBreak = FALSE;
 			eprintf("parada por ctrl+c sin respuesta.\n");
+			break;
 		    }
 		}
 		// leer buffer para comprobar si hay parada por breakpoint
