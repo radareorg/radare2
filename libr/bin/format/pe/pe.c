@@ -160,7 +160,6 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 				const char* dll_name,
 				PE_DWord OriginalFirstThunk,
 				PE_DWord FirstThunk) {
-
 	char import_name[PE_NAME_LENGTH + 1];
 	char name[PE_NAME_LENGTH + 1];
 	PE_Word import_hint, import_ordinal = 0;
@@ -201,7 +200,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 
 				// remove the trailling ".dll"
 				size_t len = strlen (symdllname);
-				r_str_case(symdllname, 0);
+				r_str_case (symdllname, 0);
 				len = len < 4 ? 0 : len - 4;
 				symdllname[len] = 0;
 

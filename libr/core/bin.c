@@ -740,7 +740,6 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 
 static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
 	char *reloc_name = NULL;
-	int ret = -1;
 	if (reloc->import) {
 		reloc_name = r_str_newf ("reloc.%s_%d",
 				reloc->import->name, (int)(addr & 0xff));
@@ -773,7 +772,7 @@ static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 
 			r_str_case (module, false);
 			if (import) {
-				char *filename;
+				char *filename = NULL;
 				int ordinal;
 				*import = 0;
 				import += strlen (TOKEN);
@@ -784,6 +783,7 @@ static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 					free (*sdb_module);
 					*sdb_module = strdup (module);
 					/* always lowercase */
+					filename = sdb_fmt (1, "%s.sdb", module);
 					r_str_case (filename, false);
 					if (r_file_exists (filename)) {
 						*db = sdb_new (NULL, filename, 0);
