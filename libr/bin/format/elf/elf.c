@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2016 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1231,9 +1231,8 @@ static int read_reloc(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *r, int is
 }
 
 RBinElfReloc* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
-	int res;
+	int res, rel, i, j;
 	size_t reloc_num = 0;
-	size_t i, j, rel;
 	RBinElfReloc *ret = NULL;
 	ut64 section_text_offset = 0LL;
 
