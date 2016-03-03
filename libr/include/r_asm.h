@@ -17,7 +17,8 @@ R_LIB_VERSION_HEADER(r_asm);
 
 #define R_ASM_OPCODES_PATH R2_LIBDIR "/radare2/" R2_VERSION "/opcodes"
 // XXX too big!
-#define R_ASM_BUFSIZE 256
+// the 256th character is left for the null terminator
+#define R_ASM_BUFSIZE 255
 
 /* backward compatibility */
 #define R_ASM_ARCH_NONE R_SYS_ARCH_NONE
@@ -64,9 +65,9 @@ typedef struct r_asm_op_t {
 	int size; // instruction size
 	int payload; // size of payload (opsize = (size-payload))
 	// But this is pretty slow..so maybe we should add some accessors
-	ut8  buf[R_ASM_BUFSIZE];
-	char buf_asm[R_ASM_BUFSIZE];
-	char buf_hex[R_ASM_BUFSIZE];
+	ut8  buf[R_ASM_BUFSIZE+1];
+	char buf_asm[R_ASM_BUFSIZE+1];
+	char buf_hex[R_ASM_BUFSIZE+1];
 } RAsmOp;
 
 typedef struct r_asm_code_t {

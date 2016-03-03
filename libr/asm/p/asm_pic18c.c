@@ -103,15 +103,21 @@ static struct {
 	{0x4, 0x4, "clrwdt", NO_ARG},
 	{0x3, 0x3, "sleep", NO_ARG},
 	{0x0, 0x0, "nop", NO_ARG},
-	{-1, -1, "invalid", NO_ARG},
+	{0x0, 0xffff, "invalid", NO_ARG},
 };
 
 static int pic_disassem(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 	int i;
+	if(l<2){//well noone loves reading bitstream of size zero or 1 !!
+		strncpy (op->buf_asm,"invalid", R_ASM_BUFSIZE);
+		op->size = l;
+		return -1;
+
+	}
 	ut16 instr = *(ut16 *)b; //instruction
-	for (i = 0; ops[i].opmin != -1 && !(ops[i].opmin == (ops[i].opmin & instr) && ops[i].opmax == (ops[i].opmax | instr)); i++)
-		;
-	if (ops[i].opmin == -1) {
+	// if still redundan code is reported think of this of instr=0x2
+	for (i = 0;ops[i].opmin != (ops[i].opmin & instr) || ops[i].opmax != (ops[i].opmax | instr); i++);
+	if (ops[i].opmin == 0 && ops[i].opmax==0xffff) {
 		strncpy (op->buf_asm, ops[i].name, R_ASM_BUFSIZE);
 		op->size = 2;
 		return -1;
