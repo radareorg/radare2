@@ -1448,6 +1448,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.jmphints", "true", "Show jump hints [numbers] in disasm");
 	SETPREF("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETPREF("asm.decode", "false", "Use code analysis as a disassembler");
+	SETPREF("asm.flgoff", "false", "Show offset in flags");
 	SETPREF("asm.indent", "false", "Indent disassembly based on reflines depth");
 	SETI("asm.indentspace", 2, "How many spaces to indent the code");
 	SETPREF("asm.dwarf", "false", "Show dwarf comment at disassembly");
@@ -1469,6 +1470,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETPREF("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF("asm.offset", "true", "Show offsets at disassembly");
+	SETPREF("asm.spacy", "false", "Spacy disasm after calls and before flags");
 	SETPREF("asm.reloff", "false", "Show relative offsets instead of absolute address in disasm");
 	SETPREF("asm.section", "false", "Show section name before offset");
 	SETPREF("asm.pseudo", "false", "Enable pseudo syntax");
