@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2015 - pancake */
+/* radare - LGPL3 - 2015-2016 - pancake */
 
 #include <r_bin.h>
 
@@ -148,10 +148,10 @@ static void showstr(const char *str, const ut8 *s, int len) {
 
 static RList* symbols(RBinFile *arch) {
 	ut32 *vtable = (ut32*)arch->buf->buf;
+	RList *ret = NULL;
 	const char *name;
 	SMD_Header *hdr;
 	int i;
-	RList *ret = NULL;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -239,8 +239,11 @@ static RList* symbols(RBinFile *arch) {
 		case 62: name = "Reserv3F"; break;
 		default: name = NULL;
 		}
-		if (!name || !vtable[i]) continue;
-		addsym (ret, name, vtable[i]);
+		if (name && vtable[i]) {
+			ut32 addr = 0;
+			r_mem_copyendian (&addr, &vtable[i], sizeof (addr), 0);
+			addsym (ret, name, addr);
+		}
 	}
 	return ret;
 }
