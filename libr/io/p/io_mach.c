@@ -88,7 +88,6 @@ static task_t task_for_pid_workaround(int Pid) {
 	return -1;
 }
 
-
 static task_t pid_to_task(int pid) {
 	task_t task = 0;
 	static task_t old_task = 0;
@@ -196,7 +195,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 			return len;
 	}
 
-	copied = getNextValid(io, fd, io->off) - io->off;
+	copied = getNextValid (io, fd, io->off) - io->off;
 	if (copied < 0) copied = 0;
 
 	while (copied < len) {
@@ -245,8 +244,6 @@ static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
 	vm_region_basic_info_data_64_t info;
 	kr = vm_region_64 (task, &addr, &vmsize, flavor, (vm_region_info_t)&info, &info_count, &object);
 	return (kr != KERN_SUCCESS ? 0 : info.protection);
-
-
 }
 
 static int tsk_pagesize(RIOMach *riom) {
@@ -265,7 +262,6 @@ static vm_address_t tsk_getpagebase(RIOMach *riom, ut64 addr) {
 	vm_address_t pagesize = tsk_pagesize (riom);
 	return (addr & ~(pagesize - 1));
 }
-
 
 static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int perm) {
 	kern_return_t kr;

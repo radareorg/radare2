@@ -770,6 +770,8 @@ static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 			const char *TOKEN = ".dll_Ordinal_";
 			char *module = strdup (reloc->import->name);
 			char *import = strstr (module, TOKEN);
+
+			r_str_case (module, false);
 			if (import) {
 				char *filename;
 				int ordinal;
@@ -781,7 +783,8 @@ static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 					*db = NULL;
 					free (*sdb_module);
 					*sdb_module = strdup (module);
-					filename = sdb_fmt (1, "%s.sdb", module);
+					/* always lowercase */
+					r_str_case (filename, false);
 					if (r_file_exists (filename)) {
 						*db = sdb_new (NULL, filename, 0);
 					} else {
