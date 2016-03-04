@@ -241,7 +241,9 @@ static RList* symbols(RBinFile *arch) {
 		}
 		if (name && vtable[i]) {
 			ut32 addr = 0;
-			r_mem_copyendian (&addr, &vtable[i], sizeof (addr), 0);
+			r_mem_copyendian ((ut8*)&addr,
+				(const ut8*)&vtable[i],
+				sizeof (addr), 0);
 			addsym (ret, name, addr);
 		}
 	}
