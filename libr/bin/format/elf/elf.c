@@ -429,6 +429,8 @@ static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 
 static void store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
+	if (!bin || !bin->shdr)
+		return;
 	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
 		if (bin->shdr[i].sh_type == SHT_GNU_verdef) {
 			store_versioninfo_gnu_verdef (bin, &bin->shdr[i]);
