@@ -1087,7 +1087,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 				handle_print_lines_left (core, ds);
 			}
 			handle_print_offset (core, ds);
-			r_cons_printf (" ");
+			r_cons_printf (";-- ");
 		} else {
 			if (ds->show_functions) {
 				r_cons_printf ((f && ds->at > f->addr)?"| ": "  ");
