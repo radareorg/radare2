@@ -361,17 +361,28 @@ static RBinElfSection* get_section_by_name(struct Elf_(r_bin_elf_obj_t) *bin, co
 
 /* TODO : expose the versioninfo inside RBinObject instead of eprintf */
 
-static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
+static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr, int sz) {
 	int i;
-	const char *section_name = &bin->shstrtab[shdr->sh_name];
+	const char *section_name = "";
 	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
-	const char *link_section_name = &bin->shstrtab[link_shdr->sh_name];
+	const char *link_section_name = "";
 	int num_entries = shdr->sh_size / sizeof (Elf_(Versym));
 	ut8 *data = calloc (num_entries, sizeof (short));
 
+	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
+		section_name = &bin->shstrtab[shdr->sh_name];
+	} else {
+		section_name = "";
+	}
+	if (bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size) {
+		link_section_name = &bin->shstrtab[link_shdr->sh_name];
+	} else {
+		link_section_name = "";
+	}
+
 	eprintf ("Version symbols section '%s' contains %d entries:\n", section_name, num_entries);
 	eprintf (" Addr: 0x%08"PFMT64x"  Offset: 0x%08"PFMT64x"  Link: %x (%s)\n",
-		(ut64)shdr->sh_addr, (ut64)shdr->sh_offset, shdr->sh_link, link_section_name);
+		(ut64)shdr->sh_addr, (ut64)shdr->sh_offset, (ut32)shdr->sh_link, link_section_name);
 	for (i = num_entries; i--;) {
 		//r_buf_read_at (bin->b, , &data[i], 1);
 	}
@@ -392,12 +403,12 @@ static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	free (data);
 }
 
-static void store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
+static void store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr, int sz) {
 	const char *section_name = &bin->shstrtab[shdr->sh_name];
 	eprintf ("Version definition section '%s' contains %d entries:\n", section_name, shdr->sh_info);
 }
 
-static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
+static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr, int sz) {
 	ut8 *need = malloc(shdr->sh_size);
 	const char *section_name = &bin->shstrtab[shdr->sh_name];
 	int i;
@@ -408,7 +419,7 @@ static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 		(ut64)shdr->sh_offset, shdr->sh_link, section_name);
 	//int num_verneed = shdr->sh_size / sizeof (Elf_(Verneed));
 	r_buf_read_at (bin->b, shdr->sh_offset, need, shdr->sh_size);
-	for (i = 0, cnt = 0; cnt < shdr->sh_info; ++cnt) {
+	for (i = 0, cnt = 0; i<sz && cnt < shdr->sh_info; ++cnt) {
 		int j;
 		int isum;
 		ut8 *vstart = need + i;
@@ -418,6 +429,7 @@ static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 		vstart += entry->vn_aux;
 		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt; ++j) {
 			Elf_(Vernaux) *aux = (Elf_(Vernaux)*)(vstart);
+			if (!aux) break;
 			eprintf ("  Flags: %x  Version: %d\n", (ut32)aux->vna_flags, aux->vna_other);
 			isum += aux->vna_next;
 			vstart += aux->vna_next;
@@ -433,11 +445,11 @@ static void store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return;
 	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
 		if (bin->shdr[i].sh_type == SHT_GNU_verdef) {
-			store_versioninfo_gnu_verdef (bin, &bin->shdr[i]);
+			store_versioninfo_gnu_verdef (bin, &bin->shdr[i], bin->shdr->sh_size);
 		} else if (bin->shdr[i].sh_type == SHT_GNU_verneed) {
-			store_versioninfo_gnu_verneed (bin, &bin->shdr[i]);
+			store_versioninfo_gnu_verneed (bin, &bin->shdr[i], bin->shdr->sh_size);
 		} else if (bin->shdr[i].sh_type == SHT_GNU_versym) {
-			store_versioninfo_gnu_versym (bin, &bin->shdr[i]);
+			store_versioninfo_gnu_versym (bin, &bin->shdr[i], bin->shdr->sh_size);
 		}
 	}
 }
