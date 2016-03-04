@@ -518,13 +518,8 @@ int main(int argc, char **argv) {
 		case 'q': rad = R_CORE_BIN_SIMPLE; break;
 		case 'j': rad = R_CORE_BIN_JSON; break;
 		case 'A': set_action (ACTION_LISTARCHS); break;
-		case 'a': if (optarg) arch = optarg; break;
+		case 'a': arch = optarg; break;
 		case 'C':
-			if (!optarg) {
-				eprintf ("Missing argument for -C");
-				r_core_fini (&core);
-				return 1;
-			}
 			set_action (ACTION_CREATE);
 			create = strdup (optarg);
 			break;
@@ -532,7 +527,7 @@ int main(int argc, char **argv) {
 		case 'k': query = optarg; break;
 		case 'K': chksum = optarg; break;
 		case 'c': set_action (ACTION_CLASSES); break;
-		case 'f': if (optarg) arch_name = strdup (optarg); break;
+		case 'f': arch_name = strdup (optarg); break;
 		case 'F': forcebin = optarg; break;
 		case 'b': bits = r_num_math (NULL, optarg); break;
 		case 'm':
@@ -617,19 +612,10 @@ int main(int argc, char **argv) {
 			break;
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
-		case 'N': if (optarg) {
-				  char *q, *p = strdup (optarg);
-				  q = strchr (p, ':');
-				  if (q) {
-					  r_config_set (core.config, "bin.minstr", p);
-					  r_config_set (core.config, "bin.maxstr", q+1);
-				  } else {
-					  r_config_set (core.config, "bin.minstr", optarg);
-				  }
-				  free (p);
-			} else {
-				eprintf ("Missing argument for -N\n");
-			}
+		case 'N':
+			tmp = strchr (optarg, ':');
+			r_config_set (core.config, "bin.minstr", optarg);
+			if (tmp) r_config_set (core.config, "bin.maxstr", tmp + 1);
 			break;
 		case 'h':
 			  r_core_fini (&core);
