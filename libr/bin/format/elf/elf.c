@@ -420,19 +420,26 @@ static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 	//int num_verneed = shdr->sh_size / sizeof (Elf_(Verneed));
 	r_buf_read_at (bin->b, shdr->sh_offset, need, shdr->sh_size);
 	for (i = 0, cnt = 0; i<sz && cnt < shdr->sh_info; ++cnt) {
-		int j;
-		int isum;
+		int j, isum;
 		ut8 *vstart = need + i;
 		Elf_(Verneed) *entry = (Elf_(Verneed)*)(vstart);
 		eprintf ("  %#x: Version: %d", i, entry->vn_version);
 		eprintf ("  Cnt: %d\n", entry->vn_cnt);
 		vstart += entry->vn_aux;
-		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt; ++j) {
+		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt; j++) {
 			Elf_(Vernaux) *aux = (Elf_(Vernaux)*)(vstart);
 			if (!aux) break;
 			eprintf ("  Flags: %x  Version: %d\n", (ut32)aux->vna_flags, aux->vna_other);
-			isum += aux->vna_next;
-			vstart += aux->vna_next;
+			if (aux->vna_next > 0) {
+				isum += aux->vna_next;
+				vstart += aux->vna_next;
+			} else {
+				break;
+			}
+		}
+		if (entry->vn_next < 1) {
+			eprintf ("Invalid next pointer in auxiliary version\n");
+			break;
 		}
 		i += entry->vn_next;
 	}
