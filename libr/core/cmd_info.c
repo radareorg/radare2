@@ -308,6 +308,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'e': RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL); break;
 		case 'M': RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL); break;
 		case 'm': RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL); break;
+		case 'V': RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL); break;
 		case 'z':
 			if (input[1] == 'z') {
 				char *ret;
@@ -452,6 +453,7 @@ static int cmd_info(void *data, const char *input) {
 				"ir|iR", "", "Relocs",
 				"is", "", "Symbols",
 				"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
+				"iV", "", "Display file version info)",
 				"iz", "", "Strings in data sections",
 				"izz", "", "Search for Strings in the whole binary",
 				NULL

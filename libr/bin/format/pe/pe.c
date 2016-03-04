@@ -1360,7 +1360,6 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj
 	curAddr += VS_VERSION_INFO_UTF_16_LEN;
 
 	if (memcmp (vs_VersionInfo->szKey, VS_VERSION_INFO_UTF_16, VS_VERSION_INFO_UTF_16_LEN)) {
-		eprintf ("Warning: check (VS_VERSIONINFO szKey)\n");
 		free_VS_VERSIONINFO(vs_VersionInfo);
 		return NULL;
 	}
