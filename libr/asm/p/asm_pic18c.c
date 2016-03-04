@@ -175,7 +175,7 @@ static int pic_disassem(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 		}
 		op->size = 4;
 		ut32 dword_instr = *(ut32 *)b;
-		if (dword_instr >> 28 != 0b1111) {
+		if (dword_instr >> 28 != 0xf) {
 			strcpy (op->buf_asm, "invalid");
 			return -1;
 		}
@@ -214,7 +214,7 @@ static int pic_disassem(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 			strcpy (op->buf_asm, "invalid");
 			return -1;
 		}
-		ut8 reg_n = (dword_instr >> 4) & 0b11;
+		ut8 reg_n = (dword_instr >> 4) & 0x3;
 		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s, %d", ops[i].name,
 			fsr[reg_n], (dword_instr & 0xf) << 8 |
 					((dword_instr >> 16) & 0xff));
