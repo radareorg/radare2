@@ -359,8 +359,7 @@ static RBinElfSection* get_section_by_name(struct Elf_(r_bin_elf_obj_t) *bin, co
 	return NULL;
 }
 
-//static int offset_from_vaddr(struct Elf_(r_bin_elf_obj_t) *bin, int size) {
-//}
+/* TODO : expose the versioninfo inside RBinObject instead of eprintf */
 
 static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
 	int i;
@@ -369,33 +368,33 @@ static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	const char *link_section_name = &bin->shstrtab[link_shdr->sh_name];
 	int num_entries = shdr->sh_size / sizeof (Elf_(Versym));
 	ut8 *data = calloc (num_entries, sizeof (short));
-	printf ("Version symbols section '%s' contains %d entries:\n", section_name, num_entries);
-	printf (" Addr: %p  Offset: %#x  Link: %x (%s)\n",
-		(void*)shdr->sh_addr, shdr->sh_offset, shdr->sh_link, link_section_name);
+
+	eprintf ("Version symbols section '%s' contains %d entries:\n", section_name, num_entries);
+	eprintf (" Addr: 0x%08"PFMT64x"  Offset: 0x%08"PFMT64x"  Link: %x (%s)\n",
+		(ut64)shdr->sh_addr, (ut64)shdr->sh_offset, shdr->sh_link, link_section_name);
 	for (i = num_entries; i--;) {
 		//r_buf_read_at (bin->b, , &data[i], 1);
 	}
 	for (i = 0; i < num_entries; i += 4) {
 		int j;
-		printf("  %03x:", i);
+		eprintf ("  %03x:", i);
 		for (j = 0; (j < 4) && (i + j) < num_entries; ++j) {
 			if (data[i + j] == 0) {
-				printf ("   0 (*local*)    ");
+				eprintf ("   0 (*local*)    ");
 			} else if (data[i + j] == 1) {
-				printf ("   1 (*global*)    ");
+				eprintf ("   1 (*global*)    ");
 			} else {
-				printf ("%4x%c", data[i + j] & 0x7FFF, data[i + j] & 0x8000 ? 'h' : ' ');
+				eprintf ("%4x%c", data[i + j] & 0x7FFF, data[i + j] & 0x8000 ? 'h' : ' ');
 			}
 		}
-		printf("\n");
+		eprintf ("\n");
 	}
 	free (data);
 }
 
 static void store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
-	Elf_(Verdef) *defs = NULL;
 	const char *section_name = &bin->shstrtab[shdr->sh_name];
-	printf ("Version definition section '%s' contains %d entries:\n", section_name, shdr->sh_info);
+	eprintf ("Version definition section '%s' contains %d entries:\n", section_name, shdr->sh_info);
 }
 
 static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
@@ -403,9 +402,10 @@ static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 	const char *section_name = &bin->shstrtab[shdr->sh_name];
 	int i;
 	int cnt;
-	printf ("Version needs section '%s' contains %d entries:\n", section_name, shdr->sh_info);
-	printf (" Addr: %p", (void*)shdr->sh_addr);
-	printf("  Offset: %#x  Link to section: %x (%s)\n", shdr->sh_offset, shdr->sh_link, section_name);
+	eprintf ("Version needs section '%s' contains %d entries:\n", section_name, shdr->sh_info);
+	eprintf (" Addr: 0x%08"PFMT64x, (ut64)shdr->sh_addr);
+	eprintf (" Offset: 0x%08"PFMT64x"  Link to section: %x (%s)\n",
+		(ut64)shdr->sh_offset, shdr->sh_link, section_name);
 	//int num_verneed = shdr->sh_size / sizeof (Elf_(Verneed));
 	r_buf_read_at (bin->b, shdr->sh_offset, need, shdr->sh_size);
 	for (i = 0, cnt = 0; cnt < shdr->sh_info; ++cnt) {
@@ -413,18 +413,18 @@ static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 		int isum;
 		ut8 *vstart = need + i;
 		Elf_(Verneed) *entry = (Elf_(Verneed)*)(vstart);
-		printf("  %#x: Version: %d", i, entry->vn_version);
-		printf("  Cnt: %d\n", entry->vn_cnt);
+		eprintf ("  %#x: Version: %d", i, entry->vn_version);
+		eprintf ("  Cnt: %d\n", entry->vn_cnt);
 		vstart += entry->vn_aux;
 		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt; ++j) {
 			Elf_(Vernaux) *aux = (Elf_(Vernaux)*)(vstart);
-			printf("  Flags: %s  Version: %d\n", aux->vna_flags, aux->vna_other);
+			eprintf ("  Flags: %x  Version: %d\n", (ut32)aux->vna_flags, aux->vna_other);
 			isum += aux->vna_next;
 			vstart += aux->vna_next;
 		}
 		i += entry->vn_next;
 	}
-	free(need);
+	free (need);
 }
 
 static void store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
