@@ -1447,7 +1447,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			cursor_nextrow (core, true);
 		} else {
 			if (core->screen_bounds > 1 && core->screen_bounds >= core->offset) {
-				r_core_seek (core, core->screen_bounds, 1);
+				ut64 addr = core->screen_bounds;
+				if (core->screen_bounds == core->offset) {
+					addr += r_asm_disassemble (core->assembler, &op, core->block, 32);
+				}
+				r_core_seek (core, addr, 1);
 			} else {
 				r_core_seek (core, core->offset + obs, 1);
 			}
@@ -1483,7 +1487,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (core->print->cur_enabled) {
 			cursor_prevrow (core, true);
 		} else {
-			if (core->screen_bounds >= core->offset) {
+			if (core->screen_bounds > 1 && core->screen_bounds > core->offset) {
 				int delta = (core->screen_bounds - core->offset);
 				if (core->offset >= delta)
 					r_core_seek (core, core->offset - delta, 1);
