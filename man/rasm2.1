@@ -5,7 +5,7 @@
 .Nd radare2 assembler and disassembler tool
 .Sh SYNOPSIS
 .Nm rasm2
-.Op Fl BdDeEfCLvw
+.Op Fl ABdDeEfCLvw
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl c Ar cpu
@@ -22,6 +22,8 @@ This tool uses r_asm to assemble and disassemble files or hexpair strings. It su
 .Bl -tag -width Fl
 .It Fl a Ar arch
 Set architecture plugin
+.It Fl A
+Show analysis information of given hexpair string
 .It Fl b Ar bits
 Set architecture bits
 .It Fl B
