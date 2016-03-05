@@ -5,12 +5,14 @@
 static RBuffer *build (REgg *egg) {
 	RBuffer *buf, *sc;
 	ut8 aux[32], nkey;
+	const char *default_key="ff";//default key
 	int i;
 	char *key = r_egg_option_get (egg, "key");
 
 	if (!key || !*key) {
-		eprintf ("Invalid key (null)\n");
-		return R_FALSE;
+		key=default_key;
+		eprintf("Xor key not provided\n");
+		eprintf("Using (%s) as the key\n",key);
 	}
 	nkey = r_num_math (NULL, key);
 	if (nkey == 0) {
