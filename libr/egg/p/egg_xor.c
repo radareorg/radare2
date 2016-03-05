@@ -10,8 +10,8 @@ static RBuffer *build (REgg *egg) {
 	char *key = r_egg_option_get (egg, "key");
 
 	if (!key || !*key) {
-		key=default_key;
-		printf("XOR key not provided. Using (%s) as the key\n",key);
+		key = default_key;
+		printf ("XOR key not provided. Using (%s) as the key\n",key);
 	}
 	nkey = r_num_math (NULL, key);
 	if (nkey == 0) {
