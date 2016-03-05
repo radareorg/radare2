@@ -5,7 +5,7 @@
 static RBuffer *build (REgg *egg) {
 	RBuffer *buf, *sc;
 	ut8 aux[32], nkey;
-	const char *default_key="11";//default key
+	const char *default_key="0xff";//default key
 	int i;
 	char *key = r_egg_option_get (egg, "key");
 
