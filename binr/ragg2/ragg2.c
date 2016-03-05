@@ -82,7 +82,7 @@ static int create (const char *format, const char *arch, int bits, const ut8 *co
 }
 
 static int openfile (const char *f, int x) {
-	int fd = open (f, O_RDWR|O_CREAT, 0644);
+	int fd = open (f, O_RDWR | O_CREAT, 0644);
 	if (fd == -1) {
 		fd = open (f, O_RDWR);
 		if (fd == -1) return -1;
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
 	char *shellcode = NULL;
 	char *encoder = NULL;
 	char *sequence = NULL;
-	int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
+	int bits = (R_SYS_BITS & R_SYS_BITS_64) ? 64 : 32;
 	int fmt = 0;
 	const char *ofile = NULL;
 	int ofileauto = 0;
@@ -154,9 +154,9 @@ int main(int argc, char **argv) {
 					ut8 *b;
 					*p++ = 0;
 					off = r_num_math (NULL, arg);
-					b = malloc (strlen (optarg)+1);
+					b = malloc (strlen (optarg) + 1);
 					len = r_hex_str2bin (p, b);
-					if (len>0) r_egg_patch (egg, off, (const ut8*)b, len);
+					if (len > 0) r_egg_patch (egg, off, (const ut8*)b, len);
 					else eprintf ("Invalid hexstr for -w\n");
 					free (b);
 				} else eprintf ("Missing colon in -w\n");
@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
 			if (p) {
 				*p = 0;
 				off = r_num_math (NULL, optarg);
-				n = r_num_math (NULL, p+1);
+				n = r_num_math (NULL, p + 1);
 				*p = ':';
 				// TODO: honor endianness here
 				r_egg_patch (egg, off, (const ut8*)&n, 4);
@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
 			char *p = strchr (optarg, ':');
 			if (p) {
 				ut64 n, off = r_num_math (NULL, optarg);
-				n = r_num_math (NULL, p+1);
+				n = r_num_math (NULL, p + 1);
 				// TODO: honor endianness here
 				r_egg_patch (egg, off, (const ut8*)&n, 8);
 			} else eprintf ("Missing colon in -d\n");
@@ -220,8 +220,8 @@ int main(int argc, char **argv) {
 			{
 			char *p = strchr (optarg, '=');
 			if (p) {
-				*p=0;
-				r_egg_option_set (egg, optarg, p+1);
+				*p = 0;
+				r_egg_option_set (egg, optarg, p + 1);
 			} else r_egg_option_set (egg, optarg, "true");
 			}
 			break;
@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
 		if (!strcmp (file, "-")) {
 			char buf[1024];
 			for (;;) {
-				fgets (buf, sizeof (buf)-1, stdin);
+				fgets (buf, sizeof (buf) - 1, stdin);
 				if (feof (stdin)) break;
 				r_egg_load (egg, buf, 0);
 			}
@@ -328,7 +328,7 @@ int main(int argc, char **argv) {
 	if (contents) {
 		int l;
 		char *buf = r_file_slurp (contents, &l);
-		if (buf && l>0) {
+		if (buf && l > 0) {
 			r_egg_raw (egg, (const ut8*)buf, l);
 		} else eprintf ("Error loading '%s'\n", contents);
 		free (buf);
@@ -344,9 +344,9 @@ int main(int argc, char **argv) {
 
 	// add raw bytes
 	if (bytes) {
-		ut8 *b = malloc (strlen (bytes)+1);
+		ut8 *b = malloc (strlen (bytes) + 1);
 		int len = r_hex_str2bin (bytes, b);
-		if (len>0) {
+		if (len > 0) {
 			if (!r_egg_raw (egg, b, len)) {
 				eprintf ("Unknown '%s'\n", shellcode);
 				return 1;
@@ -363,7 +363,7 @@ int main(int argc, char **argv) {
 		if (file) {
 			char *o, *q, *p = strdup (file);
 			if ( (o = strchr (p, '.')) ) {
-				while ( (q = strchr (o+1, '.')) )
+				while ( (q = strchr (o + 1, '.')) )
 					o = q;
 				*o = 0;
 				fd = openfile (p, ISEXEC);
@@ -428,11 +428,11 @@ int main(int argc, char **argv) {
 			case 'r':
 				if (show_str) {
 					printf ("\"");
-					for (i=0; i<b->length; i++)
+					for (i = 0; i < b->length; i++)
 						printf ("\\x%02x", b->buf[i]);
 					printf ("\"\n");
 				} else if (show_hex) {
-					for (i=0; i<b->length; i++)
+					for (i = 0; i < b->length; i++)
 						printf ("%02x", b->buf[i]);
 					printf ("\n");
 				} // else show_raw is_above()
