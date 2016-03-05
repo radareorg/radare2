@@ -64,17 +64,17 @@ static void rasm2_list(RAsm *a, const char *arch) {
 			if (h->cpus && !strcmp (arch, h->name)) {
 				char *c = strdup (h->cpus);
 				int n = r_str_split (c, ',');
-				for (i=0;i<n;i++)
+				for (i = 0; i < n; i++)
 					printf ("%s\n", r_str_word_get0 (c, i));
 				free (c);
 				break;
 			}
 		} else {
 			bits[0] = 0;
-			if (h->bits&8) strcat (bits, "8 ");
-			if (h->bits&16) strcat (bits, "16 ");
-			if (h->bits&32) strcat (bits, "32 ");
-			if (h->bits&64) strcat (bits, "64 ");
+			if (h->bits & 8) strcat (bits, "8 ");
+			if (h->bits & 16) strcat (bits, "16 ");
+			if (h->bits & 32) strcat (bits, "32 ");
+			if (h->bits & 64) strcat (bits, "64 ");
 			feat = "__";
 			if (h->assemble && h->disassemble)  feat = "ad";
 			if (h->assemble && !h->disassemble) feat = "a_";
@@ -82,19 +82,19 @@ static void rasm2_list(RAsm *a, const char *arch) {
 			feat2 = has_esil (anal, h->name);
 			printf ("%s%s  %-9s  %-11s %-7s %s\n",
 				feat, feat2, bits, h->name,
-				h->license?h->license:"unknown", h->desc);
+				h->license ? h->license : "unknown", h->desc);
 		}
 	}
 }
  // TODO: move into libr/anal/stack.c ?
 
 static char *stackop2str(int type) {
-        switch (type) {
-	case R_ANAL_STACK_NULL:     return strdup ("null");
-	case R_ANAL_STACK_NOP:      return strdup ("nop");
+	switch (type) {
+	case R_ANAL_STACK_NULL: return strdup ("null");
+	case R_ANAL_STACK_NOP: return strdup ("nop");
 	//case R_ANAL_STACK_INCSTACK: return strdup ("incstack");
-	case R_ANAL_STACK_GET:      return strdup ("get");
-	case R_ANAL_STACK_SET:      return strdup ("set");
+	case R_ANAL_STACK_GET: return strdup ("get");
+	case R_ANAL_STACK_SET: return strdup ("set");
         }
         return strdup ("unknown");
 }
@@ -174,7 +174,7 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 		len /= 8;
 
 	if (bin) {
-		if (len<0) return false;
+		if (len < 0) return false;
 		clen = len; // XXX
 		data = (ut8*)buf;
 	} else if (ascii) {
@@ -199,7 +199,7 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 			if (r_anal_op (anal, &aop, offset, data + ret, len - ret) > 0) {
 				printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
 			}
-			if (aop.size<1) {
+			if (aop.size < 1) {
 				eprintf ("Invalid\n");
 				break;
 			}
@@ -211,7 +211,7 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 		r_asm_set_pc (a, offset);
 		while ((len - ret) > 0) {
 			int dr = r_asm_disassemble (a, &op, data+ret, len-ret);
-			if (dr == -1 || op.size<1) {
+			if (dr == -1 || op.size < 1) {
 				op.size = 1;
 				strcpy (op.buf_asm, "invalid");
 				sprintf (op.buf_hex, "%02x", data[ret]);
@@ -238,10 +238,10 @@ static void print_buf(char *str) {
 	int i;
 	if (coutput) {
 		printf ("\"");
-		for (i=1; *str; str+=2, i+=2) {
-			if (!(i%41)) {
+		for (i = 1; *str; str += 2, i += 2) {
+			if (!(i % 41)) {
 				printf ("\" \\\n\"");
-				i=1;
+				i = 1;
 			}
 			printf ("\\x%c%c", *str, str[1]);
 		}
@@ -262,11 +262,11 @@ static int rasm_asm(const char *buf, ut64 offset, ut64 len, int bits, int bin) {
 			write (1, acode->buf, acode->len);
 		} else {
 			int b = acode->len;
-			if (bits==1) {
-				int bytes = (b/8)+1;
-				for (i=0; i<bytes; i++)
-					for (j=0; j<8 && b--; j++)
-						printf ("%c", (acode->buf[i] & (1<<j))?'1':'0');
+			if (bits == 1) {
+				int bytes = (b / 8) + 1;
+				for (i = 0; i < bytes; i++)
+					for (j = 0; j < 8 && b--; j++)
+						printf ("%c", (acode->buf[i] & (1 << j)) ? '1' : '0');
 				printf ("\n");
 			} else print_buf (acode->buf_hex);
 		}
@@ -298,11 +298,11 @@ int main(int argc, char *argv[]) {
 	unsigned char buf[R_ASM_BUFSIZE];
 	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL, *tmp;
 	ut64 offset = 0;
-	int fd =-1, dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
+	int fd = -1, dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
 	ut64 len = 0, idx = 0, skip = 0;
 	bool analinfo = false;
 
-	if (argc<2)
+	if (argc < 2)
 		return rasm_show_help (0);
 
 	a = r_asm_new ();
@@ -415,6 +415,9 @@ int main(int argc, char *argv[]) {
 		case 'w':
 			whatsop = true;
 			break;
+		default:
+			ret = rasm_show_help (0);
+			goto beach;
 		}
 	}
 
@@ -439,8 +442,8 @@ int main(int argc, char *argv[]) {
 		goto beach;
 	}
 	r_asm_set_cpu (a, cpu);
-	r_asm_set_bits (a, (env_bits && *env_bits)? atoi (env_bits): bits);
-	r_anal_set_bits (anal, (env_bits && *env_bits)? atoi (env_bits): bits);
+	r_asm_set_bits (a, (env_bits && *env_bits) ? atoi (env_bits) : bits);
+	r_anal_set_bits (anal, (env_bits && *env_bits) ? atoi (env_bits) : bits);
 	a->syscall = r_syscall_new ();
 	r_syscall_setup (a->syscall, arch, kernel, bits);
 
@@ -459,7 +462,7 @@ int main(int argc, char *argv[]) {
 		if (p) {
 			*p = 0;
 			if (*filters) r_asm_filter_input (a, filters);
-			if (p[1]) r_asm_filter_output (a, p+1);
+			if (p[1]) r_asm_filter_output (a, p + 1);
 			*p = ':';
 		} else {
 			if (dis) r_asm_filter_output (a, filters);
@@ -471,16 +474,16 @@ int main(int argc, char *argv[]) {
 		char *content;
 		int length = 0;
 		if (!strcmp (file, "-")) {
-			ret = read (0, buf, sizeof (buf)-1);
+			ret = read (0, buf, sizeof (buf) - 1);
 			if (ret == R_ASM_BUFSIZE)
 				eprintf ("rasm2: Cannot slurp all stdin data\n");
 			if (ret >= 0) // only for text
 				buf[ret] = '\0';
 			len = ret;
 			if (dis) {
-				if (skip && length>skip) {
+				if (skip && length > skip) {
 					if (bin) {
-						memmove (buf, buf+skip, length-skip);
+						memmove (buf, buf + skip, length - skip);
 						length -= skip;
 					}
 				}
@@ -494,12 +497,12 @@ int main(int argc, char *argv[]) {
 		} else {
 			content = r_file_slurp (file, &length);
 			if (content) {
-				if (len && len>0 && len<length)
+				if (len && len > 0 && len < length)
 					length = len;
 				content[length] = '\0';
-				if (skip && length>skip) {
+				if (skip && length > skip) {
 					if (bin) {
-						memmove (content, content+skip, length-skip);
+						memmove (content, content + skip, length - skip);
 						length -= skip;
 					}
 				}
@@ -522,23 +525,23 @@ int main(int argc, char *argv[]) {
 		if (!strcmp (argv[optind], "-")) {
 			int length;
 			do {
-				length = read (0, buf, sizeof (buf)-1);
-				if (length<1) break;
-				if (len>0 && len < length)
+				length = read (0, buf, sizeof (buf) - 1);
+				if (length < 1) break;
+				if (len > 0 && len < length)
 					length = len;
 				buf[length] = 0;
 				if ((!bin || !dis) && feof (stdin))
 					break;
-				if (skip && length>skip) {
+				if (skip && length > skip) {
 					if (bin) {
-						memmove (buf, buf+skip, length-skip+1);
+						memmove (buf, buf + skip, length - skip + 1);
 						length -= skip;
 					}
 				}
 				if (!bin || !dis) {
 					int buflen = strlen ((const char *)buf);
-					if (buf[buflen]=='\n')
-						buf[buflen-1]='\0';
+					if (buf[buflen] == '\n')
+						buf[buflen - 1]='\0';
 				}
 				if (dis) {
 					ret = rasm_disasm ((char *)buf, offset, length, a->bits, ascii, bin, dis - 1);
@@ -548,17 +551,17 @@ int main(int argc, char *argv[]) {
 				idx += ret;
 				offset += ret;
 				if (!ret) goto beach;
-			} while (!len || idx<length);
+			} while (!len || idx < length);
 			ret = idx;
 			goto beach;
 		}
 		if (dis) {
 			char *buf = argv[optind];
 			len = strlen (buf);
-			if (skip && len>skip) {
+			if (skip && len > skip) {
 				skip *= 2;
 				//eprintf ("SKIP (%s) (%lld)\n", buf, skip);
-				memmove (buf, buf+skip, len-skip);
+				memmove (buf, buf + skip, len - skip);
 				len -= skip;
 				buf[len] = 0;
 			}
