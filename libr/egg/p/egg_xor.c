@@ -11,8 +11,7 @@ static RBuffer *build (REgg *egg) {
 
 	if (!key || !*key) {
 		key=default_key;
-		eprintf("Xor key not provided\n");
-		eprintf("Using (%s) as the key\n",key);
+		printf("XOR key not provided. Using (%s) as the key\n",key);
 	}
 	nkey = r_num_math (NULL, key);
 	if (nkey == 0) {
