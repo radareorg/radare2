@@ -32,16 +32,16 @@ static struct r_print_t *pr = NULL;
 static RList *keywords;
 
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
-	int delta = addr-cur;
+	int delta = addr - cur;
 	if (rad) {
 		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, curfile);
 	} else {
 		if (showstr) {
-			printf ("0x%"PFMT64x" %s\n", addr, buf+delta);
+			printf ("0x%"PFMT64x" %s\n", addr, buf + delta);
 		} else {
 			printf ("0x%"PFMT64x"\n", addr);
 			if (pr) {
-				r_print_hexdump (pr, addr, (ut8*)buf+delta, 78, 16, true);
+				r_print_hexdump (pr, addr, (ut8*)buf + delta, 78, 16, true);
 				r_cons_flush ();
 			}
 		}
@@ -135,8 +135,8 @@ static int rafind_open(char *file) {
 	r_io_seek (io, from, R_IO_SEEK_SET);
 	//printf("; %s 0x%08"PFMT64x"-0x%08"PFMT64x"\n", file, from, to);
 	for (cur = from; !last && cur < to; cur += bsize) {
-		if ((cur+bsize)>to) {
-			bsize = to-cur;
+		if ((cur + bsize) > to) {
+			bsize = to - cur;
 			last = true;
 		}
 		ret = r_io_pread (io, cur, buf, bsize);
@@ -228,13 +228,15 @@ int main(int argc, char **argv) {
 		case 'Z':
 			showstr = 1;
 			break;
+		default:
+			return show_help (argv[0], 1);
 		}
 	}
 
 	if (optind == argc)
 		return show_help (argv[0], 1);
 
-	for (;optind < argc;optind++)
+	for (; optind < argc; optind++)
 		rafind_open (argv[optind]);
 
 	return 0;
