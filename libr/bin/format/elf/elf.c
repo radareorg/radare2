@@ -395,7 +395,9 @@ static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 			} else if (data[i + j] == 1) {
 				eprintf ("   1 (*global*)    ");
 			} else {
-				eprintf ("%4x%c", data[i + j] & 0x7FFF, data[i + j] & 0x8000 ? 'h' : ' ');
+				ut16 *d = (ut16*) (data + i + j);
+				//eprintf ("%4x%c", data[i + j] & 0x7FFF, data[i + j] & 0x8000 ? 'h' : ' ');
+				eprintf ("%4x%c", *d & 0x7FFF, *d & 0x8000 ? 'h' : ' ');
 			}
 		}
 		eprintf ("\n");
@@ -428,7 +430,6 @@ static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 		vstart += entry->vn_aux;
 		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt; j++) {
 			Elf_(Vernaux) *aux = (Elf_(Vernaux)*)(vstart);
-			if (!aux) break;
 			eprintf ("  Flags: %x  Version: %d\n", (ut32)aux->vna_flags, aux->vna_other);
 			if (aux->vna_next > 0) {
 				isum += aux->vna_next;

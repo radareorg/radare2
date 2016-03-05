@@ -479,7 +479,6 @@ static void handle_deinit_ds (RCore *core, RDisasmState *ds) {
 	free (ds->opstr);
 	free (ds->osl);
 	free (ds->sl);
-	free (ds->sl);
 	free (ds->_tabsbuf);
 	free (ds);
 }
