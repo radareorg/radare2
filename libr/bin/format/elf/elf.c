@@ -420,7 +420,10 @@ static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 	eprintf (" Offset: 0x%08"PFMT64x"  Link to section: %x (%s)\n",
 		(ut64)shdr->sh_offset, shdr->sh_link, section_name);
 	//int num_verneed = shdr->sh_size / sizeof (Elf_(Verneed));
-	r_buf_read_at (bin->b, shdr->sh_offset, need, shdr->sh_size);
+	if (r_buf_read_at (bin->b, shdr->sh_offset, need, shdr->sh_size) != shdr->sh_size) {
+		eprintf ("Cannot read section headers\n");
+		return;
+	}
 	for (i = 0, cnt = 0; i<sz && cnt < shdr->sh_info; ++cnt) {
 		int j, isum;
 		ut8 *vstart = need + i;
@@ -428,8 +431,12 @@ static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 		eprintf ("  %#x: Version: %d", i, entry->vn_version);
 		eprintf ("  Cnt: %d\n", entry->vn_cnt);
 		vstart += entry->vn_aux;
-		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt; j++) {
+		ut8 *vend = vstart + shdr->sh_size;
+		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && (j + entry->vn_aux +i + sizeof(Elf_(Vernaux))) < shdr->sh_size; j++) {
 			Elf_(Vernaux) *aux = (Elf_(Vernaux)*)(vstart);
+			if (vstart + sizeof (Elf_(Vernaux)) > vend) {
+				break;
+			}
 			eprintf ("  Flags: %x  Version: %d\n", (ut32)aux->vna_flags, aux->vna_other);
 			if (aux->vna_next > 0) {
 				isum += aux->vna_next;
