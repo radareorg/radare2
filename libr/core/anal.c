@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -2260,7 +2260,6 @@ static int esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int l
 	return 1;
 }
 
-
 static ut64 esilbreak_last_read = UT64_MAX;
 static ut32 esilbreak_last_data = UT32_MAX;
 
@@ -2271,16 +2270,24 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	esilbreak_last_read = UT64_MAX;
 	if (myvalid (addr) && r_io_is_valid_offset (mycore->io, addr, 0)) {
 		ut32 refptr = 0;
-		r_io_read_at (mycore->io, addr, (ut8*)&refptr, sizeof (refptr));
+		if (r_io_read_at (mycore->io, addr, (ut8*)&refptr, sizeof (refptr)) != sizeof (refptr)) {
+			/* invalid read */
+			refptr = -1;
+		}
 		if (myvalid (refptr) && r_io_is_valid_offset (mycore->io, (ut64)refptr, 0)) {
 			esilbreak_last_read = addr;
 			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
 				(ut64)refptr, esil->address);
-			r_io_read_at (mycore->io, refptr, str, sizeof (str));
+			str[0] = 0;
+			if (r_io_read_at (mycore->io, refptr, str, sizeof (str)) < 1) {
+				eprintf ("Invalid read\n");
+				str[0] = 0;
+			}
+			str[sizeof(str)-1] = 0;
 			if (is_string (str, sizeof (str)-1, &slen)) {
 				char str2[128];
 				esilbreak_last_data = refptr;
-				snprintf (str2, sizeof(str2)-1, "esilref: '%s'", str);
+				snprintf (str2, sizeof (str2) - 1, "esilref: '%s'", str);
 				r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, esil->address, str2);
 				r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, refptr, str2);
 				if (refptr) {
