@@ -1754,6 +1754,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("scr.html", "false", &cb_scrhtml, "Disassembly uses HTML syntax");
 	SETCB("scr.nkey", "flag", &cb_scrnkey, "Select the seek mode in visual");
 	SETCB("scr.pager", "", &cb_pager, "Select pager program (when output overflows the window)");
+	SETPREF("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
 	SETPREF("scr.pipecolor", "false", "Enable colors when using pipes");
 	SETPREF("scr.promptfile", "false", "Show user prompt file (used by r2 -q)");
 	SETPREF("scr.promptflag", "false", "Show flag name in the prompt");

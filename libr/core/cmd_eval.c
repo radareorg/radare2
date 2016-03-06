@@ -1,5 +1,78 @@
 /* radare2 - LGPL - Copyright 2009-2016 - pancake */
 
+static char *curtheme = NULL;
+static bool getNext = false;
+
+static bool nextpal_item(RCore *core, int mode, const char *file) {
+	const char *fn = r_str_lchr (file, '/');
+	if (!fn) fn = file;
+	switch (mode) {
+	case 'l': // list
+		r_cons_printf ("%s\n", fn);
+		break;
+	case 'n': // next
+		if (getNext) {
+			curtheme = r_str_dup (curtheme, fn);
+			getNext = false;
+			return false;
+		} else if (curtheme) {
+			if (!strcmp (curtheme, fn)) {
+				getNext = true;
+			}
+		} else {
+			curtheme = r_str_dup (curtheme, fn);
+			return false;
+		}
+		break;
+	}
+	return true;
+}
+
+static void nextpal(RCore *core, int mode) {
+	RList *files;
+	RListIter *iter;
+	const char *fn;
+	char *home = r_str_home (".config/radare2/cons/");
+
+	getNext = false;
+	if (home) {
+		files = r_sys_dir (home);
+		r_list_foreach (files, iter, fn) {
+			if (*fn && *fn != '.') {
+				if (!nextpal_item (core, mode, fn)) {
+					r_list_free (files);
+					R_FREE (home);
+					goto done;
+				}
+			}
+		}
+		r_list_free (files);
+		R_FREE (home);
+	}
+	files = r_sys_dir (R2_DATDIR"/radare2/"R2_VERSION"/cons/");
+	r_list_foreach (files, iter, fn) {
+		if (*fn && *fn != '.') {
+			if (!nextpal_item (core, mode, fn))
+				goto done;
+		}
+	}
+done:
+	if (getNext) {
+		R_FREE (curtheme);
+		nextpal (core, mode);
+		return;
+	}
+	if (mode == 'l' && !curtheme && !r_list_empty (files)) {
+		nextpal (core, mode);
+		// beware infinite loop here
+		return;
+	}
+	r_list_free (files);
+	if (curtheme) {
+		r_core_cmdf (core, "eco %s", curtheme);
+	}
+}
+
 static int cmd_eval(void *data, const char *input) {
 	char *p;
 	RCore *core = (RCore *)data;
@@ -74,6 +147,7 @@ static int cmd_eval(void *data, const char *input) {
 			"ecj","","show palette in JSON",
 			"ecc","","show palette in CSS",
 			"eco"," dark|white","load white color scheme template",
+			"ecn","","load next color theme",
 			"ec"," prompt red","change color of prompt",
 			"ec"," prompt red blue","change color and background of prompt",
 			""," ","",
@@ -87,36 +161,28 @@ static int cmd_eval(void *data, const char *input) {
 			break;
 		case 'o': // "eco"
 			if (input[2] == ' ') {
+				bool failed = false;
 				char *home, path[512];
 				snprintf (path, sizeof (path), ".config/radare2/cons/%s", input+3);
 				home = r_str_home (path);
 				snprintf (path, sizeof (path), R2_DATDIR"/radare2/"
 					R2_VERSION"/cons/%s", input+3);
-				if (!r_core_cmd_file (core, home))
-					if (!r_core_cmd_file (core, path))
-						if (!r_core_cmd_file (core, input+3))
+				if (!r_core_cmd_file (core, home)) {
+					if (r_core_cmd_file (core, path)) {
+						//curtheme = r_str_dup (curtheme, path);
+						curtheme = r_str_dup (curtheme, input + 3);
+					} else {
+						if (r_core_cmd_file (core, input+3)) {
+							curtheme = r_str_dup (curtheme, input + 3);
+						} else {
 							eprintf ("eco: cannot open colorscheme profile (%s)\n", path);
+							failed = true;
+						}
+					}
+				}
 				free (home);
 			} else {
-				RList *files;
-				RListIter *iter;
-				const char *fn;
-				char *home = r_str_home (".config/radare2/cons/");
-				if (home) {
-					files = r_sys_dir (home);
-					r_list_foreach (files, iter, fn) {
-						if (*fn && *fn != '.')
-							r_cons_printf ("%s\n", fn);
-					}
-					r_list_free (files);
-					free (home);
-				}
-				files = r_sys_dir (R2_DATDIR"/radare2/"R2_VERSION"/cons/");
-				r_list_foreach (files, iter, fn) {
-					if (*fn && *fn != '.')
-						r_cons_printf ("%s\n", fn);
-				}
-				r_list_free (files);
+				nextpal (core, 'l');
 			}
 			break;
 		case 's': r_cons_pal_show (); break;
@@ -124,9 +190,14 @@ static int cmd_eval(void *data, const char *input) {
 		case 'j': r_cons_pal_list ('j'); break;
 		case 'c': r_cons_pal_list ('c'); break;
 		case '\0': r_cons_pal_list (0); break;
-		case 'r': r_cons_pal_random (); break;
+		case 'r': // "ecr"
+			r_cons_pal_random ();
+			break;
+		case 'n': // "ecn"
+			nextpal (core, 'n');
+			break;
 		default: {
-			char *p = strdup (input+2);
+			char *p = strdup (input + 2);
 			char *q = strchr (p, '=');
 			if (!q) q = strchr (p, ' ');
 			if (q) {

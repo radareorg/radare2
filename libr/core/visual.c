@@ -1262,7 +1262,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		showcursor (core, false);
 		break;
 	case 'R':
-		r_core_cmd0 (core, "ecr");
+		if (r_config_get_i (core->config, "scr.randpal")) {
+			r_core_cmd0 (core, "ecr");
+		} else {
+			r_core_cmd0 (core, "ecn");
+		}
 		break;
 	case 'e':
 		r_core_visual_config (core);
