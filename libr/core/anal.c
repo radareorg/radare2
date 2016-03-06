@@ -2342,7 +2342,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		}
 	}
 	iend = end - addr;
-	buf = malloc (iend+1);
+	buf = malloc (iend+2);
 	r_io_read_at (core->io, addr, buf, iend+1);
 	if (!ESIL) {
 		r_core_cmd0 (core, "aei");
@@ -2362,7 +2362,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 	esil_anal_stop = false;
 	r_cons_break (cccb, core);
 	//r_cons_break (NULL, NULL);
-	for (i=0; i < iend; i++) {
+	for (i = 0; i < iend; i++) {
 		if (esil_anal_stop || r_cons_is_breaked ()) {
 			break;
 		}
@@ -2372,20 +2372,22 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 			i += minopsize - 1;
 		}
 		r_asm_set_pc (core->assembler, cur);
+		//we need to check again i because buf+i may goes beyond its boundaries
+		//because of i+= minopsize - 1
+		if (i > iend)
+			break;
 		if (r_asm_disassemble (core->assembler, &asmop, buf+i, iend-i)>0) {
 			op.mnemonic = strdup (asmop.buf_asm);
-			//eprintf ("0x%08"PFMT64x"  %s\n", cur, op.mnemonic);
 		}
-		if (op.size<1) {
+		if (op.size < 1) {
 			i++;
 			continue;
 		}
 		if (1) {
 			const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
 			r_anal_esil_set_pc (ESIL, cur);
-			if (!esilstr || !*esilstr) {
+			if (!esilstr || !*esilstr)
 				continue;
-			}
 			(void)r_anal_esil_parse (ESIL, esilstr);
 			// looks like ^C is handled by esil_parse !!!!
 			r_cons_break (cccb, core);
