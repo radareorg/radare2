@@ -242,9 +242,13 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			if (neg) repl_num -= r_num_get (NULL, neg + 1);
 
 			rip[1] = '\0';
-			tstr_new = r_str_newf ("%s0x%"PFMT64x"%s", tstr, repl_num, ripend);
+			tstr_new = r_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
 			free (tstr);
 			tstr = tstr_new;
+			if (!strncmp (tstr, "lea", 3)) {
+				r_str_replace_char (tstr, '[', 0);
+				r_str_replace_char (tstr, ']', 0);
+			}
 		}
 	}
 
