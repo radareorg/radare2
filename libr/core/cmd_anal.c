@@ -3540,6 +3540,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		} else {
 			r_cons_break (NULL, NULL);
 			ut64 curseek = core->offset;
+			eprintf("[x] Analyze all flags starting with sym. and entry0 (aa)\n");
 			r_core_anal_all (core);
 			if (core->cons->breaked)
 				goto jacuzzi;
@@ -3549,14 +3550,17 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				int c = r_config_get_i (core->config, "anal.calls");
 				r_config_set_i (core->config, "anal.calls", 1);
 				r_core_cmd0 (core, "s $S");
+				eprintf("[x] Analyze len bytes of instructions for references (aar)\n");
 				(void)r_core_anal_refs (core, input + 1); // "aar"
 				if (core->cons->breaked)
 					goto jacuzzi;
+				eprintf("[x] Analyze function calls (aac)\n");
 				r_core_seek (core, curseek, 1);
 				(void)cmd_anal_calls (core, ""); // "aac"
 				if (core->cons->breaked)
 					goto jacuzzi;
 				r_config_set_i (core->config, "anal.calls", c);
+				eprintf("[x] Construct a function name for all fcn.* (.afna @@ fcn.*)\n");
 				r_core_cmd0 (core, ".afna @@ fcn.*");
 				if (core->cons->breaked)
 					goto jacuzzi;
