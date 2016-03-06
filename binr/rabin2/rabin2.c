@@ -442,7 +442,6 @@ static char *demangleAs(int type) {
 int main(int argc, char **argv) {
 	const char *query = NULL;
 	int c, bits = 0, actions_done = 0, actions = 0, action = ACTION_UNK;
-	char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
 	char *tmp, *ptr, *arch = NULL, *arch_name = NULL;
 	const char *forcebin = NULL;
 	const char *chksum = NULL;
@@ -457,9 +456,8 @@ int main(int argc, char **argv) {
 	r_core_init (&core);
 	bin = core.bin;
 
-	if ((tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
-		free (tmp);
-	} else {
+	if (!(tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
+		tmp = r_str_home (R2_HOMEDIR"/plugins");
 		l = r_lib_new ("radare_plugin");
 		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 				   &__lib_bin_cb, &__lib_bin_dt, NULL);
@@ -467,10 +465,10 @@ int main(int argc, char **argv) {
 				   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
 		/* load plugins everywhere */
 		r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
-		r_lib_opendir (l, homeplugindir);
+		r_lib_opendir (l, tmp);
 		r_lib_opendir (l, R2_LIBDIR"/radare2/"R2_VERSION);
-		free (tmp);
 	}
+	free (tmp);
 
 	if ((tmp = r_sys_getenv ("RABIN2_LANG"))) {
 		r_config_set (core.config, "bin.lang", tmp);

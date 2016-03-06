@@ -1159,6 +1159,7 @@ R_API void *r_bin_free(RBin *bin) {
 	if (!bin) return NULL;
 	bin->file = NULL;
 	free (bin->force);
+	free (bin->srcdir);
 	//r_bin_free_bin_files (bin);
 	r_list_free (bin->binfiles);
 	r_list_free (bin->binxtrs);
