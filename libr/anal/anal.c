@@ -132,6 +132,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	if (!a) return NULL;
 	/* TODO: Free anals here */
 	R_FREE (a->cpu);
+	R_FREE (a->os);
 	r_list_free (a->plugins);
 	r_list_free (a->noreturn);
 	a->fcns->free = r_anal_fcn_free;

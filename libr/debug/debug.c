@@ -121,6 +121,8 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 	free (dbg->btalgo);
 	r_debug_trace_free (dbg);
 	free (dbg->arch);
+	free (dbg->glob_libs);
+	free (dbg->glob_unlibs);
 	free (dbg);
 	return NULL;
 }
