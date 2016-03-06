@@ -900,7 +900,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	{
 		RAnalFunction *fcn;
 		ut64 off = core->offset;
-		char *p, *name = strdup (input + 3);
+		char *p, *name = strdup ((input[2]&&input[3])? input + 3: "");
 		if ((p = strchr (name, ' '))) {
 			*p = 0;
 			off = r_num_math (core->num, p + 1);
