@@ -840,9 +840,13 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 			p->cur++;
 			return;
 		}
-		sz = r_asm_disassemble (core->assembler, &op,
-				core->block + next_roff, 32);
-		if (sz < 1) sz = 1;
+		if (next_roff + 32 < core->blocksize) {
+			sz = r_asm_disassemble (core->assembler, &op,
+					core->block + next_roff, 32);
+			if (sz < 1) sz = 1;
+		} else {
+			sz = 1;
+		}
 		delta = p->cur - roff;
 		p->cur = next_roff + R_MIN (delta, sz - 1);
 	} else {
