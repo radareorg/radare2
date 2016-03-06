@@ -167,7 +167,7 @@ static int rax (char *str, int len, int last) {
 			return help ();
 	}
 	dotherax:
-	
+
 	if (flags & 1) { // -s
 		int n = ((strlen (str)) >> 1) + 1;
 		buf = malloc (n);
@@ -368,12 +368,16 @@ static int rax (char *str, int len, int last) {
 }
 
 static int use_stdin () {
-	char * buf = malloc (STDIN_BUFFER_SIZE);
+	char * buf = calloc (1, STDIN_BUFFER_SIZE + 1);
+	if (!buf)
+		return 0;
 	int l, sflag = (flags & 5);
 	if (!(flags & 16384)) {
-		for (l = 0; l >= 0; l++) {
-			int n = read (0, buf + l, STDIN_BUFFER_SIZE - 1);
-			if (n < 1) break;
+		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
+			//make sure we don't read beyond boundaries
+			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
+			if (n < 1)
+				break;
 			l += n;
 			if (buf[l - 1] == 0) {
 				l--;
@@ -382,7 +386,8 @@ static int use_stdin () {
 			buf[n] = 0;
 			if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
 				buf[strlen (buf)] = '\0';
-			else buf[strlen (buf) - 1] = '\0';
+			else
+				buf[strlen (buf) - 1] = '\0';
 			if (!rax (buf, l, 0)) break;
 			l = -1;
 		}
