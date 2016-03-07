@@ -159,7 +159,7 @@ static int _6502Disass (RAsmOp *op, const ut8 *buf, ut64 len) {
 				}
 				break;
 			case 4:
-				if (len>2) {
+				if (len>3) {
 					sprintf (op->buf_asm, ops[i].name,
 						buf[1]+0x100*buf[2]+0x10000*buf[3]);
 				} else {
