@@ -24,7 +24,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 
 	// replace this with the asm.features?
-//	if (a->cpu && strstr (a->cpu, "mclass"))
+	if (a->cpu && strstr (a->cpu, "no-mclass"))
 		mode |= CS_MODE_MCLASS; // mclass by default
 	if (a->cpu && strstr (a->cpu, "v8"))
 		mode |= CS_MODE_V8;
@@ -133,12 +133,14 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 	.fini = NULL,
 	.disassemble = &disassemble,
 	.assemble = &assemble,
-	.features = 
+	.features = "no-mclass,v8"
+#if 0
 		// arm32 and arm64
 		"crypto,databarrier,divide,fparmv8,multpro,neon,t2extractpack,"
 		"thumb2dsp,trustzone,v4t,v5t,v5te,v6,v6t2,v7,v8,vfp2,vfp3,vfp4,"
 		"arm,mclass,notmclass,thumb,thumb1only,thumb2,prev8,fpvmlx,"
 		"mulops,crc,dpvfp,v6m"
+#endif
 };
 
 static int check_features(RAsm *a, cs_insn *insn) {

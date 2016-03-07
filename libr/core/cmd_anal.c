@@ -3589,7 +3589,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd0 (core, "aae @ $S");
 					rowlog_done (core);
 					rowlog (core, "Finding function by preludes");
-					r_core_cmd0 (core, "aat");
+					r_core_cmd0 (core, "aap");
 					rowlog_done (core);
 					rowlog (core, "Analyze consecutive function");
 					r_core_cmd0 (core, "aat");
