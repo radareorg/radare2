@@ -174,5 +174,5 @@ static int _6502Disass (RAsmOp *op, const ut8 *buf, ut64 len) {
 		}
 	}
 beach:
-	return snesDisass (op, buf, len);
+	return snesDisass (8, op, buf, len);
 }
