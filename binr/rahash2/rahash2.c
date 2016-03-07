@@ -7,6 +7,7 @@
 #include <r_hash.h>
 #include <r_util.h>
 #include <r_print.h>
+#include <r_crypto.h>
 #include "../blob/version.c"
 
 static ut64 from = 0LL;
@@ -230,7 +231,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 }
 
 static int do_help(int line) {
-	printf ("Usage: rahash2 [-rBhLkv] [-b S] [-a A] [-c H] [-s S] [-f O] [-t O] [file] ...\n");
+	printf ("Usage: rahash2 [-rBhLkv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
 	if (line) return 0;
 	printf (
 	" -a algo     comma separated list of algorithms (default is 'sha256')\n"
@@ -238,10 +239,11 @@ static int do_help(int line) {
 	" -B          show per-block hash\n"
 	" -c hash     compare with this hash\n"
 	" -e          swap endian (use little endian)\n"
+	" -E algo     encrypt (rc4 for now). Use -S to set key\n"
 	" -d / -D     encode/decode base64 string (-s) or file to stdout\n"
 	" -f from     start hashing at given address\n"
 	" -i num      repeat hash N iterations\n"
-	" -S seed     use given seed (hexa or s:string) use ^ to prefix\n"
+	" -S seed     use given seed (hexa or s:string) use ^ to prefix (key for -E)\n"
 	" -k          show hash using the openssh's randomkey algorithm\n"
 	" -q          run in quiet mode (only show results)\n"
 	" -L          list all available algorithms (see -a)\n"
@@ -281,6 +283,7 @@ int main(int argc, char **argv) {
 	int i, ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0, b64mode = 0;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
+	const char *encrypt = NULL;
 	char *hashstr = NULL;
 	const char *compareStr = NULL;
 	ut8 *compareBin = NULL;
@@ -290,7 +293,7 @@ int main(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "jdDrvea:i:S:s:x:b:nBhf:t:kLqc:")) != -1) {
+	while ((c = getopt (argc, argv, "jdDrveE:a:i:S:s:x:b:nBhf:t:kLqc:")) != -1) {
 		switch (c) {
 		case 'q': quiet = 1; break;
 		case 'i':
@@ -305,6 +308,7 @@ int main(int argc, char **argv) {
 		case 'n': numblocks = 1; break;
 		case 'd': b64mode = 1; break;
 		case 'D': b64mode = 2; break;
+		case 'E': encrypt = optarg; break;
 		case 'L': algolist (); return 0;
 		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
@@ -410,6 +414,53 @@ int main(int argc, char **argv) {
 		hashstr_len = to - from;
 		hashstr[hashstr_len] = '\0';
 		hashstr_len = r_str_unescape (hashstr);
+		if (encrypt) {
+			int seedlen = seed? strlen (seed): 0;
+			if (seedlen > 0) {
+				RCrypto *cry = r_crypto_new ();
+				if (r_crypto_use (cry, encrypt)) {
+					ut8 *binseed = malloc (seedlen + 1);
+					if (binseed) {
+						int len = r_hex_str2bin (seed, binseed);
+						if (len <1) {
+							len = seedlen;
+							strcpy ((char *)binseed, seed);
+						} else {
+							seedlen = len;
+						}
+						if (r_crypto_set_key (cry, binseed, seedlen, 0, 0)) {
+							if (hashstr) {
+								const char *buf = hashstr;
+								int buflen = hashstr_len;
+
+								r_crypto_update (cry, (const ut8*)buf, buflen);
+								r_crypto_final (cry, NULL, 0);
+
+								int result_size = 0;
+								ut8 *result = r_crypto_get_output (cry, &result_size);
+								if (result) {
+									write (1, result, result_size);
+									free (result);
+								}
+							}
+						} else {
+							eprintf ("Invalid key\n");
+						}
+
+						free (binseed);
+						return 0;
+					} else {
+						eprintf ("Cannot allocate %d bytes\n", seedlen);
+					}
+				} else {
+					eprintf ("Unknown encryption algorithm '%s'\n", encrypt);
+				}
+				r_crypto_free (cry);
+			} else {
+				eprintf ("Encryption key not defined. Use -S [key]\n");
+			}
+			return 1;
+		} else
 		switch (b64mode) {
 		case 1: // encode
 			{

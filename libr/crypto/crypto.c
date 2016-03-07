@@ -49,7 +49,7 @@ R_API struct r_crypto_t *r_crypto_new() {
 
 R_API struct r_crypto_t *r_crypto_as_new(struct r_crypto_t *cry) {
 	RCrypto *c = R_NEW0 (RCrypto);
-	if (c != NULL) {
+	if (c) {
 		r_crypto_init (c, false); // soft init
 		memcpy (&c->plugins, &cry->plugins, sizeof (cry->plugins));
 	}
@@ -70,7 +70,7 @@ R_API bool r_crypto_use(RCrypto *cry, const char *algo) {
 	RListIter *iter;
 	RCryptoPlugin *h;
 	r_list_foreach (cry->plugins, iter, h) {
-		if (h->use (algo)) {
+		if (h && h->use && h->use (algo)) {
 			cry->h = h;
 			cry->key_len = h->get_key_size (cry);
 			cry->key = calloc (1, cry->key_len);
@@ -98,12 +98,12 @@ R_API int r_crypto_set_iv(RCrypto *cry, const ut8 *iv) {
 }
 
 // return the number of bytes written in the output buffer
-R_API int r_crypto_update(RCrypto *cry, ut8 *buf, int len) {
+R_API int r_crypto_update(RCrypto *cry, const ut8 *buf, int len) {
 	return (cry && cry->h && cry->h->update)?
 		cry->h->update (cry, buf, len): 0;
 }
 
-R_API int r_crypto_final(RCrypto *cry, ut8 *buf, int len) {
+R_API int r_crypto_final(RCrypto *cry, const ut8 *buf, int len) {
 	return (cry && cry->h && cry->h->final)?
 		cry->h->final (cry, buf, len): 0;
 }

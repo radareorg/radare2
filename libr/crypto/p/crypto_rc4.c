@@ -24,10 +24,13 @@ static __inline void swap_bytes(ut8 *a, ut8 *b) {
  * which can have arbitrary length.
  */
 
-static void rc4_init(struct rc4_state *const state, const ut8 *key, int keylen) {
+static bool rc4_init(struct rc4_state *const state, const ut8 *key, int keylen) {
 	ut8 j;
 	int i;
 
+	if (!state || !key || keylen < 1) {
+		return false;
+	}
 	state->key_size = keylen;
 	/* Initialize state with identity permutation */
 	for (i = 0; i < 256; i++)
@@ -40,6 +43,7 @@ static void rc4_init(struct rc4_state *const state, const ut8 *key, int keylen) 
 		j += state->perm[i] + key[i % keylen]; 
 		swap_bytes (&state->perm[i], &state->perm[j]);
 	}
+	return true;
 }
 
 /*
@@ -70,8 +74,7 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 static struct rc4_state st;
 
 static int rc4_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	rc4_init (&st, key, keylen);
-	return true;
+	return rc4_init (&st, key, keylen);
 }
 
 static int rc4_get_key_size(RCrypto *cry) {

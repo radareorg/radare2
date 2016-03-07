@@ -8,6 +8,7 @@
 .Op Fl BdDehjrkv
 .Op Fl a Ar algorithm
 .Op Fl b Ar size
+.Op Fl E Ar algo
 .Op Fl s Ar string
 .Op Fl i Ar iterations
 .Op Fl S Ar seed
@@ -39,6 +40,8 @@ encoDe base64 string or file
 Decode base64 string or file
 .It Fl e
 Use little endian to display checksums
+.It Fl E Ar algo
+Encrypt instead of hash using the given algorithm (rc4, aes)
 .It Fl i Ar iters
 Apply the hash Iters times to itself+seed
 .It Fl j
