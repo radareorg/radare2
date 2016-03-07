@@ -731,13 +731,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'i': // "afi"
 		switch (input[2]) {
 		case '?':
-			eprintf("Returns information about the functions we are currently at\n");
+			eprintf ("Return information about the current function\n");
 			eprintf ("Usage: afi[j*] <addr>\n");
 			break;
 		case 'j': // "afij"
 			switch (input[3]) {
-				case '?': eprintf ("Provides information regarding current function in json format\n"); break;
-				default:  r_core_anal_fcn_list (core, input + 3, 'j'); break;
+			case '?': eprintf ("Provide information regarding current function in JSON format\n"); break;
+			default:  r_core_anal_fcn_list (core, input + 3, 'j'); break;
 			}
 			break;
 		case '*': r_core_anal_fcn_list (core, input + 3, 1); break;   // "afi*"

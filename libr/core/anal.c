@@ -1195,8 +1195,8 @@ R_API int r_core_anal_fcn_list_size(RCore *core, const char *input, int rad) {
 
 // Comparator used for sorting a RList of functions(core->anal->fcns) based on their addresses
 static int cmpaddr (const void *_a, const void *_b) {
-        const RAnalFunction *a = _a, *b = _b;
-        return (a->addr > b->addr);
+		const RAnalFunction *a = _a, *b = _b;
+		return (a->addr > b->addr);
 }
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
