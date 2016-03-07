@@ -1193,6 +1193,11 @@ R_API int r_core_anal_fcn_list_size(RCore *core) {
 	return total;
 }
 
+static int cmpfcn(const void *_a, const void *_b) {
+	const RAnalFunction *_fcn1 = _a, *_fcn2 = _b;
+	return (_fcn1->addr > _fcn2->addr);
+}
+
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	ut64 addr;
 	RListIter *iter, *iter2;
@@ -1232,6 +1237,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	} else if (rad == 'j')  {
 		r_cons_printf ("[");
 	}
+	r_list_sort (core->anal->fcns, &cmpfcn);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		int showFunc = 0;
 		if (input) {
