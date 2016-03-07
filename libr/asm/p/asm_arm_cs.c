@@ -14,7 +14,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
-	mode |= (a->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
+	mode |= (a->bits == 16) ? CS_MODE_THUMB: CS_MODE_ARM;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
 		cs_close (&cd);
@@ -23,15 +23,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		obits = a->bits;
 	}
 
-	// replace this with the asm.features?
-	if (!a->cpu || !strstr (a->cpu, "no-mclass"))
-		mode |= CS_MODE_MCLASS; // mclass by default
-	if (a->cpu && strstr (a->cpu, "v8"))
+	if (a->features && strstr (a->features, "mclass"))
+		mode |= CS_MODE_MCLASS;
+	if (a->features && strstr (a->features, "v8"))
 		mode |= CS_MODE_V8;
 	op->size = 4;
 	op->buf_asm[0] = 0;
 	if (cd == 0) {
-		ret = (a->bits==64)?
+		ret = (a->bits == 64)?
 			cs_open (CS_ARCH_ARM64, mode, &cd):
 			cs_open (CS_ARCH_ARM, mode, &cd);
 		if (ret) {
