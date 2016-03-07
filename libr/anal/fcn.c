@@ -207,7 +207,7 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 	st64 n = bb->addr+bb->size-fcn->addr; \
 	if (n>=0 && fcn->size<n) {fcn->size=n; } } \
 	if (fcn->size > MAX_FCN_SIZE) { \
-		eprintf ("Function too big at 0x%"PFMT64x" + %d\n", bb->addr, fcn->size); \
+		/* eprintf ("Function too big at 0x%"PFMT64x" + %d\n", bb->addr, fcn->size); */ \
 		fcn->size = 0; \
 		return R_ANAL_RET_ERROR; }
 

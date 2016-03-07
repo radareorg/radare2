@@ -1181,6 +1181,18 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 	}
 }
 
+R_API int r_core_anal_fcn_list_size(RCore *core, const char *input, int rad) {
+	RAnalFunction *fcn;
+	RListIter *iter;
+	ut32 total = 0;
+
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		total += fcn->size;
+	}
+	r_cons_printf ("%d\n", total);
+	return total;
+}
+
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	ut64 addr;
 	RListIter *iter, *iter2;

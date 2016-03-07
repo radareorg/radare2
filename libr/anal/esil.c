@@ -145,8 +145,7 @@ R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, int interrupt) {
 		return false;
 	i = sdb_itoa ((ut64)interrupt, t, 16);
 	if (!sdb_num_exists (esil->interrupts, i)) {
-		eprintf ("0x%08"PFMT64x" Invalid interrupt/syscall 0x%08x\n",
-			esil->address, interrupt);
+		//eprintf ("0x%08"PFMT64x" Invalid interrupt/syscall 0x%08x\n", esil->address, interrupt);
 		return false;
 	}
 	icb = (RAnalEsilInterruptCB)sdb_ptr_get (esil->interrupts, i, 0);
@@ -1052,7 +1051,7 @@ static int esil_mod(RAnalEsil *esil) {
 	if (src && r_anal_esil_get_parm (esil, src, &s)) {
 		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
-				eprintf ("esil_mod: Division by zero!\n");
+				eprintf ("0x%08"PFMT64x" esil_mod: Division by zero!\n", esil->address);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
@@ -1061,7 +1060,7 @@ static int esil_mod(RAnalEsil *esil) {
 			ret = 1;
 		}
 	} else {
-		eprintf ("esil_mod: invalid parameters");
+		eprintf ("0x%08"PFMT64x" esil_mod: invalid parameters", esil->address);
 	}
 	free (dst);
 	free (src);

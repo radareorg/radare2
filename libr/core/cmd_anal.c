@@ -748,6 +748,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'q':
 			r_core_anal_fcn_list (core, NULL, input[2]);
 			break;
+		case 's':
+			r_core_anal_fcn_list_size (core);
+			break;
 		default:
 			r_core_anal_fcn_list (core, NULL, 'o');
 			break;
@@ -3499,6 +3502,23 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	return r_core_anal_search_xrefs (core, from, to, rad);
 }
 
+static const char *oldstr = NULL;
+
+static void rowlog(RCore *core, const char *str) {
+	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	oldstr = str;
+	if (use_color)
+		eprintf ("[ ] "Color_YELLOW"%s\r[", str);
+	else eprintf ("[ ] %s\r[", str);
+}
+
+static void rowlog_done(RCore *core) {
+	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	if (use_color)
+		eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", oldstr);
+	else eprintf ("\r[x] %s\n", oldstr);
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	const char *help_msg_aa[] = {
 		"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
@@ -3542,8 +3562,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		} else {
 			r_cons_break (NULL, NULL);
 			ut64 curseek = core->offset;
-			eprintf("[x] Analyze all flags starting with sym. and entry0 (aa)\n");
+			rowlog (core, "Analyze all flags starting with sym. and entry0 (aa)");
 			r_core_anal_all (core);
+			rowlog_done (core);
 			if (core->cons->breaked)
 				goto jacuzzi;
 			r_cons_clear_line (1);
@@ -3552,24 +3573,51 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				int c = r_config_get_i (core->config, "anal.calls");
 				r_config_set_i (core->config, "anal.calls", 1);
 				r_core_cmd0 (core, "s $S");
-				eprintf("[x] Analyze len bytes of instructions for references (aar)\n");
+				rowlog (core, "Analyze len bytes of instructions for references (aar)");
 				(void)r_core_anal_refs (core, input + 1); // "aar"
+				rowlog_done(core);
 				if (core->cons->breaked)
 					goto jacuzzi;
-				eprintf("[x] Analyze function calls (aac)\n");
+				rowlog (core, "Analyze function calls (aac)");
 				r_core_seek (core, curseek, 1);
 				(void)cmd_anal_calls (core, ""); // "aac"
+				rowlog_done(core);
 				if (core->cons->breaked)
 					goto jacuzzi;
+				if (input[1] == 'a') { // "aaaa"
+					rowlog (core, "Emulate code to find computed references");
+					r_core_cmd0 (core, "aae @ $S");
+					rowlog_done (core);
+					rowlog (core, "Finding function by preludes");
+					r_core_cmd0 (core, "aat");
+					rowlog_done (core);
+					rowlog (core, "Analyze consecutive function");
+					r_core_cmd0 (core, "aat");
+					rowlog_done (core);
+				}
 				r_config_set_i (core->config, "anal.calls", c);
-				eprintf("[x] Construct a function name for all fcn.* (.afna @@ fcn.*)\n");
+				rowlog (core, "Construct a function name for all fcn.* (.afna @@ fcn.*)");
 				r_core_cmd0 (core, ".afna @@ fcn.*");
+				rowlog_done (core);
 				if (core->cons->breaked)
 					goto jacuzzi;
 				r_core_cmd0 (core, "s-");
 			}
 		jacuzzi:
 			flag_every_function (core);
+			/* TODO: move into a separate command */
+
+			eprintf ("fcns: %d\n", r_list_length (core->anal->fcns));
+			char *xrefs = r_core_cmd_str (core, "ax~xref?");
+			eprintf ("xref: %d\n", atoi (xrefs));
+			free (xrefs);
+			int sect = r_num_get (core->num, "$SS");
+			eprintf ("sect: %d\n", sect);
+			xrefs = r_core_cmd_str (core, "afls");
+			int code = atoi (xrefs);
+			eprintf ("code: %d\n", code);
+			free (xrefs);
+			eprintf ("covr: %d %%\n", code * 100 / sect );
 		}
 		break;
 	case 't': {

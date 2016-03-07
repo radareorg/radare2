@@ -1339,7 +1339,8 @@ SETL/SETNGE
 		case X86_INS_FADD:
 		case X86_INS_FADDP:
 			op->family = R_ANAL_OP_FAMILY_FPU;
-			/* pass thru */
+			op->type = R_ANAL_OP_TYPE_ADD;
+			break;
 		case X86_INS_ADDPS:
 		case X86_INS_ADDSD:
 		case X86_INS_ADDSS:
