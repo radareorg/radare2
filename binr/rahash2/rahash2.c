@@ -429,19 +429,17 @@ int main(int argc, char **argv) {
 							seedlen = len;
 						}
 						if (r_crypto_set_key (cry, binseed, seedlen, 0, 0)) {
-							if (hashstr) {
-								const char *buf = hashstr;
-								int buflen = hashstr_len;
+							const char *buf = hashstr;
+							int buflen = hashstr_len;
 
-								r_crypto_update (cry, (const ut8*)buf, buflen);
-								r_crypto_final (cry, NULL, 0);
+							r_crypto_update (cry, (const ut8*)buf, buflen);
+							r_crypto_final (cry, NULL, 0);
 
-								int result_size = 0;
-								ut8 *result = r_crypto_get_output (cry, &result_size);
-								if (result) {
-									write (1, result, result_size);
-									free (result);
-								}
+							int result_size = 0;
+							ut8 *result = r_crypto_get_output (cry, &result_size);
+							if (result) {
+								write (1, result, result_size);
+								free (result);
 							}
 						} else {
 							eprintf ("Invalid key\n");

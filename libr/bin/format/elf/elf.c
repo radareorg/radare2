@@ -411,7 +411,7 @@ static void store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 }
 
 static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr, int sz) {
-	ut8 *need = malloc(shdr->sh_size);
+	ut8 *need = malloc (shdr->sh_size);
 	const char *section_name = &bin->shstrtab[shdr->sh_name];
 	int i;
 	int cnt;
@@ -422,6 +422,7 @@ static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 	//int num_verneed = shdr->sh_size / sizeof (Elf_(Verneed));
 	if (r_buf_read_at (bin->b, shdr->sh_offset, need, shdr->sh_size) != shdr->sh_size) {
 		eprintf ("Cannot read section headers\n");
+		free (need);
 		return;
 	}
 	for (i = 0, cnt = 0; i<sz && cnt < shdr->sh_info; ++cnt) {

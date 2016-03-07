@@ -391,8 +391,6 @@ int main(int argc, char **argv, char **envp) {
 		case 'V': return verify_version (1);
 		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
 		default:
-			r_list_free (evals);
-			r_list_free (cmds);
 			help++;
 		}
 	}
@@ -400,8 +398,7 @@ int main(int argc, char **argv, char **envp) {
 	if (help > 0) {
 		r_list_free (evals);
 		r_list_free (cmds);
-		if (help > 1) return main_help (2);
-		return main_help (0);
+		return main_help (help > 1? 2: 0);
 	}
 
 	if ((tmp = r_sys_getenv ("R2_NOPLUGINS"))) {

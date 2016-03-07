@@ -29,7 +29,7 @@ static bool nextpal_item(RCore *core, int mode, const char *file) {
 }
 
 static void nextpal(RCore *core, int mode) {
-	RList *files;
+	RList *files = NULL;
 	RListIter *iter;
 	const char *fn;
 	char *home = r_str_home (".config/radare2/cons/");
@@ -41,6 +41,7 @@ static void nextpal(RCore *core, int mode) {
 			if (*fn && *fn != '.') {
 				if (!nextpal_item (core, mode, fn)) {
 					r_list_free (files);
+					files = NULL;
 					R_FREE (home);
 					goto done;
 				}
@@ -64,13 +65,13 @@ done:
 	}
 	if (mode == 'l' && !curtheme && !r_list_empty (files)) {
 		nextpal (core, mode);
-		// beware infinite loop here
-		return;
+	} else {
+		if (curtheme) {
+			r_core_cmdf (core, "eco %s", curtheme);
+		}
 	}
 	r_list_free (files);
-	if (curtheme) {
-		r_core_cmdf (core, "eco %s", curtheme);
-	}
+	files = NULL;
 }
 
 static int cmd_eval(void *data, const char *input) {

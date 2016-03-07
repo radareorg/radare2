@@ -3617,7 +3617,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			int code = atoi (xrefs);
 			eprintf ("code: %d\n", code);
 			free (xrefs);
-			eprintf ("covr: %d %%\n", code * 100 / sect );
+			eprintf ("covr: %d %%\n", code * 100 / ((sect>0)?sect:1) );
 		}
 		break;
 	case 't': {
