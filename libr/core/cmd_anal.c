@@ -2163,9 +2163,11 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				eprintf ("Emulate basic block 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", pc, end);
 				buf = malloc (bbs + 1);
 				r_io_read_at (core->io, pc, buf, bbs);
+				int left;
 				while (pc < end) {
+					left = R_MIN (end - pc, 32);
 					r_asm_set_pc (core->assembler, pc);
-					ret = r_anal_op (core->anal, &op, addr, buf, 32); // read overflow
+					ret = r_anal_op (core->anal, &op, addr, buf, left); // read overflow
 					if (ret) {
 						r_reg_setv (core->anal->reg, "PC", pc);
 						r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
