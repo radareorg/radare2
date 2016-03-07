@@ -3,7 +3,7 @@
 #include <r_crypto.h>
 
 struct r_crypto_plugin_t r_crypto_plugin_aes = { 
-	.name = "crypto_aes",
+	.name = "aes",
 	/* TODO */
 };
 
