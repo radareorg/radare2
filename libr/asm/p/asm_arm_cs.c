@@ -24,7 +24,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 
 	// replace this with the asm.features?
-	if (a->cpu && strstr (a->cpu, "no-mclass"))
+	if (!a->cpu || !strstr (a->cpu, "no-mclass"))
 		mode |= CS_MODE_MCLASS; // mclass by default
 	if (a->cpu && strstr (a->cpu, "v8"))
 		mode |= CS_MODE_V8;
