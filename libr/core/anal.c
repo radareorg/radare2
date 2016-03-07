@@ -1193,12 +1193,18 @@ R_API int r_core_anal_fcn_list_size(RCore *core, const char *input, int rad) {
 	return total;
 }
 
+static int cmpfcn(const void *_a, const void *_b) {
+	const RAnalFunction *_fcn1 = _a, *_fcn2 = _b;
+	return (_fcn1->addr > _fcn2->addr);
+}
+
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	ut64 addr;
 	RListIter *iter, *iter2;
 	RAnalFunction *fcn;
 	RAnalRef *refi;
 	RAnalVar *vari;
+	RList *sorted_fcns;
 	int first, bbs, count = 0;
 	const char *lang;
 	bool demangle = r_config_get_i (core->config, "bin.demangle");
@@ -1232,7 +1238,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	} else if (rad == 'j')  {
 		r_cons_printf ("[");
 	}
-	r_list_foreach (core->anal->fcns, iter, fcn) {
+	sorted_fcns = r_list_clone (core->anal->fcns);
+	r_list_sort (sorted_fcns, &cmpfcn);
+	r_list_foreach (sorted_fcns, iter, fcn) {
 		int showFunc = 0;
 		if (input) {
 			showFunc = *input && (!strcmp (input, "$$"));
@@ -1409,6 +1417,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	if (rad == 'j')  {
 		r_cons_printf ("]\n");
 	}
+	r_list_free (sorted_fcns);
 	return true;
 }
 
