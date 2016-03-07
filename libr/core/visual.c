@@ -806,7 +806,6 @@ static bool isDisasmPrint(int mode) {
 
 static void cursor_ocur(RCore *core, bool use_ocur) {
 	RPrint *p = core->print;
-
 	if (use_ocur && p->ocur == -1) {
 		p->ocur = p->cur;
 	} else if (!use_ocur) {
@@ -880,12 +879,16 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 		delta = p->cur - roff;
 		if (prev_roff == UT32_MAX) {
 			ut64 prev_addr = prevop_addr (core, core->offset + roff);
-			RAsmOp op;
-
-			prev_roff = 0;
-			r_core_seek (core, prev_addr, 1);
-			prev_sz = r_asm_disassemble (core->assembler, &op,
-				core->block, 32);
+			if (prev_addr > core->offset) {
+				prev_roff = 0;
+				prev_sz = 1;
+			} else {
+				RAsmOp op;
+				prev_roff = 0;
+				r_core_seek (core, prev_addr, 1);
+				prev_sz = r_asm_disassemble (core->assembler, &op,
+						core->block, 32);
+			}
 		} else {
 			prev_sz = roff - prev_roff;
 		}
@@ -898,8 +901,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 static void cursor_left(RCore *core, bool use_ocur) {
 	if (PIDX == 2) {
 		if (core->seltab == 1) {
-
-	core->print->cur--;
+			core->print->cur--;
 			return;
 		}
 	}
@@ -932,14 +934,14 @@ static bool fix_cursor(RCore *core) {
 		if (!cur_is_visible && !is_close) {
 			// when the cursor is not visible and it's far from the
 			// last visible byte, just seek there.
-			r_core_seek (core, core->offset + p->cur, 1);
+			r_core_seek_delta (core, p->cur);
 			reset_print_cur (p);
 		} else if ((!cur_is_visible && is_close) || !off_is_visible) {
 			RAsmOp op;
 			int sz = r_asm_disassemble (core->assembler,
 				&op, core->block, 32);
 			if (sz < 1) sz = 1;
-			r_core_seek (core, core->offset + sz, 1);
+			r_core_seek_delta (core, sz);
 			p->cur = R_MAX (p->cur - sz, 0);
 			if (p->ocur != -1) p->ocur = R_MAX (p->ocur - sz, 0);
 			res |= off_is_visible;
@@ -1470,7 +1472,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			cursor_prevrow (core, false);
 		} else {
 			if (r_config_get_i (core->config, "scr.wheelnkey")) {
-				r_core_cmd0(core, "sp");
+				r_core_cmd0 (core, "sp");
 			} else {
 				int times = wheelspeed;
 				if (times<1) times = 1;
