@@ -195,9 +195,9 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					printf ("%s: ", file);
 				}
 				do_hash_print (ctx, i, dlen, quiet?'n':rad, ule);
-				if (quiet) {
+				if (quiet == 1) {
 					printf (" %s\n", file);
-				}
+				} else printf ("\n");
 			}
 		}
 		if (_s)
@@ -252,7 +252,7 @@ static int do_help(int line) {
 	" -i num      repeat hash N iterations\n"
 	" -S seed     use given seed (hexa or s:string) use ^ to prefix (key for -E)\n"
 	" -k          show hash using the openssh's randomkey algorithm\n"
-	" -q          run in quiet mode (only show results)\n"
+	" -q          run in quiet mode (-qq to show only the hash)\n"
 	" -L          list all available algorithms (see -a)\n"
 	" -r          output radare commands\n"
 	" -s string   hash this string instead of files\n"
@@ -302,7 +302,7 @@ int main(int argc, char **argv) {
 
 	while ((c = getopt (argc, argv, "jdDrveE:a:i:S:s:x:b:nBhf:t:kLqc:")) != -1) {
 		switch (c) {
-		case 'q': quiet = 1; break;
+		case 'q': quiet ++; break;
 		case 'i':
 			iterations = atoi (optarg);
 			if (iterations < 0) {
