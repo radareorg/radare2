@@ -298,6 +298,7 @@ int main(int argc, char **argv) {
 	ut8 *compareBin = NULL;
 	int hashstr_len = -1;
 	int hashstr_hex = 0;
+	size_t bytes_read = 0;//bytes read from stdin 
 	ut64 algobit;
 	RHash *ctx;
 	RIO *io;
@@ -383,14 +384,13 @@ int main(int argc, char **argv) {
 #define INSIZE 32768
 		ret = 0;
 		if (!strcmp (hashstr, "-")) {
-			int res = 0;
 			hashstr = malloc (INSIZE);
 			if (!hashstr)
 				return 1;
-			res = fread ((void*)hashstr, 1, INSIZE - 1, stdin);
-			if (res < 1) res = 0;
-			hashstr[res] = '\0';
-			hashstr_len = res;
+			bytes_read = fread ((void*)hashstr, 1, INSIZE - 1, stdin);
+			if (bytes_read < 1) bytes_read = 0;
+			hashstr[bytes_read] = '\0';
+			hashstr_len = bytes_read;
 		}
 		if (hashstr_hex) {
 			ut8 *out = malloc ((strlen (hashstr) + 1) * 2);
@@ -403,7 +403,9 @@ int main(int argc, char **argv) {
 			hashstr = (char *)out;
 			/* out memleaks here, hashstr can't be freed */
 		} else {
-			hashstr_len = strlen (hashstr);
+			if (!bytes_read) {
+				hashstr_len = strlen (hashstr);
+			}
 		}
 		if (from) {
 			if (from>=hashstr_len) {
@@ -422,7 +424,9 @@ int main(int argc, char **argv) {
 		hashstr = hashstr + from;
 		hashstr_len = to - from;
 		hashstr[hashstr_len] = '\0';
-		hashstr_len = r_str_unescape (hashstr);
+		if (!bytes_read) {
+			hashstr_len = r_str_unescape (hashstr);
+		}
 		if (encrypt) {
 			int seedlen = seed? strlen (seed): 0;
 			if (seedlen > 0) {
