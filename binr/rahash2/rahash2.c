@@ -85,6 +85,9 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 		printf ("e file.%s=", hname);
 		do_hash_hexprint (c, dlen, ule, rad);
 		break;
+	case 'n':
+		do_hash_hexprint (c, dlen, ule, 'j');
+		break;
 	case 'j':
 		printf ("{\"name\":\"%s\",\"hash\":\"", hname);
 		do_hash_hexprint (c, dlen, ule, rad);
@@ -188,9 +191,13 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					r_hash_do_spice (ctx, i, iterations, _s);
 				if (!*r_hash_name (i))
 					continue;
-				if (!quiet && rad != 'j')
+				if (!quiet && rad != 'j') {
 					printf ("%s: ", file);
-				do_hash_print (ctx, i, dlen, rad, ule);
+				}
+				do_hash_print (ctx, i, dlen, quiet?'n':rad, ule);
+				if (quiet) {
+					printf (" %s\n", file);
+				}
 			}
 		}
 		if (_s)
