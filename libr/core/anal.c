@@ -1193,6 +1193,12 @@ R_API int r_core_anal_fcn_list_size(RCore *core) {
 	return total;
 }
 
+// Comparator used for sorting a RList of functions(core->anal->fcns) based on their addresses
+static int cmpaddr (const void *_a, const void *_b) {
+		const RAnalFunction *a = _a, *b = _b;
+		return (a->addr > b->addr);
+}
+
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	ut64 addr;
 	RListIter *iter, *iter2;
@@ -1208,6 +1214,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		addr = r_num_math (core->num, *input? input + 1: input);
 	else
 		addr = core->offset;
+
+	// Sorting function list based on address of the function
+	r_list_sort (core->anal->fcns, cmpaddr);
 
 	if (rad == 2) {
 		char *tmp, *name = NULL;
@@ -1232,6 +1241,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	} else if (rad == 'j')  {
 		r_cons_printf ("[");
 	}
+
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		int showFunc = 0;
 		if (input) {
@@ -1257,7 +1267,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			}
 			count++;
 			if (rad == 'o') {
-                                r_cons_printf ("0x%08"PFMT64x"  %d  %d  %s\n",
+				r_cons_printf ("0x%08"PFMT64x"  %d  %d  %s\n",
 					fcn->addr, fcn->size, r_list_length (fcn->bbs), name);
 			} else if (rad == 'q') {
 				r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
