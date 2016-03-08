@@ -106,13 +106,13 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 		}
 	} else if (MUSTSEEJSON) {
 		if (size==-1)
-			p->cb_printf ("%d", addr64);
+			p->cb_printf ("%"PFMT64d, addr64);
 		else {
 			p->cb_printf ("[ ");
 			while (size--) {
 				updateAddr (buf, i, endian, NULL, &addr64);
 				if (elem == -1 || elem == 0) {
-					p->cb_printf ("%d", addr64);
+					p->cb_printf ("%"PFMT64d, addr64);
 					if (elem == 0) elem = -2;
 				}
 				if (size != 0 && elem == -1)
