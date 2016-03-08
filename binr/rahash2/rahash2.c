@@ -197,6 +197,8 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				do_hash_print (ctx, i, dlen, quiet?'n':rad, ule);
 				if (quiet == 1) {
 					printf (" %s\n", file);
+				} else {
+					if (quiet && !rad) printf ("\n");
 				}
 			}
 		}
