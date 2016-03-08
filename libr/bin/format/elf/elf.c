@@ -361,13 +361,16 @@ static RBinElfSection* get_section_by_name(struct Elf_(r_bin_elf_obj_t) *bin, co
 
 /* TODO : expose the versioninfo inside RBinObject instead of eprintf */
 
-static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr, int sz) {
+static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
 	int i;
 	const char *section_name = "";
-	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
+	Elf_(Shdr) *link_shdr = NULL; 
 	const char *link_section_name = "";
 	int num_entries = shdr->sh_size / sizeof (Elf_(Versym));
 	ut8 *data = calloc (num_entries, sizeof (short));
+	if (shdr->sh_link > bin->ehdr.e_shnum) 
+		return;
+	link_shdr = &bin->shdr[shdr->sh_link];
 
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
 		section_name = &bin->shstrtab[shdr->sh_name];
@@ -405,39 +408,53 @@ static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	free (data);
 }
 
-static void store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr, int sz) {
-	const char *section_name = &bin->shstrtab[shdr->sh_name];
+static void store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
+	const char *section_name = NULL; 
+	if (shdr->sh_name > bin->shstrtab_size)
+		return;
+	section_name = &bin->shstrtab[shdr->sh_name];
 	eprintf ("Version definition section '%s' contains %d entries:\n", section_name, shdr->sh_info);
 }
 
-static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr, int sz) {
-	ut8 *need = malloc (shdr->sh_size);
-	const char *section_name = &bin->shstrtab[shdr->sh_name];
+static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
+	int sz = shdr->sh_size;
+	ut8 *need = NULL;
+	ut8 *vend = NULL;
+	const char *section_name = NULL;
 	int i;
 	int cnt;
+	if (shdr->sh_name > bin->ehdr.e_shnum)
+		return;
+	need = malloc (sz);
+	if (!need) return;
+	section_name = &bin->shstrtab[shdr->sh_name];
 	eprintf ("Version needs section '%s' contains %d entries:\n", section_name, shdr->sh_info);
 	eprintf (" Addr: 0x%08"PFMT64x, (ut64)shdr->sh_addr);
 	eprintf (" Offset: 0x%08"PFMT64x"  Link to section: %x (%s)\n",
 		(ut64)shdr->sh_offset, shdr->sh_link, section_name);
-	//int num_verneed = shdr->sh_size / sizeof (Elf_(Verneed));
-	if (r_buf_read_at (bin->b, shdr->sh_offset, need, shdr->sh_size) != shdr->sh_size) {
+	if (shdr->sh_offset > bin->size || shdr->sh_offset + sz > bin->size)
+		return;
+	if (shdr->sh_offset + sz < sz)
+		return;
+	if (r_buf_read_at (bin->b, shdr->sh_offset, need, sz) != sz) {
 		eprintf ("Cannot read section headers\n");
 		free (need);
 		return;
 	}
-	for (i = 0, cnt = 0; i<sz && cnt < shdr->sh_info; ++cnt) {
+	vend = need + sz;
+	//XXX we should use DT_VERNEEDNUM instead of sh_info
+	//TODO https://sourceware.org/ml/binutils/2014-11/msg00353.html
+	for (i = 0, cnt = 0; i < sz && cnt < shdr->sh_info; ++cnt) {
 		int j, isum;
 		ut8 *vstart = need + i;
 		Elf_(Verneed) *entry = (Elf_(Verneed)*)(vstart);
 		eprintf ("  %#x: Version: %d", i, entry->vn_version);
 		eprintf ("  Cnt: %d\n", entry->vn_cnt);
 		vstart += entry->vn_aux;
-		ut8 *vend = vstart + shdr->sh_size;
-		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && (j + entry->vn_aux +i + sizeof(Elf_(Vernaux))) < shdr->sh_size; j++) {
+		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && (j + entry->vn_aux +i + sizeof(Elf_(Vernaux))) < sz; j++) {
 			Elf_(Vernaux) *aux = (Elf_(Vernaux)*)(vstart);
-			if (vstart + sizeof (Elf_(Vernaux)) > vend) {
+			if (vstart + sizeof (Elf_(Vernaux)) > vend)
 				break;
-			}
 			eprintf ("  Flags: %x  Version: %d\n", (ut32)aux->vna_flags, aux->vna_other);
 			if (aux->vna_next > 0) {
 				isum += aux->vna_next;
@@ -461,11 +478,11 @@ static void store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return;
 	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
 		if (bin->shdr[i].sh_type == SHT_GNU_verdef) {
-			store_versioninfo_gnu_verdef (bin, &bin->shdr[i], bin->shdr->sh_size);
+			store_versioninfo_gnu_verdef (bin, &bin->shdr[i]);
 		} else if (bin->shdr[i].sh_type == SHT_GNU_verneed) {
-			store_versioninfo_gnu_verneed (bin, &bin->shdr[i], bin->shdr->sh_size);
+			store_versioninfo_gnu_verneed (bin, &bin->shdr[i]);
 		} else if (bin->shdr[i].sh_type == SHT_GNU_versym) {
-			store_versioninfo_gnu_versym (bin, &bin->shdr[i], bin->shdr->sh_size);
+			store_versioninfo_gnu_versym (bin, &bin->shdr[i]);
 		}
 	}
 }
