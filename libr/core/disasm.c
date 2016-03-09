@@ -265,10 +265,10 @@ static const char *getSectionName (RCore *core, ut64 addr) {
 	return section;
 }
 
-static void ds_print_spacy (RDisasmState *ds) {
+static void ds_print_spacy (RDisasmState *ds, int pre) {
 	RCore *core = ds->core;
 	RAnalFunction *f = NULL;
-	r_cons_newline ();
+	if (pre) r_cons_newline ();
 	if (ds->show_functions) {
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (!f) {
@@ -278,6 +278,7 @@ static void ds_print_spacy (RDisasmState *ds) {
 	}
 	if (f) beginline (core, ds, f);
 	handle_print_offset (core, ds);
+	if (!pre) r_cons_newline ();
 }
 
 static RDisasmState * handle_init_ds (RCore * core) {
@@ -1066,11 +1067,6 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	flaglist = r_flag_get_list (core->flags, ds->at);
 
-	if (ds->show_spacy) {
-		if (!r_list_empty (flaglist)) {
-			ds_print_spacy(ds);
-		}
-	}
 	r_list_foreach (flaglist, iter, flag) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show flags that have the same name as the function
@@ -1104,6 +1100,11 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 			r_cons_printf ("%s:\n", flag->name);
 		}
 		printed = true;
+	}
+	if (ds->show_spacy) {
+		if (!r_list_empty (flaglist)) {
+			ds_print_spacy(ds, false);
+		}
 	}
 }
 
@@ -2348,7 +2349,7 @@ beach:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_RET:
-			ds_print_spacy (ds);
+			ds_print_spacy (ds, 1);
 			break;
 		}
 	}
