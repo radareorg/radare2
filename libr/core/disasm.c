@@ -1088,9 +1088,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 			handle_print_offset (core, ds);
 			r_cons_printf (" ");
 		} else {
-			if (ds->show_functions) {
-				r_cons_printf ((f && ds->at > f->addr)?"| ": "  ");
-			}
+			r_cons_printf ((f && ds->at > f->addr)?"| ": "  ");
 			handle_print_lines_left (core, ds);
 			r_cons_printf (";-- ");
 		}
@@ -1100,21 +1098,13 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 		if (ds->asm_demangle) {
 			const char *lang = r_config_get (core->config, "bin.lang");
 			char *name = r_bin_demangle (core->bin->cur, lang, flag->realname);
-			if (!name)
-				name = strdup (flag->realname);
-			if (ds->show_functions)
-				r_cons_printf ("%s:\n", name);
-			else r_cons_printf ("%s%s", beginch, name);
+			r_cons_printf ("%s:\n", name? name: flag->realname);
 			R_FREE (name);
 		} else {
-			if (ds->show_functions) {
-				r_cons_printf ("%s:\n", flag->name);
-			} else r_cons_printf ("%s%s", beginch, flag->name);
+			r_cons_printf ("%s:\n", flag->name);
 		}
 		printed = true;
 	}
-	if (printed && !ds->show_functions)
-		r_cons_printf (":\n");
 }
 
 static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
