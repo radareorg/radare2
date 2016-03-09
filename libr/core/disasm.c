@@ -2956,7 +2956,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	RAnalOp analop;
 	RDisasmState *ds;
 	RAnalFunction *f;
-	int i, j, oplen, ret, line;
+	int i, j, k, oplen, ret, line;
 	ut64 old_offset = core->offset;
 	ut64 at;
 	int dis_opcodes = 0;
@@ -3028,38 +3028,41 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	// If using #bytes i = j
 	// If using #opcodes, j is the offset from start address. i is the
 	// offset in current disassembly buffer (256 by default)
-	i=j=line=0;
+	i = k = j = line = 0;
 	// i = number of bytes
 	// j = number of instructions
+	// k = delta from addr
 	for (;;) {
-		at = addr + i;
+		bool end_nbopcodes, end_nbbytes;
+
+		at = addr + k;
 		r_asm_set_pc (core->assembler, at);
 		// 32 is the biggest opcode length in intel
 		// Make sure we have room for it
-		if (dis_opcodes == 1 && i>=nb_bytes - 32) {
+		if (dis_opcodes == 1 && i >= nb_bytes - 32) {
 			// Read another nb_bytes bytes into buf from current offset
 			r_core_read_at (core, at, buf, nb_bytes);
-			i=0;
+			i = 0;
 		}
+
 		if (limit_by == 'o') {
-			if (j>=nb_opcodes) {
+			if (j >= nb_opcodes) {
 				break;
 			}
-		} else {
-			if (i>=nb_bytes) {
-				break;
-			}
+		} else if (i >= nb_bytes) {
+			break;
 		}
-		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, nb_bytes-i);
-		if (ret<1) {
-			r_cons_printf (j>0? ",{": "{");
+		ret = r_asm_disassemble (core->assembler, &asmop, buf + i, nb_bytes - i);
+		if (ret < 1) {
+			r_cons_printf (j > 0 ? ",{" : "{");
 			r_cons_printf ("\"offset\":%"PFMT64d, at);
 			r_cons_printf (",\"size\":1,\"type\":\"invalid\"}");
 			i++;
+			k++;
 			j++;
 			continue;
 		}
-		r_anal_op (core->anal, &analop, at, buf+i, nb_bytes-i);
+		r_anal_op (core->anal, &analop, at, buf + i, nb_bytes - i);
 		ds = handle_init_ds (core);
 		if (ds->pseudo) r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
 		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
@@ -3095,18 +3098,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		// wanted the numerical values of the type information
 		r_cons_printf (",\"type_num\":%"PFMT64d, analop.type);
 		r_cons_printf (",\"type2_num\":%"PFMT64d, analop.type2);
-#if 0
-		// THIS BREAKS THE JSON
-		if (analop.refptr) {
-			int ocolor = ds->show_color;
-			ds->show_color = 0;
-			ds->analop = analop;
-			r_cons_printf (",\"ptr_info\":\"");
-			handle_print_ptr (core, ds, nb_bytes+256, j);
-			r_cons_printf ("\"");
-			ds->show_color = ocolor;
-		}
-#endif
 		// handle switch statements
 		if (analop.switch_op && r_list_length (analop.switch_op->cases) > 0) {
 			// XXX - the java caseop will still be reported in the assembly,
@@ -3129,8 +3120,9 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		if (analop.jump != UT64_MAX ) {
 			r_cons_printf (",\"jump\":%"PFMT64d, analop.jump);
-			if (analop.fail != UT64_MAX)
+			if (analop.fail != UT64_MAX) {
 				r_cons_printf (",\"fail\":%"PFMT64d, analop.fail);
+			}
 		}
 		/* add flags */
 		{
@@ -3175,12 +3167,13 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 		r_cons_printf ("}");
 		i += oplen; // bytes
-		j ++; // instructions
+		k += oplen; // delta from addr
+		j++; // instructions
 		line++;
-		if ((dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes) \
-			|| (dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes)) {
-			break;
-		}
+
+		end_nbopcodes = dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes;
+		end_nbbytes = dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes;
+		if (end_nbopcodes || end_nbbytes) break;
 	}
 	r_cons_printf ("]");
 	core->offset = old_offset;
