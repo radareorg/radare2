@@ -63,6 +63,7 @@ R_API ut8 *r_crypto_get_output(RCrypto *cry, int *size);
 /* plugin pointers */
 extern RCryptoPlugin r_crypto_plugin_aes;
 extern RCryptoPlugin r_crypto_plugin_rc4;
+extern RCryptoPlugin r_crypto_plugin_rc2;
 extern RCryptoPlugin r_crypto_plugin_xor;
 extern RCryptoPlugin r_crypto_plugin_blowfish;
 
