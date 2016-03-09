@@ -3,16 +3,16 @@
 #include <r_anal.h>
 #include <r_asm.h>
 #include <r_lib.h>
-void cond_branch(RAnalOp *op,ut64 addr,const ut8*buf,char*flag){
-	op->type=R_ANAL_OP_TYPE_CJMP;
-	op->jump = addr + 2 +2* (*(ut16*)buf &0xff);
-	op->fail=addr+op->size;
-	op->cycles=2;
-	r_strbuf_setf(&op->esil,"%s,?,{,0x%x,pc,=,}",flag,op->jump);
-
+void cond_branch (RAnalOp *op, ut64 addr, const ut8 *buf, char *flag) {
+	op->type = R_ANAL_OP_TYPE_CJMP;
+	op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0xff);
+	op->fail = addr + op->size;
+	op->cycles = 2;
+	r_strbuf_setf (&op->esil, "%s,?,{,0x%x,pc,=,}", flag, op->jump);
 }
 static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	//TODO code should be refactored and brocken into smaller chuncks!!
+	//TODO complete the esil emitter
 	if (len < 2) {
 		op->size = len;
 		goto beach; //pancake style :P
@@ -33,18 +33,18 @@ static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 	case 0x1b:	//rcall
 		op->type = R_ANAL_OP_TYPE_CALL;
 		return op->size;
-	case 0x1a://bra
+	case 0x1a: //bra
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->cycles=2;
-		op->jump=addr+2+2* (*(ut16*)buf &0x7ff);
-		r_strbuf_setf(&op->esil, "0x%x,pc,=",op->jump);
+		op->cycles = 2;
+		op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0x7ff);
+		r_strbuf_setf (&op->esil, "0x%x,pc,=", op->jump);
 		return op->size;
 	}
 	switch (b >> 12) { //NOP,movff,BAF_T
-	case 0xf://nop
+	case 0xf:	//nop
 		op->type = R_ANAL_OP_TYPE_NOP;
-		op->cycles=1;
-		r_strbuf_setf(&op->esil,",");
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, ",");
 		return op->size;
 	case 0xc: //movff
 		if (len < 4)
@@ -66,29 +66,29 @@ static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 	};
 
 	switch (b >> 8) { //GOTO_T,N_T,K_T
-	case 0xe0://bz
-		cond_branch(op,addr,buf,"z");
+	case 0xe0:	//bz
+		cond_branch (op, addr, buf, "z");
 		return op->size;
-	case 0xe1://bnz
-		cond_branch(op,addr,buf,"z,!");
+	case 0xe1: //bnz
+		cond_branch (op, addr, buf, "z,!");
 		return op->size;
-	case 0xe3://bnc
-		cond_branch(op,addr,buf,"c,!");
+	case 0xe3: //bnc
+		cond_branch (op, addr, buf, "c,!");
 		return op->size;
-	case 0xe4://bov
-		cond_branch(op,addr,buf,"ov");
+	case 0xe4: //bov
+		cond_branch (op, addr, buf, "ov");
 		return op->size;
-	case 0xe5://bnov
-		cond_branch(op,addr,buf,"ov,!");
+	case 0xe5: //bnov
+		cond_branch (op, addr, buf, "ov,!");
 		return op->size;
-	case 0xe6://bn
-		cond_branch(op,addr,buf,"n");
+	case 0xe6: //bn
+		cond_branch (op, addr, buf, "n");
 		return op->size;
-	case 0xe7://bnn
-		cond_branch(op,addr,buf,"n,!");
+	case 0xe7: //bnn
+		cond_branch (op, addr, buf, "n,!");
 		return op->size;
-	case 0xe2://bc
-		cond_branch(op,addr,buf,"c");
+	case 0xe2: //bc
+		cond_branch (op, addr, buf, "c");
 		return op->size;
 	case 0xef: //goto
 		if (len < 4)
@@ -96,53 +96,53 @@ static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		if (*(ut32 *)buf >> 28 != 0xf)
 			goto beach;
 		op->size = 4;
-		op->cycles=2;
+		op->cycles = 2;
 		ut32 dword_instr = *(ut32 *)buf;
-		op->jump= (( dword_instr & 0xff) | ((dword_instr &  0xfff0000) >>8)) *2;
-		r_strbuf_setf(&op->esil, "0x%x,pc,=",op->jump);
+		op->jump = ((dword_instr & 0xff) | ((dword_instr & 0xfff0000) >> 8)) * 2;
+		r_strbuf_setf (&op->esil, "0x%x,pc,=", op->jump);
 		op->type = R_ANAL_OP_TYPE_JMP;
 		return op->size;
 	case 0xf: //addlw
 		op->type = R_ANAL_OP_TYPE_ADD;
-		op->cycles=1;
+		op->cycles = 1;
 		//TODO add support for dc flag
-		r_strbuf_setf(&op->esil,"0x%x,wreg,+=,$z,z,=,$s,n,=,$c,c,=,$o,ov,=,",*(ut16*)buf &0xff);
+		r_strbuf_setf (&op->esil, "0x%x,wreg,+=,$z,z,=,$s,n,=,$c,c,=,$o,ov,=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xe: //movlw
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		op->cycles=1;
-		r_strbuf_setf(&op->esil,"0x%x,wreg,=,");
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "0x%x,wreg,=,");
 		return op->size;
 	case 0xd: //mullw
 		op->type = R_ANAL_OP_TYPE_MUL;
-		op->cycles=1;
-		r_strbuf_setf(&op->esil,"0x%x,wreg,*,prod,=",*(ut16*)buf &0xff);
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "0x%x,wreg,*,prod,=", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xc: //retlw
 		op->type = R_ANAL_OP_TYPE_RET;
-		op->cycles=2;
-		r_strbuf_setf(&op->esil,"0x%x,wreg,=,tos,pc,=,",*(ut16*)buf&0xff);
+		op->cycles = 2;
+		r_strbuf_setf (&op->esil, "0x%x,wreg,=,tos,pc,=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xb: //andlw
 		op->type = R_ANAL_OP_TYPE_AND;
-		op->cycles=1;
-		r_strbuf_setf(&op->esil,"0x%x,wreg,&=,$z,z,=,$s,n,=,",*(ut16*)buf &0xff);
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "0x%x,wreg,&=,$z,z,=,$s,n,=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xa: //xorlw
 		op->type = R_ANAL_OP_TYPE_XOR;
-		op->cycles=1;
-		r_strbuf_setf(&op->esil,"0x%x,wreg,^=,$z,z,=,$s,n,=,",*(ut16*)buf &0xff);
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "0x%x,wreg,^=,$z,z,=,$s,n,=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0x9: //iorlw
 		op->type = R_ANAL_OP_TYPE_OR;
-		op->cycles=1;
-		r_strbuf_setf(&op->esil,"0x%x,wreg,^=,$z,z,=,$s,n,=,",*(ut16*)buf &0xff);
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "0x%x,wreg,^=,$z,z,=,$s,n,=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0x8: //sublw
 		op->type = R_ANAL_OP_TYPE_SUB;
-		op->cycles=1;
+		op->cycles = 1;
 		//TODO add support for dc flag
-		r_strbuf_setf(&op->esil,"wreg,0x%x,-,wreg,=,$z,z,=,$s,n,=,$c,c,=,$o,ov,=,",*(ut16*)buf&0xff);
+		r_strbuf_setf (&op->esil, "wreg,0x%x,-,wreg,=,$z,z,=,$s,n,=,$c,c,=,$o,ov,=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	};
 
@@ -172,10 +172,10 @@ static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 	case 0xf:  //incfsz
 	case 0xa:  //incf
 	case 0x8:  //addwfc
-		op->type=R_ANAL_OP_TYPE_ADD;
+		op->type = R_ANAL_OP_TYPE_ADD;
 		return op->size;
-	case 0x9:  //addwf
-		op->cycles=1;
+	case 0x9: //addwf
+		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		return op->size;
 	case 0x11: //rlncf
@@ -226,8 +226,8 @@ static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 	switch (b >> 4) {
 	case 0x10: //movlb
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		op->cycles=1;
-		r_strbuf_setf(&op->esil,"0x%x,bsr,=,",*(ut16*)buf&0xf);
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, "0x%x,bsr,=,", *(ut16 *)buf & 0xf);
 		return op->size;
 	};
 	switch (b) {
@@ -238,14 +238,14 @@ static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		op->type = R_ANAL_OP_TYPE_UNK;
 		return op->size;
 	case 0x13: //return
-		op->type=R_ANAL_OP_TYPE_RET;
-		op->cycles=2;
-		r_strbuf_setf(&op->esil,"tos,pc,=,");
+		op->type = R_ANAL_OP_TYPE_RET;
+		op->cycles = 2;
+		r_strbuf_setf (&op->esil, "tos,pc,=,");
 		return op->size;
 	case 0x12: //return
-		op->type=R_ANAL_OP_TYPE_RET;
-		op->cycles=2;
-		r_strbuf_setf(&op->esil,"tos,pc,=");
+		op->type = R_ANAL_OP_TYPE_RET;
+		op->cycles = 2;
+		r_strbuf_setf (&op->esil, "tos,pc,=");
 		return op->size;
 	case 0x11: //retfie
 	case 0x10: //retfie
@@ -271,8 +271,8 @@ static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		return op->size;
 	case 0x0: //nop
 		op->type = R_ANAL_OP_TYPE_NOP;
-		op->cycles=1;
-		r_strbuf_setf(&op->esil,",");
+		op->cycles = 1;
+		r_strbuf_setf (&op->esil, ",");
 		return op->size;
 	};
 beach:
@@ -412,8 +412,7 @@ struct r_anal_plugin_t r_anal_plugin_pic18c = {
 	.diff_fcn = NULL,
 	.diff_eval = NULL,
 	.set_reg_profile = &set_reg_profile,
-	.esil=true
-};
+	.esil = true };
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
