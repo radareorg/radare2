@@ -43,6 +43,8 @@ static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 	switch (b >> 12) { //NOP,movff,BAF_T
 	case 0xf://nop
 		op->type = R_ANAL_OP_TYPE_NOP;
+		op->cycles=1;
+		r_strbuf_setf(&op->esil,",");
 		return op->size;
 	case 0xc: //movff
 		if (len < 4)
@@ -96,33 +98,51 @@ static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		op->size = 4;
 		op->cycles=2;
 		ut32 dword_instr = *(ut32 *)buf;
-		op->jump= ( dword_instr & 0xff) | ((dword_instr &  0xfff0000) >>8);
+		op->jump= (( dword_instr & 0xff) | ((dword_instr &  0xfff0000) >>8)) *2;
 		r_strbuf_setf(&op->esil, "0x%x,pc,=",op->jump);
 		op->type = R_ANAL_OP_TYPE_JMP;
 		return op->size;
 	case 0xf: //addlw
 		op->type = R_ANAL_OP_TYPE_ADD;
+		op->cycles=1;
+		//TODO add support for dc flag
+		r_strbuf_setf(&op->esil,"0x%x,wreg,+=,$z,z,=,$s,n,=,$c,c,=,$o,ov,=,",*(ut16*)buf &0xff);
 		return op->size;
 	case 0xe: //movlw
 		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->cycles=1;
+		r_strbuf_setf(&op->esil,"0x%x,wreg,=,");
 		return op->size;
 	case 0xd: //mullw
 		op->type = R_ANAL_OP_TYPE_MUL;
+		op->cycles=1;
+		r_strbuf_setf(&op->esil,"0x%x,wreg,*,prod,=",*(ut16*)buf &0xff);
 		return op->size;
 	case 0xc: //retlw
 		op->type = R_ANAL_OP_TYPE_RET;
+		op->cycles=2;
+		r_strbuf_setf(&op->esil,"0x%x,wreg,=,tos,pc,=,",*(ut16*)buf&0xff);
 		return op->size;
 	case 0xb: //andlw
 		op->type = R_ANAL_OP_TYPE_AND;
+		op->cycles=1;
+		r_strbuf_setf(&op->esil,"0x%x,wreg,&=,$z,z,=,$s,n,=,",*(ut16*)buf &0xff);
 		return op->size;
 	case 0xa: //xorlw
 		op->type = R_ANAL_OP_TYPE_XOR;
+		op->cycles=1;
+		r_strbuf_setf(&op->esil,"0x%x,wreg,^=,$z,z,=,$s,n,=,",*(ut16*)buf &0xff);
 		return op->size;
 	case 0x9: //iorlw
 		op->type = R_ANAL_OP_TYPE_OR;
+		op->cycles=1;
+		r_strbuf_setf(&op->esil,"0x%x,wreg,^=,$z,z,=,$s,n,=,",*(ut16*)buf &0xff);
 		return op->size;
 	case 0x8: //sublw
 		op->type = R_ANAL_OP_TYPE_SUB;
+		op->cycles=1;
+		//TODO add support for dc flag
+		r_strbuf_setf(&op->esil,"wreg,0x%x,-,wreg,=,$z,z,=,$s,n,=,$c,c,=,$o,ov,=,",*(ut16*)buf&0xff);
 		return op->size;
 	};
 
@@ -206,6 +226,8 @@ static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 	switch (b >> 4) {
 	case 0x10: //movlb
 		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->cycles=1;
+		r_strbuf_setf(&op->esil,"0x%x,bsr,=,",*(ut16*)buf&0xf);
 		return op->size;
 	};
 	switch (b) {
@@ -216,7 +238,15 @@ static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		op->type = R_ANAL_OP_TYPE_UNK;
 		return op->size;
 	case 0x13: //return
+		op->type=R_ANAL_OP_TYPE_RET;
+		op->cycles=2;
+		r_strbuf_setf(&op->esil,"tos,pc,=,");
+		return op->size;
 	case 0x12: //return
+		op->type=R_ANAL_OP_TYPE_RET;
+		op->cycles=2;
+		r_strbuf_setf(&op->esil,"tos,pc,=");
+		return op->size;
 	case 0x11: //retfie
 	case 0x10: //retfie
 		op->type = R_ANAL_OP_TYPE_RET;
@@ -241,6 +271,8 @@ static int pic18c_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		return op->size;
 	case 0x0: //nop
 		op->type = R_ANAL_OP_TYPE_NOP;
+		op->cycles=1;
+		r_strbuf_setf(&op->esil,",");
 		return op->size;
 	};
 beach:
@@ -327,8 +359,9 @@ static int set_reg_profile(RAnal *esil) {
 		"flg	z	.1	.522	0\n"
 		"flg	ov	.1	.523	0\n"
 		"flg	n	.1	.524	0\n"
-		"gpr	prodh	.8	66	0\n"
-		"gpr	prodl	.8	67	0\n"
+		"gpr	prod	.16	66	0\n"
+		"gpr	prodl	.8	66	0\n"
+		"gpr	prodh	.8	67	0\n"
 		"gpr	osccon	.8	68	0\n"
 		"gpr	tmr3h	.8	69	0\n"
 		"gpr	lvdcon	.8	70	0\n"
@@ -368,7 +401,7 @@ struct r_anal_plugin_t r_anal_plugin_pic18c = {
 	.desc = "PIC 18c analysis plugin",
 	.license = "LGPL3",
 	.arch = "PIC 18c",
-	.bits = 16,
+	.bits = 8,
 	.init = NULL,
 	.fini = NULL,
 	.op = &pic18c_anal,

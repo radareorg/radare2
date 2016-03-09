@@ -230,7 +230,7 @@ RAsmPlugin r_asm_plugin_pic18c = {
 	.name = "pic18c",
 	.arch = "pic18c",
 	.license = "LGPL3",
-	.bits = 16,
+	.bits = 8,
 	.desc = "pic18c disassembler"};
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
