@@ -368,8 +368,10 @@ static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	const char *link_section_name = "";
 	int num_entries = shdr->sh_size / sizeof (Elf_(Versym));
 	ut8 *data = calloc (num_entries, sizeof (short));
-	if (shdr->sh_link > bin->ehdr.e_shnum) 
+	if (shdr->sh_link > bin->ehdr.e_shnum) {
+		free (data);
 		return;
+	}
 	link_shdr = &bin->shdr[shdr->sh_link];
 
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
