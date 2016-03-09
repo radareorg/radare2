@@ -180,7 +180,7 @@ static int pic_disassem(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 			return -1;
 		}
 		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s 0x%x", ops[i].name,
-			(dword_instr & 0xff) | ((dword_instr &  0xfff0000) >>8));
+			((dword_instr & 0xff) | ((dword_instr &  0xfff0000) >>8) )*2);
 		break;
 	}
 	case F32_T: {
