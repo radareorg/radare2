@@ -182,3 +182,5 @@ Almost 5am, maybe you should go to bed.
 Jingle sploits, jingle sploits, ropchain all the way.
 Mind that the 'g' in radare is silent
 256 colors ought to be enough for anybody
+Hang in there, Baby!
+Run a command with unspecified long sequence of 'a', pancake will be summoned and do the analysis for you.

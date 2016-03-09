@@ -159,7 +159,7 @@ static int main_help(int line) {
 		printf (
 		"Scripts:\n"
 		" system   "R2_PREFIX"/share/radare2/radare2rc\n"
-		" user     ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc\n"
+		" user     ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc (and radare2rc.d/)\n"
 		" file     ${filename}.r2\n"
 		"Plugins:\n"
 		" plugins  "R2_PREFIX"/lib/radare2/last\n"
@@ -460,6 +460,25 @@ int main(int argc, char **argv, char **envp) {
 		}
 		if (r_config_get_i (r.config, "file.analyze")) {
 			r_core_cmd0 (&r, "aa");
+		}
+		homerc = r_str_home ("/.config/radare2/radare2rc.d");
+		if (homerc) {
+			if (r_file_is_directory (homerc)) {
+				char *file;
+				RListIter *iter;
+				RList *files = r_sys_dir (homerc);
+				r_list_foreach (files, iter, file) {
+					if (*file != '.') {
+						char *path = r_str_newf ("%s/%s", homerc, file);
+						if (r_file_is_regular (path)) {
+							r_core_cmd_file (&r, path);
+						}
+						free (path);
+					}
+				}
+				r_list_free (files);
+			}
+			free (homerc);
 		}
 	}
 	if (argv[optind] && r_file_is_directory (argv[optind])) {

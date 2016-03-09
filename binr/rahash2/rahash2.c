@@ -197,7 +197,9 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				do_hash_print (ctx, i, dlen, quiet?'n':rad, ule);
 				if (quiet == 1) {
 					printf (" %s\n", file);
-				} else printf ("\n");
+				} else {
+					if (quiet && !rad) printf ("\n");
+				}
 			}
 		}
 		if (_s)
@@ -296,6 +298,7 @@ int main(int argc, char **argv) {
 	ut8 *compareBin = NULL;
 	int hashstr_len = -1;
 	int hashstr_hex = 0;
+	size_t bytes_read = 0;//bytes read from stdin 
 	ut64 algobit;
 	RHash *ctx;
 	RIO *io;
@@ -381,14 +384,13 @@ int main(int argc, char **argv) {
 #define INSIZE 32768
 		ret = 0;
 		if (!strcmp (hashstr, "-")) {
-			int res = 0;
 			hashstr = malloc (INSIZE);
 			if (!hashstr)
 				return 1;
-			res = fread ((void*)hashstr, 1, INSIZE - 1, stdin);
-			if (res < 1) res = 0;
-			hashstr[res] = '\0';
-			hashstr_len = res;
+			bytes_read = fread ((void*)hashstr, 1, INSIZE - 1, stdin);
+			if (bytes_read < 1) bytes_read = 0;
+			hashstr[bytes_read] = '\0';
+			hashstr_len = bytes_read;
 		}
 		if (hashstr_hex) {
 			ut8 *out = malloc ((strlen (hashstr) + 1) * 2);
@@ -401,7 +403,9 @@ int main(int argc, char **argv) {
 			hashstr = (char *)out;
 			/* out memleaks here, hashstr can't be freed */
 		} else {
-			hashstr_len = strlen (hashstr);
+			if (!bytes_read) {
+				hashstr_len = strlen (hashstr);
+			}
 		}
 		if (from) {
 			if (from>=hashstr_len) {
@@ -420,7 +424,9 @@ int main(int argc, char **argv) {
 		hashstr = hashstr + from;
 		hashstr_len = to - from;
 		hashstr[hashstr_len] = '\0';
-		hashstr_len = r_str_unescape (hashstr);
+		if (!bytes_read) {
+			hashstr_len = r_str_unescape (hashstr);
+		}
 		if (encrypt) {
 			int seedlen = seed? strlen (seed): 0;
 			if (seedlen > 0) {
@@ -451,7 +457,6 @@ int main(int argc, char **argv) {
 						} else {
 							eprintf ("Invalid key\n");
 						}
-
 						free (binseed);
 						return 0;
 					} else {
@@ -539,67 +544,115 @@ int main(int argc, char **argv) {
 
 	io = r_io_new ();
 	for (ret = 0, i = optind; i < argc; i++) {
+		if (encrypt) {//for encrytion when files are provided 
+			int seedlen = seed? strlen (seed): 0;
+			if (seedlen > 0) {
+				RCrypto *cry = r_crypto_new ();
+				if (r_crypto_use (cry, encrypt)) {
+					ut8 *binseed = malloc (seedlen + 1);
+					if (binseed) {
+						int len = r_hex_str2bin (seed, binseed);
+						if (len <1) {
+							len = seedlen;
+							strcpy ((char *)binseed, seed);
+						} else {
+							seedlen = len;
+						}
+						if (r_crypto_set_key (cry, binseed, seedlen, 0, 0)) {
+							int file_size;
+							ut8 *buf = (ut8*)r_file_slurp (argv[i], &file_size);
+							if (!buf) {
+								eprintf ("rahash2: Cannot open file\n");
+								continue;
+							}
+							r_crypto_update (cry, buf, file_size);
+							r_crypto_final (cry, NULL, 0);
+							int result_size = 0;
+							ut8 *result = r_crypto_get_output (cry, &result_size);
+							if (result) {
+								write (1, result, result_size);
+								free (result);
+							}
+							free(buf);
+						} else {
+							eprintf ("Invalid key\n");
+						}
+						free (binseed);
+						return 0;
+					} else {
+						eprintf ("Cannot allocate %d bytes\n", seedlen);
+					}
+				} else {
+					eprintf ("Unknown encryption algorithm '%s'\n", encrypt);
+				}
+				r_crypto_free (cry);
+			} else {
+				eprintf ("Encryption key not defined. Use -S [key]\n");
+			}
+			return 1;
+		} else {
 		switch (b64mode) {
-		case 1: // encode
-			{
-			int binlen;
-			char *out;
-			ut8 *bin = (ut8*)r_file_slurp (argv[i], &binlen);
-			if (!bin) {
-				eprintf ("Cannot open file\n");
-				continue;
-			}
-			out = malloc (((binlen + 1) * 4) / 3);
-			if (out) {
-				r_base64_encode (out, bin, binlen);
-				printf ("%s\n", out);
-				fflush (stdout);
-				free (out);
-			}
-			free (bin);
-			}
-			break;
-		case 2: // decode
-			{
-			int binlen, outlen;
-			ut8 *out, *bin = (ut8*)r_file_slurp (argv[i], &binlen);
-			if (!bin) {
-				eprintf ("Cannot open file\n");
-				continue;
-			}
-			out = malloc (binlen + 1);
-			if (out) {
-				outlen = r_base64_decode (out, (const char*)bin, binlen);
-				write (1, out, outlen);
-				free (out);
-			}
-			free (bin);
-			}
-			break;
-		default:
-			if (!strcmp (argv[i], "-")) {
-				int sz = 0;
-				ut8 *buf = (ut8*)r_stdin_slurp (&sz);
-				char *uri = r_str_newf ("malloc://%d", sz);
-				if (sz > 0) {
-					if (!r_io_open_nomap (io, uri, 0, 0)) {
-						eprintf ("rahash2: Cannot open malloc://1024\n");
+			case 1: // encode
+				{
+				int binlen;
+				char *out;
+				ut8 *bin = (ut8*)r_file_slurp (argv[i], &binlen);
+				if (!bin) {
+					eprintf ("Cannot open file\n");
+					continue;
+				}
+				out = malloc (((binlen + 1) * 4) / 3);
+				if (out) {
+					r_base64_encode (out, bin, binlen);
+					printf ("%s\n", out);
+					fflush (stdout);
+					free (out);
+				}
+				free (bin);
+				}
+				break;
+			case 2: // decode
+				{
+				int binlen, outlen;
+				ut8 *out, *bin = (ut8*)r_file_slurp (argv[i], &binlen);
+				if (!bin) {
+					eprintf ("Cannot open file\n");
+					continue;
+				}
+				out = malloc (binlen + 1);
+				if (out) {
+					outlen = r_base64_decode (out, (const char*)bin, binlen);
+					write (1, out, outlen);
+					free (out);
+				}
+				free (bin);
+				}
+				break;
+			default:
+				if (!strcmp (argv[i], "-")) {
+					int sz = 0;
+					ut8 *buf = (ut8*)r_stdin_slurp (&sz);
+					char *uri = r_str_newf ("malloc://%d", sz);
+					if (sz > 0) {
+						if (!r_io_open_nomap (io, uri, 0, 0)) {
+							eprintf ("rahash2: Cannot open malloc://1024\n");
+							return 1;
+						}
+						r_io_pwrite (io, 0, buf, sz);
+					}
+					free (uri);
+				} else {
+					if (r_file_is_directory (argv[i])) {
+						eprintf ("rahash2: Cannot hash directories\n");
 						return 1;
 					}
-					r_io_pwrite (io, 0, buf, sz);
+					if (!r_io_open_nomap (io, argv[i], 0, 0)) {
+						eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
+						return 1;
+					}
 				}
-				free (uri);
-			} else {
-				if (r_file_is_directory (argv[i])) {
-					eprintf ("rahash2: Cannot hash directories\n");
-					return 1;
-				}
-				if (!r_io_open_nomap (io, argv[i], 0, 0)) {
-					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
-					return 1;
-				}
+				ret |= do_hash (argv[i], algo, io, bsize, rad, ule, compareBin);
 			}
-			ret |= do_hash (argv[i], algo, io, bsize, rad, ule, compareBin);
 		}
 	}
 	free (hashstr);

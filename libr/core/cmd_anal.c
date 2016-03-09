@@ -3585,13 +3585,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (core->cons->breaked)
 					goto jacuzzi;
 				if (input[1] == 'a') { // "aaaa"
-					rowlog (core, "Emulate code to find computed references");
+					rowlog (core, "Emulate code to find computed references (aae)");
 					r_core_cmd0 (core, "aae @ $S");
 					rowlog_done (core);
-					rowlog (core, "Finding function by preludes");
+					rowlog (core, "Finding function by preludes (aap)");
 					r_core_cmd0 (core, "aap");
 					rowlog_done (core);
-					rowlog (core, "Analyze consecutive function");
+					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
 					rowlog_done (core);
 				}

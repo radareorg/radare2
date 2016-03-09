@@ -265,10 +265,10 @@ static const char *getSectionName (RCore *core, ut64 addr) {
 	return section;
 }
 
-static void ds_print_spacy (RDisasmState *ds) {
+static void ds_print_spacy (RDisasmState *ds, int pre) {
 	RCore *core = ds->core;
 	RAnalFunction *f = NULL;
-	r_cons_newline ();
+	if (pre) r_cons_newline ();
 	if (ds->show_functions) {
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (!f) {
@@ -278,6 +278,7 @@ static void ds_print_spacy (RDisasmState *ds) {
 	}
 	if (f) beginline (core, ds, f);
 	handle_print_offset (core, ds);
+	if (!pre) r_cons_newline ();
 }
 
 static RDisasmState * handle_init_ds (RCore * core) {
@@ -860,7 +861,7 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 		handle_set_pre (ds, core->cons->vline[RUP_CORNER]);
 		if (ds->show_flgoff) {
 			r_cons_printf ("%s%s", COLOR (ds, color_fline), ds->pre);
-			if (ds->show_functions) {
+			if (ds->show_fcnlines) {
 				r_cons_printf (" ");
 			}
 			handle_print_lines_left (core, ds);
@@ -1066,11 +1067,6 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	flaglist = r_flag_get_list (core->flags, ds->at);
 
-	if (ds->show_spacy) {
-		if (!r_list_empty (flaglist)) {
-			ds_print_spacy(ds);
-		}
-	}
 	r_list_foreach (flaglist, iter, flag) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show flags that have the same name as the function
@@ -1080,7 +1076,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 			if (f) {
 				beginline (core, ds, f);
 			} else {
-				if (ds->show_functions) {
+				if (f && ds->show_functions) {
 					r_cons_printf ("  ");
 				}
 				handle_print_lines_left (core, ds);
@@ -1088,9 +1084,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 			handle_print_offset (core, ds);
 			r_cons_printf (" ");
 		} else {
-			if (ds->show_functions) {
-				r_cons_printf ((f && ds->at > f->addr)?"| ": "  ");
-			}
+			r_cons_printf ((f && ds->at > f->addr)?"| ": "  ");
 			handle_print_lines_left (core, ds);
 			r_cons_printf (";-- ");
 		}
@@ -1100,21 +1094,18 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 		if (ds->asm_demangle) {
 			const char *lang = r_config_get (core->config, "bin.lang");
 			char *name = r_bin_demangle (core->bin->cur, lang, flag->realname);
-			if (!name)
-				name = strdup (flag->realname);
-			if (ds->show_functions)
-				r_cons_printf ("%s:\n", name);
-			else r_cons_printf ("%s%s", beginch, name);
+			r_cons_printf ("%s:\n", name? name: flag->realname);
 			R_FREE (name);
 		} else {
-			if (ds->show_functions) {
-				r_cons_printf ("%s:\n", flag->name);
-			} else r_cons_printf ("%s%s", beginch, flag->name);
+			r_cons_printf ("%s:\n", flag->name);
 		}
 		printed = true;
 	}
-	if (printed && !ds->show_functions)
-		r_cons_printf (":\n");
+	if (ds->show_spacy) {
+		if (!r_list_empty (flaglist)) {
+			ds_print_spacy(ds, false);
+		}
+	}
 }
 
 static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
@@ -2358,7 +2349,7 @@ beach:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_RET:
-			ds_print_spacy (ds);
+			ds_print_spacy (ds, 1);
 			break;
 		}
 	}
@@ -2561,7 +2552,9 @@ toro:
 			int delta = (ds->at <= f->addr)? (ds->at - f->addr + f->size): 0;
 			if (of != f) {
 				handle_show_comments_right (core, ds);
-				r_cons_printf ("%s%s%s (fcn) %s%s\n", COLOR (ds, color_fline), core->cons->vline[RUP_CORNER], COLOR (ds, color_fname), f->name, COLOR_RESET (ds));
+				r_cons_printf ("%s%s%s (fcn) %s%s\n",
+					COLOR (ds, color_fline), core->cons->vline[RUP_CORNER],
+					COLOR (ds, color_fname), f->name, COLOR_RESET (ds));
 				handle_print_pre (core, ds, true);
 				handle_print_lines_left (core, ds);
 				handle_print_offset (core, ds);
