@@ -468,9 +468,13 @@ int main(int argc, char **argv, char **envp) {
 				RListIter *iter;
 				RList *files = r_sys_dir (homerc);
 				r_list_foreach (files, iter, file) {
-					char *path = r_str_newf ("%s/%s", homerc, file);
-					r_core_cmd_file (&r, path);
-					free (path);
+					if (*file != '.') {
+						char *path = r_str_newf ("%s/%s", homerc, file);
+						if (r_file_is_regular (path)) {
+							r_core_cmd_file (&r, path);
+						}
+						free (path);
+					}
 				}
 				r_list_free (files);
 			}

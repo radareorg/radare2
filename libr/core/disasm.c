@@ -861,7 +861,7 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 		handle_set_pre (ds, core->cons->vline[RUP_CORNER]);
 		if (ds->show_flgoff) {
 			r_cons_printf ("%s%s", COLOR (ds, color_fline), ds->pre);
-			if (ds->show_functions) {
+			if (ds->show_fcnlines) {
 				r_cons_printf (" ");
 			}
 			handle_print_lines_left (core, ds);
@@ -1076,7 +1076,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 			if (f) {
 				beginline (core, ds, f);
 			} else {
-				if (ds->show_functions) {
+				if (f && ds->show_functions) {
 					r_cons_printf ("  ");
 				}
 				handle_print_lines_left (core, ds);
@@ -2552,7 +2552,9 @@ toro:
 			int delta = (ds->at <= f->addr)? (ds->at - f->addr + f->size): 0;
 			if (of != f) {
 				handle_show_comments_right (core, ds);
-				r_cons_printf ("%s%s%s (fcn) %s%s\n", COLOR (ds, color_fline), core->cons->vline[RUP_CORNER], COLOR (ds, color_fname), f->name, COLOR_RESET (ds));
+				r_cons_printf ("%s%s%s (fcn) %s%s\n",
+					COLOR (ds, color_fline), core->cons->vline[RUP_CORNER],
+					COLOR (ds, color_fname), f->name, COLOR_RESET (ds));
 				handle_print_pre (core, ds, true);
 				handle_print_lines_left (core, ds);
 				handle_print_offset (core, ds);
