@@ -8,6 +8,14 @@
 #include <r_util.h>
 #include "elf.h"
 
+#ifdef IFDBG
+#undef IFDBG
+#endif
+
+#define DO_THE_DBG 0
+#define IFDBG  if(DO_THE_DBG)
+#define IFINT  if(0)
+
 #define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000
 #define ELF_PAGE_SIZE 12
 
@@ -385,27 +393,27 @@ static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 		link_section_name = "";
 	}
 
-	eprintf ("Version symbols section '%s' contains %d entries:\n", section_name, num_entries);
-	eprintf (" Addr: 0x%08"PFMT64x"  Offset: 0x%08"PFMT64x"  Link: %x (%s)\n",
+	IFDBG eprintf ("Version symbols section '%s' contains %d entries:\n", section_name, num_entries);
+	IFDBG eprintf (" Addr: 0x%08"PFMT64x"  Offset: 0x%08"PFMT64x"  Link: %x (%s)\n",
 		(ut64)shdr->sh_addr, (ut64)shdr->sh_offset, (ut32)shdr->sh_link, link_section_name);
 	for (i = num_entries; i--;) {
 		//r_buf_read_at (bin->b, , &data[i], 1);
 	}
 	for (i = 0; i < num_entries; i += 4) {
 		int j;
-		eprintf ("  %03x:", i);
+		IFDBG eprintf ("  %03x:", i);
 		for (j = 0; (j < 4) && (i + j) < num_entries; ++j) {
 			if (data[i + j] == 0) {
-				eprintf ("   0 (*local*)    ");
+				IFDBG eprintf ("   0 (*local*)    ");
 			} else if (data[i + j] == 1) {
-				eprintf ("   1 (*global*)    ");
+				IFDBG eprintf ("   1 (*global*)    ");
 			} else {
 				ut16 *d = (ut16*) (data + i + j);
 				//eprintf ("%4x%c", data[i + j] & 0x7FFF, data[i + j] & 0x8000 ? 'h' : ' ');
-				eprintf ("%4x%c", *d & 0x7FFF, *d & 0x8000 ? 'h' : ' ');
+				IFDBG eprintf ("%4x%c", *d & 0x7FFF, *d & 0x8000 ? 'h' : ' ');
 			}
 		}
-		eprintf ("\n");
+		IFDBG eprintf ("\n");
 	}
 	free (data);
 }
@@ -415,7 +423,7 @@ static void store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	if (shdr->sh_name > bin->shstrtab_size)
 		return;
 	section_name = &bin->shstrtab[shdr->sh_name];
-	eprintf ("Version definition section '%s' contains %d entries:\n", section_name, shdr->sh_info);
+	IFDBG eprintf ("Version definition section '%s' contains %d entries:\n", section_name, shdr->sh_info);
 }
 
 static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
@@ -430,9 +438,9 @@ static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 	need = malloc (sz);
 	if (!need) return;
 	section_name = &bin->shstrtab[shdr->sh_name];
-	eprintf ("Version needs section '%s' contains %d entries:\n", section_name, shdr->sh_info);
-	eprintf (" Addr: 0x%08"PFMT64x, (ut64)shdr->sh_addr);
-	eprintf (" Offset: 0x%08"PFMT64x"  Link to section: %x (%s)\n",
+	IFDBG eprintf ("Version needs section '%s' contains %d entries:\n", section_name, shdr->sh_info);
+	IFDBG eprintf (" Addr: 0x%08"PFMT64x, (ut64)shdr->sh_addr);
+	IFDBG eprintf (" Offset: 0x%08"PFMT64x"  Link to section: %x (%s)\n",
 		(ut64)shdr->sh_offset, shdr->sh_link, section_name);
 	if (shdr->sh_offset > bin->size || shdr->sh_offset + sz > bin->size)
 		return;
@@ -450,14 +458,14 @@ static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 		int j, isum;
 		ut8 *vstart = need + i;
 		Elf_(Verneed) *entry = (Elf_(Verneed)*)(vstart);
-		eprintf ("  %#x: Version: %d", i, entry->vn_version);
-		eprintf ("  Cnt: %d\n", entry->vn_cnt);
+		IFDBG eprintf ("  %#x: Version: %d", i, entry->vn_version);
+		IFDBG eprintf ("  Cnt: %d\n", entry->vn_cnt);
 		vstart += entry->vn_aux;
 		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && (j + entry->vn_aux +i + sizeof(Elf_(Vernaux))) < sz; j++) {
 			Elf_(Vernaux) *aux = (Elf_(Vernaux)*)(vstart);
 			if (vstart + sizeof (Elf_(Vernaux)) > vend)
 				break;
-			eprintf ("  Flags: %x  Version: %d\n", (ut32)aux->vna_flags, aux->vna_other);
+			IFDBG eprintf ("  Flags: %x  Version: %d\n", (ut32)aux->vna_flags, aux->vna_other);
 			if (aux->vna_next > 0) {
 				isum += aux->vna_next;
 				vstart += aux->vna_next;
