@@ -2175,9 +2175,12 @@ static int cmd_print(void *data, const char *input) {
 		old_bits = r_config_get_i (core->config, "asm.bits");
 
 		if (input[1] && input[2]) {
-			int len = (int)r_num_math (core->num, input+2);
-			if (len == 0) {
-				break;
+			char* p = strchr(input,' ');
+			if (p) {
+				int len = (int)r_num_math (core->num, p);
+				if (len == 0) {
+					break;
+				}
 			}
 		}
 		// XXX - this is necessay b/c radare will automatically
