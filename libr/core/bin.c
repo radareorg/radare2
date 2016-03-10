@@ -1885,10 +1885,34 @@ static void bin_pe_versioninfo(RCore *r) {
 	const char *format_version = "bin/cur/info/vs_version_info/VS_VERSIONINFO%d";
 	const char *format_stringtable = "%s/string_file_info/stringtable%d";
 	const char *format_string = "%s/string%d";
+	r_cons_printf ("=== VS_VERSIONINFO ===\n\n");
 	do {
 		char path_version[256] = {0};
 		snprintf (path_version, sizeof (path_version), format_version, num_version);
-		sdb = sdb_ns_path (r->sdb, path_version, 0);
+		if (!(sdb = sdb_ns_path (r->sdb, path_version, 0)))
+			break;
+		r_cons_printf ("# VS_FIXEDFILEINFO\n\n");
+		char path_fixedfileinfo[256] = {0};
+		snprintf (path_fixedfileinfo, sizeof (path_fixedfileinfo), "%s/fixed_file_info", path_version);
+		if (!(sdb = sdb_ns_path (r->sdb, path_fixedfileinfo, 0)))
+			break;
+
+		r_cons_printf ("Signature: %s\n", sdb_const_get (sdb, "Signature", 0));
+		r_cons_printf ("StrucVersion: %s\n", sdb_const_get (sdb, "FileVersionMS", 0));
+		r_cons_printf ("FileVersionMS: %s\n", sdb_const_get (sdb, "FileVersionMS", 0));
+		r_cons_printf ("FileVersionLS: %s\n", sdb_const_get (sdb, "FileVersionLS", 0));
+		r_cons_printf ("ProductVersionMS: %s\n", sdb_const_get (sdb, "ProductVersionMS", 0));
+		r_cons_printf ("ProductVersionLS: %s\n", sdb_const_get (sdb, "ProductVersionLS", 0));
+		r_cons_printf ("FileFlagsMask: %s\n", sdb_const_get (sdb, "FileFlagsMask", 0));
+		r_cons_printf ("FileFlags: %s\n", sdb_const_get (sdb, "FileFlags", 0));
+		r_cons_printf ("FileOS: %s\n", sdb_const_get (sdb, "FileOS", 0));
+		r_cons_printf ("FileType: %s\n", sdb_const_get (sdb, "FileType", 0));
+		r_cons_printf ("FileSubType: %s\n", sdb_const_get (sdb, "FileSubType", 0));
+		r_cons_printf ("FileDateMS: %s\n", sdb_const_get (sdb, "FileDateMS", 0));
+		r_cons_printf ("FileDateLS: %s\n", sdb_const_get (sdb, "FileDateLS", 0));
+		r_cons_printf ("\n");
+
+		r_cons_printf ("# StringTable\n\n");
 		for (num_stringtable = 0; sdb; ++num_stringtable) {
 			char path_stringtable[256] = {0};
 			snprintf (path_stringtable, sizeof (path_stringtable), format_stringtable, path_version, num_stringtable);
@@ -1902,13 +1926,20 @@ static void bin_pe_versioninfo(RCore *r) {
 					int lenval = 0;
 					ut8 *key_utf16 = sdb_decode (sdb_const_get (sdb, "key", 0), &lenkey);
 					ut8 *val_utf16 = sdb_decode (sdb_const_get (sdb, "value", 0), &lenval);
-					char *key = r_str_utf16_decode (key_utf16, lenkey);
-					char *val = r_str_utf16_decode (val_utf16, lenval);
-					r_cons_printf ("%s: %s\n", key, val);
+					ut8 *key_utf8 = calloc (lenkey * 2, 1);
+					ut8 *val_utf8 = calloc (lenval * 2, 1);
+
+					if (r_str_utf16_to_utf8 (key_utf8, lenkey * 2, key_utf16, lenkey, true) < 0
+						|| r_str_utf16_to_utf8 (val_utf8, lenval * 2, val_utf16, lenval, true) < 0) {
+						eprintf ("Warning: Cannot decode utf16 to utf8\n");
+					} else {
+						r_cons_printf ("%s: %s\n", (char*)key_utf8, (char*)val_utf8);
+					}
+
+					free (key_utf8);
+					free (val_utf8);
 					free (key_utf16);
 					free (val_utf16);
-					free (key);
-					free (val);
 				}
 			}
 		}
@@ -1917,6 +1948,95 @@ static void bin_pe_versioninfo(RCore *r) {
 }
 
 static void bin_elf_versioninfo(RCore *r) {
+	const char *format = "bin/cur/info/versioninfo/%s%d";
+	char path[256] = {0};
+	int num_versym = 0;
+	int num_verneed = 0;
+	int num_entry = 0;
+	Sdb *sdb = NULL;
+
+	do {
+		snprintf (path, sizeof (path), format, "versym", num_versym++);
+		if (!(sdb = sdb_ns_path (r->sdb, path, 0)))
+			break;
+
+		ut64 addr = sdb_num_get (sdb, "addr", 0);
+		ut64 offset = sdb_num_get (sdb, "offset", 0);
+		ut64 link = sdb_num_get (sdb, "link", 0);
+		ut64 num_entries = sdb_num_get (sdb, "num_entries", 0);
+		const char *section_name = sdb_const_get (sdb, "section_name", 0);
+		const char *link_section_name = sdb_const_get (sdb, "link_section_name", 0);
+
+		r_cons_printf ("Version symbols section '%s' contains %d entries:\n", section_name, num_entries);
+		r_cons_printf (" Addr: 0x%08"PFMT64x"  Offset: 0x%08"PFMT64x"  Link: %x (%s)\n",
+			(ut64)addr, (ut64)offset, (ut32)link, link_section_name);
+
+		do {
+			int num_val = 0;
+			char path_entry[256] = {0};
+			snprintf (path_entry, sizeof (path_entry), "%s/entry%d", path, num_entry++);
+			if (!(sdb = sdb_ns_path (r->sdb, path_entry, 0)))
+				break;
+			
+			r_cons_printf ("  %03x: ", sdb_num_get (sdb, "idx", 0));
+			const char *value = NULL;
+
+			do {
+				char key[32] = {0};
+				snprintf (key, sizeof (key), "value%d", num_val++);
+
+				if ((value = sdb_const_get (sdb, key, 0)))
+					r_cons_printf ("%s ", value);
+			} while (value);
+			r_cons_printf ("\n");
+		} while (sdb);
+		r_cons_printf ("\n\n");
+	} while (sdb);
+
+	do {
+		int num_version = 0;
+		char path_version[256] = {0};
+		snprintf (path, sizeof (path), format, "verneed", num_verneed++);
+		if (!(sdb = sdb_ns_path (r->sdb, path, 0)))
+			break;
+
+		r_cons_printf ("Version need section '%s' contains %d entries:\n",
+			sdb_const_get (sdb, "section_name", 0), sdb_num_get (sdb, "num_entries", 0));
+
+		r_cons_printf (" Addr: %p", (void*)sdb_num_get (sdb, "addr", 0));
+
+		r_cons_printf ("  Offset: %#x  Link to section: %x (%s)\n",
+			sdb_num_get (sdb, "offset", 0), sdb_num_get (sdb, "link", 0),
+			sdb_const_get (sdb, "link_section_name", 0));
+
+		do {
+			snprintf (path_version, sizeof (path_version), "%s/version%d", path, num_version++);
+			const char *filename = NULL;
+			char path_vernaux[256] = {0};
+			int num_vernaux = 0;
+			if (!(sdb = sdb_ns_path (r->sdb, path_version, 0)))
+				break;
+
+			r_cons_printf ("  %#06x: Version: %d",
+				sdb_num_get (sdb, "idx", 0), sdb_num_get (sdb, "vn_version", 0));
+
+			if ((filename = sdb_const_get (sdb, "file_name", 0)))
+				r_cons_printf ("  File: %s", filename);
+
+			r_cons_printf ("  Cnt: %d\n", sdb_num_get (sdb, "cnt", 0));
+			do {
+				snprintf (path_vernaux, sizeof (path_vernaux), "%s/vernaux%d", path_version, num_vernaux++);
+				if (!(sdb = sdb_ns_path (r->sdb, path_vernaux, 0)))
+					break;
+
+				r_cons_printf ("  %#06x:   Name: %s",
+					sdb_num_get (sdb, "idx", 0), sdb_const_get (sdb, "name", 0));
+
+				r_cons_printf ("  Flags: %s Version: %d\n",
+					sdb_const_get (sdb, "flags", 0), sdb_num_get (sdb, "version", 0));
+			} while (sdb);
+		} while (sdb);
+	} while (sdb);
 }
 
 static void bin_mach0_versioninfo(RCore *r) {
