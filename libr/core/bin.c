@@ -1907,6 +1907,8 @@ static void bin_mach0_versioninfo(RCore *r) {
 static int bin_versioninfo(RCore *r, int mode) {
 	const RBinInfo *info = r_bin_get_info (r->bin);
 
+	if (!(info && info->rclass)) return false;
+
 	if (!strncmp ("pe", info->rclass, 2)) {
 		bin_pe_versioninfo (r);
 	} else if (!strncmp ("elf", info->rclass, 3)) {
