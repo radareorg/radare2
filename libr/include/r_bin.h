@@ -104,6 +104,8 @@ typedef struct r_bin_info_t {
 	int has_crypto;
 	int has_nx;
 	int big_endian;
+	char *actual_checksum;
+	char *claimed_checksum;
 	ut64 dbg_info;
 	RBinHash sum[3];
 	ut64 baddr;
