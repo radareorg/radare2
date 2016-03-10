@@ -357,6 +357,8 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 static RBinInfo* info(RBinFile *arch) {
 	SDebugInfo di = {{0}};
 	RBinInfo *ret = R_NEW0 (RBinInfo);
+	ut32 claimed_checksum, actual_checksum;
+
 	if (!ret) return NULL;
 	arch->file = strdup (arch->file);
 	ret->bclass = PE_(r_bin_pe_get_class) (arch->o->bin_obj);
@@ -374,12 +376,18 @@ static RBinInfo* info(RBinFile *arch) {
 	if (PE_(r_bin_pe_is_dll) (arch->o->bin_obj))
 		ret->type = strdup ("DLL (Dynamic Link Library)");
 	else ret->type = strdup ("EXEC (Executable file)");
+
+	claimed_checksum = PE_(bin_pe_get_claimed_checksum) (arch->o->bin_obj);
+	actual_checksum  = PE_(bin_pe_get_actual_checksum) (arch->o->bin_obj);
+
 	ret->bits = PE_(r_bin_pe_get_bits) (arch->o->bin_obj);
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
 	ret->has_canary = has_canary (arch);
 	ret->has_nx = haschr (arch, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
 	ret->has_pi = haschr (arch, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
+	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", claimed_checksum));
+	ret->actual_checksum  = strdup (sdb_fmt (1, "0x%08x", actual_checksum));
 
 	sdb_bool_set (arch->sdb, "pe.canary", has_canary(arch), 0);
 	sdb_bool_set (arch->sdb, "pe.highva", haschr(arch, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
@@ -394,8 +402,11 @@ static RBinInfo* info(RBinFile *arch) {
 	sdb_bool_set (arch->sdb, "pe.guardcf", haschr(arch, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
 	sdb_bool_set (arch->sdb, "pe.terminalserveraware", haschr(arch, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
 	sdb_num_set (arch->sdb, "pe.bits", ret->bits, 0);
+	sdb_set (arch->sdb, "pe.claimed_checksum", ret->claimed_checksum, 0);
+	sdb_set (arch->sdb, "pe.actual_checksum", ret->actual_checksum, 0);
 
 	ret->has_va = true;
+
 	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->o->bin_obj))

@@ -558,6 +558,61 @@ struct symrec {
 	return true;
 }
 
+int PE_(bin_pe_get_claimed_checksum)(struct PE_(r_bin_pe_obj_t) *bin) {
+	return bin->nt_headers->optional_header.CheckSum;
+}
+
+int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t) *bin) {
+	int i, j;
+	int checksum_offset = bin->nt_header_offset + 4 + sizeof(PE_(image_file_header)) + 0x40;
+
+	ut8 *buf = bin->b->buf;
+	ut64 computed_cs = 0;
+	int remaining_bytes;
+	int shift;
+	ut32 cur;
+	for (i = 0; i < bin->size / 4; i++) {
+		cur = (buf[i * 4]     << 0)  |
+			  (buf[i * 4 + 1] << 8)  |
+			  (buf[i * 4 + 2] << 16) |
+			  (buf[i * 4 + 3] << 24);
+
+		// skip the checksum bytes
+		if (i * 4 == checksum_offset) {
+			continue;
+		}
+
+		computed_cs = (computed_cs & 0xFFFFFFFF) + cur + (computed_cs >> 32);
+		if (computed_cs >> 32) {
+			computed_cs = (computed_cs & 0xFFFFFFFF) + (computed_cs >> 32);
+		}		
+	}
+
+	// add resultant bytes to checksum
+	remaining_bytes = bin->size % 4;
+	i = i * 4;
+	if (remaining_bytes != 0) {
+		cur = buf[i];
+		shift = 8;
+		for (j = 1; j < remaining_bytes; j++, shift += 8) {
+			cur |= buf[i + j] << shift;
+		}
+		computed_cs = (computed_cs & 0xFFFFFFFF) + cur + (computed_cs >> 32);
+		if (computed_cs >> 32) {
+			computed_cs = (computed_cs & 0xFFFFFFFF) + (computed_cs >> 32);
+		}
+	}
+
+	// 32bits -> 16bits
+	computed_cs = (computed_cs & 0xFFFF) + (computed_cs >> 16);
+	computed_cs = (computed_cs)          + (computed_cs >> 16);
+	computed_cs = (computed_cs & 0xFFFF);
+
+	// add filesize
+	computed_cs += bin->size;
+	return computed_cs;
+}
+
 static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_(image_data_directory) *data_dir_import = \
 		&bin->nt_headers->optional_header.DataDirectory[ \
