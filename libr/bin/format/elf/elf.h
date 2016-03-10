@@ -83,6 +83,10 @@ struct Elf_(r_bin_elf_obj_t) {
 	int dyn_entries;
 	int is_rela;
 
+	ut64 version_info[DT_VERSIONTAGNUM];
+
+	char *dynstr;
+
 	RBinImport **imports_by_ord;
 	size_t imports_by_ord_size;
 	RBinSymbol **symbols_by_ord;
