@@ -70,6 +70,33 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 	return ret;
 }
 
+static void add_tls_callbacks(RBinFile *arch, RList* list) {
+	PE_DWord paddr, vaddr;
+	int count = 0;
+	RBinAddr *ptr = NULL;
+	struct PE_(r_bin_pe_obj_t) *bin = (struct PE_(r_bin_pe_obj_t) *) (arch->o->bin_obj);
+	char *key;
+
+	do {
+		key =  sdb_fmt (0, "pe.tls_callback%d_paddr", count);
+		paddr = sdb_num_get (bin->kv, key, 0);
+		if (!paddr) break;
+
+		key =  sdb_fmt (0, "pe.tls_callback%d_vaddr", count);
+		vaddr = sdb_num_get (bin->kv, key, 0);
+		if (!vaddr) break;
+
+		if ((ptr = R_NEW0 (RBinAddr))) {
+			ptr->paddr = paddr;
+			ptr->vaddr = vaddr;
+			ptr->type  = R_BIN_ENTRY_TYPE_TLS;
+			r_list_append (list, ptr);
+		}
+		count++;
+	} while (vaddr != 0);
+
+}
+
 static RList* entries(RBinFile *arch) {
 	RList* ret;
 	RBinAddr *ptr = NULL;
@@ -80,12 +107,17 @@ static RList* entries(RBinFile *arch) {
 	ret->free = free;
 	if (!(entry = PE_(r_bin_pe_get_entrypoint) (arch->o->bin_obj)))
 		return ret;
-	if ((ptr = R_NEW (RBinAddr))) {
+	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = entry->paddr;
 		ptr->vaddr = entry->vaddr;
+		ptr->type  = R_BIN_ENTRY_TYPE_PROGRAM;
 		r_list_append (ret, ptr);
 	}
 	free (entry);
+
+	// get TLS callback addresses
+	add_tls_callbacks (arch, ret);
+
 	return ret;
 }
 
