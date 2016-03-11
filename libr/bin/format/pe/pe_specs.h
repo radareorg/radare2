@@ -290,6 +290,15 @@ typedef struct {
 } Pe32_image_delay_import_directory, Pe64_image_delay_import_directory;
 
 typedef struct {
+	ut32 StartAddressOfRawData;
+	ut32 EndAddressOfRawData;
+	ut32 AddressOfIndex;
+	ut32 AddressOfCallBacks;
+	ut32 SizeOfZeroFill;
+	ut32 Characteristics;
+} Pe32_image_tls_directory, Pe64_image_tls_directory;
+
+typedef struct {
 	ut32 Signature;
 	Pe32_image_file_header file_header;
 	Pe32_image_optional_header optional_header;

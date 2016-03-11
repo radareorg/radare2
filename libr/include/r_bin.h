@@ -29,6 +29,11 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_DBG_SYMS     0x08
 #define R_BIN_DBG_RELOCS   0x10
 
+#define R_BIN_ENTRY_TYPE_PROGRAM 0
+#define R_BIN_ENTRY_TYPE_INIT    1
+#define R_BIN_ENTRY_TYPE_FINI    2
+#define R_BIN_ENTRY_TYPE_TLS     3
+
 #define R_BIN_SIZEOF_STRINGS 512
 #define R_BIN_MAX_ARCH 1024
 
@@ -71,6 +76,7 @@ enum {
 typedef struct r_bin_addr_t {
 	ut64 vaddr;
 	ut64 paddr;
+	int type;
 } RBinAddr;
 
 typedef struct r_bin_hash_t {

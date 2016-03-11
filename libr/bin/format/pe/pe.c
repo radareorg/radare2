@@ -103,6 +103,11 @@ static PE_DWord bin_pe_rva_to_va(RBinPEObj* bin, PE_DWord rva) {
 	return bin->nt_headers->optional_header.ImageBase + rva;
 }
 
+static PE_DWord bin_pe_va_to_rva(RBinPEObj* bin, PE_DWord va) {
+	if (va < bin->nt_headers->optional_header.ImageBase) return va;
+	return va - bin->nt_headers->optional_header.ImageBase;
+}
+
 #if 0
 static PE_DWord PE_(r_bin_pe_paddr_to_vaddr)(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord paddr)
 {
@@ -822,6 +827,57 @@ static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 	}
 	bin->resource_directory_offset = resource_dir_paddr;
 	return true;
+}
+
+static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t) *bin, PE_DWord callbacks) {
+	PE_DWord paddr;
+	int count = 0;
+	PE_DWord addressOfTLSCallback = 1;
+	char *key;
+
+	while (addressOfTLSCallback != 0) {
+		if (r_buf_read_at (bin->b, callbacks, (ut8*)&addressOfTLSCallback, sizeof (addressOfTLSCallback)) != sizeof (addressOfTLSCallback)) {
+			eprintf("Warning: read (tls_callback)\n");
+			return;
+		}
+		if (addressOfTLSCallback == 0) break;
+		if (bin->nt_headers->optional_header.SizeOfImage) {
+			int rva_callback = bin_pe_va_to_rva (bin, (PE_DWord) addressOfTLSCallback);
+			if (rva_callback > bin->nt_headers->optional_header.SizeOfImage) break;
+		}
+		key = sdb_fmt (0, "pe.tls_callback%d_vaddr", count);
+		sdb_num_set (bin->kv, key, addressOfTLSCallback, 0);
+		
+		key = sdb_fmt (0, "pe.tls_callback%d_paddr", count);
+		paddr = bin_pe_rva_to_paddr (bin, bin_pe_va_to_rva(bin, (PE_DWord) addressOfTLSCallback));
+		sdb_num_set (bin->kv, key, paddr, 0);
+
+		count++;
+		callbacks += sizeof (addressOfTLSCallback);
+	}
+}
+
+static int bin_pe_init_tls(struct PE_(r_bin_pe_obj_t) *bin) {
+	PE_(image_tls_directory) *image_tls_directory;
+	PE_(image_data_directory) *data_dir_tls = \
+		&bin->nt_headers->optional_header.DataDirectory[ \
+		PE_IMAGE_DIRECTORY_ENTRY_TLS];
+	PE_DWord tls_paddr = bin_pe_rva_to_paddr (bin,
+		data_dir_tls->VirtualAddress);
+
+	image_tls_directory = R_NEW (PE_(image_tls_directory));
+	if (r_buf_read_at (bin->b, tls_paddr, (ut8*)image_tls_directory, sizeof (PE_(image_tls_directory))) != sizeof (PE_(image_tls_directory))) {
+		eprintf ("Warning: read (image_tls_directory)\n");
+		free(image_tls_directory);
+		return 0;
+	}
+
+	bin->tls_directory = image_tls_directory;
+	if (!image_tls_directory->AddressOfCallBacks) return 0;
+	PE_DWord callbacks_paddr = bin_pe_rva_to_paddr (bin, bin_pe_va_to_rva(bin, (PE_DWord) image_tls_directory->AddressOfCallBacks));
+	bin_pe_store_tls_callbacks (bin, callbacks_paddr);
+
+	return 0;
 }
 
 static void free_Var(Var *var) {
@@ -1693,6 +1749,8 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin_pe_init_imports(bin);
 	bin_pe_init_exports(bin);
 	bin_pe_init_resource(bin);
+	bin_pe_init_tls(bin);
+
 	PE_(r_bin_store_all_resource_version_info)(bin);
 	bin->relocs = NULL;
 	return true;
