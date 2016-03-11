@@ -1544,6 +1544,173 @@ static void cmd_print_pv(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_print_bars(RCore *core, const char *input) { // p=[e][jq]
+	bool print_bars = false;
+	char *spc, input1 = 'b';
+	ut64 stblk = 0;
+	int mode = 0, psz = 0;
+	ut8 *ptr = core->block;
+	ut64 nbsz, obsz, fsz = UT64_MAX;
+
+	nbsz = core->blocksize;
+
+	if (input[0]) {
+		mode = input[1];
+		if (input[1] && input[1] != ' ') {
+			input1 = input[1];
+			if (input[1] && input[2]) {
+				mode = input[2];
+			}
+		}
+		spc = strchr (input, ' ');
+		if (spc) {
+			nbsz = r_num_get (core->num, spc+1);
+			if (nbsz<1)
+				nbsz = core->blocksize;
+			spc = strchr (spc+1, ' ');
+			if (spc) {
+				fsz = r_num_get (core->num, spc+1);
+				spc = strchr (spc+1, ' ');
+				if (spc) {
+					stblk = r_num_get (core->num, spc+1);
+				}
+			}
+		}
+	}
+	if (fsz == UT64_MAX) {
+		fsz = (core->file && core->io)?
+			r_io_desc_size (core->io, core->file->desc): 0;
+	}
+	psz = fsz / nbsz;
+	if (nbsz) {
+		obsz = core->blocksize;
+		switch (input1) {
+		case 'p':
+		case 'e':
+			if (fsz == UT64_MAX) {
+				eprintf ("Cannot determine file size\n");
+				goto beach;
+			}
+			nbsz = fsz / nbsz;
+			break;
+		}
+		r_core_block_size (core, nbsz);
+	} else {
+		obsz = nbsz = core->blocksize;
+	}
+	switch (input1) {
+	case '?':{ // bars
+			 const char* help_msg[] = {
+				 "Usage:", "p=[bep?][qj] [num-of-blocks] ([len]) ([block-offset]) ", "show entropy/printable chars/chars bars",
+				 "p=", "", "print bytes of current block in bars",
+				 "p=", "b", "same as above",
+				 "p=", "d", "print different bytes from block",
+				 "p=", "e", "print entropy for each filesize/blocksize",
+				 "p=", "p", "print number of printable bytes for each filesize/blocksize",
+				 NULL};
+			 r_core_cmd_help (core, help_msg);
+		 }
+		 break;
+	case 'd':
+		 cmd_print_eq_dict (core, nbsz); //core->blocksize);
+		 break;
+	case 'e': // entropy
+		 {
+			ut8 *p;
+			int psz, i = 0;
+			if (nbsz<1) nbsz=1;
+			psz = fsz / nbsz;
+			if (!psz) psz = 1;
+			ptr = malloc (psz);
+			if (!ptr) {
+				eprintf ("Error: failed to malloc memory");
+				goto beach;
+			}
+			//eprintf ("block = %d * %d\n", (int)nbsz, psz);
+			p = malloc (core->blocksize);
+			if (!p) {
+				R_FREE (ptr);
+				eprintf ("Error: failed to malloc memory");
+				goto beach;
+			}
+			for (i=stblk; i<(psz+stblk); i++) {
+				r_core_read_at (core, i*nbsz, p, nbsz);
+				ptr[i-stblk] = (ut8) (256 * r_hash_entropy_fraction (p, core->blocksize));
+			}
+			free (p);
+			print_bars = true;
+		}
+		break;
+	 case 'p': // printable chars
+		 {
+			ut8 *p;
+			int i = 0, j, k;
+			if (nbsz<1) nbsz=1;
+			if (!psz) psz = 1;
+			ptr = malloc (psz);
+			if (!ptr) {
+				eprintf ("Error: failed to malloc memory");
+				goto beach;
+			}
+			//eprintf ("block = %d * %d\n", (int)nbsz, (int)psz);
+			p = malloc (core->blocksize);
+			if (!p) {
+				eprintf ("Error: failed to malloc memory");
+				R_FREE (ptr);
+				goto beach;
+			}
+			for (i=stblk; i<(psz+stblk); i++) {
+				r_core_read_at (core, i*nbsz, p, nbsz);
+				for (j=k=0; j<nbsz; j++) {
+					if (IS_PRINTABLE (p[j]))
+					k++;
+				}
+				ptr[i-stblk] = 256 * k / nbsz;
+			}
+			free (p);
+			print_bars = true;
+		}
+		break;
+	case 'b': // bytes
+	case '\0':
+		 r_print_fill (core->print, core->block, core->blocksize);
+		 break;
+	}
+	if (print_bars) {
+		int i;
+		switch (mode) {
+		case 'j':
+			r_cons_printf ("{\"blocksize\":%d,\"entropy\":[", nbsz);
+			for (i=stblk; i<(psz+stblk); i++) {
+				ut8 ep = ptr[i-stblk];
+				ut64 off = nbsz * i;
+				const char *comma = (i+1< (psz+stblk))?",": "";
+				r_cons_printf ("{\"addr\":%"PFMT64d",\"value\":%d}%s",
+						off, ep, comma);
+
+			}
+			r_cons_printf ("]}\n");
+			break;
+		case 'q':
+			for (i=stblk; i<(psz+stblk); i++) {
+				ut8 ep = ptr[i-stblk];
+				r_cons_printf ("0x%08"PFMT64x" %d %d\n", i, nbsz, ep);
+			}
+			break;
+		default:
+			r_print_fill (core->print, ptr, psz);
+			break;
+		}
+	}
+	if (ptr && ptr != core->block)
+		free (ptr);
+	ptr = NULL;
+	if (nbsz)
+		r_core_block_size (core, obsz);
+beach:
+	return;
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int mode, w, p, i, l, len, total[10];
@@ -1552,7 +1719,7 @@ static int cmd_print(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	ut8 *ptr = core->block;
 	RCoreAnalStats *as;
-	ut64 n, nbsz, obsz, fsz;
+	ut64 n;
 	ut64 tmpseek = UT64_MAX;
 
 	r_print_init_rowoffsets (core->print);
@@ -1773,134 +1940,7 @@ static int cmd_print(void *data, const char *input) {
 		r_core_anal_stats_free (as);
 		break;
 	case '=': //p=
-		{
-		char *spc, input1 = 'b';
-		ut64 stblk = 0;
-		nbsz = core->blocksize;
-		fsz = 0;
-		if (input[0]) {
-			if (input[1] && input[1] != ' ')
-				input1 = input[1];
-			spc = strchr (input, ' ');
-			if (spc) {
-				nbsz = r_num_get (core->num, spc+1);
-				if (nbsz<1)
-					nbsz = core->blocksize;
-
-				spc = strchr (spc+1, ' ');
-				if (spc) {
-					fsz = r_num_get (core->num, spc+1);
-
-					spc = strchr (spc+1, ' ');
-					if (spc) {
-						stblk = r_num_get (core->num, spc+1);
-					}
-				}
-			}
-		}
-		if (fsz<1)
-			fsz = (core->file && core->io)? r_io_desc_size (core->io, core->file->desc): 0;
-		if (nbsz) {
-			obsz = core->blocksize;
-			switch (input1) {
-			case 'p':
-			case 'e':
-				if (fsz==UT64_MAX) {
-					eprintf ("Cannot determine file size\n");
-					goto beach;
-				}
-				nbsz = fsz / nbsz;
-				break;
-			}
-			r_core_block_size (core, nbsz);
-		} else {
-			obsz = nbsz = core->blocksize;
-		}
-		switch (input1) {
-		case '?':{ // bars
-			const char* help_msg[] = {
-			"Usage:", "p=[bep?] [num-of-blocks] ([len]) ([block-offset]) ", "show entropy/printable chars/chars bars",
-			"p=", "", "print bytes of current block in bars",
-			"p=", "b", "same as above",
-			"p=", "d", "print different bytes from block",
-			"p=", "e", "print entropy for each filesize/blocksize",
-			"p=", "p", "print number of printable bytes for each filesize/blocksize",
-			NULL};
-			r_core_cmd_help (core, help_msg);
-			}
-			break;
-		case 'd':
-			cmd_print_eq_dict (core, nbsz); //core->blocksize);
-			break;
-		case 'e': // entropy
-			{
-			ut8 *p;
-			int psz, i = 0;
-			if (nbsz<1) nbsz=1;
-			psz = fsz / nbsz;
-			if (!psz) psz = 1;
-			ptr = malloc (psz);
-			if (!ptr) {
-				eprintf ("Error: failed to malloc memory");
-				goto beach;
-			}
-			//eprintf ("block = %d * %d\n", (int)nbsz, psz);
-			p = malloc (core->blocksize);
-			if (!p) {
-				R_FREE (ptr);
-				eprintf ("Error: failed to malloc memory");
-				goto beach;
-			}
-			for (i=stblk; i<(psz+stblk); i++) {
-				r_core_read_at (core, i*nbsz, p, nbsz);
-				ptr[i-stblk] = (ut8) (256 * r_hash_entropy_fraction (p, core->blocksize));
-			}
-			free (p);
-			r_print_fill (core->print, ptr, psz);
-			break;
-		case 'p': // printable chars
-			{
-			ut8 *p;
-			int psz, i = 0, j, k;
-			if (nbsz<1) nbsz=1;
-			psz = fsz / nbsz;
-			if (!psz) psz = 1;
-			ptr = malloc (psz);
-			if (!ptr) {
-				eprintf ("Error: failed to malloc memory");
-				goto beach;
-			}
-			//eprintf ("block = %d * %d\n", (int)nbsz, (int)psz);
-			p = malloc (core->blocksize);
-			if (!p) {
-				eprintf ("Error: failed to malloc memory");
-				R_FREE (ptr);
-				goto beach;
-			}
-			for (i=stblk; i<(psz+stblk); i++) {
-				r_core_read_at (core, i*nbsz, p, nbsz);
-				for (j=k=0; j<nbsz; j++) {
-					if (IS_PRINTABLE (p[j]))
-						k++;
-				}
-				ptr[i-stblk] = 256 * k / nbsz;
-			}
-			free (p);
-			r_print_fill (core->print, ptr, psz);
-			}
-			break;
-		case 'b': // bytes
-		case '\0':
-			r_print_fill (core->print, core->block, core->blocksize);
-			break;
-		}
-		if (ptr && ptr != core->block)
-			free (ptr);
-			ptr = NULL;
-		}
-		if (nbsz)
-			r_core_block_size (core, obsz);
-			}
+		cmd_print_bars (core, input);
 		break;
 	case 'A': // "pA"
 		{
