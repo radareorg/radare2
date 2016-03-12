@@ -30,9 +30,10 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_DBG_RELOCS   0x10
 
 #define R_BIN_ENTRY_TYPE_PROGRAM 0
-#define R_BIN_ENTRY_TYPE_INIT    1
-#define R_BIN_ENTRY_TYPE_FINI    2
-#define R_BIN_ENTRY_TYPE_TLS     3
+#define R_BIN_ENTRY_TYPE_MAIN    1
+#define R_BIN_ENTRY_TYPE_INIT    2
+#define R_BIN_ENTRY_TYPE_FINI    3
+#define R_BIN_ENTRY_TYPE_TLS     4
 
 #define R_BIN_SIZEOF_STRINGS 512
 #define R_BIN_MAX_ARCH 1024
@@ -440,6 +441,7 @@ R_API void r_bin_set_baddr(RBin *bin, ut64 baddr);
 R_API ut64 r_bin_get_laddr(RBin *bin);
 R_API ut64 r_bin_get_boffset(RBin *bin);
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym);
+R_API const char *r_bin_entry_type_string(int etype);
 
 R_API char* r_bin_demangle(RBinFile *binfile, const char *lang, const char *str);
 R_API int r_bin_demangle_type (const char *str);

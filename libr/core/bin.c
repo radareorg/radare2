@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 - earada, pancake */
+/* radare - LGPL - Copyright 2011-2016 - earada, pancake */
 
 #include <r_core.h>
 
@@ -669,6 +669,8 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va) {
 	r_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;
 		ut64 at = rva (r->bin, paddr, entry->vaddr, va);
+		const char *type = r_bin_entry_type_string (entry->type);
+		if (!type) type = "unknown";
 		if (IS_MODE_SET (mode)) {
 			r_flag_space_set (r->flags, "symbols");
 			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i);
@@ -679,7 +681,8 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va) {
 			r_cons_printf ("%s{\"vaddr\":%" PFMT64d ","
 				"\"paddr\":%" PFMT64d ","
 				"\"baddr\":%" PFMT64d ","
-				"\"laddr\":%" PFMT64d "}",
+				"\"laddr\":%" PFMT64d ","
+				"\"type\":\"%s\"}",
 				iter->p ? "," : "", at, paddr, baddr, laddr);
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, at);
@@ -689,8 +692,9 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va) {
 				 "vaddr=0x%08"PFMT64x
 				" paddr=0x%08"PFMT64x
 				" baddr=0x%08"PFMT64x
-				" laddr=0x%08"PFMT64x"\n",
-				at, paddr, baddr, laddr);
+				" laddr=0x%08"PFMT64x
+				" type=%s\n",
+				at, paddr, baddr, laddr, type);
 		}
 		i++;
 	}
