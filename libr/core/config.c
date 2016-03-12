@@ -1514,7 +1514,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");
-	SETPREF("bin.demangle", "false", "Import demangled symbols from RBin");
+	SETPREF("bin.demangle", "true", "Import demangled symbols from RBin");
 
 	/* bin */
 	SETI("bin.baddr", -1, "Base address of the binary");

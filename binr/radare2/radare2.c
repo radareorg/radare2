@@ -302,7 +302,7 @@ int main(int argc, char **argv, char **envp) {
 		argv++;
 	} else prefile = 0;
 
-	while ((c = getopt (argc, argv, "=0ACwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSzu"
+	while ((c = getopt (argc, argv, "=0AMCwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
@@ -369,6 +369,12 @@ int main(int argc, char **argv, char **envp) {
 		case 'l': r_lib_open (r.lib, optarg); break;
 		case 'L': list_io_plugins (r.io); return 0;
 		case 'm': mapaddr = r_num_math (r.num, optarg); break;
+		case 'M':
+			{
+				r_config_set (r.config, "bin.demangle", "false");
+				r_config_set (r.config, "asm.demangle", "false");
+			}
+			break;
 		case 'n': run_anal--; break;
 		case 'N': run_rc = 0; break;
 		case 'p':
