@@ -1076,9 +1076,6 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 			if (f) {
 				beginline (core, ds, f);
 			} else {
-				if (f && ds->show_functions) {
-					r_cons_printf ("  ");
-				}
 				handle_print_lines_left (core, ds);
 			}
 			handle_print_offset (core, ds);
