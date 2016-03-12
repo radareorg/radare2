@@ -3599,6 +3599,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
 					rowlog_done (core);
+				} else {
+					eprintf ("[*] Use -AA or aaaa to perform additional experimental analysis.\n");
 				}
 				r_config_set_i (core->config, "anal.calls", c);
 				rowlog (core, "Construct a function name for all fcn.* (.afna @@ fcn.*)");

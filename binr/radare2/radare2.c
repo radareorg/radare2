@@ -704,7 +704,7 @@ int main(int argc, char **argv, char **envp) {
 		debug = r.file && r.file->desc && r.file->desc->plugin && \
 			r.file->desc->plugin->isdbg;
 		if (debug) {
-			if (baddr != UT64_MAX) 
+			if (baddr != UT64_MAX)
 				//setup without attach again because there is dpa call
 				//producing two attach and it's annoying
 				r_core_setup_debugger (&r, debugbackend, false);
@@ -776,7 +776,6 @@ int main(int argc, char **argv, char **envp) {
 		if (do_analysis > 1) {
 			r_core_cmd0 (&r, "aaaa");
 		} else {
-			eprintf ("[*] Use -AA to perform additional experimental analysis.\n");
 			r_core_cmd0 (&r, "aaa");
 		}
 		r_cons_flush ();
