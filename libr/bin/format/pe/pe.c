@@ -571,7 +571,7 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t) *bin) {
 	int remaining_bytes;
 	int shift;
 	ut32 cur;
-	if (!bin || !bin->nt_header_offset)
+	if (!bin || !bin->nt_header_offset)
 		return 0;
 	buf = bin->b->buf;
 	checksum_offset = bin->nt_header_offset + 4 + sizeof(PE_(image_file_header)) + 0x40;
