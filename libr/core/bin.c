@@ -697,7 +697,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va) {
 				"\"baddr\":%" PFMT64d ","
 				"\"laddr\":%" PFMT64d ","
 				"\"type\":\"%s\"}",
-				iter->p ? "," : "", at, paddr, baddr, laddr);
+				iter->p ? "," : "", at, paddr, baddr, laddr, type);
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, at);
 			r_cons_printf ("s entry%i\n", i);
