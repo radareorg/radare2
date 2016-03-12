@@ -506,6 +506,14 @@ static int bin_info(RCore *r, int mode) {
 		pair_str ("compiled", compiled, mode, false);
 		pair_str ("guid", info->guid, mode, false);
 		pair_str ("dbg_file", info->debug_file_name, mode, true);
+		if (info->claimed_checksum) {
+			/* checksum specified in header */
+			pair_str ("hdr_cksum", info->claimed_checksum, mode, true);
+		}
+		if (info->actual_checksum) {
+			/* computed checksum */
+			pair_str ("cmp_cksum", info->actual_checksum, mode, true);
+		}
 
 		// checksums are only supported for pe atm
 		if (strncmp ("pe", info->rclass, 2) == 0) {
