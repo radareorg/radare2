@@ -326,7 +326,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'a': asmarch = optarg; break;
 		case 'z': zflag++; break;
 		case 'A':
-			do_analysis = true;
+			do_analysis++;
 			break;
 		case 'b': asmbits = optarg; break;
 		case 'B':
@@ -772,9 +772,13 @@ int main(int argc, char **argv, char **envp) {
 		if (r_file_exists (global_rc))
 			(void)r_core_run_script (&r, global_rc);
 	}
-	if (do_analysis) {
-		//r_core_cmd0 (&r, "aa");
-		r_core_cmd0 (&r, "aaa");
+	if (do_analysis > 0) {
+		if (do_analysis > 1) {
+			r_core_cmd0 (&r, "aaaa");
+		} else {
+			eprintf ("[*] Use -AA to perform additional experimental analysis.\n");
+			r_core_cmd0 (&r, "aaa");
+		}
 		r_cons_flush ();
 	}
 	/* run -i flags */
