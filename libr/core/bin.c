@@ -521,6 +521,12 @@ static int bin_info(RCore *r, int mode) {
 			pair_str ("crc32c", info->actual_checksum, mode, false);
 		}
 
+		// checksums are only supported for pe atm
+		if (strncmp ("pe", info->rclass, 2) == 0) {
+			pair_str ("crc32", info->claimed_checksum, mode, false);
+			pair_str ("crc32c", info->actual_checksum, mode, false);
+		}
+
 		for (i = 0; info->sum[i].type; i++) {
 			int len;
 
