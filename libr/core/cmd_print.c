@@ -74,6 +74,7 @@ static void cmd_print_eq_dict(RCore *core, int bsz) {
 	r_cons_printf ("max:   %d  0x%x\n", max, max);
 	r_cons_printf ("dict:  %d  0x%x\n", dict, dict);
 	r_cons_printf ("range: %d  0x%x\n", range, range);
+	r_cons_printf ("block: %d  0x%x\n", bsz, bsz);
 }
 
 static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
@@ -1547,17 +1548,6 @@ static void cmd_print_pv(RCore *core, const char *input) {
 static void cmd_print_bars(RCore *core, const char *input) {
 	bool print_bars = false;
 	ut8 *ptr = core->block;
-#if 0
-	ut64 obsz = UT64_MAX;
-	char *spc, input1 = 'b';
-	ut64 stblk = 0;
-	//int mode = 0, psz = 0;
-	int psz = 0;
-	ut64 nbsz, obsz, fsz = UT64_MAX;
-	// NBSZ = new block size
-	nbsz = core->blocksize;
-#endif
-
 	// p=e [nblocks] [totalsize] [skip]
 	int nblocks = -1;
 	int totalsize = -1;
@@ -1586,6 +1576,9 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		if (mode && mode != ' ' && input[2]) {
 			submode = input[2];
 		}
+	}
+	if (skipblocks < 0) {
+		skipblocks = 0;
 	}
 	if (totalsize == UT64_MAX) {
 		if (core->file && core->io) {
@@ -1635,7 +1628,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				eprintf ("Error: failed to malloc memory");
 				goto beach;
 			}
-			//eprintf ("block = %d * %d\n", (int)nbsz, psz);
 			p = malloc (blocksize);
 			if (!p) {
 				R_FREE (ptr);
@@ -1660,7 +1652,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				eprintf ("Error: failed to malloc memory");
 				goto beach;
 			}
-			//eprintf ("block = %d * %d\n", (int)nbsz, psz);
 			p = malloc (blocksize);
 			if (!p) {
 				R_FREE (ptr);
@@ -1668,7 +1659,8 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				goto beach;
 			}
 			for (i = 0; i < nblocks; i++) {
-				r_core_read_at (core, (i + skipblocks) * blocksize, p, blocksize);
+				ut64 off = (i + skipblocks) * blocksize;
+				r_core_read_at (core, off, p, blocksize);
 				for (j = k = 0; j < blocksize; j++) {
 					if (IS_PRINTABLE (p[j])) k++;
 				}
@@ -1680,15 +1672,16 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		break;
 	case 'b': // bytes
 	case '\0':
-		 r_print_fill (core->print, ptr, nblocks, core->offset, blocksize);
-		 break;
+		// TODO: support print_bars
+		r_print_fill (core->print, ptr, nblocks, core->offset, blocksize);
+		break;
 	}
 	if (print_bars) {
 		int i;
 		switch (submode) {
 		case 'j':
 			r_cons_printf ("{\"blocksize\":%d,\"entropy\":[", blocksize);
-			for (i = 0 ; i < nblocks; i++) {
+			for (i = 0; i < nblocks; i++) {
 				ut8 ep = ptr[i];
 				ut64 off = blocksize * i;
 				const char *comma = (i+1< (nblocks))?",": "";
@@ -1699,7 +1692,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			r_cons_printf ("]}\n");
 			break;
 		case 'q':
-			for (i = 0 ; i < nblocks; i++) {
+			for (i = 0; i < nblocks; i++) {
 				ut64 off = core->offset + (blocksize * i);
 				r_cons_printf ("0x%08"PFMT64x" %d %d\n", off, i, ptr[i]);
 			}
