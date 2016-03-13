@@ -2023,8 +2023,8 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 						}
 					}
 					// try to guess what's in there
-					r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x" %s",
-							p, ds->analop.refptr, n, flag);
+					r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x"%s%s",
+							p, ds->analop.refptr, n, (flag&&*flag)?" ":"", flag);
 					free (msg2);
 				}
 				// not just for LEA
