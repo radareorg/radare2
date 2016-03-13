@@ -511,6 +511,7 @@ int main(int argc, char **argv, char **envp) {
 				free (buf);
 				// TODO: load rbin thing
 			} else {
+				r_cons_flush ();
 				eprintf ("Cannot open %s\n", path);
 				return 1;
 			}
@@ -666,6 +667,7 @@ int main(int argc, char **argv, char **envp) {
 		if (!pfile) pfile = file;
 		if (fh == NULL) {
 			if (pfile && *pfile) {
+				r_cons_flush ();
 				if (perms & R_IO_WRITE)
 					eprintf ("Cannot open '%s' for writing.\n", pfile);
 				else eprintf ("Cannot open '%s'\n", pfile);
@@ -797,8 +799,10 @@ int main(int argc, char **argv, char **envp) {
 		//ret = r_core_cmd_file (&r, cmdfile[i]);
 		if (ret == -2)
 			eprintf ("Cannot open '%s'\n", cmdfile[i]);
-		if (ret < 0 || (ret == 0 && quiet))
+		if (ret < 0 || (ret == 0 && quiet)) {
+			r_cons_flush ();
 			return 0;
+		}
 	}
 /////
 	r_list_foreach (cmds, iter, cmdn) {
