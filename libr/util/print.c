@@ -1029,24 +1029,39 @@ void lsb_stego_process (FILE *fd, int length, bool forward, bool downward, int o
 #endif
 
 /// XXX: fix ascii art with different INCs
-R_API void r_print_fill(RPrint *p, const ut8 *arr, int size) {
+R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
 	int i = 0, j;
 #define INC 5
-	p->cb_printf ("         ");
-	if (arr[0]>1) for (i=0;i<arr[0]; i+=INC) p->cb_printf ("_");
-	p->cb_printf ("\n");
+#if TOPLINE
+	if (arr[0] > 1) {
+		p->cb_printf ("         ");
+		if (addr != UT64_MAX && step > 0) {
+			p->cb_printf ("           ");
+		}
+		if (arr[0]>1) for (i=0;i<arr[0]; i+=INC) p->cb_printf ("_");
+		p->cb_printf ("\n");
+	}
+#endif
 	for (i=0; i<size; i++) {
 		ut8 next = (i+1<size)? arr[i+1]:0;
 			int base = 0;
+			if (addr != UT64_MAX && step > 0) {
+				p->cb_printf ("0x%08"PFMT64x" ", addr + (i * step));
+			}
 		p->cb_printf ("%02x %04x |", i, arr[i]);
 			if (next<INC) base = 1;
 		if (next<arr[i]) {
 			//if (arr[i]>0 && i>0) p->cb_printf ("  ");
-			if (arr[i]>INC)
-			for (j=0;j<next+base; j+=INC) p->cb_printf (" ");
+			if (arr[i]>INC) {
+				for (j=0;j<next+base; j+=INC) p->cb_printf (" ");
+			}
 			for (j=next+INC; j+base<arr[i]; j+=INC) p->cb_printf ("_");
 		} else {
-			for (j=INC; j<arr[i]+base; j+=INC) p->cb_printf (" ");
+			if (i==0) {
+				for (j=INC;j<arr[i]+base; j+=INC) p->cb_printf ("'");
+			} else {
+				for (j=INC; j<arr[i]+base; j+=INC) p->cb_printf (" ");
+			}
 		}
 		//for (j=1;j<arr[i]; j+=INC) p->cb_printf (under);
 		p->cb_printf ("|");
