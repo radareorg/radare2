@@ -1131,9 +1131,14 @@ static void __anal_reg_list(RCore *core, int type, int size, char mode) {
 		use_color = NULL;
 	}
 	core->dbg->reg = core->anal->reg;
+
 	/* workaround for thumb */
 	if (core->anal->cur->arch && !strcmp (core->anal->cur->arch, "arm") && bits == 16) {
 		bits = 32;
+	}
+	/* workaround for 6502 */
+	if (core->anal->cur->arch && !strcmp (core->anal->cur->arch, "6502") && bits == 8) {
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode, use_color); // XXX detect which one is current usage
 	}
 	if (mode == '=') {
 		int pcbits = 0;
