@@ -287,7 +287,8 @@ static int cmd_section(void *data, const char *input) {
 		break;
 	case '=':
 		r_io_section_list_visual (core->io, core->offset, core->blocksize,
-					r_config_get_i (core->config, "scr.color"));
+					r_config_get_i (core->config, "scr.color"),
+					r_cons_get_size (NULL));
 		break;
 	case '.':
 		{

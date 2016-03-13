@@ -17,7 +17,7 @@
 #include <mach/mach_error.h>
 #include <mach/task.h>
 #include <mach/task_info.h>
-void macosx_debug_regions (task_t task, mach_vm_address_t address, int max);
+void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max);
 #endif
 
 #define PERM_READ 4
@@ -34,7 +34,7 @@ typedef struct {
 static RIOSelfSection self_sections[1024];
 static int self_sections_count = 0;
 
-static int self_in_section(ut64 addr, int *left, int *perm) {
+static int self_in_section(RIO *io, ut64 addr, int *left, int *perm) {
 	int i;
 	for (i=0; i<self_sections_count; i++) {
 
@@ -50,9 +50,8 @@ static int self_in_section(ut64 addr, int *left, int *perm) {
 	return false;
 }
 
-static int update_self_regions(int pid) {
+static int update_self_regions(RIO *io, int pid) {
 	self_sections_count = 0;
-
 #if __APPLE__
 	mach_port_t	task;
 	kern_return_t	rc;
@@ -61,8 +60,7 @@ static int update_self_regions(int pid) {
 		eprintf ("task_for_pid failed\n");
 		return false;
 	}
-	macosx_debug_regions (task, (size_t)1, 1000);
-
+	macosx_debug_regions (io, task, (size_t)1, 1000);
 	return true;
 #elif __linux__
 	char *pos_c;
@@ -129,7 +127,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (r_sandbox_enable (0))
 		return NULL;
 	io->va = true; // nop
-	ret = update_self_regions (pid);
+	ret = update_self_regions (io, pid);
 	if (ret) {
 		return r_io_desc_new (&r_io_plugin_self,
 			pid, file, rw, mode, NULL);
@@ -140,7 +138,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	int left;
 	int perm;
-	if (self_in_section (io->off, &left, &perm)) {
+	if (self_in_section (io, io->off, &left, &perm)) {
 		if (perm & R_IO_READ) {
 			int newlen = R_MIN (len, left);
 			ut8 *ptr = (ut8*)(size_t)io->off;
@@ -154,7 +152,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	if (fd->flags & R_IO_WRITE) {
 		int left, perm;
-		if (self_in_section (io->off, &left, &perm)) {
+		if (self_in_section (io, io->off, &left, &perm)) {
 			int newlen = R_MIN (len, left);
 			ut8 *ptr = (ut8*)(size_t)io->off;
 			if (newlen>0)
@@ -234,7 +232,7 @@ kern_return_t mach_vm_region
 // XXX. this code is dupped in libr/debug/p/debug_native.c
 // but this one looks better, the other one seems to work too.
 // TODO: unify that implementation in a single reusable place
-void macosx_debug_regions (task_t task, mach_vm_address_t address, int max) {
+void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max) {
 	kern_return_t kret;
 
 	mach_vm_address_t prev_address;
@@ -329,7 +327,7 @@ void macosx_debug_regions (task_t task, mach_vm_address_t address, int max) {
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "M"; }
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "G"; }
 			/* End Quick hack */
-			r_cons_printf (" %p - %p [%d%s](%x/%x; %d, %s, %s)",
+			io->cb_printf (" %p - %p [%d%s](%x/%x; %d, %s, %s)",
 				(void*)(size_t)(prev_address),
 			       (void*)(size_t)(prev_address + prev_size),
 			       print_size,
@@ -346,9 +344,9 @@ void macosx_debug_regions (task_t task, mach_vm_address_t address, int max) {
 			self_sections_count++;
 
 			if (nsubregions > 1)
-				r_cons_printf (" (%d sub-regions)", nsubregions);
+				io->cb_printf (" (%d sub-regions)", nsubregions);
 
-			r_cons_printf ("\n");
+			io->cb_printf ("\n");
 
 			prev_address = address;
 			prev_size = size;

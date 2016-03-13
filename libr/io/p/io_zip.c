@@ -366,21 +366,16 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		RListIter *iter, *iter_tmp;
 		char *name;
 		//eprintf("usage: zip:///path/to/archive//filepath\n");
-		eprintf("\nFiles in archive\n\n");
-		files = r_io_zip_get_files(zip_filename, 0, mode, rw );
+		files = r_io_zip_get_files (zip_filename, 0, mode, rw );
 
 		if (files) {
 			ut32 i = 0;
 			r_list_foreach_safe (files, iter, iter_tmp, name) {
-				// XXX - io->cb_printf does not flush
-				// io->cb_printf("%s\n", name);
-				r_cons_printf ("%d %s\n", i, name);
-				r_cons_flush ();
+				io->cb_printf ("%d %s\n", i, name);
 				i++;
 			}
 			r_list_free (files);
 		}
-		eprintf ("\n");
 		free (zip_uri);
 		return res;
 	}
