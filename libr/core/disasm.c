@@ -1703,16 +1703,17 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 			if (ds->show_color) {
 				r_cons_strcat (ds->color_fname);
 			}
-			handle_comment_align (core, ds);
 			//beginline (core, ds, f);
 			// print label
 			delta = ds->analop.jump - f->addr;
 			label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
 			if (label) {
+				handle_comment_align (core, ds);
 				r_cons_printf ("  ; %s.%s", f->name, label);
 			} else {
 				RAnalFunction *f2 = r_anal_get_fcn_in (core->anal, ds->at, 0);
 				if (f != f2) {
+					handle_comment_align (core, ds);
 					if (delta>0) {
 						r_cons_printf ("  ; %s+0x%x", f->name, delta);
 					} else if (delta<0) {
@@ -1848,32 +1849,31 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 // align for comment
 static void handle_comment_align (RCore *core, RDisasmState *ds) {
 	const int cmtcol = ds->cmtcol;
-	char *ll;
 	if (ds->show_comment_right_default) {
-	ll = r_cons_lastline ();
-	if (ll) {
-		int cstrlen = strlen (ll);
-		int cols, ansilen = r_str_ansi_len (ll);
-		int utf8len = r_utf8_strlen ((const ut8*)ll);
+		char *ll = r_cons_lastline ();
+		if (ll) {
+			int cstrlen = strlen (ll);
+			int cols, ansilen = r_str_ansi_len (ll);
+			int utf8len = r_utf8_strlen ((const ut8*)ll);
 
-		int cells = utf8len - (cstrlen-ansilen);
+			int cells = utf8len - (cstrlen-ansilen);
 
-		cols = ds->interactive ? core->cons->columns : 1024;
-		//cols = r_cons_get_size (NULL);
-		if (cmtcol+16>=cols) {
+			cols = ds->interactive ? core->cons->columns : 1024;
+			//cols = r_cons_get_size (NULL);
+			if (cmtcol+16>=cols) {
 #if 0
-			r_cons_newline ();
-			r_cons_memset (' ', 10);
+				r_cons_newline ();
+				r_cons_memset (' ', 10);
 #endif
-			int len = cmtcol - cells;
-			r_cons_memset (' ', len);
-		} else if (cells < cmtcol) {
-			int len = cmtcol - cells;
-			if (len < cols)
+				int len = cmtcol - cells;
 				r_cons_memset (' ', len);
+			} else if (cells < cmtcol) {
+				int len = cmtcol - cells;
+				if (len < cols)
+					r_cons_memset (' ', len);
+			}
 		}
 	}
-}
 }
 
 static void handle_print_dwarf (RCore *core, RDisasmState *ds) {
@@ -2677,10 +2677,12 @@ toro:
 			handle_print_lines_right (core, ds);
 			handle_build_op_str (core, ds);
 			handle_print_opstr (core, ds);
+
 			handle_print_fcn_name (core, ds);
 			handle_print_color_reset (core, ds);
 			handle_print_dwarf (core, ds);
 			ret = handle_print_middle (core, ds, ret);
+
 			handle_print_asmop_payload (core, ds);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
