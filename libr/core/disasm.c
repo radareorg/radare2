@@ -1996,7 +1996,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 				const char *flag = "";
 				f = r_flag_get_i (core->flags, p);
 				if (f) flag = f->name;
-				r_cons_printf (" ; 0x%"PFMT64x" %s%s", p, *flag?"; ":"", flag);
+				r_cons_printf (" ; 0x%"PFMT64x"%s%s", p, *flag?" ; ":"", flag);
 			} else {
 				f = NULL;
 				if (n==UT32_MAX || n==UT64_MAX) {
