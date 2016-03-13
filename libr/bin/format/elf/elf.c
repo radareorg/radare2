@@ -261,6 +261,7 @@ static int init_strtab(struct Elf_(r_bin_elf_obj_t) *bin) {
 static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 	Elf_(Dyn) *dyn = NULL;
 	Elf_(Addr) strtabaddr = 0;
+	ut64 offset = 0;
 	char *strtab = NULL;
 	size_t strsize = 0;
 	int entries;
@@ -296,16 +297,16 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 		free (dyn);
 		return false;
 	}
-	if (bin->phdr[i].p_offset + dyn_size > bin->size) {
+	offset = Elf_(r_bin_elf_v2p) (bin, bin->phdr[i].p_vaddr);
+	if (offset > bin->size || offset + dyn_size > bin->size) {
 		free (dyn);
 		return false;
 	}
-
 #if R_BIN_ELF64
-	r = r_buf_fread_at (bin->b, bin->phdr[i].p_offset, (ut8 *)dyn,
+	r = r_buf_fread_at (bin->b, offset, (ut8 *)dyn,
 			bin->endian ? "2L":"2l", entries);
 #else
-	r = r_buf_fread_at (bin->b, bin->phdr[i].p_offset, (ut8 *)dyn,
+	r = r_buf_fread_at (bin->b, offset, (ut8 *)dyn,
 			bin->endian ? "2I":"2i", entries);
 #endif
 	if (r < 1) {
@@ -372,7 +373,7 @@ static RBinElfSection* get_section_by_name(struct Elf_(r_bin_elf_obj_t) *bin, co
 static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
 	int i;
 	const char *section_name = "";
-	Elf_(Shdr) *link_shdr = NULL; 
+	Elf_(Shdr) *link_shdr = NULL;
 	const char *link_section_name = "";
 	int num_entries = shdr->sh_size / sizeof (Elf_(Versym));
 	ut8 *data = calloc (num_entries, sizeof (short));
@@ -419,7 +420,7 @@ static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 }
 
 static void store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
-	const char *section_name = NULL; 
+	const char *section_name = NULL;
 	if (shdr->sh_name > bin->shstrtab_size)
 		return;
 	section_name = &bin->shstrtab[shdr->sh_name];
@@ -1995,6 +1996,7 @@ ut64 Elf_(r_bin_elf_v2p) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 vaddr) {
 	if (!bin || !bin->phdr) return vaddr;
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
+		if (!p) break;
 		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
 			return p->p_offset + vaddr - p->p_vaddr;
 		}
