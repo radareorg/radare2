@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - condret@runas-racer.com */
+/* radare - LGPL - Copyright 2015-2016 - condret@runas-racer.com */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -16,10 +16,10 @@ static int snesDisass(int bits, RAsmOp *op, const ut8 *buf, int len){
 		return 0;
 	switch (s_op->len) {
 	case SNES_OP_8BIT:
-		strcpy (op->buf_asm, s_op->name);
+		strncpy (op->buf_asm, s_op->name, sizeof (op->buf_asm));
 		break;
 	case SNES_OP_16BIT:
-		sprintf (op->buf_asm, s_op->name, buf[1]);
+		snprintf (op->buf_asm, sizeof (op->buf_asm), s_op->name, buf[1]);
 		break;
 	case SNES_OP_24BIT:
 		if (*buf == 0x44 || *buf == 0x54) { // mvp and mvn
@@ -29,14 +29,15 @@ static int snesDisass(int bits, RAsmOp *op, const ut8 *buf, int len){
 		}
 		break;
 	case SNES_OP_32BIT:
-		sprintf (op->buf_asm, s_op->name, buf[1]|buf[2]<<8|buf[3]<<16);
+		snprintf (op->buf_asm, sizeof (op->buf_asm), s_op->name, buf[1]|buf[2]<<8|buf[3]<<16);
 		break;
 	case SNES_OP_IMM:
 		if (bits == 8) {
-			sprintf (op->buf_asm, "%s #0x%02x", s_op->name, buf[1]);
+			snprintf (op->buf_asm, sizeof (op->buf_asm), "%s #0x%02x",
+				s_op->name, buf[1]);
 		} else {
-			sprintf (op->buf_asm, "%s #0x%04x", s_op->name,
-				ut8p_bw(buf+1));
+			snprintf (op->buf_asm, sizeof (op->buf_asm), "%s #0x%04x",
+				s_op->name, ut8p_bw (buf+1));
 		}
 		break;
 	}
