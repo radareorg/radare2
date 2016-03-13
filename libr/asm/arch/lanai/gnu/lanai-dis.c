@@ -169,7 +169,7 @@ print_insn_lanai (memaddr, info)
 	      continue;
 #endif
 
-	  (*info->fprintf_func) (stream, opcode->name);
+	  (*info->fprintf_func) (stream, "%s", opcode->name);
 
 	  {
 	    register CONST char *s;
@@ -207,15 +207,15 @@ print_insn_lanai (memaddr, info)
 #undef	reg
 
 		  case '4': /* Op1 (for RRR) */
-		    (*info->fprintf_func) (stream, op_names[X_OP1(insn)]);
+		    (*info->fprintf_func) (stream, "%s", op_names[X_OP1(insn)]);
 		    break;
 		  case '5': /* Op2 (for RRR) */
-		    (*info->fprintf_func) (stream, op_names[X_OP2(insn)]);
+		    (*info->fprintf_func) (stream, "%s", op_names[X_OP2(insn)]);
 		    if(insn&L3_RRR_F)
 		      (*info->fprintf_func) (stream, ".f");
 		    break;
 		  case '6': /* Op2 (for RRM) */
-		    (*info->fprintf_func) (stream, op_names[X_OP2(insn)]);
+		    (*info->fprintf_func) (stream, "%s", op_names[X_OP2(insn)]);
 		    break;
 
 		  case 'J':
