@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define UPDATE_TIME(a, b) do { a = r_sys_now() - b; r->times->r_core_file_open_time = a;} while(0)
+
 static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *filenameuri);
 static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr);
 
@@ -611,14 +613,17 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 }
 
 R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 loadaddr) {
+	ut64 diff, prev = r_sys_now();
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	const int openmany = r_config_get_i (r->config, "file.openmany");
 	const char *cp;
 	RCoreFile *fh;
 	RIODesc *fd;
 
-	if (!file || !*file)
+	if (!file || !*file) {
+		UPDATE_TIME(diff, prev);
 		return NULL;
+	}
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
 		flags = 4|2;
@@ -628,19 +633,29 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 	if (fd == NULL && openmany > 2) {
 		// XXX - make this an actual option somewhere?
 		fh = r_core_file_open_many (r, file, flags, loadaddr);
-		if (fh) return fh;
+		if (fh) {
+			UPDATE_TIME(diff, prev);
+			return fh;
+		}
 	}
 	if (fd == NULL) {
 		if (flags & 2) {
-			if (!r_io_create (r->io, file, 0644, 0))
+			if (!r_io_create (r->io, file, 0644, 0)) {
+				UPDATE_TIME(diff, prev);
 				return NULL;
-			if (!(fd = r_io_open_nomap (r->io, file, flags, 0644)))
+			}
+			if (!(fd = r_io_open_nomap (r->io, file, flags, 0644))) {
+				UPDATE_TIME(diff, prev);
 				return NULL;
-		} else 
+			}
+		} else {
+			UPDATE_TIME(diff, prev);
 			return NULL;
+		}
 	}
 	if (r_io_is_listener (r->io)) {
 		r_core_serve (r, fd);
+		UPDATE_TIME(diff, prev);
 		return NULL;
 	}
 
@@ -648,6 +663,7 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 	if (!fh) {
 		eprintf ("core/file.c: r_core_open failed to allocate RCoreFile.\n");
 		//r_io_close (r->io, fd);
+		UPDATE_TIME(diff, prev);
 		return NULL;
 	}
 	fh->alive = 1;
@@ -664,6 +680,7 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 		fh = NULL;
 		if (!strcmp (suppress_warning, "false"))
 			eprintf("Unable to load file due to failed mapping.\n");
+		UPDATE_TIME(diff, prev);
 		return NULL;
 	}
 	// check load addr to make sure its still valid
@@ -671,6 +688,7 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 	r_list_append (r->files, fh);
 	r_core_file_set_by_file (r, fh);
 	r_config_set_i (r->config, "zoom.to", fh->map->from + r_io_desc_size (r->io, fh->desc));
+	UPDATE_TIME(diff, prev);
 	return fh;
 }
 
