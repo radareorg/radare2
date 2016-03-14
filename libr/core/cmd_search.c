@@ -1113,8 +1113,12 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			prev = 0;
 			// Start at just before the first end gadget.
 			for (i = next - ropdepth; i < (delta - max_inst_size_x86) && max_count != 0; i += increment) {
-				// give in-boundary instructions a shot
-				if (i < prev - max_inst_size_x86) i = prev - max_inst_size_x86;
+				if (increment == 1) {
+					// give in-boundary instructions a shot
+					if (i < prev - max_inst_size_x86) i = prev - max_inst_size_x86;
+				} else {
+					if (i < prev) i = prev;
+				}
 				if (i <0) i = 0;
 				if (r_cons_singleton()->breaked)
 					break;
