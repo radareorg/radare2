@@ -1099,11 +1099,12 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		if (r_list_length (end_list) > 0) {
 			int prev;
 			int next, ropdepth;
+			const int max_inst_size_x86 = 15;
 			// Get the depth of rop search, should just be max_instr
 			// instructions, x86 and friends are weird length instructions, so
 			// we'll just assume 15 byte instructions.
 			ropdepth = increment == 1 ?
-				max_instr * 15 /* wow, x86 is long */ :
+				max_instr * max_inst_size_x86 /* wow, x86 is long */ :
 				max_instr * increment;
 			if (r_cons_singleton()->breaked)
 				break;
@@ -1111,9 +1112,10 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			next = end_gadget->instr_offset;
 			prev = 0;
 			// Start at just before the first end gadget.
-			for (i = next - ropdepth; i < (delta - 15 /* max insn size */) &&  max_count != 0; i+=increment) {
+			for (i = next - ropdepth; i < (delta - max_inst_size_x86) && max_count != 0; i += increment) {
+				// give in-boundary instructions a shot
+				if (i < prev - max_inst_size_x86) i = prev - max_inst_size_x86;
 				if (i <0) i = 0;
-				if (i < prev) i = prev;
 				if (r_cons_singleton()->breaked)
 					break;
 				if (i >= next) {
