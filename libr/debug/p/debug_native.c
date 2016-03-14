@@ -74,6 +74,8 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 
 /* begin of debugger code */
 #if DEBUGGER
+
+#if !__APPLE__
 static int r_debug_handle_signals (RDebug *dbg) {
 #if __linux__
 	return linux_handle_signals (dbg);
@@ -81,6 +83,7 @@ static int r_debug_handle_signals (RDebug *dbg) {
 	return -1;
 #endif
 }
+#endif
 
 //this is temporal
 #if __APPLE__ || __linux__

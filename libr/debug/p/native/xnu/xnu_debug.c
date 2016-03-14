@@ -107,6 +107,12 @@ static task_t task_for_pid_workaround(int Pid) {
 	return 0;
 }
 
+static task_t task_for_pid_ios9pangu(int pid) {
+	task_t task = MACH_PORT_NULL;
+	host_get_special_port (mach_host_self (), HOST_LOCAL_NODE, 4, &task);
+	return task;
+}
+
 int xnu_wait(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
 	return R_DEBUG_REASON_UNKNOWN;
@@ -431,16 +437,19 @@ task_t pid_to_task (int pid) {
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		task = task_for_pid_workaround (pid);
 		if (task == 0) {
-			if (pid != -1) {
-				eprintf ("Failed to get task %d for pid %d.\n",
-						(int)task, (int)pid);
-				eprintf ("Reason: 0x%x: %s\n", err,
-						(char *)MACH_ERROR_STRING (err));
+			task = task_for_pid_ios9pangu (pid);
+			if (task != MACH_PORT_NULL) {
+				if (pid != -1) {
+					eprintf ("Failed to get task %d for pid %d.\n",
+							(int)task, (int)pid);
+					eprintf ("Reason: 0x%x: %s\n", err,
+							(char *)MACH_ERROR_STRING (err));
+				}
+				eprintf ("You probably need to run as root or sign "
+					"the binary.\n Read doc/ios.md || doc/osx.md\n"
+					" make -C binr/radare2 ios-sign || osx-sign\n");
+				return 0;
 			}
-			eprintf ("You probably need to run as root or sign "
-				"the binary.\n Read doc/ios.md || doc/osx.md\n"
-				" make -C binr/radare2 ios-sign || osx-sign\n");
-			return 0;
 		}
 	}
 	old_pid = pid;

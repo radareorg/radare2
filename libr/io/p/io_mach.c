@@ -116,7 +116,7 @@ static task_t pid_to_task(int pid) {
 	int err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		task = task_for_pid_workaround (pid);
-		if (task == -1) {
+		if (task == MACH_PORT_NULL) {
 			task = task_for_pid_ios9pangu (pid);
 			if (task != MACH_PORT_NULL) {
 				//eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
