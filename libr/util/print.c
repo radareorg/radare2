@@ -1030,6 +1030,15 @@ void lsb_stego_process (FILE *fd, int length, bool forward, bool downward, int o
 
 /// XXX: fix ascii art with different INCs
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
+	const int show_colors = p->flags & R_PRINT_FLAGS_COLOR;
+	const char *firebow[6] = {
+		Color_BGBLUE,
+		Color_BGGREEN,
+		Color_BGMAGENTA,
+		Color_BGRED,
+		Color_BGYELLOW,
+		Color_BGWHITE,
+	};
 	int i = 0, j;
 #define INC 5
 #if TOPLINE
@@ -1049,6 +1058,11 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 			p->cb_printf ("0x%08"PFMT64x" ", addr + (i * step));
 		}
 		p->cb_printf ("%02x %04x |", i, arr[i]);
+		if (show_colors) {
+			int idx = (int)(arr[i] * 6 / 255);
+			const char *k = firebow[idx];
+			p->cb_printf ("%s", k);
+		}
 		if (next < INC) base = 1;
 		if (next < arr[i]) {
 			//if (arr[i]>0 && i>0) p->cb_printf ("  ");
@@ -1064,7 +1078,11 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 			}
 		}
 		//for (j=1;j<arr[i]; j+=INC) p->cb_printf (under);
-		p->cb_printf ("|");
+		if (show_colors) {
+			p->cb_printf ("|"Color_RESET);
+		} else {
+			p->cb_printf ("|");
+		}
 		if (i + 1 == size) {
 			for (j=arr[i]+INC+base; j+base<next; j+=INC)
 				p->cb_printf ("_");
