@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2015 - pancake */
+/* radare2 - LGPL - Copyright 2013-2016 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -102,7 +102,10 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 				insn->detail->mips.operands[n].reg));
 		break;
 	case MIPS_OP_IMM:
-		sprintf (buf, "%"PFMT64u, (ut64)insn->detail->mips.operands[n].imm);
+		{
+			st64 x = (st64)insn->detail->mips.operands[n].imm;
+			sprintf (buf, "%"PFMT64d, x);
+		}
 		break;
 	case MIPS_OP_MEM:
 		{
@@ -368,8 +371,13 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		const char *arg1 = ARG(1);
 		const char *arg2 = ARG(2);
 		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
-					arg2, arg1, arg0);
+			if (*arg2 == '-') {
+				r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
+						arg2+1, arg1, arg0);
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
+						arg2, arg1, arg0);
+			}
 		}
 		}
 		break;
