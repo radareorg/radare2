@@ -183,7 +183,7 @@ static int cmd_eval(void *data, const char *input) {
 				}
 				free (home);
 			} else if(input[2]=='?') {
-				eprintf ("Usage: eco [themename]  ;load theme from /usr/share/radare2/0.10.2-git/cons/theme\n");
+				eprintf ("Usage: eco [themename]  ;load theme from /usr/share/radare2/0.10.2-git/cons/\n");
 
 			} else {
 				nextpal (core, 'l');
