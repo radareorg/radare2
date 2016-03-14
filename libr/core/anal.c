@@ -45,10 +45,10 @@ static int is_string (const ut8 *buf, int size, int *len) {
 			*len = i;
 			return 1;
 		}
-		if (buf[i]==10||buf[i]==13||buf[i]==9) {
+		if (buf[i]==10 || buf[i]==13 || buf[i]==9) {
 			continue;
 		}
-		if (buf[i]<32 || buf[i]>127) {
+		if (buf[i] < 32 || buf[i] > 127) {
 			// not ascii text
 			return 0;
 		}
@@ -61,11 +61,31 @@ static int is_string (const ut8 *buf, int size, int *len) {
 	return 1;
 }
 
+// Detect if there's code in the given address
+// - falls in section named 'text'
+// - section has exec bit, some const strings are in there
+// - addr is in different section than core->offset
+static bool iscodesection(RCore *core, ut64 addr) {
+	RIOSection *s = r_io_section_vget (core->io, addr);
+	if (!s) return false;
+	if (strstr (s->name, "text")) {
+		return true;
+	}
+	return false;
+	// BSS return (s && s->rwx & R_IO_WRITE)? 0: 1;
+	// Cstring return (s && s->rwx & R_IO_EXEC)? 1: 0;
+}
+
 static char *is_string_at (RCore *core, ut64 addr, int *olen) {
+	ut8 *str;
 	int ret, len = 0;
-	ut8 *str = calloc (1024, 1);
+	if (iscodesection (core, addr)) {
+		return NULL;
+	}
+	str = calloc (1024, 1);
 	r_io_read_at (core->io, addr, str, 1024);
 	str[1023] = 0;
+	// check if current section have no exec bit
 	ret = is_string (str, 1024, &len);
 	if (!ret || len < 1) {
 		ret = 0;
@@ -255,13 +275,6 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 	}
 	return NULL;
 }
-
-/*
-static int iscodesection(RCore *core, ut64 addr) {
-	RIOSection *s = r_io_section_vget (core->io, addr);
-	return (s && s->rwx & R_IO_EXEC)? 1: 0;
-}
-*/
 
 static ut64 *next_append (ut64 *next, int *nexti, ut64 v) {
 	next = realloc (next, sizeof (ut64) * (1 + *nexti));
@@ -1715,6 +1728,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
+	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	ut8 *buf;
 	ut64 at;
 	int count = 0;
@@ -1828,16 +1842,18 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			}
 
 			if (!rad) {
-				int len = 0;
-				char *str_string = is_string_at (core, xref_to, &len);
-				if (str_string) {
-					r_name_filter (str_string, -1);
-					char *str_flagname = r_str_newf ("str.%s", str_string);
-					(void)r_flag_set (core->flags, str_flagname, xref_to, 1);
-					free (str_string);
-				}
-				if (len > 0) {
-					r_core_cmdf (core, "Cs %d @ 0x%"PFMT64x, len, xref_to);
+				if (cfg_anal_strings) {
+					int len = 0;
+					char *str_string = is_string_at (core, xref_to, &len);
+					if (str_string) {
+						r_name_filter (str_string, -1);
+						char *str_flagname = r_str_newf ("str.%s", str_string);
+						(void)r_flag_set (core->flags, str_flagname, xref_to, 1);
+						free (str_string);
+					}
+					if (len > 0) {
+						r_core_cmdf (core, "Cs %d @ 0x%"PFMT64x, len, xref_to);
+					}
 				}
 				// Add to SDB
 				r_anal_xrefs_set (core->anal, type, xref_from, xref_to);
@@ -1858,15 +1874,17 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				}
 				r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 						cmd, xref_to, xref_from);
-				char *str_flagname = is_string_at (core, xref_to, &len);
-				if (str_flagname) {
-					ut64 str_addr = xref_to;
-					r_name_filter (str_flagname, -1);
-					r_cons_printf ("f str.%s=0x%"PFMT64x"\n",
-						str_flagname, str_addr);
-					r_cons_printf ("Cs %d @ 0x%"PFMT64x"\n",
-						len, str_addr);
-					free (str_flagname);
+				if (cfg_anal_strings) {
+					char *str_flagname = is_string_at (core, xref_to, &len);
+					if (str_flagname) {
+						ut64 str_addr = xref_to;
+						r_name_filter (str_flagname, -1);
+						r_cons_printf ("f str.%s=0x%"PFMT64x"\n",
+							str_flagname, str_addr);
+						r_cons_printf ("Cs %d @ 0x%"PFMT64x"\n",
+							len, str_addr);
+						free (str_flagname);
+					}
 				}
 			}
 

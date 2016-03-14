@@ -1400,6 +1400,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("anal.calls", "false", "Make basic af analysis walk into calls");
 	SETPREF("anal.hasnext", "false", "Continue analysis after each function");
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
+	SETPREF("anal.strings", "false", "Identify and register strings during analysis (aar only)");
 	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
 	SETCB("anal.bbsplit", "true", &cb_analbbsplit, "Use the experimental basic block split for JMPs");
 	SETCB("anal.noncode", "false", &cb_analnoncode, "Analyze data as code");
