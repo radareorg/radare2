@@ -178,6 +178,9 @@ static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf,
 	ut32 left, right;
 	int index;
 
+	if (!state || !inbuf || !outbuf || keylen < 0) {
+		return;
+	}
 	left = (inbuf[0] << 24 | inbuf[1] << 16 | inbuf[2] << 8 | inbuf[3]);
 	right = (inbuf[4] << 24 | inbuf[5] << 16 | inbuf[6] << 8 | inbuf[7]);
 
@@ -201,6 +204,7 @@ static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf,
 	outbuf[7] = right;
 }
 
+#if 0
 static void blowfish_dcrypt(struct blowfish_state *const state, const ut8 *inbuf, ut8 *outbuf, int keylen) {
 	ut32 left, right;
 	int index;
@@ -227,6 +231,7 @@ static void blowfish_dcrypt(struct blowfish_state *const state, const ut8 *inbuf
 	outbuf[6] = right >> 8;
 	outbuf[7] = right;
 }
+#endif
 
 static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, int keylen) {
 	ut8 block[8];
