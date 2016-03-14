@@ -1831,7 +1831,6 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 				if (sym[k].st_value) continue;
 #endif
 				ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
-				if (section_text) ret[ret_ctr].offset += section_text_offset;
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name+2 > strtab_section->sh_size) {
 					eprintf ("Warning: index out of strtab range\n");
@@ -1850,6 +1849,19 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 				}
 				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
+				if (section_text_offset) {
+					if (bin->ehdr.e_type == ET_REL) {
+						char sect_name[128];
+						snprintf (sect_name, sizeof (sect_name), ".text.%s", ret[ret_ctr].name);
+						section_text = get_section_by_name(bin, sect_name);
+						if (section_text)
+							ret[ret_ctr].offset += section_text->offset;
+						else
+							ret[ret_ctr].offset += section_text_offset;
+					} else {
+						ret[ret_ctr].offset += section_text_offset;
+					}
+				}
 				fill_symbol_bind_and_type (&ret[ret_ctr], &sym[k]);
 				ret[ret_ctr].last = 0;
 				ret_ctr++;
