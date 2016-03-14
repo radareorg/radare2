@@ -28,6 +28,55 @@ static void loganal(ut64 from, ut64 to) {
 	eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x"\r", from, to);
 }
 
+static RCore *mycore = NULL;
+
+// XXX: copypaste from anal/data.c
+#define MINLEN 1
+static int is_string (const ut8 *buf, int size, int *len) {
+	int i;
+	if (size<1)
+		return 0;
+	if (size>3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
+		*len = 1; // XXX: TODO: Measure wide string length
+		return 2; // is wide
+	}
+	for (i=0; i<size; i++) {
+		if (!buf[i] && i>MINLEN) {
+			*len = i;
+			return 1;
+		}
+		if (buf[i]==10||buf[i]==13||buf[i]==9) {
+			continue;
+		}
+		if (buf[i]<32 || buf[i]>127) {
+			// not ascii text
+			return 0;
+		}
+		if (!IS_PRINTABLE (buf[i])) {
+			*len = i;
+			return 0;
+		}
+	}
+	*len = i;
+	return 1;
+}
+
+static char *is_string_at (RCore *core, ut64 addr, int *olen) {
+	int ret, len = 0;
+	ut8 *str = calloc (1024, 1);
+	r_io_read_at (core->io, addr, str, 1024);
+	str[1023] = 0;
+	ret = is_string (str, 1024, &len);
+	if (!ret || len < 1) {
+		ret = 0;
+		free (str);
+		len = -1;
+	} else if (olen) {
+		*olen = len;
+	}
+	return ret? (char *)str: NULL;
+}
+
 /* returns the R_ANAL_ADDR_TYPE_* of the address 'addr' */
 R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 	ut64 types = 0;
@@ -1779,13 +1828,26 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			}
 
 			if (!rad) {
+				int len = 0;
+				char *str_string = is_string_at (core, xref_to, &len);
+				if (str_string) {
+					r_name_filter (str_string, -1);
+					char *str_flagname = r_str_newf ("str.%s", str_string);
+					(void)r_flag_set (core->flags, str_flagname, xref_to, 1);
+					free (str_string);
+				}
+				if (len > 0) {
+					r_core_cmdf (core, "Cs %d @ 0x%"PFMT64x, len, xref_to);
+				}
 				// Add to SDB
 				r_anal_xrefs_set (core->anal, type, xref_from, xref_to);
+				
 			} else if (rad == 'j') {
 				// Output JSON
 				if (count > 0) r_cons_printf (",");
 				r_cons_printf ("\"0x%"PFMT64x"\":\"0x%"PFMT64x"\"", xref_to, xref_from);
 			} else {
+				int len = 0;
 				// Display in radare commands format
 				char *cmd;
 				switch (type) {
@@ -1796,6 +1858,16 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				}
 				r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 						cmd, xref_to, xref_from);
+				char *str_flagname = is_string_at (core, xref_to, &len);
+				if (str_flagname) {
+					ut64 str_addr = xref_to;
+					r_name_filter (str_flagname, -1);
+					r_cons_printf ("f str.%s=0x%"PFMT64x"\n",
+						str_flagname, str_addr);
+					r_cons_printf ("Cs %d @ 0x%"PFMT64x"\n",
+						len, str_addr);
+					free (str_flagname);
+				}
 			}
 
 			count++;
@@ -2232,38 +2304,6 @@ R_API void r_core_anal_auto_merge (RCore *core, ut64 addr) {
 	/* TODO: implement me */
 }
 
-static RCore *mycore = NULL;
-
-// XXX: copypaste from anal/data.c
-#define MINLEN 1
-static int is_string (const ut8 *buf, int size, int *len) {
-	int i;
-	if (size<1)
-		return 0;
-	if (size>3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
-		*len = 1; // XXX: TODO: Measure wide string length
-		return 2; // is wide
-	}
-	for (i=0; i<size; i++) {
-		if (!buf[i] && i>MINLEN) {
-			*len = i;
-			return 1;
-		}
-		if (buf[i]==10||buf[i]==13||buf[i]==9) {
-			continue;
-		}
-		if (buf[i]<32 || buf[i]>127) {
-			// not ascii text
-			return 0;
-		}
-		if (!IS_PRINTABLE (buf[i])) {
-			*len = i;
-			return 0;
-		}
-	}
-	*len = i;
-	return 1;
-}
 
 static int myvalid(ut64 addr) {
 	if (addr <0x100)
