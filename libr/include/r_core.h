@@ -82,6 +82,12 @@ typedef struct r_core_file_t {
 	ut8 alive;
 } RCoreFile;
 
+typedef struct r_core_times_t {
+	ut64 r_core_loadlibs_init_time;
+	ut64 r_core_loadlibs_time;
+	ut64 r_core_file_open_time;
+} RCoreTimes;
+
 #define R_CORE_ASMSTEPS 128
 #define R_CORE_ASMQJMPS_NUM 10
 #define R_CORE_ASMQJMPS_LETTERS 26
@@ -116,6 +122,7 @@ typedef struct r_core_t {
 	RAnal *anal;
 	RAsm *assembler;
 	/* ^^ */
+	RCoreTimes *times;
 	RParse *parser;
 	RPrint *print;
 	RLang *lang;
