@@ -47,7 +47,7 @@ typedef struct {
 #define R_IO_NFDS 2
 extern int errno;
 
-static task_t task_for_pid_workaround(int Pid) {
+static task_t task_for_pid_workaround(int pid) {
 	host_t myhost = mach_host_self();
 	mach_port_t psDefault = 0;
 	mach_port_t psDefault_control = 0;
@@ -55,37 +55,46 @@ static task_t task_for_pid_workaround(int Pid) {
 	mach_msg_type_number_t numTasks = 0;
 	kern_return_t kr = -1;
 	int i;
-	if (Pid == -1) return -1;
+
+	if (pid == -1) {
+		return MACH_PORT_NULL;
+	}
 
 	kr = processor_set_default (myhost, &psDefault);
 	if (kr != KERN_SUCCESS) {
-		return -1;
+		return MACH_PORT_NULL;
 	}
 	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
 //		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
 		//mach_error ("host_processor_set_priv",kr);
-		return -1;
+		return MACH_PORT_NULL;
 	}
 
 	numTasks = 0;
 	kr = processor_set_tasks (psDefault_control, &tasks, &numTasks);
 	if (kr != KERN_SUCCESS) {
 //		eprintf ("processor_set_tasks failed with error %x\n", kr);
-		return -1;
+		return MACH_PORT_NULL;
 	}
-	if (Pid == 0) {
+	if (pid == 0) {
 		/* kernel task */
 		return tasks[0];
 	}
 	for (i = 0; i < numTasks; i++) {
-		int pid;
-		pid_for_task (i, &pid);
-		if (pid == Pid) {
+		int pid2 = -1;
+		pid_for_task (i, &pid2);
+		if (pid == pid2) {
 			return (tasks[i]);
 		}
 	}
-	return -1;
+	return MACH_PORT_NULL;
+}
+
+static task_t task_for_pid_ios9pangu(int pid) {
+	task_t task = MACH_PORT_NULL;
+	host_get_special_port (mach_host_self (), HOST_LOCAL_NODE, 4, &task);
+	return task;
 }
 
 static task_t pid_to_task(int pid) {
@@ -108,9 +117,12 @@ static task_t pid_to_task(int pid) {
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		task = task_for_pid_workaround (pid);
 		if (task == -1) {
-			//eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
-			//eprintf ("Missing priviledges? 0x%x: %s\n", err, MACH_ERROR_STRING (err));
-			return -1;
+			task = task_for_pid_ios9pangu (pid);
+			if (task != MACH_PORT_NULL) {
+				//eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
+				//eprintf ("Missing priviledges? 0x%x: %s\n", err, MACH_ERROR_STRING (err));
+				return -1;
+			}
 		}
 	}
 	old_task = task;
