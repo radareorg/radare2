@@ -672,7 +672,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 	bool valid = false;
 	int grep_find;
 	int search_hit;
-	RRegex* rx = NULL;
+	char* rx = NULL;
 	RList /*<intptr_t>*/ *localbadstart = r_list_new();
 	RListIter *iter;
 	void* p;
@@ -724,7 +724,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		addr += asmop.size;
 		if (rx) {
 			//grep_find = r_regex_exec (rx, asmop.buf_asm, 0, 0, 0);
-			grep_find = !r_regex_match (grep, "e", asmop.buf_asm);
+			grep_find = !r_regex_match (rx, "e", asmop.buf_asm);
 			search_hit = (end && grep && (grep_find < 1));
 		} else {
 			search_hit = (end && grep && strstr (asmop.buf_asm, grep_str));
@@ -931,7 +931,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	char* tok, *gregexp = NULL;
 	char* grep_arg = NULL;
 	bool json_first = true;
-	RRegex* rx = NULL;
+	char *rx = NULL;
 	int delta = 0;
 	ut8 *buf;
 	RIOMap *map;
@@ -983,7 +983,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		gregexp = strdup (grep);
 		tok = strtok (gregexp, ";");
 		while (tok) {
-			rx = r_regex_new (tok, "");
+			rx = strdup (tok);
 			r_list_append (rx_list, rx);
 			tok = strtok (NULL, ";");
 		}
