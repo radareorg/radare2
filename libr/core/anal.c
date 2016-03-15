@@ -1022,8 +1022,10 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	int use_esil = r_config_get_i (core->config, "anal.esil");
 
 	if (core->io->va && !core->io->raw) {
-		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode))
+		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
+			// eprintf ("Invalid address: 0x%08"PFMT64x"\n", at);
 			return false;
+		}
 	}
 	if (r_config_get_i (core->config, "anal.a2f")) {
 		r_core_cmd0 (core, ".a2f");

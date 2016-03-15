@@ -1052,7 +1052,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	default: {
 		char *uaddr = NULL, *name = NULL;
 		int depth = r_config_get_i (core->config, "anal.depth");
-		int analyze_recursively = r_config_get_i (core->config, "anal.calls");
+		bool analyze_recursively = r_config_get_i (core->config, "anal.calls");
 		RAnalFunction *fcn;
 		ut64 addr = core->offset;
 		if (input[1] == 'r') {
@@ -1085,8 +1085,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					text_addr = sect->vaddr;
 				}
 				r_list_foreach (fcn->refs, iter, ref) {
-					if (ref->addr == UT64_MAX || ref->addr < text_addr)
+					if (ref->addr == UT64_MAX || ref->addr < text_addr) {
+						eprintf ("Warning: ignore call 0x%08llx\n", ref->addr);
 						continue;
+					}
 					r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
 					RAnalFunction *f = r_anal_get_fcn_at (core->anal, fcn->addr, 0);
 					if (!f) {
