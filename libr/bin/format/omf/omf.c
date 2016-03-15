@@ -31,7 +31,7 @@ int r_bin_checksum_omf_ok(const char *buf, ut64 buf_size) {
 		eprintf ("Invalid record (too short)\n");
 		return false;
 	}
-	size = *((ut16 *)(buf + 1));
+	size = ut8p_bw (buf + 1);
 	if (buf_size < size + 3) {
 		eprintf ("Invalid record (too short)\n");
 		return false;

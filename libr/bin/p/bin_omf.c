@@ -33,10 +33,21 @@ static int destroy(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	if ((*buf == 0x80 || *buf == 0x82) && \
-			r_bin_checksum_omf_ok((char *)buf, length))
-		return true;
-	return false;
+	if ((*buf != 0x80 && *buf != 0x82) || length < 4)
+		return false;
+
+	ut16 rec_size = ut8p_bw (buf + 1);
+	ut8 str_size = *(buf + 3);
+	if (str_size + 2 != rec_size || length < rec_size + 3)
+		return false;
+
+	// check that the string is ASCII
+	int i;
+	for (i = 4; i < str_size + 4; ++i)
+		if (buf[i] > 0x7f)
+			return false;
+
+	return r_bin_checksum_omf_ok((char *)buf, length);
 }
 
 static int check(RBinFile *arch) {
