@@ -1633,10 +1633,7 @@ include_done:
                 inp();
         }
         *q = '\0';
-        if (c == TOK_ERROR)
-            tcc_error("#error %s", buf);
-        else
-            tcc_warning("#warning %s", buf);
+	tcc_warning("#%s %s",c==TOK_ERROR?"error":"warning",buf);
         break;
     case TOK_PRAGMA:
         pragma_parse(s1);
