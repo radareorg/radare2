@@ -236,6 +236,25 @@ static int cmpaddr (const void *_a, const void *_b) {
 	return (a->addr > b->addr);
 }
 
+static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_size) {
+	if (core && f && cmt && cmt_size>0 && f->bits) {
+		const char *asm_arch = r_config_get (core->config, "asm.arch");
+		if (strstr (asm_arch, "arm")) {
+			switch (f->bits) {
+			case 16: strcpy (cmt, " (thumb)"); break;
+			case 32: strcpy (cmt, " (arm)"); break;
+			case 64: strcpy (cmt, " (aarch64)"); break;
+			}
+		} else {
+			snprintf (cmt, cmt_size, " (%d bits)", f->bits);
+		}
+	} else {
+		if (cmt) {
+			cmt[0] = 0;
+		}
+	}
+}
+
 static const char *getSectionName (RCore *core, ut64 addr) {
 	static char section[128] = "";
 	static ut64 oaddr = UT64_MAX;
@@ -839,6 +858,8 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 	} else {
 		const char *space = ds->show_fcnlines ? " " : "";
 		const char *fcntype;
+		char cmt[32];
+		get_bits_comment (core, f, cmt, sizeof (cmt));
 
 		switch (f->type) {
 		case R_ANAL_FCN_TYPE_FCN:
@@ -866,14 +887,14 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 			}
 			handle_print_lines_left (core, ds);
 			handle_print_offset (core, ds);
-			r_cons_printf ("%s%s%s(%s) %s%s %d\n",
+			r_cons_printf ("%s%s%s(%s) %s%s%s %d\n",
 					space, COLOR_RESET (ds), COLOR (ds, color_fname),
-					fcntype, fcn_name, COLOR_RESET (ds), f->size);
+					fcntype, fcn_name, cmt, COLOR_RESET (ds), f->size);
 		} else {
-			r_cons_printf ("%s%s%s%s%s(%s) %s%s %d\n",
+			r_cons_printf ("%s%s%s%s%s(%s) %s%s%s %d\n",
 					COLOR (ds, color_fline), ds->pre,
 					space, COLOR_RESET (ds), COLOR (ds, color_fname),
-					fcntype, fcn_name, COLOR_RESET (ds), f->size);
+					fcntype, fcn_name, cmt, COLOR_RESET (ds), f->size);
 		}
 	}
 	if (sign)
@@ -2548,10 +2569,12 @@ toro:
 		if (f && f->folded && ds->at >= f->addr && ds->at < f->addr+f->size) {
 			int delta = (ds->at <= f->addr)? (ds->at - f->addr + f->size): 0;
 			if (of != f) {
+				char cmt[32];
+				get_bits_comment(core, f, cmt, sizeof (cmt));
 				handle_show_comments_right (core, ds);
-				r_cons_printf ("%s%s%s (fcn) %s%s\n",
+				r_cons_printf ("%s%s%s (fcn) %s%s%s\n",
 					COLOR (ds, color_fline), core->cons->vline[RUP_CORNER],
-					COLOR (ds, color_fname), f->name, COLOR_RESET (ds));
+					COLOR (ds, color_fname), f->name, cmt, COLOR_RESET (ds));
 				handle_print_pre (core, ds, true);
 				handle_print_lines_left (core, ds);
 				handle_print_offset (core, ds);

@@ -39,6 +39,58 @@ static int visual_repeat_thread(RThread *th) {
 	return 0;
 }
 
+static void toggle_bits(RCore *core) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	if (fcn) {
+		int bits = fcn->bits? fcn->bits: core->assembler->bits;
+		switch (bits) {
+		case 16: bits = 32; break;
+		case 32: bits = 64; break;
+		default: bits = 16; break;
+		}
+		fcn->bits = bits;
+		return;
+	}
+	switch (core->assembler->bits) {
+	case 8:
+		r_config_set_i (core->config, "asm.bits", 16);
+		if (core->assembler->bits != 16) {
+			r_config_set_i (core->config, "asm.bits", 32);
+			if (core->assembler->bits != 32) {
+				r_config_set_i (core->config, "asm.bits", 64);
+			}
+		}
+		break;
+	case 16:
+		r_config_set_i (core->config, "asm.bits", 32);
+		if (core->assembler->bits != 32) {
+			r_config_set_i (core->config, "asm.bits", 64);
+			if (core->assembler->bits != 64) {
+				r_config_set_i (core->config, "asm.bits", 8);
+			}
+		}
+		break;
+	case 32:
+		r_config_set_i (core->config, "asm.bits", 64);
+		if (core->assembler->bits != 64) {
+			r_config_set_i (core->config, "asm.bits", 8);
+			if (core->assembler->bits != 8) {
+				r_config_set_i (core->config, "asm.bits", 16);
+			}
+		}
+		break;
+	case 64:
+		r_config_set_i (core->config, "asm.bits", 8);
+		if (core->assembler->bits != 8) {
+			r_config_set_i (core->config, "asm.bits", 16);
+			if (core->assembler->bits != 16) {
+				r_config_set_i (core->config, "asm.bits", 32);
+			}
+		}
+		break;
+	}
+}
+
 static void visual_repeat(RCore *core) {
 	int atport = r_config_get_i (core->config, "scr.atport");
 	if (atport) {
@@ -1284,44 +1336,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_visual_mounts (core);
 		break;
 	case '&':
-		switch (core->assembler->bits) {
-		case 8:
-			r_config_set_i (core->config, "asm.bits", 16);
-			if (core->assembler->bits!=16) {
-				r_config_set_i (core->config, "asm.bits", 32);
-				if (core->assembler->bits!=32) {
-					r_config_set_i (core->config, "asm.bits", 64);
-				}
-			}
-			break;
-		case 16:
-			r_config_set_i (core->config, "asm.bits", 32);
-			if (core->assembler->bits!=32) {
-				r_config_set_i (core->config, "asm.bits", 64);
-				if (core->assembler->bits!=64) {
-					r_config_set_i (core->config, "asm.bits", 8);
-				}
-			}
-			break;
-		case 32:
-			r_config_set_i (core->config, "asm.bits", 64);
-			if (core->assembler->bits!=64) {
-				r_config_set_i (core->config, "asm.bits", 8);
-				if (core->assembler->bits!=8) {
-					r_config_set_i (core->config, "asm.bits", 16);
-				}
-			}
-			break;
-		case 64:
-			r_config_set_i (core->config, "asm.bits", 8);
-			if (core->assembler->bits!=8) {
-				r_config_set_i (core->config, "asm.bits", 16);
-				if (core->assembler->bits!=16) {
-					r_config_set_i (core->config, "asm.bits", 32);
-				}
-			}
-			break;
-		}
+		toggle_bits (core);
 		break;
 	case 't':
 		r_core_visual_types (core);
