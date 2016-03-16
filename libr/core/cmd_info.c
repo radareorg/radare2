@@ -453,7 +453,7 @@ static int cmd_info(void *data, const char *input) {
 				"ir|iR", "", "Relocs",
 				"is", "", "Symbols",
 				"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
-				"iV", "", "Display file version info)",
+				"iV", "", "Display file version info",
 				"iz", "", "Strings in data sections",
 				"izz", "", "Search for Strings in the whole binary",
 				NULL

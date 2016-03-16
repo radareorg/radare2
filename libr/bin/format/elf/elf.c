@@ -318,7 +318,11 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 		case DT_STRTAB: strtabaddr = Elf_(r_bin_elf_v2p) (bin, dyn[i].d_un.d_ptr); break;
 		case DT_STRSZ: strsize = dyn[i].d_un.d_val; break;
 		case DT_PLTREL: bin->is_rela = dyn[i].d_un.d_val; break;
-		default: break;
+		default:
+			if ((dyn[i].d_tag >= DT_VERSYM) && (dyn[i].d_tag <= DT_VERNEEDNUM)) {
+				bin->version_info[DT_VERSIONTAGIDX (dyn[i].d_tag)] = dyn[i].d_un.d_val;
+			}
+			break;
 		}
 	}
 	if (!strtabaddr || strtabaddr > bin->size ||
@@ -368,134 +372,368 @@ static RBinElfSection* get_section_by_name(struct Elf_(r_bin_elf_obj_t) *bin, co
 	return NULL;
 }
 
-/* TODO : expose the versioninfo inside RBinObject instead of eprintf */
+static char *get_ver_flags (ut32 flags)
+{
+	static char buff[32];
+	buff[0] = 0;
 
-static void store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
-	int i;
-	const char *section_name = "";
-	Elf_(Shdr) *link_shdr = NULL;
-	const char *link_section_name = "";
-	int num_entries = shdr->sh_size / sizeof (Elf_(Versym));
-	ut8 *data = calloc (num_entries, sizeof (short));
-	if (shdr->sh_link > bin->ehdr.e_shnum) {
-		free (data);
-		return;
+	if (flags == 0)
+		return "none";
+
+	if (flags & VER_FLG_BASE)
+		strcat (buff, "BASE ");
+
+	if (flags & VER_FLG_WEAK) {
+		if (flags & VER_FLG_BASE)
+			strcat (buff, "| ");
+
+		strcat (buff, "WEAK ");
 	}
-	link_shdr = &bin->shdr[shdr->sh_link];
 
+	if (flags & ~(VER_FLG_BASE | VER_FLG_WEAK))
+		strcat (buff, "| <unknown>");
+
+	return buff;
+}
+
+static Sdb *store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr, int sz) {
+	if (!bin->version_info[DT_VERSIONTAGIDX (DT_VERSYM)])
+		return NULL;
+
+	if (shdr->sh_link > bin->ehdr.e_shnum)
+		return NULL;
+
+	int i;
+	int num_entries = shdr->sh_size / sizeof (Elf_(Versym));
+	const char *section_name = "";
+	const char *link_section_name = "";
+	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
+
+	Sdb *sdb = sdb_new0();
+
+	if (!sdb)
+		return NULL;
+
+	ut8 *edata = calloc (num_entries, sizeof (ut16));
+	ut16 *data = calloc (num_entries, sizeof (ut16));
+
+	ut64 off = Elf_(r_bin_elf_v2p) (bin, bin->version_info[DT_VERSIONTAGIDX (DT_VERSYM)]);
+
+	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size)
+		section_name = &bin->shstrtab[shdr->sh_name];
+
+	if (bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size)
+		link_section_name = &bin->shstrtab[link_shdr->sh_name];
+
+	r_buf_read_at (bin->b, off, edata, sizeof (ut16) * num_entries);
+	sdb_set (sdb, "section_name", section_name, 0);
+	sdb_num_set (sdb, "num_entries", num_entries, 0);
+	sdb_num_set (sdb, "addr", shdr->sh_addr, 0);
+	sdb_num_set (sdb, "offset", shdr->sh_offset, 0);
+	sdb_num_set (sdb, "link", shdr->sh_link, 0);
+	sdb_set (sdb, "link_section_name", link_section_name, 0);
+
+	for (i = num_entries; i--;)
+		data[i] = *(ut16*)&edata[i * sizeof (ut16)];
+
+	free (edata);
+	edata = NULL;
+
+	for (i = 0; i < num_entries; i += 4) {
+		int j;
+		int check_def;
+		char key[32] = {0};
+		Sdb *sdb_entry = sdb_new0 ();
+		snprintf (key, sizeof (key), "entry%d", i / 4);
+		sdb_ns_set (sdb, key, sdb_entry);
+		sdb_num_set (sdb_entry, "idx", i, 0);
+
+		for (j = 0; (j < 4) && (i + j) < num_entries; ++j) {
+			char tmp_val[64] = {0};
+			snprintf (key, sizeof (key), "value%d", j);
+			switch (data[i + j]) {
+			case 0:
+				sdb_set (sdb_entry, key, "0 (*local*)", 0);
+				break;
+			case 1:
+				sdb_set (sdb_entry, key, "1 (*global*)", 0);
+				break;
+			default:
+				snprintf (tmp_val, sizeof (tmp_val), "%x ", data[i+j] & 0x7FFF);
+				check_def = true;
+
+				if (bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]) {
+					Elf_(Verneed) vn;
+					ut64 offset;
+
+					offset = Elf_(r_bin_elf_v2p) (bin, bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]);
+					do {
+						Elf_(Vernaux) vna;
+						ut64 a_off;
+
+						if (!r_buf_read_at (bin->b, offset, (ut8*)&vn, sizeof (vn))) {
+							eprintf ("Warning: Cannot read Verneed for Versym\n");
+							goto beach;
+						}
+
+						a_off = offset + vn.vn_aux;
+
+						do {
+							if (!r_buf_read_at (bin->b, a_off, (ut8*)&vna, sizeof (vna))) {
+								eprintf ("Warning: Cannot read Vernaux for Versym\n");
+								goto beach;
+							}
+
+							a_off += vna.vna_next;
+						} while (vna.vna_other != data[i + j] && vna.vna_next != 0);
+
+						if (vna.vna_other == data[i + j]) {
+							char val[64] = {0};
+							snprintf (val, sizeof (val), "%s(%s)", tmp_val, bin->strtab + vna.vna_name);
+							sdb_set (sdb_entry, key, val, 0);
+							check_def = false;
+							break;
+						}
+
+						offset += vn.vn_next;
+					} while (vn.vn_next);
+				}
+
+				ut64 vinfoaddr = bin->version_info[DT_VERSIONTAGIDX (DT_VERDEF)];
+
+				if (check_def && data[i + j] != 0x8001 && vinfoaddr) {
+					Elf_(Verdef) vd;
+					ut64 offset;
+
+					offset = Elf_(r_bin_elf_v2p) (bin, vinfoaddr);
+
+					do {
+						if (!r_buf_read_at (bin->b, offset, (ut8*)&vd, sizeof (vd))) {
+							eprintf ("Warning: Cannot read Verdef for Versym\n");
+							goto beach;
+						}
+
+						offset += vd.vd_next;
+					} while (vd.vd_ndx != (data[i + j] & 0x7FFF) && vd.vd_next != 0);
+
+					if (vd.vd_ndx == (data[i + j] & 0x7FFF)) {
+						Elf_(Verdaux) vda;
+						ut64 off_vda = offset - vd.vd_next + vd.vd_aux;
+						char val[64] = {0};
+
+						if (!(r_buf_read_at (bin->b, off_vda, (ut8*)&vda, sizeof (vda)))) {
+							eprintf ("Warning: Cannot read Verdaux for Versym\n");
+							goto beach;
+						}
+
+						const char *name = bin->strtab + vda.vda_name;
+						snprintf (val, sizeof (val), "%s(%s%-*s)", tmp_val, name, (int)(12 - strlen (name)), ")");
+						sdb_set (sdb_entry, key, val, 0);
+					}
+				}
+			}
+		}
+	}
+beach:
+	free (data);
+	return sdb;
+}
+
+static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr, int sz) {
+	const char *section_name = "";
+	const char *link_section_name = "";
+	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
+	Sdb *sdb = sdb_new0 ();
+	int i;
+	int cnt;
+	Elf_(Verdef) *defs = calloc (shdr->sh_size, sizeof (char));
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
 		section_name = &bin->shstrtab[shdr->sh_name];
-	} else {
-		section_name = "";
 	}
 	if (bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size) {
 		link_section_name = &bin->shstrtab[link_shdr->sh_name];
-	} else {
-		link_section_name = "";
+	}
+	if (!defs) {
+		eprintf ("Warning: Cannot allocate memory (Check Elf_(Verdef))\n");
+		sdb_free (sdb);
+		return NULL;
 	}
 
-	IFDBG eprintf ("Version symbols section '%s' contains %d entries:\n", section_name, num_entries);
-	IFDBG eprintf (" Addr: 0x%08"PFMT64x"  Offset: 0x%08"PFMT64x"  Link: %x (%s)\n",
-		(ut64)shdr->sh_addr, (ut64)shdr->sh_offset, (ut32)shdr->sh_link, link_section_name);
-	for (i = num_entries; i--;) {
-		//r_buf_read_at (bin->b, , &data[i], 1);
-	}
-	for (i = 0; i < num_entries; i += 4) {
-		int j;
-		IFDBG eprintf ("  %03x:", i);
-		for (j = 0; (j < 4) && (i + j) < num_entries; ++j) {
-			if (data[i + j] == 0) {
-				IFDBG eprintf ("   0 (*local*)    ");
-			} else if (data[i + j] == 1) {
-				IFDBG eprintf ("   1 (*global*)    ");
-			} else {
-				ut16 *d = (ut16*) (data + i + j);
-				//eprintf ("%4x%c", data[i + j] & 0x7FFF, data[i + j] & 0x8000 ? 'h' : ' ');
-				IFDBG eprintf ("%4x%c", *d & 0x7FFF, *d & 0x8000 ? 'h' : ' ');
-			}
+	sdb_set (sdb, "section_name", section_name, 0);
+	sdb_num_set (sdb, "entries", shdr->sh_info, 0);
+	sdb_num_set (sdb, "addr", shdr->sh_addr, 0);
+	sdb_num_set (sdb, "offset", shdr->sh_offset, 0);
+	sdb_num_set (sdb, "link", shdr->sh_link, 0);
+	sdb_set (sdb, "link_section_name", link_section_name, 0);
+
+	r_buf_read_at (bin->b, shdr->sh_offset, (ut8*)defs, shdr->sh_size);
+	for (cnt = 0, i = 0; cnt < shdr->sh_info; ++cnt) {
+		Sdb *sdb_verdef = sdb_new0 ();
+		char *vstart = ((char*)defs) + i;
+		char key[32] = {0};
+		Elf_(Verdef) *verdef = (Elf_(Verdef)*)vstart;
+		Elf_(Verdaux) *aux = NULL;
+		int j = 0;
+		int isum = 0;
+
+		sdb_num_set (sdb_verdef, "idx", i, 0);
+		sdb_num_set (sdb_verdef, "vd_version", verdef->vd_version, 0);
+		sdb_num_set (sdb_verdef, "vd_ndx", verdef->vd_ndx, 0);
+		sdb_num_set (sdb_verdef, "vd_cnt", verdef->vd_cnt, 0);
+		sdb_set (sdb_verdef, "vda_name", &bin->dynstr[aux->vda_name], 0);
+		sdb_set (sdb_verdef, "flags", get_ver_flags (verdef->vd_flags), 0);
+
+		vstart += verdef->vd_aux;
+		aux = (Elf_(Verdaux)*)vstart;
+		isum = i + verdef->vd_aux;
+
+		for (j = 1; j < verdef->vd_cnt; ++j) {
+			Sdb *sdb_parent = sdb_new0 ();
+			isum += aux->vda_next;
+			vstart += aux->vda_next;
+			aux = (Elf_(Verdaux)*)vstart;
+			sdb_num_set (sdb_parent, "idx", isum, 0);
+			sdb_num_set (sdb_parent, "parent", j, 0);
+			sdb_set (sdb_parent, "vda_name", &bin->dynstr[aux->vda_name], 0);
+			snprintf (key, sizeof (key), "parent%d", j - 1);
+			sdb_ns_set (sdb_verdef, key, sdb_parent);
 		}
-		IFDBG eprintf ("\n");
+
+		i += verdef->vd_next;
+		snprintf (key, sizeof (key), "verdef%d", cnt);
+		sdb_ns_set (sdb, key, sdb_verdef);
 	}
-	free (data);
+	free (defs);
+	return sdb;
 }
 
-static void store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
-	const char *section_name = NULL;
-	if (shdr->sh_name > bin->shstrtab_size)
-		return;
-	section_name = &bin->shstrtab[shdr->sh_name];
-	IFDBG eprintf ("Version definition section '%s' contains %d entries:\n", section_name, shdr->sh_info);
-}
-
-static void store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr) {
-	int sz = shdr->sh_size;
+static Sdb *store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr, int sz) {
 	ut8 *need = NULL;
-	ut8 *vend = NULL;
-	const char *section_name = NULL;
+	const char *section_name = "";
+	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
+	const char *link_section_name = "";
 	int i;
 	int cnt;
-	if (shdr->sh_name > bin->ehdr.e_shnum)
-		return;
-	need = malloc (sz);
-	if (!need) return;
-	section_name = &bin->shstrtab[shdr->sh_name];
-	IFDBG eprintf ("Version needs section '%s' contains %d entries:\n", section_name, shdr->sh_info);
-	IFDBG eprintf (" Addr: 0x%08"PFMT64x, (ut64)shdr->sh_addr);
-	IFDBG eprintf (" Offset: 0x%08"PFMT64x"  Link to section: %x (%s)\n",
-		(ut64)shdr->sh_offset, shdr->sh_link, section_name);
-	if (shdr->sh_offset > bin->size || shdr->sh_offset + sz > bin->size)
-		return;
-	if (shdr->sh_offset + sz < sz)
-		return;
-	if (r_buf_read_at (bin->b, shdr->sh_offset, need, sz) != sz) {
-		eprintf ("Cannot read section headers\n");
-		free (need);
-		return;
+
+	Sdb *sdb = sdb_new0 ();
+	if (!sdb)
+		return NULL;
+
+	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
+		section_name = &bin->shstrtab[shdr->sh_name];
 	}
-	vend = need + sz;
+	if (bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size) {
+		link_section_name = &bin->shstrtab[link_shdr->sh_name];
+	}
+	if (!(need = calloc (shdr->sh_size, sizeof (char)))) {
+		eprintf ("Warning: Cannot allocate memory for Elf_(Verneed)\n");
+		sdb_free (sdb);
+		return NULL;
+	}
+
+	sdb_set (sdb, "section_name", section_name, 0);
+	sdb_num_set (sdb, "num_entries", shdr->sh_info, 0);
+	sdb_num_set (sdb, "addr", shdr->sh_addr, 0);
+	sdb_num_set (sdb, "offset", shdr->sh_offset, 0);
+	sdb_num_set (sdb, "link", shdr->sh_link, 0);
+	sdb_set (sdb, "link_section_name", link_section_name, 0);
+
+	r_buf_read_at (bin->b, shdr->sh_offset, need, shdr->sh_size);
 	//XXX we should use DT_VERNEEDNUM instead of sh_info
 	//TODO https://sourceware.org/ml/binutils/2014-11/msg00353.html
-	for (i = 0, cnt = 0; i < sz && cnt < shdr->sh_info; ++cnt) {
-		int j, isum;
+	for (i = 0, cnt = 0; cnt < shdr->sh_info; ++cnt) {
+		int j;
+		int isum;
 		ut8 *vstart = need + i;
 		Elf_(Verneed) *entry = (Elf_(Verneed)*)(vstart);
-		IFDBG eprintf ("  %#x: Version: %d", i, entry->vn_version);
-		IFDBG eprintf ("  Cnt: %d\n", entry->vn_cnt);
+		char key[32] = {0};
+		Sdb *sdb_version = sdb_new0 ();
+		sdb_num_set (sdb_version, "vn_version", entry->vn_version, 0);
+		sdb_num_set (sdb_version, "idx", i, 0);
+
+		if (bin->dynstr)
+			sdb_set (sdb_version, "file_name", &bin->dynstr[entry->vn_file], 0);
+
+		sdb_num_set (sdb_version, "cnt", entry->vn_cnt, 0);
+
 		vstart += entry->vn_aux;
-		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && (j + entry->vn_aux +i + sizeof(Elf_(Vernaux))) < sz; j++) {
+
+		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt; ++j) {
+			Sdb *sdb_vernaux = sdb_new0 ();
 			Elf_(Vernaux) *aux = (Elf_(Vernaux)*)(vstart);
-			if (vstart + sizeof (Elf_(Vernaux)) > vend)
-				break;
-			IFDBG eprintf ("  Flags: %x  Version: %d\n", (ut32)aux->vna_flags, aux->vna_other);
-			if (aux->vna_next > 0) {
-				isum += aux->vna_next;
-				vstart += aux->vna_next;
-			} else {
-				break;
+
+			if (bin->dynstr) {
+				sdb_num_set (sdb_vernaux, "idx", isum, 0);
+				sdb_set (sdb_vernaux, "name", &bin->dynstr[aux->vna_name], 0);
 			}
+			sdb_set (sdb_vernaux, "flags", get_ver_flags (aux->vna_flags), 0);
+			sdb_num_set (sdb_vernaux, "version", aux->vna_other, 0);
+
+			isum += aux->vna_next;
+			vstart += aux->vna_next;
+			snprintf (key, sizeof (key), "vernaux%d", j);
+			sdb_ns_set (sdb_version, key, sdb_vernaux);
 		}
-		if (entry->vn_next < 1) {
-			eprintf ("Invalid next pointer in auxiliary version\n");
-			break;
-		}
+
 		i += entry->vn_next;
+
+		snprintf (key, sizeof (key), "version%d", cnt );
+		sdb_ns_set (sdb, key, sdb_version);
 	}
 	free (need);
+	return sdb;
 }
 
-static void store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
+static Sdb *store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-	if (!bin || !bin->shdr)
-		return;
+	Sdb *sdb_versioninfo = sdb_new0 ();
+	int num_verdef = 0;
+	int num_verneed = 0;
+	int num_versym = 0;
+
+	if (!bin || !bin->shdr || !sdb_versioninfo)
+		return NULL;
+
 	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
-		if (bin->shdr[i].sh_type == SHT_GNU_verdef) {
-			store_versioninfo_gnu_verdef (bin, &bin->shdr[i]);
-		} else if (bin->shdr[i].sh_type == SHT_GNU_verneed) {
-			store_versioninfo_gnu_verneed (bin, &bin->shdr[i]);
-		} else if (bin->shdr[i].sh_type == SHT_GNU_versym) {
-			store_versioninfo_gnu_versym (bin, &bin->shdr[i]);
+		Sdb *sdb = NULL;
+		char key[32] = {0};
+
+		switch (bin->shdr[i].sh_type) {
+		case SHT_GNU_verdef:
+			sdb = store_versioninfo_gnu_verdef (bin, &bin->shdr[i], bin->shdr[i].sh_size);
+			snprintf (key, sizeof (key), "verdef%d", num_verdef++);
+			sdb_ns_set (sdb_versioninfo, key, sdb);
+			break;
+		case SHT_GNU_verneed:
+			sdb = store_versioninfo_gnu_verneed (bin, &bin->shdr[i], bin->shdr[i].sh_size);
+			snprintf (key, sizeof (key), "verneed%d", num_verneed++);
+			sdb_ns_set (sdb_versioninfo, key, sdb);
+			break;
+		case SHT_GNU_versym:
+			sdb = store_versioninfo_gnu_versym (bin, &bin->shdr[i], bin->shdr[i].sh_size);
+			snprintf (key, sizeof (key), "versym%d", num_versym++);
+			sdb_ns_set (sdb_versioninfo, key, sdb);
+			break;
 		}
 	}
+
+	return sdb_versioninfo;
+}
+
+static int init_dynstr(struct Elf_(r_bin_elf_obj_t) *bin) {
+	int i;
+	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
+		const char *section_name = &bin->shstrtab[bin->shdr[i].sh_name];
+		if (bin->shdr[i].sh_type == SHT_STRTAB && !strcmp (section_name, ".dynstr")) {
+			if (!(bin->dynstr = calloc (bin->shdr[i].sh_size, sizeof (char)))) {
+				eprintf("Warning: Cannot allocate memory for dynamic strings\n");
+				return 0;
+			}
+			r_buf_read_at (bin->b, bin->shdr[i].sh_offset, (ut8*)bin->dynstr, bin->shdr[i].sh_size);
+			return 1;
+		}
+	}
+	return 0;
 }
 
 static int elf_init(struct Elf_(r_bin_elf_obj_t) *bin) {
@@ -506,6 +744,8 @@ static int elf_init(struct Elf_(r_bin_elf_obj_t) *bin) {
 	bin->strtab_size = 0;
 	bin->strtab_section = NULL;
 	bin->dyn_buf = NULL;
+	bin->dynstr = NULL;
+	memset (bin->version_info, 0, DT_VERSIONTAGNUM);
 
 	/* bin is not an ELF */
 	if (!init_ehdr (bin))
@@ -516,6 +756,8 @@ static int elf_init(struct Elf_(r_bin_elf_obj_t) *bin) {
 		eprintf ("Warning: Cannot initialize section headers\n");
 	if (!init_strtab (bin))
 		eprintf ("Warning: Cannot initialize strings table\n");
+	if (!init_dynstr (bin))
+		eprintf ("Warning: Cannot initialize dynamic strings\n");
 	bin->baddr = Elf_(r_bin_elf_get_baddr) (bin);
 	if (!init_dynamic_section (bin) && !Elf_(r_bin_elf_get_static)(bin))
 		eprintf ("Warning: Cannot initialize dynamic section\n");
@@ -528,7 +770,7 @@ static int elf_init(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
 
-	store_versioninfo (bin);
+	sdb_ns_set (bin->kv, "versioninfo", store_versioninfo (bin));
 
 	return true;
 }
