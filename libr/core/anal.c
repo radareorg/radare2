@@ -2511,6 +2511,28 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 					add_string_ref (core, op.ptr);
 				}
 				break;
+			case R_ANAL_OP_TYPE_ADD:
+				/* TODO: test if this is valid for other archs too */
+				if (!strcmp (core->anal->cpu, "mips")) {
+				       ut64 dst = ESIL->cur;
+
+					if (dst > 0xffff && op.src[1] && (dst & 0xffff) == op.src[1]->imm &&
+					    myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+						RFlagItem *f;
+						char *str;
+
+						r_anal_ref_add (core->anal, dst, cur, 'd');
+						add_string_ref (core, op.ptr);
+						if ((f = r_flag_get_i2 (core->flags, dst))) {
+							r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
+						} else if ((str = is_string_at (mycore, dst, NULL))) {
+							char *str2 = sdb_fmt (0, "esilref: '%s'", str);
+							r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, str2);
+							free (str);
+						}
+					}
+				}
+				break;
 			case R_ANAL_OP_TYPE_LOAD:
 				{
 					ut64 dst = esilbreak_last_read;
