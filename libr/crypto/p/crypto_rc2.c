@@ -238,7 +238,7 @@ struct r_lib_struct_t radare_plugin = {
 };
 #endif
 
-#if 1
+#if HAVE_MAIN
 int main() {
 	ut8 out[16];
 	struct rc2_state st;
