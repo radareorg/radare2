@@ -674,23 +674,22 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			op->fail = addr+8;
 			break;
 		}
-
 		break;
-
+	case MIPS_INS_LUI:
 	case MIPS_INS_MOVE:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		SET_SRC_DST_2_REGS (op);
 		break;
 	case MIPS_INS_ADD:
 	case MIPS_INS_ADDI:
+	case MIPS_INS_ADDU:
 	case MIPS_INS_ADDIU:
 	case MIPS_INS_DADD:
 	case MIPS_INS_DADDI:
 	case MIPS_INS_DADDIU:
-		SET_VAL (op,2);
+		SET_VAL (op, 2);
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_ADD;
-		
 		break;
 	case MIPS_INS_SUB:
 	case MIPS_INS_SUBV:

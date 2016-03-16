@@ -23,6 +23,8 @@ typedef struct {
 	int count;
 } HintListState;
 
+static void add_string_ref (RCore *core, ut64 xref_to);
+
 static void loganal(ut64 from, ut64 to) {
 	r_cons_clear_line (1);
 	eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x"\r", from, to);
@@ -2362,8 +2364,11 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 				str[0] = 0;
 			}
 			str[sizeof(str)-1] = 0;
+			add_string_ref (mycore, refptr); //ut64 xref_to) {
+
+#if 0
 			if (is_string (str, sizeof (str)-1, &slen)) {
-				char str2[128];
+				char *str2[256];
 				esilbreak_last_data = refptr;
 				snprintf (str2, sizeof (str2) - 1, "esilref: '%s'", str);
 				r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, esil->address, str2);
@@ -2375,6 +2380,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 					r_core_cmd0 (mycore, cmd2);
 				}
 			}
+#endif
 		} else {
 			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
 				esil->address, addr);
@@ -2469,6 +2475,10 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
 	pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	if (!pcname || !*pcname) {
+		eprintf ("Cannot find program counter register in the current profile.\n");
+		return;
+	}
 	esil_anal_stop = false;
 	r_cons_break (cccb, core);
 	//r_cons_break (NULL, NULL);
@@ -2484,9 +2494,10 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		r_asm_set_pc (core->assembler, cur);
 		//we need to check again i because buf+i may goes beyond its boundaries
 		//because of i+= minopsize - 1
-		if (i > iend)
+		if (i > iend) {
 			break;
-		if (r_asm_disassemble (core->assembler, &asmop, buf+i, iend-i)>0) {
+		}
+		if (r_asm_disassemble (core->assembler, &asmop, buf+i, iend-i) > 0) {
 			op.mnemonic = strdup (asmop.buf_asm);
 		}
 		if (op.size < 1) {
@@ -2504,6 +2515,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 			//r_anal_esil_dumpstack (ESIL);
 			r_anal_esil_stack_free (ESIL);
 			i += op.size -1;
+
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_LEA:
 				if (cfg_anal_strings) {
@@ -2522,7 +2534,8 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 						char *str;
 
 						r_anal_ref_add (core->anal, dst, cur, 'd');
-						add_string_ref (core, op.ptr);
+						add_string_ref (core, dst);
+
 						if ((f = r_flag_get_i2 (core->flags, dst))) {
 							r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
 						} else if ((str = is_string_at (mycore, dst, NULL))) {
@@ -2546,8 +2559,11 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 				break;
 			case R_ANAL_OP_TYPE_UJMP:
 			case R_ANAL_OP_TYPE_UCALL:
-				if (pcname && *pcname) {
-					ut64 dst = r_reg_getv (core->anal->reg, pcname);
+				{
+					ut64 dst = core->anal->esil->jump_target;
+					if (dst == UT64_MAX) {
+						dst = r_reg_getv (core->anal->reg, pcname);
+					}
 					if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
 						r_anal_ref_add (core->anal, dst, cur, 'c');
 					}

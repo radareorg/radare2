@@ -395,10 +395,10 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 		break;
 	case 'j': // jump target
 		switch (str[2]) {
-		case 't':
+		case 't': // "$jt"
 			*num = esil->jump_target;
 			break;
-		case 's':
+		case 's': // "$js"
 			*num = esil->jump_target_set;
 			break;
 		default:
