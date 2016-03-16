@@ -41,7 +41,7 @@ static RBinInfo* info(RBinFile* arch) {
 	ret->type = strdup ("Sony PlayStation 1 Executable");
 	ret->machine = strdup ("Sony PlayStation 1");
 	ret->os = strdup ("psx");
-	ret->arch = strdup ("mips.gnu");
+	ret->arch = strdup ("mips");
 	ret->bits = 32;
 	ret->has_va = true;
 	return ret;
@@ -73,6 +73,7 @@ static RList* sections(RBinFile* arch) {
 	sect->vsize = psxheader.t_size;
 	sect->srwx = R_BIN_SCN_MAP | R_BIN_SCN_EXECUTABLE;
 	sect->add = true;
+        sect->has_strings = true;
 
 	r_list_append (ret, sect);
 	return ret;
