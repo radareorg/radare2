@@ -86,6 +86,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	ut64 version_info[DT_VERSIONTAGNUM];
 
 	char *dynstr;
+	ut32 dynstr_size;
 
 	RBinImport **imports_by_ord;
 	size_t imports_by_ord_size;
