@@ -195,11 +195,16 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 			int pnumleft, immbase = p->hint->immbase;
 			bool big_endian = false;
 			char num[256], *pnum;
+			bool is_hex = false;
 			strncpy (num, ptr, sizeof (num)-2);
-			for (pnum = num; *pnum; pnum++) {
-				if (IS_NUMBER (*pnum))
+			pnum = num;
+			if (!strncmp (pnum, "0x", 2)) {
+				is_hex = true;
+				pnum += 2;
+			}
+			for (; *pnum; pnum++) {
+				if ((is_hex && ishexchar(*pnum)) || IS_NUMBER(*pnum))
 					continue;
-				if (*pnum=='x') continue;
 				break;
 			}
 			*pnum = 0;

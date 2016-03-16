@@ -466,7 +466,7 @@ R_API ut64 r_get_input_num_value(RNum *num, const char *input_value);
 #define isseparator(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r'||(x)==' '|| \
 		(x)==','||(x)==';'||(x)==':'||(x)=='['||(x)==']'|| \
 		(x)=='('||(x)==')'||(x)=='{'||(x)=='}')
-#define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {
+#define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F'))
 
 R_API int r_name_check(const char *name);
 R_API int r_name_filter(char *name, int len);
