@@ -596,8 +596,8 @@ SETL/SETNGE
 			op->type = R_ANAL_OP_TYPE_ROL;
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
-				char *dst = getarg (&gop, 0, 0, NULL);
-				esilprintf (op, "%s,%s,<<<,%s,=", src, dst, dst);
+				char *dst = getarg (&gop, 0, 1, NULL);
+				esilprintf (op, "%s,%s,<<<,%s", src, dst, dst);
 				free (src);
 				free (dst);
 			}
@@ -609,8 +609,8 @@ SETL/SETNGE
 			op->type = R_ANAL_OP_TYPE_ROR;
 			if (a->decode) {
 				char *src = getarg (&gop, 1, 0, NULL);
-				char *dst = getarg (&gop, 0, 0, NULL);
-				esilprintf (op, "%s,%s,>>>,%s,=", src, dst, dst);
+				char *dst = getarg (&gop, 0, 1, NULL);
+				esilprintf (op, "%s,%s,>>>,%s", src, dst, dst);
 				free (src);
 				free (dst);
 			}
@@ -1314,7 +1314,7 @@ SETL/SETNGE
 			{
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, NULL);
-				esilprintf (op, "%s,%s,%s,=,%s,=", src, dst, src, dst);
+				esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
 				free (src);
 				free (dst);
 			}

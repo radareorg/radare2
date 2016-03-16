@@ -2427,7 +2427,14 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		}
 	}
 	iend = end - addr;
+	if (iend < 0) {
+		return;
+	}
 	buf = malloc (iend+2);
+	if (buf == NULL) {
+		perror ("malloc");
+		return;
+	}
 	r_io_read_at (core->io, addr, buf, iend+1);
 	if (!ESIL) {
 		r_core_cmd0 (core, "aei");
@@ -2485,26 +2492,15 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 				       ut64 dst = esilbreak_last_read;
 					if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
 						r_anal_ref_add (core->anal, dst, cur, 'd');
-						//eprintf ("0x%08"PFMT64x" DATA 0x%08"PFMT64x"\n", cur, dst);
-						//r_core_cmdf (core, "axd 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
-					} else {
-						//eprintf ("Unknown LOAD at 0x%08"PFMT64x"\n", cur);
 					}
 				}
 				break;
 			case R_ANAL_OP_TYPE_UJMP:
 			case R_ANAL_OP_TYPE_UCALL:
-				{
-					if (pcname && *pcname) {
-						ut64 dst = r_reg_getv (core->anal->reg, pcname);
-						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
-							// get pc
-							//eprintf ("0x%08"PFMT64x" UCALL 0x%08"PFMT64x"\n", cur, dst);
-							//r_core_cmdf (core, "axc 0x%08"PFMT64x" 0x%"PFMT64x, cur, dst);
-							r_anal_ref_add (core->anal, dst, cur, 'c');
-						} else {
-							//eprintf ("Unknown JMP/CALL at 0x%08"PFMT64x"\n", cur);
-						}
+				if (pcname && *pcname) {
+					ut64 dst = r_reg_getv (core->anal->reg, pcname);
+					if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+						r_anal_ref_add (core->anal, dst, cur, 'c');
 					}
 				}
 				break;
