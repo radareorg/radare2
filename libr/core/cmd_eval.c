@@ -182,6 +182,9 @@ static int cmd_eval(void *data, const char *input) {
 					}
 				}
 				free (home);
+				if (failed) {
+					eprintf ("Something went wrong\n");
+				}
 			} else if(input[2]=='?') {
 				eprintf ("Usage: eco [themename]  ;load theme from /usr/share/radare2/0.10.2-git/cons/\n");
 
