@@ -2391,7 +2391,25 @@ static void cccb(void*u) {
 	eprintf ("^C\n");
 }
 
+static void add_string_ref (RCore *core, ut64 xref_to) {
+	int len = 0;
+	char *str_flagname;
+	if (xref_to == UT64_MAX || xref_to == 0LL) {
+		return;
+	}
+	str_flagname = is_string_at (core, xref_to, &len);
+	if (str_flagname) {
+		r_name_filter (str_flagname, -1);
+		char *flagname = sdb_fmt (0, "str.%s", str_flagname);
+		r_flag_set (core->flags, flagname, xref_to, len);
+		r_meta_add (core->anal, 's', xref_to, xref_to + len, str_flagname);
+		//r_cons_printf ("Cs %d @ 0x%"PFMT64x"\n", len, xref_to);
+		free (str_flagname);
+	}
+}
+
 R_API void r_core_anal_esil (RCore *core, const char *str) {
+	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	RAnalEsil *ESIL = core->anal->esil;
 	const char *pcname;
 	RAsmOp asmop;
@@ -2430,12 +2448,12 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 	if (iend < 0) {
 		return;
 	}
-	buf = malloc (iend+2);
+	buf = malloc (iend + 2);
 	if (buf == NULL) {
 		perror ("malloc");
 		return;
 	}
-	r_io_read_at (core->io, addr, buf, iend+1);
+	r_io_read_at (core->io, addr, buf, iend + 1);
 	if (!ESIL) {
 		r_core_cmd0 (core, "aei");
 		ESIL = core->anal->esil;
@@ -2487,11 +2505,21 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 			r_anal_esil_stack_free (ESIL);
 			i += op.size -1;
 			switch (op.type) {
+			case R_ANAL_OP_TYPE_LEA:
+				if (cfg_anal_strings) {
+					r_anal_ref_add (core->anal, op.ptr, cur, 'd');
+					add_string_ref (core, op.ptr);
+				}
+				break;
 			case R_ANAL_OP_TYPE_LOAD:
 				{
-				       ut64 dst = esilbreak_last_read;
+					ut64 dst = esilbreak_last_read;
 					if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
 						r_anal_ref_add (core->anal, dst, cur, 'd');
+						eprintf ("FUCK DAT STRING\n");
+						if (cfg_anal_strings) {
+							add_string_ref (core, dst);
+						}
 					}
 				}
 				break;
