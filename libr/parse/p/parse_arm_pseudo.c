@@ -58,6 +58,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "lsr",  "1 = 2 >> 3"},
 		{ 0, "mov",  "1 = 2"},
 		{ 0, "movz",  "1 = 2"},
+		{ 0, "movk",  "1 = 2"},
+		{ 0, "movn",  "1 = 2"},
 		{ 0, "vmov.i32",  "1 = 2"},
 		{ 0, "muf",  "1 = 2 * 3"},
 		{ 0, "mul",  "1 = 2 * 3"},

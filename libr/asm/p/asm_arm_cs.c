@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2015 - pancake */
+/* radare2 - LGPL - Copyright 2013-2016 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -77,18 +77,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!op->buf_asm[0])
 		strcpy (op->buf_asm, "invalid");
 	return op->size;
-}
-
-static bool arm64ass(const char *str, ut64 addr, ut32 *op) {
-	if (!strcmp (str, "movz w0, 0")) {
-		*op = 0x00008052;
-		return true;
-	}
-	if (!strcmp (str, "ret")) {
-		*op = 0xc0035fd6;
-		return true;
-	}
-	return false;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
