@@ -194,7 +194,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case ' ':
 	{
-		const char *isenum = sdb_const_get (core->anal->sdb_types, input+2, 0);
+		const char *isenum = sdb_const_get (core->anal->sdb_types, input+1, 0);
 		if (isenum && !strcmp (isenum, "enum")) {
 			eprintf ("IS ENUM! \n");
 		} else {
