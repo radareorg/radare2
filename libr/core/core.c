@@ -3,6 +3,7 @@
 #include <r_core.h>
 #include <r_socket.h>
 #include "../config.h"
+#include <r_util.h>
 #if __UNIX__
 #include <signal.h>
 #endif
@@ -1144,6 +1145,7 @@ R_API int r_core_init(RCore *core) {
 	core->scriptstack = r_list_new ();
 	core->scriptstack->free = (RListFree)free;
 	core->log = r_core_log_new ();
+	core->times = R_NEW0 (RCoreTimes);
 	core->vmode = false;
 	core->section = NULL;
 	core->oobi = NULL;

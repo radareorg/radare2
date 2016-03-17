@@ -176,6 +176,14 @@ static int cmd_help(void *data, const char *input) {
 		n = r_num_math (core->num, input+1);
 		r_cons_printf ("0%"PFMT64o"\n", n);
 		break;
+	case 'T':
+		r_cons_printf("r_core_loadlibs_init_time = %"PFMT64d"\n"
+			"r_core_loadlibs_time = %"PFMT64d"\n"
+			"r_core_open_file_time = %"PFMT64d"\n",
+			core->times->r_core_loadlibs_init_time,
+			core->times->r_core_loadlibs_time,
+			core->times->r_core_file_open_time);
+		break;
 	case 'u':
 		{
 			char unit[32];
@@ -383,7 +391,7 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_printf ("%s %d\n", R2_VERSION, R2_VERSION_COMMIT);
 
 			else r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, R2_GITTAP, R2_VERSION_COMMIT);
-		}	
+		}
 		if (input[1] == 'j' && !input[2]){
 			r_cons_printf ("{\"system\":\"%s-%s-%s\"", R_SYS_OS, R_SYS_ENDIAN, R_SYS_ARCH);
 			r_cons_printf (",\"version\":\"%s\"}\n",  R2_VERSION);
@@ -544,7 +552,7 @@ static int cmd_help(void *data, const char *input) {
 			if (input[2]) {
 				if (core->num->value)
 					r_core_cmd (core, input+1, 0);
-				break;	
+				break;
 			}
 			const char* help_msg[] = {
 			"Usage: ?[?[?]] expression", "", "",
@@ -559,6 +567,7 @@ static int cmd_help(void *data, const char *input) {
 			"?B", " [elem]", "show range boundaries like 'e?search.in",
 			"?P", " paddr", "get virtual address for given physical one",
 			"?S", " addr", "return section name of given address",
+			"?T", "", "show loading times",
 			"?V", "", "show library version of r_core",
 			"?X", " num|expr", "returns the hexadecimal value numeric expr",
 			"?_", " hudfile", "load hud menu with given file",
