@@ -594,11 +594,14 @@ static Sdb *store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 	Sdb *sdb = NULL;
 	int i, cnt;
 
+	if (!bin || !bin->dynstr) {
+		return NULL;
+	}
+	if (shdr->sh_link > bin->ehdr.e_shnum) {
+		return NULL;
+	}
 	sdb = sdb_new0 ();
-	if (!sdb || !bin || !bin->dynstr)
-		return NULL;
-	if (shdr->sh_link > bin->ehdr.e_shnum)
-		return NULL;
+	if (!sdb) return NULL;
 	link_shdr = &bin->shdr[shdr->sh_link];
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size)
 		section_name = &bin->shstrtab[shdr->sh_name];
@@ -676,14 +679,16 @@ beach:
 }
 
 static Sdb *store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
-	int i;
-	Sdb *sdb_versioninfo = sdb_new0 ();
+	Sdb *sdb_versioninfo;
 	int num_verdef = 0;
 	int num_verneed = 0;
 	int num_versym = 0;
+	int i;
 
-	if (!bin || !bin->shdr || !sdb_versioninfo)
+	if (!bin || !bin->shdr || !sdb_versioninfo) {
 		return NULL;
+	}
+	sdb_versioninfo = sdb_new0 ();
 
 	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
 		Sdb *sdb = NULL;
