@@ -1059,7 +1059,7 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		}
 		p->cb_printf ("%02x %04x |", i, arr[i]);
 		if (show_colors) {
-			int idx = (int)(arr[i] * 6 / 255);
+			int idx = (int)(arr[i] * 5 / 255);
 			const char *k = firebow[idx];
 			p->cb_printf ("%s", k);
 		}
