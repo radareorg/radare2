@@ -1894,19 +1894,30 @@ static void bin_pe_versioninfo(RCore *r) {
 		if (!(sdb = sdb_ns_path (r->sdb, path_fixedfileinfo, 0)))
 			break;
 
-		r_cons_printf ("Signature: %s\n", sdb_const_get (sdb, "Signature", 0));
-		r_cons_printf ("StrucVersion: %s\n", sdb_const_get (sdb, "FileVersionMS", 0));
-		r_cons_printf ("FileVersionMS: %s\n", sdb_const_get (sdb, "FileVersionMS", 0));
-		r_cons_printf ("FileVersionLS: %s\n", sdb_const_get (sdb, "FileVersionLS", 0));
-		r_cons_printf ("ProductVersionMS: %s\n", sdb_const_get (sdb, "ProductVersionMS", 0));
-		r_cons_printf ("ProductVersionLS: %s\n", sdb_const_get (sdb, "ProductVersionLS", 0));
-		r_cons_printf ("FileFlagsMask: %s\n", sdb_const_get (sdb, "FileFlagsMask", 0));
-		r_cons_printf ("FileFlags: %s\n", sdb_const_get (sdb, "FileFlags", 0));
-		r_cons_printf ("FileOS: %s\n", sdb_const_get (sdb, "FileOS", 0));
-		r_cons_printf ("FileType: %s\n", sdb_const_get (sdb, "FileType", 0));
-		r_cons_printf ("FileSubType: %s\n", sdb_const_get (sdb, "FileSubType", 0));
-		r_cons_printf ("FileDateMS: %s\n", sdb_const_get (sdb, "FileDateMS", 0));
-		r_cons_printf ("FileDateLS: %s\n", sdb_const_get (sdb, "FileDateLS", 0));
+		r_cons_printf ("  Signature: 0x%"PFMT64x"\n", sdb_num_get (sdb, "Signature", 0));
+		r_cons_printf ("  StrucVersion: 0x%"PFMT64x"\n", sdb_num_get (sdb, "StrucVersion", 0));
+		r_cons_printf ("  FileVersion: %"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\n",
+			sdb_num_get (sdb, "FileVersionMS", 0) >> 16,
+			sdb_num_get (sdb, "FileVersionMS", 0) & 0xFFFF,
+			sdb_num_get (sdb, "FileVersionLS", 0) >> 16,
+			sdb_num_get (sdb, "FileVersionLS", 0) & 0xFFFF);
+		r_cons_printf ("  ProductVersion: %"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\n",
+			sdb_num_get (sdb, "ProductVersionMS", 0) >> 16,
+			sdb_num_get (sdb, "ProductVersionMS", 0) & 0xFFFF,
+			sdb_num_get (sdb, "ProductVersionLS", 0) >> 16,
+			sdb_num_get (sdb, "ProductVersionLS", 0) & 0xFFFF);
+		r_cons_printf ("  FileFlagsMask: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileFlagsMask", 0));
+		r_cons_printf ("  FileFlags: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileFlags", 0));
+		r_cons_printf ("  FileOS: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileOS", 0));
+		r_cons_printf ("  FileType: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileType", 0));
+		r_cons_printf ("  FileSubType: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileSubType", 0));
+#if 0
+		r_cons_printf ("  FileDate: %d.%d.%d.%d\n",
+			sdb_num_get (sdb, "FileDateMS", 0) >> 16,
+			sdb_num_get (sdb, "FileDateMS", 0) & 0xFFFF,
+			sdb_num_get (sdb, "FileDateLS", 0) >> 16,
+			sdb_num_get (sdb, "FileDateLS", 0) & 0xFFFF);
+#endif
 		r_cons_printf ("\n");
 
 		r_cons_printf ("# StringTable\n\n");
@@ -1930,7 +1941,7 @@ static void bin_pe_versioninfo(RCore *r) {
 						|| r_str_utf16_to_utf8 (val_utf8, lenval * 2, val_utf16, lenval, true) < 0) {
 						eprintf ("Warning: Cannot decode utf16 to utf8\n");
 					} else {
-						r_cons_printf ("%s: %s\n", (char*)key_utf8, (char*)val_utf8);
+						r_cons_printf ("  %s: %s\n", (char*)key_utf8, (char*)val_utf8);
 					}
 
 					free (key_utf8);
