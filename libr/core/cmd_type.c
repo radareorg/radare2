@@ -124,27 +124,16 @@ static int cmd_type(void *data, const char *input) {
 		if (p) {
 			*p++ = 0;
 // dupp in core.c (see getbitfield())
-#if 1
 			isenum = sdb_const_get (core->anal->sdb_types, s, 0);
 			if (isenum && !strcmp (isenum, "enum")) {
-				int empty = 1;
-				ut32 num = (ut32)r_num_math (core->num, p);
-				r_cons_printf ("0x%08"PFMT64x" : ", num);
-				for (i=0; i< 32; i++) {
-					if (num & (1<<i)) {
-						const char *q = sdb_fmt (0, "%s.0x%x", s, (1<<i));
-						const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
-						if (!empty)
-							r_cons_printf (" | ");
-						if (res) r_cons_printf ("%s", res);
-						else r_cons_printf ("0x%x", (1<<i));
-						empty = 0;
-					}
-				}
+				*--p='.';
+				const char *res = sdb_const_get (core->anal->sdb_types, s, 0);
+				if (res)
+					r_cons_printf ("%s\n", res);
+				else eprintf("Invalid enum member\n");
 			} else {
 				eprintf ("This is not an enum\n");
 			}
-#endif
 		} else {
 			eprintf ("Missing value\n");
 		}
