@@ -449,13 +449,16 @@ static Sdb *store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 					ut64 offset = Elf_(r_bin_elf_v2p) (bin, bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]);
 					do {
 						Elf_(Vernaux) vna;
-						ut64 a_off = offset + vn.vn_aux;
+						ut64 a_off;
+
 						if (offset > bin->size || offset + sizeof (vn) > bin->size)
 							goto beach;
 						if (r_buf_read_at (bin->b, offset, (ut8*)&vn, sizeof (vn)) < 0) {
 							eprintf ("Warning: Cannot read Verneed for Versym\n");
 							goto beach;
 						}
+
+						a_off = offset + vn.vn_aux;
 						do {
 							if (a_off > bin->size || a_off + sizeof (vna) > bin->size)
 								goto beach;
@@ -469,6 +472,7 @@ static Sdb *store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 						if (vna.vna_other == data[i + j]) {
 							if (vna.vna_name > bin->strtab_size)
 								goto beach;
+
 							sdb_set (sdb_entry, key, sdb_fmt (0, "%s(%s)", tmp_val, bin->strtab + vna.vna_name), 0);
 							check_def = false;
 							break;
@@ -482,8 +486,10 @@ static Sdb *store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 				if (check_def && data[i + j] != 0x8001 && vinfoaddr) {
 					Elf_(Verdef) vd;
 					ut64 offset = Elf_(r_bin_elf_v2p) (bin, vinfoaddr);
+
 					if (offset > bin->size || offset + sizeof (vd) > bin->size)
 						goto beach;
+
 					do {
 						if (r_buf_read_at (bin->b, offset, (ut8*)&vd, sizeof (vd)) < 0) {
 							eprintf ("Warning: Cannot read Verdef for Versym\n");
@@ -504,6 +510,7 @@ static Sdb *store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 						}
 						if (vda.vda_name > bin->strtab_size)
 							goto beach;
+
 						const char *name = bin->strtab + vda.vda_name;
 						sdb_set (sdb_entry, key, sdb_fmt (0,"%s(%s%-*s)", tmp_val, name, (int)(12 - strlen (name)),")") , 0);
 					}
@@ -652,9 +659,7 @@ static Sdb *store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 			aux = (Elf_(Vernaux)*)(vstart);
 			if (aux->vna_name > bin->dynstr_size)
 				goto beach;
-			if (!aux->vna_next)
-				//it'll loop forever
-				goto beach;
+
 			sdb_num_set (sdb_vernaux, "idx", isum, 0);
 			sdb_set (sdb_vernaux, "name", &bin->dynstr[aux->vna_name], 0);
 			sdb_set (sdb_vernaux, "flags", get_ver_flags (aux->vna_flags), 0);
@@ -679,16 +684,16 @@ beach:
 }
 
 static Sdb *store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
-	Sdb *sdb_versioninfo;
+	Sdb *sdb_versioninfo = NULL;
 	int num_verdef = 0;
 	int num_verneed = 0;
 	int num_versym = 0;
 	int i;
 
-	if (!bin || !bin->shdr || !sdb_versioninfo) {
+	if (!bin || !bin->shdr)
 		return NULL;
-	}
-	sdb_versioninfo = sdb_new0 ();
+	if (!(sdb_versioninfo = sdb_new0 ()))
+		return NULL;
 
 	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
 		Sdb *sdb = NULL;

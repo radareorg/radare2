@@ -1178,6 +1178,10 @@ static VarFileInfo *Pe_r_bin_pe_parse_var_file_info(struct PE_(r_bin_pe_obj_t)* 
 
 static String *Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord *curAddr) {
 	String *string = calloc (1, sizeof(*string));
+	PE_DWord begAddr = *curAddr;
+	int len_value = 0;
+	int i = 0;
+
 	if (string == NULL) {
 		eprintf ("Warning: calloc (String)\n");
 		return NULL;
@@ -1210,36 +1214,43 @@ static String *Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWor
 		return NULL;
 	}
 
-	string->wKeyLen = string->wLength - string->wValueLength * 2 - sizeof(string->wLength) * 3;
-	string->szKey = (ut16 *) malloc (string->wKeyLen); //If there was padding, we would read it in string
-	if (string->szKey == NULL) {
-		eprintf ("Warning: malloc (String szKey)\n");
-		free_String(string);
-		return NULL;
-	}
+	for (i = 0; *curAddr < begAddr + string->wLength; ++i, *curAddr += sizeof (ut16)) {
+		ut16 utf16_char;
+		if (r_buf_read_at(bin->b, *curAddr, (ut8*)&utf16_char, sizeof (ut16)) != sizeof (ut16)) {
+			eprintf ("Warning: check (String szKey)\n");
+			free_String(string);
+			return NULL;
+		}
 
-	if (r_buf_read_at(bin->b, *curAddr, (ut8*)string->szKey, string->wKeyLen) != string->wKeyLen) {
-		eprintf ("Warning: read (String szKey)\n");
-		free_String(string);
-		return NULL;
+		string->szKey = (ut16*)realloc (string->szKey, (i + 1) * sizeof (ut16));
+		string->szKey[i] = utf16_char;
+		string->wKeyLen += sizeof (ut16);
+
+		if (!utf16_char) {
+			*curAddr += sizeof (ut16);
+			break;
+		}
 	}
-	*curAddr += string->wKeyLen;
 
 	align32(*curAddr);
 
-	string->Value = (ut16 *) calloc (string->wValueLength, 2);
+	len_value = R_MIN (string->wValueLength * 2, string->wLength - (*curAddr - begAddr));
+	if (len_value < 0)
+		len_value = 0;
+
+	string->Value = (ut16 *) calloc (len_value, 1);
 	if (string->Value == NULL) {
 		eprintf ("Warning: malloc (String Value)\n");
 		free_String(string);
 		return NULL;
 	}
 
-	if (r_buf_read_at(bin->b, *curAddr, (ut8*)string->Value, string->wValueLength * 2) != string->wValueLength * 2) {
+	if (r_buf_read_at(bin->b, *curAddr, (ut8*)string->Value, len_value) != len_value) {
 		eprintf ("Warning: read (String Value)\n");
 		free_String(string);
 		return NULL;
 	}
-	*curAddr += string->wValueLength * 2;
+	*curAddr += len_value;
 
 	return string;
 }
