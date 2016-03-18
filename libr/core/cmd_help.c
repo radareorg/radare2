@@ -177,12 +177,12 @@ static int cmd_help(void *data, const char *input) {
 		r_cons_printf ("0%"PFMT64o"\n", n);
 		break;
 	case 'T':
-		r_cons_printf("r_core_loadlibs_init_time = %"PFMT64d"\n"
-			"r_core_loadlibs_time = %"PFMT64d"\n"
-			"r_core_open_file_time = %"PFMT64d"\n",
-			core->times->r_core_loadlibs_init_time,
-			core->times->r_core_loadlibs_time,
-			core->times->r_core_file_open_time);
+		r_cons_printf("plug.init = %"PFMT64d"\n"
+			"plug.load = %"PFMT64d"\n"
+			"file.load = %"PFMT64d"\n",
+			core->times->loadlibs_init_time,
+			core->times->loadlibs_time,
+			core->times->file_open_time);
 		break;
 	case 'u':
 		{

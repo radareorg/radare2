@@ -1,9 +1,7 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include "r_core.h"
 #include "../config.h"
-
-#define UPDATE_TIME(a, b) do { a = r_sys_now() - b; core->times->r_core_loadlibs_init_time = a;} while(0)
 
 #define CB(x,y) \
 static int __lib_##x##_cb(RLibPlugin *pl, void *user, void *data) { \
@@ -32,7 +30,7 @@ CB (egg, egg)
 CB (fs, fs)
 
 R_API void r_core_loadlibs_init(RCore *core) {
-	ut64 diff, prev = r_sys_now();
+	ut64 prev = r_sys_now();
 #define DF(x,y,z) r_lib_add_handler(core->lib, R_LIB_TYPE_##x,y,&__lib_##z##_cb, &__lib_##z##_dt, core);
 	core->lib = r_lib_new ("radare_plugin");
 	DF (IO, "io plugins", io);
@@ -46,16 +44,15 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);
 	DF (FS, "fs plugins", fs);
-	UPDATE_TIME(diff, prev);
+	core->times->loadlibs_init_time = r_sys_now () - prev;
 }
 
 R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
-	ut64 diff, prev = r_sys_now();
+	ut64 prev = r_sys_now();
 #if R2_LOADLIBS
 	/* TODO: all those default plugin paths should be defined in r_lib */
 	if (!r_config_get_i (core->config, "cfg.plugins")) {
-		diff = r_sys_now() - prev;
-		core->times->r_core_loadlibs_time = diff;
+		core->times->loadlibs_time = 0;
 		return false;
 	}
 	if (!where) where = -1;
@@ -83,6 +80,6 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 #endif
 	}
 #endif
-	UPDATE_TIME(diff, prev);
+	core->times->loadlibs_time = r_sys_now() - prev;
 	return true;
 }

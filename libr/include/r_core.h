@@ -83,9 +83,9 @@ typedef struct r_core_file_t {
 } RCoreFile;
 
 typedef struct r_core_times_t {
-	ut64 r_core_loadlibs_init_time;
-	ut64 r_core_loadlibs_time;
-	ut64 r_core_file_open_time;
+	ut64 loadlibs_init_time;
+	ut64 loadlibs_time;
+	ut64 file_open_time;
 } RCoreTimes;
 
 #define R_CORE_ASMSTEPS 128
