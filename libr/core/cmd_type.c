@@ -122,7 +122,6 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'b':
 		{
-		int i;
 		char *p, *s = (strlen (input) > 1) ? strdup (input+2): NULL;
 		const char *isenum;
 		p = s ? strchr (s, ' ') : NULL;
