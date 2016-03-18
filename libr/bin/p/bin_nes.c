@@ -113,11 +113,9 @@ static RList *mem (RBinFile *arch) {
 	m->size = RAM_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(n = R_NEW0 (RBinMem))) {
-		r_list_free (m->mirrors);
-		m->mirrors = NULL;
+	if (!(n = R_NEW0 (RBinMem)))
 		return ret;
-	}
+	m->mirrors = r_list_new();
 	n->name = strdup ("RAM_MIRROR_2");
 	n->addr = RAM_MIRROR_2_ADDRESS;
 	n->size = RAM_MIRROR_2_SIZE;
@@ -142,6 +140,7 @@ static RList *mem (RBinFile *arch) {
 	m->size = PPU_REG_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
+	m->mirrors = r_list_new();
 	int i;
 	for (i = 1; i < 1024; i++) {
 		if (!(n = R_NEW0 (RBinMem))) {
@@ -149,10 +148,10 @@ static RList *mem (RBinFile *arch) {
 			m->mirrors = NULL;
 			return ret;
 		}
-		m->name = r_str_newf ("PPU_REG_MIRROR_%d", i);
-		m->addr = PPU_REG_ADDRESS+i*PPU_REG_SIZE;
-		m->size = PPU_REG_SIZE;
-		m->perms = r_str_rwx ("rwx");
+		n->name = r_str_newf ("PPU_REG_MIRROR_%d", i);
+		n->addr = PPU_REG_ADDRESS+i*PPU_REG_SIZE;
+		n->size = PPU_REG_SIZE;
+		n->perms = r_str_rwx ("rwx");
 		r_list_append (m->mirrors, n);
 	}
 	if (!(m = R_NEW0 (RBinMem))) {
