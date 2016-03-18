@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2016 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 
-#ifndef TEMP_MAX
-#define TEMP_MAX 127
-#endif
 static void show_help(RCore *core) {
 	const char *help_message[] = {
 		"Usage: t", "", "# cparse types commands",
@@ -299,17 +296,19 @@ static int cmd_type(void *data, const char *input) {
 			const char *name = input + 1;
 			if (*name == ' ') name++;
 			if (*name) {
-				//TODO delete all types that is name or starts with name.
-				r_anal_type_del (core->anal, name);
-				char tmp[TEMP_MAX + 1];
-				snprintf (tmp, TEMP_MAX, "%s.", name);
 				SdbKv *kv;
 				SdbListIter *iter;
-				SdbList *l = sdb_foreach_list (core->anal->sdb_types);
-				ls_foreach (l, iter, kv) {
-
-					if (!strncmp (kv->key, tmp, strlen (tmp)))
-						r_anal_type_del (core->anal, kv->key);
+				int tmp_len = strlen (name);
+				char *tmp = malloc (tmp_len + 2);
+				r_anal_type_del (core->anal, name);
+				if (tmp) {
+					snprintf (tmp, tmp_len + 1, "%s.", name);
+					SdbList *l = sdb_foreach_list (core->anal->sdb_types);
+					ls_foreach (l, iter, kv) {
+						if (!strncmp (kv->key, tmp, tmp_len - 1))
+							r_anal_type_del (core->anal, kv->key);
+					}
+					free (tmp);
 				}
 			} else eprintf ("Invalid use of t- . See t-? for help.\n");
 		}
