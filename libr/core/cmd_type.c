@@ -12,7 +12,6 @@ static void show_help(RCore *core) {
 		"tb", " <enum> <value>", "Show matching enum bitfield for given number",
 		"te", " <enum> <value>", "Show name for given enum number",
 		"td", " <string>", "Load types from string",
-		"td-", "<name>", "Undefine type by name",
 		"tf", " <addr>", "View linked type at given address",
 		"tl", "[?]", "Show/Link type to an address",
 		//"to",  "",         "List opened files",
@@ -242,12 +241,6 @@ static int cmd_type(void *data, const char *input) {
 				"td", "[string]", "Load types from string",
 				NULL };
 			r_core_cmd_help (core, help_message);
-		} else if (input[1] == '-') {
-			const char *arg = strchr (input + 1, ' ');
-			if (arg)
-				arg++;
-			else arg = input + 2;
-			r_anal_type_del (core->anal, arg);
 		} else if (input[1] == ' ') {
 			char tmp[8192];
 			snprintf (tmp, sizeof (tmp) - 1, "%s;", input + 2);
