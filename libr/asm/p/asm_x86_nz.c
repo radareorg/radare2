@@ -204,6 +204,10 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		memmove (op, op+4, strlen (op+4)+1);
 	}
 
+	if (!strcmp (op, "scasb")) { data[l++] = 0xae; return l; }
+	if (!strcmp (op, "scasw")) { data[l++] = 0x66; return l; }
+	if (!strcmp (op, "scasd")) { data[l++] = 0xaf; return l; }
+
 	if (!strcmp (op, "movsb")) { data[l++] = 0xa4; return l; }
 	if (!strcmp (op, "movsw")) { data[0] = 0x66; data[1] = 0xa5; return 2; }
 	if (!strcmp (op, "movsd")) { data[0] = 0xa5; return 1; }
