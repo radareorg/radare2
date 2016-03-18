@@ -1,5 +1,5 @@
 DBG_OBJS = signal.c map.c trace.c arg.c debug.c plugin.c ;
-DBG_OBJS += pid.c reg.c desc.c ;
+DBG_OBJS += pid.c reg.c desc.c core.c ;
 
 DBG_OBJS +=
   p/debug_bf.c
