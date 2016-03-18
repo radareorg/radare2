@@ -30,7 +30,12 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 	r_cons_printf ("%s=%s\n", k, v);
 	return 1;
 }
+static int sdbdelete(void *p, const char *k, const char *v){
+	RCore *core= (RCore*)p;
+	r_anal_type_del (core->anal,k);
+	return 1;
 
+}
 static int typelist (void *p, const char *k, const char *v) {
 #define DB core->anal->sdb_types
 	RCore *core = (RCore*)p;
@@ -301,7 +306,8 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd_help(core, help_message);
 		} else
 		if (input[1]=='*') {
-			eprintf ("TODO\n");
+			sdb_foreach (core->anal->sdb_types,sdbdelete, core);
+			//eprintf ("TODO\n");
 		} else {
 			const char *name = input + 1;
 			if (*name==' ') name++;
