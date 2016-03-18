@@ -1840,19 +1840,16 @@ static int bin_libs(RCore *r, int mode) {
 static void bin_mem_print(RList *mems, int perms, int depth) {
 	RBinMem *mem;
 	RListIter *iter;
-	int i;
 
 	if (!mems) return;
 
 	r_list_foreach (mems, iter, mem) {
 		if (mem) {
-			for (i = 0; i < depth; i++) {
-				r_cons_printf (" ");
-			}
-			r_cons_printf ("%8s addr=0x%016"PFMT64x" size=%6d perms=[%s]\n",
-				mem->name, mem->addr, mem->size, r_str_rwx_i (mem->perms & perms));
+			r_cons_printf ("0x%08"PFMT64x" +0x%04x %s %*s%-*s\n",
+				mem->addr, mem->size, r_str_rwx_i (mem->perms & perms),
+				depth, "", 20-depth, mem->name);
 			if (mem->mirrors) {
-				bin_mem_print (mem->mirrors, (mem->perms & perms), (depth + 1));	//sorry, but anything else would be inefficient
+				bin_mem_print (mem->mirrors, mem->perms & perms, depth + 1);
 			}
 		}
 	}
