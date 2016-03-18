@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake, Anton Kochkov, Jody Frankowski */
 
+#ifndef TEMP_MAX
+#define TEMP_MAX 127
+#endif
 static void show_help(RCore *core) {
 	const char * help_message[] = {
 		"Usage: t", "",    "# cparse types commands",
@@ -306,12 +309,22 @@ static int cmd_type(void *data, const char *input) {
 		} else
 		if (input[1]=='*') {
 			sdb_foreach (core->anal->sdb_types,sdbdelete, core);
-			//eprintf ("TODO\n");
 		} else {
 			const char *name = input + 1;
 			if (*name==' ') name++;
 			if (*name) {
+				//TODO delete all types that is name or starts with name.
 				r_anal_type_del (core->anal, name);
+				char tmp[TEMP_MAX+1];
+				snprintf(tmp,TEMP_MAX,"%s.",name);
+				SdbKv *kv;
+				SdbListIter *iter;
+                        	SdbList *l = sdb_foreach_list (core->anal->sdb_types);
+				ls_foreach (l, iter, kv) {
+					
+					if (!strncmp (kv->key,tmp,strlen(tmp)))
+						r_anal_type_del(core->anal,kv->key);
+				}
 			} else eprintf ("Invalid use of t- . See t-? for help.\n");
 		}
 		break;
