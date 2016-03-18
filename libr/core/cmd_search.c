@@ -185,6 +185,10 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	ut64 at;
 	ut8 *b = (ut8 *)malloc (core->blocksize);
 // TODO: handle sections ?
+	if (from >= to) {
+		eprintf ("aap: Invalid search range 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", from, to);
+		return 0;
+	}
 	r_search_reset (core->search, R_SEARCH_KEYWORD);
 	r_search_kw_add (core->search,
 		r_search_keyword_new (buf, blen, mask, mlen, NULL));
@@ -215,61 +219,75 @@ R_API int r_core_search_preludes(RCore *core) {
 	const char *prelude = r_config_get (core->config, "anal.prelude");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	int bits = r_config_get_i (core->config, "asm.bits");
-	ut64 from = core->offset;
-	ut64 to = core->offset+0xffffff; // hacky!
+	ut64 from = -1;//core->offset;
+	ut64 to = -1; //core->offset+0xffffff; // hacky!
 	int fc0, fc1;
 
+	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, "io.sections.exec", &from, &to);
+	RListIter *iter;
+	RIOMap *p;
+
 	fc0 = count_functions (core);
-	if (prelude && *prelude) {
-		ut8 *kw = malloc (strlen (prelude)+1);
-		int kwlen = r_hex_str2bin (prelude, kw);
-		ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
-		free (kw);
-	} else if (strstr (arch, "ppc")) {
-		ret = r_core_search_prelude (core, from, to,
-			(const ut8 *)"\x7c\x08\x02\xa6", 4, NULL, 0);
-	} else if (strstr (arch, "arm")) {
-		switch (bits) {
-		case 16:
-			ret = r_core_search_prelude (core, from, to,
-				(const ut8 *)"\xf0\xb5", 2, NULL, 0);
-			break;
-		case 32:
-			ret = r_core_search_prelude (core, from, to,
-				(const ut8 *)"\x00\x48\x2d\xe9", 4, NULL, 0);
-			break;
-		case 64:
-			r_core_search_prelude (core, from, to,
-				(const ut8 *)"\xf6\x57\xbd\xa9", 4, NULL, 0);
-			r_core_search_prelude (core, from, to,
-				(const ut8 *)"\xfd\x7b\xbf\xa9", 4, NULL, 0);
-			r_core_search_prelude (core, from, to,
-				(const ut8 *)"\xfc\x6f\xbe\xa9", 4, NULL, 0);
-			break;
-		default:
-			eprintf ("ap: Unsupported bits: %d\n", bits);
+	r_list_foreach (list, iter, p) {
+		eprintf ("\r[>] Scanning %s 0x%"PFMT64x" - 0x%"PFMT64x" ", r_str_rwx_i (p->flags), p->from, p->to);
+		if (p->flags & R_IO_MAP) {
+			eprintf ("skip\n");
+			continue;
 		}
-	} else if (strstr (arch, "mips")) {
-		ret = r_core_search_prelude (core, from, to,
-			(const ut8 *)"\x27\xbd\x00", 3, NULL, 0);
-	} else if (strstr (arch, "x86")) {
-		switch (bits) {
-		case 32:
-			r_core_search_prelude (core, from, to,
-				(const ut8 *)"\x55\x89\xe5", 3, NULL, 0);
-			r_core_search_prelude (core, from, to,
-				(const ut8 *)"\x55\x8b\xec", 3, NULL, 0);
-			break;
-		case 64:
-			r_core_search_prelude (core, from, to,
-				(const ut8 *)"\x55\x48\x89\xe5", 4, NULL, 0);
-			r_core_search_prelude (core, from, to,
-				(const ut8 *)"\x55\x48\x8b\xec", 4, NULL, 0);
-			break;
-		default:
-			eprintf ("ap: Unsupported bits: %d\n", bits);
-		}
-	} else eprintf ("ap: Unsupported asm.arch and asm.bits\n");
+		from = p->from;
+		to = p->to;
+		if (prelude && *prelude) {
+			ut8 *kw = malloc (strlen (prelude)+1);
+			int kwlen = r_hex_str2bin (prelude, kw);
+			ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
+			free (kw);
+		} else if (strstr (arch, "ppc")) {
+			ret = r_core_search_prelude (core, from, to,
+				(const ut8 *)"\x7c\x08\x02\xa6", 4, NULL, 0);
+		} else if (strstr (arch, "arm")) {
+			switch (bits) {
+			case 16:
+				ret = r_core_search_prelude (core, from, to,
+					(const ut8 *)"\xf0\xb5", 2, NULL, 0);
+				break;
+			case 32:
+				ret = r_core_search_prelude (core, from, to,
+					(const ut8 *)"\x00\x48\x2d\xe9", 4, NULL, 0);
+				break;
+			case 64:
+				r_core_search_prelude (core, from, to,
+					(const ut8 *)"\xf6\x57\xbd\xa9", 4, NULL, 0);
+				r_core_search_prelude (core, from, to,
+					(const ut8 *)"\xfd\x7b\xbf\xa9", 4, NULL, 0);
+				r_core_search_prelude (core, from, to,
+					(const ut8 *)"\xfc\x6f\xbe\xa9", 4, NULL, 0);
+				break;
+			default:
+				eprintf ("ap: Unsupported bits: %d\n", bits);
+			}
+		} else if (strstr (arch, "mips")) {
+			ret = r_core_search_prelude (core, from, to,
+				(const ut8 *)"\x27\xbd\x00", 3, NULL, 0);
+		} else if (strstr (arch, "x86")) {
+			switch (bits) {
+			case 32:
+				r_core_search_prelude (core, from, to,
+					(const ut8 *)"\x55\x89\xe5", 3, NULL, 0);
+				r_core_search_prelude (core, from, to,
+					(const ut8 *)"\x55\x8b\xec", 3, NULL, 0);
+				break;
+			case 64:
+				r_core_search_prelude (core, from, to,
+					(const ut8 *)"\x55\x48\x89\xe5", 4, NULL, 0);
+				r_core_search_prelude (core, from, to,
+					(const ut8 *)"\x55\x48\x8b\xec", 4, NULL, 0);
+				break;
+			default:
+				eprintf ("ap: Unsupported bits: %d\n", bits);
+			}
+		} else eprintf ("ap: Unsupported asm.arch and asm.bits\n");
+		eprintf ("done\n");
+	}
 	fc1 = count_functions (core);
 	eprintf ("Analyzed %d functions based on preludes\n", fc1 - fc0);
 	return ret;
