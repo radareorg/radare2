@@ -5,6 +5,7 @@
 #include <capstone/capstone.h>
 #include "../arch/arm/asm-arm.h"
 
+bool arm64ass(const char *str, ut64 addr, ut32 *op);
 static int check_features(RAsm *a, cs_insn *insn);
 static csh cd = 0;
 
