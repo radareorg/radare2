@@ -222,15 +222,17 @@ R_API int r_core_search_preludes(RCore *core) {
 	ut64 from = -1;//core->offset;
 	ut64 to = -1; //core->offset+0xffffff; // hacky!
 	int fc0, fc1;
+	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
+	const char *where = cfg_debug? "dbg.map": "io.sections.exec";
 
-	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, "io.sections.exec", &from, &to);
+	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, &from, &to);
 	RListIter *iter;
 	RIOMap *p;
 
 	fc0 = count_functions (core);
 	r_list_foreach (list, iter, p) {
 		eprintf ("\r[>] Scanning %s 0x%"PFMT64x" - 0x%"PFMT64x" ", r_str_rwx_i (p->flags), p->from, p->to);
-		if (p->flags & R_IO_MAP) {
+		if (!cfg_debug && ! (p->flags & R_IO_MAP)) {
 			eprintf ("skip\n");
 			continue;
 		}
@@ -556,11 +558,25 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			r_debug_map_sync (core->dbg);
 
 			if (!strcmp (mode, "dbg.map")) {
+				int perm = 0;
 				*from = *to = core->offset;
+				list = r_list_newf (free);
 				r_list_foreach (core->dbg->maps, iter, map) {
 					if (*from >= map->addr && *from < map->addr_end) {
 						*from = map->addr;
 						*to = map->addr_end;
+						perm = map->perm;
+					}
+				}
+				if (perm) {
+					RIOMap *nmap = R_NEW0 (RIOMap);
+					if (nmap) {
+						nmap->fd = core->io->desc->fd;
+						nmap->from = *from;
+						nmap->to = *to;
+						nmap->flags = perm;
+						nmap->delta = 0;
+						r_list_append (list, nmap);
 					}
 				}
 			} else {
