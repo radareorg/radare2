@@ -28,6 +28,7 @@ static bool disasm = false;
 static RCore *core = NULL;
 static const char *arch = NULL;
 static int bits = 0;
+static int anal_all = 0;
 
 static RCore* opencore(const char *f) {
 	const ut64 baddr = UT64_MAX;
@@ -43,6 +44,9 @@ static RCore* opencore(const char *f) {
 		r_core_bin_load (c, NULL, baddr);
 	}
 	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
+	if (anal_all) {
+		r_core_cmd0 (c, (anal_all>1)? "aaaa": "aaa");
+	}
 	return c;
 }
 
@@ -140,6 +144,7 @@ static int show_help(int v) {
 	printf ("Usage: radiff2 [-abcCdjrspOv] [-g sym] [-t %%] [file] [file]\n");
 	if (v) printf (
 		"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
+		"  -A [-A]    run aaa or aaaa after loading each binary\n"
 		"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
 		"  -c         count of changes\n"
 		"  -C         graphdiff code (columns: off-A, match-ratio, off-B)\n"
@@ -213,10 +218,13 @@ int main(int argc, char **argv) {
 	int gdiff_mode = 0;
 	double sim;
 
-	while ((o = getopt (argc, argv, "a:b:CDnpg:Ojrhcdsvxt:")) != -1) {
+	while ((o = getopt (argc, argv, "Aa:b:CDnpg:Ojrhcdsvxt:")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
+			break;
+		case 'A':
+			anal_all++;
 			break;
 		case 'b':
 			bits = atoi (optarg);
