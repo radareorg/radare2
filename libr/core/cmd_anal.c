@@ -3268,29 +3268,29 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			free (list);
 		}
 		break;
-	case 'c':
+	case 'c': // "agc"
 		r_core_anal_coderefs (core, r_num_math (core->num, input + 1), input[1] == 'j'? 2: 1);
 		break;
-	case 'j':
+	case 'j': // "agj"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_JSON);
 		break;
-	case 'k':
+	case 'k': // "agk"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_KEYVALUE);
 		break;
-	case 'l':
+	case 'l': // "agl"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_GRAPHLINES);
 		break;
-	case 'a':
+	case 'a': // "aga"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), 0);
 		break;
-	case 'd':
+	case 'd': // "agd"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1),
 				R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
 		break;
-	case 'v':
+	case 'v': // "agv"
 		r_core_cmd0 (core, "=H /graph/");
 		break;
-	case '?':
+	case '?': // "ag?"
 		r_core_cmd_help (core, help_msg);
 		break;
 	default:

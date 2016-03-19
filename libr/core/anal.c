@@ -1165,8 +1165,8 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 		r_list_foreach (fcni->refs, iter2, fcnr) {
 			RAnalFunction *fr = r_anal_get_fcn_in (core->anal, fcnr->addr, 0);
 			if (!fr) {
-				eprintf ("Invalid reference from 0x%08"PFMT64x
-					" to 0x%08"PFMT64x"\n", fcni->addr, fcnr->addr);
+				//eprintf ("Invalid reference from 0x%08"PFMT64x
+				//	" to 0x%08"PFMT64x"\n", fcni->addr, fcnr->addr);
 				fr = &fakefr;
 				if (fr) {
 					free (fr->name);
@@ -1186,6 +1186,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 			// TODO: display only code or data refs?
 			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
 			if (fmt == 1) {
+if (flag && flag->name) {
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 					"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
 					fcni->addr, fcnr->addr, flag?flag->name:"",
@@ -1196,6 +1197,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 					"[label=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
 					fcnr->addr, flag? flag->name: fr->name,
 					flag? flag->name: "", fcnr->addr);
+}
 			} else if (fmt==2) {
 				if (fr) {
 					if (!hideempty || (hideempty && r_list_length (fr->refs)>0)) {
