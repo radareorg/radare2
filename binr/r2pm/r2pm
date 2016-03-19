@@ -128,6 +128,11 @@ case "$1" in
 		fi
 	fi
 	;;
+-uu)
+	FILE="${R2PM_USRDIR}/pkg/$2"
+	$0 -u $2 2> /dev/null
+	rm -f "${FILE}"
+	;;
 -u|uninstall)
 	FILE="${R2PM_DBDIR}/$2"
 	if [ -f "${FILE}" ]; then
@@ -137,7 +142,8 @@ case "$1" in
 		R2PM_UNINSTALL
 		R2PM_UNREGISTER
 	else
-		echo "Cannot find file"
+		echo "Unable to find package template for $2." > /dev/stderr
+		echo "Use -uu to remove it from the database." > /dev/stderr
 	fi
 	;;
 -t|test)
@@ -181,7 +187,7 @@ case "$1" in
 	echo "Commands:"
 	echo " -i,info                 r2pm -i # pkgs info"
 	echo " -i,install <pkgname>    r2pm -i baleful"
-	echo " -u,uninstall <pkgname>  r2pm -u baleful"
+	echo " -u,uninstall <pkgname>  r2pm -u baleful (-uu to force)"
 	echo " -l,list                 list installed pkgs"
 	echo " -t,test FX,XX,BR BID    check in travis regressions"
 	echo " -s,search [<keyword>]   search in database"
