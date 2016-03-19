@@ -1536,6 +1536,12 @@ static void cmd_print_pv(RCore *core, const char *input) {
 			}
 		}
 		break;
+	case 'j':
+		r_cons_printf ("{\"value\":%"PFMT64d",\"string\":\"%s\"}\n",
+				r_num_get (core->num, "[$$]"),
+				r_core_cmd_str (core, "ps @ [$$]")
+			      );
+		break;
 	case '?':
 		eprintf ("Usage: pv[z] [ret arg#]\n");
 		break;
@@ -1834,14 +1840,14 @@ static int cmd_print(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg);
 			}
 			return 0;
-		case 'j': //pvj
+		case 'j': //p-j
 			r_cons_printf (
 				"\"from\":%"PFMT64d","
 				"\"to\":%"PFMT64d","
 				"\"blocksize\":%d,"
 				"\"blocks\":[", from, to, piece);
 			break;
-		case 'h': //pvh
+		case 'h': //p-h
 			r_cons_printf (".-------------.---------------------------------.\n");
 			r_cons_printf ("|   offset    | flags funcs cmts imps syms str  |\n");
 			r_cons_printf ("|-------------)---------------------------------|\n");
