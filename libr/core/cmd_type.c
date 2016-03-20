@@ -27,15 +27,10 @@ static void show_help(RCore *core) {
 static int sdbforcb(void *p, const char *k, const char *v) {
 	if(!strncmp(k,"type.",5))
 		r_cons_printf ("%s\n", k+5);
-	else if(!strncmp(k,"struct.",7)){
-		char *s=(char*)k+7;
-		while(*s)
-			if(*s=='.')
-				return 1;
-			else
-				s++;
-		r_cons_printf("struct %s\n",k+7);
-	}
+	else if(!strncmp(v,"struct",7))
+		r_cons_printf("struct %s\n",k);
+	else if(!strncmp(v,"enum",5))
+		r_cons_printf("enum %s\n",k);
 	return 1;
 }
 static int sdbdelete(void *p, const char *k, const char *v) {
