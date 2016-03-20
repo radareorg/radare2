@@ -18,6 +18,7 @@ R_API RIO *r_io_init (RIO *io)
 	r_io_section_init (io);
 	r_io_cache_init (io);
 	r_io_plugin_init (io);
+	r_io_undo_init (io);
 	return io;
 }
 
@@ -82,6 +83,23 @@ R_API int r_io_close (RIO *io, int fd)
 		return false;
 	r_io_desc_del (io, fd);								//remove entry from sdb-instance and free the desc-struct
 	r_io_map_cleanup (io);								//remove all dead maps
+	return true;
+}
+
+R_API int r_io_close_all (RIO *io)			//what about undo?
+{
+	if (!io)
+		return false;
+	r_io_desc_fini (io);
+	r_io_map_fini (io);
+	r_io_section_fini (io);
+	ls_free (io->plugins);
+	r_list_free (io->cache);
+	r_io_desc_init (io);
+	r_io_map_init (io);
+	r_io_section_init (io);
+	r_io_cache_init (io);
+	r_io_plugin_init (io);
 	return true;
 }
 

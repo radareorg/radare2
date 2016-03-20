@@ -571,7 +571,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				if (core->io->va) {
 					/* TODO: section size? */
 				} else {
-					*to = r_io_desc_size (core->io, core->file->desc);
+					*to = r_io_desc_size (core->file->desc);
 				}
 			}
 		}
