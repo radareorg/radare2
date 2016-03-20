@@ -1,5 +1,5 @@
 
-/* libgdbr - LGPL - Copyright 2014 - defragger */
+/* libbochs - LGPL - Copyright 2016 - SkUaTeR */
 
 #include "libbochs.h"
 static char * lpTmpBuffer; //[0x2800u];

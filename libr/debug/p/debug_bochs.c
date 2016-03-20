@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, defragger */
+/* 
+  debugbochs  - LGPL - Copyright 2016 - SkUaTeR 
+*/
 
 #include <r_asm.h>
 #include <r_debug.h>
