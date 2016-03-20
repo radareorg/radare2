@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2015 - pancake */
+/* radare2 - LGPL - Copyright 2013-2016 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -774,14 +774,41 @@ SETL/SETNGE
 				break;
 			}
 			break;
+		case X86_INS_PUSHAW:
+		// pushal, popal - push/pop EAX,EBX,ECX,EDX,ESP,EBP,ESI,EDI
+		case X86_INS_PUSHAL:
+			{
+				esilprintf (op,
+					"%d,%s,-=,%s,%s,=[%d],"
+					"%d,%s,-=,%s,%s,=[%d],"
+					"%d,%s,-=,%s,%s,=[%d],"
+					"%d,%s,-=,%s,%s,=[%d],"
+					"%d,%s,-=,%s,%s,=[%d],"
+					"%d,%s,-=,%s,%s,=[%d],"
+					"%d,%s,-=,%s,%s,=[%d],"
+					"%d,%s,-=,%s,%s,=[%d]",
+					rs, sp, "eax", sp, rs,
+					rs, sp, "ebx", sp, rs,
+					rs, sp, "ecx", sp, rs,
+					rs, sp, "edx", sp, rs,
+					rs, sp, "esp", sp, rs,
+					rs, sp, "ebp", sp, rs,
+					rs, sp, "esi", sp, rs,
+					rs, sp, "edi", sp, rs
+					);
+			}
+			op->ptr = UT64_MAX;
+			op->type = R_ANAL_OP_TYPE_UPUSH;
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = regsz * 8;
+			break;
 		case X86_INS_ENTER:
 		case X86_INS_PUSH:
-		case X86_INS_PUSHAW:
-		case X86_INS_PUSHAL:
 		case X86_INS_PUSHF:
 			{
 				char *dst = getarg (&gop, 0, 0, NULL);
-				esilprintf (op,  "%d,%s,-=,%s,%s,=[%d]", rs, sp, dst, sp, rs);
+				esilprintf (op, "%d,%s,-=,%s,%s,=[%d]",
+					rs, sp, dst?dst:"eax", sp, rs);
 				free (dst);
 			}
 			switch (INSOP(0).type) {
