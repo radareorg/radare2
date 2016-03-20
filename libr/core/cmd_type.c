@@ -25,7 +25,8 @@ static void show_help(RCore *core) {
 }
 
 static int sdbforcb(void *p, const char *k, const char *v) {
-	r_cons_printf ("%s=%s\n", k, v);
+	if(!strncmp(k,"type.",strlen("type.")))
+		r_cons_printf ("%s\n", k+5);
 	return 1;
 }
 static int sdbdelete(void *p, const char *k, const char *v) {
