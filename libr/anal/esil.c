@@ -996,13 +996,31 @@ static int esil_or(RAnalEsil *esil) {
 	return ret;
 }
 
+R_API const char *r_anal_esil_trapstr(int type) {
+	switch (type) {
+	case R_ANAL_TRAP_READ_ERR:
+		return "read-err";
+	case R_ANAL_TRAP_WRITE_ERR:
+		return "write-err";
+	case R_ANAL_TRAP_BREAKPOINT:
+		return "breakpoint";
+	case R_ANAL_TRAP_UNHANDLED:
+		return "unhandled";
+	case R_ANAL_TRAP_DIVBYZERO:
+		return "divbyzero";
+	default:
+		return "unknown";
+	}
+}
+
 R_API int r_anal_esil_dumpstack(RAnalEsil *esil) {
 	int i;
 	if (!esil)
 		return 0;
 	if (esil->trap) {
-		eprintf ("ESIL TRAP type %d 0x%x\n",
-			esil->trap, esil->trap_code);
+		eprintf ("ESIL TRAP type %d code 0x%08x %s\n",
+			esil->trap, esil->trap_code,
+			r_anal_esil_trapstr (esil->trap));
 	}
 	if (esil->stackptr < 1)
 		return 0;
