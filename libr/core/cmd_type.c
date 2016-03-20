@@ -247,7 +247,7 @@ static int cmd_type(void *data, const char *input) {
 				NULL };
 			r_core_cmd_help (core, help_message);
 			r_cons_printf ("Note: The td command should be put between double quotes\n"
-				"Exapmle: \" td struct foo {int bar;int cow};\""
+				"Example: \" td struct foo {int bar;int cow};\""
 				"\nt");
 
 		} else if (input[1] == ' ') {
