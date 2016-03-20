@@ -14,6 +14,8 @@ typedef struct {
 } RIOBochs;
 
 static libbochs_t *desc = NULL;
+#define eprintf(x,y...) \ 
+{ FILE * myfile;  myfile=fopen("logio.txt","a"); fprintf(myfile,x,##y);fflush(myfile);fclose(myfile); }
 
 static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	char cmd[50];
@@ -22,6 +24,7 @@ static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	char bufcmd[100];
 	ut64 a;
 	int  n,i,lenRec;
+	eprintf("bochs_breakpoint\n");
 	if (!bp) return false;
 	if (set) {
 		//eprintf("[set] bochs_breakpoint %016"PFMT64x"\n",bp->addr);
@@ -79,6 +82,8 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int i = 0,pos = 0, lenRec = 0, posRIP = 0;;
 	ut64 val=0, valRIP = 0;
 	ut16 val1=0;
+
+	eprintf("bochs_reg_read\n");
 	if (bCapturaRegs == TRUE) {
 		EnviaComando_(desc,"regs",TRUE);
 		//r14: 00000000_00000000 r15: 00000000_00000000
@@ -185,42 +190,6 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			memcpy(&buf[0],&ripParada,8);	
 		else
 			memcpy(&buf[0],&valRIP,8);	// guardamos el valor cs:ip en el registro virtual "vip"
-
-/*
-		pos=0x38;
-		lenRec = strlen(desc->data);
-		i=0;
-
-		while (desc->data[i] != 0 && i < lenRec -7 ) {
-
-			if ( (desc->data[i+1] == (BYTE)'s' && desc->data[i + 2] == (BYTE)':')) {
-				strncpy(regname, &desc->data[i], 2);
-				regname[2] = 0;
-				strncpy(&strReg[0], &desc->data[i + 3], 5);
-				strReg[6] = 0;
-				i += 119;
-				val = r_num_get(NULL,strReg);
-				val1=(ut16)val;
-				eprintf("parseado %s = %s valx64 = %016"PFMT64x"\n", regname, strReg,val);
-				memcpy(&buf[pos],&val1,2);
-				pos+=2;
-				// ajustamos el RIP para que refleje el segmento
-				if (bAjusta) {
-					if (!strncmp(regname,"cs",2)) {
-					valRIP+=(val*0x10); // desplazamos CS y lo añadimos a RIP
-					//eprintf("%016"PFMT64x"\n",valRIP);
-					}
-				}
-				memcpy(&buf[0],&valRIP,8);	// guardamos el valor cs:ip en el registro virtual "vip"
-				// comprobamos si tenemos ya todos los regs de segmentos(gs es el ultimo)
-				if (!strncmp(regname,"gs",2))
-					break;
-
-			}
-			else
-				i++;
-		}
-*/
 		//eprintf("guardando regs procesados%x\n",size);
 		memcpy(saveRegs,buf,size);
 		bCapturaRegs = FALSE;
@@ -243,7 +212,7 @@ void map_free(RDebugMap *map) {
 
 
 static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
-	//eprintf("bochs_map_getdebug:\n");
+	eprintf("bochs_map_getdebug:\n");
 	RDebugMap *mr;
 	RList *list = r_list_new();
 	if (!list) 
@@ -262,7 +231,7 @@ static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
 }
 
 static int r_debug_bochs_step(RDebug *dbg) {
-	//eprintf("bochs_step\n");
+	eprintf("bochs_step\n");
 	EnviaComando_(desc,"s",TRUE);
 	bCapturaRegs = TRUE;
 	bStep = TRUE;
@@ -270,7 +239,7 @@ static int r_debug_bochs_step(RDebug *dbg) {
 }
 
 static int r_debug_bochs_continue(RDebug *dbg, int pid, int tid, int sig) {
-	//eprintf("bochs_continue:\n");
+	eprintf("bochs_continue:\n");
 	EnviaComando_(desc,"c",FALSE);
 	bCapturaRegs = TRUE;
 	bBreak = FALSE;
@@ -284,7 +253,7 @@ static void bochs_debug_break(void *u) {
 }
 
 static int r_debug_bochs_wait(RDebug *dbg, int pid) {
-	//eprintf("bochs_wait:\n");
+	eprintf("bochs_wait:\n");
 	char strIP[19];
 	int ini = 0, fin = 0, i = 0;
 	if (bStep) {
@@ -296,7 +265,7 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 			EsperaRespuesta_(desc);
 			if (bBreak) {
 				if (desc->data[0]!=0) {
-					//eprintf("parada por ctrl+c  %s\n",desc->data);
+					eprintf("parada por ctrl+c  %s\n",desc->data);
 					bBreak = FALSE;
 					break;
 				}
@@ -314,6 +283,7 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 			}
 		} while(1);
 	}
+	eprintf("bochs_wait: fuera while\n");
 	i=0;
 	// Next at t=394241428
 	// (0) [0x000000337635] 0020:0000000000337635 (unk. ctxt): add eax, esi              ; 03c6	
@@ -345,7 +315,7 @@ static int r_debug_bochs_stop(RDebug *dbg) {
 
 
 static int r_debug_bochs_attach(RDebug *dbg, int pid) {
-	//eprintf("bochs_attach:\n");
+	eprintf("bochs_attach:\n");
 	RIODesc *d = dbg->iob.io->desc;
 	dbg->swstep = false;
 	if (d && d->plugin && d->plugin->name && d->data) {
@@ -354,7 +324,7 @@ static int r_debug_bochs_attach(RDebug *dbg, int pid) {
 			int arch = r_sys_arch_id (dbg->arch);
 			int bits = dbg->anal->bits;
 			if (( desc = &g->desc )) {
-				//eprintf("bochs attach: ok\n");
+				eprintf("bochs attach: ok\n");
 				saveRegs = malloc(1024);
 				bCapturaRegs = TRUE;
 				bStep        = FALSE;

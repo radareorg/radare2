@@ -18,12 +18,14 @@
 #include <r_lib.h>
 #include <r_util.h>
 #include <libbochs.h>
+#define eprintf(x,y...) \ 
+{ FILE * myfile;  myfile=fopen("logio.txt","a"); fprintf(myfile,x,##y);fflush(myfile);fclose(myfile); }
 
 typedef struct {
-	libbochs_t desc;        //libgdbr_t desc;
+	libbochs_t desc;    
 } RIOBochs;
 
-static libbochs_t *desc = NULL; //static libgdbr_t *desc = NULL;
+static libbochs_t *desc = NULL; 
 static RIODesc *riobochs = NULL;
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
@@ -76,7 +78,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 	eprintf ("bochsio.open: Cannot connect to bochs.\n");
 	free (riob);
-//	return r_io_desc_new (&r_io_plugin_bochs, -1, file, true, mode, 0);
 	return NULL;
 }
 
@@ -86,7 +87,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	// eprintf("io_seek %016"PFMT64x" \n",offset);
+	eprintf("io_seek %016"PFMT64x" \n",offset);
 	return offset;
 }
 
@@ -94,37 +95,30 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	ut64 addr = io->off;
 	if (!desc || !desc->data) return -1;
-	// eprintf("io_read ofs= %016"PFMT64x" count= %x\n",io->off,count);
-	//bochs_read(addr,count,buf);
+        eprintf("io_read ofs= %016"PFMT64x" count= %x\n",io->off,count);
 	bochs_read_(desc,addr,count,buf);
 	return count;
 }
 
 static int __close(RIODesc *fd) {
-	// eprintf("io_close\n");
-	//bochs_close();
+	eprintf("io_close\n");
 	bochs_close_(desc);
 	return true;
 }
 	
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
-        printf("system command (%s)\n", cmd);
+        eprintf("system command (%s)\n", cmd);
         if (!strcmp (cmd, "help")) {
                 eprintf ("Usage: =!cmd args\n"
                         " =!:<bochscmd>      - Send a bochs command.\n"
                         " =!dobreak          - pause bochs.\n");
 			
 	} else if (!strncmp (cmd, ":", 1)) {
-		eprintf("Enviando comando bochs\n");
-		//EnviaComando_(&cmd[1]);
-		//io->cb_printf ("%s\n", lpBuffer);
+		eprintf("io_system: Enviando comando bochs\n");
 		EnviaComando_(desc,&cmd[1],TRUE);
 		io->cb_printf ("%s\n", desc->data);
 		return 1;
 	} else if (!strncmp (cmd, "dobreak", 7)) {
-
-		//CommandStop(processInfo.hProcess);
-		//io->cb_printf ("%s\n", lpBuffer);
 		CommandStop_(desc);
 		io->cb_printf ("%s\n", desc->data);
 		return 1;
