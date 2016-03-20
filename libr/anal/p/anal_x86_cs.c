@@ -78,11 +78,11 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 			return strdup (cs_reg_name (handle, op.reg));
 		}
 	case X86_OP_IMM:
-		if (set == 1)
-			snprintf (buf, sizeof (buf), "%"PFMT64d",%s=[%d]",
+		if (set == 1) {
+			return r_str_newf ("%"PFMT64d",%s=[%d]",
 				(ut64)op.imm, setarg, op.size);
-		else snprintf (buf, sizeof (buf), "%"PFMT64d, (ut64)op.imm);
-		return strdup (buf);
+		}
+		return r_str_newf ("%"PFMT64d, (ut64)op.imm);
 	case X86_OP_MEM:
 		{
 		const char *base = cs_reg_name (handle, op.mem.base);
@@ -138,34 +138,37 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 					}
 				}
 			} else {
+				int opsize = op.size;
+				if (opsize > 8) opsize = 8;
 				if (base) {
 					if (disp) {
 						int v = (int)disp;
 						if (v<0) {
 							snprintf (buf, sizeof (buf), "0x%x,%s,-,%s%s[%d]",
-								-(int)disp, base, setarg, set?"=":"", op.size);
+								-(int)disp, base, setarg, set?"=":"", opsize);
 						} else {
 							snprintf (buf, sizeof (buf), "0x%x,%s,+,%s%s[%d]",
-								(int)disp, base, setarg, set?"=":"", op.size);
+								(int)disp, base, setarg, set?"=":"", opsize);
 						}
 					} else {
 						if (index)
 							if (set)
 								snprintf (buf, sizeof (buf), "%s,%s,+,%s=[%d]",
-									base, index, setarg, op.size);
+									base, index, setarg, opsize);
 							else
-								snprintf (buf, sizeof (buf), "%s,%s,+", base, index);
+								snprintf (buf, sizeof (buf), "%s,%s,+,[%d]",
+									base, index, opsize);
 						else
 							snprintf (buf, sizeof (buf), "%s,%s%s[%d]",
-								base, setarg, set?"=":"", op.size);
+								base, setarg, set?"=":"", opsize);
 					}
 				} else {
 					if (disp) {
 						snprintf (buf, sizeof (buf), "0x%x,%s%s[%d]",
-							(int)disp, setarg, set?"=":"", op.size);
+							(int)disp, setarg, set?"=":"", opsize);
 					} else {
 						snprintf (buf, sizeof (buf), "%s%s,[%d]",
-							setarg, set?"=":"", op.size);
+							setarg, set?"=":"", opsize);
 					}
 				}
 			}
@@ -416,19 +419,19 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_CMOV;
 			op->family = 0;
 			if (a->decode) {
-				char *dst = getarg (&gop, 0, 0, NULL);
+				char *dst = getarg (&gop, 0, 1, NULL);
 				switch (insn->id) {
-				case X86_INS_SETE:  esilprintf (op, "zf,%s,=", dst); break;
-				case X86_INS_SETNE: esilprintf (op, "zf,!,%s,=", dst); break;
-				case X86_INS_SETO:  esilprintf (op, "of,%s,=", dst); break;
-				case X86_INS_SETNO: esilprintf (op, "of,!,%s,=", dst); break;
-				case X86_INS_SETP:  esilprintf (op, "pf,%s,=", dst); break;
-				case X86_INS_SETNP: esilprintf (op, "pf,!,%s,=", dst); break;
-				case X86_INS_SETS:  esilprintf (op, "sf,%s,=", dst); break;
-				case X86_INS_SETNS: esilprintf (op, "sf,!,%s,=", dst); break;
+				case X86_INS_SETE:  esilprintf (op, "zf,%s", dst); break;
+				case X86_INS_SETNE: esilprintf (op, "zf,!,%s", dst); break;
+				case X86_INS_SETO:  esilprintf (op, "of,%s", dst); break;
+				case X86_INS_SETNO: esilprintf (op, "of,!,%s", dst); break;
+				case X86_INS_SETP:  esilprintf (op, "pf,%s", dst); break;
+				case X86_INS_SETNP: esilprintf (op, "pf,!,%s", dst); break;
+				case X86_INS_SETS:  esilprintf (op, "sf,%s", dst); break;
+				case X86_INS_SETNS: esilprintf (op, "sf,!,%s", dst); break;
 
-				case X86_INS_SETB:  esilprintf (op, "cf,%s,=", dst); break;
-				case X86_INS_SETAE: esilprintf (op, "cf,!,%s,=", dst); break;
+				case X86_INS_SETB:  esilprintf (op, "cf,%s", dst); break;
+				case X86_INS_SETAE: esilprintf (op, "cf,!,%s", dst); break;
 
 				/* TODO */
 #if 0
@@ -1092,12 +1095,13 @@ SETL/SETNGE
 			op->val = 1;
 			if (a->decode) {
 				char *src = getarg (&gop, 0, 0, NULL);
+				char *dst = getarg (&gop, 0, 1, NULL);
 				if (strchr (src, '[')) {
 					char *dst = r_str_replace (strdup (src), "[", "=[", 1);
-					esilprintf (op, "1,%s,++,%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src, dst);
+					esilprintf (op, "%s,++,%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src, dst);
 					free (dst);
 				} else {
-					esilprintf (op, "%s,++=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
+					esilprintf (op, "%s,%s=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src, dst);
 				}
 				free (src);
 			}
@@ -1312,9 +1316,16 @@ SETL/SETNGE
 			op->type = R_ANAL_OP_TYPE_MOV;
 			op->family = R_ANAL_OP_FAMILY_CPU;
 			{
-				char *src = getarg (&gop, 1, 0, NULL);
-				char *dst = getarg (&gop, 0, 1, NULL);
-				esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
+				char *src = getarg (&gop, 1, 0, NULL); // x
+				char *dst = getarg (&gop, 0, 0, NULL); // y
+				esilprintf (op,
+					"%s,%s,^,%s,=,"
+					"%s,%s,^,%s,=,"
+					"%s,%s,^,%s,=,",
+					dst, src, src,  // x = x ^ y
+					src, dst, dst,  // y = y ^ x
+					dst, src, src); // x = x ^ y
+				//esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
 				free (src);
 				free (dst);
 			}
