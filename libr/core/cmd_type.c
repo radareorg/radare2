@@ -242,10 +242,14 @@ static int cmd_type(void *data, const char *input) {
 	case 'd':
 		if (input[1] == '?') {
 			const char *help_message[] = {
-				"Usage:", "td[...]", "",
+				"Usage:", "\"td [...]\"", "",
 				"td", "[string]", "Load types from string",
 				NULL };
 			r_core_cmd_help (core, help_message);
+			r_cons_printf("Note: The td command should be put between double quotes\n"
+				      "Exapmle: \" td struct foo {int bar;int cow};\""
+				      "\nt");
+
 		} else if (input[1] == ' ') {
 			char tmp[8192];
 			snprintf (tmp, sizeof (tmp) - 1, "%s;", input + 2);
