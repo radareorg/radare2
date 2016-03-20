@@ -1119,8 +1119,15 @@ static void r_core_setenv (RCore *core) {
 }
 
 R_API int r_core_init(RCore *core) {
-	r_core_setenv(core);
-	core->cmd_depth = R_CORE_CMD_DEPTH+1;
+	core->blocksize = R_CORE_BLOCKSIZE;
+	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE+1);
+	if (core->block == NULL) {
+		eprintf ("Cannot allocate %d bytes\n", R_CORE_BLOCKSIZE);
+		/* XXX memory leak */
+		return false;
+	}
+	r_core_setenv (core);
+	core->cmd_depth = R_CORE_CMD_DEPTH + 1;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;
 	core->incomment = false;
@@ -1181,13 +1188,6 @@ R_API int r_core_init(RCore *core) {
 	}
 	core->print->cons = core->cons;
 	core->cons->num = core->num;
-	core->blocksize = R_CORE_BLOCKSIZE;
-	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE+1);
-	if (core->block == NULL) {
-		eprintf ("Cannot allocate %d bytes\n", R_CORE_BLOCKSIZE);
-		/* XXX memory leak */
-		return false;
-	}
 	core->lang = r_lang_new ();
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
 	core->cons->editor = (RConsEditorCallback)r_core_editor;

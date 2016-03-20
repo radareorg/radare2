@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_core.h>
 #include <stdlib.h>
@@ -199,50 +199,43 @@ R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
 	r_sys_setenv ("OFFSET", NULL);
 }
 
-R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
-	char buf[64], *ret, *f;
 #if DISCUSS
-	// EDITOR      cfg.editor (vim or so)
-	CURSOR      cursor position (offset from curseek)
-	COLOR       scr.color?1:0
-	VERBOSE     cfg.verbose
-	// only if cmd matches BYTES or BLOCK ?
-	BYTES       hexpairs of current block
-	BLOCK       temporally file with contents of current block
+	EDITOR   r_sys_setenv ("EDITOR", r_config_get (core->config, "cfg.editor"));
+	CURSOR   cursor position (offset from curseek)
+	VERBOSE  cfg.verbose
 #endif
-	ret = strdup (cmd);
-	if (strstr (cmd, "BYTES")) {
+R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
+	char *f, *ret = strdup (cmd);
+	if (strstr (cmd, "R2_BYTES")) {
 		char *s = r_hex_bin2strdup (core->block, core->blocksize);
-		r_sys_setenv ("BYTES", s);
+		r_sys_setenv ("R2_BYTES", s);
 		free (s);
 	}
 	r_sys_setenv ("PDB_SERVER", r_config_get (core->config, "pdb.server"));
 	if (core->file && core->file->desc && core->file->desc->name) {
-		r_sys_setenv ("FILE", core->file->desc->name);
-		snprintf (buf, sizeof (buf), "%"PFMT64d, r_io_desc_size
-			(core->io, core->file->desc));
-		r_sys_setenv ("SIZE", buf);
-		if (strstr (cmd, "BLOCK")) {
+		r_sys_setenv ("R2_FILE", core->file->desc->name);
+		r_sys_setenv ("R2_SIZE", sdb_fmt (0, "%"PFMT64d,
+			r_io_desc_size (core->io, core->file->desc)));
+		if (strstr (cmd, "R2_BLOCK")) {
 			// replace BLOCK in RET string
 			if ((f = r_file_temp ("r2block"))) {
-				if (r_file_dump (f, core->block, core->blocksize, 0))
-					r_sys_setenv ("BLOCK", f);
+				if (r_file_dump (f, core->block, core->blocksize, 0)) {
+					r_sys_setenv ("R2_BLOCK", f);
+				}
 				free (f);
 			}
 		}
 	}
 	r_sys_setenv ("RABIN2_LANG", r_config_get (core->config, "bin.lang"));
 	r_sys_setenv ("RABIN2_DEMANGLE", r_config_get (core->config, "bin.demangle"));
-	snprintf (buf, sizeof (buf), "%"PFMT64d, core->offset);
-	r_sys_setenv ("OFFSET", buf);
-	snprintf (buf, sizeof (buf), "0x%08"PFMT64x, core->offset);
-	r_sys_setenv ("XOFFSET", buf);
-	r_sys_setenv ("ENDIAN", core->assembler->big_endian?"big":"little");
-	snprintf (buf, sizeof (buf), "%d", core->blocksize);
-	r_sys_setenv ("BSIZE", buf);
-	r_sys_setenv ("ARCH", r_config_get (core->config, "asm.arch"));
-	r_sys_setenv ("DEBUG", r_config_get_i (core->config, "cfg.debug")?"1":"0");
-	r_sys_setenv ("IOVA", r_config_get_i (core->config, "io.va")?"1":"0");
+	r_sys_setenv ("R2_OFFSET", sdb_fmt (0, "%"PFMT64d, core->offset));
+	r_sys_setenv ("R2_XOFFSET", sdb_fmt (0, "0x%08"PFMT64x, core->offset));
+	r_sys_setenv ("R2_ENDIAN", core->assembler->big_endian? "big": "little");
+	r_sys_setenv ("R2_BSIZE", sdb_fmt (0, "%d", core->blocksize));
+	r_sys_setenv ("R2_ARCH", r_config_get (core->config, "asm.arch"));
+	r_sys_setenv ("R2_COLOR", r_config_get_i (core->config, "scr.color"));
+	r_sys_setenv ("R2_DEBUG", r_config_get_i (core->config, "cfg.debug")?"1":"0");
+	r_sys_setenv ("R2_IOVA", r_config_get_i (core->config, "io.va")?"1":"0");
 	return ret;
 }
 
@@ -254,7 +247,7 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 
 	r_debug_map_sync (core->dbg); // update process memory maps
 	r_list_foreach (core->dbg->maps, iter, map) {
-		if ((map->perm & 5)==5) {
+		if ((map->perm & 5) == 5) {
 			// TODO: make this more flexible
 			// XXX - why "copy/" here?
 			if (map->name && strstr (map->name, "copy/")) return map->addr;

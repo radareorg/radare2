@@ -287,7 +287,7 @@ static int cmd_type(void *data, const char *input) {
 			sdb_foreach (core->anal->sdb_types, sdbdelete, core);
 		} else {
 			const char *name = input + 1;
-			if (*name == ' ') name++;
+			while (IS_WHITESPACE(*name)) name++;
 			if (*name) {
 				SdbKv *kv;
 				SdbListIter *iter;
