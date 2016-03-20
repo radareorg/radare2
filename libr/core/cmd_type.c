@@ -25,12 +25,12 @@ static void show_help(RCore *core) {
 }
 
 static int sdbforcb(void *p, const char *k, const char *v) {
-	if(!strncmp(k,"type.",5))
-		r_cons_printf ("%s\n", k+5);
-	else if(!strncmp(v,"struct",7))
-		r_cons_printf("struct %s\n",k);
-	else if(!strncmp(v,"enum",5))
-		r_cons_printf("enum %s\n",k);
+	if (!strncmp (k, "type.", strlen ("type.")))
+		r_cons_printf ("%s\n", k + 5);
+	else if (!strncmp (v, "struct", strlen ("struct") + 1))
+		r_cons_printf ("struct %s\n", k);
+	else if (!strncmp (v, "enum", strlen ("enum") + 1))
+		r_cons_printf ("enum %s\n", k);
 	return 1;
 }
 static int sdbdelete(void *p, const char *k, const char *v) {
@@ -246,9 +246,9 @@ static int cmd_type(void *data, const char *input) {
 				"td", "[string]", "Load types from string",
 				NULL };
 			r_core_cmd_help (core, help_message);
-			r_cons_printf("Note: The td command should be put between double quotes\n"
-				      "Exapmle: \" td struct foo {int bar;int cow};\""
-				      "\nt");
+			r_cons_printf ("Note: The td command should be put between double quotes\n"
+				"Exapmle: \" td struct foo {int bar;int cow};\""
+				"\nt");
 
 		} else if (input[1] == ' ') {
 			char tmp[8192];
@@ -296,7 +296,7 @@ static int cmd_type(void *data, const char *input) {
 			sdb_foreach (core->anal->sdb_types, sdbdelete, core);
 		} else {
 			const char *name = input + 1;
-			while (IS_WHITESPACE(*name)) name++;
+			while (IS_WHITESPACE (*name)) name++;
 			if (*name) {
 				SdbKv *kv;
 				SdbListIter *iter;
