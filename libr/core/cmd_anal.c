@@ -648,7 +648,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_anal_fcn_del (core->anal, addr);
 		}
 		break;
-	case 'u': {
+	case 'u':
+		{
 		ut64 addr = core->offset;
 		ut64 addr_end = r_num_math (core->num, input + 2);
 		if (addr_end < addr) {
@@ -675,8 +676,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_config_set_i (core->config, "anal.to", b);
 			r_config_set (core->config, "anal.limits", c? c: "");
 		}
-	} break;
-	case '+': {
+		}
+		break;
+	case '+':
+		{
 		char *ptr = strdup (input + 3);
 		const char *ptr2;
 		int n = r_str_word_set0 (ptr);
@@ -719,9 +722,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		r_anal_diff_free (diff);
 		free (ptr);
-	} break;
+		}
+		break;
 	case 'o': // "afo"
-	{
+		{
 		RAnalFunction *fcn;
 		ut64 addr = core->offset;
 		if (input[2] == ' ')
@@ -732,7 +736,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 		}
 		if (fcn) r_cons_printf ("0x%08" PFMT64x "\n", fcn->addr);
-	} break;
+		}
+		break;
 	case 'i': // "afi"
 		switch (input[2]) {
 		case '?': eprintf ("Usage: afi[j*] <addr>\n"); break;
@@ -761,7 +766,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 's': { // "afs"
+	case 's':
+		{ // "afs"
 		ut64 addr;
 		RAnalFunction *f;
 		const char *arg = input + 3;
@@ -777,11 +783,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				r_cons_printf ("%s\n", str);
 				free (str);
 			}
-		} else eprintf ("No function defined at 0x%08" PFMT64x "\n", addr);
-	} break;
+		} else {
+			eprintf ("No function defined at 0x%08" PFMT64x "\n", addr);
+		}
+		}
+		break;
 	case 'm': // "afm" - merge two functions
-		r_core_anal_fcn_merge (core,
-				core->offset, r_num_math (core->num, input + 2));
+		r_core_anal_fcn_merge (core, core->offset, r_num_math (core->num, input + 2));
 		break;
 	case 'a': // "afa"
 	case 'A': // "afA"
@@ -789,12 +797,15 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		var_cmd (core, input + 1);
 		break;
 	case 'c': // "afc"
-	{
+		{
 		RAnalFunction *fcn;
 		if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0)) != NULL) {
 			r_cons_printf ("%i\n", r_anal_fcn_cc (fcn));
-		} else eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
-	} break;
+		} else  {
+			eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
+		}
+		}
+		break;
 	case 'C': // "afC"
 		if (input[2] == '?') {
 			int i;
@@ -876,15 +887,18 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 's':
 			free (r_core_anal_fcn_autoname (core, core->offset, 1));
 			break;
-		case 'a': {
+		case 'a':
+			{
 			char *name = r_core_anal_fcn_autoname (core, core->offset, 0);
 			if (name) {
 				r_cons_printf ("afn %s 0x%08" PFMT64x "\n",
 					name, core->offset);
 				free (name);
 			}
-		} break;
-		default: {
+			}
+			break;
+		default:
+			{
 			ut64 off = core->offset;
 			char *p, *name = strdup (input + 3);
 			if ((p = strchr (name, ' '))) {
@@ -899,13 +913,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				eprintf ("Usage: afn newname [off]   # set new name to given function\n");
 				free (name);
 			}
-		} break;
+			}
+			break;
 		}
 		break;
 #if FCN_OLD
 	/* this is undocumented and probably have no uses. plz discuss */
 	case 'e': // "afe"
-	{
+		{
 		RAnalFunction *fcn;
 		ut64 off = core->offset;
 		char *p, *name = strdup ((input[2]&&input[3])? input + 3: "");
@@ -913,8 +928,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			*p = 0;
 			off = r_num_math (core->num, p + 1);
 		}
-		fcn = r_anal_get_fcn_in (core->anal, off,
-					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+		fcn = r_anal_get_fcn_in (core->anal, off, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 		if (fcn) {
 			RAnalBlock *b;
 			RListIter *iter;
@@ -934,7 +948,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 		} else eprintf ("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
 		free (name);
-	} break;
+		}
+		break;
 #endif
 	case 'x':
 		switch (input[2]) {
@@ -963,7 +978,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'c': // add meta xref
 		case 'd':
 		case 's':
-		case 'C': {
+		case 'C':
+			{
 			char *p;
 			ut64 a, b;
 			RAnalFunction *fcn;
@@ -978,8 +994,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				} else eprintf ("Cannot add reference to non-function\n");
 			} else eprintf ("Usage: afx[cCd?] [src] [dst]\n");
 			free (mi);
-		} break;
-		case '-': {
+			}
+			break;
+		case '-':
+			{
 			char *p;
 			ut64 a, b;
 			RAnalFunction *fcn;
@@ -992,11 +1010,15 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				if (fcn) {
 					r_anal_fcn_xref_del (core->anal, fcn, a, b, -1);
 				} else eprintf ("Cannot del reference to non-function\n");
-			} else eprintf ("Usage: afx- [src] [dst]\n");
+			} else {
+				eprintf ("Usage: afx- [src] [dst]\n");
+			}
 			free (mi);
-		} break;
+			}
+			break;
 		default:
-		case '?': {
+		case '?':
+			{
 			const char *help_msg[] = {
 				"Usage:", "afx[-cCd?] [src] [dst]", "# manage function references (see also ar?)",
 				"afxc", " sym.main+0x38 sym.printf", "add code ref",
@@ -1005,22 +1027,25 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				"afx-", " sym.main str.helloworld", "remove reference",
 				NULL };
 			r_core_cmd_help (core, help_msg);
-		} break;
+			}
+			break;
 		}
 		break;
 	case 'g': // "afg" - non-interactive VV
 		r_core_visual_graph (core, NULL, NULL, false);
 		break;
 	case 'F': // "afF"
-	{
+		{
 		RAnalFunction *fcn;
 		int val = input[2] && r_num_math (core->num, input + 2);
 		fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 		if (fcn) {
 			fcn->folded = input[2]? val: !fcn->folded;
 		}
-	} break;
-	case '?': { // "af?"
+		}
+		break;
+	case '?':
+		{ // "af?"
 		const char *help_msg[] = {
 			"Usage:", "af", "",
 			"af", " ([name]) ([addr])", "analyze functions (start at addr or $$)",
@@ -1047,7 +1072,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afv", "[?] [idx] [type] [name]", "add local var on current function",
 			NULL };
 		r_core_cmd_help (core, help_msg);
-	} break;
+		}
+		break;
 	case 'r': // "afr" // analyze function recursively
 	default: {
 		char *uaddr = NULL, *name = NULL;
@@ -1072,8 +1098,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			// disable hasnext
 		}
 		//r_core_anal_undefine (core, core->offset);
-		r_core_anal_fcn (core, addr, UT64_MAX,
-				R_ANAL_REF_TYPE_NULL, depth);
+		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 		if (analyze_recursively) {
 			fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
 			if (fcn) {
@@ -3642,7 +3667,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			int hasnext = r_config_get_i (core->config, "anal.hasnext");
 			r_core_seek (core, s->vaddr, 1);
 			r_config_set_i (core->config, "anal.hasnext", 1);
-			(void)cmd_anal_fcn (core, "");
+			(void)cmd_anal_fcn (core, "af"); //af oob read if we pass ""
 			r_config_set_i (core->config, "anal.hasnext", hasnext);
 		} else {
 			// TODO: honor search.in? support dbg.maps?
