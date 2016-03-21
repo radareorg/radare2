@@ -3111,7 +3111,25 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 'o':
-		r_core_file_reopen (core, input[1] ? input + 2: NULL, 0, 1);
+		switch (input[1]) {
+		case 'o': //"doo" : reopen in debugger
+			r_core_file_reopen_debug (core, input + 2);
+			break;
+		case 0: // "do"
+			r_core_file_reopen (core, input[1] ? input + 2: NULL, 0, 1);
+			break;
+		case '?':
+		default: {
+				const char* help_msg[] = {
+				"Usage:", "do", " # Debug commands",
+				"do", "", "Open process (reload, alias for 'oo')",
+				"doo", "[args]", "Reopen in debugger mode with args (alias for 'ood')",
+				NULL};
+				r_core_cmd_help (core, help_msg);
+			}
+			break;
+		}
+
 		break;
 	case 'w':
 		r_cons_break (static_debug_stop, core->dbg);
@@ -3144,6 +3162,7 @@ static int cmd_debug(void *data, const char *input) {
 			"dk", "[?]", "List, send, get, set, signal handlers of child",
 			"dm", "[?]", "Show memory maps",
 			"do", "", "Open process (reload, alias for 'oo')",
+			"doo", "[args]", "Reopen in debugger mode with args (alias for 'ood')",
 			"dp", "[?]", "List, attach to process or thread id",
 			"dr", "[?]", "Cpu registers",
 			"ds", "[?]", "Step, over, source line",

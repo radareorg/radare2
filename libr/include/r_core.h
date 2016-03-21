@@ -256,6 +256,7 @@ R_API void r_core_visual_mark_reset(RCore *core);
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
 R_API int r_core_serve(RCore *core, RIODesc *fd);
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int binload);
+R_API void r_core_file_reopen_debug(RCore *core, const char *args);
 R_API RCoreFile * r_core_file_find_by_fd(RCore* core, ut64 fd);
 R_API RCoreFile * r_core_file_find_by_name (RCore * core, const char * name);
 R_API RCoreFile * r_core_file_cur (RCore *r);

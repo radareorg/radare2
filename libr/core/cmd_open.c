@@ -232,7 +232,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 	r_core_block_read (core, 0);
 }
 
-static void reopen_in_debug(RCore *core, const char *args) {
+R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	RCoreFile *ofile = core->file;
 	RBinFile *bf = NULL;
 	char *binpath = NULL;
@@ -446,7 +446,7 @@ static int cmd_open(void *data, const char *input) {
 	case 'o':
 		switch (input[1]) {
 		case 'd': // "ood" : reopen in debugger
-			reopen_in_debug (core, input + 2);
+			r_core_file_reopen_debug (core, input + 2);
 			break;
 		case 'b': // "oob" : reopen with bin info
 			r_core_file_reopen (core, input + 2, 0, 2);
