@@ -20,6 +20,13 @@ typedef struct libbochs_t {
 	HANDLE ghWriteEvent;
 	PROCESS_INFORMATION processInfo;
 	STARTUPINFO info;
+#else
+	int hReadPipeIn;
+	int hReadPipeOut;
+	int hWritePipeIn;
+	int hWritePipeOut;
+	int pid;
+
 #endif
 	bool isRunning;
 } libbochs_t;
@@ -28,7 +35,6 @@ typedef struct libbochs_t {
 //DWORD WINAPI MyThLector_(LPVOID lpParam)
 //DWORD WINAPI MyThEscritor_(LPVOID lpParam)
 bool WaitForReply_(libbochs_t *b);
-int RunRemoteThread_(libbochs_t* b, const ut8* lpBuffer, ut32 dwSize, int a4, ut32 *lpExitCode);
 void ResetBuffer_(libbochs_t* b);
 bool CommandStop_(libbochs_t * b);
 void bochs_send_cmd(libbochs_t* b, const char * comando, bool bWait);
