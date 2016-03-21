@@ -1,6 +1,5 @@
 include ../../libr/config.mk
 include ../../mk/platform.mk
-include ../../shlr/zip/deps.mk
 EDITOR?=vim
 CC?=gcc
 AR?=ar
