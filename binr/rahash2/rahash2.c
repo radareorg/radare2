@@ -474,7 +474,7 @@ int main(int argc, char **argv) {
 		switch (b64mode) {
 		case 1: // encode
 			{
-			char *out = malloc (((hashstr_len + 1) * 4) / 3);
+			char *out = malloc ((((hashstr_len + 1) * 4) / 3) + 1);
 			if (out) {
 				r_base64_encode (out, (const ut8*)hashstr, hashstr_len);
 				printf ("%s\n", out);
