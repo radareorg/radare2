@@ -1131,6 +1131,7 @@ SETL/SETNGE
 					esilprintf (op, "%s,%s=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src, dst);
 				}
 				free (src);
+				free (dst);
 			}
 			break;
 		case X86_INS_DEC:
