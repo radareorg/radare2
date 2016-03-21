@@ -583,6 +583,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	if (step < 1) step = 1;
 	if (inc < 1) inc = 1;
 	switch (base) {
+	case -10: fmt = "0x%08x "; pre = " "; if (inc<4) inc = 4; break;
+	case -1: fmt = "0x%08x "; pre = "  "; if (inc<4) inc = 4; break;
 	case 8: fmt = "%03o"; pre = " "; break;
 	case 10: fmt = "%3d"; pre = " "; break;
 	case 32: fmt = "0x%08x "; pre = " "; if (inc<4) inc = 4; break;
@@ -593,40 +595,45 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	if (step == 1 && base < 0) {
 		use_header = false;
 	}
-	if ((base>0 && base < 32 && step != 2) && use_header) {
-		ut32 opad = (ut32)(addr >> 32);
-		{ // XXX: use r_print_addr_header
-			int i, delta;
-			char soff[32];
-			if (use_segoff) {
-				ut32 s, a;
-				a = addr & 0xffff;
-				s = ((addr-a)>>4 ) &0xffff;
-				snprintf (soff, sizeof (soff), "%04x:%04x ", s, a);
-				printfmt ("- offset -");
-			} else {
-				printfmt ("- offset - ");
-				snprintf (soff, sizeof (soff), "0x%08"PFMT64x, addr);
+	if (use_header) {
+		if (base < 32 ) { //&& step != 2) {
+			ut32 opad = (ut32)(addr >> 32);
+			{ // XXX: use r_print_addr_header
+				int i, delta;
+				char soff[32];
+				if (use_segoff) {
+					ut32 s, a;
+					a = addr & 0xffff;
+					s = ((addr-a)>>4 ) &0xffff;
+					snprintf (soff, sizeof (soff), "%04x:%04x ", s, a);
+					printfmt ("- offset -");
+				} else {
+					printfmt ("- offset - ");
+					snprintf (soff, sizeof (soff), "0x%08"PFMT64x, addr);
+				}
+				delta = strlen (soff) - 10;
+				for (i=0; i<delta; i++)
+					printfmt (" ");
+					//printfmt (i+1==delta?" ":" "); // NOP WTF
 			}
-			delta = strlen (soff) - 10;
-			for (i=0; i<delta; i++)
-				printfmt (" ");
-				//printfmt (i+1==delta?" ":" "); // NOP WTF
+			printfmt (col == 1 ? "|" : " ");
+			opad >>= 4;
+			k = 0; // TODO: ??? SURE??? config.seek & 0xF;
+			/* extra padding for offsets > 8 digits */
+			for (i=0; i<inc; i++) {
+				printfmt (pre);
+				if (base<0) {
+					if (i&1)printfmt(" ");
+				}
+				printfmt (" %c", hex[(i+k)%16]);
+				if (i&1 || !pairs)
+					printfmt (col != 1 ? " " : ((i + 1) < inc) ? " " : "|");
+			}
+			printfmt ((col == 2) ? "|" : " ");
+			for (i = 0; i < inc; i++)
+				printfmt ("%c", hex[(i+k)%16]);
+			printfmt (col == 2 ? "|\n" : "\n");
 		}
-		printfmt (col == 1 ? "|" : " ");
-		opad >>= 4;
-		k = 0; // TODO: ??? SURE??? config.seek & 0xF;
-		/* extra padding for offsets > 8 digits */
-		for (i=0; i<inc; i++) {
-			printfmt (pre);
-			printfmt (" %c", hex[(i+k)%16]);
-			if (i&1 || !pairs)
-				printfmt (col != 1 ? " " : ((i + 1) < inc) ? " " : "|");
-		}
-		printfmt ((col == 2) ? "|" : " ");
-		for (i = 0; i < inc; i++)
-			printfmt ("%c", hex[(i+k)%16]);
-		printfmt (col == 2 ? "|\n" : "\n");
 	}
 
 	if (p) p->interrupt = 0;
