@@ -15,6 +15,7 @@
 .Op Fl o Ar kernel
 .Op Fl p Ar project
 .Op Fl P Ar patch
+.Op Fl R Ar rarun2
 .Op Fl s Ar addr
 .Op Fl 0AdDwntLquvV
 .Ar -|--|=|file
@@ -75,6 +76,8 @@ Quiet mode (no prompt)
 Set project file
 .It Fl P Ar file
 Apply rapatch file and quit
+.It Fl R Ar rarun2
+Specify dbg.profile rarun2 profile to use when spawning a program for debugging.
 .It Fl s Ar addr
 Start seeking at this address
 .It Fl S

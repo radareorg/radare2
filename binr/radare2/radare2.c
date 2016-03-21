@@ -146,6 +146,7 @@ static int main_help(int line) {
 		" -q           quiet mode (no prompt) and quit after -i\n"
 		" -p [prj]     use project, list if no arg, load if no file\n"
 		" -P [file]    apply rapatch file and quit\n"
+		" -R [rarun2]  specify rarun2 profile to load (same as -e dbg.profile=X)\n"
 		" -s [addr]    initial seek\n"
 		" -S           start r2 in sandbox mode\n"
 #if USE_THREADS
@@ -302,7 +303,7 @@ int main(int argc, char **argv, char **envp) {
 		argv++;
 	} else prefile = 0;
 
-	while ((c = getopt (argc, argv, "=0AMCwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:c:D:vVSzu"
+	while ((c = getopt (argc, argv, "=0AMCwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:R:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
@@ -385,6 +386,9 @@ int main(int argc, char **argv, char **envp) {
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
 			quiet = true;
+			break;
+		case 'R':
+			r_config_set (r.config, "dbg.profile", optarg);
 			break;
 		case 's': seek = r_num_math (r.num, optarg); break;
 		case 'S': sandbox = 1; break;
