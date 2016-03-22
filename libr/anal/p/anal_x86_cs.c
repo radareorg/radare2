@@ -525,7 +525,7 @@ SETL/SETNGE
 				} else {
 					if (op->ptr < 0x1000)
 						op->ptr = UT64_MAX;
-				} 
+				}
 				if (a->decode) {
 					if (op->prefix & R_ANAL_OP_PREFIX_REP) {
 						int width = INSOP(0).size;
@@ -1122,16 +1122,8 @@ SETL/SETNGE
 			op->val = 1;
 			if (a->decode) {
 				char *src = getarg (&gop, 0, 0, NULL);
-				char *dst = getarg (&gop, 0, 1, NULL);
-				if (strchr (src, '[')) {
-					char *dst = r_str_replace (strdup (src), "[", "=[", 1);
-					esilprintf (op, "%s,++,%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src, dst);
-					free (dst);
-				} else {
-					esilprintf (op, "%s,%s=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src, dst);
-				}
+				esilprintf (op, "%s,++=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
 				free (src);
-				free (dst);
 			}
 			break;
 		case X86_INS_DEC:
@@ -1141,8 +1133,7 @@ SETL/SETNGE
 			op->val = 1;
 			if (a->decode) {
 				char *src = getarg (&gop, 0, 0, NULL);
-				//esilprintf (op, "%s,--=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
-				esilprintf (op, "1,%s,[4],-,%s,=[4],$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src, src);
+				esilprintf (op, "%s,--=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
 				free (src);
 			}
 			break;
