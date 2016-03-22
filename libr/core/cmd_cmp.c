@@ -548,7 +548,7 @@ static int cmd_cmp(void *data, const char *input) {
 
 			r_core_bin_load (core2, file2,
 				r_config_get_i (core->config, "bin.baddr"));
-			r_core_gdiff (core, core2, 1);
+			r_core_gdiff (core, core2);
 			r_core_diff_show (core, core2);
 			/* exchange a segfault with a memleak */
 			core2->config = NULL;
