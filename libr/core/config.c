@@ -1398,7 +1398,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("anal.depth", 16, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB("anal.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
 	SETPREF("anal.calls", "false", "Make basic af analysis walk into calls");
-	SETPREF("anal.autoname", "false", "Automatically set a name for the functions, may result in some false positives");
+	SETPREF("anal.autoname", "true", "Automatically set a name for the functions, may result in some false positives");
 	SETPREF("anal.hasnext", "false", "Continue analysis after each function");
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
 	SETPREF("anal.strings", "false", "Identify and register strings during analysis (aar only)");
