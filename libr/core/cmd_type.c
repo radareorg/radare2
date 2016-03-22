@@ -287,14 +287,17 @@ static int cmd_type(void *data, const char *input) {
 			if (*name) {
 				SdbKv *kv;
 				SdbListIter *iter;
-				int tmp_len = strlen (name);
-				char *tmp = malloc (tmp_len + 2);
+				char*type =sdb_const_get (core->anal->sdb_types, name, 0);
+				if(!type)
+					break;
+				int tmp_len = strlen (name)+strlen(type);
+				char *tmp = malloc (tmp_len + 1);
 				r_anal_type_del (core->anal, name);
 				if (tmp) {
-					snprintf (tmp, tmp_len + 1, "%s.", name);
+					snprintf (tmp, tmp_len + 1, "%s.%s.",type, name);
 					SdbList *l = sdb_foreach_list (core->anal->sdb_types);
 					ls_foreach (l, iter, kv) {
-						if (!strncmp (kv->key, tmp, tmp_len - 1))
+						if (!strncmp (kv->key, tmp, tmp_len))
 							r_anal_type_del (core->anal, kv->key);
 					}
 					free (tmp);
