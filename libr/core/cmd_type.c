@@ -10,6 +10,7 @@ static void show_help(RCore *core) {
 		"t-*", "", "Remove all types",
 		//"t-!", "",          "Use to open $EDITOR",
 		"tb", " <enum> <value>", "Show matching enum bitfield for given number",
+		"te", "", "List all loaded enums",
 		"te", " <enum> <value>", "Show name for given enum number",
 		"td", " <string>", "Load types from string",
 		"tf", " <addr>", "View linked type at given address",
@@ -159,6 +160,16 @@ static int cmd_type(void *data, const char *input) {
 			}
 			free (name);
 			ls_free (l);
+			break;
+		}
+		if (input[1] == '?') {
+			const char *help_message[] = {
+				"USAGE te[...]", "", "",
+				"te", "", "List all loaded enums",
+				"te", " <enum> <value>", "Show name for given enum number",
+				"te?", "", "show this help",
+				NULL };
+			r_core_cmd_help (core, help_message);
 			break;
 		}
 		char *p, *s = strdup (input + 2);
