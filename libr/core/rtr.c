@@ -1173,7 +1173,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 
-	if (!rtr_host[rtr_n].proto == RTR_PROT_RAP){
+	if (rtr_host[rtr_n].proto != RTR_PROT_RAP) {
 		eprintf ("Error: Not a rap:// host\n");
 		return;
 	}

@@ -37,6 +37,12 @@ R_API int r_core_gdiff(RCore *c, RCore *c2, int anal_all) {
 			r_core_cmd0 (cores[i], "aac");
 		if (anal_all>0)
 			r_core_anal_all (cores[i]);
+		/* remove strings */
+		r_list_foreach_safe (cores[i]->anal->fcns, iter, iter2, fcn) {
+			if (!strncmp (fcn->name, "str.", 4)) {
+				r_list_delete (cores[i]->anal->fcns, iter);
+			}
+		}
 		/* Fingerprint fcn bbs (functions basic-blocs) */
 		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
 			r_list_foreach (fcn->bbs, iter2, bb) {

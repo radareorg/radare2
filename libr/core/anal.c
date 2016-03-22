@@ -236,8 +236,8 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
 			if (f) {
 				if (dump) {
-					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x
-						" %s\n", ref->at, ref->addr, f->name);
+					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+						ref->at, ref->addr, f->name);
 				}
 				if (strstr (f->name, "isatty"))
 					use_isatty = 1;
@@ -2343,12 +2343,13 @@ static int esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int l
 }
 
 static ut64 esilbreak_last_read = UT64_MAX;
+#if 0
 static ut32 esilbreak_last_data = UT32_MAX;
+#endif
 
 static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
-	int slen = 0;
 	ut8 str[128];
-	char cmd[128], cmd2[128];
+	char cmd[128];
 	esilbreak_last_read = UT64_MAX;
 	if (myvalid (addr) && r_io_is_valid_offset (mycore->io, addr, 0)) {
 		ut32 refptr = 0;
@@ -2367,8 +2368,9 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 			}
 			str[sizeof(str)-1] = 0;
 			add_string_ref (mycore, refptr); //ut64 xref_to) {
-
 #if 0
+			char cmd2[128];
+			int slen = 0;
 			if (is_string (str, sizeof (str)-1, &slen)) {
 				char *str2[256];
 				esilbreak_last_data = refptr;
