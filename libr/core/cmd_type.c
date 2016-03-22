@@ -19,24 +19,32 @@ static void show_help(RCore *core) {
 		//"to",  "",         "List opened files",
 		"to", " -", "Open cfg.editor to load types",
 		"to", " <path>", "Load types from C header file",
-		"ts", "","print loaded struct types",
+		"ts", "", "print loaded struct types",
+		"tu", "", "print loaded union types",
 		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
 		NULL };
 	r_core_cmd_help (core, help_message);
 }
-
+//TODO
+//look at the next couple of functions
+//can be optimized into one right ... you see it you do it :P
 static int sdbforcb(void *p, const char *k, const char *v) {
-	if (!strncmp (v, "type", strlen ("type")+1))
+	if (!strncmp (v, "type", strlen ("type") + 1))
 		r_cons_printf ("%s\n", k);
 	return 1;
 }
-static int stdprintifstruct(void *p, const char *k, const char *v){
+static int stdprintifstruct(void *p, const char *k, const char *v) {
 	if (!strncmp (v, "struct", strlen ("struct") + 1))
 		r_cons_printf ("%s\n", k);
 	return 1;
 }
-static int stdprintiffunc(void *p, const char *k,const char *v) {
-	if(!strncmp(v,"func",strlen("func")+1))
+static int stdprintiffunc(void *p, const char *k, const char *v) {
+	if (!strncmp (v, "func", strlen ("func") + 1))
+		r_cons_printf ("%s\n", k);
+	return 1;
+}
+static int stdprintifunion(void *p, const char *k, const char *v) {
+	if (!strncmp (v, "union", strlen ("union") + 1))
 		r_cons_printf ("%s\n", k);
 	return 1;
 }
@@ -46,8 +54,7 @@ static int sdbdelete(void *p, const char *k, const char *v) {
 	return 1;
 }
 static int typelist(void *p, const char *k, const char *v) {
-	RCore *core = (RCore *)p;
-	r_cons_printf("tk %s = %s \n",k,v);
+	r_cons_printf ("tk %s = %s \n", k, v);
 	return 1;
 }
 
@@ -56,26 +63,40 @@ static int cmd_type(void *data, const char *input) {
 
 	switch (input[0]) {
 	// t [typename] - show given type in C syntax
+	case 'u':
+		switch (input[1]) {
+		case '?': {
+			const char *help_message[] = {
+				"USAGE tu[...]", "", "",
+				"tu", "", "List all loaded unions",
+				"tu?", "", "show this help",
+				NULL };
+			r_core_cmd_help (core, help_message);
+		} break;
+		case 0:
+			sdb_foreach (core->anal->sdb_types, stdprintifunion, core);
+			break;
+		}break;
+
 	case 'k':
 		if (input[1] == ' ') {
 			sdb_query (core->anal->sdb_types, input + 2);
 		} else sdb_query (core->anal->sdb_types, "*");
 		break;
 	case 's':
-		switch(input[1]){
-		case '?':{
+		switch (input[1]) {
+		case '?': {
 			const char *help_message[] = {
-			"USAGE ts[...]", "", "",
-			"ts", "", "List all loaded structs",
-			"ts?", "", "show this help",
-			NULL };
+				"USAGE ts[...]", "", "",
+				"ts", "", "List all loaded structs",
+				"ts?", "", "show this help",
+				NULL };
 			r_core_cmd_help (core, help_message);
-		}break;
+		} break;
 		case 0:
-			sdb_foreach (core->anal->sdb_types,stdprintifstruct, core);
+			sdb_foreach (core->anal->sdb_types, stdprintifstruct, core);
 			break;
-		};
-		break;
+		}break;
 	case 'b': {
 		char *p, *s = (strlen (input) > 1)? strdup (input + 2): NULL;
 		const char *isenum;
@@ -283,7 +304,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	// tv - get/set type value linked to a given address
 	case 'f':
-		sdb_foreach (core->anal->sdb_types,stdprintiffunc, core);
+		sdb_foreach (core->anal->sdb_types, stdprintiffunc, core);
 		break;
 
 	case '?':
