@@ -19,7 +19,7 @@ static void show_help(RCore *core) {
 		"to", " -", "Open cfg.editor to load types",
 		"to", " <path>", "Load types from C header file",
 		"tk", " <sdb-query>", "Perform sdb query",
-		"ts", " <k>=<v>", "Set fields at curseek linked type",
+		"ts", "","print loaded struct types",
 		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
 		NULL };
 	r_core_cmd_help (core, help_message);
@@ -28,10 +28,13 @@ static void show_help(RCore *core) {
 static int sdbforcb(void *p, const char *k, const char *v) {
 	if (!strncmp (k, "type.", strlen ("type.")))
 		r_cons_printf ("%s\n", k + 5);
-	else if (!strncmp (v, "struct", strlen ("struct") + 1))
-		r_cons_printf ("struct %s\n", k);
 	else if (!strncmp (v, "enum", strlen ("enum") + 1))
 		r_cons_printf ("enum %s\n", k);
+	return 1;
+}
+static int stdprintifstruct(void *p, const char *k, const char *v){
+	if (!strncmp (v, "struct", strlen ("struct") + 1))
+		r_cons_printf ("%s\n", k);
 	return 1;
 }
 static int sdbdelete(void *p, const char *k, const char *v) {
@@ -96,31 +99,21 @@ static int cmd_type(void *data, const char *input) {
 			sdb_query (core->anal->sdb_types, input + 2);
 		} else sdb_query (core->anal->sdb_types, "*");
 		break;
-	case 's': {
-		char *q, *p, *o, *e;
-		p = o = strdup (input + 1);
-		for (;;) {
-			if (*p == '\0') {
-				eprintf ("Usage: ts <k>=<v> Set fields at curseek linked type\n");
-				break;
-			}
-			q = strchr (p, ' ');
-			if (q) *q = 0;
-			if (!*p) {
-				p++;
-				continue;
-			}
-			e = strchr (p, '=');
-			if (e) {
-				*e = 0;
-				r_anal_type_set (core->anal, core->offset,
-						p, r_num_math (core->num, e + 1));
-			} else eprintf ("TODO: implement get\n");
-			if (!q) break;
-			p = q + 1;
-		}
-		free (o);
-	} break;
+	case 's':
+		switch(input[1]){
+		case '?':{
+			const char *help_message[] = {
+			"USAGE ts[...]", "", "",
+			"ts", "", "List all loaded structs",
+			"ts?", "", "show this help",
+			NULL };
+			r_core_cmd_help (core, help_message);
+		}break;
+		case 0:
+			sdb_foreach (core->anal->sdb_types,stdprintifstruct, core);
+			break;
+		};
+		break;
 	case 'b': {
 		char *p, *s = (strlen (input) > 1)? strdup (input + 2): NULL;
 		const char *isenum;
