@@ -13,12 +13,12 @@ static void show_help(RCore *core) {
 		"te", "", "List all loaded enums",
 		"te", " <enum> <value>", "Show name for given enum number",
 		"td", " <string>", "Load types from string",
-		"tf", " <addr>", "View linked type at given address",
+		"tf", "", "List all loaded functions signitures",
+		"tk", " <sdb-query>", "Perform sdb query",
 		"tl", "[?]", "Show/Link type to an address",
 		//"to",  "",         "List opened files",
 		"to", " -", "Open cfg.editor to load types",
 		"to", " <path>", "Load types from C header file",
-		"tk", " <sdb-query>", "Perform sdb query",
 		"ts", "","print loaded struct types",
 		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
 		NULL };
@@ -26,14 +26,17 @@ static void show_help(RCore *core) {
 }
 
 static int sdbforcb(void *p, const char *k, const char *v) {
-	if (!strncmp (k, "type.", strlen ("type.")))
-		r_cons_printf ("%s\n", k + 5);
-	else if (!strncmp (v, "enum", strlen ("enum") + 1))
-		r_cons_printf ("enum %s\n", k);
+	if (!strncmp (v, "type.", strlen ("type")+1))
+		r_cons_printf ("%s\n", k);
 	return 1;
 }
 static int stdprintifstruct(void *p, const char *k, const char *v){
 	if (!strncmp (v, "struct", strlen ("struct") + 1))
+		r_cons_printf ("%s\n", k);
+	return 1;
+}
+static int stdprintiffunc(void *p, const char *k,const char *v) {
+	if(!strncmp(v,"func",strlen("func")+1))
 		r_cons_printf ("%s\n", k);
 	return 1;
 }
@@ -320,25 +323,10 @@ static int cmd_type(void *data, const char *input) {
 		}
 		break;
 	// tv - get/set type value linked to a given address
-	case 'f': {
-		ut64 addr;
-		char *fmt, key[128];
-		const char *type;
-		if (input[1]) {
-			addr = r_num_math (core->num, input + 1);
-		} else addr = core->offset;
-		snprintf (key, sizeof (key), "link.%08" PFMT64x, addr);
-		type = sdb_const_get (core->anal->sdb_types, key, 0);
-		if (type) {
-			fmt = r_anal_type_format (core->anal, type);
-			r_cons_printf ("struct %s {\n", type);
-			if (fmt) {
-				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
-				free (fmt);
-			} // else eprintf ("Cannot find '%s' type\n", input+1);
-			r_cons_printf ("}\n");
-		} //else eprintf ("Cannot find type at 0x%llx\n", addr);
-	} break;
+	case 'f':
+		sdb_foreach (core->anal->sdb_types,stdprintiffunc, core);
+		break;
+
 	case '?':
 		show_help (core);
 		break;
