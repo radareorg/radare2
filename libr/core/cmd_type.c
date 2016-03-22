@@ -26,7 +26,7 @@ static void show_help(RCore *core) {
 }
 
 static int sdbforcb(void *p, const char *k, const char *v) {
-	if (!strncmp (v, "type.", strlen ("type")+1))
+	if (!strncmp (v, "type", strlen ("type")+1))
 		r_cons_printf ("%s\n", k);
 	return 1;
 }
