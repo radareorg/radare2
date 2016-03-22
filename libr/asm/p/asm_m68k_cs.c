@@ -95,6 +95,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!strncmp (op->buf_asm, "dc.w", 4)) {
 		strcpy (op->buf_asm, "invalid");
 	}
+	r_str_rmch (op->buf_asm, '#');
 	return op->size;
 }
 
