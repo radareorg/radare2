@@ -2281,6 +2281,48 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			cmd_aea (core, 0, core->offset, r_num_math (core->num, input+2));
 		}
 		break;
+	case 'x':{ // "aex"
+		ut32 new_bits = -1;
+		int segoff, old_bits, pos = 0;
+		ut8 settings_changed = false;
+		char *new_arch = NULL, *old_arch = NULL, *hex = NULL;
+		old_arch = strdup (r_config_get (core->config, "asm.arch"));
+		old_bits = r_config_get_i (core->config, "asm.bits");
+		segoff = r_config_get_i (core->config, "asm.segoff");
+
+		if (input[0])
+			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
+				if (input[pos] == ' ') break;
+
+		if (!r_core_process_input_pade (core, input+pos, &hex, &new_arch, &new_bits)) {
+			// XXX - print help message
+			//return false;
+		}
+
+		if (new_arch == NULL) new_arch = strdup (old_arch);
+		if (new_bits == -1) new_bits = old_bits;
+
+		if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
+			r_core_set_asm_configs (core, new_arch, new_bits, segoff);
+			settings_changed = true;
+		}
+		int ret, bufsz;
+		RAnalOp aop = {0};
+		const char *str;
+		char *str2 = NULL;
+		bufsz = r_hex_str2bin (hex, (ut8*)hex);
+		ret = r_anal_op (core->anal, &aop, core->offset,
+			(const ut8*)hex, bufsz);
+		if (ret>0) {
+			str = R_STRBUF_SAFEGET (&aop.esil);
+			str2 = calloc(sizeof(char), strlen(str)+1);
+			strcat(str2," ");
+			strcat(str2, str);
+			cmd_anal_esil (core, str2);
+		}
+		r_anal_op_fini (&aop);
+		}
+		break;
 	case '?':
 		if (input[1] == '?') {
 			const char *help_msg[] = {
@@ -2326,6 +2368,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			"aeim", "", "initialize ESIL VM stack (aeim- remove)",
 			"aeip", "", "initialize ESIL program counter to curseek",
 			"ae", " [expr]", "evaluate ESIL expression",
+			"aex", " [hex]", "evaluate opcode expression",
 			"ae[aA]", "[f] [count]", "analyse esil accesses (regs, mem..)",
 			"aep", " [addr]", "change esil PC to this address",
 			"aef", " [addr]", "emulate function",

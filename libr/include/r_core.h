@@ -321,6 +321,8 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr);
 R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l);
 R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 
+R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, char **asm_arch, ut32 *bits);
+
 /* anal.c */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr);
 R_API void r_core_anal_esil (RCore *core, const char *str);
@@ -363,6 +365,7 @@ R_API RBuffer *r_core_syscallf (RCore *core, const char *name, const char *fmt, 
 R_API RCoreAsmHit *r_core_asm_hit_new(void);
 R_API RList *r_core_asm_hit_list_new(void);
 R_API void r_core_asm_hit_free(void *_hit);
+R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff);
 R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to);
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp);
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len);

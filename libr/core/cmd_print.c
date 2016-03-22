@@ -77,7 +77,7 @@ static void cmd_print_eq_dict(RCore *core, int bsz) {
 	r_cons_printf ("block: %d  0x%x\n", bsz, bsz);
 }
 
-static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
+R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set (core->config, "asm.arch", arch);
 	r_config_set_i (core->config, "asm.bits", bits);
 	// XXX - this needs to be done here, because
@@ -200,7 +200,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 }
 
 /* This function is not necessary anymore, but it's kept for discussion */
-static int process_input_pade(RCore *core, const char *input, char** hex, char **asm_arch, ut32 *bits) {
+R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, char **asm_arch, ut32 *bits) {
 	// input: start of the input string e.g. after the command symbols have been consumed
 	// size: hex if present, otherwise -1
 	// asm_arch: asm_arch to interpret as if present and valid, otherwise NULL;
@@ -1977,7 +1977,7 @@ static int cmd_print(void *data, const char *input) {
 				for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
 					if (input[pos] == ' ') break;
 
-			if (!process_input_pade (core, input+pos, &hex, &new_arch, &new_bits)) {
+			if (!r_core_process_input_pade (core, input+pos, &hex, &new_arch, &new_bits)) {
 				// XXX - print help message
 				//return false;
 			}
@@ -1986,7 +1986,7 @@ static int cmd_print(void *data, const char *input) {
 			if (new_bits == -1) new_bits = old_bits;
 
 			if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
-				set_asm_configs (core, new_arch, new_bits, segoff);
+				r_core_set_asm_configs (core, new_arch, new_bits, segoff);
 				settings_changed = true;
 			}
 		}
@@ -2038,7 +2038,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		if (settings_changed)
-			set_asm_configs (core, old_arch, old_bits, segoff);
+			r_core_set_asm_configs (core, old_arch, old_bits, segoff);
 		free (old_arch);
 		free (new_arch);
 	}
@@ -2256,7 +2256,7 @@ static int cmd_print(void *data, const char *input) {
 		if (new_bits == -1) new_bits = old_bits;
 
 		if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
-			set_asm_configs (core, new_arch, new_bits, segoff);
+			r_core_set_asm_configs (core, new_arch, new_bits, segoff);
 			settings_changed = true;
 		}
 
@@ -2517,7 +2517,7 @@ static int cmd_print(void *data, const char *input) {
 		core->offset = current_offset;
 		// change back asm setting is they were changed
 		if (settings_changed)
-			set_asm_configs (core, old_arch, old_bits, segoff);
+			r_core_set_asm_configs (core, old_arch, old_bits, segoff);
 
 		free (old_arch);
 		free (new_arch);
