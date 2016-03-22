@@ -3193,6 +3193,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		"aggk", "", "show graph in key=value form",
 		"aggd", "", "print the current graph in GRAPHVIZ dot format",
 		"aggi", "", "enter interactive mode for the current graph",
+		"aggd", "", "print the current graph in GRAPHVIZ dot format",
 		"agg*", "", "in r2 commands, to save in projects, etc",
 		NULL };
 	switch (*input) {
@@ -3247,18 +3248,19 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	const char *help_msg[] = {
 		"Usage:", "ag[?f]", "Graphviz/graph code",
 		"ag", " [addr]", "output graphviz code (bb at addr and children)",
-		"agj", " [addr]", "idem, but in JSON format",
-		"agk", " [addr]", "idem, but in SDB key-value format",
+		"ag-", "", "Reset the current ASCII art graph (see agn, age, agg?)",
 		"aga", " [addr]", "idem, but only addresses",
 		"agc", " [addr]", "output graphviz call graph of function",
 		"agd", " [fcn name]", "output graphviz code of diffed function",
-		"agl", " [fcn name]", "output graphviz code using meta-data",
-		"agt", " [addr]", "find paths from current offset to given address",
-		"agf", " [addr]", "Show ASCII art graph of given function",
-		"ag-", "", "Reset the current ASCII art graph",
-		"agn", "[?] title body", "Add a node to the current graph",
 		"age", "[?] title1 title2", "Add an edge to the current graph",
+		"agf", " [addr]", "Show ASCII art graph of given function",
 		"agg", "[kdi*]", "Print graph in ASCII-Art, graphviz, k=v, r2 or visual",
+		"agj", " [addr]", "idem, but in JSON format",
+		"agk", " [addr]", "idem, but in SDB key-value format",
+		"agl", " [fcn name]", "output graphviz code using meta-data",
+		"agn", "[?] title body", "Add a node to the current graph",
+		"ags", " [addr]", "output simple graphviz call graph of function (only bb offset)",
+		"agt", " [addr]", "find paths from current offset to given address",
 		"agv", "[acdltfl] [a]", "view function using graphviz",
 		NULL };
 
@@ -3278,6 +3280,9 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'g': // "agg"
 		cmd_agraph_print (core, input + 1);
 		break;
+	case 's': // "ags"
+		r_core_anal_graph (core, r_num_math (core->num, arg), 0);
+		break;
 	case 't':
 		list = r_core_anal_graph_to (core, r_num_math (core->num, input + 1), 0);
 		if (list) {
@@ -3295,6 +3300,9 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		break;
 	case 'c': // "agc"
 		r_core_anal_coderefs (core, r_num_math (core->num, input + 1), input[1] == 'j'? 2: 1);
+		break;
+	case 0: // "ag"
+		r_core_anal_graph (core, r_num_math (core->num, arg), R_CORE_ANAL_GRAPHBODY);
 		break;
 	case 'j': // "agj"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_JSON);
@@ -3319,6 +3327,9 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg);
 		break;
 	default:
+		eprintf ("See ag?\n");
+		break;
+	case ' ':
 		arg = strchr (input, ' ');
 		if (arg) arg++;
 		r_core_anal_graph (core, r_num_math (core->num, arg),

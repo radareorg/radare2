@@ -1554,12 +1554,15 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	RListIter *iter;
 	int count = 0;
 
+	if (!addr) {
+		addr = core->offset;
+	}
 	if (r_list_empty (core->anal->fcns)) {
 		eprintf ("No functions to diff\n");
 		return false;
 	}
 
-	opts |= R_CORE_ANAL_GRAPHBODY;
+	//opts |= R_CORE_ANAL_GRAPHBODY;
 	reflines = r_config_get_i (core->config, "asm.lines");
 	bytes = r_config_get_i (core->config, "asm.bytes");
 	dwarf = r_config_get_i (core->config, "asm.dwarf");
