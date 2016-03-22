@@ -33,7 +33,8 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 		if (c->from >= from && c->to <= to) {
 			if (!r_io_write_at (io, c->from, c->data, c->size))
 				eprintf ("Error writing change at 0x%08"PFMT64x"\n", c->from);
-			else c->written = true;
+			else 
+				c->written = true;
 			break;
 		}
 	}

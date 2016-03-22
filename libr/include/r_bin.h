@@ -140,7 +140,7 @@ typedef struct r_bin_object_t {
 	RList/*<??>*/ *entries;
 	RList/*<??>*/ *fields;
 	RList/*<??>*/ *libs;
-	RList/*<??>*/ *relocs;
+	RList/*<RBinReloc>*/ *relocs;
 	RList/*<??>*/ *strings;
 	RList/*<RBinClass>*/ *classes;
 	RList/*<RBinDwarfRow>*/ *lines;
@@ -271,6 +271,7 @@ typedef struct r_bin_plugin_t {
 	RList* (*relocs)(RBinFile *arch);
 	RList* (*classes)(RBinFile *arch);
 	RList* (*mem)(RBinFile *arch);
+	RList* (*patch_relocs)(RBin *bin);
 	int (*demangle_type)(const char *str);
 	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;
@@ -470,6 +471,7 @@ R_API RList* r_bin_get_imports(RBin *bin);
 R_API RBinInfo* r_bin_get_info(RBin *bin);
 R_API RList* r_bin_get_libs(RBin *bin);
 R_API ut64 r_bin_get_size (RBin *bin);
+R_API RList* r_bin_patch_relocs(RBin *bin);
 R_API RList* r_bin_get_relocs(RBin *bin);
 R_API RList* r_bin_get_sections(RBin *bin);
 R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin);

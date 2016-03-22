@@ -783,7 +783,8 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 		if (io->plugin && io->plugin->lseek)
 			ret = io->plugin->lseek (io, io->desc, offset, whence);
 		// XXX can be problematic on w32..so no 64 bit offset?
-		else ret = (ut64)lseek (io->desc->fd, offset, posix_whence);
+		else 	
+			ret = (ut64)lseek (io->desc->fd, offset, posix_whence);
 		if (ret != UT64_MAX) {
 			if (whence == R_IO_SEEK_SET)
 				io->off = offset; // FIX linux-arm-32-bs at 0x10000

@@ -292,7 +292,8 @@ static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int wh
 }
 
 static ut64 r_io_def_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	if (!fd || !fd->data) return UT64_MAX;
+	if (!fd || !fd->data) 
+		return UT64_MAX;
 	return r_io_def_mmap_seek (io, (RIOMMapFileObj *)fd->data, offset, whence);
 }
 

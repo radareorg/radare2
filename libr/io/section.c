@@ -56,10 +56,11 @@ static RIOSection *findMatching (RIO *io, ut64 paddr, ut64 vaddr, ut64 size, ut6
 R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd) {
 	int update = 0;
 	RIOSection *s;
-	if (size==0 || size>0xf0000000) {
-		if (size>0 && size != UT64_MAX && size != UT32_MAX)
-			eprintf ("Invalid size (0x%08"PFMT64x") for section '%s' at 0x%08"PFMT64x"\n",
-			size, name, vaddr);
+	if (size == 0 || size > 0xf0000000) {
+		if (size > 0 && size != UT64_MAX && size != UT32_MAX)
+			eprintf ("Invalid size (0x%08" PFMT64x
+				 ") for section '%s' at 0x%08" PFMT64x "\n",
+				 size, name, vaddr);
 		return NULL;
 	}
 	s = findMatching (io, offset, vaddr, size, vsize, rwx, name);
@@ -70,7 +71,9 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, 
 	if (s == NULL) {
 		s = R_NEW0 (RIOSection);
 		s->id = io->next_section_id++;
-	} else update = 1;
+	} else {
+		update = 1;
+	}
 	s->offset = offset;
 	s->vaddr = vaddr;
 	s->size = size;

@@ -15,9 +15,9 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 
 	pid = *p; // 1st element in debugger's struct must be int
 	r_config_set (r->config, "io.ff", "true");
-	if (is_gdb) 
+	if (is_gdb)
 		r_core_cmd (r, "dh gdb", 0);
-	else 
+	else
 		r_core_cmdf (r, "dh %s", debugbackend);
 	//this makes to attach twice showing warnings in the output
 	//we get "resource busy" so it seems isn't an issue
@@ -41,7 +41,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 	r_core_cmd (r, "sr PC", 0);
 	if (r_config_get_i (r->config, "dbg.status"))
 		r_config_set (r->config, "cmd.prompt", ".dr*;drd;sr PC;pi 1;s-");
-	else 
+	else
 		r_config_set (r->config, "cmd.prompt", ".dr*");
 	r_config_set (r->config, "cmd.vprompt", ".dr*");
 	return true;
@@ -253,49 +253,38 @@ R_API int r_core_seek_archbits (RCore *core, ut64 addr) {
 
 R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 	RIOSection *newsection;
-	ut64 old = core->offset;
-	ut64 ret;
+	ut64 ret, old = core->offset;
 
 	core->offset = addr;
-	/* XXX unnecesary call */
-	//r_io_use_fd (core->io, core->file->desc);
 	core->io->section = core->section; // HACK
 	ret = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	newsection = core->io->section;
 
 	if (ret == UT64_MAX) {
-		//eprintf ("RET =%d %llx\n", ret, addr);
-		/*
-		   XXX handle read errors correctly
-		   if (core->io->ff) {
-		   core->offset = addr;
-		   } else return false;
-		 */
-		//core->offset = addr;
 		if (!core->io->va)
 			return false;
-		//memset (core->block, 0xff, core->blocksize);
-	} else core->offset = addr;
+	} else {
+		core->offset = addr;
+	}
 	if (rb) {
 		ret = r_core_block_read (core, 0);
 		if (core->io->ff) {
-			if (ret<1 || ret > core->blocksize)
+			if (ret < 1 || ret > core->blocksize)
 				memset (core->block, 0xff, core->blocksize);
-			else memset (core->block+ret, 0xff, core->blocksize-ret);
+			else
+				memset (core->block+ret, 0xff, core->blocksize-ret);
 			ret = core->blocksize;
 			core->offset = addr;
 		} else {
-			if (ret<1) {
+			if (ret < 1)
 				core->offset = old;
-				//eprintf ("Cannot read block at 0x%08"PFMT64x"\n", addr);
-			}
 		}
 	}
 	if (core->section != newsection) {
 		r_core_seek_archbits (core, core->offset);
 		core->section = newsection;
 	}
-	return (ret==-1)? false: true;
+	return (ret == -1)? false: true;
 }
 
 R_API int r_core_seek_delta(RCore *core, st64 addr) {
