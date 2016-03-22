@@ -7,16 +7,17 @@
 # sudo pkgutil --forget org.radare.radare2
 
 SRC=/tmp/r2osx
+PREFIX=/usr/local
 DST="$(pwd)/sys/osx-pkg/radare2.unpkg"
 VERSION="`./configure --version| head -n 1|awk '{print $1}'|cut -d - -f 2`"
 [ -z "${VERSION}" ] && VERSION=0.10.0
 
 rm -rf "${SRC}"
 make mrproper
-./configure --prefix=/usr || exit 1
+./configure --prefix="${PREFIX}" || exit 1
 make -j4 || exit 1
 # TODO: run sys/install.sh
-make install PREFIX=/usr DESTDIR=${SRC} || exit 1
+make install PREFIX="${PREFIX}" DESTDIR=${SRC} || exit 1
 if [ -d "${SRC}" ]; then
 	(
 		cd ${SRC} && \
