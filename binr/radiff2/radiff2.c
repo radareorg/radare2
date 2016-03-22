@@ -45,7 +45,12 @@ static RCore* opencore(const char *f) {
 	}
 	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
 	if (anal_all) {
-		r_core_cmd0 (c, (anal_all>1)? "aaaa": "aaa");
+		const char *cmd = "aac";
+		switch (anal_all) {
+		case 1: cmd = "aaa"; break;
+		case 2: cmd = "aaaa"; break;
+		}
+		r_core_cmd0 (c, cmd);
 	}
 	return c;
 }
@@ -148,7 +153,6 @@ static int show_help(int v) {
 		"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
 		"  -c         count of changes\n"
 		"  -C         graphdiff code (columns: off-A, match-ratio, off-B)\n"
-		"  -CC        same as above but run `aac` to find more functions\n"
 		"  -d         use delta diffing\n"
 		"  -D         show disasm instead of hexpairs\n"
 		"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
@@ -215,7 +219,6 @@ int main(int argc, char **argv) {
 	int mode = MODE_DIFF;
 	int diffops = 0;
 	int threshold = -1;
-	int gdiff_mode = 0;
 	double sim;
 
 	while ((o = getopt (argc, argv, "Aa:b:CDnpg:Ojrhcdsvxt:")) != -1) {
@@ -244,7 +247,6 @@ int main(int argc, char **argv) {
 			break;
 		case 'C':
 			mode = MODE_CODE;
-			gdiff_mode++;
 			break;
 		case 'n':
 			showbare = true;
@@ -329,20 +331,20 @@ int main(int argc, char **argv) {
 				r_core_anal_fcn (c, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
 				r_core_anal_fcn (c2, r_num_math (c2->num, second),
 						UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
-				r_core_gdiff (c, c2, false); // compute the diff
+				r_core_gdiff (c, c2);
 				r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
 			} else {
 				r_core_anal_fcn (c, r_num_math (c->num, words),
 						UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
 				r_core_anal_fcn (c2, r_num_math (c2->num, words),
 						UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
-				r_core_gdiff (c, c2, gdiff_mode);
+				r_core_gdiff (c, c2);
 				r_core_anal_graph (c, r_num_math (c->num, addr),
 					R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
 			}
 			free (words);
 		} else {
-			r_core_gdiff (c, c2, gdiff_mode);
+			r_core_gdiff (c, c2);
 			r_core_diff_show (c, c2);
 		}
 		r_cons_flush ();

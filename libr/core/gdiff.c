@@ -23,7 +23,7 @@ R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 
 /* Fingerprint functions and blocks, then diff.
  * If `anal_all` is 1 analyse all the symbols, if its 2 runs `aac` */
-R_API int r_core_gdiff(RCore *c, RCore *c2, int anal_all) {
+R_API int r_core_gdiff(RCore *c, RCore *c2) {
 	RCore *cores[2] = {c, c2};
 	RAnalFunction *fcn;
 	RAnalBlock *bb;
@@ -33,10 +33,6 @@ R_API int r_core_gdiff(RCore *c, RCore *c2, int anal_all) {
 	if (!c || !c2)
 		return false;
 	for (i = 0; i < 2; i++) {
-		if (anal_all>1)
-			r_core_cmd0 (cores[i], "aac");
-		if (anal_all>0)
-			r_core_anal_all (cores[i]);
 		/* remove strings */
 		r_list_foreach_safe (cores[i]->anal->fcns, iter, iter2, fcn) {
 			if (!strncmp (fcn->name, "str.", 4)) {
