@@ -1825,9 +1825,14 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin) 
 			if (bin->shstrtab && (SHNAME > 0) && (SHNAME < SHSIZE)) {
 				strncpy (ret[i].name, &bin->shstrtab[SHNAME], SHNLEN);
 			} else {
-				snprintf (unknown_s, sizeof (unknown_s)-4, "unknown%d", unknown_c);
-				strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
-				unknown_c++;
+				if (bin->shdr[i].sh_type == SHT_NULL) {
+					//to follow the same behaviour as readelf
+					strncpy (ret[i].name, "", sizeof (ret[i].name) - 4);
+				} else {
+					snprintf (unknown_s, sizeof (unknown_s)-4, "unknown%d", unknown_c);
+					strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
+					unknown_c++;
+				}
 			}
 		}
 		ret[i].name[ELF_STRING_LENGTH-2] = '\0';
@@ -1985,18 +1990,9 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 	Elf_(Shdr) *strtab_section = NULL;
 	Elf_(Sym) *sym = NULL;
 	char *strtab = NULL;
-	RBinElfSection* section_text = NULL;
-	ut64 section_text_offset = 0LL;
 
 	if (!bin || !bin->shdr || bin->ehdr.e_shnum == 0 || bin->ehdr.e_shnum == 0xffff)
 		return get_symbols_from_phdr (bin, type);
-
-	if (bin->ehdr.e_type == ET_REL) {
-		section_text = get_section_by_name(bin, ".text");
-		if (section_text && section_text->offset != -1) {
-			section_text_offset = section_text->offset;
-		}
-	}
 
 	if (!UT32_MUL (&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr))))
 		return false;
@@ -2011,7 +2007,7 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 				continue;
 			}
 			// hack to avoid asan cry
-			if ((bin->shdr[i].sh_link*sizeof(Elf_(Shdr)))>= shdr_size) {
+			if ((bin->shdr[i].sh_link * sizeof(Elf_(Shdr))) >= shdr_size) {
 				/* oops. fix out of range pointers */
 				continue;
 			}
@@ -2023,7 +2019,7 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 				return NULL;
 			}
 			if (!strtab) {
-				if ((strtab = (char *)calloc (1, 8+strtab_section->sh_size)) == NULL) {
+				if ((strtab = (char *)calloc (1, 8 + strtab_section->sh_size)) == NULL) {
 					eprintf ("malloc (syms strtab)");
 					goto beach;
 				}
@@ -2083,16 +2079,18 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 					//int idx = sym[k].st_shndx;
 					tsize = sym[k].st_size;
 					toffset = (ut64)sym[k].st_value; //-sym_offset; // + (ELF_ST_TYPE(sym[k].st_info) == STT_FUNC?sym_offset:data_offset);
-				} else continue;
-#if SKIP_SYMBOLS_WITH_VALUE
+				} else {
+					continue;
+				}
 
-				/* skip symbols with value */
-				if (sym[k].st_value) continue;
-#endif
 				ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
-				if (section_text) ret[ret_ctr].offset += section_text_offset;
+				if (bin->ehdr.e_type == ET_REL) {
+					if (sym[k].st_shndx < bin->ehdr.e_shnum)
+						ret[ret_ctr].offset = sym[k].st_value + bin->shdr[sym[k].st_shndx].sh_offset;
+				}
+
 				ret[ret_ctr].size = tsize;
-				if (sym[k].st_name+2 > strtab_section->sh_size) {
+				if (sym[k].st_name + 2 > strtab_section->sh_size) {
 					eprintf ("Warning: index out of strtab range\n");
 					goto beach;
 				}

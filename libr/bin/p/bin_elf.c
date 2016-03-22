@@ -128,7 +128,6 @@ static RList* sections(RBinFile *arch) {
 	ret->free = free;
 	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
 		for (i = 0; !section[i].last; i++) {
-			if (!section[i].size) continue;
 			if (!(ptr = R_NEW0 (RBinSection)))
 				break;
 			strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
