@@ -3636,9 +3636,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					eprintf ("[*] Use -AA or aaaa to perform additional experimental analysis.\n");
 				}
 				r_config_set_i (core->config, "anal.calls", c);
-				rowlog (core, "Construct a function name for all fcn.* (.afna @@ fcn.*)");
-				r_core_cmd0 (core, ".afna @@ fcn.*");
-				rowlog_done (core);
+				if (r_config_get_i (core->config, "anal.autoname")) {
+					rowlog (core, "Construct a function name for all fcn.* (.afna @@ fcn.*)");
+					r_core_cmd0 (core, ".afna @@ fcn.*");
+					rowlog_done (core);
+				}
 				if (core->cons->breaked)
 					goto jacuzzi;
 				r_core_cmd0 (core, "s-");
