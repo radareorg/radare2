@@ -130,10 +130,11 @@ R_API ut8 *r_crypto_get_output(RCrypto *cry, int *size) {
 		memcpy (buf, cry->output, *size);
 	} else {
 		/* initialize */
-		cry->output = buf;
 		cry->output_len = 0;
 		cry->output_size = 4096;
+		cry->output = realloc(buf, cry->output_size);
 		return NULL;
 	}
 	return buf;
 }
+
