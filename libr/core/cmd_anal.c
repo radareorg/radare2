@@ -606,7 +606,7 @@ static bool fcnNeedsPrefix(const char *name) {
 	return (!strchr (name, '.'));
 }
 
-static bool setFunctionName(RCore *core, ut64 off, const char *name) {
+static bool setFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
 	char *oname, *nname = NULL;
 	RAnalFunction *fcn;
 	if (!core || !name)
@@ -614,7 +614,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *name) {
 	fcn = r_anal_get_fcn_in (core->anal, off,
 				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
 	if (!fcn) return false;
-	if (fcnNeedsPrefix (name)) {
+	if (prefix && fcnNeedsPrefix (name)) {
 		nname = r_str_newf ("fcn.%s", name);
 	} else {
 		nname = strdup (name);
@@ -906,7 +906,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				off = r_num_math (core->num, p);
 			}
 			if (*name) {
-				if (!setFunctionName (core, off, name))
+				if (!setFunctionName (core, off, name, false))
 					eprintf ("Cannot find function '%s' at 0x%08" PFMT64x "\n", name, off);
 				free (name);
 			} else {
@@ -1133,7 +1133,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 		}
 		if (name) {
-			if (*name && !setFunctionName (core, addr, name))
+			if (*name && !setFunctionName (core, addr, name, true))
 				eprintf ("Cannot find function '%s' at 0x%08" PFMT64x "\n", name, addr);
 			free (name);
 		}
