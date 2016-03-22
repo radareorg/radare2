@@ -187,30 +187,6 @@ R_API RList *r_reg_get_list(RReg *reg, int type) {
 	return reg->regset[type].regs;
 }
 
-R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item) {
-	RRegArena *dst, *src;
-	ut64 ret, ret2;
-	RListIter *it;
-	int ptr = !(reg->iters % 2);
-	int len = (item->size / 8); // TODO: must use r_mem_bitcmp or so.. flags not correctly checked
-	int off = BITS2BYTES (item->offset);
-	it = r_list_head (reg->regset[item->type].pool);
-	if (!it || !it->n)
-		return UT64_MAX;
-	src = r_list_head (reg->regset[item->type].pool)->data;
-	dst = it->n->data;
-	if (off + len > src->size) len = src->size - off;
-	if (off + len > dst->size) len = dst->size - off;
-	if (len > 1 && memcmp (dst->bytes + off, src->bytes + off, len)) {
-		r_reg_arena_set (reg, ptr, 0);
-		ret = r_reg_get_value (reg, item);
-		r_reg_arena_set (reg, !ptr, 0);
-		ret2 = r_reg_get_value (reg, item);
-		return ret - ret2;
-	}
-	return 0LL;
-}
-
 // TODO regsize is in bits, delta in bytes, maybe we should standarize this..
 R_API RRegItem *r_reg_get_at(RReg *reg, int type, int regsize, int delta) {
 	RList *list = r_reg_get_list (reg, type);

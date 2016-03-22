@@ -257,3 +257,15 @@ R_API st64 r_hex_bin_truncate (ut64 in, int n) {
 	}
 	return in;
 }
+
+//checks if str contains only hexademicals
+R_API int r_hex_str_is_valid(const char* str)
+{
+	int i;
+	if (*str == '0' && str[1] == 'x') str+= 2;
+	for (i = 0; str[i] != '\0' && str[i] != ' '; ++i) {
+		if (ishexchar(str[i])) continue;
+		return -1; //if we're here, then str isnt valid
+	}
+	return i;
+}

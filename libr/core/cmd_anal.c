@@ -1248,14 +1248,21 @@ void cmd_anal_reg (RCore *core, const char *str) {
 			}
 		}
 	} break;
-	case '0': // "ar"
+	case '0': // "ar0"
 		r_reg_arena_zero (core->anal->reg);
 		break;
-	case 'C': // "ara"
+	case 'C': // "arC"
 		if (core->anal->reg->reg_profile_cmt) {
 			r_cons_printf ("%s\n", core->anal->reg->reg_profile_cmt);
 		}
 		break;
+	case 'w':
+                if (str[1] == '\0') {
+                        eprintf("Need string\n");
+                        break;
+                }
+                r_reg_arena_set_bytes(core->anal->reg, str + 1);
+                break;
 	case 'a': // "ara"
 		switch (str[1]) {
 		case '?':
