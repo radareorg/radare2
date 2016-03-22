@@ -257,3 +257,18 @@ R_API st64 r_hex_bin_truncate (ut64 in, int n) {
 	}
 	return in;
 }
+
+// Check if str contains only hexademical characters and return length of bytes
+R_API int r_hex_str_is_valid(const char* str) {
+	int i;
+	if (!strncmp (str, "0x", 2)) {
+		str += 2;
+	}
+	for (i = 0; str[i] != '\0' && str[i] != ' '; i++) {
+		if (ishexchar (str[i])) {
+			continue;
+		}
+		return -1; //if we're here, then str isnt valid
+	}
+	return i;
+}
