@@ -793,6 +793,7 @@ static int elf_init(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return true;
 }
 
+
 ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
 	RBinElfSection *section = get_section_by_name (bin, section_name);
 	if (!section) return UT64_MAX;
@@ -998,7 +999,7 @@ int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin) {
 /*
 To compute the base address, one determines the memory
 address associated with the lowest p_vaddr value for a
-PT_LOAD segment. One then btains the base address by
+PT_LOAD segment. One then obtains the base address by
 truncating the memory address to the nearest multiple
 of the maximum page size
 */
@@ -1006,7 +1007,9 @@ of the maximum page size
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
 	ut64 tmp, base = UT64_MAX;
-	if (bin && bin->phdr) {
+	if (!bin) 
+		return 0;
+	if (bin->phdr) {
 		for (i = 0; i < bin->ehdr.e_phnum; i++) {
 			if (bin->phdr[i].p_type == PT_LOAD) {
 				tmp = (ut64)bin->phdr[i].p_vaddr & ELF_PAGE_MASK;
@@ -1014,6 +1017,11 @@ ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 				if (tmp < base) base = tmp;
 			}
 		}
+	}
+	if (base == UT64_MAX && bin->ehdr.e_type == ET_REL) {
+		//we return our own base address for ET_REL type
+		//we act as a loader for ELF
+		return 0x08000000;
 	}
 	return base == UT64_MAX ? 0 : base;
 }
@@ -1641,6 +1649,7 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 	reloc_num = get_relocs_num (bin);
 	if (!reloc_num)	return NULL;
+	bin->reloc_num = reloc_num;
 
 	ret = (RBinElfReloc*)calloc ((size_t)reloc_num + 1, sizeof(RBinElfReloc));
 	if (!ret) return NULL;
@@ -1664,16 +1673,17 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 			if (j + res > g_sections[i].size) {
 				eprintf ("Warning: malformed file, relocation entry #%u is partially beyond the end of section %u.\n", rel, i);
 			}
-			ret[rel].rva = ret[rel].offset;
-			if (is_rela) {
-				if (ret[rel].type != R_386_IRELATIVE && ret[rel].type != R_X86_64_IRELATIVE) {
-					// IREL relocations are not really RELA, the addend field is just
-					// repurposed for the ifunc pointer.
-					ret[rel].rva += section_text_offset;
-					ret[rel].sto = section_text_offset;
+			if (bin->ehdr.e_type == ET_REL) {
+				if (g_sections[i].info < bin->ehdr.e_shnum) {
+					ret[rel].rva = bin->shdr[g_sections[i].info].sh_offset + ret[rel].offset;
+					ret[rel].rva = Elf_(r_bin_elf_p2v) (bin, ret[rel].rva);
+				} else {
+					ret[rel].rva = ret[rel].offset;
 				}
+			} else {
+				ret[rel].rva = ret[rel].offset;
+				ret[rel].offset = Elf_(r_bin_elf_v2p) (bin, ret[rel].offset);
 			}
-			ret[rel].offset = Elf_(r_bin_elf_v2p) (bin, ret[rel].offset);
 			ret[rel].last = 0;
 			if (res < 0) break;
 			rel++;
@@ -1810,10 +1820,16 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin) 
 
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		ret[i].offset = bin->shdr[i].sh_offset;
-		ret[i].rva = bin->shdr[i].sh_addr;
 		ret[i].size = bin->shdr[i].sh_size;
 		ret[i].align = bin->shdr[i].sh_addralign;
 		ret[i].flags = bin->shdr[i].sh_flags;
+		ret[i].link = bin->shdr[i].sh_link;
+		ret[i].info = bin->shdr[i].sh_info;
+		if (bin->ehdr.e_type == ET_REL)	{
+			ret[i].rva = bin->baddr + bin->shdr[i].sh_offset;
+		} else {
+			ret[i].rva = bin->shdr[i].sh_addr;
+		}
 		nidx = bin->shdr[i].sh_name;
 #define SHNAME (int)bin->shdr[i].sh_name
 #define SHNLEN ELF_STRING_LENGTH - 4
@@ -1826,9 +1842,14 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin) 
 			if (bin->shstrtab && (SHNAME > 0) && (SHNAME < SHSIZE)) {
 				strncpy (ret[i].name, &bin->shstrtab[SHNAME], SHNLEN);
 			} else {
-				snprintf (unknown_s, sizeof (unknown_s)-4, "unknown%d", unknown_c);
-				strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
-				unknown_c++;
+				if (bin->shdr[i].sh_type == SHT_NULL) {
+					//to follow the same behaviour as readelf
+					strncpy (ret[i].name, "", sizeof (ret[i].name) - 4);
+				} else {
+					snprintf (unknown_s, sizeof (unknown_s)-4, "unknown%d", unknown_c);
+					strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
+					unknown_c++;
+				}
 			}
 		}
 		ret[i].name[ELF_STRING_LENGTH-2] = '\0';
@@ -1986,18 +2007,9 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 	Elf_(Shdr) *strtab_section = NULL;
 	Elf_(Sym) *sym = NULL;
 	char *strtab = NULL;
-	RBinElfSection* section_text = NULL;
-	ut64 section_text_offset = 0LL;
 
 	if (!bin || !bin->shdr || bin->ehdr.e_shnum == 0 || bin->ehdr.e_shnum == 0xffff)
 		return get_symbols_from_phdr (bin, type);
-
-	if (bin->ehdr.e_type == ET_REL) {
-		section_text = get_section_by_name(bin, ".text");
-		if (section_text && section_text->offset != -1) {
-			section_text_offset = section_text->offset;
-		}
-	}
 
 	if (!UT32_MUL (&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr))))
 		return false;
@@ -2012,7 +2024,7 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 				continue;
 			}
 			// hack to avoid asan cry
-			if ((bin->shdr[i].sh_link*sizeof(Elf_(Shdr)))>= shdr_size) {
+			if ((bin->shdr[i].sh_link * sizeof(Elf_(Shdr))) >= shdr_size) {
 				/* oops. fix out of range pointers */
 				continue;
 			}
@@ -2024,7 +2036,7 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 				return NULL;
 			}
 			if (!strtab) {
-				if ((strtab = (char *)calloc (1, 8+strtab_section->sh_size)) == NULL) {
+				if ((strtab = (char *)calloc (1, 8 + strtab_section->sh_size)) == NULL) {
 					eprintf ("malloc (syms strtab)");
 					goto beach;
 				}
@@ -2084,16 +2096,19 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 					//int idx = sym[k].st_shndx;
 					tsize = sym[k].st_size;
 					toffset = (ut64)sym[k].st_value; //-sym_offset; // + (ELF_ST_TYPE(sym[k].st_info) == STT_FUNC?sym_offset:data_offset);
-				} else continue;
-#if SKIP_SYMBOLS_WITH_VALUE
+				} else {
+					continue;
+				}
 
-				/* skip symbols with value */
-				if (sym[k].st_value) continue;
-#endif
-				ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
-				if (section_text) ret[ret_ctr].offset += section_text_offset;
+				if (bin->ehdr.e_type == ET_REL) {
+					if (sym[k].st_shndx < bin->ehdr.e_shnum)
+						ret[ret_ctr].offset = sym[k].st_value + bin->shdr[sym[k].st_shndx].sh_offset;
+				} else {
+					ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
+				}
+
 				ret[ret_ctr].size = tsize;
-				if (sym[k].st_name+2 > strtab_section->sh_size) {
+				if (sym[k].st_name + 2 > strtab_section->sh_size) {
 					eprintf ("Warning: index out of strtab range\n");
 					goto beach;
 				}
@@ -2235,7 +2250,12 @@ static int is_in_vphdr (Elf_(Phdr) *p, ut64 addr) {
 ut64 Elf_(r_bin_elf_p2v) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 paddr) {
 	int i;
 
-	if (!bin) return paddr;
+	if (!bin || !bin->phdr) {
+		if (bin->ehdr.e_type == ET_REL) {
+			return bin->baddr + paddr;
+		}
+		return paddr;
+	}
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
 		if (!p) break;
@@ -2253,7 +2273,12 @@ ut64 Elf_(r_bin_elf_p2v) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 paddr) {
 ut64 Elf_(r_bin_elf_v2p) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 vaddr) {
 	int i;
 
-	if (!bin || !bin->phdr) return vaddr;
+	if (!bin || !bin->phdr) {
+		if (bin->ehdr.e_type == ET_REL) {
+			return vaddr - bin->baddr;
+		}
+		return vaddr;
+	}
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
 		if (!p) break;

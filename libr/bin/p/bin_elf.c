@@ -5,6 +5,8 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include <r_io.h>
+#include <r_cons.h>
 #include "elf/elf.h"
 
 #define ELFOBJ struct Elf_(r_bin_elf_obj_t)
@@ -128,7 +130,6 @@ static RList* sections(RBinFile *arch) {
 	ret->free = free;
 	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
 		for (i = 0; !section[i].last; i++) {
-			if (!section[i].size) continue;
 			if (!(ptr = R_NEW0 (RBinSection)))
 				break;
 			strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
@@ -142,8 +143,11 @@ static RList* sections(RBinFile *arch) {
 				ptr->srwx |= R_BIN_SCN_EXECUTABLE;
 			if (R_BIN_ELF_SCN_IS_WRITABLE (section[i].flags))
 				ptr->srwx |= R_BIN_SCN_WRITABLE;
-			if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags))
+			if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags)) {
 				ptr->srwx |= R_BIN_SCN_READABLE;
+				if (obj->ehdr.e_type == ET_REL)
+					ptr->srwx |= R_BIN_SCN_MAP;
+			}
 			r_list_append (ret, ptr);
 		}
 		free (section);
@@ -234,7 +238,9 @@ static RList* sections(RBinFile *arch) {
 		ptr->vaddr = obj->baddr;
 		ptr->size = ehdr_size;
 		ptr->vsize = ehdr_size;
-		ptr->add = false;
+		ptr->add = true;
+		if (obj->ehdr.e_type == ET_REL)
+			ptr->add = true;
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP;
 		r_list_append (ret, ptr);
 	}
@@ -406,13 +412,6 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	}
 	r->vaddr = rel->rva;
 	r->paddr = rel->offset;
-	// if object file
-	if (bin->ehdr.e_type == ET_REL) {
-		ut64 text;
-		if ((text = Elf_ (r_bin_elf_get_section_offset) (bin, ".text")) != -1) {
-			r->vaddr += text;
-		}
-	}
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
 	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; r->addend += A; r->additive = !rel->is_rela; return r
@@ -473,12 +472,6 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		}
 		break;
 	default: break;
-#if 0
-		if (!(str = Elf_(r_bin_elf_get_machine_name) (bin)))
-			break;
-		eprintf("TODO(eddyb): uninmplemented ELF reloc_convert for %s\n", str);
-		free(str);
-#endif
 	}
 
 	#undef SET
@@ -492,34 +485,147 @@ static RList* relocs(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
 	RBinElfReloc *relocs = NULL;
+	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	ut64 got_addr;
 	int i;
-
+	if (!arch || !arch->o || !arch->o->bin_obj)
+		return NULL;
+	bin = arch->o->bin_obj;
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
 	/* FIXME: This is a _temporary_ fix/workaround to prevent a use-after-
 	 * free detected by ASan that would corrupt the relocation names */
 	r_list_free (imports (arch));
-
-#if 1
-	if ((got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got")) == -1) {
-		got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->o->bin_obj, ".got.plt");
-		got_addr = 0;
+	if ((got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got")) == -1) {
+		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt");
+		if (got_addr == -1)
+			got_addr = 0;
 	}
-
+	if (got_addr < 1 && bin->ehdr.e_type == ET_REL) {
+		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.r2");
+		if (got_addr == -1)
+			got_addr = 0;
+	}
 	if (arch->o) {
-		if (!(relocs = Elf_(r_bin_elf_get_relocs) (arch->o->bin_obj)))
+		if (!(relocs = Elf_(r_bin_elf_get_relocs) (bin)))
 			return ret;
 		for (i = 0; !relocs[i].last; i++) {
-			if (!(ptr = reloc_convert (arch->o->bin_obj,
-					&relocs[i], got_addr)))
+			if (!(ptr = reloc_convert (bin, &relocs[i], got_addr)))
 				continue;
 			r_list_append (ret, ptr);
 		}
 		free (relocs);
 	}
-#endif
+	return ret;
+}
+
+#define write_into_reloc() \
+	do { \
+		ut8 *buf = malloc (strlen (s) + 1); \
+		if (!buf) break; \
+		int len = r_hex_str2bin (s, buf); \
+		iob->write_at (iob->io, rel->rva, buf, len); \
+		free (buf); \
+	} while (0) \
+
+static void __patch_reloc (RIOBind *iob, RBinElfReloc *rel, ut64 vaddr) {
+	static int times = 0;
+	char s[64];
+	times++;
+	switch (rel->type) {
+	case R_X86_64_PC32: //R_386_PC32 both have the same value
+		{
+			ut64 num = vaddr - (rel->rva + 4);
+			num  = ((num << 8) & 0xFF00FF00 ) | ((num >> 8) & 0xFF00FF);
+			//if s is equal to 0x42d we should get 0x042d that is why %04
+			snprintf (s, sizeof (s), "%04"PFMT64x, num);
+			write_into_reloc();
+		}
+		break;
+	case R_X86_64_32S:
+		{
+			st32 num = r_swap_st32(vaddr);
+			snprintf (s, sizeof (s), "%08x", num);
+			write_into_reloc();
+		}
+		break;
+	case R_X86_64_64: //R_386_32
+		{
+			ut64 num = r_swap_ut64(vaddr);
+			snprintf (s, sizeof (s), "%08"PFMT64x, num);
+			write_into_reloc();
+		}
+		break;
+	default:
+		//eprintf ("relocation %d not handle at this time\n", rel->type);
+		break;
+	}
+}
+
+static RList* patch_relocs(RBin *b) {
+	RList *ret = NULL;
+	RBinReloc *ptr = NULL;
+	RIO *io = NULL;
+	RBinObject *obj = NULL;
+	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
+	RIOSection *g = NULL, *s = NULL;
+	RListIter *iter;
+	RBinElfReloc *relcs = NULL;
+	int i;
+	ut64 n_off, n_vaddr, vaddr, size, sym_addr = 0, offset = 0;
+	if (!b) 
+		return NULL;
+	io = b->iob.get_io(&b->iob);
+	if (!io) 
+		return NULL;
+	obj = r_bin_cur_object (b);
+	if (!obj) 
+	    	return NULL;
+	bin = obj->bin_obj;
+	if (bin->ehdr.e_type != ET_REL)
+		return NULL;
+	if (!io->cached) {
+	    	eprintf (Color_YELLOW"Warning: run r2 with -e io.cache=true to fix relocations in disassembly"Color_RESET"\n");
+		//return without patch
+		return relocs (r_bin_cur(b));
+	}
+	r_list_foreach (io->sections, iter, s) {
+		if (s->offset > offset) {
+			offset = s->offset;
+			g = s;
+		}
+	}
+	if (!g)
+		return NULL;
+	n_off = g->offset + g->size;
+	n_vaddr = g->vaddr + g->vsize;
+	//reserve at least that space
+	size = bin->reloc_num * 4;
+	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_BIN_SCN_READABLE|R_BIN_SCN_MAP, ".got.r2", 0, io->desc->fd))
+		return NULL;
+	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin)))
+		return NULL;
+	if (!(ret = r_list_newf ((RListFree)free)))
+		return NULL;
+	vaddr = n_vaddr;
+	for (i = 0; !relcs[i].last; i++) {
+		if (relcs[i].sym) {
+			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym])
+				sym_addr = 0;
+			else if (relcs[i].sym < bin->symbols_by_ord_size && bin->symbols_by_ord[relcs[i].sym])
+				sym_addr = bin->symbols_by_ord[relcs[i].sym]->vaddr;
+		}
+		__patch_reloc (&b->iob, &relcs[i], sym_addr ? sym_addr : vaddr);
+		if (!(ptr = reloc_convert (bin, &relcs[i], n_vaddr)))
+			continue;
+		ptr->vaddr = sym_addr ? sym_addr : vaddr;
+		if (!sym_addr)
+			vaddr += 4;
+		r_list_append (ret, ptr);
+		sym_addr = 0;
+	}
+	free (relcs);
 	return ret;
 }
 
@@ -772,6 +878,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
+	.patch_relocs = &patch_relocs,
 	.dbginfo = &r_bin_dbginfo_elf,
 	.create = &create,
 	.write = &r_bin_write_elf,

@@ -869,14 +869,19 @@ static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 static int bin_relocs(RCore *r, int mode, int va) {
 	RList *relocs;
 	RListIter *iter;
-	RBinReloc *reloc;
+	RBinReloc *reloc = NULL;
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
 	int i = 0;
 
 	va = VA_TRUE; // XXX relocs always vaddr?
-
-	if ((relocs = r_bin_get_relocs (r->bin)) == NULL) return false;
+	//this has been created for reloc object files
+	relocs = r_bin_patch_relocs (r->bin);
+	if (!relocs) {
+		relocs = r_bin_get_relocs (r->bin);
+		if (!relocs) 
+			return false;
+	}
 
 	if (IS_MODE_RAD (mode)) r_cons_printf ("fs relocs\n");
 	if (IS_MODE_NORMAL (mode)) r_cons_printf ("[Relocations]\n");
@@ -887,8 +892,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		if (IS_MODE_SET (mode)) {
 			set_bin_relocs (r, reloc, addr, &db, &sdb_module);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr,
-				reloc->import ? reloc->import->name : "");
+			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, reloc->import ? reloc->import->name : "");
 		} else if (IS_MODE_RAD (mode)) {
 			char *reloc_name = get_reloc_name (reloc, addr);
 			if (reloc_name) {
@@ -918,6 +922,8 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				addr, reloc->paddr, bin_reloc_type_name (reloc));
 			if (reloc->import && reloc->import->name[0]) {
 				r_cons_printf (" %s", reloc->import->name);
+			} else if (reloc->symbol && reloc->symbol->name[0]) {
+				r_cons_printf (" %s", reloc->symbol->name);
 			}
 			if (reloc->addend) {
 				if (reloc->import && reloc->addend > 0) {
@@ -1531,8 +1537,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			}
 			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
 			if (section->add)
-				r_io_section_add (r->io, section->paddr, addr, section->size,
-					section->vsize, section->srwx, section->name, 0, fd);
+				r_io_section_add (r->io, section->paddr, addr, section->size, section->vsize, section->srwx, section->name, 0, fd);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
 			if (chksum) {
@@ -1673,12 +1678,16 @@ static int bin_fields(RCore *r, int mode, int va) {
 	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
 	else if (IS_MODE_RAD (mode)) r_cons_printf ("fs header\n");
 	else if (IS_MODE_NORMAL (mode)) r_cons_printf ("[Header fields]\n");
+//why this? there is an overlap in bin_sections with ehdr 
+//because there can't be two sections with the same name
+#if 0
 	else if (IS_MODE_SET (mode)) {
 		// XXX: Need more flags??
 		// this will be set even if the binary does not have an ehdr
 		int fd = r_core_file_cur_fd(r);
 		r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr", 0, fd);
 	}
+#endif
 	r_list_foreach (fields, iter, field) {
 		ut64 addr = rva (bin, field->paddr, field->vaddr, va);
 
@@ -1990,7 +1999,7 @@ static void bin_elf_versioninfo(RCore *r) {
 			snprintf (path_entry, sizeof (path_entry), "%s/entry%d", path, num_entry++);
 			if (!(sdb = sdb_ns_path (r->sdb, path_entry, 0)))
 				break;
-			
+
 			r_cons_printf ("  %03x: ", sdb_num_get (sdb, "idx", 0));
 			const char *value = NULL;
 
@@ -2097,6 +2106,8 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		ret &= bin_pdb (core, mode);
 	if ((action & R_CORE_BIN_ACC_ENTRIES))
 		ret &= bin_entry (core, mode, loadaddr, va);
+	if ((action & R_CORE_BIN_ACC_SECTIONS))
+		ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum);
 	if ((action & R_CORE_BIN_ACC_RELOCS))
 		ret &= bin_relocs (core, mode, va);
 	if ((action & R_CORE_BIN_ACC_IMPORTS))
@@ -2105,8 +2116,6 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		ret &= bin_exports (core, mode, loadaddr, va, at, name);
 	if ((action & R_CORE_BIN_ACC_SYMBOLS))
 		ret &= bin_symbols (core, mode, loadaddr, va, at, name);
-	if ((action & R_CORE_BIN_ACC_SECTIONS))
-		ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum);
 	if ((action & R_CORE_BIN_ACC_FIELDS))
 		ret &= bin_fields (core, mode, va);
 	if ((action & R_CORE_BIN_ACC_LIBS))

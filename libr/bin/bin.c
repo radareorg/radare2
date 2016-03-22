@@ -493,15 +493,15 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	}
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) o->libs = cp->libs (binfile);
-	if (cp->relocs) {
-		o->relocs = cp->relocs (binfile);
-		REBASE_PADDR (o, o->relocs, RBinReloc);
-	}
 	if (cp->sections) {
 		o->sections = cp->sections (binfile);
 		REBASE_PADDR (o, o->sections, RBinSection);
 		if (bin->filter)
 			r_bin_filter_sections (o->sections);
+	}
+	if (cp->relocs) {
+		o->relocs = cp->relocs (binfile);
+		REBASE_PADDR (o, o->relocs, RBinReloc);
 	}
 	if (cp->strings) {
 		o->strings = cp->strings (binfile);
@@ -1266,6 +1266,25 @@ R_API RBinInfo *r_bin_get_info(RBin *bin) {
 R_API RList *r_bin_get_libs(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
 	return o? o->libs: NULL;
+}
+
+
+R_API RList * r_bin_patch_relocs(RBin *bin) {
+	RBinObject *o = r_bin_cur_object (bin);
+	//r_bin_object_set_items set o->relocs but there we don't have access to io
+	//so we need to be run from bin_relocs, free the previous reloc and get the patched ones
+	static bool first = true;
+	if (first && o->plugin && o->plugin->patch_relocs) {
+		RList *tmp = o->plugin->patch_relocs (bin);
+		first = false;
+		if (!tmp) return o->relocs;
+		r_list_free (o->relocs);
+		o->relocs = tmp;
+		REBASE_PADDR (o, o->relocs, RBinReloc);
+		first = false;
+		return o->relocs;
+	}
+	return o->relocs;
 }
 
 R_API RList *r_bin_get_relocs(RBin *bin) {

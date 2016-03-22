@@ -21,6 +21,8 @@ typedef struct r_bin_elf_section_t {
 	ut64 size;
 	ut64 align;
 	ut32 flags;
+	ut32 link;
+	ut32 info;
 	char name[ELF_STRING_LENGTH];
 	int last;
 } RBinElfSection;
@@ -82,6 +84,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	Elf_(Dyn) *dyn_buf;
 	int dyn_entries;
 	int is_rela;
+	ut32 reloc_num;
 
 	ut64 version_info[DT_VERSIONTAGNUM];
 

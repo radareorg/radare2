@@ -742,6 +742,14 @@ R_API const ut8 *r_uleb128 (const ut8 *data, int datalen, ut64 *v);
 R_API const ut8 *r_uleb128_decode (const ut8 *data, int *datalen, ut64 *v);
 R_API const ut8 *r_uleb128_encode (const ut64 s, int *len);
 R_API const ut8 *r_leb128 (const ut8 *data, st64 *v);
+
+/*swap*/ //inline?
+R_API ut16 r_swap_ut16(ut16 val);
+R_API st16 r_swap_st16(st16 val);
+R_API ut32 r_swap_ut32(ut32 val);
+R_API st32 r_swap_st32(st32 val);
+R_API ut64 r_swap_ut64(ut64 val);
+R_API st64 r_swap_st64(st64 val);
 #endif
 
 /* constr */
