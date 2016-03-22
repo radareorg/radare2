@@ -46,49 +46,8 @@ static int sdbdelete(void *p, const char *k, const char *v) {
 	return 1;
 }
 static int typelist(void *p, const char *k, const char *v) {
-#define DB core->anal->sdb_types
 	RCore *core = (RCore *)p;
-	int i;
-	if (!strcmp (v, "func")) {
-		const char *rv = sdb_const_get (DB,
-						sdb_fmt (0, "func.%s.ret", k), 0);
-		r_cons_printf ("# %s %s(", rv, k);
-		for (i = 0; i < 16; i++) {
-			char *av = sdb_get (DB,
-					sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
-			if (!av) break;
-			r_str_replace_char (av, ',', ' ');
-			r_cons_printf ("%s%s", i? ", ": "", av);
-			free (av);
-		}
-		r_cons_printf (");\n");
-		// signature in pf for asf
-		r_cons_printf ("asf %s=", k);
-		// formats
-		for (i = 0; i < 16; i++) {
-			const char *fmt;
-			char *comma, *av = sdb_get (DB,
-						sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
-			if (!av) break;
-			comma = strchr (av, ',');
-			if (comma) *comma = 0;
-			fmt = sdb_const_get (DB, sdb_fmt (0, "type.%s", av), 0);
-			r_cons_printf ("%s", fmt);
-			if (comma) *comma = ',';
-			free (av);
-		}
-		// names
-		for (i = 0; i < 16; i++) {
-			char *comma, *av = sdb_get (DB,
-						sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
-			if (!av) break;
-			comma = strchr (av, ',');
-			if (comma) *comma++ = 0;
-			r_cons_printf (" %s", comma);
-			free (av);
-		}
-		r_cons_newline ();
-	}
+	r_cons_printf("tk %s = %s \n",k,v);
 	return 1;
 }
 
