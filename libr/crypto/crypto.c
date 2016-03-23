@@ -117,7 +117,7 @@ R_API int r_crypto_append(RCrypto *cry, const ut8 *buf, int len) {
 		cry->output_size += 4096 + len;
 		cry->output = realloc (cry->output, cry->output_size);
 	}
-	memcpy(cry->output + cry->output_len, buf, len);
+	memcpy (cry->output + cry->output_len, buf, len);
 	cry->output_len += len;
 	return cry->output_len;
 }
