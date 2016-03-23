@@ -370,6 +370,7 @@ static int cmd_help(void *data, const char *input) {
 			"$Xn", "", "get nth xref of function",
 			"$l", "", "opcode length",
 			"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
+			"$M", "", "address where the binary is mapped (base address)",
 			"$o", "", "here (current disk io offset)",
 			"$p", "", "getpid()",
 			"$P", "", "pid of children (only in debug)",

@@ -307,6 +307,17 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'P': return (core->dbg->pid>0)? core->dbg->pid: 0;
 		case 'f': return op.fail;
 		case 'm': return op.ptr; // memref
+		case 'M': {
+				ut64 lower = UT64_MAX;
+				RListIter *iter;
+				RIOSection *s;
+				r_list_foreach (core->io->sections, iter, s) {
+					if (!s->vaddr && s->offset) continue;
+					if (s->vaddr < lower) lower = s->vaddr;
+				}
+				return lower;
+			}
+			break;
 		case 'v': return op.val; // immediate value
 		case 'l': return op.size;
 		case 'b': return core->blocksize;
