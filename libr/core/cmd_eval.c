@@ -44,6 +44,7 @@ static void nextpal(RCore *core, int mode) {
 			if (*fn && *fn != '.') {
 				if (mode == 'p') {
 					const char *nfn = iter->n? iter->n->data: NULL;
+					if (!curtheme) return;
 					eprintf ("%s %s %s\n", nfn, curtheme, fn);
 					if (nfn && !strcmp (nfn, curtheme)) {
 						r_list_free (files);
@@ -71,8 +72,9 @@ static void nextpal(RCore *core, int mode) {
 	r_list_foreach (files, iter, fn) {
 		if (*fn && *fn != '.') {
 			if (mode == 'p') {
-				eprintf ("--> %s\n", fn);
 				const char *nfn = iter->n? iter->n->data: NULL;
+				if (!curtheme) return;
+				eprintf ("--> %s\n", fn);
 				eprintf ("%s %s %s\n", nfn, curtheme, fn);
 				if (nfn && !strcmp (nfn, curtheme)) {
 					free (curtheme);
