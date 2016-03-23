@@ -360,13 +360,9 @@ RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
 
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
-	printf ("[DEBUG] %s = %d\n", "rdi->pid", rdi->pid);
 	rdi->tid = dbg->tid;
-	printf ("[DEBUG] %s = %d\n", "rdi->tid", rdi->tid);
 	rdi->uid = kp->kp_eproc.e_ucred.cr_uid;
-	printf ("[DEBUG] %s = %d\n", "rdi->uid", rdi->uid);
 	rdi->gid = kp->kp_eproc.e_ucred.cr_gid;
-	printf ("[DEBUG] %s = %d\n", "rdi->gid", rdi->gid);
 	return rdi;
 }
 

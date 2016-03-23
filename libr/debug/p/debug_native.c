@@ -1267,16 +1267,18 @@ static int r_debug_desc_native_open (const char *path) {
 #endif
 
 static int r_debug_gcore_prepare_corefile (RDebug *dbg, const char *newcorefile) {
-#if __unix__ || (__APPLE__ && __MACH__) // XXX Due to platform specific implementation right now, only APPLE can get uid & gid.
+#if __unix__ || (__APPLE__ && __MACH__) 
+	// XXX Due to platform specific implementation right now, only APPLE can get uid & gid.
 	char *corefile[MAXPATHLEN];
 	int corefile_fd;
 	RDebugInfo *info = r_debug_info (dbg, "");
 
 	/* If the newcorefile string is empty, setup a sane default based on system defaults */
-	if (strlen (newcorefile) == 0) snprintf (corefile, MAXPATHLEN, DEFAULT_COREFILE_DEST, dbg->pid);
-	else strncpy (corefile, r_str_chop_ro (strdup (newcorefile)), MAXPATHLEN - 1);
-
-	printf ("[DEBUG] The corefile will be at '%s'\n", corefile);
+	if (strlen (newcorefile) == 0) {
+		snprintf (corefile, MAXPATHLEN, DEFAULT_COREFILE_DEST, dbg->pid);
+	} else {
+		strncpy (corefile, r_str_chop_ro (strdup (newcorefile)), MAXPATHLEN - 1);
+	}
 
   	corefile_fd = open (corefile, O_RDWR | O_CREAT | O_EXCL, 0600);
   	if (corefile_fd < 0) {
@@ -1284,17 +1286,13 @@ static int r_debug_gcore_prepare_corefile (RDebug *dbg, const char *newcorefile)
     	return corefile_fd;
   	}
 
-  	printf ("[DEBUG] Created\n");
-
   	// Change ownership
-  	printf ("[DEBUG] uid=%d, gid=%d\n", info->uid, info->gid);
   	if (fchown (corefile_fd, info->uid, info->gid) != 0) {
       	eprintf ("Failed to set core file ownership\n");
       	return -1;
-  	} else printf ("[DEBUG] Changed ownership\n");
+  	}
   	r_debug_info_free (info);
 
-  	printf ("[DEBUG] Returning (%d)\n", corefile_fd);
   	return corefile_fd;
 #else
 #warning This system doesnt has coredump file generation
@@ -1406,9 +1404,11 @@ static int xnu_get_bits_with_sysctl (pid_t pid) {
 }
 
 /* RDebug doesnt set the bits. FIXME when that is done */
-#define SAME_BITNESS(proc_pid)  (get_bits () == xnu_get_bits_with_sysctl (proc_pid))
+#define SAME_BITNESS(proc_pid)\
+	 (get_bits () == xnu_get_bits_with_sysctl (proc_pid))
 
-static void get_mach_header_sizes(int *mach_header_sz, int *segment_command_sz) {
+static void get_mach_header_sizes(int *mach_header_sz, 
+									int *segment_command_sz) {
 #if __ppc64__ || __x86_64__
 	*mach_header_sz = sizeof(struct mach_header_64);
 	*segment_command_sz = sizeof(struct segment_command_64);
@@ -1420,9 +1420,10 @@ static void get_mach_header_sizes(int *mach_header_sz, int *segment_command_sz) 
 // XXX: What about arm?
 }
 
-#define COMMAND_SIZE(segment_count,segment_command_sz,thread_count,tstate_size)\
-	segment_count * segment_command_sz + thread_count * sizeof (struct thread_command) + \
-	tstate_size * thread_count
+#define COMMAND_SIZE(segment_count,segment_command_sz,\
+	thread_count,tstate_size)\
+	segment_count * segment_command_sz + thread_count * \
+	sizeof (struct thread_command) + tstate_size * thread_count
 
 static int mach0_build_header() {
 
@@ -1509,7 +1510,6 @@ cleanup:
 static int r_debug_gcore (RDebug *dbg, char *newcorefile) {
 	#if __APPLE__
 		int result = mach0_generate_corefile (dbg, newcorefile);
-		eprintf ("Se ha terminado: %d\n", result); 
 		return 0; // FIXME: r2 crashes when returning from here
 	#else
 		return -1;
