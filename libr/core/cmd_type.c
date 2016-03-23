@@ -55,6 +55,48 @@ static int sdbdelete(void *p, const char *k, const char *v) {
 }
 static int typelist(void *p, const char *k, const char *v) {
 	r_cons_printf ("tk %s = %s \n", k, v);
+#if 0
+	if (!strcmp (v, "func")) {
+		const char *rv = sdb_const_get (DB,
+						sdb_fmt (0, "func.%s.ret", k), 0);
+		r_cons_printf ("# %s %s(", rv, k);
+		for (i = 0; i < 16; i++) {
+			char *av = sdb_get (DB,
+					sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
+			if (!av) break;
+			r_str_replace_char (av, ',', ' ');
+			r_cons_printf ("%s%s", i? ", ": "", av);
+			free (av);
+		}
+		r_cons_printf (");\n");
+		// signature in pf for asf
+		r_cons_printf ("asf %s=", k);
+		// formats
+		for (i = 0; i < 16; i++) {
+			const char *fmt;
+			char *comma, *av = sdb_get (DB,
+						sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
+			if (!av) break;
+			comma = strchr (av, ',');
+			if (comma) *comma = 0;
+			fmt = sdb_const_get (DB, sdb_fmt (0, "type.%s", av), 0);
+			r_cons_printf ("%s", fmt);
+			if (comma) *comma = ',';
+			free (av);
+		}
+		// names
+		for (i = 0; i < 16; i++) {
+			char *comma, *av = sdb_get (DB,
+						sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
+			if (!av) break;
+			comma = strchr (av, ',');
+			if (comma) *comma++ = 0;
+			r_cons_printf (" %s", comma);
+			free (av);
+		}
+		r_cons_newline ();
+	}
+#endif
 	return 1;
 }
 
@@ -72,12 +114,12 @@ static int cmd_type(void *data, const char *input) {
 				"tu?", "", "show this help",
 				NULL };
 			r_core_cmd_help (core, help_message);
-		} break;
+			} break;
 		case 0:
 			sdb_foreach (core->anal->sdb_types, stdprintifunion, core);
 			break;
-		}break;
-
+		}
+		break;
 	case 'k':
 		if (input[1] == ' ') {
 			sdb_query (core->anal->sdb_types, input + 2);
@@ -277,7 +319,6 @@ static int cmd_type(void *data, const char *input) {
 			const char *help_message[] = {
 				"Usage: t-", " <type>", "Delete type by its name",
 				NULL };
-
 			r_core_cmd_help (core, help_message);
 		} else if (input[1] == '*') {
 			sdb_foreach (core->anal->sdb_types, sdbdelete, core);
@@ -287,14 +328,14 @@ static int cmd_type(void *data, const char *input) {
 			if (*name) {
 				SdbKv *kv;
 				SdbListIter *iter;
-				char*type =sdb_const_get (core->anal->sdb_types, name, 0);
-				if(!type)
+				const char *type = sdb_const_get (core->anal->sdb_types, name, 0);
+				if (!type)
 					break;
-				int tmp_len = strlen (name)+strlen(type);
+				int tmp_len = strlen (name)+strlen (type);
 				char *tmp = malloc (tmp_len + 1);
 				r_anal_type_del (core->anal, name);
 				if (tmp) {
-					snprintf (tmp, tmp_len + 1, "%s.%s.",type, name);
+					snprintf (tmp, tmp_len + 1, "%s.%s.", type, name);
 					SdbList *l = sdb_foreach_list (core->anal->sdb_types);
 					ls_foreach (l, iter, kv) {
 						if (!strncmp (kv->key, tmp, tmp_len))
