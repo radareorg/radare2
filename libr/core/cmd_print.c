@@ -1761,7 +1761,6 @@ static int cmd_print(void *data, const char *input) {
 	int ret = 0;
 	ut64 off, from, to, at, ate, piece;
 	ut32 tbs = core->blocksize;
-	ut8 *ptr = core->block;
 	RCoreAnalStats *as;
 	ut64 n;
 	ut64 tmpseek = UT64_MAX;
@@ -1833,7 +1832,6 @@ static int cmd_print(void *data, const char *input) {
 			goto beach;
 		}
 	}
-	ptr = core->block;
 	core->num->value = len;
 	if (len>core->blocksize)
 		len = core->blocksize;

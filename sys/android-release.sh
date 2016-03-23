@@ -5,7 +5,7 @@ R2B="${PWD}/../radare2-bin"
 R2T="${PWD}"
 
 ARCHS="arm mips aarch64 x86"
-v=0.10.0
+v=0.10.2-git
 
 if [ -n "$1" ]; then
 	ARCHS="$@"

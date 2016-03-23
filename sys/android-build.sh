@@ -195,3 +195,4 @@ echo `pwd`"/${D}.tar.gz"
 echo `pwd`"/${D}-${D2}.tar.gz"
 
 adb push `pwd`"/${D}-${D2}.tar.gz" /sdcard/radare2-android.tar.gz || true
+exit 0

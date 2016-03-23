@@ -1074,12 +1074,12 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 
 // TODO: rename to ds_show_flags
 static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
-	const char *beginch;
+	//const char *beginch;
 	RFlagItem *flag;
 	RListIter *iter;
 	RAnalFunction *f;
 	const RList /*RFlagList*/ *flaglist;
-	bool printed = false;
+	//bool printed = false;
 
 	if (!ds->show_flags) {
 		return;
@@ -1108,7 +1108,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 		}
 		if (ds->show_color)
 			r_cons_strcat (ds->color_flag);
-		beginch = (iter->p && printed) ? ", " : "";
+		//beginch = (iter->p && printed) ? ", " : "";
 		if (ds->asm_demangle) {
 			const char *lang = r_config_get (core->config, "bin.lang");
 			char *name = r_bin_demangle (core->bin->cur, lang, flag->realname);
@@ -1117,7 +1117,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 		} else {
 			r_cons_printf ("%s:\n", flag->name);
 		}
-		printed = true;
+		//printed = true;
 	}
 	if (ds->show_spacy) {
 		if (!r_list_empty (flaglist)) {

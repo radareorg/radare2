@@ -10,6 +10,9 @@ static bool nextpal_item(RCore *core, int mode, const char *file) {
 	case 'l': // list
 		r_cons_printf ("%s\n", fn);
 		break;
+	case 'p': // previous
+		// TODO: move logic here
+		break;
 	case 'n': // next
 		if (getNext) {
 			curtheme = r_str_dup (curtheme, fn);
@@ -39,11 +42,25 @@ static void nextpal(RCore *core, int mode) {
 		files = r_sys_dir (home);
 		r_list_foreach (files, iter, fn) {
 			if (*fn && *fn != '.') {
-				if (!nextpal_item (core, mode, fn)) {
-					r_list_free (files);
-					files = NULL;
-					R_FREE (home);
-					goto done;
+				if (mode == 'p') {
+					const char *nfn = iter->n? iter->n->data: NULL;
+					eprintf ("%s %s %s\n", nfn, curtheme, fn);
+					if (nfn && !strcmp (nfn, curtheme)) {
+						r_list_free (files);
+						files = NULL;
+						free (curtheme);
+						eprintf ("SET %s\n", fn);
+						curtheme = strdup (fn);
+						R_FREE (home);
+						goto done;
+					}
+				} else {
+					if (!nextpal_item (core, mode, fn)) {
+						r_list_free (files);
+						files = NULL;
+						R_FREE (home);
+						goto done;
+					}
 				}
 			}
 		}
@@ -53,8 +70,20 @@ static void nextpal(RCore *core, int mode) {
 	files = r_sys_dir (R2_DATDIR"/radare2/"R2_VERSION"/cons/");
 	r_list_foreach (files, iter, fn) {
 		if (*fn && *fn != '.') {
-			if (!nextpal_item (core, mode, fn))
-				goto done;
+			if (mode == 'p') {
+				eprintf ("--> %s\n", fn);
+				const char *nfn = iter->n? iter->n->data: NULL;
+				eprintf ("%s %s %s\n", nfn, curtheme, fn);
+				if (nfn && !strcmp (nfn, curtheme)) {
+					free (curtheme);
+					eprintf ("SET %s\n", fn);
+					curtheme = strdup (fn);
+					goto done;
+				}
+			} else {
+				if (!nextpal_item (core, mode, fn))
+					goto done;
+			}
 		}
 	}
 done:
@@ -64,7 +93,7 @@ done:
 		return;
 	}
 	if (mode == 'l' && !curtheme && !r_list_empty (files)) {
-		nextpal (core, mode);
+		//nextpal (core, mode);
 	} else {
 		if (curtheme) {
 			r_core_cmdf (core, "eco %s", curtheme);
@@ -148,6 +177,7 @@ static int cmd_eval(void *data, const char *input) {
 			"ecj","","show palette in JSON",
 			"ecc","","show palette in CSS",
 			"eco"," dark|white","load white color scheme template",
+			"ecp","","load previous color theme",
 			"ecn","","load next color theme",
 			"ec"," prompt red","change color of prompt",
 			"ec"," prompt red blue","change color and background of prompt",
@@ -185,7 +215,7 @@ static int cmd_eval(void *data, const char *input) {
 				if (failed) {
 					eprintf ("Something went wrong\n");
 				}
-			} else if(input[2]=='?') {
+			} else if (input[2]=='?') {
 				eprintf ("Usage: eco [themename]  ;load theme from /usr/share/radare2/0.10.2-git/cons/\n");
 
 			} else {
@@ -202,6 +232,9 @@ static int cmd_eval(void *data, const char *input) {
 			break;
 		case 'n': // "ecn"
 			nextpal (core, 'n');
+			break;
+		case 'p': // "ecp"
+			nextpal (core, 'p');
 			break;
 		default: {
 			char *p = strdup (input + 2);

@@ -3288,7 +3288,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		cmd_agraph_print (core, input + 1);
 		break;
 	case 's': // "ags"
-		r_core_anal_graph (core, r_num_math (core->num, arg), 0);
+		r_core_anal_graph (core, r_num_math (core->num, input + 1), 0);
 		break;
 	case 't':
 		list = r_core_anal_graph_to (core, r_num_math (core->num, input + 1), 0);
@@ -3309,7 +3309,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		r_core_anal_coderefs (core, r_num_math (core->num, input + 1), input[1] == 'j'? 2: 1);
 		break;
 	case 0: // "ag"
-		r_core_anal_graph (core, r_num_math (core->num, arg), R_CORE_ANAL_GRAPHBODY);
+		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_GRAPHBODY);
 		break;
 	case 'j': // "agj"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_JSON);
