@@ -55,8 +55,8 @@ static int update (RCrypto *cry, const ut8 *buf, int len) {
     //         key_size: %d\n \
     //         columns: %d\n \
     //         rounds: %d\n", st.key, st.key_size, st.columns, st.rounds);
-
-    for (int i = 0; i < blocks; i++) {
+    int i;
+    for (i = 0; i < blocks; i++) {
         // printf("Block: %d\n", i);
         aes_encrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
         // printf("Block finished: %d\n", i);
