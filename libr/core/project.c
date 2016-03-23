@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake */
+/* radare - LGPL - Copyright 2010-2015 - pancake, maijin */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -329,6 +329,9 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_core_cmd (core, "afl*", 0);
 		r_cons_flush ();
 		r_core_cmd (core, "ah*", 0);
+		r_cons_flush ();
+		r_str_write (fd, "# types\n");
+		r_core_cmd (core, "t*", 0);
 		r_cons_flush ();
 		r_str_write (fd, "# macros\n");
 		r_core_cmd (core, "(*", 0);
