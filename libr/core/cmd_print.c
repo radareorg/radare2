@@ -1379,7 +1379,7 @@ static void printraw (RCore *core, int len, int mode) {
 }
 
 // TODO: this is just a PoC, the disasm loop should be rewritten
-static void disasm_strings(RCore *core, const char *input) {
+static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 #define MYPAL(x) (core->cons && core->cons->pal.x)? core->cons->pal.x: ""
 	const char *linecolor = NULL;
 	char *ox, *qo, *string = NULL;
@@ -1475,30 +1475,69 @@ static void disasm_strings(RCore *core, const char *input) {
 			string2 = NULL;
 		}
 
-		if (addr != UT64_MAX && string && *string) {
+		if (addr != UT64_MAX) {
 			const char *str = NULL;
-			if (string && !strncmp (string, "0x", 2)) str = string;
-			if (string2 && !strncmp (string2, "0x", 2)) str = string2;
-			RFlagItem *flag = str? r_flag_get_i2 (core->flags, r_num_math (NULL, str)): NULL;
-			if (!flag) {
-				if (string && !strncmp (string, "0x", 2)) {
-					R_FREE (string);
+			if (fcn) {
+				bool label = false;
+				/* show labels, basic blocks and (conditional) branches */
+				RAnalBlock *bb;
+				RListIter *iter;
+				r_list_foreach (fcn->bbs, iter, bb) {
+					if (addr == bb->jump) {
+						r_cons_printf ("%s0x%08"PFMT64x":\n", use_color? Color_YELLOW:"", addr);
+						label = true;
+						break;
+					}
 				}
-				if (string2 && !strncmp (string2, "0x", 2)) {
-					R_FREE (string2);
+				if (!label && strstr (line, "->")) {
+					r_cons_printf ("%s0x%08"PFMT64x":\n", use_color? Color_YELLOW:"", addr);
+				}
+				if (strstr (line, "=<")) {
+					r_list_foreach (fcn->bbs, iter, bb) {
+						if (addr >= bb->addr && addr < bb->addr + bb->size) {
+							const char *op;
+							if (use_color) {
+								op = (bb->fail == UT64_MAX)? Color_GREEN"jmp": "cjmp";
+							} else {
+								op = (bb->fail == UT64_MAX)? "jmp": "cjmp";
+							}
+							r_cons_printf ("%s0x%08"PFMT64x" %s 0x%08"PFMT64x"%s\n",
+									use_color? MYPAL(offset):"", addr, op,
+									bb->jump, use_color?Color_RESET:"");
+							break;
+						}
+					}
 				}
 			}
-			if (string) {
-				if (use_color) {
-					r_cons_printf ("%s0x%08"PFMT64x"%s %s%s%s%s%s%s%s\n",
-						MYPAL(offset), addr, Color_RESET,
-						linecolor? linecolor: "",
-						string2?string2:"", string2?" ":"", string,
-						flag?" ":"", flag?flag->name:"", Color_RESET);
-				} else {
-					r_cons_printf ("0x%08"PFMT64x" %s%s%s%s%s\n", addr,
-						string2?string2:"", string2?" ":"", string,
-						flag?" ":"", flag?flag->name:"");
+			if (string && *string) {
+				if (string && !strncmp (string, "0x", 2)) str = string;
+				if (string2 && !strncmp (string2, "0x", 2)) str = string2;
+
+				ut64 ptr = r_num_math (NULL, str);
+				RFlagItem *flag = NULL;
+				if (str) {
+					flag = r_flag_get_i2 (core->flags, ptr);
+				}
+				if (!flag) {
+					if (string && !strncmp (string, "0x", 2)) {
+						R_FREE (string);
+					}
+					if (string2 && !strncmp (string2, "0x", 2)) {
+						R_FREE (string2);
+					}
+				}
+				if (string) {
+					if (use_color) {
+						r_cons_printf ("%s0x%08"PFMT64x"%s %s%s%s%s%s%s%s\n",
+								MYPAL(offset), addr, Color_RESET,
+								linecolor? linecolor: "",
+								string2? string2: "", string2? " ":"", string,
+								flag?" ":"", flag?flag->name:"", Color_RESET);
+					} else {
+						r_cons_printf ("0x%08"PFMT64x" %s%s%s%s%s\n", addr,
+								string2?string2:"", string2?" ":"", string,
+								flag?" ":"", flag?flag->name:"");
+					}
 				}
 			}
 		}
@@ -2355,13 +2394,32 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 's': // "pds"
-			disasm_strings (core, input);
+		case 's': // "pds" and "pdsf"
 			processed_cmd = true;
+			if (input[2] == '?') {
+				r_cons_printf ("Usage: pds[f]  - sumarize N bytes or function (pdfs)\n");
+			} else {
+				disasm_strings (core, input, NULL);
+			}
 			break;
 		case 'f': // "pdf"
 			processed_cmd = true;
-			{
+			if (input[2] == '?') {
+				r_cons_printf ("Usage: pdf[sj]  - disassemble function (summary+cjmp), json)\n");
+			} else if (input[2] == 's') {
+				ut64 oseek = core->offset;
+				int oblock = core->blocksize;
+				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+				if (f) {
+					r_core_seek (core, oseek, SEEK_SET);
+					r_core_block_size (core, f->size);
+					disasm_strings (core, input, f);
+					r_core_block_size (core, oblock);
+					r_core_seek (core, oseek, SEEK_SET);
+				}
+				processed_cmd = true;
+			} else {
 				ut32 bsz = core->blocksize;
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
@@ -2446,7 +2504,7 @@ static int cmd_print(void *data, const char *input) {
 				"pdi", "", "like 'pi', with offset and bytes",
 				"pdl", "", "show instruction sizes",
 				//"pds", "", "disassemble with back sweep (greedy disassembly backwards)",
-				"pds", "", "disassemble only strings (see pdsf)",
+				"pds", "", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
 				"pdt", "", "disassemble the debugger traces (see atd)",
 				NULL};
 				r_core_cmd_help (core, help_msg);
