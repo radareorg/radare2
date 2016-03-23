@@ -1396,6 +1396,10 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			eprintf ("Cannot find function.\n");
 			return;
 		}
+	} else if (!strncmp (input, "ds ", 3)) {
+		char *cmd = r_str_newf ("pD %s", input+3);
+		line = s = r_core_cmd_strf (core, cmd);
+		free (cmd);
 	} else {
 		line = s = r_core_cmd_str (core, "pd");
 	}

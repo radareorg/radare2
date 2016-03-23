@@ -415,6 +415,7 @@ static char *backup = NULL;
 static int backup_len = 0;
 static int backup_size = 0;
 
+// XXX this must be a stack
 R_API void r_cons_push() {
 	if (!backup) {
 		if (I.buffer_len<1)
