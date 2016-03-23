@@ -6,6 +6,7 @@
 #include <r_reg.h>
 #include <r_lib.h>
 #include <r_anal.h>
+#include <r_util.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/param.h>
@@ -1259,6 +1260,262 @@ static int r_debug_desc_native_open (const char *path) {
 	return 0;
 }
 
+#if __APPLE__
+#define DEFAULT_COREFILE_DEST "/cores/core.%u"
+#else
+#define DEFAULT_COREFILE_DEST "" // Must set for specific platform
+#endif
+
+static int r_debug_gcore_prepare_corefile (RDebug *dbg, const char *newcorefile) {
+#if __unix__ || (__APPLE__ && __MACH__) // XXX Due to platform specific implementation right now, only APPLE can get uid & gid.
+	char *corefile[MAXPATHLEN];
+	int corefile_fd;
+	RDebugInfo *info = r_debug_info (dbg, "");
+
+	/* If the newcorefile string is empty, setup a sane default based on system defaults */
+	if (strlen (newcorefile) == 0) snprintf (corefile, MAXPATHLEN, DEFAULT_COREFILE_DEST, dbg->pid);
+	else strncpy (corefile, r_str_chop_ro (strdup (newcorefile)), MAXPATHLEN - 1);
+
+	printf ("[DEBUG] The corefile will be at '%s'\n", corefile);
+
+  	corefile_fd = open (corefile, O_RDWR | O_CREAT | O_EXCL, 0600);
+  	if (corefile_fd < 0) {
+    	perror ("open");
+    	return corefile_fd;
+  	}
+
+  	printf ("[DEBUG] Created\n");
+
+  	// Change ownership
+  	printf ("[DEBUG] uid=%d, gid=%d\n", info->uid, info->gid);
+  	if (fchown (corefile_fd, info->uid, info->gid) != 0) {
+      	eprintf ("Failed to set core file ownership\n");
+      	return -1;
+  	} else printf ("[DEBUG] Changed ownership\n");
+  	r_debug_info_free (info);
+
+  	printf ("[DEBUG] Returning (%d)\n", corefile_fd);
+  	return corefile_fd;
+#else
+#warning This system doesnt has coredump file generation
+#endif
+}
+
+static int get_bits () {
+#if __i386__ || __powerpc__
+	return R_SYS_BITS_32;
+#elif __x86_64__ || __mips__
+	return R_SYS_BITS_32 | R_SYS_BITS_64;
+#elif __arm__ || __aarch64__
+	return R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64;
+#else
+	return 0;
+#warning Unsupported architecture
+#endif
+}
+
+#if __APPLE__
+
+typedef struct {
+    int flavor;
+    mach_msg_type_number_t count;
+} coredump_thread_state_flavor_t;
+
+#if defined (__ppc__)
+
+static coredump_thread_state_flavor_t
+thread_flavor_array[] = {
+    { PPC_THREAD_STATE,    PPC_THREAD_STATE_COUNT    },
+    { PPC_FLOAT_STATE,     PPC_FLOAT_STATE_COUNT     },
+    { PPC_EXCEPTION_STATE, PPC_EXCEPTION_STATE_COUNT },
+    { PPC_VECTOR_STATE,    PPC_VECTOR_STATE_COUNT    },
+};
+
+static int coredump_nflavors = 4;
+
+#elif defined (__ppc64__)
+
+coredump_thread_state_flavor_t
+thread_flavor_array[] = {
+    { PPC_THREAD_STATE64,    PPC_THREAD_STATE64_COUNT    },
+    { PPC_FLOAT_STATE,       PPC_FLOAT_STATE_COUNT       }, 
+    { PPC_EXCEPTION_STATE64, PPC_EXCEPTION_STATE64_COUNT },
+    { PPC_VECTOR_STATE,      PPC_VECTOR_STATE_COUNT      },
+};
+
+static int coredump_nflavors = 4;
+
+#elif defined (__i386__)
+
+static coredump_thread_state_flavor_t
+thread_flavor_array[] = { 
+    { x86_THREAD_STATE32,    x86_THREAD_STATE32_COUNT    },
+    { x86_FLOAT_STATE32,     x86_FLOAT_STATE32_COUNT     },
+    { x86_EXCEPTION_STATE32, x86_EXCEPTION_STATE32_COUNT },
+};
+
+static int coredump_nflavors = 3;
+
+#elif defined (__x86_64__)
+
+static coredump_thread_state_flavor_t
+thread_flavor_array[] = { 
+    { x86_THREAD_STATE64,    x86_THREAD_STATE64_COUNT    },
+    { x86_FLOAT_STATE64,     x86_FLOAT_STATE64_COUNT     },
+    { x86_EXCEPTION_STATE64, x86_EXCEPTION_STATE64_COUNT },
+};
+
+static int coredump_nflavors = 3;
+
+#else
+// XXX: Add __arm__ for iOS devices?
+#warning Unsupported architecture
+
+#endif
+
+#define MAX_TSTATE_FLAVORS 10
+
+typedef struct {
+    vm_offset_t header; 
+    int         hoffset;
+    int         tstate_size;
+    coredump_thread_state_flavor_t *flavors;
+} tir_t;
+
+static int xnu_get_bits_with_sysctl (pid_t pid) {
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, 0 };
+	size_t len = 4;
+	struct kinfo_proc kp;
+	size_t kinfo_size = sizeof (kp);
+
+	mib[3] = pid;
+	if (sysctl (mib, len, &kp, &kinfo_size, NULL, 0) == -1) {
+    	perror ("sysctl");
+    	return -1;
+  	} else {
+#if __arm__ || __aarch64__
+    	return (kp.kp_proc.p_flag & P_LP64) ? 
+    				R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64 
+    				: R_SYS_BITS_16 | R_SYS_BITS_32;
+#else
+    	return (kp.kp_proc.p_flag & P_LP64) ? 
+    				R_SYS_BITS_32 | R_SYS_BITS_64 
+    				: R_SYS_BITS_32;
+#endif
+  	}
+}
+
+/* RDebug doesnt set the bits. FIXME when that is done */
+#define SAME_BITNESS(proc_pid)  (get_bits () == xnu_get_bits_with_sysctl (proc_pid))
+
+static void get_mach_header_sizes(int *mach_header_sz, int *segment_command_sz) {
+#if __ppc64__ || __x86_64__
+	*mach_header_sz = sizeof(struct mach_header_64);
+	*segment_command_sz = sizeof(struct segment_command_64);
+#elif __i386__ || __ppc__
+	*mach_header_sz = sizeof(struct mach_header);
+	*segment_command_sz = sizeof(struct segment_command);
+#else
+#endif
+// XXX: What about arm?
+}
+
+#define COMMAND_SIZE(segment_count,segment_command_sz,thread_count,tstate_size)\
+	segment_count * segment_command_sz + thread_count * sizeof (struct thread_command) + \
+	tstate_size * thread_count
+
+static int mach0_build_header() {
+
+}
+
+static int mach0_generate_corefile (RDebug *dbg, char *newcorefile) {
+	int error = 0, i;
+	int is_64 = 0;
+	int tstate_size;
+	int segment_count;
+    int command_size;
+	int header_size;
+	size_t mach_header_sz;
+    size_t segment_command_sz;
+
+    vm_offset_t header;
+    RListIter *iter, *iter2;
+    RList *threads_list;
+    task_t task = pid_to_task (dbg->pid);
+    coredump_thread_state_flavor_t flavors[MAX_TSTATE_FLAVORS];
+
+	// TODO: Get cpu_type & cpu_subtype
+
+	if (!SAME_BITNESS (dbg->pid)) {
+		eprintf ("The process has a different bitness");
+		return false;
+	}
+
+	int corefile_fd = r_debug_gcore_prepare_corefile (dbg, newcorefile);
+	if (corefile_fd < 0) {
+		eprintf ("Could not create corefile to dump\n");
+		return false;
+	}
+
+	get_mach_header_sizes (&mach_header_sz, &segment_command_sz);
+    (void)task_suspend(task);
+    threads_list = xnu_thread_list (dbg, dbg->pid, r_list_new ());
+    xnu_dealloc_threads (threads_list);
+
+    segment_count = xnu_get_vmmap_entries_for_pid (dbg->pid);
+
+    bcopy(thread_flavor_array, flavors, sizeof(thread_flavor_array));
+    tstate_size = 0;
+
+    for (i = 0; i < coredump_nflavors; i++) {
+        tstate_size += sizeof(coredump_thread_state_flavor_t) +
+                              (flavors[i].count * sizeof(int));
+    }
+
+    command_size = COMMAND_SIZE (segment_count,segment_command_sz, 
+    	r_list_length (threads_list), tstate_size);
+
+    header_size = command_size + mach_header_sz;
+
+    header = (vm_offset_t)malloc(header_size);
+    memset((void *)header, 0, header_size);
+    /*
+    if (is_64) {
+        mh64             = (struct mach_header_64 *)header;
+        mh64->magic      = MH_MAGIC_64;
+        mh64->cputype    = cpu_type;
+        mh64->cpusubtype = cpu_subtype;
+        mh64->filetype   = MH_CORE;
+        mh64->ncmds      = segment_count + thread_count;
+        mh64->sizeofcmds = command_size;
+        mh64->reserved   = 0; // 8-byte alignment 
+    } else {
+        mh               = (struct mach_header *)header;
+        mh->magic        = MH_MAGIC;
+        mh->cputype      = cpu_type;
+        mh->cpusubtype   = cpu_subtype;
+        mh->filetype     = MH_CORE;
+        mh->ncmds        = segment_count + thread_count;
+        mh->sizeofcmds   = command_size;
+    }
+	*/
+cleanup:
+	if (corefile_fd >= 0) close (corefile_fd);
+	return error;
+}
+
+#endif
+
+static int r_debug_gcore (RDebug *dbg, char *newcorefile) {
+	#if __APPLE__
+		int result = mach0_generate_corefile (dbg, newcorefile);
+		eprintf ("Se ha terminado: %d\n", result); 
+		return 0; // FIXME: r2 crashes when returning from here
+	#else
+		return -1;
+	#endif
+}
+
 struct r_debug_desc_plugin_t r_debug_desc_plugin_native = {
 	.open = r_debug_desc_native_open,
 	.list = r_debug_desc_native_list,
@@ -1315,7 +1572,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.frames = &r_debug_native_frames, // rename to backtrace ?
 	.reg_profile = (void *)r_debug_native_reg_profile,
 	.reg_read = r_debug_native_reg_read,
-        .info = r_debug_native_info,
+    .info = r_debug_native_info,
 	.reg_write = (void *)&r_debug_native_reg_write,
 	.map_alloc = r_debug_native_map_alloc,
 	.map_dealloc = r_debug_native_map_dealloc,
@@ -1324,6 +1581,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.map_protect = r_debug_native_map_protect,
 	.breakpoint = r_debug_native_bp,
 	.drx = r_debug_native_drx,
+	.gcore = r_debug_gcore,
 };
 
 #ifndef CORELIB

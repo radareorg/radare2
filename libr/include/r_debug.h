@@ -236,6 +236,7 @@ typedef struct r_debug_plugin_t {
 	int (*cont)(RDebug *dbg, int pid, int tid, int sig);
 	int (*wait)(RDebug *dbg, int pid);
 	int (*kill)(RDebug *dbg, int pid, int tid, int sig);
+	int (*gcore)(RDebug *dbg, char *newcorefile);
 	RList* (*kill_list)(RDebug *dbg);
 	int (*contsc)(RDebug *dbg, int pid, int sc);
 	RList* (*frames)(RDebug *dbg, ut64 at);
@@ -433,6 +434,9 @@ R_API int r_debug_snap(RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_comment (RDebug *dbg, int idx, const char *msg);
 R_API int r_debug_snap_all(RDebug *dbg, int perms);
 R_API RDebugSnap* r_debug_snap_get (RDebug *dbg, ut64 addr);
+
+/* core */
+//R_API int r_debug_gcore(RDebug *dbg, char *newcorefile);
 
 /* plugin pointers */
 extern RDebugPlugin r_debug_plugin_native;

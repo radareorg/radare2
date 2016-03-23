@@ -3131,7 +3131,8 @@ static int cmd_debug(void *data, const char *input) {
 		r_core_debug_esil (core, input + 1);
 		break;
 	case 'g':
-		r_debug_gcore(NULL,"");
+		if (core->dbg->h && core->dbg->h->gcore) core->dbg->h->gcore (core->dbg, input + 1);
+		eprintf ("Se ha llamado al plugin");
 		break;
 	default: {
 			const char* help_msg[] = {
