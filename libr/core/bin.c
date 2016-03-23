@@ -504,15 +504,14 @@ static int bin_info(RCore *r, int mode) {
 		pair_str ("rpath", info->rpath, mode, false);
 		pair_str ("binsz", size_str, mode, false);
 		pair_str ("compiled", compiled, mode, false);
-		pair_str ("guid", info->guid, mode, false);
-		pair_str ("dbg_file", info->debug_file_name, mode, true);
+		pair_str ("dbg_file", info->debug_file_name, mode, false);
 		if (info->claimed_checksum) {
 			/* checksum specified in header */
-			pair_str ("hdr_cksum", info->claimed_checksum, mode, true);
+			pair_str ("hdr_cksum", info->claimed_checksum, mode, false);
 		}
 		if (info->actual_checksum) {
 			/* computed checksum */
-			pair_str ("cmp_cksum", info->actual_checksum, mode, true);
+			pair_str ("cmp_cksum", info->actual_checksum, mode, false);
 		}
 
 		// checksums are only supported for pe atm
@@ -538,6 +537,7 @@ static int bin_info(RCore *r, int mode) {
 			}
 			r_cons_newline ();
 		}
+		pair_str ("guid", info->guid, mode, true);
 		if (IS_MODE_JSON (mode)) r_cons_printf ("}");
 	}
 	return true;
