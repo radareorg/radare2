@@ -367,9 +367,9 @@ R_API char *r_bin_demangle (RBinFile *binfile, const char *def, const char *str)
 	case R_BIN_NM_JAVA: return r_bin_demangle_java (str);
 	/* rust uses the same mangling as c++ and appends a uniqueid */
 	case R_BIN_NM_RUST: return r_bin_demangle_cxx (str);
-	case R_BIN_NM_CXX: return r_bin_demangle_cxx (str);
 	case R_BIN_NM_OBJC: return r_bin_demangle_objc (NULL, str);
 	case R_BIN_NM_SWIFT: return r_bin_demangle_swift (str);
+	case R_BIN_NM_CXX: return r_bin_demangle_cxx (str);
 	case R_BIN_NM_DLANG: return r_bin_demangle_plugin (bin, "dlang", str);
 	}
 	return NULL;

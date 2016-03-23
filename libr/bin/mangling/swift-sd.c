@@ -1,6 +1,7 @@
 /* work-in-progress reverse engineered swift-demangler in C by pancake@nopcode.org */
 #include <stdio.h>
 #include <string.h>
+#include <r_util.h>
 #include <stdlib.h>
 
 #define HAS_MAIN 0
@@ -71,7 +72,7 @@ static const char *numpos(const char* n) {
 
 static const char *getstring(const char *s, int len) {
 	static char buf[256];
-	if (len<0 || len>sizeof(buf)-2)
+	if (len < 0 || len > sizeof (buf) - 2)
 		return NULL;
 	strncpy (buf, s, len);
 	buf[len] = 0;
@@ -83,7 +84,7 @@ static const char *resolve (struct Type *t, const char *foo, const char **bar) {
 		int len = strlen (t[0].code);
 		if (!strncmp (foo, t[0].code, len)) {
 			*bar = t[0].name;
-			return foo+len;
+			return foo + len;
 		}
 	}
 	return NULL;
@@ -104,8 +105,8 @@ char *r_bin_demangle_swift(const char *s) {
 	int is_first = 1;
 	int is_last = 0;
 	int retmode = 0;
-	if (!strncmp (s, "__", 2)) s = s+2;
-	if (!strncmp (s, "imp.", 4)) s = s+4;
+	if (!strncmp (s, "__", 2)) s = s + 2;
+	if (!strncmp (s, "imp.", 4)) s = s + 4;
 #if 0
 	const char *element[] = {
 		"module", "class", "method", NULL
@@ -115,7 +116,18 @@ char *r_bin_demangle_swift(const char *s) {
 	const char *attr2 = NULL;
 	const char *q, *p = s;
 	if (strncmp (s, "_T", 2))
-		return 0;
+		return NULL;
+
+	char *swift_demangle = r_file_path ("swift-demangle");
+	if (swift_demangle) {
+		char *res = r_sys_cmd_strf ("%s -compact -simplified %s",
+			swift_demangle, s);
+		if (res && !*res) {
+			free (res);
+			res = NULL;
+		}
+		return res;
+	}
 	out[0] = 0;
 	p += 2;
 	if (*p == 'F' || *p == 'W') {
@@ -186,11 +198,12 @@ char *r_bin_demangle_swift(const char *s) {
 			/* parse function parameters here */
 			// type len value
 			for (i=0; q; i++) {
-
 				switch (*q) {
+				case 'B':
+				case 'T':
+				case 'I':
 				case 'F':
 					p = resolve (types, q+3, &attr); // type
-q+=3;
 					break;
 				case 'G':
 					q+=2;
