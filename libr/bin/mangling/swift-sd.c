@@ -119,6 +119,13 @@ char *r_bin_demangle_swift(const char *s) {
 		return NULL;
 
 	char *swift_demangle = r_file_path ("swift-demangle");
+	if (!swift_demangle || !strcmp (swift_demangle, "swift-demangle")) {
+		char *xcrun = r_file_path ("xcrun");
+		if (xcrun) {
+			swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
+			free (xcrun);
+		}
+	}
 	if (swift_demangle) {
 		char *res = r_sys_cmd_strf ("%s -compact -simplified %s",
 			swift_demangle, s);
