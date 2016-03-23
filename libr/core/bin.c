@@ -1759,14 +1759,19 @@ static int bin_classes(RCore *r, int mode) {
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			if (c->super) {
-				r_cons_printf ("%s{\"name\":\"%s\",\"addr\":%"PFMT64d",\"index\":%"PFMT64d",\"super\":\"%s\"}",
+				r_cons_printf ("%s{\"classname\":\"%s\",\"addr\":%"PFMT64d",\"index\":%"PFMT64d",\"super\":\"%s\",\"methods\":[",
 					iter->p ? "," : "", c->name, c->addr,
 					c->index, c->super);
 			} else {
-				r_cons_printf ("%s{\"name\":\"%s\",\"addr\":%"PFMT64d",\"index\":%"PFMT64d"}",
+				r_cons_printf ("%s{\"classname\":\"%s\",\"addr\":%"PFMT64d",\"index\":%"PFMT64d",\"methods\":[",
 					iter->p ? "," : "", c->name, c->addr,
 					c->index);
 			}
+			r_list_foreach (c->methods, iter2, sym) {
+				r_cons_printf ("%s{\"name\":\"%s\",\"addr\":%"PFMT64d"}",
+					iter2->p? ",": "", sym->name, sym->vaddr);
+			}
+			r_cons_printf ("]}");
 		} else {
 			int m = 0;
 			r_cons_printf ("0x%08"PFMT64x" class %d %s",
