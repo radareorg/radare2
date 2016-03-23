@@ -3148,6 +3148,10 @@ static int cmd_debug(void *data, const char *input) {
 	case 'e':
 		r_core_debug_esil (core, input + 1);
 		break;
+	case 'g':
+		if (core->dbg->h && core->dbg->h->gcore) core->dbg->h->gcore (core->dbg, input + 1);
+		eprintf ("Se ha llamado al plugin");
+		break;
 	default: {
 			const char* help_msg[] = {
 			"Usage:", "d", " # Debug commands",
@@ -3156,6 +3160,7 @@ static int cmd_debug(void *data, const char *input) {
 			"dc", "[?]", "Continue execution",
 			"dd", "[?]", "File descriptors (!fd in r1)",
 			"de", "[-sc] [rwx] [rm] [e]", "Debug with ESIL (see de?)",
+			"dg", " <file>", "Dump a corefile (WIP)",
 			"dh", " [handler]", "List or set debugger handler",
 			"dH", " [handler]", "Transplant process to a new handler",
 			"di", "", "Show debugger backend information (See dh)",

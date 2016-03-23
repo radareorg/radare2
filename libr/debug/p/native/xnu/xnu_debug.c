@@ -337,14 +337,36 @@ int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	return true;
 }
 
+static int xnu_get_kinfo_proc (int pid, struct kinfo_proc *kp) {
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, 0 };
+	int len = 4;
+
+	mib[3] = pid;
+	if (sysctl (mib, len, kp, &len, NULL, 0) == -1) {
+    	perror ("sysctl");
+    	return -1;
+  	} else {
+    	return 0;
+  	}
+
+}
+
 RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
 	if (!rdi) return NULL;
+	struct kinfo_proc *kp; // XXX This need to be freed?
+
+	xnu_get_kinfo_proc(dbg->pid, kp);
+
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
+	printf ("[DEBUG] %s = %d\n", "rdi->pid", rdi->pid);
 	rdi->tid = dbg->tid;
-	rdi->uid = -1;// TODO
-	rdi->gid = -1;// TODO
+	printf ("[DEBUG] %s = %d\n", "rdi->tid", rdi->tid);
+	rdi->uid = kp->kp_eproc.e_ucred.cr_uid;
+	printf ("[DEBUG] %s = %d\n", "rdi->uid", rdi->uid);
+	rdi->gid = kp->kp_eproc.e_ucred.cr_gid;
+	printf ("[DEBUG] %s = %d\n", "rdi->gid", rdi->gid);
 	return rdi;
 }
 
@@ -397,6 +419,25 @@ static vm_prot_t unix_prot_to_darwin(int prot) {
                 (prot & 1 << 1) ? VM_PROT_EXECUTE : 0);
 }
 #endif
+
+int xnu_dealloc_threads (RList *threads) {
+	RListIter *iter, *iter2;
+	xnu_thread_t *thread;
+	mach_msg_type_number_t thread_count;
+	thread_array_t thread_list;
+	kern_return_t kr = KERN_SUCCESS;
+
+	kr = task_threads (task_dbg, &thread_list, &thread_count);
+	if (kr != KERN_SUCCESS) {
+		perror ("task_threads");
+	} else {
+		r_list_foreach_safe (threads, iter, iter2, thread) {
+			mach_port_deallocate (mach_task_self (), thread->port);
+		}
+		vm_deallocate (mach_task_self (), (vm_address_t)thread_list,
+			thread_count * sizeof (thread_act_t));
+	}
+}
 
 int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 	int ret;
@@ -455,6 +496,32 @@ task_t pid_to_task (int pid) {
 	old_pid = pid;
 	task_dbg = task;
 	return task;
+}
+
+int xnu_get_vmmap_entries_for_pid (pid_t pid) {
+	task_t task = pid_to_task (pid);
+	kern_return_t kr = KERN_SUCCESS;
+	vm_address_t address = 0;
+	vm_size_t size = 0;
+	int n = 1;
+
+	for(;;) {
+		mach_msg_type_number_t count;
+		struct vm_region_submap_info_64 info;
+		ut32 nesting_depth;
+
+		count = VM_REGION_SUBMAP_INFO_COUNT_64;
+		kr = vm_region_recurse_64 (task, &address, &size, &nesting_depth,
+									(vm_region_info_64_t)&info, &count);
+
+		if (kr == KERN_INVALID_ADDRESS) break;
+		else if (kr) mach_error ("vm_region:", kr); break;
+
+		if (info.is_submap) nesting_depth++;
+		else address += size; n++;
+	}
+
+	return n;
 }
 
 RDebugPid *xnu_get_pid (int pid) {

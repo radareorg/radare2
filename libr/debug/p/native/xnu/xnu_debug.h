@@ -172,6 +172,8 @@ typedef struct {
 #endif
 
 task_t pid_to_task (int pid);
+int xnu_get_vmmap_entries_for_pid (pid_t pid);
+int xnu_dealloc_threads (RList *threads);
 int xnu_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 int xnu_reg_write (RDebug *dgb, int type, const ut8 *buf, int size);
 const char *xnu_reg_profile (RDebug *dbg);

@@ -19,13 +19,13 @@ CFLAGS+=-DXNU_USE_PTRACE=$(XNU_USE_PTRACE)
 STATIC_OBJS=$(subst ..,p/..,$(subst debug_,p/debug_,$(STATIC_OBJ)))
 
 OBJS=signal.o map.o trace.o arg.o debug.o plugin.o snap.o
-OBJS+=pid.o reg.o desc.o esil.o ${STATIC_OBJS} 
+OBJS+=pid.o reg.o desc.o esil.o ${STATIC_OBJS}
 
 ifeq (${OSTYPE},darwin)
 OBJS+= p/${NATIVE_OBJS}
 endif
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
-OBJS+= p/${NATIVE_OBJS}		
+OBJS+= p/${NATIVE_OBJS}
 endif
 
 plugins:
