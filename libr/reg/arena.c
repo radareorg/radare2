@@ -73,13 +73,12 @@ R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len) {
 	int maxsz, ret = false;
 	struct r_reg_set_t *regset;
 	RRegArena *arena;
-	if (len < 0 || !buf)
+	if (len < 1 || !buf)
 		return false;
 	if (type < 0 || type >= R_REG_TYPE_LAST) return false;
 	regset = &reg->regset[type];
 	arena = regset->arena;
 	maxsz = R_MAX (arena->size, len);
-	if (len < 1) return false;
 	if ((arena->size != len) || (arena->bytes == NULL)) {
 		arena->bytes = calloc (1, maxsz);
 		if (!arena->bytes) {

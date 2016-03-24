@@ -29,7 +29,7 @@ static int r_debug_wind_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	int ret = wind_read_reg(wctx, buf, size);
 	if (!ret || size != ret)
 		return -1;
-	r_reg_set_bytes (dbg->reg, R_REG_TYPE_ALL, buf, ret);
+	r_reg_read_regs (dbg->reg, buf, ret);
 	// Report as if no register has been written as we've already updated the arena here
 	return 0;
 }
