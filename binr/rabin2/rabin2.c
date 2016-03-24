@@ -930,12 +930,20 @@ int main(int argc, char **argv) {
 	if (action & ACTION_EXTRACT) {
 		RListIter *iter;
 		RBinXtrPlugin *xtr;
+		bool supported = 0;
+
 		r_list_foreach (bin->binxtrs, iter, xtr) {
 			if (xtr->check (bin)) {
 				// xtr->extractall (bin);
 				rabin_extract ((!arch && !arch_name && !bits));
+				supported = 1;
 				break;
 			}
+		}
+
+		if (!supported) {
+			// if we reach here, no supported xtr plugins found
+			eprintf ("Cannot extract bins from '%s'. No supported plugins found!\n", bin->file);
 		}
 	}
 	if (op && action & ACTION_OPERATION)
