@@ -94,7 +94,12 @@ R_API int r_anal_type_link (RAnal *anal, const char *type, ut64 addr) {
 	// eprintf ("Cannot find type\n");
 	return false;
 }
-
+R_API int r_anal_type_unlink(RAnal *anal, ut64 addr){
+	char laddr[strlen("link.")+17];
+	snprintf (laddr, sizeof (laddr)-1, "link.%08"PFMT64x, addr);
+	r_anal_type_del(anal, laddr);
+	return true;
+}
 static void filter_type(char *t) {
 	for (;*t; t++) {
 		if (*t == ' ')
