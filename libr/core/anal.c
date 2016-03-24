@@ -232,6 +232,8 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 			r_flag_rename (core->flags, r_flag_get (core->flags, fcn->name), name);
 			free (fcn->name);
 			fcn->name = name;
+		} else {
+			free (name);
 		}
 	}
 }
