@@ -15,8 +15,11 @@
 #include <r_reg.h>
 #include <r_lib.h>
 #include <r_anal.h>
+#include <string.h>
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
+#include <mach/mach_vm.h>
+#include <mach/thread_status.h>
 
 static task_t task_dbg = 0;
 #include "xnu_debug.h"
@@ -154,10 +157,10 @@ bool xnu_step(RDebug *dbg) {
 
 int xnu_attach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
-        if (ptrace (PT_ATTACH, pid, 0, 0) == -1) {
-                perror ("ptrace (PT_ATTACH)");
-                return -1;
-        }
+		if (ptrace (PT_ATTACH, pid, 0, 0) == -1) {
+				perror ("ptrace (PT_ATTACH)");
+				return -1;
+		}
 	return pid;
 #else
 	dbg->pid = pid;
@@ -337,14 +340,40 @@ int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	return true;
 }
 
+static int xnu_get_kinfo_proc (int pid, struct kinfo_proc *kp) {
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, 0 };
+	int len = 4;
+	size_t kpl = sizeof (struct kinfo_proc);
+
+	mib[3] = pid;
+	if (sysctl (mib, len, kp, &kpl, NULL, 0) == -1) {
+		perror ("sysctl");
+		return -1;
+  	}
+  	if (kpl <= 0) return -1;
+	return 0;
+}
+
 RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
+	int kinfo_proc_error = 0;
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
 	if (!rdi) return NULL;
+
+	struct kinfo_proc kp; // XXX This need to be freed?
+
+	kinfo_proc_error = xnu_get_kinfo_proc(dbg->pid, &kp);
+
+	if (kinfo_proc_error) {
+		eprintf ("Error while querying the process info to sysctl\n");
+		return NULL;
+	}
+
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
-	rdi->uid = -1;// TODO
-	rdi->gid = -1;// TODO
+	rdi->uid = kp.kp_eproc.e_ucred.cr_uid;
+	rdi->gid = kp.kp_eproc.e_ucred.cr_gid;
+
 	return rdi;
 }
 
@@ -392,9 +421,9 @@ RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
 
 #if 0
 static vm_prot_t unix_prot_to_darwin(int prot) {
-        return ((prot & 1 << 4) ? VM_PROT_READ : 0 |
-                (prot & 1 << 2) ? VM_PROT_WRITE : 0 |
-                (prot & 1 << 1) ? VM_PROT_EXECUTE : 0);
+		return ((prot & 1 << 4) ? VM_PROT_READ : 0 |
+				(prot & 1 << 2) ? VM_PROT_WRITE : 0 |
+				(prot & 1 << 1) ? VM_PROT_EXECUTE : 0);
 }
 #endif
 
@@ -455,6 +484,396 @@ task_t pid_to_task (int pid) {
 	old_pid = pid;
 	task_dbg = task;
 	return task;
+}
+
+int xnu_get_vmmap_entries_for_pid (pid_t pid) {
+	task_t task = pid_to_task (pid);
+	kern_return_t kr = KERN_SUCCESS;
+	vm_address_t address = 0;
+	vm_size_t size = 0;
+	int n = 1;
+
+	for (;;) {
+		mach_msg_type_number_t count;
+		struct vm_region_submap_info_64 info;
+		ut32 nesting_depth;
+
+		count = VM_REGION_SUBMAP_INFO_COUNT_64;
+		kr = vm_region_recurse_64 (task, &address, &size, &nesting_depth,
+									(vm_region_info_64_t)&info, &count);
+
+		if (kr == KERN_INVALID_ADDRESS) break;
+		if (kr) mach_error ("vm_region:", kr); break;
+
+		if (info.is_submap) {
+			nesting_depth++;
+		} else {
+			address += size; 
+			n++;
+		}
+	}
+
+	return n;
+}
+
+static int get_bits () {
+#if __i386__ || __powerpc__
+	return R_SYS_BITS_32;
+#elif __x86_64__ || __mips__
+	return R_SYS_BITS_32 | R_SYS_BITS_64;
+#elif __arm__ || __aarch64__
+	return R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64;
+#else
+	return 0;
+#warning Unsupported architecture
+#endif
+}
+
+static int xnu_get_bits_with_sysctl (pid_t pid) {
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, 0 };
+	size_t len = 4;
+	struct kinfo_proc kp;
+	size_t kinfo_size = sizeof (kp);
+
+	mib[3] = pid;
+	if (sysctl (mib, len, &kp, &kinfo_size, NULL, 0) == -1) {
+		perror ("sysctl");
+		return -1;
+  	}
+#if __arm__ || __aarch64__
+	return (kp.kp_proc.p_flag & P_LP64) ? 
+					R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64 
+					: R_SYS_BITS_16 | R_SYS_BITS_32;
+#else
+	return (kp.kp_proc.p_flag & P_LP64) ? 
+					R_SYS_BITS_32 | R_SYS_BITS_64 
+					: R_SYS_BITS_32;
+#endif
+}
+
+#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
+#define COMMAND_SIZE(segment_count,segment_command_sz,\
+	thread_count,tstate_size)\
+	segment_count * segment_command_sz + thread_count * \
+	sizeof (struct thread_command) + tstate_size * thread_count
+
+/* RDebug doesnt set the bits. FIXME when that is done */
+#define SAME_BITNESS(proc_pid)\
+	 (get_bits () == xnu_get_bits_with_sysctl (proc_pid))
+
+static void get_mach_header_sizes(size_t *mach_header_sz, 
+									size_t *segment_command_sz) {
+#if __ppc64__ || __x86_64__
+	*mach_header_sz = sizeof(struct mach_header_64);
+	*segment_command_sz = sizeof(struct segment_command_64);
+#elif __i386__ || __ppc__
+	*mach_header_sz = sizeof(struct mach_header);
+	*segment_command_sz = sizeof(struct segment_command);
+#else
+#endif
+// XXX: What about arm?
+}
+
+// XXX: This function could use less function calls, but works.
+static cpu_type_t xnu_get_cpu_type (pid_t pid) {
+	int mib[CTL_MAXNAME];
+	size_t len = CTL_MAXNAME;
+	cpu_type_t cpu_type;
+	size_t cpu_type_len = sizeof (cpu_type_t);
+
+	if (sysctlnametomib ("sysctl.proc_cputype", mib, &len) == -1) {
+		perror ("sysctlnametomib");
+		return -1;
+	}
+
+	mib[len++] = pid;
+	if (sysctl (mib, len, &cpu_type, &cpu_type_len, NULL, 0) == -1) {
+		perror ("sysctl");
+		return -1;
+	}
+	if (cpu_type_len > 0) return cpu_type;
+	return -1;
+}
+
+static cpu_subtype_t xnu_get_cpu_subtype () {
+	size_t size;
+	cpu_subtype_t subtype;
+
+	size = sizeof (cpu_subtype_t);
+	sysctlbyname ("hw.cpusubtype", &subtype, &size, NULL, 0);
+
+	return subtype;
+}
+
+static void xnu_build_corefile_header (vm_offset_t header,
+	int segment_count, int thread_count, int command_size, pid_t pid) {
+#if __ppc64__ || __x86_64__
+	struct mach_header_64 *mh64;
+	mh64 = (struct mach_header_64 *)header;
+	mh64->magic	= MH_MAGIC_64;
+	mh64->cputype = xnu_get_cpu_type (pid);
+	mh64->cpusubtype = xnu_get_cpu_subtype (); 
+	mh64->filetype = MH_CORE;
+	mh64->ncmds	= segment_count + thread_count;
+	mh64->sizeofcmds = command_size;
+	mh64->reserved = 0; // 8-byte alignment 
+#elif __i386__ || __ppc__
+	struct mach_header *mh;
+	mh = (struct mach_header *)header;
+	mh->magic = MH_MAGIC;
+	mh->cputype	= xnu_get_cpu_type (pid);
+	mh->cpusubtype = xnu_get_cpu_subtype ();
+	mh->filetype = MH_CORE;
+	mh->ncmds = segment_count + thread_count;
+	mh->sizeofcmds = command_size;
+#endif
+}
+
+static int xnu_dealloc_threads (RList *threads) {
+	RListIter *iter, *iter2;
+	xnu_thread_t *thread;
+	mach_msg_type_number_t thread_count;
+	thread_array_t thread_list;
+	kern_return_t kr = KERN_SUCCESS;
+
+	kr = task_threads (task_dbg, &thread_list, &thread_count);
+	if (kr != KERN_SUCCESS) {
+		perror ("task_threads");
+	} else {
+		r_list_foreach_safe (threads, iter, iter2, thread) {
+			mach_port_deallocate (mach_task_self (), thread->port);
+		}
+		vm_deallocate (mach_task_self (), (vm_address_t)thread_list,
+			thread_count * sizeof (thread_act_t));
+	}
+	return kr;
+}
+
+/* XXX This is temporal. Later it will write in a RBuffer. */
+/* XXX Apart from writing to the file, it also creates the commands, */
+/* XXX which follow the header. */
+/* XXX Maybe this function needs refactoring, but I haven't come up with */
+/* XXX a better way to do it yet. */
+static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int start_offset,
+	vm_offset_t header, int header_end, int segment_command_sz, int *hoffset_out) {
+	RListIter *iter, *iter2;
+	RDebugMap *curr_map;
+	int foffset = 0; //start_offset;
+	int hoffset = header_end;
+	kern_return_t kr = KERN_SUCCESS;
+	int error = 0;
+	ssize_t wc;
+
+#define CAST_DOWN(type, addr) (((type)((uintptr_t)(addr))))
+#if __ppc64__ || __x86_64__
+	struct segment_command_64 *sc64;
+#elif __i386__ || __ppc__
+	struct segment_command *sc;
+#endif
+
+	r_list_foreach_safe (mem_maps, iter, iter2, curr_map) {
+		eprintf ("Writing section from 0x%llx to 0x%llx (%llu)\n", 
+			curr_map->addr, curr_map->addr_end, curr_map->size);
+
+		vm_map_offset_t vmoffset = curr_map->addr;
+#if __ppc64__ || __x86_64__
+		sc64 = (struct segment_command_64 *)(header + hoffset);
+		sc64->cmd = LC_SEGMENT_64;
+		sc64->cmdsize = sizeof (struct segment_command_64);
+		sc64->segname[0] = 0; // XXX curr_map->name OR curr_map->file ???
+		sc64->vmaddr = curr_map->addr;
+		sc64->vmsize = curr_map->size;
+		sc64->maxprot = 7; // TODO
+		sc64->initprot = xwr2rwx (curr_map->perm);
+		sc64->nsects = 0;
+#elif __i386__ || __ppc__
+		sc = (struct segment_command*)(header + hoffset);
+		sc->cmd = LC_SEGMENT;
+		sc->cmdsize = sizeof (struct segment_command);
+		sc->segname[0] = 0;
+		sc->vmaddr = CAST_DOWN (vm_offset_t, curr_map->addr); // XXX: Is this needed?
+		sc->vmsize = CAST_DOWN (vm_size_t, curr_map->size);
+		sc->fileoff = CAST_DOWN (ut32, foffset);
+		sc->filesize = CAST_DOWN (ut32, curr_map->size);
+		sc->maxprot = 7; // TODO
+		sc->initprot = xwr2rwx (curr_map->perm);
+		sc->nsects = 0;
+#endif
+
+		if ((curr_map->perm & VM_PROT_READ) == 0) 
+			mach_vm_protect (task_dbg, curr_map->addr, curr_map->size, FALSE,
+				curr_map->perm | VM_PROT_READ);
+
+		/* Acording to osxbook, the check should be like this: */
+#if 0
+		if ((maxprot & VM_PROT_READ) == VM_PROT_READ &&
+			(vbr.user_tag != VM_MEMORY_IOKIT)) {
+#endif
+		if ((curr_map->perm & VM_PROT_READ) == VM_PROT_READ) {
+			vm_map_size_t tmp_size = curr_map->size;
+			off_t xfer_foffset = foffset;
+
+			while (tmp_size > 0) {
+				vm_map_size_t xfer_size = tmp_size;
+				vm_offset_t local_address;
+				mach_msg_type_number_t local_size;
+
+				if (xfer_size > INT_MAX) xfer_size = INT_MAX;
+				kr = mach_vm_read (task_dbg, vmoffset, xfer_size,
+					&local_address, &local_size);
+
+				if ((kr != KERN_SUCCESS) || (xfer_size != local_size)) {
+					eprintf ("Failed to read target memory\n"); // XXX: Improve this message?
+					eprintf ("[DEBUG] kr = %d\n", kr);
+					eprintf ("[DEBUG] KERN_SUCCESS = %d\n", KERN_SUCCESS);
+					eprintf ("[DEBUG] xfer_size = %llu\n", xfer_size);
+					eprintf ("[DEBUG] local_size = %d\n", local_size);
+					if (kr > 1) error = -1; // XXX: INVALID_ADDRESS is not a bug right know
+					goto cleanup;
+				}
+#if __ppc64__ || __x86_64__
+				r_buf_append_bytes (buffer, (const ut8*)local_address, xfer_size);
+#elif __i386__ || __ppc__
+				r_buf_append_bytes (buffer, (void *)CAST_DOWN (ut32, local_address),
+					CAST_DOWN (ut32, xfer_size));
+#endif
+				if (wc < 0) {
+					error = errno;
+					eprintf ("Failed to write in the destination\n");
+					goto cleanup;
+				}
+
+				tmp_size -= xfer_size;
+				xfer_foffset += xfer_size;
+			}
+		}
+
+		hoffset += segment_command_sz;
+		foffset += curr_map->size;
+		vmoffset += curr_map->size;
+	}
+
+cleanup:
+	*hoffset_out = hoffset;
+	return error;
+}
+
+static int xnu_get_thread_status (register thread_t thread, int flavor, 
+	thread_state_t tstate, mach_msg_type_number_t *count) {
+	return thread_get_state (thread, flavor, tstate, count);
+}
+
+static void xnu_collect_thread_state (thread_t port, void *tirp) {
+	vm_offset_t header;
+	int i, hoffset;
+	coredump_thread_state_flavor_t *flavors;
+	struct thread_command *tc;
+	tir_t *tir = (tir_t *)tirp;
+
+	header = tir->header;
+	hoffset = tir->hoffset;
+	flavors = tir->flavors;
+	eprintf ("[DEBUG] tc location: %p\n", hoffset);
+
+	tc = (struct thread_command *)(header + hoffset);
+	tc->cmd = LC_THREAD;
+	tc->cmdsize = sizeof (struct thread_command) + tir->tstate_size;
+	hoffset += sizeof (struct thread_command);
+
+	for (i = 0; i < coredump_nflavors; i++) {
+		eprintf ("[DEBUG] %d/%d\n", i+1, coredump_nflavors);
+		*(coredump_thread_state_flavor_t *)(header + hoffset) = flavors[i];
+		hoffset += sizeof (coredump_thread_state_flavor_t);
+		xnu_get_thread_status (port, flavors[i].flavor,
+			(thread_state_t)(header + hoffset), &flavors[i].count);
+		hoffset += flavors[i].count * sizeof (int);
+	}
+
+	tir->hoffset = hoffset;
+
+}
+
+#define CORE_ALL_SECT 0
+
+bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
+	int error = 0, i;
+	int tstate_size;
+	int segment_count;
+	int command_size;
+	int header_size;
+	size_t mach_header_sz;
+	size_t segment_command_sz;
+	size_t padding_sz;
+	int hoffset;
+	off_t foffset;
+	vm_map_offset_t	vmoffset;
+
+	RBuffer *mem_maps_buffer;
+	vm_offset_t header;
+	ut8 *padding = NULL;
+	RListIter *iter, *iter2;
+	RList *threads_list;
+	xnu_thread_t *thread;
+	task_t task = pid_to_task (dbg->pid);
+	coredump_thread_state_flavor_t flavors[MAX_TSTATE_FLAVORS];
+	tir_t tir;
+
+	mem_maps_buffer = r_buf_new ();
+
+	get_mach_header_sizes (&mach_header_sz, &segment_command_sz);
+	(void)task_suspend(task);
+	threads_list = xnu_thread_list (dbg, dbg->pid, r_list_new ());
+	xnu_dealloc_threads (threads_list);
+
+	segment_count = xnu_get_vmmap_entries_for_pid (dbg->pid);
+
+	memcpy(thread_flavor_array, flavors, sizeof(thread_flavor_array));
+	tstate_size = 0;
+
+	for (i = 0; i < coredump_nflavors; i++) {
+		tstate_size += sizeof (coredump_thread_state_flavor_t) +
+			(flavors[i].count * sizeof(int));
+	}
+
+	command_size = COMMAND_SIZE (segment_count,segment_command_sz, 
+		r_list_length (threads_list), tstate_size);
+	header_size = command_size + mach_header_sz; // XXX: Add here the round_page() ?
+	header = (vm_offset_t)calloc (1, header_size);
+	xnu_build_corefile_header (header, segment_count,
+		r_list_length (threads_list), command_size, dbg->pid);
+
+	if (!dbg->maps) perror ("There are not loaded maps");
+	if (xnu_write_mem_maps_to_buffer (mem_maps_buffer, dbg->maps, round_page (header_size),
+		header, mach_header_sz, segment_command_sz, &hoffset) < 0) {
+		eprintf ("There was an error while writing the memory maps");
+		error = false;
+		goto cleanup;
+	}
+
+	tir.header = header;
+	tir.hoffset = hoffset;
+	tir.flavors = flavors;
+	tir.tstate_size = tstate_size;
+
+	r_list_foreach_safe (threads_list, iter, iter2, thread) {
+		xnu_collect_thread_state (thread->port, &tir);
+	}
+	xnu_dealloc_threads (threads_list);
+
+	r_buf_append_bytes (dest, (const ut8*)header, header_size);
+	padding_sz = round_page (header_size) - header_size;
+	padding = (ut8*)calloc (1, padding_sz);
+	r_buf_append_bytes (dest, (const ut8*)padding, padding_sz);
+	r_buf_append_buf (dest, mem_maps_buffer);
+
+cleanup:
+	//if (corefile_fd > 0) close (corefile_fd);
+	if (mem_maps_buffer) r_buf_free (mem_maps_buffer);
+	if (header) free ((void *)header);
+	if (padding) free ((void *)padding);
+	if (threads_list) r_list_free (threads_list);
+	if (error) return false;
+	return true;
 }
 
 RDebugPid *xnu_get_pid (int pid) {
@@ -599,7 +1018,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 	ut64 size;
 	mach_msg_type_number_t info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
 	unsigned int depth = 0;
-	ut64 addr = KERNEL_LOWER;         // lowest possible kernel base address
+	ut64 addr = KERNEL_LOWER;		 // lowest possible kernel base address
 	int count;
 
 	ret = task_for_pid (mach_task_self(), 0, &task);
@@ -637,7 +1056,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 }
 
 extern int proc_regionfilename(int pid, uint64_t address,
-			      void * buffer, uint32_t buffersize);
+				  void * buffer, uint32_t buffersize);
 
 #define MAX_MACH_HEADER_SIZE (64 * 1024)
 #define DYLD_INFO_COUNT 5
@@ -818,11 +1237,10 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 		{
 			module_name[0] = 0;
 			int ret = proc_regionfilename (tid, address, module_name,
-						     sizeof (module_name));
+							 sizeof (module_name));
 			module_name[ret] = 0;
 		}
 		if (true) {
-			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 			char maxperm[32];
 			char depthstr[32];
 			if (depth>0)

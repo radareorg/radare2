@@ -189,6 +189,7 @@ R_API RBuffer *r_buf_new_file (const char *file) {
 			return NULL;
 		}
 		b->fd = fd;
+		return b;
 	}
 	return NULL; /* we just freed b, don't return it */
 }

@@ -2619,6 +2619,12 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	return 1;
 }
 
+static char *set_corefile_name (const char *raw_name, pid_t pid) {
+	return (!*raw_name)?
+		r_str_newf ("core.%u", pid) :
+		r_str_chop (strdup (raw_name));
+}
+
 static int cmd_debug_step (RCore *core, const char *input) {
 	ut64 addr;
 	ut8 buf[64];
@@ -2982,6 +2988,8 @@ static int cmd_debug(void *data, const char *input) {
 				P ("inbp=%s\n", core->dbg->reason.bpi? "true": "false");
 				P ("pid=%d\n", rdi->pid);
 				P ("tid=%d\n", rdi->tid);
+				P ("uid=%d\n", rdi->uid);
+				P ("gid=%d\n", rdi->gid);
 				if (rdi->exe && *rdi->exe)
 					P ("exe=%s\n", rdi->exe);
 				if (rdi->cmdline && *rdi->cmdline)
@@ -3003,6 +3011,8 @@ static int cmd_debug(void *data, const char *input) {
 				P ("\"inbp\":%s,", core->dbg->reason.bpi? "true": "false");
 				P ("\"pid\":%d,", rdi->pid);
 				P ("\"tid\":%d,", rdi->tid);
+				P ("\"uid\":%d,", rdi->uid);
+				P ("\"gid\":%d,", rdi->gid);
 				if (rdi->exe) PS("\"exe\":\"%s\",", rdi->exe)
 				if (rdi->cmdline) PS ("\"cmdline\":\"%s\",", rdi->cmdline);
 				if (rdi->cwd) PS ("\"cwd\":\"%s\",", rdi->cwd);
@@ -3149,6 +3159,19 @@ static int cmd_debug(void *data, const char *input) {
 	case 'e':
 		r_core_debug_esil (core, input + 1);
 		break;
+	case 'g': // "dg"
+		if (core->dbg->h && core->dbg->h->gcore) {
+			char *corefile = set_corefile_name (input + 1, core->dbg->pid);
+			eprintf ("Writing to file %s\n", corefile);
+			r_sandbox_creat (corefile, 0644);
+			RBuffer *file = r_buf_new_file (corefile);
+			if (!file) perror ("r_buf_new_file");
+			r_sandbox_enable (true);
+			core->dbg->h->gcore (core->dbg, file);
+			r_buf_free (file);
+			r_sandbox_enable (false);
+		}
+		break;
 	default: {
 			const char* help_msg[] = {
 			"Usage:", "d", " # Debug commands",
@@ -3157,6 +3180,7 @@ static int cmd_debug(void *data, const char *input) {
 			"dc", "[?]", "Continue execution",
 			"dd", "[?]", "File descriptors (!fd in r1)",
 			"de", "[-sc] [rwx] [rm] [e]", "Debug with ESIL (see de?)",
+			"dg", " <file>", "Generate a core-file (WIP)",
 			"dh", " [handler]", "List or set debugger handler",
 			"dH", " [handler]", "Transplant process to a new handler",
 			"di", "", "Show debugger backend information (See dh)",
