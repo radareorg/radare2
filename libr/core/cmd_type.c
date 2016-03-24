@@ -53,6 +53,17 @@ static int sdbdelete(void *p, const char *k, const char *v) {
 	r_anal_type_del (core->anal, k);
 	return 1;
 }
+static int sdbdeletelink(void *p, const char *k, const char *v) {
+	RCore *core = (RCore *)p;
+	if (!strncmp (k, "link.", strlen ("link.")))
+		r_anal_type_del (core->anal, k);
+	return 1;
+}
+static int linklist(void *p, const char *k, const char *v){
+	if(!strncmp(k,"link.",strlen("link.")))
+		r_cons_printf("tl %s @ %s\n",v,k+strlen("link."));
+	return 1;
+}
 static int typelist(void *p, const char *k, const char *v) {
 	r_cons_printf ("tk %s = %s \n", k, v);
 #if 0
@@ -114,7 +125,7 @@ static int cmd_type(void *data, const char *input) {
 				"tu?", "", "show this help",
 				NULL };
 			r_core_cmd_help (core, help_message);
-			} break;
+		} break;
 		case 0:
 			sdb_foreach (core->anal->sdb_types, stdprintifunion, core);
 			break;
@@ -138,7 +149,8 @@ static int cmd_type(void *data, const char *input) {
 		case 0:
 			sdb_foreach (core->anal->sdb_types, stdprintifstruct, core);
 			break;
-		}break;
+		}
+		break;
 	case 'b': {
 		char *p, *s = (strlen (input) > 1)? strdup (input + 2): NULL;
 		const char *isenum;
@@ -296,24 +308,44 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	// tl - link a type to an address
 	case 'l':
-		if (input[1] == '?') {
+		switch (input[1]) {
+		case '?': {
 			const char *help_message[] = {
-				"Usage: tl", " [typename|addr] ([addr])@[addr|function]", "",
+				"Usage:", "", "",
+				" tl", " <typename>", "link a type to current adress.",
+				" tl", " <typename> <address>", "link type to given address.",
+				" tl-*", "", " delete all links.",
+				" tl-", "<address>", "delete link at given address.",
+				" tl?", "", "print this help.",
 				NULL };
-
 			r_core_cmd_help (core, help_message);
-		} else if (input[1]) {
-			ut64 addr = r_num_math (core->num, input + 2);
-			char *ptr = strchr (input + 2, ' ');
+		} break;
+		case ' ': {
+			const char *type = input + 2;
+			char *ptr = strchr (type, ' ');
+			ut64 addr;
 			if (ptr) {
-				addr = r_num_math (core->num, ptr + 1);
-				*ptr = '\0';
+				*ptr++ = 0;
+				addr = r_num_math (core->num, ptr);
 			} else addr = core->offset;
-			r_anal_type_link (core->anal, input + 2, addr);
-		} else {
-			r_core_cmd0 (core, "t~^link");
+			r_anal_type_link (core->anal, type, addr);
+		} break;
+		case '-':
+			switch (input[2]) {
+			case '*':
+				sdb_foreach (core->anal->sdb_types, sdbdeletelink, core);
+				break;
+			case ' ': {
+				const char *ptr = input + 3;
+				ut64 addr = r_num_math (core->num, ptr);
+				r_anal_type_unlink (core->anal, addr);
+			} break;
+			}
+			break;
+		case '*':
+			sdb_foreach(core->anal->sdb_types,linklist,core);
+			break;
 		}
-		break;
 	case '-':
 		if (input[1] == '?') {
 			const char *help_message[] = {
@@ -331,7 +363,7 @@ static int cmd_type(void *data, const char *input) {
 				const char *type = sdb_const_get (core->anal->sdb_types, name, 0);
 				if (!type)
 					break;
-				int tmp_len = strlen (name)+strlen (type);
+				int tmp_len = strlen (name) + strlen (type);
 				char *tmp = malloc (tmp_len + 1);
 				r_anal_type_del (core->anal, name);
 				if (tmp) {
