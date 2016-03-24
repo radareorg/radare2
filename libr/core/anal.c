@@ -2414,7 +2414,9 @@ static void add_string_ref (RCore *core, ut64 xref_to) {
 	if (str_flagname) {
 		r_name_filter (str_flagname, -1);
 		char *flagname = sdb_fmt (0, "str.%s", str_flagname);
+		r_flag_space_push (core->flags, "strings");
 		r_flag_set (core->flags, flagname, xref_to, len);
+		r_flag_space_pop (core->flags);
 		r_meta_add (core->anal, 's', xref_to, xref_to + len, str_flagname);
 		//r_cons_printf ("Cs %d @ 0x%"PFMT64x"\n", len, xref_to);
 		free (str_flagname);
@@ -2550,7 +2552,9 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 						char *str;
 
 						r_anal_ref_add (core->anal, dst, cur, 'd');
-						add_string_ref (core, dst);
+						if (cfg_anal_strings) {
+							add_string_ref (core, dst);
+						}
 
 						if ((f = r_flag_get_i2 (core->flags, dst))) {
 							r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
