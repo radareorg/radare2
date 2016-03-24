@@ -230,7 +230,7 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 		ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_A0], R_REG_TYPE_GPR);
 		ra0 = r_reg_get_value (dbg->reg, ri);
 		if (restore) {
-			r_reg_set_bytes (dbg->reg, -1, orig, orig_sz);
+			r_reg_read_regs (dbg->reg, orig, orig_sz);
 		} else {
 			r_reg_set_value (dbg->reg, ripc, rpc);
 		}

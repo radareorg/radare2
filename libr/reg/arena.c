@@ -73,13 +73,12 @@ R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len) {
 	int maxsz, ret = false;
 	struct r_reg_set_t *regset;
 	RRegArena *arena;
-	if (len < 0 || !buf)
+	if (len < 1 || !buf)
 		return false;
 	if (type < 0 || type >= R_REG_TYPE_LAST) return false;
 	regset = &reg->regset[type];
 	arena = regset->arena;
 	maxsz = R_MAX (arena->size, len);
-	if (len < 1) return false;
 	if ((arena->size != len) || (arena->bytes == NULL)) {
 		arena->bytes = calloc (1, maxsz);
 		if (!arena->bytes) {
@@ -237,22 +236,21 @@ R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret) {
 }
 
 
-R_API int r_reg_arena_set_bytes(RReg *reg, const char* str)
-{
+R_API int r_reg_arena_set_bytes(RReg *reg, const char* str) {
 	while (*str == ' ') str++;
 
-	int len = r_hex_str_is_valid(str);
+	int len = r_hex_str_is_valid (str);
 	if (len == -1) {
 		eprintf("Invalid input\n");
 		return -1;
 	}
 	int bin_str_len = (len + 1) / 2; //2 hex chrs for 1 byte
-	ut8* bin_str = malloc(bin_str_len);
+	ut8* bin_str = malloc (bin_str_len);
 	if (bin_str == NULL) {
-		eprintf("Failed to decode hex str.\n");
+		eprintf ("Failed to decode hex str.\n");
 		return -1;
 	}
-	r_hex_str2bin(str, bin_str);
+	r_hex_str2bin (str, bin_str);
 
 	int i, n = 0; //n - cumulative sum of arena's sizes
 	for (i = 0; i < R_REG_TYPE_LAST; ++i) {
@@ -260,12 +258,12 @@ R_API int r_reg_arena_set_bytes(RReg *reg, const char* str)
 		int bl = bin_str_len - n; //bytes left
 		if (bl - n < sz) {
 			//r_reg_set_bytes checks if bl-n==0 :p
-			r_reg_set_bytes(reg, i, bin_str + n, bl - n);
+			r_reg_set_bytes (reg, i, bin_str + n, bl - n);
 			break;
 		}
-		r_reg_set_bytes(reg, i, bin_str + n, bin_str_len - n);
+		r_reg_set_bytes (reg, i, bin_str + n, bin_str_len - n);
 		n += sz;
 	}
-	free(bin_str);
+	free (bin_str);
 	return 0;
 }
