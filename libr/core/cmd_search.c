@@ -187,6 +187,7 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 // TODO: handle sections ?
 	if (from >= to) {
 		eprintf ("aap: Invalid search range 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", from, to);
+		free (b);
 		return 0;
 	}
 	r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -287,10 +288,13 @@ R_API int r_core_search_preludes(RCore *core) {
 			default:
 				eprintf ("ap: Unsupported bits: %d\n", bits);
 			}
-		} else eprintf ("ap: Unsupported asm.arch and asm.bits\n");
+		} else {
+			eprintf ("ap: Unsupported asm.arch and asm.bits\n");
+		}
 		eprintf ("done\n");
 	}
 	fc1 = count_functions (core);
+	r_list_free (list);
 	eprintf ("Analyzed %d functions based on preludes\n", fc1 - fc0);
 	return ret;
 }
