@@ -1569,7 +1569,7 @@ static void cmd_print_pv(RCore *core, const char *input) {
 		}
 		/* fallthrough */
 	case ' ':
-		for (i=0;stack[i]; i++) {
+		for (i = 0; stack[i]; i++) {
 			if (!strcmp (input+1, stack[i])) {
 				if (type == 'z') {
 					r_core_cmdf (core, "ps @ [`drn sp`+%d]", n * i);
@@ -1580,10 +1580,14 @@ static void cmd_print_pv(RCore *core, const char *input) {
 		}
 		break;
 	case 'j':
+		{
+		char *str = r_core_cmd_str (core, "ps @ [$$]");
 		r_cons_printf ("{\"value\":%"PFMT64d",\"string\":\"%s\"}\n",
 				r_num_get (core->num, "[$$]"),
-				r_core_cmd_str (core, "ps @ [$$]")
+				str
 			      );
+		free (str);
+		}
 		break;
 	case '?':
 		eprintf ("Usage: pv[z] [ret arg#]\n");
