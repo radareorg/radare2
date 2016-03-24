@@ -100,6 +100,7 @@ static const char *findret(const char *s) {
 
 char *r_bin_demangle_swift(const char *s) {
 #define STRCAT_BOUNDS(x) if ((x+2+strlen (out))>sizeof (out)) break;
+	static char *swift_demangle = NULL;
 	char out[8192];
 	int i, len, is_generic = 0;;
 	int is_first = 1;
@@ -107,6 +108,7 @@ char *r_bin_demangle_swift(const char *s) {
 	int retmode = 0;
 	if (!strncmp (s, "__", 2)) s = s + 2;
 	if (!strncmp (s, "imp.", 4)) s = s + 4;
+	if (!strncmp (s, "reloc.", 6)) s = s + 6;
 #if 0
 	const char *element[] = {
 		"module", "class", "method", NULL
@@ -115,19 +117,24 @@ char *r_bin_demangle_swift(const char *s) {
 	const char *attr = NULL;
 	const char *attr2 = NULL;
 	const char *q, *p = s;
-	if (strncmp (s, "_T", 2))
+	if (strncmp (s, "_T", 2)) {
+		return NULL;
+	}
+	if (strchr (s, '\'') || strchr (s, ' '))
 		return NULL;
 
-	char *swift_demangle = r_file_path ("swift-demangle");
-	if (!swift_demangle || !strcmp (swift_demangle, "swift-demangle")) {
-		char *xcrun = r_file_path ("xcrun");
-		if (xcrun) {
-			swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
-			free (xcrun);
+	if (!swift_demangle) {
+		swift_demangle = r_file_path ("swift-demangle");
+		if (!swift_demangle || !strcmp (swift_demangle, "swift-demangle")) {
+			char *xcrun = r_file_path ("xcrun");
+			if (xcrun) {
+				swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
+				free (xcrun);
+			}
 		}
 	}
 	if (swift_demangle) {
-		char *res = r_sys_cmd_strf ("%s -compact -simplified %s",
+		char *res = r_sys_cmd_strf ("%s -compact -simplified '%s'",
 			swift_demangle, s);
 		if (res && !*res) {
 			free (res);
