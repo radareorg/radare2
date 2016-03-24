@@ -59,6 +59,11 @@ static int sdbdeletelink(void *p, const char *k, const char *v) {
 		r_anal_type_del (core->anal, k);
 	return 1;
 }
+static int linklist(void *p, const char *k, const char *v){
+	if(!strncmp(k,"link.",strlen("link.")))
+		r_cons_printf("tl %s @ %s\n",v,k+strlen("link."));
+	return 1;
+}
 static int typelist(void *p, const char *k, const char *v) {
 	r_cons_printf ("tk %s = %s \n", k, v);
 #if 0
@@ -314,7 +319,7 @@ static int cmd_type(void *data, const char *input) {
 				" tl?", "", "print this help.",
 				NULL };
 			r_core_cmd_help (core, help_message);
-		} break;
+			} break;
 		case ' ': {
 			const char *type = input + 2;
 			char *ptr = strchr (type, ' ');
@@ -324,7 +329,7 @@ static int cmd_type(void *data, const char *input) {
 				addr = r_num_math (core->num, ptr);
 			} else addr = core->offset;
 			r_anal_type_link (core->anal, type, addr);
-		} break;
+			} break;
 		case '-':
 			switch (input[2]) {
 			case '*':
@@ -334,8 +339,11 @@ static int cmd_type(void *data, const char *input) {
 				const char *ptr = input + 3;
 				ut64 addr = r_num_math (core->num, ptr);
 				r_anal_type_unlink (core->anal, addr);
-			} break;
+				} break;
 			}
+			break;
+		case '*':
+			sdb_foreach (core->anal->sdb_types,linklist,core);
 			break;
 		}
 		break;
