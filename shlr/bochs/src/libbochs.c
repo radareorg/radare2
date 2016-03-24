@@ -113,7 +113,7 @@ void bochs_send_cmd(libbochs_t* b, const char * comando, bool bWait) {
 	if (bWait)
 		WaitForReply_(b);
 #else
-#warning TODO
+#warning TODO bochs_send_cmd not implemented for this platform
 #endif
 }
 
