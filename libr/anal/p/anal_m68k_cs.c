@@ -31,7 +31,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	cs_insn* insn;
 	int mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 
-	mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
+	//mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
 	if (mode != omode || a->bits != obits) {
 		cs_close (&handle);
 		handle = 0;
@@ -40,6 +40,19 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	}
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->delay = 0;
+	// replace this with the asm.features?
+	if (a->cpu && strstr (a->cpu, "68000"))
+		mode |= CS_MODE_M68K_000;
+	if (a->cpu && strstr (a->cpu, "68010"))
+		mode |= CS_MODE_M68K_010;
+	if (a->cpu && strstr (a->cpu, "68020"))
+		mode |= CS_MODE_M68K_020;
+	if (a->cpu && strstr (a->cpu, "68030"))
+		mode |= CS_MODE_M68K_030;
+	if (a->cpu && strstr (a->cpu, "68040"))
+		mode |= CS_MODE_M68K_040;
+	if (a->cpu && strstr (a->cpu, "68060"))
+		mode |= CS_MODE_M68K_060;
 	op->size = 4;
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_M68K, mode, &handle);

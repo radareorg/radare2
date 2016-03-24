@@ -1,8 +1,10 @@
-/* radare - LGPL - Copyright 2015 - oddcoder */
+/* radare - LGPL - Copyright 2015-2016 - oddcoder */
+
 #include <r_types.h>
 #include <r_anal.h>
 #include <r_asm.h>
 #include <r_lib.h>
+
 void cond_branch (RAnalOp *op, ut64 addr, const ut8 *buf, char *flag) {
 	op->type = R_ANAL_OP_TYPE_CJMP;
 	op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0xff);
@@ -402,15 +404,7 @@ struct r_anal_plugin_t r_anal_plugin_pic18c = {
 	.license = "LGPL3",
 	.arch = "PIC 18c",
 	.bits = 8,
-	.init = NULL,
-	.fini = NULL,
 	.op = &pic18c_anal,
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL,
 	.set_reg_profile = &set_reg_profile,
 	.esil = true };
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2016 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -60,7 +60,6 @@ static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	char *inst_key = sdb_fmt (0, "inst.0x%"PFMT64x".vars", op->addr);
 	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
 	struct VarUsedType vut;
-	int fmt_len;
 	RAnalVar *res;
 
 	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) != 4) {
