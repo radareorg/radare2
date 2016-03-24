@@ -36,6 +36,7 @@ binr/rasm2/rasm2
 binr/rasm2/rasm2.exe
 binr/rax2/rax2
 binr/rax2/rax2.exe
+binr/*/_CodeSignature/*
 config-user.mk
 libr/bin/d/dll/dll
 libr/config.h
