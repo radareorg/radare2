@@ -31,7 +31,7 @@ bool WaitForReply_(libbochs_t *b);
 int RunRemoteThread_(libbochs_t* b, const ut8* lpBuffer, ut32 dwSize, int a4, ut32 *lpExitCode);
 void ResetBuffer_(libbochs_t* b);
 bool CommandStop_(libbochs_t * b);
-void SendCommand_(libbochs_t* b, const char * comando, bool bWait);
+void bochs_send_cmd(libbochs_t* b, const char * comando, bool bWait);
 int bochs_read_(libbochs_t* b, ut64 addr, int count, ut8* buf);
 void bochs_close_(libbochs_t* b);
 bool bochs_open_(libbochs_t* b, const char *rutaBochs, const char *rutaConfig);

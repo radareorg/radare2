@@ -96,7 +96,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
                         " =!:<bochscmd>      - Send a bochs command.\n"
                         " =!dobreak          - pause bochs.\n");
 		lprintf ("io_system: Enviando comando bochs\n");
-		SendCommand_ (desc, &cmd[1], true);
+		bochs_send_cmd (desc, &cmd[1], true);
 		io->cb_printf ("%s\n", desc->data);
 		return 1;
 	} else if (!strncmp (cmd, "dobreak", 7)) {
