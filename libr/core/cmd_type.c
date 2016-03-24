@@ -59,6 +59,11 @@ static int sdbdeletelink(void *p, const char *k, const char *v) {
 		r_anal_type_del (core->anal, k);
 	return 1;
 }
+static int linklist(void *p, const char *k, const char *v){
+	if(!strncmp(k,"link.",strlen("link.")))
+		r_cons_printf("tl %s @ %s\n",v,k+strlen("link."));
+	return 1;
+}
 static int typelist(void *p, const char *k, const char *v) {
 	r_cons_printf ("tk %s = %s \n", k, v);
 #if 0
@@ -337,8 +342,10 @@ static int cmd_type(void *data, const char *input) {
 			} break;
 			}
 			break;
+		case '*':
+			sdb_foreach(core->anal->sdb_types,linklist,core);
+			break;
 		}
-		break;
 	case '-':
 		if (input[1] == '?') {
 			const char *help_message[] = {
