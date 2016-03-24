@@ -140,7 +140,7 @@ char *r_bin_demangle_swift(const char *s) {
 			free (res);
 			res = NULL;
 		}
-		return res;
+		return r_str_chop (res);
 	}
 	out[0] = 0;
 	p += 2;
