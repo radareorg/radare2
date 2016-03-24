@@ -222,6 +222,19 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 	return types;
 }
 
+/*this only autoname those function that start with fcn.* or sym.func.* */
+R_API void r_core_anal_autoname_all_fcns(RCore *core) {
+	RListIter *it;
+	RAnalFunction *fcn;
+	r_list_foreach (core->anal->fcns, it, fcn) {
+		char *name = r_core_anal_fcn_autoname (core, fcn->addr, 0);
+		if (name && (!strncmp (fcn->name, "fcn.", 4) || !strncmp (fcn->name, "sym.func.", 9))) {
+			r_flag_rename (core->flags, r_flag_get (core->flags, fcn->name), name);
+			free (fcn->name);
+			fcn->name = name;
+		}
+	}
+}
 /* suggest a name for the function at the address 'addr'.
  * If dump is true, every strings associated with the function is printed */
 R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
@@ -236,8 +249,7 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
 			if (f) {
 				if (dump) {
-					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
-						ref->at, ref->addr, f->name);
+					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
 				}
 				if (strstr (f->name, "isatty"))
 					use_isatty = 1;
@@ -264,8 +276,7 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 			return strdup ("parse_args"); // main?
 		}
 		if (use_isatty) {
-			char *ret = r_str_newf ("sub.setup_tty_%s_%x",
-				do_call, addr & 0xfff);
+			char *ret = r_str_newf ("sub.setup_tty_%s_%x", do_call, addr & 0xfff);
 			free (do_call);
 			return ret;
 		}

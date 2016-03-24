@@ -891,8 +891,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			{
 			char *name = r_core_anal_fcn_autoname (core, core->offset, 0);
 			if (name) {
-				r_cons_printf ("afn %s 0x%08" PFMT64x "\n",
-					name, core->offset);
+				r_cons_printf ("afn %s 0x%08" PFMT64x "\n", name, core->offset);
 				free (name);
 			}
 			}
@@ -3627,7 +3626,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
 		"aae", " [len]", "analyze references with ESIL",
 		"aar", " [len]", "analyze len bytes of instructions for references",
-		"aan", "", "afna @@ fcn*",
+		"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
 		"aat", " [len]", "analyze all consecutive functions in section",
 		"aap", "", "find and analyze function preludes",
@@ -3645,7 +3644,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
 		r_core_cmd0 (core, "af @ entry0");
 		break;
-	case 'n': r_core_cmd0 (core, ".afna @@ fcn.*"); break;
+	case 'n': r_core_anal_autoname_all_fcns (core); break; //aan
 	case 'p': // "aap"
 		if (*input == '?') {
 			// TODO: accept parameters for ranges
@@ -3697,11 +3696,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					eprintf ("[*] Use -AA or aaaa to perform additional experimental analysis.\n");
 				}
 				r_config_set_i (core->config, "anal.calls", c);
-				if (r_config_get_i (core->config, "anal.autoname")) {
-					rowlog (core, "Construct a function name for all fcn.* (.afna @@ fcn.*)");
-					r_core_cmd0 (core, ".afna @@ fcn.*");
-					rowlog_done (core);
-				}
+				rowlog (core, "Constructing a function name for fcn.* and sym.func.* functions");
+				r_core_anal_autoname_all_fcns (core);
+				rowlog_done (core);
 				if (core->cons->breaked)
 					goto jacuzzi;
 				r_core_cmd0 (core, "s-");
