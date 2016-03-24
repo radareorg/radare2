@@ -5,8 +5,6 @@
 #include <r_lib.h>
 #include <r_util.h>
 #include <libbochs.h>
-#define eprintf(x,y...) \ 
-{ FILE * myfile;  myfile=fopen("logio.txt","a"); fprintf(myfile,x,##y);fflush(myfile);fclose(myfile); }
 
 typedef struct {
 	libbochs_t desc;    
@@ -14,6 +12,7 @@ typedef struct {
 
 static libbochs_t *desc = NULL; 
 static RIODesc *riobochs = NULL;
+extern RIOPlugin r_io_plugin_bochs; // forward declaration
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	return !strncmp (file, "bochs://", strlen ("bochs://"));
@@ -21,41 +20,38 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIOBochs  *riob;
-	eprintf("io_open\n");
+	lprintf("io_open\n");
+	const char *i;
 	char * archivoBochs;
 	char * archivoCfg;
-	int i,l;
+	int l;
 	if (!__plugin_open (io, file, 0))
 		return NULL;
 	if (riobochs) {
 		return riobochs;
 	}
-	archivoBochs=malloc(1024);
-	archivoCfg= malloc (1024);
+	archivoBochs = malloc (1024);
+	archivoCfg = malloc (1024);
 
-       	i=strstr(&file[8],"#");
-	if (i)
-	{
-		l=i - (DWORD)&file[8];
-		strncpy(archivoBochs,&file[8],l<1024?l:1024);
+       	i = strstr (file+8, "#");
+	if (i) {
+		l = i - file+8;
+		strncpy(archivoBochs,file+8,l<1024?l:1024);
 		archivoBochs[l]=0;
 
 		l=strlen(i+1);
 		strncpy(archivoCfg,i+1,l<1024?l:1024);
 		archivoCfg[l]=0;
-	}
-	else
-	{
+	} else {
 		free(archivoBochs);
 		free(archivoCfg);
-		eprintf("Error cant find : \n");
+		lprintf("Error cant find : \n");
 		return NULL;
 	}
 	riob = R_NEW0 (RIOBochs);
 
 	// Inicializamos
-	if (bochs_open_(&riob->desc,archivoBochs,archivoCfg) == TRUE)
-	{
+	if (bochs_open_(&riob->desc,archivoBochs,archivoCfg) == true) {
 		desc = &riob->desc;
 		riobochs = r_io_desc_new (&r_io_plugin_bochs, -1, file, rw, mode, riob);
 		//riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
@@ -63,18 +59,18 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		//free(archivoCfg);
 		return riobochs;
 	}
-	eprintf ("bochsio.open: Cannot connect to bochs.\n");
+	lprintf ("bochsio.open: Cannot connect to bochs.\n");
 	free (riob);
 	return NULL;
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	eprintf("io_write\n");
+	lprintf("io_write\n");
 	return -1;
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	eprintf("io_seek %016"PFMT64x" \n",offset);
+	lprintf("io_seek %016"PFMT64x" \n",offset);
 	return offset;
 }
 
@@ -82,38 +78,36 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	ut64 addr = io->off;
 	if (!desc || !desc->data) return -1;
-        eprintf("io_read ofs= %016"PFMT64x" count= %x\n",io->off,count);
+        lprintf("io_read ofs= %016"PFMT64x" count= %x\n",io->off,count);
 	bochs_read_(desc,addr,count,buf);
 	return count;
 }
 
 static int __close(RIODesc *fd) {
-	eprintf("io_close\n");
+	lprintf("io_close\n");
 	bochs_close_(desc);
 	return true;
 }
 	
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
-        eprintf("system command (%s)\n", cmd);
+        lprintf ("system command (%s)\n", cmd);
         if (!strcmp (cmd, "help")) {
-                eprintf ("Usage: =!cmd args\n"
+                lprintf ("Usage: =!cmd args\n"
                         " =!:<bochscmd>      - Send a bochs command.\n"
                         " =!dobreak          - pause bochs.\n");
-			
-	} else if (!strncmp (cmd, ":", 1)) {
-		eprintf("io_system: Enviando comando bochs\n");
-		EnviaComando_(desc,&cmd[1],TRUE);
+		lprintf ("io_system: Enviando comando bochs\n");
+		SendCommand_ (desc, &cmd[1], true);
 		io->cb_printf ("%s\n", desc->data);
 		return 1;
 	} else if (!strncmp (cmd, "dobreak", 7)) {
-		CommandStop_(desc);
+		CommandStop_ (desc);
 		io->cb_printf ("%s\n", desc->data);
 		return 1;
 	}         
         return true;
 }
 
-RIOPlugin r_io_plugin_bochs  = {
+RIOPlugin r_io_plugin_bochs = {
 	.name = "bochs",
 	.desc = "Attach to a BOCHS debugger",
 	.license = "LGPL3",
@@ -126,3 +120,11 @@ RIOPlugin r_io_plugin_bochs  = {
 	.system = __system,
 	.isdbg = true
 };
+
+#ifndef CORELIB
+struct r_lib_struct_t radare_plugin = {
+	.type = R_LIB_TYPE_IO,
+	.data = &r_io_plugin_bochs,
+	.version = R2_VERSION
+};
+#endif

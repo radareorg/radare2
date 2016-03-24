@@ -1,12 +1,18 @@
 /*! \file */
 #ifndef LIBBOCHS_H
 #define LIBBOCHS_H
+
 #include <r_util.h>
+
+#if __WINDOWS__
 #include <windows.h>
+#endif
+
 typedef struct libbochs_t {
-	char * data;
+	char *data;
 	int punteroBuffer;
 	int sizeSend;
+#if __WINDOWS__
 	HANDLE hReadPipeIn;
 	HANDLE hReadPipeOut;
 	HANDLE hWritePipeIn;
@@ -14,19 +20,28 @@ typedef struct libbochs_t {
 	HANDLE ghWriteEvent;
 	PROCESS_INFORMATION processInfo;
 	STARTUPINFO info;
-	BOOL bEjecuta;
+#endif
+	bool isRunning;
 } libbochs_t;
+
 
 //DWORD WINAPI MyThLector_(LPVOID lpParam)
 //DWORD WINAPI MyThEscritor_(LPVOID lpParam)
-BOOL EsperaRespuesta_(libbochs_t *b);
-int EjecutaThreadRemoto_(libbochs_t* b, LPVOID lpBuffer, DWORD dwSize, int a4, LPDWORD lpExitCode);
+bool WaitForReply_(libbochs_t *b);
+int RunRemoteThread_(libbochs_t* b, const ut8* lpBuffer, ut32 dwSize, int a4, ut32 *lpExitCode);
 void ResetBuffer_(libbochs_t* b);
-BOOL CommandStop_(libbochs_t * b);
-VOID EnviaComando_(libbochs_t* b, char * comando,BOOL bWait);
-int bochs_read_(libbochs_t* b,ut64 addr,int count,ut8 * buf);
+bool CommandStop_(libbochs_t * b);
+void SendCommand_(libbochs_t* b, const char * comando, bool bWait);
+int bochs_read_(libbochs_t* b, ut64 addr, int count, ut8* buf);
 void bochs_close_(libbochs_t* b);
-BOOL bochs_open_(libbochs_t* b ,char * rutaBochs, char * rutaConfig);
+bool bochs_open_(libbochs_t* b, const char *rutaBochs, const char *rutaConfig);
+
+#define ENABLE_DEBUG 0
+#if ENABLE_DEBUG
+#define lprintf(x,y...) { FILE *fd;fd=fopen("bochs.io.log", "a"); if (fd) {fprintf(fd,x,##y);fflush(fd);fclose(fd); }}
+#else
+#define lprintf(x,y...) {}
+#endif
 
 
 /*! 
