@@ -58,3 +58,4 @@ radare2-w32-*
 radare2-regressions
 tags
 .lvimrc
+.nconfig.tmp
