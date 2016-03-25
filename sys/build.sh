@@ -82,7 +82,9 @@ if [ -d shlr/capstone/.git ]; then
 ( cd shlr/capstone ; git clean -xdf )
 fi
 [ "`uname`" = Linux ] && export LDFLAGS="-Wl,--as-needed ${LDFLAGS}"
-rm -f plugins.cfg
+if [ -z "${KEEP_PLUGINS_CFG}" ]; then
+	rm -f plugins.cfg
+fi
 unset DEPS
 ./configure ${CFGARG} --prefix=${PREFIX} || exit 1
 ${MAKE} -s -j${MAKE_JOBS} MAKE_JOBS=${MAKE_JOBS} || exit 1

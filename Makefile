@@ -342,6 +342,9 @@ osx-sign-libs:
 quality:
 	./sys/shellcheck.sh
 
+menu nconfig:
+	./sys/menu.sh || true
+
 include ${MKPLUGINS}
 
 .PHONY: all clean distclean mrproper install symstall uninstall deinstall strip

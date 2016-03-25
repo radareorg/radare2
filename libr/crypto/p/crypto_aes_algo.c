@@ -27,7 +27,7 @@ void aes_expkey (const struct aes_state *st, ut32 expkey[2][st->rounds + 1][Nb])
 	int ROUND_KEY_COUNT = 4 * (1 + st->rounds);
     ut32 tk[st->columns], tt;
     st32 idx = 0, t = 0;
-    ut8 *key = st->key;
+    const ut8 *key = st->key;
     st32 i, j, r;
 
     for (i = 0; i <= st->rounds; i++)

@@ -47,7 +47,7 @@ R2PM_DESC() {
 }
 
 R2PM_List() {
-	cd "${R2PM_USRDIR}/pkg"
+	cd "${R2PM_USRDIR}/pkg" || exit 1
 	if [ -n "$1" ]; then
 		ls | grep -i "$1"
 	else
@@ -56,12 +56,22 @@ R2PM_List() {
 }
 
 R2PM_Search() {
-	cd "${R2PM_DBDIR}"
+	cd "${R2PM_DBDIR}" || exit 1
 	if [ -n "$1" ]; then
 		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g' | grep -i "$1"
 	else
 		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g'
 	fi
+}
+
+R2PM_ListUninstalled() {
+	cd "${R2PM_DBDIR}" || exit 1
+	PKGS=$(grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g' |awk '{print $1}')
+	for a in ${PKGS} ; do
+		if [ ! -f "${R2PM_USRDIR}/pkg/$a" ]; then
+			echo $a
+		fi
+	done
 }
 
 R2PM_GIT() {
@@ -168,6 +178,9 @@ case "$1" in
 -s|search)
 	R2PM_Search "$2"
 	;;
+-lu)
+	R2PM_ListUninstalled "$2"
+	;;
 -v|version)
 	echo "r2pm v0.1"
 	;;
@@ -189,6 +202,7 @@ case "$1" in
 	echo " -i,install <pkgname>    r2pm -i baleful"
 	echo " -u,uninstall <pkgname>  r2pm -u baleful (-uu to force)"
 	echo " -l,list                 list installed pkgs"
+	echo " -lu                     list uninstalled packages"
 	echo " -t,test FX,XX,BR BID    check in travis regressions"
 	echo " -s,search [<keyword>]   search in database"
 	echo " -v,version              show version"
