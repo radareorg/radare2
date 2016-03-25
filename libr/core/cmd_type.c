@@ -61,7 +61,7 @@ static int sdbdeletelink(void *p, const char *k, const char *v) {
 }
 static int linklist(void *p, const char *k, const char *v){
 	if(!strncmp(k,"link.",strlen("link.")))
-		r_cons_printf("tl %s @ %s\n",v,k+strlen("link."));
+		r_cons_printf("tl %s @ 0x%s\n",v,k+strlen("link."));
 	return 1;
 }
 static int typelist(void *p, const char *k, const char *v) {
@@ -312,10 +312,11 @@ static int cmd_type(void *data, const char *input) {
 		case '?': {
 			const char *help_message[] = {
 				"Usage:", "", "",
-				" tl", " <typename>", "link a type to current adress.",
-				" tl", " <typename> <address>", "link type to given address.",
-				" tl-*", "", " delete all links.",
+				" tl", "<typename>", "link a type to current adress.",
+				" tl", "<typename> <address>", "link type to given address.",
+				" tl-*", "", "delete all links.",
 				" tl-", "<address>", "delete link at given address.",
+				"tl*","","list all links in radare2 command format",
 				" tl?", "", "print this help.",
 				NULL };
 			r_core_cmd_help (core, help_message);
