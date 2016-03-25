@@ -13,12 +13,13 @@ static void show_help(RCore *core) {
 		"te", "", "List all loaded enums",
 		"te", " <enum> <value>", "Show name for given enum number",
 		"td", " <string>", "Load types from string",
-		"tf", "", "List all loaded functions signitures",
+		"tf", "", "List all loaded functions signatures",
 		"tk", " <sdb-query>", "Perform sdb query",
 		"tl", "[?]", "Show/Link type to an address",
 		//"to",  "",         "List opened files",
 		"to", " -", "Open cfg.editor to load types",
 		"to", " <path>", "Load types from C header file",
+		"tp", " <type> <address>", "cast data at <adress> to <type> and print it",
 		"ts", "", "print loaded struct types",
 		"tu", "", "print loaded union types",
 		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
@@ -348,6 +349,20 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		break;
+	case 'p': {
+		const char *type = input + 2;
+		char *ptr = strchr (type, ' ');
+		*ptr++ = 0;
+		ut64 addr = r_num_math (core->num, ptr);
+		int len = strlen ("link.") + 8;
+		char *key = malloc (len + 1);
+		snprintf (key, len, "link.%08" PFMT64x, addr);
+		char *fmt = r_anal_type_format (core->anal, type);
+		if (fmt) {
+			r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+			free (fmt);
+		} else eprintf ("Cannot find '%s' type\n", input + 1);
+	} break;
 	case '-':
 		if (input[1] == '?') {
 			const char *help_message[] = {
