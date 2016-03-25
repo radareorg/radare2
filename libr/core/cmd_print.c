@@ -3447,7 +3447,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	default: {
 		 const char* help_msg[] = {
-			 "Usage:", "p[=68abcdDfiImrstuxz] [arg|len]", "",
+			 "Usage:", "p[=68abcdDfiImrstuxz] [arg|len] [@addr]", "",
 			 "p=","[bep?] [blks] [len] [blk]","show entropy/printable chars/chars bars",
 			 "p2"," [len]","8x8 2bpp-tiles",
 			 "p3"," [file]","print stereogram (3D)",
