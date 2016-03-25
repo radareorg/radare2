@@ -2283,7 +2283,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case 'x':{ // "aex"
 		ut32 new_bits = -1;
 		int segoff, old_bits, pos = 0;
-		ut8 settings_changed = false;
+		bool settings_changed = false;
 		char *new_arch = NULL, *old_arch = NULL, *hex = NULL;
 		old_arch = strdup (r_config_get (core->config, "asm.arch"));
 		old_bits = r_config_get_i (core->config, "asm.bits");

@@ -1,1 +1,1 @@
-LINK+=../../shlr/gdb/lib/libgdbr.a
+LINK+=../../shlr/bochs/lib/libbochs.a
