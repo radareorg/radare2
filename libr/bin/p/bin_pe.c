@@ -529,6 +529,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
+extern struct r_bin_write_t r_bin_write_pe;
 struct r_bin_plugin_t r_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
@@ -550,7 +551,8 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.relocs = &relocs,
 	.minstrlen = 4,
 	.create = &create,
-	.get_vaddr = &get_vaddr
+	.get_vaddr = &get_vaddr,
+	.write = &r_bin_write_pe
 };
 
 #ifndef CORELIB

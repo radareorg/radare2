@@ -1,4 +1,4 @@
-OBJ_PE=bin_pe.o ../format/pe/pe.o
+OBJ_PE=bin_pe.o bin_write_pe.o ../format/pe/pe.o ../format/pe/pe_write.o
 
 STATIC_OBJ+=${OBJ_PE}
 TARGET_PE=bin_pe.${EXT_SO}

@@ -126,3 +126,4 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t *buf);
 int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, struct SDebugInfo *res);
 int PE_(bin_pe_get_claimed_checksum)(struct PE_(r_bin_pe_obj_t) *bin);
 int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t) *bin);
+bool PE_(r_bin_pe_section_perms)(struct PE_(r_bin_pe_obj_t) *bin, const char *name, int perms);
