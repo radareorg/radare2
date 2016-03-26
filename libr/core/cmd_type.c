@@ -13,12 +13,13 @@ static void show_help(RCore *core) {
 		"te", "", "List all loaded enums",
 		"te", " <enum> <value>", "Show name for given enum number",
 		"td", " <string>", "Load types from string",
-		"tf", "", "List all loaded functions signitures",
+		"tf", "", "List all loaded functions signatures",
 		"tk", " <sdb-query>", "Perform sdb query",
 		"tl", "[?]", "Show/Link type to an address",
 		//"to",  "",         "List opened files",
 		"to", " -", "Open cfg.editor to load types",
 		"to", " <path>", "Load types from C header file",
+		"tp", " <type> <address>", "cast data at <adress> to <type> and print it",
 		"ts", "", "print loaded struct types",
 		"tu", "", "print loaded union types",
 		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
@@ -59,9 +60,9 @@ static int sdbdeletelink(void *p, const char *k, const char *v) {
 		r_anal_type_del (core->anal, k);
 	return 1;
 }
-static int linklist(void *p, const char *k, const char *v){
-	if(!strncmp(k,"link.",strlen("link.")))
-		r_cons_printf("tl %s @ %s\n",v,k+strlen("link."));
+static int linklist(void *p, const char *k, const char *v) {
+	if (!strncmp (k, "link.", strlen ("link.")))
+		r_cons_printf ("tl %s @ 0x%s\n", v, k + strlen ("link."));
 	return 1;
 }
 static int typelist(void *p, const char *k, const char *v) {
@@ -312,14 +313,15 @@ static int cmd_type(void *data, const char *input) {
 		case '?': {
 			const char *help_message[] = {
 				"Usage:", "", "",
-				" tl", " <typename>", "link a type to current adress.",
-				" tl", " <typename> <address>", "link type to given address.",
-				" tl-*", "", " delete all links.",
+				" tl", "<typename>", "link a type to current adress.",
+				" tl", "<typename> <address>", "link type to given address.",
+				" tl-*", "", "delete all links.",
 				" tl-", "<address>", "delete link at given address.",
+				"tl*", "", "list all links in radare2 command format",
 				" tl?", "", "print this help.",
 				NULL };
 			r_core_cmd_help (core, help_message);
-			} break;
+		} break;
 		case ' ': {
 			const char *type = input + 2;
 			char *ptr = strchr (type, ' ');
@@ -329,7 +331,7 @@ static int cmd_type(void *data, const char *input) {
 				addr = r_num_math (core->num, ptr);
 			} else addr = core->offset;
 			r_anal_type_link (core->anal, type, addr);
-			} break;
+		} break;
 		case '-':
 			switch (input[2]) {
 			case '*':
@@ -339,14 +341,25 @@ static int cmd_type(void *data, const char *input) {
 				const char *ptr = input + 3;
 				ut64 addr = r_num_math (core->num, ptr);
 				r_anal_type_unlink (core->anal, addr);
-				} break;
+			} break;
 			}
 			break;
 		case '*':
-			sdb_foreach (core->anal->sdb_types,linklist,core);
+			sdb_foreach (core->anal->sdb_types, linklist, core);
 			break;
 		}
 		break;
+	case 'p': {
+		const char *type = input + 2;
+		char *ptr = strchr (type, ' ');
+		*ptr++ = 0;
+		ut64 addr = r_num_math (core->num, ptr);
+		char *fmt = r_anal_type_format (core->anal, type);
+		if (fmt) {
+			r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+			free (fmt);
+		} else eprintf ("Cannot find '%s' type\n", input + 1);
+	} break;
 	case '-':
 		if (input[1] == '?') {
 			const char *help_message[] = {
