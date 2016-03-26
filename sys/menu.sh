@@ -117,15 +117,16 @@ PackagesInstall() {
 	PLUGINS="`r2pm -lu`"
 	ARGS=""
 	for a in ${PLUGINS} ; do
-		ARGS="${ARGS} $a . on"
+		ARGS="${ARGS} $a . off"
 	done
-	dialog --radiolist "Select packages to install" 0 0 0 ${ARGS} 2> .nconfig.tmp
+	dialog --checklist "Select packages to install" 0 0 0 ${ARGS} 2> .nconfig.tmp
 	OPT=$(<.nconfig.tmp)
 	echo
-	echo "Selected ${OPT}"
-	if [ -n "${OPT}" -a -f "${OPT}" ]; then
-		cp -f ${OPT} plugins.cfg
-		./configure-plugins
+	if [ -n "${OPT}" ]; then
+		for a in ${OPT} ; do
+			r2pm -i "$a"
+			sleep 1
+		done
 	fi
 }
 
