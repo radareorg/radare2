@@ -315,7 +315,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 					if (!s->vaddr && s->offset) continue;
 					if (s->vaddr < lower) lower = s->vaddr;
 				}
-				return lower;
+				return (lower == UT64_MAX)? 0LL: lower;
 			}
 			break;
 		case 'v': return op.val; // immediate value
