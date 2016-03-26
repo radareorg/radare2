@@ -3692,7 +3692,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					eprintf ("[*] Use -AA or aaaa to perform additional experimental analysis.\n");
 				}
 				r_config_set_i (core->config, "anal.calls", c);
-				rowlog (core, "Constructing a function name for fcn.* and sym.func.* functions");
+				rowlog (core, "Constructing a function name for fcn.* and sym.func.* functions (aan)");
 				r_core_anal_autoname_all_fcns (core);
 				rowlog_done (core);
 				if (core->cons->breaked)
