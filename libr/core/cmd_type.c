@@ -117,7 +117,7 @@ static int cmd_type(void *data, const char *input) {
 
 	switch (input[0]) {
 	// t [typename] - show given type in C syntax
-	case 'u':
+	case 'u': // "tu"
 		switch (input[1]) {
 		case '?': {
 			const char *help_message[] = {
@@ -132,12 +132,13 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'k':
+	case 'k': // "tk"
 		if (input[1] == ' ') {
 			sdb_query (core->anal->sdb_types, input + 2);
 		} else sdb_query (core->anal->sdb_types, "*");
+		fflush (stdout);
 		break;
-	case 's':
+	case 's': // "ts"
 		switch (input[1]) {
 		case '?': {
 			const char *help_message[] = {
