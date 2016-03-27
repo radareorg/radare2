@@ -54,6 +54,8 @@ set the niceness level of the process
 preload a library (not supported on Windows, only linux,osx,bsd)
 .It Ar program
 path to program to be executed
+.It Ar execve
+use execve instead of posix_spawn (osx tricks)
 .It Ar r2preload
 preload with libr2, kill -USR1 to get an r2 shell or -USR2 to spawn a webserver in a thread
 .It Ar r2preweb

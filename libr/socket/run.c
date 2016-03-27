@@ -420,6 +420,7 @@ R_API const char *r_run_help() {
 	"# pidfile=/tmp/foo.pid\n"
 	"# #sleep=0\n"
 	"# #maxfd=0\n"
+	"# #execve=false\n"
 	"# #maxproc=0\n"
 	"# #maxstack=0\n"
 	"# #core=false\n"
@@ -642,6 +643,11 @@ R_API int r_run_config_env(RRunProfile *p) {
 }
 
 R_API int r_run_start(RRunProfile *p) {
+#if LIBC_HAVE_FORK
+	if (p->_execve) {
+		exit (execv (p->_program, (char* const*)p->_args));
+	}
+#endif
 #if __APPLE__ && LIBC_HAVE_FORK
 	posix_spawnattr_t attr = {0};
 	pid_t pid = -1;

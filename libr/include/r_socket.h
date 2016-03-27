@@ -190,6 +190,7 @@ typedef struct r_run_profile_t {
 	int _maxproc;
 	int _maxfd;
 	int _r2sleep;
+	int _execve;
 	char *_setuid;
 	char *_seteuid;
 	char *_setgid;
