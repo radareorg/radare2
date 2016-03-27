@@ -225,7 +225,6 @@ RBinPlugin r_bin_plugin_java = {
 	.desc = "java bin plugin",
 	.license = "LGPL3",
 	.init = init,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -233,7 +232,6 @@ RBinPlugin r_bin_plugin_java = {
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
 	.binsym = binsym,
 	.entries = &entries,
 	.sections = sections,
@@ -243,14 +241,10 @@ RBinPlugin r_bin_plugin_java = {
 	.info = &info,
 	.fields = fields,
 	.libs = libs,
-	.relocs = NULL,
-	.dbginfo = NULL,
 	.lines = &lines,
-	.write = NULL,
 	.classes = classes,
 	.demangle_type = retdemangle,
 	.minstrlen = 3,
-	.user = NULL
 };
 
 #ifndef CORELIB
