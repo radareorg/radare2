@@ -328,9 +328,17 @@ static int cmd_open(void *data, const char *input) {
 	case '\0':
 	case '*':
 	case 'j':
-		r_core_file_list (core, (int)(*input));
+		if ('?' == input[1]) {
+			eprintf ("Usage: oj\n");
+		} else {
+			r_core_file_list (core, (int)(*input));
+		}
 		break;
 	case 'a':
+		if ('?' == input[1]) {
+			eprintf ("Usage: oa [addr]\n");
+			break;
+		}
 		addr = core->offset;
 		if (input[1]) {
 			addr = r_num_math (core->num, input+1);
@@ -446,24 +454,42 @@ static int cmd_open(void *data, const char *input) {
 	case 'o':
 		switch (input[1]) {
 		case 'd': // "ood" : reopen in debugger
-			r_core_file_reopen_debug (core, input + 2);
+			if ('?' == input[2]) {
+				eprintf ("Usage: ood [args]\n");
+			} else {
+				r_core_file_reopen_debug (core, input + 2);
+			}
 			break;
 		case 'b': // "oob" : reopen with bin info
-			r_core_file_reopen (core, input + 2, 0, 2);
+			if ('?' == input[2]) {
+				eprintf ("Usage: oob [args]\n");
+			} else {
+				r_core_file_reopen (core, input + 2, 0, 2);
+			}
 			break;
 		case 'n':
-			if (input[2]=='n') {
-				perms = (input[3]=='+')? R_IO_READ|R_IO_WRITE: 0;
-				r_core_file_reopen (core, input + 4, perms, 0);
-				// TODO: Use API instead of !rabin2 -rk
-				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
+			if ('n' == input[2]) {
+				if ('?' == input[3]) {
+				eprintf ("Usage: oonn [args]\n");
+				} else {
+					perms = (input[3] == '+')? R_IO_READ|R_IO_WRITE: 0;
+					r_core_file_reopen (core, input + 4, perms, 0);
+					// TODO: Use API instead of !rabin2 -rk
+					r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
+				}
+			} else if ('?' == input[2]) {
+				eprintf ("Usage: oon [args]\n");
 			} else {
-				perms = (input[2]=='+')? R_IO_READ|R_IO_WRITE: 0;
+				perms = ('+' == input[2])? R_IO_READ|R_IO_WRITE: 0;
 				r_core_file_reopen (core, input + 3, perms, 0);
 			}
 			break;
 		case '+':
-			r_core_file_reopen (core, input + 2, R_IO_READ | R_IO_WRITE, 1);
+			if ('?' == input[2]) {
+				eprintf ("Usage: oo+ [args]\n");
+			} else {
+				r_core_file_reopen (core, input + 2, R_IO_READ | R_IO_WRITE, 1);
+			}
 			break;
 		case 0: // "oo"
 			r_core_file_reopen (core, input + 2, 0, 1);
@@ -475,6 +501,10 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case 'c':
+		if ('?' == input[1]) {
+			eprintf ("Usage: oc [file]\n");
+			break;
+		}
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
