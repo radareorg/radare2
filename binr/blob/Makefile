@@ -12,6 +12,7 @@ endif
 SHLR=../../shlr
 include ../../config-user.mk
 include ../../shlr/zip/deps.mk
+include ../../shlr/bochs/deps.mk
 
 ifneq (${ANDROID},1)
 ifneq (${OSTYPE},linux)
