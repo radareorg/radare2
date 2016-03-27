@@ -25,33 +25,41 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char * archivoBochs;
 	char * archivoCfg;
 	int l;
+	if (!r_sandbox_enable (false)) {
+		return NULL;
+	}
 	if (!__plugin_open (io, file, 0))
 		return NULL;
 	if (riobochs) {
 		return riobochs;
 	}
 	archivoBochs = malloc (1024);
+	if (!archivoBochs) return NULL;
 	archivoCfg = malloc (1024);
+	if (!archivoCfg) {
+		free (archivoBochs);
+		return NULL;
+	}
 
        	i = strstr (file+8, "#");
 	if (i) {
-		l = i - file+8;
-		strncpy(archivoBochs,file+8,l<1024?l:1024);
+		l = i - file + 8;
+		strncpy (archivoBochs,file+8,l<1024?l:1024);
 		archivoBochs[l]=0;
 
-		l=strlen(i+1);
-		strncpy(archivoCfg,i+1,l<1024?l:1024);
-		archivoCfg[l]=0;
+		l = strlen (i+1);
+		strncpy (archivoCfg,i+1,l<1024?l:1024);
+		archivoCfg[l] = 0;
 	} else {
-		free(archivoBochs);
-		free(archivoCfg);
-		lprintf("Error cant find : \n");
+		free (archivoBochs);
+		free (archivoCfg);
+		eprintf ("Error cant find :\n");
 		return NULL;
 	}
 	riob = R_NEW0 (RIOBochs);
 
 	// Inicializamos
-	if (bochs_open_(&riob->desc,archivoBochs,archivoCfg) == true) {
+	if (bochs_open (&riob->desc,archivoBochs,archivoCfg) == true) {
 		desc = &riob->desc;
 		riobochs = r_io_desc_new (&r_io_plugin_bochs, -1, file, rw, mode, riob);
 		//riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
@@ -79,13 +87,13 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	ut64 addr = io->off;
 	if (!desc || !desc->data) return -1;
         lprintf("io_read ofs= %016"PFMT64x" count= %x\n",io->off,count);
-	bochs_read_(desc,addr,count,buf);
+	bochs_read (desc,addr,count,buf);
 	return count;
 }
 
 static int __close(RIODesc *fd) {
 	lprintf("io_close\n");
-	bochs_close_(desc);
+	bochs_close (desc);
 	return true;
 }
 	
@@ -100,7 +108,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		io->cb_printf ("%s\n", desc->data);
 		return 1;
 	} else if (!strncmp (cmd, "dobreak", 7)) {
-		CommandStop_ (desc);
+		bochs_cmd_stop (desc);
 		io->cb_printf ("%s\n", desc->data);
 		return 1;
 	}         

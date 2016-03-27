@@ -9,13 +9,13 @@ int sizeSend = 0;
 
 #define SIZE_BUF 0x5800 * 2
 
-int RunRemoteThread_(libbochs_t* b, const ut8 *lpBuffer, ut32 dwSize, int a4, ut32 *lpExitCode) {
 #if __WINDOWS__
+static int RunRemoteThread_(libbochs_t* b, const ut8 *lpBuffer, ut32 dwSize, int a4, ut32 *lpExitCode) {
 	LPVOID pProcessMemory;
-	HANDLE hInjectThread; 
-	int result = 0; 
+	HANDLE hInjectThread;
+	int result = 0;
 	signed int tmpResult;
-	DWORD NumberOfBytesWritten; 
+	DWORD NumberOfBytesWritten;
 
 	tmpResult = 0;
 	pProcessMemory = VirtualAllocEx(b->processInfo.hProcess, 0, dwSize, 0x1000u, 0x40u);
@@ -39,28 +39,26 @@ int RunRemoteThread_(libbochs_t* b, const ut8 *lpBuffer, ut32 dwSize, int a4, ut
 		result = tmpResult;
 	}
 	return result;
-#else
-	return 0;
-#endif
 }
+#endif
 
-void ResetBuffer_(libbochs_t* b) {
+void bochs_reset_buffer(libbochs_t* b) {
 	memset (b->data, 0, SIZE_BUF);
 	b->punteroBuffer = 0;
 }
 
-bool CommandStop_(libbochs_t * b) {
+bool bochs_cmd_stop(libbochs_t * b) {
 #if __WINDOWS__
 	HMODULE hKernel;
 	DWORD ExitCode;
 	DWORD apiOffset = 0;
-	char buffer[] = { 
+	char buffer[] = {
 		0x68, 0x00, 0x00, 0x00, 0x00,	//push    0
 		0x68, 0x00, 0x00, 0x00, 0x00,	//push    0
 		0xE8, 0x00, 0x00, 0x00, 0x00,	//call    $
 		0x83, 0x04, 0x24, 0x0A,		//add     [esp], 0A
 		0x68, 0x30, 0x30, 0x30, 0x30,	//push    GenerateConsoleCtrlEvent
-		0xC3,                           //retn 
+		0xC3,                           //retn
 		0xC2, 0x04, 0x00,		//retn 4
 		0xeb, 0xfe			//jmp $
 	};
@@ -74,22 +72,22 @@ bool CommandStop_(libbochs_t * b) {
 #endif
 }
 
-bool WaitForReply_(libbochs_t *b) {
+bool bochs_wait(libbochs_t *b) {
 #if __WINDOWS__
 	int times = 0;
 	DWORD dwRead,aval,leftm;
 	times = 100; // reintenta durante 10 segundos
-	ResetBuffer_(b);	
+	bochs_reset_buffer(b);	
 	do {
 		while (PeekNamedPipe (b->hReadPipeIn, NULL, 0, NULL, &aval, &leftm)) {
 			if (aval < 0) break;
 			if (!ReadFile(b->hReadPipeIn, &b->data[b->punteroBuffer], SIZE_BUF, &dwRead, 0)) {
-				lprintf("WaitForReply_: !!ERROR Leyendo datos del pipe.\n\n");
+				lprintf("bochs_wait: !!ERROR Leyendo datos del pipe.\n\n");
 				return false;
 			}
 			//lprintf("mythreadlector: %x %x\n",NumberOfBytesRead,punteroBuffer);
 			if (dwRead)
-				b->punteroBuffer +=dwRead; 
+				b->punteroBuffer +=dwRead;
 		}
 		if (strstr (b->data, "<bochs:")) {
 			break;
@@ -106,18 +104,18 @@ void bochs_send_cmd(libbochs_t* b, const char * comando, bool bWait) {
 #if __WINDOWS__
 	//lprintf("Enviando comando: %s\n",comando);
 	DWORD dwWritten;
-	ResetBuffer_(b);
+	bochs_reset_buffer(b);
 	ZeroMemory(cmdBuff,128);
 	sizeSend=sprintf(cmdBuff,"%s\n",comando);
 	WriteFile(b->hWritePipeOut, cmdBuff, strlen(cmdBuff), &dwWritten, NULL);
 	if (bWait)
-		WaitForReply_(b);
+		bochs_wait(b);
 #else
 #warning TODO bochs_send_cmd not implemented for this platform
 #endif
 }
 
-int bochs_read_(libbochs_t* b, ut64 addr, int count, ut8 * buf) {
+int bochs_read(libbochs_t* b, ut64 addr, int count, ut8 * buf) {
 	char buff[128];
 	int lenRec = 0,i = 0,ini = 0, fin = 0, pbuf = 0, totalread = 0;
 	totalread = (count >SIZE_BUF / 3)?  SIZE_BUF / 3: count;
@@ -146,7 +144,7 @@ int bochs_read_(libbochs_t* b, ut64 addr, int count, ut8 * buf) {
 	return 0;
 }
 	
-void bochs_close_(libbochs_t* b) {
+void bochs_close(libbochs_t* b) {
 	b->isRunning = false;
 #if __WINDOWS__
 	CloseHandle (b->hReadPipeIn);
@@ -161,53 +159,61 @@ void bochs_close_(libbochs_t* b) {
 	free (cmdBuff);
 }
 
-bool bochs_open_(libbochs_t* b, const char * rutaBochs, const char * rutaConfig) {
+bool bochs_open(libbochs_t* b, const char * rutaBochs, const char * rutaConfig) {
 	bool result = false;
 #if __WINDOWS__
 	struct _SECURITY_ATTRIBUTES PipeAttributes;
 	char commandline[1024];
 	// alojamos el buffer de datos
-	b->data = malloc(SIZE_BUF);
-	lpTmpBuffer = malloc(SIZE_BUF);
-	cmdBuff = malloc(128);
-	lprintf("bochs_open: invocado\n"); 
+	b->data = malloc (SIZE_BUF);
+	if (!b->data) return false;
+	lpTmpBuffer = malloc (SIZE_BUF);
+	if (!lpTmpBuffer) {
+		R_FREE (b->data);
+		return false;
+	}
+	cmdBuff = malloc (128);
+	if (!cmdBuff) {
+		R_FREE (b->data);
+		free (lpTmpBuffer);
+		return false;
+	}
 	// creamos los pipes
 	PipeAttributes.nLength = 12;
 	PipeAttributes.bInheritHandle = 1;
 	PipeAttributes.lpSecurityDescriptor = 0;
 	//
-	result = FALSE;
-	if (CreatePipe(&b->hReadPipeIn, &b->hReadPipeOut, &PipeAttributes, SIZE_BUF) && 
-	    CreatePipe(&b->hWritePipeIn, &b->hWritePipeOut, &PipeAttributes, SIZE_BUF)
+	if (CreatePipe (&b->hReadPipeIn, &b->hReadPipeOut, &PipeAttributes, SIZE_BUF) &&
+	    CreatePipe (&b->hWritePipeIn, &b->hWritePipeOut, &PipeAttributes, SIZE_BUF)
 	   ) {
 		//  Inicializamos las estructuras
-		ZeroMemory(&b->info, sizeof(STARTUPINFO));
-		ZeroMemory(&b->processInfo, sizeof(PROCESS_INFORMATION));
-		b->info.cb = sizeof(STARTUPINFO);
+		memset (&b->info, 0, sizeof (STARTUPINFO));
+		memset (&b->processInfo, 0, sizeof (PROCESS_INFORMATION));
+		b->info.cb = sizeof (STARTUPINFO);
 		// Asignamos los pipes
 		b->info.hStdError = b->hReadPipeOut;
 		b->info.hStdOutput = b->hReadPipeOut;
 		b->info.hStdInput = b->hWritePipeIn;
 		b->info.dwFlags |=  STARTF_USESTDHANDLES;
 		// Creamos el proceso
-		sprintf(commandline, "\"%s\" -f \"%s\" -q ",rutaBochs,rutaConfig);
+		snprintf (commandline, sizeof (commandline), "\"%s\" -f \"%s\" -q ",rutaBochs,rutaConfig);
 		lprintf("*** Creando proces: %s\n",commandline);
-		if (CreateProcessA(NULL, commandline, NULL, NULL,TRUE, CREATE_NEW_CONSOLE , NULL, NULL, &b->info, &b->processInfo)) {
-			lprintf ("Proceso spawneado\n");
+		if (CreateProcessA (NULL, commandline, NULL, NULL, TRUE, CREATE_NEW_CONSOLE , NULL, NULL, &b->info, &b->processInfo)) {
+			lprintf ("Process created\n");
 			WaitForInputIdle (b->processInfo.hProcess, INFINITE);
-			lprintf ("Entrada inicializada\n");
+			lprintf ("Initialized input\n");
 
 			b->isRunning = true;
 			//CreateThread(NULL, 0, MyThLector_, b, 0, 0);
 			//b->ghWriteEvent = CreateEvent(NULL, TRUE, FALSE, TEXT("WriteEvent"));
 			//CreateThread(NULL, 0, MyThEscritor_, b, 0, 0);
-			ResetBuffer_(b);
-			lprintf("Esperando inicializacion de bochs.\n");
-			if (WaitForReply_(b)) {
-				lprintf("Inicializacion completa.\n");
+			bochs_reset_buffer (b);
+			eprintf ("Waiting for bochs...\n");
+			if (bochs_wait(b)) {
+				eprintf ("Ready.\n");
 				result = true;
 			} else {
-				bochs_close_(b);
+				bochs_close (b);
 			}
 		}
 	}

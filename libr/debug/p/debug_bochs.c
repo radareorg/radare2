@@ -20,7 +20,7 @@ typedef struct {
 static libbochs_t *desc = NULL;
 
 static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
-	char cmd[50];
+	char cmd[64];
 	char num[4];
 	char addr[19];
 	char bufcmd[100];
@@ -31,7 +31,7 @@ static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	if (set) {
 		//eprintf("[set] bochs_breakpoint %016"PFMT64x"\n",bp->addr);
 		sprintf (cmd, "lb 0x%x", (ut32)bp->addr);
-		bochs_send_cmd(desc,cmd,true);
+		bochs_send_cmd (desc, cmd, true);
 		bCapturaRegs = true;
 	} else {
 		//eprintf("[unset] bochs_breakpoint %016"PFMT64x"\n",bp->addr);
@@ -62,9 +62,9 @@ static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 			} while (desc->data[i] != '<' && i<lenRec-4);
 		}
 		if (a == bp->addr) {
-			snprintf (bufcmd,sizeof (bufcmd), "d %i",n);
+			snprintf (bufcmd, sizeof (bufcmd), "d %i",n);
 			//eprintf("[unset] Break point localizado indice = %x (%x) %s \n",n,(DWORD)a,bufcmd);
-			bochs_send_cmd(desc,bufcmd,true);
+			bochs_send_cmd (desc, bufcmd, true);
 		}
 
 	}
@@ -233,7 +233,7 @@ static int r_debug_bochs_continue(RDebug *dbg, int pid, int tid, int sig) {
 
 static void bochs_debug_break(void *u) {
 	eprintf("bochs_debug_break: Sending break...\n");
-	CommandStop_ (desc);
+	bochs_cmd_stop (desc);
 	bBreak = true;
 }
 
@@ -251,7 +251,7 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 		r_cons_break (bochs_debug_break, dbg);
 		i = 500;
 		do {
-			WaitForReply_(desc);
+			bochs_wait (desc);
 			if (bBreak) {
 				if (desc->data[0]) {
 					eprintf("ctrl+c %s\n", desc->data);

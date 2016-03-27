@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2012-2015 - pancake */
+/* radare - LGPL - Copyright 2012-2016 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
 
-static int enabled = 0;
-static int disabled = 0;
+static bool enabled = 0;
+static bool disabled = 0;
 
 /**
  * This function verifies that the given path is allowed. Paths are allowed only if they don't
@@ -51,7 +51,7 @@ R_API int r_sandbox_check_path (const char *path) {
 	return R_TRUE;
 }
 
-R_API int r_sandbox_disable (int e) {
+R_API bool r_sandbox_disable (bool e) {
 	if (e) {
 		disabled = enabled;
 		enabled = 0;
@@ -61,8 +61,8 @@ R_API int r_sandbox_disable (int e) {
 	return enabled;
 }
 
-R_API int r_sandbox_enable (int e) {
-	if (enabled) return R_TRUE;
+R_API bool r_sandbox_enable (bool e) {
+	if (enabled) return true;
 	return (enabled = !!e);
 }
 
