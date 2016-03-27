@@ -10,7 +10,7 @@ int sizeSend = 0;
 #define SIZE_BUF 0x5800 * 2
 
 #if __WINDOWS__
-static int RunRemoteThread_(libbochs_t* b, const ut8 *lpBuffer, ut32 dwSize, int a4, ut32 *lpExitCode) {
+int RunRemoteThread_(libbochs_t* b, const ut8 *lpBuffer, ut32 dwSize, int a4, ut32 *lpExitCode) {
 	LPVOID pProcessMemory;
 	HANDLE hInjectThread;
 	int result = 0;
