@@ -72,7 +72,7 @@ static int lang_c_run(RLang *lang, const char *code, int len) {
 	return true;
 }
 
-static struct r_lang_plugin_t r_lang_plugin_c = {
+static RLangPlugin r_lang_plugin_c = {
 	.name = "c",
 	.ext = "c",
 	.desc = "C language extension",
