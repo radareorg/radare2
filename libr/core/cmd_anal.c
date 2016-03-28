@@ -3613,6 +3613,56 @@ static void rowlog_done(RCore *core) {
 	else eprintf ("\r[x] %s\n", oldstr);
 }
 
+static int compute_coverage(RCore *core) {
+	RListIter *iter;
+	RAnalFunction *fcn;
+	int cov = 0;
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		cov += r_anal_fcn_size (fcn);
+	}
+	return cov;
+}
+
+static int compute_xrefs(RCore *core) {
+	RListIter *iter;
+	RAnalFunction *fcn;
+	int cov = 0;
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		cov += r_list_length (fcn->xrefs);
+	}
+	return cov;
+}
+
+static void r_core_anal_info (RCore *core, const char *input) {
+	int fcns = r_list_length (core->anal->fcns);
+	int strs = r_flag_count (core->flags, "str.*");
+	int syms = r_flag_count (core->flags, "sym.*");
+	int imps = r_flag_count (core->flags, "sym.imp.*");
+	int code = r_num_get (core->num, "$SS");
+	int covr = compute_coverage (core);
+	int xrfs = compute_xrefs (core);
+	if (*input == 'j') {
+		r_cons_printf ("{\"fcns\":%d", fcns);
+		r_cons_printf (",\"fcns\":%d", fcns);
+		r_cons_printf (",\"xrefs\":%d", xrfs);
+		r_cons_printf (",\"strings\":%d", strs);
+		r_cons_printf (",\"symbols\":%d", syms);
+		r_cons_printf (",\"imports\":%d", imps);
+		r_cons_printf (",\"covrage\":%d", covr);
+		r_cons_printf (",\"codesz\":%d", code);
+		r_cons_printf (",\"percent\":%d}\n", covr * 100 / code);
+	} else {
+		r_cons_printf ("fcns    %d\n", fcns);
+		r_cons_printf ("xrefs   %d\n", xrfs);
+		r_cons_printf ("strings %d\n", strs);
+		r_cons_printf ("symbols %d\n", syms);
+		r_cons_printf ("imports %d\n", imps);
+		r_cons_printf ("covrage %d\n", covr);
+		r_cons_printf ("codesz  %d\n", code);
+		r_cons_printf ("percent %d%%\n", covr * 100 / code);
+	}
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	const char *help_msg_aa[] = {
 		"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
@@ -3621,6 +3671,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		"aaa", "", "autoname functions after aa (see afna)",
 		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
 		"aae", " [len]", "analyze references with ESIL",
+		"aai", "[j]", "show info of all analysis parameters",
 		"aar", " [len]", "analyze len bytes of instructions for references",
 		"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
@@ -3635,6 +3686,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case '*':
 		r_core_cmd0 (core, "af @@ sym.*");
 		r_core_cmd0 (core, "af @ entry0");
+		break;
+	case 'i':
+		r_core_anal_info (core, input + 1);
 		break;
 	case 's':
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
@@ -3701,19 +3755,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			}
 		jacuzzi:
 			flag_every_function (core);
-			/* TODO: move into a separate command */
-
-			eprintf ("fcns: %d\n", r_list_length (core->anal->fcns));
-			char *xrefs = r_core_cmd_str (core, "ax~xref?");
-			eprintf ("xref: %d\n", atoi (xrefs));
-			free (xrefs);
-			int sect = r_num_get (core->num, "$SS");
-			eprintf ("sect: %d\n", sect);
-			xrefs = r_core_cmd_str (core, "afls");
-			int code = atoi (xrefs);
-			eprintf ("code: %d\n", code);
-			free (xrefs);
-			eprintf ("covr: %d %%\n", code * 100 / ((sect>0)?sect:1) );
+		//	r_core_cmd0 (core, "aai");
 		}
 		break;
 	case 't': {

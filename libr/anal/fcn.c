@@ -1232,3 +1232,14 @@ R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
 	}
 	return NULL;
 }
+
+R_API int r_anal_fcn_size(RAnalFunction *fcn) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	int sz = 0;
+
+	r_list_foreach (fcn->bbs, iter, bb) {
+		sz += bb->size;
+	}
+	return sz;
+}

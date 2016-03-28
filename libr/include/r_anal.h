@@ -1275,7 +1275,7 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind);
 
 /* vars // globals. not here  */
 
-
+R_API int r_anal_fcn_size(RAnalFunction *fcn);
 R_API int r_anal_fcn_cc(RAnalFunction *fcn);
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 addr);
 R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb);
