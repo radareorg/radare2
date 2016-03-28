@@ -3623,7 +3623,7 @@ static int compute_coverage(RCore *core) {
 	return cov;
 }
 
-static int compute_xrefs(RCore *core) {
+static int compute_calls(RCore *core) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	int cov = 0;
@@ -3640,11 +3640,12 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	int imps = r_flag_count (core->flags, "sym.imp.*");
 	int code = r_num_get (core->num, "$SS");
 	int covr = compute_coverage (core);
-	int xrfs = compute_xrefs (core);
+	int call = compute_calls (core);
+	int xrfs = r_anal_xrefs_count (core->anal);
 	if (*input == 'j') {
 		r_cons_printf ("{\"fcns\":%d", fcns);
-		r_cons_printf (",\"fcns\":%d", fcns);
 		r_cons_printf (",\"xrefs\":%d", xrfs);
+		r_cons_printf (",\"calls\":%d", call);
 		r_cons_printf (",\"strings\":%d", strs);
 		r_cons_printf (",\"symbols\":%d", syms);
 		r_cons_printf (",\"imports\":%d", imps);
@@ -3654,6 +3655,7 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	} else {
 		r_cons_printf ("fcns    %d\n", fcns);
 		r_cons_printf ("xrefs   %d\n", xrfs);
+		r_cons_printf ("calls   %d\n", call);
 		r_cons_printf ("strings %d\n", strs);
 		r_cons_printf ("symbols %d\n", syms);
 		r_cons_printf ("imports %d\n", imps);
@@ -3687,7 +3689,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd0 (core, "af @@ sym.*");
 		r_core_cmd0 (core, "af @ entry0");
 		break;
-	case 'i':
+	case 'i': // "aai"
 		r_core_anal_info (core, input + 1);
 		break;
 	case 's':

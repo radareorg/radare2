@@ -214,3 +214,19 @@ R_API const char *r_anal_xrefs_type_tostring (char type) {
 	}
 }
 
+typedef struct {
+	RAnal *anal;
+	int count;
+} CountState;
+
+static int countcb(CountState *cs, const char *k, const char *v) {
+	if (!strncmp (k, "ref.", 4))
+		cs->count ++;
+	return 1;
+}
+
+R_API int r_anal_xrefs_count(RAnal *anal) {
+	CountState cs = { anal, 0 };
+	sdb_foreach (DB, (SdbForeachCallback)countcb, &cs);
+	return cs.count;
+}
