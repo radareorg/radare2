@@ -100,8 +100,7 @@ static int decode_index32(const ut8 *data, ebc_index_t *index) {
 	ut32 tmp = *(ut32*)data;
 	index->type = EBC_INDEX32;
 	index->sign = tmp & EBC_NTH_BIT(31) ? EBC_INDEX_PLUS : EBC_INDEX_MINUS;
-	//should be multiplied by 4 here but EbcDebugger does not do that
-	index->a_width = ((tmp >> 28) & EBC_N_BIT_MASK(2)) * 2;
+	index->a_width = ((tmp >> 28) & EBC_N_BIT_MASK(2)) * 4;
 	index->n = tmp & EBC_N_BIT_MASK(index->a_width);
 	index->c = (tmp >> index->a_width) & EBC_N_BIT_MASK(28 - index->a_width);
 	return 0;
@@ -111,7 +110,7 @@ static int decode_index64(const ut8 *data, ebc_index_t *index) {
 	ut64 tmp = *(ut64*)data;
 	index->type = EBC_INDEX64;
 	index->sign = tmp & EBC_NTH_BIT(63) ? EBC_INDEX_PLUS : EBC_INDEX_MINUS;
-	index->a_width = ((tmp >> 60) & EBC_N_BIT_MASK(2)) * 2;
+	index->a_width = ((tmp >> 60) & EBC_N_BIT_MASK(2)) * 8;
 	index->n = tmp & EBC_N_BIT_MASK(index->a_width);
 	index->c = (tmp >> index->a_width) & EBC_N_BIT_MASK(60- index->a_width);
 	return 0;
