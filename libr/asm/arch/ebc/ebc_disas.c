@@ -185,6 +185,8 @@ static int decode_call(const ut8 *bytes, ebc_command_t *cmd) {
 	ut8 op1 = bytes[1] & 0x7;
 	ut32 i1;
 	unsigned long i2;
+	ebc_index_t idx32;
+	char sign;
 
 	if (!TEST_BIT (bytes[0], 6)) {
 		//CALL32
@@ -194,10 +196,12 @@ static int decode_call(const ut8 *bytes, ebc_command_t *cmd) {
 			//operand 1 indirect
 			if (TEST_BIT (bytes[0], 7)) {
 				// immediate data is present
-				i1 = *(ut32*)(bytes + 2);
-				// TODO: if operand is indirect immediate data is index
+				decode_index32(bytes + 2, &idx32);
+				sign = idx32.sign ? '+' : '-';
+
 				snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
-						"@r%d(0x%x)", op1, i1);
+						"@r%d(%c%u, %c%u)",
+						op1, sign, idx32.n, sign, idx32.c);
 				ret = 6;
 			} else {
 				snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
