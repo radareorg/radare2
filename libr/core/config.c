@@ -1661,6 +1661,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* http */
 	SETPREF("http.cors", "false", "Enable CORS");
+	SETPREF("http.referer", "", "CSFR protection if set");
 	SETPREF("http.dirlist", "false", "Enable directory listing");
 	SETPREF("http.allow", "", "Only accept clients from the comma separated IP list");
 #if __WINDOWS__

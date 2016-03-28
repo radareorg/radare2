@@ -116,6 +116,7 @@ typedef struct r_socket_http_request {
 	char *host;
 	char *agent;
 	char *method;
+	char *referer;
 	ut8 *data;
 	int data_length;
 } RSocketHTTPRequest;

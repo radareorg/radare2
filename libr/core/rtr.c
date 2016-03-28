@@ -593,52 +593,71 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 				char *cmd = rs->path +5;
 				char foo[32];
 				const char *httpcmd = r_config_get (core->config, "http.uri");
-				while (*cmd=='/') cmd++;
-				if (httpcmd && *httpcmd) {
-					int len;
-					char *res;
-					// do remote http query and proxy response
-					snprintf (foo, sizeof (foo), "%s/%s", httpcmd, cmd);
-					res = r_socket_http_get (foo, NULL, &len);
-					if (res) {
-						res[len]=0;
-						r_cons_printf ("%s\n", res);
+				const char *httpref = r_config_get (core->config, "http.referer");
+				bool httpref_enabled;
+				char *refstr = NULL;
+				if (httpref && *httpref) {
+					httpref_enabled = true;
+					if (strstr (httpref, "http")) {
+						refstr = strdup (httpref);
+					} else {
+						refstr = r_str_newf ("http://localhost:%d/", atoi (port));
 					}
 				} else {
-					char *out, *cmd = rs->path+5;
-					r_str_uri_decode (cmd);
-					r_config_set (core->config, "scr.interactive", "false");
-					if (!strcmp (cmd, "=h*")) {
-						if (r_sandbox_enable (0)) {
+					httpref_enabled = false;
+				}
+
+				while (*cmd=='/') cmd++;
+				if (httpref_enabled && (!rs->referer || (refstr && !strstr (rs->referer, refstr)))) {
+					r_socket_http_response (rs, 503, "", 0, headers);
+				} else {
+					if (httpcmd && *httpcmd) {
+						int len;
+						char *res;
+						// do remote http query and proxy response
+						snprintf (foo, sizeof (foo), "%s/%s", httpcmd, cmd);
+						res = r_socket_http_get (foo, NULL, &len);
+						if (res) {
+							res[len]=0;
+							r_cons_printf ("%s\n", res);
+						}
+					} else {
+						char *out, *cmd = rs->path+5;
+						r_str_uri_decode (cmd);
+						r_config_set (core->config, "scr.interactive", "false");
+						if (!strcmp (cmd, "=h*")) {
+							if (r_sandbox_enable (0)) {
+								out = NULL;
+							} else {
+								/* do stuff */
+								out = NULL;
+								r_socket_http_close (rs);
+								free (dir);
+								ret = -2;
+								goto the_end;
+							}
+						}
+						if (*cmd == ':') {
+							/* commands in /cmd/: starting with : do not show any output */
+							r_core_cmd0 (core, cmd+1);
 							out = NULL;
 						} else {
-							/* do stuff */
-							out = NULL;
-							r_socket_http_close (rs);
-							free (dir);
-							ret = -2;
-							goto the_end;
+							// eprintf ("CMD (%s)\n", cmd);
+							out = r_core_cmd_str_pipe (core, cmd);
 						}
+						// eprintf ("\nOUT LEN = %d\n", strlen (out));
+						if (out) {
+							char *res = r_str_uri_encode (out);
+							char newheaders [128];
+							snprintf(newheaders, sizeof(newheaders),
+								"Content-Type: text/plain\n%s", headers);
+							r_socket_http_response (rs, 200, out, 0, newheaders);
+							free (out);
+							free (res);
+						} else r_socket_http_response (rs, 200, "", 0, headers);
 					}
-					if (*cmd == ':') {
-						/* commands in /cmd/: starting with : do not show any output */
-						r_core_cmd0 (core, cmd+1);
-						out = NULL;
-					} else {
-						// eprintf ("CMD (%s)\n", cmd);
-						out = r_core_cmd_str_pipe (core, cmd);
-					}
-					// eprintf ("\nOUT LEN = %d\n", strlen (out));
-					if (out) {
-						char *res = r_str_uri_encode (out);
-						char newheaders [128];
-						snprintf(newheaders, sizeof(newheaders),
-							"Content-Type: text/plain\n%s", headers);
-						r_socket_http_response (rs, 200, out, 0, newheaders);
-						free (out);
-						free (res);
-					} else r_socket_http_response (rs, 200, "", 0, headers);
 				}
+				free (refstr);
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
 				char *path = r_file_root (root, rs->path);
