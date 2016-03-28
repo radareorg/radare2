@@ -228,8 +228,9 @@ static int decode_call(const ut8 *bytes, ebc_command_t *cmd) {
 		snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
 				"0x%lx", i2);
 	}
-	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%d%s",
+	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%d%s%s",
 			instr_names[EBC_CALL], bits,
+			TEST_BIT(bytes[1], 5) ? "ex" : "",
 			TEST_BIT(bytes[1], 4) ? "" : "a");
 	return ret;
 }
