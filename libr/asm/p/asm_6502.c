@@ -9,7 +9,7 @@
 #include "../arch/6502/6502dis.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int dlen = _6502Disass (op, buf, len);
+	int dlen = _6502Disass (a->pc, op, buf, len);
 	if(dlen<0) dlen=0;
 	op->size = dlen;
 	return dlen;
