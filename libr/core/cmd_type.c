@@ -355,13 +355,18 @@ static int cmd_type(void *data, const char *input) {
 	case 'p': {
 		const char *type = input + 2;
 		char *ptr = strchr (type, ' ');
-		*ptr++ = 0;
-		ut64 addr = r_num_math (core->num, ptr);
-		char *fmt = r_anal_type_format (core->anal, type);
-		if (fmt) {
-			r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
-			free (fmt);
-		} else eprintf ("Cannot find '%s' type\n", input + 1);
+		if (ptr) {
+			*ptr++ = 0;
+			ut64 addr = r_num_math (core->num, ptr);
+			char *fmt = r_anal_type_format (core->anal, type);
+			if (fmt) {
+				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+				free (fmt);
+			} else eprintf ("Cannot find '%s' type\n", input + 1);
+		} else {
+			eprintf ("see t?\n");
+			break;
+		}
 		}
 		break;
 	case '-':

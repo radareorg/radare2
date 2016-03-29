@@ -2316,6 +2316,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			free (str2);
 		}
 		r_anal_op_fini (&aop);
+		free (old_arch);
 		}
 		break;
 	case '?':
