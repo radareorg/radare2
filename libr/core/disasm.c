@@ -80,6 +80,7 @@ typedef struct r_disam_options_t {
 	int show_emu_str;
 	int show_emu_write;
 	int show_section;
+	int show_symbols;
 	int show_offseg;
 	int show_flags;
 	int show_bytes;
@@ -374,6 +375,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
 	ds->show_bbline = r_config_get_i (core->config, "asm.bbline");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
+	ds->show_symbols = r_config_get_i (core->config, "asm.symbol");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
 	ds->show_emu_str = r_config_get_i (core->config, "asm.emustr");
 	ds->show_emu_write = r_config_get_i (core->config, "asm.emuwrite");
@@ -1233,9 +1235,31 @@ static void handle_print_lines_right (RCore *core, RDisasmState *ds){
 	}
 }
 
-static void handle_print_lines_left (RCore *core, RDisasmState *ds){
+static void handle_print_lines_left (RCore *core, RDisasmState *ds) {
 	if (ds->show_section) {
 		r_cons_strcat (getSectionName (core, ds->at));
+	}
+	if (ds->show_symbols) {
+		static RFlagItem sfi = {0};
+		const char *name = "";
+		int delta = 0;
+		if (ds->fcn) {
+			sfi.offset = ds->fcn->addr;
+			sfi.name = ds->fcn->name;
+			ds->lastflag = &sfi;
+		} else {
+			RFlagItem *fi = r_flag_get_at (core->flags, ds->at);
+			if (fi) { // && (!ds->lastflag || fi->offset != ds->at)) {
+				sfi.offset = fi->offset;
+				sfi.name = fi->name;
+				ds->lastflag = &sfi;
+			}
+		}
+		if (ds->lastflag) {
+			name = ds->lastflag->name;
+			delta = ds->at - ds->lastflag->offset;
+		}
+		r_cons_printf ("%20s + %-4d", name, delta);
 	}
 	if (!ds->linesright && ds->show_lines && ds->line) {
 		r_cons_printf ("%s%s%s", COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
@@ -1298,6 +1322,7 @@ static void handle_print_offset (RCore *core, RDisasmState *ds) {
 					ds->at, R_ANAL_FCN_TYPE_NULL);
 			if (f) {
 				delta = ds->at - f->addr;
+				sfi.name = f->name;
 				sfi.offset = f->addr;
 				ds->lastflag = &sfi;
 			} else {
