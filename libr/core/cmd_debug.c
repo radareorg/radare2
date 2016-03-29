@@ -1146,6 +1146,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"drf","","show fpu registers (80 bit long double)",
 				"drm","","show multimedia packed registers",
 				"drm"," mmx0 0 32 = 12","set the first 32 bit word of the mmx reg to 12",
+				"drw"," <hexnum>", "Set contents of the register arena",
 				".dr", "*", "Include common register values in flags",
 				".dr", "-", "Unflag all registers",
 				NULL

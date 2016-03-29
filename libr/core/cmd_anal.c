@@ -1201,6 +1201,7 @@ static void ar_show_help(RCore *core) {
 		"arp", " <file>", "Load register profile from file",
 		"ars", "", "Stack register state",
 		"art", "", "List all register types",
+		"arw", " <hexnum>", "Set contents of the register arena", 
 		".ar*", "", "Import register values as flags",
 		".ar-", "", "Unflag all registers",
 		NULL };
@@ -1214,6 +1215,14 @@ static void cmd_ara_help(RCore *core) {
 		"ara", "+", "push a new register arena for each type",
 		"ara", "-", "pop last register arena",
 		"aras", "", "swap last two register arenas",
+		NULL };
+	r_core_cmd_help (core, help_msg);
+}
+
+static void cmd_arw_help (RCore *core) {
+	const char *help_msg[] = {
+		"Usage:", " arw ", "# Set contents of the register arena",
+		"arw", " <hexnum>", "Set contents of the register arena",
 		NULL };
 	r_core_cmd_help (core, help_msg);
 }
@@ -1256,11 +1265,18 @@ void cmd_anal_reg (RCore *core, const char *str) {
 		}
 		break;
 	case 'w':
-                if (str[1] == '\0') {
-                        eprintf ("Need string\n");
-                        break;
-                }
-                r_reg_arena_set_bytes (core->anal->reg, str + 1);
+		switch (str[1]) {
+		case '?': {
+			cmd_arw_help (core);
+			break;
+		}
+		case ' ':
+			r_reg_arena_set_bytes (core->anal->reg, str + 1);
+			break;
+		default:
+			cmd_arw_help (core);
+			break;
+		}
                 break;
 	case 'a': // "ara"
 		switch (str[1]) {
