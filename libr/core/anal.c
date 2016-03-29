@@ -1357,7 +1357,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			} else if (rad == 'j') {
 				r_cons_printf ("%s{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 						count>1? ",":"", fcn->addr, name, fcn->size);
-				r_cons_printf (",\"realsize\":%d", r_anal_fcn_size (fcn));
+				r_cons_printf (",\"realsz\":%d", r_anal_fcn_size (fcn));
 				r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
 				r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
 				r_cons_printf (",\"calltype\":\"%s\"", r_anal_cc_type2str (fcn->call));
@@ -1441,7 +1441,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			} else {
 				r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 						fcn->addr, name, (ut64)fcn->size);
-				r_cons_printf ("\n real-size: %d", r_anal_fcn_size (fcn));
+				r_cons_printf ("\n realsz: %d", r_anal_fcn_size (fcn));
 				r_cons_printf ("\n call-convention: %s", r_anal_cc_type2str (fcn->call));
 				r_cons_printf ("\n cyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
 				r_cons_printf ("\n type: %s",
