@@ -355,7 +355,11 @@ static int cmd_type(void *data, const char *input) {
 	case 'p': {
 		const char *type = input + 2;
 		char *ptr = strchr (type, ' ');
-		*ptr++ = 0;
+		if (!ptr) {
+			eprintf ("see t?\n");
+			break;
+		}
+		*ptr++=0;
 		ut64 addr = r_num_math (core->num, ptr);
 		char *fmt = r_anal_type_format (core->anal, type);
 		if (fmt) {
