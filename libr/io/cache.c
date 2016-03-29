@@ -14,8 +14,7 @@ static void cache_item_free(RIOCache *cache) {
 }
 
 R_API void r_io_cache_init(RIO *io) {
-	io->cache = r_list_new ();
-	io->cache->free = (RListFree)cache_item_free;
+	io->cache = r_list_newf ((RListFree)cache_item_free);
 	io->cached = false; // cache write ops
 	io->cached_read = false; // cached read ops
 }
@@ -108,6 +107,9 @@ R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 		/* this is a hack to solve issues */
 		return 0;
 	}
+	if (len < 0) {
+		return 0;
+	}
 #if 0
 	for (i = 0; i<len; i++) {
 		if (buf[i] != 0xff)
@@ -143,6 +145,9 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int covered = 0;
 	RListIter *iter;
 	RIOCache *c;
+	if (len < 0) {
+		return 0;
+	}
 
 	r_list_foreach (io->cache, iter, c) {
 		if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {
