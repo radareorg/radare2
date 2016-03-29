@@ -309,18 +309,13 @@ static int decode_cmpugte(const ut8 *bytes, ebc_command_t *cmd) {
 }
 
 static int decode_not(const ut8 *bytes, ebc_command_t *cmd) {
-	// TODO
-	return TEST_BIT (bytes[0], 7)? 4: 2;
-}
-
-static int decode_neg(const ut8 *bytes, ebc_command_t *cmd) {
 	int ret = 2;
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	unsigned op1, op2;
 	char index[32] = {0};
 	ut16 immed;
 
-	snprintf(cmd->instr, EBC_INSTR_MAXLEN, "%s%u", instr_names[EBC_NEG],
+	snprintf(cmd->instr, EBC_INSTR_MAXLEN, "%s%u", instr_names[EBC_NOT],
 			bits);
 
 	op1 = bytes[1] & 0x07;
@@ -344,6 +339,13 @@ static int decode_neg(const ut8 *bytes, ebc_command_t *cmd) {
 	snprintf (cmd->operands, EBC_OPERANDS_MAXLEN, "%sr%d, %sr%d%s",
 			TEST_BIT(bytes[1], 3) ? "@" : "", op1,
 			TEST_BIT(bytes[1], 7) ? "@" : "", op2, index);
+	return ret;
+}
+
+static int decode_neg(const ut8 *bytes, ebc_command_t *cmd) {
+	int ret = decode_not(bytes, cmd);
+	cmd->instr[1] = 'e';
+	cmd->instr[2] = 'g';
 	return ret;
 }
 
