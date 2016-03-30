@@ -443,6 +443,15 @@ int main(int argc, char **argv, char **envp) {
 		r_list_free (cmds);
 		return main_help (help > 1? 2: 0);
 	}
+	if (debug == 1) {
+		char *uri = strdup (argv[optind]);
+		if (strstr (uri, "://")) {
+			*uri = 0;
+			debugbackend = uri;
+		} else {
+			free (uri);
+		}
+	}
 
 	if ((tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
 		r_config_set_i (r.config, "cfg.plugins", 0);
