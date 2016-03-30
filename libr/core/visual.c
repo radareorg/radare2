@@ -650,9 +650,13 @@ R_API int r_core_visual_xrefs_x (RCore *core) {
 	int skip = 0;
 	int idx = 0;
 	char cstr[32];
+	ut64 addr = core->offset;
+	if (core->print->cur_enabled) {
+		addr += core->print->cur;
+	}
 
 repeat:
-	if ((xrefs = r_anal_xref_get (core->anal, core->offset))) {
+	if ((xrefs = r_anal_xref_get (core->anal, addr))) {
 		r_cons_clear00 ();
 		r_cons_gotoxy (1, 1);
 		r_cons_printf ("[GOTO XREF]> 0x%08"PFMT64x"\n", core->offset);
