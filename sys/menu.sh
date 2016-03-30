@@ -38,7 +38,7 @@ MainMenu() {
 			BuildAndInstall
 			;;
 		"Select plugins")
-			Todo "Cherry-picking plugins is not yet done"
+			SelectPlugin
 			;;
 		"Cleanup")
 			Cleanup
@@ -51,6 +51,41 @@ MainMenu() {
 			;;
 		esac
 	done
+}
+
+
+SelectPlugin () {
+	SelectPluginStatic
+	SelectPluginShared
+	./configure-plugins
+}
+
+SelectPluginShared () {
+	PLUGINS="`diff plugins .static.plugins | grep "<" | awk '{print $2}'`"
+	ARGS=""
+	for a in ${PLUGINS} ; do
+		ARGS="${ARGS} $a . on"
+	done
+	dialog --checklist "Select Shared Plugins" 0 0 0 ${ARGS}  2> .nconfig.tmp
+	OPT=$(<.nconfig.tmp)
+	echo "SHARED=\"" >> plugins.cfg
+	echo $OPT >> plugins.cfg
+	echo "\"" >> plugins.cfg
+	rm .static.plugins
+}
+
+SelectPluginStatic() {
+	PLUGINS="`cat plugins`"
+	ARGS=""
+	for a in ${PLUGINS} ; do
+		ARGS="${ARGS} $a . on"
+	done
+	dialog --checklist "Select Static Plugins" 0 0 0 ${ARGS}  2> .nconfig.tmp
+	OPT=$(<.nconfig.tmp)
+	echo "STATIC=\"" > plugins.cfg
+	echo $OPT >> plugins.cfg
+	echo $OPT | tr " " "\n" > .static.plugins
+	echo "\"" >> plugins.cfg
 }
 
 Packages() {
