@@ -725,6 +725,7 @@ static bool init_dynstr(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i, r;
 	const char *section_name = NULL;
 	if (!bin || !bin->shdr) return false;
+	if (!bin->shstrtab) return false;
 	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
 		if (bin->shdr[i].sh_name > bin->shstrtab_size)
 			return false;
