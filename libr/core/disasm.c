@@ -2189,7 +2189,7 @@ addr       addr+size
 
 static void handle_print_relocs (RCore *core, RDisasmState *ds) {
 	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
-	if (rel) {
+	if (rel && rel->addend) {
 		if (rel->import)
 			r_cons_printf ("  ; RELOC %d %s", rel->type, rel->import->name);
 		else if (rel->symbol)
