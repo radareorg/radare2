@@ -326,6 +326,8 @@ static int cmd_open(void *data, const char *input) {
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		break;
 	case '\0':
+		r_core_file_list (core, (int)(*input));
+		break;
 	case '*':
 		if ('?' == input[1]) {
 			const char *help_msg[] = {
