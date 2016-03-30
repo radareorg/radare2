@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2016 - pancake */
 
 #include <r_fs.h>
 #include "grubfs.h"
@@ -81,7 +81,7 @@ static void FSP(_umount)(RFSRoot *root) {
 	root->ptr = NULL;
 }
 
-struct r_fs_plugin_t FSS(r_fs_plugin) = {
+RFSPlugin FSS(r_fs_plugin) = {
 	.name = FSNAME,
 	.desc = FSDESC,
 	.open = FSP(_open),
