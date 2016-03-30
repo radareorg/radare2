@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2015 - pancake, sghctoma */
+/* radare - LGPL - Copyright 2013-2016 - pancake, sghctoma */
 
 #include <r_cons.h>
 
@@ -88,22 +88,29 @@ struct {
 } colors[] = {
 	{ "black",    Color_BLACK,    Color_BGBLACK },
 	{ "red",      Color_RED,      Color_BGRED },
+	{ "bred",     Color_BRED,     Color_BGRED },
 	{ "white",    Color_WHITE,    Color_BGWHITE },
 	{ "green",    Color_GREEN,    Color_BGGREEN },
+	{ "bgreen",   Color_BGREEN,   Color_BGGREEN },
 	{ "magenta",  Color_MAGENTA,  Color_BGMAGENTA },
+	{ "bmagenta", Color_BMAGENTA, Color_BGMAGENTA },
 	{ "yellow",   Color_YELLOW,   Color_BGYELLOW },
+	{ "byellow",  Color_BYELLOW,  Color_BGYELLOW },
 	{ "cyan",     Color_CYAN,     Color_BGCYAN },
+	{ "bcyan",    Color_BCYAN,    Color_BGCYAN },
 	{ "blue",     Color_BLUE,     Color_BGBLUE },
+	{ "bblue",    Color_BBLUE,    Color_BGBLUE },
 	{ "gray",     Color_GRAY,     Color_BGGRAY },
+	{ "bgray",    Color_BGRAY,    Color_BGGRAY },
 	{ "none",     Color_RESET,    Color_RESET },
 	{ NULL, NULL, NULL }
 };
 
 static inline ut8 rgbnum (const char ch1, const char ch2) {
-	ut8 r = 0;
+	ut8 r = 0, r2 = 0;
 	r_hex_to_byte (&r, ch1);
-	r_hex_to_byte (&r, ch2);
-	return r;
+	r_hex_to_byte (&r2, ch2);
+	return r << 4 | r2;
 }
 
 R_API void r_cons_pal_random () {
@@ -149,6 +156,16 @@ R_API char *r_cons_pal_parse (const char *str) {
 		free (s);
 		return r_cons_color_random (0);
 	}
+	if (!strncmp (s, "#", 1)) {
+		if (strlen (s) == 7) {
+#define C(x) (x >> 4)
+			int R, G, B;
+			sscanf (s, "%02x%02x%02x", &R, &G, &B);
+			r_cons_rgb_str (out, C(R), C(G), C(B), 0);
+		} else {
+			eprintf ("Invalid html color code\n");
+		}
+	} else 
 	if (!strncmp (s, "rgb:", 4)) {
 		if (strlen (s) == 7) {
 			r = rgbnum (s[4], '0');
@@ -167,12 +184,12 @@ R_API char *r_cons_pal_parse (const char *str) {
 			r = rgbnum (p[4], '0');
 			g = rgbnum (p[5], '0');
 			b = rgbnum (p[6], '0');
-			r_cons_rgb_str (out + strlen(out), r, g, b, 1);
+			r_cons_rgb_str (out + strlen (out), r, g, b, 1);
 		} else if (strlen (s) == 10) {
 			r = rgbnum (p[4], p[5]);
 			g = rgbnum (p[6], p[7]);
 			b = rgbnum (p[8], p[9]);
-			r_cons_rgb_str (out + strlen(out), r, g, b, 1);
+			r_cons_rgb_str (out + strlen (out), r, g, b, 1);
 		}
 	}
 	for (i = 0; colors[i].name; i++) {
@@ -399,6 +416,19 @@ R_API void r_cons_pal_list (int rad) {
 			r_cons_printf (".%s { color: rgb(%d, %d, %d); }%s",
 				name, r, g, b, hasnext);
 			free (name);
+			}
+			break;
+		case 'h':
+			r = g = b = 0;
+			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
+			rgbstr[0] = 0;
+//			r_cons_rgb_str (rgbstr, r, g, b, 0);
+			{
+				char *name = strdup (keys[i].name);
+				r_str_replace_char (name, '.', '_');
+				r_cons_printf (".%s { color:#%02x%02x%02x }\n",
+					name, r, g, b);
+				free (name);
 			}
 			break;
 		case '*':

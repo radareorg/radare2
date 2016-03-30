@@ -154,17 +154,11 @@ static int cmd_eval(void *data, const char *input) {
 	case 'j':
 		r_config_list (core->config, NULL, 'j');
 		break;
-	case '\0':
+	case '\0': // "e"
 		r_config_list (core->config, NULL, 0);
 		break;
-	case 'c':
+	case 'c': // "ec"
 		switch (input[1]) {
-		case 'h': // echo
-			if (( p = strchr (input, ' ') )) {
-				r_cons_strcat (p+1);
-				r_cons_newline ();
-			}
-			break;
 		case 'd':
 			r_cons_pal_init (NULL);
 			break;
@@ -224,11 +218,19 @@ static int cmd_eval(void *data, const char *input) {
 				nextpal (core, 'l');
 			}
 			break;
-		case 's': r_cons_pal_show (); break;
-		case '*': r_cons_pal_list (1); break;
-		case 'j': r_cons_pal_list ('j'); break;
-		case 'c': r_cons_pal_list ('c'); break;
-		case '\0': r_cons_pal_list (0); break;
+		case 's': r_cons_pal_show (); break; // "ecs"
+		case '*': r_cons_pal_list (1); break; // "ec*"
+		case 'h': // echo 
+			if (( p = strchr (input, ' ') )) {
+				r_cons_strcat (p+1);
+				r_cons_newline ();
+			} else {
+				r_cons_pal_list ('h'); break; // "ecj"
+			}
+			break;
+		case 'j': r_cons_pal_list ('j'); break; // "ecj"
+		case 'c': r_cons_pal_list ('c'); break; // "ecc"
+		case '\0': r_cons_pal_list (0); break; // "ec"
 		case 'r': // "ecr"
 			r_cons_pal_random ();
 			break;

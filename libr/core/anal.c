@@ -682,7 +682,7 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		r_list_foreach (bb->ops, iter, opi) {
 			r_bin_addr2line (core->bin, opi->addr, file, sizeof (file)-1, &line);
 #else
-		for (at=bb->addr; at<bb->addr+bb->size; at+=2) {
+		for (at = bb->addr; at < bb->addr + bb->size; at += 2) {
 			r_bin_addr2line (core->bin, at, file, sizeof (file)-1, &line);
 #endif
 			if (line != 0 && line != oline && strcmp (file, "??")) {
@@ -693,11 +693,11 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 					memcpy (cmdstr + idx, filestr, flen);
 					idx += flen;
 					if (is_json) {
-						memcpy (cmdstr + idx, "\\n", 3);
+						strcpy (cmdstr + idx, "\\n");
 					} else if (is_html) {
-						memcpy (cmdstr + idx, "<br />", 7);
+						strcpy (cmdstr + idx, "<br />");
 					} else {
-						memcpy (cmdstr + idx, "\\l", 3);
+						strcpy (cmdstr + idx, "\\l");
 					}
 					free (filestr);
 				}
