@@ -1,0 +1,12 @@
+OBJ_SQUASH=fs_squash.o
+EXTRA=$(GRUB)
+CFLAGS+=-Igrub/include
+
+STATIC_OBJ+=${OBJ_SQUASH}
+#STATIC_OBJ+=${EXTRA}
+TARGET_SQUASH=fs_squash.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_SQUASH}
+
+${TARGET_SQUASH}: ${OBJ_SQUASH}
+	${CC} $(call libname,fs_squash) ${LDFLAGS} ${CFLAGS} -o ${TARGET_SQUASH} ${OBJ_SQUASH} ${EXTRA}
