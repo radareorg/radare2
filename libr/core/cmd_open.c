@@ -327,16 +327,30 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '\0':
 	case '*':
+		if ('?' == input[1]) {
+			const char *help_msg[] = {
+				"o*","","list opened files in r2 commands",NULL
+			};
+			r_core_cmd_help (core, help_msg);
+			break;
+		}
 	case 'j':
 		if ('?' == input[1]) {
-			eprintf ("Usage: oj\n");
-		} else {
-			r_core_file_list (core, (int)(*input));
+			const char *help_msg[] = {
+				"oj","","list opened files in JSON format",NULL
+			};
+			r_core_cmd_help (core, help_msg);
+			break;
 		}
+
+		r_core_file_list (core, (int)(*input));
 		break;
 	case 'a':
 		if ('?' == input[1]) {
-			eprintf ("Usage: oa [addr]\n");
+			const char *help_msg[] = {
+				"oa"," [addr]","Open bin info from the given address",NULL
+			};
+			r_core_cmd_help (core, help_msg);
 			break;
 		}
 		addr = core->offset;
@@ -455,14 +469,20 @@ static int cmd_open(void *data, const char *input) {
 		switch (input[1]) {
 		case 'd': // "ood" : reopen in debugger
 			if ('?' == input[2]) {
-				eprintf ("Usage: ood [args]\n");
+				const char *help_msg[] = {
+					"ood"," [args]","reopen in debugger mode (with args)",NULL
+				};
+				r_core_cmd_help (core, help_msg);
 			} else {
 				r_core_file_reopen_debug (core, input + 2);
 			}
 			break;
 		case 'b': // "oob" : reopen with bin info
 			if ('?' == input[2]) {
-				eprintf ("Usage: oob [args]\n");
+				const char *help_msg[] = {
+					"oob", "", "reopen loading rbin info",NULL
+				};
+				r_core_cmd_help (core, help_msg);
 			} else {
 				r_core_file_reopen (core, input + 2, 0, 2);
 			}
@@ -470,23 +490,33 @@ static int cmd_open(void *data, const char *input) {
 		case 'n':
 			if ('n' == input[2]) {
 				if ('?' == input[3]) {
-				eprintf ("Usage: oonn [args]\n");
-				} else {
-					perms = (input[3] == '+')? R_IO_READ|R_IO_WRITE: 0;
-					r_core_file_reopen (core, input + 4, perms, 0);
-					// TODO: Use API instead of !rabin2 -rk
-					r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
+					const char *help_msg[] = {
+						"oonn", "", "reopen without loading rbin info, but with header flags",NULL
+					};
+					r_core_cmd_help (core, help_msg);
+					break;
 				}
+				perms = (input[3] == '+')? R_IO_READ|R_IO_WRITE: 0;
+				r_core_file_reopen (core, input + 4, perms, 0);
+				// TODO: Use API instead of !rabin2 -rk
+				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
 			} else if ('?' == input[2]) {
-				eprintf ("Usage: oon [args]\n");
-			} else {
-				perms = ('+' == input[2])? R_IO_READ|R_IO_WRITE: 0;
-				r_core_file_reopen (core, input + 3, perms, 0);
+				const char *help_msg[] = {
+					"oon", "", "reopen without loading rbin info",NULL
+				};
+				r_core_cmd_help (core, help_msg);
+				break;
 			}
+
+			perms = ('+' == input[2])? R_IO_READ|R_IO_WRITE: 0;
+			r_core_file_reopen (core, input + 3, perms, 0);
 			break;
 		case '+':
 			if ('?' == input[2]) {
-				eprintf ("Usage: oo+ [args]\n");
+				const char *help_msg[] = {
+					"oo+", "", "reopen in read-write",NULL
+				};
+				r_core_cmd_help (core, help_msg);
 			} else {
 				r_core_file_reopen (core, input + 2, R_IO_READ | R_IO_WRITE, 1);
 			}
@@ -502,7 +532,10 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case 'c':
 		if ('?' == input[1]) {
-			eprintf ("Usage: oc [file]\n");
+			const char *help_msg[] = {
+				"oc"," [file]","open core file, like relaunching r2",NULL
+			};
+			r_core_cmd_help (core, help_msg);
 			break;
 		}
 		if (r_sandbox_enable (0)) {
