@@ -74,7 +74,6 @@ static int lang_rust_run(RLang *lang, const char *code, int len) {
 "        fn cmdstr(&self, c: *const u8, str: &str) -> String {\n" \
 "                unsafe {\n" \
 "                        let ptr = r_core_cmd_str(c, str.as_ptr()) as *const i8;\n" \
-// "                        let slice = CStr::from_ptr(ptr);\n"
 "                        let c_str = CStr::from_ptr(ptr).to_string_lossy().into_owned();\n" \
 "                        free (ptr as *const u8);\n" \
 "                        String::from (c_str)\n" \

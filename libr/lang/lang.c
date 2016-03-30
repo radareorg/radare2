@@ -215,7 +215,7 @@ R_API int r_lang_prompt(RLang *lang) {
 	line->history = histnull;
 	/* foo */
 	for (;;) {
-	snprintf (buf, sizeof (buf)-1, "%s> ", lang->cur->name);
+		snprintf (buf, sizeof (buf)-1, "%s> ", lang->cur->name);
 		r_line_set_prompt (buf);
 #if 0
 		printf ("%s> ", lang->cur->name);

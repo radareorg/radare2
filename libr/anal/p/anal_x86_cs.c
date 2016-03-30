@@ -526,6 +526,9 @@ SETL/SETNGE
 					if (op->ptr < 0x1000)
 						op->ptr = UT64_MAX;
 				}
+				if (INSOP(1).type == X86_OP_IMM) {
+					op->val = INSOP(1).imm;
+				}
 				if (a->decode) {
 					if (op->prefix & R_ANAL_OP_PREFIX_REP) {
 						int width = INSOP(0).size;
@@ -731,7 +734,7 @@ SETL/SETNGE
 					}
 					break;
 				case X86_OP_IMM:
-					op->ptr = INSOP(1).imm;
+					op->val = op->ptr = INSOP(1).imm;
 					break;
 				default:
 					break;
@@ -813,7 +816,7 @@ SETL/SETNGE
 			}
 			switch (INSOP(0).type) {
 			case X86_OP_IMM:
-				op->ptr = INSOP(0).imm;
+				op->val = op->ptr = INSOP(0).imm;
 				op->type = R_ANAL_OP_TYPE_PUSH;
 				break;
 			default:
@@ -877,6 +880,7 @@ SETL/SETNGE
 				esilprintf (op, "%d,$",
 					R_ABS((int)INSOP(0).imm));
 			op->type = R_ANAL_OP_TYPE_SWI;
+			op->val = (int)INSOP(0).imm;
 			break;
 		case X86_INS_SYSCALL:
 			op->type = R_ANAL_OP_TYPE_SWI;
@@ -1114,6 +1118,9 @@ SETL/SETNGE
 				free (src);
 				free (dst);
 			}
+			if (INSOP(1).type == X86_OP_IMM) {
+				op->val = INSOP(1).imm;
+			}
 			break;
 		case X86_INS_INC:
 			// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
@@ -1173,6 +1180,7 @@ SETL/SETNGE
 					op->stackptr = INSOP(1).imm;
 				}
 			}
+			op->val = INSOP(1).imm;
 			break;
 		case X86_INS_SBB:
 			// dst = dst - (src + cf)
@@ -1403,6 +1411,7 @@ SETL/SETNGE
 					op->stackptr = -INSOP(1).imm;
 				}
 			}
+			op->val = INSOP(1).imm;
 			break;
 		case X86_INS_ADD:
 			// The OF, SF, ZF, AF, CF, and PF flags are set according to the
@@ -1431,6 +1440,7 @@ SETL/SETNGE
 					op->stackptr = -INSOP(1).imm;
 				}
 			}
+			op->val = INSOP(1).imm;
 			break;
 		case X86_INS_ADC:
 			op->type = R_ANAL_OP_TYPE_ADD;
@@ -1447,7 +1457,7 @@ SETL/SETNGE
 				free (src);
 				free (dst);
 			}
-				break;
+			break;
 			/* Direction flag */
 		case X86_INS_CLD:
 			op->type = R_ANAL_OP_TYPE_MOV;
@@ -1461,10 +1471,10 @@ SETL/SETNGE
 			break;
 		}
 		switch (insn->id) {
-		case X86_INS_MOVAPS: //cvtss2sd
-		case X86_INS_ADDSD: //cvtss2sd
-		case X86_INS_SUBSD: //cvtss2sd
-		case X86_INS_MULSD: //cvtss2sd
+		case X86_INS_MOVAPS:   //cvtss2sd
+		case X86_INS_ADDSD:    //cvtss2sd
+		case X86_INS_SUBSD:    //cvtss2sd
+		case X86_INS_MULSD:    //cvtss2sd
 		case X86_INS_CVTSS2SD: //cvtss2sd
 		case X86_INS_MOVSS:
 		case X86_INS_MOVSD:

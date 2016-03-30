@@ -226,8 +226,6 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 			bin->nsects = sect;
 			return false;
 		}
-	} else {
-		eprintf ("SEGMENT without sections %d\n", size_sects);
 	}
 	return true;
 }
