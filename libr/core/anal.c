@@ -818,8 +818,11 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					"  <img class=\"connector-end\" src=\"img/arrow.gif\" /></div>\n",
 					bbi->addr, bbi->jump);
 			} else if (!is_json) {
-				r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
-					"[color=\"%s\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->jump,
+				//r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
+				//	"[color=\"%s\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->jump,
+				//	bbi->fail != -1 ? "green" : "blue");
+				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+					"[color=\"%s\"];\n", bbi->addr, bbi->jump,
 					bbi->fail != -1 ? "green" : "blue");
 			}
 		}
@@ -830,8 +833,10 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
 					bbi->addr, bbi->fail);
 			} else if (!is_keva) {
-				r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
-					"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
+				//r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
+				//	"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
+				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+					"[color=\"red\"];\n", bbi->addr, bbi->fail);
 			}
 		}
 		if (bbi->switch_op) {
@@ -843,8 +848,10 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
 					bbi->addr, bbi->fail);
 			} else if (!is_keva) {
-				r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
-					"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
+				//r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
+				//	"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
+				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+					"[color=\"red\"];\n", bbi->addr, bbi->fail);
 			}
 
 			r_list_foreach (bbi->switch_op->cases, iter, caseop) {
@@ -863,8 +870,10 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 						"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
 						caseop->addr, caseop->jump);
 				} else {
-					r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
-						"[color=\"red\"];\n", fcn->addr, caseop->addr, fcn->addr, caseop->jump);
+					//r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
+					//	"[color=\"red\"];\n", fcn->addr, caseop->addr, fcn->addr, caseop->jump);
+					r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+						"[color=\"red\"];\n", caseop->addr, caseop->jump);
 				}
 			}
 		}
@@ -882,11 +891,12 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					sdb_set (DB, "label", str, 0);
 				} else if (!is_json) {
 					nodes++;
-					r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\","
+					//r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\","
+					//	" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
+					//	fcn->addr, bbi->addr, difftype, str, fcn->name, bbi->addr);
+					r_cons_printf (" \"0x%08"PFMT64x"\" [color=\"%s\","
 						" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
-						fcn->addr, bbi->addr,
-						difftype, str,
-						fcn->name, bbi->addr);
+						bbi->addr, difftype, str, fcn->name, bbi->addr);
 				}
 			} else {
 				if (is_html) {
@@ -899,10 +909,14 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					if (!left) top += 250;
 				} else if (!is_json && !is_keva) {
 					nodes++;
-					r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" ["
+					//r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" ["
+					//	"URL=\"%s/0x%08"PFMT64x"\", color=\"%s\", label=\"%s\"]\n",
+					//	fcn->addr, bbi->addr,
+					//	fcn->name, bbi->addr,
+					//	bbi->traced?"yellow":"lightgray", str);
+					r_cons_printf (" \"0x%08"PFMT64x"\" ["
 						"URL=\"%s/0x%08"PFMT64x"\", color=\"%s\", label=\"%s\"]\n",
-						fcn->addr, bbi->addr,
-						fcn->name, bbi->addr,
+						bbi->addr, fcn->name, bbi->addr,
 						bbi->traced?"yellow":"lightgray", str);
 				}
 			}
