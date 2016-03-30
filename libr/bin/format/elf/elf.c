@@ -560,16 +560,16 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 		int j = 0;
 		int isum = 0;
 
+		vstart += verdef->vd_aux;
+		aux = (Elf_(Verdaux)*)vstart;
+		isum = i + verdef->vd_aux;
+
 		sdb_num_set (sdb_verdef, "idx", i, 0);
 		sdb_num_set (sdb_verdef, "vd_version", verdef->vd_version, 0);
 		sdb_num_set (sdb_verdef, "vd_ndx", verdef->vd_ndx, 0);
 		sdb_num_set (sdb_verdef, "vd_cnt", verdef->vd_cnt, 0);
 		sdb_set (sdb_verdef, "vda_name", &bin->dynstr[aux->vda_name], 0);
 		sdb_set (sdb_verdef, "flags", get_ver_flags (verdef->vd_flags), 0);
-
-		vstart += verdef->vd_aux;
-		aux = (Elf_(Verdaux)*)vstart;
-		isum = i + verdef->vd_aux;
 
 		for (j = 1; j < verdef->vd_cnt; ++j) {
 			Sdb *sdb_parent = sdb_new0 ();
