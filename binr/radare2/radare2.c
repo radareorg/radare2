@@ -448,6 +448,7 @@ int main(int argc, char **argv, char **envp) {
 		if (strstr (uri, "://")) {
 			*uri = 0;
 			debugbackend = uri;
+			debug = 2;
 		} else {
 			free (uri);
 		}
