@@ -48,6 +48,22 @@ static char *filter_flags(RCore *core, const char *msg) {
 	return buf;
 }
 
+static void clippy(const char *msg) {
+	int msglen = strlen (msg);
+	char *l = strdup (r_str_pad ('-', msglen));
+	char *s = strdup (r_str_pad (' ', msglen));
+	r_cons_printf (
+" .--.     .-%s-.\n"
+" | _|     | %s |\n"
+" | O O   <  %s |\n"
+" |  |  |  | %s |\n"
+" || | /   `-%s-'\n"
+" |`-'|\n"
+" `---'\n", l, s, msg, s, l);
+	free (l);
+	free (s);
+}
+
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char *k;
@@ -427,6 +443,9 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_newline ();
 		}
 		break;
+	case 'E': // clippy echo
+		clippy (r_str_chop_ro (input+1));
+		break;
 	case 'e': // echo
 		{
 		const char *msg = r_str_chop_ro (input+1);
@@ -547,7 +566,7 @@ static int cmd_help(void *data, const char *input) {
 	case '?': // ???
 		if (input[1]=='?') {
 			if (input[2]=='?') {
-				r_cons_printf ("What are you doing?\n");
+				clippy ("What are you doing?");
 				return 0;
 			}
 			if (input[2]) {
