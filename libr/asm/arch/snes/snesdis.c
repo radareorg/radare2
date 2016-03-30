@@ -9,9 +9,7 @@
 
 static int snesDisass(int bits, RAsmOp *op, const ut8 *buf, int len){
 	snes_op_t *s_op = &snes_op[buf[0]];
-	int op_len = s_op->len;
-	if (op_len == SNES_OP_IMM)
-		op_len = bits == 8 ? SNES_OP_16BIT : SNES_OP_24BIT;
+	int op_len = snes_op_get_size(bits, s_op);
 	if (len < op_len)
 		return 0;
 	switch (s_op->len) {

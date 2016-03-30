@@ -10,11 +10,19 @@ enum {
 	SNES_OP_IMM // 8- or 16-bit immediate depending on X or M flag
 };
 
+
 typedef struct {
 	const char *name;
 	ut8 len;
 } snes_op_t;
 
+static int snes_op_get_size(int bits, snes_op_t* op) {
+	if (op->len == SNES_OP_IMM) {
+		return bits == 8 ? SNES_OP_16BIT : SNES_OP_24BIT;
+	} else {
+		return op->len;
+	}
+}
 
 static snes_op_t snes_op[]={
 {"brk 0x%02x",		SNES_OP_16BIT},
