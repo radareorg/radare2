@@ -9,7 +9,7 @@
 
 static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	memset (op, '\0', sizeof (RAnalOp));
-	op->size = snes_op[data[0]].len;
+	op->size = snes_op_get_size(anal->bits, &snes_op[data[0]]);
 	if (op->size > len)
 		return op->size = 0;
 	op->addr = addr;
