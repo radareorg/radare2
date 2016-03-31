@@ -557,11 +557,13 @@ R_API int r_run_config_env(RRunProfile *p) {
 	}
 #if __UNIX__
 	if (p->_chroot) {
-		if (chroot (p->_chroot)) {
+		if (chroot (p->_chroot) == 0) {
+      chdir ("/");
+		} else {
 			eprintf ("rarun2: cannot chroot\n");
+      perror ("chroot");
 			return 1;
-		}
-		chdir("/");
+    }
 	}
 	if (p->_setuid) {
 		ret = setgroups(0, NULL);

@@ -20,7 +20,6 @@ R_API RThreadLock *r_th_lock_new() {
 
 R_API int r_th_lock_wait(RThreadLock *thl) {
 #if HAVE_PTHREAD
-	r_th_lock_enter (thl);
 	r_th_lock_enter (thl); // locks here
 	r_th_lock_leave (thl); // releases previous mutex
 #elif __WIN32__ || __WINDOWS__ && !defined(__CYGWIN__)
