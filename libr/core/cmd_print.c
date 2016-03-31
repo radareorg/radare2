@@ -1614,8 +1614,10 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		char *spc = strchr (input, ' ');
 		if (spc) {
 			nblocks = r_num_get (core->num, spc + 1);
-			if (nblocks < 1)
+			if (nblocks < 1) {
 				nblocks = core->blocksize;
+				return;
+			}
 			spc = strchr (spc + 1, ' ');
 			if (spc) {
 				totalsize = r_num_get (core->num, spc + 1);
@@ -1672,7 +1674,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	case 'd':
 		 cmd_print_eq_dict (core, blocksize);
 		 break;
-	case 'e': // entropy
+	case 'e': // "p=e" entropy
 		 {
 			ut8 *p;
 			int i = 0;
