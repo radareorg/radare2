@@ -603,7 +603,6 @@ static ut64 prevop_addr (RCore *core, ut64 addr) {
 			return res;
 		}
 	}
-
 	// if we anal info didn't help then fallback to the dumb solution.
 	target = addr;
 	base = target - OPDELTA;

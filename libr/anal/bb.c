@@ -188,12 +188,12 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
 
 	last_delta = 0;
 	delta_off = off - bb->addr;
-	for (i = 1; i < bb->ninstr; ++i) {
+	for (i = 0; i < bb->ninstr; i++) {
 		delta = r_anal_bb_offset_inst (bb, i);
 		if (delta > delta_off) {
 			return bb->addr + last_delta;
 		}
 		last_delta = delta;
 	}
-	return bb->addr + last_delta;
+	return UT64_MAX;
 }
