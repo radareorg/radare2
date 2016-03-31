@@ -720,6 +720,18 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 	return str;
 }
 
+static char *palColorFor(const char *k) {
+	RCons *cons = r_cons_singleton ();
+	if (!cons) return NULL;
+	const char *c = r_cons_pal_get (k);
+	if (c) {
+		ut8 r = 0, g = 0, b = 0;
+		r_cons_rgb_parse (c, &r, &g, &b, NULL);
+		return r_cons_rgb_tostring (r, g, b);
+	}
+	return NULL;
+}
+
 static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 	int is_html = r_cons_singleton ()->is_html;
 	int is_json = opts & R_CORE_ANAL_JSON;
@@ -732,6 +744,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 	int top = 0;
 	char *str;
 	Sdb *DB = NULL;
+	char *pal_jump = palColorFor ("graph.true");
+	char *pal_fail = palColorFor ("graph.false");
+	char *pal_trfa = palColorFor ("graph.trufae");
 
 	if (is_keva) {
 		char ns[64];
@@ -823,7 +838,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				//	bbi->fail != -1 ? "green" : "blue");
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 					"[color=\"%s\"];\n", bbi->addr, bbi->jump,
-					bbi->fail != -1 ? "green" : "blue");
+					bbi->fail != -1 ? pal_jump : pal_trfa);
 			}
 		}
 		if (bbi->fail != -1) {
@@ -836,7 +851,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				//r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 				//	"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-					"[color=\"red\"];\n", bbi->addr, bbi->fail);
+					"[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
 			}
 		}
 		if (bbi->switch_op) {
@@ -851,7 +866,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				//r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 				//	"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-					"[color=\"red\"];\n", bbi->addr, bbi->fail);
+					"[color=\"%s\"];\n", pal_fail, bbi->addr, bbi->fail);
 			}
 
 			r_list_foreach (bbi->switch_op->cases, iter, caseop) {
@@ -873,7 +888,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 					//	"[color=\"red\"];\n", fcn->addr, caseop->addr, fcn->addr, caseop->jump);
 					r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-						"[color=\"red\"];\n", caseop->addr, caseop->jump);
+						"[color=\"%s\"];\n", pal_fail, caseop->addr, caseop->jump);
 				}
 			}
 		}

@@ -130,7 +130,6 @@ static void update_node_dimension(const RGraph *g, int is_small, int zoom) {
 			n->w = SMALLNODE_MIN_WIDTH;
 		} else {
 			unsigned int len;
-
 			n->w = r_str_bounds (n->body, (int *)&n->h);
 			len = strlen (n->title) + MARGIN_TEXT_X;
 			if (len > INT_MAX) len = INT_MAX;
