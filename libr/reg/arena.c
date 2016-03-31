@@ -199,10 +199,17 @@ R_API int r_reg_arena_push(RReg *reg) {
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegArena *a = reg->regset[i].arena;      // current arena
+		if (!a) continue;
 		RRegArena *b = r_reg_arena_new (a->size); // new arena
-		if (!a || !b) continue;
+		if (!b) continue;
 		// if (!i) {    r_print_hexdump (NULL, 0, a->bytes, a->size, 16, 16);    }
-		memcpy (b->bytes, a->bytes, a->size);
+		if (a->size >= b->size) {
+			memcpy (b->bytes, a->bytes, b->size);
+		}
+		else {
+			memcpy (b->bytes, a->bytes, a->size);
+			memset (b->bytes + a->size, 0, b->size - a->size);
+		}
 		r_list_push (reg->regset[i].pool, b);
 		reg->regset[i].arena = b;
 	}
