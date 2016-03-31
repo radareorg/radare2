@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2015-2016 - pancake */
+
 #include <r_lib.h>
 #include <r_crypto.h>
 #include "crypto_aes_algo.h"
@@ -42,7 +44,10 @@ static int update (RCrypto *cry, const ut8 *buf, int len) {
 	if (!obuf) return false;
 
 	ut8 *const ibuf = calloc (1, size);
-	if (!ibuf) return false;
+	if (!ibuf) {
+		free (obuf);
+		return false;
+	}
 
 	memset(ibuf, 0, size);
 	memcpy (ibuf, buf, len);

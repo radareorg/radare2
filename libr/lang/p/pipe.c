@@ -32,15 +32,18 @@ static BOOL bStopThread = FALSE;
 static HANDLE hPipeInOut = NULL;
 static HANDLE hproc = NULL;
 #define PIPE_BUF_SIZE 4096
-DWORD WINAPI ThreadFunction( LPVOID lpParam )
-{
+DWORD WINAPI ThreadFunction(LPVOID lpParam) {
 	RLang * lang = lpParam;
 	CHAR buf[PIPE_BUF_SIZE];
 	BOOL bSuccess = FALSE;
 	int i, res = 0;
 	DWORD dwRead, dwWritten;
 	r_cons_break (NULL, NULL);
-	res = ConnectNamedPipe(hPipeInOut, NULL);
+	res = ConnectNamedPipe (hPipeInOut, NULL);
+	if (!res) {
+		eprintf ("ConnectNamedPipe failed\n");
+		return FALSE;
+	}
 	do {
 		if (r_cons_singleton ()->breaked) {
 			TerminateProcess(hproc,0);
@@ -71,7 +74,7 @@ DWORD WINAPI ThreadFunction( LPVOID lpParam )
 						i += dwWritten - 1;
 					} else {
 						/* send null termination // chop */
-						eprintf ("w32-lang-pipe: %x \n",GetLastError());
+						eprintf ("w32-lang-pipe: 0x%x\n", (ut32)GetLastError ());
 						//WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
 						//break;
 					}
@@ -169,7 +172,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	return true;
 #else
 #if __WINDOWS__
-	DWORD hThread = 0;
+	HANDLE hThread = 0;
 	char buf[512];
 	sprintf(buf,"R2PIPE_IN%x",_getpid());
 	SetEnvironmentVariable("R2PIPE_PATH",buf);

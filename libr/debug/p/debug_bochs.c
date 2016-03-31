@@ -43,6 +43,7 @@ static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 		bochs_send_cmd (desc,"blist",true);
 		lenRec = strlen (desc->data);
 		a = -1;
+		n = 0;
 		if (!strncmp (desc->data, "Num Type", 8)) {
 			i = 37;
 			do {
@@ -61,7 +62,7 @@ static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 			} while (desc->data[i] != '<' && i<lenRec-4);
 		}
 		if (a == bp->addr) {
-			snprintf (bufcmd, sizeof (bufcmd), "d %i",n);
+			snprintf (bufcmd, sizeof (bufcmd), "d %i", n);
 			//eprintf("[unset] Break point localizado indice = %x (%x) %s \n",n,(DWORD)a,bufcmd);
 			bochs_send_cmd (desc, bufcmd, true);
 		}
@@ -155,14 +156,14 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				if ((x = strstr (x, "base="))) {
 					strncpy (strBase, x + 5, 10);
 					strBase[10] = 0;
-				}
-				if ((x = strstr (x, "limit="))) {
-					strncpy (strLimit, x + 6, 10);
-					strLimit[10] = 0;
+					if ((x = strstr (x, "limit="))) {
+						strncpy (strLimit, x + 6, 10);
+						strLimit[10] = 0;
+					}
 				}
 				//eprintf("%s localizado %s %04x base = %s limit = %s\n",regname,strReg,(WORD)val,strBase,strLimit);
 				memcpy (&buf[pos], &val, 2);
-				pos+= 2;
+				pos += 2;
 				if (bAjusta) {
 					if (!strncmp (regname,"cs",2)) {
 						valRIP += (val*0x10); // desplazamos CS y lo añadimos a RIP
@@ -200,17 +201,20 @@ void map_free(RDebugMap *map) {
 static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
 	//eprintf("bochs_map_getdebug:\n");
 	RDebugMap *mr;
-	RList *list = r_list_newf((RListFree)map_free);
-	if (!list) 
-		return NULL;	
+	RList *list = r_list_newf ((RListFree)map_free);
+	if (!list) return NULL;	
 	mr = R_NEW0 (RDebugMap);
+	if (!mr) {
+		r_list_free (list);
+		return NULL;
+	}
 	mr->name = strdup ("fake");
 	mr->addr = 0;
 	mr->addr_end = UT32_MAX;
 	mr->size = UT32_MAX;
 	mr->perm = 0;
 	mr->user = 0;
-	if (mr) r_list_append (list, mr);
+	r_list_append (list, mr);
 	return list;
 }
 

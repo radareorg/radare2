@@ -1,4 +1,5 @@
 /* work-in-progress reverse engineered swift-demangler in C by pancake@nopcode.org */
+
 #include <stdio.h>
 #include <string.h>
 #include <r_util.h>
@@ -128,6 +129,7 @@ char *r_bin_demangle_swift(const char *s) {
 		if (!swift_demangle || !strcmp (swift_demangle, "swift-demangle")) {
 			char *xcrun = r_file_path ("xcrun");
 			if (xcrun) {
+				free (swift_demangle);
 				swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
 				free (xcrun);
 			}

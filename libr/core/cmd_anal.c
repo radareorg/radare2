@@ -252,7 +252,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 	// TODO: move this to r_syscall
 	for (i = 0; i < item->args; i++) {
 		ut64 arg = r_debug_arg_get (core->dbg, true, i + 1);
-		//r_cons_printf ("%d:0x%llx", i, r_debug_arg_get (core->dbg, true, i+1));
+		//r_cons_printf ("%d:0x%"PFMT64x, i, r_debug_arg_get (core->dbg, true, i+1));
 		if (item->sargs) {
 			switch (item->sargs[i]) {
 			case 'p': // pointer
@@ -1110,7 +1110,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				}
 				r_list_foreach (fcn->refs, iter, ref) {
 					if (ref->addr == UT64_MAX || ref->addr < text_addr) {
-						eprintf ("Warning: ignore call 0x%08llx\n", ref->addr);
+						eprintf ("Warning: ignore call 0x%08"PFMT64x"\n", ref->addr);
 						continue;
 					}
 					r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
@@ -1525,7 +1525,7 @@ repeat:
 	} else {
 		esil->trap = 0;
 		addr = r_reg_getv (core->anal->reg, name);
-		//eprintf ("PC=0x%llx\n", (ut64)addr);
+		//eprintf ("PC=0x%"PFMT64x"\n", (ut64)addr);
 	}
 	if (r_anal_pin_call (core->anal, addr)) {
 		eprintf ("esil pin called\n");
@@ -3659,6 +3659,7 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	int covr = compute_coverage (core);
 	int call = compute_calls (core);
 	int xrfs = r_anal_xrefs_count (core->anal);
+	int cvpc = (code>0)? (covr * 100 / code): 0;
 	if (*input == 'j') {
 		r_cons_printf ("{\"fcns\":%d", fcns);
 		r_cons_printf (",\"xrefs\":%d", xrfs);
@@ -3668,7 +3669,7 @@ static void r_core_anal_info (RCore *core, const char *input) {
 		r_cons_printf (",\"imports\":%d", imps);
 		r_cons_printf (",\"covrage\":%d", covr);
 		r_cons_printf (",\"codesz\":%d", code);
-		r_cons_printf (",\"percent\":%d}\n", covr * 100 / code);
+		r_cons_printf (",\"percent\":%d}\n", cvpc);
 	} else {
 		r_cons_printf ("fcns    %d\n", fcns);
 		r_cons_printf ("xrefs   %d\n", xrfs);
@@ -3678,7 +3679,7 @@ static void r_core_anal_info (RCore *core, const char *input) {
 		r_cons_printf ("imports %d\n", imps);
 		r_cons_printf ("covrage %d\n", covr);
 		r_cons_printf ("codesz  %d\n", code);
-		r_cons_printf ("percent %d%%\n", covr * 100 / code);
+		r_cons_printf ("percent %d%%\n", cvpc);
 	}
 }
 

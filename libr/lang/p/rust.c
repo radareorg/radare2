@@ -31,8 +31,12 @@ static int lang_rust_file(RLang *lang, const char *file) {
 	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
 	p = strstr (name, ".rs"); if (p) *p=0;
 	cc = r_sys_getenv ("RUSTC");
-	if (!cc || !*cc)
+	if (cc && !*cc) {
+		R_FREE (cc);
+	}
+	if (!cc) {
 		cc = strdup ("rustc");
+	}
 	snprintf (buf, sizeof (buf), "%s --crate-type dylib %s -o %s/lib%s."R_LIB_EXT" -L native=/usr/local/lib/ -l r_core",
 		cc, file, libpath, libname);
 	free (cc);

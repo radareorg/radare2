@@ -44,13 +44,16 @@ static void nextpal(RCore *core, int mode) {
 			if (*fn && *fn != '.') {
 				if (mode == 'p') {
 					const char *nfn = iter->n? iter->n->data: NULL;
-					if (!curtheme) return;
+					if (!curtheme) {
+						free (home);
+						r_list_free (files);
+						return;
+					}
 					eprintf ("%s %s %s\n", nfn, curtheme, fn);
 					if (nfn && !strcmp (nfn, curtheme)) {
 						r_list_free (files);
 						files = NULL;
 						free (curtheme);
-						eprintf ("SET %s\n", fn);
 						curtheme = strdup (fn);
 						R_FREE (home);
 						goto done;
@@ -73,12 +76,14 @@ static void nextpal(RCore *core, int mode) {
 		if (*fn && *fn != '.') {
 			if (mode == 'p') {
 				const char *nfn = iter->n? iter->n->data: NULL;
-				if (!curtheme) return;
-				eprintf ("--> %s\n", fn);
+				if (!curtheme) {
+					free (home);
+					r_list_free (files);
+					return;
+				}
 				eprintf ("%s %s %s\n", nfn, curtheme, fn);
 				if (nfn && !strcmp (nfn, curtheme)) {
 					free (curtheme);
-					eprintf ("SET %s\n", fn);
 					curtheme = strdup (fn);
 					goto done;
 				}

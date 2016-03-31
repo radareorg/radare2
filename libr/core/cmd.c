@@ -307,14 +307,14 @@ static int cmd_yank(void *data, const char *input) {
 	case 'w':
 		switch (input[1]) {
 		case ' ':
-			r_core_yank_set (core, 0, input + 2, strlen (input + 2));
+			r_core_yank_set (core, 0, (const ut8*)input + 2, strlen (input + 2));
 			break;
 		case 'x':
 			if (input[2] == ' ') {
 				char *out = strdup (input + 3);
-				int len = r_hex_str2bin (input+3, out);
+				int len = r_hex_str2bin (input+3, (ut8*)out);
 				if (len> 0) {
-					r_core_yank_set (core, 0, out, len);
+					r_core_yank_set (core, 0LL, (const ut8*)out, len);
 				} else {
 					eprintf ("Invalid length\n");
 				}
