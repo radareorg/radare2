@@ -1625,11 +1625,13 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.bytes", 0);
 	r_config_set_i (core->config, "asm.dwarf", 0);
-	if (!is_html && !is_json && !is_keva)
+	if (!is_html && !is_json && !is_keva) {
 		r_cons_printf ("digraph code {\n"
 			"\tgraph [bgcolor=white];\n"
 			"\tnode [color=lightgray, style=filled shape=box"
 			" fontname=\"%s\" fontsize=\"8\"];\n", font);
+		r_cons_printf ("\tedge [arrowhead=\"vee\"];\n");
+	}
 	if (is_json)
 		r_cons_printf ("[");
 	r_list_foreach (core->anal->fcns, iter, fcni) {
