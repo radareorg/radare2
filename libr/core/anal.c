@@ -940,6 +940,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 	}
 	if (is_json)
 		r_cons_printf ("]}");
+	free (pal_jump);
+	free (pal_fail);
+	free (pal_trfa);
 	return nodes;
 }
 
@@ -1224,11 +1227,19 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 			}
 			if (!is_html && !showhdr) {
 				if (fmt == 1) {
+					const char * gv_edge = r_config_get (core->config, "graph.gv.edge");
+					const char * gv_node = r_config_get (core->config, "graph.gv.node");
+					const char * gv_grph = r_config_get (core->config, "graph.gv.graph");
+					if (!gv_edge || !*gv_edge)
+						gv_edge = "arrowhead=\"vee\"";
+					if (!gv_node || !*gv_node)
+						gv_node = "color=lightgray, style=filled shape=box";
+					if (!gv_grph || !*gv_grph)
+						gv_grph = "bgcolor=white";
 					r_cons_printf ("digraph code {\n"
-						"\tgraph [bgcolor=white];\n"
-						"\tnode [color=lightgray, style=filled shape=box"
-						" fontname=\"%s\" fontsize=\"8\"];\n"
-						"\tedge [fontname=\"%s\" fontsize=\"8\"];\n", font, font);
+							"\tgraph [%s fontname=\"%s\"];\n"
+							"\tnode [%s];\n"
+							"\tedge [%s];\n", gv_grph, font, gv_node, gv_edge);
 				}
 				showhdr = 1;
 			}
@@ -1626,11 +1637,17 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	r_config_set_i (core->config, "asm.bytes", 0);
 	r_config_set_i (core->config, "asm.dwarf", 0);
 	if (!is_html && !is_json && !is_keva) {
+		const char * gv_edge = r_config_get (core->config, "graph.gv.edge");
+		const char * gv_node = r_config_get (core->config, "graph.gv.node");
+		if (!gv_edge || !*gv_edge)
+			gv_edge = "arrowhead=\"vee\"";
+		if (!gv_node || !*gv_node) {
+			gv_node = "color=lightgray, style=filled shape=box";
+		}
 		r_cons_printf ("digraph code {\n"
-			"\tgraph [bgcolor=white];\n"
-			"\tnode [color=lightgray, style=filled shape=box"
-			" fontname=\"%s\" fontsize=\"8\"];\n", font);
-		r_cons_printf ("\tedge [arrowhead=\"vee\"];\n");
+			"\tgraph [bgcolor=white fontsize=8 fontname=\"%s\"];\n"
+			"\tnode [%s];\n"
+			"\tedge [%s];\n", font, gv_node, gv_edge);
 	}
 	if (is_json)
 		r_cons_printf ("[");

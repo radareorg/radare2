@@ -1714,6 +1714,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("graph.scroll", 5, "Scroll speed in ascii-art graph");
 	SETPREF("graph.invscroll", "false", "Invert scroll direction in ascii-art graph");
 	SETPREF("graph.title", "", "Title of the graph");
+	SETPREF("graph.gv.node", "", "Custom graphviz node style for aga, agc, ...");
+	SETPREF("graph.gv.edge", "", "Custom graphviz edge style for aga, agc, ...");
+	SETPREF("graph.gv.graph", "", "Custom graphviz graph style for aga, agc, ...");
 
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");

@@ -186,13 +186,15 @@ R_API void r_cons_rgb_fgbg (ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B) {
 }
 
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
-	if (r == 0x00 && g == b && g == 0) return "black";
-	if (r == 0xff && g == b && g == 0xff) return "white";
-	if (r == 0xff && g == b && g == 0) return "red";
-	if (g == 0xff && r == b && r == 0) return "green";
-	if (b == 0xff && r == g && r == 0) return "blue";
-	if (r == 0xff && g == 0xff && b == 0x00) return "yellow";
-	if (r == 0x00 && g == 0xff && b == 0xff) return "cyan";
-	if (r == 0xff && g == 0x00 && b == 0xff) return "magenta";
+	const char *str = NULL;
+	if (r == 0x00 && g == b && g == 0) str = "black";
+	if (r == 0xff && g == b && g == 0xff) str = "white";
+	if (r == 0xff && g == b && g == 0) str = "red";
+	if (g == 0xff && r == b && r == 0) str = "green";
+	if (b == 0xff && r == g && r == 0) str = "blue";
+	if (r == 0xff && g == 0xff && b == 0x00) str = "yellow";
+	if (r == 0x00 && g == 0xff && b == 0xff) str = "cyan";
+	if (r == 0xff && g == 0x00 && b == 0xff) str = "magenta";
+	if (str) return strdup (str);
 	return r_str_newf ("#%02x%02x%02x", r, g, b);
 }
