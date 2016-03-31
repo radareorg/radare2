@@ -361,6 +361,7 @@ static int cmd_write(void *data, const char *input) {
 		"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
 		"wx"," 9090","write two intel nops",
 		"wv"," eip+34","write 32-64 bit value",
+		"wz"," string","write zero terminated string (like w + \\x00",
 		NULL
 	};
 
@@ -830,6 +831,17 @@ static int cmd_write(void *data, const char *input) {
 		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 #endif
 		WSEEK (core, len);
+		r_core_block_read (core, 0);
+		break;
+	case 'z':
+		/* write zero-terminated string */
+		len = r_str_unescape (str);
+		r_core_write_at (core, core->offset, (const ut8*)str + 1, len);
+#if 0
+		r_io_use_desc (core->io, core->file->desc);
+		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
+#endif
+		WSEEK (core, len + 1);
 		r_core_block_read (core, 0);
 		break;
 	case 't': // "wt"

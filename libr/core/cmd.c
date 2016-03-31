@@ -290,6 +290,9 @@ static int cmd_yank(void *data, const char *input) {
 	case ' ':
 		r_core_yank (core, core->offset, r_num_math (core->num, input+1));
 		break;
+	case 'l':
+		core->num->value = core->yank_buf->length;
+		break;
 	case 'y':
 		while (input[1]==' ') input++;
 		n = input[1]? r_num_math (core->num, input+1): core->offset;
@@ -300,6 +303,26 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	case 'z':
 		r_core_yank_string (core, core->offset, r_num_math (core->num, input+1));
+		break;
+	case 'w':
+		switch (input[1]) {
+		case ' ':
+			r_core_yank_set (core, 0, input + 2, strlen (input + 2));
+			break;
+		case 'x':
+			if (input[2] == ' ') {
+				char *out = strdup (input + 3);
+				int len = r_hex_str2bin (input+3, out);
+				if (len> 0) {
+					r_core_yank_set (core, 0, out, len);
+				} else {
+					eprintf ("Invalid length\n");
+				}
+				free (out);
+			} else eprintf ("Usage: ywx [hexpairs]\n");
+			// r_core_yank_write_hex (core, input + 2);
+			break;
+		}
 		break;
 	case 'p':
 		r_core_yank_cat (core, r_num_math (core->num, input+1));
@@ -2194,7 +2217,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 			r = r_core_cmd (core, data, 0);
 			if (r < 0) { //== -1) {
 				data = nl+1;
-				ret = r; //false;
+				ret = -1; //r; //false;
 				break;
 			}
 			r_cons_flush ();
@@ -2209,7 +2232,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 		} while ((nl = strchr (data, '\n')));
 		r_cons_break_end ();
 	}
-	if (data && *data)
+	if (ret>=0 && data && *data)
 		r_core_cmd (core, data, 0);
 	free (odata);
 	return ret;

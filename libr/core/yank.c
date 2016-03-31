@@ -289,7 +289,7 @@ R_API int r_core_yank_cat_string (RCore *core, ut64 pos) {
 	int ybl = core->yank_buf->length;
 	if (ybl>0) {
 		if (pos < ybl) {
-			int len = r_str_nlen (core->yank_buf->buf + pos, ybl - pos);
+			int len = r_str_nlen ((const char *)core->yank_buf->buf + pos, ybl - pos);
 			r_cons_memcat ((const char*)core->yank_buf->buf + pos, len);
 			r_cons_newline ();
 			return true;
