@@ -659,9 +659,9 @@ repeat:
 	if ((xrefs = r_anal_xref_get (core->anal, addr))) {
 		r_cons_clear00 ();
 		r_cons_gotoxy (1, 1);
-		r_cons_printf ("[GOTO XREF]> 0x%08"PFMT64x"\n", core->offset);
+		r_cons_printf ("[GOTO XREF]> 0x%08"PFMT64x"\n", addr);
 		if (r_list_empty (xrefs)) {
-			r_cons_printf ("\tNo XREF found at 0x%"PFMT64x"\n", core->offset);
+			r_cons_printf ("\tNo XREF found at 0x%"PFMT64x"\n", addr);
 			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 		} else {
@@ -739,14 +739,18 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 	RAnalRef *refi;
 	RListIter *iter;
 	RAnalFunction *fun;
+	ut64 addr = core->offset;
+	if (core->print->cur_enabled) {
+		addr += core->print->cur;
+	}
 
-	fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	fun = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	if (fun) {
 		r_cons_clear00 ();
 		r_cons_gotoxy (1, 1);
 		r_cons_printf ("[GOTO REF]> \n");
 		if (r_list_empty (fun->refs)) {
-			r_cons_printf ("\tNo REF found at 0x%"PFMT64x"\n", core->offset);
+			r_cons_printf ("\tNo REF found at 0x%"PFMT64x"\n", addr);
 			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 		} else {
