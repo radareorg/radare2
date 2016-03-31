@@ -2188,9 +2188,9 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 			}
 			*nl = '\0';
 			r = r_core_cmd (core, data, 0);
-			if (r == -1) {
+			if (r < 0) { //== -1) {
 				data = nl+1;
-				ret = false;
+				ret = r; //false;
 				break;
 			}
 			r_cons_flush ();
@@ -2198,7 +2198,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 				if (data[1]=='!')
 					ret = -1;
 				else eprintf ("'q': quit ignored. Use 'q!'\n");
-				data = nl+1;
+				data = nl + 1;
 				break;
 			}
 			data = nl+1;

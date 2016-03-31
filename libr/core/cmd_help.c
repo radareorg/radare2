@@ -317,10 +317,10 @@ static int cmd_help(void *data, const char *input) {
 			if (n<0) r_core_cmd (core, input+1, 0);
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
-	case '!': // ??
+	case '!': // "?!"
 		if (input[1]) {
 			if (!core->num->value)
-				r_core_cmd (core, input+1, 0);
+				return core->num->value = r_core_cmd (core, input+1, 0);
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
 	case '@':
@@ -618,7 +618,7 @@ static int cmd_help(void *data, const char *input) {
 			return 0;
 		} else if (input[1]) {
 			if (core->num->value) {
-				r_core_cmd (core, input+1, 0);
+				core->num->value = r_core_cmd (core, input+1, 0);
 			}
 		} else {
 			if (core->num->dbz) {
