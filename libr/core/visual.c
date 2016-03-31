@@ -585,14 +585,20 @@ static ut64 prevop_addr (RCore *core, ut64 addr) {
 	RAnalBlock *bb;
 	RAnalOp op;
 	int len, ret, i;
+	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int maxop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+
+	if (minop == maxop) {
+		return addr - minop;
+	}
 
 	// let's see if we can use anal info to get the previous instruction
 	// TODO: look in the current basicblock, then in the current function
 	// and search in all functions only as a last chance, to try to speed
 	// up the process.
-	bb = r_anal_bb_from_offset (core->anal, addr - 1);
+	bb = r_anal_bb_from_offset (core->anal, addr - minop);
 	if (bb) {
-		ut64 res = r_anal_bb_opaddr_at (bb, addr - 1);
+		ut64 res = r_anal_bb_opaddr_at (bb, addr - minop);
 		if (res != UT64_MAX) {
 			return res;
 		}
