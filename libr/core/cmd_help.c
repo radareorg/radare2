@@ -509,13 +509,13 @@ static int cmd_help(void *data, const char *input) {
 	case '_': // hud input
 		r_core_yank_hud_file (core, input+1);
 		break;
-	case 'i': // input num
+	case 'i': // "?i" input num
 		r_cons_set_raw(0);
 		if (!r_config_get_i (core->config, "scr.interactive")) {
 			eprintf ("Not running in interactive mode\n");
 		} else
 		switch (input[1]) {
-		case 'f':
+		case 'f': // "?if"
 			core->num->value = !r_num_conditional (core->num, input+2);
 			eprintf ("%s\n", r_str_bool (!core->num->value));
 			break;
@@ -525,15 +525,15 @@ static int cmd_help(void *data, const char *input) {
 		case 'p': {
 			core->num->value = r_core_yank_hud_path (core, input+2, 0) == true;
 			} break;
-		case 'k':
+		case 'k': // "?ik"
 			r_cons_any_key (NULL);
 			break;
-		case 'y':
+		case 'y': // "?iy"
 			for (input+=2; *input==' '; input++);
 			core->num->value =
 			r_cons_yesno (1, "%s? (Y/n)", input);
 			break;
-		case 'n':
+		case 'n': // "?in"
 			for (input+=2; *input==' '; input++);
 			core->num->value =
 			r_cons_yesno (0, "%s? (y/N)", input);

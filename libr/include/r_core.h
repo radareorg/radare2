@@ -296,6 +296,7 @@ R_API int r_core_yank_to(RCore *core, const char *arg);
 R_API int r_core_yank_dump (RCore *core, ut64 pos);
 R_API int r_core_yank_hexdump (RCore *core, ut64 pos);
 R_API int r_core_yank_cat (RCore *core, ut64 pos);
+R_API int r_core_yank_cat_string (RCore *core, ut64 pos);
 R_API int r_core_yank_hud_file (RCore *core, const char *input);
 R_API int r_core_yank_hud_path (RCore *core, const char *input, int dir);
 R_API int r_core_yank_file_ex (RCore *core, const char *input);

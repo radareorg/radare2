@@ -264,8 +264,8 @@ R_API int r_core_yank_hexdump (RCore *core, ut64 pos) {
 	if (ybl>0) {
 		if (pos < ybl) {
 			r_print_hexdump (core->print, pos,
-				core->yank_buf->buf+pos,
-				ybl-pos, 16, 4);
+				core->yank_buf->buf + pos,
+				ybl - pos, 16, 1);
 			res = true;
 		} else eprintf ("Position exceeds buffer length.\n");
 	} else eprintf ("No buffer yanked already\n");
@@ -276,8 +276,21 @@ R_API int r_core_yank_cat (RCore *core, ut64 pos) {
 	int ybl = core->yank_buf->length;
 	if (ybl>0) {
 		if (pos < ybl) {
-			r_cons_memcat ((const char*)core->yank_buf->buf+pos,
-				core->yank_buf->length-pos);
+			r_cons_memcat ((const char*)core->yank_buf->buf + pos,
+				core->yank_buf->length - pos);
+			r_cons_newline ();
+			return true;
+		} else eprintf ("Position exceeds buffer length.\n");
+	} else r_cons_newline ();
+	return false;
+}
+
+R_API int r_core_yank_cat_string (RCore *core, ut64 pos) {
+	int ybl = core->yank_buf->length;
+	if (ybl>0) {
+		if (pos < ybl) {
+			int len = r_str_nlen (core->yank_buf->buf + pos, ybl - pos);
+			r_cons_memcat ((const char*)core->yank_buf->buf + pos, len);
 			r_cons_newline ();
 			return true;
 		} else eprintf ("Position exceeds buffer length.\n");
