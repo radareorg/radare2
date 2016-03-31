@@ -973,6 +973,10 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 static void anop32 (RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 	int i;
+	op->cond = insn->detail->arm.cc;
+	if (op->cond == ARM_CC_AL || op->cond < 0) {
+		op->cond = 0;
+	}
 	switch (insn->id) {
 #if 0
 

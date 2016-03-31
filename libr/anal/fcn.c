@@ -321,7 +321,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 				break;
 		}
 repeat:
-		if ((len-idx)<5) {
+		if ((len - idx) < 5) {
 			break;
 		}
 		r_anal_op_fini (&op);
@@ -360,7 +360,7 @@ repeat:
 		}
 		idx += oplen;
 		delay.un_idx = idx;
-		if (op.delay>0 && delay.pending == 0) {
+		if (op.delay > 0 && delay.pending == 0) {
 			// Handle first pass through a branch delay jump:
 			// Come back and handle the current instruction later.
 			// Save the location of it in `delay.idx`
@@ -678,12 +678,15 @@ repeat:
 			}
 			/* fallthru */
 		case R_ANAL_OP_TYPE_RET:
-			VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n",
-				addr+delay.un_idx-oplen, overlapped,
-				bb->size, fcn->size);
-			FITFCNSZ ();
-			r_anal_op_fini (&op);
-			return R_ANAL_RET_END;
+			if (op.cond == 0) {
+				VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n",
+						addr+delay.un_idx-oplen, overlapped,
+						bb->size, fcn->size);
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_END;
+			}
+			break;
 		}
 	}
 beach:
