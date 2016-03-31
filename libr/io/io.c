@@ -992,13 +992,13 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 	off = io->off;
 
 	if (*out_sz == UT64_MAX) {
-		return buf;
+		return NULL;
 	}
 	if (io->maxalloc && *out_sz > io->maxalloc) {
 		eprintf ("WARNING: File is greater than 0x%"PFMT64x" bytes.\nTry setting " \
 			"R_IO_MAX_ALLOC environment variable with the desired max " \
 			"allocation bytes.\n", io->maxalloc);
-		return buf;
+		return NULL;
 	}
 
 	buf = malloc (*out_sz);

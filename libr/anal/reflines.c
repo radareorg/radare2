@@ -422,5 +422,6 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		str = r_str_replace (str, ".", c->vline[LUP_CORNER], 1);
 		str = r_str_replace (str, "`", c->vline[LDWN_CORNER], 1);
 	}
+	r_list_free (lvls);
 	return str;
 }

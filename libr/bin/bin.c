@@ -732,7 +732,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		binfile = r_bin_file_new_from_bytes (bin, desc->name, buf_bytes, sz,
 			file_sz, bin->rawstr, baseaddr, loadaddr, desc->fd, name, NULL, offset);
 	}
-
+	//free (buf_bytes); heap use after free
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 

@@ -334,6 +334,8 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		return false;
 	}
 	free (tstr);
+	r_list_free (vars);
+	r_list_free (args);
 	return true;
 #endif
 }
