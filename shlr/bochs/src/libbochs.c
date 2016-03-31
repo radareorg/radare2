@@ -94,12 +94,13 @@ bool bochs_wait(libbochs_t *b) {
 	n = fcntl (b->hReadPipeIn, (flags | O_NONBLOCK));
 	while (1) {
 		n = read (b->hReadPipeIn, lpTmpBuffer, SIZE_BUF - 1);
-		if (!n < 1) break;
+		if (n < 1) break;
+		lpTmpBuffer[n] = 0;
 		if (b->punteroBuffer + n >= SIZE_BUF - 1)
 			bochs_reset_buffer(b);
-		memcpy (&b->data[b->punteroBuffer], lpTmpBuffer, n);
+		memcpy (&b->data[b->punteroBuffer], lpTmpBuffer, n + 1);
 		b->punteroBuffer += n;
-		if (n && strstr (&b->data[0], "<bochs:")) {
+		if (strstr (&b->data[0], "<bochs:")) {
 			break;
 		}
 	}
@@ -132,6 +133,10 @@ int bochs_read(libbochs_t* b, ut64 addr, int count, ut8 * buf) {
 	snprintf (buff, sizeof (buff), "xp /%imb 0x%016"PFMT64x"", totalread, addr);
 	bochs_send_cmd (b, buff, true);
 	data = strstr (&b->data[0], "[bochs]:");
+	if (!data) {
+		eprintf ("bochs_read: Can't find bochs prompt\n");
+		return false;
+	}
 	lenRec = strlen (data);
 	if (!strncmp (data, "[bochs]:", 8)) {
 		i += 10; // seek to next line
@@ -267,7 +272,7 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 		close (aStdinPipe[PIPE_READ]);
 		close (aStdoutPipe[PIPE_WRITE]);
 
-		read (aStdoutPipe[PIPE_READ], lpTmpBuffer, 1);
+		(void)read (aStdoutPipe[PIPE_READ], lpTmpBuffer, 1);
 
 		b->hReadPipeIn  = aStdoutPipe[PIPE_READ];
 		b->hWritePipeOut = aStdinPipe[PIPE_WRITE];
