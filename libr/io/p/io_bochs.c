@@ -1,4 +1,3 @@
-// 
 // Copyright (c) 2016 - LGPL, SkUaTeR, All rights reserved.
 
 #include <r_io.h>
@@ -22,53 +21,46 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIOBochs  *riob;
 	lprintf("io_open\n");
 	const char *i;
-	char * archivoBochs;
-	char * archivoCfg;
+	char * fileBochs = NULL;
+	char * fileCfg = NULL;
 	int l;
-//	if (!r_sandbox_enable (false)) {
-//		eprintf("sandbox exit\n");
-//		return NULL;
-//	}
-	if (!__plugin_open (io, file, 0))
+	if (!__plugin_open (io, file, 0)) {
 		return NULL;
+	}
+	if (!r_sandbox_enable (false)) {
+		eprintf ("sandbox exit\n");
+		return NULL;
+	}
 	if (riobochs) {
 		return riobochs;
-	}
-	archivoBochs = malloc (1024);
-	if (!archivoBochs) return NULL;
-	archivoCfg = malloc (1024);
-	if (!archivoCfg) {
-		free (archivoBochs);
-		return NULL;
 	}
 
        	i = strstr (file + 8, "#");
 	if (i) {
 		l = i - file - 8;
-		strncpy (archivoBochs,file+8,l<1024?l:1024);
-		archivoBochs[l] = 0;
+		fileBochs = r_str_ndup (file + 8, l);
 		l = strlen (i + 1);
-		strncpy (archivoCfg, i+1, l<1024?l:1024);
-		archivoCfg[l] = 0;
+		fileCfg = strdup (i + 1);
 	} else {
-		free (archivoBochs);
-		free (archivoCfg);
+		free (fileCfg);
 		eprintf ("Error cant find :\n");
 		return NULL;
 	}
 	riob = R_NEW0 (RIOBochs);
 
 	// Inicializamos
-	if (bochs_open (&riob->desc,archivoBochs,archivoCfg) == true) {
+	if (bochs_open (&riob->desc, fileBochs, fileCfg) == true) {
 		desc = &riob->desc;
 		riobochs = r_io_desc_new (&r_io_plugin_bochs, -1, file, rw, mode, riob);
 		//riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
-		//free(archivoBochs);
-		//free(archivoCfg);
+		free(fileBochs);
+		free(fileCfg);
 		return riobochs;
 	}
 	lprintf ("bochsio.open: Cannot connect to bochs.\n");
 	free (riob);
+	free (fileBochs);
+	free (fileCfg);
 	return NULL;
 }
 

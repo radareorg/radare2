@@ -34,13 +34,13 @@ typedef struct libbochs_t {
 
 //DWORD WINAPI MyThLector_(LPVOID lpParam)
 //DWORD WINAPI MyThEscritor_(LPVOID lpParam)
-bool WaitForReply_(libbochs_t *b);
-void ResetBuffer_(libbochs_t* b);
-bool CommandStop_(libbochs_t * b);
+bool bochs_wait(libbochs_t *b);
+void bochs_reset_buffer(libbochs_t* b);
+bool bochs_cmd_stop(libbochs_t * b);
 void bochs_send_cmd(libbochs_t* b, const char * comando, bool bWait);
-int bochs_read_(libbochs_t* b, ut64 addr, int count, ut8* buf);
-void bochs_close_(libbochs_t* b);
-bool bochs_open_(libbochs_t* b, const char *rutaBochs, const char *rutaConfig);
+int bochs_read(libbochs_t* b, ut64 addr, int count, ut8* buf);
+void bochs_close(libbochs_t* b);
+bool bochs_open(libbochs_t* b, const char *rutaBochs, const char *rutaConfig);
 
 #define ENABLE_DEBUG 0
 #if ENABLE_DEBUG

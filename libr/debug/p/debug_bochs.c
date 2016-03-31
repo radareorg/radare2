@@ -1,6 +1,4 @@
-/* 
-  debugbochs  - LGPL - Copyright 2016 - SkUaTeR 
-*/
+/* debugbochs  - LGPL - Copyright 2016 - SkUaTeR */
 
 #include <r_asm.h>
 #include <r_debug.h>
