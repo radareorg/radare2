@@ -2411,6 +2411,7 @@ R_API void r_agraph_free(RAGraph *g) {
 	agraph_free_nodes (g);
 	r_agraph_set_title (g, NULL);
 	sdb_free (g->db);
+	r_cons_canvas_free (g->can);
 	free (g);
 }
 
