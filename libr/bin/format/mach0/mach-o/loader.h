@@ -207,6 +207,9 @@ struct mach_header_64 {
 					   require it. Only used in MH_EXECUTE
 					   filetypes. */
 
+#define MH_APP_EXTENSION_SAFE = 0x02000000 /* The code was linked for use in an application extension. */
+#define MH_DYLD_SHARED_CACHE = 0x80000000 /* Found on libraries embedded in dyldcache */
+
 /*
  * The load commands directly follow the mach_header.  The total size of all
  * of the commands is given by the sizeofcmds field in the mach_header.  All
