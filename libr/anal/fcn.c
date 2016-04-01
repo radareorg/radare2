@@ -667,6 +667,7 @@ repeat:
 				}
 
 			}
+#if 0
 			if (!anal->opt.eobjmp) {
 				if (continue_after_jump) {
 					break;
@@ -676,6 +677,11 @@ repeat:
 					return R_ANAL_RET_END;
 				}
 			}
+#endif
+			FITFCNSZ ();
+			r_anal_op_fini (&op);
+			return R_ANAL_RET_END;
+			break;
 			/* fallthru */
 		case R_ANAL_OP_TYPE_RET:
 			if (op.cond == 0) {
