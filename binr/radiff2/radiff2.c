@@ -348,6 +348,8 @@ int main(int argc, char **argv) {
 			r_core_diff_show (c, c2);
 		}
 		r_cons_flush ();
+		r_core_free (c);
+		r_core_free (c2);
 		return 0;
 	}
 

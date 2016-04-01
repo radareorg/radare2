@@ -113,6 +113,7 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 	r_list_free (dbg->maps);
 	r_list_free (dbg->maps_user);
 	r_list_free (dbg->threads);
+	r_num_free (dbg->num);
 	sdb_free (dbg->sgnls);
 	r_tree_free (dbg->tree);
 	sdb_foreach (dbg->tracenodes, (SdbForeachCallback)free_tracenodes_entry, dbg);
