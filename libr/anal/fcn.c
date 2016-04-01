@@ -504,13 +504,21 @@ repeat:
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
 			}
-			if (anal->opt.eobjmp) {
-				FITFCNSZ();
-				op.jump = UT64_MAX;
-				recurseAt (op.jump);
-				recurseAt (op.fail);
-				gotoBeachRet ();
-				return R_ANAL_RET_END;
+			{
+				bool must_eob = anal->opt.eobjmp;
+				if (!must_eob) {
+					RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
+					RIOSection *d = anal->iob.section_vget (anal->iob.io, op.jump);
+					must_eob = s != d;
+				}
+				if (must_eob) {
+					FITFCNSZ();
+					op.jump = UT64_MAX;
+					recurseAt (op.jump);
+					recurseAt (op.fail);
+					gotoBeachRet ();
+					return R_ANAL_RET_END;
+				}
 			}
 			if (anal->opt.bbsplit) {
 				if (!overlapped) {
