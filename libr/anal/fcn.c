@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2016 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -43,7 +43,7 @@ R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize) {
 	ut64 eof; /* end of function */
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
-	if (!fcn || newsize<1)
+	if (!fcn || newsize < 1)
 		return false;
 	fcn->size = newsize;
 	eof = fcn->addr + fcn->size;
@@ -667,17 +667,12 @@ repeat:
 				}
 
 			}
-#if 0
-			if (!anal->opt.eobjmp) {
-				if (continue_after_jump) {
+			{ /* if UJMP is in .plt section just skip it */
+				RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
+				if (s && s->name && strstr (s->name, ".plt")) {
 					break;
-				} else {
-					FITFCNSZ ();
-					r_anal_op_fini (&op);
-					return R_ANAL_RET_END;
 				}
 			}
-#endif
 			FITFCNSZ ();
 			r_anal_op_fini (&op);
 			return R_ANAL_RET_END;
