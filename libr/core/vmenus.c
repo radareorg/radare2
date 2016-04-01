@@ -59,6 +59,7 @@ static inline char *getformat (RCoreVisualTypes *vt, const char *k) {
 static int sdbforcb (void *p, const char *k, const char *v) {
 	const char *pre = " ";
 	RCoreVisualTypes *vt = (RCoreVisualTypes*)p;
+	int use_color = vt->core->print->flags & R_PRINT_FLAGS_COLOR;
 	if (vt->optword) {
 		if (!strcmp (vt->type, "struct")) {
 			char *s = r_str_newf ("struct.%s.", vt->optword);
@@ -71,8 +72,12 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 					vt->curfmt = strdup (v);
 					pre = ">";
 				}
-				r_cons_printf (" %s %s  %s\n",
-					pre, k+strlen (s), v);
+				if (use_color && *pre=='>')
+					r_cons_printf (Color_YELLOW" %s %s  %s\n"
+						Color_RESET, pre, k+strlen (s), v);
+				else
+					r_cons_printf (" %s %s  %s\n",
+						pre, k+strlen (s), v);
 				vt->t_ctr ++;
 			}
 			free (s);
@@ -88,8 +93,12 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 						vt->curfmt = strdup (v);
 						pre = ">";
 					}
-					r_cons_printf (" %s %s  %s\n",
-						pre, k, v);
+					if (use_color && *pre=='>')
+					r_cons_printf (Color_YELLOW" %s %s  %s\n"
+						Color_RESET, pre, k, v);
+					else
+						r_cons_printf (" %s %s  %s\n",
+							pre, k, v);
 					vt->t_ctr ++;
 				}
 			}
@@ -105,8 +114,12 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 				vt->curfmt = strdup (fmt);
 				pre = ">";
 			}
-			r_cons_printf (" %s pf %3s   %s\n",
-				pre, fmt, k);
+			if (use_color && *pre=='>')
+				r_cons_printf (Color_YELLOW" %s pf %3s   %s\n"
+					Color_RESET,pre, fmt, k);
+			else
+				r_cons_printf (" %s pf %3s   %s\n",
+					pre, fmt, k);
 			free (fmt);
 		} else {
 			if (vt->t_idx == vt->t_ctr) {
@@ -116,9 +129,15 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 				vt->curfmt = strdup (v);
 				pre = ">";
 			}
-			r_cons_printf (" %s %s\n",
-				(vt->t_idx == vt->t_ctr)?
-			">":" ", k);
+			if (use_color && *pre=='>')
+				r_cons_printf (Color_YELLOW" %s %s\n"Color_RESET,
+					(vt->t_idx == vt->t_ctr)?
+					">":" ", k);
+
+			else
+				r_cons_printf (" %s %s\n",
+					(vt->t_idx == vt->t_ctr)?
+					">":" ", k);
 		}
 		vt->t_ctr ++;
 	}
@@ -140,9 +159,10 @@ R_API int r_core_visual_types(RCore *core) {
 		"enum",
 		"struct",
 		"func",
+		"union",
 		NULL
 	};
-
+	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	for (j=i=0; i<R_FLAG_SPACES_MAX; i++)
 		if (core->flags->spaces[i])
 			j = 1;
@@ -150,10 +170,14 @@ R_API int r_core_visual_types(RCore *core) {
 	for (;;) {
 		r_cons_clear00 ();
 
-		r_cons_printf ("'q' '?' ");
 		for (i=0; opts[i]; i++) {
-			const char *fmt = (h_opt==i)?
-				"[%s] ":" %s  ";
+			const char *fmt;
+			if(use_color)
+				fmt = (h_opt == i) ? Color_BGREEN"[%s] "Color_RESET:
+					Color_GREEN" %s  "Color_RESET;
+			else
+				fmt = (h_opt == i) ? "[%s] ":" %s  ";
+
 			r_cons_printf (fmt, opts[i]);
 		}
 		r_cons_newline ();
@@ -194,11 +218,20 @@ R_API int r_core_visual_types(RCore *core) {
 				}
 			 }
 			break;
-		case 'j': option++; break;
-		case 'J': option += 10; break;
+		case 'j':
+			if (++option >= vt.t_ctr)
+				option = vt.t_ctr-1;
+			break;
+		case 'J':
+			option += 10;
+			if (option >= vt.t_ctr)
+				option = vt.t_ctr-1;
+			break;
 		case 'k': if (--option<0) option = 0; break;
 		case 'K': option-=10; if (option<0) option = 0; break;
-		case 'b': // back
+		case 'b':
+			  r_core_cmdf (core, "tl %s", vt.curname);
+			  break;
 		case -1: // EOF
 		case 'q':
 			if (optword) {
@@ -225,14 +258,10 @@ R_API int r_core_visual_types(RCore *core) {
 			}
 		       break;
 		case 'd':
-			if (optword) {
-				/* TODO: delete field */
-			} else {
-				const char *cur = vt.curname;
-				if (cur && *cur) {
-					r_core_cmdf (core, "\"td-%s\"", cur);
-				}
-			}
+			r_core_cmdf (core, "t- %s", vt.curname);
+			break;
+		case '-':
+			r_core_cmd0 (core, "to -");
 			break;
 		case ' ':
 		case '\r':
@@ -265,9 +294,11 @@ R_API int r_core_visual_types(RCore *core) {
 			" j/k   - down/up keys\n"
 			" h/l   - left-right\n"
 			" a     - add new type (C syntax)\n"
+			" b	- bind type to current offset\n"
 			" d     - delete current type\n"
 			" e     - edit current type\n"
 			" o     - open .h include file\n"
+			" -	- Open cfg.editor to load types\n"
 			" :     - enter command\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
