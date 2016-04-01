@@ -20,10 +20,10 @@ int RunRemoteThread_(libbochs_t* b, const ut8 *lpBuffer, ut32 dwSize, int a4, ut
 			if (hInjectThread) {
 				if (!WaitForSingleObject (hInjectThread, 0xFFFFFFFF)
 					&& (!a4 || ReadProcessMemory (b->processInfo.hProcess,
-					pProcessMemory, lpBuffer, dwSize, &NumberOfBytesWritten)))
+					pProcessMemory, (PVOID)lpBuffer, dwSize, &NumberOfBytesWritten)))
 				{
 					if (lpExitCode)
-						GetExitCodeThread (hInjectThread, lpExitCode);
+						GetExitCodeThread (hInjectThread, (PDWORD)lpExitCode);
 					result = 1;
 				}
 			}
@@ -44,7 +44,7 @@ void bochs_reset_buffer(libbochs_t* b) {
 bool bochs_cmd_stop(libbochs_t * b) {
 #if __WINDOWS__
 	HMODULE hKernel;
-	DWORD ExitCode;
+	unsigned int ExitCode;
 	DWORD apiOffset = 0;
 	char buffer[] = {
 		0x68, 0x00, 0x00, 0x00, 0x00,	//push    0
@@ -59,7 +59,7 @@ bool bochs_cmd_stop(libbochs_t * b) {
 	hKernel = GetModuleHandleA("kernel32");
 	apiOffset = (DWORD)GetProcAddress(hKernel, "GenerateConsoleCtrlEvent");
 	*((DWORD *)&buffer[20]) = apiOffset;
-	ExitCode = RunRemoteThread_(b, &buffer, 0x1Eu, 0, &ExitCode) && ExitCode;
+	ExitCode = RunRemoteThread_(b, (const ut8*)&buffer, 0x1Eu, 0, &ExitCode) && ExitCode;
 	return ExitCode;
 #else
 	return 0;
