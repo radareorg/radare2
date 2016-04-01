@@ -5,7 +5,7 @@ Before reporting an issue with GitHub, be sure that:
 * you are using a clean installation
 * the issue was not already reported
 
-When the two conditions above are satisfied, feel free to submit an issue,
+When the above conditions are satisfied, feel free to submit an issue,
 trying to be as precise as possible. If you can, provide the problematic
 binary, the steps to reproduce the error and a backtrace in case of SEGFAULTs.
 Any information will help to fix the problem.
