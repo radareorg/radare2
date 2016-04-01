@@ -183,6 +183,37 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 
 static csh handle = 0;
 
+static int cond_x862r2(int id) {
+	switch (id) {
+	case X86_INS_JE:
+		return R_ANAL_COND_EQ;
+	case X86_INS_JNE:
+		return R_ANAL_COND_NE;
+	case X86_INS_JB:
+	case X86_INS_JL:
+		return R_ANAL_COND_LT;
+	case X86_INS_JBE:
+	case X86_INS_JLE:
+		return R_ANAL_COND_LE;
+	case X86_INS_JG:
+	case X86_INS_JA:
+		return R_ANAL_COND_GT;
+	case X86_INS_JAE:
+		return R_ANAL_COND_GE;
+	case X86_INS_JS:
+	case X86_INS_JNS:
+	case X86_INS_JO:
+	case X86_INS_JNO:
+	case X86_INS_JGE:
+	case X86_INS_JP:
+	case X86_INS_JNP:
+	case X86_INS_JCXZ:
+	case X86_INS_JECXZ:
+		break;
+	}
+	return 0;
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static int omode = 0;
 #if USE_ITER_API
@@ -259,6 +290,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->size = insn->size;
 		op->family = R_ANAL_OP_FAMILY_CPU; // almost everything is CPU
 		op->prefix = 0;
+		op->cond = cond_x862r2 (insn->id);
 		switch (insn->detail->x86.prefix[0]) {
 		case X86_PREFIX_REPNE:
 			op->prefix |= R_ANAL_OP_PREFIX_REPNE;

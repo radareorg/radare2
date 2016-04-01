@@ -970,12 +970,39 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 	}
 }
 
+static int cond_cs2r2(int cc) {
+	if (cc == ARM_CC_AL || cc < 0) {
+		cc = 0;
+	} else {
+		switch (cc) {
+		case ARM_CC_EQ: cc = R_ANAL_COND_EQ; break;
+		case ARM_CC_NE: cc = R_ANAL_COND_NE; break;
+		case ARM_CC_HS: cc = R_ANAL_COND_HS; break;
+		case ARM_CC_LO: cc = R_ANAL_COND_LO; break;
+		case ARM_CC_MI: cc = R_ANAL_COND_MI; break;
+		case ARM_CC_PL: cc = R_ANAL_COND_PL; break;
+		case ARM_CC_VS: cc = R_ANAL_COND_VS; break;
+		case ARM_CC_VC: cc = R_ANAL_COND_VC; break;
+
+		case ARM_CC_HI: cc = R_ANAL_COND_HI; break;
+		case ARM_CC_LS: cc = R_ANAL_COND_LS; break;
+		case ARM_CC_GE: cc = R_ANAL_COND_GE; break;
+		case ARM_CC_LT: cc = R_ANAL_COND_LT; break;
+		case ARM_CC_GT: cc = R_ANAL_COND_GT; break;
+		case ARM_CC_LE: cc = R_ANAL_COND_LE; break;
+		case ARM_CC_AL: cc = R_ANAL_COND_AL; break;
+		}
+	}
+	return cc;
+}
+
 static void anop32 (RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 	int i;
-	op->cond = insn->detail->arm.cc;
-	if (op->cond == ARM_CC_AL || op->cond < 0) {
-		op->cond = 0;
+	op->cond = cond_cs2r2 (insn->detail->arm.cc);
+	if (op->cond == R_ANAL_COND_NV) {
+		op->type = R_ANAL_OP_TYPE_NOP;
+		return;
 	}
 	switch (insn->id) {
 #if 0

@@ -459,14 +459,22 @@ typedef enum {
 
 /* TODO: what to do with signed/unsigned conditionals? */
 typedef enum {
-	R_ANAL_COND_EQ = 0,
-	R_ANAL_COND_NE,
-	R_ANAL_COND_GE,
-	R_ANAL_COND_GT,
-	R_ANAL_COND_LE,
-	R_ANAL_COND_LT,
-	R_ANAL_COND_AL,
-	R_ANAL_COND_NV,
+	R_ANAL_COND_AL = 0,        // Always executed (no condition)
+	R_ANAL_COND_EQ,            // Equal
+	R_ANAL_COND_NE,            // Not equal
+	R_ANAL_COND_GE,            // Greater or equal
+	R_ANAL_COND_GT,            // Greater than
+	R_ANAL_COND_LE,            // Less or equal
+	R_ANAL_COND_LT,            // Less than
+	R_ANAL_COND_NV,            // Never executed             must be a nop? :D
+	R_ANAL_COND_HS,            // Carry set                  >, ==, or unordered
+	R_ANAL_COND_LO,            // Carry clear                Less than
+	R_ANAL_COND_MI,            // Minus, negative            Less than
+	R_ANAL_COND_PL,            // Plus, positive or zero     >, ==, or unordered
+	R_ANAL_COND_VS,            // Overflow                   Unordered
+	R_ANAL_COND_VC,            // No overflow                Not unordered
+	R_ANAL_COND_HI,            // Unsigned higher            Greater than, or unordered
+	R_ANAL_COND_LS             // Unsigned lower or same     Less than or equal
 } _RAnalCond;
 
 typedef enum {
@@ -1383,6 +1391,7 @@ R_API void r_anal_cond_free (RAnalCond *c);
 R_API char *r_anal_cond_to_string(RAnalCond *cond);
 R_API int r_anal_cond_eval (RAnal *anal, RAnalCond *cond);
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
+R_API const char *r_anal_cond_tostring(int cc);
 
 /* reflines.c */
 R_API RList* /*<RAnalRefline>*/ r_anal_reflines_get(RAnal *anal,
