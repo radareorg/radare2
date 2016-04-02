@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 - pancake<nopcode.org> 
+/* radare - LGPL - Copyright 2012 - pancake<nopcode.org>
 				2013 - condret		*/
 
 #include <string.h>
@@ -15,6 +15,7 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
+	op->size = ilen;
 	op->type = R_ANAL_OP_TYPE_UNK;
 
 	switch (data[0]) {
@@ -73,6 +74,9 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		break;
 	case 0xc9:
 		op->type = R_ANAL_OP_TYPE_RET;
+		op->eob = true;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -2;
 		break;
 	case 0xed:
 		switch(data[1]) {
@@ -118,78 +122,106 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case 0x76:
 	case 0x7f:
 		op->type = R_ANAL_OP_TYPE_TRAP; // HALT
+		op->eob = true;
 		break;
-	case 0x10:
-	case 0x18:
+
+	case 0x10: // djnz
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addr + (st8)data[1] + ilen;
+		op->fail = addr + ilen;
+		break;
+	case 0x18: // jr xx
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->eob = true;
+		op->jump = addr + (st8)data[1] + ilen;
+		break;
+	// jr cond, xx
 	case 0x20:
 	case 0x28:
 	case 0x30:
 	case 0x38:
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addr + (st8)data[1] + ilen;
+		op->fail = addr + ilen;
+		break;
+
+	// conditional jumps
 	case 0xc2:
-	case 0xc3:
 	case 0xca:
 	case 0xd2:
 	case 0xda:
 	case 0xe2:
-	case 0xe9:
 	case 0xea:
 	case 0xf2:
 	case 0xfa:
-		op->type = R_ANAL_OP_TYPE_JMP; // jmpz
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = data[1] | data[2] << 8;
+		op->fail = addr + ilen;
 		break;
+	case 0xc3: // jp xx
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->eob = true;
+		op->jump = data[1] | data[2] << 8;
+		break;
+	case 0xe9: // jp (HL)
+		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->eob = true;
+		break;
+
 	case 0xc7:				//rst 0
 		op->jump = 0x00;
-		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ANAL_OP_TYPE_CALL;
 		break;
 	case 0xcf:				//rst 8
 		op->jump = 0x08;
-		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ANAL_OP_TYPE_CALL;
 		break;
 	case 0xd7:				//rst 16
 		op->jump = 0x10;
-		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ANAL_OP_TYPE_CALL;
 		break;
 	case 0xdf:				//rst 24
 		op->jump = 0x18;
-		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ANAL_OP_TYPE_CALL;
 		break;
 	case 0xe7:				//rst 32
 		op->jump = 0x20;
-		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ANAL_OP_TYPE_CALL;
 		break;
 	case 0xef:				//rst 40
 		op->jump = 0x28;
-		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ANAL_OP_TYPE_CALL;
 		break;
 	case 0xf7:				//rst 48
 		op->jump = 0x30;
-		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ANAL_OP_TYPE_CALL;
 		break;
 	case 0xff:				//rst 56
 		op->jump = 0x38;
-		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ANAL_OP_TYPE_CALL;
 		break;				// condret: i think that foo resets some regs, but i'm not sure
 
-	case 0xc4:
-	case 0xcc:
+	// conditional call
+	case 0xc4: // nz
+	case 0xd4: // nc
+	case 0xe4: // po
+	case 0xf4: // p
+
+	case 0xcc: // z
+	case 0xdc: // c
+	case 0xec: // pe
+	case 0xfc: // m
+		op->type = R_ANAL_OP_TYPE_CCALL;
+		op->jump = data[1] | data[2] << 8;
+		op->fail = addr + ilen;
+		break;
+
+	// call
 	case 0xcd:
-	case 0xd4:
-	case 0xdc:
-	case 0xdd:
-	case 0xe4:
-	case 0xec:
-	case 0xf4:
-	case 0xfc:
-	case 0xfd:
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = 2;
+		op->jump = data[1] | data[2] << 8;
 		break;
 	case 0xcb:			//the same as for gameboy
 		switch(data[1]/8) {
@@ -238,7 +270,7 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		}
 		break;
 	}
-	return op->size= ilen;
+	return ilen;
 }
 
 struct r_anal_plugin_t r_anal_plugin_z80 = {
