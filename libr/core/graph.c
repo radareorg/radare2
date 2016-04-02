@@ -2524,8 +2524,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		}
 		g = r_agraph_new (can);
 		if (!g) {
-			is_error = true;
-			goto err_graph_new;
+			r_config_set_i (core->config, "scr.interactive", o_scrinteractive);
+			r_cons_canvas_free (can);
+			return false;
 		}
 	} else {
 		o_can = g->can;
@@ -2854,9 +2855,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	free (grd);
 	if (graph_allocated) {
 		r_agraph_free (g);
-err_graph_new:
 		r_config_set_i (core->config, "scr.interactive", o_scrinteractive);
-		r_cons_canvas_free (can);
 	} else {
 		g->can = o_can;
 	}
