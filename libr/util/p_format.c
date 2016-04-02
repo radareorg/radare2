@@ -1376,6 +1376,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 			/* flags */
 			if (mode & R_PRINT_SEEFLAGS && isptr != NULLPTR) {
+				char *newname = NULL;
+				if (!fieldname) {
+					newname = fieldname = r_str_newf ("pf.%d", seeki);
+				}
 				if (mode & R_PRINT_UNIONMODE) {
 					p->cb_printf ("f %s=0x%08"PFMT64x"\n", formatname, seeki);
 					goto beach;
@@ -1386,6 +1390,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				} else if (slide/STRUCTFLAG>0 && idx==1) {
 					p->cb_printf ("%s=0x%08"PFMT64x"\n", fieldname, seeki);
 				} else p->cb_printf ("f %s=0x%08"PFMT64x"\n", fieldname , seeki);
+				if (newname) {
+					free (newname);
+					newname = fieldname = NULL;
+				}
 			}
 
 			/* dot */
