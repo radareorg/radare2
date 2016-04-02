@@ -371,10 +371,18 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.failcycles)
 				r_cons_printf ("\"failcycles\":%d,", op.failcycles);
 			r_cons_printf ("\"delay\":%d,", op.delay);
-			r_cons_printf ("\"stack\":\"%s\",", r_anal_stackop_tostring (op.stackop));
-			r_cons_printf ("\"cond\":\"%s\",",
-				(op.type & R_ANAL_OP_TYPE_COND)?
-				r_anal_cond_tostring (op.cond): "");
+			{
+				const char *p = r_anal_stackop_tostring (op.stackop);
+				if (p && *p && strcmp (p, "null"))
+					r_cons_printf ("\"stack\":\"%s\",", p);
+			}
+			{
+				const char *arg = (op.type & R_ANAL_OP_TYPE_COND)?
+					r_anal_cond_tostring (op.cond): NULL;
+				if (arg) {
+					r_cons_printf ("\"cond\":\"%s\",", arg);
+				}
+			}
 			r_cons_printf ("\"family\":\"%s\"}", r_anal_op_family_to_string (op.family));
 		} else {
 #define printline(k, fmt, arg)\
