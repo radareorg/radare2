@@ -16,8 +16,10 @@ static void r_anal_type_init(RAnal *anal) {
 	sdb_set (D, "unsigned int", "type", 0);
 	sdb_set (D, "unsigned char", "type", 0);
 	sdb_set (D, "unsigned short", "type", 0);
+	sdb_set (D, "short", "type", 0);
 	sdb_set (D, "int", "type", 0);
 	sdb_set (D, "long", "type", 0);
+	sdb_set (D, "long long", "type", 0);
 	sdb_set (D, "void *", "type", 0);
 	sdb_set (D, "char", "type", 0);
 	sdb_set (D, "char *", "type", 0);
@@ -29,8 +31,10 @@ static void r_anal_type_init(RAnal *anal) {
 	sdb_set (D, "type.unsigned int", "i", 0);
 	sdb_set (D, "type.unsigned char", "b", 0);
 	sdb_set (D, "type.unsigned short", "w", 0);
+	sdb_set (D, "type.short", "w", 0);
 	sdb_set (D, "type.int", "d", 0);
 	sdb_set (D, "type.long", "x", 0);
+	sdb_set (D, "type.long long", "q", 0);
 	sdb_set (D, "type.void *", "p", 0);
 	sdb_set (D, "type.char", "b", 0);
 	sdb_set (D, "type.char *", "*z", 0);
