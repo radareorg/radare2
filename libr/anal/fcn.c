@@ -677,7 +677,7 @@ repeat:
 			}
 			{ /* if UJMP is in .plt section just skip it */
 				RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
-				if (s && s->name && strstr (s->name, ".plt")) {
+				if (s && s->name && !strstr (s->name, ".plt")) {
 					break;
 				}
 			}
