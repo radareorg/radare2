@@ -668,22 +668,28 @@ repeat:
 
 				} else {	// indirect jump: table pointer is unknown
 					if (op.src[0] && op.src[0]->reg) {
-						ut64 ptr = search_reg_val(anal, buf, idx, addr, op.src[0]->reg->name);
+						ut64 ptr = search_reg_val (anal, buf, idx, addr, op.src[0]->reg->name);
 						if (ptr && ptr != UT64_MAX)
 							ret = try_walkthrough_jmptbl (anal, fcn, depth, addr + idx, ptr, ret);
 					}
 				}
 
 			}
-			{ /* if UJMP is in .plt section just skip it */
+			if (anal->cpu) { /* if UJMP is in .plt section just skip it */
 				RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
-				if (s && s->name && !strstr (s->name, ".plt")) {
-					break;
+				if (s && s->name) {
+					int in_plt = strstr (s->name, ".plt") != NULL;
+					if (strstr (anal->cpu, "arm")) {
+						if (!in_plt) goto river;
+					} else {
+						if (in_plt) goto river;
+					}
 				}
 			}
 			FITFCNSZ ();
 			r_anal_op_fini (&op);
 			return R_ANAL_RET_END;
+river:
 			break;
 			/* fallthru */
 		case R_ANAL_OP_TYPE_RET:
