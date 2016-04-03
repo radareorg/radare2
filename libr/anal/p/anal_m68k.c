@@ -61,10 +61,10 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		break;
 	case 0x60: {
 			   int off = 0;
-			   off = b[1];
+			   off = (st8)b[1];
 			   if (off==0)
-				   off = (b[2]<<8) | b[3] ;
-			   else if (off==0xff)
+				   off = (st16)((b[2]<<8) | b[3]);
+			   else if (off==-1)
 				   off = (b[2]<<24) | (b[3]<<16) | (b[4]<<8) | b[5];
 			   op->type = R_ANAL_OP_TYPE_CJMP;
 			   op->jump = addr + 2 + off;
