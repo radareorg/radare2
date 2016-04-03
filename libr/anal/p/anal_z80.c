@@ -132,7 +132,6 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		break;
 	case 0x18: // jr xx
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->eob = true;
 		op->jump = addr + (st8)data[1] + ilen;
 		break;
 	// jr cond, xx
@@ -160,12 +159,10 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		break;
 	case 0xc3: // jp xx
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->eob = true;
 		op->jump = data[1] | data[2] << 8;
 		break;
 	case 0xe9: // jp (HL)
 		op->type = R_ANAL_OP_TYPE_UJMP;
-		op->eob = true;
 		break;
 
 	case 0xc7:				//rst 0
