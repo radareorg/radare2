@@ -771,9 +771,15 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				}
 				break;
 			case TYPE_BRR:
-				if ((ret = getreg(ao->a[0])) == -1) {
-					eprintf("This branch does not accept off as arg\n");
-					return 0;
+				if ((ret = getreg (ao->a[0])) == -1) {
+					ut32 dst = getnum (ao->a[0]);
+					dst -= (ao->off + 8);
+					dst /= 4;
+					ao->o = 0xfa;
+					ao->o |= ((dst>>16)&0xff)<<8;
+					ao->o |= ((dst>>8)&0xff)<<16;
+					ao->o |= ((dst)&0xff)<<24;
+					return 4;
 				} else ao->o |= (getreg (ao->a[0])<<24);
 				break;
 			case TYPE_HLT:
