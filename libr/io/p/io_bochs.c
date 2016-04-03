@@ -27,7 +27,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (!__plugin_open (io, file, 0)) {
 		return NULL;
 	}
-	if (!r_sandbox_enable (false)) {
+	if (r_sandbox_enable (false)) {
 		eprintf ("sandbox exit\n");
 		return NULL;
 	}
