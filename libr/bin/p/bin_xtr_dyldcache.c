@@ -90,10 +90,9 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 	lib = r_bin_dyldcache_extract (xtr_obj, idx, &nlib);
 	if (!lib) {
 		free_xtr (xtr_obj);
-		return res;
+		return NULL;
 	}
-	res = r_bin_xtrdata_new (xtr_obj, free_xtr, lib->b, lib->offset,
-		lib->size, nlib);
+	res = r_bin_xtrdata_new (xtr_obj, free_xtr, lib->b, lib->offset, lib->size, nlib);
 	r_buf_free (lib->b);
 	free (lib);
 	return res;
@@ -102,7 +101,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 static RList * oneshotall(RBin *bin, const ut8* buf, ut64 size) {
 	RBinXtrData *data = NULL;
 	RList *res = NULL;
-	int nlib, i = 1;
+	int nlib, i = 0;
 	if (!bin->file) {
 		if (!load (bin))
 		    	return NULL;

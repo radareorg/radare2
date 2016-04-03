@@ -6,7 +6,7 @@
 #include "dyldcache.h"
 
 static int r_bin_dyldcache_init(struct r_bin_dyldcache_obj_t* bin) {
-	int len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr, "16c4il", 1);
+	int len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr, "16c4i7l", 1);
 	if (len == -1) {
 		perror ("read (cache_header)");
 		return false;
@@ -23,50 +23,57 @@ static int r_bin_dyldcache_apply_patch (struct r_buf_t* buf, ut32 data, ut64 off
 
 /* TODO: Needs more testing and ERROR HANDLING */
 struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj_t* bin, int idx, int *nlib) {
-	ut64 curoffset, liboff, libla, libpath, linkedit_offset;
+	ut64 liboff, linkedit_offset;
+	ut64 dyld_vmbase;
+	ut32 addend = 0;
 	struct r_bin_dyldcache_lib_t *ret = NULL;
+	struct dyld_cache_image_info* image_infos = NULL;
 	struct mach_header *mh;
 	ut8 *data, *cmdptr;
 	int cmd, libsz = 0;
 	RBuffer* dbuf;
 	char *libname;
 
-	if (!bin) {
-		return NULL;
-	}
+	if (!bin) 
+	    	return NULL;
 	if (bin->size < 1) {
 		eprintf ("Empty file? (%s)\n", bin->file? bin->file: "(null)");
 		return NULL;
 	}
-	if (bin->nlibs < 0 || idx < 0 || idx > bin->nlibs) {
+	if (bin->nlibs < 0 || idx < 0 || idx > bin->nlibs)
 		return NULL;
-	}
 	*nlib = bin->nlibs;
 	ret = R_NEW0 (struct r_bin_dyldcache_lib_t);
 	if (!ret) {
 		perror ("malloc (ret)");
 		return NULL;
 	}
-	curoffset = bin->hdr.startaddr + idx * 32;
-	if (curoffset + 8 >= bin->size) {
-		eprintf ("curoffset %d >= binsize %d\n", (ut32)curoffset, (ut32)bin->size);
-		free (ret);
-		return NULL;
+	if (bin->hdr.startaddr > bin->size) {
+	    	eprintf ("corrupted file");
+		return NULL; 
 	}
-	libla = *(ut64*)(bin->b->buf + curoffset);
-	liboff = libla - *(ut64*)&bin->b->buf[bin->hdr.baseaddroff];
+	image_infos = (struct dyld_cache_image_info*) (bin->b->buf + bin->hdr.startaddr);
+	dyld_vmbase = *(ut64 *)(bin->b->buf + bin->hdr.baseaddroff);
+	liboff = image_infos[idx].address - dyld_vmbase;
 	if (liboff > bin->size) {
 		eprintf ("Corrupted file\n");
 		free (ret);
 		return NULL;
 	}
 	ret->offset = liboff;
-	libpath = *(ut64*)(bin->b->buf+curoffset + 24);
+	if (image_infos[idx].pathFileOffset > bin->size) {
+	    	eprintf ("corrupted file\n");
+		free (ret);
+		return NULL;
+	}
+	libname = (char *)(bin->b->buf + image_infos[idx].pathFileOffset);
 	/* Locate lib hdr in cache */
-	data = bin->b->buf+liboff;
+	data = bin->b->buf + liboff;
 	mh = (struct mach_header *)data;
 	/* Check it is mach-o */
-	if (mh->magic != 0xfeedface) {
+	if (mh->magic != MH_MAGIC && mh->magic != MH_MAGIC_64) {
+	    	if (mh->magic == 0xbebafeca) //FAT binary 
+		    	eprintf ("FAT Binary\n");
 		eprintf ("Not mach-o\n");
 		free (ret);
 		return NULL;
@@ -77,16 +84,18 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		free (ret);
 		return NULL;
 	}
-	r_buf_set_bytes (dbuf, data, sizeof (struct mach_header));
-	cmdptr = data + sizeof(struct mach_header);
+	addend = mh->magic == MH_MAGIC? sizeof (struct mach_header) : sizeof (struct mach_header_64);
+	r_buf_set_bytes (dbuf, data, addend);
+	cmdptr = data + addend;
 	/* Write load commands */
 	for (cmd = 0; cmd < mh->ncmds; cmd++) {
 		struct load_command *lc = (struct load_command *)cmdptr;
-		cmdptr += lc->cmdsize;
 		r_buf_append_bytes (dbuf, (ut8*)lc, lc->cmdsize);
+		cmdptr += lc->cmdsize;
 	}
+	cmdptr = data + addend;
 	/* Write segments */
-	for (cmd = linkedit_offset = 0, cmdptr = data + sizeof (struct mach_header); cmd < mh->ncmds; cmd++) {
+	for (cmd = linkedit_offset = 0; cmd < mh->ncmds; cmd++) {
 		struct load_command *lc = (struct load_command *)cmdptr;
 		cmdptr += lc->cmdsize;
 		switch (lc->cmd) {
@@ -95,11 +104,14 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 			/* Write segment and patch offset */
 			struct segment_command *seg = (struct segment_command *)lc;
 			int t = seg->filesize;
-			if (seg->fileoff+seg->filesize > bin->b->length)
-				t = bin->b->length - seg->fileoff;
+			if (seg->fileoff + seg->filesize > bin->size) {
+			    	eprintf ("malformed dyldcache\n");
+			    	free (ret);
+				r_buf_free (dbuf);
+				return NULL;
+			}
 			r_buf_append_bytes (dbuf, bin->b->buf+seg->fileoff, t);
-			r_bin_dyldcache_apply_patch (dbuf, dbuf->length,
-				(ut64)((size_t)&seg->fileoff - (size_t)data));
+			r_bin_dyldcache_apply_patch (dbuf, dbuf->length, (ut64)((size_t)&seg->fileoff - (size_t)data));
 			/* Patch section offsets */
 			int sect_offset = seg->fileoff - libsz;
 			libsz = dbuf->length;
@@ -150,7 +162,6 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	}
 	/* Fill r_bin_dyldcache_lib_t ret */
 	ret->b = dbuf;
-	libname = (char*)(bin->b->buf+libpath);
 	strncpy (ret->path, libname, sizeof (ret->path) - 1);
 	ret->size = libsz;
 	return ret;
