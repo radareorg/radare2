@@ -195,5 +195,6 @@ struct r_bin_dyldcache_obj_t* r_bin_dyldcache_from_bytes_new(const ut8* buf, ut6
 		return r_bin_dyldcache_free (bin);
 	if (!r_bin_dyldcache_init (bin))
 		return r_bin_dyldcache_free (bin);
+	bin->size = size;
 	return bin;
 }
