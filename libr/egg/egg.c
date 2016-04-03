@@ -30,9 +30,7 @@ R_API REgg *r_egg_new () {
 	egg->patches->free = (RListFree)r_buf_free;
 	egg->plugins = r_list_new ();
 	for (i=0; egg_static_plugins[i]; i++) {
-		REggPlugin *static_plugin = R_NEW (REggPlugin);
-		memcpy (static_plugin, egg_static_plugins[i], sizeof (REggPlugin));
-		r_egg_add (egg, static_plugin);
+		r_egg_add (egg, egg_static_plugins[i]);
 	}
 	return egg;
 }
@@ -61,7 +59,7 @@ R_API void r_egg_free (REgg *egg) {
 	r_buf_free (egg->src);
 	r_buf_free (egg->buf);
 	r_buf_free (egg->bin);
-	r_list_free(egg->list);
+	r_list_free (egg->list);
 	r_asm_free (egg->rasm);
 	r_syscall_free (egg->syscall);
 	sdb_free (egg->db);

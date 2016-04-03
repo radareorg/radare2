@@ -354,6 +354,7 @@ static void r_bin_object_delete_items(RBinObject *o) {
 	r_list_free (o->symbols);
 	r_list_free (o->classes);
 	r_list_free (o->lines);
+	sdb_free (o->kv);
 	if (o->mem) o->mem->free = mem_free;
 	r_list_free (o->mem);
 	o->entries = NULL;
@@ -367,6 +368,7 @@ static void r_bin_object_delete_items(RBinObject *o) {
 	o->classes = NULL;
 	o->lines = NULL;
 	o->info = NULL;
+	o->kv = NULL;
 	for (i = 0; i < R_BIN_SYM_LAST; i++) {
 		free (o->binsym[i]);
 		o->binsym[i] = NULL;
@@ -422,7 +424,6 @@ static void r_bin_object_free(void /*RBinObject*/ *o_) {
 	if (!o) return;
 	r_bin_info_free (o->info);
 	r_bin_object_delete_items (o);
-	free (o);
 }
 
 // XXX - change this to RBinObject instead of RBinFile
@@ -1904,6 +1905,8 @@ R_API int r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *ob
 	bin->file = bf->file;
 	bin->cur = bf;
 	bin->narch = bf->narch;
+	if (bf->o != obj)
+		r_bin_object_free (bf->o);
 	bf->o = obj;
 	plugin = r_bin_file_cur_plugin (bf);
 	if (bin->minstrlen < 1)

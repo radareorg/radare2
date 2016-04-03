@@ -455,9 +455,17 @@ static RDisasmState * handle_init_ds (RCore * core) {
 
 static ut64 lastaddr = UT64_MAX;
 
+static void handle_reflines_fini (RAnal *anal, RDisasmState *ds) {
+	r_list_free (anal->reflines);
+	r_list_free (anal->reflines2);
+	anal->reflines = NULL;
+	anal->reflines2 = NULL;
+}
+
 static void handle_reflines_init (RAnal *anal, RDisasmState *ds) {
 	lastaddr = UT64_MAX;
 	if (ds->show_lines) {
+		handle_reflines_fini (anal, ds);
 		r_list_free (anal->reflines);
 		r_list_free (anal->reflines2);
 		anal->reflines = r_anal_reflines_get (anal,
@@ -2811,6 +2819,7 @@ toro:
 	r_anal_op_fini (&ds->analop);
 	// TODO: this too (must review)
 	handle_print_esil_anal_fini (core, ds);
+	handle_reflines_fini (core->anal, ds);
 	handle_deinit_ds (core, ds);
 	if (true || ds->show_emu) {
 		r_reg_arena_pop (core->anal->reg);

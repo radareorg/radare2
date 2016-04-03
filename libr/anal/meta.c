@@ -230,7 +230,7 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 	// those limits and it's O(1) instead of O(n)
 	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, from);
 	if (exists) {
-		char *value = sdb_get (DB, key, 0);
+		const char *value = sdb_const_get (DB, key, 0);
 		int idx = sdb_array_indexof (DB, key, value, 0);
 		sdb_array_delete (DB, key, idx, 0);
 	}
