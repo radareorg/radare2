@@ -94,14 +94,15 @@ bool bochs_wait(libbochs_t *b) {
 	n = fcntl (b->hReadPipeIn, (flags | O_NONBLOCK));
 	while (1) {
 		n = read (b->hReadPipeIn, lpTmpBuffer, SIZE_BUF - 1);
-		if (n < 1) break;
-		lpTmpBuffer[n] = 0;
-		if (b->punteroBuffer + n >= SIZE_BUF - 1)
-			bochs_reset_buffer(b);
-		memcpy (&b->data[b->punteroBuffer], lpTmpBuffer, n + 1);
-		b->punteroBuffer += n;
-		if (strstr (&b->data[0], "<bochs:")) {
-			break;
+		if (n >0) {
+			lpTmpBuffer[n] = 0;
+			if (b->punteroBuffer + n >= SIZE_BUF - 1)
+				bochs_reset_buffer(b);
+			memcpy (&b->data[b->punteroBuffer], lpTmpBuffer, n + 1);
+			b->punteroBuffer += n;
+			if (strstr (&b->data[0], "<bochs:")) {
+				break;
+			}
 		}
 	}
 	n = fcntl (b->hReadPipeIn, (flags | ~O_NONBLOCK));
