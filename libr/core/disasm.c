@@ -2355,9 +2355,9 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 			const char *usefmt = NULL;
 			ut64 pcv = ds->analop.jump;
 			if (pcv == UT64_MAX) {
-				pcv = r_reg_getv (core->anal->reg, pc);
+				pcv = ds->analop.ptr; // call [reloc-addr] // windows style
 				if (pcv == UT64_MAX) {
-					pcv = ds->analop.ptr; // call [reloc-addr] // windows style
+					pcv = r_reg_getv (core->anal->reg, pc);
 				}
 			}
 			fcn = r_anal_get_fcn_at (core->anal, pcv, 0);

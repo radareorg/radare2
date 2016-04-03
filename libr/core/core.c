@@ -1219,6 +1219,7 @@ R_API int r_core_init(RCore *core) {
 	r_anal_noreturn_add (core->anal, "sym.imp._exit", UT64_MAX);
 	r_anal_noreturn_add (core->anal, "sym.imp.__stack_chk_fail", UT64_MAX);
 	/* linux */
+	r_anal_noreturn_add (core->anal, "sym.imp.__assert_fail", UT64_MAX);
 	r_anal_noreturn_add (core->anal, "sym.__assert_fail", UT64_MAX);
 	r_anal_noreturn_add (core->anal, "sym.abort", UT64_MAX);
 	r_anal_noreturn_add (core->anal, "sym.exit", UT64_MAX);
