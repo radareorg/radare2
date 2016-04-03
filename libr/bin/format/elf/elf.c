@@ -526,6 +526,7 @@ beach:
 static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr, int sz) {
 	const char *section_name = "";
 	const char *link_section_name = "";
+	char *end = NULL;
 	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
 	Sdb *sdb = sdb_new0 ();
 	int i;
@@ -542,7 +543,7 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 		sdb_free (sdb);
 		return NULL;
 	}
-
+	end = (char *)defs + shdr->sh_size;
 	sdb_set (sdb, "section_name", section_name, 0);
 	sdb_num_set (sdb, "entries", shdr->sh_info, 0);
 	sdb_num_set (sdb, "addr", shdr->sh_addr, 0);
@@ -551,7 +552,7 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	sdb_set (sdb, "link_section_name", link_section_name, 0);
 
 	r_buf_read_at (bin->b, shdr->sh_offset, (ut8*)defs, shdr->sh_size);
-	for (cnt = 0, i = 0; cnt < shdr->sh_info; ++cnt) {
+	for (cnt = 0, i = 0; cnt < shdr->sh_info && ((char *)defs + i < end); ++cnt) {
 		Sdb *sdb_verdef = sdb_new0 ();
 		char *vstart = ((char*)defs) + i;
 		char key[32] = {0};
@@ -561,8 +562,17 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 		int isum = 0;
 
 		vstart += verdef->vd_aux;
+		if (vstart > end) {
+			sdb_free (sdb_verdef);
+			goto out_error;
+		}
+
 		aux = (Elf_(Verdaux)*)vstart;
 		isum = i + verdef->vd_aux;
+		if (aux->vda_name > bin->dynstr_size) { 
+			sdb_free (sdb_verdef);
+			goto out_error;
+		}
 
 		sdb_num_set (sdb_verdef, "idx", i, 0);
 		sdb_num_set (sdb_verdef, "vd_version", verdef->vd_version, 0);
@@ -575,7 +585,17 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 			Sdb *sdb_parent = sdb_new0 ();
 			isum += aux->vda_next;
 			vstart += aux->vda_next;
+			if (vstart > end) {
+				sdb_free (sdb_verdef);
+				sdb_free (sdb_parent);
+				goto out_error;
+			}
 			aux = (Elf_(Verdaux)*)vstart;
+			if (aux->vda_name > bin->dynstr_size) {
+				sdb_free (sdb_verdef);
+				sdb_free (sdb_parent);
+				goto out_error;
+			}
 			sdb_num_set (sdb_parent, "idx", isum, 0);
 			sdb_num_set (sdb_parent, "parent", j, 0);
 			sdb_set (sdb_parent, "vda_name", &bin->dynstr[aux->vda_name], 0);
@@ -589,6 +609,10 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	}
 	free (defs);
 	return sdb;
+out_error:
+	free (defs);
+	sdb_free (sdb);
+	return NULL;
 }
 
 static Sdb *store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf_(Shdr) *shdr, int sz) {
