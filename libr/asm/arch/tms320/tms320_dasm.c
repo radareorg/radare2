@@ -1115,7 +1115,7 @@ int tms320_dasm_fini(tms320_dasm_t * dasm) {
 	if (dasm) {
 		if (dasm->map)
 			ht_(free)(dasm->map);
-	/* avoid double free */
+		/* avoid double free */
 		memset (dasm, 0, sizeof (tms320_dasm_t));
 	}
 	return 0;

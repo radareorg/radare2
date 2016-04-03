@@ -656,7 +656,11 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 	cp = r_config_get (r->config, "cmd.open");
 	if (cp && *cp)
 		r_core_cmd (r, cp, 0);
-	r_config_set (r->config, "file.path", r_file_abspath (file));
+	{
+		char *absfile = r_file_abspath (file);
+		r_config_set (r->config, "file.path", absfile);
+		free (absfile);
+	}
 	fh->map = r_core_file_get_next_map (r, fh, flags, loadaddr);
 	if (!fh->map) {
 		r_core_file_free (fh);

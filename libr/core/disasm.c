@@ -460,6 +460,8 @@ static void handle_reflines_fini (RAnal *anal, RDisasmState *ds) {
 	r_list_free (anal->reflines2);
 	anal->reflines = NULL;
 	anal->reflines2 = NULL;
+	R_FREE (ds->refline);
+	R_FREE (ds->refline2);
 }
 
 static void handle_reflines_init (RAnal *anal, RDisasmState *ds) {
@@ -1139,7 +1141,9 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
 	if (ds->show_lines) {
 		ds->line = r_anal_reflines_str (core, ds->at, ds->linesopts);
+		free (ds->refline);
 		ds->refline = strdup (ds->line);
+		free (ds->refline2);
 		ds->refline2 = r_anal_reflines_str (core, ds->at,
 			ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE);
 		if (ds->line) {
@@ -2918,6 +2922,7 @@ r_reg_arena_push (core->anal->reg);
 		}
 		ret = r_asm_disassemble (core->assembler,
 			&ds->asmop, core->block+i, core->blocksize-i);
+		r_anal_op_fini (&ds->analop);
 		if (ds->show_color && !hasanal) {
 			r_anal_op (core->anal, &ds->analop, ds->at,
 				core->block + i, core->blocksize - i);

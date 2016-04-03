@@ -31,11 +31,10 @@ static ReflineEnd *refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
 	return re;
 }
 
-static int add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx) {
+static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx) {
 	ReflineEnd *re1, *re2;
 	RAnalRefline *item = R_NEW0 (RAnalRefline);
-	if (!item) return -1;
-
+	if (!item) return false;
 	item->from = addr;
 	item->to = to;
 	item->index = *idx;
@@ -44,18 +43,20 @@ static int add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx) {
 	r_list_append (list, item);
 
 	re1 = refline_end_new (item->from, true, item);
-	if (!re1) goto re1_err;
+	if (!re1) {
+		free (item);
+		return false;
+	}
 	r_list_add_sorted (sten, re1, (RListComparator)cmp_asc);
 
 	re2 = refline_end_new (item->to, false, item);
-	if (!re2) goto re2_err;
+	if (!re2) {
+		free (re1);
+		free (item);
+		return false;
+	}
 	r_list_add_sorted (sten, re2, (RListComparator)cmp_asc);
-	return 0;
-re2_err:
-	free (re1);
-re1_err:
-	free (item);
-	return -1;
+	return true;
 }
 
 R_API void r_anal_reflines_free (RAnalRefline *rl) {
@@ -130,8 +131,9 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 				op.jump == 0LL) {
 				break;
 			}
-			res = add_refline (list, sten, addr, op.jump, &count);
-			if (res < 0) goto sten_err;
+			if (!(res = add_refline (list, sten, addr, op.jump, &count))) {
+				goto sten_err;
+			}
 			break;
 		case R_ANAL_OP_TYPE_SWITCH:
 		{
@@ -145,9 +147,9 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
 					continue;
 				}
-				res = add_refline (list, sten, op.switch_op->addr,
-					caseop->jump, &count);
-				if (res < 0) goto sten_err;
+				if (!(res = add_refline (list, sten, op.switch_op->addr, caseop->jump, &count))) {
+					goto sten_err;
+				}
 			}
 			break;
 		}

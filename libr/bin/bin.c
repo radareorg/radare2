@@ -733,7 +733,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		binfile = r_bin_file_new_from_bytes (bin, desc->name, buf_bytes, sz,
 			file_sz, bin->rawstr, baseaddr, loadaddr, desc->fd, name, NULL, offset);
 	}
-	//free (buf_bytes); heap use after free
+	free (buf_bytes); //heap use after free
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 
@@ -1905,8 +1905,10 @@ R_API int r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *ob
 	bin->file = bf->file;
 	bin->cur = bf;
 	bin->narch = bf->narch;
+	#if 0
 	if (bf->o != obj)
 		r_bin_object_free (bf->o);
+	#endif
 	bf->o = obj;
 	plugin = r_bin_file_cur_plugin (bf);
 	if (bin->minstrlen < 1)

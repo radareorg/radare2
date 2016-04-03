@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -120,6 +120,12 @@ static inline int r_asm_pseudo_fill(RAsmOp *op, char *input) {
 	return size;
 }
 
+static void plugin_free(RAsmPlugin *p) {
+	if (p && p->fini) {
+		p->fini (NULL);
+	}
+}
+
 R_API RAsm *r_asm_new() {
 	int i;
 	RAsmPlugin *static_plugin;
@@ -127,12 +133,11 @@ R_API RAsm *r_asm_new() {
 	if (!a) return NULL;
 	a->bits = 32;
 	a->syntax = R_ASM_SYNTAX_INTEL;
-	a->plugins = r_list_new ();
+	a->plugins = r_list_newf ((RListFree)plugin_free);
 	if (!a->plugins){
 		free (a);
 		return NULL;
 	}
-	a->plugins->free = free;
 	for (i=0; asm_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RAsmPlugin);
 		if (!static_plugin) continue;
@@ -180,7 +185,6 @@ R_API RAsm *r_asm_free(RAsm *a) {
 			a->cur->fini (a->cur->user);
 		}
 		if (a->plugins) {
-			a->plugins->free = NULL;
 			r_list_free (a->plugins);
 			a->plugins = NULL;
 		}
@@ -198,7 +202,7 @@ R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
 	a->user = user;
 }
 
-R_API int r_asm_add(RAsm *a, RAsmPlugin *foo) {
+R_API bool r_asm_add(RAsm *a, RAsmPlugin *foo) {
 	RListIter *iter;
 	RAsmPlugin *h;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
