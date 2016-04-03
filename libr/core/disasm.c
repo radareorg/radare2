@@ -2351,13 +2351,16 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_CALL:
 		{
+			RAnalFunction *fcn;
 			const char *usefmt = NULL;
-			ut64 pcv = r_reg_getv (core->anal->reg, pc);
-			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
-			if (ds->analop.ptr) {
-				pcv = ds->analop.ptr; // call [reloc-addr] // windows style
-				fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
+			ut64 pcv = ds->analop.jump;
+			if (pcv == UT64_MAX) {
+				pcv = r_reg_getv (core->anal->reg, pc);
+				if (pcv == UT64_MAX) {
+					pcv = ds->analop.ptr; // call [reloc-addr] // windows style
+				}
 			}
+			fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
 			if (fcn) {
 				nargs = fcn->nargs;
 				usefmt = r_anal_get_fcnsign (core->anal, fcn->name);
