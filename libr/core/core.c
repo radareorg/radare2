@@ -258,6 +258,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		// TODO: group analop-dependant vars after a char, so i can filter
 		r_anal_op (core->anal, &op, core->offset,
 			core->block, core->blocksize);
+		r_anal_op_fini (&op); // we dont need strings or pointers, just values, which are not nullified in fini
 		switch (str[1]) {
 		case '.': // can use pc, sp, a0, a1, ...
 			return r_debug_reg_get (core->dbg, str+2);

@@ -46,13 +46,19 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	r_anal_value_free (op->src[2]);
 	r_anal_value_free (op->dst);
 	r_anal_switch_op_free (op->switch_op);
-	free (op->mnemonic);
-	memset (op, 0, sizeof (RAnalOp));
+	op->src[0] = NULL;
+	op->src[1] = NULL;
+	op->src[2] = NULL;
+	op->dst = NULL;
+	op->var = NULL;
+	op->switch_op = NULL;
+	R_FREE (op->mnemonic);
 }
 
 R_API void r_anal_op_free(void *_op) {
 	if (!_op) return;
 	r_anal_op_fini (_op);
+	memset (_op, 0, sizeof (RAnalOp));
 	free (_op);
 }
 
