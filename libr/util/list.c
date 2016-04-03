@@ -60,9 +60,8 @@ R_API int r_list_length(const RList *list) {
 
 /* remove all elements of a list */
 R_API void r_list_purge (RList *list) {
-	RListIter *it;
 	if (list) {
-		it = list->head;
+		RListIter *it = list->head;
 		while (it) {
 			RListIter *next = it->n;
 			r_list_delete (list, it);
@@ -86,10 +85,10 @@ R_API bool r_list_delete_data (RList *list, void *ptr) {
 	r_list_foreach (list, iter, p) {
 		if (ptr == p) {
 			r_list_delete (list, iter);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API void r_list_delete (RList *list, RListIter *iter) {
@@ -103,7 +102,7 @@ R_API void r_list_delete (RList *list, RListIter *iter) {
 }
 
 R_API void r_list_split (RList *list, void *ptr) {
-	if (list){
+	if (list) {
 		RListIter *iter = r_list_iterator (list);
 		while (iter) {
 			void *item = iter->data;

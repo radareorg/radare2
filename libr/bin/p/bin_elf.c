@@ -17,11 +17,13 @@ static void setsymord (ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	eobj->symbols_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinSymbol));
 }
 
-static void setimpord (ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
+static inline bool setimpord (ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size)
-		return;
+		return false;
 	free (eobj->imports_by_ord[ord]);
 	eobj->imports_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinImport));
+	eobj->imports_by_ord[ord]->name = strdup (ptr->name);
+	return true;
 }
 
 static Sdb* get_sdb (RBinObject *o) {
@@ -57,6 +59,18 @@ static int load(RBinFile *arch) {
 }
 
 static int destroy(RBinFile *arch) {
+	int i;
+	ELFOBJ* eobj = arch->o->bin_obj;
+	for (i=0; i< eobj->imports_by_ord_size; i++) {
+		RBinImport *imp = eobj->imports_by_ord[i];
+		if (imp) {
+			free (imp->name);
+			free (imp);
+			eobj->imports_by_ord[i] = NULL;
+		}
+	}
+	R_FREE (eobj->imports_by_ord);
+	//static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	Elf_(r_bin_elf_free) ((struct Elf_(r_bin_elf_obj_t)*)arch->o->bin_obj);
 	return true;
 }
@@ -345,11 +359,12 @@ static RList* imports(RBinFile *arch) {
 		bin = arch->o->bin_obj;
 	} else return NULL;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_newf (r_bin_import_free)))
 		return NULL;
-	ret->free = free;
-	if (!(import = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_IMPORTS)))
-		return ret;
+	if (!(import = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_IMPORTS))) {
+		r_list_free (ret);
+		return NULL;
+	}
 	for (i = 0; !import[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
@@ -357,7 +372,7 @@ static RList* imports(RBinFile *arch) {
 		ptr->bind = r_str_const (import[i].bind);
 		ptr->type = r_str_const (import[i].type);
 		ptr->ordinal = import[i].ordinal;
-		setimpord (bin, ptr->ordinal, ptr);
+		(void)setimpord (bin, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
 	}
 	free (import);
@@ -524,17 +539,19 @@ static RList* relocs(RBinFile *arch) {
 }
 
 static int has_canary(RBinFile *arch) {
+	int ret = 0;
 	RList* imports_list = imports (arch);
 	RListIter *iter;
 	RBinImport *import;
 	r_list_foreach (imports_list, iter, import) {
 		if (!strcmp (import->name, "__stack_chk_fail") ) {
-			r_list_free (imports_list);
-			return 1;
+			ret = 1;
+			break;
 		}
 	}
+	imports_list->free = r_bin_import_free;
 	r_list_free (imports_list);
-	return 0;
+	return ret;
 }
 
 static RBinInfo* info(RBinFile *arch) {

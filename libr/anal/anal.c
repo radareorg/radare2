@@ -115,14 +115,14 @@ R_API RAnal *r_anal_new() {
 	anal->types = r_anal_type_list_new ();
 	r_anal_set_bits (anal, 32);
 	r_anal_set_big_endian (anal, false);
-	anal->plugins = r_list_new ();
-	anal->plugins->free = (RListFree) r_anal_plugin_free;
-	for (i=0; anal_static_plugins[i]; i++) {
-		static_plugin = R_NEW (RAnalPlugin);
-		*static_plugin = *anal_static_plugins[i];
-		r_anal_add (anal, static_plugin);
+	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
+	if (anal->plugins) {
+		for (i=0; anal_static_plugins[i]; i++) {
+			static_plugin = R_NEW (RAnalPlugin);
+			*static_plugin = *anal_static_plugins[i];
+			r_anal_add (anal, static_plugin);
+		}
 	}
-
 	return anal;
 }
 

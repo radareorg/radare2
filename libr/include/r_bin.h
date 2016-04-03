@@ -219,6 +219,10 @@ typedef struct r_bin_xtr_extract_t {
 R_API RBinXtrData * r_bin_xtrdata_new (void *xtr_obj, FREE_XTR free_xtr, RBuffer *buf, ut64 offset, ut64 size, ut32 file_count);
 R_API void r_bin_xtrdata_free (void /*RBinXtrData*/ *data);
 R_API void r_bin_info_free (RBinInfo *rb);
+R_API void r_bin_import_free(void *_imp);
+R_API void r_bin_symbol_free(void *_sym);
+R_API void r_bin_string_free(void *_str);
+R_API void r_bin_field_free(void *_fld);
 
 typedef struct r_bin_xtr_plugin_t {
 	char *name;

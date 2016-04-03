@@ -394,10 +394,12 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 
 R_API void r_bin_import_free(void *_imp) {
 	RBinImport *imp = (RBinImport *)_imp;
-	free (imp->name);
-	free (imp->classname);
-	free (imp->descriptor);
-	free (imp);
+	if (imp) {
+		R_FREE (imp->name);
+		R_FREE (imp->classname);
+		R_FREE (imp->descriptor);
+		free (imp);
+	}
 }
 
 R_API void r_bin_symbol_free(void *_sym) {
@@ -478,6 +480,7 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		}
 	}
 	if (cp->imports) {
+		r_list_free (o->imports);
 		o->imports = cp->imports (binfile);
 		if (o->imports) {
 			o->imports->free = r_bin_import_free;
@@ -651,7 +654,6 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	if (!io || !desc) return false;
 	if (loadaddr == UT64_MAX) loadaddr = 0;
 
-	buf_bytes = NULL;
 	file_sz = iob->desc_size (io, desc);
 #if __APPLE__
 	/* Fix OSX/iOS debugger -- needs review for proper fix */
@@ -732,8 +734,9 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	if (!binfile) {
 		binfile = r_bin_file_new_from_bytes (bin, desc->name, buf_bytes, sz,
 			file_sz, bin->rawstr, baseaddr, loadaddr, desc->fd, name, NULL, offset);
+	} else {
+		free (buf_bytes); // possible UAF
 	}
-	// free (buf_bytes); //heap use after free
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 

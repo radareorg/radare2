@@ -104,7 +104,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	// we should reset all the arenas before setting the new reg profile
 	r_reg_arena_pop (reg);
 	// Purge the old registers
-	r_reg_free_internal (reg);
+	r_reg_free_internal (reg, true);
 
 	// Cache the profile string
 	reg->reg_profile_str = strdup (str);
@@ -166,7 +166,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 					__FUNCTION__, l, r);
 				//eprintf ("(%s)\n", str);
 				// Clean up
-				r_reg_free_internal (reg);
+				r_reg_free_internal (reg, false);
 				return false;
 			}
 		}
