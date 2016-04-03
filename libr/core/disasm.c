@@ -468,11 +468,9 @@ static void handle_reflines_init (RAnal *anal, RDisasmState *ds) {
 	lastaddr = UT64_MAX;
 	if (ds->show_lines) {
 		handle_reflines_fini (anal, ds);
-		r_list_free (anal->reflines);
 		anal->reflines = r_anal_reflines_get (anal,
 			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, ds->show_lines_call);
-		r_list_free (anal->reflines2);
 		anal->reflines2 = r_anal_reflines_get (anal,
 			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, 1);
@@ -2684,7 +2682,7 @@ toro:
 		if (core->inc == 0) {
 			core->inc = ds->oplen;
 		}
-		if (ds->analop.mnemonic) {
+		if (ds->analop.mnemonic || !ds->lastfail) {
 			r_anal_op_fini (&ds->analop);
 		}
 		if (!ds->lastfail) {

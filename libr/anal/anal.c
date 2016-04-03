@@ -224,6 +224,7 @@ R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
 		sdb_close (anal->sdb_fcnsign);
 		sdb_free (anal->sdb_fcnsign);
 		anal->sdb_fcnsign = sdb_new (0, file, 0);
+		sdb_ns_set (anal->sdb, "fcnsign", anal->sdb_fcnsign);
 		return (anal->sdb_fcnsign != NULL);
 	}
 	return false;
