@@ -2152,15 +2152,27 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 				curr_import_dir->ForwarderChain != 0)) {
 			dll_name_offset = curr_import_dir->Name;
 			paddr = bin_pe_rva_to_paddr (bin, dll_name_offset);
-			if (paddr > bin->size || paddr + PE_NAME_LENGTH > bin->size) {
+			if (paddr > bin->size)
 				return NULL;
+			int rr;
+			if (paddr + PE_NAME_LENGTH > bin->size) {
+				rr = r_buf_read_at (bin->b, paddr,
+						(ut8*)dll_name, bin->size - paddr);
+				if (rr != bin->size - paddr) {
+					eprintf ("Warning: read (magic)\n");
+					return NULL;
+				}
+				dll_name[bin->size - paddr] = '\0';
 			}
-			int rr = r_buf_read_at (bin->b, paddr, (ut8*)dll_name, PE_NAME_LENGTH);
-			if (rr != PE_NAME_LENGTH) {
-				eprintf ("Warning: read (magic)\n");
-				return NULL;
+			else {
+				rr = r_buf_read_at (bin->b, paddr,
+						(ut8*)dll_name, PE_NAME_LENGTH);
+				if (rr != PE_NAME_LENGTH) {
+					eprintf ("Warning: read (magic)\n");
+					return NULL;
+				}
+				dll_name[PE_NAME_LENGTH] = '\0';
 			}
-			dll_name[PE_NAME_LENGTH] = '\0';
 			if (!bin_pe_parse_imports (bin, &imports, &nimp, dll_name,
 					curr_import_dir->Characteristics,
 					curr_import_dir->FirstThunk)) {
