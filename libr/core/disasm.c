@@ -469,17 +469,21 @@ static void handle_reflines_init (RAnal *anal, RDisasmState *ds) {
 	if (ds->show_lines) {
 		handle_reflines_fini (anal, ds);
 		r_list_free (anal->reflines);
-		r_list_free (anal->reflines2);
 		anal->reflines = r_anal_reflines_get (anal,
 			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, ds->show_lines_call);
+		r_list_free (anal->reflines2);
 		anal->reflines2 = r_anal_reflines_get (anal,
 			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, 1);
-	} else anal->reflines = anal->reflines2 = NULL;
+	} else {
+		r_list_free (anal->reflines);
+		r_list_free (anal->reflines2);
+		anal->reflines = anal->reflines2 = NULL;
+	}
 }
 
-static void handle_reflines_fcn_init (RCore *core, RDisasmState *ds,  RAnalFunction *fcn, ut8* buf) {
+static void handle_reflines_fcn_init (RCore *core, RDisasmState *ds,  RAnalFunction *fcn, const ut8* buf) {
 	RAnal *anal = core->anal;
 	if (ds->show_lines) {
 		// TODO: make anal->reflines implicit
@@ -490,6 +494,8 @@ static void handle_reflines_fcn_init (RCore *core, RDisasmState *ds,  RAnalFunct
 		anal->reflines2 = r_anal_reflines_fcn_get (anal,
 			fcn, -1, ds->linesout, 1);
 	} else {
+		r_list_free (anal->reflines);
+		r_list_free (anal->reflines2);
 		anal->reflines = anal->reflines2 = NULL;
 	}
 }
@@ -2572,6 +2578,7 @@ toro:
 
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
+		r_anal_op_fini (&ds->analop);
 		if (r_anal_op (core->anal, &ds->analop, core->offset + core->print->cur,
 			buf+core->print->cur, (int)(len - core->print->cur))) {
 			// TODO: check for ds->analop.type and ret
@@ -2774,10 +2781,9 @@ toro:
 				r_cons_printf ("%s%s%s%s; --------------------------------------\n",
 					ds->pre, COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
 			}
-			free (ds->line);
-			free (ds->refline);
-			free (ds->refline2);
-			ds->line = ds->refline = ds->refline2 = NULL;
+			R_FREE (ds->line);
+			R_FREE (ds->refline);
+			R_FREE (ds->refline2);
 		}
 		R_FREE (ds->opstr);
 		inc = ds->oplen;

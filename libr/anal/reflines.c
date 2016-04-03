@@ -60,9 +60,7 @@ static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx) 
 }
 
 R_API void r_anal_reflines_free (RAnalRefline *rl) {
-	if (rl) {
-		free (rl);
-	}
+	free (rl);
 }
 
 /* returns a list of RAnalRefline for the code present in the buffer buf, of
@@ -132,6 +130,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 				break;
 			}
 			if (!(res = add_refline (list, sten, addr, op.jump, &count))) {
+				r_anal_op_fini (&op);
 				goto sten_err;
 			}
 			break;
@@ -148,6 +147,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 					continue;
 				}
 				if (!(res = add_refline (list, sten, op.switch_op->addr, caseop->jump, &count))) {
+					r_anal_op_fini (&op);
 					goto sten_err;
 				}
 			}
