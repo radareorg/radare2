@@ -290,6 +290,16 @@ static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
 	return cond;
 }
 
+static void thumb_swap (ut32 *a) {
+	ut32 a2 = *a;
+	ut8 *b = (ut8 *)a;
+	ut8 *b2 = (ut8 *)&a2;
+	b[0] = b2[1];
+	b[1] = b2[0];
+	b[2] = b2[3];
+	b[3] = b2[2];
+}
+
 // TODO: group similar instructions like for non-thumb
 static int thumb_assemble(ArmOpcode *ao, const char *str) {
 	int reg, j;
@@ -402,6 +412,28 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		ao->o = 0x47;
 		ao->o |= getreg (ao->a[0])<<11;
 		return 2;
+	} else
+	if (!strcmpnull (ao->op, "blx")) {
+		int reg = getreg (ao->a[0]);
+		ao->o = 0xf000e800;
+		//ao->o = 0x00f000e8;
+		if (reg == -1) {
+			ut64 n = getnum (ao->a[0]);
+			if ((st64)n < 4 || (n & 3)) {
+				eprintf ("Invalid destination for blx\n");
+				return 0;
+			}
+			n -= 4;
+			n -= ao->off;
+			n /= 4; // always aligned jump
+			ao->o |= (n & 0xffff)<<1;
+			ao->o |= (n>>10 & 0xff)<<16;
+			thumb_swap (&ao->o);
+		} else {
+			return 0;
+		}
+		// XXX: length = 4
+		return 4;
 	} else
 	if (!strcmpnull (ao->op, "bl")) {
 		int reg = getreg (ao->a[0]);
