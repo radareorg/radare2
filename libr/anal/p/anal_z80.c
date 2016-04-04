@@ -97,6 +97,26 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	case 0x97:
 	case 0xd6:
 		op->type = R_ANAL_OP_TYPE_SUB;
+                break;
+	case 0x22: // ld (**), hl
+		op->type = R_ANAL_OP_TYPE_STORE;
+		op->refptr = 2;
+		op->ptr = data[1] | data[2] << 8;
+		break;
+	case 0x32: // ld (**), a
+		op->type = R_ANAL_OP_TYPE_STORE;
+		op->refptr = 1;
+		op->ptr = data[1] | data[2] << 8;
+		break;
+	case 0x2a: // ld hl, (**)
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->refptr = 2;
+		op->ptr = data[1] | data[2] << 8;
+		break;
+	case 0x3a: // ld a, (**)
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->refptr = 1;
+		op->ptr = data[1] | data[2] << 8;
 		break;
 	case 0xc0:
 	case 0xc8:
@@ -116,10 +136,42 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 		break;
 	case 0xed:
 		switch(data[1]) {
-			case 0x45:	//retn
-			case 0x4d:	//reti
-				op->type = R_ANAL_OP_TYPE_RET;
-				break;
+		case 0x43:
+		case 0x53:
+		case 0x63:
+		case 0x73:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op->refptr = 2;
+			op->ptr = data[2] | data[3] << 8;
+			break;
+		case 0x4b:
+		case 0x5b:
+		case 0x6b:
+		case 0x7b:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->refptr = 2;
+			op->ptr = data[2] | data[3] << 8;
+			break;
+		case 0x45:	//retn
+		case 0x4d:	//reti
+			op->type = R_ANAL_OP_TYPE_RET;
+			op->eob = true;
+			break;
+		}
+		break;
+	case 0xdd: // IX ops prefix
+	case 0xfd: // IY ops prefix
+		switch (data[1]) {
+		case 0x22: // ld (**), ix; ld (**), iy
+			op->type = R_ANAL_OP_TYPE_STORE;
+			op->refptr = 2;
+			op->ptr = data[2] | data[3] << 8;
+			break;
+		case 0x2a: // ld ix, (**); ld ix, (**)
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->refptr = 2;
+			op->ptr = data[2] | data[3] << 8;
+			break;
 		}
 		break;
 	case 0x05:
