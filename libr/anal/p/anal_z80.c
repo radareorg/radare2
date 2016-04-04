@@ -168,35 +168,35 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 
 	case 0xc7:				//rst 0
 		op->jump = 0x00;
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
 	case 0xcf:				//rst 8
 		op->jump = 0x08;
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
 	case 0xd7:				//rst 16
 		op->jump = 0x10;
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
 	case 0xdf:				//rst 24
 		op->jump = 0x18;
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
 	case 0xe7:				//rst 32
 		op->jump = 0x20;
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
 	case 0xef:				//rst 40
 		op->jump = 0x28;
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
 	case 0xf7:				//rst 48
 		op->jump = 0x30;
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
 	case 0xff:				//rst 56
 		op->jump = 0x38;
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ANAL_OP_TYPE_SWI;
 		break;				// condret: i think that foo resets some regs, but i'm not sure
 
 	// conditional call
