@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2014 - pancake */
+/* radare - LGPL - Copyright 2006-2016 - pancake */
 
 #include "r_config.h"
 #include "r_util.h" // r_str_hash, r_str_chop, ...
@@ -113,15 +113,22 @@ R_API int r_config_set_setter(RConfig *cfg, const char *key, RConfigCallback cb)
 	return 0;
 }
 
+static bool is_true(const char *s) {
+	return !strcasecmp ("true", s) || !strcasecmp ("1", s);
+}
+
+static bool is_bool(const char *s) {
+	return !strcasecmp ("true", s) || !strcasecmp ("false", s);
+}
+
 R_API const char *r_config_get(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		if (node->getter) node->getter (cfg->user, node);
 		cfg->last_notfound = 0;
-		if (node->flags & CN_BOOL)
-			return (const char *)(((!strcmp ("true", node->value)) || (!strcmp ("1", node->value))) ?
-						(const char *)"true" :
-						"false"); // XXX (char*)1 is ugly
+		if (node->flags & CN_BOOL) {
+			return r_str_bool (is_true (node->value));
+		}
 		return node->value;
 	} else {
 		eprintf ("r_config_get: variable '%s' not found\n", name);
@@ -202,10 +209,10 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 			node->value = strdup ("");
 		}
 		if (node->flags & CN_BOOL) {
-			int b = (!strcmp (value, "true") || !strcmp (value, "1"));
-			node->i_value = (ut64)(b == 0)? 0: 1;
+			bool b = is_true (value);
+			node->i_value = (ut64) b? 1: 0;
 			free (node->value);
-			node->value = strdup (b? "true": "false");
+			node->value = strdup (r_str_bool (b));
 		} else {
 			if (value == NULL) {
 				free (node->value);
@@ -231,9 +238,9 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 		if (!cfg->lock) {
 			node = r_config_node_new (name, value);
 			if (node) {
-				if (value && (!strcmp (value, "true") || !strcmp (value, "false"))) {
+				if (value && is_bool (value)) {
 					node->flags |= CN_BOOL;
-					node->i_value = (!strcmp (value, "true"))? 1: 0;
+					node->i_value = is_true (value)? 1: 0;
 				}
 				if (cfg->ht) {
 					r_hashtable_insert (cfg->ht, node->hash, node);
