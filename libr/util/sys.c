@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include <r_types.h>
 #include <r_util.h>
+#include <r_lib.h>
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE)
 # include <execinfo.h>
 #endif
