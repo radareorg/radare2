@@ -88,8 +88,7 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 			break;
 		}
 		if (b[1]==0xF8 || b[1]==0xF9 || b[1]==0xB8 || b[1]==0xB9){
-			op->type = R_ANAL_OP_TYPE_JMP;
-			//op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = (b[1]&0xf0) == 0xf0 ? R_ANAL_OP_TYPE_JMP : R_ANAL_OP_TYPE_CALL;
 
 			int off = 0;
 			if (op->size == 4)
