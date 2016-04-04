@@ -83,8 +83,8 @@ static int help () {
 		"  hex   ->  ternary       ;  rax2 Tx23\n"
 		"  raw   ->  hex           ;  rax2 -S < /binfile\n"
 		"  hex   ->  raw           ;  rax2 -s 414141\n"
-		"  -b    binstr -> bin     ;  rax2 -b 01000101 01110110\n"
-		"  -B    keep base         ;  rax2 -B 33+3 -> 36\n"
+		"  -b    str -> bin        ;  rax2 -b 01000101 01110110\n"
+		"  -B    bin -> str        ;  rax2 -b 01000101 01110110\n"
 		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
 		"  -e    swap endianness   ;  rax2 -e 0x33\n"
 		"  -E    base64 encode     ;\n"
@@ -92,6 +92,7 @@ static int help () {
 		"  -F    stdin slurp C hex ;  rax2 -F < shellcode.c\n"
 		"  -h    help              ;  rax2 -h\n"
 		"  -k    randomart         ;  rax2 -k 0x34 1020304050\n"
+		"  -K    keep base         ;  rax2 -B 33+3 -> 36\n"
 		"  -n    binary number     ;  rax2 -n 0x1234 # 34120000\n"
 		"  -N    binary number     ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -s    hexstr -> raw     ;  rax2 -s 43 4a 50\n"
@@ -132,8 +133,9 @@ static int rax (char *str, int len, int last) {
 			case 'e': flags ^= 1 << 1; break;
 			case 'S': flags ^= 1 << 2; break;
 			case 'b': flags ^= 1 << 3; break;
+			case 'B': flags ^= 1 << 17; break;
 			case 'x': flags ^= 1 << 4; break;
-			case 'B': flags ^= 1 << 5; break;
+			case 'K': flags ^= 1 << 5; break;
 			case 'f': flags ^= 1 << 6; break;
 			case 'd': flags ^= 1 << 7; break;
 			case 'k': flags ^= 1 << 8; break;
@@ -246,6 +248,23 @@ static int rax (char *str, int len, int last) {
 					np[0], np[1], np[2], np[3]);
 		}
 		fflush (stdout);
+		return true;
+	} else if (flags & (1 << 17)) { // -B (bin -> str)
+		int i = 0;
+		// TODO: move to r_util
+		for (i = 0; i< strlen (str); i++) {
+			ut8 ch = str[i];
+			printf ("%d%d%d%d" "%d%d%d%d",
+				ch & 128? 1:0,
+				ch & 64? 1:0,
+				ch & 32? 1:0,
+				ch & 16? 1:0,
+				ch & 8? 1:0,
+				ch & 4? 1:0,
+				ch & 2? 1:0,
+				ch & 1? 1:0
+				);
+		}
 		return true;
 	} else if (flags & (1 << 16)) { // -w
 		ut64 n = r_num_math (num, str);
@@ -389,7 +408,7 @@ static int use_stdin () {
 			if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
 				buf[strlen (buf)] = '\0';
 			else
-				buf[strlen (buf) - 1] = '\0';
+				buf[strlen (buf)] = '\0';
 			if (!rax (buf, l, 0)) break;
 			l = -1;
 		}
