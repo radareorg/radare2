@@ -137,5 +137,5 @@ R_API void r_strbuf_free(RStrBuf *sb) {
 
 R_API void r_strbuf_fini(RStrBuf *sb) {
 	if (sb && sb->ptr)
-		free (sb->ptr);
+		R_FREE (sb->ptr);
 }
