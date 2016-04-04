@@ -6,12 +6,48 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-// hack
-#include "../../asm/arch/z80/z80.c"
+#include "../../asm/arch/z80_cr/z80_tab.h"
 
-static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	char out[32];
-	int ilen = z80dis (0, data, out, len);
+static void z80_op_size(const ut8 *data, int *size, int *size_prefix) {
+	int type;
+	switch(data[0]) {
+	case 0xed:
+		type = dd[data[1]].type;
+		break;
+	case 0xcb:
+		type = Z80_OP16;
+		break;
+	case 0xdd:
+		type = dd[data[1]].type;
+		break;
+	case 0xfd:
+		type = dd[data[1]].type;
+		break;
+	default:
+		type = dd[data[0]].type;
+		break;
+	}
+
+	if (type & Z80_OP8) {
+		*size_prefix = 1;
+	} else if (type & Z80_OP16) {
+		*size_prefix = 2;
+	} else if (type & Z80_OP24) {
+		*size_prefix = 3;
+	}
+
+	if (type & Z80_ARG16) {
+		*size = *size_prefix + 2;
+	} else if (type & Z80_ARG8) {
+		*size = *size_prefix + 1;
+	} else {
+		*size = *size_prefix;
+	}
+}
+
+static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+	int ilen;
+	z80_op_size (data, &ilen, &op->nopcode);
 
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
@@ -277,7 +313,7 @@ struct r_anal_plugin_t r_anal_plugin_z80 = {
 	.license = "LGPL3",
 	.bits = 16,
 	.desc = "Z80 CPU code analysis plugin",
-	.op = &z80_op,
+	.op = &z80_anal_op,
 };
 
 #ifndef CORELIB
