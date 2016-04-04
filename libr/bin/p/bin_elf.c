@@ -543,14 +543,16 @@ static int has_canary(RBinFile *arch) {
 	RList* imports_list = imports (arch);
 	RListIter *iter;
 	RBinImport *import;
-	r_list_foreach (imports_list, iter, import) {
-		if (!strcmp (import->name, "__stack_chk_fail") ) {
-			ret = 1;
-			break;
+	if (imports_list) {
+		r_list_foreach (imports_list, iter, import) {
+			if (!strcmp (import->name, "__stack_chk_fail") ) {
+				ret = 1;
+				break;
+			}
 		}
+		imports_list->free = r_bin_import_free;
+		r_list_free (imports_list);
 	}
-	imports_list->free = r_bin_import_free;
-	r_list_free (imports_list);
 	return ret;
 }
 
