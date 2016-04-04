@@ -12,6 +12,7 @@
 .Op Fl e Ar k=v
 .Op Fl i Ar file
 .Op Fl k Ar k=v
+.Op Fl m Ar addr
 .Op Fl o Ar kernel
 .Op Fl p Ar project
 .Op Fl P Ar patch
@@ -62,6 +63,8 @@ Perform SDB query into the core->sdb instance
 Load given plugin file
 .It Fl L
 List supported IO plugins.
+.It Fl m Ar addr
+map file at given address
 .It Fl M
 Disable demangling
 .It Fl n
