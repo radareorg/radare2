@@ -113,16 +113,17 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case 0xf1:
 		op->type = R_ANAL_OP_TYPE_POP;
 		break;
+	// ld from register to register
 	case 0x40:
 	case 0x49:
 	case 0x52:
 	case 0x5b:
 	case 0x64:
 	case 0x6d:
-	case 0x76:
 	case 0x7f:
+		break;
+	case 0x76:
 		op->type = R_ANAL_OP_TYPE_TRAP; // HALT
-		op->eob = true;
 		break;
 
 	case 0x10: // djnz
