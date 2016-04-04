@@ -972,7 +972,7 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 
 static int cond_cs2r2(int cc) {
 	if (cc == ARM_CC_AL || cc < 0) {
-		cc = 0;
+		cc = R_ANAL_COND_AL;
 	} else {
 		switch (cc) {
 		case ARM_CC_EQ: cc = R_ANAL_COND_EQ; break;
@@ -990,7 +990,6 @@ static int cond_cs2r2(int cc) {
 		case ARM_CC_LT: cc = R_ANAL_COND_LT; break;
 		case ARM_CC_GT: cc = R_ANAL_COND_GT; break;
 		case ARM_CC_LE: cc = R_ANAL_COND_LE; break;
-		case ARM_CC_AL: cc = R_ANAL_COND_AL; break;
 		}
 	}
 	return cc;
