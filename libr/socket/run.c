@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <r_util.h>
 #include <r_socket.h>
+#include <r_lib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #if __APPLE__
