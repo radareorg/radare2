@@ -88,8 +88,7 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 			break;
 		}
 		if (b[1]==0xF8 || b[1]==0xF9 || b[1]==0xB8 || b[1]==0xB9){
-			op->type = R_ANAL_OP_TYPE_JMP;
-			//op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = (b[1]&0xf0) == 0xf0 ? R_ANAL_OP_TYPE_JMP : R_ANAL_OP_TYPE_CALL;
 
 			int off = 0;
 			if (op->size == 4)
@@ -167,6 +166,21 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	return op->size;
 }
 
+static int archinfo(RAnal *anal, int query) {
+	switch (query) {
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		/* all ops are at least 1 word long */
+		return 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		/* judging by the M68000 PROGRAMMER'S REFERENCE MANUAL the
+		 * cpTRAPcc opcode is the longest at 5 words */
+		return 10;
+	default:
+		return -1;
+	}
+
+}
+
 RAnalPlugin r_anal_plugin_m68k = {
 	.name = "m68k",
 	.desc = "Motorola 68000",
@@ -174,6 +188,7 @@ RAnalPlugin r_anal_plugin_m68k = {
 	.arch = "m68k",
 	.bits = 16|32,
 	.op = &m68k_op,
+	.archinfo = archinfo,
 };
 
 #ifndef CORELIB
