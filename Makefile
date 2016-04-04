@@ -1,7 +1,7 @@
 -include config-user.mk
 include global.mk
 
-PREVIOUS_RELEASE=0.10.0
+PREVIOUS_RELEASE=0.10.1
 
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
@@ -344,6 +344,9 @@ quality:
 
 menu nconfig:
 	./sys/menu.sh || true
+
+pie:
+	sys/pie.sh ${PREVIOUS_RELEASE}
 
 include ${MKPLUGINS}
 
