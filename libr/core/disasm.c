@@ -944,6 +944,10 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 					COLOR (ds, color_flow), ds->refline2,
 					COLOR_RESET (ds));
 			}
+			if (ds->show_flgoff) {
+				handle_print_offset (core, ds);
+				r_cons_printf ("    ");
+			}
 			r_cons_printf ("%s; %s %s %s %s@ %s%s0x%x%s\n",
 				COLOR (ds, color_other),
 				(var->kind == 'v') ? "var" : "arg",
@@ -1114,6 +1118,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 				beginline (core, ds, f);
 			} else {
 				handle_print_lines_left (core, ds);
+				r_cons_printf ("  ");
 			}
 			handle_print_offset (core, ds);
 			r_cons_printf (" ");
