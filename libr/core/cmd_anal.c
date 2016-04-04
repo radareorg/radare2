@@ -1215,7 +1215,7 @@ static void ar_show_help(RCore *core) {
 		"arp", " <file>", "Load register profile from file",
 		"ars", "", "Stack register state",
 		"art", "", "List all register types",
-		"arw", " <hexnum>", "Set contents of the register arena", 
+		"arw", " <hexnum>", "Set contents of the register arena",
 		".ar*", "", "Import register values as flags",
 		".ar-", "", "Unflag all registers",
 		NULL };
@@ -1424,13 +1424,13 @@ void cmd_anal_reg (RCore *core, const char *str) {
 		break;
 	case 'n': // "drn" // "arn"
 		if (*(str + 1) == '\0') {
-			eprintf ("Oops. try drn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF\n");
+			eprintf ("Oops. try drn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
 			break;
 		}
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str + 2));
 		if (name && *name)
 			r_cons_printf ("%s\n", name);
-		else eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
+		else eprintf ("Oops. try drn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
 		break;
 	case 'd':								// "drd"
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_color); // XXX detect which one is current usage
