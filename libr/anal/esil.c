@@ -2269,11 +2269,13 @@ repeat:
 }
 
 //frees all elements from the stack, not the stack itself
+//rename to stack_empty() ?
 R_API void r_anal_esil_stack_free(RAnalEsil *esil) {
 	int i;
 	if (esil) {
-		for (i = 0; i < esil->stackptr; i++)
+		for (i = 0; i < esil->stackptr; i++) {
 			R_FREE (esil->stack[i]);
+		}
 		esil->stackptr = 0;
 	}
 }

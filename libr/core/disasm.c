@@ -189,7 +189,7 @@ typedef struct r_disam_options_t {
 
 // TODO: put RCore inside RDisasmState and rename all functions to be ds_XXX
 
-static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f);
+static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre);
 static void handle_print_esil_anal(RCore *core, RDisasmState *ds);
 static void handle_reflines_init (RAnal *anal, RDisasmState *ds);
 static void handle_comment_align (RCore *core, RDisasmState *ds);
@@ -296,7 +296,7 @@ static void ds_print_spacy (RDisasmState *ds, int pre) {
 			handle_print_lines_left (core, ds);
 		}
 	}
-	if (f) beginline (core, ds, f);
+	if (f) beginline (core, ds, f, true);
 	handle_print_offset (core, ds);
 	if (!pre) r_cons_newline ();
 }
@@ -675,14 +675,19 @@ R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 	return hint;
 }
 
-static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f) {
+static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre) {
 	const char *section = "";
+	const char *pre = ds->pre;
 	if (ds->show_section) {
 		section = getSectionName (core, ds->at);
 	}
+	if (nopre) {
+		if (*pre == '/' || *pre == '\\')
+			pre = "  ";
+	}
 	if (ds->show_functions && ds->show_fcnlines) {
 		r_cons_printf ("%s%s%s", COLOR (ds, color_fline),
-			f ? ds->pre : "  ", COLOR_RESET (ds));
+			f ? pre : "  ", COLOR_RESET (ds));
 	}
 	if (ds->show_lines && !ds->linesright) {
 		r_cons_printf ("%s%s%s%s",
@@ -712,7 +717,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 		cols /= 23;
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
 						ds->at, R_ANAL_FCN_TYPE_NULL);
-		beginline (core, ds, f);
+		beginline (core, ds, f, false);
 		r_cons_printf ("%s; XREFS: ", ds->show_color?
 				ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
@@ -721,7 +726,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 			if (count == cols) {
 				if (iter->n) {
 					r_cons_newline ();
-					beginline (core, ds, f);
+					beginline (core, ds, f, false);
 					r_cons_printf ("%s; XREFS: ",
 						ds->show_color? ds->pal_comment: "");
 				}
@@ -746,7 +751,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 				}
 			}
 
-			beginline (core, ds, fun);
+			beginline (core, ds, fun, false);
 			r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)%s\n",
 				COLOR (ds, pal_comment),
 				r_anal_xrefs_type_tostring (refi->type),
@@ -946,7 +951,7 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 			}
 			if (ds->show_flgoff) {
 				handle_print_offset (core, ds);
-				r_cons_printf ("    ");
+				r_cons_printf ("     ");
 			}
 			r_cons_printf ("%s; %s %s %s %s@ %s%s0x%x%s\n",
 				COLOR (ds, color_other),
@@ -1115,7 +1120,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 		}
 		if (ds->show_flgoff) {
 			if (f) {
-				beginline (core, ds, f);
+				beginline (core, ds, f, false);
 			} else {
 				handle_print_lines_left (core, ds);
 				r_cons_printf ("  ");
