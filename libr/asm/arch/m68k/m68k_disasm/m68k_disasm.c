@@ -913,22 +913,19 @@ static void opcode_branch(dis_buffer_t *dbuf, ut16 opc)
       make_cond(dbuf,11,"b");
 
   addchar('.');
-  disp = BITFIELD(opc,7,0);
+  disp = (st8)BITFIELD(opc,7,0);
   if (disp == 0) {
     /* 16-bit signed displacement */
-    disp = read16(dbuf->val + 1);
+    disp = (st16)read16(dbuf->val + 1);
     dbuf->used++;
     addchar('w');
-  } else if (disp == 0xff) {
+  } else if (disp == -1) {
     /* 32-bit signed displacement */
-    disp = read32(dbuf->val + 1);
+    disp = (st32)read32(dbuf->val + 1);
     dbuf->used += 2;
     addchar('l');
   } else {
-    /* 8-bit signed displacement in opcode. */
-    /* Needs to be sign-extended... */
-    if (ISBITSET(disp,7))
-      disp -= 256;
+    /* 8-bit signed displacement */
     addchar('b');
   }
   addchar('\t');
