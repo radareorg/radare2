@@ -120,6 +120,7 @@ typedef struct r_buf_t {
 	RMmap *mmap;
 	bool empty;
 	bool ro; // read-only
+	int fd;
 	RList *sparse;
 } RBuffer;
 
@@ -378,20 +379,21 @@ R_API RBuffer *r_buf_new(void);
 R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
 R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len);
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b);
-R_API RBuffer *r_buf_file (const char *file);
+R_API RBuffer *r_buf_new_file(const char *file);
+R_API RBuffer *r_buf_new_slurp (const char *file);
 R_API RBuffer *r_buf_mmap (const char *file, int flags);
 R_API RBuffer *r_buf_new_sparse();
 /* methods */
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length);
 R_API int r_buf_append_string(RBuffer *b, const char *str);
-R_API int r_buf_append_buf(RBuffer *b, RBuffer *a);
-R_API int r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length);
-R_API int r_buf_append_nbytes(RBuffer *b, int length);
-R_API int r_buf_append_ut32(RBuffer *b, ut32 n);
-R_API int r_buf_append_ut64(RBuffer *b, ut64 n);
-R_API int r_buf_append_ut16(RBuffer *b, ut16 n);
-R_API int r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length);
+R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a);
+R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length);
+R_API bool r_buf_append_nbytes(RBuffer *b, int length);
+R_API bool r_buf_append_ut32(RBuffer *b, ut32 n);
+R_API bool r_buf_append_ut64(RBuffer *b, ut64 n);
+R_API bool r_buf_append_ut16(RBuffer *b, ut16 n);
+R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length);
 R_API char *r_buf_to_string(RBuffer *b);
 R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *len);
 #define r_buf_read(a,b,c) r_buf_read_at(a,R_BUF_CUR,b,c)
@@ -758,6 +760,10 @@ R_API const char *r_constr_add (RConstr *c, const char *str);
 
 /* sandbox */
 R_API DIR* r_sandbox_opendir (const char *path);
+R_API int r_sandbox_lseek (int fd, ut64 addr, int mode);
+R_API int r_sandbox_close (int fd);
+R_API int r_sandbox_read(int fd, ut8 *buf, int len);
+R_API int r_sandbox_write(int fd, const ut8 *buf, int len);
 R_API bool r_sandbox_enable (bool e);
 R_API bool r_sandbox_disable (bool e);
 R_API int r_sandbox_system (const char *x, int fork);

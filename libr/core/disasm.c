@@ -1146,7 +1146,7 @@ static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
 	if (ds->show_lines) {
 		ds->line = r_anal_reflines_str (core, ds->at, ds->linesopts);
 		free (ds->refline);
-		ds->refline = strdup (ds->line);
+		ds->refline = ds->line? strdup (ds->line): NULL;
 		free (ds->refline2);
 		ds->refline2 = r_anal_reflines_str (core, ds->at,
 			ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE);

@@ -143,6 +143,26 @@ static char *expand_home(const char *p) {
 	return strdup (p);
 }
 
+R_API int r_sandbox_lseek (int fd, ut64 addr, int whence) {
+	if (enabled) {
+		return lseek (fd, (off_t)addr, whence);
+	}
+	return -1;
+}
+
+R_API int r_sandbox_read (int fd, ut8* buf, int len) {
+	return enabled? read (fd, buf, len): -1;
+}
+
+R_API int r_sandbox_write (int fd, const ut8* buf, int len) {
+	return enabled? write (fd, buf, len): -1;
+}
+
+R_API int r_sandbox_close (int fd) {
+	return enabled? close (fd): -1;
+}
+
+/* perm <-> mode */
 R_API int r_sandbox_open (const char *path, int mode, int perm) {
 	int ret;
 	char *epath;

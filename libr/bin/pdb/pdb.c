@@ -1147,7 +1147,7 @@ int init_pdb_parser(R_PDB *pdb, const char *filename) {
 	if (!pdb->cb_printf)
 		pdb->cb_printf = (PrintfCallback)printf;
 
-	pdb->buf = r_buf_file(filename);
+	pdb->buf = r_buf_new_slurp (filename);
 //	pdb->fp = r_sandbox_fopen (filename, "rb");
 //	if (!pdb->fp) {
 //		eprintf ("file %s can not be open\n", filename);

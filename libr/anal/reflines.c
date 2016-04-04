@@ -393,6 +393,9 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	add_spaces (b, 0, pos, wide);
 
 	str = r_buf_free_to_string (b);
+	if (!str) {
+		return NULL;
+	}
 	if (core->anal->lineswidth > 0) {
 		int lw = core->anal->lineswidth;
 		l = strlen (str);

@@ -1290,7 +1290,7 @@ R_API void r_sign_flirt_dump (const RAnal *anal, const char *flirt_file) {
 	RBuffer *flirt_buf;
 	RFlirtNode *node;
 
-	if (!(flirt_buf = r_buf_file (flirt_file))) {
+	if (!(flirt_buf = r_buf_new_slurp (flirt_file))) {
 		eprintf("Can't open %s\n", flirt_file);
 		return;
 	}
@@ -1312,7 +1312,7 @@ R_API void r_sign_flirt_scan (const RAnal *anal, const char *flirt_file) {
 	RBuffer *flirt_buf;
 	RFlirtNode *node;
 
-	if (!(flirt_buf = r_buf_file (flirt_file))) {
+	if (!(flirt_buf = r_buf_new_slurp (flirt_file))) {
 		eprintf ("Can't open %s\n", flirt_file);
 		return;
 	}
