@@ -405,10 +405,8 @@ static int use_stdin () {
 				continue;
 			}
 			buf[n] = 0;
-			if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
-				buf[strlen (buf)] = '\0';
-			else
-				buf[strlen (buf)] = '\0';
+			//if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
+			buf[strlen (buf)] = '\0';
 			if (!rax (buf, l, 0)) break;
 			l = -1;
 		}
