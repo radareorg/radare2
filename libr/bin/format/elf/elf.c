@@ -2274,7 +2274,9 @@ static int is_in_vphdr (Elf_(Phdr) *p, ut64 addr) {
 ut64 Elf_(r_bin_elf_p2v) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 paddr) {
 	int i;
 
-	if (!bin || !bin->phdr) {
+	if (!bin) return 0;
+
+	if (!bin->phdr) {
 		if (bin->ehdr.e_type == ET_REL) {
 			return bin->baddr + paddr;
 		}
@@ -2297,7 +2299,9 @@ ut64 Elf_(r_bin_elf_p2v) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 paddr) {
 ut64 Elf_(r_bin_elf_v2p) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 vaddr) {
 	int i;
 
-	if (!bin || !bin->phdr) {
+	if (!bin) return 0;
+
+	if (!bin->phdr) {
 		if (bin->ehdr.e_type == ET_REL) {
 			return vaddr - bin->baddr;
 		}
