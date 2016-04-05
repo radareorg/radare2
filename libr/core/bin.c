@@ -1285,12 +1285,14 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				"\"demname\":\"%s\","
 				"\"flagname\":\"%s\","
 				"\"size\":%d,"
+				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d"}",
 				iter->p?",":"", str,
 				sn.demname? sn.demname: "",
 				sn.nameflag,
 				(int)symbol->size,
+				symbol->type,
 				(ut64)addr, (ut64)symbol->paddr);
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode)) {
