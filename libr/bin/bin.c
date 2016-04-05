@@ -277,8 +277,13 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 			return true;
 #define X 1
 #define ROW (4 | 2)
+		/* probably too much false positives in here, or thats fine? */
 		if (strstr (o->info->bclass, "PE") && s->srwx & ROW && !(s->srwx & X) && s->size > 0) {
-			if (!strcmp (s->name, ".rdata")) // Maybe other sections are interesting too?
+			if (!strcmp (s->name, ".rsrc"))
+				return true;
+			if (!strcmp (s->name, ".data"))
+				return true;
+			if (!strcmp (s->name, ".rdata"))
 				return true;
 		}
 	}
