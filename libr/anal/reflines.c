@@ -394,6 +394,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 
 	str = r_buf_free_to_string (b);
 	if (!str) {
+		r_list_free (lvls);
 		return NULL;
 	}
 	if (core->anal->lineswidth > 0) {
