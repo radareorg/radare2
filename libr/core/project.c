@@ -223,8 +223,9 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 		// TODO: handle base address
 		r_core_bin_load (core, filepath, UT64_MAX);
 	}
-	ret = r_core_cmd_file (core, prj);
+	// FIXME: If r_anal_project_load is not called before r_core_cmd_file, xrefs are not loaded correctly
 	r_anal_project_load (core->anal, prjfile);
+	ret = r_core_cmd_file (core, prj);
 	r_config_bump (core->config, "asm.arch");
 	free (filepath);
 	free (prj);
@@ -324,8 +325,8 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_cons_flush ();
 		r_core_cmd (core, "fV*", 0);
 		r_cons_flush ();
-		r_core_cmd (core, "ax*", 0);
-		r_cons_flush ();
+		//r_core_cmd (core, "ax*", 0); // Not needed, xrefs are loaded from a DB file
+		//r_cons_flush ();
 		r_core_cmd (core, "afl*", 0);
 		r_cons_flush ();
 		r_core_cmd (core, "ah*", 0);
