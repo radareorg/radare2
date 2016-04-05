@@ -207,13 +207,16 @@ R_API RBuffer *r_buf_new_slurp (const char *file) {
 R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
 	ut64 min = 0LL, max = 0LL;
 	if (b->fd != -1) {
-		r_sandbox_lseek (b->fd, addr, whence);
+		if (r_sandbox_lseek (b->fd, addr, whence) == -1) {
+			// seek failed - print error here?
+			return -1;
+		}
 	} else if (b->sparse) {
 		sparse_limits (b->sparse, &min, &max);
 		switch (whence) {
 		case R_IO_SEEK_SET: b->cur = addr; break;
 		case R_IO_SEEK_CUR: b->cur = b->cur + addr; break;
-		case R_IO_SEEK_END: 
+		case R_IO_SEEK_END:
 			    if (sparse_limits (b->sparse, NULL, &max)) {
 				    return max; // -min
 			    }
@@ -376,7 +379,10 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	if (!b || b->empty)
 		return 0;
 	if (b->fd != -1) {
-		r_sandbox_lseek (b->fd, addr, SEEK_SET);
+		if (r_sandbox_lseek (b->fd, addr, SEEK_SET) == -1) {
+			// seek failed - print error here?
+			return 0;
+		}
 		if (write) {
 			return r_sandbox_write (b->fd, src, len);
 		} else {
