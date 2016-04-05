@@ -2,6 +2,7 @@
 
 #include <r_reg.h>
 #include <r_util.h>
+#include <r_lib.h>
 
 static const char *parse_alias(RReg *reg, char **tok, const int n) {
 	if (n != 2) return "Invalid syntax";
