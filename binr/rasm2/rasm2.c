@@ -358,13 +358,12 @@ int main (int argc, char *argv[]) {
 			r_lib_opendir (l, homeplugindir);
 			free (homeplugindir);
 		}
-		free (tmp);
 		if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
 			r_lib_opendir (l, R2_LIBDIR "/radare2/" R2_VERSION);
 			r_lib_opendir (l, R2_LIBDIR "/radare2-extras/" R2_VERSION);
 			r_lib_opendir (l, R2_LIBDIR "/radare2-bindings/" R2_VERSION);
 		}
-
+		free (tmp);
 	}
 
 	r_asm_use (a, R_SYS_ARCH);
