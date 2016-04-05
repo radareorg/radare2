@@ -94,21 +94,22 @@ static void cmd_write_op (RCore *core, const char *input) {
 	ut8 *buf;
 	int len;
 	const char* help_msg[] = {
-		"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize]",
+		"Usage:","wo[asmdxoArl24][y]"," [hexpairs] @ addr[!bsize]",
 		"wow"," [val]", "==  write looped value (alias for 'wb')",
 		"woa"," [val]", "+=  addition (f.ex: woa 0102)",
 		"wos"," [val]", "-=  substraction",
 		"wom"," [val]", "*=  multiply",
 		"wod"," [val]", "/=  divide",
-		"woe"," [from to] [step] [wsz=1]","..  create sequence",
 		"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
 		"woo"," [val]","|=  or",
 		"woA"," [val]","&=  and",
-		"woR","","random bytes (alias for 'wr $b')",
 		"wor"," [val]", ">>= shift right",
 		"wol"," [val]","<<= shift left",
 		"wo2"," [val]","2=  2 byte endian swap",
 		"wo4"," [val]", "4=  4 byte endian swap",
+		"wo*y", "", "same as their counterparts above, but using clipboard instead of [val]",
+		"woe"," [from to] [step] [wsz=1]","..  create sequence",
+		"woR","","random bytes (alias for 'wr $b')",
 		"woE"," [algo] [key]", "encrypt current block with given algo and key",
 		"wopD"," [len]","De Bruijn Pattern (syntax wopD length @ addr)",
 		"wopO"," [len]", "De Bruijn Pattern Offset (syntax: wopO value)",
@@ -128,7 +129,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 	case 'd':
 	case 'o':
 	case 'w':
-		if (input[2]!=' ') {
+		if (input[2]!=' ' && input[2]!='y') {
 			if (input[1]=='e')
 				r_cons_printf ("Usage: 'woe from-to step'\n");
 			else
@@ -138,7 +139,15 @@ static void cmd_write_op (RCore *core, const char *input) {
 		/* fallthru */
 	case '2':
 	case '4':
-		if (input[2]) {
+		if (input[2] == 'y') {
+			if  (input[3]) {
+				r_cons_printf ("Usage: 'wo%cy' (no args)\n", input[1]);
+				return;
+			} else {
+				r_core_write_op (core, NULL, input[1]);
+				r_core_block_read (core, 0);
+			}
+		} else if (input[2]) {
 			r_core_write_op (core, input+3, input[1]);
 			r_core_block_read (core, 0);
 		} else eprintf ("Missing argument\n");
