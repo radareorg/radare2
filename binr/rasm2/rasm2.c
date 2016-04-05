@@ -390,7 +390,7 @@ int main (int argc, char *argv[]) {
 			break;
 		case 'B':
 			bin = 1;
-			ibreak;
+			break;
 		case 'c':
 			cpu = optarg;
 			break;
