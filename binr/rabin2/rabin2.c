@@ -446,6 +446,7 @@ int main(int argc, char **argv) {
 	const char *forcebin = NULL;
 	const char *chksum = NULL;
 	const char *op = NULL;
+	const char *path = NULL;
 	RCoreBinFilter filter;
 	RCoreFile *cf = NULL;
 	int xtr_idx = 0; // load all files if extraction is necessary.
