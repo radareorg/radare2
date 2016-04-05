@@ -349,7 +349,7 @@ int main (int argc, char *argv[]) {
 		r_lib_add_handler (l, R_LIB_TYPE_ANAL, "analysis/emulation plugins",
 				&__lib_anal_cb, &__lib_anal_dt, NULL);
 		
-		path = r_sys_getenv ("LIBR_PLUGINS");
+		path = r_sys_getenv (R_LIB_ENV);
 		if (path && *path)
 			r_lib_opendir (l, path);
 		
