@@ -457,16 +457,28 @@ int main(int argc, char **argv) {
 	bin = core.bin;
 
 	if (!(tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
-		tmp = r_str_home (R2_HOMEDIR"/plugins");
 		l = r_lib_new ("radare_plugin");
 		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 				   &__lib_bin_cb, &__lib_bin_dt, NULL);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
 				   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
 		/* load plugins everywhere */
-		r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
-		r_lib_opendir (l, tmp);
-		r_lib_opendir (l, R2_LIBDIR"/radare2/"R2_VERSION);
+		
+		path = r_sys_getenv (R_LIB_ENV);
+		if (path && *path)
+			r_lib_opendir (l, path);
+		
+		if (1) {
+			char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
+			// eprintf ("OPENDIR (%s)\n", homeplugindir);
+			r_lib_opendir (l, homeplugindir);
+			free (homeplugindir);
+		}
+		if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
+			r_lib_opendir (l, R2_LIBDIR "/radare2/" R2_VERSION);
+			r_lib_opendir (l, R2_LIBDIR "/radare2-extras/" R2_VERSION);
+			r_lib_opendir (l, R2_LIBDIR "/radare2-bindings/" R2_VERSION);
+		}
 	}
 	free (tmp);
 
