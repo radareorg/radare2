@@ -204,7 +204,7 @@ R_API RBuffer *r_buf_new_slurp (const char *file) {
 }
 
 R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
-	ut64 min, max = 0LL;
+	ut64 min = 0LL, max = 0LL;
 	if (b->fd != -1) {
 		r_sandbox_lseek (b->fd, addr, whence);
 	} else if (b->sparse) {
