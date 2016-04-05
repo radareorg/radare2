@@ -14,7 +14,7 @@ static int snesDisass(int bits, ut64 pc, RAsmOp *op, const ut8 *buf, int len){
 		return 0;
 	switch (s_op->len) {
 	case SNES_OP_8BIT:
-		strncpy (op->buf_asm, s_op->name, sizeof (op->buf_asm));
+		strncpy (op->buf_asm, s_op->name, sizeof (op->buf_asm) - 1);
 		break;
 	case SNES_OP_16BIT:
 		if (*buf % 0x20 == 0x10 || *buf == 0x80) { // relative branch
