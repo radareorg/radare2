@@ -352,10 +352,6 @@ int main (int argc, char *argv[]) {
 		if (!path || !*path)
 			path = R2_LIBDIR "/radare2/" R2_VERSION;
 		r_lib_opendir (l, path);
-		if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
-			r_lib_opendir (l, R2_LIBDIR "/radare2-extras/" R2_VERSION);
-			r_lib_opendir (l, R2_LIBDIR "/radare2-bindings/" R2_VERSION);
-		}
 		if (1) {
 			char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
 			// eprintf ("OPENDIR (%s)\n", homeplugindir);
@@ -363,6 +359,12 @@ int main (int argc, char *argv[]) {
 			free (homeplugindir);
 		}
 		free (tmp);
+		if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
+			r_lib_opendir (l, R2_LIBDIR "/radare2/" R2_VERSION);
+			r_lib_opendir (l, R2_LIBDIR "/radare2-extras/" R2_VERSION);
+			r_lib_opendir (l, R2_LIBDIR "/radare2-bindings/" R2_VERSION);
+		}
+
 	}
 
 	r_asm_use (a, R_SYS_ARCH);
@@ -388,7 +390,7 @@ int main (int argc, char *argv[]) {
 			break;
 		case 'B':
 			bin = 1;
-			break;
+			ibreak;
 		case 'c':
 			cpu = optarg;
 			break;
