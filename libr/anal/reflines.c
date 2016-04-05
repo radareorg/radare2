@@ -190,8 +190,8 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	free (free_levels);
 	r_list_free (sten);
 	return list;
+
 sten_err:
-	r_list_free (sten);
 list_err:
 	r_list_free (sten);
 	r_list_free (list);
