@@ -621,8 +621,10 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin)))
 		return NULL;
-	if (!(ret = r_list_newf ((RListFree)free)))
+	if (!(ret = r_list_newf ((RListFree)free))) {
+		free (relcs);
 		return NULL;
+	}
 	vaddr = n_vaddr;
 	for (i = 0; !relcs[i].last; i++) {
 		if (relcs[i].sym) {
