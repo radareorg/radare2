@@ -507,11 +507,11 @@ static int bin_info(RCore *r, int mode) {
 		pair_str ("dbg_file", info->debug_file_name, mode, false);
 		if (info->claimed_checksum) {
 			/* checksum specified in header */
-			pair_str ("hdr_cksum", info->claimed_checksum, mode, false);
+			pair_str ("hdr.csum", info->claimed_checksum, mode, false);
 		}
 		if (info->actual_checksum) {
 			/* computed checksum */
-			pair_str ("cmp_cksum", info->actual_checksum, mode, false);
+			pair_str ("cmp.csum", info->actual_checksum, mode, false);
 		}
 
 		// checksums are only supported for pe atm
