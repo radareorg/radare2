@@ -348,19 +348,21 @@ int main (int argc, char *argv[]) {
 				&__lib_asm_cb, &__lib_asm_dt, NULL);
 		r_lib_add_handler (l, R_LIB_TYPE_ANAL, "analysis/emulation plugins",
 				&__lib_anal_cb, &__lib_anal_dt, NULL);
-		path = r_sys_getenv ("LIBR_PLUGINS");
-		if (!path || !*path)
-			path = R2_LIBDIR "/radare2/" R2_VERSION;
-		r_lib_opendir (l, path);
-		if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
-			r_lib_opendir (l, R2_LIBDIR "/radare2-extras/" R2_VERSION);
-			r_lib_opendir (l, R2_LIBDIR "/radare2-bindings/" R2_VERSION);
-		}
+		
+		path = r_sys_getenv (R_LIB_ENV);
+		if (path && *path)
+			r_lib_opendir (l, path);
+		
 		if (1) {
 			char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
 			// eprintf ("OPENDIR (%s)\n", homeplugindir);
 			r_lib_opendir (l, homeplugindir);
 			free (homeplugindir);
+		}
+		if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
+			r_lib_opendir (l, R2_LIBDIR "/radare2/" R2_VERSION);
+			r_lib_opendir (l, R2_LIBDIR "/radare2-extras/" R2_VERSION);
+			r_lib_opendir (l, R2_LIBDIR "/radare2-bindings/" R2_VERSION);
 		}
 		free (tmp);
 	}
