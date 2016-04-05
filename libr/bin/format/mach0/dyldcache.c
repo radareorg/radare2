@@ -34,7 +34,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	RBuffer* dbuf;
 	char *libname;
 
-	if (!bin) 
+	if (!bin)
 	    	return NULL;
 	if (bin->size < 1) {
 		eprintf ("Empty file? (%s)\n", bin->file? bin->file: "(null)");
@@ -49,8 +49,9 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		return NULL;
 	}
 	if (bin->hdr.startaddr > bin->size) {
-	    	eprintf ("corrupted file");
-		return NULL; 
+	    eprintf ("corrupted file");
+		free (ret);
+		return NULL;
 	}
 	image_infos = (struct dyld_cache_image_info*) (bin->b->buf + bin->hdr.startaddr);
 	dyld_vmbase = *(ut64 *)(bin->b->buf + bin->hdr.baseaddroff);
@@ -62,7 +63,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	}
 	ret->offset = liboff;
 	if (image_infos[idx].pathFileOffset > bin->size) {
-	    	eprintf ("corrupted file\n");
+	    eprintf ("corrupted file\n");
 		free (ret);
 		return NULL;
 	}
@@ -72,7 +73,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	mh = (struct mach_header *)data;
 	/* Check it is mach-o */
 	if (mh->magic != MH_MAGIC && mh->magic != MH_MAGIC_64) {
-	    	if (mh->magic == 0xbebafeca) //FAT binary 
+	    	if (mh->magic == 0xbebafeca) //FAT binary
 		    	eprintf ("FAT Binary\n");
 		eprintf ("Not mach-o\n");
 		free (ret);
@@ -105,8 +106,8 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 			struct segment_command *seg = (struct segment_command *)lc;
 			int t = seg->filesize;
 			if (seg->fileoff + seg->filesize > bin->size) {
-			    	eprintf ("malformed dyldcache\n");
-			    	free (ret);
+			    eprintf ("malformed dyldcache\n");
+			    free (ret);
 				r_buf_free (dbuf);
 				return NULL;
 			}
