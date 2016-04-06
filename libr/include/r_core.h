@@ -403,6 +403,7 @@ R_API int r_core_project_open(RCore *core, const char *file);
 R_API int r_core_project_cat(RCore *core, const char *name);
 R_API int r_core_project_delete(RCore *core, const char *prjfile);
 R_API int r_core_project_list(RCore *core, int mode);
+R_API int r_core_project_save_rdb(RCore *core, const char *file, int opts);
 R_API int r_core_project_save(RCore *core, const char *file);
 R_API char *r_core_project_info(RCore *core, const char *file);
 R_API char *r_core_project_notes_file (RCore *core, const char *file);
@@ -437,6 +438,19 @@ R_API void r_core_sysenv_help(const RCore* core);
 #define R_CORE_BIN_ACC_EXPORTS  0x8000
 #define R_CORE_BIN_ACC_VERSIONINFO 0x10000
 #define R_CORE_BIN_ACC_ALL	0x4FFF
+
+#define R_CORE_PRJ_FLAGS	0x0001
+#define R_CORE_PRJ_EVAL		0x0002
+#define R_CORE_PRJ_IO_MAPS	0x0004
+#define R_CORE_PRJ_SECTIONS	0x0008
+#define R_CORE_PRJ_META		0x0010
+#define R_CORE_PRJ_XREFS	0x0020
+#define R_CORE_PRJ_FCNS		0x0040
+#define R_CORE_PRJ_ANAL_HINTS	0x0080
+#define R_CORE_PRJ_ANAL_TYPES	0x0100
+#define R_CORE_PRJ_ANAL_MACROS	0x0200
+#define R_CORE_PRJ_ANAL_SEEK	0x0400
+#define R_CORE_PRJ_ALL		0xFFFF
 
 typedef struct r_core_bin_filter_t {
 	ut64 offset;

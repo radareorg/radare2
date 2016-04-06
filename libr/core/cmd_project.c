@@ -39,6 +39,11 @@ static int cmd_project(void *data, const char *input) {
 			r_cons_printf ("%s\n", file);
 		}
 		break;
+	case 'S':
+		if (input[1]==' ') {
+			r_core_project_save_rdb (core, input+2, R_CORE_PRJ_ALL);
+		} else eprintf ("Usage: PS [file]\n");
+		break;
 	case 'n':
 		if (!fileproject || !*fileproject) {
 			eprintf ("No project\n");
@@ -172,6 +177,7 @@ static int cmd_project(void *data, const char *input) {
 		"Pn", " -", "edit notes with cfg.editor",
 		"Po", " [file]", "open project",
 		"Ps", " [file]", "save project",
+		"PS", " [file]", "save script file",
 		"NOTE:", "", "See 'e file.project'",
 		"NOTE:", "", "project files are stored in ~/.config/radare2/projects",
 		NULL};
