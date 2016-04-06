@@ -20,7 +20,7 @@
 r2 is a rewrite from scratch of radare in order to provide
 a set of libraries and tools to work with binary files.
 
-Radare project started as a forensics tool, an scriptable
+Radare project started as a forensics tool, a scriptable
 commandline hexadecimal editor able to open disk files,
 but later support for analyzing binaries, disassembling
 code, debugging programs, attaching to remote gdb servers, ..
