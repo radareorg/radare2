@@ -1837,6 +1837,7 @@ static int cmd_print(void *data, const char *input) {
 			len = f->size;
 		} else {
 			eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+			core->num->value = 0;
 			goto beach;
 		}
 	}
@@ -2379,7 +2380,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
-					core->num->value = -1;
+					core->num->value = 0;
 				}
 				pd_result = true;
 			}
@@ -2400,7 +2401,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
-					core->num->value = -1;
+					core->num->value = 0;
 				}
 			}
 			break;
@@ -2416,7 +2417,7 @@ static int cmd_print(void *data, const char *input) {
 			processed_cmd = true;
 			if (input[2] == '?') {
 				r_cons_printf ("Usage: pdf[sj]  - disassemble function (summary+cjmp), json)\n");
-			} else if (input[2] == 's') {
+			} else if (input[2] == 's') { // "pdfs"
 				ut64 oseek = core->offset;
 				int oblock = core->blocksize;
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
@@ -2457,7 +2458,7 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 					processed_cmd = true;
-					core->num->value = -1;
+					core->num->value = 0;
 				}
 				if (bsz != core->blocksize)
 					r_core_block_size (core, bsz);
