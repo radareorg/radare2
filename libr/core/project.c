@@ -272,7 +272,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	return file;
 }
 
-R_API int r_core_project_save_rdb(RCore *core, const char *file, int opts) {
+R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 	char *filename;
 	int fd, fdold, tmp;
 
@@ -292,7 +292,7 @@ R_API int r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 
 	r_str_write (fd, "# r2 rdb project file\n");
 
-	if (opts&R_CORE_PRJ_FLAGS) {
+	if (opts & R_CORE_PRJ_FLAGS) {
 		r_str_write (fd, "# flags\n");
 		tmp = core->flags->space_idx;
 		core->flags->space_idx = -1;
@@ -300,48 +300,48 @@ R_API int r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 		core->flags->space_idx = tmp;
 		r_cons_flush ();
 	}
-	if (opts&R_CORE_PRJ_EVAL) {
+	if (opts & R_CORE_PRJ_EVAL) {
 		r_str_write (fd, "# eval\n");
 		r_config_list (core->config, NULL, true);
 		r_cons_flush ();
 	}
-	if (opts&R_CORE_PRJ_IO_MAPS) {
+	if (opts & R_CORE_PRJ_IO_MAPS) {
 		r_core_cmd (core, "om*", 0);
 		r_cons_flush ();
 	}
-	if (opts&R_CORE_PRJ_SECTIONS) {
+	if (opts & R_CORE_PRJ_SECTIONS) {
 		r_str_write (fd, "# sections\n");
 		r_io_section_list (core->io, core->offset, 1);
 		r_cons_flush ();
 	}
-	if (opts&R_CORE_PRJ_META) {
+	if (opts & R_CORE_PRJ_META) {
 		r_str_write (fd, "# meta\n");
 		r_meta_list (core->anal, R_META_TYPE_ANY, 1);
 		r_cons_flush ();
 	}
-	if (opts&R_CORE_PRJ_XREFS) {
+	if (opts & R_CORE_PRJ_XREFS) {
 		r_core_cmd (core, "ax*", 0);
 		r_cons_flush ();
 	}
-	if (opts&R_CORE_PRJ_FCNS) {
+	if (opts & R_CORE_PRJ_FCNS) {
 		r_core_cmd (core, "afl*", 0);
 		r_cons_flush ();
 	}
-	if (opts&R_CORE_PRJ_ANAL_HINTS) {
+	if (opts & R_CORE_PRJ_ANAL_HINTS) {
 		r_core_cmd (core, "ah*", 0);
 		r_cons_flush ();
 	}
-	if (opts&R_CORE_PRJ_ANAL_TYPES) {
+	if (opts & R_CORE_PRJ_ANAL_TYPES) {
 		r_str_write (fd, "# types\n");
 		r_core_cmd (core, "t*", 0);
 		r_cons_flush ();
 	}
-	if (opts&R_CORE_PRJ_ANAL_MACROS) {
+	if (opts & R_CORE_PRJ_ANAL_MACROS) {
 		r_str_write (fd, "# macros\n");
 		r_core_cmd (core, "(*", 0);
 		r_cons_flush ();
 	}
-	if (opts&R_CORE_PRJ_ANAL_SEEK) {
+	if (opts & R_CORE_PRJ_ANAL_SEEK) {
 		r_cons_printf ("# seek\n"
 			"s 0x%08"PFMT64x"\n", core->offset);
 		r_cons_flush ();
@@ -356,8 +356,8 @@ R_API int r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 	return true;
 }
 
-R_API int r_core_project_save(RCore *core, const char *file) {
-	int ret = true;
+R_API bool r_core_project_save(RCore *core, const char *file) {
+	bool ret = true;
 	char *prj, buf[1024];
 
 	if (file == NULL || *file == '\0')
@@ -376,7 +376,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 
 	r_core_project_init (core);
 
-	snprintf (buf, sizeof (buf), "%s.d"R_SYS_DIR"xrefs", prj);
+	snprintf (buf, sizeof (buf), "%s.d" R_SYS_DIR "xrefs", prj);
 	r_anal_project_save (core->anal, buf);
 
 	if (!r_core_project_save_rdb (core, prj, R_CORE_PRJ_ALL^R_CORE_PRJ_XREFS)) {

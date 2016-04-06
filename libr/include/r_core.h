@@ -403,8 +403,8 @@ R_API int r_core_project_open(RCore *core, const char *file);
 R_API int r_core_project_cat(RCore *core, const char *name);
 R_API int r_core_project_delete(RCore *core, const char *prjfile);
 R_API int r_core_project_list(RCore *core, int mode);
-R_API int r_core_project_save_rdb(RCore *core, const char *file, int opts);
-R_API int r_core_project_save(RCore *core, const char *file);
+R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts);
+R_API bool r_core_project_save(RCore *core, const char *file);
 R_API char *r_core_project_info(RCore *core, const char *file);
 R_API char *r_core_project_notes_file (RCore *core, const char *file);
 

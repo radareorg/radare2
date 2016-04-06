@@ -40,7 +40,7 @@ static int cmd_project(void *data, const char *input) {
 		}
 		break;
 	case 'S':
-		if (input[1]==' ') {
+		if (input[1] == ' ') {
 			r_core_project_save_rdb (core, input+2, R_CORE_PRJ_ALL);
 		} else eprintf ("Usage: PS [file]\n");
 		break;
