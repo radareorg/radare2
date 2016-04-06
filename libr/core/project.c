@@ -272,9 +272,93 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	return file;
 }
 
-R_API int r_core_project_save(RCore *core, const char *file) {
-	int fd, fdold, tmp, ret = true;
-	char *prj;
+R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
+	char *filename;
+	int fd, fdold, tmp;
+
+	if (file == NULL || *file == '\0')
+		return false;
+
+	filename = r_str_word_get_first (file);
+	fd = r_sandbox_open (file, O_BINARY|O_RDWR|O_CREAT|O_TRUNC, 0644);
+	if (fd == -1) {
+		free (filename);
+		return false;
+	}
+
+	fdold = r_cons_singleton ()->fdout;
+	r_cons_singleton ()->fdout = fd;
+	r_cons_singleton ()->is_interactive = false;
+
+	r_str_write (fd, "# r2 rdb project file\n");
+
+	if (opts & R_CORE_PRJ_FLAGS) {
+		r_str_write (fd, "# flags\n");
+		tmp = core->flags->space_idx;
+		core->flags->space_idx = -1;
+		r_flag_list (core->flags, true, NULL);
+		core->flags->space_idx = tmp;
+		r_cons_flush ();
+	}
+	if (opts & R_CORE_PRJ_EVAL) {
+		r_str_write (fd, "# eval\n");
+		r_config_list (core->config, NULL, true);
+		r_cons_flush ();
+	}
+	if (opts & R_CORE_PRJ_IO_MAPS) {
+		r_core_cmd (core, "om*", 0);
+		r_cons_flush ();
+	}
+	if (opts & R_CORE_PRJ_SECTIONS) {
+		r_str_write (fd, "# sections\n");
+		r_io_section_list (core->io, core->offset, 1);
+		r_cons_flush ();
+	}
+	if (opts & R_CORE_PRJ_META) {
+		r_str_write (fd, "# meta\n");
+		r_meta_list (core->anal, R_META_TYPE_ANY, 1);
+		r_cons_flush ();
+	}
+	if (opts & R_CORE_PRJ_XREFS) {
+		r_core_cmd (core, "ax*", 0);
+		r_cons_flush ();
+	}
+	if (opts & R_CORE_PRJ_FCNS) {
+		r_core_cmd (core, "afl*", 0);
+		r_cons_flush ();
+	}
+	if (opts & R_CORE_PRJ_ANAL_HINTS) {
+		r_core_cmd (core, "ah*", 0);
+		r_cons_flush ();
+	}
+	if (opts & R_CORE_PRJ_ANAL_TYPES) {
+		r_str_write (fd, "# types\n");
+		r_core_cmd (core, "t*", 0);
+		r_cons_flush ();
+	}
+	if (opts & R_CORE_PRJ_ANAL_MACROS) {
+		r_str_write (fd, "# macros\n");
+		r_core_cmd (core, "(*", 0);
+		r_cons_flush ();
+	}
+	if (opts & R_CORE_PRJ_ANAL_SEEK) {
+		r_cons_printf ("# seek\n"
+			"s 0x%08"PFMT64x"\n", core->offset);
+		r_cons_flush ();
+	}
+
+	r_cons_singleton ()->fdout = fdold;
+	r_cons_singleton ()->is_interactive = true;
+
+	close (fd);
+	free (filename);
+
+	return true;
+}
+
+R_API bool r_core_project_save(RCore *core, const char *file) {
+	bool ret = true;
+	char *prj, buf[1024];
 
 	if (file == NULL || *file == '\0')
 		return false;
@@ -289,64 +373,17 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		free (prj);
 		return false;
 	}
+
 	r_core_project_init (core);
-	r_anal_project_save (core->anal, prj);
-	fd = r_sandbox_open (prj, O_BINARY|O_RDWR|O_CREAT|O_TRUNC, 0644);
-	if (fd != -1) {
-		fdold = r_cons_singleton ()->fdout;
-		r_cons_singleton ()->fdout = fd;
-		r_cons_singleton ()->is_interactive = false;
-		r_str_write (fd, "# r2 rdb project file\n");
-		r_str_write (fd, "# flags\n");
-		tmp = core->flags->space_idx;
-		core->flags->space_idx = -1;
-		r_flag_list (core->flags, true, NULL);
-		core->flags->space_idx = tmp;
-		r_cons_flush ();
-		r_str_write (fd, "# eval\n");
-		// TODO: r_str_writef (fd, "e asm.arch=%s", r_config_get ("asm.arch"));
-		r_config_list (core->config, NULL, true);
-		r_cons_flush ();
-		r_core_cmd (core, "om*", 0);
-		r_cons_flush ();
-		r_str_write (fd, "# sections\n");
-		r_io_section_list (core->io, core->offset, 1);
-		r_cons_flush ();
-		r_str_write (fd, "# meta\n");
-		r_meta_list (core->anal, R_META_TYPE_ANY, 1);
-		r_cons_flush ();
-		{
-			char buf[1024];
-			snprintf (buf, sizeof (buf), "%s.d"R_SYS_DIR"xrefs", prj);
-			sdb_file (core->anal->sdb_xrefs, buf);
-			sdb_sync (core->anal->sdb_xrefs);
-		}
-		r_core_cmd (core, "S*", 0);
-		r_cons_flush ();
-		r_core_cmd (core, "fV*", 0);
-		r_cons_flush ();
-		//r_core_cmd (core, "ax*", 0); // Not needed, xrefs are loaded from a DB file
-		//r_cons_flush ();
-		r_core_cmd (core, "afl*", 0);
-		r_cons_flush ();
-		r_core_cmd (core, "ah*", 0);
-		r_cons_flush ();
-		r_str_write (fd, "# types\n");
-		r_core_cmd (core, "t*", 0);
-		r_cons_flush ();
-		r_str_write (fd, "# macros\n");
-		r_core_cmd (core, "(*", 0);
-		r_cons_flush ();
-		r_cons_printf ("# seek\n"
-			"s 0x%08"PFMT64x"\n", core->offset);
-		r_cons_flush ();
-		close (fd);
-		r_cons_singleton ()->fdout = fdold;
-		r_cons_singleton ()->is_interactive = true;
-	} else {
+
+	snprintf (buf, sizeof (buf), "%s.d" R_SYS_DIR "xrefs", prj);
+	r_anal_project_save (core->anal, buf);
+
+	if (!r_core_project_save_rdb (core, prj, R_CORE_PRJ_ALL^R_CORE_PRJ_XREFS)) {
 		eprintf ("Cannot open '%s' for writing\n", prj);
 		ret = false;
 	}
+
 	free (prj);
 	return ret;
 }
