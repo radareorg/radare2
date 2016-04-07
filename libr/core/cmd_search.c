@@ -1294,8 +1294,10 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			res = r_anal_esil_pop (core->anal->esil);
 			if (r_anal_esil_get_parm (core->anal->esil, res, &nres)) {
 				if (nres) {
-					if (!__cb_hit (&kw, core, addr))
+					if (!__cb_hit (&kw, core, addr)){
+						free (res);
 						break;
+					}
 					//eprintf (" HIT AT 0x%"PFMT64x"\n", addr);
 					kw.type = 0; //R_SEARCH_TYPE_ESIL;
 					kw.kwidx = kwidx;

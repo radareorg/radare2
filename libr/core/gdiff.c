@@ -21,8 +21,7 @@ R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 	return false;
 }
 
-/* Fingerprint functions and blocks, then diff.
- * If `anal_all` is 1 analyse all the symbols, if its 2 runs `aac` */
+/* Fingerprint functions and blocks, then diff. */
 R_API int r_core_gdiff(RCore *c, RCore *c2) {
 	RCore *cores[2] = {c, c2};
 	RAnalFunction *fcn;
