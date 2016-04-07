@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2014-2015 - condret */
+/* radare - LGPL - Copyright 2014-2016 - condret */
 
 #ifdef NULL
 #undef NULL
 #endif
 #define NULL 0
 
-enum{
+enum {
 	Z80_OP_UNK = 1,
 	Z80_OP8 = 2,
 	Z80_OP16 = 4,
@@ -22,7 +22,7 @@ typedef struct{
 	void *op_moar;
 } z80_opcode;
 
-char *cb[] = {						//cb
+static const char *cb[] = {
 	"rlc b",
 	"rlc c",
 	"rlc d",
@@ -281,7 +281,7 @@ char *cb[] = {						//cb
 	"set 7, a",
 };
 
-char *ddcb[]={
+static const char *ddcb[]={
 	"ld b, rlc [ix+0x%02x]",
 	"ld c, rlc [ix+0x%02x]",
 	"ld d, rlc [ix+0x%02x]",
@@ -485,7 +485,7 @@ char *ddcb[]={
 	"%x\rinvalid",			//HACK
 };
 
-char *fdcb[]={				//fdcb
+static const char *fdcb[]={
 	"ld b, rlc [iy+0x%02x]",
 	"ld c, rlc [iy+0x%02x]",
 	"ld d, rlc [iy+0x%02x]",
@@ -690,7 +690,7 @@ char *fdcb[]={				//fdcb
 };
 
 
-z80_opcode dd[] = {					//dd
+static z80_opcode dd[] = {					//dd
 	{"add ix, bc",		Z80_OP16		,NULL},
 	{"add ix, de",		Z80_OP16		,NULL},
 	{"ld ix, 0x%04x",	Z80_OP16^Z80_ARG16	,NULL},
@@ -780,7 +780,7 @@ z80_opcode dd[] = {					//dd
 	{"invalid",		Z80_OP16		,NULL}
 };
 
-z80_opcode ed[]={				//ed
+static z80_opcode ed[]={				//ed
 	{"in b, [c]",		Z80_OP16		,NULL},
 	{"out [c], b",		Z80_OP16		,NULL},
 	{"sbc hl, bc",		Z80_OP16		,NULL},
@@ -843,7 +843,7 @@ z80_opcode ed[]={				//ed
 	{"invalid",		Z80_OP16		,NULL}
 };
 
-z80_opcode fd[]={				//fd
+static z80_opcode fd[]={				//fd
 	{"add iy, bc",		Z80_OP16		,NULL},
 	{"add iy, de",		Z80_OP16		,NULL},
 	{"ld iy, 0x%04x",	Z80_OP16^Z80_ARG16	,NULL},
@@ -933,7 +933,7 @@ z80_opcode fd[]={				//fd
 	{"invalid",		Z80_OP16		,NULL}
 };
 
-z80_opcode z80_op[] = {
+static z80_opcode z80_op[] = {
 	{"nop",			Z80_OP8			,NULL},
 	{"ld bc, 0x%04x",	Z80_OP8^Z80_ARG16	,NULL},
 	{"ld [bc], a",		Z80_OP8			,NULL},
