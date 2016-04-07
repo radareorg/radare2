@@ -810,6 +810,7 @@ static int esil_if(RAnalEsil *esil) {
 		(void)r_anal_esil_get_parm (esil, src, &num);
 		// condition not matching, skipping until }
 		if (!num) esil->skip = true;
+		free (src);
 		return true;
 	}
 	return false;
@@ -1398,6 +1399,8 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 			ret = r_anal_esil_mem_write (esil, addr, (const ut8 *)&n, bytes);
 		}
 	}
+	free (src);
+	free (dst);
 	return ret;
 }
 
@@ -1989,8 +1992,10 @@ static int esil_num(RAnalEsil *esil) {
 		return false;
 	if (!(dup_me = r_anal_esil_pop (esil)))
 		return false;
-	if (!r_anal_esil_get_parm (esil, dup_me, &dup))
+	if (!r_anal_esil_get_parm (esil, dup_me, &dup)) {
+		free (dup_me);
 		return false;
+	}
 	free (dup_me);
 	return r_anal_esil_pushnum (esil, dup);
 }

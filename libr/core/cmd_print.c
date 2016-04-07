@@ -196,6 +196,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 		}
 		result = true;
 	}
+	free (str_clone);
 	return result;
 }
 

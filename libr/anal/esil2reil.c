@@ -80,11 +80,13 @@ RAnalReilArg *reil_pop_arg(RAnalEsil *esil) {
 		} else if (op->type == ARG_CONST) {
 			op->size = esil->anal->bits;
 		}
+		free(buf);
 		return op;
 	}
 
 	op->size = strtoll(tmp_buf, NULL, 10);
 	op->type = reil_get_arg_type(esil, op->name);
+	free(buf);
 	return op;
 }
 
