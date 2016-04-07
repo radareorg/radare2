@@ -521,8 +521,10 @@ static int get_bits () {
 	return R_SYS_BITS_32;
 #elif __x86_64__ || __mips__
 	return R_SYS_BITS_32 | R_SYS_BITS_64;
-#elif __arm__ || __aarch64__
+#elif __aarch64__
 	return R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64;
+#elif __arm__
+	return R_SYS_BITS_16 | R_SYS_BITS_32;
 #else
 	return 0;
 #warning Unsupported architecture
@@ -662,7 +664,7 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 	int hoffset = header_end;
 	kern_return_t kr = KERN_SUCCESS;
 	int error = 0;
-	ssize_t wc;
+	ssize_t rc = 0;
 
 #define CAST_DOWN(type, addr) (((type)((uintptr_t)(addr))))
 #if __ppc64__ || __x86_64__
@@ -731,13 +733,14 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 					if (kr > 1) error = -1; // XXX: INVALID_ADDRESS is not a bug right know
 					goto cleanup;
 				}
-#if __ppc64__ || __x86_64__
-				r_buf_append_bytes (buffer, (const ut8*)local_address, xfer_size);
-#elif __i386__ || __ppc__
-				r_buf_append_bytes (buffer, (void *)CAST_DOWN (ut32, local_address),
+#if __ppc64__ || __x86_64__ || __aarch64__ || __arm64__
+				rc = r_buf_append_bytes (buffer, (const ut8*)local_address, xfer_size);
+// #elif __i386__ || __ppc__ || __arm__
+#else
+				rc = r_buf_append_bytes (buffer, (void *)CAST_DOWN (ut32, local_address),
 					CAST_DOWN (ut32, xfer_size));
 #endif
-				if (wc < 0) {
+				if (!rc) {
 					error = errno;
 					eprintf ("Failed to write in the destination\n");
 					goto cleanup;
@@ -764,16 +767,17 @@ static int xnu_get_thread_status (register thread_t thread, int flavor,
 }
 
 static void xnu_collect_thread_state (thread_t port, void *tirp) {
-	vm_offset_t header;
-	int i, hoffset;
 	coredump_thread_state_flavor_t *flavors;
-	struct thread_command *tc;
 	tir_t *tir = (tir_t *)tirp;
+	struct thread_command *tc;
+	vm_offset_t header;
+	ut64 hoffset;
+	int i;
 
 	header = tir->header;
 	hoffset = tir->hoffset;
 	flavors = tir->flavors;
-	eprintf ("[DEBUG] tc location: %p\n", hoffset);
+	eprintf ("[DEBUG] tc location: 0x%" PFMT64x "\n", hoffset);
 
 	tc = (struct thread_command *)(header + hoffset);
 	tc->cmd = LC_THREAD;
@@ -788,9 +792,7 @@ static void xnu_collect_thread_state (thread_t port, void *tirp) {
 			(thread_state_t)(header + hoffset), &flavors[i].count);
 		hoffset += flavors[i].count * sizeof (int);
 	}
-
 	tir->hoffset = hoffset;
-
 }
 
 #define CORE_ALL_SECT 0
@@ -805,8 +807,6 @@ bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	size_t segment_command_sz;
 	size_t padding_sz;
 	int hoffset;
-	off_t foffset;
-	vm_map_offset_t	vmoffset;
 
 	RBuffer *mem_maps_buffer;
 	vm_offset_t header;
@@ -1012,19 +1012,18 @@ static const char * unparse_inheritance (vm_inherit_t i) {
 
 //it's not used (yet)
 vm_address_t get_kernel_base(task_t ___task) {
+	mach_msg_type_number_t info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
+	vm_region_submap_info_data_64_t info;
+	ut64 naddr, addr = KERNEL_LOWER; // lowest possible kernel base address
+	unsigned int depth = 0;
 	kern_return_t ret;
 	task_t task;
-	vm_region_submap_info_data_64_t info;
 	ut64 size;
-	mach_msg_type_number_t info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
-	unsigned int depth = 0;
-	ut64 addr = KERNEL_LOWER;		 // lowest possible kernel base address
 	int count;
 
 	ret = task_for_pid (mach_task_self(), 0, &task);
 	if (ret != KERN_SUCCESS)
 		return 0;
-	ut64 naddr;
 	eprintf ("%d vs %d\n", task, ___task);
 	for (count = 128; count; count--) {
 		// get next memory region
@@ -1055,8 +1054,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 	return (vm_address_t)0;
 }
 
-extern int proc_regionfilename(int pid, uint64_t address,
-				  void * buffer, uint32_t buffersize);
+extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_t buffersize);
 
 #define MAX_MACH_HEADER_SIZE (64 * 1024)
 #define DYLD_INFO_COUNT 5
@@ -1071,22 +1069,24 @@ typedef struct {
 	ut32 info_array_count;
 	ut32 info_array;
 } DyldAllImageInfos32;
+
 typedef struct {
 	ut32 image_load_address;
 	ut32 image_file_path;
 	ut32 image_file_mod_date;
 } DyldImageInfo32;
+
 typedef struct {
 	ut32 version;
 	ut32 info_array_count;
 	ut64 info_array;
 } DyldAllImageInfos64;
+
 typedef struct {
 	ut64 image_load_address;
 	ut64 image_file_path;
 	ut64 image_file_mod_date;
 } DyldImageInfo64;
-
 
 // TODO: Implement mach0 size.. maybe copypasta from rbin?
 static int mach0_size (RDebug *dbg, ut64 addr) {
@@ -1260,9 +1260,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 				info.is_submap? "_sub": "",
 				"", info.is_submap ? "_submap": "",
 				module_name, maxperm, depthstr);
-			mr = r_debug_map_new (buf, address, address+size,
-					xwr2rwx (info.protection), 0);
-			if (mr == NULL) {
+			if (!(mr = r_debug_map_new (buf, address, address + size, xwr2rwx (info.protection), 0))) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				break;
 			}

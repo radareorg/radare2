@@ -1297,9 +1297,6 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "x86",
 	.canstep = 1,
-#elif __arm__
-	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
-	.arch = "arm",
 #if __linux__
 	.canstep = 0, // XXX it's 1 on some platforms...
 #else
@@ -1309,6 +1306,9 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "arm",
 	.canstep = 0, // XXX it's 1 on some platforms...
+#elif __arm__
+	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
+	.arch = "arm",
 #elif __mips__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "mips",
