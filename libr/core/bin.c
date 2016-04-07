@@ -394,6 +394,20 @@ static const char* get_compile_time(Sdb *binFileSdb) {
 	return timeDateStamp_string;
 }
 
+static int is_executable (RBinObject *obj) {
+	RListIter *it;
+	RBinSection* sec;
+	if (obj) {
+		if (obj->info && obj->info->arch)
+			return true;
+		r_list_foreach (obj->sections, it, sec) {
+			if (R_BIN_SCN_EXECUTABLE & sec->srwx)
+				return true;
+		}
+	}
+	return false;
+}
+
 static int bin_info(RCore *r, int mode) {
 	int i, j, v;
 	char str[R_FLAG_NAME_SIZE];
@@ -401,13 +415,15 @@ static int bin_info(RCore *r, int mode) {
 	char baddr_str[32];
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RBinFile *binfile = r_core_bin_cur (r);
+	RBinObject *obj = r_bin_cur_object (r->bin);
 	const char *compiled = NULL;
+	bool havecode;
 
-	if (!binfile || !info) {
+	if (!binfile || !info || !obj) {
 		if (mode & R_CORE_BIN_JSON) r_cons_printf ("{}");
 		return false;
 	}
-
+	havecode = is_executable (obj) | (obj->entries != NULL);
 	compiled = get_compile_time (binfile->sdb);
 	snprintf (size_str, sizeof (size_str),
 		"%"PFMT64d,  r_bin_get_size (r->bin));
@@ -475,6 +491,7 @@ static int bin_info(RCore *r, int mode) {
 	} else {
 		// XXX: if type is 'fs' show something different?
 		if (IS_MODE_JSON (mode)) r_cons_printf ("{");
+		pair_bool ("havecode", havecode, mode, false);
 		pair_bool ("pic", info->has_pi, mode, false);
 		pair_bool ("canary", info->has_canary, mode, false);
 		pair_bool ("nx", info->has_nx, mode, false);
