@@ -1021,7 +1021,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_IT:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr + insn->size;
-		op->fail = addr + insn->size + 2;
+		op->fail = addr + insn->size + 4; // XXX must be next_insn->size;
 			// XXX what if instruction is 4
 		break;
 	case ARM_INS_NOP:
@@ -1168,8 +1168,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (insn->detail->arm.operands[0].reg == ARM_REG_LR) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		} else {
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = IMM(0);
+			op->fail = addr + op->size;
 		}
 		break;
 	default:

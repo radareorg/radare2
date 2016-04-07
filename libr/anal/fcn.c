@@ -680,7 +680,8 @@ repeat:
 				if (s && s->name) {
 					int in_plt = strstr (s->name, ".plt") != NULL;
 					if (strstr (anal->cpu, "arm")) {
-						if (!in_plt) goto river;
+						if (anal->bits != 16)
+							if (!in_plt) goto river;
 					} else {
 						if (in_plt) goto river;
 					}
