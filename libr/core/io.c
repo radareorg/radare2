@@ -97,42 +97,23 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int a
 
 R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	int i, j, len, ret = false;
-	char *str = NULL;
+	char *str;
 	ut8 *buf;
 
 	// XXX we can work with config.block instead of dupping it
 	buf = (ut8 *)malloc (core->blocksize);
-	if (!buf)
+	str = (char *)malloc (strlen (arg)+1);
+	if (buf == NULL || str == NULL)
 		goto beach;
 	memcpy (buf, core->block, core->blocksize);
-
-	// fill key buffer either from arg or from clipboard
-	if (arg) {  // parse arg for key
-		str = (char *)malloc (strlen (arg)+1);
-		if (!str)
+	if (op!='e') {
+		len = r_hex_str2bin (arg, (ut8 *)str);
+		if (len < 0) {
+			eprintf ("Invalid hexpair string\n");
 			goto beach;
-		if (op!='e') {
-			len = r_hex_str2bin (arg, (ut8 *)str);
-			if (len < 0) {
-				eprintf ("Invalid hexpair string\n");
-				goto beach;
-			}
-		} else len = 0;
-	} else {  // use clipboard as key
-		if (op!='e') {
-			len = core->yank_buf->length;
-			if (len <= 0) {
-				eprintf ("Clipboard is empty\n");
-				goto beach;
-			}
-			str = (char *)malloc (len);
-			if (!str)
-				goto beach;
-			memcpy (str, core->yank_buf->buf, len);
-		} else len = 0;
-	}
+		}
+	} else len = 0;
 
-	// execute the operand
 	if (op=='e') {
 		int wordsize = 1;
 		char *os, *p, *s = strdup (arg);
