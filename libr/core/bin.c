@@ -1871,6 +1871,24 @@ static void bin_mem_print(RList *mems, int perms, int depth) {
 	}
 }
 
+static void bin_mem_print_JSON(RList *mems, int perms, int depth) {
+	RBinMem *mem;
+	RListIter *iter;
+
+	if (!mems) return;
+
+	r_list_foreach (mems, iter, mem) {
+		if (mem) {
+			r_cons_printf ("{\"name\":\"%*s%-*s\", \"size\":%d, \"address\":%d, "
+				"\"flags\":\"%s\"},\n", depth, "", 20-depth, mem->name, mem->size,
+				mem->addr, r_str_rwx_i (mem->perms & perms));
+			if (mem->mirrors) {
+				bin_mem_print_JSON (mem->mirrors, mem->perms & perms, depth + 1);
+			}
+		}
+	}
+}
+
 static int bin_mem(RCore *r, int mode) {
 	RList *mem = NULL;
 	if (!r)	return false;
@@ -1881,8 +1899,10 @@ static int bin_mem(RCore *r, int mode) {
 		return false;
 	}
 	if (IS_MODE_JSON (mode)) {
-		r_cons_printf ("TODO\n");
-		return false;
+		r_cons_printf ("[");
+		bin_mem_print_JSON (mem, 7, 0);
+		r_cons_printf ("]");
+		return true;
 	}
 	if (!(IS_MODE_RAD (mode) || IS_MODE_SET (mode))) {
 		bin_mem_print (mem, 7, 0);
