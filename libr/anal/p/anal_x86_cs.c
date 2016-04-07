@@ -436,14 +436,12 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 					width, dst, counter, counter, dst, src);
 		} else {
 			int width = INSOP(0).size;
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, NULL);
-			esilprintf (op, "%s,%s,df,?{,%d,%s,-=,%d,%s,-=,},"\
-					"df,!,?{,%d,%s,+=,%d,%s,+=,}",
-					src, dst, width, src, width, 
-					dst, width, src, width, dst);
-			free (src);
-			free (dst);
+			const char *src = cs_reg_name(*handle, INSOP(1).mem.base);
+			const char *dst = cs_reg_name(*handle, INSOP(0).mem.base);
+			esilprintf (op, "%s,[%d],%s,=[%d],df,?{,%d,%s,-=,%d,%s,-=,},"\
+					"df,!,?{,%d,%s,+=,%d,%s,+=,},%s,=,%s,=",
+					src, width, dst, width, width, src, width, 
+					dst, width, src, width, dst, dst, src);
 		}
 		break;
 	// mov
