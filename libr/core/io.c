@@ -109,12 +109,14 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	if (op!='e') {
 		// fill key buffer either from arg or from clipboard
 		if (arg) {  // parse arg for key
-			str = (char *)malloc (strlen (arg));
+			// r_hex_str2bin() is guaranteed to output maximum half the
+			// input size, or 1 byte if there is just a single nibble.
+			str = (char *)malloc (strlen (arg) / 2 + 1);
 			if (!str)
 				goto beach;
 			len = r_hex_str2bin (arg, (ut8 *)str);
-			// r_hex_str2bin() is guaranteed to output maximum half
-			// the input size, thus len <= strlen (arg) / 2.
+			// Output is invalid if there was just a single nibble,
+			// but in that case, len is negative (-1).
 			if (len <= 0) {
 				eprintf ("Invalid hexpair string\n");
 				goto beach;
