@@ -61,8 +61,8 @@ R_API int r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
 }
 
 R_API void r_anal_xrefs_save(RAnal *anal, const char *prjfile) {
-	sdb_sync (anal->sdb_xrefs);
 	sdb_file (anal->sdb_xrefs, prjfile);
+	sdb_sync (anal->sdb_xrefs);
 }
 
 R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type,
