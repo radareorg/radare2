@@ -1879,8 +1879,8 @@ static void bin_mem_print_JSON(RList *mems, int perms, int depth) {
 
 	r_list_foreach (mems, iter, mem) {
 		if (mem) {
-			r_cons_printf ("{\"name\":\"%*s%-*s\", \"size\":%d, \"address\":%d, "
-				"\"flags\":\"%s\"},\n", depth, "", 20-depth, mem->name, mem->size,
+			r_cons_printf ("{\"name\":\"%s\", \"size\":%d, \"address\":%d, "
+				"\"flags\":\"%s\"},\n", mem->name, mem->size,
 				mem->addr, r_str_rwx_i (mem->perms & perms));
 			if (mem->mirrors) {
 				bin_mem_print_JSON (mem->mirrors, mem->perms & perms, depth + 1);
