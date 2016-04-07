@@ -592,7 +592,7 @@ static RList* patch_relocs(RBin *b) {
 	if (!b) 
 		return NULL;
 	io = b->iob.get_io(&b->iob);
-	if (!io) 
+	if (!io || !io->desc) 
 		return NULL;
 	obj = r_bin_cur_object (b);
 	if (!obj) 
