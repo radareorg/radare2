@@ -1865,7 +1865,7 @@ static void bin_mem_print(RList *mems, int perms, int depth, int mode) {
 				if ((!(iter->p) && (depth == 0))) {
 					r_cons_printf ("[");
 				}
-				r_cons_printf ("{\"name\":\"%s\", \"size\":%d, \"address\":%d, "
+				r_cons_printf ("{\"name\":\"%s\",\"size\":%d,\"address\":%d,"
 					"\"flags\":\"%s\"}", mem->name, mem->size,
 					mem->addr, r_str_rwx_i (mem->perms & perms));
 			} else if (IS_MODE_SIMPLE(mode)) {
@@ -1877,13 +1877,13 @@ static void bin_mem_print(RList *mems, int perms, int depth, int mode) {
 			}
 			if (mem->mirrors) {
 				if (IS_MODE_JSON (mode)) {
-					r_cons_printf (",\n");
+					r_cons_printf (",");
 				}
 				bin_mem_print (mem->mirrors, mem->perms & perms, depth + 1, mode);
 			}
 			if (IS_MODE_JSON(mode)) {
 				if (iter->n) {
-					r_cons_printf (",\n");
+					r_cons_printf (",");
 				} else if ((!(iter->n) && (depth == 0))) {
 					r_cons_printf ("]\n");
 				}
