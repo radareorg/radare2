@@ -227,6 +227,15 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		.insn = insn,
 		.bits = a->bits
 	};
+
+	// counter for rep prefix
+	const char *counter = (a->bits==16)?"cx":
+		(a->bits==32)?"ecx":"rcx";
+
+	if (op->prefix & R_ANAL_OP_PREFIX_REP) {
+		esilprintf (op, "%s,!,?{,BREAK,},", counter);
+	}
+
 	switch (insn->id) {
 	case X86_INS_FNOP:
 	case X86_INS_NOP:
@@ -416,6 +425,20 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 	case X86_INS_CMOVP:
 	case X86_INS_CMOVS:
 		break;
+	case X86_INS_STOSB:
+			r_strbuf_appendf (&op->esil, "al,edi,=[1],df,?{,1,edi,-=,},df,!,?{,1,edi,+=,}");
+		break;
+	case X86_INS_STOSD:
+	case X86_INS_STOSQ:
+	case X86_INS_STOSW:
+		break;
+	case X86_INS_LODSB:
+			r_strbuf_appendf (&op->esil, "esi,[1],al,=,df,?{,1,esi,-=,},df,!,?{,1,esi,+=,}");
+		break;
+	case X86_INS_LODSD:
+	case X86_INS_LODSQ:
+	case X86_INS_LODSW:
+		break;
 	// string mov
 	case X86_INS_MOVSB:
 	case X86_INS_MOVSD:
@@ -425,15 +448,13 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 			int width = INSOP(0).size;
 			const char *src = cs_reg_name(*handle, INSOP(1).mem.base);
 			const char *dst = cs_reg_name(*handle, INSOP(0).mem.base);
-			const char *counter = (a->bits==16)?"cx":
-				(a->bits==32)?"ecx":"rcx";
-			esilprintf (op, "%s,!,?{,BREAK,},%s,NUM,%s,NUM,"\
-					"%s,[%d],%s,=[%d],df,?{,%d,%s,-=,%d,%s,-=,},"\
-					"df,!,?{,%d,%s,+=,%d,%s,+=,},%s,--=,%s," \
-					"?{,8,GOTO,},%s,=,%s,=",
-					counter, src, dst, src, width, dst,
-					width, width, src, width, dst, width, src,
-					width, dst, counter, counter, dst, src);
+			r_strbuf_appendf (&op->esil, 
+					"%s,[%d],%s,=[%d],"\
+					"df,?{,%d,%s,-=,%d,%s,-=,},"\
+					"df,!,?{,%d,%s,+=,%d,%s,+=,}",
+					src, width, dst, width, 
+					width, src, width, dst, 
+					width, src, width, dst);
 		} else {
 			int width = INSOP(0).size;
 			const char *src = cs_reg_name(*handle, INSOP(1).mem.base);
@@ -1167,6 +1188,10 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 	case X86_INS_CVTSS2SD: //cvtss2sd
 		break;
 	}
+
+	if (op->prefix & R_ANAL_OP_PREFIX_REP) {
+		r_strbuf_appendf(&op->esil, ",%s,--=,%s,?{,5,GOTO,}", counter, counter);
+	}
 }
 
 static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
@@ -1357,6 +1382,16 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 	case X86_INS_CMOVP:
 	case X86_INS_CMOVS:
 		op->type = R_ANAL_OP_TYPE_CMOV;
+		break;
+	case X86_INS_STOSB:
+	case X86_INS_STOSD:
+	case X86_INS_STOSQ:
+	case X86_INS_STOSW:
+		break;
+	case X86_INS_LODSB:
+	case X86_INS_LODSD:
+	case X86_INS_LODSQ:
+	case X86_INS_LODSW:
 		break;
 	// mov
 	case X86_INS_MOVSS:
