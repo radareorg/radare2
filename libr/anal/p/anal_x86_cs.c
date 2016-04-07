@@ -2093,7 +2093,7 @@ static int esil_x86_cs_fini (RAnalEsil *esil) {
 	return true;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RAnal *anal) {
 	const char *p = NULL;
 	switch (anal->bits) {
 	case 16: p =
@@ -2458,8 +2458,15 @@ static int set_reg_profile(RAnal *anal) {
 		 break;
 #endif
 	}
+	if (p && *p) return strdup (p);
+	return NULL;
+}
+
+/*
+static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
+*/
 
 static int archinfo(RAnal *anal, int q) {
 	switch (q) {
@@ -2482,7 +2489,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.bits = 16|32|64,
 	.op = &analop,
 	.archinfo = archinfo,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
 //	.esil_intr = esil_x86_cs_intr,

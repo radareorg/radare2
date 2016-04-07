@@ -171,16 +171,15 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 }
 
 // TODO: Must be deprecated
-R_API int r_anal_list(RAnal *anal) {
+R_API void r_anal_list(RAnal *anal) {
 	RAnalPlugin *h;
 	RListIter *it;
 	r_list_foreach (anal->plugins, it, h) {
 		anal->cb_printf ("anal %-10s %s\n", h->name, h->desc);
 	}
-	return false;
 }
 
-R_API int r_anal_use(RAnal *anal, const char *name) {
+R_API bool r_anal_use(RAnal *anal, const char *name) {
 	RListIter *it;
 	RAnalPlugin *h;
 	r_list_foreach (anal->plugins, it, h) {
@@ -198,9 +197,25 @@ R_API int r_anal_use(RAnal *anal, const char *name) {
 	return false;
 }
 
-R_API int r_anal_set_reg_profile(RAnal *anal) {
-	if (anal && anal->cur && anal->cur->set_reg_profile)
-		return anal->cur->set_reg_profile (anal);
+R_API char *r_anal_get_reg_profile(RAnal *anal) {
+	if (anal && anal->cur && anal->cur->get_reg_profile)
+		return anal->cur->get_reg_profile (anal);
+	return NULL;
+}
+
+// deprecate.. or at least reuse get_reg_profile...
+R_API bool r_anal_set_reg_profile(RAnal *anal) {
+	bool ret = false;
+	if (anal && anal->cur && anal->cur->set_reg_profile) {
+		ret = anal->cur->set_reg_profile (anal);
+	} else {
+		char *p = r_anal_get_reg_profile (anal);
+		if (p && *p) {
+			r_reg_set_profile_string (anal->reg, p);
+			ret = true;
+		}
+		free (p);
+	}
 	return false;
 }
 
@@ -244,11 +259,11 @@ R_API int r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int 
 	return r_anal_use (anal, arch);
 }
 
-R_API int r_anal_set_os(RAnal *anal, const char *os) {
+R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 	return r_anal_set_triplet (anal, os, NULL, -1);
 }
 
-R_API int r_anal_set_bits(RAnal *anal, int bits) {
+R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	switch (bits) {
 	case 8:
 	case 16:

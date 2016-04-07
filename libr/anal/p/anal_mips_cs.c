@@ -856,7 +856,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	return opsize;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RAnal *anal) {
 	// XXX : 64bit profile
 	const char *p =
 		"=PC    pc\n"
@@ -903,7 +903,7 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	hi	.64	132	0\n"
 		"gpr	lo	.64	140	0\n"
 		"gpr	t	.32	148	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
 static int archinfo(RAnal *anal, int q) {
@@ -916,7 +916,7 @@ RAnalPlugin r_anal_plugin_mips_cs = {
 	.license = "BSD",
 	.esil = true,
 	.arch = "mips",
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = get_reg_profile,
 	.archinfo = archinfo,
 	.bits = 16|32|64,
 	.op = &analop,

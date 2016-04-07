@@ -1234,7 +1234,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RAnal *anal) {
 	const char *p;
 	if (anal->bits == 64) {
 		p = \
@@ -1382,8 +1382,7 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	gef	.4	72.16	0	great_or_equal\n" // +16
 		;
 	}
-
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
 static int archinfo(RAnal *anal, int q) {
@@ -1410,7 +1409,7 @@ RAnalPlugin r_anal_plugin_arm_cs = {
 	.esil = true,
 	.arch = "arm",
 	.archinfo = archinfo,
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = get_reg_profile,
 	.bits = 16 | 32 | 64,
 	.op = &analop,
 };

@@ -1028,6 +1028,7 @@ typedef int (*RAnalBbCallback)(RAnal *a, RAnalBlock *bb, ut64 addr, const ut8 *d
 typedef int (*RAnalFnCallback)(RAnal *a, RAnalFunction *fcn, ut64 addr, const ut8 *data, int len, int reftype);
 
 typedef int (*RAnalRegProfCallback)(RAnal *a);
+typedef char*(*RAnalRegProfGetCallback)(RAnal *a);
 typedef int (*RAnalFPBBCallback)(RAnal *a, RAnalBlock *bb);
 typedef int (*RAnalFPFcnCallback)(RAnal *a, RAnalFunction *fcn);
 typedef int (*RAnalDiffBBCallback)(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2);
@@ -1105,6 +1106,7 @@ typedef struct r_anal_plugin_t {
 	RAnalCmdExt cmd_ext;
 
 	RAnalRegProfCallback set_reg_profile;
+	RAnalRegProfGetCallback get_reg_profile;
 	RAnalFPBBCallback fingerprint_bb;
 	RAnalFPFcnCallback fingerprint_fcn;
 	RAnalDiffBBCallback diff_bb;
@@ -1158,12 +1160,13 @@ R_API RAnal *r_anal_free(RAnal *r);
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API void r_anal_plugin_free (RAnalPlugin *p);
 R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo);
-R_API int r_anal_list(RAnal *anal);
+R_API void r_anal_list(RAnal *anal);
 R_API int r_anal_archinfo(RAnal *anal, int query);
-R_API int r_anal_use(RAnal *anal, const char *name);
-R_API int r_anal_set_reg_profile(RAnal *anal);
-R_API int r_anal_set_bits(RAnal *anal, int bits);
-R_API int r_anal_set_os(RAnal *anal, const char *os);
+R_API bool r_anal_use(RAnal *anal, const char *name);
+R_API bool r_anal_set_reg_profile(RAnal *anal);
+R_API char *r_anal_get_reg_profile(RAnal *anal);
+R_API bool r_anal_set_bits(RAnal *anal, int bits);
+R_API bool r_anal_set_os(RAnal *anal, const char *os);
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu);
 R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API char *r_anal_strmask (RAnal *anal, const char *data);

@@ -96,8 +96,8 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int set_reg_profile(RAnal *anal) {
-	const char *p = \
+static char *get_reg_profile(RAnal *anal) {
+	return strdup (
 		"=PC	pc\n"
 		"=BP	brk\n"
 		"=SP	ptr\n"
@@ -109,8 +109,8 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	pc	.32	4	0\n" // program counter
 		"gpr	brk	.32	8	0\n" // brackets
 		"gpr	scr	.32	12	0\n" // screen
-		"gpr	kbd	.32	16	0\n"; // keyboard
-	return r_reg_set_profile_string (anal->reg, p);
+		"gpr	kbd	.32	16	0\n" // keyboard
+	);
 }
 
 struct r_anal_plugin_t r_anal_plugin_bf = {
@@ -121,7 +121,7 @@ struct r_anal_plugin_t r_anal_plugin_bf = {
 	.bits = 8,
 	.esil = true,
 	.op = &bf_op,
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = get_reg_profile,
 };
 
 #ifndef CORELIB
