@@ -1884,7 +1884,7 @@ static void bin_mem_print(RList *mems, int perms, int depth, int mode) {
 			if (IS_MODE_JSON(mode)) {
 				if (iter->n) {
 					r_cons_printf (",\n");
-                } else if ((!(iter->n) && (depth == 0))) {
+				} else if ((!(iter->n) && (depth == 0))) {
 					r_cons_printf ("]\n");
 				}
 			}
