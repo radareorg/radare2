@@ -205,7 +205,8 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.create = &create,
-	.classes = &MACH0_(parse_classes)
+	.classes = &MACH0_(parse_classes),
+	.write = &r_bin_write_mach0,
 };
 
 #ifndef CORELIB

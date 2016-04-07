@@ -1,5 +1,3 @@
-/* radare - LGPL - Copyright 2008-2015 - nibble, pancake */
-
 #ifndef R2_BIN_H
 #define R2_BIN_H
 
@@ -399,6 +397,7 @@ typedef struct r_bin_write_t {
 	bool (*scn_perms)(RBinFile *arch, const char *name, int perms);
 	int (*rpath_del)(RBinFile *arch);
 	bool (*entry)(RBinFile *arch, ut64 addr);
+	bool (*addlib)(RBinFile *arch, const char *lib);
 } RBinWrite;
 
 // TODO: deprecate r_bin_is_big_endian
@@ -527,6 +526,7 @@ R_API int r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line);
 R_API char *r_bin_addr2text(RBin *bin, ut64 addr);
 R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr);
 /* bin_write.c */
+R_API bool r_bin_wr_addlib(RBin *bin, const char *lib);
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms);
 R_API bool r_bin_wr_rpath_del(RBin *bin);

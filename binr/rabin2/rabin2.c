@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -355,7 +355,18 @@ static int rabin_do_operation(const char *op) {
 		case 'S':
 			if (!ptr2)
 				goto _rabin_do_operation_error;
-			else if (!rabin_dump_sections (ptr2))
+			if (!rabin_dump_sections (ptr2))
+				goto error;
+			break;
+		default:
+			goto _rabin_do_operation_error;
+		}
+		break;
+	case 'a':
+		if (!ptr) goto _rabin_do_operation_error;
+		switch (*ptr) {
+		case 'l':
+			if (!ptr2 || !r_bin_wr_addlib (bin, ptr2))
 				goto error;
 			break;
 		default:
@@ -594,11 +605,12 @@ int main(int argc, char **argv) {
 			if (isBinopHelp (op)) {
 				printf ("Operation string:\n"
 					"  Change Entrypoint: e/0x8048000\n"
-					"  Dump symbols: d/s/1024\n"
-					"  Dump section: d/S/.text\n"
-					"  Resize section: r/.data/1024\n"
+					"  Dump Symbols: d/s/1024\n"
+					"  Dump Section: d/S/.text\n"
+					"  Resize Section: r/.data/1024\n"
 					"  Remove RPATH: R\n"
-					"  Change permissions: p/.data/rwx\n");
+					"  Add Library: a/l/libfoo.dylib\n"
+					"  Change Permissions: p/.data/rwx\n");
 				r_core_fini (&core);
 				return 0;
 			}
