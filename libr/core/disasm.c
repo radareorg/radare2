@@ -14,6 +14,7 @@
 #define COLOR_CONST(ds, color) (ds->show_color ? Color_ ## color : "")
 #define COLOR_RESET(ds) COLOR_CONST(ds, RESET)
 
+
 static const char* r_vline_a[] = {
 	"|", // LINE_VERT
 	"|-", // LINE_CROSS
@@ -191,6 +192,7 @@ typedef struct r_disam_options_t {
 
 // TODO: put RCore inside RDisasmState and rename all functions to be ds_XXX
 
+static void handle_print_pre (RCore *core, RDisasmState *ds, bool tail);
 static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre);
 static void handle_print_esil_anal(RCore *core, RDisasmState *ds);
 static void handle_reflines_init (RAnal *anal, RDisasmState *ds);
@@ -940,18 +942,7 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 			idx = 12 - strlen (var->name);
 			if (idx < 0) idx = 0;
 			spaces[idx] = 0;
-#if 0
-			if (!ds->show_fcnlines) {
-				r_cons_printf ("%s", ds->refline2);
-			} else {
-				r_cons_printf ("%s%s %s%s%s",
-					COLOR (ds, color_fline), core->cons->vline[LINE_VERT],
-					COLOR (ds, color_flow), ds->refline2,
-					COLOR_RESET (ds));
-			}
-#endif
-			r_cons_printf ("%s%s %s",
-				COLOR (ds, color_fline), core->cons->vline[LINE_VERT], COLOR_RESET(ds));
+			handle_print_pre (core, ds, false);
 			handle_print_lines_left (core, ds);
 			if (ds->show_flgoff) {
 				handle_print_offset (core, ds);
