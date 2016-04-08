@@ -1,0 +1,19 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/radare/r2pipe.go"
+R2PM_DESC "[syspkg-r2pipe] r2pipe API for Go"
+
+R2PM_INSTALL() {
+	go get github.com/radare/r2pipe.go
+	go get github.com/radare/radare2/
+
+	cd $GOPATH/src/github.com/radare/radare2/radare2-bindings/
+	cd go && make
+	mkdir $GOPATH/src/r_bin
+	cp * $GOPATH/src/r_bin/
+}
+
+R2PM_UNINSTALL() {
+	rm -f $(GOPATH)/src/r_bin
+	rm -f $(GOPATH)/src/github/radare/r2pipe.go
+}
