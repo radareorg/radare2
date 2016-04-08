@@ -80,7 +80,9 @@ typedef struct r_disam_options_t {
 	int show_emu_str;
 	int show_emu_write;
 	int show_section;
+	int show_section_col;
 	int show_symbols;
+	int show_symbols_col;
 	int show_offseg;
 	int show_flags;
 	int show_bytes;
@@ -256,6 +258,8 @@ static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_s
 	}
 }
 
+#endif
+
 static const char *getSectionName (RCore *core, ut64 addr) {
 	static char section[128] = "";
 	static ut64 oaddr = UT64_MAX;
@@ -375,7 +379,9 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
 	ds->show_bbline = r_config_get_i (core->config, "asm.bbline");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
+	ds->show_section_col = r_config_get_i (core->config, "asm.section.col");
 	ds->show_symbols = r_config_get_i (core->config, "asm.symbol");
+	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
 	ds->show_emu_str = r_config_get_i (core->config, "asm.emustr");
 	ds->show_emu_write = r_config_get_i (core->config, "asm.emuwrite");
@@ -676,11 +682,7 @@ R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 }
 
 static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre) {
-	const char *section = "";
 	const char *pre = ds->pre;
-	if (ds->show_section) {
-		section = getSectionName (core, ds->at);
-	}
 	if (nopre) {
 		if (*pre == '/' || *pre == '\\')
 			pre = "  ";
@@ -689,11 +691,10 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nop
 		r_cons_printf ("%s%s%s", COLOR (ds, color_fline),
 			f ? pre : "  ", COLOR_RESET (ds));
 	}
-	if (ds->show_lines && !ds->linesright) {
-		r_cons_printf ("%s%s%s%s",
-			section, COLOR (ds, color_flow),
-			f ? ds->refline2 : "  ", COLOR_RESET (ds));
-	}
+	char *tmp = ds->line;
+	ds->line = ds->refline2;
+	handle_print_lines_left (core, ds);
+	ds->line = tmp;
 }
 
 static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
@@ -941,6 +942,7 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 			idx = 12 - strlen (var->name);
 			if (idx < 0) idx = 0;
 			spaces[idx] = 0;
+#if 0
 			if (!ds->show_fcnlines) {
 				r_cons_printf ("%s", ds->refline2);
 			} else {
@@ -949,6 +951,10 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 					COLOR (ds, color_flow), ds->refline2,
 					COLOR_RESET (ds));
 			}
+#endif
+			r_cons_printf ("%s%s %s",
+				COLOR (ds, color_fline), core->cons->vline[LINE_VERT], COLOR_RESET(ds));
+			handle_print_lines_left (core, ds);
 			if (ds->show_flgoff) {
 				handle_print_offset (core, ds);
 				r_cons_printf ("     ");
@@ -1068,7 +1074,7 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 		/* print multiline comment */
 		if (ds->cmtfold) {
 			char * p = strdup (ds->comment);
-			char *q = strchr(p,'\n');
+			char *q = strchr (p, '\n');
 			if (q) {
 				*q = 0;
 				r_cons_strcat (p);
@@ -1261,9 +1267,41 @@ static void handle_print_lines_right (RCore *core, RDisasmState *ds){
 	}
 }
 
+static void printCol (RDisasmState *ds, char *sect, int cols, const char *color) {
+	int pre, post;
+	if (cols < 8) cols = 8;
+	int outsz = cols + 32;
+	char *out = malloc (outsz);
+	memset (out, ' ', outsz);
+	int sect_len = strlen (sect);
+
+	if (sect_len > cols) {
+		sect[cols-2] = '.';
+		sect[cols-1] = '.';
+		sect[cols] = 0;
+	}
+	if (ds->show_color) {
+		pre = strlen (color) + 1;
+		post = strlen (color) + 1 + strlen (Color_RESET);
+		snprintf (out, outsz-pre, "%s %s", color, sect);
+		strcat (out, Color_RESET);
+		out[outsz-1] = 0;
+	} else {
+		strcpy (out + 1, sect);
+		pre = 1;
+		post = 0;
+	}
+	out[strlen (out)] = ' ';
+	out[cols + post] = 0;
+	r_cons_strcat (out);
+	free (out);
+}
+
 static void handle_print_lines_left (RCore *core, RDisasmState *ds) {
 	if (ds->show_section) {
-		r_cons_strcat (getSectionName (core, ds->at));
+		char *sect = strdup (getSectionName (core, ds->at));
+		printCol (ds, sect, ds->show_section_col, ds->color_reg);
+		free (sect);
 	}
 	if (ds->show_symbols) {
 		static RFlagItem sfi = {0};
@@ -1281,11 +1319,15 @@ static void handle_print_lines_left (RCore *core, RDisasmState *ds) {
 				ds->lastflag = &sfi;
 			}
 		}
-		if (ds->lastflag) {
+		if (ds->lastflag && ds->lastflag->name) {
 			name = ds->lastflag->name;
 			delta = ds->at - ds->lastflag->offset;
 		}
-		r_cons_printf ("%20s + %-4d", name, delta);
+		{
+			char * str = r_str_newf ("%s + %-4d", name, delta);
+			printCol (ds, str, ds->show_symbols_col, ds->color_num);
+			free (str);
+		}
 	}
 	if (!ds->linesright && ds->show_lines && ds->line) {
 		r_cons_printf ("%s%s%s", COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
@@ -1316,7 +1358,7 @@ static void handle_print_cycles (RCore *core, RDisasmState *ds) {
 
 static void handle_print_stackptr (RCore *core, RDisasmState *ds) {
 	if (ds->show_stackptr) {
-		r_cons_printf ("%3d%s", ds->stackptr,
+		r_cons_printf ("%5d%s", ds->stackptr,
 			ds->analop.type==R_ANAL_OP_TYPE_CALL?">":
 			ds->stackptr>ds->ostackptr?"+":ds->stackptr<ds->ostackptr?"-":" ");
 		ds->ostackptr = ds->stackptr;
@@ -1443,12 +1485,12 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 			if (!p) {
 				continue;
 			}
-			MI.space = atoi (p+1);
-			q = strchr (p+1, ',');
+			MI.space = atoi (p + 1);
+			q = strchr (p + 1, ',');
 			if (!q) {
 				continue;
 			}
-			MI.str = (char*)sdb_decode (q+1, 0);
+			MI.str = (char*)sdb_decode (q + 1, 0);
 		} else MI.str = NULL;
 		// sdb-get blah
 		// TODO: implement ranged meta find (if not at the begging of function..
@@ -2403,7 +2445,9 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, usefmt, spv);
 				r_cons_chop ();
 			} else {
-				r_cons_printf ("\n; CALL: ");
+				handle_print_pre (core, ds, false);
+				handle_print_lines_left (core, ds);
+				r_cons_printf ("; CALL: ");
 				for (i = 0; i < nargs; i++) {
 					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
 					r_cons_printf ("%s0x%"PFMT64x, i?", ":"", v);

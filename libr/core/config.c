@@ -1475,6 +1475,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.spacy", "false", "Spacy disasm after calls and before flags");
 	SETPREF("asm.reloff", "false", "Show relative offsets instead of absolute address in disasm");
 	SETPREF("asm.section", "false", "Show section name before offset");
+	SETI("asm.section.col", 20, "Columns width to show asm.section");
 	SETPREF("asm.pseudo", "false", "Enable pseudo syntax");
 	SETPREF("asm.size", "false", "Show size of opcodes in disassembly (pd)");
 	SETPREF("asm.stackptr", "false", "Show stack pointer at disassembly");
@@ -1493,6 +1494,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.cmtfold", "false", "Fold comments, toggle with Vz");
 	SETPREF("asm.family", "false", "Show family name in disasm");
 	SETPREF("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
+	SETI("asm.symbol.col", 40, "Columns width to show asm.section");
 	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be used by asm");
 	SETCB("asm.features", "", &cb_asmfeatures, "Specify supported features by the target CPU (=? for help)");
 	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");

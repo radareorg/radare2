@@ -240,24 +240,51 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 	return true;
 }
 
-R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 off, int type, int where) {
-	static RAnalMetaItem it = {0};
+R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
+	const char *infos, *metas;
+	char key[100];
+	Sdb *s = a->sdb_meta;
+	static RAnalMetaItem mi = {0};
 	// XXX: return allocated item? wtf
 	if (where != R_META_WHERE_HERE) {
 		eprintf ("THIS WAS NOT SUPOSED TO HAPPEN\n");
 		return NULL;
 	}
-	//char *range = get_in_range (off);
-	if (type == R_META_TYPE_ANY) {
-		//const char *p;
-	//	char key [100];
-	//	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, off);
-		//p = sdb_const_get (DB, key, 0);
-// XXX: TODO unimplemented. see core/disasm.c:1070
-	} else {
-	//	snprintf (key, sizeof (key)-1, "meta.
+
+	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, at);
+	infos = sdb_const_get (s, key, 0);
+	if (!infos)
+		return NULL;
+	for (; *infos; infos++) {
+		/* XXX wtf, must use anal.meta.deserialize() */
+		char *p, *q;
+		if (*infos==',')
+			continue;
+		snprintf (key, sizeof (key) - 1, "meta.%c.0x%"PFMT64x, *infos, at);
+		metas = sdb_const_get (s, key, 0);
+		mi.size = sdb_array_get_num (s, key, 0, 0);
+		mi.type = *infos;
+		mi.from = at;
+		mi.to = at + mi.size;
+		if (type != R_META_TYPE_ANY && type != mi.type) {
+			continue;
+		}
+		if (metas) {
+			p = strchr (metas, ',');
+			if (!p) {
+				continue;
+			}
+			mi.space = atoi (p + 1);
+			q = strchr (p + 1, ',');
+			if (!q) {
+				continue;
+			}
+			free (mi.str);
+			mi.str = (char*)sdb_decode (q + 1, 0);
+			return &mi;
+		} else mi.str = NULL;
 	}
-	return &it;
+	return NULL;
 }
 
 R_API const char *r_meta_type_to_string(int type) {
