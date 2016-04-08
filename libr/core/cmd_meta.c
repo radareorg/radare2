@@ -499,7 +499,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 							// TODO: filter \n and so on :)
 							strncpy (name, t, sizeof (name)-1);
 							name[sizeof (name)-1] = '\0';
-							int rc = r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
+							(void)r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
 							name[sizeof (name)-1] = '\0';
 							n = strlen (name) + 1;
 							//eprintf ("NAME (%s) %d\n", name, rc);
