@@ -428,16 +428,26 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 	case X86_INS_STOSB:
 			r_strbuf_appendf (&op->esil, "al,edi,=[1],df,?{,1,edi,-=,},df,!,?{,1,edi,+=,}");
 		break;
-	case X86_INS_STOSD:
-	case X86_INS_STOSQ:
 	case X86_INS_STOSW:
+			r_strbuf_appendf (&op->esil, "ax,edi,=[2],df,?{,2,edi,-=,},df,!,?{,2,edi,+=,}");
+		break;
+	case X86_INS_STOSD:
+			r_strbuf_appendf (&op->esil, "eax,edi,=[4],df,?{,4,edi,-=,},df,!,?{,4,edi,+=,}");
+		break;
+	case X86_INS_STOSQ:
+			r_strbuf_appendf (&op->esil, "rax,rdi,=[8],df,?{,8,edi,-=,},df,!,?{,8,edi,+=,}");
 		break;
 	case X86_INS_LODSB:
 			r_strbuf_appendf (&op->esil, "esi,[1],al,=,df,?{,1,esi,-=,},df,!,?{,1,esi,+=,}");
 		break;
-	case X86_INS_LODSD:
-	case X86_INS_LODSQ:
 	case X86_INS_LODSW:
+			r_strbuf_appendf (&op->esil, "esi,[2],ax,=,df,?{,2,esi,-=,},df,!,?{,2,esi,+=,}");
+		break;
+	case X86_INS_LODSD:
+			r_strbuf_appendf (&op->esil, "esi,[4],eax,=,df,?{,4,esi,-=,},df,!,?{,4,esi,+=,}");
+		break;
+	case X86_INS_LODSQ:
+			r_strbuf_appendf (&op->esil, "rsi,[8],rax,=,df,?{,8,rsi,-=,},df,!,?{,8,rsi,+=,}");
 		break;
 	// string mov
 	case X86_INS_MOVSB:
