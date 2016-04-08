@@ -245,45 +245,37 @@ static int cb_asmbits(void *user, void *data) {
 	const char *asmos, *asmarch;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	int ret;
+	int ret = 0, bits;
 	if (!core) {
 		eprintf ("user can't be NULL\n");
 		return false;
 	}
 
-	ret = r_asm_set_bits (core->assembler, node->i_value);
-	if (ret == false) {
-		RAsmPlugin *h = core->assembler->cur;
-		if (h) {
-			eprintf ("Cannot set bits %"PFMT64d" to '%s'\n",
-					node->i_value, h->name);
-		} else {
-			eprintf ("e asm.bits: Cannot set value, no plugins defined yet\n");
-			ret = true;
+	bits = node->i_value;
+
+	if (bits > 0) {
+		ret = r_asm_set_bits (core->assembler, bits);
+		if (ret == false) {
+			RAsmPlugin *h = core->assembler->cur;
+			if (h) {
+				eprintf ("Cannot set bits %d to '%s'\n", bits, h->name);
+			} else {
+				eprintf ("e asm.bits: Cannot set value, no plugins defined yet\n");
+				ret = true;
+			}
 		}
+		if (!r_anal_set_bits (core->anal, node->i_value)) {
+			eprintf ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
+		}
+		core->print->bits = bits;
 	}
-	if (!r_anal_set_bits (core->anal, node->i_value)) {
-		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", (int)node->i_value);
-	}
-	core->print->bits = node->i_value;
 	if (core->dbg && core->anal && core->anal->cur) {
-		int load_from_debug = 0;
-		r_debug_set_arch (core->dbg, core->anal->cur->arch, node->i_value);
+		bool load_from_debug = false;
+		r_debug_set_arch (core->dbg, core->anal->cur->arch, bits);
 		if (r_config_get_i (core->config, "cfg.debug")) {
-			if (core->dbg->h && core->dbg->h->reg_profile) {
-				char *rp = core->dbg->h->reg_profile (core->dbg);
-				r_reg_set_profile_string (core->dbg->reg, rp);
-				r_reg_set_profile_string (core->anal->reg, rp);
-				free (rp);
-			} else {
-				load_from_debug = 1;
-			}
+			load_from_debug = true;
 		} else {
-			if (core->anal->cur->set_reg_profile) {
-				core->anal->cur->set_reg_profile (core->anal);
-			} else {
-				load_from_debug = 1;
-			}
+			(void)r_anal_set_reg_profile (core->anal);
 		}
 		if (load_from_debug) {
 			if (core->dbg->h && core->dbg->h->reg_profile) {
@@ -298,8 +290,7 @@ static int cb_asmbits(void *user, void *data) {
 	asmos = r_config_get (core->config, "asm.os");
 	asmarch = r_config_get (core->config, "asm.arch");
 	if (core->anal) {
-		if (!r_syscall_setup (core->anal->syscall, asmarch,
-					asmos, node->i_value)) {
+		if (!r_syscall_setup (core->anal->syscall, asmarch, asmos, bits)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
