@@ -445,7 +445,9 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 			r_meta_list (core->anal, type, 0);
 			break;
 		}
-		{
+		if (type == 'z')
+			type = 's';
+		if (strlen (input) > 2) {
 			char *rep = strchr (input + 2, '[');
 			if (!rep) rep = strchr (input + 2, ' ');
 			if (rep) {
@@ -453,13 +455,13 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 			}
 		}
 		int repcnt = 0;
-		if (repeat <1) repeat = 1;
+		if (repeat < 1) repeat = 1;
 		while (repcnt < repeat) {
 			t = strdup (input+2);
 			p = NULL;
 			n = 0;
 			strncpy (name, t, sizeof (name) - 1);
-			if (*input != 'C') {
+			if (type != 'C') {
 				n = r_num_math (core->num, t);
 				if (type == 'f') {
 					p = strchr (t, ' ');
@@ -474,7 +476,13 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 					 * save and reload.
 					 */
 					p = strchr (t, ' ');
-					if (p) addr = r_num_math (core->num, p+1);
+					if (p) addr = r_num_math (core->num, p + 1);
+					if (!addr) {
+						addr = 128;
+					}
+					free (t);
+					t = strdup ("");
+					n = 250;
 				}
 				if (!*t || n > 0) {
 					RFlagItem *fi;
@@ -482,24 +490,30 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 					if (p) {
 						*p = '\0';
 						strncpy (name, p+1, sizeof (name)-1);
-					} else
+					} else {
 						switch (type) {
-							case 'z':
-								type = 's';
-								/* fallthrough */
-							case 's':
-								// TODO: filter \n and so on :)
-								strncpy (name, t, sizeof (name)-1);
-								name[sizeof (name)-1] = '\0';
-								r_core_read_at (core, addr, (ut8*)name, sizeof (name)-1);
-								if (n < sizeof (name)) {
-									name[n] = '\0';
-								} else name[sizeof (name)-1] = '\0';
-								break;
-							default:
-								fi = r_flag_get_i (core->flags, addr);
-								if (fi) strncpy (name, fi->name, sizeof (name)-1);
+						case 'z':
+							type = 's';
+							/* fallthrough */
+						case 's':
+							// TODO: filter \n and so on :)
+							strncpy (name, t, sizeof (name)-1);
+							name[sizeof (name)-1] = '\0';
+							int rc = r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
+							name[sizeof (name)-1] = '\0';
+							n = strlen (name) + 1;
+							//eprintf ("NAME (%s) %d\n", name, rc);
+#if 0
+							if (n < sizeof (name)) {
+								name[n] = '\0';
+							} else name[sizeof (name)-1] = '\0';
+#endif
+							break;
+						default:
+							fi = r_flag_get_i (core->flags, addr);
+							if (fi) strncpy (name, fi->name, sizeof (name)-1);
 						}
+					}
 				} else if (n<1) {
 					eprintf ("Invalid length %d\n", n);
 					return false;
@@ -541,6 +555,7 @@ static int cmd_meta(void *data, const char *input) {
 		break;
 	case 'h': /* comment */
 	case 's': /* string */
+	case 'z': /* zero-terminated string */
 	case 'd': /* data */
 	case 'm': /* magic */
 	case 'f': /* formatted */
@@ -565,6 +580,7 @@ static int cmd_meta(void *data, const char *input) {
 				"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
 				"CCu", " [comment-text] [@addr]", "add unique comment",
 				"Cs", "[-] [size] [@addr]", "add string",
+				"Cz", "[@addr]", "add zero-terminated string",
 				"Ch", "[-] [size] [@addr]", "hide data",
 				"Cd", "[-] [size] [repeat] [@addr]", "hexdump data array (Cd 4 10 == dword [10])",
 				"Cf", "[-] [sz] [fmt..] [@addr]", "format memory (see pf?)",
