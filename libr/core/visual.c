@@ -1741,10 +1741,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			} else {
 				switch (buf[i]) {
 				case '-':
-					memcpy (buf, "\"CC-\x00", 4);
+					memcpy (buf, "\"CC-\x00", 5);
 					break;
 				case '!':
-					memcpy (buf, "\"CC!\x00", 4);
+					memcpy (buf, "\"CC!\x00", 5);
 					break;
 				default:
 					memcpy (buf, "\"CC ", 4);
