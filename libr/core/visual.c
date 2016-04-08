@@ -1741,16 +1741,33 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			} else {
 				switch (buf[i]) {
 				case '-':
-					memcpy (buf, "\"CC-", 4);
+					memcpy (buf, "\"CC-\x00", 4);
 					break;
 				case '!':
-					memcpy (buf, "\"CC!", 4);
+					memcpy (buf, "\"CC!\x00", 4);
 					break;
 				default:
 					memcpy (buf, "\"CC ", 4);
 					break;
 				}
 				strcat (buf, "\"");
+			}
+			if (buf[3] == ' ') {
+				// have to escape any quotes.
+				int j, len = strlen (buf);
+				char* duped = strdup (buf);
+				i = 4, j=4;
+				for (i=4, j=4; i < len; ++i,++j) {
+					char c = duped[i];
+					if (c == '"' && i != (len - 1)) {
+						buf[j] = '\\';
+						++j;
+						buf[j] = '"';
+					} else {
+						buf[j] = c;
+					}
+				}
+				free (duped);
 			}
 			r_core_cmd (core, buf, 1);
 			if (core->print->cur_enabled) r_core_seek (core, orig, 1);
