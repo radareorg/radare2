@@ -57,11 +57,11 @@ extern char *strdup (const char *);
 #define SDB_KSZ 0xff
 
 typedef struct sdb_kv {
-	char key[SDB_KSZ];
+	char *key;
 	char *value;
 	int value_len;
-	ut64 expire;
 	ut32 cas;
+	ut64 expire;
 } SdbKv;
 
 typedef struct sdb_t {

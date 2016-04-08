@@ -23,8 +23,6 @@
  *
  */
 
-#include "avr_disasm.h"
-
 /* Sorted by number of operands so disassembler can find the most
  * simplifed form of an instruction first.
  * i.e. clr R16 instead of eor R16, R16 */
@@ -44,7 +42,7 @@
  * for a different operand type, because they are clearly written out 
  * in the instruction set data structure.
  */ 
-instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS] = {
+static instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS] = {
 	{"break", 0x9598, 0, {0x0000, 0x0000}, {OPERAND_NONE, OPERAND_NONE}},
 	{"clc", 0x9488, 0, {0x0000, 0x0000}, {OPERAND_NONE, OPERAND_NONE}},
 	{"clh", 0x94d8, 0, {0x0000, 0x0000}, {OPERAND_NONE, OPERAND_NONE}},
@@ -109,6 +107,10 @@ instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS] = {
 	{"lsr", 0x9406, 1, {0x01f0, 0x0000}, {OPERAND_REGISTER, OPERAND_NONE}},
 	{"neg", 0x9401, 1, {0x01f0, 0x0000}, {OPERAND_REGISTER, OPERAND_NONE}},
 	{"pop", 0x900f, 1, {0x01f0, 0x0000}, {OPERAND_REGISTER, OPERAND_NONE}},
+	{"xch", 0x9204, 2, {0x0000, 0x01f0}, {OPERAND_Z, OPERAND_REGISTER}},
+	{"las", 0x9205, 2, {0x0000, 0x01f0}, {OPERAND_Z, OPERAND_REGISTER}},
+	{"lac", 0x9206, 2, {0x0000, 0x01f0}, {OPERAND_Z, OPERAND_REGISTER}},
+	{"lat", 0x9207, 2, {0x0000, 0x01f0}, {OPERAND_Z, OPERAND_REGISTER}},
 	{"push", 0x920f, 1, {0x01f0, 0x0000}, {OPERAND_REGISTER, OPERAND_NONE}},
 	{"rcall", 0xd000, 1, {0x0fff, 0x0000}, {OPERAND_RELATIVE_ADDRESS, OPERAND_NONE}},
 	{"rjmp", 0xc000, 1, {0x0fff, 0x0000}, {OPERAND_RELATIVE_ADDRESS, OPERAND_NONE}},
@@ -152,6 +154,8 @@ instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS] = {
 	{"ldd", 0x8008, 2, {0x01f0, 0x2c07}, {OPERAND_REGISTER, OPERAND_YPQ}},
 	{"ldd", 0x8000, 2, {0x01f0, 0x2c07}, {OPERAND_REGISTER, OPERAND_ZPQ}},
 	{"ldi", 0xe000, 2, {0x00f0, 0x0f0f}, {OPERAND_REGISTER_STARTR16, OPERAND_DATA}},
+	{"std", 0x8208, 2, {0x2c07, 0x01f0}, {OPERAND_YPQ, OPERAND_REGISTER}},
+	{"std", 0x8200, 2, {0x2c07, 0x01f0}, {OPERAND_ZPQ, OPERAND_REGISTER}},
 	{"lds", 0x9000, 2, {0x01f0, 0x0000}, {OPERAND_REGISTER, OPERAND_LONG_ABSOLUTE_ADDRESS}},
 	{"lds", 0xA000, 2, {0x00f0, 0x070f}, {OPERAND_REGISTER_STARTR16, OPERAND_DATA}},
 	{"mov", 0x2c00, 2, {0x01f0, 0x020f}, {OPERAND_REGISTER, OPERAND_REGISTER}},
@@ -180,10 +184,8 @@ instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS] = {
 	{"st", 0x8200, 2, {0x0000, 0x01f0}, {OPERAND_Z, OPERAND_REGISTER}},
 	{"st", 0x9201, 2, {0x0000, 0x01f0}, {OPERAND_ZP, OPERAND_REGISTER}},
 	{"st", 0x9202, 2, {0x0000, 0x01f0}, {OPERAND_MZ, OPERAND_REGISTER}},
-	{"std", 0x8208, 2, {0x2c07, 0x01f0}, {OPERAND_YPQ, OPERAND_REGISTER}},
-	{"std", 0x8200, 2, {0x2c07, 0x01f0}, {OPERAND_ZPQ, OPERAND_REGISTER}},
 	{"sts", 0x9200, 2, {0x0000, 0x01f0}, {OPERAND_LONG_ABSOLUTE_ADDRESS, OPERAND_REGISTER}},
-	{"sts", 0xA800, 2, {0x00f0, 0x070f}, {OPERAND_REGISTER_STARTR16, OPERAND_DATA}},
+	{"sts", 0xA800, 2, {0x00f0, 0x070f}, {OPERAND_DATA, OPERAND_REGISTER_STARTR16}}, // was {OPERAND_REGISTER_STARTR16, OPERAND_DATA}, bug?
 	{"sub", 0x1800, 2, {0x01f0, 0x020f}, {OPERAND_REGISTER, OPERAND_REGISTER}},
 	{"subi", 0x5000, 2, {0x00f0, 0x0f0f}, {OPERAND_REGISTER_STARTR16, OPERAND_DATA}},
 	{".word", 0x0000, 1, {0xFFFF, 0x0000}, {OPERAND_WORD_DATA, OPERAND_NONE}},

@@ -54,7 +54,7 @@ static inline _sfsyscall4(long, ptrace, int, request, pid_t, pid, void *,addr, v
 // recvmsg
 // sendmsg
 static inline _sfsyscall6(ssize_t, recvfrom, int, s, void * , buf, size_t, len, int, flags, struct sockaddr * , from, socklen_t * , fromlen)
-static inline _sfsyscall3(int, accept, int,s, struct sockaddr *,addr, socklen_t,addrlen);
+static inline _sfsyscall3(int, accept, int,s, struct sockaddr *,addr, socklen_t *,addrlen);
 // getpeername
 // getsockname
 static inline _sfsyscall2( int, access, const char *, pathname, int, mode )

@@ -86,7 +86,7 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 	switch (rwx) {
 		case 1: rwx=0; break;
 		case 2: rwx=1; break;
-		case 4: rwx=2; break;
+		case 4: rwx=3; break;
 		default:
 			rwx=0;
 	}
@@ -112,9 +112,7 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 //eprintf ("drx[DR_CONTROL] = %x \n", drx[DR_CONTROL]);	
 	drx[DR_CONTROL] = control;
 //eprintf ("CONTROL = %x\n", control);
-
-
-	return R_TRUE;
+	return true;
 }
 
 ut64 drx_get(drxt *drx, int n, int *rwx, int *len, int *global, int *enabled) {
@@ -136,7 +134,7 @@ ut64 drx_get(drxt *drx, int n, int *rwx, int *len, int *global, int *enabled) {
 
 int drx_next(drxt *drx) {
 	int i;
-	for(i=0; i<4; i++)
+	for (i=0; i<4; i++)
 		if (!drx[i])
 			return i;
 	return -1;

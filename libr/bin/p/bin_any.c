@@ -31,7 +31,11 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->type = get_filetype (arch);
 	ret->has_pi = 0;
 	ret->has_canary = 0;
-	ret->bits = 32;
+	if (R_SYS_BITS & R_SYS_BITS_64) {
+		ret->bits = 64;
+	} else {
+		ret->bits = 32;
+	}
 	ret->big_endian = 0;
 	ret->has_va = 0;
 	ret->has_nx = 0;
@@ -42,11 +46,11 @@ static RBinInfo* info(RBinFile *arch) {
 }
 
 static int load(RBinFile *arch) {
-	return R_TRUE;
+	return true;
 }
 
 static int destroy(RBinFile *arch) {
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -57,28 +61,10 @@ struct r_bin_plugin_t r_bin_plugin_any = {
 	.name = "any",
 	.desc = "Dummy format r_bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
-	.get_sdb = NULL,
 	.load = &load,
-	.load_bytes = NULL,
 	.destroy = &destroy,
-	.check = NULL,
 	.baddr = &baddr,
-	.boffset = NULL,
-	.binsym = NULL,
-	.entries = NULL,
-	.sections = NULL,
-	.symbols = NULL,
-	.imports = NULL,
-	.strings = NULL,
 	.info = info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.dbginfo = NULL,
-	.create = NULL,
-	.write = NULL,
 	.minstrlen = 0,
 };
 

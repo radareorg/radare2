@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 - pancake */
+/* radare - LGPL - Copyright 2010-2015 - pancake */
 
 /* covardly copied from r_cmd */
 
@@ -14,7 +14,7 @@ R_API int r_core_plugin_deinit(RCmd *cmd) {
 	RListIter *iter;
 	RCorePlugin *plugin;
 	if (!cmd->plist)
-		return R_FALSE;
+		return false;
 	r_list_foreach (cmd->plist, iter, plugin) {
 		if (plugin && plugin->deinit) {
 			plugin->deinit (cmd, NULL);
@@ -23,15 +23,14 @@ R_API int r_core_plugin_deinit(RCmd *cmd) {
 	/* empty the list */
 	r_list_free (cmd->plist);
 	cmd->plist = NULL;
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
-	if (plugin->init)
-		if (!plugin->init (cmd, NULL))
-			return R_FALSE;
+	if (plugin->init && !plugin->init (cmd, NULL))
+		return false;
 	r_list_append (cmd->plist, plugin);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_core_plugin_init(RCmd *cmd) {
@@ -40,10 +39,10 @@ R_API int r_core_plugin_init(RCmd *cmd) {
 	for (i=0; cmd_static_plugins[i]; i++) {
 		if (!r_core_plugin_add (cmd, cmd_static_plugins[i])) {
 			eprintf ("Error loading cmd plugin\n");
-			return R_FALSE;
+			return false;
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_core_plugin_check(RCmd *cmd, const char *a0) {
@@ -51,22 +50,7 @@ R_API int r_core_plugin_check(RCmd *cmd, const char *a0) {
 	RCorePlugin *cp;
 	r_list_foreach (cmd->plist, iter, cp) {
 		if (cp->call (NULL, a0))
-			return R_TRUE;
+			return true;
 	}
-	return R_FALSE;
+	return false;
 }
-
-#if 0
-// TODO: must return an r_iter ator
-R_API int r_cmd_plugin_list(struct r_cmd_t *cmd) {
-	int n = 0;
-	struct list_head *pos;
-	cmd->printf ("IO plugins:\n");
-	list_for_each_prev(pos, &cmd->plist) {
-		struct r_cmd_list_t *il = list_entry(pos, struct r_cmd_list_t, list);
-		cmd->printf(" - %s\n", il->plugin->name);
-		n++;
-	}
-	return n;
-}
-#endif

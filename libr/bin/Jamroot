@@ -11,6 +11,9 @@ OBJS += p/bin_ningb.c ;
 OBJS += p/bin_bios.c ;
 OBJS += p/bin_rar.c ;
 OBJS += p/bin_xbe.c ;
+OBJS += p/bin_spc700.c ;
+# PSX-EXE
+OBJS += p/bin_psxexe.c ;
 
 # Plan9
 OBJS += p/bin_p9.c format/p9/p9bin.c ;
@@ -25,6 +28,9 @@ OBJS += p/bin_elf.c format/elf/elf.c ;
 OBJS += p/bin_write_elf.c format/elf/elf_write.c ;
 OBJS += p/bin_elf64.c format/elf/elf64.c ;
 OBJS += p/bin_write_elf64.c format/elf/elf64_write.c ;
+
+# CGC
+OBJS += p/bin_cgc.c format/elf/elf.c ;
 
 # MACH0
 OBJS += p/bin_mach0.c format/mach0/mach0.c ;
@@ -42,6 +48,9 @@ OBJS += p/bin_pe64.c format/pe/pe64.c ;
 
 # OMF
 OBJS += p/bin_omf.c format/omf/omf.c
+
+# MDMP
+OBJS += p/bin_mdmp.c format/mdmp/mdmp.c ;
 
 # DEX
 OBJS += p/bin_dex.c format/dex/dex.c ;
@@ -65,7 +74,8 @@ lib r_bin : $(OBJS) :
     <include>../include
     <include>mangling
     <define>CORELIB
-    <library>../util 
+    <library>../util
+    <library>../lib
     <library>../db
     <library>../../shlr/sdb
     $(EXTRA)

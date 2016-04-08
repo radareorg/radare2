@@ -7,7 +7,7 @@ int main(int argc, char **argv) {
 	char *file;
 	RRunProfile *p;
 	int i, ret;
-	if (argc==1 || !strcmp (argv[1], "-h")) {
+	if (argc == 1 || !strcmp (argv[1], "-h")) {
 		eprintf ("Usage: rarun2 [-v] [script.rr2] [directive ..]\n");
 		printf ("%s", r_run_help ());
 		return 1;
@@ -21,11 +21,16 @@ int main(int argc, char **argv) {
 		p = r_run_new (file);
 	} else {
 		p = r_run_new (NULL);
-		for (i = *file?1:2; i<argc; i++)
+		for (i = *file ? 1 : 2; i < argc; i++)
 			r_run_parseline (p, argv[i]);
 	}
-	if (!p)
+	if (!p) return 1;
+
+	ret = r_run_config_env (p);
+	if (ret) {
+		printf("error while configuring the environment.\n");
 		return 1;
+	}
 	ret = r_run_start (p);
 	r_run_free (p);
 	return ret;

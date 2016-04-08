@@ -12,9 +12,11 @@
 .Op Fl e Ar k=v
 .Op Fl i Ar file
 .Op Fl k Ar k=v
+.Op Fl m Ar addr
 .Op Fl o Ar kernel
 .Op Fl p Ar project
 .Op Fl P Ar patch
+.Op Fl R Ar rarun2
 .Op Fl s Ar addr
 .Op Fl 0AdDwntLquvV
 .Ar -|--|=|file
@@ -36,7 +38,7 @@ Print \\x00 after initialization and after every command executed
 .It Fl a Ar arch
 force asm.arch (x86, ppc, arm, mips, bf, java, ...)
 .It Fl A
-run 'aaa' command before prompt or patch to analyze all referenced code
+run 'aaa' command before prompt or patch to analyze all referenced code. Use -AA to run aaaa
 .It Fl b Ar bits
 force asm.bits (16, 32, 64)
 .It Fl B Ar baddr
@@ -61,8 +63,12 @@ Perform SDB query into the core->sdb instance
 Load given plugin file
 .It Fl L
 List supported IO plugins.
+.It Fl m Ar addr
+map file at given address
+.It Fl M
+Disable demangling
 .It Fl n
-Do not load user settings/projects from ~/.radare2rc and ~/.config/radare2/.
+Do not load user settings/projects from ~/.radare2rc, ~/.config/radare2/radare2rc and the scripts inside .../radare2rc.d/ directory.
 .It Fl nn
 Only load the rbin structures (elf, mach0, ...)
 .It Fl N
@@ -73,6 +79,8 @@ Quiet mode (no prompt)
 Set project file
 .It Fl P Ar file
 Apply rapatch file and quit
+.It Fl R Ar rarun2
+Specify dbg.profile rarun2 profile to use when spawning a program for debugging.
 .It Fl s Ar addr
 Start seeking at this address
 .It Fl S
@@ -100,7 +108,11 @@ To enter visual mode use the 'V' command. Then press '?' for help.
 .Sh DEBUGGER
 In r2 the debugger commands are implemented under the 'd' command. Type 'd?' for help.
 .Sh ENVIRONMENT
-These values can be used from scripts launched from inside radare ('!' command)
+ RHOMEDIR     ~/.config/radare2
+ RCFILE       ~/.radare2rc (user preferences, batch script)
+ MAGICPATH    /usr/lib/radare2/0.10.0-git/magic
+ R_DEBUG      if defined, show error messages and crash signal
+ VAPIDIR      path to extra vapi directory
 .Ar FILE
 path to the current working file.
 .Sh SEE ALSO

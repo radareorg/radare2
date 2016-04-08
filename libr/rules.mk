@@ -12,7 +12,6 @@ endif
 
 ALL?=
 CFLAGS+=-I$(LIBR)/include
-CFLAGS+=-DGIT_TAP=\"${GIT_TAP}\"
 LINK+=$(addprefix -L../,$(subst r_,,$(BINDEPS)))
 LINK+=$(addprefix -l,$(BINDEPS))
 SRC=$(subst .o,.c,$(OBJ))
@@ -22,7 +21,7 @@ LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 BEXE=$(BIN)$(EXT_EXE)
 
 ifeq ($(USE_RPATH),1)
-LINK+=-Wl,-rpath "${PREFIX}/lib"
+LINK+=-Wl,-rpath "${LIBDIR}"
 endif
 
 ifeq (${OSTYPE},gnulinux)
@@ -63,7 +62,7 @@ ${LIBSO}: $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	    [ -n "${SILENT}" ] && \
 	    echo "LD $(LIBSO)" || \
 	    echo "${CC_LIB} ${LIBNAME} ${OBJS} ${SHARED_OBJ} ${LINK} ${LDFLAGS}" ; \
-	    ${CC_LIB} ${LIBNAME} ${OBJS} ${SHARED_OBJ} ${LINK} ${LDFLAGS} || exit 1; \
+	    ${CC_LIB} ${LIBNAME} ${CFLAGS} ${OBJS} ${SHARED_OBJ} ${LINK} ${LDFLAGS} || exit 1; \
 	    [ -f "$(LIBR)/stripsyms.sh" ] && sh $(LIBR)/stripsyms.sh ${LIBSO} ${NAME} ; \
 	  break ; \
 	fi ; done
@@ -76,7 +75,9 @@ $(LIBAR): ${OBJS}
 ifneq ($(SILENT),)
 	echo "CC_AR $(LIBAR)"
 endif
+	rm -f $(LIBAR)
 	${CC_AR} ${OBJS} ${SHARED_OBJ}
+	${RANLIB} $(LIBAR)
 else
 $(LIBAR): ;
 endif

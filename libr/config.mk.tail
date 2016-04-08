@@ -100,6 +100,12 @@ endif
 ifeq (${OSTYPE},freebsd)
 OSTYPE=bsd
 endif
+ifeq (${OSTYPE},dragonfly)
+OSTYPE=bsd
+endif
+ifeq (${OSTYPE},bitrig)
+OSTYPE=bsd
+endif
 # Output
 ifeq (${OSTYPE},windows)
 CFLAGS+=-D__WINDOWS__=1

@@ -5,6 +5,8 @@
 #include <r_util.h>
 #include <r_list.h>
 
+#define DFLT_NINSTR 3
+
 R_API RAnalBlock *r_anal_bb_new() {
 	RAnalBlock *bb = R_NEW0 (RAnalBlock);
 	if (!bb) return NULL;
@@ -20,6 +22,8 @@ R_API RAnalBlock *r_anal_bb_new() {
 	bb->fingerprint = NULL;
 	bb->diff = r_anal_diff_new ();
 	bb->label = NULL;
+	bb->op_pos = R_NEWS (ut16, DFLT_NINSTR);
+	bb->n_op_pos = DFLT_NINSTR;
 	return bb;
 }
 
@@ -32,8 +36,9 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 		bb->diff = NULL;
 	}
 	free (bb->op_bytes);
-	if (bb->switch_op)
+	if (bb->switch_op) {
 		r_anal_switch_op_free (bb->switch_op);
+	}
 #if R_ANAL_BB_HAS_OPS
 	r_list_free (bb->ops);
 	bb->ops = NULL;
@@ -41,6 +46,7 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 	bb->fingerprint = NULL;
 	bb->cond = NULL;
 	free (bb->label);
+	free (bb->op_pos);
 	free (bb);
 }
 
@@ -55,8 +61,9 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 	RAnalOp *op = NULL;
 	int oplen, idx = 0;
 
-	if (bb->addr == -1)
+	if (bb->addr == -1) {
 		bb->addr = addr;
+	}
 	len -= 16; // XXX: hack to avoid segfault by x86im
 	while (idx < len) {
 		// TODO: too slow object construction
@@ -64,7 +71,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			eprintf ("Error: new (op)\n");
 			return R_ANAL_RET_ERROR;
 		}
-		if ((oplen = r_anal_op (anal, op, addr+idx, buf+idx, len-idx)) == 0) {
+		if ((oplen = r_anal_op (anal, op, addr + idx, buf + idx, len - idx)) == 0) {
 			r_anal_op_free (op);
 			op = NULL;
 			if (idx == 0) {
@@ -73,19 +80,24 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			}
 			break;
 		}
-		if (oplen<1)
+		if (oplen < 1) {
 			return R_ANAL_RET_END;
+		}
+
+		r_anal_bb_set_offset (bb, bb->ninstr, addr + idx - bb->addr);
 		idx += oplen;
 		bb->size += oplen;
 		bb->ninstr++;
 #if R_ANAL_BB_HAS_OPS
 		r_list_append (bb->ops, op);
 #endif
-		if (head)
+		if (head) {
 			bb->type = R_ANAL_BB_TYPE_HEAD;
+		}
+
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_CMP:
-			r_anal_cond_free(bb->cond);
+			r_anal_cond_free (bb->cond);
 			bb->cond = r_anal_cond_new_from_op (op);
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
@@ -109,7 +121,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			bb->type |= R_ANAL_BB_TYPE_LAST;
 			goto beach;
 		case R_ANAL_OP_TYPE_LEA:
-{
+		{
 			RAnalValue *src = op->src[0];
 			if (src && src->reg && anal->reg) {
 				const char *pc = anal->reg->name[R_REG_NAME_PC];
@@ -122,7 +134,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 					r_anal_ref_add (anal, ptr, addr+idx-op->size, 'd');
 				}
 			}
-}
+		}
 		}
 		r_anal_op_free (op);
 	}
@@ -145,4 +157,43 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 			if (r_anal_bb_is_in_offset (bb, off))
 				return bb;
 	return NULL;
+}
+
+/* return the offset of the i-th instruction in the basicblock bb.
+ * If the index of the instruction is not valid, it returns UT16_MAX  */
+R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i) {
+	if (i < 0 || i >= bb->ninstr) return UT16_MAX;
+	return i > 0 ? bb->op_pos[i - 1] : 0;
+}
+
+/* set the offset of the i-th instruction in the basicblock bb */
+R_API void r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
+	// the offset of the instruction 0 is not stored because always 0
+	if (i > 0) {
+		if (i >= bb->n_op_pos) {
+			bb->n_op_pos = i * 2;
+			bb->op_pos = realloc (bb->op_pos, bb->n_op_pos * sizeof (*bb->op_pos));
+		}
+		bb->op_pos[i - 1] = v;
+	}
+}
+
+/* return the address of the instruction that occupy a given offset.
+ * If the offset is not part of the given basicblock, UT64_MAX is returned. */
+R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
+	ut16 delta, delta_off, last_delta;
+	int i;
+
+	if (!r_anal_bb_is_in_offset (bb, off)) return UT64_MAX;
+
+	last_delta = 0;
+	delta_off = off - bb->addr;
+	for (i = 0; i < bb->ninstr; i++) {
+		delta = r_anal_bb_offset_inst (bb, i);
+		if (delta > delta_off) {
+			return bb->addr + last_delta;
+		}
+		last_delta = delta;
+	}
+	return UT64_MAX;
 }

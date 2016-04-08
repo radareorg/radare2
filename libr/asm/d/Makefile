@@ -1,4 +1,5 @@
-FILES=x86 arm ppc z80 mips
+FILES=6502 8051 m68k x86 arc arm avr LH5801 ppc z80 mips sparc sh malbolge
+FILES+=i8080 java i4004 dalvik msp430 lm32 sysz tms320 riscv propeller v810 pic18c
 F_SDB=$(addsuffix .sdb,${FILES})
 SDB=../../../shlr/sdb/sdb
 include ../../../config-user.mk
@@ -15,10 +16,10 @@ clean:
 .PHONY: all clean install install-symlink symstall uninstall
 
 # XXX rmdblslash not defined, but doesnt warns about it
-#OPDIR=$(call rmdblslash,${DESTDIR}${LIBDIR}/radare2/${VERSION}/opcodes)
 OPDIR=${DESTDIR}${LIBDIR}/radare2/${VERSION}/opcodes
 
 install: ${F_SDB}
+	-rm -rf "${OPDIR}"
 	mkdir -p "${OPDIR}"
 	cp -f *.sdb "${OPDIR}"
 
@@ -26,7 +27,7 @@ install: ${F_SDB}
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
 	mkdir -p "${OPDIR}"
-	for a in *.sdb ; do ln -fs "${CWD}/$$a" "${OPDIR}/$$a" ; done
+	for FILE in *.sdb ; do ln -fs "${CWD}/$$FILE" "${OPDIR}/$$FILE" ; done
 
 uninstall:
 	rm -rf "${DESTDIR}${LIBDIR}/radare2/opcodes"

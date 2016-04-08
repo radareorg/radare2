@@ -119,6 +119,7 @@ enum cr16_regs {
 	CR16_R13,
 	CR16_RA,
 	CR16_SP,
+	CR16_LAST,
 };
 
 enum cr16_dedic_regs {

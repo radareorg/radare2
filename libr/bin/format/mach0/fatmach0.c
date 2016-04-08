@@ -6,25 +6,31 @@
 #include "fatmach0.h"
 
 static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
+	ut32 size;
 	int len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr, "2I", 1);
-	if (len == 0 || len == -1) {
+	if (len < 1) {
 		perror ("read (fat_header)");
-		return R_FALSE;
+		return false;
 	}
 	bin->nfat_arch = bin->hdr.nfat_arch;
+	if (sizeof(struct fat_header) + bin->nfat_arch * \
+		sizeof(struct fat_arch) > bin->size)
+		return false;
 	if (bin->hdr.magic != FAT_MAGIC || bin->nfat_arch == 0 || bin->nfat_arch<1)
-		return R_FALSE;
-	if (!(bin->archs = malloc (bin->nfat_arch * sizeof (struct fat_arch)))) {
+		return false;
+	size = bin->nfat_arch * sizeof (struct fat_arch);
+	if (size < bin->nfat_arch) return false;
+	if (!(bin->archs = malloc (size))) {
 		perror ("malloc (fat_arch)");
-		return R_FALSE;
+		return false;
 	}
 	len = r_buf_fread_at (bin->b, R_BUF_CUR, (ut8*)bin->archs, "5I", bin->nfat_arch);
 	if (len == 0 || len == -1) {
 		perror ("read (fat_arch)");
 		R_FREE (bin->archs);
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 }
 
 struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin, int idx, int *narch) {
@@ -48,15 +54,16 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 		eprintf ("Skipping corrupted sub-bin %d arch %d\n",
 			idx, bin->archs[idx].size);
 		free (buf);
-		ret->b = r_buf_new ();
-		ret->offset = bin->archs[idx].offset;
-		ret->size = bin->archs[idx].size;
-		return ret;
+		//ret->b = r_buf_new ();
+		//ret->offset = bin->archs[idx].offset;
+		//ret->size = bin->archs[idx].size;
+		free (ret);
+		return NULL;
 //		free (ret);
 //		return NULL;
 	}
 #endif
-	if (!(buf = malloc (1+bin->archs[idx].size))) {
+	if (!(buf = malloc (1 + bin->archs[idx].size))) {
 		perror ("malloc (buf)");
 		free (ret);
 		return NULL;
@@ -88,7 +95,7 @@ void* r_bin_fatmach0_free(struct r_bin_fatmach0_obj_t* bin) {
 	if (!bin) return NULL;
 	free (bin->archs);
 	r_buf_free (bin->b);
-	free (bin);
+	R_FREE (bin);
 	return NULL;
 }
 
@@ -97,7 +104,7 @@ struct r_bin_fatmach0_obj_t* r_bin_fatmach0_new(const char* file) {
 	struct r_bin_fatmach0_obj_t *bin = R_NEW0 (struct r_bin_fatmach0_obj_t);
 	if (!bin) return NULL;
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) 
+	if (!(buf = (ut8*)r_file_slurp (file, &bin->size)))
 		return r_bin_fatmach0_free (bin);
 	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {

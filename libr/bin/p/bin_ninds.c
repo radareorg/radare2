@@ -1,4 +1,4 @@
-/* radare - LGPL - 2014 - a0rtega */
+/* radare - LGPL - 2015 - a0rtega */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -22,10 +22,10 @@ static int check(RBinFile *arch) {
 static int check_bytes(const ut8 *buf, ut64 length) {
 	ut8 ninlogohead[6];
 	if (!buf || length < sizeof(struct nds_hdr)) /* header size */
-		return R_FALSE;
+		return false;
 	memcpy(ninlogohead, buf+0xc0, 6);
 	/* begin of nintendo logo =    \x24\xff\xae\x51\x69\x9a */
-	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? R_TRUE : R_FALSE;
+	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? true : false;
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
@@ -36,7 +36,7 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	if (!arch || !arch->o)
-		return R_FALSE;
+		return false;
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return check_bytes (bytes, sz);
 }
@@ -44,7 +44,7 @@ static int load(RBinFile *arch) {
 static int destroy(RBinFile *arch) {
 	r_buf_free (arch->buf);
 	arch->buf = NULL;
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -76,7 +76,8 @@ static RList* sections(RBinFile *arch) {
 	ptr9->vsize = loaded_header.arm9_size;
 	ptr9->paddr = loaded_header.arm9_rom_offset;
 	ptr9->vaddr = loaded_header.arm9_ram_address;
-	ptr9->srwx = r_str_rwx ("rwx");
+	ptr9->srwx = r_str_rwx ("mrwx");
+	ptr9->add = true;
 	r_list_append (ret, ptr9);
 
 	strncpy (ptr7->name, "arm7", 5);
@@ -84,7 +85,8 @@ static RList* sections(RBinFile *arch) {
 	ptr7->vsize = loaded_header.arm7_size;
 	ptr7->paddr = loaded_header.arm7_rom_offset;
 	ptr7->vaddr = loaded_header.arm7_ram_address;
-	ptr7->srwx = r_str_rwx ("rwx");
+	ptr7->srwx = r_str_rwx ("mrwx");
+	ptr7->add = true;
 	r_list_append (ret, ptr7);
 
 	return ret;
@@ -140,7 +142,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->machine = strdup ("Nintendo DS");
 	ret->os = strdup ("nds");
 	ret->arch = strdup ("arm");
-	ret->has_va = R_TRUE;
+	ret->has_va = true;
 	ret->bits = 32;
 
 	return ret;
@@ -150,9 +152,6 @@ struct r_bin_plugin_t r_bin_plugin_ninds = {
 	.name = "ninds",
 	.desc = "Nintendo DS format r_bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
-	.get_sdb = NULL,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
@@ -160,18 +159,9 @@ struct r_bin_plugin_t r_bin_plugin_ninds = {
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = &boffset,
-	.binsym = NULL,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = NULL,
-	.imports = NULL,
-	.strings = NULL,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.create = NULL,
-	.write = NULL,
 };
 
 #ifndef CORELIB

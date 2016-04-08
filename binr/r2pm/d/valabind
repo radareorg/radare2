@@ -1,0 +1,15 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/radare/radare2"
+R2PM_DESC "[syspkg] Valabind tool"
+
+R2PM_INSTALL() {
+	sys/valabind.sh
+}
+
+R2PM_UNINSTALL() {
+	echo "Sorry. This package cannot be uninstalled"
+	exit 0
+}
+
+R2PM_END

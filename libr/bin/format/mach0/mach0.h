@@ -58,11 +58,13 @@ struct lib_t {
 struct MACH0_(obj_t) {
 	struct MACH0_(mach_header) hdr;
 	struct MACH0_(segment_command)* segs;
+	char *intrp;
 	int nsegs;
 	struct MACH0_(section)* sects;
 	int nsects;
 	struct MACH0_(nlist)* symtab;
 	ut8* symstr;
+	ut8* func_start; //buffer that hold the data from LC_FUNCTION_STARTS
 	int symstrlen;
 	int nsymtab;
 	ut32* indirectsyms;
@@ -102,6 +104,7 @@ struct MACH0_(obj_t) {
 	int dbg_info;
 	const char *lang;
 	int uuidn;
+	int func_size;
 };
 
 struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file);
@@ -118,6 +121,7 @@ char* MACH0_(get_class)(struct MACH0_(obj_t)* bin);
 int MACH0_(get_bits)(struct MACH0_(obj_t)* bin);
 int MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin);
 int MACH0_(is_pie)(struct MACH0_(obj_t)* bin);
+const char* MACH0_(get_intrp)(struct MACH0_(obj_t)* bin);
 const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin);
 char* MACH0_(get_cputype)(struct MACH0_(obj_t)* bin);
 char* MACH0_(get_cpusubtype)(struct MACH0_(obj_t)* bin);

@@ -1,7 +1,28 @@
-/* radare - LGPL - Copyright 2010-2012 */
-/*   pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2016 - pancake */
 
 #include <r_anal.h>
+
+R_API const char *r_anal_cond_tostring(int cc) {
+	switch (cc) {
+	case R_ANAL_COND_EQ: return "eq";
+	case R_ANAL_COND_NV: return "nv";
+	case R_ANAL_COND_NE: return "ne";
+	case R_ANAL_COND_HS: return "hs";
+	case R_ANAL_COND_LO: return "lo";
+	case R_ANAL_COND_MI: return "mi";
+	case R_ANAL_COND_PL: return "pl";
+	case R_ANAL_COND_VS: return "vs";
+	case R_ANAL_COND_VC: return "vc";
+	case R_ANAL_COND_HI: return "hi";
+	case R_ANAL_COND_LS: return "ls";
+	case R_ANAL_COND_GE: return "ge";
+	case R_ANAL_COND_LT: return "lt";
+	case R_ANAL_COND_GT: return "gt";
+	case R_ANAL_COND_LE: return "le";
+	case R_ANAL_COND_AL: return "al";
+	}
+	return "??";
+}
 
 R_API RAnalCond *r_anal_cond_new() {
 	return R_NEW0 (RAnalCond);
@@ -65,6 +86,7 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 	return R_FALSE;
 }
 
+// XXX conflict naming with tostring()
 R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 	char *val0, *val1, *out = NULL;
 	const char *cnd;
@@ -79,14 +101,16 @@ R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 			if ((out = malloc (val0len)))
 				snprintf (out, val0len, "%s%s", cnd, val0);
 		} else {
-			int val0len = strlen (val0) + strlen (val1)+10;
-			if ((out = malloc (val0len)))
-				snprintf (out, val0len, "%s %s %s", val0, cnd, val1);
+			if (val1) {
+				int val0len = strlen (val0) + strlen (val1) + 10;
+				if ((out = malloc (val0len)))
+					snprintf (out, val0len, "%s %s %s", val0, cnd, val1);
+			}
 		}
 	}
 	free (val0);
 	free (val1);
-	return out;
+	return out? out: strdup ("?");
 }
 
 R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {

@@ -45,11 +45,9 @@ Reduce the delta where flag resolving by address is used with cfg.delta
 Disable these messages with 'e cfg.fortunes = false' in your ~/.radare2rc
 Change your fortune types with 'e cfg.fortunetype = fun,tips,nsfw' in your ~/.radare2rc
 Show offsets in graphs with 'e graph.offset = true'
-Follow a flag in disassembly view (avoids to disasemble out of the visibility of the flag) with asm.follow
 Execute a command every time a breakpoint is hit with 'e cmd.bp = !my-program'
 Disassemble in intel syntax with 'e asm.syntax = intel'.
 Change the UID of the debugged process with child.uid (requires root)
-Find cp850 strings with 'e cfg.encoding=cp850' and '/s'
 Enhace your graphs by increasing the size of the block and graph.depth eval variable.
 Control the height of the terminal on serial consoles with e scr.height
 Emulate the base address of a file with e file.baddr.
@@ -57,14 +55,13 @@ Bindiff two files with '$ bdiff /bin/true /bin/false'
 Execute commands on a temporary offset by appending '@ offset' to your command.
 Temporally drop the verbosity prefixing the commands with ':'
 Change the graph block definition with graph.callblocks, graph.jmpblocks, graph.flagblocks
-Use the '<' and '>' keys in visual cursor mode (V->c) to folder selected bytes.
 Use scr.accel to browse the file faster!
 Use the 'pR' command to see the source line related to the current seek
 Analyze socket connections with the socket plugin: 'radare2 socket://www.foo.com:80'. Use 'w' to send data
 Setup dbg.fpregs to true to visualize the fpu registers in the debugger view.
 To debug a program, you can call r2 with 'dbg://<path-to-program>' or '-d <path..>'
 Use 'e' and 't' in Visual mode to edit configuration and track flags.
-Use 'rabin2 -rios' to get the import/export/other symbols of any binary.
+Use 'rabin2 -ris' to get the import/export symbols of any binary.
 Remember to maintain your ~/.radare_history
 Enable the PAGER with 'e scr.pager=less -R'
 Use 'e asm.offset=true' to show offsets in 16bit segment addressing mode.
@@ -81,3 +78,5 @@ The unix-like reverse engineering framework.
 This code was intentionally left blank, try 'e asm.arch = ws'
 For a full list of commands see `strings /dev/urandom`
 Thanks for using radare2!
+give | and > a try piping and redirection
+Run .dmm* to load the flags of the symbols of all modules loaded in the debugger

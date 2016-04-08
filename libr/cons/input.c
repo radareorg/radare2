@@ -34,6 +34,7 @@ R_API int r_cons_controlz(int ch) {
 	if (ch == 0x1a) {
 		r_cons_set_raw (0);
 		r_cons_show_cursor (1);
+		r_cons_enable_mouse (0);
 		r_sys_stop ();
 		return 0;
 	}
@@ -205,7 +206,6 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	return ch;
 }
 
-
 // XXX no control for max length here?!?!
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 #define RETURN(x) { ret=x; goto beach; }
@@ -300,118 +300,118 @@ do_it_again:
 					bCtrl=irInBuf[i].Event.KeyEvent.dwControlKeyState & 8;
 					if (irInBuf[i].Event.KeyEvent.uChar.AsciiChar==0) {
 						ch=0;
-						switch(irInBuf[i].Event.KeyEvent.wVirtualKeyCode) {
-							case VK_DOWN: // key down
-								if (bCtrl)
-									ch='J';
-								else
-									ch='j';
-								break;
-							case VK_RIGHT: // key right
-								if (bCtrl)
-									ch='L';
-								else
-									ch='l';
-								break;
-							case VK_UP: // key up
-								if (bCtrl)
-									ch='K';
-								else
-									ch='k';
-								break;
-							case VK_LEFT: // key left
-								if (bCtrl)
-									ch='H';
-								else
-									ch='h';
-								break;
-							case VK_PRIOR: // key home
-								if (bCtrl)
-									ch='K';
-								else
-									ch='K';
-								break;
-							case VK_NEXT: // key end
-								if (bCtrl)
-									ch='J';
-								else
-									ch='J';
-								break;
-							case VK_F1:
-								if (bCtrl)
-									ch=R_CONS_KEY_F1;
-								else
-									ch=R_CONS_KEY_F1;
-								break;
-							case VK_F2:
-								if (bCtrl)
-									ch=R_CONS_KEY_F2;
-								else
-									ch=R_CONS_KEY_F2;
-								break;
-							case VK_F3:
-								if (bCtrl)
-									ch=R_CONS_KEY_F3;
-								else
-									ch=R_CONS_KEY_F3;
-								break;
-							case VK_F4:
-								if (bCtrl)
-									ch=R_CONS_KEY_F4;
-								else
-									ch=R_CONS_KEY_F4;
-								break;
-							case VK_F5:
-								if (bCtrl)
-									ch=0xcf5;
-								else
-									ch=R_CONS_KEY_F5;
-								break;
-							case VK_F6:
-								if (bCtrl)
-									ch=R_CONS_KEY_F6;
-								else
-									ch=R_CONS_KEY_F6;
-								break;
-							case VK_F7:
-								if (bCtrl)
-									ch=R_CONS_KEY_F7;
-								else
-									ch=R_CONS_KEY_F7;
-								break;
-							case VK_F8:
-								if (bCtrl)
-									ch=R_CONS_KEY_F8;
-								else
-									ch=R_CONS_KEY_F8;
-								break;
-							case VK_F9:
-								if (bCtrl)
-									ch=R_CONS_KEY_F9;
-								else
-									ch=R_CONS_KEY_F9;
-								break;
-							case VK_F10:
-								if (bCtrl)
-									ch=R_CONS_KEY_F10;
-								else
-									ch=R_CONS_KEY_F10;
-								break;
-							case VK_F11:
-								if (bCtrl)
-									ch=R_CONS_KEY_F11;
-								else
-									ch=R_CONS_KEY_F11;
-								break;
-							case VK_F12:
-								if (bCtrl)
-									ch=R_CONS_KEY_F12;
-								else
-									ch=R_CONS_KEY_F12;
-								break;
-							default:
-								ch=0;
-								break;
+						switch (irInBuf[i].Event.KeyEvent.wVirtualKeyCode) {
+						case VK_DOWN: // key down
+							if (bCtrl)
+								ch='J';
+							else
+								ch='j';
+							break;
+						case VK_RIGHT: // key right
+							if (bCtrl)
+								ch='L';
+							else
+								ch='l';
+							break;
+						case VK_UP: // key up
+							if (bCtrl)
+								ch='K';
+							else
+								ch='k';
+							break;
+						case VK_LEFT: // key left
+							if (bCtrl)
+								ch='H';
+							else
+								ch='h';
+							break;
+						case VK_PRIOR: // key home
+							if (bCtrl)
+								ch='K';
+							else
+								ch='K';
+							break;
+						case VK_NEXT: // key end
+							if (bCtrl)
+								ch='J';
+							else
+								ch='J';
+							break;
+						case VK_F1:
+							if (bCtrl)
+								ch=R_CONS_KEY_F1;
+							else
+								ch=R_CONS_KEY_F1;
+							break;
+						case VK_F2:
+							if (bCtrl)
+								ch=R_CONS_KEY_F2;
+							else
+								ch=R_CONS_KEY_F2;
+							break;
+						case VK_F3:
+							if (bCtrl)
+								ch=R_CONS_KEY_F3;
+							else
+								ch=R_CONS_KEY_F3;
+							break;
+						case VK_F4:
+							if (bCtrl)
+								ch=R_CONS_KEY_F4;
+							else
+								ch=R_CONS_KEY_F4;
+							break;
+						case VK_F5:
+							if (bCtrl)
+								ch=0xcf5;
+							else
+								ch=R_CONS_KEY_F5;
+							break;
+						case VK_F6:
+							if (bCtrl)
+								ch=R_CONS_KEY_F6;
+							else
+								ch=R_CONS_KEY_F6;
+							break;
+						case VK_F7:
+							if (bCtrl)
+								ch=R_CONS_KEY_F7;
+							else
+								ch=R_CONS_KEY_F7;
+							break;
+						case VK_F8:
+							if (bCtrl)
+								ch=R_CONS_KEY_F8;
+							else
+								ch=R_CONS_KEY_F8;
+							break;
+						case VK_F9:
+							if (bCtrl)
+								ch=R_CONS_KEY_F9;
+							else
+								ch=R_CONS_KEY_F9;
+							break;
+						case VK_F10:
+							if (bCtrl)
+								ch=R_CONS_KEY_F10;
+							else
+								ch=R_CONS_KEY_F10;
+							break;
+						case VK_F11:
+							if (bCtrl)
+								ch=R_CONS_KEY_F11;
+							else
+								ch=R_CONS_KEY_F11;
+							break;
+						case VK_F12:
+							if (bCtrl)
+								ch=R_CONS_KEY_F12;
+							else
+								ch=R_CONS_KEY_F12;
+							break;
+						default:
+							ch=0;
+							break;
 						}
 					}
 				}
@@ -475,4 +475,20 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	if (key=='\n' || key=='\r')
 		key = def;
 	return key=='y';
+}
+
+R_API char *r_cons_input(const char *msg) {
+	char *oprompt = r_line_get_prompt (); //r_cons_singleton()->line->prompt);
+	char buf[1024];
+	if (msg) {
+		//r_cons_printf ("%s\n", msg);
+		r_line_set_prompt (msg);
+	} else {
+		r_line_set_prompt ("");
+	}
+	buf[0] = 0;
+	r_cons_fgets (buf, sizeof (buf), 0, NULL);
+	r_line_set_prompt (oprompt);
+	free (oprompt);
+	return strdup (buf);
 }

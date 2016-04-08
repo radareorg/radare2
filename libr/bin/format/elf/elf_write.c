@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2010-2015 pancake, nibble */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,14 +15,14 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
 	Elf_(Phdr) *phdr = bin->phdr, *phdrp;
 	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
-	const char *strtab = bin->strtab;
+	const char *strtab = bin->shstrtab;
 	ut8 *buf;
 	ut64 off, got_offset = 0, got_addr = 0, rsz_offset = 0, delta = 0;
 	ut64 rsz_osize = 0, rsz_size = size, rest_size = 0;
 	int i, j, done = 0;
 
 	if (size == 0) {
-		printf("0 size section?\n");
+		eprintf ("0 size section?\n");
 		return 0;
 	}
 
@@ -35,11 +35,11 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 		}
 
 	if (delta == 0) {
-		printf("Cannot find section\n");
+		eprintf ("Cannot find section\n");
 		return 0;
 	}
  
-	printf("delta: %"PFMT64d"\n", delta);
+	eprintf ("delta: %"PFMT64d"\n", delta);
 	
 	/* rewrite rel's (imports) */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
@@ -53,14 +53,14 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	}
 
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!strcmp(&strtab[shdrp->sh_name], ".rel.plt")) {
+		if (!strcmp (&strtab[shdrp->sh_name], ".rel.plt")) {
 			Elf_(Rel) *rel, *relp;
 			rel = (Elf_(Rel) *)malloc (1+shdrp->sh_size);
 			if (rel == NULL) {
 				perror ("malloc");
 				return 0;
 			}
-			if (r_buf_read_at(bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1)
+			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1)
 				perror("read (rel)");
 
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rel)), relp++) {
@@ -76,7 +76,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 			}
 			free(rel);
 			break;
-		} else if (!strcmp(&strtab[shdrp->sh_name], ".rela.plt")) {
+		} else if (!strcmp (&strtab[shdrp->sh_name], ".rela.plt")) {
 			Elf_(Rela) *rel, *relp;
 			rel = (Elf_(Rela) *)malloc (1+shdrp->sh_size);
 			if (rel == NULL) {
@@ -158,9 +158,9 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	r_buf_set_bytes (bin->b, (ut8*)buf, (int)(rsz_offset+rsz_size+rest_size));
 
 	printf("COPY FROM 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_osize));
-	r_buf_read_at (bin->b, rsz_offset+rsz_osize, (ut8*)buf, rest_size);
+	r_buf_read_at (bin->b, rsz_offset + rsz_osize, (ut8*)buf, rest_size);
 	printf("COPY TO 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_size));
-	r_buf_write_at (bin->b, rsz_offset+rsz_size, (ut8*)buf, rest_size);
+	r_buf_write_at (bin->b, rsz_offset + rsz_size, (ut8*)buf, rest_size);
 	printf("Shifted %d bytes\n", (int)delta);
 	free(buf);
 	bin->size = bin->b->length;
@@ -178,12 +178,12 @@ int Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
 			if (!(dyn = malloc (1+bin->phdr[i].p_filesz))) {
 				perror ("malloc (dyn)");
-				return R_FALSE;
+				return false;
 			}
 			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->phdr[i].p_filesz) == -1) {
 				eprintf ("Error: read (dyn)\n");
 				free (dyn);
-				return R_FALSE;
+				return false;
 			}
 			if ((ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)))) > 0) {
 				for (j = 0; j < ndyn; j++)
@@ -197,12 +197,60 @@ int Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 									(ut8*)"", 1) == -1) {
 							eprintf ("Error: write (rpath)\n");
 							free (dyn);
-							return R_FALSE;
+							return false;
 						}
 					}
 			}
 			free (dyn);
 			break;
 		}
-	return R_TRUE;
+	return true;
+}
+
+bool Elf_(r_bin_elf_section_perms)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, int perms) {
+	Elf_(Ehdr) *ehdr = &bin->ehdr;
+	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
+	const char *strtab = bin->shstrtab;
+	int i, patchoff;
+
+	/* calculate delta */
+	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
+		const char *shname = &strtab[shdrp->sh_name];
+		int operms = shdrp->sh_flags;
+		if (!strncmp (name, shname, ELF_STRING_LENGTH)) {
+			ut8 newperms = (ut8)operms;
+			// SHF_EXECINSTR
+			if (perms & 1) {
+				R_BIT_SET (&newperms, 2);
+			} else {
+				R_BIT_UNSET (&newperms, 2);
+			}
+			// SHF_WRITE
+			if (perms & 2) {
+				R_BIT_SET (&newperms, 0);
+			} else {
+				R_BIT_UNSET (&newperms, 0);
+			}
+			patchoff = bin->ehdr.e_shoff;
+			patchoff += ((const ut8*)shdrp - (const ut8*)bin->shdr);
+			patchoff += r_offsetof (Elf_(Shdr), sh_flags);
+			printf ("wx %02x @ 0x%x\n", newperms, patchoff);
+			r_buf_write_at (bin->b, patchoff, (ut8*)&newperms, 1);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Elf_(r_bin_elf_entry_write)(struct Elf_(r_bin_elf_obj_t) *bin, ut64 addr) {
+	int patchoff = 0x18;
+#if R_BIN_ELF64
+	printf ("wv8 0x%"PFMT64x" @ 0x%x\n", addr, patchoff);
+	eprintf ("%d\n", r_buf_write_at (bin->b, patchoff, (ut8*)&addr, sizeof (addr)));
+#else
+	ut32 addr32 = (ut32)addr;
+	printf ("wv4 0x%x @ 0x%x\n", addr32, patchoff);
+	r_buf_write_at (bin->b, patchoff, (ut8*)&addr32, sizeof (addr32));
+#endif
+	return true;
 }

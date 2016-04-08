@@ -26,8 +26,8 @@ static int check(RBinFile *arch) {
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length > 16)
 		if (!memcmp (buf, RARVMHDR, 16))
-			return R_TRUE;
-	return R_FALSE;
+			return true;
+	return false;
 }
 
 static Sdb* get_sdb (RBinObject *o) {
@@ -57,7 +57,7 @@ static int load(RBinFile *arch) {
 }
 
 static int destroy (RBinFile *arch) {
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -106,7 +106,8 @@ static RList* sections(RBinFile *arch) {
 	ptr->size = ptr->vsize = 0x9a;
 	ptr->paddr = 0;
 	ptr->vaddr = ptr->paddr;
-	ptr->srwx = 4; // r--
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
+	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	/* rarvm code */
@@ -115,7 +116,8 @@ static RList* sections(RBinFile *arch) {
 	strncpy (ptr->name, "rarvm", R_BIN_SIZEOF_STRINGS);
 	ptr->vsize = ptr->size = sz - 0x9a;
 	ptr->vaddr = ptr->paddr = 0x9a;
-	ptr->srwx = 5; // rw-
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
+	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
 }
@@ -160,8 +162,8 @@ static RBinInfo* info(RBinFile *arch) {
 	}
 // TODO: specify if its compressed or executable
 	ret->bits = bits;
-	ret->has_va = R_TRUE;
-	ret->big_endian = R_TRUE;
+	ret->has_va = true;
+	ret->big_endian = true;
 	ret->dbg_info = 0;
 	ret->dbg_info = 0;
 	return ret;
@@ -182,8 +184,6 @@ RBinPlugin r_bin_plugin_rar = {
 	.name = "rar",
 	.desc = "rarvm bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -192,18 +192,12 @@ RBinPlugin r_bin_plugin_rar = {
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,
-	.strings = NULL,
 	.info = &info,
-	.fields = NULL,
 	.libs = &libs,
-	.relocs = NULL,
-	.dbginfo = NULL,
-	.write = NULL,
 	.create = &create,
 };
 

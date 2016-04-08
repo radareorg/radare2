@@ -1,5 +1,6 @@
 include ../../../config-user.mk
 include ../../../libr/config.mk
+include ../../../mk/platform.mk
 include ../../../mk/${COMPILER}.mk
 
 ifneq (,$(findstring cygwin,${OSTYPE}))
@@ -9,7 +10,7 @@ SOVER=${EXT_SO}
 LDFLAGS+=-shared
 LDFLAGS_SHARED?=-shared
 else
-ifneq (,$(findstring ming32,${OSTYPE})$(findstring mingw64,${OSTYPE})$(findstring msys,${OSTYPE}))
+ifneq (,$(findstring mingw32,${OSTYPE})$(findstring mingw64,${OSTYPE})$(findstring msys,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
 EXT_SO=dll
 SOVER=${EXT_SO}
@@ -94,10 +95,9 @@ ${LIBNAME}: ${OBJS}
 ifneq ($(SILENT),)
 	@echo LIB ${LIBNAME}
 endif
-	${CC} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS} ${LINKFLAGS}
+	${CC} $(CFLAGS) ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS} ${LINKFLAGS}
 
 ${LIBAR}: ${OFILES}
-	#${CC_AR} $(LIBAR) ${OFILES}
 	${CC_AR} ${OFILES}
 	${RANLIB} ${LIBAR}
 

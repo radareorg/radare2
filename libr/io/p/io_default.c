@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -64,7 +64,8 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	} else {
 		cur = 0;
 	}
-	if (r_file_size (mmo->filename) > ST32_MAX) {
+	st64 sz = r_file_size (mmo->filename);
+	if (sz == 0 || sz > ST32_MAX) {
 		// Do not use mmap if the file is huge
 		mmo->rawio = 1;
 	}
@@ -75,13 +76,13 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	mmo->buf = r_buf_mmap (mmo->filename, mmo->flags);
 	if (mmo->buf) {
 		r_io_def_mmap_seek (io, mmo, cur, SEEK_SET);
-		return R_TRUE;
+		return true;
 	} else {
 		mmo->rawio = 1;
 		mmo->fd = __io_posix_open (mmo->filename, mmo->flags, mmo->mode);
 		return (mmo->fd != -1);
 	}
-	return R_FALSE;
+	return false;
 }
 
 RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int mode, int flags) {
@@ -105,7 +106,6 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 		free (mmo);
 		return NULL;
 	}
-
 	if (!r_io_def_mmap_refresh_def_mmap_buf (mmo)) {
 		mmo->rawio = 1;
 		if (!r_io_def_mmap_refresh_def_mmap_buf (mmo)) {
@@ -125,9 +125,8 @@ static void r_io_def_mmap_free (RIOMMapFileObj *mmo) {
 }
 
 static int r_io_def_mmap_close(RIODesc *fd) {
-	if (!fd || !fd->data)
-		return -1;
-	r_io_def_mmap_free ( (RIOMMapFileObj *) fd->data);
+	if (!fd || !fd->data) return -1;
+	r_io_def_mmap_free ((RIOMMapFileObj *) fd->data);
 	fd->data = NULL;
 	return 0;
 }
@@ -147,8 +146,7 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		// in this case we fallback reopening in raw mode
 		return -1;
 	}
-
-	if (io->off==UT64_MAX) {
+	if (io->off == UT64_MAX) {
 		memset (buf, 0xff, count);
 		return count;
 	}
@@ -265,53 +263,46 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 }
 
 static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int flags, int mode) {
-	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (
-		io, file, mode, flags);
+	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, mode, flags);
 	if (!mmo) return NULL;
-	return r_io_desc_new (&r_io_plugin_default, mmo->fd,
-				mmo->filename, flags, mode, mmo);
+	return r_io_desc_new (&r_io_plugin_default, mmo->fd, mmo->filename, flags, mode, mmo);
 }
 
 static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
 	ut64 seek_val = UT64_MAX;
 
 	if (!mmo) return UT64_MAX;
-	if (mmo->rawio)
-		return lseek (mmo->fd, offset, whence);
+	if (mmo->rawio) return lseek (mmo->fd, offset, whence);
 	if (!mmo->buf) return UT64_MAX;
 
 	seek_val = mmo->buf->cur;
 	switch (whence) {
-		case SEEK_SET:
-			seek_val = (mmo->buf->length < offset) ?
-				mmo->buf->length : offset;
-			break;
-		case SEEK_CUR:
-			seek_val = (mmo->buf->length < (offset + mmo->buf->cur)) ?
-				mmo->buf->length : offset + mmo->buf->cur;
-			break;
-		case SEEK_END:
-			seek_val = mmo->buf->length;
-			break;
+	case SEEK_SET:
+		seek_val = R_MIN (mmo->buf->length, offset);
+		break;
+	case SEEK_CUR:
+		seek_val = R_MIN (mmo->buf->length, (offset + mmo->buf->cur));
+		break;
+	case SEEK_END:
+		seek_val = mmo->buf->length;
+		break;
 	}
 	mmo->buf->cur = io->off = seek_val;
 	return seek_val;
 }
 
 static ut64 r_io_def_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	if (!fd || !fd->data)
-		return -1;
+	if (!fd || !fd->data) 
+		return UT64_MAX;
 	return r_io_def_mmap_seek (io, (RIOMMapFileObj *)fd->data, offset, whence);
 }
 
 static int r_io_def_mmap_truncate(RIOMMapFileObj *mmo, ut64 size) {
 	int res = r_file_truncate (mmo->filename, size);
-
 	if (res && !r_io_def_mmap_refresh_def_mmap_buf (mmo) ) {
 		eprintf ("r_io_def_mmap_truncate: Error trying to refresh the def_mmap'ed file.");
-		res = R_FALSE;
-	}
-	else if (!res) eprintf ("r_io_def_mmap_truncate: Error trying to resize the file.");
+		res = false;
+	} else if (!res) eprintf ("r_io_def_mmap_truncate: Error trying to resize the file.");
 	return res;
 }
 

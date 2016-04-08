@@ -47,7 +47,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (!ctx)
 		return NULL;
 
-	return r_io_desc_new (&r_io_plugin_windbg, -1, file, R_TRUE, mode, ctx);
+	return r_io_desc_new (&r_io_plugin_windbg, -1, file, true, mode, ctx);
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
@@ -55,7 +55,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		return -1;
 
 	if (wind_get_target(fd->data)) {
-		uint64_t va;
+		ut64 va;
 		if (!wind_va_to_pa (fd->data, io->off, &va))
 			return -1;
 		return wind_write_at_phys (fd->data, buf, va, count);
@@ -73,7 +73,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 
 	if (wind_get_target(fd->data)) {
-		uint64_t va;
+		ut64 va;
 		if (!wind_va_to_pa (fd->data, io->off, &va))
 			return -1;
 		return wind_read_at_phys(fd->data, buf, va, count);
@@ -84,7 +84,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 static int __close(RIODesc *fd) {
 	wind_ctx_free (fd->data);
-	return R_TRUE;
+	return true;
 }
 
 RIOPlugin r_io_plugin_windbg = {
@@ -97,5 +97,5 @@ RIOPlugin r_io_plugin_windbg = {
 	.write = __write,
 	.plugin_open = __plugin_open,
 	.lseek = __lseek,
-	.isdbg = R_TRUE,
+	.isdbg = true,
 };

@@ -8,14 +8,17 @@
 #define R2P_INPUT(x) (((R2Pipe*)x->data)->input[0])
 #define R2P_OUTPUT(x) (((R2Pipe*)x->data)->output[1])
 
+#if !__WINDOWS__
 static void env(const char *s, int f) {
         char *a = r_str_newf ("%d", f);
         r_sys_setenv (s, a);
         free (a);
 }
+#endif
 
 R_API int r2p_close(R2Pipe *r2p) {
-#if __WINDOWS__
+	if (!r2p) return 0;
+#if __WINDOWS__ && !defined(__CYGWIN__)
 	if (r2p->pipe) {
 		CloseHandle (r2p->pipe);
 		r2p->pipe = NULL;
@@ -43,58 +46,83 @@ R_API int r2p_close(R2Pipe *r2p) {
 	return 0;
 }
 
-#if __WINDOWS__
+#if __WINDOWS__ && !defined(__CYGWIN__)
 static int w32_createChildProcess(const char * szCmdline) {
 	PROCESS_INFORMATION piProcInfo;
 	STARTUPINFO siStartInfo;
 	BOOL bSuccess = FALSE;
-	DWORD dwWritten;
 	ZeroMemory (&piProcInfo, sizeof (PROCESS_INFORMATION));
 	ZeroMemory (&siStartInfo, sizeof (STARTUPINFO));
 	siStartInfo.cb = sizeof (STARTUPINFO);
-	bSuccess = CreateProcess (NULL, szCmdline, NULL, NULL,
+	bSuccess = CreateProcess (NULL, (LPSTR)szCmdline, NULL, NULL,
 		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
 	if (!bSuccess)
-		return R_FALSE;
+		return false;
 	CloseHandle (piProcInfo.hProcess);
 	CloseHandle (piProcInfo.hThread);
-	return R_TRUE;
+	return true;
 }
 
 static int w32_createPipe(R2Pipe *r2p, const char *cmd) {
-	DWORD dwRead, dwWritten;
 	CHAR buf[1024];
-	BOOL bSuccess = FALSE;
-	SECURITY_ATTRIBUTES saAttr;
-	int res = 0;
 	r2p->pipe = CreateNamedPipe ("\\\\.\\pipe\\R2PIPE_IN",
 		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
 		PIPE_READMODE_MESSAGE | \
 		PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 		sizeof (buf), sizeof (buf), 0, NULL);
-	if (w32_createChildProcess (cmd) != R_TRUE) {
-		//eprintf("Error spawning process: %s\n",code);
-		return R_TRUE;
+	if (w32_createChildProcess (cmd)) {
+		if (ConnectNamedPipe (r2p->pipe, NULL))
+			return true;
 	}
-	bSuccess = ConnectNamedPipe (r2p->pipe, NULL);
-	if (!bSuccess) {
-		//eprintf("Error connecting pipe.\n");
-		return R_TRUE;
-	}
-	return R_TRUE;
+	return false;
 }
 #endif
+
+static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
+#if __UNIX__ || defined(__CYGWIN__)
+	char *out = r_sys_getenv ("R2PIPE_IN");
+	char *in = r_sys_getenv ("R2PIPE_OUT");
+	int done = false;
+	if (in && out) {
+		int i_in = atoi (in);
+		int i_out = atoi (out);
+		if (i_in>=0 && i_out>=0) {
+			r2p->input[0] = r2p->input[1] = i_in;
+			r2p->output[0] = r2p->output[1] = i_out;
+			done = true;
+		}
+	}
+	if (!done) {
+		eprintf ("Cannot find R2PIPE_IN or R2PIPE_OUT environment\n");
+		R_FREE (r2p);
+	}
+	free (in);
+	free (out);
+	return r2p;
+#else
+	eprintf ("r2p_open(NULL) not supported on windows\n");
+	return NULL;
+#endif
+}
 
 R_API R2Pipe *r2p_open(const char *cmd) {
 	R2Pipe *r2p = R_NEW0 (R2Pipe);
 	r2p->magic = R2P_MAGIC;
-#if __WINDOWS__
+	if (!cmd) {
+		r2p->child = -1;
+		return r2p_open_spawn (r2p, cmd);
+	}
+#if __WINDOWS__ && !defined(__CYGWIN__)
 	w32_createPipe (r2p, cmd);
 	r2p->child = (int)(r2p->pipe);
 #else
 	pipe (r2p->input);
 	pipe (r2p->output);
+#if LIBC_HAVE_FORK
 	r2p->child = fork ();
+#else
+	r2p->child = -1;
+#endif
 	if (r2p->child == -1) {
 		r2p_close (r2p);
 		return NULL;
@@ -103,54 +131,132 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 	env ("R2PIPE_OUT", r2p->output[1]);
 
 	if (r2p->child) {
+		char ch;
 		eprintf ("Child is %d\n", r2p->child);
+		if (read (r2p->output[0], &ch, 1) != 1) {
+			eprintf ("Failed to read 1 byte\n");
+			r2p_close (r2p);
+			return NULL;
+		}
 	} else {
-		int rc;
-		rc = r_sandbox_system (cmd, 1);
-		eprintf ("Child was %d with %d\n", r2p->child, rc);
+		int rc = 0;
+		if (cmd && *cmd) {
+			close (0);
+			close (1);
+			dup2 (r2p->input[0], 0);
+			dup2 (r2p->output[1], 1);
+			rc = r_sandbox_system (cmd, 0);
+		}
 		r2p_close (r2p);
-		exit (0);
+		exit (rc);
 		return NULL;
 	}
 #endif
 	return r2p;
 }
 
+R_API char *r2p_cmd(R2Pipe *r2p, const char *str) {
+	if (!r2p_write (r2p, str)) {
+		perror ("r2p_write");
+		return NULL;
+	}
+	return r2p_read (r2p);
+}
+
+R_API char *r2p_cmdf(R2Pipe *r2p, const char *fmt, ...) {
+	int ret, ret2;
+	char *p, string[1024];
+	va_list ap, ap2;
+	va_start (ap, fmt);
+	va_start (ap2, fmt);
+	ret = vsnprintf (string, sizeof (string)-1, fmt, ap);
+	if (ret < 1 || ret >= sizeof (string)) {
+		p = malloc (ret+2);
+		if (!p) {
+			va_end (ap2);
+			va_end (ap);
+			return NULL;
+		}
+		ret2 = vsnprintf (p, ret+1, fmt, ap2);
+		if (ret2 < 1 || ret2 > ret+1) {
+			free (p);
+			va_end (ap2);
+			va_end (ap);
+			return NULL;
+		}
+		fmt = r2p_cmd (r2p, p);
+		free (p);
+	} else {
+		fmt = r2p_cmd (r2p, string);
+	}
+	va_end (ap2);
+	va_end (ap);
+	return (char*)fmt;
+}
+
 R_API int r2p_write(R2Pipe *r2p, const char *str) {
-	int len = strlen (str)+1; /* include \x00 */
-#if __WINDOWS__
+	char *cmd;
+	int ret, len;
+	if (!r2p || !str)
+		return -1;
+	len = strlen (str) + 1; /* include \x00 */
+	cmd = malloc (len + 2);
+	memcpy (cmd, str, len);
+	cmd[len++] = '\n';
+	cmd[len] = 0;
+#if __WINDOWS__ && !defined(__CYGWIN__)
 	DWORD dwWritten = -1;
-	WriteFile (r2p->pipe, str, len, &dwWritten, NULL);
-	return dwWritten;
+	WriteFile (r2p->pipe, cmd, len, &dwWritten, NULL);
+	ret = (dwWritten == len);
 #else
-	return write (r2p->input[1], str, len);
+	ret = (write (r2p->input[1], cmd, len) == len);
 #endif
+	free (cmd);
+	return ret;
 }
 
 /* TODO: add timeout here ? */
 R_API char *r2p_read(R2Pipe *r2p) {
-	char buf[1024];
-#if __WINDOWS__
+	int bufsz = 0;
+	char *newbuf, *buf = NULL;
+	if (!r2p) return NULL;
+	bufsz = 4096;
+	buf = calloc (1, bufsz);
+	if (!buf) return NULL;
+#if __WINDOWS__ && !defined(__CYGWIN__)
 	BOOL bSuccess = FALSE;
 	DWORD dwRead = 0;
-	memset (buf, 0, sizeof (buf));
-	bSuccess = ReadFile (r2p->pipe, buf, sizeof (buf), &dwRead, NULL);
+	// TODO: handle > 4096 buffers here
+	bSuccess = ReadFile (r2p->pipe, buf, bufsz, &dwRead, NULL);
 	if (!bSuccess || !buf[0]) {
 		return NULL;
 	}
 	if (dwRead>0) {
 		buf[dwRead] = 0;
 	}
-	buf[sizeof (buf)-1] = 0;
+	buf[bufsz-1] = 0;
 #else
 	int i, rv;
-	for (i=0; i<sizeof (buf)-1; i++) {
-		rv = read (r2p->output[0], buf+i, 1);
+	for (i=0; i < bufsz; i++) {
+		rv = read (r2p->output[0], buf + i, 1);
+		if (i+2 >= bufsz) {
+			bufsz += 4096;
+			newbuf = realloc (buf, bufsz);
+			if (!newbuf) {
+				free (buf);
+				buf = NULL;
+				break;
+			}
+			buf = newbuf;
+		}
 		if (rv != 1 || !buf[i]) break;
 	}
-	buf[i] = 0;
+	if (buf) {
+		int zpos = (i<bufsz)? i: i - 1;
+		buf[zpos] = 0;
+	}
 #endif
-	return strdup (buf);
+	return buf;
 }
 
 R_API void r2p_free (R2Pipe *r2p) {

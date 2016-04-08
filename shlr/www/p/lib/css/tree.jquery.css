@@ -48,6 +48,12 @@ ul.jqtree-tree .jqtree-element {
     margin-left: 0;
 }
 
+span.addr:hover, 
+div#strings .jqtree-title-folder:hover,
+div#types .jqtree-title-folder:hover {
+    cursor: default;
+}
+
 ul.jqtree-tree li.jqtree-folder {
     margin-bottom: 4px;
 }

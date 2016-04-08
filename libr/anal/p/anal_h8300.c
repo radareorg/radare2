@@ -12,17 +12,17 @@
 #define emit(frag) r_strbuf_appendf(&op->esil, frag)
 #define emitf(...) r_strbuf_appendf(&op->esil, __VA_ARGS__)
 //setting the appropriate flags, NOTE: semicolon included
-#define setZ r_strbuf_appendf(&op->esil, ",%%z,Z,=") //zero flag
-#define setN r_strbuf_appendf(&op->esil, ",%%s,N,=") //negative(sign) flag
+#define setZ r_strbuf_appendf(&op->esil, ",$z,Z,=") //zero flag
+#define setN r_strbuf_appendf(&op->esil, ",$s,N,=") //negative(sign) flag
 #define setV(val) r_strbuf_appendf(&op->esil, ",%s,V,=", val) //overflow flag
-#define setC_B r_strbuf_appendf(&op->esil, ",%%c7,C,=") //carry flag for byte op
-#define setC_W r_strbuf_appendf(&op->esil, ",%%c15,C,=") //carryflag for word op
-#define setCb_B r_strbuf_appendf(&op->esil, ",%%b7,C,=") //borrow flag for byte
-#define setCb_W r_strbuf_appendf(&op->esil, ",%%b15,C,=") //borrow flag for word
-#define setH_B r_strbuf_appendf(&op->esil, ",%%c3,H,=") //half carry(byte)-bcd
-#define setH_W r_strbuf_appendf(&op->esil, ",%%c11,H,=") //half carry(word)-bcd
-#define setHb_B r_strbuf_appendf(&op->esil, ",%%b3,H,=") //half borrow(byte)-bcd
-#define setHb_W r_strbuf_appendf(&op->esil, ",%%b11,H,=") //halfborrow(word)-bcd
+#define setC_B r_strbuf_appendf(&op->esil, ",$c7,C,=") //carry flag for byte op
+#define setC_W r_strbuf_appendf(&op->esil, ",$c15,C,=") //carryflag for word op
+#define setCb_B r_strbuf_appendf(&op->esil, ",$b7,C,=") //borrow flag for byte
+#define setCb_W r_strbuf_appendf(&op->esil, ",$b15,C,=") //borrow flag for word
+#define setH_B r_strbuf_appendf(&op->esil, ",$c3,H,=") //half carry(byte)-bcd
+#define setH_W r_strbuf_appendf(&op->esil, ",$c11,H,=") //half carry(word)-bcd
+#define setHb_B r_strbuf_appendf(&op->esil, ",$b3,H,=") //half borrow(byte)-bcd
+#define setHb_W r_strbuf_appendf(&op->esil, ",$b11,H,=") //halfborrow(word)-bcd
 
 //get reg. from opcodes
 #define rs() (buf[1]&0x70)>>4 //upper nibble used as source generally
@@ -680,8 +680,8 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr,
 
 static int set_reg_profile(RAnal *anal) {
 	char *p =
-		"=pc	pc\n"
-		"=sp	r7\n"
+		"=PC	pc\n"
+		"=SP	r7\n"
 		"gpr	r0	.16	0	0\n"
 		"gpr	r0h	.8	0	0\n"
 		"gpr	r0l	.8	1	0\n"
@@ -723,18 +723,11 @@ struct r_anal_plugin_t r_anal_plugin_h8300 = {
 	.name = "h8300",
 	.desc = "H8300 code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_H8300,
+	.arch = "h8300",
 	.bits = 16,
-	.init = NULL,
-	.fini = NULL,
 	.op = &h8300_op,
-	.esil = R_TRUE,
+	.esil = true,
 	.set_reg_profile = set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

@@ -190,22 +190,42 @@ R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb)
 }
 
 /* TODO: Move into r_util maybe? */
-R_API int r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb,
+R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb,
 		ut32 *distance, double *similarity) {
-	int i, j, cost, tmin, **m;
+	int i, j, tmin, **m;
+	ut64 totalsz = 0;
 
 	if (!a || !b || la < 1 || lb < 1)
-		return R_FALSE;
+		return false; 
 
+	if (la == lb && !memcmp (a, b, la)) {
+		if (distance != NULL)
+			*distance = 0;
+		if (similarity != NULL)
+			*similarity = 1.0;
+		return true;
+	}
+	totalsz = sizeof(int*) * (lb+1);
+	for(i = 0; i <= la; i++) {
+		totalsz += ((lb+1) * sizeof(int));
+	}
+	if (totalsz >= 1024 * 1024 * 1024) { // 1 GB of ram
+		char *szstr = r_num_units (NULL, totalsz);
+		eprintf ("Too much memory required (%s) to run distance diff, Use -c.\n", szstr);
+		free (szstr);
+		return false;
+	}
 	if ((m = malloc ((la+1) * sizeof(int*))) == NULL)
-		return R_FALSE;
-	for(i = 0; i <= la; i++)
+		return false;
+	for(i = 0; i <= la; i++) {
 		if ((m[i] = malloc ((lb+1) * sizeof(int))) == NULL) {
+			eprintf ("Allocation failed\n");
 			while (i--)
 				free (m[i]);
 			free (m);
-			return R_FALSE;
+			return false;
 		}
+	}
 
 	for (i = 0; i <= la; i++)
 		m[i][0] = i;
@@ -214,9 +234,7 @@ R_API int r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b,
 
 	for (i = 1; i <= la; i++) {
 		for (j = 1; j <= lb; j++) {
-			if (a[i-1] == b[j-1])
-				cost = 0;
-			else cost = 1;
+			int cost = (a[i-1] != b[j-1])? 1: 0;
 			tmin = R_MIN (m[i-1][j] + 1, m[i][j-1] + 1);
 			m[i][j] = R_MIN (tmin, m[i-1][j-1] + cost);
 		}
@@ -231,5 +249,5 @@ R_API int r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b,
 		free (m[i]);
 	free (m);
 
-	return R_TRUE;
+	return true;
 }

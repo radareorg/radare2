@@ -43,9 +43,9 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
-	if (!arch || !arch->o) return R_FALSE;
+	if (!arch || !arch->o) return false;
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj ? R_TRUE: R_FALSE;
+	return arch->o->bin_obj ? true: false;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -94,24 +94,24 @@ static int check(RBinFile *arch) {
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if (!buf || length < 8)
-		return R_FALSE;
+		return false;
 	// Non-extended opcode dex file
 	if (!memcmp (buf, "dex\n035\0", 8)) {
-	        return R_TRUE;
+	        return true;
 	}
 	// Extended (jumnbo) opcode dex file, ICS+ only (sdk level 14+)
 	if (!memcmp (buf, "dex\n036\0", 8))
-	        return R_TRUE;
+	        return true;
 	// M3 (Nov-Dec 07)
 	if (!memcmp (buf, "dex\n009\0", 8))
-	        return R_TRUE;
+	        return true;
 	// M5 (Feb-Mar 08)
         if (!memcmp (buf, "dex\n009\0", 8))
-	        return R_TRUE;
+	        return true;
 	// Default fall through, should still be a dex file
 	if (!memcmp (buf, "dex\n", 4))
-                return R_TRUE;
-	return R_FALSE;
+                return true;
+	return false;
 }
 
 static RBinInfo *info(RBinFile *arch) {
@@ -120,7 +120,7 @@ static RBinInfo *info(RBinFile *arch) {
 	if (!ret) return NULL;
 	ret->file = arch->file? strdup (arch->file): NULL;
 	ret->type = strdup ("DEX CLASS");
-	ret->has_va = R_FALSE;
+	ret->has_va = false;
 	ret->bclass = r_bin_dex_get_version (arch->o->bin_obj);
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
@@ -186,9 +186,10 @@ static RList* strings (RBinFile *arch) {
 		r_buf_read_at (bin->b, bin->strings[i], (ut8*)&buf, 6);
 		len = dex_read_uleb128 (buf);
 		if (len>1 && len < R_BIN_SIZEOF_STRINGS) {
+			ptr->string = malloc (len + 1);
 			r_buf_read_at (bin->b, bin->strings[i]+dex_uleb128_len (buf),
-					(ut8*)&ptr->string, len);
-			ptr->string[(int) len+1]='\0';
+					(ut8*)ptr->string, len);
+			ptr->string[len] = 0;
 			ptr->vaddr = ptr->paddr = bin->strings[i];
 			ptr->size = len;
 			ptr->length = len;
@@ -339,7 +340,6 @@ static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
 
 static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct dex_class_t *c, RBinClass *cls) {
 	int i, *methods;
-	char *name;
 	ut64 SF, IF, DM, VM;
 	const ut8 *p, *p_end;
 	char *class_name;
@@ -353,10 +353,10 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 	if (!class_name) {
 		return NULL;
 	}
-	methods = calloc (sizeof (ut32), bin->header.method_size);
+	methods = calloc (sizeof (int), bin->header.method_size);
 	if (!methods) {
 		free (class_name);
-		return R_FALSE;
+		return false;
 	}
 	dprintf ("  class_data_offset: %d\n", c->class_data_offset);
 	p = r_buf_get_at (binfile->buf, c->class_data_offset, NULL);
@@ -406,7 +406,7 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 		omi = MI;
 		// the mi is diff
 #if 0
-		index into the method_ids list for the identity of this method (includes the name and descriptor), represented as a difference from the index of previous element in the list. The index of the first element in a list is represented directly. 
+		index into the method_ids list for the identity of this method (includes the name and descriptor), represented as a difference from the index of previous element in the list. The index of the first element in a list is represented directly.
 #endif
 		p = r_uleb128 (p, p_end-p, &MA);
 		p = r_uleb128 (p, p_end-p, &MC);
@@ -419,52 +419,55 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 		dprintf ("METHOD NAME %u\n", (ut32)MI);
 		if (!method_name) method_name = strdup ("unknown");
 		flag_name = flagname (class_name, method_name);
+		if (!flag_name)
+			continue;
 		dprintf ("f %s @ 0x%x\n", flag_name, (ut32)MC);
 		dprintf ("    { name: %d %d %s,\n", (ut32)MC, (ut32)MI, method_name);
 		dprintf ("      idx: %u,\n", (ut32)MI);
 		dprintf ("      access_flags: 0x%x,\n", (ut32)MA);
 		dprintf ("      code_offset: 0x%x },\n", (ut32)MC);
 		/* add symbol */
-		if (flag_name && *flag_name) {
+		if (*flag_name) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			strncpy (sym->name, flag_name, sizeof (sym->name)-1);
-			strcpy (sym->type, "FUNC");
+			sym->name = flag_name;
+			sym->type = r_str_const ("FUNC");
 			sym->paddr = sym->vaddr = MC;
 			if (MC>0) { /* avoid methods at 0 paddr */
 #if 0
-// TODO: use sdb+pf to show method header
-ut16 regsz;
-ut16 ins_size
-ut16 outs_size
-ut16 tries_size
-ut32 debug_info_off
-ut32 insns_size
-ut16[insn_size] insns;
-ut16 padding = 0
-try_item[tries_size] tries
-encoded_catch_handler_list handlers
+				// TODO: use sdb+pf to show method header
+				ut16 regsz;
+				ut16 ins_size
+				ut16 outs_size
+				ut16 tries_size
+				ut32 debug_info_off
+				ut32 insns_size
+				ut16[insn_size] insns;
+				ut16 padding = 0
+				try_item[tries_size] tries
+				encoded_catch_handler_list handlers
 #endif
 				sym->paddr += 0x10;
 				r_list_append (bin->methods_list, sym);
+// this causes an invalid flag name issue
 				if (cls) {
-					if (!cls->methods) {
+					if (!cls->methods)
 						cls->methods = r_list_new ();
-					}
 					r_list_append (cls->methods, sym);
 				}
 				/* cache in sdb */
 				if (!mdb) {
 					mdb = sdb_new0 ();
 				}
-				sdb_num_set (mdb, sdb_fmt(0, "method.%d", MI), sym->paddr, 0);
+				sdb_num_set (mdb, sdb_fmt (0, "method.%d", MI), sym->paddr, 0);
 			} else {
 				//r_list_append (bin->methods_list, sym);
 				// XXX memleak sym
 				free (sym);
 			}
+		} else {
+			free (flag_name);
 		}
 		free (method_name);
-		free (flag_name);
 	}
 	/* virtual methods */
 	dprintf ("  virtual methods: %u\n", (ut32)VM);
@@ -478,13 +481,14 @@ encoded_catch_handler_list handlers
 		if (MC>0 && bin->code_from>MC) bin->code_from = MC;
 		if (MC>0 && bin->code_to<MC) bin->code_to = MC;
 
-		name = dex_method_name (bin, MI);
+		char *name = dex_method_name (bin, MI);
 		dprintf ("    method name: %s\n", name);
 		dprintf ("    method_idx: %u\n", (ut32)MI);
 		dprintf ("    method access_flags: %u\n", (ut32)MA);
 		dprintf ("    method code_offset: %u\n", (ut32)MC);
 		free (name);
 	}
+	free (class_name);
 	return methods;
 }
 
@@ -494,7 +498,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 
 	// doublecheck??
 	if (!bin || bin->methods_list)
-		return R_FALSE;
+		return false;
 	bin->code_from = UT64_MAX;
 	bin->code_to = 0;
 	bin->methods_list = r_list_new ();
@@ -504,7 +508,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 
 	if (bin->header.method_size>bin->size) {
 		bin->header.method_size = 0;
-		return R_FALSE;
+		return false;
 	}
 
 	/* WrapDown the header sizes to avoid huge allocations */
@@ -514,7 +518,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 
 	if (bin->header.strings_size > bin->size) {
 		eprintf ("Invalid strings size\n");
-		return R_FALSE;
+		return false;
 	}
 
 	dprintf ("Walking %d classes\n", bin->header.class_size);
@@ -553,10 +557,10 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				char *method_name = dex_method_name (bin, i);
 				dprintf ("import %d (%s)\n", i, method_name);
 				if (method_name && *method_name) {
-					RBinSymbol *sym = R_NEW0 (RBinSymbol);
-					strncpy (sym->name, method_name, R_BIN_SIZEOF_STRINGS);
-					strcpy (sym->type, "FUNC");
-					sym->paddr = sym->vaddr = 0; // UNKNOWN
+					RBinImport *sym = R_NEW0 (RBinImport);
+					sym->name = strdup (method_name);
+					sym->type = r_str_const ("FUNC");
+					//sym->paddr /= sym->vaddr = 0; // UNKNOWN
 					r_list_append (bin->imports_list, sym);
 				}
 				free (method_name);
@@ -564,7 +568,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		}
 		free (methods);
 	}
-	return R_TRUE;
+	return true;
 }
 
 static RList* imports (RBinFile *arch) {
@@ -688,7 +692,7 @@ static RList* classes (RBinFile *arch) {
 		class = R_NEW0 (RBinClass);
 		// get source file name (ClassName.java)
 		// TODO: use RConstr here
-		//class->name = strdup (name[0]<0x41? name+1: name); 
+		//class->name = strdup (name[0]<0x41? name+1: name);
 		class->name = dex_class_name_byid (bin, entry.class_id);
 		// find reference to this class instance
 		char *cn = getClassName(class->name);
@@ -699,8 +703,8 @@ static RList* classes (RBinFile *arch) {
 			class->name = cn;
 			//class->addr = class_addr;
 
-		int *methods = parse_class (arch, bin, &entry, class);
-		free (methods);
+			int *methods = parse_class (arch, bin, &entry, class);
+			free (methods);
 
 			r_list_append (ret, class);
 			dprintf ("class.%s=%d\n", name[0]==12?name+1:name, entry.class_id);
@@ -734,9 +738,9 @@ static int already_entry (RList *entries, ut64 vaddr) {
 static RList* entries(RBinFile *arch) {
 	RListIter *iter;
 	RBinDexObj *bin;
-	RList *ret;
-	RBinAddr *ptr;
 	RBinSymbol *m;
+	RBinAddr *ptr;
+	RList *ret;
 
 	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
@@ -846,7 +850,8 @@ static RList* sections(RBinFile *arch) {
 		strcpy (ptr->name, "header");
 		ptr->size = ptr->vsize = sizeof (struct dex_header_t);
 		ptr->paddr= ptr->vaddr = 0;
-		ptr->srwx = 4;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
@@ -854,14 +859,16 @@ static RList* sections(RBinFile *arch) {
 		//ptr->size = ptr->vsize = fsym;
 		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
 		ptr->size = bin->code_from - ptr->vaddr; // fix size
-		ptr->srwx = 4;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
 		strcpy (ptr->name, "code");
 		ptr->vaddr = ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
 		ptr->size = bin->code_to - ptr->paddr;
-		ptr->srwx = 4|1;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
@@ -877,7 +884,8 @@ static RList* sections(RBinFile *arch) {
 			dprintf ("Hack\n");
 			//ptr->size = ptr->vsize = 1024;
 		}
-		ptr->srwx = 4; //|2;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; //|2;
+		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	return ret;
@@ -896,17 +904,12 @@ struct r_bin_plugin_t r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
-	.destroy = NULL,
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
-	.binsym = NULL,
 	.entries = entries,
 	.classes = classes,
 	.sections = sections,
@@ -914,12 +917,7 @@ struct r_bin_plugin_t r_bin_plugin_dex = {
 	.imports = imports,
 	.strings = strings,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.dbginfo = NULL,
 	.size = &size,
-	.write = NULL,
 	.get_offset = &getoffset
 };
 

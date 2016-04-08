@@ -2,14 +2,32 @@
 
 [ -z "${CPU}" ] && CPU="armv7"
 # CPU=arm64
-[ -z "${IOSINC}" ] && IOSINC="${CWD}/ios-include"
 CWD="$(dirname "$0")"
+[ -z "${IOSINC}" ] && IOSINC="${CWD}/ios-include"
 #CC="xcrun --sdk iphoneos gcc -arch armv7 -I${CWD}/ios-include"
-CC="xcrun --sdk iphoneos gcc -arch ${CPU} -I${IOSINC}"
+CPUS=""
+CPU=`echo $CPU | sed -e 's,+, ,g'`
+EXTRA=""
+for a in `IFS=+ echo ${CPU}` ; do
+	if [ "$a" = "armv7k" ]; then
+		EXTRA="-fembed-bitcode"
+	fi
+	CPUS="-arch $a ${CPUS}"
+done
+[ -z "${SDK}" ] && SDK=iphoneos
+APPLE_SDK=`echo ${SDK} |tr a-z A-Z`
+CC="xcrun --sdk ${SDK} gcc ${CPUS} -DAPPLE_SDK_${APPLE_SDK}=1 -I${IOSINC} ${EXTRA}"
+echo $CC $*
 #CC="xcrun --sdk iphoneos gcc -arch arm64"
-exec ${CC} $*
-exit 1
+${CC} $*
+r=$?
+if [ "$r" != 0 ]; then
+	echo ${CC} $* > /dev/stderr
+fi
+exit $r
 
+
+##################################### LEGACY AND UNUSED CODE ##########################################
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
 
 #CPU="armv7 arm64"
@@ -18,7 +36,7 @@ if [ -z "${CPU}" ]; then
 	#CPU=arm64
 fi
 if [ -z "${IOSVER}" ]; then
-	IOSVER=8.3
+	IOSVER=9.1
 fi
 
 # USE_SIMULATOR=1

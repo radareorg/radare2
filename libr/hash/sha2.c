@@ -944,9 +944,9 @@ void SHA512_Last(R_SHA512_CTX* context) {
 	*(sha2_word64*)&context->buffer[SHA512_SHORT_BLOCK_LENGTH+8] = context->bitcount[0];
 #else
 	{
-		sha2_word64 *p = (sha2_word64*)((ut8*)context->buffer+SHA256_SHORT_BLOCK_LENGTH);
+		sha2_word64 *p = (sha2_word64*)((ut8*)context->buffer+SHA512_SHORT_BLOCK_LENGTH);
 		*p = (sha2_word64)context->bitcount[1];
-		p = (sha2_word64*)((ut8*)context->buffer+SHA256_SHORT_BLOCK_LENGTH+8);
+		p = (sha2_word64*)((ut8*)context->buffer+SHA512_SHORT_BLOCK_LENGTH+8);
 		*p = (sha2_word64)context->bitcount[0];
 	}
 #endif

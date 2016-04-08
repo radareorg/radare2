@@ -108,6 +108,9 @@ ANAL_OBJS += p/anal_dalvik.c ;
 # GB
 ANAL_OBJS += p/anal_gb.c ;
 
+# 6502
+ANAL_OBJS += p/anal_6502.c ;
+
 lib r_anal : $(ANAL_OBJS) :
     <include>../include
     <define>CORELIB

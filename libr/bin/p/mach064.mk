@@ -1,4 +1,6 @@
-OBJ_MACH064=bin_mach064.o ../format/mach0/mach064.o
+OBJ_MACH064=bin_mach064.o
+OBJ_MACH064+=bin_write_mach064.o
+OBJ_MACH064+=../format/mach0/mach064.o
 
 STATIC_OBJ+=${OBJ_MACH064}
 TARGET_MACH064=bin_mach064.${EXT_SO}

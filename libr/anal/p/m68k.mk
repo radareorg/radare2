@@ -1,5 +1,7 @@
 OBJ_M68K=anal_m68k.o
 
+include ${CURDIR}capstone.mk
+
 STATIC_OBJ+=${OBJ_M68K}
 TARGET_M68K=anal_m68k.${EXT_SO}
 

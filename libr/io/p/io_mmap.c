@@ -45,7 +45,7 @@ static int r_io_mmap_refresh_buf(RIOMMapFileObj *mmo) {
 	mmo->buf = r_buf_mmap (mmo->filename, mmo->flags);
 	if (mmo->buf)
 		r_io_mmap_seek (io, mmo, cur, SEEK_SET);
-	return (mmo->buf ? R_TRUE : R_FALSE);
+	return (mmo->buf ? true : false);
 }
 
 RIOMMapFileObj *r_io_mmap_create_new_file(RIO  *io, const char *filename, int mode, int flags) {
@@ -174,7 +174,7 @@ static int r_io_mmap_truncate(RIOMMapFileObj *mmo, ut64 size) {
 
 	if (res && !r_io_mmap_refresh_buf (mmo) ) {
 		eprintf ("r_io_mmap_truncate: Error trying to refresh the mmap'ed file.");
-		res = R_FALSE;
+		res = false;
 	}
 	else if (res) eprintf ("r_io_mmap_truncate: Error trying to resize the file.");
 	return res;

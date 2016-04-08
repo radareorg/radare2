@@ -1,26 +1,25 @@
-/* radare - LGPL - Copyright 2012 - pancake */
+/* radare - LGPL - Copyright 2012-2015 - pancake */
 
 #include <r_bin.h>
 
-R_API int r_bin_lang_objc(RBinFile *binfile) {
+R_API bool r_bin_lang_objc(RBinFile *binfile) {
 	RBinObject *o = binfile ? binfile->o : NULL;
 	RBinInfo *info = o ? o->info : NULL;
 	RListIter *iter;
 	RBinSymbol *sym;
-	int hasobjc = R_FALSE;
-	char *dsym;
+	bool hasobjc = false;
 	const char *ft;
+	char *dsym;
 
-	if (!info)
-		return 0;
+	if (!info) return false;
 	ft = info->rclass;
-
 	if (!ft || (!strstr (ft, "mach") && !strstr (ft, "elf")))
-		return 0;
+		return false;
 	r_list_foreach (o->symbols, iter, sym) {
-		if (!hasobjc)
-			if (!strncmp (sym->name, "_OBJC_", 6))
-				hasobjc = R_TRUE;
+		if (!hasobjc && !strncmp (sym->name, "_OBJC_", 6)) {
+			hasobjc = true;
+			break;
+		}
 		dsym = r_bin_demangle_objc (binfile, sym->name);
 		if (dsym) {
 			// Add type

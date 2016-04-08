@@ -10,7 +10,7 @@ static csh cd = 0;
 static int n = 0;
 static cs_insn *insn = NULL;
 
-static int the_end(void *p) {
+static bool the_end(void *p) {
 #if !USE_ITER_API
 	if (insn) {
 		cs_free (insn, n);
@@ -21,7 +21,7 @@ static int the_end(void *p) {
 		cs_close (&cd);
 		cd = 0;
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int check_features(RAsm *a, cs_insn *insn);
@@ -49,7 +49,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
-	if (a->syntax == R_ASM_SYNTAX_ATT) {
+	if (a->syntax == R_ASM_SYNTAX_MASM) {
+#if CS_API_MAJOR >= 4
+		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
+#endif
+	} else if (a->syntax == R_ASM_SYNTAX_ATT) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
 	} else {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);

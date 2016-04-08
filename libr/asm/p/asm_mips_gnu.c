@@ -43,18 +43,18 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	va_list ap;
 	char *tmp;
 	if (buf_global == NULL || format == NULL)
-		return R_FALSE;
+		return false;
 	va_start (ap, format);
  	tmp = malloc (strlen (format)+strlen (buf_global)+2);
 	if (tmp == NULL) {
 		va_end (ap);
-		return R_FALSE;
+		return false;
 	}
 	sprintf (tmp, "%s%s", buf_global, format);
 	vsprintf (buf_global, tmp, ap);
 	va_end (ap);
 	free (tmp);
-	return R_TRUE;
+	return true;
 }
 
 static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, int len) {

@@ -1,15 +1,25 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+
+static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
+	RListIter *it;
+	RBinFile *bf;
+	r_list_foreach (bin->binfiles, it, bf) {
+		if (bf->fd == fd) return bf->id;
+	}
+	return UT32_MAX;
+
+}
+
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "ob", " # List open binary files backed by fd",
 		"ob", "", "List opened binfiles and bin objects",
-		"ob", " [binfile #]", "Same as obo.",
-		"obb", " [binfile #]", "Prioritize by binfile number with current selected object",
-		"ob-", " [binfile #]", "Delete binfile",
+		"ob", " [fd # bobj #]", "Prioritize by fd number and object number",
+		"obb", " [fd #]", "Prioritize by fd number with current selected object",
+		"ob-", " [fd #]", "Delete binfile by fd",
 		"obd", " [binobject #]", "Delete binfile object numbers, if more than 1 object is loaded",
 		"obo", " [binobject #]", "Prioritize by bin object number",
-		"obs", " [bf #] [bobj #]", "Prioritize by binfile and object numbers",
 		NULL};
 	const char *value = NULL;
 	ut32 binfile_num = -1, binobj_num = -1;
@@ -21,78 +31,101 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case '*':
 		r_core_bin_list (core, input[1]);
 		break;
-	case 's':
-		value = *(input+2) ? input+3 : NULL;
-		if (!value) {
-			eprintf ("Invalid binfile number.");
-			break;
-		}
-		binfile_num = *value && r_is_valid_input_num_value (core->num, value) ?
-			r_get_input_num_value (core->num, value) : UT32_MAX;
-
-		if (binfile_num == UT32_MAX) {
-			eprintf ("Invalid binfile number.");
-			break;
-		}
-
-		value = *(value+1) ? r_str_tok (value+1, ' ', -1) : NULL;
-		value = value && *(value+1) ? value+1 : NULL;
-
-		binobj_num = value && binfile_num != -1 &&
-			r_is_valid_input_num_value (core->num, value) ?
-			r_get_input_num_value (core->num, value) : UT32_MAX;
-
-		if (binobj_num == UT32_MAX) {
-			eprintf ("Invalid bin object number.");
-			break;
-		}
-		r_core_bin_raise (core, binfile_num, binobj_num);
-		break;
 	case 'b':
-		value = *(input+2) ? input+3 : NULL;
+	{
+		ut32 fd;
+		value = *(input + 3) ? input + 3 : NULL;
 		if (!value) {
-			eprintf ("Invalid binfile number.");
+			eprintf ("Invalid fd number.");
 			break;
 		}
-		binfile_num = *value && r_is_valid_input_num_value (core->num, value) ?
+		binfile_num = UT32_MAX;
+		fd = *value && r_is_valid_input_num_value (core->num, value) ?
 			r_get_input_num_value (core->num, value) : UT32_MAX;
-
+		binfile_num = find_binfile_id_by_fd (core->bin, fd);
 		if (binfile_num == UT32_MAX) {
-			eprintf ("Invalid binfile number.");
+			eprintf ("Invalid fd number.");
 			break;
 		}
-		value = *(value+1) ? r_str_tok (value+1, ' ', -1) : NULL;
-		value = value && *(value+1) ? value+1 : NULL;
 		r_core_bin_raise (core, binfile_num, -1);
 		break;
+	}
 	case ' ':
-	case 'o':
-		value = *(input+2) ? input+3 : NULL;
-		if (!value) {
-			eprintf ("Invalid binfile number.");
+	{
+		ut32 fd;
+		int n;
+		const char *tmp;
+		char *v;
+		v = input[2] ? strdup (input + 2) : NULL;
+		if (!v) {
+			eprintf ("Invalid arguments");
 			break;
 		}
-		binobj_num = *value && r_is_valid_input_num_value (core->num, value) ?
-			r_get_input_num_value (core->num, value) : UT32_MAX;
+		n = r_str_word_set0 (v);
+		if (n < 2 || n > 2) {
+			eprintf ("Invalid arguments\n");
+			eprintf ("usage: ob fd obj\n");
+			free (v);
+			break;
+		}
+		tmp = r_str_word_get0 (v, 0);
+		fd  = *v && r_is_valid_input_num_value (core->num, tmp) ?
+			r_get_input_num_value (core->num, tmp) : UT32_MAX;
+		tmp = r_str_word_get0 (v, 1);
+		binobj_num  = *v && r_is_valid_input_num_value (core->num, tmp) ?
+			r_get_input_num_value (core->num, tmp) : UT32_MAX;
+		binfile_num = find_binfile_id_by_fd (core->bin, fd);
+		r_core_bin_raise (core, binfile_num, binobj_num);
+		free (v);
+		break;
+	}
+	case 'o':
+		value = input[3] ? input + 3 : NULL;
+		if (!value) {
+			eprintf ("Invalid argument");
+			break;
+		}
+		binobj_num  = *value && r_is_valid_input_num_value (core->num, value) ?
+				r_get_input_num_value (core->num, value) : UT32_MAX;
 		if (binobj_num == UT32_MAX) {
-			eprintf ("Invalid bin object number.");
+			eprintf ("Invalid binobj_num");
 			break;
 		}
 		r_core_bin_raise (core, -1, binobj_num);
 		break;
 	case '-': // "ob-"
+		//FIXME this command doesn't remove nothing
 		if (input[2] == '*') {
-			r_cons_printf ("[i] Deleted %d binfiles\n", r_bin_file_delete_all (core->bin));
+			//FIXME this only delete from a list but it doesn't free any space
+			r_cons_printf ("[i] Deleted %d binfiles\n",
+					r_bin_file_delete_all (core->bin));
 		} else {
-			if (!r_bin_file_delete (core->bin, r_num_math (core->num, input+2))) {
-				eprintf ("Cant find an RBinFile associated with that fd.\n");
+			ut32 fd;
+			value = input[3] ? input + 3 : NULL;
+			if (!value) {
+				eprintf ("Invalid argument\n");
+				break;
+			}
+			fd  = *value && r_is_valid_input_num_value (core->num, value) ?
+					r_get_input_num_value (core->num, value) : UT32_MAX;
+
+			binfile_num = find_binfile_id_by_fd (core->bin, fd);
+			if (binfile_num == UT32_MAX) {
+				eprintf ("Invalid fd\n");
+				break;
+			}
+			if (r_core_bin_delete (core, binfile_num, -1)){
+				if (!r_bin_file_delete (core->bin, fd))
+					eprintf ("Cannot find an RBinFile associated with that fd.\n");
+			} else {
+				eprintf ("Couldn't erase because there must be 1 bin object loaded\n");
 			}
 		}
 		break;
 	case 'd': // backward compat, must be deleted
-		value = *(input+2) ? input+2 : NULL;
+		value = input[2] ? input + 2 : NULL;
 		if (!value) {
-			eprintf ("Invalid binfile number.");
+			eprintf ("Invalid bin object number.");
 			break;
 		}
 		binobj_num = *value && r_is_valid_input_num_value (core->num, value) ?
@@ -116,6 +149,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 		"om", "-0x10000", "remove the map at given address",
 		"om", " fd addr [size]", "create new io map",
 		"omr", " fd|0xADDR ADDR", "relocate current map",
+		"om*", "", "show r2 commands to restore mapaddr",
 		NULL };
 	ut64 fd = 0LL;
 	ut64 addr = 0LL;
@@ -177,7 +211,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 		break;
 	case '-':
 		if (atoi (input+3)>0) {
-			r_io_map_del(core->io,
+			r_io_map_del (core->io,
 					r_num_math (core->num, input+2));
 		} else {
 			r_io_map_del_at (core->io,
@@ -185,14 +219,59 @@ static void cmd_open_map (RCore *core, const char *input) {
 		}
 		break;
 	case '\0':
-		r_io_map_list (core->io);
+		r_io_map_list (core->io, 0);
+		break;
+	case '*':
+		r_io_map_list (core->io, 'r');
 		break;
 	default:
 	case '?':
 		r_core_cmd_help (core, help_msg);
-		 break;
+		break;
 	}
 	r_core_block_read (core, 0);
+}
+
+R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
+	RCoreFile *ofile = core->file;
+	RBinFile *bf = NULL;
+	char *binpath = NULL;
+	if (!ofile || !ofile->desc || !ofile->desc->uri || !ofile->desc->fd) {
+		eprintf ("No file open?\n");
+		return;
+	}
+	bf = r_bin_file_find_by_fd (core->bin, ofile->desc->fd);
+	binpath = bf ? strdup (bf->file) : NULL;
+	if (!binpath) {
+		if (r_file_exists (ofile->desc->name))
+			binpath = strdup (ofile->desc->name);
+	}
+	if (!binpath) {
+		eprintf ("No bin file open?\n");
+		return;
+	}
+	int bits = core->assembler->bits;
+	char *oldname = r_file_abspath (binpath);
+	char *newfile = r_str_newf ("dbg://%s %s", oldname, args);
+	char *newfile2 = strdup (newfile);
+	core->file->desc->uri = newfile;
+	core->file->desc->referer = NULL;
+	r_core_file_reopen (core, newfile, 0, 2);
+	r_config_set_i (core->config, "asm.bits", bits);
+	r_config_set_i (core->config, "cfg.debug", true);
+	newfile = newfile2;
+
+	ut64 new_baddr = r_debug_get_baddr (core, newfile);
+	ut64 old_baddr = r_config_get_i (core->config, "bin.baddr");
+	if (old_baddr != new_baddr) {
+		r_bin_set_baddr (core->bin, new_baddr);
+		r_config_set_i (core->config, "bin.baddr", new_baddr);
+		r_core_bin_load (core, newfile, new_baddr);
+	}
+	r_core_cmd0 (core, "sr PC");
+	free (oldname);
+	free (binpath);
+	free (newfile);
 }
 
 static int cmd_open(void *data, const char *input) {
@@ -206,6 +285,7 @@ static int cmd_open(void *data, const char *input) {
 		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
 		"oo","","reopen current file (kill+fork in debugger)",
 		"oo","+","reopen current file in read-write",
+		"ood"," [args]","reopen in debugger mode (with args)",
 		"o"," 4","priorize io on fd 4 (bring to front)",
 		"o","-1","close file descriptor 1",
 		"o-","*","close all opened files",
@@ -222,9 +302,13 @@ static int cmd_open(void *data, const char *input) {
 	const char* help_msg_oo[] = {
 		"Usage:", "oo[-] [arg]", " # map opened files",
 		"oo", "", "reopen current file",
-		"oob", "", "reopen loading rbin info",
-		"oon", "", "reopen without loading rbin info",
 		"oo+", "", "reopen in read-write",
+		"oob", "", "reopen loading rbin info",
+		"ood", "", "reopen in debug mode",
+		"oon", "", "reopen without loading rbin info",
+		"oon+", "", "reopen in read-write mode without loading rbin info",
+		"oonn", "", "reopen without loading rbin info, but with header flags",
+		"oonn+", "", "reopen in read-write mode without loading rbin info, but with",
 		NULL};
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
@@ -242,11 +326,37 @@ static int cmd_open(void *data, const char *input) {
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		break;
 	case '\0':
+		r_core_file_list (core, (int)(*input));
+		break;
 	case '*':
+		if ('?' == input[1]) {
+			const char *help_msg[] = {
+				"Usage:", "o* [> files.r2]", "",
+				"o*", "", "list opened files in r2 commands", NULL
+			};
+			r_core_cmd_help (core, help_msg);
+			break;
+		}
 	case 'j':
+		if ('?' == input[1]) {
+			const char *help_msg[] = {
+				"Usage:", "oj [~{}]", " # Use ~{} to indent the JSON",
+				"oj", "", "list opened files in JSON format", NULL
+			};
+			r_core_cmd_help (core, help_msg);
+			break;
+		}
 		r_core_file_list (core, (int)(*input));
 		break;
 	case 'a':
+		if ('?' == input[1]) {
+			const char *help_msg[] = {
+				"Usage:", "oa [addr]", " #",
+				"oa", " [addr]", "Open bin info from the given address",NULL
+			};
+			r_core_cmd_help (core, help_msg);
+			break;
+		}
 		addr = core->offset;
 		if (input[1]) {
 			addr = r_num_math (core->num, input+1);
@@ -361,17 +471,62 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case 'o':
 		switch (input[1]) {
+		case 'd': // "ood" : reopen in debugger
+			if ('?' == input[2]) {
+				const char *help_msg[] = {
+					"ood"," [args]","reopen in debugger mode (with args)",NULL
+				};
+				r_core_cmd_help (core, help_msg);
+			} else {
+				r_core_file_reopen_debug (core, input + 2);
+			}
+			break;
 		case 'b': // "oob" : reopen with bin info
-			r_core_file_reopen (core, input+2, 0, 2);
+			if ('?' == input[2]) {
+				const char *help_msg[] = {
+					"oob", "", "reopen loading rbin info",NULL
+				};
+				r_core_cmd_help (core, help_msg);
+			} else {
+				r_core_file_reopen (core, input + 2, 0, 2);
+			}
 			break;
 		case 'n':
-			r_core_file_reopen (core, input+2, 0, 0);
+			if ('n' == input[2]) {
+				if ('?' == input[3]) {
+					const char *help_msg[] = {
+						"oonn", "", "reopen without loading rbin info, but with header flags",NULL
+					};
+					r_core_cmd_help (core, help_msg);
+					break;
+				}
+				perms = (input[3] == '+')? R_IO_READ|R_IO_WRITE: 0;
+				r_core_file_reopen (core, input + 4, perms, 0);
+				// TODO: Use API instead of !rabin2 -rk
+				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
+			} else if ('?' == input[2]) {
+				const char *help_msg[] = {
+					"oon", "", "reopen without loading rbin info",NULL
+				};
+				r_core_cmd_help (core, help_msg);
+				break;
+			}
+
+			perms = ('+' == input[2])? R_IO_READ|R_IO_WRITE: 0;
+			r_core_file_reopen (core, input + 3, perms, 0);
 			break;
 		case '+':
-			r_core_file_reopen (core, input+2, R_IO_READ | R_IO_WRITE, 1);
+			if ('?' == input[2]) {
+				const char *help_msg[] = {
+					"oo+", "", "reopen in read-write",NULL
+				};
+				r_core_cmd_help (core, help_msg);
+			} else {
+				r_core_file_reopen (core, input + 2, R_IO_READ | R_IO_WRITE, 1);
+			}
 			break;
 		case 0: // "oo"
-			r_core_file_reopen (core, input+2, 0, 1);
+			r_core_file_reopen (core, input + 2, 0, 1);
 			break;
 		case '?':
 		default:
@@ -380,6 +535,13 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case 'c':
+		if ('?' == input[1]) {
+			const char *help_msg[] = {
+				"oc"," [file]","open core file, like relaunching r2",NULL
+			};
+			r_core_cmd_help (core, help_msg);
+			break;
+		}
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
@@ -392,7 +554,7 @@ static int cmd_open(void *data, const char *input) {
 			if (!r_core_file_open (core, input+2, R_IO_READ, 0))
 				eprintf ("Cannot open file\n");
 			if (!r_core_bin_load (core, NULL, baddr))
-				r_config_set (core->config, "io.va", "false");
+				r_config_set_i (core->config, "io.va", false);
 		} else {
 			eprintf ("Missing argument\n");
 		}

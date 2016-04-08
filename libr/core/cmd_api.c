@@ -36,6 +36,7 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 	int i;
 	if (!cmd) return NULL;
 	r_cmd_alias_free (cmd);
+	r_cmd_macro_free (&cmd->macro);
 	// dinitialize plugin commands
 	r_core_plugin_deinit(cmd);
 	r_list_free (cmd->plist);
@@ -61,6 +62,7 @@ R_API void r_cmd_alias_free (RCmd *cmd) {
 	cmd->aliases.count = 0;
 	free (cmd->aliases.keys);
 	free (cmd->aliases.values);
+	free (cmd->aliases.remote);
 	cmd->aliases.keys = NULL;
 	cmd->aliases.values = NULL;
 }
@@ -68,7 +70,7 @@ R_API void r_cmd_alias_free (RCmd *cmd) {
 R_API int r_cmd_alias_del (RCmd *cmd, const char *k) {
 	int i; // find
 	for (i=0; i<cmd->aliases.count; i++) {
-		if (!strcmp (k, cmd->aliases.keys[i])) {
+		if (!k || !strcmp (k, cmd->aliases.keys[i])) {
 			free (cmd->aliases.values[i]);
 			cmd->aliases.values[i] = NULL;
 			cmd->aliases.count--;
@@ -92,10 +94,11 @@ R_API int r_cmd_alias_del (RCmd *cmd, const char *k) {
 	return 0;
 }
 
-R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v) {
+R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) {
 	int i; // find
 	for (i=0; i<cmd->aliases.count; i++) {
-		if (!strcmp (k, cmd->aliases.keys[i])) {
+		int matches = !strcmp (k, cmd->aliases.keys[i]);
+		if (matches) {
 			free (cmd->aliases.values[i]);
 			cmd->aliases.values[i] = strdup (v);
 			return 1;
@@ -105,18 +108,31 @@ R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v) {
 	i = cmd->aliases.count++;
 	cmd->aliases.keys = (char **)realloc (cmd->aliases.keys,
 		sizeof (char**)*cmd->aliases.count);
+	cmd->aliases.remote = (int *)realloc (cmd->aliases.remote,
+		sizeof (int*)*cmd->aliases.count);
 	cmd->aliases.values = (char **)realloc (cmd->aliases.values,
 		sizeof (char**)*cmd->aliases.count);
 	cmd->aliases.keys[i] = strdup (k);
 	cmd->aliases.values[i] = strdup (v);
+	cmd->aliases.remote[i] = remote;
 	return 0;
 }
 
-R_API char *r_cmd_alias_get (RCmd *cmd, const char *k) {
-	int i; // find
+R_API char *r_cmd_alias_get (RCmd *cmd, const char *k, int remote) {
+	int matches, i;
 	for (i=0; i<cmd->aliases.count; i++) {
-		if (!strcmp (k, cmd->aliases.keys[i]))
+		matches = 0;
+		if (remote) {
+			if (cmd->aliases.remote[i]) {
+				matches = !strncmp (k, cmd->aliases.keys[i],
+					strlen (cmd->aliases.keys[i]));
+			}
+		} else {
+			matches = !strcmp (k, cmd->aliases.keys[i]);
+		}
+		if (matches) {
 			return cmd->aliases.values[i];
+		}
 	}
 	return NULL;
 }
@@ -129,16 +145,16 @@ R_API int r_cmd_set_data(RCmd *cmd, void *data) {
 R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const char *desc) {
 	RCmdLongItem *item = R_NEW (RCmdLongItem);
 	if (item == NULL)
-		return R_FALSE;
+		return false;
 	strncpy (item->cmd, lcmd, sizeof (item->cmd)-1);
 	strncpy (item->cmd_short, scmd, sizeof (item->cmd_short)-1);
 	item->cmd_len = strlen (lcmd);
 	strncpy (item->desc, desc, sizeof (item->desc)-1);
 	if (!r_list_append (cmd->lcmds, item)){
 		free (item);
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(cb)) {
@@ -153,7 +169,7 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(c
 	strncpy (item->cmd, cmd, sizeof (item->cmd)-1);
 	strncpy (item->desc, desc, sizeof (item->desc)-1);
 	item->callback = cb;
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_cmd_del(RCmd *cmd, const char *command) {
@@ -172,18 +188,28 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 		if (cmd->nullcallback != NULL)
 			ret = cmd->nullcallback (cmd->data);
 	} else {
+		char *nstr = NULL;
+		const char *ji = r_cmd_alias_get (cmd, input, 1);
+		if (ji) {
+			nstr = r_str_newf ("=!%s", input);
+			input = nstr;
+		}
 		r_list_foreach (cmd->plist, iter, cp) {
-			if (cp->call (cmd->data, input))
-				return R_TRUE;
+			if (cp->call (cmd->data, input)) {
+				free (nstr);
+				return true;
+			}
 		}
 		if (input[0] == -1) {
+			free (nstr);
 			return -1;
 		}
 		c = cmd->cmds[((ut8)input[0]) & 0xff];
 		if (c && c->callback) {
-			const char *inp = (input && *input)? input+1: "";
+			const char *inp = (*input)? input+1: "";
 			ret = c->callback (cmd->data, inp);
 		} else ret = -1;
+		free (nstr);
 	}
 	return ret;
 }
@@ -218,11 +244,16 @@ R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->counter = 0;
 	mac->_brk_value = 0;
 	mac->brk_value = &mac->_brk_value;
-	mac->printf = (void*)printf;
+	mac->cb_printf = (void*)printf;
 	mac->num = NULL;
 	mac->user = NULL;
 	mac->cmd = NULL;
 	mac->macros = r_list_new ();
+}
+
+R_API void r_cmd_macro_free(RCmdMacro *mac) {
+	r_list_free (mac->macros);
+	mac->macros = NULL;
 }
 
 // XXX add support single line function definitions
@@ -257,7 +288,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	} else {
 		eprintf ("Invalid macro body\n");
 		free (name);
-		return R_FALSE;
+		return false;
 	}
 
 	if (*name && name[1] && name[strlen (name)-1]==')') {
@@ -324,7 +355,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		for (;codelen<R_CMD_MAXLEN;) { // XXX input from mac->fd
 #if 0
 			if (stdin == r_cons_stdin_fd) {
-				mac->printf(".. ");
+				mac->cb_printf(".. ");
 				fflush(stdout);
 			}
 			fgets(buf, 1023, r_cons_stdin_fd);
@@ -370,29 +401,46 @@ R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
 			free (m->code);
 			free (m);
 			free (name);
-			return R_TRUE;
+			return true;
 		}
 	}
 	free (name);
-	return R_FALSE;
+	return false;
 }
 
-// TODO: use mac->printf which is r_cons_printf at the end
+// TODO: use mac->cb_printf which is r_cons_printf at the end
 R_API void r_cmd_macro_list(RCmdMacro *mac) {
 	RCmdMacroItem *m;
 	int j, idx = 0;
 	RListIter *iter;
 	r_list_foreach (mac->macros, iter, m) {
-		mac->printf ("%d (%s %s, ", idx, m->name, m->args);
+		mac->cb_printf ("%d (%s %s, ", idx, m->name, m->args);
 		for (j=0; m->code[j]; j++) {
 			if (m->code[j]=='\n')
-				mac->printf (", ");
-			else mac->printf ("%c", m->code[j]);
+				mac->cb_printf (", ");
+			else mac->cb_printf ("%c", m->code[j]);
 		}
-		mac->printf (")\n");
+		mac->cb_printf (")\n");
 		idx++;
 	}
 }
+
+// TODO: use mac->cb_printf which is r_cons_printf at the end
+R_API void r_cmd_macro_meta(RCmdMacro *mac) {
+	RCmdMacroItem *m;
+	int j;
+	RListIter *iter;
+	r_list_foreach (mac->macros, iter, m) {
+		mac->cb_printf ("(%s %s, ", m->name, m->args);
+		for (j=0; m->code[j]; j++) {
+			if (m->code[j]=='\n')
+				mac->cb_printf (", ");
+			else mac->cb_printf ("%c", m->code[j]);
+		}
+		mac->cb_printf (")\n");
+	}
+}
+
 #if 0
 (define name value
   f $0 @ $1)
@@ -532,13 +580,13 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	str = strdup (name);
 	if (str == NULL) {
 		perror ("strdup");
-		return R_FALSE;
+		return false;
 	}
 	ptr = strchr (str, ')');
 	if (ptr == NULL) {
 		eprintf ("Missing end ')' parenthesis.\n");
 		free (str);
-		return R_FALSE;
+		return false;
 	} else *ptr='\0';
 
 	args = strchr (str, ' ');
@@ -570,7 +618,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					m->name, m->nargs, nargs);
 				macro_level --;
 				free (str);
-				return R_FALSE;
+				return false;
 			}
 
 			mac->brk = 0;
@@ -580,7 +628,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					eprintf ("Interrupted at (%s)\n", ptr);
 					if (end) *end = '\n';
 					free (str);
-					return R_FALSE;
+					return false;
 				}
 				r_cons_flush ();
 
@@ -614,7 +662,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				} else {
 					macro_level --;
 					free (str);
-					return R_TRUE;
+					return true;
 				}
 
 				/* Fetch next command */
@@ -624,14 +672,14 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 			if (mac->brk) {
 				macro_level--;
 				free (str);
-				return R_TRUE;
+				return true;
 			}
 		}
 	}
 	eprintf ("No macro named '%s'\n", str);
 	macro_level--;
 	free (str);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value) {
@@ -642,42 +690,3 @@ R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value) {
 		mac->brk_value = &mac->_brk_value;
 	return 0;
 }
-
-#if 0
-int cmd_quit(void *data, const char *input) {
-	printf("quit\n");
-//	exit(1);
-	return 0;
-}
-
-int cmd_echo(void *data, const char *input) {
-	const char *arg = strchr(input, ' ');
-	if (arg == NULL)
-		arg = input;
-	printf("%s\n", arg+1);
-	return 0;
-}
-
-int main()
-{
-	struct r_cmd_t *cmd;
-
-	cmd = r_cmd_new();
-
-	r_cmd_add(cmd, "e", "echo message", &cmd_echo);
-	r_cmd_add(cmd, "q", "quit program", &cmd_quit);
-
-	r_cmd_add_long(cmd, "echo", "e", "echo message");
-	r_cmd_add_long(cmd, "exit", "q", "quit program");
-
-	r_cmd_call(cmd, "e hello world short");
-	r_cmd_call_long(cmd, "echo hello world long");
-	r_cmd_call_long(cmd, "exit");
-	if (!r_cmd_call(cmd, "**dummy**"))
-		eprintf ("==> Cannot call **dummy**\n");
-	else eprintf ("==> **dummy** called\n");
-	r_cmd_call(cmd, "quit");
-
-	return 0;
-}
-#endif

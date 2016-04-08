@@ -39,7 +39,7 @@ typedef struct r_print_t {
 	char datefmt[32];
 	int datezone;
 	int (*write)(const unsigned char *buf, int len);
-	int (*printf)(const char *str, ...);
+	int (*cb_printf)(const char *str, ...);
 	int (*disasm)(void *p, ut64 addr);
 	int (*oprintf)(const char *str, ...);
 	char* (*get_bitfield)(void *user, const char *name, ut64 value);
@@ -49,10 +49,14 @@ typedef struct r_print_t {
 	int width;
 	int limit;
 	int bits;
-	int cur_enabled;
+	// true if the cursor is enabled, false otherwise
+	bool cur_enabled;
+	// offset of the selected byte from the first displayed one
 	int cur;
-	int cols;
+	// offset of the selected byte from the first displayed one, when a
+	// range of bytes is selected. -1 is used if no bytes are selected.
 	int ocur;
+	int cols;
 	int flags;
 	int addrmod;
 	int col;
@@ -69,6 +73,17 @@ typedef struct r_print_t {
 	RReg *reg;
 	RRegItem* (*get_register)(RReg *reg, const char *name, int type);
 	ut64 (*get_register_value)(RReg *reg, RRegItem *item);
+	ut64* lines_cache;
+	int lines_cache_sz;
+	int lines_abs;
+
+	// offset of the first byte of each printed row.
+	// Last elements is marked with a UT32_MAX.
+	ut32 *row_offsets;
+	// size of row_offsets
+	int row_offsets_sz;
+	// when true it makes visual mode flush the buffer to screen
+	bool vflush;
 } RPrint;
 
 #ifdef R_API
@@ -88,7 +103,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len);
 R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* a, ut64 ba, const ut8 *b, int len, int scndcol);
 R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt);
-R_API void r_print_fill(RPrint *p, const ut8 *arr, int size);
+R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step);
 R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch);
 R_API void r_print_c(RPrint *p, const ut8 *str, int len);
 R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlines);
@@ -98,16 +113,19 @@ R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);
 R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang);
 #define SEEFLAG -2
 #define JSONOUTPUT -3
-#define R_PRINT_MUSTSEE 1
-#define R_PRINT_ISFIELD (1<<1)
-#define R_PRINT_SEEFLAGS (1<<2)
-#define R_PRINT_JSON (1<<3)
-#define R_PRINT_MUSTSET (1<<4)
-#define R_PRINT_UNIONMODE (1<<5)
-#define R_PRINT_VALUE (1<<6)
+
+/* mode values for r_print_format_* API */
+#define R_PRINT_MUSTSEE   (1)      // enable printing of data in specified fmt
+#define R_PRINT_ISFIELD   (1 << 1)
+#define R_PRINT_SEEFLAGS  (1 << 2)
+#define R_PRINT_JSON      (1 << 3)
+#define R_PRINT_MUSTSET   (1 << 4)
+#define R_PRINT_UNIONMODE (1 << 5)
+#define R_PRINT_VALUE     (1 << 6)
+#define R_PRINT_DOT       (1 << 7)
 R_API int r_print_format_struct_size(const char *format, RPrint *p, int mode);
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
-R_API int r_print_format_length (const char *fmt);
+R_API int r_print_format_length(const char *fmt);
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt, int delta);
 #define R_PRINT_STRING_WIDE 1
 #define R_PRINT_STRING_ZEROEND 2
@@ -125,6 +143,10 @@ R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles);
 R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num);
 R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type);
 R_API void r_print_set_interrupted(int i);
+R_API void r_print_init_rowoffsets(RPrint *p);
+R_API ut32 r_print_rowoff(RPrint *p, int i);
+R_API void r_print_set_rowoff(RPrint *p, int i, ut32 offset);
+R_API int r_print_row_at_off(RPrint *p, ut32 offset);
 // WIP
 R_API int r_print_unpack7bit(const char *src, char *dest);
 R_API int r_print_pack7bit(const char *src, char *dest);

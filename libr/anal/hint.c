@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2015 - pancake */
+/* radare - LGPL - Copyright 2013-2016 - pancake */
 
 #include <r_anal.h>
 
@@ -16,6 +16,17 @@ R_API void r_anal_hint_del (RAnal *a, ut64 addr, int size) {
 	} else {
 		setf (key, "hint.0x%08"PFMT64x, addr);
 		sdb_unset (a->sdb_hints, key, 0);
+	}
+}
+
+static void unsetHint (RAnal *a, const char *type, ut64 addr) {
+	int idx;
+	char key[128];
+	setf (key, "hint.0x%"PFMT64x, addr);
+	idx = sdb_array_indexof (DB, key, type, 0);
+	if (idx != -1) {
+		sdb_array_delete (DB, key, idx, 0);
+		sdb_array_delete (DB, key, idx, 0);
 	}
 }
 
@@ -42,6 +53,14 @@ R_API void r_anal_hint_set_jump (RAnal *a, ut64 addr, ut64 ptr) {
 
 R_API void r_anal_hint_set_fail(RAnal *a, ut64 addr, ut64 ptr) {
 	setHint (a, "fail:", addr, NULL, ptr);
+}
+
+R_API void r_anal_hint_set_immbase (RAnal *a, ut64 addr, int base) {
+	if (base) {
+		setHint (a, "immbase:", addr, NULL, (ut64)base);
+	} else {
+		unsetHint (a, "immbase:", addr);
+	}
 }
 
 R_API void r_anal_hint_set_pointer (RAnal *a, ut64 addr, ut64 ptr) {
@@ -100,6 +119,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 		r = sdb_anext (r, &nxt);
 		if (token) {
 			switch (token) {
+			case 'i': hint->immbase = sdb_atoi (r); break;
 			case 'j': hint->jump = sdb_atoi (r); break;
 			case 'f': hint->fail = sdb_atoi (r); break;
 			case 'p': hint->ptr  = sdb_atoi (r); break;

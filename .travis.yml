@@ -1,102 +1,49 @@
 # travis.yml for testing radare2. Initially written in 2014, by jn__.
-# Validate with http://yaml.travis-ci.org/.
+
+os:
+  - linux
+  - osx
 
 language: c
+
 compiler:
   - gcc
-  #- clang
-  # With this scarry double quotation the strings will be passed to the shell
-  # still quoted, which is necessary here.
-  #- '"clang -fsanitize=address"'
-  #- '"clang -fsanitize=memory -fsanitize-memory-track-origins"'
-  #- '"clang -fsanitize=thread"'
+  - clang
 
-# Put different test categories in different jobs. This will also help keeping
-# the logs shorter than 10k lines (the maximum that's displayed).
-env:
-  # TODO: run t.archos, once we have Linux tests in there.
- 
-  #- Analysis
-  - TESTS=anal.arm
-  - TESTS=anal.java
-  - TESTS=anal.mips
-  - TESTS=anal.others
-  - TESTS=anal.x86
-  - TESTS=esil
-  
-  #- Formats
-  - TESTS=format.pe
-  - TESTS=format.pdb
-  - TESTS=format.mangling
-  - TESTS=format.msil
-  - TESTS=format.elf
-  - TESTS=format.java
-  - TESTS=format.dex
-  - TESTS=format.mach0
-  - TESTS=format.omf
-  - TESTS=format.xbe
-  - TESTS=format.firmware
-  - TESTS=format.others
+matrix:
+  exclude:
+      - os: osx
+        compiler: gcc
 
-  #- (dis)assemblers
-  - TESTS=asm.8051
-  - TESTS=asm.arc
-  - TESTS=asm.arm
-  - TESTS=asm.avr
-  - TESTS=asm.cr16
-  - TESTS=asm.dalvik
-  - TESTS=asm.ebc
-  - TESTS=asm.gb
-  - TESTS=asm.h8300
-  - TESTS=asm.java
-  - TESTS=asm.lh5801
-  - TESTS=asm.mips
-  - TESTS=asm.msp430
-  - TESTS=asm.tms320
-  - TESTS=asm.ws
-  - TESTS=asm.x86
-  - TESTS=asm.z80
-  
-  #- debugger
-  #- TESTS=dbg.linux
-  - TESTS=io               # IO
-  - TESTS=commands         # r2 commands related
-  - TESTS=tools            # tools related 
-
-# Force build on container-based infrastructure
 sudo: false
 
-# Additional depencies like capstone are downloaded by the r2 makefiles.
 addons:
   apt:
     packages:
-      - dc # GNU dc, used by r2r.
+      - dc
+      - binutils
       - cabextract
 
-install:
-  - git clone `doc/repo REGRESSIONS`
-  # This little hack will prevent the test names from being erased in the
-  # travis logfile.
-  - sed -i 's/\\r//' radare2-regressions/tests.sh
+cache:
+  - ccache
+  - apt
 
 script:
-  # llvm-symbolizer isn't in PATH, so we need this.
-  # (Also, YAML doesn't like underscores)
-  #- export SYMBOLIZER=/usr/local/clang-3.4/bin/llvm-symbolizer
-  #- export ASAN_SYMBOLIZER_PATH=$SYMBOLIZER
-  #- export MSAN_SYMBOLIZER_PATH=$SYMBOLIZER
-  #- 'export TSAN_OPTIONS=external_symbolizer_path=$SYMBOLIZER'
-  # Limit the stack size (to 32MiB) to make ThreadSanitizer happy.
-  - ulimit -s 32768
-  # Now on to actually building stuff...
-# Set prefix for which we don't need sudo
-  - ./configure --prefix=`pwd`/install > /dev/null  # TODO: Might enable some of the additional features.
-  - make -s > /dev/null
+  - git clone --depth 1 `doc/repo REGRESSIONS`
+  - ./configure --prefix=`pwd`/install > /dev/null
+  - make -s -j2 > /dev/null
   - make install > /dev/null
   - export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
   - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
+  - export LIBR_INCLUDE=${TRAVIS_BUILD_DIR}/libr/include
+  - export LIBR_UTIL=${TRAVIS_BUILD_DIR}/libr/util
+  - export NOOK=1
+  - export NOREPORT=1
   - cd radare2-regressions
-  - VERBOSE=1 make $TESTS   # Run the tests, report only regressions as errors.
+  - VERBOSE=1 make -k all
+  - make unit_tests
 
 notifications:
   irc: "chat.freenode.net#radare"
+  on_success: never
+  on_failure: always

@@ -39,13 +39,13 @@ typedef struct r_hashtable64_t {
 R_API RHashTable* r_hashtable_new(void);
 R_API void r_hashtable_free(RHashTable *ht);
 R_API void *r_hashtable_lookup(RHashTable *ht, ut32 hash);
-R_API boolt r_hashtable_insert(RHashTable *ht, ut32 hash, void *data);
+R_API bool r_hashtable_insert(RHashTable *ht, ut32 hash, void *data);
 R_API void r_hashtable_remove(RHashTable *ht, ut32 hash);
 
 R_API RHashTable64* r_hashtable64_new(void);
 R_API void r_hashtable64_free(RHashTable64 *ht);
 R_API void *r_hashtable64_lookup(RHashTable64 *ht, ut64 hash);
-R_API boolt r_hashtable64_insert(RHashTable64 *ht, ut64 hash, void *data);
+R_API bool r_hashtable64_insert(RHashTable64 *ht, ut64 hash, void *data);
 R_API void r_hashtable64_remove(RHashTable64 *ht, ut64 hash);
 
 #ifdef __cplusplus

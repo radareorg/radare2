@@ -394,7 +394,7 @@ void FAR *out_desc;
             }
             Tracev((stderr, "inflate:       code lengths ok\n"));
 
-            /* get length and distance code code lengths */
+            /* get length and distance code lengths */
             state->have = 0;
             while (state->have < state->nlen + state->ndist) {
                 for (;;) {

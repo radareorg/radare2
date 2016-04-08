@@ -171,16 +171,16 @@ static int cin_get(RNum *num, RNumCalc *nc, char *c) {
 
 static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	double d;
-	char str[R_NUMCALC_STRSZ];
+	char str[R_NUMCALC_STRSZ]; // TODO: move into the heap?
 	int i = 0;
 	char c;
 	str[0] = 0;
 	while (cin_get (num, nc, &c)) {
-		if (c!=':' && c!='.' && !isalnum ((unsigned char)c)) {
+		if (c!=':' && c!='.' && !isalnum ((ut8)c)) {
 			cin_putback (num, nc, c);
 			break;
 		}
-		if (i<R_NUMCALC_STRSZ) {
+		if (i < R_NUMCALC_STRSZ) {
 			str[i++] = c;
 		}
 	}
@@ -288,7 +288,8 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 				}
 			}
 			nc->string_value[i] = 0;
-			cin_putback (num, nc, ch);
+			if (ch!='\'')
+				cin_putback (num, nc, ch);
 			return nc->curr_tok = RNCNAME;
 		}
 /*

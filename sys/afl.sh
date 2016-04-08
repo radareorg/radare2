@@ -1,5 +1,6 @@
 #!/bin/sh
 export CC="afl-clang"
+# export AFL_USE_ASAN=1
 if [ -d /usr/lib/afl ]; then
 	export AFL_PATH=/usr/lib/afl
 fi

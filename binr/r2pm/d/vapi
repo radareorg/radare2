@@ -1,0 +1,15 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/radare/radare2-bindings"
+R2PM_DESC "[syspkg] radare2 Vapi files for Vala"
+
+R2PM_INSTALL() {
+	./configure --prefix="${R2PM_PREFIX}"
+	${SUDO} make install-vapi
+}
+
+R2PM_UNINSTALL() {
+	${SUDO} make uninstall-vapi
+}
+
+R2PM_END

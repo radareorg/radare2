@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2012-2015 - pancake */
+/* radare - LGPL - Copyright 2012-2016 - pancake */
 
 #include <r_socket.h>
 
-static int *breaked = NULL;
+static bool *breaked = NULL;
 
-R_API void r_socket_http_server_set_breaked(int *b) {
+R_API void r_socket_http_server_set_breaked(bool *b) {
 	breaked = b;
 }
 
@@ -49,11 +49,14 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 				hr->path = strdup (p+1);
 			}
 		} else {
+			if (!hr->referer && !strncmp (buf, "Referer: ", 9)) {
+				hr->referer = strdup (buf + 9);
+			} else
 			if (!hr->agent && !strncmp (buf, "User-Agent: ", 12)) {
-				hr->agent = strdup (buf+12);
+				hr->agent = strdup (buf + 12);
 			} else
 			if (!hr->host && !strncmp (buf, "Host: ", 6)) {
-				hr->host = strdup (buf+6);
+				hr->host = strdup (buf + 6);
 			} else
 			if (!strncmp (buf, "Content-Length: ", 16)) {
 				content_length = atoi (buf+16);

@@ -84,6 +84,7 @@ static int cmd_zign(void *data, const char *input) {
 	case 'b':
 	case 'h':
 	case 'f':
+	case 'p':
 		if (*(input+1) == '\0' || *(input+2) == '\0')
 			eprintf ("Usage: z%c [name] [arg]\n", *input);
 		else{
@@ -100,10 +101,10 @@ static int cmd_zign(void *data, const char *input) {
 			r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n", item->name, core->offset);
 		break;
 	case '-':
-		if (input[1] == '*')
+		if (input[1] == '*') {
 			r_sign_reset (core->sign);
-		else {
-			int i = r_sign_remove_ns(core->sign, input+1);
+		} else {
+			int i = r_sign_remove_ns (core->sign, input+1);
 			r_cons_printf ("%d zignatures removed\n", i);
 		}
 		break;
@@ -116,6 +117,11 @@ static int cmd_zign(void *data, const char *input) {
 			RSignItem *si;
 			RIOSection *s;
 			if (input[1]) {
+				if(input[1] != ' ') {
+					eprintf ("Usage: z%c [ini] [end]\n", *input);
+					return R_FALSE;
+				}
+
 				char *ptr = strchr (input+2, ' ');
 				if (ptr) {
 					*ptr = '\0';
@@ -156,6 +162,9 @@ static int cmd_zign(void *data, const char *input) {
 							if (si->type == 'f')
 								r_cons_printf ("f sign.fun_%s_%d @ 0x%08"PFMT64x"\n",
 									si->name, idx, ini+idx); //core->offset);
+							else if(si->type == 'p')
+								r_cons_printf ("afn sign.fun_%s_%d 0x%08"PFMT64x"\n",
+										si->name, idx, ini+idx);
 							else r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n",
 								si->name, ini+idx); //core->offset+idx);
 							eprintf ("- Found %d matching function signatures\r", count);
@@ -164,28 +173,34 @@ static int cmd_zign(void *data, const char *input) {
 				} else eprintf ("Cannot read %d bytes at 0x%08"PFMT64x"\n", len, ini);
 				r_cons_break_end ();
 				free (buf);
-			} else eprintf ("Cannot alloc %d bytes\n", len);
+				core->sign->matches = count;
+			} else {
+				eprintf ("Cannot alloc %d bytes\n", len);
+				core->sign->matches = 0;
+			}
 		}
 		break;
 	case '\0':
 	case '*':
-		r_sign_list (core->sign, (*input=='*'));
+		r_sign_list (core->sign, (*input=='*'), 0);
 		break;
-	case 'F': {
+	case 'j':
+		r_sign_list (core->sign, (*input=='*'), 1);
+		break;
+	case 'F':
 		if (input[1] == 'd') {
-			if(input[2] != ' ') {
-				eprintf("Usage: zFd <file>\n");
-				return R_FALSE;
+			if (input[2] != ' ') {
+				eprintf ("Usage: zFd <flirt-sig-file>\n");
+				return false;
 			}
 			r_sign_flirt_dump (core->anal, input + 3);
 		} else {
 			if(input[1] != ' ') {
-				eprintf("Usage: zF <file>\n");
-				return R_FALSE;
+				eprintf ("Usage: zF <flirt-sig-file>\n");
+				return false;
 			}
 			r_sign_flirt_scan (core->anal, input + 2);
 		}
-	}
 		break;
 	default:
 	case '?':{
@@ -193,21 +208,22 @@ static int cmd_zign(void *data, const char *input) {
 			"Usage:", "z[abcp/*-] [arg]", "Zignatures",
 			"z", "", "show status of zignatures",
 			"z*", "", "display all zignatures",
-			"z-", "namespace", "Unload zignatures in namespace",
+			"z-", " namespace", "Unload zignatures in namespace",
 			"z-*", "", "unload all zignatures",
-			"z/", "[ini] [end]", "search zignatures between these regions",
+			"z/", " [ini] [end]", "search zignatures between these regions",
 			"za", " ...", "define new zignature for analysis",
 			"zb", " name bytes", "define zignature for bytes",
 			"zB", " size", "Generate zignatures for current offset/flag",
 			"zc", " @ fcn.foo", "flag signature if matching (.zc@@fcn)",
 			"zf", " name fmt", "define function zignature (fast/slow, args, types)",
-			"zF", " file", "Open a flirt signature file and scan opened file",
-			"zFd", " file", "Dump a flirt signature",
+			"zF", " file", "Open a FLIRT signature file and scan opened file",
+			"zFd", " file", "Dump a FLIRT signature",
 			"zg", " namespace [file]", "Generate zignatures for current file",
 			"zh", " name bytes", "define function header zignature",
 			"zn", " namespace", "Define namespace for following zignatures (until zn-)",
 			"zn", "", "Display current namespace",
 			"zn-", "", "Unset namespace",
+			"zp", " name bytes", "define new zignature for function body",
 			"NOTE:", "", "bytes can contain '.' (dots) to specify a binary mask",
 			NULL};
 			r_core_cmd_help (core, help_msg);

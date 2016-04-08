@@ -5,15 +5,11 @@
 static RLine r_line_instance;
 #define I r_line_instance
 
-/* definitions to be removed */
-int r_line_dietline_init();
-void r_line_hist_free();
-
-R_API RLine *r_line_singleton () {
+R_API RLine *r_line_singleton() {
 	return &r_line_instance;
 }
 
-R_API RLine *r_line_new () {
+R_API RLine *r_line_new() {
 	I.hist_up = NULL;
 	I.hist_down = NULL;
 	I.prompt = strdup ("> ");
@@ -23,21 +19,21 @@ R_API RLine *r_line_new () {
 	return &I;
 }
 
-R_API void r_line_free () {
+R_API void r_line_free() {
 	// XXX: prompt out of the heap?
-	free ((void*)I.prompt);
+	free ((void *)I.prompt);
 	I.prompt = NULL;
 	r_line_hist_free ();
 }
 
 // handle const or dynamic prompts?
-R_API void r_line_set_prompt (const char *prompt) {
+R_API void r_line_set_prompt(const char *prompt) {
 	free (I.prompt);
 	I.prompt = strdup (prompt);
 }
 
 // handle const or dynamic prompts?
-R_API char *r_line_get_prompt () {
+R_API char *r_line_get_prompt() {
 	return strdup (I.prompt);
 }
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -8,17 +8,17 @@
 
 static RBinXtrData * extract(RBin *bin, int idx);
 static RList * extractall(RBin *bin);
-static RBinXtrData * oneshot(const ut8 *buf, ut64 size, int idx);
-static RList * oneshotall(const ut8 *buf, ut64 size );
+static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx);
+static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size );
 static int free_xtr (void *xtr_obj) ;
 
 static int check(RBin *bin) {
 	ut8 *h, buf[4];
-	int off, ret = R_FALSE;
-	RMmap *m = r_file_mmap (bin->file, R_FALSE, 0);
+	int off, ret = false;
+	RMmap *m = r_file_mmap (bin->file, false, 0);
 	if (!m || !m->buf) {
 		r_file_mmap_free (m);
-		return R_FALSE;
+		return false;
 	}
 	h = m->buf;
 	if (m->len>=0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
@@ -30,7 +30,7 @@ static int check(RBin *bin) {
 				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
 				!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
-				ret = R_TRUE;
+				ret = true;
 		}
 	}
 	r_file_mmap_free (m);
@@ -40,25 +40,24 @@ static int check(RBin *bin) {
 static int check_bytes(const ut8* bytes, ut64 sz) {
 	const ut8 *h;
 	ut8 buf[4];
-	int off, ret = R_FALSE;
+	int off, ret = false;
 
 	if (!bytes || sz < 0x300) {
-		return R_FALSE;
+		return false;
 	}
 	memcpy (&off, bytes+4*sizeof (int), sizeof (int));
 	r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
 
 	h = bytes;
 	if (sz>=0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
-		memcpy (&off, h+4*sizeof (int), sizeof (int));
-		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
+		r_mem_copyendian ((ut8*)&off, (ut8*)h+4*sizeof(int), sizeof(int), !LIL_ENDIAN);
 		if (off > 0 && off < sz) {
 			memcpy (buf, h+off, 4);
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
 				!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
-				ret = R_TRUE;
+				ret = true;
 		}
 	}
 	return ret;
@@ -71,12 +70,11 @@ static int destroy(RBin *bin) {
 
 static int free_xtr (void *xtr_obj) {
 	r_bin_fatmach0_free ((struct r_bin_fatmach0_obj_t*)xtr_obj);
-	return R_TRUE;
+	return true;
 }
 
-static int load(RBin *bin) {
-	return (bin->cur->xtr_obj = r_bin_fatmach0_new (bin->file))?
-		R_TRUE: R_FALSE;
+static bool load(RBin *bin) {
+	return ((bin->cur->xtr_obj = r_bin_fatmach0_new (bin->file)) != NULL);
 }
 
 static int size(RBin *bin) {
@@ -100,13 +98,13 @@ static RBinXtrData * extract(RBin* bin, int idx) {
 	return res;
 }
 
-static RBinXtrData * oneshot(const ut8 *buf, ut64 size, int idx) {
-	int narch;
-	RBinXtrData * res = NULL;
+static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 	void *xtr_obj = r_bin_fatmach0_from_bytes_new (buf, size);
-
 	struct r_bin_fatmach0_obj_t *fb = xtr_obj;
 	struct r_bin_fatmach0_arch_t *arch;
+	RBinXtrData *res = NULL;
+	int narch;
+
 
 	arch = r_bin_fatmach0_extract (fb, idx, &narch);
 	if (!arch) {
@@ -115,7 +113,7 @@ static RBinXtrData * oneshot(const ut8 *buf, ut64 size, int idx) {
 	}
 
 	res = r_bin_xtrdata_new (xtr_obj, free_xtr, arch->b, arch->offset,
-							arch->size, narch);
+		arch->size, narch);
 	r_buf_free (arch->b);
 	free (arch);
 	return res;
@@ -124,7 +122,7 @@ static RBinXtrData * oneshot(const ut8 *buf, ut64 size, int idx) {
 
 static RList * extractall(RBin *bin) {
 	RList *res = NULL;
-	int narch, i=0;
+	int narch, i = 0;
 	RBinXtrData *data = NULL;
 
 	data = extract (bin, i);
@@ -139,25 +137,22 @@ static RList * extractall(RBin *bin) {
 		data = extract (bin, i);
 		r_list_append (res, data);
 	}
-
 	return res;
 }
 
-static RList * oneshotall(const ut8 *buf, ut64 size) {
+static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	RList *res = NULL;
-	int narch, i=0;
-	RBinXtrData *data = NULL;
+	int narch, i = 0;
+	RBinXtrData *data = oneshot (bin, buf, size, i);
 
-	data = oneshot (buf, size, i);
 	if (!data) return res;
-
 	// XXX - how do we validate a valid narch?
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
 	r_list_append (res, data);
 	for (i=1; data && i < narch; i++) {
 		data = NULL;
-		data = oneshot (buf, size, i);
+		data = oneshot (bin, buf, size, i);
 		r_list_append (res, data);
 	}
 
@@ -167,8 +162,6 @@ struct r_bin_xtr_plugin_t r_bin_xtr_plugin_fatmach0 = {
 	.name = "fatmach0",
 	.desc = "fat mach0 bin extractor plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.check = &check,
 	.load = &load,
 	.size = &size,

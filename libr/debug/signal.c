@@ -17,7 +17,7 @@ static struct {
 	{ "SIGILL", "4" },
 	{ "SIGTRAP", "5" },
 	{ "SIGABRT", "6" },
-	{ "SIGIOT", "6" },
+	// { "SIGIOT", "6" },
 	{ "SIGBUS", "7" },
 	{ "SIGFPE", "8" },
 	{ "SIGKILL", "9" },
@@ -84,9 +84,45 @@ static int siglistcb (void *p, const char *k, const char *v) {
 	return 1;
 }
 
+static int siglistjsoncb (void *p, const char *k, const char *v) {
+	static char key[32] = "cfg.";
+	RDebug *dbg = (RDebug *)p;
+	int opt;
+	if (atoi (k)>0) {
+		strcpy (key+4, k);
+		opt = (int)sdb_num_get (DB, key, 0);
+		if (dbg->_mode == 2) {
+			dbg->_mode = 0;
+		} else r_cons_strcat (",");
+
+		r_cons_printf ("{\"signum\":\"%s\",\"name\":\"%s\","
+			"\"option\":", k, v);
+		if (opt & R_DBG_SIGNAL_CONT) {
+			r_cons_strcat ("\"cont\"");
+		} else if (opt & R_DBG_SIGNAL_SKIP) {
+			r_cons_strcat ("\"skip\"");
+		} else {
+			r_cons_strcat ("null");
+		}
+		r_cons_strcat ("}");
+	}
+	return true;
+}
+
 R_API void r_debug_signal_list(RDebug *dbg, int mode) {
 	dbg->_mode = mode;
-	sdb_foreach (DB, siglistcb, dbg);
+	switch (mode) {
+	case 0:
+	case 1:
+		sdb_foreach (DB, siglistcb, dbg);
+		break;
+	case 2:
+		r_cons_strcat ("[");
+		sdb_foreach (DB, siglistjsoncb, dbg);
+		r_cons_strcat ("]");
+		r_cons_newline();
+		break;
+	}
 	dbg->_mode = 0;
 }
 
@@ -96,7 +132,7 @@ R_API int r_debug_signal_resolve(RDebug *dbg, const char *signame) {
 	if (strchr (signame, '.'))
 		return 0;
 	name = strdup (signame);
-	r_str_case (name, R_TRUE);
+	r_str_case (name, true);
 	if (strncmp (name, "SIG", 3))
 		name = r_str_prefix (name, "SIG");
 	ret = (int)sdb_num_get (DB, name, 0);
@@ -145,5 +181,5 @@ R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action) {
 		return dbg->h->kill_setup (dbg, sig, action);
 #endif
 	// TODO: implement r_debug_kill_setup
-	return R_FALSE;
+	return false;
 }

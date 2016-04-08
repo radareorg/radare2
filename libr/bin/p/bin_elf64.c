@@ -15,8 +15,8 @@ static int check(RBinFile *arch) {
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length >= 5)
 		if (!memcmp (buf, "\x7F\x45\x4c\x46\x02", 5))
-			return R_TRUE;
-	return R_FALSE;
+			return true;
+	return false;
 }
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf64;
@@ -114,8 +114,6 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.name = "elf64",
 	.desc = "elf64 bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -130,12 +128,12 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.symbols = &symbols,
 	.imports = &imports,
 	.minstrlen = 4,
-	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
+	.patch_relocs = &patch_relocs,
 	.dbginfo = &r_bin_dbginfo_elf64,
 	.create = &create,
 	.write = &r_bin_write_elf64,

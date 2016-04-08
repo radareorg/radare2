@@ -1,17 +1,25 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2016 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_list.h>
 
+#define SDB_VARUSED_FMT "qzdq"
+struct VarUsedType {
+	ut64 fcn_addr;
+	char *type;
+	ut32 scope;
+	st64 delta;
+};
+
 R_API RAnalOp *r_anal_op_new () {
 	RAnalOp *op = R_NEW0 (RAnalOp);
 	if (!op) return NULL;
-	op->addr = -1;
-	op->jump = -1;
-	op->fail = -1;
-	op->ptr = -1;
-	op->val = -1;
+	op->addr = UT64_MAX;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
+	op->ptr = UT64_MAX;
+	op->val = UT64_MAX;
 	r_strbuf_init (&op->esil);
 	return op;
 }
@@ -32,28 +40,70 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	if (((ut64)(size_t)op->mnemonic) == UT64_MAX) {
 		return;
 	}
+	r_anal_var_free (op->var);
 	r_anal_value_free (op->src[0]);
 	r_anal_value_free (op->src[1]);
 	r_anal_value_free (op->src[2]);
 	r_anal_value_free (op->dst);
+	r_strbuf_fini (&op->esil);
 	r_anal_switch_op_free (op->switch_op);
-	free (op->mnemonic);
-	memset (op, 0, sizeof (RAnalOp));
+	op->src[0] = NULL;
+	op->src[1] = NULL;
+	op->src[2] = NULL;
+	op->dst = NULL;
+	op->var = NULL;
+	op->switch_op = NULL;
+	R_FREE (op->mnemonic);
 }
 
 R_API void r_anal_op_free(void *_op) {
 	if (!_op) return;
 	r_anal_op_fini (_op);
+	memset (_op, 0, sizeof (RAnalOp));
 	free (_op);
 }
 
+static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
+	char *inst_key = sdb_fmt (0, "inst.0x%"PFMT64x".vars", op->addr);
+	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+	struct VarUsedType vut;
+	RAnalVar *res;
+
+	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) != 4) {
+		return NULL;
+	}
+	res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
+	sdb_fmt_free (&vut, SDB_VARUSED_FMT);
+	return res;
+}
+
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	int ret = R_FALSE;
-	if (len>0 && anal && memset (op, 0, sizeof (RAnalOp)) &&
-		anal->cur && anal->cur->op) {
+	int ret = 0;
+
+	//len will end up in memcmp so check for negative	
+	if (!anal || len < 0) return -1;
+	if (anal->pcalign) {
+		if (addr % anal->pcalign) {
+			memset (op, 0, sizeof (RAnalOp));
+			op->type = R_ANAL_OP_TYPE_ILL;
+			op->addr = addr;
+			op->size = 1;
+			return -1;
+		}
+	}
+	if (len > 0 && anal && memset (op, 0, sizeof (RAnalOp)) &&
+		anal->cur && anal->cur->op && strcmp (anal->cur->name, "null")) {
 		ret = anal->cur->op (anal, op, addr, data, len);
 		op->addr = addr;
-		if (ret<1) op->type = R_ANAL_OP_TYPE_ILL;
+		op->var = get_used_var (anal, op);
+		if (ret < 1) op->type = R_ANAL_OP_TYPE_ILL;
+	} else {
+		if (!memcmp (data, "\xff\xff\xff\xff", R_MIN(4, len))) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+			ret = 2; // HACK
+		} else {
+			op->type = R_ANAL_OP_TYPE_MOV;
+		}
 	}
 	return ret;
 }
@@ -85,7 +135,7 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 	while (op) {
 		if (op->delay>0) {
 			anal->queued = r_anal_op_copy (op);
-			return R_FALSE;
+			return false;
 		}
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_JMP:
@@ -141,7 +191,7 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 			anal->queued = NULL;
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API const char *r_anal_optype_to_string(int t) {
@@ -162,6 +212,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_LEAVE : return "leave";
 	case R_ANAL_OP_TYPE_LOAD  : return "load";
 	case R_ANAL_OP_TYPE_MOD   : return "mod";
+	case R_ANAL_OP_TYPE_CMOV  : return "cmov";
 	case R_ANAL_OP_TYPE_MOV   : return "mov";
 	case R_ANAL_OP_TYPE_MUL   : return "mul";
 	case R_ANAL_OP_TYPE_NOP   : return "nop";
@@ -192,6 +243,8 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_XCHG  : return "xchg";
 	case R_ANAL_OP_TYPE_XOR   : return "xor";
 	case R_ANAL_OP_TYPE_CASE  : return "case";
+	case R_ANAL_OP_TYPE_CPL   : return "cpl";
+	case R_ANAL_OP_TYPE_CRYPTO: return "crypto";
 	}
 	return "undefined";
 }
@@ -208,6 +261,9 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	char *r0 = r_anal_value_to_string (op->dst);
 	char *a0 = r_anal_value_to_string (op->src[0]);
 	char *a1 = r_anal_value_to_string (op->src[1]);
+	if (!r0) r0 = strdup ("?");
+	if (!a0) a0 = strdup ("?");
+	if (!a1) a1 = strdup ("?");
 
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_MOV:
@@ -220,7 +276,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 			cstr = r_anal_cond_to_string (bb->cond);
 			snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
 			free (cstr);
-		} else snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, "unk", op->jump);
+		} else snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, "?", op->jump);
 		}
 		break;
 	case R_ANAL_OP_TYPE_JMP:
@@ -369,7 +425,7 @@ R_API const char *r_anal_stackop_tostring (int s) {
 R_API const char *r_anal_op_family_to_string (int n) {
 	static char num[32];
 	switch (n) {
-	case R_ANAL_OP_FAMILY_UNKNOWN: return "unknown";
+	case R_ANAL_OP_FAMILY_UNKNOWN: return "unk";
 	case R_ANAL_OP_FAMILY_CPU: return "cpu";
 	case R_ANAL_OP_FAMILY_FPU: return "fpu";
 	case R_ANAL_OP_FAMILY_MMX: return "mmx";

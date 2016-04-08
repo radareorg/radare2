@@ -96,31 +96,18 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 			r_socket_read_block (rap_s->fd, &rap_s->buf[5], i);
 			rap_s->write(rap_s->user, &rap_s->buf[5], i);
 			rap_s->buf[0] = RAP_RMT_WRITE | RAP_RMT_REPLY;
-			r_socket_write (rap_s->fd, rap_s->buf, 1);
+			r_socket_write (rap_s->fd, rap_s->buf, 5);
 			r_socket_flush (rap_s->fd);
 			break;
 		case RAP_RMT_SEEK:
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 9);
 			i = rap_s->buf[1];
 			r_mem_copyendian ((ut8*)&offset, &rap_s->buf[2], 8, !endian);
-			rap_s->seek (rap_s->user, offset, i);
+			offset = rap_s->seek (rap_s->user, offset, i);
+			r_mem_copyendian (&rap_s->buf[2], (ut8*)&offset, 8, !endian);
 			rap_s->buf[0] = RAP_RMT_SEEK | RAP_RMT_REPLY;
-			r_socket_write (rap_s->fd, rap_s->buf, 1);
+			r_socket_write (rap_s->fd, rap_s->buf, 9);
 			r_socket_flush (rap_s->fd);
-			break;
-		case RAP_RMT_SYSTEM:
-			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);
-			r_mem_copyendian ((ut8 *)&i, &rap_s->buf[1], 4, !endian);
-			r_socket_read_block (rap_s->fd, &rap_s->buf[5], i);
-			ptr = rap_s->system (rap_s->user, (const char *)&rap_s->buf[5]);
-			i = ptr? (strlen (ptr) + 1): 0;
-			r_mem_copyendian (&rap_s->buf[1], (ut8 *)&i, 4, !endian);
-			rap_s->buf[0] = RAP_RMT_SYSTEM | RAP_RMT_REPLY;
-			r_socket_write (rap_s->fd, rap_s->buf, 5);
-			if (i)	r_socket_write (rap_s->fd, ptr, i);
-			r_socket_flush (rap_s->fd);
-			free (ptr);
-			ptr = NULL;
 			break;
 		case RAP_RMT_CMD:
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);

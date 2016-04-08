@@ -135,7 +135,7 @@ PUB_FUNC char *pstrncpy(char *out, const char *in, size_t num)
 PUB_FUNC char *tcc_basename(const char *name)
 {
     char *p = strchr(name, 0);
-    while (p > name && !IS_DIRSEP(p[-1]))
+    while (p && p > name && !IS_DIRSEP(p[-1]))
         --p;
     return p;
 }

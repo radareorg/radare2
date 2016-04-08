@@ -168,11 +168,11 @@ struct grub_jfs_inode
   union
   {
     /* The tree describing the extents of the file.  */
-    struct __attribute__ ((packed))
+    struct 
     {
       struct grub_jfs_treehead tree;
       struct grub_jfs_tree_extent extents[16];
-    } file;
+    } __attribute__ ((packed)) file;
     union
     {
       /* The tree describing the dirents.  */

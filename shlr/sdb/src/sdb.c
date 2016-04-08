@@ -156,19 +156,18 @@ SDB_API const char *sdb_const_get_len (Sdb* s, const char *key, int *vlen, ut32 
 	/* search in memory */
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
 	if (kv) {
-		if (*kv->value) {
-			if (kv->expire) {
-				if (!now) now = sdb_now ();
-				if (now > kv->expire) {
-					sdb_unset (s, key, 0);
-					return NULL;
-				}
+		if (!*kv->value)
+			return NULL;
+		if (kv->expire) {
+			if (!now) now = sdb_now ();
+			if (now > kv->expire) {
+				sdb_unset (s, key, 0);
+				return NULL;
 			}
-			if (cas) *cas = kv->cas;
-			if (vlen) *vlen = kv->value_len;
-			return kv->value;
 		}
-		return NULL;
+		if (cas) *cas = kv->cas;
+		if (vlen) *vlen = kv->value_len;
+		return kv->value;
 	}
 	/* search in disk */
 	if (s->fd == -1)
@@ -300,10 +299,12 @@ SDB_API int sdb_add (Sdb* s, const char *key, const char *val, ut32 cas) {
 }
 
 SDB_API int sdb_exists (Sdb* s, const char *key) {
+	ut32 pos, hash;
 	char ch;
 	SdbKv *kv;
 	int klen = strlen (key)+1;
-	ut32 pos, hash = sdb_hash (key);
+	if (!s) return 0;
+	hash = sdb_hash (key);
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
 	if (kv) return (*kv->value)? 1: 0;
 	if (s->fd == -1)
@@ -385,7 +386,7 @@ SDB_API SdbKv* sdb_kv_new (const char *k, const char *v) {
 		vl = 0;
 	}
 	kv = R_NEW (SdbKv);
-	strncpy (kv->key, k, sizeof (kv->key)-1);
+	kv->key = strdup (k);
 	kv->value_len = vl;
 	if (vl) {
 		kv->value = malloc (vl);
@@ -397,6 +398,7 @@ SDB_API SdbKv* sdb_kv_new (const char *k, const char *v) {
 }
 
 SDB_API void sdb_kv_free (SdbKv *kv) {
+	free (kv->key);
 	free (kv->value);
 	free (kv);
 }
@@ -477,7 +479,8 @@ static int sdb_foreach_list_cb(void *user, const char *k, const char *v) {
 	SdbList *list = (SdbList *)user;
 	list->free = free;
 	SdbKv *kv = R_NEW0 (SdbKv);
-	strncpy (kv->key, k, sizeof (kv->key)-1);
+	/* fake read-only */
+	kv->key = (char *)k;
 	kv->value = (char*)v;
 	ls_append (list, kv);
 	return 1;
@@ -595,9 +598,10 @@ static int getbytes(Sdb *s, char *b, int len) {
 }
 
 SDB_API void sdb_dump_begin (Sdb* s) {
-	if (s->fd != -1)
-		seek_set (s->fd, (s->pos=2048));
-	else s->pos = 0;
+	if (s->fd != -1) {
+		s->pos = sizeof (((struct cdb_make *)0)->final);
+		seek_set (s->fd, s->pos);
+	} else s->pos = 0;
 }
 
 SDB_API SdbKv *sdb_dump_next (Sdb* s) {
@@ -888,8 +892,13 @@ static int like_cb(void *user, const char *k, const char *v) {
 		return 1;
 	if (lcd->array) {
 		int idx = lcd->array_index;
-		lcd->array_size += sizeof (char*) * 2;
-		lcd->array = realloc (lcd->array, lcd->array_size);
+		int newsize = lcd->array_size + sizeof (char*) * 2;
+		const char **newarray = realloc (lcd->array, newsize);
+		if (!newarray) {
+			return 0;
+		}
+		lcd->array = newarray;
+		lcd->array_size = newsize;
 		// concatenate in array
 		lcd->array[idx] = k;
 		lcd->array[idx+1] = v;

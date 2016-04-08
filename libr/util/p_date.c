@@ -25,7 +25,7 @@ R_API int r_print_date_dos(RPrint *p, ut8 *buf, int len) {
 	// TODO: support p->datezone
 	// TODO: support p->datefmt
         /* la data de modificacio del fitxer, no de creacio del zip */
-        p->printf("%d-%02d-%02d %d:%d:%d\n",
+        p->cb_printf("%d-%02d-%02d %d:%d:%d\n",
                 year, month, day, hour, minutes, seconds);
 	return 4;
 }
@@ -45,10 +45,10 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 			if (time) {
 				ret = strftime (s, sizeof (s), p->datefmt, time);
 				if (ret) {
-					p->printf ("%s\n", s);
+					p->cb_printf ("%s\n", s);
 					ret = sizeof (time_t);
 				}
-			} else p->printf ("Invalid time\n");
+			} else p->cb_printf ("Invalid time\n");
 		}
 	}
 	return ret;
@@ -56,7 +56,6 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 
 R_API int r_print_date_get_now(RPrint *p, char *str) {
 	int ret = 0;
-        *str = 0;
 #if __UNIX__
         struct tm curt; /* current time */
         time_t l;
@@ -66,6 +65,7 @@ R_API int r_print_date_get_now(RPrint *p, char *str) {
 		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
+        *str = 0;
         l = time(0);
         localtime_r (&l, &curt);
 	// XXX localtime is affected by the timezone. 
@@ -81,6 +81,7 @@ R_API int r_print_date_get_now(RPrint *p, char *str) {
 		ret = sizeof(time_t);
 	}
 #else
+        *str = 0;
 #warning r_print_date_now NOT IMPLEMENTED FOR THIS PLATFORM
 #endif
 	return ret;
@@ -102,7 +103,7 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 			ret = strftime(datestr, 256, p->datefmt,
 				(const struct tm*) gmtime((const time_t*)&t));
 			if (ret) {
-				p->printf("%s\n", datestr);
+				p->cb_printf("%s\n", datestr);
 				ret = R_TRUE;
 			}
 		}

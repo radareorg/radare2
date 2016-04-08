@@ -1,6 +1,8 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <r_userconf.h>
+#include <stdlib.h>
+#include <string.h>
 #if defined(__NetBSD__)
 # include <sys/param.h>
 # if __NetBSD_Prereq__(7,0,0)
@@ -11,6 +13,7 @@
 #include <dirent.h>
 #include <r_types.h>
 #include <r_util.h>
+#include <r_lib.h>
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE)
 # include <execinfo.h>
 #endif
@@ -31,6 +34,9 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 # include <sys/stat.h>
 # include <errno.h>
 # include <signal.h>
+# include <unistd.h>
+extern char **environ;
+
 #ifdef __HAIKU__
 # define Sleep sleep
 #endif
@@ -67,7 +73,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
 
 R_API int r_sys_fork() {
 #if HAVE_FORK
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	return -1;
 #else
 	return fork ();
@@ -91,7 +97,7 @@ R_API ut64 r_sys_now(void) {
 }
 
 R_API int r_sys_truncate(const char *file, int sz) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	int fd = r_sandbox_open (file, O_RDWR, 0644);
 	if (!fd) return R_FALSE;
 	ftruncate (fd, sz);
@@ -176,13 +182,28 @@ R_API int r_sys_sleep(int secs) {
 }
 
 R_API int r_sys_usleep(int usecs) {
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	// unix api uses microseconds
 	return usleep (usecs);
 #else
 	// w32 api uses milliseconds
 	usecs /= 1000;
 	Sleep (usecs); // W32
+	return 0;
+#endif
+}
+
+R_API int r_sys_clearenv(void) {
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+	if (environ == NULL) {
+		return 0;
+	}
+	while (*environ != NULL) {
+		*environ++ = NULL;
+	}
+	return 0;
+#else
+#warning r_sys_clearenv : unimplemented for this platform
 	return 0;
 #endif
 }
@@ -296,7 +317,7 @@ R_API int r_sys_chdir(const char *s) {
 	return r_sandbox_chdir (s)==0;
 }
 
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
 	char buffer[1024], *outputptr = NULL;
 	char *inputptr = (char *)input;
@@ -441,7 +462,7 @@ R_API int r_sys_cmdf (const char *fmt, ...) {
 }
 
 R_API int r_sys_cmdbg (const char *str) {
-#if __UNIX__
+#if __UNIX__ || __CYGWIN && !defined(MINGW32)
 	int ret, pid = r_sys_fork ();
 	if (pid == -1) return -1;
 	if (pid) return pid;
@@ -487,37 +508,43 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	return NULL;
 }
 
-R_API int r_sys_rmkdir(const char *dir) {
-	int ret = R_TRUE;
-	const char slash = R_SYS_DIR[0];
+R_API bool r_sys_mkdirp(const char *dir) {
+	bool ret = true;
+	char slash = R_SYS_DIR[0];
 	char *path = strdup (dir), *ptr = path;
-	if (*ptr==slash) ptr++;
-#if __WINDOWS__
+	if (*ptr == slash) ptr++;
+#if __WINDOWS__ && !defined(__CYGWIN__)
 	{
 		char *p = strstr (ptr, ":\\");
-		if (p) {
-			ptr = p + 2;
-		}
+		if (p) ptr = p + 2;
 	}
 #endif
-	while ((ptr = strchr (ptr, slash))) {
+	for (;;) {
+		// find next slash
+		for (; *ptr; ptr++) {
+			if (*ptr == '/' || *ptr == '\\') {
+				slash = *ptr;
+				break;
+			}
+		}
+		if (!*ptr) break;
 		*ptr = 0;
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
-			eprintf ("r_sys_rmkdir: fail '%s' of '%s'\n", path, dir);
+			eprintf ("r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
 			free (path);
-			return R_FALSE;
+			return false;
 		}
 		*ptr = slash;
 		ptr++;
 	}
 	if (!r_sys_mkdir (path) && r_sys_mkdir_failed ())
-		ret = R_FALSE;
+		ret = false;
 	free (path);
 	return ret;
 }
 
 R_API void r_sys_perror(const char *fun) {
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	perror (fun);
 #elif __WINDOWS__
 	char *lpMsgBuf;
@@ -543,19 +570,34 @@ R_API void r_sys_perror(const char *fun) {
 #endif
 }
 
+R_API bool r_sys_arch_match(const char *archstr, const char *arch) {
+	char *ptr;
+	if (!archstr || !arch || !*archstr || !*arch)
+		return true;
+	if (!strcmp (archstr, "*") || !strcmp (archstr, "any"))
+		return true;
+	if (!strcmp (archstr, arch))
+		return true;
+	if ((ptr = strstr (archstr, arch))) {
+		char p = ptr[strlen (arch)];
+		if (!p || p==',') return true;
+	}
+	return false;
+}
+
 R_API int r_sys_arch_id(const char *arch) {
-    int i;
-    for (i=0; arch_bit_array[i].name; i++)
-        if (!strcmp (arch, arch_bit_array[i].name))
-            return arch_bit_array[i].bit;
-    return 0;
+	int i;
+	for (i=0; arch_bit_array[i].name; i++)
+		if (!strcmp (arch, arch_bit_array[i].name))
+			return arch_bit_array[i].bit;
+	return 0;
 }
 
 R_API const char *r_sys_arch_str(int arch) {
-    int i;
-    for (i=0; arch_bit_array[i].name; i++)
-        if (arch & arch_bit_array[i].bit)
-            return arch_bit_array[i].name;
+	int i;
+	for (i=0; arch_bit_array[i].name; i++)
+		if (arch & arch_bit_array[i].bit)
+			return arch_bit_array[i].name;
 	return "none";
 }
 
@@ -582,7 +624,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (void*)ptr;
 #if USE_FORK
-#if __UNIX__
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	pid = r_sys_fork ();
 	//pid = -1;
 #else
@@ -590,7 +632,8 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 #endif
 	if (pid<0) {
 		return cb ();
-	} else if (!pid) {
+	}
+	if (!pid) {
 		ret = cb ();
 		exit (ret);
 		return ret;

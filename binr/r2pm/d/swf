@@ -1,0 +1,20 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/radare/radare2-extras"
+R2PM_DESC "[r2-bin] SWF / Flash disassembler"
+
+R2PM_INSTALL() {
+    ./configure --prefix="${R2PM_PREFIX}"
+    cd libr/asm/p
+    make asm_swf.${LIBEXT}
+    cp -f asm_swf.${LIBEXT} "${R2PM_PLUGDIR}"
+    cd ../../bin/p
+    make bin_swf.${LIBEXT}
+    cp -f bin_swf.${LIBEXT} "${R2PM_PLUGDIR}"
+}
+
+R2PM_UNINSTALL() {
+    rm -f "${R2PM_PLUGDIR}"/*swf*
+}
+
+R2PM_END

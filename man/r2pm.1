@@ -1,0 +1,52 @@
+.Dd Oct 1, 2015
+.Dt R2PM 1
+.Sh NAME
+.Nm R2PM
+.Nd radare2 package manager
+.Sh SYNOPSIS
+.Nm r2pm
+.Op cmd
+.Op ...
+.Sh DESCRIPTION
+Allows to install, update, uninstall and discover plugins and tools that can be used with radare2.
+.Bl -tag -width Fl
+.It Fl i, Cm info
+Show information about repository and installed packages
+.It Fl i, Cm install Ar pkgname
+Install a package
+.It Fl t, Cm test [OK|FX|BR|XX] Cm [build-id]
+Show last build + testsuite run from travis, greps for errors
+.It Fl u, Cm uninstall Ar pkgname
+Uninstall a package
+.It Fl l, Cm list
+List installed packages
+.It Fl s, Cm search Ar keyword
+Search in database for packages matching keyword
+.It Fl v, Cm version
+Show version information
+.It Fl h, Cm help
+Show usage help message
+.It Fl c, Cm clean
+Clean the source cache
+.El
+.Sh EXAMPLES
+.Pp
+Install a package
+.Pp
+  $ r2pm install yara3
+.Pp
+Uninstall a package
+.Pp
+  $ r2pm uninstall yara3
+.Pp
+Search a package
+.Pp
+  $ r2pm search yara
+.Pp
+List available packages
+.Pp
+  $ r2pm -s
+.Sh SEE ALSO
+.Pp
+.Xr radare2(1)
+

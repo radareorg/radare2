@@ -39,12 +39,14 @@ typedef struct r_bp_plugin_t {
 } RBreakpointPlugin;
 
 typedef struct r_bp_item_t {
+	char *name;
 	ut64 addr;
 	int size; /* size of breakpoint area */
 	int recoil; /* recoil */
 	int rwx;
 	int hw;
 	int trace;
+	int internal; /* used for internal purposes */
 	int enabled;
 	int hits;
 	ut8 *obytes; /* original bytes */
@@ -64,13 +66,14 @@ typedef struct r_bp_t {
 	RBreakpointPlugin *cur;
 	RList *traces; // XXX
 	RList *plugins;
-	PrintfCallback printf;
+	PrintfCallback cb_printf;
 	RBreakpointCallback breakpoint;
 	/* storage of breakpoints */
 	int nbps;
 	RList *bps; // list of breakpoints
 	RBreakpointItem **bps_idx;
 	int bps_idx_count;
+	st64 delta;
 } RBreakpoint;
 
 enum {

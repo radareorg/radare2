@@ -205,10 +205,8 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	OP_GROUP_INPLACE_LHS_4(0x90, A, ".")
 
 	case 0xA4:
-		/* mul */ emit("8,A,B,*,DUP,>>,DUP,!,!,OV,=,B,=,A,=,0,C,="); break;
-	case 0xA5:
-		/* ??? */ emit("$$"); break;
-
+		/* mul */ emit("8,A,B,*,NUM,>>,NUM,!,!,OV,=,B,=,A,=,0,C,="); break;
+	case 0xA5: /* ??? */ emit("0,TRAP"); break;
 	case 0xA6: case 0xA7:
 		j (XR(IB1) XW(R0I)) break;
 
@@ -344,7 +342,7 @@ static struct r_i8015_reg {
 	{"tmod",  0x89, 0x00, 1, 0}
 };
 
-static int i8051_hook_reg_read(RAnalEsil *, const char *, ut64 *);
+static int i8051_hook_reg_read(RAnalEsil *, const char *, ut64 *, int *);
 
 static int i8051_reg_compare(const void *name, const void *reg) {
 	return strcmp((const char*)name, ((struct r_i8015_reg*)reg)->name);
@@ -362,8 +360,8 @@ static struct r_i8015_reg *i8051_reg_find(const char *name) {
 static int i8051_reg_get_offset(RAnalEsil *esil, struct r_i8015_reg *ri) {
 	ut8 offset = ri->offset;
 	if (ri->banked) {
-		ut64 psw;
-		i8051_hook_reg_read(esil, "psw", &psw);
+		ut64 psw = 0LL;
+		i8051_hook_reg_read(esil, "psw", &psw, NULL);
 		offset += psw & 0x18;
 	}
 	return offset;
@@ -380,7 +378,7 @@ struct r_i8051_user {
 	RAnalEsilCallbacks cbs;
 };
 
-static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
+static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
 	ut64 val = 0LL;
 	struct r_i8015_reg *ri;
@@ -393,10 +391,10 @@ static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
 
 	esil->cb = ocbs;
 	if (!ret && ocbs.hook_reg_read) {
-		ret = ocbs.hook_reg_read (esil, name, res);
+		ret = ocbs.hook_reg_read (esil, name, res, NULL);
 	}
 	if (!ret && ocbs.reg_read) {
-		ret = ocbs.reg_read (esil, name, &val);
+		ret = ocbs.reg_read (esil, name, &val, NULL);
 	}
 	esil->cb = cbs;
 
@@ -424,7 +422,7 @@ static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 val) {
 
 static int esil_i8051_init (RAnalEsil *esil) {
 	if (esil->cb.user)
-		return R_TRUE;
+		return true;
 
 	esil->cb.user = R_NEW0(struct r_i8051_user);
 	ocbs = esil->cb;
@@ -432,19 +430,19 @@ static int esil_i8051_init (RAnalEsil *esil) {
 	esil->cb.hook_reg_read = i8051_hook_reg_read;
 	esil->cb.hook_reg_write = i8051_hook_reg_write;
 
-	return R_TRUE;
+	return true;
 }
 
 static int esil_i8051_fini (RAnalEsil *esil) {
 	esil->cb = ocbs;
 	R_FREE(esil->cb.user);
-	return R_TRUE;
+	return true;
 }
 
 static int set_reg_profile(RAnal *anal) {
-	char *p =
-		"=pc	pc\n"
-		"=sp	sp\n"
+	const char *p =
+		"=PC	pc\n"
+		"=SP	sp\n"
 		"gpr	r0	.8	0	0\n"
 		"gpr	r1	.8	1	0\n"
 		"gpr	r2	.8	2	0\n"
@@ -544,19 +542,12 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 struct r_anal_plugin_t r_anal_plugin_8051 = {
 	.name = "8051",
-	.arch = R_SYS_ARCH_8051,
+	.arch = "8051",
 	.bits = 8|16,
 	.desc = "8051 CPU code analysis plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.op = &i8051_op,
 	.set_reg_profile = set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL,
 	.esil_init = esil_i8051_init,
 	.esil_fini = esil_i8051_fini
 };

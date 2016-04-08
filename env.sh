@@ -1,7 +1,13 @@
 #!/bin/sh
 
-pfx="$1"
-if [ -z "$pfx" ]; then
+getabsolutepath() {
+	[ -d "$1" ] && { cd "$1"; echo "$(pwd -P)"; } ||
+	{ cd "$(dirname "$1")"; echo "$(pwd -P)/$(basename "$1")"; }
+}
+
+pfx=$(getabsolutepath "$1")
+
+if [ -z "$1" ]; then
 	echo "Usage: ./env.sh [destdir|prefix] [program]"
 	exit 1
 fi
@@ -41,5 +47,17 @@ if [ -z "$*" ]; then
 	echo "==> Back to system shell..."
 	echo
 else
-	eval $new_env $*
+	if [ "$#" -gt 1 ]; then
+		par=""
+		p=0
+		while : ; do
+			p=$(($p+1))
+			[ $p -gt $# ] && break
+			a=`eval echo "\$\{$p\}"`
+			par="$par\"$a\" "
+		done
+		eval $new_env $par
+	else
+		eval $new_env $*
+	fi
 fi

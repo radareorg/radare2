@@ -5,3 +5,7 @@ OBJS=lang.o
 DEPS=r_util r_cons
 
 include ../rules.mk
+
+pop:
+	make
+	r2 -c '#!rust' -

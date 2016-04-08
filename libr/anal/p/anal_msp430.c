@@ -7,9 +7,7 @@
 
 #include <msp430_disas.h>
 
-static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr,
-		const ut8 *buf, int len)
-{
+static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int ret;
 	struct msp430_cmd cmd;
 
@@ -30,7 +28,7 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	case MSP430_ONEOP:
 		switch (cmd.opcode) {
 		case MSP430_RRA:
-		case MSP430_RCR:
+		case MSP430_RRC:
 			op->type = R_ANAL_OP_TYPE_ROR; break;
 		case MSP430_PUSH:
 			op->type = R_ANAL_OP_TYPE_PUSH; break;
@@ -63,6 +61,9 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		op->jump = addr + cmd.jmp_addr;
 		op->fail = addr + 2;
 		break;
+	case MSP430_INV:
+		op->type = R_ANAL_OP_TYPE_ILL;
+		break;
 	default:
 		op->type = R_ANAL_OP_TYPE_UNK;
 	}
@@ -74,15 +75,7 @@ struct r_anal_plugin_t r_anal_plugin_msp430 = {
 	.name = "msp430",
 	.desc = "TI MSP430 code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_MSP430,
+	.arch = "msp430",
 	.bits = 16,
-	.init = NULL,
-	.fini = NULL,
 	.op = msp430_op,
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL,
 };

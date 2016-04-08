@@ -142,6 +142,9 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		}
 		sscanf (str, "0x%"PFMT64x, &ret);
 	} else
+	if (str[0]=='\'') {
+		ret = str[1] & 0xff;
+	} else
 	if (str[0]=='0' && str[1]=='x') {
 #if __WINDOWS__ && MINGW32 && !__CYGWIN__
 		ret = _strtoui64 (str+2, NULL, 16);
@@ -189,8 +192,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			break;
 		}
 	}
-	if (num != NULL)
-		num->value = ret;
+	if (num) num->value = ret;
 	return ret;
 }
 
@@ -245,8 +247,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 	ret = r_num_calc (num, str, &err);
 	if (err) eprintf ("r_num_calc error: (%s) in (%s)\n", err, str);
 	else if (num) num->value = ret;
-	if (num != NULL)
-		num->value = ret;
+	if (num) num->value = ret;
 	return ret;
 #else
 	ut64 ret = 0LL;
@@ -464,4 +465,33 @@ R_API int r_is_valid_input_num_value(RNum *num, const char *input_value){
 R_API ut64 r_get_input_num_value(RNum *num, const char *input_value){
 	ut64 value = input_value ? r_num_math (num, input_value) : 0;
 	return value;
+}
+
+R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
+	ut64 mask = 0LL;
+	ut64 n = 0;
+	char *p;
+	int i;
+
+	while (*hex && (*hex==' ' || *hex=='.')) {
+		hex++;
+	}
+	i = strlen (hex) * 4;
+	p = malloc (strlen (hex)+10);
+	if (p) {
+		strcpy (p, "0x");
+		strcpy (p+2, hex);
+		if (hex[0] >= '0' && hex[0] <= '9') {
+			n = r_num_math (num, p);
+		} else {
+			eprintf ("Invalid argument\n");
+			n = 0;
+		}
+		free (p);
+	}
+	if (!n) {
+		return UT64_MAX;
+	}
+	mask = UT64_MAX << i;
+	return (addr & mask) | n;
 }

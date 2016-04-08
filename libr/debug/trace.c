@@ -10,7 +10,7 @@ R_API RDebugTrace *r_debug_trace_new () {
 	RDebugTrace *t = R_NEW (RDebugTrace);
 	t->tag = 1; // UT32_MAX;
 	t->addresses = NULL;
-	t->enabled = R_FALSE;
+	t->enabled = false;
 	t->traces = r_list_new ();
 	t->traces->free = free;
 	t->db = sdb_new0 ();
@@ -39,11 +39,11 @@ R_API int r_debug_trace_pc (RDebug *dbg) {
 	RRegItem *ri;
 	RAnalOp op;
 	static ut64 oldpc = 0LL; // Must trace the previously traced instruction
-	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 	if ((ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1))) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
 		if (!addr) {
-			return R_FALSE;
+			return false;
 		}
 		if (dbg->iob.read_at (dbg->iob.io, addr, buf, sizeof (buf))>0) {
 			if (r_anal_op (dbg->anal, &op, addr, buf, sizeof (buf))>0) {
@@ -56,11 +56,11 @@ R_API int r_debug_trace_pc (RDebug *dbg) {
 					r_debug_trace_add (dbg, oldpc, op.size);
 				}
 				oldpc = addr;
-				return R_TRUE;
+				return true;
 			} else eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", addr);
 		} //else eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", addr);
 	} else eprintf ("trace_pc: cannot get program counter\n");
-	return R_FALSE;
+	return false;
 }
 
 R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
@@ -95,24 +95,35 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode) {
 	RDebugTracepoint *trace;
 	r_list_foreach (dbg->trace->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
-			if (mode == 1)
-				dbg->printf ("at+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);
-			else dbg->printf ("0x%08"PFMT64x" size=%d count=%d times=%d tag=%d\n",
-				trace->addr, trace->size, trace->count, trace->times, trace->tag);
+			switch (mode) {
+			case 1:
+			case '*':
+				dbg->cb_printf ("at+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);
+				break;
+			case 'd':
+				dbg->cb_printf ("pd 1 @ 0x%"PFMT64x"\n", trace->addr);
+				break;
+			case 'l':
+				dbg->cb_printf ("0x%"PFMT64x" ", trace->addr);
+				break;
+			default:
+				dbg->cb_printf ("0x%08"PFMT64x" size=%d count=%d times=%d tag=%d\n",
+					trace->addr, trace->size, trace->count, trace->times, trace->tag);
+				break;
+			}
 		}
 	}
 }
 
 // XXX: find better name, make it public?
 static int r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
-	int ret = R_TRUE;
-	char addr_str[32];
 	if (dbg->trace->addresses) {
+		char addr_str[32];
 		snprintf (addr_str, sizeof (addr_str), "0x%08"PFMT64x, addr);
 		if (!strstr (dbg->trace->addresses, addr_str))
-			ret = R_FALSE;
+			return false;
 	}
-	return ret;
+	return true;
 }
 
 R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {

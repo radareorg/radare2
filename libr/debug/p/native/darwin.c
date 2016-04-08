@@ -16,42 +16,47 @@ int pids_cmdline(int pid, char *cmdline) {
 
 // XXX
 int pids_sons_of_r(int pid, int recursive, int limit) {
-        int p;
-        int n = 0;
-        int mola;
-        char buf[128];
-        int tmp;
-        char tmp2[1024];
-        char tmp3[8];
-        struct dirent *file;
+        int p, mola, tmp, n = 0;
         FILE *fd;
-        DIR *dh = opendir("/proc/");
+        char tmp3[8];
+        char buf[128];
+        char tmp2[1024];
+        struct dirent *file;
+        DIR *dh;
+       
+        if (pid < 1)
+	       return false;
+	dh = opendir ("/proc/");
+	if (!dh) {
+                return false;
+	}
 
-        if (pid == 0 || dh == NULL)
-                return 0;
-
-        while((file=(struct dirent *)readdir(dh)) ) {
-                p = atoi(file->d_name);
+        while ((file = (struct dirent *)readdir (dh))) {
+                p = atoi (file->d_name);
                 if (p) {
-                        sprintf(buf,"/proc/%s/stat", file->d_name);
-                        fd = fopen(buf, "r");
+                        sprintf (buf,"/proc/%s/stat", file->d_name);
+                        fd = fopen (buf, "r");
                         if (fd) {
                                 mola = 0;
-                                fscanf(fd,"%d %s %s %d",
+                                fscanf (fd,"%d %s %s %d",
                                         &tmp, tmp2, tmp3, &mola);
                                 if (mola == pid) {
-                                        pids_cmdline(p, tmp2);
+                                        pids_cmdline (p, tmp2);
                                         //for(i=0; i<recursive*2;i++)
                                         //      printf(" ");
-                                        cons_printf(" `- %d : %s (%s)\n", p, tmp2, (tmp3[0]=='S')?"sleeping":(tmp3[0]=='T')?"stopped":"running");
+                                        cons_printf (" `- %d : %s (%s)\n",
+						p, tmp2, (tmp3[0]=='S')?
+						"sleeping":(tmp3[0]=='T')?
+						"stopped":"running");
                                         n++;
-                                        if (recursive<limit)
-                                                n+=pids_sons_of_r(p, recursive+1, limit);
+                                        if (recursive<limit) {
+                                                n += pids_sons_of_r (p, recursive+1, limit);
+					}
                                 }
                         }
-                        fclose(fd);
+                        fclose (fd);
                 }
         }
+	closedir (dh);
         return n;
 }
-

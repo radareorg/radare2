@@ -71,6 +71,7 @@
  
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 //#include <portab.h>
 #ifndef R_API_I
 #define R_API_I
@@ -78,34 +79,31 @@
 #define CHAR char
 #define WORD short
 #define UWORD unsigned short
-#define UBYTE unsigned char
+#define ut8 unsigned char
 #define ut8 unsigned char
 #define STR char*
 #define BYTE char
 #define ULONG unsigned int
-#define Boolean int
-#define R_TRUE 1
-#define R_FALSE 0
  
 #define CODESIZE        8192L           // 8K Programmcode
 #define FUTURA_189      1               // Sprungtabellen-Sprünge für Futura Aquariencomputer ROM V1.89
                                         // Sprüngen im Debugger. Siehe auch oben.
  
 // Speicher für den Programmcode
-//static UBYTE       *Opcodes; //[CODESIZE];
+//static ut8       *Opcodes; //[CODESIZE];
  
 // Flag pro Speicherstelle, ob Opcode, Operand, Daten
 // Bit 4 = 1, d.h. hier wird per JR o.ä. hingesprungen.
 enum {
-    Opcode,
-    Operand,
-    Data
+	Opcode,
+	Operand,
+	Data
 } DataType;
  
  
 // Länge eines Opcodes in Bytes ermitteln
-static UBYTE OpcodeLen(ULONG p, const ut8 *Opcodes) {
-	UBYTE   len = 1;
+static ut8 OpcodeLen(ULONG p, const ut8 *Opcodes) {
+	ut8   len = 1;
  
 	switch (Opcodes[p]) {// Opcode
 	case 0x06:          // LD B,n
@@ -260,7 +258,7 @@ static UBYTE OpcodeLen(ULONG p, const ut8 *Opcodes) {
 #if MAIN_DIS
 R_API_I ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
 	int i;
-	ULONG   next;
+	ULONG next;
  
         i = OpcodeLen (adr, Opcodes);           // Länge vom Opcode ermitteln
 	if (len<i)
@@ -354,9 +352,9 @@ R_API_I ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
 
 // Disassemblieren
 static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen) {
-	UBYTE           a = Opcodes[0];
-	UBYTE           d = (a >> 3) & 7;
-	UBYTE           e = a & 7;
+	ut8 a = Opcodes[0];
+	ut8 d = (a >> 3) & 7;
+	ut8 e = a & 7;
 	static STR reg[8] = {"b","c","d","e","h","l","(hl)","a"};
 	static STR dreg[4] = {"bc","de","hl","sp"};
 	static STR cond[8] = {"nz","z","nc","c","po","pe","p","m"};
@@ -440,15 +438,12 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 			}
 			break;
 		case 0x03:
-			if (a & 0x08)
-				strcpy (s,"dec ");
-			else
-				strcpy (s,"inc ");
-			strcat (s,dreg[d >> 1]);
+			strcpy (s, (a & 8)? "dec ": "inc ");
+			strcat (s, dreg[d >> 1]);
 			break;
 		case 0x04:
-			strcpy (s,"inc ");
-			strcat (s,reg[d]);
+			strcpy (s, "inc ");
+			strcat (s, reg[d]);
 			break;
 		case 0x05:
 			strcpy (s, "dec ");
@@ -491,18 +486,18 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 		case 0x01:
 			if(d & 1) {
 				switch(d >> 1) {
-					case 0x00:
-						strcpy(s,"ret");
-						break;
-					case 0x01:
-						strcpy(s,"exx");
-						break;
-					case 0x02:
-						strcpy(s,"jp (hl)");
-						break;
-					case 0x03:
-						strcpy(s,"ld sp, hl");
-						break;
+				case 0x00:
+					strcpy(s,"ret");
+					break;
+				case 0x01:
+					strcpy(s,"exx");
+					break;
+				case 0x02:
+					strcpy(s,"jp (hl)");
+					break;
+				case 0x03:
+					strcpy(s,"ld sp, hl");
+					break;
 				}
 			} else {
 				strcpy(s,"pop ");

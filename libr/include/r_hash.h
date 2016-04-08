@@ -70,6 +70,14 @@ typedef struct r_hash_seed_t {
 #define R_HASH_SIZE_SHA384 48
 #define R_HASH_SIZE_SHA512 64
 #define R_HASH_SIZE_ADLER32 4
+/* entropy is double !! fail with size 4 */
+#define R_HASH_SIZE_ENTROPY 4
+#define R_HASH_SIZE_PCPRINT 1
+#define R_HASH_SIZE_MOD255 1
+#define R_HASH_SIZE_PARITY 1
+#define R_HASH_SIZE_XOR 1
+#define R_HASH_SIZE_XORPAIR 2
+#define R_HASH_SIZE_HAMDIST 1
 
 #define R_HASH_NONE 0
 #define R_HASH_MD5 1

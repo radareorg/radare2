@@ -6,6 +6,7 @@
 *.sdb
 *.dylib
 *.dll
+*.dSYM
 supported.*
 config.mk
 plugins.cfg
@@ -27,12 +28,15 @@ binr/ragg2/ragg2
 binr/ragg2/ragg2.exe
 binr/rahash2/rahash2
 binr/rahash2/rahash2.exe
+binr/ranal2/ranal2
+binr/ranal2/ranal2.exe
 binr/rarun2/rarun2
 binr/rarun2/rarun2.exe
 binr/rasm2/rasm2
 binr/rasm2/rasm2.exe
 binr/rax2/rax2
 binr/rax2/rax2.exe
+binr/*/_CodeSignature/*
 config-user.mk
 libr/bin/d/dll/dll
 libr/config.h
@@ -48,7 +52,11 @@ shlr/sdb/src/.sdb
 shlr/sdb/src/sdb.exe
 shlr/sdb/src/.sdb.exe
 shlr/sdb/src/sdb-version.h
+shlr/sdb/src/sdb_version.h
 shlr/sdb/src/libsdb.so*
 shlr/capstone/
 radare2-w32-*
 radare2-regressions
+tags
+.lvimrc
+.nconfig.tmp

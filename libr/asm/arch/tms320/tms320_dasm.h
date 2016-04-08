@@ -125,7 +125,7 @@ typedef struct {
 
 #define def_field(name, size)			\
 	unsigned int bf_##name##_valid:1;	\
-	unsigned int bf_##name##_value:size;
+	unsigned int bf_##name##_value:size
 
 	struct {
 		def_field	(E, 1);
@@ -198,8 +198,8 @@ typedef struct {
 
 		// qualifiers
 
-		def_field	(q_lr, 1)
-		def_field	(q_cr, 1)
+		def_field	(q_lr, 1);
+		def_field	(q_cr, 1);
 	} f;
 
 	RHashTable		* map;

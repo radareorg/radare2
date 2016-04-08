@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2016 - pancake */
 
 #include <r_fs.h>
 #include "grubfs.h"
@@ -20,12 +20,12 @@ static RFSFile* FSP(_open)(RFSRoot *root, const char *path) {
 	return file;
 }
 
-static boolt FSP(_read)(RFSFile *file, ut64 addr, int len) {
+static bool FSP(_read)(RFSFile *file, ut64 addr, int len) {
 	GrubFS *gfs = file->ptr;
 	grubfs_bind_io (NULL, file->root->delta);
 	gfs->file->fs->read (gfs->file, (char*)file->data, len);
 	file->off = grub_hack_lastoff; //gfs->file->offset;
-	return R_FALSE;
+	return false;
 }
 
 static void FSP(_close)(RFSFile *file) {
@@ -70,8 +70,8 @@ static int FSP(_mount)(RFSRoot *root) {
 	root->ptr = gfs;
 	grubfs_bind_io (&root->iob, root->delta);
 	// XXX: null hook seems to be problematic on some filesystems
-	//return gfs->file->fs->dir (gfs->file->device, "/", NULL, 0)? R_FALSE:R_TRUE;
-	ret = gfs->file->fs->dir (gfs->file->device, "/", do_nothing, 0)? R_FALSE:R_TRUE;
+	//return gfs->file->fs->dir (gfs->file->device, "/", NULL, 0)? false:true;
+	ret = gfs->file->fs->dir (gfs->file->device, "/", do_nothing, 0)? false:true;
 	grubfs_bind_io (NULL, root->delta);
 	return ret;
 }
@@ -81,7 +81,7 @@ static void FSP(_umount)(RFSRoot *root) {
 	root->ptr = NULL;
 }
 
-struct r_fs_plugin_t FSS(r_fs_plugin) = {
+RFSPlugin FSS(r_fs_plugin) = {
 	.name = FSNAME,
 	.desc = FSDESC,
 	.open = FSP(_open),

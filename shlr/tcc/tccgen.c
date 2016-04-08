@@ -906,7 +906,10 @@ static void struct_decl(CType *type, int u)
             bit_pos = 0;
             offset = 0;
             while (tok != '}') {
-                parse_btype(&btype, &ad);
+                if (!parse_btype(&btype, &ad)) {
+			expect("bracket");
+			break;
+		}
                 while (1) {
                     bit_size = -1;
                     v = 0;
@@ -1002,12 +1005,15 @@ static void struct_decl(CType *type, int u)
 			char b[1024];
 			char *varstr = get_tok_str (v, NULL);
 			type_to_str (b, sizeof(b), &type1, NULL);
-			tcc_appendf ("%s=struct\n", name);
-			tcc_appendf ("[+]struct.%s=%s\n",
-				name, varstr);
-			/* compact form */
-			tcc_appendf ("struct.%s.%s=%s,%d,%d\n",
-				name,varstr,b,offset,arraysize);
+			{
+				const char *ctype = (a == TOK_UNION)? "union": "struct";
+				tcc_appendf ("%s=%s\n", name, ctype);
+				tcc_appendf ("[+]%s.%s=%s\n",
+						ctype, name, varstr);
+				/* compact form */
+				tcc_appendf ("%s.%s.%s=%s,%d,%d\n",
+						ctype, name,varstr,b,offset,arraysize);
+			}
 #if 0
 			printf ("struct.%s.%s.type=%s\n", name, varstr, b);
 			printf ("struct.%s.%s.offset=%d\n", name, varstr, offset);
@@ -1470,16 +1476,14 @@ static void type_decl(CType *type, AttributeDef *ad, int *v, int td)
         post_type(type, ad);
         nocode_wanted = saved_nocode_wanted;
     } else {
-{
 	    char kind[1024];
 	    char *name = get_tok_str (*v, NULL);
 	    type_to_str (kind, sizeof(kind), type, NULL);
 	    //eprintf ("---%d %s STATIC %s\n", td, kind, name);
 	    global_symname = name;
 	    global_type = kind;
-}
-        post_type(type, ad);
-}
+	    post_type(type, ad);
+    }
     type->t |= storage;
     if (tok == TOK_ATTRIBUTE1 || tok == TOK_ATTRIBUTE2)
         parse_attribute(ad);

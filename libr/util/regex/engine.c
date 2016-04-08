@@ -169,6 +169,9 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 	m->offp = string;
 	m->beginp = start;
 	m->endp = stop;
+
+	if (m->g->nstates * 4 < m->g->nstates)
+		return R_REGEX_NOMATCH;
 	STATESETUP(m, 4);
 	SETUP(m->st);
 	SETUP(m->fresh);
@@ -202,9 +205,13 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 			break;		/* no further info needed */
 
 		/* oh my, he wants the subexpressions... */
-		if (m->pmatch == NULL)
+		if (m->pmatch == NULL) {
+			if ((m->g->nsub + 1) * sizeof(RRegexMatch) < m->g->nsub) {
+				return R_REGEX_ESPACE;
+			}
 			m->pmatch = (RRegexMatch *)malloc((m->g->nsub + 1) *
 							sizeof(RRegexMatch));
+		}
 		if (m->pmatch == NULL) {
 			STATETEARDOWN(m);
 			return(R_REGEX_ESPACE);
@@ -216,6 +223,11 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 			dp = dissect(m, m->coldp, endp, gf, gl);
 		} else {
 			if (g->nplus > 0 && m->lastpos == NULL)
+				if ((g->nplus + 1) * sizeof(char *) < g->nplus) {
+					free (m->pmatch);
+					STATETEARDOWN(m);
+					return R_REGEX_ESPACE;
+				}
 				m->lastpos = (char **)malloc((g->nplus+1) *
 							sizeof(char *));
 			if (g->nplus > 0 && m->lastpos == NULL) {
@@ -481,7 +493,7 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 	size_t len;
 	int hard;
 	sop s;
-	regoff_t offsave;
+	ut64 offsave;
 	cset *cs;
 
 	AT("back", start, stop, startst, stopst);
@@ -968,7 +980,7 @@ print(struct match *m, char *caption, states st, int ch, FILE *d)
 	(void)fprintf(d, "\n");
 }
 
-/* 
+/*
  - at - print current situation
  */
 static void

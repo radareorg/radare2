@@ -71,6 +71,10 @@ static int instrPrint(char *out, const op* o) {
 	char arg[32], arg2[32];
 	if (o->code.opcode == 0) {
 		valPrint (arg, o->n.a_type, o->n.a);
+		if (o->n.opcode<0 || o->n.opcode>1) {
+			strcpy (out, "invalid");
+			return strlen (out);
+		}
 		return sprintf(out, "%s %s",
 			opNameB[o->n.opcode], arg);
 	}

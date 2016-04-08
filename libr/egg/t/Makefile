@@ -19,7 +19,7 @@ include ../../rules.mk
 include ../../db/r.mk
 
 t tests:
-	@for a in ${TESTS} ; do sh t-$$a.sh ; done
+	@for TEST in ${TESTS} ; do sh t-$${TEST}.sh ; done
 
 myclean:
 	rm -f test${EXT_EXE} test.o

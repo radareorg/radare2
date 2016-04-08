@@ -19,7 +19,7 @@ static const char *two_op_instrs[] = {
 };
 
 static const char *one_op_instrs[] = {
-	[MSP430_RCR]	= "rcr",
+	[MSP430_RRC]	= "rrc",
 	[MSP430_SWPB]	= "swpb",
 	[MSP430_RRA]	= "rra",
 	[MSP430_SXT]	= "sxt",
@@ -59,11 +59,11 @@ static ut8 get_ad(ut16 instr)
 	return (instr >> 7) & 1;
 }
 
-static int get_src(instr) {
+static int get_src(ut16 instr) {
 	return (instr >> 8) & 0xF;
 }
 
-static int get_dst(instr) {
+static int get_dst(ut16 instr) {
 	return instr & 0xF;
 }
 
@@ -370,7 +370,7 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 	cmd->opcode = get_oneop_opcode(instr);
 
 	switch (get_oneop_opcode(instr)) {
-	case MSP430_RCR:
+	case MSP430_RRC:
 	case MSP430_SWPB:
 	case MSP430_RRA:
 	case MSP430_SXT:
@@ -481,6 +481,14 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 
 	r_mem_copyendian((ut8*)&operand1, in + 2, sizeof(ut16), LIL_ENDIAN);
 	ret = decode_oneop_opcode(instr, operand1, cmd);
+
+	/* if ret < 0, it's an invalid opcode.Say so and return 2 since
+	 * all MSP430 opcodes are of 16 bits,valid or invalid */
+	if (ret < 0) {
+		cmd->type = MSP430_INV;
+		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "invalid opcode");
+		ret = 2;
+	}
 
 	return ret;
 }

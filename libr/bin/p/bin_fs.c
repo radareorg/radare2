@@ -12,7 +12,7 @@ static int check_bytes(const ut8 *buf, ut64 length);
 //static char *fsname(RBinFile *arch) {
 static char *fsname(const ut8* buf, ut64 length) {
 	ut8 fs_lbuf[1024];
-	int i, j, len, ret = R_FALSE;
+	int i, j, len, ret = false;
 
 	for (i=0; fstypes[i].name ; i++) {
 		RFSType *f = &fstypes[i];
@@ -27,7 +27,7 @@ static char *fsname(const ut8* buf, ut64 length) {
 			int min = R_MIN (f->buflen, sizeof (fs_lbuf));
 			if (!memcmp (fs_lbuf, f->buf, min)) {
 
-				ret = R_TRUE;
+				ret = true;
 				len = R_MIN (f->bytelen, sizeof (fs_lbuf));
 
 				if (f->byteoff+len > length) break;
@@ -35,7 +35,7 @@ static char *fsname(const ut8* buf, ut64 length) {
 
 				for (j=0; j<f->bytelen; j++) {
 					if (fs_lbuf[j] != f->byte) {
-						ret = R_FALSE;
+						ret = false;
 						break;
 					}
 				}
@@ -61,13 +61,13 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 
 static int load(RBinFile *arch) {
 	if (check (arch))
-		return R_TRUE;
-	return R_FALSE;
+		return true;
+	return false;
 }
 
 static int destroy(RBinFile *arch) {
 	//r_bin_fs_free ((struct r_bin_fs_obj_t*)arch->o->bin_obj);
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -113,21 +113,16 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	char *p;
-	int ret;
-	if (!buf) return R_FALSE;
-	p = fsname (buf, length);
-	ret = (p)? R_TRUE: R_FALSE;
+	if (!buf || (st64)length <1) return false;
+	char *p = fsname (buf, length);
 	free (p);
-	return ret;
+	return p != NULL;
 }
 
 RBinPlugin r_bin_plugin_fs = {
 	.name = "fs",
 	.desc = "filesystem bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -135,20 +130,8 @@ RBinPlugin r_bin_plugin_fs = {
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
-	.binsym = NULL,
-	.entries = NULL,
-	.sections = NULL,
-	.symbols = NULL,
-	.imports = NULL,
 	.strings = &strings,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.dbginfo = NULL,
-	.write = NULL,
-	.demangle_type = NULL
 };
 
 #ifndef CORELIB

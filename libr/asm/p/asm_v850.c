@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2012-2015 - pancake */
+
 #include <stdio.h>
 #include <string.h>
 #include <r_types.h>
@@ -7,15 +9,17 @@
 #include <v850_disas.h>
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int ret = R_TRUE;
-	struct v850_cmd cmd;
-
-	ret = v850_decode_command (buf, &cmd);
-
-	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s", cmd.instr, cmd.operands);
-	op->size = ret;
-
-	return ret;
+	struct v850_cmd cmd = {
+		.instr = "",
+		.operands = ""
+	};
+	if (len < 2) return -1;
+	int ret = v850_decode_command (buf, &cmd);
+	if (ret > 0) {
+		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s",
+			  cmd.instr, cmd.operands);
+	}
+	return op->size = ret;
 }
 
 RAsmPlugin r_asm_plugin_v850 = {

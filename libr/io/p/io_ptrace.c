@@ -151,10 +151,10 @@ static void close_pidmem(RIOPtrace *iop) {
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	if (!strncmp (file, "ptrace://", 9))
-		return R_TRUE;
+		return true;
 	if (!strncmp (file, "attach://", 9))
-		return R_TRUE;
-	return R_FALSE;
+		return true;
+	return false;
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
@@ -232,7 +232,18 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	return (!whence)?offset:whence==1?io->off+offset:UT64_MAX;
+	switch (whence) {
+	case 0: // abs
+		io->off = offset;
+		break;
+	case 1: // cur
+		io->off += (int)offset;
+		break;
+	case 2: // end
+		io->off = UT64_MAX;
+		break;
+	}
+	return io->off;
 }
 
 static int __close(RIODesc *desc) {
@@ -274,11 +285,11 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 				iop->pid = iop->tid = pid;
 			}
 		} else {
-			io->printf ("%d\n", iop->pid);
+			io->cb_printf ("%d\n", iop->pid);
 		}
 		return pid;
 	} else eprintf ("Try: '=!pid'\n");
-	return R_TRUE;
+	return true;
 }
 
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
@@ -293,7 +304,7 @@ RIOPlugin r_io_plugin_ptrace = {
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,
-	.isdbg = R_TRUE
+	.isdbg = true
 };
 #else
 struct r_io_plugin_t r_io_plugin_ptrace = {

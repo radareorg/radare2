@@ -16,7 +16,7 @@ R_API RSyscall* r_syscall_new() {
 	RSyscall *rs = R_NEW0 (RSyscall);
 	if (rs) {
 		rs->sysport = sysport_x86;
-		rs->printf = (PrintfCallback)printf;
+		rs->cb_printf = (PrintfCallback)printf;
 		rs->regs = fastcall_x86_32;
 	}
 	return rs;
@@ -24,6 +24,7 @@ R_API RSyscall* r_syscall_new() {
 
 R_API void r_syscall_free(RSyscall *s) {
 	sdb_free (s->db);
+	free(s->os);
 	memset (s, 0, sizeof (RSyscall));
 	free (s);
 }
@@ -37,16 +38,15 @@ R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
 
 R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bits) {
 	const char *file;
-	if (os == NULL || !*os)
+	if (!os || !*os)
 		os = R_SYS_OS;
-	if (arch == NULL)
-		arch = R_SYS_ARCH;
+	if (!arch) arch = R_SYS_ARCH;
 
 	free (s->os);
 	s->os = strdup (os);
 
 	if (!strcmp (os, "any")) // ignored
-		return R_TRUE;
+		return true;
 
 	if (!strcmp (arch, "mips"))
 		s->regs = fastcall_mips;
@@ -64,11 +64,12 @@ R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bit
 			break;
 		case 64:
 			s->regs = fastcall_x86_64;
+			break;
 		}
 	}
 
 #define SYSCALLPATH R2_LIBDIR"/radare2/"R2_VERSION"/syscall"
-	file = sdb_fmt (0, "%s/%s-%s-%d.sdb", 
+	file = sdb_fmt (0, "%s/%s-%s-%d.sdb",
 		SYSCALLPATH, os, arch, bits);
 	if (!r_file_exists (file)) {
 		//eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
@@ -90,17 +91,18 @@ R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bit
 	if (s->fd)
 		fclose (s->fd);
 	s->fd = NULL;
-	return R_TRUE;
+	return true;
 }
 
+/// XXX wtf is this function for?
 R_API int r_syscall_setup_file(RSyscall *s, const char *path) {
 	if (s->fd)
 		fclose (s->fd);
 	s->fd = r_sandbox_fopen (path, "r");
 	if (s->fd == NULL)
-		return 1;
+		return false;
 	/* TODO: load info from file */
-	return 0;
+	return true;
 }
 
 R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char *s) {

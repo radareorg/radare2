@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 pancake */
+/* radare - LGPL - Copyright 2007-2015 pancake */
 
 #include "r_hash.h"
 #include "r_util.h"
@@ -99,13 +99,13 @@ R_API int r_hash_size(ut64 algo) {
 	if (algo & R_HASH_CRC32) return R_HASH_SIZE_CRC32;
 	if (algo & R_HASH_XXHASH) return R_HASH_SIZE_XXHASH;
 	if (algo & R_HASH_ADLER32) return R_HASH_SIZE_ADLER32;
-	if (algo & R_HASH_PARITY) return 1;
-	if (algo & R_HASH_ENTROPY) return 4; // special case
-	if (algo & R_HASH_HAMDIST) return 1;
-	if (algo & R_HASH_XOR) return 1;
-	if (algo & R_HASH_XORPAIR) return 1;
-	if (algo & R_HASH_MOD255) return 1;
-	if (algo & R_HASH_PCPRINT) return 1;
+	if (algo & R_HASH_PARITY) return R_HASH_SIZE_PARITY;
+	if (algo & R_HASH_ENTROPY) return R_HASH_SIZE_ENTROPY;
+	if (algo & R_HASH_HAMDIST) return R_HASH_SIZE_HAMDIST;
+	if (algo & R_HASH_XOR) return R_HASH_SIZE_XOR;
+	if (algo & R_HASH_XORPAIR) return R_HASH_SIZE_XORPAIR;
+	if (algo & R_HASH_MOD255) return R_HASH_SIZE_MOD255;
+	if (algo & R_HASH_PCPRINT) return R_HASH_SIZE_PCPRINT;
 	return 0;
 }
 
@@ -167,19 +167,31 @@ R_API void r_hash_do_spice(RHash *ctx, int algo, int loops, RHashSeed *seed) {
 }
 
 R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int len) {
-	char *digest_hex = NULL;
-	int i, digest_size;
 	ut64 algo = r_hash_name_to_bits (name);
-	if (!ctx)
-		ctx = r_hash_new (R_TRUE, algo);
+	char *digest_hex = NULL;
+	RHash *myctx = NULL;
+	int i, digest_size;
+	if (!algo || !data) {
+		return NULL;
+	}
+	if (!ctx) {
+		myctx = ctx = r_hash_new (true, algo);
+	}
 	r_hash_do_begin (ctx, algo);
-	r_hash_calculate (ctx, algo, data, len);
+	digest_size = r_hash_calculate (ctx, algo, data, len);
 	r_hash_do_end (ctx, algo);
-	digest_size = r_hash_size (algo);
-	digest_hex = malloc ((digest_size *2)+1);
-	for (i = 0; i< digest_size; i++)
-		sprintf (digest_hex+(i*2), "%02x", ctx->digest[i]);
-	digest_hex[digest_size*2] = 0;
-	r_hash_free (ctx);
+	if (digest_size > 0) {
+		if (digest_size * 2 < digest_size) {
+			digest_hex = NULL;
+		} else {
+			digest_hex = malloc ((digest_size * 2) + 1);
+			for (i = 0; i < digest_size; i++)
+				sprintf (digest_hex + (i * 2), "%02x", ctx->digest[i]);
+			digest_hex[digest_size * 2] = 0;
+		}
+	}
+	if (myctx) {
+		r_hash_free (myctx);
+	}
 	return digest_hex;
 }

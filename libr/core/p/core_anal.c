@@ -1,4 +1,4 @@
-/* radare - Copyright 2014 pancake */
+/* radare - Copyright 2014-2015 pancake */
 
 #include <r_types.h>
 #include <r_core.h>
@@ -96,11 +96,15 @@ ut64 analyzeIterative (RCore *core, Sdb *db, ut64 addr) {
 
 	for (;;) {
 		op = r_core_anal_op (core, addr + cur);
-		if (!op) {
+		if (!op || !op->mnemonic) {
 			eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
-			return R_FALSE;
+			break;
 		}
 		eprintf ("0x%08"PFMT64x"  %s\n", addr + cur, op->mnemonic);
+		if (op->mnemonic[0] == '?') {
+			eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
+			break;
+		}
 
 		bb_end += op->size;
 		fcn_size += op->size;
@@ -203,13 +207,13 @@ static int analyzeFunction (RCore *core, ut64 addr) {
 	Sdb *db = sdb_new0 ();
 	if (!db) {
 		eprintf ("Cannot create db\n");
-		return R_FALSE;
+		return false;
 	}
 
 	addr = analyzeIterative (core, db, addr);
 	if (addr == UT64_MAX) {
 		eprintf ("Initial analysis failed\n");
-		return R_FALSE;
+		return false;
 	}
 	sdb_num_set (db, "addr", addr, 0);
 
@@ -313,7 +317,7 @@ static int analyzeFunction (RCore *core, ut64 addr) {
 		free (calls);
 	}
 	sdb_free (db);
-	return R_TRUE;
+	return true;
 }
 
 static int r_cmd_anal_call(void *user, const char *input) {
@@ -327,11 +331,13 @@ static int r_cmd_anal_call(void *user, const char *input) {
 			break;
 		default:
 			eprintf ("Usage: a2f\n");
+			eprintf ("a2f is the new (experimental) analysis engine\n");
+			eprintf ("Use with caution.\n");
 			break;
 		}
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 // PLUGIN Definition Info

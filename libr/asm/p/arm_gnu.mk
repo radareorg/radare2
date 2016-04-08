@@ -2,6 +2,7 @@ N=asm_arm_gnu
 OBJ_ARM=$(N).o
 #arm thumb + armv7
 OBJ_ARM+=../arch/arm/gnu/arm-dis.o
+OBJ_ARM+=../arch/arm/gnu/floatformat.o
 #aarch64
 OBJ_ARM+=../arch/arm/aarch64/aarch64-dis.o
 OBJ_ARM+=../arch/arm/aarch64/aarch64-dis-2.o

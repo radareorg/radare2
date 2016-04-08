@@ -1,0 +1,17 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/radare/radare2-extras"
+R2PM_DESC "[r2-core] yara3 plugin for radare2"
+
+R2PM_INSTALL() {
+	cd yara/yara3
+	./configure --prefix="${R2PM_PREFIX}" || R2PM_FAIL "Configure"
+	make || R2PM_FAIL "Build"
+	make install || R2PM_FAIL "Install"
+}
+
+R2PM_UNINSTALL() {
+	make uninstall
+}
+
+R2PM_END

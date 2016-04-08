@@ -61,7 +61,7 @@ rep:
 		case ' ':
 			ptr = r_str_newf ("%s.%d", input+2, flagenum);
 			(void)r_flag_set (core->flags, ptr,
-					core->offset, 1, 0);
+					core->offset, 1);
 			flagenum++;
 			free (ptr);
 			break;
@@ -100,7 +100,7 @@ rep:
 			fi = r_flag_get (core->flags, name);
 			if (!fi)
 				fi = r_flag_set (core->flags, name,
-					core->offset, 1, 0);
+					core->offset, 1);
 			if (fi) {
 				r_flag_item_set_alias (fi, ptr);
 			} else {
@@ -108,6 +108,27 @@ rep:
 			}
 		} else {
 			eprintf ("Usage: fa flagname flagalias\n");
+		}
+		break;
+	case 'V': // visual marks
+		switch(input[1]) {
+		case '-':
+			r_core_visual_mark_reset (core);
+			break;
+		case ' ':
+			{
+			const char *arg = strchr (input+2, ' ');
+			ut64 addr = arg? r_num_math (core->num, arg): core->offset;
+			r_core_visual_mark_set (core, atoi (input+1), addr);
+			}
+			break;
+		case '?':
+			eprintf ("Usage: fV[*-] [nkey] [offset]\n");
+			eprintf ("Dump/Restore visual marks (mK/'K)\n");
+			break;
+		default:
+			r_core_visual_mark_dump (core);
+			break;
 		}
 		break;
 	case 'm':
@@ -177,14 +198,16 @@ rep:
 		break;
 	case '+':
 	case ' ': {
-		char *s = strchr (str, ' '), *s2 = NULL, *eq = strchr (str, '=');
+		char* eq = strchr (str, '=');
+		char* s = strchr (str, ' ');
+		char* s2 = NULL;
 		ut32 bsze = 1; //core->blocksize;
+
 		if (eq) {
 			// TODO: add support for '=' char in flag comments
 			*eq = 0;
 			off = r_num_math (core->num, eq+1);
 		}
-		s = strchr (str, ' ');
 		if (s) {
 			*s = '\0';
 			s2 = strchr (s+1, ' ');
@@ -204,7 +227,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			if (fcn) r_anal_var_add (core->anal, fcn->addr, 0, off, 'v', "int", 4, str+1);
 			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 #endif
-		} else r_flag_set (core->flags, str, off, bsze, (*input=='+'));
+		} else r_flag_set (core->flags, str, off, bsze);
 		}
 		break;
 	case '-':
@@ -221,11 +244,12 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			} else {
 				if (strchr (flagname, '*'))
 					r_flag_unset_glob (core->flags, flagname);
-				else r_flag_unset (core->flags, flagname, NULL);
+				else r_flag_unset_name (core->flags, flagname);
 			}
-		} else r_flag_unset_i (core->flags, off, NULL);
+		} else r_flag_unset_off (core->flags, off);
 		break;
 	case '.':
+		if (input[1]==' ') input++;
 		if (input[1]) {
 			if (input[1] == '*') {
 				if (input[2] == '*') {
@@ -491,13 +515,13 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			}
 		}
 		break;
-	case 'n':
-	case '*':
+	case 'n': // "fn"
+	case '*': // "f*"
 	case '\0':
-	case 'j':
+	case 'j': // "fj"
 		r_flag_list (core->flags, *input, input[0]? input+1:"");
 		break;
-	case 'd':
+	case 'd': // "fd"
 		{
 			ut64 addr = 0;
 			RFlagItem *f = NULL;
@@ -514,16 +538,21 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 				addr = r_num_math (core->num, input+2);
 				break;
 			}
+			core->flags->space_strict = true;
 			f = r_flag_get_at (core->flags, addr);
+			core->flags->space_strict = false;
 			if (f) {
 				if (f->offset != addr) {
-					r_cons_printf ("%s + %d\n", f->name, (int)(addr-f->offset));
-				} else r_cons_printf ("%s\n", f->name);
+					r_cons_printf ("%s + %d\n", f->name,
+						(int)(addr - f->offset));
+				} else {
+					r_cons_printf ("%s\n", f->name);
+				}
 			}
 		}
 		break;
 	case '?':
-{
+	{
 		const char *help_msg[] = {
 		"Usage: f","[?] [flagname]", " # Manage offset-name flags",
 		"f","","list flags (will only list flags from selected flagspaces)",
@@ -561,8 +590,8 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
 		NULL};
 		r_core_cmd_help (core, help_msg);
-}
 		break;
+	}
 	}
 	if (str)
 		free (str);

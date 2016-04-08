@@ -155,7 +155,7 @@ R_API void r_mixed_change_begin(RMixed *m, void *p) {
 		}
 }
 
-R_API boolt r_mixed_change_end(RMixed *m, void *p) {
+R_API bool r_mixed_change_end(RMixed *m, void *p) {
 	int i;
 	void *q;
 	for (i=0; i<RMIXED_MAXKEYS; i++) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2015 nibble */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +21,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	char *buf = treplace (sdata->data, sdata->search, sdata->replace);
 	memcpy (str, buf, R_PARSE_STRLEN);
 	free (buf);
-	return R_TRUE;
+	return true;
 }
 
 static int assemble(RParse *p, char *data, char *str) {
@@ -30,10 +30,10 @@ static int assemble(RParse *p, char *data, char *str) {
 		*ptr = '\0';
 		sprintf (data, "mov %s, %s", str, ptr+1);
 	} else strcpy (data, str);
-	return R_TRUE;
+	return true;
 }
 
-static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
+static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 #if USE_VARSUBS
 	char *ptr, *ptr2;
 	int i;
@@ -45,22 +45,19 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 				ptr2 = ptr + strlen (f->varsubs[i].pat);
 				snprintf (str, len, "%s%s%s", data, f->varsubs[i].sub, ptr2);
 		}
-	return R_TRUE;
+	return true;
 #else
 	strncpy (str, data, len);
-	return R_FALSE;
+	return false;
 #endif
 }
 
-struct r_parse_plugin_t r_parse_plugin_mreplace = {
+RParsePlugin r_parse_plugin_mreplace = {
 	.name = "mreplace",
 	.desc = "mreplace parsing plugin",
-	.init = NULL,
-	.fini = NULL,
 	.parse = &parse,
 	.assemble = &assemble,
 	.varsub = &varsub,
-	.filter = NULL,
 };
 
 #else

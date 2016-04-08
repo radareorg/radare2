@@ -8,5 +8,6 @@ ALL_TARGETS+=${TARGET_ANY}
 include $(SHLR)/zip/deps.mk
 
 ${TARGET_ANY}: ${OBJ_ANY}
-	${CC} $(call libname,bin_any) ${CFLAGS} $(OBJ_ANY) $(LINK) $(LDFLAGS) \
-	-L../../magic -lr_magic
+	${CC} $(call libname,bin_any) $(DL_LIBS) ${CFLAGS} $(OBJ_ANY) $(LINK) $(LDFLAGS) \
+	-L../../magic -lr_magic \
+	-L../../util -lr_util

@@ -98,7 +98,6 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		} else {
 			destaddrs = destaddr;
 		}
-
 		op->jump = addr + destaddrs;
 		op->fail = addr + 2;
 		op->type = R_ANAL_OP_TYPE_CJMP;
@@ -112,17 +111,9 @@ struct r_anal_plugin_t r_anal_plugin_v850 = {
 	.name = "v850",
 	.desc = "V850 code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_V850,
+	.arch = "v850",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
 	.op = v850_op,
-	.set_reg_profile = NULL,
-	.fingerprint_bb	= NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL,
 };
 
 #ifndef CORELIB

@@ -20,13 +20,13 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="description" content="Yet another web front-end for radare2">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Radare2 Material Design</title>
 
     <!-- Add to homescreen for Chrome on Android -->
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="icon" sizes="192x192" href="images/touch/chrome-touch-icon-192x192.png">
 
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=true">
     <!-- Add to homescreen for Safari on iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -42,8 +42,10 @@
     <link rel="canonical" href="http://www.example.com/">
     -->
 
-    <link href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="cache/fonts.css" rel="stylesheet">
+    <link href="cache/icons.css" rel="stylesheet">
+    <!-- <link href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en" rel="stylesheet"> -->
+    <!-- <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"> -->
     <link rel="stylesheet" href="material.min.css">
     <link rel="stylesheet" href="styles.css">
     <style>
@@ -77,11 +79,17 @@
             <i class="material-icons">more_vert</i>
           </button>
           <ul class="mdl-menu mdl-js-menu mdl-js-ripple-effect mdl-menu--bottom-right" for="hdrbtn">
+<!--
             <li class="mdl-menu__item"><a target=_blank href="./">New Window</a></li>
-            <li class="mdl-menu__item"><a href='javascript:panelConsole()'>Console</a></li>
-            <li class="mdl-menu__item"><a href='javascript:panelSettings()'>Settings</a></li>
-            <li class="mdl-menu__item"><a href='javascript:panelAbout()'>About</a></li>
-            <li class="mdl-menu__item"><a href="mailto:pancake@nopcode.org">Contact</a></li>
+            <li onclick="singlePanel()" class="mdl-menu__item">Single Panel</li>
+            <li onclick="hSplit()" class="mdl-menu__item">Horiz Split</li>
+            <li onclick="vSplit()" class="mdl-menu__item">Vert Split</li>
+-->
+            <li id='menu_seek' class="mdl-menu__item">Seek</li>
+            <li id='menu_console' class="mdl-menu__item">Console</li>
+            <li id='menu_settings' class="mdl-menu__item">Settings</li>
+            <li id='menu_about' class="mdl-menu__item">About</li>
+            <li id='menu_mail' class="mdl-menu__item">Contact</li>
           </ul>
         </div>
       </header>
@@ -93,35 +101,36 @@
 </a>
 </center>
           <div class="demo-avatar-dropdown">
-            <span>/bin/ls</span>
+            <span><!-- empty --></span>
             <div class="mdl-layout-spacer"></div>
             <button id="accbtn" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--icon">
               <i class="material-icons">arrow_drop_down</i>
             </button>
             <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect" for="accbtn">
               <li class="mdl-menu__item"><a href="open.html">Open</a></li>
-              <li class="mdl-menu__item"><a href="javascript:saveProject()">Save</a></li>
-              <li class="mdl-menu__item"><a href="javascript:deleteProject()">Delete</a></li>
-              <li class="mdl-menu__item"><a href="javascript:closeProject()">Close</a></li>
+              <li id='menu_project_save' class="mdl-menu__item">Save</li>
+              <li id='menu_project_delete' class="mdl-menu__item">Delete</li>
+              <li id='menu_project_close' class="mdl-menu__item">Close</li>
             </ul>
           </div>
         </header>
         <nav class="demo-navigation mdl-navigation mdl-color--blue-grey-800">
           <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons">home</i>Overview</a>
-          <a class="mdl-navigation__link" href="javascript:panelHeaders()"><i class="mdl-color-text--blue-grey-400 material-icons">people</i>Headers</a>
-          <a class="mdl-navigation__link" href="javascript:panelDisasm()"><i class="mdl-color-text--blue-grey-400 material-icons">inbox</i>Disassembly</a>
-          <a class="mdl-navigation__link" href="javascript:panelHexdump()"><i class="mdl-color-text--blue-grey-400 material-icons">inbox</i>Hexdump</a>
-          <a class="mdl-navigation__link" href="javascript:panelFunctions()"><i class="mdl-color-text--blue-grey-400 material-icons">list</i>Functions</a>
-          <a class="mdl-navigation__link" href="javascript:panelFlags()"><i class="mdl-color-text--blue-grey-400 material-icons">flag</i>Flags</a>
-          <a class="mdl-navigation__link" href="javascript:panelSearch()"><i class="mdl-color-text--blue-grey-400 material-icons">search</i>Search</a>
-          <a class="mdl-navigation__link" href="javascript:panelScript()"><i class="mdl-color-text--blue-grey-400 material-icons">extension</i>Script</a>
+          <a id='menu_headers' class="mdl-navigation__link"><i class="mdl-color-text--blue-grey-400 material-icons">people</i>Headers</a>
+          <a id='menu_disasm' class="mdl-navigation__link"><i class="mdl-color-text--blue-grey-400 material-icons">inbox</i>Disassembly</a>
+          <a id='menu_debug' class="mdl-navigation__link"><i class="mdl-color-text--blue-grey-400 material-icons">inbox</i>Debugger</a>
+          <a id='menu_hexdump' class="mdl-navigation__link"><i class="mdl-color-text--blue-grey-400 material-icons">inbox</i>Hexdump</a>
+          <a id='menu_functions' class="mdl-navigation__link"><i class="mdl-color-text--blue-grey-400 material-icons">list</i>Functions</a>
+          <a id='menu_flags' class="mdl-navigation__link"><i class="mdl-color-text--blue-grey-400 material-icons">flag</i>Flags</a>
+          <a id='menu_search' class="mdl-navigation__link")><i class="mdl-color-text--blue-grey-400 material-icons">search</i>Search</a>
+          <a id='menu_script' class="mdl-navigation__link")><i class="mdl-color-text--blue-grey-400 material-icons">extension</i>Script</a>
           <!-- <a class="mdl-navigation__link" href="javascript:panelConsole()"><i class="mdl-color-text--blue-grey-400 material-icons">computer</i>Console</a> -->
-          <a class="mdl-navigation__link" href="javascript:panelComments()"><i class="mdl-color-text--blue-grey-400 material-icons">forum</i>Comments</a>
+          <a id='menu_comments' class="mdl-navigation__link" href="javascript:panelComments()"><i class="mdl-color-text--blue-grey-400 material-icons">forum</i>Comments</a>
           <!-- <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons">flag</i>Updates</a> -->
           <!--<a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons">local_offer</i>Promos</a> -->
           <!--<a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons">settings</i>Settings</a>-->
           <div class="mdl-layout-spacer"></div>
-          <a class="mdl-navigation__link" href="javascript:panelHelp()"><i class="mdl-color-text--blue-grey-400 material-icons">help_outline</i>Help</a>
+          <a id='menu_help' class="mdl-navigation__link"><i class="mdl-color-text--blue-grey-400 material-icons">help_outline</i>Help</a>
         </nav>
       </div>
       <!-- <main class="mdl-layout__content mdl-color--grey-100" id="content"> -->
@@ -267,9 +276,9 @@
           </g>
         </defs>
       </svg>
-      <a href="javascript:seek()" id="view-source" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">seek</a>
-    <script src="material.min.js"></script>
-    <script src="r2.js"></script>
-    <script src="index.js"></script>
+    <script type="application/javascript" src="material.min.js"></script>
+    <script type="application/javascript" src="r2.js"></script>
+    <script type="application/javascript" src="index.js"></script>
+    <script type="application/javascript" src="beautify.js"></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-<pre>
+```
     ____  ___  ___  ___ ____  ___    ____
    |  _ \/   \|   \/   \  _ \/ _ \  |__  \
    |    (  V  | |  ) V  |   (   _/   / __/ 
@@ -7,55 +7,44 @@
                 www.radare.org
 
                                   --pancake
-</pre>
+```
 
-[![Build Status](http://ci.rada.re/buildStatus/icon?job=radare2)](http://ci.rada.re/job/radare2/) Jenkins
-
-[![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)](https://travis-ci.org/radare/radare2) TravisCI
-
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/radare/radare2?branch=master&svg=true)]( https://ci.appveyor.com/project/radare/radare2 ) AppVeyor
-
-[![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) Coverity
-
-
+| | |
+|----------|---------------------------------------------------------------------|
+| **Jenkins**  	| [![Build Status](http://ci.rada.re/buildStatus/icon?job=radare2)](http://ci.rada.re/job/radare2)|
+| **TravisCI** 	| [![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)](https://travis-ci.org/radare/radare2)|
+| **AppVeyor**  | [![Build Status](https://ci.appveyor.com/api/projects/status/v9bxvsb1p6c3cmf9/branch/master?svg=true)](https://ci.appveyor.com/project/radare/radare2-shvdd)|
+| **Coverity** 	| [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) |
 # Introduction
 
 r2 is a rewrite from scratch of radare in order to provide
-a set of libraries and tools to work with binary files
+a set of libraries and tools to work with binary files.
 
-This is the rewrite of radare (1.x branch) to provide a
-framework with a set of libraries and programs to work
-with binary data.
-
-Radare project started as a forensics tool, an scriptable
+Radare project started as a forensics tool, a scriptable
 commandline hexadecimal editor able to open disk files,
 but later support for analyzing binaries, disassembling
 code, debugging programs, attaching to remote gdb servers, ..
 
-radare2 is portable.
+   radare2 is portable.
 
-Architectures:
+   * **Architectures:**
+	* 6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, csr,
+   dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, msil,
+   msp430, nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), V810,
+   x86-64, zimg, risc-v.
 
-6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, csr,
-dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, mips, msil,
-nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), V810, x86-64,
-zimg.
+   * **File Formats:**
+	* bios, CGC, dex, elf, elf64, filesystem, java, fatmach0, mach0,
+   mach0-64, MZ, PE, PE+, TE, COFF, plan9, dyldcache, Commodore VICE emulator, 
+   Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
 
-File Formats:
+   * **Operating Systems:**
+	* Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32,
+   w64, Solaris, Haiku, FirefoxOS
 
-  bios, dex, elf, elf64, filesystem, java, fatmach0, mach0,
-  mach0-64, MZ, PE, PE+, TE, COFF, plan9, bios, dyldcache,
-  Gameboy and Nintendo DS ROMs
-
-Operating Systems:
-
-  Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32,
-  w64, Solaris, Haiku, FirefoxOS
-
-Bindings:
-
-  Vala/Genie, Python (2, 3), NodeJS, LUA, Go, Perl,
-  Guile, php5, newlisp, Ruby, Java, OCAML, ...
+   * **Bindings:**
+	* Vala/Genie, Python (2, 3), NodeJS, LUA, Go, Perl,
+   Guile, php5, newlisp, Ruby, Java, OCAML, ...
 
 # Dependencies
 
@@ -73,6 +62,11 @@ the following command:
 
     $ sys/install.sh
 
+If you want to install radare2 in the home directory without
+using root privileges and sudo, simply run:
+
+    $ sys/user.sh
+
 # Uninstall
 
 In case of a polluted filesystem you can uninstall the current
@@ -84,7 +78,7 @@ version or remove all previous installations:
 # Bindings
 
 All language bindings are under the r2-bindings directory.
-You will need to install swig2 and valabind in order to
+You will need to install swig and valabind in order to
 build the bindings for Python, LUA, etc..
 
 APIs are defined in vapi files which are then translated
@@ -94,19 +88,28 @@ The easiest way to install the python bindings is to run:
 
     $ sys/python.sh
 
-If you want to use the NodeJS bindings just do:
+In addition there are `r2pipe` bindings, which are an API
+interface to interact with the prompt, passing commands
+and receivent the output as a string, many commands support
+JSON output, so it's integrated easily with many languages
+in order to deserialize it into native objects.
 
-    $ npm install radare2.js
+    $ npm install r2pipe   # NodeJS
+    $ gem install r2pipe   # Ruby
+    $ pip install r2pipe   # Python
 
-To specify the installed version of radare2:
+And also for Go, Rust, Swift, D, .NET, Java, NewLisp, Perl, Haskell,
+Vala, Ocaml, and many more to come!
 
-    $ npm install radare2.js@0.9.2
+# Regression Testsuite
 
-# Tests
+Running `make tests` it will fetch the radare2-regressions
+repository and run all the tests in order to verify that no
+changes break a functionality.
 
-There is a test suite that can be retrieved by running:
-
-    $ make tests
+We run those tests on every commit, and they are also
+executed with ASAN and valgrind on different platforms
+to catch other unwanted 'features'.
 
 # Documentation
 
@@ -119,6 +122,12 @@ Commands are small mnemonics of few characters and there is
 some extra syntax sugar that makes the shell much more pleasant
 for scripting and interacting with the apis.
 
+You could also checkout the [radare2 book](https://radare.gitbooks.io/radare2book/content/).
+
+# Coding Style
+
+Look at [CONTRIBUTING.md](https://github.com/radare/radare2/blob/master/CONTRIBUTING.md).
+
 # Webserver
 
 radare2 comes with an embedded webserver that serves a pure
@@ -126,12 +135,12 @@ html/js interface that sends ajax queries to the core and
 aims to implement an usable UI for phones, tablets and desktops.
 
     $ r2 -c=H /bin/ls
-    
-To use the webserver on Windows, you require a cmd instance 
+
+To use the webserver on Windows, you require a cmd instance
 with administrator rights. To start the webserver use command
 in the project root.
 
-    radare2.exe -c=H rax2.exe
+    > radare2.exe -c=H rax2.exe
 
 # Pointers
 

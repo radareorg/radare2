@@ -33,11 +33,11 @@ R_API int r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
 	ut8 found = 0;
 	SdbListIter *it;
 	SdbNs *ns;
-	if (!db) return R_FALSE;
+	if (!db) return false;
 	path = r_str_home (db);
 	if (!path) {
 		free (db);
-		return R_FALSE;
+		return false;
 	}
 
 	ls_foreach (anal->sdb->ns, it, ns){
@@ -52,15 +52,16 @@ R_API int r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
 	if (!DB) {
 		free (db);
 		free (path);
-		return R_FALSE;
+		return false;
 	}
 	sdb_ns_set (anal->sdb, "xrefs", DB);
 	free (path);
 	free (db);
-	return R_TRUE;
+	return true;
 }
 
 R_API void r_anal_xrefs_save(RAnal *anal, const char *prjfile) {
+	sdb_file (anal->sdb_xrefs, prjfile);
 	sdb_sync (anal->sdb_xrefs);
 }
 
@@ -68,27 +69,27 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type,
 			     ut64 from, ut64 to) {
 	char key[32];
 	if (!anal || !DB)
-		return R_FALSE;
+		return false;
 	// unknown refs should not be stored. seems wrong
 	if (type == R_ANAL_REF_TYPE_NULL) {
-		return R_FALSE;
+		return false;
 	}
 	XREFKEY (key, sizeof (key), "ref", type, from);
 	sdb_array_add_num (DB, key, to, 0);
 	XREFKEY (key, sizeof (key), "xref", type, to);
 	sdb_array_add_num (DB, key, from, 0);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
 	char key[32];
 	if (!anal || !DB)
-		return R_FALSE;
+		return false;
 	XREFKEY (key, sizeof (key), "ref", type, from);
 	sdb_array_remove_num (DB, key, to, 0);
 	XREFKEY (key, sizeof (key), "xref", type, to);
 	sdb_array_remove_num (DB, key, from, 0);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
@@ -96,11 +97,11 @@ R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const R
 	RAnalRef *ref = NULL;
 	XREFKEY(key, sizeof (key), kind, type, addr);
 	str = sdb_get (DB, key, 0);
-	if (!str) return R_FALSE;
+	if (!str) return false;
 	for (ptr=str; ; ptr = next) {
 		s = sdb_anext (ptr, &next);
 		if (!(ref = r_anal_ref_new ()))
-			return R_FALSE;
+			return false;
 		ref->addr = r_num_get (NULL, s);
 		ref->at = addr;
 		ref->type = type;
@@ -109,7 +110,7 @@ R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const R
 			break;
 	}
 	free (str);
-	return R_TRUE;
+	return true;
 }
 
 R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
@@ -146,18 +147,18 @@ R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
 
 R_API int r_anal_xrefs_init (RAnal *anal) {
 	sdb_reset (DB);
-	if (!DB) return R_FALSE;
+	if (!DB) return false;
 	sdb_array_set (DB, "types", -1, "code.jmp,code.call,data.mem,data.string", 0);
-	return R_TRUE;
+	return true;
 }
 
 static int xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {
 	ut64 dst, src = r_num_get (NULL, v);
 	if (!strncmp (k, "ref.", 4)) {
-		char *p = strchr (k+4, '.');
+		const char *p = r_str_rchr (k, NULL, '.');
 		if (p) {
 			dst = r_num_get (NULL, p+1);
-			anal->printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", src, dst);
+			anal->cb_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", src, dst);
 		}
 	}
 	return 1;
@@ -166,18 +167,18 @@ static int xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {
 static int xrefs_list_cb_json(RAnal *anal, const char *k, const char *v) {
 	ut64 dst, src = r_num_get (NULL, v);
 	if (!strncmp (k, "ref.", 4) && (strlen (k)>8)) {
-		char *p = strchr (k+4, '.');
+		const char *p = r_str_rchr (k, NULL, '.');
 		if (p) {
 			dst = r_num_get (NULL, p+1);
 			sscanf (p+1, "0x%"PFMT64x, &dst);
-			anal->printf ("%"PFMT64d":%"PFMT64d",", src, dst);
+			anal->cb_printf ("%"PFMT64d":%"PFMT64d",", src, dst);
 		}
 	}
 	return 1;
 }
 
 static int xrefs_list_cb_plain(RAnal *anal, const char *k, const char *v) {
-	anal->printf ("%s=%s\n", k, v);
+	anal->cb_printf ("%s=%s\n", k, v);
 	return 1;
 }
 
@@ -188,9 +189,9 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_rad, anal);
 		break;
 	case 'j':
-		anal->printf ("{");
+		anal->cb_printf ("{");
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_json, anal);
-		anal->printf ("}\n");
+		anal->cb_printf ("}\n");
 		break;
 	default:
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_plain, anal);
@@ -214,3 +215,19 @@ R_API const char *r_anal_xrefs_type_tostring (char type) {
 	}
 }
 
+typedef struct {
+	RAnal *anal;
+	int count;
+} CountState;
+
+static int countcb(CountState *cs, const char *k, const char *v) {
+	if (!strncmp (k, "ref.", 4))
+		cs->count ++;
+	return 1;
+}
+
+R_API int r_anal_xrefs_count(RAnal *anal) {
+	CountState cs = { anal, 0 };
+	sdb_foreach (DB, (SdbForeachCallback)countcb, &cs);
+	return cs.count;
+}

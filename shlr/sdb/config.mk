@@ -1,7 +1,13 @@
-DESTDIR?=
 PREFIX?=/usr
+BINDIR=${PREFIX}/bin
+LIBDIR=${PREFIX}/lib
+DATADIR=${PREFIX}/share
+INCDIR=${PREFIX}/include
+VAPIDIR=${DATADIR}/vala/vapi/
+MANDIR=${DATADIR}/man/man1
 
-SDBVER=0.9.8
+
+SDBVER=0.10.0
 
 BUILD_MEMCACHE=0
 
@@ -23,7 +29,10 @@ INSTALL_MAN=$(INSTALL) -m 444
 INSTALL_LIB=$(INSTALL) -c
 endif
 
-CFLAGS_STD=-std=gnu99 -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L 
+# link time optimization
+#CFLAGS_STD=-std=gnu99 -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L -flto -O2
+
+CFLAGS_STD=-std=gnu99 -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L
 #CFLAGS+=-Wno-initializer-overrides
 CFLAGS+=${CFLAGS_STD}
 
@@ -37,8 +46,8 @@ CFLAGS+=-Wsign-compare
 # CFLAGS+=-Wmissing-field-initializers
 #CFLAGS+=-O3
 #CFLAGS+=-ggdb -g -Wall -O0
-CFLAGS+=-g
-LDFLAGS+=-g
+#CFLAGS+=-g
+#LDFLAGS+=-g -flto
 
 HAVE_VALA=#$(shell valac --version 2> /dev/null)
 # This is hacky
@@ -74,7 +83,11 @@ LDFLAGS_SHARED=-shared
 endif
 
 # create .d files
+ifeq (,$(findstring tcc,${CC}))
 CFLAGS+=-MMD
+else
+CFLAGS+=-MD
+endif
 
 ifeq (${OS},w32)
 OSTYPE=MINGW32

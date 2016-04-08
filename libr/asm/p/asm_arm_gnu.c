@@ -99,18 +99,18 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	va_list ap;
 	char *tmp;
 	if (buf_global == NULL || format == NULL)
-		return R_FALSE;
+		return false;
 	va_start (ap, format);
  	tmp = malloc (strlen (format)+strlen (buf_global)+2);
 	if (tmp == NULL) {
 		va_end (ap);
-		return R_FALSE;
+		return false;
 	}
 	sprintf (tmp, "%s%s", buf_global, format);
 	vsprintf (buf_global, tmp, ap);
 	va_end (ap);
 	free (tmp);
-	return R_TRUE;
+	return true;
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
@@ -121,8 +121,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char *options = (a->bits==16)? "force-thumb": "no-force-thumb";
 
 	if (len<2) return -1;
-	memset (bytes, 0, sizeof (buf));
-	memcpy (bytes, buf, len<4?len:4);
+	memset (bytes, 0, sizeof (bytes));
+	memcpy (bytes, buf, R_MIN (len, 4));
 	if (a->bits<64 && len<(a->bits/8)) return -1;
 	buf_global = op->buf_asm;
 	Offset = a->pc;

@@ -35,14 +35,14 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
-	if (!arch || !arch->o) return R_FALSE;
+	if (!arch || !arch->o) return false;
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj ? R_TRUE: R_FALSE;
+	return arch->o->bin_obj ? true: false;
 }
 
 static int destroy(RBinFile *arch) {
 	r_bin_te_free ((struct r_bin_te_obj_t*)arch->o->bin_obj);
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -106,15 +106,16 @@ static RList* sections(RBinFile *arch) {
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr;
-		ptr->srwx = 0;
+		ptr->srwx = R_BIN_SCN_MAP;
+		ptr->add = true;
 		if (R_BIN_TE_SCN_IS_EXECUTABLE (sections[i].flags))
-			ptr->srwx |= 0x1;
+			ptr->srwx |= R_BIN_SCN_EXECUTABLE;
 		if (R_BIN_TE_SCN_IS_WRITABLE (sections[i].flags))
-			ptr->srwx |= 0x2;
+			ptr->srwx |= R_BIN_SCN_WRITABLE;
 		if (R_BIN_TE_SCN_IS_READABLE (sections[i].flags))
-			ptr->srwx |= 0x4;
+			ptr->srwx |= R_BIN_SCN_SHAREABLE;
 		if (R_BIN_TE_SCN_IS_SHAREABLE (sections[i].flags))
-			ptr->srwx |= 0x8;
+			ptr->srwx |= R_BIN_SCN_SHAREABLE;
 		/* All TE files have _TEXT_RE section, which is 16-bit, because of
 		 * CPU start in this mode */
 		if (!strncmp(ptr->name, "_TEXT_RE", 8))
@@ -139,7 +140,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->bits = r_bin_te_get_bits (arch->o->bin_obj);
 	ret->big_endian = 1;
 	ret->dbg_info = 0;
-	ret->has_va = R_TRUE;
+	ret->has_va = true;
 
 	sdb_num_set (arch->sdb, "te.bits", ret->bits, 0);
 
@@ -154,19 +155,16 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-
 	if (buf && length > 2)
-	if (!memcmp (buf, "\x56\x5a", 2))
-		return R_TRUE;
-	return R_FALSE;
+		if (!memcmp (buf, "\x56\x5a", 2))
+			return true;
+	return false;
 }
 
 RBinPlugin r_bin_plugin_te = {
 	.name = "te",
 	.desc = "TE bin plugin", // Terse Executable format
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -174,21 +172,11 @@ RBinPlugin r_bin_plugin_te = {
 	.check = &check,
 	.check_bytes = check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = NULL, // TE doesn't have exports data directory
-	.imports = NULL, // TE doesn't have imports data directory
-	.strings = NULL,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL, // TE doesn't have imports data directory
-	.relocs = NULL,
-	.dbginfo = NULL,
-	.write = NULL,
 	.minstrlen = 4,
-	.create = NULL,
 };
 
 #ifndef CORELIB

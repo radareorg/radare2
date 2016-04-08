@@ -312,8 +312,7 @@ grub_hfsplus_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
     {
       struct grub_hfsplus_extkey *key;
       struct grub_hfsplus_extkey_internal extoverflow;
-      int blk;
-      int ptr;
+      int blk, ptr = 0;
 
       /* Try to find this block in the current set of extents.  */
       blk = grub_hfsplus_find_block (extents, &blksleft);
@@ -831,8 +830,8 @@ grub_hfsplus_iterate_dir (grub_fshelp_node_t dir,
 			  void *closure)
 {
   struct grub_hfsplus_key_internal intern;
-  struct grub_hfsplus_btnode *node;
-  int ptr;
+  struct grub_hfsplus_btnode *node = NULL;
+  int ptr = 0;
   struct grub_hfsplus_iterate_dir_closure c;
 
   /* Create a key that points to the first entry in the directory.  */

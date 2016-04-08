@@ -18,7 +18,7 @@
 
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 #ifndef R_API_I
 #define R_API_I
@@ -48,9 +48,6 @@ static const char *mnemonics[] = {
 	"include", "incbin", "if", "else", "endif", "end", "macro", "endm",
 	"seek", NULL
 };
-
-/* number of errors seen so far */
-static int errors = 0;
 
 /* current line, address and file */
 static int addr = 0, file;
@@ -94,12 +91,12 @@ static struct stack stack[MAX_INCLUDE];	/* maximum level of includes */
 
 /* print an error message, including current line and file */
 static void printerr (int error, const char *fmt, ...) {
+#if 0
 	va_list l;
 	va_start (l, fmt);
 	if ((sp < 0) || (stack[sp].name == 0)) {
 		fprintf (stderr, "internal assembler error, sp == %i\n", sp);
 		vfprintf (stderr, fmt, l);
-		exit (2);
 	}
 	fprintf (stderr, "%s%s:%d: %s: ", stack[sp].dir ? stack[sp].dir->name : "",
 			stack[sp].name, stack[sp].line, error ? "error" : "warning");
@@ -107,6 +104,7 @@ static void printerr (int error, const char *fmt, ...) {
 	va_end (l);
 	if (error)
 		errors++;
+#endif
 }
 
 /* skip over spaces in string */
@@ -122,7 +120,7 @@ static const char * delspc (const char *ptr) {
 static void rd_comma (const char **p) {
 	*p = delspc (*p);
 	if (**p != ',') {
-		printerr (1, "`,' expected. Remainder of line: %s\n", *p);
+		eprintf ("`,' expected. Remainder of line: %s\n", *p);
 		return;
 	}
 	*p = delspc ((*p) + 1);
@@ -151,7 +149,7 @@ static int indx (const char **ptr, const char **list, int error, const char **ex
 	*ptr = delspc (*ptr);
 	if (!**ptr) {
 		if (error) {
-			printerr (1, "unexpected end of line\n");
+			eprintf ("unexpected end of line\n");
 			return 0;
 		} else return 0;
 	}
@@ -195,8 +193,7 @@ static int indx (const char **ptr, const char **list, int error, const char **ex
 		comma++;
 		return i + 1;
 	}
-	if (error)
-		printerr (1, "parse error. Remainder of line=%s\n", *ptr);
+	//if (error) eprintf ("parse error. Remainder of line=%s\n", *ptr);
 	return 0;
 }
 
@@ -216,7 +213,7 @@ static void readlabel (const char **p, int store) {
 	if (!pos || pos >= c)
 		return;
 	if (pos == *p) {
-		printerr (1, "`:' found without a label");
+		eprintf ("`:' found without a label");
 		return;
 	}
 	if (!store) {
@@ -227,12 +224,12 @@ static void readlabel (const char **p, int store) {
 	dummy = *p;
 	j = rd_label (&dummy, &i, &previous, sp, 0);
 	if (i || j) {
-		printerr (1, "duplicate definition of label %s\n", *p);
+		eprintf ("duplicate definition of label %s\n", *p);
 		*p = c;
 		return;
 	}
 	if (NULL == (buf = malloc (sizeof (struct label) + c - *p))) {
-		printerr (1, "not enough memory to store label %s\n", *p);
+		eprintf ("not enough memory to store label %s\n", *p);
 		*p = c;
 		return;
 	}
@@ -492,14 +489,11 @@ static int rd_rrxx (const char **p) {
 	const char *listx[] = { "bc", "de", "ix", "sp", NULL };
 	const char *listy[] = { "bc", "de", "iy", "sp", NULL };
 	const char *list[] = { "bc", "de", "hl", "sp", NULL };
-	switch (indexed) {
-	case 0xDD:
+	if (indexed == 0xdd)
 		return indx (p, listx, 1, NULL);
-	case 0xFD:
+	if (indexed == 0xfd)
 		return indx (p, listy, 1, NULL);
-	default:
-		return indx (p, list, 1, NULL);
-	}
+	return indx (p, list, 1, NULL);
 }
 
 /* read b,c,d,e,h,l,(hl),a,(ix+nn),(iy+nn),nn
@@ -676,7 +670,7 @@ static int rd_ldbcdehla (const char **p) {
 		int x;
 		x = 0xdd + 0x20 * (i > 12);
 		if (indexed && indexed != x) {
-			printerr (1, "illegal use of index registers\n");
+			eprintf ("illegal use of index registers\n");
 			return 0;
 		}
 		indexed = x;
@@ -684,7 +678,7 @@ static int rd_ldbcdehla (const char **p) {
 	}
 	if (i > 8) {
 		if (indexed) {
-			printerr (1, "illegal use of index registers\n");
+			eprintf ("illegal use of index registers\n");
 			return 0;
 		}
 		indexed = 0xDD + 0x20 * (i == 10);
@@ -731,677 +725,645 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	//for (file = 0; file < infilecount; ++file)
 	do {
 		int cmd, cont = 1;
-// XXX: must free
-		  z80buffer = strdup (str);
-	  if (!cont)
-	    break;		/* break to next source file */
-//	  if (havelist)
-//	    fprintf (listfile, "%04x", addr);
-	  for (bufptr = z80buffer; (bufptr = strchr (bufptr, '\n'));)
-	    *bufptr = ' ';
-	  for (bufptr = z80buffer; (bufptr = strchr (bufptr, '\r'));)
-	    *bufptr = ' ';
-	  ptr = z80buffer;
-	  //lastlabel = NULL;
-	  baseaddr = addr;
-	  ++stack[sp].line;
-	  ptr = delspc (ptr);
-	  if (!*ptr)
-	    continue;
-	  if (!noifcount && !define_macro)
-	    readlabel (&ptr, 1);
-	  else
-	    readlabel (&ptr, 0);
-	  ptr = delspc (ptr);
-	  if (!*ptr)
-	    continue;
-	  comma = 0;
-	  indexed = 0;
-	  indexjmp = 0;
-	  writebyte = 0;
-	  readbyte = 0;
-	  readword = 0;
-	  cmd = readcommand (&ptr) - 1;
-	  switch (cmd)
-	    {
-	      int i, have_quote;
-	    case Z80_ADC:
-	      if (!(r = rd_a_hl (&ptr)))
-		break;
-	      if (r == HL)
-		{
-		  if (!(r = rd_rr_ (&ptr)))
-		    break;
-		  wrtb (0xED);
-		  wrtb (0x4A + 0x10 * --r);
-		  break;
-		}
-	      if (!(r = rd_r (&ptr)))
-		break;
-	      wrtb (0x88 + --r);
-	      break;
-	    case Z80_ADD:
-	      if (!(r = rd_r_add (&ptr)))
-		break;
-	      if (r == addHL)
-		{
-		  if (!(r = rd_rrxx (&ptr)))
-		    break;
-		  wrtb (0x09 + 0x10 * --r);	/* ADD HL/IX/IY, qq  */
-		  break;
-		}
-	      if (has_argument (&ptr))
-		{
-		  if (r != A)
-		    {
-		      printerr (1, "parse error before: %s\n", ptr);
-		      break;
-		    }
-		  if (!(r = rd_r (&ptr)))
-		    break;
-		  wrtb (0x80 + --r);	/* ADD A,r  */
-		  break;
-		}
-	      wrtb (0x80 + --r);	/* ADD r  */
-	      break;
-	    case Z80_AND:
-	      if (!(r = rd_r (&ptr)))
-		break;
-	      wrtb (0xA0 + --r);
-	      break;
-	    case Z80_BIT:
-	      if (!rd_0_7 (&ptr))
-		break;
-	      rd_comma (&ptr);
-	      if (!(r = rd_r_ (&ptr)))
-		break;
-	      wrtb (0xCB);
-	      wrtb (0x40 + (r - 1));
-	      break;
-	    case Z80_CALL:
-	      if ((r = rd_cc (&ptr))) {
-		  wrtb (0xC4 + 8 * --r);
-		  rd_comma (&ptr);
-		} else wrtb (0xCD);
-	      break;
-	    case Z80_CCF:
-	      wrtb (0x3F);
-	      break;
-	    case Z80_CP:
-	      if (!(r = rd_r (&ptr)))
-		break;
-	      wrtb (0xB8 + --r);
-	      break;
-	    case Z80_CPD:
-	      wrtb (0xED);
-	      wrtb (0xA9);
-	      break;
-	    case Z80_CPDR:
-	      wrtb (0xED);
-	      wrtb (0xB9);
-	      break;
-	    case Z80_CPI:
-	      wrtb (0xED);
-	      wrtb (0xA1);
-	      break;
-	    case Z80_CPIR:
-	      wrtb (0xED);
-	      wrtb (0xB1);
-	      break;
-	    case Z80_CPL:
-	      wrtb (0x2F);
-	      break;
-	    case Z80_DAA:
-	      wrtb (0x27);
-	      break;
-	    case Z80_DEC:
-	      if (!(r = rd_r_rr (&ptr)))
-		break;
-	      if (r < 0) {
-		  wrtb (0x05 - 8 * ++r);
-		  break;
-		}
-	      wrtb (0x0B + 0x10 * --r);
-	      break;
-	    case Z80_DI:
-	      wrtb (0xF3);
-	      break;
-	    case Z80_DJNZ:
-	      wrtb (0x10);
-	      //rd_wrt_jr (&ptr, '\0');
-	      break;
-	    case Z80_EI:
-	      wrtb (0xFB);
-	      break;
-	    case Z80_EX:
-	      if (!(r = rd_ex1 (&ptr)))
-		break;
-	      switch (r)
-		{
-		case DE:
-		  if (!rd_hl (&ptr))
-		    break;
-		  wrtb (0xEB);
-		  break;
-		case AF:
-		  if (!rd_af_ (&ptr))
-		    break;
-		  wrtb (0x08);
-		  break;
-		default:
-		  if (!rd_hlx (&ptr))
-		    break;
-		  wrtb (0xE3);
-		}
-	      break;
-	    case Z80_EXX:
-	      wrtb (0xD9);
-	      break;
-	    case Z80_HALT:
-	      wrtb (0x76);
-	      break;
-	    case Z80_IM:
-	      if (!(r = rd_0_2 (&ptr)))
-		break;
-	      wrtb (0xED);
-	      wrtb (0x46 + 8 * --r);
-	      break;
-	    case Z80_IN:
-	      if (!(r = rd_in (&ptr)))
-		break;
-	      if (r == A)
-		{
-		  if (!(r = rd_nnc (&ptr)))
-		    break;
-		  if (r == C)
-		    {
-		      wrtb (0xED);
-		      wrtb (0x40 + 8 * (A - 1));
-		      break;
-		    }
-		  wrtb (0xDB);
-		  break;
-		}
-	      if (!rd_c (&ptr))
-		break;
-	      wrtb (0xED);
-	      wrtb (0x40 + 8 * --r);
-	      break;
-	    case Z80_INC:
-	      if (!(r = rd_r_rr (&ptr)))
-		break;
-	      if (r < 0)
-		{
-		  wrtb (0x04 - 8 * ++r);
-		  break;
-		}
-	      wrtb (0x03 + 0x10 * --r);
-	      break;
-	    case Z80_IND:
-	      wrtb (0xED);
-	      wrtb (0xAA);
-	      break;
-	    case Z80_INDR:
-	      wrtb (0xED);
-	      wrtb (0xBA);
-	      break;
-	    case Z80_INI:
-	      wrtb (0xED);
-	      wrtb (0xA2);
-	      break;
-	    case Z80_INIR:
-	      wrtb (0xED);
-	      wrtb (0xB2);
-	      break;
-	    case Z80_JP:
-	      r = rd_jp (&ptr);
-	      if (r < 0)
-		{
-		  wrtb (0xE9);
-		  break;
-		}
-	      if (r) {
-		  wrtb (0xC2 + 8 * --r);
-		  rd_comma (&ptr);
-		} else wrtb (0xC3);
-	      break;
-	    case Z80_JR:
-	      r = rd_jr (&ptr);
-	      if (r)
-		rd_comma (&ptr);
-	      wrtb (0x18 + 8 * r);
-	      break;
-	    case Z80_LD:
-	      if (!(r = rd_ld (&ptr)))
-		break;
-	      switch (r)
-		{
-		case ld_BC:
-		case ld_DE:
-		  if (!rd_a (&ptr))
-		    break;
-		  wrtb (0x02 + 0x10 * (r == ld_DE));
-		  break;
-		case ld_HL:
-		  r = rd_ld_hl (&ptr);
-		  wrtb (0x70 + --r);
-		  break;
-		case ld_NN:
-		  if (!(r = rd_ld_nn (&ptr)))
-		    break;
-		  if (r == ld_nnA || r == ld_nnHL)
-		    {
-		      wrtb (0x22 + 0x10 * (r == ld_nnA));
-		      break;
-		    }
-		  wrtb (0xED);
-		  wrtb (0x43 + 0x10 * --r);
-		  break;
-		case ldA:
-		  if (!(r = rd_lda (&ptr)))
-		    break;
-		  if (r == A_NN)
-		    {
-		      wrtb (0x3A);
-		      break;
-		    }
-		  if (r == A_I || r == A_R)
-		    {
-		      wrtb (0xED);
-		      wrtb (0x57 + 8 * (r == A_R));
-		      break;
-		    }
-		  if (r < 0)
-		    {
-		      wrtb (0x0A - 0x10 * ++r);
-		      break;
-		    }
-		  wrtb (0x78 + --r);
-		  break;
-		case ldB:
-		case ldC:
-		case ldD:
-		case ldE:
-		case ldH:
-		case ldL:
-		  if (!(s = rd_ldbcdehla (&ptr)))
-		    break;
-		  wrtb (0x40 + 0x08 * (r - 7) + (s - 1));
-		  break;
-		case ldBC:
-		case ldDE:
-		  s = rd_nn_nn (&ptr);
-		  if (s == _NN)
-		    {
-		      wrtb (0xED);
-		      wrtb (0x4B + 0x10 * (r == ldDE));
-		      break;
-		    }
-		  wrtb (0x01 + (r == ldDE) * 0x10);
-		  break;
-		case ldHL:
-		  r = rd_nn_nn (&ptr);
-		  wrtb (0x21 + (r == _NN) * 9);
-		  break;
-		case ldI:
-		case ldR:
-		  if (!rd_a (&ptr))
-		    break;
-		  wrtb (0xED);
-		  wrtb (0x47 + 0x08 * (r == ldR));
-		  break;
-		case ldSP:
-		  r = rd_sp (&ptr);
-		  if (r == SPHL)
-		    {
-		      wrtb (0xF9);
-		      break;
-		    }
-		  if (r == SPNN)
-		    {
-		      wrtb (0x31);
-		      break;
-		    }
-		  wrtb (0xED);
-		  wrtb (0x7B);
-		  break;
-		}
-	      break;
-	    case Z80_LDD:
-	      wrtb (0xED);
-	      wrtb (0xA8);
-	      break;
-	    case Z80_LDDR:
-	      wrtb (0xED);
-	      wrtb (0xB8);
-	      break;
-	    case Z80_LDI:
-	      wrtb (0xED);
-	      wrtb (0xA0);
-	      break;
-	    case Z80_LDIR:
-	      wrtb (0xED);
-	      wrtb (0xB0);
-	      break;
-	    case Z80_NEG:
-	      wrtb (0xED);
-	      wrtb (0x44);
-	      break;
-	    case Z80_NOP:
-	      wrtb (0x00);
-	      break;
-	    case Z80_OR:
-	      if (!(r = rd_r (&ptr)))
-		break;
-	      wrtb (0xB0 + --r);
-	      break;
-	    case Z80_OTDR:
-	      wrtb (0xED);
-	      wrtb (0xBB);
-	      break;
-	    case Z80_OTIR:
-	      wrtb (0xED);
-	      wrtb (0xB3);
-	      break;
-	    case Z80_OUT:
-	      if (!(r = rd_nnc (&ptr)))
-		break;
-	      if (r == C)
-		{
-		  if (!(r = rd_out (&ptr)))
-		    break;
-		  wrtb (0xED);
-		  wrtb (0x41 + 8 * --r);
-		  break;
-		}
-	      if (!rd_a (&ptr))
-		break;
-		wrtb (0xD3);
-	      break;
-	    case Z80_OUTD:
-	      wrtb (0xED);
-	      wrtb (0xAB);
-	      break;
-	    case Z80_OUTI:
-	      wrtb (0xED);
-	      wrtb (0xA3);
-	      break;
-	    case Z80_POP:
-	      if (!(r = rd_stack (&ptr)))
-		break;
-	      wrtb (0xC1 + 0x10 * --r);
-	      break;
-	    case Z80_PUSH:
-	      if (!(r = rd_stack (&ptr)))
-		break;
-	      wrtb (0xC5 + 0x10 * --r);
-	      break;
-	    case Z80_RES:
-	      if (!rd_0_7 (&ptr))
-		break;
-	      rd_comma (&ptr);
-	      if (!(r = rd_r_ (&ptr)))
-		break;
-	      wrtb (0xCB);
-	      wrtb (0x80 + --r);
-	      break;
-	    case Z80_RET:
-	      if (!(r = rd_cc (&ptr)))
-		{
-		  wrtb (0xC9);
-		  break;
-		}
-	      wrtb (0xC0 + 8 * --r);
-	      break;
-	    case Z80_RETI:
-	      wrtb (0xED);
-	      wrtb (0x4D);
-	      break;
-	    case Z80_RETN:
-	      wrtb (0xED);
-	      wrtb (0x45);
-	      break;
-	    case Z80_RL:
-	      if (!(r = rd_r_ (&ptr)))
-		break;
-	      wrtb (0xCB);
-	      wrtb (0x10 + --r);
-	      break;
-	    case Z80_RLA:
-	      wrtb (0x17);
-	      break;
-	    case Z80_RLC:
-	      if (!(r = rd_r_ (&ptr)))
-		break;
-	      wrtb (0xCB);
-	      wrtb (0x00 + --r);
-	      break;
-	    case Z80_RLCA:
-	      wrtb (0x07);
-	      break;
-	    case Z80_RLD:
-	      wrtb (0xED);
-	      wrtb (0x6F);
-	      break;
-	    case Z80_RR:
-	      if (!(r = rd_r_ (&ptr)))
-		break;
-	      wrtb (0xCB);
-	      wrtb (0x18 + --r);
-	      break;
-	    case Z80_RRA:
-	      wrtb (0x1F);
-	      break;
-	    case Z80_RRC:
-	      if (!(r = rd_r_ (&ptr)))
-		break;
-	      wrtb (0xCB);
-	      wrtb (0x08 + --r);
-	      break;
-	    case Z80_RRCA:
-	      wrtb (0x0F);
-	      break;
-	    case Z80_RRD:
-	      wrtb (0xED);
-	      wrtb (0x67);
-	      break;
-	    case Z80_RST:
-	      ptr = "";
-	      break;
-	    case Z80_SBC:
-	      if (!(r = rd_a_hl (&ptr)))
-		break;
-	      if (r == HL)
-		{
-		  if (!(r = rd_rr_ (&ptr)))
-		    break;
-		  wrtb (0xED);
-		  wrtb (0x42 + 0x10 * --r);
-		  break;
-		}
-	      if (!(r = rd_r (&ptr)))
-		break;
-	      wrtb (0x98 + --r);
-	      break;
-	    case Z80_SCF:
-	      wrtb (0x37);
-	      break;
-	    case Z80_SET:
-	      if (!rd_0_7 (&ptr))
-		break;
-	      rd_comma (&ptr);
-	      if (!(r = rd_r_ (&ptr)))
-		break;
-	      wrtb (0xCB);
-	      wrtb (0xC0 + --r);
-	      break;
-	    case Z80_SLA:
-	      if (!(r = rd_r_ (&ptr)))
-		break;
-	      wrtb (0xCB);
-	      wrtb (0x20 + --r);
-	      break;
-	    case Z80_SLI:
-	      if (!(r = rd_r_ (&ptr)))
-		break;
-	      wrtb (0xCB);
-	      wrtb (0x30 + --r);
-	      break;
-	    case Z80_SRA:
-	      if (!(r = rd_r_ (&ptr)))
-		break;
-	      wrtb (0xCB);
-	      wrtb (0x28 + --r);
-	      break;
-	    case Z80_SRL:
-	      if (!(r = rd_r_ (&ptr)))
-		break;
-	      wrtb (0xCB);
-	      wrtb (0x38 + --r);
-	      break;
-	    case Z80_SUB:
-	      if (!(r = rd_r (&ptr)))
-		break;
-	      if (has_argument (&ptr))	/* SUB A,r ?  */
-		{
-		  if (r != A)
-		    {
-		      printerr (1, "parse error before: %s\n", ptr);
-		      break;
-		    }
-		  if (!(r = rd_r (&ptr)))
-		    break;
-		}
-	      wrtb (0x90 + --r);
-	      break;
-	    case Z80_XOR:
-	      if (!(r = rd_r (&ptr)))
-		break;
-	      wrtb (0xA8 + --r);
-	      break;
-	    case Z80_DEFB:
-	    case Z80_DB:
-	    case Z80_DEFM:
-	    case Z80_DM:
-	      ptr = delspc (ptr);
-	      while (1)
-		{
-		  have_quote = (*ptr == '"' || *ptr == '\'');
-		  if (have_quote)
-		    {
-		      /* Read string.  */
-		      int quote = *ptr;
-		      ++ptr;
-		      while (*ptr != quote)
-			{
-			  write_one_byte (rd_character (&ptr, NULL, 1), 0);
-			  if (*ptr == 0)
-			    {
-			      printerr (1, "end of line in quoted string\n");
-			      break;
-			    }
+		// XXX: must free
+		z80buffer = strdup (str);
+		if (!cont)
+			break;		/* break to next source file */
+		//	  if (havelist)
+		//	    fprintf (listfile, "%04x", addr);
+		for (bufptr = z80buffer; (bufptr = strchr (bufptr, '\n'));)
+			*bufptr = ' ';
+		for (bufptr = z80buffer; (bufptr = strchr (bufptr, '\r'));)
+			*bufptr = ' ';
+		ptr = z80buffer;
+		//lastlabel = NULL;
+		baseaddr = addr;
+		++stack[sp].line;
+		ptr = delspc (ptr);
+		if (!*ptr)
+			continue;
+		if (!noifcount && !define_macro)
+			readlabel (&ptr, 1);
+		else
+			readlabel (&ptr, 0);
+		ptr = delspc (ptr);
+		if (!*ptr)
+			continue;
+		comma = 0;
+		indexed = 0;
+		indexjmp = 0;
+		writebyte = 0;
+		readbyte = 0;
+		readword = 0;
+		cmd = readcommand (&ptr) - 1;
+			int i, have_quote;
+			switch (cmd) {
+			case Z80_ADC:
+				if (!(r = rd_a_hl (&ptr)))
+					break;
+				if (r == HL) {
+					if (!(r = rd_rr_ (&ptr)))
+						break;
+					wrtb (0xED);
+					wrtb (0x4A + 0x10 * --r);
+					break;
+				}
+				if (!(r = rd_r (&ptr)))
+					break;
+				wrtb (0x88 + --r);
+				break;
+			case Z80_ADD:
+				if (!(r = rd_r_add (&ptr)))
+					break;
+				if (r == addHL) {
+					if (!(r = rd_rrxx (&ptr)))
+						break;
+					wrtb (0x09 + 0x10 * --r);	/* ADD HL/IX/IY, qq  */
+					break;
+				}
+				if (has_argument (&ptr)) {
+					if (r != A) {
+						eprintf ("parse error before: %s\n", ptr);
+						break;
+					}
+					if (!(r = rd_r (&ptr)))
+						break;
+					wrtb (0x80 + --r);	/* ADD A,r  */
+					break;
+				}
+				wrtb (0x80 + --r);	/* ADD r  */
+				break;
+			case Z80_AND:
+				if (!(r = rd_r (&ptr)))
+					break;
+				wrtb (0xA0 + --r);
+				break;
+			case Z80_BIT:
+				if (!rd_0_7 (&ptr))
+					break;
+				rd_comma (&ptr);
+				if (!(r = rd_r_ (&ptr)))
+					break;
+				wrtb (0xCB);
+				wrtb (0x40 + (r - 1));
+				break;
+			case Z80_CALL:
+				if ((r = rd_cc (&ptr))) {
+					wrtb (0xC4 + 8 * --r);
+					rd_comma (&ptr);
+				} else wrtb (0xCD);
+				break;
+			case Z80_CCF:
+				wrtb (0x3F);
+				break;
+			case Z80_CP:
+				if (!(r = rd_r (&ptr)))
+					break;
+				wrtb (0xB8 + --r);
+				break;
+			case Z80_CPD:
+				wrtb (0xED);
+				wrtb (0xA9);
+				break;
+			case Z80_CPDR:
+				wrtb (0xED);
+				wrtb (0xB9);
+				break;
+			case Z80_CPI:
+				wrtb (0xED);
+				wrtb (0xA1);
+				break;
+			case Z80_CPIR:
+				wrtb (0xED);
+				wrtb (0xB1);
+				break;
+			case Z80_CPL:
+				wrtb (0x2F);
+				break;
+			case Z80_DAA:
+				wrtb (0x27);
+				break;
+			case Z80_DEC:
+				if (!(r = rd_r_rr (&ptr)))
+					break;
+				if (r < 0) {
+					wrtb (0x05 - 8 * ++r);
+					break;
+				}
+				wrtb (0x0B + 0x10 * --r);
+				break;
+			case Z80_DI:
+				wrtb (0xF3);
+				break;
+			case Z80_DJNZ:
+				wrtb (0x10);
+				//rd_wrt_jr (&ptr, '\0');
+				break;
+			case Z80_EI:
+				wrtb (0xFB);
+				break;
+			case Z80_EX:
+				if (!(r = rd_ex1 (&ptr)))
+					break;
+				switch (r) {
+				case DE:
+					if (!rd_hl (&ptr))
+						break;
+					wrtb (0xEB);
+					break;
+				case AF:
+					if (!rd_af_ (&ptr))
+						break;
+					wrtb (0x08);
+					break;
+				default:
+					if (!rd_hlx (&ptr))
+						break;
+					wrtb (0xE3);
+				}
+				break;
+			case Z80_EXX:
+				wrtb (0xD9);
+				break;
+			case Z80_HALT:
+				wrtb (0x76);
+				break;
+			case Z80_IM:
+				if (!(r = rd_0_2 (&ptr)))
+					break;
+				wrtb (0xED);
+				wrtb (0x46 + 8 * --r);
+				break;
+			case Z80_IN:
+				if (!(r = rd_in (&ptr)))
+					break;
+				if (r == A) {
+					if (!(r = rd_nnc (&ptr)))
+						break;
+					if (r == C) {
+						wrtb (0xED);
+						wrtb (0x40 + 8 * (A - 1));
+						break;
+					}
+					wrtb (0xDB);
+					break;
+				}
+				if (!rd_c (&ptr))
+					break;
+				wrtb (0xED);
+				wrtb (0x40 + 8 * --r);
+				break;
+			case Z80_INC:
+				if (!(r = rd_r_rr (&ptr)))
+					break;
+				if (r < 0) {
+					wrtb (0x04 - 8 * ++r);
+					break;
+				}
+				wrtb (0x03 + 0x10 * --r);
+				break;
+			case Z80_IND:
+				wrtb (0xED);
+				wrtb (0xAA);
+				break;
+			case Z80_INDR:
+				wrtb (0xED);
+				wrtb (0xBA);
+				break;
+			case Z80_INI:
+				wrtb (0xED);
+				wrtb (0xA2);
+				break;
+			case Z80_INIR:
+				wrtb (0xED);
+				wrtb (0xB2);
+				break;
+			case Z80_JP:
+				r = rd_jp (&ptr);
+				if (r < 0) {
+					wrtb (0xE9);
+					break;
+				}
+				if (r) {
+					wrtb (0xC2 + 8 * --r);
+					rd_comma (&ptr);
+				} else wrtb (0xC3);
+				break;
+			case Z80_JR:
+				r = rd_jr (&ptr);
+				if (r)
+					rd_comma (&ptr);
+				wrtb (0x18 + 8 * r);
+				break;
+			case Z80_LD:
+				if (!(r = rd_ld (&ptr)))
+					break;
+				switch (r) {
+				case ld_BC:
+				case ld_DE:
+					if (!rd_a (&ptr))
+						break;
+					wrtb (0x02 + 0x10 * (r == ld_DE));
+					break;
+				case ld_HL:
+					r = rd_ld_hl (&ptr);
+					wrtb (0x70 + --r);
+					break;
+				case ld_NN:
+					if (!(r = rd_ld_nn (&ptr)))
+						break;
+					if (r == ld_nnA || r == ld_nnHL) {
+						wrtb (0x22 + 0x10 * (r == ld_nnA));
+						break;
+					}
+					wrtb (0xED);
+					wrtb (0x43 + 0x10 * --r);
+					break;
+				case ldA:
+					if (!(r = rd_lda (&ptr)))
+						break;
+					if (r == A_NN) {
+						wrtb (0x3A);
+						break;
+					}
+					if (r == A_I || r == A_R) {
+						wrtb (0xED);
+						wrtb (0x57 + 8 * (r == A_R));
+						break;
+					}
+					if (r < 0) {
+						wrtb (0x0A - 0x10 * ++r);
+						break;
+					}
+					wrtb (0x78 + --r);
+					break;
+				case ldB:
+				case ldC:
+				case ldD:
+				case ldE:
+				case ldH:
+				case ldL:
+					if (!(s = rd_ldbcdehla (&ptr)))
+						break;
+					wrtb (0x40 + 0x08 * (r - 7) + (s - 1));
+					break;
+				case ldBC:
+				case ldDE:
+					s = rd_nn_nn (&ptr);
+					if (s == _NN) {
+						wrtb (0xED);
+						wrtb (0x4B + 0x10 * (r == ldDE));
+						break;
+					}
+					wrtb (0x01 + (r == ldDE) * 0x10);
+					break;
+				case ldHL:
+					r = rd_nn_nn (&ptr);
+					wrtb (0x21 + (r == _NN) * 9);
+					break;
+				case ldI:
+				case ldR:
+					if (!rd_a (&ptr))
+						break;
+					wrtb (0xED);
+					wrtb (0x47 + 0x08 * (r == ldR));
+					break;
+				case ldSP:
+					r = rd_sp (&ptr);
+					if (r == SPHL) {
+						wrtb (0xF9);
+						break;
+					}
+					if (r == SPNN) {
+						wrtb (0x31);
+						break;
+					}
+					wrtb (0xED);
+					wrtb (0x7B);
+					break;
+				}
+				break;
+			case Z80_LDD:
+				wrtb (0xED);
+				wrtb (0xA8);
+				break;
+			case Z80_LDDR:
+				wrtb (0xED);
+				wrtb (0xB8);
+				break;
+			case Z80_LDI:
+				wrtb (0xED);
+				wrtb (0xA0);
+				break;
+			case Z80_LDIR:
+				wrtb (0xED);
+				wrtb (0xB0);
+				break;
+			case Z80_NEG:
+				wrtb (0xED);
+				wrtb (0x44);
+				break;
+			case Z80_NOP:
+				wrtb (0x00);
+				break;
+			case Z80_OR:
+				if (!(r = rd_r (&ptr)))
+					break;
+				wrtb (0xB0 + --r);
+				break;
+			case Z80_OTDR:
+				wrtb (0xED);
+				wrtb (0xBB);
+				break;
+			case Z80_OTIR:
+				wrtb (0xED);
+				wrtb (0xB3);
+				break;
+			case Z80_OUT:
+				if (!(r = rd_nnc (&ptr)))
+					break;
+				if (r == C) {
+					if (!(r = rd_out (&ptr)))
+						break;
+					wrtb (0xED);
+					wrtb (0x41 + 8 * --r);
+					break;
+				}
+				if (!rd_a (&ptr))
+					break;
+				wrtb (0xD3);
+				break;
+			case Z80_OUTD:
+				wrtb (0xED);
+				wrtb (0xAB);
+				break;
+			case Z80_OUTI:
+				wrtb (0xED);
+				wrtb (0xA3);
+				break;
+			case Z80_POP:
+				if (!(r = rd_stack (&ptr)))
+					break;
+				wrtb (0xC1 + 0x10 * --r);
+				break;
+			case Z80_PUSH:
+				if (!(r = rd_stack (&ptr)))
+					break;
+				wrtb (0xC5 + 0x10 * --r);
+				break;
+			case Z80_RES:
+				if (!rd_0_7 (&ptr))
+					break;
+				rd_comma (&ptr);
+				if (!(r = rd_r_ (&ptr)))
+					break;
+				wrtb (0xCB);
+				wrtb (0x80 + --r);
+				break;
+			case Z80_RET:
+				if (!(r = rd_cc (&ptr))) {
+					wrtb (0xC9);
+					break;
+				}
+				wrtb (0xC0 + 8 * --r);
+				break;
+			case Z80_RETI:
+				wrtb (0xED);
+				wrtb (0x4D);
+				break;
+			case Z80_RETN:
+				wrtb (0xED);
+				wrtb (0x45);
+				break;
+			case Z80_RL:
+				if (!(r = rd_r_ (&ptr)))
+					break;
+				wrtb (0xCB);
+				wrtb (0x10 + --r);
+				break;
+			case Z80_RLA:
+				wrtb (0x17);
+				break;
+			case Z80_RLC:
+				if (!(r = rd_r_ (&ptr)))
+					break;
+				wrtb (0xCB);
+				wrtb (0x00 + --r);
+				break;
+			case Z80_RLCA:
+				wrtb (0x07);
+				break;
+			case Z80_RLD:
+				wrtb (0xED);
+				wrtb (0x6F);
+				break;
+			case Z80_RR:
+				if (!(r = rd_r_ (&ptr)))
+					break;
+				wrtb (0xCB);
+				wrtb (0x18 + --r);
+				break;
+			case Z80_RRA:
+				wrtb (0x1F);
+				break;
+			case Z80_RRC:
+				if (!(r = rd_r_ (&ptr)))
+					break;
+				wrtb (0xCB);
+				wrtb (0x08 + --r);
+				break;
+			case Z80_RRCA:
+				wrtb (0x0F);
+				break;
+			case Z80_RRD:
+				wrtb (0xED);
+				wrtb (0x67);
+				break;
+			case Z80_RST:
+				ptr = "";
+				break;
+			case Z80_SBC:
+				if (!(r = rd_a_hl (&ptr)))
+					break;
+				if (r == HL) {
+					if (!(r = rd_rr_ (&ptr)))
+						break;
+					wrtb (0xED);
+					wrtb (0x42 + 0x10 * --r);
+					break;
+				}
+				if (!(r = rd_r (&ptr)))
+					break;
+				wrtb (0x98 + --r);
+				break;
+			case Z80_SCF:
+				wrtb (0x37);
+				break;
+			case Z80_SET:
+				if (!rd_0_7 (&ptr))
+					break;
+				rd_comma (&ptr);
+				if (!(r = rd_r_ (&ptr)))
+					break;
+				wrtb (0xCB);
+				wrtb (0xC0 + --r);
+				break;
+			case Z80_SLA:
+				if (!(r = rd_r_ (&ptr)))
+					break;
+				wrtb (0xCB);
+				wrtb (0x20 + --r);
+				break;
+			case Z80_SLI:
+				if (!(r = rd_r_ (&ptr)))
+					break;
+				wrtb (0xCB);
+				wrtb (0x30 + --r);
+				break;
+			case Z80_SRA:
+				if (!(r = rd_r_ (&ptr)))
+					break;
+				wrtb (0xCB);
+				wrtb (0x28 + --r);
+				break;
+			case Z80_SRL:
+				if (!(r = rd_r_ (&ptr)))
+					break;
+				wrtb (0xCB);
+				wrtb (0x38 + --r);
+				break;
+			case Z80_SUB:
+				if (!(r = rd_r (&ptr)))
+					break;
+				if (has_argument (&ptr)) {/* SUB A,r ?  */
+					if (r != A) {
+						eprintf ("parse error before: %s\n", ptr);
+						break;
+					}
+					if (!(r = rd_r (&ptr)))
+						break;
+				}
+				wrtb (0x90 + --r);
+				break;
+			case Z80_XOR:
+				if (!(r = rd_r (&ptr)))
+					break;
+				wrtb (0xA8 + --r);
+				break;
+			case Z80_DEFB:
+			case Z80_DB:
+			case Z80_DEFM:
+			case Z80_DM:
+				ptr = delspc (ptr);
+				while (1) {
+					have_quote = (*ptr == '"' || *ptr == '\'');
+					if (have_quote) {
+						/* Read string.  */
+						int quote = *ptr;
+						++ptr;
+						while (*ptr != quote)
+						{
+							write_one_byte (rd_character (&ptr, NULL, 1), 0);
+							if (*ptr == 0)
+							{
+								eprintf ("end of line in quoted string\n");
+								break;
+							}
+						}
+						++ptr;
+					} else {
+						/* Read expression.  */
+						skipword (&ptr, ',');
+					}
+					ptr = delspc (ptr);
+					if (*ptr == ',') {
+						++ptr;
+						continue;
+					}
+					if (*ptr != 0)
+						eprintf ("junk in byte definition: %s\n", ptr);
+					break;
+				}
+				break;
+			case Z80_DEFW:
+			case Z80_DW:
+				if (!(r = rd_word (&ptr, ','))) {
+					eprintf ("No data for word definition\n");
+					break;
+				}
+				while (1) {
+					ptr = delspc (ptr);
+					if (*ptr != ',')
+						break;
+					++ptr;
+					if (!(r = rd_word (&ptr, ',')))
+						eprintf ("Missing expression in defw\n");
+				}
+				break;
+			case Z80_DEFS:
+			case Z80_DS:
+				r = rd_expr (&ptr, ',', NULL, sp, 1);
+				if (r < 0) {
+					eprintf ("ds should have its first argument >=0"
+							" (not -0x%x)\n", -r);
+					break;
+				}
+				ptr = delspc (ptr);
+				if (*ptr) {
+					rd_comma (&ptr);
+					readbyte = 0;
+					rd_byte (&ptr, '\0');
+					writebyte = 0;
+					break;
+				}
+				for (i = 0; i < r; i++) {
+					write_one_byte (0, 0);
+				}
+				break;
+			case Z80_END:
+				break;
+			case Z80_ORG:
+				addr = rd_expr (&ptr, '\0', NULL, sp, 1) & 0xffff;
+				break;
+			case Z80_IF:
+				if (rd_expr (&ptr, '\0', NULL, sp, 1))
+					ifcount++;
+				else
+					noifcount++;
+				break;
+			case Z80_ELSE:
+				if (ifcount == 0)
+				{
+					eprintf ("else without if\n");
+					break;
+				}
+				noifcount = 1;
+				ifcount--;
+				break;
+			case Z80_ENDIF:
+				if (noifcount == 0 && ifcount == 0) {
+					eprintf ("endif without if\n");
+					break;
+				}
+				if (noifcount)
+					noifcount--;
+				else
+					ifcount--;
+				break;
+			case Z80_ENDM:
+				if (stack[sp].file)
+					eprintf ("endm outside macro definition\n");
+				break;
+			case Z80_SEEK:
+				eprintf ("seek error\n");
+				break;
+			default:
+				//eprintf ("command or comment expected (was %s)\n", ptr);
+				return 0;
 			}
-		      ++ptr;
-		    }
-		  else
-		    {
-		      /* Read expression.  */
-		      skipword (&ptr, ',');
-		    }
-		  ptr = delspc (ptr);
-		  if (*ptr == ',')
-		    {
-		      ++ptr;
-		      continue;
-		    }
-		  if (*ptr != 0)
-		    printerr (1, "junk in byte definition: %s\n", ptr);
-		  break;
-		}
-	      break;
-	    case Z80_DEFW:
-	    case Z80_DW:
-	      if (!(r = rd_word (&ptr, ',')))
-		{
-		  printerr (1, "No data for word definition\n");
-		  break;
-		}
-	      while (1)
-		{
-		  ptr = delspc (ptr);
-		  if (*ptr != ',')
-		    break;
-		  ++ptr;
-		  if (!(r = rd_word (&ptr, ',')))
-		    printerr (1, "Missing expression in defw\n");
-		}
-	      break;
-	    case Z80_DEFS:
-	    case Z80_DS:
-	      r = rd_expr (&ptr, ',', NULL, sp, 1);
-	      if (r < 0)
-		{
-		  printerr (1, "ds should have its first argument >=0"
-			    " (not -0x%x)\n", -r);
-		  break;
-		}
-	      ptr = delspc (ptr);
-	      if (*ptr) {
-		  rd_comma (&ptr);
-		  readbyte = 0;
-		  rd_byte (&ptr, '\0');
-		  writebyte = 0;
-		  break;
-		}
-	      for (i = 0; i < r; i++) {
-		  write_one_byte (0, 0);
-		}
-	      break;
-	    case Z80_END:
-	      break;
-	    case Z80_ORG:
-	      addr = rd_expr (&ptr, '\0', NULL, sp, 1) & 0xffff;
-	      break;
-	    case Z80_IF:
-	      if (rd_expr (&ptr, '\0', NULL, sp, 1))
-		ifcount++;
-	      else
-		noifcount++;
-	      break;
-	    case Z80_ELSE:
-	      if (ifcount == 0)
-		{
-		  printerr (1, "else without if\n");
-		  break;
-		}
-	      noifcount = 1;
-	      ifcount--;
-	      break;
-	    case Z80_ENDIF:
-	      if (noifcount == 0 && ifcount == 0)
-		{
-		  printerr (1, "endif without if\n");
-		  break;
-		}
-	      if (noifcount)
-		noifcount--;
-	      else
-		ifcount--;
-	      break;
-	    case Z80_ENDM:
-	      if (stack[sp].file)
-		printerr (1, "endm outside macro definition\n");
-	      break;
-	    case Z80_SEEK:
-	      fprintf (stderr, "seek error\n");
-		  break;
-	    default:
-	      printerr (1, "command or comment expected (was %s)\n", ptr);
-	      return 0;
-	    }
-    } while (0);
-  //free (infile);
-return obuflen;
+	} while (0);
+	//free (infile);
+	return obuflen;
 }
 
 // XXX

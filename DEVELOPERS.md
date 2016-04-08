@@ -9,7 +9,8 @@ CODE STYLE
 In order to contribute with patches or plugins we encourage you to
 use the same coding style as the rest of the code base.
 
-You may find some notes on this topic in doc/syntax and doc/vim
+You may find some notes on this topic [here](https://github.com/radare/radare2/blob/master/CONTRIBUTING.md#coding-style-guidelines)
+and doc/vim.
 
 MODULES
 -------
@@ -31,8 +32,9 @@ API
 As mentioned in README.md, the API itself is maintained in a different
 repository. The API function definitions in C header files are derived
 from and documented in the radare2-bindings repository, found at:
-
+```sh
    git clone git://github.com/radare/radare2-bindings
+```
 
 Currently the process of updating the header files from changed API
 bindings requires human intervention, to ensure that proper review
@@ -50,38 +52,39 @@ a C compiler, a GNU make and a unix-like system.
 
 CROSSCOMPILATION
 ----------------
-The instructions to crosscompile r2 to Windows are in doc/windows
+The instructions to crosscompile r2 to Windows are in doc/windows.
 
 You may find other documents in doc/ explaining how to build it on iOS,
 linux-arm and others, but the procedure is like this:
 
- - define CC
- - use a different compiler profile with --with-compiler
- - use a different OS with --with-ostype
- - type make
- - install in DESTDIR
+ - define `CC`
+ - use a different compiler profile with `--with-compiler`
+ - use a different OS with `--with-ostype`
+ - type `make`
+ - install in `DESTDIR`
 
 SOURCE REPOSITORY
 -----------------
 The source of radare2 can be found in the following github repository.
-
+```sh
    git clone git://github.com/radare/radare2
-
+```
 Other packages radare2 depends on, such as Capstone, are pull from
 their git repository as required.
 
 To get an up to date copy of the repository you should perform the
 following steps:
-
+```sh
    git pull
+```
 
 If you have conflicts in your local copy it's because you have modified
 files which are conflicting with the incoming patchsets. To get a clean
 source directory type the following command:
-
+```sh
    git clean -xdf
    git reset --hard
-
+```
 COMPILATION
 -----------
 Inter-module rebuild dependencies are not handled automatically and
@@ -95,8 +98,9 @@ sure enough that everything is ok just make clean the whole project.
 
 If you want to accelerate the build process after full make cleans
 you should use ccache in this way:
-
+```
   export CC="ccache gcc"
+```
 
 INSTALLATION
 ------------
@@ -104,9 +108,9 @@ Developers use to modify the code, type make and then try.
 
 radare2 have a specific makefile target that allows you to install
 system wide but using symlinks instead of hard copies.
-
+```sh
    sudo make symstall
-
+```
 This kind of installation is really helpful if you do lot of changes
 in the code for various reasons.
 
@@ -118,8 +122,9 @@ REGRESSION TESTING
 
 The source of the radare2 regression test suite can be found in the
 following github repository.
-
+```sh
    git clone git://github.com/radare/radare2-regressions
+```
 
 See the README.md file in that repository for further information.
 
@@ -133,7 +138,6 @@ don't know how to do something which is supposed to be covered
 by this framework.
 
 You should report it into the github issues page.
-
    https://github.com/radare/radare2/issues
 
 Otherwise, if you are looking for some more feedback I will
@@ -141,7 +145,7 @@ encourage you to send an email to any of the emails enumerated
 in the AUTHORS file.
 
 Anyway, if you want to get even more feedback and discuss this
-in a public place: join the #radare channel on irc.freenode.net
+in a public place: join the #radare channel on irc.freenode.net.
 
 The issues page of Github contains a list of all the bugs that
 have been reported classified with labels by difficulty, type,
@@ -151,27 +155,29 @@ to contribute.
 CONTRIBUTING WITH PATCHES
 -------------------------
 All the development happens in the git repository. It is
-good that all patches can be applied against the git HEAD.
+good that all patches can be applied against the `git HEAD`.
 
 I can get patches in unidiff format like this:
-
-  git diff > p
+```sh
+   git diff > p
+```
 
 HOW TO RELEASE 
 --------------
 
- - Set RELEASE=1 in global.mk and r2-bindings/config.mk.acr
- - Use bsdtar from libarchive package. GNU tar is broken
+ - Set `RELEASE=1` in global.mk and r2-bindings/config.mk.acr.
+ - Use `bsdtar` from libarchive package. GNU tar is broken.
 
-  == RADARE2
+  RADARE2
+  ---
    - bump revision
-   - ./configure
-   - make dist
+   - `./configure`  
+   - `make dist`
 
-  == R2-BINDINGS
-   - ./configure --enable-devel
-   - make
-   - make dist
-
+  R2-BINDINGS
+  ---
+   - `./configure --enable-devel`
+   - `make`
+   - `make dist`
 
 --pancake

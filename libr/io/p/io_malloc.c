@@ -120,21 +120,19 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			}
 		} else {
 			mal->size = r_num_math (NULL, pathname+9);
-			mal->offset = 0;
-			if (((int)(mal->size))>0) {
-				mal->buf = malloc (mal->size+1);
-				memset (mal->buf, '\0', mal->size);
-			} else {
+			if (((int)mal->size) <= 0) {
+				free (mal);
 				eprintf ("Cannot allocate (%s) 0 bytes\n", pathname+9);
 				return NULL;
 			}
+			mal->offset = 0;
+			mal->buf = calloc (1, mal->size+1);
 		}
 		if (mal->buf != NULL) {
 			RETURN_IO_DESC_NEW (&r_io_plugin_malloc,
 				mal->fd, pathname, rw, mode,mal);
 		}
-		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9,
-			mal->size);
+		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9, mal->size);
 		free (mal);
 	}
 	return NULL;

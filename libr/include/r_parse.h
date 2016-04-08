@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
 
 #ifndef R2_PARSE_H
 #define R2_PARSE_H
@@ -23,8 +23,10 @@ typedef struct r_parse_t {
 	void *user;
 	int flagspace;
 	int notin_flagspace;
+	bool relsub; // replace rip relative expressions in instruction
 	struct r_parse_plugin_t *cur;
 	RAnal *anal; // weak anal ref
+	RAnalHint *hint; // weak anal ref
 	RList *parsers;
 	RAnalVarList varlist;
 } RParse;
@@ -37,7 +39,7 @@ typedef struct r_parse_plugin_t {
 	int (*parse)(RParse *p, const char *data, char *str);
 	int (*assemble)(RParse *p, char *data, char *str);
 	int (*filter)(RParse *p, RFlag *f, char *data, char *str, int len);
-	int (*varsub)(RParse *p, RAnalFunction *f, char *data, char *str, int len);
+	bool (*varsub)(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 	int (*replace)(int argc, const char *argv[], char *newstr);
 	struct list_head list;
 } RParsePlugin;
@@ -52,7 +54,7 @@ R_API int r_parse_use(RParse *p, const char *name);
 R_API int r_parse_parse(RParse *p, const char *data, char *str);
 R_API int r_parse_assemble(RParse *p, char *data, char *str);
 R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len);
-R_API int r_parse_varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len);
+R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 R_API char *r_parse_c_string(const char *code);
 R_API char *r_parse_c_file(const char *path);
 R_API int r_parse_is_c_file (const char *file);
@@ -65,6 +67,9 @@ extern struct r_parse_plugin_t r_parse_plugin_arm_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_mips_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_dalvik_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_mreplace;
+extern struct r_parse_plugin_t r_parse_plugin_ppc_pseudo;
+extern struct r_parse_plugin_t r_parse_plugin_6502_pseudo;
+extern struct r_parse_plugin_t r_parse_plugin_m68k_pseudo;
 #endif
 
 #ifdef __cplusplus

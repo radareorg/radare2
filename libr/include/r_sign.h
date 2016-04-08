@@ -17,12 +17,13 @@ enum {
 	R_SIGN_FUNC = 'f',
 	R_SIGN_HEAD = 'h',
 	R_SIGN_ANAL = 'a',
+	R_SIGN_BODY = 'p',
 };
 
 /* signature struct */
 typedef struct r_sign_item_t {
 	int type;
-	char name[32];
+	char *name;
 	int size;
 	ut64 addr;
 	ut8 *bytes;
@@ -34,20 +35,21 @@ typedef struct r_sign_t {
 	int s_byte;
 	int s_head;
 	int s_func; // TODO: this must be an array count[N]
-	char ns[32]; // namespace
-	PrintfCallback printf;
+	char *ns;
+	PrintfCallback cb_printf;
 	RList *items;
+	int matches;
 } RSign;
 
 typedef int (*RSignCallback)(RSignItem *si, void *user);
 
 #ifdef R_API
 R_API RSign *r_sign_new(void);
-R_API int r_sign_add(RSign *sig, RAnal *anal, int type,
+R_API bool r_sign_add(RSign *sig, RAnal *anal, int type,
 		const char *name, const char *arg);
 R_API RSign *r_sign_free(RSign *sig);
 R_API void r_sign_ns(RSign *sig, const char *str);
-R_API void r_sign_list(RSign *sig, int rad);
+R_API void r_sign_list(RSign *sig, int rad, int json);
 R_API void r_sign_reset(RSign *sig);
 R_API void r_sign_item_free(void *_item);
 R_API int r_sign_remove_ns(RSign* sig, const char* ns);

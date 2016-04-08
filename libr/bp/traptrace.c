@@ -68,26 +68,26 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	int bitlen;
 	/* cannot map addr 0 */
 	if (from == 0LL)
-		return R_FALSE;
+		return false;
 	if (from>to)
-		return R_FALSE;
+		return false;
 	len = to-from;
 	if (len >= ST32_MAX)
-		return R_FALSE;
+		return false;
 	buf = (ut8*) malloc ((int)len);
 	if (buf == NULL)
-		return R_FALSE;
+		return false;
 	trap = (ut8*) malloc ((int)len+4);
 	if (trap == NULL) {
 		free (buf);
-		return R_FALSE;
+		return false;
 	}
 	bitlen = (len>>4)+1;
 	bits = malloc (bitlen);
 	if (bits == NULL) {
 		free (buf);
 		free (trap);
-		return R_FALSE;
+		return false;
 	}
 	// TODO: check return value
 	bp->iob.read_at (bp->iob.io, from, buf, len);
@@ -99,7 +99,7 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 		free (buf);
 		free (trap);
 		free (bits);
-		return R_FALSE;
+		return false;
 	}
 	trace->addr = from;
 	trace->addr_end = to;
@@ -111,15 +111,15 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 		free (buf);
 		free (trap);
 		free (trace);
-		return R_FALSE;
+		return false;
 	}
 	// read a memory, overwrite it as breakpointing area
 	// everytime it is hitted, instruction is restored
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_bp_traptrace_free_at(RBreakpoint *bp, ut64 from) {
-	int ret = R_FALSE;
+	int ret = false;
 	RListIter *iter, *iter_tmp;
 	RBreakpointTrace *trace;
 	r_list_foreach_safe (bp->traces, iter, iter_tmp, trace) {
@@ -128,7 +128,7 @@ R_API int r_bp_traptrace_free_at(RBreakpoint *bp, ut64 from) {
 				trace->buffer, trace->length);
 			r_bp_traptrace_free (trace);
 			r_list_delete (bp->traces, iter);
-			ret = R_TRUE;
+			ret = true;
 		}
 	}
 	return ret;
@@ -139,10 +139,9 @@ R_API void r_bp_traptrace_list(RBreakpoint *bp) {
 	RListIter *iter;
 	RBreakpointTrace *trace;
 	r_list_foreach (bp->traces, iter, trace) {
-		RBreakpointTrace *trace = r_list_iter_get (iter);
-		for (i=0; i<trace->bitlen; i++) {
+		for (i = 0; i < trace->bitlen; i++) {
 			if (R_BIT_CHK (trace->bits, i))
-				eprintf ("  - 0x%08"PFMT64x"\n", trace->addr+(i<<4));
+				eprintf ("  - 0x%08"PFMT64x"\n", trace->addr + (i<<4));
 		}
 	}
 }
@@ -157,10 +156,10 @@ R_API int r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len) {
 			delta = (int) (from-trace->addr);
 			if (R_BIT_CHK (trace->bits, delta))
 			if (trace->traps[delta]==0x00)
-				return R_FALSE; // already traced..debugger should stop
+				return false; // already traced..debugger should stop
 			R_BIT_SET (trace->bits, delta);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }

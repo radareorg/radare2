@@ -11,7 +11,7 @@
 //    "A%sB$nC-(D;)Ea0Fb1Gc2Hd3Ie4Jf5Kg6Lh7Mi8Nj9OkPlQmRnSoTpUqVrWsXtYuZvwxyz";
 
 //TODO(crowell): Make charset configurable, to allow banning characters.
-static const char* debruijn_charset = "ABCDEFGHIJKLMNOPQRSTUVWZYZabcdefghijklmnopqrstuvwxyz1234567890";
+static const char* debruijn_charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
 
 // Generate a De Bruijn sequence.
 static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int order,
@@ -49,10 +49,10 @@ static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int or
 // to free the memory.
 static char* de_bruijn(const char* charset, int order, int maxlen) {
 	int size = strlen (charset);
-	int* prenecklace_a = calloc(size * order, sizeof(int));
-	char* sequence = calloc(maxlen + 1, sizeof(char));
-	de_bruijn_seq(1, 1, order, maxlen, size, prenecklace_a, sequence, charset);
-	free(prenecklace_a);
+	int* prenecklace_a = calloc (size * order, sizeof(int));
+	char* sequence = calloc (maxlen + 1, sizeof(char));
+	de_bruijn_seq (1, 1, order, maxlen, size, prenecklace_a, sequence, charset);
+	free (prenecklace_a);
 	return sequence;
 }
 
@@ -108,6 +108,8 @@ static char* cyclic_pattern_long() {
 R_API int r_debruijn_offset(ut64 value, int guest_endian) {
 	ut64 needle_l[2];  // Hold the value as a string.
 	char* needle, *pattern;
+	int n, host_endian, retval;
+	char* pch;
 
 	if (value == 0)
 		return -1;
@@ -123,14 +125,14 @@ R_API int r_debruijn_offset(ut64 value, int guest_endian) {
 
 	// we should not guess the endian. its already handled by other functions 
 	// and configure by the user in cfg.bigendian
-	int n = 1;
+	n = 1;
 	// little endian if true
-	int host_endian = (*(char*)&n == 1) ? 1 : 0;
+	host_endian = (*(char*)&n == 1) ? 1 : 0;
 	if (host_endian != guest_endian)
 		reverse_string (needle);
 
-	char* pch = strstr (pattern, needle);
-	int retval = -1;
+	pch = strstr (pattern, needle);
+	retval = -1;
 	if (pch != NULL)
 		retval = (int)(pch - pattern);
 	free (pattern);

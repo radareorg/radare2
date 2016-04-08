@@ -11,11 +11,11 @@
 #include <r_parse.h>
 
 static int can_replace(const char *str, int idx, int max_operands) {
-	int ret = R_TRUE;
-	if (str[idx] > '9' || str[idx] < '1') ret = R_FALSE;
+	int ret = true;
+	if (str[idx] > '9' || str[idx] < '1') ret = false;
 	if (str[idx + 1] != '\x00' && str[idx + 1] <= '9' && str[idx + 1] >= '1')
-		ret = R_FALSE;
-	if ((int)((int)str[idx] - 0x30) > max_operands) ret = R_FALSE;
+		ret = false;
+	if ((int)((int)str[idx] - 0x30) > max_operands) ret = false;
 	return ret;
 }
 
@@ -42,20 +42,20 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "bltzal", "if (1 < 0) call 2", 2},
 		{ "bne",  "if (1 != 2) goto 3", 3},
 		{ "bnez",  "if (1) goto 2", 2},
-		{ "j",   "call 1", 1},
+		{ "j",   "goto 1", 1},
 		{ "jal",   "call 1", 1},
 		{ "jalr",  "call 1", 1},
-		{ "jr",   "ret 1", 1},
+		{ "jr",   "goto 1", 1},
 		{ "lb",  "1 = byte [3 + 2]", 3},
 		{ "lbu",  "1 = byte [3 + 2]", 3},
 		{ "lw",  "1 = halfword [3 + 2]", 3},
 		{ "li",   "1 = 2", 2},
-		{ "lui",  "1 |= 2 << 16", 2},
+		{ "lui",  "1 = 2 << 16", 2},
 		{ "lw",  "1 = [3 + 2]", 3},
 		{ "move",  "1 = 2", 1},
 		{ "mult",  "1 = 2 * 3", 3},
 		{ "multu",  "1 = 2 * 3", 3},
-		{ "negu",  "1 = !2", 2},
+		{ "negu",  "1 = ~2", 2},
 		{ "nop",   "", 0},
 		{ "nor",   "1 = ~(2 | 3)", 3},
 		{ "or",   "1 = 2 | 3", 3},
@@ -69,7 +69,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "slti",  "1 = (2 < 3)", 3},
 		{ "sltiu",  "1 = (2 < 3)", 3},
 		{ "sltu",  "1 = unsigned (2 < 3)", 3},
-		{ "sra",  "1 = 2 >> 3", 3}, // arithmetic
+		{ "sra",  "1 = (signed)2 >> 3", 3}, // arithmetic
 		{ "srl",  "1 = 2 >> 3", 3},
 		{ "srlv",  "1 = 2 >> 3", 3},
 		{ "subu",  "1 = 2 - 3", 3},
@@ -94,7 +94,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 				}
 				newstr[k]='\0';
 			}
-			return R_TRUE;
+			return true;
 		}
 	}
 
@@ -107,7 +107,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		}
 	}
 
-	return R_FALSE;
+	return false;
 }
 
 #define WSZ 64
@@ -122,12 +122,12 @@ static int parse(RParse *p, const char *data, char *str) {
 
 	if (!strcmp (data, "jr ra")) {
 		strcpy (str, "ret");
-		return R_TRUE;
+		return true;
 	}
 
 	// malloc can be slow here :?
 	if ((buf = malloc (len+1)) == NULL)
-		return R_FALSE;
+		return false;
 	memcpy (buf, data, len+1);
 
 	r_str_replace_char (buf, '(', ',');
@@ -213,7 +213,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		}
 	}
 	free (buf);
-	return R_TRUE;
+	return true;
 }
 
 struct r_parse_plugin_t r_parse_plugin_mips_pseudo = {

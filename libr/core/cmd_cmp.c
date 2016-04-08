@@ -44,12 +44,12 @@ R_API RCoreCmpWatcher* r_core_cmpwatch_get(RCore *core, ut64 addr) {
 
 R_API int r_core_cmpwatch_add (RCore *core, ut64 addr, int size, const char *cmd) {
 	RCoreCmpWatcher *cmpw;
-	if (size<1) return R_FALSE;
+	if (size<1) return false;
 	cmpw = r_core_cmpwatch_get (core, addr);
 	if (!cmpw) {
 		cmpw = R_NEW (RCoreCmpWatcher);
 		if (!cmpw)
-			return R_FALSE;
+			return false;
 		cmpw->addr = addr;
 	}
 	cmpw->size = size;
@@ -58,21 +58,21 @@ R_API int r_core_cmpwatch_add (RCore *core, ut64 addr, int size, const char *cmd
 	cmpw->ndata = malloc (size);
 	if (cmpw->ndata == NULL) {
 		free (cmpw);
-		return R_FALSE;
+		return false;
 	}
 	r_io_read_at (core->io, addr, cmpw->ndata, size);
 	r_list_append (core->watchers, cmpw);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_core_cmpwatch_del (RCore *core, ut64 addr) {
-	int ret = R_FALSE;
+	int ret = false;
 	RCoreCmpWatcher *w;
 	RListIter *iter, *iter2;
 	r_list_foreach_safe (core->watchers, iter, iter2, w) {
 		if (w->addr == addr || addr == UT64_MAX) {
 			r_list_delete (core->watchers, iter);
-			ret = R_TRUE;
+			ret = true;
 		}
 	}
 	return ret;
@@ -102,7 +102,7 @@ R_API int r_core_cmpwatch_show (RCore *core, ut64 addr, int mode) {
 			break;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_core_cmpwatch_update (RCore *core, ut64 addr) {
@@ -113,7 +113,7 @@ R_API int r_core_cmpwatch_update (RCore *core, ut64 addr) {
 		w->odata = w->ndata;
 		w->ndata = malloc (w->size);
 		if (w->ndata == NULL)
-			return R_FALSE;
+			return false;
 		r_io_read_at (core->io, w->addr, w->ndata, w->size);
 	}
 	return !r_list_empty (core->watchers);
@@ -121,7 +121,7 @@ R_API int r_core_cmpwatch_update (RCore *core, ut64 addr) {
 
 R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr) {
 	RCoreCmpWatcher *w;
-	int ret = R_FALSE;
+	int ret = false;
 	RListIter *iter;
 	r_list_foreach (core->watchers, iter, w) {
 		if (w->addr == addr || addr == UT64_MAX) {
@@ -129,7 +129,7 @@ R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr) {
 				free (w->ndata);
 				w->ndata = w->odata;
 				w->odata = NULL;
-				ret = R_TRUE;
+				ret = true;
 			}
 		}
 	}
@@ -140,14 +140,14 @@ static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
 	int i, min, inc = 16;
 	ut8 *f, *d;
 	if (len<1)
-		return R_FALSE;
+		return false;
 	f = malloc (len);
 	if (f == NULL)
-		return R_FALSE;
+		return false;
 	d = malloc (len);
 	if (d == NULL) {
 		free (f);
-		return R_FALSE;
+		return false;
 	}
 	r_io_read_at (core->io, of, f, len);
 	r_io_read_at (core->io, od, d, len);
@@ -168,7 +168,7 @@ static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
 	}
 	if (headers)
 		B_SET (core->print->flags, R_PRINT_FLAGS_HEADER);
-	return R_TRUE;
+	return true;
 }
 
 static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
@@ -250,7 +250,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	int cols = r_config_get_i (core->config, "hex.cols") * 2;
 	ut64 off = r_num_math (core->num, input);
 	ut8 *buf = calloc (core->blocksize+32, 1);
-	if (!buf) return R_FALSE;
+	if (!buf) return false;
 	r_core_read_at (core, off, buf, core->blocksize+32);
 	switch (mode) {
 	case 'c': // columns
@@ -328,7 +328,24 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	return 0;
 }
 
+static int cmd_cp(void *data, const char *input) {
+	if (strlen (input)<3) {
+		eprintf ("Usage: cp src dst\n");
+		return 0;
+	}
+	input = input + 2;
+	if (!r_sandbox_enable(0)) {
+#if __WINDOWS__
+		r_sys_cmdf ("copy %s", input);
+#else
+		r_sys_cmdf ("cp %s", input);
+#endif
+	}
+	return 0;
+}
+
 static int cmd_cmp(void *data, const char *input) {
+	static char *oldcwd = NULL;
 	RCore *core = data;
 	ut64 val = UT64_MAX;
 	ut8 *buf;
@@ -339,6 +356,9 @@ static int cmd_cmp(void *data, const char *input) {
 	FILE *fd;
 
 	switch (*input) {
+	case 'p':
+		return cmd_cp (data, input);
+		break;
 	case 'a': r_core_syscmd_cat (input+1); break;
 	case 'w': cmd_cmp_watcher (core, input+1); break;
 	case ' ':
@@ -352,7 +372,7 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		buf = (ut8*)malloc (strlen (input+2)+1);
 		if (buf == NULL)
-			return R_FALSE;
+			return false;
 		ret = r_hex_str2bin (input+2, buf);
 		if (ret<1) eprintf ("Cannot parse hexpair\n");
 		else val = radare_compare (core, core->block, buf, ret);
@@ -366,7 +386,7 @@ static int cmd_cmp(void *data, const char *input) {
 			if (ret<1) eprintf ("Cannot read hexdump\n");
 			val = radare_compare (core, core->block, buf, ret);
 			free (buf);
-		} return R_FALSE;
+		} return false;
 		break;
 	case 'f':
 		if (input[1]!=' ') {
@@ -388,23 +408,43 @@ static int cmd_cmp(void *data, const char *input) {
 			free (buf);
 		} else {
 			fclose (fd);
-			return R_FALSE;
+			return false;
 		}
 		break;
 	case 'd':
 		while (input[1]==' ') input++;
 		if (input[1]) {
-			if (input[1]=='~' && input[2]=='/') {
+			if (!strcmp (input+1, "-")) {
+				if (oldcwd) {
+					char *newdir = oldcwd;
+					oldcwd = r_sys_getdir ();
+					if (r_sandbox_chdir (newdir)==-1) {
+						eprintf ("Cannot chdir to %s\n", newdir);
+						free (oldcwd);
+						oldcwd = newdir;
+					} else {
+						free (newdir);
+					}
+				} else {
+					// nothing to do here
+				}
+			} else if (input[1]=='~' && input[2]=='/') {
 				char *homepath = r_str_home (input+3);
 				if (homepath) {
-					if (*homepath)
+					if (*homepath) {
+						free (oldcwd);
+						oldcwd = r_sys_getdir ();
 						if (r_sandbox_chdir (homepath)==-1)
 							eprintf ("Cannot chdir to %s\n", homepath);
+					}
 					free (homepath);
 				} else eprintf ("Cannot find home\n");
 			} else {
-				if (r_sandbox_chdir (input+1)==-1)
+				free (oldcwd);
+				oldcwd = r_sys_getdir ();
+				if (r_sandbox_chdir (input+1)==-1) {
 					eprintf ("Cannot chdir to %s\n", input+1);
+				}
 			}
 		} else {
 			char* home = r_sys_getenv (R_SYS_HOME);
@@ -458,17 +498,17 @@ static int cmd_cmp(void *data, const char *input) {
 			switch (input[1]) {
 			case 'o': // "cgo"
 				file2 = (char*)r_str_chop_ro (input+2);
-				r_anal_diff_setup (core->anal, R_TRUE, -1, -1);
+				r_anal_diff_setup (core->anal, true, -1, -1);
 				break;
 			case 'f': // "cgf"
 				eprintf ("TODO: agf is experimental\n");
-				r_anal_diff_setup (core->anal, R_TRUE, -1, -1);
+				r_anal_diff_setup (core->anal, true, -1, -1);
 				r_core_gdiff_fcn (core, core->offset,
 					r_num_math (core->num, input +2));
-				return R_FALSE;
+				return false;
 			case ' ':
 				file2 = (char*)r_str_chop_ro (input+2);
-				r_anal_diff_setup (core->anal, R_FALSE, -1, -1);
+				r_anal_diff_setup (core->anal, false, -1, -1);
 				break;
 			default: {
 				const char * help_message[] = {
@@ -479,18 +519,18 @@ static int cmd_cmp(void *data, const char *input) {
 				NULL
 				};
 				r_core_cmd_help(core, help_message);
-				return R_FALSE;
+				return false;
 				}
 			}
 
 			if (r_file_size (file2) <= 0) {
 				eprintf ("Cannot compare with file %s\n", file2);
-				return R_FALSE;
+				return false;
 			}
 
 			if (!(core2 = r_core_new ())) {
 				eprintf ("Cannot init diff core\n");
-				return R_FALSE;
+				return false;
 			}
 			r_core_loadlibs (core2, R_CORE_LOADLIBS_ALL, NULL);
 			core2->io->va = core->io->va;
@@ -498,17 +538,17 @@ static int cmd_cmp(void *data, const char *input) {
 			if (!r_core_file_open (core2, file2, 0, 0LL)) {
 				eprintf ("Cannot open diff file '%s'\n", file2);
 				r_core_free (core2);
-				return R_FALSE;
+				return false;
 			}
 			// TODO: must replicate on core1 too
-			r_config_set_i (core2->config, "io.va", R_TRUE);
-			r_config_set_i (core2->config, "anal.split", R_TRUE);
+			r_config_set_i (core2->config, "io.va", true);
+			r_config_set_i (core2->config, "anal.split", true);
 			r_anal_diff_setup (core->anal, diffops, -1, -1);
 			r_anal_diff_setup (core2->anal, diffops, -1, -1);
 
 			r_core_bin_load (core2, file2,
 				r_config_get_i (core->config, "bin.baddr"));
-			r_core_gdiff (core, core2, 1);
+			r_core_gdiff (core, core2);
 			r_core_diff_show (core, core2);
 			/* exchange a segfault with a memleak */
 			core2->config = NULL;

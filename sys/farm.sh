@@ -226,9 +226,9 @@ if [ -z "${DONTFIND}" ]; then
 fi
 
 log "[==] Running some tests..."
-export PATH=${DESTDIR}/${PREFIX}/bin:$PATH
-export PKG_CONFIG_PATH=${DESTDIR}/${PREFIX}/lib/pkgconfig
-export LD_LIBRARY_PATH=${DESTDIR}/${PREFIX}/lib
+export PATH=${DESTDIR}${BINDIR}:$PATH
+export PKG_CONFIG_PATH=${DESTDIR}${LIBDIR}/pkgconfig
+export LD_LIBRARY_PATH=${DESTDIR}${LIBDIR}
 logcmd type r2
 logcmd type rasm2
 logcmd type rabin2
@@ -259,7 +259,7 @@ log "[==] Installing valabind bindings..."
 logcmd time ${MAKE} install DESTDIR=${DESTDIR}
 
 log "[==] Testing bindings.."
-export PYTHONPATH=${DESTDIR}/${PREFIX}/lib/python2.5/site-packages/
+export PYTHONPATH=${DESTDIR}${LIBDIR}/python2.5/site-packages/
 logcmd ${PYTHON} -c "'from r2.r_util import *;b=RBuffer()'"
 logcmd ${PYTHON} -c "'from r2.r_asm import *;a=RAsm()'"
 logcmd ${PYTHON} -c "'from r2.r_core import *;c=RCore()'"

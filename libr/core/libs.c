@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include "r_core.h"
 #include "../config.h"
@@ -8,9 +8,9 @@ static int __lib_##x##_cb(RLibPlugin *pl, void *user, void *data) { \
 	struct r_##x##_plugin_t *hand = (struct r_##x##_plugin_t *)data; \
 	RCore *core = (RCore *)user; \
 	r_##x##_add (core->y, hand); \
-	return R_TRUE; \
+	return true; \
 }\
-static int __lib_##x##_dt(RLibPlugin *pl, void *p, void *u) { return R_TRUE; }
+static int __lib_##x##_dt(RLibPlugin *pl, void *p, void *u) { return true; }
 
 // XXX api consistency issues
 #define r_io_add r_io_plugin_add
@@ -27,8 +27,10 @@ CB (asm, assembler)
 CB (parse, parser)
 CB (bin, bin)
 CB (egg, egg)
+CB (fs, fs)
 
 R_API void r_core_loadlibs_init(RCore *core) {
+	ut64 prev = r_sys_now();
 #define DF(x,y,z) r_lib_add_handler(core->lib, R_LIB_TYPE_##x,y,&__lib_##z##_cb, &__lib_##z##_dt, core);
 	core->lib = r_lib_new ("radare_plugin");
 	DF (IO, "io plugins", io);
@@ -41,13 +43,17 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);
+	DF (FS, "fs plugins", fs);
+	core->times->loadlibs_init_time = r_sys_now () - prev;
 }
 
 R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
+	ut64 prev = r_sys_now();
 #if R2_LOADLIBS
 	/* TODO: all those default plugin paths should be defined in r_lib */
 	if (!r_config_get_i (core->config, "cfg.plugins")) {
-		return R_FALSE;
+		core->times->loadlibs_time = 0;
+		return false;
 	}
 	if (!where) where = -1;
 	if (path) r_lib_opendir (core->lib, path);
@@ -55,7 +61,9 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 		r_lib_opendir (core->lib, r_config_get (core->config, "dir.plugins"));
 	}
 	if (where & R_CORE_LOADLIBS_ENV) {
-		r_lib_opendir (core->lib, getenv (R_LIB_ENV));
+		path = r_sys_getenv (R_LIB_ENV);
+		if (path && *path)
+			r_lib_opendir (core->lib, path);
 	}
 	if (where & R_CORE_LOADLIBS_HOME) {
 		char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
@@ -64,10 +72,16 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 		free (homeplugindir);
 	}
 	if (where & R_CORE_LOADLIBS_SYSTEM) {
+#if __WINDOWS__
+		r_lib_opendir (core->lib, "plugins");
+		r_lib_opendir (core->lib, "share/radare2/"R2_VERSION"/plugins");
+#else
 		r_lib_opendir (core->lib, R2_LIBDIR"/radare2/"R2_VERSION);
 		r_lib_opendir (core->lib, R2_LIBDIR"/radare2-extras/"R2_VERSION);
 		r_lib_opendir (core->lib, R2_LIBDIR"/radare2-bindings/"R2_VERSION);
+#endif
 	}
 #endif
-	return R_TRUE;
+	core->times->loadlibs_time = r_sys_now() - prev;
+	return true;
 }

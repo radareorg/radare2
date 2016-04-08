@@ -92,7 +92,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 			if (vmode) {
 				// TODO: Fix utf8 chop
 				/* only chop columns if necessary */
-				if (linelen+ll>cols) {
+				if (ll==linelen) {
+				} else 	if (ll+linelen >= cols) {
 					// chop line if too long
 					ll = (cols-linelen)-1;
 					if (ll<1)
@@ -135,11 +136,13 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				//lines--;
 				linelen = 0;
 			}
-			if (linelen+ll>cols) {
-				// chop line if too long
-				ll = (cols-linelen)-1;
-				// fix utf8 len here
-				ll = wrapline ((const char*)str, cols-linelen-1);
+			if (vmode) {
+				if (linelen+ll>=cols) {
+					// chop line if too long
+					ll = (cols-linelen)-1;
+					// fix utf8 len here
+					ll = wrapline ((const char*)str, cols-linelen-1);
+				}
 			}
 			if (ll>0) {
 				write (1, str, ll);
@@ -161,39 +164,37 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 			continue;
 		} else
 		if (esc == 2) {
-			{
-				int x, y;
-				const char *ptr2 = NULL;
-				int i, state = 0;
-				for (i=0; ptr[i] && state>=0; i++) {
-					switch (state) {
-					case 0:
-						if (ptr[i]==';') {
-							y = atoi ((const char *)ptr);
-							state = 1;
-							ptr2 = (const char *)ptr+i+1;
-						} else
-						if (ptr[i] >='0' && ptr[i]<='9') {
-							// ok
-						} else state = -1; // END FAIL
-						break;
-					case 1:
-						if (ptr[i]=='H') {
-							x = atoi (ptr2);
-							state = -2; // END OK
-						} else
-						if (ptr[i] >='0' && ptr[i]<='9') {
-							// ok
-						} else state = -1; // END FAIL
-						break;
-					}
+			int x, y;
+			const char *ptr2 = NULL;
+			int i, state = 0;
+			for (i=0; ptr[i] && state>=0; i++) {
+				switch (state) {
+				case 0:
+					if (ptr[i]==';') {
+						y = atoi ((const char *)ptr);
+						state = 1;
+						ptr2 = (const char *)ptr+i+1;
+					} else
+					if (ptr[i] >='0' && ptr[i]<='9') {
+						// ok
+					} else state = -1; // END FAIL
+					break;
+				case 1:
+					if (ptr[i]=='H') {
+						x = atoi (ptr2);
+						state = -2; // END OK
+					} else
+					if (ptr[i] >='0' && ptr[i]<='9') {
+						// ok
+					} else state = -1; // END FAIL
+					break;
 				}
-				if (state == -2) {
-					w32_gotoxy (x, y);
-					ptr += i;
-					str = ptr + 1;// + i-2;
-					continue;
-				}
+			}
+			if (state == -2) {
+				w32_gotoxy (x, y);
+				ptr += i;
+				str = ptr + 1;// + i-2;
+				continue;
 			}
 			if (ptr[0]=='0'&&ptr[1]==';'&&ptr[2]=='0') {
 				// \x1b[0;0H
@@ -326,15 +327,6 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 		}
 		ret++;
 	}
-
-	/* the ending padding */ {
-		int ll = (size_t)(ptr-str);
-		if (ll>0) {
-			write (1, str, ll);
-			linelen += ll;
-		}
-	}
-
 	if (vmode) {
 		/* fill partial line */
 		int wlen = cols-linelen-1;
@@ -346,6 +338,13 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 		}
 		/* fill tail */
 		fill_tail(cols, lines);
+	}
+	else {
+		int ll = (size_t)(ptr-str);
+		if (ll>0) {
+			write (1, str, ll);
+			linelen += ll;
+		}
 	}
 	return ret;
 }

@@ -360,13 +360,13 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 
 static int set_reg_profile(RAnal *anal) {
 	const char *p = 
-	"=pc	ip\n"
-	"=sp	sp\n"
-	"=bp	bp\n"
-	"=a0	v0\n"
-	"=a1	v1\n"
-	"=a2	v2\n"
-	"=a3	v3\n"
+	"=PC	ip\n"
+	"=SP	sp\n"
+	"=BP	bp\n"
+	"=A0	v0\n"
+	"=A1	v1\n"
+	"=A2	v2\n"
+	"=A3	v3\n"
 	"gpr	v0	.32	0	0\n"
 	"gpr	v1	.32	4	0\n"
 	"gpr	v2	.32	8	0\n"
@@ -379,7 +379,7 @@ static int set_reg_profile(RAnal *anal) {
 
 struct r_anal_plugin_t r_anal_plugin_dalvik = {
 	.name = "dalvik",
-	.arch = R_SYS_ARCH_DALVIK,
+	.arch = "dalvik",
 	.set_reg_profile = &set_reg_profile,
 	.license = "LGPL3",
 	.bits = 32,

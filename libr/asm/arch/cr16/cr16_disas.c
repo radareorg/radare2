@@ -22,6 +22,7 @@ static const char *cr16_regs_names[] = {
 	[CR16_R13]	= "r13",
 	[CR16_RA]	= "ra",
 	[CR16_SP]	= "sp",
+	[CR16_LAST]	= "XX",
 };
 
 static const char *instrs_4bit[] = {
@@ -1062,8 +1063,8 @@ int cr16_decode_movd(const ut8 *instr, struct cr16_cmd *cmd)
 	snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "movd");
 
 	imm32 = imm | (((c >> 4) & 1) << 16) | (((c >> 9) & 1) << 20) | (((c >> 1) & 0x7) << 17);
-	snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1, "$0x%08x,(%s,%s)",
-			imm32, cr16_regs_names[((c >> 5) & 0xF) + 1],
+	snprintf (cmd->operands, CR16_INSTR_MAXLEN - 1, "$0x%08x,(%s,%s)", imm32,
+			cr16_regs_names[((c >> 5) & 0xF) + 1],
 			cr16_regs_names[(c >> 5) & 0xF]);
 
 	return ret;

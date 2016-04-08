@@ -90,7 +90,7 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 		item = r_reg_get (anal->reg, a0, R_REG_TYPE_GPR);
 		if (!item) {
 			//eprintf ("cannot get reg a0\n");
-			return R_FALSE;
+			return false;
 		}
 		eax = (int)r_reg_get_value (anal->reg, item);
 		si = r_syscall_get (anal->syscall, eax, (int)cc->jump);
@@ -154,7 +154,7 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 	return strdup (str);
 }
 
-R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
+R_API bool r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
 	RRegItem *it;
 	cc->off = op->addr;
 	switch (op->type) {
@@ -163,12 +163,12 @@ R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
 		cc->type = R_ANAL_CC_TYPE_STDCALL;
 		// TODO: check if next instruction after call is restoring stack
 		cc->jump = op->jump;
-		return R_FALSE;
+		return false;
 	case R_ANAL_OP_TYPE_SWI: // syscall
 		cc->type = R_ANAL_CC_TYPE_FASTCALL;
 		cc->off = op->jump;
 		cc->jump = op->val; // syscall number
-		return R_FALSE;
+		return false;
 	case R_ANAL_OP_TYPE_XOR:
 		if (op->src[0] && op->src[0]->reg && op->dst && op->dst->reg && op->dst->reg->name) {
 			char *n1 = op->dst->reg->name;
@@ -206,18 +206,18 @@ R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
 		break;
 	}
 	// must update internal stuff to recognize parm
-	return R_TRUE;
+	return true;
 }
 
 // Mixed up with XRefs
 R_API int r_anal_cc_register (RAnal *anal, RAnalCC *cc) {
 	// register this calling convention to the destination call address
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_anal_cc_unregister (RAnal *anal, RAnalCC *cc) {
 	// register this calling convention to the destination call address
-	return R_FALSE;
+	return false;
 }
 
 #if 0

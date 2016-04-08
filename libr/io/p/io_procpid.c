@@ -86,7 +86,7 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 			RIOProcpid *riop = R_NEW (RIOProcpid);
 			riop->pid = pid;
 			riop->fd = fd;
-			return r_io_desc_new (&r_io_plugin_procpid, -1, file, R_TRUE, 0, riop);
+			return r_io_desc_new (&r_io_plugin_procpid, -1, file, true, 0, riop);
 		}
 		/* kill children */
 		eprintf ("Cannot open /proc/%d/mem of already attached process\n", pid);
@@ -114,14 +114,14 @@ static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 		int pid = atoi (cmd+4);
 		if (pid != 0)
 			iop->pid = pid;
-		io->printf ("%d\n", iop->pid);
+		io->cb_printf ("%d\n", iop->pid);
 		return 0;
 	} else eprintf ("Try: '=!pid'\n");
-	return R_TRUE;
+	return true;
 }
 
 static int __init(struct r_io_t *io) {
-	return R_TRUE;
+	return true;
 }
 
 RIOPlugin r_io_plugin_procpid = {

@@ -5,20 +5,22 @@
 .Nd block based hashing utility
 .Sh SYNOPSIS
 .Nm hasher2
-.Op Fl BdDehjrkv
+.Op Fl BdDehjrkvq
 .Op Fl a Ar algorithm
 .Op Fl b Ar size
+.Op Fl E Ar algo
 .Op Fl s Ar string
 .Op Fl i Ar iterations
 .Op Fl S Ar seed
 .Op Fl f Ar from
 .Op Fl x Ar hexstr
 .Op Fl t Ar to
+.Op Fl c Ar hash
 .Op [file] ...
 .Sh DESCRIPTION
 This program is part of the radare project.
 .Pp
-Hasher allows you to calculate, check and show the hash values of each block of a target file. The block size is 32768 bytes by default. It's allowed to hash from stdin using '-' as a target file.
+Hasher allows you to calculate, check and show the hash values of each block of a target file. The block size is 32768 bytes by default. It's allowed to hash from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
 .Pp
 You can hash big files by hashing each block and later determine what part of it has been modified. Useful for filesystem analysis.
 .Pp
@@ -30,12 +32,16 @@ This is the command used by the '#' command of radare.
 Select an algorithm for the hashing. Valid values are listed in: rahash2 -L
 .It Fl b Ar blocksize
 Define the block size
+.It Fl c Ar hash
+Compare the computed hash with this one. Allowed only when a single hash is computed.
 .It Fl d
 encoDe base64 string or file
 .It Fl D
 Decode base64 string or file
 .It Fl e
 Use little endian to display checksums
+.It Fl E Ar algo
+Encrypt instead of hash using the given algorithm (rc4, aes, xor, blowfish)
 .It Fl i Ar iters
 Apply the hash Iters times to itself+seed
 .It Fl j
@@ -52,6 +58,8 @@ Set seed to hash with, use ^to prefix seed, otherwise its suffixed.
 Start hashing at given address
 .It Fl t Ar to
 Stop hashing at given address
+.It Fl q
+Quiet mode (-qq for even quieter!)
 .It Fl r
 Show output in radare commands
 .It Fl x Ar hexstr
@@ -60,6 +68,11 @@ Hash the given hexpair string instead of using the 'source' and 'hash-file' argu
 Show version information
 .It Fl h
 Show usage help message.
+.El
+.Sh DIAGNOSTICS
+.Ex -std
+.Pp
+When -c is used, exit status 0 indicates a match between the expected and computed hashes.
 .El
 .Sh SEE ALSO
 .Pp

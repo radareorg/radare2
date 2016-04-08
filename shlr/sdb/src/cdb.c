@@ -46,9 +46,16 @@ int cdb_init(struct cdb *c, int fd) {
 	if (fd != -1 && !fstat (fd, &st) && st.st_size>4 && st.st_size != (off_t)UT64_MAX) {
 #if USE_MMAN
 		char *x = mmap (0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+		if (!x) {
+			eprintf ("Cannot mmap %d\n", (int)st.st_size);
+			return 0;
+		}
 #else
-		char *x = malloc (st.st_size);
-		if (!x) return 0;
+		char *x = calloc (1, st.st_size);
+		if (!x) {
+			eprintf ("Cannot malloc %d\n", (int)st.st_size);
+			return 0;
+		}
 		read (fd, x, st.st_size); // TODO: handle return value
 #endif
 		if (x + 1) {
@@ -75,7 +82,8 @@ int cdb_read(struct cdb *c, char *buf, ut32 len, ut32 pos) {
 		ssize_t r;
 		memset (buf, 0, len);
 		r = read (c->fd, buf, len);
-		if (r != len) return 0;
+		if (r == -1) return 0;
+		if ((ut32)r != len) return 0;
 		buf += r;
 		len -= r;
 	}
@@ -105,16 +113,22 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, ut32 len) {
 	if (c->fd == -1) return -1;
 	c->hslots = 0;
 	if (!c->loop) {
-		if (!cdb_read (c, buf, sizeof (buf), (u << 3) & 2047)) {
+		int bufsz = ((u+1) & 0xFF) ? sizeof (buf) : sizeof (buf) / 2;
+		if (!cdb_read (c, buf, bufsz, (u << 2) & 1023))
 			return -1;
-		}
-		ut32_unpack (buf + 4, &c->hslots);
-		if (!c->hslots) {
-			return 0;
-		}
+
+		/* hslots = (hpos_next - hpos) / 8 */
 		ut32_unpack (buf, &c->hpos);
+		if (bufsz == sizeof (buf))
+			ut32_unpack (buf+4, &pos);
+		else pos = c->size;
+
+		if (pos < c->hpos) return -1;
+		c->hslots = (pos - c->hpos) / (2 * sizeof (ut32));
+		if (!c->hslots) return 0;
+
 		c->khash = u;
-		u = ((u>>8)%c->hslots)<<3;
+		u = ((u >> 8) % c->hslots) << 3;
 		c->kpos = c->hpos + u;
 	}
 	while (c->loop < c->hslots) {

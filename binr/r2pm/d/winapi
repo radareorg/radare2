@@ -1,0 +1,18 @@
+R2PM_BEGIN
+
+R2PM_DESC "[r2] Get info about windows functions"
+
+BINDIR="${R2PM_PLUGDIR}/../bin"
+
+R2PM_INSTALL() {
+	mkdir -p "${BINDIR}"
+	echo '#!/bin/sh' > "${BINDIR}/winapi"
+    echo 'curl https://source.winehq.org/WineAPI/${1}.html 2>/dev/null | grep DESCRIPTION -A 1 | tail -n "+2" | sed -e "s/<[^>]*>//g"' > "${BINDIR}/winapi"
+	chmod +x "${BINDIR}"/winapi
+}
+
+R2PM_UNINSTALL() {
+	rm -f "${BINDIR}"/winapi
+}
+
+R2PM_END

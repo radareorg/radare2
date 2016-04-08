@@ -13,7 +13,7 @@ static int null_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 struct r_anal_plugin_t r_anal_plugin_null = {
 	.name = "null",
 	.desc = "Fallback/Null analysis plugin",
-	.arch = R_SYS_ARCH_NONE,
+	.arch = "none",
 	.license = "LGPL3",
 	.bits = 8|16|32|64,	/* is this used? */
 	.op = &null_anal,

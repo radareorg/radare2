@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdint.h>
 
 #include "zipint.h"
 
@@ -108,9 +109,9 @@ _zip_cdir_new(zip_uint64_t nentry, struct zip_error *error)
 	return NULL;
     }
 
-    if (nentry == 0)
+    if (nentry == 0) {
 	cd->entry = NULL;
-    else if ((cd->entry=(struct zip_entry *)malloc(sizeof(*(cd->entry))*nentry)) == NULL) {
+    } else if ((nentry > SIZE_MAX/sizeof(*(cd->entry))) || (cd->entry=(struct zip_entry *)malloc(sizeof(*(cd->entry))*(size_t)nentry)) == NULL) {
 	_zip_error_set(error, ZIP_ER_MEMORY, 0);
 	free(cd);
 	return NULL;

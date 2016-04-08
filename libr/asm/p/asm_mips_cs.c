@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2015 - pancake */
+/* radare2 - LGPL - Copyright 2013-2016 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -33,7 +33,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (n<1) {
 		strcpy (op->buf_asm, "invalid");
 		op->size = 4;
-		ret = -1;
 		goto beach;
 	} else ret = 4;
 	if (insn->size<1)

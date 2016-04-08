@@ -7,7 +7,7 @@ static int cmd_macro(void *data, const char *input) {
 	switch (*input) {
 	case ')': r_cmd_macro_break (&core->rcmd->macro, input+1); break;
 	case '-': r_cmd_macro_rm (&core->rcmd->macro, input+1); break;
-	case '*':
+	case '*': r_cmd_macro_meta (&core->rcmd->macro); break;
 	case '\0': r_cmd_macro_list (&core->rcmd->macro); break;
 	case '(':
 	case '?': {
@@ -39,7 +39,7 @@ static int cmd_macro(void *data, const char *input) {
 		for (i=0; buf[i]; i++) {
 			switch (buf[i]) {
 			case '(': j++; break;
-			case ')': j--; 
+			case ')': j--;
 				if (buf[i+1] =='(') {
 					buf[i+1] = 0;
 					mustcall = i+2;

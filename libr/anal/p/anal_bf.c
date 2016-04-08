@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2014 - pancake */
+/* radare2 - LGPL - Copyright 2011-2015 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -24,32 +24,33 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	r_strbuf_init (&op->esil);
 	op->size = 1;
 	switch (buf[0]) {
-	case '[': op->type = R_ANAL_OP_TYPE_CJMP;
-		  op->fail = addr+1;
-		  {
-			 const ut8 *p = buf + 1;
-			 int lev = 0, i = 1;
-			 while (i<len && *p) {
-				 if (*p == '[')
-					 lev++;
-				 if (*p == ']') {
-					 lev--;
-					 if (lev==-1) {
-						 dst = addr + (size_t)(p-buf);
-						 dst ++;
-						 op->jump = dst;
-						 r_strbuf_setf (&op->esil,
-							"pc,brk,=[1],brk,++=,"
-						 	"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
-						 break;
-					 }
-				 }
-				 p++;
-				 i++;
-			 }
-		  }
-	// ?1[ptr],pc=${NEW_PC
-	break;
+	case '[':
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->fail = addr+1;
+		{
+			const ut8 *p = buf + 1;
+			int lev = 0, i = 1;
+			len--;
+			while (i < len && *p) {
+				if (*p == '[')
+					lev++;
+				if (*p == ']') {
+					lev--;
+					if (lev==-1) {
+						dst = addr + (size_t)(p-buf);
+						dst ++;
+						op->jump = dst;
+						r_strbuf_setf (&op->esil,
+								"$$,brk,=[1],brk,++=,"
+								"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
+						break;
+					}
+				}
+				p++;
+				i++;
+			}
+		}
+		break;
 	case ']': op->type = R_ANAL_OP_TYPE_UJMP;
 		// XXX This is wrong esil
 		r_strbuf_set (&op->esil, "brk,--=,brk,[1],pc,=");
@@ -67,13 +68,11 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case '+':
 		op->size = countChar (buf, len, '+');
 		op->type = R_ANAL_OP_TYPE_ADD;
-		//r_strbuf_setf (&op->esil, "%d,ptr,[1],+,ptr,=[1]", op->size);
 		r_strbuf_setf (&op->esil, "%d,ptr,+=[1]", op->size);
 		break;
 	case '-':
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->size = countChar (buf, len, '-');
-		//r_strbuf_setf (&op->esil, "%d,ptr,[1],-,ptr,=[1]", op->size);
 		r_strbuf_setf (&op->esil, "%d,ptr,-=[1]", op->size);
 		break;
 	case '.':
@@ -97,39 +96,32 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int set_reg_profile(RAnal *anal) {
-	const char *p = \
-		"=pc	pc\n"
-		"=bp	brk\n"
-		"=sp	ptr\n"
-		"=a0	rax\n"
-		"=a1	rbx\n"
-		"=a2	rcx\n"
-		"=a3	rdx\n"
+static char *get_reg_profile(RAnal *anal) {
+	return strdup (
+		"=PC	pc\n"
+		"=BP	brk\n"
+		"=SP	ptr\n"
+		"=A0	rax\n"
+		"=A1	rbx\n"
+		"=A2	rcx\n"
+		"=A3	rdx\n"
 		"gpr	ptr	.32	0	0\n" // data pointer
 		"gpr	pc	.32	4	0\n" // program counter
 		"gpr	brk	.32	8	0\n" // brackets
 		"gpr	scr	.32	12	0\n" // screen
-		"gpr	kbd	.32	16	0\n"; // keyboard
-	return r_reg_set_profile_string (anal->reg, p);
+		"gpr	kbd	.32	16	0\n" // keyboard
+	);
 }
 
 struct r_anal_plugin_t r_anal_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_BF,
+	.arch = "bf",
 	.bits = 8,
-	.init = NULL,
-	.fini = NULL,
-	.esil = R_TRUE,
+	.esil = true,
 	.op = &bf_op,
-	.set_reg_profile = set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
+	.get_reg_profile = get_reg_profile,
 };
 
 #ifndef CORELIB

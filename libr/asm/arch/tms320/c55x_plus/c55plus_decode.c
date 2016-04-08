@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <r_types.h>
 
 #include "ins.h"
@@ -93,14 +94,13 @@ static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, st8 *ins,
 	return res;
 }
 
-static boolt check_arg(ut32 ins_bits, int *err_code)
-{
-	boolt res = 0;
+static bool check_arg(ut32 ins_bits, int *err_code) {
+	bool res = false;
 
 	if ((ins_bits <= 31) | (ins_bits >= 128 && ins_bits < 160)) {
-		res = 1;
+		res = true;
 	} else if (ins_bits >= 32 && ins_bits <= 252) {
-		res = 0;
+		res = false;
 	} else {
 		fprintf(stderr, "Invalid arg: %u\n", ins_bits);
 		*err_code = -1;
@@ -312,9 +312,9 @@ static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len
 	return res_decode;
 }
 
-static boolt is_hash(st32 hash_code)
+static bool is_hash(st32 hash_code)
 {
-	boolt ret;
+	bool ret;
 
 	switch(hash_code) {
 		case 0xE8:
@@ -443,8 +443,7 @@ static st8 *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_p
 	return ins_res;
 }
 
-st8 *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos)
-{
+st8 *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos) {
 	ut8 opcode, two_ins = 0;
 	ut32 next_ins1_pos, next_ins2_pos;
 	st32 hash_code;
@@ -510,14 +509,11 @@ st8 *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos)
 	return ins_res;
 }
 
-static boolt is_linear_circular(ut32 ins_bits)
-{
+static bool is_linear_circular(ut32 ins_bits) {
 	ut8 op, op2, op3;
-
 	op = (ins_bits >> 6) | 16 * (ins_bits & 3);
 	op2 = (ins_bits >> 2) & 0xF;
 	op3 = op2 & 0xF;
-
 	return (op == 26 || op == 30 || (op3 > 7 && op3 != 15));
 }
 

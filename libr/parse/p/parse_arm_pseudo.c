@@ -23,6 +23,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 2, "add",  "1 += 2"},
 		{ 3, "adds",  "1 = 2 + 3"},
 		{ 3, "addw",  "1 = 2 + 3"},
+		{ 3, "add.w",  "1 = 2 + 3"},
 		{ 0, "adf",  "1 = 2 + 3"},
 		{ 0, "adrp",  "1 = 2"},
 		{ 0, "and",  "1 = 2 & 3"},
@@ -57,6 +58,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "lsr",  "1 = 2 >> 3"},
 		{ 0, "mov",  "1 = 2"},
 		{ 0, "movz",  "1 = 2"},
+		{ 0, "movk",  "1 = 2"},
+		{ 0, "movn",  "1 = 2"},
 		{ 0, "vmov.i32",  "1 = 2"},
 		{ 0, "muf",  "1 = 2 * 3"},
 		{ 0, "mul",  "1 = 2 * 3"},
@@ -95,7 +98,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, NULL }
 	};
 	if (!newstr) {
-		return R_FALSE;
+		return false;
 	}
 
 	for (i=0; ops[i].op != NULL; i++) {
@@ -107,10 +110,13 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			for (j=k=0; ops[i].str[j]!='\0'; j++, k++) {
 				if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
-					const char *w = argv[ ops[i].str[j]-'0' ];
-					if (w != NULL) {
-						strcpy (newstr+k, w);
-						k += strlen(w)-1;
+					int idx = ops[i].str[j]-'0';
+					if (idx<argc) {
+						const char *w = argv[idx];
+						if (w) {
+							strcpy (newstr + k, w);
+							k += strlen (w) - 1;
+						}
 					}
 				} else newstr[k] = ops[i].str[j];
 			}
@@ -121,7 +127,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			}
 			r_str_replace_char (newstr, '{', '(');
 			r_str_replace_char (newstr, '}', ')');
-			return R_TRUE;
+			return true;
 		}
 	}
 
@@ -133,7 +139,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	}
 	r_str_replace_char (newstr, '{', '(');
 	r_str_replace_char (newstr, '}', ')');
-	return R_FALSE;
+	return false;
 }
 
 static int parse(RParse *p, const char *data, char *str) {
@@ -142,10 +148,10 @@ static int parse(RParse *p, const char *data, char *str) {
 	char *buf, *ptr, *optr;
 
 	if (len>=sizeof (w0))
-		return R_FALSE;
+		return false;
 	// malloc can be slow here :?
 	if ((buf = malloc (len+1)) == NULL)
-		return R_FALSE;
+		return false;
 	memcpy (buf, data, len+1);
 
 	if (*buf) {
@@ -166,7 +172,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			if (!ptr) {
 				eprintf ("Unbalanced bracket\n");
 				free(buf);
-				return R_FALSE;
+				return false;
 			}
 			ptr = strchr (ptr, ',');
 			if (ptr) {
@@ -203,10 +209,10 @@ static int parse(RParse *p, const char *data, char *str) {
 		free (s);
 	}
 	free (buf);
-	return R_TRUE;
+	return true;
 }
 
-static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
+static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RAnalVar *var;
 	RListIter *iter;
 	char oldstr[64], newstr[64];
@@ -215,7 +221,7 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 
 	if (!p->varlist) {
                 free (tstr);
-		return R_FALSE;
+		return false;
         }
 
 	vars = p->varlist (p->anal, f, 'v');
@@ -286,20 +292,16 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	} else {
 		// TOO BIG STRING CANNOT REPLACE HERE
 		free (tstr);
-		return R_FALSE;
+		return false;
 	}
 	free (tstr);
-	return R_TRUE;
+	return true;
 }
 
-struct r_parse_plugin_t r_parse_plugin_arm_pseudo = {
+RParsePlugin r_parse_plugin_arm_pseudo = {
 	.name = "arm.pseudo",
 	.desc = "ARM/ARM64 pseudo syntax",
-	.init = NULL,
-	.fini = NULL,
 	.parse = parse,
-	.assemble = NULL,
-	.filter = NULL,
 	.varsub = &varsub,
 };
 

@@ -787,7 +787,7 @@ struct winedbg_arm_insn* arm_new() {
 	struct winedbg_arm_insn *ret;
 	ret = malloc(sizeof(struct winedbg_arm_insn));
 	ret->pc = 0;
-	ret->thumb = R_FALSE;
+	ret->thumb = false;
 	ret->str_hex = NULL;
 	ret->str_asm = NULL;
 	return ret;

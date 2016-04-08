@@ -1,25 +1,20 @@
-/* radare - LGPL - Copyright 2008-2014 pancake, inisider */
+/* radare - LGPL - Copyright 2008-2015 pancake, inisider */
 
 #include <r_util.h>
 
 #include "coff.h"
 
-int r_coff_supported_arch (const ut8 *buf) {
+bool r_coff_supported_arch (const ut8 *buf) {
 	ut16 arch = *(ut16*)buf;
-	int ret;
-
 	switch (arch) {
 	case COFF_FILE_MACHINE_AMD64:
 	case COFF_FILE_MACHINE_I386:
 	case COFF_FILE_MACHINE_H8300:
 	case COFF_FILE_TI_COFF:
-		ret = R_TRUE;
-		break;
+		return true;
 	default:
-		ret = R_FALSE;
+		return false;
 	}
-
-	return ret;
 }
 
 int r_coff_is_stripped (struct r_bin_coff_obj *obj) {
@@ -55,6 +50,7 @@ static int r_coff_rebase_sym (struct r_bin_coff_obj *obj, RBinAddr *addr, struct
 RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	int i;
+	if (!addr) return NULL;
 
 	/* Simplest case, the header provides the entrypoint address */
 	if (obj->hdr.f_opthdr) {
@@ -101,7 +97,7 @@ static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj) {
 	if (obj->hdr.f_magic == COFF_FILE_TI_COFF)
 		(void)r_buf_fread_at (obj->b, R_BUF_CUR, (ut8 *)&obj->target_id, obj->endian? "S": "s", 1);
 
-	return R_TRUE;
+	return true;
 }
 
 static int r_bin_coff_init_opt_hdr(struct r_bin_coff_obj *obj) {
@@ -138,14 +134,14 @@ static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf) {
 	obj->size = buf->length;
 	if (!r_buf_set_bytes (obj->b, buf->buf, obj->size)){
 		r_buf_free (obj->b);
-		return R_FALSE;
+		return false;
 	}
 	r_bin_coff_init_hdr(obj);
 	r_bin_coff_init_opt_hdr(obj);
 
 	r_bin_coff_init_scn_hdr(obj);
 	r_bin_coff_init_symtable(obj);
-	return R_TRUE;
+	return true;
 }
 
 void r_bin_coff_free(struct r_bin_coff_obj *obj) {

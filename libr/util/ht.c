@@ -179,8 +179,11 @@ R_API void ht_(free)(RHT *ht) {
 }
 
 R_API void *ht_(lookup)(RHT *ht, utH hash) {
-	RHTE *entry = ht_(search) (ht, hash);
-	return entry? entry->data : NULL;
+	if (ht) {
+		RHTE *entry = ht_(search) (ht, hash);
+		return entry? entry->data : NULL;
+	}
+	return NULL;
 }
 
 /**
@@ -189,7 +192,7 @@ R_API void *ht_(lookup)(RHT *ht, utH hash) {
  * Note that insertion may rearrange the table on a resize or rehash,
  * so previously found hash_entries are no longer valid after this function.
  */
-R_API boolt ht_(insert) (RHT *ht, utH hash, void *data) {
+R_API bool ht_(insert) (RHT *ht, utH hash, void *data) {
 	utH hash_address;
 
 	if (ht->entries >= ht->max_entries)

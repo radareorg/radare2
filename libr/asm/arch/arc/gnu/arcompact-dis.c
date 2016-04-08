@@ -31,12 +31,12 @@
 #include "arc-dis.h"
 #include "arcompact-dis.h"
 #include "elf-bfd.h"
+#include "r_types.h"
 
   /*
-    warning: implicit declaration of function `printf_unfiltered'
+    warning: implicit declaration of function `eprintf'
     if dbg is 1 then this definition is required
   */
-  void printf_unfiltered (const char *,...);
 static bfd_vma bfd_getm32 (unsigned int);
 static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
 
@@ -47,19 +47,9 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
 
   /*
     Ravi:
-    : undefined reference to `printf_unfiltered'
+    : undefined reference to `eprintf'
     if dbg is 1 then this definition is required
   */
-#if dbg
-  void printf_unfiltered (const char *,...)
- {
-   va_list args;
-   va_start (args, format);
-   vfprintf_unfiltered (gdb_stdout, format, args);
-   va_end (args);
- }
-#endif
-
 #undef _NELEM
 #define _NELEM(ary)	(sizeof(ary) / sizeof(ary[0]))
 
@@ -2714,7 +2704,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldC = FIELDD9(state->words[0]);
       fieldCisReg = 0;
 
-      if (dbg) printf_unfiltered("6:b reg %d %d c 0x%x  \n",
+      if (dbg) eprintf("6:b reg %d %d c 0x%x  \n",
 				 fieldBisReg,fieldB,fieldC);
       state->_ea_present = 1;
       state->_offset = fieldC;
@@ -2762,7 +2752,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldAisReg=0;
 
       /* [B,A offset] */
-      if (dbg) printf_unfiltered("7:b reg %d %x off %x\n",
+      if (dbg) eprintf("7:b reg %d %x off %x\n",
 				 fieldBisReg,fieldB,fieldA);
       state->_ea_present = 1;
       state->_offset = fieldA;

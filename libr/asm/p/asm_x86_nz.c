@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2015 - pancake */
+/* Copyright (C) 2008-2016 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -77,12 +77,22 @@ static int bits8 (const char *p) {
 	return -1;
 }
 
+static bool is64reg(const char *str) {
+	int i;
+	const char *regs[] = { "r8", "r9", "r10","r11", "r12", "r13", "r14", "r15", NULL };
+	for (i=0; regs[i]; i++)
+		if (!strcmp (regs[i], str))
+			return true;
+	return false;
+}
+
 static ut8 getreg(const char *str) {
 	int i;
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL };
 //	const char *regs16[] = { "al", "ah", "cl", "ch", "dl", "dh", "bl", "bh", NULL };
 	const char *regs16[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL };
 	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL };
+	const char *regs64_2[] = { "r8", "r9", "r10","r11", "r12", "r13", "r14", "r15", NULL };
 	if (!str)
 		return 0xff;
 	for (i=0; regs[i]; i++)
@@ -90,6 +100,9 @@ static ut8 getreg(const char *str) {
 			return i;
 	for (i=0; regs64[i]; i++)
 		if (!strncmp (regs64[i], str, strlen (regs64[i])))
+			return i;
+	for (i=0; regs64_2[i]; i++)
+		if (!strcmp (regs64_2[i], str))
 			return i;
 	for (i=0; regs16[i]; i++)
 		if (!strncmp (regs16[i], str, strlen (regs16[i])))
@@ -103,15 +116,8 @@ static int isnum(RAsm *a, const char *str) {
 	return str && (*str == '-' || (*str >= '0' && *str <= '9'));
 }
 
-static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
-	ut64 offset = a->pc;
-	ut8 t, *data = ao->buf;
-	char *arg, op[128];
-	int l = 0;
-
-	strncpy (op, str, sizeof (op)-1);
-	op[sizeof (op)-1] = '\0';
-	arg = strstr (op, "dword ptr");
+static int hasDword (char *op) {
+	char *arg = strstr (op, "dword ptr");
 	if (arg) {
 		const int dword_len = strlen ("dword ptr");
 		memmove (arg, arg+dword_len, strlen (arg+dword_len)+1);
@@ -121,6 +127,62 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		const int dword_len = strlen ("dword ");
 		memmove (arg, arg+dword_len, strlen (arg+dword_len)+1);
 	}
+	return 0;
+}
+
+static int hasByte (char *op) {
+	char *arg = strstr (op, "byte ptr");
+	if (arg) {
+		const int dword_len = strlen ("byte ptr");
+		memmove (arg, arg+dword_len, strlen (arg+dword_len)+1);
+		return 1;
+	}
+	arg = strstr (op, "byte ");
+	if (arg) {
+		const int dword_len = strlen ("byte ");
+		memmove (arg, arg+dword_len, strlen (arg+dword_len)+1);
+		return 1;
+	}
+	return 0;
+}
+
+static int assemble16(RAsm *a, RAsmOp *ao, const char *str) {
+	int l = 0;
+	ut8 *data = ao->buf;
+	if (!strcmp (str, "nop")) {
+		data[l++] = 0x90;
+	} else if (!strcmp (str, "ret")) {
+		data[l++] = 0xc3;
+	} else if (!strcmp (str, "int3")) {
+		data[l++] = 0xcc;
+	} else if (!strncmp (str, "xor al,", 7)) {
+		// just to make the test happy, this needs much more work
+		const char *comma = strchr (str, ',');
+		if (comma) {
+			int n = getnum (a, comma+1);
+			data[l++] = 0x34;
+			data[l++] = n;
+		}
+	}
+	return l;
+}
+
+static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
+	int wordsize = 0;
+	ut64 offset = a->pc;
+	ut8 t, *data = ao->buf;
+	char *arg, op[128];
+	int l = 0;
+
+	if (a->bits == 16) {
+		return assemble16 (a, ao, str);
+	}
+
+	strncpy (op, str, sizeof (op)-1);
+	op[sizeof (op)-1] = '\0';
+
+	if (hasDword (op)) wordsize = 4;
+	if (hasByte (op)) wordsize = 1;
 
 	if (!memcmp (op, "ret ", 4) || !memcmp (op, "retn ", 5)) {
 		int n = getnum (a, op+4);
@@ -141,6 +203,10 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		data[l++] = 0xf3;
 		memmove (op, op+4, strlen (op+4)+1);
 	}
+
+	if (!strcmp (op, "scasb")) { data[l++] = 0xae; return l; }
+	if (!strcmp (op, "scasw")) { data[l++] = 0x66; return l; }
+	if (!strcmp (op, "scasd")) { data[l++] = 0xaf; return l; }
 
 	if (!strcmp (op, "movsb")) { data[l++] = 0xa4; return l; }
 	if (!strcmp (op, "movsw")) { data[0] = 0x66; data[1] = 0xa5; return 2; }
@@ -163,6 +229,15 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	if (!strcmp (op, "ud2")) {
 		data[l++] = 0x0f;
 		data[l++] = 0x0b;
+		return l;
+	}
+	if (!strncmp (op, "neg ", 4)) {
+		const char *arg = op + 4;
+		int arg0 = getreg (arg);
+		if (a->bits == 64 && *arg == 'r')
+			data[l++] = 0x48;
+		data[l++] = 0xf7;
+		data[l++] = 0xd8 | arg0;
 		return l;
 	}
 	if (!strcmp (op, "rdtsc")) {
@@ -657,6 +732,9 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					eprintf ("Invalid register name (%s)\n", arg);
 					return 0;
 				}
+				if (is64reg(arg)) {
+					data[l++] = 0x41;
+				}
 				data[l++] = ch;
 				return l;
 			}
@@ -732,6 +810,9 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			if (dst == 0) {
 				ut8 r = getreg (arg);
 				if (r==(ut8)-1) return 0;
+				if (is64reg(arg)) {
+					data[l++] = 0x41;
+				}
 				data[l++] = r | 0x58;
 				return l;
 			}
@@ -788,9 +869,21 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				pfx = 0;
 			} else pfx = 0xc0;
 			arg0 = getreg (arg);
+			if (!arg2) {
+				return -1;
+			}
 			if (a->bits==64) {
-				if (*arg=='r')
-					data[l++] = 0x48;
+				if (*arg=='r' || *arg2=='r') {
+					bool a = is64reg (arg);
+					bool b = is64reg (arg2);
+					if (a) {
+						data[l++] = b? 0x4d: 0x49;
+					} else {
+						data[l++] = b? 0x4c: 0x48;
+					}
+				}
+				if (*arg=='r') {
+				}
 				data[l++] = 0x31; // NOTE: 0x33 is also a valid encoding for xor.. polimorfi?
 				data[l++] = arg0 | (getreg(arg2)<<3) | pfx;
 			} else {
@@ -995,7 +1088,6 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 						data[l++] = 0x24;
 					} else if (r==5) { // EBP
 						data[l++] = getreg (arg)<<3 | r | 0x40;
-						data[l++] = 0;
 					} else data[l++] = getreg (arg) | r | 0x40;
 					data[l++] = r_num_math (NULL, delta) * N;
 				} else {
@@ -1080,14 +1172,22 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				} else {
 					if (argk) {
 						int r = getreg (arg);
-						data[l++] = 0xc7;
-						if (r==4) { //ESP
-							data[l++] = 0x04;
-							data[l++] = 0x24;
-						} else if (r==5) { // EBP
-							data[l++] = 0x75;
-							data[l++] = 0;
-						} else  data[l++] = r;
+						if (wordsize == 1) {
+							// byte ptr
+							data[l++] = 0xc6;
+							data[l++] = r;
+							data[l++] = getnum (a, arg2);
+							return l;
+						} else {
+							data[l++] = 0xc7;
+							if (r==4) { //ESP
+								data[l++] = 0x04;
+								data[l++] = 0x24;
+							} else if (r==5) { // EBP
+								data[l++] = 0x75;
+								data[l++] = 0;
+							} else  data[l++] = r;
+						}
 #define is16reg(x) (x[1]=='l'||x[1]=='h')
 					} else {
 						if (is16reg (arg)) {
@@ -1289,6 +1389,14 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 		} else
 		if (!strcmp (op, "nop")) {
 			data[l++] = 0x90;
+		} else
+		if (!strcmp (op, "clac")) {
+			memcpy (data+l, "\x0f\x01\xca", 3);
+			l += 3;
+		} else
+		if (!strcmp (op, "stac")) {
+			memcpy (data+l, "\x0f\x01\xcb", 3);
+			l += 3;
 		}
 		return l;
 	}
@@ -1301,7 +1409,7 @@ RAsmPlugin r_asm_plugin_x86_nz = {
 	.desc = "x86 handmade assembler",
 	.license = "LGPL3",
 	.arch = "x86",
-	.bits = 32|64,
+	.bits = 16|32|64,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = NULL,

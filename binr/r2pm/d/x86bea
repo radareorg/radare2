@@ -1,0 +1,19 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/radare/radare2-extras"
+R2PM_DESC "[r2-asm-anal] X86 BeaEngine Disassembler"
+
+R2PM_INSTALL() {
+	./configure --prefix="${R2PM_PREFIX}"
+	cd libr
+	make clean
+	make bea
+	make bea-install HOMEDEST="${R2PM_PLUGDIR}
+}
+
+R2PM_UNINSTALL() {
+	cd baleful
+	rm -f "${R2PM_PLUGDIR}"/*bea*
+}
+
+R2PM_END

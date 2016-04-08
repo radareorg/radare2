@@ -12,12 +12,12 @@ typedef struct dso_json_info_t {
 } DsoJsonInfo;
 
 typedef enum {
-	DSO_JSON_NULL = 0x00,
-	DSO_JSON_NUM = 0x01,
-	DSO_JSON_STR = 0x02,
-	DSO_JSON_LIST = 0x03,
-	DSO_JSON_DICT = 0x04,
-	DSO_JSON_DICT_ENTRY = 0x05,
+	DSO_JSON_NULL = 1,
+	DSO_JSON_NUM,
+	DSO_JSON_STR,
+	DSO_JSON_LIST,
+	DSO_JSON_DICT,
+	DSO_JSON_DICT_ENTRY,
 	DSO_JSON_END = 0xFF,
 } DSO_JSON_TYPES;
 
@@ -59,8 +59,7 @@ typedef struct  basic_json_t {
 
 R_API ut8  dso_json_char_needs_hexing ( ut8 b);
 
-R_API void dso_json_obj_del (void *dso_objv);
-
+R_API void dso_json_obj_del (DsoJsonObj *dso_obj);
 R_API char * dso_json_obj_to_str (DsoJsonObj * dso_obj);
 R_API DsoJsonObj * dso_json_null_new (void);
 R_API void dso_json_null_free (void *x);
@@ -87,7 +86,7 @@ R_API int dso_json_dict_entry_value_set_empty_list (DsoJsonObj *entry_obj);
 R_API int dso_json_dict_entry_value_set_obj (DsoJsonObj *entry_obj, DsoJsonObj *obj);
 
 R_API DsoJsonObj * dso_json_list_new (void);
-R_API void dso_json_list_free (void *y);
+R_API void dso_json_list_free (DsoJsonObj *x);
 R_API int dso_json_list_append (DsoJsonObj *list_obj, DsoJsonObj *y);
 R_API int dso_json_list_append_str (DsoJsonObj *list_obj, char *y);
 R_API int dso_json_list_append_num (DsoJsonObj *list_obj, ut64 y);

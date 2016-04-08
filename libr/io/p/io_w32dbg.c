@@ -38,7 +38,7 @@ static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
 
 static int w32dbg_write_at(RIOW32Dbg *dbg, const ut8 *buf, int len, ut64 addr) {
 	DWORD ret;
-    return 0 != WriteProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, len, &ret)? len: 0;
+	return 0 != WriteProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, len, &ret)? len: 0;
 }
 
 static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
@@ -47,12 +47,12 @@ static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	if (!strncmp (file, "attach://", 9))
-		return R_TRUE;
-	return (!strncmp (file, "w32dbg://", 9))? R_TRUE: R_FALSE;
+		return true;
+	return (!strncmp (file, "w32dbg://", 9))? true: false;
 }
 
 static int __attach (RIOW32Dbg *dbg) {
-	eprintf ("---> attach to %d\n", dbg->pid);
+	eprintf ("Attaching io to pid %d\n", dbg->pid);
 	dbg->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	if (dbg->pi.hProcess == NULL)
 		return -1;
@@ -83,7 +83,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 
 static int __close(RIODesc *fd) {
 	// TODO: detach
-	return R_TRUE;
+	return true;
 }
 
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
@@ -94,16 +94,16 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		int pid = atoi (cmd+4);
 		if (pid != 0)
 			iop->pid = iop->tid = pid;
-		io->printf ("\n");
+		io->cb_printf ("\n");
 		//printf("PID=%d\n", io->fd);
 		return pid;
 	} else eprintf ("Try: '=!pid'\n");
-	return R_TRUE;
+	return true;
 }
 
 static int __init(struct r_io_t *io) {
 //	eprintf ("w32dbg init\n");
-	return R_TRUE;
+	return true;
 }
 
 // TODO: rename w32dbg to io_w32dbg .. err io.w32dbg ??
@@ -120,7 +120,7 @@ RIOPlugin r_io_plugin_w32dbg = {
 	.system = __system,
 	.init = __init,
 	.write = __write,
-	.isdbg = R_TRUE
+	.isdbg = true
 };
 #else
 struct r_io_plugin_t r_io_plugin_w32dbg = {

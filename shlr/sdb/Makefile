@@ -4,8 +4,6 @@ VALADIR=bindings/vala
 PWD=$(shell pwd)
 PFX=${DESTDIR}${PREFIX}
 HGFILES=`find sdb-${SDBVER} -type f | grep -v hg | grep -v swp`
-VAPIDIR=$(PFX)/share/vala/vapi/
-MANDIR=${PFX}/share/man/man1
 MKDIR=mkdir
 
 all: pkgconfig src/sdb_version.h
@@ -66,78 +64,79 @@ w32dist:
 	rm -rf sdb-${SDBVER}
 
 install-dirs:
-	$(INSTALL_DIR) ${MANDIR} ${PFX}/lib/pkgconfig ${PFX}/bin 
-	$(INSTALL_DIR) ${PFX}/share/vala/vapi ${PFX}/include/sdb
+	$(INSTALL_DIR) ${DESTDIR}${MANDIR} ${DESTDIR}${LIBDIR}/pkgconfig ${DESTDIR}${BINDIR} 
+	$(INSTALL_DIR) ${DESTDIR}${DATADIR}/vala/vapi ${DESTDIR}${INCDIR}/sdb
 
 INCFILES=src/sdb.h src/sdb_version.h src/cdb.h src/ht.h src/types.h
 INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h
 
 install: pkgconfig install-dirs
-	$(INSTALL_MAN) src/sdb.1 ${MANDIR}
-	$(INSTALL_LIB) src/libsdb.${EXT_SO} ${PFX}/lib
-	$(INSTALL_DATA) src/libsdb.a ${PFX}/lib
+	$(INSTALL_MAN) src/sdb.1 ${DESTDIR}${MANDIR}
+	$(INSTALL_LIB) src/libsdb.${EXT_SO} ${DESTDIR}${LIBDIR}
+	$(INSTALL_DATA) src/libsdb.a ${DESTDIR}${LIBDIR}
 	-if [ "$(EXT_SO)" != "$(SOVER)" ]; then \
-	  cd $(PFX)/lib ; \
+	  cd ${DESTDIR}${LIBDIR} ; \
 	  mv libsdb.$(EXT_SO) libsdb.$(SOVER) ; \
 	  ln -s libsdb.$(SOVER) libsdb.$(EXT_SO) ; \
+	  ln -s libsdb.$(SOVER) libsdb.$(EXT_SO).$(SOVERSION) ; \
 	fi
-	$(INSTALL_DATA) $(INCFILES) ${PFX}/include/sdb
-	$(INSTALL_PROGRAM) src/sdb ${PFX}/bin
+	$(INSTALL_DATA) $(INCFILES) ${DESTDIR}${INCDIR}/sdb
+	$(INSTALL_PROGRAM) src/sdb ${DESTDIR}${BINDIR}
 ifeq ($(BUILD_MEMCACHE),1)
-	$(INSTALL_DATA) memcache/libmcsdb.a ${PFX}/lib
-	$(INSTALL_DATA) memcache/mcsdb.h ${PFX}/include/sdb
-	$(INSTALL_PROGRAM) memcache/mcsdbd ${PFX}/bin
-	$(INSTALL_PROGRAM) memcache/mcsdbc ${PFX}/bin
-	$(INSTALL_DATA) pkgconfig/mcsdb.pc ${PFX}/lib/pkgconfig
+	$(INSTALL_DATA) memcache/libmcsdb.a ${DESTDIR}${LIBDIR}
+	$(INSTALL_DATA) memcache/mcsdb.h ${DESTDIR}${INCDIR}/sdb
+	$(INSTALL_PROGRAM) memcache/mcsdbd ${DESTDIR}${BINDIR}
+	$(INSTALL_PROGRAM) memcache/mcsdbc ${DESTDIR}${BINDIR}
+	$(INSTALL_DATA) pkgconfig/mcsdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
 endif
-	$(INSTALL_DATA) pkgconfig/sdb.pc ${PFX}/lib/pkgconfig
+	$(INSTALL_DATA) pkgconfig/sdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
 ifneq (${HAVE_VALA},)
-	$(INSTALL_DATA) ${VALADIR}/sdb.vapi ${PFX}/share/vala/vapi
-	cd ${VALADIR}/types && ${MAKE} install PFX=${PFX}
+	$(INSTALL_DATA) ${VALADIR}/sdb.vapi ${DESTDIR}${DATADIR}/vala/vapi
+	cd ${VALADIR}/types && ${MAKE} install DESTDIR=${DESTDIR} PREFIX=${PREFIX}
 ifeq ($(BUILD_MEMCACHE),1)
-	$(INSTALL_DATA) ${VALADIR}/mcsdb.vapi ${PFX}/share/vala/vapi
+	$(INSTALL_DATA) ${VALADIR}/mcsdb.vapi ${DESTDIR}${DATADIR}/vala/vapi
 endif
 endif
 
 deinstall uninstall:
-	rm -rf ${PFX}/include/sdb
-	rm -f ${PFX}/bin/sdb
-	rm -f ${PFX}/bin/mcsdbc
-	rm -f ${PFX}/bin/mcsdbd
-	rm -f ${PFX}/lib/libsdb.*
-	rm -f ${PFX}/lib/libmcsdb.a
-	rm -f ${PFX}/lib/pkgconfig/sdb.pc
-	rm -f ${PFX}/lib/pkgconfig/mcsdb.pc
-	rm -f ${MANDIR}/sdb.1
+	rm -rf ${DESTDIR}${INCDIR}/sdb
+	rm -f ${DESTDIR}${BINDIR}/sdb
+	rm -f ${DESTDIR}${BINDIR}/mcsdbc
+	rm -f ${DESTDIR}${BINDIR}/mcsdbd
+	rm -f ${DESTDIR}${LIBDIR}/libsdb.*
+	rm -f ${DESTDIR}${LIBDIR}/libmcsdb.a
+	rm -f ${DESTDIR}${LIBDIR}/pkgconfig/sdb.pc
+	rm -f ${DESTDIR}${LIBDIR}/pkgconfig/mcsdb.pc
+	rm -f ${DESTDIR}${MANDIR}/sdb.1
 ifneq (${HAVE_VALA},)
-	rm -f ${PFX}/share/vala/vapi/sdb.vapi 
-	rm -f ${PFX}/share/vala/vapi/mcsdb.vapi 
-	cd ${VALADIR}/types && ${MAKE} uninstall PFX=${PFX}
+	rm -f ${DESTDIR}${DATADIR}/vala/vapi/sdb.vapi
+	rm -f ${DESTDIR}${DATADIR}/vala/vapi/mcsdb.vapi
+	cd ${VALADIR}/types && ${MAKE} uninstall DESTDIR=${DESTDIR} PREFIX=${PREFIX}
 endif
 
 symstall: install-dirs
 	cd src ; for a in libsdb.* ; do \
-		ln -fs ${PWD}/src/$$a ${PFX}/lib/$$a ; done
-	ln -fs ${PWD}/src/sdb.1 ${MANDIR}/sdb.1
-	ln -fs ${PWD}/src/sdb ${PFX}/bin
-	ln -fs ${PWD}/src/sdb.h ${PFX}/include/sdb
-	ln -fs ${PWD}/src/sdb_version.h ${PFX}/include/sdb
-	ln -fs ${PWD}/src/cdb.h ${PFX}/include/sdb
-	ln -fs ${PWD}/src/ht.h ${PFX}/include/sdb
-	ln -fs ${PWD}/src/types.h ${PFX}/include/sdb
-	ln -fs ${PWD}/src/ls.h ${PFX}/include/sdb
-	ln -fs ${PWD}/src/cdb_make.h ${PFX}/include/sdb
-	ln -fs ${PWD}/src/buffer.h ${PFX}/include/sdb
-	ln -fs ${PWD}/src/config.h ${PFX}/include/sdb
-	ln -fs ${PWD}/bindings/vala/sdb.pc ${PFX}/lib/pkgconfig
-	ln -fs ${PWD}/bindings/vala/mcsdb.pc ${PFX}/lib/pkgconfig
+		ln -fs ${PWD}/src/$$a ${DESTDIR}${LIBDIR}/$$a ; done
+	ln -fs ${PWD}/src/sdb.1 ${DESTDIR}${MANDIR}/sdb.1
+	ln -fs ${PWD}/src/sdb ${DESTDIR}${BINDIR}
+	ln -fs ${PWD}/src/sdb.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/src/sdb_version.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/src/cdb.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/src/ht.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/src/types.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/src/ls.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/src/cdb_make.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/src/buffer.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/src/config.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/bindings/vala/sdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
+	ln -fs ${PWD}/bindings/vala/mcsdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
 ifneq (${HAVE_VALA},)
-	$(MKDIR) -p $(VAPIDIR)
-	ln -fs ${PWD}/bindings/vala/sdb.vapi $(VAPIDIR)
-	ln -fs ${PWD}/bindings/vala/mcsdb.vapi $(VAPIDIR)
-	ln -fs ${PWD}/bindings/vala/sdb.vapi $(VAPIDIR)
-	ln -fs ${PWD}/bindings/vala/mcsdb.vapi $(VAPIDIR)
-	cd ${VALADIR}/types && ${MAKE} symstall PFX=${PFX}
+	$(MKDIR) -p ${DESTDIR}$(VAPIDIR)
+	ln -fs ${PWD}/bindings/vala/sdb.vapi ${DESTDIR}$(VAPIDIR)
+	ln -fs ${PWD}/bindings/vala/mcsdb.vapi ${DESTDIR}$(VAPIDIR)
+	ln -fs ${PWD}/bindings/vala/sdb.vapi ${DESTDIR}$(VAPIDIR)
+	ln -fs ${PWD}/bindings/vala/mcsdb.vapi ${DESTDIR}$(VAPIDIR)
+	cd ${VALADIR}/types && ${MAKE} symstall DESTDIR=${DESTDIR} PREFIX=${PREFIX}
 endif
 
 # windows compiler prefix

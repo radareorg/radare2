@@ -1,4 +1,5 @@
-/* c55plus - LGPL - Copyright 2013 - th0rpe */
+/* c55plus - LGPL - Copyright 2013-2015 - th0rpe */
+/* this .c is included , not compiled */
 #include "hashvector.h"
 
 extern st32 get_hashfunc_01(st32 A1, st32 A2);
@@ -93,7 +94,7 @@ extern st32 get_hashfunc_89(st32 A1, st32 A2);
 extern st32 get_hashfunc_90(st32 A1, st32 A2);
 extern st32 get_hashfunc_91(st32 A1, st32 A2);
 
-HASHCODE_ENTRY_T ins_hash[] = {
+static HASHCODE_ENTRY_T ins_hash[] = {
 {0x223,
 get_hashfunc_02},
 {0x223,

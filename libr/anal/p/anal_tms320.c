@@ -1,5 +1,5 @@
 /*
- * TMS320 disassembly analizer
+ * TMS320 disassembly analyzer
  *
  * Written by Ilya V. Matveychikov <i.matveychikov@milabs.ru>
  *
@@ -18,7 +18,7 @@ int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 
-static boolt match(const char * str, const char * token) {
+static bool match(const char * str, const char * token) {
 	return !strncasecmp(str, token, strlen(token));
 }
 
@@ -100,7 +100,7 @@ static int tms320_fini(void * unused) {
 
 struct r_anal_plugin_t r_anal_plugin_tms320 = {
 	.name = "tms320",
-	.arch = R_SYS_ARCH_TMS320,
+	.arch = "tms320",
 	.bits = 32,
 	.desc = "TMS320 DSP family code analisys plugin",
 	.init = tms320_init,

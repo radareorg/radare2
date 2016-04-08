@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 - pancake */
+/* radare - LGPL - Copyright 2010-2015 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -7,8 +7,7 @@
 #include <r_anal.h>
 
 /* Return a mapping from the register number i.e. $0 .. $31 to string name */
-static const char* mips_reg_decode(unsigned reg_num)
-{
+static const char* mips_reg_decode(unsigned reg_num) {
 /* See page 36 of "See Mips Run Linux, 2e, D. Sweetman, 2007"*/
 	static const char *REGISTERS[32] = {
 		"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
@@ -50,16 +49,16 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 	optype = (b[0]>>2);
 
 	if (optype == 0) {
-#if 0
+/*
 	R-TYPE
 	======
-	opcode (6)  rs (5)  rt (5)  rd (5)  sa (5)  function (6) 
+	opcode (6)  rs (5)  rt (5)  rd (5)  sa (5)  function (6)
 	rs = register source
 	rs = register target
 	rd = register destination
-	sa = 
+	sa =
 	fu =
-		
+
 		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
 		 1111 1111  1111 1111  1111 1111  1111 1111
 		 \_op__/\_rs__/\_rt_/  \_rd_/\_sa__/\_fun_/
@@ -67,7 +66,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		 b[0]>>2  |  (b[1]&31)   |      |   b[3]&63
 		          |          (b[2]>>3)  |
 		  (b[0]&3)<<3)+(b[1]>>5)   (b[2]&7)+(b[3]>>6)
-#endif
+*/
 #if WIP
 		int rs = ((b[0]&3)<<3) + (b[1]>>5);
 		int rt = b[1]&31;
@@ -149,16 +148,16 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 			break;
 		}
 		//family = 'R';
-	} else 
+	} else
 	if ((optype & 0x3e) == 2) {
-#if 0
+/*
 		// J-TYPE
 		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
 		 1111 1111  1111 1111  1111 1111  1111 1111
 		 \_op__/\______address____________________/
                    |             |
                (b[0]>>2)  ((b[0]&3)<<24)+(b[1]<<16)+(b[2]<<8)+b[3]
-#endif
+*/
 		// FIXME: what happens when addr is using a virtual map?
 		// ANS: address will be E 0x000000..0x0ffffffc
 		//      but addr could be anywhere
@@ -184,23 +183,22 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = page_hack + address;
 			op->delay = 1;
-			r_strbuf_setf (&op->esil, "pc=0x%08x", address);
+			r_strbuf_setf (&op->esil, "0x%08x,pc,=", address);
 			break;
 		case 3: // jal
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = page_hack + address;
 			op->fail = addr+8;
 			op->delay = 1;
-			r_strbuf_setf (&op->esil, "lr=pc+4,pc=0x%08x", address);
+			r_strbuf_setf (&op->esil, "pc,lr,=,0x%08x,pc,=", (ut32)address);
 			break;
 		}
 		//family = 'J';
-	} else 
-	if ((optype & 0x10) == 0x1c) {
-#if 0
+	} else if ((optype & 0x10) == 0x1c) {
+/*
 	C-TYPE
 	======
-	opcode (6) format (5) ft (5) fs (5) fd (5) function (6) 
+	opcode (6) format (5) ft (5) fs (5) fd (5) function (6)
 
 		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
 		 1111 1111  1111 1111  1111 1111  1111 1111
@@ -209,7 +207,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		 b[0]>>2  |  (b[1]&31)   |      |   b[3]&63
 		          |          (b[2]>>3)  |
 		  (b[0]&3)<<3)+(b[1]>>5)   (b[2]&7)+(b[3]>>6)
-#endif
+*/
 #if WIP
 		int fmt = ((b[0]&3)<<3) + (b[1]>>5);
 		int ft = (b[1]&31);
@@ -230,11 +228,11 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		// ....
 		}
 	} else {
-#if 0
+/*
 	I-TYPE
 	======
    	all opcodes but 000000 000001x and 0100xx
-	opcode (6)  rs (5)  rt (5) immediate (16) 
+	opcode (6)  rs (5)  rt (5) immediate (16)
 
 		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
 		 1111 1111  1111 1111  1111 1111  1111 1111
@@ -243,7 +241,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		 b[0]>>2  |  (b[1]&31)          |
 		          |                     |
 		 ((b[0]&3)<<3)+(b[1]>>5)   (b[2]<<8)+b[3]
-#endif
+*/
 		int rs = ((b[0]&3)<<3)+(b[1]>>5);
 		int rt = b[1]&31;
 		int imm = (b[2]<<8)+b[3];
@@ -336,10 +334,10 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 #endif
 	//eprintf ("MIPS: family=%c optype=%d oplen=%d op=>type=%d\n", family, optype, oplen, op->type);
 	return oplen;
-#if 0
+/*
  R - all instructions that only take registers as arguments (jalr, jr)
      opcode 000000
-     opcode (6) 	rs (5) 	rt (5) 	rd (5) 	sa (5) 	function (6) 
+     opcode (6) 	rs (5) 	rt (5) 	rd (5) 	sa (5) 	function (6)
 		add 	rd, rs, rt 	100000
 		addu 	rd, rs, rt 	100001
 		and 	rd, rs, rt 	100100
@@ -372,14 +370,14 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		sub 	rd, rs, rt 	100010
 		subu 	rd, rs, rt 	100011
 		syscall 		001100
-		xor 	rd, rs, rt 	100110 
+		xor 	rd, rs, rt 	100110
  I - instructions with immediate operand, load/store/..
      all opcodes but 000000 000001x and 0100xx
-     opcode (6) 	rs (5) 	rt (5) 	immediate (16) 
-		addi 	rt, rs, immediate 	001000 	
-		addiu 	rt, rs, immediate 	001001 	
-		andi 	rt, rs, immediate 	001100 	
-		beq 	rs, rt, label 	000100 	
+     opcode (6) 	rs (5) 	rt (5) 	immediate (16)
+		addi 	rt, rs, immediate 	001000
+		addiu 	rt, rs, immediate 	001001
+		andi 	rt, rs, immediate 	001100
+		beq 	rs, rt, label 	000100
 
 		bgez 	rs, label 	000001 	rt = 00001
 
@@ -387,35 +385,35 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		blez 	rs, label 	000110 	rt = 00000
 
 		bltz 	rs, label 	000001 	rt = 00000
-		bne 	rs, rt, label 	000101 	
-		lb 	rt, immediate(rs) 	100000 	
-		lbu 	rt, immediate(rs) 	100100 	
+		bne 	rs, rt, label 	000101
+		lb 	rt, immediate(rs) 	100000
+		lbu 	rt, immediate(rs) 	100100
 
-		lh 	rt, immediate(rs) 	100001 	
-		lhu 	rt, immediate(rs) 	100101 	
+		lh 	rt, immediate(rs) 	100001
+		lhu 	rt, immediate(rs) 	100101
 
-		lui 	rt, immediate 	 	001111 	
+		lui 	rt, immediate 	 	001111
 
-		lw 	rt, immediate(rs) 	100011 	
-		lwc1 	rt, immediate(rs) 	110001 	
+		lw 	rt, immediate(rs) 	100011
+		lwc1 	rt, immediate(rs) 	110001
 
-		ori 	rt, rs, immediate 	001101 	
-		sb 	rt, immediate(rs) 	101000 	
+		ori 	rt, rs, immediate 	001101
+		sb 	rt, immediate(rs) 	101000
 
-		slti 	rt, rs, immediate 	001010 	
-		sltiu 	rt, rs, immediate 	001011 	
-		sh 	rt, immediate(rs) 	101001 	
-		sw 	rt, immediate(rs) 	101011 	
-		swc1 	rt, immediate(rs) 	111001 	
-		xori 	rt, rs, immediate 	001110 	
+		slti 	rt, rs, immediate 	001010
+		sltiu 	rt, rs, immediate 	001011
+		sh 	rt, immediate(rs) 	101001
+		sw 	rt, immediate(rs) 	101011
+		swc1 	rt, immediate(rs) 	111001
+		xori 	rt, rs, immediate 	001110
  J - require memory address like j, jal
      00001x
-     opcode (6) 	target (26) 
+     opcode (6) 	target (26)
 		j 	label 	000010 	coded address of label
-		jal 	label 	000011 	coded address of label 
+		jal 	label 	000011 	coded address of label
  C - coprocessor insutrctions that use cp0, cp1, ..
      0100xx
-     opcode (6) 	format (5) 	ft (5) 	fs (5) 	fd (5) 	function (6) 
+     opcode (6) 	format (5) 	ft (5) 	fs (5) 	fd (5) 	function (6)
 		add.s 	fd, fs, ft 	000000 	10000
 		cvt.s.w	fd, fs, ft 	100000 	10100
 		cvt.w.s	fd, fs, ft 	100100 	10000
@@ -424,8 +422,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 		mov.s 	fd, fs 		000110 	10000
 		mtc1 	ft, fs 		000000 	00100
 		mul.s 	fd, fs, ft 	000010 	10000
-		sub.s 	fd, fs, ft 	000001 	10000 
-#endif
+		sub.s 	fd, fs, ft 	000001 	10000
+*/
 	return op->size;
 }
 
@@ -433,12 +431,12 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 static int mips_set_reg_profile(RAnal* anal){
      const char *p =
 #if 0
-          "=pc    pc\n"
-	  "=sp    sp\n"
-	  "=a0    a0\n"
-	  "=a1    a1\n"
-	  "=a2    a2\n"
-	  "=a3    a3\n"
+          "=PC    pc\n"
+	  "=SP    sp\n"
+	  "=A0    a0\n"
+	  "=A1    a1\n"
+	  "=A2    a2\n"
+	  "=A3    a3\n"
 	  "gpr	zero	.32	0	0\n"
 	  "gpr	at	.32	4	0\n"
 	  "gpr	v0	.32	8	0\n"
@@ -474,13 +472,13 @@ static int mips_set_reg_profile(RAnal* anal){
 	  "gpr	pc	.32	128	0\n";
 #else
      // take the one from the debugger //
-	"=pc	pc\n"
-	"=sp	sp\n"
-	"=bp	fp\n"
-	"=a0	a0\n"
-	"=a1	a1\n"
-	"=a2	a2\n"
-	"=a3	a3\n"
+	"=PC	pc\n"
+	"=SP	sp\n"
+	"=BP	fp\n"
+	"=A0	a0\n"
+	"=A1	a1\n"
+	"=A2	a2\n"
+	"=A3	a3\n"
 	"gpr	zero	.64	0	0\n"
 	// XXX DUPPED CAUSES FAILURE "gpr	at	.32	8	0\n"
 	"gpr	at	.64	8	0\n"
@@ -525,22 +523,20 @@ static int mips_set_reg_profile(RAnal* anal){
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 4;
+}
+
 struct r_anal_plugin_t r_anal_plugin_mips_gnu = {
 	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_MIPS,
+	.arch = "mips",
 	.bits = 32,
-	.esil = R_TRUE,
-	.init = NULL,
-	.fini = NULL,
+	.esil = true,
+	.archinfo = archinfo,
 	.op = &mips_op,
 	.set_reg_profile = mips_set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

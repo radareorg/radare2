@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2015 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -11,6 +11,7 @@ R_API RAnalDiff *r_anal_diff_new() {
 		diff->addr = -1;
 		diff->dist = 0;
 		diff->name = NULL;
+		diff->size = 0;
 	}
 	return diff;
 }
@@ -44,16 +45,15 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 	ut8 *buf;
 	int oplen, idx = 0;
 
-	if (!anal)
-		return R_FALSE;
+	if (!anal) return false;
 	if (anal->cur && anal->cur->fingerprint_bb)
 		return (anal->cur->fingerprint_bb (anal, bb));
 
 	if (!(bb->fingerprint = malloc (1+bb->size)))
-		return R_FALSE;
+		return false;
 	if (!(buf = malloc (1+bb->size))) {
 		free (bb->fingerprint);
-		return R_FALSE;
+		return false;
 	}
 	if (anal->iob.read_at (anal->iob.io, bb->addr, buf, bb->size) == bb->size) {
 		memcpy (bb->fingerprint, buf, bb->size);
@@ -61,7 +61,7 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 			if (!(op = r_anal_op_new ())) {
 				free (bb->fingerprint);
 				free (buf);
-				return R_FALSE;
+				return false;
 			}
 			while (idx < bb->size) {
 				if ((oplen = r_anal_op (anal, op, 0, buf+idx, bb->size-idx)) <1)
@@ -101,7 +101,7 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) {
 	RListIter *iter, *iter2;
 	double t, ot;
 
-	if (!anal) return R_FALSE;
+	if (!anal) return false;
 	if (anal->cur && anal->cur->diff_bb)
 		return (anal->cur->diff_bb (anal, fcn, fcn2));
 
@@ -136,10 +136,12 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) {
 			R_FREE (mbb2->fingerprint);
 			mbb->diff->addr = mbb2->addr;
 			mbb2->diff->addr = mbb->addr;
+			mbb->diff->size = mbb2->size;
+			mbb2->diff->size = mbb->size;
 		} else
 			fcn->diff->type = fcn2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
@@ -149,7 +151,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 	double t, ot;
 
 	if (!anal)
-		return R_FALSE;
+		return false;
 
 	if (anal->cur && anal->cur->diff_fcn)
 		return (anal->cur->diff_fcn (anal, fcns, fcns2));
@@ -177,6 +179,8 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 			R_FREE (fcn2->fingerprint);
 			fcn->diff->addr = fcn2->addr;
 			fcn2->diff->addr = fcn->addr;
+			fcn->diff->size = fcn2->size;
+			fcn2->diff->size = fcn->size;
 			R_FREE (fcn->diff->name);
 			if (fcn2->name)
 				fcn->diff->name = strdup (fcn2->name);
@@ -240,6 +244,8 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 			R_FREE (mfcn2->fingerprint);
 			mfcn->diff->addr = mfcn2->addr;
 			mfcn2->diff->addr = mfcn->addr;
+			mfcn->diff->size = mfcn2->size;
+			mfcn2->diff->size = mfcn->size;
 			R_FREE (mfcn->diff->name);
 			if (mfcn2->name)
 				mfcn->diff->name = strdup (mfcn2->name);
@@ -249,12 +255,12 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 			r_anal_diff_bb (anal, mfcn, mfcn2);
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_anal_diff_eval(RAnal *anal) {
 	/*TODO*/
 	if (anal && anal->cur && anal->cur->diff_eval)
 		return (anal->cur->diff_eval (anal));
-	return R_TRUE; // XXX: shouldnt this be false?
+	return true; // XXX: shouldnt this be false?
 }

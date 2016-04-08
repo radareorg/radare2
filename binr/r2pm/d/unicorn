@@ -1,0 +1,16 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/radare/radare2-extras"
+R2PM_DESC "[r2-debug] Unicorn emulator plugin for radare2"
+
+R2PM_INSTALL() {
+	./configure --prefix="${R2PM_PREFIX}"
+	make -C unicorn
+	make unicorn-install
+}
+
+R2PM_UNINSTALL() {
+	make unicorn-uninstall
+}
+
+R2PM_END

@@ -40,7 +40,6 @@ GSoC/RSOC
 Participants from the previous Summer Of Code competition which keep contributing to the project with better `pf`, console highlights, flirt signatures, yara, decompiler,. .
 
  - Jody Frankowski
- - JudgeDredd
  - Skia
  - Sushant
  - dkreuter
@@ -61,6 +60,7 @@ This release comes with contributions from the following people:
  - Jasper St.Pierre
  - Jeff Muizelaar
  - Jonathan Neuschafer
+ - Judge Dredd (jjdredd, Rahim Usubov)
  - Julien Nabet
  - Kai Renken
  - Kamil Rytarowski
@@ -74,7 +74,7 @@ This release comes with contributions from the following people:
  - ampotos
  - capi_x
  - cosarara
- - dso
+ - dso (Adam Pridgen)
  - dunhame
  - dx
  - fenugrec
@@ -98,21 +98,21 @@ Some people didn't contributed to the last release, but they did it for the past
  - 0xroot
  - Alexander
  - Anton Bolotinksy
- - Glyn Kennington
- - earada
+ - Eduardo Arada
  - elektranox
- - esanfelix
- - esteve
- - graz
+ - Eloi Sanfelix
+ - Esteve Espunya
+ - Javier Segura (graz)
+ - Glyn Kennington
  - l0gic
  - milabs
  - montekki
  - neuroflip
  - nion
  - oxff
- - pof
+ - Pau Oliva Fora (pof)
+ - Roc Vallès (rvalles)
  - rudi_s
- - rvalles
  - schrotthaufen
  - timstrazz
  - vext01

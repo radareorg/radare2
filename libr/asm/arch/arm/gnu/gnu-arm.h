@@ -1,5 +1,5 @@
 /* ARM assembler/disassembler support.
-   Copyright 2004, 2010, 2011 Free Software Foundation, Inc.
+   Copyright (C) 2004-2014 Free Software Foundation, Inc.
 
    This file is part of GDB and GAS.
 
@@ -17,9 +17,6 @@
    along with GDB or GAS; see the file COPYING3.  If not, write to the
    Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
-
-#include <string.h>
-#define abort(x) if(0) {x}
 
 /* The following bitmasks control CPU extensions:  */
 #define ARM_EXT_V1	 0x00000001	/* All processors (core set).  */
@@ -65,7 +62,6 @@
 #define ARM_CEXT_MAVERICK 0x00000002	/* Use Cirrus/DSP coprocessor.  */
 #define ARM_CEXT_IWMMXT   0x00000004    /* Intel Wireless MMX technology coprocessor.   */
 #define ARM_CEXT_IWMMXT2  0x00000008    /* Intel Wireless MMX technology coprocessor version 2.   */
-#define ARM_CEXT_IWMMXt2  0x00000008    /* Intel Wireless MMX technology coprocessor version 2.   */
 
 #define FPU_ENDIAN_PURE	 0x80000000	/* Pure-endian doubles.	      */
 #define FPU_ENDIAN_BIG	 0		/* Double words-big-endian.   */
@@ -120,6 +116,8 @@
 #define ARM_AEXT_V6ZKT2 (ARM_AEXT_V6T2 | ARM_EXT_V6K | ARM_EXT_SEC)
 #define ARM_AEXT_V7_ARM	(ARM_AEXT_V6KT2 | ARM_EXT_V7 | ARM_EXT_BARRIER)
 #define ARM_AEXT_V7A	(ARM_AEXT_V7_ARM | ARM_EXT_V7A)
+#define ARM_AEXT_V7VE	(ARM_AEXT_V7A  | ARM_EXT_DIV | ARM_EXT_ADIV \
+    | ARM_EXT_VIRT | ARM_EXT_SEC | ARM_EXT_MP)
 #define ARM_AEXT_V7R	(ARM_AEXT_V7_ARM | ARM_EXT_V7R | ARM_EXT_DIV)
 #define ARM_AEXT_NOTM \
   (ARM_AEXT_V4 | ARM_EXT_V5ExP | ARM_EXT_V5J | ARM_EXT_V6_NOTM \
@@ -228,6 +226,7 @@
 #define ARM_ARCH_V6SM	ARM_FEATURE (ARM_AEXT_V6SM, 0)
 #define ARM_ARCH_V7	ARM_FEATURE (ARM_AEXT_V7, 0)
 #define ARM_ARCH_V7A	ARM_FEATURE (ARM_AEXT_V7A, 0)
+#define ARM_ARCH_V7VE	ARM_FEATURE (ARM_AEXT_V7VE, 0)
 #define ARM_ARCH_V7R	ARM_FEATURE (ARM_AEXT_V7R, 0)
 #define ARM_ARCH_V7M	ARM_FEATURE (ARM_AEXT_V7M, 0)
 #define ARM_ARCH_V7EM	ARM_FEATURE (ARM_AEXT_V7EM, 0)
@@ -245,11 +244,6 @@
 #define ARM_ARCH_V7A_MP_SEC \
 			ARM_FEATURE (ARM_AEXT_V7A | ARM_EXT_MP | ARM_EXT_SEC, \
 				     0)
-/* v7-a+idiv+mp+sec+virt.  */
-#define ARM_ARCH_V7A_IDIV_MP_SEC_VIRT \
-			ARM_FEATURE (ARM_AEXT_V7A | ARM_EXT_MP | ARM_EXT_SEC \
-				     | ARM_EXT_DIV | ARM_EXT_ADIV \
-				     | ARM_EXT_VIRT, 0)
 /* v7-r+idiv.  */
 #define ARM_ARCH_V7R_IDIV	ARM_FEATURE (ARM_AEXT_V7R | ARM_EXT_ADIV, 0)
 /* Features that are present in v6M and v6S-M but not other v6 cores.  */
@@ -291,5 +285,3 @@ typedef struct
   } while (0)
 
 #define ARM_FEATURE(core, coproc) {(core), (coproc)}
-
-#define STT_GNU_IFUNC 10

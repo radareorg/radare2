@@ -7,6 +7,8 @@
 #define FMT_JSON 2
 
 
+static int needs_newline = 0;
+
 static void showfile(const int nth, const char *fpath, const char *name, int printfmt) {
 #if __UNIX__
 	struct stat sb;
@@ -31,7 +33,8 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 	}
 	perm = isdir? 0755: 0644;
 	if (!printfmt) {
-		r_cons_printf ("%18s%s", nn, (nth%4)?"  ":"\n");
+		needs_newline = ((nth+1)%4)? 1: 0;
+		r_cons_printf ("%18s%s", nn, needs_newline? "  ": "\n");
 		free (nn);
 		return;
 	}
@@ -44,7 +47,7 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 		uid = sb.st_uid;
 		gid = sb.st_gid;
 		perm = sb.st_mode & 0777;
-		if (!(u_rwx = strdup(r_str_rwx_i(perm>>6)))) {
+		if (!(u_rwx = strdup(r_str_rwx_i (perm>>6)))) {
 			free(nn);
 			return;
 		}
@@ -63,15 +66,16 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 			}
 	}
 #else
+	u_rwx = strdup ("-");
 	fch = isdir? 'd': '-';
 #endif
 	if (printfmt == FMT_RAW) {
 		r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
-		isdir?'d':fch,
-		      u_rwx,
-		      r_str_rwx_i ((perm>>3)&7),
-		      r_str_rwx_i (perm&7),
-		      uid, gid, sz, nn);
+			isdir?'d':fch,
+			u_rwx? u_rwx:"-",
+			r_str_rwx_i ((perm>>3)&7),
+			r_str_rwx_i (perm&7),
+			uid, gid, sz, nn);
 	} else if (printfmt == FMT_JSON) {
 		if (nth > 0) r_cons_printf(",");
 		r_cons_printf("{\"name\":\"%s\",\"size\":%d,\"uid\":%d,"
@@ -102,8 +106,10 @@ R_API void r_core_syscmd_ls(const char *input) {
 	}
 	if (input[1]==' ') {
 		if ((!strncmp (input+2, "-l", 2)) || (!strncmp (input+2, "-j", 2))) {
+			//mode = 'l';
 			if (input[3]) {
 				printfmt = (input[3] == 'j') ? FMT_JSON : FMT_RAW;
+			//	mode = 'j';
 				path = input+4;
 				while (*path==' ') path++;
 				if (!*path) path = ".";
@@ -136,7 +142,7 @@ R_API void r_core_syscmd_ls(const char *input) {
 			memcpy (d, path, off);
 			path = (const char *)d;
 			pattern = strdup (p+1);
-		}else {
+		} else {
 			pattern = strdup (path);
 			path = ".";
 		}
@@ -156,16 +162,18 @@ R_API void r_core_syscmd_ls(const char *input) {
 		dir = r_str_concat (strdup (path), "/");
 	int nth = 0;
 	if (printfmt == FMT_JSON) r_cons_printf ("[");
+	needs_newline = 0;
 	r_list_foreach (files, iter, name) {
 		char *n = r_str_concat (strdup (dir), name);
 		if (!n) break;
-		if (r_str_glob(name, pattern)){
+		if (r_str_glob (name, pattern)) {
 			if (*n) showfile (nth, n, name, printfmt);
 			nth++;
 		}
 		free (n);
 	}
 	if (printfmt == FMT_JSON) r_cons_printf ("]");
+	if (needs_newline) r_cons_newline ();
 	free (dir);
 	free (d);
 	free (homepath);
@@ -189,14 +197,26 @@ R_API void r_core_syscmd_cat(const char *file) {
 }
 
 R_API void r_core_syscmd_mkdir(const char *dir) {
+	bool show_help = true;
 	const char *p = strchr (dir, ' ');
 	if (p) {
-		char *dirname = strdup (p+1);
-		dirname = r_str_chop (dirname);
-		if (!r_sys_mkdir (dirname)) {
+		int ret;
+		char *dirname;
+		if (!strncmp (p+1, "-p ", 3)) {
+			dirname = r_str_chop (strdup (p+3));
+			ret = r_sys_mkdirp (dirname);
+		} else {
+			dirname = r_str_chop (strdup (p+1));
+			ret = r_sys_mkdir (dirname);
+		}
+		if (!ret) {
 			if (r_sys_mkdir_failed ())
 				eprintf ("Cannot create \"%s\"\n", dirname);
 		}
 		free (dirname);
-	} else eprintf ("Usage: mkdir [directory]\n");
+		show_help = false;
+	}
+	if (show_help) {
+		eprintf ("Usage: mkdir [-p] [directory]\n");
+	}
 }

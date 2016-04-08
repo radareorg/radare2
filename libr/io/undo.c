@@ -19,7 +19,7 @@ R_API int r_io_undo_init(RIO *io) {
 	io->undo.w_enable = 0;
 	io->undo.w_list = r_list_new ();
 
-	return R_TRUE;
+	return true;
 }
 
 R_API void r_io_undo_enable(RIO *io, int s, int w) {
@@ -45,7 +45,7 @@ R_API ut64 r_io_sundo(RIO *io, ut64 offset) {
 	io->undo.redos++;
 
 	off = io->undo.seek[io->undo.idx];
-	io->off = r_io_section_vaddr_to_offset (io, off);
+	io->off = r_io_section_vaddr_to_maddr_try (io, off);
 	return off;
 }
 
@@ -60,14 +60,15 @@ R_API ut64 r_io_sundo_redo(RIO *io) {
 	io->undo.redos--;
 
 	off = io->undo.seek[io->undo.idx];
-	io->off = r_io_section_vaddr_to_offset (io, off);
+	io->off = r_io_section_vaddr_to_maddr_try (io, off);
 	return off;
 }
 
 R_API void r_io_sundo_push(RIO *io, ut64 off) {
-	if (!io->undo.s_enable)
-		return;
-
+	if (!io->undo.s_enable) return;
+	//the first insert
+	if (io->undo.idx > 0)
+		if (io->undo.seek[io->undo.idx - 1] == off) return;
 	io->undo.seek[io->undo.idx] = off;
 	io->undo.idx = (io->undo.idx + 1) % R_IO_UNDOS;
 	/* Only R_IO_UNDOS - 1 undos can be used because r_io_sundo_undo () must
@@ -94,7 +95,7 @@ R_API void r_io_sundo_list(RIO *io) {
 	undos = io->undo.undos;
 	redos = io->undo.redos;
 	if (!undos && !redos) {
-		io->printf ("-no seeks done-\n");
+		io->cb_printf ("-no seeks done-\n");
 		return;
 	}
 
@@ -105,11 +106,11 @@ R_API void r_io_sundo_list(RIO *io) {
 	j = 0;
 	for (i = start; i != end || j == 0; i = (i + 1) % R_IO_UNDOS) {
 		if (j < undos) {
-			io->printf ("f undo_%d @ 0x%"PFMT64x"\n", undos - j - 1, io->undo.seek[i]);
+			io->cb_printf ("f undo_%d @ 0x%"PFMT64x"\n", undos - j - 1, io->undo.seek[i]);
 		} else if (j == undos && j != 0 && redos != 0) {
-			io->printf ("# Current undo/redo position.\n");
+			io->cb_printf ("# Current undo/redo position.\n");
 		} else if (j != undos) {
-			io->printf ("f redo_%d @ 0x%"PFMT64x"\n", j - undos - 1, io->undo.seek[i]);
+			io->cb_printf ("f redo_%d @ 0x%"PFMT64x"\n", j - undos - 1, io->undo.seek[i]);
 		}
 		j++;
 	}
@@ -124,7 +125,7 @@ R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len) {
 	/* undo write changes */
 	uw = R_NEW (RIOUndoWrite);
 	if (!uw) return;
-	uw->set = R_TRUE;
+	uw->set = true;
 	uw->off = off;
 	uw->len = len;
 	uw->n = (ut8*) malloc (len);
@@ -160,14 +161,14 @@ R_API void r_io_wundo_list(RIO *io) {
 
 	if (io->undo.w_init)
 	r_list_foreach (io->undo.w_list, iter, u) {
-		io->printf ("%02d %c %d %08"PFMT64x": ", i, u->set?'+':'-', u->len, u->off);
+		io->cb_printf ("%02d %c %d %08"PFMT64x": ", i, u->set?'+':'-', u->len, u->off);
 		len = (u->len>BW)?BW:u->len;
-		for (j=0;j<len;j++) io->printf ("%02x ", u->o[j]);
-		if (len == BW) io->printf (".. ");
-		io->printf ("=> ");
-		for (j=0;j<len;j++) io->printf ("%02x ", u->n[j]);
-		if (len == BW) io->printf (".. ");
-		io->printf ("\n");
+		for (j=0;j<len;j++) io->cb_printf ("%02x ", u->o[j]);
+		if (len == BW) io->cb_printf (".. ");
+		io->cb_printf ("=> ");
+		for (j=0;j<len;j++) io->cb_printf ("%02x ", u->n[j]);
+		if (len == BW) io->cb_printf (".. ");
+		io->cb_printf ("\n");
 		i++;
 	}
 }
@@ -177,10 +178,10 @@ R_API int r_io_wundo_apply(RIO *io, struct r_io_undo_w_t *u, int set) {
 	io->undo.w_enable = 0;
 	if (set) {
 		r_io_write_at (io, u->off, u->n, u->len);
-		u->set = R_TRUE;
+		u->set = true;
 	} else {
 		r_io_write_at (io, u->off, u->o, u->len);
-		u->set = R_FALSE;
+		u->set = false;
 	}
 	io->undo.w_enable = orig;
 	return 0;
@@ -208,9 +209,9 @@ R_API int r_io_wundo_set(RIO *io, int n, int set) {
 				break;
 		if (u) { // wtf?
 			r_io_wundo_apply (io, u, set);
-			return R_TRUE;
+			return true;
 		}
 		eprintf ("invalid undo-write index\n");
 	} else eprintf ("no writes done\n");
-	return R_FALSE;
+	return false;
 }

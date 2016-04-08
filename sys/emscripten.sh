@@ -12,7 +12,7 @@ unset LDFLAGS
 export CC="emcc --ignore-dynamic-linking"
 export AR="emar"
 
-CFGFLAGS="./configure --prefix=/usr --disable-shared --enable-static --disable-debugger --with-compiler=emscripten --without-ewf --without-pic --with-nonpic --without-gmp"
+CFGFLAGS="./configure --prefix=/usr --disable-debugger --with-compiler=emscripten --without-pic --with-nonpic"
 
 make mrproper
 cp -f plugins.emscripten.cfg plugins.cfg

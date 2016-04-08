@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake, pof */
+/* radare - LGPL - Copyright 2012-2015 - pancake, pof */
 
 #include <string.h>
 #include <r_types.h>
@@ -39,8 +39,15 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	sz = instlen (b, len);
 	op->size = sz;
 // TODO: Use disasm string to detect type?
+	if (len>=2) {
+		if (!memcmp (b, "\xff\xff", 2)) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+			op->size = sz;
+			return -1;
 
-	switch (b[0] &0xf0) {
+		}
+	}
+	switch (b[0] & 0xf0) {
 	case 0xB0:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
@@ -54,10 +61,10 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		break;
 	case 0x60: {
 			   int off = 0;
-			   off = b[1];
+			   off = (st8)b[1];
 			   if (off==0)
-				   off = (b[2]<<8) | b[3] ;
-			   else if (off==0xff)
+				   off = (st16)((b[2]<<8) | b[3]);
+			   else if (off==-1)
 				   off = (b[2]<<24) | (b[3]<<16) | (b[4]<<8) | b[5];
 			   op->type = R_ANAL_OP_TYPE_CJMP;
 			   op->jump = addr + 2 + off;
@@ -81,8 +88,7 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 			break;
 		}
 		if (b[1]==0xF8 || b[1]==0xF9 || b[1]==0xB8 || b[1]==0xB9){
-			op->type = R_ANAL_OP_TYPE_JMP;
-			//op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = (b[1]&0xf0) == 0xf0 ? R_ANAL_OP_TYPE_JMP : R_ANAL_OP_TYPE_CALL;
 
 			int off = 0;
 			if (op->size == 4)
@@ -160,21 +166,29 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	return op->size;
 }
 
+static int archinfo(RAnal *anal, int query) {
+	switch (query) {
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		/* all ops are at least 1 word long */
+		return 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		/* judging by the M68000 PROGRAMMER'S REFERENCE MANUAL the
+		 * cpTRAPcc opcode is the longest at 5 words */
+		return 10;
+	default:
+		return -1;
+	}
+
+}
+
 RAnalPlugin r_anal_plugin_m68k = {
 	.name = "m68k",
 	.desc = "Motorola 68000",
 	.license = "LGPL3",
-	.arch = R_SYS_ARCH_M68K,
+	.arch = "m68k",
 	.bits = 16|32,
-	.init = NULL,
-	.fini = NULL,
 	.op = &m68k_op,
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
+	.archinfo = archinfo,
 };
 
 #ifndef CORELIB

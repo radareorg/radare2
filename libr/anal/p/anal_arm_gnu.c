@@ -38,7 +38,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	ut32 ins32 = *_ins32;
 
 	struct winedbg_arm_insn *arminsn = arm_new();
-	arm_set_thumb (arminsn, R_TRUE);
+	arm_set_thumb (arminsn, true);
 	arm_set_input_buffer (arminsn, data);
 	arm_set_pc (arminsn, addr);
 	op->jump = op->fail = -1;
@@ -167,7 +167,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return 0;
 	memset (op, '\0', sizeof (RAnalOp));
 	arminsn = arm_new();
-	arm_set_thumb (arminsn, R_FALSE);
+	arm_set_thumb (arminsn, false);
 	arm_set_input_buffer (arminsn, data);
 	arm_set_pc (arminsn, addr);
 	op->jump = op->fail = -1;
@@ -208,7 +208,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 				if ((b[3]&0xf) == 5) {
 					op->ptr = 8+addr+b[0]+((b[1]&0xf)<<8);
 				// XXX: if set it breaks the visual disasm wtf
-				//	op->refptr = R_TRUE;
+				//	op->refptr = true;
 				}
 			case 4:
 			case 6:
@@ -251,7 +251,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			//op->stackop = R_ANAL_STACK_SET;
 			op->jump = 1234;
 			//op->ptr = 4+addr+b[0]; // sure? :)
-			//op->ptrptr = R_TRUE;
+			//op->ptrptr = true;
 		}
 		//eprintf("0x%08x\n", code[i] & ARM_DTX_LOAD);
 		// 0x0001B4D8,           1eff2fe1        bx    lr
@@ -401,13 +401,14 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 
 static int set_reg_profile(RAnal *anal) {
 	// TODO: support 64bit profile
-	const char *p32 = "=pc	r15\n"
-		"=sp	r13\n" 
-		"=bp	r14\n" // XXX
-		"=a0	r0\n"
-		"=a1	r1\n"
-		"=a2	r2\n"
-		"=a3	r3\n"
+	const char *p32 =
+		"=PC	r15\n"
+		"=SP	r13\n" 
+		"=BP	r14\n" // XXX
+		"=A0	r0\n"
+		"=A1	r1\n"
+		"=A2	r2\n"
+		"=A3	r3\n"
 		"gpr	lr	.32	56	0\n" // r14
 		"gpr	pc	.32	60	0\n" // r15
 
@@ -428,25 +429,37 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	r14	.32	56	0\n"
 		"gpr	r15	.32	60	0\n"
 		"gpr	r16	.32	64	0\n"
-		"gpr	r17	.32	68	0\n";
+		"gpr	r17	.32	68	0\n"
+		"gpr	cpsr	.32	72	0\n";
 	return r_reg_set_profile_string (anal->reg, p32);
+}
+
+static int archinfo(RAnal *anal, int q) {
+	if (q == R_ANAL_ARCHINFO_ALIGN) {
+		if (anal && anal->bits == 16)
+			return 2;
+		return 4;
+	}
+	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
+		return 4;
+	}
+	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+		if (anal && anal->bits == 16)
+			return 2;
+		return 4;
+	}
+	return 4; // XXX
 }
 
 struct r_anal_plugin_t r_anal_plugin_arm_gnu = {
 	.name = "arm.gnu",
-	.arch = R_SYS_ARCH_ARM,
+	.arch = "arm",
 	.license = "LGPL3",
-	.bits = 32 | 64,
+	.bits = 16 | 32 | 64,
 	.desc = "ARM code analysis plugin",
-	.init = NULL,
-	.fini = NULL,
+	.archinfo = archinfo,
 	.op = &arm_op,
 	.set_reg_profile = set_reg_profile,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
 };
 
 #ifndef CORELIB

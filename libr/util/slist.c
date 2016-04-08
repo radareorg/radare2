@@ -4,14 +4,13 @@
 #include "r_util.h"
 #include "r_slist.h"
 
-
-R_API RSList *r_slist_new () {
+R_API RSList *r_slist_new() {
 	RSList *s = R_NEW0 (RSList);
 	s->list = r_list_new ();
 	return s;
 }
 
-R_API void r_slist_free (RSList *s) {
+R_API void r_slist_free(RSList *s) {
 	free (s->items);
 	free (s->alloc);
 	r_list_free (s->list);
@@ -23,15 +22,15 @@ R_API int r_slist_get_slot(RSList *s, ut64 addr) {
 		return -1;
 	if (addr < s->min || addr > s->max)
 		return -1;
-	return (addr-s->min) / s->mod;
+	return (addr - s->min) / s->mod;
 }
 
-static RSListItem *get_new_item () {
+static RSListItem *get_new_item() {
 	// TODO: use slices here!
 	return malloc (sizeof (RSListItem));
 }
 
-R_API RSList *r_slist_add (RSList *s, void *data, ut64 from, ut64 to) {
+R_API RSList *r_slist_add(RSList *s, void *data, ut64 from, ut64 to) {
 	ut64 at = from;
 	int slot, lastslot;
 	RSListItem *item = get_new_item ();
@@ -43,11 +42,11 @@ R_API RSList *r_slist_add (RSList *s, void *data, ut64 from, ut64 to) {
 	r_list_append (s->list, item); // item must be alloacted by slices
 	// find slot
 	slot = r_slist_get_slot (s, from);
-	if (slot<0) {
+	if (slot < 0) {
 		//r_slist_optimize ();
 		return NULL;
 	}
-	while (at<to && slot < s->nitems) {
+	while (at < to && slot < s->nitems) {
 		lastslot = s->last[slot];
 		if (lastslot == s->lastslot) {
 			// must optimize and exit
@@ -66,7 +65,7 @@ R_API RSList *r_slist_add (RSList *s, void *data, ut64 from, ut64 to) {
 	return NULL;
 }
 
-R_API RSListItem **r_slist_get (RSList *s, ut64 addr) {
+R_API RSListItem **r_slist_get(RSList *s, ut64 addr) {
 	int idx;
 	ut64 base;
 	if (s->min == 0 && s->min == s->max)
@@ -81,17 +80,17 @@ R_API RSListItem **r_slist_get (RSList *s, ut64 addr) {
 // r_slist_get_iter()
 // r_slist_iter_has_next()
 
-R_API void r_slist_del (RSList *s, RSListItem *p) {
+R_API void r_slist_del(RSList *s, RSListItem *p) {
 	// delete from s->list
 	// remove lists
 }
 
-R_API void *r_slist_get_at (RSList *list, ut64 addr) {
+R_API void *r_slist_get_at(RSList *list, ut64 addr) {
 	return NULL;
 }
 
 // called on add and del
-R_API void r_slist_optimize (RSList *s) {
+R_API void r_slist_optimize(RSList *s) {
 	RSListItem *ptr;
 	RListIter *iter;
 	ut64 min, max;
@@ -113,13 +112,17 @@ R_API void r_slist_optimize (RSList *s) {
 		}
 	}
 
-	eprintf ("MIN %d\nMAX %d\n", (int)min, (int)max);
+	//eprintf ("MIN %d\nMAX %d\n", (int)min, (int)max);
 
 	s->min = min;
 	s->max = max;
-	s->mod = ((max-min));
-	s->items = malloc (1+ (sizeof (void*) * s->nitems));
-	//eprintf ("MOD %d (block size)\n", s->mod);
+	s->mod = ((max - min));
+	if (s->nitems * sizeof (void *) < s->nitems) {
+		s->items = NULL;
+	} else {
+		s->items = malloc (1 + (sizeof (void *) * s->nitems));
+	}
+//eprintf ("MOD %d (block size)\n", s->mod);
 // store integers as indexes inside the allocated heap
 
 #if 0
@@ -156,7 +159,7 @@ OUTPUT
 
 #if 0
 typedef struct {
-	
+
 } SListStore;
 typedef struct {
 	IntArray news;
@@ -170,9 +173,9 @@ typedef struct {
 -+- QueueList # new additions are here
  `- idxlist   |_
 --- RangeCmp  # user provided comparator function
---- IndexList # 
+--- IndexList #
 --- Storage   # Heap Array storing all elements
-              | We always use 
+              | We always use
 --- StoreList # Heap Array of integers pointing to storage
               | we can probably just store a list of removed
               | items and the length

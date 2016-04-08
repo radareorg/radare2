@@ -1,0 +1,18 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/radare/radare2-extras"
+R2PM_DESC "[r2-asm] tiny PowerPC disassembler"
+
+R2PM_INSTALL() {
+	./configure --prefix="${R2PM_PREFIX}"
+	cd libr/asm/p
+	make clean
+	make
+	cp -f asm_ppc_disasm.${LIBEXT} ${R2PM_PLUGDIR}
+}
+
+R2PM_UNINSTALL() {
+	rm -f "${R2PM_PLUGDIR}/asm_ppc_disasm."*
+}
+
+R2PM_END

@@ -44,7 +44,7 @@ typedef struct r_syscall_t {
 	RSyscallPort *sysport;
 	Sdb *db;
 	// TODO: deprecate
-	PrintfCallback printf;
+	PrintfCallback cb_printf;
 } RSyscall;
 
 /* plugin struct */

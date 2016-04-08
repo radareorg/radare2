@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2015 - ampotos */
+
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -16,25 +18,36 @@ static int load(RBinFile *arch) {
 	ut64 size = arch ? r_buf_size(arch->buf) : 0;
 
 	if (!arch || !arch->o) {
-		return R_FALSE;
+		return false;
 	}
 	if (!(arch->o->bin_obj = load_bytes(arch, byte, \
 			size, arch->o->loadaddr, arch->sdb)))
-		return R_FALSE;
-	return R_TRUE;
+		return false;
+	return true;
 }
 
 static int destroy(RBinFile *arch) {
 	r_bin_free_all_omf_obj (arch->o->bin_obj);
 	arch->o->bin_obj = NULL;
-	return R_TRUE;
+	return true;
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	if ((*buf == 0x80 || *buf == 0x82) && \
-			r_bin_checksum_omf_ok((char *)buf, length))
-		return R_TRUE;
-	return R_FALSE;
+	if ((*buf != 0x80 && *buf != 0x82) || length < 4)
+		return false;
+
+	ut16 rec_size = ut8p_bw (buf + 1);
+	ut8 str_size = *(buf + 3);
+	if (str_size + 2 != rec_size || length < rec_size + 3)
+		return false;
+
+	// check that the string is ASCII
+	int i;
+	for (i = 4; i < str_size + 4; ++i)
+		if (buf[i] > 0x7f)
+			return false;
+
+	return r_bin_checksum_omf_ok((char *)buf, length);
 }
 
 static int check(RBinFile *arch) {
@@ -70,7 +83,7 @@ static RList *sections(RBinFile *arch) {
 	ut32 ct_omf_sect = 0;
 	r_bin_omf_obj *obj = arch->o->bin_obj;
 
-	if (!(ret = r_list_new()))
+	if (!(ret = r_list_new ()))
 		return NULL;
 
 	while (ct_omf_sect < obj->nb_section)
@@ -92,17 +105,16 @@ static RList *symbols(RBinFile *arch) {
 	ret->free = free;
 
 	while (ct_sym < ((r_bin_omf_obj *)arch->o->bin_obj)->nb_symbol) {
-		if (!(sym = R_NEW0(RBinSymbol)))
+		if (!(sym = R_NEW0 (RBinSymbol)))
 			return ret;
 		sym_omf = ((r_bin_omf_obj *)arch->o->bin_obj)->symbols[ct_sym++];
-		strncpy(sym->name, sym_omf->name, R_BIN_SIZEOF_STRINGS);
-		strncpy(sym->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-
+		sym->name = strdup (sym_omf->name);
+		sym->forwarder = r_str_const ("NONE");
 		sym->paddr = r_bin_omf_get_paddr_sym(arch->o->bin_obj, sym_omf);
 		sym->vaddr = r_bin_omf_get_vaddr_sym(arch->o->bin_obj, sym_omf); 
 		sym->ordinal = ct_sym;
 		sym->size = 0;
-		r_list_append(ret, sym);
+		r_list_append (ret, sym);
 	}
 	return ret;
 }
@@ -120,11 +132,11 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->os = strdup ("any");
 	ret->machine = strdup ("i386");
 	ret->arch = strdup ("x86");
-	ret->big_endian = R_FALSE;
-	ret->has_va = R_TRUE;
+	ret->big_endian = false;
+	ret->has_va = true;
 	ret->bits = r_bin_omf_get_bits (arch->o->bin_obj);
 	ret->dbg_info = 0;
-	ret->has_nx = R_FALSE;
+	ret->has_nx = false;
 	return ret;
 }
 
@@ -136,35 +148,17 @@ struct r_bin_plugin_t r_bin_plugin_omf = {
 	.name = "omf",
 	.desc = "omf bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
-	.get_sdb = NULL,
 	.load = &load,
 	.load_bytes = &load_bytes,
-	.size = NULL,
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
-	.binsym = NULL,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
-	.imports = NULL,
-	.strings = NULL,
 	.info = &info,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.classes = NULL,
-	.mem = NULL,
-	.demangle_type = NULL,
-	.dbginfo = NULL,
-	.write = NULL,
-	.get_offset = NULL,
 	.get_vaddr = &get_vaddr,
-	.create = NULL,
 };
 
 #ifndef CORELIB

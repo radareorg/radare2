@@ -23,20 +23,8 @@ R_API const char *r_flag_space_cur(RFlag *f) {
 	return r_flag_space_get_i (f, f->space_idx);
 }
 
-#if 0
-void flag_space_init(struct r_flag_t *f) {
-	static int init = 0;
-	int i;
-	if (init)
-		return;
-	init = 1;
-	for(i=0;i<R_FLAG_SPACES_MAX;i++)
-		f->space[i] = NULL;
-}
-#endif
-
 R_API int r_flag_space_push(RFlag *f, const char *name) {
-	int ret = R_FALSE;
+	int ret = false;
 	if (name && *name) {
 		if (f->space_idx != -1 && f->spaces[f->space_idx]) {
 			r_list_push (f->spacestack, f->spaces[f->space_idx]);
@@ -44,7 +32,7 @@ R_API int r_flag_space_push(RFlag *f, const char *name) {
 			r_list_push (f->spacestack, "*");
 		}
 		r_flag_space_set (f, name);
-		ret = R_TRUE;
+		ret = true;
 	}
 	return ret;
 }
@@ -55,9 +43,9 @@ R_API int r_flag_space_pop(RFlag *f) {
 		if (*p) {
 			r_flag_space_set (f, p);
 		}
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_flag_space_set(RFlag *f, const char *name) {
@@ -68,8 +56,7 @@ R_API int r_flag_space_set(RFlag *f, const char *name) {
 	}
 
 	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
-		if (f->spaces[i] != NULL)
-		if (!strcmp (name, f->spaces[i])) {
+		if (f->spaces[i] != NULL && !strcmp (name, f->spaces[i])) {
 			f->space_idx = i;
 			return f->space_idx;
 		}
@@ -94,9 +81,6 @@ R_API int r_flag_space_unset (RFlag *f, const char *fs) {
 		if (!fs || !strcmp (fs, f->spaces[i])) {
 			if (f->space_idx == i) {
 				f->space_idx = -1;
-			}
-			if (f->space_idx2 == i) {
-				f->space_idx2 = -1;
 			}
 			R_FREE (f->spaces[i]);
 			// remove all flags space references
@@ -168,18 +152,18 @@ R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname) {
 	int i;
 	if (!oname) {
 		if (f->space_idx == -1)
-			return R_FALSE;
+			return false;
 		oname = f->spaces[f->space_idx];
 	}
-	if (!nname) return R_FALSE;
+	if (!nname) return false;
 	while (*oname==' ') oname++;
 	while (*nname==' ') nname++;
 	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
 		if (f->spaces[i]  && !strcmp (oname, f->spaces[i])) {
 			free (f->spaces[i]);
 			f->spaces[i] = strdup (nname);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }

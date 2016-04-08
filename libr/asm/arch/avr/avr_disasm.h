@@ -27,10 +27,10 @@
 #define AVR_DISASM_H
 
 #include <stdint.h>
-int avrdis (char *out, unsigned long long addr, const unsigned char *buf, int len);
+static int avrdis (char *out, unsigned long long addr, const unsigned char *buf, int len);
 
 /* Total number of assembly instructions, Maximum number of operands */
-#define AVR_TOTAL_INSTRUCTIONS	141
+#define AVR_TOTAL_INSTRUCTIONS	145
 #define AVR_MAX_NUM_OPERANDS	2
 
 /* Enumeration for all types of AVR Operands */
@@ -45,7 +45,7 @@ enum AVR_Operand_Types {
 	OPERAND_Z, OPERAND_ZP, OPERAND_MZ, OPERAND_ZPQ,
 };
 /* OPERAND_REGISTER_GHOST:
- * Some instructions, like clr, only have one one instruction when written in assembly,
+ * Some instructions, like clr, only have one instruction when written in assembly,
  * such as clr R16. However, when encoded, the instruction becomes eor R16, R16. So although
  * OPERAND_REGISTER_GHOST has an operand mask, the actual register value is never displayed
  * in disassembly. */
@@ -92,7 +92,7 @@ struct _disassembledInstruction {
 typedef struct _disassembledInstruction disassembledInstruction;
 
 /* Disassembles an assembled instruction, including its operands. */
-int disassembleInstruction(disassembledInstruction *dInstruction, const assembledInstruction aInstruction);
+static int disassembleInstruction(disassembledInstruction *dInstruction, const assembledInstruction aInstruction);
 
 #endif
 

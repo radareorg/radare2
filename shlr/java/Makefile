@@ -3,6 +3,7 @@ LIBAR?=libr_java.a
 
 include ../../config-user.mk
 include ../../global.mk
+include ../../mk/platform.mk
 _INCLUDE_MK_GCC_=
 include ../../mk/${COMPILER}.mk
 SHLR?=..
@@ -15,20 +16,19 @@ all:
 	exit 1
 endif
 
-ifeq (,$(findstring cygwin,${OSTYPE}))
-ifeq (,$(findstring mingw32,${OSTYPE}))
-CFLAGS+=-fPIC -g
-else
+CFLAGS+=${PIC_CFLAGS}
+ifneq (,$(findstring mingw32,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
 endif
-endif
 
-#CFLAGS+=-g -ggdb
+CFLAGS+=-g -ggdb
 CFLAGS+=-I../../libr/include
 LDFLAGS+=-L../../libr/util
 OBJS=code.o class.o ops.o dsojson.o
 
-all: out libr_java.a
+all: libr_java.a
+
+RANLIB?=ranlib
 
 libr_java.a: ${OBJS}
 	rm -f libr_java.a

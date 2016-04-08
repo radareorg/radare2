@@ -397,7 +397,7 @@ typedef struct {
 
 typedef struct {
 	ut16 class_info_idx;
-	RBinJavaCPTypeObj *class_info_cp_obj;;
+	RBinJavaCPTypeObj *class_info_cp_obj;
 } RBinJavaClassInfoValue;
 
 typedef struct r_bin_java_element_value_ary_t{

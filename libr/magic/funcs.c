@@ -102,7 +102,7 @@ static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut
 	if (lineno != 0) {
 		free(ms->o.buf);
 		ms->o.buf = NULL;
-		file_printf (ms, "line %u: ", lineno);
+		(void)file_printf (ms, "line %u: ", lineno);
 	}
 	// OPENBSDBUG
         file_vprintf (ms, f, va);
@@ -150,8 +150,7 @@ int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t 
 	mime = ms->flags & R_MAGIC_MIME;
 	if (nb == 0) {
 		if ((!mime || (mime & R_MAGIC_MIME_TYPE)) &&
-		    file_printf(ms, mime ? "application/x-empty" :
-		    "empty") == -1)
+		    file_printf(ms, mime ? "application/x-empty" : "empty") == -1)
 			return -1;
 		return 1;
 	} else if (nb == 1) {

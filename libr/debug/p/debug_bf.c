@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2014 - pancake */
+/* radare - LGPL - Copyright 2011-2015 - pancake */
 
 #include <r_asm.h>
 #include <r_debug.h>
@@ -31,8 +31,8 @@ static int is_io_bf(RDebug *dbg) {
 	RIODesc *d = dbg->iob.io->desc;
 	if (d && d->plugin && d->plugin->name)
 		if (!strcmp ("bdescbg", d->plugin->name))
-			return R_TRUE;
-	return R_FALSE;
+			return true;
+	return false;
 }
 
 static int r_debug_bf_step_over(RDebug *dbg) {
@@ -47,19 +47,19 @@ static int r_debug_bf_step_over(RDebug *dbg) {
 		bfvm_step (o->bfvm, 0);
 		oop = op;
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_bf_step(RDebug *dbg) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_step (o->bfvm, 0);
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	RIOBdescbg *o;
 	if (!dbg)
-		return R_FALSE;
+		return false;
 	if (!is_io_bf (dbg))
 		return 0;
 	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data))
@@ -82,7 +82,7 @@ static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	RIOBdescbg *o;
 	if (!dbg)
-		return R_FALSE;
+		return false;
 	if (!is_io_bf (dbg))
 		return 0;
 	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data))
@@ -98,29 +98,29 @@ static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size)
 	o->bfvm->input_idx = r.inpi;
 	o->bfvm->base = r.mem;
 	o->bfvm->ptr = r.memi; // dup
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_bf_continue(RDebug *dbg, int pid, int tid, int sig) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_cont (o->bfvm, UT64_MAX);
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_bf_continue_syscall(RDebug *dbg, int pid, int num) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_contsc (o->bfvm);
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_bf_wait(RDebug *dbg, int pid) {
 	/* do nothing */
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_bf_attach(RDebug *dbg, int pid) {
 	if (!is_io_bf (dbg))
-		return R_FALSE;
+		return false;
 #if 0
 	RIOBdescbg *o;
 	o = dbg->iob.io->desc->data;
@@ -128,19 +128,19 @@ eprintf ("base = %llx\n", o->bfvm->base);
 eprintf ("screen = %llx\n", o->bfvm->screen);
 eprintf ("input = %llx\n", o->bfvm->input);
 #endif
-	return R_TRUE;
+	return true;
 }
 
-static int r_debug_bf_detach(int pid) {
+static int r_debug_bf_detach(RDebug *dbg, int pid) {
 	// reset vm?
-	return R_TRUE;
+	return true;
 }
 
 static char *r_debug_bf_reg_profile(RDebug *dbg) {
 	return strdup (
-	"=pc	pc\n"
-	"=sp	esp\n"
-	"=bp	ptr\n"
+	"=PC	pc\n"
+	"=SP	esp\n"
+	"=BP	ptr\n"
 	"gpr	pc	.32	0	0\n"
 	"gpr	ptr	.32	4	0\n"
 	"gpr	esp	.32	8	0\n"
@@ -155,13 +155,13 @@ static char *r_debug_bf_reg_profile(RDebug *dbg) {
 
 static int r_debug_bf_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	//r_io_system (dbg->iob.io, "db");
-	return R_FALSE;
+	return false;
 }
 
 static int r_debug_bf_kill(RDebug *dbg, int pid, int tid, int sig) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_reset (o->bfvm);
-	return R_TRUE;
+	return true;
 }
 
 static RList *r_debug_native_map_get(RDebug *dbg) {
@@ -183,17 +183,15 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 static int r_debug_bf_stop(RDebug *dbg) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	BfvmCPU *c = o->bfvm;
-	c->breaked = R_TRUE;
-	return R_TRUE;
+	c->breaked = true;
+	return true;
 }
 
 RDebugPlugin r_debug_plugin_bf = {
 	.name = "bf",
+	.arch = "bf",
 	.license = "LGPL3",
-	/* TODO: Add support for more architectures here */
-	.arch = R_ASM_ARCH_BF,
-	.bits = R_SYS_BITS_32,
-	.init = NULL,
+	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.step = r_debug_bf_step,
 	.step_over = r_debug_bf_step_over,
 	.cont = r_debug_bf_continue,
@@ -201,20 +199,13 @@ RDebugPlugin r_debug_plugin_bf = {
 	.attach = &r_debug_bf_attach,
 	.detach = &r_debug_bf_detach,
 	.wait = &r_debug_bf_wait,
-	.pids = NULL,
 	.stop = r_debug_bf_stop,
-	.tids = NULL,
-	.threads = NULL,
 	.kill = r_debug_bf_kill,
-	.frames = NULL,
 	.breakpoint = &r_debug_bf_breakpoint,
 	.reg_read = &r_debug_bf_reg_read,
 	.reg_write = &r_debug_bf_reg_write,
 	.reg_profile = r_debug_bf_reg_profile,
 	.map_get = r_debug_native_map_get,
-//	.breakpoint = r_debug_native_bp,
-	//.ptr_write = &r_debug_bf_ptr_write,
-	//.ptr_read = &r_debug_bf_ptr_read,
 };
 
 #ifndef CORELIB

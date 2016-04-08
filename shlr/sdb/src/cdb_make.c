@@ -45,7 +45,11 @@ char *cdb_alloc(ut32 n) {
 }
 
 void cdb_alloc_free(void *x) {
+#if __SDB_WINDOWS__ && !__CYGWIN__
+	_aligned_free(x);
+#else
 	free (x);
+#endif
 }
 #endif
 
@@ -148,9 +152,8 @@ int cdb_make_finish(struct cdb_make *c) {
 
 	for (i=0; i<256; i++) {
 		count = c->count[i];
-		len = count<<1; //(*2)
-		ut32_pack (c->final + 8 * i, c->pos);
-		ut32_pack (c->final + 8 * i + 4, len);
+		len = count << 1;
+		ut32_pack (c->final + 4 * i, c->pos);
 
 		for (u=0; u<len; u++)
 			c->hash[u].h = c->hash[u].p = 0;

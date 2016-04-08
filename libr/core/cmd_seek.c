@@ -1,5 +1,123 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+static void __init_seek_line (RCore *core) {
+	ut64 from, to;
+
+	r_config_bump (core->config, "lines.to");
+	from = r_config_get_i (core->config, "lines.from");
+	to = r_config_get_i (core->config, "lines.to");
+	if (r_core_lines_initcache (core, from, to) == -1) {
+		eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
+	}
+}
+
+static void __get_current_line (RCore *core) {
+	if (core->print->lines_cache_sz > 0) {
+		int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
+		r_cons_printf ("%d\n", curr);
+	}
+}
+
+static void __seek_line_absolute (RCore *core, int numline) {
+	if (numline < 1 || numline > core->print->lines_cache_sz - 1) {
+		eprintf ("ERROR: Line must be between 1 and %d\n", core->print->lines_cache_sz-1);
+	} else {
+		r_core_seek (core, core->print->lines_cache[numline-1], 1);
+	}
+}
+
+static void __seek_line_relative (RCore *core, int numlines) {
+	int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
+	if (numlines > 0 && curr+numlines >= core->print->lines_cache_sz-1) {
+		eprintf ("ERROR: Line must be < %d\n", core->print->lines_cache_sz-1);
+	} else if (numlines < 0 && curr+numlines < 1) {
+		eprintf ("ERROR: Line must be > 1\n");
+	} else {
+		r_core_seek (core, core->print->lines_cache[curr+numlines-1], 1);
+	}
+}
+
+static void __clean_lines_cache (RCore *core) {
+	core->print->lines_cache_sz = -1;
+	R_FREE (core->print->lines_cache);
+}
+
+R_API int r_core_lines_currline (RCore *core) { // make priv8 again
+	int imin = 0;
+	int imax = core->print->lines_cache_sz;
+	int imid = 0;
+
+	while (imin <= imax) {
+		imid = imin + ((imax - imin) / 2);
+		if (core->print->lines_cache[imid] == core->offset) {
+			return imid;
+		}
+		else if (core->print->lines_cache[imid] < core->offset)
+			imin = imid + 1;
+		else
+			imax = imid - 1;
+	}
+	return imin;
+}
+
+R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
+	int i, line_count;
+	int bsz = core->blocksize;
+	char *buf;
+	ut64 off = start_addr;
+	ut64 baddr; 
+	if (start_addr == UT64_MAX || end_addr == UT64_MAX) {
+		return -1;
+	}
+
+	free (core->print->lines_cache);
+	core->print->lines_cache = R_NEWS0 (ut64, bsz);
+	if (!core->print->lines_cache) {
+		return -1;
+	}
+
+	{
+		RIOSection *s = r_io_section_mget_in (core->io, core->offset);
+		baddr = s ? s->offset : r_config_get_i (core->config, "bin.baddr");
+	}
+
+	line_count = start_addr ? 0 : 1;
+	core->print->lines_cache[0] = start_addr ? 0 : baddr;
+	r_cons_break (NULL, NULL);
+	buf = malloc (bsz);
+	if (!buf) return -1;
+	while (off < end_addr) {
+		if (r_cons_singleton ()->breaked) {
+			break;
+		}
+		r_io_read_at (core->io, off, (ut8*)buf, bsz);
+		for (i=0; i<bsz; i++) {
+			if (buf[i] == '\n') {
+				core->print->lines_cache[line_count] = start_addr ? off+i+1 : off+i+1+baddr;
+				line_count++;
+				if (line_count % bsz == 0) {
+					ut64 *tmp = realloc (core->print->lines_cache,
+						(line_count+bsz)*sizeof(ut64));
+					if (tmp) {
+						core->print->lines_cache = tmp;
+					} else {
+						R_FREE (core->print->lines_cache);
+						goto beach;
+					}
+				}
+			}
+		}
+		off += bsz;
+	}
+	free (buf);
+	r_cons_break_end ();
+	return line_count;
+beach:
+	free (buf);
+	r_cons_break_end();
+	return -1;
+}
+
 static int cmd_seek(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *cmd, *p;
@@ -18,8 +136,8 @@ static int cmd_seek(void *data, const char *input) {
 				core->dbg->reg = orig;
 				r_core_seek (core, off, 1);
 			}
-		} else eprintf ("|Usage| 'sr pc' seek to program counter register\n");
-	} else
+		} else eprintf ("|Usage| 'sr PC' seek to program counter register\n");
+	}
 	if (*input) {
 		const char *inputnum = strchr (input, ' ');
 		int sign = 1;
@@ -30,7 +148,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[0]!='/' && inputnum && isalpha (inputnum[0]) && off == 0) {
 			if (!r_flag_get (core->flags, inputnum)) {
 				eprintf ("Cannot find address for '%s'\n", inputnum);
-				return R_FALSE;
+				return false;
 			}
 		}
 #endif
@@ -209,7 +327,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_io_sundo_push (core->io, core->offset);
 			r_core_anal_bb_seek (core, off);
 			break;
-		case 'f':
+		case 'f': // "sf"
 			if (strlen(input) > 2 && input[1]==' ') {
 				RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, input+2);
 				if (fcn) {
@@ -222,7 +340,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_core_seek (core, fcn->addr+fcn->size, 1);
 			}
 			break;
-		case 'o':
+		case 'o': // "so"
 			{
 			RAnalOp op;
 			int val=0, ret, i, n = r_num_math (core->num, input+1);
@@ -232,7 +350,7 @@ static int cmd_seek(void *data, const char *input) {
 				ut64 addr = core->offset;
 				int numinstr = n * -1;
 				ret = r_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
-				r_core_seek (core, addr, R_TRUE);
+				r_core_seek (core, addr, true);
 				val += ret;
 			} else {
 				for (val=i=0; i<n; i++) {
@@ -247,20 +365,70 @@ static int cmd_seek(void *data, const char *input) {
 			core->num->value = val;
 			}
 			break;
-		case 'g':
+		case 'g': // "sg"
 			{
 			RIOSection *s = r_io_section_vget (core->io, core->offset);
 			if (s) r_core_seek (core, s->vaddr, 1);
 			else r_core_seek (core, 0, 1);
 			}
 			break;
-		case 'G':
+		case 'G': // "sG"
 			{
 			if (!core->file) break;
 			RIOSection *s = r_io_section_vget (core->io, core->offset);
 			// XXX: this +2 is a hack. must fix gap between sections
 			if (s) r_core_seek (core, s->vaddr+s->size+2, 1);
 			else r_core_seek (core, r_io_desc_size (core->io, core->file->desc), 1);
+			}
+			break;
+		case 'l': // "sl"
+			{
+			int sl_arg = r_num_math (core->num, input+2);
+			const char *help_msg[] = {
+				"Usage:", "sl+ or sl- or slc", "",
+				"sl", " [line]", "Seek to absolute line",
+				"sl", "[+-][line]", "Seek to relative line",
+				"slc", "", "Clear line cache",
+				"sll", "", "Show total number of lines",
+				NULL };
+			switch (input[1]) {
+			case 0:
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
+				__get_current_line (core);
+				break;
+			case ' ':
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
+				__seek_line_absolute (core, sl_arg);
+				break;
+			case '-':
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
+				__seek_line_relative (core, -sl_arg);
+				break;
+			case '+':
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
+				__seek_line_relative (core, sl_arg);
+				break;
+			case 'c':
+				__clean_lines_cache (core);
+				break;
+			case 'l':
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
+				eprintf ("%d lines\n", core->print->lines_cache_sz-1);
+				break;
+			case '?':
+				r_core_cmd_help (core, help_msg);
+				break;
+			}
 			}
 			break;
 		case '?': {
@@ -284,6 +452,7 @@ static int cmd_seek(void *data, const char *input) {
 			"sf", "", "Seek to next function (f->addr+f->size)",
 			"sf", " function", "Seek to address of specified function",
 			"sg/sG", "", "Seek begin (sg) or end (sG) of section or file",
+			"sl", "[+-]line", "Seek to line",
 			"sn/sp", "", "Seek next/prev scr.nkey",
 			"so", " [N]", "Seek to N next opcode(s)",
 			"sr", " pc", "Seek to register",

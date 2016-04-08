@@ -1,0 +1,11 @@
+255=DllCanUnloadNow
+256=DllGetClassObject
+257=DllRegisterServer
+258=DllUnregisterServer
+253=OleCreateFontIndirect
+252=OleCreatePictureIndirect
+250=OleCreatePropertyFrame
+249=OleCreatePropertyFrameIndirect
+248=OleIconToCursor
+251=OleLoadPicture
+254=OleTranslateColor

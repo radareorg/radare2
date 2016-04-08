@@ -28,13 +28,13 @@ static int init(void *user) {
 }
 
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
-	int result = R_FALSE;
+	int result = false;
 	char *addr, value[1024] = {0};
 	addr = sdb_itoa ((ut64)(size_t)bin_obj,  value, 16);
 	if (key && bin_obj && DB) {
 		IFDBG_BIN_JAVA eprintf ("Adding %s:%s to the bin_objs db\n", key, addr);
 		sdb_set (DB, key, addr, 0);
-		result = R_TRUE;
+		result = true;
 	}
 	return result;
 }
@@ -72,12 +72,12 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, 
 }
 
 static int load(RBinFile *arch) {
-	int result = R_FALSE;
+	int result = false;
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
  	struct r_bin_java_obj_t* bin_obj = NULL;
 
- 	if (!arch || !arch->o) return R_FALSE;
+ 	if (!arch || !arch->o) return false;
 
 	bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 
@@ -105,7 +105,7 @@ static int load(RBinFile *arch) {
 		if (arch->file) {
 			bin_obj->file = strdup (arch->file);
 		}
-		result = R_TRUE;
+		result = true;
 	}
 	return result;
 }
@@ -114,7 +114,7 @@ static int destroy(RBinFile *arch) {
 	r_bin_java_free ((struct r_bin_java_obj_t*)arch->o->bin_obj);
 	sdb_free (DB);
 	DB = NULL;
-	return R_TRUE;
+	return true;
 }
 
 static RList* entries(RBinFile *arch) {
@@ -164,18 +164,16 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	int off, ret = R_FALSE;
-	int version = 0;
-
-	if (buf && length>10)
-	if (!memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
-		memcpy (&off, buf+4*sizeof(int), sizeof(int));
+	bool ret = false;
+	int off, version = 0;
+	if (buf && length>32 && !memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
+		memcpy (&off, buf + 4 * sizeof(int), sizeof(int));
 		version = buf[6] | (buf[7] <<8);
 		if (version>1024) {
 			r_mem_copyendian ((ut8*)&off,
 				(ut8*)&off, sizeof(int),
 				!LIL_ENDIAN);
-			ret = R_TRUE;
+			ret = true;
 		}
 	}
 	return ret;
@@ -227,7 +225,6 @@ RBinPlugin r_bin_plugin_java = {
 	.desc = "java bin plugin",
 	.license = "LGPL3",
 	.init = init,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -235,7 +232,6 @@ RBinPlugin r_bin_plugin_java = {
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
 	.binsym = binsym,
 	.entries = &entries,
 	.sections = sections,
@@ -245,14 +241,10 @@ RBinPlugin r_bin_plugin_java = {
 	.info = &info,
 	.fields = fields,
 	.libs = libs,
-	.relocs = NULL,
-	.dbginfo = NULL,
 	.lines = &lines,
-	.write = NULL,
 	.classes = classes,
 	.demangle_type = retdemangle,
 	.minstrlen = 3,
-	.user = NULL
 };
 
 #ifndef CORELIB

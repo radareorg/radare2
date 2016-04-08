@@ -1,4 +1,4 @@
-/* radare2 Copyleft 2013-2014 pancake */
+/* radare2 Copyleft 2013-2015 pancake */
 
 var r2 = {};
 
@@ -10,6 +10,26 @@ var prev_curoff = 0;
 var prev_lastoff = 0;
 var hascmd = false;
 
+function isFirefoxOS() {
+  if (!locationbar.visible) {
+    if (navigator.userAgent.indexOf('Firefox') > -1 && navigator.userAgent.indexOf("Mobile") > -1) {
+      return ("mozApps" in navigator);
+    }
+  }
+  return false;
+}
+
+// Valid options: sync, async or sasync
+//r2.asyncMode = 'sasync';
+r2.asyncMode = 'sync';
+
+if (isFirefoxOS()) {
+  /* Requires CORS or SystemXHR */
+  r2.root = 'http://cloud.radare.org';
+} else {
+  r2.root = '';
+}
+
 // async helper
 function asyncLoop(iterations, func, callback) {
   var index = 0;
@@ -19,7 +39,6 @@ function asyncLoop(iterations, func, callback) {
       if (done) {
         return;
       }
-
       if (index < iterations) {
         index++;
         func(loop);
@@ -54,18 +73,16 @@ if (typeof (module) !== 'undefined') {
   }
 }
 
-r2.project_name = "";
+r2.project_name = '';
 
 r2.plugin = function() {
-  console.error ("r2.plugin is not available in this environment");
+  console.error ('r2.plugin is not available in this environment');
 }
 try {
   if (r2plugin) {
     r2.plugin = r2plugin
   }
 } catch ( e ) {}
-
-r2.root = ""; // prefix path
 
 /* helpers */
 function dump(obj) {
@@ -103,20 +120,49 @@ function objtostr(obj) {
   return str;
 }
 
+var ajax_in_process = false;
+
 function Ajax(method, uri, body, fn) {
-  if (typeof (XMLHttpRequest) == "undefined")
+  if (typeof (XMLHttpRequest) == 'undefined')
     return false;
-  var x = new XMLHttpRequest ();
+  if (r2.asyncMode == 'fake') {
+    if (fn) {
+      fn ("{}");
+    }
+    return true;
+  }
+  if (r2.asyncMode == 'sasync') {
+    console.log ('async waiting');
+    if (ajax_in_process) {
+      setTimeout(function() {
+        Ajax(method, uri, body, fn);
+      }, 100);
+      return false;
+    }
+  }
+  if (isFirefoxOS()) {
+    var x = new XMLHttpRequest ({mozSystem: true});
+  } else {
+    var x = new XMLHttpRequest ();
+  }
   if (!x)
     return false;
-  x.open (method, uri, false);
+  ajax_in_process = true;
+  if (r2.asyncMode == 'sync') {
+    x.open (method, uri, false);
+  } else {
+    x.open (method, uri, true);
+  }
   x.setRequestHeader ('Accept', 'text/plain');
-  x.setRequestHeader ('Accept', 'text/html');
+  //x.setRequestHeader ('Accept', 'text/html');
   x.setRequestHeader ("Content-Type", "application/x-ww-form-urlencoded; charset=UTF-8");
   x.onreadystatechange = function(y) {
+    ajax_in_process = false;
     if (x.status == 200) {
       if (fn) {
         fn (x.responseText);
+      } else {
+        console.error ('missing ajax callback');
       }
     } else {
       console.error ("ajax " + x.status)
@@ -206,7 +252,7 @@ r2.get_address_type = function(address) {
       }
     }
   }
-  return "";
+  return '';
 }
 
 r2.settings = {};
@@ -360,15 +406,20 @@ r2.cmds = function(cmds, cb) {
   r2.cmd (cmd, lala);
 }
 
+function stackTrace() {
+    var err = new Error();
+    return err.stack;
+}
+
 function _internal_cmd(c, cb) {
   if (typeof (r2cmd) != 'undefined') {
     hascmd = r2cmd;
   }
   if (hascmd) {
     // TODO: use setTimeout for async?
-    if (typeof (r2plugin) != "undefined") {
+    if (typeof (r2plugin) != 'undefined') {
       // duktape
-      cb (r2cmd(c));
+      return cb (r2cmd(c));
     } else {
       // node
       return hascmd (c, cb);
@@ -394,11 +445,11 @@ r2.cmd = function(c, cb) {
         loop.next ();
       });
     }, function() {
-        // all iterations done
-        cb (res);
-      });
+      // all iterations done
+      cb (res);
+    });
   } else {
-    _internal_cmd (c, cb);
+    return _internal_cmd (c, cb);
   }
 }
 

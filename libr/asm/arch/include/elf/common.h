@@ -201,6 +201,8 @@
    unofficial e_machine number should eventually ask registry@caldera.com for
    an officially blessed number to be added to the list above.	*/
 
+#define EM_RISCV	243	/* RISC V */
+
 /* Old version of Sparc v9, from before the ABI;
    This should be removed shortly.  */
 #define EM_OLD_SPARCV9		11
@@ -643,7 +645,7 @@
 #define DF_P1_LAZYLOAD	0x00000001
 #define DF_P1_GROUPPERM	0x00000002
 
-/* Flag value in in the DT_FLAGS_1 .dynamic entry.  */
+/* Flag value in the DT_FLAGS_1 .dynamic entry.  */
 #define DF_1_NOW	0x00000001
 #define DF_1_GLOBAL	0x00000002
 #define DF_1_GROUP	0x00000004

@@ -19,7 +19,7 @@ static int cmp(const void *a, const void *b) {
 }
 
 R_API int r_flag_sort(RFlag *f, int namesort) {
-	int ret = R_FALSE;
+	int ret = false;
 	int changes;
 	RFlagItem *flag, *fi = NULL;
 	RListIter *iter, *it_elem;
@@ -40,7 +40,7 @@ R_API int r_flag_sort(RFlag *f, int namesort) {
 			}
 		}
 		if (fi && changes) {
-			ret = R_TRUE;
+			ret = true;
 			r_list_split_iter (f->flags, it_elem);
 			free (it_elem);
 			r_list_append (tmp, fi);

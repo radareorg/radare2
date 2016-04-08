@@ -22,10 +22,13 @@ else
 	shift
 fi
 
+type sudo || NOSUDO=1
 [ "$(id -u)" = 0 ] || SUDO=sudo
 [ -n "${NOSUDO}" ] && SUDO=
 
-if [ "${HARDEN}" = 1 ]; then
+if [ "${M32}" = 1 ]; then
+	./sys/build-m32.sh $* && ${SUDO} ${MAKE} ${INSTALL_TARGET}
+elif [ "${HARDEN}" = 1 ]; then
 	# shellcheck disable=SC2048
 	# shellcheck disable=SC2086
 	./sys/build-harden.sh $* && ${SUDO} ${MAKE} ${INSTALL_TARGET}

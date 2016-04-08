@@ -24,7 +24,7 @@ enum MatchFlag {
 static inline int mycmp(const char *a, const char *b, int n, int any) {
 	int i, j;
 	for (i=j=0; a[i] && b[j] && j<n; i++) {
-		if (tolower(a[i]) == tolower(b[j])) {
+		if (tolower ((const ut8)a[i]) == tolower ((const ut8)b[j])) {
 			j++;
 		} else {
 			if (!any) return 0;

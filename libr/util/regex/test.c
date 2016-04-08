@@ -18,6 +18,19 @@ int _main() {
 	return 0;
 }
 
+static void test_or() {
+	RRegex *rx = r_regex_new ("(eax|ebx)", "e");
+	printf ("result (%s) = %d\n", "mov eax", r_regex_match("(eax|ebx)", "e", "mov eax"));
+	printf ("result (%s) = %d\n", "mov ebx", r_regex_match("(eax|ebx)", "e", "mov ebx"));
+	printf ("result (%s) = %d\n", "mov eax", r_regex_match("(eax|ebx)", "e", "mov ecx"));
+	printf ("result (%s) = %d\n", "mov ebx", r_regex_match("(eax|ecx)", "e", "mov ebx"));
+	printf ("result (%s) = %d\n", "mov eax", r_regex_check(rx, "mov eax"));
+	printf ("result (%s) = %d\n", "mov ebx", r_regex_check(rx, "mov ebx"));
+	printf ("result (%s) = %d\n", "mov eax", r_regex_exec(rx, "mov eax", 0, 0, 1));
+	printf ("result (%s) = %d\n", "mov ebx", r_regex_exec(rx, "mov ebx", 0, 0, 1));
+	r_regex_free (rx);
+}
+
 int main(int argc, char **argv) {
 	const char *needle = "^hi";
 	const char *haystack_1 = "patata";
@@ -35,5 +48,6 @@ int main(int argc, char **argv) {
 		printf ("result (%s) = %d\n", haystack_2, res);
 		r_regex_free (rx);
 	} else printf ("oops, cannot compile regexp\n");
+	test_or();
 	return 0;
 }

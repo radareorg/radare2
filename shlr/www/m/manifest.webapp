@@ -1,0 +1,20 @@
+{
+   "name" : "radare2",
+   "description": "Material Remote Web UI for radare2",
+   "version" : "0.1",
+   "default_locale" : "en",
+   "type" : "privileged",
+   "developer" : {
+      "name" : "pancake",
+      "url" : "http://github.com/radare/radare2/"
+   },
+   "permissions" : {
+    "systemXHR": {
+      "description": "communicate with remote r2 servers"
+    }
+   },
+   "launch_path" : "/index.html",
+   "icons" : {
+      "256" : "/images/rlogo256.png"
+   }
+}

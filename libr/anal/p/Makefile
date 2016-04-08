@@ -1,7 +1,7 @@
 include ../../config.mk
+include ../../../mk/platform.mk
 
-
-CFLAGS+=-I../../include -I../arch -Wall -shared -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
+CFLAGS+=-I../../include -I../arch -Wall -shared $(PIC_CFLAGS) ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
 CFLAGS+=-L../../util -lr_util -L../../anal -lr_anal -L../../reg -lr_reg
 LDFLAGS+=${LINK}
 
@@ -12,7 +12,7 @@ all: ${ALL_TARGETS} ;
 
 ALL_TARGETS=
 # TODO: rename to enabled plugins
-ARCHS=null.mk x86_udis.mk ppc_gnu.mk ppc_cs.mk arm_gnu.mk avr.mk csr.mk dalvik.mk sh.mk ebc.mk gb.mk malbolge.mk ws.mk h8300.mk cr16.mk v850.mk msp430.mk sparc_gnu.mk sparc_cs.mk x86_cs.mk cris.mk
+ARCHS=null.mk x86_udis.mk ppc_gnu.mk ppc_cs.mk arm_gnu.mk avr.mk csr.mk dalvik.mk sh.mk ebc.mk gb.mk malbolge.mk ws.mk h8300.mk cr16.mk v850.mk msp430.mk sparc_gnu.mk sparc_cs.mk x86_cs.mk cris.mk 6502.mk snes.mk riscv.mk vax.mk xtensa.mk
 include $(ARCHS)
 
 clean:
@@ -23,6 +23,7 @@ mrproper: clean
 
 .PHONY: all clean mrproper
 else
-all:
-.PHONY: all
+all clean mrproper:
+
+.PHONY: all clean mrproper
 endif

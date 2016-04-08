@@ -41,7 +41,7 @@ int main() {
 
 	reg = r_reg_new ();
 	r_reg_set_profile (reg, "./test.regs");
-	r_reg_set_bytes (reg, -1, (const ut8 *)foo, sizeof(foo));
+	r_reg_read_regs (reg, (const ut8 *)foo, sizeof(foo));
 {
 	ut64 a;
 	RRegItem *item;

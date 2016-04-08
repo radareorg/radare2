@@ -7,7 +7,7 @@ static int cmd_project(void *data, const char *input) {
 	char *str = NULL;
 
 	if (!input)
-		return R_FALSE;
+		return false;
 
 	str = strdup (fileproject);
 	if (arg && *arg==' ') arg++;
@@ -38,6 +38,11 @@ static int cmd_project(void *data, const char *input) {
 			r_config_set (core->config, "file.project", file);
 			r_cons_printf ("%s\n", file);
 		}
+		break;
+	case 'S':
+		if (input[1] == ' ') {
+			r_core_project_save_rdb (core, input+2, R_CORE_PRJ_ALL);
+		} else eprintf ("Usage: PS [file]\n");
 		break;
 	case 'n':
 		if (!fileproject || !*fileproject) {
@@ -116,7 +121,7 @@ static int cmd_project(void *data, const char *input) {
 				}
 			} else if (input[2] == ' ') {
 				/* set base64 string */
-				ut8 *data = r_base64_decode_dyn (input+3, 0);
+				ut8 *data = r_base64_decode_dyn (input+3, -1);
 				if (data) {
 					char *str = r_core_project_notes_file (core, fileproject);
 					if (str) {
@@ -172,6 +177,7 @@ static int cmd_project(void *data, const char *input) {
 		"Pn", " -", "edit notes with cfg.editor",
 		"Po", " [file]", "open project",
 		"Ps", " [file]", "save project",
+		"PS", " [file]", "save script file",
 		"NOTE:", "", "See 'e file.project'",
 		"NOTE:", "", "project files are stored in ~/.config/radare2/projects",
 		NULL};
@@ -180,5 +186,5 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	}
 	free (str);
-	return R_TRUE;
+	return true;
 }

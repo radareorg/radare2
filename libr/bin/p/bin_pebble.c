@@ -67,7 +67,7 @@ static int load(RBinFile *arch) {
 
 static int destroy(RBinFile *arch) {
 	//r_bin_pebble_free ((struct r_bin_pebble_obj_t*)arch->o->bin_obj);
-	return R_TRUE;
+	return true;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -125,7 +125,8 @@ static RList* sections(RBinFile *arch) {
 	strcpy (ptr->name, "relocs");
 	ptr->vsize = ptr->size = pai.num_reloc_entries * sizeof (ut32);
 	ptr->vaddr = ptr->paddr = pai.reloc_list_start;
-	ptr->srwx = 6;
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP;
+	ptr->add = true;
 	r_list_append (ret, ptr);
 	if (ptr->vaddr<textsize)
 		textsize = ptr->vaddr;
@@ -136,7 +137,8 @@ static RList* sections(RBinFile *arch) {
 	strcpy (ptr->name, "symtab");
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
-	ptr->srwx = 4;
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+	ptr->add = true;
 	r_list_append (ret, ptr);
 	if (ptr->vaddr<textsize)
 		textsize = ptr->vaddr;
@@ -146,7 +148,9 @@ static RList* sections(RBinFile *arch) {
 	strcpy (ptr->name, "text");
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
-	ptr->srwx = 7;
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE |
+		R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (!(ptr = R_NEW0 (RBinSection)))
@@ -154,7 +158,8 @@ static RList* sections(RBinFile *arch) {
 	strcpy (ptr->name, "header");
 	ptr->vsize = ptr->size = sizeof (PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;
-	ptr->srwx = 4;
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	return ret;

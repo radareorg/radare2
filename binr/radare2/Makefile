@@ -15,11 +15,19 @@ FOOD_LIBS=$(addprefix ../../libr/,$(subst r_,,$(BINDEPS)))
 SIGN_LIBS=$(addsuffix /libr_*.dylib,$(FOOD_LIBS))
 
 include ../rules.mk
-CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
+#IOS_CERTID?=org.radare.radare2
+
+ios:
+	$(MAKE) -C ../../libr/io
+	$(MAKE) -C ../../libr/debug
+	rm -f radare2
+	$(MAKE)
+	$(MAKE) ios-sign
 
 ios-sign iossign sign:
 	xcrun --sdk iphoneos codesign \
 		-s- --entitlements radare2.xml radare2
+	# -f -s "$$IOS_CERTID" --entitlements radare2.xml radare2
 	#ldid -Sradare2.xml radare2
 
 ios_sdk_sign:
@@ -38,9 +46,9 @@ osx-sign osxsign:
 #	sudo chmod 4755 radare2
 
 osx-sign-libs:
-	for a in ${SIGN_LIBS} ; do \
-		echo Signing $$a ; \
-		codesign -f -s ${CERTID} $$a ; \
+	for LIB in ${SIGN_LIBS} ; do \
+		echo Signing $$LIB ; \
+		codesign -f -s ${CERTID} $$LIB ; \
 	done
 #	xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} --entitlements $(ENTITL) radare2
 #	xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} radare2
@@ -56,3 +64,4 @@ include ../../libr/socket/deps.mk
 include ../../shlr/zip/deps.mk
 include ../../shlr/gdb/deps.mk
 include ../../shlr/java/deps.mk
+include ../../shlr/bochs/deps.mk

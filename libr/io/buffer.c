@@ -11,21 +11,18 @@ R_API int r_io_buffer_load(RIO* io, ut64 addr, int len) {
 	ut64 at;
 	int i, r;
 	ut8 buf[512];
-	if (len<1) return R_FALSE;
+	if (len<1) return false;
 	io->buffer_enabled = 0;
 	for (i=0; i<len; i+=sizeof (buf)) {
-		at = addr+i; //r_io_section_vaddr_to_offset (io, addr+i);
-		//r_io_seek (io, addr+i, R_IO_SEEK_SET);
+		at = addr+i;
 		r_io_seek (io, at, R_IO_SEEK_SET);
 		memset (buf, 0xff, sizeof (buf));
 		r = r_io_read (io, buf, sizeof (buf));
-		//eprintf ("r=%d %llx\n", r, addr+i);
-		//if (buf[0] !=0xff) eprintf ("STORE %02x %02x %02x\n", buf[0], buf[1], buf[2]);
 		if (r<1) break;
 		r_cache_set (io->buffer, at, buf, sizeof (buf));
 	}
 	io->buffer_enabled = 1;
-	return R_TRUE;
+	return true;
 }
 
 R_API const ut8* r_io_buffer_get (RIO *io, ut64 addr, int *len) {

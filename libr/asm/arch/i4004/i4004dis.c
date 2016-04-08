@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - condret@runas-racer.com */
+/* radare - LGPL - Copyright 2014-2016 - condret@runas-racer.com */
 
 #include <r_asm.h>
 #include <r_types.h>
@@ -6,11 +6,11 @@
 #include <stdio.h>
 
 /* That 3 is a hack */
-const int i4004_ins_len[16] = {
+static const int i4004_ins_len[16] = {
 	1, 2, 3, 1, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
-const char *i4004_e[16] = {
+static const char *i4004_e[16] = {
 	"wrm",
 	"wmp",
 	"wrr",
@@ -29,7 +29,7 @@ const char *i4004_e[16] = {
 	"rd3"
 };
 
-const char *i4004_f[16] = {
+static const char *i4004_f[16] = {
 	"clb",
 	"clc",
 	"iac",
@@ -69,12 +69,12 @@ static int i4004dis (RAsmOp *op, const ut8 *buf, int len) {
 		case 1: snprintf (basm, basz, "jcn %d 0x%02x", low, buf[1]); break;
 		case 2:
 			if (rlen == 1)
-				snprintf (basm, basz, "scr r%d", (low & 0xe));
+				snprintf (basm, basz, "src r%d", (low & 0xe));
 			else	snprintf (basm, basz, "fim r%d, 0x%02x", (low & 0xe), buf[1]);
 			break;
 		case 3: snprintf (basm, basz, "fin r%d", (low & 0xe)); break;
-		case 4: snprintf (basm, basz, "jun %03x", ((ut16)(low<<8) | buf[1])); break;
-		case 5: snprintf (basm, basz, "jms %03x", ((ut16)(low<<8) | buf[1])); break;
+		case 4: snprintf (basm, basz, "jun 0x%03x", ((ut16)(low<<8) | buf[1])); break;
+		case 5: snprintf (basm, basz, "jms 0x%03x", ((ut16)(low<<8) | buf[1])); break;
 		case 6: snprintf (basm, basz, "inc r%d", low); break;
 		case 7: snprintf (basm, basz, "isz r%d, 0x%02x", low, buf[1]); break;
 		case 8: snprintf (basm, basz, "add r%d", low); break;

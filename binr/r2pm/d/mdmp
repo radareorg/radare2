@@ -1,0 +1,19 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/radare/radare2-extras"
+R2PM_DESC "[r2-bin] minidump support (wip)"
+
+R2PM_INSTALL() {
+	export PKG_CONFIG_PATH=/usr/lib/pkgconfig
+	./configure --prefix=/usr
+	cd libr/bin
+	make clean
+	make mdmp
+	make mdmp-install HOMEDEST="${R2PM_PLUGDIR}"
+}
+
+R2PM_UNINSTALL() {
+	rm -f "${R2PM_PLUGDIR}/"*mdmp*
+}
+
+R2PM_END

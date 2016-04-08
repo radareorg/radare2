@@ -13,7 +13,6 @@
 
 #include "lh5801.h"
 #include <stdio.h>
-#include <assert.h>
 #include <string.h>
 #include <r_types.h>
 
@@ -137,16 +136,14 @@ enum lh5801_insn_format {
 #define LH5801_IFMT_IMMS(f)  ((f)&LH5801_IFMT_IMM_MASK)
 #define LH5801_IFMT_RMODE(f) ((f)&LH5801_IFMT_RMODE_MASK)
 
-static int lh5801_ifmt_fd_matches(enum lh5801_insn_format fmt, int fd)
-{
+static bool lh5801_ifmt_fd_matches(enum lh5801_insn_format fmt, int fd) {
 	switch (fmt & LH5801_IFMT_FD_MASK) {
-		case LH5801_IFMT_FD_NO: 	return !fd;
-		case LH5801_IFMT_FD_YES:	return fd;
-		case LH5801_IFMT_FD_MOD:	return R_TRUE;
-		default:			assert(R_FALSE);
+	case LH5801_IFMT_FD_NO: 	return !fd;
+	case LH5801_IFMT_FD_YES:	return fd;
+	case LH5801_IFMT_FD_MOD:	return true;
+	default:			return false;
 	}
 }
-
 
 /* Instruction (variant) description. */
 struct lh5801_insn_desc {
@@ -742,8 +739,7 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 /* Decodes one instruction.
  * returns -1 on invalid instructions, the length on valid instructions,
  * and 0 when decoding wasn't possible due to a too small length */
-int lh5801_decode(struct lh5801_insn *insn, const ut8 *buf, int len)
-{
+int lh5801_decode(struct lh5801_insn *insn, const ut8 *buf, int len) {
 	int fd = (buf[0] == 0xfd);
 	int type = -1;
 	unsigned i;
@@ -805,9 +801,9 @@ int lh5801_decode(struct lh5801_insn *insn, const ut8 *buf, int len)
 	insn->fd = fd;
 	insn->opcode = buf[0];
 	switch (LH5801_IFMT_IMMS(desc.format)) {
-		case 3: insn->imm[2] = buf[3];
-		case 2: insn->imm[1] = buf[2];
-		case 1: insn->imm[0] = buf[1];
+	case 3: insn->imm[2] = buf[3];
+	case 2: insn->imm[1] = buf[2];
+	case 1: insn->imm[0] = buf[1];
 	}
 
 	/* return the instruction length */
@@ -816,8 +812,7 @@ int lh5801_decode(struct lh5801_insn *insn, const ut8 *buf, int len)
 
 /* Print the accessed register. Buf must point to a buffer of at least eight
  * bytes. Only the return value should be used. */
-static char *print_reg(char *buf, const struct lh5801_insn *insn)
-{
+static char *print_reg(char *buf, const struct lh5801_insn *insn) {
 	const struct lh5801_insn_desc desc = lh5801_insn_descs[insn->type];
 	unsigned regnr = (insn->opcode >> 4) & 3;
 	const char names[] = "xyu";
@@ -844,21 +839,24 @@ static char *print_reg(char *buf, const struct lh5801_insn *insn)
 		buf[2] = '\0';
 		break;
 	case LH5801_IFMT_RMEM:
-		assert(desc.format & LH5801_IFMT_FD_MOD);
-		if (insn->fd)
-			*(buf++) = '#';
-		buf[0] = '(';
-		buf[1] = names[regnr];
-		buf[2] = ')';
-		buf[3] = '\0';
+		if (desc.format & LH5801_IFMT_FD_MOD) {
+			if (insn->fd)
+				*(buf++) = '#';
+			buf[0] = '(';
+			buf[1] = names[regnr];
+			buf[2] = ')';
+			buf[3] = '\0';
+		} else {
+			return NULL;
+		}
 		break;
-	default: assert(0);
+	default:
+		return NULL;
 	}
 	return saved_buf;
 }
 
-void lh5801_print_insn(char *out, int size, const struct lh5801_insn *insn)
-{
+void lh5801_print_insn(char *out, int size, const struct lh5801_insn *insn) {
 	const struct lh5801_insn_class_desc *iclass =
 		&lh5801_insn_class_descs[insn->iclass];
 	const struct lh5801_insn_desc desc = lh5801_insn_descs[insn->type];
@@ -929,10 +927,13 @@ void lh5801_print_insn(char *out, int size, const struct lh5801_insn *insn)
 		}
 		break;
 	case LH5801_IFMT_IMM3:
-		assert(desc.format & LH5801_IFMT_FD_MOD);
-		snprintf(out, size, "%s %s(%02x%02xh), %02xh", mnem,
-			insn->fd? "#":"",
-			insn->imm[0], insn->imm[1], insn->imm[2]);
+		if (desc.format & LH5801_IFMT_FD_MOD) {
+			snprintf(out, size, "%s %s(%02x%02xh), %02xh", mnem,
+				insn->fd? "#":"",
+				insn->imm[0], insn->imm[1], insn->imm[2]);
+		} else {
+			snprintf(out,size, "imm3 invalid format");
+		}
 		break;
 	default:
 		snprintf(out, size, "%s, BUG: unknown format 0x%x -> 0x%x",

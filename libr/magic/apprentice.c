@@ -214,7 +214,6 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 	if ((ml = malloc (sizeof (*ml))) == NULL) {
 		file_delmagic (magic, mapped, nmagic);
 		file_oomem (ms, sizeof(*ml));
-		free (magic);
 		return -1;
 	}
 
@@ -243,6 +242,7 @@ void file_delmagic(struct r_magic *p, int type, size_t entries) {
 		/*FALLTHROUGH*/
 	case 0:
 		free (p);
+		p = NULL;
 		break;
 	default:
 		abort ();

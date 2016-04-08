@@ -2,6 +2,7 @@ NAME=grubfs
 
 include ../../config-user.mk
 include ../../global.mk
+include ../../mk/platform.mk
 NAME=grubfs
 _INCLUDE_MK_GCC_=
 include ../../libr/config.mk
@@ -64,13 +65,20 @@ CFLAGS+=-Iinclude
 CFLAGS+=-I../../libr/include -DGRUB_TARGET_NO_MODULES
 CFLAGS+=-g
 
-ifeq (,$(findstring cygwin,${OSTYPE}))
-ifeq (,$(findstring mingw32,${OSTYPE}))
-CFLAGS+=-fPIC
+ifneq (,$(findstring cygwin,${OSTYPE}))
+CFLAGS+=-D__CYGWIN__=1
 else
+ifneq (,$(findstring mingw32,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
+else
+ifneq (,$(findstring mingw64,${OSTYPE})$(findstring msys,${OSTYPE}))
+LFDLAGS_SHARE?=-shared
+else
+CFLAGS+=${PIC_CFLAGS}
 endif
 endif
+endif
+
 # This fixes a silly GNU gcc build problem in OSX - BLAME! :D
 ifeq (${OSTYPE},darwin)
 CFLAGS+=-DAPPLE_CC

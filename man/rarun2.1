@@ -1,4 +1,4 @@
-.Dd Sep 30, 2014
+.Dd Mar 27, 2016
 .Dt RARUN2 1
 .Sh NAME
 .Nm rarun2
@@ -26,12 +26,16 @@ set 32 or 64 bit (if the architecture supports it)
 change directory before executing the program
 .It Ar chroot
 run the program in chroot. requires some previous setup
+.It Ar clearenv
+unset the whole environment
 .It Ar core
-set no limit the core file size 
+set no limit the core file size
 .It Ar connect
 connect stdin/stdout/stderr to a socket
 .It Ar envfile
 set a file with lines like `var=value` to be used as env
+.It Ar fork
+used with the listen option, allow to spawn a different process for each connection. Ignored when debugging.
 .It Ar input
 set string to be passed to the program via stdin
 .It Ar libpath
@@ -50,6 +54,8 @@ set the niceness level of the process
 preload a library (not supported on Windows, only linux,osx,bsd)
 .It Ar program
 path to program to be executed
+.It Ar execve
+use execve instead of posix_spawn (osx tricks)
 .It Ar r2preload
 preload with libr2, kill -USR1 to get an r2 shell or -USR2 to spawn a webserver in a thread
 .It Ar r2preweb
@@ -75,7 +81,24 @@ execute the given command
 .It Ar timeout
 set a timeout
 .It Ar unsetenv
-unset the whole environnement
+unset one environment variable
+.El
+.Sh VALUE PREFIXES
+Every value in this configuration file can contain a special
+.Pp
+.Bl -tag -width Fl
+.It Ar @filename
+Slurp contents of file and put them inside the key
+.It Ar "text"
+Escape characters useful for hex chars
+.It Ar 'string'
+Escape characters useful for hex chars
+.It Ar !cmd
+Run command to store the output in the variable
+.It Ar :102030
+Parse hexpair string and store it in the variable
+.It Ar :!102030
+Parse hexpair string from output of command and store it in the variable
 .El
 .Sh EXAMPLES
 Sample rarun2 script
@@ -86,6 +109,11 @@ Sample rarun2 script
   arg0=10
   stdin=foo.txt
   chdir=/tmp
+  clearenv=true
+  setenv=EGG=eggsy
+  setenv=NOFUN=nogames
+  unsetenv=NOFUN
+  # EGG will be the only env variable
   #chroot=.
   ./foo.rr2
 .Pp
@@ -100,7 +128,11 @@ Debugging a program redirecting io to another terminal
   $ tty ; clear ; sleep 999999
   /dev/ttyS010
   ## in another terminal run r2
-  $ r2 \-d rarun2 program=/bin/ls stdio=/dev/ttys010
+  $ r2 \-d /bin/ls -e dbg.profile=foo.rr2
+  $ cat foo.rr2
+  #!/usr/bin/rarun2
+  stdio=/dev/ttys010
+
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1) ,

@@ -1,12 +1,11 @@
-
-	return strdup (
-	"=pc	eip\n"
-	"=sp	esp\n"
-	"=bp	ebp\n"
-	"=a0	eax\n"
-	"=a1	ebx\n"
-	"=a2	ecx\n"
-	"=a3	edi\n"
+return strdup (
+	"=PC	eip\n"
+	"=SP	esp\n"
+	"=BP	ebp\n"
+	"=A0	eax\n"
+	"=A1	ebx\n"
+	"=A2	ecx\n"
+	"=A3	edi\n"
 	"seg	fs	.32	0	0\n"
 	"seg	es	.32	4	0\n"
 	"seg	ds	.32	8	0\n"

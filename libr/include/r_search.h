@@ -20,6 +20,7 @@ enum {
 	R_SEARCH_XREFS,
 	R_SEARCH_AES,
 	R_SEARCH_DELTAKEY,
+	R_SEARCH_MAGIC,
 	R_SEARCH_LAST
 };
 
@@ -64,6 +65,7 @@ typedef struct r_search_t {
 	RMemoryPool *pool;
 	int distance;
 	int inverse;
+	bool overlap;
 	int contiguous;
 	int align;
 	RSearchUpdate update;
@@ -108,6 +110,7 @@ R_API int r_search_bmh(const RSearchKeyword *kw, const ut64 from, const ut8 *buf
 R_API int r_search_mybinparse_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_aes_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_rsa_update(void *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_magic_update(void *_s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_deltakey_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_strings_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_regexp_update(void *s, ut64 from, const ut8 *buf, int len);

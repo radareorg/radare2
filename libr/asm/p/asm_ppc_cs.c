@@ -6,12 +6,12 @@
 
 static csh handle = 0;
 
-static int the_end(void *p) {
+static bool the_end(void *p) {
 	if (handle) {
 		cs_close (&handle);
 		handle = 0;
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
@@ -29,6 +29,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	op->size = 0;
 	omode = mode;
+	op->buf_asm[0] = 0;
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_PPC, mode, &handle);
 		if (ret) return 0;
@@ -44,7 +45,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 		cs_free (insn, n);
 	}
-	if (op->size==4) {
+	if (op->size == 4) {
 		op->size = 4;
 		return op->size;
 	}
@@ -58,10 +59,8 @@ RAsmPlugin r_asm_plugin_ppc_cs = {
 	.license = "BSD",
 	.arch = "ppc",
 	.bits = 32|64,
-	.init = NULL,
 	.fini = the_end,
 	.disassemble = &disassemble,
-	.assemble = NULL
 };
 
 #ifndef CORELIB

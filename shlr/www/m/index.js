@@ -11,8 +11,32 @@ if (type=='active') {
 }
 
 function clickableOffsets(x) {
-	x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a href='javascript:seek(\"0x$1\")'>0x$1</a>");
+	x = x.replace (/0x([a-zA-Z0-9]*)/g,
+		"<a href='javascript:seek(\"0x$1\")'>0x$1</a>");
+	x = x.replace (/sym\.([\.a-zA-Z0-9]*)/g,
+		"<a href='javascript:seek(\"sym.$1\")'>sym.$1</a>");
+	x = x.replace (/fcn\.([\.a-zA-Z0-9]*)/g,
+		"<a href='javascript:seek(\"fcn.$1\")'>fcn.$1</a>");
 	return x;
+}
+
+function write() {
+	var str = prompt ("hexpairs, quoted string or :assembly");
+	if (str != "") {
+		switch (str[0]) {
+		case ':':
+			str = str.substring(1);
+			r2.cmd ('"wa '+str+'"', update);
+			break;
+		case '"':
+			str = str.replace(/"/g, '');
+			r2.cmd ("w "+str, update);
+			break;
+		default:
+			r2.cmd ("wx "+str, update);
+			break;
+		}
+	}
 }
 
 function comment() {
@@ -68,9 +92,11 @@ function seek(x) {
 		} else {
 			panelDisasm();
 		}
+		document.getElementById('content').scrollTop = 0;
 		update();
 	}
 }
+
 function analyze() {
 	r2.cmd("af", function() {
 		panelDisasm();
@@ -246,11 +272,7 @@ function configDebug() {
 	r2.cmd("e io.debug=true");
 }
 
-function configArchARM() { r2.cmd("e asm.arch=arm"); }
-function configArchX86() { r2.cmd("e asm.arch=x86"); }
-function configArchMIPS() { r2.cmd("e asm.arch=mips"); }
-function configArchDALVIK() { r2.cmd("e asm.arch=dalvik"); }
-function configArchJAVA() { r2.cmd("e asm.arch=java"); }
+function configArch(name) { r2.cmd("e asm.arch="+name); }
 function configBits8() { r2.cmd("e asm.bits=8"); }
 function configBits16() { r2.cmd("e asm.bits=16"); }
 function configBits32() { r2.cmd("e asm.bits=32"); }
@@ -258,22 +280,48 @@ function configBits64() { r2.cmd("e asm.bits=64"); }
 function configColorTrue() { inColor = true; }
 function configColorFalse() { inColor = false; }
 
+var comboId = 0;
+
+function uiCombo(d) {
+	var fun_name = "combo"+(++comboId);
+	var fun = fun_name +' = function(e) {';
+	fun += ' var sel = document.getElementById("opt_'+fun_name+'");';
+	fun += ' var opt = sel.options[sel.selectedIndex].value;'
+	fun += ' switch (opt) {';
+	for (var a in d) {
+		fun += 'case "'+d[a].name+'": '+d[a].js+'('+d[a].name+');break;';
+	}
+	fun += '}}';
+	// CSP violation here
+	eval (fun);
+	var out = '<select id="opt_'+fun_name+'" onchange="'+fun_name+'()">';
+	for (var a in d) {
+		var def = (d[a].default)? " default": ""
+		out += '<option'+def+'>'+d[a].name+'</option>';
+	}
+	out += '</select>';
+	return out;
+}
+
+function uiSwitch(d) {
+// TODO: not yet done
+	var out = ''+d+
+'<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="switch-1">'+
+'<input type="checkbox" id="switch-1" class="mdl-switch__input" checked />'+
+'<span class="mdl-switch__label"></span>'+
+'</label>';
+	return out;
+}
+
 function uiBlock(d) {
-	var out = '<br /><div class="mdl-card__supporting-text mdl-color-text--blue-grey-50" style="color:black !important;background-color:white !important">';
+	var out = '<br /><div class="mdl-card__supporting-text mdl-shadow--2dp mdl-color-text--blue-grey-50 mdl-cell" style="display:inline-block;margin:5px;color:black !important;background-color:white !important">';
 	out += '<h3 style="color:black">'+d.name+'</h3>';
 	for (var i in d.blocks) {
 		var D = d.blocks[i];
 		out += '<br />'+D.name+': ';
-		for (var b in D.buttons) {
-			var B = D.buttons[b];
-if (B.default) {
-			out += uiButton('javascript:'+B.js+'()', B.name, 'active');
-} else {
-			out += uiButton('javascript:'+B.js+'()', B.name);
-}
-		}
+		out += uiCombo(D.buttons);
 	}
-	out += '</div><br />';
+	out += '</div>';
 	return out;
 }
 
@@ -286,17 +334,53 @@ function panelSettings() {
 	c.style.backgroundColor = '#f0f0f0';
 	out += uiBlock({ name: 'Platform', blocks: [
 	     { name: "Arch", buttons: [
-			{ name: "x86", js: 'configArchX86', default:true },
-			{ name: "arm", js: 'configArchARM' },
-			{ name: "mips", js: 'configArchMIPS' },
-			{ name: "java", js: 'configArchJAVA' },
-			{ name: "dalvik", js: 'configArchDALVIK' },
+			{ name: "x86", js: 'configArch', default:true },
+			{ name: "arm", js: 'configArch' },
+			{ name: "mips", js: 'configArch' },
+			{ name: "java", js: 'configArch' },
+			{ name: "dalvik", js: 'configArch' },
+			{ name: "6502", js: 'configArch' },
+			{ name: "8051", js: 'configArch' },
+			{ name: "h8300", js: 'configArch' },
+			{ name: "hppa", js: 'configArch' },
+			{ name: "i4004", js: 'configArch' },
+			{ name: "i8008", js: 'configArch' },
+			{ name: "lh5801", js: 'configArch' },
+			{ name: "lm32", js: 'configArch' },
+			{ name: "m68k", js: 'configArch' },
+			{ name: "malbolge", js: 'configArch' },
+			{ name: "mcs96", js: 'configArch' },
+			{ name: "msp430", js: 'configArch' },
+			{ name: "nios2", js: 'configArch' },
+			{ name: "ppc", js: 'configArch' },
+			{ name: "rar", js: 'configArch' },
+			{ name: "sh", js: 'configArch' },
+			{ name: "snes", js: 'configArch' },
+			{ name: "sparc", js: 'configArch' },
+			{ name: "spc700", js: 'configArch' },
+			{ name: "sysz", js: 'configArch' },
+			{ name: "tms320", js: 'configArch' },
+			{ name: "v810", js: 'configArch' },
+			{ name: "v850", js: 'configArch' },
+			{ name: "ws", js: 'configArch' },
+			{ name: "xcore", js: 'configArch' },
+			{ name: "prospeller", js: 'configArch' },
+			{ name: "gb", js: 'configArch' },
+			{ name: "z80", js: 'configArch' },
+			{ name: "arc", js: 'configArch' },
+			{ name: "avr", js: 'configArch' },
+			{ name: "bf", js: 'configArch' },
+			{ name: "cr16", js: 'configArch' },
+			{ name: "cris", js: 'configArch' },
+			{ name: "csr", js: 'configArch' },
+			{ name: "dcpu16", js: 'configArch' },
+			{ name: "ebc", js: 'configArch' },
 		]}, 
 	     { name: "Bits", buttons: [
-			{ name: "8", js: 'configBits8' },
-			{ name: "16", js: 'configBits16' },
-			{ name: "32", js: 'configBits32', default:true },
 			{ name: "64", js: 'configBits64' },
+			{ name: "32", js: 'configBits32', default:true },
+			{ name: "16", js: 'configBits16' },
+			{ name: "8", js: 'configBits8' },
 		]},
 	     { name: "OS", buttons: [
 			{ name: "Linux", js: 'configOS_LIN', default:true },
@@ -305,7 +389,7 @@ function panelSettings() {
 		]},
 	    ]
 	});
-	out += uiBlock({ name: 'Disassembly Options', blocks: [
+	out += uiBlock({ name: 'Disassembly', blocks: [
 		{
 		       name: 'Size', buttons: [
 			{ name: "S", js: 'smallDisasm' },
@@ -318,8 +402,13 @@ function panelSettings() {
 			{ name: 'Opcodes', js: 'configOpcodes' },
 			{ name: 'ATT', js: 'configATT' }
 		       ]},
-		{
-		       name: 'Colors', buttons: [
+		       {
+		    name: 'Colors', buttons: [
+		     { name: "Yes", js: 'configColorTrue', default:true },
+		     { name: "No", js: 'configColorFalse' },
+		    ]
+	     }, {
+		       name: 'Theme', buttons: [
 			{ name: 'Default', js: 'configColorDefault' },
 			{ name: 'Random', js: 'configColorRandom' },
 			{ name: 'Solarized', js: 'configColorTheme("solarized")' },
@@ -331,19 +420,15 @@ function panelSettings() {
 			]}
 					]
 	});
-	out += uiBlock({ name: 'Core', blocks: [
+	out += uiBlock({ name: 'Core/IO', blocks: [
 		{
 		    name: 'Mode', buttons: [
 		     { name: "PA", js: 'configPA' },
 		     { name: "VA", js: 'configVA' },
 		     { name: "Debug", js: 'configDebug' }
 		    ]
-		},{
-		    name: 'Colors', buttons: [
-		     { name: "Yes", js: 'configColorTrue', default:true },
-		     { name: "No", js: 'configColorFalse' },
-		    ]
-	     }]});
+		},
+]});
 	out += uiBlock({ name: 'Analysis', blocks: [
 		{
 		    name: 'HasNext', buttons: [
@@ -464,6 +549,16 @@ function consoleKey(e) {
 	}
 }
 
+function singlePanel() {
+	window.top.location.href = "/m/";
+}
+function hSplit() {
+	location.href = "/m/hsplit";
+}
+function vSplit() {
+	location.href = "/m/vsplit";
+}
+
 function panelConsole() {
 	update = panelConsole;
 	document.getElementById('title').innerHTML = 'Console';
@@ -531,9 +626,41 @@ function runSearch(text) {
 	}
 }
 
+function indentScript() {
+	var str = document.getElementById('script').value;
+	var indented = js_beautify (str);
+	document.getElementById('script').value = indented;
+	localStorage['script'] = indented;
+}
+
 function runScript() {
 	var str = document.getElementById('script').value;
-	eval (str);
+	localStorage['script'] = str;
+	document.getElementById('scriptOutput').innerHTML = '';
+	try {
+		var msg = "\"use strict\";"+
+		"function log(x) { var a = "+
+		"document.getElementById('scriptOutput'); "+
+		"if (a) a.innerHTML += x + '\\n'; }\n";
+		// CSP violation here
+		eval (msg + str);
+	} catch (e) {
+		alert (e);
+	}
+}
+
+var foo = "";
+function toggleScriptOutput() {
+	var o = document.getElementById('scriptOutput');
+	if (o) {
+		if (foo == "") {
+			foo = o.innerHTML;
+			o.innerHTML = "";
+		} else {
+			o.innerHTML = foo;
+			foo = "";
+		}
+	}
 }
 
 function panelScript() {
@@ -541,9 +668,16 @@ function panelScript() {
 	document.getElementById('title').innerHTML = 'Script';
 	var c = document.getElementById("content");
 	c.style.backgroundColor = "#f0f0f0";
+	var localScript = localStorage.getItem('script');
 	var out = '<br />'+uiButton('javascript:runScript()', 'Run');
-	out += '<br /><br /><textarea rows=32 id="script" style="width:100%">';
-	out += 'r2.cmd("?e hello world", alert);</textarea>';
+	out += '&nbsp;'+uiButton('javascript:indentScript()', 'Indent');
+	out += '&nbsp;'+uiButton('javascript:toggleScriptOutput()', 'Output');
+	out += '<br /><div class="output" id="scriptOutput"></div><br />';
+	out += '<textarea rows=32 id="script" class="pre" style="width:100%">';
+	if (!localScript) {
+		localScript = 'r2.cmd("?V", log);';
+	}
+	out += localScript + '</textarea>';
 	c.innerHTML = out;
 }
 
@@ -551,8 +685,8 @@ function panelSearch() {
 	update = panelSearch;
 	document.getElementById('title').innerHTML = 'Search';
 	var c = document.getElementById("content");
-	var out = "<br />";
 	c.style.backgroundColor = "#f0f0f0";
+	var out = "<br />";
 	out += "<input style='z-index:9999;background-color:white !important;position:absolute;padding-left:10px;top:3.5em;height:1.8em;color:white' onkeypress='searchKey()' class='mdl-card--expand mdl-textfield__input' id='search_input'/>";
 	out+='<br />';
 	out+=uiButton('javascript:runSearch()', 'Hex');
@@ -667,6 +801,7 @@ function down() {
 }
 
 function panelHexdump() {
+	document.getElementById('content').scrollTop = 0;
 	update = panelHexdump;
 	lastView = 'px';
 	var c = document.getElementById("content");
@@ -679,6 +814,7 @@ function panelHexdump() {
 	out += uiRoundButton('javascript:down()', 'keyboard_arrow_down');
 	out += '&nbsp;';
 	out += uiButton('javascript:comment()', 'Comment');
+	out += uiButton('javascript:write()', 'Write');
 	out += uiButton('javascript:flag()', 'Flag');
 	out += uiButton('javascript:flagsize()', 'Size');
 	out += uiButton('javascript:block()', 'Block');
@@ -698,7 +834,9 @@ function uiRoundButton(a, b) {
 	out += '</button>';
 	return out;
 }
+
 function panelDisasm() {
+	document.getElementById('content').scrollTop = 0;
 	update = panelDisasm;
 	lastView = panelDisasm;
 	var c = document.getElementById("content");
@@ -714,14 +852,92 @@ function panelDisasm() {
 	out += uiButton('javascript:comment()', 'Comment');
 	out += uiButton('javascript:info()', 'Info');
 	out += uiButton('javascript:rename()', 'Rename');
+	out += uiButton('javascript:write()', 'Write');
 	c.innerHTML = out;
+	c.style['font-size'] = '12px';
+	c.style.overflow = 'scroll';
 	var tail = '';
 	if (inColor) {
 		tail = '@e:scr.color=1,scr.html=1';
 	}
 	r2.cmd ("pd 128"+tail, function (d) {
 		var dis = clickableOffsets (d);
-		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace'>"+dis+"<pre>";
+		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace;color:grey'>"+dis+"<pre>";
+	});
+}
+
+var nativeDebugger = false;
+
+function srpc() {
+	r2.cmd ("sr pc", update);
+}
+function stepi() {
+	if (nativeDebugger) {
+		r2.cmd ("ds", update);
+	} else {
+		r2.cmd ("aes", update);
+	}
+}
+function cont() {
+	if (nativeDebugger) {
+		r2.cmd ("dc", update);
+	} else {
+		r2.cmd ("aec", update);
+	}
+}
+function setbp() {
+	r2.cmd ("db $$", update);
+}
+function setreg() {
+	var expr = prompt ("comment");
+	if (expr != '') {
+		if (nativeDebugger) {
+			r2.cmd ("dr "+expr+";.dr*", update);
+		} else {
+			r2.cmd ("aer "+expr+";.ar*", update);
+		}
+	}
+}
+
+function panelDebug() {
+	r2.cmd("e cfg.debug", function (x) {
+		nativeDebugger = (x.trim() == 'true');
+	});
+	document.getElementById('content').scrollTop = 0;
+	update = panelDebug;
+	lastView = panelDebug;
+	var c = document.getElementById("content");
+	document.getElementById('title').innerHTML = 'Debugger';
+	if (inColor) {
+		c.style.backgroundColor = "#202020";
+	}
+	var out = "<br />";
+	out += uiRoundButton('javascript:up()', 'keyboard_arrow_up');
+	out += uiRoundButton('javascript:down()', 'keyboard_arrow_down');
+	out += '&nbsp;';
+	out += uiButton('javascript:srpc()', 'PC');
+	out += uiButton('javascript:stepi()', 'Step');
+	out += uiButton('javascript:cont()', 'Cont');
+	out += uiButton('javascript:setbp()', 'BP');
+	out += uiButton('javascript:setreg()', 'REG');
+	c.innerHTML = out;
+	var tail = '';
+	if (inColor) {
+		tail = '@e:scr.color=1,scr.html=1';
+	}
+	// stack
+	if (nativeDebugger) {
+		var rcmd = "dr";
+	} else {
+		var rcmd = "ar";
+	}
+        r2.cmd ("f cur;."+rcmd+"*;sr sp;px 64", function (d) {
+                var dis = clickableOffsets (d);
+                c.innerHTML += "<pre style='font-family:Console,Courier New,monospace;color:grey'>"+dis+"<pre>";
+        });
+	r2.cmd (rcmd+"=;s cur;f-cur;pd 128"+tail, function (d) {
+		var dis = clickableOffsets (d);
+		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace;color:grey'>"+dis+"<pre>";
 	});
 }
 
@@ -735,7 +951,7 @@ function deleteProject() {
 	location.href = "open.html";
 }
 function closeProject() {
-	alert ("Project deleted");
+	alert ("Project closed");
 	location.href = "open.html";
 }
 function rename() {
@@ -753,7 +969,8 @@ function info() {
 	var out = "<br />"; //Version: "+d;
 	out += uiRoundButton('javascript:panelDisasm()', 'undo');
 	out += '&nbsp;';
-	out += uiButton ('javascript:pdf()', 'Pdf');
+	out += uiButton ('javascript:pdtext()', 'Full');
+	out += uiButton ('javascript:pdf()', 'Func');
 	out += uiButton ('javascript:graph()', 'Graph');
 	out += uiButton ('javascript:blocks()', 'Blocks');
 	out += uiButton ('javascript:decompile()', 'Decompile');
@@ -772,6 +989,20 @@ function blocks() {
 	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
 	var tail = inColor? '@e:scr.color=1,scr.html=1': '';
 	r2.cmd ("pdr"+tail, function (d) {
+		c.innerHTML += "<pre style='font-family:Console,Courier,monospace;color:"+color+"'>"+d+"<pre>";
+	});
+}
+
+function pdtext() {
+	document.getElementById('title').innerHTML = 'Function';
+	var c = document.getElementById('content');
+	c.style['overflow'] = 'none';
+	var color = inColor? "white": "black";
+	c.innerHTML = "<br />";
+	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
+	var tail = inColor? '@e:scr.color=1,scr.html=1,asm.lineswidth=0': '@e:asm.lineswidth=0';
+	r2.cmd("e scr.color=1;s entry0;s $S;pD $SS;e scr.color=0", function(d) {
+		d = clickableOffsets (d);
 		c.innerHTML += "<pre style='font-family:Console,Courier,monospace;color:"+color+"'>"+d+"<pre>";
 	});
 }
@@ -810,6 +1041,7 @@ function graph() {
 	c.innerHTML = '<br />&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a>';
 	var tail = inColor? '@e:scr.color=1,scr.html=1': '';
 	r2.cmd ("agf"+tail, function (d) {
+		d = clickableOffsets(d);
 		c.innerHTML += "<pre style='font-family:Console,Courier New,monospace;color:"+color+"'>"+d+"<pre>";
 	});
 }
@@ -858,16 +1090,69 @@ function updateInfo() {
 		document.getElementById('info').innerHTML = body;
 	});
 }
-window.onload = function() {
+
+function onClick(a,b) {
+	var h = document.getElementById(a);
+	if (h) {
+		h.addEventListener('click', function() {
+			b();
+		});
+	} else {
+		console.error('onclick-error', a);
+	}
+}
+
+updateInfo();
+
+function panelHelp() {
+	alert ("TODO");
+}
+
+var twice = false;
+function ready() {
+	if (twice) {
+		return;
+	}
+	twice = true;
 	updateFortune();
 	updateInfo();
+
+	/* left menu */
+	onClick('menu_headers', panelHeaders);
+	onClick('menu_disasm', panelDisasm);
+	onClick('menu_debug', panelDebug);
+	onClick('menu_hexdump', panelHexdump);
+	onClick('menu_functions', panelFunctions);
+	onClick('menu_flags', panelFlags);
+	onClick('menu_search', panelSearch);
+	onClick('menu_comments', panelComments);
+	onClick('menu_script', panelScript);
+	onClick('menu_help', panelHelp);
+
+	/* left sub-menu */
+	onClick('menu_project_save', saveProject);
+	onClick('menu_project_delete', deleteProject);
+	onClick('menu_project_close', closeProject);
+
+	/* right menu */
+	onClick('menu_seek', seek);
+	onClick('menu_console', panelConsole);
+	onClick('menu_settings', panelSettings);
+	onClick('menu_about', panelAbout);
+	onClick('menu_mail', function() {
+		window.location = 'mailto:pancake@nopcode.org';
+        });
 }
+window.onload = ready
+
+document.addEventListener( "DOMContentLoaded", ready, false )
 
 document.body.onkeypress = function(e) {
 	if (e.ctrlKey) {
 		const keys = [
 			panelConsole,
 			panelDisasm,
+			panelDebug,
 			panelHexdump,
 			panelFunctions,
 			panelFlags,

@@ -12,6 +12,18 @@
 #undef mips
 #define mips mips
 
+#if __IPHONE_8_0 && TARGET_OS_IPHONE
+#define LIBC_HAVE_SYSTEM 0
+#else
+#define LIBC_HAVE_SYSTEM 1
+#endif
+
+#if APPLE_SDK_APPLETVOS || APPLE_SDK_WATCHOS || APPLE_SDK_APPLETVSIMULATOR || APPLE_SDK_WATCHSIMULATOR
+#define LIBC_HAVE_FORK 0
+#else
+#define LIBC_HAVE_FORK 1
+#endif
+
 #ifdef __GNUC__
 #  define UNUSED_FUNCTION(x) __attribute__((__unused__)) UNUSED_ ## x
 #else
@@ -45,15 +57,13 @@
   #define __addr_t_defined
   #include <windows.h>
 #endif
-#if __WIN32__ || MINGW32
+#if __WIN32__ || MINGW32 && !__CYGWIN__
   #include <winsock.h>
   typedef int socklen_t;
-#if __WIN32__ || __CYGWIN__ || MINGW32
   #undef USE_SOCKETS
   #define __WINDOWS__ 1
   #undef __UNIX__
   #undef __BSD__
-#endif
 #endif
 
 #if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
@@ -109,14 +119,10 @@
 extern "C" {
 #endif
 
-#ifndef GIT_TAP
-#define GIT_TAP R2_VERSION
-#endif
-
 #define R_LIB_VERSION_HEADER(x) \
 const char *x##_version()
 #define R_LIB_VERSION(x) \
-const char *x##_version () { return "" GIT_TAP; }
+const char *x##_version () { return "" R2_GITTAP; }
 
 #define TODO(x) eprintf(__FUNCTION__"  " x)
 
@@ -165,6 +171,11 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #undef R_IPI
 #endif
 
+#ifdef R_HEAP
+#undef R_HEAP
+#endif
+#define R_HEAP
+
 #ifdef R_API
 #undef R_API
 #endif
@@ -173,7 +184,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #elif R_INLINE
   #define R_API inline
 #else
-  #if defined(__GNUC__)
+  #if defined(__GNUC__) && __GNUC__ >= 4
     #define R_API __attribute__((visibility("default")))
   #else
     #define R_API
@@ -189,6 +200,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 // TODO: Make R_NEW_COPY be 1 arg, not two
 #define R_NEW_COPY(x,y) x=(void*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
+#define IS_NUMBER(x) (x>='0'&&x<='9')
 #define IS_WHITESPACE(x) (x==' '||x=='\t')
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
 
@@ -246,7 +258,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define HAVE_REGEXP 1
 #endif
 
-#if __WINDOWS__
+#if (__WINDOWS__ || MINGW32) && !__CYGWIN__
 #define PFMT64x "I64x"
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
@@ -293,7 +305,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #elif __arm__
 #define R_SYS_ARCH "arm"
 #define R_SYS_BITS R_SYS_BITS_32
-#elif __arm64__
+#elif __arm64__ || __aarch64__
 #define R_SYS_ARCH "arm"
 #define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
 #elif __arc__

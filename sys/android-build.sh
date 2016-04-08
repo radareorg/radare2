@@ -87,6 +87,8 @@ echo NDK_ARCH: ${NDK_ARCH}
 echo "Using NDK_ARCH: ${NDK_ARCH}"
 echo "Using STATIC_BUILD: ${STATIC_BUILD}"
 
+export CFLAGS="-fPIC -fPIE"
+
 if [ "${BUILD}" = 1 ]; then
 	if [ -z "${NDK}" ]; then
 		echo "Missing NDK env var. Use ./android-{arm|aarch64|mips|mips64|x86}.sh"
@@ -96,40 +98,46 @@ if [ "${BUILD}" = 1 ]; then
 	# start build
 	sleep 1
 
-	make mrproper
-	if [ $STATIC_BUILD = 1 ]; then
-		CFGFLAGS="--without-pic --with-nonpic"
-	fi
-	# dup
-	echo ./configure --with-compiler=android \
-		--with-ostype=android --without-ewf \
-		--prefix=${PREFIX} ${CFGFLAGS}
+	if [ 1 = 1 ]; then
+		make mrproper
+		if [ $STATIC_BUILD = 1 ]; then
+			CFGFLAGS="--without-pic --with-nonpic"
+		fi
+		# dup
+		echo ./configure --with-compiler=android \
+			--with-ostype=android --without-ewf \
+			--prefix=${PREFIX} ${CFGFLAGS}
 
-	./configure --with-compiler=android --with-ostype=android \
-		--prefix=${PREFIX} ${CFGFLAGS} || exit 1
-	make -s -j 4 || exit 1
+		./configure --with-compiler=android --with-ostype=android \
+			--prefix=${PREFIX} ${CFGFLAGS} || exit 1
+		make -s -j 4 || exit 1
+	fi
 fi
 rm -rf $D
 mkdir -p $D
 
+HERE=${PWD}
 INSTALL_PROGRAM=`grep INSTALL_DATA config-user.mk|cut -d = -f 2`
 
-make install INSTALL_PROGRAM="${INSTALL_PROGRAM}" DESTDIR=$PWD/$D || exit 1
+make install INSTALL_PROGRAM="${INSTALL_PROGRAM}" DESTDIR="$HERE/$D" || exit 1
 
 make purge-dev DESTDIR=${PWD}/${D} STRIP="${STRIP}"
 #make purge-doc DESTDIR=${PWD}/${D} STRIP="${STRIP}"
-rm -rf ${PWD}/${D}/share
+#rm -rf ${PWD}/${D}/share
 rm -rf ${PWD}/${D}/include
 rm -rf ${PWD}/${D}/lib/pkgconfig
 rm -rf ${PWD}/${D}/lib/libsdb.a
+rm -rf "${HERE}/${D}/${PREFIX}/lib"
 
-echo rm -rf ${PWD}/${D}/${PREFIX}/bin/*
-rm -rf "${PWD}/${D}/${PREFIX}/bin/"*
+rm -rf "${HERE}/${D}/${PREFIX}/radare2" # r2pm
+rm -rf "${HERE}/${D}/${PREFIX}/bin/r2pm"
+#echo rm -rf ${PWD}/${D}/${BINDIR}/*
 
+#find $HERE/$D | grep www
+#sleep 4
 #end build
 
 # use busybox style symlinkz
-HERE=${PWD}
 cd binr/blob
 make STATIC_BUILD=1 || exit 1
 make install PREFIX="${PREFIX}" DESTDIR="${HERE}/${D}" || exit 1
@@ -139,19 +147,33 @@ mkdir -p ${HERE}/${D}/${PREFIX}/tmp
 :> ${HERE}/${D}/${PREFIX}/tmp/.empty
 cd ../..
 
-chmod +x "${HERE}/${D}/${PREFIX}/bin/"*
-find ${D}/${PREFIX}/share/radare2/*/www
+chmod +x "${HERE}/${D}/${BINDIR}/"*
+find ${D}/${DATADIR}/radare2/*/www
 # Remove development files
-rm -f ${HERE}/${D}/${PREFIX}/lib/radare2/*/*.so
-rm -f ${HERE}/${D}/${PREFIX}/lib/*.a
-rm -rf ${HERE}/${D}/${PREFIX}/share/radare2/*/www/*/node_modules
+rm -f ${HERE}/${D}/${LIBDIR}/radare2/*/*.so
+rm -f ${HERE}/${D}/${LIBDIR}/*.a
+rm -rf ${HERE}/${D}/${DATADIR}/radare2/*/www/*/node_modules
 rm -rf ${HERE}/${D}/${PREFIX}/include
 eval `grep ^VERSION= ${HERE}/config-user.mk`
-#WWWROOT="/data/data/org.radare2.installer/radare2/share/radare2/${VERSION}/www"
-#ln -fs ${WWWROOT} ${HERE}/${D}/data/data/org.radare2.installer/www
-#cp -rf ${WWWROOT} ${HERE}/${D}/data/data/org.radare2.installer/www
-#chmod -R o+rx ${HERE}/${D}/data/data/org.radare2.installer/www
+WWWROOT="/data/data/org.radare2.installer/radare2/share/radare2/${VERSION}/www"
+WWWWOOT="${HERE}/${D}/data/data/org.radare2.installer/www"
+WWWSOOT="${HERE}/${D}/data/data/org.radare2.installer/radare2/share/radare2/${VERSION}/www"
+echo WWWROOT="${WWWROOT}"
+echo WWWROOT="${WWWWOOT}"
+echo WWWROOT="${WWWSOOT}"
+(
+	rm -rf "${WWWWOOT}"
+	mkdir -p "${WWWWOOT}"
+	mv "${WWWSOOT}"/* "${WWWWOOT}"
+	# pax doesnt like symlinks when making it compatible with the java tar
+	#cd "${WWWWOOT}/.."
+	#ln -fs "../radare2/share/radare2/${VERSION}/www" www
+	#ln -fs "${WWWROOT}" "${WWWWOOT}"
+)
+chmod -R o+rx "${WWWWOOT}"
 cd ${D}
+find $HERE/$D | grep www
+sleep 4
 #sltar -c data | gzip > ../$D.tar.gz
 pax -w data | gzip > ../$D.tar.gz
 
@@ -173,3 +195,4 @@ echo `pwd`"/${D}.tar.gz"
 echo `pwd`"/${D}-${D2}.tar.gz"
 
 adb push `pwd`"/${D}-${D2}.tar.gz" /sdcard/radare2-android.tar.gz || true
+exit 0

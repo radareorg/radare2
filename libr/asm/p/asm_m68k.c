@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2009-2014 - nibble */
+/* radare - GPL3 - Copyright 2009-2015 - nibble */
 
 #include <stdio.h>
 #include <string.h>
@@ -33,6 +33,7 @@ static int disassemble(RAsm *a, RAsmOp *aop, const ut8 *buf, int len) {
 	if (*operands)
 		snprintf (aop->buf_asm, R_ASM_BUFSIZE, "%s %s", opcode, operands);
 	else snprintf (aop->buf_asm, R_ASM_BUFSIZE, "%s", opcode);
+	r_str_rmch (aop->buf_asm, '#');
 	aop->size = ilen;
 	return aop->size;
 }
@@ -43,10 +44,7 @@ RAsmPlugin r_asm_plugin_m68k = {
 	.license = "BSD",
 	.bits = 16|32,
 	.desc = "Motorola 68000",
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
 };
 
 #ifndef CORELIB

@@ -13,7 +13,7 @@ R_API int r_io_map_count (RIO *io) {
 
 R_API RIOMap * r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
 	RIOMap *map = R_NEW (RIOMap);
-	if (!map || ((UT64_MAX - size) < addr)) {					//prevent interger-overflow
+	if (!map || ((UT64_MAX - size) < addr)) { //prevent interger-overflow
 		free (map);
 		return NULL;
 	}
@@ -32,41 +32,39 @@ R_API void r_io_map_init(RIO *io) {
 
 R_API int r_io_map_sort(void *_a, void *_b) {
 	RIOMap *a = _a, *b = _b;
-	if (a->from == b->from ){
-		ut64 a_sz = a->to - a->from,
-			b_sz = b->to - b->from;
+	if (a->from == b->from) {
+		ut64 a_sz = a->to - a->from;
+		ut64 b_sz = b->to - b->from;
 		return a_sz < b_sz;
 	}
 	return a->from < b->from;
 }
 
 R_API int r_io_map_write_update(RIO *io, int fd, ut64 addr, ut64 len) {
-	int res = R_FALSE;
+	int res = false;
 	RIOMap *map = NULL;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
 		if (map->fd == fd) break;
 		map = NULL;
 	}
-
 	if (map && map->to < addr+len) {
-		res = R_TRUE;
+		res = true;
 		map->to = addr+len;
 	}
 	return res;
 }
 
 R_API int r_io_map_truncate_update(RIO *io, int fd, ut64 sz) {
-	int res = R_FALSE;
+	int res = false;
 	RIOMap *map = NULL;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
 		if (map->fd == fd) break;
 		map = NULL;
 	}
-
 	if (map) {
-		res = R_TRUE;
+		res = true;
 		map->to = map->from+sz;
 	}
 	return res;
@@ -76,8 +74,12 @@ R_API RIOMap *r_io_map_get(RIO *io, ut64 addr) {
 	RIOMap *map;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
-		if ((map->from <= addr) && (addr < map->to))
+		if (map->from == map->to && addr >= map->from) {
 			return map;
+		}
+		if (addr >= map->from && addr < map->to) {
+			return map;
+		}
 	}
 	return NULL;
 }
@@ -161,12 +163,12 @@ R_API RIOMap * r_io_map_get_first_map_in_range(RIO *io, ut64 addr, ut64 endaddr)
 R_API int r_io_map_del(RIO *io, int fd) {
 	RIOMap *map;
 	RListIter *iter, *tmp;
-	ut8 deleted = R_FALSE;
+	ut8 deleted = false;
 	if (io && io->maps) {
 		r_list_foreach_safe (io->maps, iter, tmp, map) {
 			if (fd==-1 || map->fd==fd) {
 				r_list_delete (io->maps, iter);
-				deleted = R_TRUE;
+				deleted = true;
 			}
 		}
 	}
@@ -191,10 +193,10 @@ R_API int r_io_map_del_at(RIO *io, ut64 addr) {
 	r_list_foreach (io->maps, iter, map) {
 		if (map->from <= addr && addr < map->to) {
 			r_list_delete (io->maps, iter);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 load_align) {
@@ -234,12 +236,12 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut
 }
 
 R_API int r_io_map_exists_for_offset (RIO *io, ut64 off) {
-	int res = R_FALSE;
+	int res = false;
 	RIOMap *im = NULL;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, im) {
 		if (im->from <= off && off < im->to) {
-			res = R_TRUE;
+			res = true;
 			break;
 		}
 	}
@@ -314,27 +316,40 @@ R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 off, int fd) {
 	return paddr;
 }
 
-R_API int r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
+R_API bool r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
 	RListIter *iter;
 	RIOMap *im = NULL;
 	ut64 off = map->from;
-	if (!fd) return R_FALSE;
+	if (!fd) return false;
 	r_list_foreach (io->maps, iter, im) {
 		if (im == map) continue;
 		if (off >= im->from && off < im->to) {
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
-R_API void r_io_map_list (RIO *io) {
+R_API void r_io_map_list (RIO *io, int mode) {
 	RIOMap *map;
 	RListIter *iter;
-	if (io && io->maps && io->printf) {
+	if (io && io->maps && io->cb_printf) {
 		r_list_foreach (io->maps, iter, map) {
-			if (map)
-				io->printf ("%i +0x%"PFMT64x" 0x%"PFMT64x" - 0x%"PFMT64x" ; %s\n", map->fd, map->delta, map->from, map->to, r_str_rwx_i (map->flags));
+			if (!map) continue;
+			switch (mode) {
+			case 1:
+			case 'r':
+				if (map->from) {
+					io->cb_printf ("omr 0x0 0x%"PFMT64x"\n", map->from);
+				}
+				break;
+			default:
+				io->cb_printf ("%i +0x%"PFMT64x" 0x%"PFMT64x
+						" - 0x%"PFMT64x" ; %s\n", map->fd,
+						map->delta, map->from, map->to,
+						r_str_rwx_i (map->flags));
+				break;
+			}
 		}
 	}
 }

@@ -1,4 +1,4 @@
-.Dd Feb 4, 2015
+.Dd Oct 19, 2015
 .Dt RAFIND2 1
 .Sh NAME
 .Nm rafind2
@@ -19,6 +19,8 @@ The options are:
 .Bl -tag -width Fl
 .It Fl z
 Search for zero-terminated strings
+.It Fl a Ar align
+Only accept aligned hits
 .It Fl s Ar str
 Search for a specific string
 .It Fl S Ar str
@@ -27,7 +29,9 @@ Search for a specific wide string
 Search for a regular expression string matches
 .It Fl x Ar hex
 Search for an hexpair string
-.It Fl m Ar mask
+.It Fl m
+Carve for known file-types using the r_magic signatures
+.It Fl M Ar mask
 Set binary mask to be applied
 .It Fl f Ar from
 Specify the source adddress

@@ -12,13 +12,13 @@ static int lang_vala_file(RLang *lang, const char *file) {
 	char *vapidir, *srcdir, *libname;
 
 	if (strlen (file)>500)
-		return R_FALSE;
+		return false;
 	if (!strstr (file, ".vala"))
 		sprintf (name, "%s.vala", file);
 	else strcpy (name, file);
 	if (!r_file_exists (name)) {
 		eprintf ("file not found (%s)\n", name);
-		return R_FALSE;
+		return false;
 	}
 
 	srcdir = strdup (file);
@@ -33,6 +33,7 @@ static int lang_vala_file(RLang *lang, const char *file) {
 		libname = strdup (file);
 		strcpy (srcdir, ".");
 	}
+	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
 	vapidir = r_sys_getenv ("VAPIDIR");
 	if (vapidir) {
 		if (*vapidir) {
@@ -44,7 +45,7 @@ static int lang_vala_file(RLang *lang, const char *file) {
 	free (srcdir);
 	if (r_sandbox_system (buf, 1) != 0) {
 		free (libname);
-		return R_FALSE;
+		return false;
 	}
 	p = strstr (name, ".vala"); if (p) *p=0;
 	p = strstr (name, ".gs"); if (p) *p=0;
@@ -53,7 +54,7 @@ static int lang_vala_file(RLang *lang, const char *file) {
 		" $(pkg-config --cflags --libs r_core gobject-2.0)", name, libname);
 	if (r_sandbox_system (buf, 1) != 0) {
 		free (libname);
-		return R_FALSE;
+		return false;
 	}
 
 	snprintf (buf, sizeof (buf), "./lib%s."R_LIB_EXT, libname);
@@ -74,7 +75,7 @@ static int lang_vala_file(RLang *lang, const char *file) {
 
 static int lang_vala_init(void *user) {
 	// TODO: check if "valac" is found in path
-	return R_TRUE;
+	return true;
 }
 
 static int lang_vala_run(RLang *lang, const char *code, int len) {
@@ -87,7 +88,7 @@ static int lang_vala_run(RLang *lang, const char *code, int len) {
 		lang_vala_file (lang, ".tmp.vala");
 		r_file_rm (".tmp.vala");
 	} else eprintf ("Cannot open .tmp.vala\n");
-	return R_TRUE;
+	return true;
 }
 
 static struct r_lang_plugin_t r_lang_plugin_vala = {

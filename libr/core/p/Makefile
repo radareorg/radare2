@@ -1,7 +1,8 @@
 include ../../config.mk
+include ../../../mk/platform.mk
 include ../../../shlr/zip/deps.mk
 
-CFLAGS=-I../../include -Wall -shared -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
+CFLAGS+=-I../../include -Wall -shared ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
 # XXX
 CFLAGS+=-DLIL_ENDIAN=1
 CFLAGS+=-L../../util -lr_util -L../../reg -lr_reg -L.. -lr_core

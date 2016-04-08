@@ -9,14 +9,13 @@ typedef struct r_regex_t {
 	size_t re_nsub;	/* number of parenthesized subexpressions */
 	const char *re_endp; /* end pointer for R_REGEX_PEND */
 	struct re_guts *re_g; /* none of your business :-) */
+	int re_flags;
 } RRegex;
 
 typedef struct r_regmatch_t {
 	off_t rm_so;		/* start of match */
 	off_t rm_eo;		/* end of match */
 } RRegexMatch;
-
-typedef int regoff_t;
 
 /* regcomp() flags */
 #define	R_REGEX_BASIC		0000
@@ -60,6 +59,7 @@ typedef int regoff_t;
 
 R_API RRegex *r_regex_new (const char *pattern, const char *cflags);
 R_API int r_regex_run (const char *pattern, const char *flags, const char *text);
+R_API int r_regex_match (const char *pattern, const char *flags, const char *text);
 R_API int r_regex_flags(const char *flags);
 R_API int r_regex_comp(RRegex*, const char *, int);
 R_API size_t r_regex_error(int, const RRegex*, char *, size_t);
@@ -67,6 +67,7 @@ R_API size_t r_regex_error(int, const RRegex*, char *, size_t);
  * gcc under c99 mode won't compile "[]" by itself.  As a workaround,
  * a dummy argument name is added.
  */
+R_API bool r_regex_check(const RRegex *rr, const char *str);
 R_API int r_regex_exec(const RRegex *, const char *, size_t, RRegexMatch __pmatch[], int);
 R_API void r_regex_free(RRegex *);
 R_API void r_regex_fini(RRegex *);

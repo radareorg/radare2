@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014 - pancake */
+/* radare2 - LGPL - Copyright 2014-2015 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -232,13 +232,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 
 static int set_reg_profile(RAnal *anal) {
 	const char *p =
-		"=pc	pc\n"
-		"=sp	r14\n" // XXX
-		"=bp	srp\n" // XXX
-		"=a0	r0\n"
-		"=a1	r1\n"
-		"=a2	r2\n"
-		"=a3	r3\n"
+		"=PC	pc\n"
+		"=SP	r14\n" // XXX
+		"=BP	srp\n" // XXX
+		"=A0	r0\n"
+		"=A1	r1\n"
+		"=A2	r2\n"
+		"=A3	r3\n"
 		"gpr	sp	.32	56	0\n" // r14
 		"gpr	acr	.32	60	0\n" // r15
 		"gpr	pc	.32	64	0\n" // r16 // out of context
@@ -271,8 +271,8 @@ RAnalPlugin r_anal_plugin_cris = {
 	.name = "cris",
 	.desc = "Axis Communications 32-bit embedded processor",
 	.license = "LGPL3",
-	.esil = R_TRUE,
-	.arch = R_SYS_ARCH_CRIS,
+	.esil = false,
+	.arch = "cris",
 	.set_reg_profile = set_reg_profile,
 	.bits = 32,
 	.op = &analop,

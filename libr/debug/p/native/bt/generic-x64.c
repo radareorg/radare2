@@ -36,7 +36,7 @@ static RList *backtrace_x86_64(RDebug *dbg, ut64 at) {
 		_rbp = ptr;
 	}
 
-	for (i=1; i<MAXBT; i++) {
+	for (i=1; i<dbg->btdepth; i++) {
 		// TODO: make those two reads in a shot
 		bio->read_at (bio->io, _rbp, (ut8*)&ebp2, 8);
 		if (ebp2 == UT64_MAX)
@@ -57,7 +57,7 @@ static RList *backtrace_x86_64_anal(RDebug *dbg, ut64 at) {
 	int i;
 	ut8 buf[8];
 	RDebugFrame *frame;
-	ut64 ptr, ebp2;
+	ut64 ptr, ebp2 = UT64_MAX;
 	ut64 _rip, _rbp;
 	RList *list;
 	RReg *reg = dbg->reg;
@@ -68,8 +68,8 @@ static RList *backtrace_x86_64_anal(RDebug *dbg, ut64 at) {
 	if (at == UT64_MAX) {
 		//_rsp = r_reg_get_value (reg, r_reg_get (reg, "rsp", R_REG_TYPE_GPR));
 		_rbp = r_reg_get_value (reg, r_reg_get (reg, "rbp", R_REG_TYPE_GPR));
-	//} else {
-	//	_rsp = _rbp = at;
+	} else {
+		_rbp = at;
 	}
 
 	list = r_list_new ();
@@ -82,10 +82,12 @@ static RList *backtrace_x86_64_anal(RDebug *dbg, ut64 at) {
 		frame = R_NEW0 (RDebugFrame);
 		frame->addr = _rip;
 		frame->size = 0;
+		frame->sp = _rbp;
+		frame->bp = _rbp + 8; // XXX
 		r_list_append (list, frame);
 	}
 
-	for (i=1; i<MAXBT; i++) {
+	for (i=1; i<dbg->btdepth; i++) {
 		// TODO: make those two reads in a shot
 		bio->read_at (bio->io, _rbp, (ut8*)&ebp2, 8);
 		if (ebp2 == UT64_MAX)
@@ -97,6 +99,8 @@ static RList *backtrace_x86_64_anal(RDebug *dbg, ut64 at) {
 		frame = R_NEW0 (RDebugFrame);
 		frame->addr = ptr;
 		frame->size = 0;
+		frame->sp = _rbp;
+		frame->bp = _rbp + 8;
 		//frame->name = (fcn && fcn->name) ? strdup (fcn->name) : NULL;
 		r_list_append (list, frame);
 		_rbp = ebp2;

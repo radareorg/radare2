@@ -23,7 +23,7 @@ R_API void r_log_msg(const char *str) {
 R_API void r_log_error(const char *str) {
 	fputs ("ERR: ", stderr);
 	fputs (str, stderr);
-	r_log_file(str);
+	r_log_file (str);
 }
 
 R_API void r_log_progress(const char *str, int percent) {

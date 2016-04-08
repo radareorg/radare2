@@ -60,9 +60,8 @@ R_API int r_list_length(const RList *list) {
 
 /* remove all elements of a list */
 R_API void r_list_purge (RList *list) {
-	RListIter *it;
 	if (list) {
-		it = list->head;
+		RListIter *it = list->head;
 		while (it) {
 			RListIter *next = it->n;
 			r_list_delete (list, it);
@@ -80,16 +79,16 @@ R_API void r_list_free (RList *list) {
 	}
 }
 
-R_API boolt r_list_delete_data (RList *list, void *ptr) {
+R_API bool r_list_delete_data (RList *list, void *ptr) {
 	void *p;
 	RListIter *iter;
 	r_list_foreach (list, iter, p) {
 		if (ptr == p) {
 			r_list_delete (list, iter);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API void r_list_delete (RList *list, RListIter *iter) {
@@ -103,7 +102,7 @@ R_API void r_list_delete (RList *list, RListIter *iter) {
 }
 
 R_API void r_list_split (RList *list, void *ptr) {
-	if (list){
+	if (list) {
 		RListIter *iter = r_list_iterator (list);
 		while (iter) {
 			void *item = iter->data;
@@ -125,7 +124,7 @@ R_API void r_list_split_iter (RList *list, RListIter *iter) {
 }
 
 //Warning: free functions must be compatible
-#define r_list_empty(x) (x==NULL || (x->head==NULL && x->tail==NULL))
+#define r_list_empty(x) (x == NULL || (x->head == NULL && x->tail == NULL))
 R_API int r_list_join (RList *list1, RList *list2) {
 	if (!list1 || !list2)
 		return 0;
@@ -226,7 +225,7 @@ R_API RListIter *r_list_insert(RList *list, int n, void *data) {
 R_API void *r_list_pop(RList *list) {
 	void *data = NULL;
 	RListIter *iter;
-	if (list){
+	if (list) {
 		if (list->tail) {
 			iter = list->tail;
 			if (list->head == list->tail) {
@@ -234,6 +233,26 @@ R_API void *r_list_pop(RList *list) {
 			} else {
 				list->tail = iter->p;
 				list->tail->n = NULL;
+			}
+			data = iter->data;
+			free (iter);
+		}
+		return data;
+	}
+	return NULL;
+}
+
+R_API void *r_list_pop_head(RList *list) {
+	void *data = NULL;
+	RListIter *iter;
+	if (list) {
+		if (list->head) {
+			iter = list->head;
+			if (list->head == list->tail) {
+				list->head = list->tail = NULL;
+			} else {
+				list->head = iter->n;
+				list->head->p = NULL;
 			}
 			data = iter->data;
 			free (iter);
@@ -274,6 +293,7 @@ R_API void *r_list_get_top(const RList *list) {
 		return list->tail->data;
 	return NULL;
 }
+
 R_API void *r_list_get_bottom(const RList *list) {
 	if (list && list->head)
 		return list->head->data;

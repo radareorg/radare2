@@ -136,6 +136,8 @@ static void opcode_pflush (dis_buffer_t *, ut16, ut16);
 
 #define addchar(ch) (*dbuf->casm++ = ch)
 #define iaddchar(ch) (*dbuf->cinfo++ = ch)
+#define addcomma() { (*dbuf->casm++ = ',');(*dbuf->casm++ = ' '); }
+
 
 typedef void dis_func_t (dis_buffer_t *, ut16);
 
@@ -315,7 +317,7 @@ static void opcode_bitmanip(dis_buffer_t *dbuf, ut16 opc)
     addchar('\t');
     if (ISBITSET(opc,7)) {
       PRINT_DREG(dbuf, BITFIELD(opc, 11, 9));
-      addchar(',');
+      addcomma();
     }
     if (dbuf->mit) {  /*phx*/
       PRINT_AREG(dbuf, BITFIELD(opc, 2, 0));
@@ -331,7 +333,7 @@ static void opcode_bitmanip(dis_buffer_t *dbuf, ut16 opc)
     }
     dbuf->used++;
     if (!ISBITSET(opc,7)) {
-      addchar(',');
+      addcomma();
       PRINT_DREG(dbuf, BITFIELD(opc, 11, 9));
     }
     *dbuf->casm = 0;
@@ -355,7 +357,7 @@ static void opcode_bitmanip(dis_buffer_t *dbuf, ut16 opc)
   if (tmp) {
     addstr(dbuf, tmp);
     PRINT_DREG(dbuf, BITFIELD(opc,11,9));
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf,5,GETMOD_BEFORE,0,0);
     return;
   }
@@ -377,7 +379,7 @@ static void opcode_bitmanip(dis_buffer_t *dbuf, ut16 opc)
   if (tmp) {
     addstr(dbuf, tmp);
     get_immed(dbuf, SIZE_BYTE);
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf, 5, GETMOD_BEFORE, 0, 1);
     return;
   }
@@ -385,7 +387,7 @@ static void opcode_bitmanip(dis_buffer_t *dbuf, ut16 opc)
   if (IS_INST(CALLM,opc)) {  /*phx*/
     addstr(dbuf, "callm\t");
     get_immed(dbuf, SIZE_BYTE);
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf, 5, GETMOD_BEFORE, 0, 1);
     return;
   }
@@ -405,12 +407,12 @@ static void opcode_bitmanip(dis_buffer_t *dbuf, ut16 opc)
     PRINT_DREG(dbuf, BITFIELD(ext,2,0));
     addchar(':');
     PRINT_DREG(dbuf, BITFIELD(ext2,2,0));
-    addchar(',');
+    addcomma();
     
     PRINT_DREG(dbuf, BITFIELD(ext,8,6));
     addchar(':');
     PRINT_DREG(dbuf, BITFIELD(ext2,8,6));
-    addchar(',');
+    addcomma();
     
     print_RnPlus(dbuf,ext,ISBITSET(ext,15),14,0);
     addchar(':');
@@ -437,9 +439,9 @@ static void opcode_bitmanip(dis_buffer_t *dbuf, ut16 opc)
     }
     addchar('\t');
     PRINT_DREG(dbuf, BITFIELD(ext, 2, 0));
-    addchar(',');
+    addcomma();
     PRINT_DREG(dbuf, BITFIELD(ext, 8, 6));
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 1);
     return;
   case CHK2_INST:
@@ -466,7 +468,7 @@ static void opcode_bitmanip(dis_buffer_t *dbuf, ut16 opc)
     addchar('\t');
     get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 1);
 
-    addchar(',');
+    addcomma();
     if(ISBITSET(ext,15))
       PRINT_AREG(dbuf, BITFIELD(ext, 14, 12));
     else
@@ -498,11 +500,11 @@ static void opcode_bitmanip(dis_buffer_t *dbuf, ut16 opc)
         PRINT_AREG(dbuf,BITFIELD(ext,14,12));
       else
         PRINT_DREG(dbuf,BITFIELD(ext,14,12));
-      addchar(',');
+      addcomma();
       get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 1);
     } else {
       get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 1);
-      addchar(',');
+      addcomma();
       if (ISBITSET(ext,15)) 
         PRINT_AREG(dbuf,BITFIELD(ext,14,12));
       else
@@ -547,12 +549,12 @@ static void opcode_bitmanip(dis_buffer_t *dbuf, ut16 opc)
       addchar ('l');
       addchar('\t');
       get_immed(dbuf,SIZE_LONG);
-      addchar(',');
+      addcomma();
       get_modregstr(dbuf,5,GETMOD_BEFORE,SIZE_LONG,2);
       return;
     }
     get_immed(dbuf,sz);
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf,5,GETMOD_BEFORE,sz,1);
     return;
   }
@@ -581,7 +583,7 @@ static void opcode_move(dis_buffer_t *dbuf, ut16 opc)
   case 0x7:   /* moveq */
     addstr(dbuf, "moveq\t#");
     prints_bf(dbuf, opc, 7, 0);
-    addchar(',');
+    addcomma();
     PRINT_DREG(dbuf,BITFIELD(opc,11,9));
     return; 
   }
@@ -601,7 +603,7 @@ static void opcode_move(dis_buffer_t *dbuf, ut16 opc)
   addchar('\t');
   lused = dbuf->used;
   get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 0);
-  addchar(',');
+  addcomma();
   get_modregstr(dbuf, 11, GETMOD_AFTER, sz, dbuf->used - lused);
 }
 
@@ -688,7 +690,7 @@ static void opcode_misc(dis_buffer_t *dbuf, ut16 opc)
       addstr(dbuf, "link.l\t");
       get_modregstr(dbuf, 2, AR_DIR, 0, 2);
     }
-    addchar(',');
+    addcomma();
     if ((LINKW_MASK & opc) == LINKW_INST)
       get_immed(dbuf, SIZE_WORD);
     else 
@@ -699,11 +701,11 @@ static void opcode_misc(dis_buffer_t *dbuf, ut16 opc)
     addstr(dbuf, "move.l\t");
     if (!ISBITSET(opc,3)) {
       get_modregstr(dbuf, 2, AR_DIR, 0, 0);
-      addchar(',');
+      addcomma();
     }
     addstr(dbuf, "usp");
     if (ISBITSET(opc,3)) {
-      addchar(',');
+      addcomma();
       get_modregstr(dbuf, 2, AR_DIR, 0, 0);
     }
     return;
@@ -812,7 +814,7 @@ static void opcode_misc(dis_buffer_t *dbuf, ut16 opc)
   if ((opc & LEA_MASK) == LEA_INST) {
     addstr(dbuf, "lea\t");
     get_modregstr(dbuf, 5, GETMOD_BEFORE, SIZE_LONG, 0);
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf, 11, AR_DIR, 0, 0);
     return;
   } else if ((opc & CHK_MASK) == CHK_INST) {
@@ -823,7 +825,7 @@ static void opcode_misc(dis_buffer_t *dbuf, ut16 opc)
       addstr(dbuf, "chk.l\t");
       get_modregstr(dbuf, 5, GETMOD_BEFORE, SIZE_LONG, 0);
     }
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf, 11, DR_DIR, 0, 0);
     return;
   } 
@@ -858,7 +860,7 @@ static void opcode_0101(dis_buffer_t *dbuf, ut16 opc)
     make_cond(dbuf,11,"db");
     addchar('\t');
     PRINT_DREG(dbuf, BITFIELD(opc,2,0));
-    addchar(',');
+    addcomma();
     print_disp(dbuf, read16(dbuf->val + 1), SIZE_WORD, -1, 0);
     dbuf->used++;
     return;
@@ -888,7 +890,7 @@ static void opcode_0101(dis_buffer_t *dbuf, ut16 opc)
     if (data == 0)
       data = 8;
     printu(dbuf, data, SIZE_BYTE);
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf, 5, GETMOD_BEFORE, 0, 0);
     
     return;
@@ -911,22 +913,19 @@ static void opcode_branch(dis_buffer_t *dbuf, ut16 opc)
       make_cond(dbuf,11,"b");
 
   addchar('.');
-  disp = BITFIELD(opc,7,0);
+  disp = (st8)BITFIELD(opc,7,0);
   if (disp == 0) {
     /* 16-bit signed displacement */
-    disp = read16(dbuf->val + 1);
+    disp = (st16)read16(dbuf->val + 1);
     dbuf->used++;
     addchar('w');
-  } else if (disp == 0xff) {
+  } else if (disp == -1) {
     /* 32-bit signed displacement */
-    disp = read32(dbuf->val + 1);
+    disp = (st32)read32(dbuf->val + 1);
     dbuf->used += 2;
     addchar('l');
   } else {
-    /* 8-bit signed displacement in opcode. */
-    /* Needs to be sign-extended... */
-    if (ISBITSET(disp,7))
-      disp -= 256;
+    /* 8-bit signed displacement */
     addchar('b');
   }
   addchar('\t');
@@ -991,11 +990,11 @@ static void opcode_addsub(dis_buffer_t *dbuf, ut16 opc)
 
     if (ISBITSET(opc,8) && amode == 0) {
       PRINT_DREG(dbuf,BITFIELD(opc,11,9));
-      addchar(',');
+      addcomma();
       get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 0);
     } else {
       get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 0);
-      addchar(',');
+      addcomma();
       if (amode)
         PRINT_AREG(dbuf,BITFIELD(opc,11,9));
       else
@@ -1054,7 +1053,7 @@ static void opcode_1110(dis_buffer_t *dbuf, ut16 opc)
     
     if (IS_INST(BFINS,opc)) {
       PRINT_DREG(dbuf, BITFIELD(ext,14,12));
-      addchar(',');
+      addcomma();
     }
     get_modregstr(dbuf, 5, GETMOD_BEFORE, 0, 1);
     addchar('{');
@@ -1077,7 +1076,7 @@ static void opcode_1110(dis_buffer_t *dbuf, ut16 opc)
     }
     addchar('}');
     if (ISBITSET(opc,8) && !IS_INST(BFINS,opc)) {
-      addchar(',');
+      addcomma();
       PRINT_DREG(dbuf, BITFIELD(ext,14,12));
     } else
       *dbuf->casm = 0;
@@ -1144,7 +1143,7 @@ static void opcode_1110(dis_buffer_t *dbuf, ut16 opc)
       sz = 8;
     printu_wb(dbuf, sz, SIZE_BYTE, 10);
   }
-  addchar(',');
+  addcomma();
   PRINT_DREG(dbuf, BITFIELD(opc,2,0));
   return;
 }
@@ -1184,7 +1183,7 @@ static void opcode_1011(dis_buffer_t *dbuf, ut16 opc)
     }
     addchar('\t');
     print_RnPlus(dbuf,opc,1,2,1);
-    addchar(',');
+    addcomma();
     print_RnPlus(dbuf,opc,1,11,1);
     return;
   } else {
@@ -1211,16 +1210,16 @@ static void opcode_1011(dis_buffer_t *dbuf, ut16 opc)
     addchar('\t');
     if (IS_INST(EOR,opc)) {
       PRINT_DREG(dbuf, BITFIELD(opc,11,9));
-      addchar(',');
+      addcomma();
     }
   }
   get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 0);
 
   if (IS_INST(CMPA,opc)) {
-    addchar(',');
+    addcomma();
     PRINT_AREG(dbuf, BITFIELD(opc,11,9));
   } else if (IS_INST(CMP,opc)) {
-    addchar(',');
+    addcomma();
     PRINT_DREG(dbuf, BITFIELD(opc,11,9));
   }
   return;
@@ -1237,22 +1236,22 @@ static void opcode_1000(dis_buffer_t *dbuf, ut16 opc)
   if (IS_INST(UNPKA,opc)) {
     addstr(dbuf, "unpk\t");
     print_AxAyPredec(dbuf,opc);
-    addchar(',');
+    addcomma();
     get_immed(dbuf,SIZE_WORD);
   } else if (IS_INST(UNPKD,opc)) {
     addstr(dbuf, "unpk\t");
     print_DxDy(dbuf,opc);
-    addchar(',');
+    addcomma();
     get_immed(dbuf,SIZE_WORD);
   } else if (IS_INST(PACKA,opc)) {  /*phx - PACK was missing */
     addstr(dbuf, "pack\t");
     print_AxAyPredec(dbuf,opc);
-    addchar(',');
+    addcomma();
     get_immed(dbuf,SIZE_WORD);
   } else if (IS_INST(PACKD,opc)) {
     addstr(dbuf, "pack\t");
     print_DxDy(dbuf,opc);
-    addchar(',');
+    addcomma();
     get_immed(dbuf,SIZE_WORD);
   } else if (IS_INST(SBCDA,opc)) {
     addstr(dbuf, "sbcd\t");
@@ -1266,7 +1265,7 @@ static void opcode_1000(dis_buffer_t *dbuf, ut16 opc)
     else
       addstr(dbuf, "divu.w\t");
     get_modregstr(dbuf, 5, GETMOD_BEFORE, SIZE_WORD, 0);
-    addchar(',');
+    addcomma();
     PRINT_DREG(dbuf, BITFIELD(opc,11,9));
   } else {
     addstr(dbuf, "or.");
@@ -1289,11 +1288,11 @@ static void opcode_1000(dis_buffer_t *dbuf, ut16 opc)
     addchar('\t');
     if (ISBITSET(opc,8)) {
       PRINT_DREG(dbuf, BITFIELD(opc,11,9));
-      addchar(',');
+      addcomma();
     }
     get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 0);
     if (!ISBITSET(opc,8)) {
-      addchar(',');
+      addcomma();
       PRINT_DREG(dbuf, BITFIELD(opc,11,9));
     }
   }
@@ -1319,21 +1318,21 @@ static void opcode_1100(dis_buffer_t *dbuf, ut16 opc)
     else
       addstr(dbuf, "mulu.w\t");
     get_modregstr(dbuf, 5, GETMOD_BEFORE, SIZE_WORD, 0);
-    addchar(',');
+    addcomma();
     PRINT_DREG(dbuf, BITFIELD(opc,11,9));
   } else if (IS_INST(EXG,opc)) {
     addstr(dbuf, "exg\t");
     if (ISBITSET(opc,7)) {
       PRINT_DREG(dbuf,BITFIELD(opc,11,9));
-      addchar(',');
+      addcomma();
       PRINT_AREG(dbuf,BITFIELD(opc,2,0));
     } else if (ISBITSET(opc,3)) {
       PRINT_AREG(dbuf,BITFIELD(opc,11,9));
-      addchar(',');
+      addcomma();
       PRINT_AREG(dbuf,BITFIELD(opc,2,0));
     } else {
       PRINT_DREG(dbuf,BITFIELD(opc,11,9));
-      addchar(',');
+      addcomma();
       PRINT_DREG(dbuf,BITFIELD(opc,2,0));
     }
   } else {
@@ -1358,11 +1357,11 @@ static void opcode_1100(dis_buffer_t *dbuf, ut16 opc)
     
     if (ISBITSET(opc,8)) {
       PRINT_DREG(dbuf, BITFIELD(opc,11,9));
-      addchar(',');
+      addcomma();
     }
     get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 0);
     if (!ISBITSET(opc,8)) {
-      addchar(',');
+      addcomma();
       PRINT_DREG(dbuf, BITFIELD(opc,11,9));
     }
   }
@@ -1438,7 +1437,7 @@ static void opcode_fpu(dis_buffer_t *dbuf, ut16 opc)
     if (BITFIELD(opc,5,0) == 0 && BITFIELD(ext,15,10) == 0x17) {
       addstr(dbuf,"fmovecr.x\t#");
       printu(dbuf,BITFIELD(ext,6,0),SIZE_BYTE);
-      addchar(',');
+      addcomma();
       PRINT_FPREG(dbuf, BITFIELD(ext,9,7));
       return;
     }
@@ -1595,7 +1594,7 @@ static void opcode_fpu(dis_buffer_t *dbuf, ut16 opc)
       print_fcond(dbuf,BITFIELD(ext,5,0));
       addchar('\t');
       PRINT_DREG(dbuf, BITFIELD(opc,2,0));
-      addchar(',');
+      addcomma();
       print_disp(dbuf, read16(dbuf->val + 2), SIZE_WORD, -1, 1);
       dbuf->used++;
     } else if (BITFIELD(opc,5,3) == 0x7 &&
@@ -1680,7 +1679,7 @@ static void opcode_fmove_ext(dis_buffer_t *dbuf, ut16 opc, ut16 ext)
     }
     addchar('\t');
     PRINT_FPREG(dbuf, BITFIELD(ext,9,7));
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 1);
     if (sz == SIZE_PACKED) {
       addchar('{');
@@ -1703,11 +1702,11 @@ static void opcode_fmove_ext(dis_buffer_t *dbuf, ut16 opc, ut16 ext)
 
     if (ISBITSET(ext,13)) {
       print_freglist(dbuf, AR_DEC, BITFIELD(ext,12,10), 1);
-      addchar(',');
+      addcomma();
     }
     get_modregstr(dbuf, 5, GETMOD_BEFORE, SIZE_LONG, 1);
     if (!ISBITSET(ext,13)) {
-      addchar(',');
+      addcomma();
       print_freglist(dbuf, AR_DEC, BITFIELD(ext,12,10), 1);
     }
     return;
@@ -1718,22 +1717,22 @@ static void opcode_fmove_ext(dis_buffer_t *dbuf, ut16 opc, ut16 ext)
   if (ISBITSET(ext,11)) {
     if (ISBITSET(ext,13)) {
       PRINT_DREG(dbuf,BITFIELD(ext,6,4));
-      addchar(',');
+      addcomma();
     }
     get_modregstr(dbuf, 5, GETMOD_BEFORE, SIZE_EXTENDED, 1);
     if (!ISBITSET(ext,13)) {
-      addchar(',');
+      addcomma();
       PRINT_DREG(dbuf,BITFIELD(ext,6,4));
     }   
   } else {
     if (ISBITSET(ext,13)) {
       print_freglist(dbuf, BITFIELD(opc,5,3),
                BITFIELD(ext,7,0), 0);
-      addchar(',');
+      addcomma();
     }
     get_modregstr(dbuf, 5, GETMOD_BEFORE, SIZE_EXTENDED, 1);
     if (!ISBITSET(ext,13)) {
-      addchar(',');
+      addcomma();
       print_freglist(dbuf, BITFIELD(opc,5,3),
                BITFIELD(ext,7,0), 0);
     }   
@@ -1771,13 +1770,13 @@ static void opcode_mmu(dis_buffer_t *dbuf, ut16 opc)
         addchar('w');
       addchar('\t');
       print_fcode(dbuf, BITFIELD(ext, 5, 0));
-      addchar(',');
+      addcomma();
       get_modregstr(dbuf, 5, GETMOD_BEFORE, 0, 1);
-      addchar(',');
+      addcomma();
       addchar('#');
       printu_bf(dbuf, ext, 12, 10);
       if (ISBITSET(ext, 8)) {
-        addchar(',');
+        addcomma();
         PRINT_AREG(dbuf, BITFIELD(ext, 7, 5));
       }
     }
@@ -1809,7 +1808,7 @@ static void opcode_mmu(dis_buffer_t *dbuf, ut16 opc)
       print_mcond(dbuf,BITFIELD(ext,5,0));
       addchar('\t');
       PRINT_DREG(dbuf, BITFIELD(opc,2,0));
-      addchar(',');
+      addcomma();
       print_disp(dbuf, read16(dbuf->val + 2), SIZE_WORD, -1, 1);
       dbuf->used++;
     } else if (BITFIELD(opc,5,3) == 0x7 &&
@@ -1872,7 +1871,7 @@ static void opcode_pflush(dis_buffer_t *dbuf, ut16 opc, ut16 ext)
       addchar('w');
     addchar('\t');
     print_fcode(dbuf, fc);
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf, 5, GETMOD_BEFORE, SIZE_LONG, 1);  /*phx*/
     return;
   }
@@ -1882,7 +1881,7 @@ static void opcode_pflush(dis_buffer_t *dbuf, ut16 opc, ut16 ext)
       addstr(dbuf,"val");
     else
       PRINT_AREG(dbuf, BITFIELD(ext,2,0));
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf, 5, GETMOD_BEFORE, SIZE_LONG, 1);
     return;
   }
@@ -1901,12 +1900,12 @@ static void opcode_pflush(dis_buffer_t *dbuf, ut16 opc, ut16 ext)
   case 4:
     addchar('\t');
     print_fcode(dbuf, fc);
-    addchar(',');
+    addcomma();
     addchar('#');
     printu(dbuf, mask, SIZE_BYTE);
     if (!ISBITSET(mode,1)) 
       break;
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf, 5, GETMOD_BEFORE, SIZE_LONG, 1);
   }
 }
@@ -2011,13 +2010,13 @@ static void opcode_pmove(dis_buffer_t *dbuf, ut16 opc, ut16 ext)
   
   if (!rtom) {
     get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 1);
-    addchar(',');
+    addcomma();
   }
   addstr(dbuf, reg);
   if (BITFIELD(ext, 15, 13) == 3 && preg > 1) 
     printu_bf(dbuf, ext, 4, 2);
   if (rtom) {
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 1);
   }
   return;
@@ -2104,7 +2103,7 @@ static void opcode_mmu040(dis_buffer_t *dbuf, ut16 opc)
       break;
     }
     if (BITFIELD(opc,4,3) != 3) {
-      addchar(',');
+      addcomma();
       print_RnPlus(dbuf,opc,1,2,0);
     }
   }
@@ -2142,16 +2141,18 @@ static void opcode_divmul(dis_buffer_t *dbuf, ut16 opc)
   addchar('\t');
 
   get_modregstr(dbuf,5,GETMOD_BEFORE,SIZE_LONG,1);
-  addchar(',');
+  addcomma();
 
   if (ISBITSET(ext,10) ||
       (iq != hr && IS_INST(DIVSL,opc))) {
     /* 64 bit version */
     PRINT_DREG(dbuf, hr);
-    if (dbuf->mit) 
-      addchar(',');
-    else
+    if (dbuf->mit) {
+      addcomma();
+    } else {
       addchar(':');
+      addchar(' ');
+    }
   }
   PRINT_DREG(dbuf, iq);
 }
@@ -2262,11 +2263,11 @@ static void opcode_movem(dis_buffer_t *dbuf, ut16 opc)
     addstr(dbuf, "movem.w\t");
   if (ISBITSET(opc,10)) {
     get_modregstr(dbuf, 5, GETMOD_BEFORE, 0, 1);
-    addchar(',');
+    addcomma();
     print_reglist(dbuf, BITFIELD(opc,5,3), rl);
   } else {
     print_reglist(dbuf, BITFIELD(opc,5,3), rl);
-    addchar(',');
+    addcomma();
     get_modregstr(dbuf, 5, GETMOD_BEFORE, 0, 1);
   }
 }
@@ -2291,7 +2292,7 @@ static void opcode_movec(dis_buffer_t *dbuf, ut16 opc)
     else
       get_modregstr(dbuf,14,DR_DIR,0,0);
     dbuf->val--;
-    addchar(',');
+    addcomma();
   }
   switch (BITFIELD(ext,11,0)) {
     /* 010/020/030/040/CPU32/060 */
@@ -2363,7 +2364,7 @@ static void opcode_movec(dis_buffer_t *dbuf, ut16 opc)
   addstr(dbuf, tmp);
   if (!ISBITSET(opc,0)) {
     dbuf->val++;
-    addchar(',');
+    addcomma();
     if (ISBITSET(ext,15)) 
       get_modregstr(dbuf,14,AR_DIR,0,0);
     else
@@ -2382,29 +2383,29 @@ static void opcode_move16(dis_buffer_t *dbuf, ut16 opc)
 
   if (ISBITSET(opc, 5)) {
     print_RnPlus(dbuf,opc,1,2,1);
-    addchar(',');
+    addcomma();
     print_RnPlus(dbuf,read16(dbuf->val + 1),1,14,1);
     dbuf->used++;
   } else {
     switch (BITFIELD(opc,4,3)) {
     case 0:
       print_RnPlus(dbuf,opc,1,2,1);
-      addchar(',');
+      addcomma();
       get_immed(dbuf, SIZE_LONG);
       break;
     case 1:
       get_immed(dbuf, SIZE_LONG);
-      addchar(',');
+      addcomma();
       print_RnPlus(dbuf,opc,1,2,1);
       break;
     case 2:
       print_RnPlus(dbuf,opc,1,2,0);
-      addchar(',');
+      addcomma();
       get_immed(dbuf, SIZE_LONG);
       break;
     case 3:
       get_immed(dbuf, SIZE_LONG);
-      addchar(',');
+      addcomma();
       print_RnPlus(dbuf,opc,1,2,0);
       break;
     }
@@ -2589,7 +2590,7 @@ static void get_modregstr_moto(dis_buffer_t *dbuf, int bit, int mod, int sz, int
         bd == 2 ? SIZE_WORD :
         bd == 3 ? SIZE_LONG :
         SIZE_BYTE);
-    addchar(',');
+    addcomma();
     if (bd && ISBITSET(ext,7)) {
       addchar('z');
       if (mod != MOD_SPECIAL) 
@@ -2607,7 +2608,7 @@ static void get_modregstr_moto(dis_buffer_t *dbuf, int bit, int mod, int sz, int
     
     if (od && ISBITSET(ext,2)) 
       addchar(']'); /* post-indexed. */
-    addchar(',');
+    addcomma();
     if (bd && ISBITSET(ext,6)) 
       addchar('0');
     else {
@@ -2625,7 +2626,7 @@ static void get_modregstr_moto(dis_buffer_t *dbuf, int bit, int mod, int sz, int
     if (od) {
       if (!ISBITSET(ext,2)) 
         addchar(']'); /* pre-indexed */
-      addchar(',');
+      addcomma();
       prints(dbuf, odisp,
           od == 2 ? SIZE_WORD :
           od == 3 ? SIZE_LONG :
@@ -2805,23 +2806,23 @@ static void get_modregstr_mit(dis_buffer_t *dbuf,int bit, int mod, int sz, int d
           bd == 2 ? SIZE_WORD :
           bd == 3 ? SIZE_LONG :
           SIZE_BYTE);
-      if (od && !ISBITSET(ext,6) && !ISBITSET(ext,2)) 
+      if (od && !ISBITSET(ext,6) && !ISBITSET(ext,2)) {
         /* Pre-indexed and not suppressing index */
-        addchar(',');
-      else if (od && ISBITSET(ext,2)) {
+        addcomma();
+      } else if (od && ISBITSET(ext,2)) {
         /* Post-indexed */
         addchar(')');
         addchar('@');
         addchar('(');
       } else if (!od)
-        addchar(',');
+        addcomma();
     } else if (!bd) {
             /* don't forget simple 8 bit displacement. */
       prints(dbuf, disp,
           bd == 2 ? SIZE_WORD :
           bd == 3 ? SIZE_LONG :
           SIZE_BYTE);
-      addchar(',');
+      addcomma();
     }
     
     /* Post-indexed? */
@@ -2832,7 +2833,7 @@ static void get_modregstr_mit(dis_buffer_t *dbuf,int bit, int mod, int sz, int d
             od == 2 ? SIZE_WORD :
             od == 3 ? SIZE_LONG :
             SIZE_BYTE);
-        addchar(',');
+        addcomma();
       }
     } 
       
@@ -2994,12 +2995,12 @@ static void get_fpustdGEN(dis_buffer_t *dbuf, ut16 ext, const char *name)
     addchar('\t');
     get_modregstr(dbuf, 5, GETMOD_BEFORE, sz, 1);
     if (BITFIELD(ext,6,3) == 6) {
-      addchar(',');
+      addcomma();
       PRINT_FPREG(dbuf, BITFIELD(ext,2,0));
       addchar(':');
       PRINT_FPREG(dbuf, BITFIELD(ext,9,7));
     } else if (BITFIELD(ext,5,0) != FTST) {
-      addchar(',');
+      addcomma();
       PRINT_FPREG(dbuf, BITFIELD(ext,9,7));
     }
   } else {
@@ -3007,12 +3008,12 @@ static void get_fpustdGEN(dis_buffer_t *dbuf, ut16 ext, const char *name)
     addchar('\t');
     PRINT_FPREG(dbuf, BITFIELD(ext,12,10));
     if (BITFIELD(ext,6,3) == 6) {
-      addchar(',');
+      addcomma();
       PRINT_FPREG(dbuf, BITFIELD(ext,2,0));
       addchar(':');
       PRINT_FPREG(dbuf, BITFIELD(ext,9,7));
     } else if (BITFIELD(ext,5,0) != FTST) {
-      addchar(',');
+      addcomma();
       PRINT_FPREG(dbuf, BITFIELD(ext,9,7));
     }
   }
@@ -3261,7 +3262,7 @@ static void print_AxAyPredec(dis_buffer_t *dbuf, ut16 opc)
 static void print_DxDy(dis_buffer_t *dbuf, ut16 opc)
 {
   PRINT_DREG(dbuf,BITFIELD(opc,2,0));
-  addchar(',');
+  addcomma();
   PRINT_DREG(dbuf,BITFIELD(opc,11,9));
 }
 

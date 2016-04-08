@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - pancake */
+/* radare - LGPL - Copyright 2013-2016 - pancake, sghctoma */
 
 #include <r_cons.h>
 
@@ -7,12 +7,11 @@ R_API void r_cons_pal_free () {
 	int i;
 	RCons *cons = r_cons_singleton ();
 	for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++) {
-		if (cons->pal.list[i])
-			R_FREE (cons->pal.list[i]);
+		if (cons->pal.list[i]) R_FREE (cons->pal.list[i]);
 	}
 }
 
-R_API void r_cons_pal_init(const char *foo) {
+R_API void r_cons_pal_init (const char *foo) {
 	RCons *cons = r_cons_singleton ();
 	memset (&cons->pal, 0, sizeof (cons->pal));
 	cons->pal.b0x00 = Color_GREEN;
@@ -45,6 +44,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.pop = Color_BMAGENTA;
 	cons->pal.prompt = Color_YELLOW;
 	cons->pal.push = Color_MAGENTA;
+	cons->pal.crypto = Color_BGBLUE;
 	cons->pal.reg = Color_CYAN;
 	cons->pal.reset = Color_RESET;
 	cons->pal.ret = Color_RED;
@@ -69,7 +69,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.graph_true = Color_GREEN;
 	cons->pal.graph_false = Color_RED;
 	cons->pal.graph_trufae = Color_BLUE; // single jump
-	
+
 	r_cons_pal_free ();
 	cons->pal.list[0] = strdup (Color_RED);
 	cons->pal.list[1] = strdup (Color_YELLOW);
@@ -88,77 +88,122 @@ struct {
 } colors[] = {
 	{ "black",    Color_BLACK,    Color_BGBLACK },
 	{ "red",      Color_RED,      Color_BGRED },
+	{ "bred",     Color_BRED,     Color_BGRED },
 	{ "white",    Color_WHITE,    Color_BGWHITE },
 	{ "green",    Color_GREEN,    Color_BGGREEN },
+	{ "bgreen",   Color_BGREEN,   Color_BGGREEN },
 	{ "magenta",  Color_MAGENTA,  Color_BGMAGENTA },
+	{ "bmagenta", Color_BMAGENTA, Color_BGMAGENTA },
 	{ "yellow",   Color_YELLOW,   Color_BGYELLOW },
+	{ "byellow",  Color_BYELLOW,  Color_BGYELLOW },
 	{ "cyan",     Color_CYAN,     Color_BGCYAN },
+	{ "bcyan",    Color_BCYAN,    Color_BGCYAN },
 	{ "blue",     Color_BLUE,     Color_BGBLUE },
+	{ "bblue",    Color_BBLUE,    Color_BGBLUE },
 	{ "gray",     Color_GRAY,     Color_BGGRAY },
+	{ "bgray",    Color_BGRAY,    Color_BGGRAY },
 	{ "none",     Color_RESET,    Color_RESET },
 	{ NULL, NULL, NULL }
 };
 
-static inline ut8 rgbnum (const char ch) {
-	ut8 r = 0;
-	r_hex_to_byte (&r, ch);
-	return r*16;
+static inline ut8 rgbnum (const char ch1, const char ch2) {
+	ut8 r = 0, r2 = 0;
+	r_hex_to_byte (&r, ch1);
+	r_hex_to_byte (&r2, ch2);
+	return r << 4 | r2;
 }
 
-R_API void r_cons_pal_random() {
+R_API void r_cons_pal_random () {
 	RCons *cons = r_cons_singleton ();
 	ut8 r, g, b;
 	char val[32];
 	const char *k;
 	int i;
-	for (i=0;;i++) {
+	for (i = 0; ; i++) {
 		k = r_cons_pal_get_i (i);
 		if (!k) break;
-		r = r_num_rand (0xf);
-		g = r_num_rand (0xf);
-		b = r_num_rand (0xf);
-		sprintf (val, "rgb:%x%x%x", r, g, b);
-		r_cons_pal_set (k, val);
+		if (cons->truecolor > 0) {
+			r = r_num_rand (0xff);
+			g = r_num_rand (0xff);
+			b = r_num_rand (0xff);
+			sprintf (val, "rgb:%02x%02x%02x", r, g, b);
+			r_cons_pal_set (k, val);
+		} else {
+			char *s = r_cons_color_random_string (0);
+			if (s) {
+				r_cons_pal_set (k, s);
+				free (s);
+			} else {
+				r_cons_pal_set (k, "red");
+			}
+		}
 	}
-	for (i=0; i<R_CONS_PALETTE_LIST_SIZE; i++) {
-		if (cons->pal.list[i])
-			R_FREE (cons->pal.list[i]);
+	for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++) {
+		if (cons->pal.list[i]) R_FREE (cons->pal.list[i]);
 		cons->pal.list[i] = r_cons_color_random (0);
 	}
 }
 
-R_API char *r_cons_pal_parse(const char *str) {
+R_API char *r_cons_pal_parse (const char *str) {
 	int i;
 	ut8 r, g, b;
 	char out[128];
 	char *s = strdup (str);
-	char *p = strchr (s+1, ' ');
+	char *p = strchr (s + 1, ' ');
 	out[0] = 0;
 	if (p) *p++ = 0;
 	if (!strcmp (str, "random")) {
 		free (s);
 		return r_cons_color_random (0);
 	}
+	if (!strncmp (s, "#", 1)) {
+		if (strlen (s) == 7) {
+#define C(x) (x >> 4)
+			int R, G, B;
+			sscanf (s, "%02x%02x%02x", &R, &G, &B);
+			r_cons_rgb_str (out, C(R), C(G), C(B), 0);
+		} else {
+			eprintf ("Invalid html color code\n");
+		}
+	} else 
 	if (!strncmp (s, "rgb:", 4)) {
-		r = rgbnum (s[4]);
-		g = rgbnum (s[5]);
-		b = rgbnum (s[6]);
-		r_cons_rgb_str (out, r, g, b, 0);
+		if (strlen (s) == 7) {
+			r = rgbnum (s[4], '0');
+			g = rgbnum (s[5], '0');
+			b = rgbnum (s[6], '0');
+			r_cons_rgb_str (out, r, g, b, 0);
+		} else if (strlen (s) == 10) {
+			r = rgbnum (s[4], s[5]);
+			g = rgbnum (s[6], s[7]);
+			b = rgbnum (s[8], s[9]);
+			r_cons_rgb_str (out, r, g, b, 0);
+		}
 	}
 	if (p && !strncmp (p, "rgb:", 4)) {
-		r = rgbnum (p[4]);
-		g = rgbnum (p[5]);
-		b = rgbnum (p[6]);
-		r_cons_rgb_str (out+strlen (out), r, g, b, 1);
+		if (strlen (s) == 7) {
+			r = rgbnum (p[4], '0');
+			g = rgbnum (p[5], '0');
+			b = rgbnum (p[6], '0');
+			r_cons_rgb_str (out + strlen (out), r, g, b, 1);
+		} else if (strlen (s) == 10) {
+			r = rgbnum (p[4], p[5]);
+			g = rgbnum (p[6], p[7]);
+			b = rgbnum (p[8], p[9]);
+			r_cons_rgb_str (out + strlen (out), r, g, b, 1);
+		}
 	}
-	for (i=0; colors[i].name; i++) {
-		if (!strcmp (s, colors[i].name))
-			strncat (out, colors[i].code, sizeof(out)-strlen(out)-1);
-		if (p && !strcmp (p, colors[i].name))
-			strncat (out, colors[i].bgcode, sizeof(out)-strlen(out)-1);
+	for (i = 0; colors[i].name; i++) {
+		if (!strcmp (s, colors[i].name)) {
+			strncat (out, colors[i].code,
+				sizeof (out) - strlen (out) - 1);
+		}
+		if (p && !strcmp (p, colors[i].name)) {
+			strncat (out, colors[i].bgcode,
+				sizeof (out) - strlen (out) - 1);
+		}
 	}
 	free (s);
-	return *out? strdup (out): NULL;
+	return *out ? strdup (out) : NULL;
 }
 
 static struct {
@@ -186,6 +231,7 @@ static struct {
 	{ "btext", r_offsetof (RConsPalette, btext) },
 	{ "push",  r_offsetof (RConsPalette, push) },
 	{ "pop", r_offsetof (RConsPalette, pop) },
+	{ "crypto", r_offsetof (RConsPalette, crypto) },
 	{ "jmp", r_offsetof (RConsPalette, jmp) },
 	{ "cjmp", r_offsetof (RConsPalette, cjmp) },
 	{ "call", r_offsetof (RConsPalette, call) },
@@ -220,72 +266,118 @@ static struct {
 	{ NULL, 0 }
 };
 
-R_API void r_cons_pal_walk() {
+R_API void r_cons_pal_walk () {
 	//RCons *c = r_cons_singleton ();
 }
 
-R_API void r_cons_pal_load(const char *sdbfile) {
+R_API void r_cons_pal_load (const char *sdbfile) {
 }
 
-R_API void r_cons_pal_save(const char *sdbfile) {
+R_API void r_cons_pal_save (const char *sdbfile) {
 }
 
-R_API void r_cons_pal_show () {
-	const int inc = 3;
-	int i, j, k, n = 0;
-	for (i=0; colors[i].name; i++) {
-		r_cons_printf ("%s%s__"Color_RESET" %s\n",
-			colors[i].code,
-			colors[i].bgcode,
-			colors[i].name);
-	}
+static void r_cons_pal_show_gs () {
+	int i, n;
+
 	r_cons_printf ("\nGreyscale:\n");
-	for (i=n=0; i<=0xf; i+=1) {
+	for (i = 0x08, n = 0;  i <= 0xee; i += 0xa) {
 		char fg[32], bg[32];
-		int r = i*16;
-		if (i<5) strcpy (fg, Color_WHITE);
-		else r_cons_rgb_str (fg, 0, 0, 0, 0);
-		r_cons_rgb_str (bg, r, r, r, 1);
-		r_cons_printf ("%s%s  rgb:%x%x%x  "
-			Color_RESET, fg, bg, i, i, i);
-		if (n++==5) {
+
+		if (i < 0x76) strcpy (fg, Color_WHITE);
+		else strcpy (fg, Color_BLACK);
+		r_cons_rgb_str (bg, i, i, i, 1);
+		r_cons_printf ("%s%s rgb:%02x%02x%02x "Color_RESET,
+			fg, bg, i, i, i);
+
+		if (n++ == 5) {
 			n = 0;
-			r_cons_newline();
+			r_cons_newline ();
 		}
 	}
-	r_cons_printf ("\n\nRGB:\n");
-	for (i=n=0; i<=0xf; i+=inc) {
-		for (k=0; k<=0xf; k+=inc) {
-			for (j=0; j<=0xf; j+=inc) {
+}
+
+static void r_cons_pal_show_256 () {
+	int r, g, b;
+
+	r_cons_printf ("\n\nXTerm colors:\n");
+	for (r = 0x00; r <= 0xff; r += 0x28) {
+		if (r == 0x28) r = 0x5f;
+		for (b = 0x00; b <= 0xff; b += 0x28) {
+			if (b == 0x28) b = 0x5f;
+			for (g = 0x00; g <= 0xff; g += 0x28) {
 				char fg[32], bg[32];
-				int r = i*16;
-				int g = j*16;
-				int b = k*16;
-				if ((i<6) && (j<5) )
+
+				if (g == 0x28) g = 0x5f;
+				if ((r <= 0x5f) && (g <= 0x5f))
 					strcpy (fg, Color_WHITE);
-				//if (i<2 && j<6 && k<13)
-				else r_cons_rgb_str (fg, 0, 0, 0, 0);
+				else strcpy (fg, Color_BLACK);
 				r_cons_rgb_str (bg, r, g, b, 1);
-				r_cons_printf ("%s%s  rgb:%x%x%x  "Color_RESET,
-					fg, bg, i, j, k);
+				r_cons_printf ("%s%s rgb:%02x%02x%02x "
+					Color_RESET, fg, bg, r, g, b);
+
+				if (g == 0xff) r_cons_newline ();
+			}
+		}
+	}
+}
+
+static void r_cons_pal_show_rgb () {
+	const int inc = 3;
+	int i, j, k, n = 0;
+
+	r_cons_printf ("\n\nRGB:\n");
+	for (i = n = 0; i <= 0xf; i += inc) {
+		for (k = 0; k <= 0xf; k += inc) {
+			for (j = 0; j <= 0xf; j += inc) {
+				char fg[32], bg[32];
+				int r = i * 16;
+				int g = j * 16;
+				int b = k * 16;
+				if ((i < 6) && (j <5)) strcpy (fg, Color_WHITE);
+				else strcpy (fg, Color_BLACK);
+				r_cons_rgb_str (bg, r, g, b, 1);
+				r_cons_printf ("%s%s rgb:%02x%02x%02x "
+					Color_RESET, fg, bg, r, g, b);
 				//if (n++==7) {
-				if (n++==5) {
+				if (n ++== 5) {
 					n = 0;
-					r_cons_newline();
+					r_cons_newline ();
 				}
 			}
 		}
 	}
 }
 
-R_API const char *r_cons_pal_get_color(int n) {
-	RConsPalette *pal = &(r_cons_singleton ()->pal);
+R_API void r_cons_pal_show () {
+	int i = 0;
+
+	for (i = 0; colors[i].name; i++) {
+		r_cons_printf ("%s%s__"Color_RESET" %s\n",
+			colors[i].code,
+			colors[i].bgcode,
+			colors[i].name);
+	}
+
+	switch (r_cons_singleton ()->truecolor) {
+	case 1: // 256 color palette
+		r_cons_pal_show_gs ();
+		r_cons_pal_show_256 ();
+		break;
+	case 2: // 16M
+		r_cons_pal_show_gs ();
+		r_cons_pal_show_rgb ();
+		break;
+	}
+}
+
+R_API const char *r_cons_pal_get_color (int n) {
+	RConsPalette *pal = & (r_cons_singleton ()->pal);
 	ut8 *p = (ut8*)pal;
 	const char **color = NULL;
 	int i;
-	for (i=0; keys[i].name; i++) {
-		if (i<n) continue;
-		color = (const char**)(p + keys[i].off);
+	for (i = 0; keys[i].name; i++) {
+		if (i < n) continue;
+		color = (const char**) (p + keys[i].off);
 		color = (const char**)*color;
 		return (const char *)color;
 	}
@@ -293,38 +385,50 @@ R_API const char *r_cons_pal_get_color(int n) {
 }
 
 R_API void r_cons_pal_list (int rad) {
-	RConsPalette *pal = &(r_cons_singleton ()->pal);
+	RConsPalette *pal = & (r_cons_singleton ()->pal);
 	ut8 *p = (ut8*)pal;
 	ut8 r, g, b;
 	char **color, rgbstr[32];
 	const char *hasnext;
 	int i;
-	if (rad=='j')
-		r_cons_printf ("{");
-	for (i=0; keys[i].name; i++) {
-		color = (char**)(p + keys[i].off);
+	if (rad == 'j') r_cons_printf ("{");
+	for (i = 0; keys[i].name; i++) {
+		color = (char**) (p + keys[i].off);
 		switch (rad) {
 		case 'j':
 			r = g = b = 0;
 			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
-			hasnext = (keys[i+1].name)?",":"";
+			hasnext = (keys[i + 1].name) ? "," : "";
 			r_cons_printf ("\"%s\":[%d,%d,%d]%s",
 				keys[i].name, r, g, b, hasnext);
 			break;
 		case 'c': {
 			r = g = b = 0;
 			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
-			hasnext = (keys[i+1].name) ? "\n" : "";
-			//Need to replace the '.' char because this is not valid CSS
-			char *name = strdup(keys[i].name);
-			int j, len = strlen(name);
-			for(j=0; j < len; j++) {
-				if(name[j] == '.')
-					name[j] = '_';
+			hasnext = (keys[i + 1].name) ? "\n" : "";
+			//Need to replace the '.' char because this is not
+			//valid CSS
+			char *name = strdup (keys[i].name);
+			int j, len = strlen (name);
+			for (j = 0; j < len; j++) {
+				if (name[j] == '.') name[j] = '_';
 			}
 			r_cons_printf (".%s { color: rgb(%d, %d, %d); }%s",
 				name, r, g, b, hasnext);
-			free(name);
+			free (name);
+			}
+			break;
+		case 'h':
+			r = g = b = 0;
+			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
+			rgbstr[0] = 0;
+//			r_cons_rgb_str (rgbstr, r, g, b, 0);
+			{
+				char *name = strdup (keys[i].name);
+				r_str_replace_char (name, '.', '_');
+				r_cons_printf (".%s { color:#%02x%02x%02x }\n",
+					name, r, g, b);
+				free (name);
 			}
 			break;
 		case '*':
@@ -334,47 +438,46 @@ R_API void r_cons_pal_list (int rad) {
 			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
 			rgbstr[0] = 0;
 			r_cons_rgb_str (rgbstr, r, g, b, 0);
-			r >>= 4;
-			g >>= 4;
-			b >>= 4;
-			r_cons_printf ("ec %s rgb:%x%x%x\n",
-				keys[i].name, r&0xf, g&0xf, b&0xf);
+			r_cons_printf ("ec %s rgb:%02x%02x%02x\n",
+				keys[i].name, r, g, b);
 			break;
 		default:
-			r_cons_printf (" %s##"Color_RESET"  %s\n", *color, keys[i].name);
+			r_cons_printf (" %s##"Color_RESET"  %s\n", *color,
+				keys[i].name);
 		}
 	}
-	if (rad=='j')
-		r_cons_printf ("}\n");
+	if (rad == 'j') r_cons_printf ("}\n");
 }
 
 R_API int r_cons_pal_set (const char *key, const char *val) {
 	int i;
 	char **p;
-	for (i=0; keys[i].name; i++) {
+	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
-			p = (char **)((char *)&(r_cons_singleton()->pal) + keys[i].off);
+			p = (char **) ((char *)& (r_cons_singleton ()->pal) +
+				keys[i].off);
 //			free (*p);
 			*p = r_cons_pal_parse (val);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API const char *r_cons_pal_get_i (int n) {
 	int i;
-	for (i=0; i<n && keys[i].name; i++) {}
-	if (i==n) return keys[n].name;
+	for (i = 0; i < n && keys[i].name; i++) {}
+	if (i == n) return keys[n].name;
 	return NULL;
 }
 
 R_API const char *r_cons_pal_get (const char *key) {
 	int i;
 	char **p;
-	for (i=0; keys[i].name; i++) {
+	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
-			p = (char **)((char *)&(r_cons_singleton()->pal) + keys[i].off);
+			p = (char **) ((char *)& (r_cons_singleton ()->pal) +
+				keys[i].off);
 			if (!p) return "";
 			return *p;
 		}

@@ -51,29 +51,31 @@ R_API void r_anal_pin_unset (RAnal *a, ut64 addr) {
 
 R_API int r_anal_pin_call(RAnal *a, ut64 addr) {
 	char buf[64];
-	const char *key, *name;
-	key = sdb_itoa (addr, buf, 16);
-	if (!key) return R_FALSE;
-	name = sdb_const_get (DB, key, NULL);
-	if (!name) return R_FALSE;
-	RAnalEsilPin fcnptr = (RAnalEsilPin)sdb_ptr_get (DB, name, NULL);
-	if (fcnptr) {
-		fcnptr (a);
-		return R_TRUE;
+	const char *name, *key = sdb_itoa (addr, buf, 16);
+	if (key) {
+		name = sdb_const_get (DB, key, NULL);
+		if (name) {
+			RAnalEsilPin fcnptr = (RAnalEsilPin)
+				sdb_ptr_get (DB, name, NULL);
+			if (fcnptr) {
+				fcnptr (a);
+				return true;
+			}
+		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 static int cb_list(void *user, const char *k, const char *v) {
 	RAnal *a = (RAnal*)user;
 	if (!strncmp (k, "0x", 2)) {
 		// bind
-		a->printf ("%s = %s\n", k, v);
+		a->cb_printf ("%s = %s\n", k, v);
 	} else {
 		// ptr
-		a->printf ("PIN %s\n", k);
+		a->cb_printf ("PIN %s\n", k);
 	}
-	return 1;
+	return true;
 }
 
 R_API void r_anal_pin_list(RAnal *a) {

@@ -37,6 +37,6 @@
 
 #define WITH_GPL @WITH_GPL@
 
-#define R2_WWWROOT "@DATADIR@/radare2/@VERSION@/www"
+#define R2_WWWROOT R2_DATDIR "/radare2/" R2_VERSION "/www"
 
 #endif

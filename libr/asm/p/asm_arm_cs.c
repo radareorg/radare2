@@ -1,36 +1,43 @@
-/* radare2 - LGPL - Copyright 2013-2015 - pancake */
+/* radare2 - LGPL - Copyright 2013-2016 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
 #include <capstone/capstone.h>
 #include "../arch/arm/asm-arm.h"
 
+bool arm64ass(const char *str, ut64 addr, ut32 *op);
 static int check_features(RAsm *a, cs_insn *insn);
-static csh cd;
+static csh cd = 0;
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	static int omode = -1;
+	static int obits = 32;
 	cs_insn* insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
-	mode = (a->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
-	if (a->big_endian)
-		mode |= CS_MODE_BIG_ENDIAN;
-	else
-		mode |= CS_MODE_LITTLE_ENDIAN;
+	mode |= (a->bits == 16) ? CS_MODE_THUMB: CS_MODE_ARM;
+	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	if (mode != omode || a->bits != obits) {
+		cs_close (&cd);
+		cd = 0; // unnecessary
+		omode = mode;
+		obits = a->bits;
+	}
 
-	// replace this with the asm.features?
-	if (a->cpu && strstr (a->cpu, "mclass"))
+	if (a->features && strstr (a->features, "mclass"))
 		mode |= CS_MODE_MCLASS;
-	if (a->cpu && strstr (a->cpu, "v8"))
+	if (a->features && strstr (a->features, "v8"))
 		mode |= CS_MODE_V8;
 	op->size = 4;
 	op->buf_asm[0] = 0;
-	ret = (a->bits==64)?
-		cs_open (CS_ARCH_ARM64, mode, &cd):
-		cs_open (CS_ARCH_ARM, mode, &cd);
-	if (ret) {
-		ret = -1;
-		goto beach;
+	if (cd == 0) {
+		ret = (a->bits == 64)?
+			cs_open (CS_ARCH_ARM64, mode, &cd):
+			cs_open (CS_ARCH_ARM, mode, &cd);
+		if (ret) {
+			ret = -1;
+			goto beach;
+		}
 	}
 	if (a->syntax == R_ASM_SYNTAX_REGNUM) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
@@ -67,25 +74,32 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	cs_free (insn, n);
 	beach:
-	cs_close (&cd);
+	//cs_close (&cd);
 	if (!op->buf_asm[0])
 		strcpy (op->buf_asm, "invalid");
 	return op->size;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	const int is_thumb = a->bits==16? 1: 0;
+	const bool is_thumb = a->bits==16? true: false;
 	int opsize;
-	ut32 opcode = armass_assemble (buf, a->pc, is_thumb);
-	if (a->bits != 32 && a->bits != 16) {
-		eprintf ("Error: ARM assembler only supports 16 or 32 bits\n");
-		return -1;
+	ut32 opcode;
+	if (a->bits == 64) {
+		if (!arm64ass (buf, a->pc, &opcode)) {
+			return -1;
+		}
+	} else {
+		opcode = armass_assemble (buf, a->pc, is_thumb);
+		if (a->bits != 32 && a->bits != 16) {
+			eprintf ("Error: ARM assembler only supports 16 or 32 bits\n");
+			return -1;
+		}
 	}
-	if (opcode==UT32_MAX)
+	if (opcode == UT32_MAX)
 		return -1;
 	if (is_thumb) {
-		const int o = opcode>>16;
-		opsize = (o&0x80 && ((o&0xe0)==0xe0))? 4: 2;
+		const int o = opcode >> 16;
+		opsize = o>0? 4: 2; //(o&0x80 && ((o&0xe0)==0xe0))? 4: 2;
 		r_mem_copyendian (op->buf, (void *)&opcode,
 			opsize, a->big_endian);
 	} else {
@@ -102,17 +116,19 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 	.cpus = "v8,cortex-m",
 	.license = "BSD",
 	.arch = "arm",
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
 	.assemble = &assemble,
-	.features = 
+	.features = "no-mclass,v8"
+#if 0
 		// arm32 and arm64
 		"crypto,databarrier,divide,fparmv8,multpro,neon,t2extractpack,"
 		"thumb2dsp,trustzone,v4t,v5t,v5te,v6,v6t2,v7,v8,vfp2,vfp3,vfp4,"
 		"arm,mclass,notmclass,thumb,thumb1only,thumb2,prev8,fpvmlx,"
 		"mulops,crc,dpvfp,v6m"
+#endif
 };
 
 static int check_features(RAsm *a, cs_insn *insn) {

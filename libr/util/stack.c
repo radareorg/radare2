@@ -2,11 +2,11 @@
 
 #include <r_util.h>
 
-R_API RStack *r_stack_new (unsigned int n) {
+R_API RStack *r_stack_new(unsigned int n) {
 	RStack *s = R_NEW0 (RStack);
 	if (!s) return NULL;
 	s->elems = R_NEWS0 (void *, n);
-	if (!s->elems){
+	if (!s->elems) {
 		free (s);
 		return NULL;
 	}
@@ -16,16 +16,16 @@ R_API RStack *r_stack_new (unsigned int n) {
 	return s;
 }
 
-R_API void r_stack_free (RStack *s) {
+R_API void r_stack_free(RStack *s) {
 	free (s->elems);
 	free (s);
 }
 
-R_API int r_stack_push (RStack *s, void *el) {
+R_API int r_stack_push(RStack *s, void *el) {
 	if (s->top == s->n_elems - 1) {
 		/* reallocate the stack */
 		s->n_elems *= 2;
-		s->elems = realloc (s->elems, s->n_elems * sizeof(void *));
+		s->elems = realloc (s->elems, s->n_elems * sizeof (void *));
 		if (!s->elems)
 			return R_FALSE;
 	}
@@ -35,7 +35,7 @@ R_API int r_stack_push (RStack *s, void *el) {
 	return R_TRUE;
 }
 
-R_API void *r_stack_pop (RStack *s) {
+R_API void *r_stack_pop(RStack *s) {
 	void *res;
 	if (s->top == -1)
 		return NULL;
@@ -45,10 +45,10 @@ R_API void *r_stack_pop (RStack *s) {
 	return res;
 }
 
-R_API int r_stack_is_empty (RStack *s) {
+R_API int r_stack_is_empty(RStack *s) {
 	return s->top == -1;
 }
 
-R_API unsigned int r_stack_size (RStack *s) {
+R_API unsigned int r_stack_size(RStack *s) {
 	return (unsigned int)(s->top + 1);
 }

@@ -66,10 +66,11 @@ struct r_bin_pe_lib_t {
 struct PE_(r_bin_pe_obj_t) {
 	// these pointers contain a copy of the headers and sections!
 	PE_(image_dos_header)             *dos_header;
-	PE_(image_nt_headers)			  *nt_headers;
+	PE_(image_nt_headers)		  *nt_headers;
 	PE_(image_section_header)         *section_header;
 	PE_(image_export_directory)       *export_directory;
 	PE_(image_import_directory)       *import_directory;
+	PE_(image_tls_directory)          *tls_directory;
 	Pe_image_resource_directory       *resource_directory;
 	PE_(image_delay_import_directory) *delay_import_directory;
 	// these values define the real offset into the untouched binary
@@ -123,3 +124,5 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin);
 struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file);
 struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t *buf);
 int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, struct SDebugInfo *res);
+int PE_(bin_pe_get_claimed_checksum)(struct PE_(r_bin_pe_obj_t) *bin);
+int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t) *bin);

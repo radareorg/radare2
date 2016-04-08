@@ -28,12 +28,6 @@
 #define memicmp memcmp
 #define Sleep sleep
 
-//#ifndef MAINPROG
-//#define unique extern
-//#else
-#define unique
-//#endif
-
 // If you prefere Borland, this will force necessary setting (but, as a side
 // effect, may cause plenty of warnings if other include files will be compiled
 // with different options):
@@ -163,18 +157,18 @@
 //typedef unsigned long  ulong;          // Unsigned long
 
 typedef struct t_addrdec {
-  int            defseg;
-  char           *descr;
+	int            defseg;
+	char           *descr;
 } t_addrdec;
 
 typedef struct t_cmddata {
-  ulong          mask;                 // Mask for first 4 bytes of the command
-  ulong          code;                 // Compare masked bytes with this
-  unsigned       len;                  // Length of the main command code
-  unsigned char  bits;                 // Special bits within the command
-  unsigned char  arg1,arg2,arg3;       // Types of possible arguments
-  unsigned       type;                 // C_xxx + additional information
-  char           *name;                // Symbolic name for this command
+	ulong          mask;                 // Mask for first 4 bytes of the command
+	ulong          code;                 // Compare masked bytes with this
+	unsigned       len;                  // Length of the main command code
+	unsigned char  bits;                 // Special bits within the command
+	unsigned char  arg1,arg2,arg3;       // Types of possible arguments
+	unsigned       type;                 // C_xxx + additional information
+	char           *name;                // Symbolic name for this command
 } t_cmddata;
 
 // Initialized constant data structures used by all programs from assembler
@@ -193,8 +187,6 @@ extern const char      *condition[16];
 extern const t_cmddata cmddata[];
 extern const t_cmddata vxdcmd;
 extern const t_cmddata dangerous[];
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////// ASSEMBLER, DISASSEMBLER AND EXPRESSIONS ///////////////////
@@ -303,62 +295,40 @@ extern const t_cmddata dangerous[];
 #define DAW_DANGEROUS  0x3000          // May mess up any OS if executed
 
 typedef struct t_disasm {              // Results of disassembling
-  ulong          ip;                   // Instrucion pointer
-  char           dump[TEXTLEN];        // Hexadecimal dump of the command
-  char           result[TEXTLEN];      // Disassembled command
-  char           comment[TEXTLEN];     // Brief comment
-  int            cmdtype;              // One of C_xxx
-  int            memtype;              // Type of addressed variable in memory
-  int            nprefix;              // Number of prefixes
-  int            indexed;              // Address contains register(s)
-  ulong          jmpconst;             // Constant jump address
-  ulong          jmptable;             // Possible address of switch table
-  ulong          adrconst;             // Constant part of address
-  ulong          immconst;             // Immediate constant
-  int            zeroconst;            // Whether contains zero constant
-  int            fixupoffset;          // Possible offset of 32-bit fixups
-  int            fixupsize;            // Possible total size of fixups or 0
-  int            error;                // Error while disassembling command
-  int            warnings;             // Combination of DAW_xxx
+	ulong          ip;                   // Instrucion pointer
+	char           dump[TEXTLEN];        // Hexadecimal dump of the command
+	char           result[TEXTLEN];      // Disassembled command
+	char           comment[TEXTLEN];     // Brief comment
+	int            cmdtype;              // One of C_xxx
+	int            memtype;              // Type of addressed variable in memory
+	int            nprefix;              // Number of prefixes
+	int            indexed;              // Address contains register(s)
+	ulong          jmpconst;             // Constant jump address
+	ulong          jmptable;             // Possible address of switch table
+	ulong          adrconst;             // Constant part of address
+	ulong          immconst;             // Immediate constant
+	int            zeroconst;            // Whether contains zero constant
+	int            fixupoffset;          // Possible offset of 32-bit fixups
+	int            fixupsize;            // Possible total size of fixups or 0
+	int            error;                // Error while disassembling command
+	int            warnings;             // Combination of DAW_xxx
 } t_disasm;
 
 typedef struct t_asmmodel {            // Model to search for assembler command
-  char           code[MAXCMDSIZE];     // Binary code
-  char           mask[MAXCMDSIZE];     // Mask for binary code (0: bit ignored)
-  int            length;               // Length of code, bytes (0: empty)
-  int            jmpsize;              // Offset size if relative jump
-  int            jmpoffset;            // Offset relative to IP
-  int            jmppos;               // Position of jump offset in command
+	char           code[MAXCMDSIZE];     // Binary code
+	char           mask[MAXCMDSIZE];     // Mask for binary code (0: bit ignored)
+	int            length;               // Length of code, bytes (0: empty)
+	int            jmpsize;              // Offset size if relative jump
+	int            jmpoffset;            // Offset relative to IP
+	int            jmppos;               // Position of jump offset in command
 } t_asmmodel;
 
-#if 0
-unique int       ideal;                // Force IDEAL decoding mode
-unique int       lowercase;            // Force lowercase display
-unique int       tabarguments;         // Tab between mnemonic and arguments
-unique int       extraspace;           // Extra space between arguments
-unique int       putdefseg;            // Display default segments in listing
-unique int       showmemsize;          // Always show memory size
-unique int       shownear;             // Show NEAR modifiers
-unique int       shortstringcmds;      // Use short form of string commands
-unique int       sizesens;             // How to decode size-sensitive mnemonics
-unique int       symbolic;             // Show symbolic addresses in disasm
-unique int       farcalls;             // Accept far calls, returns & addresses
-unique int       decodevxd;            // Decode VxD calls (Win95/98)
-unique int       privileged;           // Accept privileged commands
-unique int       iocommand;            // Accept I/O commands
-unique int       badshift;             // Accept shift out of range 1..31
-unique int       extraprefix;          // Accept superfluous prefixes
-unique int       lockedbus;            // Accept LOCK prefixes
-unique int       stackalign;           // Accept unaligned stack operations
-unique int       iswindowsnt;          // When checking for dangers, assume NT
-#endif
-
 int    Assemble(char *cmd,ulong ip,t_asmmodel *model,int attempt,
-         int constsize,char *errtext);
+	int constsize,char *errtext);
 int    Checkcondition(int code,ulong flags);
 int    Decodeaddress(ulong addr,char *symb,int nsymb,char *comment);
 ulong  Disasm(const unsigned char *src,ulong srcsize,ulong srcip,
-         t_disasm *disasm,int disasmmode);
+	t_disasm *disasm,int disasmmode);
 ulong  Disassembleback(unsigned char *block,ulong base,ulong size,ulong ip,int n);
 ulong  Disassembleforward(unsigned char *block,ulong base,ulong size,ulong ip,int n);
 int    Isfilling(ulong addr,unsigned char *data,ulong size,ulong align);

@@ -26,16 +26,17 @@
 #include <stdint.h>
 #include "avr_disasm.h"
 #include "errorcodes.h"
+#include "avr_instructionset.c"
 
 /* AVR instructionSet is defined in avrinstructionset.c */
-extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
+//extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
 
 /* Ugly public variables that are shared across format_disasm.c and avr_disasm.c. As much as
  * I didn't want to do it (and instead would have liked to find a clean & clever solution that
  * doesn't expose anything between the two interfaces), for now this was the quickest (and cleanest?)
  * way to get this special case (32-bit opcode) taken care of. */
 /* Variable to keep track of long instructions that have been found and are to be printed. */
-int AVR_Long_Instruction = 0;
+static int AVR_Long_Instruction = 0;
 /* Variable to hold the address of the long instructions */
 static uint32_t AVR_Long_Address;
 /* A copy of the AVR long instruction, we need to keep this so we know information about the
@@ -54,7 +55,7 @@ static int lookupInstruction(uint16_t opcode, int offset);
 
 
 /* Disassembles an assembled instruction, including its operands. */
-int disassembleInstruction(disassembledInstruction *dInstruction, const assembledInstruction aInstruction) {
+static int disassembleInstruction(disassembledInstruction *dInstruction, const assembledInstruction aInstruction) {
 	int insidx, i;
 	
 	if (dInstruction == NULL)

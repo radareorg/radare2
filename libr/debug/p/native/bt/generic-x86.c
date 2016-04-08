@@ -18,7 +18,7 @@ static RList *backtrace_x86_32(RDebug *dbg, ut64 at) {
 	_esp = (ut32) ((ri)? r_reg_get_value (reg, ri): at);
 		// TODO: implement [stack] map uptrace method too
 	esp = _esp;
-	for (i=0; i<MAXBT; i++) {
+	for (i=0; i<dbg->btdepth; i++) {
 		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
 		if (ebp2 == UT32_MAX)
 			break;
@@ -66,7 +66,7 @@ static RList *backtrace_x86_32_anal(RDebug *dbg, ut64 at) {
 		r_list_append (list, frame);
 	}
 
-	for (i=1; i<MAXBT; i++) {
+	for (i=1; i<dbg->btdepth; i++) {
 		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
 		if (ebp2 == UT32_MAX)
 			break;
@@ -77,7 +77,9 @@ static RList *backtrace_x86_32_anal(RDebug *dbg, ut64 at) {
 		if (buf[(ebp2-5)%4]==0xe8) {
 			frame = R_NEW0 (RDebugFrame);
 			frame->addr = ebp2;
-			frame->size = esp-_esp;
+			frame->size = esp - _esp;
+			frame->sp = _esp;
+			frame->bp = _esp + frame->size;
 			r_list_append (list, frame);
 		}
 		esp += 4;

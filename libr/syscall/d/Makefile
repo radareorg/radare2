@@ -23,13 +23,13 @@ HOST_CC?=gcc
 
 F_SDB=$(addsuffix .sdb,$F)
 
-SDBPATH=$(call rmdblslash,$(LTOP)/../shlr/sdb/)
+SDBPATH=$(LTOP)/../shlr/sdb/
 ifeq ($(BUILD_OS),windows)
 BUILD_EXT_EXE=.exe
 else
 BUILD_EXT_EXE=
 endif
-SDB=$(call rmdblslash,$(SDBPATH)/sdb${BUILD_EXT_EXE})
+SDB=$(SDBPATH)/sdb${BUILD_EXT_EXE}
 
 all: ${SDB}
 	@$(MAKE) compile
@@ -66,13 +66,14 @@ ${SDB}:
 .PHONY: all clean install install-symlink symstall
 
 install: ${F_SDB}
+	-rm -rf "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
 	mkdir -p "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
 	cp -f *.sdb "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
 
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
 	mkdir -p "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
-	for a in *.sdb ; do ln -fs "${CWD}/$$a" "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall/$$a" ; done
+	for FILE in *.sdb ; do ln -fs "${CWD}/$$FILE" "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall/$$FILE" ; done
 
 uninstall:
 	rm -rf "${DESTDIR}${LIBDIR}/radare2/syscall"

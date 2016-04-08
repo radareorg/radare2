@@ -6,7 +6,6 @@
 #include <capstone/systemz.h>
 // instruction set: http://www.tachyonsoft.com/inst390m.htm
 
-
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported
 #endif
@@ -110,9 +109,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 RAnalPlugin r_anal_plugin_sysz = {
 	.name = "systemz.cs",
 	.desc = "Capstone SystemZ microanalysis",
-	.esil = R_TRUE,
+	.esil = false,
 	.license = "BSD",
-	.arch = R_SYS_ARCH_SYSZ,
+	.arch = "sysz",
 	.bits = 32|64,
 	.op = &analop,
 	//.set_reg_profile = &set_reg_profile,

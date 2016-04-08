@@ -453,7 +453,7 @@ typedef union {
 	unsigned short cv_property;
 } UCV_PROPERTY;
 
-enum {
+typedef enum {
 	eMTvanilla   = 0x00,
 	eMTvirtual   = 0x01,
 	eMTstatic    = 0x02,
@@ -464,7 +464,7 @@ enum {
 	eMT_MAX
 } EMPROP;
 
-enum {
+typedef enum {
 	ePrivate    = 1,
 	eProtected  = 2,
 	ePublic     = 3,

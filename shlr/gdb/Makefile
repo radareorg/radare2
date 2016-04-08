@@ -1,4 +1,5 @@
 include ../../libr/config.mk
+include ../../mk/platform.mk
 include ../../shlr/zip/deps.mk
 EDITOR?=vim
 CC?=gcc
@@ -6,7 +7,7 @@ AR?=ar
 RANLIB?=ranlib
 LIBNAME=libgdbr
 LIBFILE=$(LIBNAME).$(EXT_SO)
-CFLAGS+=-I$(LIBR)/include -fPIC
+CFLAGS+=-I$(LIBR)/include $(PIC_CFLAGS)
 CFLAGS+=-Iinclude -I${LIBR}/include
 MAJOR=0
 MINOR=1
@@ -49,7 +50,7 @@ $(LIB):
 	mkdir -p $(LIB)
 
 $(LIB)/$(LIBNAME).a: $(LIB) $(SRC_O)
-	$(LD) -fPIC -shared -o $(LIB)/$(LIBFILE) $(SRC_O) $(LDFLAGS) $(LINK)
+	$(LD) $(PIC_CFLAGS) -shared -o $(LIB)/$(LIBFILE) $(CFLAGS) $(SRC_O) $(LDFLAGS) $(LINK)
 	$(AR) rvs $(LIB)/$(LIBNAME).a $(SRC_O)
 	# required for solaris and w32
 	$(RANLIB) $(LIB)/$(LIBNAME).a

@@ -1,13 +1,11 @@
 OBJ_TMS320=asm_tms320.o
 OBJ_TMS320+=../arch/tms320/tms320_dasm.o
 
-# looks ugly as radare2 build system is terrible
-
+#../arch/tms320/c55x_plus/hashvector.o
 OBJ_TMS320+=../arch/tms320/c55x_plus/c55plus.o \
 	    ../arch/tms320/c55x_plus/c55plus_decode.o \
 	    ../arch/tms320/c55x_plus/decode_funcs.o \
 	    ../arch/tms320/c55x_plus/hashtable.o \
-	    ../arch/tms320/c55x_plus/hashvector.o \
 	    ../arch/tms320/c55x_plus/ins.o \
 	    ../arch/tms320/c55x_plus/utils.o
 

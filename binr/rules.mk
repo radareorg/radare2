@@ -2,17 +2,20 @@ BINR_PROGRAM=1
 include ../../libr/config.mk
 include ../../shlr/zip/deps.mk
 
-CFLAGS+=-DLIBDIR=\"${LIBDIR}\" -I$(LTOP)/include
-CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\" 
-CFLAGS+=-DR2_GITTIP=\"$(GIT_TIP)\"
-CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
+ifneq ($(OSTYPE),windows)
+# tcc doesn't recognize the -pie option
+ifeq (,$(findstring tcc,${CC}))
+CFLAGS+=-pie
+endif
+endif
+CFLAGS+=-I$(LTOP)/include
 
 ifeq (${COMPILER},emscripten)
 EXT_EXE=.js
 endif
 
 ifeq ($(USE_RPATH),1)
-LDFLAGS+=-Wl,-rpath "${PREFIX}/lib"
+LDFLAGS+=-Wl,-rpath "${LIBDIR}"
 endif
 
 OBJ+=${BIN}.o
@@ -61,11 +64,16 @@ ifneq ($(SILENT),)
 endif
 	${CC} ${CFLAGS} $@.c ${OBJS} ${REAL_LDFLAGS} -o $@
 
+# -static fails because -ldl -lpthread static-gcc ...
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
+ifeq ($(WITHNONPIC),1)
+	${CC} -pie ${CFLAGS} $+ -L.. -o $@ $(REAL_LDFLAGS)
+else
 ifneq ($(SILENT),)
 	@echo LD $@
 endif
-	${CC} $+ -L.. -o $@ $(REAL_LDFLAGS)
+	${CC} ${CFLAGS} $+ -L.. -o $@ $(REAL_LDFLAGS)
+endif
 endif
 
 # Dummy myclean rule that can be overriden by the t/ Makefile

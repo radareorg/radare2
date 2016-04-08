@@ -4,12 +4,37 @@
 #
 grep -e DEPS */Makefile | sed -e 's,/Makefile,,' > /tmp/rdeps.txt
 
-MODE=dot
-#MODE=gml
+if [ -z "$1" ]; then
+	MODE=dot
+	#MODE=gml
+	MODE=r2
+else
+	MODE="$1"
+fi
 
-if [ $MODE = "dot" ]; then
+if [ "$MODE" = "-h" ]; then
 
-echo "digraph G {";
+echo "Usage: depgraph [r2|dot|gml]"
+exit 0
+
+elif [ $MODE = "r2" ]; then
+
+cat /tmp/rdeps.txt | perl -ne '
+use List::MoreUtils qw(uniq);
+/(.*):(.*)=(.*)$/;
+my $lib=$1;
+@deps=split(/ /, $3);
+foreach $dep (uniq @deps) {
+  print "agn $dep\n";
+}
+foreach $dep (@deps) {
+  print "age $dep r_$lib\n";
+}'
+echo "agg"
+
+elif [ $MODE = "dot" ]; then
+
+echo "digraph G {"
 cat /tmp/rdeps.txt | perl -ne '
 /(.*):(.*)=(.*)$/;
 my $lib=$1;

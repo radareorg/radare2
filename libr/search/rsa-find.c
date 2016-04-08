@@ -33,18 +33,15 @@ static int check_rsa_fields(const ut8* start) {
 #define NB_PRIV_FIELDS 10
 	ut32 len = 0;
 	int i;
-	ut8 const* ptr = start;
-
-	ptr = parse_next_rsa_field (start, &len); // skip sequence field
+	// skip sequence field
+	ut8 const* ptr = parse_next_rsa_field (start, &len);
 
 	if (!len || len > 1024)
-		return R_FALSE;
-
+		return false;
 	for (i = 0; i < NB_PRIV_FIELDS; i++)
 		if (!(ptr = parse_next_rsa_field (ptr, &len)))
-			return R_FALSE;
-
-	return R_TRUE;
+			return false;
+	return true;
 }
 
 // Finds and return index of private RSA key

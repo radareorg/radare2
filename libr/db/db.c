@@ -26,7 +26,7 @@ R_API RDatabaseBlock *r_db_block_new() {
 R_API int r_db_add_id(struct r_db_t *db, int key, int size) {
 	key &= 0xff;
 	if (db->blocks[key])
-		return R_FALSE;
+		return false;
 	if (db->id_min==-1) {
 		db->id_min = key;
 		db->id_max = key;
@@ -36,14 +36,14 @@ R_API int r_db_add_id(struct r_db_t *db, int key, int size) {
 		db->id_min = key;
 	db->blocks[key] = r_db_block_new ();
 	db->blocks_sz[key] = size;
-	return R_TRUE;
+	return true;
 }
 
 static int _r_db_add_internal(struct r_db_t *db, int key, void *b) {
 	int i, idx, len, size;
 	struct r_db_block_t *block;
 	if (key<0 || key>255)
-		return R_FALSE;
+		return false;
 	size = db->blocks_sz[key];
 	block = db->blocks[key];
 	if (block == NULL) {
@@ -73,7 +73,7 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b) {
 }
 
 R_API int r_db_add(struct r_db_t *db, void *b) {
-	int i, ret = R_FALSE;
+	int i, ret = false;
 	for (i=db->id_min;i<=db->id_max;i++)
 		if (db->blocks[i])
 			ret += _r_db_add_internal (db, i, b);
@@ -81,10 +81,10 @@ R_API int r_db_add(struct r_db_t *db, void *b) {
 }
 
 R_API int r_db_add_unique(struct r_db_t *db, void *b) {
-	int i, ret = R_TRUE;
+	int i, ret = true;
 	for(i=db->id_min;i<=db->id_max;i++) {
 		if (db->blocks[i] && r_db_get (db, i, b) != NULL) {
-			ret = R_FALSE;
+			ret = false;
 			break;
 		}
 	}
@@ -146,9 +146,9 @@ static int _r_db_delete_internal(struct r_db_t *db, int key, const ut8 *b) {
 			free (block->data);
 			block->data = NULL;
 		}
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_db_delete(struct r_db_t *db, const void *ptr) {
@@ -165,7 +165,7 @@ R_API int r_db_delete(struct r_db_t *db, const void *ptr) {
 
 static int r_db_iter_find_next(RDatabaseIter *it) {
 	// TODO
-	return R_FALSE;
+	return false;
 }
 
 R_API RDatabaseIter *r_db_iter_new(RDatabase *db, int key) {

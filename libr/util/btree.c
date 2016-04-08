@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2015 - pancake */
 
 #include <btree.h>
 
@@ -8,12 +8,12 @@ R_API void btree_init(struct btree_node **T) {
 
 R_API struct btree_node *btree_remove(struct btree_node *p, BTREE_DEL(del)) {
 	struct btree_node *rp = NULL, *f;
-	if (p==NULL) return p;
-	if (p->right!=NULL) {
-		if (p->left!=NULL) {
+	if (!p) return p;
+	if (p->right) {
+		if (p->left) {
 			f = p;
 			rp = p->right;
-			while (rp->left!=NULL) {
+			while (rp->left) {
 				f = rp;
 				rp = rp->left;
 			}
@@ -61,14 +61,15 @@ R_API void btree_traverse(struct btree_node *root, int reverse, void *context, B
 	}
 }
 
-R_API int btree_del(struct btree_node *proot, void *x, BTREE_CMP(cmp), BTREE_DEL(del)) {
+R_API bool btree_del(struct btree_node *proot, void *x, BTREE_CMP(cmp), BTREE_DEL(del)) {
 	struct btree_node *p = btree_search (proot, x, cmp, 1);
 	if (p) {
 		// p->right = 
 		btree_remove (p->left, del);
-		return R_TRUE;
+		p->left = NULL;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API void *btree_get(struct btree_node *proot, void *x, BTREE_CMP(cmp)) {
@@ -129,12 +130,12 @@ R_API struct btree_node *btree_hittest(struct btree_node *root, struct btree_nod
 R_API int btree_optimize(struct btree_node **T, BTREE_CMP(cmp)) {
 	struct btree_node *node, *NT = NULL;
 	do {
-		node = btree_hittest(*T, NULL);
+		node = btree_hittest (*T, NULL);
 		if (node) {
 			btree_add (&NT, node->data, cmp);
 			btree_del (*T, node->data, cmp, NULL);
 		}
-	} while(node);
+	} while (node);
 	*T = NT; /* replace one tree with the other */
 	return 0;
 }

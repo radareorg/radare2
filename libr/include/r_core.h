@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #ifndef R2_CORE_H
 #define R2_CORE_H
@@ -82,7 +82,17 @@ typedef struct r_core_file_t {
 	ut8 alive;
 } RCoreFile;
 
+typedef struct r_core_times_t {
+	ut64 loadlibs_init_time;
+	ut64 loadlibs_time;
+	ut64 file_open_time;
+} RCoreTimes;
+
 #define R_CORE_ASMSTEPS 128
+#define R_CORE_ASMQJMPS_NUM 10
+#define R_CORE_ASMQJMPS_LETTERS 26
+#define R_CORE_ASMQJMPS_MAX_LETTERS (26 * 26 * 26 * 26 * 26)
+#define R_CORE_ASMQJMPS_LEN_LETTERS 5
 typedef struct r_core_asmsteps_t {
 	ut64 offset;
 	int cols;
@@ -99,7 +109,7 @@ typedef struct r_core_t {
 	int oobi_len;
 	RBuffer *yank_buf;
 	int tmpseek;
-	boolt vmode;
+	bool vmode;
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
 	RCons *cons;
@@ -111,8 +121,8 @@ typedef struct r_core_t {
 	RCmd *rcmd;
 	RAnal *anal;
 	RAsm *assembler;
-	RAnalRefline *reflines;
-	RAnalRefline *reflines2;
+	/* ^^ */
+	RCoreTimes *times;
 	RParse *parser;
 	RPrint *print;
 	RLang *lang;
@@ -129,19 +139,24 @@ typedef struct r_core_t {
 	char *lastcmd;
 	int cmdrepeat;
 	ut64 inc;
+	// represents the first not-visible offset on the screen
+	// (only when in visual disasm mode)
 	ut64 screen_bounds;
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
 	int curasmstep;
 	RCoreAsmsteps asmsteps[R_CORE_ASMSTEPS];
-	ut64 asmqjmps[10];
+	ut64 *asmqjmps;
+	int asmqjmps_count;
+	int asmqjmps_size;
+	bool is_asmqjmps_letter;
+	bool keep_asmqjmps;
 	// visual
 	int http_up;
 	int printidx;
 	int utf8;
 	int vseek;
-	int zerosep;
-	int in_search;
+	bool in_search;
 	RList *watchers;
 	RList *scriptstack;
 	RList *tasks;
@@ -149,7 +164,11 @@ typedef struct r_core_t {
 	ut8 switch_file_view;
 	Sdb *sdb;
 	int incomment;
+	int curtab; // current tab
+	int seltab; // selected tab
 	int cmdremote;
+	char *lastsearch;
+	bool fixedblock;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -179,6 +198,8 @@ R_API RCore *r_core_cast(void *p);
 R_API int r_core_config_init(RCore *core);
 R_API int r_core_prompt(RCore *core, int sync);
 R_API int r_core_prompt_exec(RCore *core);
+R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr);
+R_API int r_core_lines_currline (RCore *core);
 R_API void r_core_prompt_loop(RCore *core);
 R_API int r_core_cmd(RCore *core, const char *cmd, int log);
 R_API void r_core_cmd_repeat(RCore *core, int next);
@@ -188,7 +209,6 @@ R_API int r_core_fgets(char *buf, int len);
 R_API int r_core_cmdf(void *user, const char *fmt, ...);
 R_API int r_core_flush(void *user, const char *cmd);
 R_API int r_core_cmd0(void *user, const char *cmd);
-R_API void r_core_cmd_flush (RCore *core);
 R_API void r_core_cmd_init(RCore *core);
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
 R_API char *r_core_cmd_str(RCore *core, const char *cmd);
@@ -198,7 +218,7 @@ R_API int r_core_cmd_file(RCore *core, const char *file);
 R_API int r_core_cmd_lines(RCore *core, const char *lines);
 R_API int r_core_cmd_command(RCore *core, const char *command);
 R_API int r_core_run_script (RCore *core, const char *file);
-R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb);
+R_API bool r_core_seek(RCore *core, ut64 addr, bool rb);
 R_API int r_core_seek_base (RCore *core, const char *hex);
 R_API void r_core_seek_previous (RCore *core, const char *type);
 R_API void r_core_seek_next (RCore *core, const char *type);
@@ -210,28 +230,40 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset);
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_visual_prompt_input (RCore *core);
+R_API bool r_core_visual_hudstuff(RCore *core);
+R_API int r_core_visual_classes(RCore *core);
 R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
-R_API int r_core_visual_graph(RCore *core, RAnalFunction *_fcn, int is_interactive);
+R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive);
 R_API int r_core_fcn_graph(RCore *core, RAnalFunction *_fcn);
 R_API int r_core_visual_panels(RCore *core);
 R_API int r_core_visual_cmd(RCore *core, int ch);
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr);
 R_API void r_core_visual_asm(RCore *core, ut64 addr);
 R_API void r_core_visual_colors(RCore *core);
-R_API int r_core_visual_xrefs_x (RCore *core);
-R_API int r_core_visual_xrefs_X (RCore *core);
+R_API int r_core_visual_xrefs_x(RCore *core);
+R_API int r_core_visual_xrefs_X(RCore *core);
+R_API int r_core_visual_hud(RCore *core);
+R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str);
+R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int i);
+/* visual marks */
+R_API void r_core_visual_mark_seek(RCore *core, ut8 ch);
+R_API void r_core_visual_mark(RCore *core, ut8 ch);
+R_API void r_core_visual_mark_set(RCore *core, ut8 ch, ut64 addr);
+R_API void r_core_visual_mark_dump(RCore *core);
+R_API void r_core_visual_mark_reset(RCore *core);
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
 R_API int r_core_serve(RCore *core, RIODesc *fd);
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int binload);
+R_API void r_core_file_reopen_debug(RCore *core, const char *args);
 R_API RCoreFile * r_core_file_find_by_fd(RCore* core, ut64 fd);
 R_API RCoreFile * r_core_file_find_by_name (RCore * core, const char * name);
 R_API RCoreFile * r_core_file_cur (RCore *r);
 R_API int r_core_file_set_by_fd(RCore *core, ut64 fd);
 R_API int r_core_file_set_by_name(RCore *core, const char * name);
 R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf);
-R_API int r_core_setup_debugger (RCore *r, const char *debugbackend);
+R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach);
 
 R_API int r_core_files_free(const RCore *core, RCoreFile *cf);
 R_API void r_core_file_free(RCoreFile *cf);
@@ -252,6 +284,8 @@ R_API int r_core_set_file_by_name (RBin * bin, const char * name);
 R_API RBinFile * r_core_bin_cur (RCore *core);
 R_API ut32 r_core_file_cur_fd (RCore *core);
 
+R_API void r_core_debug_rr (RCore *core, RReg *reg);
+
 #define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
 R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen);
@@ -262,6 +296,7 @@ R_API int r_core_yank_to(RCore *core, const char *arg);
 R_API int r_core_yank_dump (RCore *core, ut64 pos);
 R_API int r_core_yank_hexdump (RCore *core, ut64 pos);
 R_API int r_core_yank_cat (RCore *core, ut64 pos);
+R_API int r_core_yank_cat_string (RCore *core, ut64 pos);
 R_API int r_core_yank_hud_file (RCore *core, const char *input);
 R_API int r_core_yank_hud_path (RCore *core, const char *input, int dir);
 R_API int r_core_yank_file_ex (RCore *core, const char *input);
@@ -271,7 +306,7 @@ R_API int r_core_yank_file_all (RCore *core, const char *input);
 #define R_CORE_LOADLIBS_HOME 2
 #define R_CORE_LOADLIBS_SYSTEM 4
 #define R_CORE_LOADLIBS_CONFIG 8
-#define R_CORE_LOADLIBS_ALL -1
+#define R_CORE_LOADLIBS_ALL UT32_MAX
 
 R_API void r_core_loadlibs_init(RCore *core);
 R_API int r_core_loadlibs(RCore *core, int where, const char *path);
@@ -287,8 +322,11 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr);
 R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l);
 R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 
+R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, char **asm_arch, ut32 *bits);
+
 /* anal.c */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr);
+R_API void r_core_anal_esil (RCore *core, const char *str);
 R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2);
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr);
 R_API ut64 r_core_anal_address (RCore *core, ut64 addr);
@@ -297,13 +335,18 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode);
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref);
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad);
 R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth);
-R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv);
+R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int gv);
+R_API int r_core_anal_refs(RCore *core, const char *input);
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head);
+R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr);
 R_API int r_core_anal_bb_seek(RCore *core, ut64 addr);
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth);
 R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump);
+R_API void r_core_anal_autoname_all_fcns(RCore *core);
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad);
+R_API int r_core_anal_fcn_list_size(RCore *core);
 R_API void r_core_anal_fcn_labels(RCore *core, RAnalFunction *fcn, int rad);
+R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr);
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts);
 R_API int r_core_anal_graph_fcn(RCore *core, char *input, int opts);
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n);
@@ -324,6 +367,7 @@ R_API RBuffer *r_core_syscallf (RCore *core, const char *name, const char *fmt, 
 R_API RCoreAsmHit *r_core_asm_hit_new(void);
 R_API RList *r_core_asm_hit_list_new(void);
 R_API void r_core_asm_hit_free(void *_hit);
+R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff);
 R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to);
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp);
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len);
@@ -352,14 +396,15 @@ R_API int r_core_bin_refresh_strings(RCore *core);
 R_API int r_core_pseudo_code (RCore *core, const char *input);
 
 /* gdiff.c */
-R_API int r_core_gdiff(RCore *core1, RCore *core2, int anal_all);
+R_API int r_core_gdiff(RCore *core1, RCore *core2);
 R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2);
 
 R_API int r_core_project_open(RCore *core, const char *file);
 R_API int r_core_project_cat(RCore *core, const char *name);
 R_API int r_core_project_delete(RCore *core, const char *prjfile);
 R_API int r_core_project_list(RCore *core, int mode);
-R_API int r_core_project_save(RCore *core, const char *file);
+R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts);
+R_API bool r_core_project_save(RCore *core, const char *file);
 R_API char *r_core_project_info(RCore *core, const char *file);
 R_API char *r_core_project_notes_file (RCore *core, const char *file);
 
@@ -373,6 +418,7 @@ R_API void r_core_sysenv_help(const RCore* core);
 #define R_CORE_BIN_SET		0x002
 #define R_CORE_BIN_SIMPLE	0x004
 #define R_CORE_BIN_JSON         0x008
+#define R_CORE_BIN_ARRAY 	0x010
 
 #define R_CORE_BIN_ACC_STRINGS	0x001
 #define R_CORE_BIN_ACC_INFO	0x002
@@ -389,14 +435,29 @@ R_API void r_core_sysenv_help(const RCore* core);
 #define R_CORE_BIN_ACC_PDB	0x2000
 #define R_CORE_BIN_ACC_SIZE     0x1000
 #define R_CORE_BIN_ACC_MEM	0x4000
+#define R_CORE_BIN_ACC_EXPORTS  0x8000
+#define R_CORE_BIN_ACC_VERSIONINFO 0x10000
 #define R_CORE_BIN_ACC_ALL	0x4FFF
+
+#define R_CORE_PRJ_FLAGS	0x0001
+#define R_CORE_PRJ_EVAL		0x0002
+#define R_CORE_PRJ_IO_MAPS	0x0004
+#define R_CORE_PRJ_SECTIONS	0x0008
+#define R_CORE_PRJ_META		0x0010
+#define R_CORE_PRJ_XREFS	0x0020
+#define R_CORE_PRJ_FCNS		0x0040
+#define R_CORE_PRJ_ANAL_HINTS	0x0080
+#define R_CORE_PRJ_ANAL_TYPES	0x0100
+#define R_CORE_PRJ_ANAL_MACROS	0x0200
+#define R_CORE_PRJ_ANAL_SEEK	0x0400
+#define R_CORE_PRJ_ALL		0xFFFF
 
 typedef struct r_core_bin_filter_t {
 	ut64 offset;
 	const char *name;
 } RCoreBinFilter;
 
-R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 offset, const char *chksum);
+R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum);
 R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits);
 R_API int r_core_bin_update_arch_bits (RCore *r);
 /* rtr */
@@ -430,11 +491,10 @@ R_API RList* r_core_get_boundaries_ok(RCore *core);
 
 R_API int r_core_patch (RCore *core, const char *patch);
 
-R_API void r_core_hack_help(RCore *core);
+R_API void r_core_hack_help(const RCore *core);
 R_API int r_core_hack(RCore *core, const char *op);
 R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append);
 R_API void r_core_diff_show(RCore *core, RCore *core2);
-
 
 /* watchers */
 R_API void r_core_cmpwatch_free (RCoreCmpWatcher *w);
@@ -478,6 +538,8 @@ R_API void r_core_syscmd_ls(const char *input);
 R_API void r_core_syscmd_cat(const char *file);
 R_API void r_core_syscmd_mkdir(const char *dir);
 
+// TODO : move into debug or syscall++
+R_API char *cmd_syscall_dostr(RCore *core, int num);
 /* tasks */
 
 typedef void (*RCoreTaskCallback)(void *user, char *out);

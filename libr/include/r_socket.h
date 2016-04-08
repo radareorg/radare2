@@ -73,6 +73,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 R_API int r_socket_unix_listen (RSocket *s, const char *file);
 #endif
 R_API int r_socket_port_by_name(const char *name);
+R_API int r_socket_close_fd (RSocket *s);
 R_API int r_socket_close (RSocket *s);
 R_API int r_socket_free (RSocket *s);
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile);
@@ -107,7 +108,7 @@ R_API int r_socket_proc_ready (RSocketProc *sp, int secs, int usecs);
 /* HTTP */
 R_API char *r_socket_http_get (const char *url, int *code, int *rlen);
 R_API char *r_socket_http_post (const char *url, const char *data, int *code, int *rlen);
-R_API void r_socket_http_server_set_breaked(int *b);
+R_API void r_socket_http_server_set_breaked(bool *b);
 
 typedef struct r_socket_http_request {
 	RSocket *s;
@@ -115,6 +116,7 @@ typedef struct r_socket_http_request {
 	char *host;
 	char *agent;
 	char *method;
+	char *referer;
 	ut8 *data;
 	int data_length;
 } RSocketHTTPRequest;
@@ -137,7 +139,6 @@ enum {
 	RAP_RMT_WRITE,
 	RAP_RMT_SEEK,
 	RAP_RMT_CLOSE,
-	RAP_RMT_SYSTEM,
 	RAP_RMT_CMD,
 	RAP_RMT_REPLY = 0x80,
 	RAP_RMT_MAX = 4096
@@ -170,6 +171,7 @@ typedef struct r_run_profile_t {
 	char *_args[R_RUN_PROFILE_NARGS];
 	char *_system;
 	char *_program;
+	char *_stdio;
 	char *_stdin;
 	char *_stdout;
 	char *_stderr;
@@ -182,11 +184,14 @@ typedef struct r_run_profile_t {
 	char *_pidfile;
 	int _r2preload;
 	int _docore;
+	int _dofork;
+	int _dodebug;
 	int _aslr;
 	int _maxstack;
 	int _maxproc;
 	int _maxfd;
 	int _r2sleep;
+	int _execve;
 	char *_setuid;
 	char *_seteuid;
 	char *_setgid;
@@ -204,6 +209,7 @@ R_API int r_run_parse(RRunProfile *pf, const char *profile);
 R_API void r_run_free (RRunProfile *r);
 R_API int r_run_parseline (RRunProfile *p, char *b);
 R_API const char *r_run_help(void);
+R_API int r_run_config_env(RRunProfile *p);
 R_API int r_run_start(RRunProfile *p);
 R_API void r_run_reset(RRunProfile *p);
 R_API int r_run_parsefile (RRunProfile *p, const char *b);
@@ -214,7 +220,8 @@ R_API R2Pipe *r2p_open(const char *cmd);
 R_API int r2p_write(R2Pipe *r2p, const char *str);
 R_API char *r2p_read(R2Pipe *r2p);
 R_API void r2p_free (R2Pipe *r2p);
-
+R_API char *r2p_cmd(R2Pipe *r2p, const char *str);
+R_API char *r2p_cmdf(R2Pipe *r2p, const char *fmt, ...);
 #endif
 
 #ifdef __cplusplus

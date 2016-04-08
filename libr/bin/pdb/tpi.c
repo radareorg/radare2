@@ -1,6 +1,5 @@
-
+#include "types.h"
 #include "tpi.h"
-
 #include "stream_file.h"
 
 static unsigned int base_idx = 0;
@@ -895,6 +894,14 @@ static void free_sval(SVal *val)
 			R_FREE(val->name_or_val);
 			break;
 		}
+		case eLF_SHORT:
+		{
+			SVal_LF_SHORT *lf_short;
+			lf_short = (SVal_LF_SHORT *) val->name_or_val;
+			R_FREE(lf_short->name.name);
+			R_FREE(val->name_or_val);
+			break;
+		}
 		case eLF_USHORT:
 		{
 			SVal_LF_USHORT *lf_ushort;
@@ -1609,6 +1616,15 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 			parse_sctring(&lf_ulong.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc(sizeof(SVal_LF_ULONG));
 			memcpy(val->name_or_val, &lf_ulong, sizeof(SVal_LF_ULONG));
+			break;
+		}
+		case eLF_SHORT:
+		{
+			SVal_LF_SHORT lf_short;
+			READ(*read_bytes, 2, len, lf_short.value, leaf_data, short);
+			parse_sctring(&lf_short.name, leaf_data, read_bytes, len);
+			val->name_or_val = malloc(sizeof(SVal_LF_SHORT));
+			memcpy(val->name_or_val, &lf_short, sizeof(SVal_LF_SHORT));
 			break;
 		}
 		case eLF_USHORT:

@@ -1,6 +1,6 @@
 OBJ_MIPS_CS=anal_mips_cs.o
 
-include p/capstone.mk
+include $(CURDIR)capstone.mk
 
 STATIC_OBJ+=$(OBJ_MIPS_CS)
 TARGET_MIPS_CS=anal_mips_cs.${EXT_SO}

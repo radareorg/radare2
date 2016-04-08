@@ -6,13 +6,13 @@ Mac OS-X Users need to follow some extra steps to get the radare2 program signed
 Installation
 ------------
 
-To compile for OSX run configure in this way:
+To compile for OSX automatically, do it this way:
 
 	$ sys/install.sh
 
-By default it is installed in /usr, you can specify a different prefix like this:
+By default it is installed in /usr/local, you can specify a different prefix like this:
 
-	$ sys/install.sh /usr/local
+	$ sys/install.sh /custom/prefix
 
 To install bindings you will need to install r2, valac, valabind and swig. The whole process can be automated by using scripts under sys/
 
@@ -23,93 +23,56 @@ To install bindings you will need to install r2, valac, valabind and swig. The w
 Code Signing
 ------------
 
-After OSX 10.6, binaries that need permissions to debug require to be signed and include a PLIST describing them. This process differs from the steps needed for iOS, so please read the `doc/ios` for further details.
+After OSX 10.6, binaries that need permissions to debug require to be signed and include a PLIST describing them. In order to do this you can follow the following steps:
 
-- The first step requires creating a self signed system certificate for code signing, Open the `KeyChain Access` application and start the wizard found in:
+(Based on https://llvm.org/svn/llvm-project/lldb/trunk/docs/code-signing.txt)
 
-	Menu -> CertificateAssistant -> Create Certificate
-	-> certificate type: code signing
+	- Launch /Applications/Utilities/Keychain Access.app
+	- In Keychain Access select the "login" keychain in the "Keychains" list in the upper left hand corner of the window.
+	- Select the following menu item:
+		Keychain Access->Certificate Assistant->Create a Certificate...
+	- Set the following settings
+		Name = org.radare.radare2
+		Identity Type = Self Signed Root
+		Certificate Type = Code Signing
+	- Click Create
+	- Click Continue
+	- Click Done
+	- Click on the "My Certificates"
+	- Double click on your new org.radare.radare2 certificate
+	- Turn down the "Trust" disclosure triangle, scroll to the "Code Signing" trust pulldown menu and select "Always Trust" and authenticate as needed using your username and password.
+	- Drag the new "org.radare.radare2" code signing certificate (not the public or private keys of the same name) from the "login" keychain to the "System" keychain in the Keychains pane on the left hand side of the main Keychain Access window. This will move this certificate to the "System" keychain. You'll have to authorize a few more times, set it to be "Always trusted" when asked.
+	- In the Keychain Access GUI, click and drag "org.radare.radare2" in the "System" keychain onto the desktop. The drag will create a "~/Desktop/org.radare.radare2.cer" file used in the next step.
+	- Switch to Terminal, and run the following:
+		$ sudo security add-trust -d -r trustRoot -p basic -p codeSign -k /Library/Keychains/System.keychain ~/Desktop/org.radare.radare2.cer
+		$ rm -f ~/Desktop/org.radare.radare2.cer
+	- Drag the "org.radare.radare2" certificate from the "System" keychain back into the "login" keychain
+	- Quit Keychain Access
+	- Reboot
+	- Run sys/install.sh (or follow the next steps if you want to install and sign radare2 manually)
 
-	Use organization: radare.org
-	Name: org.radare.radare2
-
-Once created, right click on certificate and:
-
-	-> Trust options -> Always trust
-
-Then you can sign the binary by using the following command:
+As said before, the signing process can also be done manually following the next process. First, you will need to sign the radare2 binary:
 
 	$ make -C binr/radare2 osxsign
 
-But this is not all! As long as r2 code is splitted into several libraries, you should sign every single dependency (libr*) by typing the system password all the time. For simplicity, I would recommend you to build a static version of r2 and just sign it.
+But this is not enough. As long as r2 code is splitted into several libraries, you should sign every single dependency (libr*).
+
+	$ make -C binr/radare2 osx-sign-libs
+
+Another alternative is to build a static version of r2 and just sign it.
 
 	$ sys/static.sh
 	$ make -C binr/radare2 osxsign
 
 You can verify that the binary is properly signed and verified by the code signing utility:
 
-	$ codesign -v binr/radare2/radare2
+	$ codesign -dv binr/radare2/radare2
 
-So let's check what the sandboxing thinks about it:
-
-	$ spctl -av radare2
-	radare2: accepted
-	override=security disabled
-
-If this command says `rejected` instead of `accepted` it is probably because of your system settings. So launch the *System Preferences* application and:
-
-	-> Security & Privacy
-	-> General
-	-> Allow Apps Downloaded From
-		-> Anywhere
-
-Because our signing hasnt been done from an apple verified account we have to mark this option and then manually restart `taskgated` to make it happen!
-
-	$ sudo killall taskgated
-
-After this confirm it with the `spctl` tool and you should be able to debug on OSX without root permissions!
+After doing it you should be able to debug on OSX without root permissions!
 
 	$ r2 -d ls
 
-If you want to run and sign a dynamically linked version of radare2 you will get the following error:
-
-	$ codesign -dv binr/radare2/radare2
-	binr/radare2/radare2: code object is not signed at all
-
-Follow those steps to fix this issue:
-
-	$ make -C binr/radare2 osx-sign-libs
-
-And run `codesign -dv` and `spctl -av` to confirm.
-
-Troubleshooting
----------------
-Make sure that taskgated runs with -p by editing `com.apple.taskgated.plist`:
-
-	<key>ProgramArguments</key> 
-	<array> 
-		<string>/usr/libexec/taskgated</string> 
-		<string>-p</string> 
-		<string>-s</string> 
-	</array>
-
-Then run those lines:
-
-	launchctl unload /System/Library/LaunchDaemons/com.apple.taskgated.plist
-	sudo vim /System/Library/LaunchDaemons/com.apple.taskgated.plist
-	launchctl load /System/Library/LaunchDaemons/com.apple.taskgated.plist
-
-
-To root your certificate read the following instructions:
-
-https://llvm.org/svn/llvm-project/lldb/trunk/docs/code-signing.txt
-
-	sudo security add-trust -d -r trustRoot \
-		-p basic -p codeSign \
-		-k /Library/Keychains/System.keychain \
-		~/Desktop/org.radare.radare2.cer
-
-And then reboot!
+Note: if you already have a valid certifcate for code signing, you can specify its name by setting the env var CERTID.
 
 Packaging
 ---------

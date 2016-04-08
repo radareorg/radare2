@@ -1,15 +1,21 @@
 include ../../config.mk
+include ../../../mk/platform.mk
+include ../../util/deps.mk
 
-CFLAGS=-I../../include -Wall -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
+CFLAGS+=-I../../include -Wall ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
 # XXX
 CFLAGS+=-DLIL_ENDIAN=1
 # -D__UNIX__
 CFLAGS+=-DCORELIB
+LDFLAGS+=${LINK}
 
 foo: all
 
 ALL_TARGETS=
-ARCHS=att2intel.mk x86_pseudo.mk mreplace.mk arm_pseudo.mk z80_pseudo.mk
+ARCHS=att2intel.mk x86_pseudo.mk mreplace.mk
+ARCHS+=arm_pseudo.mk z80_pseudo.mk ppc_pseudo.mk 6502_pseudo.mk
+ARCHS+=m68k_pseudo.mk
+
 include $(ARCHS)
 
 all: ${ALL_TARGETS}

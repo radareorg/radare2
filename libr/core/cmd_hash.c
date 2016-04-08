@@ -40,7 +40,7 @@ static RHashHashHandlers hash_handlers[] = {
 
 static void handle_md4 (const ut8 *block, int len) {
 	int i = 0;
-	RHash *ctx = r_hash_new (R_TRUE, R_HASH_MD4);
+	RHash *ctx = r_hash_new (true, R_HASH_MD4);
 	const ut8 *c = r_hash_do_md4 (ctx, block, len);
 	for (i=0; i<R_HASH_SIZE_MD4; i++) r_cons_printf ("%02x", c[i]);
 	r_cons_newline ();
@@ -49,7 +49,7 @@ static void handle_md4 (const ut8 *block, int len) {
 
 static void handle_md5 (const ut8 *block, int len) {
 	int i = 0;
-	RHash *ctx = r_hash_new (R_TRUE, R_HASH_MD5);
+	RHash *ctx = r_hash_new (true, R_HASH_MD5);
 	const ut8 *c = r_hash_do_md5 (ctx, block, len);
 	for (i=0; i<R_HASH_SIZE_MD5; i++) r_cons_printf ("%02x", c[i]);
 	r_cons_newline ();
@@ -58,7 +58,7 @@ static void handle_md5 (const ut8 *block, int len) {
 
 static void handle_sha1 (const ut8 *block, int len) {
 	int i = 0;
-	RHash *ctx = r_hash_new (R_TRUE, R_HASH_SHA1);
+	RHash *ctx = r_hash_new (true, R_HASH_SHA1);
 	const ut8 *c = r_hash_do_sha1 (ctx, block, len);
 	for (i=0; i<R_HASH_SIZE_SHA1; i++) r_cons_printf ("%02x", c[i]);
 	r_cons_newline ();
@@ -67,7 +67,7 @@ static void handle_sha1 (const ut8 *block, int len) {
 
 static void handle_sha256 (const ut8 *block, int len) {
 	int i = 0;
-	RHash *ctx = r_hash_new (R_TRUE, R_HASH_SHA256);
+	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
 	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
 	for (i=0; i<R_HASH_SIZE_SHA256; i++) r_cons_printf ("%02x", c[i]);
 	r_cons_newline ();
@@ -76,7 +76,7 @@ static void handle_sha256 (const ut8 *block, int len) {
 
 static void handle_sha512 (const ut8 *block, int len) {
 	int i = 0;
-	RHash *ctx = r_hash_new (R_TRUE, R_HASH_SHA512);
+	RHash *ctx = r_hash_new (true, R_HASH_SHA512);
 	const ut8 *c = r_hash_do_sha512 (ctx, block, len);
 	for (i=0; i<R_HASH_SIZE_SHA512; i++) r_cons_printf ("%02x", c[i]);
 	r_cons_newline ();
@@ -142,7 +142,7 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 	const char *lang = input+1;
 	if (r_sandbox_enable (0)) {
 		eprintf ("hashbang disabled in sandbox mode\n");
-		return R_FALSE;
+		return false;
 	}
 	if (*lang=='/') {
 		const char *ptr = lang+1;
@@ -159,7 +159,7 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 		if (p && p->name) lang = p->name;
 	} else if (input[1]=='?' || input[1]=='*' || input[1]=='\0') {
 		r_lang_list (core->lang);
-		return R_TRUE;
+		return true;
 	}
 	p = strchr (input, ' ');
 	if (p) *p=0;
@@ -177,7 +177,7 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 		if (!p || *p==' ')
 			eprintf ("Invalid hashbang. See '#!' for help.\n");
 	}
-	return R_TRUE;
+	return true;
 }
 
 static int cmd_hash(void *data, const char *input) {
@@ -185,7 +185,7 @@ static int cmd_hash(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut32 osize = 0, len = core->blocksize;
 	const char *ptr;
-	int pos = 0, handled_cmd = R_FALSE;
+	int pos = 0, handled_cmd = false;
 
 	switch (*input) {
 	case '\t':
@@ -194,7 +194,7 @@ static int cmd_hash(void *data, const char *input) {
 	case '#':
 		if (!input[1]) {
 			algolist (1);
-			return R_TRUE;
+			return true;
 		}
 	case '!':
 		return cmd_hash_bang (core, input);
@@ -211,7 +211,7 @@ static int cmd_hash(void *data, const char *input) {
 			if (nlen != core->blocksize) {
 				eprintf ("Invalid block size\n");
 				r_core_block_size (core, osize);
-				return R_TRUE;
+				return true;
 			}
 		}
 	} else if (!ptr || !*(ptr+1)) osize = len;
@@ -220,7 +220,7 @@ static int cmd_hash(void *data, const char *input) {
 	while (osize > 0 && hash_handlers[pos].name != NULL) {
 		if (!r_str_ccmp (input, hash_handlers[pos].name, ' ')) {
 			hash_handlers[pos].handler (core->block, len);
-			handled_cmd = R_TRUE;
+			handled_cmd = true;
 			break;
 		}
 		pos++;

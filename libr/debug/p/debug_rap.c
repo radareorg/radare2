@@ -6,7 +6,7 @@
 
 static int r_debug_rap_step(RDebug *dbg) {
 	r_io_system (dbg->iob.io, "ds");
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_rap_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
@@ -15,17 +15,17 @@ static int r_debug_rap_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static int r_debug_rap_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	return R_FALSE; // XXX Error check
+	return false; // XXX Error check
 }
 
 static int r_debug_rap_continue(RDebug *dbg, int pid, int tid, int sig) {
 	r_io_system (dbg->iob.io, "dc");
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_rap_wait(RDebug *dbg, int pid) {
 	/* do nothing */
-	return R_TRUE;
+	return true;
 }
 
 static int r_debug_rap_attach(RDebug *dbg, int pid) {
@@ -38,14 +38,14 @@ static int r_debug_rap_attach(RDebug *dbg, int pid) {
 			eprintf ("ERROR: Underlaying IO descriptor is not a GDB one..\n");
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
-static int r_debug_rap_detach(int pid) {
+static int r_debug_rap_detach(RDebug *dbg, int pid) {
 // XXX TODO PID must be a socket here !!1
 //	close (pid);
 	//XXX Maybe we should continue here?
-	return R_TRUE;
+	return true;
 }
 
 static char *r_debug_rap_reg_profile(RDebug *dbg) {
@@ -61,27 +61,19 @@ static char *r_debug_rap_reg_profile(RDebug *dbg) {
 
 static int r_debug_rap_breakpoint (RBreakpointItem *bp, int set, void *user){
 	//r_io_system (dbg->iob.io, "db");
-	return R_FALSE;
+	return false;
 }
 
 RDebugPlugin r_debug_plugin_rap = {
 	.name = "rap",
 	.license = "LGPL3",
-	/* TODO: Add support for more architectures here */
-	.arch = 0xff,
+	.arch = "any",
 	.bits = R_SYS_BITS_32,
-	.init = NULL,
 	.step = r_debug_rap_step,
 	.cont = r_debug_rap_continue,
 	.attach = &r_debug_rap_attach,
 	.detach = &r_debug_rap_detach,
 	.wait = &r_debug_rap_wait,
-	.pids = NULL,
-	.tids = NULL,
-	.threads = NULL,
-	.kill = NULL,
-	.frames = NULL,
-	.map_get = NULL,
 	.breakpoint = &r_debug_rap_breakpoint,
 	.reg_read = &r_debug_rap_reg_read,
 	.reg_write = &r_debug_rap_reg_write,

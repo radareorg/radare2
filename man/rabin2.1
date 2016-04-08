@@ -1,11 +1,11 @@
-.Dd Jan 10, 2015
+.Dd Oct 19, 2015
 .Dt RABIN2 1
 .Sh NAME
 .Nm RABIN2
 .Nd Binary program info extractor
 .Sh SYNOPSIS
 .Nm rabin2
-.Op Fl AceghHiIsSMzlpRrLxvh
+.Op Fl AceghHiIsSMzlpRrLxvhqQV
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl B Ar addr
@@ -14,7 +14,7 @@
 .Op Fl f Ar subbin
 .Op Fl k Ar query
 .Op Fl K Ar algo
-.Op Fl O Ar str
+.Op Fl O Ar binop
 .Op Fl o Ar str
 .Op Fl m Ar addr
 .Op Fl @ Ar addr
@@ -26,7 +26,7 @@ This program allows you to get information about ELF/PE/MZ and CLASS files in a 
 .It Fl @ Ar addr
 Show information (symbol, section, import) of the given address
 .It Fl A
-List archs
+List sub-binaries and their associated arch-bits pairs
 .It Fl a Ar arch
 Set arch (x86, arm, .. accepts underscore for bits x86_32)
 .It Fl b Ar bits
@@ -75,12 +75,14 @@ Force minimum and maximum number of chars per string (see -z and -zz). if (strle
 Show information (symbol, section, import) at string offset
 .It Fl o Ar str
 Output file/folder for write operations (out by default)
-.It Fl O Ar str
-Write/extract operations (\-O help)
+.It Fl O Ar binop
+Perform binary operation on target binary (dump, resize, change sections, ...) see '-O help' for more information
 .It Fl p
 Disable VA. Show physical addresses
 .It Fl q
 Be quiet, just show fewer data
+.It Fl Q
+ show load address used by dlopen (non-aslr libs)
 .It Fl R
 Show realocations
 .It Fl r
@@ -91,6 +93,8 @@ Show exported symbols
 Show sections
 .It Fl v
 Show version information
+.It Fl V
+Show binary version information
 .It Fl x
 Extract all sub binaries from a fat binary (f.ex: fatmach0)
 .It Fl z
@@ -100,6 +104,17 @@ Guess size of binary program
 .It Fl zz
 Shows strings from raw bins
 .El
+.Sh ENVIRONMENT
+.Pp
+RABIN2_LANG same as r2 -e bin.lang for rabin2
+.Pp
+RABIN2_DEMANGLE demangle symbols
+.Pp
+RABIN2_MAXSTRBUF same as r2 -e bin.maxstrbuf for rabin2
+.Pp
+RABIN2_STRFILTER same as r2 -e bin.strfilter for rabin2
+.Pp
+RABIN2_STRPURGE same as r2 -e bin.strpurge for rabin2
 .Sh EXAMPLES
 .Pp
 List symbols of a program

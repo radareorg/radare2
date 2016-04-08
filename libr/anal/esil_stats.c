@@ -22,10 +22,9 @@ static int hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return 0;
 }
 
-static int hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res) {
-	if (*name>='0' && *name<='9')
-		sdb_array_add (esil->stats, "num.load", name, 0);
-	else sdb_array_add (esil->stats, "reg.read", name, 0);
+static int hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
+	const char *key = (*name>='0' && *name<='9')? "num.load": "reg.read";
+	sdb_array_add (esil->stats, key, name, 0);
 	return 0;
 }
 

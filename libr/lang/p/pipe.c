@@ -1,4 +1,3 @@
-
 /* radare2 - LGPL - Copyright 2015 pancake */
 
 #include "r_lib.h"
@@ -13,30 +12,88 @@ static int lang_pipe_file(RLang *lang, const char *file) {
 	return lang_pipe_run (lang, file, -1);
 }
 
-static void env(const char *s, int f) {
-	char *a = r_str_newf ("%d", f);
-	r_sys_setenv (s, a);
-//	eprintf ("%s %s\n", s, a);
-	free (a);
-}
-
 #if __WINDOWS__
 static HANDLE  myCreateChildProcess(const char * szCmdline) {
 	PROCESS_INFORMATION piProcInfo;
 	STARTUPINFO siStartInfo;
 	BOOL bSuccess = FALSE;
-	DWORD dwWritten;
 	ZeroMemory (&piProcInfo, sizeof (PROCESS_INFORMATION));
 	ZeroMemory (&siStartInfo, sizeof (STARTUPINFO));
-	siStartInfo.cb = sizeof(STARTUPINFO);
-	bSuccess = CreateProcess (NULL, szCmdline, NULL, NULL,
+	siStartInfo.cb = sizeof (STARTUPINFO);
+	LPTSTR szCmdLine2 = strdup (szCmdline);
+	bSuccess = CreateProcess (NULL, szCmdLine2, NULL, NULL,
 		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
-	if (!bSuccess)
-		return NULL;
-	
+	free (szCmdLine2);
 	//CloseHandle (piProcInfo.hProcess);
 	//CloseHandle (piProcInfo.hThread);
-	return piProcInfo.hProcess;
+	return bSuccess? piProcInfo.hProcess: NULL;
+}
+static BOOL bStopThread = FALSE;
+static HANDLE hPipeInOut = NULL;
+static HANDLE hproc = NULL;
+#define PIPE_BUF_SIZE 4096
+DWORD WINAPI ThreadFunction(LPVOID lpParam) {
+	RLang * lang = lpParam;
+	CHAR buf[PIPE_BUF_SIZE];
+	BOOL bSuccess = FALSE;
+	int i, res = 0;
+	DWORD dwRead, dwWritten;
+	r_cons_break (NULL, NULL);
+	res = ConnectNamedPipe (hPipeInOut, NULL);
+	if (!res) {
+		eprintf ("ConnectNamedPipe failed\n");
+		return FALSE;
+	}
+	do {
+		if (r_cons_singleton ()->breaked) {
+			TerminateProcess(hproc,0);
+			break;
+		}
+		memset (buf, 0, PIPE_BUF_SIZE);
+		bSuccess = ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL);
+                if (bStopThread)
+			break;
+		if (bSuccess && dwRead>0) {
+			buf[sizeof (buf)-1] = 0;
+			char *res = lang->cmd_str ((RCore*)lang->user, buf);
+			if (res) {
+				int res_len = strlen (res) + 1;
+				for (i = 0; i < res_len; i++) {
+					memset (buf, 0, PIPE_BUF_SIZE);
+					dwWritten = 0;
+					int writelen=res_len - i;
+					int rc = WriteFile (hPipeInOut, res + i, writelen>PIPE_BUF_SIZE?PIPE_BUF_SIZE:writelen, &dwWritten, 0);
+					if (bStopThread) {
+						free (res);
+						break;
+					}
+					if (!rc) {
+						eprintf ("WriteFile: failed 0x%x\n", (int)GetLastError());
+					}
+					if (dwWritten > 0) {
+						i += dwWritten - 1;
+					} else {
+						/* send null termination // chop */
+						eprintf ("w32-lang-pipe: 0x%x\n", (ut32)GetLastError ());
+						//WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
+						//break;
+					}
+				}
+				free (res);
+			} else {
+				WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
+			}
+		}
+	} while(!bStopThread);
+	r_cons_break_end ();
+	return TRUE;
+}
+#else
+static void env(const char *s, int f) {
+	char *a = r_str_newf ("%d", f);
+	r_sys_setenv (s, a);
+//	eprintf ("%s %s\n", s, a);
+	free (a);
 }
 #endif
 
@@ -46,6 +103,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	int child, ret;
 	int input[2];
 	int output[2];
+
 	pipe (input);
 	pipe (output);
 
@@ -57,34 +115,21 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		/* error */
 	} else if (child == 0) {
 		/* children */
-#if 1
 		r_sandbox_system (code, 1);
-#else
-		/* DEMO */
-		char buf[1024];
-		/* kid stuff here */
-		while (1) {
-			write (output[1], "pd 3\n", 6);
-			res = read (input[0], buf, sizeof (buf)-1);
-			if (res <1) break;
-			printf ("---> ((%s))\n", buf);
-			sleep (1);
-		}
-#endif
 		write (input[1], "", 1);
 		close (input[0]);
 		close (input[1]);
 		close (output[0]);
 		close (output[1]);
 		exit (0);
-		return R_FALSE;
+		return false;
 	} else {
 		/* parent */
 		char *res, buf[1024];
 
 		/* Close pipe ends not required in the parent */
-		close(output[1]);
-		close(input[0]);
+		close (output[1]);
+		close (input[0]);
 
 		r_cons_break (NULL, NULL);
 		for (;;) {
@@ -111,7 +156,9 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		if (safe_in != -1)
 			close (safe_in);
 		safe_in = open (ttyname(0), O_RDONLY);
-		dup2 (safe_in, 0);
+		if (safe_in != -1) {
+			dup2 (safe_in, 0);
+		} else eprintf ("Cannot open ttyname(0) %s\n", ttyname(0));
 		r_cons_break_end ();
 	}
 
@@ -119,65 +166,36 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	close (input[1]);
 	close (output[0]);
 	close (output[1]);
-	close (safe_in);
-	waitpid(child, NULL, 0);
-	return R_TRUE;
+	if (safe_in != -1)
+		close (safe_in);
+	waitpid (child, NULL, 0);
+	return true;
 #else
 #if __WINDOWS__
-	HANDLE hPipeInOut = NULL;
-	HANDLE hproc=NULL;
-	DWORD dwRead, dwWritten;
-	CHAR buf[1024];
-	BOOL bSuccess = FALSE;
-	int res=0;
+	HANDLE hThread = 0;
+	char buf[512];
 	sprintf(buf,"R2PIPE_IN%x",_getpid());
 	SetEnvironmentVariable("R2PIPE_PATH",buf);
 	sprintf(buf,"\\\\.\\pipe\\R2PIPE_IN%x",_getpid());
 	hPipeInOut = CreateNamedPipe(buf,
-		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
-		PIPE_READMODE_MESSAGE | \
-		PIPE_NOWAIT,PIPE_UNLIMITED_INSTANCES,
-		sizeof (buf), sizeof (buf), 0, NULL);
-	hproc=myCreateChildProcess (code);
-	if (hproc==NULL) {
-		//eprintf("Error spawning process: %s\n",code);
-		return R_TRUE;
+			PIPE_ACCESS_DUPLEX,
+			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
+			PIPE_BUF_SIZE,
+			PIPE_BUF_SIZE,
+			0,
+			NULL);
+	hproc = myCreateChildProcess (code);
+	if (!hproc) {
+		return false;
 	}
-	r_cons_break (NULL, NULL);
-	for (;;)
-	{
-		res = ConnectNamedPipe(hPipeInOut, NULL);
-		if (GetLastError()==ERROR_PIPE_CONNECTED) {
-			//eprintf("new client\n");
-			break;
-		}
-		if (r_cons_singleton ()->breaked) {
-			TerminateProcess(hproc,0);
-			break;
-		}
-
-	}
-	for (;;) {
-		if (r_cons_singleton ()->breaked) {
-			TerminateProcess(hproc,0);
-			break;
-		}
-		memset (buf, 0, sizeof (buf));
-		bSuccess = ReadFile( hPipeInOut, buf, sizeof (buf), &dwRead, NULL);
-	  	if (dwRead!=0) {
-			buf[sizeof(buf)-1] = 0;
-			res = lang->cmd_str ((RCore*)lang->user, buf);
-			if (res) {
-				WriteFile(hPipeInOut, res, strlen (res)+1, &dwWritten, NULL);
-				free (res);
-			} else {
-				WriteFile(hPipeInOut, "", 1, &dwWritten, NULL);
-			}
-	  	}
-	}
-	CloseHandle(hPipeInOut);
-	r_cons_break_end ();
-	return R_TRUE;
+	bStopThread=FALSE;
+	hThread = CreateThread (NULL, 0,ThreadFunction,lang, 0,0);
+	WaitForSingleObject (hproc, INFINITE );
+	bStopThread = TRUE;
+	DeleteFile (buf);
+	WaitForSingleObject (hThread, INFINITE);
+	CloseHandle (hPipeInOut);
+	return true;
 #endif
 #endif
 }
@@ -186,10 +204,6 @@ static struct r_lang_plugin_t r_lang_plugin_pipe = {
 	.name = "pipe",
 	.ext = "pipe",
 	.desc = "Use #!pipe node script.js",
-	.help = NULL,
 	.run = lang_pipe_run,
-	.init = NULL,
-	.fini = NULL,
 	.run_file = (void*)lang_pipe_file,
-	.set_argv = NULL,
 };

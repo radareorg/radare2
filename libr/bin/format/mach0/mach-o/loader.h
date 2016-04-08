@@ -207,6 +207,9 @@ struct mach_header_64 {
 					   require it. Only used in MH_EXECUTE
 					   filetypes. */
 
+#define MH_APP_EXTENSION_SAFE = 0x02000000 /* The code was linked for use in an application extension. */
+#define MH_DYLD_SHARED_CACHE = 0x80000000 /* Found on libraries embedded in dyldcache */
+
 /*
  * The load commands directly follow the mach_header.  The total size of all
  * of the commands is given by the sizeofcmds field in the mach_header.  All
@@ -233,7 +236,7 @@ struct load_command {
  * After MacOS X 10.1 when a new load command is added that is required to be
  * understood by the dynamic linker for the image to execute properly the
  * LC_REQ_DYLD bit will be or'ed into the load command constant.  If the dynamic
- * linker sees such a load command it it does not understand will issue a
+ * linker sees such a load command it does not understand, it will issue a
  * "unknown load command required for execution" error and refuse to use the
  * image.  Other load commands without this bit that are not understood will
  * simply be ignored.
@@ -295,6 +298,12 @@ struct load_command {
 #define LC_DATA_IN_CODE 0x29 /* table of non-instructions in __text */
 #define LC_SOURCE_VERSION 0x2A /* source version used to build binary */
 #define LC_DYLIB_CODE_SIGN_DRS 0x2B /* Code signing DRs copied from linked dylibs */
+
+/* included in iOS9 for new platforms */
+#define LC_LINKER_OPTION 0x2D /* linker options in MH_OBJECT files */
+#define LC_LINKER_OPTIMIZATION_HINT 0x2E /* optimization hints in MH_OBJECT files */
+#define LC_VERSION_MIN_TVOS 0x2F /* build for AppleTV min OS version */
+#define LC_VERSION_MIN_WATCHOS 0x30 /* build for Watch min OS version */
 
 
 /*
@@ -970,7 +979,7 @@ struct dysymtab_command {
      * this requires the r_address field to be something other than a section
      * offset to identify the item to be relocated.  In this case r_address is
      * set to the offset from the vmaddr of the first LC_SEGMENT command.
-     * For MH_SPLIT_SEGS images r_address is set to the the offset from the
+     * For MH_SPLIT_SEGS images r_address is set to the offset from the
      * vmaddr of the first read-write LC_SEGMENT command.
      *
      * The relocation entries are grouped by module and the module table
@@ -1098,7 +1107,7 @@ struct twolevel_hints_command {
  * isub_image field is an index into the sub-images (sub-frameworks and
  * sub-umbrellas list) that made up the two-level image that the undefined
  * symbol was found in when it was built by the static link editor.  If
- * isub-image is 0 the the symbol is expected to be defined in library and not
+ * isub-image is 0 the symbol is expected to be defined in library and not
  * in the sub-images.  If isub-image is non-zero it is an index into the array
  * of sub-images for the umbrella with the first index in the sub-images being
  * 1. The array of sub-images is the ordered list of sub-images of the umbrella

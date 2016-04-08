@@ -2,6 +2,7 @@
 
 OBJ_ARMCS=asm_arm_cs.o
 OBJ_ARMCS+=../arch/arm/armass.o
+OBJ_ARMCS+=../arch/arm/armass64.o
 
 include p/capstone.mk
 

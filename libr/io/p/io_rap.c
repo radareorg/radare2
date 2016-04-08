@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 - pancake */
+/* radare - LGPL - Copyright 2011-2016 - pancake */
 
 // TODO: implement the rap API in r_socket ?
 #include "r_io.h"
@@ -38,13 +38,13 @@ static int rap__write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count)
 	return ret;
 }
 
-static boolt rap__accept(RIO *io, RIODesc *desc, int fd) {
+static bool rap__accept(RIO *io, RIODesc *desc, int fd) {
 	RIORap *rap = desc->data;
 	if (rap) {
 		rap->client = r_socket_new_from_fd (fd);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
@@ -111,7 +111,7 @@ static ut64 rap__lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) 
 		eprintf ("Unexpected lseek reply\n");
 		return -1;
 	}
-	r_mem_copyendian ((ut8 *)&offset, tmp+1, 8, !ENDIAN);
+	r_mem_copyendian ((ut8 *)&offset, tmp+1, 8, ENDIAN);
 	return offset;
 }
 
@@ -157,11 +157,13 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		}
 		//TODO: Handle ^C signal (SIGINT, exit); // ???
 		eprintf ("rap: listening at port %s ssl %s\n", port, (is_ssl)?"on":"off");
-		rior = R_NEW (RIORap);
-		rior->listener = R_TRUE;
+		rior = R_NEW0 (RIORap);
+		rior->listener = true;
 		rior->client = rior->fd = r_socket_new (is_ssl);
-		if (rior->fd == NULL)
+		if (rior->fd == NULL) {
+			free (rior);
 			return NULL;
+		}
 		if (is_ssl) {
 			if (file && *file) {
 				if (!r_socket_listen (rior->fd, port, file)) {
@@ -183,14 +185,14 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		eprintf ("Cannot create new socket\n");
 		return NULL;
 	}
-	if (r_socket_connect_tcp (rap_fd, ptr, port, 30) == R_FALSE) {
+	if (r_socket_connect_tcp (rap_fd, ptr, port, 30) == false) {
 		eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
 		r_socket_free (rap_fd);
 		return NULL;
 	}
 	eprintf ("Connected to: %s at port %s\n", ptr, port);
 	rior = R_NEW (RIORap);
-	rior->listener = R_FALSE;
+	rior->listener = false;
 	rior->client = rior->fd = rap_fd;
 	if (file && *file) {
 		// send
@@ -240,24 +242,17 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 static int rap__listener(RIODesc *fd) {
 	if (RIORAP_IS_VALID (fd))
 		return RIORAP_IS_LISTEN (fd);
-	return R_FALSE;
+	return false;
 }
 
 static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	RSocket *s = RIORAP_FD (fd);
 	ut8 buf[RMT_MAX];
 	char *ptr;
-	int op, ret;
+	int ret;
 	unsigned int i, j = 0;
 
-	// send
-	if (*command=='!') {
-		op = RMT_SYSTEM;
-		command++;
-	} else {
-		op = RMT_CMD;
-	}
-	buf[0] = op;
+	buf[0] = RMT_CMD;
 	i = strlen (command)+1;
 	if (i>RMT_MAX-5) {
 		eprintf ("Command too long\n");
@@ -276,7 +271,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		}
 		/* system back in the middle */
 		/* TODO: all pkt handlers should check for reverse queries */
-		if (buf[0] == RMT_SYSTEM || buf[0] == RMT_CMD) {
+		if (buf[0] == RMT_CMD) {
 			char *res, *str;
 			ut32 reslen = 0, cmdlen = 0;
 			// run io->cmdstr
@@ -308,8 +303,8 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	ret = r_socket_read_block (s, buf+1, 4);
 	if (ret != 4)
 		return -1;
-	if (buf[0] != (op | RMT_REPLY)) {
-		eprintf ("Unexpected system reply\n");
+	if (buf[0] != (RMT_CMD | RMT_REPLY)) {
+		eprintf ("Unexpected rap cmd reply\n");
 		return -1;
 	}
 
@@ -328,10 +323,10 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 			if (ir>0) tr += ir;
 			else break;
 		} while (tr<i);
-		// TODO: use io->printf() with support for \x00
+		// TODO: use io->cb_printf() with support for \x00
 		ptr[i] = 0;
-		if (io->printf) {
-			io->printf ("%s", ptr);
+		if (io->cb_printf) {
+			io->cb_printf ("%s", ptr);
 			j = i;
 		} else j = write (1, ptr, i);
 		free (ptr);

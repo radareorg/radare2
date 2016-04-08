@@ -11,35 +11,47 @@ enum {
 	DOT_DOT
 };
 
-static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2, int style){
+static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
+		RCanvasLineStyle *style){
 	RCons *cons = r_cons_singleton ();
-	switch (style) {
-	case 0: // Unconditional jump
-		//c->attr=Color_BLUE;
-		c->attr = cons->pal.graph_trufae; //Color_GREEN;
+	switch (style->color) {
+	case LINE_UNCJMP:
+		c->attr = cons->pal.graph_trufae;
+		break;
+	case LINE_TRUE:
+		c->attr = cons->pal.graph_true;
+		break;
+	case LINE_FALSE:
+		c->attr = cons->pal.graph_false;
+		break;
+	case LINE_NONE:
+	default:
+		c->attr = cons->pal.graph_trufae;
+		break;
+	}
+	if (!c->color) c->attr = Color_RESET;
+
+	switch (style->symbol) {
+	case LINE_UNCJMP:
 		if (G (x, y))
 			W ("v");
-		if (G (x2, y2))
-			W ("V");
 		break;
-	case 1: // Conditional jump, True branch
-		c->attr = cons->pal.graph_true; //Color_GREEN;
+	case LINE_TRUE:
 		if (G (x, y))
 			W ("t"); //\\");
-		if (G (x2, y2))
-			W ("\\");
 		break;
-	case 2: // Conditional jump, False branch
-		c->attr = cons->pal.graph_false; //Color_RED;
+	case LINE_FALSE:
 		if (G (x, y))
 			W ("f");
-		if (G (x2, y2))
-			W ("/");
+		break;
+	case LINE_NONE:
+	default:
 		break;
 	}
 }
 
-R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
+R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2,
+		RCanvasLineStyle *style) {
 	apply_line_style(c,x,y,x2,y2,style);
 	if(y2<y){
 		int tmp = y2;
@@ -85,10 +97,8 @@ loop:
 	c->attr=Color_RESET;
 }
 
-static void draw_horizontal_line (RConsCanvas *c,
-								  int x, int y,
-								  int width,
-								  int style) {
+static void draw_horizontal_line (RConsCanvas *c, int x, int y,
+		int width, int style) {
 	char *l_corner, *r_corner;
 	int i;
 
@@ -113,15 +123,19 @@ static void draw_horizontal_line (RConsCanvas *c,
 		break;
 	}
 
-	if (G (x, y))
+	if (G (x, y)) {
 		W (l_corner);
+	}
 
-	for (i = x + 1; i < x + width - 1; i++)
-		if (G (i, y))
+	for (i = x + 1; i < x + width - 1; i++) {
+		if (G (i, y)) {
 			W ("-");
+		}
+	}
 
-	if (G (x + width - 1, y))
+	if (G (x + width - 1, y)) {
 		W (r_corner);
+	}
 }
 
 static void draw_vertical_line (RConsCanvas *c, int x, int y, int height) {
@@ -131,7 +145,8 @@ static void draw_vertical_line (RConsCanvas *c, int x, int y, int height) {
 			W ("|");
 }
 
-R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int y2, int style) {
+R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int y2,
+		RCanvasLineStyle *style) {
 	int min_x = R_MIN (x, x2);
 	int diff_x = R_ABS (x - x2);
 	int diff_y = R_ABS (y - y2);
@@ -150,20 +165,14 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 		draw_vertical_line(c, x2, y + hl + 1, hl2);
 		draw_horizontal_line(c, min_x, y + hl + 1, w, style);
 	} else  {
-		int rl = diff_x / 2;
-		int rl2 = diff_x - rl + 1;
-		int vl = y2 - y == 1 ? 1 : diff_y + 1;
-		int y_line, style;
-
-		draw_vertical_line(c, min_x + rl, y2, vl);
-
-		y_line = min_x == x ? y + 1 : y2 - 1;
-		style = min_x == x ? REV_APEX_APEX : DOT_DOT;
-		draw_horizontal_line(c, min_x, y_line, rl + 1, style);
-
-		y_line = min_x == x ? y2 - 1 : y + 1;
-		style = min_x == x ? DOT_DOT : REV_APEX_APEX;
-		draw_horizontal_line(c, min_x + rl, y_line, rl2, style);
+		if (y2 == y) {
+			draw_horizontal_line (c, min_x, y, diff_x + 1, DOT_DOT);
+		} else {
+			if (x != x2) {
+				draw_horizontal_line (c, min_x, y, diff_x + 1, REV_APEX_APEX);
+			}
+			draw_vertical_line (c, x2, y2, diff_y);
+		}
 	}
 
 	c->attr = Color_RESET;
