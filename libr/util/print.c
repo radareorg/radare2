@@ -1380,7 +1380,10 @@ R_API void r_print_set_rowoff (RPrint *p, int i, ut32 offset) {
 	if (i >= p->row_offsets_sz) {
 		size_t new_size;
 		p->row_offsets_sz *= 2;
-		new_size = sizeof (*p->row_offsets) * p->row_offsets_sz;
+		//XXX dangerous
+		while (i >= p->row_offsets_sz)
+			p->row_offsets_sz *= 2;
+		new_size = sizeof (ut32) * p->row_offsets_sz;
 		p->row_offsets = realloc (p->row_offsets, new_size);
 	}
 	p->row_offsets[i] = offset;

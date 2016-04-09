@@ -247,7 +247,8 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x3c: // if-gtz
 		case 0x3d: // if-lez
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = addr + (short)(data[2]|data[3]<<8)*2;
+			//XXX fix this better the check is to avoid an oob
+			op->jump = addr + (len>3?(short)(data[2]|data[3]<<8)*2 : 0);
 			op->fail = addr + sz;
 			op->eob = 1;
 			break;
@@ -276,7 +277,9 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0xf9: // invoke-virtual-quick/range
 		case 0xfb: // invoke-super-quick/range
 			{
-			ut32 vB = (data[3]<<8) | data[2];
+			//XXX fix this better since the check avoid an oob
+			//but the jump will be incorrect
+			ut32 vB = len > 3?(data[3] << 8) | data[2] : 0;
 			op->jump = anal->binb.get_offset (
 				anal->binb.bin, 'm', vB);
 			op->fail = addr + sz;
