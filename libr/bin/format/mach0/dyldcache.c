@@ -110,7 +110,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 			/* Write segment and patch offset */
 			struct segment_command *seg = (struct segment_command *)lc;
 			int t = seg->filesize;
-			if (seg->fileoff + seg->filesize > bin->size || seg->fileoff > bin->size) {
+			if (seg->fileoff + seg->filesize > bin->size || seg->fileoff > bin->size) {
 			    	eprintf ("malformed dyldcache\n");
 			    	free (ret);
 				r_buf_free (dbuf);
