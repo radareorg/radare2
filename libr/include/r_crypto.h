@@ -66,6 +66,7 @@ extern RCryptoPlugin r_crypto_plugin_rc4;
 extern RCryptoPlugin r_crypto_plugin_xor;
 extern RCryptoPlugin r_crypto_plugin_blowfish;
 extern RCryptoPlugin r_crypto_plugin_rc2;
+extern RCryptoPlugin r_crypto_plugin_rot;
 
 #ifdef __cplusplus
 }
