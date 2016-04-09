@@ -136,39 +136,31 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 	int sect, len, seg = bin->nsegs - 1;
 	ut32 size_sects;
 
-	if (!UT32_MUL (&size_sects, bin->nsegs, sizeof (struct MACH0_(segment_command)))){
+	if (!UT32_MUL (&size_sects, bin->nsegs, sizeof (struct MACH0_(segment_command))))
 		return false;
-	}
-	if (!size_sects || size_sects > bin->size) {
+	if (!size_sects || size_sects > bin->size)
 		return false;
-	}
+	if (off > bin->size || off + sizeof (struct MACH0_(segment_command)) > bin->size)
+		return false;
 	if (!(bin->segs = realloc (bin->segs, bin->nsegs * sizeof(struct MACH0_(segment_command))))) {
 		perror ("realloc (seg)");
 		return false;
 	}
-	if (off > bin->size || off + sizeof (struct MACH0_(segment_command)) > bin->size) {
-		return false;
-}
 #if R_BIN_MACH064
-	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg],
-		bin->endian?"2I16c4L4I":"2i16c4l4i", 1);
+	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c4L4I":"2i16c4l4i", 1);
 #else
-	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg],
-		bin->endian?"2I16c8I":"2i16c8i", 1);
+	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c8I":"2i16c8i", 1);
 #endif
+	if (len < 1)
+		return false;
 	sdb_num_set (bin->kv, sdb_fmt (0, "mach0_segment_%d.offset", seg), off, 0);
 	sdb_num_set (bin->kv, "mach0_segments.count", 0, 0);
 	sdb_set (bin->kv, "mach0_segment.format",
 		"xd[16]zxxxxoodx "
 		"cmd cmdsize segname vmaddr vmsize "
 		"fileoff filesize maxprot initprot nsects flags", 0);
-#if 0
-// ENUM DEMO
-	sdb_set (bin->kv, sdb_fmt (0, "mach0_segment.cparse"),
-		"enum { FOO=1, FOO=2, FOO=4 }", 0);
-#endif
 
-	if (len == 0 || len == -1) {
+	if (len < 1) {
 		eprintf ("Error: read (seg)\n");
 		return false;
 	}
@@ -970,7 +962,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 			sections[i].flags = seg->flags;
 			r_str_ncpy (sectname, seg->segname, sizeof (sectname)-1);
 			// hack to support multiple sections with same name
-			sections[i].srwx = prot2perm (seg[i].initprot);
+			sections[i].srwx = prot2perm (seg->initprot);
 			sections[i].last = 0;
 		}
 		sections[i].last = 1;
