@@ -1458,6 +1458,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			}
 #endif
 		}
+		if (string2) R_FREE(string2);
 		str = strstr (line, "sym.");
 		if (!str) str = strstr (line, "fcn.");
 		if (str) {
