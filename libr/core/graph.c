@@ -28,6 +28,11 @@ static int mousemode = 0;
 #define ZOOM_STEP 10
 #define ZOOM_DEFAULT 100
 
+#define BODY_CG		0x1
+#define BODY_ESIL	0x2
+#define BODY_OFFSETS	0x4
+#define BODY_SUMMARY	0x8
+
 #define hash_set(sdb,k,v) (sdb_num_set (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), (ut64)(size_t)v, 0))
 #define hash_get(sdb,k) (sdb_num_get (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), NULL))
 #define hash_get_rnode(sdb,k) ((RGraphNode *)(size_t)hash_get (sdb, k))
@@ -94,6 +99,9 @@ static bool is_mini(const RAGraph *g) {
 static bool is_esil(const RAGraph *g) {
 	return g->mode == R_AGRAPH_MODE_ESIL || g->mode == R_AGRAPH_MODE_ESIL_OFFSET;
 }
+static bool is_summary(const RAGraph *g) {
+	return g->mode == R_AGRAPH_MODE_SUMMARY;
+}
 static int next_mode(int mode) {
 	return (mode + 1) % R_AGRAPH_MODE_MAX;
 }
@@ -108,10 +116,20 @@ static const char *mode2str(const RAGraph *g, const char *prefix) {
 	else if (is_esil (g) && is_offset (g)) submode = "ESIL-OFF";
 	else if (is_esil (g)) submode = "ESIL";
 	else if (is_offset (g)) submode = "OFF";
+	else if (is_summary (g)) submode = "SUMM";
 	else submode = "NORM";
 
 	snprintf(m, sizeof (m), "%s-%s", prefix, submode);
 	return m;
+}
+
+static int mode2opts(const RAGraph *g) {
+	int opts = 0;
+	if (is_offset (g)) opts |= BODY_OFFSETS;
+	if (is_esil (g)) opts |= BODY_ESIL;
+	if (is_summary (g)) opts |= BODY_SUMMARY;
+	if (g->is_callgraph) opts |= BODY_CG;
+	return opts;
 }
 
 static char *get_title (ut64 addr) {
@@ -1503,8 +1521,7 @@ static void set_layout(RAGraph *g) {
 	r_list_free (g->back_edges);
 }
 
-static char *get_body (RCore *core, ut64 addr, int size, bool with_offset,
-		bool is_esil, bool disasm_insts) {
+static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	char *body;
 	int o_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
 	int o_lines = r_config_get_i (core->config, "asm.lines");
@@ -1514,16 +1531,23 @@ static char *get_body (RCore *core, ut64 addr, int size, bool with_offset,
 	int o_offset = r_config_get_i (core->config, "asm.offset");
 	int o_esil = r_config_get_i (core->config, "asm.esil");
 	int o_cursor = core->print->cur_enabled;
-	const char *cmd = disasm_insts ? "pd" : "pD";
+
+	const char *cmd;
+	if (opts & BODY_SUMMARY) {
+		cmd = "pds";
+	} else {
+		cmd = (opts & BODY_CG) ? "pd" : "pD";
+	}
+
 	// configure options
 	r_config_set_i (core->config, "asm.fcnlines", false);
 	r_config_set_i (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmtcol", 0);
 	r_config_set_i (core->config, "asm.marks", false);
-	r_config_set_i (core->config, "asm.esil", is_esil);
+	r_config_set_i (core->config, "asm.esil", opts & BODY_ESIL);
 	core->print->cur_enabled = false;
 
-	if (with_offset) {
+	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY) {
 		r_config_set_i (core->config, "asm.offset", true);
 		r_config_set_i (core->config, "asm.bytes", true);
 	} else {
@@ -1532,6 +1556,7 @@ static char *get_body (RCore *core, ut64 addr, int size, bool with_offset,
 	}
 	body = r_core_cmd_strf (core,
 		"%s %d @ 0x%08"PFMT64x, cmd, size, addr);
+
 	// restore original options
 	core->print->cur_enabled = o_cursor;
 	r_config_set_i (core->config, "asm.esil", o_esil);
@@ -1555,8 +1580,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (bb->addr == UT64_MAX)
 			continue;
 
-		body = get_body (core, bb->addr, bb->size, is_offset (g),
-			is_esil (g), false);
+		body = get_body (core, bb->addr, bb->size, mode2opts (g));
 		title = get_title (bb->addr);
 		node = r_agraph_get_node (g, title);
 		if (node) {
@@ -1582,8 +1606,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 		if (bb->addr == UT64_MAX) continue;
 
-		body = get_body (core, bb->addr, bb->size, is_offset (g),
-			is_esil (g), false);
+		body = get_body (core, bb->addr, bb->size, mode2opts (g));
 		title = get_title (bb->addr);
 
 		node = r_agraph_add_node (g, title, body);
@@ -1654,8 +1677,7 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 				continue;
 		free (title);
 
-		body = get_body (core, ref->addr, 4, is_offset (g),
-			is_esil (g), true);
+		body = get_body (core, ref->addr, 4, mode2opts (g));
 		body = r_str_concat (body, "...\n");
 		title = get_title (ref->addr);
 
