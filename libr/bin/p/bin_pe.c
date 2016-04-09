@@ -343,15 +343,18 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 	const ut8 *buf;
 	unsigned int idx;
 	ut64 sz;
-	if (!arch) return false;
+	if (!arch) 
+		return false;
 	buf = r_buf_buffer (arch->buf);
-	if (!buf) return false;
+	if (!buf) 
+		return false;
 	sz = r_buf_size (arch->buf);
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
-	if (sz < idx + 0x5E)
+	if (idx + 0x5E + 1 >= sz )
 		return false;
-	return ((*(ut16*)(buf + idx + 0x5E)) & \
-		dllCharacteristic);
+	//it's funny here idx+0x5E can be 158 and sz 159 but with
+	//the cast it reads two bytes until 160 
+	return ((*(ut16*)(buf + idx + 0x5E)) & dllCharacteristic);
 }
 
 static RBinInfo* info(RBinFile *arch) {

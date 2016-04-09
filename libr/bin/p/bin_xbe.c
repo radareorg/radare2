@@ -186,7 +186,7 @@ static RList* libs(RBinFile *arch) {
 		off = 0;
 	else
 		off = h->kernel_lib_addr - h->base;
-	if (off > arch->size || off + sizeof(xbe_lib) > arch->size)
+	if (off > arch->size || off + sizeof(xbe_lib) > arch->size)
 		goto out_error;
 	r = r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
 	if (r < 1)
