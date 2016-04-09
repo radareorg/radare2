@@ -1530,11 +1530,11 @@ R_API RBinJavaCPTypeObj* r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 		str_len = R_BIN_JAVA_USHORT (buf, offset+1);
 		buf_sz += str_len;
 	}
-	cp_buf = calloc (buf_sz, sizeof (char));
+	cp_buf = calloc (buf_sz, 1);
 	if (!cp_buf)
 		return java_obj;
-	if (offset+0x20 < len && offset <= buf_sz) {
-		memcpy (cp_buf, (ut8*) buf + offset, buf_sz - offset);
+	if (offset + buf_sz < len) {
+		memcpy (cp_buf, (ut8*) buf + offset, buf_sz);
 		IFDBG eprintf ("Parsed the tag '%d':%s and create object from offset 0x%08"PFMT64x".\n",tag, R_BIN_JAVA_CP_METAS[tag].name, offset);
 		java_obj = (*java_constant_info->allocs->new_obj)(bin, cp_buf, buf_sz);
 		if (java_obj != NULL && java_obj->metas != NULL) {
