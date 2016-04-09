@@ -165,51 +165,62 @@ static RList* sections(RBinFile *arch) {
 
 static RList* libs(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj;
+	xbe_header *h = NULL;
 	int i, off, libs, r;
 	xbe_lib lib;
 	RList *ret;
 	char *s;
+	ut32 addr, end;
 
-	if (!arch || !arch->o)
+	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
 	obj = arch->o->bin_obj;
+	h = obj->header;
+	end = h->base + h->headers_size + h->image_size;
 	ret = r_list_new ();
-	if (!ret) return NULL;
+	if (!ret)
+		return NULL;
 	ret->free = free;
-	if ( obj->header->kernel_lib_addr < obj->header->base) {
+	if (h->kernel_lib_addr < h->base)
 		off = 0;
-	} else {
-		off = obj->header->kernel_lib_addr - obj->header->base;
-	}
+	else
+		off = h->kernel_lib_addr - h->base;
 	r = r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
-	if (r == 0 || r == -1) return NULL;
+	if (r < 1)
+		goto out_error;
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
-	if (s) r_list_append (ret, s);
-
-	if (obj->header->xapi_lib_addr < obj->header->base) {
+	if (s)
+		r_list_append (ret, s);
+	if (h->xapi_lib_addr < h->base)
 		off = 0;
-	} else {
-		off = obj->header->xapi_lib_addr - obj->header->base;
-	}
+	else
+		off = h->xapi_lib_addr - h->base;
 	r = r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
-	if (r == 0 || r == -1) return NULL;
+	if (r < 1)
+		goto out_error;
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
-	if (s) r_list_append (ret, s);
-
+	if (s)
+		r_list_append (ret, s);
 	libs = obj->header->lib_versions;
-	if (libs<1) libs = 0;
+	if (libs < 1)
+		goto out_error;
 	for (i = 0; i < libs; i++) {
-		r = r_buf_read_at (arch->buf, obj->header->lib_versions_addr - \
-			obj->header->base + (i * sizeof (xbe_lib)),
-			(ut8 *)&lib, sizeof (xbe_lib));
-
-		if (r == 0 || r == -1) continue;
-		s = r_str_newf ("%s %i.%i.%i", lib.name,
-			lib.major, lib.minor, lib.build);
-		if (s) r_list_append(ret, s);
+		addr = h->lib_versions_addr - h->base + (i * sizeof (xbe_lib));
+		if (addr > end || addr + sizeof (xbe_lib) > end)
+			goto out_error;
+		r = r_buf_read_at (arch->buf, h->lib_versions_addr - h->base + (i * sizeof (xbe_lib)),
+				(ut8 *)&lib, sizeof (xbe_lib));
+		if (r < 1)
+			goto out_error;
+		s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
+		if (s)
+			r_list_append(ret, s);
 	}
 
 	return ret;
+out_error:
+	r_list_free (ret);
+	return NULL;
 }
 
 static RList* symbols(RBinFile *arch) {
