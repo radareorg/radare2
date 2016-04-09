@@ -428,40 +428,26 @@ int main(int argc, char **argv) {
 			hashstr_len = r_str_unescape (hashstr);
 		}
 		if (encrypt) {
-			int seedlen = seed? strlen (seed): 0;
-			if (seedlen > 0) {
+			if (s.len > 0) {
 				RCrypto *cry = r_crypto_new ();
 				if (r_crypto_use (cry, encrypt)) {
-					ut8 *binseed = malloc (seedlen + 1);
-					if (binseed) {
-						int len = r_hex_str2bin (seed, binseed);
-						if (len <1) {
-							len = seedlen;
-							strcpy ((char *)binseed, seed);
-						} else {
-							seedlen = len;
-						}
-						if (r_crypto_set_key (cry, binseed, seedlen, 0, 0)) {
-							const char *buf = hashstr;
-							int buflen = hashstr_len;
+					if (r_crypto_set_key (cry, s.buf, s.len, 0, 0)) {
+						const char *buf = hashstr;
+						int buflen = hashstr_len;
 
-							r_crypto_update (cry, (const ut8*)buf, buflen);
-							r_crypto_final (cry, NULL, 0);
+						r_crypto_update (cry, (const ut8*)buf, buflen);
+						r_crypto_final (cry, NULL, 0);
 
-							int result_size = 0;
-							ut8 *result = r_crypto_get_output (cry, &result_size);
-							if (result) {
-								write (1, result, result_size);
-								free (result);
-							}
-						} else {
-							eprintf ("Invalid key\n");
+						int result_size = 0;
+						ut8 *result = r_crypto_get_output (cry, &result_size);
+						if (result) {
+							write (1, result, result_size);
+							free (result);
 						}
-						free (binseed);
-						return 0;
 					} else {
-						eprintf ("Cannot allocate %d bytes\n", seedlen);
+						eprintf ("Invalid key\n");
 					}
+					return 0;
 				} else {
 					eprintf ("Unknown encryption algorithm '%s'\n", encrypt);
 				}
@@ -545,43 +531,31 @@ int main(int argc, char **argv) {
 	io = r_io_new ();
 	for (ret = 0, i = optind; i < argc; i++) {
 		if (encrypt) {//for encrytion when files are provided 
-			int seedlen = seed? strlen (seed): 0;
-			if (seedlen > 0) {
+			if (s.len > 0) {
 				RCrypto *cry = r_crypto_new ();
 				if (r_crypto_use (cry, encrypt)) {
-					ut8 *binseed = malloc (seedlen + 1);
-					if (binseed) {
-						int len = r_hex_str2bin (seed, binseed);
-						if (len <1) {
-							len = seedlen;
-							strcpy ((char *)binseed, seed);
-						} else {
-							seedlen = len;
+					if (r_crypto_set_key (cry, s.buf, s.len, 0, 0)) {
+						int file_size;
+						ut8 *buf = (ut8*)r_file_slurp (argv[i], &file_size);
+						if (!buf) {
+							eprintf ("rahash2: Cannot open file\n");
+							continue;
 						}
-						if (r_crypto_set_key (cry, binseed, seedlen, 0, 0)) {
-							int file_size;
-							ut8 *buf = (ut8*)r_file_slurp (argv[i], &file_size);
-							if (!buf) {
-								eprintf ("rahash2: Cannot open file\n");
-								continue;
-							}
-							r_crypto_update (cry, buf, file_size);
-							r_crypto_final (cry, NULL, 0);
-							int result_size = 0;
-							ut8 *result = r_crypto_get_output (cry, &result_size);
-							if (result) {
-								write (1, result, result_size);
-								free (result);
-							}
-							free(buf);
-						} else {
-							eprintf ("Invalid key\n");
+
+						r_crypto_update (cry, buf, file_size);
+						r_crypto_final (cry, NULL, 0);
+
+						int result_size = 0;
+						ut8 *result = r_crypto_get_output (cry, &result_size);
+						if (result) {
+							write (1, result, result_size);
+							free (result);
 						}
-						free (binseed);
-						return 0;
+						free(buf);
 					} else {
-						eprintf ("Cannot allocate %d bytes\n", seedlen);
+						eprintf ("Invalid key\n");
 					}
+					return 0;
 				} else {
 					eprintf ("Unknown encryption algorithm '%s'\n", encrypt);
 				}
