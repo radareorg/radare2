@@ -589,7 +589,7 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t) *bin) {
 		computed_cs = (computed_cs & 0xFFFFFFFF) + cur + (computed_cs >> 32);
 		if (computed_cs >> 32) {
 			computed_cs = (computed_cs & 0xFFFFFFFF) + (computed_cs >> 32);
-		}		
+		}
 	}
 
 	// add resultant bytes to checksum
@@ -906,7 +906,7 @@ static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t) *bin, PE_DWord
 		}
 		key = sdb_fmt (0, "pe.tls_callback%d_vaddr", count);
 		sdb_num_set (bin->kv, key, addressOfTLSCallback, 0);
-		
+
 		key = sdb_fmt (0, "pe.tls_callback%d_paddr", count);
 		paddr = bin_pe_rva_to_paddr (bin, bin_pe_va_to_rva(bin, (PE_DWord) addressOfTLSCallback));
 		sdb_num_set (bin->kv, key, paddr, 0);
@@ -2119,6 +2119,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	struct r_bin_pe_import_t *imps, *imports = NULL;
 	char dll_name[PE_NAME_LENGTH + 1];
 	int nimp = 0;
+	ut64 off; //used to cache value
 	PE_DWord dll_name_offset = 0;
 	PE_DWord paddr = 0;
 	PE_DWord import_func_name_offset;
@@ -2128,16 +2129,19 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	if (!bin) return NULL;
 	if (bin->import_directory_offset >= bin->size) return NULL;
 	if (bin->import_directory_offset + 32 >= bin->size) return NULL;
-
-	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
+	
+	off = bin->import_directory_offset;
+	if (off < bin->size && off > 0) {
 		void *last;
+		if (off + sizeof(PE_(image_import_directory)) > bin->size)
+			return NULL;
 		curr_import_dir = (PE_(image_import_directory)*)(bin->b->buf + bin->import_directory_offset);
 		dll_name_offset = curr_import_dir->Name;
 
-		if (bin->import_directory_offset < 1) return NULL;
 		if (bin->import_directory_size < 1) return NULL;
 
-		if (bin->import_directory_offset + bin->import_directory_size > bin->size) {
+		if (off + bin->import_directory_size > bin->size) {
+			//why chopping instead of returning and cleaning?
 			eprintf ("Warning: read (import directory too big)\n");
 			bin->import_directory_size = bin->size - bin->import_directory_offset;
 		}
@@ -2151,8 +2155,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 			if (paddr > bin->size || paddr + PE_NAME_LENGTH > bin->size) {
 				return NULL;
 			}
-			int rr = r_buf_read_at (bin->b, paddr,
-						(ut8*)dll_name, PE_NAME_LENGTH);
+			int rr = r_buf_read_at (bin->b, paddr, (ut8*)dll_name, PE_NAME_LENGTH);
 			if (rr != PE_NAME_LENGTH) {
 				eprintf ("Warning: read (magic)\n");
 				return NULL;
@@ -2166,11 +2169,11 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 			curr_import_dir++;
 		}
 	}
-
-	if (bin->delay_import_directory_offset < bin->size && bin->delay_import_directory_offset > 0) {
-		curr_delay_import_dir = (PE_(image_delay_import_directory)*) (
-			bin->b->buf + bin->delay_import_directory_offset);
-
+	off = bin->delay_import_directory_offset;
+	if (off < bin->size && off > 0) {
+		if (off + sizeof(PE_(image_delay_import_directory)) > bin->size)
+			return NULL;
+		curr_delay_import_dir = (PE_(image_delay_import_directory)*) (bin->b->buf + off);
 		if (curr_delay_import_dir->Attributes == 0) {
 			dll_name_offset = bin_pe_rva_to_paddr(bin,
 				curr_delay_import_dir->Name - PE_(r_bin_pe_get_image_base)(bin));
@@ -2182,9 +2185,8 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 		}
 
 		while ((curr_delay_import_dir->Name != 0) && (curr_delay_import_dir->DelayImportAddressTable !=0)) {
-			if (dll_name_offset > bin->size || dll_name_offset + PE_NAME_LENGTH > bin->size) {
+			if (dll_name_offset > bin->size || dll_name_offset + PE_NAME_LENGTH > bin->size)
 				return NULL;
-			}
 			int rr = r_buf_read_at (bin->b, dll_name_offset, (ut8*)dll_name, PE_NAME_LENGTH);
 			if (rr < 5) {
 				eprintf ("Warning: read (magic)\n");
@@ -2218,6 +2220,8 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_(image_import_directory) *curr_import_dir = NULL;
 	PE_(image_delay_import_directory) *curr_delay_import_dir = NULL;
 	PE_DWord name_off = 0;
+	RStrHT *lib_map = NULL;
+	ut64 off; //cache value
 	int index = 0;
 	int len = 0;
 	int max_libs = 20;
@@ -2227,25 +2231,18 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 		return NULL;
 	}
 
-	if (bin->import_directory_offset + bin->import_directory_size > bin->b->length) {
+	if (bin->import_directory_offset + bin->import_directory_size > bin->size) {
 		eprintf ("import directory offset bigger than file\n");
-		bin->import_directory_size = bin->b->length - bin->import_directory_offset;
-		//return NULL;
+		goto out_error;
 	}
-	RStrHT *lib_map = r_strht_new();
-	if (bin->import_directory_offset < bin->size && bin->import_directory_offset > 0) {
+	lib_map = r_strht_new();
+	off = bin->import_directory_offset;
+	if (off < bin->size && off > 0) {
 		void *last = NULL;
 		// normal imports
-		curr_import_dir = (PE_(image_import_directory)*)(
-			bin->b->buf + bin->import_directory_offset);
-		if (bin->import_directory_offset+bin->import_directory_size > bin->b->length) {
-			// chop
-			bin->import_directory_size = bin->b->length - bin->import_directory_offset;
-			eprintf ("Warning: read libs (import directory too big) %d %d size %d\n",
-				(int)bin->import_directory_offset, (int)bin->import_directory_size,
-				(int)bin->b->length);
-			//return NULL;
-		}
+		if (off + sizeof (PE_(image_import_directory)) > bin->size)
+			goto out_error;
+		curr_import_dir = (PE_(image_import_directory)*)(bin->b->buf + off);
 		last = (char *)curr_import_dir + bin->import_directory_size;
 		while ((void*)(curr_import_dir+1) <= last && (
 				curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
@@ -2256,7 +2253,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 			if (libs[index].name[0] == 0) { // minimum string length
 				goto next;
 			}
-			if (len <2 || libs[index].name[0] == 0) { // minimum string length
+			if (len < 2 || libs[index].name[0] == 0) { // minimum string length
 				eprintf ("Warning: read (libs - import dirs) %d\n", len);
 				break;
 			}
@@ -2269,8 +2266,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 					libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
 					if (!libs) {
 						r_sys_perror ("realloc (libs)");
-						r_strht_free (lib_map);
-						return NULL;
+						goto out_error;
 					}
 					max_libs *= 2;
 				}
@@ -2279,12 +2275,15 @@ next:
 			curr_import_dir++;
 		}
 	}
-
-	if (bin->delay_import_directory_offset < bin->size && bin->delay_import_directory_offset > 0) {
-		curr_delay_import_dir = (PE_(image_delay_import_directory)*)(
-			bin->b->buf + bin->delay_import_directory_offset);
+	off = bin->delay_import_directory_offset;
+	if (off < bin->size && off > 0) {
+		if (off + sizeof(PE_(image_delay_import_directory)) > bin->size)
+			goto out_error;
+		curr_delay_import_dir = (PE_(image_delay_import_directory)*)(bin->b->buf + off);
 		while (curr_delay_import_dir->Name != 0 && curr_delay_import_dir->DelayImportNameTable != 0) {
 			name_off = bin_pe_rva_to_paddr(bin, curr_delay_import_dir->Name);
+			if (name_off > bin->size || name_off + PE_STRING_LENGTH > bin->size)
+				goto out_error;
 			len = r_buf_read_at (bin->b, name_off, (ut8*)libs[index].name, PE_STRING_LENGTH);
 			if (len != PE_STRING_LENGTH) {
 				eprintf ("Warning: read (libs - delay import dirs)\n");
@@ -2314,6 +2313,10 @@ next:
 	r_strht_free (lib_map);
 	libs[index].last = 1;
 	return libs;
+out_error:
+	r_strht_free (lib_map);
+	free (libs);
+	return NULL;
 }
 
 int PE_(r_bin_pe_get_image_size)(struct PE_(r_bin_pe_obj_t)* bin) {

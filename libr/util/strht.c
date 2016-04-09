@@ -16,11 +16,15 @@ static void r_strht_fini(RStrHT *s) {
 
 R_API RStrHT *r_strht_new() {
 	RStrHT *s = R_NEW0 (RStrHT);
+	if (!s)
+		return NULL;
 	r_strht_init (s);
 	return s;
 }
 
 R_API void r_strht_free(RStrHT *s) {
+	if (!s)
+		return;
 	r_strht_fini (s);
 	free (s);
 }
