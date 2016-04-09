@@ -210,7 +210,7 @@ R_IPI m68k_word *M68k_Disassemble(struct DisasmPara_68k *dp)
 {
   ut16 opc;
   dis_func_t *func;
-  dis_buffer_t dbuf;
+  dis_buffer_t dbuf = {0};
   char *s;
 
   if (dp->opcode==NULL || dp->operands==NULL)
@@ -2441,7 +2441,7 @@ static void get_modregstr_moto(dis_buffer_t *dbuf, int bit, int mod, int sz, int
   ut8 scale, idx;
   const short *nval;
   ut16 ext;
-  int disp, odisp, bd, od, reg;
+  int disp = 0, odisp = 0, bd = 0, od = 0, reg = 0;
   
   odisp = 0;
 
@@ -2554,7 +2554,9 @@ static void get_modregstr_moto(dis_buffer_t *dbuf, int bit, int mod, int sz, int
         disp = *nval++;
       } else {
         dbuf->used += 2;
-        disp = *(long *)nval;
+        if (sz >= sizeof(long)) {
+          disp = *(long *)nval;
+        }
         nval += 2;
       }
 
@@ -2565,7 +2567,9 @@ static void get_modregstr_moto(dis_buffer_t *dbuf, int bit, int mod, int sz, int
         odisp = *nval++;
       } else if (od == 3) {
         dbuf->used += 2;
-        odisp = *(long *)nval;
+        if (sz >= sizeof(long)) {
+	  odisp = *(long *)nval;
+        }
         nval += 2;
       }
     } else {
