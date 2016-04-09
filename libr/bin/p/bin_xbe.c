@@ -102,48 +102,45 @@ static RList* entries(RBinFile *arch) {
 }
 
 static RList* sections(RBinFile *arch) {
-	xbe_section *sect;
-	r_bin_xbe_obj_t *obj;
-	RList *ret;
-	int i;
+	xbe_section *sect = NULL;
+	r_bin_xbe_obj_t *obj = NULL;
+	xbe_header *h = NULL;
+	RList *ret = NULL;
+	int i, r;
+	ut32 addr, end;
 
-	if (!arch || !arch->o)
+	if (!arch || !arch->o || !arch->o->bin_obj || !arch->buf) 
 		return NULL;
-
 	obj = arch->o->bin_obj;
-	if (obj->header->sections < 1)
+	h = obj->header;
+	end = h->base + h->headers_size + h->image_size; 
+	if (h->sections < 1)
 		return NULL;
-
 	ret = r_list_new ();
 	if (!ret)
 		return NULL;
-
-	if (!arch->buf) {
-		free (ret);
-		return NULL;
-	}
-
 	ret->free = free;
-
-	if (obj->header->sections < 1 || obj->header->sections>255) {
-		free (ret);
-		return NULL;
-	}
-	sect = calloc (obj->header->sections, sizeof (xbe_section));
-	if (!sect) {
-		free (ret);
-		return NULL;
-	}
-
-	r_buf_read_at (arch->buf, obj->header->sechdr_addr - obj->header->base,
-		(ut8 *)sect, sizeof (xbe_section)*obj->header->sections);
-
-	for (i = 0; i < obj->header->sections; i++) {
+	if (h->sections < 1 || h->sections > 255)
+		goto out_error;
+	sect = calloc (h->sections, sizeof (xbe_section));
+	if (!sect)
+		goto out_error;
+	r = r_buf_read_at (arch->buf, h->sechdr_addr - h->base, (ut8 *)sect, sizeof(xbe_section) * h->sections);
+	if (r < 1)
+		goto out_error;
+	for (i = 0; i < h->sections; i++) {
 		RBinSection *item = R_NEW0(RBinSection);
 		char tmp[0x100];
-
-		r_buf_read_at (arch->buf, sect[i].name_addr - obj->header->base, (ut8 *)tmp, sizeof(tmp));
-
+		addr = sect[i].name_addr - h->base;
+		if (addr > end || addr + sizeof(tmp) > end) {
+			free (item);
+			goto out_error;
+		}
+		r = r_buf_read_at (arch->buf, addr, (ut8 *)tmp, sizeof(tmp));
+		if (r < 1) {
+			free (item);
+			goto out_error;
+		}
 		snprintf (item->name, R_BIN_SIZEOF_STRINGS, "%s.%i", tmp, i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;
@@ -159,8 +156,11 @@ static RList* sections(RBinFile *arch) {
 		r_list_append (ret, item);
 	}
 	free (sect);
-
 	return ret;
+out_error:
+	r_list_free (ret);
+	free (sect);
+	return NULL;
 }
 
 static RList* libs(RBinFile *arch) {
