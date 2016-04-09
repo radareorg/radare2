@@ -3169,6 +3169,7 @@ static int cmd_debug(void *data, const char *input) {
 			r_sandbox_creat (corefile, 0644);
 			RBuffer *file = r_buf_new_file (corefile);
 			if (!file) perror ("r_buf_new_file");
+			free (corefile);
 			r_sandbox_enable (true);
 			core->dbg->h->gcore (core->dbg, file);
 			r_buf_free (file);
