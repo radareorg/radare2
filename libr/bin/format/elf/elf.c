@@ -663,6 +663,8 @@ static Sdb *store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 	for (i = 0, cnt = 0; cnt < shdr->sh_info; ++cnt) {
 		int j, isum;
 		ut8 *vstart = need + i;
+		if (vstart + sizeof (Elf_(Verneed)) > end)
+			goto beach;
 		Elf_(Verneed) *entry = (Elf_(Verneed)*)(vstart);
 		char key[32] = {0};
 		sdb_version = sdb_new0 ();
