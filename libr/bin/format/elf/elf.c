@@ -562,7 +562,7 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 		int isum = 0;
 
 		vstart += verdef->vd_aux;
-		if (vstart > end) {
+		if (vstart > end || vstart + sizeof(Elf_(Verdaux)) > end) {
 			sdb_free (sdb_verdef);
 			goto out_error;
 		}
@@ -585,7 +585,7 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 			Sdb *sdb_parent = sdb_new0 ();
 			isum += aux->vda_next;
 			vstart += aux->vda_next;
-			if (vstart > end) {
+			if (vstart > end || vstart + sizeof(Elf_(Verdaux)) > end) {
 				sdb_free (sdb_verdef);
 				sdb_free (sdb_parent);
 				goto out_error;
