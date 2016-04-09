@@ -28,10 +28,9 @@ static int mousemode = 0;
 #define ZOOM_STEP 10
 #define ZOOM_DEFAULT 100
 
-#define BODY_CG		0x1
-#define BODY_ESIL	0x2
-#define BODY_OFFSETS	0x4
-#define BODY_SUMMARY	0x8
+#define BODY_ESIL	0x1
+#define BODY_OFFSETS	0x2
+#define BODY_SUMMARY	0x4
 
 #define hash_set(sdb,k,v) (sdb_num_set (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), (ut64)(size_t)v, 0))
 #define hash_get(sdb,k) (sdb_num_get (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), NULL))
@@ -128,7 +127,6 @@ static int mode2opts(const RAGraph *g) {
 	if (is_offset (g)) opts |= BODY_OFFSETS;
 	if (is_esil (g)) opts |= BODY_ESIL;
 	if (is_summary (g)) opts |= BODY_SUMMARY;
-	if (g->is_callgraph) opts |= BODY_CG;
 	return opts;
 }
 
@@ -1532,12 +1530,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	int o_esil = r_config_get_i (core->config, "asm.esil");
 	int o_cursor = core->print->cur_enabled;
 
-	const char *cmd;
-	if (opts & BODY_SUMMARY) {
-		cmd = "pds";
-	} else {
-		cmd = (opts & BODY_CG) ? "pd" : "pD";
-	}
+	const char *cmd = (opts & BODY_SUMMARY) ? "pds" : "pD";
 
 	// configure options
 	r_config_set_i (core->config, "asm.fcnlines", false);
@@ -1677,8 +1670,11 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 				continue;
 		free (title);
 
-		body = get_body (core, ref->addr, 4, mode2opts (g));
-		body = r_str_concat (body, "...\n");
+		int size = 0;
+		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, ref->addr);
+		if (bb) size = bb->size;
+
+		body = get_body (core, ref->addr, size, mode2opts (g));
 		title = get_title (ref->addr);
 
 		node = r_agraph_add_node (g, title, body);
