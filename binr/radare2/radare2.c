@@ -445,8 +445,9 @@ int main(int argc, char **argv, char **envp) {
 	}
 	if (debug == 1) {
 		char *uri = strdup (argv[optind]);
-		if (strstr (uri, "://")) {
-			*uri = 0;
+		char *p = strstr (uri, "://");
+		if (p) {
+			*p = 0;
 			debugbackend = uri;
 			debug = 2;
 		} else {
