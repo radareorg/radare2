@@ -812,8 +812,9 @@ static int getoffset (RBinFile *arch, int type, int idx) {
 	case 'o': // objects
 		break;
 	case 's': // strings
-		if (dex->header.strings_size > idx)
-			return dex->strings[idx];
+		if (dex->header.strings_size > idx) {
+			if (dex->strings) return dex->strings[idx];
+		}
 		break;
 	case 't': // things
 		break;
