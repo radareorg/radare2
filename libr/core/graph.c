@@ -2697,7 +2697,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" R            - randomize colors\n"
 					" o            - go/seek to given offset\n"
 					" u/U          - undo/redo seek\n"
-					" p/P          - rotate graph modes (normal, display offsets, esil, minigraph)\n"
+					" p/P          - rotate graph modes (normal, display offsets, esil, minigraph, summary)\n"
 					" s/S          - step / step over\n"
 					" V            - toggle basicblock / call graphs\n"
 					" w            - toggle between movements speed 1 and graph.scroll\n"
