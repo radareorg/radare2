@@ -15,7 +15,7 @@ R2PM_INSTALL() {
 }
 
 R2PM_UNINSTALL() {
-	rm -rf "$GOPATH"/src/r_bin
-	rm -rf "$GOPATH"/src/github/radare/r2pipe.go
-	rm -rf "$GOPATH"/src/radare/radare2/
+	rm -rf $GOPATH/src/r_bin
+	rm -rf $GOPATH/src/github/radare/r2pipe.go
+	rm -rf $GOPATH/src/radare/radare2/
 }
