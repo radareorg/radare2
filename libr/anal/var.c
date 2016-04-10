@@ -42,9 +42,10 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	if (!type) type = "int";
 //eprintf ("VAR ADD 0x%llx  - %d\n", addr, delta);
 	switch (kind) {
-	case 'a':
+	case 'a': // stack-based argument
 	case 'r':
 	case 'v':
+	case 'A': // fastcall based argument
 		break;
 	default:
 		eprintf ("Invalid var kind '%c'\n", kind);
@@ -94,6 +95,7 @@ R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kin
 	case 'a':
 	case 'r':
 	case 'v':
+	case 'A':
 		break;
 	default:
 		eprintf ("Invalid var kind '%c'\n", kind);
@@ -434,6 +436,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					var->name, var->type, fcn->addr);
 				break;
 			case 'j':
+				//TODO add afA
 				anal->cb_printf ("{\"name\":\"%s\","
 					"\"kind\":\"%s\",\"type\":\"%s\",\"ref\":\"%s%s0x%x\"}",
 					var->name, var->kind=='v'?"var":"arg", var->type,
@@ -442,12 +445,36 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				if (iter->n) anal->cb_printf (",");
 				break;
 			default:
-				anal->cb_printf ("%s %s %s @ %s%s0x%x\n",
-					kind=='v'?"var":"arg",
-					var->type, var->name,
-					anal->reg->name[R_REG_NAME_BP],
-					(kind=='v')?"-":"+",
-					var->delta);
+				switch (kind) {
+				case 'a':
+					anal->cb_printf ("arg %s %s @ %s+0x%x\n",
+						var->type, var->name,
+						anal->reg->name[R_REG_NAME_BP],
+						var->delta);
+					break;
+				case 'v':
+					anal->cb_printf ("var %s %s @ %s-0x%x\n",
+						var->type, var->name,
+						anal->reg->name[R_REG_NAME_BP],
+						var->delta);
+					break;
+				case 'A':
+					if(var->delta==0){
+						anal->cb_printf ("var %s %s @ ecx\n",
+							var->type, var->name);
+					}else if(var->delta ==1){
+						anal->cb_printf ("var %s %s @ edx\n",
+							var->type, var->name);
+					}else{
+						anal->cb_printf ("var %s %s @ %s+0x%x\n",
+							var->type, var->name,
+							anal->reg->name[R_REG_NAME_BP],
+							var->delta);
+					break;
+
+					}
+					break;
+				}
 			}
 		}
 	}
