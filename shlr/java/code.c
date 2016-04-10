@@ -208,14 +208,23 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		}
 		output[outlen-1] = 0;
 		return update_bytes_consumed (JAVA_OPS[idx].size);
-	case 0xb2: // getstatic
-	case 0xb3: // putstatic
-	case 0xb4: // getfield
-	case 0xb5: // putfield
 	case 0xbb: // new
 	case 0xbd: // anewarray
 	case 0xc0: // checkcast
 	case 0xc1: // instance of
+		arg = r_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
+		if (arg) {
+			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
+			free (arg);
+		} else {
+			snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1) );
+		}
+		output[outlen-1] = 0;
+		return update_bytes_consumed (JAVA_OPS[idx].size);
+	case 0xb2: // getstatic
+	case 0xb3: // putstatic
+	case 0xb4: // getfield
+	case 0xb5: // putfield
 		arg = r_bin_java_resolve_with_space (obj, (int)USHORT (bytes, 1));
 		if (arg) {
 			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
