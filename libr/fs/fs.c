@@ -29,11 +29,12 @@ R_API RFS *r_fs_new() {
 		// XXX fs->roots->free = r_fs_plugin_free;
 		for (i = 0; fs_static_plugins[i]; i++) {
 			static_plugin = R_NEW (RFSPlugin);
+			if (!static_plugin) continue;
 			memcpy (static_plugin, fs_static_plugins[i], sizeof (RFSPlugin));
 			r_fs_add (fs, static_plugin);
+			free (static_plugin);
 		}
 	}
-	static_plugin = NULL;
 	return fs;
 }
 
