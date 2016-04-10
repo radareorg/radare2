@@ -3691,6 +3691,34 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	}
 }
 
+extern int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize);
+static void cmd_anal_aav(RCore *core, const char *input) {
+#define set(x,y) r_config_set(core->config, x, y);
+#define seti(x,y) r_config_set_i(core->config, x, y);
+#define geti(x) r_config_get_i(core->config, x);
+	RIOSection *s = r_io_section_vget (core->io, core->offset);
+	ut64 o_align = geti ("search.align");
+	ut64 from = s->vaddr;
+	ut64 to = s->vaddr + s->size;
+	seti ("search.align", 4);
+
+	char *arg = strchr (input, ' ');
+	if (arg) {
+		ut64 ptr = r_num_math (core->num, arg + 1);
+		s = r_io_section_vget (core->io, ptr);
+	}
+	ut64 vmin = s->vaddr;
+	ut64 vmax = s->vaddr + s->size;
+//eprintf ("from to %llx %llx\n", from, to);
+//eprintf ("from to %llx %llx\n", vmin, vmax);
+	int vsize = 4; // 32bit dword
+	(void)cmd_search_value_in_range (core,
+			from, to, vmin, vmax, vsize);
+	// TODO: for each hit . must set flag, xref and metadata Cd 4
+
+	seti ("search.align", o_align);
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	const char *help_msg_aa[] = {
 		"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
@@ -3705,6 +3733,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
 		"aat", " [len]", "analyze all consecutive functions in section",
 		"aap", "", "find and analyze function preludes",
+		"aav", "", "find values referencing a specific section or map",
 		NULL };
 
 	switch (*input) {
@@ -3714,6 +3743,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case '*':
 		r_core_cmd0 (core, "af @@ sym.*");
 		r_core_cmd0 (core, "af @ entry0");
+		break;
+	case 'v': // "aav"
+		cmd_anal_aav(core, input);
 		break;
 	case 'i': // "aai"
 		r_core_anal_info (core, input + 1);

@@ -12,6 +12,7 @@ static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
 static unsigned int searchcount = 0;
 
+
 struct search_parameters {
 	RList *boundaries;
 	const char *mode;
@@ -134,14 +135,13 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 	r_cons_break_end ();
 }
 
-static int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
+R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
 	int i, match, align = core->search->align, hitctr = 0;
 	ut8 buf[4096];
 	const int sz = sizeof (buf);
-	ut64 v64;
+	ut64 v64, v = 0;
 	ut32 v32;
 	ut16 v16;
-#define cbhit(y) r_cons_printf ("f hit0_%d = 0x%"PFMT64x"\n", hitctr, y); hitctr++
 	if (vmin >= vmax) {
 		eprintf ("Error: vmin must be lower than vmax\n");
 		return -1;
@@ -156,13 +156,21 @@ static int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin,
 			match = false;
 			switch (vsize) {
 			case 1: match = (buf[i]>=vmin && buf[i]<=vmax); break;
-			case 2: v16 = *((ut16*)(v)); match = (v16>=vmin && v16<=vmax); break;
-			case 4: v32 = *((ut32 *)(v)); match = (v32>=vmin && v32<=vmax); break;
-			case 8: v64 = *((ut64 *)(v)); match = (v64>=vmin && v64<=vmax); break;
+			case 2: v = v16 = *((ut16*)(v)); match = (v16>=vmin && v16<=vmax); v = v16; break;
+			case 4: v = v32 = *((ut32 *)(v)); match = (v32>=vmin && v32<=vmax); v = v32; break;
+			case 8: v = v64 = *((ut64 *)(v)); match = (v64>=vmin && v64<=vmax); v = v64; break;
 			default: eprintf ("Unknown vsize\n"); return -1;
 			}
-			if (match)
-				cbhit (from+i);
+			if (match) {
+				r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n",
+					v, from + i);
+				r_cons_printf ("Cd %d @ 0x%"PFMT64x"\n", vsize,
+					from + i);
+				r_cons_printf ("f hit0_%d = 0x%"PFMT64x
+					" # from 0x%"PFMT64x"\n",
+						hitctr, from +i, v);
+				hitctr++;
+			}
 		}
 		from += sz;
 	}
@@ -1933,7 +1941,7 @@ reread:
 	case 'V':
 		// TODO: add support for json
 		{
-		int err = 1, vsize = atoi (input+1);
+		int err = 1, vsize = atoi (input + 1);
 		if (vsize && input[2] && input[3]) {
 			char *w = strchr (input + 3, ' ');
 			if (w) {
@@ -1944,6 +1952,7 @@ reread:
 					err = 0;
 					(void)cmd_search_value_in_range (core,
 					param.from, param.to, vmin, vmax, vsize);
+					r_cons_printf ("f-hit*\n");
 				}
 			}
 		}
