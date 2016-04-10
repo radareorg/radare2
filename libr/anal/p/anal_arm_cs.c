@@ -746,7 +746,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 					pcdelta = 0; // not needed for esil
 					break;
 				case 32:
-					pcdelta = 8;
+					pcdelta = 4;
 					op->ptr = addr + 8 + MEMDISP(1);
 					op->refptr = 4;
 					break;
@@ -1075,6 +1075,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_VQMOVUN:
 	case ARM_INS_VQMOVN:
 		op->type = R_ANAL_OP_TYPE_MOV;
+		if (REGID(0) == ARM_REG_PC) {
+			if (REGID(1) == ARM_REG_LR) {
+				op->type = R_ANAL_OP_TYPE_RET;
+			} else {
+				op->type = R_ANAL_OP_TYPE_UJMP;
+			}
+		}
 		break;
 	case ARM_INS_UDF:
 		op->type = R_ANAL_OP_TYPE_TRAP;
@@ -1122,7 +1129,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_LDRSHT:
 	case ARM_INS_LDRT:
 // 0x000082a8    28301be5     ldr r3, [fp, -0x28]
-		if (insn->detail->arm.operands[0].reg == ARM_REG_PC) {
+		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		} else {
 			op->type = R_ANAL_OP_TYPE_LOAD;
@@ -1165,7 +1172,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
 		// BX LR == RET
-		if (insn->detail->arm.operands[0].reg == ARM_REG_LR) {
+		if (REGID(0) == ARM_REG_LR) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		} else {
 			op->type = R_ANAL_OP_TYPE_JMP;
