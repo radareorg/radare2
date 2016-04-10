@@ -3706,6 +3706,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	if (arg) {
 		ut64 ptr = r_num_math (core->num, arg + 1);
 		s = r_io_section_vget (core->io, ptr);
+	} else {
+		from = r_num_math (core->num, "${bin.baddr}");
+		to = r_num_math (core->num, "${bin.baddr}+$s");
 	}
 	ut64 vmin = s->vaddr;
 	ut64 vmax = s->vaddr + s->size;
@@ -3715,6 +3718,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	(void)cmd_search_value_in_range (core,
 			from, to, vmin, vmax, vsize);
 	// TODO: for each hit . must set flag, xref and metadata Cd 4
+	r_cons_printf ("f-hit*\n");
 
 	seti ("search.align", o_align);
 }
@@ -3733,7 +3737,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
 		"aat", " [len]", "analyze all consecutive functions in section",
 		"aap", "", "find and analyze function preludes",
-		"aav", "", "find values referencing a specific section or map",
+		"aav", " [sat]", "find values referencing a specific section or map",
 		NULL };
 
 	switch (*input) {
@@ -3801,6 +3805,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog_done (core);
 					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
+					rowlog_done (core);
+					rowlog (core, "Analyze value pointers (aav)");
+					r_core_cmd0 (core, ".aav");
+					r_core_cmd0 (core, ".aav $S+$SS+1");
 					rowlog_done (core);
 				} else {
 					eprintf ("[*] Use -AA or aaaa to perform additional experimental analysis.\n");

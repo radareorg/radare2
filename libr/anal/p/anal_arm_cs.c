@@ -600,6 +600,9 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_CMP:
 		r_strbuf_appendf (&op->esil, "%s,%s,==", ARG(1), ARG(0));
 		break;
+	case ARM_INS_CMN:
+		r_strbuf_appendf (&op->esil, "%s,%s,!=", ARG(1), ARG(0));
+		break;
 	case ARM_INS_LSL:
 		// suffix 'S' forces conditional flag to be updated
 		if (OPCOUNT() == 2) {
@@ -1093,6 +1096,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_AND;
 		break;
 	case ARM_INS_CMP:
+	case ARM_INS_CMN:
 	case ARM_INS_TST:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
@@ -1103,10 +1107,19 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 		//case ARM_INS_POP:
 	case ARM_INS_PUSH:
-	case ARM_INS_STR:
-		op->type = R_ANAL_OP_TYPE_STORE;
+	case ARM_INS_STM:
+	case ARM_INS_STMDB:
+		op->type = R_ANAL_OP_TYPE_PUSH;
 // 0x00008160    04202de5     str r2, [sp, -4]!
 // 0x000082a0    28000be5     str r0, [fp, -0x28]
+		if (REGBASE(1) == ARM_REG_FP) {
+			op->stackop = R_ANAL_STACK_SET;
+			op->stackptr = 0;
+			op->ptr = MEMDISP(1);
+		}
+		break;
+	case ARM_INS_STR:
+		op->type = R_ANAL_OP_TYPE_STORE;
 		if (REGBASE(1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = 0;

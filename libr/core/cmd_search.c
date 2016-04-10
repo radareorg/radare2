@@ -139,7 +139,7 @@ R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, 
 	int i, match, align = core->search->align, hitctr = 0;
 	ut8 buf[4096];
 	const int sz = sizeof (buf);
-	ut64 v64, v = 0;
+	ut64 v64, n = 0;
 	ut32 v32;
 	ut16 v16;
 	if (vmin >= vmax) {
@@ -151,24 +151,24 @@ R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, 
 		(void)r_io_read_at (core->io, from, buf, sz);
 		for (i=0; i<sizeof (buf)-vsize; i++) {
 			void *v = (buf+i);
-			if (align && (from+i)%4)
+			if (align && (from+i)%align)
 				continue;
 			match = false;
 			switch (vsize) {
 			case 1: match = (buf[i]>=vmin && buf[i]<=vmax); break;
-			case 2: v = v16 = *((ut16*)(v)); match = (v16>=vmin && v16<=vmax); v = v16; break;
-			case 4: v = v32 = *((ut32 *)(v)); match = (v32>=vmin && v32<=vmax); v = v32; break;
-			case 8: v = v64 = *((ut64 *)(v)); match = (v64>=vmin && v64<=vmax); v = v64; break;
+			case 2: v16 = *((ut16*)(v)); match = (v16>=vmin && v16<=vmax); n = v16; break;
+			case 4: v32 = *((ut32 *)(v)); match = (v32>=vmin && v32<=vmax); n = v32; break;
+			case 8: v64 = *((ut64 *)(v)); match = (v64>=vmin && v64<=vmax); n = v64; break;
 			default: eprintf ("Unknown vsize\n"); return -1;
 			}
 			if (match) {
 				r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n",
-					v, from + i);
+					n, from + i);
 				r_cons_printf ("Cd %d @ 0x%"PFMT64x"\n", vsize,
 					from + i);
 				r_cons_printf ("f hit0_%d = 0x%"PFMT64x
 					" # from 0x%"PFMT64x"\n",
-						hitctr, from +i, v);
+						hitctr, from +i, n);
 				hitctr++;
 			}
 		}
