@@ -9,5 +9,5 @@ R2PM_INSTALL() {
 
 R2PM_UNINSTALL() {
 	go clean -i github.com/radare/r2pipe-go
-	rm -rf $GOPATH/src/github.com/radare/r2pipe-go
+	rm -rf "$GOPATH/src/github.com/radare/r2pipe-go"
 }
