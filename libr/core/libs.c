@@ -48,6 +48,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 }
 
 R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
+	char *p = NULL;
 	ut64 prev = r_sys_now();
 #if R2_LOADLIBS
 	/* TODO: all those default plugin paths should be defined in r_lib */
@@ -61,9 +62,10 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 		r_lib_opendir (core->lib, r_config_get (core->config, "dir.plugins"));
 	}
 	if (where & R_CORE_LOADLIBS_ENV) {
-		path = r_sys_getenv (R_LIB_ENV);
-		if (path && *path)
-			r_lib_opendir (core->lib, path);
+		p = r_sys_getenv (R_LIB_ENV);
+		if (p && *p)
+			r_lib_opendir (core->lib, p);
+		free (p);
 	}
 	if (where & R_CORE_LOADLIBS_HOME) {
 		char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
@@ -83,6 +85,5 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	}
 #endif
 	core->times->loadlibs_time = r_sys_now() - prev;
-	free (path);
 	return true;
 }
