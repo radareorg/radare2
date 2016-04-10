@@ -35,22 +35,15 @@ static void flag_every_function(RCore *core) {
 static void var_help(RCore *core, char ch) {
 	const char *help_msg[] = {
 		"Usage:", "af[aAv]", " [idx] [type] [name]",
-		"afa", "", "list function arguments",
-		"afa*", "", "list function arguments in commands",
-		"afa", " [idx] [name] ([type])", "define argument N with name and type",
-		"afan", " [old_name] [new_name]", "rename function argument",
-		"afat", " [name] [new_type]", "change type for given argument",
-		"afaj", "", "return list of function arguments in JSON format",
-		"afa-", " [idx]", "delete argument at the given index",
+		"af[aAv]", "", "list stack based/fastcall function arguments, variables",
+		"af[aAv]*", "", "same as af[aAv] but in r2 commands",
+		"af[aAv]", " [idx] [name] ([type])", "define argument/variable with name and type and offset id",
+		"af[aAv]n", " [old_name] [new_name]", "rename function argument / variable",
+		"af[aAv]t", " [name] [new_type]", "change type for given argument / variable",
+		"af[aAv]j", "", "return list of function arguments /variables in JSON format",
+		"af[aAv]-", " [idx]", "delete argument/ variables at the given index",
 		"afag", " [idx] [addr]", "define var get reference",
 		"afas", " [idx] [addr]", "define var set reference",
-		"afv", "", "list function local variables",
-		"afv*", "", "list function local variables in commands",
-		"afv", " [idx] [name] ([type])", "define variable N with name and type",
-		"afvn", " [old_name] [new_name]", "rename local variable",
-		"afvt", " [name] [new_type]", "change type for given variable",
-		"afvj", "", "return list of function local variables in JSON format",
-		"afv-", " [idx]", "delete variable at the given index",
 		"afvg", " [idx] [addr]", "define var get reference",
 		"afvs", " [idx] [addr]", "define var set reference",
 		"afx", "[-] [from] [to]", "manipulate function xrefs",
@@ -101,7 +94,7 @@ static int var_cmd(RCore *core, const char *str) {
 		case '.':
 			r_anal_var_list_show (core->anal, fcn, core->offset, 0);
 			break;
-		case '-': // "afv-"
+		case '-': // "afaAv-"
 			if (str[2] == '*') {
 				r_anal_var_delete_all (core->anal, fcn->addr, type);
 			} else {

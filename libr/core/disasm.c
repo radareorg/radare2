@@ -928,7 +928,8 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 	ds->stackptr = 0;
 	if (ds->vars) {
 		char spaces[32];
-		RList *args = r_anal_var_list (core->anal, f, 'a');
+		RList *args = r_anal_var_list (core->anal, f,
+			(f->call == R_ANAL_CC_TYPE_FASTCALL) ? 'A' : 'a');
 		RList *vars = r_anal_var_list (core->anal, f, 'v');
 		r_list_sort (args, (RListComparator)var_comparator);
 		r_list_sort (vars, (RListComparator)var_comparator);
@@ -948,13 +949,39 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 				handle_print_offset (core, ds);
 				r_cons_printf ("     ");
 			}
-			r_cons_printf ("%s; %s %s %s %s@ %s%s0x%x%s\n",
-				COLOR (ds, color_other),
-				(var->kind == 'v') ? "var" : "arg",
-				var->type, var->name, spaces,
-				core->anal->reg->name[R_REG_NAME_BP],
-				(var->kind == 'v') ? "-" : "+",
-				var->delta, COLOR_RESET (ds));
+			r_cons_printf ("%s; ", COLOR (ds, color_other));
+			switch (var->kind) {
+			case 'a':
+				r_cons_printf ("arg %s %s @ %s+0x%x",
+					var->type, var->name,
+					core->anal->reg->name[R_REG_NAME_BP],
+					var->delta);
+				break;
+			case 'v':
+				r_cons_printf ("var %s %s @ %s-0x%x",
+					var->type, var->name,
+					core->anal->reg->name[R_REG_NAME_BP],
+					var->delta);
+				break;
+			case 'A':
+				switch (var->delta){
+				case 0:
+					r_cons_printf ("arg %s %s @ ecx",
+						var->type, var->name);
+					break;
+				case 1:
+					r_cons_printf ("arg %s %s @ edx",
+						var->type, var->name);
+					break;
+				default:
+					r_cons_printf ("arg %s %s @ %s+0x%x",
+						var->type, var->name,
+						core->anal->reg->name[R_REG_NAME_BP],
+						var->delta);
+				}
+				break;
+		}
+			r_cons_printf ("%s\n", COLOR_RESET (ds));
 		}
 		r_list_free (vars);
 		// it's already empty, but rlist instance is still there
