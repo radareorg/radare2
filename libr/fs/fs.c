@@ -33,6 +33,7 @@ R_API RFS *r_fs_new() {
 			r_fs_add (fs, static_plugin);
 		}
 	}
+	static_plugin = NULL;
 	return fs;
 }
 

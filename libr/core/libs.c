@@ -83,5 +83,6 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	}
 #endif
 	core->times->loadlibs_time = r_sys_now() - prev;
+	free (path);
 	return true;
 }
