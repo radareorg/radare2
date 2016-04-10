@@ -2210,6 +2210,10 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 					import_func_name_offset,
 					curr_delay_import_dir->DelayImportAddressTable))
 				break;
+			if (curr_delay_import_dir + sizeof(curr_delay_import_dir) > bin->b->buf + bin->size) {
+				eprintf ("Warning: malformed pe\n");
+				return NULL;
+			}
 			curr_delay_import_dir++;
 		}
 	}
