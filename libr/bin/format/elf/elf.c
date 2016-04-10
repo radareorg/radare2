@@ -687,7 +687,12 @@ static Sdb *store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 				goto beach;
 
 			sdb_num_set (sdb_vernaux, "idx", isum, 0);
-			sdb_set (sdb_vernaux, "name", &bin->dynstr[aux->vna_name], 0);
+			if (aux->vna_name > 0 && aux->vna_name + 8 < bin->dynstr_size) {
+				char name [16];
+				strncpy (name, &bin->dynstr[aux->vna_name], sizeof (name)-1);
+				name[sizeof(name)-1] = 0;
+				sdb_set (sdb_vernaux, "name", name, 0);
+			}
 			sdb_set (sdb_vernaux, "flags", get_ver_flags (aux->vna_flags), 0);
 			sdb_num_set (sdb_vernaux, "version", aux->vna_other, 0);
 			isum += aux->vna_next;
