@@ -1171,7 +1171,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case 'b': // "drb"
 		{ // WORK IN PROGRESS // DEBUG COMMAND
 		int len;
-		const ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
+		ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
 		//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
 		r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
 		free (buf);
