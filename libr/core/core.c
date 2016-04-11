@@ -40,7 +40,7 @@ static void r_line_free_autocomplete(RLine *line) {
 static void r_core_free_autocomplete(RCore *core) {
 	if (!core || !core->cons || !core->cons->line)
 		return;
-	r_line_free_autocomplete(core->cons->line);
+	r_line_free_autocomplete (core->cons->line);
 }
 
 static int on_fcn_new(void *_anal, void* _user, RAnalFunction *fcn) {
@@ -402,6 +402,7 @@ static const char *radare_argv[] = {
 	"#!python", "#!perl", "#!vala",
 	"V",
 	"aa", "ab", "af", "ar", "ag", "at", "a?", "ax", "ad",
+	"aaa", "aac","aae", "aai", "aar", "aan", "aas", "aat", "aap", "aav",
 	"af", "afa", "afan", "afc", "afi", "afb", "afbb", "afn", "afr", "afs", "af*", "afv", "afvn",
 	"aga", "agc", "agd", "agl", "agfl",
 	"e", "et", "e-", "e*", "e!", "e?", "env ",
@@ -717,6 +718,7 @@ openfile:
 		    (!strncmp (line->buffer.data, "ad ", 3)) ||
 		    (!strncmp (line->buffer.data, "bf ", 3)) ||
 		    (!strncmp (line->buffer.data, "ag ", 3)) ||
+		    (!strncmp (line->buffer.data, "aav ", 4)) ||
 		    (!strncmp (line->buffer.data, "afi ", 4)) ||
 		    (!strncmp (line->buffer.data, "afb ", 4)) ||
 		    (!strncmp (line->buffer.data, "afc ", 4)) ||
@@ -818,7 +820,7 @@ R_API int r_core_fgets(char *buf, int len) {
 	RLine *rli = r_line_singleton ();
 	buf[0] = '\0';
 	if (rli->completion.argv != radare_argv)
-		r_line_free_autocomplete(rli);
+		r_line_free_autocomplete (rli);
 	rli->completion.argc = CMDS;
 	rli->completion.argv = radare_argv;
 	rli->completion.run = autocomplete;
