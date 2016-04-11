@@ -2461,8 +2461,8 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, usefmt, spv);
 				r_cons_chop ();
 			} else {
-				handle_print_pre (core, ds, false);
-				handle_print_lines_left (core, ds);
+				//handle_print_pre (core, ds, false);
+				//handle_print_lines_left (core, ds);
 				r_cons_printf ("; CALL: ");
 				for (i = 0; i < nargs; i++) {
 					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
