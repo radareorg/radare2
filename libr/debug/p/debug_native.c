@@ -187,7 +187,7 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 #if __linux__
 	return ptrace (PTRACE_SYSCALL, pid, 0, 0);
 #elif __BSD__
-	ut64 pc = r_debug_reg_get (dbg, "pc");
+	ut64 pc = r_debug_reg_get (dbg, "PC");
 	return ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0);
 #else
 	eprintf ("TODO: continue syscall not implemented yet\n");
@@ -213,7 +213,7 @@ static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
 	return tid;
 #elif __BSD__
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
-	ut64 pc = r_debug_reg_get (dbg, "pc");
+	ut64 pc = r_debug_reg_get (dbg, "PC");
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)(size_t)data) == 0;
 #elif __CYGWIN__
 	#warning "r_debug_native_continue not supported on this platform"
