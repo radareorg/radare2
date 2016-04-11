@@ -1370,6 +1370,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		r_cons_printf ("[");
 	}
 	r_list_sort (core->anal->fcns, &cmpfcn);
+	r_cons_printf ("%s\t    %s  %s  %-30s %s\n",
+		"Offset","Size","nbbs","Function Name","Call Refs");
+	r_cons_printf ("%s\t    %s  %s  %-30s %s\n",
+		"======","====","====","=============","=========");
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		int showFunc = 0;
 		if (input) {
@@ -1395,8 +1399,16 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			}
 			count++;
 			if (rad == 'o') {
-				r_cons_printf ("0x%08"PFMT64x"  %-4d  %-4d  %s\n",
-					fcn->addr, fcn->size, r_list_length (fcn->bbs), name);
+				RListIter *callrefiter;
+				int noofRef = 0;
+				r_list_foreach (fcn->refs, callrefiter, refi) {
+					if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
+						noofRef = noofRef + 1;
+					}
+				}
+				r_cons_printf ("0x%08"PFMT64x"  %-4d  %-4d  %-30s %-4d\n",
+					fcn->addr, fcn->size, r_list_length (fcn->bbs), name, noofRef);
+				free (callrefiter);
 			} else if (rad == 'q') {
 				r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
 						//fcn->addr, fcn->size, r_list_length (fcn->bbs), fcn->name);
