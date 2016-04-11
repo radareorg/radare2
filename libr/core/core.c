@@ -208,6 +208,25 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 
 	if (ok) *ok = false;
 	switch (*str) {
+	case '.':
+		if (core->num->nc.curr_tok=='+') {
+			ut64 off = core->num->nc.number_value.n;
+			if (!off) off = core->offset;
+			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, off, 0);
+			if (fcn) {
+				if (ok) *ok = true;
+				ut64 dst = r_anal_fcn_label_get (core->anal, fcn, str + 1);
+				if (dst == UT64_MAX)
+					dst = fcn->addr;
+				st64 delta = dst - off;
+				if (delta < 0) {
+					core->num->nc.curr_tok = '-';
+					delta = off - dst;
+				}
+				return delta;
+			}
+		}
+		break;
 	case '[':
 {
 		ut64 n = 0LL;
