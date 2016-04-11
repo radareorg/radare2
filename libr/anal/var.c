@@ -436,12 +436,40 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					var->name, var->type, fcn->addr);
 				break;
 			case 'j':
-				//TODO add afA
-				anal->cb_printf ("{\"name\":\"%s\","
-					"\"kind\":\"%s\",\"type\":\"%s\",\"ref\":\"%s%s0x%x\"}",
-					var->name, var->kind=='v'?"var":"arg", var->type,
-					anal->reg->name[R_REG_NAME_BP],
-					(var->kind=='v')?"-":"+", var->delta);
+				switch(var->kind){
+				case 'a':
+					anal->cb_printf ("{\"name\":\"%s\","
+						"\"kind\":\"arg\",\"type\":\"%s\",\"ref\":\"%s+0x%x\"}",
+						var->name, var->type,anal->reg->name[R_REG_NAME_BP],
+						var->delta);
+					break;
+				case 'v':
+					anal->cb_printf ("{\"name\":\"%s\","
+						"\"kind\":\"var\",\"type\":\"%s\",\"ref\":\"%s-0x%x\"}",
+						var->name, var->type,anal->reg->name[R_REG_NAME_BP],
+						var->delta);
+				case 'A':
+					if (var->delta==0){
+						anal->cb_printf ("{\"name\":\"%s\","
+							"\"kind\":\"arg\",\"type\":\"%s\",\"ref\":\"ecx\"}",
+							var->name, var->type);
+
+					}else if(var->delta ==1){
+						anal->cb_printf ("{\"name\":\"%s\","
+							"\"kind\":\"arg\",\"type\":\"%s\",\"ref\":\"edx\"}",
+							var->name, var->type);
+
+					}else{
+						anal->cb_printf ("{\"name\":\"%s\","
+							"\"kind\":\"arg\",\"type\":\"%s\",\"ref\":\"%s+0x%x\"}",
+							var->name, var->type,anal->reg->name[R_REG_NAME_BP],
+							var->delta);
+
+					}
+					break;
+
+
+				}
 				if (iter->n) anal->cb_printf (",");
 				break;
 			default:
@@ -459,14 +487,14 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 						var->delta);
 					break;
 				case 'A':
-					if(var->delta==0){
-						anal->cb_printf ("var %s %s @ ecx\n",
+					if (var->delta==0){
+						anal->cb_printf ("arg %s %s @ ecx\n",
 							var->type, var->name);
 					}else if(var->delta ==1){
-						anal->cb_printf ("var %s %s @ edx\n",
+						anal->cb_printf ("arg %s %s @ edx\n",
 							var->type, var->name);
 					}else{
-						anal->cb_printf ("var %s %s @ %s+0x%x\n",
+						anal->cb_printf ("arg %s %s @ %s+0x%x\n",
 							var->type, var->name,
 							anal->reg->name[R_REG_NAME_BP],
 							var->delta);
