@@ -23,12 +23,8 @@ static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 static const char *tmp_argv[TMP_ARGV_SZ];
 static bool tmp_argv_heap = false;
 
-static void r_core_free_autocomplete(RCore *core) {
+static void r_line_free_autocomplete(RLine *line) {
 	int i;
-	RLine *line;
-	if (!core || !core->cons || !core->cons->line)
-		return;
-	line = core->cons->line;
 	if (tmp_argv_heap) {
 		int argc = line->completion.argc;
 		for (i = 0; i < argc; i++) {
@@ -41,6 +37,11 @@ static void r_core_free_autocomplete(RCore *core) {
 	line->completion.argv = tmp_argv;
 }
 
+static void r_core_free_autocomplete(RCore *core) {
+	if (!core || !core->cons || !core->cons->line)
+		return;
+	r_line_free_autocomplete(core->cons->line);
+}
 
 static int on_fcn_new(void *_anal, void* _user, RAnalFunction *fcn) {
 	RCore *core = (RCore*)_user;
@@ -816,6 +817,8 @@ R_API int r_core_fgets(char *buf, int len) {
 	const char *ptr;
 	RLine *rli = r_line_singleton ();
 	buf[0] = '\0';
+	if (rli->completion.argv != radare_argv)
+		r_line_free_autocomplete(rli);
 	rli->completion.argc = CMDS;
 	rli->completion.argv = radare_argv;
 	rli->completion.run = autocomplete;
