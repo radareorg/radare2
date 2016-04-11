@@ -39,8 +39,8 @@ typedef struct r_crypto_plugin_t {
 	int (*get_key_size)(RCrypto *cry);
 	int (*set_iv)(RCrypto *cry, const ut8 *iv);
 	int (*set_key)(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
-	int (*update)(RCrypto *cry, const ut8 *buf, int len);
-	int (*final)(RCrypto *cry, const ut8 *buf, int len);
+	int (*update)(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt);
+	int (*final)(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt);
 	bool (*use)(const char *algo);
 	int (*fini)(RCrypto *cry);
 } RCryptoPlugin;
@@ -54,8 +54,8 @@ R_API RCrypto *r_crypto_free(RCrypto *cry);
 R_API bool r_crypto_use(RCrypto *cry, const char *algo);
 R_API int r_crypto_set_key(RCrypto *cry, const ut8* key, int keylen, int mode, int direction);
 R_API int r_crypto_set_iv(RCrypto *cry, const ut8 *iv);
-R_API int r_crypto_update(RCrypto *cry, const ut8 *buf, int len);
-R_API int r_crypto_final(RCrypto *cry, const ut8 *buf, int len);
+R_API int r_crypto_update(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt);
+R_API int r_crypto_final(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt);
 R_API int r_crypto_append(RCrypto *cry, const ut8 *buf, int len);
 R_API ut8 *r_crypto_get_output(RCrypto *cry, int *size);
 #endif

@@ -41,7 +41,11 @@ static bool ror_use(const char *algo) {
 	return !strcmp (algo, "ror");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len) {
+static int update(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
+	if (!to_encrypt) {
+		eprintf ("USE ROL\n");
+		return false;
+	}
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) return false;
 	ror_crypt (&st, buf, obuf, len);
@@ -50,8 +54,8 @@ static int update(RCrypto *cry, const ut8 *buf, int len) {
 	return 0;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+static int final(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
+	return update (cry, buf, len, to_encrypt);
 }
 
 RCryptoPlugin r_crypto_plugin_ror = {
