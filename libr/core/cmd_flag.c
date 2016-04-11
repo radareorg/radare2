@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 static void flagbars(RCore *core) {
 	int total = 0;
@@ -219,8 +219,8 @@ rep:
 			bsze = r_num_math (core->num, s+1);
 		}
 		if (*str == '.') {
-input++;
-goto rep;
+			input++;
+			goto rep;
 #if 0
 eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
@@ -260,8 +260,16 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 					else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 				}
 			} else {
-				const char *name = input+((input[2]==' ')? 2:1);
+				char *name = strdup (input + ((input[2] == ' ')? 2: 1));
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
+				if (name) {
+					char *eq = strchr (name, '=');
+					if (eq) {
+						*eq ++ = 0;
+						off = r_num_math (core->num, eq);
+					}
+					r_str_chop (name);
+				}
 				if (fcn) {
 					if (*name=='-') {
 						r_anal_fcn_label_del (core->anal, fcn, name+1, off);
@@ -269,6 +277,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 						r_anal_fcn_label_set (core->anal, fcn, name, off);
 					}
 				} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+				free (name);
 			}
 		} else {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);

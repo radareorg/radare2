@@ -123,16 +123,16 @@ static int cmd_seek(void *data, const char *input) {
 	char *cmd, *p;
 	ut64 off;
 
-	if (*input=='r') {
+	if (*input == 'r') {
 		if (input[1] && input[2]) {
 			if (core->io->debug) {
-				off = r_debug_reg_get (core->dbg, input+2);
+				off = r_debug_reg_get (core->dbg, input + 2);
 				r_io_sundo_push (core->io, core->offset);
 				r_core_seek (core, off, 1);
 			} else {
 				RReg *orig = core->dbg->reg;
 				core->dbg->reg = core->anal->reg;
-				off = r_debug_reg_get (core->dbg, input+2);
+				off = r_debug_reg_get (core->dbg, input + 2);
 				core->dbg->reg = orig;
 				r_core_seek (core, off, 1);
 			}
@@ -141,9 +141,25 @@ static int cmd_seek(void *data, const char *input) {
 	if (*input) {
 		const char *inputnum = strchr (input, ' ');
 		int sign = 1;
-		inputnum = inputnum? inputnum+1: input+1;
-		off = r_num_math (core->num, inputnum);
-		if (*inputnum== '-') off = -off;
+		{
+			char *u_num = strdup (inputnum? inputnum + 1: input + 1);
+			char *local = strstr (u_num, "+.");
+			if (local) {
+				RAnalFunction *fcn;
+				ut64 dst;
+				*local++ = 0;
+				off = r_num_math (core->num, u_num);
+				fcn = r_anal_get_fcn_at (core->anal, off, 0);
+				dst = r_anal_fcn_label_get (core->anal, fcn, local + 1);
+				if (dst != UT64_MAX) {
+					off = dst;
+				}
+			} else {
+				off = r_num_math (core->num, u_num);
+			}
+			if (*u_num == '-') off = -off;
+			free (u_num);
+		}
 #if 0
 		if (input[0]!='/' && inputnum && isalpha (inputnum[0]) && off == 0) {
 			if (!r_flag_get (core->flags, inputnum)) {
@@ -222,7 +238,7 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case ' ':
 			r_io_sundo_push (core->io, core->offset);
-			r_core_seek (core, off*sign, 1);
+			r_core_seek (core, off * sign, 1);
 			r_core_block_read (core, 0);
 			break;
 		case '/':
