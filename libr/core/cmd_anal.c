@@ -3702,8 +3702,15 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define geti(x) r_config_get_i(core->config, x);
 	RIOSection *s = r_io_section_vget (core->io, core->offset);
 	ut64 o_align = geti ("search.align");
-	ut64 from = s->vaddr;
-	ut64 to = s->vaddr + s->size;
+	ut64 from, to;
+	if (s) {
+		from = s->vaddr;
+		to = s->vaddr + s->size;
+	} else {
+		eprintf ("aav: Cannot find section at this address\n");
+		// TODO: look in debug maps
+		return;
+	}
 	seti ("search.align", 4);
 
 	char *arg = strchr (input, ' ');
