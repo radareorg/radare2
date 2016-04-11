@@ -1,21 +1,39 @@
 'use strict';
 
 var exec = require('child_process').exec;
-function execute(command, callback){
-	exec(command, function(error, stdout, stderr){ callback(stdout); });
+var spawn = require('child_process').spawn;
+function execute(command, cb){
+	let output = '';
+	function callback(error, stdout, stderr) {
+		cb(stdout);
+	}
+	exec (command, { maxBuffer: 1024*1024*1024 }, callback)
 };
 
-module.exports.getGitUser = function(callback){
-    execute("git config --global user.name", function(name){
-        execute("git config --global user.email", function(email){
-            callback({ name: name.replace("\n", ""), email: email.replace("\n", "") });
-        });
-    });
-};
-
-function getTags() {
-	let tags = {};
-	
+function getDifflines(upto, path, cb) {
+	if (typeof upto === 'function') {
+		cb = upto;
+		path = '';
+		upto = '';
+	} else if (typeof path === 'function') {
+		cb = path;
+		path = '';
+	}
+	execute('git diff '+upto+'..@ '+path, (log) => {
+		let o = {
+			add: 0,
+			del: 0
+		};
+		for (let line of log.split(/\n/g)) {
+			if (line.match(/^\+/)) {
+				o.add ++;
+			} else if (line.match(/^-/)) {
+				o.del ++;
+			}
+		}
+		o.diff = o.add - o.del;
+		cb (o);
+	});
 }
 
 function getChangelog(upto, path, cb) {
@@ -29,6 +47,8 @@ function getChangelog(upto, path, cb) {
 	}
 	execute('git log '+upto+'..@ '+path, (log) => {
 		let o = {
+			upto: upto,
+			path: path,
 			authors: {},
 			commits: []
 		};
@@ -39,9 +59,9 @@ function getChangelog(upto, path, cb) {
 		for (let line of lines) {
 			if (line.match("^Author")) {
 				const author = line.substring(8);
-				if (o.authors[author] === undefined) 
-				o.authors[author] = 0;
-				else o.authors[author]++;
+				if (o.authors[author] === undefined) {
+					o.authors[author] = 1;
+				} else o.authors[author]++;
 			} else if (line.match("^Date:")) {
 				date = line.substring(8);
 			} else if (line.match("^commit")) {
@@ -75,30 +95,69 @@ function countWord(x,y) {
 }
 
 function computeStats(o) {
-	console.log('Commits', o.commits.length);
-	console.log('Fix', countWord(o.commits, /fix/i))
-	console.log('Crash', countWord(o.commits, /crash/i))
-	console.log('New', countWord(o.commits, /new/i))
-	console.log('Add', countWord(o.commits, /add/i))
-	console.log('Anal', countWord(o.commits, /anal/i))
-	console.log('ESIL', countWord(o.commits, /esil/i))
-	console.log('enhance', countWord(o.commits, /enhance/i))
+	return {
+		commits: o.commits.length,
+		fix: countWord(o.commits, /fix/i),
+		crash: countWord(o.commits, /crash/i),
+		'new': countWord(o.commits, /new/i),
+		add: countWord(o.commits, /add/i),
+		anal: countWord(o.commits, /anal/i),
+		leak: countWord(o.commits, /leak/i),
+		esil: countWord(o.commits, /esil/i),
+		enhance: countWord(o.commits, /enhance/i),
+	}
 }
 
 function computeRanking(o) {
 	let r = [];
 	for (let a in o.authors) {
 		r.push(o.authors[a]+ '  '+a);
-		console.log(a);
+	//	console.log(a);
 	}
 	r = r.sort(function(a, b) {
-		return +a - +b;
+		a = +((a.split(' ')[0]));
+		b = +((b.split(' ')[0]));
+		return (a < b) ? 1 : -1;
 	});
-	console.log(r);
+	return {
+		count: Object.keys(o.authors).length,
+		authors: r
+	};
 }
 
-getChangelog('0.10.1', '', function(o) {
-	//console.log(JSON.stringify(o));
-	computeRanking (o);
-	computeStats (o);
-});
+const last_tag = '0.10.1';
+
+const paths = [
+	'', // total
+	'binr/r2pm/d',
+	'libr/debug',
+	'libr/bin',
+	'libr/core',
+	'libr/crypto',
+	'libr/cons',
+	'libr/anal',
+	'libr/asm',
+	'man',
+];
+
+var count = 0;
+var doner = [];
+var ready = false;
+
+for (let paz of paths) {
+	count ++;
+	getChangelog(last_tag, paz, function(o) {
+		getDifflines(last_tag, paz, function(d) {
+			let r = computeStats (o);
+			r.path = paz;
+			r.rank = computeRanking (o);
+			r.diff = d;
+			doner.push (r);
+			count --;
+			if (count == 0) {
+				console.log (JSON.stringify (doner));
+			}
+		});
+	});
+}
+ready = true;
