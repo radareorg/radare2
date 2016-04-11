@@ -1956,7 +1956,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		(a->bits==32)? CS_MODE_32:
 		(a->bits==16)? CS_MODE_16: 0;
 	int n, ret;
-	int regsz = 4;
 
 	if (handle && mode != omode) {
 		cs_close (&handle);
@@ -1969,15 +1968,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			handle = 0;
 			return 0;
 		}
-	}
-#if 0
-	if (len>3 && !memcmp (buf, "\xff\xff\xff\xff", 4))
-		return 0;
-#endif
-	switch (a->bits) {
-	case 64: regsz = 8; break;
-	case 16: regsz = 2; break;
-	default: regsz = 4; break; // 32
 	}
 	memset (op, '\0', sizeof (RAnalOp));
 	op->cycles = 1; // aprox
@@ -2004,21 +1994,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 #else
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 #endif
-	struct Getarg gop = {
-		.handle = handle,
-		.insn = insn,
-		.bits = a->bits
-	};
 	if (n<1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
-		int rs = a->bits/8;
-		const char *pc = (a->bits==16)?"ip":
-			(a->bits==32)?"eip":"rip";
-		const char *sp = (a->bits==16)?"sp":
-			(a->bits==32)?"esp":"rsp";
-		const char *bp = (a->bits==16)?"bp":
-			(a->bits==32)?"ebp":"rbp";
+		// int rs = a->bits / 8;
+		//const char *pc = (a->bits==16)?"ip": (a->bits==32)?"eip":"rip";
+		//const char *sp = (a->bits==16)?"sp": (a->bits==32)?"esp":"rsp";
+		//const char *bp = (a->bits==16)?"bp": (a->bits==32)?"ebp":"rbp";
 		op->size = insn->size;
 		op->family = R_ANAL_OP_FAMILY_CPU; // almost everything is CPU
 		op->prefix = 0;

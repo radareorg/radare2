@@ -13,12 +13,12 @@ int mod(int a, int b) {
 }
 
 static bool rot_init(ut8 *rotkey, const ut8 *key, int keylen) {
-	if (!rotkey || !key) {
-		return false;
+	if (rotkey && key && keylen > 0) {
+		int i = atoi ((const char *)key);
+		*rotkey = (ut8)mod (i, 26);
+		return true;
 	}   
-	int i = atoi(key);
-	*rotkey = (ut8)mod(i, 26);
-	return true;
+	return false;
 }
 
 static void rot_crypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
