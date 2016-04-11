@@ -154,7 +154,7 @@ for (let paz of paths) {
 			r.diff = d;
 			doner.push (r);
 			count --;
-			if (count == 0) {
+			if (count == 0 && ready) {
 				console.log (JSON.stringify (doner));
 			}
 		});

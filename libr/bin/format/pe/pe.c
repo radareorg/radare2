@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 nibble, pancake, inisider */
+/* radare - LGPL - Copyright 2008-2016 nibble, pancake, inisider */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -2202,10 +2202,9 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 
 			dll_name[PE_NAME_LENGTH] = '\0';
 			if (!bin_pe_parse_imports (bin, &imports, &nimp, dll_name,
-					import_func_name_offset,
-					curr_delay_import_dir->DelayImportAddressTable))
+					import_func_name_offset, curr_delay_import_dir->DelayImportAddressTable))
 				break;
-			if (curr_delay_import_dir + sizeof(curr_delay_import_dir) > bin->b->buf + bin->size) {
+			if ((size_t)(curr_delay_import_dir - off) + sizeof (curr_delay_import_dir) > bin->size) {
 				eprintf ("Warning: malformed pe\n");
 				return NULL;
 			}
