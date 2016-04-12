@@ -21,20 +21,22 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 }
 
 static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *key, bool to_encrypt) {
-	int keylen = key? strlen (key): 0;
-	if (keylen > 0) {
+	//TODO: generalise no_key_mode for all non key encoding/decoding.
+	int keylen = key ? strlen (key): 0;
+	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo);
+	if (no_key_mode || keylen > 0) {
 		RCrypto *cry = r_crypto_new ();
 		if (r_crypto_use (cry, algo)) {
 			ut8 *binkey = malloc (keylen + 1);
 			if (binkey) {
-				int len = r_hex_str2bin (key, binkey);
+				int len = no_key_mode ? 1 : r_hex_str2bin (key, binkey);
 				if (len < 1) {
 					len = keylen;
 					strcpy ((char *)binkey, key);
 				} else {
 					keylen = len;
 				}
-				if (r_crypto_set_key (cry, binkey, keylen, 0, 0)) {
+				if (no_key_mode || r_crypto_set_key (cry, binkey, keylen, 0, 0)) {
 					r_crypto_update (cry, (const ut8*)core->block, core->blocksize, to_encrypt);
 					r_crypto_final (cry, NULL, 0, to_encrypt);
 

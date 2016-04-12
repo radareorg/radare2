@@ -4,7 +4,7 @@ NAME=r_util
 DEPS=
 
 OBJS=mem.o pool.o num.o str.o hex.o file.o range.o
-OBJS+=prof.o cache.o sys.o buf.o w32-sys.o base64.o base85.o
+OBJS+=prof.o cache.o sys.o buf.o w32-sys.o base64.o base85.o base91.o
 OBJS+=list.o flist.o ht.o ht64.o mixed.o btree.o chmod.o graph.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
 OBJS+=sandbox.o calc.o thread.o thread_lock.o thread_msg.o
