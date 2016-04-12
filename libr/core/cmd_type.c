@@ -28,13 +28,32 @@ static void show_help(RCore *core) {
 }
 
 static void save_parsed_type(RCore *core, char *parsed) {
+	char *type, *name, *cmd;
+	size_t cmdlen;
+	if (!core || !core->anal || !parsed) {
+		goto beach;
+	}
 	// First, if this exists, let's remove it.
-	char* type = strdup (parsed);
-	char* name = strtok (type, "=");
-	char* cmd = calloc (strlen(name) + 5, 1);
-	sprintf (cmd, "\"t- %s\"", name);
+	type = strdup (parsed);
+	if (!type) {
+		goto beach;
+	}
+	name = strtok (type, "=");
+	if (!name || strchr (name, "\n")) {
+		goto beach;
+	}
+	cmdlen = strlen (name) + 5;
+	cmd = calloc (strlen(name) + 5, 1);
+	if (!cmd) {
+		goto beach;
+	}
+	if (snprintf (cmd, cmdlen, "\"t- %s\"", name) < 1) {
+		goto beach;
+	}
 	r_core_cmd (core, cmd, 1);
+	// Now add the type to sdb.
 	sdb_query_lines (core->anal->sdb_types, parsed);
+beach:
 	free (type);
 	free (cmd);
 }
