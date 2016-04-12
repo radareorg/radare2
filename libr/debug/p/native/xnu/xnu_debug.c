@@ -674,7 +674,7 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 #endif
 
 	r_list_foreach_safe (mem_maps, iter, iter2, curr_map) {
-		eprintf ("Writing section from 0x%llx to 0x%llx (%llu)\n", 
+		eprintf ("Writing section from 0x%"PFMT64x" to 0x%"PFMT64x" (%"PFMT64d")\n", 
 			curr_map->addr, curr_map->addr_end, curr_map->size);
 
 		vm_map_offset_t vmoffset = curr_map->addr;
@@ -728,7 +728,7 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 					eprintf ("Failed to read target memory\n"); // XXX: Improve this message?
 					eprintf ("[DEBUG] kr = %d\n", kr);
 					eprintf ("[DEBUG] KERN_SUCCESS = %d\n", KERN_SUCCESS);
-					eprintf ("[DEBUG] xfer_size = %llu\n", xfer_size);
+					eprintf ("[DEBUG] xfer_size = %"PFMT64d"\n", (ut64)xfer_size);
 					eprintf ("[DEBUG] local_size = %d\n", local_size);
 					if (kr > 1) error = -1; // XXX: INVALID_ADDRESS is not a bug right know
 					goto cleanup;
@@ -827,7 +827,7 @@ bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 
 	segment_count = xnu_get_vmmap_entries_for_pid (dbg->pid);
 
-	memcpy(thread_flavor_array, flavors, sizeof(thread_flavor_array));
+	memcpy (thread_flavor_array, &flavors, sizeof (thread_flavor_array));
 	tstate_size = 0;
 
 	for (i = 0; i < coredump_nflavors; i++) {
