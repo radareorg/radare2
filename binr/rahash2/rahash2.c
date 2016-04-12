@@ -289,10 +289,11 @@ int is_power_of_two(const ut64 x) {
 }
 
 int encrypt_or_decrypt (const char *algo, bool to_encrypt, const char *hashstr, int hashstr_len) {
-	if (s.len > 0) {
+	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo); //TODO: generalise this for all non key encoding/decoding.
+	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
 		if (r_crypto_use (cry, algo)) {
-			if (r_crypto_set_key (cry, s.buf, s.len, 0, 0)) {
+			if (no_key_mode || r_crypto_set_key (cry, s.buf, s.len, 0, 0)) {
 				const char *buf = hashstr;
 				int buflen = hashstr_len;
 
@@ -320,10 +321,11 @@ int encrypt_or_decrypt (const char *algo, bool to_encrypt, const char *hashstr, 
 }
 
 int encrypt_or_decrypt_file (const char *algo, bool to_encrypt, char *filename) {
-	if (s.len > 0) {
+	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo); //TODO: generalise this for all non key encoding/decoding.
+	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
 		if (r_crypto_use (cry, algo)) {
-			if (r_crypto_set_key (cry, s.buf, s.len, 0, 0)) {
+			if (no_key_mode || r_crypto_set_key (cry, s.buf, s.len, 0, 0)) {
 				int file_size;
 				ut8 *buf = (ut8*)r_file_slurp (filename, &file_size);
 				if (!buf) {
@@ -413,8 +415,14 @@ int main(int argc, char **argv) {
 			eprintf ("rahash2: Option -c incompatible with -b and -B options.\n");
 			return 1;
 		}
-		if ((decrypt && !strcmp (decrypt, "b64")) || (encrypt && !strcmp (encrypt, "b64"))) {
-			eprintf ("rahash2: Option -c incompatible with -E b64 or -D b64 options.\n");
+		bool flag = false;
+		if (encrypt) {
+			flag = !strcmp (encrypt, "base64") || !strcmp (encrypt, "base91");
+		} else if (decrypt) {
+			flag = !strcmp (decrypt, "base64") || !strcmp (decrypt, "base91");
+		}
+		if (flag) {
+			eprintf ("rahash2: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.\n");
 			return 1;
 		}
 		algobit = r_hash_name_to_bits(algo);
@@ -499,31 +507,9 @@ int main(int argc, char **argv) {
 			hashstr_len = r_str_unescape (hashstr);
 		}
 		if (encrypt) {
-			if (!strcmp (encrypt, "b64")) {
-				char *out = malloc ((((hashstr_len + 1) * 4) / 3) + 1);
-				if (out) {
-					r_base64_encode (out, (const ut8*)hashstr, hashstr_len);
-					printf ("%s\n", out);
-					fflush (stdout);
-					free (out);
-				}
-				return ret;
-			} else {
-				return encrypt_or_decrypt (encrypt, true, hashstr, hashstr_len);
-			}
+			return encrypt_or_decrypt (encrypt, true, hashstr, hashstr_len);
 		} else if (decrypt) {
-			if (!strcmp (decrypt, "b64")) {
-				ut8 *out = malloc (INSIZE);
-				if (out) {
-					int outlen = r_base64_decode (out,
-						(const char *)hashstr, hashstr_len);
-					write (1, out, outlen);
-					free (out);
-				}
-				return ret;
-			} else {
-				return encrypt_or_decrypt (decrypt, false, hashstr, hashstr_len);
-			}
+			return encrypt_or_decrypt (decrypt, false, hashstr, hashstr_len);
 		} else {
 			char *str = (char *)hashstr;
 			int strsz = hashstr_len;
@@ -573,47 +559,13 @@ int main(int argc, char **argv) {
 	io = r_io_new ();
 	for (ret = 0, i = optind; i < argc; i++) {
 		if (encrypt) {//for encrytion when files are provided 
-			if (!strcmp (encrypt, "b64")) {
-				int binlen;
-				char *out;
-				ut8 *bin = (ut8*)r_file_slurp (argv[i], &binlen);
-				if (!bin) {
-					eprintf ("Cannot open file\n");
-					continue;
-				}
-				out = malloc (((binlen + 1) * 4) / 3);
-				if (out) {
-					r_base64_encode (out, bin, binlen);
-					printf ("%s\n", out);
-					fflush (stdout);
-					free (out);
-				}
-				free (bin);
-			} else {
-				int rt = encrypt_or_decrypt_file (encrypt, true, argv[1]);
-				if (rt == -1) continue;
-				else return rt;
-			}
+			int rt = encrypt_or_decrypt_file (encrypt, true, argv[i]);
+			if (rt == -1) continue;
+			else return rt;
 		} else if (decrypt) {
-			if (!strcmp (decrypt, "b64")) {
-				int binlen, outlen;
-				ut8 *out, *bin = (ut8*)r_file_slurp (argv[i], &binlen);
-				if (!bin) {
-					eprintf ("Cannot open file\n");
-					continue;
-				}
-				out = malloc (binlen + 1);
-				if (out) {
-					outlen = r_base64_decode (out, (const char*)bin, binlen);
-					write (1, out, outlen);
-					free (out);
-				}
-				free (bin);
-			} else {
-				int rt = encrypt_or_decrypt_file (decrypt, false, argv[1]);
-				if (rt == -1) continue;
-				else return rt;
-			}
+			int rt = encrypt_or_decrypt_file (decrypt, false, argv[i]);
+			if (rt == -1) continue;
+			else return rt;
 		} else {
 			if (!strcmp (argv[i], "-")) {
 				int sz = 0;
