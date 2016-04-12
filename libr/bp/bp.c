@@ -239,7 +239,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 		switch (rad) {
 		case 0:
 			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x \
-				"%d %c%c%c %s %s %s cmd=\"%s\" " \
+				" %d %c%c%c %s %s %s cmd=\"%s\" " \
 				"name=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
 				(b->rwx & R_BP_PROT_READ) ? 'r' : '-',
