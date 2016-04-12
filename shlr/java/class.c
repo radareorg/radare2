@@ -1982,6 +1982,7 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr_from_buffer (ut8 *buffer, st64
 		IFDBG eprintf ("Typeinfo: %s, was %s\n", type_info->name, name);
 		//printf ("SZ %d %d %d\n", nsz, sz, buf_offset);
 		if (nsz > sz)  {
+			if(name) free (name);
 			return NULL;
 		}
 		if ((attr = type_info->allocs->new_obj (buffer, nsz, buf_offset))) {
