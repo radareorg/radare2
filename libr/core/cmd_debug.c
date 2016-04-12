@@ -3165,6 +3165,10 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'g': // "dg"
 		if (core->dbg->h && core->dbg->h->gcore) {
+			if (core->dbg->pid == -1) {
+				eprintf ("Not debugging, can't write core.\n");
+				break;
+			}
 			char *corefile = set_corefile_name (input + 1, core->dbg->pid);
 			eprintf ("Writing to file %s\n", corefile);
 			r_sandbox_creat (corefile, 0644);

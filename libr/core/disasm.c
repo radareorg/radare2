@@ -2399,10 +2399,13 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	if (!esil || !ds->show_comments || !ds->show_emu) {
 		goto beach;
 	}
+	{
+		const RAnalMetaItem *mi = r_meta_find (core->anal, ds->at, R_META_TYPE_ANY, 0);
+		if (mi) { goto beach; }
+	}
 	ioc = r_config_get_i (core->config, "io.cache");
 	r_config_set (core->config, "io.cache", "true");
 	handle_comment_align (core, ds);
-
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pc, ds->at + ds->analop.size);
@@ -2461,8 +2464,8 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, usefmt, spv);
 				r_cons_chop ();
 			} else {
-				handle_print_pre (core, ds, false);
-				handle_print_lines_left (core, ds);
+				//handle_print_pre (core, ds, false);
+				//handle_print_lines_left (core, ds);
 				r_cons_printf ("; CALL: ");
 				for (i = 0; i < nargs; i++) {
 					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);

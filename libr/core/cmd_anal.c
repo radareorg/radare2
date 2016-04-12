@@ -1772,7 +1772,11 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	//	PFMT64x"`", stack_size, stack_addr);
 	//r_core_cmdf (core, "f stack=0x%08"PFMT64x, stack_addr);
 	//r_core_cmdf (core, "dr %s=0x%08"PFMT64x, sp, stack_ptr);
+	// SP
 	sp = r_reg_get_name (core->dbg->reg, R_REG_NAME_SP);
+	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
+	// BP
+	sp = r_reg_get_name (core->dbg->reg, R_REG_NAME_BP);
 	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
 	//r_core_cmdf (core, "ar %s=0x%08"PFMT64x, sp, stack_ptr);
 	//r_core_cmdf (core, "f %s=%s", sp, sp);
@@ -3698,8 +3702,15 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define geti(x) r_config_get_i(core->config, x);
 	RIOSection *s = r_io_section_vget (core->io, core->offset);
 	ut64 o_align = geti ("search.align");
-	ut64 from = s->vaddr;
-	ut64 to = s->vaddr + s->size;
+	ut64 from, to;
+	if (s) {
+		from = s->vaddr;
+		to = s->vaddr + s->size;
+	} else {
+		eprintf ("aav: Cannot find section at this address\n");
+		// TODO: look in debug maps
+		return;
+	}
 	seti ("search.align", 4);
 
 	char *arg = strchr (input, ' ');

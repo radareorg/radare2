@@ -15,11 +15,11 @@ static int aes_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int 
 	st.columns = (int)(keylen / 4);
 	memcpy(st.key, key, keylen);
 
-	// printf("*** State:\n \
-	//         Key: %s\n \
-	//         Received keylen: %d\t\tkey_size: %d\n \
-	//         columns: %d\n \
-	//         rounds: %d\n \
+	// printf("*** State:\n
+	//         Key: %s\n
+	//         Received keylen: %d\t\tkey_size: %d\n
+	//         columns: %d\n
+	//         rounds: %d\n
 	//         Finished!\n", st.key, keylen, st.key_size, st.columns, st.rounds);
 	return true;
 }
@@ -56,10 +56,10 @@ static int update (RCrypto *cry, const ut8 *buf, int len) {
 		ibuf[len] = 0b1000;
 	}
 
-	// printf("*** State:\n \
-	//         Key: %s\n \
-	//         key_size: %d\n \
-	//         columns: %d\n \
+	// printf("*** State:\n
+	//         Key: %s\n
+	//         key_size: %d\n
+	//         columns: %d\n
 	//         rounds: %d\n", st.key, st.key_size, st.columns, st.rounds);
 	int i;
 	for (i = 0; i < blocks; i++) {

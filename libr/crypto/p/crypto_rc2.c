@@ -156,8 +156,8 @@ static void rc2_dcrypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, i
 		data_block[idx] = inbuf[i];
 		idx += 1;
 		if (idx % BLOCK_SIZE == 0) {
-			rc2_dcrypt8(state, (const ut8 *) data_block, (ut8 *) dcrypted_block);
-			strncpy(ptr, dcrypted_block, BLOCK_SIZE);
+			rc2_dcrypt8 (state, (const ut8 *) data_block, (ut8 *) dcrypted_block);
+			strncpy (ptr, dcrypted_block, BLOCK_SIZE);
 			ptr += BLOCK_SIZE;
 			idx = 0;
 		}
