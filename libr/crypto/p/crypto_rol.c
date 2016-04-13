@@ -28,8 +28,10 @@ static void rol_crypt(struct rol_state *const state, const ut8 *inbuf, ut8 *outb
 }
 
 static struct rol_state st;
+static int flag = 0;
 
 static int rol_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+	flag = direction;
 	return rol_init (&st, key, keylen);
 }
 
@@ -41,8 +43,8 @@ static bool rol_use(const char *algo) {
 	return !strcmp (algo, "rol");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
-	if (!to_encrypt) {
+static int update(RCrypto *cry, const ut8 *buf, int len) {
+	if (flag) {
 		eprintf ("Use ROR\n");
 		return false;
 	}
@@ -54,8 +56,8 @@ static int update(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
 	return 0;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
-	return update (cry, buf, len, to_encrypt);
+static int final(RCrypto *cry, const ut8 *buf, int len) {
+	return update (cry, buf, len);
 }
 
 RCryptoPlugin r_crypto_plugin_rol = {

@@ -51,8 +51,10 @@ static void rot_decrypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 }
 
 static ut8 rot_key;
+static int flag = 0;
 
 static int rot_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+	flag = direction;
 	return rot_init (&rot_key, key, keylen);
 }
 
@@ -65,12 +67,12 @@ static bool rot_use(const char *algo) {
 	return !strcmp (algo, "rot");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
+static int update(RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) return false;
-	if (to_encrypt) {
+	if (flag == 0) {
 		rot_crypt (rot_key, buf, obuf, len);
-	} else {
+	} else if (flag == 1) {
 		rot_decrypt (rot_key, buf, obuf, len);
 	}
 	r_crypto_append (cry, obuf, len);
@@ -78,8 +80,8 @@ static int update(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
 	return 0;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
-	return update (cry, buf, len, to_encrypt);
+static int final(RCrypto *cry, const ut8 *buf, int len) {
+	return update (cry, buf, len);
 }
 
 RCryptoPlugin r_crypto_plugin_rot = {
