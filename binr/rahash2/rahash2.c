@@ -288,12 +288,12 @@ int is_power_of_two(const ut64 x) {
 	return x && !(x & (x - 1));
 }
 
-int encrypt_or_decrypt (const char *algo, bool to_encrypt, const char *hashstr, int hashstr_len) {
+int encrypt_or_decrypt(const char *algo, bool to_encrypt, const char *hashstr, int hashstr_len) {
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo); //TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
 		if (r_crypto_use (cry, algo)) {
-			if (no_key_mode || r_crypto_set_key (cry, s.buf, s.len, 0, 0)) {
+			if (r_crypto_set_key (cry, s.buf, s.len, 0, 0)) {
 				const char *buf = hashstr;
 				int buflen = hashstr_len;
 
@@ -325,7 +325,7 @@ int encrypt_or_decrypt_file (const char *algo, bool to_encrypt, char *filename) 
 	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
 		if (r_crypto_use (cry, algo)) {
-			if (no_key_mode || r_crypto_set_key (cry, s.buf, s.len, 0, 0)) {
+			if (r_crypto_set_key (cry, s.buf, s.len, 0, 0)) {
 				int file_size;
 				ut8 *buf = (ut8*)r_file_slurp (filename, &file_size);
 				if (!buf) {

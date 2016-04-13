@@ -31,34 +31,29 @@ struct rc2_state {
 
 // takes a 8-128 len ut8 key
 // expands it to a 64 len ut16 key
-static bool rc2_expandKey(const ut8 *key,
-						  int key_len, // len(key)
-						  int bits,    // the effective key len in bits
-						  struct rc2_state *state) {
+static bool rc2_expandKey(struct rc2_state *state, const ut8 *key, int key_len) {
 	int i;
-	char tempKey[129];
 
-	if (key_len < 1) return false;
-	strncpy(tempKey, (char *) key, sizeof(tempKey) - 1);
+	if (key_len < 1 || key_len > 128) return false;
+	memcpy(state->ekey, key, key_len);
 
 	// first loop
- 	for (i = key_len; i < sizeof(tempKey) - 1; i++) {
- 		tempKey[i] = PITABLE[(key[i - key_len] + key[i - 1]) & 255];
+ 	for (i = key_len; i < 128; i++) {
+ 		((ut8 *)state->ekey)[i] = PITABLE[(((ut8 *)state->ekey)[i - key_len] + ((ut8 *)state->ekey)[i - 1]) & 255];
  	}
 
-	int ekey_len = (bits + 7) >> 3; // in bytes
-	int mask = 255 >> (8 * ekey_len - bits);
-
- 	tempKey[sizeof(tempKey) - 1 - ekey_len] = PITABLE[tempKey[sizeof(tempKey) - 1 - ekey_len] & mask];
+	int ekey_len = (BITS + 7) >> 3;
+	i = 128 - ekey_len;
+ 	((ut8 *)state->ekey)[i] = PITABLE[((ut8 *)state->ekey)[i] & (255 >> (7 & -BITS))];
 
  	// second loop
- 	for (i = sizeof(tempKey) - 2 - ekey_len; i >= 0; i--) {
- 		tempKey[i] = PITABLE[tempKey[i + 1] ^ tempKey[i + ekey_len]];
+ 	while (i--) {
+ 		((ut8 *)state->ekey)[i] = PITABLE[((ut8 *)state->ekey)[i + 1] ^ ((ut8 *)state->ekey)[i + ekey_len]];
  	}
 
  	// generate the ut16 key
- 	for (i = 0; i < RC2_KEY_SIZE; i++) {
- 		state->ekey[i] = (ut8)tempKey[i * 2] + ((ut8)tempKey[i * 2 + 1] << 8);
+ 	for (i = RC2_KEY_SIZE - 1; i >= 0; i--) {
+ 		state->ekey[i] = ((ut8 *)state->ekey)[i * 2] + (((ut8 *)state->ekey)[i * 2 + 1] << 8);
  	}
 
  	return true;
@@ -74,17 +69,17 @@ static void rc2_crypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) {
 	x10 = (inbuf[1] << 8) | inbuf[0];
 
 	for (i = 0; i < 16; i++) {
-		x10 += ((x32 & ~x76) | (x54 & x76)) + state->ekey[4 * i + 0];
-		x10 = (x10 << 1) | (x10 >> 15 & 1);
+		x10 += ((x32 & ~x76) + (x54 & x76)) + state->ekey[4 * i + 0];
+		x10 = (x10 << 1) + (x10 >> 15 & 1);
 
-		x32 += ((x54 & ~x10) | (x76 & x10)) + state->ekey[4 * i + 1];
-		x32 = (x32 << 2) | (x32 >> 14 & 3);
+		x32 += ((x54 & ~x10) + (x76 & x10)) + state->ekey[4 * i + 1];
+		x32 = (x32 << 2) + (x32 >> 14 & 3);
 
-		x54 += ((x76 & ~x32) | (x10 & x32)) + state->ekey[4 * i + 2];
-		x54 = (x54 << 3) | (x54 >> 13 & 7);
+		x54 += ((x76 & ~x32) + (x10 & x32)) + state->ekey[4 * i + 2];
+		x54 = (x54 << 3) + (x54 >> 13 & 7);
 
-		x76 += ((x10 & ~x54) | (x32 & x54)) + state->ekey[4 * i + 3];
-		x76 = (x76 << 5) | (x76 >> 11 & 31);
+		x76 += ((x10 & ~x54) + (x32 & x54)) + state->ekey[4 * i + 3];
+		x76 = (x76 << 5) + (x76 >> 11 & 31);
 	
 		if (i == 4 || i == 10) {
 			x10 += state->ekey[x76 & 63];
@@ -115,15 +110,19 @@ static void rc2_dcrypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) 
 	x10 = (inbuf[1] << 8) | inbuf[0];
 
 	for (i = 15; i >= 0; i--) {
+		x76 &= 65535;
 		x76 = (x76 << 11) | (x76 >> 5);
 		x76 -= ((x10 & ~x54) | (x32 & x54)) + state->ekey[4 * i + 3];
-    
+
+		x76 &= 65535;
 		x54 = (x54 << 13) | (x54 >> 3);
 		x54 -= ((x76 & ~x32) | (x10 & x32)) + state->ekey[4 * i + 2];
-    
+
+		x32 &= 65535;
 		x32 = (x32 << 14) | (x32 >> 2);
 		x32 -= ((x54 & ~x10) | (x76 & x10)) + state->ekey[4 * i + 1];
-    
+
+		x10 &= 65535;
 		x10 = (x10 << 15) | (x10 >> 1);
 		x10 -= ((x32 & ~x76) | (x54 & x76)) + state->ekey[4 * i + 0];		
 
@@ -196,8 +195,8 @@ static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, in
 static struct rc2_state state;
 
 static int rc2_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	state.key_size = keylen;
-	return rc2_expandKey(key, keylen, BITS, &state);
+	state.key_size = 1024;
+	return rc2_expandKey(&state, key, keylen);
 }
 
 static int rc2_get_key_size(RCrypto *cry) {

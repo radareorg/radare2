@@ -2,6 +2,14 @@
 #include <r_crypto.h>
 #include <r_util.h>
 
+static int base64_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+	return true;
+}
+
+static int base64_get_key_size(RCrypto *cry) {
+	return 0;
+}
+
 static bool base64_use(const char *algo) {
 	return !strcmp (algo, "base64");
 }
@@ -31,6 +39,8 @@ static int final(RCrypto *cry, const ut8 *buf, int len, bool to_encode) {
 
 RCryptoPlugin r_crypto_plugin_base64 = {
 	.name = "base64",
+	.set_key = base64_set_key,
+	.get_key_size = base64_get_key_size,
 	.use = base64_use,
 	.update = update,
 	.final = final
