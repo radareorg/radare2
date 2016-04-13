@@ -991,8 +991,8 @@ static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 				}
 				break;
 			default:
-				eprintf ("Unsupported relocs for this arch %d\n",
-					bin->ehdr.e_machine);
+				eprintf ("Unsupported relocs type %d for arch %d\n",
+					reloc_type, bin->ehdr.e_machine);
 				break;
 			}
 		}
