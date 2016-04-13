@@ -632,6 +632,8 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;
 	case MIPS_INS_SYSCALL:
+		op->type = R_ANAL_OP_TYPE_SWI;
+		break;
 	case MIPS_INS_BREAK:
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		break;
