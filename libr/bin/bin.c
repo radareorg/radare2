@@ -302,7 +302,7 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 		/* dump to stdout, not stored in list */
 		ret = NULL;
 	} else {
-		ret = r_list_newf (free);
+		ret = r_list_newf (r_bin_string_free);
 		if (!ret) return NULL;
 	}
 
@@ -382,6 +382,7 @@ static void r_bin_object_delete_items(RBinObject *o) {
 
 R_API void r_bin_info_free(RBinInfo *rb) {
 	if (!rb) return;
+	free (rb->intrp);
 	free (rb->file);
 	free (rb->type);
 	free (rb->bclass);
@@ -503,7 +504,8 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) o->libs = cp->libs (binfile);
 	if (cp->sections) {
-		o->sections = cp->sections (binfile);
+		// XXX sections are populated by call to size
+		if (!o->sections) o->sections = cp->sections (binfile);
 		REBASE_PADDR (o, o->sections, RBinSection);
 		if (bin->filter)
 			r_bin_filter_sections (o->sections);
@@ -823,7 +825,9 @@ static void r_bin_file_free(void /*RBinFile*/ *bf_) {
 	}
 	free (a->file);
 	r_list_free (a->objs);
+	r_bin_object_free (a->o);
 	memset (a, 0, sizeof (RBinFile));
+	free (a);
 }
 
 static int r_bin_file_object_add(RBinFile *binfile, RBinObject *o) {
@@ -1135,6 +1139,12 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut
 	return bf;
 }
 
+static void plugin_free(RBinPlugin *p) {
+	if (p && p->fini) {
+		p->fini (NULL);
+	}
+}
+
 // rename to r_bin_plugin_add like the rest
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
 	RListIter *it;
@@ -1420,8 +1430,7 @@ R_API RBin *r_bin_new() {
 	bin->force = NULL;
 	bin->sdb = sdb_new0 ();
 	bin->cb_printf = (PrintfCallback)printf;
-	bin->plugins = r_list_new ();
-	bin->plugins->free = free;
+	bin->plugins = r_list_newf ((RListFree)plugin_free);
 	bin->minstrlen = 0;
 	bin->cur = NULL;
 

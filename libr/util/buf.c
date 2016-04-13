@@ -557,13 +557,13 @@ R_API void r_buf_deinit(RBuffer *b) {
 	if (b->mmap) {
 		r_file_mmap_free (b->mmap);
 		b->mmap = NULL;
-	} else free (b->buf);
+	} else R_FREE (b->buf);
 }
 
 R_API void r_buf_free(RBuffer *b) {
 	if (!b) return;
 	if (!b->ro) r_buf_deinit (b);
-	free (b);
+	R_FREE (b);
 }
 
 R_API int r_buf_append_string (RBuffer *b, const char *str) {
