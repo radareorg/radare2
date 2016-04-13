@@ -72,11 +72,9 @@ R_API bool r_crypto_use(RCrypto *cry, const char *algo) {
 	r_list_foreach (cry->plugins, iter, h) {
 		if (h && h->use && h->use (algo)) {
 			cry->h = h;
-			if (h->get_key_size) {	//should i change this or make base64/base91 return 0 for get_key_size?
-				cry->key_len = h->get_key_size (cry);
-				cry->key = calloc (1, cry->key_len);
-			}
-			return (h->get_key_size) ? (cry->key != NULL) : true;
+			cry->key_len = h->get_key_size (cry);
+			cry->key = calloc (1, cry->key_len);
+			return cry->key != NULL;
 		}
 	}
 	return false;

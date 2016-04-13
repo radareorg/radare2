@@ -36,7 +36,7 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 				} else {
 					keylen = len;
 				}
-				if (no_key_mode || r_crypto_set_key (cry, binkey, keylen, 0, 0)) {
+				if (r_crypto_set_key (cry, binkey, keylen, 0, 0)) {
 					r_crypto_update (cry, (const ut8*)core->block, core->blocksize, to_encrypt);
 					r_crypto_final (cry, NULL, 0, to_encrypt);
 
