@@ -22,10 +22,7 @@ R_API RParse *r_parse_new() {
 	p->notin_flagspace = -1;
 	p->flagspace = -1;
 	for (i=0; parse_static_plugins[i]; i++) {
-		static_plugin = R_NEW (RParsePlugin);
-		memcpy (static_plugin, parse_static_plugins[i],
-			sizeof (RParsePlugin));
-		r_parse_add (p, static_plugin);
+		r_parse_add (p, parse_static_plugins[i]);
 	}
 	return p;
 }

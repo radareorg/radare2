@@ -27,6 +27,18 @@ static int init(void *user) {
 	return 0;
 }
 
+static int fini(void *user) {
+	IFDBG_BIN_JAVA eprintf ("Calling plugin fini = %d.\n", DB?1:0);
+	if (!DB) {
+		IFDBG_BIN_JAVA eprintf ("plugin DB already uninited.\n");
+	} else {
+		IFDBG_BIN_JAVA eprintf ("plugin DB beeing uninited.\n");
+		sdb_free (DB);
+		DB = NULL;
+	}
+	return 0;
+}
+
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 	int result = false;
 	char *addr, value[1024] = {0};
@@ -225,6 +237,7 @@ RBinPlugin r_bin_plugin_java = {
 	.desc = "java bin plugin",
 	.license = "LGPL3",
 	.init = init,
+	.fini = fini,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,

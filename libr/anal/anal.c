@@ -118,9 +118,7 @@ R_API RAnal *r_anal_new() {
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {
 		for (i=0; anal_static_plugins[i]; i++) {
-			static_plugin = R_NEW (RAnalPlugin);
-			*static_plugin = *anal_static_plugins[i];
-			r_anal_add (anal, static_plugin);
+			r_anal_add (anal, anal_static_plugins[i]);
 		}
 	}
 	return anal;
@@ -128,7 +126,7 @@ R_API RAnal *r_anal_new() {
 
 R_API void r_anal_plugin_free (RAnalPlugin *p) {
 	if (p && p->fini) {
-		p->fini (p);
+		p->fini (NULL);
 	}
 }
 
