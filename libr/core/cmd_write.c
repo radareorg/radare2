@@ -20,7 +20,7 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	return !len;
 }
 
-static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *key, bool to_encrypt) {
+static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *key, int direction) {
 	//TODO: generalise no_key_mode for all non key encoding/decoding.
 	int keylen = key ? strlen (key): 0;
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo);
@@ -36,9 +36,9 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 				} else {
 					keylen = len;
 				}
-				if (r_crypto_set_key (cry, binkey, keylen, 0, 0)) {
-					r_crypto_update (cry, (const ut8*)core->block, core->blocksize, to_encrypt);
-					r_crypto_final (cry, NULL, 0, to_encrypt);
+				if (r_crypto_set_key (cry, binkey, keylen, 0, direction)) {
+					r_crypto_update (cry, (const ut8*)core->block, core->blocksize);
+					r_crypto_final (cry, NULL, 0);
 
 					int result_size = 0;
 					ut8 *result = r_crypto_get_output (cry, &result_size);
@@ -56,11 +56,11 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 				eprintf ("Cannot allocate %d bytes\n", keylen);
 			}
 		} else {
-			eprintf ("Unknown %s algorithm '%s'\n", ((to_encrypt) ? "encryption" : "decryption") ,algo);
+			eprintf ("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption") ,algo);
 		}
 		r_crypto_free (cry);
 	} else {
-		eprintf ("%s key not defined. Use -S [key]\n", ((to_encrypt) ? "Encryption" : "Decryption"));
+		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
 	}
 	return 1;
 }
@@ -157,7 +157,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 	case 'E': // encrypt
 	case 'D': // decrypt
 		{
-			bool to_encrypt = (input[1] == 'E');
+			int direction = (input[1] == 'E') ? 0 : 1;
 			const char *algo = NULL;
 			const char *key = NULL;
 			char *space, *args = strdup (r_str_chop_ro (input+2));
@@ -168,10 +168,9 @@ static void cmd_write_op (RCore *core, const char *input) {
 			}
 			algo = args;
 			if (algo && *algo) {
-				encrypt_or_decrypt_block (core, algo, key, to_encrypt);
+				encrypt_or_decrypt_block (core, algo, key, direction);
 			} else {
-				if (to_encrypt) eprintf ("Usage: woE [algo] [key]\n");
-				else eprintf ("Usage: woD [algo] [key]\n");
+				eprintf ("Usage: wo%c [algo] [key]\n", ((!direction)?'E':'D'));
 				eprintf ("TODO: list currently supported crypto algorithms\n");
 				eprintf ("  rc2, rc4, xor, blowfish, aes, rot, ror, rol\n");
 			}

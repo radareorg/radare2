@@ -5,6 +5,7 @@
 #include "crypto_aes_algo.h"
 
 static struct aes_state st;
+static int flag = 0;
 
 static int aes_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
@@ -14,6 +15,7 @@ static int aes_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int 
 	st.rounds = 6 + (int)(keylen / 4);
 	st.columns = (int)(keylen / 4);
 	memcpy(st.key, key, keylen);
+	flag = direction;
 
 	// printf("*** State:\n
 	//         Key: %s\n
@@ -34,7 +36,7 @@ static bool aes_use (const char *algo) {
 
 #define BLOCK_SIZE 16
 
-static int update (RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
+static int update (RCrypto *cry, const ut8 *buf, int len) {
 	// Pad to the block size, do not append dummy block
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
@@ -62,13 +64,13 @@ static int update (RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
 	//         columns: %d\n
 	//         rounds: %d\n", st.key, st.key_size, st.columns, st.rounds);
 	int i;
-	if (to_encrypt) {
+	if (flag == 0) {
 		for (i = 0; i < blocks; i++) {
 			// printf("Block: %d\n", i);
 			aes_encrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 			// printf("Block finished: %d\n", i);
 		}
-	} else {
+	} else if (flag == 1) {
 		for (i = 0; i < blocks; i++) {
 			aes_decrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 		}
@@ -82,8 +84,8 @@ static int update (RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
 	return 0;
 }
 
-static int final (RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
-	return update (cry, buf, len, to_encrypt);
+static int final (RCrypto *cry, const ut8 *buf, int len) {
+	return update (cry, buf, len);
 }
 
 RCryptoPlugin r_crypto_plugin_aes = { 

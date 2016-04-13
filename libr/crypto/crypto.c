@@ -98,14 +98,14 @@ R_API int r_crypto_set_iv(RCrypto *cry, const ut8 *iv) {
 }
 
 // return the number of bytes written in the output buffer
-R_API int r_crypto_update(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
+R_API int r_crypto_update(RCrypto *cry, const ut8 *buf, int len) {
 	return (cry && cry->h && cry->h->update)?
-		cry->h->update (cry, buf, len, to_encrypt): 0;
+		cry->h->update (cry, buf, len): 0;
 }
 
-R_API int r_crypto_final(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
+R_API int r_crypto_final(RCrypto *cry, const ut8 *buf, int len) {
 	return (cry && cry->h && cry->h->final)?
-		cry->h->final (cry, buf, len, to_encrypt): 0;
+		cry->h->final (cry, buf, len): 0;
 }
 
 // TODO: internal api?? used from plugins? TODO: use r_buf here

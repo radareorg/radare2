@@ -288,17 +288,18 @@ int is_power_of_two(const ut64 x) {
 	return x && !(x & (x - 1));
 }
 
-int encrypt_or_decrypt(const char *algo, bool to_encrypt, const char *hashstr, int hashstr_len) {
+//direction: 0 => encrypt, 1 => decrypt
+int encrypt_or_decrypt(const char *algo, int direction, const char *hashstr, int hashstr_len) {
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo); //TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
 		if (r_crypto_use (cry, algo)) {
-			if (r_crypto_set_key (cry, s.buf, s.len, 0, 0)) {
+			if (r_crypto_set_key (cry, s.buf, s.len, 0, direction)) {
 				const char *buf = hashstr;
 				int buflen = hashstr_len;
 
-				r_crypto_update (cry, (const ut8*)buf, buflen, to_encrypt);
-				r_crypto_final (cry, NULL, 0, to_encrypt);
+				r_crypto_update (cry, (const ut8*)buf, buflen);
+				r_crypto_final (cry, NULL, 0);
 
 				int result_size = 0;
 				ut8 *result = r_crypto_get_output (cry, &result_size);
@@ -311,21 +312,21 @@ int encrypt_or_decrypt(const char *algo, bool to_encrypt, const char *hashstr, i
 			}
 			return 0;
 		} else {
-			eprintf ("Unknown %s algorithm '%s'\n", ((to_encrypt) ? "encryption" : "decryption") ,algo);
+			eprintf ("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption") ,algo);
 		}
 		r_crypto_free (cry);
 	} else {
-		eprintf ("%s key not defined. Use -S [key]\n", ((to_encrypt) ? "Encryption" : "Decryption"));
+		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
 	}
 	return 1;
 }
 
-int encrypt_or_decrypt_file (const char *algo, bool to_encrypt, char *filename) {
+int encrypt_or_decrypt_file (const char *algo, int direction, char *filename) {
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo); //TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
 		if (r_crypto_use (cry, algo)) {
-			if (r_crypto_set_key (cry, s.buf, s.len, 0, 0)) {
+			if (r_crypto_set_key (cry, s.buf, s.len, 0, direction)) {
 				int file_size;
 				ut8 *buf = (ut8*)r_file_slurp (filename, &file_size);
 				if (!buf) {
@@ -333,8 +334,8 @@ int encrypt_or_decrypt_file (const char *algo, bool to_encrypt, char *filename) 
 					return -1;
 				}
 
-				r_crypto_update (cry, buf, file_size, to_encrypt);
-				r_crypto_final (cry, NULL, 0, to_encrypt);
+				r_crypto_update (cry, buf, file_size);
+				r_crypto_final (cry, NULL, 0);
 
 				int result_size = 0;
 				ut8 *result = r_crypto_get_output (cry, &result_size);
@@ -348,11 +349,11 @@ int encrypt_or_decrypt_file (const char *algo, bool to_encrypt, char *filename) 
 			}
 			return 0;
 		} else {
-			eprintf ("Unknown %s algorithm '%s'\n", ((to_encrypt) ? "encryption" : "decryption") ,algo);
+			eprintf ("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption") ,algo);
 		}
 		r_crypto_free (cry);
 	} else {
-		eprintf ("%s key not defined. Use -S [key]\n", ((to_encrypt) ? "Encryption" : "Decryption"));
+		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
 	}
 	return 1;
 }
@@ -507,9 +508,9 @@ int main(int argc, char **argv) {
 			hashstr_len = r_str_unescape (hashstr);
 		}
 		if (encrypt) {
-			return encrypt_or_decrypt (encrypt, true, hashstr, hashstr_len);
+			return encrypt_or_decrypt (encrypt, 0, hashstr, hashstr_len);
 		} else if (decrypt) {
-			return encrypt_or_decrypt (decrypt, false, hashstr, hashstr_len);
+			return encrypt_or_decrypt (decrypt, 1, hashstr, hashstr_len);
 		} else {
 			char *str = (char *)hashstr;
 			int strsz = hashstr_len;
@@ -559,11 +560,11 @@ int main(int argc, char **argv) {
 	io = r_io_new ();
 	for (ret = 0, i = optind; i < argc; i++) {
 		if (encrypt) {//for encrytion when files are provided 
-			int rt = encrypt_or_decrypt_file (encrypt, true, argv[i]);
+			int rt = encrypt_or_decrypt_file (encrypt, 0, argv[i]);
 			if (rt == -1) continue;
 			else return rt;
 		} else if (decrypt) {
-			int rt = encrypt_or_decrypt_file (decrypt, false, argv[i]);
+			int rt = encrypt_or_decrypt_file (decrypt, 1, argv[i]);
 			if (rt == -1) continue;
 			else return rt;
 		} else {

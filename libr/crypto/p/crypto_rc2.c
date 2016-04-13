@@ -193,8 +193,10 @@ static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, in
 ///////////////////////////////////////////////////////////
 
 static struct rc2_state state;
+static int flag = 0;
 
 static int rc2_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+	flag = direction;
 	state.key_size = 1024;
 	return rc2_expandKey(&state, key, keylen);
 }
@@ -207,12 +209,12 @@ static bool rc2_use(const char *algo) {
 	return !strcmp (algo, "rc2");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
+static int update(RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) return false;
-	if (to_encrypt) {
+	if (flag == 0) {
 		rc2_crypt (&state, buf, obuf, len);
-	} else {
+	} else if (flag == 1) {
 		rc2_dcrypt (&state, buf, obuf, len);
 	}
 	r_crypto_append(cry, obuf, len);
@@ -220,8 +222,8 @@ static int update(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
 	return 0;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
-	return update (cry, buf, len, to_encrypt);
+static int final(RCrypto *cry, const ut8 *buf, int len) {
+	return update (cry, buf, len);
 }
 
 RCryptoPlugin r_crypto_plugin_rc2 = {
