@@ -118,16 +118,16 @@ static int decode_emulation(ut16 instr, ut16 op1, struct msp430_cmd *cmd)
 	} else if (opcode == MSP430_MOV && ad == 0 && dst == MSP430_PC) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "br");
 		remove_second_operand(cmd);
-	} else if (opcode == MSP430_BIC && as == 2 && src == MSP430_SR && dst == MSP430_SR) {
+	} else if (opcode == MSP430_BIC && as == 2 && src == MSP430_SR && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "clrn");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIC && as == 2 && src == MSP430_R3 && dst == MSP430_SR) {
+	} else if (opcode == MSP430_BIC && as == 2 && src == MSP430_R3 && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "clrz");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIC && as == 3 && src == MSP430_SR && dst == MSP430_SR) {
+	} else if (opcode == MSP430_BIC && as == 3 && src == MSP430_SR && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "dint");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIS && as == 3 && src == MSP430_SR && dst == MSP430_SR) {
+	} else if (opcode == MSP430_BIS && as == 3 && src == MSP430_SR && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "eint");
 		cmd->operands[0] = '\0';
 	} else if (opcode == MSP430_DADD && as == 0 && src == MSP430_R3) {
@@ -157,13 +157,13 @@ static int decode_emulation(ut16 instr, ut16 op1, struct msp430_cmd *cmd)
 	} else if (opcode == MSP430_SUBC && as == 0 && src == MSP430_R3) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "sbc.b" : "sbc");
 		remove_first_operand(cmd);
-	} else if (opcode == MSP430_BIS && as == 1 && src == MSP430_R3) {
+	} else if (opcode == MSP430_BIS && as == 1 && src == MSP430_R3 && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "setc");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIS && as == 2 && src == MSP430_SR) {
+	} else if (opcode == MSP430_BIS && as == 2 && src == MSP430_SR && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "setn");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIS && as == 2 && src == MSP430_R3) {
+	} else if (opcode == MSP430_BIS && as == 2 && src == MSP430_R3 && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "setz");
 		cmd->operands[0] = '\0';
 	} else if (opcode == MSP430_CMP && as == 0 && src == MSP430_R3) {

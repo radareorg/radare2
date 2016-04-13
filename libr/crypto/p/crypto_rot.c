@@ -13,12 +13,12 @@ int mod(int a, int b) {
 }
 
 static bool rot_init(ut8 *rotkey, const ut8 *key, int keylen) {
-	if (!rotkey || !key) {
-		return false;
+	if (rotkey && key && keylen > 0) {
+		int i = atoi ((const char *)key);
+		*rotkey = (ut8)mod (i, 26);
+		return true;
 	}   
-	int i = atoi(key);
-	*rotkey = (ut8)mod(i, 26);
-	return true;
+	return false;
 }
 
 static void rot_crypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
@@ -32,7 +32,22 @@ static void rot_crypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 		outbuf[i] -= (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
 		outbuf[i] = mod (outbuf[i], 26);
 		outbuf[i] += (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
-    }   
+	}
+}
+
+static void rot_decrypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
+	int i;
+	for (i = 0; i < buflen; i++) {
+		outbuf[i] = inbuf[i];
+		if ((inbuf[i] < 'a' || inbuf[i] > 'z') && (inbuf[i] < 'A' || inbuf[i] > 'Z')) {
+			continue;
+		}
+		outbuf[i] += 26;	//adding so that subtracting does not make it negative
+		outbuf[i] -= key;
+		outbuf[i] -= (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
+		outbuf[i] = mod (outbuf[i], 26);
+		outbuf[i] += (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
+	}
 }
 
 static ut8 rot_key;
@@ -50,17 +65,21 @@ static bool rot_use(const char *algo) {
 	return !strcmp (algo, "rot");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len) {
+static int update(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) return false;
-	rot_crypt (rot_key, buf, obuf, len);
+	if (to_encrypt) {
+		rot_crypt (rot_key, buf, obuf, len);
+	} else {
+		rot_decrypt (rot_key, buf, obuf, len);
+	}
 	r_crypto_append (cry, obuf, len);
 	free (obuf);
 	return 0;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+static int final(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
+	return update (cry, buf, len, to_encrypt);
 }
 
 RCryptoPlugin r_crypto_plugin_rot = {

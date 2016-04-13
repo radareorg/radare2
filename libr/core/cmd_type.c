@@ -26,6 +26,29 @@ static void show_help(RCore *core) {
 		NULL };
 	r_core_cmd_help (core, help_message);
 }
+
+static void save_parsed_type(RCore *core, char *parsed) {
+	char *type, *name;
+	if (!core || !core->anal || !parsed) {
+		goto beach;
+	}
+	// First, if this exists, let's remove it.
+	type = strdup (parsed);
+	if (!type) {
+		goto beach;
+	}
+	name = strtok (type, "=");
+	if (!name || strchr (name, '\n') != NULL
+			|| strchr (name, ';') != NULL) {
+		goto beach;
+	}
+	r_core_cmdf (core, "\"t- %s\"", name);
+	// Now add the type to sdb.
+	sdb_query_lines (core->anal->sdb_types, parsed);
+beach:
+	free (type);
+}
+
 //TODO
 //look at the next couple of functions
 //can be optimized into one right ... you see it you do it :P
@@ -261,7 +284,7 @@ static int cmd_type(void *data, const char *input) {
 						out = r_parse_c_string (tmp);
 						if (out) {
 							//		r_cons_strcat (out);
-							sdb_query_lines (core->anal->sdb_types, out);
+							save_parsed_type (core, out);
 							free (out);
 						}
 						free (tmp);
@@ -270,7 +293,7 @@ static int cmd_type(void *data, const char *input) {
 					char *out = r_parse_c_file (filename);
 					if (out) {
 						//r_cons_strcat (out);
-						sdb_query_lines (core->anal->sdb_types, out);
+						save_parsed_type (core, out);
 						free (out);
 					}
 					//r_anal_type_loadfile (core->anal, filename);
@@ -301,7 +324,7 @@ static int cmd_type(void *data, const char *input) {
 			char *out = r_parse_c_string (tmp);
 			if (out) {
 				//r_cons_strcat (out);
-				sdb_query_lines (core->anal->sdb_types, out);
+				save_parsed_type (core, out);
 				free (out);
 			}
 		} else {

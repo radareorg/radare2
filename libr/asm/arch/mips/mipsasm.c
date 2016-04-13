@@ -106,7 +106,6 @@ static int mips_j (ut8 *b, int op, int addr) {
 
 static int getreg (const char *p) {
 	int n;
-	char **tmp;
 
 	if (!p || !*p) {
 		eprintf ("Missing argument\n");

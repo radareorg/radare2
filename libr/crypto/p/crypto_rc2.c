@@ -156,8 +156,8 @@ static void rc2_dcrypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, i
 		data_block[idx] = inbuf[i];
 		idx += 1;
 		if (idx % BLOCK_SIZE == 0) {
-			rc2_dcrypt8(state, (const ut8 *) data_block, (ut8 *) dcrypted_block);
-			strncpy(ptr, dcrypted_block, BLOCK_SIZE);
+			rc2_dcrypt8 (state, (const ut8 *) data_block, (ut8 *) dcrypted_block);
+			strncpy (ptr, dcrypted_block, BLOCK_SIZE);
 			ptr += BLOCK_SIZE;
 			idx = 0;
 		}
@@ -208,17 +208,21 @@ static bool rc2_use(const char *algo) {
 	return !strcmp (algo, "rc2");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len) {
+static int update(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) return false;
-	rc2_crypt(&state, buf, obuf, len);
+	if (to_encrypt) {
+		rc2_crypt (&state, buf, obuf, len);
+	} else {
+		rc2_dcrypt (&state, buf, obuf, len);
+	}
 	r_crypto_append(cry, obuf, len);
 	free (obuf);
 	return 0;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+static int final(RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
+	return update (cry, buf, len, to_encrypt);
 }
 
 RCryptoPlugin r_crypto_plugin_rc2 = {

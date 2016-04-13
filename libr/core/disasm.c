@@ -2399,10 +2399,13 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	if (!esil || !ds->show_comments || !ds->show_emu) {
 		goto beach;
 	}
+	{
+		const RAnalMetaItem *mi = r_meta_find (core->anal, ds->at, R_META_TYPE_ANY, 0);
+		if (mi) { goto beach; }
+	}
 	ioc = r_config_get_i (core->config, "io.cache");
 	r_config_set (core->config, "io.cache", "true");
 	handle_comment_align (core, ds);
-
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pc, ds->at + ds->analop.size);

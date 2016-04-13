@@ -15,11 +15,11 @@ static int aes_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int 
 	st.columns = (int)(keylen / 4);
 	memcpy(st.key, key, keylen);
 
-	// printf("*** State:\n \
-	//         Key: %s\n \
-	//         Received keylen: %d\t\tkey_size: %d\n \
-	//         columns: %d\n \
-	//         rounds: %d\n \
+	// printf("*** State:\n
+	//         Key: %s\n
+	//         Received keylen: %d\t\tkey_size: %d\n
+	//         columns: %d\n
+	//         rounds: %d\n
 	//         Finished!\n", st.key, keylen, st.key_size, st.columns, st.rounds);
 	return true;
 }
@@ -34,7 +34,7 @@ static bool aes_use (const char *algo) {
 
 #define BLOCK_SIZE 16
 
-static int update (RCrypto *cry, const ut8 *buf, int len) {
+static int update (RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
 	// Pad to the block size, do not append dummy block
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
@@ -56,16 +56,22 @@ static int update (RCrypto *cry, const ut8 *buf, int len) {
 		ibuf[len] = 0b1000;
 	}
 
-	// printf("*** State:\n \
-	//         Key: %s\n \
-	//         key_size: %d\n \
-	//         columns: %d\n \
+	// printf("*** State:\n
+	//         Key: %s\n
+	//         key_size: %d\n
+	//         columns: %d\n
 	//         rounds: %d\n", st.key, st.key_size, st.columns, st.rounds);
 	int i;
-	for (i = 0; i < blocks; i++) {
-		// printf("Block: %d\n", i);
-		aes_encrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
-		// printf("Block finished: %d\n", i);
+	if (to_encrypt) {
+		for (i = 0; i < blocks; i++) {
+			// printf("Block: %d\n", i);
+			aes_encrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
+			// printf("Block finished: %d\n", i);
+		}
+	} else {
+		for (i = 0; i < blocks; i++) {
+			aes_decrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
+		}
 	}
 
 	// printf("%128s\n", obuf);
@@ -76,8 +82,8 @@ static int update (RCrypto *cry, const ut8 *buf, int len) {
 	return 0;
 }
 
-static int final (RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+static int final (RCrypto *cry, const ut8 *buf, int len, bool to_encrypt) {
+	return update (cry, buf, len, to_encrypt);
 }
 
 RCryptoPlugin r_crypto_plugin_aes = { 

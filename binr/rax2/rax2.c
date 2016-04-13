@@ -390,9 +390,9 @@ static int rax (char *str, int len, int last) {
 
 static int use_stdin () {
 	char * buf = calloc (1, STDIN_BUFFER_SIZE + 1);
+	int l; //, sflag = (flags & 5);
 	if (!buf)
 		return 0;
-	int l, sflag = (flags & 5);
 	if (!(flags & 16384)) {
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
 			//make sure we don't read beyond boundaries
