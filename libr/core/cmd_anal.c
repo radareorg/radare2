@@ -3702,7 +3702,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define geti(x) r_config_get_i(core->config, x);
 	RIOSection *s = r_io_section_vget (core->io, core->offset);
 	ut64 o_align = geti ("search.align");
-	ut64 from, to;
+	ut64 from, to, ptr;
 	if (s) {
 		from = s->vaddr;
 		to = s->vaddr + s->size;
@@ -3715,11 +3715,15 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 
 	char *arg = strchr (input, ' ');
 	if (arg) {
-		ut64 ptr = r_num_math (core->num, arg + 1);
+		ptr = r_num_math (core->num, arg + 1);
 		s = r_io_section_vget (core->io, ptr);
 	} else {
 		from = r_num_math (core->num, "${bin.baddr}");
 		to = r_num_math (core->num, "${bin.baddr}+$s");
+	}
+	if (!s) {
+		eprintf ("aav: Cannot find section at 0x%"PFMT64d"\n", ptr);
+		return; // WTF!
 	}
 	ut64 vmin = s->vaddr;
 	ut64 vmax = s->vaddr + s->size;
