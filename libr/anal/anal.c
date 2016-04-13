@@ -75,7 +75,6 @@ static int meta_count_for(void *user, int idx) {
 
 R_API RAnal *r_anal_new() {
 	int i;
-	RAnalPlugin *static_plugin;
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) return NULL;
 	anal->os = strdup (R_SYS_OS);
