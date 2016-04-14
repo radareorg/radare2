@@ -37,7 +37,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 		if (p) {
 			r_reg_set_profile_string (dbg->reg, p);
 			if (dbg->anal) {
-				r_reg_free (dbg->anal->reg);
+				//r_reg_free (dbg->anal->reg);
 				dbg->anal->reg = dbg->reg;
 			}
 			if (dbg->h->init)
