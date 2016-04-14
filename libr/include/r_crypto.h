@@ -37,7 +37,7 @@ typedef struct r_crypto_t {
 typedef struct r_crypto_plugin_t {
 	const char *name;
 	int (*get_key_size)(RCrypto *cry);
-	int (*set_iv)(RCrypto *cry, const ut8 *iv);
+	int (*set_iv)(RCrypto *cry, const ut8 *iv, int ivlen);
 	int (*set_key)(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
 	int (*update)(RCrypto *cry, const ut8 *buf, int len);
 	int (*final)(RCrypto *cry, const ut8 *buf, int len);
@@ -53,7 +53,7 @@ R_API RCrypto *r_crypto_new(void);
 R_API RCrypto *r_crypto_free(RCrypto *cry);
 R_API bool r_crypto_use(RCrypto *cry, const char *algo);
 R_API int r_crypto_set_key(RCrypto *cry, const ut8* key, int keylen, int mode, int direction);
-R_API int r_crypto_set_iv(RCrypto *cry, const ut8 *iv);
+R_API int r_crypto_set_iv(RCrypto *cry, const ut8 *iv, int ivlen);
 R_API int r_crypto_update(RCrypto *cry, const ut8 *buf, int len);
 R_API int r_crypto_final(RCrypto *cry, const ut8 *buf, int len);
 R_API int r_crypto_append(RCrypto *cry, const ut8 *buf, int len);
@@ -71,6 +71,7 @@ extern RCryptoPlugin r_crypto_plugin_rol;
 extern RCryptoPlugin r_crypto_plugin_ror;
 extern RCryptoPlugin r_crypto_plugin_base64;
 extern RCryptoPlugin r_crypto_plugin_base91;
+extern RCryptoPlugin r_crypto_plugin_aes_cbc;
 
 #ifdef __cplusplus
 }
