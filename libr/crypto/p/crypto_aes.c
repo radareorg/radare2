@@ -40,7 +40,7 @@ static int update (RCrypto *cry, const ut8 *buf, int len) {
 	// Pad to the block size, do not append dummy block
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
-	const int blocks = size / st.key_size;
+	const int blocks = size / BLOCK_SIZE;
 
 	ut8 *const obuf = calloc (1, size);
 	if (!obuf) return false;

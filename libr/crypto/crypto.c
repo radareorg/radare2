@@ -92,9 +92,9 @@ R_API int r_crypto_get_key_size(RCrypto *cry) {
 		cry->h->get_key_size (cry): 0;
 }
 
-R_API int r_crypto_set_iv(RCrypto *cry, const ut8 *iv) {
+R_API int r_crypto_set_iv(RCrypto *cry, const ut8 *iv, int ivlen) {
 	return (cry && cry->h && cry->h->set_iv)?
-		cry->h->set_iv(cry, iv): 0;
+		cry->h->set_iv(cry, iv, ivlen): 0;
 }
 
 // return the number of bytes written in the output buffer
