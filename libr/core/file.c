@@ -138,6 +138,11 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		r_core_cmd0 (core, ".dm*");
 		r_core_cmd0 (core, ".dr*");
 		r_core_cmd0 (core, "sr PC");
+	} else {
+		ut64 gp = r_num_math (core->num, "loc._gp");
+		if (gp && gp != UT64_MAX) {
+			r_config_set_i (core->config, "anal.gp", gp);
+		}
 	}
 	// update anal io bind
 	r_io_bind (core->io, &(core->anal->iob));
@@ -495,6 +500,13 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ;"
 			" wx `#adler32 $s-12 @12` @8)\"\n");
+	}
+	if (!r_config_get_i (r->config, "cfg.debug")) {
+		/* load GP for mips */
+		ut64 gp = r_num_math (r->num, "loc._gp");
+		if (gp && gp != UT64_MAX) {
+			r_config_set_i (r->config, "anal.gp", gp);
+		}
 	}
 	if (r_config_get_i (r->config, "file.analyze")) {
 		r_core_cmd0 (r, "aa");

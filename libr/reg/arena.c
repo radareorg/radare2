@@ -156,8 +156,10 @@ R_API RRegArena *r_reg_arena_new(int size) {
 }
 
 R_API void r_reg_arena_free(RRegArena *ra) {
-	free (ra->bytes);
-	free (ra);
+	if (ra) {
+		free (ra->bytes);
+		free (ra);
+	}
 }
 
 R_API void r_reg_arena_swap(RReg *reg, int copy) {

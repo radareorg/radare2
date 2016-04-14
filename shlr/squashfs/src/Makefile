@@ -95,7 +95,7 @@ XATTR_DEFAULT = 1
 
 INCLUDEDIR = -I.
 INSTALL_DIR = /usr/local/bin
-CFLAGS+=-I/usr/local/include
+CFLAGS+=-I/usr/local/include -g
 
 MKSQUASHFS_OBJS = mksquashfs.o read_fs.o sort.o swap.o pseudo.o compressor.o \
 	action.o

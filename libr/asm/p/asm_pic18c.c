@@ -225,15 +225,19 @@ static int pic_disassem(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 	};
 	return op->size;
 }
+
 RAsmPlugin r_asm_plugin_pic18c = {
 	.disassemble = pic_disassem,
 	.name = "pic18c",
 	.arch = "pic18c",
 	.license = "LGPL3",
 	.bits = 8,
-	.desc = "pic18c disassembler"};
+	.desc = "pic18c disassembler"
+};
+
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_pic18c };
+	.data = &r_asm_plugin_pic18c
+};
 #endif

@@ -139,11 +139,7 @@ R_API RAsm *r_asm_new() {
 		return NULL;
 	}
 	for (i=0; asm_static_plugins[i]; i++) {
-		static_plugin = R_NEW (RAsmPlugin);
-		if (!static_plugin) continue;
-		// memleak here
-		memcpy (static_plugin, asm_static_plugins[i], sizeof (RAsmPlugin));
-		r_asm_add (a, static_plugin);
+		r_asm_add (a, asm_static_plugins[i]);
 	}
 	return a;
 }
@@ -189,10 +185,8 @@ R_API RAsm *r_asm_free(RAsm *a) {
 			a->plugins = NULL;
 		}
 		free (a->cpu);
-		// TODO: any memory leak here?
 		sdb_free (a->pair);
 		a->pair = NULL;
-		// XXX: segfault, plugins cannot be freed
 		free (a);
 	}
 	return NULL;

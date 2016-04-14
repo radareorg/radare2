@@ -345,12 +345,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 4; /* :D */
+}
+
 RAnalPlugin r_anal_plugin_ppc_cs = {
 	.name = "ppc",
 	.desc = "Capstone PowerPC analysis",
 	.license = "BSD",
 	.arch = "ppc",
 	.bits = 32|64,
+	.archinfo = archinfo,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,
 };

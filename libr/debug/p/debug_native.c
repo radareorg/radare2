@@ -771,7 +771,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		return NULL;
 	}
 
-	list = r_list_new();
+	list = r_list_new ();
 	if (!list) {
 		fclose (fd);
 		return NULL;
@@ -779,7 +779,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	list->free = (RListFree)_map_free;
 	while (!feof (fd)) {
 		line[0] = '\0';
-		fgets (line, sizeof(line) - 1, fd);
+		fgets (line, sizeof (line) - 1, fd);
 		if (line[0] == '\0') break;
 		path[0] = '\0';
 		line[strlen (line) - 1] = '\0';
@@ -789,7 +789,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 			&region[2], &region2[2], &ign, &ign,
 			unkstr, perms, &ign, &ign);
 		pos_c = strchr (line, '/');
-		if (pos_c) strncpy (path, pos_c, sizeof(path) - 1);
+		if (pos_c) strncpy (path, pos_c, sizeof (path) - 1);
 		else path[0] = '\0';
 #else
 		char null[64]; // XXX: this can overflow
@@ -801,12 +801,12 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 
 		pos_c[-1] = (char)'0'; // xxx. this is wrong
 		pos_c[ 0] = (char)'x';
-		strncpy (region2, pos_c - 1, sizeof(region2) - 1);
+		strncpy (region2, pos_c - 1, sizeof (region2) - 1);
 #endif // __KFBSD__
 		region[0] = region2[0] = '0';
 		region[1] = region2[1] = 'x';
 
-		if (!*path) snprintf (path, sizeof(path), "unk%d", unk++);
+		if (!*path) snprintf (path, sizeof (path), "unk%d", unk++);
 		perm = 0;
 		for (i = 0; perms[i] && i < 4; i++)
 			switch (perms[i]) {
@@ -815,10 +815,8 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 			case 'x': perm |= R_IO_EXEC; break;
 			}
 
-		map = r_debug_map_new (path,
-					r_num_get (NULL, region),
-					r_num_get (NULL, region2),
-					perm, 0);
+		map = r_debug_map_new (path, r_num_get (NULL, region),
+				r_num_get (NULL, region2), perm, 0);
 		if (!map) break;
 		map->file = strdup (path);
 		r_list_append (list, map);

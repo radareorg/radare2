@@ -138,11 +138,16 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 4; /* :D */
+}
+
 struct r_anal_plugin_t r_anal_plugin_ppc_gnu = {
 	.name = "ppc.gnu",
 	.desc = "PowerPC analysis plugin",
 	.license = "LGPL3",
 	.arch = "ppc",
+	.archinfo = archinfo,
 	.bits = 32|64,
 	.op = &ppc_op,
 	.set_reg_profile = &set_reg_profile,

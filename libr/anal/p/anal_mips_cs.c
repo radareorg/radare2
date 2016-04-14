@@ -8,6 +8,7 @@
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 
 #define OPERAND(x) insn->detail->mips.operands[x]
+#define REGID(x) insn->detail->mips.operands[x].reg
 #define REG(x) cs_reg_name (*handle, insn->detail->mips.operands[x].reg)
 #define IMM(x) insn->detail->mips.operands[x].imm
 #define MEMBASE(x) cs_reg_name(*handle, insn->detail->mips.operands[x].mem.base)
@@ -632,6 +633,8 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;
 	case MIPS_INS_SYSCALL:
+		op->type = R_ANAL_OP_TYPE_SWI;
+		break;
 	case MIPS_INS_BREAK:
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		break;
@@ -690,6 +693,10 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		SET_VAL (op, 2);
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_ADD;
+		if (REGID(0) == MIPS_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -IMM(2);
+		}
 		break;
 	case MIPS_INS_SUB:
 	case MIPS_INS_SUBV:
@@ -727,6 +734,9 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		SET_VAL (op,2);
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_AND;
+		if (REGID(0) == MIPS_REG_SP) {
+			op->stackop = R_ANAL_STACK_ALIGN;
+		}
 		break;
 	case MIPS_INS_NOT:
 		op->type = R_ANAL_OP_TYPE_NOT;

@@ -2,6 +2,7 @@
 #define R2_BP_H
 
 #include <r_types.h>
+#include <r_lib.h>
 #include <r_io.h>
 #include <r_list.h>
 

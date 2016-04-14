@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015 - pancake */
+/* radare2 - LGPL - Copyright 2015-2016 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -115,15 +115,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case M68K_INS_BGT:
 	case M68K_INS_BLE:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = IMM(0) - 0x100; // XXX wtf capstone bug
+		op->jump = ((addr >>32)<<32) | (UT32_MAX & IMM(0));
 		op->fail = addr + 2;
 		break;
 	case M68K_INS_BRA:
 		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = ((addr >>32)<<32) | (UT32_MAX & IMM(0));
 		break;
 	case M68K_INS_BSR:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = IMM(0) - 0x100; // XXX wtf capstone bug
+		op->jump = IMM(0);
 		op->fail = addr + 2;
 		break;
 	case M68K_INS_BCHG:
@@ -395,6 +396,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case M68K_INS_JSR:
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = UT32_MAX & (ut64)IMM(0);
+		op->fail = addr + op->size;
 		break;
 	case M68K_INS_LINK:
 	case M68K_INS_LPSTOP:

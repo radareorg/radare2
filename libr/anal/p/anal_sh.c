@@ -804,11 +804,16 @@ static int sh_set_reg_profile(RAnal* anal){
 	return r_reg_set_profile_string(anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 2; /* :) */
+}
+
 struct r_anal_plugin_t r_anal_plugin_sh = {
 	.name = "sh",
 	.desc = "SH-4 code analysis plugin",
 	.license = "LGPL3",
 	.arch = "sh",
+	.archinfo = archinfo,
 	.bits = 32,
 	.op = &sh_op,
 	.set_reg_profile = &sh_set_reg_profile,

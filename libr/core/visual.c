@@ -589,6 +589,9 @@ static ut64 prevop_addr (RCore *core, ut64 addr) {
 	int maxop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 
 	if (minop == maxop) {
+		if (minop == -1) {
+			return addr - 4;
+		}
 		return addr - minop;
 	}
 

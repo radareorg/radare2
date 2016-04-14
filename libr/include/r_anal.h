@@ -528,6 +528,7 @@ enum {
 	R_ANAL_STACK_INC,
 	R_ANAL_STACK_GET,
 	R_ANAL_STACK_SET,
+	R_ANAL_STACK_ALIGN,
 };
 
 enum {
@@ -590,6 +591,7 @@ typedef struct r_anal_options_t {
 	int noncode;
 	int nopskip; // skip nops at the beginning of functions
 	int jmptbl; // analyze jump tables
+	bool pushret; // analyze push+ret as jmp
 } RAnalOptions;
 
 typedef struct r_anal_t {
