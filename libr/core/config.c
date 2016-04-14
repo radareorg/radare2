@@ -1302,6 +1302,13 @@ static int cb_anal_searchstringrefs(void *user, void *data) {
 	return true;
 }
 
+static int cb_anal_pushret(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.pushret = node->i_value;
+	return true;
+}
+
 static int cb_anal_followbrokenfcnsrefs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -1417,6 +1424,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.searchstringrefs", "false", &cb_anal_searchstringrefs, "Search string references in data references");
 	SETCB("anal.bbs_alignment", "0x10", &cb_anal_bbs_alignment, "Possible space between basic blocks");
 	SETCB("anal.bb_max_size", "1024", &cb_anal_bb_max_size, "Maximum basic block size");
+	SETCB("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
 
 	SETPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETCB("esil.debug", "false", &cb_esildebug, "Show ESIL debug info");

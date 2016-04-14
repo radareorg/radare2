@@ -315,6 +315,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	VERBOSE_ANAL eprintf ("Append bb at 0x%08"PFMT64x
 		" (fcn 0x%08"PFMT64x")\n", addr, fcn->addr);
 
+	bool last_is_push = false;
+	ut64 last_push_addr = UT64_MAX;
 	while (idx < len) {
 		if (anal->limit) {
 			if ((addr+idx)<anal->limit->from || (addr+idx+1)>anal->limit->to)
@@ -693,17 +695,31 @@ repeat:
 river:
 			break;
 			/* fallthru */
+		case R_ANAL_OP_TYPE_PUSH:
+			last_is_push = true;
+			last_push_addr = op.val;
+			break;
 		case R_ANAL_OP_TYPE_RET:
-			if (op.cond == 0) {
-				VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n",
-						addr+delay.un_idx-oplen, overlapped,
-						bb->size, fcn->size);
-				FITFCNSZ ();
-				r_anal_op_fini (&op);
-				return R_ANAL_RET_END;
+			if (last_is_push && anal->opt.pushret) {
+				op.type = R_ANAL_OP_TYPE_JMP;
+				op.jump = last_push_addr;
+				bb->jump = op.jump;
+				recurseAt (op.jump);
+				gotoBeachRet();
+			} else {
+				if (op.cond == 0) {
+					VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n",
+							addr+delay.un_idx-oplen, overlapped,
+							bb->size, fcn->size);
+					FITFCNSZ ();
+					r_anal_op_fini (&op);
+					return R_ANAL_RET_END;
+				}
 			}
 			break;
 		}
+		if (op.type != R_ANAL_OP_TYPE_PUSH)
+			last_is_push = false;
 	}
 beach:
 	r_anal_op_fini (&op);
