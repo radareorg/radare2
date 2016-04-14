@@ -248,10 +248,11 @@ static int do_help(int line) {
 	" -B          show per-block hash\n"
 	" -c hash     compare with this hash\n"
 	" -e          swap endian (use little endian)\n"
-	" -E algo     encrypt (rc4 for now). Use -S to set key\n"
-	" -d / -D     encode/decode base64 string (-s) or file to stdout\n"
+	" -E algo     encrypt. Use -S to set key and -I to set IV\n"
+	" -D algo     decrypt. Use -S to set key and -I to set IV\n"
 	" -f from     start hashing at given address\n"
 	" -i num      repeat hash N iterations\n"
+	" -I iv       use give initialization vector (IV) (hexa or s:string)\n"
 	" -S seed     use given seed (hexa or s:string) use ^ to prefix (key for -E)\n"
 	" -k          show hash using the openssh's randomkey algorithm\n"
 	" -q          run in quiet mode (-qq to show only the hash)\n"
@@ -289,7 +290,7 @@ int is_power_of_two(const ut64 x) {
 }
 
 //direction: 0 => encrypt, 1 => decrypt
-int encrypt_or_decrypt(const char *algo, int direction, const char *hashstr, int hashstr_len, const char *iv, int ivlen, int mode) {
+int encrypt_or_decrypt(const char *algo, int direction, const char *hashstr, int hashstr_len, const ut8 *iv, int ivlen, int mode) {
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo); //TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
@@ -299,7 +300,7 @@ int encrypt_or_decrypt(const char *algo, int direction, const char *hashstr, int
 				int buflen = hashstr_len;
 
 				if (iv && !r_crypto_set_iv (cry, iv, ivlen)) {
-					eprintf ("Invalid IV length.\n");
+					eprintf ("Invalid IV.\n");
 					return 0;
 				}
 
@@ -326,7 +327,7 @@ int encrypt_or_decrypt(const char *algo, int direction, const char *hashstr, int
 	return 1;
 }
 
-int encrypt_or_decrypt_file (const char *algo, int direction, char *filename, const char *iv, int ivlen, int mode) {
+int encrypt_or_decrypt_file (const char *algo, int direction, char *filename, const ut8 *iv, int ivlen, int mode) {
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo); //TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
@@ -337,6 +338,11 @@ int encrypt_or_decrypt_file (const char *algo, int direction, char *filename, co
 				if (!buf) {
 					eprintf ("rahash2: Cannot open file\n");
 					return -1;
+				}
+
+				if (iv && !r_crypto_set_iv (cry, iv, ivlen)) {
+					eprintf ("Invalid IV.\n");
+					return 0;
 				}
 
 				r_crypto_update (cry, buf, file_size);
@@ -370,7 +376,7 @@ int main(int argc, char **argv) {
 	const char *decrypt = NULL;
 	const char *encrypt = NULL;
 	char *hashstr = NULL;
-	char *iv = NULL;
+	ut8 *iv = NULL;
 	int ivlen = -1;
 	char *ivseed = NULL;
 	const char *compareStr = NULL;
