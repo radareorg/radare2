@@ -1183,7 +1183,7 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 	case X86_INS_ADC:
 		{
 			const char *dst_reg = cs_reg_name(*handle, INSOP(0).reg);
-                        const char *src_reg = cs_reg_name(*handle, INSOP(1).reg);
+			const char *src_reg = cs_reg_name(*handle, INSOP(1).reg);
 			// dst = dst + src + cf
 			// NOTE: We would like to add the carry first before adding the
 			// source to ensure that the flag computation from $c belongs
