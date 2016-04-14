@@ -12,6 +12,7 @@
 .Op Fl E Ar algo
 .Op Fl s Ar string
 .Op Fl i Ar iterations
+.Op Fl I Ar IV
 .Op Fl S Ar seed
 .Op Fl f Ar from
 .Op Fl x Ar hexstr
@@ -43,6 +44,8 @@ Use little endian to display checksums
 Encrypt instead of hash using the given algorithm ( base64, base91, rc4, aes, xor, blowfish, rot)
 .It Fl i Ar iters
 Apply the hash Iters times to itself+seed
+.It Fl I Ar [^]s:string|hexstr
+Set initialization vector (IV) for the cryptographic functions.
 .It Fl j
 Show output in JSON (see -r)
 .It Fl B
