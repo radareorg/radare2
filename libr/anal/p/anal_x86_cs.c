@@ -1166,7 +1166,7 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 			free (dst);
 		} else {
 			const char *dst_reg = cs_reg_name(*handle, INSOP(0).reg);
-      const char *src_reg = cs_reg_name(*handle, INSOP(1).reg);
+			const char *src_reg = cs_reg_name(*handle, INSOP(1).reg);
 			switch(INSOP(0).size) {
 				case 1:
 					esilprintf (op, "0,zf,=,0,cf,=,0xff,%s,%s,+,>,?{,1,cf,=,},%s,%s,+=,$o,of,=,$s,sf,=,0xff,%s,&,!,?{,1,zf,=,},$p,pf,=", src_reg, dst_reg, src_reg, dst_reg, dst_reg, dst_reg);
