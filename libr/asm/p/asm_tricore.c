@@ -14,10 +14,13 @@
 
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
-static unsigned char bytes[32];
+static ut8 bytes[128];
 
 static int tricore_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-	memcpy (myaddr, bytes, length);
+	int delta = memaddr - Offset;
+	if (delta > 0 && length > delta) {
+		memcpy (myaddr, bytes + delta, length - delta);
+	}
 	return 0;
 }
 
@@ -34,8 +37,8 @@ static void print_address(bfd_vma address, struct disassemble_info *info) {
 	if (buf_global == NULL) {
 		return;
 	}
-	sprintf(tmp, "0x%08"PFMT64x, (ut64)address);
-	strcat(buf_global, tmp);
+	sprintf (tmp, "0x%08" PFMT64x, (ut64) address);
+	strcat (buf_global, tmp);
 }
 
 static int buf_fprintf(void *stream, const char *format, ...) {
