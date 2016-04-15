@@ -47,6 +47,7 @@ static void var_help(RCore *core, char ch) {
 		"afvg", " [idx] [addr]", "define var get reference",
 		"afvs", " [idx] [addr]", "define var set reference",
 		"afx", "[-] [from] [to]", "manipulate function xrefs",
+		"afM", "", "print byte map of functions coverage",
 		NULL };
 	if (ch == 'a' || ch == 'A' || ch == 'v') {
 		r_core_cmd_help (core, help_msg);
@@ -605,6 +606,119 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 	return true;
 }
 
+static void r_core_anal_nofunclist  (RCore *core, const char *input) {
+	int minlen = (int)(input[0]==' ') ? r_num_math (core->num, input + 1): 16;
+	ut64 code_size = r_num_get (core->num, "$SS");
+	ut64 base_addr = r_num_get (core->num, "$S"); 
+	ut64 chunk_size, chunk_offset, i;
+	RListIter *iter, *iter2;                     
+	RAnalFunction *fcn;
+	RAnalBlock *b;
+	char* bitmap;
+	int counter;
+
+	if (minlen < 1) minlen=1;
+	if (code_size < 1) return;
+	bitmap = calloc (1, code_size+64);
+	if (!bitmap) return;
+
+	// for each function
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		// for each basic block in the function
+		r_list_foreach (fcn->bbs, iter2, b) { 
+			// if it is not withing range, continue
+			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size))
+				continue;
+			// otherwise mark each byte in the BB in the bitmap
+			for (counter = 0; counter < b->size; counter++) {
+				bitmap[b->addr+counter-base_addr] = '='; 
+			}
+			// finally, add a special marker to show the beginning of a
+			// function
+			bitmap[fcn->addr-base_addr] = 'F';
+		}
+	}
+
+	// Now we print the list of memory regions that are not assigned to a function
+	chunk_size = 0;
+	chunk_offset = 0;
+	for (i = 0; i < code_size; i++) {
+		if (bitmap[i]){
+			// We only print a region is its size is bigger than 15 bytes
+			if (chunk_size >= minlen){
+				fcn = r_anal_get_fcn_in (core->anal, base_addr+chunk_offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+				if (fcn)
+					r_cons_printf ("0x%08"PFMT64x"  %6d   %s\n", base_addr+chunk_offset, chunk_size, fcn->name);
+				else 
+					r_cons_printf ("0x%08"PFMT64x"  %6d\n", base_addr+chunk_offset, chunk_size);
+			}
+			chunk_size = 0;
+			chunk_offset = i+1;
+			continue;
+		}
+		chunk_size+=1;
+	}
+	if (chunk_size >= 16) {
+		fcn = r_anal_get_fcn_in (core->anal, base_addr+chunk_offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+		if (fcn) {
+			r_cons_printf ("0x%08"PFMT64x"  %6d   %s\n", base_addr+chunk_offset, chunk_size, fcn->name);
+		} else {
+			r_cons_printf ("0x%08"PFMT64x"  %6d\n", base_addr+chunk_offset, chunk_size);
+		}
+	}
+	free(bitmap);
+}
+
+static void r_core_anal_fmap  (RCore *core, const char *input) {
+	int show_color = r_config_get_i (core->config, "scr.color");
+	int cols = r_config_get_i (core->config, "hex.cols") * 4;
+	ut64 code_size = r_num_get (core->num, "$SS");
+	ut64 base_addr = r_num_get (core->num, "$S");
+	RListIter *iter, *iter2;
+	RAnalFunction *fcn;
+	RAnalBlock *b;
+	char* bitmap;
+	int assigned;
+	ut64 i;
+	
+	if (code_size < 1) return;
+	bitmap = calloc (1, code_size+64);
+	if (!bitmap) return;
+
+	// for each function
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		// for each basic block in the function
+		r_list_foreach (fcn->bbs, iter2, b) { 
+			// if it is not within range, continue
+			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size))
+				continue;
+			// otherwise mark each byte in the BB in the bitmap
+			int counter = 1;
+			for (counter = 0; counter < b->size; counter++) {
+				bitmap[b->addr+counter-base_addr] = '='; 
+			}
+			bitmap[fcn->addr-base_addr] = 'F';
+		}
+	}
+	// print the bitmap
+	assigned = 0;
+	for (i = 0; i < code_size; i += 1) {
+		if (!(i % cols)) {
+			r_cons_printf ("\n0x%08"PFMT64x"  ", base_addr+i);
+		}
+		if (bitmap[i]) assigned++;
+		if (show_color) {
+			if (bitmap[i])
+				r_cons_printf ("%s%c\x1b[0m", Color_GREEN, bitmap[i]);
+			else
+				r_cons_printf (".");
+		} else
+			r_cons_printf ("%c", bitmap[i] ? bitmap[i] : '.' );
+	}
+	r_cons_printf ("\n%d / %d (%.2lf%%) bytes assigned to a function\n", assigned, code_size, 100.0*( (float) assigned) / code_size);
+	free(bitmap);
+}
+
 static bool fcnNeedsPrefix(const char *name) {
 	if (!strncmp (name, "entry", 5))
 		return false;
@@ -797,6 +911,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'm': // "afm" - merge two functions
 		r_core_anal_fcn_merge (core, core->offset, r_num_math (core->num, input + 2));
+		break;
+	case 'M': // "afM" - print functions map
+		r_core_anal_fmap (core, input + 1);
 		break;
 	case 'a': // "afa"
 	case 'A': // "afA"
@@ -3764,6 +3881,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		"aat", " [len]", "analyze all consecutive functions in section",
 		"aap", "", "find and analyze function preludes",
 		"aav", " [sat]", "find values referencing a specific section or map",
+		"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
 		NULL };
 
 	switch (*input) {
@@ -3776,6 +3894,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'v': // "aav"
 		cmd_anal_aav(core, input);
+		break;
+	case 'u': // "aau" - print areas not covered by functions
+		r_core_anal_nofunclist (core, input + 1);
 		break;
 	case 'i': // "aai"
 		r_core_anal_info (core, input + 1);
