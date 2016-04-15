@@ -51,7 +51,7 @@ Change the UID of the debugged process with child.uid (requires root)
 Enhace your graphs by increasing the size of the block and graph.depth eval variable.
 Control the height of the terminal on serial consoles with e scr.height
 Emulate the base address of a file with e file.baddr.
-Bindiff two files with '$ bdiff /bin/true /bin/false'
+Bindiff two files with '$ radiff2 /bin/true /bin/false'
 Execute commands on a temporary offset by appending '@ offset' to your command.
 Temporally drop the verbosity prefixing the commands with ':'
 Change the graph block definition with graph.callblocks, graph.jmpblocks, graph.flagblocks
