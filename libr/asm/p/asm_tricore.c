@@ -17,7 +17,7 @@ static char *buf_global = NULL;
 static unsigned char bytes[32];
 
 static int tricore_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-	memcpy (myaddr, bytes, length);
+	memcpy (myaddr, &bytes[memaddr-Offset], length);
 	return 0;
 }
 
