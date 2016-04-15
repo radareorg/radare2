@@ -139,6 +139,14 @@ static int cmd_seek(void *data, const char *input) {
 		} else eprintf ("|Usage| 'sr PC' seek to program counter register\n");
 	}
 	if (*input) {
+		char* ptr;
+		if ((ptr = strstr(input, "+.")) != NULL) {
+			char* dup = strdup(input);
+			dup[ptr - input] = '\x00';
+			off = r_num_math (core->num, dup + 1);
+			core->offset = off;
+			free (dup);
+		}
 		const char *inputnum = strchr (input, ' ');
 		int sign = 1;
 		{
