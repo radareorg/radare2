@@ -23,9 +23,9 @@ static int update(RCrypto *cry, const ut8 *buf, int len) {
 	int olen = INSIZE; //a way to optimise memory allocation.
 	ut8 *obuf = malloc (olen);
 	if (flag == 0) {
-		olen = r_base91_encode (obuf, buf, len);
+		olen = r_base91_encode ((char *)obuf, (const ut8 *)buf, len);
 	} else if (flag == 1) {
-		olen = r_base91_decode (obuf, buf, len);
+		olen = r_base91_decode (obuf, (const char *)buf, len);
 	}
 	r_crypto_append (cry, obuf, olen);
 	free (obuf);
