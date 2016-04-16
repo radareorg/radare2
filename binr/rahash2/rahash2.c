@@ -248,10 +248,11 @@ static int do_help(int line) {
 	" -B          show per-block hash\n"
 	" -c hash     compare with this hash\n"
 	" -e          swap endian (use little endian)\n"
-	" -E algo     encrypt (rc4 for now). Use -S to set key\n"
-	" -d / -D     encode/decode base64 string (-s) or file to stdout\n"
+	" -E algo     encrypt. Use -S to set key and -I to set IV\n"
+	" -D algo     decrypt. Use -S to set key and -I to set IV\n"
 	" -f from     start hashing at given address\n"
 	" -i num      repeat hash N iterations\n"
+	" -I iv       use give initialization vector (IV) (hexa or s:string)\n"
 	" -S seed     use given seed (hexa or s:string) use ^ to prefix (key for -E)\n"
 	" -k          show hash using the openssh's randomkey algorithm\n"
 	" -q          run in quiet mode (-qq to show only the hash)\n"
@@ -289,7 +290,7 @@ int is_power_of_two(const ut64 x) {
 }
 
 //direction: 0 => encrypt, 1 => decrypt
-int encrypt_or_decrypt(const char *algo, int direction, const char *hashstr, int hashstr_len) {
+int encrypt_or_decrypt(const char *algo, int direction, const char *hashstr, int hashstr_len, const ut8 *iv, int ivlen, int mode) {
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo); //TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
@@ -297,6 +298,11 @@ int encrypt_or_decrypt(const char *algo, int direction, const char *hashstr, int
 			if (r_crypto_set_key (cry, s.buf, s.len, 0, direction)) {
 				const char *buf = hashstr;
 				int buflen = hashstr_len;
+
+				if (iv && !r_crypto_set_iv (cry, iv, ivlen)) {
+					eprintf ("Invalid IV.\n");
+					return 0;
+				}
 
 				r_crypto_update (cry, (const ut8*)buf, buflen);
 				r_crypto_final (cry, NULL, 0);
@@ -321,7 +327,7 @@ int encrypt_or_decrypt(const char *algo, int direction, const char *hashstr, int
 	return 1;
 }
 
-int encrypt_or_decrypt_file (const char *algo, int direction, char *filename) {
+int encrypt_or_decrypt_file (const char *algo, int direction, char *filename, const ut8 *iv, int ivlen, int mode) {
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo); //TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
@@ -332,6 +338,11 @@ int encrypt_or_decrypt_file (const char *algo, int direction, char *filename) {
 				if (!buf) {
 					eprintf ("rahash2: Cannot open file\n");
 					return -1;
+				}
+
+				if (iv && !r_crypto_set_iv (cry, iv, ivlen)) {
+					eprintf ("Invalid IV.\n");
+					return 0;
 				}
 
 				r_crypto_update (cry, buf, file_size);
@@ -365,6 +376,9 @@ int main(int argc, char **argv) {
 	const char *decrypt = NULL;
 	const char *encrypt = NULL;
 	char *hashstr = NULL;
+	ut8 *iv = NULL;
+	int ivlen = -1;
+	char *ivseed = NULL;
 	const char *compareStr = NULL;
 	ut8 *compareBin = NULL;
 	int hashstr_len = -1;
@@ -374,7 +388,7 @@ int main(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "jD:rveE:a:i:S:s:x:b:nBhf:t:kLqc:")) != -1) {
+	while ((c = getopt (argc, argv, "jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
 		switch (c) {
 		case 'q': quiet ++; break;
 		case 'i':
@@ -386,6 +400,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'j': rad = 'j'; break;
 		case 'S': seed = optarg; break;
+		case 'I': ivseed = optarg; break;
 		case 'n': numblocks = 1; break;
 		case 'D': decrypt = optarg; break;
 		case 'E': encrypt = optarg; break;
@@ -459,6 +474,20 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 	}
+	 // convert iv to hex or string.
+	if (ivseed) {
+		iv = (ut8*)malloc (strlen (ivseed) + 128);
+		if (!strncmp (ivseed, "s:", 2)) {
+			strcpy ((char*)iv, ivseed + 2);
+			ivlen = strlen (ivseed + 2);
+		} else {
+			ivlen = r_hex_str2bin (ivseed, iv);
+			if (ivlen < 1) {
+				strcpy ((char*)iv, ivseed);
+				ivlen = strlen (ivseed);
+			}
+		}
+	}
 	do_hash_seed (seed);
 	if (hashstr) {
 #define INSIZE 32768
@@ -508,9 +537,9 @@ int main(int argc, char **argv) {
 			hashstr_len = r_str_unescape (hashstr);
 		}
 		if (encrypt) {
-			return encrypt_or_decrypt (encrypt, 0, hashstr, hashstr_len);
+			return encrypt_or_decrypt (encrypt, 0, hashstr, hashstr_len, iv, ivlen, 0);
 		} else if (decrypt) {
-			return encrypt_or_decrypt (decrypt, 1, hashstr, hashstr_len);
+			return encrypt_or_decrypt (decrypt, 1, hashstr, hashstr_len, iv, ivlen, 0);
 		} else {
 			char *str = (char *)hashstr;
 			int strsz = hashstr_len;
@@ -560,11 +589,11 @@ int main(int argc, char **argv) {
 	io = r_io_new ();
 	for (ret = 0, i = optind; i < argc; i++) {
 		if (encrypt) {//for encrytion when files are provided 
-			int rt = encrypt_or_decrypt_file (encrypt, 0, argv[i]);
+			int rt = encrypt_or_decrypt_file (encrypt, 0, argv[i], iv, ivlen, 0);
 			if (rt == -1) continue;
 			else return rt;
 		} else if (decrypt) {
-			int rt = encrypt_or_decrypt_file (decrypt, 1, argv[i]);
+			int rt = encrypt_or_decrypt_file (decrypt, 1, argv[i], iv, ivlen, 0);
 			if (rt == -1) continue;
 			else return rt;
 		} else {

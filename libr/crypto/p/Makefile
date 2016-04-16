@@ -10,7 +10,7 @@ caca:
 foo: all
 
 ALL_TARGETS=
-ALGOS=aes.mk
+ALGOS=aes.mk aes_cbc.mk
 include $(ALGOS)
 
 all: ${ALL_TARGETS}

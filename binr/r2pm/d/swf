@@ -6,6 +6,7 @@ R2PM_DESC "[r2-bin] SWF / Flash disassembler"
 R2PM_INSTALL() {
     ./configure --prefix="${R2PM_PREFIX}"
     cd libr/asm/p
+    make clean
     make asm_swf.${LIBEXT}
     cp -f asm_swf.${LIBEXT} "${R2PM_PLUGDIR}"
     cd ../../bin/p

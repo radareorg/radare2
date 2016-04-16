@@ -505,10 +505,10 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 				esilprintf (op, "%s,!,?{,BREAK,},%s,NUM,%s,NUM,"\
 						"%s,[%d],%s,=[%d],df,?{,%d,%s,-=,%d,%s,-=,},"\
 						"df,!,?{,%d,%s,+=,%d,%s,+=,},%s,--=,%s," \
-						"?{,8,GOTO,},%s,=,%s,=",
+						"?{,8,GOTO,}",
 						counter, src, dst, src, width, dst,
 						width, width, src, width, dst, width, src,
-						width, dst, counter, counter, dst, src);
+						width, dst, counter, counter);
 			} else {
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 1, NULL);
@@ -600,7 +600,7 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
 			char *dst = getarg (&gop, 0, 0, NULL);
-			esilprintf (op, "%s,%s,>>=,$z,zf,=,$p,pf,=,$s,sf,=", src, dst);
+			esilprintf (op, "0,cf,=,1,%s,-,1,<<,%s,&,?{,1,cf,=,},%s,%s,>>=,$z,zf,=,$p,pf,=,$s,sf,=", src, dst, src, dst);
 			free (src);
 			free (dst);
 		}
@@ -1165,26 +1165,42 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 			free (src2);
 			free (dst);
 		} else {
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "+");
-			esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$c,cf,=", src, dst);
-			free (src);
-			free (dst);
+			const char *dst_reg = cs_reg_name(*handle, INSOP(0).reg);
+			const char *src_reg = cs_reg_name(*handle, INSOP(1).reg);
+			switch(INSOP(0).size) {
+				case 1:
+					esilprintf (op, "0,zf,=,0,cf,=,0xff,%s,%s,+,>,?{,1,cf,=,},%s,%s,+=,$o,of,=,$s,sf,=,0xff,%s,&,!,?{,1,zf,=,},$p,pf,=", src_reg, dst_reg, src_reg, dst_reg, dst_reg, dst_reg);
+					break;
+				case 2:
+					esilprintf (op, "0,zf,=,0,cf,=,0xffff,%s,%s,+,>,?{,1,cf,=,},%s,%s,+=,$o,of,=,$s,sf,=,0xffff,%s,&,!,?{,1,zf,=,},p,pf,=", src_reg, dst_reg, src_reg, dst_reg, dst_reg, dst_reg);
+					break;
+				case 4:
+					esilprintf (op, "0,zf,=,0,cf,=,0xffffffff,%s,%s,+,>,?{,1,cf,=,},%s,%s,+=,$o,of,=,$s,sf,=,0xffffffff,%s,&,!,?{,1,zf,=,},$p,pf,=", src_reg, dst_reg, src_reg, dst_reg, dst_reg);
+					break;
+			}
 		}
 		break;
 	case X86_INS_ADC:
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 0, NULL);
+			const char *dst_reg = cs_reg_name(*handle, INSOP(0).reg);
+			const char *src_reg = cs_reg_name(*handle, INSOP(1).reg);
 			// dst = dst + src + cf
 			// NOTE: We would like to add the carry first before adding the
 			// source to ensure that the flag computation from $c belongs
 			// to the operation of adding dst += src rather than the one
 			// that adds carry (as esil only keeps track of the last
 			// addition to set the flags).
-			esilprintf (op, "cf,%s,+,%s,+=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$c,cf,=", src, dst);
-			free (src);
-			free (dst);
+			switch(INSOP(0).size) {
+				case 1:
+			                esilprintf (op, "0,zf,=,cf,%s,+,%s,+,0,cf,=,DUP,0xff,<,?{,1,cf,=,},%s,=,0xff,%s,&,!,?{,1,zf,=,}", src_reg, dst_reg, dst_reg, dst_reg);
+					break;
+				case 2:
+			                esilprintf (op, "0,zf,=,cf,%s,+,%s,+,0,cf,=,DUP,0xffff,<,?{,1,cf,=,},%s,=,0xffff,%s,&,!,?{,1,zf,=,}", src_reg, dst_reg, dst_reg, dst_reg);
+					break;
+				case 4:
+			                esilprintf (op, "0,zf,=,cf,%s,+,%s,+,0,cf,=,DUP,0xffffffff,<,?{,1,cf,=,},%s,=,0xffffffff,%s,&,!,?{,1,zf,=,}", src_reg, dst_reg, dst_reg, dst_reg);
+					break;
+			}
 		}
 		break;
 		/* Direction flag */
