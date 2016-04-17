@@ -473,6 +473,7 @@ extern RIOPlugin r_io_plugin_mach;
 extern RIOPlugin r_io_plugin_debug;
 extern RIOPlugin r_io_plugin_shm;
 extern RIOPlugin r_io_plugin_gdb;
+extern RIOPlugin r_io_plugin_qnx;
 extern RIOPlugin r_io_plugin_rap;
 extern RIOPlugin r_io_plugin_http;
 extern RIOPlugin r_io_plugin_bfdbg;

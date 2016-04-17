@@ -39,6 +39,7 @@ ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
 MODS+=gdb
+MODS+=qnx
 SDB_URL=git://github.com/radare/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 PWD=$(shell pwd)
