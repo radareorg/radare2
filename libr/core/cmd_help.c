@@ -377,6 +377,8 @@ static int cmd_help(void *data, const char *input) {
 			"$c,$r", "", "get width and height of terminal",
 			"$Cn", "", "get nth call of function",
 			"$Dn", "", "get nth data reference in function",
+			"$D", "", "current debug map base address ?v $D @ rsp",
+			"$DD", "", "current debug map size",
 			"$e", "", "1 if end of block, else 0",
 			"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
 			"$F", "", "current function size",

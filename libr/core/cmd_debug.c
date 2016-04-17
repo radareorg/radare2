@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%"PFMT64u

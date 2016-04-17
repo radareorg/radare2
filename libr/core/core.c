@@ -349,20 +349,29 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return 0LL;
 		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
-			s = r_io_section_vget (core->io, core->offset);
-			return s? (str[2]=='S'? s->size: s->vaddr): 3;
+			if ((s = r_io_section_vget (core->io, core->offset))) {
+				return (str[2]=='S'? s->size: s->vaddr);
+			}
+			return 0LL;
+		case 'D':
+			if (IS_NUMBER (str[2])) {
+				return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_DATA);
+			} else {
+				RDebugMap *map;
+				RListIter *iter;
+				r_list_foreach (core->dbg->maps, iter, map) {
+					if (core->offset >= map->addr && core->offset < map->addr_end) {
+						return (str[2] == 'D')? map->size: map->addr;
+					}
+				}
+			}
+			return 0LL; // maybe // return UT64_MAX;
 		case '?': return core->num->value;
 		case '$': return core->offset;
-		case 'o': return r_io_section_vaddr_to_maddr_try (core->io,
-				core->offset);
-		case 'C': return getref (core, atoi (str+2), 'r',
-				R_ANAL_REF_TYPE_CALL);
-		case 'J': return getref (core, atoi (str+2), 'r',
-				R_ANAL_REF_TYPE_CODE);
-		case 'D': return getref (core, atoi (str+2), 'r',
-				R_ANAL_REF_TYPE_DATA);
-		case 'X': return getref (core, atoi (str+2), 'x',
-				R_ANAL_REF_TYPE_CALL);
+		case 'o': return r_io_section_vaddr_to_maddr_try (core->io, core->offset);
+		case 'C': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_CALL);
+		case 'J': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_CODE);
+		case 'X': return getref (core, atoi (str+2), 'x', R_ANAL_REF_TYPE_CALL);
 		case 'B':
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			return fcn? fcn->addr: 0;
