@@ -463,11 +463,11 @@ R_API char *r_file_readlink(const char *path) {
 		int ret;
 		char pathbuf[4096];
 		strncpy (pathbuf, path, sizeof (pathbuf)-1);
-		pathbuf[sizeof (pathbuf)-1] = 0;
+		pathbuf[sizeof (pathbuf)-1] = '\0';
 		repeat:
 		ret = readlink (path, pathbuf, sizeof (pathbuf)-1);
 		if (ret != -1) {
-			pathbuf[ret] = 0;
+			pathbuf[ret] = '\0';
 			path = pathbuf;
 			goto repeat;
 		}
