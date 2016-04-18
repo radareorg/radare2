@@ -922,8 +922,8 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
 		// are set according to the result.
 		{
-			char *src = getarg (&gop, 0, 0, NULL);
-			esilprintf (op, "%s,--=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
+			char *src = getarg (&gop, 0, 1, "--");
+			esilprintf (op, "%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
 			free (src);
 		}
 		break;
