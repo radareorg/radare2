@@ -1369,6 +1369,14 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	} else if (rad == 'j')  {
 		r_cons_printf ("[");
 	}
+	if(rad == 'o'){
+		r_cons_printf ("%-10s %-5s %-5s %-30s %-10s %-10s %s %s %s %s %s\n",
+			"Offset", "Size", "nbbs", "Function Name", "Min_Bound", "Max_Bound",
+				"Calls", "Vars", "Args", "Xref", "Framesize");
+		r_cons_printf ("%-10s %-5s %-5s %-30s %-10s %-10s %s %s %s %s %s\n",
+			"======", "====", "====", "=============", "=========", "=========",
+				"=====", "====", "====", "====", "=========");
+	}
 	r_list_sort (core->anal->fcns, &cmpfcn);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		int showFunc = 0;
@@ -1395,8 +1403,30 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			}
 			count++;
 			if (rad == 'o') {
-				r_cons_printf ("0x%08"PFMT64x"  %-4d  %-4d  %s\n",
-					fcn->addr, fcn->size, r_list_length (fcn->bbs), name);
+				RListIter *callrefiter, *bbsiter;
+				RAnalBlock *bbi;
+				long long max = UT64_MIN;
+				long long min = UT64_MAX;
+				int noofCallRef = 0;
+				int noofRef = 0;
+				r_list_foreach (fcn->refs, callrefiter, refi) {
+					if (refi->type == R_ANAL_REF_TYPE_CALL) {
+						noofCallRef = noofCallRef + 1;
+					}
+					noofRef++;
+				}
+				r_list_foreach (fcn->bbs, bbsiter, bbi) {
+					if (max < bbi->addr) {
+						max = bbi->addr;
+					}
+					if (min > bbi->addr) {
+						min = bbi->addr; 
+					}
+				}
+				r_cons_printf ("0x%08"PFMT64x" %-5d %-5d %-30s 0x%08"PFMT64x" 0x%08"PFMT64x" %-5d %-4d %-4d %-4d %-4d\n",
+					fcn->addr, r_anal_fcn_size (fcn), r_list_length (fcn->bbs), name, min, max, noofCallRef, r_anal_var_count (core->anal, fcn, 'v'),
+						r_anal_var_count (core->anal, fcn, 'a'), noofRef, fcn->size);
+				free (callrefiter);
 			} else if (rad == 'q') {
 				r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
 						//fcn->addr, fcn->size, r_list_length (fcn->bbs), fcn->name);
