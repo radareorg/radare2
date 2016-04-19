@@ -20,7 +20,7 @@ static void showhelp(RCore *core) {
 		"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
 		"cv", "[1248] [addr] @at", "Compare 1,2,4,8-byte value",
 		"cw", "[us?] [...]", "Compare memory watchers",
-		"cx", " [hexpair]", "Compare hexpair string",
+		"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
 		"cX", " [addr]", "Like 'cc' but using hexdiff output",
 		NULL
 	};
@@ -348,12 +348,14 @@ static int cmd_cmp(void *data, const char *input) {
 	static char *oldcwd = NULL;
 	RCore *core = data;
 	ut64 val = UT64_MAX;
+	char * filled;
 	ut8 *buf;
 	ut16 v16;
 	ut32 v32;
 	ut64 v64;
 	int ret;
 	FILE *fd;
+	int i;
 
 	switch (*input) {
 	case 'p':
@@ -367,16 +369,30 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case 'x':
 		if (input[1]!=' ') {
-			eprintf ("Usage: cx 001122'\n");
+			eprintf ("Usage: cx 00..22'\n");
 			return 0;
 		}
+		filled = (char*) malloc (strlen (input + 2) + 1);
+		if (filled == NULL)
+			return false;
+
+		memcpy (filled, input + 2, strlen (input + 2) + 1);
+
 		buf = (ut8*)malloc (strlen (input+2)+1);
 		if (buf == NULL)
 			return false;
-		ret = r_hex_str2bin (input+2, buf);
+
+		ret = r_hex_bin2str (core->block, strlen (input + 2) / 2, (char *)buf);
+
+		for (i = 0; i < ret * 2; i++)
+			if (filled[i] == '.')
+				filled[i] = buf[i];
+
+		ret = r_hex_str2bin (filled, buf);
 		if (ret<1) eprintf ("Cannot parse hexpair\n");
 		else val = radare_compare (core, core->block, buf, ret);
 		free (buf);
+		free (filled);
 		break;
 	case 'X':
 		buf = malloc (core->blocksize);
