@@ -444,6 +444,10 @@ int main(int argc, char **argv, char **envp) {
 		return main_help (help > 1? 2: 0);
 	}
 	if (debug == 1) {
+		if (optind >= argc) {
+			eprintf ("Missing argument for -d\n");
+			return 1;
+		}
 		char *uri = strdup (argv[optind]);
 		char *p = strstr (uri, "://");
 		if (p) {
