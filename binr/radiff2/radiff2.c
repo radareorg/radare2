@@ -167,9 +167,11 @@ static int show_help(int v) {
 	return 1;
 }
 
+#define DUMP_CONTEXT 2
 static void dump_cols (ut8 *a, int as, ut8 *b, int bs, int w) {
 	ut32 sz = R_MIN (as, bs);
 	ut32 i, j;
+	int ctx = DUMP_CONTEXT;
 	switch (w) {
 	case 8:
 		printf ("  offset     0 1 2 3 4 5 6 7 01234567    0 1 2 3 4 5 6 7 01234567\n");
@@ -184,18 +186,50 @@ static void dump_cols (ut8 *a, int as, ut8 *b, int bs, int w) {
 		return ;
 	}
 	for (i = 0; i < sz; i += w) {
-		printf ("0x%08x%c ", i, (memcmp (a + i, b + i, 8)) ? ' ' : '!');
-		for (j = 0; j < w; j++)
+		bool eq = memcmp (a + i, b + i, 8) == NULL;
+		if (eq) {
+			ctx--;
+			if (ctx == -1) {
+				printf ("...\n");
+				continue;
+			}
+			if (ctx < 0) {
+				ctx = -1;
+				continue;
+			}
+		} else {
+			ctx = DUMP_CONTEXT;
+		}
+		printf (eq?Color_GREEN:Color_RED);
+		printf ("0x%08x%c ", i, eq ? ' ' : '!');
+		printf (Color_RESET);
+		for (j = 0; j < w; j++) {
+			bool eq2 = a[i+j] == b[i+j];
+			if (!eq) printf (eq2?Color_GREEN:Color_RED);
 			printf ("%02x", a[i + j]);
+			if (!eq) printf (Color_RESET);
+		}
 		printf (" ");
-		for (j = 0; j < w; j++)
+		for (j = 0; j < w; j++) {
+			bool eq2 = a[i+j] == b[i+j];
+			if (!eq) printf (eq2?Color_GREEN:Color_RED);
 			printf ("%c", IS_PRINTABLE (a[i + j]) ? a[i + j] : '.');
+			if (!eq) printf (Color_RESET);
+		}
 		printf ("   ");
-		for (j = 0; j < w; j++)
+		for (j = 0; j < w; j++) {
+			bool eq2 = a[i+j] == b[i+j];
+			if (!eq) printf (eq2?Color_GREEN:Color_RED);
 			printf ("%02x", b[i + j]);
+			if (!eq) printf (Color_RESET);
+		}
 		printf (" ");
-		for (j = 0; j < w; j++)
+		for (j = 0; j < w; j++) {
+			bool eq2 = a[i+j] == b[i+j];
+			if (!eq) printf (eq2?Color_GREEN:Color_RED);
 			printf ("%c", IS_PRINTABLE (b[i + j]) ? b[i + j] : '.');
+			if (!eq) printf (Color_RESET);
+		}
 		printf ("\n");
 	}
 	if (as != bs)

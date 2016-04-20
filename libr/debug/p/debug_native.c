@@ -792,9 +792,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		if (pos_c) strncpy (path, pos_c, sizeof (path) - 1);
 		else path[0] = '\0';
 #else
-		char null[64]; // XXX: this can overflow
-		sscanf (line, "%s %s %s %s %s %s",
-			&region[2], perms, null, null, null, path);
+		sscanf (line, "%s %s %*s %*s %*s %[^\n]", &region[2], perms, path);
 
 		pos_c = strchr (&region[2], '-');
 		if (!pos_c) continue;

@@ -23,13 +23,13 @@ static int update(RCrypto *cry, const ut8 *buf, int len) {
 	if (flag == 0) {
 		olen = ((len + 2) / 3 ) * 4;
 		obuf = malloc (olen + 1);
-		r_base64_encode (obuf, buf, len);
+		r_base64_encode ((char *)obuf, (const ut8 *)buf, len);
 	} else if (flag == 1){
 		olen = (len / 4) * 3;
 		if (len > 0)					//to prevent invalid access of memory
 			olen -= (buf[len-1] == '=') ? ((buf[len-2] == '=') ? 2 : 1) : 0;
 		obuf = malloc (olen + 1);
-		olen = r_base64_decode (obuf, buf, len);
+		olen = r_base64_decode (obuf, (const char *)buf, len);
 	}
 	r_crypto_append (cry, obuf, olen);
 	free (obuf);
