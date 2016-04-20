@@ -187,7 +187,7 @@ static void dump_cols (ut8 *a, int as, ut8 *b, int bs, int w) {
 		return ;
 	}
 	for (i = 0; i < sz; i += w) {
-		bool eq = memcmp (a + i, b + i, w) == NULL;
+		bool eq = !memcmp (a + i, b + i, w);
 		if (eq) {
 			ctx--;
 			if (ctx == -1) {

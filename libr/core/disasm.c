@@ -1201,7 +1201,14 @@ static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
 }
 
 static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len) {
-	int ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
+	int ret;
+
+	if (ds->hint && ds->hint->opcode) {
+		free (ds->opstr);
+		ds->opstr = strdup (ds->hint->opcode);
+		return true;
+	}
+	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
 	if (ds->asmop.size < 1) ds->asmop.size = 1;
 
 	if (ds->show_nodup) {
