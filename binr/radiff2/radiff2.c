@@ -146,7 +146,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 }
 
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-abcCdjrspOv] [-g sym] [-t %%] [file] [file]\n");
+	printf ("Usage: radiff2 [-abcCdjrspOxv] [-g sym] [-t %%] [file] [file]\n");
 	if (v) printf (
 		"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
 		"  -A [-A]    run aaa or aaaa after loading each binary\n"
@@ -163,6 +163,7 @@ static int show_help(int v) {
 		"  -r         output in radare commands\n"
 		"  -s         compute text distance\n"
 		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
+		"  -x         show two column hexdump diffing\n"
 		"  -v         show version information\n");
 	return 1;
 }
@@ -186,7 +187,7 @@ static void dump_cols (ut8 *a, int as, ut8 *b, int bs, int w) {
 		return ;
 	}
 	for (i = 0; i < sz; i += w) {
-		bool eq = memcmp (a + i, b + i, 8) == NULL;
+		bool eq = memcmp (a + i, b + i, w) == NULL;
 		if (eq) {
 			ctx--;
 			if (ctx == -1) {
