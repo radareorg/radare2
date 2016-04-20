@@ -25,7 +25,9 @@ ifeq (${OSTYPE},darwin)
 OBJS+= p/${NATIVE_OBJS}
 endif
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
-OBJS+= p/${NATIVE_OBJS}		
+CFLAGS+=-I../bin/format/elf
+OBJS+= p/${NATIVE_OBJS}
+OBJS+= p/${COREDUMP_OBJS}	
 endif
 
 plugins:
