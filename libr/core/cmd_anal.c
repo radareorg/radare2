@@ -3095,19 +3095,30 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case '\0':
 		r_core_anal_hint_list (core->anal, input[0]);
 		break;
-	case '-':
+	case '-': // "ah-"
 		if (input[1]) {
-			int i;
-			char *ptr = strdup (input + 1);
-			ut64 addr;
-			int size = 1;
-			i = r_str_word_set0 (ptr);
-			if (i == 2)
-				size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
-			addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-			r_anal_hint_del (core->anal, addr, size);
-			free (ptr);
-		} else r_anal_hint_clear (core->anal);
+			if (input[1] == '*') {
+				r_anal_hint_clear (core->anal);
+			} else {
+				char *ptr = strdup (input + 1);
+				ut64 addr;
+				int size = 1;
+				int i = r_str_word_set0 (ptr);
+				if (i == 2) {
+					size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+				}
+				const char *a0 = r_str_word_get0 (ptr, 0);
+				if (a0 && *a0) {
+					addr = r_num_math (core->num, a0);
+				} else {
+					addr = core->offset;
+				}
+				r_anal_hint_del (core->anal, addr, size);
+				free (ptr);
+			}
+		} else {
+			r_anal_hint_clear (core->anal);
+		}
 		break;
 	}
 }
