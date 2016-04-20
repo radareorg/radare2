@@ -52,6 +52,29 @@ typedef ut64 mips64_regs_t [274];
 #endif
 #endif
 
+/* For the maps */
+typedef struct linux_map_entry {
+        unsigned long int start_addr;
+        unsigned long int end_addr;
+        unsigned int perms;
+        unsigned long int offset;
+        unsigned long int inode;
+        char *name;
+        struct linux_map_entry *n;
+}linux_map_entry_t;
+
+#define ADD_MAP(p)      do {                                                    \
+                                if(me_head == NULL) {                        	\
+                                        me_head = p;                  		\
+                                        me_tail = p;                         	\
+                                } else {                                        \
+                                        p->n = NULL;                            \
+                                        me_tail->n = p;                      	\
+                                        me_tail = p;                         	\
+                                }                                               \
+                        } while(0);                                             \
+/**/
+
 
 //API
 int linux_step (RDebug *dbg);

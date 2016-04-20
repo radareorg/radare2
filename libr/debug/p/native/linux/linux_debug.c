@@ -5,6 +5,8 @@
 #include <r_reg.h>
 #include <r_lib.h>
 #include <r_anal.h>
+#include <elf.h>
+#include <sys/procfs.h>
 #include "linux_debug.h"
 
 const char *linux_reg_profile (RDebug *dbg) {
@@ -28,6 +30,8 @@ const char *linux_reg_profile (RDebug *dbg) {
 #error "Unsupported Linux CPU"
 #endif
 }
+
+	
 
 int linux_handle_signals (RDebug *dbg) {
 	siginfo_t siginfo = {0};
@@ -507,3 +511,450 @@ RList *linux_desc_list (int pid) {
 	closedir (dd);
 	return ret;
 }
+
+typedef enum {
+	PID_E = 0,
+	TCOMM_E,
+	STATE_E,
+	PPID_E,
+	PGRP_E,
+	SID_E,
+	TTY_NR_E,
+	TTY_PGRP_E,
+	FLAGS_E,
+	MIN_FLT_E,
+	CMIN_FLT_E,
+	MAJ_FLT_E,
+	UTIME_E,
+	STIME_E,
+	CUTIME_E,
+	CSTIME_E,
+	PRIORITY_E,
+	NICE_E,
+	NUM_THREADS_E,
+	IT_REAL_VALUE_E,
+	START_TIME_E,
+	VSIZE_E,
+	RSS_E,
+	RSSLIM_E,
+	START_CODE_E,
+	END_CODE_E,
+	START_STACK_E,
+	ESP_E,
+	EIP_E,
+	PENDING_E,
+	BLOCKED_E,
+	SIGIGN_E,
+	SIGCATCH_E,
+	PLACE_HOLDER_1E,
+	PLACE_HOLDER_2E,
+	PLACE_HOLDER_3E,
+	EXIT_SIGNAL_E,
+	TASK_CPU_E,
+	RT_PRIORITY_E,
+	POLICY_E,
+	BLKIO_TICKS_E,
+	GTIME_E,
+	START_DATA_E,
+	END_DATA_E,
+	START_BRK_E,
+	ARG_START_E,
+	ARG_END_E,
+	ENV_START_E,
+	ENV_END_E,
+	EXIT_CODE_E
+}proc_stat_entry;
+
+static int is_a_right_entry(proc_stat_entry entry)
+{
+	return !(entry ==  STATE_E || entry == PPID_E || entry == PGRP_E || entry == SID_E || entry == FLAGS_E || entry == NICE_E || entry ==  NUM_THREADS_E);
+}
+
+static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg) {
+
+	FILE *f;
+        char file[128];
+        long nice;
+        int c;
+        int pos;
+        pid_t mypid;
+        char *pbuff;
+        char *tpbuff;
+        char *temp_uid;
+        char *temp_gid;
+        char *p_uid;
+        char *p_gid;
+        char data[80];
+        char buff[4096];
+	char prog_states[6] = "RSDTZW";
+	unsigned int n_threads;
+        proc_stat_entry current_entry;
+	prpsinfo_t *p;
+
+	p = (struct prpsinfo_t *)malloc(sizeof(prpsinfo_t));
+
+	/* /proc/pid/stat: let's have some fun. Documentation about the fields can be found under /Documentation/filesystem/proc.txt: Table 1-4 */
+	p->pr_pid = mypid = dbg->pid;
+	snprintf(file, sizeof(file), "/proc/%d/stat", mypid);
+	
+	f = r_sandbox_fopen(file, "r");
+	if (f == NULL) {
+                eprintf ("Cannot open '%s' for writing\n", file);
+                goto error;
+        }
+	
+	/* Need to find which function radare2 exposes to read files */
+	while((c = fgetc(f)) != EOF && c!= '\n' && pos < sizeof(buff))
+		buff[pos++] = c;
+
+	buff[pos] = '\0';
+
+	/* Parsing /proc/%d/stat */
+	for(tpbuff = pbuff, current_entry = PID_E; *pbuff != '\0'; tpbuff = pbuff) {
+		int len;
+
+                while(!is_data(*pbuff++))
+                        ;
+
+                pbuff--;
+                len = pbuff - tpbuff;
+
+                if(len) {
+                        strncpy(data, tpbuff, len);
+                        data[pbuff - tpbuff] = '\0';
+                        if(!is_a_right_entry(current_entry)) {
+                                switch(current_entry) {
+                                        case TCOMM_E:
+                                                strncpy(p->pr_fname, data, sizeof(p->pr_fname));
+                                                break;
+                                        case STATE_E:
+                                                p->pr_sname = data[0];
+                                                p->pr_zomb = (p->pr_sname == 'Z') ? 1 : 0;
+						p->pr_state = strchr(prog_states, p->pr_sname) - prog_states;
+                                                break;
+                                        case PPID_E:
+                                                p->pr_ppid = atoi(data);
+                                                break;
+                                        case PGRP_E:
+                                                p->pr_pgrp = atoi(data);
+                                                break;
+                                        case SID_E:
+                                                p->pr_sid = atoi(data);
+                                                break;
+                                        case FLAGS_E:
+                                                p->pr_flag = atol(data);
+                                                break;
+                                        case NICE_E:
+                                                nice = atol(data);
+						p->pr_nice = nice;
+                                                break;
+                                        case NUM_THREADS_E:
+                                                n_threads = atoi(data);
+                                                break;
+                                }
+                        }
+                        current_entry++;
+                }
+
+                while(*pbuff == ' ' || *pbuff == '(' || *pbuff == ')')
+                        pbuff++;
+        }
+
+	/* Since we can't find pr_uid and pr_gid in /proc/%d/stat, we need to look for that in /proc/%d/status */
+	snprintf(file, sizeof(file), "/proc/%d/status", mypid);
+
+	f = r_sandbox_fopen(file, "r");
+        if (f == NULL) {
+                eprintf ("Cannot open '%s' for writing\n", file);
+                goto error;
+        }
+
+	pos = 0;
+
+	while((c = fgetc(f)) != EOF && pos < sizeof(buff))
+		buff[pos++] = c;
+	buff[pos] = '\0';
+
+	/* Let's search for Uid */
+        temp_uid = strstr(buff, "Uid:");
+        temp_gid = strstr(buff, "Gid:");
+
+        while(!isdigit(*temp_uid++))
+                ;
+        p_uid = temp_uid-1;
+
+        while(isdigit(*temp_uid++))
+                ;
+        p_uid[temp_uid-p_uid-1] = '\0';	
+
+
+	/* Do the same for Gid */
+	while(!isdigit(*temp_gid++))
+                ;
+        p_gid = temp_gid-1;
+
+        while(isdigit(*temp_gid++))
+                ;
+        p_gid[temp_gid-p_gid-1] = '\0';
+
+
+	p->pr_uid = atoi(p_uid);
+	p->pr_gid = atoi(p_gid);
+
+	/* 	We still need to get pr_psargs		*/
+	/* is radare2 storing the arg_list somewhere? If not we have to get that from /proc/ */	
+	/*						*/
+
+
+	return p;
+
+	error:
+		if(p)
+			free(p);
+		return NULL;
+}	
+		
+
+static prstatus_t *linux_get_prstatus(RDebug *dbg) {
+	prstatus_t *p;
+	char *reg_buff;
+	int rbytes;
+	size_t size_gp_regset;
+
+	size_gp_regset = sizeof(elf_gregset_t);
+	rbytes = linux_reg_read(dbg, R_REG_TYPE_GPR, reg_buff, size_gp_regset);
+	if(rbytes != size_gp_regset)			/* something went wrong */
+		return NULL;
+	
+	p = (prstatus_t *)malloc(sizeof(prstatus_t));
+	p->pr_pid = dbg->pid;
+	/*p->pr_cursig: is radare2 storing that somehere? */
+	memcpy(p->pr_reg, reg_buff, rbytes);
+	
+	return p;
+}
+
+static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg) {
+
+	elf_fpregset_t *p;
+	char *reg_buff;
+	int rbytes;
+	size_t size_fp_regset;
+	
+
+	size_fp_regset = sizeof(elf_fpregset_t);
+	rbytes = linux_reg_read(dbg, R_REG_TYPE_FPU, reg_buff, size_fp_regset);
+	if(rbytes != size_fp_regset)
+		return NULL;
+	
+	p = (elf_fpregset_t *)malloc(sizeof(elf_fpregset_t));
+	memcpy(p, reg_buff, rbytes);
+
+	return p;
+}
+
+static siginfo_t *linux_get_siginfo(RDebug *dbg) {
+
+        siginfo_t *siginfo;
+        int ret;
+
+        siginfo = (siginfo_t *)malloc(sizeof(siginfo_t));
+        ret = pftrace(PTRACE_GETSIGINFO, dbg->pid, 0, siginfo);
+
+        if(!siginfo->si_signo) {
+                free(siginfo);
+                siginfo = NULL;
+        }
+
+        return siginfo;
+}
+
+static int get_map_address_space(char *pstr, unsigned int long *start_addr, unsigned int long *end_addr)
+{
+        char *pp;
+
+        pp = pstr;
+
+        *start_addr = strtoul(pp, &pp, 16);
+        pp++;   /*Skip '-' */
+        *end_addr = strtoul(pp, &pp, 16);
+
+        return 0;
+}
+
+#define R_MEM 0x1
+#define W_MEM 0x2
+#define X_MEM 0x4
+#define P_MEM 0x8
+#define S_MEM 0x10
+
+static int get_map_perms(char *pstr, int *fl_perms)
+{
+        char *pp;
+        int len;
+
+        len = strlen(pstr);
+        *fl_perms = 0;
+
+        pp = memchr(pstr, 'r', len);
+        if(pp)
+                *fl_perms |= R_MEM;
+
+        pp = memchr(pstr, 'w', len);
+        if(pp)
+                *fl_perms |= W_MEM;
+
+        pp = memchr(pstr, 'x', len);
+        if(pp)
+                *fl_perms |= X_MEM;
+
+        pp = memchr(pstr, 'p', len);
+        if(pp)
+                *fl_perms |= P_MEM;
+
+        pp = memchr(pstr, 's', len);
+        if(pp)
+                *fl_perms |= S_MEM;
+
+	if((*fl_perms & P_MEM) && (*fl_perms & S_MEM))
+		return -1;
+
+        return 0;
+}
+
+
+static int get_map_offset(char *pstr, int *offset)
+{
+        char *pp;
+
+        pp = pstr;
+        *offset = strtoul(pp, &pp, 16);
+
+        return 0;
+}
+
+static int get_map_name(char *pstr, char **name)
+{
+        *name = strdup(pstr);
+        return 0;
+}
+
+typedef enum {
+        ADDR,
+        PERM,
+        OFFSET,
+        DEV,
+        INODE,
+        NAME
+}MAPS_FIELD;
+
+static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg) {
+
+	linux_map_entry_t *me_head, *me_tail;
+	linux_map_entry_t *pmentry;
+	FILE *f;
+        unsigned int long start_addr;
+        unsigned int long end_addr;
+        int flag_perm;
+        int offset;
+	pid_t mypid;
+        char buff[4906];
+	char file[80];
+        char *name;
+        char *p;
+        char *end_line;
+        char *end_token;
+        MAPS_FIELD maps_current;
+
+	me_head = me_tail = NULL;
+	name = NULL;
+
+	snprintf(file, sizeof(file), "/proc/%d/maps", mypid);
+
+	f = r_sandbox_fopen(file, "r");
+        if (f == NULL) {
+                eprintf ("Cannot open '%s' for writing\n", file);
+                return NULL;
+        }
+
+	p = strtok_r(buff, "\n", &end_line);
+	while(p != NULL) {
+                char *pp;
+                pp = strtok_r(p, " ", &end_token);
+                maps_current = ADDR;
+
+                while(pp != NULL) {
+                        switch(maps_current) {
+
+                                case ADDR:
+                                                get_map_address_space(pp, &start_addr, &end_addr);
+                                                break;
+                                case PERM:
+                                                get_map_perms(pp, &flag_perm);
+                                                break;
+                                case OFFSET:
+                                                get_map_offset(pp, &offset);
+                                                break;
+                                case DEV:
+                                                maps_current++;
+                                                pp = strtok_r(NULL, " ", &end_token);
+                                case INODE:
+                                                maps_current++;
+                                                pp = strtok_r(NULL, " ", &end_token);
+                                case NAME:
+                                                if(pp)  /* Has this map a name? */
+                                                        get_map_name(pp, &name);
+                                                break;
+                        }
+                        maps_current++;
+                        pp = strtok_r(NULL, " ", &end_token);
+                }
+
+		pmentry = (linux_map_entry_t *)malloc(sizeof(linux_map_entry_t));
+                pmentry->start_addr = start_addr;
+                pmentry->end_addr = end_addr;
+                pmentry->perms = flag_perm;
+                pmentry->offset = offset;
+                pmentry->inode = 0;	
+		if(name) {
+                        pmentry->name = strdup(name);
+                        free(name);
+                        name = NULL;
+                }
+                ADD_MAP(pmentry);
+                p = strtok_r(NULL, "\n", &end_line);
+	}
+
+	fclose(f);
+
+	return me_head;
+}
+
+	
+
+	
+
+bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
+
+	RBuffer note_buff[4096];
+	prpsinfo_t *prpsinfo;
+	prstatus_t *prstatus;
+	elf_fpregset_t *fp_regset;
+	siginfo_t *siginfo;
+
+	
+	/* Let's start getting elf_prpsinfo */
+	prpsinfo = linux_get_prpsinfo(dbg);		/* NT_PRPSINFO 		*/
+	prstatus = linux_get_prstatus(dbg);		/* NT_PRSTATUS 		*/
+	fp_regset = linux_get_fp_regset(dbg);		/* NT_FPREGSET		*/
+	siginfo = linux_get_siginfo(dbg);		/* NT_SIGINFO    	*/
+							/* NT_X86_XSTATE	*/
+							/* NT_AUXV     		*/
+	linux_get_mapped_files(dbg);			/* NT_FILE		*/
+							
+		
+
+
+        return true;
+}
+
