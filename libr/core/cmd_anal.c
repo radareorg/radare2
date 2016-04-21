@@ -813,40 +813,59 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		}
 		break;
-	case 'C': // "afC"
-		if (input[2] == '?') {
+	case 'C':{ // "afC"
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+		if (!fcn && !(input[2] == '?'|| input[2] == 'l')) {
+			eprintf ("Cant find function here\n");
+			break;
+		}
+		const char *help_afC[] = {
+			"Usage:", "afC[agl?]", "",
+			"afC", " convention", "Manually set calling convention for current function",
+			"afC", "", "Show Calling convention for the Current function",
+			"afCa", "", "Analyse function argument for the current calling convention",
+			"afCl", "", "List all available calling conventions",
+			"afCg", "", "Guess calling convention of function at current offset",
+			NULL };
+		switch (input[2]) {
+		case'?': {
+			r_core_cmd_help (core, help_afC);
+			} break;
+		case 'l':{ //afCl list all function Calling conventions.
 			int i;
 			for (i = 0;; i++) {
 				const char *s = r_anal_cc_type2str (i);
-				if (!s) break;
+				if (!s && !*s) break;
 				r_cons_printf ("%s\n", s);
 			}
-		} else {
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			if (fcn) {
-				if (input[2] == 'a') {
-					eprintf ("TODO: analyze function to guess its calling convention\n");
-				} else if (input[2] == ' ') {
-					int type = r_anal_cc_str2type (input + 3);
-					if (type == -1) {
-						eprintf ("Unknown calling convention '%s'\n", input + 3);
-					} else {
-						// set calling convention for current function
-						fcn->call = type;
-					}
-				} else {
-					const char *type = r_anal_cc_type2str (fcn->call);
-					if (type) {
-						r_cons_printf ("%s\n", type);
-					} else {
-						eprintf ("Unknown calling convention\n");
-					}
-				}
+			} break;
+		case 'g': {
+			//TODO guess calling conventions
+			eprintf ("TODO\n") ;
+			} break;
+		case 'a': {
+			r_anal_var_delete_all (core->anal, fcn->addr, 'A');
+			r_anal_var_delete_all (core->anal, fcn->addr, 'a');
+			r_anal_var_delete_all (core->anal, fcn->addr, 'v');
+			fcn_callconv(core, fcn);
+			} break;
+		case ' ': {
+			int type = r_anal_cc_str2type (input + 3);
+			if (type == -1) {
+				eprintf ("Unknown calling convention '%s'\n"
+					"See afCl for available types\n", input + 3);
 			} else {
-				eprintf ("Cannot find function\n");
+				fcn->call = type;
 			}
+			}break;
+		case 0:{
+			const char *str = r_anal_cc_type2str (fcn->call);
+			r_cons_printf ("%s\n", str);
+		       }break;
+		default:
+			eprintf("See afC?\n");
 		}
-		break;
+		}break;
 	case 'B': // "afB" // set function bits
 		if (input[2] == ' ') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset,
@@ -1064,7 +1083,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afb", " [addr]", "List basic blocks of given function",
 			"afB", " 16", "set current function as thumb (change asm.bits)",
 			"afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
-			"afC[a]", " type @[addr]", "set calling convention for function (afC?=list cc types)",
+			"afC[?]", " type @[addr]", "set calling convention for function",
 			"aff", "", "re-adjust function boundaries to fit",
 			"afF", "[1|0|]", "fold/unfold/toggle",
 			"afg", "", "non-interactive ascii-art basic-block graph (See VV)",

@@ -22,7 +22,6 @@ R_API void r_anal_cc_init (RAnalCC *cc) {
 }
 
 R_API int r_anal_cc_str2type (const char *str) {
-	if (!strcmp (str, "none")) return R_ANAL_CC_TYPE_NONE;
 	if (!strcmp (str, "cdecl")) return R_ANAL_CC_TYPE_CDECL;
 	if (!strcmp (str, "stdcall")) return R_ANAL_CC_TYPE_STDCALL;
 	if (!strcmp (str, "fastcall")) return R_ANAL_CC_TYPE_FASTCALL;
@@ -40,7 +39,6 @@ R_API int r_anal_cc_str2type (const char *str) {
 
 R_API const char *r_anal_cc_type2str(int type) {
 	switch (type) {
-	case R_ANAL_CC_TYPE_NONE: return "none";
 	case R_ANAL_CC_TYPE_CDECL: return "cdecl";
 	case R_ANAL_CC_TYPE_STDCALL: return "stdcall";
 	case R_ANAL_CC_TYPE_FASTCALL: return "fastcall";

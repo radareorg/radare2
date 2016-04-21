@@ -177,17 +177,16 @@ enum {
 	R_ANAL_FQUALIFIER_VIRTUAL = 5,
 };
 
-enum {
-	R_ANAL_CC_TYPE_NONE,
-	R_ANAL_CC_TYPE_CDECL,
-	R_ANAL_CC_TYPE_STDCALL,
-	R_ANAL_CC_TYPE_FASTCALL,
-	R_ANAL_CC_TYPE_PASCAL,
-	R_ANAL_CC_TYPE_WINAPI, // Microsoft's pascal call clone
-	R_ANAL_CC_TYPE_MSFASTCALL, // microsoft fastcall
-	R_ANAL_CC_TYPE_BOFASTCALL, // borland fastcall
-	R_ANAL_CC_TYPE_WAFASTCALL, // wacom fastcall
-	R_ANAL_CC_TYPE_CLARION, // TopSpeed/Clarion/JPI
+/*--------------------Function Convnetions-----------*/
+#define	R_ANAL_CC_TYPE_CDECL 'a'
+#define	R_ANAL_CC_TYPE_STDCALL 0
+#define R_ANAL_CC_TYPE_FASTCALL 'A'
+#define	R_ANAL_CC_TYPE_PASCAL 1
+#define R_ANAL_CC_TYPE_WINAPI 2 // Microsoft's pascal call clone
+#define R_ANAL_CC_TYPE_MSFASTCALL 3 // microsoft fastcall
+#define R_ANAL_CC_TYPE_BOFASTCALL 4 // borland fastcall
+#define R_ANAL_CC_TYPE_WAFASTCALL 5 // wacom fastcall
+#define R_ANAL_CC_TYPE_CLARION 6 // TopSpeed/Clarion/JPI
 	/* Clarion:
 	 *	first four integer parameters are passed in registers:
 	 *	eax, ebx, ecx, edx. Floating point parameters are passed
@@ -198,10 +197,9 @@ enum {
 	 *	Integer values are returned in eax, pointers in edx
 	 *	and floating point types in st0.
 	 */
-	R_ANAL_CC_TYPE_SAFECALL, // Delphi and Free Pascal on Windows
-	R_ANAL_CC_TYPE_SYSV,
-	R_ANAL_CC_TYPE_THISCALL,
-};
+#define R_ANAL_CC_TYPE_SAFECALL 7 // Delphi and Free Pascal on Windows
+#define R_ANAL_CC_TYPE_SYSV 8
+#define R_ANAL_CC_TYPE_THISCALL 9
 
 #define R_ANAL_CC_ARGS 16
 
@@ -1248,6 +1246,7 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name);
 R_API RList *r_anal_fcn_list_new(void);
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_fcn_free(void *fcn);
+R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr,
 		ut8 *buf, ut64 len, int reftype);
 R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size,
