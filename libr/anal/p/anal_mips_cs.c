@@ -422,8 +422,11 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		const char *arg0 = ARG(0);
 		const char *arg1 = ARG(1);
 		const char *arg2 = ARG(2);
-		r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=",
-			arg2, arg1, arg0);
+		if (!strcmp (arg0, arg1)) {
+			r_strbuf_appendf (&op->esil, "%s,%s,&=", arg2, arg1);
+		} else {
+			r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=", arg2, arg1, arg0);
+		}
 		}
 		break;
 	case MIPS_INS_OR:

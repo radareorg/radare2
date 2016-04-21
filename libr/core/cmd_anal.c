@@ -4030,7 +4030,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
 	case 'r': cmd_anal_reg (core, input + 1); break;  // "ar"
 	case 'e': cmd_anal_esil (core, input + 1); break; // "ae"
-	case 'o': cmd_anal_opcode (core, input + 1); break;
+	case 'o': cmd_anal_opcode (core, input + 1); break; // "ao"
 	case 'n': cmd_anal_noreturn (core, input + 1); break; // "an"
 	case 'F':
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
