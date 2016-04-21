@@ -1,9 +1,12 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2016 - pancake */
 
 #include <r_core.h>
 
+
 R_API int r_core_pseudo_code (RCore *core, const char *input) {
 	Sdb *db;
+	ut64 queuegoto = 0LL;
+	const char *blocktype = "else";
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
 		core->offset, R_ANAL_FCN_TYPE_NULL);
 	int asmpseudo = r_config_get_i (core->config, "asm.pseudo");
@@ -49,6 +52,7 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 
 	do {
 #define I_TAB 4
+#define K_MARK(x) sdb_fmt(0,"mark.%"PFMT64x,x)
 #define K_ELSE(x) sdb_fmt(0,"else.%"PFMT64x,x)
 #define K_INDENT(x) sdb_fmt(0,"loc.%"PFMT64x,x)
 #define SET_INDENT(x) { memset (indentstr, ' ', x*I_TAB); indentstr [(x*I_TAB)-2] = 0; }
@@ -65,11 +69,21 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 		//if (nindent != indent) {
 		//	r_cons_printf ("\n%s  loc_0x%llx:\n", indentstr, bb->addr);
 		//}
-		r_cons_printf ("\n%s  loc_0x%llx:\n", indentstr, bb->addr);
-		indentstr[(indent*I_TAB)-2] = 0;
-		r_cons_printf ("\n%s", code);
-		free (code);
-		if (sdb_get (db, K_INDENT(bb->addr), 0)) {
+		if (!sdb_const_get (db, K_MARK(bb->addr), 0)) {
+			bool mustprint = !queuegoto || queuegoto != bb->addr;
+			if (mustprint) {
+				if (queuegoto) {
+					r_cons_printf ("\n%s  goto loc_0x%llx", indentstr, queuegoto);
+					queuegoto = 0LL;
+				}
+				r_cons_printf ("\n%s  loc_0x%llx:\n", indentstr, bb->addr);
+				indentstr[(indent * I_TAB) - 2] = 0;
+				r_cons_printf ("\n%s", code);
+				free (code);
+				sdb_num_set (db, K_MARK(bb->addr), 1, 0);
+			}
+		}
+		if (sdb_const_get (db, K_INDENT (bb->addr), 0)) {
 			// already analyzed, go pop and continue
 			// XXX check if cant pop
 			//eprintf ("%s// 0x%08llx already analyzed\n", indentstr, bb->addr);
@@ -85,12 +99,17 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 				break;
 			}
 			if (sdb_num_get (db, K_ELSE(bb->addr), 0)) {
-				r_cons_printf ("\n%s} else {", indentstr);
+				if (!strcmp (blocktype, "else")) {
+					r_cons_printf ("\n%s } %s {", indentstr, blocktype);
+				} else {
+					r_cons_printf ("\n%s } %s (?);", indentstr, blocktype);
+				}
 			} else {
 				r_cons_printf ("\n%s}", indentstr);
 			}
 			if (addr != bb->addr) {
-				r_cons_printf ("\n%s  goto loc_0x%llx", indentstr, addr);
+				queuegoto = addr;
+				//r_cons_printf ("\n%s  goto loc_0x%llx", indentstr, addr);
 			}
 			bb = r_anal_bb_from_offset (core->anal, addr);
 			if (!bb) {
@@ -99,11 +118,11 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 			}
 			//eprintf ("next is %llx\n", addr);
 			nindent = sdb_num_get (db, K_INDENT(addr), NULL);
-			if (indent>nindent) {
+			if (indent > nindent && !strcmp (blocktype, "else")) {
 				int i;
 				for (i=indent; i!=nindent; i--) {
 					SET_INDENT (i);
-					r_cons_printf ("\n%s}", indentstr);
+					r_cons_printf ("\n%s }", indentstr);
 				}
 			}
 			indent = nindent;
@@ -146,17 +165,22 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 							r_cons_printf (" {");
 						}
 					} else {
-						r_cons_printf (" do");
+						r_cons_printf ("do");
 						sdb_array_push_num (db, "indent", jump, 0);
 						sdb_num_set (db, K_INDENT(jump), indent, 0);
 						sdb_num_set (db, K_ELSE(jump), 1, 0);
+						if (jump <= bb->addr) {
+							blocktype = "while";
+						} else {
+							blocktype = "else";
+						}
 						r_cons_printf (" {");
 						indent++;
 					}
 				}
 			} else {
 				ut64 addr = sdb_array_pop_num (db, "indent", NULL);
-				if (addr==UT64_MAX) {
+				if (addr == UT64_MAX) {
 					r_cons_printf ("\nbreak\n");
 					break;
 				}
