@@ -267,7 +267,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			"[%s + 0x%x]",
 			p->anal->reg->name[R_REG_NAME_BP],
 			arg->delta);
-		snprintf (newstr, sizeof (newstr)-1, "[%s+%s]",
+		snprintf (newstr, sizeof (newstr)-1, "[%s + %s]",
 			p->anal->reg->name[R_REG_NAME_BP],
 			arg->name);
 		if (strstr (tstr, oldstr) != NULL) {
@@ -292,11 +292,11 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 
 	char bp[32];
 	if (p->anal->reg->name[R_REG_NAME_BP]) {
-		strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], 31);
+		strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], sizeof (bp) -1);
 		if (isupper (*str)) {
 			r_str_case (bp, true);
 		}
-		bp[31] = 0;
+		bp[sizeof(bp) - 1] = 0;
 	} else {
 		bp[0] = 0;
 	}
@@ -325,18 +325,18 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		}
 	}
 
+	bool ret = true;
 	if (len > strlen (tstr)) {
-		strncpy (str, tstr, strlen(tstr));
+		strncpy (str, tstr, strlen (tstr));
 		str[strlen (tstr)] = 0;
 	} else {
 		// TOO BIG STRING CANNOT REPLACE HERE
-		free (tstr);
-		return false;
+		ret = false;
 	}
 	free (tstr);
 	r_list_free (vars);
 	r_list_free (args);
-	return true;
+	return ret;
 #endif
 }
 
