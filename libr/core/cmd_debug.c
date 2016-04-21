@@ -412,15 +412,17 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case 'n':
 		eprintf ("TODO: debug_fork: %d\n", r_debug_child_fork (core->dbg));
 		break;
-	case 't':
+	case 't': // "dpt"
 		switch (input[2]) {
 		case 'n':
 			eprintf ("TODO: debug_clone: %d\n", r_debug_child_clone (core->dbg));
 			break;
 		case '=':
-		case ' ':
 			r_debug_select (core->dbg, core->dbg->pid,
 				(int) r_num_math (core->num, input+3));
+			break;
+		case ' ':
+			r_debug_thread_list (core->dbg, atoi (input+2));
 			break;
 		default:
 			r_debug_thread_list (core->dbg, core->dbg->pid);
