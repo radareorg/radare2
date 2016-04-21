@@ -3824,6 +3824,7 @@ static void r_core_anal_info (RCore *core, const char *input) {
 }
 
 extern int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize);
+
 static void cmd_anal_aav(RCore *core, const char *input) {
 #define set(x,y) r_config_set(core->config, x, y);
 #define seti(x,y) r_config_set_i(core->config, x, y);
@@ -3831,6 +3832,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	RIOSection *s = r_io_section_vget (core->io, core->offset);
 	ut64 o_align = geti ("search.align");
 	ut64 from, to, ptr;
+	ut64 vmin, vmax;
+	bool asterisk = false;
 	if (s) {
 		from = s->vaddr;
 		to = s->vaddr + s->size;
@@ -3846,23 +3849,34 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		ptr = r_num_math (core->num, arg + 1);
 		s = r_io_section_vget (core->io, ptr);
 	} else {
-		from = r_num_math (core->num, "${bin.baddr}");
-		to = r_num_math (core->num, "${bin.baddr}+$s");
+		eprintf ("aav: using from to %llx %llx\n", from, to);
+		from = r_config_get_i (core->config, "bin.baddr");
+		to = from + ((core->file)? r_io_desc_size (core->io, core->file->desc): 0);
 	}
 	if (!s) {
 		eprintf ("aav: Cannot find section at 0x%"PFMT64d"\n", ptr);
 		return; // WTF!
 	}
-	ut64 vmin = s->vaddr;
-	ut64 vmax = s->vaddr + s->size;
+	{
+		RList *ret;
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			ret = r_core_get_boundaries_prot (core, 0, "dbg.maps", &vmin, &vmax);
+		} else {
+			ret = r_core_get_boundaries_prot (core, 0, "io.sections", &vmin, &vmax);
+		}
+		r_list_free (ret);
+	}
 //eprintf ("from to %llx %llx\n", from, to);
 //eprintf ("from to %llx %llx\n", vmin, vmax);
 	int vsize = 4; // 32bit dword
 	(void)cmd_search_value_in_range (core,
 			from, to, vmin, vmax, vsize);
 	// TODO: for each hit . must set flag, xref and metadata Cd 4
-	r_cons_printf ("f-hit*\n");
-
+	if (asterisk) {
+		r_cons_printf ("f-hit*\n");
+	} else {
+		r_core_cmd0 (core, "f-hit*");
+	}
 	seti ("search.align", o_align);
 }
 
@@ -3893,7 +3907,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd0 (core, "af @ entry0");
 		break;
 	case 'v': // "aav"
-		cmd_anal_aav(core, input);
+		cmd_anal_aav (core, input);
 		break;
 	case 'u': // "aau" - print areas not covered by functions
 		r_core_anal_nofunclist (core, input + 1);
@@ -3919,9 +3933,16 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (input[0] && (input[1] == '?' || (input[1] && input[2] == '?'))) {
 			eprintf ("Usage: See aa? for more help\n");
 		} else {
+			bool done_aav = false;
 			r_cons_break (NULL, NULL);
 			ut64 curseek = core->offset;
 			rowlog (core, "Analyze all flags starting with sym. and entry0 (aa)");
+			if (strstr (r_config_get (core->config, "asm.arch"), "arm")) {
+				rowlog (core, "Analyze value pointers (aav)");
+				done_aav = true;
+				r_core_cmd0 (core, "aav");
+				r_core_cmd0 (core, "aav $S+$SS+1");
+			}
 			r_core_anal_all (core);
 			rowlog_done (core);
 			if (core->cons->breaked)
@@ -3953,10 +3974,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
 					rowlog_done (core);
-					rowlog (core, "Analyze value pointers (aav)");
-					r_core_cmd0 (core, ".aav");
-					r_core_cmd0 (core, ".aav $S+$SS+1");
-					rowlog_done (core);
+					if (!done_aav) {
+						rowlog (core, "Analyze value pointers (aav)");
+						r_core_cmd0 (core, "aav");
+						r_core_cmd0 (core, "aav $S+$SS+1");
+						rowlog_done (core);
+					}
 				} else {
 					eprintf ("[*] Use -AA or aaaa to perform additional experimental analysis.\n");
 				}

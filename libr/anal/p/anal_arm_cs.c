@@ -1120,6 +1120,12 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_STR:
+	case ARM_INS_STRB:
+	case ARM_INS_STRD:
+	case ARM_INS_STRBT:
+	case ARM_INS_STRH:
+	case ARM_INS_STRHT:
+	case ARM_INS_STRT:
 		op->type = R_ANAL_OP_TYPE_STORE;
 		if (REGBASE(1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_SET;

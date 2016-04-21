@@ -137,6 +137,7 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 
 R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
 	int i, match, align = core->search->align, hitctr = 0;
+	bool asterisk = false;
 	ut8 buf[4096];
 	const int sz = sizeof (buf);
 	ut64 v64, n = 0;
@@ -162,13 +163,16 @@ R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, 
 			default: eprintf ("Unknown vsize\n"); return -1;
 			}
 			if (match) {
-				r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n",
-					n, from + i);
-				r_cons_printf ("Cd %d @ 0x%"PFMT64x"\n", vsize,
-					from + i);
-				r_cons_printf ("f hit0_%d = 0x%"PFMT64x
-					" # from 0x%"PFMT64x"\n",
-						hitctr, from +i, n);
+				if (asterisk) {
+					r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", n, from + i);
+					r_cons_printf ("Cd %d @ 0x%"PFMT64x"\n", vsize, from + i);
+					r_cons_printf ("f hit0_%d = 0x%"PFMT64x" # from 0x%"PFMT64x"\n",
+							hitctr, from +i, n);
+				} else {
+					//eprintf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", n, from + i);
+					r_core_cmdf (core,"ax 0x%"PFMT64x" 0x%"PFMT64x, n, from + i);
+					r_core_cmdf (core,"Cd %d @ 0x%"PFMT64x, vsize, from + i);
+				}
 				hitctr++;
 			}
 		}
@@ -530,6 +534,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			if (!strcmp (mode, "io.sections.exec")) mask = R_IO_EXEC;
 			if (!strcmp (mode, "io.sections.write")) mask = R_IO_WRITE;
 
+			*from = UT64_MAX;
+			*to = 0;
 			r_list_foreach (core->io->sections, iter, s) {
 				if (!mask || (s->rwx & mask)) {
 					if (!list) {
@@ -544,6 +550,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					map->fd = s->fd;
 					map->from = s->vaddr;
 					map->to = s->vaddr + s->size;
+					if (map->from && map->to) {
+						if (map->from < *from)
+							*from = map->from;
+						if (map->to > *to)
+							*to = map->to;
+					}
 					map->flags = s->rwx;
 					map->delta = 0;
 					if (!(map->flags & protection)) {
@@ -598,6 +610,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				if (!strcmp (mode, "dbg.heap")) heap = true;
 				if (!strcmp (mode, "dbg.stack")) stack = true;
 
+				*from = UT64_MAX;
+				*to = 0;
 				r_list_foreach (core->dbg->maps, iter, map) {
 					add = (stack && strstr(map->name, "stack"))? 1: 0;
 					if (!add && (heap && (map->perm & R_IO_WRITE)) && strstr (map->name, "heap")) {
@@ -613,6 +627,14 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 						nmap->fd = core->io->desc->fd;
 						nmap->from = map->addr;
 						nmap->to = map->addr_end;
+						if (nmap->from && nmap->to) {
+							if (nmap->from < *from) {
+								*from = nmap->from;
+							}
+							if (nmap->to < *to) {
+								*to = nmap->to;
+							}
+						}
 						nmap->flags = map->perm;
 						nmap->delta = 0;
 						r_list_append (list, nmap);
