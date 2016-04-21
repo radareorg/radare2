@@ -19,6 +19,7 @@
 #define MEMBASE64(x) cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base)
 #define REGBASE(x) insn->detail->arm.operands[x].mem.base
 #define REGBASE64(x) insn->detail->arm64.operands[x].mem.base
+// s/index/base|reg/
 #define MEMINDEX(x) cs_reg_name(*handle, insn->detail->arm.operands[x].mem.index)
 #define MEMINDEX64(x) cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index)
 #define HASMEMINDEX64(x) insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID
@@ -999,7 +1000,7 @@ static int cond_cs2r2(int cc) {
 }
 
 static void anop32 (RAnalOp *op, cs_insn *insn) {
-	ut64 addr = op->addr;
+	const ut64 addr = op->addr;
 	int i;
 	op->cond = cond_cs2r2 (insn->detail->arm.cc);
 	if (op->cond == R_ANAL_COND_NV) {
@@ -1123,7 +1124,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (REGBASE(1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = 0;
-			op->ptr = MEMDISP(1);
+			op->ptr = -MEMDISP(1);
 		}
 		break;
 	case ARM_INS_LDR:
@@ -1150,7 +1151,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (REGBASE(1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
-			op->ptr = MEMDISP(1);
+			op->ptr = -MEMDISP(1);
 		}
 		break;
 	case ARM_INS_BL:
