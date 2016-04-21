@@ -511,11 +511,17 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 							break;
 					}
 					if (i == nexti) {
+						ut64 at = fcn->addr + fcn->size;
+						while (true) {
+							const RAnalMetaItem *mi = r_meta_find (core->anal, at, R_META_TYPE_ANY, 0);
+							if (!mi) break;
+							at += mi->size;
+						}
 						// TODO: ensure next address is function after padding (nop or trap or wat)
 						// XXX noisy for test cases because we want to clear the stderr
 						r_cons_clear_line (1);
-						loganal (fcn->addr, fcn->addr+fcn->size, 10000 - depth);
-						next = next_append (next, &nexti, fcn->addr + fcn->size);
+						loganal (fcn->addr, at, 10000 - depth);
+						next = next_append (next, &nexti, at);
 					}
 				}
 			}

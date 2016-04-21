@@ -2062,7 +2062,7 @@ static void bin_elf_versioninfo(RCore *r) {
 		r_cons_printf ("Version need section '%s' contains %d entries:\n",
 			sdb_const_get (sdb, "section_name", 0), sdb_num_get (sdb, "num_entries", 0));
 
-		r_cons_printf (" Addr: %p", (void*)sdb_num_get (sdb, "addr", 0));
+		r_cons_printf (" Addr: 0x%08"PFMT64x"\n", sdb_num_get (sdb, "addr", 0));
 
 		r_cons_printf ("  Offset: %#x  Link to section: %x (%s)\n",
 			sdb_num_get (sdb, "offset", 0), sdb_num_get (sdb, "link", 0),
