@@ -2370,6 +2370,9 @@ static void handle_print_esil_anal_init(RCore *core, RDisasmState *ds) {
 		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0);
 	}
 	free (regstate);
+	if (core->anal->gp) {
+		r_reg_setv (core->anal->reg, "gp", opc);
+	}
 	regstate = r_reg_arena_peek (core->anal->reg);
 }
 
