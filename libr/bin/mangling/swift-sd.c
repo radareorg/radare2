@@ -134,7 +134,8 @@ char *r_bin_demangle_swift(const char *s) {
 		}
 	}
 	if (swift_demangle) {
-		char *res = r_sys_cmd_strf ("%s -compact -simplified '%s'",
+		//char *res = r_sys_cmd_strf ("%s -compact -simplified '%s'",
+		char *res = r_sys_cmd_strf ("%s -compact '%s'",
 			swift_demangle, s);
 		if (res && !*res) {
 			free (res);
@@ -286,7 +287,6 @@ char *r_bin_demangle_swift(const char *s) {
 							strcat (out, attr);
 
 						}
-					} else {
 					}
 					q += len;
 				} else {
