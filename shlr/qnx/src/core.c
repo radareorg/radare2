@@ -211,7 +211,7 @@ ptid_t qnxr_attach (libqnxr_t *g, pid_t pid) {
 
 	if (g->inferior_ptid.pid != pid) {
 		qnxr_disconnect (g);
-		sleep (1);
+		r_sys_sleep (1);
 		qnxr_connect (g, g->host, g->port);
 	}
 
