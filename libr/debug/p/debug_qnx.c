@@ -4,6 +4,24 @@
 #include <r_debug.h>
 #include <libqnxr.h>
 
+/* HACK_FOR_PLUGIN_LINKAGE */
+R_API RDebugPid *__r_debug_pid_new(const char *path, int pid, char status, ut64 pc) {
+	RDebugPid *p = R_NEW0 (RDebugPid);
+	if (!p) return NULL;
+	p->path = strdup (path);
+	p->pid = pid;
+	p->status = status;
+	p->runnable = true;
+	p->pc = pc;
+	return p;
+}
+R_API void *__r_debug_pid_free(RDebugPid *pid) {
+	free (pid->path);
+	free (pid);
+	return NULL;
+}
+/* ------------------- */
+
 typedef struct {
 	libqnxr_t desc;
 } RIOQnx;
@@ -14,7 +32,7 @@ static int buf_size = 0;
 
 static void pidlist_cb (void *ctx, pid_t pid, char *name) {
 	RList *list = ctx;
-	r_list_append (list, r_debug_pid_new (name, pid, 's', 0));
+	r_list_append (list, __r_debug_pid_new (name, pid, 's', 0));
 }
 
 static int r_debug_qnx_select (int pid, int tid) {
@@ -26,13 +44,14 @@ static RList *r_debug_qnx_tids (int pid) {
 	return NULL;
 }
 
+
 static RList *r_debug_qnx_pids (int pid) {
 	RList *list = r_list_new ();
-	list->free = (RListFree)&r_debug_pid_free;
+	list->free = (RListFree)&__r_debug_pid_free;
 
 	/* TODO */
 	if (pid) {
-		r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
+		r_list_append (list, __r_debug_pid_new ("(current)", pid, 's', 0));
 	} else {
 		qnxr_pidlist (desc, list, &pidlist_cb);
 	}
@@ -84,14 +103,14 @@ static RList *r_debug_qnx_map_get (RDebug *dbg) {
 }
 
 static int r_debug_qnx_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
-	if (!reg_buf) {
-		// we cannot write registers before we once read them
-		return -1;
-	}
 	int buflen = 0;
 	int bits = dbg->anal->bits;
 	const char *pcname = r_reg_get_name (dbg->anal->reg, R_REG_NAME_PC);
 	RRegItem *reg = r_reg_get (dbg->anal->reg, pcname, 0);
+	if (!reg_buf) {
+		// we cannot write registers before we once read them
+		return -1;
+	}
 	if (reg) {
 		if (dbg->anal->bits != reg->size)
 			bits = reg->size;
@@ -104,7 +123,7 @@ static int r_debug_qnx_reg_write (RDebug *dbg, int type, const ut8 *buf, int siz
 	// so this workaround resizes the small register profile buffer
 	// to the whole set and fills the rest with 0
 	if (buf_size < buflen) {
-		ut8 *new_buf = realloc (reg_buf, buflen * sizeof(ut8));
+		ut8 *new_buf = realloc (reg_buf, buflen * sizeof (ut8));
 		if (!new_buf) {
 			return -1;
 		}

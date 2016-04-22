@@ -83,7 +83,7 @@ static int i386nto_gregset_reg_offset[] =
 
 #if defined(__QNXNTO__) || defined(__SOLARIS__)
 #define errnoconvert(x) x
-#elif defined(__linux__) || defined(__CYGWIN__) || defined(__MINGW32__)
+#elif defined(__linux__) || defined(__WINDOWS__) || defined(__APPLE__)
 
 struct errnomap_t {
 	int nto;
