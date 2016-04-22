@@ -2037,7 +2037,7 @@ static void bin_elf_versioninfo(RCore *r) {
 			if (!(sdb = sdb_ns_path (r->sdb, path_entry, 0)))
 				break;
 
-			r_cons_printf ("  %03x: ", sdb_num_get (sdb, "idx", 0));
+			r_cons_printf ("  0x%08"PFMT64x": ", sdb_num_get (sdb, "idx", 0));
 			const char *value = NULL;
 
 			do {
@@ -2060,11 +2060,11 @@ static void bin_elf_versioninfo(RCore *r) {
 			break;
 
 		r_cons_printf ("Version need section '%s' contains %d entries:\n",
-			sdb_const_get (sdb, "section_name", 0), sdb_num_get (sdb, "num_entries", 0));
+			sdb_const_get (sdb, "section_name", 0), (int)sdb_num_get (sdb, "num_entries", 0));
 
-		r_cons_printf (" Addr: 0x%08"PFMT64x"\n", sdb_num_get (sdb, "addr", 0));
+		r_cons_printf (" Addr: 0x%08"PFMT64x, sdb_num_get (sdb, "addr", 0));
 
-		r_cons_printf ("  Offset: %#x  Link to section: %x (%s)\n",
+		r_cons_printf ("  Offset: 0x%08"PFMT64x"  Link to section: %"PFMT64d" (%s)\n",
 			sdb_num_get (sdb, "offset", 0), sdb_num_get (sdb, "link", 0),
 			sdb_const_get (sdb, "link_section_name", 0));
 
@@ -2076,23 +2076,24 @@ static void bin_elf_versioninfo(RCore *r) {
 			if (!(sdb = sdb_ns_path (r->sdb, path_version, 0)))
 				break;
 
-			r_cons_printf ("  %#06x: Version: %d",
-				sdb_num_get (sdb, "idx", 0), sdb_num_get (sdb, "vn_version", 0));
+			r_cons_printf ("  0x%08"PFMT64x": Version: %d",
+				sdb_num_get (sdb, "idx", 0), (int)sdb_num_get (sdb, "vn_version", 0));
 
 			if ((filename = sdb_const_get (sdb, "file_name", 0)))
 				r_cons_printf ("  File: %s", filename);
 
-			r_cons_printf ("  Cnt: %d\n", sdb_num_get (sdb, "cnt", 0));
+			r_cons_printf ("  Cnt: %d\n", (int)sdb_num_get (sdb, "cnt", 0));
 			do {
-				snprintf (path_vernaux, sizeof (path_vernaux), "%s/vernaux%d", path_version, num_vernaux++);
+				snprintf (path_vernaux, sizeof (path_vernaux), "%s/vernaux%d",
+					path_version, num_vernaux++);
 				if (!(sdb = sdb_ns_path (r->sdb, path_vernaux, 0)))
 					break;
 
-				r_cons_printf ("  %#06x:   Name: %s",
+				r_cons_printf ("  0x%08"PFMT64x":   Name: %s",
 					sdb_num_get (sdb, "idx", 0), sdb_const_get (sdb, "name", 0));
 
 				r_cons_printf ("  Flags: %s Version: %d\n",
-					sdb_const_get (sdb, "flags", 0), sdb_num_get (sdb, "version", 0));
+					sdb_const_get (sdb, "flags", 0), (int)sdb_num_get (sdb, "version", 0));
 			} while (sdb);
 		} while (sdb);
 	} while (sdb);
