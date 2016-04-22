@@ -132,7 +132,7 @@ RList *linux_thread_list (int pid, RList *list) {
 	/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
 	//while ((de = readdir (dh))) {
 	snprintf (cmdline, sizeof(cmdline), "/proc/%d/task", pid);
-	if (r_file_exists (cmdline)) {
+	if (r_file_is_directory (cmdline)) {
 		struct dirent *de;
 		DIR *dh = opendir (cmdline);
 		while ((de = readdir (dh))) {
