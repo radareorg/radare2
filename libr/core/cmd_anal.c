@@ -245,8 +245,8 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 	res = r_str_concatf (res, "%d = %s (", item->num, item->name);
 	// TODO: move this to r_syscall
 	for (i = 0; i < item->args; i++) {
-		ut64 arg = r_debug_arg_get (core->dbg, true, i + 1);
-		//r_cons_printf ("%d:0x%"PFMT64x, i, r_debug_arg_get (core->dbg, true, i+1));
+		ut64 arg = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i + 1);
+		//r_cons_printf ("(%d:0x%"PFMT64x")\n", i, arg);
 		if (item->sargs) {
 			switch (item->sargs[i]) {
 			case 'p': // pointer
@@ -263,10 +263,10 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 				res = r_str_concatf (res, "\"%s\"", str);
 				break;
 			case 'Z': {
-				ut64 len = r_debug_arg_get (core->dbg, true, i + 2);
+				ut64 len = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i + 2);
 				len = R_MIN (len + 1, sizeof (str) - 1);
 				if (len == 0) len = 16; // override default
-				r_io_read_at (core->io, arg, (ut8 *)str, len);
+				(void)r_io_read_at (core->io, arg, (ut8 *)str, len);
 				str[len] = 0;
 				r_str_filter (str, -1);
 				res = r_str_concatf (res, "\"%s\"", str);

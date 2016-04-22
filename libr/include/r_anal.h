@@ -180,7 +180,7 @@ enum {
 /*--------------------Function Convnetions-----------*/
 #define	R_ANAL_CC_TYPE_CDECL 'a'
 #define	R_ANAL_CC_TYPE_STDCALL 0
-#define R_ANAL_CC_TYPE_FASTCALL 'A'
+#define R_ANAL_CC_TYPE_FASTCALL 'A' // syscall
 #define	R_ANAL_CC_TYPE_PASCAL 1
 #define R_ANAL_CC_TYPE_WINAPI 2 // Microsoft's pascal call clone
 #define R_ANAL_CC_TYPE_MSFASTCALL 3 // microsoft fastcall
