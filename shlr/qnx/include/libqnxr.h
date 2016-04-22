@@ -21,8 +21,8 @@
 
 typedef struct
 	{
-	int pid;
-	long tid;
+	st32 pid;
+	st64 tid;
 } ptid_t;
 
 /*! 

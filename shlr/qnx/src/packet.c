@@ -34,8 +34,8 @@ static int append (libqnxr_t *g, char ch) {
 }
 
 static int unpack (libqnxr_t *g) {
-	unsigned char modifier = 0;
-	unsigned char sum = 0xff;
+	ut8 modifier = 0;
+	ut8 sum = 0xff;
 
 	for (; g->read_ptr < g->read_len; g->read_ptr++) {
 		char cur = g->read_buff[g->read_ptr];
@@ -105,7 +105,7 @@ int qnxr_read_packet (libqnxr_t *g) {
 		return -1;
 	}
 
-	if (g->data_len >= sizeof(struct DShdr)) {
+	if (g->data_len >= sizeof (struct DShdr)) {
 		if (g->recv.pkt.hdr.channel)
 			g->channelrd = g->recv.pkt.hdr.channel;
 	} else if (g->data_len >= 1) {
@@ -127,19 +127,19 @@ int qnxr_read_packet (libqnxr_t *g) {
 }
 
 int qnxr_send_nak (libqnxr_t *g) {
-	return r_socket_write (g->sock, nak_packet, sizeof(nak_packet));
+	return r_socket_write (g->sock, nak_packet, sizeof (nak_packet));
 }
 
 int qnxr_send_ch_reset (libqnxr_t *g) {
-	return r_socket_write (g->sock, ch_reset_packet, sizeof(ch_reset_packet));
+	return r_socket_write (g->sock, ch_reset_packet, sizeof (ch_reset_packet));
 }
 
 int qnxr_send_ch_debug (libqnxr_t *g) {
-	return r_socket_write (g->sock, ch_debug_packet, sizeof(ch_debug_packet));
+	return r_socket_write (g->sock, ch_debug_packet, sizeof (ch_debug_packet));
 }
 
 int qnxr_send_ch_text (libqnxr_t *g) {
-	return r_socket_write (g->sock, ch_text_packet, sizeof(ch_text_packet));
+	return r_socket_write (g->sock, ch_text_packet, sizeof (ch_text_packet));
 }
 
 int qnxr_send_packet (libqnxr_t *g) {
