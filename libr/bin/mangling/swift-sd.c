@@ -91,14 +91,6 @@ static const char *resolve (struct Type *t, const char *foo, const char **bar) {
 	return NULL;
 }
 
-#if 0
-static const char *findret(const char *s) {
-	const char *p = strstr (s, "_");
-	if (p) return p+1;
-	return NULL;
-}
-#endif
-
 char *r_bin_demangle_swift(const char *s) {
 #define STRCAT_BOUNDS(x) if ((x+2+strlen (out))>sizeof (out)) break;
 	static char *swift_demangle = NULL;
@@ -128,7 +120,7 @@ char *r_bin_demangle_swift(const char *s) {
 		swift_demangle = r_file_path ("swift-demangle");
 		if (!swift_demangle || !strcmp (swift_demangle, "swift-demangle")) {
 			char *xcrun = r_file_path ("xcrun");
-			if (xcrun) {
+			if (xcrun && strcmp (xcrun, "xcrun")) {
 				free (swift_demangle);
 				swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
 				free (xcrun);
