@@ -900,7 +900,8 @@ int main(int argc, char **argv, char **envp) {
 				char *question;
 				if (debug) {
 					if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
-						if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
+						if (r_config_get_i (r.config, "dbg.exitkills") &&
+								r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
 							r_debug_kill (r.dbg, 0, false, 9); // KILL
 					} else continue;
 				}
