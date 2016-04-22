@@ -15,7 +15,7 @@
 #include "arch.h"
 
 #ifndef offsetof
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#define offsetof(TYPE, MEMBER) ((size_t) & ((TYPE *)0)->MEMBER)
 #endif
 
 enum Breakpoint {
@@ -26,10 +26,10 @@ enum Breakpoint {
 	ACCESS_WATCHPOINT
 };
 
-int qnxr_send_vcont(libqnxr_t* g, int step, int thread_id);
+int qnxr_send_vcont (libqnxr_t *g, int step, int thread_id);
 
-int _qnxr_set_bp(libqnxr_t* g, ut64 address, const char* conditions, enum Breakpoint type);
+int _qnxr_set_bp (libqnxr_t *g, ut64 address, const char *conditions, enum Breakpoint type);
 
-int _qnxr_remove_bp(libqnxr_t* g, ut64 address, enum Breakpoint type);
+int _qnxr_remove_bp (libqnxr_t *g, ut64 address, enum Breakpoint type);
 
 #endif

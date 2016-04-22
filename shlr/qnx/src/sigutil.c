@@ -1,3 +1,5 @@
+/* libqnxr - GPL - Copyright 2016 - madprogrammer, FSF Inc */
+
 #include <signal.h>
 #include "gdb_signals.h"
 #include "sigutil.h"

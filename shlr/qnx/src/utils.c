@@ -1,3 +1,5 @@
+/* libqnxr - GPL - Copyright 2016 - madprogrammer, FSF Inc */
+
 #include <errno.h>
 #include <r_types.h>
 #include "utils.h"
@@ -52,21 +54,20 @@ enum i386_regnum {
 	I386_ST0_REGNUM     /* %st(0) */
 };
 
-static int i386nto_gregset_reg_offset[] =
-	{
-	 7 * 4,  /* %eax */
-	 6 * 4,  /* %ecx */
-	 5 * 4,  /* %edx */
-	 4 * 4,  /* %ebx */
-	 11 * 4, /* %esp */
-	 2 * 4,  /* %epb */
-	 1 * 4,  /* %esi */
-	 0 * 4,  /* %edi */
-	 8 * 4,  /* %eip */
-	 10 * 4, /* %eflags */
-	 9 * 4,  /* %cs */
-	 12 * 4, /* %ss */
-	 -1      /* filler */
+static int i386nto_gregset_reg_offset[] = {
+	7 * 4,  /* %eax */
+	6 * 4,  /* %ecx */
+	5 * 4,  /* %edx */
+	4 * 4,  /* %ebx */
+	11 * 4, /* %esp */
+	2 * 4,  /* %epb */
+	1 * 4,  /* %esi */
+	0 * 4,  /* %edi */
+	8 * 4,  /* %eip */
+	10 * 4, /* %eflags */
+	9 * 4,  /* %cs */
+	12 * 4, /* %ss */
+	-1      /* filler */
 };
 
 /* Pdebug returns errno values on Neutrino that do not correspond to right
@@ -90,8 +91,7 @@ struct errnomap_t {
 	int other;
 };
 
-int
-errnoconvert (int x) {
+int errnoconvert (int x) {
 	struct errnomap_t errnomap[] = {
 #if defined(__linux__)
 		{NTO_ENAMETOOLONG, ENAMETOOLONG},
@@ -120,7 +120,8 @@ errnoconvert (int x) {
 	int i;
 
 	for (i = 0; i < sizeof(errnomap) / sizeof(errnomap[0]); i++)
-		if (errnomap[i].nto == x) return errnomap[i].other;
+		if (errnomap[i].nto == x)
+			return errnomap[i].other;
 	return x;
 }
 
@@ -130,18 +131,19 @@ errnoconvert (int x) {
 #endif /* __QNXNTO__ */
 
 LONGEST
-extract_signed_integer (const uint8_t *addr, int len, int be) {
+extract_signed_integer (const ut8 *addr, int len, int be) {
 	LONGEST retval;
-	const unsigned char *p;
-	const unsigned char *startaddr = addr;
-	const unsigned char *endaddr = startaddr + len;
+	const ut8 *p;
+	const ut8 *startaddr = addr;
+	const ut8 *endaddr = startaddr + len;
 
 	if (len > (int)sizeof(LONGEST))
-		eprintf ("This operation is not available on integers of more than %d bytes\n",
-			 (int)sizeof(LONGEST));
+		eprintf (
+			"This operation is not available on integers of more than %d bytes\n",
+			(int)sizeof(LONGEST));
 
 	/* Start at the most significant end of the integer, and work towards
-       the least significant.  */
+ the least significant.  */
 	if (be) {
 		p = startaddr;
 		/* Do the sign extension once at the start.  */
@@ -159,18 +161,19 @@ extract_signed_integer (const uint8_t *addr, int len, int be) {
 }
 
 ULONGEST
-extract_unsigned_integer (const uint8_t *addr, int len, int be) {
+extract_unsigned_integer (const ut8 *addr, int len, int be) {
 	ULONGEST retval;
-	const unsigned char *p;
-	const unsigned char *startaddr = addr;
-	const unsigned char *endaddr = startaddr + len;
+	const ut8 *p;
+	const ut8 *startaddr = addr;
+	const ut8 *endaddr = startaddr + len;
 
 	if (len > (int)sizeof(LONGEST))
-		eprintf ("This operation is not available on integers of more than %d bytes\n",
-			 (int)sizeof(LONGEST));
+		eprintf (
+			"This operation is not available on integers of more than %d bytes\n",
+			(int)sizeof(LONGEST));
 
 	/* Start at the most significant end of the integer, and work towards
-       the least significant.  */
+ the least significant.  */
 	retval = 0;
 	if (be) {
 		for (p = startaddr; p < endaddr; ++p)
@@ -182,30 +185,27 @@ extract_unsigned_integer (const uint8_t *addr, int len, int be) {
 	return retval;
 }
 
-int
-i386nto_regset_id (int regno) {
+int i386nto_regset_id (int regno) {
 	if (regno == -1)
 		return NTO_REG_END;
-	else if (regno < I386_NUM_GREGS)
+	if (regno < I386_NUM_GREGS)
 		return NTO_REG_GENERAL;
-	else if (regno < I386_NUM_GREGS + I386_NUM_FREGS)
+	if (regno < I386_NUM_GREGS + I386_NUM_FREGS)
 		return NTO_REG_FLOAT;
-	else if (regno < I386_SSE_NUM_REGS)
+	if (regno < I386_SSE_NUM_REGS)
 		return NTO_REG_FLOAT; /* We store xmm registers in fxsave_area.  */
 
 	return -1;
 }
 
-int
-i386nto_reg_offset (int regnum) {
+int i386nto_reg_offset (int regnum) {
 	if (regnum >= 0 && regnum < ARRAY_SIZE (i386nto_gregset_reg_offset))
 		return i386nto_gregset_reg_offset[regnum];
 
 	return -1;
 }
 
-int
-i386nto_register_area (int regno, int regset, unsigned *off) {
+int i386nto_register_area (int regno, int regset, ut32 *off) {
 	*off = 0;
 	if (regset == NTO_REG_GENERAL) {
 		if (regno == -1)
@@ -216,7 +216,7 @@ i386nto_register_area (int regno, int regset, unsigned *off) {
 			return 0;
 		return 4;
 	} else if (regset == NTO_REG_FLOAT) {
-		unsigned off_adjust, regsize, regset_size, regno_base;
+		ut32 off_adjust, regsize, regset_size, regno_base;
 		/* The following are flags indicating number in our fxsave_area.  */
 		int first_four = (regno >= I387_FCTRL_REGNUM && regno <= I387_FISEG_REGNUM);
 		int second_four = (regno > I387_FISEG_REGNUM && regno <= I387_FOP_REGNUM);
@@ -230,7 +230,7 @@ i386nto_register_area (int regno, int regset, unsigned *off) {
 		/* fxsave_area structure.  */
 		if (first_four) {
 			/* fpu_control_word, fpu_status_word, fpu_tag_word, fpu_operand
-	         registers.  */
+registers.  */
 			regsize = 2; /* Two bytes each.  */
 			off_adjust = 0;
 			regno_base = I387_FCTRL_REGNUM;
@@ -289,27 +289,20 @@ i386nto_register_area (int regno, int regset, unsigned *off) {
 	}
 #endif
 
-		if (regno != -1)
-			*off = off_adjust + (regno - regno_base) * regsize;
-		else
-			*off = 0;
+		*off = (regno != -1) ? off_adjust + (regno - regno_base) * regsize : 0;
 		return regsize;
 	}
 	return -1;
 }
 
-ptid_t
-ptid_build (int pid, long tid) {
+ptid_t ptid_build (st32 pid, st64 tid) {
 	ptid_t ptid;
-
 	ptid.pid = pid;
 	ptid.tid = tid;
 
 	return ptid;
 }
 
-int
-ptid_equal (ptid_t ptid1, ptid_t ptid2) {
-	return ptid1.pid == ptid2.pid &&
-	       ptid1.tid == ptid2.tid;
+int ptid_equal (ptid_t ptid1, ptid_t ptid2) {
+	return ptid1.pid == ptid2.pid && ptid1.tid == ptid2.tid;
 }
