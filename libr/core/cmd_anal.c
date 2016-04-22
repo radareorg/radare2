@@ -3829,18 +3829,26 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define set(x,y) r_config_set(core->config, x, y);
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
-	RIOSection *s = r_io_section_vget (core->io, core->offset);
+	RIOSection *s;
 	ut64 o_align = geti ("search.align");
 	ut64 from, to, ptr;
 	ut64 vmin, vmax;
 	bool asterisk = false;
-	if (s) {
-		from = s->vaddr;
-		to = s->vaddr + s->size;
+	bool is_debug = r_config_get_i (core->config, "cfg.debug");
+
+	if (is_debug) {
+		// 
+		r_list_free (r_core_get_boundaries_prot (core, 0, "dbg.map", &from, &to));
 	} else {
-		eprintf ("aav: Cannot find section at this address\n");
-		// TODO: look in debug maps
-		return;
+		s = r_io_section_vget (core->io, core->offset);
+		if (s) {
+			from = s->vaddr;
+			to = s->vaddr + s->size;
+		} else {
+			eprintf ("aav: Cannot find section at this address\n");
+			// TODO: look in debug maps
+			return;
+		}
 	}
 	seti ("search.align", 4);
 
@@ -3848,29 +3856,26 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	if (arg) {
 		ptr = r_num_math (core->num, arg + 1);
 		s = r_io_section_vget (core->io, ptr);
-	} else {
-		eprintf ("aav: using from to %llx %llx\n", from, to);
-		from = r_config_get_i (core->config, "bin.baddr");
-		to = from + ((core->file)? r_io_desc_size (core->io, core->file->desc): 0);
-	}
-	if (!s) {
-		eprintf ("aav: Cannot find section at 0x%"PFMT64d"\n", ptr);
-		return; // WTF!
 	}
 	{
 		RList *ret;
-		if (r_config_get_i (core->config, "cfg.debug")) {
-			ret = r_core_get_boundaries_prot (core, 0, "dbg.maps", &vmin, &vmax);
+		if (is_debug) {
+			ret = r_core_get_boundaries_prot (core, 0, "dbg.map", &vmin, &vmax);
 		} else {
+			from = r_config_get_i (core->config, "bin.baddr");
+			to = from + ((core->file)? r_io_desc_size (core->io, core->file->desc): 0);
+			if (!s) {
+				eprintf ("aav: Cannot find section at 0x%"PFMT64d"\n", ptr);
+				return; // WTF!
+			}
 			ret = r_core_get_boundaries_prot (core, 0, "io.sections", &vmin, &vmax);
 		}
 		r_list_free (ret);
 	}
-//eprintf ("from to %llx %llx\n", from, to);
-//eprintf ("from to %llx %llx\n", vmin, vmax);
+	eprintf ("aav: using from to 0x%"PFMT64x" 0x%"PFMT64x"\n", from, to);
+	eprintf ("Using vmin 0x%"PFMT64x" and vmax 0x%"PFMT64x"\n", vmin, vmax);
 	int vsize = 4; // 32bit dword
-	(void)cmd_search_value_in_range (core,
-			from, to, vmin, vmax, vsize);
+	(void)cmd_search_value_in_range (core, from, to, vmin, vmax, vsize);
 	// TODO: for each hit . must set flag, xref and metadata Cd 4
 	if (asterisk) {
 		r_cons_printf ("f-hit*\n");

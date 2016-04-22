@@ -137,22 +137,32 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 
 R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
 	int i, match, align = core->search->align, hitctr = 0;
-	bool asterisk = false;
 	ut8 buf[4096];
-	const int sz = sizeof (buf);
+	bool asterisk = false;
 	ut64 v64, n = 0;
 	ut32 v32;
 	ut16 v16;
+	if (from >= to) {
+		eprintf ("Error: from must be lower than to\n");
+		return -1;
+	}
 	if (vmin >= vmax) {
 		eprintf ("Error: vmin must be lower than vmax\n");
 		return -1;
 	}
 	while (from < to) {
-		memset (buf, 0, sz); // probably unnecessary
-		(void)r_io_read_at (core->io, from, buf, sz);
-		for (i=0; i<sizeof (buf)-vsize; i++) {
-			void *v = (buf+i);
-			if (align && (from+i)%align)
+		memset (buf, 0, sizeof (buf)); // probably unnecessary
+		(void)r_io_read_at (core->io, from, buf, sizeof (buf));
+		if (r_cons_is_breaked ()) {
+			goto beach;
+		}
+		for (i=0; i < sizeof (buf) - vsize; i++) {
+			void *v = (buf + i);
+			if (r_cons_is_breaked ()) {
+				eprintf ("BEACH\n");
+				goto beach;
+			}
+			if (align && (from + i) % align)
 				continue;
 			match = false;
 			switch (vsize) {
@@ -176,8 +186,10 @@ R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, 
 				hitctr++;
 			}
 		}
-		from += sz;
+		from += sizeof (buf);
 	}
+beach:
+	r_cons_break_end ();
 	return hitctr;
 }
 
@@ -590,6 +602,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 						*from = map->addr;
 						*to = map->addr_end;
 						perm = map->perm;
+						break;
 					}
 				}
 				if (perm) {
@@ -631,7 +644,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 							if (nmap->from < *from) {
 								*from = nmap->from;
 							}
-							if (nmap->to < *to) {
+							if (nmap->to > *to) {
 								*to = nmap->to;
 							}
 						}
