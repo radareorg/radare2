@@ -742,7 +742,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 	r_list_foreach (xrefs, iter, refi) {
 		if (refi->at == ds->at) {
 			RAnalFunction *fun = r_anal_get_fcn_in (
-				core->anal, refi->at, -1);
+				core->anal, refi->addr, -1);
 			name = strdup (fun ? fun->name : "unk");
 			if (demangle) {
 				tmp = r_bin_demangle (core->bin->cur, lang, name);
