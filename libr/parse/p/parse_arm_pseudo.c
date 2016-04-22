@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2016 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -103,7 +103,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		return false;
 	}
 
-	for (i=0; ops[i].op != NULL; i++) {
+	for (i = 0; ops[i].op != NULL; i++) {
 		if (ops[i].narg) {
 			if (argc-1 != ops[i].narg) {
 				continue;

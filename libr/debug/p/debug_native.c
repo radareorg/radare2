@@ -1305,6 +1305,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 #elif __arm__
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "arm",
+	.canstep = 0,
 #elif __mips__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "mips",
