@@ -2198,9 +2198,10 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			if (p==UT64_MAX || p==UT32_MAX) {
 				DOALIGN();
 				r_cons_printf (" ; -1", p);
-			} else if (p>='!' && p<='~') {
+			} else if (((char)p>0) && p>='!' && p<='~') {
+				char ch = p;
 				DOALIGN();
-				r_cons_printf (" ; '%c'", p);
+				r_cons_printf (" ; '%c'", ch);
 			} else if (p>10) {
 				if ((st64)p<0) {
 					// resolve local var if possible

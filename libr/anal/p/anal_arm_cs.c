@@ -13,7 +13,7 @@
 #define REG64(x) cs_reg_name (*handle, insn->detail->arm64.operands[x].reg)
 #define REGID64(x) insn->detail->arm64.operands[x].reg
 #define REGID(x) insn->detail->arm.operands[x].reg
-#define IMM(x) insn->detail->arm.operands[x].imm
+#define IMM(x) (ut32)(insn->detail->arm.operands[x].imm)
 #define IMM64(x) insn->detail->arm64.operands[x].imm
 #define MEMBASE(x) cs_reg_name(*handle, insn->detail->arm.operands[x].mem.base)
 #define MEMBASE64(x) cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base)
@@ -25,6 +25,8 @@
 #define HASMEMINDEX64(x) insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) insn->detail->arm64.operands[x].mem.disp
+#define ISIMM(x) insn->detail->arm.operands[x].type == ARM_OP_IMM
+#define ISIMM64(x) insn->detail->arm64.operands[x].type == ARM64_OP_IMM
 #define ISREG(x) insn->detail->arm.operands[x].type == ARM_OP_REG
 #define ISREG64(x) insn->detail->arm64.operands[x].type == ARM64_OP_REG
 #define ISMEM(x) insn->detail->arm.operands[x].type == ARM_OP_MEM
@@ -1086,6 +1088,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->type = R_ANAL_OP_TYPE_UJMP;
 			}
 		}
+		if (ISIMM(1)) {
+			op->ptr = IMM(1);
+		}
 		break;
 	case ARM_INS_UDF:
 		op->type = R_ANAL_OP_TYPE_TRAP;
@@ -1100,6 +1105,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_CMN:
 	case ARM_INS_TST:
 		op->type = R_ANAL_OP_TYPE_CMP;
+		if (ISIMM(1)) {
+			op->ptr = IMM(1);
+		}
 		break;
 	case ARM_INS_ROR:
 	case ARM_INS_ORN:
