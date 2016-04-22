@@ -91,6 +91,8 @@ static const char *resolve (struct Type *t, const char *foo, const char **bar) {
 	return NULL;
 }
 
+static int have_swift_demangle = -1;
+
 char *r_bin_demangle_swift(const char *s) {
 #define STRCAT_BOUNDS(x) if ((x+2+strlen (out))>sizeof (out)) break;
 	static char *swift_demangle = NULL;
@@ -116,14 +118,18 @@ char *r_bin_demangle_swift(const char *s) {
 	if (strchr (s, '\'') || strchr (s, ' '))
 		return NULL;
 
-	if (!swift_demangle) {
-		swift_demangle = r_file_path ("swift-demangle");
-		if (!swift_demangle || !strcmp (swift_demangle, "swift-demangle")) {
-			char *xcrun = r_file_path ("xcrun");
-			if (xcrun && strcmp (xcrun, "xcrun")) {
-				free (swift_demangle);
-				swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
-				free (xcrun);
+	if (have_swift_demangle == -1) {
+		if (!swift_demangle) {
+			have_swift_demangle = 0;
+			swift_demangle = r_file_path ("swift-demangle");
+			if (!swift_demangle || !strcmp (swift_demangle, "swift-demangle")) {
+				char *xcrun = r_file_path ("xcrun");
+				if (xcrun && strcmp (xcrun, "xcrun")) {
+					free (swift_demangle);
+					swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
+					have_swift_demangle = 1;
+					free (xcrun);
+				}
 			}
 		}
 	}
