@@ -949,12 +949,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_afC);
 			} break;
 		case 'l':{ //afCl list all function Calling conventions.
-			int i;
-			for (i = 0;; i++) {
-				const char *s = r_anal_cc_type2str (i);
-				if (!s && !*s) break;
-				r_cons_printf ("%s\n", s);
-			}
+			r_cons_printf ("%s\n", r_anal_cc_type2str (R_ANAL_CC_TYPE_CDECL));
+			r_cons_printf ("%s\n", r_anal_cc_type2str (R_ANAL_CC_TYPE_STDCALL));
+			r_cons_printf ("%s\n", r_anal_cc_type2str (R_ANAL_CC_TYPE_FASTCALL));
+			//THOSE are the only implemented ones
+			//should I test for null ... no ;)
 			} break;
 		case 'g': {
 			//TODO guess calling conventions
