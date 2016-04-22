@@ -39,21 +39,21 @@ typedef struct libqnxr_t {
 	char host[256];
 	int port;
 	int connected;
-	uint8_t mid;
+	ut8 mid;
 	union {
-		uint8_t data[DS_DATA_MAX_SIZE];
+		ut8 data[DS_DATA_MAX_SIZE];
 		DSMsg_union_t pkt;
 	} tran, recv;
 	ssize_t data_len;
-	uint8_t architecture;
+	ut8 architecture;
 	registers_t *registers;
 	int channelrd;
 	int channelwr;
 	int target_proto_minor;
 	int target_proto_major;
 	int stop_flags;
-	uint8_t notify_type;
-	uint32_t stop_pc;
+	ut8 notify_type;
+	ut32 stop_pc;
 	int signal;
 	ptid_t inferior_ptid;
 	int waiting_for_stop;
@@ -62,7 +62,7 @@ typedef struct libqnxr_t {
 typedef void(pidlist_cb_t)(void *ctx, pid_t pid, char *name);
 
 int qnxr_init (libqnxr_t *g);
-int qnxr_set_architecture (libqnxr_t *g, uint8_t architecture);
+int qnxr_set_architecture (libqnxr_t *g, ut8 architecture);
 int qnxr_cleanup (libqnxr_t *g);
 int qnxr_connect (libqnxr_t *g, const char *server, int port);
 int qnxr_disconnect (libqnxr_t *g);
@@ -80,8 +80,8 @@ int qnxr_read_registers (libqnxr_t *g);
 
 int qnxr_write_reg (libqnxr_t *g, const char *name, char *value, int len);
 int qnxr_write_register (libqnxr_t *g, int index, char *value, int len);
-int qnxr_read_memory (libqnxr_t *g, ut64 address, uint8_t *data, ut64 len);
-int qnxr_write_memory (libqnxr_t *g, ut64 address, const uint8_t *data, ut64 len);
+int qnxr_read_memory (libqnxr_t *g, ut64 address, ut8 *data, ut64 len);
+int qnxr_write_memory (libqnxr_t *g, ut64 address, const ut8 *data, ut64 len);
 
 int qnxr_set_bp (libqnxr_t *g, ut64 address, const char *conditions);
 int qnxr_set_hwbp (libqnxr_t *g, ut64 address, const char *conditions);

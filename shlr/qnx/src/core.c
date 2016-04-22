@@ -5,6 +5,7 @@
 #include "libqnxr.h"
 #include "core.h"
 #include "signal.h"
+#include "sigutil.h"
 #include "packet.h"
 
 #define MAX_TRAN_TRIES 3
@@ -111,7 +112,7 @@ int qnxr_init (libqnxr_t *g) {
 	return 0;
 }
 
-int qnxr_set_architecture (libqnxr_t *g, uint8_t architecture) {
+int qnxr_set_architecture (libqnxr_t *g, ut8 architecture) {
 	if (!g) return -1;
 	g->architecture = architecture;
 	switch (architecture) {
@@ -343,7 +344,7 @@ int qnxr_read_registers (libqnxr_t *g) {
 	return n;
 }
 
-int qnxr_read_memory (libqnxr_t *g, ut64 address, uint8_t *data, ut64 len) {
+int qnxr_read_memory (libqnxr_t *g, ut64 address, ut8 *data, ut64 len) {
 	int rcv_len, tot_len, ask_len;
 	ut64 addr;
 
@@ -373,7 +374,7 @@ int qnxr_read_memory (libqnxr_t *g, ut64 address, uint8_t *data, ut64 len) {
 	return tot_len;
 }
 
-int qnxr_write_memory (libqnxr_t *g, ut64 address, const uint8_t *data, ut64 len) {
+int qnxr_write_memory (libqnxr_t *g, ut64 address, const ut8 *data, ut64 len) {
 	ut64 addr;
 
 	if (!g || !data) return -1;
@@ -717,7 +718,7 @@ int nto_send_arg (libqnxr_t *g, const char *arg) {
 
 int nto_send (libqnxr_t *g, ut32 len, st32 report_errors) {
 	int rlen;
-	uint8_t tries = 0;
+	ut8 tries = 0;
 	g->send_len = len;
 
 	if (!g || g->connected == 0) return -1;

@@ -14,13 +14,13 @@
 #define SET_CHANNEL_TEXT 2
 #define SET_CHANNEL_NAK 0xff
 
-static uint8_t nak_packet[] =
+static ut8 nak_packet[] =
 	{FRAME_CHAR, SET_CHANNEL_NAK, 0, FRAME_CHAR};
-static uint8_t ch_reset_packet[] =
+static ut8 ch_reset_packet[] =
 	{FRAME_CHAR, SET_CHANNEL_RESET, 0xff, FRAME_CHAR};
-static uint8_t ch_debug_packet[] =
+static ut8 ch_debug_packet[] =
 	{FRAME_CHAR, SET_CHANNEL_DEBUG, 0xfe, FRAME_CHAR};
-static uint8_t ch_text_packet[] =
+static ut8 ch_text_packet[] =
 	{FRAME_CHAR, SET_CHANNEL_TEXT, 0xfd, FRAME_CHAR};
 
 static int append (libqnxr_t *g, char ch) {
@@ -149,14 +149,14 @@ int qnxr_send_packet (libqnxr_t *g) {
 	}
 
 	int i;
-	uint8_t csum = 0;
+	ut8 csum = 0;
 	char *p;
 
 	p = g->send_buff;
 	*p++ = FRAME_CHAR;
 
 	for (i = 0; i < g->send_len; i++) {
-		uint8_t c = g->tran.data[i];
+		ut8 c = g->tran.data[i];
 		csum += c;
 
 		switch (c) {

@@ -131,7 +131,7 @@ int errnoconvert (int x) {
 #endif /* __QNXNTO__ */
 
 LONGEST
-extract_signed_integer (const uint8_t *addr, int len, int be) {
+extract_signed_integer (const ut8 *addr, int len, int be) {
 	LONGEST retval;
 	const ut8 *p;
 	const ut8 *startaddr = addr;
@@ -161,7 +161,7 @@ extract_signed_integer (const uint8_t *addr, int len, int be) {
 }
 
 ULONGEST
-extract_unsigned_integer (const uint8_t *addr, int len, int be) {
+extract_unsigned_integer (const ut8 *addr, int len, int be) {
 	ULONGEST retval;
 	const ut8 *p;
 	const ut8 *startaddr = addr;
@@ -188,11 +188,11 @@ extract_unsigned_integer (const uint8_t *addr, int len, int be) {
 int i386nto_regset_id (int regno) {
 	if (regno == -1)
 		return NTO_REG_END;
-	else if (regno < I386_NUM_GREGS)
+	if (regno < I386_NUM_GREGS)
 		return NTO_REG_GENERAL;
-	else if (regno < I386_NUM_GREGS + I386_NUM_FREGS)
+	if (regno < I386_NUM_GREGS + I386_NUM_FREGS)
 		return NTO_REG_FLOAT;
-	else if (regno < I386_SSE_NUM_REGS)
+	if (regno < I386_SSE_NUM_REGS)
 		return NTO_REG_FLOAT; /* We store xmm registers in fxsave_area.  */
 
 	return -1;
