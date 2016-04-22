@@ -545,6 +545,11 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '(':
 		r_cmd_macro_call (&core->rcmd->macro, input+1);
+		str = r_str_newf (".%s", input);
+		if (str) {
+			free (core->lastcmd);
+			core->lastcmd = str;
+		}
 		break;
 	case '?':{
 		const char* help_msg[] = {
@@ -2384,6 +2389,10 @@ R_API void r_core_cmd_repeat(RCore *core, int next) {
 		return;
 	if (core->lastcmd)
 	switch (*core->lastcmd) {
+	case '.':
+		if (core->lastcmd[1] == '(') // macro call
+			r_core_cmd0 (core, core->lastcmd);
+		break;
 	case 'd': // debug
 		r_core_cmd0 (core, core->lastcmd);
 		switch (core->lastcmd[1]) {
