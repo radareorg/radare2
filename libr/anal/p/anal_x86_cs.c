@@ -1172,6 +1172,9 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 			case 4:
 				esilprintf (op, "0,zf,=,0,cf,=,0xffffffff,%s,%s,+,>,?{,1,cf,=,},%s,%s,$o,of,=,$s,sf,=,0xffffffff,%s,&,!,?{,1,zf,=,},$p,pf,=", src, dst_r, src, dst_w, dst_r);
 				break;
+			case 8:
+				esilprintf (op, "0,zf,=,0,cf,=,0xffffffffffffffff,%s,%s,+,>,?{,1,cf,=,},%s,%s,$o,of,=,$s,sf,=,0xffffffffffffffff,%s,&,!,?{,1,zf,=,},$p,pf,=", src, dst_r, src, dst_w, dst_r);
+				break;
 		}
 		free(src);
 		free(dst_r);
@@ -1198,6 +1201,9 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 					break;
 				case 4:
 					esilprintf (op, "0,zf,=,cf,%s,+,%s,+,0,cf,=,DUP,0xffffffff,<,?{,1,cf,=,},%s,=,0xffffffff,%s,&,!,?{,1,zf,=,}", src, dst_r, dst_w, dst_r);
+					break;
+				case 8:
+					esilprintf (op, "0,zf,=,cf,%s,+,%s,+,0,cf,=,DUP,0xffffffffffffffff,<,?{,1,cf,=,},%s,=,0xffffffffffffffff,%s,&,!,?{,1,zf,=,}", src, dst_r, dst_w, dst_r);
 					break;
 			}
 			free(src);
