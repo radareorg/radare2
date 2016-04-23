@@ -258,6 +258,12 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
         }
 	vars = p->varlist (p->anal, f, 'v');
 	args = p->varlist (p->anal, f, 'a');
+	/* if no stack args check for fastcall ones */
+	/* XXX: this is just a hack because not all compilers store fastcall args in stack */
+	if (r_list_empty (args)) {
+		args = p->varlist (p->anal, f, 'A');
+	}
+	/* iterate over arguments */
 	r_list_foreach (args, argiter, arg) {
 		if (arg->delta < 10) snprintf (oldstr, sizeof (oldstr)-1,
 			"[%s + %d]",
