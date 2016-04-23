@@ -1359,6 +1359,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		}
 		i += opsz;
 	}
+	r_cons_printf ("  %d\n", i-oi);
 	if (bgcolor_in_heap) free (bgcolor);
 
 	return true;
