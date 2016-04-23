@@ -914,7 +914,8 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, reloc->import ? reloc->import->name : "");
 		} else if (IS_MODE_RAD (mode)) {
 			//char *reloc_name = get_reloc_name (reloc, addr);
-			char *name = strdup (reloc->import->name);
+			char *name = strdup (reloc->import ?
+					reloc->import->name: "null");
 			if (bin_demangle) {
 				char *mn = r_bin_demangle (r->bin->cur, NULL, name);
 				if (mn) {
@@ -924,7 +925,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			}
 			if (name) {
 				r_cons_printf ("f %s%s%s @ 0x%08"PFMT64x"\n",
-					r->bin->prefix ? r->bin->prefix : "",
+					r->bin->prefix ? r->bin->prefix : "reloc.",
 					r->bin->prefix ? "." : "",
 					name,
 					addr);
