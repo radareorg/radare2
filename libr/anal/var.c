@@ -358,7 +358,7 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind) {
 				if (vardef) {
 					count ++;
 				} else {
-					eprintf ("Cannot find '%s'\n", word);
+					eprintf ("Cannot find var '%s'\n", word);
 				}
 				ptr = next;
 			} while (next);
@@ -401,7 +401,7 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 					sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 					free (vardef);
 				} else {
-					eprintf ("Cannot find '%s'\n", word);
+					// eprintf ("Cannot find var definition for '%s'\n", word);
 				}
 				ptr = next;
 			} while (next);
