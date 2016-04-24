@@ -355,7 +355,7 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 			flag->offset, flag->name));
 	}
 	sdb_foreach (core->anal->sdb_meta, cmtcb, list);
-	res = r_cons_hud(list, NULL);
+	res = r_cons_hud (list, NULL, r_config_get_i (core->config, "scr.color"));
 	if (res) {
 		char *p = strchr (res, ' ');
 		if (p) *p = 0;
@@ -376,7 +376,7 @@ static bool r_core_visual_config_hud(RCore *core) {
 	r_list_foreach (core->config->nodes, iter, bt) {
 		r_list_append (list, r_str_newf("%s %s", bt->name, bt->value));
 	}
-	res = r_cons_hud (list, NULL);
+	res = r_cons_hud (list, NULL, r_config_get_i (core->config, "scr.color"));
 	if (res) {
 		const char *oldvalue = NULL;
 		char cmd[512];
