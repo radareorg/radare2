@@ -149,11 +149,11 @@ R_API int r_core_visual_hud(RCore *core) {
 
 	showcursor (core, true);
 	if (c && *c && r_file_exists (c))
-		res = r_cons_hud_file (c);
+		res = r_cons_hud_file (c, r_config_get_i (core->config, "scr.color"));
 	if (!res && homehud)
-		res = r_cons_hud_file (homehud);
+		res = r_cons_hud_file (homehud, r_config_get_i (core->config, "scr.color")); 
 	if (!res && r_file_exists (f))
-		res = r_cons_hud_file (f);
+		res = r_cons_hud_file (f, r_config_get_i (core->config, "scr.color"));
 	if (!res)
 		r_cons_message ("Cannot find hud file");
 
