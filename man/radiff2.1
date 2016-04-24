@@ -1,11 +1,11 @@
-.Dd May 11, 2014
+.Dd Apr 21, 2016
 .Dt RADIFF2 1
 .Sh NAME
 .Nm RADIFF2
 .Nd unified binary diffing utility
 .Sh SYNOPSIS
 .Nm radiff2
-.Op Fl AabcCDOdrspvh
+.Op Fl AabcCdDhOrspxv
 .Op Fl t Ar 0-100
 .Op Fl g Ar sym
 .Ar file1
@@ -40,6 +40,8 @@ Do code diffing with all bytes instead of just the fixed opcode bytes
 Use physical addressing (io.va=0)
 .It Fl r
 Output in radare commands as a binary patch.
+.It Fl x
+Show two column hexdump diffing.
 .It Fl s
 Calculate text distance from two files.
 .It Fl t Ar 0\-100

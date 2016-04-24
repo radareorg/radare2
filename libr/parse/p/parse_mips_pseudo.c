@@ -51,7 +51,6 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "lw",  "1 = halfword [3 + 2]", 3},
 		{ "li",   "1 = 2", 2},
 		{ "lui",  "1 = 2 << 16", 2},
-		{ "lw",  "1 = [3 + 2]", 3},
 		{ "move",  "1 = 2", 1},
 		{ "mult",  "1 = 2 * 3", 3},
 		{ "multu",  "1 = 2 * 3", 3},
@@ -84,11 +83,11 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
 				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
-					if (can_replace(ops[i].str, j, ops[i].max_operands)) {
+					if (can_replace (ops[i].str, j, ops[i].max_operands)) {
 						const char *w = argv[ ops[i].str[j]-'0' ];
 						if (w != NULL) {
 							strcpy (newstr+k, w);
-							k += strlen(w)-1;
+							k += strlen (w) - 1;
 						}
 					} else newstr[k] = ops[i].str[j];
 				}

@@ -110,7 +110,7 @@ R_API char *r_bin_demangle_msvc(const char *str) {
 
 	create_demangler (&mangler);
 	if (init_demangler (mangler, (char *)str) == eDemanglerErrOK) {
-		mangler->demangle(mangler, &out/*demangled_name*/);
+		mangler->demangle (mangler, &out/*demangled_name*/);
 	}
 	free_demangler (mangler);
 	return out;

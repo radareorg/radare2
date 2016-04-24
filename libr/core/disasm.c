@@ -742,7 +742,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 	r_list_foreach (xrefs, iter, refi) {
 		if (refi->at == ds->at) {
 			RAnalFunction *fun = r_anal_get_fcn_in (
-				core->anal, refi->at, -1);
+				core->anal, refi->addr, -1);
 			name = strdup (fun ? fun->name : "unk");
 			if (demangle) {
 				tmp = r_bin_demangle (core->bin->cur, lang, name);
@@ -1201,7 +1201,14 @@ static void handle_update_ref_lines (RCore *core, RDisasmState *ds) {
 }
 
 static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len) {
-	int ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
+	int ret;
+
+	if (ds->hint && ds->hint->opcode) {
+		free (ds->opstr);
+		ds->opstr = strdup (ds->hint->opcode);
+		return true;
+	}
+	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
 	if (ds->asmop.size < 1) ds->asmop.size = 1;
 
 	if (ds->show_nodup) {
@@ -2191,9 +2198,10 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 			if (p==UT64_MAX || p==UT32_MAX) {
 				DOALIGN();
 				r_cons_printf (" ; -1", p);
-			} else if (p>='!' && p<='~') {
+			} else if (((char)p>0) && p>='!' && p<='~') {
+				char ch = p;
 				DOALIGN();
-				r_cons_printf (" ; '%c'", p);
+				r_cons_printf (" ; '%c'", ch);
 			} else if (p>10) {
 				if ((st64)p<0) {
 					// resolve local var if possible
@@ -2363,6 +2371,9 @@ static void handle_print_esil_anal_init(RCore *core, RDisasmState *ds) {
 		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0);
 	}
 	free (regstate);
+	if (core->anal->gp) {
+		r_reg_setv (core->anal->reg, "gp", opc);
+	}
 	regstate = r_reg_arena_peek (core->anal->reg);
 }
 

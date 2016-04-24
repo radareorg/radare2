@@ -18,6 +18,9 @@ static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int or
 		int maxlen, int size, int* prenecklace_a, char* sequence,
 		const char* charset) {
 	int j;
+	if (!charset || !sequence) {
+		return;
+	}
 	if (strlen(sequence) == maxlen) {
 		return;
 	}

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2016 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -57,6 +57,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "lsl",  "1 = 2 << 3"},
 		{ 0, "lsr",  "1 = 2 >> 3"},
 		{ 0, "mov",  "1 = 2"},
+		{ 0, "mvn",  "1 = 2"},
 		{ 0, "movz",  "1 = 2"},
 		{ 0, "movk",  "1 = 2"},
 		{ 0, "movn",  "1 = 2"},
@@ -77,6 +78,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "strh",  "2 =(halt) 1"},
 		{ 0, "strh.w",  "2 + 3 = 1"},
 		{ 3, "sub",  "1 = 2 - 3"},
+		{ 3, "subs",  "1 = 2 - 3"},
 		{ 2, "sub",  "1 -= 2"}, // THUMB
 		{ 2, "subs",  "1 -= 2"}, // THUMB
 		{ 0, "swp",  "swap(1, 2)"},
@@ -101,7 +103,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		return false;
 	}
 
-	for (i=0; ops[i].op != NULL; i++) {
+	for (i = 0; ops[i].op != NULL; i++) {
 		if (ops[i].narg) {
 			if (argc-1 != ops[i].narg) {
 				continue;
@@ -238,7 +240,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 					"[%s, 0x%x]",
 					p->anal->reg->name[R_REG_NAME_BP],
 					var->delta);
-			snprintf (newstr, sizeof (newstr)-1, "[%s+%s]",
+			snprintf (newstr, sizeof (newstr)-1, "[%s + %s]",
 					p->anal->reg->name[R_REG_NAME_BP],
 					var->name);
 			if (strstr (tstr, oldstr) != NULL) {
@@ -246,7 +248,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 				break;
 			}
 			// Try with no spaces
-			snprintf (oldstr, sizeof (oldstr)-1, "[%s+0x%x]",
+			snprintf (oldstr, sizeof (oldstr)-1, "[%s + 0x%x]",
 					p->anal->reg->name[R_REG_NAME_BP],
 					var->delta);
 			if (strstr (tstr, oldstr) != NULL) {
@@ -265,7 +267,23 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 					"[%s, -0x%x]",
 					p->anal->reg->name[R_REG_NAME_BP],
 					var->delta);
-			snprintf (newstr, sizeof (newstr)-1, "[%s-%s]",
+			if (strstr (tstr, oldstr) != NULL) {
+				snprintf (newstr, sizeof (newstr)-1, "[%s - %s]",
+					p->anal->reg->name[R_REG_NAME_BP],
+					var->name);
+				tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				break;
+			}
+			// asm.pseudo
+			if (var->delta < 10) snprintf (oldstr, sizeof (oldstr)-1,
+					"[%s - %d]",
+					p->anal->reg->name[R_REG_NAME_BP],
+					var->delta);
+			else snprintf (oldstr, sizeof (oldstr)-1,
+					"[%s - 0x%x]",
+					p->anal->reg->name[R_REG_NAME_BP],
+					var->delta);
+			snprintf (newstr, sizeof (newstr)-1, "[%s - %s]",
 					p->anal->reg->name[R_REG_NAME_BP],
 					var->name);
 			if (strstr (tstr, oldstr) != NULL) {

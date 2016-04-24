@@ -184,3 +184,4 @@ Mind that the 'g' in radare is silent
 256 colors ought to be enough for anybody
 Hang in there, Baby!
 Run a command with unspecified long sequence of 'a', pancake will be summoned and do the analysis for you.
+In r2land usability is treated as a bug
