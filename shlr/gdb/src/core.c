@@ -426,6 +426,9 @@ int gdbr_set_architecture(libgdbr_t* g, uint8_t architecture) {
 	case ARCH_AVR:
 		g->registers = avr;
 		break;
+	case ARCH_LM32:
+		g->registers = lm32;
+		break;
 	default:
 		eprintf ("Error unknown architecture set\n");
 	}
