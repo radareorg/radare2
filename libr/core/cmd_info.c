@@ -311,6 +311,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'V': RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL); break;
 		case 'z':
 			if (input[1] == 'z') {
+				char *biname;
 				char *ret;
 				const int min = core->bin->minstrlen;
 				const int max = core->bin->maxstrlen;
@@ -319,24 +320,26 @@ static int cmd_info(void *data, const char *input) {
 					eprintf ("Core file not open\n");
 					return 0;
 				}
+				biname = r_str_escape (core->file->desc->name);
 				switch (input[2]) {
 				case '*':
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -rzz '%s'", min, max, core->file->desc->name);
+					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -rzz %s", min, max, biname);
 					break;
 				case 'q':
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qzz '%s'", min, max, core->file->desc->name);
+					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qzz %s", min, max, biname);
 					break;
 				case 'j':
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -jzz '%s'", min, max, core->file->desc->name);
+					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -jzz %s", min, max, biname);
 					break;
 				default:
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -zz '%s'", min, max, core->file->desc->name);
+					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -zz %s", min, max, biname);
 					break;
 				}
 				if (ret && *ret) {
 					r_cons_strcat (ret);
 				}
 				free (ret);
+				free (biname);
 				input++;
 			} else {
 				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
