@@ -29,7 +29,7 @@ static void XREFKEY(char * const key, const size_t key_len,
 }
 
 R_API int r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
-		char *path, *db;
+	char *path, *db;
 	ut8 found = 0;
 	SdbListIter *it;
 	SdbNs *ns;
