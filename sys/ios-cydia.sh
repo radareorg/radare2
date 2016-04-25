@@ -20,7 +20,7 @@ fi
 . sys/ios-env.sh
 
 makeDeb() {
-	( cd binr/radare2 ; make ios_sdk_sign )
+	( cd binr ; make ios-sdk-sign )
 	rm -rf /tmp/r2ios
 	make install DESTDIR=/tmp/r2ios
 	rm -rf /tmp/r2ios/usr/share/radare2/*/www/enyo/node_modules
