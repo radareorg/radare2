@@ -533,7 +533,7 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case ' ':
 		if (!r_core_run_script (core, input+1)) {
-			eprintf ("Cannot find '%s'\n", input+1);
+			eprintf ("Cannot find script '%s'\n", input+1);
 			core->num->value = 1;
 		} else {
 			core->num->value = 0;

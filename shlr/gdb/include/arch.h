@@ -8,6 +8,7 @@
 #define ARCH_ARM_64 3
 #define ARCH_MIPS 4
 #define ARCH_AVR 5
+#define ARCH_LM32 6
 
 /*!
  * This struct defines a generic

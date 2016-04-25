@@ -196,7 +196,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 			len = (int)(input[3]==' ')?
 				r_num_math (core->num, input + 3): core->blocksize;
 			core->num->value = r_debruijn_offset (len, !core->assembler->big_endian);
-			r_cons_printf ("%d\n", core->num->value);
+			r_cons_printf ("%"PFMT64d"\n", core->num->value);
 			break;
 		default:
 			eprintf ("Invalid arguments for wop\n");
