@@ -912,7 +912,7 @@ int main(int argc, char **argv, char **envp) {
 				free (question);
 			} else {
 				// r_core_project_save (&r, prj);
-				if (debug) {
+				if (debug && r_config_get_i (r.config, "dbg.exitkills")) {
 					r_debug_kill (r.dbg, 0, false, 9); // KILL
 				}
 			}
