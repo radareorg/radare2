@@ -328,6 +328,7 @@ typedef struct r_bin_section_t {
 
 typedef struct r_bin_class_t {
 	char *name;
+	// TODO: char *module;
 	char *super;
 	char *visibility_str;
 	int index;
