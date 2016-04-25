@@ -1,16 +1,12 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_core.h>
+#include <r_endian.h>
 
 #define SETI(x,y,z) r_config_node_desc(r_config_set_i(cfg,x,y), z);
 #define SETICB(w,x,y,z) r_config_node_desc(r_config_set_i_cb(cfg,w,x,y), z);
 #define SETPREF(x,y,z) r_config_node_desc(r_config_set(cfg,x,y), z);
 #define SETCB(w,x,y,z) r_config_node_desc(r_config_set_cb(cfg,w,x,y), z);
-#if LIL_ENDIAN
-#define CFG_BIGENDIAN "false"
-#else
-#define CFG_BIGENDIAN "true"
-#endif
 
 static const char *has_esil(RCore *core, const char *name) {
 	RListIter *iter;
@@ -224,6 +220,13 @@ static int cb_asmarch(void *user, void *data) {
 	//if (!strcmp (node->value, "bf"))
 	//	r_config_set (core->config, "dbg.backend", "bf");
 	__setsegoff (core->config, node->value, core->assembler->bits);
+
+	// detect endian
+	char *asmarch = strdup (r_config_get (core->config, "asm.arch"));
+	int is_be = IS_BIG_ENDIAN_TARGET(asmarch);
+	core->assembler->big_endian = is_be;
+	core->anal->big_endian = is_be;
+	core->anal->reg->big_endian = is_be;
 	return true;
 }
 
@@ -476,13 +479,20 @@ static int cb_asmsyntax(void *user, void *data) {
 	return true;
 }
 
-static int cb_bigendian(void *user, void *data) {
+static int cb_bigendian_host(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->print->big_endian = node->i_value;
+	return true;
+}
+
+static int cb_bigendian_target(void *user, void *data) {
+	int is_be;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->assembler->big_endian = node->i_value;
 	core->anal->big_endian = node->i_value;
 	core->anal->reg->big_endian = node->i_value;
-	core->print->big_endian = node->i_value;
 	return true;
 }
 
@@ -1533,9 +1543,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("bin.classes", "true", "Load classes from rbin on startup");
 
 	/* cfg */
-	r_config_set_cb (cfg, "cfg.bigendian", CFG_BIGENDIAN, &cb_bigendian);
+	r_config_set_cb (cfg, "cfg.bigendian", CFG_BIGENDIANHOST, &cb_bigendian_host);
+	r_config_set_cb (cfg, "cfg.bigendiantarget", CFG_BIGENDIANTARGET, &cb_bigendian_target);
 	SETPREF("cfg.plugins", "true", "Load plugins at startup");
-	r_config_desc (cfg, "cfg.bigendian", "Use little (false) or big (true) endiannes");
+	r_config_desc (cfg, "cfg.bigendian", "Use little (false) or big (true) endianness for display");
+	r_config_desc (cfg, "cfg.bigendiantarget", "Use little (false) or big (true) endianness for asm/anal");
 	SETCB("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETICB("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
 	SETCB("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");

@@ -2,6 +2,14 @@
 
 #include <r_reg.h>
 #include <r_util.h>
+#include <r_types.h>
+
+#define SAME_ENDIAN ( \
+	   ((strcmp(R_SYS_ENDIAN, "little") == 0) && reg->big_endian == 0) \
+	|| ((strcmp(R_SYS_ENDIAN, "big") == 0) && reg->big_endian == 1)    \
+	)
+
+#define SWAP_ENDIAN (SAME_ENDIAN)
 
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	RRegSet *regset;
@@ -39,7 +47,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		break;
 	case 16:
 		if (regset->arena->size - off - 2 >= 0) {
-			r_mem_copyendian ((ut8 *)&v16, (ut8 *)regset->arena->bytes + off, 2, !reg->big_endian);
+			r_mem_copyendian ((ut8 *)&v16, (ut8 *)regset->arena->bytes + off, 2, SWAP_ENDIAN);
 			ret = v16;
 		}
 		break;
@@ -47,13 +55,13 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		if (off + 4 <= regset->arena->size) {
 			r_mem_copyendian ((ut8 *)&v32,
 					(ut8 *)regset->arena->bytes + off,
-					sizeof (ut32), !reg->big_endian);
+					sizeof (ut32), SWAP_ENDIAN);
 			ret = v32;
 		} else eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
 		break;
 	case 64:
 		if (regset->arena->bytes && (off + 8 <= regset->arena->size))
-			r_mem_copyendian ((ut8 *)&ret, (ut8 *)regset->arena->bytes + off, 8, !reg->big_endian);
+			r_mem_copyendian ((ut8 *)&ret, (ut8 *)regset->arena->bytes + off, 8, SWAP_ENDIAN);
 		else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		break;
 	case 80: // long double
@@ -85,15 +93,15 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		r_reg_set_longdouble (reg, item, (long double)value);
 		break;
 	case 64:
-		r_mem_copyendian ((ut8 *)&v64, (ut8 *)&value, 8, !reg->big_endian);
+		r_mem_copyendian ((ut8 *)&v64, (ut8 *)&value, 8, SWAP_ENDIAN);
 		src = (ut8 *)&v64;
 		break;
 	case 32:
-		r_mem_copyendian ((ut8 *)&v32, (ut8 *)&value, 4, !reg->big_endian);
+		r_mem_copyendian ((ut8 *)&v32, (ut8 *)&value, 4, SWAP_ENDIAN);
 		src = (ut8 *)&v32;
 		break;
 	case 16:
-		r_mem_copyendian ((ut8 *)&v16, (ut8 *)&value, 2, !reg->big_endian);
+		r_mem_copyendian ((ut8 *)&v16, (ut8 *)&value, 2, SWAP_ENDIAN);
 		src = (ut8 *)&v16;
 		break;
 	case 8:
