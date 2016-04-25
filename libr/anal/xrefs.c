@@ -29,12 +29,23 @@ static void XREFKEY(char * const key, const size_t key_len,
 }
 
 R_API int r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
-	char *path, *db = r_str_newf (R2_HOMEDIR"/projects/%s.d", prjfile);
+	char *path, *db;
 	ut8 found = 0;
 	SdbListIter *it;
 	SdbNs *ns;
-	if (!db) return false;
-	path = r_str_home (db);
+
+	if (!prjfile || strlen(prjfile) < 1) return false;
+
+	if (prjfile[0] == '/') {
+		db = r_str_newf ("%s.d", prjfile);
+		if (!db) return false;
+		path = strdup (db);
+	} else {
+		db = r_str_newf (R2_HOMEDIR"/projects/%s.d", prjfile);
+		if (!db) return false;
+		path = r_str_home (db);
+	}
+
 	if (!path) {
 		free (db);
 		return false;
