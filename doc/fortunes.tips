@@ -66,7 +66,7 @@ Remember to maintain your ~/.radare_history
 Enable the PAGER with 'e scr.pager=less -R'
 Use 'e asm.offset=true' to show offsets in 16bit segment addressing mode.
 The '?' command can be used to evaluate math expressions. Like this: '? (0x34+22)*4'
-Set 'e bin.dwarf=true' to load dwarf information at startup.
+Set 'e bin.dbginfo=true' to load debug information at startup.
 Rename a function using the 'afr <newname> @ <offset>' command.
 You can redefine descriptive commands in the hud file and using the 'V_' command.
 Pass '-j' to rabin2 to get the information of the binary in JSON format.

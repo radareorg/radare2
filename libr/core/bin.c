@@ -572,7 +572,7 @@ static int bin_dwarf(RCore *core, int mode) {
 		list = plugin->lines (binfile);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
-		if (r_config_get_i (core->config, "bin.dwarf")) {
+		if (r_config_get_i (core->config, "bin.dbginfo")) {
 			RBinDwarfDebugAbbrev *da = NULL;
 			da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 			r_bin_dwarf_parse_info (da, core->bin, mode);
