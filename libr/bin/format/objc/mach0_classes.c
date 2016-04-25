@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - inisider */
+/* radare - LGPL - Copyright 2015-2016 - inisider */
 
 #include "mach0_classes.h"
 
@@ -612,6 +612,41 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	}
 }
 
+
+static const char *skipnum(const char *s) {
+	while (IS_NUMBER (*s)) s++;
+	return s;
+}
+
+// TODO: split up between module + classname
+static char *demangle_classname(const char *s) {
+	int modlen, len;
+	const char *kstr;
+	char *ret, *sym, *klass, *module;
+	if (!strncmp (s, "_TtC", 4)) {
+		len = atoi (s + 4);
+		modlen = strlen (s + 4);
+		if (len >= modlen) {
+			return strdup (s);
+		}
+		module = r_str_ndup (skipnum (s + 4), len);
+		kstr = skipnum (s + 4) + len;
+		len = atoi (kstr);
+		modlen = strlen (kstr);
+		if (len >= modlen) {
+			free (module);
+			return strdup (s);
+		}
+		klass = r_str_ndup (skipnum (kstr), len);
+		ret = r_str_newf ("%s.%s", module, klass);
+		free (module);
+		free (klass);
+	} else {
+		ret = strdup (s);
+	}
+	return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBinClass *klass) {
 	struct MACH0_(obj_t) * bin;
@@ -659,7 +694,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBin
 				int rc = r_buf_read_at (arch->buf, r, (ut8 *)name, left);
 				if (rc < 1) rc = 0;
 				name[rc] = 0;
-				klass->name = strdup (name);
+				klass->name = demangle_classname (name);
 				free (name);
 			}
 		}
@@ -760,6 +795,42 @@ static void __r_bin_class_free(RBinClass *p) {
 	r_bin_class_free (p);
 }
 
+#if 0
+static RList *parse_swift_classes(RBinFile *bf) {
+	bool is_swift = false;
+	RBinString *str;
+	RListIter *iter;
+	RBinClass *cls;
+	RList *ret;
+	char *lib;
+
+	r_list_foreach (bf->o->libs, iter, lib) {
+		if (strstr (lib, "libswift")) {
+			is_swift = true;
+			break;
+		}
+	}
+	if (!is_swift) {
+		return NULL;
+	}
+
+	int idx = 0;
+	ret = r_list_newf (r_bin_string_free);
+	r_list_foreach (bf->o->strings, iter, str) {
+		if (!strncmp (str->string, "_TtC", 4)) {
+			char *msg = strdup (str->string + 4);
+			cls = R_NEW0 (RBinClass);
+			cls->name = strdup (msg);
+			cls->super = strdup (msg);
+			cls->index = idx++;
+			r_list_append (ret, cls);
+			free (msg);
+		}
+	}
+	return ret;
+}
+#endif
+
 RList *MACH0_(parse_classes)(RBinFile *arch) {
 	RList /*<RBinClass>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
@@ -768,7 +839,7 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 	RBinSection *s = NULL;
 	ut32 i = 0, size = 0;
 	RList *sctns = NULL;
-	ut8 is_found = 0;
+	bool is_found = false;
 	mach0_ut p = 0;
 	ut32 left = 0;
 	int len;
@@ -776,16 +847,19 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
 
+	/* check if it's Swift */
+	//ret = parse_swift_classes (arch);
+
 	// searching of section with name __objc_classlist
 	if (!(sctns = r_bin_plugin_mach.sections (arch))) {
 		// retain just for debug
 		// eprintf ("there is no sections\n");
-		return NULL;
+		return ret;
 	}
 
 	r_list_foreach (sctns, iter, s) {
 		if (strstr (s->name, "__objc_classlist") != NULL) {
-			is_found = 1;
+			is_found = true;
 			break;
 		}
 	}
@@ -797,7 +871,7 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 	}
 	// end of seaching of section with name __objc_classlist
 
-	if (!(ret = r_list_new ())) {
+	if (!ret && !(ret = r_list_new ())) {
 		// retain just for debug
 		// eprintf ("RList<RBinClass> allocation error\n");
 		goto get_classes_error;
