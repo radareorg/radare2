@@ -700,6 +700,10 @@ static Sdb *store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 			snprintf (key, sizeof (key), "vernaux%d", j);
 			sdb_ns_set (sdb_version, key, sdb_vernaux);
 		}
+		if ((int)entry->vn_next < 0) {
+			eprintf ("Invalid vn_next\n");
+			break;
+		}
 		i += entry->vn_next;
 		snprintf (key, sizeof (key), "version%d", cnt );
 		sdb_ns_set (sdb, key, sdb_version);

@@ -36,6 +36,33 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_SIZEOF_STRINGS 512
 #define R_BIN_MAX_ARCH 1024
 
+#define R_BIN_REQ_ALL       UT64_MAX
+#define R_BIN_REQ_UNK       0x000000
+#define R_BIN_REQ_ENTRIES   0x000001
+#define R_BIN_REQ_IMPORTS   0x000002
+#define R_BIN_REQ_SYMBOLS   0x000004
+#define R_BIN_REQ_SECTIONS  0x000008
+#define R_BIN_REQ_INFO      0x000010
+#define R_BIN_REQ_OPERATION 0x000020
+#define R_BIN_REQ_HELP      0x000040
+#define R_BIN_REQ_STRINGS   0x000080
+#define R_BIN_REQ_FIELDS    0x000100
+#define R_BIN_REQ_LIBS      0x000200
+#define R_BIN_REQ_SRCLINE   0x000400
+#define R_BIN_REQ_MAIN      0x000800
+#define R_BIN_REQ_EXTRACT   0x001000
+#define R_BIN_REQ_RELOCS    0x002000
+#define R_BIN_REQ_LISTARCHS 0x004000
+#define R_BIN_REQ_CREATE    0x008000
+#define R_BIN_REQ_CLASSES   0x010000
+#define R_BIN_REQ_DWARF     0x020000
+#define R_BIN_REQ_SIZE      0x040000
+#define R_BIN_REQ_PDB       0x080000
+#define R_BIN_REQ_PDB_DWNLD 0x100000
+#define R_BIN_REQ_DLOPEN    0x200000
+#define R_BIN_REQ_EXPORTS   0x400000
+#define R_BIN_REQ_VERSIONINFO 0x800000
+
 enum {
 	R_BIN_SYM_ENTRY,
 	R_BIN_SYM_INIT,
@@ -201,6 +228,7 @@ typedef struct r_bin_t {
 	int strpurge; // purge false positive strings
 	char *srcdir; // dir.source
 	char *prefix; // bin.prefix
+	ut64 filter_rules;
 } RBin;
 
 typedef int (*FREE_XTR)(void *xtr_obj);
@@ -418,6 +446,7 @@ typedef struct r_bin_bind_t {
 #define r_bin_class_free(x) { free(x->name);free(x->super);free (x); }
 
 /* bin.c */
+R_API void r_bin_load_filter(RBin *bin, ut64 rules);
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
 R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr);
 R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr, int fileoffset, const char *name);

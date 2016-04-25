@@ -628,7 +628,8 @@ static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 }
 
 static char *get_reg_profile(RAnal *anal) {
-	return ("=PC	a15\n"
+	return strdup (
+		"=PC	a15\n"
 		"=BP	a14\n"
 		"=SP	a13\n" // XXX
 		"=A0	a0\n"
