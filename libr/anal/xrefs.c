@@ -34,13 +34,13 @@ R_API int r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
 	SdbListIter *it;
 	SdbNs *ns;
 
-	if(!prjfile || strlen(prjfile) < 1) return false;
+	if (!prjfile || strlen(prjfile) < 1) return false;
 
-	if(prjfile[0] == '/'){
+	if (prjfile[0] == '/') {
 		db = r_str_newf ("%s.d", prjfile);
 		if (!db) return false;
-		path = strdup(db);
-	}else{
+		path = strdup (db);
+	} else {
 		db = r_str_newf (R2_HOMEDIR"/projects/%s.d", prjfile);
 		if (!db) return false;
 		path = r_str_home (db);
