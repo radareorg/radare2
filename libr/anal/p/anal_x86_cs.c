@@ -175,8 +175,8 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 		}
 		}
 		return strdup (buf);
-	case X86_OP_FP:
-		break;
+	//case X86_OP_FP:
+	//	break;
 	}
 	return strdup ("PoP");
 }
@@ -864,7 +864,7 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 			free (src);
 			//XXX fallthrough
 			}
-		case X86_OP_FP:
+		//case X86_OP_FP:
 		default: // other?
 			break;
 		}
@@ -1762,7 +1762,7 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 			free (src);
 			//XXX fallthrough
 			}
-		case X86_OP_FP:
+		//case X86_OP_FP:
 		default: // other?
 			op->type = R_ANAL_OP_TYPE_UJMP;
 			op->ptr = UT64_MAX;
