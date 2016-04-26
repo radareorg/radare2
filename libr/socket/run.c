@@ -13,7 +13,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #if __APPLE__
+#if !__POWERPC__
 #include <spawn.h>
+#endif
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <mach/exception_types.h>
@@ -651,7 +653,7 @@ R_API int r_run_start(RRunProfile *p) {
 		exit (execv (p->_program, (char* const*)p->_args));
 	}
 #endif
-#if __APPLE__ && LIBC_HAVE_FORK
+#if __APPLE__ && !__POWERPC__ && LIBC_HAVE_FORK
 	posix_spawnattr_t attr = {0};
 	pid_t pid = -1;
 	int ret;

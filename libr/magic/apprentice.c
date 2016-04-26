@@ -58,10 +58,10 @@ struct r_magic_entry {
 	ut32 max_count;
 };
 
-int file_formats[FILE_NAMES_SIZE];
-const size_t file_nformats = FILE_NAMES_SIZE;
-const char *file_names[FILE_NAMES_SIZE];
-const size_t file_nnames = FILE_NAMES_SIZE;
+static int magic_file_formats[FILE_NAMES_SIZE];
+static const size_t file_nformats = FILE_NAMES_SIZE;
+static const char *magic_file_names[FILE_NAMES_SIZE];
+static const size_t file_nnames = FILE_NAMES_SIZE;
 
 static int getvalue(RMagic *ms, struct r_magic *, const char **, int);
 static int hextoint(int);
@@ -162,8 +162,8 @@ static void init_file_tables(void) {
 	done++;
 	for (p = type_tbl; p->len; p++) {
 		assert(p->type < FILE_NAMES_SIZE);
-		file_names[p->type] = p->name;
-		file_formats[p->type] = p->format;
+		magic_file_names[p->type] = p->name;
+		magic_file_formats[p->type] = p->format;
 	}
 }
 
@@ -1336,14 +1336,14 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 		    "m->type and format strings");
 		return -1;
 	}
-	if (file_formats[m->type] == FILE_FMT_NONE) {
+	if (magic_file_formats[m->type] == FILE_FMT_NONE) {
 		file_magwarn(ms, "No format string for `%s' with description "
-		    "`%s'", m->desc, file_names[m->type]);
+		    "`%s'", m->desc, magic_file_names[m->type]);
 		return -1;
 	}
 
 	ptr++;
-	if (ptr && check_format_type(ptr, file_formats[m->type]) == -1) {
+	if (ptr && check_format_type(ptr, magic_file_formats[m->type]) == -1) {
 		/*
 		 * TODO: this error message is unhelpful if the format
 		 * string is not one character long
@@ -1351,7 +1351,7 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 		file_magwarn(ms, "Printf format `%c' is not valid for type "
 		    "`%s' in description `%s'",
 		    ptr && *ptr ? *ptr : '?',
-		    file_names[m->type], m->desc);
+		    magic_file_names[m->type], m->desc);
 		return -1;
 	}
 
@@ -1360,7 +1360,7 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 			file_magwarn (ms,
 			    "Too many format strings (should have at most one) "
 			    "for `%s' with description `%s'",
-			    file_names[m->type], m->desc);
+			    magic_file_names[m->type], m->desc);
 			return -1;
 		}
 	}
@@ -1859,3 +1859,5 @@ static void bs1(struct r_magic *m) {
 	}
 }
 #endif
+
+#include "print.c"

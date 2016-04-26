@@ -60,7 +60,7 @@ static int update(RCrypto *cry, const ut8 *buf, int len) {
 	memcpy (ibuf, buf, len);
 
 	if (diff) {
-		ibuf[len] = 0b1000;
+		ibuf[len] = 8; // 0b1000;
 	}
 
 	int i, j;
