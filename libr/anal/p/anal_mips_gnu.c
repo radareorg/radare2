@@ -19,9 +19,8 @@ static const char* mips_reg_decode(unsigned reg_num) {
 	return NULL;
 }
 
-static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len) {
+static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	unsigned int opcode;
-	ut8 b[4];
 	// WIP char buf[10]; int reg; int family;
 	int optype, oplen = (anal->bits==16)?2:4;
 
@@ -35,10 +34,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b_in, int len
 	op->addr = addr;
 	r_strbuf_init (&op->esil);
 
-	// Reminder: r_mem_copyendian swaps if arg `endian` ==0 ...
-	// When anal->big_endian is "false", as for mipsel architecture, we NEED to swap here for the below analysis to work.
-	r_mem_copyendian ((ut8*)&opcode, b_in, 4, anal->big_endian ? 1 : 0);
-	r_mem_copyendian (b, b_in, 4, anal->big_endian ? 1 : 0);
+	// Be endian aware
+	opcode = r_read_ble32 (b, anal->big_endian);
 
 	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", b[0], b[1], b[2], b[3], anal->big_endian);
 	if (opcode == 0) {

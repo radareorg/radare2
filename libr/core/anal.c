@@ -340,7 +340,8 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 		ref1.at = ref->addr;
 		ref1.addr = 0;
 		for (offs = 0; offs < bufsz; offs += sz, ref1.at += sz) {
-			r_mem_copyendian ((ut8*)&ref1.addr, buf + offs, sz, !core->anal->big_endian);
+			// XXX wtf endian
+			memcpy ((ut8*)&ref1.addr, buf + offs, sz);
 			r_anal_try_get_fcn (core, &ref1, fcndepth, refdepth-1);
 		}
 	}
@@ -1745,7 +1746,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 
 static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 ref, int code, int depth) {
 	ut64 dataptr;
-	int wordsize, endian;
+	int wordsize;
 
 	if (ptr == ref) {
 		if (code) {
@@ -1760,11 +1761,9 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 	}
 	if (depth < 1)
 		return false;
-	if (core->bin && core->bin->cur && core->bin->cur->o && core->bin->cur->o->info) {
-		endian = core->bin->cur->o->info->big_endian;
-	} else endian = CPU_ENDIAN;
+	
 	wordsize = (int)(core->anal->bits/8);
-	if ((dataptr = r_io_read_i (core->io, ptr, wordsize, endian)) == -1)
+	if ((dataptr = r_io_read_i (core->io, ptr, wordsize)) == -1)
 		return false;
 	return core_anal_followptr (core, type, at, dataptr, ref, code, depth - 1);
 }
@@ -2148,7 +2147,6 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 	ut8 *buf = core->block;
 	int len = core->blocksize;
 	int word = core->assembler->bits /8;
-	int endi = core->anal->big_endian;
 	char *str;
 	int i, j;
 
@@ -2162,12 +2160,12 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 
 	for (i = j = 0; j<count; j++ ) {
 		if (i>=len) {
-			r_io_read_at (core->io, addr+i, buf, len);
+			r_io_read_at (core->io, addr + i, buf, len);
 			addr += i;
 			i = 0;
 			continue;
 		}
-		d = r_anal_data (core->anal, addr+i, buf+i, len-i);
+		d = r_anal_data (core->anal, addr + i, buf + i, len - i);
 		str = r_anal_data_to_string (d);
 		r_cons_printf ("%s\n", str);
 
@@ -2175,14 +2173,14 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 			switch (d->type) {
 			case R_ANAL_DATA_TYPE_POINTER:
 				r_cons_printf ("`- ");
-				dstaddr = r_mem_get_num (buf+i, word, !endi);
-				if (depth>0)
-					r_core_anal_data (core, dstaddr, 1, depth-1);
+				dstaddr = r_mem_get_num (buf + i, word);
+				if (depth > 0)
+					r_core_anal_data (core, dstaddr, 1, depth - 1);
 				i += word;
 				break;
 			case R_ANAL_DATA_TYPE_STRING:
 				buf[len-1] = 0;
-				i += strlen ((const char*)buf+i)+1;
+				i += strlen ((const char*)buf + i) + 1;
 				break;
 			default:
 				i += (d->len > 3)? d->len: word;

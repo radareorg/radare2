@@ -209,7 +209,7 @@ int propeller_decode_command(const ut8 *instr, struct propeller_cmd *cmd)
 	ut32 in;
 	ut16 opcode;
 
-	r_mem_copyendian((ut8*)&in, instr, sizeof (ut32), LIL_ENDIAN);
+	in = r_read_be32 (instr);
 
 	opcode = get_opcode (in);
 

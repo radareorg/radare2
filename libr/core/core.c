@@ -234,7 +234,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		const char *p = NULL;
 		if (strlen (str)>5)
 			p = strchr (str+5, ':');
-		// TODO: honor LE
 		if (p) {
 			refsz = atoi (str+1);
 			str = p;
@@ -258,15 +257,17 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		// pop state
 		if (ok) *ok = 1;
-		ut64 num = 0;
+		ut8 buf[sizeof (ut64)] = {0};
+		(void)r_io_read_at (core->io, n, buf, refsz);
 		switch (refsz) {
 		case 8:
+			return r_read_ble64 (buf, core->print->big_endian);
 		case 4:
+			return r_read_ble32 (buf, core->print->big_endian);
 		case 2:
+			return r_read_ble16 (buf, core->print->big_endian);
 		case 1:
-			(void)r_io_read_at (core->io, n, (ut8*)&num, refsz);
-			r_mem_copyendian ((ut8*)&num, (ut8*)&num, refsz, !core->assembler->big_endian);
-			return num;
+			return r_read_ble8 (buf);
 		default:
 			eprintf ("Invalid reference size: %d (%s)\n", refsz, str);
 			return 0LL;
@@ -1655,7 +1656,6 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 	int i, pipefd;
 	RIORap *rior;
 	ut64 x;
-	int LE = 1; // 1 if host is little LE
 
 	rior = (RIORap *)file->data;
 	if (rior == NULL|| rior->fd == NULL) {
@@ -1733,7 +1733,7 @@ reaccept:
 					}
 				}
 				buf[0] = RMT_OPEN | RMT_REPLY;
-				r_mem_copyendian (buf+1, (ut8 *)&pipefd, 4, !LE);
+				r_write_be32 (buf+1, pipefd);
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
 
@@ -1807,7 +1807,7 @@ reaccept:
 				break;
 			case RMT_READ:
 				r_socket_read_block (c, (ut8*)&buf, 4);
-				r_mem_copyendian ((ut8*)&i, buf, 4, !LE);
+				i = r_read_be32 (buf);
 				ptr = (ut8 *)malloc (i+core->blocksize+5);
 				if (ptr==NULL) {
 					eprintf ("Cannot read %d bytes\n", i);
@@ -1821,7 +1821,7 @@ reaccept:
 						i = RMT_MAX;
 					if (i>core->blocksize)
 						r_core_block_size (core, i);
-					r_mem_copyendian (ptr+1, (ut8 *)&i, 4, !LE);
+					r_write_be32 (ptr+1, i);
 					memcpy (ptr+5, core->block, i); //core->blocksize);
 					r_socket_write (c, ptr, i+5);
 					r_socket_flush (c);
@@ -1838,7 +1838,7 @@ reaccept:
 
 				/* read */
 				r_socket_read_block (c, (ut8*)&bufr, 4);
-				r_mem_copyendian ((ut8*)&i, (ut8 *)bufr, 4, !LE);
+				i = r_read_be32 (bufr);
 				if (i>0 && i<RMT_MAX) {
 					if ((cmd=malloc (i+1))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
@@ -1858,8 +1858,7 @@ reaccept:
 				}
 				bufw = malloc (cmd_len + 5);
 				bufw[0] = RMT_CMD | RMT_REPLY;
-				r_mem_copyendian ((ut8*)bufw+1,
-					(ut8 *)&cmd_len, 4, !LE);
+				r_write_be32 (bufw+1, cmd_len);
 				memcpy (bufw+5, cmd_output, cmd_len);
 				r_socket_write (c, bufw, cmd_len+5);
 				r_socket_flush (c);
@@ -1869,7 +1868,7 @@ reaccept:
 				}
 			case RMT_WRITE:
 				r_socket_read (c, buf, 5);
-				r_mem_copyendian((ut8 *)&x, buf+1, 4, LE);
+				x = r_read_at_be32 (buf, 1);
 				ptr = malloc (x);
 				r_socket_read (c, ptr, x);
 				r_core_write_at (core, core->offset, ptr, x);
@@ -1878,7 +1877,7 @@ reaccept:
 				break;
 			case RMT_SEEK:
 				r_socket_read_block (c, buf, 9);
-				r_mem_copyendian((ut8 *)&x, buf+1, 8, !LE);
+				x = r_read_at_be64 (buf, 1);
 				if (buf[0]!=2) {
 					r_core_seek (core, x, buf[0]);
 					x = core->offset;
@@ -1890,7 +1889,7 @@ reaccept:
 					}
 				}
 				buf[0] = RMT_SEEK | RMT_REPLY;
-				r_mem_copyendian (buf+1, (ut8*)&x, 8, !LE);
+				r_write_be64 (buf+1, x);
 				r_socket_write (c, buf, 9);
 				r_socket_flush (c);
 				break;
@@ -1898,11 +1897,11 @@ reaccept:
 				eprintf ("CLOSE\n");
 				// XXX : proper shutdown
 				r_socket_read_block (c, buf, 4);
-				r_mem_copyendian ((ut8*)&i, buf, 4, LE);
+				i = r_read_be32 (buf);
 				{
 				//FIXME: Use r_socket_close
 				int ret = close (i);
-				r_mem_copyendian (buf+1, (ut8*)&ret, 4, !LE);
+				r_write_be32 (buf+1, ret);
 				buf[0] = RMT_CLOSE | RMT_REPLY;
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);

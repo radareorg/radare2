@@ -8,7 +8,6 @@
 #include <sys/types.h>
 
 // XXX: if in listener mode we need to use fd or fdlistener to listen or accept
-#define ENDIAN (0)
 #define RIORAP_FD(x) ((x->data)?(((RIORap*)(x->data))->client):NULL)
 #define RIORAP_IS_LISTEN(x) (((RIORap*)(x->data))->listener)
 #define RIORAP_IS_VALID(x) ((x) && (x->data) && (x->plugin == &r_io_plugin_rap))
@@ -24,7 +23,7 @@ static int rap__write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count)
 		return -1;
 	}
 	tmp[0] = RMT_WRITE;
-	r_mem_copyendian ((ut8 *)tmp+1, (ut8*)&count, 4, ENDIAN);
+	r_write_be32 (tmp + 1, count);
 	memcpy (tmp+5, buf, count);
 
 	ret = r_socket_write (s, tmp, count+5);
@@ -57,7 +56,7 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 		count = RMT_MAX;
 	// send
 	tmp[0] = RMT_READ;
-	r_mem_copyendian (tmp+1, (ut8*)&count, 4, ENDIAN);
+	r_write_be32 (tmp + 1, count);
 	r_socket_write (s, tmp, 5);
 	r_socket_flush (s);
 	// recv
@@ -68,7 +67,7 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 			ret, tmp[0], 2, (RMT_READ|RMT_REPLY));
 		return -1;
 	}
-	r_mem_copyendian ((ut8*)&i, tmp+1, 4, ENDIAN);
+	i = r_read_at_be32 (tmp, 1);
 	if (i>count) {
 		eprintf ("rap__read: Unexpected data size %d\n", i);
 		return -1;
@@ -100,7 +99,7 @@ static ut64 rap__lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) 
 	// query
 	tmp[0] = RMT_SEEK;
 	tmp[1] = (ut8)whence;
-	r_mem_copyendian (tmp+2, (ut8*)&offset, 8, ENDIAN);
+	r_write_be64 (tmp + 2, offset);
 	r_socket_write (s, &tmp, 10);
 	r_socket_flush (s);
 	// get reply
@@ -111,7 +110,7 @@ static ut64 rap__lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) 
 		eprintf ("Unexpected lseek reply\n");
 		return -1;
 	}
-	r_mem_copyendian ((ut8 *)&offset, tmp+1, 8, ENDIAN);
+	offset = r_read_at_be64 (tmp, 1);
 	return offset;
 }
 
@@ -212,7 +211,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 			free (rior);
 			return NULL;
 		}
-		r_mem_copyendian ((ut8 *)&i, (ut8*)buf+1, 4, ENDIAN);
+		i = r_read_at_be32 (buf, 1);
 		if (i>0) eprintf ("ok\n");
 #if 0
 		/* Read meta info */
@@ -258,7 +257,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		eprintf ("Command too long\n");
 		return -1;
 	}
-	r_mem_copyendian (buf+1, (ut8*)&i, 4, ENDIAN);
+	r_write_be32 (buf + 1, i);
 	memcpy (buf+5, command, i);
 	r_socket_write (s, buf, i+5);
 	r_socket_flush (s);
@@ -278,7 +277,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 			// return back the string
 			buf[0] |= RMT_REPLY;
 			ret = r_socket_read_block (s, buf+1, 4);
-			r_mem_copyendian ((ut8*)&cmdlen, buf+1, 4, ENDIAN);
+			cmdlen = r_read_at_be32 (buf, 1);
 			if (cmdlen+1==0) // check overflow
 				cmdlen = 0;
 			str = calloc (1, cmdlen+1);
@@ -288,8 +287,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 			eprintf ("[%s]=>(%s)\n", str, res);
 			reslen = strlen (res);
 			free (str);
-			r_mem_copyendian ((ut8*)buf+1, (const ut8*)&reslen,
-				sizeof(ut32), ENDIAN);
+			r_write_be32 (buf + 1, reslen);
 			memcpy (buf+5, res, reslen);
 			free (res);
 			r_socket_write (s, buf, 5+reslen);
@@ -308,7 +306,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		return -1;
 	}
 
-	r_mem_copyendian ((ut8*)&i, buf+1, 4, ENDIAN);
+	i = r_read_at_be32 (buf, 1);
 	ret = 0;
 	if (i>0xffffffff) {
 		eprintf ("Invalid length\n");

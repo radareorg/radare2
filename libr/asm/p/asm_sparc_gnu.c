@@ -52,7 +52,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len<4) return -1;
 	buf_global = op->buf_asm;
 	Offset = a->pc;
-	memcpy (bytes, buf, 4); // TODO handle thumb
+	// disasm inverted
+	r_mem_swapendian (bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
@@ -80,6 +81,7 @@ RAsmPlugin r_asm_plugin_sparc_gnu = {
 	.name = "sparc.gnu",
 	.arch = "sparc",
 	.bits = 32|64,
+	.endian = R_SYS_ENDIAN_BIG | R_SYS_ENDIAN_LITTLE,
 	.license = "GPL3",
 	.desc = "Scalable Processor Architecture",
 	.disassemble = &disassemble,

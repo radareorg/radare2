@@ -114,6 +114,7 @@
 #include <stdarg.h>
 #include <sys/time.h>
 #include <fcntl.h> /* for O_RDONLY */
+#include <r_endian.h> /* needs size_t */
 
 #ifdef __cplusplus
 extern "C" {
@@ -321,6 +322,11 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define R_SYS_ARCH "unknown"
 #define R_SYS_BITS R_SYS_BITS_32
 #endif
+
+#define R_SYS_ENDIAN_NONE 0
+#define R_SYS_ENDIAN_LITTLE 1
+#define R_SYS_ENDIAN_BIG 2
+#define R_SYS_ENDIAN_BI 3
 
 enum {
 	R_SYS_ARCH_NONE = 0,

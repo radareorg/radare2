@@ -567,13 +567,13 @@ bear in mind that we need to fix that loop and honor lseek sections and sio maps
 	return olen;
 }
 
-R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
+R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz) {
 	ut64 ret = 0LL;
 	ut8 buf[8];
 	sz = R_DIM (sz, 1, 8);
 	if (sz != r_io_read_at (io, addr, buf, sz))
 		return UT64_MAX;
-	r_mem_copyendian ((ut8 *)&ret, buf, sz, endian);
+	memcpy ((ut8 *)&ret, buf, sz);
 	return ret;
 }
 

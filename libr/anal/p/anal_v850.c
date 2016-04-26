@@ -32,7 +32,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	op->jump = op->fail = -1;
 	op->ptr = op->val = -1;
 
-	r_mem_copyendian ((ut8*)&word1, buf, 2, LIL_ENDIAN);
+	word1 = r_read_ble16 (buf, anal->big_endian);
 
 	switch ((word1 >> 5) & 0x3F) {
 	case V850_MOV_IMM5:

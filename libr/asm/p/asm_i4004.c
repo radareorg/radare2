@@ -16,11 +16,8 @@ RAsmPlugin r_asm_plugin_i4004 = {
 	.arch = "i4004",
 	.license = "LGPL3",
 	.bits = 4,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = &disassemble,
-	.modify = NULL,
-	.assemble = NULL,
+	.endian = R_SYS_ENDIAN_NONE,
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

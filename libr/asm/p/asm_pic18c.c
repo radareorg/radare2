@@ -232,6 +232,7 @@ RAsmPlugin r_asm_plugin_pic18c = {
 	.arch = "pic18c",
 	.license = "LGPL3",
 	.bits = 8,
+	.endian = R_SYS_ENDIAN_NONE,
 	.desc = "pic18c disassembler"
 };
 

@@ -26,6 +26,7 @@ RAsmPlugin r_asm_plugin_gb = {
 	.arch = "z80",
 	.license = "LGPL3",
 	.bits = 16,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.assemble = &assemble,
 };

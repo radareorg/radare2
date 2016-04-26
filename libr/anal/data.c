@@ -31,8 +31,8 @@ static int is_string(const ut8 *buf, int size, int *len) {
 	return 1;
 }
 
-static int is_number(const ut8 *buf, int endian, int size) {
-	ut64 n = r_mem_get_num (buf, size, endian);
+static int is_number(const ut8 *buf, int size) {
+	ut64 n = r_mem_get_num (buf, size);
 	return (n < UT32_MAX)? (int)n: 0;
 }
 
@@ -48,12 +48,13 @@ static int is_invalid(const ut8 *buf, int size) {
 }
 
 #define USE_IS_VALID_OFFSET 1
-static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
+static ut64 is_pointer(RAnal *anal, const ut8 *buf, int size) {
 	ut64 n;
 	ut8 buf2[32];
+	RIOBind *iob = &anal->iob;
 	if (size > sizeof (buf2))
 		size = sizeof (buf2);
-	n = r_mem_get_num (buf, size, endian);
+	n = r_mem_get_num (buf, size);
 	if (!n) return 1; // null pointer
 #if USE_IS_VALID_OFFSET
 	int r = iob->is_valid_offset (iob->io, n, 0);
@@ -227,7 +228,6 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size) {
 	ut64 dst = 0;
 	int n, nsize = 0;
 	int bits = anal->bits;
-	int endi = !anal->big_endian;
 	int word = R_MIN (8, bits / 8);
 
 	if (size < 4)
@@ -266,7 +266,7 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size) {
 		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_HEADER, -1,
 					buf, word);
 	if (size >= word) {
-		dst = is_pointer (&anal->iob, buf, endi, word);
+		dst = is_pointer (anal, buf, word);
 		if (dst) return r_anal_data_new (addr,
 						R_ANAL_DATA_TYPE_POINTER, dst, buf, word);
 	}
@@ -277,7 +277,7 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size) {
 					nsize, R_ANAL_DATA_TYPE_WIDE_STRING);
 	}
 	if (size >= word) {
-		n = is_number (buf, endi, word);
+		n = is_number (buf, word);
 		if (n) return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NUMBER,
 					n, buf, word);
 	}

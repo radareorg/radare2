@@ -38,11 +38,9 @@ RAsmPlugin r_asm_plugin_csr = {
 	.arch = "csr",
 	.license = "PD",
 	.bits = 16,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.desc = "Cambridge Silicon Radio (CSR)",
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = &disassemble,
-	.assemble = NULL
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

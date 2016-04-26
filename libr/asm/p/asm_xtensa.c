@@ -88,9 +88,9 @@ RAsmPlugin r_asm_plugin_xtensa = {
 	.arch = "xtensa",
 	.license = "GPL3",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "XTensa CPU",
-	.disassemble = &disassemble,
-	0
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

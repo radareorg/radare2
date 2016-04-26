@@ -2015,10 +2015,10 @@ reread:
 		case '8':
 			if (input[param_offset]){
 				n64 = r_num_math (core->num, input+param_offset);
-				r_mem_copyendian ((ut8*)&n64, (const ut8*)&n64,
-					8, !core->assembler->big_endian);
+				ut8 buf[sizeof (ut64)];
+				r_write_le64 (buf, n64);
 				r_search_kw_add (core->search,
-					r_search_keyword_new ((const ut8*)&n64, 8, NULL, 0, NULL));
+					r_search_keyword_new ((const ut8*)buf, sizeof (ut64), NULL, 0, NULL));
 			}
 			else eprintf ("Usage: /v8 value\n");
 			break;
@@ -2033,10 +2033,10 @@ reread:
 		case '2':
 			if (input[param_offset]){
 				n16 = (ut16)r_num_math (core->num, input+param_offset);
-				r_mem_copyendian ((ut8*)&n16, (ut8*)&n16,
-					2, !core->assembler->big_endian);
+				ut8 buf[sizeof (ut16)];
+				r_write_le16 (buf, n16);
 				r_search_kw_add (core->search,
-					r_search_keyword_new ((const ut8*)&n16, 2, NULL, 0, NULL));
+					r_search_keyword_new ((const ut8*)buf, sizeof (ut16), NULL, 0, NULL));
 			}
 			else eprintf ("Usage: /v2 value\n");
 			break;
@@ -2045,10 +2045,10 @@ reread:
 			if (input[param_offset-1]) {
 				if (input[param_offset]){
 					n32 = (ut32)r_num_math (core->num, input+param_offset);
-					r_mem_copyendian ((ut8*)&n32, (const ut8*)&n32,
-						4, !core->assembler->big_endian);
+					ut8 buf[sizeof (ut32)];
+					r_write_le32 (buf, n32);
 					r_search_kw_add (core->search,
-						r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
+						r_search_keyword_new ((const ut8*)buf, sizeof (ut32), NULL, 0, NULL));
 				}
 			}
 			else eprintf ("Usage: /v4 value\n");

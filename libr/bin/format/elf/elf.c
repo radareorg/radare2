@@ -80,8 +80,7 @@ static int init_ehdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 		" ident (elf_type)type (elf_machine)machine version entry phoff shoff flags ehsize"
 		" phentsize phnum shentsize shnum shstrndx", 0);
 #endif
-	bin->endian = (e_ident[EI_DATA] == ELFDATA2MSB) ?
-		LIL_ENDIAN: !LIL_ENDIAN;
+	bin->endian = (e_ident[EI_DATA] == ELFDATA2MSB)? 1: 0;
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
 	len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->ehdr,
 #if R_BIN_ELF64

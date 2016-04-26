@@ -15,7 +15,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	arm_set_pc (arminsn, a->pc);
 	arm_set_thumb (arminsn, a->bits == 16);
 	if (a->big_endian && a->bits == 32) {
-		r_mem_copyendian (buf2, buf, 4, 0);
+		r_mem_swapendian (buf2, buf, 4);
 		arm_set_input_buffer (arminsn, buf2);
 	} else {
 		arm_set_input_buffer (arminsn, buf);
@@ -31,11 +31,9 @@ RAsmPlugin r_asm_plugin_arm_winedbg = {
 	.name = "arm.winedbg",
 	.arch = "arm",
 	.bits = 16|32,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "WineDBG's ARM disassembler",
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL,
 	.license = "LGPL2"
 };
 

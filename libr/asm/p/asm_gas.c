@@ -31,10 +31,9 @@ RAsmPlugin r_asm_plugin_x86_gas = {
 	.desc = "GNU Assembler (gas)",
 	.arch = NULL, //"x86", // XXX
 	.bits = 16|32|64,
-	.init = NULL,
-	.fini = NULL,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = NULL, /*&disassemble,*/
-	.assemble = &assemble, 
+	.assemble = &assemble
 };
 
 #ifndef CORELIB

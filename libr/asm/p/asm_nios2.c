@@ -80,7 +80,7 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) 
 	disasm_obj.stream = stdout;
 
 	op->buf_asm[0]='\0';
-	if (a->big_endian)
+	if (disasm_obj.endian == BFD_ENDIAN_BIG)
 		op->size = print_insn_big_nios2 ((bfd_vma)Offset, &disasm_obj);
 	else op->size = print_insn_little_nios2 ((bfd_vma)Offset, &disasm_obj);
 
@@ -95,11 +95,9 @@ RAsmPlugin r_asm_plugin_nios2 = {
 	.arch = "nios2",
 	.license = "GPL3",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "NIOS II Embedded Processor",
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = &disassemble,
-	.assemble = NULL
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

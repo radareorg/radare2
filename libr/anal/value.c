@@ -54,7 +54,7 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 		if (anal->iob.io) {
 			ut8 data[8];
 			ut64 addr = r_anal_value_to_ut64 (anal, val);
-			r_mem_set_num (data, val->memref, num, anal->big_endian);
+			r_mem_set_num (data, val->memref, num);
 			anal->iob.write_at (anal->iob.io, addr, data, val->memref);
 		} else eprintf ("No IO binded to r_anal\n");
 	} else {

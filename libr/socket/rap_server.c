@@ -59,7 +59,7 @@ static inline int getEndian () {
 }
 
 R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
-	int endian, i, ret;
+	int i, ret;
 	ut64 offset;
 	char *ptr = NULL;
 	if (!rap_s || !rap_s->fd)
@@ -67,7 +67,6 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 	if (!r_socket_is_connected (rap_s->fd))
 		return R_FALSE;
 	r_socket_read_block (rap_s->fd, rap_s->buf, 1);
-	endian = getEndian();
 	ret = rap_s->buf[0];
 	switch (rap_s->buf[0]) {
 		case RAP_RMT_OPEN:
@@ -80,7 +79,7 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 			break;
 		case RAP_RMT_READ:
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);
-			r_mem_copyendian ((ut8*)&i, &rap_s->buf[1], 4, !endian);
+			i = r_read_be32 (&rap_s->buf[1]);
 			if (i > RAP_RMT_MAX || i < 0)
 				i = RAP_RMT_MAX;
 			rap_s->read (rap_s->user, &rap_s->buf[5], i);
@@ -90,7 +89,7 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 			break;
 		case RAP_RMT_WRITE:
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);
-			r_mem_copyendian ((ut8*)&i, &rap_s->buf[1], 4, !endian);
+			i = r_read_be32 (&rap_s->buf[1]);
 			if (i > RAP_RMT_MAX || i < 0)
 				i = RAP_RMT_MAX;
 			r_socket_read_block (rap_s->fd, &rap_s->buf[5], i);
@@ -101,23 +100,23 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 			break;
 		case RAP_RMT_SEEK:
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 9);
-			i = rap_s->buf[1];
-			r_mem_copyendian ((ut8*)&offset, &rap_s->buf[2], 8, !endian);
+			i = r_read_be32 (&rap_s->buf[1]);
+			offset = r_read_be64 (&rap_s->buf[2]);
 			offset = rap_s->seek (rap_s->user, offset, i);
-			r_mem_copyendian (&rap_s->buf[2], (ut8*)&offset, 8, !endian);
+			r_write_be64 (&rap_s->buf[2], offset);
 			rap_s->buf[0] = RAP_RMT_SEEK | RAP_RMT_REPLY;
 			r_socket_write (rap_s->fd, rap_s->buf, 9);
 			r_socket_flush (rap_s->fd);
 			break;
 		case RAP_RMT_CMD:
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);
-			r_mem_copyendian ((ut8 *)&i, &rap_s->buf[1], 4, !endian);
+			i = r_read_be32 (&rap_s->buf[1]);
 			r_socket_read_block (rap_s->fd, &rap_s->buf[5], i);
 			ptr = rap_s->cmd (rap_s->user, (const char *)&rap_s->buf[5]);
 			if (ptr)
 				i = strlen (ptr) + 1;
 			else	i = 0;
-			r_mem_copyendian (&rap_s->buf[1], (ut8 *)&i, 4, !endian);
+			r_write_be32 (&rap_s->buf[1], i);
 			rap_s->buf[0] = RAP_RMT_CMD | RAP_RMT_REPLY;
 			r_socket_write (rap_s->fd, rap_s->buf, 5);
 			if (i)	r_socket_write (rap_s->fd, ptr, i);
@@ -127,7 +126,7 @@ R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 			break;
 		case RAP_RMT_CLOSE:
 			r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);
-			r_mem_copyendian ((ut8 *)&i, &rap_s->buf[1], 4, !endian);
+			i = r_read_be32 (&rap_s->buf[1]);
 			rap_s->close (rap_s->user, i);
 			rap_s->buf[0] = RAP_RMT_CLOSE | RAP_RMT_REPLY;
 			r_socket_write (rap_s->fd, rap_s->buf, 5);

@@ -323,7 +323,7 @@ R_API int r_io_mread(RIO *io, int fd, ut64 maddr, ut8 *buf, int len);
 R_API int r_io_pread(RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_read(RIO *io, ut8 *buf, int len);
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
-R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian);
+R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz);
 R_API int r_io_write(RIO *io, const ut8 *buf, int len);
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API int r_io_mwrite(RIO *io, int fd, ut64 maddr, ut8 *buf, int len);

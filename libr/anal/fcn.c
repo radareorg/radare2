@@ -229,9 +229,14 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 	ut64 offs, sz = anal->bits >> 3;
 	if (!jmptbl) return 0;
 	anal->iob.read_at (anal->iob.io, ptr, jmptbl, MAX_JMPTBL_SIZE);
-	for (offs = 0; offs < MAX_JMPTBL_SIZE; offs += sz) {
-		ut64 jmpptr = 0;
-		r_mem_copyendian ((ut8*)&jmpptr, jmptbl + offs, sz, !anal->big_endian);
+	for (offs = 0; offs + sz - 1 < MAX_JMPTBL_SIZE; offs += sz) {
+		ut64 jmpptr;
+		switch (sz) {
+		case 1: jmpptr = r_read_le8 (jmptbl + offs); break;
+		case 2: jmpptr = r_read_le16 (jmptbl + offs); break;
+		case 4: jmpptr = r_read_le32 (jmptbl + offs); break;
+		default: jmpptr = r_read_le64 (jmptbl + offs); break;
+		}
 		if (anal->limit) {
 			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to)
 				break;

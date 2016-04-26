@@ -77,7 +77,7 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 		l = (long int)s64;
 		p = (const ut8*)&l;
 	} else return 0;
-	r_mem_copyendian (op->buf, p, n, !a->big_endian);
+	memcpy (op->buf, p, n);
 	r_hex_bin2str (op->buf, n, op->buf_hex);
 	return n;
 }
@@ -147,7 +147,6 @@ R_API int r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian) {
 	int ret = 0;
 	ret |= !r_asm_use (a, arch);
 	ret |= !r_asm_set_bits (a, bits);
-	ret |= !r_asm_set_big_endian (a, big_endian);
 	return ret;
 }
 
@@ -278,9 +277,25 @@ R_API int r_asm_set_bits(RAsm *a, int bits) {
 	return false;
 }
 
-R_API int r_asm_set_big_endian(RAsm *a, int b) {
-	a->big_endian = b;
-	return true;
+R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
+	if (!a || !a->cur) return false;
+	switch (a->cur->endian) {
+	case R_SYS_ENDIAN_NONE:
+	case R_SYS_ENDIAN_BI:
+		// let user select
+		a->big_endian = b;
+		return b;
+	case R_SYS_ENDIAN_LITTLE:
+		a->big_endian = false;
+		return false;
+	case R_SYS_ENDIAN_BIG:
+		a->big_endian = true;
+		return true;
+	default:
+		eprintf ("RAsmPlugin doesn't specify endianness\n");
+		break;
+	}
+	return false;
 }
 
 R_API int r_asm_set_syntax(RAsm *a, int syntax) {
@@ -331,12 +346,10 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!op->buf_asm[0] || op->size <1 || !strcmp (op->buf_asm, "invalid")) {
 		if (a->invhex) {
 			if (a->bits == 16) {
-				ut16 b;
-				r_mem_copyendian ((ut8*)&b, buf, 2, !a->big_endian);
+				ut16 b = r_read_le16 (buf);
 				snprintf (op->buf_asm, sizeof (op->buf_asm), ".word 0x%04x", b);
 			} else {
-				ut32 b;
-				r_mem_copyendian ((ut8*)&b, buf, 4, !a->big_endian);
+				ut32 b = r_read_le32 (buf);
 				snprintf (op->buf_asm, sizeof (op->buf_asm), ".dword 0x%08x", b);
 			}
 			// TODO: something for 64bits too?
@@ -346,7 +359,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (a->ofilter)
 		r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
-	r_mem_copyendian (op->buf, buf, oplen, !a->big_endian);
+	memcpy (op->buf, buf, oplen);
 	*op->buf_hex = 0;
 	if ((oplen*4) >= sizeof (op->buf_hex))
 		oplen = (sizeof (op->buf_hex)/4)-1;
@@ -482,7 +495,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL,
 		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
 	RAsmCode *acode = NULL;
-	RAsmOp op;
+	RAsmOp op = {0};
 	ut64 off, pc;
 	if (buf == NULL)
 		return NULL;

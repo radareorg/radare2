@@ -40,12 +40,9 @@ RAsmPlugin r_asm_plugin_xcore_cs = {
 	.desc = "Capstone XCore disassembler",
 	.license = "BSD",
 	.arch = "xcore",
-	.cpus = NULL,
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
-	.assemble = NULL
 };
 
 #ifndef CORELIB

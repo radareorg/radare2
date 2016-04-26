@@ -406,6 +406,7 @@ RAsmPlugin r_asm_plugin_avr = {
 	.arch = "avr",
 	.license = "GPL",
 	.bits = 8|16,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "AVR Atmel",
 	.disassemble = &disassemble,
 	.assemble = &assemble

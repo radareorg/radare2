@@ -3,7 +3,6 @@
 #include "r_core.h"
 #include "r_socket.h"
 
-#define endian core->assembler->big_endian
 #define rtr_n core->rtr_n
 #define rtr_host core->rtr_host
 
@@ -1064,7 +1063,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		/* read */
 		eprintf ("waiting... "); fflush(stdout);
 		r_socket_read (fd, (ut8*)buf, 5);
-		r_mem_copyendian ((ut8 *)&i, (ut8*)buf+1, 4, core->assembler->big_endian);
+		i = r_read_at_be32 (buf, 1);
 		if (buf[0] != (char)(RTR_RAP_OPEN|RTR_RAP_REPLY) || i<= 0) {
 			eprintf ("Error: Wrong reply\n");
 			r_socket_free(fd);
@@ -1206,7 +1205,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	/* send */
 	bufw[0] = RTR_RAP_CMD;
 	i = strlen (cmd) + 1;
-	r_mem_copyendian ((ut8*)bufw+1, (ut8*)&i, 4, endian);
+	r_write_be32 (bufw+1, i);
 	memcpy (bufw+5, cmd, i);
 	r_socket_write (rtr_host[rtr_n].fd, bufw, 5+i);
 	/* read */
@@ -1215,7 +1214,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		eprintf ("Error: Wrong reply\n");
 		return;
 	}
-	r_mem_copyendian ((ut8*)&cmd_len, (ut8*)bufr+1, 4, endian);
+	cmd_len = r_read_at_be32 (bufr, 1);
 	cmd_output = malloc (cmd_len);
 	if (!cmd_output) {
 		eprintf ("Error: Allocating cmd output\n");

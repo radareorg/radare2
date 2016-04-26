@@ -94,7 +94,7 @@ struct MACH0_(obj_t) {
 	int size;
 	ut64 baddr;
 	ut64 entry;
-	int endian;
+	bool big_endian;
 	const char* file;
 	RBuffer* b;
 	int os;

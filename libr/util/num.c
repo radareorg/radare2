@@ -7,32 +7,6 @@
 #include <r_util.h>
 #define R_NUM_USE_CALC 1
 
-R_API ut16 r_num_ntohs (ut16 foo) {
-#if LIL_ENDIAN
-	ut8 *p = (ut8*)&foo;
-	foo = p[1] | p[0]<<8;
-#endif
-	return foo;
-}
-
-#define __htonq(x) (\
-        (((x) & 0xff00000000000000LL) >> 56)  | \
-        (((x) & 0x00ff000000000000LL) >> 40)  | \
-        (((x) & 0x0000ff0000000000LL) >> 24)  | \
-        (((x) & 0x000000ff00000000LL) >> 8)   | \
-        (((x) & 0x00000000ff000000LL) << 8)   | \
-        (((x) & 0x0000000000ff0000LL) << 24)  | \
-        (((x) & 0x000000000000ff00LL) << 40)  | \
-        (((x) & 0x00000000000000ffLL) << 56))
-
-R_API ut64 r_num_htonq(ut64 value) {
-        ut64 ret = value;
-#if LIL_ENDIAN
-        r_mem_copyendian ((ut8*)&ret, (ut8*)&value, 8, 0);
-#endif
-        return ret;
-}
-
 R_API void r_num_irand() {
 	srand (r_sys_now ());
 }

@@ -45,9 +45,10 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 	ret = op->size = v810_decode_command (buf, len, &cmd);
 	if (ret <= 0) return ret;
 
-	r_mem_copyendian ((ut8*)&word1, buf, 2, LIL_ENDIAN);
+	word1 = r_read_ble16 (buf, anal->big_endian);
+
 	if (ret == 4)
-		r_mem_copyendian ((ut8*)&word2, buf + 2, 2, LIL_ENDIAN);
+		word2 = r_read_ble16 (buf+2, anal->big_endian);
 
 	op->addr = addr;
 	op->jump = op->fail = -1;

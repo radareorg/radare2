@@ -118,6 +118,7 @@ typedef struct r_asm_plugin_t {
 	const char *license;
 	void *user; // user data pointer
 	int bits;
+	int endian;
 	bool (*init)(void *user);
 	bool (*fini)(void *user);
 	int (*disassemble)(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
@@ -141,7 +142,7 @@ R_API int r_asm_use(RAsm *a, const char *name);
 R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits);
 R_API int r_asm_set_bits(RAsm *a, int bits);
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu);
-R_API int r_asm_set_big_endian(RAsm *a, int boolean);
+R_API bool r_asm_set_big_endian(RAsm *a, bool big_endian);
 R_API int r_asm_set_syntax(RAsm *a, int syntax);
 R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len);

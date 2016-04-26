@@ -1379,12 +1379,8 @@ static int esil_deceq(RAnalEsil *esil) {
 static int esil_poke_n(RAnalEsil *esil, int bits) {
 	ut64 bitmask = genmask (bits - 1);
 	ut64 num, addr;
-	union {
-		ut8 byte;
-		ut16 word;
-		ut32 dword;
-		ut64 qword;
-	} n, n2;
+	ut8 b[sizeof(ut64)];
+	ut64 n;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 	int bytes = bits / 8, ret = 0;
@@ -1398,16 +1394,15 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 		if (dst && r_anal_esil_get_parm (esil, dst, &addr)) {
 			int type = r_anal_esil_get_parm_type (esil, src);
 			if (type != R_ANAL_ESIL_PARM_INTERNAL) {
-				n.qword = n2.qword = 0;
-				r_anal_esil_mem_read (esil, addr, (ut8 *)&n, bytes);
-				r_mem_copyendian ((ut8 *)&n2, (ut8 *)&n, bytes, !esil->anal->big_endian);
-				esil->old = n2.qword;
+				r_anal_esil_mem_read (esil, addr, b, bytes);
+				n = r_read_ble64 (b, esil->anal->big_endian);
+				esil->old = n;
 				esil->cur = (num & bitmask);
 				esil->lastsz = bits;
 				num = num & bitmask;
 			}
-			r_mem_copyendian ((ut8 *)&n, (ut8 *)&num, bytes, !esil->anal->big_endian);
-			ret = r_anal_esil_mem_write (esil, addr, (const ut8 *)&n, bytes);
+			r_write_ble64 (b, num, esil->anal->big_endian);
+			ret = r_anal_esil_mem_write (esil, addr, b, bytes);
 		}
 	}
 	free (src);
@@ -1433,30 +1428,31 @@ static int esil_poke(RAnalEsil *esil) {
 
 static int esil_poke_some(RAnalEsil *esil) {
 	int i, ret = 0;
+	int regsize;
 	ut64 ptr, regs;
 	char *count, *dst = r_anal_esil_pop (esil);
-	if (dst) {
+	if (dst && r_anal_esil_get_parm_size (esil, dst, NULL, &regsize)) {
+		ut8 bytes = regsize / 8;
 		// reg
 		isregornum (esil, dst, &ptr);
 		count = r_anal_esil_pop (esil);
 		if (count) {
 			isregornum (esil, count, &regs);
 			if (regs > 0) {
+				ut8 b[bytes];
 				ut64 num64;
-				ut32 num32;
 				for (i = 0; i < regs; i++) {
 					char *foo = r_anal_esil_pop (esil);
 					isregornum (esil, foo, &num64);
 					/* TODO: implement peek here */
 					// read from $dst
-					num32 = num64;
-					ret = r_anal_esil_mem_write (esil, ptr,
-								(const ut8 *)&num32, sizeof (num32));
-					if (ret != sizeof (num32)) {
+					r_write_ble64 (b, num64, esil->anal->big_endian);
+					ret = r_anal_esil_mem_write (esil, ptr, b, bytes);
+					if (ret != bytes) {
 						//eprintf ("Cannot write at 0x%08" PFMT64x "\n", ptr);
 						esil->trap = 1;
 					}
-					ptr += 4;
+					ptr += bytes;
 					free (foo);
 				}
 			}
@@ -1481,9 +1477,11 @@ static int esil_peek_n(RAnalEsil *esil, int bits) {
 		return 0;
 	}
 	if (dst && isregornum (esil, dst, &addr)) {
-		ut64 a, b, bitmask = genmask (bits - 1);
-		ret = r_anal_esil_mem_read (esil, addr, (ut8 *)&a, bytes);
-		r_mem_copyendian ((ut8 *)&b, (const ut8 *)&a, bytes, !esil->anal->big_endian);
+		ut64 bitmask = genmask (bits - 1);
+		ut8 a[sizeof(ut64)];
+		ut64 b;
+		ret = r_anal_esil_mem_read (esil, addr, a, bytes);
+		b = r_read_ble64 (a, esil->anal->big_endian);
 		snprintf (res, sizeof (res), "0x%" PFMT64x, b & bitmask);
 		r_anal_esil_push (esil, res);
 		esil->lastsz = bits;
@@ -1521,20 +1519,21 @@ static int esil_peek_some(RAnalEsil *esil) {
 			isregornum (esil, count, &regs);
 			if (regs > 0) {
 				ut32 num32;
+				ut8 a[sizeof (ut32)];
 				for (i = 0; i < regs; i++) {
 					char *foo = r_anal_esil_pop (esil);
 					if (!foo) {
 						ERR ("Cannot pop in peek");
 						return 0;
 					}
-					ret = r_anal_esil_mem_read (esil, ptr,
-								(ut8 *)&num32, sizeof (num32));
-					if (ret == sizeof (num32)) {
+					ret = r_anal_esil_mem_read (esil, ptr, a, 4);
+					if (ret == sizeof (ut32)) {
+						num32 = r_read_ble32 (a, esil->anal->big_endian);
 						r_anal_esil_reg_write (esil, foo, num32);
 					} else {
 						eprintf ("Cannot peek from 0x%08" PFMT64x "\n", ptr);
 					}
-					ptr += 4;
+					ptr += sizeof (ut32);
 					free (foo);
 				}
 			}
