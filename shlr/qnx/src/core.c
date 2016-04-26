@@ -148,8 +148,8 @@ int qnxr_connect (libqnxr_t *g, const char *host, int port) {
 	g->connected = 0;
 	g->mid = 0;
 
-	if (g->host != host)
-		strncpy (g->host, host, sizeof (g->host));
+
+	memmove (g->host, host, strlen (host) + 1);
 	g->port = port;
 
 	ret = snprintf (tmp, sizeof (tmp) - 1, "%d", port);
