@@ -1712,10 +1712,12 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETI("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF("http.bind", "localhost", "Server address");
-#if __WINDOWS__
-	SETPREF("http.root", "www", "Root directory");
+#if __ANDROID__
+	SETPREF("http.root", "/data/data/org.radare2.installer/www", "http root directory");
+#elif __WINDOWS__
+	SETPREF("http.root", "www", "http root directory");
 #else
-	SETPREF("http.root", R2_WWWROOT, "Root directory");
+	SETPREF("http.root", R2_WWWROOT, "http root directory");
 #endif
 	SETPREF("http.port", "9090", "Server port");
 #if __ANDROID__ || __IPHONE_2_0
