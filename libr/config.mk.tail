@@ -1,6 +1,10 @@
 # config.mk.tail
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+ifeq ($(LIBR),)
+# workaround for OSX-powerpc wtf
+LIBR=$(shell cd $(dir $(word 2,$(MAKEFILE_LIST)))/libr; pwd)
+endif
 SHLR:=$(LIBR)/../shlr
 
 #include $(LIBR)/../config-user.mk
