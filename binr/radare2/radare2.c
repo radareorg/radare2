@@ -850,8 +850,11 @@ int main(int argc, char **argv, char **envp) {
 		}
 	if (sandbox)
 		r_config_set (r.config, "cfg.sandbox", "true");
-	if (quiet)
+	if (quiet) {
 		r_config_set (r.config, "scr.wheel", "false");
+		r_config_set (r.config, "scr.interactive", "false");
+		r_config_set (r.config, "scr.prompt", "false");
+	}
 
 	r.num->value = 0;
 	if (patchfile) {

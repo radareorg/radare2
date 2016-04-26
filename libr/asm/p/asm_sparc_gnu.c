@@ -82,10 +82,7 @@ RAsmPlugin r_asm_plugin_sparc_gnu = {
 	.bits = 32|64,
 	.license = "GPL3",
 	.desc = "Scalable Processor Architecture",
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
 };
 
 #ifndef CORELIB
