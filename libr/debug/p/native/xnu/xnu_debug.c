@@ -516,52 +516,11 @@ int xnu_get_vmmap_entries_for_pid (pid_t pid) {
 	return n;
 }
 
-static int get_bits () {
-#if __i386__ || __powerpc__
-	return R_SYS_BITS_32;
-#elif __x86_64__ || __mips__
-	return R_SYS_BITS_32 | R_SYS_BITS_64;
-#elif __aarch64__
-	return R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64;
-#elif __arm__
-	return R_SYS_BITS_16 | R_SYS_BITS_32;
-#else
-	return 0;
-#warning Unsupported architecture
-#endif
-}
-
-static int xnu_get_bits_with_sysctl (pid_t pid) {
-	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, 0 };
-	size_t len = 4;
-	struct kinfo_proc kp;
-	size_t kinfo_size = sizeof (kp);
-
-	mib[3] = pid;
-	if (sysctl (mib, len, &kp, &kinfo_size, NULL, 0) == -1) {
-		perror ("sysctl");
-		return -1;
-  	}
-#if __arm__ || __aarch64__
-	return (kp.kp_proc.p_flag & P_LP64) ? 
-					R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64 
-					: R_SYS_BITS_16 | R_SYS_BITS_32;
-#else
-	return (kp.kp_proc.p_flag & P_LP64) ? 
-					R_SYS_BITS_32 | R_SYS_BITS_64 
-					: R_SYS_BITS_32;
-#endif
-}
-
 #define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 #define COMMAND_SIZE(segment_count,segment_command_sz,\
 	thread_count,tstate_size)\
 	segment_count * segment_command_sz + thread_count * \
 	sizeof (struct thread_command) + tstate_size * thread_count
-
-/* RDebug doesnt set the bits. FIXME when that is done */
-#define SAME_BITNESS(proc_pid)\
-	 (get_bits () == xnu_get_bits_with_sysctl (proc_pid))
 
 static void get_mach_header_sizes(size_t *mach_header_sz, 
 									size_t *segment_command_sz) {

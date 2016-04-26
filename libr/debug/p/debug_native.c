@@ -1292,7 +1292,6 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 #elif __x86_64__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "x86",
-	.canstep = 1,
 #if __linux__
 	.canstep = 0, // XXX it's 1 on some platforms...
 #else

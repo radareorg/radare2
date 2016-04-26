@@ -622,7 +622,7 @@ static const char *skipnum(const char *s) {
 static char *demangle_classname(const char *s) {
 	int modlen, len;
 	const char *kstr;
-	char *ret, *sym, *klass, *module;
+	char *ret, *klass, *module;
 	if (!strncmp (s, "_TtC", 4)) {
 		len = atoi (s + 4);
 		modlen = strlen (s + 4);

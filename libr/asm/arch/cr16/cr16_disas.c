@@ -353,36 +353,6 @@ static inline int cr16_print_reg_reg(struct cr16_cmd *cmd, ut8 src, ut8 dst)
 	return 0;
 }
 
-#if 0
-// This function is unused, shall we remove it?
-static int cr16_decode_stcbiti(const ut8 *instr, struct cr16_cmd *cmd)
-{
-	int ret = 2;
-	ut8 dstreg;
-	ut16 in;
-
-	r_mem_copyendian((ut8*)&in, instr, 2, LIL_ENDIAN);
-
-	if (cr16_print_biti_opcode(cmd, in)) {
-		return -1;
-	}
-
-	dstreg = cr16_get_dstreg(in);
-
-	if (cr16_check_reg_boundaries(dstreg)) {
-		return -1;
-	}
-
-	if (cr16_print_short_reg(cmd, (in >> 1) & 0xF, cr16_get_dstreg(in))) {
-		return -1;
-	}
-
-	cmd->type = CR16_TYPE_BIT;
-
-	return ret;
-}
-#endif
-
 static inline int cr16_print_4biti_opcode(struct cr16_cmd *cmd, ut16 instr)
 {
 	if (cr16_check_instrs_4bit_bndrs(cr16_get_opcode_low(instr))) {
