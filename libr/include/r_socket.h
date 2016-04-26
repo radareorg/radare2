@@ -32,6 +32,11 @@ R_LIB_VERSION_HEADER(r_socket);
 #ifndef MSG_DONTWAIT
 #define MSG_DONTWAIT 0
 #endif
+#ifndef SD_BOTH
+#define SD_RECEIVE  0
+#define SD_SEND 1
+#define SD_BOTH 2
+#endif
 
 typedef struct {
 	int magic;
