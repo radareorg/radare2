@@ -149,12 +149,12 @@ SDB_API const char *sdb_const_get_len (Sdb* s, const char *key, int *vlen, ut32 
 	SdbKv *kv;
 	if (cas) *cas = 0;
 	if (vlen) *vlen = 0;
-	if (!s||!key) return NULL;
+	if (!s || !key) return NULL;
 	// TODO: optimize, iterate once
 	keylen = strlen (key)+1;
 	hash = sdb_hash (key);
 	/* search in memory */
-	kv = (SdbKv*)ht_lookup (s->ht, hash);
+	kv = (SdbKv*) ht_lookup (s->ht, hash);
 	if (kv) {
 		if (!*kv->value)
 			return NULL;
@@ -172,15 +172,15 @@ SDB_API const char *sdb_const_get_len (Sdb* s, const char *key, int *vlen, ut32 
 	/* search in disk */
 	if (s->fd == -1)
 		return NULL;
-	(void)cdb_findstart (&s->db);
-	if (cdb_findnext (&s->db, hash, key, keylen) <1)
+	(void) cdb_findstart (&s->db);
+	if (cdb_findnext (&s->db, hash, key, keylen) < 1)
 		return NULL;
 	len = cdb_datalen (&s->db);
 	if (len == 0)
 		return NULL;
 	if (vlen) *vlen = len;
 	pos = cdb_datapos (&s->db);
-	return s->db.map+pos;
+	return s->db.map + pos;
 }
 
 SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {

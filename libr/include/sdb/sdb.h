@@ -222,10 +222,14 @@ int sdb_ns_unset (Sdb *s, const char *name);
 
 // array
 int sdb_array_contains (Sdb* s, const char *key, const char *val, ut32 *cas);
-SDB_API int sdb_array_contains_num(Sdb *s, const char *key, ut64 val, ut32 *cas);
-SDB_API int sdb_array_indexof(Sdb *s, const char *key, const char *val, ut32 cas);
+int sdb_array_contains_num(Sdb *s, const char *key, ut64 val, ut32 *cas);
+int sdb_array_indexof(Sdb *s, const char *key, const char *val, ut32 cas);
 int sdb_array_set (Sdb* s, const char *key, int idx, const char *val, ut32 cas);
 int sdb_array_set_num (Sdb* s, const char *key, int idx, ut64 val, ut32 cas);
+int sdb_array_append(Sdb *s, const char *key, const char *val, ut32 cas);
+int sdb_array_append_num(Sdb *s, const char *key, ut64 val, ut32 cas);
+int sdb_array_prepend(Sdb *s, const char *key, const char *val, ut32 cas);
+int sdb_array_prepend_num(Sdb *s, const char *key, ut64 val, ut32 cas);
 char *sdb_array_get (Sdb* s, const char *key, int idx, ut32 *cas);
 ut64 sdb_array_get_num (Sdb* s, const char *key, int idx, ut32 *cas);
 int sdb_array_get_idx (Sdb *s, const char *key, const char *val, ut32 cas); // agetv
@@ -255,6 +259,9 @@ int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas);
 char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas);
 int sdb_array_push_num(Sdb *s, const char *key, ut64 num, ut32 cas);
 ut64 sdb_array_pop_num(Sdb *s, const char *key, ut32 *cas);
+
+char *sdb_array_pop_head(Sdb *s, const char *key, ut32 *cas);
+char *sdb_array_pop_tail(Sdb *s, const char *key, ut32 *cas);
 
 typedef void (*SdbHook)(Sdb *s, void *user, const char *k, const char *v);
 

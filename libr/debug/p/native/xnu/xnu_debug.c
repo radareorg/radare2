@@ -517,7 +517,7 @@ int xnu_get_vmmap_entries_for_pid (pid_t pid) {
 }
 
 static int get_bits () {
-#if __i386__ || __powerpc__
+#if __i386__ || __POWERPC__
 	return R_SYS_BITS_32;
 #elif __x86_64__ || __mips__
 	return R_SYS_BITS_32 | R_SYS_BITS_64;

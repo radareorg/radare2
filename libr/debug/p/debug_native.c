@@ -1310,7 +1310,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "mips",
 	.canstep = 0,
-#elif __powerpc__
+#elif __POWERPC__
 	.bits = R_SYS_BITS_32,
 	.arch = "ppc",
 	.canstep = 1,
