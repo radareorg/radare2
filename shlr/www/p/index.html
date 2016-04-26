@@ -6,6 +6,12 @@
 	<meta name="language" content="en" />
 
 	<title>radare2</title>
+	<!--polyfill for joint.js-->
+	<script>
+		SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformToElement || function(toElement) {
+			return toElement.getScreenCTM().inverse().multiply(this.getScreenCTM());
+		};
+	</script>
 
 	<link rel="stylesheet" type="text/css" href="./lib/css/layout-default-latest.css" />
 	<link rel="stylesheet" type="text/css" href="./lib/css/jquery.ui.tabs.css" />
