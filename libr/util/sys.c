@@ -19,7 +19,9 @@
 #endif
 #if __APPLE__
 #include <errno.h>
+#if !__POWERPC__
 #include <execinfo.h>
+#endif
 // iOS dont have this we cant hardcode
 // #include <crt_externs.h>
 extern char ***_NSGetEnviron(void);
@@ -196,12 +198,16 @@ R_API int r_sys_usleep(int usecs) {
 
 R_API int r_sys_clearenv(void) {
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __APPLE__ && __POWERPC__
+	/* do nothing */
+#else
 	if (environ == NULL) {
 		return 0;
 	}
 	while (*environ != NULL) {
 		*environ++ = NULL;
 	}
+#endif
 	return 0;
 #else
 #warning r_sys_clearenv : unimplemented for this platform
@@ -713,12 +719,17 @@ R_API char *r_sys_pid_to_path(int pid) {
 	}
 	return NULL;
 #elif __APPLE__
+#if __POWERPC__
+#warning TODO getpidproc
+	return NULL;
+#else
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 	pathbuf[0] = 0;
 	int ret = proc_pidpath (pid, pathbuf, sizeof (pathbuf));
 	if (ret <= 0)
 		return NULL;
 	return strdup (pathbuf);
+#endif
 #else
 	int ret;
 	char buf[128], pathbuf[1024];
@@ -738,7 +749,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 static char** env = NULL;
 
 R_API char **r_sys_get_environ () {
-#if __APPLE__
+#if __APPLE__ && !__POWERPC__
 	env = *_NSGetEnviron();
 #endif
 	// return environ if available??

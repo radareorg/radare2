@@ -32,7 +32,7 @@ ifeq (${OSTYPE},darwin)
 EXT_SO=dylib
 SOVER=${EXT_SO}
 LDFLAGS+=-dynamic
-LDFLAGS_SHARED?=-shared
+LDFLAGS_SHARED?=-dynamiclib
 # ifeq (${ARCH},i386)
    #CC+=-arch i386
 #   CC+=-arch x86_64
