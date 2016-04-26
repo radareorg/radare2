@@ -2,8 +2,11 @@
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 ifeq ($(LIBR),)
-# workaround for OSX-powerpc wtf
-LIBR=$(shell cd $(dir $(word 2,$(MAKEFILE_LIST)))/libr; pwd)
+ifeq ($(R2DIR),)
+$(error ERROR: Cannot find R2DIR. Please define this variable)
+else
+LIBR=$(R2DIR)/libr
+endif
 endif
 SHLR:=$(LIBR)/../shlr
 
