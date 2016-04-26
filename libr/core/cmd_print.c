@@ -1560,6 +1560,7 @@ static void cmd_print_pv(RCore *core, const char *input) {
 	const char *stack[] = { "ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL };
 	int i, n = core->assembler->bits / 8;
 	int type = 'v';
+	bool fixed_size = true;
 	switch (input[0]) {
 	case '1':
 		n = 1;
@@ -1576,6 +1577,9 @@ static void cmd_print_pv(RCore *core, const char *input) {
 	case '8':
 		n = 8;
 		input++;
+		break;
+	default:
+		fixed_size = false;
 		break;
 	}
 	// variables can be
@@ -1616,6 +1620,7 @@ static void cmd_print_pv(RCore *core, const char *input) {
 	default:
 		{
 			ut64 v = r_mem_get_num (core->block, n, !core->print->big_endian);
+			if (!fixed_size) n = 0;
 			switch (n) {
 			case 1: r_cons_printf ("0x%02" PFMT64x "\n", v); break;
 			case 2: r_cons_printf ("0x%04" PFMT64x "\n", v); break;
