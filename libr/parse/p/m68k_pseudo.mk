@@ -7,4 +7,5 @@ LIBDEPS=-L../../util -lr_util
 LIBDEPS+=-L../../flags -lr_flags
 
 ${TARGET_M68KPSEUDO}: ${OBJ_M68KPSEUDO}
-	${CC} $(call libname,parse_m68k_pseudo) ${LIBDEPS} -shared ${CFLAGS} -o ${TARGET_M68KPSEUDO} ${OBJ_M68KPSEUDO}
+	${CC} $(call libname,parse_m68k_pseudo) ${LIBDEPS} \
+		${LDFLAGS_SHARED} ${CFLAGS} -o ${TARGET_M68KPSEUDO} ${OBJ_M68KPSEUDO}
