@@ -1218,6 +1218,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'r': // "afr" // analyze function recursively
 	default: {
 		char *uaddr = NULL, *name = NULL;
+		int mybits = core->assembler->bits;
 		int depth = r_config_get_i (core->config, "anal.depth");
 		bool analyze_recursively = r_config_get_i (core->config, "anal.calls");
 		RAnalFunction *fcn;
@@ -1238,8 +1239,25 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			// depth = 1; // or 1?
 			// disable hasnext
 		}
+
+		{
+			if (mybits == 32) {
+				const char *asmarch = r_config_get (core->config, "asm.arch");
+				if (strstr (asmarch, "arm")) {
+					RFlagItem *item = r_flag_get_i (core->flags, addr + 1);
+					if (item) {
+						r_config_set_i (core->config, "asm.bits", 16);
+					}
+				}
+			}
+		}
+
 		//r_core_anal_undefine (core, core->offset);
 		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
+		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+		if (fcn) {
+			fcn->bits = 16;
+		}
 		if (analyze_recursively) {
 			fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
 			if (fcn) {
@@ -1272,6 +1290,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					}
 				}
 			}
+		}
+
+		if (mybits != core->assembler->bits) {
+			r_config_set_i (core->config, "asm.bits", mybits);
 		}
 		if (name) {
 			if (*name && !setFunctionName (core, addr, name, true))
