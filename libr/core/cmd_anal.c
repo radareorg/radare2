@@ -1240,6 +1240,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			// disable hasnext
 		}
 
+		bool swapbits = false;
 		{
 			if (mybits == 32) {
 				const char *asmarch = r_config_get (core->config, "asm.arch");
@@ -1247,6 +1248,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					RFlagItem *item = r_flag_get_i (core->flags, addr + 1);
 					if (item) {
 						r_config_set_i (core->config, "asm.bits", 16);
+						swapbits = true;
 					}
 				}
 			}
@@ -1254,9 +1256,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 		//r_core_anal_undefine (core, core->offset);
 		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
-		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-		if (fcn) {
-			fcn->bits = 16;
+		if (swapbits) {
+			fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+			if (fcn) {
+				fcn->bits = core->assembler->bits;
+			}
 		}
 		if (analyze_recursively) {
 			fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
