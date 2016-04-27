@@ -1087,8 +1087,8 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 		break;
 	case X86_INS_NOT:
 		{
-			char *dst = getarg (&gop, 0, 1, "~");
-			esilprintf (op, "%s", dst);
+			char *dst = getarg (&gop, 0, 1, "^");
+			esilprintf (op, "-1,%s", dst);
 			free (dst);
 		}
 		break;
