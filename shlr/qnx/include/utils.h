@@ -18,7 +18,7 @@
 #define EXTRACT_UNSIGNED_INTEGER(addr, len) \
 	extract_unsigned_integer ((const ut8 *)addr, len, 0)
 
-#if defined(__linux__) || defined(__WINDOWS__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__WINDOWS__) || defined(__APPLE__) || defined(__NetBSD__)
 int errnoconvert (int x);
 #endif
 
