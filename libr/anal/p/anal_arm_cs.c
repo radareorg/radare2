@@ -1073,6 +1073,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		break;
+	case ARM_INS_TRAP:
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
 	case ARM_INS_MOV:
 	case ARM_INS_MOVT:
 	case ARM_INS_MOVW:
