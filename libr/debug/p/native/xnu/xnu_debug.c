@@ -272,7 +272,11 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		break;
 	default:
 		//th->gpr has a header and the state we should copy on the state only
+#if __POWERPC__
+#warning TODO powerpc support here
+#else
 		memcpy (&th->gpr.uts, buf, R_MIN (size, sizeof (th->gpr.uts)));
+#endif
 		ret = xnu_thread_set_gpr (dbg, th);
 		break;
 	}
@@ -1101,6 +1105,10 @@ static void xnu_map_free(RDebugMap *map) {
 }
 
 static RList *xnu_dbg_modules(RDebug *dbg) {
+#if __POWERPC__
+#warning TODO: xnu_dbg_modules not supported
+	return NULL;
+#else
 	struct task_dyld_info info;
 	mach_msg_type_number_t count;
 	kern_return_t kr;
@@ -1181,6 +1189,7 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 	}
 	free (info_array);
 	return list;
+#endif
 }
 
 RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {

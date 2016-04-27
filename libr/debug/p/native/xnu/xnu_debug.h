@@ -34,8 +34,10 @@
 int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #else
 #include <sys/ptrace.h>
+#if !__POWERPC__
 #include <sys/proc_info.h>
 #include <libproc.h>
+#endif
 #endif
 #include <sys/types.h>
 #include <sys/wait.h>

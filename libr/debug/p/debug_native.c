@@ -1029,7 +1029,7 @@ static int getMaxFiles() {
 }
 
 static RList *xnu_desc_list (int pid) {
-#if TARGET_OS_IPHONE
+#if TARGET_OS_IPHONE || __POWERPC__
 	return NULL;
 #else
 #define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
