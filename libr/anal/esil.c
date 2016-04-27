@@ -572,6 +572,45 @@ static int esil_negeq(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_comp(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num;
+	char *src = r_anal_esil_pop (esil);
+	if (src) {
+		if (r_anal_esil_get_parm (esil, src, &num)) {
+			r_anal_esil_pushnum (esil, ~num);
+			ret = 1;
+		} else {
+			if (isregornum (esil, src, &num)) {
+				ret = 1;
+				r_anal_esil_pushnum (esil, ~num);
+			} else {
+				eprintf ("0x%08"PFMT64x" esil_comp: unknown reg %s\n", esil->address, src);
+			}
+		}
+	} else {
+		ERR ("esil_comp: empty stack");
+	}
+	free (src);
+	return ret;
+}
+
+static int esil_compeq(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 num;
+	char *src = r_anal_esil_pop (esil);
+	if (src && r_anal_esil_reg_read (esil, src, &num, NULL)) {
+		num = ~num;
+		r_anal_esil_reg_write (esil, src, num);
+		ret = 1;
+	} else {
+		ERR ("esil_negcomp: empty stack");
+	}
+	free (src);
+	//r_anal_esil_pushnum (esil, ret);
+	return ret;
+}
+
 static int esil_nop(RAnalEsil *esil) {
 	return 0;
 }
@@ -1580,6 +1619,45 @@ static int esil_mem_oreq(RAnalEsil *esil) {
 	return esil_mem_oreq_n (esil, esil->anal->bits);
 }
 
+/* COMPEQ */
+static int esil_mem_compeq_n(RAnalEsil *esil, int bits) {
+	int ret = 0;
+	ut64 d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src1 = NULL;
+	r_anal_esil_push (esil, dst);
+	ret = (!!esil_peek_n (esil, bits));
+	src1 = r_anal_esil_pop (esil);
+	if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+		d = ~d;
+		r_anal_esil_pushnum (esil, d);
+		r_anal_esil_push (esil, dst);
+		ret &= (!!esil_poke_n (esil, bits));
+	} else ret = 0;
+	if (!ret) {
+		ERR ("esil_mem_compeq_n: invalid parameters");
+	}
+	free (dst);
+	free (src1);
+	return ret;
+}
+
+static int esil_mem_compeq1(RAnalEsil *esil) {
+	return esil_mem_compeq_n (esil, 8);
+}
+static int esil_mem_compeq2(RAnalEsil *esil) {
+	return esil_mem_compeq_n (esil, 16);
+}
+static int esil_mem_compeq4(RAnalEsil *esil) {
+	return esil_mem_compeq_n (esil, 32);
+}
+static int esil_mem_compeq8(RAnalEsil *esil) {
+	return esil_mem_compeq_n (esil, 64);
+}
+static int esil_mem_compeq(RAnalEsil *esil) {
+	return esil_mem_compeq_n (esil, esil->anal->bits);
+}
+
 /* XOREQ */
 
 static int esil_mem_xoreq_n(RAnalEsil *esil, int bits) {
@@ -2328,6 +2406,8 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("|=", esil_oreq);
 	OP ("!", esil_neg);
 	OP ("!=", esil_negeq);
+	OP ("~", esil_comp);
+	OP ("~=", esil_compeq);
 	OP ("=", esil_eq);
 	OP ("*", esil_mul);
 	OP ("*=", esil_muleq);
@@ -2355,6 +2435,11 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("|=[2]", esil_mem_oreq2);
 	OP ("|=[4]", esil_mem_oreq4);
 	OP ("|=[8]", esil_mem_oreq8);
+	OP ("~=[]", esil_mem_compeq);
+	OP ("~=[1]", esil_mem_compeq1);
+	OP ("~=[2]", esil_mem_compeq2);
+	OP ("~=[4]", esil_mem_compeq4);
+	OP ("~=[8]", esil_mem_compeq8);
 	OP ("^=[]", esil_mem_xoreq);
 	OP ("^=[1]", esil_mem_xoreq1);
 	OP ("^=[2]", esil_mem_xoreq2);
