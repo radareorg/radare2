@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
 #if 0
 * Use RList
 * Support callback for null command (why?)
@@ -541,15 +541,10 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '!':
 		/* from command */
-		r_core_cmd_command (core, input+1);
+		r_core_cmd_command (core, input + 1);
 		break;
 	case '(':
-		r_cmd_macro_call (&core->rcmd->macro, input+1);
-		str = r_str_newf (".%s", input);
-		if (str) {
-			free (core->lastcmd);
-			core->lastcmd = str;
-		}
+		r_cmd_macro_call (&core->rcmd->macro, input + 1);
 		break;
 	case '?':{
 		const char* help_msg[] = {
@@ -2164,7 +2159,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->incomment)
 		return false;
 
-	if (log && *cstr && *cstr!='.') {
+	if (log && (*cstr && (*cstr != '.' || !strncmp (cstr, ".(", 2)))) {
 		free (core->lastcmd);
 		core->lastcmd = strdup (cstr);
 	}
