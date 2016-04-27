@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include "r_core.h"
 
@@ -408,12 +408,20 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c) {
 	RBinSymbol *m, *mur = NULL;
 	RList *list;
 	int i = 0;
+	int skip = idx - 10;
 
 	switch (mode) {
 	case 'c':
 		r_cons_printf("Classes:\n\n");
 		list = r_bin_get_classes (core->bin);
 		r_list_foreach (list, iter, c) {
+			if (idx > 10) {
+				skip--;
+				if (skip > 0) {
+					i++;
+					continue;
+				}
+			}
 			r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
 				(i==idx)?">>":"- ", i, c->addr, c->name);
 			if (i++ == idx)
@@ -449,6 +457,7 @@ R_API int r_core_visual_classes(RCore *core) {
 	RBinClass *cur = NULL;
 	RBinSymbol *mur = NULL;
 	void *ptr;
+	int oldcur = 0;
 
 	for (;;) {
 		r_cons_clear00 ();
@@ -465,7 +474,9 @@ R_API int r_core_visual_classes(RCore *core) {
 
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
-		if (ch==-1 || ch==4) return false;
+		if (ch==-1 || ch==4) {
+			return false;
+		}
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'C':
@@ -473,15 +484,15 @@ R_API int r_core_visual_classes(RCore *core) {
 			break;
 		case 'J': option += 10; break;
 		case 'j': option++; break;
-		case 'k': if (--option<0) option = 0; break;
-		case 'K': option-=10; if (option<0) option = 0; break;
+		case 'k': if (--option < 0) option = 0; break;
+		case 'K': option -= 10; if (option<0) option = 0; break;
 		case 'h':
 		case 'b': // back
 		case 'q':
 			if (mode == 'c')
 				return true;
 			mode = 'c';
-			option = 0;
+			option = oldcur;
 			break;
 		case '*':
 			r_core_block_size (core, core->blocksize+16);
@@ -500,6 +511,8 @@ R_API int r_core_visual_classes(RCore *core) {
 				return true;
 			} else {
 				if (cur) {
+					oldcur = option;
+					option = 0;
 					mode = 'm';
 				}
 			}
