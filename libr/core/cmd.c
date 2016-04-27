@@ -1836,6 +1836,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 				r_core_cmd0 (core, cmd);
 			}
 			r_core_cmdf (core, "dp %d", origpid);
+			r_list_free (list);
 		}
 		break;
 	case 'r':

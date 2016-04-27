@@ -339,9 +339,7 @@ R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int s
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind) {
 	char *varlist;
 	int count = 0;
-	RList *list = r_list_new ();
 	if (!a || !fcn) {
-		r_list_free (list);
 		return 0;
 	}
 	if (!kind) kind = 'v'; // by default show vars

@@ -103,6 +103,7 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 	else mmo->fd = r_sandbox_open (filename, O_RDONLY, mode);
 
 	if (mmo->fd == -1) {
+		free (mmo->filename);
 		free (mmo);
 		return NULL;
 	}
