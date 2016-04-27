@@ -683,7 +683,7 @@ R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
 	return hint;
 }
 
-static void beginline(RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre) {
+static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre) {
 	const char *pre;
 	handle_setup_pre(core, ds, false);
 	pre = ds->pre;
@@ -692,7 +692,7 @@ static void beginline(RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopr
 			pre = "  ";
 	}
 	if (ds->show_functions && ds->show_fcnlines) {
-		if (*pre == '\\') handle_set_pre (ds, "|"); 
+		if (*pre == '\\') handle_set_pre (ds, core->cons->vline[LINE_VERT]); 
 		handle_print_pre (core, ds);
 	}
 	char *tmp = ds->line;
