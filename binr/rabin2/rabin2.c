@@ -420,6 +420,9 @@ static char *demangleAs(int type) {
 	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
 	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file); break;
 	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc(file); break;
+	default:
+		eprintf ("Unsupported demangler\n");
+		break;
 	}
 	return res;
 }
@@ -625,7 +628,7 @@ int main(int argc, char **argv) {
 	if (do_demangle) {
 		char *res = NULL;
 		int type;
-		if ((argc-optind)<2) {
+		if ((argc - optind) < 2) {
 			return rabin_show_help (0);
 		}
 		type = r_bin_demangle_type (do_demangle);
@@ -634,7 +637,7 @@ int main(int argc, char **argv) {
 			for (;;) {
 				file = stdin_gets();
 				if (!file || !*file) break;
-				res = demangleAs(type);
+				res = demangleAs (type);
 				if (!res) {
 					eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
 					return 1;
@@ -648,11 +651,7 @@ int main(int argc, char **argv) {
 				R_FREE (file);
 			}
 		} else {
-			res = demangleAs(type);
-			if (!res) {
-				eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
-				return 1;
-			}
+			res = demangleAs (type);
 			if (res && *res) {
 				printf ("%s\n", res);
 				free(res);
