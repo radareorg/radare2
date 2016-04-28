@@ -646,19 +646,21 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 	case X86_INS_PUSHAL:
 		{
 			esilprintf (op,
+				"0,%s,+,"
 				"%d,%s,-=,%s,%s,=[%d],"
 				"%d,%s,-=,%s,%s,=[%d],"
 				"%d,%s,-=,%s,%s,=[%d],"
 				"%d,%s,-=,%s,%s,=[%d],"
-				"%d,%s,-=,%s,%s,=[%d],"
+				"%d,%s,-=,%s,=[%d],"
 				"%d,%s,-=,%s,%s,=[%d],"
 				"%d,%s,-=,%s,%s,=[%d],"
 				"%d,%s,-=,%s,%s,=[%d]",
+				sp,
 				rs, sp, "eax", sp, rs,
-				rs, sp, "ebx", sp, rs,
 				rs, sp, "ecx", sp, rs,
 				rs, sp, "edx", sp, rs,
-				rs, sp, "esp", sp, rs,
+				rs, sp, "ebx", sp, rs,
+				rs, sp, "esp", rs,
 				rs, sp, "ebp", sp, rs,
 				rs, sp, "esi", sp, rs,
 				rs, sp, "edi", sp, rs
@@ -683,6 +685,29 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 	case X86_INS_POPF:
 	case X86_INS_POPAW:
 	case X86_INS_POPAL:
+		{
+			esilprintf (op,
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,[%d],%d,%s,+=,"
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,=",
+				sp, rs, rs, sp, "edi", 
+				sp, rs, rs, sp, "esi", 
+				sp, rs, rs, sp, "ebp", 
+				sp, rs, rs, sp, 
+				sp, rs, rs, sp, "ebx", 
+				sp, rs, rs, sp, "edx", 
+				sp, rs, rs, sp, "ecx", 
+				sp, rs, rs, sp, "eax",
+				sp
+				);
+		}
+		break;
 	case X86_INS_POPCNT:
 		{
 			char *dst = getarg (&gop, 0, 0, NULL);
