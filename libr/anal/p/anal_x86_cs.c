@@ -1142,14 +1142,26 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 		{
 			char *src = getarg (&gop, 1, 0, NULL); // x
 			char *dst = getarg (&gop, 0, 0, NULL); // y
-			esilprintf (op,
-				"%s,%s,^,%s,=,"
-				"%s,%s,^,%s,=,"
-				"%s,%s,^,%s,=,",
-				dst, src, src,  // x = x ^ y
-				src, dst, dst,  // y = y ^ x
-				dst, src, src); // x = x ^ y
-			//esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
+			if (INSOP(0).type == X86_OP_MEM) {
+				char *dst1 = getarg (&gop, 0, 1, NULL);
+				esilprintf (op,
+					"%s,%s,^,%s,=,"
+					"%s,%s,^,%s,"
+					"%s,%s,^,%s,=",
+					dst, src, src,	// x = x ^ y
+					src, dst, dst1,	// y = y ^ x
+					dst, src, src); // x = x ^ y
+				free (dst1);
+			} else {
+				esilprintf (op,
+					"%s,%s,^,%s,=,"
+					"%s,%s,^,%s,=,"
+					"%s,%s,^,%s,=",
+					dst, src, src,  // x = x ^ y
+					src, dst, dst,  // y = y ^ x
+					dst, src, src); // x = x ^ y
+				//esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
+			}
 			free (src);
 			free (dst);
 		}
