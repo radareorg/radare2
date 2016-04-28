@@ -501,7 +501,6 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 R_API int r_core_visual_classes(RCore *core) {
 	int ch, option = 0;
 	char cmd[1024];
-	int format = 0;
 	int mode = 'c';
 	RBinClass *cur = NULL;
 	RBinSymbol *mur = NULL;
@@ -577,6 +576,12 @@ R_API int r_core_visual_classes(RCore *core) {
 				free (num);
 			}
 			break;
+		case 'p':
+			if (mode == 'm' && mur) {
+				r_core_seek (core, mur->vaddr, true);
+				r_core_cmd0 (core, "af;pdf~..");
+			}
+			break;
 		case 'h':
 		case 127: // backspace
 		case 'b': // back
@@ -589,8 +594,6 @@ R_API int r_core_visual_classes(RCore *core) {
 		case '/':
 			grepmode = true;
 			break;
-		case 'P': if (--format<0) format = MAX_FORMAT; break;
-		case 'p': format++; break;
 		case 'l':
 		case ' ':
 		case '\r':
@@ -616,7 +619,7 @@ R_API int r_core_visual_classes(RCore *core) {
 			" /     - grep mode\n"
 			" C     - toggle colors\n"
 			" l/' ' - accept current selection\n"
-			" p/P   - rotate print format\n"
+			" p     - preview method disasm with less\n"
 			" :     - enter command\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
