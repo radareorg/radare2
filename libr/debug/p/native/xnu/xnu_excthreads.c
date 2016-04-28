@@ -42,7 +42,12 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 #elif __POWERPC__ //ppc processor
 //XXX poor support at this stage i don't care so much. Once intel and arm done it could be done
 //TODO add better support for ppc
+static bool modify_trace_bit(RDebug *dbg, void *th, int enable) {
+	return false;
+}
+#if 0
 static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
+	return false;
 	R_REG_T state;
 	unsigned int state_count = R_REG_STATE_SZ;
 	kern_return_t kr;
@@ -61,6 +66,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 	}
 	return true;
 }
+#endif
 
 #elif __arm || __arm64 || __aarch64//arm processor
 
@@ -244,6 +250,9 @@ static void encode_reply(mig_reply_error_t *reply, mach_msg_header_t *hdr, int c
 
 static bool validate_mach_message (RDebug *dbg, exc_msg *msg) {
 	kern_return_t kr;
+#if __POWERPC__
+	return false;
+#else
 	/*check if the message is for us*/
 	if (msg->hdr.msgh_local_port != ex.exception_port)
 		return false;
@@ -288,6 +297,7 @@ static bool validate_mach_message (RDebug *dbg, exc_msg *msg) {
 		return false;
 	}
 	return true;
+#endif
 }
 
 static bool handle_dead_notify (RDebug *dbg, exc_msg *msg) {
@@ -417,6 +427,9 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 
 
 bool xnu_create_exception_thread(RDebug *dbg) {
+#if __POWERPC__
+	return false;
+#else
 	kern_return_t kr;
 	bool ret;
 	mach_port_t exception_port = MACH_PORT_NULL;
@@ -463,4 +476,5 @@ bool xnu_create_exception_thread(RDebug *dbg) {
 		eprintf ("Termination notification request failed\n");
 	ex.exception_port = exception_port;
 	return true;
+#endif
 }
