@@ -1,6 +1,13 @@
 # config.mk.tail
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+ifeq ($(LIBR),)
+ifeq ($(R2DIR),)
+$(error ERROR: Cannot find R2DIR. Please define this variable)
+else
+LIBR=$(R2DIR)/libr
+endif
+endif
 SHLR:=$(LIBR)/../shlr
 
 #include $(LIBR)/../config-user.mk
@@ -197,9 +204,9 @@ libname=-shared -o $1.${EXT_SO}
 else
 ifeq (${OSTYPE},darwin)
 ifeq (${HAVE_LIBVERSION},1)
-libname=-shared -o $1.${EXT_SO} ${LDFLAGS_SONAME}$1.${LIBVERSION}.${EXT_SO}
+libname=-dynamiclib -o $1.${EXT_SO} ${LDFLAGS_SONAME}$1.${LIBVERSION}.${EXT_SO}
 else
-libname=-shared -o $1.${EXT_SO}
+libname=-dynamiclib -o $1.${EXT_SO}
 endif
 else
 ifeq (${HAVE_LIBVERSION},1)

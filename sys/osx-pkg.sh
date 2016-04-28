@@ -11,13 +11,14 @@ PREFIX=/usr/local
 DST="$(pwd)/sys/osx-pkg/radare2.unpkg"
 VERSION="`./configure --version| head -n 1|awk '{print $1}'|cut -d - -f 2`"
 [ -z "${VERSION}" ] && VERSION=0.10.0
+[ -z "${MAKE}" ] && MAKE=make
 
 rm -rf "${SRC}"
-make mrproper
+${MAKE} mrproper
 ./configure --prefix="${PREFIX}" || exit 1
-make -j4 || exit 1
+${MAKE} -j4 || exit 1
 # TODO: run sys/install.sh
-make install PREFIX="${PREFIX}" DESTDIR=${SRC} || exit 1
+${MAKE} install PREFIX="${PREFIX}" DESTDIR=${SRC} || exit 1
 if [ -d "${SRC}" ]; then
 	(
 		cd ${SRC} && \

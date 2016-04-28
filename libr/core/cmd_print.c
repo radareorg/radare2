@@ -1560,6 +1560,28 @@ static void cmd_print_pv(RCore *core, const char *input) {
 	const char *stack[] = { "ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL };
 	int i, n = core->assembler->bits / 8;
 	int type = 'v';
+	bool fixed_size = true;
+	switch (input[0]) {
+	case '1':
+		n = 1;
+		input++;
+		break;
+	case '2':
+		n = 2;
+		input++;
+		break;
+	case '4':
+		n = 4;
+		input++;
+		break;
+	case '8':
+		n = 8;
+		input++;
+		break;
+	default:
+		fixed_size = false;
+		break;
+	}
 	// variables can be
 	switch (input[0]) {
 	case 'z':
@@ -1573,7 +1595,7 @@ static void cmd_print_pv(RCore *core, const char *input) {
 		/* fallthrough */
 	case ' ':
 		for (i = 0; stack[i]; i++) {
-			if (!strcmp (input+1, stack[i])) {
+			if (!strcmp (input + 1, stack[i])) {
 				if (type == 'z') {
 					r_core_cmdf (core, "ps @ [`drn sp`+%d]", n * i);
 				} else {
@@ -1596,7 +1618,18 @@ static void cmd_print_pv(RCore *core, const char *input) {
 		eprintf ("Usage: pv[z] [ret arg#]\n");
 		break;
 	default:
-		r_core_cmd0 (core, "?v [$$]");
+		{
+			ut64 v = r_mem_get_num (core->block, n, !core->print->big_endian);
+			if (!fixed_size) n = 0;
+			switch (n) {
+			case 1: r_cons_printf ("0x%02" PFMT64x "\n", v); break;
+			case 2: r_cons_printf ("0x%04" PFMT64x "\n", v); break;
+			case 4: r_cons_printf ("0x%08" PFMT64x "\n", v); break;
+			case 8: r_cons_printf ("0x%016" PFMT64x "\n", v); break;
+			default: r_cons_printf ("0x%" PFMT64x "\n", v); break;
+			}
+		}
+		//r_core_cmd0 (core, "?v [$$]");
 		break;
 	}
 }

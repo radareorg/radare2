@@ -175,8 +175,8 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 		}
 		}
 		return strdup (buf);
-	case X86_OP_FP:
-		break;
+	//case X86_OP_FP:
+	//	break;
 	}
 	return strdup ("PoP");
 }
@@ -864,7 +864,7 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 			free (src);
 			//XXX fallthrough
 			}
-		case X86_OP_FP:
+		//case X86_OP_FP:
 		default: // other?
 			break;
 		}
@@ -1082,6 +1082,13 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 			}
 			esilprintf (op, "%s,%s", src, dst);
 			free (src);
+			free (dst);
+		}
+		break;
+	case X86_INS_NOT:
+		{
+			char *dst = getarg (&gop, 0, 1, "^");
+			esilprintf (op, "-1,%s", dst);
 			free (dst);
 		}
 		break;
@@ -1762,7 +1769,7 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 			free (src);
 			//XXX fallthrough
 			}
-		case X86_OP_FP:
+		//case X86_OP_FP:
 		default: // other?
 			op->type = R_ANAL_OP_TYPE_UJMP;
 			op->ptr = UT64_MAX;
@@ -1814,6 +1821,10 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 		// are set according to the result.
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->val = 1;
+		break;
+	case X86_INS_NOT:
+		op->type = R_ANAL_OP_TYPE_NOT;
+		op->family = R_ANAL_OP_FAMILY_CPU;
 		break;
 	case X86_INS_PSUBB:
 	case X86_INS_PSUBW:

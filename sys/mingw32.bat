@@ -1,5 +1,5 @@
 SET PATH=C:\MinGW\msys\1.0\bin;C:\Program Files (x86)\Git\bin;%PATH%
-SET ENV_R2_VER=0.10.2
+SET ENV_R2_VER=0.10.3
 echo %PATH%
 sh.exe -c "export PATH=/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x86\)/Git/bin:${PATH} ; gcc -v"
 sh.exe -c "uname | tr 'A-Z' 'a-z'"

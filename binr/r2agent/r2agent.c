@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013 - pancake */
+/* radare2 - LGPL - Copyright 2013-2016 - pancake */
 
 #include <getopt.c>
 #include <r_core.h>
@@ -29,13 +29,13 @@ int main(int argc, char **argv) {
 	int c, timeout = 3;
 	int dodaemon = 0;
 	int dosandbox = 0;
-	int listenlocal = 1;
+	bool listenlocal = true;
 	const char *port = "8080";
 
 	while ((c = getopt (argc, argv, "ahp:ds")) != -1) {
 		switch (c) {
 		case 'a':
-			listenlocal = 0;
+			listenlocal = false;
 			break;
 		case 's':
 			dosandbox = 1;
@@ -101,7 +101,8 @@ int main(int argc, char **argv) {
 					perror ("malloc");
 					return 1;
 				}
-				sprintf (cmd, "r2 -q -e http.port=%d -c=h \"%s\"",
+				sprintf (cmd, "r2 -q %s-e http.port=%d -c=h \"%s\"",
+					listenlocal? "": "-e http.bind=public ",
 					session_port, filename);
 
 				// TODO: use r_sys api to get pid when running in bg
@@ -124,6 +125,7 @@ int main(int argc, char **argv) {
 		r_socket_http_response (rs, 200, result, 0, NULL);
 		r_socket_http_close (rs);
 		free (result_heap);
+		result_heap = NULL;
 	}
 	r_socket_free (s);
 	return 0;

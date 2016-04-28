@@ -15,6 +15,11 @@ MINOR=1
 LD=$(CC)
 LDFLAGS+=-L${LIBR}/socket -lr_socket
 LDFLAGS+=-L${LIBR}/util -lr_util
+ifeq ($(BUILD_OS),darwin)
+LDFLAGS_SHARED=-dynamiclib
+else
+LDFLAGS_SHARED=-shared
+endif
 #OSTYPE=windows
 include ../../libr/socket/deps.mk
 
@@ -50,7 +55,7 @@ $(LIB):
 	mkdir -p $(LIB)
 
 $(LIB)/$(LIBNAME).a: $(LIB) $(SRC_O)
-	$(LD) $(PIC_CFLAGS) -shared -o $(LIB)/$(LIBFILE) $(CFLAGS) $(SRC_O) $(LDFLAGS) $(LINK)
+	$(LD) $(PIC_CFLAGS) $(LDFLAGS_SHARED) -o $(LIB)/$(LIBFILE) $(CFLAGS) $(SRC_O) $(LDFLAGS) $(LINK)
 	$(AR) rvs $(LIB)/$(LIBNAME).a $(SRC_O)
 	# required for solaris and w32
 	$(RANLIB) $(LIB)/$(LIBNAME).a

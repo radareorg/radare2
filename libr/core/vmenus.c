@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include "r_core.h"
 
@@ -402,39 +402,96 @@ static bool r_core_visual_config_hud(RCore *core) {
 // TODO: show only N elements of the list
 // TODO: wrap index when out of boundaries
 // TODO: Add support to show class fields too
-static void *show_class(RCore *core, int mode, int idx, RBinClass *_c) {
+static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const char *grep) {
+	bool show_color = r_config_get_i (core->config, "scr.color");
 	RListIter *iter;
 	RBinClass *c, *cur = NULL;
 	RBinSymbol *m, *mur = NULL;
 	RList *list;
 	int i = 0;
+	int skip = idx - 10;
 
 	switch (mode) {
 	case 'c':
-		r_cons_printf("Classes:\n\n");
+		r_cons_printf ("Classes:\n\n");
 		list = r_bin_get_classes (core->bin);
 		r_list_foreach (list, iter, c) {
-			r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
-				(i==idx)?">>":"- ", i, c->addr, c->name);
-			if (i++ == idx)
+			if (grep) {
+				if (!r_str_casestr (c->name, grep)) {
+					i++;
+					continue;
+				}
+			} else {
+				if (idx > 10) {
+					skip--;
+					if (skip > 0) {
+						i++;
+						continue;
+					}
+				}
+			}
+			if (show_color) {
+				if (i == idx) {
+					const char *clr = Color_BLUE;
+					r_cons_printf (Color_GREEN ">>" Color_RESET " %02d %s0x%08"
+							PFMT64x Color_YELLOW "  %s\n" Color_RESET,
+						i, clr, c->addr, c->name);
+				} else {
+					r_cons_printf ("-  %02d %s0x%08"PFMT64x Color_RESET"  %s\n",
+						i, core->cons->pal.offset, c->addr, c->name);
+				}
+			} else {
+				r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
+					(i==idx)?">>":"- ", i, c->addr, c->name);
+			}
+			if (i++ == idx) {
 				cur = c;
+			}
 		}
 		return cur;
 	case 'f':
 		// show fields
+		r_cons_printf ("Fields:\n\n");
 		break;
 	case 'm':
 		// show methods
 		if (_c) {
-			r_cons_printf("MethodsFor: %s\n\n", _c->name);
+			r_cons_printf ("MethodsFor: %s\n\n", _c->name);
 			r_list_foreach (_c->methods, iter, m) {
-				r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
-					(i==idx)?">>":"- ", i, m->vaddr, m->name);
-				if (i++ == idx)
+				if (grep) {
+					if (!r_str_casestr (m->name, grep)) {
+						i++;
+						continue;
+					}
+				} else {
+					if (idx > 10) {
+						skip--;
+						if (skip > 0) {
+							i++;
+							continue;
+						}
+					}
+				}
+				if (show_color) {
+					if (i == idx) {
+						const char *clr = Color_BLUE;
+						r_cons_printf (Color_GREEN ">>" Color_RESET " %02d %s0x%08"
+								PFMT64x Color_YELLOW "  %s\n" Color_RESET,
+							i, clr, m->vaddr, m->name);
+					} else {
+						r_cons_printf ("-  %02d %s0x%08"PFMT64x Color_RESET"  %s\n",
+							i, core->cons->pal.offset, m->vaddr, m->name);
+					}
+				} else {
+					r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
+						(i==idx)? ">>": "- ", i, m->vaddr, m->name);
+				}
+				if (i++ == idx) {
 					mur = m;
+				}
 			}
 		} else {
-			eprintf ("Findus\n");
+			eprintf ("No class defined\n");
 		}
 		return mur;
 	}
@@ -449,11 +506,18 @@ R_API int r_core_visual_classes(RCore *core) {
 	RBinClass *cur = NULL;
 	RBinSymbol *mur = NULL;
 	void *ptr;
+	int oldcur = 0;
+	char *grep = NULL;
+	bool grepmode = false;
 
 	for (;;) {
+		int cols;
 		r_cons_clear00 ();
 
-		ptr = show_class (core, mode, option, cur);
+		if (grepmode) {
+			r_cons_printf ("Grep: %s\n", grep? grep: "");
+		}
+		ptr = show_class (core, mode, option, cur, grep);
 		switch (mode) {
 		case 'm':
 			mur = (RBinSymbol*)ptr;
@@ -463,9 +527,40 @@ R_API int r_core_visual_classes(RCore *core) {
 			break;
 		}
 
+		/* update terminal size */
+		(void) r_cons_get_size (&cols);
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
-		if (ch==-1 || ch==4) return false;
+		if (ch==-1 || ch==4) {
+			return false;
+		}
+
+		if (grepmode) {
+			switch (ch) {
+			case 127:
+				if (grep) {
+					int len = strlen (grep);
+					if (len < 1) {
+						grepmode = false;
+					} else {
+						grep[len - 1] = 0;
+					}
+				}
+				break;
+			case ' ':
+			case '\r':
+			case '\n':
+				R_FREE (grep);
+				grepmode = false;
+				break;
+			default:
+				if (!grep) grep = r_str_newf ("%c", ch);
+				else grep = r_str_concatf (grep, "%c", ch);
+				break;
+			}
+			continue;
+		}
+
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'C':
@@ -473,21 +568,26 @@ R_API int r_core_visual_classes(RCore *core) {
 			break;
 		case 'J': option += 10; break;
 		case 'j': option++; break;
-		case 'k': if (--option<0) option = 0; break;
-		case 'K': option-=10; if (option<0) option = 0; break;
+		case 'k': if (--option < 0) option = 0; break;
+		case 'K': option -= 10; if (option<0) option = 0; break;
+		case 'g':
+			{
+				char *num = prompt ("Index:", NULL);
+				option = atoi (num);
+				free (num);
+			}
+			break;
 		case 'h':
+		case 127: // backspace
 		case 'b': // back
 		case 'q':
 			if (mode == 'c')
 				return true;
 			mode = 'c';
-			option = 0;
-			break;
-		case '*':
-			r_core_block_size (core, core->blocksize+16);
+			option = oldcur;
 			break;
 		case '/':
-			r_core_block_size (core, core->blocksize-16);
+			grepmode = true;
 			break;
 		case 'P': if (--format<0) format = MAX_FORMAT; break;
 		case 'p': format++; break;
@@ -500,6 +600,8 @@ R_API int r_core_visual_classes(RCore *core) {
 				return true;
 			} else {
 				if (cur) {
+					oldcur = option;
+					option = 0;
 					mode = 'm';
 				}
 			}
@@ -511,6 +613,7 @@ R_API int r_core_visual_classes(RCore *core) {
 			" q     - quit menu\n"
 			" j/k   - down/up keys\n"
 			" h/b   - go back\n"
+			" /     - grep mode\n"
 			" C     - toggle colors\n"
 			" l/' ' - accept current selection\n"
 			" p/P   - rotate print format\n"
@@ -1575,8 +1678,8 @@ static int option = 0;
 
 static void r_core_visual_anal_refresh_column (RCore *core) {
 	const ut64 addr = (level != 0 && level != 1)  ?
-										core->offset :
-										var_functions_show (core, option, 0);
+		core->offset :
+		var_functions_show (core, option, 0);
 	RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	int h;
 	char* output;
@@ -2180,8 +2283,9 @@ repeat:
 				depth = 0;
 			}
 			r_cons_break (NULL, NULL);
-			r_core_anal_fcn (core, off, UT64_MAX,
-				R_ANAL_REF_TYPE_NULL, depth);
+			r_core_cmd0 (core, "af"); // required for thumb autodetection
+			//r_core_anal_fcn (core, off, UT64_MAX,
+			//	R_ANAL_REF_TYPE_NULL, depth);
 			r_cons_break_end ();
 			if (funsize) {
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, off, -1);

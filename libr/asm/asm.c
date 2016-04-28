@@ -128,7 +128,6 @@ static void plugin_free(RAsmPlugin *p) {
 
 R_API RAsm *r_asm_new() {
 	int i;
-	RAsmPlugin *static_plugin;
 	RAsm *a = R_NEW0 (RAsm);
 	if (!a) return NULL;
 	a->bits = 32;

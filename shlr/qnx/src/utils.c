@@ -84,7 +84,7 @@ static int i386nto_gregset_reg_offset[] = {
 
 #if defined(__QNXNTO__) || defined(__SOLARIS__)
 #define errnoconvert(x) x
-#elif defined(__linux__) || defined(__WINDOWS__) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__WINDOWS__) || defined(__APPLE__) || defined(__CYGWIN__) || defined(MINGW32) || defined(__NetBSD__)
 
 struct errnomap_t {
 	int nto;
@@ -105,7 +105,7 @@ int errnoconvert (int x) {
 #elif defined(__CYGWIN__)
 		{NTO_ENAMETOOLONG, ENAMETOOLONG},
 		{NTO_ENOSYS, ENOSYS}
-#elif defined(__MINGW32__)
+#elif defined(__MINGW32__) || defined(MINGW32) || defined(__NetBSD__)
 		/* The closest mappings from mingw's errno.h.  */
 		{NTO_ENAMETOOLONG, ENAMETOOLONG},
 		{NTO_ELIBACC, ESRCH},

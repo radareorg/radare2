@@ -391,7 +391,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			};
 			ret = ptrace (PTRACE_GETREGSET, pid, NT_PRSTATUS, &io);
 			}
-#elif __powerpc__
+#elif __POWERPC__
 			ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
 #else
 			/* linux -{arm/x86/x86_64} */
@@ -440,7 +440,7 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 			.iov_len = sizeof (R_DEBUG_REG_T)
 		};
 		int ret = ptrace (PTRACE_SETREGSET, dbg->pid, NT_PRSTATUS, &io);
-#elif __powerpc__
+#elif __POWERPC__
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid, &regs, NULL);
 #else 
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid, 0, (void*)buf);
