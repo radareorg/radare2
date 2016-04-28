@@ -681,8 +681,6 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 		esilprintf (op, "%s,%s,=,%s,[%d],%s,=,%d,%s,+=",
 			bp, sp, sp, rs, bp, rs, sp);
 		break;
-	case X86_INS_POP:
-	case X86_INS_POPF:
 	case X86_INS_POPAW:
 	case X86_INS_POPAL:
 		{
@@ -708,6 +706,8 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 				);
 		}
 		break;
+	case X86_INS_POP:
+	case X86_INS_POPF:
 	case X86_INS_POPCNT:
 		{
 			char *dst = getarg (&gop, 0, 0, NULL);
