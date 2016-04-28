@@ -51,7 +51,7 @@ R_API char *r_cons_hud_string(const char *s, const bool usecolor) {
    entry. If all words are present, the function returns true.
    The mask is a character buffer wich is filled by 'x' to mark those characters
    that match the filter */
-static bool *strmatch(char *entry, char *filter, char* mask, const int mask_size) {
+static bool strmatch(char *entry, char *filter, char* mask, const int mask_size) {
 	char *p, *current_token = filter;
 	const char *next_match;
 	int token_len, i;

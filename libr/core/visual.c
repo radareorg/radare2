@@ -143,17 +143,18 @@ static int zoom = 0;
 R_API int r_core_visual_hud(RCore *core) {
 	const char *c = r_config_get (core->config, "hud.path");
 	const char *f = R2_LIBDIR"/radare2/"R2_VERSION"/hud/main";
+	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	char *homehud = r_str_home (R2_HOMEDIR"/hud");
 	char *res = NULL;
 	char *p = 0;
 
 	showcursor (core, true);
 	if (c && *c && r_file_exists (c))
-		res = r_cons_hud_file (c, r_config_get_i (core->config, "scr.color"));
+		res = r_cons_hud_file (c, use_color);
 	if (!res && homehud)
-		res = r_cons_hud_file (homehud, r_config_get_i (core->config, "scr.color")); 
+		res = r_cons_hud_file (homehud, use_color);
 	if (!res && r_file_exists (f))
-		res = r_cons_hud_file (f, r_config_get_i (core->config, "scr.color"));
+		res = r_cons_hud_file (f, use_color);
 	if (!res)
 		r_cons_message ("Cannot find hud file");
 
