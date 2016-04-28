@@ -1085,6 +1085,15 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 			free (dst);
 		}
 		break;
+	case X86_INS_NEG:
+		{
+			char *src = getarg (&gop, 0, 0, NULL);
+			char *dst = getarg(&gop, 0, 1, NULL);
+			esilprintf (op, "0,cf,=,0,%s,>,?{,1,cf,=,},%s,0,-,%s,$z,zf,=,0,of,=,$s,sf,=,$o,pf,=", src, src, dst);
+			free (src);
+			free (dst);
+		}
+		break;
 	case X86_INS_NOT:
 		{
 			char *dst = getarg (&gop, 0, 1, "^");
@@ -1821,6 +1830,10 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 		// are set according to the result.
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->val = 1;
+		break;
+	case X86_INS_NEG:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		op->family = R_ANAL_OP_FAMILY_CPU;
 		break;
 	case X86_INS_NOT:
 		op->type = R_ANAL_OP_TYPE_NOT;
