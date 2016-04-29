@@ -938,7 +938,8 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					r_cons_printf (" \"0x%08"PFMT64x"\" ["
 						"URL=\"%s/0x%08"PFMT64x"\", color=\"%s\", label=\"%s\"]\n",
 						bbi->addr, fcn->name, bbi->addr,
-						bbi->traced?"yellow":"lightgray", str);
+						bbi->traced?"yellow":(r_anal_bb_is_in_offset(bbi, core->offset)?"lightblue":"lightgray"),
+						str);
 				}
 			}
 			free (str);
@@ -1260,8 +1261,10 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 						 fcnr->type==R_ANAL_REF_TYPE_CALL)?"green":"red",
 						flag->name, fcnr->addr);
 					r_cons_printf ("\t\"0x%08"PFMT64x"\" "
-						"[label=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
+						"[label=\"%s\" color=\"%s\""
+						" URL=\"%s/0x%08"PFMT64x"\"];\n",
 						fcnr->addr, flag->name,
+						r_anal_fcn_is_in_offset(fcni, core->offset)?"lightblue":"lightgray",
 						flag->name, fcnr->addr);
 				}
 			} else if (fmt == 2) {
