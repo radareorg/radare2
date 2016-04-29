@@ -1719,7 +1719,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("graph.gv.node", "", "Custom graphviz node style for aga, agc, ...");
 	SETPREF("graph.gv.edge", "", "Custom graphviz edge style for aga, agc, ...");
 	SETPREF("graph.gv.graph", "", "Custom graphviz graph style for aga, agc, ...");
-
+	SETPREF("graph.gv.current", "false", "Color current node differently.");
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");
 

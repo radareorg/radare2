@@ -753,6 +753,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 	char *pal_jump = palColorFor ("graph.true");
 	char *pal_fail = palColorFor ("graph.false");
 	char *pal_trfa = palColorFor ("graph.trufae");
+	bool color_current = r_config_get_i(core->config, "graph.gv.current");
 
 	if (is_keva) {
 		char ns[64];
@@ -935,10 +936,12 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//	fcn->addr, bbi->addr,
 					//	fcn->name, bbi->addr,
 					//	bbi->traced?"yellow":"lightgray", str);
-					r_cons_printf (" \"0x%08"PFMT64x"\" ["
+					r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
 						"URL=\"%s/0x%08"PFMT64x"\", color=\"%s\", label=\"%s\"]\n",
 						bbi->addr, fcn->name, bbi->addr,
-						bbi->traced?"yellow":"lightgray", str);
+						bbi->traced?"yellow":(
+							(color_current && r_anal_bb_is_in_offset(bbi, core->offset))?"lightblue":"lightgray"),
+						str);
 				}
 			}
 			free (str);
@@ -1260,7 +1263,8 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 						 fcnr->type==R_ANAL_REF_TYPE_CALL)?"green":"red",
 						flag->name, fcnr->addr);
 					r_cons_printf ("\t\"0x%08"PFMT64x"\" "
-						"[label=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
+						"[label=\"%s\""
+						" URL=\"%s/0x%08"PFMT64x"\"];\n",
 						fcnr->addr, flag->name,
 						flag->name, fcnr->addr);
 				}
