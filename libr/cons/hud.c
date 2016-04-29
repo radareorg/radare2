@@ -53,45 +53,38 @@ R_API char *r_cons_hud_string(const char *s, const bool usecolor) {
    that match the filter */
 static bool strmatch(char *entry, char *filter, char* mask, const int mask_size) {
 	char *p, *current_token = filter;
-	const char *next_match;
-	int token_len, i;
-	// first we separate the filter in words
-	for (p = filter; *p; p++) {
-		if (*p == ' ') {
+	const char *filter_end = filter + strlen (filter);
+	// first we separate the filter in words (include the terminator char
+	// to avoid special handling of the last token)
+	for (p = filter; p <= filter_end; p++) {
+		if (*p == ' ' || *p == '\0') {
+			const char *next_match, *entry_ptr = entry;
+			char old_char = *p;
+			int token_len;
+
 			// Ignoring consecutive spaces
-			if (p == current_token) continue;
+			if (p == current_token) {
+				current_token++;
+				continue;
+			}
 			*p = 0;
 			token_len = strlen (current_token);
-			// then we verify that the word is present in the target
-			next_match = r_str_casestr (entry, current_token);
-			if (!next_match) {
-				*p = ' ';
-				return false;
-			}
-			// and look for other matches of the same word in the same line
-			while (next_match) {
-				for (i = next_match - entry; 
+			// look for all matches of the current_token in this entry
+			while ((next_match = r_str_casestr (entry_ptr, current_token))) {
+				int i;
+				for (i = next_match - entry;
 					(i < next_match - entry + token_len) && i < mask_size;
 					i++) {
 					mask[i] = 'x';
 				}
-				next_match = r_str_casestr (next_match+token_len, current_token);
+				entry_ptr += token_len;
 			}
-			*p = ' ';
+			*p = old_char;
+			if (entry_ptr == entry) {
+				// the word is not present in the target
+				return false;
+			}
 			current_token = p + 1;
-		}
-	}
-	// handle the last word in the filter
-	token_len = strlen (current_token);
-	if (token_len) {
-		next_match = r_str_casestr (entry, current_token);
-		if (!next_match) return false;
-		while (next_match) {
-			for (i = next_match - entry; 
-				(i < next_match - entry + token_len) && i < mask_size ; i++) {
-				mask[i] = 'x';
-			}
-			next_match = r_str_casestr (next_match+token_len, current_token);
 		}
 	}
 	return true;
