@@ -2015,7 +2015,6 @@ R_API void r_core_visual_define (RCore *core) {
 		," h    highlight word"
 		," m    manpage for current call"
 		," n    rename flag used at cursor"
-		," q    quit/cancel operation"
 		," r    rename function"
 		," R    find references /r"
 		," s    set string"
@@ -2024,7 +2023,7 @@ R_API void r_core_visual_define (RCore *core) {
 		," x    find xrefs to current address (./r)"
 		," w    set as 32bit word"
 		," W    set as 64bit word"
-		," q    quit this menu"
+		," q    quit menu"
 		, NULL};
 	{
 		int i;
