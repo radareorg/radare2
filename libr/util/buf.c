@@ -40,6 +40,7 @@ static int sparse_read(RList *list, ut64 addr, ut8 *buf, int len) {
 }
 
 static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int len) {
+	if (!data) return NULL;
 // TODO: make it more smart to reuse the already sparse items
 	RBufferSparse *s = R_NEW0 (RBufferSparse);
 	if (!s) return NULL;
@@ -48,12 +49,11 @@ static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int le
 	s->size = len;
 	s->odata = NULL;
 	s->data = calloc (1, len);
-	if (!data) {
+	if (!s->data) {
 		free (s);
 		return NULL;
-	} else {
-		memcpy (s->data, data, len);
-	}
+	} 
+	memcpy (s->data, data, len);
 	if (r_list_append (l, s) == NULL) return NULL;
 	return s;
 }

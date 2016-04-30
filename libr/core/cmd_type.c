@@ -27,26 +27,23 @@ static void show_help(RCore *core) {
 	r_core_cmd_help (core, help_message);
 }
 
-static void save_parsed_type(RCore *core, char *parsed) {
-	char *type, *name;
+static void save_parsed_type(RCore *core, const char *parsed) {
 	if (!core || !core->anal || !parsed) {
-		goto beach;
+		return;
 	}
 	// First, if this exists, let's remove it.
-	type = strdup (parsed);
-	if (!type) {
-		goto beach;
+	char *type = strdup (parsed);
+	if (type) {
+		char *name = strtok (type, "=");
+		if (!name || strchr (name, '\n') || strchr (name, ';')) {
+			/* do nothing */
+		} else {
+			r_core_cmdf (core, "\"t- %s\"", name);
+			// Now add the type to sdb.
+			sdb_query_lines (core->anal->sdb_types, parsed);
+		}
+		free (type);
 	}
-	name = strtok (type, "=");
-	if (!name || strchr (name, '\n') != NULL
-			|| strchr (name, ';') != NULL) {
-		goto beach;
-	}
-	r_core_cmdf (core, "\"t- %s\"", name);
-	// Now add the type to sdb.
-	sdb_query_lines (core->anal->sdb_types, parsed);
-beach:
-	free (type);
 }
 
 //TODO

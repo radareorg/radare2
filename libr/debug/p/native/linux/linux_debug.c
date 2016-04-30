@@ -26,6 +26,8 @@ const char *linux_reg_profile (RDebug *dbg) {
 	} else {
 #include "reg/linux-x64.h"
 	}
+#elif __ppc__ || __powerpc__ || __POWERPC__
+#include "reg/linux-ppc.h"
 #else
 #error "Unsupported Linux CPU"
 #endif
@@ -136,7 +138,7 @@ RList *linux_thread_list (int pid, RList *list) {
 	/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
 	//while ((de = readdir (dh))) {
 	snprintf (cmdline, sizeof(cmdline), "/proc/%d/task", pid);
-	if (r_file_exists (cmdline)) {
+	if (r_file_is_directory (cmdline)) {
 		struct dirent *de;
 		DIR *dh = opendir (cmdline);
 		while ((de = readdir (dh))) {
@@ -395,7 +397,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			};
 			ret = ptrace (PTRACE_GETREGSET, pid, NT_PRSTATUS, &io);
 			}
-#elif __powerpc__
+#elif __POWERPC__
 			ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
 #else
 			/* linux -{arm/x86/x86_64} */
@@ -444,7 +446,7 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 			.iov_len = sizeof (R_DEBUG_REG_T)
 		};
 		int ret = ptrace (PTRACE_SETREGSET, dbg->pid, NT_PRSTATUS, &io);
-#elif __powerpc__
+#elif __POWERPC__
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid, &regs, NULL);
 #else 
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid, 0, (void*)buf);

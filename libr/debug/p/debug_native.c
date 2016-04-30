@@ -1029,7 +1029,7 @@ static int getMaxFiles() {
 }
 
 static RList *xnu_desc_list (int pid) {
-#if TARGET_OS_IPHONE
+#if TARGET_OS_IPHONE || __POWERPC__
 	return NULL;
 #else
 #define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
@@ -1292,7 +1292,6 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 #elif __x86_64__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "x86",
-	.canstep = 1,
 #if __linux__
 	.canstep = 0, // XXX it's 1 on some platforms...
 #else
@@ -1305,11 +1304,12 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 #elif __arm__
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "arm",
+	.canstep = 0,
 #elif __mips__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "mips",
 	.canstep = 0,
-#elif __powerpc__
+#elif __POWERPC__
 	.bits = R_SYS_BITS_32,
 	.arch = "ppc",
 	.canstep = 1,

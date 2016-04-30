@@ -20,9 +20,9 @@ CS_PATCHES=0
 else
 CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
-CS_UPD=20160513
+CS_UPD=20160522
 CS_BRA=next
-CS_TIP=0dc28bf7b236ff8b178e295f68fe0e70a8144aa7
+CS_TIP=a4bdbc81575ff5d9e571237be09b30823cdde122
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
 CS_PATCHES=1
@@ -39,6 +39,7 @@ ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
 MODS+=gdb
+MODS+=qnx
 SDB_URL=git://github.com/radare/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 PWD=$(shell pwd)

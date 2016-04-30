@@ -7,32 +7,6 @@
 #include "../blob/version.c"
 #include "../../libr/bin/pdb/pdb_downloader.h"
 
-#define ACTION_UNK       0x000000
-#define ACTION_ENTRIES   0x000001
-#define ACTION_IMPORTS   0x000002
-#define ACTION_SYMBOLS   0x000004
-#define ACTION_SECTIONS  0x000008
-#define ACTION_INFO      0x000010
-#define ACTION_OPERATION 0x000020
-#define ACTION_HELP      0x000040
-#define ACTION_STRINGS   0x000080
-#define ACTION_FIELDS    0x000100
-#define ACTION_LIBS      0x000200
-#define ACTION_SRCLINE   0x000400
-#define ACTION_MAIN      0x000800
-#define ACTION_EXTRACT   0x001000
-#define ACTION_RELOCS    0x002000
-#define ACTION_LISTARCHS 0x004000
-#define ACTION_CREATE    0x008000
-#define ACTION_CLASSES   0x010000
-#define ACTION_DWARF     0x020000
-#define ACTION_SIZE      0x040000
-#define ACTION_PDB       0x080000
-#define ACTION_PDB_DWNLD 0x100000
-#define ACTION_DLOPEN    0x200000
-#define ACTION_EXPORTS   0x400000
-#define ACTION_VERSIONINFO 0x800000
-
 static struct r_bin_t *bin = NULL;
 static char* output = NULL;
 static char* create = NULL;
@@ -446,13 +420,17 @@ static char *demangleAs(int type) {
 	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
 	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file); break;
 	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc(file); break;
+	default:
+		eprintf ("Unsupported demangler\n");
+		break;
 	}
 	return res;
 }
 
 int main(int argc, char **argv) {
 	const char *query = NULL;
-	int c, bits = 0, actions_done = 0, actions = 0, action = ACTION_UNK;
+	int c, bits = 0, actions_done = 0, actions = 0;
+	ut64 action = R_BIN_REQ_UNK;
 	char *tmp, *ptr, *arch = NULL, *arch_name = NULL;
 	const char *forcebin = NULL;
 	const char *chksum = NULL;
@@ -521,46 +499,46 @@ int main(int argc, char **argv) {
 	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeElRwO:o:pPqQrvLhuxzZ")) != -1) {
 		switch (c) {
 		case 'g':
-			set_action (ACTION_CLASSES);
-			set_action (ACTION_IMPORTS);
-			set_action (ACTION_SYMBOLS);
-			set_action (ACTION_SECTIONS);
-			set_action (ACTION_STRINGS);
-			set_action (ACTION_SIZE);
-			set_action (ACTION_INFO);
-			set_action (ACTION_FIELDS);
-			set_action (ACTION_DWARF);
-			set_action (ACTION_ENTRIES);
-			set_action (ACTION_MAIN);
-			set_action (ACTION_LIBS);
-			set_action (ACTION_RELOCS);
-			set_action (ACTION_VERSIONINFO);
+			set_action (R_BIN_REQ_CLASSES);
+			set_action (R_BIN_REQ_IMPORTS);
+			set_action (R_BIN_REQ_SYMBOLS);
+			set_action (R_BIN_REQ_SECTIONS);
+			set_action (R_BIN_REQ_STRINGS);
+			set_action (R_BIN_REQ_SIZE);
+			set_action (R_BIN_REQ_INFO);
+			set_action (R_BIN_REQ_FIELDS);
+			set_action (R_BIN_REQ_DWARF);
+			set_action (R_BIN_REQ_ENTRIES);
+			set_action (R_BIN_REQ_MAIN);
+			set_action (R_BIN_REQ_LIBS);
+			set_action (R_BIN_REQ_RELOCS);
+			set_action (R_BIN_REQ_VERSIONINFO);
 			break;
-		case 'V': set_action (ACTION_VERSIONINFO); break;
+		case 'V': set_action (R_BIN_REQ_VERSIONINFO); break;
 		case 'q': rad = R_CORE_BIN_SIMPLE; break;
 		case 'j': rad = R_CORE_BIN_JSON; break;
-		case 'A': set_action (ACTION_LISTARCHS); break;
+		case 'A': set_action (R_BIN_REQ_LISTARCHS); break;
 		case 'a': arch = optarg; break;
 		case 'C':
-			set_action (ACTION_CREATE);
+			set_action (R_BIN_REQ_CREATE);
 			create = strdup (optarg);
 			break;
 		case 'u': bin->filter = 0; break;
 		case 'k': query = optarg; break;
 		case 'K': chksum = optarg; break;
-		case 'c': set_action (ACTION_CLASSES); break;
+		case 'c': set_action (R_BIN_REQ_CLASSES); break;
 		case 'f': arch_name = strdup (optarg); break;
 		case 'F': forcebin = optarg; break;
 		case 'b': bits = r_num_math (NULL, optarg); break;
 		case 'm':
 			at = r_num_math (NULL, optarg);
-			set_action (ACTION_SRCLINE);
+			set_action (R_BIN_REQ_SRCLINE);
 			break;
-		case 'i': set_action (ACTION_IMPORTS); break;
-		case 's': set_action (ACTION_SYMBOLS); break;
-		case 'S': set_action (ACTION_SECTIONS); break;
+		case 'i': set_action (R_BIN_REQ_IMPORTS); break;
+		case 's': set_action (R_BIN_REQ_SYMBOLS); break;
+		case 'S': set_action (R_BIN_REQ_SECTIONS); break;
 		case 'z':
-			if (is_active (ACTION_STRINGS)) {
+			if (is_active (R_BIN_REQ_STRINGS)) {
 				if (rawstr) {
 					/* rawstr mode 2 means that we are not going */
 					/* to store them just dump'm all to stdout */
@@ -568,17 +546,17 @@ int main(int argc, char **argv) {
 				} else {
 					rawstr = true;
 				}
-			} else set_action (ACTION_STRINGS);
+			} else set_action (R_BIN_REQ_STRINGS);
 			break;
-		case 'Z': set_action (ACTION_SIZE); break;
-		case 'I': set_action (ACTION_INFO); break;
-		case 'H': set_action (ACTION_FIELDS); break;
-		case 'd': set_action (ACTION_DWARF); break;
+		case 'Z': set_action (R_BIN_REQ_SIZE); break;
+		case 'I': set_action (R_BIN_REQ_INFO); break;
+		case 'H': set_action (R_BIN_REQ_FIELDS); break;
+		case 'd': set_action (R_BIN_REQ_DWARF); break;
 		case 'P':
-			if (is_active (ACTION_PDB)) {
-				set_action (ACTION_PDB_DWNLD);
+			if (is_active (R_BIN_REQ_PDB)) {
+				set_action (R_BIN_REQ_PDB_DWNLD);
 			} else {
-				set_action (ACTION_PDB);
+				set_action (R_BIN_REQ_PDB);
 			}
 			break;
 		case 'D':
@@ -591,17 +569,17 @@ int main(int argc, char **argv) {
 				do_demangle = argv[optind];
 			}
 			break;
-		case 'e': set_action (ACTION_ENTRIES); break;
-		case 'E': set_action (ACTION_EXPORTS); break;
-		case 'Q': set_action (ACTION_DLOPEN); break;
-		case 'M': set_action (ACTION_MAIN); break;
-		case 'l': set_action (ACTION_LIBS); break;
-		case 'R': set_action (ACTION_RELOCS); break;
-		case 'x': set_action (ACTION_EXTRACT); break;
+		case 'e': set_action (R_BIN_REQ_ENTRIES); break;
+		case 'E': set_action (R_BIN_REQ_EXPORTS); break;
+		case 'Q': set_action (R_BIN_REQ_DLOPEN); break;
+		case 'M': set_action (R_BIN_REQ_MAIN); break;
+		case 'l': set_action (R_BIN_REQ_LIBS); break;
+		case 'R': set_action (R_BIN_REQ_RELOCS); break;
+		case 'x': set_action (R_BIN_REQ_EXTRACT); break;
 		case 'w': rw = true; break;
 		case 'O':
 			op = optarg;
-			set_action (ACTION_OPERATION);
+			set_action (R_BIN_REQ_OPERATION);
 			if (isBinopHelp (op)) {
 				printf ("Operation string:\n"
 					"  Change Entrypoint: e/0x8048000\n"
@@ -643,14 +621,14 @@ int main(int argc, char **argv) {
 		case 'h':
 			  r_core_fini (&core);
 			  return rabin_show_help (1);
-		default: action |= ACTION_HELP;
+		default: action |= R_BIN_REQ_HELP;
 		}
 	}
 
 	if (do_demangle) {
 		char *res = NULL;
 		int type;
-		if ((argc-optind)<2) {
+		if ((argc - optind) < 2) {
 			return rabin_show_help (0);
 		}
 		type = r_bin_demangle_type (do_demangle);
@@ -659,7 +637,7 @@ int main(int argc, char **argv) {
 			for (;;) {
 				file = stdin_gets();
 				if (!file || !*file) break;
-				res = demangleAs(type);
+				res = demangleAs (type);
 				if (!res) {
 					eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
 					return 1;
@@ -673,11 +651,7 @@ int main(int argc, char **argv) {
 				R_FREE (file);
 			}
 		} else {
-			res = demangleAs(type);
-			if (!res) {
-				eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
-				return 1;
-			}
+			res = demangleAs (type);
 			if (res && *res) {
 				printf ("%s\n", res);
 				free(res);
@@ -692,7 +666,7 @@ int main(int argc, char **argv) {
 	}
 	file = argv[optind];
 	if (!query) {
-		if (action & ACTION_HELP || action == ACTION_UNK || !file) {
+		if (action & R_BIN_REQ_HELP || action == R_BIN_REQ_UNK || !file) {
 			r_core_fini (&core);
 			return rabin_show_help (0);
 		}
@@ -704,7 +678,7 @@ int main(int argc, char **argv) {
 			bits = r_num_math (NULL, ptr+1);
 		}
 	}
-	if (action & ACTION_CREATE) {
+	if (action & R_BIN_REQ_CREATE) {
 		// TODO: move in a function outside
 		RBuffer *b;
 		int datalen, codelen;
@@ -757,7 +731,7 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	if (rawstr == 2) {
-		unset_action (ACTION_STRINGS);
+		unset_action (R_BIN_REQ_STRINGS);
 	}
 	r_config_set_i (core.config, "bin.rawstr", rawstr);
 
@@ -766,7 +740,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	if (file && *file && action & ACTION_DLOPEN) {
+	if (file && *file && action & R_BIN_REQ_DLOPEN) {
 		void *addr = r_lib_dl_open (file);
 		if (addr) {
 			eprintf ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(size_t)(addr));
@@ -791,6 +765,7 @@ int main(int argc, char **argv) {
 	bin->maxstrbuf = r_config_get_i (core.config, "bin.maxstrbuf");
 
 	r_bin_force_plugin (bin, forcebin);
+	r_bin_load_filter (bin, action);
 	if (!r_bin_load (bin, file, baddr, laddr, xtr_idx, fd, rawstr)) {
 		if (!r_bin_load (bin, file, baddr, laddr, xtr_idx, fd, rawstr)) {
 			eprintf ("r_bin: Cannot open file\n");
@@ -866,13 +841,13 @@ int main(int argc, char **argv) {
 	if (isradjson) r_cons_printf ("{");
 
 	// List fatmach0 sub-binaries, etc
-	if (action & ACTION_LISTARCHS || ((arch || bits || arch_name) &&
+	if (action & R_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) &&
 		!r_bin_select (bin, arch, bits, arch_name))) {
 		r_bin_list_archs (bin, (rad == R_CORE_BIN_JSON)? 'j': 1);
 		actions_done++;
 		free (arch_name);
 	}
-	if (action & ACTION_PDB_DWNLD) {
+	if (action & R_BIN_REQ_PDB_DWNLD) {
 		int ret;
 		char *path;
 		SPDBDownloaderOpt opt;
@@ -933,26 +908,26 @@ int main(int argc, char **argv) {
 		free (tmp);
 	}
 
-	run_action ("sections", ACTION_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
-	run_action ("entries", ACTION_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
-	run_action ("main", ACTION_MAIN, R_CORE_BIN_ACC_MAIN);
-	run_action ("imports", ACTION_IMPORTS, R_CORE_BIN_ACC_IMPORTS);
-	run_action ("classes", ACTION_CLASSES, R_CORE_BIN_ACC_CLASSES);
-	run_action ("symbols", ACTION_SYMBOLS, R_CORE_BIN_ACC_SYMBOLS);
-	run_action ("exports", ACTION_EXPORTS, R_CORE_BIN_ACC_EXPORTS);
-	run_action ("strings", ACTION_STRINGS, R_CORE_BIN_ACC_STRINGS);
-	run_action ("info", ACTION_INFO, R_CORE_BIN_ACC_INFO);
-	run_action ("fields", ACTION_FIELDS, R_CORE_BIN_ACC_FIELDS);
-	run_action ("libs", ACTION_LIBS, R_CORE_BIN_ACC_LIBS);
-	run_action ("relocs", ACTION_RELOCS, R_CORE_BIN_ACC_RELOCS);
-	run_action ("dwarf", ACTION_DWARF, R_CORE_BIN_ACC_DWARF);
-	run_action ("pdb", ACTION_PDB, R_CORE_BIN_ACC_PDB);
-	run_action ("size", ACTION_SIZE, R_CORE_BIN_ACC_SIZE);
-	run_action ("versioninfo", ACTION_VERSIONINFO, R_CORE_BIN_ACC_VERSIONINFO);
-	if (action & ACTION_SRCLINE) {
+	run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
+	run_action ("entries", R_BIN_REQ_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
+	run_action ("main", R_BIN_REQ_MAIN, R_CORE_BIN_ACC_MAIN);
+	run_action ("imports", R_BIN_REQ_IMPORTS, R_CORE_BIN_ACC_IMPORTS);
+	run_action ("classes", R_BIN_REQ_CLASSES, R_CORE_BIN_ACC_CLASSES);
+	run_action ("symbols", R_BIN_REQ_SYMBOLS, R_CORE_BIN_ACC_SYMBOLS);
+	run_action ("exports", R_BIN_REQ_EXPORTS, R_CORE_BIN_ACC_EXPORTS);
+	run_action ("strings", R_BIN_REQ_STRINGS, R_CORE_BIN_ACC_STRINGS);
+	run_action ("info", R_BIN_REQ_INFO, R_CORE_BIN_ACC_INFO);
+	run_action ("fields", R_BIN_REQ_FIELDS, R_CORE_BIN_ACC_FIELDS);
+	run_action ("libs", R_BIN_REQ_LIBS, R_CORE_BIN_ACC_LIBS);
+	run_action ("relocs", R_BIN_REQ_RELOCS, R_CORE_BIN_ACC_RELOCS);
+	run_action ("dwarf", R_BIN_REQ_DWARF, R_CORE_BIN_ACC_DWARF);
+	run_action ("pdb", R_BIN_REQ_PDB, R_CORE_BIN_ACC_PDB);
+	run_action ("size", R_BIN_REQ_SIZE, R_CORE_BIN_ACC_SIZE);
+	run_action ("versioninfo", R_BIN_REQ_VERSIONINFO, R_CORE_BIN_ACC_VERSIONINFO);
+	if (action & R_BIN_REQ_SRCLINE) {
 		rabin_show_srcline (at);
 	}
-	if (action & ACTION_EXTRACT) {
+	if (action & R_BIN_REQ_EXTRACT) {
 		RListIter *iter;
 		RBinXtrPlugin *xtr;
 		bool supported = false;
@@ -971,7 +946,7 @@ int main(int argc, char **argv) {
 			eprintf ("Cannot extract bins from '%s'. No supported plugins found!\n", bin->file);
 		}
 	}
-	if (op && action & ACTION_OPERATION)
+	if (op && action & R_BIN_REQ_OPERATION)
 		rabin_do_operation (op);
 	if (isradjson)
 		printf ("}");

@@ -1,6 +1,13 @@
 # config.mk.tail
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+ifeq ($(LIBR),)
+ifeq ($(R2DIR),)
+$(error ERROR: Cannot find R2DIR. Please define this variable)
+else
+LIBR=$(R2DIR)/libr
+endif
+endif
 SHLR:=$(LIBR)/../shlr
 
 #include $(LIBR)/../config-user.mk
@@ -38,9 +45,6 @@ ifneq (${OSTYPE},haiku)
 LDLIBS+=-lm
 endif
 endif
-ifneq (,$(findstring r_lib,$(BINDEPS)))
-LDLIBS+=${DL_LIBS}
-endif
 ifneq (,$(findstring r_socket,$(BINDEPS)))
 ifeq (${HAVE_LIB_SSL},1)
 LDLIBS+=${SSL_LDFLAGS}
@@ -50,6 +54,7 @@ ifneq (,$(findstring r_th,$(BINDEPS)))
 LDLIBS+=${TH_LIBS}
 endif
 ifneq (,$(findstring r_util,$(BINDEPS)))
+LDLIBS+=${DL_LIBS}
 ifeq (${HAVE_LIB_GMP},1)
 LDLIBS+=-lgmp
 endif
@@ -197,9 +202,9 @@ libname=-shared -o $1.${EXT_SO}
 else
 ifeq (${OSTYPE},darwin)
 ifeq (${HAVE_LIBVERSION},1)
-libname=-shared -o $1.${EXT_SO} ${LDFLAGS_SONAME}$1.${LIBVERSION}.${EXT_SO}
+libname=-dynamiclib -o $1.${EXT_SO} ${LDFLAGS_SONAME}$1.${LIBVERSION}.${EXT_SO}
 else
-libname=-shared -o $1.${EXT_SO}
+libname=-dynamiclib -o $1.${EXT_SO}
 endif
 else
 ifeq (${HAVE_LIBVERSION},1)

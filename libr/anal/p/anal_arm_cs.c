@@ -13,17 +13,20 @@
 #define REG64(x) cs_reg_name (*handle, insn->detail->arm64.operands[x].reg)
 #define REGID64(x) insn->detail->arm64.operands[x].reg
 #define REGID(x) insn->detail->arm.operands[x].reg
-#define IMM(x) insn->detail->arm.operands[x].imm
+#define IMM(x) (ut32)(insn->detail->arm.operands[x].imm)
 #define IMM64(x) insn->detail->arm64.operands[x].imm
 #define MEMBASE(x) cs_reg_name(*handle, insn->detail->arm.operands[x].mem.base)
 #define MEMBASE64(x) cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base)
 #define REGBASE(x) insn->detail->arm.operands[x].mem.base
 #define REGBASE64(x) insn->detail->arm64.operands[x].mem.base
+// s/index/base|reg/
 #define MEMINDEX(x) cs_reg_name(*handle, insn->detail->arm.operands[x].mem.index)
 #define MEMINDEX64(x) cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index)
 #define HASMEMINDEX64(x) insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) insn->detail->arm64.operands[x].mem.disp
+#define ISIMM(x) insn->detail->arm.operands[x].type == ARM_OP_IMM
+#define ISIMM64(x) insn->detail->arm64.operands[x].type == ARM64_OP_IMM
 #define ISREG(x) insn->detail->arm.operands[x].type == ARM_OP_REG
 #define ISREG64(x) insn->detail->arm64.operands[x].type == ARM64_OP_REG
 #define ISMEM(x) insn->detail->arm.operands[x].type == ARM_OP_MEM
@@ -45,15 +48,15 @@
 static const ut64 bitmask_by_width[] = {
 	0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff,
 	0xfff, 0x1fff, 0x3fff, 0x7fff, 0xffff, 0x1ffff, 0x3ffff, 0x7ffff,
-	0xfffff, 0x1fffff, 0x3fffff, 0x7fffff, 0xffffff, 0x1ffffffL, 0x3ffffffL,
-	0x7ffffffL, 0xfffffffL, 0x1fffffffL, 0x3fffffffL, 0x7fffffffL, 0xffffffffL,
-	0x1ffffffffL, 0x3ffffffffL, 0x7ffffffffL, 0xfffffffffL, 0x1fffffffffL,
-	0x3fffffffffL, 0x7fffffffffL, 0xffffffffffL, 0x1ffffffffffL, 0x3ffffffffffL,
-	0x7ffffffffffL, 0xfffffffffffL, 0x1fffffffffffL, 0x3fffffffffffL, 0x7fffffffffffL,
-	0xffffffffffffL, 0x1ffffffffffffL, 0x3ffffffffffffL, 0x7ffffffffffffL,
-	0xfffffffffffffL, 0x1fffffffffffffL, 0x3fffffffffffffL, 0x7fffffffffffffL,
-	0xffffffffffffffL, 0x1ffffffffffffffL, 0x3ffffffffffffffL, 0x7ffffffffffffffL,
-	0xfffffffffffffffL, 0x1fffffffffffffffL, 0x3fffffffffffffffL, 0x7fffffffffffffffL, 0xffffffffffffffffL
+	0xfffff, 0x1fffff, 0x3fffff, 0x7fffff, 0xffffff, 0x1ffffffLL, 0x3ffffffLL,
+	0x7ffffffLL, 0xfffffffLL, 0x1fffffffLL, 0x3fffffffLL, 0x7fffffffLL, 0xffffffffLL,
+	0x1ffffffffLL, 0x3ffffffffLL, 0x7ffffffffLL, 0xfffffffffLL, 0x1fffffffffLL,
+	0x3fffffffffLL, 0x7fffffffffLL, 0xffffffffffLL, 0x1ffffffffffLL, 0x3ffffffffffLL,
+	0x7ffffffffffLL, 0xfffffffffffLL, 0x1fffffffffffLL, 0x3fffffffffffLL, 0x7fffffffffffLL,
+	0xffffffffffffLL, 0x1ffffffffffffLL, 0x3ffffffffffffLL, 0x7ffffffffffffLL,
+	0xfffffffffffffLL, 0x1fffffffffffffLL, 0x3fffffffffffffLL, 0x7fffffffffffffLL,
+	0xffffffffffffffLL, 0x1ffffffffffffffLL, 0x3ffffffffffffffLL, 0x7ffffffffffffffLL,
+	0xfffffffffffffffLL, 0x1fffffffffffffffLL, 0x3fffffffffffffffLL, 0x7fffffffffffffffLL, 0xffffffffffffffffLL
 };
 
 static const char *decode_shift(arm_shifter shift) {
@@ -999,7 +1002,7 @@ static int cond_cs2r2(int cc) {
 }
 
 static void anop32 (RAnalOp *op, cs_insn *insn) {
-	ut64 addr = op->addr;
+	const ut64 addr = op->addr;
 	int i;
 	op->cond = cond_cs2r2 (insn->detail->arm.cc);
 	if (op->cond == R_ANAL_COND_NV) {
@@ -1070,6 +1073,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		break;
+	case ARM_INS_TRAP:
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
 	case ARM_INS_MOV:
 	case ARM_INS_MOVT:
 	case ARM_INS_MOVW:
@@ -1085,6 +1091,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->type = R_ANAL_OP_TYPE_UJMP;
 			}
 		}
+		if (ISIMM(1)) {
+			op->ptr = IMM(1);
+		}
 		break;
 	case ARM_INS_UDF:
 		op->type = R_ANAL_OP_TYPE_TRAP;
@@ -1099,6 +1108,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_CMN:
 	case ARM_INS_TST:
 		op->type = R_ANAL_OP_TYPE_CMP;
+		if (ISIMM(1)) {
+			op->ptr = IMM(1);
+		}
 		break;
 	case ARM_INS_ROR:
 	case ARM_INS_ORN:
@@ -1119,11 +1131,17 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_STR:
+	case ARM_INS_STRB:
+	case ARM_INS_STRD:
+	case ARM_INS_STRBT:
+	case ARM_INS_STRH:
+	case ARM_INS_STRHT:
+	case ARM_INS_STRT:
 		op->type = R_ANAL_OP_TYPE_STORE;
 		if (REGBASE(1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = 0;
-			op->ptr = MEMDISP(1);
+			op->ptr = -MEMDISP(1);
 		}
 		break;
 	case ARM_INS_LDR:
@@ -1150,7 +1168,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (REGBASE(1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
-			op->ptr = MEMDISP(1);
+			op->ptr = -MEMDISP(1);
 		}
 		break;
 	case ARM_INS_BL:

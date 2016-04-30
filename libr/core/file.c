@@ -117,6 +117,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		//reopen and attach
 		r_core_setup_debugger (core, "native", true);
 		r_debug_select (core->dbg, newpid, newpid);
+		//
 	}
 
 	if (core->file) {
@@ -685,6 +686,13 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 	r_list_append (r->files, fh);
 	r_core_file_set_by_file (r, fh);
 	r_config_set_i (r->config, "zoom.to", fh->map->from + r_io_desc_size (r->io, fh->desc));
+
+	if (r_config_get_i (r->config, "cfg.debug")) {
+		bool swstep = true;
+		if (r->dbg->h && r->dbg->h->canstep)
+			swstep = false;
+		r_config_set_i (r->config, "dbg.swstep", swstep);
+	}
 beach:
 	r->times->file_open_time = r_sys_now() - prev;
 	return fh;

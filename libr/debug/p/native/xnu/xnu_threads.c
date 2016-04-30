@@ -83,6 +83,8 @@ static int xnu_thread_set_drx (RDebug *dbg, xnu_thread_t *thread) {
 	rc = thread_set_state (thread->port, thread->flavor,
 			       (thread_state_t)&thead->debug.drx32,
 			       thread->count);
+#elif __POWERPC__
+	ppc_debug_state_t *regs;
 #else
 	thread->count  = ARM_DEBUG_STATE_COUNT;
 	thread->flavor = ARM_DEBUG_STATE;
@@ -95,8 +97,9 @@ static int xnu_thread_set_drx (RDebug *dbg, xnu_thread_t *thread) {
 #ifndef PPC_DEBUG_STATE32
 #define PPC_DEBUG_STATE32 1
 #endif
-	thread->flavor = PPC_DEBUG_STATE32;
-	thread->count  = R_MIN (thread->count, sizeof (regs->uds.ds32));
+	//thread->flavor = PPC_DEBUG_STATE32;
+	//thread->count  = R_MIN (thread->count, sizeof (regs->uds.ds32));
+	return false;
 #else
 	regs->dsh.flavor = 0;
 	thread->count    = 0;
@@ -154,6 +157,9 @@ static bool xnu_thread_get_gpr (RDebug *dbg, xnu_thread_t *thread) {
 	if (!dbg || !thread) return false;
 	regs = &thread->gpr;
 	if (!regs) return false;
+#if __POWERPC__
+	thread->state = &regs;
+#else
 	thread->state = &regs->uts;
 #if __arm || __arm64 || __aarch64
 	thread->flavor     = ARM_UNIFIED_THREAD_STATE;
@@ -168,6 +174,7 @@ static bool xnu_thread_get_gpr (RDebug *dbg, xnu_thread_t *thread) {
 				     sizeof (x86_thread_state64_t) :
 				     sizeof (x86_thread_state32_t);
 #endif
+#endif
 	rc = thread_get_state (thread->port, thread->flavor,
 			       (thread_state_t)regs, &thread->count);
 	if (rc != KERN_SUCCESS) {
@@ -179,6 +186,10 @@ static bool xnu_thread_get_gpr (RDebug *dbg, xnu_thread_t *thread) {
 }
 
 static bool xnu_fill_info_thread (RDebug *dbg, xnu_thread_t *thread) {
+#if __POWERPC__
+	thread->name = strdup ("unknown");
+	return false;
+#else
 #if !TARGET_OS_IPHONE
 	struct proc_threadinfo proc_threadinfo;
 	int ret_proc;
@@ -211,6 +222,7 @@ static bool xnu_fill_info_thread (RDebug *dbg, xnu_thread_t *thread) {
 	} else {
 		thread->name = strdup ("unknown");
 	}
+#endif
 #endif
 	return true;
 }

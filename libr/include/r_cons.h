@@ -431,10 +431,10 @@ R_API int r_cons_html_print(const char *ptr);
 
 // TODO: use gets() .. MUST BE DEPRECATED
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv);
-R_API char *r_cons_hud(RList *list, const char *prompt);
-R_API char *r_cons_hud_path(const char *path, int dir);
-R_API char *r_cons_hud_string(const char *s);
-R_API char *r_cons_hud_file(const char *f);
+R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor);
+R_API char *r_cons_hud_path(const char *path, int dir, const bool usecolor);
+R_API char *r_cons_hud_string(const char *s, const bool usecolor);
+R_API char *r_cons_hud_file(const char *f, const bool usecolor);
 
 R_API const char *r_cons_get_buffer(void);
 R_API void r_cons_grep(const char *str);

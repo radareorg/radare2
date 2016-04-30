@@ -32,7 +32,7 @@ void cdb_alloc_free(void *x) {
 #else
 //5.2
 char *cdb_alloc(ut32 n) {
-#if __APPLE__
+#if __APPLE__ && !__POWERPC__
 	void *ret = NULL;
 	if (!posix_memalign (&ret, ALIGNMENT, n))
 		return ret;

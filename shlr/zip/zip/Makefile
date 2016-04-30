@@ -31,7 +31,7 @@ ifeq (${OSTYPE},darwin)
 EXT_SO=dylib
 SOVER=${EXT_SO}
 LDFLAGS+=-dynamic
-LDFLAGS_SHARED?=-fPIC -shared
+LDFLAGS_SHARED?=-fPIC -dynamiclib
 # ifeq (${ARCH},i386)
    #CC+=-arch i386
 #   CC+=-arch x86_64

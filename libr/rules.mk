@@ -10,13 +10,21 @@ CFLAGS+=-g
 LINK+=-g -ggdb
 endif
 
+LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+ifeq (${LIBR},)
+ifeq ($(R2DIR),)
+$(error R2DIRis not defined)
+else
+LIBR:=$(R2DIR)/libr
+endif
+endif
+
 ALL?=
 CFLAGS+=-I$(LIBR)/include
 LINK+=$(addprefix -L../,$(subst r_,,$(BINDEPS)))
 LINK+=$(addprefix -l,$(BINDEPS))
 SRC=$(subst .o,.c,$(OBJ))
 MAGICSED=| sed -e 's,-lr_magic,@LIBMAGIC@,g'
-LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 BEXE=$(BIN)$(EXT_EXE)
 

@@ -443,6 +443,7 @@ extern RDebugPlugin r_debug_plugin_gdb;
 extern RDebugPlugin r_debug_plugin_bf;
 extern RDebugPlugin r_debug_plugin_wind;
 extern RDebugPlugin r_debug_plugin_bochs;
+extern RDebugPlugin r_debug_plugin_qnx;
 #endif
 
 #ifdef __cplusplus

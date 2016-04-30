@@ -14,7 +14,6 @@ static RParsePlugin *parse_static_plugins[] =
 
 R_API RParse *r_parse_new() {
 	int i;
-	RParsePlugin *static_plugin;
 	RParse *p = R_NEW0 (RParse);
 	if (!p) return NULL;
 	p->parsers = r_list_new ();

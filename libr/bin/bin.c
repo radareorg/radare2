@@ -157,7 +157,7 @@ static int string_scan_range(RList *list, const ut8 *buf, int min, const ut64 fr
 
 		/* Eat a whole C string */
 		for (rc = i = 0; i < sizeof (tmp) - 3 && needle < to; i += rc) {
-			RRune r;
+			RRune r = {0};
 
 			if (str_type == R_STRING_TYPE_WIDE) {
 				if (needle + 1 < to) {
@@ -492,15 +492,17 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 			o->imports->free = r_bin_import_free;
 		}
 	}
-	if (cp->symbols) {
-		o->symbols = cp->symbols (binfile);
-		if (o->symbols) {
-			o->symbols->free = r_bin_symbol_free;
-			REBASE_PADDR (o, o->symbols, RBinSymbol);
-			if (bin->filter)
-				r_bin_filter_symbols (o->symbols);
+	//if (bin->filter_rules & (R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
+		if (cp->symbols) {
+			o->symbols = cp->symbols (binfile);
+			if (o->symbols) {
+				o->symbols->free = r_bin_symbol_free;
+				REBASE_PADDR (o, o->symbols, RBinSymbol);
+				if (bin->filter)
+					r_bin_filter_symbols (o->symbols);
+			}
 		}
-	}
+	//}
 	o->info = cp->info? cp->info (binfile): NULL;
 	if (cp->libs) o->libs = cp->libs (binfile);
 	if (cp->sections) {
@@ -510,25 +512,33 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		if (bin->filter)
 			r_bin_filter_sections (o->sections);
 	}
-	if (cp->relocs) {
-		o->relocs = cp->relocs (binfile);
-		REBASE_PADDR (o, o->relocs, RBinReloc);
+	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
+		if (cp->relocs) {
+			o->relocs = cp->relocs (binfile);
+			REBASE_PADDR (o, o->relocs, RBinReloc);
+		}
 	}
-	if (cp->strings) {
-		o->strings = cp->strings (binfile);
-	} else {
-		o->strings = get_strings (binfile, minlen, 0);
+	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
+		if (cp->strings) {
+			o->strings = cp->strings (binfile);
+		} else {
+			o->strings = get_strings (binfile, minlen, 0);
+		}
+		REBASE_PADDR (o, o->strings, RBinString);
 	}
-	REBASE_PADDR (o, o->strings, RBinString);
-	if (cp->classes) {
-		o->classes = cp->classes (binfile);
-		if (bin->filter)
-			r_bin_filter_classes (o->classes);
+	if (bin->filter_rules & R_BIN_REQ_CLASSES) {
+		if (cp->classes) {
+			o->classes = cp->classes (binfile);
+			if (bin->filter)
+				r_bin_filter_classes (o->classes);
+		}
 	}
 	if (cp->lines) o->lines = cp->lines (binfile);
 	if (cp->get_sdb) o->kv = cp->get_sdb (o);
 	if (cp->mem) o->mem = cp->mem (binfile);
-	o->lang = r_bin_load_languages (binfile);
+	if (bin->filter_rules & (R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
+		o->lang = r_bin_load_languages (binfile);
+	}
 	binfile->o = old_o;
 	return true;
 }
@@ -1428,6 +1438,7 @@ R_API RBin *r_bin_new() {
 	RBin *bin = R_NEW0 (RBin);
 	if (!bin) return NULL;
 	bin->force = NULL;
+	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0 ();
 	bin->cb_printf = (PrintfCallback)printf;
 	bin->plugins = r_list_newf ((RListFree)plugin_free);
@@ -2011,4 +2022,8 @@ R_API const char *r_bin_entry_type_string(int etype) {
 		return "tls";
 	}
 	return NULL;
+}
+
+R_API void r_bin_load_filter(RBin *bin, ut64 rules) {
+	bin->filter_rules = rules;
 }

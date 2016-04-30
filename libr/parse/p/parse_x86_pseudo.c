@@ -258,6 +258,12 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
         }
 	vars = p->varlist (p->anal, f, 'v');
 	args = p->varlist (p->anal, f, 'a');
+	/* if no stack args check for fastcall ones */
+	/* XXX: this is just a hack because not all compilers store fastcall args in stack */
+	if (r_list_empty (args)) {
+		args = p->varlist (p->anal, f, 'A');
+	}
+	/* iterate over arguments */
 	r_list_foreach (args, argiter, arg) {
 		if (arg->delta < 10) snprintf (oldstr, sizeof (oldstr)-1,
 			"[%s + %d]",
@@ -267,7 +273,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			"[%s + 0x%x]",
 			p->anal->reg->name[R_REG_NAME_BP],
 			arg->delta);
-		snprintf (newstr, sizeof (newstr)-1, "[%s+%s]",
+		snprintf (newstr, sizeof (newstr)-1, "[%s + %s]",
 			p->anal->reg->name[R_REG_NAME_BP],
 			arg->name);
 		if (strstr (tstr, oldstr) != NULL) {
@@ -292,11 +298,11 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 
 	char bp[32];
 	if (p->anal->reg->name[R_REG_NAME_BP]) {
-		strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], 31);
+		strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], sizeof (bp) -1);
 		if (isupper (*str)) {
 			r_str_case (bp, true);
 		}
-		bp[31] = 0;
+		bp[sizeof(bp) - 1] = 0;
 	} else {
 		bp[0] = 0;
 	}
@@ -325,18 +331,18 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		}
 	}
 
+	bool ret = true;
 	if (len > strlen (tstr)) {
-		strncpy (str, tstr, strlen(tstr));
+		strncpy (str, tstr, strlen (tstr));
 		str[strlen (tstr)] = 0;
 	} else {
 		// TOO BIG STRING CANNOT REPLACE HERE
-		free (tstr);
-		return false;
+		ret = false;
 	}
 	free (tstr);
 	r_list_free (vars);
 	r_list_free (args);
-	return true;
+	return ret;
 #endif
 }
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
 #if 0
 * Use RList
 * Support callback for null command (why?)
@@ -533,7 +533,7 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case ' ':
 		if (!r_core_run_script (core, input+1)) {
-			eprintf ("Cannot find '%s'\n", input+1);
+			eprintf ("Cannot find script '%s'\n", input+1);
 			core->num->value = 1;
 		} else {
 			core->num->value = 0;
@@ -541,10 +541,10 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '!':
 		/* from command */
-		r_core_cmd_command (core, input+1);
+		r_core_cmd_command (core, input + 1);
 		break;
 	case '(':
-		r_cmd_macro_call (&core->rcmd->macro, input+1);
+		r_cmd_macro_call (&core->rcmd->macro, input + 1);
 		break;
 	case '?':{
 		const char* help_msg[] = {
@@ -1836,6 +1836,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 				r_core_cmd0 (core, cmd);
 			}
 			r_core_cmdf (core, "dp %d", origpid);
+			r_list_free (list);
 		}
 		break;
 	case 'r':
@@ -2159,7 +2160,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->incomment)
 		return false;
 
-	if (log && *cstr && *cstr!='.') {
+	if (log && (*cstr && (*cstr != '.' || !strncmp (cstr, ".(", 2)))) {
 		free (core->lastcmd);
 		core->lastcmd = strdup (cstr);
 	}
@@ -2384,6 +2385,10 @@ R_API void r_core_cmd_repeat(RCore *core, int next) {
 		return;
 	if (core->lastcmd)
 	switch (*core->lastcmd) {
+	case '.':
+		if (core->lastcmd[1] == '(') // macro call
+			r_core_cmd0 (core, core->lastcmd);
+		break;
 	case 'd': // debug
 		r_core_cmd0 (core, core->lastcmd);
 		switch (core->lastcmd[1]) {

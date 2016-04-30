@@ -380,6 +380,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	}
 	len = r_hex_str2bin (str, buf);
 	r_anal_op (anal, op, addr, buf, len);
+	free (buf);
 	return op;
 }
 
