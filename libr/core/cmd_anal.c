@@ -3923,6 +3923,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	eprintf ("aav: using from to 0x%"PFMT64x" 0x%"PFMT64x"\n", from, to);
 	eprintf ("Using vmin 0x%"PFMT64x" and vmax 0x%"PFMT64x"\n", vmin, vmax);
 	int vsize = 4; // 32bit dword
+	if (core->assembler->bits == 64) {
+		vsize = 8;
+	}
 	(void)cmd_search_value_in_range (core, from, to, vmin, vmax, vsize);
 	// TODO: for each hit . must set flag, xref and metadata Cd 4
 	if (asterisk) {
