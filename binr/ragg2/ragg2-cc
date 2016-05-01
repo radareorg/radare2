@@ -153,8 +153,6 @@ if [ "`uname`" = Darwin ]; then
 jmp _main"
 else
 	OBJCOPY=objcopy
-	CFLAGS="-fPIC -fPIE -pie -fpic"
-	LDFLAGS="-fPIC -fPIE -pie -fpic"
 	SHDR="
 .section .text
 .globl  main
@@ -163,9 +161,13 @@ jmp main
 "
 	case "$B" in
 	64)
+	        CFLAGS="-fPIC -fPIE -pie -fpic -m64"
+	        LDFLAGS="-fPIC -fPIE -pie -fpic -m64"
 		ARCH=linux-x86-64
 		;;
 	*) 
+	        CFLAGS="-fPIC -fPIE -pie -fpic -m32"
+	        LDFLAGS="-fPIC -fPIE -pie -fpic -m32"
 		ARCH=linux-x86-32
 		;;
 	esac
