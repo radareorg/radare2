@@ -17,7 +17,7 @@ LD=$(CC)
 LDFLAGS+=-L${LIBR}/socket -lr_socket
 LDFLAGS+=-L${LIBR}/util -lr_util
 
-ifeq ($(shell uname),Darwin)
+ifeq (${OSTYPE},Darwin)
 LDFLAGS_SHARED=-dynamiclib
 else
 LDFLAGS_SHARED=-shared
