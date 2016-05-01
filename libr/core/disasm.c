@@ -944,9 +944,12 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 		RList *args = r_anal_var_list (core->anal, f,
 			(f->call == R_ANAL_CC_TYPE_FASTCALL) ? 'A' : 'a');
 		RList *vars = r_anal_var_list (core->anal, f, 'v');
+		RList *sp_vars = r_anal_var_list (core->anal, f, 'e');
 		r_list_sort (args, (RListComparator)var_comparator);
 		r_list_sort (vars, (RListComparator)var_comparator);
+		r_list_sort (sp_vars, (RListComparator)var_comparator);
 		r_list_join (args, vars);
+		r_list_join (args,sp_vars);
 		RAnalVar *var;
 		RListIter *iter;
 		r_list_foreach (args, iter, var) {
@@ -992,6 +995,12 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 						core->anal->reg->name[R_REG_NAME_BP],
 						var->delta);
 				}
+				break;
+			case 'e':
+				r_cons_printf ("var %s %s @ %s+0x%x\n",
+					var->type, var->name,
+					core->anal->reg->name[R_REG_NAME_SP],
+					var->delta);
 				break;
 		}
 			r_cons_printf ("%s\n", COLOR_RESET (ds));

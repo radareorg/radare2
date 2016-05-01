@@ -271,6 +271,11 @@ R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	case R_ANAL_STACK_NOP:
 	case R_ANAL_STACK_ALIGN:
 	case R_ANAL_STACK_INC: {
+		char bp[50]={',',0};
+		strcat (bp, anal->reg->name[R_REG_NAME_BP]);
+		strcat (bp, ",+,[4],");
+		//TODO char, short, and long in case of 64bit it wont be [4]
+		//This will be some hints for type propagation imho
 		char *esil_buf, *ptr_end, *addr, *op_esil;
 		st64 ptr;
 		op_esil = r_strbuf_get (&op->esil);
@@ -281,7 +286,7 @@ R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 		if (!esil_buf) {
 			return;
 		}
-		ptr_end = strstr (esil_buf, ",ebp,+,[4],");
+		ptr_end = strstr (esil_buf, bp);
 		if (!ptr_end) {
 			free (esil_buf);
 			break;
