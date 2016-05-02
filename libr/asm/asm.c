@@ -354,6 +354,29 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return ret;
 }
 
+typedef int (*Ase)(RAsm *a, RAsmOp *op, const char *buf);
+
+static Ase findAssembler(RAsm *a, const char *kw) {
+	Ase ase = NULL;
+	RAsmPlugin *h;
+	RListIter *iter;
+	r_list_foreach (a->plugins, iter, h) {
+		if (h->arch && h->assemble
+				&& has_bits (h, a->bits)
+				&& !strncmp (a->cur->arch,
+					h->arch,
+					strlen (a->cur->arch))) {
+			if (kw) {
+				if (strstr (h->name, kw)) {
+					return h->assemble;
+				}
+			} else {
+				ase = h->assemble;
+			}
+		}
+	}
+	return ase;
+}
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int ret = 0;
 	RAsmPlugin *h;
@@ -364,21 +387,14 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	r_str_case (b, 0); // to-lower
 	memset (op, 0, sizeof (RAsmOp));
 	if (a->cur) {
-		int (*ase)(RAsm *a, RAsmOp *op, const char *buf) = NULL;
+		Ase ase = NULL;
 		if (!a->cur->assemble) {
 			/* find callback if no assembler support in current plugin */
-			r_list_foreach (a->plugins, iter, h) {
-				if (h->arch && h->assemble
-						&& has_bits (h, a->bits)
-						&& !strncmp (a->cur->arch,
-						h->arch,
-						strlen (a->cur->arch))) {
-					if (strstr (h->name, ".nz")) {
-						ase = h->assemble;
-						break;
-					} else {
-						ase = h->assemble;
-					}
+			ase = findAssembler (a, ".ks");
+			if (!ase) {
+				ase = findAssembler (a, ".nz");
+				if (!ase) {
+					ase = findAssembler (a, NULL);
 				}
 			}
 		} else {
@@ -593,6 +609,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				continue;
 			}
 			if (*ptr_start == '.') { /* pseudo */
+				/* TODO: move into a separate function */
 				ptr = ptr_start;
 				if (!strncmp (ptr, ".intel_syntax", 13))
 					a->syntax = R_ASM_SYNTAX_INTEL;

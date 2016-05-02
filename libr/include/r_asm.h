@@ -111,11 +111,11 @@ typedef struct r_asm_t {
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
 
 typedef struct r_asm_plugin_t {
-	char *name;
-	char *arch;
-	char *cpus;
-	char *desc;
-	char *license;
+	const char *name;
+	const char *arch;
+	const char *cpus;
+	const char *desc;
+	const char *license;
 	void *user; // user data pointer
 	int bits;
 	bool (*init)(void *user);
