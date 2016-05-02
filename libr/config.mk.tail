@@ -45,9 +45,6 @@ ifneq (${OSTYPE},haiku)
 LDLIBS+=-lm
 endif
 endif
-ifneq (,$(findstring r_lib,$(BINDEPS)))
-LDLIBS+=${DL_LIBS}
-endif
 ifneq (,$(findstring r_socket,$(BINDEPS)))
 ifeq (${HAVE_LIB_SSL},1)
 LDLIBS+=${SSL_LDFLAGS}
@@ -57,6 +54,7 @@ ifneq (,$(findstring r_th,$(BINDEPS)))
 LDLIBS+=${TH_LIBS}
 endif
 ifneq (,$(findstring r_util,$(BINDEPS)))
+LDLIBS+=${DL_LIBS}
 ifeq (${HAVE_LIB_GMP},1)
 LDLIBS+=-lgmp
 endif

@@ -14,7 +14,7 @@ MINOR=1
 LD=$(CC)
 LDFLAGS+=-L${LIBR}/socket -lr_socket
 LDFLAGS+=-L${LIBR}/util -lr_util
-ifeq ($(BUILD_OS),darwin)
+ifeq ($(OSTYPE),darwin)
 LDFLAGS_SHARED=-dynamiclib
 else
 LDFLAGS_SHARED=-shared

@@ -531,7 +531,7 @@ static void get_mach_header_sizes(size_t *mach_header_sz,
 #if __ppc64__ || __x86_64__
 	*mach_header_sz = sizeof(struct mach_header_64);
 	*segment_command_sz = sizeof(struct segment_command_64);
-#elif __i386__ || __ppc__
+#elif __i386__ || __ppc__ || __POWERPC__
 	*mach_header_sz = sizeof(struct mach_header);
 	*segment_command_sz = sizeof(struct segment_command);
 #else
@@ -582,7 +582,7 @@ static void xnu_build_corefile_header (vm_offset_t header,
 	mh64->ncmds	= segment_count + thread_count;
 	mh64->sizeofcmds = command_size;
 	mh64->reserved = 0; // 8-byte alignment 
-#elif __i386__ || __ppc__
+#elif __i386__ || __ppc__ || __POWERPC__
 	struct mach_header *mh;
 	mh = (struct mach_header *)header;
 	mh->magic = MH_MAGIC;
@@ -632,7 +632,7 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 #define CAST_DOWN(type, addr) (((type)((uintptr_t)(addr))))
 #if __ppc64__ || __x86_64__
 	struct segment_command_64 *sc64;
-#elif __i386__ || __ppc__
+#elif __i386__ || __ppc__ || __POWERPC__
 	struct segment_command *sc;
 #endif
 

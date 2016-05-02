@@ -305,7 +305,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int oplen, ret = op->payload = 0;
 	op->size = 4;
-	if (len<1)
+	if (len < 1)
 		return 0;
 	op->buf_asm[0] = '\0';
 	if (a->pcalign) {
@@ -354,6 +354,29 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return ret;
 }
 
+typedef int (*Ase)(RAsm *a, RAsmOp *op, const char *buf);
+
+static Ase findAssembler(RAsm *a, const char *kw) {
+	Ase ase = NULL;
+	RAsmPlugin *h;
+	RListIter *iter;
+	r_list_foreach (a->plugins, iter, h) {
+		if (h->arch && h->assemble
+				&& has_bits (h, a->bits)
+				&& !strncmp (a->cur->arch,
+					h->arch,
+					strlen (a->cur->arch))) {
+			if (kw) {
+				if (strstr (h->name, kw)) {
+					return h->assemble;
+				}
+			} else {
+				ase = h->assemble;
+			}
+		}
+	}
+	return ase;
+}
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int ret = 0;
 	RAsmPlugin *h;
@@ -364,21 +387,14 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	r_str_case (b, 0); // to-lower
 	memset (op, 0, sizeof (RAsmOp));
 	if (a->cur) {
-		int (*ase)(RAsm *a, RAsmOp *op, const char *buf) = NULL;
+		Ase ase = NULL;
 		if (!a->cur->assemble) {
 			/* find callback if no assembler support in current plugin */
-			r_list_foreach (a->plugins, iter, h) {
-				if (h->arch && h->assemble
-						&& has_bits (h, a->bits)
-						&& !strncmp (a->cur->arch,
-						h->arch,
-						strlen (a->cur->arch))) {
-					if (strstr (h->name, ".nz")) {
-						ase = h->assemble;
-						break;
-					} else {
-						ase = h->assemble;
-					}
+			ase = findAssembler (a, ".ks");
+			if (!ase) {
+				ase = findAssembler (a, ".nz");
+				if (!ase) {
+					ase = findAssembler (a, NULL);
 				}
 			}
 		} else {
@@ -593,6 +609,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				continue;
 			}
 			if (*ptr_start == '.') { /* pseudo */
+				/* TODO: move into a separate function */
 				ptr = ptr_start;
 				if (!strncmp (ptr, ".intel_syntax", 13))
 					a->syntax = R_ASM_SYNTAX_INTEL;
@@ -740,4 +757,39 @@ R_API char *r_asm_describe(RAsm *a, const char* str) {
 
 R_API RList* r_asm_get_plugins(RAsm *a) {
 	return a->plugins;
+}
+
+/* new simplified API */
+
+R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits) {
+	if (!r_asm_use (a, name)) {
+		return false;
+	}
+	return r_asm_set_bits (a, bits);
+}
+
+R_API char *r_asm_to_string(RAsm *a, ut64 addr, const ut8 *b, int l) {
+	RAsmCode *code;
+	r_asm_set_pc (a, addr);
+	code = r_asm_mdisassemble (a, b, l);
+	if (code) {
+		char *buf_asm = code->buf_asm;
+		code->buf_asm = NULL;
+		r_asm_code_free (code);
+		return buf_asm;
+	}
+	return NULL;
+}
+
+R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l) {
+	RAsmCode *code;
+	r_asm_set_pc (a, addr);
+	code = r_asm_massemble (a, b);
+	if (code) {
+		ut8 *buf = code->buf;
+		if (l) *l = code->len;
+		r_asm_code_free (code);
+		return buf;
+	}
+	return NULL;
 }

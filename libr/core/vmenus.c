@@ -355,7 +355,7 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 			flag->offset, flag->name));
 	}
 	sdb_foreach (core->anal->sdb_meta, cmtcb, list);
-	res = r_cons_hud(list, NULL);
+	res = r_cons_hud (list, NULL, r_config_get_i (core->config, "scr.color"));
 	if (res) {
 		char *p = strchr (res, ' ');
 		if (p) *p = 0;
@@ -376,7 +376,7 @@ static bool r_core_visual_config_hud(RCore *core) {
 	r_list_foreach (core->config->nodes, iter, bt) {
 		r_list_append (list, r_str_newf("%s %s", bt->name, bt->value));
 	}
-	res = r_cons_hud (list, NULL);
+	res = r_cons_hud (list, NULL, r_config_get_i (core->config, "scr.color"));
 	if (res) {
 		const char *oldvalue = NULL;
 		char cmd[512];
@@ -501,7 +501,6 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 R_API int r_core_visual_classes(RCore *core) {
 	int ch, option = 0;
 	char cmd[1024];
-	int format = 0;
 	int mode = 'c';
 	RBinClass *cur = NULL;
 	RBinSymbol *mur = NULL;
@@ -577,6 +576,12 @@ R_API int r_core_visual_classes(RCore *core) {
 				free (num);
 			}
 			break;
+		case 'p':
+			if (mode == 'm' && mur) {
+				r_core_seek (core, mur->vaddr, true);
+				r_core_cmd0 (core, "af;pdf~..");
+			}
+			break;
 		case 'h':
 		case 127: // backspace
 		case 'b': // back
@@ -589,8 +594,6 @@ R_API int r_core_visual_classes(RCore *core) {
 		case '/':
 			grepmode = true;
 			break;
-		case 'P': if (--format<0) format = MAX_FORMAT; break;
-		case 'p': format++; break;
 		case 'l':
 		case ' ':
 		case '\r':
@@ -616,7 +619,7 @@ R_API int r_core_visual_classes(RCore *core) {
 			" /     - grep mode\n"
 			" C     - toggle colors\n"
 			" l/' ' - accept current selection\n"
-			" p/P   - rotate print format\n"
+			" p     - preview method disasm with less\n"
 			" :     - enter command\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
@@ -2012,7 +2015,6 @@ R_API void r_core_visual_define (RCore *core) {
 		," h    highlight word"
 		," m    manpage for current call"
 		," n    rename flag used at cursor"
-		," q    quit/cancel operation"
 		," r    rename function"
 		," R    find references /r"
 		," s    set string"
@@ -2021,7 +2023,7 @@ R_API void r_core_visual_define (RCore *core) {
 		," x    find xrefs to current address (./r)"
 		," w    set as 32bit word"
 		," W    set as 64bit word"
-		," q    quit this menu"
+		," q    quit menu"
 		, NULL};
 	{
 		int i;

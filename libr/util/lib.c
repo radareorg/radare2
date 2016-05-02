@@ -135,9 +135,7 @@ R_API RLib *r_lib_free(RLib *lib) {
 
 /* THIS IS WRONG */
 R_API int r_lib_dl_check_filename(const char *file) {
-	if (strstr (file, "."R_LIB_EXT))
-		return R_TRUE;
-	return R_FALSE;
+	return (strstr (file, "."R_LIB_EXT)) != NULL;
 }
 
 /* high level api */
@@ -315,8 +313,11 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	}
 	while ((de = (struct dirent *)readdir (dh))) {
 		snprintf (file, sizeof (file), "%s/%s", path, de->d_name);
-		if (r_lib_dl_check_filename (file))
+		if (r_lib_dl_check_filename (file)) {
 			r_lib_open (lib, file);
+		} else {
+			IFDBG eprintf ("Cannot open %s\n", file);
+		}
 	}
 	closedir (dh);
 	return R_TRUE;

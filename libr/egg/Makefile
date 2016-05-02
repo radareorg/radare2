@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_egg
-DEPS=r_util r_asm r_syscall r_db
+DEPS=r_asm r_syscall r_db r_util
 
 OBJS=egg.o lang.o
 OBJS+=emit_x86.o

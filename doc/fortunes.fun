@@ -185,3 +185,5 @@ Mind that the 'g' in radare is silent
 Hang in there, Baby!
 Run a command with unspecified long sequence of 'a', pancake will be summoned and do the analysis for you.
 In r2land usability is treated as a bug
+radare2 is WYSIWYF - what you see is what you fix
+Your endian swaps

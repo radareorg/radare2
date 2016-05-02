@@ -24,6 +24,8 @@ const char *linux_reg_profile (RDebug *dbg) {
 	} else {
 #include "reg/linux-x64.h"
 	}
+#elif __ppc__ || __powerpc__ || __POWERPC__
+#include "reg/linux-ppc.h"
 #else
 #error "Unsupported Linux CPU"
 #endif

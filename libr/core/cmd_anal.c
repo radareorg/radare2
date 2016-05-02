@@ -35,13 +35,13 @@ static void flag_every_function(RCore *core) {
 static void var_help(RCore *core, char ch) {
 	const char *help_msg[] = {
 		"Usage:", "af[aAv]", " [idx] [type] [name]",
-		"af[aAv]", "", "list stack based/fastcall function arguments, variables",
-		"af[aAv]*", "", "same as af[aAv] but in r2 commands",
-		"af[aAv]", " [idx] [name] ([type])", "define argument/variable with name and type and offset id",
-		"af[aAv]n", " [old_name] [new_name]", "rename function argument / variable",
-		"af[aAv]t", " [name] [new_type]", "change type for given argument / variable",
-		"af[aAv]j", "", "return list of function arguments /variables in JSON format",
-		"af[aAv]-", " [idx]", "delete argument/ variables at the given index",
+		"af[aeAv]", "", "list stack based/fastcall function arguments, variables",
+		"af[aeAv]*", "", "same as af[aAv] but in r2 commands",
+		"af[aeAv]", " [idx] [name] ([type])", "define argument/variable with name and type and offset id",
+		"af[aeAv]n", " [old_name] [new_name]", "rename function argument / variable",
+		"af[aeAv]t", " [name] [new_type]", "change type for given argument / variable",
+		"af[aeAv]j", "", "return list of function arguments /variables in JSON format",
+		"af[aeAv]-", " [idx]", "delete argument/ variables at the given index",
 		"afag", " [idx] [addr]", "define var get reference",
 		"afas", " [idx] [addr]", "define var set reference",
 		"afvg", " [idx] [addr]", "define var get reference",
@@ -68,6 +68,8 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'V': // show vars in human readable format
 		r_anal_var_list_show (core->anal, fcn, 'v', 0);
 		r_anal_var_list_show (core->anal, fcn, 'a', 0);
+		r_anal_var_list_show (core->anal, fcn, 'A', 0);
+		r_anal_var_list_show (core->anal, fcn, 'e', 0);
 		break;
 	case '?':
 		var_help (core, 0);
@@ -75,6 +77,7 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'v': // frame variable
 	case 'a': // stack arg
 	case 'A': // fastcall arg
+	case 'e': // off the stack variables
 		// XXX nested dup
 		if (str[1] == '?') {
 			var_help (core, *str);
@@ -95,7 +98,7 @@ static int var_cmd(RCore *core, const char *str) {
 		case '.':
 			r_anal_var_list_show (core->anal, fcn, core->offset, 0);
 			break;
-		case '-': // "afaAv-"
+		case '-': // "afaAev-"
 			if (str[2] == '*') {
 				r_anal_var_delete_all (core->anal, fcn->addr, type);
 			} else {
@@ -918,6 +921,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'a': // "afa"
 	case 'A': // "afA"
 	case 'v': // "afv"
+	case 'e': // "afe"
 		var_cmd (core, input + 1);
 		break;
 	case 'c': // "afc"
@@ -1058,7 +1062,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		}
 		break;
-#if FCN_OLD
+#if 0
 	/* this is undocumented and probably have no uses. plz discuss */
 	case 'e': // "afe"
 		{
@@ -3919,6 +3923,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	eprintf ("aav: using from to 0x%"PFMT64x" 0x%"PFMT64x"\n", from, to);
 	eprintf ("Using vmin 0x%"PFMT64x" and vmax 0x%"PFMT64x"\n", vmin, vmax);
 	int vsize = 4; // 32bit dword
+	if (core->assembler->bits == 64) {
+		vsize = 8;
+	}
 	(void)cmd_search_value_in_range (core, from, to, vmin, vmax, vsize);
 	// TODO: for each hit . must set flag, xref and metadata Cd 4
 	if (asterisk) {

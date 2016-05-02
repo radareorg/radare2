@@ -646,19 +646,21 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 	case X86_INS_PUSHAL:
 		{
 			esilprintf (op,
+				"0,%s,+,"
 				"%d,%s,-=,%s,%s,=[%d],"
 				"%d,%s,-=,%s,%s,=[%d],"
 				"%d,%s,-=,%s,%s,=[%d],"
 				"%d,%s,-=,%s,%s,=[%d],"
-				"%d,%s,-=,%s,%s,=[%d],"
+				"%d,%s,-=,%s,=[%d],"
 				"%d,%s,-=,%s,%s,=[%d],"
 				"%d,%s,-=,%s,%s,=[%d],"
 				"%d,%s,-=,%s,%s,=[%d]",
+				sp,
 				rs, sp, "eax", sp, rs,
-				rs, sp, "ebx", sp, rs,
 				rs, sp, "ecx", sp, rs,
 				rs, sp, "edx", sp, rs,
-				rs, sp, "esp", sp, rs,
+				rs, sp, "ebx", sp, rs,
+				rs, sp, "esp", rs,
 				rs, sp, "ebp", sp, rs,
 				rs, sp, "esi", sp, rs,
 				rs, sp, "edi", sp, rs
@@ -679,10 +681,33 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 		esilprintf (op, "%s,%s,=,%s,[%d],%s,=,%d,%s,+=",
 			bp, sp, sp, rs, bp, rs, sp);
 		break;
-	case X86_INS_POP:
-	case X86_INS_POPF:
 	case X86_INS_POPAW:
 	case X86_INS_POPAL:
+		{
+			esilprintf (op,
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,[%d],%d,%s,+=,"
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,[%d],%d,%s,+=,%s,=,"
+				"%s,=",
+				sp, rs, rs, sp, "edi", 
+				sp, rs, rs, sp, "esi", 
+				sp, rs, rs, sp, "ebp", 
+				sp, rs, rs, sp, 
+				sp, rs, rs, sp, "ebx", 
+				sp, rs, rs, sp, "edx", 
+				sp, rs, rs, sp, "ecx", 
+				sp, rs, rs, sp, "eax",
+				sp
+				);
+		}
+		break;
+	case X86_INS_POP:
+	case X86_INS_POPF:
 	case X86_INS_POPCNT:
 		{
 			char *dst = getarg (&gop, 0, 0, NULL);
@@ -1085,6 +1110,15 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 			free (dst);
 		}
 		break;
+	case X86_INS_NEG:
+		{
+			char *src = getarg (&gop, 0, 0, NULL);
+			char *dst = getarg(&gop, 0, 1, NULL);
+			esilprintf (op, "0,cf,=,0,%s,>,?{,1,cf,=,},%s,0,-,%s,$z,zf,=,0,of,=,$s,sf,=,$o,pf,=", src, src, dst);
+			free (src);
+			free (dst);
+		}
+		break;
 	case X86_INS_NOT:
 		{
 			char *dst = getarg (&gop, 0, 1, "^");
@@ -1108,14 +1142,26 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 		{
 			char *src = getarg (&gop, 1, 0, NULL); // x
 			char *dst = getarg (&gop, 0, 0, NULL); // y
-			esilprintf (op,
-				"%s,%s,^,%s,=,"
-				"%s,%s,^,%s,=,"
-				"%s,%s,^,%s,=,",
-				dst, src, src,  // x = x ^ y
-				src, dst, dst,  // y = y ^ x
-				dst, src, src); // x = x ^ y
-			//esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
+			if (INSOP(0).type == X86_OP_MEM) {
+				char *dst1 = getarg (&gop, 0, 1, NULL);
+				esilprintf (op,
+					"%s,%s,^,%s,=,"
+					"%s,%s,^,%s,"
+					"%s,%s,^,%s,=",
+					dst, src, src,	// x = x ^ y
+					src, dst, dst1,	// y = y ^ x
+					dst, src, src); // x = x ^ y
+				free (dst1);
+			} else {
+				esilprintf (op,
+					"%s,%s,^,%s,=,"
+					"%s,%s,^,%s,=,"
+					"%s,%s,^,%s,=",
+					dst, src, src,  // x = x ^ y
+					src, dst, dst,  // y = y ^ x
+					dst, src, src); // x = x ^ y
+				//esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
+			}
 			free (src);
 			free (dst);
 		}
@@ -1821,6 +1867,10 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 		// are set according to the result.
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->val = 1;
+		break;
+	case X86_INS_NEG:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		op->family = R_ANAL_OP_FAMILY_CPU;
 		break;
 	case X86_INS_NOT:
 		op->type = R_ANAL_OP_TYPE_NOT;

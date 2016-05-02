@@ -230,12 +230,9 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 				}
 				if (db) {
 					symname = resolveModuleOrdinal (db, symdllname, import_ordinal);
-					if (symname) {
-						snprintf (import_name,
-							PE_NAME_LENGTH,
-							"%s_%s", dll_name, symname);
-					}
-				} else  {
+					if (symname) 
+						snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, symname);
+				} else {
 					eprintf ("Cannot find %s\n", filename);
 
 				}
@@ -2190,7 +2187,6 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 			dll_name_offset = bin_pe_rva_to_paddr(bin, curr_delay_import_dir->Name);
 			import_func_name_offset = curr_delay_import_dir->DelayImportNameTable;
 		}
-
 		while ((curr_delay_import_dir->Name != 0) && (curr_delay_import_dir->DelayImportAddressTable !=0)) {
 			if (dll_name_offset > bin->size || dll_name_offset + PE_NAME_LENGTH > bin->size)
 				return NULL;
@@ -2201,10 +2197,10 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 			}
 
 			dll_name[PE_NAME_LENGTH] = '\0';
-			if (!bin_pe_parse_imports (bin, &imports, &nimp, dll_name,
-					import_func_name_offset, curr_delay_import_dir->DelayImportAddressTable))
+			if (!bin_pe_parse_imports (bin, &imports, &nimp, dll_name, import_func_name_offset, 
+				  		  curr_delay_import_dir->DelayImportAddressTable))
 				break;
-                       if ((size_t)(void*)curr_delay_import_dir + sizeof(curr_delay_import_dir) > (size_t)(void*)bin->b->buf + bin->size) {
+			if ((char *)(curr_delay_import_dir + 2) > (char *)(bin->b->buf + bin->size)) {
 				eprintf ("Warning: malformed pe\n");
 				return NULL;
 			}

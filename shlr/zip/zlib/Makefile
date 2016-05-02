@@ -10,7 +10,7 @@ CFLAGS+=-D__CYGWIN__=1
 EXT_SO=dll
 SOVER=${EXT_SO}
 LDFLAGS+=-shared
-LDFLAGS_SHARED?=-shared
+LDFLAGS_SHARED=-shared
 else
 ifneq (,$(findstring mingw32,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
@@ -19,20 +19,20 @@ SOVER=${EXT_SO}
 LDFLAGS+=-shared
 LDFLAGS_SHARED?=-shared
 else
-LDFLAGS_SHARED?=-shared
+LDFLAGS_SHARED=-shared
 endif
 endif
 ifeq (${OSTYPE},windows)
 EXT_SO=dll
 SOVER=${EXT_SO}
 LDFLAGS+=-shared
-LDFLAGS_SHARED?= -shared
+LDFLAGS_SHARED=-shared
 else
 ifeq (${OSTYPE},darwin)
 EXT_SO=dylib
 SOVER=${EXT_SO}
 LDFLAGS+=-dynamic
-LDFLAGS_SHARED?=-dynamiclib
+LDFLAGS_SHARED=-dynamiclib
 # ifeq (${ARCH},i386)
    #CC+=-arch i386
 #   CC+=-arch x86_64
