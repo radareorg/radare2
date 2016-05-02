@@ -1,4 +1,12 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include <stdbool.h>
+#include <string.h>
+
+#include "r_crypto.h"
+#include "r_config.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_io.h"
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	ut8 *buf = malloc (strlen (pairs) + 1);

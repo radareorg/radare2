@@ -1,4 +1,9 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include "r_list.h"
+#include "r_config.h"
+#include "r_core.h"
+#include "r_print.h"
+#include "r_bin.h"
 
 
 static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
@@ -261,6 +266,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	r_config_set_i (core->config, "cfg.debug", true);
 	newfile = newfile2;
 
+	//XXX: need cmd_debug.h for r_debug_get_baddr
 	ut64 new_baddr = r_debug_get_baddr (core, newfile);
 	ut64 old_baddr = r_config_get_i (core->config, "bin.baddr");
 	if (old_baddr != new_baddr) {

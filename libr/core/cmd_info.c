@@ -1,4 +1,10 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
+#include <string.h>
+
+#include "r_bin.h"
+#include "r_config.h"
+#include "r_cons.h"
+#include "r_core.h"
 
 #define PAIR_WIDTH 9
 // TODO: reuse implementation in core/bin.c

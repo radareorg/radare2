@@ -1,4 +1,10 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+#include <string.h>
+
+#include "r_anal.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "sdb/sdb.h"
 
 static void show_help(RCore *core) {
 	const char *help_message[] = {
