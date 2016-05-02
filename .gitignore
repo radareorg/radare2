@@ -55,6 +55,7 @@ shlr/sdb/src/sdb-version.h
 shlr/sdb/src/sdb_version.h
 shlr/sdb/src/libsdb.so*
 shlr/capstone/
+sys/mingw32.bat
 radare2-w32-*
 radare2-regressions
 tags
