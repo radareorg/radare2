@@ -187,7 +187,8 @@ static int rasm_show_help(int v) {
 			" If '-l' value is greater than output length, output is padded with nops\n"
 			" If the last argument is '-' reads from stdin\n");
 		printf ("Environment:\n"
-		" RASM2_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
+		" RASM2_NOPLUGINS  do not load shared plugins (speedup loading)\n"
+		" R_DEBUG          if defined, show error messages and crash signal\n"
 		"");
 	}
 	return 0;
@@ -309,6 +310,7 @@ static int __lib_asm_cb(RLibPlugin *pl, void *user, void *data) {
 	r_asm_add (a, hand);
 	return true;
 }
+
 static int __lib_asm_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
@@ -319,6 +321,7 @@ static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 	r_anal_add (anal, hand);
 	return true;
 }
+
 static int __lib_anal_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 	return true;
 }
