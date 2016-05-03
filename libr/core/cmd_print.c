@@ -3345,9 +3345,11 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '8': // "p8"
 		if (input[1] == '?') {
-			r_cons_printf("|Usage: p8[j] [len]     8bit hexpair list of bytes (see pcj)\n");
+			r_cons_printf("|Usage: p8[fj] [len]     8bit hexpair list of bytes (see pcj)\n");
 		} else if (input[1] == 'j') {
 			r_core_cmdf (core, "pcj %s", input+2);
+		} else if (input[1] == 'f') {
+			r_core_cmdf (core, "p8 $F @ $B");
 		} else r_print_bytes (core->print, core->block, len, "%02x");
 		break;
 	case 'f': // "pf"
