@@ -142,7 +142,8 @@ typedef struct r_io_t {
 	RList *cache;
 	RCache *buffer;
 	int buffer_enabled;
-	int ff;
+	bool ff;
+	ut8 Oxff;
 	int autofd;
 	int aslr;
 	ut64 winbase;

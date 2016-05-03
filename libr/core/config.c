@@ -909,6 +909,13 @@ static int cb_ioff(void *user, void *data) {
 	return true;
 }
 
+static int cb_io_oxff(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->io->Oxff = node->i_value;
+	return true;
+}
+
 static int cb_ioautofd(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1826,6 +1833,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("io.cache", "false", &cb_iocache, "Enable cache for io changes");
 	SETCB("io.raw", "false", &cb_ioraw, "Ignore maps/sections and use raw io");
 	SETCB("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
+	SETICB("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
 	SETCB("io.va", "true", &cb_iova, "Use virtual address layout");
 	SETCB("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");

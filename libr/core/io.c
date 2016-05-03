@@ -290,9 +290,9 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 		ret = r_core_block_read (core, 0);
 		if (core->io->ff) {
 			if (ret < 1 || ret > core->blocksize)
-				memset (core->block, 0xff, core->blocksize);
+				memset (core->block, core->io->ff, core->blocksize);
 			else
-				memset (core->block+ret, 0xff, core->blocksize-ret);
+				memset (core->block+ret, core->io->ff, core->blocksize-ret);
 			ret = core->blocksize;
 			core->offset = addr;
 		} else {
@@ -414,7 +414,7 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 	RCoreFile *file = NULL;
 
 	r_list_foreach (core->files, iter, file) {
-		if (file && file->desc){
+		if (file && file->desc) {
 			core->io->raised = file->desc->fd;
 			core->switch_file_view = 1;
 			break;
@@ -425,7 +425,7 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 
 R_API int r_core_block_read(RCore *core, int next) {
 	if (core->file == NULL && r_core_file_set_first_valid(core) == NULL) {
-		memset (core->block, 0xff, core->blocksize);
+		memset (core->block, core->io->Oxff, core->blocksize);
 		return -1;
 	}
 	if (core->file && core->switch_file_view) {
@@ -440,8 +440,8 @@ R_API int r_core_block_read(RCore *core, int next) {
 
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	if (!core->io || !core->file || !core->file->desc || size<1) {
-		if (size>0)
-			memset (buf, 0xff, size);
+		if (size > 0)
+			memset (buf, core->io->Oxff, size);
 		return false;
 	}
 	r_io_use_desc (core->io, core->file->desc);
