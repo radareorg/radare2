@@ -73,7 +73,7 @@ static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 			}
 		}
 		eprintf ("Running child until syscalls:");
-		for (i=0; i<count; i++)
+		for (i=0; i < count; i++)
 			eprintf ("%d ", syscalls[i]);
 		eprintf ("\n");
 		free (str);
@@ -122,7 +122,7 @@ static void dot_trace_discover_child (RTreeNode *n, RTreeVisitor *vis) {
 	}
 }
 
-static void dot_trace_traverse(RCore *core, RTree *t) {
+static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 	const char *gfont = r_config_get (core->config, "graph.font");
 	struct dot_trace_ght aux_data;
 	RTreeVisitor vis = { 0 };
@@ -130,6 +130,10 @@ static void dot_trace_traverse(RCore *core, RTree *t) {
 	RListIter *iter;
 	RGraphNode *n;
 
+	if (fmt == 'i') {
+		r_core_cmd0 (core, "ag-;.dtg*;aggi");
+		return;
+	}
 	aux_data.graph = r_graph_new ();
 	aux_data.graphnodes = sdb_new0 ();
 
@@ -141,31 +145,44 @@ static void dot_trace_traverse(RCore *core, RTree *t) {
 
 	/* traverse the callgraph to print the dot file */
 	nodes = r_graph_get_nodes (aux_data.graph);
+	if (fmt == 0) {
 	r_cons_printf ("digraph code {\n"
 		"graph [bgcolor=white];\n"
 		"    node [color=lightgray, style=filled"
 		" shape=box fontname=\"%s\" fontsize=\"8\"];\n", gfont);
+	}
 	r_list_foreach (nodes, iter, n) {
 		struct trace_node *tn = (struct trace_node *)n->data;
 		const RList *neighbours = r_graph_get_neighbours (aux_data.graph, n);
 		RListIter *it_n;
 		RGraphNode *w;
 
-		if (tn) {
-			r_cons_printf ("\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x
-					"\" color=\"lightgray\" label=\"0x%08"PFMT64x
-					" (%d)\"]\n", tn->addr, tn->addr, tn->addr, tn->refs);
+		if (!fmt) {
+			if (tn) {
+				r_cons_printf ("\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x
+						"\" color=\"lightgray\" label=\"0x%08"PFMT64x
+						" (%d)\"]\n", tn->addr, tn->addr, tn->addr, tn->refs);
+			}
 		}
 		r_list_foreach (neighbours, it_n, w) {
 			 struct trace_node *tv = (struct trace_node *)w->data;
 
 			 if (tv && tn) {
-				 r_cons_printf ("\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x
-						 "\" [color=\"red\"];\n", tn->addr, tv->addr);
+				 if (fmt) {
+					 r_cons_printf ("agn 0x%08"PFMT64x"\n", tn->addr);
+					 r_cons_printf ("agn 0x%08"PFMT64x"\n", tv->addr);
+					 r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+							 tn->addr, tv->addr);
+				 } else {
+					 r_cons_printf ("\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x
+							 "\" [color=\"red\"];\n", tn->addr, tv->addr);
+				 }
 			 }
 		}
 	}
-	r_cons_printf ("}\n");
+	if (!fmt) {
+		r_cons_printf ("}\n");
+	}
 
 	r_graph_free (aux_data.graph);
 	sdb_free (aux_data.graphnodes);
@@ -2811,23 +2828,29 @@ static int cmd_debug(void *data, const char *input) {
 				"dtd", "", "List all traced disassembled",
 				"dtc [addr]|([from] [to] [addr])", "", "Trace call/ret",
 				"dtg", "", "Graph call/ret trace",
-				"dtr", "", "Reset traces (instruction//cals)",
+				"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
+				"dtgi", "", "Interactive debug trace",
+				"dt-", "", "Reset traces (instruction/calls)",
 				NULL
 			};
 			r_core_cmd_help (core, help_message);
 			}
 			break;
 		case 'c': // "dtc"
-			debug_trace_calls (core, input + 2);
+			if (input[2] == '?') {
+				eprintf ("Usage: dtc [addr] ([from] [to] [addr]) - trace calls in debugger\n");
+			} else {
+				debug_trace_calls (core, input + 2);
+			}
 			break;
 		case 'd':
 			// TODO: reimplement using the api
 			r_core_cmd0 (core, "pd 1 @@= `dt~[0]`");
 			break;
 		case 'g': // "dtg"
-			dot_trace_traverse (core, core->dbg->tree);
+			dot_trace_traverse (core, core->dbg->tree, input[2]);
 			break;
-		case 'r':
+		case '-':
 			r_tree_reset (core->dbg->tree);
 			r_debug_trace_free (core->dbg);
 			r_debug_tracenodes_reset (core->dbg);

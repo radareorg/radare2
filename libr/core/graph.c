@@ -2638,6 +2638,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case '<':
 			r_core_cmd0 (core, "ag-;.agc*;aggi");
 			break;
+		case 'G':
+			r_core_cmd0 (core, "ag-;.dtg*;aggi");
+			break;
 		case 'V':
 			if (fcn) agraph_toggle_callgraph (g);
 			break;
@@ -2692,6 +2695,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" ;            - add comment in current basic block\n"
 					" /            - highlight text\n"
 					" \"            - toggle graph.refs\n"
+					" >            - show function callgraph (see graph.refs)\n"
+					" <            - show program callgraph (see graph.refs)\n"
 					" Home/End     - go to the top/bottom of the canvas\n"
 					" Page-UP/DOWN - scroll canvas up/down\n"
 					" C            - toggle scr.colors\n"
@@ -2701,14 +2706,13 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" TAB          - select previous node\n"
 					" t/f          - follow true/false edges\n"
 					" g([A-Za-z]*) - follow jmp/call identified by shortcut\n"
+					" G            - debug trace callgraph (generated with dtc)\n"
 					" r            - refresh graph\n"
 					" R            - randomize colors\n"
 					" o            - go/seek to given offset\n"
 					" u/U          - undo/redo seek\n"
 					" p/P          - rotate graph modes (normal, display offsets, esil, minigraph, summary)\n"
 					" s/S          - step / step over\n"
-					" >            - show function callgraph\n"
-					" <            - show program callgraph\n" // TODO: maybe refgraph
 					" V            - toggle basicblock / call graphs\n"
 					" w            - toggle between movements speed 1 and graph.scroll\n"
 					" x/X          - jump to xref/ref\n"
