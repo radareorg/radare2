@@ -76,7 +76,7 @@ static const char *getnum(const char* n, int *num) {
 }
 
 static const char *numpos(const char* n) {
-	while (*n<'0' || *n>'9') n++;
+	while (*n && *n<'0' || *n>'9') n++;
 	return n;
 }
 
@@ -90,6 +90,9 @@ static const char *getstring(const char *s, int len) {
 }
 
 static const char *resolve(struct Type *t, const char *foo, const char **bar) {
+	if (!foo || !*foo) {
+		return NULL;
+	}
 	for (; t[0].code; t++) {
 		int len = strlen (t[0].code);
 		if (!strncmp (foo, t[0].code, len)) {
@@ -140,8 +143,13 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 	int is_last = 0;
 	int retmode = 0;
 	if (!strncmp (s, "imp.", 4)) s = s + 4;
-	if (!strncmp (s, "__", 2)) s = s + 2;
 	if (!strncmp (s, "reloc.", 6)) s = s + 6;
+
+	if (*s != 'T' && strncmp (s, "_T", 2) && strncmp (s, "__T", 3)) {
+		return NULL;
+	}
+
+	if (!strncmp (s, "__", 2)) s = s + 2;
 #if 0
 	const char *element[] = {
 		"module", "class", "method", NULL
@@ -151,9 +159,6 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 	const char *attr2 = NULL;
 	const char *q, *p = s;
 
-	if (*s != 'T' && strncmp (s, "_T", 2)) {
-		return NULL;
-	}
 	if (strchr (s, '\'') || strchr (s, ' ')) {
 		return NULL;
 	}

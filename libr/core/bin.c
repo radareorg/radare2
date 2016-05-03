@@ -1190,10 +1190,6 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 			r_name_filter (sn->demflag, -1);
 		}
 	}
-if (strstr (sym->name, "4main4")) {
-	sn->demname = r_bin_demangle (r->bin->cur, "swift", sym->name);
-	eprintf ("%s  =  %s\n", sym->name, sn->demname);
-}
 }
 
 static void snFini(SymName *sn) {
