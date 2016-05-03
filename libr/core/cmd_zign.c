@@ -1,4 +1,9 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include "r_anal.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_list.h"
+#include "r_sign.h"
 
 static int cmd_zign(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -92,8 +97,8 @@ static int cmd_zign(void *data, const char *input) {
 			if (ptr) {
 				*ptr = 0;
 				r_sign_add (core->sign, core->anal, (int)*input, input+2, ptr+1);
-			} 
-		}	
+			}
+		}
 		break;
 	case 'c':
 		item = r_sign_check (core->sign, core->block, core->blocksize);

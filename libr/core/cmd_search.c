@@ -1,4 +1,10 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
+#include <stddef.h>
+
+#include "r_core.h"
+#include "r_io.h"
+#include "r_list.h"
+#include "r_types_base.h"
 
 static int preludecnt = 0;
 static int searchflags = 0;

@@ -1,4 +1,10 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
+#include "r_asm.h"
+#include "r_core.h"
+#include "r_config.h"
+#include "r_print.h"
+#include "r_types.h"
+#include "r_util.h"
 
 #define R_CORE_MAX_DISASM (1024*1024*8)
 
@@ -2815,7 +2821,10 @@ static int cmd_print(void *data, const char *input) {
 				"| e dir.magic  # defaults to "R_MAGIC_PATH"\n"
 				"| /m           # search for magic signatures\n"
 				);
-		} else r_core_magic (core, input+1, true);
+		} else {
+			// XXX: need cmd_magic header for r_core_magic
+			r_core_magic (core, input+1, true);
+		}
 		break;
 	case 'u': //pu
 		if (input[1]=='?') {

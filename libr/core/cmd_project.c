@@ -1,4 +1,7 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include "r_config.h"
+#include "r_core.h"
+#include "r_print.h"
 
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *)data;

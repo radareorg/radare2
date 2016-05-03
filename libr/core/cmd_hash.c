@@ -1,4 +1,10 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
+#include <stddef.h>
+
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_hash.h"
+#include "r_types_base.h"
 
 typedef void (*HashHandler)(const ut8 *block, int len);
 

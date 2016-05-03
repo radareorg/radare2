@@ -1,4 +1,9 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
+#include <stddef.h>
+
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_util.h"
 
 static const char* findBreakChar(const char *s) {
 	while (*s) {
@@ -146,6 +151,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'd':
 		if (input[1]=='.'){
 			int cur = R_MAX(core->print->cur, 0);
+			// XXX: we need cmd_xxx.h (cmd_anal.h)
 			core_anal_bytes(core, core->block + cur, core->blocksize, 1, 'd');
 		} else if (input[1]==' '){
 			char *d = r_asm_describe (core->assembler, input+2);

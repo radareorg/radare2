@@ -1,4 +1,8 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
+#include <stddef.h>
+
+#include "r_cons.h"
+#include "r_core.h"
 
 static void flagbars(RCore *core) {
 	int total = 0;

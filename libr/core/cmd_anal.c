@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake, maijin */
 
 #include "r_util.h"
+#include "r_core.h"
 
 static void find_refs(RCore *core, const char *glob) {
 	char cmd[128];
@@ -1575,6 +1576,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 		}
 		break;
 	case 'p': // drp
+		// XXX we have to break out .h for these cmd_xxx files.
 		cmd_reg_profile (core, str);
 		break;
 	case 't': // "drt"

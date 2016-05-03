@@ -1,4 +1,6 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
+#include "r_cmd.h"
+#include "r_core.h"
 
 static int cmd_macro(void *data, const char *input) {
 	char *buf = NULL;

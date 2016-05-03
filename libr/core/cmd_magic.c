@@ -1,4 +1,11 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include <stddef.h>
+
+#include "r_config.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_magic.h"
+#include "r_types.h"
 
 /* ugly global vars */
 static int magicdepth = 99; //XXX: do not use global var here

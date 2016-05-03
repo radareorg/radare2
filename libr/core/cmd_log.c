@@ -1,4 +1,9 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
+#include <string.h>
+
+#include "r_config.h"
+#include "r_cons.h"
+#include "r_core.h"
 
 static int textlog_chat (RCore *core) {
 	char prompt[64];
