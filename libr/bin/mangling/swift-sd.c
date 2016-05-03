@@ -49,6 +49,7 @@ static struct Type metas [] = {
 	/* attributes */
 	{ "FC", "ClassFunc" },
 	{ "S0_FT", "?" },
+	{ "RxC", ".." },
 	{ "S0", "self" },
 	{ "U__FQ_T_", "<A>(A)" },
 	{ "ToFC", "@objc class func" },
@@ -81,7 +82,7 @@ static const char *getnum(const char* n, int *num) {
 }
 
 static const char *numpos(const char* n) {
-	while (*n && *n<'0' || *n>'9') n++;
+	while (*n && (*n<'0' || *n>'9')) n++;
 	return n;
 }
 
@@ -186,6 +187,14 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 				break;
 			}
 			break;
+		case 'F':
+			switch (p[2]) {
+			case 'e':
+				tail = "..extension";
+				p += 2;
+				break;
+			}
+			break;
 		case 'M':
 			switch (p[2]) {
 			case 'a':
@@ -215,7 +224,8 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 	// XXX
 	q = getnum (p, NULL);
 	
-	if (IS_NUMBER (*p) || *p == 'v' || *p == 'o' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') { // _TF or __TW
+	// _TF or __TW
+	if (IS_NUMBER (*p) || *p == 'v' || *p == 'o' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') {
 		if (!strncmp (p+1, "SS", 2)) {
 			strcat (out, "Swift.String.init (");
 			p += 3;
@@ -236,7 +246,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 #endif
 		q = getnum (q, &len);
 		if (len > 0) {
-			p = q;
+			eprintf ("LEN = %d\n", len);
 		}
 
 		q = numpos (p);
@@ -259,10 +269,13 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 			strcat (out, getstring (q, len));
 		}
 		p = resolve (flags, q, &attr);
-		if (!p && *q=='U') {
+		if (!p && ((*q=='U') || (*q == 'R'))) {
 			p = resolve (metas, q, &attr);
-			if (attr) {
-				//printf ("Template (%s)\n", attr);
+			if (attr && *q == 'R') {
+				attr = NULL;
+				q += 3;
+				//q = p + 1;
+//				//printf ("Template (%s)\n", attr);
 			} else {
 				//printf ("Findus (%s)\n", q);
 			}
@@ -312,6 +325,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 				if (*q == 'f') q++;
 				switch (*q) {
 				case 'S': // "S0"
+					if (q[1]=='1') q++;
 					switch (q[1]) {
 					case '0':
 						strcat (out, " (self) -> ()");
@@ -333,8 +347,9 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 							int n;
 							char *Q = getnum (q + 2, &n);
 							strcat (out, getstring (Q, n));
-							q = Q;
+							q = Q + n + 1;
 						}
+						continue;
 						break;
 					}
 					break;
@@ -370,7 +385,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 				if (p) {
 					q = p;
 					q = getnum (p, &len);
-					if (!strcmp (attr, "generic"))
+					if (attr && !strcmp (attr, "generic"))
 						is_generic = 1;
 					//printf ("TYPE: %s LEN %d VALUE %s\n",
 					//	attr, len, getstring (q, len));
@@ -396,9 +411,11 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 							}
 							//printf ("ISLAST (%s)\n", q+len);
 							is_last = q[len];
-							STRCAT_BOUNDS (strlen (attr));
-							strcat (out, attr);
-							strcat (out, " ");
+							if (attr) {
+								STRCAT_BOUNDS (strlen (attr));
+								strcat (out, attr);
+								strcat (out, " ");
+							}
 							STRCAT_BOUNDS (strlen (s));
 							strcat (out, s);
 							if (is_last) {
@@ -416,7 +433,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 					}
 					q += len;
 				} else {
-						q++;
+					q++;
 					break;
 				}
 			}
@@ -531,11 +548,15 @@ Test swift_tests[] = {
 	"__TWaC4main8FooClassS_9FoodClassS_"
 	,"main.FooClass..FoodClass..protocol"
 },{
+	"__TFe4mainRxCS_8FooClassxS_9FoodClassrS1_8sayHellofT_T_"
+	,"main..FooClass..FoodClass..sayHello..extension"
+},{
 	// _direct field offset for main.Tost.msg : Swift.String
 	NULL, NULL
 }};
 
 int main(int argc, char **argv) {
+	int rc = 0;
 	char *ret;
 	if (argc > 1) {
 		ret = r_bin_demangle_swift (argv[1], 0);
@@ -555,14 +576,16 @@ int main(int argc, char **argv) {
 				} else {
 					printf (Color_RED"[XX]"Color_RESET"  %s\n", ret);
 					printf (Color_YELLOW"[MUSTBE]"Color_RESET"  %s\n", test->dem);
+					rc = 1;
 				}
 				free (ret);
 			} else {
 				printf (Color_RED"[XX]"Color_RESET"  \"(null)\"\n");
 				printf (Color_YELLOW"[MUSTBE]"Color_RESET"  %s\n", test->dem);
+				rc = 1;
 			}
 		}
 	}
-	return 0;
+	return rc;
 }
 #endif
