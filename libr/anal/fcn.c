@@ -264,13 +264,24 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 #define gotoBeach(x) ret=x;goto beach;
 #define gotoBeachRet() goto beach;
 
-void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, char *reg, char *sign, char type) {
+void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	char *varname, *esil_buf, *ptr_end, *addr, *op_esil;
 	st64 ptr;
-	char sig[50] = {',', 0};
-	strcat (sig, reg);
-	sig [strlen (sig)] = ',';
-	strcat (sig,sign);
+	int len, lenmax=50;
+	char *sig = malloc (sizeof (char)*lenmax+1);
+	if(!sig) return;
+	strcpy(sig,",");
+	strncat (sig, reg, lenmax-1);
+	len = strlen(sig);
+	if (len > lenmax - 3) { /*<=============-i
+		1 for first colon		||
+		1 for the next colon		||
+		at least one for the sign	/|
+		total of 3 =====================_| */
+		return;
+	}
+	strncat (sig, ",", lenmax - len++);
+	strncat (sig, sign, lenmax - len);
 	//strcat (sig,",[4],");
 	op_esil = r_strbuf_get (&op->esil);
 	if (!op_esil) {
@@ -296,13 +307,13 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, char *reg, char 
 		return;
 	}
 	ptr = (st64)r_num_get (NULL, addr);
-	if( *sign =='+'){
+	if(*sign =='+') {
 		varname = get_varname (anal, ARGPREFIX, R_ABS (ptr));
-		r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits/8, varname);
+		r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits / 8, varname);
 		r_anal_var_access (anal, fcn->addr, type, 1, ptr, 0, op->addr);
-	} else{
+	} else {
 		varname = get_varname (anal, VARPREFIX, R_ABS (ptr));
-		r_anal_var_add (anal, fcn->addr, 1, ptr,'v', NULL, anal->bits/8, varname);
+		r_anal_var_add (anal, fcn->addr, 1, ptr,'v', NULL, anal->bits / 8, varname);
 		r_anal_var_access (anal, fcn->addr, 'v', 1, ptr, 1, op->addr);
 
 	}
@@ -312,6 +323,7 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, char *reg, char 
 R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "+", fcn->call);
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "-", 'v');
+	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_SP], "+", 'e');
 }
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int continue_after_jump = anal->opt.afterjmp;
