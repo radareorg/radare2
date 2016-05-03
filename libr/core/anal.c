@@ -1192,6 +1192,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 	RAnalFunction fakefr = {0};
 	const char *font = r_config_get (core->config, "graph.font");
 	int is_html = r_cons_singleton ()->is_html;
+	bool refgraph = r_config_get_i (core->config, "graph.refs");
 	int first, first2, showhdr = 0;
 	RListIter *iter, *iter2;
 	const int hideempty = 1;
@@ -1203,7 +1204,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 		r_cons_printf ("[");
 	first = 0;
 	r_list_foreach (core->anal->fcns, iter, fcni) {
-		if (addr != 0 && addr != fcni->addr)
+		if (addr != UT64_MAX && addr != fcni->addr)
 			continue;
 		if (fmt == 0) {
 			r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
@@ -1220,6 +1221,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 			first = 1;
 		}
 		first2 = 0;
+		// TODO: maybe fcni->calls instead ?
 		r_list_foreach (fcni->refs, iter2, fcnr) {
 			RAnalFunction *fr = r_anal_get_fcn_in (core->anal, fcnr->addr, 0);
 			if (!fr) {
@@ -1275,7 +1277,17 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 					}
 				}
 			} else {
-				r_cons_printf (" - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
+				if (refgraph || fcnr->type == 'C') {
+//					r_cons_printf ("agn 0x%08"PFMT64x"\n", fcnr->addr);
+//					r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", fcni->addr, fr->addr);
+
+					// TODO: avoid recreating nodes unnecessarily
+					r_cons_printf ("agn %s\n", fcni->name);
+					r_cons_printf ("agn %s\n", fr->name);
+					r_cons_printf ("age %s %s\n", fcni->name, fr->name);
+				} else {
+					r_cons_printf ("# - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
+				}
 			}
 		}
 		if (fmt==2) r_cons_printf ("]}");

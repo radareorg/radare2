@@ -3464,8 +3464,10 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		r_agraph_set_curnode (core->graph, ran);
 		core->graph->force_update_seek = true;
 		core->graph->need_set_layout = true;
+		int ov = r_config_get_i (core->config, "scr.interactive");
 		core->graph->need_update_dim = true;
 		r_core_visual_graph (core, core->graph, NULL, true);
+		r_config_set_i (core->config, "scr.interactive", ov);
 		r_cons_show_cursor (true);
 		break;
 	}
@@ -3551,7 +3553,13 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	case 'c': // "agc"
-		r_core_anal_coderefs (core, r_num_math (core->num, input + 1), input[1] == 'j'? 2: 1);
+		if (input[1] == '*') {
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): UT64_MAX;
+			r_core_anal_coderefs (core, addr, '*');
+		} else {
+			ut64 addr = input[2]? r_num_math (core->num, input + 1): UT64_MAX;
+			r_core_anal_coderefs (core, addr, input[1] == 'j'? 2: 1);
+		}
 		break;
 	case 0: // "ag"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_GRAPHBODY);

@@ -2632,8 +2632,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				r_config_set (core->config, "cmd.gprompt", buf);
 			}
 			break;
+		case '>':
+			r_core_cmd0 (core, "ag-;.agc* $$;aggi");
+			break;
+		case '<':
+			r_core_cmd0 (core, "ag-;.agc*;aggi");
+			break;
 		case 'V':
-			if (fcn) agraph_toggle_callgraph(g);
+			if (fcn) agraph_toggle_callgraph (g);
 			break;
 		case 'Z':
 			if (okey == 27) agraph_prev_node (g);
@@ -2685,6 +2691,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" '            - toggle asm.comments\n"
 					" ;            - add comment in current basic block\n"
 					" /            - highlight text\n"
+					" \"            - toggle graph.refs\n"
 					" Home/End     - go to the top/bottom of the canvas\n"
 					" Page-UP/DOWN - scroll canvas up/down\n"
 					" C            - toggle scr.colors\n"
@@ -2700,12 +2707,17 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" u/U          - undo/redo seek\n"
 					" p/P          - rotate graph modes (normal, display offsets, esil, minigraph, summary)\n"
 					" s/S          - step / step over\n"
+					" >            - show function callgraph\n"
+					" <            - show program callgraph\n" // TODO: maybe refgraph
 					" V            - toggle basicblock / call graphs\n"
 					" w            - toggle between movements speed 1 and graph.scroll\n"
 					" x/X          - jump to xref/ref\n"
 					" +/-/0        - zoom in/out/default\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
+			break;
+		case '"':
+			r_config_toggle (core->config, "graph.refs");
 			break;
 		case 'p':
 			if (!fcn) break;

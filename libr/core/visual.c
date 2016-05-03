@@ -1379,17 +1379,15 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_core_cmd0 (core, "agv $$");
 		} else {
 			RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-			int ocolor;
-
+			int ocolor = r_config_get_i (core->config, "scr.color");
 			if (!fun) {
-				r_cons_message("Not in a function. Type 'df' to define it here");
+				r_cons_message ("Not in a function. Type 'df' to define it here");
 				break;
 			} else if (r_list_empty (fun->bbs)) {
-				r_cons_message("No basic blocks in this function. You may want to use 'afb+'.");
+				r_cons_message ("No basic blocks in this function. You may want to use 'afb+'.");
 				break;
 			}
 			reset_print_cur (core->print);
-			ocolor = r_config_get_i (core->config, "scr.color");
 			r_core_visual_graph (core, NULL, NULL, true);
 			r_config_set_i (core->config, "scr.color", ocolor);
 		}
