@@ -63,3 +63,182 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size);
 RList *linux_desc_list (int pid);
 int linux_handle_signals (RDebug *dbg);
 const char *linux_reg_profile (RDebug *dbg);
+/* coredump api */
+
+#include <elf.h>
+#include <sys/procfs.h>
+
+#define ELF_HDR_SIZE sizeof(Elf64_Ehdr)
+
+#define R_DEBUG_REG_T struct user_regs_struct
+
+#define SIZE_NT_FILE_DESCSZ sizeof(unsigned long) * 3   /* start_address * end_address * offset_address */
+                                                        /* 
+                                                        NT_FILE layout:
+                                                        [number of mappings]
+                                                        [page size]
+                                                        [foreach(mapping)
+                                                                [start_address]
+                                                                [end_address]
+                                                                [offset_address]
+                                                        [filenames]
+                                                        */
+#define DEFAULT_NOTE    6
+
+#define X_MEM 0x1
+#define W_MEM 0x2
+#define R_MEM 0x4
+#define P_MEM 0x8
+#define S_MEM 0x10
+
+static unsigned int n_notes = DEFAULT_NOTE;
+
+typedef struct map_file {
+        unsigned int count;
+        unsigned int size;
+}map_file_t;
+
+typedef struct auxv_buff {
+        void *data;
+        size_t size;
+} auxv_buff_t;
+
+typedef struct linux_map_entry {
+        unsigned long long start_addr;
+        unsigned long long end_addr;
+        unsigned long long offset;
+        unsigned long long inode;
+        unsigned long int perms;
+        unsigned int anonymous;
+        unsigned int s_name;
+        char *name;
+        struct linux_map_entry *n;
+}linux_map_entry_t;
+
+#define ADD_MAP_NODE(p)         do {                                                    \
+                                        if(me_head == NULL) {                           \
+                                                me_head = p;                            \
+                                                me_tail = p;                            \
+                                        } else {                                        \
+                                                p->n = NULL;                            \
+                                                me_tail->n = p;                         \
+                                                me_tail = p;                            \
+                                        }                                               \
+                                } while(0)
+
+
+typedef struct linux_elf_note {
+        prpsinfo_t *prpsinfo;
+        prstatus_t *prstatus;
+        siginfo_t *siginfo;
+        auxv_buff_t *auxv;
+        elf_fpregset_t *fp_regset;
+        linux_map_entry_t *maps;
+}linux_elf_note_t;
+
+typedef enum {
+        PID_E = 0,
+        TCOMM_E,
+        STATE_E,
+        PPID_E,
+        PGRP_E,
+        SID_E,
+        TTY_NR_E,
+        TTY_PGRP_E,
+        FLAGS_E,
+        MIN_FLT_E,
+        CMIN_FLT_E,
+        MAJ_FLT_E,
+        UTIME_E,
+        STIME_E,
+        CUTIME_E,
+        CSTIME_E,
+        PRIORITY_E,
+        NICE_E,
+        NUM_THREADS_E,
+        IT_REAL_VALUE_E,
+        START_TIME_E,
+        VSIZE_E,
+        RSS_E,
+        RSSLIM_E,
+        START_CODE_E,
+        END_CODE_E,
+        START_STACK_E,
+        ESP_E,
+        EIP_E,
+        PENDING_E,
+        BLOCKED_E,
+        SIGIGN_E,
+        SIGCATCH_E,
+        PLACE_HOLDER_1E,
+        PLACE_HOLDER_2E,
+        PLACE_HOLDER_3E,
+        EXIT_SIGNAL_E,
+        TASK_CPU_E,
+        RT_PRIORITY_E,
+        POLICY_E,
+        BLKIO_TICKS_E,
+        GTIME_E,
+        START_DATA_E,
+        END_DATA_E,
+        START_BRK_E,
+        ARG_START_E,
+        ARG_END_E,
+        ENV_START_E,
+        ENV_END_E,
+        EXIT_CODE_E
+}proc_stat_entry;
+
+typedef enum {
+        ADDR,
+        PERM,
+        OFFSET,
+        DEV,
+        INODE,
+        NAME
+}MAPS_FIELD;
+
+typedef enum {
+        T_PRPSINFO,
+        T_PRSTATUS,
+        T_FPREGSET,
+        T_X86_XSTATE,
+        T_SIGINFO,
+        T_AUXV,
+        T_FILE,
+} note_t;
+
+/*const char *note_name[7] =      {
+                                        ".note.linux.prspinfo",
+                                        ".note.linux.reg",
+                                        ".note.linux.fpreg",
+                                        ".note.linux.xstate",
+                                        ".note.linux.siginfo",
+                                        ".note.linux.auxv",
+                                        ".note.linux.ntfile"
+                                };*/
+
+static int is_a_right_entry(proc_stat_entry entry);
+static int is_data(char c);
+static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg);
+static prstatus_t *linux_get_prstatus(RDebug *dbg);
+static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg);
+static siginfo_t *linux_get_siginfo(RDebug *dbg);
+static int get_map_address_space(char *pstr, unsigned long long *start_addr, unsigned long long *end_addr);
+static int get_map_perms(char *pstr, unsigned long int *fl_perms);
+static int get_map_offset(char *pstr, unsigned long long *offset);
+static int get_map_name(char *pstr, char **name);
+static int get_anonymous_value(char *keyw);
+static int is_map_anonymous(FILE *f, unsigned long long start_addr, unsigned long long end_addr);
+static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg);
+static auxv_buff_t *linux_get_auxv(RDebug *dbg);
+static Elf64_Ehdr *build_elf_hdr(unsigned int n_segments);
+static int get_n_mappings(linux_map_entry_t *me_head);
+static bool dump_elf_header(RBuffer *dest, Elf64_Ehdr *hdr);
+static int get_nt_size(linux_map_entry_t *head);
+static void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size);
+static const ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_section);
+static int dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigned long offset_to_note);
+static void show_maps(linux_map_entry_t *head);	/* test purposes */
+static int dump_elf_map_content(RBuffer *dest, linux_map_entry_t *head, pid_t pid);
+bool linux_generate_corefile (RDebug *dbg, RBuffer *dest);

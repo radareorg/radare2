@@ -8,127 +8,8 @@
 #include <elf.h>
 #include <signal.h>
 #include <sys/procfs.h>
+#include <sys/uio.h>
 #include "linux_debug.h"
-
-/* Coredump */
-#define ELF_HDR_SIZE sizeof(Elf64_Ehdr)
-
-#define R_DEBUG_REG_T struct user_regs_struct
-
-#define SIZE_NT_FILE_DESCSZ sizeof(unsigned long) * 3   /* start_address * end_address * offset_address */
-                                                        /* 
-                                                        NT_FILE layout:
-                                                        [number of mappings]
-                                                        [page size]
-                                                        [foreach(mapping)
-                                                                [start_address]
-                                                                [end_address]
-                                                                [offset_address]
-                                                        [filenames]
-                                                        */
-#define DEFAULT_NOTE    6
-
-static unsigned int n_notes = DEFAULT_NOTE;
-
-typedef struct map_file {
-        unsigned int count;
-        unsigned int size;
-}map_file_t;
-
-map_file_t mapping_file = {0,0};
-
-typedef struct auxv_buff {
-        void *data;
-        size_t size;
-} auxv_buff_t;
-
-typedef struct linux_map_entry {
-        unsigned long long start_addr;
-        unsigned long long end_addr;
-        unsigned long long offset;
-        unsigned long long inode;
-        unsigned long int perms;
-        unsigned int anonymous;
-        unsigned int s_name;
-        char *name;
-        struct linux_map_entry *n;
-}linux_map_entry_t;
-                   
-#define ADD_MAP_NODE(p)         do {                                                    \
-                                        if(me_head == NULL) {                           \
-                                                me_head = p;                            \
-                                                me_tail = p;                            \
-                                        } else {                                        \
-                                                p->n = NULL;                            \
-                                                me_tail->n = p;                         \
-                                                me_tail = p;                            \
-                                        }                                               \
-                                } while(0)
-
-
-typedef struct linux_elf_note {
-        prpsinfo_t *prpsinfo;
-        prstatus_t *prstatus;
-        siginfo_t *siginfo;
-        auxv_buff_t *auxv;
-        elf_fpregset_t *fp_regset;
-        linux_map_entry_t *maps;
-}linux_elf_note_t;
-
-typedef enum {
-        PID_E = 0,
-        TCOMM_E,
-        STATE_E,
-        PPID_E,
-        PGRP_E,
-        SID_E,
-        TTY_NR_E,
-        TTY_PGRP_E,
-        FLAGS_E,
-        MIN_FLT_E,
-        CMIN_FLT_E,
-        MAJ_FLT_E,
-        UTIME_E,
-        STIME_E,
-        CUTIME_E,
-        CSTIME_E,
-        PRIORITY_E,
-        NICE_E,
-        NUM_THREADS_E,
-        IT_REAL_VALUE_E,
-        START_TIME_E,
-        VSIZE_E,
-        RSS_E,
-        RSSLIM_E,
-        START_CODE_E,
-        END_CODE_E,
-        START_STACK_E,
-        ESP_E,
-        EIP_E,
-        PENDING_E,
-        BLOCKED_E,
-        SIGIGN_E,
-        SIGCATCH_E,
-        PLACE_HOLDER_1E,
-        PLACE_HOLDER_2E,
-        PLACE_HOLDER_3E,
-        EXIT_SIGNAL_E,
-        TASK_CPU_E,
-        RT_PRIORITY_E,
-        POLICY_E,
-        BLKIO_TICKS_E,
-        GTIME_E,
-        START_DATA_E,
-        END_DATA_E,
-        START_BRK_E,
-        ARG_START_E,
-        ARG_END_E,
-        ENV_START_E,
-        ENV_END_E,
-        EXIT_CODE_E
-}proc_stat_entry;
-
-/*		*/
 
 
 const char *linux_reg_profile (RDebug *dbg) {
@@ -639,6 +520,8 @@ RList *linux_desc_list (int pid) {
 
 /* Coredump  functions */
 
+static map_file_t mapping_file = {0,0};
+
 static int is_a_right_entry(proc_stat_entry entry)
 {
         return !(entry ==  STATE_E || entry == PPID_E || entry == PGRP_E || entry == SID_E || entry == FLAGS_E || entry == NICE_E || entry ==  NUM_THREADS_E);
@@ -796,11 +679,12 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg) {
 
 static prstatus_t *linux_get_prstatus(RDebug *dbg) {
         prstatus_t *p;
-        char *reg_buff;
+	ut8 *reg_buff;
+//        char *reg_buff;
         int rbytes;
         size_t size_gp_regset;
 
-        reg_buff = malloc(sizeof(struct user_regs_struct));
+        reg_buff = (unsigned char *)malloc(sizeof(struct user_regs_struct));
 
         size_gp_regset = sizeof(elf_gregset_t);
         rbytes = linux_reg_read(dbg, R_REG_TYPE_GPR, reg_buff, size_gp_regset);
@@ -820,11 +704,11 @@ static prstatus_t *linux_get_prstatus(RDebug *dbg) {
 static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg) {
 
         elf_fpregset_t *p;
-        char *reg_buff;
+        ut8 *reg_buff;
         int rbytes;
         size_t size_fp_regset;
 
-        reg_buff = malloc(sizeof(struct user_fpregs_struct));
+        reg_buff = (unsigned char *)malloc(sizeof(struct user_fpregs_struct));
 
         size_fp_regset = sizeof(elf_fpregset_t);
         rbytes = linux_reg_read(dbg, R_REG_TYPE_FPU, reg_buff, size_fp_regset);
@@ -839,8 +723,8 @@ static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg) {
 
 static siginfo_t *linux_get_siginfo(RDebug *dbg) {
 
+	int ret;
         siginfo_t *siginfo;
-        int ret;
 
         siginfo = (siginfo_t *)malloc(sizeof(siginfo_t));
         ret = ptrace(PTRACE_GETSIGINFO, dbg->pid, 0, siginfo);
@@ -865,12 +749,6 @@ static int get_map_address_space(char *pstr, unsigned long long *start_addr, uns
 
         return 0;
 }
-
-#define X_MEM 0x1
-#define W_MEM 0x2
-#define R_MEM 0x4
-#define P_MEM 0x8
-#define S_MEM 0x10
 
 static int get_map_perms(char *pstr, unsigned long int *fl_perms)
 {
@@ -926,16 +804,7 @@ static int get_map_name(char *pstr, char **name)
         return 0;
 }
 
-typedef enum {
-        ADDR,
-        PERM,
-        OFFSET,
-        DEV,
-        INODE,
-        NAME
-}MAPS_FIELD;
-
-int get_anonymous_value(char *keyw)
+static int get_anonymous_value(char *keyw)
 {
         while(!isspace(*keyw))
                 keyw++;
@@ -947,7 +816,7 @@ int get_anonymous_value(char *keyw)
 }
 
 
-int is_map_anonymous(FILE *f, unsigned long long start_addr, unsigned long long end_addr)
+static int is_map_anonymous(FILE *f, unsigned long long start_addr, unsigned long long end_addr)
 {
         char identity[80];
         char buff[1024];
@@ -955,7 +824,7 @@ int is_map_anonymous(FILE *f, unsigned long long start_addr, unsigned long long 
         char *keyw;
         int is_anonymous;
 
-        snprintf(identity, sizeof(identity), "%08lx-%08lx", start_addr, end_addr);
+        snprintf(identity, sizeof(identity), "%08llx-%08llx", start_addr, end_addr);
         while(fgets(buff, sizeof(buff), f) != NULL) {
                 if(strstr(buff, identity) != NULL) {
                         while(fgets(buff_tok, sizeof(buff_tok), f) != NULL) {
@@ -1001,7 +870,6 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg) {
         memset(file, '\0', sizeof(file));
 
         snprintf(file, sizeof(file), "/proc/%d/maps", mypid);
-
         f = fopen(file, "r");
         if (f == NULL) {
                 printf ("Cannot open '%s' for reading\n", file);
@@ -1035,7 +903,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg) {
                                                 maps_current++;
                                                 pp = strtok_r(NULL, " ", &end_token);
                                 case NAME:
-                                                if(pp)  /* Has this map a name? */
+                                                if(pp)   /* Has this map a name? */
                                                         get_map_name(pp, &name);
                                                 break;
                         }
@@ -1043,13 +911,18 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg) {
                         pp = strtok_r(NULL, " ", &end_token);
                 }
 
+		if(start_addr == 0 || end_addr == 0)
+                        break;
+
                 pmentry = (linux_map_entry_t *)malloc(sizeof(linux_map_entry_t));
                 pmentry->start_addr = start_addr;
                 pmentry->end_addr = end_addr;
                 pmentry->perms = flag_perm;
                 pmentry->offset = offset;
+		pmentry->name = NULL;
                 pmentry->inode = 0;
-                if(name) {
+
+		if(name) {
                         pmentry->name = strdup(name);
                         pmentry->s_name = strlen(pmentry->name) + 1;
                         free(name);
@@ -1060,7 +933,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg) {
                         strcmp(pmentry->name, "[vvar]") == 0 ||
                         strcmp(pmentry->name, "[vdso]") == 0))
                         pmentry->anonymous = 1;
-                else
+                else 
                         pmentry->anonymous = is_map_anonymous(f_smaps, start_addr, end_addr);   /* Fix this, we can make it much faster, was just for test purposes */
 		
 		if(pmentry->name &&     strcmp(pmentry->name, "[vsyscall]") != 0
@@ -1119,7 +992,7 @@ static auxv_buff_t *linux_get_auxv(RDebug *dbg)
         return auxv;
 }
 
-Elf64_Ehdr *build_elf_hdr(unsigned int n_segments)
+static Elf64_Ehdr *build_elf_hdr(unsigned int n_segments)
 {
         int pad_byte;
         int ph_size;
@@ -1166,7 +1039,7 @@ Elf64_Ehdr *build_elf_hdr(unsigned int n_segments)
         return h;
 }
 
-int get_n_mappings(linux_map_entry_t *me_head)
+static int get_n_mappings(linux_map_entry_t *me_head)
 {
         linux_map_entry_t *p;
         int n_entries;
@@ -1179,39 +1052,22 @@ int get_n_mappings(linux_map_entry_t *me_head)
 }
 
 
-int dump_elf_header(FILE *f, Elf64_Ehdr *hdr)
+static bool dump_elf_header(RBuffer *dest, Elf64_Ehdr *hdr)
 {
-        int ret;
+        bool ret;
 
-        ret = fwrite(hdr, sizeof(Elf64_Ehdr), 1, f);
-        return ret == 0 ? 0 : 1;
+	ret = r_buf_append_bytes(dest, (const ut8*)hdr, hdr->e_ehsize);
+	if(ret != true) {
+		perror("dump_elf_header: error");
+	}
+
+        return ret;
 }
 
-typedef enum {
-        T_PRPSINFO,
-        T_PRSTATUS,
-        T_FPREGSET,
-        T_X86_XSTATE,
-        T_SIGINFO,
-        T_AUXV,
-        T_FILE,
-} note_t;
-
-const char *note_name[7] =      {
-                                        ".note.linux.prspinfo",
-                                        ".note.linux.reg",
-                                        ".note.linux.fpreg",
-                                        ".note.linux.xstate",
-                                        ".note.linux.siginfo",
-                                        ".note.linux.auxv",
-                                        ".note.linux.ntfile"
-                                };
-
-int get_nt_size(linux_map_entry_t *head)
+static int get_nt_size(linux_map_entry_t *head)
 {
         linux_map_entry_t *p;
         size_t size;
-        int i;
 
         size = 0;
         for(p = head; p != NULL; p = p->n) {
@@ -1227,20 +1083,19 @@ int get_nt_size(linux_map_entry_t *head)
 }
 
 
-void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size)
+static void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size)
 {
         char *maps_data;
         char *pp;
         linux_map_entry_t *p;
         size_t size;            /* global size */
-        size_t size_nt_file;
         unsigned long long n_segments;
         unsigned long long n_pag;
 
         size = mapping_file.size;
-        printf("get_nt_size: %d\n", size);
+        printf("get_nt_size: %ld\n", size);
         n_segments = mapping_file.count;
-        printf("n_segments: %d\n", n_segments);
+        printf("n_segments: %lld\n", n_segments);
         n_pag = 1;
 
         maps_data = malloc(size);
@@ -1282,7 +1137,7 @@ void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size)
         return maps_data;
 }
 
-char *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_section)
+static const ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_section)
 {
         prpsinfo_t *prpsinfo;
         prstatus_t *prstatus;
@@ -1291,8 +1146,8 @@ char *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_section)
         elf_fpregset_t *fp_regset;
         linux_map_entry_t *maps;
         Elf64_Nhdr note_hdr;
-        char *note_data;
-        char *pnote_data;
+        ut8 *note_data;
+        ut8 *pnote_data;
         char *maps_data;
         char n_core[] = "CORE";
         char n_lnx[] = "LINUX";
@@ -1306,7 +1161,6 @@ char *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_section)
         size_t size_nt_file;
         size_t size_nt_file_pad;
         size_t i_size_core;
-        size_t size_linux;
         size_t note_hdr_size;
         int i;
 
@@ -1440,18 +1294,18 @@ char *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_section)
         return note_data;
 }
 
-int dump_elf_pheaders(FILE *f, linux_elf_note_t *sec_note, unsigned long offset_to_note)
+static int dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigned long offset_to_note)
 {
         Elf64_Phdr phdr;
         linux_map_entry_t *me_p;
         size_t note_section_size;
-        unsigned long flags;
-        char *note_data;
+        ut8 *note_data;
+	bool ret;
         unsigned long offset_to_next;
 
         printf("offset_to_note: %ld\n", offset_to_note);
         note_data = build_note_section(sec_note, &note_section_size);
-        printf("note_section_size : %d\n", note_section_size);
+        printf("note_section_size : %ld\n", note_section_size);
 
         /* Start with note */
         phdr.p_type = PT_NOTE;
@@ -1462,7 +1316,12 @@ int dump_elf_pheaders(FILE *f, linux_elf_note_t *sec_note, unsigned long offset_
         phdr.p_filesz = note_section_size;
         phdr.p_memsz = 0x0;
         phdr.p_align = 0x1;
-        fwrite(&phdr, sizeof(Elf64_Phdr), 1, f);
+
+	ret = r_buf_append_bytes(dest, (const ut8 *)&phdr, sizeof(Elf64_Phdr));
+	if(ret != true) {
+		printf("dump_elf_pheaders: r_buf_append_bytes error!\n");
+		return -1;
+    	}
 
         offset_to_next = offset_to_note + note_section_size;
 
@@ -1482,31 +1341,102 @@ int dump_elf_pheaders(FILE *f, linux_elf_note_t *sec_note, unsigned long offset_
 
                 offset_to_next += phdr.p_filesz == 0 ? 0 : phdr.p_filesz;
 
-                fwrite(&phdr, sizeof(Elf64_Phdr), 1, f);
+		ret = r_buf_append_bytes(dest, (const ut8*)&phdr, sizeof(Elf64_Phdr));
+		if(ret != true) {
+			printf("dump_elf_pheaders: r_buf_append_bytes error!\n");
+			return -1;
+		}
+
                 memset(&phdr, '\0', sizeof(Elf64_Phdr));
         }
 
 	printf("pheaders writen\n");
 
-        fwrite(note_data, note_section_size, 1, f);
+	ret = r_buf_append_bytes(dest, (const ut8*)note_data, note_section_size);
         printf("note writen\n");
 
         return 0;
 }
 
+
+static void show_maps(linux_map_entry_t *head)
+{
+        linux_map_entry_t *p;
+
+        printf("SHOW MAPS ===================\n");
+
+        for(p = head; p != NULL; p = p->n) {
+                if(p->name)
+                        printf("p->name: %s\n", p->name);
+
+                printf("p->start_addr - %lx, p->end_addr - %lx\n", p->start_addr, p->end_addr);
+        }
+        printf("SHOW MAPS ===================\n");
+}
+
+static int dump_elf_map_content(RBuffer *dest, linux_map_entry_t *head, pid_t pid)
+{
+        linux_map_entry_t *p;
+        struct iovec local;
+        struct iovec remote;
+        char *map_content;
+        size_t size;
+        size_t rbytes;
+
+        for(p = head; p != NULL ; p = p->n) {
+
+
+                printf("\n\nTrying to dump: %p - %p\n", p->name, p->start_addr);
+
+                if(!(p->perms & R_MEM) && !(p->perms & W_MEM)) {
+                        printf("dump_elf_map_content: %s does not have r/w perm\n", p->name);
+                        continue;
+                }
+
+                if(p->anonymous == 0) {
+                        printf("p->anonymous == 0 | Skipping: %p - %p\n", p->name, p->start_addr);
+                        continue;
+                }
+
+                size = p->end_addr - p->start_addr;
+                map_content = malloc(size);
+                if(map_content == NULL)
+                        printf("map_content = NULL\n");
+
+                printf("p->name: %s - %p to %p - size: %d\n", p->name, p->start_addr, map_content, size);
+
+                local.iov_base = (void *)map_content;
+                local.iov_len = size;
+
+                remote.iov_base = (void *)p->start_addr;
+                remote.iov_len = size;
+
+                rbytes = process_vm_readv(pid, &local, 1, &remote, 1, 0);
+                printf("dump_elf_map_content: rbytes: %ld\n", rbytes);
+
+                if(rbytes != size) {
+                        printf("dump_elf_map_content: size not equal\n");
+                        perror("process_vm_readv");
+                } else {
+			r_buf_append_bytes(dest, (const ut8*)map_content, size);
+                }
+
+                free(map_content);
+        }
+
+	return 0;
+}
+
 	
 bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 
-	char *core_file = "core.oscar";
         Elf64_Ehdr *elf_hdr;
         linux_elf_note_t *sec_note;
         unsigned int n_segments;
         int ret;
-        FILE *f;
-	RBuffer note_buff[4096];
 
 	sec_note = (linux_elf_note_t *)malloc(sizeof(linux_elf_note_t));
-	
+
 	/* Let's start getting elf_prpsinfo */
         sec_note->prpsinfo = linux_get_prpsinfo(dbg);             /* NT_PRPSINFO          */            /* pr_psargs missing */
         sec_note->prstatus = linux_get_prstatus(dbg);             /* NT_PRSTATUS          */            /* p->pr_cursig      */
@@ -1517,11 +1447,14 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
         sec_note->maps = linux_get_mapped_files(dbg);        	  /* NT_FILE              */         /* We still need to take a look at /proc/%d/coredumpfilter */
         n_segments = get_n_mappings(sec_note->maps);
 
+	show_maps(sec_note->maps);
+
         elf_hdr = build_elf_hdr(n_segments);
 
-        dump_elf_header(f, elf_hdr);
-        dump_elf_pheaders(f, sec_note, elf_hdr->e_ehsize + (elf_hdr->e_phnum * elf_hdr->e_phentsize));
-/*      dump_elf_map_content(f, sec_note->maps);        */
+	/* Write to file */
+        ret = dump_elf_header(dest, elf_hdr);
+        ret = dump_elf_pheaders(dest, sec_note, elf_hdr->e_ehsize + (elf_hdr->e_phnum * elf_hdr->e_phentsize));
+      	ret = dump_elf_map_content(dest, sec_note->maps, dbg->pid);
 							
         return true;
 }
