@@ -75,13 +75,14 @@ static int rabin_show_help(int v) {
 		);
 	if (v) {
 		printf ("Environment:\n"
-		" RABIN2_LANG:      e bin.lang       # assume lang for demangling\n"
+		" RABIN2_LANG:      e bin.lang         # assume lang for demangling\n"
 		" RABIN2_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
-		" RABIN2_DEMANGLE:  e bin.demangle   # show symbols demangled\n"
-		" RABIN2_MAXSTRBUF: e bin.maxstrbuf  # specify maximum buffer size\n"
-		" RABIN2_STRFILTER: e bin.strfilter  # r2 -qe bin.strfilter=? -c '' --\n"
-		" RABIN2_STRPURGE:  e bin.strpurge   # try to purge false positives\n"
-		" RABIN2_PREFIX:    e bin.prefix     # prefix symbols/sections/relocs with a specific string\n");
+		" RABIN2_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
+		" RABIN2_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
+		" RABIN2_STRFILTER: e bin.strfilter    # r2 -qe bin.strfilter=? -c '' --\n"
+		" RABIN2_STRPURGE:  e bin.strpurge     # try to purge false positives\n"
+		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
+		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n");
 	}
 	return 1;
 }
@@ -418,7 +419,7 @@ static char *demangleAs(int type) {
 	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (file); break;
 	case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
 	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
-	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file); break;
+	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file, 0); break; // XX: use
 	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc(file); break;
 	default:
 		eprintf ("Unsupported demangler\n");
@@ -472,6 +473,10 @@ int main(int argc, char **argv) {
 	}
 	free (tmp);
 
+	if ((tmp = r_sys_getenv ("RABIN2_DMNGLRCMD"))) {
+		r_config_set (core.config, "bin.demanglecmd", tmp);
+		free (tmp);
+	}
 	if ((tmp = r_sys_getenv ("RABIN2_LANG"))) {
 		r_config_set (core.config, "bin.lang", tmp);
 		free (tmp);

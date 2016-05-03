@@ -410,6 +410,15 @@ static int cb_binfilter(void *user, void *data) {
 	return true;
 }
 
+/* BinDemangleCmd */
+static int cb_bdc(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->bin->demanglercmd = node->i_value;
+	return true;
+}
+
+
 static int cb_strpurge(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -1519,6 +1528,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");
 	SETPREF("bin.demangle", "true", "Import demangled symbols from RBin");
+	SETCB("bin.demanglecmd", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
 
 	/* bin */
 	SETI("bin.baddr", -1, "Base address of the binary");

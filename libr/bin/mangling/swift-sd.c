@@ -1,11 +1,18 @@
-/* work-in-progress reverse engineered swift-demangler in C by pancake@nopcode.org */
+/* work-in-progress reverse engineered swift-demangler in C 
+ * Copyright MIT 2015-2016
+ * by pancake@nopcode.org */
 
 #include <stdio.h>
 #include <string.h>
 #include <r_util.h>
 #include <stdlib.h>
+#include <r_cons.h>
 
+#ifndef HAS_MAIN
 #define HAS_MAIN 0
+#endif
+
+#define IFDBG if(0)
 
 // $ echo "..." | xcrun swift-demangle
 
@@ -22,13 +29,14 @@ static struct Type types[] = {
 	{ "Ss", "generic" }, // C_ARGC
 	{ "S_", "Generic" }, // C_ARGC
 	{ "Sa", "Array" },
-	{ "Si", "Int" },
+	{ "Si", "Swift.Int" },
 	{ "Sf", "Float" },
 	{ "Sb", "Bool" },
 	{ "Su", "UInt" },
 	{ "SQ", "ImplicitlyUnwrappedOptional" },
 	{ "Sc", "UnicodeScalar" },
 	{ "Sd", "Double" },
+	{ "SS", "String" }, // Swift.String
 	/* builtin */
 	{ "Bi1", "Builtin.Int1" },
 	{ "Bp", "Builtin.RawPointer" },
@@ -41,6 +49,7 @@ static struct Type metas [] = {
 	/* attributes */
 	{ "FC", "ClassFunc" },
 	{ "S0_FT", "?" },
+	{ "S0", "self" },
 	{ "U__FQ_T_", "<A>(A)" },
 	{ "ToFC", "@objc class func" },
 	{ "ToF", "@objc func" },
@@ -49,7 +58,7 @@ static struct Type metas [] = {
 };
 
 static struct Type flags [] = {
-	{ "f", "function" },
+	//{ "f", "function" }, // this is not an accessor
 	{ "s", "setter" },
 	{ "g", "getter" },
 	{ "m", "method" }, // field?
@@ -80,7 +89,7 @@ static const char *getstring(const char *s, int len) {
 	return buf;
 }
 
-static const char *resolve (struct Type *t, const char *foo, const char **bar) {
+static const char *resolve(struct Type *t, const char *foo, const char **bar) {
 	for (; t[0].code; t++) {
 		int len = strlen (t[0].code);
 		if (!strncmp (foo, t[0].code, len)) {
@@ -93,31 +102,8 @@ static const char *resolve (struct Type *t, const char *foo, const char **bar) {
 
 static int have_swift_demangle = -1;
 
-char *r_bin_demangle_swift(const char *s) {
-#define STRCAT_BOUNDS(x) if ((x+2+strlen (out))>sizeof (out)) break;
+static char *swift_demangle_cmd(const char *s) {
 	static char *swift_demangle = NULL;
-	char out[8192];
-	int i, len, is_generic = 0;;
-	int is_first = 1;
-	int is_last = 0;
-	int retmode = 0;
-	if (!strncmp (s, "__", 2)) s = s + 2;
-	if (!strncmp (s, "imp.", 4)) s = s + 4;
-	if (!strncmp (s, "reloc.", 6)) s = s + 6;
-#if 0
-	const char *element[] = {
-		"module", "class", "method", NULL
-	};
-#endif
-	const char *attr = NULL;
-	const char *attr2 = NULL;
-	const char *q, *p = s;
-	if (strncmp (s, "_T", 2)) {
-		return NULL;
-	}
-	if (strchr (s, '\'') || strchr (s, ' '))
-		return NULL;
-
 	if (have_swift_demangle == -1) {
 		if (!swift_demangle) {
 			have_swift_demangle = 0;
@@ -143,9 +129,100 @@ char *r_bin_demangle_swift(const char *s) {
 		}
 		return r_str_chop (res);
 	}
+	return NULL;
+}
+
+char *r_bin_demangle_swift(const char *s, int syscmd) {
+#define STRCAT_BOUNDS(x) if ((x + 2 + strlen (out)) > sizeof (out)) break;
+	char out[1024];
+	int i, len, is_generic = 0;
+	int is_first = 1;
+	int is_last = 0;
+	int retmode = 0;
+	if (!strncmp (s, "imp.", 4)) s = s + 4;
+	if (!strncmp (s, "__", 2)) s = s + 2;
+	if (!strncmp (s, "reloc.", 6)) s = s + 6;
+#if 0
+	const char *element[] = {
+		"module", "class", "method", NULL
+	};
+#endif
+	const char *attr = NULL;
+	const char *attr2 = NULL;
+	const char *q, *p = s;
+
+	if (*s != 'T' && strncmp (s, "_T", 2)) {
+		return NULL;
+	}
+	if (strchr (s, '\'') || strchr (s, ' ')) {
+		return NULL;
+	}
+	if (syscmd) {
+		char *res = swift_demangle_cmd (s);
+		if (res) {
+			return res;
+		}
+	}
+
 	out[0] = 0;
-	p += 2;
-	if (*p == 'F' || *p == 'W') {
+
+	const char *tail = NULL;
+	if (p[0]) {
+		switch (p[1]) {
+		case 'M':
+			switch (p[2]) {
+			case 'a':
+				tail = "..accessor.metadata";
+				break;
+			case 'm':
+				tail = "..metaclass";
+				break;
+			case 'L':
+				tail = "..lazy.metadata";
+				break;
+			default:
+				tail = "..metadata";
+				break;
+			}
+			break;
+		case 'I': // interfaces
+			eprintf ("Jkjfksaldf\n");
+			break;
+		}
+	}
+	p += (tail? 1: 2);
+
+
+	int methlen;
+	q = getnum (p, &methlen);
+	if (q && methlen > 0) {
+		 // 
+	}
+	
+	if (IS_NUMBER (*p) || *p == 'v' || *p == 'o' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') { // _TF or __TW
+		if (!strncmp (p+1, "SS", 2)) {
+			strcat (out, "Swift.String.init (");
+			p += 3;
+		}
+		if (!strncmp (p, "vdv", 3)) {
+			tail = "..field";
+			p += 3;
+		}
+		if (!strncmp (p, "oFC", 3)) {
+			tail = "..init.witnesstable";
+			p += 4;
+		}
+#if 0
+		if (!strncmp (p+1, "C", 2)) {
+			strcat (out, "class ");
+			p += 3;
+		}
+#endif
+		q = getnum (q, &len);
+		if (len > 0) {
+			p = q;
+		}
+
 		q = numpos (p);
 		//printf ("(%s)\n", getstring (p, (q-p)));
 		for (i=0, len = 1; len; q += len, i++) {
@@ -161,8 +238,7 @@ char *r_bin_demangle_swift(const char *s) {
 				len, getstring (q, len));
 #endif
 			// push string
-			if (*out)
-				strcat (out, ".");
+			if (i && *out) strcat (out, ".");
 			STRCAT_BOUNDS (len);
 			strcat (out, getstring (q, len));
 		}
@@ -176,6 +252,7 @@ char *r_bin_demangle_swift(const char *s) {
 			}
 //			return 0;
 		}
+		/* parse accessors */
 		if (attr) {
 			int len;
 			const char *name;
@@ -209,31 +286,50 @@ char *r_bin_demangle_swift(const char *s) {
 					strcat (out, attr2);
 				}
 			} while (0);
+			if (q && *q == '_') {
+				strcat (out, " -> ()");
+			}
 		} else {
 			/* parse function parameters here */
-			// type len value
+			// type len value/
 			for (i=0; q; i++) {
+				if (*q == 'f') q++;
 				switch (*q) {
+				case 'S': // "S0"
+					if (q[1] == '0') {
+						strcat (out, " (self) -> ()");
+						if (attr) {
+							strcat (out, attr);
+						}
+						//p = q + 7;
+						q = p = q + 1;
+						attr = "";
+					} else if (q[1] == 'S') {
+						// swift string
+							strcat (out, "__String");
+					}
+					break;
 				case 'B':
 				case 'T':
 				case 'I':
+					p = resolve (types, q + 0, &attr); // type
+					break;
 				case 'F':
-					p = resolve (types, q+3, &attr); // type
+					strcat (out, " ()");
+					p = resolve (types, q + 3, &attr); // type
 					break;
 				case 'G':
 					q+=2;
 					//printf ("GENERIC\n");
 					if (!strncmp (q, "_V", 2)) {
-						q+=2;
+						q += 2;
 					}
 					p = resolve (types, q, &attr); // type
 					break;
 				case 'V':
-				//	printf ("VECTOR\n");
-					p = resolve (types, q+1, &attr); // type
+					p = resolve (types, q + 1, &attr); // type
 					break;
 				case '_':
-
 					// it's return value time!
 					p = resolve (types, q+1, &attr); // type
 					//printf ("RETURN TYPE %s\n", attr);
@@ -241,6 +337,7 @@ char *r_bin_demangle_swift(const char *s) {
 				default:
 					p = resolve (types, q, &attr); // type
 				}
+
 				if (p) {
 					q = p;
 					q = getnum (p, &len);
@@ -290,7 +387,6 @@ char *r_bin_demangle_swift(const char *s) {
 					}
 					q += len;
 				} else {
-					//printf ("void\n");
 					q++;
 					break;
 				}
@@ -300,6 +396,9 @@ char *r_bin_demangle_swift(const char *s) {
 		//printf ("Unsupported type: %c\n", *p);
 	}
 	if (*out) {
+		if (tail)
+			strcat (out, tail);
+#if 1
 		char *p, *outstr = strdup (out);
 		p = outstr;
 		for (;;) {
@@ -311,6 +410,7 @@ char *r_bin_demangle_swift(const char *s) {
 			} else break;
 		}
 		return outstr;
+#endif
 	}
 	return NULL;
 }
@@ -318,41 +418,116 @@ char *r_bin_demangle_swift(const char *s) {
 
 #if HAS_MAIN
 
-const char *swift_tests[] = {
- "_TFC10swifthello5Hellog5WorldSS" // getter
-,"_TFC10swifthello5Hellom5WorldSS" // method
-,"_TFC10swifthello5Hellos5WorldSS" // setter
-// Swift.String.init (Swift.String.Type)(_builtinStringLiteral : Builtin.RawPointer, byteSize : Builtin.Word, isASCII : Builtin.Int1) -> Swift.String
-,"_TFSSCfMSSFT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS"
-// FlappyBird.GameScene.resetScene (FlappyBird.GameScene)() -> ()
-,"_TFC10FlappyBird9GameScene10resetScenefS0_FT_T_"
-// Swift.println <A>(A) -> ()
-,"_TFSs7printlnU__FQ_T_"
-// Swift.C_ARGV.mutableAddressor : Swift.UnsafeMutablePointer<Swift.UnsafeMutablePointer<Swift.Int8>>
-,"_TFSsa6C_ARGVGVSs20UnsafeMutablePointerGS_VSs4Int8__"
-// Swift.C_ARGC.mutableAddressor : Swift.Int32
-,"_TFSsa6C_ARGCVSs5Int32"
-//_swifthello.nor () -> Swift.Int
-,"_TF10swifthello3norFT_Si"
-,NULL
-};
+typedef struct {
+	const char *sym;
+	const char *dem;
+} Test;
+
+Test swift_tests[] = {
+{
+	"_TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS"
+	,"Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String"
+	//, "Swift.String.init (Swift.String.Type) -> (_builtinStringLiteral : Builtin.RawPointer, byteSize : Builtin.Word, isASCII : Builtin.Int1) -> Swift.String
+},{
+	"_TFC10swifthello5Hellog5WorldSS" // getter
+	,"swifthello.Hello.World.getter__String"
+	// swifthello.Hello.World.getter : Swift.String
+},{
+	"_TFC10swifthello5Hellom5WorldSS" // getter
+	,"swifthello.Hello.World.method__String"
+},{
+	"_TFC10swifthello5Hellos5WorldSS" // getter
+	,"swifthello.Hello.World.setter__String"
+},{
+	"_TFSSCfMSSFT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS"
+	,"Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String"
+},{
+	"_TF10swifthello3norFT_Si"
+	,"swifthello.nor () -> Swift.Int"
+},{
+	"_TFSs7printlnU__FQ_T_"
+	,"println.<A>(A) -> ()"
+},{
+	"_TFSsa6C_ARGVGVSs20UnsafeMutablePointerGS_VSs4Int8__"
+	,"C_ARGV<generic UnsafeMutablePointer><generic Int8>"
+},{
+	"_TFC10FlappyBird9GameScene10resetScenefS0_FT_T_"
+	,"FlappyBird.GameScene.resetScene (self) -> (__ _) ()" // XXX this is not correct
+},{
+	"__TFC4main8BarClass8sayHellofT_T_"
+	,"main.BarClass.sayHello"
+},{
+	"__TFC4main4TostCfT_S0_"
+	,"main.Tost.allocator"
+},{
+	"__TFC4main4TostD"
+	,"main.Tost.deallocator"
+},{
+	"__TFC4main4TostcfT_S0_"
+	,"main.Tost.constructor"
+},{
+	"__TF4main4moinFT_Si"
+	,"main.moin () -> Swift.Int"
+},{
+	"__TFC4main4Tostg3msgSS"
+	,"main.Tost.msg.getter__String"
+},{
+	"__TMC4main4Tost"
+	,"main.Tost..metadata"
+},{
+	"__TMLC4main4Tost"
+	,"main.Tost..lazy.metadata"
+
+},{
+	"__TMaC4main4Tost"
+	,"main.Tost..accessor.metadata"
+	//,"_lazy cache variable for type metadata for main.Tost"
+},{
+	"__TMmC4main4Tost"
+	,"main.Tost..metaclass"
+},{
+	"__TFV4main7Balanceg5widthSd"
+	,"main.Balance.width.getter__Double"
+},{
+	"__TWoFC4main4TostCfT_S0_"
+	,"Tost.allocator..init.witnesstable"
+},{
+	"__TWvdvC4main4Tost3msgSS"
+	,"main.Tost.msg__String..field"
+},{
+	"__TIFC10Moscapsule10MQTTClient11unsubscribeFTSS17requestCompletionGSqFTOS_10MosqResultSi_T___T_A0_"
+	,"Moscapsule.MQTTClient.unsubscribe ()"
+////imp._TIFC10Moscapsule10MQTTClient11unsubscribeFTSS17requestCompletionGSqFTOS_10MosqResultSi_T___T_A0_
+},{
+	// _direct field offset for main.Tost.msg : Swift.String
+	NULL, NULL
+}};
 
 int main(int argc, char **argv) {
 	char *ret;
-	if (argc>1) {
-		ret = r_bin_demangle_swift (argv[1]);
+	if (argc > 1) {
+		ret = r_bin_demangle_swift (argv[1], 0);
 		if (ret) {
 			printf ("%s\n", ret);
 			free (ret);
 		}
 	} else {
 		int i = 0;
-		for (i=0; swift_tests[i]; i++) {
-			printf ("\n-  %s\n", swift_tests[i]);
-			ret = r_bin_demangle_swift (swift_tests[i]);
+		for (i=0; swift_tests[i].sym; i++) {
+			Test *test = &swift_tests[i];
+			printf ("[>>] %s\n", test->sym);
+			ret = r_bin_demangle_swift (test->sym, 0);
 			if (ret) {
-				printf ("+  %s\n", ret);
+				if (!strcmp (ret, test->dem)) {
+					printf (Color_GREEN"[OK]"Color_RESET"  %s\n", ret);
+				} else {
+					printf (Color_RED"[XX]"Color_RESET"  %s\n", ret);
+					printf (Color_YELLOW"[MUSTBE]"Color_RESET"  %s\n", test->dem);
+				}
 				free (ret);
+			} else {
+				printf (Color_RED"[XX]"Color_RESET"  \"(null)\"\n");
+				printf (Color_YELLOW"[MUSTBE]"Color_RESET"  %s\n", test->dem);
 			}
 		}
 	}
