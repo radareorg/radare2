@@ -1207,12 +1207,22 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 	RAnalFunction *fcni;
 	RAnalRef *fcnr;
 
+	ut64 from = r_config_get_i (core->config, "graph.from");
+	ut64 to = r_config_get_i (core->config, "graph.to");
+
 	if (fmt == 2)
 		r_cons_printf ("[");
 	first = 0;
 	r_list_foreach (core->anal->fcns, iter, fcni) {
-		if (addr != UT64_MAX && addr != fcni->addr)
+		if (from != UT64_MAX && addr < from) {
 			continue;
+		}
+		if (to != UT64_MAX && addr > to) {
+			continue;
+		}
+		if (addr != UT64_MAX && addr != fcni->addr) {
+			continue;
+		}
 		if (fmt == 0) {
 			r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
 		} else if (fmt == 2) {
