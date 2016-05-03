@@ -486,6 +486,17 @@ R_API int r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num) {
 	return ret;
 }
 
+R_API int r_anal_esil_reg_read_nocallback(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
+	int ret;
+	void *old_hook_reg_read = (void *) esil->cb.hook_reg_read;
+
+	esil->cb.hook_reg_read = NULL;
+	ret = r_anal_esil_reg_read (esil, regname, num, size);
+	esil->cb.hook_reg_read = old_hook_reg_read;
+
+	return ret;
+}
+
 R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
 	bool ret = false;
 	ut64 localnum; // XXX why is this necessary?
@@ -514,7 +525,7 @@ static int esil_eq(RAnalEsil *esil) {
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
-	if (src && dst && r_anal_esil_reg_read (esil, dst, &num, NULL)) {
+	if (src && dst && r_anal_esil_reg_read_nocallback (esil, dst, &num, NULL)) {
 		if (r_anal_esil_get_parm (esil, src, &num2)) {
 			ret = r_anal_esil_reg_write (esil, dst, num2);
 			if (ret && r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) { //necessary for some flag-things
