@@ -69,8 +69,13 @@ static struct Type flags [] = {
 	{ NULL , NULL}
 };
 
+static const char *findnum(const char* n) {
+	while (*n < '0' || *n >'9') n++;
+	return n;
+}
+
 static const char *getnum(const char* n, int *num) {
-	*num = atoi (n);
+	if (num) *num = atoi (n);
 	while (*n>='0' && *n <='9') n++;
 	return n;
 }
@@ -174,10 +179,20 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 	const char *tail = NULL;
 	if (p[0]) {
 		switch (p[1]) {
+		case 'W':
+			switch (p[2]) {
+			case 'a':
+				tail = "..protocol";
+				break;
+			}
+			break;
 		case 'M':
 			switch (p[2]) {
 			case 'a':
 				tail = "..accessor.metadata";
+				break;
+			case 'e':
+				tail = "..override";
 				break;
 			case 'm':
 				tail = "..metaclass";
@@ -191,18 +206,14 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 			}
 			break;
 		case 'I': // interfaces
-			eprintf ("Jkjfksaldf\n");
+			/* TODO */
 			break;
 		}
 	}
 	p += (tail? 1: 2);
 
-
-	int methlen;
-	q = getnum (p, &methlen);
-	if (q && methlen > 0) {
-		 // 
-	}
+	// XXX
+	q = getnum (p, NULL);
 	
 	if (IS_NUMBER (*p) || *p == 'v' || *p == 'o' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') { // _TF or __TW
 		if (!strncmp (p+1, "SS", 2)) {
@@ -301,7 +312,8 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 				if (*q == 'f') q++;
 				switch (*q) {
 				case 'S': // "S0"
-					if (q[1] == '0') {
+					switch (q[1]) {
+					case '0':
 						strcat (out, " (self) -> ()");
 						if (attr) {
 							strcat (out, attr);
@@ -309,9 +321,21 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 						//p = q + 7;
 						q = p = q + 1;
 						attr = "";
-					} else if (q[1] == 'S') {
+						break;
+					case 'S':
 						// swift string
-							strcat (out, "__String");
+						strcat (out, "__String");
+						break;
+					case '_':
+						// swift string
+						{
+							strcat (out, "..");
+							int n;
+							char *Q = getnum (q + 2, &n);
+							strcat (out, getstring (Q, n));
+							q = Q;
+						}
+						break;
 					}
 					break;
 				case 'B':
@@ -392,7 +416,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 					}
 					q += len;
 				} else {
-					q++;
+						q++;
 					break;
 				}
 			}
@@ -503,6 +527,9 @@ Test swift_tests[] = {
 	"__TIFC10Moscapsule10MQTTClient11unsubscribeFTSS17requestCompletionGSqFTOS_10MosqResultSi_T___T_A0_"
 	,"Moscapsule.MQTTClient.unsubscribe ()"
 ////imp._TIFC10Moscapsule10MQTTClient11unsubscribeFTSS17requestCompletionGSqFTOS_10MosqResultSi_T___T_A0_
+},{
+	"__TWaC4main8FooClassS_9FoodClassS_"
+	,"main.FooClass..FoodClass..protocol"
 },{
 	// _direct field offset for main.Tost.msg : Swift.String
 	NULL, NULL
