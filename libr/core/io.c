@@ -290,9 +290,9 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 		ret = r_core_block_read (core, 0);
 		if (core->io->ff) {
 			if (ret < 1 || ret > core->blocksize)
-				memset (core->block, core->io->ff, core->blocksize);
+				memset (core->block, core->io->Oxff, core->blocksize);
 			else
-				memset (core->block+ret, core->io->ff, core->blocksize-ret);
+				memset (core->block+ret, core->io->Oxff, core->blocksize-ret);
 			ret = core->blocksize;
 			core->offset = addr;
 		} else {
