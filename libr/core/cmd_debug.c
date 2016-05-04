@@ -157,12 +157,10 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 		RListIter *it_n;
 		RGraphNode *w;
 
-		if (!fmt) {
-			if (tn) {
-				r_cons_printf ("\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x
-						"\" color=\"lightgray\" label=\"0x%08"PFMT64x
-						" (%d)\"]\n", tn->addr, tn->addr, tn->addr, tn->refs);
-			}
+		if (!fmt && tn) {
+			r_cons_printf ("\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x
+					"\" color=\"lightgray\" label=\"0x%08"PFMT64x
+					" (%d)\"]\n", tn->addr, tn->addr, tn->addr, tn->refs);
 		}
 		r_list_foreach (neighbours, it_n, w) {
 			 struct trace_node *tv = (struct trace_node *)w->data;

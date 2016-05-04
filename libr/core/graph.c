@@ -28,9 +28,8 @@ static int mousemode = 0;
 #define ZOOM_STEP 10
 #define ZOOM_DEFAULT 100
 
-#define BODY_ESIL	0x1
-#define BODY_OFFSETS	0x2
-#define BODY_SUMMARY	0x4
+#define BODY_OFFSETS	0x1
+#define BODY_SUMMARY	0x2
 
 #define hash_set(sdb,k,v) (sdb_num_set (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), (ut64)(size_t)v, 0))
 #define hash_get(sdb,k) (sdb_num_get (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), NULL))
@@ -90,13 +89,10 @@ struct agraph_refresh_data {
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(g->can, x,y,x2,y2,c,0)
 
 static bool is_offset(const RAGraph *g) {
-	return g->mode == R_AGRAPH_MODE_OFFSET || g->mode == R_AGRAPH_MODE_ESIL_OFFSET;
+	return g->mode == R_AGRAPH_MODE_OFFSET;
 }
 static bool is_mini(const RAGraph *g) {
 	return g->mode == R_AGRAPH_MODE_MINI;
-}
-static bool is_esil(const RAGraph *g) {
-	return g->mode == R_AGRAPH_MODE_ESIL || g->mode == R_AGRAPH_MODE_ESIL_OFFSET;
 }
 static bool is_summary(const RAGraph *g) {
 	return g->mode == R_AGRAPH_MODE_SUMMARY;
@@ -112,8 +108,6 @@ static const char *mode2str(const RAGraph *g, const char *prefix) {
 	const char *submode;
 
 	if (is_mini (g)) submode = "SMALL";
-	else if (is_esil (g) && is_offset (g)) submode = "ESIL-OFF";
-	else if (is_esil (g)) submode = "ESIL";
 	else if (is_offset (g)) submode = "OFF";
 	else if (is_summary (g)) submode = "SUMM";
 	else submode = "NORM";
@@ -125,7 +119,6 @@ static const char *mode2str(const RAGraph *g, const char *prefix) {
 static int mode2opts(const RAGraph *g) {
 	int opts = 0;
 	if (is_offset (g)) opts |= BODY_OFFSETS;
-	if (is_esil (g)) opts |= BODY_ESIL;
 	if (is_summary (g)) opts |= BODY_SUMMARY;
 	return opts;
 }
@@ -1527,7 +1520,6 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	int o_cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 	int o_marks = r_config_get_i (core->config, "asm.marks");
 	int o_offset = r_config_get_i (core->config, "asm.offset");
-	int o_esil = r_config_get_i (core->config, "asm.esil");
 	int o_cursor = core->print->cur_enabled;
 
 	const char *cmd = (opts & BODY_SUMMARY) ? "pds" : "pD";
@@ -1537,7 +1529,6 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	r_config_set_i (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmtcol", 0);
 	r_config_set_i (core->config, "asm.marks", false);
-	r_config_set_i (core->config, "asm.esil", opts & BODY_ESIL);
 	core->print->cur_enabled = false;
 
 	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY) {
@@ -1552,7 +1543,6 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 
 	// restore original options
 	core->print->cur_enabled = o_cursor;
-	r_config_set_i (core->config, "asm.esil", o_esil);
 	r_config_set_i (core->config, "asm.fcnlines", o_fcnlines);
 	r_config_set_i (core->config, "asm.lines", o_lines);
 	r_config_set_i (core->config, "asm.bytes", o_bytes);
@@ -2711,7 +2701,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" R            - randomize colors\n"
 					" o            - go/seek to given offset\n"
 					" u/U          - undo/redo seek\n"
-					" p/P          - rotate graph modes (normal, display offsets, esil, minigraph, summary)\n"
+					" p/P          - rotate graph modes (normal, display offsets, minigraph, summary)\n"
 					" s/S          - step / step over\n"
 					" V            - toggle basicblock / call graphs\n"
 					" w            - toggle between movements speed 1 and graph.scroll\n"
