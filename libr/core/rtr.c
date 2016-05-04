@@ -1197,20 +1197,23 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	}
 
 	core->num->value = 0; // that's fine
+	while (IS_WHITESPACE (*cmd)) {
+		cmd++;
+	}
 	if (!strlen (cmd)) {
 		// just check if we can connect
 		r_socket_close (rtr_host[rtr_n].fd);
 		return;
 	}
 	/* send */
-	bufw[0] = RTR_RAP_CMD;
+	bufw[0] = RAP_RMT_CMD;
 	i = strlen (cmd) + 1;
-	r_write_be32 (bufw+1, i);
-	memcpy (bufw+5, cmd, i);
-	r_socket_write (rtr_host[rtr_n].fd, bufw, 5+i);
+	r_write_be32 (bufw + 1, i);
+	memcpy (bufw + 5, cmd, i);
+	r_socket_write (rtr_host[rtr_n].fd, bufw, 5 + i);
 	/* read */
 	r_socket_read (rtr_host[rtr_n].fd, (ut8*)bufr, 5);
-	if (bufr[0] != (char)(RTR_RAP_CMD|RTR_RAP_REPLY)) {
+	if (bufr[0] != (char)(RAP_RMT_CMD | RTR_RAP_REPLY)) {
 		eprintf ("Error: Wrong reply\n");
 		return;
 	}
