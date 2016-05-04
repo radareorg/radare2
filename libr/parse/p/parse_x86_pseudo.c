@@ -222,11 +222,11 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		}
 	return true;
 #else
-	RAnalVar *var, *arg;
-	RListIter *variter, *argiter;
+	RAnalVar *var, *arg, *sparg;
+	RListIter *variter, *argiter, *spiter;
 	char oldstr[64], newstr[64];
 	char *tstr = strdup (data);
-	RList *vars, *args;
+	RList *vars, *args, *spargs;
 
 	if (p->relsub) {
 		char *rip = strstr (tstr, "[rip");
@@ -258,10 +258,34 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
         }
 	vars = p->varlist (p->anal, f, 'v');
 	args = p->varlist (p->anal, f, 'a');
+	spargs = p->varlist (p->anal, f, 'e');
 	/* if no stack args check for fastcall ones */
 	/* XXX: this is just a hack because not all compilers store fastcall args in stack */
 	if (r_list_empty (args)) {
 		args = p->varlist (p->anal, f, 'A');
+	}
+	/*iterate over stack pointer arguments/variables*/
+	r_list_foreach (spargs, spiter,sparg) {
+		if (sparg->delta < 10) {
+			snprintf (oldstr, sizeof (oldstr)-1, "[%s + %d]",
+				p->anal->reg->name[R_REG_NAME_SP], sparg->delta);
+		} else {
+			snprintf (oldstr, sizeof (oldstr)-1, "[%s + 0x%x]",
+				p->anal->reg->name[R_REG_NAME_SP], sparg->delta);
+		}
+		snprintf (newstr, sizeof (newstr)-1, "[%s + %s]",
+			p->anal->reg->name[R_REG_NAME_SP],
+			sparg->name);
+		if (strstr (tstr, oldstr)) {
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			break;
+		} else {
+			r_str_case (oldstr, false);
+			if (strstr (tstr, oldstr)) {
+				tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				break;
+			}
+		}
 	}
 	/* iterate over arguments */
 	r_list_foreach (args, argiter, arg) {

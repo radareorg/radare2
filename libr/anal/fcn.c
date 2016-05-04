@@ -272,22 +272,8 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	char *varname, *esil_buf, *ptr_end, *addr, *op_esil;
 	st64 ptr;
-	int len, lenmax=50;
-	char *sig = malloc (sizeof (char)*lenmax+1);
+	char *sig = r_str_newf (",%s,%s", reg, sign);
 	if(!sig) return;
-	strcpy(sig,",");
-	strncat (sig, reg, lenmax-1);
-	len = strlen(sig);
-	if (len > lenmax - 3) { /*<=============-i
-		1 for first colon		||
-		1 for the next colon		||
-		at least one for the sign	/|
-		total of 3 =====================_| */
-		return;
-	}
-	strncat (sig, ",", lenmax - len++);
-	strncat (sig, sign, lenmax - len);
-	//strcat (sig,",[4],");
 	op_esil = r_strbuf_get (&op->esil);
 	if (!op_esil) {
 		return;
