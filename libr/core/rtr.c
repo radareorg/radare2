@@ -1146,9 +1146,25 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 	}
 }
 
+static ut8 *r_rap_packet(ut8 type, ut32 len) {
+	ut8 *buf = malloc (len + 5);
+	if (buf) {
+		buf[0] = type;
+		r_write_be32 (buf + 1, len);
+	}
+	return buf;
+}
+
+static void r_rap_packet_fill(ut8 *buf, const ut8* src, int len) {
+	if (buf && src && len > 0) {
+		ut32 curlen = r_read_be32 (buf + 1);
+		memcpy (buf + 5, src, R_MIN (curlen, len));
+	}
+}
+
 R_API void r_core_rtr_cmd(RCore *core, const char *input) {
-	char bufw[1024], bufr[8];
-	const char *cmd = NULL, *cmd_output = NULL;
+	char bufw[1024], bufr[8], *cmd_output = NULL;
+	const char *cmd = NULL;
 	int i, cmd_len, fd = atoi (input);
 
 	if (*input==':' && !strchr (input + 1, ':')) {
@@ -1156,9 +1172,10 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 	if (fd != 0) {
-		if (rtr_host[rtr_n].fd)
-			for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd
-				&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
+		RSocket *fh = rtr_host[rtr_n].fd;
+		for (rtr_n = 0; fh && fh->fd != fd && rtr_n < RTR_MAX_HOSTS - 1; rtr_n++) {
+			/* do nothing */
+		}
 		if (!(cmd = strchr (input, ' '))) {
 			eprintf ("Error\n");
 			return;
@@ -1182,30 +1199,49 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	while (IS_WHITESPACE (*cmd)) {
 		cmd++;
 	}
+	RSocket *fh = rtr_host[rtr_n].fd;
 	if (!strlen (cmd)) {
 		// just check if we can connect
-		r_socket_close (rtr_host[rtr_n].fd);
+		r_socket_close (fh);
 		return;
 	}
-	/* send */
+	/* send request */
 	bufw[0] = RAP_RMT_CMD;
 	i = strlen (cmd) + 1;
 	r_write_be32 (bufw + 1, i);
 	memcpy (bufw + 5, cmd, i);
-	r_socket_write (rtr_host[rtr_n].fd, bufw, 5 + i);
-	/* read */
-	r_socket_read (rtr_host[rtr_n].fd, (ut8*)bufr, 5);
+	r_socket_write (fh, bufw, 5 + i);
+	/* read response */
+	r_socket_read (fh, (ut8*)bufr, 5);
+	if (bufr[0] == (char)(RAP_RMT_CMD)) {
+		cmd_len = r_read_at_be32 (bufr, 1);
+		cmd = malloc (cmd_len);
+		if (cmd) {
+			char *res = r_core_cmd_str (core, cmd);
+			if (res) {
+				int res_len = strlen (res) + 1;
+				ut8 *pkt = r_rap_packet ((RAP_RMT_CMD | RAP_RMT_REPLY), res_len);
+				r_rap_packet_fill (pkt, (const ut8*)res, res_len);
+				r_socket_write (fh, pkt, 5 + res_len);
+				free (res);
+				free (pkt);
+			}
+		}
+		/* read response */
+		r_socket_read (fh, (ut8*)bufr, 5);
+	}
+
 	if (bufr[0] != (char)(RAP_RMT_CMD | RTR_RAP_REPLY)) {
 		eprintf ("Error: Wrong reply\n");
 		return;
 	}
 	cmd_len = r_read_at_be32 (bufr, 1);
-	cmd_output = malloc (cmd_len);
+	cmd_output = calloc (1, cmd_len + 1);
 	if (!cmd_output) {
 		eprintf ("Error: Allocating cmd output\n");
 		return;
 	}
-	r_socket_read (rtr_host[rtr_n].fd, (ut8*)cmd_output, cmd_len);
+	r_socket_read (fh, (ut8*)cmd_output, cmd_len);
 	r_cons_printf ("%s\n", cmd_output);
 	free ((void *)cmd_output);
 }

@@ -1704,7 +1704,7 @@ reaccept:
 				eprintf ("open (%d): ", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
-				ptr = malloc (cmd);
+				ptr = malloc (cmd + 1);
 				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX)
 				if (ptr == NULL) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
@@ -1733,10 +1733,9 @@ reaccept:
 					}
 				}
 				buf[0] = RMT_OPEN | RMT_REPLY;
-				r_write_be32 (buf+1, pipefd);
+				r_write_be32 (buf + 1, pipefd);
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
-
 #if 0
 				/* Write meta info */
 				RMetaItem *d;
@@ -1808,43 +1807,43 @@ reaccept:
 			case RMT_READ:
 				r_socket_read_block (c, (ut8*)&buf, 4);
 				i = r_read_be32 (buf);
-				ptr = (ut8 *)malloc (i+core->blocksize+5);
-				if (ptr==NULL) {
+				ptr = (ut8 *)malloc (i + core->blocksize+5);
+				if (ptr == NULL) {
 					eprintf ("Cannot read %d bytes\n", i);
 					r_socket_close (c);
 					// TODO: reply error here
 					return -1;
 				} else {
 					r_core_block_read (core, 0);
-					ptr[0] = RMT_READ|RMT_REPLY;
+					ptr[0] = RMT_READ | RMT_REPLY;
 					if (i>RMT_MAX)
 						i = RMT_MAX;
 					if (i>core->blocksize)
 						r_core_block_size (core, i);
 					r_write_be32 (ptr+1, i);
-					memcpy (ptr+5, core->block, i); //core->blocksize);
+					memcpy (ptr + 5, core->block, i); //core->blocksize);
 					r_socket_write (c, ptr, i+5);
 					r_socket_flush (c);
-					free(ptr);
+					free (ptr);
 					ptr = NULL;
 				}
 				break;
 			case RMT_CMD:
 				{
-				char bufr[8], *bufw = NULL;
 				char *cmd = NULL, *cmd_output = NULL;
+				char bufr[8], *bufw = NULL;
 				ut32 cmd_len = 0;
 				int i;
 
 				/* read */
 				r_socket_read_block (c, (ut8*)&bufr, 4);
 				i = r_read_be32 (bufr);
-				if (i>0 && i<RMT_MAX) {
-					if ((cmd=malloc (i+1))) {
+				if (i>0 && i < RMT_MAX) {
+					if ((cmd = malloc (i + 1))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';
-						eprintf ("len: %d cmd: '%s'\n",
-							i, cmd); fflush(stdout);
+						eprintf ("len: %d cmd:'%s'\n", i, cmd);
+						fflush (stdout);
 						cmd_output = r_core_cmd_str (core, cmd);
 						free (cmd);
 					} else eprintf ("rap: cannot malloc\n");
@@ -1856,10 +1855,42 @@ reaccept:
 					cmd_output = strdup ("");
 					cmd_len = 0;
 				}
+
+#if DEMO_SERVER_SENDS_CMD_TO_CLIENT
+				static bool once = true;
+				/* TODO: server can reply a command request to the client only here */
+				if (once) {
+					const char *cmd = "pd 4";
+					int cmd_len = strlen (cmd) + 1;
+					ut8 *b = malloc (cmd_len + 5);
+					b[0] = RMT_CMD;
+					r_write_be32 (b + 1, cmd_len);
+					strcpy ((char *)b+ 5, cmd);
+					r_socket_write (c, b, 5 + cmd_len);
+					r_socket_flush (c);
+
+					/* read response */
+					r_socket_read (c, b, 5);
+					if (b[0] == (RMT_CMD | RMT_REPLY)) {
+						ut32 n = r_read_be32 (b + 1);
+						eprintf ("REPLY %d\n", n);
+						if (n > 0) {
+							ut8 *res = calloc (1, n);
+							r_socket_read (c, res, n);
+							eprintf ("RESPONSE(%s)\n", (const char *)res);
+							free (res);
+						}
+					}
+					r_socket_flush (c);
+					free (b);
+					once = false;
+				}
+#endif
+
 				bufw = malloc (cmd_len + 5);
 				bufw[0] = RMT_CMD | RMT_REPLY;
-				r_write_be32 (bufw+1, cmd_len);
-				memcpy (bufw+5, cmd_output, cmd_len);
+				r_write_be32 (bufw + 1, cmd_len);
+				memcpy (bufw + 5, cmd_output, cmd_len);
 				r_socket_write (c, bufw, cmd_len+5);
 				r_socket_flush (c);
 				free (bufw);

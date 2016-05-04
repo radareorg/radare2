@@ -249,7 +249,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	ut8 buf[RMT_MAX];
 
 	buf[0] = RMT_CMD;
-	i = strlen (command)+1;
+	i = strlen (command) + 1;
 	if (i > RMT_MAX - 5) {
 		eprintf ("Command too long\n");
 		return -1;
@@ -277,10 +277,14 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		cmdlen = r_read_at_be32 (buf, 1);
 		if (cmdlen + 1 == 0) // check overflow
 			cmdlen = 0;
-		str = calloc (1, cmdlen+1);
+		str = calloc (1, cmdlen + 1);
 		ret = r_socket_read_block (s, (ut8*)str, cmdlen);
-		//eprintf ("RUN CMD(%s)\n", str);
-		res = io->cb_core_cmdstr (io->user, str);
+		eprintf ("RUN %d CMD(%s)\n", ret, str);
+		if (str && *str) {
+			res = io->cb_core_cmdstr (io->user, str);
+		} else {
+			res = strdup ("");
+		}
 		eprintf ("[%s]=>(%s)\n", str, res);
 		reslen = strlen (res);
 		free (str);

@@ -264,11 +264,11 @@ static int cmd_rap(void *data, const char *input) {
 	case 'H': while (input[1]==' ') input++;
 		  r_core_rtr_http (core, getArg(input[1],'H'), input+1); break;
 	case '?': r_core_rtr_help (core); break;
-	case '+': r_core_rtr_add (core, input+1); break;
-	case '-': r_core_rtr_remove (core, input+1); break;
-	case '=': r_core_rtr_session (core, input+1); break;
+	case '+': r_core_rtr_add (core, input + 1); break;
+	case '-': r_core_rtr_remove (core, input + 1); break;
+	case '=': r_core_rtr_session (core, input + 1); break;
 	//case ':': r_core_rtr_cmds (core, input+1); break;
-	case '<': r_core_rtr_pushout (core, input+1); break;
+	case '<': r_core_rtr_pushout (core, input + 1); break;
 	case '!':
 		if (input[1]=='=') {
 			// swap core->cmdremote = core->cmdremote? 0: 1;
