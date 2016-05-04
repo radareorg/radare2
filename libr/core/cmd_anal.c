@@ -4034,9 +4034,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog (core, "Emulate code to find computed references (aae)");
 					r_core_cmd0 (core, "aae @ $S");
 					rowlog_done (core);
-					rowlog (core, "Finding function by preludes (aap)");
-					r_core_cmd0 (core, "aap");
-					rowlog_done (core);
 					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
 					rowlog_done (core);
