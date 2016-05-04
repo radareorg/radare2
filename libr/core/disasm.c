@@ -1005,7 +1005,7 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 				}
 				break;
 			case 'e':
-				r_cons_printf ("var %s %s @ %s+0x%x\n",
+				r_cons_printf ("var %s %s @ %s+0x%x",
 					var->type, var->name,
 					core->anal->reg->name[R_REG_NAME_SP],
 					var->delta);
