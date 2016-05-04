@@ -507,8 +507,8 @@ static int mips_set_reg_profile(RAnal* anal){
 	"gpr	s5	.64	168	0\n"
 	"gpr	s6	.64	176	0\n"
 	"gpr	s7	.64	184	0\n"
-	"gpr	s8	.64	192	0\n"
-	"gpr	s9	.64	200	0\n"
+	"gpr	t8	.64	192	0\n"
+	"gpr	t9	.64	200	0\n"
 	/* special */
 	"gpr	k0	.64	208	0\n"
 	"gpr	k1	.64	216	0\n"
