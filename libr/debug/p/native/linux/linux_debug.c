@@ -532,6 +532,79 @@ static int is_data(char c)
         return !isalnum(c);
 }
 
+static char *prpsinfo_get_fname(FILE *f)
+{
+        char *p;
+        int c;
+        int pos;
+
+        p = malloc(16);
+        pos = 0;
+        while((c = fgetc(f)) != EOF && c != '\0')
+                p[pos++] = c;
+
+        if(c == '\0')
+                p[pos] = c;
+
+        return p;
+}
+
+static char *get_basename(char *pfname, int len)
+{
+        char *p;
+
+        for(p = pfname + len; p != pfname ; p--)
+                if(*p == '/')
+                        return (p + 1);
+
+        return p;
+}
+
+static char *prpsinfo_get_psargs(FILE *f, char *pfname, int size_psargs)
+{
+        char paux[80];
+        char *p;
+        int c;
+        int pos;
+        int read;
+
+        p = malloc(size_psargs);
+
+        strcpy(p, pfname);
+
+        read = strlen(pfname);
+        pos = 0;
+	paux[pos++] = ' ';
+        while((c = fgetc(f)) != EOF && read < (size_psargs - 1)) {
+                if(c == '\0')
+                        c = ' ';
+                paux[pos++] = c;
+                read++;
+        }
+
+        paux[pos] = '\0';
+        strcat(p, paux);
+
+        return p;
+}
+
+static void debug_print_prpsinfo(prpsinfo_t *p)
+{
+        printf("prpsinfo.pr_state: %d\n", p->pr_state);
+        printf("prpsinfo.pr_sname: %c\n", p->pr_sname);
+        printf("prpsinfo.pr_zomb: %d\n", p->pr_zomb);
+        printf("prpsinfo.pr_nice: %d\n", p->pr_nice);
+        printf("prpsinfo.pr_flags: %ld\n", p->pr_flag);
+        printf("prpsinfo.pr_uid: %ld\n", p->pr_uid);
+        printf("prpsinfo.pr_gid: %ld\n", p->pr_gid);
+        printf("prpsinfo.pr_pid: %ld\n", p->pr_pid);
+        printf("prpsinfo.pr_ppid: %ld\n", p->pr_ppid);
+        printf("prpsinfo.pr_pgrp: %ld\n", p->pr_pgrp);
+        printf("prpsinfo.pr_sid: %ld\n", p->pr_sid);
+        printf("prpsinfo.pr_fname: %s\n", p->pr_fname);
+	printf("prpsinfo.pr_psargs: %s\n", p->pr_psargs);
+}
+
 static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg) {
 
         FILE *f;
@@ -540,6 +613,9 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg) {
         int c;
         int pos;
         pid_t mypid;
+	char *pfname;
+        char *ppsargs;
+        char *basename; /* pr_fname stores just the exec, withouth the path */
         char *pbuff;
         char *tpbuff;
         char *temp_uid;
@@ -548,15 +624,32 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg) {
         char *p_gid;
         char data[80];
         char buff[4096];
-        char prog_states[6] = "RSDTZW";
+	char prog_states[6] = "RSZTt";				/* http://man7.org/linux/man-pages/man5/proc.5.html */
         unsigned int n_threads;
         proc_stat_entry current_entry;
         prpsinfo_t *p;
 
         p = (prpsinfo_t *)malloc(sizeof(prpsinfo_t));
+        p->pr_pid = mypid = dbg->pid;
+
+	/* Start filling pr_fname and pr_psargs */
+        snprintf(file, sizeof(file), "/proc/%d/cmdline", mypid);
+        f = fopen(file, "r");
+        if(f == NULL) {
+                printf("Cannot open '%s' for reading\n", file);
+                goto error;
+        }
+
+	pfname = prpsinfo_get_fname(f);
+        basename = get_basename(pfname, strlen(pfname));
+        strncpy(p->pr_fname, basename, sizeof(p->pr_fname));
+
+	ppsargs = prpsinfo_get_psargs(f, pfname, sizeof(p->pr_psargs));
+        strncpy(p->pr_psargs, ppsargs, sizeof(p->pr_psargs));
+        free(ppsargs);
+        free(pfname);
 
         /* /proc/pid/stat: let's have some fun. Documentation about the fields can be found under /Documentation/filesystem/proc.txt: Table 1-4 */
-        p->pr_pid = mypid = dbg->pid;
         snprintf(file, sizeof(file), "/proc/%d/stat", mypid);
 
         f = fopen(file, "r");
@@ -588,9 +681,6 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg) {
                         data[pbuff - tpbuff] = '\0';
                         if(!is_a_right_entry(current_entry)) {
                                 switch(current_entry) {
-                                        case TCOMM_E:
-                                                strncpy(p->pr_fname, data, sizeof(p->pr_fname));
-                                                break;
                                         case STATE_E:
                                                 p->pr_sname = data[0];
                                                 p->pr_zomb = (p->pr_sname == 'Z') ? 1 : 0;
@@ -665,9 +755,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg) {
         p->pr_uid = atoi(p_uid);
         p->pr_gid = atoi(p_gid);
 
-        /*      We still need to get pr_psargs          */
-        /* is radare2 storing the arg_list somewhere? If not we have to get that from /proc/ */
-        /*                                              */
+	debug_print_prpsinfo(p);
 
         return p;
 
@@ -680,7 +768,6 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg) {
 static prstatus_t *linux_get_prstatus(RDebug *dbg) {
         prstatus_t *p;
 	ut8 *reg_buff;
-//        char *reg_buff;
         int rbytes;
         size_t size_gp_regset;
 
