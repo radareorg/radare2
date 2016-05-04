@@ -4,6 +4,19 @@
 #include <string.h>
 #include <r_util.h>
 
+R_API RSocketRapServer *r_socket_rap_server_from_rsocket (int is_ssl, const char *port, RSocket *rap_sock) {
+	RSocketRapServer *rap_s;
+	if (!port)
+		return NULL;
+	rap_s = R_NEW0 (RSocketRapServer);
+	rap_s->fd = rap_sock;
+	memcpy (rap_s->port, port, 4);
+	if (rap_s->fd)
+		return rap_s;
+	free (rap_s);
+	return NULL;
+}
+
 R_API RSocketRapServer *r_socket_rap_server_new (int is_ssl, const char *port) {
 	RSocketRapServer *rap_s;
 	if (!port)
@@ -15,6 +28,12 @@ R_API RSocketRapServer *r_socket_rap_server_new (int is_ssl, const char *port) {
 		return rap_s;
 	free (rap_s);
 	return NULL;
+}
+
+R_API RSocketRapServer *r_socket_rap_server_write(RSocketRapServer *rap_s, char *cmd){
+	strcpy(rap_s->buf, cmd);
+	r_socket_write (rap_s->fd, rap_s->buf ,strlen(rap_s->buf));
+	r_socket_flush (rap_s->fd);
 }
 
 R_API RSocketRapServer *r_socket_rap_server_create (const char *pathname) {
