@@ -70,11 +70,6 @@ static struct Type flags [] = {
 	{ NULL , NULL}
 };
 
-static const char *findnum(const char* n) {
-	while (*n < '0' || *n >'9') n++;
-	return n;
-}
-
 static const char *getnum(const char* n, int *num) {
 	if (num) *num = atoi (n);
 	while (*n>='0' && *n <='9') n++;
@@ -96,13 +91,13 @@ static const char *getstring(const char *s, int len) {
 }
 
 static const char *resolve(struct Type *t, const char *foo, const char **bar) {
-	if (!foo || !*foo) {
+	if (!t || !foo || !*foo) {
 		return NULL;
 	}
 	for (; t[0].code; t++) {
 		int len = strlen (t[0].code);
 		if (!strncmp (foo, t[0].code, len)) {
-			*bar = t[0].name;
+			if (bar) *bar = t[0].name;
 			return foo + len;
 		}
 	}
@@ -112,6 +107,7 @@ static const char *resolve(struct Type *t, const char *foo, const char **bar) {
 static int have_swift_demangle = -1;
 
 static char *swift_demangle_cmd(const char *s) {
+	/* XXX: command injection issue here */
 	static char *swift_demangle = NULL;
 	if (have_swift_demangle == -1) {
 		if (!swift_demangle) {
@@ -164,6 +160,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 	const char *attr = NULL;
 	const char *attr2 = NULL;
 	const char *q, *p = s;
+	const char *q_end = p + strlen (p);
 
 	if (strchr (s, '\'') || strchr (s, ' ')) {
 		return NULL;
@@ -251,8 +248,8 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 
 		q = numpos (p);
 		//printf ("(%s)\n", getstring (p, (q-p)));
-		for (i=0, len = 1; len; q += len, i++) {
-			if (*q=='P') {
+		for (i=0, len = 1; len && q < q_end; q += len, i++) {
+			if (*q == 'P') {
 		//		printf ("PUBLIC: ");
 				q++;
 			}
@@ -267,6 +264,9 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 			if (i && *out) strcat (out, ".");
 			STRCAT_BOUNDS (len);
 			strcat (out, getstring (q, len));
+		}
+		if (q > q_end) {
+			return 0;
 		}
 		p = resolve (flags, q, &attr);
 		if (!p && ((*q=='U') || (*q == 'R'))) {
@@ -321,7 +321,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 		} else {
 			/* parse function parameters here */
 			// type len value/
-			for (i=0; q; i++) {
+			for (i=0; q && q < q_end; i++) {
 				if (*q == 'f') q++;
 				switch (*q) {
 				case 'S': // "S0"
@@ -345,7 +345,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 						{
 							strcat (out, "..");
 							int n;
-							char *Q = getnum (q + 2, &n);
+							const char *Q = getnum (q + 2, &n);
 							strcat (out, getstring (Q, n));
 							q = Q + n + 1;
 						}
@@ -363,7 +363,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 					p = resolve (types, q + 3, &attr); // type
 					break;
 				case 'G':
-					q+=2;
+					q += 2;
 					//printf ("GENERIC\n");
 					if (!strncmp (q, "_V", 2)) {
 						q += 2;
@@ -391,18 +391,29 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 					//	attr, len, getstring (q, len));
 					if (!len) {
 						if (retmode) {
-							p = resolve (types, q+1, &attr); // type
+							if (q + 1 > q_end) {
+								if (attr) {
+									strcat (out, " -> ");
+									STRCAT_BOUNDS (strlen (attr));
+									strcat (out, attr);
+								}
+								break;
+							}
+							p = resolve (types, q + 1, &attr); // type
 							//printf ("RETURN TYPE %s\n", attr);
 		//					printf ("RET %s\n", attr);
-							strcat (out, " -> ");
-							STRCAT_BOUNDS (strlen (attr));
-							strcat (out, attr);
+							if (attr) {
+								strcat (out, " -> ");
+								STRCAT_BOUNDS (strlen (attr));
+								strcat (out, attr);
+							}
 							break;
 						}
 						retmode = 1;
 						len++;
 					}
-					if (q[len]) {
+					//if (strlen (q) <= len && q[len]) {
+					if (len <= (q_end-q)  && q[len]) {
 						const char *s = getstring (q, len);
 						if (s && *s) {
 							if (is_first) {	
@@ -428,7 +439,12 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 							strcat (out, " -> ");
 							STRCAT_BOUNDS (strlen (attr));
 							strcat (out, attr);
-
+						}
+					} else {
+						if (attr) {
+							strcat (out, " -> ");
+							STRCAT_BOUNDS (strlen (attr));
+							strcat (out, attr);
 						}
 					}
 					q += len;
