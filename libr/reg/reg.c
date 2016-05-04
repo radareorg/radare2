@@ -110,6 +110,7 @@ R_API void r_reg_free_internal(RReg *reg, bool init) {
 			reg->regset[i].regs = r_list_newf ((RListFree)r_reg_item_free);
 		} else {
 			r_list_free (reg->regset[i].regs);
+			reg->regset[i].regs = NULL;
 		}
 	}
 	reg->size = 0;
