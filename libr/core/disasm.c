@@ -529,9 +529,10 @@ static void handle_deinit_ds(RCore *core, RDisasmState *ds) {
 
 static void handle_set_pre(RDisasmState *ds, const char * str) {
 	if (!ds->show_fcnlines) {
-		str = "";
-		if (ds->pre && !*ds->pre)
+		if (ds->pre && !*ds->pre) {
 			return;
+		}
+		str = "";
 	}
 	free (ds->pre);
 	ds->pre = strdup (str);
@@ -692,7 +693,9 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nop
 			pre = "  ";
 	}
 	if (ds->show_functions && ds->show_fcnlines) {
-		if (*pre == '\\') handle_set_pre (ds, core->cons->vline[LINE_VERT]); 
+		if (*pre == '\\') {
+			handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+		}
 		handle_print_pre (core, ds);
 	}
 	char *tmp = ds->line;
@@ -702,10 +705,12 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nop
 }
 
 static void handle_pre_xrefs(RCore *core, RDisasmState *ds) {
-	handle_setup_pre (core, ds, false);
-	if (*ds->pre != ' '){
-		handle_set_pre(ds, core->cons->vline[LINE_VERT]);
-		ds->pre = r_str_concat (ds->pre, " ");
+	if (ds->show_fcnlines) {
+		handle_setup_pre (core, ds, false);
+		if (*ds->pre != ' '){
+			handle_set_pre(ds, core->cons->vline[LINE_VERT]);
+			ds->pre = r_str_concat (ds->pre, " ");
+		}
 	}
 	handle_print_pre (core, ds);
 	char *tmp = ds->line;
@@ -713,6 +718,7 @@ static void handle_pre_xrefs(RCore *core, RDisasmState *ds) {
 	handle_print_lines_left (core, ds);
 	ds->line = tmp;
 }
+
 static void handle_show_xrefs(RCore *core, RDisasmState *ds) {
 	RList *xrefs;
 	RAnalRef *refi;
@@ -868,15 +874,16 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 	const char *lang;
 	char *fcn_name;
 	char *sign;
-	if (!core || !ds || !ds->show_functions)
+
+	if (!core || !ds || !ds->show_functions) {
 		return;
+	}
 	demangle = r_config_get_i (core->config, "bin.demangle");
 	lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-	if (!f)
+	if (!f || (f->addr != ds->at)) {
 		return;
-	if (f->addr != ds->at)
-		return;
+	}
 	if (demangle) {
 		fcn_name = r_bin_demangle (core->bin->cur, lang, f->name);
 		if (!fcn_name)
@@ -936,8 +943,9 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 		r_cons_printf ("// %s\n", sign);
 	R_FREE (sign);
 	handle_set_pre (ds, core->cons->vline[LINE_VERT]);
-	if (ds->show_fcnlines)
+	if (ds->show_fcnlines) {
 		ds->pre = r_str_concat (ds->pre, " ");
+	}
 	ds->stackptr = 0;
 	if (ds->vars) {
 		char spaces[32];
@@ -2144,15 +2152,15 @@ static void handle_print_ptr(RCore *core, RDisasmState *ds, int len, int idx) {
 
 		if (ds->analop.refptr) {
 			ut64 num = r_read_le64 (msg);
-			st64 n = (st64)num;
-			st32 n32 = (st32)n;
 			// TODO: make this more complete
 			switch (ds->analop.refptr) {
-			case 1: n &= UT8_MAX; break;
-			case 2: n &= UT16_MAX; break;
-			case 4: n &= UT32_MAX; break;
-			case 8: n &= UT64_MAX; break;
+			case 1: num &= UT8_MAX; break;
+			case 2: num &= UT16_MAX; break;
+			case 4: num &= UT32_MAX; break;
+			case 8: num &= UT64_MAX; break;
 			}
+			st64 n = (st64)num;
+			st32 n32 = (st32)(n & UT32_MAX);
 			handle_comment_align (core, ds);
 			if (ds->show_color) {
 				r_cons_printf (ds->pal_comment);
