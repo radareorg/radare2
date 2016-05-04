@@ -87,16 +87,18 @@ static const char *numpos(const char* n) {
 }
 
 static const char *getstring(const char *s, int len) {
-	static char buf[256];
-	if (len < 0 || len > sizeof (buf) - 2)
-		return NULL;
+	static char buf[256] = {0};
+	if (!s || !*s || len < 0 || len > sizeof (buf) - 2) {
+		buf[0] = 0;
+		return buf;
+	}
 	strncpy (buf, s, len);
 	buf[len] = 0;
 	return buf;
 }
 
 static const char *resolve(struct Type *t, const char *foo, const char **bar) {
-	if (!foo || !*foo) {
+	if (!t || !foo || !*foo) {
 		return NULL;
 	}
 	for (; t[0].code; t++) {
