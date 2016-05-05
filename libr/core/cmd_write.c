@@ -28,10 +28,10 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	return !len;
 }
 
-static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *key, int direction) {
+static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *key, int direction, const char *iv) {
 	//TODO: generalise no_key_mode for all non key encoding/decoding.
 	int keylen = key ? strlen (key): 0;
-	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo);
+	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo);
 	if (no_key_mode || keylen > 0) {
 		RCrypto *cry = r_crypto_new ();
 		if (r_crypto_use (cry, algo)) {
@@ -45,6 +45,19 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 					keylen = len;
 				}
 				if (r_crypto_set_key (cry, binkey, keylen, 0, direction)) {
+					if (iv) {
+						ut8 *biniv = malloc (strlen (iv) + 1);
+						int ivlen = r_hex_str2bin (iv, biniv);
+						if (ivlen < 1) {
+							ivlen = strlen(iv);
+							strcpy ((char *)biniv, iv);
+						}
+						if (!r_crypto_set_iv (cry, biniv, ivlen)) {
+							eprintf ("Invalid IV.\n");
+							return 0;
+						}
+					}
+
 					r_crypto_update (cry, (const ut8*)core->block, core->blocksize);
 					r_crypto_final (cry, NULL, 0);
 
@@ -109,9 +122,9 @@ static void cmd_write_op (RCore *core, const char *input) {
 		"woa"," [val]", "+=  addition (f.ex: woa 0102)",
 		"woA"," [val]","&=  and",
 		"wod"," [val]", "/=  divide",
-		"woD","[algo] [key]","decrypt current block with given algo and key",
+		"woD","[algo] [key] [IV]","decrypt current block with given algo and key",
 		"woe"," [from to] [step] [wsz=1]","..  create sequence",
-		"woE"," [algo] [key]", "encrypt current block with given algo and key",
+		"woE"," [algo] [key] [IV]", "encrypt current block with given algo and key",
 		"wol"," [val]","<<= shift left",
 		"wom"," [val]", "*=  multiply",
 		"woo"," [val]","|=  or",
@@ -168,17 +181,23 @@ static void cmd_write_op (RCore *core, const char *input) {
 			int direction = (input[1] == 'E') ? 0 : 1;
 			const char *algo = NULL;
 			const char *key = NULL;
+			const char *iv = NULL;
 			char *space, *args = strdup (r_str_chop_ro (input+2));
 			space = strchr (args, ' ');
 			if (space) {
 				*space++ = 0;
 				key = space;
+				space = strchr (key, ' ');
+				if (space) {
+					*space++ = 0;
+					iv = space;
+				}
 			}
 			algo = args;
 			if (algo && *algo) {
-				encrypt_or_decrypt_block (core, algo, key, direction);
+				encrypt_or_decrypt_block (core, algo, key, direction, iv);
 			} else {
-				eprintf ("Usage: wo%c [algo] [key]\n", ((!direction)?'E':'D'));
+				eprintf ("Usage: wo%c [algo] [key] [IV]\n", ((!direction)?'E':'D'));
 				eprintf ("TODO: list currently supported crypto algorithms\n");
 				eprintf ("  rc2, rc4, xor, blowfish, aes, rot, ror, rol\n");
 			}

@@ -483,6 +483,9 @@ R_API char *r_base64_encode_dyn(const char *str, int len);
 R_API int r_base91_encode(char *bout, const ut8 *bin, int len);
 R_API int r_base91_decode(ut8 *bout, const char *bin, int len);
 
+R_API char *r_punycode_encode(const char*src, int srclen, int *dstlen);
+R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen);
+
 /* strings */
 static inline void r_str_rmch (char *s, char ch) {
 	for (;*s; s++) {
