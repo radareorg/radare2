@@ -15,7 +15,7 @@
 
 static int blob_version(const char *program) {
 	printf ("%s "R2_VERSION" %d @ "
-			R_SYS_OS"-"R_SYS_ENDIAN"-"
+			R_SYS_OS"-"
 			R_SYS_ARCH"-%d git.%s\n",
 			program, R2_VERSION_COMMIT,
 			R_SYS_BITS&8?64:32,
