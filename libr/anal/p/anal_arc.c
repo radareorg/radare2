@@ -699,6 +699,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 break;
             }
             op->jump = (addr & ~3) + imm;
+            break;
         case 0x1f: { /* Branch and Link Unconditionally, 0x1F */
             imm = sex_s13((words[0] & 0x07ff0000) >> (16-2));
             op->type = R_ANAL_OP_TYPE_CALL;
