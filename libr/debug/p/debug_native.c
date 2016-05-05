@@ -884,7 +884,10 @@ static int r_debug_native_kill (RDebug *dbg, int pid, int tid, int sig) {
 	int ret = false;
 	if (pid == 0) pid = dbg->pid;
 #if __WINDOWS__ && !__CYGWIN__
-	ret = w32_terminate_process (dbg, pid);
+	if (sig==0)
+		ret = true;
+	else
+		ret = w32_terminate_process (dbg, pid);
 #else
 #if 0
 	if (thread) {
