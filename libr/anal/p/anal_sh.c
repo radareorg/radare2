@@ -766,8 +766,8 @@ static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) 
 
 	op->size = 2;
 
-	op_MSB = (anal->big_endian)? data[0]:data[1];
-	op_LSB = (anal->big_endian)? data[1]:data[0];
+	op_MSB = anal->big_endian? data[0]: data[1];
+	op_LSB = anal->big_endian? data[1]: data[0];
 	ret =  first_nibble_decode[(op_MSB>>4) & 0x0F](anal, op, (ut16)(op_MSB<<8 | op_LSB));
 	return ret;
 }

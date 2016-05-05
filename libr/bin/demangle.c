@@ -343,7 +343,7 @@ R_API int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	return type;
 }
 
-R_API char *r_bin_demangle (RBinFile *binfile, const char *def, const char *str) {
+R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str) {
 	int type = -1;
 	RBin *bin;
 	if (!binfile || !*str) return NULL;
@@ -354,8 +354,12 @@ R_API char *r_bin_demangle (RBinFile *binfile, const char *def, const char *str)
 	if (!strncmp (str, "imp.", 4))
 		str += 4;
 	if (!strncmp (str, "__", 2)) {
-		type = R_BIN_NM_CXX;
-		str++;
+		if (str[2] == 'T') {
+			type = R_BIN_NM_SWIFT;
+		} else {
+			type = R_BIN_NM_CXX;
+		//	str++;
+		}
 	}
 	// if str is sym. or imp. when str+=4 str points to the end so just return
 	if (!*str)
@@ -368,7 +372,7 @@ R_API char *r_bin_demangle (RBinFile *binfile, const char *def, const char *str)
 	/* rust uses the same mangling as c++ and appends a uniqueid */
 	case R_BIN_NM_RUST: return r_bin_demangle_cxx (str);
 	case R_BIN_NM_OBJC: return r_bin_demangle_objc (NULL, str);
-	case R_BIN_NM_SWIFT: return r_bin_demangle_swift (str);
+	case R_BIN_NM_SWIFT: return r_bin_demangle_swift (str, bin->demanglercmd);
 	case R_BIN_NM_CXX: return r_bin_demangle_cxx (str);
 	case R_BIN_NM_DLANG: return r_bin_demangle_plugin (bin, "dlang", str);
 	}

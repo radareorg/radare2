@@ -7,11 +7,8 @@
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_bytes, int len) {
+static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len) {
 //int arch_ppc_op(ut64 addr, const u8 *bytes, struct op_t *op)
-// TODO swap endian here??
-	char bytes[1024];
-	r_mem_copyendian ((ut8*)bytes, _bytes, 4, 1);
 	// XXX hack
 	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
 	short baddr = ((bytes[2]<<8) | (bytes[3]&0xfc));// 16-29

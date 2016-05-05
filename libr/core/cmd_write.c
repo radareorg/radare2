@@ -1,4 +1,12 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include <stdbool.h>
+#include <string.h>
+
+#include "r_crypto.h"
+#include "r_config.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_io.h"
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	ut8 *buf = malloc (strlen (pairs) + 1);
@@ -195,7 +203,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		case 'O':
 			len = (int)(input[3]==' ')?
 				r_num_math (core->num, input + 3): core->blocksize;
-			core->num->value = r_debruijn_offset (len, !core->assembler->big_endian);
+			core->num->value = r_debruijn_offset (len, 0 /* use LE */);
 			r_cons_printf ("%"PFMT64d"\n", core->num->value);
 			break;
 		default:
@@ -214,10 +222,8 @@ static void cmd_write_op (RCore *core, const char *input) {
 #define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
 static void cmd_write_value (RCore *core, const char *input) {
 	int type = 0;
-	ut8 addr1;
-	ut16 addr2;
-	ut32 addr4, addr4_;
-	ut64 addr8, off = 0LL;
+	ut64 off = 0LL;
+	ut8 buf[sizeof(ut64)];
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 
 	if (!input)
@@ -252,28 +258,23 @@ static void cmd_write_value (RCore *core, const char *input) {
 		type = (off&UT64_32U)? 8: 4;
 	switch (type) {
 	case 1:
-		addr1 = (ut8)off;
-		r_io_write (core->io, (const ut8 *)&addr1, 1);
+		r_write_ble8 (buf, (ut8)(off & UT8_MAX));
+		r_io_write (core->io, buf, 1);
 		WSEEK (core, 1);
 		break;
 	case 2:
-		addr2 = (ut16)off;
-		r_io_write (core->io, (const ut8 *)&addr2, 2);
+		r_write_le16 (buf, (ut16)(off & UT16_MAX));
+		r_io_write (core->io, buf, 2);
 		WSEEK (core, 2);
 		break;
 	case 4:
-		addr4_ = (ut32)off;
-		//drop_endian((ut8*)&addr4_, (ut8*)&addr4, 4); /* addr4_ = addr4 */
-		//endian_memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); /* addr4 = addr4_ */
-		memcpy ((ut8*)&addr4, (ut8*)&addr4_, 4); // XXX needs endian here too
-		r_io_write (core->io, (const ut8 *)&addr4, 4);
+		r_write_le32 (buf, (ut32)(off & UT32_MAX));
+		r_io_write (core->io, buf, 4);
 		WSEEK (core, 4);
 		break;
 	case 8:
-		/* 8 byte addr */
-		memcpy ((ut8*)&addr8, (ut8*)&off, 8); // XXX needs endian here
-		//	endian_memcpy((ut8*)&addr8, (ut8*)&off, 8);
-		r_io_write (core->io, (const ut8 *)&addr8, 8);
+		r_write_le64 (buf, off);
+		r_io_write (core->io, buf, 8);
 		WSEEK (core, 8);
 		break;
 	}

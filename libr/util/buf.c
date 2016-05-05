@@ -417,7 +417,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 
 static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n, int write) {
 	ut64 len, check_len;
-	int i, j, k, tsize, endian, m = 1;
+	int i, j, k, tsize, bigendian, m = 1;
 	if (!b || b->empty) return 0;
 	if (b->fd != -1) {
 		eprintf ("r_buf_fcpy_at not supported yet for r_buf_new_file\n");
@@ -436,13 +436,13 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 			if (m == 1)
 				m = r_num_get (NULL, &fmt[j]);
 			continue;
-		case 's': tsize = 2; endian = 1; break;
-		case 'S': tsize = 2; endian = 0; break;
-		case 'i': tsize = 4; endian = 1; break;
-		case 'I': tsize = 4; endian = 0; break;
-		case 'l': tsize = 8; endian = 1; break;
-		case 'L': tsize = 8; endian = 0; break;
-		case 'c': tsize = 1; endian = 1; break;
+		case 's': tsize = 2; bigendian = 0; break;
+		case 'S': tsize = 2; bigendian = 1; break;
+		case 'i': tsize = 4; bigendian = 0; break;
+		case 'I': tsize = 4; bigendian = 1; break;
+		case 'l': tsize = 8; bigendian = 0; break;
+		case 'L': tsize = 8; bigendian = 1; break;
+		case 'c': tsize = 1; bigendian = 0; break;
 		default: return -1;
 		}
 
@@ -461,18 +461,16 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 
 		for (k = 0; k < m; k++) {
 			if (write) {
-				r_mem_copyendian (
-				(ut8*)&buf[addr+len+(k*tsize)],
-				(ut8*)&b->buf[len+(k*tsize)],
-				tsize, endian);
+				r_mem_swaporcopy ((ut8*)&buf[addr+len+(k*tsize)],
+						  (const ut8*)&b->buf[len+(k*tsize)],
+						  tsize, bigendian);
 			} else {
-				r_mem_copyendian (
-				(ut8*)&buf[len+(k*tsize)],
-				(ut8*)&b->buf[addr+len+(k*tsize)],
-				tsize, endian);
+				r_mem_swaporcopy ((ut8*)&buf[len+(k*tsize)],
+						  (const ut8*)&b->buf[addr+len+(k*tsize)],
+						  tsize, bigendian);
 			}
 		}
-		len += tsize*m;
+		len += tsize * m;
 		m = 1;
 	}
 	b->cur = addr + len;

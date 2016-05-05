@@ -234,7 +234,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		const char *p = NULL;
 		if (strlen (str)>5)
 			p = strchr (str+5, ':');
-		// TODO: honor LE
 		if (p) {
 			refsz = atoi (str+1);
 			str = p;
@@ -258,15 +257,17 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		// pop state
 		if (ok) *ok = 1;
-		ut64 num = 0;
+		ut8 buf[sizeof (ut64)] = {0};
+		(void)r_io_read_at (core->io, n, buf, refsz);
 		switch (refsz) {
 		case 8:
+			return r_read_ble64 (buf, core->print->big_endian);
 		case 4:
+			return r_read_ble32 (buf, core->print->big_endian);
 		case 2:
+			return r_read_ble16 (buf, core->print->big_endian);
 		case 1:
-			(void)r_io_read_at (core->io, n, (ut8*)&num, refsz);
-			r_mem_copyendian ((ut8*)&num, (ut8*)&num, refsz, !core->assembler->big_endian);
-			return num;
+			return r_read_ble8 (buf);
 		default:
 			eprintf ("Invalid reference size: %d (%s)\n", refsz, str);
 			return 0LL;
@@ -1655,7 +1656,6 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 	int i, pipefd;
 	RIORap *rior;
 	ut64 x;
-	int LE = 1; // 1 if host is little LE
 
 	rior = (RIORap *)file->data;
 	if (rior == NULL|| rior->fd == NULL) {
@@ -1704,7 +1704,7 @@ reaccept:
 				eprintf ("open (%d): ", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
-				ptr = malloc (cmd);
+				ptr = malloc (cmd + 1);
 				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX)
 				if (ptr == NULL) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
@@ -1733,10 +1733,9 @@ reaccept:
 					}
 				}
 				buf[0] = RMT_OPEN | RMT_REPLY;
-				r_mem_copyendian (buf+1, (ut8 *)&pipefd, 4, !LE);
+				r_write_be32 (buf + 1, pipefd);
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
-
 #if 0
 				/* Write meta info */
 				RMetaItem *d;
@@ -1807,44 +1806,44 @@ reaccept:
 				break;
 			case RMT_READ:
 				r_socket_read_block (c, (ut8*)&buf, 4);
-				r_mem_copyendian ((ut8*)&i, buf, 4, !LE);
-				ptr = (ut8 *)malloc (i+core->blocksize+5);
-				if (ptr==NULL) {
+				i = r_read_be32 (buf);
+				ptr = (ut8 *)malloc (i + core->blocksize+5);
+				if (ptr == NULL) {
 					eprintf ("Cannot read %d bytes\n", i);
 					r_socket_close (c);
 					// TODO: reply error here
 					return -1;
 				} else {
 					r_core_block_read (core, 0);
-					ptr[0] = RMT_READ|RMT_REPLY;
+					ptr[0] = RMT_READ | RMT_REPLY;
 					if (i>RMT_MAX)
 						i = RMT_MAX;
 					if (i>core->blocksize)
 						r_core_block_size (core, i);
-					r_mem_copyendian (ptr+1, (ut8 *)&i, 4, !LE);
-					memcpy (ptr+5, core->block, i); //core->blocksize);
+					r_write_be32 (ptr+1, i);
+					memcpy (ptr + 5, core->block, i); //core->blocksize);
 					r_socket_write (c, ptr, i+5);
 					r_socket_flush (c);
-					free(ptr);
+					free (ptr);
 					ptr = NULL;
 				}
 				break;
 			case RMT_CMD:
 				{
-				char bufr[8], *bufw = NULL;
 				char *cmd = NULL, *cmd_output = NULL;
+				char bufr[8], *bufw = NULL;
 				ut32 cmd_len = 0;
 				int i;
 
 				/* read */
 				r_socket_read_block (c, (ut8*)&bufr, 4);
-				r_mem_copyendian ((ut8*)&i, (ut8 *)bufr, 4, !LE);
-				if (i>0 && i<RMT_MAX) {
-					if ((cmd=malloc (i+1))) {
+				i = r_read_be32 (bufr);
+				if (i>0 && i < RMT_MAX) {
+					if ((cmd = malloc (i + 1))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';
-						eprintf ("len: %d cmd: '%s'\n",
-							i, cmd); fflush(stdout);
+						eprintf ("len: %d cmd:'%s'\n", i, cmd);
+						fflush (stdout);
 						cmd_output = r_core_cmd_str (core, cmd);
 						free (cmd);
 					} else eprintf ("rap: cannot malloc\n");
@@ -1856,11 +1855,42 @@ reaccept:
 					cmd_output = strdup ("");
 					cmd_len = 0;
 				}
+
+#if DEMO_SERVER_SENDS_CMD_TO_CLIENT
+				static bool once = true;
+				/* TODO: server can reply a command request to the client only here */
+				if (once) {
+					const char *cmd = "pd 4";
+					int cmd_len = strlen (cmd) + 1;
+					ut8 *b = malloc (cmd_len + 5);
+					b[0] = RMT_CMD;
+					r_write_be32 (b + 1, cmd_len);
+					strcpy ((char *)b+ 5, cmd);
+					r_socket_write (c, b, 5 + cmd_len);
+					r_socket_flush (c);
+
+					/* read response */
+					r_socket_read (c, b, 5);
+					if (b[0] == (RMT_CMD | RMT_REPLY)) {
+						ut32 n = r_read_be32 (b + 1);
+						eprintf ("REPLY %d\n", n);
+						if (n > 0) {
+							ut8 *res = calloc (1, n);
+							r_socket_read (c, res, n);
+							eprintf ("RESPONSE(%s)\n", (const char *)res);
+							free (res);
+						}
+					}
+					r_socket_flush (c);
+					free (b);
+					once = false;
+				}
+#endif
+
 				bufw = malloc (cmd_len + 5);
 				bufw[0] = RMT_CMD | RMT_REPLY;
-				r_mem_copyendian ((ut8*)bufw+1,
-					(ut8 *)&cmd_len, 4, !LE);
-				memcpy (bufw+5, cmd_output, cmd_len);
+				r_write_be32 (bufw + 1, cmd_len);
+				memcpy (bufw + 5, cmd_output, cmd_len);
 				r_socket_write (c, bufw, cmd_len+5);
 				r_socket_flush (c);
 				free (bufw);
@@ -1869,7 +1899,7 @@ reaccept:
 				}
 			case RMT_WRITE:
 				r_socket_read (c, buf, 5);
-				r_mem_copyendian((ut8 *)&x, buf+1, 4, LE);
+				x = r_read_at_be32 (buf, 1);
 				ptr = malloc (x);
 				r_socket_read (c, ptr, x);
 				r_core_write_at (core, core->offset, ptr, x);
@@ -1878,7 +1908,7 @@ reaccept:
 				break;
 			case RMT_SEEK:
 				r_socket_read_block (c, buf, 9);
-				r_mem_copyendian((ut8 *)&x, buf+1, 8, !LE);
+				x = r_read_at_be64 (buf, 1);
 				if (buf[0]!=2) {
 					r_core_seek (core, x, buf[0]);
 					x = core->offset;
@@ -1890,7 +1920,7 @@ reaccept:
 					}
 				}
 				buf[0] = RMT_SEEK | RMT_REPLY;
-				r_mem_copyendian (buf+1, (ut8*)&x, 8, !LE);
+				r_write_be64 (buf+1, x);
 				r_socket_write (c, buf, 9);
 				r_socket_flush (c);
 				break;
@@ -1898,11 +1928,11 @@ reaccept:
 				eprintf ("CLOSE\n");
 				// XXX : proper shutdown
 				r_socket_read_block (c, buf, 4);
-				r_mem_copyendian ((ut8*)&i, buf, 4, LE);
+				i = r_read_be32 (buf);
 				{
 				//FIXME: Use r_socket_close
 				int ret = close (i);
-				r_mem_copyendian (buf+1, (ut8*)&ret, 4, !LE);
+				r_write_be32 (buf+1, ret);
 				buf[0] = RMT_CLOSE | RMT_REPLY;
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);

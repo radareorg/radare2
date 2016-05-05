@@ -34,7 +34,8 @@ RAsmPlugin r_asm_plugin_mcs96 = {
 	.arch = "mcs96",
 	.license = "LGPL3",
 	.bits = 16,
-	.disassemble = &disassemble,
+	.endian = R_SYS_ENDIAN_NONE,
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

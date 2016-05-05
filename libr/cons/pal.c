@@ -66,9 +66,12 @@ R_API void r_cons_pal_init (const char *foo) {
 	cons->pal.graph_box = Color_RESET;
 	cons->pal.graph_box2 = Color_BLUE;
 	cons->pal.graph_box3 = Color_MAGENTA;
+	cons->pal.graph_box4 = Color_GRAY;
 	cons->pal.graph_true = Color_GREEN;
 	cons->pal.graph_false = Color_RED;
 	cons->pal.graph_trufae = Color_BLUE; // single jump
+	cons->pal.graph_traced = Color_YELLOW;
+	cons->pal.graph_current = Color_BLUE;
 
 	r_cons_pal_free ();
 	cons->pal.list[0] = strdup (Color_RED);
@@ -254,9 +257,12 @@ static struct {
 	{ "graph.box", r_offsetof (RConsPalette, graph_box) },
 	{ "graph.box2", r_offsetof (RConsPalette, graph_box2) },
 	{ "graph.box3", r_offsetof (RConsPalette, graph_box3) },
+	{ "graph.box4", r_offsetof (RConsPalette, graph_box4) },
 	{ "graph.true", r_offsetof (RConsPalette, graph_true) },
 	{ "graph.false", r_offsetof (RConsPalette, graph_false) },
 	{ "graph.trufae", r_offsetof (RConsPalette, graph_trufae) },
+	{ "graph.current", r_offsetof (RConsPalette, graph_current) },
+	{ "graph.traced", r_offsetof (RConsPalette, graph_traced) },
 
 	{ "gui.cflow", r_offsetof (RConsPalette, gui_cflow) },
 	{ "gui.dataoffset", r_offsetof (RConsPalette, gui_dataoffset) },

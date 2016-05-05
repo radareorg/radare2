@@ -43,9 +43,10 @@ RAsmPlugin r_asm_plugin_tms320 = {
 	.desc = "TMS320 DSP family",
 	.license = "LGPLv3",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.init = tms320_init,
 	.fini = tms320_fini,
-	.disassemble = tms320_disassemble,
+	.disassemble = &tms320_disassemble,
 };
 
 #ifndef CORELIB

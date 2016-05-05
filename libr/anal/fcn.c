@@ -229,9 +229,14 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 	ut64 offs, sz = anal->bits >> 3;
 	if (!jmptbl) return 0;
 	anal->iob.read_at (anal->iob.io, ptr, jmptbl, MAX_JMPTBL_SIZE);
-	for (offs = 0; offs < MAX_JMPTBL_SIZE; offs += sz) {
-		ut64 jmpptr = 0;
-		r_mem_copyendian ((ut8*)&jmpptr, jmptbl + offs, sz, !anal->big_endian);
+	for (offs = 0; offs + sz - 1 < MAX_JMPTBL_SIZE; offs += sz) {
+		ut64 jmpptr;
+		switch (sz) {
+		case 1: jmpptr = r_read_le8 (jmptbl + offs); break;
+		case 2: jmpptr = r_read_le16 (jmptbl + offs); break;
+		case 4: jmpptr = r_read_le32 (jmptbl + offs); break;
+		default: jmpptr = r_read_le64 (jmptbl + offs); break;
+		}
 		if (anal->limit) {
 			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to)
 				break;
@@ -264,76 +269,67 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 #define gotoBeach(x) ret=x;goto beach;
 #define gotoBeachRet() goto beach;
 
-R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
-	char* varname;
-	switch (op->stackop) {
-	case R_ANAL_STACK_NULL:
-	case R_ANAL_STACK_NOP:
-	case R_ANAL_STACK_ALIGN:
-	case R_ANAL_STACK_INC: {
-		char bp[50]={',',0};
-		strcat (bp, anal->reg->name[R_REG_NAME_BP]);
-		strcat (bp, ",+,[4],");
-		//TODO char, short, and long in case of 64bit it wont be [4]
-		//This will be some hints for type propagation imho
-		char *esil_buf, *ptr_end, *addr, *op_esil;
-		st64 ptr;
-		op_esil = r_strbuf_get (&op->esil);
-		if (!op_esil) {
-			return;
-		}
-		esil_buf = strdup (op_esil);
-		if (!esil_buf) {
-			return;
-		}
-		ptr_end = strstr (esil_buf, bp);
-		if (!ptr_end) {
-			free (esil_buf);
-			break;
-		}
-		*ptr_end = 0;
-		addr = ptr_end;
-		while ((*addr != '0' || *(addr+1) != 'x') &&
-			addr >= esil_buf && *addr != ',' ) {
-			addr--;
-		}
-		if (strncmp (addr, "0x", 2)) {
-			free (esil_buf);
-			break;
-		}
-		ptr = (st64)r_num_get (NULL, addr);
-		varname = get_varname (anal, ARGPREFIX, R_ABS (ptr));
-		r_anal_var_add (anal, fcn->addr, 1, ptr, fcn->call, NULL, anal->bits/8, varname);
-		r_anal_var_access (anal, fcn->addr, fcn->call, 1, ptr, 0, op->addr);
-		free (esil_buf);
-		} break;
-	case R_ANAL_STACK_GET:
-		if (((int) op->ptr) > 0) {
-			varname = get_varname (anal, ARGPREFIX, R_ABS (op->ptr));
-			r_anal_var_add (anal, fcn->addr, 1, op->ptr, fcn->call, NULL, anal->bits/8, varname);
-			r_anal_var_access (anal, fcn->addr, 'a', 1, op->ptr, 0, op->addr);
-		} else {
-			varname = get_varname (anal, VARPREFIX, R_ABS (op->ptr));
-			r_anal_var_add (anal, fcn->addr, 1, -op->ptr, 'v', NULL, anal->bits/8, varname);
-			r_anal_var_access (anal, fcn->addr, 'v', 1, -op->ptr, 0, op->addr);
-		}
-		free (varname);
-		break;
-	case R_ANAL_STACK_SET:
-		if ((int)op->ptr > 0) {
-			varname = get_varname (anal, ARGPREFIX, R_ABS (op->ptr));
-			r_anal_var_add (anal, fcn->addr, 1, op->ptr,fcn->call, NULL, anal->bits/8, varname);
-			r_anal_var_access (anal, fcn->addr, fcn->call, 1, op->ptr, 1, op->addr);
-		} else {
-			varname = get_varname (anal, VARPREFIX, R_ABS (op->ptr));
-			r_anal_var_add (anal, fcn->addr, 1, -op->ptr,'v', NULL, anal->bits/8, varname);
-			r_anal_var_access (anal, fcn->addr, 'v', 1, -op->ptr, 1, op->addr);
-		}
-		free (varname);
-		break;
+void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
+	char *varname, *esil_buf, *ptr_end, *addr, *op_esil;
+	st64 ptr;
+	int len, lenmax=50;
+	char *sig = malloc (sizeof (char)*lenmax+1);
+	if(!sig) return;
+	strcpy(sig,",");
+	strncat (sig, reg, lenmax-1);
+	len = strlen(sig);
+	if (len > lenmax - 3) { /*<=============-i
+		1 for first colon		||
+		1 for the next colon		||
+		at least one for the sign	/|
+		total of 3 =====================_| */
+		return;
 	}
-}
+	strncat (sig, ",", lenmax - len++);
+	strncat (sig, sign, lenmax - len);
+	//strcat (sig,",[4],");
+	op_esil = r_strbuf_get (&op->esil);
+	if (!op_esil) {
+		return;
+	}
+	esil_buf = strdup (op_esil);
+	if (!esil_buf) {
+		return;
+	}
+	ptr_end = strstr (esil_buf, sig);
+	if (!ptr_end) {
+		free (esil_buf);
+		return;
+	}
+	*ptr_end = 0;
+	addr = ptr_end;
+	while ((*addr != '0' || *(addr+1) != 'x') &&
+		addr >= esil_buf && *addr != ',' ) {
+		addr--;
+	}
+	if (strncmp (addr, "0x", 2)) {
+		free (esil_buf);
+		return;
+	}
+	ptr = (st64)r_num_get (NULL, addr);
+	if(*sign =='+') {
+		varname = get_varname (anal, ARGPREFIX, R_ABS (ptr));
+		r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits / 8, varname);
+		r_anal_var_access (anal, fcn->addr, type, 1, ptr, 0, op->addr);
+	} else {
+		varname = get_varname (anal, VARPREFIX, R_ABS (ptr));
+		r_anal_var_add (anal, fcn->addr, 1, ptr,'v', NULL, anal->bits / 8, varname);
+		r_anal_var_access (anal, fcn->addr, 'v', 1, ptr, 1, op->addr);
 
+	}
+	free (esil_buf);
+
+}
+R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
+	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "+", fcn->call);
+	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "-", 'v');
+	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_SP], "+", 'e');
+}
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int continue_after_jump = anal->opt.afterjmp;
 	RAnalBlock *bb = NULL;

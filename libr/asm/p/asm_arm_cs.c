@@ -15,7 +15,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
-	mode |= (a->bits == 16) ? CS_MODE_THUMB: CS_MODE_ARM;
+	mode |= (a->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
 		cs_close (&cd);
@@ -99,11 +99,14 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (is_thumb) {
 		const int o = opcode >> 16;
 		opsize = o>0? 4: 2; //(o&0x80 && ((o&0xe0)==0xe0))? 4: 2;
-		r_mem_copyendian (op->buf, (void *)&opcode,
-			opsize, a->big_endian);
+		if (opsize == 4) {
+			r_write_be32(op->buf, opcode);
+		} else if (opsize == 2) {
+			r_write_be16(op->buf, opcode & UT16_MAX);
+		}
 	} else {
 		opsize = 4;
-		r_mem_copyendian (op->buf, (void *)&opcode, 4, a->big_endian);
+		r_write_be32(op->buf, opcode);
 	}
 // XXX. thumb endian assembler needs no swap
 	return opsize;
@@ -116,8 +119,7 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 	.license = "BSD",
 	.arch = "arm",
 	.bits = 16 | 32 | 64,
-	.init = NULL,
-	.fini = NULL,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.assemble = &assemble,
 	.features = "no-mclass,v8"

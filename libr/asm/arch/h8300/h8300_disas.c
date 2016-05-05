@@ -143,9 +143,7 @@ static int decode_opcode(const ut8 *bytes, struct h8300_cmd *cmd)
 {
 	ut16 ext_opcode;
 
-	r_mem_copyendian((ut8*)&ext_opcode, bytes, sizeof(ut16), !LIL_ENDIAN);
-
-	ext_opcode = ext_opcode >> 7;
+	ext_opcode = (r_read_be16 (bytes)) >> 7;
 
 	switch (ext_opcode) {
 	case H8300_BOR:
@@ -333,7 +331,7 @@ static int decode_imm162r16(const ut8 *bytes, struct h8300_cmd *cmd)
 		return -1;
 	}
 
-	r_mem_copyendian((ut8*)&imm, bytes + 2, sizeof(ut16), !LIL_ENDIAN);
+	imm = r_read_at_be16 (bytes, 2);
 	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "#0x%x:16,r%u",
 			imm, bytes[1] & 0x7);
 
@@ -350,8 +348,7 @@ static int decode_disp162r16(const ut8 *bytes, struct h8300_cmd *cmd)
 		return -1;
 	}
 
-	r_mem_copyendian((ut8*)&disp, bytes + 2,
-			sizeof(ut16), !LIL_ENDIAN);
+	disp = r_read_at_be16 (bytes, 2);
 
 	if (bytes[1] & 0x80) {
 		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
@@ -598,7 +595,7 @@ int decode_jmp_abs16(const ut8 *bytes, struct h8300_cmd *cmd)
 		return -1;
 	}
 
-	r_mem_copyendian((ut8*)&abs, bytes + 2, 2, !LIL_ENDIAN);
+	abs = r_read_at_be16 (bytes, 2);
 	snprintf(cmd->operands, H8300_INSTR_MAXLEN, "@0x%x:16", abs);
 
 	return ret;
@@ -644,7 +641,7 @@ static int decode_abs162r16(const ut8 *bytes, struct h8300_cmd *cmd)
 		return -1;
 	}
 
-	r_mem_copyendian((ut8*)&abs, bytes + 2, sizeof(ut16), !LIL_ENDIAN);
+	abs = r_read_at_be16 (bytes, 2);
 	if (bytes[1] & 0x80) {
 		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
 				"r%u,@0x%x:16", bytes[1] & 0x7, abs);
@@ -688,7 +685,7 @@ static int decode_r82dispr16(const ut8 *bytes, struct h8300_cmd *cmd)
 		return -1;
 	}
 
-	r_mem_copyendian((ut8*)&disp, bytes + 2, sizeof(ut16), !LIL_ENDIAN);
+	disp = r_read_at_be16 (bytes, 2);
 	if (bytes[1] & 0x80) {
 		snprintf(cmd->operands, H8300_INSTR_MAXLEN,
 			"r%u%c,@(0x%x:16,r%u)",
@@ -741,7 +738,7 @@ static int decode_r82abs16(const ut8 *bytes, struct h8300_cmd *cmd)
 		return -1;
 	}
 
-	r_mem_copyendian((ut8*)&abs, bytes + 2, sizeof(ut16), !LIL_ENDIAN);
+	abs = r_read_at_be16 (bytes, 2);
 
 	if (bytes[1] & 0x80) {
 		snprintf(cmd->operands, H8300_INSTR_MAXLEN, "r%u%c,@0x%x:16",

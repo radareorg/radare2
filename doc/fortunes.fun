@@ -187,3 +187,6 @@ Run a command with unspecified long sequence of 'a', pancake will be summoned an
 In r2land usability is treated as a bug
 radare2 is WYSIWYF - what you see is what you fix
 Your endian swaps
+*(ut64*)buffer ought to be illegal
+MY ENDIAN IS HUUUGE
+enlarge your endian

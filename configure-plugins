@@ -22,6 +22,7 @@ help () {
   echo "Usage: ./configure-plugins [options]"
   echo "  -n                   do nothing.. do not generate any file"
   echo "  --list               list all static and shared plugins"
+  echo "  --rm-static [dir]    remove plugins that are already in core from dir"
   echo "  --static [name ..]   define named plugin as static"
   echo "  --shared [name ..]   define named plugin as shared"
   echo "  --help, -h           display this helpful message"
@@ -166,6 +167,29 @@ MODE=""
 DONOTHING=0
 DEFCFG=./plugins.def.cfg
 
+rmstatic() {
+  C=0
+  if [ -z "$1" ]; then
+    echo "Missing argument"
+    exit 1
+  fi
+  for a in ${STATIC} ; do
+    b="`echo $a | tr . _`"
+    for ext in dll dylib so ; do
+      f="$b.$ext"
+      if [ -f "$f" ]; then
+        C=$(($C+1))
+	printf "  $C found\r"
+        #echo "rm -f $f"
+        rm -f "$f"
+      fi
+    done
+  done
+  echo "Removed $C shared plugins that are already static"
+}
+
+RMSTATIC=-
+
 while : ; do
   [ -z "$1" ] && break
   case "$1" in
@@ -173,6 +197,7 @@ while : ; do
   "--shared") MODE=shared ; ;;
   "--without-gpl") DEFCFG=./plugins.nogpl.cfg ;;
   "--disable-loadlibs") LOADLIBS=0 ;;
+  "--rm-static") RMSTATIC="$2" ; ;;
   "--list") sort_vars ; list ; ;;
   "-n") DONOTHING=1 ; ;;
   "-h"|"--help") help ; ;;
@@ -183,6 +208,17 @@ done
 
 load ${DEFCFG}
 sort_vars
+
+if [ - != "${RMSTATIC}" ]; then
+  if [ -z "${RMSTATIC}" ]; then
+    echo "Missing argument" > /dev/stderr
+    exit
+  fi
+  if [ -d "${RMSTATIC}" ]; then
+    cd "${RMSTATIC}" && rmstatic "${RMSTATIC}"
+  fi
+  exit 0
+fi
 
 [ ${DONOTHING} = 0 ] && generate
 

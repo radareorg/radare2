@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake, maijin */
 
 #include "r_util.h"
+#include "r_core.h"
 
 static void find_refs(RCore *core, const char *glob) {
 	char cmd[128];
@@ -1575,6 +1576,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 		}
 		break;
 	case 'p': // drp
+		// XXX we have to break out .h for these cmd_xxx files.
 		cmd_reg_profile (core, str);
 		break;
 	case 't': // "drt"
@@ -2987,7 +2989,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_asm_disassemble (core->assembler, &asmop, buf, size);
 					char str[512];
 					r_parse_filter (core->parser, core->flags,
-							asmop.buf_asm, str, sizeof (str));
+							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%c\",\"opcode\":\"%s\"}%s",
 						ref->addr, ref->type, str, iter->n? ",": "");
 				}
@@ -3009,7 +3011,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_asm_set_pc (core->assembler, ref->addr);
 					r_asm_disassemble (core->assembler, &asmop, buf, size);
 					r_parse_filter (core->parser, core->flags,
-							asmop.buf_asm, str, sizeof (str));
+							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 					if (has_color) {
 						buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
@@ -3076,7 +3078,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, 12);
 					r_parse_filter (core->parser, core->flags,
-							asmop.buf_asm, str, sizeof (str));
+							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
 									core->cons->pal.num);
 					r_cons_printf ("%c 0x%" PFMT64x " %s\n",
@@ -3462,8 +3464,10 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		r_agraph_set_curnode (core->graph, ran);
 		core->graph->force_update_seek = true;
 		core->graph->need_set_layout = true;
+		int ov = r_config_get_i (core->config, "scr.interactive");
 		core->graph->need_update_dim = true;
 		r_core_visual_graph (core, core->graph, NULL, true);
+		r_config_set_i (core->config, "scr.interactive", ov);
 		r_cons_show_cursor (true);
 		break;
 	}
@@ -3549,7 +3553,13 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	case 'c': // "agc"
-		r_core_anal_coderefs (core, r_num_math (core->num, input + 1), input[1] == 'j'? 2: 1);
+		if (input[1] == '*') {
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): UT64_MAX;
+			r_core_anal_coderefs (core, addr, '*');
+		} else {
+			ut64 addr = input[2]? r_num_math (core->num, input + 1): UT64_MAX;
+			r_core_anal_coderefs (core, addr, input[1] == 'j'? 2: 1);
+		}
 		break;
 	case 0: // "ag"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_GRAPHBODY);
@@ -4023,9 +4033,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (input[1] == 'a') { // "aaaa"
 					rowlog (core, "Emulate code to find computed references (aae)");
 					r_core_cmd0 (core, "aae @ $S");
-					rowlog_done (core);
-					rowlog (core, "Finding function by preludes (aap)");
-					r_core_cmd0 (core, "aap");
 					rowlog_done (core);
 					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");

@@ -309,9 +309,9 @@ int v810_decode_command(const ut8 *instr, int len, struct v810_cmd *cmd) {
 	ut16 word1 = 0;
 	ut16 word2 = 0;
 
-	r_mem_copyendian ((ut8*)&word1, instr, 2, LIL_ENDIAN);
+	word1 = r_read_le16 (instr);
 	if (len >= 4)
-		r_mem_copyendian ((ut8*)&word2, instr + 2, 2, LIL_ENDIAN);
+		word2 = r_read_le16 (instr + 2);
 
 	switch (OPCODE(word1)) {
 	case V810_MOV:

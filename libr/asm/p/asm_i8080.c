@@ -20,10 +20,8 @@ RAsmPlugin r_asm_plugin_i8080 = {
 	.arch = "i8080",
 	.license = "BSD",
 	.bits = 8,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = do_disassemble,
-	.assemble = NULL,
+	.endian = R_SYS_ENDIAN_NONE,
+	.disassemble = &do_disassemble
 };
 
 #ifndef CORELIB

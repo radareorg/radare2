@@ -1,4 +1,11 @@
 /* radare2 - LGPL - Copyright 2009-2016 - pancake */
+#include "r_anal.h"
+#include "r_bin.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_print.h"
+#include "r_types.h"
+#include "sdb/sdb.h"
 
 static int remove_meta_offset(RCore *core, ut64 offset) {
 	char aoffset[64];

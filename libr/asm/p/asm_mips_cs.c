@@ -10,7 +10,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	csh handle;
 	cs_insn* insn;
 	int mode, n, ret = -1;
-	mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	mode = (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (a->cpu && *a->cpu) {
 		if (!strcmp (a->cpu, "micro")) {
 			mode |= CS_MODE_MICRO;
@@ -52,7 +52,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 	int ret = mips_assemble (str, a->pc, op->buf);
-	r_mem_copyendian (op->buf, op->buf, 4, !a->big_endian);
 	return ret;
 }
 
@@ -63,10 +62,9 @@ RAsmPlugin r_asm_plugin_mips_cs = {
 	.arch = "mips",
 	.cpus = "gp64,micro,r6,v3",
 	.bits = 16|32|64,
-	.init = NULL,
-	.fini = NULL,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
-	.assemble = assemble
+	.assemble = &assemble
 };
 
 #ifndef CORELIB

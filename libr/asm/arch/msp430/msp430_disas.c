@@ -446,7 +446,7 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 	ut16 operand1, operand2;
 	ut8 opcode;
 
-	r_mem_copyendian((ut8*)&instr, in, sizeof(ut16), LIL_ENDIAN);
+	instr = r_read_le16 (in);
 
 	opcode = get_twoop_opcode(instr);
 
@@ -464,8 +464,8 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 	case MSP430_XOR:
 	case MSP430_AND:
 		cmd->type = MSP430_TWOOP;
-		r_mem_copyendian((ut8*)&operand1, in + 2, sizeof(ut16), LIL_ENDIAN);
-		r_mem_copyendian((ut8*)&operand2, in + 4, sizeof(ut16), LIL_ENDIAN);
+		operand1 = r_read_at_le16 (in, 2);
+		operand2 = r_read_at_le16 (in, 4);
 		ret = decode_twoop_opcode(instr, operand1, operand2, cmd);
 	break;
 	}
@@ -479,7 +479,7 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 	if (ret > 0)
 		return ret;
 
-	r_mem_copyendian((ut8*)&operand1, in + 2, sizeof(ut16), LIL_ENDIAN);
+	operand1 = r_read_at_le16 (in, 2);
 	ret = decode_oneop_opcode(instr, operand1, cmd);
 
 	/* if ret < 0, it's an invalid opcode.Say so and return 2 since

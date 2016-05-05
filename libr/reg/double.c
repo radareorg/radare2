@@ -30,7 +30,6 @@ R_API double r_reg_get_double(RReg *reg, RRegItem *item) {
 }
 
 R_API bool r_reg_set_double(RReg *reg, RRegItem *item, double value) {
-	double vld = 0.0f;
 	ut8 *src;
 
 	if (!item) {
@@ -39,8 +38,8 @@ R_API bool r_reg_set_double(RReg *reg, RRegItem *item, double value) {
 	}
 	switch (item->size) {
 	case 64:
-		r_mem_copyendian ((ut8 *)&vld, (ut8 *)&value, 10, !reg->big_endian);
-		src = (ut8 *)&vld;
+		// FIXME: endian
+		src = (ut8 *)&value;
 		break;
 	default:
 		eprintf ("r_reg_set_double: Bit size %d not supported\n", item->size);
@@ -83,7 +82,6 @@ R_API long double r_reg_get_longdouble(RReg *reg, RRegItem *item) {
 }
 
 R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
-	long double vld = 0.0f;
 	ut8 *src;
 
 	if (!item) {
@@ -94,8 +92,8 @@ R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
 	case 80:
 	case 96:
 	case 128:
-		r_mem_copyendian ((ut8 *)&vld, (ut8 *)&value, 10, !reg->big_endian);
-		src = (ut8 *)&vld;
+		// FIXME: endian
+		src = (ut8 *)&value;
 		break;
 	default:
 		eprintf ("r_reg_set_longdouble: Bit size %d not supported\n", item->size);

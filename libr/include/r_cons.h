@@ -110,9 +110,13 @@ typedef struct r_cons_palette_t {
 	char *graph_box;
 	char *graph_box2;
 	char *graph_box3;
+	char *graph_box4;
 	char *graph_true;
 	char *graph_false;
 	char *graph_trufae;
+	char *graph_traced;
+	char *graph_current;
+	
 
 #define R_CONS_PALETTE_LIST_SIZE 8
 	char *list[R_CONS_PALETTE_LIST_SIZE];
@@ -270,6 +274,7 @@ typedef struct r_cons_t {
 #define Color_BCYAN     "\x1b[1;36m"
 #define Color_BBLUE     "\x1b[1;34m"
 #define Color_BGRAY     "\x1b[1;38m"
+
 
 #define Colors_PLAIN { \
 	Color_BLACK, Color_RED, Color_WHITE, \
@@ -553,11 +558,9 @@ typedef struct r_ascii_node_t {
 
 #define R_AGRAPH_MODE_NORMAL 0
 #define R_AGRAPH_MODE_OFFSET 1
-#define R_AGRAPH_MODE_ESIL 2
-#define R_AGRAPH_MODE_ESIL_OFFSET 3
-#define R_AGRAPH_MODE_MINI 4
-#define R_AGRAPH_MODE_SUMMARY 5
-#define R_AGRAPH_MODE_MAX 6
+#define R_AGRAPH_MODE_MINI 2
+#define R_AGRAPH_MODE_SUMMARY 3
+#define R_AGRAPH_MODE_MAX 4
 
 typedef void (*RANodeCallback)(RANode *n, void *user);
 typedef void (*RAEdgeCallback)(RANode *from, RANode *to, void *user);

@@ -1410,11 +1410,8 @@ RAsmPlugin r_asm_plugin_x86_nz = {
 	.license = "LGPL3",
 	.arch = "x86",
 	.bits = 16|32|64,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = NULL,
-	.modify = NULL,
-	.assemble = &assemble,
+	.endian = R_SYS_ENDIAN_LITTLE,
+	.assemble = &assemble
 };
 
 #ifndef CORELIB

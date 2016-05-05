@@ -1366,10 +1366,7 @@ RAsmPlugin r_asm_plugin_x86_tab = {
 	.license = "LGPL3",
 	.arch = "x86",
 	.bits = 32,		// maybe later: 16, 64
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = NULL,
-	.modify = NULL,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.assemble = &assemble,
 };
 

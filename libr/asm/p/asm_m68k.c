@@ -43,6 +43,7 @@ RAsmPlugin r_asm_plugin_m68k = {
 	.arch = "m68k",
 	.license = "BSD",
 	.bits = 16|32,
+	.endian = R_SYS_ENDIAN_BIG,
 	.desc = "Motorola 68000",
 	.disassemble = &disassemble,
 };

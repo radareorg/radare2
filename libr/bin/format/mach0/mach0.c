@@ -89,17 +89,17 @@ static int init_hdr(struct MACH0_(obj_t)* bin) {
 		return false;
 	}
 	if (magic == MACH0_(MH_MAGIC))
-		bin->endian = !LIL_ENDIAN;
+		bin->big_endian = false;
 	else if (magic == MACH0_(MH_CIGAM))
-		bin->endian = LIL_ENDIAN;
+		bin->big_endian = true;
 	else if (magic == FAT_CIGAM)
-		bin->endian = LIL_ENDIAN;
+		bin->big_endian = true;
 	else return false; // object files are magic == 0, but body is different :?
 	len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr,
 #if R_BIN_MACH064
-		bin->endian?"8I":"8i", 1
+		bin->big_endian?"8I":"8i", 1
 #else
-		bin->endian?"7I":"7i", 1
+		bin->big_endian?"7I":"7i", 1
 #endif
 	);
 
@@ -147,9 +147,9 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 		return false;
 	}
 #if R_BIN_MACH064
-	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c4L4I":"2i16c4l4i", 1);
+	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg], bin->big_endian?"2I16c4L4I":"2i16c4l4i", 1);
 #else
-	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c8I":"2i16c8i", 1);
+	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg], bin->big_endian?"2I16c8I":"2i16c8i", 1);
 #endif
 	if (len < 1)
 		return false;
@@ -203,9 +203,9 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 			len = r_buf_fread_at (bin->b, off + sizeof (struct MACH0_(segment_command)),
 				(ut8*)&bin->sects[sect],
 #if R_BIN_MACH064
-				bin->endian?"16c16c2L8I":"16c16c2l8i",
+				bin->big_endian?"16c16c2L8I":"16c16c2l8i",
 #else
-				bin->endian?"16c16c9I":"16c16c9i",
+				bin->big_endian?"16c16c9I":"16c16c9i",
 #endif
 				bin->nsects - sect);
 			if (len == 0 || len == -1) {
@@ -229,7 +229,7 @@ static int parse_symtab(struct MACH0_(obj_t)* bin, ut64 off) {
 	if (off > bin->size || off + sizeof (struct symtab_command) > bin->size)
 		return false;
 	int len = r_buf_fread_at (bin->b, off, (ut8*)&st,
-		bin->endian?"6I":"6i", 1);
+		bin->big_endian?"6I":"6i", 1);
 	if (len == 0 || len == -1) {
 		eprintf ("Error: read (symtab)\n");
 		return false;
@@ -265,10 +265,10 @@ static int parse_symtab(struct MACH0_(obj_t)* bin, ut64 off) {
 		}
 #if R_BIN_MACH064
 		len = r_buf_fread_at (bin->b, st.symoff, (ut8*)bin->symtab,
-			bin->endian?"I2cSL":"i2csl", bin->nsymtab);
+			bin->big_endian?"I2cSL":"i2csl", bin->nsymtab);
 #else
 		len = r_buf_fread_at (bin->b, st.symoff, (ut8*)bin->symtab,
-			bin->endian?"I2cSI":"i2csi", bin->nsymtab);
+			bin->big_endian?"I2cSI":"i2csi", bin->nsymtab);
 #endif
 		if (len == 0 || len == -1) {
 			eprintf ("Error: read (nlist)\n");
@@ -286,7 +286,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 	if (off > bin->size || off + sizeof (struct dysymtab_command) > bin->size)
 		return false;
 
-	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->dysymtab, bin->endian?"20I":"20i", 1);
+	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->dysymtab, bin->big_endian?"20I":"20i", 1);
 	if (len == 0 || len == -1) {
 		eprintf ("Error: read (dysymtab)\n");
 		return false;
@@ -310,7 +310,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 			return false;
 		}
 		len = r_buf_fread_at(bin->b, bin->dysymtab.tocoff,
-			(ut8*)bin->toc, bin->endian?"2I":"2i", bin->ntoc);
+			(ut8*)bin->toc, bin->big_endian?"2I":"2i", bin->ntoc);
 		if (len == 0 || len == -1) {
 			eprintf ("Error: read (toc)\n");
 			R_FREE (bin->toc);
@@ -338,10 +338,10 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 		}
 #if R_BIN_MACH064
 		len = r_buf_fread_at (bin->b, bin->dysymtab.modtaboff,
-			(ut8*)bin->modtab, bin->endian?"12IL":"12il", bin->nmodtab);
+			(ut8*)bin->modtab, bin->big_endian?"12IL":"12il", bin->nmodtab);
 #else
 		len = r_buf_fread_at (bin->b, bin->dysymtab.modtaboff,
-			(ut8*)bin->modtab, bin->endian?"13I":"13i", bin->nmodtab);
+			(ut8*)bin->modtab, bin->big_endian?"13I":"13i", bin->nmodtab);
 #endif
 		if (len == -1) {
 			eprintf ("Error: read (modtab)\n");
@@ -370,7 +370,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 		}
 
 		len = r_buf_fread_at (bin->b, bin->dysymtab.indirectsymoff,
-				(ut8*)bin->indirectsyms, bin->endian?"I":"i", bin->nindirectsyms);
+				(ut8*)bin->indirectsyms, bin->big_endian?"I":"i", bin->nindirectsyms);
 		if (len == -1) {
 			eprintf ("Error: read (indirect syms)\n");
 			R_FREE (bin->indirectsyms);
@@ -391,12 +391,12 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		return false;
 
 	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->thread,
-		bin->endian?"2I":"2i", 1);
+		bin->big_endian?"2I":"2i", 1);
 	if (len == 0 || len == -1)
 		goto wrong_read;
 
 	len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
-		(ut8*)&flavor, bin->endian?"1I":"1i", 1);
+		(ut8*)&flavor, bin->big_endian?"1I":"1i", 1);
 	if (len == -1)
 		goto wrong_read;
 
@@ -406,7 +406,7 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 
 	// TODO: use count for checks
 	len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command) + sizeof(flavor),
-		(ut8*)&count, bin->endian?"1I":"1i", 1);
+		(ut8*)&count, bin->big_endian?"1I":"1i", 1);
 	if (len == -1)
 		goto wrong_read;
 
@@ -454,7 +454,7 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 			if (ptr_thread + sizeof (struct ppc_thread_state32) > bin->size)
 				return false;
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
-				(ut8*)&bin->thread_state.ppc_32, bin->endian?"40I":"40i", 1)) == -1) {
+				(ut8*)&bin->thread_state.ppc_32, bin->big_endian?"40I":"40i", 1)) == -1) {
 				eprintf ("Error: read (thread state ppc_32)\n");
 				return false;
 			}
@@ -466,7 +466,7 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 			if (ptr_thread + sizeof (struct ppc_thread_state64) > bin->size)
 				return false;
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
-				(ut8*)&bin->thread_state.ppc_64, bin->endian?"34LI3LI":"34li3li", 1)) == -1) {
+				(ut8*)&bin->thread_state.ppc_64, bin->big_endian?"34LI3LI":"34li3li", 1)) == -1) {
 				eprintf ("Error: read (thread state ppc_64)\n");
 				return false;
 			}
@@ -480,7 +480,7 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		if (ptr_thread + sizeof (struct arm_thread_state32) > bin->size)
 			return false;
 		if ((len = r_buf_fread_at (bin->b, ptr_thread,
-				(ut8*)&bin->thread_state.arm_32, bin->endian?"17I":"17i", 1)) == -1) {
+				(ut8*)&bin->thread_state.arm_32, bin->big_endian?"17I":"17i", 1)) == -1) {
 			eprintf ("Error: read (thread state arm)\n");
 			return false;
 		}
@@ -493,7 +493,7 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		if (ptr_thread + sizeof (struct arm_thread_state64) > bin->size)
 			return false;
 		if ((len = r_buf_fread_at(bin->b, ptr_thread,
-				(ut8*)&bin->thread_state.arm_64, bin->endian?"34LI1I":"34Li1i", 1)) == -1) {
+				(ut8*)&bin->thread_state.arm_64, bin->big_endian?"34LI1I":"34Li1i", 1)) == -1) {
 			eprintf ("Error: read (thread state arm)\n");
 			return false;
 		}
@@ -543,7 +543,7 @@ static int parse_function_starts (struct MACH0_(obj_t)* bin, ut64 off) {
 			" LC_FUNCTION_STARTS command\n");
 	}
 	bin->func_start = NULL;
-	len = r_buf_fread_at (bin->b, off, (ut8*)&fc, bin->endian ? "4I" : "4i", 1);
+	len = r_buf_fread_at (bin->b, off, (ut8*)&fc, bin->big_endian ? "4I" : "4i", 1);
 	if (len < 1) {
 		eprintf ("Failed to get data while parsing"
 			" LC_FUNCTION_STARTS command\n");
@@ -584,7 +584,7 @@ static int parse_dylib(struct MACH0_(obj_t)* bin, ut64 off) {
 		perror ("realloc (libs)");
 		return false;
 	}
-	len = r_buf_fread_at (bin->b, off, (ut8*)&dl, bin->endian?"6I":"6i", 1);
+	len = r_buf_fread_at (bin->b, off, (ut8*)&dl, bin->big_endian?"6I":"6i", 1);
 	if (len == 0 || len == -1) {
 		eprintf ("Error: read (dylib)\n");
 		return false;
@@ -623,7 +623,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			eprintf ("mach0: out of bounds command\n");
 			return false;
 		}
-		len = r_buf_fread_at (bin->b, off, (ut8*)&lc, bin->endian?"2I":"2i", 1);
+		len = r_buf_fread_at (bin->b, off, (ut8*)&lc, bin->big_endian?"2I":"2i", 1);
 		if (len == 0 || len == -1) {
 			eprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
 			return false;
@@ -724,7 +724,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				return false;
 			}
 			if (r_buf_fread_at (bin->b, off, (ut8*)&eic,
-					bin->endian?"5I":"5i", 1) != -1) {
+					bin->big_endian?"5I":"5i", 1) != -1) {
 				bin->has_crypto = eic.cryptid;
 				sdb_set (bin->kv, "crypto", "true", 0);
 				sdb_num_set (bin->kv, "cryptid", eic.cryptid, 0);
@@ -745,7 +745,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 					return false;
 				}
 				if (r_buf_fread_at (bin->b, off, (ut8*)&dy,
-							bin->endian?"3I":"3i", 1) == -1) {
+							bin->big_endian?"3I":"3i", 1) == -1) {
 					eprintf ("Warning: read (LC_DYLD_INFO) at 0x%08"PFMT64x"\n", off);
 				} else {
 					int len = dy.cmdsize;
@@ -776,7 +776,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				return false;
 			}
 			r_buf_fread_at (bin->b, off+8, (void*)&ep,
-				bin->endian?"2L": "2l", 1);
+				bin->big_endian?"2L": "2l", 1);
 			bin->entry = ep.eo;
 			bin->main_cmd = lc;
 
@@ -819,7 +819,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				return false;
 			}
 			if (r_buf_fread_at (bin->b, off, (ut8*)bin->dyld_info,
-					bin->endian?"12I":"12i", 1) == -1) {
+					bin->big_endian?"12I":"12i", 1) == -1) {
 				free (bin->dyld_info);
 				bin->dyld_info = NULL;
 				eprintf ("Error: read (LC_DYLD_INFO) at 0x%08"PFMT64x"\n", off);
@@ -1632,7 +1632,7 @@ int MACH0_(get_bits)(struct MACH0_(obj_t)* bin) {
 }
 
 int MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin) {
-	return bin && bin->endian;
+	return bin && bin->big_endian;
 }
 
 const char* MACH0_(get_intrp)(struct MACH0_(obj_t)* bin) {

@@ -15,16 +15,14 @@ static int rax (char *str, int len, int last);
 
 static int format_output (char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
-	const char *str = (char*)&n;
 	char strbits[65];
 
 	if (force_mode)
 		mode = force_mode;
 
 	if (flags & 2) {
-		/* swap endian */
-		ut32 n2 = (n >> 32) ? 8 : 4;
-		r_mem_copyendian ((ut8*)str, (ut8*)str, n2, 0);
+		ut64 n2 = n;
+		r_mem_swapendian ((ut8*)&n, (ut8*)&n2, (n >> 32) ? 8 : 4);
 	}
 	switch (mode) {
 	case 'I': printf ("%"PFMT64d"\n", n); break;
@@ -307,7 +305,6 @@ static int rax (char *str, int len, int last) {
 	} else if (flags & 2048) { // -t
 		ut32 n = r_num_math (num, str);
 		RPrint *p = r_print_new ();
-		r_mem_copyendian ((ut8*) &n, (ut8*) &n, 4, !(flags & 2));
 		r_print_date_unix (p, (const ut8*)&n, sizeof (ut32));
 		r_print_free (p);
 		return true;

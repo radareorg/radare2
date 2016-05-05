@@ -45,10 +45,8 @@ RAsmPlugin r_asm_plugin_malbolge = {
 	.arch = "malbolge",
 	.license = "LGPL3",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = &__disassemble,
-	.assemble = NULL,
+	.endian = R_SYS_ENDIAN_NONE,
+	.disassemble = &__disassemble
 };
 
 #ifndef CORELIB

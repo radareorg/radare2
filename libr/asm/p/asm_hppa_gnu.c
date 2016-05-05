@@ -17,7 +17,7 @@ static char *buf_global = NULL;
 static unsigned char bytes[4];
 
 static int hppa_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-#if SWAP_ENDIAN
+#if 0 // XXX wtf ?!
 	if (length == 4)  {
 		// swap
 		myaddr[0] = bytes[3];
@@ -84,7 +84,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &print_address;
-	disasm_obj.endian = !a->big_endian;
+	disasm_obj.endian = BFD_ENDIAN_BIG;
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 
@@ -100,11 +100,9 @@ RAsmPlugin r_asm_plugin_hppa_gnu = {
 	.arch = "hppa",
 	.license = "GPL3",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_BIG,
 	.desc = "HP PA-RISC",
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = &disassemble,
-	.assemble = NULL
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

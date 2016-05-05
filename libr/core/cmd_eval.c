@@ -1,4 +1,8 @@
 /* radare2 - LGPL - Copyright 2009-2016 - pancake */
+#include <stddef.h>
+#include <stdbool.h>
+
+#include "r_core.h"
 
 static char *curtheme = NULL;
 static bool getNext = false;
@@ -155,6 +159,7 @@ static int cmd_eval(void *data, const char *input) {
 		}
 		return true;
 	case 'x': // exit
+		// XXX we need headers for the cmd_xxx files.
 		return cmd_quit (data, "");
 	case 'j':
 		r_config_list (core->config, NULL, 'j');
@@ -225,7 +230,7 @@ static int cmd_eval(void *data, const char *input) {
 			break;
 		case 's': r_cons_pal_show (); break; // "ecs"
 		case '*': r_cons_pal_list (1); break; // "ec*"
-		case 'h': // echo 
+		case 'h': // echo
 			if (( p = strchr (input, ' ') )) {
 				r_cons_strcat (p+1);
 				r_cons_newline ();

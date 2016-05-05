@@ -332,6 +332,7 @@ int main (int argc, char *argv[]) {
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
 	unsigned char buf[R_ASM_BUFSIZE];
 	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL, *tmp;
+	bool isbig = false;
 	ut64 offset = 0;
 	int fd = -1, dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
 	ut64 len = 0, idx = 0, skip = 0;
@@ -377,8 +378,8 @@ int main (int argc, char *argv[]) {
 		r_asm_set_bits (a, sysbits);
 		r_anal_set_bits (anal, sysbits);
 	}
-	r_asm_set_big_endian (a, false);
-	r_anal_set_big_endian (anal, false);
+	isbig = r_asm_set_big_endian (a, false);
+	r_anal_set_big_endian (anal, isbig);
 
 	while ((c = getopt (argc, argv, "Ai:k:DCc:eEva:b:s:do:Bl:hjLf:F:wO:")) != -1) {
 		switch (c) {
@@ -407,7 +408,8 @@ int main (int argc, char *argv[]) {
 			dis = 2;
 			break;
 		case 'e':
-			r_asm_set_big_endian (a, !a->big_endian);
+			isbig = r_asm_set_big_endian (a, true);
+			r_anal_set_big_endian (anal, isbig);
 			break;
 		case 'E':
 			dis = 3;

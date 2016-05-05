@@ -1,4 +1,10 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include "r_types.h"
+#include "r_config.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_debug.h"
+#include "r_io.h"
 
 static void __init_seek_line (RCore *core) {
 	ut64 from, to;
