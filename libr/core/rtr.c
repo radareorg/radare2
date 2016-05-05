@@ -623,6 +623,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 								out = NULL;
 								r_socket_http_close (rs);
 								free (dir);
+								free (refstr);
 								ret = -2;
 								goto the_end;
 							}
