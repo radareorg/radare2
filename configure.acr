@@ -138,7 +138,6 @@ REPORT PREFIX HAVE_LIB_GMP HAVE_OPENSSL USE_CAPSTONE HAVE_FORK
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk
-	sys/mingw32.bat
 	libr/include/r_userconf.h
 	pkgcfg/r_io.pc
 	pkgcfg/r_db.pc
