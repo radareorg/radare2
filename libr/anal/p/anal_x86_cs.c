@@ -670,6 +670,8 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 	case X86_INS_ENTER:
 	case X86_INS_PUSH:
 	case X86_INS_PUSHF:
+	case X86_INS_PUSHFD:
+	case X86_INS_PUSHFQ:
 		{
 			char *dst = getarg (&gop, 0, 0, NULL);
 			esilprintf (op, "%d,%s,-=,%s,%s,=[%d]",
@@ -1683,6 +1685,8 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 	case X86_INS_ENTER:
 	case X86_INS_PUSH:
 	case X86_INS_PUSHF:
+	case X86_INS_PUSHFD:
+	case X86_INS_PUSHFQ:
 		switch (INSOP(0).type) {
 		case X86_OP_IMM:
 			op->val = op->ptr = INSOP(0).imm;
