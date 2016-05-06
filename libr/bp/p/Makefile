@@ -3,7 +3,7 @@ include ../../../mk/platform.mk
 ifeq ($(WITHPIC),1)
 
 CFLAGS+=-I../../include -I../arch/ -I../arch/include -Wall ${PIC_CFLAGS} ${LDFLAGS_LIB}
-CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__
+CFLAGS+=-D__UNIX__
 
 foo: all
 

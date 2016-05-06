@@ -1483,7 +1483,7 @@ static int esil_peek_n(RAnalEsil *esil, int bits) {
 		ret = r_anal_esil_mem_read (esil, addr, a, bytes);
 		b = r_read_ble64 (a, 0); //esil->anal->big_endian);
 		if (esil->anal->big_endian) {
-			r_mem_swapendian ((ut8*)&b, &b, bytes);
+			r_mem_swapendian ((ut8*)&b, (const ut8*)&b, bytes);
 		}
 		snprintf (res, sizeof (res), "0x%" PFMT64x, b & bitmask);
 		r_anal_esil_push (esil, res);
