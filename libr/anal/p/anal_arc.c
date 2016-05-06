@@ -62,10 +62,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 
         if (opcode >= 0x0c) {
             op->size = 2;
-            op->fail = addr + 2; /* TODO: is this really needed? I thought fail was a jump target */
         } else {
             op->size = 4;
-            op->fail = addr + 4; /* same comment as above */
         }
 
         ut8 subopcode = 0;
@@ -97,6 +95,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->type = R_ANAL_OP_TYPE_JMP;
             }
             op->jump = (addr & ~3) + limm;
+            op->fail = addr + op->size;
             break;
         case 1:
             format = (words[0] & 0x00010000) >> 16;
@@ -121,6 +120,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     /* Branch on Compare/Bit Test Register-Immediate, 0x01, [0x1, 0x1] */
                     /* TODO: cond codes and imm u6 */
                 }
+                op->fail = addr + op->size;
             } else {
                 format2 = (words[0] & 0x00020000) >> 17;
                 field_a   = (words[0] & 0x07fc0000) >> 18;
@@ -140,6 +140,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     op->type = R_ANAL_OP_TYPE_CALL;
                 }
                 op->jump = (addr & ~3) + limm;
+                op->fail = addr + op->size;
             }
             break;
         case 2: { /* Load Register with Offset, 0x02 */
@@ -271,6 +272,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                         /* limm */
                         op->type = R_ANAL_OP_TYPE_JMP;
                         op->jump = limm;
+                        op->fail = addr + op->size;
                     } else if (field_c == 0x1d || field_c == 0x1e || field_c == 0x1f) {
                         /* ilink1, ilink2, blink */
                         op->type = R_ANAL_OP_TYPE_RET;
@@ -281,12 +283,14 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 case 1: /* unconditional jumps via u6 imm */
                     op->type = R_ANAL_OP_TYPE_JMP;
                     op->jump = addr + field_c; /* TODO: is addr aligned? */
+                    op->fail = addr + op->size;
                     break;
                 case 2: /* unconditional jumps via s12 imm */
                     op->type = R_ANAL_OP_TYPE_JMP;
                     imm = (field_a << 6 | field_c);
                     imm = sex_s12(imm);
                     op->jump = addr + imm;
+                    op->fail = addr + op->size;
                     break;
                 case 3: { /* conditional jumps */
                     ut8 field_m = (words[0] & 0x20) >> 5;
@@ -307,6 +311,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     }
 
                     /* TODO: cond codes */
+                    op->fail = addr + op->size;
                     break;
                 }
                 }
@@ -319,6 +324,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                         /* limm */
                         op->type = R_ANAL_OP_TYPE_CALL;
                         op->jump = limm;
+                        op->fail = addr + op->size;
                     } else {
                         op->type = R_ANAL_OP_TYPE_UCALL;
                     }
@@ -326,6 +332,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 case 1: /* unconditional jumps via u6 imm */
                     op->type = R_ANAL_OP_TYPE_CALL;
                     op->jump = addr + field_c; /* TODO: is addr aligned? */
+                    op->fail = addr + op->size;
                     break;
                 case 2: /* unconditional jumps via s12 imm */
                     op->type = R_ANAL_OP_TYPE_CALL;
@@ -349,6 +356,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     }
 
                     /* TODO: cond codes */
+                    op->fail = addr + op->size;
                     break;
                 }
                 }
@@ -380,11 +388,13 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     imm = sex_s13((field_c | (field_a <<6))<<1);
                     op->jump = (addr & ~3) + imm;
                     op->type = R_ANAL_OP_TYPE_CJMP;
+                    op->fail = addr + op->size;
                     break;
                 case 3: /* Loop Set Up (Conditional) */
                     imm = field_c<<1;
                     op->jump = (addr & ~3) + imm;
                     op->type = R_ANAL_OP_TYPE_CJMP;
+                    op->fail = addr + op->size;
                     /* TODO: cond codes */
                     break;
                 default:
@@ -836,6 +846,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             /* subopcode = (words[0] & 0x00800000) >> (16+7); */
             imm       = sex_s8((words[0] & 0x007f0000) >> (16-1));
             op->jump  = (addr & ~3) + imm;
+            op->fail = addr + op->size;
             op->type  = R_ANAL_OP_TYPE_CJMP;
             }
             break;
@@ -857,11 +868,13 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 break;
             }
             op->jump = (addr & ~3) + imm;
+            op->fail = addr + op->size;
             break;
         case 0x1f: { /* Branch and Link Unconditionally, 0x1F */
             imm = sex_s13((words[0] & 0x07ff0000) >> (16-2));
             op->type = R_ANAL_OP_TYPE_CALL;
             op->jump = (addr & ~3) + imm;
+            op->fail = addr + op->size;
             }
             break;
         }
