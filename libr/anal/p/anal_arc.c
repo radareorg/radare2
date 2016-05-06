@@ -150,6 +150,17 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             ut8 field_aa = (words[0] & 0x600) >> 9;
             ut8 field_zz = (words[0] & 0x180) >> 7;
 
+            op->type = R_ANAL_OP_TYPE_LOAD;
+
+            switch(field_zz) {
+            case 0: op->refptr = 4; break;
+            case 1: op->refptr = 1; break;
+            case 2: op->refptr = 2; break;
+            default:
+                op->type = R_ANAL_OP_TYPE_ILL;
+                break;
+            }
+
             if (field_b == 0x3e) {
                 op->size = 8;
                 limm = words[1];
@@ -160,6 +171,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     break;
                 case 1: /* .A or .AW - invalid with limm */
                 case 2: /* .AB - invalid with limm */
+                    op->type = R_ANAL_OP_TYPE_ILL;
                     break;
                 case 3: /* .AS */
                     if (field_zz == 2) {
@@ -169,8 +181,9 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     }
                     break;
                 }
+            } else if (field_b == 0x3f) { /* PCL */
+                op->ptr = (addr & ~3) + imm;
             }
-            op->type = R_ANAL_OP_TYPE_LOAD;
             break;
         }
         case 3: { /* Store Register with Offset, 0x03 */
@@ -178,7 +191,18 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             field_b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >>9;
             imm     = sex_s9((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >>7);
             /* ut8 field_aa = (words[0] & 0x18) >> 3; */
-            /* ut8 field_zz = (words[0] & 0x6) >> 1; */
+            ut8 field_zz = (words[0] & 0x6) >> 1;
+
+            op->type = R_ANAL_OP_TYPE_STORE;
+
+            switch(field_zz) {
+            case 0: op->refptr = 4; break;
+            case 1: op->refptr = 1; break;
+            case 2: op->refptr = 2; break;
+            default:
+                op->type = R_ANAL_OP_TYPE_ILL;
+                break;
+            }
 
             if (field_b == 0x3e) {
                 op->size = 8;
@@ -189,7 +213,10 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 limm = words[1];
                 op->val = limm;
             }
-            op->type = R_ANAL_OP_TYPE_STORE;
+
+            if (field_b == 0x3f) { /* PCL */
+                op->ptr = (addr & ~3) + imm;
+            }
             break;
         }
         case 4: /* General Operations */
@@ -204,6 +231,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             if (field_b == 0x3e) {
                 op->size = 8;
                 limm = words[1];
+                /* FIXME: MOV<.f> 0,x is encoded as field_b==0x3e, but no limm */
             } else if ((format == 0 || format == 1) && (field_a == 0x3e)) {
                 op->size = 8;
                 limm = words[1];
@@ -215,8 +243,21 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 limm = words[1];
             }
 
+            if (format == 1) {
+                /* REG_U6IMM */
+                imm = field_c;
+            } else if (format == 2) {
+                /* REG_S12IMM */
+                imm = sex_s12(field_c | field_a<<6);
+            }
+
             switch (subopcode) {
             case 0x00: /* add */
+                if ((format==1 || format==2) && field_b==0x3f) {
+                    /* dst = PCL + src */
+                    op->ptr = (addr & ~3) + imm;
+                    op->refptr = 1; /* HACK! we dont actually know what size it is */
+                }
             case 0x01: /* add with carry */
             case 0x14: /* add with left shift by 1 */
             case 0x15: /* add with left shift by 2 */
@@ -250,7 +291,20 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->type = R_ANAL_OP_TYPE_CMOV;
                 break;
             case 0x0a: /* move */
-                op->type = R_ANAL_OP_TYPE_MOV;
+                if (format==2) {
+                    op->type = R_ANAL_OP_TYPE_MOV;
+                    op->val = sex_s12(field_a<<6 | field_c);
+                } else if (format==3) {
+                    op->type = R_ANAL_OP_TYPE_CMOV;
+                    /* TODO: cond codes */
+                    if ((field_a & 0x20) ==1) {
+                        /* its a move from imm u6 */
+                        op->val = field_c;
+                    } else if (field_c==0x3e) {
+                        /* its a move from limm */
+                        op->val = limm;
+                    }
+                }
                 break;
             case 0x0b: /* test */
             case 0x0c: /* compare */
@@ -825,6 +879,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
         case 0x1a: { /* Load PCL-Relative, 0x1A */
             field_c = (words[0] & 0x00ff0000) >> 14;
             op->ptr = (addr & ~3) + field_c;
+            op->refptr = 4;
             op->type = R_ANAL_OP_TYPE_LOAD;
             }
             break;
