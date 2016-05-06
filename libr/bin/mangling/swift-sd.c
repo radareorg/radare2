@@ -256,14 +256,19 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 			q = getnum (q, &len);
 			if (!len)
 				break;
+			const char *str = getstring (q, len);
+			if (len == 2 && !strcmp (str, "ee")) {
+				strcat (out, "Swift");
+			} else {
 #if 0
-			printf ("%s %d %s\n", element[i],
-				len, getstring (q, len));
+				printf ("%s %d %s\n", element[i],
+						len, getstring (q, len));
 #endif
-			// push string
-			if (i && *out) strcat (out, ".");
-			STRCAT_BOUNDS (len);
-			strcat (out, getstring (q, len));
+				// push string
+				if (i && *out) strcat (out, ".");
+				STRCAT_BOUNDS (len);
+				strcat (out, getstring (q, len));
+			}
 		}
 		if (q > q_end) {
 			return 0;
@@ -324,6 +329,16 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 			for (i=0; q && q < q_end; i++) {
 				if (*q == 'f') q++;
 				switch (*q) {
+				case 'u':
+					if (!strncmp (q, "uRxs", 4)) {
+						strcat (out, "..");
+						int n;
+						const char *Q = getnum (q + 4, &n);
+						strcat (out, getstring (Q, n));
+						q = Q + n + 1;
+						continue;
+					}
+					break;
 				case 'S': // "S0"
 					if (q[1]=='1') q++;
 					switch (q[1]) {
@@ -412,7 +427,6 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 						retmode = 1;
 						len++;
 					}
-					//if (strlen (q) <= len && q[len]) {
 					if (len <= (q_end-q)  && q[len]) {
 						const char *s = getstring (q, len);
 						if (s && *s) {
@@ -450,7 +464,12 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 					q += len;
 				} else {
 					q++;
-					break;
+					char *n = strstr (q, "__");
+					if (n) {
+						q = n + 1;
+					} else {
+						break;
+					}
 				}
 			}
 		}
@@ -567,6 +586,9 @@ Test swift_tests[] = {
 	"__TFe4mainRxCS_8FooClassxS_9FoodClassrS1_8sayHellofT_T_"
 	,"main..FooClass..FoodClass..sayHello..extension"
 },{
+	"__TZFsoi2eeuRxs9EquatablerFTGSqx_GSqx__Sb",
+	"Swift..Equatable () -> Bool"
+},{
 	// _direct field offset for main.Tost.msg : Swift.String
 	NULL, NULL
 }};
@@ -587,7 +609,7 @@ int main(int argc, char **argv) {
 			printf ("[>>] %s\n", test->sym);
 			ret = r_bin_demangle_swift (test->sym, 0);
 			if (ret) {
-				if (!strcmp (ret, test->dem)) {
+				if (test->dem && !strcmp (ret, test->dem)) {
 					printf (Color_GREEN"[OK]"Color_RESET"  %s\n", ret);
 				} else {
 					printf (Color_RED"[XX]"Color_RESET"  %s\n", ret);
