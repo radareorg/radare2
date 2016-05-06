@@ -1702,12 +1702,16 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 		break;
 	case X86_INS_POP:
 	case X86_INS_POPF:
-	case X86_INS_POPAW:
-	case X86_INS_POPAL:
 	case X86_INS_POPCNT:
 		op->type = R_ANAL_OP_TYPE_POP;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -regsz;
+		break;
+	case X86_INS_POPAW:
+	case X86_INS_POPAL:
+		op->type = R_ANAL_OP_TYPE_POP;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -regsz * 8;
 		break;
 	case X86_INS_RET:
 	case X86_INS_RETF:
