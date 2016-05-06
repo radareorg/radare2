@@ -1088,7 +1088,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 						data[l++] = 0x24;
 					} else if (r==5) { // EBP
 						data[l++] = getreg (arg)<<3 | r | 0x40;
-					} else data[l++] = getreg (arg) | r | 0x40;
+					} else data[l++] = getreg (arg)<<3 | r | 0x40;
 					data[l++] = r_num_math (NULL, delta) * N;
 				} else {
 					int r = getreg (arg2);
