@@ -25,9 +25,12 @@ static struct Type types[] = {
 	/* basic types */
 	{ "Sb", "Bool" },
 	{ "SS", "String" },
+	{ "FS", "String" },
 	{ "GV", "mutableAddressor" }, // C_ARGC
 	{ "Ss", "generic" }, // C_ARGC
 	{ "S_", "Generic" }, // C_ARGC
+	{ "TF", "GenericSpec" }, // C_ARGC
+	{ "Ts", "String" }, // C_ARGC
 	{ "Sa", "Array" },
 	{ "Si", "Swift.Int" },
 	{ "Sf", "Float" },
@@ -222,7 +225,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 	q = getnum (p, NULL);
 	
 	// _TF or __TW
-	if (IS_NUMBER (*p) || *p == 'v' || *p == 'o' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') {
+	if (IS_NUMBER (*p) || *p == 'v' || *p == 'I' || *p == 'o' || *p == 'T' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') {
 		if (!strncmp (p+1, "SS", 2)) {
 			strcat (out, "Swift.String.init (");
 			p += 3;
@@ -292,6 +295,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 			const char *name;
 			/* get field name and then type */
 			resolve (types, q, &attr);
+
 			//printf ("Accessor: %s\n", attr);
 			q = getnum (q+1, &len);
 			name = getstring (q, len);
@@ -329,6 +333,15 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 			for (i=0; q && q < q_end; i++) {
 				if (*q == 'f') q++;
 				switch (*q) {
+				case 's':
+					{
+						int n;
+						const char *Q = getnum (q + 1, &n);
+						strcat (out, getstring (Q, n));
+						q = Q + n + 1;
+						continue;
+					}
+					break;
 				case 'u':
 					if (!strncmp (q, "uRxs", 4)) {
 						strcat (out, "..");
@@ -372,6 +385,9 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 				case 'T':
 				case 'I':
 					p = resolve (types, q + 0, &attr); // type
+					if (p && *p && IS_NUMBER (p[1])) {
+						p--;
+					}
 					break;
 				case 'F':
 					strcat (out, " ()");
@@ -468,7 +484,12 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 					if (n) {
 						q = n + 1;
 					} else {
-						break;
+						n = strstr (q, "_");
+						if (n) {
+							q = n + 1;
+						} else {
+							break;
+						}
 					}
 				}
 			}
@@ -585,6 +606,14 @@ Test swift_tests[] = {
 },{
 	"__TFe4mainRxCS_8FooClassxS_9FoodClassrS1_8sayHellofT_T_"
 	,"main..FooClass..FoodClass..sayHello..extension"
+},{
+	"_TTSg5P____TFs27_allocateUninitializedArrayurFBwTGSax_Bp_",
+	"P____(GenericSpec F)_allocateUninitializedArray -> Builtin.RawPointer" // TODO poor translation
+	// "generic specialization <protocol<>> of Swift._allocateUninitializedArray <A> (Builtin.Word) -> ([A], Builtin.RawPointer)"
+},{
+	"_TIFs5printFTGSaP__9separatorSS10terminatorSS_T_A0_",
+	"print (__Array P)", // TODO: poor translation
+	//"Swift.(print ([protocol<>], separator : Swift.String, terminator : Swift.String) -> ()).(default argument 1)"
 },{
 	"__TZFsoi2eeuRxs9EquatablerFTGSqx_GSqx__Sb",
 	"Swift..Equatable () -> Bool"
