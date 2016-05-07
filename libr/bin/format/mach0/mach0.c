@@ -381,6 +381,45 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 	return true;
 }
 
+static void parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
+    	int index, len;
+	ut32 count, data;
+	struct linkedit_data_command link = {};
+    	if (off > bin->size || off + sizeof(struct linkedit_data_command) > bin->size)
+	    	return;
+	len = r_buf_fread_at (bin->b, off, (ut8*)&link, bin->big_endian ? "4I" : "4i", 1);
+	if (len < 1) {
+		eprintf ("Failed to get data while parsing LC_CODE_SIGNATURE command\n");
+		return;
+	}
+	data =  link.dataoff;
+	if (data > bin->size || data + sizeof(struct super_blob_t) > bin->size)
+	    	return;
+	struct super_blob_t *super = (struct super_blob_t *) (bin->b->buf + data);
+	count = r_swap_ut32(super->count);
+	for (index = 0; index < count; ++index) {
+		if ((ut8 *)(super->index +
+			    index * sizeof (struct blob_index_t)) >
+		    (ut8 *)(bin->b->buf + bin->size))
+			return;
+		if (r_swap_ut32(super->index[index].type) == CSSLOT_ENTITLEMENTS) {
+			ut32 begin = r_swap_ut32(super->index[index].offset);
+			if (begin > bin->size || begin + sizeof(struct blob_t) > bin->size)
+			    	return;
+			struct blob_t *entitlements = (struct blob_t*) ((ut8*)super + begin);
+			len = r_swap_ut32(entitlements->length) - sizeof(struct blob_t);
+			if (len > bin->size || len < 1)
+			    	return;
+			bin->signature = calloc (1, len + 1);
+			if (!bin->signature)
+			    	return;
+			memcpy (bin->signature, entitlements + 1, len);
+			bin->signature[len] = '\0';
+			return;
+		}
+	}
+}
+
 static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64 off, bool is_first_thread) {
 	ut64 ptr_thread, pc = UT64_MAX, pc_offset = UT64_MAX;
 	ut32 flavor, count;
@@ -537,8 +576,7 @@ static int parse_function_starts (struct MACH0_(obj_t)* bin, ut64 off) {
 	struct linkedit_data_command fc;
 	ut8 *buf;
 	int len;
-	if (off > bin->size || off + sizeof (struct
-			linkedit_data_command) > bin->size) {
+	if (off > bin->size || off + sizeof (struct linkedit_data_command) > bin->size) {
 		eprintf ("Likely overflow while parsing"
 			" LC_FUNCTION_STARTS command\n");
 	}
@@ -723,8 +761,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				eprintf ("encryption info out of bounds\n");
 				return false;
 			}
-			if (r_buf_fread_at (bin->b, off, (ut8*)&eic,
-					bin->big_endian?"5I":"5i", 1) != -1) {
+			if (r_buf_fread_at (bin->b, off, (ut8*)&eic, bin->big_endian?"5I":"5i", 1) != -1) {
 				bin->has_crypto = eic.cryptid;
 				sdb_set (bin->kv, "crypto", "true", 0);
 				sdb_num_set (bin->kv, "cryptid", eic.cryptid, 0);
@@ -735,7 +772,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			break;
 		case LC_LOAD_DYLINKER:
 			{
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dylinker", 0);
+				sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dylinker", 0);
 				free (bin->intrp);
 				bin->intrp = NULL;
 				//eprintf ("[mach0] load dynamic linker\n");
@@ -818,16 +855,15 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				free (bin->dyld_info);
 				return false;
 			}
-			if (r_buf_fread_at (bin->b, off, (ut8*)bin->dyld_info,
-					bin->big_endian?"12I":"12i", 1) == -1) {
+			if (r_buf_fread_at (bin->b, off, (ut8*)bin->dyld_info, bin->big_endian?"12I":"12i", 1) == -1) {
 				free (bin->dyld_info);
 				bin->dyld_info = NULL;
 				eprintf ("Error: read (LC_DYLD_INFO) at 0x%08"PFMT64x"\n", off);
 			}
 			break;
 		case LC_CODE_SIGNATURE:
+			parse_signature(bin, off);
 			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "signature", 0);
-			//eprintf ("mach0: TODO: show code signature\n");
 			/* ut32 dataoff
 			// ut32 datasize */
 			break;
@@ -884,6 +920,7 @@ void* MACH0_(mach0_free)(struct MACH0_(obj_t)* bin) {
 	free (bin->modtab);
 	free (bin->libs);
 	free (bin->func_start);
+	free (bin->signature);
 	r_buf_free (bin->b);
 	free (bin);
 	return NULL;

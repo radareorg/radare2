@@ -9,6 +9,15 @@
 
 #define R_BIN_MACH0_STRING_LENGTH 256
 
+
+#define CSMAGIC_CODEDIRECTORY      0xfade0c02
+#define CSMAGIC_EMBEDDED_SIGNATURE 0xfade0cc0
+#define CSMAGIC_ENTITLEMENTS       0xfade7171
+
+#define CSSLOT_CODEDIRECTORY 0
+#define CSSLOT_REQUIREMENTS  2
+#define CSSLOT_ENTITLEMENTS  5
+
 struct section_t {
 	ut64 offset;
 	ut64 addr;
@@ -55,6 +64,23 @@ struct lib_t {
 	int last;
 };
 
+
+struct blob_index_t {
+    ut32 type;
+    ut32 offset;
+}; 
+
+struct blob_t {
+    ut32 magic;
+    ut32  length;
+};
+
+struct super_blob_t {
+    struct blob_t blob;
+    ut32 count;
+    struct blob_index_t index[];
+}; 
+
 struct MACH0_(obj_t) {
 	struct MACH0_(mach_header) hdr;
 	struct MACH0_(segment_command)* segs;
@@ -81,6 +107,7 @@ struct MACH0_(obj_t) {
 	struct MACH0_(dylib_module)* modtab;
 	int nmodtab;
 	struct thread_command thread;
+	ut8* signature;
 	union {
 		struct x86_thread_state32 x86_32;
 		struct x86_thread_state64 x86_64;
