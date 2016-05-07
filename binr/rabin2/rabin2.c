@@ -352,6 +352,16 @@ static int rabin_do_operation(const char *op) {
 		r_bin_wr_rpath_del (bin);
 		rc = r_bin_wr_output (bin, output);
 		break;
+	case 'C': 
+		{
+		RBinFile *cur   = r_bin_cur (bin);
+		RBinPlugin *plg = r_bin_file_cur_plugin (cur);
+		if (!plg) break;
+		if (plg->signature) {
+			plg->signature (cur);
+		}
+		}
+		break;		
 	case 'r':
 		r_bin_wr_scn_resize (bin, ptr, r_num_math (NULL, ptr2));
 		rc = r_bin_wr_output (bin, output);
