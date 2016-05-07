@@ -299,6 +299,7 @@ typedef struct r_bin_plugin_t {
 	RList* (*classes)(RBinFile *arch);
 	RList* (*mem)(RBinFile *arch);
 	RList* (*patch_relocs)(RBin *bin);
+	void (*signature)(RBinFile *arch); 
 	int (*demangle_type)(const char *str);
 	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;

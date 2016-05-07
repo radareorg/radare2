@@ -155,17 +155,4 @@ char* MACH0_(get_cpusubtype)(struct MACH0_(obj_t)* bin);
 char* MACH0_(get_filetype)(struct MACH0_(obj_t)* bin);
 ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin);
 
-#if 0
-int r_bin_mach0_get_file_alignment(r_bin_mach0_obj*);
-int r_bin_mach0_get_image_size(r_bin_mach0_obj*);
-int r_bin_mach0_get_os(r_bin_mach0_obj*, char*);
-int r_bin_mach0_get_subsystem(r_bin_mach0_obj*, char*);
-int r_bin_mach0_get_section_alignment(r_bin_mach0_obj*);
-int r_bin_mach0_get_strings(r_bin_mach0_obj*, int, int, r_bin_mach0_string*);
-int r_bin_mach0_is_stripped_relocs(r_bin_mach0_obj*);
-int r_bin_mach0_is_stripped_line_nums(r_bin_mach0_obj*);
-int r_bin_mach0_is_stripped_local_syms(r_bin_mach0_obj*);
-int r_bin_mach0_is_stripped_debug(r_bin_mach0_obj*);
-#endif
-
 #endif

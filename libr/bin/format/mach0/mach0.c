@@ -404,7 +404,7 @@ static void parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 			return;
 		if (r_swap_ut32(super->index[index].type) == CSSLOT_ENTITLEMENTS) {
 			ut32 begin = r_swap_ut32(super->index[index].offset);
-			if (begin > bin->size || begin + sizeof(struct blob_t) > bin->size)
+			if (begin > bin->size || begin + sizeof(struct blob_t) > bin->size)
 			    	return;
 			struct blob_t *entitlements = (struct blob_t*) ((ut8*)super + begin);
 			len = r_swap_ut32(entitlements->length) - sizeof(struct blob_t);
