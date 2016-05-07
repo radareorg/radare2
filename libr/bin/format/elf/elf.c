@@ -1955,6 +1955,7 @@ static RBinElfSymbol* get_symbols_from_phdr (struct Elf_(r_bin_elf_obj_t) *bin, 
 
 	}
 	if (!addr_sym_table) return NULL;
+	if (!sym_size) return NULL;
 	//since ELF doesn't specify the symbol table size we are going to read until the end of the buffer
 	// this might be overkill.
 	nsym = (bin->size - addr_sym_table) / sym_size;
@@ -2042,6 +2043,7 @@ done:
 			bin->symbols_by_ord = (RBinSymbol**)calloc (ret_ctr, sizeof (RBinSymbol*));
 		}
 	}
+	free (sym);
 	return ret;
 beach:
 	free (sym);
