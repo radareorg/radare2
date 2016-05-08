@@ -12,6 +12,7 @@ static void r_bp_item_free (RBreakpointItem *b) {
 	free (b->name);
 	free (b->bbytes);
 	free (b->obytes);
+	free (b->module_name);
 	free (b);
 }
 
@@ -241,7 +242,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 		case 0:
 			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x \
 				" %d %c%c%c %s %s %s cmd=\"%s\" " \
-				"name=\"%s\"\n",
+				"name=\"%s\" module=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
 				(b->rwx & R_BP_PROT_READ) ? 'r' : '-',
 				(b->rwx & R_BP_PROT_WRITE) ? 'w' : '-',
@@ -250,13 +251,18 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
 				b->data ? b->data : "",
-				b->name ? b->name : "");
+				b->name ? b->name : "",
+				b->module_name ? b->module_name : "");
 			break;
 		case 1:
 		case 'r':
 		case '*':
 			// TODO: add command, tracing, enable, ..
-			bp->cb_printf ("db 0x%08"PFMT64x"\n", b->addr);
+			if (b->module_name) {
+			    	bp->cb_printf ("dbm %s %"PFMT64d"\n", b->module_name, b->module_delta);
+			} else { 
+				bp->cb_printf ("db 0x%08"PFMT64x"\n", b->addr);
+			}
 			//b->trace? "trace": "break",
 			//b->enabled? "enabled": "disabled",
 			// b->data? b->data: "");
@@ -296,8 +302,7 @@ R_API RBreakpointItem *r_bp_item_new (RBreakpoint *bp) {
 	}
 	/* allocate new slot */
 	bp->bps_idx_count += 16; // alocate space for 16 more bps
-	bp->bps_idx = realloc (bp->bps_idx,
-				bp->bps_idx_count * sizeof(RBreakpointItem*));
+	bp->bps_idx = realloc (bp->bps_idx, bp->bps_idx_count * sizeof(RBreakpointItem*));
 	for (j = i; j < bp->bps_idx_count; j++) {
 		bp->bps_idx[j] = NULL;
 	}
