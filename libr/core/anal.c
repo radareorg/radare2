@@ -2090,6 +2090,7 @@ R_API int r_core_anal_all(RCore *core) {
 		r_list_foreach (list, iter, entry) {
 			ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
 			r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
+
 		}
 	}
 	/* Symbols (Imports are already analyzed by rabin2 on init) */
@@ -2107,6 +2108,8 @@ R_API int r_core_anal_all(RCore *core) {
 	}
 	/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 	r_list_foreach (core->anal->fcns, iter, fcni) {
+
+		fcn_callconv (core, fcni);
 		if (core->cons->breaked)
 			break;
 		if (!strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4))
