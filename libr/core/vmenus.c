@@ -2277,12 +2277,12 @@ repeat:
 		}
 		{
 			int funsize = 0;
-			int depth = r_config_get_i (core->config, "anal.depth");
+			//int depth = r_config_get_i (core->config, "anal.depth");
 			if (core->print->cur_enabled) {
 				if (core->print->ocur != -1) {
 					funsize = 1+ R_ABS (core->print->cur - core->print->ocur);
 				}
-				depth = 0;
+				//depth = 0;
 			}
 			r_cons_break (NULL, NULL);
 			r_core_cmd0 (core, "af"); // required for thumb autodetection
