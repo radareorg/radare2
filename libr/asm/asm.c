@@ -392,8 +392,6 @@ static Ase findAssembler(RAsm *a, const char *kw) {
 }
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int ret = 0;
-	RAsmPlugin *h;
-	RListIter *iter;
 	char *b = strdup (buf);
 	if (a->ifilter)
 		r_parse_parse (a->ifilter, buf, b);
