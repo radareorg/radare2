@@ -20,6 +20,14 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
+static char *entitlements(RBinFile *arch) {
+	struct MACH0_(obj_t) *bin;
+	if (!arch || !arch->o)
+	    	return NULL;
+	bin = arch->o->bin_obj;
+	return (char *)bin->signature;
+}
+
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct MACH0_(obj_t) *res = NULL;
 	RBuffer *tbuf = NULL;
@@ -574,6 +582,7 @@ static int size(RBinFile *arch) {
 	return off+len;
 }
 
+
 RBinPlugin r_bin_plugin_mach0 = {
 	.name = "mach0",
 	.desc = "mach0 bin plugin",
@@ -587,6 +596,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.signature = &entitlements,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

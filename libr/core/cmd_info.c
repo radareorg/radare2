@@ -315,6 +315,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'M': RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL); break;
 		case 'm': RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL); break;
 		case 'V': RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL); break;
+		case 'C': RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL); break;			  
 		case 'z':
 			if (input[1] == 'z') {
 				char *biname;
@@ -446,6 +447,7 @@ static int cmd_info(void *data, const char *input) {
 				"ia", "", "Show all info (imports, exports, sections..)",
 				"ib", "", "Reload the current buffer for setting of the bin (use once only)",
 				"ic", "", "List classes, methods and fields",
+				"iC", "", "Show signature info (entitlements, ...)",
 				"id", "", "Debug information (source lines)",
 				"iD", " lang sym", "demangle symbolname for given language",
 				"ie", "", "Entrypoint",
