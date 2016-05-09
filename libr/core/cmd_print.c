@@ -2865,7 +2865,7 @@ static int cmd_print(void *data, const char *input) {
 					((input[1]=='w')?R_PRINT_STRING_WIDE:0));
 		}
 		break;
-	case 'c': //pc
+	case 'c': // "pc"
 		r_print_code (core->print, core->offset, core->block, len, input[1]);
 		break;
 	case 'r': // "pr"
