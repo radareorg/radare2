@@ -7,6 +7,9 @@
 #include <r_anal.h>
 
 #define ARC_REG_LIMM    0x3e
+#define ARC_REG_ILINK1  0x1d
+#define ARC_REG_ILINK2  0x1e
+#define ARC_REG_BLINK   0x1f
 
 /* the CPU fields that we decode get stored in this struct */
 typedef struct arc_fields_t {
@@ -85,12 +88,12 @@ static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basi
 
     switch (f->format) {
     case 0: /* unconditional jumps via reg or long imm */
-        if (f->c == 0x3e) {
+        if (f->c == ARC_REG_LIMM) {
             /* limm */
             op->type = basic_type;
             op->jump = f->limm;
             op->fail = addr + op->size;
-        } else if (f->c == 0x1d || f->c == 0x1e || f->c == 0x1f) {
+        } else if (f->c == ARC_REG_ILINK1 || f->c == ARC_REG_ILINK2 || f->c == ARC_REG_BLINK) {
             /* ilink1, ilink2, blink */
             /* Note: not valid for basic_type == CALL */
             op->type = R_ANAL_OP_TYPE_RET;
@@ -112,10 +115,10 @@ static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basi
         break;
     case 3: /* conditional jumps */
         if (f->mode_m == 0) {
-            if (f->c == 0x3e) {
+            if (f->c == ARC_REG_LIMM) {
                 op->type = type_cjmp;
                 op->jump = f->limm;
-            } else if (f->c == 0x1d || f->c == 0x1e || f->c == 0x1f) {
+            } else if (f->c == ARC_REG_ILINK1 || f->c == ARC_REG_ILINK2 || f->c == ARC_REG_BLINK) {
                 /* ilink1, ilink2, blink */
                 /* Note: not valid for basic_type == CALL */
                 op->type = R_ANAL_OP_TYPE_CRET;
@@ -147,17 +150,17 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 
     /* if any one of the reg fields indicates a limm value,
        increase the size to cover it */
-    if (fields.b == 0x3e) {
+    if (fields.b == ARC_REG_LIMM) {
         op->size = 8;
         fields.limm = words[1];
-        /* FIXME: MOV<.f> 0,x is encoded as fields.b == 0x3e, but no limm */
-    } else if ((fields.format == 0 || fields.format == 1) && (fields.a == 0x3e)) {
+        /* FIXME: MOV<.f> 0,x is encoded as fields.b == ARC_REG_LIMM, but no limm */
+    } else if ((fields.format == 0 || fields.format == 1) && (fields.a == ARC_REG_LIMM)) {
         op->size = 8;
         fields.limm = words[1];
-    } else if ((fields.format == 0) && (fields.c == 0x3e)) {
+    } else if ((fields.format == 0) && (fields.c == ARC_REG_LIMM)) {
         op->size = 8;
         fields.limm = words[1];
-    } else if ((fields.format == 3) && ((fields.a & 0x20) == 0x20) && (fields.c == 0x3e)) {
+    } else if ((fields.format == 3) && ((fields.a & 0x20) == 0x20) && (fields.c == ARC_REG_LIMM)) {
         op->size = 8;
         fields.limm = words[1];
     }
@@ -219,7 +222,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
             if ((fields.a & 0x20) == 1) {
                 /* its a move from imm u6 */
                 op->val = fields.c;
-            } else if (fields.c == 0x3e) {
+            } else if (fields.c == ARC_REG_LIMM) {
                 /* its a move from limm */
                 op->val = fields.limm;
             }
@@ -450,7 +453,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 
                 if (format2 == 0) {
                     /* Branch on Compare Register-Register, 0x01, [0x1, 0x0] */
-                    if (fields.b == 0x3e || fields.c == 0x3e) {
+                    if (fields.b == ARC_REG_LIMM || fields.c == ARC_REG_LIMM) {
                         op->size = 8;
                         fields.limm = words[1];
                     }
@@ -500,7 +503,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 break;
             }
 
-            if (fields.b == 0x3e) {
+            if (fields.b == ARC_REG_LIMM) {
                 op->size = 8;
                 fields.limm = words[1];
 
@@ -542,11 +545,11 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 break;
             }
 
-            if (fields.b == 0x3e) {
+            if (fields.b == ARC_REG_LIMM) {
                 op->size = 8;
                 fields.limm = words[1];
                 op->ptr = fields.limm;
-            } else if (fields.c == 0x3e) {
+            } else if (fields.c == ARC_REG_LIMM) {
                 op->size = 8;
                 fields.limm = words[1];
                 op->val = fields.limm;
@@ -569,16 +572,16 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             fields.a = (words[0] & 0x0000003f);
             fields.b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
 
-            if (fields.b == 0x3e) {
+            if (fields.b == ARC_REG_LIMM) {
                 op->size = 8;
                 fields.limm = words[1];
-            } else if ((fields.format == 0 || fields.format == 1) && (fields.a == 0x3e)) {
+            } else if ((fields.format == 0 || fields.format == 1) && (fields.a == ARC_REG_LIMM)) {
                 op->size = 8;
                 fields.limm = words[1];
-            } else if ((fields.format == 0) && (fields.c == 0x3e)) {
+            } else if ((fields.format == 0) && (fields.c == ARC_REG_LIMM)) {
                 op->size = 8;
                 fields.limm = words[1];
-            } else if ((fields.format == 3) && ((fields.a & 0x20) == 0x20) && (fields.c == 0x3e)) {
+            } else if ((fields.format == 3) && ((fields.a & 0x20) == 0x20) && (fields.c == ARC_REG_LIMM)) {
                 op->size = 8;
                 fields.limm = words[1];
             }
@@ -634,7 +637,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             /* fields.b   = (words[0] & 0x07000000) >> 24; dst, src1 */
             fields.c = (words[0] & 0x00e00000) >> 21 | (words[0] &0x00070000) >> 13; /* src2 */
 
-            if (fields.c == 0x3e) {
+            if (fields.c == ARC_REG_LIMM) {
                 op->size = 6;
                 op->val = (words[0] & 0x0000ffff) << 16 | (words[1] & 0xffff0000) >> 16;
             }
