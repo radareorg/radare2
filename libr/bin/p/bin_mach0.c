@@ -20,13 +20,12 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static void entitlements(RBinFile *arch) {
+static char *entitlements(RBinFile *arch) {
 	struct MACH0_(obj_t) *bin;
 	if (!arch || !arch->o)
-	    	return;
+	    	return NULL;
 	bin = arch->o->bin_obj;
-	eprintf ("%s", bin->signature);
-	return;
+	return (char *)bin->signature;
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
