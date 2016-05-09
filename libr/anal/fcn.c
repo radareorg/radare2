@@ -733,8 +733,9 @@ repeat:
 				if (s && s->name) {
 					int in_plt = strstr (s->name, ".plt") != NULL;
 					if (strstr (anal->cpu, "arm")) {
-						if (anal->bits != 16)
+						if (anal->bits == 64) {
 							if (!in_plt) goto river;
+						}
 					} else {
 						if (in_plt) goto river;
 					}

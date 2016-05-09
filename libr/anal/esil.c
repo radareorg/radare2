@@ -472,8 +472,9 @@ R_API int r_anal_esil_get_parm_size(RAnalEsil *esil, const char *str, ut64 *num,
 		if (size) *size = esil->anal->bits;
 		return true;
 	case R_ANAL_ESIL_PARM_REG:
-		if (!r_anal_esil_reg_read (esil, str, num, size))
+		if (!r_anal_esil_reg_read (esil, str, num, size)) {
 			break;
+		}
 		return true;
 	default:
 		IFDBG eprintf ("Invalid arg (%s)\n", str);
