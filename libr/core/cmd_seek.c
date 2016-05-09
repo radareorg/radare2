@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
+
 #include "r_types.h"
 #include "r_config.h"
 #include "r_cons.h"
@@ -460,7 +461,7 @@ static int cmd_seek(void *data, const char *input) {
 			"s+", "", "Redo seek",
 			"s+", " n", "Seek n bytes forward",
 			"s++", "", "Seek blocksize bytes forward",
-			"s*", "", "List undo seek history",
+			"s[j*=]", "", "List undo seek history (JSON, =list, *r2)",
 			"s/", " DATA", "Search for next occurrence of 'DATA'",
 			"s/x", " 9091", "Search for next occurrence of \\x90\\x91",
 			"s.", "hexoff", "Seek honoring a base from core->offset",
