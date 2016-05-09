@@ -72,6 +72,9 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
         ut16 field_a = 0;
         ut16 field_b = 0;
         ut16 field_c = 0;
+        ut8 field_aa;
+        ut8 field_zz;
+        ut8 field_m;
         st16 imm;
         st64 limm;
 
@@ -143,12 +146,12 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->fail = addr + op->size;
             }
             break;
-        case 2: { /* Load Register with Offset, 0x02 */
+        case 2: /* Load Register with Offset, 0x02 */
             field_a = (words[0] & 0x0000003f);
             field_b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
             imm = sex_s9 ((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
-            ut8 field_aa = (words[0] & 0x600) >> 9;
-            ut8 field_zz = (words[0] & 0x180) >> 7;
+            field_aa = (words[0] & 0x600) >> 9;
+            field_zz = (words[0] & 0x180) >> 7;
 
             op->type = R_ANAL_OP_TYPE_LOAD;
 
@@ -185,13 +188,12 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->ptr = (addr & ~3) + imm;
             }
             break;
-        }
-        case 3: { /* Store Register with Offset, 0x03 */
+        case 3: /* Store Register with Offset, 0x03 */
             field_c = (words[0] & 0xfc0) >> 6;
             field_b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
             imm = sex_s9 ((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
             /* ut8 field_aa = (words[0] & 0x18) >> 3; */
-            ut8 field_zz = (words[0] & 0x6) >> 1;
+            field_zz = (words[0] & 0x6) >> 1;
 
             op->type = R_ANAL_OP_TYPE_STORE;
 
@@ -218,7 +220,6 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->ptr = (addr & ~3) + imm;
             }
             break;
-        }
         case 4: /* General Operations */
             format = (words[0] & 0x00c00000) >> 22;
             subopcode = (words[0] & 0x003f0000) >> 16;
@@ -346,8 +347,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     op->jump = addr + imm;
                     op->fail = addr + op->size;
                     break;
-                case 3: { /* conditional jumps */
-                    ut8 field_m = (words[0] & 0x20) >> 5;
+                case 3: /* conditional jumps */
+                    field_m = (words[0] & 0x20) >> 5;
                     if (field_m == 0) {
                         if (field_c == 0x3e) {
                             op->type = R_ANAL_OP_TYPE_CJMP;
@@ -367,7 +368,6 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     /* TODO: cond codes */
                     op->fail = addr + op->size;
                     break;
-                }
                 }
             case 0x22: /* jump and link */
             case 0x23: /* jump and link with delay slot */
@@ -394,8 +394,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     imm = sex_s12 (imm);
                     op->jump = addr + imm;
                     break;
-                case 3: { /* conditional jumps */
-                    ut8 field_m = (words[0] & 0x20) >> 5;
+                case 3: /* conditional jumps */
+                    field_m = (words[0] & 0x20) >> 5;
                     if (field_m == 0) {
                         if (field_c == 0x3e) {
                             op->type = R_ANAL_OP_TYPE_CCALL;
@@ -412,7 +412,6 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     /* TODO: cond codes */
                     op->fail = addr + op->size;
                     break;
-                }
                 }
                 break;
             case 0x1e: /* Reserved */
@@ -542,7 +541,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
         case 0x05:
         case 0x06:
         case 0x07:
-        case 0x08: { /* 32-bit Extension Instructions, 0x05 - 0x08 */
+        case 0x08: /* 32-bit Extension Instructions, 0x05 - 0x08 */
             subopcode = (words[0] & 0x003f0000) >> 16;
             format = (words[0] & 0x00c00000) >> 22;
             field_c = (words[0] & 0x00000fc0) >>  6;
@@ -565,16 +564,13 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 
             /* TODO: fill in the extansion functions */
             op->type = R_ANAL_OP_TYPE_UNK;
-            }
             break;
         case 0x09:
         case 0x0a:
-        case 0x0b: { /* Market Specific Extension Instructions, 0x09 - 0x0B */
-
+        case 0x0b: /* Market Specific Extension Instructions, 0x09 - 0x0B */
             op->type = R_ANAL_OP_TYPE_UNK;
-            }
             break;
-        case 0x0c: { /* Load /Add Register-Register, 0x0C, [0x00 - 0x03] */
+        case 0x0c: /* Load /Add Register-Register, 0x0C, [0x00 - 0x03] */
             subopcode = (words[0] & 0x00180000) >> 19;
             /* field_a   = (words[0] & 0x00070000) >> 16; */
             /* field_c   = (words[0] & 0x00e00000) >> 21; */
@@ -590,9 +586,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->type = R_ANAL_OP_TYPE_ADD;
                 break;
             }
-            }
             break;
-        case 0x0d: { /* Add/Sub/Shift Register-Immediate, 0x0D, [0x00 - 0x03] */
+        case 0x0d: /* Add/Sub/Shift Register-Immediate, 0x0D, [0x00 - 0x03] */
             subopcode = (words[0] & 0x00180000) >> 19;
             /* imm = (words[0] & 0x00070000) >> 16; src2 u3 */
             /* field_c = (words[0] & 0x00e00000) >> 21; dst */
@@ -612,9 +607,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->type = R_ANAL_OP_TYPE_SHR;
                 break;
             }
-            }
             break;
-        case 0x0e: { /* Mov/Cmp/Add with High Register, 0x0E, [0x00 - 0x03] */
+        case 0x0e: /* Mov/Cmp/Add with High Register, 0x0E, [0x00 - 0x03] */
             subopcode = (words[0] & 0x00180000) >> 19;
             /* field_b   = (words[0] & 0x07000000) >> 24; dst, src1 */
             field_c = (words[0] & 0x00e00000) >> 21 | (words[0] &0x00070000) >> 13; /* src2 */
@@ -636,10 +630,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->type = R_ANAL_OP_TYPE_CMP;
                 break;
             }
-            }
             break;
-
-        case 0xf: { /* General Register Format Instructions, 0x0F, [0x00 - 0x1F] */
+        case 0xf: /* General Register Format Instructions, 0x0F, [0x00 - 0x1F] */
             subopcode = (words[0] & 0x001f0000) >> 16;
             field_c = (words[0] & 0x00e00000) >> (16+5);
             field_b = (words[0] & 0x07000000) >> (16+8);
@@ -763,7 +755,6 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                    type is commented out */
                 break;
             }
-            }
             break;
         case 0x10: /* LD_S    c,[b,u7] */
         case 0x11: /* LDB_S   c,[b,u5] */
@@ -780,7 +771,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             op->type = R_ANAL_OP_TYPE_STORE;
             }
             break;
-        case 0x17: { /* Shift/Subtract/Bit Immediate, 0x17, [0x00 - 0x07] */
+        case 0x17: /* Shift/Subtract/Bit Immediate, 0x17, [0x00 - 0x07] */
             subopcode = (words[0] & 0x00e00000) >> (16+5);
             switch (subopcode) {
             case 0: /* Multiple arithmetic shift left */
@@ -804,9 +795,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->type = R_ANAL_OP_TYPE_AND;
                 break;
             }
-            }
             break;
-        case 0x18: { /* Stack Pointer Based Instructions, 0x18, [0x00 - 0x07]  */
+        case 0x18: /* Stack Pointer Based Instructions, 0x18, [0x00 - 0x07]  */
             subopcode = (words[0] & 0x00e00000) >> (16+5);
             switch (subopcode) {
             case 0: /* Load long word sp-rel. */
@@ -859,9 +849,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 }
                 break;
             }
-            }
             break;
-        case 0x19: { /* Load/Add GP-Relative, 0x19, [0x00 - 0x03] */
+        case 0x19: /* Load/Add GP-Relative, 0x19, [0x00 - 0x03] */
             subopcode = (words[0] & 0x06000000) >> (16+9);
             switch (subopcode) {
             case 0: /* Load gp-relative (32-bit aligned) to r0 */
@@ -874,36 +863,31 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 break;
             }
             op->type = R_ANAL_OP_TYPE_UNK;
-            }
             break;
-        case 0x1a: { /* Load PCL-Relative, 0x1A */
+        case 0x1a: /* Load PCL-Relative, 0x1A */
             field_c = (words[0] & 0x00ff0000) >> 14;
             op->ptr = (addr & ~3) + field_c;
             op->refptr = 4;
             op->type = R_ANAL_OP_TYPE_LOAD;
-            }
             break;
-        case 0x1b: { /* Move Immediate, 0x1B */
+        case 0x1b: /* Move Immediate, 0x1B */
             op->val = (words[0] & 0x00ff0000) >> 16;
             op->type = R_ANAL_OP_TYPE_MOV;
-            }
             break;
-        case 0x1c: { /* ADD/CMP Immediate, 0x1C, [0x00 - 0x01] */
+        case 0x1c: /* ADD/CMP Immediate, 0x1C, [0x00 - 0x01] */
             subopcode = (words[0] & 0x00800000) >> (16+7);
             if (subopcode == 0) {
                 op->type = R_ANAL_OP_TYPE_ADD;
             } else {
                 op->type = R_ANAL_OP_TYPE_CMP;
             }
-            }
             break;
-        case 0x1d: { /* Branch on Compare Register with Zero, 0x1D, [0x00 - 0x01] */
+        case 0x1d: /* Branch on Compare Register with Zero, 0x1D, [0x00 - 0x01] */
             /* subopcode = (words[0] & 0x00800000) >> (16+7); */
             imm = sex_s8 ((words[0] & 0x007f0000) >> (16-1));
             op->jump = (addr & ~3) + imm;
             op->fail = addr + op->size;
             op->type = R_ANAL_OP_TYPE_CJMP;
-            }
             break;
         case 0x1e: /* Branch Conditionally, 0x1E, [0x00 - 0x03] */
             subopcode = (words[0] & 0x06000000) >> (16+9);
@@ -925,12 +909,11 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             op->jump = (addr & ~3) + imm;
             op->fail = addr + op->size;
             break;
-        case 0x1f: { /* Branch and Link Unconditionally, 0x1F */
+        case 0x1f: /* Branch and Link Unconditionally, 0x1F */
             imm = sex_s13 ((words[0] & 0x07ff0000) >> (16-2));
             op->type = R_ANAL_OP_TYPE_CALL;
             op->jump = (addr & ~3) + imm;
             op->fail = addr + op->size;
-            }
             break;
         }
 
