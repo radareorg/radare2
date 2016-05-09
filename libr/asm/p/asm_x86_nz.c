@@ -1039,7 +1039,6 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				delta = strchr (arg, '+');
 				//if (!delta) delta = strchr (arg, '-'); // XXX: TODO: handle negative off
 				if (delta) {
-					eprintf("1 handle + \n");
 					*delta++ = 0;
 				} else {
 					delta = strchr (arg, '-');
@@ -1082,7 +1081,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					}
 				}
 				data[l++] = 0x8b;
-				if (delta) {					
+				if (delta) {
 					ut8 mask = 0x40;
 					ut32 d = r_num_math (NULL, delta) * N;
 					// Check if delta is short or dword
@@ -1095,11 +1094,10 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 						data[l++] = 0x24;
 					} else if (r==5) { // EBP
 						data[l++] = getreg (arg)<<3 | r | mask;
-					} else data[l++] = getreg (arg)<<3 | r | mask;					
-					
+					} else data[l++] = getreg (arg)<<3 | r | mask;
+
 					data[l++] = d;
-					if ((ST8_MIN > d) && (d > ST8_MAX)) {
-						// Split...						
+					if ((ST8_MIN > d) && (d > ST8_MAX)) {:
 						data[l++] = d>>8;
 						data[l++] = d>>16;
 						data[l++] = d>>24;
