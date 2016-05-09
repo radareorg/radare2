@@ -169,7 +169,7 @@ tcc-clean tccclean:
 
 CFILES=i386-asm.c i386-gen.c libtcc.c tccasm.c tccelf.c tccgen.c tccpp.c
 HFILES=tcc.h i386-asm.h tcclib.h tcctok.h stab.h
-HFILES+=elf.h libtcc.h config.h i386-tok.h
+HFILES+=elf.h config.h i386-tok.h
 
 # TODO: use mob branch?
 
