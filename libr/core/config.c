@@ -1541,6 +1541,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.describe", "false", "Show opcode description");
 	SETPREF("asm.marks", "true", "Show marks before the disassembly");
 	SETCB("bin.strpurge", "false", &cb_strpurge, "Try to purge false positive strings");
+	SETPREF("bin.libs", "false", "Try to load libraries after loading main binary");
 	SETCB("bin.strfilter", "", &cb_strfilter, "Filter strings (?:help, a:scii, e:mail, p:ath, u:rl, 8:utf8)");
 	SETCB("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
