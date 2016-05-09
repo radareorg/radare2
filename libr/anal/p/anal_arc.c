@@ -6,16 +6,16 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#define ARC_REG_LIMM		0x3e
+#define ARC_REG_LIMM	0x3e
 #define ARC_REG_ILINK1	0x1d
 #define ARC_REG_ILINK2	0x1e
-#define ARC_REG_BLINK	 0x1f
+#define ARC_REG_BLINK	0x1f
 
 /* the CPU fields that we decode get stored in this struct */
 typedef struct arc_fields_t {
-	ut8 opcode;			/* major opcode */
-	ut8 subopcode;	 /* sub opcode */
-	ut8 format;			/* operand format */
+	ut8 opcode;	/* major opcode */
+	ut8 subopcode;	/* sub opcode */
+	ut8 format;	/* operand format */
 	ut8 format2;
 	ut16 a;		/* destination register */
 	ut16 b;		/* source/destination register */
@@ -31,13 +31,13 @@ static void arccompact_dump_fields(ut64 addr, ut32 words[2], arc_fields *f) {
 #if DEBUG
 	/* Quick and dirty debug print */
 	eprintf ("DEBUG: 0x%04llx: %08x op=0x%x subop=0x%x format=0x%x fields.a=0x%x fields.b=0x%x fields.c=0x%x imm=%i limm=%lli\n",
-			addr,words[0], f->opcode,f->subopcode,f->format, f->a,f->b,f->c, f->imm,f->limm);
+		addr,words[0], f->opcode,f->subopcode,f->format, f->a,f->b,f->c, f->imm,f->limm);
 #endif
 }
 
 
 /* For (arguably valid) reasons, the ARCompact CPU uses "middle endian"
-	 encoding on Little-Endian systems
+	encoding on Little-Endian systems
  */
 static inline ut32 r_read_me32(const void *src) {
 	const ut8 *s = src;
@@ -46,14 +46,14 @@ static inline ut32 r_read_me32(const void *src) {
 }
 
 static int sex(int bits, int imm) {
-		int maxsint = (1 << (bits-1))-1;
-		int maxuint = (1 << (bits))-1;
+	int maxsint = (1 << (bits-1))-1;
+	int maxuint = (1 << (bits))-1;
 
-		if (imm > maxsint) {
-				/* sign extend */
-				imm = -maxuint + imm -1;
-		}
-		return imm;
+	if (imm > maxsint) {
+		/* sign extend */
+		imm = -maxuint + imm -1;
+	}
+	return imm;
 }
 
 static int sex_s7(int imm) { return sex(7, imm); }
