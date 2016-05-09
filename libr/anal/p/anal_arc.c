@@ -6,12 +6,12 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#define BYTES2WORD_BE(a,b,c,d) ((a)<<24 | (b)<<16 | (c)<<8 | (d))
-#define BYTES2WORD_ME(a,b,c,d) ((b)<<24 | (a)<<16 | (d)<<8 | (c))
+#define BYTES2WORD_BE(a,b,c,d) ((a) << 24 | (b) << 16 | (c) << 8 | (d))
+#define BYTES2WORD_ME(a,b,c,d) ((b) << 24 | (a) << 16 | (d) << 8 | (c))
 
-int sex(int bits, int imm) {
-    int maxsint = (1<<(bits-1))-1;
-    int maxuint = (1<<(bits))-1;
+static int sex(int bits, int imm) {
+    int maxsint = (1 << (bits-1))-1;
+    int maxuint = (1 << (bits))-1;
 
     if (imm > maxsint) {
         /* sign extend */
@@ -20,14 +20,14 @@ int sex(int bits, int imm) {
     return imm;
 }
 
-int sex_s7(int imm) { return sex(7,imm); }
-int sex_s8(int imm) { return sex(8,imm); }
-int sex_s9(int imm) { return sex(9,imm); }
-int sex_s10(int imm) { return sex(10,imm); }
-int sex_s12(int imm) { return sex(12,imm); }
-int sex_s13(int imm) { return sex(13,imm); }
-int sex_s21(int imm) { return sex(21,imm); }
-int sex_s25(int imm) { return sex(25,imm); }
+static int sex_s7(int imm) { return sex(7, imm); }
+static int sex_s8(int imm) { return sex(8, imm); }
+static int sex_s9(int imm) { return sex(9, imm); }
+static int sex_s10(int imm) { return sex(10, imm); }
+static int sex_s12(int imm) { return sex(12, imm); }
+static int sex_s13(int imm) { return sex(13, imm); }
+static int sex_s21(int imm) { return sex(21, imm); }
+static int sex_s25(int imm) { return sex(25, imm); }
 
 
 static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
@@ -77,21 +77,21 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 
         switch (opcode) {
         case 0:
-            format  = (words[0] & 0x00010000) >> 16;
+            format = (words[0] & 0x00010000) >> 16;
             field_a = (words[0] & 0x07fe0000) >> 17;
             field_b = (words[0] & 0x0000ffc0) >> 6;
             field_c = (words[0] & 0x0000000f);
-            limm    = field_a<<1 | field_b<<11;
+            limm = field_a << 1 | field_b << 11;
 
-            if (format==0) {
+            if (format == 0) {
                 /* Branch Conditionally 0x00 [0x0] */
-                limm = sex_s21(limm);
+                limm = sex_s21 (limm);
                 op->type = R_ANAL_OP_TYPE_CJMP;
                 /* TODO: cond codes */
             } else {
                 /* Branch Unconditional Far 0x00 [0x1] */
-                limm |= field_c<<21;
-                limm = sex_s25(limm);
+                limm |= field_c << 21;
+                limm = sex_s25 (limm);
                 op->type = R_ANAL_OP_TYPE_JMP;
             }
             op->jump = (addr & ~3) + limm;
@@ -100,16 +100,16 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
         case 1:
             format = (words[0] & 0x00010000) >> 16;
 
-            if (format==1) {
-                format2   = (words[0] & 0x10) >> 4;
+            if (format == 1) {
+                format2 = (words[0] & 0x10) >> 4;
                 subopcode = (words[0] & 0x0f);
-                field_b   = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >>9;
-                field_c   = (words[0] & 0x00000fc0) >> 6;
-                imm       = sex_s9((words[0] & 0x00fe0000) >> 16 | (words[0] & 0x8000) >>7);
-                op->type  = R_ANAL_OP_TYPE_CJMP;
-                op->jump  = (addr & ~3) + imm;
+                field_b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
+                field_c = (words[0] & 0x00000fc0) >> 6;
+                imm = sex_s9 ((words[0] & 0x00fe0000) >> 16 | (words[0] & 0x8000) >> 7);
+                op->type = R_ANAL_OP_TYPE_CJMP;
+                op->jump = (addr & ~3) + imm;
 
-                if (format2==0) {
+                if (format2 == 0) {
                     /* Branch on Compare Register-Register, 0x01, [0x1, 0x0] */
                     if (field_b == 0x3e || field_c == 0x3e) {
                         op->size = 8;
@@ -123,20 +123,20 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->fail = addr + op->size;
             } else {
                 format2 = (words[0] & 0x00020000) >> 17;
-                field_a   = (words[0] & 0x07fc0000) >> 18;
-                field_b   = (words[0] & 0x0000ffc0) >> 6;
-                field_c   = (words[0] & 0x0000000f);
-                limm = field_a<<2 | field_b<<11;
+                field_a = (words[0] & 0x07fc0000) >> 18;
+                field_b = (words[0] & 0x0000ffc0) >> 6;
+                field_c = (words[0] & 0x0000000f);
+                limm = field_a << 2 | field_b << 11;
 
-                if (format2==0) {
+                if (format2 == 0) {
                     /* Branch and Link Conditionally, 0x01, [0x0, 0x0] */
-                    limm = sex_s21(limm);
+                    limm = sex_s21 (limm);
                     op->type = R_ANAL_OP_TYPE_CCALL;
                     /* TODO: cond codes */
                 } else {
                     /* Branch and Link Unconditional Far, 0x01, [0x0, 0x1] */
-                    limm |= field_c<<21;
-                    limm = sex_s25(limm);
+                    limm |= field_c << 21;
+                    limm = sex_s25 (limm);
                     op->type = R_ANAL_OP_TYPE_CALL;
                 }
                 op->jump = (addr & ~3) + limm;
@@ -145,14 +145,14 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             break;
         case 2: { /* Load Register with Offset, 0x02 */
             field_a = (words[0] & 0x0000003f);
-            field_b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >>9;
-            imm     = sex_s9((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >>7);
+            field_b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
+            imm = sex_s9 ((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
             ut8 field_aa = (words[0] & 0x600) >> 9;
             ut8 field_zz = (words[0] & 0x180) >> 7;
 
             op->type = R_ANAL_OP_TYPE_LOAD;
 
-            switch(field_zz) {
+            switch (field_zz) {
             case 0: op->refptr = 4; break;
             case 1: op->refptr = 1; break;
             case 2: op->refptr = 2; break;
@@ -175,9 +175,9 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     break;
                 case 3: /* .AS */
                     if (field_zz == 2) {
-                        op->ptr = limm+(imm<<1);
+                        op->ptr = limm + (imm << 1);
                     } else if (field_zz == 0) {
-                        op->ptr = limm+(imm<<2);
+                        op->ptr = limm + (imm << 2);
                     }
                     break;
                 }
@@ -188,14 +188,14 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
         }
         case 3: { /* Store Register with Offset, 0x03 */
             field_c = (words[0] & 0xfc0) >> 6;
-            field_b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >>9;
-            imm     = sex_s9((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >>7);
+            field_b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
+            imm = sex_s9 ((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
             /* ut8 field_aa = (words[0] & 0x18) >> 3; */
             ut8 field_zz = (words[0] & 0x6) >> 1;
 
             op->type = R_ANAL_OP_TYPE_STORE;
 
-            switch(field_zz) {
+            switch (field_zz) {
             case 0: op->refptr = 4; break;
             case 1: op->refptr = 1; break;
             case 2: op->refptr = 2; break;
@@ -220,18 +220,18 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             break;
         }
         case 4: /* General Operations */
-            format    = (words[0] & 0x00c00000) >> 22;
+            format = (words[0] & 0x00c00000) >> 22;
             subopcode = (words[0] & 0x003f0000) >> 16;
-            field_c   = (words[0] & 0x00000fc0) >> 6;
-            field_a   = (words[0] & 0x0000003f);
-            field_b   = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >>9;
+            field_c = (words[0] & 0x00000fc0) >> 6;
+            field_a = (words[0] & 0x0000003f);
+            field_b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
 
             /* if any one of the reg fields indicates a limm value,
                increase the size to cover it */
             if (field_b == 0x3e) {
                 op->size = 8;
                 limm = words[1];
-                /* FIXME: MOV<.f> 0,x is encoded as field_b==0x3e, but no limm */
+                /* FIXME: MOV<.f> 0,x is encoded as field_b == 0x3e, but no limm */
             } else if ((format == 0 || format == 1) && (field_a == 0x3e)) {
                 op->size = 8;
                 limm = words[1];
@@ -248,12 +248,12 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 imm = field_c;
             } else if (format == 2) {
                 /* REG_S12IMM */
-                imm = sex_s12(field_c | field_a<<6);
+                imm = sex_s12 (field_c | field_a << 6);
             }
 
             switch (subopcode) {
             case 0x00: /* add */
-                if ((format==1 || format==2) && field_b==0x3f) {
+                if ((format == 1 || format == 2) && field_b == 0x3f) {
                     /* dst = PCL + src */
                     op->ptr = (addr & ~3) + imm;
                     op->refptr = 1; /* HACK! we dont actually know what size it is */
@@ -291,16 +291,16 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->type = R_ANAL_OP_TYPE_CMOV;
                 break;
             case 0x0a: /* move */
-                if (format==2) {
+                if (format == 2) {
                     op->type = R_ANAL_OP_TYPE_MOV;
-                    op->val = sex_s12(field_a<<6 | field_c);
-                } else if (format==3) {
+                    op->val = sex_s12 (field_a << 6 | field_c);
+                } else if (format == 3) {
                     op->type = R_ANAL_OP_TYPE_CMOV;
                     /* TODO: cond codes */
-                    if ((field_a & 0x20) ==1) {
+                    if ((field_a & 0x20) == 1) {
                         /* its a move from imm u6 */
                         op->val = field_c;
-                    } else if (field_c==0x3e) {
+                    } else if (field_c == 0x3e) {
                         /* its a move from limm */
                         op->val = limm;
                     }
@@ -342,13 +342,13 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 case 2: /* unconditional jumps via s12 imm */
                     op->type = R_ANAL_OP_TYPE_JMP;
                     imm = (field_a << 6 | field_c);
-                    imm = sex_s12(imm);
+                    imm = sex_s12 (imm);
                     op->jump = addr + imm;
                     op->fail = addr + op->size;
                     break;
                 case 3: { /* conditional jumps */
                     ut8 field_m = (words[0] & 0x20) >> 5;
-                    if (field_m==0) {
+                    if (field_m == 0) {
                         if (field_c == 0x3e) {
                             op->type = R_ANAL_OP_TYPE_CJMP;
                             op->jump = limm;
@@ -391,12 +391,12 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 case 2: /* unconditional jumps via s12 imm */
                     op->type = R_ANAL_OP_TYPE_CALL;
                     imm = (field_a << 6 | field_c);
-                    imm = sex_s12(imm);
+                    imm = sex_s12 (imm);
                     op->jump = addr + imm;
                     break;
                 case 3: { /* conditional jumps */
                     ut8 field_m = (words[0] & 0x20) >> 5;
-                    if (field_m==0) {
+                    if (field_m == 0) {
                         if (field_c == 0x3e) {
                             op->type = R_ANAL_OP_TYPE_CCALL;
                             op->jump = limm;
@@ -437,15 +437,15 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             case 0x28: /* loop (16-bit aligned target address) */
                 /* this is essentially a COME FROM instruction!! */
                 /* TODO: describe it to radare better ? */
-                switch(format) {
+                switch (format) {
                 case 2: /* Loop Set Up (Unconditional) */
-                    imm = sex_s13((field_c | (field_a <<6))<<1);
+                    imm = sex_s13 ((field_c | (field_a << 6)) << 1);
                     op->jump = (addr & ~3) + imm;
                     op->type = R_ANAL_OP_TYPE_CJMP;
                     op->fail = addr + op->size;
                     break;
                 case 3: /* Loop Set Up (Conditional) */
-                    imm = field_c<<1;
+                    imm = field_c << 1;
                     op->jump = (addr & ~3) + imm;
                     op->type = R_ANAL_OP_TYPE_CJMP;
                     op->fail = addr + op->size;
@@ -464,7 +464,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->type = R_ANAL_OP_TYPE_IO;
                 break;
             case 0x2f: /* Single Operand Instructions, 0x04, [0x2F, 0x00 - 0x3F] */
-                switch(field_a) {
+                switch (field_a) {
                 case 0: /* Arithmetic shift left by one */
                     op->type = R_ANAL_OP_TYPE_SAL;
                     break;
@@ -498,7 +498,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                     op->type = R_ANAL_OP_TYPE_XCHG;
                     break;
                 case 0x3f: /* See Zero operand (ZOP) table */
-                    switch(field_b) {
+                    switch (field_b) {
                     case 1: /* Sleep */
                         /* TODO: a better encoding for this */
                         op->type = R_ANAL_OP_TYPE_NULL;
@@ -543,11 +543,11 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
         case 0x06:
         case 0x07:
         case 0x08: { /* 32-bit Extension Instructions, 0x05 - 0x08 */
-            subopcode = (words[0] & 0x003f0000) >>16;
-            format    = (words[0] & 0x00c00000) >>22;
-            field_c   = (words[0] & 0x00000fc0) >> 6;
-            field_a   = (words[0] & 0x0000003f);
-            field_b   = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >>9;
+            subopcode = (words[0] & 0x003f0000) >> 16;
+            format = (words[0] & 0x00c00000) >> 22;
+            field_c = (words[0] & 0x00000fc0) >>  6;
+            field_a = (words[0] & 0x0000003f);
+            field_b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
 
             if (field_b == 0x3e) {
                 op->size = 8;
@@ -575,12 +575,12 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             }
             break;
         case 0x0c: { /* Load /Add Register-Register, 0x0C, [0x00 - 0x03] */
-            subopcode = (words[0] & 0x00180000) >>19;
-            /* field_a   = (words[0] & 0x00070000) >>16; */
-            /* field_c   = (words[0] & 0x00e00000) >>21; */
-            /* field_b   = (words[0] & 0x07000000) >>24; */
+            subopcode = (words[0] & 0x00180000) >> 19;
+            /* field_a   = (words[0] & 0x00070000) >> 16; */
+            /* field_c   = (words[0] & 0x00e00000) >> 21; */
+            /* field_b   = (words[0] & 0x07000000) >> 24; */
 
-            switch(subopcode) {
+            switch (subopcode) {
             case 0: /* Load long word (reg.+reg.) */
             case 1: /* Load unsigned byte (reg.+reg.) */
             case 2: /* Load unsigned word (reg.+reg.) */
@@ -593,12 +593,12 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             }
             break;
         case 0x0d: { /* Add/Sub/Shift Register-Immediate, 0x0D, [0x00 - 0x03] */
-            subopcode = (words[0] & 0x00180000) >>19;
-            /* imm       = (words[0] & 0x00070000) >>16; src2 u3 */
-            /* field_c   = (words[0] & 0x00e00000) >>21; dst */
-            /* field_b   = (words[0] & 0x07000000) >>24; src1 */
+            subopcode = (words[0] & 0x00180000) >> 19;
+            /* imm = (words[0] & 0x00070000) >> 16; src2 u3 */
+            /* field_c = (words[0] & 0x00e00000) >> 21; dst */
+            /* field_b = (words[0] & 0x07000000) >> 24; src1 */
 
-            switch(subopcode) {
+            switch (subopcode) {
             case 0: /* Add */
                 op->type = R_ANAL_OP_TYPE_ADD;
                 break;
@@ -615,16 +615,16 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             }
             break;
         case 0x0e: { /* Mov/Cmp/Add with High Register, 0x0E, [0x00 - 0x03] */
-            subopcode = (words[0] & 0x00180000) >>19;
-            /* field_b   = (words[0] & 0x07000000) >>24; dst, src1 */
-            field_c   = (words[0] & 0x00e00000) >>21 | (words[0] &0x00070000) >>13; /* src2 */
+            subopcode = (words[0] & 0x00180000) >> 19;
+            /* field_b   = (words[0] & 0x07000000) >> 24; dst, src1 */
+            field_c = (words[0] & 0x00e00000) >> 21 | (words[0] &0x00070000) >> 13; /* src2 */
 
-            if (field_c==0x3e) {
+            if (field_c == 0x3e) {
                 op->size = 6;
-                op->val = (words[0] & 0x0000ffff)<<16 | (words[1] & 0xffff0000)>>16;
+                op->val = (words[0] & 0x0000ffff) << 16 | (words[1] & 0xffff0000) >> 16;
             }
 
-            switch(subopcode) {
+            switch (subopcode) {
             case 0: /* Add */
                 op->type = R_ANAL_OP_TYPE_ADD;
                 break;
@@ -640,9 +640,9 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             break;
 
         case 0xf: { /* General Register Format Instructions, 0x0F, [0x00 - 0x1F] */
-            subopcode = (words[0] & 0x001f0000) >>16;
-            field_c   = (words[0] & 0x00e00000) >>(16+5);
-            field_b   = (words[0] & 0x07000000) >>(16+8);
+            subopcode = (words[0] & 0x001f0000) >> 16;
+            field_c = (words[0] & 0x00e00000) >> (16+5);
+            field_b = (words[0] & 0x07000000) >> (16+8);
 
             switch (subopcode) {
             case 0: /* Single Operand, Jumps and Special Format Instructions, 0x0F, [0x00, 0x00 - 0x07] */
@@ -782,7 +782,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             break;
         case 0x17: { /* Shift/Subtract/Bit Immediate, 0x17, [0x00 - 0x07] */
             subopcode = (words[0] & 0x00e00000) >> (16+5);
-            switch(subopcode) {
+            switch (subopcode) {
             case 0: /* Multiple arithmetic shift left */
                 op->type = R_ANAL_OP_TYPE_SAL;
                 break;
@@ -808,7 +808,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             break;
         case 0x18: { /* Stack Pointer Based Instructions, 0x18, [0x00 - 0x07]  */
             subopcode = (words[0] & 0x00e00000) >> (16+5);
-            switch(subopcode) {
+            switch (subopcode) {
             case 0: /* Load long word sp-rel. */
             case 1: /* Load unsigned byte sp-rel. */
                 op->type = R_ANAL_OP_TYPE_LOAD;
@@ -821,8 +821,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->type = R_ANAL_OP_TYPE_ADD;
                 break;
             case 5: /* Add/Subtract SP Relative, 0x18, [0x05, 0x00-0x07] */
-                field_b = (words[0] & 0x07000000) >>(16+8);
-                switch(field_b) {
+                field_b = (words[0] & 0x07000000) >> (16+8);
+                switch (field_b) {
                 case 0: /* Add immediate to SP */
                     op->type = R_ANAL_OP_TYPE_ADD;
                     break;
@@ -835,8 +835,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 }
                 break;
             case 6: /* POP Register from Stack, 0x18, [0x06, 0x00-0x1F] */
-                field_c = (words[0] & 0x001f0000) >>16;
-                switch(field_c) {
+                field_c = (words[0] & 0x001f0000) >> 16;
+                switch (field_c) {
                 case 1: /* Pop register from stack */
                 case 0x11: /* Pop blink from stack */
                     op->type = R_ANAL_OP_TYPE_POP;
@@ -847,8 +847,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 }
                 break;
             case 7: /* PUSH Register to Stack, 0x18, [0x07, 0x00-0x1F] */
-                field_c = (words[0] & 0x001f0000) >>16;
-                switch(field_c) {
+                field_c = (words[0] & 0x001f0000) >> 16;
+                switch (field_c) {
                 case 1: /* Push register to stack */
                 case 0x11: /* Push blink to stack */
                     op->type = R_ANAL_OP_TYPE_PUSH;
@@ -863,7 +863,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             break;
         case 0x19: { /* Load/Add GP-Relative, 0x19, [0x00 - 0x03] */
             subopcode = (words[0] & 0x06000000) >> (16+9);
-            switch(subopcode) {
+            switch (subopcode) {
             case 0: /* Load gp-relative (32-bit aligned) to r0 */
             case 1: /* Load unsigned byte gp-relative (8-bit aligned) to r0 */
             case 2: /* Load unsigned word gp-relative (16-bit aligned) to r0 */
@@ -890,7 +890,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             break;
         case 0x1c: { /* ADD/CMP Immediate, 0x1C, [0x00 - 0x01] */
             subopcode = (words[0] & 0x00800000) >> (16+7);
-            if (subopcode==0) {
+            if (subopcode == 0) {
                 op->type = R_ANAL_OP_TYPE_ADD;
             } else {
                 op->type = R_ANAL_OP_TYPE_CMP;
@@ -899,15 +899,15 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             break;
         case 0x1d: { /* Branch on Compare Register with Zero, 0x1D, [0x00 - 0x01] */
             /* subopcode = (words[0] & 0x00800000) >> (16+7); */
-            imm       = sex_s8((words[0] & 0x007f0000) >> (16-1));
-            op->jump  = (addr & ~3) + imm;
+            imm = sex_s8 ((words[0] & 0x007f0000) >> (16-1));
+            op->jump = (addr & ~3) + imm;
             op->fail = addr + op->size;
-            op->type  = R_ANAL_OP_TYPE_CJMP;
+            op->type = R_ANAL_OP_TYPE_CJMP;
             }
             break;
         case 0x1e: /* Branch Conditionally, 0x1E, [0x00 - 0x03] */
             subopcode = (words[0] & 0x06000000) >> (16+9);
-            imm       = sex_s10((words[0] & 0x01ff0000) >> (16-1));
+            imm = sex_s10 ((words[0] & 0x01ff0000) >> (16-1));
 
             switch (subopcode) {
             case 0: /* B_S */
@@ -919,14 +919,14 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 break;
             case 3: /* Bcc_S */
                 op->type = R_ANAL_OP_TYPE_CJMP;
-                imm = sex_s7((words[0] & 0x003f0000) >> (16-1));
+                imm = sex_s7 ((words[0] & 0x003f0000) >> (16-1));
                 break;
             }
             op->jump = (addr & ~3) + imm;
             op->fail = addr + op->size;
             break;
         case 0x1f: { /* Branch and Link Unconditionally, 0x1F */
-            imm = sex_s13((words[0] & 0x07ff0000) >> (16-2));
+            imm = sex_s13 ((words[0] & 0x07ff0000) >> (16-2));
             op->type = R_ANAL_OP_TYPE_CALL;
             op->jump = (addr & ~3) + imm;
             op->fail = addr + op->size;
@@ -935,8 +935,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
         }
 
         /* Quick and dirty debug print */
-        if (getenv("HCDEBUG")) {
-            eprintf("DEBUG: 0x%04llx: %08x op=0x%x subop=0x%x format=0x%x field_a=0x%x field_b=0x%x field_c=0x%x imm=%i limm=%lli\n",
+        if (getenv ("HCDEBUG")) {
+            eprintf ("DEBUG: 0x%04llx: %08x op=0x%x subop=0x%x format=0x%x field_a=0x%x field_b=0x%x field_c=0x%x imm=%i limm=%lli\n",
                 addr,words[0],
                 opcode,subopcode,format,
                 field_a,field_b,field_c,
