@@ -6,8 +6,14 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#define BYTES2WORD_BE(a,b,c,d) ((a) << 24 | (b) << 16 | (c) << 8 | (d))
-#define BYTES2WORD_ME(a,b,c,d) ((b) << 24 | (a) << 16 | (d) << 8 | (c))
+/* For (arguably valid) reasons, the ARCompact CPU uses "middle endian"
+   encoding on Little-Endian systems
+ */
+static inline ut32 r_read_me32(const void *src) {
+        const ut8 *s = src;
+        return (((ut32)s[1]) << 24) | (((ut32)s[0]) << 16) |
+                (((ut32)s[3]) << 8) | (((ut32)s[2]) << 0);
+}
 
 static int sex(int bits, int imm) {
     int maxsint = (1 << (bits-1))-1;
@@ -29,7 +35,6 @@ static int sex_s13(int imm) { return sex(13, imm); }
 static int sex_s21(int imm) { return sex(21, imm); }
 static int sex_s25(int imm) { return sex(25, imm); }
 
-
 static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	const ut8 *b = (ut8 *)data;
 
@@ -49,12 +54,12 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
         if (anal->big_endian) {
             int i;
             for (i=0; i<12; i+=4) {
-                words[i/4] = BYTES2WORD_BE(b[i],b[i+1],b[i+2],b[i+3]);
+                words[i/4] = r_read_be32(&b[i]);
             }
         } else {
             int i;
             for (i=0; i<12; i+=4) {
-                words[i/4] = BYTES2WORD_ME(b[i],b[i+1],b[i+2],b[i+3]);
+                words[i/4] = r_read_me32(&b[i]);
             }
         }
 
