@@ -542,7 +542,7 @@ int main(int argc, char **argv, char **envp) {
 	} else if (strcmp (argv[optind-1], "--")) {
 		if (debug) {
 			if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
-			r_config_set (r.config, "search.in", "raw"); // implicit?
+			r_config_set (r.config, "search.in", "dbg.map"); // implicit?
 			r_config_set_i (r.config, "io.va", false); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
 			perms = R_IO_READ | R_IO_WRITE;
