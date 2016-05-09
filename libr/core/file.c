@@ -371,8 +371,6 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 	if (plugin && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
 	}
-
-	if (r_config_get_i (r->config, "file.analyze")) r_core_cmd0 (r, "aa");
 	return true;
 }
 
@@ -420,9 +418,6 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	if (plugin && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
 	}
-
-	if (r_config_get_i (r->config, "file.analyze"))
-		r_core_cmd0 (r, "aa");
 	return true;
 }
 
@@ -508,9 +503,6 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		if (gp && gp != UT64_MAX) {
 			r_config_set_i (r->config, "anal.gp", gp);
 		}
-	}
-	if (r_config_get_i (r->config, "file.analyze")) {
-		r_core_cmd0 (r, "aa");
 	}
 	return true;
 }

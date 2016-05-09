@@ -1851,7 +1851,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("io.vio", "false", &cb_iovio, "Enable the new vio (reading only) (WIP)");
 
 	/* file */
-	SETI("file.analyze", 0, "Analyze file on load. 1) r2 -A 2) -AA 3) -AAA");
 	SETPREF("file.desc", "", "User defined file description (used by projects)");
 	SETPREF("file.md5", "", "MD5 sum of current file");
 	SETPREF("file.path", "", "Path of current file");
