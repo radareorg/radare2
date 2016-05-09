@@ -414,6 +414,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
         } else {
             op->size = 4;
         }
+        op->nopcode = op->size;
 
         switch (opcode) {
         case 0:
