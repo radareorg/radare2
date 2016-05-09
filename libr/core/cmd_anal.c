@@ -3815,17 +3815,26 @@ static const char *oldstr = NULL;
 
 static void rowlog(RCore *core, const char *str) {
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	bool verbose = r_config_get_i (core->config, "scr.prompt");
 	oldstr = str;
-	if (use_color)
-		eprintf ("[ ] "Color_YELLOW"%s\r[", str);
-	else eprintf ("[ ] %s\r[", str);
+	if (!verbose) {
+		return;
+	}
+	if (use_color) {
+		eprintf ("[ ] "Color_YELLOW"%s\r["Color_RESET, str);
+	} else {
+		eprintf ("[ ] %s\r[", str);
+	}
 }
 
 static void rowlog_done(RCore *core) {
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	if (use_color)
-		eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", oldstr);
-	else eprintf ("\r[x] %s\n", oldstr);
+	bool verbose = r_config_get_i (core->config, "scr.prompt");
+	if (verbose) {
+		if (use_color)
+			eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", oldstr);
+		else eprintf ("\r[x] %s\n", oldstr);
+	}
 }
 
 static int compute_coverage(RCore *core) {
@@ -4044,7 +4053,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						rowlog_done (core);
 					}
 				} else {
-					eprintf ("[*] Use -AA or aaaa to perform additional experimental analysis.\n");
+					rowlog (core, "[*] Use -AA or aaaa to perform additional experimental analysis.\n");
 				}
 				r_config_set_i (core->config, "anal.calls", c);
 				rowlog (core, "Constructing a function name for fcn.* and sym.func.* functions (aan)");
