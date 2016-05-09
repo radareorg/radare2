@@ -16,7 +16,7 @@ static RAnal *anal = NULL;
 static int coutput = false;
 static bool json = false;
 
-static int showanal(RAnal *anal, RAnalOp *op, ut64 offset, ut8 *buf, int len, bool json);
+static int showanal(RAnal *lanal, RAnalOp *op, ut64 offset, ut8 *buf, int len, bool json);
 
 // TODO: add israw/len
 static int show_analinfo(const char *arg, ut64 offset) {
@@ -49,10 +49,10 @@ static int show_analinfo(const char *arg, ut64 offset) {
 	return ret;
 }
 
-static const char *has_esil(RAnal *a, const char *name) {
+static const char *has_esil(RAnal *lanal, const char *name) {
 	RListIter *iter;
 	RAnalPlugin *h;
-	r_list_foreach (a->plugins, iter, h) {
+	r_list_foreach (anal->plugins, iter, h) {
 		if (!strcmp (name, h->name)) {
 			if (h->esil)
 				return "Ae";
@@ -62,7 +62,7 @@ static const char *has_esil(RAnal *a, const char *name) {
 	return "__";
 }
 
-static void rasm2_list(RAsm *a, const char *arch) {
+static void rasm2_list(RAsm *la, const char *arch) {
 	int i;
 	char bits[32];
 	const char *feat2, *feat;
@@ -109,7 +109,7 @@ static char *stackop2str(int type) {
 	return strdup ("unknown");
 }
 
-static int showanal(RAnal *anal, RAnalOp *op, ut64 offset, ut8 *buf, int len, bool json) {
+static int showanal(RAnal *lanal, RAnalOp *op, ut64 offset, ut8 *buf, int len, bool json) {
 	const char *optype = NULL;
 	char *bytes, *stackop = NULL;
 	int ret;
@@ -378,8 +378,6 @@ int main (int argc, char *argv[]) {
 		r_asm_set_bits (a, sysbits);
 		r_anal_set_bits (anal, sysbits);
 	}
-	isbig = r_asm_set_big_endian (a, false);
-	r_anal_set_big_endian (anal, isbig);
 
 	while ((c = getopt (argc, argv, "Ai:k:DCc:eEva:b:s:do:Bl:hjLf:F:wO:")) != -1) {
 		switch (c) {
@@ -408,8 +406,7 @@ int main (int argc, char *argv[]) {
 			dis = 2;
 			break;
 		case 'e':
-			isbig = r_asm_set_big_endian (a, true);
-			r_anal_set_big_endian (anal, isbig);
+			isbig = true;
 			break;
 		case 'E':
 			dis = 3;
@@ -486,6 +483,8 @@ int main (int argc, char *argv[]) {
 	r_anal_set_bits (anal, (env_bits && *env_bits)? atoi (env_bits): bits);
 	a->syscall = r_syscall_new ();
 	r_syscall_setup (a->syscall, arch, kernel, bits);
+	isbig = r_asm_set_big_endian (a, isbig);
+	r_anal_set_big_endian (anal, isbig);
 
 	if (whatsop) {
 		const char *s = r_asm_describe (a, argv[optind]);
