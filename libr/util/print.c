@@ -551,6 +551,57 @@ static int check_sparse (const ut8 *p, int len, int ch) {
 	return 1;
 }
 
+static bool isAllZeros (const ut8*buf, int len) {
+	int i;
+	for (i = 0; i < len; i++) {
+		if (buf[i] != 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
+#define Pal(x) (rp->cons && rp->cons->pal.x)? rp->cons->pal.x
+        PrintfCallback p = (PrintfCallback) rp->cb_printf;
+	bool c = rp->flags & R_PRINT_FLAGS_COLOR;
+	const char *color_0xff = c? (Pal(b0xff): Color_RED): "";
+	const char *color_text = c? (Pal(btext): Color_MAGENTA): "";
+	const char *color_other = c? (Pal(other): Color_WHITE): "";
+	const char *color_reset = c? Color_RESET: "";
+	int i, j;
+
+	if (rp->flags & R_PRINT_FLAGS_HEADER) {
+		p ("         ");
+		for (i = 0; i < step; i++) {
+			p ("%3X", i);
+		}
+		p ("\n");
+	}
+
+	for (i = 0; i < len; i += step) {
+		int inc = R_MIN (step, (len - i));
+		if (isAllZeros (buf + i, inc)) {
+			continue;
+		}
+		p ("%8X:", addr + i);
+		for (j = 0; j < inc; j ++) {
+			ut8 ch = buf[i + j];
+			if (ch == 0x00) {
+				p ("   ");
+			} else if (ch == 0xff) {
+				p ("%s ##%s", color_0xff, color_reset);
+			} else if (IS_PRINTABLE (ch)) {
+				p ("%s .%c%s", color_text, ch, color_reset);
+			} else {
+				p ("%s %02x%s", color_other, ch, color_reset);
+			}
+		}
+		p ("\n");
+	}
+	p ("%8X ]\n", addr + i);
+}
+
 // XXX: step is borken
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step) {
         PrintfCallback printfmt = (PrintfCallback) printf;
@@ -596,7 +647,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_header = false;
 	}
 	if (use_header) {
-		if (base < 32 ) { //&& step != 2) {
+		if (base < 32) { //&& step != 2) {
 			ut32 opad = (ut32)(addr >> 32);
 			{ // XXX: use r_print_addr_header
 				int i, delta;

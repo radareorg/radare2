@@ -2975,6 +2975,7 @@ static int cmd_print(void *data, const char *input) {
 				"pxb", "", "dump bits in hexdump form",
 				"pxd", "[124]", "signed integer dump (1 byte, 2 and 4)",
 				"pxe", "", "emoji hexdump! :)",
+				"pxi", "", "HexII compact binary representation",
 				"pxf", "", "show hexdump of current function",
 				"pxh", "", "show hexadecimal half-words dump (16bit)",
 				"pxH", "", "same as above, but one per line",
@@ -3024,8 +3025,10 @@ static int cmd_print(void *data, const char *input) {
 #define P(x) (IS_PRINTABLE(x)?x:'.')
 #define SPLIT_BITS(x) memmove (x + 5, x + 4, 5); x[4]=0
 			for (i = c = 0; i < len; i++,c++) {
-				if (c == 0) r_print_offset (core->print,
-							core->offset+i, 0, 0, 0);
+				if (c == 0) {
+					r_print_offset (core->print,
+						core->offset + i, 0, 0, 0);
+				}
 				r_str_bits (buf, core->block+i, 8, NULL);
 				SPLIT_BITS (buf);
 				r_cons_printf ("%s.%s  ", buf, buf+5);
@@ -3040,6 +3043,10 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			}
+			break;
+		case 'i': // "pxi"
+			r_print_hexii (core->print, core->offset, core->block,
+				core->blocksize, r_config_get_i (core->config, "hex.cols"));
 			break;
 		case 'o': // "pxo"
 			r_print_hexdump (core->print, core->offset,
