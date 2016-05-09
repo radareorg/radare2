@@ -35,6 +35,328 @@ static int sex_s13(int imm) { return sex(13, imm); }
 static int sex_s21(int imm) { return sex(21, imm); }
 static int sex_s25(int imm) { return sex(25, imm); }
 
+static void arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
+    ut8 field_m;
+    st16 imm;
+    st64 limm;
+
+    ut8 format = (words[0] & 0x00c00000) >> 22;
+    ut8 subopcode = (words[0] & 0x003f0000) >> 16;
+    ut16 field_c = (words[0] & 0x00000fc0) >> 6;
+    ut16 field_a = (words[0] & 0x0000003f);
+    ut16 field_b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
+
+    /* if any one of the reg fields indicates a limm value,
+       increase the size to cover it */
+    if (field_b == 0x3e) {
+        op->size = 8;
+        limm = words[1];
+        /* FIXME: MOV<.f> 0,x is encoded as field_b == 0x3e, but no limm */
+    } else if ((format == 0 || format == 1) && (field_a == 0x3e)) {
+        op->size = 8;
+        limm = words[1];
+    } else if ((format == 0) && (field_c == 0x3e)) {
+        op->size = 8;
+        limm = words[1];
+    } else if ((format == 3) && ((field_a & 0x20) == 0x20) && (field_c == 0x3e)) {
+        op->size = 8;
+        limm = words[1];
+    }
+
+    if (format == 1) {
+        /* REG_U6IMM */
+        imm = field_c;
+    } else if (format == 2) {
+        /* REG_S12IMM */
+        imm = sex_s12 (field_c | field_a << 6);
+    }
+
+    switch (subopcode) {
+    case 0x00: /* add */
+        if ((format == 1 || format == 2) && field_b == 0x3f) {
+            /* dst = PCL + src */
+            op->ptr = (addr & ~3) + imm;
+            op->refptr = 1; /* HACK! we dont actually know what size it is */
+        }
+    case 0x01: /* add with carry */
+    case 0x14: /* add with left shift by 1 */
+    case 0x15: /* add with left shift by 2 */
+    case 0x16: /* add with left shift by 3 */
+        op->type = R_ANAL_OP_TYPE_ADD;
+        break;
+    case 0x02: /* subtract */
+    case 0x03: /* subtract with carry */
+    case 0x0e: /* reverse subtract */
+    case 0x17: /* subtract with left shift by 1 */
+    case 0x18: /* subtract with left shift by 2 */
+    case 0x19: /* subtract with left shift by 3 */
+        op->type = R_ANAL_OP_TYPE_SUB;
+        break;
+    case 0x04: /* logical bitwise AND */
+    case 0x06: /* logical bitwise AND with invert */
+    case 0x10: /* bit clear */
+    case 0x13: /* bit mask */
+        op->type = R_ANAL_OP_TYPE_AND;
+        break;
+    case 0x05: /* logical bitwise OR */
+    case 0x0f: /* bit set */
+        op->type = R_ANAL_OP_TYPE_OR;
+        break;
+    case 0x07: /* logical bitwise exclusive-OR */
+    case 0x12: /* bit xor */
+        op->type = R_ANAL_OP_TYPE_XOR;
+        break;
+    case 0x08: /* larger of 2 signed integers */
+    case 0x09: /* smaller of 2 signed integers */
+        op->type = R_ANAL_OP_TYPE_CMOV;
+        break;
+    case 0x0a: /* move */
+        if (format == 2) {
+            op->type = R_ANAL_OP_TYPE_MOV;
+            op->val = sex_s12 (field_a << 6 | field_c);
+        } else if (format == 3) {
+            op->type = R_ANAL_OP_TYPE_CMOV;
+            /* TODO: cond codes */
+            if ((field_a & 0x20) == 1) {
+                /* its a move from imm u6 */
+                op->val = field_c;
+            } else if (field_c == 0x3e) {
+                /* its a move from limm */
+                op->val = limm;
+            }
+        }
+        break;
+    case 0x0b: /* test */
+    case 0x0c: /* compare */
+    case 0x0d: /* reverse compare */
+    case 0x11: /* bit test */
+        op->type = R_ANAL_OP_TYPE_CMP;
+        break;
+    case 0x1a: /* 32 X 32 signed multiply */
+    case 0x1b: /* 32 X 32 signed multiply */
+    case 0x1c: /* 32 X 32 unsigned multiply */
+    case 0x1d: /* 32 X 32 unsigned multiply */
+        op->type = R_ANAL_OP_TYPE_MUL;
+        break;
+    case 0x20: /* Jump */
+    case 0x21: /* Jump with delay slot */
+        switch (format) {
+        case 0: /* unconditional jumps via reg or long imm */
+            if (field_c == 0x3e) {
+                /* limm */
+                op->type = R_ANAL_OP_TYPE_JMP;
+                op->jump = limm;
+                op->fail = addr + op->size;
+            } else if (field_c == 0x1d || field_c == 0x1e || field_c == 0x1f) {
+                /* ilink1, ilink2, blink */
+                op->type = R_ANAL_OP_TYPE_RET;
+            } else {
+                op->type = R_ANAL_OP_TYPE_UJMP;
+            }
+            break;
+        case 1: /* unconditional jumps via u6 imm */
+            op->type = R_ANAL_OP_TYPE_JMP;
+            op->jump = addr + field_c; /* TODO: is addr aligned? */
+            op->fail = addr + op->size;
+            break;
+        case 2: /* unconditional jumps via s12 imm */
+            op->type = R_ANAL_OP_TYPE_JMP;
+            imm = (field_a << 6 | field_c);
+            imm = sex_s12 (imm);
+            op->jump = addr + imm;
+            op->fail = addr + op->size;
+            break;
+        case 3: /* conditional jumps */
+            field_m = (words[0] & 0x20) >> 5;
+            if (field_m == 0) {
+                if (field_c == 0x3e) {
+                    op->type = R_ANAL_OP_TYPE_CJMP;
+                    op->jump = limm;
+                } else if (field_c == 0x1d || field_c == 0x1e || field_c == 0x1f) {
+                    /* ilink1, ilink2, blink */
+                    op->type = R_ANAL_OP_TYPE_CRET;
+                } else {
+                    op->type = R_ANAL_OP_TYPE_UCJMP;
+                }
+            } else {
+                imm = field_c;
+                op->type = R_ANAL_OP_TYPE_CJMP;
+                op->jump = addr + field_c; /* TODO: is addr aligned? */
+            }
+
+            /* TODO: cond codes */
+            op->fail = addr + op->size;
+            break;
+        }
+    case 0x22: /* jump and link */
+    case 0x23: /* jump and link with delay slot */
+        /* FIXME: DRY this code and the previous jumps .. */
+        switch (format) {
+        case 0: /* unconditional jumps via reg or long imm */
+            if (field_c == 0x3e) {
+                /* limm */
+                op->type = R_ANAL_OP_TYPE_CALL;
+                op->jump = limm;
+                op->fail = addr + op->size;
+            } else {
+                op->type = R_ANAL_OP_TYPE_UCALL;
+            }
+            break;
+        case 1: /* unconditional jumps via u6 imm */
+            op->type = R_ANAL_OP_TYPE_CALL;
+            op->jump = addr + field_c; /* TODO: is addr aligned? */
+            op->fail = addr + op->size;
+            break;
+        case 2: /* unconditional jumps via s12 imm */
+            op->type = R_ANAL_OP_TYPE_CALL;
+            imm = (field_a << 6 | field_c);
+            imm = sex_s12 (imm);
+            op->jump = addr + imm;
+            break;
+        case 3: /* conditional jumps */
+            field_m = (words[0] & 0x20) >> 5;
+            if (field_m == 0) {
+                if (field_c == 0x3e) {
+                    op->type = R_ANAL_OP_TYPE_CCALL;
+                    op->jump = limm;
+                } else {
+                    op->type = R_ANAL_OP_TYPE_UCCALL;
+                }
+            } else {
+                imm = field_c;
+                op->type = R_ANAL_OP_TYPE_CCALL;
+                op->jump = addr + field_c; /* TODO: is addr aligned? */
+            }
+
+            /* TODO: cond codes */
+            op->fail = addr + op->size;
+            break;
+        }
+        break;
+    case 0x1e: /* Reserved */
+    case 0x1f: /* Reserved */
+    case 0x24: /* Reserved */
+    case 0x25: /* Reserved */
+    case 0x26: /* Reserved */
+    case 0x27: /* Reserved */
+    case 0x2c: /* Reserved */
+    case 0x2d: /* Reserved */
+    case 0x2e: /* Reserved */
+    case 0x38: /* Reserved */
+    case 0x39: /* Reserved */
+    case 0x3a: /* Reserved */
+    case 0x3b: /* Reserved */
+    case 0x3c: /* Reserved */
+    case 0x3d: /* Reserved */
+    case 0x3e: /* Reserved */
+    case 0x3f: /* Reserved */
+        op->type = R_ANAL_OP_TYPE_ILL;
+        break;
+    case 0x28: /* loop (16-bit aligned target address) */
+        /* this is essentially a COME FROM instruction!! */
+        /* TODO: describe it to radare better ? */
+        switch (format) {
+        case 2: /* Loop Set Up (Unconditional) */
+            imm = sex_s13 ((field_c | (field_a << 6)) << 1);
+            op->jump = (addr & ~3) + imm;
+            op->type = R_ANAL_OP_TYPE_CJMP;
+            op->fail = addr + op->size;
+            break;
+        case 3: /* Loop Set Up (Conditional) */
+            imm = field_c << 1;
+            op->jump = (addr & ~3) + imm;
+            op->type = R_ANAL_OP_TYPE_CJMP;
+            op->fail = addr + op->size;
+            /* TODO: cond codes */
+            break;
+        default:
+            op->type = R_ANAL_OP_TYPE_ILL;
+            break;
+        }
+        break;
+    case 0x29: /* set status flags */
+        op->type = R_ANAL_OP_TYPE_MOV;
+        break;
+    case 0x2a: /* load from auxiliary register. */
+    case 0x2b: /* store to auxiliary register. */
+        op->type = R_ANAL_OP_TYPE_IO;
+        break;
+    case 0x2f: /* Single Operand Instructions, 0x04, [0x2F, 0x00 - 0x3F] */
+        switch (field_a) {
+        case 0: /* Arithmetic shift left by one */
+            op->type = R_ANAL_OP_TYPE_SAL;
+            break;
+        case 1: /* Arithmetic shift right by one */
+            op->type = R_ANAL_OP_TYPE_SAR;
+            break;
+        case 2: /* Logical shift right by one */
+            op->type = R_ANAL_OP_TYPE_SHR;
+            break;
+        case 3: /* Rotate right */
+        case 4: /* Rotate right through carry */
+            op->type = R_ANAL_OP_TYPE_ROR;
+            break;
+        case 5: /* Sign extend byte */
+        case 6: /* Sign extend word */
+        case 7: /* Zero extend byte */
+        case 8: /* Zero extend word */
+            op->type = R_ANAL_OP_TYPE_UNK;
+            /* TODO: a better encoding for SEX and EXT instructions */
+            break;
+        case 9: /* Absolute */
+            op->type = R_ANAL_OP_TYPE_ABS;
+            break;
+        case 0xa: /* Logical NOT */
+            op->type = R_ANAL_OP_TYPE_NOT;
+            break;
+        case 0xb: /* Rotate left through carry */
+            op->type = R_ANAL_OP_TYPE_ROL;
+            break;
+        case 0xc: /* Atomic Exchange */
+            op->type = R_ANAL_OP_TYPE_XCHG;
+            break;
+        case 0x3f: /* See Zero operand (ZOP) table */
+            switch (field_b) {
+            case 1: /* Sleep */
+                /* TODO: a better encoding for this */
+                op->type = R_ANAL_OP_TYPE_NULL;
+                break;
+            case 2: /* Software interrupt */
+                op->type = R_ANAL_OP_TYPE_SWI;
+                break;
+            case 3: /* Wait for all data-based memory transactions to complete */
+                /* TODO: a better encoding for this */
+                op->type = R_ANAL_OP_TYPE_NULL;
+                break;
+            case 4: /* Return from interrupt/exception */
+                op->type = R_ANAL_OP_TYPE_RET;
+                break;
+            case 5: /* Breakpoint instruction */
+                op->type = R_ANAL_OP_TYPE_TRAP;
+                break;
+            default:
+                op->type = R_ANAL_OP_TYPE_ILL;
+                break;
+            }
+            break;
+        default:
+            op->type = R_ANAL_OP_TYPE_ILL;
+            break;
+        }
+        break;
+    case 0x30:
+    case 0x31:
+    case 0x32:
+    case 0x33:
+    case 0x34:
+    case 0x35:
+    case 0x36:
+    case 0x37: /* Load Register-Register, 0x04, [0x30 - 0x37] */
+        op->type = R_ANAL_OP_TYPE_MOV;
+        break;
+    }
+}
+
 static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	const ut8 *b = (ut8 *)data;
 
@@ -226,322 +548,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             }
             break;
         case 4: /* General Operations */
-            format = (words[0] & 0x00c00000) >> 22;
-            subopcode = (words[0] & 0x003f0000) >> 16;
-            field_c = (words[0] & 0x00000fc0) >> 6;
-            field_a = (words[0] & 0x0000003f);
-            field_b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
-
-            /* if any one of the reg fields indicates a limm value,
-               increase the size to cover it */
-            if (field_b == 0x3e) {
-                op->size = 8;
-                limm = words[1];
-                /* FIXME: MOV<.f> 0,x is encoded as field_b == 0x3e, but no limm */
-            } else if ((format == 0 || format == 1) && (field_a == 0x3e)) {
-                op->size = 8;
-                limm = words[1];
-            } else if ((format == 0) && (field_c == 0x3e)) {
-                op->size = 8;
-                limm = words[1];
-            } else if ((format == 3) && ((field_a & 0x20) == 0x20) && (field_c == 0x3e)) {
-                op->size = 8;
-                limm = words[1];
-            }
-
-            if (format == 1) {
-                /* REG_U6IMM */
-                imm = field_c;
-            } else if (format == 2) {
-                /* REG_S12IMM */
-                imm = sex_s12 (field_c | field_a << 6);
-            }
-
-            switch (subopcode) {
-            case 0x00: /* add */
-                if ((format == 1 || format == 2) && field_b == 0x3f) {
-                    /* dst = PCL + src */
-                    op->ptr = (addr & ~3) + imm;
-                    op->refptr = 1; /* HACK! we dont actually know what size it is */
-                }
-            case 0x01: /* add with carry */
-            case 0x14: /* add with left shift by 1 */
-            case 0x15: /* add with left shift by 2 */
-            case 0x16: /* add with left shift by 3 */
-                op->type = R_ANAL_OP_TYPE_ADD;
-                break;
-            case 0x02: /* subtract */
-            case 0x03: /* subtract with carry */
-            case 0x0e: /* reverse subtract */
-            case 0x17: /* subtract with left shift by 1 */
-            case 0x18: /* subtract with left shift by 2 */
-            case 0x19: /* subtract with left shift by 3 */
-                op->type = R_ANAL_OP_TYPE_SUB;
-                break;
-            case 0x04: /* logical bitwise AND */
-            case 0x06: /* logical bitwise AND with invert */
-            case 0x10: /* bit clear */
-            case 0x13: /* bit mask */
-                op->type = R_ANAL_OP_TYPE_AND;
-                break;
-            case 0x05: /* logical bitwise OR */
-            case 0x0f: /* bit set */
-                op->type = R_ANAL_OP_TYPE_OR;
-                break;
-            case 0x07: /* logical bitwise exclusive-OR */
-            case 0x12: /* bit xor */
-                op->type = R_ANAL_OP_TYPE_XOR;
-                break;
-            case 0x08: /* larger of 2 signed integers */
-            case 0x09: /* smaller of 2 signed integers */
-                op->type = R_ANAL_OP_TYPE_CMOV;
-                break;
-            case 0x0a: /* move */
-                if (format == 2) {
-                    op->type = R_ANAL_OP_TYPE_MOV;
-                    op->val = sex_s12 (field_a << 6 | field_c);
-                } else if (format == 3) {
-                    op->type = R_ANAL_OP_TYPE_CMOV;
-                    /* TODO: cond codes */
-                    if ((field_a & 0x20) == 1) {
-                        /* its a move from imm u6 */
-                        op->val = field_c;
-                    } else if (field_c == 0x3e) {
-                        /* its a move from limm */
-                        op->val = limm;
-                    }
-                }
-                break;
-            case 0x0b: /* test */
-            case 0x0c: /* compare */
-            case 0x0d: /* reverse compare */
-            case 0x11: /* bit test */
-                op->type = R_ANAL_OP_TYPE_CMP;
-                break;
-            case 0x1a: /* 32 X 32 signed multiply */
-            case 0x1b: /* 32 X 32 signed multiply */
-            case 0x1c: /* 32 X 32 unsigned multiply */
-            case 0x1d: /* 32 X 32 unsigned multiply */
-                op->type = R_ANAL_OP_TYPE_MUL;
-                break;
-            case 0x20: /* Jump */
-            case 0x21: /* Jump with delay slot */
-                switch (format) {
-                case 0: /* unconditional jumps via reg or long imm */
-                    if (field_c == 0x3e) {
-                        /* limm */
-                        op->type = R_ANAL_OP_TYPE_JMP;
-                        op->jump = limm;
-                        op->fail = addr + op->size;
-                    } else if (field_c == 0x1d || field_c == 0x1e || field_c == 0x1f) {
-                        /* ilink1, ilink2, blink */
-                        op->type = R_ANAL_OP_TYPE_RET;
-                    } else {
-                        op->type = R_ANAL_OP_TYPE_UJMP;
-                    }
-                    break;
-                case 1: /* unconditional jumps via u6 imm */
-                    op->type = R_ANAL_OP_TYPE_JMP;
-                    op->jump = addr + field_c; /* TODO: is addr aligned? */
-                    op->fail = addr + op->size;
-                    break;
-                case 2: /* unconditional jumps via s12 imm */
-                    op->type = R_ANAL_OP_TYPE_JMP;
-                    imm = (field_a << 6 | field_c);
-                    imm = sex_s12 (imm);
-                    op->jump = addr + imm;
-                    op->fail = addr + op->size;
-                    break;
-                case 3: /* conditional jumps */
-                    field_m = (words[0] & 0x20) >> 5;
-                    if (field_m == 0) {
-                        if (field_c == 0x3e) {
-                            op->type = R_ANAL_OP_TYPE_CJMP;
-                            op->jump = limm;
-                        } else if (field_c == 0x1d || field_c == 0x1e || field_c == 0x1f) {
-                            /* ilink1, ilink2, blink */
-                            op->type = R_ANAL_OP_TYPE_CRET;
-                        } else {
-                            op->type = R_ANAL_OP_TYPE_UCJMP;
-                        }
-                    } else {
-                        imm = field_c;
-                        op->type = R_ANAL_OP_TYPE_CJMP;
-                        op->jump = addr + field_c; /* TODO: is addr aligned? */
-                    }
-
-                    /* TODO: cond codes */
-                    op->fail = addr + op->size;
-                    break;
-                }
-            case 0x22: /* jump and link */
-            case 0x23: /* jump and link with delay slot */
-                /* FIXME: DRY this code and the previous jumps .. */
-                switch (format) {
-                case 0: /* unconditional jumps via reg or long imm */
-                    if (field_c == 0x3e) {
-                        /* limm */
-                        op->type = R_ANAL_OP_TYPE_CALL;
-                        op->jump = limm;
-                        op->fail = addr + op->size;
-                    } else {
-                        op->type = R_ANAL_OP_TYPE_UCALL;
-                    }
-                    break;
-                case 1: /* unconditional jumps via u6 imm */
-                    op->type = R_ANAL_OP_TYPE_CALL;
-                    op->jump = addr + field_c; /* TODO: is addr aligned? */
-                    op->fail = addr + op->size;
-                    break;
-                case 2: /* unconditional jumps via s12 imm */
-                    op->type = R_ANAL_OP_TYPE_CALL;
-                    imm = (field_a << 6 | field_c);
-                    imm = sex_s12 (imm);
-                    op->jump = addr + imm;
-                    break;
-                case 3: /* conditional jumps */
-                    field_m = (words[0] & 0x20) >> 5;
-                    if (field_m == 0) {
-                        if (field_c == 0x3e) {
-                            op->type = R_ANAL_OP_TYPE_CCALL;
-                            op->jump = limm;
-                        } else {
-                            op->type = R_ANAL_OP_TYPE_UCCALL;
-                        }
-                    } else {
-                        imm = field_c;
-                        op->type = R_ANAL_OP_TYPE_CCALL;
-                        op->jump = addr + field_c; /* TODO: is addr aligned? */
-                    }
-
-                    /* TODO: cond codes */
-                    op->fail = addr + op->size;
-                    break;
-                }
-                break;
-            case 0x1e: /* Reserved */
-            case 0x1f: /* Reserved */
-            case 0x24: /* Reserved */
-            case 0x25: /* Reserved */
-            case 0x26: /* Reserved */
-            case 0x27: /* Reserved */
-            case 0x2c: /* Reserved */
-            case 0x2d: /* Reserved */
-            case 0x2e: /* Reserved */
-            case 0x38: /* Reserved */
-            case 0x39: /* Reserved */
-            case 0x3a: /* Reserved */
-            case 0x3b: /* Reserved */
-            case 0x3c: /* Reserved */
-            case 0x3d: /* Reserved */
-            case 0x3e: /* Reserved */
-            case 0x3f: /* Reserved */
-                op->type = R_ANAL_OP_TYPE_ILL;
-                break;
-            case 0x28: /* loop (16-bit aligned target address) */
-                /* this is essentially a COME FROM instruction!! */
-                /* TODO: describe it to radare better ? */
-                switch (format) {
-                case 2: /* Loop Set Up (Unconditional) */
-                    imm = sex_s13 ((field_c | (field_a << 6)) << 1);
-                    op->jump = (addr & ~3) + imm;
-                    op->type = R_ANAL_OP_TYPE_CJMP;
-                    op->fail = addr + op->size;
-                    break;
-                case 3: /* Loop Set Up (Conditional) */
-                    imm = field_c << 1;
-                    op->jump = (addr & ~3) + imm;
-                    op->type = R_ANAL_OP_TYPE_CJMP;
-                    op->fail = addr + op->size;
-                    /* TODO: cond codes */
-                    break;
-                default:
-                    op->type = R_ANAL_OP_TYPE_ILL;
-                    break;
-                }
-                break;
-            case 0x29: /* set status flags */
-                op->type = R_ANAL_OP_TYPE_MOV;
-                break;
-            case 0x2a: /* load from auxiliary register. */
-            case 0x2b: /* store to auxiliary register. */
-                op->type = R_ANAL_OP_TYPE_IO;
-                break;
-            case 0x2f: /* Single Operand Instructions, 0x04, [0x2F, 0x00 - 0x3F] */
-                switch (field_a) {
-                case 0: /* Arithmetic shift left by one */
-                    op->type = R_ANAL_OP_TYPE_SAL;
-                    break;
-                case 1: /* Arithmetic shift right by one */
-                    op->type = R_ANAL_OP_TYPE_SAR;
-                    break;
-                case 2: /* Logical shift right by one */
-                    op->type = R_ANAL_OP_TYPE_SHR;
-                    break;
-                case 3: /* Rotate right */
-                case 4: /* Rotate right through carry */
-                    op->type = R_ANAL_OP_TYPE_ROR;
-                    break;
-                case 5: /* Sign extend byte */
-                case 6: /* Sign extend word */
-                case 7: /* Zero extend byte */
-                case 8: /* Zero extend word */
-                    op->type = R_ANAL_OP_TYPE_UNK;
-                    /* TODO: a better encoding for SEX and EXT instructions */
-                    break;
-                case 9: /* Absolute */
-                    op->type = R_ANAL_OP_TYPE_ABS;
-                    break;
-                case 0xa: /* Logical NOT */
-                    op->type = R_ANAL_OP_TYPE_NOT;
-                    break;
-                case 0xb: /* Rotate left through carry */
-                    op->type = R_ANAL_OP_TYPE_ROL;
-                    break;
-                case 0xc: /* Atomic Exchange */
-                    op->type = R_ANAL_OP_TYPE_XCHG;
-                    break;
-                case 0x3f: /* See Zero operand (ZOP) table */
-                    switch (field_b) {
-                    case 1: /* Sleep */
-                        /* TODO: a better encoding for this */
-                        op->type = R_ANAL_OP_TYPE_NULL;
-                        break;
-                    case 2: /* Software interrupt */
-                        op->type = R_ANAL_OP_TYPE_SWI;
-                        break;
-                    case 3: /* Wait for all data-based memory transactions to complete */
-                        /* TODO: a better encoding for this */
-                        op->type = R_ANAL_OP_TYPE_NULL;
-                        break;
-                    case 4: /* Return from interrupt/exception */
-                        op->type = R_ANAL_OP_TYPE_RET;
-                        break;
-                    case 5: /* Breakpoint instruction */
-                        op->type = R_ANAL_OP_TYPE_TRAP;
-                        break;
-                    default:
-                        op->type = R_ANAL_OP_TYPE_ILL;
-                        break;
-                    }
-                    break;
-                default:
-                    op->type = R_ANAL_OP_TYPE_ILL;
-                    break;
-                }
-                break;
-            case 0x30:
-            case 0x31:
-            case 0x32:
-            case 0x33:
-            case 0x34:
-            case 0x35:
-            case 0x36:
-            case 0x37: /* Load Register-Register, 0x04, [0x30 - 0x37] */
-                op->type = R_ANAL_OP_TYPE_MOV;
-                break;
-            /* 0x2f Special ops */
-            }
+            arcompact_genops(op,addr,words);
             break;
         case 0x05:
         case 0x06:
