@@ -1177,7 +1177,6 @@ R_API int r_core_init(RCore *core) {
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;
 	core->incomment = false;
-	core->screen_bounds = 0LL;
 	core->config = NULL;
 	core->http_up = false;
 	core->print = r_print_new ();

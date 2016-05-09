@@ -8,7 +8,7 @@
 static int obs = 0;
 static int blocksize = 0;
 static int autoblocksize = 1;
-static void r_core_visual_refresh (RCore *core);
+static void visual_refresh(RCore *core);
 #define PIDX (R_ABS(core->printidx%NPF))
 
 #define debugfmt_default "?0;f tmp;sr SP;pxw 64;?1;dr=;?1;s-;s tmp;f-tmp;pd $r"
@@ -28,7 +28,7 @@ static int visual_repeat_thread(RThread *th) {
 	for (;;) {
 		if (core->cons->breaked)
 			break;
-		r_core_visual_refresh (core);
+		visual_refresh (core);
 		r_cons_flush ();
 		r_cons_gotoxy (0, 0);
 		r_cons_printf ("[@%d] ", i++);
@@ -995,10 +995,10 @@ static bool fix_cursor(RCore *core) {
 	bool res = false;
 
 	if (!core->print->cur_enabled) return false;
-	if (core->screen_bounds > 1) {
-		bool off_is_visible = core->offset < core->screen_bounds;
-		bool cur_is_visible = core->offset + p->cur < core->screen_bounds;
-		bool is_close = core->offset + p->cur < core->screen_bounds + 32;
+	if (core->print->screen_bounds > 1) {
+		bool off_is_visible = core->offset < core->print->screen_bounds;
+		bool cur_is_visible = core->offset + p->cur < core->print->screen_bounds;
+		bool is_close = core->offset + p->cur < core->print->screen_bounds + 32;
 
 		if (!cur_is_visible && !is_close) {
 			// when the cursor is not visible and it's far from the
@@ -1096,7 +1096,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 							op->type == R_ANAL_OP_TYPE_CCALL) {
 						if (core->print->cur_enabled) {
 							int delta = R_ABS ((st64)op->jump-(st64)offset);
-							if ( op->jump < core->offset || op->jump >= core->screen_bounds) {
+							if ( op->jump < core->offset || op->jump >= core->print->screen_bounds) {
 								r_io_sundo_push (core->io, offset);
 								r_core_visual_seek_animation (core, op->jump);
 								core->print->cur = 0;
@@ -1486,9 +1486,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (core->print->cur_enabled) {
 			cursor_nextrow (core, true);
 		} else {
-			if (core->screen_bounds > 1 && core->screen_bounds >= core->offset) {
-				ut64 addr = core->screen_bounds;
-				if (core->screen_bounds == core->offset) {
+			if (core->print->screen_bounds > 1 && core->print->screen_bounds >= core->offset) {
+				ut64 addr = core->print->screen_bounds;
+				if (core->print->screen_bounds == core->offset) {
 					addr += r_asm_disassemble (core->assembler, &op, core->block, 32);
 				}
 				r_core_seek (core, addr, 1);
@@ -1527,8 +1527,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (core->print->cur_enabled) {
 			cursor_prevrow (core, true);
 		} else {
-			if (core->screen_bounds > 1 && core->screen_bounds > core->offset) {
-				int delta = (core->screen_bounds - core->offset);
+			if (core->print->screen_bounds > 1 && core->print->screen_bounds > core->offset) {
+				int delta = (core->print->screen_bounds - core->offset);
 				if (core->offset >= delta)
 					r_core_seek (core, core->offset - delta, 1);
 				else
@@ -1875,10 +1875,10 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	{
 		int bsize = core->cons->rows * 5;
 
-		if (core->screen_bounds > 1) {
+		if (core->print->screen_bounds > 1) {
 			// estimate new blocksize with the size of the last
 			// printed instructions
-			int new_sz = core->screen_bounds - core->offset + 32;
+			int new_sz = core->print->screen_bounds - core->offset + 32;
 			if (new_sz > bsize) bsize = new_sz;
 		}
 		r_core_block_size (core, bsize);
@@ -1951,7 +1951,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	if (color) r_cons_strcat (Color_RESET);
 }
 
-static int r_core_visual_responsive (RCore *core) {
+static int visual_responsive(RCore *core) {
 	int h, w = r_cons_get_size (&h);
 	if (r_config_get_i (core->config, "scr.responsive")) {
 		if (w<110) {
@@ -1986,14 +1986,14 @@ static int r_core_visual_responsive (RCore *core) {
 	return w;
 }
 
-static void r_core_visual_refresh (RCore *core) {
+static void visual_refresh(RCore *core) {
 	int w;
 	const char *vi, *vcmd;
 	if (!core) return;
 	r_print_set_cursor (core->print, core->print->cur_enabled, core->print->ocur, core->print->cur);
 	core->cons->blankline = true;
 
-	w = r_core_visual_responsive (core);
+	w = visual_responsive (core);
 
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
@@ -2002,7 +2002,6 @@ static void r_core_visual_refresh (RCore *core) {
 	}
 	r_cons_flush ();
 	r_cons_print_clear ();
-	//core->curtab = 0;
 
 	vi = r_config_get (core->config, "cmd.cprompt");
 	if (vi && *vi) {
@@ -2036,15 +2035,15 @@ static void r_core_visual_refresh (RCore *core) {
 	if (vcmd && *vcmd) {
 		// disable screen bounds when it's a user-defined command
 		// because it can cause some issues
-		core->screen_bounds = 0;
+		core->print->screen_bounds = 0;
 		r_core_cmd (core, vcmd, 0);
 	} else {
-		core->screen_bounds = 1LL;
-		r_core_cmd0 (core, zoom? "pz": printfmt[PIDX]);
+		core->print->screen_bounds = 1LL;
+		r_core_cmd0 (core, zoom ? "pz" : printfmt[PIDX]);
 	}
-	if (core->screen_bounds != 1LL) {
+	if (core->print->screen_bounds != 1LL) {
 		r_cons_printf ("[0x%08"PFMT64x"..0x%08"PFMT64x"]\n",
-			core->offset, core->screen_bounds);
+			core->offset, core->print->screen_bounds);
 	}
 	blocksize = core->num->value? core->num->value : core->blocksize;
 
@@ -2130,7 +2129,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		r_cons_show_cursor (false);
 		if (wheel) r_cons_enable_mouse (true);
 		core->cons->event_data = core;
-		core->cons->event_resize = (RConsEvent)r_core_visual_refresh;
+		core->cons->event_resize = (RConsEvent)visual_refresh;
 		flags = core->print->flags;
 		color = r_config_get_i (core->config, "scr.color");
 		if (color) flags |= R_PRINT_FLAGS_COLOR;
@@ -2150,7 +2149,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 			r_core_cmd (core, cmdprompt, 0);
 		}
 		core->print->vflush = !skip;
-		r_core_visual_refresh (core);
+		visual_refresh (core);
 		if (!skip) {
 			ch = r_cons_readchar ();
 			r_core_visual_show_char (core, ch);

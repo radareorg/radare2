@@ -84,6 +84,9 @@ typedef struct r_print_t {
 	int row_offsets_sz;
 	// when true it makes visual mode flush the buffer to screen
 	bool vflush;
+	// represents the first not-visible offset on the screen
+	// (only when in visual disasm mode)
+	ut64 screen_bounds;
 } RPrint;
 
 #ifdef R_API
@@ -153,6 +156,7 @@ R_API int r_print_pack7bit(const char *src, char *dest);
 R_API char *r_print_stereogram_bytes(const ut8 *buf, int len);
 R_API char *r_print_stereogram(const char *bump, int w, int h);
 R_API void r_print_stereogram_print(RPrint *p, const char *buf);
+R_API void r_print_set_screenbounds(RPrint *p, ut64 addr);
 #endif
 
 #ifdef __cplusplus
