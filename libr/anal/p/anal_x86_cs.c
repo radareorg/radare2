@@ -29,6 +29,44 @@ struct Getarg {
 	int bits;
 };
 
+// Gets a string of the 64 bit extended reg for a 32 bit x86 reg
+static char *get64from32 (struct Getarg* gop, int n) {
+	csh handle = gop->handle;
+	cs_insn *insn = gop->insn;
+	cs_x86_op op;
+	if (n<0 || n>=INSOPS)
+		return NULL;
+	op = INSOP (n);
+	switch (op.type) {
+	case X86_OP_REG:
+		if (gop->bits == 64) {
+			switch (op.reg) {
+			case X86_REG_EAX: op.reg = X86_REG_RAX; break;
+			case X86_REG_EBX: op.reg = X86_REG_RBX; break;
+			case X86_REG_ECX: op.reg = X86_REG_RCX; break;
+			case X86_REG_EDX: op.reg = X86_REG_RDX; break;
+			case X86_REG_ESI: op.reg = X86_REG_RSI; break;
+			case X86_REG_EDI: op.reg = X86_REG_RDI; break;
+			case X86_REG_ESP: op.reg = X86_REG_RSP; break;
+			case X86_REG_EBP: op.reg = X86_REG_RBP; break;
+
+			case X86_REG_R8D: op.reg = X86_REG_R8; break;
+			case X86_REG_R9D: op.reg = X86_REG_R9; break;
+			case X86_REG_R10D: op.reg = X86_REG_R10; break;
+			case X86_REG_R11D: op.reg = X86_REG_R11; break;
+			case X86_REG_R12D: op.reg = X86_REG_R12; break;
+			case X86_REG_R13D: op.reg = X86_REG_R13; break;
+			case X86_REG_R14D: op.reg = X86_REG_R14; break;
+			case X86_REG_R15D: op.reg = X86_REG_R15; break;
+			default: break;
+			}
+		}
+		return strdup (cs_reg_name (handle, op.reg));
+	default:
+		return strdup ("invalid");
+	}
+}
+
 /**
  * Translates operand N to esil
  *
@@ -917,9 +955,16 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 	case X86_INS_XOR:
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "^");
-			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,0,cf,=,0,of,=",
-				src, dst);
+			char *dst = getarg (&gop, 0, 0, NULL);
+			char *rxx = get64from32 (&gop, 0);
+			char prefix[32] = {0};
+			if (a->bits == 64 && INSOP(0).size == 4) {
+				// Zero out top 32 bits of reg
+				snprintf(prefix, sizeof (prefix), "0,%s,+,%s,%s,^=,%s,=", dst, rxx, rxx, dst);
+				esilprintf (op, "%s,%s,%s,^=,$z,zf,=,$p,pf,=,$s,sf,=,0,cf,=,0,of,=", prefix, src, dst);
+			} else {
+				esilprintf (op, "%s,%s,^=,$z,zf,=,$p,pf,=,$s,sf,=,0,cf,=,0,of,=", src, dst);
+			}
 			free (src);
 			free (dst);
 		}
@@ -1027,8 +1072,16 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 	case X86_INS_ANDNPS:
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "&");
-			esilprintf (op, "%s,%s,0,of,=,0,cf,=,$z,zf,=,$s,sf,=,$o,pf,=", src, dst);
+			char *dst = getarg (&gop, 0, 0, NULL);
+			char *rxx = get64from32 (&gop, 0);
+			char prefix[32] = {0};
+			if (a->bits == 64 && INSOP(0).size == 4) {
+				// Zero out top 32 bits of reg
+				snprintf(prefix, sizeof (prefix), "0,%s,+,%s,%s,^=,%s,=", dst, rxx, rxx, dst);
+				esilprintf (op, "%s,%s,%s,&=,0,of,=,0,cf,=,$z,zf,=,$s,sf,=,$o,pf,=", prefix, src, dst);
+			} else {
+				esilprintf (op, "%s,%s,&=,0,of,=,0,cf,=,$z,zf,=,$s,sf,=,$o,pf,=", src, dst);
+			}
 			free (src);
 			free (dst);
 		}
