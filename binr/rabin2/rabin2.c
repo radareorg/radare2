@@ -358,7 +358,7 @@ static int rabin_do_operation(const char *op) {
 		RBinPlugin *plg = r_bin_file_cur_plugin (cur);
 		if (!plg) break;
 		if (plg->signature) {
-			char *sign = plg->signature (cur);
+			const char *sign = plg->signature (cur);
 			r_cons_printf ("%s\n", sign);
 			r_cons_flush ();
 		}
