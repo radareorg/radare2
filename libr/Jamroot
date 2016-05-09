@@ -2,6 +2,7 @@
 
 build-project util ;
 build-project hash ;
+build-project print ;
 
 build-project reg ;
 build-project cons ;
