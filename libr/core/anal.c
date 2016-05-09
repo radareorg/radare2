@@ -1613,14 +1613,19 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 }
 
 R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
+	if (!core || !fcn || core->anal->opt.bb_max_size < 1) {
+		return;
+	}
 	ut8 *buf = calloc(1,core->anal->opt.bb_max_size);
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;
 	int i;
-	if(!core || !fcn || !buf){
+	if(!buf){
 		return;
 	}
 	r_list_foreach (fcn->bbs, tmp, bb) {
+		if (bb->size < 1) continue;
+		buf = realloc (buf, bb->size);
 		if (r_io_read_at (core->io, bb->addr, buf, bb->size) != bb->size) {
 			eprintf ("read error\n");
 			free(buf);
@@ -1633,6 +1638,7 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
 			fill_args (core->anal, fcn, &op);
 		}
 	}
+
 	if (fcn->call == R_ANAL_CC_TYPE_FASTCALL) {
 		r_anal_var_add (core->anal, fcn->addr, 1, 0,'A', "int", 4,"arg_ecx");
 		r_anal_var_add (core->anal, fcn->addr, 1, 1,'A', "int", 4,"arg_edx");
@@ -2109,6 +2115,7 @@ R_API int r_core_anal_all(RCore *core) {
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (core->cons->breaked)
 			break;
+		fcn_callconv (core, fcni);
 		if (!strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4))
 			fcni->type = R_ANAL_FCN_TYPE_SYM;
 	}

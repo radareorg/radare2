@@ -290,7 +290,7 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 	*ptr_end = 0;
 	addr = ptr_end;
 	while ((*addr != '0' || *(addr+1) != 'x') &&
-		addr >= esil_buf && *addr != ',' ) {
+		addr >= esil_buf +2  && *addr != ',' ) {
 		addr--;
 	}
 	if (strncmp (addr, "0x", 2)) {
