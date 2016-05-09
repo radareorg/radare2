@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_util
-DEPS=
+DEPS=r_cons
 
 OBJS=mem.o pool.o num.o str.o hex.o file.o range.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o base64.o base85.o base91.o
