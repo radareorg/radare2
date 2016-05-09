@@ -50,15 +50,15 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 
 	op->delay = 0;
 
-        ut32 words[3];   /* storage for the de-swizled opcode data */
+        ut32 words[1];   /* storage for the de-swizled opcode data */
         if (anal->big_endian) {
             int i;
-            for (i=0; i<12; i+=4) {
+            for (i=0; i<8; i+=4) {
                 words[i/4] = r_read_be32(&b[i]);
             }
         } else {
             int i;
-            for (i=0; i<12; i+=4) {
+            for (i=0; i<8; i+=4) {
                 words[i/4] = r_read_me32(&b[i]);
             }
         }
