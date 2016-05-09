@@ -66,6 +66,76 @@ static int sex_s13(int imm) { return sex(13, imm); }
 static int sex_s21(int imm) { return sex(21, imm); }
 static int sex_s25(int imm) { return sex(25, imm); }
 
+static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basic_type) {
+    ut64 type_ujmp;
+    ut64 type_cjmp;
+    ut64 type_ucjmp;
+
+    if (basic_type == R_ANAL_OP_TYPE_JMP) {
+        type_ujmp = R_ANAL_OP_TYPE_UJMP;
+        type_cjmp = R_ANAL_OP_TYPE_CJMP;
+        type_ucjmp = R_ANAL_OP_TYPE_UCJMP;
+    } else if (basic_type == R_ANAL_OP_TYPE_CALL) {
+        type_ujmp = R_ANAL_OP_TYPE_UCALL;
+        type_cjmp = R_ANAL_OP_TYPE_CCALL;
+        type_ucjmp = R_ANAL_OP_TYPE_UCCALL;
+    } else {
+        return -1; /* Should not happen */
+    }
+
+    switch (f->format) {
+    case 0: /* unconditional jumps via reg or long imm */
+        if (f->c == 0x3e) {
+            /* limm */
+            op->type = basic_type;
+            op->jump = f->limm;
+            op->fail = addr + op->size;
+        } else if (f->c == 0x1d || f->c == 0x1e || f->c == 0x1f) {
+            /* ilink1, ilink2, blink */
+            /* Note: not valid for basic_type == CALL */
+            op->type = R_ANAL_OP_TYPE_RET;
+        } else {
+            op->type = type_ujmp;
+        }
+        break;
+    case 1: /* unconditional jumps via u6 imm */
+        op->type = basic_type;
+        op->jump = addr + f->c; /* TODO: is addr aligned? */
+        op->fail = addr + op->size;
+        break;
+    case 2: /* unconditional jumps via s12 imm */
+        op->type = basic_type;
+        f->imm = (f->a << 6 | f->c);
+        f->imm = sex_s12 (f->imm);
+        op->jump = addr + f->imm;
+        op->fail = addr + op->size;
+        break;
+    case 3: /* conditional jumps */
+        if (f->mode_m == 0) {
+            if (f->c == 0x3e) {
+                op->type = type_cjmp;
+                op->jump = f->limm;
+            } else if (f->c == 0x1d || f->c == 0x1e || f->c == 0x1f) {
+                /* ilink1, ilink2, blink */
+                /* Note: not valid for basic_type == CALL */
+                op->type = R_ANAL_OP_TYPE_CRET;
+            } else {
+                op->type = type_ucjmp;
+            }
+        } else {
+            f->imm = f->c;
+            op->type = type_cjmp;
+            op->jump = addr + f->c; /* TODO: is addr aligned? */
+        }
+
+        /* TODO: cond codes */
+        op->fail = addr + op->size;
+        break;
+    }
+
+    return op->size;
+}
+
 static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
     arc_fields fields;
 
@@ -169,98 +239,13 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
         break;
     case 0x20: /* Jump */
     case 0x21: /* Jump with delay slot */
-        switch (fields.format) {
-        case 0: /* unconditional jumps via reg or long imm */
-            if (fields.c == 0x3e) {
-                /* limm */
-                op->type = R_ANAL_OP_TYPE_JMP;
-                op->jump = fields.limm;
-                op->fail = addr + op->size;
-            } else if (fields.c == 0x1d || fields.c == 0x1e || fields.c == 0x1f) {
-                /* ilink1, ilink2, blink */
-                op->type = R_ANAL_OP_TYPE_RET;
-            } else {
-                op->type = R_ANAL_OP_TYPE_UJMP;
-            }
-            break;
-        case 1: /* unconditional jumps via u6 imm */
-            op->type = R_ANAL_OP_TYPE_JMP;
-            op->jump = addr + fields.c; /* TODO: is addr aligned? */
-            op->fail = addr + op->size;
-            break;
-        case 2: /* unconditional jumps via s12 imm */
-            op->type = R_ANAL_OP_TYPE_JMP;
-            fields.imm = (fields.a << 6 | fields.c);
-            fields.imm = sex_s12 (fields.imm);
-            op->jump = addr + fields.imm;
-            op->fail = addr + op->size;
-            break;
-        case 3: /* conditional jumps */
-            fields.mode_m = (words[0] & 0x20) >> 5;
-            if (fields.mode_m == 0) {
-                if (fields.c == 0x3e) {
-                    op->type = R_ANAL_OP_TYPE_CJMP;
-                    op->jump = fields.limm;
-                } else if (fields.c == 0x1d || fields.c == 0x1e || fields.c == 0x1f) {
-                    /* ilink1, ilink2, blink */
-                    op->type = R_ANAL_OP_TYPE_CRET;
-                } else {
-                    op->type = R_ANAL_OP_TYPE_UCJMP;
-                }
-            } else {
-                fields.imm = fields.c;
-                op->type = R_ANAL_OP_TYPE_CJMP;
-                op->jump = addr + fields.c; /* TODO: is addr aligned? */
-            }
-
-            /* TODO: cond codes */
-            op->fail = addr + op->size;
-            break;
-        }
+        fields.mode_m = (words[0] & 0x20) >> 5;
+        arcompact_genops_jmp(op, addr, &fields, R_ANAL_OP_TYPE_JMP);
+        break;
     case 0x22: /* jump and link */
     case 0x23: /* jump and link with delay slot */
-        /* FIXME: DRY this code and the previous jumps .. */
-        switch (fields.format) {
-        case 0: /* unconditional jumps via reg or long imm */
-            if (fields.c == 0x3e) {
-                /* limm */
-                op->type = R_ANAL_OP_TYPE_CALL;
-                op->jump = fields.limm;
-                op->fail = addr + op->size;
-            } else {
-                op->type = R_ANAL_OP_TYPE_UCALL;
-            }
-            break;
-        case 1: /* unconditional jumps via u6 imm */
-            op->type = R_ANAL_OP_TYPE_CALL;
-            op->jump = addr + fields.c; /* TODO: is addr aligned? */
-            op->fail = addr + op->size;
-            break;
-        case 2: /* unconditional jumps via s12 imm */
-            op->type = R_ANAL_OP_TYPE_CALL;
-            fields.imm = (fields.a << 6 | fields.c);
-            fields.imm = sex_s12 (fields.imm);
-            op->jump = addr + fields.imm;
-            break;
-        case 3: /* conditional jumps */
-            fields.mode_m = (words[0] & 0x20) >> 5;
-            if (fields.mode_m == 0) {
-                if (fields.c == 0x3e) {
-                    op->type = R_ANAL_OP_TYPE_CCALL;
-                    op->jump = fields.limm;
-                } else {
-                    op->type = R_ANAL_OP_TYPE_UCCALL;
-                }
-            } else {
-                fields.imm = fields.c;
-                op->type = R_ANAL_OP_TYPE_CCALL;
-                op->jump = addr + fields.c; /* TODO: is addr aligned? */
-            }
-
-            /* TODO: cond codes */
-            op->fail = addr + op->size;
-            break;
-        }
+        fields.mode_m = (words[0] & 0x20) >> 5;
+        arcompact_genops_jmp(op, addr, &fields, R_ANAL_OP_TYPE_JMP);
         break;
     case 0x1e: /* Reserved */
     case 0x1f: /* Reserved */
