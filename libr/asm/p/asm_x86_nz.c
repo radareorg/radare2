@@ -1086,7 +1086,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					ut8 mask = 0x40;
 					ut32 d = r_num_math (NULL, delta) * N;
 					// Check if delta is short or dword
-					if (d>>8 > 0) {
+					if ((ST8_MIN > d) && (d > ST8_MAX)) {
 						mask = 0x80;
 					}
 					int r = getreg (arg2);
@@ -1098,7 +1098,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					} else data[l++] = getreg (arg)<<3 | r | mask;					
 					
 					data[l++] = d;
-					if (d>>8 > 0) {
+					if ((ST8_MIN > d) && (d > ST8_MAX)) {
 						// Split...						
 						data[l++] = d>>8;
 						data[l++] = d>>16;
