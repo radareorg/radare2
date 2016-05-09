@@ -392,22 +392,22 @@ static void parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		eprintf ("Failed to get data while parsing LC_CODE_SIGNATURE command\n");
 		return;
 	}
-	data =  link.dataoff;
+	data = link.dataoff;
 	if (data > bin->size || data + sizeof(struct super_blob_t) > bin->size)
 	    	return;
 	struct super_blob_t *super = (struct super_blob_t *) (bin->b->buf + data);
-	count = r_swap_ut32(super->count);
+	count = r_read_ble32 (&super->count, true);
 	for (index = 0; index < count; ++index) {
 		if ((ut8 *)(super->index +
 			    index * sizeof (struct blob_index_t)) >
 		    (ut8 *)(bin->b->buf + bin->size))
 			return;
-		if (r_swap_ut32(super->index[index].type) == CSSLOT_ENTITLEMENTS) {
-			ut32 begin = r_swap_ut32(super->index[index].offset);
+		if (r_read_ble32 (&super->index[index].type, true) == CSSLOT_ENTITLEMENTS) {
+			ut32 begin = r_read_ble32 (&super->index[index].offset, true);
 			if (begin > bin->size || begin + sizeof(struct blob_t) > bin->size)
 			    	return;
-			struct blob_t *entitlements = (struct blob_t*) ((ut8*)super + begin);
-			len = r_swap_ut32(entitlements->length) - sizeof(struct blob_t);
+			struct blob_t *entitlements = (struct blob_t *) ((ut8*)super + begin);
+			len = r_read_ble32 (&entitlements->length, true) - sizeof(struct blob_t);
 			if (len > bin->size || len < 1)
 			    	return;
 			bin->signature = calloc (1, len + 1);
