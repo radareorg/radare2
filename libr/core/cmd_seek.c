@@ -287,7 +287,9 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_seek_base (core, input);
 			break;
 		case '*':
-			r_io_sundo_list (core->io);
+		case '=':
+		case 'j':
+			r_io_sundo_list (core->io, input[0]);
 			break;
 		case '+':
 			if (input[1]!='\0') {
