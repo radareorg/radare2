@@ -211,7 +211,7 @@ R_API bool r_anal_set_reg_profile(RAnal *anal) {
 			ret = true;
 		}
 	}
-	return false;
+	return ret;
 }
 
 R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {

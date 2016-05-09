@@ -385,13 +385,6 @@ enum {
 #define R_SYS_OS "unknown"
 #endif
 
-/* endian */
-#if LIL_ENDIAN
-#define R_SYS_ENDIAN "little"
-#else
-#define R_SYS_ENDIAN "big"
-#endif
-
 #ifdef __cplusplus
 }
 #endif

@@ -1,6 +1,20 @@
 SET PATH=C:\MinGW\msys\1.0\bin;C:\Program Files (x86)\Git\bin;%PATH%
-SET ENV_R2_VER=@VERSION@
 echo %PATH%
+setlocal enabledelayedexpansion
+@echo off
+
+rem Read configure.acr and find a version string
+for /F "tokens=1,2" %%i in (configure.acr) do (
+	set VAR1=%%i
+	set VAR2=%%j
+	if "!VAR1!" == "VERSION" (
+		echo "Read version from configure.acr: !VAR2!"
+		set ENV_R2_VER=!VAR2!
+		goto :start_build
+	)
+)
+
+:start_build
 sh.exe -c "export PATH=/c/mingw/bin:/c/mingw/msys/1.0/bin:/c/Program\ Files\ \(x86\)/Git/bin:${PATH} ; gcc -v"
 sh.exe -c "uname | tr 'A-Z' 'a-z'"
 sh.exe -c "echo CC=${CC}"
@@ -13,3 +27,4 @@ if "%APPVEYOR%" == "True" (
      7z.exe a -tzip %APPVEYOR_BUILD_FOLDER%\radare2-w32-%ENV_R2_VER%.zip %APPVEYOR_BUILD_FOLDER%\radare2-w32-%ENV_R2_VER%
      iscc -DRadare2Location=%APPVEYOR_BUILD_FOLDER%\radare2-w32-%ENV_R2_VER%\* -DLicenseLocation=%APPVEYOR_BUILD_FOLDER%\COPYING.LESSER -DIcoLocation=%APPVEYOR_BUILD_FOLDER%\radare2.ico radare2.iss
 )
+:end

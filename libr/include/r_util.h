@@ -370,6 +370,7 @@ R_API const char *r_num_calc_index (RNum *num, const char *p);
 R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize);
 R_API int r_num_is_valid_input(RNum *num, const char *input_value);
 R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
+R_API double r_num_get_float (RNum *num, const char *str);
 R_API char* r_num_as_string(RNum *___, ut64 n);
 R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex);
 
@@ -482,6 +483,9 @@ R_API char *r_base64_encode_dyn(const char *str, int len);
 
 R_API int r_base91_encode(char *bout, const ut8 *bin, int len);
 R_API int r_base91_decode(ut8 *bout, const char *bin, int len);
+
+R_API char *r_punycode_encode(const char*src, int srclen, int *dstlen);
+R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen);
 
 /* strings */
 static inline void r_str_rmch (char *s, char ch) {

@@ -3,8 +3,6 @@ include ../../../mk/platform.mk
 
 CFLAGS+=-I$(TOP)/shlr -I../../include -I../arch/ -I../arch/include
 CFLAGS+=-Wall -shared ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
-# XXX
-CFLAGS+=-DLIL_ENDIAN=1
 LDFLAGS+=-L../../util -L../../lib
 LDFLAGS+=${LINK} -lr_util
 
