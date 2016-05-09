@@ -415,8 +415,6 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             op->size = 4;
         }
 
-        ut8 format2 = 0;
-
         switch (opcode) {
         case 0:
             fields.format = (words[0] & 0x00010000) >> 16;
@@ -443,7 +441,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
             fields.format = (words[0] & 0x00010000) >> 16;
 
             if (fields.format == 1) {
-                format2 = (words[0] & 0x10) >> 4;
+                fields.format2 = (words[0] & 0x10) >> 4;
                 fields.subopcode = (words[0] & 0x0f);
                 fields.b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
                 fields.c = (words[0] & 0x00000fc0) >> 6;
@@ -451,7 +449,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 op->type = R_ANAL_OP_TYPE_CJMP;
                 op->jump = (addr & ~3) + fields.imm;
 
-                if (format2 == 0) {
+                if (fields.format2 == 0) {
                     /* Branch on Compare Register-Register, 0x01, [0x1, 0x0] */
                     if (fields.b == ARC_REG_LIMM || fields.c == ARC_REG_LIMM) {
                         op->size = 8;
@@ -464,13 +462,13 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
                 }
                 op->fail = addr + op->size;
             } else {
-                format2 = (words[0] & 0x00020000) >> 17;
+                fields.format2 = (words[0] & 0x00020000) >> 17;
                 fields.a = (words[0] & 0x07fc0000) >> 18;
                 fields.b = (words[0] & 0x0000ffc0) >> 6;
                 fields.c = (words[0] & 0x0000000f);
                 fields.limm = fields.a << 2 | fields.b << 11;
 
-                if (format2 == 0) {
+                if (fields.format2 == 0) {
                     /* Branch and Link Conditionally, 0x01, [0x0, 0x0] */
                     fields.limm = sex_s21 (fields.limm);
                     op->type = R_ANAL_OP_TYPE_CCALL;
