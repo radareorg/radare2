@@ -1097,7 +1097,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					} else data[l++] = getreg (arg)<<3 | r | mask;
 
 					data[l++] = d;
-					if ((ST8_MIN > d) && (d > ST8_MAX)) {:
+					if ((ST8_MIN > d) && (d > ST8_MAX)) {
 						data[l++] = d>>8;
 						data[l++] = d>>16;
 						data[l++] = d>>24;
