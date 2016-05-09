@@ -1947,6 +1947,9 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
 	//r_core_cmdf (core, "ar %s=0x%08"PFMT64x, sp, stack_ptr);
 	//r_core_cmdf (core, "f %s=%s", sp, sp);
+	if (!r_io_section_get_name (core->io, "esil_stack")) {
+		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d esil_stack", addr, addr, size, size);
+	}
 	r_core_seek (core, curoff, 0);
 }
 
@@ -2327,7 +2330,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case 'i': // "aei"
 		switch (input[1]) {
 		case 's':
-		case 'm':
+		case 'm': // "aeim"
 			cmd_esil_mem (core, input + 2);
 			break;
 		case 'p': // initialize pc = $$
