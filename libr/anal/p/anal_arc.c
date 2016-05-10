@@ -6,16 +6,16 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#define ARC_REG_LIMM		0x3e
+#define ARC_REG_LIMM	0x3e
 #define ARC_REG_ILINK1	0x1d
 #define ARC_REG_ILINK2	0x1e
-#define ARC_REG_BLINK	 0x1f
+#define ARC_REG_BLINK	0x1f
 
 /* the CPU fields that we decode get stored in this struct */
 typedef struct arc_fields_t {
-	ut8 opcode;			/* major opcode */
-	ut8 subopcode;	 /* sub opcode */
-	ut8 format;			/* operand format */
+	ut8 opcode;	/* major opcode */
+	ut8 subopcode;	/* sub opcode */
+	ut8 format;	/* operand format */
 	ut8 format2;
 	ut16 a;		/* destination register */
 	ut16 b;		/* source/destination register */
@@ -31,13 +31,13 @@ static void arccompact_dump_fields(ut64 addr, ut32 words[2], arc_fields *f) {
 #if DEBUG
 	/* Quick and dirty debug print */
 	eprintf ("DEBUG: 0x%04llx: %08x op=0x%x subop=0x%x format=0x%x fields.a=0x%x fields.b=0x%x fields.c=0x%x imm=%i limm=%lli\n",
-			addr,words[0], f->opcode,f->subopcode,f->format, f->a,f->b,f->c, f->imm,f->limm);
+		addr,words[0], f->opcode,f->subopcode,f->format, f->a,f->b,f->c, f->imm,f->limm);
 #endif
 }
 
 
 /* For (arguably valid) reasons, the ARCompact CPU uses "middle endian"
-	 encoding on Little-Endian systems
+	encoding on Little-Endian systems
  */
 static inline ut32 r_read_me32(const void *src) {
 	const ut8 *s = src;
@@ -46,14 +46,14 @@ static inline ut32 r_read_me32(const void *src) {
 }
 
 static int sex(int bits, int imm) {
-		int maxsint = (1 << (bits-1))-1;
-		int maxuint = (1 << (bits))-1;
+	int maxsint = (1 << (bits-1))-1;
+	int maxuint = (1 << (bits))-1;
 
-		if (imm > maxsint) {
-				/* sign extend */
-				imm = -maxuint + imm -1;
-		}
-		return imm;
+	if (imm > maxsint) {
+		/* sign extend */
+		imm = -maxuint + imm -1;
+	}
+	return imm;
 }
 
 static int sex_s7(int imm) { return sex(7, imm); }
@@ -272,22 +272,22 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 		/* this is essentially a COME FROM instruction!! */
 		/* TODO: describe it to radare better ? */
 		switch (fields.format) {
-			case 2: /* Loop Set Up (Unconditional) */
-				fields.imm = sex_s13 ((fields.c | (fields.a << 6)) << 1);
-				op->jump = (addr & ~3) + fields.imm;
-				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->fail = addr + op->size;
-				break;
-			case 3: /* Loop Set Up (Conditional) */
-				fields.imm = fields.c << 1;
-				op->jump = (addr & ~3) + fields.imm;
-				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->fail = addr + op->size;
-				/* TODO: cond codes */
-				break;
-			default:
-				op->type = R_ANAL_OP_TYPE_ILL;
-				break;
+		case 2: /* Loop Set Up (Unconditional) */
+			fields.imm = sex_s13 ((fields.c | (fields.a << 6)) << 1);
+			op->jump = (addr & ~3) + fields.imm;
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->fail = addr + op->size;
+			break;
+		case 3: /* Loop Set Up (Conditional) */
+			fields.imm = fields.c << 1;
+			op->jump = (addr & ~3) + fields.imm;
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->fail = addr + op->size;
+			/* TODO: cond codes */
+			break;
+		default:
+			op->type = R_ANAL_OP_TYPE_ILL;
+			break;
 		}
 		break;
 	case 0x29: /* set status flags */
@@ -299,65 +299,65 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 		break;
 	case 0x2f: /* Single Operand Instructions, 0x04, [0x2F, 0x00 - 0x3F] */
 		switch (fields.a) {
-			case 0: /* Arithmetic shift left by one */
-				op->type = R_ANAL_OP_TYPE_SAL;
+		case 0: /* Arithmetic shift left by one */
+			op->type = R_ANAL_OP_TYPE_SAL;
+			break;
+		case 1: /* Arithmetic shift right by one */
+			op->type = R_ANAL_OP_TYPE_SAR;
+			break;
+		case 2: /* Logical shift right by one */
+			op->type = R_ANAL_OP_TYPE_SHR;
+			break;
+		case 3: /* Rotate right */
+		case 4: /* Rotate right through carry */
+			op->type = R_ANAL_OP_TYPE_ROR;
+			break;
+		case 5: /* Sign extend byte */
+		case 6: /* Sign extend word */
+		case 7: /* Zero extend byte */
+		case 8: /* Zero extend word */
+			op->type = R_ANAL_OP_TYPE_UNK;
+			/* TODO: a better encoding for SEX and EXT instructions */
+			break;
+		case 9: /* Absolute */
+			op->type = R_ANAL_OP_TYPE_ABS;
+			break;
+		case 0xa: /* Logical NOT */
+			op->type = R_ANAL_OP_TYPE_NOT;
+			break;
+		case 0xb: /* Rotate left through carry */
+			op->type = R_ANAL_OP_TYPE_ROL;
+			break;
+		case 0xc: /* Atomic Exchange */
+			op->type = R_ANAL_OP_TYPE_XCHG;
+			break;
+		case 0x3f: /* See Zero operand (ZOP) table */
+			switch (fields.b) {
+			case 1: /* Sleep */
+				/* TODO: a better encoding for this */
+				op->type = R_ANAL_OP_TYPE_NULL;
 				break;
-			case 1: /* Arithmetic shift right by one */
-				op->type = R_ANAL_OP_TYPE_SAR;
+			case 2: /* Software interrupt */
+				op->type = R_ANAL_OP_TYPE_SWI;
 				break;
-			case 2: /* Logical shift right by one */
-				op->type = R_ANAL_OP_TYPE_SHR;
+			case 3: /* Wait for all data-based memory transactions to complete */
+				/* TODO: a better encoding for this */
+				op->type = R_ANAL_OP_TYPE_NULL;
 				break;
-			case 3: /* Rotate right */
-			case 4: /* Rotate right through carry */
-				op->type = R_ANAL_OP_TYPE_ROR;
+			case 4: /* Return from interrupt/exception */
+				op->type = R_ANAL_OP_TYPE_RET;
 				break;
-			case 5: /* Sign extend byte */
-			case 6: /* Sign extend word */
-			case 7: /* Zero extend byte */
-			case 8: /* Zero extend word */
-				op->type = R_ANAL_OP_TYPE_UNK;
-				/* TODO: a better encoding for SEX and EXT instructions */
-				break;
-			case 9: /* Absolute */
-				op->type = R_ANAL_OP_TYPE_ABS;
-				break;
-			case 0xa: /* Logical NOT */
-				op->type = R_ANAL_OP_TYPE_NOT;
-				break;
-			case 0xb: /* Rotate left through carry */
-				op->type = R_ANAL_OP_TYPE_ROL;
-				break;
-			case 0xc: /* Atomic Exchange */
-				op->type = R_ANAL_OP_TYPE_XCHG;
-				break;
-			case 0x3f: /* See Zero operand (ZOP) table */
-				switch (fields.b) {
-					case 1: /* Sleep */
-						/* TODO: a better encoding for this */
-						op->type = R_ANAL_OP_TYPE_NULL;
-						break;
-					case 2: /* Software interrupt */
-						op->type = R_ANAL_OP_TYPE_SWI;
-						break;
-					case 3: /* Wait for all data-based memory transactions to complete */
-						/* TODO: a better encoding for this */
-						op->type = R_ANAL_OP_TYPE_NULL;
-						break;
-					case 4: /* Return from interrupt/exception */
-						op->type = R_ANAL_OP_TYPE_RET;
-						break;
-					case 5: /* Breakpoint instruction */
-						op->type = R_ANAL_OP_TYPE_TRAP;
-						break;
-					default:
-						op->type = R_ANAL_OP_TYPE_ILL;
-						break;
-				}
+			case 5: /* Breakpoint instruction */
+				op->type = R_ANAL_OP_TYPE_TRAP;
 				break;
 			default:
 				op->type = R_ANAL_OP_TYPE_ILL;
 				break;
+			}
+			break;
+		default:
+			op->type = R_ANAL_OP_TYPE_ILL;
+			break;
 		}
 		break;
 	case 0x30:
