@@ -946,8 +946,7 @@ static int cmd_write(void *data, const char *input) {
 					}
 					free (in);
 				}
-			} else
-			if ((buf = r_file_slurp_hexpairs (arg, &size))) {
+			} else if ((buf = r_file_slurp_hexpairs (arg, &size))) {
 				r_io_use_desc (core->io, core->file->desc);
 				r_io_write_at (core->io, core->offset, buf, size);
 				WSEEK (core, size);
