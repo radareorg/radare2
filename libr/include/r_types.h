@@ -227,8 +227,9 @@ typedef void (*PrintfCallback)(const char *str, ...);
 
 /* TODO: Move outside */
 #define _perror(str,file,line) \
-  { char buf[128];snprintf(buf,sizeof(buf),"%s:%d %s",file,line,str);perror(buf); }
+  { char buf[128];snprintf(buf,sizeof(buf),"%s:%d %s",file,line,str);r_sys_perror_str(buf); }
 #define perror(x) _perror(x,__FILE__,__LINE__)
+#define r_sys_perror(x) _perror(x,__FILE__,__LINE__)
 
 #ifndef HAVE_EPRINTF
 #define eprintf(x,y...) fprintf(stderr,x,##y)
