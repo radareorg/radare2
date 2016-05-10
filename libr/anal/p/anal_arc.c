@@ -272,22 +272,22 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 		/* this is essentially a COME FROM instruction!! */
 		/* TODO: describe it to radare better ? */
 		switch (fields.format) {
-			case 2: /* Loop Set Up (Unconditional) */
-				fields.imm = sex_s13 ((fields.c | (fields.a << 6)) << 1);
-				op->jump = (addr & ~3) + fields.imm;
-				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->fail = addr + op->size;
-				break;
-			case 3: /* Loop Set Up (Conditional) */
-				fields.imm = fields.c << 1;
-				op->jump = (addr & ~3) + fields.imm;
-				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->fail = addr + op->size;
-				/* TODO: cond codes */
-				break;
-			default:
-				op->type = R_ANAL_OP_TYPE_ILL;
-				break;
+		case 2: /* Loop Set Up (Unconditional) */
+			fields.imm = sex_s13 ((fields.c | (fields.a << 6)) << 1);
+			op->jump = (addr & ~3) + fields.imm;
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->fail = addr + op->size;
+			break;
+		case 3: /* Loop Set Up (Conditional) */
+			fields.imm = fields.c << 1;
+			op->jump = (addr & ~3) + fields.imm;
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->fail = addr + op->size;
+			/* TODO: cond codes */
+			break;
+		default:
+			op->type = R_ANAL_OP_TYPE_ILL;
+			break;
 		}
 		break;
 	case 0x29: /* set status flags */
@@ -299,65 +299,65 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 		break;
 	case 0x2f: /* Single Operand Instructions, 0x04, [0x2F, 0x00 - 0x3F] */
 		switch (fields.a) {
-			case 0: /* Arithmetic shift left by one */
-				op->type = R_ANAL_OP_TYPE_SAL;
+		case 0: /* Arithmetic shift left by one */
+			op->type = R_ANAL_OP_TYPE_SAL;
+			break;
+		case 1: /* Arithmetic shift right by one */
+			op->type = R_ANAL_OP_TYPE_SAR;
+			break;
+		case 2: /* Logical shift right by one */
+			op->type = R_ANAL_OP_TYPE_SHR;
+			break;
+		case 3: /* Rotate right */
+		case 4: /* Rotate right through carry */
+			op->type = R_ANAL_OP_TYPE_ROR;
+			break;
+		case 5: /* Sign extend byte */
+		case 6: /* Sign extend word */
+		case 7: /* Zero extend byte */
+		case 8: /* Zero extend word */
+			op->type = R_ANAL_OP_TYPE_UNK;
+			/* TODO: a better encoding for SEX and EXT instructions */
+			break;
+		case 9: /* Absolute */
+			op->type = R_ANAL_OP_TYPE_ABS;
+			break;
+		case 0xa: /* Logical NOT */
+			op->type = R_ANAL_OP_TYPE_NOT;
+			break;
+		case 0xb: /* Rotate left through carry */
+			op->type = R_ANAL_OP_TYPE_ROL;
+			break;
+		case 0xc: /* Atomic Exchange */
+			op->type = R_ANAL_OP_TYPE_XCHG;
+			break;
+		case 0x3f: /* See Zero operand (ZOP) table */
+			switch (fields.b) {
+			case 1: /* Sleep */
+				/* TODO: a better encoding for this */
+				op->type = R_ANAL_OP_TYPE_NULL;
 				break;
-			case 1: /* Arithmetic shift right by one */
-				op->type = R_ANAL_OP_TYPE_SAR;
+			case 2: /* Software interrupt */
+				op->type = R_ANAL_OP_TYPE_SWI;
 				break;
-			case 2: /* Logical shift right by one */
-				op->type = R_ANAL_OP_TYPE_SHR;
+			case 3: /* Wait for all data-based memory transactions to complete */
+				/* TODO: a better encoding for this */
+				op->type = R_ANAL_OP_TYPE_NULL;
 				break;
-			case 3: /* Rotate right */
-			case 4: /* Rotate right through carry */
-				op->type = R_ANAL_OP_TYPE_ROR;
+			case 4: /* Return from interrupt/exception */
+				op->type = R_ANAL_OP_TYPE_RET;
 				break;
-			case 5: /* Sign extend byte */
-			case 6: /* Sign extend word */
-			case 7: /* Zero extend byte */
-			case 8: /* Zero extend word */
-				op->type = R_ANAL_OP_TYPE_UNK;
-				/* TODO: a better encoding for SEX and EXT instructions */
-				break;
-			case 9: /* Absolute */
-				op->type = R_ANAL_OP_TYPE_ABS;
-				break;
-			case 0xa: /* Logical NOT */
-				op->type = R_ANAL_OP_TYPE_NOT;
-				break;
-			case 0xb: /* Rotate left through carry */
-				op->type = R_ANAL_OP_TYPE_ROL;
-				break;
-			case 0xc: /* Atomic Exchange */
-				op->type = R_ANAL_OP_TYPE_XCHG;
-				break;
-			case 0x3f: /* See Zero operand (ZOP) table */
-				switch (fields.b) {
-					case 1: /* Sleep */
-						/* TODO: a better encoding for this */
-						op->type = R_ANAL_OP_TYPE_NULL;
-						break;
-					case 2: /* Software interrupt */
-						op->type = R_ANAL_OP_TYPE_SWI;
-						break;
-					case 3: /* Wait for all data-based memory transactions to complete */
-						/* TODO: a better encoding for this */
-						op->type = R_ANAL_OP_TYPE_NULL;
-						break;
-					case 4: /* Return from interrupt/exception */
-						op->type = R_ANAL_OP_TYPE_RET;
-						break;
-					case 5: /* Breakpoint instruction */
-						op->type = R_ANAL_OP_TYPE_TRAP;
-						break;
-					default:
-						op->type = R_ANAL_OP_TYPE_ILL;
-						break;
-				}
+			case 5: /* Breakpoint instruction */
+				op->type = R_ANAL_OP_TYPE_TRAP;
 				break;
 			default:
 				op->type = R_ANAL_OP_TYPE_ILL;
 				break;
+			}
+			break;
+		default:
+			op->type = R_ANAL_OP_TYPE_ILL;
+			break;
 		}
 		break;
 	case 0x30:
