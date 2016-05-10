@@ -6,10 +6,11 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#define ARC_REG_LIMM	0x3e
 #define ARC_REG_ILINK1	0x1d
 #define ARC_REG_ILINK2	0x1e
 #define ARC_REG_BLINK	0x1f
+#define ARC_REG_LIMM	0x3e
+#define ARC_REG_PCL	0x3f
 
 /* the CPU fields that we decode get stored in this struct */
 typedef struct arc_fields_t {
@@ -23,8 +24,9 @@ typedef struct arc_fields_t {
 	ut8 mode_aa;
 	ut8 mode_zz;
 	ut8 mode_m;
-	st16 imm;
-	st64 limm;
+	ut8 mode_n;	/* Delay slot flag */
+	st64 imm;	/* data stored in the opcode */
+	st64 limm;	/* data stored immediately following the opcode */
 } arc_fields;
 
 static void arccompact_dump_fields(ut64 addr, ut32 words[2], arc_fields *f) {
@@ -56,14 +58,35 @@ static int sex(int bits, int imm) {
 	return imm;
 }
 
-static int sex_s7(int imm) { return sex(7, imm); }
-static int sex_s8(int imm) { return sex(8, imm); }
-static int sex_s9(int imm) { return sex(9, imm); }
-static int sex_s10(int imm) { return sex(10, imm); }
-static int sex_s12(int imm) { return sex(12, imm); }
-static int sex_s13(int imm) { return sex(13, imm); }
-static int sex_s21(int imm) { return sex(21, imm); }
-static int sex_s25(int imm) { return sex(25, imm); }
+static int sex_s7(int imm) { return sex (7, imm); }
+static int sex_s8(int imm) { return sex (8, imm); }
+static int sex_s9(int imm) { return sex (9, imm); }
+static int sex_s10(int imm) { return sex (10, imm); }
+static int sex_s12(int imm) { return sex (12, imm); }
+static int sex_s13(int imm) { return sex (13, imm); }
+static int sex_s21(int imm) { return sex (21, imm); }
+static int sex_s25(int imm) { return sex (25, imm); }
+
+static void arcompact_jump(RAnalOp *op, ut64 addr, ut64 jump, ut8 delay) {
+	op->jump = jump;
+	op->fail = addr + op->size;
+	op->delay = delay;
+}
+
+static void arcompact_branch(RAnalOp *op, ut64 addr, st64 offset, ut8 delay) {
+	arcompact_jump (op, addr, (addr & ~3) + offset, delay);
+}
+
+static void map_zz2refptr(RAnalOp *op, ut8 mode_zz) {
+	switch (mode_zz) {
+	case 0: op->refptr = 4; break;
+	case 1: op->refptr = 1; break;
+	case 2: op->refptr = 2; break;
+	default:
+		op->type = R_ANAL_OP_TYPE_ILL;
+		break;
+	}
+}
 
 static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basic_type) {
 	ut64 type_ujmp;
@@ -90,52 +113,56 @@ static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basi
 		if (f->c == ARC_REG_LIMM) {
 			/* limm */
 			op->type = basic_type;
-			op->jump = f->limm;
-			op->fail = addr + op->size;
-		} else if (f->c == ARC_REG_ILINK1 || f->c == ARC_REG_ILINK2 || f->c == ARC_REG_BLINK) {
+			arcompact_jump (op, addr, f->limm, f->mode_n);
+			return op->size;
+		}
+		if (f->c == ARC_REG_ILINK1 || f->c == ARC_REG_ILINK2 || f->c == ARC_REG_BLINK) {
 			/* ilink1, ilink2, blink */
 			/* Note: not valid for basic_type == CALL */
 			op->type = R_ANAL_OP_TYPE_RET;
-		} else {
-			op->type = type_ujmp;
+			op->delay = f->mode_n;
+			return op->size;
 		}
-		break;
+		op->type = type_ujmp;
+		return op->size;
 	case 1: /* unconditional jumps via u6 imm */
 		op->type = basic_type;
-		op->jump = addr + f->c; /* TODO: is addr aligned? */
-		op->fail = addr + op->size;
-		break;
+		arcompact_jump (op, addr, f->c, f->mode_n);
+		return op->size;
 	case 2: /* unconditional jumps via s12 imm */
 		op->type = basic_type;
 		f->imm = (f->a << 6 | f->c);
 		f->imm = sex_s12 (f->imm);
-		op->jump = addr + f->imm;
-		op->fail = addr + op->size;
-		break;
+		arcompact_jump (op, addr, f->imm, f->mode_n);
+		return op->size;
 	case 3: /* conditional jumps */
 		if (f->mode_m == 0) {
 			if (f->c == ARC_REG_LIMM) {
 				op->type = type_cjmp;
-				op->jump = f->limm;
-			} else if (f->c == ARC_REG_ILINK1 || f->c == ARC_REG_ILINK2 || f->c == ARC_REG_BLINK) {
+				arcompact_jump (op, addr, f->limm, f->mode_n);
+				return op->size;
+			}
+			if (f->c == ARC_REG_ILINK1 || f->c == ARC_REG_ILINK2 || f->c == ARC_REG_BLINK) {
 				/* ilink1, ilink2, blink */
 				/* Note: not valid for basic_type == CALL */
 				op->type = R_ANAL_OP_TYPE_CRET;
-			} else {
-				op->type = type_ucjmp;
+				op->delay = f->mode_n;
+				return op->size;
 			}
-		} else {
-			f->imm = f->c;
-			op->type = type_cjmp;
-			op->jump = addr + f->c; /* TODO: is addr aligned? */
+
+			op->type = type_ucjmp;
+			return op->size;
 		}
 
+		op->type = type_cjmp;
+		arcompact_jump (op, addr, f->c, f->mode_n);
+		return op->size;
+
 		/* TODO: cond codes */
-		op->fail = addr + op->size;
-		break;
 	}
 
-	return op->size;
+	/* should not be reached */
+	return 0;
 }
 
 static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
@@ -146,6 +173,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	fields.c = (words[0] & 0x00000fc0) >> 6;
 	fields.a = (words[0] & 0x0000003f);
 	fields.b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
+	fields.mode_n = 0;
 
 	/* if any one of the reg fields indicates a limm value,
 	   increase the size to cover it */
@@ -174,7 +202,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 
 	switch (fields.subopcode) {
 	case 0x00: /* add */
-		if ((fields.format == 1 || fields.format == 2) && fields.b == 0x3f) {
+		if ((fields.format == 1 || fields.format == 2) && fields.b == ARC_REG_PCL) {
 			/* dst = PCL + src */
 			op->ptr = (addr & ~3) + fields.imm;
 			op->refptr = 1; /* HACK! we dont actually know what size it is */
@@ -239,15 +267,19 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	case 0x1d: /* 32 X 32 unsigned multiply */
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
-	case 0x20: /* Jump */
 	case 0x21: /* Jump with delay slot */
+		fields.mode_n = 1;
+		/* fall through */
+	case 0x20: /* Jump */
 		fields.mode_m = (words[0] & 0x20) >> 5;
-		arcompact_genops_jmp(op, addr, &fields, R_ANAL_OP_TYPE_JMP);
+		arcompact_genops_jmp (op, addr, &fields, R_ANAL_OP_TYPE_JMP);
 		break;
-	case 0x22: /* jump and link */
 	case 0x23: /* jump and link with delay slot */
+		fields.mode_n = 1;
+		/* fall through */
+	case 0x22: /* jump and link */
 		fields.mode_m = (words[0] & 0x20) >> 5;
-		arcompact_genops_jmp(op, addr, &fields, R_ANAL_OP_TYPE_JMP);
+		arcompact_genops_jmp (op, addr, &fields, R_ANAL_OP_TYPE_CALL);
 		break;
 	case 0x1e: /* Reserved */
 	case 0x1f: /* Reserved */
@@ -416,6 +448,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		fields.a = (words[0] & 0x07fe0000) >> 17;
 		fields.b = (words[0] & 0x0000ffc0) >> 6;
 		fields.c = (words[0] & 0x0000000f);
+		fields.mode_n = (words[0] &0x20) >> 5;
 		fields.limm = fields.a << 1 | fields.b << 11;
 
 		if (fields.format == 0) {
@@ -434,11 +467,11 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			fields.limm = sex_s25 (fields.limm);
 			op->type = R_ANAL_OP_TYPE_JMP;
 		}
-		op->jump = (addr & ~3) + fields.limm;
-		op->fail = addr + op->size;
+		arcompact_branch (op, addr, fields.limm, fields.mode_n);
 		break;
 	case 1:
 		fields.format = (words[0] & 0x00010000) >> 16;
+		fields.mode_n = (words[0] &0x20) >> 5;
 
 		if (fields.format == 1) {
 			fields.format2 = (words[0] & 0x10) >> 4;
@@ -447,7 +480,6 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			fields.c = (words[0] & 0x00000fc0) >> 6;
 			fields.imm = sex_s9 ((words[0] & 0x00fe0000) >> 16 | (words[0] & 0x8000) >> 7);
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = (addr & ~3) + fields.imm;
 
 			if (fields.format2 == 0) {
 				/* Branch on Compare Register-Register, 0x01, [0x1, 0x0] */
@@ -460,22 +492,22 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 				/* Branch on Compare/Bit Test Register-Immediate, 0x01, [0x1, 0x1] */
 				/* TODO: cond codes and imm u6 */
 			}
-			op->fail = addr + op->size;
+			arcompact_branch (op, addr, fields.imm, fields.mode_n);
 		} else {
 			fields.format2 = (words[0] & 0x00020000) >> 17;
 			fields.a = (words[0] & 0x07fc0000) >> 18;
 			fields.b = (words[0] & 0x0000ffc0) >> 6;
 			fields.c = (words[0] & 0x0000000f);
-			fields.limm = fields.a << 2 | fields.b << 11;
+			fields.imm = fields.a << 2 | fields.b << 11;
 
 			if (fields.format2 == 0) {
 				/* Branch and Link Conditionally, 0x01, [0x0, 0x0] */
-				fields.limm = sex_s21 (fields.limm);
+				fields.imm = sex_s21 (fields.imm);
 				op->type = R_ANAL_OP_TYPE_CCALL;
 				/* TODO: cond codes */
 			} else {
 				/* Branch and Link Unconditional Far, 0x01, [0x0, 0x1] */
-				fields.limm |= (fields.c & 0x0f) << 21;
+				fields.imm |= (fields.c & 0x0f) << 21;
 				/* the mask tries to make it clear to
 				   static code analysis that this field
 				   will not overflow.
@@ -483,54 +515,39 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 				   - work out a way that doesnt generate
 				   code output
 				 */
-				fields.limm = sex_s25 (fields.limm);
+				fields.imm = sex_s25 (fields.imm);
 				op->type = R_ANAL_OP_TYPE_CALL;
 			}
-			op->jump = (addr & ~3) + fields.limm;
-			op->fail = addr + op->size;
+			arcompact_branch (op, addr, fields.imm, fields.mode_n);
 		}
 		break;
 	case 2: /* Load Register with Offset, 0x02 */
 		fields.a = (words[0] & 0x0000003f);
 		fields.b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
 		fields.imm = sex_s9 ((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
-		fields.mode_aa = (words[0] & 0x600) >> 9;
+		/* fields.mode_aa = (words[0] & 0x600) >> 9; */
 		fields.mode_zz = (words[0] & 0x180) >> 7;
 
 		op->type = R_ANAL_OP_TYPE_LOAD;
 
-		switch (fields.mode_zz) {
-		case 0: op->refptr = 4; break;
-		case 1: op->refptr = 1; break;
-		case 2: op->refptr = 2; break;
-		default:
+		/* it is illegal for dst (fields.a) to be one of the
+		   extension core registers */
+		if (fields.a == ARC_REG_PCL || fields.a == 61 ||
+		   (fields.a >= 0x20 && fields.a <= 0x2b)) {
 			op->type = R_ANAL_OP_TYPE_ILL;
-			break;
 		}
+
+		map_zz2refptr (op, fields.mode_zz);
 
 		if (fields.b == ARC_REG_LIMM) {
 			op->size = 8;
 			fields.limm = words[1];
-
-			switch (fields.mode_aa) {
-			case 0: /* No Field Syntax */
-				op->ptr = fields.limm+fields.imm;
-				break;
-			case 1: /* .A or .AW - invalid with limm */
-			case 2: /* .AB - invalid with limm */
-				op->type = R_ANAL_OP_TYPE_ILL;
-				break;
-			case 3: /* .AS */
-				if (fields.mode_zz == 2) {
-					op->ptr = fields.limm + (fields.imm << 1);
-				} else if (fields.mode_zz == 0) {
-					op->ptr = fields.limm + (fields.imm << 2);
-				}
-				break;
-			}
-		} else if (fields.b == 0x3f) { /* PCL */
+			op->ptr = fields.limm+fields.imm;
+			/* fields.aa is reserved - and ignored with limm */
+		} else if (fields.b == ARC_REG_PCL) { /* PCL */
 			op->ptr = (addr & ~3) + fields.imm;
 		}
+		/* TODO: set op with GP,FP,SP src/dst details */
 		break;
 	case 3: /* Store Register with Offset, 0x03 */
 		fields.c = (words[0] & 0xfc0) >> 6;
@@ -541,14 +558,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 
 		op->type = R_ANAL_OP_TYPE_STORE;
 
-		switch (fields.mode_zz) {
-		case 0: op->refptr = 4; break;
-		case 1: op->refptr = 1; break;
-		case 2: op->refptr = 2; break;
-		default:
-			op->type = R_ANAL_OP_TYPE_ILL;
-			break;
-		}
+		map_zz2refptr (op, fields.mode_zz);
 
 		if (fields.b == ARC_REG_LIMM) {
 			op->size = 8;
@@ -560,12 +570,13 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			op->val = fields.limm;
 		}
 
-		if (fields.b == 0x3f) { /* PCL */
+		if (fields.b == ARC_REG_PCL) { /* PCL */
 			op->ptr = (addr & ~3) + fields.imm;
 		}
+		/* TODO: set op with GP,FP,SP src/dst details */
 		break;
 	case 4: /* General Operations */
-		return arcompact_genops (op,addr,words);
+		return arcompact_genops (op, addr, words);
 	case 0x05:
 	case 0x06:
 	case 0x07:
@@ -668,12 +679,20 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		case 0: /* Single Operand, Jumps and Special Format Instructions, 0x0F, [0x00, 0x00 - 0x07] */
 			switch (fields.c) {
 			case 0: /* J_S [r]*/
+				op->type = R_ANAL_OP_TYPE_UJMP;
+				arcompact_jump (op, 0, 0, 0);
+				break;
 			case 1: /* J_S.D [r] */
 				op->type = R_ANAL_OP_TYPE_UJMP;
+				arcompact_jump (op, 0, 0, 1);
 				break;
 			case 2: /* JL_S [r] */
+				op->type = R_ANAL_OP_TYPE_UCALL;
+				arcompact_jump (op, 0, 0, 0);
+				break;
 			case 3: /* JL_S.D [r] */
 				op->type = R_ANAL_OP_TYPE_UCALL;
+				arcompact_jump (op, 0, 0, 1);
 				break;
 			case 4:
 			case 5: /* Reserved - instruction error */
@@ -686,6 +705,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 				switch (fields.b) {
 				case 0: /* nop_s */
 					op->type = R_ANAL_OP_TYPE_NOP;
+					op->size = 4;
 					break;
 				case 1:
 				case 2:
@@ -696,8 +716,10 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 				case 5: /* JNE_S [blink] */
 					op->type = R_ANAL_OP_TYPE_CRET;
 					break;
-				case 6: /* J_S [blink] */
 				case 7: /* J_S.D [blink] */
+					op->delay = 1;
+					/* fall through */
+				case 6: /* J_S [blink] */
 					op->type = R_ANAL_OP_TYPE_RET;
 					break;
 				}
@@ -784,10 +806,10 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			break;
 		}
 		break;
-	case 0x10: /* LD_S		c,[b,u7] */
-	case 0x11: /* LDB_S	 c,[b,u5] */
-	case 0x12: /* LDW_S	 c,[b,u6] */
-	case 0x13: /* LDW_S.X c,[b,u6] */
+	case 0x10: /* LD_S	c,[b,u7] */
+	case 0x11: /* LDB_S	c,[b,u5] */
+	case 0x12: /* LDW_S	c,[b,u6] */
+	case 0x13: /* LDW_S.X	c,[b,u6] */
 		/* Load/Store with Offset, 0x10 - 0x16 */
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		break;
@@ -911,9 +933,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	case 0x1d: /* Branch on Compare Register with Zero, 0x1D, [0x00 - 0x01] */
 		/* fields.subopcode = (words[0] & 0x00800000) >> (16+7); */
 		fields.imm = sex_s8 ((words[0] & 0x007f0000) >> (16 - 1));
-		op->jump = (addr & ~3) + fields.imm;
-		op->fail = addr + op->size;
 		op->type = R_ANAL_OP_TYPE_CJMP;
+		arcompact_branch (op, addr, fields.imm, 0);
 		break;
 	case 0x1e: /* Branch Conditionally, 0x1E, [0x00 - 0x03] */
 		fields.subopcode = (words[0] & 0x06000000) >> (16 + 9);
@@ -931,17 +952,15 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			fields.imm = sex_s7 ((words[0] & 0x003f0000) >> (16 - 1));
 			break;
 		}
-		op->jump = (addr & ~3) + fields.imm;
-		op->fail = addr + op->size;
+		arcompact_branch (op, addr, fields.imm, 0);
 		break;
 	case 0x1f: /* Branch and Link Unconditionally, 0x1F */
 		fields.imm = sex_s13 ((words[0] & 0x07ff0000) >> (16 - 2));
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = (addr & ~3) + fields.imm;
-		op->fail = addr + op->size;
+		arcompact_branch (op, addr, fields.imm, 0);
 		break;
 	}
-	arccompact_dump_fields(addr, words, &fields);
+	arccompact_dump_fields (addr, words, &fields);
 	return op->size;
 }
 
@@ -998,13 +1017,88 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	return op->size;
 }
 
+static int archinfo(RAnal *anal, int query) {
+	if (anal->bits != 16) {
+		return -1;
+	}
+
+	switch (query) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 2;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		/* all ops are at least 1 word long */
+		return 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 8;
+	default:
+		return -1;
+	}
+}
+
+static int set_reg_profile(RAnal *anal) {
+	if (anal->bits != 16) {
+		return -1;
+	}
+	const char *p16 =
+		"=PC	pcl\n"
+		"=SP	sp\n"
+		"=LR	blink\n"
+		// "=BP	r27\n" // ??
+		"=A0	r0\n"
+		"=A1	r1\n"
+		"=A2	r2\n"
+		"=A3	r3\n"
+
+		"gpr	r0	.32	0	0\n"
+		"gpr	r1	.32	4	0\n"
+		"gpr	r2	.32	8	0\n"
+		"gpr	r3	.32	12	0\n"
+		"gpr	r4	.32	16	0\n"
+		"gpr	r5	.32	20	0\n"
+		"gpr	r6	.32	24	0\n"
+		"gpr	r7	.32	28	0\n"
+		"gpr	r8	.32	32	0\n"
+		"gpr	r9	.32	36	0\n"
+		"gpr	r10	.32	40	0\n"
+		"gpr	r11	.32	44	0\n"
+		"gpr	r12	.32	48	0\n"
+		"gpr	r13	.32	52	0\n"
+		"gpr	r14	.32	56	0\n"
+		"gpr	r15	.32	60	0\n"
+		"gpr	r16	.32	64	0\n"
+		"gpr	r17	.32	68	0\n"
+		"gpr	r18	.32	72	0\n"
+		"gpr	r19	.32	76	0\n"
+		"gpr	r20	.32	80	0\n"
+		"gpr	r21	.32	84	0\n"
+		"gpr	r22	.32	88	0\n"
+		"gpr	r23	.32	92	0\n"
+		"gpr	r24	.32	96	0\n"
+		"gpr	r25	.32	100	0\n"
+		"gpr	gp	.32	104	0\n"
+		"gpr	fp	.32	108	0\n"
+		"gpr	sp	.32	112	0\n"
+		"gpr	ilink1	.32	116	0\n"
+		"gpr	ilink2	.32	120	0\n"
+		"gpr	blink	.32	124	0\n"
+		"gpr	lp_count	.32	128	0\n"
+		"gpr	pcl	.32	132	0\n";
+
+		/* Auxiliary Register Set ??
+		   - Contains flag bits amongst other things
+		 */
+	return r_reg_set_profile_string (anal->reg, p16);
+}
+
 struct r_anal_plugin_t r_anal_plugin_arc = {
 	.name = "arc",
 	.arch = "arc",
 	.license = "LGPL3",
 	.bits = 16 | 32,
 	.desc = "ARC code analysis plugin",
-	.op = &arc_op
+	.op = &arc_op,
+	.archinfo = archinfo,
+	.set_reg_profile = set_reg_profile,
 };
 
 #ifndef CORELIB
