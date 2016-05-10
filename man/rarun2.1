@@ -129,6 +129,8 @@ Debugging a program redirecting io to another terminal
   /dev/ttyS010
   ## in another terminal run r2
   $ r2 \-e dbg.profile=foo.rr2 -d ls
+  ## or you can use -R option
+  $ r2 \-R foo.rr2 -d ls
   $ cat foo.rr2
   #!/usr/bin/rarun2
   stdio=/dev/ttys010
