@@ -150,7 +150,9 @@ typedef enum {
 	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/', RNCMOD='%',
 	//RNCXOR='^', RNCOR='|', RNCAND='&',
 	RNCNEG='~', RNCAND='&', RNCORR='|', RNCXOR='^',
-	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')'
+	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')',
+	RNCSHL='<', RNCSHR = '>'
+
 } RNumCalcToken;
 
 typedef struct r_num_calc_t {
