@@ -7,18 +7,17 @@
 #define STDIN_BUFFER_SIZE 354096
 
 static RNum *num;
-static int help ();
+static int help();
 static ut64 flags = 0;
-static int use_stdin ();
+static int use_stdin();
 static int force_mode = 0;
-static int rax (char *str, int len, int last);
+static int rax(char *str, int len, int last);
 
 static int format_output (char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
 	char strbits[65];
 
-	if (force_mode)
-		mode = force_mode;
+	if (force_mode) mode = force_mode;
 
 	if (flags & 2) {
 		ut64 n2 = n;
@@ -38,7 +37,7 @@ static int format_output (char mode, const char *s) {
 		}
 		} break;
 	case 'F': {
-		  float *f = (float*)&n;
+		float *f = (float*)&n;
 		printf ("%ff\n", *f);
 		} break;
 	case 'f': printf ("%.01lf\n", num->fvalue); break;
@@ -115,7 +114,7 @@ static int rax (char *str, int len, int last) {
 	if ((flags & 4))
 		goto dotherax;
 	if (*str == '=') {
-		switch (atoi (str+1)) {
+		switch (atoi (str + 1)) {
 		case 2: force_mode = 'B'; break;
 		case 3: force_mode = 'T'; break;
 		case 8: force_mode = 'O'; break;
@@ -187,27 +186,29 @@ static int rax (char *str, int len, int last) {
 		}
 		return true;
 	}
-	if (flags & 4) { // -S
-		for (i = 0; i < len; i++)
+	if (flags & (1 << 2)) { // -S
+		for (i = 0; i < len; i++) {
 			printf ("%02x", (ut8)str[i]);
+		}
 		printf ("\n");
 		return true;
-	} else if (flags & 8) {
+	} else if (flags & (1 << 3)) { // -b
 		int i, len;
 		ut8 buf[4096];
 		len = r_str_binstr2bin (str, buf, sizeof (buf));
-		for (i = 0; i < len; i++)
+		for (i = 0; i < len; i++) {
 			printf ("%c", buf[i]);
+		}
 		return true;
-	} else if (flags & 16) {
+	} else if (flags & (1 << 4)) { // -x
 		int h = r_str_hash (str);
 		printf ("0x%x\n", h);
 		return true;
-	} else if (flags & 32) {
+	} else if (flags & (1 << 5)) { // -K
 		out_mode = 'I';
-	} else if (flags & 64) {
+	} else if (flags & (1 << 6)) { // -f
 		out_mode = 'f';
-	} else if (flags & 256) { // -k
+	} else if (flags & (1 << 8)) { // -k
 		int n = ((strlen (str)) >> 1) + 1;
 		char *s = NULL;
 		ut32 *m;
@@ -252,7 +253,7 @@ static int rax (char *str, int len, int last) {
 	} else if (flags & (1 << 17)) { // -B (bin -> str)
 		int i = 0;
 		// TODO: move to r_util
-		for (i = 0; i< strlen (str); i++) {
+		for (i = 0; i < strlen (str); i++) {
 			ut8 ch = str[i];
 			printf ("%d%d%d%d" "%d%d%d%d",
 				ch & 128? 1:0,
@@ -284,33 +285,39 @@ static int rax (char *str, int len, int last) {
 		if (n >> 32) {
 			/* is 64 bit value */
 			ut8 *np = (ut8*)&n;
-			if (flags & 1) fwrite (&n, sizeof (n), 1, stdout);
-			else printf ("\\x%02x\\x%02x\\x%02x\\x%02x"
+			if (flags & 1) {
+				fwrite (&n, sizeof (n), 1, stdout);
+			} else {
+				printf ("\\x%02x\\x%02x\\x%02x\\x%02x"
 				"\\x%02x\\x%02x\\x%02x\\x%02x\n",
 				np[0], np[1], np[2], np[3],
 				np[4], np[5], np[6], np[7]);
+			}
 		} else {
 			/* is 32 bit value */
 			ut32 n32 = (ut32)(n & UT32_MAX);
 			ut8 *np = (ut8*) & n32;
-			if (flags & 1) fwrite (&n32, sizeof (n32), 1, stdout);
-			else printf ("\\x%02x\\x%02x\\x%02x\\x%02x\n",
+			if (flags & 1) {
+				fwrite (&n32, sizeof (n32), 1, stdout);
+			} else {
+				printf ("\\x%02x\\x%02x\\x%02x\\x%02x\n",
 				np[0], np[1], np[2], np[3]);
+			}
 		}
 		fflush (stdout);
 		return true;
-	} else if (flags & 1024) { // -u
+	} else if (flags & (1 << 10)) { // -u
 		char buf[80];
 		r_num_units (buf, r_num_math (NULL, str));
 		printf ("%s\n", buf);
 		return true;
-	} else if (flags & 2048) { // -t
+	} else if (flags & (1 << 11)) { // -t
 		ut32 n = r_num_math (num, str);
 		RPrint *p = r_print_new ();
 		r_print_date_unix (p, (const ut8*)&n, sizeof (ut32));
 		r_print_free (p);
 		return true;
-	} else if (flags & 4096) { // -E
+	} else if (flags & (1 << 12)) { // -E
 		const int len = strlen (str);
 		char * out = calloc (sizeof (char), ((len + 1) * 4) / 3);
 		if (out) {
@@ -320,7 +327,7 @@ static int rax (char *str, int len, int last) {
 			free (out);
 		}
 		return true;
-	} else if (flags & 8192) { // -D
+	} else if (flags & (1 << 13)) { // -D
 		const int len = strlen (str);
 		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
 		ut8* out = calloc (sizeof (ut8), ((len + 2) / 3) * 4);
@@ -355,6 +362,7 @@ static int rax (char *str, int len, int last) {
 
 		if (num->dbz) {
 			eprintf ("RNum ERROR: Division by Zero\n");
+			return false;
 		}
 		n32 = (ut32)(n & UT32_MAX);
 		asnum  = r_num_as_string (NULL, n);
@@ -368,8 +376,12 @@ static int rax (char *str, int len, int last) {
 		eprintf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o
 			" %s %04x:%04x ",
 			n, n, n, unit, s, a);
-		if (n >> 32) eprintf ("%"PFMT64d" ", (st64)n);
-		else eprintf ("%d ", (st32)n);
+
+		if (n >> 32) {
+			eprintf ("%"PFMT64d" ", (st64)n);
+		} else {
+			eprintf ("%d ", (st32)n);
+		}
 		if (asnum) {
 			eprintf ("\"%s\" ", asnum);
 			free (asnum);
