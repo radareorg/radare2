@@ -1272,6 +1272,8 @@ static int r_debug_setup_ownership (int fd, RDebug *dbg) {
 static bool r_debug_gcore (RDebug *dbg, RBuffer *dest) {
 #if __APPLE__
 	return xnu_generate_corefile (dbg, dest);
+#elif __linux__
+	return linux_generate_corefile(dbg, dest);
 #else
 	return false;
 #endif
