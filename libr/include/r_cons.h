@@ -42,6 +42,14 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_cons);
 
+typedef int (*RConsGetSize)(int *rows);
+typedef int (*RConsGetCursor)(int *rows);
+
+typedef struct r_cons_bind_t {
+	RConsGetSize get_size;
+	RConsGetCursor get_cursor;
+} RConsBind;
+
 typedef struct r_cons_grep_t {
 	char strings[R_CONS_GREP_WORDS][R_CONS_GREP_WORD_SIZE];
 	int nstrings;
@@ -116,7 +124,6 @@ typedef struct r_cons_palette_t {
 	char *graph_trufae;
 	char *graph_traced;
 	char *graph_current;
-	
 
 #define R_CONS_PALETTE_LIST_SIZE 8
 	char *list[R_CONS_PALETTE_LIST_SIZE];
@@ -462,6 +469,7 @@ R_API int r_cons_get_column (void);
 R_API char *r_cons_message(const char *msg);
 R_API void r_cons_set_title(const char *str);
 R_API int r_cons_enable_mouse(const int enable);
+R_API void r_cons_bind(RConsBind *bind);
 #endif
 
 /* r_line */

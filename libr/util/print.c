@@ -195,6 +195,8 @@ R_API RPrint *r_print_new() {
 	p->row_offsets_sz = 0;
 	p->row_offsets = NULL;
 	p->vflush = true;
+	p->screen_bounds = 0;
+	memset (&p->consbind, 0, sizeof (p->consbind));
 	return p;
 }
 
@@ -540,7 +542,7 @@ R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len) {
 		p->cb_printf ("%02x ", buf[i]);
 }
 
-static int check_sparse (const ut8 *p, int len, int ch) {
+static int check_sparse(const ut8 *p, int len, int ch) {
 	int i;
 	ut8 q = *p;
 	if (ch && ch != q)
@@ -602,7 +604,24 @@ R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int ste
 	p ("%8X ]\n", addr + i);
 }
 
-// XXX: step is borken
+/* set screen_bounds to addr if the cursor is not visible on the screen anymore.
+ * Note: screen_bounds is set only the first time this happens. */
+R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
+	int r, rc;
+
+	if (!p->screen_bounds) return;
+	if (!p->consbind.get_size) return;
+	if (!p->consbind.get_cursor) return;
+
+	(void)p->consbind.get_size (&r);
+	(void)p->consbind.get_cursor (&rc);
+
+	if (rc > r - 1 && p->screen_bounds == 1) {
+		p->screen_bounds = addr;
+	}
+}
+
+// XXX: step is broken
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step) {
         PrintfCallback printfmt = (PrintfCallback) printf;
 	int i, j, k, inc = 16;
@@ -647,7 +666,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_header = false;
 	}
 	if (use_header) {
-		if (base < 32) { //&& step != 2) {
+		if (base < 32 ) {
 			ut32 opad = (ut32)(addr >> 32);
 			{ // XXX: use r_print_addr_header
 				int i, delta;
@@ -690,6 +709,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	if (p) p->interrupt = 0;
 	//for (i=j=0; (p&&!p->interrupt) && i<len; i+=(stride?stride:inc), j+=(stride?stride:0)) {
 	for (i=j=0; i<len; i+=(stride?stride:inc), j+=(stride?stride:0)) {
+		r_print_set_screenbounds (p, addr + i);
 		if (use_sparse) {
 			if (check_sparse (buf+i, inc, sparse_char)) {
 				if (i+inc>=len || check_sparse (buf+i+inc, inc, sparse_char)) {

@@ -967,3 +967,9 @@ R_API void r_cons_chop () {
 		I.buffer_len--;
 	}
 }
+
+R_API void r_cons_bind(RConsBind *bind) {
+	if (!bind) return;
+	bind->get_size = r_cons_get_size;
+	bind->get_cursor = r_cons_get_cursor;
+}
