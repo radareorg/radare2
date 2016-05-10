@@ -1746,7 +1746,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("graph.invscroll", "false", "Invert scroll direction in ascii-art graph");
 	SETPREF("graph.title", "", "Title of the graph");
 	SETPREF("graph.gv.node", "", "Graphviz node style. (color=gray, style=filled shape=box)");
-	SETPREF("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")";
+	SETPREF("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")");
 	SETPREF("graph.gv.graph", "", "Graphviz global style attributes. (bgcolor=white)");
 	SETPREF("graph.gv.current", "false", "Highlight the current node in graphviz graph.");
 	/* hud */
