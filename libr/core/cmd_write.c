@@ -373,7 +373,6 @@ static int cmd_write(void *data, const char *input) {
 		"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
 		"we","[nNsxX] [arg]","extend write operations (insert instead of replace)",
 		"wf"," -|file","write contents of file at current offset",
-		"wF"," -|file","write contents of hexpairs file here",
 		"wh"," r2","whereis/which shell command",
 		"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
 		"wo?"," hex","write in block with operation. 'wo?' fmi",
@@ -911,31 +910,6 @@ static int cmd_write(void *data, const char *input) {
 	case 'f':
 		cmd_wf (core, input);
 		break;
-	case 'F': // wF
-		arg = (const char *)(input+((input[1]==' ')?2:1));
-		if (!strcmp (arg, "-")) {
-			int len;
-			ut8 *out;
-			char *in = r_core_editor (core, NULL, NULL);
-			if (in) {
-				out = (ut8 *)strdup (in);
-				if (out) {
-					len = r_hex_str2bin (in, out);
-					if (len>0)
-						r_io_write_at (core->io, core->offset, out, len);
-					free (out);
-				}
-				free (in);
-			}
-		} else
-		if ((buf = r_file_slurp_hexpairs (arg, &size))) {
-			r_io_use_desc (core->io, core->file->desc);
-			r_io_write_at (core->io, core->offset, buf, size);
-			WSEEK (core, size);
-			free (buf);
-			r_core_block_read (core, 0);
-		} else eprintf ("Cannot open file '%s'\n", arg);
-		break;
 	case 'w':
 		str++;
 		len = (len-1)<<1;
@@ -955,7 +929,46 @@ static int cmd_write(void *data, const char *input) {
 		} else eprintf ("Cannot malloc %d\n", len);
 		break;
 	case 'x':
-		cmd_write_hexpair(core, input+1);
+		switch (input[1]) {
+		case 'f':
+			arg = (const char *)(input+((input[2]==' ')?3:2));
+			if (!strcmp (arg, "-")) {
+				int len;
+				ut8 *out;
+				char *in = r_core_editor (core, NULL, NULL);
+				if (in) {
+					out = (ut8 *)strdup (in);
+					if (out) {
+						len = r_hex_str2bin (in, out);
+						if (len>0)
+							r_io_write_at (core->io, core->offset, out, len);
+						free (out);
+					}
+					free (in);
+				}
+			} else
+			if ((buf = r_file_slurp_hexpairs (arg, &size))) {
+				r_io_use_desc (core->io, core->file->desc);
+				r_io_write_at (core->io, core->offset, buf, size);
+				WSEEK (core, size);
+				free (buf);
+				r_core_block_read (core, 0);
+			} else eprintf ("Cannot open file '%s'\n", arg);
+			break;
+		case ' ':
+			cmd_write_hexpair(core, input+1);
+			break;
+		default:
+			{
+			const char* help_msg[] = {
+				"Usage:", "wx[f] [arg]", "",
+				"wx", " 9090", "write two intel nops",
+				"wxf", " -|file", "write contents of hexpairs file here",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			break;
+			}
+		}
 		break;
 	case 'a':
 		switch (input[1]) {
