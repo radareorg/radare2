@@ -522,18 +522,12 @@ RList *linux_desc_list (int pid) {
 
 static map_file_t mapping_file = {0,0};
 
-static int is_a_right_entry(proc_stat_entry entry)
-{
-        return !(entry ==  STATE_E || entry == PPID_E || entry == PGRP_E || entry == SID_E || entry == FLAGS_E || entry == NICE_E || entry ==  NUM_THREADS_E);
-}
 
-static int is_data(char c)
-{
+static int is_data(char c) {
         return !isalnum(c);
 }
 
-static char *prpsinfo_get_fname(FILE *f)
-{
+static char *prpsinfo_get_fname(FILE *f) {
         char *p;
         int c;
         int pos;
@@ -549,19 +543,17 @@ static char *prpsinfo_get_fname(FILE *f)
         return p;
 }
 
-static char *get_basename(char *pfname, int len)
-{
+static char *get_basename(char *pfname, int len) {
         char *p;
 
         for(p = pfname + len; p != pfname ; p--)
-                if(*p == '/')
+                if (*p == '/')
                         return (p + 1);
 
         return p;
 }
 
-static char *prpsinfo_get_psargs(FILE *f, char *pfname, int size_psargs)
-{
+static char *prpsinfo_get_psargs(FILE *f, char *pfname, int size_psargs) {
         char paux[80];
         char *p;
         int c;
@@ -576,7 +568,7 @@ static char *prpsinfo_get_psargs(FILE *f, char *pfname, int size_psargs)
         pos = 0;
 	paux[pos++] = ' ';
         while((c = fgetc(f)) != EOF && read < (size_psargs - 1)) {
-                if(c == '\0')
+                if (c == '\0')
                         c = ' ';
                 paux[pos++] = c;
                 read++;
@@ -588,8 +580,8 @@ static char *prpsinfo_get_psargs(FILE *f, char *pfname, int size_psargs)
         return p;
 }
 
-static void debug_print_prpsinfo(prpsinfo_t *p)
-{
+/*static void debug_print_prpsinfo(prpsinfo_t *p) {
+
         printf("prpsinfo.pr_state: %d\n", p->pr_state);
         printf("prpsinfo.pr_sname: %c\n", p->pr_sname);
         printf("prpsinfo.pr_zomb: %d\n", p->pr_zomb);
@@ -603,9 +595,9 @@ static void debug_print_prpsinfo(prpsinfo_t *p)
         printf("prpsinfo.pr_sid: %ld\n", p->pr_sid);
         printf("prpsinfo.pr_fname: %s\n", p->pr_fname);
 	printf("prpsinfo.pr_psargs: %s\n", p->pr_psargs);
-}
+}*/
 
-static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg) {
+static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_stat_content_t *proc_data) {
 
         FILE *f;
         char file[128];
@@ -616,17 +608,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg) {
 	char *pfname;
         char *ppsargs;
         char *basename; /* pr_fname stores just the exec, withouth the path */
-        char *pbuff;
-        char *tpbuff;
-        char *temp_uid;
-        char *temp_gid;
-        char *p_uid;
-        char *p_gid;
-        char data[80];
-        char buff[4096];
-	char prog_states[6] = "RSZTt";				/* http://man7.org/linux/man-pages/man5/proc.5.html */
-        unsigned int n_threads;
-        proc_stat_entry current_entry;
+	char prog_states[6] = "RSDTZW";				/* fs/binfmt_elf.c from kernel */
         prpsinfo_t *p;
 
         p = (prpsinfo_t *)malloc(sizeof(prpsinfo_t));
@@ -635,7 +617,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg) {
 	/* Start filling pr_fname and pr_psargs */
         snprintf(file, sizeof(file), "/proc/%d/cmdline", mypid);
         f = fopen(file, "r");
-        if(f == NULL) {
+        if (f == NULL) {
                 printf("Cannot open '%s' for reading\n", file);
                 goto error;
         }
@@ -649,140 +631,78 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg) {
         free(ppsargs);
         free(pfname);
 
-        /* /proc/pid/stat: let's have some fun. Documentation about the fields can be found under /Documentation/filesystem/proc.txt: Table 1-4 */
-        snprintf(file, sizeof(file), "/proc/%d/stat", mypid);
+	p->pr_sname = proc_data->s_name;
+	p->pr_zomb = (p->pr_sname == 'Z') ? 1 : 0;
+	p->pr_state = strchr(prog_states, p->pr_sname) - prog_states;
+	p->pr_ppid = proc_data->ppid;
+	p->pr_pgrp = proc_data->pgrp;
+	p->pr_sid = proc_data->sid;
+	p->pr_flag = proc_data->flag;
+	p->pr_nice = proc_data->nice;
 
-        f = fopen(file, "r");
-        if (f == NULL) {
-                printf ("Cannot open '%s' for writing\n", file);
-                goto error;
-        }
-
-        pos = 0;
-        /* Need to find which function radare2 exposes to read files */
-        while((c = fgetc(f)) != EOF && c!= '\n' && pos < sizeof(buff))
-                buff[pos++] = c;
-
-        buff[pos] = '\0';
-        pbuff = buff;
-
-        /* Parsing /proc/%d/stat */
-        for(tpbuff = pbuff, current_entry = PID_E; *pbuff != '\0'; tpbuff = pbuff) {
-                int len;
-
-                while(!is_data(*pbuff++))
-			;
-
-		pbuff--;
-                len = pbuff - tpbuff;
-
-                if(len) {
-                        strncpy(data, tpbuff, len);
-                        data[pbuff - tpbuff] = '\0';
-                        if(!is_a_right_entry(current_entry)) {
-                                switch(current_entry) {
-                                        case STATE_E:
-                                                p->pr_sname = data[0];
-                                                p->pr_zomb = (p->pr_sname == 'Z') ? 1 : 0;
-                                                p->pr_state = strchr(prog_states, p->pr_sname) - prog_states;
-                                                break;
-                                        case PPID_E:
-                                                p->pr_ppid = atoi(data);
-                                                break;
-                                        case PGRP_E:
-                                                p->pr_pgrp = atoi(data);
-                                                break;
-                                        case SID_E:
-                                                p->pr_sid = atoi(data);
-                                                break;
-                                        case FLAGS_E:
-                                                p->pr_flag = atol(data);
-                                                break;
-                                        case NICE_E:
-                                                nice = atol(data);
-                                                p->pr_nice = nice;
-                                                break;
-                                        case NUM_THREADS_E:
-                                                n_threads = atoi(data);
-                                                break;
-                                }
-                        }
-                        current_entry++;
-                }
-
-                while(*pbuff == ' ' || *pbuff == '(' || *pbuff == ')')
-                        pbuff++;
-        }
-
-        /* Since we can't find pr_uid and pr_gid in /proc/%d/stat, we need to look for that in /proc/%d/status */
-        snprintf(file, sizeof(file), "/proc/%d/status", mypid);
+	p->pr_uid = proc_data->uid;
+	p->pr_gid = proc_data->gid;
 	
-	f = fopen(file, "r");
-        if (f == NULL) {
-                printf ("Cannot open '%s' for writing\n", file);
-                goto error;
-        }
-
-        pos = 0;
-
-        while((c = fgetc(f)) != EOF && pos < sizeof(buff))
-                buff[pos++] = c;
-        buff[pos] = '\0';
-
-        /* Let's search for Uid */
-        temp_uid = strstr(buff, "Uid:");
-        temp_gid = strstr(buff, "Gid:");
-
-        while(!isdigit(*temp_uid++))
-                ;
-        p_uid = temp_uid-1;
-
-        while(isdigit(*temp_uid++))
-                ;
-        p_uid[temp_uid-p_uid-1] = '\0';
-
-
-        /* Do the same for Gid */
-        while(!isdigit(*temp_gid++))
-                ;
-        p_gid = temp_gid-1;
-
-        while(isdigit(*temp_gid++))
-                ;
-        p_gid[temp_gid-p_gid-1] = '\0';
-
-
-        p->pr_uid = atoi(p_uid);
-        p->pr_gid = atoi(p_gid);
-
-	debug_print_prpsinfo(p);
+	/*debug_print_prpsinfo(p);*/
 
         return p;
 
         error:
-                if(p)
+                if (p)
 			free(p);
 		return NULL;
 }
 
-static prstatus_t *linux_get_prstatus(RDebug *dbg) {
+/*void debug_prstatus(prstatus_t *p) {
+
+	printf("\n== debug_prstatus ==\n");
+	printf("p->pr_cursig: %d\n", p->pr_cursig);
+	printf("p->pr_info.si_signo: %d\n", p->pr_info.si_signo);
+	printf("p->pr_pid: %d\n", p->pr_pid);
+	printf("p->pr_ppid: %d\n", p->pr_ppid);
+	printf("p->pr_pgrp: %d\n", p->pr_pgrp);
+	printf("p->pr_sid: %d\n", p->pr_sid);
+	printf("p->pr_sigpend: %d\n", p->pr_sigpend);
+	printf("p->pr_sighold: %d\n", p->pr_sighold);
+}*/
+
+static prstatus_t *linux_get_prstatus(RDebug *dbg, proc_stat_content_t *proc_data, short int signr) {
+
         prstatus_t *p;
 	ut8 *reg_buff;
         int rbytes;
         size_t size_gp_regset;
 
-        reg_buff = (unsigned char *)malloc(sizeof(struct user_regs_struct));
+        reg_buff = R_NEW0(struct user_regs_struct);
 
         size_gp_regset = sizeof(elf_gregset_t);
         rbytes = linux_reg_read(dbg, R_REG_TYPE_GPR, reg_buff, size_gp_regset);
-        if(rbytes != size_gp_regset) {                    /* something went wrong */
+        if (rbytes != size_gp_regset) {                    /* something went wrong */
+		perror("linux_get_prstatus");
                 printf("linux_get_prstatus: error in (rbytes != size_gp_regset)\n");
                 return NULL;
         }
 
-        p = (prstatus_t *)malloc(sizeof(prstatus_t));
+	/* http://lxr.free-electrons.com/source/arch/x86/include/asm/signal.h#L24 */
+	
+	p = R_NEW0(prstatus_t);
+	p->pr_cursig = p->pr_info.si_signo = signr;
         p->pr_pid = dbg->pid;
-        /*p->pr_cursig: is radare2 storing that somehere? */
+	p->pr_ppid = proc_data->ppid;
+	p->pr_pgrp = proc_data->pgrp;
+	p->pr_sid = proc_data->sid;
+	p->pr_sigpend = proc_data->sigpend;
+	p->pr_sighold = proc_data->sighold;
+
+	/*
+	p->pr_cutime
+	p->pr_cstime
+	p->pr_utime
+	p->pr_stime
+	*/
+
+	/*debug_prstatus(p);*/
+
         memcpy(p->pr_reg, reg_buff, rbytes);
 
         return p;
@@ -795,14 +715,14 @@ static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg) {
         int rbytes;
         size_t size_fp_regset;
 
-        reg_buff = (unsigned char *)malloc(sizeof(struct user_fpregs_struct));
+	reg_buff = R_NEW0(struct user_fpregs_struct);
 
         size_fp_regset = sizeof(elf_fpregset_t);
         rbytes = linux_reg_read(dbg, R_REG_TYPE_FPU, reg_buff, size_fp_regset);
-        if(rbytes != size_fp_regset)
+        if (rbytes != size_fp_regset)
                 return NULL;
 
-        p = (elf_fpregset_t *)malloc(sizeof(elf_fpregset_t));
+	p = R_NEW0(elf_fpregset_t);
         memcpy(p, reg_buff, rbytes);
 
         return p;
@@ -813,10 +733,10 @@ static siginfo_t *linux_get_siginfo(RDebug *dbg) {
 	int ret;
         siginfo_t *siginfo;
 
-        siginfo = (siginfo_t *)malloc(sizeof(siginfo_t));
+	siginfo = R_NEW0(siginfo_t);
         ret = ptrace(PTRACE_GETSIGINFO, dbg->pid, 0, siginfo);
 
-        if(!siginfo->si_signo) {
+        if (!siginfo->si_signo) {
                 free(siginfo);
                 siginfo = NULL;
         }
@@ -824,8 +744,7 @@ static siginfo_t *linux_get_siginfo(RDebug *dbg) {
         return siginfo;
 }
 
-static int get_map_address_space(char *pstr, unsigned long long *start_addr, unsigned long long *end_addr)
-{
+static int get_map_address_space(char *pstr, unsigned long long *start_addr, unsigned long long *end_addr) {
         char *pp;
 
         pp = pstr;
@@ -837,8 +756,7 @@ static int get_map_address_space(char *pstr, unsigned long long *start_addr, uns
         return 0;
 }
 
-static int get_map_perms(char *pstr, unsigned long int *fl_perms)
-{
+static int get_map_perms(char *pstr, unsigned long int *fl_perms) {
         char *pp;
         int len;
         unsigned long int flags;
@@ -847,35 +765,34 @@ static int get_map_perms(char *pstr, unsigned long int *fl_perms)
         flags = 0;
 
         pp = memchr(pstr, 'r', len);
-        if(pp)
+        if (pp)
                 flags |= R_MEM;
 
         pp = memchr(pstr, 'w', len);
-        if(pp)
+        if (pp)
                 flags |= W_MEM;
 
         pp = memchr(pstr, 'x', len);
-        if(pp)
+        if (pp)
                 flags |= X_MEM;
 
         pp = memchr(pstr, 'p', len);
-        if(pp)
+        if (pp)
                 flags |= P_MEM;
 
         pp = memchr(pstr, 's', len);
-        if(pp)
+        if (pp)
                 flags |= S_MEM;
 
         *fl_perms = flags;
 
-        if((flags & P_MEM) && (flags & S_MEM))
+        if ((flags & P_MEM) && (flags & S_MEM))
                 return -1;
 
         return 0;
 }
 
-static int get_map_offset(char *pstr, unsigned long long *offset)
-{
+static int get_map_offset(char *pstr, unsigned long long *offset) {
         char *pp;
 
         pp = pstr;
@@ -885,14 +802,13 @@ static int get_map_offset(char *pstr, unsigned long long *offset)
 }
 
 
-static int get_map_name(char *pstr, char **name)
-{
+static int get_map_name(char *pstr, char **name) {
         *name = strdup(pstr);
         return 0;
 }
 
-static int get_anonymous_value(char *keyw)
-{
+static int get_anonymous_value(char *keyw) {
+
         while(!isspace(*keyw))
                 keyw++;
 
@@ -903,8 +819,8 @@ static int get_anonymous_value(char *keyw)
 }
 
 
-static int is_map_anonymous(FILE *f, unsigned long long start_addr, unsigned long long end_addr)
-{
+static int is_map_anonymous(FILE *f, unsigned long long start_addr, unsigned long long end_addr) {
+
         char identity[80];
         char buff[1024];
         char buff_tok[256];
@@ -913,9 +829,9 @@ static int is_map_anonymous(FILE *f, unsigned long long start_addr, unsigned lon
 
         snprintf(identity, sizeof(identity), "%08llx-%08llx", start_addr, end_addr);
         while(fgets(buff, sizeof(buff), f) != NULL) {
-                if(strstr(buff, identity) != NULL) {
+                if (strstr(buff, identity) != NULL) {
                         while(fgets(buff_tok, sizeof(buff_tok), f) != NULL) {
-                                if((keyw = strstr(buff_tok, "Anonymous:")) != NULL) {
+                                if ((keyw = strstr(buff_tok, "Anonymous:")) != NULL) {
                                         is_anonymous = get_anonymous_value(keyw);
                                         fseek(f, 0, SEEK_SET);
                                         return is_anonymous;
@@ -990,7 +906,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg) {
                                                 maps_current++;
                                                 pp = strtok_r(NULL, " ", &end_token);
                                 case NAME:
-                                                if(pp)   /* Has this map a name? */
+                                                if (pp)   /* Has this map a name? */
                                                         get_map_name(pp, &name);
                                                 break;
                         }
@@ -998,10 +914,11 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg) {
                         pp = strtok_r(NULL, " ", &end_token);
                 }
 
-		if(start_addr == 0 || end_addr == 0)
+		if (start_addr == 0 || end_addr == 0) {
                         break;
+		}
 
-                pmentry = (linux_map_entry_t *)malloc(sizeof(linux_map_entry_t));
+		pmentry = R_NEW0(linux_map_entry_t);
                 pmentry->start_addr = start_addr;
                 pmentry->end_addr = end_addr;
                 pmentry->perms = flag_perm;
@@ -1009,21 +926,25 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg) {
 		pmentry->name = NULL;
                 pmentry->inode = 0;
 
-		if(name) {
+		if (name) {
                         pmentry->name = strdup(name);
                         pmentry->s_name = strlen(pmentry->name) + 1;
                         free(name);
                         name = NULL;
                 }
-                if(     pmentry->name != NULL &&
+
+                if (pmentry->name != NULL &&
                         (strcmp(pmentry->name, "[vsyscall]") == 0 ||
                         strcmp(pmentry->name, "[vvar]") == 0 ||
-                        strcmp(pmentry->name, "[vdso]") == 0))
+                        strcmp(pmentry->name, "[vdso]") == 0)) {
+			printf("pmentry->anonymous: 1: %s\n", pmentry->name);
                         pmentry->anonymous = 1;
-                else 
+		} else {
                         pmentry->anonymous = is_map_anonymous(f_smaps, start_addr, end_addr);   /* Fix this, we can make it much faster, was just for test purposes */
+			printf("pmentry->anonymous: %d: %s\n", pmentry->anonymous, pmentry->name);
+		}
 		
-		if(pmentry->name &&     strcmp(pmentry->name, "[vsyscall]") != 0
+		if (pmentry->name &&     strcmp(pmentry->name, "[vsyscall]") != 0
                                         && strcmp(pmentry->name, "[vvar]") != 0
                                         && strcmp(pmentry->name, "[vdso]") != 0
                                         && strcmp(pmentry->name, "[stack]")) {
@@ -1045,8 +966,8 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg) {
         return me_head;
 }
 
-static auxv_buff_t *linux_get_auxv(RDebug *dbg)
-{
+static auxv_buff_t *linux_get_auxv(RDebug *dbg) {
+
         Elf64_auxv_t auxv_entry;
         auxv_buff_t *auxv;
         int auxv_entries;
@@ -1057,7 +978,7 @@ static auxv_buff_t *linux_get_auxv(RDebug *dbg)
         auxv = NULL;
         snprintf(file, sizeof(file), "/proc/%d/auxv", dbg->pid);
         f = fopen(file, "r");
-        if(f == NULL) {
+        if (f == NULL) {
                 printf("File error\n");
                 return NULL;
         }
@@ -1067,9 +988,9 @@ static auxv_buff_t *linux_get_auxv(RDebug *dbg)
         while(fread(&auxv_entry, sizeof(Elf64_auxv_t), 1, f) == 1)
                 auxv_entries++;
 
-        if(auxv_entries > 0) {
+        if (auxv_entries > 0) {
                 size = auxv_entries * sizeof(Elf64_auxv_t);
-                auxv = (auxv_buff_t *)malloc(sizeof(auxv_buff_t));
+		auxv = R_NEW0(auxv_buff_t);
                 auxv->size = size;
                 auxv->data = malloc(auxv->size);
                 fseek(f, 0, SEEK_SET);
@@ -1079,15 +1000,15 @@ static auxv_buff_t *linux_get_auxv(RDebug *dbg)
         return auxv;
 }
 
-static Elf64_Ehdr *build_elf_hdr(unsigned int n_segments)
-{
+static Elf64_Ehdr *build_elf_hdr(unsigned int n_segments) {
+
         int pad_byte;
         int ph_size;
         int ph_offset;
         Elf64_Ehdr *h;
 
-        h = malloc(sizeof(Elf64_Ehdr));
-        if(h == NULL)
+	h = R_NEW0(Elf64_Ehdr);
+        if (h == NULL)
                 return NULL;
 
         ph_offset = ELF_HDR_SIZE;
@@ -1126,39 +1047,39 @@ static Elf64_Ehdr *build_elf_hdr(unsigned int n_segments)
         return h;
 }
 
-static int get_n_mappings(linux_map_entry_t *me_head)
-{
+static int get_n_mappings(linux_map_entry_t *me_head) {
+
         linux_map_entry_t *p;
         int n_entries;
 
         for(n_entries = 0, p = me_head; p != NULL ; p = p->n)
-                if((p->perms & R_MEM) || (p->perms & W_MEM))            /* We don't count maps which does not have r/w perms */
+                if ((p->perms & R_MEM) || (p->perms & W_MEM))            /* We don't count maps which does not have r/w perms */
                         n_entries++;
 
         return n_entries;
 }
 
 
-static bool dump_elf_header(RBuffer *dest, Elf64_Ehdr *hdr)
-{
+static bool dump_elf_header(RBuffer *dest, Elf64_Ehdr *hdr) {
+
         bool ret;
 
 	ret = r_buf_append_bytes(dest, (const ut8*)hdr, hdr->e_ehsize);
-	if(ret != true) {
+	if (ret != true) {
 		perror("dump_elf_header: error");
 	}
 
         return ret;
 }
 
-static int get_nt_size(linux_map_entry_t *head)
-{
+static int get_nt_size(linux_map_entry_t *head) {
+
         linux_map_entry_t *p;
         size_t size;
 
         size = 0;
         for(p = head; p != NULL; p = p->n) {
-                if(p->name && strcmp(p->name, "[vdso]") != 0
+                if (p->name && strcmp(p->name, "[vdso]") != 0
                                 && strcmp(p->name, "[vsyscall]") != 0
                                 && strcmp(p->name, "[vvar]") != 0
                                 && strcmp(p->name, "[stack]") != 0) {
@@ -1170,8 +1091,8 @@ static int get_nt_size(linux_map_entry_t *head)
 }
 
 
-static void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size)
-{
+static void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size) {
+
         char *maps_data;
         char *pp;
         linux_map_entry_t *p;
@@ -1193,7 +1114,7 @@ static void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size)
         pp += sizeof(n_segments) + sizeof(n_pag);
 
         for(p = head; p != NULL; p = p->n) {
-                if(p->name && strcmp(p->name, "[vdso]") != 0
+                if (p->name && strcmp(p->name, "[vdso]") != 0
                                 && strcmp(p->name, "[vsyscall]") != 0
                                 && strcmp(p->name, "[vvar]") != 0
                                 && strcmp(p->name, "[stack]") != 0) {
@@ -1211,7 +1132,7 @@ static void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size)
         }
 
         for(p = head; p != NULL; p = p->n) {
-                if(p->name && strcmp(p->name, "[vdso]") != 0
+                if (p->name && strcmp(p->name, "[vdso]") != 0
                                 && strcmp(p->name, "[vsyscall]") != 0
                                 && strcmp(p->name, "[vvar]") != 0
                                 && strcmp(p->name, "[stack]") != 0) {
@@ -1224,8 +1145,8 @@ static void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size)
         return maps_data;
 }
 
-static const ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_section)
-{
+static const ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_section) {
+
         prpsinfo_t *prpsinfo;
         prstatus_t *prstatus;
         siginfo_t *siginfo;
@@ -1381,8 +1302,8 @@ static const ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_no
         return note_data;
 }
 
-static int dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigned long offset_to_note)
-{
+static int dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigned long offset_to_note) {
+
         Elf64_Phdr phdr;
         linux_map_entry_t *me_p;
         size_t note_section_size;
@@ -1405,7 +1326,7 @@ static int dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigned
         phdr.p_align = 0x1;
 
 	ret = r_buf_append_bytes(dest, (const ut8 *)&phdr, sizeof(Elf64_Phdr));
-	if(ret != true) {
+	if (ret != true) {
 		printf("dump_elf_pheaders: r_buf_append_bytes error!\n");
 		return -1;
     	}
@@ -1415,7 +1336,7 @@ static int dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigned
         /* write program headers */
 
         for(me_p = sec_note->maps; me_p != NULL; me_p = me_p->n) {
-                if(!(me_p->perms & R_MEM) && !(me_p->perms & W_MEM))
+                if (!(me_p->perms & R_MEM) && !(me_p->perms & W_MEM))
                         continue;
                 phdr.p_type = PT_LOAD;
                 phdr.p_flags = me_p->perms;
@@ -1429,7 +1350,7 @@ static int dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigned
                 offset_to_next += phdr.p_filesz == 0 ? 0 : phdr.p_filesz;
 
 		ret = r_buf_append_bytes(dest, (const ut8*)&phdr, sizeof(Elf64_Phdr));
-		if(ret != true) {
+		if (ret != true) {
 			printf("dump_elf_pheaders: r_buf_append_bytes error!\n");
 			return -1;
 		}
@@ -1446,14 +1367,14 @@ static int dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigned
 }
 
 
-static void show_maps(linux_map_entry_t *head)
-{
+static void show_maps(linux_map_entry_t *head) {
+
         linux_map_entry_t *p;
 
         printf("SHOW MAPS ===================\n");
 
         for(p = head; p != NULL; p = p->n) {
-                if(p->name)
+                if (p->name)
                         printf("p->name: %s\n", p->name);
 
                 printf("p->start_addr - %lx, p->end_addr - %lx\n", p->start_addr, p->end_addr);
@@ -1461,8 +1382,8 @@ static void show_maps(linux_map_entry_t *head)
         printf("SHOW MAPS ===================\n");
 }
 
-static int dump_elf_map_content(RBuffer *dest, linux_map_entry_t *head, pid_t pid)
-{
+static int dump_elf_map_content(RBuffer *dest, linux_map_entry_t *head, pid_t pid) {
+
         linux_map_entry_t *p;
         struct iovec local;
         struct iovec remote;
@@ -1475,19 +1396,19 @@ static int dump_elf_map_content(RBuffer *dest, linux_map_entry_t *head, pid_t pi
 
                 printf("\n\nTrying to dump: %p - %p\n", p->name, p->start_addr);
 
-                if(!(p->perms & R_MEM) && !(p->perms & W_MEM)) {
+                if (!(p->perms & R_MEM) && !(p->perms & W_MEM)) {
                         printf("dump_elf_map_content: %s does not have r/w perm\n", p->name);
                         continue;
                 }
 
-                if(p->anonymous == 0) {
+                if (p->anonymous == 0) {
                         printf("p->anonymous == 0 | Skipping: %p - %p\n", p->name, p->start_addr);
                         continue;
                 }
 
                 size = p->end_addr - p->start_addr;
                 map_content = malloc(size);
-                if(map_content == NULL)
+                if (map_content == NULL)
                         printf("map_content = NULL\n");
 
                 printf("p->name: %s - %p to %p - size: %d\n", p->name, p->start_addr, map_content, size);
@@ -1501,7 +1422,7 @@ static int dump_elf_map_content(RBuffer *dest, linux_map_entry_t *head, pid_t pi
                 rbytes = process_vm_readv(pid, &local, 1, &remote, 1, 0);
                 printf("dump_elf_map_content: rbytes: %ld\n", rbytes);
 
-                if(rbytes != size) {
+                if (rbytes != size) {
                         printf("dump_elf_map_content: size not equal\n");
                         perror("process_vm_readv");
                 } else {
@@ -1514,24 +1435,176 @@ static int dump_elf_map_content(RBuffer *dest, linux_map_entry_t *head, pid_t pi
 	return 0;
 }
 
+static void print_p(proc_stat_content_t *p) {
+
+        printf("p->ppid: %d\n", p->ppid);
+        printf("p->pgrp: %d\n", p->pgrp);
+        printf("p->sid: %d\n", p->sid);
+        printf("p->s_name: %c\n", p->s_name);
+        printf("p->flags: %ld\n", p->flag);
+        printf("p->flags: %ld\n", p->flag);
+        printf("p->utime: %ld\n", p->utime);
+        printf("p->stime: %ld\n", p->stime);
+        printf("p->cutime: %ld\n", p->cutime);
+        printf("p->cstime: %ld\n", p->cstime);
+        printf("p->nice: %ld\n", p->nice);
+        printf("p->num_threads: %u\n", p->num_threads);
+        printf("p->sigpend: %ld\n", p->sigpend);
+        printf("p->sighold: %ld\n", p->sighold);
+        printf("p->uid: %u\n", p->uid);
+        printf("p->gid: %u\n", p->gid);
+}
+
+static proc_stat_content_t *get_proc_content(RDebug *dbg) {
+
+        FILE *f;
+        int pos;
+        int c;
+        char file[128];
+        char buff[4096];
+        char s_sigpend[] = "SigPnd";
+        char s_sighold[] = "SigBlk";
+        char *temp_p_uid;
+        char *temp_p_gid;
+        char *p_uid;
+        char *p_gid;
+        char *temp_p_sigpend;
+        char *temp_p_sighold;
+        char *p_sigpend;
+        char *p_sighold;
+        proc_stat_content_t *p;
+
+        snprintf(file, sizeof(file), "/proc/%d/stat", dbg->pid);
+        printf("file: %s\n", file);
+        f = fopen(file, "r");
+
+        if (f == NULL) {
+                printf("get_proc_stat: error file\n");
+                return NULL;
+        }
+
+	p = R_NEW0(proc_stat_content_t);
+
+        pos = 0;
+        while((c = fgetc(f)) != EOF && c!= '\n' && pos < sizeof(buff))
+                buff[pos++] = c;
+
+        buff[pos] = '\0';
+
+        /* /proc/[pid]/stat */
+        sscanf(buff, "%d %*s %c %d %d %d %*d %*d %u %*lu %*lu %*lu %*lu %lu %lu %ld %ld %*ld %ld %ld",   &p->pid,
+                                                                                                        &p->s_name,
+                                                                                                        &p->ppid,
+                                                                                                        &p->pgrp,
+                                                                                                        &p->sid,
+                                                                                                        &p->flag,
+													&p->utime,
+													&p->stime,
+													&p->cutime,
+													&p->cstime,
+                                                                                                        &p->nice,
+                                                                                                        &p->num_threads);
+        /* /proc/[pid]/status for uid, gid, sigpend and sighold */
+
+        snprintf(file, sizeof(file), "/proc/%d/status", dbg->pid);
+
+        f = fopen(file, "r");
+        if (f == NULL) {
+                printf ("Cannot open '%s' for writing\n", file);
+        }
+
+        pos = 0;
+        while((c = fgetc(f)) != EOF && pos < sizeof(buff))
+                buff[pos++] = c;
+        buff[pos] = '\0';
+
+        temp_p_sigpend = strstr(buff, s_sigpend);
+        temp_p_sighold = strstr(buff, s_sighold);
+
+        /* sigpend */
+        while(!isdigit(*temp_p_sigpend++))
+                ;
+
+        p_sigpend = temp_p_sigpend-1;
+
+        while(isdigit(*temp_p_sigpend++))
+                ;
+
+	p_sigpend[temp_p_sigpend-p_sigpend-1] = '\0';
+
+
+        /* sighold */
+        while(!isdigit(*temp_p_sighold++))
+                ;
+
+        p_sighold = temp_p_sighold-1;
+
+        while(isdigit(*temp_p_sighold++))
+                ;
+
+        p_sighold[temp_p_sighold-p_sighold-1] = '\0';
+
+        p->sigpend = atol(p_sigpend);
+        p->sighold = atol(p_sighold);
+
+
+
+        /***************************/
+        temp_p_uid = strstr(buff, "Uid:");
+        temp_p_gid = strstr(buff, "Gid:");
+
+        while(!isdigit(*temp_p_uid++))
+                ;
+        p_uid = temp_p_uid-1;
+
+        while(isdigit(*temp_p_uid++))
+                ;
+        p_uid[temp_p_uid-p_uid-1] = '\0';
+
+
+        /* Do the same for Gid */
+        while(!isdigit(*temp_p_gid++))
+                ;
+        p_gid = temp_p_gid-1;
+
+        while(isdigit(*temp_p_gid++))
+                ;
+        p_gid[temp_p_gid-p_gid-1] = '\0';
+
+
+        p->uid = atoi(p_uid);
+        p->gid = atoi(p_gid);
+
+
+        return p;
+}	
+	
+
 	
 bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 
         Elf64_Ehdr *elf_hdr;
+	proc_stat_content_t *proc_data;
         linux_elf_note_t *sec_note;
         unsigned int n_segments;
         int ret;
 
-	sec_note = (linux_elf_note_t *)malloc(sizeof(linux_elf_note_t));
+	sec_note = R_NEW0(linux_elf_note_t);
+
+	proc_data = get_proc_content(dbg);
+
+	print_p(proc_data);
 
 	/* Let's start getting elf_prpsinfo */
-        sec_note->prpsinfo = linux_get_prpsinfo(dbg);             /* NT_PRPSINFO          */            /* pr_psargs missing */
-        sec_note->prstatus = linux_get_prstatus(dbg);             /* NT_PRSTATUS          */            /* p->pr_cursig      */
-        sec_note->fp_regset = linux_get_fp_regset(dbg);           /* NT_FPREGSET          */
-        sec_note->siginfo = linux_get_siginfo(dbg);               /* NT_SIGINFO           */
-                                                                  /* NT_X86_XSTATE        */
-        sec_note->auxv = linux_get_auxv(dbg);                     /* NT_AUXV              */
-        sec_note->maps = linux_get_mapped_files(dbg);        	  /* NT_FILE              */         /* We still need to take a look at /proc/%d/coredumpfilter */
+        sec_note->prpsinfo = linux_get_prpsinfo(dbg, proc_data);             		/* NT_PRPSINFO          */            /* pr_psargs missing */
+        sec_note->siginfo = linux_get_siginfo(dbg);               			/* NT_SIGINFO           */
+        sec_note->fp_regset = linux_get_fp_regset(dbg);           			/* NT_FPREGSET          */
+        sec_note->prstatus = linux_get_prstatus(dbg, 
+						proc_data,
+						sec_note->siginfo->si_signo);             /* NT_PRSTATUS          */            /* p->pr_cursig      */
+                                                                  			/* NT_X86_XSTATE        */
+        sec_note->auxv = linux_get_auxv(dbg);                     			/* NT_AUXV              */
+        sec_note->maps = linux_get_mapped_files(dbg);        	  			/* NT_FILE              */         /* We still need to take a look at /proc/%d/coredumpfilter */
         n_segments = get_n_mappings(sec_note->maps);
 
 	show_maps(sec_note->maps);

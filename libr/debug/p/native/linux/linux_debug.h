@@ -91,7 +91,34 @@ const char *linux_reg_profile (RDebug *dbg);
 #define P_MEM 0x8
 #define S_MEM 0x10
 
+#define MAP_ANON_PRIV	0x1
+#define MAP_ANON_SHR	0x2
+#define MAP_FILE_PRIV	0x4
+#define MAP_FILE_SHR	0x8
+#define MAP_ELF_HDR	0x10
+#define MAP_HUG_PRIV	0x20
+#define MAP_HUG_SHR	0x40
+
 static unsigned int n_notes = DEFAULT_NOTE;
+
+typedef struct proc_stat_content {
+        int pid;
+        int ppid;
+        int pgrp;
+        int sid;
+        char s_name;
+        unsigned long int flag;
+	unsigned long int utime;
+	unsigned long int stime;
+	unsigned long int cutime;
+	unsigned long int cstime;
+        unsigned long int nice;
+        unsigned int num_threads;
+        unsigned long int sigpend;
+        unsigned long int sighold;
+        unsigned int uid;
+        unsigned int gid;
+}proc_stat_content_t;
 
 typedef struct map_file {
         unsigned int count;
@@ -137,59 +164,6 @@ typedef struct linux_elf_note {
 }linux_elf_note_t;
 
 typedef enum {
-        PID_E = 0,
-        TCOMM_E,
-        STATE_E,
-        PPID_E,
-        PGRP_E,
-        SID_E,
-        TTY_NR_E,
-        TTY_PGRP_E,
-        FLAGS_E,
-        MIN_FLT_E,
-        CMIN_FLT_E,
-        MAJ_FLT_E,
-        UTIME_E,
-        STIME_E,
-        CUTIME_E,
-        CSTIME_E,
-        PRIORITY_E,
-        NICE_E,
-        NUM_THREADS_E,
-        IT_REAL_VALUE_E,
-        START_TIME_E,
-        VSIZE_E,
-        RSS_E,
-        RSSLIM_E,
-        START_CODE_E,
-        END_CODE_E,
-        START_STACK_E,
-        ESP_E,
-        EIP_E,
-        PENDING_E,
-        BLOCKED_E,
-        SIGIGN_E,
-        SIGCATCH_E,
-        PLACE_HOLDER_1E,
-        PLACE_HOLDER_2E,
-        PLACE_HOLDER_3E,
-        EXIT_SIGNAL_E,
-        TASK_CPU_E,
-        RT_PRIORITY_E,
-        POLICY_E,
-        BLKIO_TICKS_E,
-        GTIME_E,
-        START_DATA_E,
-        END_DATA_E,
-        START_BRK_E,
-        ARG_START_E,
-        ARG_END_E,
-        ENV_START_E,
-        ENV_END_E,
-        EXIT_CODE_E
-}proc_stat_entry;
-
-typedef enum {
         ADDR,
         PERM,
         OFFSET,
@@ -218,10 +192,9 @@ typedef enum {
                                         ".note.linux.ntfile"
                                 };*/
 
-static int is_a_right_entry(proc_stat_entry entry);
 static int is_data(char c);
-static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg);
-static prstatus_t *linux_get_prstatus(RDebug *dbg);
+static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_stat_content_t *proc_data);
+static prstatus_t *linux_get_prstatus(RDebug *dbg, proc_stat_content_t *proc_data, short int signr);
 static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg);
 static siginfo_t *linux_get_siginfo(RDebug *dbg);
 static int get_map_address_space(char *pstr, unsigned long long *start_addr, unsigned long long *end_addr);
