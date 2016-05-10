@@ -97,7 +97,10 @@ typedef struct r_hash_seed_t {
 #define R_HASH_MOD255 16384
 #define R_HASH_XXHASH 32768
 #define R_HASH_ADLER32 65536
-#define R_HASH_ALL 0xFFFF
+#define R_HASH_BASE64 131072
+#define R_HASH_BASE91 262144
+#define R_HASH_PUNYCODE 524288
+#define R_HASH_ALL 0xFFFFF
 
 #ifdef R_API
 /* OO */

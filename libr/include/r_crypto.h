@@ -58,6 +58,7 @@ R_API int r_crypto_update(RCrypto *cry, const ut8 *buf, int len);
 R_API int r_crypto_final(RCrypto *cry, const ut8 *buf, int len);
 R_API int r_crypto_append(RCrypto *cry, const ut8 *buf, int len);
 R_API ut8 *r_crypto_get_output(RCrypto *cry, int *size);
+R_API const char *r_crypto_name(ut64 bit);
 #endif
 
 /* plugin pointers */
@@ -74,6 +75,18 @@ extern RCryptoPlugin r_crypto_plugin_base91;
 extern RCryptoPlugin r_crypto_plugin_aes_cbc;
 extern RCryptoPlugin r_crypto_plugin_punycode;
 extern RCryptoPlugin r_crypto_plugin_rc6;
+
+#define R_CRYPTO_NONE 0
+#define R_CRYPTO_RC2 1
+#define R_CRYPTO_RC4 2
+#define R_CRYPTO_RC6 4
+#define R_CRYPTO_AES_ECB 8
+#define R_CRYPTO_AES_CBC 16
+#define R_CRYPTO_ROR 32
+#define R_CRYPTO_ROL 64
+#define R_CRYPTO_ROT 128
+#define R_CRYPTO_BLOWFISH 256
+#define R_CRYPTO_ALL 0xFFFF
 
 #ifdef __cplusplus
 }
