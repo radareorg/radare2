@@ -384,6 +384,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			break;
 		case EINVAL:
 			perror ("ptrace: Cannot attach");
+			eprintf ("Possibly unsigned r2. Please see doc/osx.md\n");
 			eprintf ("ERRNO: %d (EINVAL)\n", errno);
 			break;
 		default:
