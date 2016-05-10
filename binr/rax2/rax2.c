@@ -93,13 +93,14 @@ static int help () {
 		"  -K    keep base         ;  rax2 -B 33+3 -> 36\n"
 		"  -n    binary number     ;  rax2 -n 0x1234 # 34120000\n"
 		"  -N    binary number     ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
+		"  -r    r2 style output   ;  rax2 -r 0x1234\n"
 		"  -s    hexstr -> raw     ;  rax2 -s 43 4a 50\n"
 		"  -S    raw -> hexstr     ;  rax2 -S < /bin/ls > ls.hex\n"
 		"  -t    tstamp -> str     ;  rax2 -t 1234567890\n"
 		"  -x    hash string       ;  rax2 -x linux osx\n"
 		"  -u    units             ;  rax2 -u 389289238 # 317.0M\n"
 		"  -w    signed word       ;  rax2 -w 16 0xffff\n"
-		"  -v    version           ;  rax2 -V\n"
+		"  -v    version           ;  rax2 -v\n"
 		);
 	return true;
 }
@@ -145,6 +146,7 @@ static int rax (char *str, int len, int last) {
 			case 'F': flags ^= 1 << 14; break;
 			case 'N': flags ^= 1 << 15; break;
 			case 'w': flags ^= 1 << 16; break;
+			case 'r': flags ^= 1 << 18; break;
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
@@ -343,6 +345,41 @@ static int rax (char *str, int len, int last) {
 			free (str);
 		}
 		return false;
+	} else if (flags & (1 << 18)) { // -r
+		char *asnum, unit[32];
+		char out[128];
+		ut32 n32, s, a;
+		double d;
+		float f;
+		ut64 n = r_num_math (num, str);
+
+		if (num->dbz) {
+			eprintf ("RNum ERROR: Division by Zero\n");
+		}
+		n32 = (ut32)(n & UT32_MAX);
+		asnum  = r_num_as_string (NULL, n);
+		memcpy (&f, &n32, sizeof (f));
+		memcpy (&d, &n, sizeof (d));
+
+		/* decimal, hexa, octal */
+		s = n >> 16 << 12;
+		a = n & 0x0fff;
+		r_num_units (unit, n);
+		eprintf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o
+			" %s %04x:%04x ",
+			n, n, n, unit, s, a);
+		if (n >> 32) eprintf ("%"PFMT64d" ", (st64)n);
+		else eprintf ("%d ", (st32)n);
+		if (asnum) {
+			eprintf ("\"%s\" ", asnum);
+			free (asnum);
+		}
+		/* binary and floating point */
+		r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
+		eprintf ("%s %.01lf %ff %lf\n",
+			out, num->fvalue, f, d);
+
+		return true;
 	}
 
 	if (str[0] == '0' && str[1] == 'x') {
