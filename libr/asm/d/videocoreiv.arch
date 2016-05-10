@@ -1,29 +1,9 @@
-######################################################################
-# This work is covered by the following variation of the WTFPL:
-#
-#             DO WHAT YOU WANT TO PUBLIC LICENSE
-#                     Version 1, December 2012
-#
-#  Copyright (C) 2012 The contributors.
-#
-#  Everyone is permitted to copy and distribute verbatim or modified
-#  copies of this license document, and changing it is allowed as long
-#  as the name is changed.
-#
-#             DO WHAT YOU WANT TO PUBLIC LICENSE
-#    TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
-#
-#   0. You just DO WHAT YOU WANT TO.
-#
-######################################################################
-#
 # Arch Instruction bits file for VideoCore IV
 # NOTE: This is in a very early state and is of limited accuracy.
 # Mnemonics wont match official VideoCore IV due to this being an independent work.
 #
 # History:
 # Date          Author           Comment
-# 03/12/2012    hhh              Getting ready for all the Vector instructions
 # 19/11/2012    hhh              "Test" is a prefix on instructions meaning experimental decoding attempts.
 # 16/07/2012    hhh              Initial check in, the 32 bit long instructions are in a state of flux - dont trust :)
 #
@@ -43,20 +23,15 @@
 #
 # In this particular arch file we have:
 # 
-#   0 1 - ? !    match a zero, one, any, any but warn not zero, any but warn if not one
+#   0 1 x ? !    match a zero, one, any, any but warn if zero, any but warn if != one
 #   a b d s      bits for a register reference
 #   c            bits for condition codes
-#   w            width of memory access
 #   i            signed integer immediate
 #   o            signed offset
 #   u            unsigned integer immediate
-#   n            number of registers 
-#   p q f v      integer, float, vector opcode
-#   x y z        unknown quantities
-#
-# Unused:
-#
-#   eghjklmrtXYZ
+#   m            mask
+#   p q          operation
+#   x            uknown
 #
 #  In general a bit-match (or left-hand-side) is bound against the incoming bitstream.
 #  The quoted-string (or right-hand-sides) are emitted with the bound items resolved.
@@ -76,13 +51,13 @@
 (define-table c ["eq", "ne", "cs/lo", "cc/hs", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le", "", "f"])
 
 # Common Operations
-(define-table q ["mov", "add", "mul", "sub", "mvn", "cmp", "btst", "extu", "bset", "bclr", "bchg", "adds8", "exts", "lsr", "lsl", "asr"])
+(define-table q ["mov", "add", "mul", "sub", "not", "cmp", "btest", "bmask", "bset", "bclr", "bchg", "adds8", "signext", "lsr", "lsl", "asr"])
 
 # All operations
-(define-table p ["mov", "cmn", "add", "bic", "mul", "eor", "sub", "and", "mvn", "ror", "cmp", "rsb", "btst", "or", "extu", "max", "bset", "min", "bclr", "adds2", "bchg", "adds4", "adds8", "adds16", "exts", "neg", "lsr", "clz", "lsl", "brev", "asr", "abs"])
+(define-table p ["mov", "cmn", "add", "bic", "mul", "eor", "sub", "and", "not", "ror", "cmp", "rsub", "btst", "or", "bmask", "max", "bset", "min", "bclr", "adds2", "bchg", "adds4", "adds8", "adds16", "signext", "neg", "lsr", "count", "lsl", "brev", "asr", "abs"])
 
 # Floating point
-(define-table f ["fadd", "fsub", "fmul", "fdiv", "fcmp", "fabs", "frsb", "fmax", "frcp", "frsqrt", "fnmul", "fmin", "fld1", "fld0", "fop14", "fop15"])
+(define-table f ["fadd", "fsub", "fmul", "fdiv", "fcmp", "fabs", "frsub", "fmax", "frcp", "frsqrt", "fnmul", "fmin", "fld1", "fld0", "fop14", "fop15"])
 
 # Width of Memory Operation   
 #   00 Long/Word  (32 bits)
@@ -95,15 +70,15 @@
 # 16 bit instructions
 #
 
-0000 0000 0000 0000                                               "; bkpt     # provisional: raises exception 0x0e
+0000 0000 0000 0000                                               "; halt"
 
 0000 0000 0000 0001                                               "; nop"
 
-0000 0000 0000 0010                                               "; sleep"   # provisional
+0000 0000 0000 0010                                               "; wait"    # provisional
 0000 0000 0000 0011                                               "; user"    # provisional: enter user mode (set bit 31 of SR)
 
-0000 0000 0000 0100                                               "; ei"      # provisional: set bit 30 / enable interrupts
-0000 0000 0000 0101                                               "; di"      # provisional: clear bit 30 / disable interrupts
+0000 0000 0000 0100                                               "; enable"  # provisional: set bit 30 / enable interrupts
+0000 0000 0000 0101                                               "; disable" # provisional: clear bit 30 / disable interrupts
 
 0000 0000 0000 0110                                               "; clr"     # clear SR[5:4] = 00
 0000 0000 0000 0111                                               "; inc"     # increment SR[5:4]
@@ -111,28 +86,23 @@
 0000 0000 0000 1001                                               "; dec"     # decrement SR[5:4]
 
 0000 0000 0000 1010                                               "; rti"      # pops sr and pc off stack
-
 0000 0000 0000 1xxx                                               "; unk3 0x%02x{x}"  # raise exception 03 (illegal instruction)
-
 0000 0000 0001 xxxx                                               "; unk4 0x%02x{x}"  # raise exception 03 (illegal instruction)
 
 0000 0000 001d dddd                                               "; swi r%i{d}"  # raise exception 0x20+rd&31
 
-0000 0000 0101 1010                                               "; rts"     #otherwise known as 'b lr'
-0000 0000 010d dddd                                               "; b r%i{d}"
-0000 0000 011d dddd                                               "; bl r%i{d}"
+0000 0000 010 11010                                               "; rts"     #otherwise known as 'b lr'
+0000 0000 010  d:5                                                "; b r%i{d}"
+0000 0000 011  d:5                                                "; bl r%i{d}"
 
 # Table/Switch instructions
 # branch using indirect byte displacement  b *(pc+rd)
-0000 0000 100d dddd                                               "; tbb r%i{d}" #, [0x%x{2+$+f*2}, 0x%x{2+$+e*2}, 0x%x{2+$+b*2}, 0x%x{2+$+a*2}, ...]"
+0000 0000 100 d:5                                                "; tbb r%i{d}" #, [0x%x{2+$+f*2}, 0x%x{2+$+e*2}, 0x%x{2+$+b*2}, 0x%x{2+$+a*2}, ...]"
 # branch using indirect short displacement b *(pc+rd*2)
-0000 0000 101d dddd                                               "; tbh r%i{d}" #, [0x%x{2+$+b*2}, 0x%x{2+$+a*2}, ...]"
+0000 0000 101 d:5                                                 "; tbh r%i{d}" #, [0x%x{2+$+b*2}, 0x%x{2+$+a*2}, ...]"
 
-0000 0000 111d dddd                                               "; mov r%i{d}, cpuid"
+0000 0000 111 d:5                                                 "; mov r%i{d}, cpuid"
 0000 0000 1xxx xxxx                                               "; unk7 0x%02x{x}"
-
-0000 0001 11uu uuuu                                               "; swi 0x%02x{u}"   # raise exception 0x20+u&31
-
 0000 0001 xxxx xxxx                                               "; unk8 0x%02x{x}"
 
 # Push/Pop bits for single register case
@@ -146,289 +116,201 @@
 0000 0011 0bb0 0000                                               "; pop  r%d{b*8}, pc"
 
 # Push/Pop bits multiple register case for bank 1
-0000 0010 101n nnnn                                               "; push r6-r%d{6+n}"
-0000 0010 001n nnnn                                               "; pop  r6-r%d{6+n}"
-0000 0011 101n nnnn                                               "; push r6-r%d{6+n}, lr"
-0000 0011 001n nnnn                                               "; pop  r6-r%d{6+n}, pc"
+0000 0010 101 n:5                                               "; push r6-r%d{6+n}"
+0000 0010 001 n:5                                               "; pop  r6-r%d{6+n}"
+0000 0011 101 n:5                                               "; push r6-r%d{6+n}, lr"
+0000 0011 001 n:5                                               "; pop  r6-r%d{6+n}, pc"
 
 # Push/Pop bits general case
-0000 0010 1bbn nnnn                                               "; push r%d{b*8}-r%d{(n+b*8)&31}"
-0000 0010 0bbn nnnn                                               "; pop  r%d{b*8}-r%d{(n+b*8)&31}"
-0000 0011 1bbn nnnn                                               "; push r%d{b*8}-r%d{(n+b*8)&31}, lr"
-0000 0011 0bbn nnnn                                               "; pop  r%d{b*8}-r%d{(n+b*8)&31}, pc"
+0000 0010 1bb n:5                                               "; push r%d{b*8}-r%d{(n+b*8)&31}"
+0000 0010 0bb n:5                                               "; pop  r%d{b*8}-r%d{(n+b*8)&31}"
+0000 0011 1bb n:5                                               "; push r%d{b*8}-r%d{(n+b*8)&31}, lr"
+0000 0011 0bb n:5                                               "; pop  r%d{b*8}-r%d{(n+b*8)&31}, pc"
 
-0000 010u uuuu dddd                                               "; ld r%i{d}, 0x%02x{u*4}(sp)"
-0000 011u uuuu dddd                                               "; st r%i{d}, 0x%02x{u*4}(sp)"
+0000 010 o:5 d:4                                                  "; ld r%i{d}, 0x%02x{o*4}(sp)"
+0000 011 o:5 d:4                                                  "; st r%i{d}, 0x%02x{o*4}(sp)"
 
-0000 1ww0 ssss dddd                                               "; ld%s{w} r%i{d}, (r%i{s})"
-0000 1ww1 ssss dddd                                               "; st%s{w} r%i{d}, (r%i{s})"
+0000 1ww0 s:4 d:4                                               "; ld%s{w} r%i{d}, (r%i{s})"
+0000 1ww1 s:4 d:4                                               "; st%s{w} r%i{d}, (r%i{s})"
  
-0001 0ooo ooo1 1001                                               "; add sp, #0x%x{o*4}"
-0001 0ooo oood dddd                                               "; lea r%i{d}, 0x%x{o*4}(sp)"
+0001 0 o:6 11001                                                 "; add sp, #0x%x{o*4}"
+0001 0 o:6  d:5                                                  "; lea r%i{d}, 0x%x{o*4}(sp)"
  
-0001 1ccc cooo oooo                                               "; b%s{c} 0x%08x{$+o*2}"
+0001 1 c:4 o:7                                                    "; b%s{c} 0x%08x{$+o*2}"
 
-0010 uuuu ssss dddd                                               "; ld  r%i{d}, 0x%02x{u*4}(r%i{s})"
-0011 uuuu ssss dddd                                               "; st  r%i{d}, 0x%02x{u*4}(r%i{s})"
+0010 u:4 s:4 d:4                                                 "; ld  r%i{d}, 0x%02x{u*4}(r%i{s})"
+0011 u:4 s:4 d:4                                                  "; st  r%i{d}, 0x%02x{u*4}(r%i{s})"
 
 # Arithmetic and Logical Operations
 
 # op rd, ra   (rd = rd op ra)
-010p pppp ssss dddd                                               "; %s{p} r%i{d}, r%i{s}"
-0101 0xxs ssss dddd                                               "; add r%i{d}, r%i{s} shl #%i{x}"
+01010 xx s:5 d:4                                               "; add r%i{d}, r%i{s} shl #%i{x}"
+010 p:5 s:4 d:4                                               "; %s{p} r%i{d}, r%i{s}"
 
 # op rd, #u   (rd = rd op #u)
-011q qqqu uuuu dddd                                               "; %s{q} r%i{d}, #%i{u}"
+011 q:4 u:5 d:4                                               "; %s{q} r%i{d}, #%i{u}"
 
 #
 # 32 bit instructions
 #
 
-1000 cccc 0000 dddd 01ss ssoo oooo oooo                           "; b%s{c} r%i{d}, r%i{s}, 0x%08x{$+o*2}"
-1000 cccc 0000 dddd 11uu uuuu oooo oooo                           "; b%s{c} r%i{d}, #%i{u}, 0x%08x{$+o*2}"
+1000 c:4 0000 d:4 01 s:4 o:10                    "; b%s{c} r%i{d}, r%i{s}, 0x%08x{$+o*2}"
+1000 c:4 0000 d:4 11 u:6 o:8                     "; b%s{c} r%i{d}, #%i{u}, 0x%08x{$+o*2}"
 
-1000 cccc aaaa dddd 00ss ssoo oooo oooo                           "; addcmpb%s{c} r%i{d}, r%i{a}, r%i{s}, 0x%08x{$+o*2}"
-1000 cccc iiii dddd 01ss ssoo oooo oooo                           "; addcmpb%s{c} r%i{d}, #%i{i}, r%i{s}, 0x%08x{$+o*2}"
-1000 cccc aaaa dddd 10uu uuuu oooo oooo                           "; addcmpb%s{c} r%i{d}, r%i{a}, #%i{u}, 0x%08x{$+o*2}"
-1000 cccc iiii dddd 11uu uuuu oooo oooo                           "; addcmpb%s{c} r%i{d}, #%i{i}, #%i{u}, 0x%08x{$+o*2}"
+1000 c:4 a:4 d:4 00 s:4 o:10                     "; addcmpb%s{c} r%i{d}, r%i{a}, r%i{s}, 0x%08x{$+o*2}"
+1000 c:4 i:4 d:4 01 s:4 o:10                     "; addcmpb%s{c} r%i{d}, #%i{i}, r%i{s}, 0x%08x{$+o*2}"
+1000 c:4 a:4 d:4 10 u:6 o:8                      "; addcmpb%s{c} r%i{d}, r%i{a}, #%i{u}, 0x%08x{$+o*2}"
+1000 c:4 i:4 d:4 11 u:6 o:8                      "; addcmpb%s{c} r%i{d}, #%i{i}, #%i{u}, 0x%08x{$+o*2}"
 
-1001 cccc 0ooo oooo oooo oooo oooo oooo                           "; b%s{c} 0x%08x{$+o*2}"
-1001 oooo 1ooo oooo oooo oooo oooo oooo                           "; bl  0x%08x{$+o*2}"
+1001 c:4 0 o:23                           "; b%s{c} 0x%08x{$+o*2}"
+1001 o:4 1 o:23                           "; bl  0x%08x{$+o*2}"
 
 # Conditional Ld/St with (ra, rb)
-1010 0000 ww0d dddd aaaa accc c00b bbbb                           "; ld%s{w}%s{c} r%i{d}, (r%i{a}, r%i{b})"
-1010 0000 ww1d dddd aaaa accc c00b bbbb                           "; st%s{w}%s{c} r%i{d}, (r%i{a}, r%i{b})"
-1010 0000 ww0d dddd aaaa accc c10u uuuu                           "; test ld%s{w}%s{c} r%i{d}, 0x%x{u}(r%i{a})"
-1010 0000 ww1d dddd aaaa accc c10u uuuu                           "; test st%s{w}%s{c} r%i{d}, 0x%x{u}(r%i{a})"
-1010 0000 wwxd dddd aaaa accc cxxu uuuu                           "; bad ld/st with (ra, rb) or (ra, #u)"
+1010 0000 ww0 d:5  a:5 c:4 00 b:5                       "; ld%s{w}%s{c} r%i{d}, (r%i{a}, r%i{b})"
+1010 0000 ww1 d:5  a:5 c:4 00 b:5                       "; st%s{w}%s{c} r%i{d}, (r%i{a}, r%i{b})"
+1010 0000 ww0 d:5  a:5 c:4 10 u:5                       "; ld%s{w}%s{c} r%i{d}, 0x%x{u}(r%i{a})"
+1010 0000 ww1 d:5  a:5 c:4 10 u:5                       "; st%s{w}%s{c} r%i{d}, 0x%x{u}(r%i{a})"
+1010 0000 wwx d:5  a:5 c:4 xx u:5                       "; !bad ld/st with (ra, rb) or (ra, #u)"
 
 # Conditional Ld/St with Post increment/decrement
-1010 0100 ww0d dddd ssss sccc c000 0000                           "; ld%s{w}%s{c} r%i{d}, --(r%i{s})"
-1010 0100 ww1d dddd ssss sccc c000 0000                           "; st%s{w}%s{c} r%i{d}, --(r%i{s})" 
-1010 0101 ww0d dddd ssss sccc c000 0000                           "; ld%s{w}%s{c} r%i{d}, (r%i{s})++"
-1010 0101 ww1d dddd ssss sccc c000 0000                           "; st%s{w}%s{c} r%i{d}, (r%i{s})++" 
-1010 010x wwxd dddd ssss sccc cxxx xxxx                           "; bad ld/st with pre-decrement/post-increment addressing";
+1010 0100 ww1 d:5  11001 c:4 0000000               	"; push%s{w}%s{c} r%i{d}" 
+1010 0101 ww0 d:5  11001 c:4 0000000                    "; pop%s{w}%s{c} r%i{d}"
+
+1010 0100 ww0 d:5  s:5 c:4 0000000                      "; ld%s{w}%s{c} r%i{d}, --(r%i{s})"
+1010 0100 ww1 d:5  s:5 c:4 0000000                      "; st%s{w}%s{c} r%i{d}, --(r%i{s})" 
+1010 0101 ww0 d:5  s:5 c:4 0000000                      "; ld%s{w}%s{c} r%i{d}, (r%i{s})++"
+1010 0101 ww1 d:5  s:5 c:4 0000000                      "; st%s{w}%s{c} r%i{d}, (r%i{s})++" 
+1010 010x wwx d:5  s:5 c:4 xxxxxxx                      "; !bad ld/st with pre-decrement/post-increment addressing";
 
 # Non conditional
-1010 001o ww0d dddd ssss sooo oooo oooo                           "; ld%s{w} r%i{d}, 0x%x{o}(r%i{s})"
-1010 001o ww1d dddd ssss sooo oooo oooo                           "; st%s{w} r%i{d}, 0x%x{o}(r%i{s})""
+1010 001 o ww0 d:5  s:5 o:11                            "; ld%s{w} r%i{d}, 0x%x{o}(r%i{s})"
+1010 001 o ww1 d:5  s:5 o:11                            "; st%s{w} r%i{d}, 0x%x{o}(r%i{s})""
 
-1010 0x1o ww0d dddd ssss sooo oooo oooo                           "; ld%s{w} r%i{d}, 0x%x{o}(r%i{s}) x=%d{x}?"
-1010 0x1o ww1d dddd ssss sooo oooo oooo                           "; st%s{w} r%i{d}, 0x%x{o}(r%i{s}) x=%d{x}?"
+1010 0x1 o ww0 d:5  s:5 o:11                            "; ld%s{w} r%i{d}, 0x%x{o}(r%i{s}), %d{x}" #?
+1010 0x1 o ww1 d:5  s:5 o:11                            "; st%s{w} r%i{d}, 0x%x{o}(r%i{s}), %d{x}" #?
+
+1010 0x1 o ww1 d:5  s:5 o:11                            "; st12%s{w} r%i{d}, 0x%x{o}(r%i{s}), %d{x}" #?
 
 # 1010 10.. Ld/st with 16 bit offset
-1010 1000 ww0d dddd oooo oooo oooo oooo                           "; ld%s{w} r%i{d}, 0x%0x{o}(r24)"
-1010 1000 ww1d dddd oooo oooo oooo oooo                           "; st%s{w} r%i{d}, 0x%0x{o}(r24)"
-1010 1001 ww0d dddd oooo oooo oooo oooo                           "; ld%s{w} r%i{d}, 0x%0x{o}(sp)"
-1010 1001 ww1d dddd oooo oooo oooo oooo                           "; st%s{w} r%i{d}, 0x%0x{o}(sp)"
-1010 1010 ww0d dddd oooo oooo oooo oooo                           "; ld%s{w} r%i{d}, 0x%0x{o}(pc)"
-1010 1010 ww1d dddd oooo oooo oooo oooo                           "; st%s{w} r%i{d}, 0x%0x{o}(pc)"
-1010 1011 ww0d dddd oooo oooo oooo oooo                           "; ld%s{w} r%i{d}, 0x%x{o}(r0)"
-1010 1011 ww1d dddd oooo oooo oooo oooo                           "; st%s{w} r%i{d}, 0x%x{o}(r0)"
+1010 1000 ww0 d:5  o:16                                 "; ld%s{w} r%i{d}, 0x%0x{o}(r24)"
+1010 1000 ww1 d:5  o:16                                 "; st%s{w} r%i{d}, 0x%0x{o}(r24)"
+1010 1001 ww0 d:5  o:16                                 "; ld%s{w} r%i{d}, 0x%0x{o}(sp)"
+1010 1001 ww1 d:5  o:16                                 "; st%s{w} r%i{d}, 0x%0x{o}(sp)"
+1010 1010 ww0 d:5  o:16                                 "; ld%s{w} r%i{d}, 0x%0x{o}(pc)"
+1010 1010 ww1 d:5  o:16                                 "; st%s{w} r%i{d}, 0x%0x{o}(pc)"
+1010 1011 ww0 d:5  o:16                                 "; ld%s{w} r%i{d}, 0x%x{o}(r0)"
+1010 1011 ww1 d:5  o:16                                 "; st%s{w} r%i{d}, 0x%x{o}(r0)"
 
-1010 11xx ww0d dddd oooo oooo oooo oooo                           "; ld%s{w} r%i{d}, 0x%x{o}(?? %i{x})"
-1010 11xx ww1d dddd oooo oooo oooo oooo                           "; st%s{w} r%i{d}, 0x%x{o}(?? %i{x})"
+1010 11xx ww0 d:5  o:16                                 "; ld%s{w} r%i{d}, 0x%x{o} ;(?? %i{x})"
+1010 11xx ww1 d:5  o:16                                 "; st%s{w} r%i{d}, 0x%x{o} ;(?? %i{x})"
 
-1100 0100 000d dddd aaaa accc c00b bbbb                           "; mulhd.ss %s{c} r%i{d}, r%i{a}, r%i{b}"
-1100 0100 001d dddd aaaa accc c00b bbbb                           "; mulhd.su %s{c} r%i{d}, r%i{a}, r%i{b}"
-1100 0100 010d dddd aaaa accc c00b bbbb                           "; mulhd.us %s{c} r%i{d}, r%i{a}, r%i{b}"
-1100 0100 011d dddd aaaa accc c00b bbbb                           "; mulhd.uu %s{c} r%i{d}, r%i{a}, r%i{b}"
-1100 0100 000d dddd aaaa accc c1ii iiii                           "; mulhd.ss %s{c} r%i{d}, r%i{a}, #%d{i}"
-1100 0100 001d dddd aaaa accc c1ii iiii                           "; mulhd.su %s{c} r%i{d}, r%i{a}, #%d{i}"
-1100 0100 010d dddd aaaa accc c1ii iiii                           "; mulhd.us %s{c} r%i{d}, r%i{a}, #%d{i}"
-1100 0100 011d dddd aaaa accc c1ii iiii                           "; mulhd.uu %s{c} r%i{d}, r%i{a}, #%d{i}"
+1100 0100 000 d:5  a:5 c:4 00 b:5                       "; mulhd.ss%s{c} r%i{d}, r%i{a}, r%i{b}"
+1100 0100 001 d:5  a:5 c:4 00 b:5                       "; mulhd.su%s{c} r%i{d}, r%i{a}, r%i{b}"
+1100 0100 010 d:5  a:5 c:4 00 b:5                       "; mulhd.us%s{c} r%i{d}, r%i{a}, r%i{b}"
+1100 0100 011 d:5  a:5 c:4 00 b:5                       "; mulhd.uu%s{c} r%i{d}, r%i{a}, r%i{b}"
+1100 0100 000 d:5  a:5 c:4 10 u:5                       "; mulhd.ss%s{c} r%i{d}, r%i{a}, #%d{u}"
+1100 0100 001 d:5  a:5 c:4 10 u:5                       "; mulhd.su%s{c} r%i{d}, r%i{a}, #%d{u}"
+1100 0100 010 d:5  a:5 c:4 10 u:5                       "; mulhd.us%s{c} r%i{d}, r%i{a}, #%d{u}"
+1100 0100 011 d:5  a:5 c:4 10 u:5                       "; mulhd.uu%s{c} r%i{d}, r%i{a}, #%d{u}"
 
-1100 0100 100d dddd aaaa accc c00b bbbb                           "; divs%s{c} r%i{d}, r%i{a}, r%i{b}"
-1100 0100 101d dddd aaaa accc c00b bbbb                           "; divsu%s{c} r%i{d}, r%i{a}, r%i{b}"
-1100 0100 110d dddd aaaa accc c00b bbbb                           "; divus%s{c} r%i{d}, r%i{a}, r%i{b}"
-1100 0100 111d dddd aaaa accc c00b bbbb                           "; divu%s{c} r%i{d}, r%i{a}, r%i{b}"
-1100 0100 100d dddd aaaa accc c1ii iiii                           "; divs%s{c} r%i{d}, r%i{a}, #%d{i}"
-1100 0100 101d dddd aaaa accc c1ii iiii                           "; divsu%s{c} r%i{d}, r%i{a}, #%d{i}"
-1100 0100 110d dddd aaaa accc c1ii iiii                           "; divus%s{c} r%i{d}, r%i{a}, #%d{i}"
-1100 0100 111d dddd aaaa accc c1ii iiii                           "; divu%s{c} r%i{d}, r%i{a}, #%d{i}"
+1100 0100 100 d:5  a:5 c:4 00 b:5                       "; divss%s{c} r%i{d}, r%i{a}, r%i{b}"
+1100 0100 101 d:5  a:5 c:4 00 b:5                       "; divsu%s{c} r%i{d}, r%i{a}, r%i{b}"
+1100 0100 110 d:5  a:5 c:4 00 b:5                       "; divus%s{c} r%i{d}, r%i{a}, r%i{b}"
+1100 0100 111 d:5  a:5 c:4 00 b:5                       "; divuu%s{c} r%i{d}, r%i{a}, r%i{b}"
+1100 0100 100 d:5  a:5 c:4 10 u:5                       "; divss%s{c} r%i{d}, r%i{a}, #%d{u}"
+1100 0100 101 d:5  a:5 c:4 10 u:5                       "; divsu%s{c} r%i{d}, r%i{a}, #%d{u}"
+1100 0100 110 d:5  a:5 c:4 10 u:5                       "; divus%s{c} r%i{d}, r%i{a}, #%d{u}"
+1100 0100 111 d:5  a:5 c:4 10 u:5                       "; divuu%s{c} r%i{d}, r%i{a}, #%d{u}"
 
-1100 0101 111d dddd aaaa accc c00b bbbb                           "; add%s{c} r%d{d}, r%d{a}, r%d{b} shl 8"
+1100 0101 111 d:5  a:5 c:4 00 b:5                       "; add%s{c} r%d{d}, r%d{a}, r%d{b} shl 8"
 
-1100 0101 xxxd dddd aaaa accc c00b bbbb                           "; test5 add%s{c} r%i{d}, r%i{a}, r%i{b} shl %d{x+1}"
-1100 0101 xxxd dddd aaaa accc c10u uuuu                           "; test5 add%s{c} r%i{d}, r%i{a}, #%d{u} shl %d{x+1}"
+1100 0101 xxx d:5  a:5 c:4 00 b:5                       "; test5_add%s{c} r%i{d}, r%i{a}, r%i{b} shl %d{x+1}"
+1100 0101 xxx d:5  a:5 c:4 10 u:5                       "; test5_add%s{c} r%i{d}, r%i{a}, #%d{u} shl %d{x+1}"
 
-1100 0110 xxxd dddd aaaa accc c00b bbbb                           "; test6 add%s{c} r%i{d}, r%i{a}, r%i{b} lsr %d{x+1}"
-1100 0110 xxxd dddd aaaa accc c10u uuuu                           "; test6 add%s{c} r%i{d}, r%i{a}, #%d{u} lsr %d{x+1}"
+1100 0110 xxx d:5  a:5 c:4 00 b:5                       "; test6_add%s{c} r%i{d}, r%i{a}, r%i{b} lsr %d{x+1}"
+1100 0110 xxx d:5  a:5 c:4 10 u:5                       "; test6_add%s{c} r%i{d}, r%i{a}, #%d{u} lsr %d{x+1}"
 
-1100 0110 xxxd dddd aaaa accc c00b bbbb                           "; test6 s%s{c} r%i{d}, r%i{a}, r%i{b} ;%d{x}"
-1100 0110 xxxd dddd aaaa accc c00b bbbb                           "; test6 u%s{c} r%i{d}, r%i{a}, r%i{b} ;%d{x}"
-1100 0110 xxxd dddd aaaa accc c10u uuuu                           "; test6 s%s{c} r%i{d}, r%i{a}, #%d{u} ;%d{x}"
-1100 0110 xxxd dddd aaaa accc c10u uuuu                           "; test6 u%s{c} r%i{d}, r%i{a}, #%d{u} ;%d{x}"
+1100 0110 xxx d:5  a:5 c:4 00 b:5                       "; test6_s%s{c} r%i{d}, r%i{a}, r%i{b} ;%d{x}"
+1100 0110 xxx d:5  a:5 c:4 00 b:5                       "; test6_u%s{c} r%i{d}, r%i{a}, r%i{b} ;%d{x}"
+1100 0110 xxx d:5  a:5 c:4 10 u:5                       "; test6_s%s{c} r%i{d}, r%i{a}, #%d{u} ;%d{x}"
+1100 0110 xxx d:5  a:5 c:4 10 u:5                       "; test6_u%s{c} r%i{d}, r%i{a}, #%d{u} ;%d{x}"
 
-1100 0111 xxxd dddd aaaa accc c00b bbbb                           "; test7 s%s{c} r%i{d}, r%i{a}, r%i{b} ;%d{x}"
-1100 0111 xxxd dddd aaaa accc c00b bbbb                           "; test7 u%s{c} r%i{d}, r%i{a}, r%i{b} ;%d{x}"
-1100 0111 xxxd dddd aaaa accc c10u uuuu                           "; test7 s%s{c} r%i{d}, r%i{a}, #%d{u} ;%d{x}"
-1100 0111 xxxd dddd aaaa accc c10u uuuu                           "; test7 u%s{c} r%i{d}, r%i{a}, #%d{u} ;%d{x}"
+1100 0111 xxx d:5  a:5 c:4 00 b:5                       "; test7_s%s{c} r%i{d}, r%i{a}, r%i{b} ;%d{x}"
+1100 0111 xxx d:5  a:5 c:4 00 b:5                       "; test7_u%s{c} r%i{d}, r%i{a}, r%i{b} ;%d{x}"
+1100 0111 xxx d:5  a:5 c:4 10 u:5                       "; test7_s%s{c} r%i{d}, r%i{a}, #%d{u} ;%d{x}"
+1100 0111 xxx d:5  a:5 c:4 10 u:5                       "; test7_u%s{c} r%i{d}, r%i{a}, #%d{u} ;%d{x}"
 
 # 32 bit triadic instructions
-1100 00pp pppd dddd aaaa accc c00b bbbb                           "; %s{p}%s{c} r%i{d}, r%i{a}, r%i{b}"
-1100 00pp pppd dddd aaaa accc c1ii iiii                           "; %s{p}%s{c} r%i{d}, r%i{a}, #%i{i}"
+1100 00 p:5 d:5  a:5 c:4 00 b:5                         "; %s{p}%s{c} r%i{d}, r%i{a}, r%i{b}"
+1100 00 p:5 d:5  a:5 c:4 1 i:6                          "; %s{p}%s{c} r%i{d}, r%i{a}, #%i{i}"
 
 # floating poing triadic
-1100 100f fffd dddd aaaa accc c00b bbbb                           "; %s{f}%s{c} r%i{d}, r%i{a}, r%i{b}"
-1100 100f fffd dddd aaaa accc c1ii iiii                           "; %s{f}%s{c} r%i{d}, r%i{a}, #%i{i}"
-1100 1010 000d dddd aaaa accc c100 0000                           "; ftrunc%s{c} r%i{d}, r%i{a} ; convert to int"
-1100 1010 001d dddd aaaa accc c100 0000                           "; floor%s{c} r%i{d}, r%i{a} ; convert to int"
-1100 1010 010d dddd aaaa accc c100 0000                           "; flts%s{c} r%i{d}, r%i{a} ; convert to float from signed integer"
-1100 1010 011d dddd aaaa accc c100 0000                           "; fltu%s{c} r%i{d}, r%i{a} ; convert to float from unsigned integer"
+1100 100  f:4 d:5  a:5 c:4 00 b:5                       "; %s{f}%s{c} r%i{d}, r%i{a}, r%i{b}"
+1100 100  f:4 d:5  a:5 c:4 1 i:6                        "; %s{f}%s{c} r%i{d}, r%i{a}, #%i{i}"
+1100 1010 000 d:5  a:5 c:4 100 0000                     "; ftrunc r%i{d}, r%i{a} ; convert to int"
+1100 1010 001 d:5  a:5 c:4 100 0000                     "; floor r%i{d}, r%i{a} ; convert to int"
+1100 1010 010 d:5  a:5 c:4 100 0000                     "; flts r%i{d}, r%i{a} ; convert to float from signed integer"
+1100 1010 011 d:5  a:5 c:4 100 0000                     "; fltu r%i{d}, r%i{a} ; convert to float from unsigned integer"
 
-1100 1010 000d dddd aaaa accc c1ii iiii                           "; ftrunc%s{c} r%i{d}, r%i{a}, lsl #%i{i}"
-1100 1010 001d dddd aaaa accc c1ii iiii                           "; floor%s{c} r%i{d}, r%i{a}, lsl #%i{i}"
-1100 1010 010d dddd aaaa accc c1ii iiii                           "; flts%s{c} r%i{d}, r%i{a}, lsr #%i{i}"
-1100 1010 011d dddd aaaa accc c1ii iiii                           "; fltu%s{c} r%i{d}, r%i{a}, lsr #%i{i}"
+1100 1010 000 d:5 a:5 c:4 1 i:6                   "; ftrunc r%i{d}, r%i{a}, #%i{i} ; unexpected const"
+1100 1010 001 d:5 a:5 c:4 1 i:6                   "; floor r%i{d}, r%i{a}, #%i{i} ; unexpected const"
+1100 1010 010 d:5 a:5 c:4 1 i:6                   "; flts r%i{d}, r%i{a}, #%i{i} ; unexpected const"
+1100 1010 011 d:5 a:5 c:4 1 i:6                   "; fltu r%i{d}, r%i{a}, #%i{i} ; unexpected const"
 
-1100 1100 001d dddd 0000 0000 000a aaaa                           "; test3 mov r%d{d}, reg%d{a}"
-1100 1100 000a aaaa 0000 0000 000d dddd                           "; test3 mov reg%d{a}, r%d{d}"
-1100 1100 xxxa aaaa 0000 0000 000d dddd                           "; test3 mov r%d{d}, reg%d{a} %x{x}?"
+1100 1100 001 d:5 0000 0000 000 a:5                     "; test3_mov r%d{d}, r%d{a}"
+1100 1100 000 a:5 0000 0000 000 d:5                     "; test3_mov r%d{a}, r%d{d}"
+1100 1100 xxx a:5 0000 0000 000 d:5                     "; test3_mov r%d{d}, r%d{a}, %x{x} ;?"
 
-1011 00pp pppd dddd iiii iiii iiii iiii                           "; %s{p} r%i{d}, #0x%04x{i}"
+1011 00 p:5 d:5 i:16                           "; %s{p} r%i{d}, #0x%04x{i}"
 
-1011 01ss sssd dddd iiii iiii iiii iiii                           "; lea r%i{d}, 0x%04x{i}(r%i{s})"
-1011 1111 111d dddd oooo oooo oooo oooo                           "; lea r%i{d}, 0x%08x{$+o} ;pc"
+1011 01 s:5 d:5 i:16                           "; lea r%i{d}, 0x%04x{i}(r%i{s})"
+1011 1111 111 d:5 o:16                           "; lea r%i{d}, 0x%08x{$+o} ;pc"
 
 #
 # 48 bit instruction words
 #
 
-1110 0000 ssss dddd uuuu uuuu uuuu uuuu uuuu uuuu uuuu uuuu       "; op0"
-1110 0001 ssss dddd uuuu uuuu uuuu uuuu uuuu uuuu uuuu uuuu       "; op1"
-1110 0010 ssss dddd uuuu uuuu uuuu uuuu uuuu uuuu uuuu uuuu       "; op2"
-1110 0011 ssss dddd uuuu uuuu uuuu uuuu uuuu uuuu uuuu uuuu       "; op3"
-1110 0100 ssss dddd uuuu uuuu uuuu uuuu uuuu uuuu uuuu uuuu       "; op4"
+1110 0000 s:4 d:4 u:32       "; op0 r%i{d}, r%i{s}, 0x%08x{u}"
+1110 0001 s:4 d:4 u:32       "; op1 r%i{d}, r%i{s}, 0x%08x{u}"
+1110 0010 s:4 d:4 u:32       "; op2 r%i{d}, r%i{s}, 0x%08x{u}"
+1110 0011 s:4 d:4 u:32       "; op3 r%i{d}, r%i{s}, 0x%08x{u}"
+1110 0100 s:4 d:4 u:32       "; op4 r%i{d}, r%i{s}, 0x%08x{u}"
 
-1110 0101 000d dddd oooo oooo oooo oooo oooo oooo oooo oooo       "; lea r%i{d}, 0x%08x{$+o} ;(pc)"
-1110 0101 xxxd dddd oooo oooo oooo oooo oooo oooo oooo oooo       "; lea r%i{d}, 0x%08x{$+o} ;(pc) ; %x{x}?"     
+1110 0101 000 d:5 o:32       "; lea r%i{d}, 0x%08x{$+o} ;(pc)"
+1110 0101 xxx d:5 o:32       "; lea_x %x{x}, r%i{d}, 0x%08x{$+o} ;(pc)"
 
-1110 0110 ww0d dddd ssss sooo oooo oooo oooo oooo oooo oooo       "; ld%s{w} r%i{d}, 0x%08x{o}(r%i{s})"
-1110 0110 ww1d dddd ssss sooo oooo oooo oooo oooo oooo oooo       "; st%s{w} r%i{d}, 0x%08x{o}(r%i{s})"
+1110 0110 ww 0 d:5  s:5  o:27       "; ld%s{w} r%i{d}, 0x%08x{o}(r%i{s})"
+1110 0110 ww 1 d:5  s:5  o:27       "; st%s{w} r%i{d}, 0x%08x{o}(r%i{s})"
 
-1110 0111 ww0d dddd 1111 1ooo oooo oooo oooo oooo oooo oooo       "; ld%s{w} r%i{d}, 0x%08x{$+o} ;(pc)"
-1110 0111 ww1d dddd 1111 1ooo oooo oooo oooo oooo oooo oooo       "; st%s{w} r%i{d}, 0x%08x{$+o} ;(pc)"
-1110 0111 ww0d dddd ssss sooo oooo oooo oooo oooo oooo oooo       "; test ld%s{w} r%i{d}, 0x%08x{o}(r%i{s})"
-1110 0111 ww1d dddd ssss sooo oooo oooo oooo oooo oooo oooo       "; test st%s{w} r%i{d}, 0x%08x{o}(r%i{s})"
+1110 0111 ww 0 d:5 11111 o:27       "; ld%s{w} r%i{d}, 0x%08x{$+o} ;(pc)"
+1110 0111 ww 1 d:5 11111 o:27       "; st%s{w} r%i{d}, 0x%08x{$+o} ;(pc)"
+1110 0111 ww 0 d:5  s:5  o:27       "; test_ld%s{w} r%i{d}, 0x%08x{o}(r%i{s})"
+1110 0111 ww 1 d:5  s:5  o:27       "; test_st%s{w} r%i{d}, 0x%08x{o}(r%i{s})"
 
-1110 10pp pppd dddd uuuu uuuu uuuu uuuu uuuu uuuu uuuu uuuu       "; %s{p} r%i{d}, #0x%08x{u}"
+1110 10 p:5 d:5 u:32       "; %s{p} r%i{d}, #0x%08x{u}"
 
-1110 11ss sssd dddd uuuu uuuu uuuu uuuu uuuu uuuu uuuu uuuu       "; add r%i{d}, r%i{s}, #0x%08x{u}"
+1110 11 s:5 d:5 u:32       "; add r%i{d}, r%i{s}, #0x%08x{u}"
 
 
+#
 # Experimental Vector Instruction Decoding
 #
-# The Vector Register File (VRF) is an 2d array P(64,64) of 8 bit quantities.
-#
-#  P(y,x) is a reference to an single 8 bit value.
-#  PX(y,x) is a reference to a 16 bit value made from two 8 bit cells: P(y,x)+(P(y,x+16)<<8)
-#  PY(y,x) is a reference to a 32 bit value made from four 8 bit cells: P(y,x)+(P(y,x+16)<<8)+(P(y,x+32)<<16)+(P(y,x+48)<<24)
-#
-#  R(y,x) a vector register is a reference to 16 adjacent horizontal or vertical values from P().
-#  H(y,x), HX(y,x) or HY(y,x) are horizontal 8, 16, or 32 bit vectors.
-#  V(y,x), VX(y,x) or HY(y,x) are vertical 8, 16 or 32 bit vectors.
-#
-#  16 x 8 bit vectors:
-#    H(y, x)  = [ P(y,x),  P(y,x+1),  ..., P(y,x+15)  ]
-#    V(y, x)  = [ P(y,x),  P(y+1,x),  ..., P(y+15,x)  ]
-#
-#  16 x 16 bit vectors:
-#    HX(y, x) = [ PX(y,x), PX(y,x+1), ..., PX(y,x+15) ]
-#    VX(y, x) = [ PX(y,x), PX(y+1,x), ..., PX(y+15,x) ]
-#
-#  16 x 32 bit vectors:
-#    HY(y, x) = [ PY(y,x), PY(y,x+1), ..., PY(y,x+15) ]
-#    VY(y, x) = [ PY(y,x), PY(y+1,x), ..., PY(y+15,x) ]
-#
-#  Vector Addressing:
-#
-#    v<op> D, A, B                        D := A op B
-#
-#   where D, A, B are vectors with the following forms:
-#
-#    R(yd, xd)                          Refer to a simple vector at (yd, xd).
-#    R(yd++, xd)                        Step in the indicated direction for each repeated execution.
-#    R(yd, xd++)                        Step in the indicated direction for each repeated execution.
-#    R(yd, xd)+rs                       Use scalar register contents <y:6 x:6> to offset (yd, xd).
-#    R(yd++, xd)+rs                     Increment addressing with scalar offset.
-#    R(yd, xd++)+rs                     Increment addressing with scalar offset.
-#    rs                                 Use a scalar register contents as a constant for all lanes (B only).
-#    rs+#s9                             Use a scalar register contents + signed 9 bit quantity (B only).
-#    -                                  Discard result (D only).
-#
-#   and R is from: V, VX, VY, H, HX, HY
-#
-(define-table D ["H(y,0)", "V(y,0)", "H(y,16)", "V(y,16)", "H(y,32)", "V(y,32)", "H(y,48)", "V(y,48)", "HX(y,0)", "VX(y,0)", "HX(y,32)", "VX(y,32)", "HY(y,0)", "VY(y,0)", "-", "-"])
-(define-table A ["H(y,0)", "V(y,0)", "H(y,16)", "V(y,16)", "H(y,32)", "V(y,32)", "H(y,48)", "V(y,48)", "HX(y,0)", "VX(y,0)", "HX(y,32)", "VX(y,32)", "HY(y,0)", "VY(y,0)", "0", "0"])
-(define-table B ["H(y,0)", "V(y,0)", "H(y,16)", "V(y,16)", "H(y,32)", "V(y,32)", "H(y,48)", "V(y,48)", "HX(y,0)", "VX(y,0)", "HX(y,32)", "VX(y,32)", "HY(y,0)", "VY(y,0)", "#", "#"])
+#00037e24: 1111000000000000: ... :f000 0ff8 0385 ; vector48 0x0, 0x3850ff8
 
-
-# The Accumulator (ACC) is a additional 16 element vector register contained in the Vector ALU.  Arithmetic on the
-# Accumulator occurs using saturating signed 16 bit arithmetic.
-#
-# Instruction Modifiers:
-#
-#  Instruction modifiers change the behavior of instructions, allowing repetition, predicated update of vector elements,
-#  accumulation, and update of a scalar register and condition flags.
-# 
-# <modifier> = [<rep>] [<flag>] [<acc>] [<src>]
-#  <rep>   = [REP2 | REP4 | REP8 | REP16 | REP32 | REP64 | REPLT]
-#  <flag>  = [IFZ | IFNZ | IFN | IFNN | IFC | IFNC] [SETF]
-#  <acc>   = [CLRA] [ACC]
-#  <sru>   = [PPU0|SUM|IMIN|IMAX] (r0|r1|r2|r3|r4|r5|r6)
-
-#  The <rep> modifier causes an instruction to be repeated 1, 2, 4, 8, 16, 32, 64 or r0 times.
-#  Instructions will always execute at least once.
-(define-table R ["", "REP2", "REP4", "REP8", "REP16", "REP32", "REP64", "REP r0"])
-
-#  The <pred> modifier selects which vector lanes should write back their result and whether each lane should update its
-#  Zero, Negative and Carry flags at the end of the operation. There are 16 sets of flags corresponding to the width
-#  of the ALU.
-(define-table P ["", "NV", "IFZ", "IFNZ", "IFN", "IFNN", "IFC", "IFNC"])
-(define-table F ["", "SETF"]
+1111 0000 0000 yyyy  0000 0011 1000 a:4  xxxx xxxx xxxx xxxx     "; vldb %x{y}?, (r%i{a}), %x{x}"
+1111 0000 1000 yyyy  0000 0011 1000 a:4  xxxx xxxx xxxx xxxx     "; vstb %x{y}?, (r%i{a}), %x{x}"
+1111 1000 0000 yyyy  0000 0011 1000 a:4  xxxx xxxx xxxx xxxx z:32     "; vldh %x{y}?, (r%i{a}), %x{x}, %x{z}"
+1111 1000 1000 yyyy  0000 0011 1000 a:4  xxxx xxxx xxxx xxxx z:32     "; vsth %x{y}?, (r%i{a}), %x{x}, %x{z}"
 
 #
-#  The <acc> modifier controls updates to the accumulator. If CLRA is set then the accumulator will be cleared on the 
-#  execution of the instruction but on repetitions it is ignored.  When ACC is set the Accumulator is incremented by
-#  the result of the current calculation before the sum) is written back to the destination vector register.
+# The rules below catch all undefined bit sequences.
 #
-#  The <sru> modifier may be used to result back to one of the scalar registers on each repetition.  The scalar unit, N and
-#  Z flags are also updated. PPU0 writes back the result of element 0, SUM writes back the result of summing all active elements,
-#  whilst IMIN and IMAX write back the index of the minimum or maximum element (or -1 if all elements disabled by predication)
 
-# Load and Store instructions:
-#
-#  The instructions transfer 16 element registers between the Vector Register File (VRF) and main memory.
-#  To avoid cache pollution, the data accesses bypass the L1 cache.
-#
-#   vld R(yd,xd)[+rd], (rb[+offset][+=ra]) [<modifier>]
-#   vst R(ya,ya)[+ra], (rb[+offset][+=rd]) [<modifier>]
-#
-# Arithmetic/Logical Instructions:
-#
-#   vop vd, va, vb <modifiers>
-
-(define-table v ["mov","mask","odd","even", "altl","altu","brev","ror", "lsl","asl","lsr","asr", "op12","op13","op14","op15", "and","or","eor","bic", "cnt","log2","op22","op23", "min","max","dist","op27", "op28","sgn","clamp","cmpge", "add","adds","addc","addsc", "sub","subs","subc","subsc", "rsub","rsubs","rsubc","rsubsc", "op44","op45","op46","op47", "mul","muls","mulhd","op51", "op52","op53","op54","op55", "op56","op57","op58","op59", "op60","op61","op62","op63"])
-
-# 48 bit vector format
-1111 00xx 0xxx xrrr DDDD dddd ddaa aaaa aaaa yyyy yzzz zsss "; vld %s{D}%d{d}, (r%d{s}) ; x=%02x{x} r=%x{r} A=%03x{a} y=%03x{y} z=%x{z}"
-1111 00xx 1xxx xrrr dddd dddd ddAA AAaa aaaa yyyy yzzz zsss "; vst %s{A}%d{a}, (r%d{s}) ; x=%02x{x} r=%x{r} D=%03x{d} y=%03x{y} z=%x{z}"
-1111 01xv vvvv vrrr DDDD dddd ddAA AAaa aaaa y0BB BBbb bbbb "; v%s{v} %s{D}%d{d}, %s{A}%d{a}, %s{B}%d{b}"
-1111 01xv vvvv vrrr DDDD dddd ddAA AAaa aaaa y1zz zzii iiii "; v%s{v} %s{D}%d{d}, %s{A}%d{a}, #%d{i} ; x=%x{x} r=%x{r} y=%x{y} z=%x{z}"
-
-# 80 bit vector format
-
-1111 10xx 0xxx xRRR DDDD dddd ddaa aaaa aaaa yyyy ykkk kkkk gggg ggut ttuu zzzz zzzz zzzz zzzs ssjj "; vld %s{D}%d{d} %02x{g}, %d{(j*128)+k}(r%d{s}+=r%d{t}) %s{R} ; x=%02x{x} A=%03x{a} y=%02x{y} z=%04x{z}"
-1111 10xx 1xxx xRRR dddd dddd ddAA AAaa aaaa yyyy ykkk kkkk uttt uuhh hhhh zzzz zzzz zzzz zzzs ssjj "; vst %s{A}%d{a} %02x{h}, %d{(j*128)+k}(r%d{s}+=r%d{t}) %s{R} ; x=%02x{x} D=%03x{d} y=%02x{y} z=%04x{z}"
-
-1111 11xv vvvv vRRR DDDD dddd ddAA AAaa aaaa F0BB BBbb bbbb gggg gghh hhhh zzzz PPPz zzzz zzkk kkkk "; v%s{v} %s{D}%d{d} %02x{g}, %s{A}%d{a} %02x{h}, %s{B}%d{b} %02x{k} %s{R} %s{P} %s{F} #%x{x} %04x{z}"
-1111 11xv vvvv vRRR DDDD dddd ddAA AAaa aaaa F1ll llll llll gggg gghh hhhh zzzz PPPz zzzz zzkk kkkk "; v%s{v} %s{D}%d{d} %02x{g}, %s{A}%d{a} %02x{h}, #%d{(k*1024)+l} %s{R} %s{P} %s{F} #%x{x} %04x{z}"
-
-# Fallback patterns
-
-1111 1xxx xxxx xxxx yyyy yyyy yyyy yyyy yyyy yyyy yyyy yyyy zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz    "; vector80 0x%x{x}, 0x%x{y}, 0x%x{z}"
-1111 0xxx xxxx xxxx yyyy yyyy yyyy yyyy yyyy yyyy yyyy yyyy       "; vector48 0x%x{x}, 0x%x{y}"
-1110 xxxx xxxx xxxx yyyy yyyy yyyy yyyy yyyy yyyy yyyy yyyy       "; scalar48 0x%x{x}, 0x%x{y}"
-1xxx xxxx xxxx xxxx yyyy yyyy yyyy yyyy                           "; scalar32 0x%x{x}, 0x%x{y}"
-0xxx xxxx xxxx xxxx                                               "; scalar16 0x%x{x}"
+11111 x:11 y:32 z:32    "; vector80 0x%x{x}, 0x%x{y}, 0x%x{z}"
+11110 x:11 y:32         "; vector48 0x%x{x}, 0x%x{y}"
+1110  x:12 y:32         "; scalar48 0x%x{x}, 0x%x{y}"
+110   x:13 y:16         "; scalar32 0x%x{x}, 0x%x{y}"
+110   x:13 y:16         "; scalar32_2 0x%x{x}, 0x%x{y}"
+10    x:14 y:16         "; scalar32 0x%x{x}, 0x%x{y}"
+10    x:14 y:16         "; scalar32_1 0x%x{x}, 0x%x{y}"
+0     x:15              "; scalar16 0x%x{x}"

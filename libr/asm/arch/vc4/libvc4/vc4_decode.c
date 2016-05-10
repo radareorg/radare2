@@ -16,7 +16,7 @@
 
 
 void vc4_build_values(struct vc4_val *vals, const struct vc4_opcode *op,
-		      const uint8_t *b, uint32_t len)
+		      const uint8_t *pb, uint32_t len)
 {
 	memset(vals, 0, sizeof(struct vc4_val) * 256);
 
@@ -27,18 +27,31 @@ void vc4_build_values(struct vc4_val *vals, const struct vc4_opcode *op,
 	w = wi = 0;
 	const char *c = op->string;
 	int ci;
+	uint16_t b[5];
+
+	for (i = 0; i < op->length; i++) {
+		if ((i * 2u + 1u) < len) {
+			b[i] = vc4_get_le16(pb + i * 2);
+		} else {
+			b[i] = 0;
+		}
+	}
+
+	/* If we have a 48-bit scalar instruction, swap the second and
+	 * third words. */
+	if (op->mode == VC4_INS_SCALAR48) {
+		i = b[1];
+		b[1] = b[2];
+		b[2] = i;
+	}
 
 	while (*c) {
 		ci = (int)(unsigned char)*c++;
 
 		if (mask == 0) {
 			mask = 0x8000;
-			if (len >= (wi + 2)) {
-				w = vc4_get_le16(b + wi);
-			} else {
-				w = 0;
-			}
-			wi += 2;
+			w = b[wi];
+			wi += 1;
 		}
 
 		vals[ci].value <<= 1;
@@ -47,13 +60,6 @@ void vc4_build_values(struct vc4_val *vals, const struct vc4_opcode *op,
 		vals[ci].length++;
 
 		mask >>= 1;
-	}
-
-	for (i=0; i<256; i++) {
-		if (vals[i].length == 32)
-			vals[i].value =
-			  ((vals[i].value >> 16) & 0xffff) |
-			  ((vals[i].value & 0xffff) << 16);
 	}
 }
 
@@ -68,7 +74,7 @@ static char *vc4_expand_expr(const char *p, const struct vc4_info *info,
 
 	for (; *p != 0; p++) {
 		np = NULL;
-		if ((*p >= 'a' && *p <= 'z') || *p == '$') {
+		if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *p == '$') {
 
 			const struct vc4_val *val = vals + (int)*p;
 
@@ -141,9 +147,13 @@ char *vc4_display(const struct vc4_info *info, const struct vc4_opcode *op,
 
 		assert(c[0] == '%');
 
-		r = sscanf(c, "%m[^{]{%m[^}]}%n", &fmt, &exp, &l0);
+		fmt = malloc(strlen(c));
+		exp = malloc(strlen(c));
+		l0 = -1;
 
-		if (r < 2 || fmt == NULL || exp == NULL) {
+		r = sscanf(c, "%[^{]{%[^}]}%n", fmt, exp, &l0);
+
+		if (r < 2 || l0 < 2 || fmt == NULL || exp == NULL) {
 			fprintf(stderr, "bad line  %s/%s/%s %d %d\n", fmt, exp, c+l0, l0, r);
 			abort();
 		}
@@ -160,7 +170,7 @@ char *vc4_display(const struct vc4_info *info, const struct vc4_opcode *op,
 			}
 			assert(t != NULL);
 			assert(ev >= 0);
-			assert(ev < t->count);
+			assert((size_t)ev < t->count);
 			r = asprintf(&md, fmt, t->tab[ev]);
 		} else {
 			r = asprintf(&md, fmt, (uint32_t)ev);
@@ -187,55 +197,22 @@ const struct vc4_opcode *vc4_get_opcode(const struct vc4_info *info, const uint8
 	uint16_t b1;
 	const struct vc4_opcode_tab *t;
 	size_t i;
-	int deb = 0;
 
 	if (l < 2) {
 		fprintf(stderr, "overrun 1!\n");
 		b0 = 0;
-	} else {
-		b0 = vc4_get_le16(b);
 	}
 
 	b0 = vc4_get_le16(b);
-
-	if (b0 == 0xa013)
-		deb = 1;
 
 	t = info->opcodes[b0];
 	if (t == NULL)
 		return NULL;
 
-	if (deb) {
-/*
-		printf("\n");
-		for (i=0; i<t->count; i++) {
-			printf("D %04x %04x   %04x %04x  %s\n",
-			       t->tab[i]->ins_mask[0], t->tab[i]->ins[0],
-			       t->tab[i]->ins_mask[1], t->tab[i]->ins[1],
-			       t->tab[i]->format);
-		}
-*/
-	}
-
 	if (t->count == 1)
 		return t->tab[0];
-/*
-	for (i=0; i<t->count; i++) {
-		if ((b0 & t->tab[i]->ins_mask[0]) == t->tab[i]->ins[0] &&
-		    t->tab[i]->ins_mask[1] == 0)
-			return t->tab[i];
-	}
-*/
+
 	if (l < 4) {
-/*
-		fprintf(stderr, "overrun 2 %04x!\n", b0);
-		for (i=0; i<t->count; i++) {
-			fprintf(stderr, "> %04x %04x %s!\n",
-				t->tab[i]->ins_mask[0],
-				t->tab[i]->ins[0],
-				t->tab[i]->format);
-		}
-*/
 		b1 = 0;
 	} else {
 		b1 = vc4_get_le16(b + 2);

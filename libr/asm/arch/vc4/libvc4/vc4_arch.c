@@ -14,7 +14,7 @@
 
 static int vc4_isopcode(char ch)
 {
-	return strchr("01?!abcdfimnopqsuwxyz", ch) != NULL;
+	return strchr("01?!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", ch) != NULL;
 }
 
 static struct vc4_decode_table *vc4_read_table(char ch, const char *s)
@@ -150,6 +150,22 @@ static int match_scc(const char *src, const char *o_fmt, char *s0, char *c0, cha
 	return (r >= 3) && (len > 0) && ((size_t)len == strlen(src));
 }
 
+uint32_t vc4_op_get_val_width(const struct vc4_opcode *op, char code)
+{
+	uint32_t width;
+
+	assert(op != NULL);
+
+	if (code >= 'a' && code <= 'z')
+		width = op->vals_lc[code - 'a'].length;
+	else if (code >= 'A' && code <= 'Z')
+		width = op->vals_uc[code - 'A'].length;
+	else
+		assert(0);
+
+	return width;
+}
+
 static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *par)
 {
 	char ch;
@@ -161,7 +177,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 	    match_c(par->txt, "r%%d{%c}", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = vc4_op_get_val_width(op, ch);
 		assert(width == 4 || width == 5);
 		if (width == 4) {
 			par->type = vc4_p_reg_0_15;
@@ -176,13 +192,13 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 
 		assert(ch >= 'a' && ch <= 'z');
 		assert(ch2 >= 'a' && ch2 <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width == 5);
 		par->type = vc4_p_reg_shl;
 		par->reg_width = width;
 		par->reg_code = ch;
 
-		width = op->vals[ch2 - 'a'].length;
+		width = op->vals_lc[ch2 - 'a'].length;
 		assert(width >= 1);
 		par->num_width = width;
 		par->num_code = ch2;
@@ -194,13 +210,13 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 
 		assert(ch >= 'a' && ch <= 'z');
 		assert(ch2 >= 'a' && ch2 <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width == 5);
 		par->type = vc4_p_reg_shl_p1;
 		par->reg_width = width;
 		par->reg_code = ch;
 
-		width = op->vals[ch2 - 'a'].length;
+		width = op->vals_lc[ch2 - 'a'].length;
 		assert(width >= 1);
 		par->num_width = width;
 		par->num_code = ch2;
@@ -212,12 +228,12 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 
 		assert(ch >= 'a' && ch <= 'z');
 		assert(ch2 >= 'a' && ch2 <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		par->type = vc4_p_num_u_shl_p1;
 		par->reg_width = width;
 		par->reg_code = ch;
 
-		width = op->vals[ch2 - 'a'].length;
+		width = op->vals_lc[ch2 - 'a'].length;
 		assert(width >= 1);
 		par->num_width = width;
 		par->num_code = ch2;
@@ -227,13 +243,13 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 
 		assert(ch >= 'a' && ch <= 'z');
 		assert(ch2 >= 'a' && ch2 <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width == 5);
 		par->type = vc4_p_reg_lsr;
 		par->reg_width = width;
 		par->reg_code = ch;
 
-		width = op->vals[ch2 - 'a'].length;
+		width = op->vals_lc[ch2 - 'a'].length;
 		assert(width >= 1);
 		par->num_width = width;
 		par->num_code = ch2;
@@ -249,13 +265,13 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 
 		assert(ch >= 'a' && ch <= 'z');
 		assert(ch2 >= 'a' && ch2 <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width == 5);
 		par->type = vc4_p_reg_lsr_p1;
 		par->reg_width = width;
 		par->reg_code = ch;
 
-		width = op->vals[ch2 - 'a'].length;
+		width = op->vals_lc[ch2 - 'a'].length;
 		assert(width >= 1);
 		par->num_width = width;
 		par->num_code = ch2;
@@ -271,12 +287,12 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 
 		assert(ch >= 'a' && ch <= 'z');
 		assert(ch2 >= 'a' && ch2 <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		par->type = vc4_p_num_u_lsr_p1;
 		par->reg_width = width;
 		par->reg_code = ch;
 
-		width = op->vals[ch2 - 'a'].length;
+		width = op->vals_lc[ch2 - 'a'].length;
 		assert(width >= 1);
 		par->num_width = width;
 		par->num_code = ch2;
@@ -286,7 +302,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 
 		assert(ch >= 'a' && ch <= 'z');
 		assert(ch2 >= 'a' && ch2 <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width == 5);
 		if (ch == 'i' || ch == 'o') {
 			par->type = vc4_p_num_s_shl_p1;
@@ -296,7 +312,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		par->reg_width = width;
 		par->reg_code = ch;
 
-		width = op->vals[ch2 - 'a'].length;
+		width = op->vals_lc[ch2 - 'a'].length;
 		assert(width >= 1);
 		par->num_width = width;
 		par->num_code = ch2;
@@ -305,7 +321,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		   match_c(par->txt, "r%%d{%c} shl 8", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width == 5);
 		par->type = vc4_p_reg_shl_8;
 		par->reg_width = width;
@@ -314,7 +330,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 	} else if (match_c(par->txt, "r%%d{%c*8}", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width == 2);
 		par->type = vc4_p_reg_0_6_16_24;
 		par->reg_width = width;
@@ -323,7 +339,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 	} else if (match_c(par->txt, "(r%%i{%c})", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width == 4 || width == 5);
 		par->type = (width == 4) ? vc4_p_addr_reg_0_15 : vc4_p_addr_reg_0_31;
 		par->reg_width = width;
@@ -332,7 +348,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 	} else if (match_c(par->txt, "(r%%i{%c}", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width == 5);
 		par->type = vc4_p_addr_2reg_begin_0_31;
 		par->reg_width = width;
@@ -341,7 +357,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 	} else if (match_c(par->txt, "r%%i{%c})", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width == 5);
 		par->type = vc4_p_addr_2reg_end_0_31;
 		par->reg_width = width;
@@ -350,7 +366,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 	} else if (match_c(par->txt, "(r%%i{%c})++", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width == 4 || width == 5);
 		par->type = vc4_p_addr_reg_post_inc;
 		par->reg_width = width;
@@ -359,7 +375,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 	} else if (match_c(par->txt, "--(r%%i{%c})", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width == 4 || width == 5);
 		par->type = vc4_p_addr_reg_pre_dec;
 		par->reg_width = width;
@@ -374,7 +390,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		   match_c(par->txt, "%%d{%c}", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		if (ch == 'i' || ch == 'o') {
 			par->type = vc4_p_num_s;
@@ -391,7 +407,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		   match_c(par->txt, "%%x{%c*4}", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		if (ch == 'i' || ch == 'o') {
 			par->type = vc4_p_num_s4;
@@ -406,7 +422,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 
 		assert(ch >= 'a' && ch <= 'z');
 		assert(ch2 >= 'a' && ch2 <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		if (ch == 'i' || ch == 'o') {
 			par->type = vc4_p_addr_reg_num_s;
@@ -416,7 +432,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		par->num_width = width;
 		par->num_code = ch;
 
-		width = op->vals[ch2 - 'a'].length;
+		width = op->vals_lc[ch2 - 'a'].length;
 		assert(width == 4 || width == 5);
 		par->reg_width = width;
 		par->reg_code = ch2;
@@ -428,7 +444,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		   match_cc(par->txt, "%%x{%c*4}(r%%i{%c})", &ch, &ch2)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		if (ch == 'i' || ch == 'o') {
 			par->type = vc4_p_addr_reg_0_15_num_s4;
@@ -438,7 +454,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		par->num_width = width;
 		par->num_code = ch;
 
-		width = op->vals[ch2 - 'a'].length;
+		width = op->vals_lc[ch2 - 'a'].length;
 		assert(width == 4);
 		par->reg_width = width;
 		par->reg_code = ch2;
@@ -446,7 +462,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 	} else if (match_sc(par->txt, "0x%%%[0-9]x{$+%c}", extra, &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		assert(ch == 'i' || ch == 'o');
 		par->type = vc4_p_pc_rel_s;
@@ -456,7 +472,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 	} else if (match_sc(par->txt, "0x%%%[0-9]x{$+%c*2}", extra, &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		assert(ch == 'i' || ch == 'o');
 		par->type = vc4_p_pc_rel_s2;
@@ -466,7 +482,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 	} else if (match_sc(par->txt, "0x%%%[0-9]x{$+%c*4}", extra, &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		assert(ch == 'i' || ch == 'o');
 		par->type = vc4_p_pc_rel_s4;
@@ -477,7 +493,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		   match_c(par->txt, "0x%%x{%c}(sp)", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		assert(ch == 'i' || ch == 'o');
 		par->type = vc4_p_sp_rel_s;
@@ -488,7 +504,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		   match_c(par->txt, "0x%%x{%c*4}(sp)", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		assert(ch == 'i' || ch == 'o');
 		par->type = vc4_p_sp_rel_s4;
@@ -499,7 +515,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		   match_c(par->txt, "0x%%x{%c}(r24)", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		assert(ch == 'i' || ch == 'o');
 		par->type = vc4_p_r24_rel_s;
@@ -510,7 +526,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		   match_c(par->txt, "0x%%x{%c*4}(r24)", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		assert(ch == 'i' || ch == 'o');
 		par->type = vc4_p_r24_rel_s4;
@@ -521,7 +537,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		   match_c(par->txt, "0x%%x{%c}(pc)", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		assert(ch == 'i' || ch == 'o');
 		par->type = vc4_p_pc_rel_s;
@@ -532,7 +548,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		   match_c(par->txt, "0x%%x{%c*4}(pc)", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		assert(ch == 'i' || ch == 'o');
 		par->type = vc4_p_pc_rel_s4;
@@ -543,7 +559,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		   match_c(par->txt, "0x%%x{%c}(r0)", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		assert(ch == 'i' || ch == 'o');
 		par->type = vc4_p_r0_rel_s;
@@ -554,7 +570,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 		   match_c(par->txt, "0x%%x{%c*4}(r0)", &ch)) {
 
 		assert(ch >= 'a' && ch <= 'z');
-		width = op->vals[ch - 'a'].length;
+		width = op->vals_lc[ch - 'a'].length;
 		assert(width >= 1);
 		assert(ch == 'i' || ch == 'o');
 		par->type = vc4_p_r0_rel_s4;
@@ -565,7 +581,8 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 
 		par->type = vc4_p_reg_r6;
 
-	} else if (strcmp(par->txt, "r6-r%d{6+n}") == 0) {
+	} else if (strcmp(par->txt, "r6-r%d{6+n}") == 0 ||
+		   strcmp(par->txt, "r6-r%d{(6+n)&31}") == 0) {
 
 		par->type = vc4_p_reg_range_r6;
 		par->reg_width = 2;
@@ -599,7 +616,7 @@ static void vc4_classify_param(const struct vc4_opcode *op, struct vc4_param *pa
 
 	} else {
 
-		fprintf(stderr, "Bad operand? <%s>\n", par->txt);
+		fprintf(stderr, "Bad operand? <%s> <%s>\n", par->txt, op->format);
 	} 
 }
 
@@ -617,7 +634,8 @@ static void vc4_build_params(struct vc4_opcode *op)
 	fmt = strdup(op->format);
 
 	vc4_build_values(vals, op, NULL, 0);
-	memcpy(op->vals, &vals['a'], sizeof(op->vals));
+	memcpy(op->vals_lc, &vals['a'], sizeof(op->vals_lc));
+	memcpy(op->vals_uc, &vals['A'], sizeof(op->vals_uc));
 
 	if ((c = strchr(fmt, ';')) != NULL) {
 		*c = 0;
@@ -644,7 +662,7 @@ static void vc4_build_params(struct vc4_opcode *op)
 				*p1++ = 0;
 
 			op->params[op->num_params++].txt = strdup(p0);
-			assert(op->num_params <= 5);
+			assert(op->num_params <= VC4_MAX_PARAMS);
 
 			if (p1 == NULL)
 				break;
@@ -692,9 +710,18 @@ static void vc4_add_opcode(struct vc4_info *info, struct vc4_opcode *op)
 {
 	uint32_t i;
 
+	assert(op->length >= 1 && op->length <= 5);
+
+	vc4_parse_string16(op->string, &op->ins[0], &op->ins_mask[0]);
+
+	op->mode = vc4_get_instruction_mode(op->ins[0]);
+
 	vc4_build_params(op);
-/*
-	printf("> %-30s %s\n", op->format, op->string);
+
+#if 0
+	printf("> %-30s %s  %04x %d %d\n",
+	       op->format, op->string, op->ins[0],
+	       op->length, vc4_get_instruction_length(op->ins[0]));
 	
 	for (i = 0; i< op->num_params; i++) {
 		printf("  p%d = %-15s %d %d %d %c\n", i + 1,
@@ -704,15 +731,14 @@ static void vc4_add_opcode(struct vc4_info *info, struct vc4_opcode *op)
 		       op->params[i].num_width,
 		       op->params[i].reg_code);
 	}
-*/
-	vc4_parse_string16(op->string, &op->ins[0], &op->ins_mask[0]);
+#endif
+
+	assert(op->length == vc4_get_instruction_length(op->ins[0]));
 
 	for (i = 0; i <= (op->ins_mask[0] ^ 0xFFFFu); i++) {
 		uint16_t x = op->ins[0] | (i & (op->ins_mask[0] ^ 0xFFFF));
 		vc4_add_opcode_tab(&info->opcodes[x], op);
 	}
-
-	assert(op->length >= 1 && op->length <= 5);
 
 	if (op->length == 1)
 		return;
@@ -720,61 +746,13 @@ static void vc4_add_opcode(struct vc4_info *info, struct vc4_opcode *op)
 	vc4_parse_string16(op->string + 16, &op->ins[1], &op->ins_mask[1]);
 }
 
-static struct vc4_opcode *vc4_scan_opcode_old(const char *line)
+
+static int scan_format(char *d, const char **pp)
 {
-	const char *p;
-	char *d;
-	char *format;
-	int nibs;
-	struct vc4_opcode *op;
+	int bits = 0;
+	const char *p = *pp;
+	char *dd = d;
 
-	for (p = line; ; p++) {
-		if (*p == ':' || !*p)
-			return NULL;
-		if (*p == '"')
-			break;
-	}
-
-	p = line;
-	for (nibs = 0; ; nibs++) {
-		while (*p && isspace(*p))
-			p++;
-		if (!*p)
-			return NULL;
-		if (!(vc4_isopcode(p[0]) && vc4_isopcode(p[1]) && vc4_isopcode(p[2]) && vc4_isopcode(p[3])))
-			break;
-		p += 4;
-	}
-
-	if ((nibs % 4) != 0) {
-		fprintf(stderr, "Wrong number of nybles!\n");
-		abort();
-	}
-
-	while (*p && isspace(*p))
-		p++;
-	if (!*p)
-		return NULL;
-
-	if (*p != '"') {
-		fprintf(stderr, "No opening \"");
-		abort();
-	}
-	assert(p[1] == ';');
-	assert(p[2] == ' ');
-	format = strdup(p+3);
-	if (!strchr(format, '\"')) {
-		fprintf(stderr, "No closing \"! [%s] \n", format);
-		abort();
-	}
-	*strchr(format, '"') = 0;
-
-	op = (struct vc4_opcode *)calloc(1, sizeof(struct vc4_opcode));
-	op->format = format;
-	op->length = nibs / 4;
-
-	p = line;
-	d = op->string;
 	for (;;) {
 		if (isspace(*p)) {
 			p++;
@@ -782,51 +760,45 @@ static struct vc4_opcode *vc4_scan_opcode_old(const char *line)
 		}
 		if (*p == '"')
 			break;
-		*d++ = *p++;
+		if (*p == ':') {
+			long count;
+			char *end;
+			assert(bits > 0);
+			count = strtol(p+1, &end, 10);
+			assert(count > 0 && count <= 32);
+			while (count-- > 1) {
+				if (d != NULL)
+					*d++ = 	p[-1];
+				bits++;
+			}
+			p = end;
+		} else if (vc4_isopcode(p[0])) {
+			if (d != NULL)
+				*d++ = *p;
+			p++;
+			bits++;
+		} else {
+			return -1;
+		}
 	}
-	*d = 0;
-
-	assert((d - op->string) == (nibs * 4));
-
-	return op;
+	if (d != NULL)
+		*d = 0;
+	*pp = p;
+	assert(d == NULL || (d - dd) == bits);
+	return bits;
 }
 
 static struct vc4_opcode *vc4_scan_opcode(const char *line)
 {
 	const char *p;
-	char *d;
 	char *format;
 	int bits;
 	struct vc4_opcode *op;
 
-	op = vc4_scan_opcode_old(line);
-	if (op != NULL)
-		return op;
-
 	p = line;
-	for (bits = 0; ; ) {
-		while (*p && isspace(*p))
-			p++;
-		if (!*p)
-			return NULL;
-		if (*p == '"')
-			break;
-		if (vc4_isopcode(p[0]) && (vc4_isopcode(p[1]) || isspace(p[1]))) {
-			bits++;
-			p++;
-			continue;
-		}
-		if (vc4_isopcode(p[0]) && (p[1] == ':')) {
-			long count;
-			char *end;
-			count = strtol(p+2, &end, 10);
-			assert(count > 0 && count <= 32);
-			p = end;
-			bits += count;
-			continue;
-		}
-		assert(0);
-	}
+	bits = scan_format(NULL, &p);
+	if  (bits < 0)
+		return NULL;
 
 	if ((bits % 16) != 0) {
 		fprintf(stderr, "Wrong number of nybles 2!\n");
@@ -856,31 +828,7 @@ static struct vc4_opcode *vc4_scan_opcode(const char *line)
 	op->length = bits / 16;
 
 	p = line;
-	d = op->string;
-	for (;;) {
-		if (isspace(*p)) {
-			p++;
-			continue;
-		}
-		if (*p == '"')
-			break;
-		if (*p == ':') {
-			long count;
-			char *end;
-			assert(p > line);
-			count = strtol(p+1, &end, 10);
-			assert(count > 0 && count <= 32);
-			while (count-- > 1) {
-				*d++ = 	p[-1];
-			}
-			p = end;
-		} else {
-			*d++ = *p++;
-		}
-	}
-	*d = 0;
-
-	assert((d - op->string) == bits);
+	scan_format(op->string, &p);
 
 	return op;
 }
@@ -902,7 +850,7 @@ struct vc4_info *vc4_read_arch_file(const char *path)
 	FILE *fp;
 	char *line = NULL;
 	size_t len = 0;
-	char *buf;
+	int n1, n2, n3;
 	char ch;
 	ssize_t r;
 	struct vc4_info *inf;
@@ -910,12 +858,11 @@ struct vc4_info *vc4_read_arch_file(const char *path)
 
 	fp = fopen(path, "r");
 	if (fp == NULL) {
-		fprintf (stderr, "Cannot open '%s'\n", path);
-		return NULL;
+		perror("file open");
+		exit(1);
 	}
 
 	inf = calloc(sizeof(struct vc4_info), 1);
-	buf = malloc(1024);
 
 	for (;;) {
 		if ((r = getline(&line, &len, fp)) < 0)
@@ -925,12 +872,15 @@ struct vc4_info *vc4_read_arch_file(const char *path)
 		if (vc4_remove_comment(line))
 			continue;
 
+		n1 = n2 = n3 = -1;
 		if (sscanf(line, " ( define-signed %c ) ", &ch) == 1) {
 			buf2[0] = ch;
 			buf2[1] = 0;
 			strcat(inf->signed_ops, buf2);
-		} else if (sscanf(line, " ( define-table %c [ %[^]]+ ] ) ", &ch, buf) == 2) {
-			struct vc4_decode_table *t = vc4_read_table(ch, buf);
+		} else if (sscanf(line, " ( define-table %c [ %n %*[^]] %n ] ) %n", &ch, &n1, &n2, &n3) >= 1 && n1 > 0 && n2 > 0 && n3 > 0) {
+			line[n2] = 0;
+			struct vc4_decode_table *t = vc4_read_table(ch, line + n1);
+			/*fprintf(stderr, "Table %c (%d)\n", ch, t->count);*/
 			t->next = inf->tables;
 			inf->tables = t;
 		} else {
@@ -939,7 +889,6 @@ struct vc4_info *vc4_read_arch_file(const char *path)
 	}
 
 	free(line);
-	free(buf);
 
 	fclose(fp);
 
@@ -979,7 +928,67 @@ void vc4_free_info(struct vc4_info *info)
 		free(info->opcodes[i]);
 	}
 
+	free(info->lookup_tab);
+
 	free(info);
+}
+
+static int vc4_lookup_compare(const void *va, const void *vb)
+{
+	const struct vc4_lookup *a = (const struct vc4_lookup *)va;
+	const struct vc4_lookup *b = (const struct vc4_lookup *)vb;
+	return strcmp(a->str, b->str);
+}
+
+struct vc4_lookup *vc4_lookup_find(const struct vc4_info *inf, const char *name)
+{
+	struct vc4_lookup key;
+	struct vc4_lookup *ret;
+
+	if (inf->lookup_count == 0)
+		return NULL;
+
+	key.str = name;
+	key.chain = NULL;
+
+	ret = bsearch(&key, inf->lookup_tab, inf->lookup_count,
+		      sizeof(struct vc4_lookup), vc4_lookup_compare);
+	return ret;
+}
+
+static struct vc4_lookup *vc4_lookup_add(struct vc4_info *inf, const char *name)
+{
+	struct vc4_lookup key;
+	struct vc4_lookup *ret;
+
+	ret = vc4_lookup_find(inf, name);
+	if (ret != NULL)
+		return ret;
+
+	if (inf->lookup_count == 0) {
+		inf->lookup_tab = malloc(sizeof(struct vc4_lookup));
+	} else {
+		inf->lookup_tab = realloc(
+			inf->lookup_tab,
+			(inf->lookup_count + 1) * sizeof(struct vc4_lookup));
+	}
+
+	assert(inf->lookup_tab != NULL);
+
+	inf->lookup_tab[inf->lookup_count].str = name;
+	inf->lookup_tab[inf->lookup_count].chain = NULL;
+	inf->lookup_count++;
+
+	qsort(inf->lookup_tab, inf->lookup_count,
+	      sizeof(struct vc4_lookup), vc4_lookup_compare);
+
+	key.str = name;
+	key.chain = NULL;
+
+	ret = bsearch(&key, inf->lookup_tab, inf->lookup_count,
+		      sizeof(struct vc4_lookup), vc4_lookup_compare);
+	assert(ret != NULL);
+	return ret;
 }
 
 static void vc4_go_got_one(struct vc4_info *info,
@@ -991,6 +1000,7 @@ static void vc4_go_got_one(struct vc4_info *info,
 	uint16_t ins[5];
 	uint16_t ins_mask[5];
 	size_t i;
+	struct vc4_lookup *lup;
 
 	assert(a != NULL);
 
@@ -1027,6 +1037,11 @@ static void vc4_go_got_one(struct vc4_info *info,
 		info->all_asms_tail->next_all = a;
 	}
 	info->all_asms_tail = a;
+
+	/* Add to lookup table of opcodes. */
+	lup = vc4_lookup_add(info, a->str);
+	a->next = lup->chain;
+	lup->chain = a;
 }
 
 static void vc4_go_got_one_slash(struct vc4_info *info,
@@ -1065,24 +1080,24 @@ static void vc4_go_expand(struct vc4_info *info,
 			  const struct vc4_op_pat *base_pat)
 {
 	struct vc4_decode_table *t;
-	char *fmt;
-	char *exp;
+	char fmt[128];
+	char exp[16];
 	int l0, r;
 	size_t i;
 	const char *c;
 	char *new_str;
 	struct vc4_op_pat new_pat;
+	uint32_t lim;
 
 	if ((c = strchr(str, '%')) == NULL) {
 		vc4_go_got_one_slash(info, op, str, base_pat);
 		return;
 	}
 
-	fmt = malloc(1024);
-	exp = malloc(1024);
-	r = sscanf(c, "%[^{]{%[^}]}%n", fmt, exp, &l0);
+	l0 = -1;
+	r = sscanf(c, "%127[^{]{%15[^}]}%n", fmt, exp, &l0);
 
-	if (r < 2 || fmt == NULL || exp == NULL) {
+	if (r < 2 || l0 < 1 || fmt[0] == 0 || exp[0] == 0) {
 		fprintf(stderr, "bad line '%s'\n", str);
 		//fprintf(stderr, "bad line  %s/%s/%s %d %d\n", fmt, exp, c+l0, l0, r);
 		abort();
@@ -1102,175 +1117,34 @@ static void vc4_go_expand(struct vc4_info *info,
 	new_pat.count++;
 	new_pat.pat[new_pat.count - 1].code = exp[0];
 
-	for (i = 0; i < (1u << op->vals[exp[0] - 'a'].length); i++) {
+	lim = 1u << vc4_op_get_val_width(op, exp[0]);
+
+	for (i = 0; i < lim; i++) {
 		new_pat.pat[new_pat.count - 1].val = i;
-		if (c == str) {
-			r = asprintf(&new_str, "%s%s", t->tab[i], c + l0);
-		} else {
-			r = asprintf(&new_str, "%.*s%s%s", c - str, str, t->tab[i], c + l0);
-		}
+
+		new_str = strndup(str, c - str);
+		vc4_strcat(&new_str, t->tab[i]);
+		vc4_strcat(&new_str, c + l0);
+
 		vc4_go_expand(info, op, new_str, &new_pat);
 		free(new_str);
-	}
-
-	free(fmt);
-	free(exp);
-}
-
-static int params_convertable(enum vc4_param_type a, enum vc4_param_type b)
-{
-	switch (a)
-	{
-	case vc4_p_reg_0_15:
-	case vc4_p_reg_0_31:
-	case vc4_p_reg_0_6_16_24:
-	case vc4_p_reg_r6:
-	case vc4_p_reg_sp:
-	case vc4_p_reg_lr:
-	case vc4_p_reg_sr:
-	case vc4_p_reg_pc:
-		return b == vc4_p_reg_0_15 || b == vc4_p_reg_0_31 ||
-			b == vc4_p_reg_0_6_16_24 || b == vc4_p_reg_r6 ||
-			b == vc4_p_reg_sp || b == vc4_p_reg_lr ||
-			b == vc4_p_reg_sr || b == vc4_p_reg_pc;
-
-	case vc4_p_reg_cpuid:
-	case vc4_p_reg_range:
-	case vc4_p_reg_range_r6:
-	case vc4_p_reg_shl:
-	case vc4_p_reg_shl_8:
-	case vc4_p_reg_shl_p1:
-	case vc4_p_addr_reg_post_inc:
-	case vc4_p_addr_reg_pre_dec:
-		return a == b;
-
-	case vc4_p_addr_reg_0_15:
-	case vc4_p_addr_reg_0_31:
-		return (b == vc4_p_addr_reg_0_15) || (b == vc4_p_addr_reg_0_31);
-
-	case vc4_p_num_u_shl_p1:
-	case vc4_p_num_s_shl_p1:
-		return b == vc4_p_num_u_shl_p1 || b == vc4_p_num_s_shl_p1;
-
-	case vc4_p_num_u:
-	case vc4_p_num_s:
-	case vc4_p_num_u4:
-	case vc4_p_num_s4:
-		return (b == vc4_p_num_u) || (b == vc4_p_num_s) ||
-			(b == vc4_p_num_u4) || (b == vc4_p_num_s4);
-
-	case vc4_p_addr_reg_num_u:
-	case vc4_p_addr_reg_num_s:
-		return (b == vc4_p_addr_reg_num_u) || (b == vc4_p_addr_reg_num_s);
-
-	case vc4_p_r0_rel_s:
-	case vc4_p_r0_rel_s2:
-	case vc4_p_r0_rel_s4:
-		return b == vc4_p_r0_rel_s || b == vc4_p_r0_rel_s2 || b == vc4_p_r0_rel_s4;
-
-	case vc4_p_r24_rel_s:
-	case vc4_p_r24_rel_s2:
-	case vc4_p_r24_rel_s4:
-		return b == vc4_p_r24_rel_s || b == vc4_p_r24_rel_s2 || b == vc4_p_r24_rel_s4;
-
-	case vc4_p_sp_rel_s:
-	case vc4_p_sp_rel_s2:
-	case vc4_p_sp_rel_s4:
-		return b == vc4_p_sp_rel_s || b == vc4_p_sp_rel_s2 || b == vc4_p_sp_rel_s4;
-
-	case vc4_p_pc_rel_s:
-	case vc4_p_pc_rel_s2:
-	case vc4_p_pc_rel_s4:
-		return b == vc4_p_pc_rel_s || b == vc4_p_pc_rel_s2 || b == vc4_p_pc_rel_s4;
-
-	default:
-		return 0;
-	}
-}
-
-static void vc4_find_relax_for_op(struct vc4_info *info, struct vc4_asm *to_relax)
-{
-	struct vc4_asm *as;
-	size_t i;
-	int bad_match;
-
-	for (as = info->all_asms; as != NULL; as = as->next_all) {
-
-		if (as == to_relax)
-			continue;
-		if (strcmp(as->str, to_relax->str))
-			continue;
-		if (as->op->length >= to_relax->op->length)
-			continue;
-		if (as->op->num_params != to_relax->op->num_params)
-			continue;
-
-		bad_match = 0;
-		for (i=0; i<as->op->num_params; i++) {
-			if (!params_convertable(as->op->params[0].type,
-						to_relax->op->params[0].type)) {
-				bad_match = 1;
-				break;
-			}
-		}
-		if (bad_match)
-			continue;
-
-		if (to_relax->relax == NULL ||
-		    to_relax->relax->op->length < as->op->length) {
-			to_relax->relax = as;
-		}
-	}
-}
-
-static void vc4_find_relax(struct vc4_info *info)
-{
-	struct vc4_asm *as;
-
-	for (as = info->all_asms; as != NULL; as = as->next_all) {
-
-		vc4_find_relax_for_op(info, as);
-	}
-
-	for (as = info->all_asms; as != NULL; as = as->next_all) {
-
-		if (as->relax != NULL) {
-
-/*
-			printf("Relax %-7s %s -> %s  %s -> %s\n",
-			       as->str,
-			       as->op->string, as->relax->op->string,
-			       as->op->format, as->relax->op->format);
-*/
-			if (as->relax->relax_bigger == NULL) {
-				assert(as->relax->relax_bigger == NULL);
-
-				as->relax->relax_bigger = as;
-			}
-		}
 	}
 }
 
 void vc4_get_opcodes(struct vc4_info *info)
 {
 	struct vc4_opcode *op;
-	char *str;
+	char str[32];
 	struct vc4_op_pat pat;
 
 	pat.count = 0;
 
 	assert(info->all_asms == NULL);
 	
-	str = malloc(1024);
-
 	for (op = info->all_opcodes; op != NULL; op = op->next) {
 
-		sscanf(op->format, "%s ", str);
+		sscanf(op->format, "%31s ", str);
 		if (str[0] != '!')
 			vc4_go_expand(info, op, str, &pat);
 	}
-	
-	free(str);
-
-	vc4_find_relax(info);
 }
