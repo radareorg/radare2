@@ -11,14 +11,13 @@ PREFIX?=${PWD}/../prefix
 
 PWD=$(shell pwd)
 
-LIBS0=util hash
+LIBS0=util hash print
 LIBS1=socket reg cons db magic bp search config
 LIBS2=syscall lang io crypto flags
 LIBS3=fs anal bin
 LIBS4=parse
 LIBS5=asm debug
 LIBS6=egg
-#LIBS6+=print
 LIBS7=core
 
 LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7)

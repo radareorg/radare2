@@ -4,7 +4,7 @@ NAME=r_cons
 OBJS=cons.o pipe.o output.o grep.o less.o utf8.o
 OBJS+=line.o hud.o rgb.o input.o pal.o editor.o 2048.o
 OBJS+=canvas.o canvas_line.o
-DEPS=r_util
+DEPS=r_util r_print
 
 include ../rules.mk
 
