@@ -128,7 +128,7 @@ Debugging a program redirecting io to another terminal
   $ tty ; clear ; sleep 999999
   /dev/ttyS010
   ## in another terminal run r2
-  $ r2 \-d /bin/ls -e dbg.profile=foo.rr2
+  $ r2 \-e dbg.profile=foo.rr2 -d ls
   $ cat foo.rr2
   #!/usr/bin/rarun2
   stdio=/dev/ttys010
