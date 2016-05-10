@@ -217,6 +217,16 @@ typedef void (*PrintfCallback)(const char *str, ...);
 //#define R_BIT_CHK(x,y) ((((const ut8*)x)[y>>4] & (1<<(y&0xf))))
 #define R_BIT_CHK(x,y) (*(x) & (1<<(y)))
 
+/* make error messages useful by prepending file, line, and function name */
+#define _perror(str,file,line,func) \
+  { \
+	  char buf[256]; \
+	  snprintf(buf,sizeof(buf),"[%s:%d %s] %s",file,line,func,str); \
+	  r_sys_perror_str(buf); \
+  }
+#define perror(x) _perror(x,__FILE__,__LINE__,__FUNCTION__)
+#define r_sys_perror(x) _perror(x,__FILE__,__LINE__,__FUNCTION__)
+
 #if __UNIX__
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -224,11 +234,6 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #include <dirent.h>
 #endif
 #include <unistd.h>
-
-/* TODO: Move outside */
-#define _perror(str,file,line) \
-  { char buf[128];snprintf(buf,sizeof(buf),"%s:%d %s",file,line,str);perror(buf); }
-#define perror(x) _perror(x,__FILE__,__LINE__)
 
 #ifndef HAVE_EPRINTF
 #define eprintf(x,y...) fprintf(stderr,x,##y)

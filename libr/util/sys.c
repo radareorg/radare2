@@ -550,9 +550,12 @@ R_API bool r_sys_mkdirp(const char *dir) {
 	return ret;
 }
 
-R_API void r_sys_perror(const char *fun) {
+R_API void r_sys_perror_str(const char *fun) {
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#pragma push_macro("perror")
+#undef perror
 	perror (fun);
+#pragma pop_macro("perror")
 #elif __WINDOWS__
 	char *lpMsgBuf;
 	LPVOID lpDisplayBuf;
