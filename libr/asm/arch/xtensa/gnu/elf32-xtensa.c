@@ -26,6 +26,7 @@
 #include <stdarg.h>
 #include <strings.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "bfdlink.h"
 //#include "libbfd.h"
@@ -163,8 +164,8 @@ filename_cmp (const char *s1, const char *s2)
       int c2 = *s2;
 
 #if defined (HAVE_CASE_INSENSITIVE_FILE_SYSTEM)
-      c1 = TOLOWER (c1);
-      c2 = TOLOWER (c2);
+      c1 = tolower (c1);
+      c2 = tolower (c2);
 #endif
 
 #if defined (HAVE_DOS_BASED_FILE_SYSTEM)

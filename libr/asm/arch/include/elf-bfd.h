@@ -2121,6 +2121,57 @@ extern bfd_boolean _sh_elf_set_mach_from_flags
     }									\
   while (0)
 
+/* This macro is to avoid lots of duplicated code in the body of the
+   loop over relocations in xxx_relocate_section() in the various
+   elfxx-xxxx.c files.
+
+   Handle relocations against symbols from removed linkonce sections,
+   or sections discarded by a linker script.  When doing a relocatable
+   link, we remove such relocations.  Otherwise, we just want the
+   section contents zeroed and avoid any special processing.  */
+#define RELOC_AGAINST_DISCARDED_SECTION(info, input_bfd, input_section,	\
+					rel, count, relend,		\
+					howto, index, contents)		\
+  {									\
+    int i_;								\
+    _bfd_clear_contents (howto, input_bfd, input_section,		\
+			 contents + rel[index].r_offset);		\
+									\
+    if (info->relocatable						\
+	&& (input_section->flags & SEC_DEBUGGING))			\
+      {									\
+	/* Only remove relocations in debug sections since other	\
+	   sections may require relocations.  */			\
+	Elf_Internal_Shdr *rel_hdr;					\
+									\
+	rel_hdr = _bfd_elf_single_rel_hdr (input_section->output_section); \
+									\
+	/* Avoid empty output section.  */				\
+	if (rel_hdr->sh_size > count * rel_hdr->sh_entsize)		\
+	  {								\
+	    rel_hdr->sh_size -= count * rel_hdr->sh_entsize;		\
+	    rel_hdr = _bfd_elf_single_rel_hdr (input_section);		\
+	    rel_hdr->sh_size -= count * rel_hdr->sh_entsize;		\
+									\
+	    memmove (rel, rel + count,					\
+		     (relend - rel - count) * sizeof (*rel));		\
+									\
+	    input_section->reloc_count -= count;			\
+	    relend -= count;						\
+	    rel--;							\
+	    continue;							\
+	  }								\
+      }									\
+									\
+    for (i_ = 0; i_ < count; i_++)					\
+      {									\
+	rel[i_].r_info = 0;						\
+	rel[i_].r_addend = 0;						\
+      }									\
+    rel += count - 1;							\
+    continue;								\
+  }
+
 /* Will a symbol be bound to the the definition within the shared
    library, if any.  */
 #define SYMBOLIC_BIND(INFO, H) \
