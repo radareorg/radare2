@@ -843,6 +843,9 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 static void anop64 (RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 	switch (insn->id) {
+	case ARM64_INS_SVC:
+		op->type = R_ANAL_OP_TYPE_SWI;
+		break;
 	case ARM64_INS_ADRP:
 	case ARM64_INS_ADR:
 		op->type = R_ANAL_OP_TYPE_LEA;
