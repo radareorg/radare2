@@ -418,6 +418,8 @@ R_API const char *r_anal_stackop_tostring (int s) {
 		return "get";
 	case R_ANAL_STACK_SET:
 		return "set";
+	case R_ANAL_STACK_RESET:
+		return "reset";
 	}
 	return "unk";
 }
