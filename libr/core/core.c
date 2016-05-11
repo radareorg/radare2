@@ -1177,7 +1177,6 @@ R_API int r_core_init(RCore *core) {
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;
 	core->incomment = false;
-	core->screen_bounds = 0LL;
 	core->config = NULL;
 	core->http_up = false;
 	core->print = r_print_new ();
@@ -1233,6 +1232,7 @@ R_API int r_core_init(RCore *core) {
 		r_line_hist_load (R2_HOMEDIR"/history");
 	}
 	core->print->cons = core->cons;
+	r_cons_bind (&core->print->consbind);
 	core->cons->num = core->num;
 	core->lang = r_lang_new ();
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;

@@ -1947,6 +1947,9 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
 	//r_core_cmdf (core, "ar %s=0x%08"PFMT64x, sp, stack_ptr);
 	//r_core_cmdf (core, "f %s=%s", sp, sp);
+	if (!r_io_section_get_name (core->io, "esil_stack")) {
+		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d esil_stack", addr, addr, size, size);
+	}
 	r_core_seek (core, curoff, 0);
 }
 
@@ -2327,7 +2330,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case 'i': // "aei"
 		switch (input[1]) {
 		case 's':
-		case 'm':
+		case 'm': // "aeim"
 			cmd_esil_mem (core, input + 2);
 			break;
 		case 'p': // initialize pc = $$
@@ -3815,17 +3818,26 @@ static const char *oldstr = NULL;
 
 static void rowlog(RCore *core, const char *str) {
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	bool verbose = r_config_get_i (core->config, "scr.prompt");
 	oldstr = str;
-	if (use_color)
-		eprintf ("[ ] "Color_YELLOW"%s\r[", str);
-	else eprintf ("[ ] %s\r[", str);
+	if (!verbose) {
+		return;
+	}
+	if (use_color) {
+		eprintf ("[ ] "Color_YELLOW"%s\r["Color_RESET, str);
+	} else {
+		eprintf ("[ ] %s\r[", str);
+	}
 }
 
 static void rowlog_done(RCore *core) {
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	if (use_color)
-		eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", oldstr);
-	else eprintf ("\r[x] %s\n", oldstr);
+	bool verbose = r_config_get_i (core->config, "scr.prompt");
+	if (verbose) {
+		if (use_color)
+			eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", oldstr);
+		else eprintf ("\r[x] %s\n", oldstr);
+	}
 }
 
 static int compute_coverage(RCore *core) {
@@ -4032,7 +4044,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				if (input[1] == 'a') { // "aaaa"
 					rowlog (core, "Emulate code to find computed references (aae)");
-					r_core_cmd0 (core, "aae @ $S");
+					r_core_cmd0 (core, "aae $SS @ $S");
 					rowlog_done (core);
 					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
@@ -4044,7 +4056,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						rowlog_done (core);
 					}
 				} else {
-					eprintf ("[*] Use -AA or aaaa to perform additional experimental analysis.\n");
+					rowlog (core, "[*] Use -AA or aaaa to perform additional experimental analysis.\n");
 				}
 				r_config_set_i (core->config, "anal.calls", c);
 				rowlog (core, "Constructing a function name for fcn.* and sym.func.* functions (aan)");

@@ -128,6 +128,10 @@ static char *swift_demangle_cmd(const char *s) {
 		}
 	}
 	if (swift_demangle) {
+		if (strstr (s, "'") || strstr (s, "\\")) {
+			/* nice try */
+			return NULL;
+		}
 		//char *res = r_sys_cmd_strf ("%s -compact -simplified '%s'",
 		char *res = r_sys_cmd_strf ("%s -compact '%s'",
 			swift_demangle, s);

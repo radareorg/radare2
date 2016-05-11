@@ -139,9 +139,6 @@ typedef struct r_core_t {
 	char *lastcmd;
 	int cmdrepeat;
 	ut64 inc;
-	// represents the first not-visible offset on the screen
-	// (only when in visual disasm mode)
-	ut64 screen_bounds;
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
 	int curasmstep;
@@ -438,6 +435,7 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn);
 #define R_CORE_BIN_ACC_MEM	0x4000
 #define R_CORE_BIN_ACC_EXPORTS  0x8000
 #define R_CORE_BIN_ACC_VERSIONINFO 0x10000
+#define R_CORE_BIN_ACC_SIGNATURE 0x20000
 #define R_CORE_BIN_ACC_ALL	0x4FFF
 
 #define R_CORE_PRJ_FLAGS	0x0001

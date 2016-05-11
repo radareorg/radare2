@@ -1613,14 +1613,19 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 }
 
 R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
+	if (!core || !fcn || core->anal->opt.bb_max_size < 1) {
+		return;
+	}
 	ut8 *buf = calloc(1,core->anal->opt.bb_max_size);
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;
 	int i;
-	if(!core || !fcn || !buf){
+	if(!buf){
 		return;
 	}
 	r_list_foreach (fcn->bbs, tmp, bb) {
+		if (bb->size < 1) continue;
+		buf = realloc (buf, bb->size);
 		if (r_io_read_at (core->io, bb->addr, buf, bb->size) != bb->size) {
 			eprintf ("read error\n");
 			free(buf);
@@ -1633,6 +1638,7 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
 			fill_args (core->anal, fcn, &op);
 		}
 	}
+
 	if (fcn->call == R_ANAL_CC_TYPE_FASTCALL) {
 		r_anal_var_add (core->anal, fcn->addr, 1, 0,'A', "int", 4,"arg_ecx");
 		r_anal_var_add (core->anal, fcn->addr, 1, 1,'A', "int", 4,"arg_edx");
@@ -2109,6 +2115,7 @@ R_API int r_core_anal_all(RCore *core) {
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (core->cons->breaked)
 			break;
+		fcn_callconv (core, fcni);
 		if (!strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4))
 			fcni->type = R_ANAL_FCN_TYPE_SYM;
 	}
@@ -2582,6 +2589,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 	mycore = core;
 	if (!strcmp (str, "?")) {
 		eprintf ("Usage: aae[f] [len] - analyze refs in function, section or len bytes with esil\n");
+		eprintf ("  aae $SS @ $S      - analyze the whole section\n");
 		return;
 	}
 	if (!strcmp (str, "f")) {
@@ -2640,7 +2648,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		}
 		r_cons_break (cccb, core);
 		cur = addr + i;
-		if (!r_anal_op (core->anal, &op, cur, buf+i, iend-i)) {
+		if (!r_anal_op (core->anal, &op, cur, buf + i, iend-i)) {
 			i += minopsize - 1;
 		}
 		r_asm_set_pc (core->assembler, cur);
@@ -2666,18 +2674,23 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 			r_cons_break (cccb, core);
 			//r_anal_esil_dumpstack (ESIL);
 			r_anal_esil_stack_free (ESIL);
-			i += op.size -1;
+			i += op.size - 1;
 
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_LEA:
-				if (cfg_anal_strings) {
-					r_anal_ref_add (core->anal, op.ptr, cur, 'd');
-					add_string_ref (core, op.ptr);
+				if (strcmp (core->anal->cpu, "arm")) {
+					if (cfg_anal_strings) {
+						r_anal_ref_add (core->anal, op.ptr, cur, 'd');
+						add_string_ref (core, op.ptr);
+					}
 				}
 				break;
 			case R_ANAL_OP_TYPE_ADD:
 				/* TODO: test if this is valid for other archs too */
-				if (core->anal->bits == 32 && !strcmp (core->anal->cpu, "mips")) {
+				if (core->anal->bits == 64 && !strcmp (core->anal->cpu, "arm")) {
+					ut64 dst = ESIL->cur;
+					r_anal_ref_add (core->anal, dst, cur, 'd');
+				} else if ((core->anal->bits == 32 && !strcmp (core->anal->cpu, "mips"))) {
 				       ut64 dst = ESIL->cur;
 
 					if (!op.src[0] || !op.src[0]->reg || !op.src[0]->reg->name)

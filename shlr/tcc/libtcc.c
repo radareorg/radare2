@@ -856,6 +856,7 @@ static const FlagDef flag_defs[] = {
     { offsetof(TCCState, leading_underscore), 0, "leading-underscore" },
 };
 #endif
+void (*tcc_cb)(const char *, char **);
 
 PUB_FUNC void tcc_set_callback (TCCState *s, void (*cb)(const char *,char**), char **p) {
 	tcc_cb = cb;

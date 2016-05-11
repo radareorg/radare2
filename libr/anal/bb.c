@@ -23,6 +23,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 	bb->diff = r_anal_diff_new ();
 	bb->label = NULL;
 	bb->op_pos = R_NEWS (ut16, DFLT_NINSTR);
+	memset(bb->op_pos, 0, DFLT_NINSTR * sizeof(ut16));
 	bb->n_op_pos = DFLT_NINSTR;
 	return bb;
 }
@@ -171,6 +172,7 @@ R_API void r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
 	// the offset of the instruction 0 is not stored because always 0
 	if (i > 0) {
 		if (i >= bb->n_op_pos) {
+			int offset = bb->n_op_pos;
 			bb->n_op_pos = i * 2;
 			bb->op_pos = realloc (bb->op_pos, bb->n_op_pos * sizeof (*bb->op_pos));
 		}

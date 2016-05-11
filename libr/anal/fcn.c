@@ -290,7 +290,7 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 	*ptr_end = 0;
 	addr = ptr_end;
 	while ((*addr != '0' || *(addr+1) != 'x') &&
-		addr >= esil_buf && *addr != ',' ) {
+		addr >= esil_buf +1  && *addr != ',' ) {
 		addr--;
 	}
 	if (strncmp (addr, "0x", 2)) {
@@ -733,8 +733,9 @@ repeat:
 				if (s && s->name) {
 					int in_plt = strstr (s->name, ".plt") != NULL;
 					if (strstr (anal->cpu, "arm")) {
-						if (anal->bits != 16)
+						if (anal->bits == 64) {
 							if (!in_plt) goto river;
+						}
 					} else {
 						if (in_plt) goto river;
 					}

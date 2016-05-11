@@ -20,9 +20,8 @@
 
 #include "tcc.h"
 
-/* callback pointers */
+/* callback pointer */
 ST_DATA char **tcc_cb_ptr;
-ST_DATA void (*tcc_cb)(const char *, char **);
 
 /********************************************************/
 /* global variables */

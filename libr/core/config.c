@@ -219,7 +219,7 @@ static int cb_asmarch(void *user, void *data) {
 	//if (!strcmp (node->value, "bf"))
 	//	r_config_set (core->config, "dbg.backend", "bf");
 	__setsegoff (core->config, node->value, core->assembler->bits);
-	
+
 	// set a default endianness
 	int bigbin = r_bin_is_big_endian (core->bin);
 	if (bigbin == -1 /* error: no endianness detected in binary */) {
@@ -1541,6 +1541,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.describe", "false", "Show opcode description");
 	SETPREF("asm.marks", "true", "Show marks before the disassembly");
 	SETCB("bin.strpurge", "false", &cb_strpurge, "Try to purge false positive strings");
+	SETPREF("bin.libs", "false", "Try to load libraries after loading main binary");
 	SETCB("bin.strfilter", "", &cb_strfilter, "Filter strings (?:help, a:scii, e:mail, p:ath, u:rl, 8:utf8)");
 	SETCB("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
@@ -1744,10 +1745,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("graph.scroll", 5, "Scroll speed in ascii-art graph");
 	SETPREF("graph.invscroll", "false", "Invert scroll direction in ascii-art graph");
 	SETPREF("graph.title", "", "Title of the graph");
-	SETPREF("graph.gv.node", "", "Custom graphviz node style for aga, agc, ...");
-	SETPREF("graph.gv.edge", "", "Custom graphviz edge style for aga, agc, ...");
-	SETPREF("graph.gv.graph", "", "Custom graphviz graph style for aga, agc, ...");
-	SETPREF("graph.gv.current", "false", "Color current node differently.");
+	SETPREF("graph.gv.node", "", "Graphviz node style. (color=gray, style=filled shape=box)");
+	SETPREF("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")");
+	SETPREF("graph.gv.graph", "", "Graphviz global style attributes. (bgcolor=white)");
+	SETPREF("graph.gv.current", "false", "Highlight the current node in graphviz graph.");
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");
 
@@ -1851,7 +1852,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("io.vio", "false", &cb_iovio, "Enable the new vio (reading only) (WIP)");
 
 	/* file */
-	SETI("file.analyze", 0, "Analyze file on load. 1) r2 -A 2) -AA 3) -AAA");
 	SETPREF("file.desc", "", "User defined file description (used by projects)");
 	SETPREF("file.md5", "", "MD5 sum of current file");
 	SETPREF("file.path", "", "Path of current file");
