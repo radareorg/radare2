@@ -67,7 +67,7 @@ int linux_step (RDebug *dbg) {
 	int ret = false;
 	ut64 addr = 0; /* should be eip */
 	//ut32 data = 0;
-	//printf("NATIVE STEP over PID=%d\n", pid);
+	//printf("NATIVE STEP over PID=%d\n", dbg->pid);
 	addr = r_debug_reg_get (dbg, "PC");
 	ret = ptrace (PTRACE_SINGLESTEP, dbg->pid,
 			(void*)(size_t)addr, 0);

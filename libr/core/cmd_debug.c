@@ -401,7 +401,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		"dpa", " <pid>", "Attach and select pid",
 		"dpe", "", "Show path to executable",
 		"dpf", "", "Attach to pid like file fd // HACK",
-		"dpk", " <pid> <signal>", "Send signal to process",
+		"dpk", " <pid> [<signal>]", "Send signal to process (default 0)",
 		"dpn", "", "Create new process (fork)",
 		"dpnt", "", "Create new thread (clone)",
 		"dpt", "", "List threads of current pid",
@@ -409,7 +409,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		"dpt=", "<thread>", "Attach to thread",
 		NULL};
 	switch (input[1]) {
-	case '-':
+	case '-': // "dp-"
 		if (input[2]== ' ') {
 			r_debug_detach (core->dbg, r_num_math (core->num, input+2));
 		} else {
@@ -420,15 +420,16 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		/* stop, print, pass -- just use flags*/
 		/* XXX: not for threads? signal is for a whole process!! */
 		/* XXX: but we want fine-grained access to process resources */
-		pid = atoi (input+2);
-		ptr = strchr (input, ' ');
-		sig = ptr? atoi (ptr+1): 0;
+		pid = atoi (input + 2);
 		if (pid > 0) {
+			ptr = r_str_chop_ro (input + 2);
+			ptr = strchr (ptr, ' ');
+			sig = ptr? atoi (ptr + 1): 0;
 			eprintf ("Sending signal '%d' to pid '%d'\n", sig, pid);
 			r_debug_kill (core->dbg, 0, false, sig);
 		} else eprintf ("cmd_debug_pid: Invalid arguments (%s)\n", input);
 		break;
-	case 'n':
+	case 'n': // dpn
 		eprintf ("TODO: debug_fork: %d\n", r_debug_child_fork (core->dbg));
 		break;
 	case 't': // "dpt"
@@ -448,7 +449,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'a':
+	case 'a': // "dpa"
 		if (input[2]) {
 			r_debug_attach (core->dbg, (int) r_num_math (
 				core->num, input+2));
@@ -462,22 +463,22 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			(core->dbg->h && !core->dbg->h->canstep));
 		r_core_cmdf (core, "=!pid %d", core->dbg->pid);
 		break;
-	case 'f':
+	case 'f': // "dpf"
 		if (core->file && core->file->desc) {
 			r_debug_select (core->dbg, core->file->desc->fd, core->dbg->tid);
 		}
 		break;
-	case '=':
+	case '=': // "dp="
 		r_debug_select (core->dbg,
 			(int) r_num_math (core->num, input+2), core->dbg->tid);
 		break;
-	case '*':
+	case '*': // "dp*"
 		r_debug_pid_list (core->dbg, 0, 0);
 		break;
-	case 'j':
+	case 'j': // "dpj"
 		r_debug_pid_list (core->dbg, core->dbg->pid, 'j');
 		break;
-	case 'e':
+	case 'e': // "dpe"
 		{
 			int pid = (input[2] == ' ')? atoi(input+2): core->dbg->pid;
 			char *exe = r_sys_pid_to_path (pid);
