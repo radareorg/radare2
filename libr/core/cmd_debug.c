@@ -405,7 +405,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		"dpf", "", "Attach to pid like file fd // HACK",
 		"dpk", " <pid> [<signal>]", "Send signal to process (default 0)",
 		"dpn", "", "Create new process (fork)",
-		"dpnt", "", "Create new thread (clone)",
+		"dptn", "", "Create new thread (clone)",
 		"dpt", "", "List threads of current pid",
 		"dpt", " <pid>", "List threads of process",
 		"dpt=", "<thread>", "Attach to thread",
@@ -443,7 +443,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			r_debug_kill (core->dbg, 0, false, sig);
 		} else eprintf ("cmd_debug_pid: Invalid arguments (%s)\n", input);
 		break;
-	case 'n': // dpn
+	case 'n': // "dpn"
 		eprintf ("TODO: debug_fork: %d\n", r_debug_child_fork (core->dbg));
 		break;
 	case 't': // "dpt"
