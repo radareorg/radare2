@@ -2647,7 +2647,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		}
 		r_cons_break (cccb, core);
 		cur = addr + i;
-		if (!r_anal_op (core->anal, &op, cur, buf+i, iend-i)) {
+		if (!r_anal_op (core->anal, &op, cur, buf + i, iend-i)) {
 			i += minopsize - 1;
 		}
 		r_asm_set_pc (core->assembler, cur);
@@ -2673,18 +2673,23 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 			r_cons_break (cccb, core);
 			//r_anal_esil_dumpstack (ESIL);
 			r_anal_esil_stack_free (ESIL);
-			i += op.size -1;
+			i += op.size - 1;
 
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_LEA:
-				if (cfg_anal_strings) {
-					r_anal_ref_add (core->anal, op.ptr, cur, 'd');
-					add_string_ref (core, op.ptr);
+				if (strcmp (core->anal->cpu, "arm")) {
+					if (cfg_anal_strings) {
+						r_anal_ref_add (core->anal, op.ptr, cur, 'd');
+						add_string_ref (core, op.ptr);
+					}
 				}
 				break;
 			case R_ANAL_OP_TYPE_ADD:
 				/* TODO: test if this is valid for other archs too */
-				if (core->anal->bits == 32 && !strcmp (core->anal->cpu, "mips")) {
+				if (core->anal->bits == 64 && !strcmp (core->anal->cpu, "arm")) {
+					ut64 dst = ESIL->cur;
+					r_anal_ref_add (core->anal, dst, cur, 'd');
+				} else if ((core->anal->bits == 32 && !strcmp (core->anal->cpu, "mips"))) {
 				       ut64 dst = ESIL->cur;
 
 					if (!op.src[0] || !op.src[0]->reg || !op.src[0]->reg->name)
