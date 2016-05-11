@@ -218,7 +218,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 		} else if (fields.format == 3) {
 			op->type = R_ANAL_OP_TYPE_CMOV;
 			/* TODO: cond codes */
-			if ((fields.a & 0x20) == 1) {
+			if ((fields.a & 0x20)) {
 				/* its a move from imm u6 */
 				op->val = fields.c;
 			} else if (fields.c == ARC_REG_LIMM) {
