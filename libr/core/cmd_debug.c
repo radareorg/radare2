@@ -2552,11 +2552,11 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		eprintf ("TODO: dca\n");
 		break;
 	case 'f': // "dcf"
-		eprintf ("[+] Running 'dcs vfork' behind the scenes...\n");
+		eprintf ("[+] Running 'dcs vfork fork clone' behind the scenes...\n");
 		// we should stop in fork and vfork syscalls
 		//TODO: multiple syscalls not handled yet
 		// r_core_cmd0 (core, "dcs vfork fork");
-		r_core_cmd0 (core, "dcs vfork fork");
+		r_core_cmd0 (core, "dcs vfork fork clone");
 		break;
 	case 'c': // "dcc"
 		r_reg_arena_swap (core->dbg->reg, true);
