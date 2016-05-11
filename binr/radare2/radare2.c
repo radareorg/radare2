@@ -815,6 +815,7 @@ int main(int argc, char **argv, char **envp) {
 		case 1: r_core_cmd0 (&r, "aa"); break;
 		case 2: r_core_cmd0 (&r, "aaa"); break;
 		case 3: r_core_cmd0 (&r, "aaaa"); break;
+		default: r_core_cmd0 (&r, "aaaaa"); break;
 		}
 		r_cons_flush ();
 	}

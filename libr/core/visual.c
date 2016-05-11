@@ -1053,7 +1053,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	}
 
 	// do we need hotkeys for data references? not only calls?
-	if (ch >= '0'&& ch <= '9') {
+	// '0' is handled to seek at the beginning of the function
+	if (ch > '0' && ch <= '9') {
 		char chbuf[2];
 		ut64 off;
 
@@ -1643,6 +1644,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 		} else r_core_yank_paste (core, core->offset+core->print->cur, 0);
+		break;
+	case '0':
+		{
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+		if (fcn) {
+			r_core_seek (core, fcn->addr, 1);
+		}
+		}
 		break;
 	case '-':
 		if (core->print->cur_enabled) {
