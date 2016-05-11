@@ -725,15 +725,17 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 		break;
 	case X86_INS_ENTER:
 	case X86_INS_PUSH:
-	case X86_INS_PUSHF:
-	case X86_INS_PUSHFD:
-	case X86_INS_PUSHFQ:
 		{
 			char *dst = getarg (&gop, 0, 0, NULL);
 			esilprintf (op, "%d,%s,-=,%s,%s,=[%d]",
 				rs, sp, dst?dst:"eax", sp, rs);
 			free (dst);
 		}
+		break;
+	case X86_INS_PUSHF:
+	case X86_INS_PUSHFD:
+	case X86_INS_PUSHFQ:
+		esilprintf (op, "%d,%s,-=,eflags,%s,=[%d]", rs, sp, sp, rs);
 		break;
 	case X86_INS_LEAVE:
 		esilprintf (op, "%s,%s,=,%s,[%d],%s,=,%d,%s,+=",
@@ -765,7 +767,6 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 		}
 		break;
 	case X86_INS_POP:
-	case X86_INS_POPF:
 	case X86_INS_POPCNT:
 		{
 			char *dst = getarg (&gop, 0, 0, NULL);
@@ -774,6 +775,11 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 				sp, rs, dst, rs, sp);
 			free (dst);
 		}
+		break;
+	case X86_INS_POPF:
+	case X86_INS_POPFD:
+	case X86_INS_POPFQ:
+		esilprintf (op, "%s,[%d],eflags,=", sp, rs);
 		break;
 	case X86_INS_RET:
 	case X86_INS_RETF:
