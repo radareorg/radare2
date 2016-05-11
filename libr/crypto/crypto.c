@@ -5,6 +5,29 @@
 
 R_LIB_VERSION (r_crypto);
 
+struct { const char *name; ut64 bit; }
+static const crypto_name_bytes[] = {
+	{"all", UT64_MAX},
+	{"rc2", R_CRYPTO_RC2},
+	{"rc4", R_CRYPTO_RC4},
+	{"rc6", R_CRYPTO_RC6},
+	{"aes-ecb", R_CRYPTO_AES_ECB},
+	{"aes-cbc", R_CRYPTO_AES_CBC},
+	{"ror", R_CRYPTO_ROR},
+	{"rol", R_CRYPTO_ROL},
+	{"rot", R_CRYPTO_ROT},
+	{"blowfish", R_CRYPTO_BLOWFISH},
+	{NULL, 0}
+};
+
+R_API const char *r_crypto_name(ut64 bit) {
+	int i;
+	for (i=1; crypto_name_bytes[i].bit; i++)
+		if (bit & crypto_name_bytes[i].bit)
+			return crypto_name_bytes[i].name;
+	return "";
+}
+
 static RCryptoPlugin *crypto_static_plugins[] = {
 	R_CRYPTO_STATIC_PLUGINS
 };

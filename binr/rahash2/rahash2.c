@@ -268,11 +268,20 @@ static int do_help(int line) {
 static void algolist() {
 	ut64 bits;
 	int i;
+	eprintf ("Available Hashes: \n");
 	for (i = 0; ; i++) {
 		bits = ((ut64)1) << i;
 		const char *name = r_hash_name (bits);
 		if (!name || !*name) break;
-		printf ("%s\n", name);
+		printf ("  %s\n", name);
+	}
+	eprintf ("\n");
+	eprintf ("Available Crypto Algos: \n");
+	for (i = 0; ; i++) {
+		bits = ((ut64)1) << i;
+		const char *name = r_crypto_name (bits);
+		if (!name || !*name) break;
+		printf ("  %s\n", name);
 	}
 }
 

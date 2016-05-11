@@ -198,8 +198,22 @@ static void cmd_write_op (RCore *core, const char *input) {
 				encrypt_or_decrypt_block (core, algo, key, direction, iv);
 			} else {
 				eprintf ("Usage: wo%c [algo] [key] [IV]\n", ((!direction)?'E':'D'));
-				eprintf ("TODO: list currently supported crypto algorithms\n");
-				eprintf ("  rc2, rc4, xor, blowfish, aes, rot, ror, rol\n");
+				eprintf ("Currently supported hashes:\n");
+				ut64 bits;
+				int i;
+				for (i = 0; ; i++) {
+					bits = ((ut64)1) << i;
+					const char *name = r_hash_name (bits);
+					if (!name || !*name) break;
+						printf ("  %s\n", name);
+				}
+				eprintf ("Currently supported crypto algos:\n");
+				for (i = 0; ; i++) {
+					bits = ((ut64)1) << i;
+					const char *name = r_crypto_name (bits);
+					if (!name || !*name) break;
+						printf ("  %s\n", name);
+				}
 			}
 			free (args);
 		}
