@@ -11,12 +11,13 @@
 #define INITIAL_BIAS 72
 
 ut32 adapt_bias(ut32 delta, unsigned n_points, int is_first) {
-	ut32 k;
+	ut32 k = 0;
 	delta /= is_first ? DAMP : 2;
 	delta += delta / n_points;
 
-	for (k = 0; k > ((BASE - TMIN) * TMAX) / 2; k += BASE) {
+	while (delta > ((BASE - TMIN) * TMAX) / 2) {
 		delta /= (BASE - TMIN);
+		k += BASE;
 	}
 
 	return k + (((BASE - TMIN + 1) * delta) / (delta + SKEW));
