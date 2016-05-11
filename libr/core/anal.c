@@ -2589,6 +2589,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 	mycore = core;
 	if (!strcmp (str, "?")) {
 		eprintf ("Usage: aae[f] [len] - analyze refs in function, section or len bytes with esil\n");
+		eprintf ("  aae $SS @ $S      - analyze the whole section\n");
 		return;
 	}
 	if (!strcmp (str, "f")) {

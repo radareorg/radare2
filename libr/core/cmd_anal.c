@@ -4044,7 +4044,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				if (input[1] == 'a') { // "aaaa"
 					rowlog (core, "Emulate code to find computed references (aae)");
-					r_core_cmd0 (core, "aae @ $S");
+					r_core_cmd0 (core, "aae $SS @ $S");
 					rowlog_done (core);
 					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
