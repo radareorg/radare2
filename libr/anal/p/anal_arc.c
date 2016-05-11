@@ -425,7 +425,12 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			/* TODO: cond codes */
 		} else {
 			/* Branch Unconditional Far 0x00 [0x1] */
-			fields.limm |= fields.c << 21;
+			fields.limm |= (fields.c & 0x0f) << 21;
+			/* the mask tries to make it clear to static code
+			   analysis that this field will not overflow.
+			   TODO:
+			   - work out a way that doesnt generate code output
+			 */
 			fields.limm = sex_s25 (fields.limm);
 			op->type = R_ANAL_OP_TYPE_JMP;
 		}
@@ -470,7 +475,14 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 				/* TODO: cond codes */
 			} else {
 				/* Branch and Link Unconditional Far, 0x01, [0x0, 0x1] */
-				fields.limm |= fields.c << 21;
+				fields.limm |= (fields.c & 0x0f) << 21;
+				/* the mask tries to make it clear to
+				   static code analysis that this field
+				   will not overflow.
+				   TODO:
+				   - work out a way that doesnt generate
+				   code output
+				 */
 				fields.limm = sex_s25 (fields.limm);
 				op->type = R_ANAL_OP_TYPE_CALL;
 			}
