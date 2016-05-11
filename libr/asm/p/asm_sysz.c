@@ -57,6 +57,7 @@ RAsmPlugin r_asm_plugin_sysz = {
 	.license = "BSD",
 	.arch = "sysz",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_BIG,
 	.fini = the_end,
 	.disassemble = &disassemble,
 };

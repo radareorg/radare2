@@ -17,11 +17,8 @@ RAsmPlugin r_asm_plugin_ws = {
 	.arch = "whitespace",
 	.license = "LGPL3",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = &disassemble,
-	.modify = NULL,
-	.assemble = NULL
+	.endian = R_SYS_ENDIAN_NONE,
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

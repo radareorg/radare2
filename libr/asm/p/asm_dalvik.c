@@ -429,7 +429,7 @@ static int dalvik_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	// TODO: use a hashtable here
 	for (i=0; i<256; i++)
 		if (!strcmp (dalvik_opcodes[i].name, buf)) {
-			r_mem_copyendian (op->buf, (void*)&i, 4, a->big_endian);
+			r_write_ble32 (op->buf, i, a->big_endian);
 			op->size = dalvik_opcodes[i].len;
 			return op->size;
 		}
@@ -442,9 +442,9 @@ RAsmPlugin r_asm_plugin_dalvik = {
 	.license = "LGPL3",
 	.desc = "AndroidVM Dalvik",
 	.bits = 32 | 64,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &dalvik_disassemble,
 	.assemble = &dalvik_assemble,
-	0
 };
 
 #ifndef CORELIB

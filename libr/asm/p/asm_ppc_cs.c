@@ -16,13 +16,12 @@ static bool the_end(void *p) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = 0;
-	int mode = 0, n, ret;
+	int n, ret;
 	ut64 off = a->pc;
 	cs_insn* insn;
+	
+	int mode = (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 
-	if (a->big_endian) {
-		mode = CS_MODE_BIG_ENDIAN;
-	}
 	if (handle && mode != omode) {
 		cs_close (&handle);
 		handle = 0;
@@ -59,6 +58,7 @@ RAsmPlugin r_asm_plugin_ppc_cs = {
 	.license = "BSD",
 	.arch = "ppc",
 	.bits = 32|64,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.fini = the_end,
 	.disassemble = &disassemble,
 };

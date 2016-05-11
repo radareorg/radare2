@@ -168,7 +168,7 @@ R_API RSocketRapServer *r_socket_rap_server_create (const char *pathname);
 R_API void r_socket_rap_server_free (RSocketRapServer *rap_s);
 R_API int r_socket_rap_server_listen (RSocketRapServer *rap_s, const char *certfile);
 R_API RSocket* r_socket_rap_server_accept (RSocketRapServer *rap_s);
-R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s);
+R_API bool r_socket_rap_server_continue (RSocketRapServer *rap_s);
 
 /* run.c */
 #define R_RUN_PROFILE_NARGS 512

@@ -48,7 +48,7 @@ return strdup (
 "gpr	si	.16	72	0\n"
 "gpr	sil	.8	72	0\n"
 "gpr	rbp	.64	80	0\n"
-"gpr	rbp	.32	80	0\n"
+"gpr	ebp	.32	80	0\n"
 "gpr	bp	.16	80	0\n"
 "gpr	bpl	.8	80	0\n"
 "gpr	rbx	.64	88	0\n"

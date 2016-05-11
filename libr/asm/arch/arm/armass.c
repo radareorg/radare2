@@ -245,9 +245,7 @@ static ut32 getshift(const char *str) {
 		}
 	}
 
-	r_mem_copyendian ((ut8*)&shift, (const ut8*)&i, sizeof (ut32), 0);
-
-	return shift;
+	return i;
 }
 
 static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
@@ -404,8 +402,8 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 			return 0;
 		}
 		ut16 opcode = 0xe000 | ((delta / 2) & 0x7ff);	//11bit offset>>1
-		ao->o = opcode >>8;
-		ao->o |= (opcode & 0xff)<<8;	// (ut32) ao->o holds the opcode in little-endian format !?
+		ao->o = opcode >> 8;
+		ao->o |= (opcode & 0xff) << 8;    // XXX (ut32) ao->o holds the opcode in little-endian format !?
 		return 2;
 	} else
 	if (!strcmpnull (ao->op, "bx")) {

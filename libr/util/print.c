@@ -173,7 +173,7 @@ R_API RPrint *r_print_new() {
 	p->stride = 0;
 	p->bytespace = 0;
 	p->interrupt = 0;
-	p->big_endian = CPU_ENDIAN;
+	p->big_endian = false;
 	p->datezone = 0;
 	p->col = 0;
 	p->width = 78;
@@ -195,6 +195,8 @@ R_API RPrint *r_print_new() {
 	p->row_offsets_sz = 0;
 	p->row_offsets = NULL;
 	p->vflush = true;
+	p->screen_bounds = 0;
+	memset (&p->consbind, 0, sizeof (p->consbind));
 	return p;
 }
 
@@ -446,11 +448,11 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		break;
 	case 'P':
 	case 'p':
-		p->cb_printf ("import struct\nbuf = struct.pack (\"%dB\", ", len);
+		p->cb_printf ("import struct\nbuf = struct.pack (\"%dB\", *[", len);
 		for (i=0; !p->interrupt && i<len; i++) {
 			if (!(i%w)) p->cb_printf ("\n");
 			r_print_cursor (p, i, 1);
-			p->cb_printf ("0x%02x%c", buf[i], (i+1<len)?',':')');
+			p->cb_printf ("0x%02x%s", buf[i], (i+1<len)?",":"])");
 			r_print_cursor (p, i, 0);
 		}
 		p->cb_printf ("\n");
@@ -540,7 +542,7 @@ R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len) {
 		p->cb_printf ("%02x ", buf[i]);
 }
 
-static int check_sparse (const ut8 *p, int len, int ch) {
+static int check_sparse(const ut8 *p, int len, int ch) {
 	int i;
 	ut8 q = *p;
 	if (ch && ch != q)
@@ -551,7 +553,75 @@ static int check_sparse (const ut8 *p, int len, int ch) {
 	return 1;
 }
 
-// XXX: step is borken
+static bool isAllZeros (const ut8*buf, int len) {
+	int i;
+	for (i = 0; i < len; i++) {
+		if (buf[i] != 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
+#define Pal(x) (rp->cons && rp->cons->pal.x)? rp->cons->pal.x
+        PrintfCallback p = (PrintfCallback) rp->cb_printf;
+	bool c = rp->flags & R_PRINT_FLAGS_COLOR;
+	const char *color_0xff = c? (Pal(b0xff): Color_RED): "";
+	const char *color_text = c? (Pal(btext): Color_MAGENTA): "";
+	const char *color_other = c? (Pal(other): Color_WHITE): "";
+	const char *color_reset = c? Color_RESET: "";
+	int i, j;
+
+	if (rp->flags & R_PRINT_FLAGS_HEADER) {
+		p ("         ");
+		for (i = 0; i < step; i++) {
+			p ("%3X", i);
+		}
+		p ("\n");
+	}
+
+	for (i = 0; i < len; i += step) {
+		int inc = R_MIN (step, (len - i));
+		if (isAllZeros (buf + i, inc)) {
+			continue;
+		}
+		p ("%8X:", addr + i);
+		for (j = 0; j < inc; j ++) {
+			ut8 ch = buf[i + j];
+			if (ch == 0x00) {
+				p ("   ");
+			} else if (ch == 0xff) {
+				p ("%s ##%s", color_0xff, color_reset);
+			} else if (IS_PRINTABLE (ch)) {
+				p ("%s .%c%s", color_text, ch, color_reset);
+			} else {
+				p ("%s %02x%s", color_other, ch, color_reset);
+			}
+		}
+		p ("\n");
+	}
+	p ("%8X ]\n", addr + i);
+}
+
+/* set screen_bounds to addr if the cursor is not visible on the screen anymore.
+ * Note: screen_bounds is set only the first time this happens. */
+R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
+	int r, rc;
+
+	if (!p->screen_bounds) return;
+	if (!p->consbind.get_size) return;
+	if (!p->consbind.get_cursor) return;
+
+	(void)p->consbind.get_size (&r);
+	(void)p->consbind.get_cursor (&rc);
+
+	if (rc > r - 1 && p->screen_bounds == 1) {
+		p->screen_bounds = addr;
+	}
+}
+
+// XXX: step is broken
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step) {
         PrintfCallback printfmt = (PrintfCallback) printf;
 	int i, j, k, inc = 16;
@@ -596,7 +666,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_header = false;
 	}
 	if (use_header) {
-		if (base < 32 ) { //&& step != 2) {
+		if (base < 32 ) {
 			ut32 opad = (ut32)(addr >> 32);
 			{ // XXX: use r_print_addr_header
 				int i, delta;
@@ -639,6 +709,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	if (p) p->interrupt = 0;
 	//for (i=j=0; (p&&!p->interrupt) && i<len; i+=(stride?stride:inc), j+=(stride?stride:0)) {
 	for (i=j=0; i<len; i+=(stride?stride:inc), j+=(stride?stride:0)) {
+		r_print_set_screenbounds (p, addr + i);
 		if (use_sparse) {
 			if (check_sparse (buf+i, inc, sparse_char)) {
 				if (i+inc>=len || check_sparse (buf+i+inc, inc, sparse_char)) {
@@ -687,7 +758,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					sz_n = step == 2 ? sizeof (ut16) : sizeof (ut32);
 				}
 				sz_n = R_MIN (left, sz_n);
-				r_mem_copyendian ((ut8*)&n, buf+j, sz_n, !p->big_endian);
+				memcpy ((ut8*)&n, buf+j, sz_n);
 				r_print_cursor (p, j, 1);
 				// stub for colors
 				if (p && p->colorfor) {

@@ -22,11 +22,8 @@ RAsmPlugin r_asm_plugin_spc700 = {
 	.arch = "spc700",
 	.license = "LGPL3",
 	.bits = 16,
-	.init = NULL,
-	.fini = NULL,
+	.endian = R_SYS_ENDIAN_NONE, // is this LE?
 	.disassemble = &disassemble,
-	.modify = NULL,
-	.assemble = NULL,
 };
 
 #ifndef CORELIB

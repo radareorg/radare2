@@ -74,7 +74,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.stream = stdout;
 
 	op->buf_asm[0] = '\0';
-	if (a->big_endian)
+	if (disasm_obj.endian == BFD_ENDIAN_BIG)
 		op->size = print_insn_shb ((bfd_vma)Offset, &disasm_obj);
 	else
 		op->size = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
@@ -89,11 +89,9 @@ RAsmPlugin r_asm_plugin_sh = {
 	.arch = "sh",
 	.license = "GPL3",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "SuperH-4 CPU",
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = &disassemble,
-	.assemble = NULL
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

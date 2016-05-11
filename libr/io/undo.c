@@ -87,7 +87,7 @@ R_API void r_io_sundo_reset(RIO *io) {
 	io->undo.redos = 0;
 }
 
-R_API void r_io_sundo_list(RIO *io) {
+R_API void r_io_sundo_list(RIO *io, int mode) {
 	int idx, undos, redos, i, j, start, end;
 
 	if (!io->undo.s_enable)
@@ -104,15 +104,44 @@ R_API void r_io_sundo_list(RIO *io) {
 	end   = (idx + redos + 1) % R_IO_UNDOS;
 
 	j = 0;
-	for (i = start; i != end || j == 0; i = (i + 1) % R_IO_UNDOS) {
-		if (j < undos) {
-			io->cb_printf ("f undo_%d @ 0x%"PFMT64x"\n", undos - j - 1, io->undo.seek[i]);
-		} else if (j == undos && j != 0 && redos != 0) {
-			io->cb_printf ("# Current undo/redo position.\n");
-		} else if (j != undos) {
-			io->cb_printf ("f redo_%d @ 0x%"PFMT64x"\n", j - undos - 1, io->undo.seek[i]);
+	switch (mode) {
+	case 'j':
+		io->cb_printf ("[");
+		break;
+	}
+	for (i = start; i < end || j == 0; i = (i + 1) % R_IO_UNDOS) {
+		int idx = (j< undos)? undos - j - 1: j - undos - 1;
+		ut64 addr = io->undo.seek[i];
+		ut64 notLast = j+1<undos && (i != end - 1);
+		switch (mode) {
+		case '=':
+			if (j < undos) {
+				io->cb_printf ("0x%"PFMT64x"%s", addr, notLast? " > ": "");
+			}
+			break;
+		case 'j':
+			if (j < undos) {
+				io->cb_printf ("%"PFMT64d"%s", addr, notLast? ",": "");
+			}
+			break;
+		case '*':
+			if (j < undos) {
+				io->cb_printf ("f undo_%d @ 0x%"PFMT64x"\n", idx, addr);
+			} else if (j == undos && j != 0 && redos != 0) {
+				io->cb_printf ("# Current undo/redo position.\n");
+			} else if (j != undos) {
+				io->cb_printf ("f redo_%d @ 0x%"PFMT64x"\n", idx, addr);
+			}
 		}
 		j++;
+	}
+	switch (mode) {
+	case '=':
+		io->cb_printf ("\n");
+		break;
+	case 'j':
+		io->cb_printf ("]\n");
+		break;
 	}
 }
 

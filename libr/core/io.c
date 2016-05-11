@@ -175,27 +175,21 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 		if (wordsize<1) wordsize = 1;
 		if (wordsize == 1) {
 			for (i=n=0; i<core->blocksize; i++, n+= step)
-				buf[i] = (ut8)(n%dif)+from;
+				buf[i] = (ut8)(n % dif) + from;
 		} else if (wordsize == 2) {
 			ut16 num16 = from;
-			for (i=0; i<core->blocksize; i+=wordsize, num16 += step) {
-				r_mem_copyendian ((ut8*)buf+i,
-					(ut8*)&num16, sizeof (ut16),
-					!core->assembler->big_endian);
+			for (i = 0; i < core->blocksize; i += wordsize, num16 += step) {
+				r_write_le16 (buf + i, num16);
 			}
 		} else if (wordsize == 4) {
 			ut32 num32 = from;
-			for (i=0; i<core->blocksize; i += wordsize, num32 += step) {
-				r_mem_copyendian ((ut8*)buf+i,
-					(ut8*)&num32, sizeof (ut32),
-					!core->assembler->big_endian);
+			for (i = 0; i < core->blocksize; i += wordsize, num32 += step) {
+				r_write_le32 (buf + i, num32);
 			}
 		} else if (wordsize == 8) {
 			ut64 num64 = from;
-			for (i=0; i<core->blocksize; i+=wordsize, num64 += step) {
-				r_mem_copyendian ((ut8*)buf+i,
-					(ut8*)&num64, sizeof (ut64),
-					!core->assembler->big_endian);
+			for (i = 0; i < core->blocksize; i += wordsize, num64 += step) {
+				r_write_le64 (buf + i, num64);
 			}
 		} else {
 			eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
@@ -290,9 +284,9 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 		ret = r_core_block_read (core, 0);
 		if (core->io->ff) {
 			if (ret < 1 || ret > core->blocksize)
-				memset (core->block, 0xff, core->blocksize);
+				memset (core->block, core->io->Oxff, core->blocksize);
 			else
-				memset (core->block+ret, 0xff, core->blocksize-ret);
+				memset (core->block+ret, core->io->Oxff, core->blocksize-ret);
 			ret = core->blocksize;
 			core->offset = addr;
 		} else {
@@ -414,7 +408,7 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 	RCoreFile *file = NULL;
 
 	r_list_foreach (core->files, iter, file) {
-		if (file && file->desc){
+		if (file && file->desc) {
 			core->io->raised = file->desc->fd;
 			core->switch_file_view = 1;
 			break;
@@ -425,7 +419,7 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 
 R_API int r_core_block_read(RCore *core, int next) {
 	if (core->file == NULL && r_core_file_set_first_valid(core) == NULL) {
-		memset (core->block, 0xff, core->blocksize);
+		memset (core->block, core->io->Oxff, core->blocksize);
 		return -1;
 	}
 	if (core->file && core->switch_file_view) {
@@ -440,8 +434,8 @@ R_API int r_core_block_read(RCore *core, int next) {
 
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	if (!core->io || !core->file || !core->file->desc || size<1) {
-		if (size>0)
-			memset (buf, 0xff, size);
+		if (size > 0)
+			memset (buf, core->io->Oxff, size);
 		return false;
 	}
 	r_io_use_desc (core->io, core->file->desc);

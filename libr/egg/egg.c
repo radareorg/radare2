@@ -245,7 +245,7 @@ R_API int r_egg_assemble(REgg *egg) {
 	if (egg->remit == &emit_x86 || egg->remit == &emit_x64) {
 		r_asm_use (egg->rasm, "x86.nz");
 		r_asm_set_bits (egg->rasm, egg->bits);
-		r_asm_set_big_endian (egg->rasm, 0);
+		r_asm_set_big_endian (egg->rasm, egg->endian);
 		r_asm_set_syntax (egg->rasm, R_ASM_SYNTAX_INTEL);
 
 		code = r_buf_to_string (egg->buf);
@@ -259,7 +259,7 @@ R_API int r_egg_assemble(REgg *egg) {
 	if (egg->remit == &emit_arm) {
 		r_asm_use (egg->rasm, "arm");
 		r_asm_set_bits (egg->rasm, egg->bits);
-		r_asm_set_big_endian (egg->rasm, egg->endian); // XXX
+		r_asm_set_big_endian (egg->rasm, egg->endian);
 		r_asm_set_syntax (egg->rasm, R_ASM_SYNTAX_INTEL);
 
 		code = r_buf_to_string (egg->buf);

@@ -32,8 +32,9 @@ RAsmPlugin r_asm_plugin_lh5801 = {
 	.arch = "LH5801",
 	.license = "LGPL3",
 	.bits = 8,
+	.endian = R_SYS_ENDIAN_NONE,
 	.desc = "SHARP LH5801 disassembler",
-	.disassemble = &disassemble,
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

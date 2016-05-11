@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+#include "r_core.h"
 
 static void showhelp(RCore *core) {
 	const char* help_msg[] = {

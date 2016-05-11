@@ -46,6 +46,7 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	case 'r':
 	case 'v':
 	case 'A': // fastcall based argument
+	case 'e':
 		break;
 	default:
 		eprintf ("Invalid var kind '%c'\n", kind);
@@ -96,6 +97,7 @@ R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kin
 	case 'r':
 	case 'v':
 	case 'A':
+	case 'e':
 		break;
 	default:
 		eprintf ("Invalid var kind '%c'\n", kind);
@@ -464,6 +466,12 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 							var->delta);
 					}
 					break;
+				case 'e':
+					anal->cb_printf ("{\"name\":\"%s\","
+						"\"kind\":\"var\",\"type\":\"%s\",\"ref\":\"%s+0x%x\"}",
+						var->name, var->type,anal->reg->name[R_REG_NAME_SP],
+						var->delta);
+					break;
 				}
 				if (iter->n) anal->cb_printf (",");
 				break;
@@ -494,6 +502,12 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 							anal->reg->name[R_REG_NAME_BP],
 							var->delta);
 					}
+					break;
+				case 'e':
+					anal->cb_printf ("var %s %s @ %s+0x%x\n",
+						var->type, var->name,
+						anal->reg->name[R_REG_NAME_SP],
+						var->delta);
 					break;
 				}
 			}

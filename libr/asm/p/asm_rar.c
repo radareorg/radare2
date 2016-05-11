@@ -26,11 +26,10 @@ RAsmPlugin r_asm_plugin_rar = {
 	.arch = "rar",
 	.license = "LGPL3",
 	.bits = 1,
+	.endian = R_SYS_ENDIAN_NONE,
 	.desc = "RAR VM",
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = &assemble 
+	.assemble = &assemble
 };
 
 #ifndef CORELIB

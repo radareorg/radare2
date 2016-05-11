@@ -20,6 +20,7 @@ RAsmPlugin r_asm_plugin_6502 = {
 	.desc = "6502/NES/C64/Tamagotchi/T-1000 CPU",
 	.arch = "6502",
 	.bits = 8|16,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.license = "LGPL3",
 	.disassemble = &disassemble,
 };

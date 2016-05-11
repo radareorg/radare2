@@ -20,9 +20,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn = NULL;
-	cs_mode mode = 0;
 	int ret, n = 0;
-	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	cs_mode mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
 		cs_close (&cd);
 		cd = 0; // unnecessary
@@ -106,8 +105,8 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.license = "BSD",
 	.arch = "m68k",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
-	.features = NULL
 };
 
 static bool check_features(RAsm *a, cs_insn *insn) {
@@ -130,6 +129,7 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.license = "BSD",
 	.arch = "m68k",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 };
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,

@@ -1,4 +1,10 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
+#include "r_asm.h"
+#include "r_core.h"
+#include "r_config.h"
+#include "r_print.h"
+#include "r_types.h"
+#include "r_util.h"
 
 #define R_CORE_MAX_DISASM (1024*1024*8)
 
@@ -1101,11 +1107,11 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 						r_anal_op (core->anal, &aop, core->offset+i,
 							core->block+i, core->blocksize-i);
 						r_parse_filter (core->parser, core->flags,
-							asm_str, opstr, sizeof (opstr)-1);
+							asm_str, opstr, sizeof (opstr)-1, core->print->big_endian);
 						r_cons_printf ("%s%s"Color_RESET"\n", r_print_color_op_type (core->print, aop.type), opstr);
 					} else {
 						r_parse_filter (core->parser, core->flags,
-							asmop.buf_asm, opstr, sizeof (opstr)-1);
+							asmop.buf_asm, opstr, sizeof (opstr)-1, core->print->big_endian);
 						r_cons_printf ("%s\n", opstr);
 					}
 				} else {
@@ -1619,14 +1625,36 @@ static void cmd_print_pv(RCore *core, const char *input) {
 		break;
 	default:
 		{
-			ut64 v = r_mem_get_num (core->block, n, !core->print->big_endian);
+			ut64 v;
+			ut64 mask = UT64_MAX;
 			if (!fixed_size) n = 0;
 			switch (n) {
-			case 1: r_cons_printf ("0x%02" PFMT64x "\n", v); break;
-			case 2: r_cons_printf ("0x%04" PFMT64x "\n", v); break;
-			case 4: r_cons_printf ("0x%08" PFMT64x "\n", v); break;
-			case 8: r_cons_printf ("0x%016" PFMT64x "\n", v); break;
-			default: r_cons_printf ("0x%" PFMT64x "\n", v); break;
+			case 1:
+				v = r_read_ble8 (core->block);
+				r_cons_printf ("0x%02" PFMT64x "\n", v);
+				break;
+			case 2:
+				v = r_read_ble16 (core->block, core->print->big_endian);
+				r_cons_printf ("0x%04" PFMT64x "\n", v);
+				break;
+			case 4:
+				v = r_read_ble32 (core->block, core->print->big_endian);
+				r_cons_printf ("0x%08" PFMT64x "\n", v);
+				break;
+			case 8:
+				v = r_read_ble64 (core->block, core->print->big_endian);
+				r_cons_printf ("0x%016" PFMT64x "\n", v);
+				break;
+			default:
+				switch (core->assembler->bits / 8) {
+				case 1: mask = UT8_MAX; break;
+				case 2: mask = UT16_MAX; break;
+				case 4: mask = UT32_MAX; break;
+				default: break;
+				}
+				v = r_read_ble64 (core->block, core->print->big_endian);
+				r_cons_printf ("0x%0x\n", v & mask);
+				break;
 			}
 		}
 		//r_core_cmd0 (core, "?v [$$]");
@@ -2116,10 +2144,17 @@ static int cmd_print(void *data, const char *input) {
 				" esil (pae) from hexpairs\n");
 		} else {
 			RAsmCode *acode;
+			int i;
+			int bytes;
 			r_asm_set_pc (core->assembler, core->offset);
 			acode = r_asm_massemble (core->assembler, input+1);
 			if (acode && *acode->buf_hex) {
-				r_cons_printf ("%s\n", acode->buf_hex);
+				bytes = strlen (acode->buf_hex) >> 1;
+				for (i = 0; i < bytes; i++) {
+					ut8 b = acode->buf[ core->print->big_endian? (bytes - 1 - i): i ];
+					r_cons_printf ("%02x", b);
+				}
+				r_cons_newline ();
 				r_asm_code_free (acode);
 			}
 		}
@@ -2238,7 +2273,7 @@ static int cmd_print(void *data, const char *input) {
 						r_cons_printf ("???\n");
 					} else {
 						r_parse_filter (core->parser, core->flags, asmop.buf_asm,
-								str, sizeof (str));
+								str, sizeof (str), core->print->big_endian);
 						if (colors_on) {
 							RAnalOp aop;
 							r_anal_op (core->anal, &aop, addr, buf+i, l-i);
@@ -2815,7 +2850,10 @@ static int cmd_print(void *data, const char *input) {
 				"| e dir.magic  # defaults to "R_MAGIC_PATH"\n"
 				"| /m           # search for magic signatures\n"
 				);
-		} else r_core_magic (core, input+1, true);
+		} else {
+			// XXX: need cmd_magic header for r_core_magic
+			r_core_magic (core, input+1, true);
+		}
 		break;
 	case 'u': //pu
 		if (input[1]=='?') {
@@ -2827,7 +2865,7 @@ static int cmd_print(void *data, const char *input) {
 					((input[1]=='w')?R_PRINT_STRING_WIDE:0));
 		}
 		break;
-	case 'c': //pc
+	case 'c': // "pc"
 		r_print_code (core->print, core->offset, core->block, len, input[1]);
 		break;
 	case 'r': // "pr"
@@ -2937,6 +2975,7 @@ static int cmd_print(void *data, const char *input) {
 				"pxb", "", "dump bits in hexdump form",
 				"pxd", "[124]", "signed integer dump (1 byte, 2 and 4)",
 				"pxe", "", "emoji hexdump! :)",
+				"pxi", "", "HexII compact binary representation",
 				"pxf", "", "show hexdump of current function",
 				"pxh", "", "show hexadecimal half-words dump (16bit)",
 				"pxH", "", "same as above, but one per line",
@@ -2986,8 +3025,10 @@ static int cmd_print(void *data, const char *input) {
 #define P(x) (IS_PRINTABLE(x)?x:'.')
 #define SPLIT_BITS(x) memmove (x + 5, x + 4, 5); x[4]=0
 			for (i = c = 0; i < len; i++,c++) {
-				if (c == 0) r_print_offset (core->print,
-							core->offset+i, 0, 0, 0);
+				if (c == 0) {
+					r_print_offset (core->print,
+						core->offset + i, 0, 0, 0);
+				}
 				r_str_bits (buf, core->block+i, 8, NULL);
 				SPLIT_BITS (buf);
 				r_cons_printf ("%s.%s  ", buf, buf+5);
@@ -3002,6 +3043,10 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			}
+			break;
+		case 'i': // "pxi"
+			r_print_hexii (core->print, core->offset, core->block,
+				core->blocksize, r_config_get_i (core->config, "hex.cols"));
 			break;
 		case 'o': // "pxo"
 			r_print_hexdump (core->print, core->offset,
@@ -3041,12 +3086,9 @@ static int cmd_print(void *data, const char *input) {
 				char *fn;
 				RPrint *p = core->print;
 				RFlagItem *f;
-				ut32 *v = (ut32*)((ut8*)core->block+i);
-				r_mem_copyendian ((ut8*)v, (ut8*)v, 4,
-						!core->print->big_endian);
-
+				ut32 v = r_read_ble32 (core->block + i, core->print->big_endian);
 				if (p && p->colorfor) {
-					a = p->colorfor (p->user, *v);
+					a = p->colorfor (p->user, v);
 					if (a && *a) {
 						b = Color_RESET;
 					} else {
@@ -3055,21 +3097,21 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					a = b = "";
 				}
-				f = r_flag_get_at (core->flags, *v);
+				f = r_flag_get_at (core->flags, v);
 				fn = NULL;
 				if (f) {
-					st64 delta = (*v - f->offset);
+					st64 delta = (v - f->offset);
 					if (delta >= 0 && delta < 8192) {
-						if (*v == f->offset) {
+						if (v == f->offset) {
 							fn = strdup (f->name);
 						} else {
 							fn = r_str_newf ("%s+%d",
-								f->name, *v-f->offset);
+								f->name, v-f->offset);
 						}
 					}
 				}
 				r_cons_printf ("0x%08"PFMT64x" %s0x%08"PFMT64x"%s %s\n",
-					(ut64)core->offset+i, a, (ut64)*v, b, fn? fn: "");
+					(ut64)core->offset+i, a, (ut64)v, b, fn? fn: "");
 				free (fn);
 			}
 			break;
@@ -3129,10 +3171,7 @@ static int cmd_print(void *data, const char *input) {
 				char *fn;
 				RPrint *p = core->print;
 				RFlagItem *f;
-				ut64 v;
-				r_mem_copyendian ((ut8*)&v,
-					(const ut8*)(ut64*)(core->block+i), 2,
-					!core->assembler->big_endian);
+				ut64 v = (ut64)r_read_ble16 (core->block + i, p->big_endian);
 				if (p && p->colorfor) {
 					a = p->colorfor (p->user, v);
 					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
@@ -3163,10 +3202,7 @@ static int cmd_print(void *data, const char *input) {
 				char *fn;
 				RPrint *p = core->print;
 				RFlagItem *f;
-				ut64 v;
-				r_mem_copyendian ((ut8*)&v,
-					(const ut8*)(ut64*)(core->block+i), 8,
-					!core->assembler->big_endian);
+				ut64 v = r_read_ble64 (core->block + i, p->big_endian);
 				if (p && p->colorfor) {
 					a = p->colorfor (p->user, v);
 					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
@@ -3345,9 +3381,11 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '8': // "p8"
 		if (input[1] == '?') {
-			r_cons_printf("|Usage: p8[j] [len]     8bit hexpair list of bytes (see pcj)\n");
+			r_cons_printf("|Usage: p8[fj] [len]     8bit hexpair list of bytes (see pcj)\n");
 		} else if (input[1] == 'j') {
 			r_core_cmdf (core, "pcj %s", input+2);
+		} else if (input[1] == 'f') {
+			r_core_cmdf (core, "p8 $F @ $B");
 		} else r_print_bytes (core->print, core->block, len, "%02x");
 		break;
 	case 'f': // "pf"
@@ -3417,12 +3455,10 @@ static int cmd_print(void *data, const char *input) {
 				r_print_date_dos (core->print, core->block+l, sizeof (ut32));
 			break;
 		case 'n':
-			core->print->big_endian = !core->print->big_endian;
 			if (len < sizeof (ut64)) eprintf ("You should change the block size: b %d\n", (int)sizeof (ut64));
 			if (len % sizeof (ut64) != 0) len = len - (len % sizeof (ut64));
 			for (l=0; l<len; l+=sizeof (ut64))
 				r_print_date_w32 (core->print, core->block+l, sizeof (ut64));
-			core->print->big_endian = !core->print->big_endian;
 			break;
 		case '?':{
 			const char* help_msg[] = {

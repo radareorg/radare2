@@ -1,4 +1,9 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
+#include <stddef.h>
+
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_util.h"
 
 static const char* findBreakChar(const char *s) {
 	while (*s) {
@@ -146,6 +151,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'd':
 		if (input[1]=='.'){
 			int cur = R_MAX(core->print->cur, 0);
+			// XXX: we need cmd_xxx.h (cmd_anal.h)
 			core_anal_bytes(core, core->block + cur, core->blocksize, 1, 'd');
 		} else if (input[1]==' '){
 			char *d = r_asm_describe (core->assembler, input+2);
@@ -219,13 +225,8 @@ static int cmd_help(void *data, const char *input) {
 			if (core->num->dbz) {
 				eprintf ("RNum ERROR: Division by Zero\n");
 			}
-			n32 = (ut32)n;
-			{
-				ut64 nn;
-				int be = core->assembler->big_endian;
-				r_mem_copyendian ((ut8*)&nn, (ut8*)&n, sizeof(n), !be);
-				asnum  = r_num_as_string (NULL, nn);
-			}
+			n32 = (ut32)(n & UT32_MAX);
+			asnum  = r_num_as_string (NULL, n);
 			memcpy (&f, &n32, sizeof (f));
 			memcpy (&d, &n, sizeof (d));
 
@@ -412,7 +413,7 @@ static int cmd_help(void *data, const char *input) {
 			else r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, R2_GITTAP, R2_VERSION_COMMIT);
 		}
 		if (input[1] == 'j' && !input[2]){
-			r_cons_printf ("{\"system\":\"%s-%s-%s\"", R_SYS_OS, R_SYS_ENDIAN, R_SYS_ARCH);
+			r_cons_printf ("{\"system\":\"%s-%s\"", R_SYS_OS, R_SYS_ARCH);
 			r_cons_printf (",\"version\":\"%s\"}\n",  R2_VERSION);
 		}
 		break;

@@ -670,13 +670,17 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_SADD16:
 	case ARM_INS_SADD8:
 	case ARM_INS_ADD:
-		if (!strcmp (ARG(2), "")) {
+		if (strcmp (ARG(2), "")) {
 			if (!strcmp (ARG(1), "pc")) {
 				// that 2>>2<< is for & 0xfffffffc
 				// (the address of the current instruction + 4) AND &FFFFFFFC.
 				// to clear 2 lower bits
+				int delta = 4;
+				if (a->bits == 32) {
+					delta = 8;
+				}
 				r_strbuf_appendf (&op->esil,
-				"4,%"PFMT64d",+,%s,+=", op->addr, ARG(0));
+				"%d,%"PFMT64d",+,%s,+=", delta, op->addr, ARG(0));
 				//"2,2,4,%s,+,>>,<<,%s,+=", ARG(1), ARG(0));
 				//"2,2,4,%"PFMT64d",+,>>,<<,%s,+=", op->addr, ARG(0));
 				//"4,%s,+,0xfffffffc,&,%s,+=", ARG(1), ARG(0));
@@ -753,8 +757,12 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 					break;
 				case 32:
 					pcdelta = 4;
-					op->ptr = addr + 8 + MEMDISP(1);
-					op->refptr = 4;
+					if (ISREG(1)) {
+						// cant resolve register values magically
+					} else {
+						op->ptr = addr + 8 + MEMDISP(1);
+						op->refptr = 4;
+					}
 					break;
 				}
 				if (ISMEM(1) && LSHIFT2(1)) {
@@ -835,6 +843,9 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 static void anop64 (RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 	switch (insn->id) {
+	case ARM64_INS_SVC:
+		op->type = R_ANAL_OP_TYPE_SWI;
+		break;
 	case ARM64_INS_ADRP:
 	case ARM64_INS_ADR:
 		op->type = R_ANAL_OP_TYPE_LEA;
@@ -844,6 +855,15 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_SUB:
 		op->type = R_ANAL_OP_TYPE_SUB;
+		if (REGID64(0) == ARM64_REG_SP) {
+			if (REGID64(1) == ARM64_REG_SP) {
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = IMM64(2);
+			} else {
+				op->stackop = R_ANAL_STACK_RESET;
+				op->stackptr = 0;
+			}
+		}
 		break;
 	case ARM64_INS_ADD:
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -853,6 +873,11 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_CMOV;
 		break;
 	case ARM64_INS_MOV:
+		if (REGID64(0) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_RESET;
+			op->stackptr = 0;
+		}
+		/* fallthru */
 	case ARM64_INS_MOVI:
 	case ARM64_INS_MOVK:
 	case ARM64_INS_MOVN:
@@ -1203,8 +1228,19 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
 		// BX LR == RET
-		if (REGID(0) == ARM_REG_LR) {
-			op->type = R_ANAL_OP_TYPE_RET;
+		if (ISREG(0)) {
+			switch (REGID(0)) {
+			case ARM_REG_LR:
+				op->type = R_ANAL_OP_TYPE_RET;
+				break;
+			case ARM_REG_IP:
+				op->type = R_ANAL_OP_TYPE_UJMP;
+				break;
+			default:
+				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->eob = true;
+				break;
+			}
 		} else {
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = IMM(0);

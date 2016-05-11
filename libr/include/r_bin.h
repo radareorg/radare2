@@ -229,6 +229,7 @@ typedef struct r_bin_t {
 	char *srcdir; // dir.source
 	char *prefix; // bin.prefix
 	ut64 filter_rules;
+	bool demanglercmd;
 } RBin;
 
 typedef int (*FREE_XTR)(void *xtr_obj);
@@ -298,6 +299,7 @@ typedef struct r_bin_plugin_t {
 	RList* (*classes)(RBinFile *arch);
 	RList* (*mem)(RBinFile *arch);
 	RList* (*patch_relocs)(RBin *bin);
+	char* (*signature)(RBinFile *arch); 
 	int (*demangle_type)(const char *str);
 	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;
@@ -484,7 +486,7 @@ R_API int r_bin_demangle_type (const char *str);
 R_API char *r_bin_demangle_java(const char *str);
 R_API char *r_bin_demangle_cxx(const char *str);
 R_API char *r_bin_demangle_msvc(const char *str);
-R_API char *r_bin_demangle_swift(const char *s);
+R_API char *r_bin_demangle_swift(const char *s, bool syscmd);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
 R_API int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym);
 R_API bool r_bin_lang_objc(RBinFile *binfile);

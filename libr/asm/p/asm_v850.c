@@ -28,11 +28,8 @@ RAsmPlugin r_asm_plugin_v850 = {
 	.desc = "v850 disassembly plugin",
 	.arch = "v850",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = &disassemble,
-	.modify = NULL,
-	.assemble = NULL
+	.endian = R_SYS_ENDIAN_LITTLE,
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

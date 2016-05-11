@@ -3,12 +3,6 @@
 
 #include "r_version.h"
 
-#ifdef LIL_ENDIAN
-#undef LIL_ENDIAN
-#endif
-#define LIL_ENDIAN @LIL_ENDIAN@
-#define CPU_ENDIAN @BIG_ENDIAN@
-
 #define DEBUGGER @DEBUGGER@
 
 #if __WIN32__ || __CYGWIN__ || MINGW32

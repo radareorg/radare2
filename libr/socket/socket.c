@@ -259,7 +259,6 @@ R_API int r_socket_close_fd (RSocket *s) {
 /* shutdown the socket and close the file descriptor */
 R_API int r_socket_close (RSocket *s) {
 	int ret = false;
-	char buf;
 	if (!s) return false;
 	if (s->fd != -1) {
 #if __UNIX__ || defined(__CYGWIN__)
@@ -269,6 +268,7 @@ R_API int r_socket_close (RSocket *s) {
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/ms740481(v=vs.85).aspx
 		shutdown (s->fd, SD_SEND);
 		do {
+			char buf = 0;
 			ret = recv (s->fd, &buf, 1, 0); 
 		} while (ret != 0 && ret != SOCKET_ERROR);
 		ret = closesocket (s->fd);

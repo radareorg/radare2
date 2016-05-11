@@ -158,12 +158,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	op->buf_asm[0]='\0';
 	if (a->bits==64) {
 		obj.disassembler_options = NULL;
-		/* is endianness ignored on 64bits? */
-		//r_mem_copyendian (bytes, buf, 4, !a->big_endian);
+		memcpy (bytes, buf, 4);
 		op->size = print_insn_aarch64 ((bfd_vma)Offset, &obj);
 	} else {
 		obj.disassembler_options = options;
-		op->size = obj.endian?
+		op->size = (obj.endian == BFD_ENDIAN_LITTLE)?
 			print_insn_little_arm ((bfd_vma)Offset, &obj):
 			print_insn_big_arm ((bfd_vma)Offset, &obj);
 	}
@@ -179,11 +178,9 @@ RAsmPlugin r_asm_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
 	.bits = 16|32|64,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "Acorn RISC Machine CPU",
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL,
 	.license = "GPL3"
 };
 

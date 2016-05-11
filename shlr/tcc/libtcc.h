@@ -94,7 +94,6 @@ LIBTCCAPI int tcc_relocate(TCCState *s1, void *ptr);
 LIBTCCAPI void *tcc_get_symbol(TCCState *s, const char *name);
 
 extern char **tcc_cb_ptr;
-void (*tcc_cb)(const char *, char **);
 
 void tcc_set_callback (TCCState *s, void (*cb)(const char *,char**), char **p);
 

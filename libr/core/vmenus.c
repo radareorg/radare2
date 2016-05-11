@@ -2015,7 +2015,6 @@ R_API void r_core_visual_define (RCore *core) {
 		," h    highlight word"
 		," m    manpage for current call"
 		," n    rename flag used at cursor"
-		," q    quit/cancel operation"
 		," r    rename function"
 		," R    find references /r"
 		," s    set string"
@@ -2024,7 +2023,7 @@ R_API void r_core_visual_define (RCore *core) {
 		," x    find xrefs to current address (./r)"
 		," w    set as 32bit word"
 		," W    set as 64bit word"
-		," q    quit this menu"
+		," q    quit menu"
 		, NULL};
 	{
 		int i;
@@ -2278,12 +2277,12 @@ repeat:
 		}
 		{
 			int funsize = 0;
-			int depth = r_config_get_i (core->config, "anal.depth");
+			//int depth = r_config_get_i (core->config, "anal.depth");
 			if (core->print->cur_enabled) {
 				if (core->print->ocur != -1) {
 					funsize = 1+ R_ABS (core->print->cur - core->print->ocur);
 				}
-				depth = 0;
+				//depth = 0;
 			}
 			r_cons_break (NULL, NULL);
 			r_core_cmd0 (core, "af"); // required for thumb autodetection

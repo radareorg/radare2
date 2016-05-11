@@ -84,7 +84,7 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	if (!strcmp ("w32dbg", d->plugin->name)) {
 		RIOW32Dbg *g = d->data;
 		r->io->desc->fd = g->pid;
-		//r_debug_attach (r->dbg,g->pid);  // no es necesario ya se hacen unos cuantos attach antes y despues ....
+		r_debug_attach (r->dbg,g->pid);
 	}
 	return r->io->winbase;
 #else
@@ -542,7 +542,7 @@ int main(int argc, char **argv, char **envp) {
 	} else if (strcmp (argv[optind-1], "--")) {
 		if (debug) {
 			if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
-			r_config_set (r.config, "search.in", "raw"); // implicit?
+			r_config_set (r.config, "search.in", "dbg.map"); // implicit?
 			r_config_set_i (r.config, "io.va", false); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
 			perms = R_IO_READ | R_IO_WRITE;
@@ -815,6 +815,7 @@ int main(int argc, char **argv, char **envp) {
 		case 1: r_core_cmd0 (&r, "aa"); break;
 		case 2: r_core_cmd0 (&r, "aaa"); break;
 		case 3: r_core_cmd0 (&r, "aaaa"); break;
+		default: r_core_cmd0 (&r, "aaaaa"); break;
 		}
 		r_cons_flush ();
 	}

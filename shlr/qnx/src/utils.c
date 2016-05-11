@@ -82,9 +82,7 @@ static int i386nto_gregset_reg_offset[] = {
 #define NTO_EILSEQ 88
 #define NTO_ENOSYS 89
 
-#if defined(__QNXNTO__) || defined(__SOLARIS__)
-#define errnoconvert(x) x
-#elif defined(__linux__) || defined(__WINDOWS__) || defined(__APPLE__) || defined(__CYGWIN__) || defined(MINGW32) || defined(__NetBSD__)
+#if defined(__linux__) || defined(__WINDOWS__) || defined(__APPLE__) || defined(__CYGWIN__) || defined(MINGW32) || defined(__NetBSD__)
 
 struct errnomap_t {
 	int nto;
@@ -125,9 +123,10 @@ int errnoconvert (int x) {
 	return x;
 }
 
-#define errnoconvert(x) errnoconvert (x)
 #else
-#error errno mapping not setup for this host
+int errnoconvert (int x) {
+	return x;
+}
 #endif /* __QNXNTO__ */
 
 LONGEST

@@ -1,4 +1,7 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_egg.h"
 
 static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
 	if (!*input) return;

@@ -130,7 +130,7 @@ static char *findNextNumber(char *op) {
 	return NULL;
 }
 
-static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
+static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian) {
 	char *ptr = data, *ptr2;
 	RAnalFunction *fcn;
 	RFlagItem *flag;
@@ -192,7 +192,6 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 		}
 		if (p->hint) {
 			int pnumleft, immbase = p->hint->immbase;
-			bool big_endian = false;
 			char num[256], *pnum;
 			bool is_hex = false;
 			strncpy (num, ptr, sizeof (num)-2);
@@ -207,8 +206,6 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 				break;
 			}
 			*pnum = 0;
-			if (p->anal && p->anal->big_endian)
-				big_endian = true;
 			switch (immbase) {
 			case 0:
 				// do nothing
@@ -290,10 +287,10 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	return false;
 }
 
-R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len) {
-	filter (p, f, data, str, len);
+R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian) {
+	filter (p, f, data, str, len, big_endian);
 	if (p->cur && p->cur->filter)
-		return p->cur->filter (p, f, data, str, len);
+		return p->cur->filter (p, f, data, str, len, big_endian);
 	return false;
 }
 

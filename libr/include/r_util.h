@@ -150,7 +150,9 @@ typedef enum {
 	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/', RNCMOD='%',
 	//RNCXOR='^', RNCOR='|', RNCAND='&',
 	RNCNEG='~', RNCAND='&', RNCORR='|', RNCXOR='^',
-	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')'
+	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')',
+	RNCSHL='<', RNCSHR = '>'
+
 } RNumCalcToken;
 
 typedef struct r_num_calc_t {
@@ -370,6 +372,7 @@ R_API const char *r_num_calc_index (RNum *num, const char *p);
 R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize);
 R_API int r_num_is_valid_input(RNum *num, const char *input_value);
 R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
+R_API double r_num_get_float (RNum *num, const char *str);
 R_API char* r_num_as_string(RNum *___, ut64 n);
 R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex);
 
@@ -408,7 +411,7 @@ R_API char *r_buf_free_to_string (RBuffer *b);
 R_API const ut8 *r_buf_buffer (RBuffer *b);
 R_API ut64 r_buf_size (RBuffer *b);
 
-R_API ut64 r_mem_get_num(const ut8 *b, int size, int endian);
+R_API ut64 r_mem_get_num(const ut8 *b, int size);
 
 /* MEMORY POOL */
 R_API RMemoryPool* r_mem_pool_deinit(RMemoryPool *pool);
@@ -437,11 +440,12 @@ R_API double r_prof_end(RProfile *p);
 R_API void *r_mem_dup (void *s, int l);
 R_API void r_mem_reverse(ut8 *b, int l);
 R_API int r_mem_protect(void *ptr, int size, const char *prot);
-R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num, int endian);
+R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num);
 R_API int r_mem_eq(ut8 *a, ut8 *b, int len);
 R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits);
 R_API void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize);
-R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian);
+R_API void r_mem_swaporcopy (ut8 *dest, const ut8 *src, int len, bool big_endian);
+R_API void r_mem_swapendian (ut8 *dest, const ut8 *orig, int size);
 R_API int r_mem_cmp_mask (const ut8 *dest, const ut8 *orig, const ut8 *mask, int len);
 R_API const ut8 *r_mem_mem (const ut8 *haystack, int hlen, const ut8 *needle, int nlen);
 R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *needle, int nlen, int align);
@@ -481,6 +485,9 @@ R_API char *r_base64_encode_dyn(const char *str, int len);
 
 R_API int r_base91_encode(char *bout, const ut8 *bin, int len);
 R_API int r_base91_decode(ut8 *bout, const char *bin, int len);
+
+R_API char *r_punycode_encode(const char*src, int srclen, int *dstlen);
+R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen);
 
 /* strings */
 static inline void r_str_rmch (char *s, char ch) {

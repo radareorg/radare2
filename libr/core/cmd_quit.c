@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
+#include "r_core.h"
 
 static int cmd_quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;

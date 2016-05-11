@@ -1082,14 +1082,26 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				}
 				data[l++] = 0x8b;
 				if (delta) {
+					ut8 mask = 0x40;
+					ut32 d = r_num_math (NULL, delta) * N;
+					// Check if delta is short or dword
+					if ((ST8_MIN > d) && (d > ST8_MAX)) {
+						mask = 0x80;
+					}
 					int r = getreg (arg2);
 					if (r==4) { //ESP
-						data[l++] = getreg (arg)<<3 | r | 0x40;
+						data[l++] = getreg (arg)<<3 | r | mask;
 						data[l++] = 0x24;
 					} else if (r==5) { // EBP
-						data[l++] = getreg (arg)<<3 | r | 0x40;
-					} else data[l++] = getreg (arg) | r | 0x40;
-					data[l++] = r_num_math (NULL, delta) * N;
+						data[l++] = getreg (arg)<<3 | r | mask;
+					} else data[l++] = getreg (arg)<<3 | r | mask;
+
+					data[l++] = d;
+					if ((ST8_MIN > d) && (d > ST8_MAX)) {
+						data[l++] = d>>8;
+						data[l++] = d>>16;
+						data[l++] = d>>24;
+					}
 				} else {
 					int r = getreg (arg2);
 					if (r==4) { //ESP
@@ -1410,11 +1422,8 @@ RAsmPlugin r_asm_plugin_x86_nz = {
 	.license = "LGPL3",
 	.arch = "x86",
 	.bits = 16|32|64,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = NULL,
-	.modify = NULL,
-	.assemble = &assemble,
+	.endian = R_SYS_ENDIAN_LITTLE,
+	.assemble = &assemble
 };
 
 #ifndef CORELIB

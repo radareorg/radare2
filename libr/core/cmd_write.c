@@ -1,4 +1,12 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include <stdbool.h>
+#include <string.h>
+
+#include "r_crypto.h"
+#include "r_config.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_io.h"
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	ut8 *buf = malloc (strlen (pairs) + 1);
@@ -20,10 +28,10 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	return !len;
 }
 
-static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *key, int direction) {
+static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *key, int direction, const char *iv) {
 	//TODO: generalise no_key_mode for all non key encoding/decoding.
 	int keylen = key ? strlen (key): 0;
-	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo);
+	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo);
 	if (no_key_mode || keylen > 0) {
 		RCrypto *cry = r_crypto_new ();
 		if (r_crypto_use (cry, algo)) {
@@ -37,6 +45,19 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 					keylen = len;
 				}
 				if (r_crypto_set_key (cry, binkey, keylen, 0, direction)) {
+					if (iv) {
+						ut8 *biniv = malloc (strlen (iv) + 1);
+						int ivlen = r_hex_str2bin (iv, biniv);
+						if (ivlen < 1) {
+							ivlen = strlen(iv);
+							strcpy ((char *)biniv, iv);
+						}
+						if (!r_crypto_set_iv (cry, biniv, ivlen)) {
+							eprintf ("Invalid IV.\n");
+							return 0;
+						}
+					}
+
 					r_crypto_update (cry, (const ut8*)core->block, core->blocksize);
 					r_crypto_final (cry, NULL, 0);
 
@@ -101,9 +122,9 @@ static void cmd_write_op (RCore *core, const char *input) {
 		"woa"," [val]", "+=  addition (f.ex: woa 0102)",
 		"woA"," [val]","&=  and",
 		"wod"," [val]", "/=  divide",
-		"woD","[algo] [key]","decrypt current block with given algo and key",
+		"woD","[algo] [key] [IV]","decrypt current block with given algo and key",
 		"woe"," [from to] [step] [wsz=1]","..  create sequence",
-		"woE"," [algo] [key]", "encrypt current block with given algo and key",
+		"woE"," [algo] [key] [IV]", "encrypt current block with given algo and key",
 		"wol"," [val]","<<= shift left",
 		"wom"," [val]", "*=  multiply",
 		"woo"," [val]","|=  or",
@@ -160,17 +181,23 @@ static void cmd_write_op (RCore *core, const char *input) {
 			int direction = (input[1] == 'E') ? 0 : 1;
 			const char *algo = NULL;
 			const char *key = NULL;
+			const char *iv = NULL;
 			char *space, *args = strdup (r_str_chop_ro (input+2));
 			space = strchr (args, ' ');
 			if (space) {
 				*space++ = 0;
 				key = space;
+				space = strchr (key, ' ');
+				if (space) {
+					*space++ = 0;
+					iv = space;
+				}
 			}
 			algo = args;
 			if (algo && *algo) {
-				encrypt_or_decrypt_block (core, algo, key, direction);
+				encrypt_or_decrypt_block (core, algo, key, direction, iv);
 			} else {
-				eprintf ("Usage: wo%c [algo] [key]\n", ((!direction)?'E':'D'));
+				eprintf ("Usage: wo%c [algo] [key] [IV]\n", ((!direction)?'E':'D'));
 				eprintf ("TODO: list currently supported crypto algorithms\n");
 				eprintf ("  rc2, rc4, xor, blowfish, aes, rot, ror, rol\n");
 			}
@@ -195,7 +222,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		case 'O':
 			len = (int)(input[3]==' ')?
 				r_num_math (core->num, input + 3): core->blocksize;
-			core->num->value = r_debruijn_offset (len, !core->assembler->big_endian);
+			core->num->value = r_debruijn_offset (len, 0 /* use LE */);
 			r_cons_printf ("%"PFMT64d"\n", core->num->value);
 			break;
 		default:
@@ -214,10 +241,8 @@ static void cmd_write_op (RCore *core, const char *input) {
 #define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
 static void cmd_write_value (RCore *core, const char *input) {
 	int type = 0;
-	ut8 addr1;
-	ut16 addr2;
-	ut32 addr4, addr4_;
-	ut64 addr8, off = 0LL;
+	ut64 off = 0LL;
+	ut8 buf[sizeof(ut64)];
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 
 	if (!input)
@@ -252,28 +277,23 @@ static void cmd_write_value (RCore *core, const char *input) {
 		type = (off&UT64_32U)? 8: 4;
 	switch (type) {
 	case 1:
-		addr1 = (ut8)off;
-		r_io_write (core->io, (const ut8 *)&addr1, 1);
+		r_write_ble8 (buf, (ut8)(off & UT8_MAX));
+		r_io_write (core->io, buf, 1);
 		WSEEK (core, 1);
 		break;
 	case 2:
-		addr2 = (ut16)off;
-		r_io_write (core->io, (const ut8 *)&addr2, 2);
+		r_write_le16 (buf, (ut16)(off & UT16_MAX));
+		r_io_write (core->io, buf, 2);
 		WSEEK (core, 2);
 		break;
 	case 4:
-		addr4_ = (ut32)off;
-		//drop_endian((ut8*)&addr4_, (ut8*)&addr4, 4); /* addr4_ = addr4 */
-		//endian_memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); /* addr4 = addr4_ */
-		memcpy ((ut8*)&addr4, (ut8*)&addr4_, 4); // XXX needs endian here too
-		r_io_write (core->io, (const ut8 *)&addr4, 4);
+		r_write_le32 (buf, (ut32)(off & UT32_MAX));
+		r_io_write (core->io, buf, 4);
 		WSEEK (core, 4);
 		break;
 	case 8:
-		/* 8 byte addr */
-		memcpy ((ut8*)&addr8, (ut8*)&off, 8); // XXX needs endian here
-		//	endian_memcpy((ut8*)&addr8, (ut8*)&off, 8);
-		r_io_write (core->io, (const ut8 *)&addr8, 8);
+		r_write_le64 (buf, off);
+		r_io_write (core->io, buf, 8);
 		WSEEK (core, 8);
 		break;
 	}
@@ -353,7 +373,6 @@ static int cmd_write(void *data, const char *input) {
 		"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
 		"we","[nNsxX] [arg]","extend write operations (insert instead of replace)",
 		"wf"," -|file","write contents of file at current offset",
-		"wF"," -|file","write contents of hexpairs file here",
 		"wh"," r2","whereis/which shell command",
 		"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
 		"wo?"," hex","write in block with operation. 'wo?' fmi",
@@ -891,31 +910,6 @@ static int cmd_write(void *data, const char *input) {
 	case 'f':
 		cmd_wf (core, input);
 		break;
-	case 'F': // wF
-		arg = (const char *)(input+((input[1]==' ')?2:1));
-		if (!strcmp (arg, "-")) {
-			int len;
-			ut8 *out;
-			char *in = r_core_editor (core, NULL, NULL);
-			if (in) {
-				out = (ut8 *)strdup (in);
-				if (out) {
-					len = r_hex_str2bin (in, out);
-					if (len>0)
-						r_io_write_at (core->io, core->offset, out, len);
-					free (out);
-				}
-				free (in);
-			}
-		} else
-		if ((buf = r_file_slurp_hexpairs (arg, &size))) {
-			r_io_use_desc (core->io, core->file->desc);
-			r_io_write_at (core->io, core->offset, buf, size);
-			WSEEK (core, size);
-			free (buf);
-			r_core_block_read (core, 0);
-		} else eprintf ("Cannot open file '%s'\n", arg);
-		break;
 	case 'w':
 		str++;
 		len = (len-1)<<1;
@@ -935,7 +929,45 @@ static int cmd_write(void *data, const char *input) {
 		} else eprintf ("Cannot malloc %d\n", len);
 		break;
 	case 'x':
-		cmd_write_hexpair(core, input+1);
+		switch (input[1]) {
+		case 'f':
+			arg = (const char *)(input+((input[2]==' ')?3:2));
+			if (!strcmp (arg, "-")) {
+				int len;
+				ut8 *out;
+				char *in = r_core_editor (core, NULL, NULL);
+				if (in) {
+					out = (ut8 *)strdup (in);
+					if (out) {
+						len = r_hex_str2bin (in, out);
+						if (len>0)
+							r_io_write_at (core->io, core->offset, out, len);
+						free (out);
+					}
+					free (in);
+				}
+			} else if ((buf = r_file_slurp_hexpairs (arg, &size))) {
+				r_io_use_desc (core->io, core->file->desc);
+				r_io_write_at (core->io, core->offset, buf, size);
+				WSEEK (core, size);
+				free (buf);
+				r_core_block_read (core, 0);
+			} else eprintf ("Cannot open file '%s'\n", arg);
+			break;
+		case ' ':
+			cmd_write_hexpair(core, input+1);
+			break;
+		default:
+			{
+			const char* help_msg[] = {
+				"Usage:", "wx[f] [arg]", "",
+				"wx", " 9090", "write two intel nops",
+				"wxf", " -|file", "write contents of hexpairs file here",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			break;
+			}
+		}
 		break;
 	case 'a':
 		switch (input[1]) {

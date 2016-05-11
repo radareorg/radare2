@@ -1,4 +1,10 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
+#include <string.h>
+
+#include "r_bin.h"
+#include "r_config.h"
+#include "r_cons.h"
+#include "r_core.h"
 
 #define PAIR_WIDTH 9
 // TODO: reuse implementation in core/bin.c
@@ -20,7 +26,7 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (s); break;
 	case R_BIN_NM_JAVA: res = r_bin_demangle_java (s); break;
 	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, s); break;
-	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (s); break;
+	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (s, core->bin->demanglercmd); break;
 	case R_BIN_NM_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
 	default:
 		r_bin_demangle_list (core->bin);
@@ -309,6 +315,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'M': RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL); break;
 		case 'm': RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL); break;
 		case 'V': RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL); break;
+		case 'C': RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL); break;			  
 		case 'z':
 			if (input[1] == 'z') {
 				char *biname;
@@ -440,6 +447,7 @@ static int cmd_info(void *data, const char *input) {
 				"ia", "", "Show all info (imports, exports, sections..)",
 				"ib", "", "Reload the current buffer for setting of the bin (use once only)",
 				"ic", "", "List classes, methods and fields",
+				"iC", "", "Show signature info (entitlements, ...)",
 				"id", "", "Debug information (source lines)",
 				"iD", " lang sym", "demangle symbolname for given language",
 				"ie", "", "Entrypoint",

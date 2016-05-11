@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include "r_io.h"
 #include "r_util.h"
@@ -26,7 +26,8 @@ R_API RIO *r_io_new() {
 	io->write_mask_fd = -1;
 	io->cb_printf = (void *)printf;
 	io->bits = (sizeof (void *) == 8)? 64: 32;
-	io->ff = 1;
+	io->ff = true;
+	io->Oxff = 0xff;
 	io->aslr = 0;
 	io->raised = -1;
 	io->autofd = true;
@@ -363,7 +364,7 @@ int r_io_read_cr (RIO *io, ut64 addr, ut8 *buf, int len) {
 	if (!io)
 		return R_FAIL;
 	if (io->ff)
-		memset (buf, 0xff, len);
+		memset (buf, io->Oxff, len);
 	if (io->raw) {
 		r_io_seek (io, addr, R_IO_SEEK_SET);
 		return r_io_read_internal (io, buf, len);
@@ -394,7 +395,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	if (io->sectonly && !r_list_empty (io->sections)) {
 		if (!r_io_section_exists_for_vaddr (io, addr, 0)) {
 			// find next sec
-			memset (buf, 0xff, len);
+			memset (buf, io->Oxff, len);
 			ut64 next = r_io_section_next (io, addr);
 			if (next < (addr + len)) {
 				int delta = (next - addr);
@@ -410,12 +411,12 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 
 	if (io->raw) {
 		if (r_io_seek (io, addr, R_IO_SEEK_SET) == UT64_MAX)
-			memset (buf, 0xff, len);
+			memset (buf, io->Oxff, len);
 		return r_io_read_internal (io, buf, len);
 	}
 
 	io->off = addr;
-	memset (buf, 0xff, len); // probably unnecessary
+	memset (buf, io->Oxff, len); // probably unnecessary
 
 	if (io->buffer_enabled) {
 		return r_io_buffer_read (io, addr, buf, len);
@@ -505,7 +506,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		if (len > 0 && l > len) l = len;
 		addr = paddr - w;
 		if (r_io_seek (io, paddr, R_IO_SEEK_SET) == UT64_MAX) {
-			memset (buf + w, 0xff, l);
+			memset (buf + w, io->Oxff, l);
 		}
 		// XXX is this necessary?
 		ms = r_io_map_select (io, addr + w);
@@ -519,7 +520,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		}
 		ret = r_io_read_internal (io, buf + w, l);
 		if (ret < 1) {
-			memset (buf + w, 0xff, l); // reading out of file
+			memset (buf + w, io->Oxff, l); // reading out of file
 			ret = l;
 		} else if (ret < l) {
 			l = ret;
@@ -543,7 +544,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 				if (o == UT64_MAX) {
 					ut64 o = r_io_section_vaddr_to_maddr_try (io, addr + w);
 					if (o == UT64_MAX)
-						memset (buf + w, 0xff, l);
+						memset (buf + w, io->Oxff, l);
 				}
 				break;
 			}
@@ -559,20 +560,20 @@ this is not a real fix, because it just avoids reading again , even if the seek 
 bear in mind that we need to fix that loop and honor lseek sections and sio maps fine
 #endif
 		if (len > 0) {
-			memset (buf + w, 0xff, len);
+			memset (buf + w, io->Oxff, len);
 		}
 		//break;
 	}
 	return olen;
 }
 
-R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
+R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz) {
 	ut64 ret = 0LL;
 	ut8 buf[8];
 	sz = R_DIM (sz, 1, 8);
 	if (sz != r_io_read_at (io, addr, buf, sz))
 		return UT64_MAX;
-	r_mem_copyendian ((ut8 *)&ret, buf, sz, endian);
+	memcpy ((ut8 *)&ret, buf, sz);
 	return ret;
 }
 
@@ -673,7 +674,7 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 			eprintf ("malloc failed in write_mask_fd");
 			return -1;
 		}
-		//memset (data, 0xff, len);
+		// memset (data, io->Oxff, len);
 		r_io_seek (io, io->off, R_IO_SEEK_SET);
 		r_io_read (io, data, len);
 		r_io_seek (io, io->off, R_IO_SEEK_SET);

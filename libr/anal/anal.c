@@ -113,7 +113,6 @@ R_API RAnal *r_anal_new() {
 	anal->refs = r_anal_ref_list_new ();
 	anal->types = r_anal_type_list_new ();
 	r_anal_set_bits (anal, 32);
-	r_anal_set_big_endian (anal, false);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {
 		for (i=0; anal_static_plugins[i]; i++) {
@@ -213,7 +212,7 @@ R_API bool r_anal_set_reg_profile(RAnal *anal) {
 		}
 		free (p);
 	}
-	return false;
+	return ret;
 }
 
 R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {

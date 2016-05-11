@@ -38,6 +38,7 @@ RAsmPlugin r_asm_plugin_java = {
 	.arch = "java",
 	.license = "Apache",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.assemble = &assemble
 };

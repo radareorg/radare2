@@ -29,6 +29,44 @@ struct Getarg {
 	int bits;
 };
 
+static bool is_xmm_reg(cs_x86_op op) {
+	switch (op.reg) {
+	case X86_REG_XMM0:
+	case X86_REG_XMM1:
+	case X86_REG_XMM2:
+	case X86_REG_XMM3:
+	case X86_REG_XMM4:
+	case X86_REG_XMM5:
+	case X86_REG_XMM6:
+	case X86_REG_XMM7:
+	case X86_REG_XMM8:
+	case X86_REG_XMM9:
+	case X86_REG_XMM10:
+	case X86_REG_XMM11:
+	case X86_REG_XMM12:
+	case X86_REG_XMM13:
+	case X86_REG_XMM14:
+	case X86_REG_XMM15:
+	case X86_REG_XMM16:
+	case X86_REG_XMM17:
+	case X86_REG_XMM18:
+	case X86_REG_XMM19:
+	case X86_REG_XMM20:
+	case X86_REG_XMM21:
+	case X86_REG_XMM22:
+	case X86_REG_XMM23:
+	case X86_REG_XMM24:
+	case X86_REG_XMM25:
+	case X86_REG_XMM26:
+	case X86_REG_XMM27:
+	case X86_REG_XMM28:
+	case X86_REG_XMM29:
+	case X86_REG_XMM30:
+	case X86_REG_XMM31: return true;
+	default: return false;
+	}
+}
+
 /**
  * Translates operand N to esil
  *
@@ -450,8 +488,26 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 			r_strbuf_appendf (&op->esil, "rsi,[8],rax,=,df,?{,8,rsi,-=,},df,!,?{,8,rsi,+=,}");
 		break;
 	// string mov
-	case X86_INS_MOVSB:
+	// PS: MOVSD can correspond to one of the two instruction (yes, intel x86
+	// has the same pneumonic for two different opcodes!). We can decide which
+	// of the two it is based on the operands.
+	// For more information, see:
+	// http://x86.renejeschke.de/html/file_module_x86_id_203.html
+	//               (vs)
+	// http://x86.renejeschke.de/html/file_module_x86_id_204.html
 	case X86_INS_MOVSD:
+		// Handle "Move Scalar Double-Precision Floating-Point Value"
+		if (is_xmm_reg (INSOP(0)) || is_xmm_reg (INSOP(1))) {
+			const char *src = getarg (&gop, 1, 0, NULL);
+			const char *dst = getarg (&gop, 0, 1, NULL);
+			if (src && dst) {
+				esilprintf (op, "%s,%s", src, dst);
+			}
+			if (src) free (src);
+			if (dst) free (dst);
+			break;
+		}
+	case X86_INS_MOVSB:
 	case X86_INS_MOVSQ:
 	case X86_INS_MOVSW:
 		if (op->prefix & R_ANAL_OP_PREFIX_REP) {
@@ -669,13 +725,17 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 		break;
 	case X86_INS_ENTER:
 	case X86_INS_PUSH:
-	case X86_INS_PUSHF:
 		{
 			char *dst = getarg (&gop, 0, 0, NULL);
 			esilprintf (op, "%d,%s,-=,%s,%s,=[%d]",
 				rs, sp, dst?dst:"eax", sp, rs);
 			free (dst);
 		}
+		break;
+	case X86_INS_PUSHF:
+	case X86_INS_PUSHFD:
+	case X86_INS_PUSHFQ:
+		esilprintf (op, "%d,%s,-=,eflags,%s,=[%d]", rs, sp, sp, rs);
 		break;
 	case X86_INS_LEAVE:
 		esilprintf (op, "%s,%s,=,%s,[%d],%s,=,%d,%s,+=",
@@ -707,7 +767,6 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 		}
 		break;
 	case X86_INS_POP:
-	case X86_INS_POPF:
 	case X86_INS_POPCNT:
 		{
 			char *dst = getarg (&gop, 0, 0, NULL);
@@ -716,6 +775,11 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 				sp, rs, dst, rs, sp);
 			free (dst);
 		}
+		break;
+	case X86_INS_POPF:
+	case X86_INS_POPFD:
+	case X86_INS_POPFQ:
+		esilprintf (op, "%s,[%d],eflags,=", sp, rs);
 		break;
 	case X86_INS_RET:
 	case X86_INS_RETF:
@@ -1683,6 +1747,8 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 	case X86_INS_ENTER:
 	case X86_INS_PUSH:
 	case X86_INS_PUSHF:
+	case X86_INS_PUSHFD:
+	case X86_INS_PUSHFQ:
 		switch (INSOP(0).type) {
 		case X86_OP_IMM:
 			op->val = op->ptr = INSOP(0).imm;
@@ -1702,12 +1768,16 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 		break;
 	case X86_INS_POP:
 	case X86_INS_POPF:
-	case X86_INS_POPAW:
-	case X86_INS_POPAL:
 	case X86_INS_POPCNT:
 		op->type = R_ANAL_OP_TYPE_POP;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -regsz;
+		break;
+	case X86_INS_POPAW:
+	case X86_INS_POPAL:
+		op->type = R_ANAL_OP_TYPE_POP;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -regsz * 8;
 		break;
 	case X86_INS_RET:
 	case X86_INS_RETF:

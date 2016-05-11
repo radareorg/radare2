@@ -32,6 +32,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = mov (str, 0x8052);
 		return *op != -1;
 	}
+	if (!strcmp (str, "nop")) {
+		*op = 0x1f2003d5;
+		return *op != -1;
+	}
 	if (!strcmp (str, "ret")) {
 		*op = 0xc0035fd6;
 		return true;

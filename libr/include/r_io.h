@@ -142,7 +142,8 @@ typedef struct r_io_t {
 	RList *cache;
 	RCache *buffer;
 	int buffer_enabled;
-	int ff;
+	bool ff;
+	ut8 Oxff;
 	int autofd;
 	int aslr;
 	ut64 winbase;
@@ -322,7 +323,7 @@ R_API int r_io_mread(RIO *io, int fd, ut64 maddr, ut8 *buf, int len);
 R_API int r_io_pread(RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_read(RIO *io, ut8 *buf, int len);
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
-R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian);
+R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz);
 R_API int r_io_write(RIO *io, const ut8 *buf, int len);
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API int r_io_mwrite(RIO *io, int fd, ut64 maddr, ut8 *buf, int len);
@@ -426,7 +427,7 @@ R_API ut64 r_io_sundo(RIO *io, ut64 offset);
 R_API ut64 r_io_sundo_redo(RIO *io);
 R_API void r_io_sundo_push(RIO *io, ut64 off);
 R_API void r_io_sundo_reset(RIO *io);
-R_API void r_io_sundo_list(RIO *io);
+R_API void r_io_sundo_list(RIO *io, int mode);
 /* write undo */
 R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len);
 R_API void r_io_wundo_apply_all(RIO *io, int set);
