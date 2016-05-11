@@ -71,7 +71,7 @@ typedef struct r_debug_frame_t {
 } RDebugFrame;
 
 typedef struct r_debug_reason_t {
-        int type;
+	int type;
 	int tid;
 	int signum;
 	RBreakpointItem *bpi;
@@ -168,6 +168,7 @@ typedef struct r_debug_t {
 	Sdb *sgnls;
 	RCoreBind corebind;
 	int trace_forks;
+	int forked_pid;
 	int trace_execs;
 	int trace_clone;
 	// internal use only
