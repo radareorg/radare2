@@ -88,8 +88,8 @@ static int help () {
 		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
 		"  -F    stdin slurp C hex ;  rax2 -F < shellcode.c\n"
 		"  -h    help              ;  rax2 -h\n"
-		"  -k    randomart         ;  rax2 -k 0x34 1020304050\n"
-		"  -K    keep base         ;  rax2 -B 33+3 -> 36\n"
+		"  -k    keep base         ;  rax2 -k 33+3 -> 36\n"
+		"  -K    randomart         ;  rax2 -K 0x34 1020304050\n"
 		"  -n    binary number     ;  rax2 -n 0x1234 # 34120000\n"
 		"  -N    binary number     ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -r    r2 style output   ;  rax2 -r 0x1234\n"
@@ -133,10 +133,10 @@ static int rax (char *str, int len, int last) {
 			case 'b': flags ^= 1 << 3; break;
 			case 'B': flags ^= 1 << 17; break;
 			case 'x': flags ^= 1 << 4; break;
-			case 'K': flags ^= 1 << 5; break;
+			case 'k': flags ^= 1 << 5; break;
 			case 'f': flags ^= 1 << 6; break;
 			case 'd': flags ^= 1 << 7; break;
-			case 'k': flags ^= 1 << 8; break;
+			case 'K': flags ^= 1 << 8; break;
 			case 'n': flags ^= 1 << 9; break;
 			case 'u': flags ^= 1 << 10; break;
 			case 't': flags ^= 1 << 11; break;
@@ -204,11 +204,11 @@ static int rax (char *str, int len, int last) {
 		int h = r_str_hash (str);
 		printf ("0x%x\n", h);
 		return true;
-	} else if (flags & (1 << 5)) { // -K
+	} else if (flags & (1 << 5)) { // -k
 		out_mode = 'I';
 	} else if (flags & (1 << 6)) { // -f
 		out_mode = 'f';
-	} else if (flags & (1 << 8)) { // -k
+	} else if (flags & (1 << 8)) { // -K
 		int n = ((strlen (str)) >> 1) + 1;
 		char *s = NULL;
 		ut32 *m;

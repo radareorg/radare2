@@ -1343,10 +1343,12 @@ static void __anal_reg_list(RCore *core, int type, int size, char mode) {
 		int pcbits = 0;
 		const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 		RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
-		if (bits != reg->size)
+		if (bits != reg->size) {
 			pcbits = reg->size;
-		if (pcbits)
+		}
+		if (pcbits) {
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
+		}
 	}
 	r_debug_reg_list (core->dbg, type, bits, mode, use_color);
 	core->dbg->reg = hack;
@@ -2063,7 +2065,9 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	if (!core)
 		return false;
 	maxopsize = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-	if (maxopsize < 1) maxopsize = 16;
+	if (maxopsize < 1) {
+		maxopsize = 16;
+	}
 	if (mode & 1) {
 		// number of bytes / length
 		buf_sz = length;

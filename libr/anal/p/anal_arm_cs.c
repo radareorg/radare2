@@ -855,6 +855,15 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_SUB:
 		op->type = R_ANAL_OP_TYPE_SUB;
+		if (REGID64(0) == ARM64_REG_SP) {
+			if (REGID64(1) == ARM64_REG_SP) {
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = IMM64(2);
+			} else {
+				op->stackop = R_ANAL_STACK_RESET;
+				op->stackptr = 0;
+			}
+		}
 		break;
 	case ARM64_INS_ADD:
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -864,6 +873,11 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_CMOV;
 		break;
 	case ARM64_INS_MOV:
+		if (REGID64(0) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_RESET;
+			op->stackptr = 0;
+		}
+		/* fallthru */
 	case ARM64_INS_MOVI:
 	case ARM64_INS_MOVK:
 	case ARM64_INS_MOVN:

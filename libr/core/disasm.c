@@ -1425,12 +1425,16 @@ static void handle_print_cycles(RCore *core, RDisasmState *ds) {
 static void handle_print_stackptr(RCore *core, RDisasmState *ds) {
 	if (ds->show_stackptr) {
 		r_cons_printf ("%5d%s", ds->stackptr,
-			ds->analop.type==R_ANAL_OP_TYPE_CALL?">":
+			ds->analop.type == R_ANAL_OP_TYPE_CALL?">":
 			ds->analop.stackop == R_ANAL_STACK_ALIGN? "=":
 			ds->stackptr > ds->ostackptr? "+":
 			ds->stackptr < ds->ostackptr? "-": " ");
 		ds->ostackptr = ds->stackptr;
-		ds->stackptr += ds->analop.stackptr;
+		if (ds->analop.stackop == R_ANAL_STACK_RESET) {
+			ds->stackptr = 0;
+		} else {
+			ds->stackptr += ds->analop.stackptr;
+		}
 		/* XXX if we reset the stackptr 'ret 0x4' has not effect.
 		 * Use RAnalFunction->RAnalOp->stackptr? */
 		if (ds->analop.type == R_ANAL_OP_TYPE_RET)

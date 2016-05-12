@@ -382,7 +382,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 }
 
 static void parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
-    	int index, len;
+    	int i, len;
 	ut32 count, data;
 	struct linkedit_data_command link = {};
     	if (off > bin->size || off + sizeof(struct linkedit_data_command) > bin->size)
@@ -397,13 +397,12 @@ static void parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	    	return;
 	struct super_blob_t *super = (struct super_blob_t *) (bin->b->buf + data);
 	count = r_read_ble32 (&super->count, true);
-	for (index = 0; index < count; ++index) {
-		if ((ut8 *)(super->index +
-			    index * sizeof (struct blob_index_t)) >
+	for (i = 0; i < count; ++i) {
+		if ((ut8 *)(super->index + i) >
 		    (ut8 *)(bin->b->buf + bin->size))
 			return;
-		if (r_read_ble32 (&super->index[index].type, true) == CSSLOT_ENTITLEMENTS) {
-			ut32 begin = r_read_ble32 (&super->index[index].offset, true);
+		if (r_read_ble32 (&super->index[i].type, true) == CSSLOT_ENTITLEMENTS) {
+			ut32 begin = r_read_ble32 (&super->index[i].offset, true);
 			if (begin > bin->size || begin + sizeof(struct blob_t) > bin->size)
 			    	return;
 			struct blob_t *entitlements = (struct blob_t *) ((ut8*)super + begin);
