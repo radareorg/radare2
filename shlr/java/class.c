@@ -3556,7 +3556,7 @@ R_API RBinJavaAttrInfo* r_bin_java_line_number_table_attr_new (ut8 *buffer, ut64
 		// XXX if (curpos + 8 >= sz) break;
 		lnattr = R_NEW0 (RBinJavaLineNumberAttribute);
 		if (!lnattr) {
-			perror ("r_bin_java_line_number_table_attr_new");
+			perror ("calloc");
 			break;
 		}
 		lnattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
