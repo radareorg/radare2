@@ -551,3 +551,13 @@ eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"
 done
+
+# addition for ARCH & OSFAMILY report, xref: 
+# issue https://github.com/radare/radare2/issues/4873
+# pullreq https://github.com/radare/radare2/pull/4870
+# to do: to fix in ACR level
+CPU="`uname -m|sed -e 's, ,,g'|cut -d - -f 1`" # refreshed due bug shift values (#4873)
+OS="`uname -s|tr A-Z a-z`" # (same as rem above)
+echo " - ARCH = ${CPU}" # cant modif in configure.acr (unsupported), cant modif in acr/src/acr-sh (unallowed)
+echo " - OSFAMILY = ${OS}" # (same as rem above)
+echo # added ¥n need to mark end Final Report
