@@ -1903,25 +1903,8 @@ static void handle_print_fcn_name(RCore * core, RDisasmState *ds) {
 	}
 }
 
-static bool is_asmqjmps_valid(RCore *core) {
-	if (!core->asmqjmps) return false;
-	if (core->is_asmqjmps_letter) {
-		if (core->asmqjmps_count >= R_CORE_ASMQJMPS_MAX_LETTERS) {
-			return false;
-		}
-
-		if (core->asmqjmps_count >= core->asmqjmps_size - 2) {
-			core->asmqjmps_size *= 2;
-			core->asmqjmps = realloc (core->asmqjmps, core->asmqjmps_size * sizeof (ut64));
-			if (!core->asmqjmps) return false;
-		}
-	}
-
-	return core->asmqjmps_count < core->asmqjmps_size - 1;
-}
-
 static void handle_print_core_vmode(RCore *core, RDisasmState *ds) {
-	int i;
+	char *shortcut = NULL;
 
 	if (!ds->show_jmphints) return;
 	if (core->vmode) {
@@ -1932,20 +1915,10 @@ static void handle_print_core_vmode(RCore *core, RDisasmState *ds) {
 		case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
 			handle_comment_align (core, ds);
 			if (ds->show_color) r_cons_strcat (ds->pal_comment);
-			if (is_asmqjmps_valid (core)) {
-				char t[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
-				int found = 0;
-
-				for (i = 0; i < core->asmqjmps_count + 1; i++) {
-					if (core->asmqjmps[i] == ds->analop.jump) {
-						found = 1;
-						break;
-					}
-				}
-				if (!found) i = ++core->asmqjmps_count;
-				core->asmqjmps[i] = ds->analop.jump;
-				r_core_set_asmqjmps (core, t, sizeof (t), i);
-				r_cons_printf (" ;[%s]", t);
+			shortcut = r_core_add_asmqjmp (core, ds->analop.jump);
+			if (shortcut) {
+				r_cons_printf (" ;[%s]", shortcut);
+				free (shortcut);
 			} else {
 				r_cons_strcat (" ;[?]");
 			}
