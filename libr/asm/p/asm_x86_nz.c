@@ -1140,16 +1140,16 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				if (sib) {
 					*sib++ = 0;
 					ut32 s = r_num_math (NULL, sib);
-					ut32 d = r_num_math (NULL, delta);
+					ut32 d = r_num_math (NULL, delta) * N;
 
 					data[l++] = 0 << 6 | getreg (arg) << 3 | 4;
-					// TODO remove hardcoded SIB multiplier
 					data[l++] = getsib(s) << 6 | getreg (arg2) << 3 | 5;
 
 					data[l++] = d;
 					data[l++] = d >> 8;
 					data[l++] = d >> 16;
 					data[l++] = d >> 14;
+
 				} else if (delta) {
 					ut8 mask = 0x40;
 					ut32 d = r_num_math (NULL, delta) * N;
