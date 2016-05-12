@@ -105,6 +105,30 @@ int linux_attach (RDebug *dbg, int pid) {
 	return pid;
 }
 
+static int linux_get_proc_pid(int pid, char *prop, char *out, size_t len) {
+	char filename[128];
+	int fd, ret = -1;
+	ssize_t nr;
+
+	snprintf (filename, sizeof(filename) - 1, "/proc/%d/%s", pid, prop);
+	fd = open (filename, O_RDONLY);
+	if (fd == -1)
+		return -1;
+	nr = read (fd, out, len);
+	if (nr > 0) {
+		out[nr - 1] = '\0';  /* terminate at newline */
+		ret = 0;
+	}
+	else if (nr < 0) {
+		r_sys_perror ("read");
+	}
+	else {
+		eprintf ("linux_get_proc_pid: got EOF reading from \"%s\"\n", filename);
+	}
+	close (fd);
+	return ret;
+}
+
 RDebugInfo *linux_info (RDebug *dbg, const char *arg) {
 	char procpid_cmdline[1024];
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
@@ -122,69 +146,130 @@ RDebugInfo *linux_info (RDebug *dbg, const char *arg) {
 	return rdi;
 }
 
+#undef MAXPID
+#define MAXPID 99999
+
+RList *linux_pid_list (int pid, RList *list)
+{
+	int i;
+	char *ptr, buf[1024];
+
+	list->free = (RListFree)&r_debug_pid_free;
+	if (pid) {
+		/* add the requested pid. should we do this? we don't even know if it's valid still.. */
+		r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
+
+		/* list parents */
+		DIR *dh;
+		struct dirent *de;
+		dh = opendir ("/proc");
+		if (dh == NULL) {
+			r_sys_perror ("opendir /proc");
+			r_list_free (list);
+			return NULL;
+		}
+		while ((de = readdir (dh))) {
+			/* for each existing pid file... */
+			i = atoi (de->d_name);
+			if (!i)
+				continue;
+
+			/* try to read the status */
+			if (linux_get_proc_pid (i, "status", buf, sizeof(buf)) == -1)
+				continue;
+
+			/* look for the parent process id */
+			ptr = strstr (buf, "PPid:");
+			if (ptr) {
+				int ppid = atoi (ptr + 6);
+
+				/* if this is the requested process... */
+				if (i == pid) {
+					//eprintf ("PPid: %d\n", ppid);
+					/* append it to the list with parent */
+					r_list_append (list, r_debug_pid_new (
+						"(ppid)", ppid, 's', 0));
+				}
+
+				/* ignore it if it is not one of our children */
+				if (ppid != pid)
+					continue;
+
+				/* it's a child of the requested pid, read it's command line and add it */
+				if (linux_get_proc_pid (ppid, "cmdline", buf, sizeof(buf)) == -1)
+					continue;
+
+				r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
+			}
+		}
+		closedir (dh);
+	} else {
+		/* try to bruteforce the processes
+		 * XXX(jjd): wouldn't listing the processes like before work better?
+		 */
+		for (i = 2; i < MAXPID; i++) {
+			/* try to send signal 0, if it fails it must not be valid */
+			if (r_sandbox_kill (i, 0) == -1)
+				continue;
+
+			// TODO: Use slurp!
+			// XXX(jjd): we probably need better zero-copy w/r_list if we use
+			// slurp here
+			if (linux_get_proc_pid(i, "cmdline", buf, sizeof(buf)) == -1)
+				continue;
+
+			r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
+		}
+	}
+	return list;
+}
+
 RList *linux_thread_list (int pid, RList *list) {
-	int i, fd = -1, thid = 0;
-	char *ptr, cmdline[1024];
+	int i, thid = 0;
+	char *ptr, buf[1024];
 
 	if (!pid) {
 		r_list_free (list);
 		return NULL;
 	}
 	r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
-	/* list parents */
 
-	/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
-	//while ((de = readdir (dh))) {
-	snprintf (cmdline, sizeof(cmdline), "/proc/%d/task", pid);
-	if (r_file_is_directory (cmdline)) {
+	/* if this process has a task directory, use that */
+	snprintf (buf, sizeof(buf), "/proc/%d/task", pid);
+	if (r_file_is_directory (buf)) {
 		struct dirent *de;
-		DIR *dh = opendir (cmdline);
+		DIR *dh = opendir (buf);
 		while ((de = readdir (dh))) {
 			int tid = atoi (de->d_name);
+
+			if (linux_get_proc_pid(tid, "comm", buf, sizeof(buf)) == -1)
+				continue;
+
 			// TODO: get status, pc, etc..
-			r_list_append (list, r_debug_pid_new (cmdline, tid, 's', 0));
+			r_list_append (list, r_debug_pid_new (buf, tid, 's', 0));
 		}
 		closedir (dh);
 	} else {
 		/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
-		//while ((de = readdir (dh))) {
 #undef MAXPID
 #define MAXPID 99999
+		/* otherwise, brute force the pids */
 		for (i = pid; i < MAXPID; i++) { // XXX
-			snprintf (cmdline, sizeof(cmdline), "/proc/%d/status", i);
-			if (fd != -1) {
-				close (fd);
-				fd = -1;
-			}
-			fd = open (cmdline, O_RDONLY);
-			if (fd == -1) {
+			if (linux_get_proc_pid(i, "status", buf, sizeof(buf)) == -1)
 				continue;
-			}
-			if (read (fd, cmdline, 1024)<2) {
-				// read error
-				close (fd);
-				break;
-			}
-			cmdline[sizeof(cmdline) - 1] = '\0';
-			ptr = strstr (cmdline, "Tgid:");
+
+			/* look for a thread group id */
+			ptr = strstr (buf, "Tgid:");
 			if (ptr) {
 				int tgid = atoi (ptr + 5);
-				if (tgid != pid) {
-					close (fd);
-					fd = -1;
+
+				/* if it is not in our thread group, we don't want it */
+				if (tgid != pid)
 					continue;
-				}
-				if (read (fd, cmdline, sizeof(cmdline) - 1) <2) {
-					break;
-				}
-				snprintf (cmdline, sizeof(cmdline), "thread_%d", thid++);
-				cmdline[sizeof (cmdline) - 1] = '\0';
-				r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
+
+				snprintf (buf, sizeof(buf), "thread_%d", thid++);
+				r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
 			}
-		}
-		if (fd != -1) {
-			close (fd);
-			fd = -1;
 		}
 	}
 	return list;

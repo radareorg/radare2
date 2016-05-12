@@ -327,7 +327,6 @@ static RList *r_debug_native_pids (int pid) {
 #if __WINDOWS__ && !__CYGWIN__
 	return w32_pids (pid, list);
 #elif __APPLE__
-
 	if (pid) {
 		RDebugPid *p = xnu_get_pid (pid);
 		if (p) r_list_append (list, p);
@@ -338,75 +337,14 @@ static RList *r_debug_native_pids (int pid) {
 			if (p) r_list_append (list, p);
 		}
 	}
+#elif __linux__
+	return linux_pid_list (pid, list);
 #else
-	int i, fd;
-	char *ptr, cmdline[1024];
-	list->free = (RListFree)&r_debug_pid_free;
-	/* TODO */
-	if (pid) {
-		r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
-		/* list parents */
-		DIR *dh;
-		struct dirent *de;
-		dh = opendir ("/proc");
-		if (dh == NULL) {
-			r_list_free (list);
-			return NULL;
-		}
-		//for (i=2; i<39999; i++) {
-		while ((de = readdir (dh))) {
-			i = atoi (de->d_name); if (!i) continue;
-			snprintf (cmdline, sizeof (cmdline), "/proc/%d/status", i);
-			fd = open (cmdline, O_RDONLY);
-			if (fd == -1) continue;
-			if (read (fd, cmdline, sizeof(cmdline)) == -1) {
-				close (fd);
-				continue;
-			}
-			cmdline[sizeof(cmdline) - 1] = '\0';
-			ptr = strstr (cmdline, "PPid:");
-			if (ptr) {
-				int ret, ppid = atoi (ptr + 6);
-				close (fd);
-				if (i == pid) {
-					//eprintf ("PPid: %d\n", ppid);
-					r_list_append (list, r_debug_pid_new (
-						"(ppid)", ppid, 's', 0));
-				}
-				if (ppid != pid) continue;
-				snprintf (cmdline, sizeof(cmdline) - 1, "/proc/%d/cmdline", ppid);
-				fd = open (cmdline, O_RDONLY);
-				if (fd == -1) continue;
-				ret = read (fd, cmdline, sizeof(cmdline));
-				if (ret > 0) {
-					cmdline[ret - 1] = '\0';
-					r_list_append (list, r_debug_pid_new (
-						cmdline, i, 's', 0));
-				}
-			}
-			close (fd);
-		}
-		closedir (dh);
-	} else
-	for (i = 2; i < MAXPID; i++) {
-		if (!r_sandbox_kill (i, 0)) {
-			int ret;
-			// TODO: Use slurp!
-			snprintf (cmdline, sizeof(cmdline), "/proc/%d/cmdline", i);
-			fd = open (cmdline, O_RDONLY);
-			if (fd == -1) continue;
-			cmdline[0] = '\0';
-			ret = read (fd, cmdline, sizeof(cmdline));
-			if (ret > 0) {
-				cmdline[ret - 1] = '\0';
-				r_list_append (list, r_debug_pid_new (
-					cmdline, i, 's', 0));
-			}
-			close (fd);
-		}
-	}
+#warning No r_debug_native_pids implementation provided
+	eprintf ("TODO: list processes\n");
+	r_list_free(list);
+	return NULL;
 #endif
-	return list;
 }
 
 
