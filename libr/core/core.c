@@ -135,9 +135,9 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
 		}
 
 		if (core->asmqjmps_count >= core->asmqjmps_size - 2) {
-			core->asmqjmps_size *= 2;
 			core->asmqjmps = realloc (core->asmqjmps, core->asmqjmps_size * sizeof (ut64));
-			if (!core->asmqjmps) return false;
+			if (!core->asmqjmps) return NULL;
+			core->asmqjmps_size *= 2;
 		}
 	}
 
