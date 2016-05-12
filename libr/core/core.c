@@ -127,36 +127,37 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
  * The returned buffer needs to be freed
  */
 R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
+	int i, found = 0;
 	if (!core->asmqjmps) return NULL;
 	if (core->is_asmqjmps_letter) {
 		if (core->asmqjmps_count >= R_CORE_ASMQJMPS_MAX_LETTERS) {
 			return NULL;
 		}
-	}
-	char t[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
-	int i, found = 0;
-	for (i = 0; i < core->asmqjmps_count + 1; i++) {
-		if (core->asmqjmps[i] == addr) {
-			found = 1;
-			break;
+
+		if (core->asmqjmps_count >= core->asmqjmps_size - 2) {
+			core->asmqjmps_size *= 2;
+			core->asmqjmps = realloc (core->asmqjmps, core->asmqjmps_size * sizeof (ut64));
+			if (!core->asmqjmps) return false;
 		}
 	}
-	if (!found) {
-		i++;
-		if (i >= core->asmqjmps_size) {
-			ut64* new_buffer = realloc (core->asmqjmps, sizeof(ut64) * core->asmqjmps_size * 2);	
-			if (!new_buffer) {
-				eprintf ("Failed to reallocate asmqjmp buffer\n");
-				return NULL;
+
+	if (core->asmqjmps_count < core->asmqjmps_size - 1) {
+		char t[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
+		for (i = 0; i < core->asmqjmps_count + 1; i++) {
+			if (core->asmqjmps[i] == addr) {
+				found = 1;
+				break;
 			}
-			core->asmqjmps = new_buffer;
-			core->asmqjmps_size = core->asmqjmps_size * 2;
 		}
-		core->asmqjmps_count = i;
-		core->asmqjmps[i] = addr;
+		if (!found) {
+			i = ++core->asmqjmps_count;
+			core->asmqjmps[i] = addr;
+		}
+		r_core_set_asmqjmps (core, t, sizeof (t), i);
+		return strdup(t);
+	} else {
+		return NULL;
 	}
-	r_core_set_asmqjmps (core, t, sizeof(t), i);
-	return strdup(t);
 }
 
 /* returns in str a string that represents the shortcut to access the asmqjmp
