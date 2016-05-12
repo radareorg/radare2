@@ -110,6 +110,27 @@ static ut8 getreg(const char *str) {
 	return 0xff;
 }
 
+static ut8 getsib(const ut8 sib) {
+	switch (sib) {
+	case 0:
+	case 1:
+		return 0;
+		break;
+	case 2:
+		return 1;
+		break;
+	case 4:
+		return 2;
+		break;
+	case 8:
+		return 3;
+		break;
+	default:
+		return 0;
+		break;
+	}
+}
+
 static int isnum(RAsm *a, const char *str) {
 	if (r_num_get (a->num, str) != 0)
 		return 1;
@@ -1027,6 +1048,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			ut8 *ptr;
 			int pfx, arg0;
 			char *delta = NULL;
+			char *sib = NULL;
 			int argk = (*arg == '[');
 			dst = r_num_math (NULL, arg2);
 			ptr = (ut8 *)&dst;
@@ -1099,6 +1121,9 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				if (a->bits == 64)
 					if (*arg == 'r')
 						data[l++] = 0x48;
+
+				sib = strchr (arg2, '*');
+
 				delta = strchr (arg2, '+');
 				if (delta) {
 					N = 1;
@@ -1110,8 +1135,22 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 						*delta++ = 0;
 					}
 				}
+
 				data[l++] = 0x8b;
-				if (delta) {
+				if (sib) {
+					*sib++ = 0;
+					ut32 s = r_num_math (NULL, sib);
+					ut32 d = r_num_math (NULL, delta);
+
+					data[l++] = 0 << 6 | getreg (arg) << 3 | 4;
+					// TODO remove hardcoded SIB multiplier
+					data[l++] = getsib(s) << 6 | getreg (arg2) << 3 | 5;
+
+					data[l++] = d;
+					data[l++] = d >> 8;
+					data[l++] = d >> 16;
+					data[l++] = d >> 14;
+				} else if (delta) {
 					ut8 mask = 0x40;
 					ut32 d = r_num_math (NULL, delta) * N;
 					// Check if delta is short or dword
