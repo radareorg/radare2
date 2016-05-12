@@ -203,6 +203,25 @@ RList *linux_thread_list (int pid, RList *list) {
 	eprintf ("fos = 0x%04lx              ", (fpregs).fos)
 
 static void print_fpu (void *f, int r){
+#if __ppc__ || __powerpc__                              // reserved powepc;
+//	eprintf ("---- powerpc ----\n");  // commented, for test flag only. as requested
+//	int i;                                                               // tofix 
+//	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct*)f;   // tofix
+//	PRINT_FPU (fpregs);                             // tofix
+//	for(i = 0; i < 8; i++)                          // tofix
+//		{                                           
+//		ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);  // tofix
+//		ut32 *c = (ut32*)&fpregs.st_space;          // tofix
+//		float *f = (float *)&fpregs.st_space;       // tofix
+//		c = c + (i * 4);                            // tofix
+//		f = f + (i * 4);                            // tofix
+//		eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  |\
+//			%0.3f (%08x) \n", i,
+//			(double)*((double*)&fpregs.st_space[i*4]), *b, (float) f[0], 
+//			c[0], (float) f[1], c[1]);           // tofix
+//		}                                            // tofix
+#endif // __ppc__ || __powerpc__
+
 #if __x86_64__ || __i386__
 	int i;
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct*)f;
@@ -393,10 +412,10 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			};
 			ret = ptrace (PTRACE_GETREGSET, pid, NT_PRSTATUS, &io);
 			}
-#elif __POWERPC__
+#elif __POWERPC__ //|| __powerpc__ || __ppc__  // added powepc; tofix // omitted, reason: linux ptrace ppc swap args
 			ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
 #else
-			/* linux -{arm/x86/x86_64} */
+			/* linux -{arm/x86/x86_64/powerpc} */
 			ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
 #endif
 			/*
@@ -442,10 +461,11 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 			.iov_len = sizeof (R_DEBUG_REG_T)
 		};
 		int ret = ptrace (PTRACE_SETREGSET, dbg->pid, NT_PRSTATUS, &io);
-#elif __POWERPC__
+#elif __POWERPC__ // || __powerpc__ || __ppc__ // added powepc // omitted, reason: linux != osx
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid, &regs, NULL);
-#else 
-		int ret = ptrace (PTRACE_SETREGS, dbg->pid, 0, (void*)buf);
+#else           
+                /* linux -{arm32/x86/x86_64/powerpc} */
+		int ret = ptrace (PTRACE_SETREGS, dbg->pid, 0, (void*)buf); // 
 #endif
 		if (size > sizeof (R_DEBUG_REG_T)) size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? false : true;
