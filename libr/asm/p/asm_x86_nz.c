@@ -733,7 +733,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					if (*delta == '-') d = -d;
 					*delta++ = 0;
 					data[l++] = 0xff;
-					if (d < ST8_MAX && d > ST8_MAX) {
+					if (d < ST8_MAX && d > ST8_MIN) {
 						data[l++] = 0x70 | r;
 						if (r == 4)
 							data[l++] = 0x24; // wtf
@@ -1143,13 +1143,12 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					ut32 d = r_num_math (NULL, delta) * N;
 
 					data[l++] = 0 << 6 | getreg (arg) << 3 | 4;
-					data[l++] = getsib(s) << 6 | getreg (arg2) << 3 | 5;
+					data[l++] = getsib (s) << 6 | getreg (arg2) << 3 | 5;
 
 					data[l++] = d;
 					data[l++] = d >> 8;
 					data[l++] = d >> 16;
 					data[l++] = d >> 14;
-
 				} else if (delta) {
 					ut8 mask = 0x40;
 					ut32 d = r_num_math (NULL, delta) * N;
