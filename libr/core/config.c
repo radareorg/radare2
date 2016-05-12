@@ -1749,6 +1749,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")");
 	SETPREF("graph.gv.graph", "", "Graphviz global style attributes. (bgcolor=white)");
 	SETPREF("graph.gv.current", "false", "Highlight the current node in graphviz graph.");
+	SETPREF("graph.node_shortcuts", "false", "Enables shortcuts for every node.");
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");
 

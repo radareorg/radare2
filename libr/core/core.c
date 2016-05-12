@@ -122,6 +122,43 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
 	return UT64_MAX;
 }
 
+/**
+ * Takes addr and returns already saved shortcut or a new one
+ * The returned buffer needs to be freed
+ */
+R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
+	if (!core->asmqjmps) return NULL;
+	if (core->is_asmqjmps_letter) {
+		if (core->asmqjmps_count >= R_CORE_ASMQJMPS_MAX_LETTERS) {
+			return NULL;
+		}
+	}
+	char t[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
+	int i, found = 0;
+	for (i = 0; i < core->asmqjmps_count + 1; i++) {
+		if (core->asmqjmps[i] == addr) {
+			found = 1;
+			break;
+		}
+	}
+	if (!found) {
+		i++;
+		if (i >= core->asmqjmps_size) {
+			ut64* new_buffer = realloc (core->asmqjmps, sizeof(ut64) * core->asmqjmps_size * 2);	
+			if (!new_buffer) {
+				eprintf ("Failed to reallocate asmqjmp buffer\n");
+				return NULL;
+			}
+			core->asmqjmps = new_buffer;
+			core->asmqjmps_size = core->asmqjmps_size * 2;
+		}
+		core->asmqjmps_count = i;
+		core->asmqjmps[i] = addr;
+	}
+	r_core_set_asmqjmps (core, t, sizeof(t), i);
+	return strdup(t);
+}
+
 /* returns in str a string that represents the shortcut to access the asmqjmp
  * at position pos. When is_asmqjmps_letter is true, pos is converted into a
  * multiletter shortcut of the form XYWZu and returned (see r_core_get_asmqjmps

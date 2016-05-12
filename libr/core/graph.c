@@ -206,14 +206,28 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	if (y < -1)
 		delta_y = R_MIN (n->h - BORDER_HEIGHT - 1, -y - MARGIN_TEXT_Y);
 
-	/* print the title */
-	if (cur) {
-		snprintf (title, sizeof (title)-1,
-				"[%s]", n->title);
+	char* shortcut = sdb_get (g->db, sdb_fmt (2, "agraph.nodes.%s.shortcut", n->title), 0);
+	if (shortcut) {
+		/* print the title */
+		if (cur) {
+			snprintf (title, sizeof (title)-1,
+					"[%s] ;[%s]", n->title, shortcut);
+		} else {
+			snprintf (title, sizeof (title)-1,
+					" %s ;[%s]", n->title, shortcut);
+		}
+		free (shortcut);
 	} else {
-		snprintf (title, sizeof (title)-1,
-				" %s ", n->title);
+		/* print the title */
+		if (cur) {
+			snprintf (title, sizeof (title)-1,
+					"[%s]", n->title);
+		} else {
+			snprintf (title, sizeof (title)-1,
+					" %s", n->title);
+		}
 	}
+
 	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1))
 		W(title + delta_x);
 
@@ -1581,6 +1595,8 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
+	char *shortcut = NULL;
+	int shortcuts = 0;
 
 	core->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -1593,6 +1609,15 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		title = get_title (bb->addr);
 
 		node = r_agraph_add_node (g, title, body);
+		shortcuts = r_config_get_i (core->config, "graph.node_shortcuts");
+
+		if (shortcuts ) {
+			shortcut = r_core_add_asmqjmp (core, bb->addr);
+			if (shortcut) {
+				sdb_set (g->db, sdb_fmt (2, "agraph.nodes.%s.shortcut", title), shortcut, 0);
+				free (shortcut);
+			}
+		}
 		free (body);
 		free (title);
 		if (!node) return false;
