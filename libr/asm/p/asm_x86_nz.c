@@ -407,7 +407,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					int n = getnum (a, arg2);
 					int d = getnum (a, delta + 1);
 					int r = getreg (arg);
-					if (d < 127 && d > -127) {
+					if (d < ST8_MAX && d > ST8_MIN) {
 						data[l++] = 0x83;
 						if (r != 4)
 							data[l++] = 0x40 | r; // XXX: hardcoded
@@ -477,7 +477,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					int n = getnum (a, arg2);
 					int d = getnum (a, delta + 1);
 					int r = getreg (arg);
-					if (d < 127 && d > -127) {
+					if (d < ST8_MAX && d > ST8_MIN) {
 						data[l++] = 0x83;
 						if (r != 4)
 							data[l++] = 0x68 | r; // XXX: hardcoded
@@ -733,7 +733,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					if (*delta == '-') d = -d;
 					*delta++ = 0;
 					data[l++] = 0xff;
-					if (d < 127 && d > -127) {
+					if (d < ST8_MAX && d > ST8_MAX) {
 						data[l++] = 0x70 | r;
 						if (r == 4)
 							data[l++] = 0x24; // wtf
