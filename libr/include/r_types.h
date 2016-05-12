@@ -125,7 +125,7 @@ const char *x##_version()
 #define R_LIB_VERSION(x) \
 const char *x##_version () { return "" R2_GITTAP; }
 
-#define TODO(x) eprintf(__FUNCTION__"  " x)
+#define TODO(x) eprintf(__func__"  " x)
 
 // TODO: FS or R_SYS_DIR ??
 #undef FS
@@ -217,6 +217,11 @@ typedef void (*PrintfCallback)(const char *str, ...);
 //#define R_BIT_CHK(x,y) ((((const ut8*)x)[y>>4] & (1<<(y&0xf))))
 #define R_BIT_CHK(x,y) (*(x) & (1<<(y)))
 
+/* try for C99, but provide backwards compatibility */
+#if defined(_MSC_VER) && (_MSC_VER <= 1800)
+#define __func__ __FUNCTION__
+#endif
+
 /* make error messages useful by prepending file, line, and function name */
 #define _perror(str,file,line,func) \
   { \
@@ -224,8 +229,8 @@ typedef void (*PrintfCallback)(const char *str, ...);
 	  snprintf(buf,sizeof(buf),"[%s:%d %s] %s",file,line,func,str); \
 	  r_sys_perror_str(buf); \
   }
-#define perror(x) _perror(x,__FILE__,__LINE__,__FUNCTION__)
-#define r_sys_perror(x) _perror(x,__FILE__,__LINE__,__FUNCTION__)
+#define perror(x) _perror(x,__FILE__,__LINE__,__func__)
+#define r_sys_perror(x) _perror(x,__FILE__,__LINE__,__func__)
 
 #if __UNIX__
 #include <sys/types.h>
