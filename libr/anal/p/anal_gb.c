@@ -158,8 +158,8 @@ static inline void gb_anal_add_sp (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->dst->reg = r_reg_get (reg, "sp", R_REG_TYPE_GPR);
 	op->src[0]->imm = (st8)data;
 	if (data < 128)
-		r_strbuf_setf (&op->esil, "-0x%02x,sp,-=", data);		//sp-=0x90
-	else	r_strbuf_setf (&op->esil, "0x%02x,sp,+=", data - 128);		//sp+=0x90
+		r_strbuf_setf (&op->esil, "0x%02x,sp,+=", data);
+	else	r_strbuf_setf (&op->esil, "0x%02x,sp,-=", 0 - (st8)data);
 	r_strbuf_append (&op->esil, ",0,Z,=,0,N,=");
 }
 
@@ -195,8 +195,8 @@ static inline void gb_anal_mov_hl_sp (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->src[0]->reg = r_reg_get (reg, regs_16[3], R_REG_TYPE_GPR);
 	op->src[1]->imm = (st8)data;
 	if (data < 128)
-		r_strbuf_setf (&op->esil, "0x%02x,sp,-,hl,=", data);		//hl=sp-0x90
-	else	r_strbuf_setf (&op->esil, "0x%02x,sp,+,hl,=", data - 128);	//hl=sp+0x90
+		r_strbuf_setf (&op->esil, "0x%02x,sp,+,hl,=", data);
+	else	r_strbuf_setf (&op->esil, "0x%02x,sp,-,hl,=", 0 - (st8)data);
 	r_strbuf_append (&op->esil, ",0,Z,=,0,N,=");
 }
 
