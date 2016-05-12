@@ -476,11 +476,11 @@ static inline void gb_anal_store_hl (RReg *reg, RAnalOp *op, const ut8 *data)
 		op->src[0]->imm = data[1];
 		r_strbuf_setf (&op->esil, "0x%02x,hl,=[1]", data[1]);
 	} else {
-		op->src[0]->reg = r_reg_get (reg, regs_8[((data[0] & 0x38)>>3)], R_REG_TYPE_GPR);
-		r_strbuf_setf (&op->esil, "%s,hl,=[1]", regs_8[(data[0] & 0x38)>>3]);
+		op->src[0]->reg = r_reg_get (reg, regs_8[data[0] & 0x07], R_REG_TYPE_GPR);
+		r_strbuf_setf (&op->esil, "%s,hl,=[1]", regs_8[data[0] & 0x07]);
 	}
 	if (data[0] == 0x32)
-		r_strbuf_append (&op->esil, ",1,hl,-=");
+		r_strbuf_set (&op->esil, "a,hl,=[1],1,hl,-=");
 	if (data[0] == 0x22)
 		r_strbuf_set (&op->esil, "a,hl,=[1],1,hl,+=");
 }
