@@ -1904,7 +1904,6 @@ static void handle_print_fcn_name(RCore * core, RDisasmState *ds) {
 }
 
 static void handle_print_core_vmode(RCore *core, RDisasmState *ds) {
-	int i;
 	char *shortcut = NULL;
 
 	if (!ds->show_jmphints) return;
