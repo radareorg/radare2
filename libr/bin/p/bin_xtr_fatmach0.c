@@ -113,8 +113,7 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 		return res;
 	}
 
-	res = r_bin_xtrdata_new (xtr_obj, free_xtr, arch->b, arch->offset,
-		arch->size, narch);
+	res = r_bin_xtrdata_new (xtr_obj, free_xtr, arch->b, arch->offset, arch->size, narch);
 	r_buf_free (arch->b);
 	free (arch);
 	return res;

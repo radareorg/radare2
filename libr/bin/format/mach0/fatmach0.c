@@ -25,7 +25,7 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 		return false;
 	}
 	len = r_buf_fread_at (bin->b, R_BUF_CUR, (ut8*)bin->archs, "5I", bin->nfat_arch);
-	if (len == 0 || len == -1) {
+	if (len < 1) {
 		perror ("read (fat_arch)");
 		R_FREE (bin->archs);
 		return false;
@@ -49,20 +49,12 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 		perror ("malloc (ret)");
 		return NULL;
 	}
-#if 1
 	if (bin->archs[idx].size == 0 || bin->archs[idx].size > bin->size) {
 		eprintf ("Skipping corrupted sub-bin %d arch %d\n",
 			idx, bin->archs[idx].size);
-		free (buf);
-		//ret->b = r_buf_new ();
-		//ret->offset = bin->archs[idx].offset;
-		//ret->size = bin->archs[idx].size;
 		free (ret);
 		return NULL;
-//		free (ret);
-//		return NULL;
 	}
-#endif
 	if (!(buf = malloc (1 + bin->archs[idx].size))) {
 		perror ("malloc (buf)");
 		free (ret);

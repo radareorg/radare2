@@ -247,7 +247,7 @@ R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {
 }
 
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length) {
-	if (length<=0 || !buf) return R_FALSE;
+	if (length <= 0 || !buf) return R_FALSE;
 	free (b->buf);
 	if (!(b->buf = malloc (length)))
 		return R_FALSE;

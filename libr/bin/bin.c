@@ -751,9 +751,12 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	if (!binfile) {
 		binfile = r_bin_file_new_from_bytes (bin, desc->name, buf_bytes, sz,
 			file_sz, bin->rawstr, baseaddr, loadaddr, desc->fd, name, NULL, offset);
-	} else {
+	} 
+#if 0
+	else {
 		free (buf_bytes); // possible UAF
 	}
+#endif
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 
