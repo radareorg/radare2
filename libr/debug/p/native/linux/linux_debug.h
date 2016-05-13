@@ -65,8 +65,8 @@ int linux_handle_signals (RDebug *dbg);
 const char *linux_reg_profile (RDebug *dbg);
 /* coredump api */
 
-//#include "elf/elf.h"
-#include <elf.h>
+//#include "elf.h"
+#include "elf_specs.h"
 #include <sys/procfs.h>
 
 #define ELF_HDR_SIZE sizeof(Elf64_Ehdr)
