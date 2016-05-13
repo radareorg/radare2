@@ -79,6 +79,7 @@ typedef ut64 mips64_regs_t [274];
 
 //API
 int linux_step (RDebug *dbg);
+RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status);
 int linux_attach (RDebug *dbg, int pid);
 RDebugInfo *linux_info (RDebug *dbg, const char *arg);
 RList *linux_thread_list (int pid, RList *list);

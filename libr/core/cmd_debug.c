@@ -17,8 +17,6 @@ struct trace_node {
 	int refs;
 };
 
-static int checkbpcallback(RCore *core);
-
 // Get base address from a loaded file.
 static ut64 r_debug_get_baddr(RCore *r, const char *file) {
 	char *abspath;
@@ -82,7 +80,6 @@ static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 	}
 	r_reg_arena_swap (core->dbg->reg, true);
 	r_debug_continue_syscalls (core->dbg, syscalls, count);
-	checkbpcallback (core);
 	free (syscalls);
 }
 
@@ -190,7 +187,6 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
  * TODO: handle when the process is dead
  * TODO: handle ^C */
 
-static int checkbpcallback(RCore *core) ;
 static int step_until(RCore *core, ut64 addr) {
 	ut64 off = r_debug_reg_get (core->dbg, "PC");
 	if (off == 0LL) {
@@ -208,10 +204,6 @@ static int step_until(RCore *core, ut64 addr) {
 		if (r_debug_is_dead (core->dbg))
 			break;
 		r_debug_step (core->dbg, 1);
-		if (checkbpcallback (core)) {
-			eprintf ("Interrupted by a breakpoint\n");
-			break;
-		}
 		off = r_debug_reg_get (core->dbg, "PC");
 		// check breakpoint here
 	} while (off != addr);
@@ -233,10 +225,6 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 			break;
 		r_debug_step (core->dbg, 1);
 		r_debug_reg_sync (core->dbg, -1, 0);
-		if (checkbpcallback (core)) {
-			eprintf ("Interrupted by a breakpoint\n");
-			break;
-		}
 		if (r_anal_esil_condition (core->anal->esil, esilstr)) {
 			eprintf ("ESIL BREAK!\n");
 			break;
@@ -265,10 +253,6 @@ static int step_until_inst(RCore *core, const char *instr) {
 			break;
 		r_debug_step (core->dbg, 1);
 		r_debug_reg_sync (core->dbg, -1, 0);
-		if (checkbpcallback (core)) {
-			eprintf ("Interrupted by a breakpoint\n");
-			break;
-		}
 		/* TODO: disassemble instruction and strstr */
 		pc = r_debug_reg_get (core->dbg, "PC");
 		r_asm_set_pc (core->assembler, pc);
@@ -306,10 +290,6 @@ static int step_until_flag(RCore *core, const char *instr) {
 			break;
 		r_debug_step (core->dbg, 1);
 		r_debug_reg_sync (core->dbg, -1, 0);
-		if (checkbpcallback (core)) {
-			eprintf ("Interrupted by a breakpoint\n");
-			break;
-		}
 		pc = r_debug_reg_get (core->dbg, "PC");
 		list = r_flag_get_list (core->flags, pc);
 		r_list_foreach (list, iter, f) {
@@ -334,10 +314,6 @@ static int step_until_eof(RCore *core) {
 			break;
 		if (!r_debug_step (core->dbg, 1))
 			break;
-		if (checkbpcallback (core)) {
-			eprintf ("Interrupted by a breakpoint\n");
-			break;
-		}
 		off = r_debug_reg_get (core->dbg, "SP");
 		// check breakpoint here
 	} while (off <= now);
@@ -368,10 +344,6 @@ static int step_line(RCore *core, int times) {
 	}
 	do {
 		r_debug_step (core->dbg, 1);
-		if (checkbpcallback (core)) {
-			eprintf ("Interrupted by a breakpoint\n");
-			break;
-		}
 		off = r_debug_reg_get (core->dbg, "PC");
 		if (!r_bin_addr2line (core->bin, off, file2, sizeof (file2), &line2)) {
 			if (find_meta)
@@ -537,10 +509,6 @@ static void cmd_debug_backtrace (RCore *core, const char *input) {
 		do {
 			ut8 buf[32];
 			r_debug_continue (core->dbg);
-			if (checkbpcallback (core)) {
-				eprintf ("Interrupted by breakpoint\n");
-				break;
-			}
 			addr = r_debug_reg_get (core->dbg, "PC");
 			if (addr == 0LL) {
 				eprintf ("pc=0\n");
@@ -1648,38 +1616,6 @@ free (rf);
 	}
 }
 
-static int checkbpcallback(RCore *core) {
-	ut64 pc = r_debug_reg_get (core->dbg, "PC");
-	RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, pc);
-	if (bpi) {
-		// r_core_debug_breakpoint_hit (core, bpi);
-#if 0
-		const char *cmdbp = r_config_get (core->config, "cmd.bp");
-		if (bpi->data && bpi->data[0]) {
-			r_core_cmd (core, bpi->data, 0);
-		}
-		if (cmdbp && *cmdbp) {
-			r_core_cmd (core, cmdbp, 0);
-		}
-#endif
-		return true;
-	}
-	return false;
-}
-
-static int bypassbp(RCore *core) {
-	RBreakpointItem *bpi;
-	ut64 addr;
-	r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-	addr = r_debug_reg_get (core->dbg, "PC");
-	bpi = r_bp_get_at (core->dbg->bp, addr);
-	if (!bpi)
-		return false;
-	/* XXX 2 if libr/debug/debug.c:226 is enabled */
-	r_debug_step (core->dbg, 1);
-	return true;
-}
-
 static int validAddress(RCore *core, ut64 addr) {
 	RDebugMap *map;
 	RListIter *iter;
@@ -1753,9 +1689,11 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	switch (input[1]) {
 	case '.':
 		if (input[2]) {
-			ut64 addr = r_num_tail (core->num, core->offset, input +2);
+			ut64 addr = r_num_tail (core->num, core->offset, input + 2);
 			if (validAddress (core, addr)) {
 				bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
+				if (!bpi)
+					eprintf ("Unable to add breakpoint (%s)\n", input + 2);
 			} else {
 				eprintf ("Invalid address\n");
 			}
@@ -1994,8 +1932,10 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		bpi = r_bp_get_at (core->dbg->bp, addr);
 		if (bpi) {
 			//bp->enabled = !bp->enabled;
+			// XXX(jjd): this ^^ is what I would think toggling means...
 			r_bp_del (core->dbg->bp, addr);
 		} else {
+			// XXX(jjd): does t his need an address validity check??
 			bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
 			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input + 2);
 		}
@@ -2276,10 +2216,6 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 #endif
 			break;
 		}
-		if (checkbpcallback (core)) {
-			eprintf ("Interrupted by a breakpoint\n");
-			break;
-		}
 	}
 }
 
@@ -2319,8 +2255,8 @@ static void debug_trace_calls (RCore *core, const char *input) {
 
 	if (final_addr != UT64_MAX) {
 		int hwbp = r_config_get_i (core->config, "dbg.hwbp");
-		if (hwbp) bp_final = r_bp_add_hw (core->dbg->bp, final_addr, 1, R_BP_PROT_EXEC);
-		else bp_final = r_bp_add_sw (core->dbg->bp, final_addr, 1, R_BP_PROT_EXEC);
+
+		bp_final = r_debug_bp_add (core->dbg, final_addr, hwbp, NULL, 0);
 		if (!bp_final)
 			eprintf ("Cannot set breakpoint at final address (%"PFMT64x")\n", final_addr);
 	}
@@ -2589,11 +2525,9 @@ static bool cmd_dcu (RCore *core, const char *input) {
 	} else {
 		ut64 addr = from;
 		eprintf ("Continue until 0x%08"PFMT64x" using %d bpsize\n", addr, core->dbg->bpsize);
-		bypassbp (core);
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_bp_add_sw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC);
 		r_debug_continue (core->dbg);
-		checkbpcallback (core);
 		r_bp_del (core->dbg->bp, addr);
 	}
 	return true;
@@ -2626,10 +2560,8 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	// TODO: we must use this for step 'ds' too maybe...
 	switch (input[1]) {
 	case 0: // "dc"
-		bypassbp (core);
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_continue (core->dbg);
-		checkbpcallback (core);
 		break;
 	case 'a': // "dca"
 		eprintf ("TODO: dca\n");
@@ -2648,12 +2580,10 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		} else {
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
 		}
-		checkbpcallback (core);
 		break;
 	case 'r':
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
-		checkbpcallback (core);
 		break;
 	case 'k':
 		// select pid and r_debug_continue_kill (core->dbg,
@@ -2661,7 +2591,6 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		signum = r_num_math (core->num, input+2);
 		ptr = strchr (input+3, ' ');
 		if (ptr) {
-			bypassbp (core);
 			int old_pid = core->dbg->pid;
 			int old_tid = core->dbg->tid;
 			int pid = atoi (ptr+1);
@@ -2673,7 +2602,6 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		} else {
 			r_debug_continue_kill (core->dbg, signum);
 		}
-		checkbpcallback (core);
 		break;
 	case 's':
 		switch (input[2]) {
@@ -2724,12 +2652,10 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	case ' ':
 		old_pid = core->dbg->pid;
 		pid = atoi (input + 2);
-		bypassbp (core);
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_select (core->dbg, pid, core->dbg->tid);
 		r_debug_continue (core->dbg);
 		r_debug_select (core->dbg, old_pid, core->dbg->tid);
-		checkbpcallback (core);
 		break;
 	case 't':
 		cmd_debug_backtrace (core, input + 2);
@@ -2779,12 +2705,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	switch (input[1]) {
 	case 0:
 		r_reg_arena_swap (core->dbg->reg, true);
-		r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 		r_debug_step (core->dbg, times);
-		if (checkbpcallback (core)) {
-			eprintf ("Interrupted by a breakpoint\n");
-			break;
-		}
 		break;
 	case 'i':
 		if (input[2] == ' ') {
@@ -2796,10 +2717,6 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				r_debug_step (core->dbg, 1);
 				if (r_debug_is_dead (core->dbg))
 					break;
-				if (checkbpcallback (core)) {
-					eprintf ("Interrupted by a breakpoint\n");
-					break;
-				}
 				r_core_cmd0 (core, ".dr*");
 				n++;
 			} while (!r_num_conditional (core->num, input+3));
@@ -2848,10 +2765,6 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				}
 			}
 			r_debug_step (core->dbg, 1);
-			if (checkbpcallback (core)) {
-				eprintf ("Interrupted by a breakpoint\n");
-				break;
-			}
 		}
 		break;
 	case 's':
@@ -2885,11 +2798,6 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			r_bp_del (core->dbg->bp, addr);
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_step_over (core->dbg, times);
-			if (checkbpcallback (core)) {
-				eprintf ("Interrupted by a breakpoint\n");
-				if (bpi) r_core_cmd0 (core, delb);
-				break;
-			}
 			if (bpi) r_core_cmd0 (core, delb);
 			break;
 		}
@@ -3108,7 +3016,7 @@ static int cmd_debug(void *data, const char *input) {
 			NULL
 		};
 		RDebugInfo *rdi = r_debug_info (core->dbg, input+2);
-		int stop = r_debug_stop_reason(core->dbg);
+		RDebugReasonType stop = r_debug_stop_reason(core->dbg);
 		char *escaped_str;
 		switch (input[1]) {
 		case '\0':
@@ -3121,7 +3029,7 @@ static int cmd_debug(void *data, const char *input) {
 				P ("signum=%d\n", core->dbg->reason.signum);
 				P ("sigpid=%d\n", core->dbg->reason.tid);
 				P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
-				P ("inbp=%s\n", core->dbg->reason.bpi? "true": "false");
+				P ("inbp=%s\n", core->dbg->reason.bp_addr? "true": "false");
 				P ("pid=%d\n", rdi->pid);
 				P ("tid=%d\n", rdi->tid);
 				P ("uid=%d\n", rdi->uid);
@@ -3144,7 +3052,7 @@ static int cmd_debug(void *data, const char *input) {
 				P ("\"signum\":%d,", core->dbg->reason.signum);
 				P ("\"sigpid\":%d,", core->dbg->reason.tid);
 				P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
-				P ("\"inbp\":%s,", core->dbg->reason.bpi? "true": "false");
+				P ("\"inbp\":%s,", core->dbg->reason.bp_addr? "true": "false");
 				P ("\"pid\":%d,", rdi->pid);
 				P ("\"tid\":%d,", rdi->tid);
 				P ("\"uid\":%d,", rdi->uid);

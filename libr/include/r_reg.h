@@ -7,7 +7,11 @@
 
 R_LIB_VERSION_HEADER (r_reg);
 
-enum {
+/*
+ * various CPUs have registers within various types/classes
+ * this enum aims to cover them all.
+ */
+typedef enum {
 	R_REG_TYPE_GPR,
 	R_REG_TYPE_DRX,
 	R_REG_TYPE_FPU,
@@ -17,9 +21,13 @@ enum {
 	R_REG_TYPE_SEG,
 	R_REG_TYPE_LAST,
 	R_REG_TYPE_ALL = -1, // TODO; rename to ANY
-};
+} RRegisterType;
 
-enum {
+/*
+ * pretty much all CPUs share some common registers
+ * this enum aims to create an abstraction to ease cross-arch handling.
+ */
+typedef enum {
 	R_REG_NAME_PC, // program counter
 	R_REG_NAME_SP, // stack pointer
 	R_REG_NAME_SR, // status register
@@ -46,7 +54,7 @@ enum {
 	/* syscall number (orig_eax,rax,r0,x0) */
 	R_REG_NAME_SN,
 	R_REG_NAME_LAST,
-};
+} RRegisterId;
 
 // TODO: use enum here?
 #define R_REG_COND_EQ 0
@@ -71,10 +79,10 @@ enum {
 
 typedef struct r_reg_item_t {
 	char *name;
-	int type;
-	int size;	/* 8,16,32,64 ... 128/256 ??? */
-	int offset;      // offset in data structure
-	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
+	RRegisterType type;
+	int size;			/* 8,16,32,64 ... 128/256 ??? */
+	int offset;			/* offset in data structure */
+	int packed_size;	/* 0 means no packed register, 1byte pack, 2b pack... */
 	bool is_float;
 	char *flags;
 	int index;

@@ -1905,8 +1905,8 @@ repeat:
 	}
 
 	st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
+	ut64 pc = r_debug_reg_get (core->dbg, "PC");
 	if (follow > 0) {
-		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		if ((pc < core->offset) || (pc > (core->offset + follow)))
 			r_core_cmd0 (core, "sr PC");
 	}
@@ -1914,7 +1914,7 @@ repeat:
 	if (core->dbg->trace->enabled) {
 		RReg *reg = core->dbg->reg;
 		core->dbg->reg = core->anal->reg;
-		r_debug_trace_pc (core->dbg);
+		r_debug_trace_pc (core->dbg, pc);
 		core->dbg->reg = reg;
 	}
 	// check addr

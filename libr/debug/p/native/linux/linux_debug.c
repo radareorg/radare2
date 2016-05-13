@@ -7,6 +7,7 @@
 #include <r_anal.h>
 #include <signal.h>
 #include <sys/uio.h>
+#include <errno.h>
 #include "linux_debug.h"
 #include "../procfs.h"
 
@@ -37,7 +38,18 @@ const char *linux_reg_profile (RDebug *dbg) {
 int linux_handle_signals (RDebug *dbg) {
 	siginfo_t siginfo = {0};
 	int ret = ptrace (PTRACE_GETSIGINFO, dbg->pid, 0, &siginfo);
-	if (ret != -1 && siginfo.si_signo > 0) {
+
+	if (ret == -1) {
+		/* ESRCH means the process already went away :-/ */
+		if (errno == ESRCH) {
+			dbg->reason.type = R_DEBUG_REASON_DEAD;
+			return true;
+		}
+		r_sys_perror ("ptrace GETSIGINFO");
+		return false;
+	}
+
+	if (siginfo.si_signo > 0) {
 		//siginfo_t newsiginfo = {0};
 		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
 		dbg->reason.type = R_DEBUG_REASON_SIGNAL;
@@ -47,21 +59,80 @@ int linux_handle_signals (RDebug *dbg) {
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
 #warning DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
-		case SIGABRT: // 6 / SIGIOT // SIGABRT
-			dbg->reason.type = R_DEBUG_REASON_ABORT;
-			break;
-		case SIGSEGV:
-			dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
-			eprintf ("[+] SIGNAL %d errno=%d addr=%p code=%d ret=%d\n",
-				siginfo.si_signo, siginfo.si_errno,
-				siginfo.si_addr, siginfo.si_code, ret);
-			break;
-		default: break;
+			case SIGTRAP:
+				dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
+				break;
+			case SIGABRT: // 6 / SIGIOT // SIGABRT
+				dbg->reason.type = R_DEBUG_REASON_ABORT;
+				break;
+			case SIGSEGV:
+				dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
+				break;
+			default:
+				break;
 		}
+		eprintf ("[+] SIGNAL %d errno=%d addr=%p code=%d ret=%d\n",
+			siginfo.si_signo, siginfo.si_errno,
+			siginfo.si_addr, siginfo.si_code, ret);
 		return true;
 	}
 	return false;
 }
+
+#ifdef PT_GETEVENTMSG
+/*
+ * Handle PTRACE_EVENT_*
+ *
+ * Returns R_DEBUG_REASON_*
+ *
+ * If it's not something we handled, we return ..._UNKNOWN to
+ * tell the caller to keep trying to figure out what to do.
+ *
+ * If something went horribly wrong, we return ..._ERROR;
+ *
+ * NOTE: This API was added in Linux 2.5.46
+ */
+RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
+	ut32 pt_evt;
+	ut32 data;
+
+	/* we only handle stops with SIGTRAP here */
+	if (!WIFSTOPPED(status) || WSTOPSIG(status) != SIGTRAP)
+		return R_DEBUG_REASON_UNKNOWN;
+
+	pt_evt = status >> 16;
+	switch (pt_evt) {
+	case 0:
+		/* NOTE: this case is handled by linux_handle_signals */
+		break;
+	case PTRACE_EVENT_FORK:
+		if (dbg->trace_forks) {
+			if (ptrace (PTRACE_GETEVENTMSG, pid, 0, &data) == -1) {
+				r_sys_perror ("ptrace GETEVENTMSG");
+				return R_DEBUG_REASON_ERROR;
+			}
+
+			eprintf ("PTRACE_EVENT_FORK new_pid=%d\n", data);
+			dbg->forked_pid = data;
+			// TODO: more handling here?
+			/* we have a new process that we are already tracing */
+			return R_DEBUG_REASON_NEW_PID;
+		}
+		break;
+	case PTRACE_EVENT_EXIT:
+		if (ptrace (PTRACE_GETEVENTMSG, pid, 0, &data) == -1) {
+			r_sys_perror ("ptrace GETEVENTMSG");
+			return R_DEBUG_REASON_ERROR;
+		}
+		eprintf ("PTRACE_EVENT_EXIT pid=%d, status=%d\n", pid, data);
+		return R_DEBUG_REASON_EXIT_PID;
+	default:
+		eprintf ("Unknown PTRACE_EVENT encountered: %d\n", pt_evt);
+		break;
+	}
+	return R_DEBUG_REASON_UNKNOWN;
+}
+#endif
 
 int linux_step (RDebug *dbg) {
 	int ret = false;
@@ -69,9 +140,9 @@ int linux_step (RDebug *dbg) {
 	//ut32 data = 0;
 	//printf("NATIVE STEP over PID=%d\n", dbg->pid);
 	addr = r_debug_reg_get (dbg, "PC");
-	ret = ptrace (PTRACE_SINGLESTEP, dbg->pid,
-			(void*)(size_t)addr, 0);
-	linux_handle_signals (dbg);
+	//eprintf ("NATIVE STEP over PID=%d at 0x%" PFMT64x "\n", dbg->pid, addr);
+	ret = ptrace (PTRACE_SINGLESTEP, dbg->pid, (void*)(size_t)addr, 0);
+	//XXX(jjd): why?? //linux_handle_signals (dbg);
 	if (ret == -1) {
 		perror ("native-singlestep");
 		ret = false;
