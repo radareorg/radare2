@@ -8,9 +8,7 @@ static inline ut8 r_read_ble8(const void *src) {
 }
 
 static inline ut8 r_read_at_ble8(const void *src, size_t offset) {
-	const ut8 *s = src;
-	s += offset;
-	return r_read_ble8 (s);
+	return r_read_ble8 (((const ut8*)src) + offset);
 }
 
 static inline void r_write_ble8(void *dest, ut8 val) {
@@ -18,7 +16,7 @@ static inline void r_write_ble8(void *dest, ut8 val) {
 }
 
 static inline void r_write_at_ble8(void *dest, ut8 val, size_t offset) {
-	ut8 *d = dest + offset;
+	ut8 *d = (ut8*)dest + offset;
 	r_write_ble8 (d, val);
 }
 
@@ -41,12 +39,12 @@ static inline void r_write_at_be8(void *dest, ut8 val, size_t offset) {
 }
 
 static inline ut16 r_read_be16(const void *src) {
-	const ut8 *s = src;
+	const ut8 *s = (const ut8*)src;
 	return (((ut16)s[0]) << 8) | (((ut16)s[1]) << 0);
 }
 
 static inline ut16 r_read_at_be16(const void *src, size_t offset) {
-	const ut8 *s = src + offset;
+	const ut8 *s = (const ut8*)src + offset;
 	return r_read_be16 (s);
 }
 
@@ -56,18 +54,18 @@ static inline void r_write_be16(void *dest, ut16 val) {
 }
 
 static inline void r_write_at_be16(void *dest, ut16 val, size_t offset) {
-	ut8 *d = dest + offset;
+	ut8 *d = (ut8*)dest + offset;
 	r_write_be16 (d, val);
 }
 
 static inline ut32 r_read_be32(const void *src) {
-	const ut8 *s = src;
+	const ut8 *s = (const ut8*)src;
 	return (((ut32)s[0]) << 24) | (((ut32)s[1]) << 16) |
 		(((ut32)s[2]) << 8) | (((ut32)s[3]) << 0);
 }
 
 static inline ut32 r_read_at_be32(const void *src, size_t offset) {
-	const ut8 *s = src + offset;
+	const ut8 *s = (const ut8*)src + offset;
 	return r_read_be32 (s);
 }
 
@@ -77,7 +75,7 @@ static inline void r_write_be32(void *dest, ut32 val) {
 }
 
 static inline void r_write_at_be32(void *dest, ut32 val, size_t offset) {
-	ut8 *d = dest + offset;
+	ut8 *d = (ut8*)dest + offset;
 	r_write_be32 (d, val);
 }
 
@@ -88,7 +86,7 @@ static inline ut64 r_read_be64(const void *src) {
 }
 
 static inline ut64 r_read_at_be64(const void *src, size_t offset) {
-	const ut8 *s = src + offset;
+	const ut8 *s = (const ut8*)src + offset;
 	return r_read_be64 (s);
 }
 
@@ -98,7 +96,7 @@ static inline void r_write_be64(void *dest, ut64 val) {
 }
 
 static inline void r_write_at_be64(void *dest, ut64 val, size_t offset) {
-	ut8 *d = dest + offset;
+	ut8 *d = (ut8*)dest + offset;
 	r_write_be64 (d, val);
 }
 
@@ -121,12 +119,12 @@ static inline void r_write_at_le8(void *dest, ut8 val, size_t offset) {
 }
 
 static inline ut16 r_read_le16(const void *src) {
-	const ut8 *s = src;
+	const ut8 *s = (const ut8*)src;
 	return (((ut16)s[1]) << 8) | (((ut16)s[0]) << 0);
 }
 
 static inline ut16 r_read_at_le16(const void *src, size_t offset) {
-	const ut8 *s = src + offset;
+	const ut8 *s = (const ut8*)src + offset;
 	return r_read_le16 (s);
 }
 
@@ -136,18 +134,18 @@ static inline void r_write_le16(void *dest, ut16 val) {
 }
 
 static inline void r_write_at_le16(void *dest, ut16 val, size_t offset) {
-	ut8 *d = dest + offset;
+	ut8 *d = (ut8 *)dest + offset;
 	r_write_le16 (d, val);
 }
 
 static inline ut32 r_read_le32(const void *src) {
-	const ut8 *s = src;
+	const ut8 *s = (const ut8*)src;
 	return (((ut32)s[3]) << 24) | (((ut32)s[2]) << 16) |
 		(((ut32)s[1]) << 8) | (((ut32)s[0]) << 0);
 }
 
 static inline ut32 r_read_at_le32(const void *src, size_t offset) {
-	const ut8 *s = src + offset;
+	const ut8 *s = (const ut8*)src + offset;
 	return r_read_le32 (s);
 }
 
@@ -157,7 +155,7 @@ static inline void r_write_le32(void *dest, ut32 val) {
 }
 
 static inline void r_write_at_le32(void *dest, ut32 val, size_t offset) {
-	ut8 *d = dest + offset;
+	ut8 *d = ((ut8*)dest) + offset;
 	r_write_le32 (d, val);
 }
 
@@ -168,7 +166,7 @@ static inline ut64 r_read_le64(const void *src) {
 }
 
 static inline ut64 r_read_at_le64(const void *src, size_t offset) {
-	const ut8 *s = src + offset;
+	const ut8 *s = ((const ut8*)src) + offset;
 	return r_read_le64 (s);
 }
 
@@ -178,7 +176,7 @@ static inline void r_write_le64(void *dest, ut64 val) {
 }
 
 static inline void r_write_at_le64(void *dest, ut64 val, size_t offset) {
-	ut8 *d = dest + offset;
+	ut8 *d = (ut8*)dest + offset;
 	r_write_le64 (d, val);
 }
 

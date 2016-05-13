@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2016 - pancake */
 
+//Implemented AES version of RC6. keylen = 16, 23, or 32 bytes; w = 32; and r = 20.
 #include <r_lib.h>
 #include <r_crypto.h>
 
@@ -30,7 +31,7 @@ static bool rc6_init(struct rc6_state *const state, const ut8 *key, int keylen, 
 	int t = 2 * r + 4;
 	ut32 L[c];
 	ut32 A = 0, B = 0, k = 0, j = 0;
-	ut32 v = 3 * ((c > t) ? c : t);
+	ut32 v = 3 * t; //originally v = 2 * ((c > t) ? c : t);
 
 	int i, off;
 

@@ -274,6 +274,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 				// push string
 				if (i && *out) strcat (out, ".");
 				STRCAT_BOUNDS (len);
+				len = R_MIN (len, strlen (q));
 				strcat (out, getstring (q, len));
 			}
 		}
@@ -597,6 +598,9 @@ Test swift_tests[] = {
 },{
 	"__TWoFC4main4TostCfT_S0_"
 	,"Tost.allocator..init.witnesstable"
+},{
+	"__TMBi256_"
+	,"_..metadata"
 },{
 	"__TWvdvC4main4Tost3msgSS"
 	,"main.Tost.msg__String..field"
