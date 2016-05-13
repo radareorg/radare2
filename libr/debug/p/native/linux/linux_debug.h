@@ -115,17 +115,17 @@ typedef struct proc_stat_content {
         int pgrp;
         int sid;
         char s_name;
-        unsigned long int flag;
+        ut32 flag;
 	unsigned long int utime;
 	unsigned long int stime;
-	unsigned long int cutime;
-	unsigned long int cstime;
+	long int cutime;
+	long int cstime;
         unsigned long int nice;
-        unsigned int num_threads;
+        unsigned long int num_threads;
         unsigned long int sigpend;
         unsigned long int sighold;
-        unsigned int uid;
-        unsigned int gid;
+        ut32 uid;
+        ut32 gid;
 	unsigned char coredump_filter;
 }proc_stat_content_t;
 
@@ -140,20 +140,33 @@ typedef struct auxv_buff {
 } auxv_buff_t;
 
 typedef struct linux_map_entry {
-        unsigned long long start_addr;
-        unsigned long long end_addr;
-        unsigned long long offset;
-        unsigned long long inode;
-        unsigned long int perms;
+        ut64 start_addr;
+        ut64 end_addr;
+        ut64 offset;
+        ut64 inode;
+        ut8 perms;
+        ut32 s_name;
         bool anonymous;
 	bool dumpeable;
 	bool kernel_mapping;
 	bool file_backed;
-        unsigned int s_name;
         char *name;
         struct linux_map_entry *n;
 }linux_map_entry_t;
 
+
+#define ADD_MAP_NODE(p)         do {							\
+					if (me_head) {					\
+						p->n = NULL;				\
+						me_tail->n = p;				\
+						me_tail = p;				\
+					} else {					\
+                                                me_head = p;                            \
+						me_tail = p;				\
+					}						\
+				} while(0)
+
+/*
 #define ADD_MAP_NODE(p)         do {                                                    \
                                         if(me_head == NULL) {                           \
                                                 me_head = p;                            \
@@ -164,7 +177,7 @@ typedef struct linux_map_entry {
                                                 me_tail = p;                            \
                                         }                                               \
                                 } while(0)
-
+*/
 
 typedef struct linux_elf_note {
         prpsinfo_t *prpsinfo;
@@ -188,17 +201,17 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_stat_content_t *proc_dat
 static prstatus_t *linux_get_prstatus(RDebug *dbg, proc_stat_content_t *proc_data, short int signr);
 static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg);
 static siginfo_t *linux_get_siginfo(RDebug *dbg);
-static void get_map_address_space(char *pstr, unsigned long long *start_addr, unsigned long long *end_addr);
-static void get_map_perms(char *pstr, unsigned long int *fl_perms);
-static void get_map_offset(char *pstr, unsigned long long *offset);
+static void get_map_address_space(char *pstr, ut64 *start_addr, ut64 *end_addr);
+static void get_map_perms(char *pstr, ut8 *fl_perms);
+static void get_map_offset(char *pstr, ut64 *offset);
 static void get_map_name(char *pstr, char **name);
 static bool get_anonymous_value(char *keyw);
 static bool has_map_deleted_part(char *name);
-static bool has_map_anonymous_content(FILE *f, unsigned long long start_addr, unsigned long long end_addr);
+static bool has_map_anonymous_content(FILE *f, ut64 start_addr, ut64 end_addr);
 static bool is_a_kernel_mapping(char *map_name);
-static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, unsigned long int filter_flags);
+static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags);
 static auxv_buff_t *linux_get_auxv(RDebug *dbg);
-static Elf64_Ehdr *build_elf_hdr(unsigned int n_segments);
+static Elf64_Ehdr *build_elf_hdr(ut32 n_segments);
 static int get_n_mappings(linux_map_entry_t *me_head);
 static bool dump_elf_header(RBuffer *dest, Elf64_Ehdr *hdr);
 static void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size);
