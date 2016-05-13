@@ -1184,6 +1184,18 @@ struct encryption_info_command {
 				   0 means not-encrypted yet */
 };
 
+
+struct encryption_info_command_64 {
+   ut32	cmd;		/* LC_ENCRYPTION_INFO_64 */
+   ut32	cmdsize;	/* sizeof(struct encryption_info_command_64) */
+   ut32	cryptoff;	/* file offset of encrypted range */
+   ut32	cryptsize;	/* file size of encrypted range */
+   ut32	cryptid;	/* which enryption system,
+				   0 means not-encrypted yet */
+   ut32	pad;		/* padding to make this struct's size a multiple
+				   of 8 bytes */
+};
+
 /*
  * The version_min_command contains the min OS version on which this
  * binary was built to run.
