@@ -498,8 +498,8 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 	case X86_INS_MOVSD:
 		// Handle "Move Scalar Double-Precision Floating-Point Value"
 		if (is_xmm_reg (INSOP(0)) || is_xmm_reg (INSOP(1))) {
-			const char *src = getarg (&gop, 1, 0, NULL);
-			const char *dst = getarg (&gop, 0, 1, NULL);
+			char *src = getarg (&gop, 1, 0, NULL);
+			char *dst = getarg (&gop, 0, 1, NULL);
 			if (src && dst) {
 				esilprintf (op, "%s,%s", src, dst);
 			}

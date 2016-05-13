@@ -36,7 +36,6 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 		return R_HASH_SIZE_CRC16;
 	}
 	if (algobit & R_HASH_CRC32) {
-		ut8 *pres;
 		ut32 res = r_hash_crc32 (buf, len);
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32);
 		return R_HASH_SIZE_CRC32;

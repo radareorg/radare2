@@ -180,21 +180,26 @@ R_API void r_graph_del_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
 	t->n_edges--;
 }
 
+/* returns the list of nodes reachable from `n` */
 R_API const RList *r_graph_get_neighbours (const RGraph *g, const RGraphNode *n) {
 	if (!n) return NULL;
 	return n->out_nodes;
 }
 
+/* returns the n-th nodes reachable from the give node `n`.
+ * This, of course, depends on the order of the nodes. */
 R_API RGraphNode *r_graph_nth_neighbour (const RGraph *g, const RGraphNode *n, int nth) {
 	if (!n) return NULL;
 	return (RGraphNode *)r_list_get_n (n->out_nodes, nth);
 }
 
+/* returns the list of nodes that can reach `n` */
 R_API const RList *r_graph_innodes (const RGraph *g, const RGraphNode *n) {
 	if (!n) return NULL;
 	return n->in_nodes;
 }
 
+/* returns the list of nodes reachable from `n` and that can reach `n`. */
 R_API const RList *r_graph_all_neighbours (const RGraph *g, const RGraphNode *n) {
 	if (!n) return NULL;
 	return n->all_neighbours;
@@ -205,6 +210,7 @@ R_API const RList *r_graph_get_nodes (const RGraph *g) {
 	return g->nodes;
 }
 
+/* true if there is an edge from the node `from` to the node `to` */
 R_API int r_graph_adjacent (const RGraph *g, const RGraphNode *from, const RGraphNode *to) {
 	if (!g || !from) return R_FALSE;
 	return r_list_contains (from->out_nodes, to) ? R_TRUE : R_FALSE;
