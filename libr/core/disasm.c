@@ -870,7 +870,7 @@ static int var_comparator(const RAnalVar *a, const RAnalVar *b){
 
 static void handle_show_functions(RCore *core, RDisasmState *ds) {
 	RAnalFunction *f;
-	bool demangle;
+	bool demangle, call;
 	const char *lang;
 	char *fcn_name;
 	char *sign;
@@ -879,6 +879,7 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 		return;
 	}
 	demangle = r_config_get_i (core->config, "bin.demangle");
+	call = r_config_get_i (core->config, "asm.calls");
 	lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (!f || (f->addr != ds->at)) {
@@ -949,6 +950,8 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 	ds->stackptr = 0;
 	if (ds->vars) {
 		char spaces[32];
+		RAnalVar *var;
+		RListIter *iter;
 		RList *args = r_anal_var_list (core->anal, f,
 			(f->call == R_ANAL_CC_TYPE_FASTCALL) ? 'A' : 'a');
 		RList *vars = r_anal_var_list (core->anal, f, 'v');
@@ -956,10 +959,18 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 		r_list_sort (args, (RListComparator)var_comparator);
 		r_list_sort (vars, (RListComparator)var_comparator);
 		r_list_sort (sp_vars, (RListComparator)var_comparator);
+		if (call) {
+			r_cons_printf ("%s%s%s %s %s%s (",
+				COLOR (ds, color_fline), ds->pre,
+				COLOR_RESET (ds), COLOR (ds, color_fname),
+				fcn_name, COLOR_RESET (ds));
+			r_list_foreach (args, iter, var) {
+				r_cons_printf ("%s %s%s", var->type, var->name, iter->n ? ", " : "");
+			}
+			r_cons_printf (");\n");
+		}
 		r_list_join (args, vars);
 		r_list_join (args,sp_vars);
-		RAnalVar *var;
-		RListIter *iter;
 		r_list_foreach (args, iter, var) {
 			int idx;
 
