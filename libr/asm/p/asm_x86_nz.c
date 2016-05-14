@@ -704,6 +704,9 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				data[l++] = 0xc0 | getreg (arg);
 			} else {
 				data[l++] = 0x40 | getreg (arg);
+				if (data[l - 1] == 0xff) {
+					data[l++] = 0x00;
+				}
 			}
 			return l;
 		} else if (!strcmp (op, "dec")) {
