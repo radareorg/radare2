@@ -366,10 +366,17 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_FMULP:
 		break;
 	case X86_INS_CLI:
+		esilprintf (op, "0,if,=");
+		break;
 	case X86_INS_STI:
+		esilprintf (op, "1,if,=");
 		break;
 	case X86_INS_CLC:
+		esilprintf (op, "0,cf,=");
+		break;
 	case X86_INS_STC:
+		esilprintf (op, "1,cf,=");
+		break;
 	case X86_INS_CLAC:
 	case X86_INS_CLGI:
 	case X86_INS_CLTS:
@@ -407,31 +414,14 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			case X86_INS_SETNP: esilprintf (op, "pf,!,%s", dst); break;
 			case X86_INS_SETS:  esilprintf (op, "sf,%s", dst); break;
 			case X86_INS_SETNS: esilprintf (op, "sf,!,%s", dst); break;
-
 			case X86_INS_SETB:  esilprintf (op, "cf,%s", dst); break;
 			case X86_INS_SETAE: esilprintf (op, "cf,!,%s", dst); break;
-
-			/* TODO */
-#if 0
-SETLE/SETNG
-Sets the byte in the operand to 1 if the Zero Flag is set or the
-Sign Flag is not equal to the Overflow Flag,  otherwise sets the
-operand to 0.
-SETBE/SETNA
-Sets the byte in the operand to 1 if the Carry Flag or the Zero
-			Flag is set, otherwise sets the operand to 0.
-SETL/SETNGE
-Sets the byte in the operand to 1 if the Sign Flag is not equal
-			to the Overflow Flag, otherwise sets the operand to 0.
-
-			case X86_INS_SETL:  esilprintf (op, "pf,!,%s,=", dst); break;
-			case X86_INS_SETLE: esilprintf (op, "pf,!,%s,=", dst); break;
-			case X86_INS_SETG:  esilprintf (op, "pf,!,%s,=", dst); break;
-			case X86_INS_SETA:  esilprintf (op, "pf,!,%s,=", dst); break;
-			case X86_INS_SETBE: esilprintf (op, "pf,!,%s,=", dst); break;
-			case X86_INS_SETGE: esilprintf (op, "pf,!,%s,=", dst); break;
-							break;
-#endif
+			case X86_INS_SETL:  esilprintf (op, "sf,of,!=,%s", dst); break;
+			case X86_INS_SETLE: esilprintf (op, "zf,sf,of,!=,|,%s", dst); break;
+			case X86_INS_SETG:  esilprintf (op, "zf,!,sf,of,==,&,%s", dst); break;
+			case X86_INS_SETGE: esilprintf (op, "sf,of,==,%s", dst); break;
+			case X86_INS_SETA:  esilprintf (op, "cf,zf,|,!,%s", dst); break;
+			case X86_INS_SETBE: esilprintf (op, "cf,zf,|,%s", dst); break;
 			}
 			free (dst);
 		}
@@ -461,7 +451,82 @@ Sets the byte in the operand to 1 if the Sign Flag is not equal
 	case X86_INS_CMOVNS:
 	case X86_INS_CMOVO:
 	case X86_INS_CMOVP:
-	case X86_INS_CMOVS:
+	case X86_INS_CMOVS: {
+		const char *conditional = NULL;
+		char *src = getarg (&gop, 1, 0, NULL);
+		char *dst = getarg (&gop, 0, 1, NULL);
+		switch (insn->id) {
+		case X86_INS_CMOVA:
+			// mov if CF = 0 *AND* ZF = 0
+			conditional = "cf,zf,|,!";
+			break;
+		case X86_INS_CMOVAE:
+			// mov if CF = 0
+			conditional = "cf,!";
+			break;
+		case X86_INS_CMOVB:
+			// mov if CF = 1
+			conditional = "cf";
+			break;
+		case X86_INS_CMOVBE:
+			// mov if CF = 1 *OR* ZF = 1
+			conditional = "cf,zf,|";
+			break;
+		case X86_INS_CMOVE:
+			// mov if ZF = 1
+			conditional = "zf";
+			break;
+		case X86_INS_CMOVG:
+			// mov if ZF = 0 *AND* SF = OF
+			conditional = "zf,!,sf,of,==,&";
+			break;
+		case X86_INS_CMOVGE:
+			// mov if SF = OF
+			conditional = "sf,of,==";
+			break;
+		case X86_INS_CMOVL:
+			// mov if SF != OF
+			conditional = "sf,of,!=";
+			break;
+		case X86_INS_CMOVLE:
+			// mov if ZF = 1 *OR* SF != OF
+			conditional = "zf,sf,of,!=,|";
+			break;
+		case X86_INS_CMOVNE:
+			// mov if ZF = 0
+			conditional = "zf,!";
+			break;
+		case X86_INS_CMOVNO:
+			// mov if OF = 0
+			conditional = "of,!";
+			break;
+		case X86_INS_CMOVNP:
+			// mov if PF = 0
+			conditional = "pf,!";
+			break;
+		case X86_INS_CMOVNS:
+			// mov if SF = 0
+			conditional = "sf,!";
+			break;
+		case X86_INS_CMOVO:
+			// mov if OF = 1
+			conditional = "of";
+			break;
+		case X86_INS_CMOVP:
+			// mov if PF = 1
+			conditional = "pf";
+			break;
+		case X86_INS_CMOVS:
+			// mov if SF = 1
+			conditional = "sf";
+			break;
+		}
+		if (src && dst && conditional) {
+			esilprintf (op, "%s,?{,%s,%s,}", conditional, src, dst);
+		}
+		free (src);
+		free (dst);
+	}
 		break;
 	case X86_INS_STOSB:
 			r_strbuf_appendf (&op->esil, "al,edi,=[1],df,?{,1,edi,-=,},df,!,?{,1,edi,+=,}");
