@@ -1050,7 +1050,7 @@ static void handle_setup_pre(RCore *core, RDisasmState *ds, bool tail) {
 			}
 		} else if (f->addr + f->size - ds->analop.size == ds->at) {
 			handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
-		} else if (ds->at > f->addr && ds->at < f->addr+f->size-1) {
+		} else if (r_anal_fcn_is_in_offset (f, ds->at)) {
 			handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 		}
 
@@ -2711,7 +2711,7 @@ toro:
 
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		ds->fcn = f;
-		if (f && f->folded && ds->at >= f->addr && ds->at < f->addr+f->size) {
+		if (f && f->folded && r_anal_fcn_is_in_offset (f, ds->at)) {
 			int delta = (ds->at <= f->addr)? (ds->at - f->addr + f->size): 0;
 			if (of != f) {
 				char cmt[32];

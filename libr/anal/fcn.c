@@ -597,7 +597,7 @@ repeat:
 #else
 						// hardcoded jmp size // must be checked at the end wtf?
 						// always fitfcnsz and retend
-						if (op.jump>fcn->addr && op.jump<(fcn->addr+fcn->size)) {
+						if (r_anal_fcn_is_in_offset (op.jump)) {
 							/* jump inside the same function */
 							FITFCNSZ();
 							return R_ANAL_RET_END;
@@ -857,8 +857,7 @@ R_API void r_anal_trim_jmprefs(RAnalFunction *fcn) {
 	RListIter *iter;
 	RListIter *tmp;
 	r_list_foreach_safe (fcn->refs, iter, tmp, ref) {
-		if (ref->type == R_ANAL_REF_TYPE_CODE &&
-				ref->addr >= fcn->addr && (ref->addr - fcn->addr) < fcn->size) {
+		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_fcn_is_in_offset (fcn, ref->addr)) {
 			r_list_delete(fcn->refs, iter);
 		}
 	}
@@ -1025,11 +1024,9 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	}
 	r_list_foreach (anal->fcns, iter, fcn) {
 		if (!type || (fcn && fcn->type & type)) {
-			if (addr == fcn->addr ||
-			    (ret == NULL && ((addr > fcn->addr) &&
-			    (addr < fcn->addr + fcn->size))))
+			if (fcn->addr == addr || (!ret && r_anal_fcn_is_in_offset (fcn, addr))) {
 				ret = fcn;
-
+			}
 		}
 	}
 	return ret;
@@ -1040,8 +1037,9 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
 	RAnalFunction *fcn = NULL;
 	RListIter *iter;
 	r_list_foreach (anal->fcns, iter, fcn) {
-		if (!strcmp (name, fcn->name))
+		if (!strcmp (name, fcn->name)) {
 			return fcn;
+		}
 	}
 	return NULL;
 }
@@ -1294,16 +1292,26 @@ R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) {
 }
 
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
-	return (addr >= fcn->addr &&  addr < (fcn->addr+fcn->size));
+	RAnalBlock *bb;
+	RListIter *iter;
+
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (addr >= bb->addr && addr < bb->addr + bb->size) {
+			return true;
+		}
+	}
+	return false;
 }
 
 R_API int r_anal_fcn_count (RAnal *anal, ut64 from, ut64 to) {
 	int n = 0;
 	RAnalFunction *fcni;
 	RListIter *iter;
-	r_list_foreach (anal->fcns, iter, fcni)
-		if (fcni->addr >= from && fcni->addr < to)
+	r_list_foreach (anal->fcns, iter, fcni) {
+		if (fcni->addr >= from && fcni->addr < to) {
 			return n++;
+		}
+	}
 	return n;
 }
 

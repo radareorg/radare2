@@ -1126,7 +1126,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	fcn = r_anal_get_fcn_in (core->anal, at, 0);
 	if (fcn) {
 		if (fcn->addr == at) return 0;  // already analyzed function
-		if (from >= fcn->addr && (from - fcn->addr) < fcn->size) {	// inner function
+		if (r_anal_fcn_is_in_offset (fcn, from)) { // inner function
 			RAnalRef *ref;
 
 			// XXX: use r_anal-xrefs api and sdb
