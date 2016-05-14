@@ -1294,11 +1294,20 @@ R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) {
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
 	RAnalBlock *bb;
 	RListIter *iter;
+	bool has_bbs = false;
 
 	r_list_foreach (fcn->bbs, iter, bb) {
+		has_bbs = true;
 		if (addr >= bb->addr && addr < bb->addr + bb->size) {
 			return true;
 		}
+	}
+
+	if (!has_bbs) {
+		// hack to make anal_java work, because it doesn't use
+		// basicblocks.
+		// FIXME: anal_java should create basicblocks
+		return addr >= fcn->addr && addr < fcn->addr + fcn->size;
 	}
 	return false;
 }
