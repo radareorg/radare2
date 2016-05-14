@@ -1105,9 +1105,7 @@ static int esil_mod(RAnalEsil *esil) {
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
-				ut64 mod = d % s;
-				mod += d < 0? s: 0;
-				r_anal_esil_pushnum (esil, mod);
+				r_anal_esil_pushnum (esil, d % s);
 			}
 			ret = 1;
 		}
@@ -1130,12 +1128,9 @@ static int esil_modeq(RAnalEsil *esil) {
 				if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
 					esil->old = d;
 					esil->cur = d % s;
-					esil->cur += d < 0? s: 0;
 					esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 				}
-				ut64 mod = d % s;
-				mod += d < 0? s: 0;
-				r_anal_esil_reg_write (esil, dst, mod);
+				r_anal_esil_reg_write (esil, dst, d % s);
 			} else {
 				ERR ("esil_modeq: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
@@ -1908,9 +1903,7 @@ static int esil_mem_modeq_n(RAnalEsil *esil, int bits) {
 			ret = (!!esil_peek_n (esil, bits));
 			src1 = r_anal_esil_pop (esil);
 			if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
-				ut64 mod = d % s;
-				mod += d < 0? s: 0;
-				r_anal_esil_pushnum (esil, mod);
+				r_anal_esil_pushnum (esil, d % s);
 				r_anal_esil_push (esil, dst);
 				ret &= (!!esil_poke_n (esil, bits));
 			} else ret = 0;
