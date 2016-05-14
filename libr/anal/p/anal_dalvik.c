@@ -14,8 +14,13 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 
 	memset (op, '\0', sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
+	op->ptr = UT64_MAX;
+	op->val = UT64_MAX;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
+	op->refptr = 0;
 	op->size = sz;
-	op->nopcode = 1; // Necesary??
+	op->nopcode = 1; // Necessary??
 
 	switch (data[0]) {
 		case 0xca: // rem-float:
@@ -34,7 +39,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x0a: //
 		case 0x0d: // move-exception
 		case 0x12: // const/4
-		case 0x13: // const
+		case 0x13: // const/16
 		case 0x14: // const
 		case 0x15: // const
 		case 0x16: // const
@@ -42,11 +47,18 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x42: // const
 		case 0x18: // const-wide
 		case 0x19: // const-wide
-		case 0x1a: // const-string
 		case 0x0c: // move-result-object // TODO: add MOVRET OP TYPE ??
 		case 0x0b: // move-result-wide
+			op->type = R_ANAL_OP_TYPE_MOV;
+			break;
+		case 0x1a: // const-string
 		case 0x1c: // const-class
 			op->type = R_ANAL_OP_TYPE_MOV;
+			{
+				ut32 vB = (data[3]<<8) | data[2];
+				ut64 offset = R_ANAL_GET_OFFSET(anal, 's', vB);
+				op->ptr = offset;
+			}
 			break;
 		case 0x85: // long-to-float
 		case 0x8e: // double-to-int
