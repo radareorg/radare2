@@ -403,7 +403,7 @@ static bool dump_this_map(char *buff_smaps, ut64 start_addr, ut64 end_addr, bool
 	if (vmflags & HT_FLAG) {
 		if ((filter_flags & MAP_HUG_PRIV) && anonymous) {
 			eprintf ("filter_flags & MAP_HUG_PRIV\n");
-			goto beach:
+			goto beach;
 		}
 		if (filter_flags & MAP_HUG_SHR) {
 			eprintf ("filter_flags & MAP_HUG_SHR\n");
@@ -748,7 +748,7 @@ static ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_sec
 	siginfo_t *siginfo;
 	auxv_buff_t *auxv;
 	Elf64_Nhdr note_hdr;
-	ut8 *note_data;
+	ut8 *note_data, *onote_data = NULL;
 	char *maps_data;
 	size_t size_elf_fpregset;
 	size_t size_nt_file_pad;
@@ -808,6 +808,7 @@ static ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_sec
 		free (maps_data);
 		return NULL;
 	}
+	onote_data = note_data;
 
 	/* prpsinfo */
 	prpsinfo = sec_note->prpsinfo;
@@ -879,7 +880,7 @@ static ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_sec
 	memcpy (note_data, maps_data, size_nt_file_pad);
 	note_data += size_nt_file_pad;
 	free (maps_data);
-	return note_data;
+	return onote_data;
 }
 
 static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, st64 *offset) {
@@ -1018,26 +1019,21 @@ static void print_p(proc_stat_content_t *p) {
 }
 
 static proc_stat_content_t *get_proc_content(RDebug *dbg) {
-	const char *s_sigpend = "SigPnd";
-	const char *s_sighold = "SigBlk";
 	char *temp_p_uid, *temp_p_gid, *p_uid, *p_gid;
 	char *temp_p_sigpend, *temp_p_sighold;
 	char *p_sigpend, *p_sighold;
 	proc_stat_content_t *p;
 	ut16 filter_flags;
-	char *file, *buff;
+	char *buff;
 	int size;
 
-	file = r_str_newf ("/proc/%d/stat", dbg->pid);
-	eprintf ("file: %s\n", file);
+	const char *file = sdb_fmt (0, "/proc/%d/stat", dbg->pid);
 
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
 		eprintf ("get_proc_stat: r_file_slurp error\n");
-		free (file);
 		return NULL;
 	}
-	R_FREE (file);
 
 	p = R_NEW0 (proc_stat_content_t);
 	if (!p) {
@@ -1071,8 +1067,8 @@ static proc_stat_content_t *get_proc_content(RDebug *dbg) {
 		return NULL;
 	}
 
-	temp_p_sigpend = strstr (buff, s_sigpend);
-	temp_p_sighold = strstr (buff, s_sighold);
+	temp_p_sigpend = strstr (buff, "SigPnd");
+	temp_p_sighold = strstr (buff, "SigBlk");
 	if (!temp_p_sigpend || !temp_p_sighold) {
 		free (buff);
 		free (p);
@@ -1115,7 +1111,7 @@ static proc_stat_content_t *get_proc_content(RDebug *dbg) {
 	free (buff);
 
 	/* Check the coredump_filter value */
-	const char *file = sdb_fmt (0, "/proc/%d/coredump_filter", dbg->pid);
+	file = sdb_fmt (0, "/proc/%d/coredump_filter", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
 		eprintf ("get_proc_stat: r_file_slurp error\n");
