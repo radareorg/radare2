@@ -1789,9 +1789,11 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
 			r_list_foreach (list, iter, frame) {
-				char flagdesc[1024], flagdesc2[1024];
+				char flagdesc[1024], flagdesc2[1024], pcstr[32], spstr[32];
 				RFlagItem *f = r_flag_get_at (core->flags, frame->addr);
+
 				flagdesc[0] = flagdesc2[0] = 0;
+
 				if (f) {
 					if (f->offset != addr) {
 						int delta = (int)(frame->addr - f->offset);
@@ -1809,8 +1811,6 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						snprintf (flagdesc, sizeof(flagdesc),
 							"%s", f->name);
 					}
-				} else {
-					flagdesc[0] = 0;
 				}
 				f = r_flag_get_at (core->flags, frame->addr);
 				if (f && !strchr (f->name, '.')) {
@@ -1833,24 +1833,30 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						snprintf (flagdesc2, sizeof (flagdesc2),
 							"%s", f->name);
 					}
-				} else {
-					flagdesc2[0] = 0;
 				}
 				if (!strcmp (flagdesc, flagdesc2)) {
 					flagdesc2[0] = 0;
 				}
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
-				if (fcn) {
-					r_cons_printf ("%d  0x%08"PFMT64x" sp: 0x%"PFMT64x"  %d"
-							"[%s]  %s %s\n", i++,
-							frame->addr, frame->sp,
-							(int)frame->size, fcn->name, flagdesc,
-							flagdesc2);
+
+				if (core->dbg->bits & R_SYS_BITS_64) {
+					snprintf (pcstr, sizeof(pcstr), "0x%-16" PFMT64x, frame->addr);
+					snprintf (spstr, sizeof(spstr), "0x%-16" PFMT64x, frame->sp);
+				} else if (core->dbg->bits & R_SYS_BITS_32) {
+					snprintf (pcstr, sizeof(pcstr), "0x%-8" PFMT64x, frame->addr);
+					snprintf (spstr, sizeof(spstr), "0x%-8" PFMT64x, frame->sp);
 				} else {
-					r_cons_printf ("%d  0x%08"PFMT64x"  sp: 0x%"PFMT64x"  %d"
-							"   %s %s\n", (int)i++, (ut64)frame->addr,
-							frame->sp, (int)frame->size, flagdesc, flagdesc2);
+					snprintf (pcstr, sizeof(pcstr), "0x%" PFMT64x, frame->addr);
+					snprintf (spstr, sizeof(spstr), "0x%" PFMT64x, frame->sp);
 				}
+
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
+				r_cons_printf ("%d  %s sp: %s  %-5d"
+						"[%s]  %s %s\n", i++,
+						pcstr, spstr,
+						(int)frame->size,
+						fcn ? fcn->name : "??",
+						flagdesc,
+						flagdesc2);
 			}
 			r_list_free (list);
 			break;
