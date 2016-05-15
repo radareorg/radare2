@@ -32,11 +32,12 @@ static int r_debug_recoil(RDebug *dbg) {
 	dbg->reason.bpi = NULL;
 	if (ri) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
-		recoil = r_bp_recoil (dbg->bp, addr);
+		recoil = r_bp_recoil (dbg->bp, addr - dbg->bpsize);
 		//eprintf ("[R2] Breakpoint recoil at 0x%"PFMT64x" = %d\n", addr, recoil);
 		if (recoil < 1)
 			recoil = 0; // XXX Hack :D
 		if (recoil) {
+			dbg->in_recoil = 1;
 			dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
 			dbg->reason.bpi = r_bp_get_at (dbg->bp, addr-recoil);
 			dbg->reason.addr = addr - recoil;
@@ -74,6 +75,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->tracenodes = sdb_new0 ();
 	dbg->swstep = 0;
 	dbg->newstate = 0;
+	dbg->in_recoil = false;
 	dbg->stop_all_threads = false;
 	dbg->trace = r_debug_trace_new ();
 	dbg->cb_printf = (void *)printf;
@@ -540,7 +542,15 @@ repeat:
 	if (r_debug_is_dead (dbg))
 		return false;
 	if (dbg->h && dbg->h->cont) {
-		r_bp_restore (dbg->bp, true); // set sw breakpoints
+		if (dbg->in_recoil) {
+			/* if we are recoiling, we should not set the breakpoint that
+			 * caused us to stop.
+			 */
+			dbg->in_recoil = false;
+			r_bp_restore_except (dbg->bp, true, dbg->reason.addr);
+		}
+		else
+			r_bp_restore (dbg->bp, true); // set sw breakpoints
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
 		dbg->reason.signum = 0;
 		retwait = r_debug_wait (dbg);
