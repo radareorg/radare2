@@ -69,6 +69,8 @@ const char *linux_reg_profile (RDebug *dbg);
 #include "elf_specs.h"
 #include <sys/procfs.h>
 
+#define SIZE_PR_FNAME	16
+
 #define ELF_HDR_SIZE sizeof(Elf64_Ehdr)
 
 #define R_DEBUG_REG_T struct user_regs_struct
@@ -145,7 +147,6 @@ typedef struct linux_map_entry {
         ut64 offset;
         ut64 inode;
         ut8 perms;
-        ut32 s_name;
         bool anonymous;
 	bool dumpeable;
 	bool kernel_mapping;
@@ -219,5 +220,6 @@ static const ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_no
 static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigned long offset_to_note);
 static void show_maps(linux_map_entry_t *head);	/* test purposes */
 static bool dump_elf_map_content(RBuffer *dest, linux_map_entry_t *head, pid_t pid);
+static void clean_maps(linux_map_entry_t *h);
 static void may_clean_all(linux_elf_note_t *sec_note, proc_stat_content_t *proc_data, Elf64_Ehdr *elf_hdr);
 bool linux_generate_corefile (RDebug *dbg, RBuffer *dest);
