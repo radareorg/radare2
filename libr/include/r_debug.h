@@ -144,6 +144,7 @@ typedef struct r_debug_t {
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
 	int newstate;
+	bool in_recoil; 			/* are we stopped due to bp? */
 	RDebugReason reason; /* stop reason */
 	RDebugTrace *trace;
 	int stop_all_threads;
