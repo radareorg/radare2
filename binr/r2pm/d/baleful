@@ -9,12 +9,12 @@ R2PM_INSTALL() {
 	cd baleful
 	make clean
 	make
-	make install
+	make install R2PM_PLUGDIR="${R2PM_PLUGDIR}"
 }
 
 R2PM_UNINSTALL() {
 	cd baleful
-	make uninstall
+	make uninstall R2PM_PLUGDIR="${R2PM_PLUGDIR}"
 }
 
 R2PM_END
