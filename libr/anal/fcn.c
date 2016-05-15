@@ -175,8 +175,7 @@ static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		ut64 eaddr = bb->addr + bb->size;
-		if (bb->addr >= eaddr) {
-			if (addr == bb->addr)
+		if (bb->addr >= eaddr && addr == bb->addr) {
 				return bb;
 		}
 		if ((addr >= bb->addr) && (addr < eaddr)) {
@@ -238,8 +237,9 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 		default: jmpptr = r_read_le64 (jmptbl + offs); break;
 		}
 		if (anal->limit) {
-			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to)
+			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to) {
 				break;
+			}
 		}
 		if (jmpptr < ip - MAX_JMPTBL_JMP || jmpptr > ip + MAX_JMPTBL_JMP) {
 			break;
@@ -280,10 +280,13 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 	}
 	esil_buf = strdup (op_esil);
 	if (!esil_buf) {
+		free (sig);
+		free (op_esil);
 		return;
 	}
 	ptr_end = strstr (esil_buf, sig);
 	if (!ptr_end) {
+		free (sig);
 		free (esil_buf);
 		return;
 	}
@@ -294,6 +297,7 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 		addr--;
 	}
 	if (strncmp (addr, "0x", 2)) {
+		free (sig);
 		free (esil_buf);
 		return;
 	}
@@ -309,13 +313,14 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 
 	}
 	free (esil_buf);
-
 }
+
 R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "+", fcn->call);
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "-", 'v');
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_SP], "+", 'e');
 }
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int continue_after_jump = anal->opt.afterjmp;
 	RAnalBlock *bb = NULL;
@@ -333,6 +338,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		int adjust;
 		int un_idx; // delay.un_idx
 	} delay = {0};
+
 	if (anal->sleep) {
 		r_sys_usleep (anal->sleep);
 	}
@@ -370,8 +376,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	ut64 last_push_addr = UT64_MAX;
 	while (idx < len) {
 		if (anal->limit) {
-			if ((addr+idx)<anal->limit->from || (addr+idx+1)>anal->limit->to)
+			if ((addr+idx)<anal->limit->from || (addr+idx+1)>anal->limit->to) {
 				break;
+			}
 		}
 repeat:
 		if ((len - idx) < 5) {
@@ -549,8 +556,9 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
-			if (anal->opt.jmpref)
+			if (anal->opt.jmpref) {
 				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
+			}
 			if (r_anal_noreturn_at (anal, op.jump) ||
 					(op.jump < fcn->addr && !anal->opt.jmpabove)) {
 				FITFCNSZ ();
@@ -794,7 +802,7 @@ static int check_preludes(ut8 *buf, ut16 bufsz) {
 	return false;
 }
 
-R_API int check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {
+R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {
 	RAnalOp op = {0};
 	int i, oplen, opcnt = 0, pushcnt = 0, movcnt = 0, brcnt = 0;
 	if (check_preludes(buf, bufsz)) return true;
@@ -815,7 +823,9 @@ R_API int check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
-			if (op.jump < low || op.jump >= high) return false;
+			if (op.jump < low || op.jump >= high) {
+				return false;
+			}
 			brcnt++;
 			break;
 		case R_ANAL_OP_TYPE_UNK:
