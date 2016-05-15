@@ -14,8 +14,18 @@ export GLOBAL=0
 export R2VERSION="`r2 -qv`"
 export PREFIX="`r2 -hh | grep PREFIX | awk '{print $2}' 2> /dev/null`"
 export LIBEXT="`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`"
-export R2HOMEDIR="`r2 -hh | grep RHOMEDIR | awk '{print $2}' 2> /dev/null`"
+export R2HOMEDIR="`r2 -hh | grep '^ RHOMEDIR' | awk '{print $2}' 2> /dev/null`"
+# prefix
 export R2PM_SYSPREFIX="${PREFIX}"
+export R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix"
+export R2PM_PREFIX="${R2PM_HOMEPREFIX}"
+# www
+export R2PM_SYSWWWROOT="`r2 -cq -qe http.root --`"
+export R2PM_HOMEWWWROOT="${R2HOMEDIR}/www"
+export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
+echo $R2PM_WWWROOT
+# pkgconfig
+export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 
 # Global Vars
 TRAVIS_TYPE=XX
@@ -23,9 +33,6 @@ TRAVIS_JOB=86948888
 [ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2HOMEDIR}"
 IS_SYSPKG=0
 R2PM_USRDIR="${HOME}/.config/radare2/r2pm"
-export R2PM_HOMEPREFIX="${R2PM_USRDIR}/prefix"
-R2PM_PREFIX="${R2PM_HOMEPREFIX}"
-export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_PREFIX}/lib/radare2/last"
 
