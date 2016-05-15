@@ -36,10 +36,7 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[])
 	RStack *s;
 	RGraphEdge *edg;
 
-	if (g->n_edges == 0)
-		return;
-
-	s = r_stack_new (2 * g->n_edges);
+	s = r_stack_new (2 * g->n_edges + 1);
 
 	edg = R_NEW (RGraphEdge);
 	edg->from = NULL;

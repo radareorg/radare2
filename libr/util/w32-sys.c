@@ -9,7 +9,7 @@
 #endif
 
 #define BUFSIZE 1024
-void r_sys_perror(const char *fun);
+void r_sys_perror_str(const char *fun);
 
 #define ErrorExit(x) { r_sys_perror(x); return NULL; }
 static int CreateChildProcess(const char *szCmdline, HANDLE out);

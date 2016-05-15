@@ -324,7 +324,7 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 	r_io_read_at (core->io, ref->addr, buf, bufsz);
 
 	if (sec->rwx & R_IO_EXEC &&
-			check_fcn (core->anal, buf, bufsz, ref->addr, sec->vaddr, sec->vaddr + sec->vsize)) {
+			r_anal_check_fcn (core->anal, buf, bufsz, ref->addr, sec->vaddr, sec->vaddr + sec->vsize)) {
 		if (core->anal->limit) {
 			if (ref->addr < core->anal->limit->from || ref->addr > core->anal->limit->to) {
 				free(buf);
@@ -1126,7 +1126,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	fcn = r_anal_get_fcn_in (core->anal, at, 0);
 	if (fcn) {
 		if (fcn->addr == at) return 0;  // already analyzed function
-		if (from >= fcn->addr && (from - fcn->addr) < fcn->size) {	// inner function
+		if (r_anal_fcn_is_in_offset (fcn, from)) { // inner function
 			RAnalRef *ref;
 
 			// XXX: use r_anal-xrefs api and sdb
@@ -1765,12 +1765,13 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 		}
 		return true;
 	}
-	if (depth < 1)
+	if (depth < 1) {
 		return false;
-	
-	wordsize = (int)(core->anal->bits/8);
-	if ((dataptr = r_io_read_i (core->io, ptr, wordsize)) == -1)
+	}
+	wordsize = (int)(core->anal->bits / 8);
+	if ((dataptr = r_io_read_i (core->io, ptr, wordsize)) == -1) {
 		return false;
+	}
 	return core_anal_followptr (core, type, at, dataptr, ref, code, depth - 1);
 }
 
@@ -1815,15 +1816,16 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			if (ret != core->blocksize)
 				break;
 			for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;
-			     (!bckwrds && i < core->blocksize - OPSZ) || (bckwrds && i > 0);
-			     bckwrds ? i-- : i++) {
+					(!bckwrds && i < core->blocksize - OPSZ) || (bckwrds && i > 0);
+					bckwrds ? i-- : i++) {
 				if (r_cons_is_breaked ())
 					break;
 				r_cons_break (NULL, NULL);
 				r_anal_op_fini (&op);
-				if (!r_anal_op (core->anal, &op, at + i, buf+i,
-						core->blocksize - i))
+				if (!r_anal_op (core->anal, &op, at + i, buf + i,
+						core->blocksize - i)) {
 					continue;
+				}
 				switch (op.type) {
 				case R_ANAL_OP_TYPE_JMP:
 				case R_ANAL_OP_TYPE_CJMP:
@@ -1857,7 +1859,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 				default:
 					if (op.ptr != -1 &&
 						core_anal_followptr (core, 'd',
-							at+i, op.ptr, ref,
+							at + i, op.ptr, ref,
 							false, ptrdepth)) {
 						count ++;
 					}

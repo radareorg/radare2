@@ -2452,6 +2452,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "yank",     "yank bytes", &cmd_yank);
 	r_cmd_add (core->rcmd, "resize",   "change file size", &cmd_resize);
 	r_cmd_add (core->rcmd, "Visual",   "enter visual mode", &cmd_visual);
+	r_cmd_add (core->rcmd, "visual",   "enter visual mode", &cmd_visual);
 	r_cmd_add (core->rcmd, "*",        "pointer read/write", &cmd_pointer);
 	r_cmd_add (core->rcmd, "&",        "threading capabilities", &cmd_thread);
 	r_cmd_add (core->rcmd, "%",        "short version of 'env' command", &cmd_env);
