@@ -62,6 +62,61 @@ static int r_debug_recoil(RDebug *dbg) {
 	return false;
 }
 
+/* add a breakpoint with some typical values */
+R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *module, st64 m_delta) {
+	int bpsz = strcmp (dbg->arch, "arm") ? 1 : 4;
+	RBreakpointItem *bpi;
+	if (!addr && module) {
+		RListIter *iter;
+		RDebugMap *map;
+		bool detect_module, valid = false;
+		int perm;
+		if (m_delta) {
+		    	detect_module = false;
+			RList *list = r_debug_modules_list (dbg);
+			r_list_foreach (list, iter, map) {
+				if (strstr (map->file, module)) {
+					addr = map->addr + m_delta;
+					free (module);
+					module = strdup (map->file);
+					break;
+				}
+			}
+		} else {
+		    	//module holds the address
+			addr = (ut64)r_num_math (dbg->num, module);
+			if (!addr) return NULL;
+			detect_module = true;
+		}
+		r_debug_map_sync (dbg);
+		r_list_foreach (dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+			    	valid = true;
+				if (detect_module) {
+					module = strdup (map->file);
+					m_delta = addr - map->addr;
+				}
+				perm = ((map->perm & 1) << 2) | (map->perm & 2) | ((map->perm & 4) >> 2);
+				if (!(perm & R_BP_PROT_EXEC))
+				    	eprintf ("WARNING: setting bp within mapped memory without exec perm\n");
+				break;
+			}
+		}
+		if (!valid) {
+		    	eprintf ("WARNING: modules' base addr + delta doesn't compute in a valid address\n");
+			return NULL;
+		}
+	}
+	bpi = hw
+	? r_bp_add_hw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
+	: r_bp_add_sw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+	if (bpi) {
+	    	bpi->module_name  = module;
+		bpi->module_delta = m_delta;
+	}
+	return bpi;
+}
+
 R_API RDebug *r_debug_new(int hard) {
 	RDebug *dbg = R_NEW0 (RDebug);
 	if (!dbg) return NULL;
