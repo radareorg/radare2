@@ -87,7 +87,7 @@ R_API char *r_punycode_encode(const char *src, int srclen, int *dstlen) {
 		return NULL;
 	}
 
-	dst = calloc (2*srclen+10, 1);
+	dst = calloc (2 * srclen + 10, 1);
 	if (!dst) {
 		return NULL;
 	}
@@ -115,6 +115,7 @@ R_API char *r_punycode_encode(const char *src, int srclen, int *dstlen) {
 		}
 
 		if ((unsigned int)(m - n) > (UT32_MAX - delta) / (h + 1)) {
+			free (dst);
 			return NULL;
 		}
 
@@ -124,6 +125,7 @@ R_API char *r_punycode_encode(const char *src, int srclen, int *dstlen) {
 		for (si = 0; si < srclen; si++) {
 			if ((ut8)src[si] < n) {
 				if (++delta == 0) {
+					free (dst);
 					return NULL;
 				}
 			} else if ((ut8)src[si] == n) {

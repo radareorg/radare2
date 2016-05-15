@@ -1909,8 +1909,9 @@ static int esil_mem_modeq_n(RAnalEsil *esil, int bits) {
 			} else ret = 0;
 		}
 	}
-	if (!ret)
+	if (!ret) {
 		ERR ("esil_mem_modeq_n: invalid parameters");
+	}
 	free (dst);
 	free (src0);
 	free (src1);
