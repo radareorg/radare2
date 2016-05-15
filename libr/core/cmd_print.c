@@ -370,7 +370,7 @@ static void print_format_help_help_help_help(RCore *core) {
 	r_core_cmd_help (core, help_msg);
 }
 
-static void cmd_print_format (RCore *core, const char *_input, int len) {
+static void cmd_print_format(RCore *core, const char *_input, int len) {
 	char *input;
 	int mode = R_PRINT_MUSTSEE;
 	switch (_input[1]) {
@@ -1562,6 +1562,69 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	free (s);
 }
 
+static void algolist(int mode) {
+	int i;
+	for (i = 0; ; i++) {
+		ut64 bits = ((ut64)1) << i;
+		const char *name = r_hash_name (bits);
+		if (!name || !*name) break;
+		if (mode) {
+			r_cons_printf ("%s\n", name);
+		} else {
+			r_cons_printf ("%s ", name);
+		}
+	}
+	if (!mode) r_cons_newline ();
+}
+
+static bool cmd_print_ph(RCore *core, const char *input) {
+	char algo[128];
+	ut32 osize = 0, len = core->blocksize;
+	const char *ptr;
+	int pos = 0, handled_cmd = false;
+
+	if (!*input || *input == '?') {
+		algolist (1);
+		return true;
+	}
+	if (*input == '=') {
+		algolist (0);
+		return true;
+	}
+	input = r_str_chop_ro (input);
+	ptr = strchr (input, ' ');
+	sscanf (input, "%31s", algo);
+	if (ptr && *(ptr+1) && r_num_is_valid_input (core->num, ptr + 1)) {
+		int nlen = r_num_math (core->num, ptr + 1);
+		if (nlen>0) len = nlen;
+		osize = core->blocksize;
+		if (nlen > core->blocksize) {
+			r_core_block_size (core, nlen);
+			if (nlen != core->blocksize) {
+				eprintf ("Invalid block size\n");
+				r_core_block_size (core, osize);
+				return false;
+			}
+		}
+	} else if (!ptr || !*(ptr+1)) {
+		osize = len;
+	}
+
+	/* TODO: Simplify this spaguetti monster */
+	while (osize > 0 && hash_handlers[pos].name) {
+		if (!r_str_ccmp (input, hash_handlers[pos].name, ' ')) {
+			hash_handlers[pos].handler (core->block, len);
+			handled_cmd = true;
+			break;
+		}
+		pos++;
+	}
+	if (osize) {
+		r_core_block_size (core, osize);
+	}
+	return true;
+}
+
 static void cmd_print_pv(RCore *core, const char *input) {
 	const char *stack[] = { "ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL };
 	int i, n = core->assembler->bits / 8;
@@ -1828,14 +1891,14 @@ beach:
 }
 
 static int cmd_print(void *data, const char *input) {
-	RCore *core = (RCore *)data;
 	int mode, w, p, i, l, len, total[10];
-	int ret = 0;
 	ut64 off, from, to, at, ate, piece;
+	RCore *core = (RCore *)data;
 	ut32 tbs = core->blocksize;
-	RCoreAnalStats *as;
-	ut64 n;
 	ut64 tmpseek = UT64_MAX;
+	RCoreAnalStats *as;
+	int ret = 0;
+	ut64 n;
 
 	r_print_init_rowoffsets (core->print);
 	off = UT64_MAX;
@@ -1851,9 +1914,9 @@ static int cmd_print(void *data, const char *input) {
 					off = core->offset + n;
 					len = l = - n;
 					tmpseek = core->offset;
-				} else if (l>0) {
+				} else if (l > 0) {
 					len = l;
-					if (l>tbs) {
+					if (l > tbs) {
 						if (input[0] == 'x' && input[1] == 'l') {
 							l *= core->print->cols;
 						}
@@ -1928,8 +1991,11 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_printf("| pwd               display current working directory\n");
 		}
 		break;
+	case 'h': // "ph"
+		cmd_print_ph (core, input + 1);
+		break;
 	case 'v': // "pv"
-		cmd_print_pv (core, input+1);
+		cmd_print_pv (core, input + 1);
 		break;
 	case '-': // "p-"
 		mode = input[1];
@@ -3536,7 +3602,8 @@ static int cmd_print(void *data, const char *input) {
 			 "p","[bB] [len]","bitstream of N bytes",
 			 "pc","[p] [len]","output C (or python) format",
 			 "p","[dD][ajbrfils] [sz] [a] [b]","disassemble N opcodes/bytes for Arch/Bits (see pd?)",
-			 "pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>) ",
+			 "pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>)",
+			 "ph","[?=|hash] ([len])","calculate hash for a block",
 			 "p","[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
 			 "pm"," [magic]","print libmagic data (see pm? and /m?)",
 			 "pr","[glx] [len]","print N raw bytes (in lines or hexblocks, 'g'unzip)",
