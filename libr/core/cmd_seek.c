@@ -356,7 +356,7 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
-				r_core_seek (core, fcn->addr+fcn->size, 1);
+				r_core_seek (core, fcn->addr + r_anal_fcn_size (fcn), 1);
 			}
 			break;
 		case 'o': // "so"

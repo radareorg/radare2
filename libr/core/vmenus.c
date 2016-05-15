@@ -1594,7 +1594,7 @@ static void function_rename(RCore *core, ut64 addr, const char *name) {
 			r_flag_unset_name (core->flags, fcn->name);
 			free (fcn->name);
 			fcn->name = strdup (name);
-			r_flag_set (core->flags, name, addr, fcn->size);
+			r_flag_set (core->flags, name, addr, r_anal_fcn_size (fcn));
 			break;
 		}
 	}
@@ -1689,7 +1689,7 @@ static void r_core_visual_anal_refresh_column (RCore *core) {
 	int i;
 	int sz = 16;
 	r_cons_get_size (&h);
-	if (fcn) sz = R_MIN(fcn->size, h * 15); // max instr is 15 bytes.
+	if (fcn) sz = R_MIN(r_anal_fcn_size (fcn), h * 15); // max instr is 15 bytes.
 	char cmdf[64];
 	sprintf (cmdf, "pD %d @ 0x%"PFMT64x, sz, addr);
 	output = r_core_cmd_str (core, cmdf);
@@ -2291,7 +2291,7 @@ repeat:
 			r_cons_break_end ();
 			if (funsize) {
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, off, -1);
-				if (f) f->size = funsize;
+				r_anal_fcn_set_size (f, funsize);
 			}
 		}
 		break;

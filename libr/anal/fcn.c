@@ -45,8 +45,8 @@ R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize) {
 	RListIter *iter, *iter2;
 	if (!fcn || newsize < 1)
 		return false;
-	fcn->size = newsize;
-	eof = fcn->addr + fcn->size;
+	r_anal_fcn_set_size (fcn, newsize);
+	eof = fcn->addr + r_anal_fcn_size (fcn);
 	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
 		if (bb->addr >= eof) {
 			// already called by r_list_delete r_anal_bb_free (bb);
@@ -71,7 +71,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	if (!fcn) return NULL;
 	/* Function return type */
 	fcn->rets = 0;
-	fcn->size = 0;
+	fcn->_size = 0;
 	/* Function qualifier: static/volatile/inline/naked/virtual */
 	fcn->fmod = R_ANAL_FQUALIFIER_NONE;
 	/* Function calling convention: cdecl/stdcall/fastcall/etc */
@@ -99,7 +99,7 @@ R_API RList *r_anal_fcn_list_new() {
 R_API void r_anal_fcn_free(void *_fcn) {
 	RAnalFunction *fcn = _fcn;
 	if (!_fcn) return;
-	fcn->size = 0;
+	fcn->_size = 0;
 	free (fcn->name);
 	free (fcn->attr);
 #if FCN_OLD
@@ -202,10 +202,10 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 
 #define FITFCNSZ() {\
 	st64 n = bb->addr+bb->size-fcn->addr; \
-	if (n>=0 && fcn->size<n) {fcn->size=n; } } \
-	if (fcn->size > MAX_FCN_SIZE) { \
+	if (n>=0 && r_anal_fcn_size (fcn)<n) {r_anal_fcn_set_size (fcn, n); } } \
+	if (r_anal_fcn_size (fcn) > MAX_FCN_SIZE) { \
 		/* eprintf ("Function too big at 0x%"PFMT64x" + %d\n", bb->addr, fcn->size); */ \
-		fcn->size = 0; \
+		r_anal_fcn_set_size (fcn, 0); \
 		return R_ANAL_RET_ERROR; }
 
 #define VARPREFIX "local"
@@ -462,7 +462,7 @@ repeat:
 				bb->size -= oplen;
 				fcn->ninstr--;
 				VERBOSE_DELAY eprintf ("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%d f.uncorr=%d\n",
-						addr + idx - oplen, bb->addr, bb->size, fcn->size);
+						addr + idx - oplen, bb->addr, bb->size, r_anal_fcn_size (fcn));
 				FITFCNSZ();
 			}
 			// Next time, we go to the opcode after the delay count
@@ -778,7 +778,7 @@ river:
 				if (op.cond == 0) {
 					VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n",
 							addr+delay.un_idx-oplen, overlapped,
-							bb->size, fcn->size);
+							bb->size, r_anal_fcn_size (fcn));
 					FITFCNSZ ();
 					r_anal_op_fini (&op);
 					return R_ANAL_RET_END;
@@ -847,7 +847,7 @@ static void fcnfit (RAnal *a, RAnalFunction *f) {
 	// find next function
 	RAnalFunction *next = r_anal_fcn_next (a, f->addr);
 	if (next) {
-		if ((f->addr + f->size)> next->addr) {
+		if ((f->addr + r_anal_fcn_size (f))> next->addr) {
 			r_anal_fcn_resize (f, (next->addr - f->addr));
 		}
 	}
@@ -882,7 +882,7 @@ R_API void r_anal_trim_jmprefs(RAnalFunction *fcn) {
 }
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	int ret;
-	fcn->size = 0;
+	r_anal_fcn_set_size (fcn, 0);
 	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE)?
 			R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
 	if (fcn->addr == UT64_MAX) fcn->addr = addr;
@@ -893,7 +893,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 	fcn->maxstack = 0;
 	ret = fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
 
-	if (ret == R_ANAL_RET_END && fcn->size) {	// cfg analysis completed
+	if (ret == R_ANAL_RET_END && r_anal_fcn_size (fcn)) {	// cfg analysis completed
 		RListIter *iter;
 		RAnalBlock *bb;
 		ut64 endaddr = fcn->addr;
@@ -916,7 +916,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		// resize function if overlaps
 		r_list_foreach (anal->fcns, iter, fcn1) {
 			if (fcn1->addr >= (fcn->addr) &&
-				fcn1->addr < (fcn->addr + fcn->size))
+				fcn1->addr < (fcn->addr + r_anal_fcn_size (fcn)))
 					if (overlapped > fcn1->addr)
 						overlapped = fcn1->addr;
 		}
@@ -956,7 +956,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 		append = 1;
 	}
 	fcn->addr = addr;
-	fcn->size = size;
+	r_anal_fcn_set_size (fcn, size);
 	free (fcn->name);
 	if (!name) {
 		fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
@@ -988,7 +988,7 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 	r_list_foreach_safe (anal->fcns, iter, iter2, fcn) {
 		if (fcn->type != R_ANAL_FCN_TYPE_LOC)
 			continue;
-		if (fcn->addr >= f->addr && fcn->addr < (f->addr+f->size))
+		if (fcn->addr >= f->addr && fcn->addr < (f->addr + r_anal_fcn_size (f)))
 			r_list_delete (anal->fcns, iter);
 	}
 	r_anal_fcn_del (anal, addr);
@@ -1014,7 +1014,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 		RAnalFunction *fcni;
 		RListIter *iter, *iter_tmp;
 		r_list_foreach_safe (a->fcns, iter, iter_tmp, fcni) {
-			if (addr >= fcni->addr && addr < fcni->addr+fcni->size) {
+			if (addr >= fcni->addr && addr < fcni->addr+r_anal_fcn_size (fcni)) {
 				if (a->cb.on_fcn_delete) {
 					a->cb.on_fcn_delete (a, a->user, fcni);
 				}
@@ -1326,7 +1326,7 @@ R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
 		// hack to make anal_java work, because it doesn't use
 		// basicblocks.
 		// FIXME: anal_java should create basicblocks
-		return addr >= fcn->addr && addr < fcn->addr + fcn->size;
+		return addr >= fcn->addr && addr < fcn->addr + r_anal_fcn_size (fcn);
 	}
 	return false;
 }
@@ -1355,10 +1355,25 @@ R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
 	return NULL;
 }
 
-R_API int r_anal_fcn_size(RAnalFunction *fcn) {
+/* directly set the size of the function */
+R_API void r_anal_fcn_set_size(RAnalFunction *fcn, ut32 size) {
+	if (!fcn) return;
+	fcn->_size = size;
+}
+
+/* returns the size of the function.
+ * IMPORTANT: this will change, one day, because it doesn't have much sense */
+R_API ut32 r_anal_fcn_size(const RAnalFunction *fcn) {
+	return fcn ? fcn->_size : 0;
+}
+
+/* return the "real" size of the function, that is the sum of the size of the
+ * basicblocks this function is composed of.
+ * IMPORTANT: this will become, one day, the only size of a function */
+R_API ut32 r_anal_fcn_realsize(const RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
-	int sz = 0;
+	ut32 sz = 0;
 
 	r_list_foreach (fcn->bbs, iter, bb) {
 		sz += bb->size;

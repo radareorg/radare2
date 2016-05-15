@@ -897,7 +897,7 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 		r_cons_printf ("%s%s ", COLOR (ds, color_fline),
 			core->cons->vline[LINE_CROSS]); // |-
 		r_cons_printf ("%s%s%s %d\n", COLOR (ds, color_floc),
-			fcn_name, COLOR_RESET (ds), f->size);
+			fcn_name, COLOR_RESET (ds), r_anal_fcn_size (f));
 	} else {
 		const char *space = ds->show_fcnlines ? " " : "";
 		const char *fcntype;
@@ -932,12 +932,12 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 			handle_print_offset (core, ds);
 			r_cons_printf ("%s%s%s(%s) %s%s%s %d\n",
 					space, COLOR_RESET (ds), COLOR (ds, color_fname),
-					fcntype, fcn_name, cmt, COLOR_RESET (ds), f->size);
+					fcntype, fcn_name, cmt, COLOR_RESET (ds), r_anal_fcn_size (f));
 		} else {
 			r_cons_printf ("%s%s%s%s%s(%s) %s%s%s %d\n",
 					COLOR (ds, color_fline), ds->pre,
 					space, COLOR_RESET (ds), COLOR (ds, color_fname),
-					fcntype, fcn_name, cmt, COLOR_RESET (ds), f->size);
+					fcntype, fcn_name, cmt, COLOR_RESET (ds), r_anal_fcn_size (f));
 		}
 	}
 	if (sign)
@@ -1043,12 +1043,12 @@ static void handle_setup_pre(RCore *core, RDisasmState *ds, bool tail) {
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (f) {
 		if (f->addr == ds->at) {
-			if (ds->analop.size == f->size) {
+			if (ds->analop.size == r_anal_fcn_size (f)) {
 				handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
 			} else {
 				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 			}
-		} else if (f->addr + f->size - ds->analop.size == ds->at) {
+		} else if (f->addr + r_anal_fcn_size (f) - ds->analop.size == ds->at) {
 			handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
 		} else if (r_anal_fcn_is_in_offset (f, ds->at)) {
 			handle_set_pre (ds, core->cons->vline[LINE_VERT]);
@@ -2721,7 +2721,7 @@ toro:
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		ds->fcn = f;
 		if (f && f->folded && r_anal_fcn_is_in_offset (f, ds->at)) {
-			int delta = (ds->at <= f->addr)? (ds->at - f->addr + f->size): 0;
+			int delta = (ds->at <= f->addr)? (ds->at - f->addr + r_anal_fcn_size (f)): 0;
 			if (of != f) {
 				char cmt[32];
 				get_bits_comment(core, f, cmt, sizeof (cmt));
@@ -2732,7 +2732,7 @@ toro:
 				handle_setup_print_pre (core, ds, true);
 				handle_print_lines_left (core, ds);
 				handle_print_offset (core, ds);
-				r_cons_printf ("(%d byte folded function)\n", f->size);
+				r_cons_printf ("(%d byte folded function)\n", r_anal_fcn_size (f));
 				//r_cons_printf ("%s%s%s\n", COLOR (ds, color_fline), core->cons->vline[RDWN_CORNER], COLOR_RESET (ds));
 				if (delta<0) delta = -delta;
 				ds->addr += delta + idx;
@@ -3255,7 +3255,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
 		if (f) {
 			r_cons_printf (",\"fcn_addr\":%"PFMT64d, f->addr);
-			r_cons_printf (",\"fcn_last\":%"PFMT64d, f->addr + f->size - oplen);
+			r_cons_printf (",\"fcn_last\":%"PFMT64d, f->addr + r_anal_fcn_size (f) - oplen);
 		} else {
 			r_cons_printf (",\"fcn_addr\":0");
 			r_cons_printf (",\"fcn_last\":0");
@@ -3373,9 +3373,9 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	if (!fcn)
 		return -1;
 
-	cur_buf_sz = fcn->size + 1;
+	cur_buf_sz = r_anal_fcn_size (fcn) + 1;
 	buf = malloc (cur_buf_sz);
-	len = fcn->size;
+	len = r_anal_fcn_size (fcn);
 	bb_list = r_list_new();
 	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
 	// TODO: import values from debugger is possible
@@ -3396,7 +3396,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	ds->p = p;
 	ds->l = l;
 	ds->buf = buf;
-	ds->len = fcn->size;
+	ds->len = r_anal_fcn_size (fcn);
 	ds->addr = fcn->addr;
 	ds->fcn = fcn;
 

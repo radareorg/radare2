@@ -1969,7 +1969,7 @@ static int cmd_print(void *data, const char *input) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) {
-			len = f->size;
+			len = r_anal_fcn_size (f);
 		} else {
 			eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 			core->num->value = 0;
@@ -2307,7 +2307,7 @@ static int cmd_print(void *data, const char *input) {
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f) {
 					r_core_print_disasm_instructions (core,
-						f->size, 0);
+						r_anal_fcn_size (f), 0);
 					break;
 				}
 			}
@@ -2394,7 +2394,7 @@ static int cmd_print(void *data, const char *input) {
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f) {
 					ut32 bsz = core->blocksize;
-					r_core_block_size (core, f->size);
+					r_core_block_size (core, r_anal_fcn_size (f));
 					r_core_print_disasm_instructions (core, 0, 0);
 					r_core_block_size (core, bsz);
 				} else {
@@ -2524,9 +2524,10 @@ static int cmd_print(void *data, const char *input) {
 					RAnalBlock *b;
 					// XXX: hack must be reviewed/fixed in code analysis
 					if (r_list_length (f->bbs) == 1) {
+						ut32 fcn_size = r_anal_fcn_size (f);
 						b = r_list_get_top (f->bbs);
-						if (b->size > f->size) {
-							b->size = f->size;
+						if (b->size > fcn_size) {
+							b->size = fcn_size;
 						}
 					}
 					r_list_sort (f->bbs, (RListComparator)bbcmp);
@@ -2594,7 +2595,7 @@ static int cmd_print(void *data, const char *input) {
 						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 				if (f) {
 					r_core_seek (core, oseek, SEEK_SET);
-					r_core_block_size (core, f->size);
+					r_core_block_size (core, r_anal_fcn_size (f));
 					disasm_strings (core, input, f);
 					r_core_block_size (core, oblock);
 					r_core_seek (core, oseek, SEEK_SET);
@@ -2606,24 +2607,25 @@ static int cmd_print(void *data, const char *input) {
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f && input[2] == 'j') { // "pdfj"
 					ut8 *buf;
+					ut32 fcn_size = r_anal_fcn_size (f);
 					r_cons_printf ("{");
 					r_cons_printf ("\"name\":\"%s\"", f->name);
-					r_cons_printf (",\"size\":%d", f->size);
+					r_cons_printf (",\"size\":%d", fcn_size);
 					r_cons_printf (",\"addr\":%"PFMT64d, f->addr);
 					r_cons_printf (",\"ops\":");
 					// instructions are all outputted as a json list
-					buf = malloc (f->size);
+					buf = malloc (fcn_size);
 					if (buf) {
-						r_io_read_at (core->io, f->addr, buf, f->size);
-						r_core_print_disasm_json (core, f->addr, buf, f->size, 0);
+						r_io_read_at (core->io, f->addr, buf, fcn_size);
+						r_core_print_disasm_json (core, f->addr, buf, fcn_size, 0);
 						free (buf);
 					} else {
-						eprintf ("cannot allocate %d bytes\n", f->size);
+						eprintf ("cannot allocate %d bytes\n", fcn_size);
 					}
 					r_cons_printf ("}\n");
 					pd_result = 0;
 				} else if (f) {
-					r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->size, f->addr);
+					r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, r_anal_fcn_size (f), f->addr);
 					pd_result = 0;
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
