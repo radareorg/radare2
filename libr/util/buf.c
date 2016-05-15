@@ -165,7 +165,7 @@ R_API ut64 r_buf_size (RBuffer *b) {
 
 // rename to new?
 R_API RBuffer *r_buf_mmap (const char *file, int flags) {
-	int rw = flags & R_IO_WRITE ? R_TRUE : R_FALSE;
+	int rw = flags & R_IO_WRITE ? true : false;
 	RBuffer *b = r_buf_new ();
 	if (!b) return NULL;
 	b->mmap = r_file_mmap (file, rw, 0);
@@ -243,18 +243,18 @@ R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {
 	// TODO: implement r_buf_set_bits
 	// TODO: get the implementation from reg/value.c ?
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length) {
-	if (length <= 0 || !buf) return R_FALSE;
+	if (length <= 0 || !buf) return false;
 	free (b->buf);
 	if (!(b->buf = malloc (length)))
-		return R_FALSE;
+		return false;
 	memmove (b->buf, buf, length);
 	b->length = length;
 	b->empty = 0;
-	return R_TRUE;
+	return true;
 }
 
 R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length) {
@@ -311,10 +311,10 @@ R_API bool r_buf_append_nbytes(RBuffer *b, int length) {
 	}
 	if (b->empty) b->length = b->empty = 0;
 	if (!(b->buf = realloc (b->buf, b->length+length)))
-		return R_FALSE;
+		return false;
 	memset (b->buf+b->length, 0, length);
 	b->length += length;
-	return R_TRUE;
+	return true;
 }
 
 R_API bool r_buf_append_ut16(RBuffer *b, ut16 n) {
@@ -513,17 +513,18 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 		if (pa+len > b->length) {
 			memset (buf, 0xff, len);
 			len = b->length - pa;
-			if (len<0)
+			if (len < 0) {
 				return 0;
+			}
 		}
 	}
 	// must be +pa, but maybe its missused?
-	//return r_buf_cpy (b, addr, buf, b->buf+pa, len, R_FALSE);
-	return r_buf_cpy (b, addr, buf, b->buf, len, R_FALSE);
+	//return r_buf_cpy (b, addr, buf, b->buf+pa, len, false);
+	return r_buf_cpy (b, addr, buf, b->buf, len, false);
 }
 
 R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
-	return r_buf_fcpy_at (b, addr, buf, fmt, n, R_FALSE);
+	return r_buf_fcpy_at (b, addr, buf, fmt, n, false);
 }
 
 //ret 0 or -1 if failed; ret copied length if success
@@ -534,11 +535,11 @@ R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
 		free (b->buf);
 		b->buf = (ut8 *) malloc (addr + len);
 	}
-	return r_buf_cpy (b, addr, b->buf, buf, len, R_TRUE);
+	return r_buf_cpy (b, addr, b->buf, buf, len, true);
 }
 
 R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
-	return r_buf_fcpy_at (b, addr, buf, fmt, n, R_TRUE);
+	return r_buf_fcpy_at (b, addr, buf, fmt, n, true);
 }
 
 R_API void r_buf_deinit(RBuffer *b) {
