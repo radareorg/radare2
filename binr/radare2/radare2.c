@@ -430,7 +430,14 @@ int main(int argc, char **argv, char **envp) {
 			threaded = true;
 			break;
 #endif
-		case 'v': verify_version(0); return blob_version ("radare2");
+		case 'v':
+			if (quiet) {
+				printf ("%s\n", R2_VERSION);
+				return 0;
+			} else {
+				verify_version (0);
+				return blob_version ("radare2");
+			}
 		case 'V': return verify_version (1);
 		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
 		default:
