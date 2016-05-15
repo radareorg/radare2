@@ -135,8 +135,7 @@ IFEQ LIBVERSION xxx ; {
 REPORT PREFIX HAVE_LIB_GMP HAVE_OPENSSL USE_CAPSTONE HAVE_FORK
 	VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC
 	USEROSTYPE LIBVERSION 
-	(( add report for OS/OSFamily and CPU/Arch ))
-	OS CPU; 
+	# OS CPU ; (( was added report for OS/OSFamily and CPU/Arch: failed, see pull #4870 ))
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk
