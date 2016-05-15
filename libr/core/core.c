@@ -421,7 +421,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return fcn? fcn->ninstr: 0;
 		case 'F':
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			return fcn? fcn->size: 0;
+			return r_anal_fcn_size (fcn);
 		}
 		break;
 	default:

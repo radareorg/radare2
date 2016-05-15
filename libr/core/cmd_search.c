@@ -517,7 +517,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			if (f) {
 				*from = f->addr;
-				*to = f->addr + f->size;
+				*to = f->addr + r_anal_fcn_size (f);
 
 				/* Search only inside the basic block */
 				if (!strcmp (mode, "anal.bb")) {
