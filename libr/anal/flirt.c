@@ -1212,7 +1212,7 @@ static RFlirtNode* flirt_parse (const RAnal *anal, RBuffer *flirt_buf) {
 
 	name[header->library_name_len] = '\0';
 
-	anal->cb_printf  ("Loading: %s\n", name);
+	// anal->cb_printf  ("Loading: %s\n", name);
 #if DEBUG
 	print_header (header);
 	header_size = flirt_buf->cur;
