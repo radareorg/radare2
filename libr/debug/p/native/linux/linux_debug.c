@@ -432,7 +432,7 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 			if (ptrace (PTRACE_POKEUSER, dbg->pid, r_offsetof (
 					struct user, u_debugreg[i]), val[i])) {
 				eprintf ("ptrace error for dr %d\n", i);
-				perror ("ptrace");
+				r_sys_perror ("ptrace POKEUSER");
 			}
 		}
 		return sizeof (R_DEBUG_REG_T);
@@ -470,7 +470,7 @@ RList *linux_desc_list (int pid) {
 
 	snprintf (path, sizeof (path), "/proc/%i/fd/", pid);
 	if (!(dd = opendir (path))) {
-		eprintf ("Cannot open /proc\n");
+		r_sys_perror ("opendir /proc/x/fd");
 		return NULL;
 	}
 	ret = r_list_new ();
