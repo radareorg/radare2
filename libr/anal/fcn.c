@@ -321,6 +321,12 @@ R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_SP], "+", 'e');
 }
 
+static bool isInvalidMemory (const ut8 *buf) {
+	// can be wrong
+	return !memcmp (buf, "\xff\xff\xff\xff", 4);
+	// return buf[0]==buf[1] && buf[0]==0xff && buf[2]==0xff && buf[3] == 0xff;
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int continue_after_jump = anal->opt.afterjmp;
 	RAnalBlock *bb = NULL;
@@ -385,7 +391,7 @@ repeat:
 			break;
 		}
 		r_anal_op_fini (&op);
-		if (buf[idx]==buf[idx+1] && buf[idx]==0xff && buf[idx+2]==0xff) {
+		if (isInvalidMemory (buf + idx)) {
 			FITFCNSZ();
 			VERBOSE_ANAL eprintf ("FFFF opcode at 0x%08"PFMT64x"\n", addr+idx);
 			return R_ANAL_RET_ERROR;
@@ -413,7 +419,6 @@ repeat:
 			r_anal_bb_set_offset (bb, bb->ninstr, addr + idx - bb->addr);
 			bb->size += oplen;
 			bb->ninstr++;
-
 			fcn->ninstr++;
 		//	FITFCNSZ(); // defer this, in case this instruction is a branch delay entry
 		//	fcn->size += oplen; /// XXX. must be the sum of all the bblocks
