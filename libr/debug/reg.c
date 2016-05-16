@@ -100,7 +100,6 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		to = from +1;
 	}
 
-	bool is_arm = dbg->arch && strstr (dbg->arch, "arm");
 	int itmidx = -1;
 	dbg->creg = NULL;
 	for (i = from; i < to; i++) {
@@ -108,7 +107,11 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		if (!head) continue;
 		r_list_foreach (head, iter, item) {
 			ut64 value;
+#if 0
+			bool is_arm = dbg->arch && strstr (dbg->arch, "arm");
 
+			/* the thumb flag in the cpsr register shouldnt forbid us to switch between arm or thumb */
+			/* this code must run only after a step maybe ... need some discussion, disabling for now */
 			if (is_arm && (rad == 1 || rad == '*') && item->size == 1) {
 				if (!strcmp (item->name, "tf")) {
 					bool is_thumb = r_reg_get_value (dbg->reg, item);
@@ -118,6 +121,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				}
 				continue;
 			}
+#endif
 
 			if (type != -1) {
 				if (type != item->type) continue;

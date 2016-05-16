@@ -6,12 +6,15 @@ R2PM_DESC "[r2-www] The tiled WebUI of /t"
 R2PM_INSTALL() {
 	cd www/t || exit 1
 	make || exit 1
-	WWWROOT=`r2 -qce' http.root' - 2> /dev/null`
+	WWWROOT="${R2PM_WWWROOT}"
+	echo "WWWROOT IS ${WWWROOT}"
+	mkdir -p ${WWWROOT} || exit 1
+	echo mkdir -p ${WWWROOT} || exit 1
 	if [ -n "${WWWROOT}" ]; then
 		rm -rf "${WWWROOT}/t"/*
-		mkdir -p "${WWWROOT}/t"
+		mkdir -p "${WWWROOT}/t" || exit 1
 		echo "Installing /t..."
-		tar xzvf dist.tar.gz -C "${WWWROOT}/t"
+		tar xzvf dist.tar.gz -C "${WWWROOT}/t" || exit 1
 	else
 		echo "Cannot find WWWROOT"
 		exit 1
@@ -19,7 +22,7 @@ R2PM_INSTALL() {
 }
 
 R2PM_UNINSTALL() {
-	WWWROOT=`r2 -qce' http.root' - 2>/dev/null`
+	WWWROOT="${R2PM_WWWROOT}"
 	if [ -n "${WWWROOT}" ]; then
 		rm -rf "{WWWROOT}/t"
 	else

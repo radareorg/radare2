@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2015 pancake */
+/* radare - LGPL - Copyright 2007-2016 pancake */
 
 #include "r_hash.h"
 #include "r_util.h"
@@ -25,6 +25,9 @@ static const hash_name_bytes[] = {
 	 {"hamdist", R_HASH_HAMDIST},
 	 {"pcprint", R_HASH_PCPRINT},
 	 {"mod255", R_HASH_MOD255},
+	 {"base64",R_HASH_BASE64},
+	 {"base91",R_HASH_BASE91},
+	 {"punycode",R_HASH_PUNYCODE},
 	 {NULL, 0}
 };
 

@@ -1712,10 +1712,13 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETI("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF("http.bind", "localhost", "Server address");
-#if __WINDOWS__
-	SETPREF("http.root", "www", "Root directory");
+	SETPREF("http.homeroot", "~/.config/radare2/www", "http home root directory");
+#if __ANDROID__
+	SETPREF("http.root", "/data/data/org.radare2.installer/www", "http root directory");
+#elif __WINDOWS__
+	SETPREF("http.root", "www", "http root directory");
 #else
-	SETPREF("http.root", R2_WWWROOT, "Root directory");
+	SETPREF("http.root", R2_WWWROOT, "http root directory");
 #endif
 	SETPREF("http.port", "9090", "Server port");
 #if __ANDROID__ || __IPHONE_2_0
@@ -1749,6 +1752,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")");
 	SETPREF("graph.gv.graph", "", "Graphviz global style attributes. (bgcolor=white)");
 	SETPREF("graph.gv.current", "false", "Highlight the current node in graphviz graph.");
+	SETPREF("graph.nodejmps", "false", "Enables shortcuts for every node.");
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");
 

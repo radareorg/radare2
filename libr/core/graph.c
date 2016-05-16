@@ -15,7 +15,7 @@ static int mousemode = 0;
 #define MARGIN_TEXT_Y 2
 #define HORIZONTAL_NODE_SPACING 6
 #define VERTICAL_NODE_SPACING 4
-#define MIN_NODE_WIDTH 18
+#define MIN_NODE_WIDTH 22
 #define MIN_NODE_HEIGTH BORDER_HEIGHT
 #define TITLE_LEN 128
 #define DEFAULT_SPEED 1
@@ -196,6 +196,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	char title[TITLE_LEN];
 	char *body;
 	int x, y;
+	char *shortcut;
 
 	x = n->x + g->can->sx;
 	y = n->y + g->can->sy;
@@ -206,16 +207,23 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	if (y < -1)
 		delta_y = R_MIN (n->h - BORDER_HEIGHT - 1, -y - MARGIN_TEXT_Y);
 
+	shortcut = sdb_get (g->db, sdb_fmt (2, "agraph.nodes.%s.shortcut", n->title), 0);
 	/* print the title */
 	if (cur) {
 		snprintf (title, sizeof (title)-1,
 				"[%s]", n->title);
 	} else {
 		snprintf (title, sizeof (title)-1,
-				" %s ", n->title);
+				" %s", n->title);
 	}
-	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1))
+	if (shortcut) {
+		strncat (title, sdb_fmt (2, " ;[%s]", shortcut), sizeof (title)-1);
+		free (shortcut);
+	}
+
+	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {
 		W(title + delta_x);
+	}
 
 	/* print the body */
 	if (g->zoom > ZOOM_DEFAULT) {
@@ -293,6 +301,9 @@ static int **get_crossing_matrix (const RGraph *g,
 
 			r_list_foreach (neigh, itk, gk) {
 				int s;
+				// skip self-loop
+				if (gj == gk) continue;
+
 				for (s = 0; s < j; ++s) {
 					const RGraphNode *gs = layers[i - 1].nodes[s];
 					const RList *neigh_s = r_graph_get_neighbours (g, gs);
@@ -303,15 +314,18 @@ static int **get_crossing_matrix (const RGraph *g,
 						const RANode *ak, *at; /* k and t should be "indexes" on layer i */
 
 						if (gt == gk) continue;
+						// skip self-loop
+						if (gt == gs) continue;
+
 						ak = get_anode (gk);
 						at = get_anode (gt);
 						if (ak->layer != i || at->layer != i) {
-							 /* eprintf("\"%s\" (%d) or \"%s\" (%d) are not on the right layer (%d)\n", */
-									 /* ak->title, ak->layer, */
-									 /* at->title, at->layer, */
-									 /* i); */
-
-							 continue;
+							// this should never happen
+							eprintf("(WARNING) \"%s\" (%d) or \"%s\" (%d) are not on the right layer (%d)\n",
+								ak->title, ak->layer,
+								at->title, at->layer,
+								i);
+							continue;
 						}
 						m[ak->pos_in_layer][at->pos_in_layer]++;
 					}
@@ -415,25 +429,6 @@ static void view_cyclic_edge (const RGraphEdge *e, const RGraphVisitor *vis) {
 	r_list_append (g->back_edges, new_e);
 }
 
-static int get_depth (Sdb *path, const RGraphNode *n) {
-	int res = 0;
-	while ((n = hash_get_rnode (path, n)) != NULL) {
-		res++;
-	}
-	return res;
-}
-
-static void set_layer (const RGraphEdge *e, const RGraphVisitor *vis) {
-	Sdb *path = (Sdb *)vis->data;
-	int bdepth, adepth;
-
-	adepth = get_depth (path, e->from);
-	bdepth = get_depth (path, e->to);
-
-	if (adepth + 1 > bdepth)
-		hash_set (path, e->to, e->from);
-}
-
 static void view_dummy (const RGraphEdge *e, const RGraphVisitor *vis) {
 	const RANode *a = get_anode (e->from);
 	const RANode *b = get_anode (e->to);
@@ -469,24 +464,43 @@ static void remove_cycles (RAGraph *g) {
 	}
 }
 
-/* assign a layer to each node of the graph */
+static void add_sorted(RGraphNode *n, RGraphVisitor *vis) {
+	RList *l = (RList *)vis->data;
+	r_list_prepend (l, n);
+}
+
+/* assign a layer to each node of the graph.
+ *
+ * It visits the nodes of the graph in the topological sort, so that every time
+ * you visit a node, you can be sure that you have already visited all nodes
+ * that can lead to that node and thus you can easily compute the layer based
+ * on the layer of these "parent" nodes. */
 static void assign_layers (const RAGraph *g) {
 	RGraphVisitor layer_vis = { NULL, NULL, NULL, NULL, NULL, NULL };
-	Sdb *path_layers = sdb_new0 ();
 	const RGraphNode *gn;
 	const RListIter *it;
 	RANode *n;
+	RList *topological_sort = r_list_new ();
 
-	layer_vis.data = path_layers;
-	layer_vis.tree_edge = (RGraphEdgeCallback)set_layer;
-	layer_vis.fcross_edge = (RGraphEdgeCallback)set_layer;
+	layer_vis.data = topological_sort;
+	layer_vis.finish_node = (RGraphNodeCallback)add_sorted;
 	r_graph_dfs (g->graph, &layer_vis);
 
-	graph_foreach_anode (r_graph_get_nodes (g->graph), it, gn, n) {
-		n->layer = get_depth (path_layers, gn);
+	graph_foreach_anode (topological_sort, it, gn, n) {
+		const RList *innodes = r_graph_innodes (g->graph, gn);
+		RListIter *it;
+		RGraphNode *prev;
+		RANode *preva;
+
+		n->layer = 0;
+		graph_foreach_anode (innodes, it, prev, preva) {
+			if (preva->layer + 1 > n->layer) {
+				n->layer = preva->layer + 1;
+			}
+		}
 	}
 
-	sdb_free (path_layers);
+	r_list_free (topological_sort);
 }
 
 static int find_edge (const RGraphEdge *a, const RGraphEdge *b) {
@@ -544,8 +558,9 @@ static void create_layers (RAGraph *g) {
 	/* identify max layer */
 	g->n_layers = 0;
 	graph_foreach_anode (nodes, it, gn, n) {
-		if (n->layer > g->n_layers)
+		if (n->layer > g->n_layers) {
 			g->n_layers = n->layer;
+		}
 	}
 
 	/* create a starting ordering of nodes for each layer */
@@ -553,12 +568,12 @@ static void create_layers (RAGraph *g) {
 	if (sizeof (struct layer_t) * g->n_layers < g->n_layers) return;
 	g->layers = R_NEWS0 (struct layer_t, g->n_layers);
 
-	graph_foreach_anode (nodes, it, gn, n)
+	graph_foreach_anode (nodes, it, gn, n) {
 		g->layers[n->layer].n_nodes++;
+	}
 
 	for (i = 0; i < g->n_layers; ++i) {
 		if (sizeof(RGraphNode*) * g->layers[i].n_nodes < g->layers[i].n_nodes) {
-			//FIXME how to handle properly this error ret2libc?
 			continue;
 		}
 		g->layers[i].nodes = R_NEWS0 (RGraphNode *,
@@ -1581,6 +1596,8 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
+	char *shortcut = NULL;
+	int shortcuts = 0;
 
 	core->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -1593,6 +1610,15 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		title = get_title (bb->addr);
 
 		node = r_agraph_add_node (g, title, body);
+		shortcuts = r_config_get_i (core->config, "graph.nodejmps");
+
+		if (shortcuts) {
+			shortcut = r_core_add_asmqjmp (core, bb->addr);
+			if (shortcut) {
+				sdb_set (g->db, sdb_fmt (2, "agraph.nodes.%s.shortcut", title), shortcut, 0);
+				free (shortcut);
+			}
+		}
 		free (body);
 		free (title);
 		if (!node) return false;

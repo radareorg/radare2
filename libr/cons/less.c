@@ -44,14 +44,14 @@ static void printpage (const char *line, int *index, RList **mla,
 	RStrpool *p;
 
 	r_cons_clear00 ();
-	if (from <0 || to <0) {
+	if (from < 0 || to < 0) {
 		return;
 	}
-	p = r_strpool_new(0);
-	for (i=from; i<to; i++) {
-		color_line(line + index[i], p, mla[i]);
-		r_strpool_ansi_chop(p, w);
-		r_cons_reset_colors();
+	p = r_strpool_new (0);
+	for (i = from; i < to; i++) {
+		color_line (line + index[i], p, mla[i]);
+		r_strpool_ansi_chop (p, w);
+		r_cons_reset_colors ();
 		r_cons_printf ("%s\n", p->str);
 	}
 	r_strpool_free(p);
@@ -174,9 +174,9 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	w = h = 0;
 	while (ui) {
 		w = r_cons_get_size (&h);
-		to = R_MIN (lines_count, from+h);
+		to = R_MIN (lines_count, from + h - 1);
 		if (from+3>lines_count)
-			from = lines_count-3;
+			from = lines_count - 3;
 		if (from<0) from = 0;
 		printpage (p, lines, mla, from, to, w);
 		ch = r_cons_readchar ();

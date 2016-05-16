@@ -124,7 +124,7 @@ R_API char *r_file_abspath(const char *file) {
 	}
 	cwd = r_sys_getdir ();
 	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
-		ret = r_str_home (file+2);
+		ret = r_str_home (file + 2);
 	} else {
 #if __UNIX__ || __CYGWIN__
 		if (cwd && *file != '/')
@@ -550,7 +550,7 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
 
 	if (fh == INVALID_HANDLE_VALUE) {
-		r_sys_perror ("r_file_mmap_read: CreateFile");
+		r_sys_perror ("CreateFile");
 		return -1;
 	}
 
@@ -564,7 +564,7 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 		memcpy (obuf, buf, len);
 		UnmapViewOfFile (obuf);
 	} else {
-		r_sys_perror ("r_file_mmap_read: CreateFileMapping");
+		r_sys_perror ("CreateFileMapping");
 		CloseHandle (fh);
 		return -1;
 	}
@@ -608,7 +608,7 @@ static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
 		FILE_SHARE_READ|(m->rw?FILE_SHARE_WRITE:0), NULL,
 		OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (m->fh == INVALID_HANDLE_VALUE) {
-		r_sys_perror ("r_file_mmap_windows: CreateFile");
+		r_sys_perror ("CreateFile");
 		free (m);
 		return NULL;
 	}
@@ -621,7 +621,7 @@ static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
 			FILE_MAP_COPY,
 			UT32_HI (m->base), UT32_LO (m->base), 0);
 	} else {
-		r_sys_perror ("r_file_mmap_windows: CreateFileMapping");
+		r_sys_perror ("CreateFileMapping");
 		CloseHandle (m->fh);
 		free (m);
 		m = NULL;

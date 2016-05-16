@@ -874,19 +874,24 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'l': // "afl"
 		switch (input[2]) {
 		case '?':
-			eprintf ("Usage: afl[ajq*] <addr>\n");
+			eprintf ("Usage: afl[aljq*] <addr>\n");
 			eprintf ("List all functions in quiet, commands or json format\n");
+			eprintf ("afl  - list functions\n");
+			eprintf ("afll - list function in verbose mode\n");
 			break;
 		case 'a':
 		case '*':
 		case 'j':
-		case 'q':
+		case 'q': // "aflq"
 			r_core_anal_fcn_list (core, NULL, input[2]);
 			break;
 		case 's':
 			r_core_anal_fcn_list_size (core);
 			break;
-		default:
+		case 'l': // "afll"
+			r_core_anal_fcn_list (core, NULL, 'l');
+			break;
+		default: // "afl"
 			r_core_anal_fcn_list (core, NULL, 'o');
 			break;
 		}
@@ -1209,7 +1214,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afF", "[1|0|]", "fold/unfold/toggle",
 			"afg", "", "non-interactive ascii-art basic-block graph (See VV)",
 			"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
-			"afl", "[*] [fcn name]", "list functions (addr, size, bbs, name)",
+			"afl", "[l*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 			"afo", " [fcn.name]", "show address for the function named like this",
 			"afn", " name [addr]", "rename name for function at address (change flag too)",
 			"afna", "", "suggest automatic name for current offset",
@@ -1343,10 +1348,12 @@ static void __anal_reg_list(RCore *core, int type, int size, char mode) {
 		int pcbits = 0;
 		const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 		RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
-		if (bits != reg->size)
+		if (bits != reg->size) {
 			pcbits = reg->size;
-		if (pcbits)
+		}
+		if (pcbits) {
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
+		}
 	}
 	r_debug_reg_list (core->dbg, type, bits, mode, use_color);
 	core->dbg->reg = hack;
@@ -2063,7 +2070,9 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	if (!core)
 		return false;
 	maxopsize = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-	if (maxopsize < 1) maxopsize = 16;
+	if (maxopsize < 1) {
+		maxopsize = 16;
+	}
 	if (mode & 1) {
 		// number of bytes / length
 		buf_sz = length;

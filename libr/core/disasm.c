@@ -870,7 +870,7 @@ static int var_comparator(const RAnalVar *a, const RAnalVar *b){
 
 static void handle_show_functions(RCore *core, RDisasmState *ds) {
 	RAnalFunction *f;
-	bool demangle;
+	bool demangle, call;
 	const char *lang;
 	char *fcn_name;
 	char *sign;
@@ -879,6 +879,7 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 		return;
 	}
 	demangle = r_config_get_i (core->config, "bin.demangle");
+	call = r_config_get_i (core->config, "asm.calls");
 	lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (!f || (f->addr != ds->at)) {
@@ -949,6 +950,8 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 	ds->stackptr = 0;
 	if (ds->vars) {
 		char spaces[32];
+		RAnalVar *var;
+		RListIter *iter;
 		RList *args = r_anal_var_list (core->anal, f,
 			(f->call == R_ANAL_CC_TYPE_FASTCALL) ? 'A' : 'a');
 		RList *vars = r_anal_var_list (core->anal, f, 'v');
@@ -956,10 +959,18 @@ static void handle_show_functions(RCore *core, RDisasmState *ds) {
 		r_list_sort (args, (RListComparator)var_comparator);
 		r_list_sort (vars, (RListComparator)var_comparator);
 		r_list_sort (sp_vars, (RListComparator)var_comparator);
+		if (call) {
+			r_cons_printf ("%s%s%s %s %s%s (",
+				COLOR (ds, color_fline), ds->pre,
+				COLOR_RESET (ds), COLOR (ds, color_fname),
+				fcn_name, COLOR_RESET (ds));
+			r_list_foreach (args, iter, var) {
+				r_cons_printf ("%s %s%s", var->type, var->name, iter->n ? ", " : "");
+			}
+			r_cons_printf (");\n");
+		}
 		r_list_join (args, vars);
 		r_list_join (args,sp_vars);
-		RAnalVar *var;
-		RListIter *iter;
 		r_list_foreach (args, iter, var) {
 			int idx;
 
@@ -1039,7 +1050,7 @@ static void handle_setup_pre(RCore *core, RDisasmState *ds, bool tail) {
 			}
 		} else if (f->addr + f->size - ds->analop.size == ds->at) {
 			handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
-		} else if (ds->at > f->addr && ds->at < f->addr+f->size-1) {
+		} else if (r_anal_fcn_is_in_offset (f, ds->at)) {
 			handle_set_pre (ds, core->cons->vline[LINE_VERT]);
 		}
 
@@ -1903,25 +1914,8 @@ static void handle_print_fcn_name(RCore * core, RDisasmState *ds) {
 	}
 }
 
-static bool is_asmqjmps_valid(RCore *core) {
-	if (!core->asmqjmps) return false;
-	if (core->is_asmqjmps_letter) {
-		if (core->asmqjmps_count >= R_CORE_ASMQJMPS_MAX_LETTERS) {
-			return false;
-		}
-
-		if (core->asmqjmps_count >= core->asmqjmps_size - 2) {
-			core->asmqjmps_size *= 2;
-			core->asmqjmps = realloc (core->asmqjmps, core->asmqjmps_size * sizeof (ut64));
-			if (!core->asmqjmps) return false;
-		}
-	}
-
-	return core->asmqjmps_count < core->asmqjmps_size - 1;
-}
-
 static void handle_print_core_vmode(RCore *core, RDisasmState *ds) {
-	int i;
+	char *shortcut = NULL;
 
 	if (!ds->show_jmphints) return;
 	if (core->vmode) {
@@ -1932,20 +1926,10 @@ static void handle_print_core_vmode(RCore *core, RDisasmState *ds) {
 		case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
 			handle_comment_align (core, ds);
 			if (ds->show_color) r_cons_strcat (ds->pal_comment);
-			if (is_asmqjmps_valid (core)) {
-				char t[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
-				int found = 0;
-
-				for (i = 0; i < core->asmqjmps_count + 1; i++) {
-					if (core->asmqjmps[i] == ds->analop.jump) {
-						found = 1;
-						break;
-					}
-				}
-				if (!found) i = ++core->asmqjmps_count;
-				core->asmqjmps[i] = ds->analop.jump;
-				r_core_set_asmqjmps (core, t, sizeof (t), i);
-				r_cons_printf (" ;[%s]", t);
+			shortcut = r_core_add_asmqjmp (core, ds->analop.jump);
+			if (shortcut) {
+				r_cons_printf (" ;[%s]", shortcut);
+				free (shortcut);
 			} else {
 				r_cons_strcat (" ;[?]");
 			}
@@ -2727,7 +2711,7 @@ toro:
 
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		ds->fcn = f;
-		if (f && f->folded && ds->at >= f->addr && ds->at < f->addr+f->size) {
+		if (f && f->folded && r_anal_fcn_is_in_offset (f, ds->at)) {
 			int delta = (ds->at <= f->addr)? (ds->at - f->addr + f->size): 0;
 			if (of != f) {
 				char cmt[32];

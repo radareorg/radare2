@@ -175,8 +175,7 @@ static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		ut64 eaddr = bb->addr + bb->size;
-		if (bb->addr >= eaddr) {
-			if (addr == bb->addr)
+		if (bb->addr >= eaddr && addr == bb->addr) {
 				return bb;
 		}
 		if ((addr >= bb->addr) && (addr < eaddr)) {
@@ -238,8 +237,9 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 		default: jmpptr = r_read_le64 (jmptbl + offs); break;
 		}
 		if (anal->limit) {
-			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to)
+			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to) {
 				break;
+			}
 		}
 		if (jmpptr < ip - MAX_JMPTBL_JMP || jmpptr > ip + MAX_JMPTBL_JMP) {
 			break;
@@ -280,10 +280,13 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 	}
 	esil_buf = strdup (op_esil);
 	if (!esil_buf) {
+		free (sig);
+		free (op_esil);
 		return;
 	}
 	ptr_end = strstr (esil_buf, sig);
 	if (!ptr_end) {
+		free (sig);
 		free (esil_buf);
 		return;
 	}
@@ -294,6 +297,7 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 		addr--;
 	}
 	if (strncmp (addr, "0x", 2)) {
+		free (sig);
 		free (esil_buf);
 		return;
 	}
@@ -309,13 +313,14 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 
 	}
 	free (esil_buf);
-
 }
+
 R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "+", fcn->call);
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "-", 'v');
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_SP], "+", 'e');
 }
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int continue_after_jump = anal->opt.afterjmp;
 	RAnalBlock *bb = NULL;
@@ -333,6 +338,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		int adjust;
 		int un_idx; // delay.un_idx
 	} delay = {0};
+
 	if (anal->sleep) {
 		r_sys_usleep (anal->sleep);
 	}
@@ -370,8 +376,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	ut64 last_push_addr = UT64_MAX;
 	while (idx < len) {
 		if (anal->limit) {
-			if ((addr+idx)<anal->limit->from || (addr+idx+1)>anal->limit->to)
+			if ((addr+idx)<anal->limit->from || (addr+idx+1)>anal->limit->to) {
 				break;
+			}
 		}
 repeat:
 		if ((len - idx) < 5) {
@@ -464,6 +471,9 @@ repeat:
 		switch (op.stackop) {
 		case R_ANAL_STACK_INC:
 			fcn->stack += op.val;
+			if (fcn->stack > 0 && (int)op.val > 0) {
+				fcn->maxstack = fcn->stack;
+			}
 			break;
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_SET:
@@ -549,8 +559,9 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
-			if (anal->opt.jmpref)
+			if (anal->opt.jmpref) {
 				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
+			}
 			if (r_anal_noreturn_at (anal, op.jump) ||
 					(op.jump < fcn->addr && !anal->opt.jmpabove)) {
 				FITFCNSZ ();
@@ -597,7 +608,7 @@ repeat:
 #else
 						// hardcoded jmp size // must be checked at the end wtf?
 						// always fitfcnsz and retend
-						if (op.jump>fcn->addr && op.jump<(fcn->addr+fcn->size)) {
+						if (r_anal_fcn_is_in_offset (op.jump)) {
 							/* jump inside the same function */
 							FITFCNSZ();
 							return R_ANAL_RET_END;
@@ -794,7 +805,7 @@ static int check_preludes(ut8 *buf, ut16 bufsz) {
 	return false;
 }
 
-R_API int check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {
+R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {
 	RAnalOp op = {0};
 	int i, oplen, opcnt = 0, pushcnt = 0, movcnt = 0, brcnt = 0;
 	if (check_preludes(buf, bufsz)) return true;
@@ -815,7 +826,9 @@ R_API int check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
-			if (op.jump < low || op.jump >= high) return false;
+			if (op.jump < low || op.jump >= high) {
+				return false;
+			}
 			brcnt++;
 			break;
 		case R_ANAL_OP_TYPE_UNK:
@@ -857,8 +870,7 @@ R_API void r_anal_trim_jmprefs(RAnalFunction *fcn) {
 	RListIter *iter;
 	RListIter *tmp;
 	r_list_foreach_safe (fcn->refs, iter, tmp, ref) {
-		if (ref->type == R_ANAL_REF_TYPE_CODE &&
-				ref->addr >= fcn->addr && (ref->addr - fcn->addr) < fcn->size) {
+		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_fcn_is_in_offset (fcn, ref->addr)) {
 			r_list_delete(fcn->refs, iter);
 		}
 	}
@@ -873,6 +885,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		int result = anal->cur->fcn (anal, fcn, addr, buf, len, reftype);
 		if (anal->cur->custom_fn_anal) return result;
 	}
+	fcn->maxstack = 0;
 	ret = fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
 
 	if (ret == R_ANAL_RET_END && fcn->size) {	// cfg analysis completed
@@ -1025,11 +1038,9 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	}
 	r_list_foreach (anal->fcns, iter, fcn) {
 		if (!type || (fcn && fcn->type & type)) {
-			if (addr == fcn->addr ||
-			    (ret == NULL && ((addr > fcn->addr) &&
-			    (addr < fcn->addr + fcn->size))))
+			if (fcn->addr == addr || (!ret && r_anal_fcn_is_in_offset (fcn, addr))) {
 				ret = fcn;
-
+			}
 		}
 	}
 	return ret;
@@ -1040,8 +1051,9 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
 	RAnalFunction *fcn = NULL;
 	RListIter *iter;
 	r_list_foreach (anal->fcns, iter, fcn) {
-		if (!strcmp (name, fcn->name))
+		if (!strcmp (name, fcn->name)) {
 			return fcn;
+		}
 	}
 	return NULL;
 }
@@ -1294,16 +1306,35 @@ R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) {
 }
 
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
-	return (addr >= fcn->addr &&  addr < (fcn->addr+fcn->size));
+	RAnalBlock *bb;
+	RListIter *iter;
+	bool has_bbs = false;
+
+	r_list_foreach (fcn->bbs, iter, bb) {
+		has_bbs = true;
+		if (addr >= bb->addr && addr < bb->addr + bb->size) {
+			return true;
+		}
+	}
+
+	if (!has_bbs) {
+		// hack to make anal_java work, because it doesn't use
+		// basicblocks.
+		// FIXME: anal_java should create basicblocks
+		return addr >= fcn->addr && addr < fcn->addr + fcn->size;
+	}
+	return false;
 }
 
 R_API int r_anal_fcn_count (RAnal *anal, ut64 from, ut64 to) {
 	int n = 0;
 	RAnalFunction *fcni;
 	RListIter *iter;
-	r_list_foreach (anal->fcns, iter, fcni)
-		if (fcni->addr >= from && fcni->addr < to)
+	r_list_foreach (anal->fcns, iter, fcni) {
+		if (fcni->addr >= from && fcni->addr < to) {
 			return n++;
+		}
+	}
 	return n;
 }
 
