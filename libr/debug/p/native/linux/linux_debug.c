@@ -1968,7 +1968,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 		goto cleanup;
 	}
 
-	if (elf_hdr->e_phnum > PN_XNUM)
+	if (elf_hdr->e_phnum == PN_XNUM)
 		shdr_pxnum = get_extra_sectionhdr (elf_hdr, offset, n_segments);
 
 	hdr_size = (proc_data->coredump_filter & MAP_ELF_HDR) ? elf_hdr->e_ehsize : 0;
@@ -1981,7 +1981,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	/* Write to file */
         ret = dump_elf_pheaders (dest, sec_note, &offset);
       	ret = dump_elf_map_content (dest, sec_note->maps, dbg->pid);
-	if (elf_hdr->e_phnum > PN_XNUM)
+	if (elf_hdr->e_phnum == PN_XNUM)
 		ret = dump_elf_sheader_pxnum(dest, shdr_pxnum);
 
 	cleanup:
