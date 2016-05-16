@@ -1379,14 +1379,14 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 
 	if (input && *input)
-		addr = r_num_math (core->num, *input? input + 1: input);
+		addr = r_num_math (core->num, input + 1);
 	else
 		addr = core->offset;
 
 	if (rad == 2) {
 		char *tmp, *name = NULL;
 		r_list_foreach (core->anal->fcns, iter, fcn) {
-			if (input[0] && input[1] && input[2]!='*' && !strncmp (fcn->name, "loc.", 4))
+			if (input && input[0] && input[1] && input[2]!='*' && !strncmp (fcn->name, "loc.", 4))
 				continue;
 			bbs = r_list_length (fcn->bbs);
 			name = strdup (fcn->name ? fcn->name : "");
@@ -1406,13 +1406,13 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	} else if (rad == 'j')  {
 		r_cons_printf ("[");
 	}
-	if (rad == 'o') {
-		r_cons_printf ("%-10s %-5s %-5s %-30s %-10s %-10s %s %s %s %s %s\n",
-			"Offset", "Size", "nbbs", "Function Name", "Min_Bound", "Max_Bound",
-				"Calls", "Vars", "Args", "Xref", "Framesize");
-		r_cons_printf ("%-10s %-5s %-5s %-30s %-10s %-10s %s %s %s %s %s\n",
-			"======", "====", "====", "=============", "=========", "=========",
-				"=====", "====", "====", "====", "=========");
+	if (rad == 'l') {
+		r_cons_printf ("%-11s %4s %5s %4s %11s    %-11s %s %s %s %s %s %s\n",
+			"address", "size", "nbbs", "cc", "min bound", "max bound",
+				"calls", "vars", "args", "xref", "frame", "name");
+		r_cons_printf ("%-11s %-4s %-5s %-4s %-11s    %-11s %s %s %s %s %s %s\n",
+			"===========", "====", "=====", "====", "===========", "===========",
+				"=====", "====", "====", "====", "=====", "====");
 	}
 	r_list_sort (core->anal->fcns, &cmpfcn);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
@@ -1439,7 +1439,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				}
 			}
 			count++;
-			if (rad == 'o') {
+			if (rad == 'o' || rad == 'l') {
 				RListIter *callrefiter, *bbsiter;
 				RAnalBlock *bbi;
 				long long max = UT64_MIN;
@@ -1453,16 +1453,24 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 					noofRef++;
 				}
 				r_list_foreach (fcn->bbs, bbsiter, bbi) {
-					if (max < bbi->addr) {
-						max = bbi->addr;
+					if (max < (bbi->addr + bbi->size)) {
+						max = bbi->addr + bbi->size;
 					}
 					if (min > bbi->addr) {
 						min = bbi->addr; 
 					}
 				}
-				r_cons_printf ("0x%08"PFMT64x" %-5d %-5d %-30s 0x%08"PFMT64x" 0x%08"PFMT64x" %-5d %-4d %-4d %-4d %-4d\n",
-					fcn->addr, r_anal_fcn_size (fcn), r_list_length (fcn->bbs), name, min, max, noofCallRef, r_anal_var_count (core->anal, fcn, 'v'),
-						r_anal_var_count (core->anal, fcn, 'a'), noofRef, fcn->size);
+				if (rad == 'l') {
+					r_cons_printf ("0x%08"PFMT64x" %4d %5d %4d 0x%08"PFMT64x" .. 0x%08"PFMT64x" %5d %4d %4d %4d %5d %s\n",
+							fcn->addr, 
+							r_anal_fcn_cc (fcn),
+							r_anal_fcn_size (fcn), r_list_length (fcn->bbs), min, max, noofCallRef,
+							r_anal_var_count (core->anal, fcn, 'v'),
+							r_anal_var_count (core->anal, fcn, 'a'), noofRef, fcn->size, name);
+				} else {
+					r_cons_printf ("0x%08"PFMT64x"  %-4d  %-4d  %s\n",
+							fcn->addr, fcn->size, r_list_length (fcn->bbs), name);
+				}
 				free (callrefiter);
 				free (bbsiter);
 			} else if (rad == 'q') {
