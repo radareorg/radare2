@@ -1466,10 +1466,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 							r_anal_fcn_cc (fcn),
 							r_anal_fcn_size (fcn), r_list_length (fcn->bbs), min, max, noofCallRef,
 							r_anal_var_count (core->anal, fcn, 'v'),
-							r_anal_var_count (core->anal, fcn, 'a'), noofRef, fcn->size, name);
+							r_anal_var_count (core->anal, fcn, 'a'), noofRef, fcn->stack, name);
 				} else {
 					r_cons_printf ("0x%08"PFMT64x"  %-4d  %-4d  %s\n",
-							fcn->addr, fcn->size, r_list_length (fcn->bbs), name);
+							fcn->addr, r_anal_fcn_size (fcn), r_list_length (fcn->bbs), name);
 				}
 				free (callrefiter);
 				free (bbsiter);
@@ -1563,6 +1563,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 						fcn->addr, name, (ut64)fcn->size);
 				r_cons_printf ("\n realsz: %d", r_anal_fcn_size (fcn));
+				r_cons_printf ("\n stackframe: %d", fcn->stack);
 				r_cons_printf ("\n call-convention: %s", r_anal_cc_type2str (fcn->call));
 				r_cons_printf ("\n cyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
 				r_cons_printf ("\n type: %s",
