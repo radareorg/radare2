@@ -13,8 +13,15 @@ fi
 export GLOBAL=0
 export R2VERSION="`r2 -qv`"
 export PREFIX="`r2 -hh | grep PREFIX | awk '{print $2}' 2> /dev/null`"
+export BINDIR="${PREFIX}/bin"
+export LIBDIR="${PREFIX}/lib"
 export LIBEXT="`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`"
 export R2HOMEDIR="`r2 -hh | grep '^ RHOMEDIR' | awk '{print $2}' 2> /dev/null`"
+[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2HOMEDIR}"
+# bindir
+export R2PM_HOMEBINDIR="${R2PM_PLUGDIR}/bin"
+export R2PM_SYSBINDIR="${BINDIR}"
+export R2PM_BINDIR=${R2PM_HOMEBINDIR}
 # prefix
 export R2PM_SYSPREFIX="${PREFIX}"
 export R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix"
@@ -30,7 +37,6 @@ export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 # Global Vars
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
-[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2HOMEDIR}"
 IS_SYSPKG=0
 R2PM_USRDIR="${HOME}/.config/radare2/r2pm"
 
@@ -208,6 +214,7 @@ case "$1" in
 	GLOBAL=1
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
 	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2_VERSION}/plugins"
+	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	r2pm_install $@
 	;;
 -c|clean)

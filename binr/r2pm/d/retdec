@@ -3,16 +3,17 @@ R2PM_BEGIN
 R2PM_GIT "https://github.com/jpenalbae/r2-scripts"
 R2PM_DESC "[r2-r2pipe-node] RetDec Decompiler script"
 
-BINDIR="${R2PM_PLUGDIR}/../bin"
+BINDIR="${R2PM_BINDIR}"
 
 R2PM_INSTALL() {
 	cd decompiler
 	node --version || exit 1
+	echo "Using BINDIR=${BINDIR}"
 	npm install || exit 1
-	mkdir -p "${BINDIR}"
-	echo '#!/bin/sh' > "${BINDIR}/retdec"
-	echo "exec node '`pwd`'"'/decompile.js $*' >> "${BINDIR}/retdec"
-	chmod +x "${BINDIR}"/retdec
+	mkdir -p "${R2PM_BINDIR}"
+	echo '#!/bin/sh' > "${R2PM_BINDIR}/retdec"
+	echo "exec node '`pwd`'"'/decompile.js $*' >> "${R2PM_BINDIR}/retdec"
+	chmod +x "${R2PM_BINDIR}"/retdec
 }
 
 R2PM_UNINSTALL() {
