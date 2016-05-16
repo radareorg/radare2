@@ -145,8 +145,12 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 #define APPLE_WITH_BACKTRACE 1
 #endif
 
-R_API void r_sys_backtrace(void) {
 #if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || defined(NETBSD_WITH_BACKTRACE)
+#define HAVE_BACKTRACE 1
+#endif
+
+R_API void r_sys_backtrace(void) {
+#ifdef HAVE_BACKTRACE
 	void *array[10];
 	size_t size = backtrace (array, 10);
 	printf ("Backtrace %zd stack frames.\n", size);
@@ -260,8 +264,7 @@ R_API int r_sys_crash_handler(const char *cmd) {
 
 	if (!checkcmd (cmd))
 		return R_FALSE;
-		
-#if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || defined(NETBSD_WITH_BACKTRACE)
+#ifdef HAVE_BACKTRACE
 	/* call this outside of the signal handler to init it safely */
 	backtrace (array, 1);
 #endif
