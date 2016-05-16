@@ -1463,10 +1463,18 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 						min = bbi->addr; 
 					}
 				}
+					char *msg;
+					int sz = r_anal_fcn_size (fcn);
+					if (fcn->size != sz) {
+						msg = r_str_newf ("%4d -> %-4d", fcn->size, sz);
+					} else {
+						msg = r_str_newf ("%4d", fcn->size);
+					}
 				if (rad == 'l') {
 					const char *color = "";
-					const char *color_end = use_color? Color_RESET: "";
+					const char *color_end = "";
 					if (use_color) {
+						color_end = Color_RESET;
 						if (strstr (name, "sym.imp.")) {
 							color = Color_YELLOW;
 						} else if (strstr (name, "sym.")) {
@@ -1482,10 +1490,16 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 							r_anal_var_count (core->anal, fcn, 'v'),
 							r_anal_var_count (core->anal, fcn, 'a'), noofRef, fcn->maxstack, name, color_end);
 				} else {
-					r_cons_printf ("0x%08"PFMT64x" %4d %4d %4d %s\n",
-							fcn->addr, fcn->size, r_anal_fcn_size (fcn),
-							r_list_length (fcn->bbs), name);
+					int sz = r_anal_fcn_size (fcn);
+					if (fcn->size == sz) {
+						msg = r_str_newf ("%-12d", fcn->size);
+					} else {
+						msg = r_str_newf ("%-4d -> %-4d", fcn->size, sz);
+					}
+					r_cons_printf ("0x%08"PFMT64x" %4d %4s %s\n",
+							fcn->addr, r_list_length (fcn->bbs), msg, name);
 				}
+				free (msg);
 				free (callrefiter);
 			} else if (rad == 'q') {
 				r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
