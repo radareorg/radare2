@@ -1,4 +1,4 @@
-.Dd Oct 1, 2015
+.Dd May 15, 2016
 .Dt R2PM 1
 .Sh NAME
 .Nm R2PM
@@ -14,10 +14,14 @@ Allows to install, update, uninstall and discover plugins and tools that can be 
 Show information about repository and installed packages
 .It Fl i, Cm install Ar pkgname
 Install a package
+.It Fl gi, Cm global-install Ar pkgname
+Install a package in the system directory
 .It Fl t, Cm test [OK|FX|BR|XX] Cm [build-id]
 Show last build + testsuite run from travis, greps for errors
 .It Fl u, Cm uninstall Ar pkgname
 Uninstall a package
+.It Fl gu, Cm global-install Ar pkgname
+Uninstall a package from the system directory
 .It Fl l, Cm list
 List installed packages
 .It Fl s, Cm search Ar keyword

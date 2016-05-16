@@ -56,7 +56,8 @@ static inline ut16 crc16_byte(ut16 crc, const ut8 data) {
  * Returns the updated CRC value.
  */
 R_API ut16 r_hash_crc16(ut16 crc, ut8 const *buffer, ut64 len) {
-	while (len--)
-		crc = crc16_byte(crc, *buffer++);
-	return crc;
+	while (len--) {
+		crc = crc16_byte (crc, *buffer++);
+	}
+	return r_read_le16 (&crc);
 }

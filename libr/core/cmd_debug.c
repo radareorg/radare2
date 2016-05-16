@@ -1681,12 +1681,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	switch (input[1]) {
 	case '.':
 		if (input[2]) {
-			int bpsz = strcmp (core->dbg->arch, "arm") ? 1 : 4;
 			ut64 addr = r_num_tail (core->num, core->offset, input +2);
 			if (validAddress (core, addr)) {
-				bpi = hwbp
-				? r_bp_add_hw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
-				: r_bp_add_sw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+				bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
 			} else {
 				eprintf ("Invalid address\n");
 			}
@@ -1857,21 +1854,32 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'm': // "dbm"
+	case 'b': // "dbb"	
 		if (input[2]) {
 			core->dbg->bp->delta = (st64)r_num_math (core->num, input+2);
 		} else {
 			r_cons_printf ("%"PFMT64d"\n", core->dbg->bp->delta);
 		}
+	case 'm': // "dbm"
+		if (input[2] && input[3]) {
+			char *string = strdup (input + 3);
+			char *module = NULL;
+			st64 delta = 0;
+			module = strtok (string, " ");
+			delta = (ut64)r_num_math (core->num, strtok (NULL, ""));
+			bpi = r_debug_bp_add (core->dbg, 0, hwbp, strdup (module), delta);
+			if (bpi) bpi->name = strdup (module);
+			free (string);
+		}
 		break;
 	case 'j': r_bp_list (core->dbg->bp, 'j'); break;
 	case '*': r_bp_list (core->dbg->bp, 1); break;
 	case '\0': r_bp_list (core->dbg->bp, 0); break;
-	case '-':
+	case '-': // "db-"
 		if (input[2] == '*') r_bp_del_all (core->dbg->bp);
 		else r_bp_del (core->dbg->bp, r_num_math (core->num, input + 2));
 		break;
-	case 'c':
+	case 'c': // "dbc"
 		addr = r_num_math (core->num, input + 2);
 		bpi = r_bp_get_at (core->dbg->bp, addr);
 		if (bpi) {
@@ -1886,22 +1894,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 		} else eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
 		break;
-	case 's':
+	case 's': // "dbs"
 		addr = r_num_math (core->num, input + 2);
 		bpi = r_bp_get_at (core->dbg->bp, addr);
 		if (bpi) {
 			//bp->enabled = !bp->enabled;
 			r_bp_del (core->dbg->bp, addr);
 		} else {
-			if (hwbp) bpi = r_bp_add_hw (core->dbg->bp, addr,
-						1, R_BP_PROT_EXEC);
-			else bpi = r_bp_add_sw (core->dbg->bp, addr,
-						1, R_BP_PROT_EXEC);
-			if (!bpi) eprintf ("Cannot set breakpoint "
-					"(%s)\n", input + 2);
+
+			bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
+			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input + 2);
 		}
-		r_bp_enable (core->dbg->bp, r_num_math (core->num,
-							input + 2), 0);
+		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), 0);
 		break;
 	case 'n': // "dbn"
 		bpi = r_bp_get_at (core->dbg->bp, core->offset);
@@ -1956,9 +1960,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				if (!strcmp (core->dbg->arch, "arm")) {
 					bpsz = 4;
 				}
-				bpi = hwbp
-				? r_bp_add_hw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
-				: r_bp_add_sw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+				bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
 				if (bpi) {
 					free (bpi->name);
 					if (!strcmp (input + 2, "$$")) {
@@ -1967,8 +1969,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						RFlagItem *f = r_flag_get_i2 (core->flags, addr);
 						if (f) {
 							if (f->offset != addr) {
-								newname = r_str_newf ("%s+%d\n",
-									f->name, (int)(addr - f->offset));
+								newname = r_str_newf ("%s+%d\n", f->name, (int)(addr - f->offset));
 							} else {
 								newname = strdup (f->name);
 							}

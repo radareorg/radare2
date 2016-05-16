@@ -150,9 +150,9 @@ R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num) {
 // TODO: Remove completely
 R_API void r_mem_swaporcopy(ut8* dest, const ut8* src, int len, bool big_endian) {
 	if (big_endian) {
-		r_mem_swapendian(dest, src, len);
+		r_mem_swapendian (dest, src, len);
 	} else {
-		memcpy(dest, src, len);
+		memcpy (dest, src, len);
 	}
 }
 

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2015 - pancake */
+/* radare2 - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_cons.h>
 #include <r_print.h>
@@ -293,8 +293,8 @@ static void palloc(int moar) {
 	if (I.buffer == NULL) {
 		int new_sz;
 		if ((INT_MAX - MOAR) < moar) return;
-		new_sz = moar+MOAR;
-		temp = malloc(new_sz);
+		new_sz = moar + MOAR;
+		temp = malloc (new_sz);
 		if (!temp) return;
 		I.buffer_sz = new_sz;
 		I.buffer = temp;

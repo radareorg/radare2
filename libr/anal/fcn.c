@@ -471,6 +471,9 @@ repeat:
 		switch (op.stackop) {
 		case R_ANAL_STACK_INC:
 			fcn->stack += op.val;
+			if (fcn->stack > 0 && (int)op.val > 0) {
+				fcn->maxstack = fcn->stack;
+			}
 			break;
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_SET:
@@ -882,6 +885,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		int result = anal->cur->fcn (anal, fcn, addr, buf, len, reftype);
 		if (anal->cur->custom_fn_anal) return result;
 	}
+	fcn->maxstack = 0;
 	ret = fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
 
 	if (ret == R_ANAL_RET_END && fcn->size) {	// cfg analysis completed
