@@ -1890,6 +1890,10 @@ beach:
 	return;
 }
 
+static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
+	return a->addr - b->addr;
+}
+
 static int cmd_print(void *data, const char *input) {
 	int mode, w, p, i, l, len, total[10];
 	ut64 off, from, to, at, ate, piece;
@@ -2503,17 +2507,21 @@ static int cmd_print(void *data, const char *input) {
 					// XXX: hack must be reviewed/fixed in code analysis
 					if (r_list_length (f->bbs) == 1) {
 						b = r_list_get_top (f->bbs);
-						if (b->size > f->size) b->size = f->size;
+						if (b->size > f->size) {
+							b->size = f->size;
+						}
 					}
+					r_list_sort (f->bbs, (RListComparator)bbcmp);
 					// TODO: sort by addr
 					//r_list_sort (f->bbs, &r_anal_ex_bb_address_comparator);
 					r_list_foreach (f->bbs, iter, b) {
 						r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+#if 0
 						if (b->jump != UT64_MAX)
 							r_cons_printf ("-[true]-> 0x%08"PFMT64x"\n", b->jump);
 						if (b->fail != UT64_MAX)
 							r_cons_printf ("-[false]-> 0x%08"PFMT64x"\n", b->fail);
-						r_cons_printf ("--\n");
+#endif
 					}
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
