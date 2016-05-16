@@ -3201,9 +3201,8 @@ static int cmd_print(void *data, const char *input) {
 					ut64 *foo = (ut64*)(buf+i);
 					ut64 val = *foo;
 					if (base==32) val &= UT32_MAX;
-					r_cons_printf ("%s{\"addr\":%"PFMT64d",\
-							\"value\":%"PFMT64d,
-							comma, addr, val);
+					r_cons_printf ("%s{\"addr\":%"PFMT64d",\"value\":%" \
+							PFMT64d, comma, addr, val);
 					comma = ",";
 					// XXX: this only works in little endian
 					withref = 0;
