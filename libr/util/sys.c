@@ -260,9 +260,11 @@ R_API int r_sys_crash_handler(const char *cmd) {
 
 	if (!checkcmd (cmd))
 		return R_FALSE;
-
+		
+#if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || defined(NETBSD_WITH_BACKTRACE)
 	/* call this outside of the signal handler to init it safely */
 	backtrace (array, 1);
+#endif
 
 	free (crash_handler_cmd);
 	crash_handler_cmd = strdup (cmd);
