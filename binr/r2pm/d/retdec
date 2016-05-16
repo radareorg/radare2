@@ -8,12 +8,11 @@ BINDIR="${R2PM_BINDIR}"
 R2PM_INSTALL() {
 	cd decompiler
 	node --version || exit 1
-	echo "Using BINDIR=${BINDIR}"
 	npm install || exit 1
 	mkdir -p "${R2PM_BINDIR}"
 	echo '#!/bin/sh' > "${R2PM_BINDIR}/retdec"
 	echo "exec node '`pwd`'"'/decompile.js $*' >> "${R2PM_BINDIR}/retdec"
-	chmod +x "${R2PM_BINDIR}"/retdec
+	chmod +x "${R2PM_BINDIR}"/retdec || exit 1
 }
 
 R2PM_UNINSTALL() {
