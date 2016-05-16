@@ -84,13 +84,15 @@ static int on_fcn_rename(void *_anal, void* _user, RAnalFunction *fcn, const cha
 }
 
 static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
-	const char *cmdbp;
-	int oecho = core->cons->echo; // should be configurable by user?
-	core->cons->echo = 1; // should be configurable by user?
-	cmdbp = r_config_get (core->config, "cmd.bp");
-	if (cmdbp && *cmdbp)
+	bool oecho = core->cons->echo;
+	const char *cmdbp = r_config_get (core->config, "cmd.bp");
+	core->cons->echo = true;
+	if (cmdbp && *cmdbp) {
 		r_core_cmd0 (core, cmdbp);
-	r_core_cmd0 (core, bpi->data);
+	}
+	if (bpi->data && bpi->data[0]) {
+		r_core_cmd0 (core, bpi->data);
+	}
 	core->cons->echo = oecho;
 }
 
