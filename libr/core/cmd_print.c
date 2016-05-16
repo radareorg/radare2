@@ -1594,7 +1594,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	input = r_str_chop_ro (input);
 	ptr = strchr (input, ' ');
 	sscanf (input, "%31s", algo);
-	if (ptr && *(ptr+1) && r_num_is_valid_input (core->num, ptr + 1)) {
+	if (ptr && *(ptr + 1) && r_num_is_valid_input (core->num, ptr + 1)) {
 		int nlen = r_num_math (core->num, ptr + 1);
 		if (nlen>0) len = nlen;
 		osize = core->blocksize;

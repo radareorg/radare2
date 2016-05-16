@@ -1,11 +1,12 @@
-/* radare - LGPL - Copyright 2009-2015 pancake */
+/* radare - LGPL - Copyright 2009-2016 pancake */
 
 #include "r_hash.h"
 
 /* TODO: do it more beautiful with structs and not spaguetis */
 R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
-
-	if (len < 0)  return 0;
+	if (len < 0) {
+		return 0;
+	}
 	if (algobit & R_HASH_MD4) {
 		r_hash_do_md4 (ctx, buf, len);
 		return R_HASH_SIZE_MD4;
@@ -32,12 +33,16 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_CRC16) {
 		ut16 res = r_hash_crc16 (0, buf, len);
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16);
+		ctx->digest[1] = (res) & 0xff;
+		ctx->digest[0] = (res >> 8) & 0xff;
 		return R_HASH_SIZE_CRC16;
 	}
 	if (algobit & R_HASH_CRC32) {
 		ut32 res = r_hash_crc32 (buf, len);
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32);
+		ctx->digest[3] = res & 0xff;
+		ctx->digest[2] = (res >> 8) & 0xff;
+		ctx->digest[1] = (res >> 16) & 0xff;
+		ctx->digest[0] = (res >> 24) & 0xff;
 		return R_HASH_SIZE_CRC32;
 	}
 	if (algobit & R_HASH_XXHASH) {

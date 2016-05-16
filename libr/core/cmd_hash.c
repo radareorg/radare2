@@ -84,7 +84,7 @@ static void handle_sha512 (const ut8 *block, int len) {
 	int i = 0;
 	RHash *ctx = r_hash_new (true, R_HASH_SHA512);
 	const ut8 *c = r_hash_do_sha512 (ctx, block, len);
-	for (i=0; i<R_HASH_SIZE_SHA512; i++) r_cons_printf ("%02x", c[i]);
+	for (i = 0; i < R_HASH_SIZE_SHA512; i++) r_cons_printf ("%02x", c[i]);
 	r_cons_newline ();
 	r_hash_free (ctx);
 }
@@ -96,7 +96,7 @@ static void handle_adler32 (const ut8 *block, int len) {
 }
 
 static void handle_crc32 (const ut8 *block, int len) {
-	r_cons_printf ("%04x\n", r_hash_crc32 (block, len));
+	r_cons_printf ("%08x\n", r_hash_crc32 (block, len));
 }
 
 static void handle_crc16 (const ut8 *block, int len) {
