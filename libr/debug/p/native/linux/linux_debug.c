@@ -1886,7 +1886,7 @@ static Elf64_Shdr *get_extra_sectionhdr(Elf64_Ehdr *elf_hdr, st64 offset, int n_
 	shdr->sh_type = SHT_NULL;
 	shdr->sh_size = elf_hdr->e_shnum;
 	shdr->sh_link = elf_hdr->e_shstrndx;
-	shdr->sh_info = n_segments;
+	shdr->sh_info = n_segments + 1;
 
 	return shdr;
 }
