@@ -428,6 +428,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				op.fail = hint->fail;
 			if (op.fail != UT64_MAX)
 				printline ("fail", "0x%08" PFMT64x "\n", op.fail);
+			if (op.delay)
+				printline ("delay", "%d\n", op.delay);
 
 			printline ("stack", "%s\n", r_anal_stackop_tostring (op.stackop));
 			{
