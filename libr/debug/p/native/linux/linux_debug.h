@@ -212,14 +212,16 @@ static bool has_map_anonymous_content(FILE *f, ut64 start_addr, ut64 end_addr);
 static bool is_a_kernel_mapping(char *map_name);
 static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags);
 static auxv_buff_t *linux_get_auxv(RDebug *dbg);
-static Elf64_Ehdr *build_elf_hdr(ut32 n_segments);
+static Elf64_Ehdr *build_elf_hdr(int n_segments);
 static int get_n_mappings(linux_map_entry_t *me_head);
 static bool dump_elf_header(RBuffer *dest, Elf64_Ehdr *hdr);
 static void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size);
 static const ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_section);
-static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigned long offset_to_note);
+static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, st64 *offset);
 static void show_maps(linux_map_entry_t *head);	/* test purposes */
 static bool dump_elf_map_content(RBuffer *dest, linux_map_entry_t *head, pid_t pid);
 static void clean_maps(linux_map_entry_t *h);
 static void may_clean_all(linux_elf_note_t *sec_note, proc_stat_content_t *proc_data, Elf64_Ehdr *elf_hdr);
+static bool dump_elf_sheader_pxnum(RBuffer *dest, Elf64_Shdr *shdr);
+static Elf64_Shdr *get_extra_sectionhdr(Elf64_Ehdr *elf_hdr, st64 offset, int n_segments);
 bool linux_generate_corefile (RDebug *dbg, RBuffer *dest);

@@ -1244,7 +1244,7 @@ static auxv_buff_t *linux_get_auxv(RDebug *dbg) {
         return auxv;
 }
 
-static Elf64_Ehdr *build_elf_hdr(ut32 n_segments) {
+static Elf64_Ehdr *build_elf_hdr(int n_segments) {
         int pad_byte;
         int ph_size;
         int ph_offset;
@@ -1279,7 +1279,7 @@ static Elf64_Ehdr *build_elf_hdr(ut32 n_segments) {
         h->e_ehsize = ELF_HDR_SIZE;
         h->e_phoff = ph_offset;                 /* Program header table's file offset */
         h->e_phentsize = ph_size; 
-        h->e_phnum = n_segments + 1;            /* n_segments  + NOTE segment */
+        h->e_phnum = (n_segments + 1) > PN_XNUM ? PN_XNUM : n_segments + 1;            /* n_segments  + NOTE segment */
         h->e_flags = 0x0;
         /* Coredump contains no sections */
         h->e_shoff = 0x0;
@@ -1533,15 +1533,15 @@ static const ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_no
         return note_data;
 }
 
-static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigned long offset_to_note) {
+static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, st64 *offset) {
         Elf64_Phdr phdr;
         linux_map_entry_t *me_p;
         size_t note_section_size;
         ut8 *note_data;
 	bool ret;
-        unsigned long offset_to_next;
+        st64 offset_to_next;
 
-        eprintf ("offset_to_note: %ld\n", offset_to_note);
+        eprintf ("offset_to_note: %ld\n", *offset);
 
         note_data = build_note_section (sec_note, &note_section_size);
 	if (!note_data)
@@ -1552,7 +1552,7 @@ static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigne
         /* Start with note */
         phdr.p_type = PT_NOTE;
         phdr.p_flags = PF_R;
-        phdr.p_offset = offset_to_note;
+        phdr.p_offset = *offset;
         phdr.p_vaddr = 0x0;
         phdr.p_paddr = 0x0;
         phdr.p_filesz = note_section_size;
@@ -1566,7 +1566,7 @@ static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigne
 		return false;
     	}
 
-        offset_to_next = offset_to_note + note_section_size;
+        offset_to_next = *offset + note_section_size;
 
         /* write program headers */
 
@@ -1579,7 +1579,7 @@ static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigne
                 phdr.p_paddr = 0x0;
                 phdr.p_memsz = me_p->end_addr - me_p->start_addr;
                 phdr.p_filesz = me_p->dumpeable == 0 ? 0 : phdr.p_memsz;
-                phdr.p_offset = offset_to_next;;
+                phdr.p_offset = offset_to_next;
                 phdr.p_align = 0x1;
 
                 offset_to_next += phdr.p_filesz == 0 ? 0 : phdr.p_filesz;
@@ -1594,6 +1594,7 @@ static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, unsigne
                 memset (&phdr, '\0', sizeof(Elf64_Phdr));
         }
 
+	*offset = offset_to_next;
 	eprintf ("pheaders writen\n");
 
 	ret = r_buf_append_bytes (dest, (const ut8*)note_data, note_section_size);
@@ -1868,13 +1869,40 @@ static void may_clean_all(linux_elf_note_t *sec_note, proc_stat_content_t *proc_
 	if(elf_hdr)
 		free (elf_hdr);
 }
+
+static Elf64_Shdr *get_extra_sectionhdr(Elf64_Ehdr *elf_hdr, st64 offset, int n_segments) {
+	Elf64_Shdr *shdr;
+
+	eprintf ("get_extra_sectionhdr\n");
+
+	shdr = R_NEW0 (Elf64_Shdr);
+	if (!shdr) return NULL;
+	
+	elf_hdr->e_shoff = offset;
+	elf_hdr->e_shentsize = sizeof (shdr);
+	elf_hdr->e_shnum = 1;
+	elf_hdr->e_shstrndx = SHN_UNDEF;
+
+	shdr->sh_type = SHT_NULL;
+	shdr->sh_size = elf_hdr->e_shnum;
+	shdr->sh_link = elf_hdr->e_shstrndx;
+	shdr->sh_info = n_segments;
+
+	return shdr;
+}
+	
+static bool dump_elf_sheader_pxnum(RBuffer *dest, Elf64_Shdr *shdr) {
+	return r_buf_append_bytes (dest, (const ut8 *)shdr, sizeof (*shdr));
+}
 	
 bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
         Elf64_Ehdr *elf_hdr;
+	Elf64_Shdr *shdr_pxnum;
 	proc_stat_content_t *proc_data;
         linux_elf_note_t *sec_note;
-        ut32 n_segments;
 	ut32 hdr_size;
+	st64 offset;
+        int n_segments;
         bool ret;
 	bool is_error;
 
@@ -1940,14 +1968,21 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 		goto cleanup;
 	}
 
+	if (elf_hdr->e_phnum > PN_XNUM)
+		shdr_pxnum = get_extra_sectionhdr (elf_hdr, offset, n_segments);
+
 	hdr_size = (proc_data->coredump_filter & MAP_ELF_HDR) ? elf_hdr->e_ehsize : 0;
 
 	if (hdr_size)
 		ret = dump_elf_header (dest, elf_hdr);
+
+	offset = hdr_size + (elf_hdr->e_phnum * elf_hdr->e_phentsize);
 	
 	/* Write to file */
-        ret = dump_elf_pheaders (dest, sec_note, hdr_size + (elf_hdr->e_phnum * elf_hdr->e_phentsize));
+        ret = dump_elf_pheaders (dest, sec_note, &offset);
       	ret = dump_elf_map_content (dest, sec_note->maps, dbg->pid);
+	if (elf_hdr->e_phnum > PN_XNUM)
+		ret = dump_elf_sheader_pxnum(dest, shdr_pxnum);
 
 	cleanup:
 		may_clean_all (sec_note, proc_data, elf_hdr);
