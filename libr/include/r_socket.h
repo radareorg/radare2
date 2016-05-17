@@ -205,6 +205,7 @@ typedef struct r_run_profile_t {
 	char *_connect;
 	char *_listen;
 	int _timeout;
+	int _timeout_sig;
 	int _nice;
 } RRunProfile;
 

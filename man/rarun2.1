@@ -1,4 +1,4 @@
-.Dd Mar 27, 2016
+.Dd May 17, 2016
 .Dt RARUN2 1
 .Sh NAME
 .Nm rarun2
@@ -82,6 +82,8 @@ select file to replace stdout file descriptor
 execute the given command
 .It Ar timeout
 set a timeout
+.It Ar timeoutsig
+signal to use when killing the child because the timeout happens
 .It Ar unsetenv
 unset one environment variable
 .El
