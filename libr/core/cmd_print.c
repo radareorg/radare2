@@ -1489,6 +1489,9 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			string2 = NULL;
 		}
 
+		if (strstr (line, "XREF")) {
+			addr = UT64_MAX;
+		}
 		if (addr != UT64_MAX) {
 			const char *str = NULL;
 			if (fcn) {
