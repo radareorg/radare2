@@ -1,4 +1,5 @@
 /* radare2 - LGPL - Copyright 2009-2016 - pancake */
+:
 #include "r_anal.h"
 #include "r_bin.h"
 #include "r_cons.h"
@@ -291,12 +292,9 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case '+':
 	case ' ':
 		{
-		const char* newcomment = input+2;
-		char *text, *nc;
-		while (*newcomment==' ') newcomment++;
-		char *comment = r_meta_get_string (
-				core->anal, R_META_TYPE_COMMENT, addr);
-		nc = strdup (newcomment);
+		const char* newcomment = r_str_chop_ro (input + 2);
+		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
 		if (comment) {
 			text = malloc (strlen (comment)+strlen (newcomment)+2);
@@ -306,7 +304,9 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				strcat (text, nc);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, text);
 				free (text);
-			} else perror ("malloc");
+			} else {
+				r_sys_perror ("malloc");
+			}
 		} else {
 			r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, nc);
 		}
@@ -439,8 +439,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
 				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
-				r_meta_set_string (core->anal,
-						R_META_TYPE_COMMENT, addr, out);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, out);
 				free (out);
 			}
 			free (comment);
@@ -464,7 +463,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 		int repcnt = 0;
 		if (repeat < 1) repeat = 1;
 		while (repcnt < repeat) {
-			t = strdup (input+2);
+			t = strdup (input + 2);
 			p = NULL;
 			n = 0;
 			strncpy (name, t, sizeof (name) - 1);
@@ -474,7 +473,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 					p = strchr (t, ' ');
 					if (p) {
 						n = r_print_format (core->print, addr, core->block,
-								core->blocksize, p+1, 0, NULL, NULL);
+							core->blocksize, p + 1, 0, NULL, NULL);
 					}
 				}
 				if (type == 's') {
@@ -521,7 +520,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 							if (fi) strncpy (name, fi->name, sizeof (name)-1);
 						}
 					}
-				} else if (n<1) {
+				} else if (n < 1) {
 					eprintf ("Invalid length %d\n", n);
 					return false;
 				}
@@ -648,7 +647,7 @@ static int cmd_meta(void *data, const char *input) {
 			r_space_list (ms, input[1]);
 			break;
 		case ' ':
-			r_space_set (ms, input+2);
+			r_space_set (ms, input + 2);
 			break;
 #if 0
 		case 'm':
@@ -665,10 +664,10 @@ static int cmd_meta(void *data, const char *input) {
 #endif
 		default: {
 				 int i, j = 0;
-				 for (i=0; i<R_FLAG_SPACES_MAX; i++) {
+				 for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 					 if (!ms->spaces[i]) continue;
 					 r_cons_printf ("%02d %c %s\n", j++,
-						 (i==ms->space_idx)?'*':' ',
+						 (i == ms->space_idx)?'*':' ',
 						 ms->spaces[i]);
 				 }
 			 } break;

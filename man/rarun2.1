@@ -5,7 +5,9 @@
 .Nd radare2 utility to run programs in exotic environments
 .Sh SYNOPSIS
 .Nm rarun2
-.Op [script.rr2]
+.Op [directives]
+.Op [script.rr2] 
+.Op [--] [program] [args]
 .Sh DESCRIPTION
 This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default filedescriptors.
 .Pp
@@ -134,7 +136,10 @@ Debugging a program redirecting io to another terminal
   $ cat foo.rr2
   #!/usr/bin/rarun2
   stdio=/dev/ttys010
-
+.Pp
+You can also use the -- flag to specify program and arguments in a more natural way:
+.Pp
+  $ rarun2 timeout=2 -- sleep 4
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1) ,

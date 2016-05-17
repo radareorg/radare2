@@ -210,7 +210,7 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 	if (from > to)
 		return false;
 	if (from == to)
-		to = from+1;
+		to = from + 1;
 	if (type == 100 && (to-from)<1) {
 		return false;
 	}

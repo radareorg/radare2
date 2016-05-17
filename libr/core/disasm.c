@@ -1088,8 +1088,9 @@ static void handle_show_comments_right(RCore *core, RDisasmState *ds) {
 	RFlagItem *item;
 	/* show comment at right? */
 	int scr = ds->show_comment_right;
-	if (!ds->show_comments)
+	if (!ds->show_comments) {
 		return;
+	}
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	item = r_flag_get_i (core->flags, ds->at);
 	ds->comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
@@ -1097,8 +1098,9 @@ static void handle_show_comments_right(RCore *core, RDisasmState *ds) {
 		ds->ocomment = item->comment;
 		ds->comment = strdup (item->comment);
 	}
-	if (!ds->comment)
+	if (!ds->comment) {
 		return;
+	}
 	maxclen = strlen (ds->comment)+5;
 	linelen = maxclen;
 	if (ds->show_comment_right_default) {
