@@ -1865,6 +1865,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} else {
 			r_cons_printf ("%"PFMT64d"\n", core->dbg->bp->delta);
 		}
+		break;
 	case 'm': // "dbm"
 		if (input[2] && input[3]) {
 			char *string = strdup (input + 3);
