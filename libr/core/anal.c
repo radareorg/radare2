@@ -934,6 +934,12 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					left = left? 0: 600;
 					if (!left) top += 250;
 				} else if (!is_json && !is_keva) {
+					bool current = r_anal_bb_is_in_offset (bbi, core->offset);
+					const char *label_color = bbi->traced
+						? pal_traced
+						: (current && color_current)
+							? pal_curr
+							: pal_box4;
 					nodes++;
 					//r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" ["
 					//	"URL=\"%s/0x%08"PFMT64x"\", color=\"%s\", label=\"%s\"]\n",
@@ -941,12 +947,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//	fcn->name, bbi->addr,
 					//	bbi->traced?"yellow":"lightgray", str);
 					r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
-						"URL=\"%s/0x%08"PFMT64x"\", color=\"%s\", label=\"%s\"]\n",
+						"URL=\"%s/0x%08"PFMT64x"\", fillcolor=\"%s\", color=\"%s\", label=\"%s\"]\n",
 						bbi->addr, fcn->name, bbi->addr,
-						bbi->traced?pal_traced:(
-							(color_current &&
-							 r_anal_bb_is_in_offset (bbi, core->offset))?pal_curr:pal_box4),
-						str);
+						current? "yellow": "lightgray", label_color, str);
 				}
 			}
 			free (str);
