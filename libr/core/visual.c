@@ -382,6 +382,9 @@ static void setcursor (RCore *core, bool cur) {
 	if (core->print->cur_enabled) flags |= R_PRINT_FLAGS_CURSOR;
 	else flags &= ~(R_PRINT_FLAGS_CURSOR);
 	core->print->cur_enabled = cur;
+	if (core->print->cur == -1) {
+		core->print->cur = 0;
+	}
 	r_print_set_flags (core->print, flags);
 	core->print->col = core->print->cur_enabled ? 1 : 0;
 }
@@ -1655,12 +1658,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '-':
 		if (core->print->cur_enabled) {
-			int cur = core->print->cur;
-			if (cur>=core->blocksize)
-				cur = core->print->cur-1;
-			if (core->print->ocur==-1) sprintf (buf, "wos 01 @ $$+%i!1",core->print->cur);
-			else sprintf (buf, "wos 01 @ $$+%i!%i", core->print->cur<core->print->ocur?
-				core->print->cur:core->print->ocur, R_ABS (core->print->ocur-core->print->cur)+1);
+			if (core->print->ocur == -1) {
+				sprintf (buf, "wos 01 @ $$+%i!1",core->print->cur);
+			} else {
+				sprintf (buf, "wos 01 @ $$+%i!%i", core->print->cur < core->print->ocur
+					? core->print->cur
+					: core->print->ocur,
+					R_ABS (core->print->ocur - core->print->cur) + 1);
+			}
 			r_core_cmd (core, buf, 0);
 		} else {
 			if (!autoblocksize)
@@ -1669,12 +1674,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '+':
 		if (core->print->cur_enabled) {
-			int cur = core->print->cur;
-			if (cur>=core->blocksize)
-				cur = core->print->cur-1;
-			if (core->print->ocur==-1) sprintf (buf, "woa 01 @ $$+%i!1", core->print->cur);
-			else sprintf (buf, "woa 01 @ $$+%i!%i",
-				core->print->cur<core->print->ocur? core->print->cur: core->print->ocur, R_ABS (core->print->ocur-core->print->cur)+1);
+			if (core->print->ocur == -1) {
+				sprintf (buf, "woa 01 @ $$+%i!1", core->print->cur);
+			} else {
+				sprintf (buf, "woa 01 @ $$+%i!%i", core->print->cur < core->print->ocur
+					? core->print->cur
+					: core->print->ocur,
+					R_ABS (core->print->ocur - core->print->cur) + 1);
+			}
 			r_core_cmd (core, buf, 0);
 		} else {
 			if (!autoblocksize)
