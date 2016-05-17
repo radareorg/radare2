@@ -149,10 +149,10 @@ static int show_help(int v) {
 	printf ("Usage: radiff2 [-abcCdjrspOxv] [-g sym] [-t %%] [file] [file]\n");
 	if (v) printf (
 		"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
-		"  -A [-A]    run aaa or aaaa after loading each binary\n"
+		"  -A [-A]    run aaa or aaaa after loading each binary (see -C)\n"
 		"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
 		"  -c         count of changes\n"
-		"  -C         graphdiff code (columns: off-A, match-ratio, off-B)\n"
+		"  -C         graphdiff code (columns: off-A, match-ratio, off-B) (see -A)\n"
 		"  -d         use delta diffing\n"
 		"  -D         show disasm instead of hexpairs\n"
 		"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
