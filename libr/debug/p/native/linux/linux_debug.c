@@ -785,32 +785,43 @@ static void get_map_address_space(char *pstr, ut64 *start_addr, ut64 *end_addr) 
 }
 
 static void get_map_perms(char *pstr, ut8 *fl_perms) {
+	const char perms[] = "rwxps";
 	char *pp;
 	int len;
+	int i;
 	ut8 flags;
 
 	len = strlen(pstr);
 	flags = 0;
-	
-	pp = memchr (pstr, 'r', len);
-	if (pp)
-		flags |= R_MEM;
-	
-	pp = memchr (pstr, 'w', len);
-	if (pp)
-		flags |= W_MEM;
-	
-	pp = memchr (pstr, 'x', len);
-	if (pp)
-		flags |= X_MEM;
-	
-	pp = memchr (pstr, 'p', len);
-	if (pp)
-		flags |= P_MEM;
-	
-	pp = memchr (pstr, 's', len);
-	if (pp)
-		flags |= S_MEM;
+	for(i = 0 ; i < sizeof(perms) - 1 ; i++) {
+                switch(perms[i]) {
+                case 'r':
+                        pp = memchr (pstr, 'r', len);
+                        if (pp)
+                                flags |= R_MEM;
+                        break;
+                case 'w':
+                        pp = memchr (pstr, 'w', len);
+                        if (pp)
+                                flags |= W_MEM;
+                        break;
+                case 'x':
+                        pp = memchr (pstr, 'x', len);
+                        if (pp)
+                                flags |= X_MEM;
+                        break;
+                case 'p':
+                        pp = memchr (pstr, 'p', len);
+                        if (pp)
+                                flags |= P_MEM;
+                        break;
+                case 's':
+                        pp = memchr (pstr, 's', len);
+                        if (pp)
+                                flags |= S_MEM;
+                        break;
+                }
+        }
 	
 	*fl_perms = flags;
 	
