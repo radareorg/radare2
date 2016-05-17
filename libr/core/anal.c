@@ -1492,8 +1492,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				} else {
 					int sz = r_anal_fcn_size (fcn);
 					if (fcn->size == sz) {
+						free (msg);
 						msg = r_str_newf ("%-12d", fcn->size);
 					} else {
+						free (msg);
 						msg = r_str_newf ("%-4d -> %-4d", fcn->size, sz);
 					}
 					r_cons_printf ("0x%08"PFMT64x" %4d %4s %s\n",
