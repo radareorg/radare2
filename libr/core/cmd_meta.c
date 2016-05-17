@@ -475,20 +475,6 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 							core->blocksize, p + 1, 0, NULL, NULL);
 					}
 				}
-				if (type == 's') {
-					/* This is kept for compatibility with old projects.
-					 * Somewhat broken, but project will get corrected on
-					 * save and reload.
-					 */
-					p = strchr (t, ' ');
-					if (p) addr = r_num_math (core->num, p + 1);
-					if (!addr) {
-						addr = 128;
-					}
-					free (t);
-					t = strdup ("");
-					n = 250;
-				}
 				if (!*t || n > 0) {
 					RFlagItem *fi;
 					p = strchr (t, ' ');
