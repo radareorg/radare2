@@ -1040,7 +1040,7 @@ static bool dump_this_map(FILE *f, ut64 start_addr, ut64 end_addr, bool file_bac
 	eprintf ("dump_this_map: nothing found, returning false\n");
 	return false;
 }
-	
+
 static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) {
         linux_map_entry_t *me_head, *me_tail;
         linux_map_entry_t *pmentry;
@@ -1534,20 +1534,20 @@ static const ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_no
 }
 
 static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, st64 *offset) {
-        Elf64_Phdr phdr;
-        linux_map_entry_t *me_p;
-        size_t note_section_size;
-        ut8 *note_data;
+	Elf64_Phdr phdr;
+	linux_map_entry_t *me_p;
+	size_t note_section_size;
+	ut8 *note_data;
 	bool ret;
-        st64 offset_to_next;
+	st64 offset_to_next;
 
-        eprintf ("offset_to_note: %ld\n", *offset);
+	eprintf ("offset_to_note: %ld\n", *offset);
 
-        note_data = build_note_section (sec_note, &note_section_size);
+	note_data = build_note_section (sec_note, &note_section_size);
 	if (!note_data)
 		return false;
 
-        eprintf ("note_section_size : %ld\n", note_section_size);
+	eprintf ("note_section_size : %ld\n", note_section_size);
 
         /* Start with note */
         phdr.p_type = PT_NOTE;
@@ -1674,16 +1674,15 @@ static void print_p(proc_stat_content_t *p) {
         eprintf ("p->pgrp: %d\n", p->pgrp);
         eprintf ("p->sid: %d\n", p->sid);
         eprintf ("p->s_name: %c\n", p->s_name);
-        eprintf ("p->flags: %ld\n", p->flag);
-        eprintf ("p->flags: %ld\n", p->flag);
-        eprintf ("p->utime: %ld\n", p->utime);
-        eprintf ("p->stime: %ld\n", p->stime);
+        eprintf ("p->flags: %u\n", p->flag);
+        eprintf ("p->utime: %lu\n", p->utime);
+        eprintf ("p->stime: %lu\n", p->stime);
         eprintf ("p->cutime: %ld\n", p->cutime);
         eprintf ("p->cstime: %ld\n", p->cstime);
         eprintf ("p->nice: %ld\n", p->nice);
-        eprintf ("p->num_threads: %u\n", p->num_threads);
-        eprintf ("p->sigpend: %ld\n", p->sigpend);
-        eprintf ("p->sighold: %ld\n", p->sighold);
+        eprintf ("p->num_threads: %ld\n", p->num_threads);
+        eprintf ("p->sigpend: %lu\n", p->sigpend);
+        eprintf ("p->sighold: %lu\n", p->sighold);
         eprintf ("p->uid: %u\n", p->uid);
         eprintf ("p->gid: %u\n", p->gid);
         eprintf ("p->coredump_filter: %lx\n", p->coredump_filter);
@@ -1831,6 +1830,9 @@ static proc_stat_content_t *get_proc_content(RDebug *dbg) {
 	p->coredump_filter = filter_flags;
 
 	eprintf ("p->coredump_filter: %lx\n", p->coredump_filter);
+
+	if (p->num_threads > 1)
+		eprintf ("Warning! This functionality does not have thread support yet\n");
 
         return p;
 }
