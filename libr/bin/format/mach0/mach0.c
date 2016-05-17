@@ -1374,8 +1374,13 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 	imports[j].last = 1;
 
 	if (!bin->imports_by_ord_size) {
-		bin->imports_by_ord_size = j;
-		bin->imports_by_ord = (RBinImport**)calloc (j, sizeof (RBinImport*));
+		if (j > 0) {
+			bin->imports_by_ord_size = j;
+			bin->imports_by_ord = (RBinImport**)calloc (j, sizeof (RBinImport*));
+		} else {
+			bin->imports_by_ord_size = 0;
+			bin->imports_by_ord = NULL;
+		}
 	}
 
 	return imports;
