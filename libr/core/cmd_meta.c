@@ -1,5 +1,4 @@
 /* radare2 - LGPL - Copyright 2009-2016 - pancake */
-:
 #include "r_anal.h"
 #include "r_bin.h"
 #include "r_cons.h"
