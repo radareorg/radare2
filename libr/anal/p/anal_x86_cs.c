@@ -1918,8 +1918,6 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 				op->refptr = 8;
 			} else {
 				cs_x86_op in = INSOP(0);
-				if (in.mem.index == 0 && in.mem.base == 0 && in.mem.scale == 1) {
-				}
 			}
 			break;
 		default:
@@ -1944,8 +1942,6 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 				op->refptr = 8;
 			} else {
 				cs_x86_op in = INSOP(0);
-				if (in.mem.index == 0 && in.mem.base == 0 && in.mem.scale == 1) {
-				}
 			}
 			break;
 		case X86_OP_REG:
