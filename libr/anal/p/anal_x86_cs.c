@@ -1912,8 +1912,14 @@ static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh
 		case X86_OP_MEM:
 			op->type = R_ANAL_OP_TYPE_UCALL;
 			op->jump = UT64_MAX;
-			if (INSOP(0).mem.base == 0) {
-				op->ptr = INSOP(0).mem.disp;
+			op->ptr = INSOP(0).mem.disp;
+			if (INSOP(0).mem.base == X86_REG_RIP) {
+				op->ptr += addr + insn->size;
+				op->refptr = 8;
+			} else {
+				cs_x86_op in = INSOP(0);
+				if (in.mem.index == 0 && in.mem.base == 0 && in.mem.scale == 1) {
+				}
 			}
 			break;
 		default:
