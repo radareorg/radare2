@@ -65,7 +65,6 @@ int linux_handle_signals (RDebug *dbg);
 const char *linux_reg_profile (RDebug *dbg);
 /* coredump api */
 
-//#include "elf.h"
 #include "elf_specs.h"
 #include <sys/procfs.h>
 
@@ -76,17 +75,20 @@ const char *linux_reg_profile (RDebug *dbg);
 #define R_DEBUG_REG_T	struct user_regs_struct
 
 #define SIZE_NT_FILE_DESCSZ	sizeof(unsigned long) * 3   /* start_address * end_address * offset_address */
-                                                        /* 
-                                                        NT_FILE layout:
-                                                        [number of mappings]
-                                                        [page size]
-                                                        [foreach(mapping)
-                                                                [start_address]
-                                                                [end_address]
-                                                                [offset_address]
-                                                        [filenames]
-                                                        */
+/* 
+NT_FILE layout:
+	[number of mappings]
+	[page size]
+	[foreach(mapping)
+		[start_address]
+		[end_address]
+		[offset_address]
+	[filenames]
+*/
+
 #define	DEFAULT_NOTE	6
+
+static int n_notes = DEFAULT_NOTE;
 
 #define	X_MEM	0x1
 #define	W_MEM	0x2
@@ -109,8 +111,6 @@ const char *linux_reg_profile (RDebug *dbg);
 #define	HT_FLAG	0x8
 #define	PV_FLAG	0x10 /* just for us */
 
-static unsigned int n_notes = DEFAULT_NOTE;
-
 typedef struct proc_stat_content {
 	int pid;
 	int ppid;
@@ -132,8 +132,8 @@ typedef struct proc_stat_content {
 } proc_stat_content_t;
 
 typedef struct map_file {
-        unsigned int count;
-        unsigned int size;
+	unsigned int count;
+	unsigned int size;
 } map_file_t;
 
 typedef struct auxv_buff {
@@ -187,6 +187,7 @@ static bool get_anonymous_value(char *keyw);
 static bool has_map_deleted_part(char *name);
 static bool has_map_anonymous_content(FILE *f, ut64 start_addr, ut64 end_addr);
 static bool is_a_kernel_mapping(char *map_name);
+static char *read_alloc_from_file(FILE *f);
 static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags);
 static auxv_buff_t *linux_get_auxv(RDebug *dbg);
 static Elf64_Ehdr *build_elf_hdr(int n_segments);
