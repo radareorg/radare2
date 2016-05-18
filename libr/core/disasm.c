@@ -1615,19 +1615,74 @@ static int handle_print_meta_infos(RCore * core, RDisasmState *ds, ut8* buf, int
 
 				switch (mi->size) {
 				case 1:
-					r_cons_printf (".byte 0x%02x", buf[idx]);
+					{
+					char bin_buf[8];
+					if (ds->hint) {
+						switch (ds->hint->immbase) {
+							case 1:
+								r_str_bits (bin_buf, buf[idx], 8, NULL);
+								r_cons_printf (".byte %sb", bin_buf);
+								break;
+							case 8:
+								r_cons_printf (".byte %oo", buf[idx]);
+								break;
+							case 10:
+								r_cons_printf (".byte %d", buf[idx]);
+								break;
+							case 16:
+								r_cons_printf (".byte 0x%02x", buf[idx]);
+								break;
+						}
+					} else {
+						r_cons_printf (".byte 0x%02x", buf[idx]);
+					}
+					}
 					break;
 				case 2:
 					{
 					ut16 data = r_read_ble16(buf+idx, core->print->big_endian);
-					r_cons_printf (".word 0x%04x", data);
+					char bin_buf[16];
+					if (ds->hint) {
+						switch (ds->hint->immbase) {
+							case 1:
+								r_str_bits (bin_buf, &data, 16, NULL);
+								r_cons_printf (".word %sb", bin_buf);
+								break;
+							case 8:
+								r_cons_printf (".word %oo", data);
+								break;
+							case 10:
+								r_cons_printf (".word %d", data);
+								break;
+							case 16:
+								r_cons_printf (".word 0x%04x", data);
+								break;
+						}
+					} else {
+						r_cons_printf (".word 0x%04x", data);
+					}
 					}
 					break;
 				case 4:
 					{
 					ut32 data = r_read_ble32 (buf+idx, core->print->big_endian);
-					if (ds->hint && ds->hint->immbase == 10) {
-						r_cons_printf (".int32 %d", data);
+					char bin_buf[32];
+					if (ds->hint) {
+						switch (ds->hint->immbase) {
+							case 1:
+								r_str_bits (bin_buf, &data, 32, NULL);
+								r_cons_printf (".int32 %sb", bin_buf);
+								break;
+							case 8:
+								r_cons_printf (".int32 %oo", data);
+								break;
+							case 10:
+								r_cons_printf (".int32 %d", data);
+								break;
+							case 16:
+								r_cons_printf (".dword 0x%08x", data);
+								break;
+						}
 					} else {
 						r_cons_printf (".dword 0x%08x", data);
 					}
@@ -1640,7 +1695,26 @@ static int handle_print_meta_infos(RCore * core, RDisasmState *ds, ut8* buf, int
 				case 8:
 					{
 					ut64 data = r_read_ble64(buf+idx, core->print->big_endian);
-					r_cons_printf (".qword 0x%016"PFMT64x, data);
+					char bin_buf[64];
+					if (ds->hint) {
+						switch (ds->hint->immbase) {
+							case 1:
+								r_str_bits (bin_buf, &data, 64, NULL);
+								r_cons_printf (".int64 %sb", bin_buf);
+								break;
+							case 8:
+								r_cons_printf (".int64 %oo", data);
+								break;
+							case 10:
+								r_cons_printf (".int64 %d", data);
+								break;
+							case 16:
+								r_cons_printf (".qword 0x%016"PFMT64x, data);
+								break;
+						}
+					} else {
+						r_cons_printf (".qword 0x%016"PFMT64x, data);
+					}
 					{
 						RFlagItem *fi = r_flag_get_i (core->flags, data);
 						if (fi) r_cons_printf (" ; %s", fi->name);
