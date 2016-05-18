@@ -886,22 +886,27 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				data[l++] = 0x09;
 				data[l++] = arg0 | (getreg (arg2) << 3) | pfx;
 			} else {
-				if (isnum (a, arg2)) {
-					int n = getnum (a, arg2);
-					if (n > -256 && n < 256) { //< 0 || n > 255) {
-						data[l++] = 0x83;
-						data[l++] = 0xc0 | (arg0);
-						data[l++] = (char)n;
-					} else {
-						data[l++] = 0x81;
-						data[l++] = 0xc9 | (arg0);
-						data[l++] = n >> 0;
-						data[l++] = n >> 8;
-						data[l++] = n >> 16;
-						data[l++] = n >> 24;
-					}
+				if (strchr (arg, ']')) {
+					data[l++] = 0x09;
+					data[l++] = arg0; // | 0xf0;
 				} else {
-					data[l++] = arg0 | (getreg (arg2) << 3) | pfx;
+					if (isnum (a, arg2)) {
+						int n = getnum (a, arg2);
+						if (n > -256 && n < 256) {
+							data[l++] = 0x83;
+							data[l++] = 0xc0 | (arg0);
+							data[l++] = (char)n;
+						} else {
+							data[l++] = 0x81;
+							data[l++] = 0xc9 | (arg0);
+							data[l++] = n >> 0;
+							data[l++] = n >> 8;
+							data[l++] = n >> 16;
+							data[l++] = n >> 24;
+						}
+					} else {
+						data[l++] = arg0 | (getreg (arg2) << 3) | pfx;
+					}
 				}
 			}
 			return l;
