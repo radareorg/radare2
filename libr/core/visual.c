@@ -1472,7 +1472,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 							f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 						}
 						if (f && f->folded) {
-							cols = core->offset - f->addr + f->size;
+							cols = core->offset - f->addr + r_anal_fcn_size (f);
 						} else {
 							r_asm_set_pc (core->assembler, core->offset);
 							cols = r_asm_disassemble (core->assembler,
