@@ -464,7 +464,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 		int repcnt = 0;
 		if (repeat < 1) repeat = 1;
 		while (repcnt < repeat) {
-			t = strdup (r_str_chop_ro (input + 2));
+			t = strdup (r_str_chop_ro (input + 1));
 			p = NULL;
 			n = 0;
 			strncpy (name, t, sizeof (name) - 1);
