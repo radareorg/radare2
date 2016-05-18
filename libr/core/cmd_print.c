@@ -2678,7 +2678,7 @@ static int cmd_print(void *data, const char *input) {
 				"pD", " N", "disassemble N bytes",
 				"pda", "", "disassemble all possible opcodes (byte per byte)",
 				"pdb", "", "disassemble basic block",
-				"pdc", "", "pseudo disassembler output in C-link syntax",
+				"pdc", "", "pseudo disassembler output in C-like syntax",
 				"pdj", "", "disassemble to json",
 				"pdr", "", "recursive disassemble across the function graph",
 				"pdf", "", "disassemble function",
