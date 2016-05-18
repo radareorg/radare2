@@ -51,7 +51,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "lw",  "1 = halfword [3 + 2]", 3},
 		{ "li",   "1 = 2", 2},
 		{ "lui",  "1 = 2 << 16", 2},
-		{ "move",  "1 = 2", 1},
+		{ "move",  "1 = 2", 2},
 		{ "mult",  "1 = 2 * 3", 3},
 		{ "multu",  "1 = 2 * 3", 3},
 		{ "negu",  "1 = ~2", 2},
