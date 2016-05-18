@@ -1607,9 +1607,12 @@ static int handle_print_meta_infos(RCore * core, RDisasmState *ds, ut8* buf, int
 			case R_META_TYPE_DATA:
 				hexlen = len - idx;
 				delta = ds->at-mi->from;
-				if (mi->size<hexlen) hexlen = mi->size;
+				if (mi->size < hexlen) {
+					hexlen = mi->size;
+				}
 				ds->oplen = mi->size;
 				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+
 				switch (mi->size) {
 				case 1:
 					r_cons_printf (".byte 0x%02x", buf[idx]);
@@ -1622,8 +1625,12 @@ static int handle_print_meta_infos(RCore * core, RDisasmState *ds, ut8* buf, int
 					break;
 				case 4:
 					{
-					ut32 data = r_read_ble32(buf+idx, core->print->big_endian);
-					r_cons_printf (".dword 0x%08x", data);
+					ut32 data = r_read_ble32 (buf+idx, core->print->big_endian);
+					if (ds->hint && ds->hint->immbase == 10) {
+						r_cons_printf (".int32 %d", data);
+					} else {
+						r_cons_printf (".dword 0x%08x", data);
+					}
 					{
 						RFlagItem *fi = r_flag_get_i (core->flags, data);
 						if (fi) r_cons_printf (" ; %s", fi->name);
