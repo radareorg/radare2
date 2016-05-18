@@ -496,6 +496,15 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				ARG (2), ARG (1), ARG (0));
 		}
 		break;
+	case MIPS_INS_MUL:
+		r_strbuf_appendf (&op->esil,
+			"%s,%s,*,0xffffffff,&,lo,=,"
+			ES_SIGN_EXT64 ("lo")
+			",32,%s,%s,*,>>,0xffffffff,&,hi,=,"
+			ES_SIGN_EXT64 ("hi")
+			",lo,%s,=",
+			ARG (1), ARG (2), ARG (1), ARG (2), REG (0));
+		break;
 	case MIPS_INS_MULT:
 	case MIPS_INS_MULTU:
 		r_strbuf_appendf (&op->esil,
