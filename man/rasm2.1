@@ -5,7 +5,7 @@
 .Nd radare2 assembler and disassembler tool
 .Sh SYNOPSIS
 .Nm rasm2
-.Op Fl ABdDeEfCLvw
+.Op Fl ABdDeEfCLvwq
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl c Ar cpu
@@ -60,6 +60,8 @@ output to file, for example 'rasm2 \-BF a a.asm'
 Select syntax output (intel, att)
 .It Fl w
 Describe opcode (whats op)
+.It Fl q
+Quiet output (handy for -L, -v, ...)
 .El
 .Sh different than filename
 .Pp

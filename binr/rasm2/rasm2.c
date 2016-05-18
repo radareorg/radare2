@@ -15,6 +15,7 @@ static RAsm *a = NULL;
 static RAnal *anal = NULL;
 static int coutput = false;
 static bool json = false;
+static bool quiet = false;
 
 static int showanal(RAnal *lanal, RAnalOp *op, ut64 offset, ut8 *buf, int len, bool json);
 
@@ -68,6 +69,9 @@ static void rasm2_list(RAsm *la, const char *arch) {
 	const char *feat2, *feat;
 	RAsmPlugin *h;
 	RListIter *iter;
+	if (json) {
+		printf ("{");
+	}
 	r_list_foreach (a->plugins, iter, h) {
 		if (arch) {
 			if (h->cpus && !strcmp (arch, h->name)) {
@@ -89,10 +93,22 @@ static void rasm2_list(RAsm *la, const char *arch) {
 			if (h->assemble && !h->disassemble) feat = "a_";
 			if (!h->assemble && h->disassemble) feat = "_d";
 			feat2 = has_esil (anal, h->name);
-			printf ("%s%s  %-9s  %-11s %-7s %s\n",
-				feat, feat2, bits, h->name,
-				h->license? h->license: "unknown", h->desc);
+			if (quiet) {
+				printf ("%s\n", h->name);
+			} else if (json) {
+				const char *str_bits = "32, 64";
+				const char *license = "GPL";
+				printf ("\"%s\":{\"bits\":[%s],\"license\":\"%s\",\"description\":\"%s\",\"features\":\"%s\"}%s",
+						h->name, str_bits, license, h->desc, feat, iter->n? ",": "");
+			} else {
+				printf ("%s%s  %-9s  %-11s %-7s %s\n",
+						feat, feat2, bits, h->name,
+						h->license? h->license: "unknown", h->desc);
+			}
 		}
+	}
+	if (json) {
+		printf ("}\n");
 	}
 }
 // TODO: move into libr/anal/stack.c ?
@@ -184,6 +200,7 @@ static int rasm_show_help(int v) {
 			" -B           Binary input/output (-l is mandatory for binary input)\n"
 			" -v           Show version information\n"
 			" -w           What's this instruction for? describe opcode\n"
+			" -q           quiet mode\n"
 			" If '-l' value is greater than output length, output is padded with nops\n"
 			" If the last argument is '-' reads from stdin\n");
 		printf ("Environment:\n"
@@ -379,7 +396,7 @@ int main (int argc, char *argv[]) {
 		r_anal_set_bits (anal, sysbits);
 	}
 
-	while ((c = getopt (argc, argv, "Ai:k:DCc:eEva:b:s:do:Bl:hjLf:F:wO:")) != -1) {
+	while ((c = getopt (argc, argv, "Ai:k:DCc:eEva:b:s:do:Bl:hjLf:F:wqO:")) != -1) {
 		switch (c) {
 		case 'a':
 			arch = optarg;
@@ -423,7 +440,12 @@ int main (int argc, char *argv[]) {
 		case 'i':
 			skip = r_num_math (NULL, optarg);
 			break;
-		case 'j': json = true; break;
+		case 'j':
+			json = true;
+			break;
+		case 'q':
+			quiet = true;
+			break;
 		case 'k':
 			kernel = optarg;
 			break;
@@ -447,7 +469,11 @@ int main (int argc, char *argv[]) {
 			else r_asm_set_syntax (a, R_ASM_SYNTAX_INTEL);
 			break;
 		case 'v':
-			ret = blob_version ("rasm2");
+			if (quiet) {
+				printf ("%s\n", R2_VERSION);
+			} else {
+				ret = blob_version ("rasm2");
+			}
 			goto beach;
 		case 'w':
 			whatsop = true;
