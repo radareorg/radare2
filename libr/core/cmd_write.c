@@ -128,8 +128,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		"wol"," [val]","<<= shift left",
 		"wom"," [val]", "*=  multiply",
 		"woo"," [val]","|=  or",
-		"wopD"," [len]","De Bruijn Pattern (syntax wopD length @ addr)",
-		"wopO"," [len]", "De Bruijn Pattern Offset (syntax: wopO value)",
+		"wop[DO]"," [arg]","De Bruijn Patterns",
 		"wor"," [val]", ">>= shift right",
 		"woR","","random bytes (alias for 'wr $b')",
 		"wos"," [val]", "-=  substraction",
@@ -239,9 +238,19 @@ static void cmd_write_op (RCore *core, const char *input) {
 			core->num->value = r_debruijn_offset (len, 0 /* use LE */);
 			r_cons_printf ("%"PFMT64d"\n", core->num->value);
 			break;
+		case '\0':
+		case '?':
 		default:
-			eprintf ("Invalid arguments for wop\n");
-			break;
+			{
+				const char* wop_help_msg[] = {
+					"Usage:","wop[DO]"," len @ addr | value",
+					"wopD"," len [@ addr]","Write a De Bruijn Pattern of length 'len' at address 'addr'",
+					"wopO"," value", "Finds the given value into a De Bruijn Pattern at current offset",
+					NULL
+				};
+				r_core_cmd_help (core, wop_help_msg);
+				break;
+			}
 		}
 		break;
 	case '\0':
