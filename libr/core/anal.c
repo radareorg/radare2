@@ -1505,7 +1505,6 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 							fcn->addr, r_list_length (fcn->bbs), msg, name);
 				}
 				free (msg);
-				free (callrefiter);
 			} else if (rad == 'q') {
 				r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
 						//fcn->addr, fcn->size, r_list_length (fcn->bbs), fcn->name);

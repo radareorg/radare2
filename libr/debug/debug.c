@@ -114,6 +114,7 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *modu
 	    	bpi->module_name  = module;
 		bpi->module_delta = m_delta;
 	}
+	free (module);
 	return bpi;
 }
 
