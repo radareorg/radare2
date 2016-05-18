@@ -1,4 +1,5 @@
 /* radare2 - LGPL - Copyright 2009-2016 - pancake */
+
 #include "r_anal.h"
 #include "r_bin.h"
 #include "r_cons.h"
@@ -446,27 +447,29 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 		break;
 	case ' ':
 	case '\0':
-		if (type!='z' && !input[1]) {
+		if (type!='z' && input[1] == '*') {
 			r_meta_list (core->anal, type, 0);
 			break;
 		}
-		if (type == 'z')
+		if (type == 'z') {
 			type = 's';
+		}
 		if (strlen (input) > 2) {
 			char *rep = strchr (input + 2, '[');
 			if (!rep) rep = strchr (input + 2, ' ');
 			if (rep) {
-				repeat = r_num_get (core->num, rep+1);
+				repeat = r_num_get (core->num, rep + 1);
 			}
 		}
 		int repcnt = 0;
 		if (repeat < 1) repeat = 1;
 		while (repcnt < repeat) {
-			t = strdup (input + 2);
+			t = strdup (r_str_chop_ro (input + 2));
 			p = NULL;
 			n = 0;
 			strncpy (name, t, sizeof (name) - 1);
 			if (type != 'C') {
+				bool hasSpace = strchr (t, ' ');
 				n = r_num_math (core->num, t);
 				if (type == 'f') {
 					p = strchr (t, ' ');
@@ -475,32 +478,27 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 							core->blocksize, p + 1, 0, NULL, NULL);
 					}
 				}
+				if (type == 's') {
+					strncpy (name, t, sizeof (name) - 1);
+					(void)r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
+					name[sizeof (name) - 1] = '\0';
+					int name_len = strlen (name);
+					if (n == 0) {
+						n = name_len + 1;
+					} else {
+						if (n > 0 && n < name_len) {
+							name[n] = 0;
+						}
+					}
+				}
 				if (!*t || n > 0) {
 					RFlagItem *fi;
 					p = strchr (t, ' ');
 					if (p) {
 						*p = '\0';
-						strncpy (name, p+1, sizeof (name)-1);
+						strncpy (name, p + 1, sizeof (name)-1);
 					} else {
-						switch (type) {
-						case 'z':
-							type = 's';
-							/* fallthrough */
-						case 's':
-							// TODO: filter \n and so on :)
-							strncpy (name, t, sizeof (name)-1);
-							name[sizeof (name)-1] = '\0';
-							(void)r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
-							name[sizeof (name)-1] = '\0';
-							n = strlen (name) + 1;
-							//eprintf ("NAME (%s) %d\n", name, rc);
-#if 0
-							if (n < sizeof (name)) {
-								name[n] = '\0';
-							} else name[sizeof (name)-1] = '\0';
-#endif
-							break;
-						default:
+						if (type != 's') {
 							fi = r_flag_get_i (core->flags, addr);
 							if (fi) strncpy (name, fi->name, sizeof (name)-1);
 						}
@@ -561,7 +559,7 @@ static int cmd_meta(void *data, const char *input) {
 	case '\0':
 	case '?':{
 			const char* help_msg[] = {
-				"Usage:", "C[-LCvsdfm?] [...]", " # Metadata management",
+				"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
 				"C*", "", "list meta info in r2 commands",
 				"C-", " [len] [[@]addr]", "delete metadata at given address range",
 				"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
