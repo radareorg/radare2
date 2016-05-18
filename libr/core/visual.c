@@ -1003,7 +1003,7 @@ static bool fix_cursor(RCore *core) {
 		bool cur_is_visible = core->offset + p->cur < core->print->screen_bounds;
 		bool is_close = core->offset + p->cur < core->print->screen_bounds + 32;
 
-		if (!cur_is_visible && !is_close) {
+		if ((!cur_is_visible && !is_close) || (!cur_is_visible && p->cur == 0)) {
 			// when the cursor is not visible and it's far from the
 			// last visible byte, just seek there.
 			r_core_seek_delta (core, p->cur);
