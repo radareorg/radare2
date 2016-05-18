@@ -2984,7 +2984,8 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_printf ("|Usage: pr[glx] [size]\n"
 			"| prl: print raw with lines offsets\n"
 			"| prx: printable chars with real offset (hyew)\n"
-			"| prg: print raw GUNZIPped block\n");
+			"| prg: print raw GUNZIPped block\n"
+			"| prz: print raw zero terminated string\n");
 			break;
 		case 'g': // "prg" // gunzip
 			switch (input[2]) {
@@ -3040,6 +3041,11 @@ static int cmd_print(void *data, const char *input) {
 		case 'x': // "prx"
 			if (l != 0) {
 				printraw (core, len, 2);
+			}
+			break;
+		case 'z': // "prz"
+			if (l != 0) {
+				printraw (core, strlen (core->block), 0);
 			}
 			break;
 		default:
