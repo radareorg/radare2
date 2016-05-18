@@ -657,11 +657,15 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 				const char *root = r_config_get (core->config, "http.root");
 				const char *homeroot = r_config_get (core->config, "http.homeroot");
 				char *path;
+				if (!strcmp (rs->path, "/")) {
+					free (rs->path);
+					rs->path = strdup ("/index.html");
+				}
 				if (homeroot && *homeroot) {
 					char *homepath = r_file_abspath (homeroot);
 					path = r_file_root (homepath, rs->path);
 					free (homepath);
-					if (!r_file_exists (path)) {
+					if (!r_file_exists (path) && !r_file_is_directory (path)) {
 						free (path);
 						path = r_file_root (root, rs->path);
 					}
@@ -669,7 +673,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 					path = r_file_root (root, rs->path);
 				}
 				// FD IS OK HERE
-				if (rs->path [strlen (rs->path)-1] == '/') {
+				if (rs->path [strlen (rs->path) - 1] == '/') {
 					path = r_str_concat (path, "index.html");
 					//rs->path = r_str_concat (rs->path, "index.html");
 				} else {
