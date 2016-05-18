@@ -26,6 +26,12 @@ if [ "${IFILE}" = "-u" ]; then
 	IFILE="$1"
 fi
 
+# yell, rather than overwrite an innocent file
+if ! type clang-format >/dev/null; then
+	echo This script requires clang-format to function
+	exit 1
+fi
+
 indentFile() {
 	if [ ! -f "${IFILE}" ]; then
 		echo "Cannot find $IFILE"

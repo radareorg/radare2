@@ -407,7 +407,6 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 
 static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	ut32 words[2]; /* storage for the de-swizled opcode data */
-	const ut8 *b = (ut8 *)data;
 	arc_fields fields;
 
 	/* ARCompact ISA, including */
@@ -420,26 +419,28 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		return 0;
 	}
 
+	op->type = R_ANAL_OP_TYPE_UNK;
+	op->ptr = UT64_MAX;
+	op->val = UT64_MAX;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
+	op->refptr = 0;
 	op->delay = 0;
 
 	if (anal->big_endian) {
-		int i;
-		for (i = 0; i < 8; i += 4) {
-			words[i / 4] = r_read_be32 (&b[i]);
-		}
+		words[0] = r_read_be32 (&data[0]);
+		words[1] = r_read_be32 (&data[4]);
 	} else {
-		int i;
-		for (i = 0; i < 8; i += 4) {
-			words[i / 4] = r_read_me32 (&b[i]);
-		}
+		words[0] = r_read_me32 (&data[0]);
+		words[1] = r_read_me32 (&data[4]);
 	}
 
-	ut8 opcode = (words[0] & 0xf8000000) >> 27;
+	fields.opcode = (words[0] & 0xf8000000) >> 27;
 
-	op->size = (opcode >= 0x0c)? 2: 4;
+	op->size = (fields.opcode >= 0x0c)? 2: 4;
 	op->nopcode = op->size;
 
-	switch (opcode) {
+	switch (fields.opcode) {
 	case 0:
 		fields.format = (words[0] & 0x00010000) >> 16;
 		fields.a = (words[0] & 0x07fe0000) >> 17;
@@ -967,8 +968,7 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case 0x05: /* Branch with Link */
 	case 0x06: /* Loop */
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + 4 + (((b[1] << 1) | (b[2] << 9) |
-			((b[3] & 7) << 17) | ((b[0] & 0x80) >> 7)) << 2);
+		op->jump = addr + 4 + ((r_read_le32 (&data[0]) & 0x07ffff80) >> (7 - 2));
 		break;
 	case 0x07: /* Conditional Jump and Jump with Link */
 		op->type = R_ANAL_OP_TYPE_CJMP;
@@ -1092,6 +1092,6 @@ struct r_anal_plugin_t r_anal_plugin_arc = {
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_arc,
-	.version = R2_VERSION
+	.version = R2_VERSION,
 };
 #endif

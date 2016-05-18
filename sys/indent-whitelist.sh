@@ -5,6 +5,7 @@ libr/include/r_reg.h
 libr/anal/cycles.c
 libr/anal/esil.c
 libr/anal/data.c
+libr/anal/p/anal_arc.c
 libr/config/config.c
 libr/config/callback.c
 libr/config/t/test.c
