@@ -12,7 +12,7 @@ R_API RAnalValue *r_anal_value_new_from_string(const char *str) {
 }
 
 R_API RAnalValue *r_anal_value_copy (RAnalValue *ov) {
-	RAnalValue *v = R_NEW (RAnalValue);
+	RAnalValue *v = R_NEW0 (RAnalValue);
 	if (!v) return NULL;
 	memcpy (v, ov, sizeof (RAnalValue));
 	// reference to reg and regdelta should be kept

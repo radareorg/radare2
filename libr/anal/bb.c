@@ -169,9 +169,10 @@ R_API void r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
 	// the offset of the instruction 0 is not stored because always 0
 	if (i > 0) {
 		if (i >= bb->n_op_pos) {
+			ut16 *tmp_op_pos = realloc (bb->op_pos, (i * 2) * sizeof (*bb->op_pos));
+			if (!tmp_op_pos) return;
 			bb->n_op_pos = i * 2;
-			bb->op_pos = realloc (bb->op_pos, bb->n_op_pos * sizeof (*bb->op_pos));
-			if (!bb->op_pos) return;
+			bb->op_pos = tmp_op_pos;
 		}
 		bb->op_pos[i - 1] = v;
 	}

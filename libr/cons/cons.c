@@ -343,8 +343,9 @@ R_API void r_cons_fill_line() {
 	char *p, white[1024];
 	int cols = I.columns-1;
 	if (cols<1) return;
-	p = (cols>=sizeof (white))?
+	p = (cols >= sizeof (white))?
 		malloc (cols+1): white;
+	if (!p) return;
 	memset (p, ' ', cols);
 	p[cols] = 0;
 	r_cons_strcat (p);
@@ -424,6 +425,7 @@ R_API void r_cons_push() {
 		backup_len = I.buffer_len;
 		backup_size = I.buffer_sz;
 		I.buffer = malloc (I.buffer_sz);
+		if (!I.buffer) return;
 		memcpy (I.buffer, backup, I.buffer_len);
 		I.buffer_len = 0;
 	}
@@ -849,6 +851,7 @@ R_API void r_cons_set_cup(int enable) {
 
 R_API void r_cons_column(int c) {
 	char *b = malloc (I.buffer_len+1);
+	if (!b) return;
 	memcpy (b, I.buffer, I.buffer_len);
 	b[I.buffer_len] = 0;
 	r_cons_reset ();
@@ -900,6 +903,7 @@ R_API void r_cons_highlight (const char *word) {
 			I.highlight = strdup (word);
 		}
 		rword = malloc (word_len + linv[0] + linv[1] + 1);
+		if (!rword) return;
 		strcpy (rword, inv[0]);
 		strcpy (rword + linv[0], word);
 		strcpy (rword + linv[0] + word_len, inv[1]);

@@ -1099,7 +1099,7 @@ static void get_array_print_type(void *type, char **name)
 		name_len += strlen (tmp_name);
 	*name = (char *) malloc (name_len + 1);
 	if (!(*name)) {
-		if (tmp_name) free (tmp_name);
+		free (tmp_name);
 		return;
 	}
 	// name[name_len] = '\0';
@@ -1137,7 +1137,7 @@ static void get_pointer_print_type(void *type, char **name)
 		name_len += strlen (tmp_name);
 	*name = (char *) malloc (name_len + 1);
 	if (!(*name)) {
-		if (tmp_name) free (tmp_name);
+		free (tmp_name);
 		return;
 	}
 	// name[name_len] = '\0';
@@ -1175,7 +1175,7 @@ static void get_modifier_print_type(void *type, char **name)
 		name_len += strlen (tmp_name);
 	*name = (char *) malloc(name_len + 1);
 	if (!(*name)) {
-		if (tmp_name) free (tmp_name);
+		free (tmp_name);
 		return;
 	}
 	// name[name_len] = '\0';
@@ -1249,6 +1249,7 @@ static void get_fieldlist_print_type(void *type, char **name)
 
 	name_len = strlen ("fieldlist ");
 	*name = (char *) malloc (name_len + 1);
+	if (!(*name)) return;
 	// name[name_len] = '\0';
 	strcpy (*name, "fieldlist ");
 }
@@ -1526,9 +1527,12 @@ static void get_member_print_type(void *type, char **name)
 	if (tmp_name)
 		name_len += strlen (tmp_name);
 	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) return;
+	if (!(*name)) {
+		if (need_to_free) R_FREE (tmp_name);
+		return;
+	}
 	// name[name_len] = '\0';
-	strcp y(*name, "(member) ");
+	strcpy(*name, "(member) ");
 	if (tmp_name)
 		strcat (*name, tmp_name);
 
@@ -1578,6 +1582,7 @@ void init_scstring(SCString *cstr, unsigned int size, char *name)
 {
 	cstr->size = size;
 	cstr->name = (char *) malloc (size);
+	if (!cstr->name) return;
 	strcpy (cstr->name, name);
 }
 
@@ -1969,11 +1974,11 @@ static void init_stype_info(STypeInfo *type_info)
 
 #define PARSE_LF2(lf_type, lf_func_name, type) { \
 	STypeInfo *type_info = (STypeInfo *) malloc (sizeof (STypeInfo)); \
-	if (!type_info) return; \
+	if (!type_info) return 0; \
 	lf_type *lf = (lf_type *) malloc (sizeof (lf_type)); \
 	if (!lf) { \
 		free (type_info); \
-		return; \
+		return 0; \
 	} \
 	curr_read_bytes = parse_##lf_func_name (lf, p, read_bytes, len); \
 	type_info->type_info = (void *) lf; \
@@ -2170,7 +2175,7 @@ static int parse_lf_arglist(SLF_ARGLIST *lf_arglist, unsigned char *leaf_data, u
 	READ (*read_bytes, 4, len, lf_arglist->count, leaf_data, unsigned int);
 
 	lf_arglist->arg_type = (unsigned int *) malloc (lf_arglist->count * 4);
-	if (!lf_arglist->arg_typ) return 0;
+	if (!lf_arglist->arg_type) return 0;
 	memcpy (lf_arglist->arg_type, leaf_data, lf_arglist->count * 4);
 	leaf_data += (lf_arglist->count * 4);
 	*read_bytes += (lf_arglist->count * 4);
@@ -2271,7 +2276,7 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, unsigned char *leaf_data, u
 
 	size = (4 * lf_vtshape->count + (lf_vtshape->count % 2) * 4) / 8;
 	lf_vtshape->vt_descriptors = (char *) malloc (size);
-	if (!lf_vtshape) return;
+	if (!lf_vtshape->vt_descriptors) return 0;
 	memcpy (lf_vtshape->vt_descriptors, leaf_data, size);
 	leaf_data += size;
 	*read_bytes += size;
@@ -2284,7 +2289,7 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, unsigned char *leaf_data, u
 
 #define PARSE_LF(lf_type, lf_func) { \
 	lf_type *lf = (lf_type *) malloc(sizeof(lf_type)); \
-	if (!lf) return; \
+	if (!lf) return 0; \
 	parse_##lf_func(lf, leaf_data + 2, &read_bytes, type->length); \
 	type->type_data.type_info = (void *) lf; \
 	init_stype_info(&type->type_data); \
@@ -2328,7 +2333,7 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 		if (!lf) { \
 			free (leaf_data); \
 			return 0; \
-		}
+		} \
 		parse_lf_pointer(lf, leaf_data + 2, &read_bytes, type->length); \
 		type->type_data.type_info = (void *) lf; \
 		init_stype_info(&type->type_data); \

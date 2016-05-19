@@ -177,15 +177,15 @@ R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int t
 	} else {
 		ad->str = malloc (len + 1);
 		if (!ad->str) {
-			r_anal_data_free(ad);
+			r_anal_data_free (ad);
 			return NULL;
 		}
 		memcpy (ad->str, p, len);
 		ad->str[len] = 0;
 		ad->buf = malloc (len + 1);
 		if (!ad->buf) {
-			r_anal_data_free(ad);
-			eprintf ("Cannot allocate %"PFMT64d" bytes\n", len + 1);
+			r_anal_data_free (ad);
+			eprintf ("Cannot allocate %d bytes\n", len + 1);
 			return NULL;
 		}
 		memcpy (ad->buf, ad->str, len + 1);
