@@ -78,6 +78,7 @@ R_API RBinXtrData *r_bin_xtrdata_new(void *xtr_obj, FREE_XTR free_xtr, RBuffer *
 		return data;
 	}
 	data = R_NEW0 (RBinXtrData);
+	if (!data) return NULL;
 	data->xtr_obj = xtr_obj;
 	data->free_xtr = free_xtr;
 	data->buf = tb;
@@ -751,7 +752,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	if (!binfile) {
 		binfile = r_bin_file_new_from_bytes (bin, desc->name, buf_bytes, sz,
 			file_sz, bin->rawstr, baseaddr, loadaddr, desc->fd, name, NULL, offset);
-	} 
+	}
 #if 0
 	else {
 		free (buf_bytes); // possible UAF
@@ -872,9 +873,9 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const 
 	if (!bf) {
 		if (!bin) return NULL;
 		bf = r_bin_file_create_append (bin, filename, bytes, sz, file_sz, rawstr, fd, xtr->name);
-		if (!bf) 
+		if (!bf)
 			return bf;
-		if (!bin->cur) 
+		if (!bin->cur)
 			bin->cur = bf;
 	}
 	if (idx == 0 && xtr && bytes) {
@@ -974,6 +975,7 @@ static RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 
 	ut64 bytes_sz = binfile? r_buf_size (binfile->buf): 0;
 	Sdb *sdb = binfile? binfile->sdb: NULL;
 	RBinObject *o = R_NEW0 (RBinObject);
+	if (!o) return NULL;
 	o->obj_size = bytes && (bytes_sz >= sz + offset)? sz: 0;
 	o->boffset = offset;
 	o->id = r_num_rand (0xfffff000);
@@ -1047,6 +1049,7 @@ static int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz) {
 
 static RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb) {
 	RBinFile *binfile = R_NEW0 (RBinFile);
+	if (!binfile) return NULL;
 
 	r_bin_file_set_bytes (binfile, bytes, sz);
 
@@ -1456,6 +1459,7 @@ R_API RBin *r_bin_new() {
 	bin->binxtrs->free = free;
 	for (i = 0; bin_xtr_static_plugins[i]; i++) {
 		static_xtr_plugin = R_NEW0 (RBinXtrPlugin);
+		if (!static_xtr_plugin) return NULL;
 		*static_xtr_plugin = *bin_xtr_static_plugins[i];
 		r_bin_xtr_add (bin, static_xtr_plugin);
 	}
