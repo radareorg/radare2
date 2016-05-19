@@ -44,6 +44,8 @@ struct user_regs_struct_x86_32 {
 #define R_DEBUG_REG_T struct user_pt_regs
 #elif __arm__
 #define R_DEBUG_REG_T struct user_regs
+#elif __POWERPC__
+#define R_DEBUG_REG_T struct pt_regs_t
 #elif __mips__
 
 #include <sys/ucontext.h>

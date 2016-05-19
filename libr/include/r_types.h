@@ -12,6 +12,11 @@
 #undef mips
 #define mips mips
 
+#ifdef __powerpc || __powerpc__
+#undef __POWERPC__
+#define __POWERPC__ 1
+#endif
+
 #if __IPHONE_8_0 && TARGET_OS_IPHONE
 #define LIBC_HAVE_SYSTEM 0
 #else
