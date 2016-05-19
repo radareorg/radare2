@@ -159,6 +159,7 @@ void reil_cast_size(RAnalEsil *esil, RAnalReilArg *src, RAnalReilArg *dst) {
 	snprintf (tmp_buf, REGBUFSZ-1, "0:%d", dst->size);
 	r_anal_esil_push (esil, tmp_buf);
 	ins = R_NEW0 (RAnalReilInst);
+	if (!ins) return;
 	ins->opcode = REIL_OR;
 	ins->arg[0] = src;
 	ins->arg[1] = reil_pop_arg (esil);
@@ -197,10 +198,19 @@ static int reil_eq(RAnalEsil *esil) {
 	} else if (src_type == ARG_REG) {
 		// No direct register to register transfer.
 		ins = R_NEW0 (RAnalReilInst);
+		if (!ins) return false;
 		ins->opcode = REIL_STR;
 		ins->arg[0] = src;
 		ins->arg[1] = R_NEW0(RAnalReilArg);
+		if (!ins->arg[1]) {
+			reil_free_inst (ins);
+			return false;
+		}
 		ins->arg[2] = R_NEW0(RAnalReilArg);
+		if (!ins->arg[2]) {
+			reil_free_inst(ins);	 
+			return false;
+		}
 		reil_make_arg(esil, ins->arg[1], " ");
 		get_next_temp_reg(esil, tmp_buf);
 		reil_make_arg(esil, ins->arg[2], tmp_buf);
@@ -213,12 +223,21 @@ static int reil_eq(RAnalEsil *esil) {
 
 	// First, make a copy of the dst. We will need this to set the flags later on.
 	ins = R_NEW0 (RAnalReilInst);
+	if (!ins) return false;
 	dst_type = dst->type;
 	if (src_type != ARG_ESIL_INTERNAL && dst_type == ARG_REG) {
 		ins->opcode = REIL_STR;
 		ins->arg[0] = dst;
 		ins->arg[1] = R_NEW0(RAnalReilArg);
+		if (!ins->arg[1]) {
+			reil_free_inst (ins);
+			return false;
+		}
 		ins->arg[2] = R_NEW0(RAnalReilArg);
+		if (!ins->arg[2]) {
+			reil_free_inst(ins);	 
+			return false;
+		}
 		reil_make_arg(esil, ins->arg[1], " ");
 		get_next_temp_reg(esil, tmp_buf);
 		reil_make_arg(esil, ins->arg[2], tmp_buf);
@@ -286,7 +305,14 @@ static int reil_binop(RAnalEsil *esil, RAnalReilOpcode opcode) {
 	ins->opcode = opcode;
 	ins->arg[0] = op2;
 	ins->arg[1] = op1;
+	if (!ins->arg[1]) return false;
 	ins->arg[2] = R_NEW0(RAnalReilArg);
+	if (!ins->arg[2])  {
+		R_FREE (op1);
+		R_FREE (op2);
+		reil_free_inst (ins);
+		return false;
+	}
 	get_next_temp_reg(esil, tmp_buf);
 	reil_make_arg(esil, ins->arg[2], tmp_buf);
 	// Choose the larger of the two sizes as the size of dst
@@ -351,10 +377,21 @@ static int reil_cmp(RAnalEsil *esil) {
 	}
 
 	ins = R_NEW0 (RAnalReilInst);
+	if (!ins) {
+		R_FREE (op1);
+		R_FREE (op2);
+		return false;
+	}
 	ins->opcode = REIL_EQ;
 	ins->arg[0] = op2;
 	ins->arg[1] = op1;
 	ins->arg[2] = R_NEW0(RAnalReilArg);
+	if (!ins->arg[2]) {
+		R_FREE (op1);
+		R_FREE (op2);
+		reil_free_inst (ins);
+		return false;
+	}
 	get_next_temp_reg(esil, tmp_buf);
 	reil_make_arg(esil, ins->arg[2], tmp_buf);
 	ins->arg[2]->size = 1;
@@ -491,11 +528,22 @@ static int reil_neg(RAnalEsil *esil) {
 	if (!op) return false;
 
 	ins = R_NEW0 (RAnalReilInst);
+	if (!ins) return false;
 	ins->opcode = REIL_EQ;
 	ins->arg[0] = op;
 	r_anal_esil_pushnum (esil, 0);
 	ins->arg[1] = reil_pop_arg(esil);
+	if (!ins->arg[1]) {
+		R_FREE (op);
+		reil_free_inst (ins);
+		return false;
+	}
 	ins->arg[2] = R_NEW0 (RAnalReilArg);
+	if (!ins->arg[2]) {
+		R_FREE (op);
+		reil_free_inst (ins);
+		return false;
+	}
 	get_next_temp_reg(esil, tmp_buf);
 	reil_make_arg(esil, ins->arg[2], tmp_buf);
 	if (ins->arg[0]->size < ins->arg[1]->size)

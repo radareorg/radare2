@@ -453,6 +453,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 
 R_API RCore *r_core_new() {
 	RCore *c = R_NEW0 (RCore);
+	if (!c) return NULL;
 	r_core_init (c);
 	return c;
 }

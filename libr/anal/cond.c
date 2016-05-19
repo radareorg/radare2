@@ -44,6 +44,7 @@ R_API void r_anal_cond_free (RAnalCond *c) {
 // XXX?
 R_API RAnalCond *r_anal_cond_clone(RAnalCond *cond) {
 	RAnalCond *c = R_NEW (RAnalCond);
+	if (!c) return NULL;
 	memcpy (c, cond, sizeof (RAnalCond));
 	return c;
 }
