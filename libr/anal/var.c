@@ -221,7 +221,7 @@ R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int d
 	sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
 
 	av = R_NEW0 (RAnalVar);
-	if (!av) return NULL
+	if (!av) return NULL;
 	av->addr = addr;
 	av->scope = scope;
 	av->delta = delta;

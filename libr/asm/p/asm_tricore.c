@@ -65,6 +65,10 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 			escaped = r_str_replace (buf_local, "%", "%%", true);
 		} else {
 			escaped = strdup (buf_global);
+			if (!escaped) {
+				free (tmp);
+				return 0;
+			}
 		}
 		glen = strlen (escaped);
 	}

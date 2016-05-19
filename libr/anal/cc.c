@@ -12,7 +12,7 @@ NOTES
 #include <r_anal.h>
 
 R_API RAnalCC* r_anal_cc_new () {
-	RAnalCC *cc = R_NEW (RAnalCC);
+	RAnalCC *cc = R_NEW0 (RAnalCC);
 	if (!cc) return NULL;
 	r_anal_cc_init (cc);
 	return cc;
