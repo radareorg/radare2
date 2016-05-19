@@ -402,7 +402,7 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 				} else {
 					// TODO: use b64 here
 					a->cb_printf ("0x%08"PFMT64x" array[%d] %s %s\n",
-						d->from, (int)d->size, 
+						d->from, (int)d->size,
 						r_meta_type_to_string (d->type), pstr);
 				}
 				break;
@@ -434,7 +434,10 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 	it.str = strchr (v2+1, ',');
 	if (it.str)
 		it.str = (char *)sdb_decode ((const char*)it.str+1, 0);
-	else it.str = strdup (it.str? it.str: ""); // don't break in free
+	else {
+		it.str = strdup (it.str? it.str: ""); // don't break in free
+		if (!it.str) goto beach
+	}
 	printmetaitem (ui->anal, &it, ui->rad);
 	free (it.str);
 beach:
@@ -475,14 +478,19 @@ static int meta_enumerate_cb(void *user, const char *k, const char *v) {
 	it->to = it->from + it->size;
 	v2 = strchr (v, ',');
 	if (!v2) {
-		free (it); 
+		free (it);
 		goto beach;
 	}
 	it->space = atoi (v2+1);
 	it->str = strchr (v2+1, ',');
 
-	if (it->str)
+	if (it->str) {
 		it->str = (char *)sdb_decode ((const char*)it->str+1, 0);
+	} else {
+		free(it);
+		goto beach;
+
+	}
 	//printmetaitem (ui->anal, &it, ui->rad);
 	r_list_append (list, it);
 beach:

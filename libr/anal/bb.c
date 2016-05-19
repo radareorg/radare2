@@ -80,10 +80,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			}
 			break;
 		}
-		if (oplen < 1) {
-			r_anal_op_free (op);
-			return R_ANAL_RET_END;
-		}
+		if (oplen < 1) goto beach;
 
 		r_anal_bb_set_offset (bb, bb->ninstr, addr + idx - bb->addr);
 		idx += oplen;
