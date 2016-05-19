@@ -12,7 +12,7 @@
 #undef mips
 #define mips mips
 
-#ifdef __powerpc || __powerpc__
+#if defined(__powerpc) || defined(__powerpc__)
 #undef __POWERPC__
 #define __POWERPC__ 1
 #endif
