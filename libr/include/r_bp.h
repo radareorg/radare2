@@ -41,6 +41,8 @@ typedef struct r_bp_plugin_t {
 
 typedef struct r_bp_item_t {
 	char *name;
+	char *module_name; /*module where you get the base address*/
+	st64 module_delta; /*delta to apply to module */
 	ut64 addr;
 	int size; /* size of breakpoint area */
 	int recoil; /* recoil */

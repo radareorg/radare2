@@ -382,6 +382,9 @@ static void setcursor (RCore *core, bool cur) {
 	if (core->print->cur_enabled) flags |= R_PRINT_FLAGS_CURSOR;
 	else flags &= ~(R_PRINT_FLAGS_CURSOR);
 	core->print->cur_enabled = cur;
+	if (core->print->cur == -1) {
+		core->print->cur = 0;
+	}
 	r_print_set_flags (core->print, flags);
 	core->print->col = core->print->cur_enabled ? 1 : 0;
 }
@@ -1000,7 +1003,7 @@ static bool fix_cursor(RCore *core) {
 		bool cur_is_visible = core->offset + p->cur < core->print->screen_bounds;
 		bool is_close = core->offset + p->cur < core->print->screen_bounds + 32;
 
-		if (!cur_is_visible && !is_close) {
+		if ((!cur_is_visible && !is_close) || (!cur_is_visible && p->cur == 0)) {
 			// when the cursor is not visible and it's far from the
 			// last visible byte, just seek there.
 			r_core_seek_delta (core, p->cur);
@@ -1469,7 +1472,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 							f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 						}
 						if (f && f->folded) {
-							cols = core->offset - f->addr + f->size;
+							cols = core->offset - f->addr + r_anal_fcn_size (f);
 						} else {
 							r_asm_set_pc (core->assembler, core->offset);
 							cols = r_asm_disassemble (core->assembler,
@@ -1655,12 +1658,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '-':
 		if (core->print->cur_enabled) {
-			int cur = core->print->cur;
-			if (cur>=core->blocksize)
-				cur = core->print->cur-1;
-			if (core->print->ocur==-1) sprintf (buf, "wos 01 @ $$+%i!1",core->print->cur);
-			else sprintf (buf, "wos 01 @ $$+%i!%i", core->print->cur<core->print->ocur?
-				core->print->cur:core->print->ocur, R_ABS (core->print->ocur-core->print->cur)+1);
+			if (core->print->ocur == -1) {
+				sprintf (buf, "wos 01 @ $$+%i!1",core->print->cur);
+			} else {
+				sprintf (buf, "wos 01 @ $$+%i!%i", core->print->cur < core->print->ocur
+					? core->print->cur
+					: core->print->ocur,
+					R_ABS (core->print->ocur - core->print->cur) + 1);
+			}
 			r_core_cmd (core, buf, 0);
 		} else {
 			if (!autoblocksize)
@@ -1669,12 +1674,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '+':
 		if (core->print->cur_enabled) {
-			int cur = core->print->cur;
-			if (cur>=core->blocksize)
-				cur = core->print->cur-1;
-			if (core->print->ocur==-1) sprintf (buf, "woa 01 @ $$+%i!1", core->print->cur);
-			else sprintf (buf, "woa 01 @ $$+%i!%i",
-				core->print->cur<core->print->ocur? core->print->cur: core->print->ocur, R_ABS (core->print->ocur-core->print->cur)+1);
+			if (core->print->ocur == -1) {
+				sprintf (buf, "woa 01 @ $$+%i!1", core->print->cur);
+			} else {
+				sprintf (buf, "woa 01 @ $$+%i!%i", core->print->cur < core->print->ocur
+					? core->print->cur
+					: core->print->ocur,
+					R_ABS (core->print->ocur - core->print->cur) + 1);
+			}
 			r_core_cmd (core, buf, 0);
 		} else {
 			if (!autoblocksize)

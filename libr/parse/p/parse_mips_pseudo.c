@@ -51,9 +51,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "lw",  "1 = halfword [3 + 2]", 3},
 		{ "li",   "1 = 2", 2},
 		{ "lui",  "1 = 2 << 16", 2},
-		{ "move",  "1 = 2", 1},
-		{ "mult",  "1 = 2 * 3", 3},
-		{ "multu",  "1 = 2 * 3", 3},
+		{ "mfhi",  "1 = hi", 1},
+		{ "mflo",  "1 = lo", 1},
+		{ "move",  "1 = 2", 2},
+		{ "mult",  "lo = 1 * 2", 2},
+		{ "mul",  "1 = 2 * 3", 3},
+		{ "mulu",  "1 = 2 * 3", 3},
 		{ "negu",  "1 = ~2", 2},
 		{ "nop",   "", 0},
 		{ "nor",   "1 = ~(2 | 3)", 3},
@@ -185,6 +188,7 @@ static int parse(RParse *p, const char *data, char *str) {
 {
 	char *p = strdup (str);
 	p = r_str_replace (p, "+ -", "- ", 0);
+	p = r_str_replace(p, " + ]", " + 0]", 0);
 #if EXPERIMENTAL_ZERO
 	p = r_str_replace (p, "zero", "0", 0);
 	if (!memcmp (p, "0 = ", 4)) *p = 0; // nop

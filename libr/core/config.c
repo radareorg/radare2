@@ -22,13 +22,16 @@ static const char *has_esil(RCore *core, const char *name) {
 }
 
 // copypasta from binr/rasm2/rasm2.c
-static void rasm2_list(RCore *core, const char *arch) {
+static void rasm2_list(RCore *core, const char *arch, int fmt) {
 	int i;
 	const char *feat2, *feat;
 	RAsm *a = core->assembler;
 	char bits[32];
 	RAsmPlugin *h;
 	RListIter *iter;
+	if (fmt == 'j') {
+		r_cons_printf ("{");
+	}
 	r_list_foreach (a->plugins, iter, h) {
 		if (arch && *arch) {
 			if (h->cpus && !strcmp (arch, h->name)) {
@@ -54,10 +57,22 @@ static void rasm2_list(RCore *core, const char *arch) {
 			if (h->assemble && !h->disassemble) feat = "a_";
 			if (!h->assemble && h->disassemble) feat = "_d";
 			feat2 = has_esil (core, h->name);
-			r_cons_printf ("%s%s  %-9s  %-11s %-7s %s\n",
-				feat, feat2, bits, h->name,
-				h->license?h->license:"unknown", h->desc);
+			if (fmt == 'q') {
+				r_cons_printf ("%s\n", h->name);
+			} else if (fmt == 'j') {
+				const char *str_bits = "32, 64";
+				const char *license = "GPL";
+				r_cons_printf ("\"%s\":{\"bits\":[%s],\"license\":\"%s\",\"description\":\"%s\",\"features\":\"%s\"}%s",
+						h->name, str_bits, license, h->desc, feat, iter->n? ",": "");
+			} else {
+				r_cons_printf ("%s%s  %-9s  %-11s %-7s %s\n",
+						feat, feat2, bits, h->name,
+						h->license?h->license:"unknown", h->desc);
+			}
 		}
+	}
+	if (fmt == 'j') {
+		r_cons_printf ("}\n");
 	}
 }
 
@@ -166,21 +181,24 @@ static int cb_asmarch(void *user, void *data) {
 		bits = core->anal->bits;
 	}
 
-	if (*node->value=='?') {
-		rasm2_list (core, NULL);
+	if (*node->value == '?') {
+		rasm2_list (core, NULL, node->value[1]);
 		return false;
 	}
 	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
-	if (*node->value) {
-		if (!r_asm_use (core->assembler, node->value)) {
-			eprintf ("asm.arch: cannot find (%s)\n", node->value);
-			return false;
-		}
-	} else return false;
+
+	if (!*node->value) {
+		return false;
+	}
+
+	if (!r_asm_use (core->assembler, node->value)) {
+		eprintf ("asm.arch: cannot find (%s)\n", node->value);
+		return false;
+	}
 
 	if (core->assembler && core->assembler->cur) {
 		bits = core->assembler->cur->bits;
-		if (8&bits) bits = 8;
+		if (8 & bits) bits = 8;
 		else if (16 & bits) bits = 16;
 		else if (32 & bits) bits = 32;
 		else bits = 64;
@@ -347,7 +365,7 @@ static int cb_asmcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value=='?') {
-		rasm2_list (core, r_config_get (core->config, "asm.arch"));
+		rasm2_list (core, r_config_get (core->config, "asm.arch"), node->value[1]);
 		return 0;
 	}
 	r_asm_set_cpu (core->assembler, node->value);
@@ -1712,6 +1730,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETI("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF("http.bind", "localhost", "Server address");
+	SETPREF("http.homeroot", "~/.config/radare2/www", "http home root directory");
 #if __ANDROID__
 	SETPREF("http.root", "/data/data/org.radare2.installer/www", "http root directory");
 #elif __WINDOWS__

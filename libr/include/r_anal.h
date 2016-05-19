@@ -282,7 +282,7 @@ typedef struct r_anal_fcn_store_t {
 typedef struct r_anal_type_function_t {
 	char* name;
 	char* dsc; // For producing nice listings
-	ut32 size;
+	ut32 _size;
 	int bits; // ((> bits 0) (set-bits bits))
 	short type;
 	/*item_list *rets; // Type of return value */
@@ -293,6 +293,7 @@ typedef struct r_anal_type_function_t {
 	char* attr; // __attribute__(()) list
 	ut64 addr;
 	int stack;
+	int maxstack;
 	int ninstr;
 	int nargs; // Function arguments counter
 	int depth;
@@ -1293,7 +1294,9 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind);
 
 /* vars // globals. not here  */
 
-R_API int r_anal_fcn_size(RAnalFunction *fcn);
+R_API ut32 r_anal_fcn_size(const RAnalFunction *fcn);
+R_API void r_anal_fcn_set_size(RAnalFunction *fcn, ut32 size);
+R_API ut32 r_anal_fcn_realsize(const RAnalFunction *fcn);
 R_API int r_anal_fcn_cc(RAnalFunction *fcn);
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 addr);
 R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb);

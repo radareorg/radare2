@@ -50,7 +50,8 @@ static int printDisassembledInstruction(char *out, const disassembledInstruction
 		return 0;
 
 	strcat (out, dInstruction.instruction->mnemonic);
-	strcat (out, " ");
+	if (dInstruction.instruction->numOperands > 0)
+		strcat (out, " ");
 
 	for (i = 0; i < dInstruction.instruction->numOperands; i++) {
 		/* If we're not on the first operand, but not on the last one either, print a comma separating

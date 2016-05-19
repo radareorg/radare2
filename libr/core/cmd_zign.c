@@ -62,8 +62,8 @@ static int cmd_zign(void *data, const char *input) {
 					if (flag) {
 						name = flag->name;
 						r_cons_printf ("zb %s ", name);
-						len = (fcni->size > sizeof (buf))?
-							sizeof (buf): fcni->size;
+						len = (r_anal_fcn_size (fcni) > sizeof (buf))?
+							sizeof (buf): r_anal_fcn_size(fcni);
 						for (i=0; i<len; i++)
 							r_cons_printf ("%02x", buf[i]);
 						r_cons_newline ();

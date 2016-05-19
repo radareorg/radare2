@@ -156,7 +156,8 @@ static int main_help(int line) {
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
 		" -z, -zz      do not load strings or load them even in raw\n");
-	if (line == 2)
+	if (line == 2) {
+		char *homedir = r_str_home (R2_HOMEDIR);
 		printf (
 		"Scripts:\n"
 		" system   "R2_PREFIX"/share/radare2/radare2rc\n"
@@ -167,7 +168,7 @@ static int main_help(int line) {
 		" user     ~/.config/radare2/plugins\n"
 		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
 		"Environment:\n"
-		" RHOMEDIR     ~/.config/radare2\n" // TODO: rename to RHOME R2HOME?
+		" RHOMEDIR     %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 		" MAGICPATH    "R_MAGIC_PATH"\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
@@ -178,7 +179,9 @@ static int main_help(int line) {
 		" INCDIR       "R2_INCDIR"\n"
 		" LIBDIR       "R2_LIBDIR"\n"
 		" LIBEXT       "R_LIB_EXT"\n"
-		);
+		, homedir);
+		free (homedir);
+	}
 	return 0;
 }
 
@@ -430,7 +433,14 @@ int main(int argc, char **argv, char **envp) {
 			threaded = true;
 			break;
 #endif
-		case 'v': verify_version(0); return blob_version ("radare2");
+		case 'v':
+			if (quiet) {
+				printf ("%s\n", R2_VERSION);
+				return 0;
+			} else {
+				verify_version (0);
+				return blob_version ("radare2");
+			}
 		case 'V': return verify_version (1);
 		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
 		default:
@@ -945,5 +955,6 @@ int main(int argc, char **argv, char **envp) {
 	r_cons_set_raw (0);
 	free (file);
 	r_str_const_free ();
+	r_cons_free ();
 	return ret;
 }

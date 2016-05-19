@@ -6,6 +6,8 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 	int pid, *p = NULL;
 	ut8 is_gdb = (strcmp (debugbackend, "gdb") == 0);
 	RIODesc * fd = r->file ? r->file->desc : NULL;
+	const char *prompt = NULL;
+
 	p = fd ? fd->data : NULL;
 	r_config_set_i (r->config, "cfg.debug", 1);
 	if (!p) {
@@ -39,10 +41,15 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 		}
 	}
 	r_core_cmd (r, "sr PC", 0);
-	if (r_config_get_i (r->config, "dbg.status"))
-		r_config_set (r->config, "cmd.prompt", ".dr*;drd;sr PC;pi 1;s-");
-	else
-		r_config_set (r->config, "cmd.prompt", ".dr*");
+
+	/* set the prompt if it's not been set already by the callbacks */
+	prompt = r_config_get (r->config, "cmd.prompt");
+	if (prompt && !strcmp (prompt, "")) {
+		if (r_config_get_i (r->config, "dbg.status"))
+			r_config_set (r->config, "cmd.prompt", ".dr*;drd;sr PC;pi 1;s-");
+		else
+			r_config_set (r->config, "cmd.prompt", ".dr*");
+	}
 	r_config_set (r->config, "cmd.vprompt", ".dr*");
 	return true;
 }

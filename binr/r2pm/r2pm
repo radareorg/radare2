@@ -2,22 +2,44 @@
 
 # Honor user environment
 [ -z "${SUDO}" ] && SUDO=sudo
-if [ -z "${R2PM_PREFIX}" ]; then
-	if [ "`uname`" = Darwin ]; then
-		R2PM_PREFIX=/usr/local
-	else
-		R2PM_PREFIX=/usr/
-	fi
+
+r2 -qv > /dev/null 2>&1
+if [ $? != 0 ]; then
+	echo "Cannot find r2 in PATH"
+	exit 1
 fi
+
+# Exported Vars
+export GLOBAL=0
+export R2VERSION="`r2 -qv`"
+PREFIX="`r2 -hh | grep PREFIX | awk '{print $2}' 2> /dev/null`"
+BINDIR="${PREFIX}/bin"
+LIBDIR="${PREFIX}/lib"
+WRKDIR="$PWD"
+export LIBEXT="`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`"
+export R2HOMEDIR="`r2 -hh | grep '^ RHOMEDIR' | awk '{print $2}' 2> /dev/null`"
+#[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2HOMEDIR}"
+R2PM_PLUGDIR="${R2HOMEDIR}/plugins"
+# bindir
+export R2PM_HOMEBINDIR="${R2PM_PLUGDIR}/bin"
+export R2PM_SYSBINDIR="${BINDIR}"
+export R2PM_BINDIR=${R2PM_HOMEBINDIR}
+# prefix
+export R2PM_SYSPREFIX="${PREFIX}"
+export R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix"
+export R2PM_PREFIX="${R2PM_HOMEPREFIX}"
+# www
+export R2PM_SYSWWWROOT="`r2 -cq -qe http.root --`"
+export R2PM_HOMEWWWROOT="${R2HOMEDIR}/www"
+export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
+# pkgconfig
+export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 
 # Global Vars
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
-[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${HOME}/.config/radare2/plugins"
-R2PM_USRDIR="${HOME}/.config/radare2/r2pm"
-LIBEXT=`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`
-PREFIX=`r2 -hh | grep PREFIX | awk '{print $2}' 2> /dev/null`
 IS_SYSPKG=0
+R2PM_USRDIR="${HOME}/.config/radare2/r2pm"
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_PREFIX}/lib/radare2/last"
 
@@ -27,7 +49,7 @@ if [ -z "${R2PM_DBDIR}" ]; then
 	fi
 fi
 if [ -f "d/baleful" ]; then
-	R2PM_DBDIR=$(pwd)/d
+	R2PM_DBDIR="$(pwd)/d"
 fi
 if [ ! -d "${R2PM_DBDIR}" ]; then
 	R2PM_DBDIR=""
@@ -40,6 +62,7 @@ mkdir -p "${R2PM_PLUGDIR}"
 
 R2PM_SYSPKG() {
 	IS_SYSPKG="$1"
+	echo "R2PM_SYSPKG is going to be deprecated" > /dev/stderr
 }
 
 R2PM_DESC() {
@@ -121,8 +144,7 @@ R2PM_END() {
 	echo "${ACTION} Done For ${NAME}"
 }
 
-case "$1" in
--i|install)
+r2pm_install() {
 	if [ -z "$2" ]; then
 		R2PM_Info
 	else
@@ -137,6 +159,11 @@ case "$1" in
 			echo "Cannot find file"
 		fi
 	fi
+}
+
+case "$1" in
+-i|install)
+	r2pm_install $@
 	;;
 -uu)
 	FILE="${R2PM_USRDIR}/pkg/$2"
@@ -182,7 +209,14 @@ case "$1" in
 	R2PM_ListUninstalled "$2"
 	;;
 -v|version)
-	echo "r2pm v0.1"
+	echo "r2pm ${R2VERSION}"
+	;;
+-gi|global-install)
+	GLOBAL=1
+	R2PM_PREFIX="${R2PM_SYSPREFIX}"
+	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2_VERSION}/plugins"
+	R2PM_BINDIR="${R2PM_SYSBINDIR}"
+	r2pm_install $@
 	;;
 -c|clean)
 	R2PM_List radare2 | grep radare2
@@ -198,19 +232,21 @@ case "$1" in
 *|help|-h)
 	echo "Usage: r2pm [cmd] [...]"
 	echo "Commands:"
-	echo " -i,info                 r2pm -i # pkgs info"
-	echo " -i,install <pkgname>    r2pm -i baleful"
-	echo " -u,uninstall <pkgname>  r2pm -u baleful (-uu to force)"
-	echo " -l,list                 list installed pkgs"
-	echo " -lu                     list uninstalled packages"
-	echo " -t,test FX,XX,BR BID    check in travis regressions"
-	echo " -s,search [<keyword>]   search in database"
-	echo " -v,version              show version"
-	echo " -h,help                 show this message"
-	echo " -c,clean                clear source cache"
+	echo " -i,info                  r2pm -i # pkgs info"
+	echo " -i,install <pkgname>     r2pm -i baleful"
+	echo " -gi,global-install <pkg> r2pm -gi baleful # install baleful in system"
+	echo " -gu,global-uninstall <pkg> r2pm -gu baleful # uninstall pkg from systemdir"
+	echo " -u,uninstall <pkgname>   r2pm -u baleful (-uu to force)"
+	echo " -l,list                  list installed pkgs"
+	echo " -lu                      list uninstalled packages"
+	echo " -t,test FX,XX,BR BID     check in travis regressions"
+	echo " -s,search [<keyword>]    search in database"
+	echo " -v,version               show version"
+	echo " -h,help                  show this message"
+	echo " -c,clean                 clear source cache"
 	echo "Environment:"
-	echo "SUDO=sudo                use this tool as sudo"
-	echo "R2PM_PREFIX=/usr         prefix for syspkgs"
+	echo "SUDO=sudo                 use this tool as sudo"
+	#echo "R2PM_PREFIX=/usr         prefix for syspkgs"
 	echo "R2PM_PLUGDIR=~/.config/radare2/plugins   # default value, home-install for plugins"
 	echo "R2PM_PLUGDIR=/usr/lib/radare2/last/      # for system-wide plugin installs"
 	;;

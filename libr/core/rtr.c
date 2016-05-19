@@ -363,12 +363,16 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 	int iport, timeout = r_config_get_i (core->config, "http.timeout");
 	const char *host = r_config_get (core->config, "http.bind");
 	const char *root = r_config_get (core->config, "http.root");
+	const char *homeroot = r_config_get (core->config, "http.homeroot");
 	const char *port = r_config_get (core->config, "http.port");
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
 
 	if (!r_file_is_directory (root)) {
-		eprintf ("Cannot find http.root '%s'\n", root);
+		if (!r_file_is_directory (homeroot)) {
+			eprintf ("Cannot find http.root (%s) or http.homeroot (%s)\n", root, homeroot);
+			return false;
+		}
 		return false;
 	}
 
@@ -651,9 +655,25 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 				free (refstr);
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
-				char *path = r_file_root (root, rs->path);
+				const char *homeroot = r_config_get (core->config, "http.homeroot");
+				char *path;
+				if (!strcmp (rs->path, "/")) {
+					free (rs->path);
+					rs->path = strdup ("/index.html");
+				}
+				if (homeroot && *homeroot) {
+					char *homepath = r_file_abspath (homeroot);
+					path = r_file_root (homepath, rs->path);
+					free (homepath);
+					if (!r_file_exists (path) && !r_file_is_directory (path)) {
+						free (path);
+						path = r_file_root (root, rs->path);
+					}
+				} else {
+					path = r_file_root (root, rs->path);
+				}
 				// FD IS OK HERE
-				if (rs->path [strlen (rs->path)-1] == '/') {
+				if (rs->path [strlen (rs->path) - 1] == '/') {
 					path = r_str_concat (path, "index.html");
 					//rs->path = r_str_concat (rs->path, "index.html");
 				} else {

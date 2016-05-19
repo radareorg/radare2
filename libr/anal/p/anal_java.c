@@ -471,7 +471,7 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 
 	fcn->name = strdup (gen_name);
 	fcn->dsc = strdup ("unknown");
-	fcn->size = code_length;
+	r_anal_fcn_set_size (fcn, code_length);
 	fcn->type = R_ANAL_FCN_TYPE_FCN;
 	fcn->addr = addr;
 
@@ -487,7 +487,7 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 		actual_size += bb->size;
 	}
 
-	fcn->size = state->bytes_consumed;
+	r_anal_fcn_set_size (fcn, state->bytes_consumed);
 
 	result = state->anal_ret_val;
 
@@ -495,10 +495,10 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 	free (nodes);
 	r_anal_state_free (state);
 	IFDBG eprintf ("Completed analysing code from buffer, name: %s, desc: %s\n", fcn->name, fcn->dsc);
-	if (fcn->size != code_length) {
-		eprintf ("WARNING Analysis of %s Incorrect: Code Length: 0x%"PFMT64x", Function size reported 0x%x\n", fcn->name, code_length, fcn->size);
+	if (r_anal_fcn_size (fcn) != code_length) {
+		eprintf ("WARNING Analysis of %s Incorrect: Code Length: 0x%"PFMT64x", Function size reported 0x%x\n", fcn->name, code_length, r_anal_fcn_size(fcn));
 		eprintf ("Deadcode detected, setting code length to: 0x%"PFMT64x"\n", code_length);
-		fcn->size = code_length;
+		r_anal_fcn_set_size (fcn, code_length);
 	}
 	return result;
 }
@@ -513,7 +513,7 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 	if (!code_attr) {
 		fcn->name = strdup ("sym.UNKNOWN");
 		fcn->dsc = strdup ("unknown");
-		fcn->size = code_length;
+		r_anal_fcn_set_size (fcn, code_length);
 		fcn->type = R_ANAL_FCN_TYPE_FCN;
 		fcn->addr = 0;
 		return R_ANAL_RET_ERROR;
@@ -557,7 +557,7 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	fcn->bbs = r_anal_bb_list_new ();
 
 	IFDBG eprintf ("analyze_method: Parsing fcn %s @ 0x%08"PFMT64x", %d bytes\n",
-		fcn->name, fcn->addr, fcn->size);
+		fcn->name, fcn->addr, r_anal_fcn_size (fcn));
 	java_new_method (fcn->addr);
 	state->current_fcn = fcn;
 	// Not a resource leak.  Basic blocks should be stored in the state->fcn
@@ -607,7 +607,7 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 		}
 		//r_listrange_add (anal->fcnstore, fcn);
 		r_list_append (anal->fcns, fcn);
-		offset += fcn->size;
+		offset += r_anal_fcn_size (fcn);
 		if (!analyze_all) break;
 	}
 	free (buffer);

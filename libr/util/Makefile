@@ -12,7 +12,7 @@ OBJS+=strpool.o bitmap.o strht.o p_date.o p_format.o print.o
 OBJS+=p_seven.o slist.o randomart.o log.o zip.o debruijn.o
 OBJS+=utf8.o strbuf.o lib.o name.o spaces.o
 OBJS+=diff.o bdiff.o stack.o queue.o tree.o des.o
-OBJS+=swap.o punycode.o
+OBJS+=punycode.o
 
 # DO NOT BUILD r_big api (not yet used and its buggy)
 ifeq (1,0)

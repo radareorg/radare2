@@ -364,6 +364,9 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 		} else eprintf ("Out of bounds args index: %d\n", n);
 	} else if (!strcmp (b, "timeout")) {
 		p->_timeout = atoi (e);
+	} else if (!strcmp (b, "timeoutsig")) {
+		// TODO: support non-numeric signal numbers here
+		p->_timeout_sig = atoi (e);
 	} else if (!strcmp (b, "envfile")) {
 		char *p, buf[1024];
 		FILE *fd = fopen (e, "r");
@@ -480,7 +483,6 @@ R_API int r_run_config_env(RRunProfile *p) {
 	if (p->_docore || p->_maxfd || p->_maxproc || p->_maxstack)
 		eprintf ("Warning: setrlimits not supported for this platform\n");
 #endif
-
 	if (p->_connect) {
 		char *q = strchr (p->_connect, ':');
 		if (q) {
@@ -561,12 +563,12 @@ R_API int r_run_config_env(RRunProfile *p) {
 #if __UNIX__
 	if (p->_chroot) {
 		if (chroot (p->_chroot) == 0) {
-      chdir ("/");
+			chdir ("/");
 		} else {
 			eprintf ("rarun2: cannot chroot\n");
-      perror ("chroot");
+			perror ("chroot");
 			return 1;
-    }
+		}
 	}
 	if (p->_setuid) {
 		ret = setgroups(0, NULL);
@@ -634,10 +636,15 @@ R_API int r_run_config_env(RRunProfile *p) {
 #if __UNIX__
 		int mypid = getpid ();
 		if (!r_sys_fork ()) {
+			int use_signal = p->_timeout_sig;
+			if (use_signal < 1) {
+				use_signal = SIGKILL;
+			}
 			sleep (p->_timeout);
-			if (!kill (mypid, 0))
+			if (!kill (mypid, 0)) {
 				eprintf ("\nrarun2: Interrupted by timeout\n");
-			kill (mypid, SIGKILL);
+			}
+			kill (mypid, use_signal);
 			exit (0);
 		}
 #else

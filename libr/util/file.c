@@ -124,7 +124,7 @@ R_API char *r_file_abspath(const char *file) {
 	}
 	cwd = r_sys_getdir ();
 	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
-		ret = r_str_home (file+2);
+		ret = r_str_home (file + 2);
 	} else {
 #if __UNIX__ || __CYGWIN__
 		if (cwd && *file != '/')

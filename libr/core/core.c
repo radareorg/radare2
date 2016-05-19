@@ -84,13 +84,15 @@ static int on_fcn_rename(void *_anal, void* _user, RAnalFunction *fcn, const cha
 }
 
 static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
-	const char *cmdbp;
-	int oecho = core->cons->echo; // should be configurable by user?
-	core->cons->echo = 1; // should be configurable by user?
-	cmdbp = r_config_get (core->config, "cmd.bp");
-	if (cmdbp && *cmdbp)
+	bool oecho = core->cons->echo;
+	const char *cmdbp = r_config_get (core->config, "cmd.bp");
+	core->cons->echo = true;
+	if (cmdbp && *cmdbp) {
 		r_core_cmd0 (core, cmdbp);
-	r_core_cmd0 (core, bpi->data);
+	}
+	if (bpi->data && bpi->data[0]) {
+		r_core_cmd0 (core, bpi->data);
+	}
 	core->cons->echo = oecho;
 }
 
@@ -419,7 +421,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return fcn? fcn->ninstr: 0;
 		case 'F':
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			return fcn? fcn->size: 0;
+			return r_anal_fcn_size (fcn);
 		}
 		break;
 	default:
@@ -482,7 +484,7 @@ static const char *radare_argv[] = {
 	"(", "(*", "(-", "()", ".", ".!", ".(", "./",
 	"r", "r+", "r-",
 	"b", "bf", "b?",
-	"/", "//", "/a", "/c", "/m", "/x", "/v", "/v2", "/v4", "/v8", "/r"
+	"/", "//", "/a", "/c", "/h", "/m", "/x", "/v", "/v2", "/v4", "/v8", "/r"
 	"y", "yy", "y?",
 	"wx", "ww", "w?", "wxf",
 	"p6d", "p6e", "p8", "pb", "pc",

@@ -5,11 +5,12 @@ R2PM_DESC "[r2-bin] minidump support (wip)"
 
 R2PM_INSTALL() {
 	export PKG_CONFIG_PATH=/usr/lib/pkgconfig
-	./configure --prefix=/usr
-	cd libr/bin
+	./configure --prefix="${R2PM_PREFIX}" || exit 1
+	cd libr/bin || exit 1
 	make clean
-	make mdmp
-	make mdmp-install HOMEDEST="${R2PM_PLUGDIR}"
+	make mdmp || exit 1
+	cp -f p/*mdmp*.${LIBEXT} "${R2PM_PLUGDIR}" || exit 1
+	#make mdmp-install HOMEDEST="${R2PM_PLUGDIR}" || exit 1
 }
 
 R2PM_UNINSTALL() {

@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
+
 #include <stddef.h>
 
 #include "r_core.h"
@@ -516,7 +517,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			if (f) {
 				*from = f->addr;
-				*to = f->addr + f->size;
+				*to = f->addr + r_anal_fcn_size (f);
 
 				/* Search only inside the basic block */
 				if (!strcmp (mode, "anal.bb")) {
@@ -2165,14 +2166,14 @@ reread:
 			dosearch = true;
 		} else eprintf ("Missing delta\n");
 		break;
-	case '#':
+	case 'h':
 		{
-		char *p, *arg = r_str_chop (strdup (input+1));
+		char *p, *arg = r_str_chop (strdup (input + 1));
 		p = strchr (arg, ' ');
 		if (p) {
 			*p++ = 0;
 			if (*arg=='?') {
-				eprintf ("Usage: /#md5 [hash] [datalen]\n");
+				eprintf ("Usage: /h md5 [hash] [datalen]\n");
 			} else {
 				ut32 min = UT32_MAX;
 				ut32 max = UT32_MAX;
@@ -2189,7 +2190,7 @@ reread:
 				search_hash (core, arg, p, min, max);
 			}
 		} else {
-			eprintf ("Missing hash\n");
+			eprintf ("Missing hash. See ph?\n");
 		}
 		free (arg);
 		}
@@ -2319,7 +2320,7 @@ reread:
 			"/+", " /bin/sh", "construct the string with chunks",
 			"/!x", " 00", "inverse hexa search (find first byte != 0x00)",
 			"//", "", "repeat last search",
-			"/#", "[t] [hash] [len]", "find block matching this hash. See /#?",
+			"/h", "[t] [hash] [len]", "find block matching this hash. See /#?",
 			"/a", " jmp eax", "assemble opcode and search its bytes",
 			"/A", " jmp", "find analyzed instructions of this type (/A? for help)",
 			"/b", "", "search backwards",

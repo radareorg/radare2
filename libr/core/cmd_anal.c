@@ -28,7 +28,7 @@ static void flag_every_function(RCore *core) {
 	r_flag_space_push (core->flags, "functions");
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_flag_set (core->flags, fcn->name,
-			fcn->addr, fcn->size);
+			fcn->addr, r_anal_fcn_size (fcn));
 	}
 	r_flag_space_pop (core->flags);
 }
@@ -428,6 +428,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				op.fail = hint->fail;
 			if (op.fail != UT64_MAX)
 				printline ("fail", "0x%08" PFMT64x "\n", op.fail);
+			if (op.delay)
+				printline ("delay", "%d\n", op.delay);
 
 			printline ("stack", "%s\n", r_anal_stackop_tostring (op.stackop));
 			{
@@ -874,19 +876,24 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'l': // "afl"
 		switch (input[2]) {
 		case '?':
-			eprintf ("Usage: afl[ajq*] <addr>\n");
+			eprintf ("Usage: afl[aljq*] <addr>\n");
 			eprintf ("List all functions in quiet, commands or json format\n");
+			eprintf ("afl  - list functions\n");
+			eprintf ("afll - list function in verbose mode\n");
 			break;
 		case 'a':
 		case '*':
 		case 'j':
-		case 'q':
+		case 'q': // "aflq"
 			r_core_anal_fcn_list (core, NULL, input[2]);
 			break;
 		case 's':
 			r_core_anal_fcn_list_size (core);
 			break;
-		default:
+		case 'l': // "afll"
+			r_core_anal_fcn_list (core, NULL, 'l');
+			break;
+		default: // "afl"
 			r_core_anal_fcn_list (core, NULL, 'o');
 			break;
 		}
@@ -1209,7 +1216,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afF", "[1|0|]", "fold/unfold/toggle",
 			"afg", "", "non-interactive ascii-art basic-block graph (See VV)",
 			"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
-			"afl", "[*] [fcn name]", "list functions (addr, size, bbs, name)",
+			"afl", "[l*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 			"afo", " [fcn.name]", "show address for the function named like this",
 			"afn", " name [addr]", "rename name for function at address (change flag too)",
 			"afna", "", "suggest automatic name for current offset",
@@ -2461,7 +2468,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			cmd_aea (core, 1 + (1<<3), core->offset, r_num_math (core->num, input+2));
 		} else if (input[1] == 'f') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-			if (fcn) cmd_aea (core, 1, fcn->addr, fcn->size);
+			if (fcn) cmd_aea (core, 1, fcn->addr, r_anal_fcn_size (fcn));
 		} else {
 			cmd_aea (core, 1, core->offset, (int)r_num_math (core->num, input+2));
 		}
@@ -2477,7 +2484,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			cmd_aea (core, 1<<3, core->offset, r_num_math (core->num, input+2));
 		} else if (input[1] == 'f') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-			if (fcn) cmd_aea (core, 1, fcn->addr, fcn->size);
+			if (fcn) cmd_aea (core, 1, fcn->addr, r_anal_fcn_size (fcn));
 		} else {
 			cmd_aea (core, 0, core->offset, r_num_math (core->num, input+2));
 		}
@@ -3849,7 +3856,7 @@ static int compute_coverage(RCore *core) {
 	RAnalFunction *fcn;
 	int cov = 0;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		cov += r_anal_fcn_size (fcn);
+		cov += r_anal_fcn_realsize (fcn);
 	}
 	return cov;
 }
@@ -4107,17 +4114,18 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 static bool anal_fcn_data (RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+	ut32 fcn_size = r_anal_fcn_size (fcn);
 	if (fcn) {
 		int i;
 		bool gap = false;
 		ut64 gap_addr = UT64_MAX;
-		char *bitmap = calloc (1, fcn->size);
+		char *bitmap = calloc (1, fcn_size);
 		if (bitmap) {
 			RAnalBlock *b;
 			RListIter *iter;
 			r_list_foreach (fcn->bbs, iter, b) {
 				int f = b->addr - fcn->addr;
-				int t = R_MIN (f + b->size, fcn->size);
+				int t = R_MIN (f + b->size, fcn_size);
 				if (f>=0) {
 					while (f < t) {
 						bitmap[f++] = 1;
@@ -4125,7 +4133,7 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 				}
 			}
 		}
-		for (i=0; i<fcn->size; i++) {
+		for (i = 0; i < fcn_size; i++) {
 			ut64 here = fcn->addr + i;
 			if (bitmap && bitmap[i]) {
 				if (gap) {
@@ -4141,7 +4149,7 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 			}
 		}
 		if (gap) {
-			r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", fcn->addr + fcn->size - gap_addr, gap_addr);
+			r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", fcn->addr + fcn_size - gap_addr, gap_addr);
 			gap = false;
 		}
 		free (bitmap);
@@ -4172,7 +4180,7 @@ static bool anal_fcn_data_gaps (RCore *core, const char *input) {
 				//r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", range, end);
 			}
 		}
-		end = fcn->addr + fcn->size;
+		end = fcn->addr + r_anal_fcn_size (fcn);
 	}
 	return true;
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 - pancake, Roc Valles, condret */
+/* radare - LGPL - Copyright 2011-2016 - pancake, Roc Valles, condret */
 
 #if 0
 http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
@@ -25,6 +25,14 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	char *arg, str[32];
 	if (op == NULL)
 		return 2;
+	memset (op, '\0', sizeof (RAnalOp));
+	op->type = R_ANAL_OP_TYPE_UNK;
+	op->ptr = UT64_MAX;
+	op->val = UT64_MAX;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
+	op->refptr = 0;
+	op->nopcode = 1; // Necessary??
 	op->size = avrdis (str, addr, buf, len);
 	r_strbuf_init (&op->esil);
 	arg = strchr (str, ' ');

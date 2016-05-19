@@ -538,6 +538,7 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 		if (next_module_function) {
 			char *name;
 			int name_offs = 0;
+			ut32 next_module_function_size;
 
 			// get function size from flirt signature
 			ut64 flirt_fcn_size = module->length - flirt_func->offset;
@@ -552,12 +553,13 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 				next_flirt_func_it = next_flirt_func_it->n;
 			}
 			// resize function if needed
-			if (next_module_function->size < flirt_fcn_size) {
+			next_module_function_size = r_anal_fcn_size (next_module_function);
+			if (next_module_function_size < flirt_fcn_size) {
 				RListIter *iter;
 				RListIter *iter_tmp;
 				RAnalFunction *fcn;
 				r_list_foreach_safe (anal->fcns, iter, iter_tmp, fcn) {
-					if (fcn->addr >= next_module_function->addr + next_module_function->size &&
+					if (fcn->addr >= next_module_function->addr + next_module_function_size &&
 							fcn->addr < next_module_function->addr + flirt_fcn_size) {
 						r_list_join(next_module_function->refs, fcn->refs);
 						r_list_join(next_module_function->xrefs, fcn->xrefs);
@@ -569,6 +571,7 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 					}
 				}
 				r_anal_fcn_resize(next_module_function, flirt_fcn_size);
+				next_module_function_size = r_anal_fcn_size (next_module_function);
 				r_anal_trim_jmprefs(next_module_function);
 			}
 
@@ -581,7 +584,7 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 			free (next_module_function->name);
 			next_module_function->name = r_str_newf("flirt.%s", name);
 			anal->flb.set (anal->flb.f, next_module_function->name,
-				next_module_function->addr, next_module_function->size);
+				next_module_function->addr, next_module_function_size);
 
 			anal->cb_printf ("Found %s\n", next_module_function->name);
 			free(name);
@@ -647,15 +650,16 @@ static int node_match_functions (const RAnal *anal, const RFlirtNode *root_node)
 			continue;
 		}
 
-		func_buf = malloc (func->size);
-		size = anal->iob.read_at (anal->iob.io, func->addr, func_buf, func->size);
-		if  (size != func->size) {
+		int func_size = r_anal_fcn_size (func);
+		func_buf = malloc (func_size);
+		size = anal->iob.read_at (anal->iob.io, func->addr, func_buf, func_size);
+		if  (size != func_size) {
 			eprintf ("Couldn't read function\n");
 			ret = false;
 			goto exit;
 		}
 		r_list_foreach (root_node->child_list, node_child_it, child) {
-			if (node_match_buffer (anal, child, func_buf, func->addr, func->size, 0)) {
+			if (node_match_buffer (anal, child, func_buf, func->addr, func_size, 0)) {
 				break;
 			}
 		}
@@ -1212,7 +1216,7 @@ static RFlirtNode* flirt_parse (const RAnal *anal, RBuffer *flirt_buf) {
 
 	name[header->library_name_len] = '\0';
 
-	anal->cb_printf  ("Loading: %s\n", name);
+	// anal->cb_printf  ("Loading: %s\n", name);
 #if DEBUG
 	print_header (header);
 	header_size = flirt_buf->cur;
