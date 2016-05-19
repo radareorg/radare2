@@ -16,8 +16,8 @@ if [ $? = 0 ]; then
 	export CC
 fi
 
-valac --help > /dev/null 2>&1
-if [ ! $? = 0 ]; then
+#valac --help > /dev/null 2>&1
+#if [ ! $? = 0 ]; then
 	# must install from tarball
 	VV=0.13.4
 	SV=$(echo ${VV}|cut -d . -f 1,2)
@@ -26,11 +26,15 @@ if [ ! $? = 0 ]; then
 		tar xjvf vala-${VV}.tar.bz2
 	fi
 	cd vala-${VV} || exit 1
-	./configure --prefix=/usr && \
-	make && \
-	sudo make install
+	./configure --prefix="${PREFIX}" || exit 1
+	make || exit 1
+	sudo make install || exit 1
 	cd ..
-fi
+#fi
+
+exit 0
+
+# git install
 
 if [ -d vala ]; then
 	cd vala

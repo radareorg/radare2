@@ -4,7 +4,7 @@ R2PM_GIT "https://github.com/radare/radare2"
 R2PM_DESC "[syspkg] Vala compiler from git"
 
 R2PM_INSTALL() {
-	sys/vala.sh
+	sys/vala.sh "${R2PM_PREFIX}"
 }
 
 R2PM_UNINSTALL() {

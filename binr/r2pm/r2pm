@@ -31,7 +31,6 @@ export R2PM_PREFIX="${R2PM_HOMEPREFIX}"
 export R2PM_SYSWWWROOT="`r2 -cq -qe http.root --`"
 export R2PM_HOMEWWWROOT="${R2HOMEDIR}/www"
 export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
-echo $R2PM_WWWROOT
 # pkgconfig
 export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 
