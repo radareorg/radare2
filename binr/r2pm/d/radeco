@@ -3,8 +3,6 @@ R2PM_BEGIN
 R2PM_GIT "https://github.com/radare/radeco"
 R2PM_DESC "[syspkg] Radare Decompiler in Rust"
 
-BINDIR="${R2PM_PLUGDIR}/../bin"
-
 R2PM_INSTALL() {
 	cargo update --verbose || exit 1
 	cargo build --verbose || exit 1
