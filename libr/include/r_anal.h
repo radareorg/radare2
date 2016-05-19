@@ -882,7 +882,6 @@ enum {
 	R_ANAL_ESIL_PARM_INTERNAL,
 	R_ANAL_ESIL_PARM_REG,
 	R_ANAL_ESIL_PARM_NUM,
-	R_ANAL_ESIL_PARM_FLOAT,
 };
 
 /* Constructs to convert from ESIL to REIL */
@@ -1001,7 +1000,6 @@ typedef struct r_anal_esil_t {
 	ut64 old;	//used for carry-flagging and borrow-flagging
 	ut64 cur;	//used for carry-flagging and borrow-flagging
 	ut8 lastsz;	//in bits //used for signature-flag
-	int curtype;	//used for detecting type of flags (double / ut64)
 	/* native ops and custom ops */
 	Sdb *ops;
 	Sdb *interrupts;
