@@ -34,6 +34,7 @@ static RCore* opencore(const char *f) {
 	const ut64 baddr = UT64_MAX;
 	RCore *c = r_core_new ();
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
+	if (!c) return NULL;
 	r_config_set_i (c->config, "io.va", useva);
 	r_config_set_i (c->config, "anal.split", true);
 	if (f) {

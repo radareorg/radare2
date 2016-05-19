@@ -89,6 +89,7 @@ static int rafind_open(char *file) {
 
 	r_cons_new ();
 	rs = r_search_new (mode);
+	if (!rs) return 1;
 	buf = calloc (1, bsize);
 	if (!buf) {
 		eprintf ("Cannot allocate %"PFMT64d" bytes\n", bsize);

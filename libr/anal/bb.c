@@ -81,6 +81,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			break;
 		}
 		if (oplen < 1) {
+			r_anal_op_free (op);
 			return R_ANAL_RET_END;
 		}
 
@@ -173,6 +174,7 @@ R_API void r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
 		if (i >= bb->n_op_pos) {
 			bb->n_op_pos = i * 2;
 			bb->op_pos = realloc (bb->op_pos, bb->n_op_pos * sizeof (*bb->op_pos));
+			if (!bb->op_pos) return;
 		}
 		bb->op_pos[i - 1] = v;
 	}
