@@ -22,9 +22,10 @@ void parse_omap_stream(void *stream, R_STREAM_FILE *stream_file)
 	SOmapEntry *omap_entry = 0;
 	SOmapStream *omap_stream = 0;
 
-	stream_file_get_size(stream_file, &data_size);
-	data = (char *) malloc(data_size);
-	stream_file_get_data(stream_file, data);
+	stream_file_get_size (stream_file, &data_size);
+	data = (char *) malloc (data_size);
+	if (!data) return;
+	stream_file_get_data (stream_file, data);
 
 	omap_stream = (SOmapStream *) stream;
 	omap_stream->froms = 0;
@@ -32,19 +33,18 @@ void parse_omap_stream(void *stream, R_STREAM_FILE *stream_file)
 	curr_read_bytes = 0;
 	ptmp = data;
 	while (read_bytes < data_size) {
-		omap_entry = (SOmapEntry *) malloc(sizeof(SOmapEntry));
-		curr_read_bytes = parse_omap_entry(ptmp, data_size, &read_bytes, omap_entry);
-		ptmp += curr_read_bytes;
-
+		omap_entry = (SOmapEntry *) malloc (sizeof(SOmapEntry));
+		if (!omap_entry) break;
+		curr_read_bytes = parse_omap_entry (ptmp, data_size, &read_bytes, omap_entry);
 		if (!curr_read_bytes) {
-			free(omap_entry);
+			free (omap_entry);
 			break;
 		}
-
-		r_list_append(omap_stream->omap_entries, omap_entry);
+		ptmp += curr_read_bytes;
+		r_list_append (omap_stream->omap_entries, omap_entry);
 	}
 
-	free(data);
+	free (data);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -110,23 +110,24 @@ int omap_remap(void *stream, int address)
 	len = r_list_length(omap_stream->omap_entries);
 
 	if (omap_stream->froms == 0) {
-		omap_stream->froms = (unsigned int *) malloc(4 * len);
-		it = r_list_iterator(omap_stream->omap_entries);
-		while (r_list_iter_next(it)) {
-			omap_entry = (SOmapEntry *) r_list_iter_get(it);
+		omap_stream->froms = (unsigned int *) malloc (4 * len);
+		if (!omap_stream->froms) return -1;
+		it = r_list_iterator (omap_stream->omap_entries);
+		while (r_list_iter_next (it)) {
+			omap_entry = (SOmapEntry *) r_list_iter_get (it);
 			omap_stream->froms[i] = omap_entry->from;
 			i++;
 		}
 	}
 
 	// mb (len -1) ???
-	pos = binary_search(omap_stream->froms, address, 0, (len));
+	pos = binary_search (omap_stream->froms, address, 0, (len));
 
 	if (omap_stream->froms[pos] != address) {
 		pos -= 1;
 	}
 
-	omap_entry = (SOmapEntry *) r_list_get_n(omap_stream->omap_entries, pos);
+	omap_entry = (SOmapEntry *) r_list_get_n (omap_stream->omap_entries, pos);
 	if (!omap_entry) {
 		return -1;
 	}

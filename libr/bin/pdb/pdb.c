@@ -120,6 +120,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 
 	stream_file_get_size (&pdb_stream->stream_file, &data_size);
 	data = (char *) calloc (1, data_size);
+	if (!data) return 0;
 	stream_file_get_data(&pdb_stream->stream_file, data);
 
 	num_streams = *(int *)data;
@@ -255,17 +256,22 @@ static void free_info_stream(void *stream) {
 ///////////////////////////////////////////////////////////////////////////////
 #define ADD_INDX_TO_LIST(list, index, stream_size, stream_type, free_func, parse_func) { \
 	if (index != -1) { \
-		SStreamParseFunc *stream_parse_func = R_NEW0(SStreamParseFunc); \
+		SStreamParseFunc *stream_parse_func = R_NEW0 (SStreamParseFunc); \
+		if (!stream_parse_func) return; \
 		stream_parse_func->indx = (index); \
 		stream_parse_func->type = (stream_type); \
 		stream_parse_func->parse_stream = (parse_func); \
 		stream_parse_func->free = (free_func); \
 		if (stream_size) { \
-			stream_parse_func->stream = malloc(stream_size); \
+			stream_parse_func->stream = malloc (stream_size); \
+			if (!stream_parse_func->stream) { \
+				R_FREE (stream_parse_func); \
+				return; \
+			} \
 		} else { \
 			stream_parse_func->stream = 0; \
 		} \
-		r_list_append((list), stream_parse_func); \
+		r_list_append ((list), stream_parse_func); \
 	} \
 }
 
@@ -322,10 +328,10 @@ static int pdb_read_root(R_PDB *pdb) {
 	SPage *page = 0;
 	SStreamParseFunc *stream_parse_func = 0;
 
-	it = r_list_iterator(root_stream->streams_list);
-	while (r_list_iter_next(it)) {
-		page = (SPage*) r_list_iter_get(it);
-		init_r_stream_file(&stream_file, pdb->buf, (int *)page->stream_pages,
+	it = r_list_iterator (root_stream->streams_list);
+	while (r_list_iter_next (it)) {
+		page = (SPage*) r_list_iter_get (it);
+		init_r_stream_file (&stream_file, pdb->buf, (int *)page->stream_pages,
 						   page->num_pages/*root_stream->pdb_stream.pages_amount*/,
 						   page->stream_size,
 						   root_stream->pdb_stream.page_size);
@@ -336,14 +342,14 @@ static int pdb_read_root(R_PDB *pdb) {
 			pdb_info_stream = R_NEW0 (SPDBInfoStream);
 			if (!pdb_info_stream) return 0;
 			pdb_info_stream->free_ = free_info_stream;
-			parse_pdb_info_stream(pdb_info_stream, &stream_file);
-			r_list_append(pList, pdb_info_stream);
+			parse_pdb_info_stream (pdb_info_stream, &stream_file);
+			r_list_append (pList, pdb_info_stream);
 			break;
 		case ePDB_STREAM_TPI:
 			tpi_stream = R_NEW0 (STpiStream);
 			if (!tpi_stream) return 0;
-			init_tpi_stream(tpi_stream);
-			if (!parse_tpi_stream(tpi_stream, &stream_file)) {
+			init_tpi_stream (tpi_stream);
+			if (!parse_tpi_stream (tpi_stream, &stream_file)) {
 				free (tpi_stream);
 				return 0;
 			}
@@ -352,29 +358,31 @@ static int pdb_read_root(R_PDB *pdb) {
 		case ePDB_STREAM_DBI:
 		{
 			SDbiStream *dbi_stream = R_NEW0 (SDbiStream);
-			init_dbi_stream(dbi_stream);
-			parse_dbi_stream(dbi_stream, &stream_file);
-			r_list_append(pList, dbi_stream);
-			pdb->pdb_streams2 = r_list_new();
-			fill_list_for_stream_parsing(pdb->pdb_streams2, dbi_stream);
+			if (!dbi_stream) return 0;
+			init_dbi_stream (dbi_stream);
+			parse_dbi_stream (dbi_stream, &stream_file);
+			r_list_append (pList, dbi_stream);
+			pdb->pdb_streams2 = r_list_new ();
+			fill_list_for_stream_parsing (pdb->pdb_streams2, dbi_stream);
 			break;
 		}
 		default:
-			find_indx_in_list(pdb->pdb_streams2, i, &stream_parse_func);
+			find_indx_in_list (pdb->pdb_streams2, i, &stream_parse_func);
 			if (stream_parse_func) {
 				if (stream_parse_func->parse_stream) {
-					stream_parse_func->parse_stream(stream_parse_func->stream,
+					stream_parse_func->parse_stream (stream_parse_func->stream,
 													&stream_file);
 					break;
 				}
 			}
 
 			pdb_stream = R_NEW0 (R_PDB_STREAM);
-			init_r_pdb_stream(pdb_stream, pdb->buf, (int *)page->stream_pages,
+			if (!pdb_stream) return 0;
+			init_r_pdb_stream (pdb_stream, pdb->buf, (int *)page->stream_pages,
 							  root_stream->pdb_stream.pages_amount, i,
 							  page->stream_size,
 							  root_stream->pdb_stream.page_size);
-			r_list_append(pList, pdb_stream);
+			r_list_append (pList, pdb_stream);
 
 			break;
 		}
@@ -665,6 +673,7 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 			res_field[pos] = '?';
 			tmp = strtok(NULL, " ");
 			name = (char *) malloc(strlen(tmp) + strlen(*name_field) + 1 + 2);
+			if (!name) return 0;
 			strcpy(name, tmp);
 			sprintf(name, "(%s)%s", tmp, *name_field);
 			free(*name_field);
@@ -735,6 +744,7 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 			res_field[pos] = 'B';
 			tmp = strtok(NULL, " ");
 			name = (char *) malloc(strlen(tmp) + strlen(*name_field) + 1 + 2);
+			if (!name) return 0;
 			strcpy(name, tmp);
 			sprintf(name, "(%s)%s", tmp, *name_field);
 			free(*name_field);
@@ -800,6 +810,7 @@ int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name,
 	case eLF_STRUCTURE:
 	case eLF_UNION:
 		members_field[i] = (char *) malloc(sizeof(char) * strlen(name) + 1);
+		if (!members_field[i]) return 0;
 		strcpy(members_field[i], name);
 		if (build_format_flags(pdb, type, *pos, format_flags_field, &members_field[i]) == 0) {
 			return 0;
@@ -808,6 +819,7 @@ int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name,
 		break;
 	case eLF_ENUM:
 		members_field[i] = (char *) malloc(sizeof(char) * strlen(name) + 8 + 1 + 1); // 8 - hex int, 1 - =
+		if (!members_field[i]) return 0;
 		sprintf(members_field[i], "%s=%08X", name, offset);
 		break;
 	default:

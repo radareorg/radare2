@@ -291,6 +291,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 		{
 			int i = 0;
 			str_info = (SStrInfo *) malloc(sizeof(SStrInfo));
+			if (!str_info) break;d
 			i = get_template(buf + 1, str_info);
 			if (!i) {
 				R_FREE(str_info);
