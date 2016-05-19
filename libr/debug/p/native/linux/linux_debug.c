@@ -24,7 +24,7 @@ const char *linux_reg_profile (RDebug *dbg) {
 	} else {
 #include "reg/linux-x64.h"
 	}
-#elif __ppc__ || __powerpc__ || __POWERPC__
+#elif __ppc__ || __powerpc || __powerpc__ || __POWERPC__
 #include "reg/linux-ppc.h"
 #else
 #error "Unsupported Linux CPU"
@@ -451,7 +451,7 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 		};
 		int ret = ptrace (PTRACE_SETREGSET, dbg->pid, NT_PRSTATUS, &io);
 #elif __POWERPC__
-		int ret = ptrace (PTRACE_SETREGS, dbg->pid, &regs, NULL);
+		int ret = ptrace (PTRACE_SETREGS, dbg->pid, buf, NULL);
 #else 
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid, 0, (void*)buf);
 #endif
