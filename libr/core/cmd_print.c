@@ -3047,7 +3047,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'z': // "prz"
 			if (l != 0) {
-				printraw (core, strlen (core->block), 0);
+				printraw (core, strlen ((const char*)core->block), 0);
 			}
 			break;
 		default:

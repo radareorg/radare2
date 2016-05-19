@@ -406,15 +406,32 @@ static int cmd_help(void *data, const char *input) {
 		}
 		return true;
 	case 'V':
-		if (!input[1]){
-			if (!strcmp (R2_VERSION, R2_GITTAP))
+		switch (input[1]) {
+		case '?':
+			{
+				const char* help_msg[] = {
+					"Usage: ?V[jq]","","",
+					"?V", "", "show version information",
+					"?Vj", "", "same as above but in JSON",
+					"?Vq", "", "quiet mode, just show the version number",
+					NULL};
+				r_core_cmd_help (core, help_msg);
+			}
+			break;
+		case 0:
+			if (!strcmp (R2_VERSION, R2_GITTAP)) {
 				r_cons_printf ("%s %d\n", R2_VERSION, R2_VERSION_COMMIT);
-
-			else r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, R2_GITTAP, R2_VERSION_COMMIT);
-		}
-		if (input[1] == 'j' && !input[2]){
+			} else {
+				r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, R2_GITTAP, R2_VERSION_COMMIT);
+			}
+			break;
+		case 'j':
 			r_cons_printf ("{\"system\":\"%s-%s\"", R_SYS_OS, R_SYS_ARCH);
 			r_cons_printf (",\"version\":\"%s\"}\n",  R2_VERSION);
+			break;
+		case 'q':
+			r_cons_printf ("%s\n", R2_VERSION);
+			break;
 		}
 		break;
 	case 'l':

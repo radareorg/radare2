@@ -469,7 +469,6 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 			n = 0;
 			strncpy (name, t, sizeof (name) - 1);
 			if (type != 'C') {
-				bool hasSpace = strchr (t, ' ');
 				n = r_num_math (core->num, t);
 				if (type == 'f') {
 					p = strchr (t, ' ');
