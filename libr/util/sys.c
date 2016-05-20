@@ -524,6 +524,10 @@ R_API bool r_sys_mkdirp(const char *dir) {
 	bool ret = true;
 	char slash = R_SYS_DIR[0];
 	char *path = strdup (dir), *ptr = path;
+	if (!path) {
+		eprintf ("r_sys_mkdirp: Unable to allocate memory\n");
+		return false;
+	}
 	if (*ptr == slash) ptr++;
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	{

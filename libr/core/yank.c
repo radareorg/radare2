@@ -152,13 +152,14 @@ R_API int r_core_yank_set_str (RCore *core, ut64 addr, const char *str,
 R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 	ut64 curseek = core->offset;
 	ut8 *buf = NULL;
-	if (len<0) {
+	if (len < 0) {
 		eprintf ("r_core_yank: cannot yank negative bytes\n");
 		return false;
 	}
 	if (len == 0) len = core->blocksize;
 	//free (core->yank_buf);
 	buf = malloc (len);
+	if (!buf) return false;
 	//core->yank_buf = (ut8 *)malloc (len);
 	if (addr != core->offset)
 		r_core_seek (core, addr, 1);

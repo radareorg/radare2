@@ -320,6 +320,7 @@ static RList *r_debug_native_tids (int pid) {
 
 static RList *r_debug_native_pids (int pid) {
 	RList *list = r_list_new ();
+	if (!list) return NULL;
 #if __WINDOWS__ && !__CYGWIN__
 	return w32_pids (pid, list);
 #elif __APPLE__
@@ -848,6 +849,7 @@ static RList *r_debug_native_modules_get (RDebug *dbg) {
 		return NULL;
 	}
 	last = r_list_new ();
+	if (!last) return NULL;
 	last->free = (RListFree)r_debug_map_free;
 	r_list_foreach_safe (list, iter, iter2, map) {
 		const char *file = map->file;

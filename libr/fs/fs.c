@@ -23,8 +23,16 @@ R_API RFS *r_fs_new() {
 	if (fs) {
 		fs->view = R_FS_VIEW_NORMAL;
 		fs->roots = r_list_new ();
+		if (!fs->roots) {
+			r_fs_free (fs);
+			return NULL;
+		}
 		fs->roots->free = (RListFree)r_fs_root_free;
 		fs->plugins = r_list_new ();
+		if (!fs->plugins) {
+			r_fs_free (fs);
+			return NULL;
+		}
 		fs->plugins->free = free;
 		// XXX fs->roots->free = r_fs_plugin_free;
 		for (i = 0; fs_static_plugins[i]; i++) {
@@ -61,7 +69,8 @@ R_API void r_fs_add(RFS *fs, RFSPlugin *p) {
 	// TODO: find coliding plugin name
 	if (p && p->init)
 		p->init ();
-	RFSPlugin *sp = R_NEW (RFSPlugin);
+	RFSPlugin *sp = R_NEW0 (RFSPlugin);
+	if (!sp) return;
 	memcpy (sp, p, sizeof (RFSPlugin));
 	r_list_append (fs->plugins, sp);
 }
@@ -89,6 +98,7 @@ R_API RFSRoot *r_fs_mount(RFS *fs, const char *fstype, const char *path, ut64 de
 		return NULL;
 	}
 	str = strdup (path);
+	if (!str) return NULL;
 	r_str_chop_path (str);
 	/* Check if path exists */
 	r_list_foreach (fs->roots, iter, root) {
@@ -164,6 +174,7 @@ R_API RList *r_fs_root(RFS *fs, const char *p) {
 	RListIter *iter;
 	int len, olen;
 	char *path = strdup (p);
+	if (!path) return NULL;
 	r_str_chop_path (path);
 	r_list_foreach (fs->roots, iter, root) {
 		len = strlen (root->path);
@@ -336,6 +347,7 @@ static void r_fs_find_off_aux(RFS *fs, const char *name, ut64 offset, RList *lis
 
 R_API RList *r_fs_find_off(RFS *fs, const char *name, ut64 off) {
 	RList *list = r_list_new ();
+	if (!list) return NULL;
 	list->free = free;
 	r_fs_find_off_aux (fs, name, off, list);
 	return list;
@@ -374,8 +386,8 @@ static void r_fs_find_name_aux(RFS *fs, const char *name, const char *glob, RLis
 }
 
 R_API RList *r_fs_find_name(RFS *fs, const char *name, const char *glob) {
-	RList *list = r_list_new ();
-	list->free = free;
+	RList *list = r_list_newf (free);
+	if (!list) return NULL;
 	r_fs_find_name_aux (fs, name, glob, list);
 	return list;
 }

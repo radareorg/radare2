@@ -83,6 +83,7 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 	r_file_dump (".b", b, lb, 0);
 	r_sys_cmd ("radiff -d .a .b | rsc uncolor > .d");
 	fd = fopen (".d", "r");
+	if (!fd) return 0;
 
 	while (!feof (fd)) {
 		ut64 oa, ob; // offset
@@ -196,7 +197,7 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 	ut64 totalsz = 0;
 
 	if (!a || !b || la < 1 || lb < 1)
-		return false; 
+		return false;
 
 	if (la == lb && !memcmp (a, b, la)) {
 		if (distance != NULL)

@@ -53,7 +53,12 @@ static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int or
 static char* de_bruijn(const char* charset, int order, int maxlen) {
 	int size = strlen (charset);
 	int* prenecklace_a = calloc (size * order, sizeof(int));
+	if (!prenecklace_a) return NULL;
 	char* sequence = calloc (maxlen + 1, sizeof(char));
+	if (!sequence) {
+		free (prenecklace_a);
+		return NULL;
+	}
 	de_bruijn_seq (1, 1, order, maxlen, size, prenecklace_a, sequence, charset);
 	free (prenecklace_a);
 	return sequence;
@@ -71,9 +76,14 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 		return (char*)NULL;
 	}
 	pat = de_bruijn(charset, 3 /*subsequence length*/, size);
+	if (!pat) return NULL;
 	if (start == 0)
 		return pat;
 	pat2 = calloc ((size - start) + 1, sizeof(char));
+	if (!pat2) {
+		free (pat);
+		return NULL;
+	}
 	strncpy (pat2, pat + start, size - start);
 	pat2[size-start] = 0;
 	free (pat);
@@ -126,7 +136,7 @@ R_API int r_debruijn_offset(ut64 value, int guest_endian) {
 	while (!needle[0])
 		needle++;
 
-	// we should not guess the endian. its already handled by other functions 
+	// we should not guess the endian. its already handled by other functions
 	// and configure by the user in cfg.bigendian
 	n = 1;
 	// little endian if true

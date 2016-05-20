@@ -347,6 +347,7 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 	ut64 addr;
 	char *res;
 	RList *list = r_list_new ();
+	if (!list) return false;
 	list->free = free;
 	r_list_foreach (core->flags->flags, iter, flag) {
 		r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s",
@@ -369,6 +370,7 @@ static bool r_core_visual_config_hud(RCore *core) {
 	RListIter *iter;
 	RConfigNode *bt;
 	RList *list = r_list_new ();
+	if (!list) return false;
 	char *res;
 	list->free = free;
 	r_list_foreach (core->config->nodes, iter, bt) {

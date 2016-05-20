@@ -30,6 +30,7 @@ R_API char *r_hex_from_c(const char *code) {
 	} else {
 		ret = malloc (3);
 	}
+	if (!ret) return NULL;
 	*ret = 0;
 	out = ret;
 	if (code) {

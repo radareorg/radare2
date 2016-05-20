@@ -62,11 +62,23 @@ R_API RFlag * r_flag_new() {
 	f = R_NEW0 (RFlag);
 	if (!f) return NULL;
 	f->num = r_num_new (&num_callback, f);
+	if (!f->num) {
+		r_flag_free (f);
+		return NULL;
+	}
 	f->base = 0;
 	f->flags = r_list_new ();
+	if (!f->flags) {
+		r_flag_free (f);
+		return NULL;
+	}
 	f->flags->free = (RListFree) r_flag_item_free;
 	f->space_idx = -1;
 	f->spacestack = r_list_newf (NULL);
+	if (!f->spacestack) {
+		r_flag_free (f);
+		return NULL;
+	}
 	f->ht_name = r_hashtable64_new ();
 	f->ht_off = r_hashtable64_new ();
 	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
@@ -292,6 +304,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 		remove_offsetmap (f, item);
 	} else {
 		item = R_NEW0 (RFlagItem);
+		if (!item) return NULL;
 		if (!set_name (item, name)) {
 			eprintf ("Invalid flag name '%s'.\n", name);
 			free (item);
@@ -419,6 +432,7 @@ R_API void r_flag_unset_all(RFlag *f) {
 
 	r_list_free (f->flags);
 	f->flags = r_list_new ();
+	if (!f->flags) return;
 	f->flags->free = (RListFree) r_flag_item_free;
 
 	r_hashtable64_free (f->ht_name);

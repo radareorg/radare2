@@ -132,6 +132,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 
 	len = strlen (str);
 	s = malloc (len+4);
+	if (!s) return;
 	memcpy (s, str, len);
 	memset (s+len, 0, 4);
 

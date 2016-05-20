@@ -133,6 +133,7 @@ R_API void r_reg_free(RReg *reg) {
 R_API RReg *r_reg_new() {
 	RRegArena *arena;
 	RReg *reg = R_NEW0 (RReg);
+	if (!reg) return NULL;
 	int i;
 
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {

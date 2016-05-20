@@ -106,11 +106,16 @@ static int __plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname,0)) {
-		RIOMalloc *mal = R_NEW (RIOMalloc);
+		RIOMalloc *mal = R_NEW0 (RIOMalloc);
+		if (!mal) return NULL;
 		mal->fd = -2; /* causes r_io_desc_new() to set the correct fd */
 		if (!strncmp (pathname, "hex://", 6)) {
 			mal->size = strlen (pathname);
 			mal->buf = malloc (mal->size+1);
+			if (!mal->buf) {
+				free (mal);
+				return NULL;
+			}
 			mal->offset = 0;
 			memset (mal->buf, 0, mal->size);
 			mal->size = r_hex_str2bin (pathname+6, mal->buf);

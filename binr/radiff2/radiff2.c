@@ -23,7 +23,7 @@ static int useva = true;
 static int delta = 0;
 static int showbare = false;
 static int json_started = 0;
-static int diffmode = 0; 
+static int diffmode = 0;
 static bool disasm = false;
 static RCore *core = NULL;
 static const char *arch = NULL;
@@ -242,7 +242,13 @@ static void handle_sha256 (const ut8 *block, int len) {
 	int i = 0;
 	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
 	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
-	for (i = 0; i < R_HASH_SIZE_SHA256; i++) printf ("%02x", c[i]);
+	if (!c) {
+		r_hash_free (ctx);
+		return;
+	}
+	for (i = 0; i < R_HASH_SIZE_SHA256; i++) {
+		printf ("%02x", c[i]);
+	}
 	r_hash_free (ctx);
 }
 
@@ -318,7 +324,7 @@ int main(int argc, char **argv) {
 			return show_help (0);
 		}
 	}
-	
+
 	if (argc < 3 || optind + 2 > argc)
 		return show_help (0);
 
@@ -327,7 +333,7 @@ int main(int argc, char **argv) {
 	} else {
 		file = NULL;
 	}
-	
+
 	if (optind + 1 < argc) {
 		file2 = argv[optind + 1];
 	} else {
@@ -412,7 +418,7 @@ int main(int argc, char **argv) {
 		d = r_diff_new (0LL, 0LL);
 		r_diff_set_delta (d, delta);
 		if (diffmode == 'j') {
-			printf("{\"files\":[{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file, sza); 
+			printf("{\"files\":[{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file, sza);
 			handle_sha256 (bufa, sza);
 			printf("\"},\n{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file2, szb);
 			handle_sha256 (bufb, szb);

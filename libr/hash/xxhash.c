@@ -99,7 +99,7 @@ unsigned int XXH32(const void* input, int len, unsigned int seed) {
 	}
 
 	h32 += (unsigned int) len;
-	
+
 	while (p<=bEnd-4) {
 		h32 += XXH_LE32(p) * PRIME32_3;
 		h32 = XXH_rotl32(h32, 17) * PRIME32_4 ;
@@ -138,6 +138,7 @@ struct XXH_state32_t {
 
 void* XXH32_init (unsigned int seed) {
 	struct XXH_state32_t * state = (struct XXH_state32_t *) malloc ( sizeof(struct XXH_state32_t));
+	if (!state) return NULL;
 	state->seed = seed;
 	state->v1 = seed + PRIME32_1 + PRIME32_2;
 	state->v2 = seed + PRIME32_2;
@@ -167,7 +168,7 @@ int XXH32_feed (void* state_in, const void* input, int len) {
 		{
 			const unsigned int* p32 = (const unsigned int*)state->memory;
 			state->v1 += XXH_LE32(p32) * PRIME32_2; state->v1 = XXH_rotl32(state->v1, 13); state->v1 *= PRIME32_1; p32++;
-			state->v2 += XXH_LE32(p32) * PRIME32_2; state->v2 = XXH_rotl32(state->v2, 13); state->v2 *= PRIME32_1; p32++; 
+			state->v2 += XXH_LE32(p32) * PRIME32_2; state->v2 = XXH_rotl32(state->v2, 13); state->v2 *= PRIME32_1; p32++;
 			state->v3 += XXH_LE32(p32) * PRIME32_2; state->v3 = XXH_rotl32(state->v3, 13); state->v3 *= PRIME32_1; p32++;
 			state->v4 += XXH_LE32(p32) * PRIME32_2; state->v4 = XXH_rotl32(state->v4, 13); state->v4 *= PRIME32_1; p32++;
 		}
@@ -187,7 +188,7 @@ int XXH32_feed (void* state_in, const void* input, int len) {
 			v2 += XXH_LE32(p) * PRIME32_2; v2 = XXH_rotl32(v2, 13); v2 *= PRIME32_1; p+=4;
 			v3 += XXH_LE32(p) * PRIME32_2; v3 = XXH_rotl32(v3, 13); v3 *= PRIME32_1; p+=4;
 			v4 += XXH_LE32(p) * PRIME32_2; v4 = XXH_rotl32(v4, 13); v4 *= PRIME32_1; p+=4;
-		}  
+		}
 		state->v1 = v1;
 		state->v2 = v2;
 		state->v3 = v3;
@@ -215,7 +216,7 @@ unsigned int XXH32_getIntermediateResult (void* state_in) {
 	}
 
 	h32 += (unsigned int) state->total_len;
-	
+
 	while (p<=bEnd-4) {
 		h32 += XXH_LE32(p) * PRIME32_3;
 		h32 = XXH_rotl32(h32, 17) * PRIME32_4 ;

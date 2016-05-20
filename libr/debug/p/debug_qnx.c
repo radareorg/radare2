@@ -47,6 +47,7 @@ static RList *r_debug_qnx_tids (int pid) {
 
 static RList *r_debug_qnx_pids (int pid) {
 	RList *list = r_list_new ();
+	if (!list) return NULL;
 	list->free = (RListFree)&__r_debug_pid_free;
 
 	/* TODO */

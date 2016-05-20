@@ -48,6 +48,7 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b) {
 	block = db->blocks[key];
 	if (block == NULL) {
 		block = r_db_block_new ();
+		if (!block) return false;
 		db->blocks[key] = block;
 	}
 	for (i=0;i<size;i++) {
@@ -169,7 +170,8 @@ static int r_db_iter_find_next(RDatabaseIter *it) {
 }
 
 R_API RDatabaseIter *r_db_iter_new(RDatabase *db, int key) {
-	RDatabaseIter *iter = R_NEW (RDatabaseIter);
+	RDatabaseIter *iter = R_NEW0 (RDatabaseIter);
+	if (!iter) return NULL;
 	/* TODO: detect when keys are not valid and return NULL */
 	iter->db = db;
 	iter->key = key;
@@ -233,7 +235,7 @@ R_API int r_db_iter_next(RDatabaseIter *iter) {
 // TODO: must be implemented for Vala/Swig
 	// if (something) return 1;
 	// depth = iter->size
-	// 
+	//
 	for (i=iter->ptr; i<iter->size; i++) {
 		//block = block->childs[b[key+i]];
 	}
@@ -245,7 +247,7 @@ R_API int r_db_iter_next(RDatabaseIter *iter) {
 /* return current iter data and go to next iterable element */
 R_API void *r_db_iter_get(RDatabaseIter *iter) {
 	void *data = iter->cur;
-	
+
 // TODO: must be implemented for Vala/Swig
 	return data;
 }

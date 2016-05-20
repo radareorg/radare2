@@ -420,6 +420,7 @@ static int layer_sweep (const RGraph *g, const struct layer_t layers[],
 static void view_cyclic_edge (const RGraphEdge *e, const RGraphVisitor *vis) {
 	const RAGraph *g = (RAGraph *)vis->data;
 	RGraphEdge *new_e = R_NEW0 (RGraphEdge);
+	if (!new_e) return;
 	new_e->from = e->from;
 	new_e->to = e->to;
 	new_e->nth = e->nth;
@@ -436,6 +437,7 @@ static void view_dummy (const RGraphEdge *e, const RGraphVisitor *vis) {
 
 	if (R_ABS (a->layer - b->layer) > 1) {
 		RGraphEdge *new_e = R_NEW0 (RGraphEdge);
+		if (!new_e) return;
 		new_e->from = e->from;
 		new_e->to = e->to;
 		new_e->nth = e->nth;
@@ -973,11 +975,13 @@ xminus_err:
 
 static RGraphNode *get_right_dummy (const RAGraph *g, const RGraphNode *n) {
 	const RANode *an = get_anode (n);
+	if (!an) return NULL;
 	int k, layer = an->layer;
 
 	for (k = an->pos_in_layer + 1; k < g->layers[layer].n_nodes; ++k) {
 		RGraphNode *gk = g->layers[layer].nodes[k];
 		const RANode *ak = get_anode (gk);
+		if (!ak) break;
 
 		if (ak->is_dummy)
 			return gk;
@@ -1302,9 +1306,18 @@ static void place_original (RAGraph *g) {
 	const RANode *an;
 
 	D = sdb_new0 ();
+	if (!D) return;
 	P = sdb_new0 ();
-	g->dists = r_list_new ();
-	g->dists->free = (RListFree)free;
+	if (!P) {
+		sdb_free (D);
+		return;
+	}
+	g->dists = r_list_newf ((RListFree) free);
+	if (!g->dists) {
+		sdb_free (D);
+		sdb_free (P);
+		return;
+	}
 
 	graph_foreach_anode (nodes, itn, gn, an) {
 		if (!an->is_dummy) continue;
@@ -1353,7 +1366,7 @@ static void create_edge_from_dummies (const RAGraph *g, RANode *an, RList *torem
 	RANode *a_from = get_anode (from);
 	RListIter *(*add_to_list)(RList *, void *) = NULL;
 	AEdge *e = R_NEW0 (AEdge);
-
+	if (!e) return;
 	e->x = r_list_new ();
 	e->y = r_list_new ();
 	e->is_reversed = an->is_reversed;
@@ -1407,6 +1420,7 @@ static void analyze_back_edges (const RAGraph *g, RANode *an) {
 		i++;
 		if (ak->layer > an->layer) continue;
 		e = R_NEW0 (AEdge);
+		if (!e) return;
 		e->is_reversed = true;
 		e->from = an;
 		e->to = ak;
@@ -2242,6 +2256,7 @@ static void free_anode (RANode *n) {
 
 static int free_anode_cb (void *user UNUSED, const char *k UNUSED, const char *v) {
 	RANode *n = (RANode *)(size_t)sdb_atoi(v);
+	if (!n) return 0;
 	free_anode (n);
 	return 1;
 }
@@ -2362,6 +2377,7 @@ static int user_edge_cb(struct g_cb *user, const char *k UNUSED, const char *v) 
 	RAGraph *g = user->graph;
 	void *user_data = user->data;
 	RANode *an, *n = (RANode *)(size_t)sdb_atoi (v);
+	if (!n) return 0;
 	const RList *neigh = r_graph_get_neighbours (g->graph, n->gnode);
 	RListIter *it;
 	RGraphNode *gn;

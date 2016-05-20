@@ -177,6 +177,10 @@ static RList *r_debug_wind_pids (int pid) {
 
 	r_list_foreach(pids, it, p) {
 		RDebugPid *newpid = R_NEW0 (RDebugPid);
+		if (!newpid) {
+			r_list_free (ret);
+			return NULL;
+		}
 		newpid->path = strdup (p->name);
 		newpid->pid = p->uniqueid;
 		newpid->status = 's';

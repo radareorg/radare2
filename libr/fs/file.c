@@ -4,6 +4,7 @@
 
 R_API RFSFile *r_fs_file_new (RFSRoot *root, const char *path) {
 	RFSFile *file = R_NEW0 (RFSFile);
+	if (!file) return NULL;
 	file->root = root;
 	file->name = strdup (path);
 	// TODO: concat path?
@@ -19,8 +20,13 @@ R_API void r_fs_file_free (RFSFile *file) {
 // TODO: Use RFSRoot and pass it in the stack instead of heap? problematic with bindings
 R_API RFSRoot *r_fs_root_new (const char *path, ut64 delta) {
 	char *p;
-	RFSRoot *root = R_NEW (RFSRoot);
+	RFSRoot *root = R_NEW0 (RFSRoot);
+	if (!root) return NULL;
 	root->path = strdup (path);
+	if (!root->path) {
+		R_FREE (root);
+		return NULL;
+	}
 	p = root->path + strlen (path);
 	if (*p == '/') *p = 0; // chop tailing slash
 	root->delta = delta;
@@ -38,6 +44,7 @@ R_API void r_fs_root_free (RFSRoot *root) {
 
 R_API RFSPartition *r_fs_partition_new(int num, ut64 start, ut64 length) {
 	RFSPartition *p = R_NEW0 (RFSPartition);
+	if (!p) return NULL;
 	p->number = num;
 	p->start = start;
 	p->length = length;

@@ -1215,6 +1215,7 @@ static bool isAnExport(RBinSymbol *s) {
 
 static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly) {
 	RBinInfo *info = r_bin_get_info (r->bin);
+	if (!info) return 0;
 	int is_arm = info && info->arch && !strncmp (info->arch, "arm", 3);
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RBinSymbol *symbol;

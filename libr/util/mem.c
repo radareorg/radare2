@@ -33,7 +33,12 @@ R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int 
 	int i, ret = -1;
 	ut8 *mdest, *morig;
 	mdest = malloc (len);
+	if (!mdest) return ret;
 	morig = malloc (len);
+	if (!morig) {
+		free (mdest);
+		return ret;
+	}
 	for (i=0; i<len; i++) {
 		mdest[i] = dest[i]&mask[i];
 		morig[i] = orig[i]&mask[i];

@@ -244,8 +244,8 @@ static int cmpaddr(const void *_a, const void *_b) {
 }
 
 static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_size) {
-	if (core && f && cmt && cmt_size>0 && f->bits) {
-		const char *asm_arch = r_config_get (core->config, "asm.arch");
+	const char *asm_arch = r_config_get (core->config, "asm.arch");
+	if (core && f && cmt && cmt_size>0 && f->bits || !*asm_arch) {
 		if (strstr (asm_arch, "arm")) {
 			switch (f->bits) {
 			case 16: strcpy (cmt, " (thumb)"); break;
@@ -309,6 +309,7 @@ static void ds_print_spacy(RDisasmState *ds, int pre) {
 
 static RDisasmState * handle_init_ds(RCore * core) {
 	RDisasmState *ds = R_NEW0 (RDisasmState);
+	if (!ds) return NULL;
 	ds->core = core;
 	ds->pal_comment = core->cons->pal.comment;
 	#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
@@ -768,7 +769,7 @@ static void handle_show_xrefs(RCore *core, RDisasmState *ds) {
 				tmp = r_bin_demangle (core->bin->cur, lang, name);
 				if (tmp) {
 					free (name);
-					name = tmp; 
+					name = tmp;
 				}
 			}
 			handle_pre_xrefs (core, ds);
@@ -1357,6 +1358,7 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 	if (cols < 8) cols = 8;
 	int outsz = cols + 32;
 	char *out = malloc (outsz);
+	if (!out) return;
 	memset (out, ' ', outsz);
 	int sect_len = strlen (sect);
 
@@ -1553,7 +1555,7 @@ static bool handle_print_data_type (RCore *core, const ut8 *buf, int ib, int siz
 	case 8: type = isSigned? ".int64": ".qword"; break;
 	default: return false;
 	}
-	ut64 n = r_read_ble (buf, core->print->big_endian, size * 8); 
+	ut64 n = r_read_ble (buf, core->print->big_endian, size * 8);
 
 	switch (ib) {
 	case 1:
@@ -2555,6 +2557,7 @@ static void handle_print_comments_right(RCore *core, RDisasmState *ds) {
 	handle_print_relocs (core, ds);
 	if (ds->asm_describe) {
 		char *locase = strdup (ds->asmop.buf_asm);
+		if (!locase) return;
 		char *op = strchr (locase, ' ');
 		if (op) *op = 0;
 		r_str_case (locase, 0);
@@ -3399,8 +3402,13 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 
 	cur_buf_sz = r_anal_fcn_size (fcn) + 1;
 	buf = malloc (cur_buf_sz);
+	if (!buf) return -1;
 	len = r_anal_fcn_size (fcn);
 	bb_list = r_list_new();
+	if (!bb_list) {
+		free (buf);
+		return -1;
+	}
 	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces

@@ -333,6 +333,7 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 	if (!p) {
 		int nslen = strlen (newstr);
 		out = malloc (nslen+1);
+		if (!out) return NULL;
 		strcpy (out, newstr);
 		out[nslen] = 0;
 		if (newlen)
@@ -344,6 +345,7 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 	if (blen<0) blen = 0;
 	nlen = alen+blen+strlen (newstr);
 	out = malloc (nlen + 2);
+	if (!out) return NULL;
 	if (alen>0)
 		memcpy (out, stra, alen);
 	memcpy (out+alen, newstr, strlen (newstr)+1);
@@ -452,9 +454,10 @@ R_API char *r_str_new(const char *str) {
 
 R_API char *r_str_newlen(const char *str, int len) {
 	char *buf;
-	if (len<1)
+	if (len < 1)
 		return NULL;
-	buf = malloc (len+1);
+	buf = malloc (len + 1);
+	if (!buf) return NULL;
 	memcpy (buf, str, len);
 	buf[len] = 0;
 	return buf;
@@ -634,6 +637,7 @@ R_API const char *r_str_get(const char *str) {
 
 R_API char *r_str_ndup(const char *ptr, int len) {
 	char *out = malloc (len+1);
+	if (!out) return NULL;
 	strncpy (out, ptr, len);
 	out[len] = 0;
 	return out;
@@ -646,6 +650,7 @@ R_API char *r_str_dup(char *ptr, const char *string) {
 	if (!string) return NULL;
 	len = strlen (string)+1;
 	ptr = malloc (len+1);
+	if (!ptr) return NULL;
 	memcpy (ptr, string, len);
 	return ptr;
 }
@@ -1149,6 +1154,10 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 	if (!tmp) return -1;
 	memcpy (tmp, str, len + 1);
 	cps = malloc(len * sizeof(int));
+	if (!cps) {
+		free (tmp);
+		return NULL;
+	}
 
 	for (i = j = 0; i < len; i++) {
 		if ((i + 1) < len && tmp[i] == 0x1b && tmp[i + 1] == '[') {
@@ -1290,6 +1299,7 @@ R_API char *r_str_arg_escape (const char *arg) {
 		return NULL;
 
 	str = malloc ((2 * strlen (arg) + 1) * sizeof (char)); // Worse case when every character need to be escaped
+	if (!str) return NULL;
 	for (src_i = 0; arg[src_i] != '\0'; src_i++) {
 		char c = arg[src_i];
 		switch (c) {

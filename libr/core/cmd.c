@@ -68,6 +68,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	RAsmOp *op;
 	if (b == NULL) {
 		b = r_buf_new ();
+		if (!b) return NULL;
 		if (!r_core_read_at (core, addr, buf, sizeof (buf)))
 			return NULL;
 		b->base = addr;
@@ -650,7 +651,11 @@ static int cmd_kuery(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1] == ' ') {
-			char *fn = strdup (input+2);
+			char *fn = strdup (input + 2);
+			if (!fn) {
+				eprintf("Unable to allocate memory\n");
+				return 0;
+			}
 			char *ns = strchr (fn, ' ');
 			if (ns) {
 				Sdb *db;
@@ -2259,6 +2264,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 
 	if (!lines || !*lines) return true;
 	data = odata = strdup (lines);
+	if (!odata) return false;
 	nl = strchr (odata, '\n');
 	if (nl) {
 		r_cons_break (NULL, NULL);
@@ -2346,6 +2352,7 @@ R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b) {
 
 R_API int r_core_cmd_buffer(void *user, const char *buf) {
 	char *ptr, *optr, *str = strdup (buf);
+	if (!str) return false;
 	optr = str;
 	ptr = strchr (str, '\n');
 	while (ptr) {

@@ -466,7 +466,13 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	RBinFile *binfile = NULL;
 	RIODesc *desc = cf ? cf->desc : NULL;
 	RBinPlugin *plugin = NULL;
-	int is_io_load = desc && desc->plugin;
+	int is_io_load;
+	// NULL deref guard
+	if (!desc) {
+		is_io_load = false;
+	} else {
+		is_io_load = desc && desc->plugin;
+	}
 
 	if (cf) {
 		if ((filenameuri == NULL || !*filenameuri)) {
@@ -563,6 +569,7 @@ R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, u
 	const char *loadmethod = r_config_get (core->config, "file.loadmethod");
 	const char *suppress_warning = r_config_get (core->config, "file.nowarn");
 	ut64 load_align = r_config_get_i (core->config, "file.loadalign");
+	if (!loadmethod || !suppress_warning) return NULL;
 	RIOMap *map = NULL;
 	if (!strcmp (loadmethod, "overwrite"))
 		map = r_io_map_new (core->io, fh->desc->fd, mode, 0, loadaddr, r_io_desc_size (core->io, fh->desc));

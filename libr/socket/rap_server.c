@@ -9,6 +9,7 @@ R_API RSocketRapServer *r_socket_rap_server_new (int is_ssl, const char *port) {
 	if (!port)
 		return NULL;
 	rap_s = R_NEW0 (RSocketRapServer);
+	if (!rap_s) return NULL;
 	rap_s->fd = r_socket_new (is_ssl);
 	memcpy (rap_s->port, port, 4);
 	if (rap_s->fd)

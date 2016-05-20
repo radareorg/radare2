@@ -38,6 +38,7 @@ R_API void r_strht_del(RStrHT *s, const char *key) {
 	r_list_foreach (s->ls, iter, _i) {
 		i = (int)(size_t)_i;
 		k = r_strpool_get (s->sp, i);
+		if (!k) continue;
 		if (!strcmp (key, k)) {
 			r_list_delete (s->ls, iter);
 			break;

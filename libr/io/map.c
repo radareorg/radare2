@@ -112,6 +112,7 @@ static RList *r_io_map_get_maps_in_range_prepend(RIO *io, ut64 addr, ut64 endadd
 	RIOMap *map;
 	RListIter *iter;
 	RList *maps = r_list_new ();
+	if (!maps) return NULL;
 	maps->free = NULL;
 	r_list_foreach (io->maps, iter, map) {
 		if (map->from <= addr && addr < map->to) r_list_append(maps, map);
@@ -137,6 +138,7 @@ R_API RList *r_io_map_get_maps_in_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOMap *map;
 	RListIter *iter;
 	RList *maps = r_list_new ();
+	if (!maps) return NULL;
 	maps->free = NULL;
 	r_list_foreach (io->maps, iter, map) {
 		if (map->from <= addr && addr < map->to) r_list_append(maps, map);
@@ -207,7 +209,7 @@ R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta
 	r_list_foreach (io->maps, iter, map) {
 		next_addr = R_MAX (next_addr, map->to+(load_align - (map->to % load_align)));
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
-		// adding the check for the map's fd to see if this removes contention for 
+		// adding the check for the map's fd to see if this removes contention for
 		// memory mapping with multiple files.
 
 		if (map->fd == fd && ((map->from <= next_addr && next_addr < map->to) ||

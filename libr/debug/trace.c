@@ -7,13 +7,22 @@
 // DO IT WITH SDB
 
 R_API RDebugTrace *r_debug_trace_new () {
-	RDebugTrace *t = R_NEW (RDebugTrace);
+	RDebugTrace *t = R_NEW0 (RDebugTrace);
+	if (!t) return NULL;
 	t->tag = 1; // UT32_MAX;
 	t->addresses = NULL;
 	t->enabled = false;
 	t->traces = r_list_new ();
+	if (!t->traces) {
+		r_debug_trace_free (t);
+		return NULL;
+	}
 	t->traces->free = free;
 	t->db = sdb_new0 ();
+	if (!t->db) {
+		r_debug_trace_free (t);
+		return NULL;
+	}
 	return t;
 }
 
@@ -135,6 +144,7 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 	tp = r_debug_trace_get (dbg, addr);
 	if (!tp) {
 		tp = R_NEW0 (RDebugTracepoint);
+		if (!tp) return NULL;
 		tp->stamp = r_sys_now ();
 		tp->addr = addr;
 		tp->tags = tag;

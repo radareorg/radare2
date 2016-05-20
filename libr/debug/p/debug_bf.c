@@ -167,8 +167,8 @@ static int r_debug_bf_kill(RDebug *dbg, int pid, int tid, int sig) {
 static RList *r_debug_native_map_get(RDebug *dbg) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	BfvmCPU *c = o->bfvm;
-	RList *list = r_list_new ();
-	list->free = (RListFree)r_debug_map_free;
+	RList *list = r_list_newf ((RListFree)r_debug_map_free);
+	if (!list) return NULL;
 	r_list_append (list, r_debug_map_new (
 		"code", 0, 4096, 6, 0));
 	r_list_append (list, r_debug_map_new (
