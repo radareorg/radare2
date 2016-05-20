@@ -310,13 +310,11 @@ R_API int r_core_visual_types(RCore *core) {
 			r_line_set_prompt (":> ");
 			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) <0)
 				cmd[0]='\0';
-			//line[strlen(line)-1]='\0';
 			r_core_cmd (core, cmd, 1);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			if (cmd[0])
 				r_cons_any_key (NULL);
-			//cons_gotoxy(0,0);
 			r_cons_clear ();
 			continue;
 		}
@@ -1797,6 +1795,7 @@ R_API void r_core_visual_anal(RCore *core) {
 			break;
 		case ':':
 			r_core_visual_prompt (core);
+			r_cons_any_key (NULL);
 			continue;
 		case 'a':
 			switch (level) {
