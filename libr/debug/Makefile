@@ -26,7 +26,8 @@ OBJS+= p/${NATIVE_OBJS}
 endif
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
 CFLAGS+=-I../bin/format/elf
-OBJS+= p/${NATIVE_OBJS}		
+OBJS+= p/${NATIVE_OBJS}
+OBJS+= p/${COREDUMP_OBJS}	
 endif
 
 plugins:
