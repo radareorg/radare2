@@ -380,13 +380,10 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'p': {
 		const char *type = input + 2;
-		char *ptr = strchr (type, ' ');
-		if (ptr) {
-			*ptr++ = 0;
-			ut64 addr = r_num_math (core->num, ptr);
+		if (type && *type) {
 			char *fmt = r_anal_type_format (core->anal, type);
 			if (fmt) {
-				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+				r_core_cmdf (core, "pf %s", fmt);
 				free (fmt);
 			} else eprintf ("Cannot find '%s' type\n", input + 1);
 		} else {
