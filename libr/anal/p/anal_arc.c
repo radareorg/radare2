@@ -18,6 +18,7 @@ typedef struct arc_fields_t {
 	ut8 subopcode; /* sub opcode */
 	ut8 format;    /* operand format */
 	ut8 format2;
+	ut8 cond;
 	ut16 a; /* destination register */
 	ut16 b; /* source/destination register */
 	ut16 c; /* source/destintaion register */
@@ -65,10 +66,44 @@ static int sex(int bits, int imm) {
 #define SEX_S21(imm) sex (21, imm);
 #define SEX_S25(imm) sex (25, imm);
 
+static int map_cond2radare(ut8 cond) {
+	switch (cond) {
+	case 0: return R_ANAL_COND_AL;
+	case 1: return R_ANAL_COND_EQ;
+	case 2: return R_ANAL_COND_NE;
+	case 3: return R_ANAL_COND_PL;
+	case 4: return R_ANAL_COND_MI;
+	case 7: return R_ANAL_COND_VS;
+	case 8: return R_ANAL_COND_VC;
+	case 9: return R_ANAL_COND_GT;
+	case 0xa: return R_ANAL_COND_GE;
+	case 0xb: return R_ANAL_COND_LT;
+	case 0xc: return R_ANAL_COND_LE;
+	case 0xd: return R_ANAL_COND_HI;
+	case 0xe: return R_ANAL_COND_LS;
+#if 0
+	/* TODO: */
+	/* - radare defines R_ANAL_COND_LO as carry clear and _HS as carry set */
+	/*   which appears different to the ARC definitions. */
+	/*   Need to do some math and double check the details */
+	case 5: return R_ANAL_COND_?? - CS,C,LO - Carry set & LO
+	case 6: return R_ANAL_COND_?? - CC,NC,HS - Carry clear & HS
+	/* - Positive non-zero doesnt map to any Radare cond code.  Perhaps just add it? */
+	case 0xf: return R_ANAL_COND_?? - PNZ - Positive non-zero
+#endif
+	}
+	return -1;
+}
+
 static void arcompact_jump(RAnalOp *op, ut64 addr, ut64 jump, ut8 delay) {
 	op->jump = jump;
 	op->fail = addr + op->size;
 	op->delay = delay;
+}
+
+static void arcompact_jump_cond(RAnalOp *op, ut64 addr, ut64 jump, ut8 delay, ut8 cond) {
+	arcompact_jump (op, addr, jump, delay);
+	op->cond = map_cond2radare (cond);
 }
 
 static void arcompact_branch(RAnalOp *op, ut64 addr, st64 offset, ut8 delay) {
@@ -106,6 +141,8 @@ static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basi
 		return -1; /* Should not happen */
 	}
 
+	f->cond = f->a & 0x1f;
+
 	switch (f->format) {
 	case 0: /* unconditional jumps via reg or long imm */
 		if (f->c == ARC_REG_LIMM) {
@@ -137,26 +174,26 @@ static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basi
 		if (f->mode_m == 0) {
 			if (f->c == ARC_REG_LIMM) {
 				op->type = type_cjmp;
-				arcompact_jump (op, addr, f->limm, f->mode_n);
+				arcompact_jump_cond (op, addr, f->limm, f->mode_n, f->cond);
 				return op->size;
 			}
 			if (f->c == ARC_REG_ILINK1 || f->c == ARC_REG_ILINK2 || f->c == ARC_REG_BLINK) {
 				/* ilink1, ilink2, blink */
 				/* Note: not valid for basic_type == CALL */
 				op->type = R_ANAL_OP_TYPE_CRET;
+				op->cond = map_cond2radare (f->cond);
 				op->delay = f->mode_n;
 				return op->size;
 			}
 
+			op->cond = map_cond2radare (f->cond);
 			op->type = type_ucjmp;
 			return op->size;
 		}
 
 		op->type = type_cjmp;
-		arcompact_jump (op, addr, f->c, f->mode_n);
+		arcompact_jump_cond (op, addr, f->c, f->mode_n, f->cond);
 		return op->size;
-
-		/* TODO: cond codes */
 	}
 
 	/* should not be reached */
@@ -241,8 +278,9 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 			op->type = R_ANAL_OP_TYPE_MOV;
 			op->val = SEX_S12 (fields.a << 6 | fields.c);
 		} else if (fields.format == 3) {
+			fields.cond = fields.a & 0x1f;
+			op->cond = map_cond2radare (fields.cond);
 			op->type = R_ANAL_OP_TYPE_CMOV;
-			/* TODO: cond codes */
 			if ((fields.a & 0x20)) {
 				/* its a move from imm u6 */
 				op->val = fields.c;
@@ -309,10 +347,11 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 			break;
 		case 3: /* Loop Set Up (Conditional) */
 			fields.imm = fields.c << 1;
+			fields.cond = fields.a & 0x1f;
+			op->cond = map_cond2radare (fields.a & 0x1f);
 			op->jump = (addr & ~3) + fields.imm;
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->fail = addr + op->size;
-			/* TODO: cond codes */
 			break;
 		default:
 			op->type = R_ANAL_OP_TYPE_ILL;
@@ -452,8 +491,9 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		if (fields.format == 0) {
 			/* Branch Conditionally 0x00 [0x0] */
 			fields.limm = SEX_S21 (fields.limm);
+			fields.cond = (words[0] & 0x1f);
+			op->cond = map_cond2radare (fields.cond);
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			/* TODO: cond codes */
 		} else {
 			/* Branch Unconditional Far 0x00 [0x1] */
 			fields.limm |= (fields.c & 0x0f) << 21;
@@ -482,10 +522,10 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 					op->size = 8;
 					fields.limm = words[1];
 				}
-				/* TODO: cond codes */
+				/* TODO: cond codes (using the "br" mapping) */
 			} else {
 				/* Branch on Compare/Bit Test Register-Immediate, 0x01, [0x1, 0x1] */
-				/* TODO: cond codes and imm u6 */
+				/* TODO: cond codes and imm u6 (using the "br" mapping) */
 			}
 			arcompact_branch (op, addr, fields.imm, fields.mode_n);
 		} else {
@@ -498,8 +538,9 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			if (fields.format2 == 0) {
 				/* Branch and Link Conditionally, 0x01, [0x0, 0x0] */
 				fields.imm = SEX_S21 (fields.imm);
+				fields.cond = (words[0] & 0x1f);
+				op->cond = map_cond2radare (fields.cond);
 				op->type = R_ANAL_OP_TYPE_CCALL;
-				/* TODO: cond codes */
 			} else {
 				/* Branch and Link Unconditional Far, 0x01, [0x0, 0x1] */
 				fields.imm |= (fields.c & 0x0f) << 21;
@@ -687,7 +728,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 				op->type = R_ANAL_OP_TYPE_ILL;
 				break;
 			case 6: /* SUB_S.NE [b] */
-				op->type = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_SUB;
+				op->cond = R_ANAL_COND_NE;
+				op->type = R_ANAL_OP_TYPE_SUB;
 				break;
 			case 7: /* Zero Operand Instructions, 0x0F, [0x00, 0x07, 0x00 - 0x07] */
 				switch (fields.b) {
@@ -701,7 +743,11 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 					op->type = R_ANAL_OP_TYPE_ILL;
 					break;
 				case 4: /* JEQ_S [blink] */
+					op->cond = R_ANAL_COND_EQ;
+					op->type = R_ANAL_OP_TYPE_CRET;
+					break;
 				case 5: /* JNE_S [blink] */
+					op->cond = R_ANAL_COND_NE;
 					op->type = R_ANAL_OP_TYPE_CRET;
 					break;
 				case 7: /* J_S.D [blink] */
@@ -921,6 +967,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	case 0x1d: /* Branch on Compare Register with Zero, 0x1D, [0x00 - 0x01] */
 		/* fields.subopcode = (words[0] & 0x00800000) >> (16+7); */
 		fields.imm = SEX_S8 ((words[0] & 0x007f0000) >> (16 - 1));
+		/* fields.subopcode? reg NE: reg EQ; */
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		arcompact_branch (op, addr, fields.imm, 0);
 		break;
@@ -932,12 +979,17 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			op->type = R_ANAL_OP_TYPE_JMP;
 			break;
 		case 1: /* BEQ_S */
+			op->cond = R_ANAL_COND_EQ;
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			break;
 		case 2: /* BNE_S */
+			op->cond = R_ANAL_COND_NE;
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			break;
 		case 3: /* Bcc_S */
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			fields.imm = SEX_S7 ((words[0] & 0x003f0000) >> (16 - 1));
+			/* TODO: cond codes (looks like it is the BR table again?) */
 			break;
 		}
 		arcompact_branch (op, addr, fields.imm, 0);

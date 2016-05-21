@@ -419,9 +419,9 @@ R_API char *r_file_root(const char *root, const char *path) {
 R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 	int ret;
 	FILE *fd;
-	if (!file || !*file || !buf) {
+	if (!file || !*file || !buf || len < 0) {
 		eprintf ("r_file_dump file: %s buf: %p\n", file, buf);
-		return R_FALSE;
+		return false;
 	}
 	if (append) {
 		fd = r_sandbox_fopen (file, "awb");
@@ -431,13 +431,18 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 	}
 	if (fd == NULL) {
 		eprintf ("Cannot open '%s' for writing\n", file);
-		return R_FALSE;
+		return false;
 	}
-	if (len<0) len = strlen ((const char *)buf);
-	ret = fwrite (buf, 1, len, fd) == len;
-	if (!ret) eprintf ("r_file_dump: fwrite: error\n");
+	if (len < 0) {
+		len = strlen ((const char *)buf);
+	}
+	if (fwrite (buf, len, 1, fd) != 1) {
+		r_sys_perror ("r_file_dump: fwrite: error\n");
+		fclose (fd);
+		return false;
+	}
 	fclose (fd);
-	return ret;
+	return true;
 }
 
 R_API bool r_file_rm(const char *file) {

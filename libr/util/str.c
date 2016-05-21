@@ -1162,15 +1162,17 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 	}
 	str[j] = tmp[i];
 
-	if (out)
+	if (out) {
 		*out = tmp;
-	else
+	} else {
 		free (tmp);
+	}
 
-	if (cposs)
+	if (cposs) {
 		*cposs = cps;
-	else
-		free(cps);
+	} else {
+		free (cps);
+	}
 
 	return j;
 }

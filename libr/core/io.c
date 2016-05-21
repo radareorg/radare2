@@ -251,7 +251,7 @@ R_API int r_core_seek_archbits (RCore *core, ut64 addr) {
 	if (arch && bits) {
 		if (!oldarch) {
 			RBinInfo *info = r_bin_get_info (core->bin);
-			if (info) {
+			if (info && info->arch) {
 				oldarch = strdup (info->arch);
 				oldbits = info->bits;
 			} else {

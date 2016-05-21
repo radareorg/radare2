@@ -44,6 +44,30 @@ struct user_regs_struct_x86_32 {
 #define R_DEBUG_REG_T struct user_pt_regs
 #elif __arm__
 #define R_DEBUG_REG_T struct user_regs
+#elif __POWERPC__
+struct powerpc_regs_t {
+	unsigned long gpr[32];
+	unsigned long nip;
+	unsigned long msr;
+	unsigned long orig_gpr3;	/* Used for restarting system calls */
+	unsigned long ctr;
+	unsigned long link;
+	unsigned long xer;
+	unsigned long ccr;
+#ifdef __powerpc64__
+	unsigned long softe;		/* Soft enabled/disabled */
+#else
+	unsigned long mq;		/* 601 only (not used at present) */
+					/* Used on APUS to hold IPL value. */
+#endif
+	unsigned long trap;		/* Reason for being here */
+	/* N.B. for critical exceptions on 4xx, the dar and dsisr
+	   fields are overloaded to hold srr0 and srr1. */
+	unsigned long dar;		/* Fault registers */
+	unsigned long dsisr;		/* on 4xx/Book-E used for ESR */
+	unsigned long result;		/* Result of a system call */
+};
+#define R_DEBUG_REG_T struct powerpc_regs_t
 #elif __mips__
 
 #include <sys/ucontext.h>

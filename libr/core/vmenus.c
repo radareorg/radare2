@@ -310,13 +310,11 @@ R_API int r_core_visual_types(RCore *core) {
 			r_line_set_prompt (":> ");
 			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) <0)
 				cmd[0]='\0';
-			//line[strlen(line)-1]='\0';
 			r_core_cmd (core, cmd, 1);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			if (cmd[0])
 				r_cons_any_key (NULL);
-			//cons_gotoxy(0,0);
 			r_cons_clear ();
 			continue;
 		}
@@ -1160,8 +1158,9 @@ R_API void r_core_visual_config(RCore *core) {
 						fs2, desc);
 		}
 
-		if (fs && !strncmp (fs, "asm.", 4))
+		if (fs && !strncmp (fs, "asm.", 4)) {
 			r_core_cmd (core, "pd $r", 0);
+		}
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		if (ch==4 || ch==-1)
@@ -1679,30 +1678,24 @@ static int level = 0;
 static ut64 addr = 0;
 static int option = 0;
 
-static void r_core_visual_anal_refresh_column (RCore *core) {
-	const ut64 addr = (level != 0 && level != 1)  ?
-		core->offset :
-		var_functions_show (core, option, 0);
+static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
+	const ut64 addr = (level != 0 && level != 1)
+		? core->offset
+		: var_functions_show (core, option, 0);
 	RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	int h;
-	char* output;
-	int i;
-	int sz = 16;
-	r_cons_get_size (&h);
-	if (fcn) sz = R_MIN(r_anal_fcn_size (fcn), h * 15); // max instr is 15 bytes.
-	char cmdf[64];
-	sprintf (cmdf, "pD %d @ 0x%"PFMT64x, sz, addr);
-	output = r_core_cmd_str (core, cmdf);
-	if (!output) return;
-	sz = strlen (output);
-	h -= 2;
-	for (i = 0; i < sz; ++i) {
-		if (h <= 1) break;
-		if (output[i] == '\n') --h;
+	int h, sz = 16, w = r_cons_get_size (&h);
+	if (fcn) sz = R_MIN (r_anal_fcn_size (fcn), h * 15); // max instr is 15 bytes.
+
+	char *cmdf = r_str_newf ("pD %d @ 0x%"PFMT64x, sz, addr);
+	if (!cmdf) return;
+	char *output = r_core_cmd_str (core, cmdf);
+	if (output) {
+		char *out = r_str_ansi_crop (output, 0, 0, w - colpos, h);
+		r_cons_printf ("Visual code analysis manipulation\n%s", out);
+		free (out);
+		R_FREE (output);
 	}
-	output[i] = '\x00';
-	r_cons_printf ("Visual code analysis manipulation\n%s", output);
-	R_FREE (output);
+	free (cmdf);
 }
 
 static ut64 r_core_visual_anal_refresh (RCore *core) {
@@ -1721,8 +1714,8 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 
 	r_cons_clear00 ();
 	r_cons_flush ();
-	r_core_visual_anal_refresh_column (core);
-	if (cols>30) {
+	r_core_visual_anal_refresh_column (core, cols);
+	if (cols > 30) {
 		r_cons_column (cols);
 	}
 	switch (level) {
@@ -1802,6 +1795,7 @@ R_API void r_core_visual_anal(RCore *core) {
 			break;
 		case ':':
 			r_core_visual_prompt (core);
+			r_cons_any_key (NULL);
 			continue;
 		case 'a':
 			switch (level) {

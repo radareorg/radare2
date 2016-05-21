@@ -320,7 +320,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_LDRSB:
 	case ARM64_INS_LDRB:
 	case ARM64_INS_LDRSW:
-		{
+		if ((int)MEMDISP64(1) < 0) {
+			r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",-,=[]",
+				REG64(0), MEMBASE64(1), -(int)MEMDISP64(1));
+		} else {
 			int size = REGSIZE64(0);
 			switch (insn->id) {
 			case ARM64_INS_LDRSB:
@@ -400,8 +403,13 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_STUR:
 	case ARM64_INS_STR: // str x6, [x6,0xf90]
 	case ARM64_INS_STRH:
-		r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",+,=[]",
-			REG64(0), MEMBASE64(1), MEMDISP64(1));
+		if ((int)MEMDISP64(1) < 0) {
+			r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",-,=[]",
+				REG64(0), MEMBASE64(1), -(int)MEMDISP64(1));
+		} else {
+			r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",+,=[]",
+				REG64(0), MEMBASE64(1), MEMDISP64(1));
+		}
 		break;
 	case ARM64_INS_CBZ:
 		r_strbuf_setf (&op->esil, "%s,?{,%"PFMT64d",pc,=,}",
