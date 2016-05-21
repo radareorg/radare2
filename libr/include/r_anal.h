@@ -1171,7 +1171,7 @@ R_API void r_anal_list(RAnal *anal);
 R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API bool r_anal_use(RAnal *anal, const char *name);
 R_API bool r_anal_set_reg_profile(RAnal *anal);
-R_API char *r_anal_get_reg_profile(RAnal *anal);
+R_API const char *r_anal_get_reg_profile(RAnal *anal);
 R_API bool r_anal_set_bits(RAnal *anal, int bits);
 R_API bool r_anal_set_os(RAnal *anal, const char *os);
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu);
