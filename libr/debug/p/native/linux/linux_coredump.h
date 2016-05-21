@@ -110,6 +110,7 @@ typedef enum {
 	NAME
 } MAPS_FIELD;
 
+#if 0
 static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_stat_content_t *proc_data);
 static prstatus_t *linux_get_prstatus(RDebug *dbg, proc_stat_content_t *proc_data, short int signr);
 static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg);
@@ -138,4 +139,5 @@ static void clean_maps(linux_map_entry_t *h);
 static void may_clean_all(linux_elf_note_t *sec_note, proc_stat_content_t *proc_data, Elf64_Ehdr *elf_hdr);
 static bool dump_elf_sheader_pxnum(RBuffer *dest, Elf64_Shdr *shdr);
 static Elf64_Shdr *get_extra_sectionhdr(Elf64_Ehdr *elf_hdr, st64 offset, int n_segments);
+#endif
 bool linux_generate_corefile (RDebug *dbg, RBuffer *dest);
