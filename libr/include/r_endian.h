@@ -194,6 +194,21 @@ static inline ut64 r_read_ble64(const void *src, bool big_endian) {
 	return big_endian? r_read_be64 (src): r_read_le64 (src);
 }
 
+static inline ut64 r_read_ble(const void *src, bool big_endian, int size) {
+	switch (size) {
+	case 8:
+		return (ut64) src;
+	case 16:
+		return r_read_ble16 (src, big_endian);
+	case 32:
+		return r_read_ble32 (src, big_endian);
+	case 64:
+		return r_read_ble64 (src, big_endian);
+	default:
+		return UT64_MAX;
+	}
+}
+
 static inline void r_write_ble16(void *dest, ut16 val, bool big_endian) {
 	big_endian? r_write_be16 (dest, val): r_write_le16 (dest, val);
 }
