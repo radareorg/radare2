@@ -110,34 +110,9 @@ typedef enum {
 	NAME
 } MAPS_FIELD;
 
-#if 0
-static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_stat_content_t *proc_data);
-static prstatus_t *linux_get_prstatus(RDebug *dbg, proc_stat_content_t *proc_data, short int signr);
-static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg);
-static siginfo_t *linux_get_siginfo(RDebug *dbg);
-static void get_map_address_space(char *pstr, ut64 *start_addr, ut64 *end_addr);
-static void get_map_perms(char *pstr, ut8 *fl_perms);
-static void get_map_offset(char *pstr, ut64 *offset);
-static char *get_map_name(char *pstr);
-static bool get_anonymous_value(char *keyw);
-static bool has_map_deleted_part(char *name);
-static bool dump_this_map(char *buff_smaps, ut64 start_addr, ut64 end_addr, bool file_backed, bool anonymous, ut8 perms, ut8 filter_flags);
-static bool has_map_anonymous_content(char *buff_smaps, ut64 start_addr, ut64 end_addr);
-static bool is_a_kernel_mapping(char *map_name);
-//static char *read_alloc_from_file(FILE *f);
-static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags);
-static auxv_buff_t *linux_get_auxv(RDebug *dbg);
-static Elf64_Ehdr *build_elf_hdr(int n_segments);
-static int get_n_mappings(linux_map_entry_t *me_head);
-static bool dump_elf_header(RBuffer *dest, Elf64_Ehdr *hdr);
-static void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size);
-static const ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_section);
-static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, st64 *offset);
-static void show_maps(linux_map_entry_t *head);	/* test purposes */
-static bool dump_elf_map_content(RBuffer *dest, linux_map_entry_t *head, pid_t pid);
-static void clean_maps(linux_map_entry_t *h);
-static void may_clean_all(linux_elf_note_t *sec_note, proc_stat_content_t *proc_data, Elf64_Ehdr *elf_hdr);
-static bool dump_elf_sheader_pxnum(RBuffer *dest, Elf64_Shdr *shdr);
-static Elf64_Shdr *get_extra_sectionhdr(Elf64_Ehdr *elf_hdr, st64 offset, int n_segments);
-#endif
+extern ssize_t process_vm_readv(pid_t pid, const struct iovec *local_iov,
+	unsigned long liovcnt, const struct iovec *remote_iov,
+	unsigned long riovcnt, unsigned long flags);
+
 bool linux_generate_corefile (RDebug *dbg, RBuffer *dest);
+int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size);

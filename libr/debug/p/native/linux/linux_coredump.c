@@ -2,6 +2,7 @@
 
 #include <r_debug.h>
 #include <sys/uio.h>
+#include <bits/uio.h>
 #include <sys/ptrace.h>
 #include "linux_coredump.h"
 
@@ -159,7 +160,7 @@ static prstatus_t *linux_get_prstatus(RDebug *dbg, proc_stat_content_t *proc_dat
 	prstatus_t *p;
 	int rbytes;
 
-	ut8 *reg_buff = R_NEW0 (struct user_regs_struct);
+	ut8 *reg_buff = calloc (sizeof (struct user_regs_struct), 1);
 	if (!reg_buff) {
 		return NULL;
 	}
@@ -195,7 +196,7 @@ static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg) {
 	elf_fpregset_t *p;
 	int rbytes;
 
-	ut8 *reg_buff = R_NEW0 (struct user_fpregs_struct);
+	ut8 *reg_buff = (ut8 *)R_NEW0 (struct user_fpregs_struct);
 	if (!reg_buff) {
 		return NULL;
 	}
@@ -999,15 +1000,15 @@ static void print_p(proc_stat_content_t *p) {
 }
 
 static proc_stat_content_t *get_proc_content(RDebug *dbg) {
-	char *file, *buff;
-	const char s_sigpend[] = "SigPnd";
-	const char s_sighold[] = "SigBlk";
+	const char *s_sigpend = "SigPnd";
+	const char *s_sighold = "SigBlk";
 	char *temp_p_uid, *temp_p_gid, *p_uid, *p_gid;
 	char *temp_p_sigpend, *temp_p_sighold;
 	char *p_sigpend, *p_sighold;
-	int size;
-	ut16 filter_flags;
 	proc_stat_content_t *p;
+	ut16 filter_flags;
+	char *file, *buff;
+	int size;
 
 	file = r_str_newf ("/proc/%d/stat", dbg->pid);
 	eprintf ("file: %s\n", file);
@@ -1027,13 +1028,19 @@ static proc_stat_content_t *get_proc_content(RDebug *dbg) {
 	}
 
 	/* /proc/[pid]/stat */
-	// sscanf (buff, "%d %*s %c %d %d %d %*d %*d %u %*lu %*lu %*lu %*lu %" PFMT64u" %"PFMT64u" %ld %ld %*ld %ld %ld",
-	sscanf (buff, "%d %*s %c %d %d %d %*d %*d %u %*lu %*lu %*lu %*lu %"
-			PFMT64u" %"PFMT64u" %ld %ld %*ld %ld %ld",
-		&p->pid, &p->s_name, &p->ppid, &p->pgrp, &p->sid, &p->flag,
-		&p->utime, &p->stime, &p->cutime, &p->cstime, &p->nice, &p->num_threads);
-
-	free (buff);
+	{
+		char no_str[128];
+		long unsigned int no_lui;
+		long int no_li;
+		int no_num;
+		sscanf (buff, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %"
+				PFMT64u" %"PFMT64u" %ld %ld %ld %ld %ld",
+			&p->pid, no_str, &p->s_name, &p->ppid, &p->pgrp, &no_num,
+			&no_num, &p->sid, &p->flag, &no_lui, &no_lui, &no_lui,
+			&no_lui, &p->utime, &p->stime, &p->cutime, &p->cstime,
+			&no_li, &p->nice, &p->num_threads);
+		free (buff);
+	}
 
 	/* /proc/[pid]/status for uid, gid, sigpend and sighold */
 	file = sdb_fmt (0, "/proc/%d/status", dbg->pid);
