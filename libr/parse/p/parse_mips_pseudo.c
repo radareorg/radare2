@@ -219,12 +219,132 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-struct r_parse_plugin_t r_parse_plugin_mips_pseudo = {
+static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+	RAnalVar *var, *arg, *sparg;
+	RListIter *variter, *argiter, *spiter;
+	char oldstr[64], newstr[64];
+	char *tstr = strdup (data);
+	RList *vars, *args, *spargs;
+
+	if (!p->varlist) {
+                free (tstr);
+		return false;
+        }
+	vars = p->varlist (p->anal, f, 'v');
+	args = p->varlist (p->anal, f, 'a');
+	spargs = p->varlist (p->anal, f, 'e');
+	/*iterate over stack pointer arguments/variables*/
+	r_list_foreach (spargs, spiter,sparg) {
+		if (sparg->delta < 10) {
+			snprintf (oldstr, sizeof (oldstr)-1, "[%s + %d]",
+				p->anal->reg->name[R_REG_NAME_SP], sparg->delta);
+		} else {
+			snprintf (oldstr, sizeof (oldstr)-1, "[%s + 0x%x]",
+				p->anal->reg->name[R_REG_NAME_SP], sparg->delta);
+		}
+		snprintf (newstr, sizeof (newstr)-1, "[%s + %s]",
+			p->anal->reg->name[R_REG_NAME_SP],
+			sparg->name);
+		if (strstr (tstr, oldstr)) {
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			break;
+		} else {
+			r_str_case (oldstr, false);
+			if (strstr (tstr, oldstr)) {
+				tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				break;
+			}
+		}
+	}
+	/* iterate over arguments */
+	r_list_foreach (args, argiter, arg) {
+		if (arg->delta < 10) snprintf (oldstr, sizeof (oldstr)-1,
+			"[%s + %d]",
+			p->anal->reg->name[R_REG_NAME_BP],
+			arg->delta);
+		else snprintf (oldstr, sizeof (oldstr)-1,
+			"[%s + 0x%x]",
+			p->anal->reg->name[R_REG_NAME_BP],
+			arg->delta);
+		snprintf (newstr, sizeof (newstr)-1, "[%s + %s]",
+			p->anal->reg->name[R_REG_NAME_BP],
+			arg->name);
+		if (strstr (tstr, oldstr) != NULL) {
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			break;
+		} else {
+			r_str_case (oldstr, false);
+			if (strstr (tstr, oldstr) != NULL) {
+				tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				break;
+			}
+		}
+		// Try with no spaces
+		snprintf (oldstr, sizeof (oldstr)-1, "[%s+0x%x]",
+			p->anal->reg->name[R_REG_NAME_BP],
+			arg->delta);
+		if (strstr (tstr, oldstr) != NULL) {
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			break;
+		}
+	}
+
+	char bp[32];
+	if (p->anal->reg->name[R_REG_NAME_BP]) {
+		strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], sizeof (bp) -1);
+		if (isupper (*str)) {
+			r_str_case (bp, true);
+		}
+		bp[sizeof(bp) - 1] = 0;
+	} else {
+		bp[0] = 0;
+	}
+
+	r_list_foreach (vars, variter, var) {
+		if (var->delta < 10) snprintf (oldstr, sizeof (oldstr)-1, "[%s - %d]", bp, var->delta);
+		else snprintf (oldstr, sizeof (oldstr)-1, "[%s - 0x%x]", bp, var->delta);
+		snprintf (newstr, sizeof (newstr)-1, "[%s - %s]", bp, var->name);
+		if (strstr (tstr, oldstr) != NULL) {
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			break;
+		} else {
+			r_str_case (oldstr, true);
+			if (strstr (tstr, oldstr) != NULL) {
+				tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				break;
+			}
+		}
+		// Try with no spaces
+		snprintf (oldstr, sizeof (oldstr)-1, "[%s - 0x%x]",
+			p->anal->reg->name[R_REG_NAME_BP],
+			var->delta);
+		if (strstr (tstr, oldstr) != NULL) {
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			break;
+		}
+	}
+
+	bool ret = true;
+	if (len > strlen (tstr)) {
+		strncpy (str, tstr, strlen (tstr));
+		str[strlen (tstr)] = 0;
+	} else {
+		// TOO BIG STRING CANNOT REPLACE HERE
+		ret = false;
+	}
+	free (tstr);
+	r_list_free (vars);
+	r_list_free (args);
+	return ret;
+}
+
+RParsePlugin r_parse_plugin_mips_pseudo = {
 	.name = "mips.pseudo",
 	.desc = "MIPS pseudo syntax",
 	.init = NULL,
 	.fini = NULL,
 	.parse = parse,
+	.varsub = varsub,
 };
 
 #ifndef CORELIB
