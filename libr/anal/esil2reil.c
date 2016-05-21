@@ -756,6 +756,7 @@ static int reil_poken(RAnalEsil *esil, ut8 n) {
 	ins->arg[1] = R_NEW0 (RAnalReilArg);
 	if (!ins->arg[1]) {
 		reil_free_inst (ins);
+		return false;
 	}
 	reil_make_arg(esil, ins->arg[1], " ");
 	reil_print_inst(esil, ins);
