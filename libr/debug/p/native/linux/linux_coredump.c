@@ -284,6 +284,7 @@ static bool getAnonymousValue(char *keyw) {
 }
 
 static char *isAnonymousKeyword(const char *pp) {
+	if (!pp) return NULL;
 	char *keyw = strstr (pp, "Anonymous:");
 	if (!keyw) keyw = strstr (pp, "AnonHugePages:");
 	return keyw;
@@ -1215,6 +1216,5 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	}
 cleanup:
 	may_clean_all (sec_note, proc_data, elf_hdr);
-	r_sandbox_enable (false);
 	return !error;
 }
