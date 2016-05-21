@@ -5,6 +5,8 @@
 #include <r_reg.h>
 #include <r_lib.h>
 #include <r_anal.h>
+#include <signal.h>
+#include <sys/uio.h>
 #include "linux_debug.h"
 
 const char *linux_reg_profile (RDebug *dbg) {
@@ -517,3 +519,4 @@ RList *linux_desc_list (int pid) {
 	closedir (dd);
 	return ret;
 }
+

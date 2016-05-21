@@ -11,6 +11,7 @@ endif
 
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
 NATIVE_OBJS=native/linux/linux_debug.o
+COREDUMP_OBJS=native/linux/linux_coredump.o
 endif
 
 
