@@ -325,8 +325,10 @@ static bool dump_this_map(char *buff_smaps, ut64 start_addr, ut64 end_addr, bool
 				start_addr, end_addr);
 		return false;
 	}
+#if 0
 	eprintf ("[dump_this_map] %"PFMT64x"-%"PFMT64x": file: %d - anonymous - %d - flags: 0%x\n",
 			start_addr, end_addr, file_backed, anonymous, filter_flags);
+#endif
 	identity = r_str_newf ("%08"PFMT64x"-%08"PFMT64x"", start_addr, end_addr);
 	vmflags = 0;
 	flags_str = NULL;
@@ -358,21 +360,21 @@ static bool dump_this_map(char *buff_smaps, ut64 start_addr, ut64 end_addr, bool
 
 	p = strtok (flags_str, " ");
 	while (p) {
-		eprintf ("dump_this_map: %s\n", p);
+		//eprintf ("dump_this_map: %s\n", p);
 		if (!strncmp (p, "sh", 2)) {
-			eprintf ("vmflags |= SH_FLAG\n");
+		//	eprintf ("vmflags |= SH_FLAG\n");
 			vmflags |= SH_FLAG;
 		}
 		if (!strncmp (p, "io", 2)) {
-			eprintf ("vmflags |= IO_FLAG\n");
+		//	eprintf ("vmflags |= IO_FLAG\n");
 			vmflags |= IO_FLAG;
 		}
 		if (!strncmp (p, "ht", 2)) {
 			eprintf ("vmflags |= HT_FLAG\n");
-			vmflags |= HT_FLAG;
+			// vmflags |= HT_FLAG;
 		}
 		if (!strncmp (p, "dd", 2)) {
-			eprintf ("vmflags |= DD_FLAG\n");
+			//eprintf ("vmflags |= DD_FLAG\n");
 			vmflags |= DD_FLAG;
 		}
 		p = strtok (NULL, " ");
@@ -529,7 +531,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 			R_FREE (name);
 		}
 
-		eprintf ("\n\n[checking] %"PFMT64x"-%"PFMT64x"\n", pmentry->start_addr, pmentry->end_addr);
+		eprintf ("[checking] %"PFMT64x"-%"PFMT64x"\n", pmentry->start_addr, pmentry->end_addr);
 		/* Check if the map comes from the kernel (vsyscall, vvar, vdso) (they are always dumped, but not vvar) */
 		if (pmentry->name && is_a_kernel_mapping (pmentry->name)) {
 			pmentry->anonymous = pmentry->kernel_mapping = true;
@@ -952,7 +954,7 @@ static bool dump_elf_map_content(RBuffer *dest, linux_map_entry_t *head, pid_t p
 	size_t rbytes;
 
 	for (p = head; p; p = p->n) {
-		eprintf ("\nTrying to dump: %s - %"PFMT64x"\n", p->name, p->start_addr);
+		//eprintf ("Trying to dump: %s - %"PFMT64x"\n", p->name, p->start_addr);
 		if (p->dumpeable) {
 			size = p->end_addr - p->start_addr;
 			map_content = malloc (size);
@@ -1193,7 +1195,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 		goto cleanup;
 	}
 	n_segments = get_n_mappings (sec_note->maps);
-	show_maps (sec_note->maps);
+	// show_maps (sec_note->maps);
 	elf_hdr = build_elf_hdr (n_segments);
 	if (!elf_hdr) {
 		error = true;
