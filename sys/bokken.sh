@@ -2,7 +2,7 @@
 # find root
 cd `dirname $PWD/$0`
 
-if [ ! -d _work]; then
+if [ ! -d _work ]; then
 	mkdir _work
 fi
 cd _work || exit 1
