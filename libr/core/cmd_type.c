@@ -25,7 +25,7 @@ static void show_help(RCore *core) {
 		//"to",  "",         "List opened files",
 		"to", " -", "Open cfg.editor to load types",
 		"to", " <path>", "Load types from C header file",
-		"tp", " <type> <address>", "cast data at <adress> to <type> and print it",
+		"tp", " <type>  = <address>", "cast data at <adress> to <type> and print it",
 		"ts", "", "print loaded struct types",
 		"tu", "", "print loaded union types",
 		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
@@ -382,9 +382,12 @@ static int cmd_type(void *data, const char *input) {
 		if (input[2]) {
 			ut64 addr = core->offset;
 			const char *type = input + 2;
-			char *ptr = strchr (type, ' ');
+			char *ptr = strchr (type, '=');
 			if (ptr) {
+				char *tmp = ptr-1;
 				*ptr++ = 0;
+				while(isspace (*ptr)) ptr++;
+				while(isspace (*tmp)) *tmp-- = 0;
 				addr = r_num_math (core->num, ptr);
 			}
 			char *fmt = r_anal_type_format (core->anal, type);
