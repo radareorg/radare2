@@ -6,7 +6,8 @@ R2PM_DESC "[syspkg] Radare Decompiler in Rust"
 R2PM_INSTALL() {
 	cargo update --verbose || exit 1
 	cargo build --verbose || exit 1
-	ln -fs `pwd`/target/debug/radeco "${BINDIR}"/radeco || exit 1
+	ln -fs `pwd`/target/debug/radeco \
+		"${BINDIR}"/radeco || exit 1
 }
 
 R2PM_UNINSTALL() {

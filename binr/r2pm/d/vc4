@@ -5,10 +5,10 @@ R2PM_DESC "[r2-asm] VC4 / RPI VideoCore4 disassembler"
 
 R2PM_INSTALL() {
     ./configure --prefix="${R2PM_PREFIX}" || exit 1
-    cd libr/asm/p
-    make clean
-    make asm_vc4.${LIBEXT} || exit 1
-    mkdir -p "${R2PM_PLUGDIR}"
+    cd libr/asm/p || exit 1
+    ${MAKE} clean
+    ${MAKE} asm_vc4.${LIBEXT} || exit 1
+    mkdir -p "${R2PM_PLUGDIR}" || exit 1
     cp -f asm_vc4.${LIBEXT} "${R2PM_PLUGDIR}" || exit 1
 }
 

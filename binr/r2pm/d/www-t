@@ -7,8 +7,8 @@ MAKE_TARGET="tiles"
 UI="t"
 
 R2PM_INSTALL() {
-	make "${MAKE_TARGET}" || exit 1
-	cd "dist/${UI}"
+	${MAKE} "${MAKE_TARGET}" || exit 1
+	cd "dist/${UI}" || exit 1
 	WWWROOT="${R2PM_WWWROOT}"
 	echo "WWWROOT IS ${WWWROOT}"
 	mkdir -p ${WWWROOT} || exit 1

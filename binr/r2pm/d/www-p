@@ -7,7 +7,7 @@ MAKE_TARGET="panel"
 UI="p"
 
 R2PM_INSTALL() {
-	make "${MAKE_TARGET}" || exit 1
+	${MAKE} "${MAKE_TARGET}" || exit 1
 	cd "dist/${UI}"
 	WWWROOT="${R2PM_WWWROOT}"
 	echo "WWWROOT IS ${WWWROOT}"

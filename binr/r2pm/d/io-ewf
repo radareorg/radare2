@@ -4,16 +4,16 @@ R2PM_GIT "https://github.com/radare/radare2-extras"
 R2PM_DESC "[r2-io] EWF Forensic Image Loader"
 
 R2PM_INSTALL() {
-	./configure --prefix="${R2PM_PREFIX}"
-	cd libr/io/p
-	make clean
-	make ewf || R2PM_FAIL Build
-	make ewf-install || R2PM_FAIL Install
+	./configure --prefix="${R2PM_PREFIX}" || exit 1
+	cd libr/io/p || exit 1
+	${MAKE} clean
+	${MAKE} ewf || R2PM_FAIL Build
+	${MAKE} ewf-install || R2PM_FAIL Install
 }
 
 R2PM_UNINSTALL() {
 	cd libr/io/p
-	make ewf-uninstall || R2PM_FAIL
+	${MAKE} ewf-uninstall || R2PM_FAIL
 }
 
 R2PM_END

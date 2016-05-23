@@ -7,15 +7,15 @@ MAKE_TARGET="enyo"
 UI="enyo"
 
 R2PM_INSTALL() {
-	make "${MAKE_TARGET}" || exit 1
-	cd "dist/${UI}"
+	${MAKE} "${MAKE_TARGET}" || exit 1
+	cd "dist/${UI}" || exit 1
 	WWWROOT="${R2PM_WWWROOT}"
 	echo "WWWROOT IS ${WWWROOT}"
 	mkdir -p ${WWWROOT} || exit 1
 	if [ -n "${WWWROOT}" ]; then
 		rm -rf "${WWWROOT}/${UI}"
 		echo "Installing /${UI}..."
-		ln -s "${PWD}" "${WWWROOT}/${UI}"
+		ln -s "${PWD}" "${WWWROOT}/${UI}" || exit 1
 	else
 		echo "Cannot find WWWROOT"
 		exit 1

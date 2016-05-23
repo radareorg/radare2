@@ -7,12 +7,12 @@ R2PM_INSTALL() {
 	cd yara/yara3
 	export EXT_SO=$(r2 -hh|grep LIBEXT|awk '{print $2}')
 	./configure --prefix="${R2PM_PREFIX}" || R2PM_FAIL "Configure"
-	make || R2PM_FAIL "Build"
-	make install || R2PM_FAIL "Install"
+	${MAKE} || R2PM_FAIL "Build"
+	${MAKE} install || R2PM_FAIL "Install"
 }
 
 R2PM_UNINSTALL() {
-	make uninstall
+	${MAKE} uninstall
 }
 
 R2PM_END

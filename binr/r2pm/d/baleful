@@ -5,16 +5,16 @@ R2PM_DESC "[r2-asm-anal] Baleful VM disassembler and analyzer"
 
 R2PM_INSTALL() {
 #	export PKG_CONFIG_PATH="${R2PM_PREFIX}/lib/pkgconfig"
-	./configure --prefix="${R2PM_PREFIX}"
-	cd baleful
-	make clean
-	make
-	make install R2PM_PLUGDIR="${R2PM_PLUGDIR}"
+	./configure --prefix="${R2PM_PREFIX}" || exit 1
+	cd baleful || exit 1
+	${MAKE} clean
+	${MAKE} || exit 1
+	${MAKE} install R2PM_PLUGDIR="${R2PM_PLUGDIR}" || exit 1
 }
 
 R2PM_UNINSTALL() {
 	cd baleful
-	make uninstall R2PM_PLUGDIR="${R2PM_PLUGDIR}"
+	${MAKE} uninstall R2PM_PLUGDIR="${R2PM_PLUGDIR}"
 }
 
 R2PM_END

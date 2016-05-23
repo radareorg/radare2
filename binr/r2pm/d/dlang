@@ -5,9 +5,9 @@ R2PM_DESC "[r2-bin] dlang symbol demangler plugin"
 
 R2PM_INSTALL() {
 	ldc2 --version || R2PM_FAIL "You need to install ldc2"
-	./configure --prefix="${R2PM_PREFIX}"
-	cd libr/bin/p
-	make || R2PM_FAIL "You probably need to install phobos2 D library"
+	./configure --prefix="${R2PM_PREFIX}" || exit 1
+	cd libr/bin/p || exit 1
+	${MAKE} || R2PM_FAIL "You probably need to install phobos2 D library"
 	cp -f bin_dlang.${LIBEXT} "${R2PM_PLUGDIR}"
 }
 

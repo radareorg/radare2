@@ -14,9 +14,9 @@ R2PM_INSTALL() {
 
 R2PM_UNINSTALL() {
 	if [ "${GLOBAL}" = 1 ]; then
-		${SUDO} make uninstall PREFIX="${R2PM_PREFIX}"
+		${SUDO} ${MAKE} uninstall PREFIX="${R2PM_PREFIX}"
 	else
-		make uninstall PREFIX="${R2PM_PREFIX}"
+		${MAKE} uninstall PREFIX="${R2PM_PREFIX}"
 	fi
 }
 
