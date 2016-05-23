@@ -2241,6 +2241,7 @@ void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
 	free (bin->strtab);
 	free (bin->dyn_buf);
 	free (bin->shstrtab);
+	free (bin->dynstr);
 	//free (bin->strtab_section);
 	if (bin->imports_by_ord) {
 		for (i=0; i<bin->imports_by_ord_size; i++)
