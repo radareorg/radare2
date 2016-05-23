@@ -4,11 +4,13 @@ R2PM_GIT "https://github.com/radare/radare2-extras"
 R2PM_DESC "[r2-asm] Tiny ARM Thumb disassembler"
 
 R2PM_INSTALL() {
-	./configure --prefix="${R2PM_PREFIX}"
+	./configure --prefix="${R2PM_PREFIX}" || exit 1
 	cd libr/asm/p
-	make clean
-	make
-	cp -f asm_armthumb.${LIBEXT} "${R2PM_PLUGDIR}"
+	${MAKE} clean
+ls
+	${MAKE} asm_armthumb.${LIBEXT} || exit 1
+	cp -f asm_armthumb.${LIBEXT} "${R2PM_PLUGDIR}" || exit 1
+	echo "cp -f asm_armthumb.${LIBEXT} ${R2PM_PLUGDIR}"
 }
 
 R2PM_UNINSTALL() {
