@@ -10,6 +10,10 @@ if [ $? != 0 ]; then
 fi
 
 # Exported Vars
+MAKE=make
+gmake --help >/dev/null 2>&1
+[ $? = 0 ] && MAKE=gmake
+export MAKE
 export GLOBAL=0
 export R2VERSION="`r2 -qv`"
 PREFIX="`r2 -hh | grep PREFIX | awk '{print $2}' 2> /dev/null`"
