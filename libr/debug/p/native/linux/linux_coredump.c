@@ -302,7 +302,7 @@ static bool has_map_anonymous_content(char *buff_smaps, ut64 start_addr, ut64 en
 		if (strstr (p, identity)) {
 			pp = strtok_r (NULL, "\n", &extern_tok);
 			for (; pp ; pp = strtok_r (NULL, "\n", &extern_tok)) {
-				if ((keyw = isAnonymousKeyword (keyw))) {
+				if ((keyw = isAnonymousKeyword (pp))) {
 					is_anonymous = getAnonymousValue (keyw);
 					free (str);
 					return is_anonymous;
@@ -370,8 +370,8 @@ static bool dump_this_map(char *buff_smaps, ut64 start_addr, ut64 end_addr, bool
 			vmflags |= IO_FLAG;
 		}
 		if (!strncmp (p, "ht", 2)) {
-			eprintf ("vmflags |= HT_FLAG\n");
-			// vmflags |= HT_FLAG;
+			//eprintf ("vmflags |= HT_FLAG\n");
+			 vmflags |= HT_FLAG;
 		}
 		if (!strncmp (p, "dd", 2)) {
 			//eprintf ("vmflags |= DD_FLAG\n");
@@ -730,7 +730,6 @@ static ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_sec
 	auxv_buff_t *auxv;
 	Elf64_Nhdr note_hdr;
 	ut8 *note_data;
-	ut8 *pnote_data;
 	char *maps_data;
 	size_t size_elf_fpregset;
 	size_t size_nt_file_pad;
@@ -791,7 +790,6 @@ static ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_sec
 		return NULL;
 	}
 
-	pnote_data = note_data;
 	/* prpsinfo */
 	prpsinfo = sec_note->prpsinfo;
 	note_hdr.n_namesz = sizeof (n_core);
@@ -861,7 +859,6 @@ static ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_sec
 	note_data += i_size_core;
 	memcpy (note_data, maps_data, size_nt_file_pad);
 	note_data += size_nt_file_pad;
-	note_data = pnote_data;
 	return note_data;
 }
 
