@@ -506,6 +506,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 	}
 	if (p->_listen) {
 		RSocket *child, *fd = r_socket_new (0);
+		int is_child = false;
 		if (!r_socket_listen (fd, p->_listen, NULL)) {
 			eprintf ("rarun2: cannot listen\n");
 			r_socket_free (fd);
@@ -514,7 +515,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 		while (true) {
 			child = r_socket_accept (fd);
 			if (child) {
-				int is_child = true;
+				is_child = true;
 
 				if (p->_dofork && !p->_dodebug) {
 					pid_t child_pid = r_sys_fork ();
@@ -544,7 +545,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 				}
 			}
 		}
-		r_socket_free (child);
+		if(!is_child) r_socket_free (child);
 		r_socket_free (fd);
 	}
 	if (p->_r2sleep != 0) {
