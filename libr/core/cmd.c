@@ -1741,6 +1741,44 @@ next_arroba:
 			}
 			//ret = -1; /* do not run out-of-foreach cmd */
 		} else {
+			bool tmpseek = false;
+			const char *fromvars[] = { "anal.from", "diff.from", "graph.from",
+				"io.buffer.from", "lines.from", "search.from", "zoom.from", NULL };
+			const char *tovars[] = { "anal.to", "diff.to", "graph.to",
+				"io.buffer.to", "lines.to", "search.to", "zoom.to", NULL };
+			ut64 curfrom[R_ARRAY_SIZE (fromvars) - 1], curto[R_ARRAY_SIZE (tovars) - 1];
+
+			// @..
+			if (ptr[1] == '.' && ptr[2] == '.') {
+				char *range = ptr + 3;
+				char *p = strchr (range, ' ');
+				if (p == NULL) {
+					eprintf ("Usage: / ABCD @..0x1000 0x3000\n");
+					return false;
+				}
+				*p = '\x00';
+				ut64 from = r_num_math (core->num, range);
+				ut64 to = r_num_math (core->num, p + 1);
+
+				// save current ranges
+				for (i = 0; fromvars[i]; i++) {
+					curfrom[i] = r_config_get_i (core->config, fromvars[i]);
+				}
+				for (i = 0; tovars[i]; i++) {
+					curto[i] = r_config_get_i (core->config, tovars[i]);
+				}
+
+				// set new ranges
+				for (i = 0; fromvars[i]; i++) {
+					r_config_set_i (core->config, fromvars[i], from);
+				}
+				for (i = 0; tovars[i]; i++) {
+					r_config_set_i (core->config, tovars[i], to);
+				}
+
+				tmpseek = true;
+			}
+
 			if (usemyblock) {
 				if (addr != UT64_MAX) {
 					core->offset = addr;
@@ -1751,8 +1789,20 @@ if (addr != UT64_MAX) {
 				if (!ptr[1] || r_core_seek (core, addr, 1)) {
 					r_core_block_read (core, 0);
 					ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
-				} else ret = 0;
+				} else {
+					ret = 0;
+				}
 }
+			}
+
+			if (tmpseek) {
+				// restore ranges
+				for (i = 0; fromvars[i]; i++) {
+					r_config_set_i (core->config, fromvars[i], curfrom[i]);
+				}
+				for (i = 0; tovars[i]; i++) {
+					r_config_set_i (core->config, tovars[i], curto[i]);
+				}
 			}
 		}
 		if (ptr2) {
