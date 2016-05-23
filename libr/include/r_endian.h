@@ -197,7 +197,7 @@ static inline ut64 r_read_ble64(const void *src, bool big_endian) {
 static inline ut64 r_read_ble(const void *src, bool big_endian, int size) {
 	switch (size) {
 	case 8:
-		return (ut64) src;
+		return (ut64) ((ut8*)src)[0];
 	case 16:
 		return r_read_ble16 (src, big_endian);
 	case 32:

@@ -1962,10 +1962,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} else {
 			addr = r_num_math (core->num, input+2);
 			if (validAddress (core, addr)) {
-				int bpsz = 1;
-				if (!strcmp (core->dbg->arch, "arm")) {
-					bpsz = 4;
-				}
+				// const int bpsz = (!strcmp (core->dbg->arch, "arm"))? 4: 1;
 				bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
 				if (bpi) {
 					free (bpi->name);

@@ -1626,7 +1626,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	if (osize) {
 		r_core_block_size (core, osize);
 	}
-	return true;
+	return handled_cmd;
 }
 
 static void cmd_print_pv(RCore *core, const char *input) {
