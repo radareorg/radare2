@@ -968,8 +968,9 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 		fcn->diff->type = diff->type;
 		fcn->diff->addr = diff->addr;
 		R_FREE (fcn->diff->name);
-		if (diff->name)
+		if (diff->name) {
 			fcn->diff->name = strdup (diff->name);
+		}
 	}
 #if FCN_SDB
 	sdb_set (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x, addr), "TODO", 0); // TODO: add more info here
@@ -1101,8 +1102,9 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 		bb->diff->type = diff->type;
 		bb->diff->addr = diff->addr;
 		R_FREE (bb->diff->name);
-		if (diff->name)
+		if (diff->name) {
 			bb->diff->name = strdup (diff->name);
+		}
 	}
 	return true;
 }
