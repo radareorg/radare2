@@ -333,7 +333,12 @@ static int cmd_info(void *data, const char *input) {
 					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -rzz %s", min, max, biname);
 					break;
 				case 'q':
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qzz %s", min, max, biname);
+					if (input[3] == 'q') {
+						ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qqzz %s", min, max, biname);
+						input++;
+					} else {
+						ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qzz %s", min, max, biname);
+					}
 					break;
 				case 'j':
 					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -jzz %s", min, max, biname);
@@ -349,6 +354,10 @@ static int cmd_info(void *data, const char *input) {
 				free (biname);
 				input++;
 			} else {
+			    	if (input[1] == 'q') {
+				    	mode = (input[2] == 'q') ? R_CORE_BIN_SIMPLEST : R_CORE_BIN_SIMPLE;
+					input++;
+				}
 				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 			}
 			break;
