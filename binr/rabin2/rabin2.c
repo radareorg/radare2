@@ -534,10 +534,8 @@ int main(int argc, char **argv) {
 			break;
 		case 'V': set_action (R_BIN_REQ_VERSIONINFO); break;
 		case 'q':
-			if (rad & R_CORE_BIN_SIMPLE)
-				rad = R_CORE_BIN_SIMPLEST;
-			else
-				rad = R_CORE_BIN_SIMPLE;
+			rad = (rad & R_CORE_BIN_SIMPLE ?
+				R_CORE_BIN_SIMPLEST : R_CORE_BIN_SIMPLE);
 			break;
 		case 'j': rad = R_CORE_BIN_JSON; break;
 		case 'A': set_action (R_BIN_REQ_LISTARCHS); break;
