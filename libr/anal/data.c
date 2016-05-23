@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake */
+/* radare - LGPL - Copyright 2012-2016 - pancake */
 
 #include <r_anal.h>
 
@@ -95,7 +95,7 @@ R_API char *r_anal_data_to_string(RAnalData *d) {
 
 	line = malloc (mallocsz);
 	if (!line) {
-		eprintf ("Cannot allocate %"PFMT64d" bytes\n", mallocsz);
+		eprintf ("Cannot allocate %d bytes\n", mallocsz);
 		return NULL;
 	}
 	snprintf (line, mallocsz, "0x%08" PFMT64x "  ", d->addr);
