@@ -301,7 +301,7 @@ function printFinalReportTable(obj) {
 function getLogMessages(x) {
   let msg = '';
   for (let m of x) {
-    msg += m.msg;
+    msg += m.msg + '\n';
   }
   return msg;
 }
@@ -319,6 +319,7 @@ function main() {
   console.log('Date: ' + new Date().toString());
   console.log('Website: http://radare.org');
   console.log('Tarball: https://github.com/radare/radare2/releases');
+  console.log();
   
   for (let onePath of paths) {
     count ++;
@@ -342,6 +343,8 @@ function main() {
           }
           for (let oneDoner of doner) {
             if (oneDoner.path == '') {
+              console.log('radare2 '+curVersion+' comes with '+oneDoner.diff.diff+'new lines of new features,'+
+                ' bug fixes and enhancements. Here some of the most important highlights:');
               console.log();
               console.log('Numbers:');
               console.log('--------');
