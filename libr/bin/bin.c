@@ -11,8 +11,6 @@
 #include <list.h>
 #include "../config.h"
 
-#define DO_THE_PTR 1
-
 R_LIB_VERSION (r_bin);
 
 #define DB a->sdb;
@@ -629,15 +627,9 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	if (!buf_bytes)
 		return false;
 
-	if (!r_bin_file_set_bytes (bf, buf_bytes, sz))
-#if DO_THE_PTR
-	{
-		free (buf_bytes);
-	}
-#else
-	{ }
+	r_bin_file_set_bytes (bf, buf_bytes, sz);
 	free (buf_bytes);
-#endif
+
 	if (r_list_length (the_obj_list) == 1) {
 		RBinObject *old_o = (RBinObject *)r_list_get_n (the_obj_list, 0);
 		res = r_bin_load_io_at_offset_as (bin, desc, baseaddr,
@@ -753,11 +745,9 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		binfile = r_bin_file_new_from_bytes (bin, desc->name, buf_bytes, sz,
 			file_sz, bin->rawstr, baseaddr, loadaddr, desc->fd, name, NULL, offset);
 	}
-#if 0
-	else {
-		free (buf_bytes); // possible UAF
-	}
-#endif
+
+	free (buf_bytes);
+
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 
@@ -1036,14 +1026,9 @@ static RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 
 
 static int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz) {
 	if (!bytes) return false;
-#if DO_THE_PTR
-	r_buf_free (binfile->buf);
-	binfile->buf = r_buf_new_with_pointers (bytes, sz);
-#else
 	r_buf_free (binfile->buf);
 	binfile->buf = r_buf_new ();
 	r_buf_set_bytes (binfile->buf, bytes, sz);
-#endif
 	return binfile->buf != NULL;
 }
 
