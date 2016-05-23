@@ -1754,7 +1754,7 @@ static int cmd_search(void *data, const char *input) {
 
 	core->in_search = true;
 	r_flag_space_push (core->flags, "searches");
-	param.from = param.to = 0;
+	param.from = param.to = UT64_MAX;
 	param.inverse = false;
 	param.crypto_search = false;
 	param.bckwrds = false;
@@ -1806,9 +1806,9 @@ static int cmd_search(void *data, const char *input) {
 	searchprefix = r_config_get (core->config, "search.prefix");
 	core->search->overlap = r_config_get_i (core->config, "search.overlap");
 	// TODO: get ranges from current IO section
-	/* XXX: Think how to get the section ranges here */
-	if (param.from == 0LL) param.from = core->offset;
-	if (param.to == 0LL) param.to = UT32_MAX; // XXX?
+	// XXX: Think how to get the section ranges here
+
+	if (param.from == UT64_MAX) param.from = core->offset;
 
 	/* we don't really care what's bigger bc there's a flag for backward search
 	   from now on 'from' and 'to' represent only the search boundaries, not
