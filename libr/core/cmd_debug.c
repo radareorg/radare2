@@ -2648,7 +2648,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	return 1;
 }
 
-static char *set_corefile_name (const char *raw_name, pid_t pid) {
+static char *get_corefile_name (const char *raw_name, pid_t pid) {
 	return (!*raw_name)?
 		r_str_newf ("core.%u", pid) :
 		r_str_chop (strdup (raw_name));
@@ -3203,14 +3203,17 @@ static int cmd_debug(void *data, const char *input) {
 				eprintf ("Not debugging, can't write core.\n");
 				break;
 			}
-			char *corefile = set_corefile_name (input + 1, core->dbg->pid);
-			eprintf ("Writing to file %s\n", corefile);
-			r_sandbox_creat (corefile, 0644);
-			RBuffer *file = r_buf_new_file (corefile);
-			if (!file) perror ("r_buf_new_file");
+			char *corefile = get_corefile_name (input + 1, core->dbg->pid);
+			eprintf ("Writing to file '%s'\n", corefile);
+			r_file_rm (corefile);
+			RBuffer *dst = r_buf_new ();
+			if (!dst) perror ("r_buf_new_file");
+			if (!core->dbg->h->gcore (core->dbg, dst)) {
+				eprintf ("dg: coredump failed\n");
+			}
+			r_file_dump (corefile, dst->buf, dst->length, 1);
+			r_buf_free (dst);
 			free (corefile);
-			core->dbg->h->gcore (core->dbg, file);
-			r_buf_free (file);
 		}
 		break;
 	default: {

@@ -48,6 +48,7 @@ static void printpage (const char *line, int *index, RList **mla,
 		return;
 	}
 	p = r_strpool_new (0);
+	if (!p) return;
 	for (i = from; i < to; i++) {
 		color_line (line + index[i], p, mla[i]);
 		r_strpool_ansi_chop (p, w);
@@ -121,6 +122,7 @@ static int all_matches(const char *s, RRegex *rx, RList **mla,
 		m.rm_so = 0;
 		const char *loff = s + lines[l]; /* current line offset */
 		char *clean = strdup(loff);
+		if (!clean) return 0;
 		int *cpos;
 		r_str_ansi_filter(clean, NULL, &cpos, 0);
 		m.rm_eo = slen = strlen(clean);
@@ -159,11 +161,13 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 
 	if (str == NULL || str[0] == '\0') return 0;
 	char *p = strdup (str);
+	if (!p) return 0;
 	int *lines = splitlines (p, &lines_count);
 	if (lines_count<1) {
 		mla = NULL;
 	} else {
 		mla = calloc (lines_count, sizeof (RList *));
+		if (!mla) return 0;
 	}
 	for (i = 0; i < lines_count; i++)
 		mla[i] = r_list_new ();

@@ -53,15 +53,23 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	flen = strlen (format);
 	glen = strlen (buf_global);
 	tmp = malloc (flen + glen + 2);
-	if (tmp) {
-		if (strchr (buf_global, '%')) {
-			char *buf_local = strdup (buf_global);
-			escaped = r_str_replace (buf_local, "%", "%%", true);
-		} else {
-			escaped = strdup (buf_global);
+	if (!tmp) return 0;
+
+	if (strchr (buf_global, '%')) {
+		char *buf_local = strdup (buf_global);
+		if (!buf_local) {
+			free (tmp);
+			return 0;
 		}
-		glen = strlen (escaped);
+		escaped = r_str_replace (buf_local, "%", "%%", true);
+	} else {
+		escaped = strdup (buf_global);
+		if (!escaped) {
+			free (tmp);
+			return 0;
+		}
 	}
+	glen = strlen (escaped);
 
 	if (escaped) {
 		memcpy (tmp, escaped, glen);

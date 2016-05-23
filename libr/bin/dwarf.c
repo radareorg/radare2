@@ -1426,7 +1426,7 @@ RBinSection *getsection(RBin *a, const char *sn) {
 		r_list_foreach (o->sections, iter, section) {
 			if (strstr (section->name, sn)) {
 				return section;
-}
+			}
 		}
 	}
 	return NULL;
@@ -1502,11 +1502,9 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 			return NULL;
 		}
 		buf = calloc (1, len+1);
+		if (!buf) return NULL;
 		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
-		if (!ret) {
-			free (buf);
-			return NULL;
-		}
+		
 		list = r_list_new (); // always return empty list wtf
 		list->free = r_bin_dwarf_row_free;
 		r_bin_dwarf_parse_line_raw2 (a, buf, len, mode);

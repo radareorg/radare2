@@ -1,7 +1,9 @@
 /* radare - LGPL - Copyright 2007-2015 - pancake */
 
+#if __WINDOWS__ && MINGW32 && !__CYGWIN__
 #include <stdlib.h>
-#include <r_types.h>
+#endif
+
 #include <r_util.h>
 #define R_NUM_USE_CALC 1
 
@@ -277,19 +279,15 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 #endif
 }
 
-R_API int r_num_is_float (struct r_num_t *num, const char *str) {
+R_API int r_num_is_float(RNum *num, const char *str) {
 	// TODO: also support 'f' terminated strings
 	return (strchr (str, '.') != NULL)? R_TRUE:R_FALSE;
 }
 
-R_API double r_num_get_float (RNum *num, const char *str) {
-	typedef union {
-		ut64 n;
-		double d;
-	} dualtype;
-	dualtype dual;
-	dual.n = (ut64)r_num_get (NULL, str);
-	return (double)dual.d;
+R_API double r_num_get_float(RNum *num, const char *str) {
+	double d = 0.0f;
+	(void) sscanf (str, "%lf", &d);
+	return d;
 }
 
 R_API int r_num_to_bits (char *out, ut64 num) {

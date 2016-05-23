@@ -8,11 +8,6 @@
 
 static map_file_t mapping_file = { 0, 0 };
 
-static inline char *prpsinfo_get_fname(char *buffer) {
-	/* buffer contains: str\0str1\0str2\0... Here we're only interested in the first part of string, and strdup copies till it reaches a \0 */
-	return strdup (buffer);
-}
-
 /* XXX looks like a dupe of isValidSection */
 static bool is_a_kernel_mapping(char *map_name) {
 	if (!strcmp (map_name, "[vsyscall]") ||
@@ -96,16 +91,15 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_stat_content_t *proc_dat
 
 	p->pr_pid = mypid = dbg->pid;
 	/* Start filling pr_fname and pr_psargs */
-	file = r_str_newf ("/proc/%d/cmdline", mypid);
+	file = sdb_fmt (0, "/proc/%d/cmdline", mypid);
 	buffer = r_file_slurp (file, &len);
 	if (!buffer) {
 		eprintf ("buffer NULL\n");
 		goto error;
 	}
-	R_FREE (file);
-	pfname = prpsinfo_get_fname (buffer);
+	buffer[len] = 0;
+	pfname = strdup (buffer);
 	if (!pfname) {
-		eprintf ("prpsinfo_get_fname: couldn't allocate memory\n");
 		goto error;
 	}
 	basename = get_basename (pfname, strlen (pfname));
@@ -136,7 +130,6 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_stat_content_t *proc_dat
 	return p;
 error:
 	free (p);
-	free (file);
 	free (buffer);
 	free (pfname);
 	free (ppsargs);
@@ -277,10 +270,13 @@ static bool has_map_deleted_part(char *name) {
 }
 
 static bool getAnonymousValue(char *keyw) {
-	for (keyw = strchr (keyw, ' '); isspace (*keyw); keyw ++) {
-		/* nothing here */
+	if (!keyw) return false;
+	keyw = strchr (keyw, ' ');
+	if (!keyw) return false;
+	while (*keyw && isspace (*keyw)) {
+		keyw ++;
 	}
-	return *keyw != '0';
+	return *keyw && *keyw != '0';
 }
 
 static char *isAnonymousKeyword(const char *pp) {
@@ -291,18 +287,17 @@ static char *isAnonymousKeyword(const char *pp) {
 }
 
 static bool has_map_anonymous_content(char *buff_smaps, ut64 start_addr, ut64 end_addr) {
-	char *p, *pp, *extern_tok, *keyw;
-	bool is_anonymous;
-
-	char *identity = r_str_newf ("%08"PFMT64x"-%08"PFMT64x"", start_addr, end_addr);
+	char *p, *pp, *extern_tok, *keyw = NULL;
+	char *identity = r_str_newf ("%08"PFMT64x"-%08"PFMT64x, start_addr, end_addr);
 	char *str = strdup (buff_smaps);
+	bool is_anonymous;
 
 	p = strtok_r (str, "\n", &extern_tok);
 	for (; p; p = strtok_r (NULL, "\n", &extern_tok)) {
 		if (strstr (p, identity)) {
 			pp = strtok_r (NULL, "\n", &extern_tok);
 			for (; pp ; pp = strtok_r (NULL, "\n", &extern_tok)) {
-				if ((keyw = isAnonymousKeyword (keyw))) {
+				if ((keyw = isAnonymousKeyword (pp))) {
 					is_anonymous = getAnonymousValue (keyw);
 					free (str);
 					return is_anonymous;
@@ -310,13 +305,16 @@ static bool has_map_anonymous_content(char *buff_smaps, ut64 start_addr, ut64 en
 			}
 		}
 	}
+	free (identity);
 	free (str);
 	return 0;
 }
 
 static bool dump_this_map(char *buff_smaps, ut64 start_addr, ut64 end_addr, bool file_backed, bool anonymous, ut8 perms, ut8 filter_flags) {
-	char *identity, *aux, *p, *pp, *ppp, *extern_tok, *flags_str;
+	char *p, *pp, *ppp, *extern_tok, *flags_str;
+	char *identity = NULL;
 	bool found = false;
+	char *aux = NULL;
 	ut8 vmflags;
 
 	/* if the map doesn't have r/w quit right here */
@@ -325,12 +323,21 @@ static bool dump_this_map(char *buff_smaps, ut64 start_addr, ut64 end_addr, bool
 				start_addr, end_addr);
 		return false;
 	}
+#if 0
 	eprintf ("[dump_this_map] %"PFMT64x"-%"PFMT64x": file: %d - anonymous - %d - flags: 0%x\n",
 			start_addr, end_addr, file_backed, anonymous, filter_flags);
+#endif
 	identity = r_str_newf ("%08"PFMT64x"-%08"PFMT64x"", start_addr, end_addr);
+	if (!identity) {
+		return false;
+	}
 	vmflags = 0;
 	flags_str = NULL;
 	aux = strdup (buff_smaps);
+	if (!aux) {
+		free (identity);
+		return false;
+	}
 
 	pp = strtok_r (aux, "\n", &extern_tok);
 	for (; pp ; pp = strtok_r (NULL, "\n", &extern_tok)) {
@@ -346,11 +353,17 @@ static bool dump_this_map(char *buff_smaps, ut64 start_addr, ut64 end_addr, bool
 	}
 
 	if (!flags_str && !found) {
+		/* if we don't have VmFlags, just dump it. I'll fix it later on */
 		eprintf ("VmFlags: not found\n");
-		return true;	/* if we don't have VmFlags, just dump it. I'll fix it later on */
+		free (identity);
+		free (aux);
+		return true;
 	}
 
 	flags_str = strchr (flags_str, ' ');
+	if (!flags_str) {
+		goto fail;
+	}
 	while (*flags_str++ == ' ') {
 		/* nothing here */
 	}
@@ -358,21 +371,21 @@ static bool dump_this_map(char *buff_smaps, ut64 start_addr, ut64 end_addr, bool
 
 	p = strtok (flags_str, " ");
 	while (p) {
-		eprintf ("dump_this_map: %s\n", p);
+		//eprintf ("dump_this_map: %s\n", p);
 		if (!strncmp (p, "sh", 2)) {
-			eprintf ("vmflags |= SH_FLAG\n");
+		//	eprintf ("vmflags |= SH_FLAG\n");
 			vmflags |= SH_FLAG;
 		}
 		if (!strncmp (p, "io", 2)) {
-			eprintf ("vmflags |= IO_FLAG\n");
+		//	eprintf ("vmflags |= IO_FLAG\n");
 			vmflags |= IO_FLAG;
 		}
 		if (!strncmp (p, "ht", 2)) {
-			eprintf ("vmflags |= HT_FLAG\n");
+			// eprintf ("vmflags |= HT_FLAG\n");
 			vmflags |= HT_FLAG;
 		}
 		if (!strncmp (p, "dd", 2)) {
-			eprintf ("vmflags |= DD_FLAG\n");
+			//eprintf ("vmflags |= DD_FLAG\n");
 			vmflags |= DD_FLAG;
 		}
 		p = strtok (NULL, " ");
@@ -384,54 +397,61 @@ static bool dump_this_map(char *buff_smaps, ut64 start_addr, ut64 end_addr, bool
 	eprintf ("vmflags: %u\n", vmflags);
 	/* first check for dd and io flags */
 	if ((vmflags & DD_FLAG) || (vmflags & IO_FLAG)) {
-		return false;
+		goto fail;
 	}
 
 	if (vmflags & HT_FLAG) {
 		if ((filter_flags & MAP_HUG_PRIV) && anonymous) {
 			eprintf ("filter_flags & MAP_HUG_PRIV\n");
-			return true;
+			goto beach;
 		}
 		if (filter_flags & MAP_HUG_SHR) {
 			eprintf ("filter_flags & MAP_HUG_SHR\n");
-			return true;
+			goto beach;
 		}
 	}
 
 	if (vmflags & SH_FLAG) {
 		if (filter_flags & MAP_ANON_SHR) {
 			eprintf ("filter_flags & MAP_ANON_SHR\n");
-			return true;
+			goto beach;
 		}
 		if (filter_flags & MAP_HUG_SHR) {
 			eprintf ("filter_flags & MAP_HUG_SHR\n");
-			return true;
+			goto beach;
 		}
 	}
 
 	if (vmflags & PV_FLAG) {
 		if ((filter_flags & MAP_ANON_PRIV) && anonymous) {
 			eprintf ("filter_flags & MAP_ANON_PRIV\n");
-			return true;
+			goto beach;
 		}
 		if ((filter_flags & MAP_HUG_PRIV) && anonymous) {
 			eprintf ("filter_flags & MAP_HUG_PRIV\n");
-			return true;
+			goto beach;
 		}
 	}
 	if (file_backed) {
 		if (filter_flags & MAP_FILE_PRIV) {
 			eprintf ("filter_flags & MAP_FILE_PRIV\n");
-			return true;
+			goto beach;
 		}
 		if (filter_flags & MAP_FILE_SHR) {
 			eprintf ("filter_flags & MAP_FILE_PRIV\n");
-			return true;
+			goto beach;
 		}
 	}
 
 	eprintf ("dump_this_map: nothing found, returning false\n");
+fail:
+	free (identity);
+	free (aux);
 	return false;
+beach:
+	free (identity);
+	free (aux);
+	return true;
 }
 
 static void clean_maps(linux_map_entry_t *h) {
@@ -444,7 +464,7 @@ static void clean_maps(linux_map_entry_t *h) {
 }
 
 static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) {
-	char *buff, *buff_smaps, *file, *name, *p, *end_line, *end_token;
+	char *buff = NULL, *buff_smaps, *file, *name, *p, *end_line, *end_token;
 	linux_map_entry_t *me_head, *me_tail;
 	ut64 start_addr, end_addr, offset;
 	linux_map_entry_t *pmentry;
@@ -471,8 +491,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 		eprintf ("r_file_slurp buff == NULL\n");
 		goto error;
 	}
-
-	free (file);
+	R_FREE (file);
 
 	p = strtok_r (buff, "\n", &end_line);
 	while (p) {
@@ -487,7 +506,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 			case PERM:
 				get_map_perms (pp, &flag_perm);
 				break;
-			case OFFSET:
+			case OFFSET: /* XXX this is not used acording to coverity */
 				get_map_offset (pp, &offset);
 				break;
 			case DEV:
@@ -529,7 +548,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 			R_FREE (name);
 		}
 
-		eprintf ("\n\n[checking] %"PFMT64x"-%"PFMT64x"\n", pmentry->start_addr, pmentry->end_addr);
+		eprintf ("[checking] %"PFMT64x"-%"PFMT64x"\n", pmentry->start_addr, pmentry->end_addr);
 		/* Check if the map comes from the kernel (vsyscall, vvar, vdso) (they are always dumped, but not vvar) */
 		if (pmentry->name && is_a_kernel_mapping (pmentry->name)) {
 			pmentry->anonymous = pmentry->kernel_mapping = true;
@@ -584,7 +603,7 @@ error:
 }
 
 static auxv_buff_t *linux_get_auxv(RDebug *dbg) {
-	char *buff;
+	char *buff = NULL;
 	auxv_buff_t *auxv = NULL;
 	int auxv_entries;
 	int size;
@@ -601,6 +620,7 @@ static auxv_buff_t *linux_get_auxv(RDebug *dbg) {
 	if (auxv_entries > 0) {
 		auxv = R_NEW0 (auxv_buff_t);
 		if (!auxv) {
+			free (buff);
 			return NULL;
 		}
 		auxv->size = size;
@@ -639,6 +659,7 @@ static Elf64_Ehdr *build_elf_hdr(int n_segments) {
 	for (pad_byte = EI_PAD; pad_byte < EI_NIDENT; pad_byte++) {
 		h->e_ident[pad_byte] = '\0';
 	}
+	/* buffer overrun here */
 	h->e_ident[EI_NIDENT] = EI_NIDENT;
 	h->e_type = ET_CORE; /* CORE */
 	h->e_machine = EM_X86_64;
@@ -719,7 +740,7 @@ static void *get_nt_data(linux_map_entry_t *head, size_t *nt_file_size) {
 }
 
 static ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_section) {
-	const char *n_core = "CORE";
+	const char n_core[] = "CORE";
 	elf_fpregset_t *fp_regset;
 	linux_map_entry_t *maps;
 	prpsinfo_t *prpsinfo;
@@ -727,8 +748,7 @@ static ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_sec
 	siginfo_t *siginfo;
 	auxv_buff_t *auxv;
 	Elf64_Nhdr note_hdr;
-	ut8 *note_data;
-	ut8 *pnote_data;
+	ut8 *note_data, *onote_data = NULL;
 	char *maps_data;
 	size_t size_elf_fpregset;
 	size_t size_nt_file_pad;
@@ -788,8 +808,8 @@ static ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_sec
 		free (maps_data);
 		return NULL;
 	}
+	onote_data = note_data;
 
-	pnote_data = note_data;
 	/* prpsinfo */
 	prpsinfo = sec_note->prpsinfo;
 	note_hdr.n_namesz = sizeof (n_core);
@@ -859,20 +879,19 @@ static ut8 *build_note_section(linux_elf_note_t *sec_note, size_t *size_note_sec
 	note_data += i_size_core;
 	memcpy (note_data, maps_data, size_nt_file_pad);
 	note_data += size_nt_file_pad;
-	note_data = pnote_data;
-	return note_data;
+	free (maps_data);
+	return onote_data;
 }
 
 static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, st64 *offset) {
-	Elf64_Phdr phdr;
-	linux_map_entry_t *me_p;
 	size_t note_section_size;
-	ut8 *note_data;
-	bool ret;
+	linux_map_entry_t *me_p;
 	st64 offset_to_next;
+	Elf64_Phdr phdr;
+	bool ret;
 
 	eprintf ("offset_to_note: %"PFMT64d"\n", *offset);
-	note_data = build_note_section (sec_note, &note_section_size);
+	ut8 *note_data = build_note_section (sec_note, &note_section_size);
 	if (!note_data)	return false;
 	eprintf ("note_section_size : %ld\n", note_section_size);
 
@@ -918,7 +937,6 @@ static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, st64 *o
 	}
 
 	*offset = offset_to_next;
-	eprintf ("pheaders writen\n");
 
 	ret = r_buf_append_bytes (dest, (const ut8*)note_data, note_section_size);
 	if (!ret) {
@@ -926,7 +944,7 @@ static bool dump_elf_pheaders(RBuffer *dest, linux_elf_note_t *sec_note, st64 *o
 		free (note_data);
 		return false;
 	}
-	eprintf ("note writen\n");
+	free (note_data);
 	return true;
 }
 
@@ -952,7 +970,7 @@ static bool dump_elf_map_content(RBuffer *dest, linux_map_entry_t *head, pid_t p
 	size_t rbytes;
 
 	for (p = head; p; p = p->n) {
-		eprintf ("\nTrying to dump: %s - %"PFMT64x"\n", p->name, p->start_addr);
+		//eprintf ("Trying to dump: %s - %"PFMT64x"\n", p->name, p->start_addr);
 		if (p->dumpeable) {
 			size = p->end_addr - p->start_addr;
 			map_content = malloc (size);
@@ -1001,18 +1019,15 @@ static void print_p(proc_stat_content_t *p) {
 }
 
 static proc_stat_content_t *get_proc_content(RDebug *dbg) {
-	const char *s_sigpend = "SigPnd";
-	const char *s_sighold = "SigBlk";
 	char *temp_p_uid, *temp_p_gid, *p_uid, *p_gid;
 	char *temp_p_sigpend, *temp_p_sighold;
 	char *p_sigpend, *p_sighold;
 	proc_stat_content_t *p;
 	ut16 filter_flags;
-	char *file, *buff;
+	char *buff;
 	int size;
 
-	file = r_str_newf ("/proc/%d/stat", dbg->pid);
-	eprintf ("file: %s\n", file);
+	const char *file = sdb_fmt (0, "/proc/%d/stat", dbg->pid);
 
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
@@ -1020,7 +1035,6 @@ static proc_stat_content_t *get_proc_content(RDebug *dbg) {
 		return NULL;
 	}
 
-	free (file);
 	p = R_NEW0 (proc_stat_content_t);
 	if (!p) {
 		eprintf ("get_proc_content: proc_stat_content_t\n");
@@ -1053,8 +1067,13 @@ static proc_stat_content_t *get_proc_content(RDebug *dbg) {
 		return NULL;
 	}
 
-	temp_p_sigpend = strstr (buff, s_sigpend);
-	temp_p_sighold = strstr (buff, s_sighold);
+	temp_p_sigpend = strstr (buff, "SigPnd");
+	temp_p_sighold = strstr (buff, "SigBlk");
+	if (!temp_p_sigpend || !temp_p_sighold) {
+		free (buff);
+		free (p);
+		return NULL;
+	}
 
 	/* sigpend */
 	while (!isdigit (*temp_p_sigpend++)) {
@@ -1092,7 +1111,7 @@ static proc_stat_content_t *get_proc_content(RDebug *dbg) {
 	free (buff);
 
 	/* Check the coredump_filter value */
-	file = r_str_newf ("/proc/%d/coredump_filter", dbg->pid);
+	file = sdb_fmt (0, "/proc/%d/coredump_filter", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
 		eprintf ("get_proc_stat: r_file_slurp error\n");
@@ -1104,6 +1123,7 @@ static proc_stat_content_t *get_proc_content(RDebug *dbg) {
 	if (p->num_threads > 1) {
 		eprintf ("Warning! No thread coredump support yet.\n");
 	}
+	free (buff);
 	return p;
 }
 
@@ -1193,7 +1213,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 		goto cleanup;
 	}
 	n_segments = get_n_mappings (sec_note->maps);
-	show_maps (sec_note->maps);
+	// show_maps (sec_note->maps);
 	elf_hdr = build_elf_hdr (n_segments);
 	if (!elf_hdr) {
 		error = true;
@@ -1216,5 +1236,6 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	}
 cleanup:
 	may_clean_all (sec_note, proc_data, elf_hdr);
+	free (shdr_pxnum);
 	return !error;
 }

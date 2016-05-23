@@ -81,15 +81,15 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		break;
 	case 32:
 		if (reg->big_endian)
-			r_write_be32(src, (ut32)(value & UT32_MAX));
+			r_write_be32(src, value);
 		else
-			r_write_le32(src, (ut32)(value & UT32_MAX));
+			r_write_le32(src, value);
 		break;
 	case 16:
 		if (reg->big_endian)
-			r_write_be16(src, (ut16)(value & UT16_MAX));
+			r_write_be16(src, value);
 		else
-			r_write_le16(src, (ut16)(value & UT16_MAX));
+			r_write_le16(src, value);
 		break;
 	case 8:
 		r_write_ble8(src, (ut8)(value & UT8_MAX));

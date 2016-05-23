@@ -366,6 +366,7 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 	if (w < 0) return;
 
 	row = malloc (w + 1);
+	if (!row) return;
 	memset (row, ch, w);
 	row[w] = 0;
 

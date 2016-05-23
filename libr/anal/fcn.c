@@ -1247,9 +1247,13 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	}
 
 	/* Add 'function' keyword */
-	str = malloc(strlen(sig) + 10);
-	strcpy(str, "function ");
-	strcat(str, sig);
+	str = malloc (strlen(sig) + 10);
+	if (!str) {
+		eprintf ("Cannot allocate %d bytes\n", strlen(sig) + 10);
+		return false;
+	}
+	strcpy (str, "function ");
+	strcat (str, sig);
 
 	/* TODO: improve arguments parsing */
 	/* TODO: implement parser */

@@ -207,24 +207,23 @@ R_API int r_search_bmh (const RSearchKeyword *kw, const ut64 from, const ut8 *bu
 }
 #endif
 
-static int maskHits(const ut8* buf, int len, RSearchKeyword *kw) {
-	int i, k;
+static int maskcmp(RSearchKeyword *kw, const ut8* buf, int kwidx) {
+	int k;
 	ut8 a, b;
-	if (len<kw->binmask_length)
-		return 0;
-	for (i=0; i<kw->binmask_length; i++) {
-		k = (i % kw->binmask_length);
-		a = buf[i];
-		b = kw->bin_keyword[i];
-		if (kw->icase) {
-			a = tolower (a);
-			b = tolower (b);
-		}
-		a &= kw->bin_binmask[k];
-		b &= kw->bin_binmask[k];
-		if (a != b)
-			return 0;
+
+	kwidx = kw->idx[kwidx];
+	k = (kwidx % kw->binmask_length);
+	a = *buf;
+	b = kw->bin_keyword[kwidx];
+	if (kw->icase) {
+		a = tolower (a);
+		b = tolower (b);
 	}
+	a &= kw->bin_binmask[k];
+	b &= kw->bin_binmask[k];
+	if (a != b)
+		return 0;
+
 	return 1;
 }
 
@@ -240,7 +239,7 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 	RSearchKeyword *kw;
 	r_list_foreach (s->kws, iter, kw) {
 		offset = 0;
-		while (offset < len && r_search_bmh(kw, offset, buf, len, &match_pos)) {
+		while (offset < len && r_search_bmh (kw, offset, buf, len, &match_pos)) {
 			if (!r_search_hit_new (s, kw, from + match_pos)) {
 				eprintf ("Something very bad has happened...\n");
 				return -1;
@@ -273,79 +272,72 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 		}
 	}
 #endif
-	for (i=0; i<len; i++) {
+	for (i = 0; i < len; i++) {
 		r_list_foreach (s->kws, iter, kw) {
-			if (s->inverse && s->nhits>0) {
+			if (s->inverse && s->nhits > 0) {
 				//eprintf ("nhits = %d\n", s->nhits);
 				return -1;
 			}
-			for (j=0; j <= kw->distance; j++) {
-				/* TODO: refactor: hit = checkKeyword() */
+			for (j = 0; j <= kw->distance; j++) {
+				// TODO: refactor: hit = checkKeyword()
 				// TODO: assert len(kw) == len(bm)
-				if (kw->binmask_length != 0) {
-					// CHECK THE WHOLE MASKED HEXPAIR HERE
-					if (kw->binmask_length < (len-i)) {
-						if (maskHits (buf+i, len-i, kw)) {
-							i += kw->keyword_length - 1;
-							kw->idx[j] = kw->keyword_length - 1;
-							kw->distance = 0;
-							hit = true;
-						} else {
-							hit = false;
-						}
-					} else {
-						hit = false;
-					}
+				ut8 ch, ch2;
+				bool match = false;
+				hit = false;
+
+				if (kw->binmask_length > 0) {
+					match = (maskcmp (kw, buf + i, j) > 0);
 				} else {
-					ut8 ch = kw->bin_keyword[kw->idx[j]];
-					ut8 ch2 = buf[i];
+					ch = kw->bin_keyword[kw->idx[j]];
+					ch2 = buf[i];
 					if (kw->icase) {
 						ch = tolower (ch);
 						ch2 = tolower (ch2);
 					}
-					if (ch != ch2) {
-						if (s->inverse) {
-							if (!r_search_hit_new (s, kw, (ut64)
-									from + i - kw->keyword_length + 1))
-								return -1;
-							kw->idx[j] = 0;
-							//kw->idx[0] = 0;
-							kw->distance = 0;
-							//eprintf ("HIT FOUND !!! %x %x 0x%llx %d\n", ch, ch2, from+i, i);
-							kw->count++;
-							s->nhits++;
-							return 1; // only return 1 keyword if inverse mode
-						}
-						if (kw->distance < s->distance) {
-							kw->idx[kw->distance+1] = kw->idx[kw->distance];
-							kw->distance++;
-							hit = true;
-						} else {
-							// Works for 0a0a0a0b
-							bool isTail = false;
-							int k = kw->idx[j];
-							if (k>0) {
-								int q = 1;
-								int model = kw->bin_keyword[0];
-								for (isTail=true; q<k; q++) {
-									if (kw->bin_keyword[q] != model)
-										isTail = false;
-								}
-							}
-							if (isTail) {
-								kw->idx[j]--;
-							} else {
-								kw->idx[j] = 0;
-							}
-							kw->distance = 0;
-							hit = false;
-							ch = kw->bin_keyword[kw->idx[j]];
-							if (ch == ch2) {
-								hit = true;
-							}
-						}
-					} else {
+					match = (ch == ch2);
+				}
+				if (match) {
+					hit = true;
+				} else {
+					if (s->inverse) {
+						if (!r_search_hit_new (s, kw, (ut64)from + i - kw->keyword_length + 1))
+							return -1;
+						kw->idx[j] = 0;
+						//kw->idx[0] = 0;
+						kw->distance = 0;
+						//eprintf ("HIT FOUND !!! %x %x 0x%llx %d\n", ch, ch2, from+i, i);
+						kw->count++;
+						s->nhits++;
+						return 1; // only return 1 keyword if inverse mode
+					}
+					if (kw->distance < s->distance) {
+						kw->idx[kw->distance + 1] = kw->idx[kw->distance];
+						kw->distance++;
 						hit = true;
+					} else {
+						// Works for 0a0a0a0b
+						bool isTail = false;
+						int k = kw->idx[j];
+						if (k > 0) {
+							int q = 1;
+							int model = kw->bin_keyword[0];
+							for (isTail = true; q < k; q++) {
+								if (kw->bin_keyword[q] != model)
+									isTail = false;
+							}
+						}
+						if (isTail) {
+							kw->idx[j]--;
+						} else {
+							kw->idx[j] = 0;
+						}
+						kw->distance = 0;
+						if (kw->binmask_length > 0) {
+							hit = (maskcmp (kw, buf + i, j) > 0);
+						} else {
+							ch = kw->bin_keyword[kw->idx[j]];
+							hit = (ch == ch2);
+						}
 					}
 				}
 				if (hit) {
@@ -355,8 +347,7 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 							kw->idx[j] = 0;
 							continue;
 						}
-						if (!r_search_hit_new (s, kw, (ut64)
-								from + i - kw->keyword_length + 1)) {
+						if (!r_search_hit_new (s, kw, (ut64)from + i - kw->keyword_length + 1)) {
 							return -1;
 						}
 						kw->idx[j] = 0;

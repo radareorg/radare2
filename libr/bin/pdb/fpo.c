@@ -101,26 +101,31 @@ void parse_fpo_new_stream(void *stream, R_STREAM_FILE *stream_file)
 	SFPO_DATA_V2 *fpo_data = 0;
 	SFPONewStream *fpo_stream = 0;
 
-	stream_file_get_size(stream_file, &data_size);
-	data = (char *) malloc(data_size);
-	stream_file_get_data(stream_file, data);
+	stream_file_get_size (stream_file, &data_size);
+	data = (char *) malloc (data_size);
+	if (!data) return;
+	stream_file_get_data (stream_file, data);
 
 	fpo_stream = (SFPONewStream *) stream;
-	fpo_stream->fpo_data_list = r_list_new();
+	fpo_stream->fpo_data_list = r_list_new ();
 	curr_read_bytes = 0;
 	ptmp = data;
 	while (read_bytes < data_size) {
-		fpo_data = (SFPO_DATA_V2 *) malloc(sizeof(SFPO_DATA_V2));
-		curr_read_bytes = parse_fpo_data_v2(ptmp, data_size, &read_bytes, fpo_data);
+		fpo_data = (SFPO_DATA_V2 *) malloc (sizeof(SFPO_DATA_V2));
+		if (!fpo_data) {
+			free (data);
+			return;
+		}
+		curr_read_bytes = parse_fpo_data_v2 (ptmp, data_size, &read_bytes, fpo_data);
 		ptmp += curr_read_bytes;
 
 		if (!curr_read_bytes) {
-			free(fpo_data);
+			free (fpo_data);
 			break;
 		}
 
-		r_list_append(fpo_stream->fpo_data_list, fpo_data);
+		r_list_append (fpo_stream->fpo_data_list, fpo_data);
 	}
 
-	free(data);
+	free (data);
 }

@@ -81,12 +81,12 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 	csh handle = gop->handle;
 	cs_insn *insn = gop->insn;
 	char buf[64];
-	char *setarg = setop? setop : "";
+	char *setarg = setop ? setop : "";
 	cs_x86_op op;
 	if (!insn->detail)
 		return NULL;
 	buf[0] = 0;
-	if (n<0 || n>=INSOPS)
+	if (n < 0 || n >= INSOPS)
 		return NULL;
 	op = INSOP (n);
 	switch (op.type) {
@@ -1055,10 +1055,15 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// The OF and CF flags are cleared; the SF, ZF, and PF flags are
 		// set according to the result. The state of the AF flag is
 		// undefined.
+		// NOTE: Flag clearing should always be the last operation to be done
+		// as this resets esil->cur and esil->old and resulting in the wrong
+		// computation of the rest of the flags.
+		// XXX: Fix the above issue in esil.c to ensure we never make this
+		// mistake.
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
 			char *dst = getarg (&gop, 0, 0, NULL);
-			esilprintf (op, "%s,%s,|=,0,of,=,0,cf,=,$s,sf,=,$z,zf,=,$p,pf,=", src, dst);
+			esilprintf (op, "%s,%s,|=,$s,sf,=,$z,zf,=,$p,pf,=,0,of,=,0,cf,=", src, dst);
 			free (src);
 			free (dst);
 		}
@@ -1342,55 +1347,27 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// result.
 		{
 		char *src = getarg (&gop, 1, 0, NULL);
-		char *dst_r = getarg (&gop, 0, 0, NULL);
-		char *dst_w = getarg (&gop, 0,1, "+");
-		switch(INSOP(0).size) {
-			case 1:
-				esilprintf (op, "0,zf,=,0,cf,=,0xff,%s,%s,+,>,?{,1,cf,=,},%s,%s,$o,of,=,$s,sf,=,0xff,%s,&,!,?{,1,zf,=,},$p,pf,=", src, dst_r, src, dst_w, dst_r);
-				break;
-			case 2:
-				esilprintf (op, "0,zf,=,0,cf,=,0xffff,%s,%s,+,>,?{,1,cf,=,},%s,%s,$o,of,=,$s,sf,=,0xffff,%s,&,!,?{,1,zf,=,},p,pf,=", src, dst_r, src, dst_w, dst_r);
-				break;
-			case 4:
-				esilprintf (op, "0,zf,=,0,cf,=,0xffffffff,%s,%s,+,>,?{,1,cf,=,},%s,%s,$o,of,=,$s,sf,=,0xffffffff,%s,&,!,?{,1,zf,=,},$p,pf,=", src, dst_r, src, dst_w, dst_r);
-				break;
-			case 8:
-				esilprintf (op, "0,zf,=,0,cf,=,0xffffffffffffffff,%s,%s,+,>,?{,1,cf,=,},%s,%s,$o,of,=,$s,sf,=,0xffffffffffffffff,%s,&,!,?{,1,zf,=,},$p,pf,=", src, dst_r, src, dst_w, dst_r);
-				break;
-		}
-		free(src);
-		free(dst_r);
-		free(dst_w);
+		char *dst = getarg (&gop, 0, 1, "+");
+		int carry_out_bit = (INSOP(0).size * 8) - 1;
+		esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,=,$c%d,cf,=,$p,pf,=", src, dst, carry_out_bit);
+		free (src);
+		free (dst);
 		}
 		break;
 	case X86_INS_ADC:
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst_r = getarg (&gop, 0, 0, NULL);
-			char *dst_w = getarg (&gop, 0, 1, NULL);
+			char *dst = getarg (&gop, 0, 1, "+");
+			int carry_out_bit = (INSOP(0).size * 8) - 1;
 			// dst = dst + src + cf
 			// NOTE: We would like to add the carry first before adding the
 			// source to ensure that the flag computation from $c belongs
 			// to the operation of adding dst += src rather than the one
 			// that adds carry (as esil only keeps track of the last
 			// addition to set the flags).
-			switch(INSOP(0).size) {
-				case 1:
-					esilprintf (op, "0,zf,=,cf,%s,+,%s,+,0,cf,=,DUP,0xff,<,?{,1,cf,=,},%s,=,0xff,%s,&,!,?{,1,zf,=,}", src, dst_r, dst_w, dst_r);
-					break;
-				case 2:
-			    esilprintf (op, "0,zf,=,cf,%s,+,%s,+,0,cf,=,DUP,0xffff,<,?{,1,cf,=,},%s,=,0xffff,%s,&,!,?{,1,zf,=,}", src, dst_r, dst_w, dst_r);
-					break;
-				case 4:
-					esilprintf (op, "0,zf,=,cf,%s,+,%s,+,0,cf,=,DUP,0xffffffff,<,?{,1,cf,=,},%s,=,0xffffffff,%s,&,!,?{,1,zf,=,}", src, dst_r, dst_w, dst_r);
-					break;
-				case 8:
-					esilprintf (op, "0,zf,=,cf,%s,+,%s,+,0,cf,=,DUP,0xffffffffffffffff,<,?{,1,cf,=,},%s,=,0xffffffffffffffff,%s,&,!,?{,1,zf,=,}", src, dst_r, dst_w, dst_r);
-					break;
-			}
-			free(src);
-			free(dst_r);
-			free(dst_w);
+			esilprintf (op, "cf,%s,+,%s,$o,of,=,$s,sf,=,$z,zf,=,$c%d,cf,=,$p,pf,=", src, dst, carry_out_bit);
+			free (src);
+			free (dst);
 		}
 		break;
 		/* Direction flag */
@@ -1406,11 +1383,11 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	}
 
 	if (op->prefix & R_ANAL_OP_PREFIX_REP) {
-		r_strbuf_appendf(&op->esil, ",%s,--=,%s,?{,5,GOTO,}", counter, counter);
+		r_strbuf_appendf (&op->esil, ",%s,--=,%s,?{,5,GOTO,}", counter, counter);
 	}
 }
 
-static void anop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	struct Getarg gop = {
 		.handle = *handle,
 		.insn = insn,
