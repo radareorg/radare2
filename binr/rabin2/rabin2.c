@@ -60,6 +60,7 @@ static int rabin_show_help(int v) {
 		" -P              show debug/pdb information\n"
 		" -PP             download pdb file for binary\n"
 		" -q              be quiet, just show fewer data\n"
+		" -qq             show less info (no offset/size for -z for ex.)\n"
 		" -Q              show load address used by dlopen (non-aslr libs)\n"
 		" -r              radare output\n"
 		" -R              relocations\n"
@@ -532,7 +533,10 @@ int main(int argc, char **argv) {
 			set_action (R_BIN_REQ_VERSIONINFO);
 			break;
 		case 'V': set_action (R_BIN_REQ_VERSIONINFO); break;
-		case 'q': rad = R_CORE_BIN_SIMPLE; break;
+		case 'q':
+			rad = (rad & R_CORE_BIN_SIMPLE ?
+				R_CORE_BIN_SIMPLEST : R_CORE_BIN_SIMPLE);
+			break;
 		case 'j': rad = R_CORE_BIN_JSON; break;
 		case 'A': set_action (R_BIN_REQ_LISTARCHS); break;
 		case 'a': arch = optarg; break;
