@@ -1541,6 +1541,57 @@ static void handle_adistrick_comments(RCore *core, RDisasmState *ds) {
 	}
 }
 
+
+static bool handle_print_data_type (RCore *core, const ut8 *buf, int ib, int size) {
+	const char *type = NULL;
+	char msg[64];
+	const int isSigned = (ib == 1 || ib == 8 || ib == 10)? 1: 0;
+	switch (size) {
+	case 1: type = isSigned? ".char": ".byte"; break;
+	case 2: type = isSigned? ".int16": ".word"; break;
+	case 4: type = isSigned? ".int32": ".dword"; break;
+	case 8: type = isSigned? ".int64": ".qword"; break;
+	default: return false;
+	}
+	ut64 n = r_read_ble (buf, core->print->big_endian, size * 8); 
+
+	switch (ib) {
+	case 1:
+		r_str_bits (msg, buf, size * 8, NULL);
+		r_cons_printf ("%s %sb", type, msg);
+		break;
+	case 8:
+		r_cons_printf ("%s %oo", type, n);
+		break;
+	case 10:
+		r_cons_printf ("%s %d", type, n);
+		break;
+	default:
+		switch (size) {
+		case 1:
+			r_cons_printf ("%s 0x%02x", type, n);
+			break;
+		case 2:
+			r_cons_printf ("%s 0x%04x", type, n);
+			break;
+		case 4:
+			r_cons_printf ("%s 0x%08x", type, n);
+			break;
+		case 8:
+			r_cons_printf ("%s 0x%016x", type, n);
+			break;
+		default:
+			return false;
+		}
+	}
+
+	if (size == 4 || size == 8) {
+		RFlagItem *fi = r_flag_get_i (core->flags, n);
+		if (fi) r_cons_printf (" ; %s", fi->name);
+	}
+	return true;
+}
+
 static int handle_print_meta_infos(RCore * core, RDisasmState *ds, ut8* buf, int len, int idx) {
 	int ret = 0;
 	const char *infos, *metas;
@@ -1619,45 +1670,12 @@ static int handle_print_meta_infos(RCore * core, RDisasmState *ds, ut8* buf, int
 				ds->oplen = mi->size;
 				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 
-				switch (mi->size) {
-				case 1:
-					r_cons_printf (".byte 0x%02x", buf[idx]);
-					break;
-				case 2:
-					{
-					ut16 data = r_read_ble16(buf+idx, core->print->big_endian);
-					r_cons_printf (".word 0x%04x", data);
-					}
-					break;
-				case 4:
-					{
-					ut32 data = r_read_ble32 (buf+idx, core->print->big_endian);
-					if (ds->hint && ds->hint->immbase == 10) {
-						r_cons_printf (".int32 %d", data);
-					} else {
-						r_cons_printf (".dword 0x%08x", data);
-					}
-					{
-						RFlagItem *fi = r_flag_get_i (core->flags, data);
-						if (fi) r_cons_printf (" ; %s", fi->name);
-					}
-					}
-					break;
-				case 8:
-					{
-					ut64 data = r_read_ble64(buf+idx, core->print->big_endian);
-					r_cons_printf (".qword 0x%016"PFMT64x, data);
-					{
-						RFlagItem *fi = r_flag_get_i (core->flags, data);
-						if (fi) r_cons_printf (" ; %s", fi->name);
-					}
-					}
-					break;
-				default:
+				if (!handle_print_data_type (core, buf + idx,
+					ds->hint? ds->hint->immbase: 0, mi->size)) {
 					r_cons_printf ("hex length=%lld delta=%d\n", mi->size , delta);
 					r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1);
-					break;
 				}
+
 				core->inc = 16;
 				core->print->flags |= R_PRINT_FLAGS_HEADER;
 				ds->asmop.size = ret = (int)mi->size; //-delta;
