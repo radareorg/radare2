@@ -2,7 +2,6 @@
 
 #include <r_debug.h>
 #include <sys/uio.h>
-#include <bits/uio.h>
 #include <sys/ptrace.h>
 #include "linux_coredump.h"
 
