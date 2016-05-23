@@ -132,30 +132,32 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file)
 	int size = 0, sz = 0;
 	int i = 0;
 
-	parse_dbi_header(&dbi_stream->dbi_header, stream_file);
-	pos += sizeof(SDBIHeader) - 2;	// 2 because enum in C equal to 4, but
+	parse_dbi_header (&dbi_stream->dbi_header, stream_file);
+	pos += sizeof (SDBIHeader) - 2;	// 2 because enum in C equal to 4, but
 									// to read just 2;
-	stream_file_seek(stream_file, pos, 0);
+	stream_file_seek (stream_file, pos, 0);
 
 	size = dbi_stream->dbi_header.module_size;
 	dbiexhdr_data = (char *) malloc(size);
-	stream_file_read(stream_file, size, dbiexhdr_data);
+	if (!dbiexhdr_data) return;
+	stream_file_read (stream_file, size, dbiexhdr_data);
 
 	dbi_stream->dbiexhdrs = r_list_new();
 	p_tmp = dbiexhdr_data;
 	while (i < size) {
-		dbi_ex_header = (SDBIExHeader *) malloc(sizeof(SDBIExHeader));
+		dbi_ex_header = (SDBIExHeader *) malloc (sizeof(SDBIExHeader));
+		if (!dbi_ex_header) break;
 		// TODO: rewrite for signature where can to do chech CAN_READ true?
-		sz = parse_dbi_ex_header(p_tmp, size, dbi_ex_header);
+		sz = parse_dbi_ex_header (p_tmp, size, dbi_ex_header);
 		if ((sz % _ALIGN)) {
 			sz = sz + (_ALIGN - (sz % _ALIGN));
 		}
 		i += sz;
 		p_tmp += sz;
-		r_list_append(dbi_stream->dbiexhdrs, dbi_ex_header);
+		r_list_append (dbi_stream->dbiexhdrs, dbi_ex_header);
 	}
 
-	free(dbiexhdr_data);
+	free (dbiexhdr_data);
 
 	// "Section Contribution"
 	stream_file_seek(stream_file, dbi_stream->dbi_header.seccon_size, 1);

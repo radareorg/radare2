@@ -280,7 +280,12 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	size_t i;
 
 	in = calloc (1, len + 1);
+	if (!in) return 0;
 	out = calloc (1, len + 2);
+	if (!out) {
+		free (in);
+		return 0;
+	}
 	memcpy (in, buf, len);
 
 	if (cons->grep.nstrings > 0) {

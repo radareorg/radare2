@@ -34,11 +34,16 @@ void parse_gdata_stream(void *stream, R_STREAM_FILE *stream_file) {
 		if (len == 0)
 			break;
 		data = (char *) malloc(len);
+		if (!data) return;
 		stream_file_read(stream_file, len, data);
 
 		leaf_type = *(unsigned short *) (data);
 		if ((leaf_type == 0x110E) || (leaf_type == 0x1009)) {
 			global = (SGlobal *) malloc(sizeof(SGlobal));
+			if (!global) {
+				free (data);
+				return;
+			}
 			global->leaf_type = leaf_type;
 			parse_global(data + 2, len, global);
 			r_list_append(data_stream->globals_list, global);

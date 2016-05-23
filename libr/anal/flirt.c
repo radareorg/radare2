@@ -865,6 +865,7 @@ static ut8 parse_leaf (const RAnal *anal, RBuffer *b, RFlirtNode *node) {
 
 		do { // loop for all modules having the same crc
 			module = R_NEW0(RFlirtModule);
+			if (!module) goto err_exit;
 
 			module->crc_length = crc_length;
 			module->crc16      = crc16;
