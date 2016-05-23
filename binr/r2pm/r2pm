@@ -38,6 +38,8 @@ export R2PM_HOMEWWWROOT="${R2HOMEDIR}/www"
 export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
 # pkgconfig
 export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+export CFLAGS="-I${R2PM_HOMEPREFIX}/include"
+export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
 
 # Global Vars
 TRAVIS_TYPE=XX
