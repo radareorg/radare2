@@ -25,7 +25,7 @@ R2PM_INSTALL() {
 R2PM_UNINSTALL() {
 	WWWROOT="${R2PM_WWWROOT}"
 	if [ -n "${WWWROOT}" ]; then
-		rm -rf "{WWWROOT}/${UI}"
+		rm -rf "${WWWROOT}/${UI}"
 	else
 		echo "Cannot find WWWROOT"
 		exit 1
