@@ -1607,7 +1607,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			searchhits = 0;
 
 			if (param->to < param->from) {
-				eprintf ("invalid to/front values\n");
+				eprintf ("invalid from/to values\n");
 				break;
 			}
 
