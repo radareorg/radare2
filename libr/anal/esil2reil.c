@@ -223,7 +223,11 @@ static int reil_eq(RAnalEsil *esil) {
 
 	// First, make a copy of the dst. We will need this to set the flags later on.
 	ins = R_NEW0 (RAnalReilInst);
-	if (!ins) return false;
+	if (!ins) {
+		R_FREE (dst);
+		R_FREE (src);
+		return false;
+	}
 	dst_type = dst->type;
 	if (src_type != ARG_ESIL_INTERNAL && dst_type == ARG_REG) {
 		ins->opcode = REIL_STR;
@@ -532,7 +536,10 @@ static int reil_neg(RAnalEsil *esil) {
 	if (!op) return false;
 
 	ins = R_NEW0 (RAnalReilInst);
-	if (!ins) return false;
+	if (!ins) {
+		R_FREE (op);
+		return false;
+	}
 	ins->opcode = REIL_EQ;
 	ins->arg[0] = op;
 	r_anal_esil_pushnum (esil, 0);
@@ -576,7 +583,10 @@ static int reil_not(RAnalEsil *esil) {
 	if (!op) return false;
 
 	ins = R_NEW0 (RAnalReilInst);
-	if (!ins) return false;
+	if (!ins) {
+		R_FREE (op);
+		return false;
+	}
 	ins->opcode = REIL_NOT;
 	ins->arg[0] = op;
 	ins->arg[1] = R_NEW0 (RAnalReilArg);
@@ -612,7 +622,11 @@ static int reil_if(RAnalEsil *esil) {
 	}
 
 	ins = R_NEW0 (RAnalReilInst);
-	if (!ins) return false;
+	if (!ins) {
+		R_FREE (op2);
+		R_FREE (op1);
+		return false;
+	}
 	ins->opcode = REIL_JCC;
 	ins->arg[0] = op1;
 	ins->arg[2] = op2;
@@ -636,7 +650,10 @@ static int reil_peek(RAnalEsil *esil) {
 	if (!op1) return false;
 
 	ins = R_NEW0 (RAnalReilInst);
-	if (!ins) return false;
+	if (!ins) {
+		R_FREE (op1);
+		return false;
+	}
 	ins->opcode = REIL_LDM;
 	ins->arg[0] = op1;
 	ins->arg[1] = R_NEW0(RAnalReilArg);
@@ -713,7 +730,11 @@ static int reil_poken(RAnalEsil *esil, ut8 n) {
 
 	if (op1->type != ARG_ESIL_INTERNAL) {
 		ins = R_NEW0 (RAnalReilInst);
-		if (!ins) return false;
+		if (!ins) {
+			R_FREE (op2);
+			R_FREE (op1);
+			return false;
+		}
 		ins->opcode = REIL_LDM;
 		ins->arg[0] = op2;
 		ins->arg[1] = R_NEW0(RAnalReilArg);
