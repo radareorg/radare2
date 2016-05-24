@@ -76,7 +76,10 @@ R_API RBinXtrData *r_bin_xtrdata_new(void *xtr_obj, FREE_XTR free_xtr, RBuffer *
 		return data;
 	}
 	data = R_NEW0 (RBinXtrData);
-	if (!data) return NULL;
+	if (!data) {
+		r_buf_free (tb);
+		return NULL;
+	}
 	data->xtr_obj = xtr_obj;
 	data->free_xtr = free_xtr;
 	data->buf = tb;
