@@ -1595,7 +1595,7 @@ next2:
 	core->tmpseek = ptr? true: false;
 	if (ptr) {
 		ut64 tmpoff, tmpbsz, addr;
-		const char *tmpasm = NULL;
+		char *tmpasm = NULL;
 		const char *tmpbits = NULL;
 		char *tmpeval = NULL;
 		const char *offstr = NULL;
@@ -1738,7 +1738,7 @@ next_arroba:
 		if (ptr[1]=='@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
 			if (ptr[2] == '@') {
-				char *rule = ptr+3;
+				char *rule = ptr + 3;
 				while (*rule && *rule==' ') rule++;
 				ret = r_core_cmd_foreach3 (core, cmd, rule);
 			} else {
@@ -1754,14 +1754,13 @@ next_arroba:
 			ut64 curfrom[R_ARRAY_SIZE (fromvars) - 1], curto[R_ARRAY_SIZE (tovars) - 1];
 
 			// @..
-			if (ptr[1] == '.' && ptr[2] == '.') {
+			if (ptr[0] && ptr[1] == '.' && ptr[2] == '.') {
 				char *range = ptr + 3;
 				char *p = strchr (range, ' ');
-				if (p == NULL) {
+				if (!p) {
 					eprintf ("Usage: / ABCD @..0x1000 0x3000\n");
-					if (tmpeval) free (tmpeval);
-					if (tmpbits) free (tmpbits);
-					if (tmpasm) free (tmpasm);
+					free (tmpeval);
+					free (tmpasm);
 					return false;
 				}
 				*p = '\x00';
@@ -1793,14 +1792,14 @@ next_arroba:
 				}
 				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 			} else {
-if (addr != UT64_MAX) {
-				if (!ptr[1] || r_core_seek (core, addr, 1)) {
-					r_core_block_read (core, 0);
-					ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
-				} else {
-					ret = 0;
+				if (addr != UT64_MAX) {
+					if (!ptr[1] || r_core_seek (core, addr, 1)) {
+						r_core_block_read (core, 0);
+						ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
+					} else {
+						ret = 0;
+					}
 				}
-}
 			}
 
 			if (tmpseek) {
@@ -1827,7 +1826,7 @@ if (addr != UT64_MAX) {
 		}
 		if (tmpeval) {
 			r_core_cmd0 (core, tmpeval);
-			free (tmpeval);
+			R_FREE (tmpeval);
 		}
 		r_core_seek (core, tmpoff, 1);
 		*ptr = '@';
