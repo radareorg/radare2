@@ -69,9 +69,9 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 			return 0;
 		}
 	}
-	glen = strlen (escaped);
 
 	if (escaped) {
+		glen = strlen (escaped);
 		memcpy (tmp, escaped, glen);
 		memcpy (tmp+glen, format, flen);
 		tmp[flen+glen] = 0;
