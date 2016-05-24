@@ -33,7 +33,7 @@ export R2PM_SYSPREFIX="${PREFIX}"
 export R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix/"
 export R2PM_PREFIX="${R2PM_HOMEPREFIX}"
 # www
-export R2PM_SYSWWWROOT="`r2 -cq -qe http.root --`"
+export R2PM_SYSWWWROOT="`r2 -qc 'e http.root' --`"
 export R2PM_HOMEWWWROOT="${R2HOMEDIR}/www/"
 export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
 # pkgconfig
@@ -234,6 +234,7 @@ case "$1" in
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
 	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/plugins/"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
+	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
 	if [ ! -d "${R2PM_PLUGDIR}" ]; then
 		mkdir -p "${R2PM_PLUGDIR}"
 	fi
@@ -244,6 +245,7 @@ case "$1" in
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
 	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/plugins/"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
+	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
 	r2pm_uninstall $@
 	;;
 -c|clean)
