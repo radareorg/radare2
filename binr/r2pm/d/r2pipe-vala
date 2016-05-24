@@ -1,0 +1,28 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/radare/radare2-bindings"
+R2PM_DESC "[r2pipe] API for Vala and C-Glib"
+
+R2PM_INSTALL() {
+	./configure --prefix="${R2PM_PREFIX}"
+	cd r2pipe/vala
+	if [ "${GLOBAL}" = 1 ]; then
+		${MAKE} clean
+		${MAKE} || exit 1
+		${MAKE} install || exit 1
+	else
+		echo "Cannot install in home yet"
+		exit 1
+	fi
+}
+
+R2PM_UNINSTALL() {
+	if [ "${GLOBAL}" = 1 ]; then
+		${MAKE} uninstall
+	else
+		echo "Cannot uninstall from home yet"
+		exit 1
+	fi
+}
+
+R2PM_END
