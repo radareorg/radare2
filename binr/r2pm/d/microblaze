@@ -8,12 +8,12 @@ R2PM_INSTALL() {
 	cd microblaze || exit 1
 	${MAKE} clean
 	${MAKE} || exit 1
-	${MAKE} install || exit 1
+	${MAKE} install R2_PLUGIN_PATH="${R2PM_PLUGDIR}" || exit 1
 }
 
 R2PM_UNINSTALL() {
 	cd microblaze || exit 1
-	${MAKE} uninstall || exit 1
+	${MAKE} uninstall "${R2PM_PLUGDIR}" || exit 1
 }
 
 R2PM_END
