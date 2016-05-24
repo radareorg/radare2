@@ -31,14 +31,15 @@ R_API RList *r_anal_op_list_new() {
 	return list;
 }
 
-R_API void r_anal_op_fini(RAnalOp *op) {
-	if (!op) // || !op->mnemonic)
-		return;
+R_API bool r_anal_op_fini(RAnalOp *op) {
+	if (!op)  {
+		return false;
+	}
 	if (((ut64)(size_t)op) == UT64_MAX) {
-		return;
+		return false;
 	}
 	if (((ut64)(size_t)op->mnemonic) == UT64_MAX) {
-		return;
+		return false;
 	}
 	r_anal_var_free (op->var);
 	r_anal_value_free (op->src[0]);
@@ -54,6 +55,7 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	op->var = NULL;
 	op->switch_op = NULL;
 	R_FREE (op->mnemonic);
+	return true;
 }
 
 R_API void r_anal_op_free(void *_op) {
@@ -109,7 +111,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 }
 
 R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
-	RAnalOp *nop = R_NEW (RAnalOp);
+	RAnalOp *nop = R_NEW0 (RAnalOp);
 	if (!nop) return NULL;
 	*nop = *op;
 	if (op->mnemonic) {
@@ -133,7 +135,7 @@ R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
 // TODO: return RAnalException *
 R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 	while (op) {
-		if (op->delay>0) {
+		if (op->delay > 0) {
 			anal->queued = r_anal_op_copy (op);
 			return false;
 		}

@@ -210,18 +210,16 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	shortcut = sdb_get (g->db, sdb_fmt (2, "agraph.nodes.%s.shortcut", n->title), 0);
 	/* print the title */
 	if (cur) {
-		snprintf (title, sizeof (title)-1,
-				"[%s]", n->title);
+		snprintf (title, sizeof (title)-1, "[%s]", n->title);
 	} else {
-		snprintf (title, sizeof (title)-1,
-				" %s", n->title);
+		snprintf (title, sizeof (title)-1, " %s", n->title);
 	}
 	if (shortcut) {
-		strncat (title, sdb_fmt (2, " ;[%s]", shortcut), sizeof (title)-1);
+		strncat (title, sdb_fmt (2, " ;[%s]", shortcut), sizeof (title) - strlen (title) - 1);
 		free (shortcut);
 	}
 
-	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {
+	if ((delta_x < strlen (title)) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {
 		W(title + delta_x);
 	}
 
@@ -421,8 +419,7 @@ static int layer_sweep (const RGraph *g, const struct layer_t layers[],
 
 static void view_cyclic_edge (const RGraphEdge *e, const RGraphVisitor *vis) {
 	const RAGraph *g = (RAGraph *)vis->data;
-	RGraphEdge *new_e = R_NEW (RGraphEdge);
-
+	RGraphEdge *new_e = R_NEW0 (RGraphEdge);
 	new_e->from = e->from;
 	new_e->to = e->to;
 	new_e->nth = e->nth;
@@ -433,9 +430,12 @@ static void view_dummy (const RGraphEdge *e, const RGraphVisitor *vis) {
 	const RANode *a = get_anode (e->from);
 	const RANode *b = get_anode (e->to);
 	RList *long_edges = (RList *)vis->data;
+	if (!a || !b) {
+		return;
+	}
 
 	if (R_ABS (a->layer - b->layer) > 1) {
-		RGraphEdge *new_e = R_NEW (RGraphEdge);
+		RGraphEdge *new_e = R_NEW0 (RGraphEdge);
 		new_e->from = e->from;
 		new_e->to = e->to;
 		new_e->nth = e->nth;

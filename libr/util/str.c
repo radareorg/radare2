@@ -2034,7 +2034,7 @@ R_API void r_str_const_free() {
 
 R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffix) {
 	char *c0, *c1;
-	if (!cmt || !prefix || !suffix || !cmt || !*cmt) return NULL;
+	if (!cmt || !prefix || !suffix || !*cmt) return NULL;
 	c0 = strstr (cmt, prefix);
 	if (!c0) return NULL;
 	c1 = strstr (c0 + strlen (prefix), suffix);

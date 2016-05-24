@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_reg.h>
 
@@ -200,15 +200,13 @@ R_API void r_reg_arena_pop(RReg *reg) {
 R_API int r_reg_arena_push(RReg *reg) {
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		RRegArena *a = reg->regset[i].arena;      // current arena
+		RRegArena *a = reg->regset[i].arena; // current arena
 		if (!a) continue;
 		RRegArena *b = r_reg_arena_new (a->size); // new arena
 		if (!b) continue;
-		// if (!i) {    r_print_hexdump (NULL, 0, a->bytes, a->size, 16, 16);    }
 		if (a->size >= b->size) {
 			memcpy (b->bytes, a->bytes, b->size);
-		}
-		else {
+		} else {
 			memcpy (b->bytes, a->bytes, a->size);
 			memset (b->bytes + a->size, 0, b->size - a->size);
 		}
@@ -222,15 +220,17 @@ R_API void r_reg_arena_zero(RReg *reg) {
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegArena *a = reg->regset[i].arena;
-		if (a->size > 0)
+		if (a->size > 0) {
 			memset (reg->regset[i].arena->bytes, 0, a->size);
+		}
 	}
 }
 
 R_API ut8 *r_reg_arena_peek(RReg *reg) {
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
-	if (!reg || !regset || !regset->arena || regset->arena->size < 1)
+	if (!reg || !regset || !regset->arena || (regset->arena->size < 1)) {
 		return NULL;
+	}
 	ut8 *ret = malloc (regset->arena->size);
 	if (!ret) return NULL;
 	memcpy (ret, regset->arena->bytes, regset->arena->size);
@@ -246,16 +246,17 @@ R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret) {
 
 
 R_API int r_reg_arena_set_bytes(RReg *reg, const char* str) {
-	while (*str == ' ') str++;
-
+	while (IS_WHITESPACE (*str)) {
+		str++;
+	}
 	int len = r_hex_str_is_valid (str);
 	if (len == -1) {
-		eprintf("Invalid input\n");
+		eprintf ("Invalid input\n");
 		return -1;
 	}
 	int bin_str_len = (len + 1) / 2; //2 hex chrs for 1 byte
 	ut8* bin_str = malloc (bin_str_len);
-	if (bin_str == NULL) {
+	if (!bin_str) {
 		eprintf ("Failed to decode hex str.\n");
 		return -1;
 	}

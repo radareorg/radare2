@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2015 - pancake */
+/* radare - LGPL - Copyright 2014-2016 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
@@ -550,15 +550,42 @@ R_API int r_run_config_env(RRunProfile *p) {
 	if (p->_r2sleep != 0) {
 		r_sys_sleep (p->_r2sleep);
 	}
+#if __UNIX__
+	if (p->_chroot) {
+		if (chdir (p->_chroot) == -1) {
+			eprintf ("Cannot chdir to chroot in %s\n", p->_chroot);
+			return 1;
+		} else {
+			if (chroot (".") == -1) {
+				eprintf ("Cannot chroot to %s\n", p->_chroot);
+				return 1;
+			} else {
+				if (p->_chgdir) {
+					if (chdir (p->_chgdir) == -1) {
+						eprintf ("Cannot chdir after chroot to %s\n", p->_chgdir);
+						return 1;
+					}
+				}
+			}
+		}
+	} else if (p->_chgdir) {
+		if (chdir (p->_chgdir) == -1) {
+			eprintf ("Cannot chdir after chroot to %s\n", p->_chgdir);
+			return 1;
+		}
+	}
+#endif
 	if (p->_chgdir) {
 		ret = chdir (p->_chgdir);
-		if (ret < 0)
+		if (ret < 0) {
 			return 1;
+		}
 	}
 	if (p->_chroot) {
 		ret = chdir (p->_chroot);
-		if (ret < 0)
+		if (ret < 0) {
 			return 1;
+		}
 	}
 #if __UNIX__
 	if (p->_chroot) {
@@ -566,12 +593,12 @@ R_API int r_run_config_env(RRunProfile *p) {
 			chdir ("/");
 		} else {
 			eprintf ("rarun2: cannot chroot\n");
-			perror ("chroot");
+			r_sys_perror ("chroot");
 			return 1;
 		}
 	}
 	if (p->_setuid) {
-		ret = setgroups(0, NULL);
+		ret = setgroups (0, NULL);
 		if (ret < 0)
 			return 1;
 		ret = setuid (atoi (p->_setuid));

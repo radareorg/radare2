@@ -351,7 +351,7 @@ static bool dump_this_map(char *buff_smaps, ut64 start_addr, ut64 end_addr, bool
 		}
 	}
 
-	if (!flags_str && !found) {
+	if (!flags_str || !found) {
 		/* if we don't have VmFlags, just dump it. I'll fix it later on */
 		eprintf ("VmFlags: not found\n");
 		free (identity);
@@ -1143,7 +1143,7 @@ static Elf64_Shdr *get_extra_sectionhdr(Elf64_Ehdr *elf_hdr, st64 offset, int n_
 	if (!shdr) return NULL;
 	eprintf ("get_extra_sectionhdr\n");
 	elf_hdr->e_shoff = offset;
-	elf_hdr->e_shentsize = sizeof (shdr);
+	elf_hdr->e_shentsize = sizeof (Elf64_Shdr);
 	elf_hdr->e_shnum = 1;
 	elf_hdr->e_shstrndx = SHN_UNDEF;
 	shdr->sh_type = SHT_NULL;

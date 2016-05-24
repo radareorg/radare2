@@ -609,7 +609,7 @@ R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int ste
 R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 	int r, rc;
 
-	if (!p->screen_bounds) return;
+	if (!p || !p->screen_bounds) return;
 	if (!p->consbind.get_size) return;
 	if (!p->consbind.get_cursor) return;
 

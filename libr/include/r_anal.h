@@ -1199,7 +1199,7 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 addr);
 R_API const char *r_anal_stackop_tostring (int s);
 R_API RAnalOp *r_anal_op_new(void);
 R_API void r_anal_op_free(void *op);
-R_API void r_anal_op_fini(RAnalOp *op);
+R_API bool r_anal_op_fini(RAnalOp *op);
 R_API bool r_anal_op_is_eob (RAnalOp *op);
 R_API RList *r_anal_op_list_new(void);
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr,
