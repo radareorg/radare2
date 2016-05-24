@@ -1754,6 +1754,7 @@ next_arroba:
 				char *p = strchr (range, ' ');
 				if (p == NULL) {
 					eprintf ("Usage: / ABCD @..0x1000 0x3000\n");
+					if (tmpeval) free (tmpeval);
 					return false;
 				}
 				*p = '\x00';
