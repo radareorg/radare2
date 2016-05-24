@@ -23,9 +23,6 @@
 #ifndef HAVE_LIB_SSL
 #define HAVE_LIB_SSL @HAVE_OPENSSL@
 #endif
-#ifndef HAVE_LIB_EWF
-#define HAVE_LIB_EWF @HAVE_LIB_EWF@
-#endif
 
 #define HAVE_FORK @HAVE_FORK@
 
