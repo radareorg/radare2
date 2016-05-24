@@ -1754,7 +1754,7 @@ next_arroba:
 			ut64 curfrom[R_ARRAY_SIZE (fromvars) - 1], curto[R_ARRAY_SIZE (tovars) - 1];
 
 			// @..
-			if (ptr[0] && ptr[1] == '.' && ptr[2] == '.') {
+			if (ptr[1] == '.' && ptr[2] == '.') {
 				char *range = ptr + 3;
 				char *p = strchr (range, ' ');
 				if (!p) {
