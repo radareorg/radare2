@@ -167,7 +167,10 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		mla = NULL;
 	} else {
 		mla = calloc (lines_count, sizeof (RList *));
-		if (!mla) return 0;
+		if (!mla) {
+			free (p);
+			return 0;
+		}
 	}
 	for (i = 0; i < lines_count; i++)
 		mla[i] = r_list_new ();
