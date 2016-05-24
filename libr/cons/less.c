@@ -169,6 +169,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		mla = calloc (lines_count, sizeof (RList *));
 		if (!mla) {
 			free (p);
+			free (lines);
 			return 0;
 		}
 	}
