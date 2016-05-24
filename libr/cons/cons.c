@@ -903,7 +903,10 @@ R_API void r_cons_highlight (const char *word) {
 			I.highlight = strdup (word);
 		}
 		rword = malloc (word_len + linv[0] + linv[1] + 1);
-		if (!rword) return;
+		if (!rword) {
+			free (cpos);
+			return;
+		}
 		strcpy (rword, inv[0]);
 		strcpy (rword + linv[0], word);
 		strcpy (rword + linv[0] + word_len, inv[1]);
