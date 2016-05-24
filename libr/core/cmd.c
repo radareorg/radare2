@@ -1755,6 +1755,8 @@ next_arroba:
 				if (p == NULL) {
 					eprintf ("Usage: / ABCD @..0x1000 0x3000\n");
 					if (tmpeval) free (tmpeval);
+					if (tmpbits) free (tmpbits);
+					if (tmpasm) free (tmpasm);
 					return false;
 				}
 				*p = '\x00';
