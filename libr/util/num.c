@@ -38,7 +38,7 @@ R_API void r_num_minmax_swap_i(int *a, int *b) {
 }
 
 R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
-	RNum *num = R_NEW (RNum);
+	RNum *num = R_NEW0 (RNum);
 	if (!num) return NULL;
 	num->value = 0LL;
 	num->callback = cb;
@@ -265,7 +265,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 					*p2 = '\0';
 					ret = r_num_op (op, ret, r_num_math_internal (num, p));
 					ret = r_num_op (op, ret, r_num_math (num, p2+1));
-					p = p2+1; 
+					p = p2+1;
 					continue;
 				} else eprintf ("WTF!\n");
 			} else ret = r_num_op (op, ret, r_num_math_internal (num, p));

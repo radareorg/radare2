@@ -9,6 +9,7 @@ R_API void r_io_section_init(RIO *io) {
 	io->enforce_rwx = 0; // do not enforce RWX section permissions by default
 	io->enforce_seek = 0; // do not limit seeks out of the file by default
 	io->sections = r_list_new ();
+	if (!io->sections) return;
 	io->sections->free = r_io_section_free;
 }
 
@@ -139,6 +140,7 @@ R_API void r_io_section_free(void *ptr) {
 R_API void r_io_section_clear(RIO *io) {
 	r_list_free (io->sections);
 	io->sections = r_list_new ();
+	if (!io->sections) return;
 	io->sections->free = r_io_section_free;
 }
 
@@ -449,6 +451,7 @@ R_API RList *r_io_section_get_in_paddr_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOSection *s;
 	RListIter *iter;
 	RList *sections = r_list_new ();
+	if (!sections) return NULL;
 	sections->free = r_io_section_free;
 	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, s) {
@@ -466,6 +469,7 @@ R_API RList *r_io_section_get_in_vaddr_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOSection *s;
 	RListIter *iter;
 	RList *sections = r_list_new ();
+	if (!sections) return NULL;
 	sections->free = r_io_section_free;
 	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, s) {

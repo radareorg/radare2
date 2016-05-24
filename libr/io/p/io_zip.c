@@ -203,6 +203,7 @@ RList * r_io_zip_get_files(char *archivename, ut32 flags, int mode, int rw) {
 	//eprintf("Slurping file");
 	if (zipArch) {
 		files = r_list_new ();
+		if (!files) return NULL;
 		files->free = free;
 		num_entries = zip_get_num_files (zipArch);
 
@@ -268,8 +269,8 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 	if (!r_io_zip_plugin_open (io, file, 1))
 		return NULL;
 
-
 	zip_uri = strdup (file);
+	if (!zip_uri) return NULL;
 	// 1) Tokenize to the '//' and find the base file directory ('/')
 	zip_filename = strstr(zip_uri, "//");
 	if (zip_filename && zip_filename[2]) {
@@ -324,6 +325,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	if (!r_io_zip_plugin_open (io, file, 0))
 		return res;
 	zip_uri = strdup (file);
+	if (!zip_uri) return NULL;
 	// 1) Tokenize to the '//' and find the base file directory ('/')
 	zip_filename = strstr(zip_uri, "//");
 	if (zip_filename && zip_filename[2]) {
@@ -451,6 +453,7 @@ static int r_io_zip_truncate_buf(RIOZipFileObj *zfo, int size) {
 
 	if (size > 0){
 		ut8 *buf = malloc (size);
+		if (!buf) return false;
 		memcpy(buf, zfo->b->buf, size);
 		free (zfo->b->buf);
 		zfo->b->buf = buf;
@@ -466,7 +469,12 @@ static int r_io_zip_realloc_buf(RIOZipFileObj *zfo, int count) {
 	int res = false;
 	if (zfo->b->cur + count > zfo->b->length) {
 		RBuffer *buffer = r_buf_new();
+		if (!buffer) return false;
 		buffer->buf = malloc (zfo->b->cur + count );
+		if (!buffer->buf) {
+			r_buf_free(buffer);
+			return false;
+		}
 		buffer->length = zfo->b->cur + count;
 		memcpy (buffer->buf, zfo->b->buf, zfo->b->length);
 		memset (buffer->buf+zfo->b->length, 0, count);

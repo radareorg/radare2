@@ -1421,6 +1421,7 @@ R_API int r_core_config_init(RCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
 	RConfig *cfg = core->config = r_config_new (core);
+	if (!cfg) return 0;
 	cfg->cb_printf = r_cons_printf;
 	cfg->num = core->num;
 

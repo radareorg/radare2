@@ -17,6 +17,10 @@ R_API RParse *r_parse_new() {
 	RParse *p = R_NEW0 (RParse);
 	if (!p) return NULL;
 	p->parsers = r_list_new ();
+	if (!p->parsers) {
+		r_parse_free (p);
+		return NULL;
+	}
 	p->parsers->free = NULL; // memleak
 	p->notin_flagspace = -1;
 	p->flagspace = -1;

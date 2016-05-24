@@ -10,6 +10,7 @@ enum {
 
 static RGraphNode *r_graph_node_new (void *data) {
 	RGraphNode *p = R_NEW0 (RGraphNode);
+	if (!p) return NULL;
 	p->data = data;
 	p->free = NULL;
 	p->out_nodes = r_list_new ();
@@ -37,8 +38,12 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[])
 	RGraphEdge *edg;
 
 	s = r_stack_new (2 * g->n_edges + 1);
-
-	edg = R_NEW (RGraphEdge);
+	if (!s) return;
+	edg = R_NEW0 (RGraphEdge);
+	if (!edg) {
+		r_stack_free (s);
+		return;
+	}
 	edg->from = NULL;
 	edg->to = n;
 	r_stack_push (s, edg);
@@ -89,7 +94,12 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[])
 
 R_API RGraph *r_graph_new () {
 	RGraph *t = R_NEW0 (RGraph);
+	if (!t) return NULL;
 	t->nodes = r_list_new ();
+	if (!t->nodes) {
+		r_graph_free(t);
+		return NULL;
+	}
 	t->nodes->free = (RListFree)r_graph_node_free;
 	t->n_nodes = 0;
 	t->last_index = 0;
@@ -117,6 +127,7 @@ R_API void r_graph_reset (RGraph *t) {
 	r_list_free (t->nodes);
 
 	t->nodes = r_list_new ();
+	if (!t->nodes) return;
 	t->nodes->free = (RListFree)r_graph_node_free;
 	t->n_nodes = 0;
 	t->n_edges = 0;
@@ -125,7 +136,7 @@ R_API void r_graph_reset (RGraph *t) {
 
 R_API RGraphNode *r_graph_add_node (RGraph *t, void *data) {
 	RGraphNode *n = r_graph_node_new (data);
-
+	if (!n) return NULL;
 	n->idx = t->last_index++;
 	r_list_append (t->nodes, n);
 	t->n_nodes++;
@@ -218,6 +229,7 @@ R_API void r_graph_dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis) {
 
 	if (!g || !n || !vis) return;
 	color = R_NEWS0 (int, g->last_index);
+	if (!color) return;
 	dfs_node (g, n, vis, color);
 	free (color);
 }
@@ -229,6 +241,7 @@ R_API void r_graph_dfs (RGraph *g, RGraphVisitor *vis) {
 
 	if (!g || !vis) return;
 	color = R_NEWS0 (int, g->last_index);
+	if (!color) return;
 	r_list_foreach (g->nodes, it, n) {
 		 if (color[n->idx] == WHITE_COLOR)
 			 dfs_node (g, n, vis, color);

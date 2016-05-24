@@ -24,7 +24,8 @@ typedef struct r_bitmap_t {
 } RBitmap;
 
 R_API RBitmap *r_bitmap_new(size_t len) {
-	RBitmap *b = R_NEW (RBitmap);
+	RBitmap *b = R_NEW0 (RBitmap);
+	if (!b) return NULL;
 	b->length = len;
 	b->bitmap = calloc (BITMAP_WORD_COUNT (len), sizeof (RBitword));
 	return b;

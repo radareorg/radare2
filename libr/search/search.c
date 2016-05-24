@@ -4,7 +4,7 @@
 #include <r_list.h>
 #include <ctype.h>
 
-// Experimental search engine (fails, because stops at first hit of every block read 
+// Experimental search engine (fails, because stops at first hit of every block read
 #define USE_BMH 0
 
 R_LIB_VERSION (r_search);
@@ -31,6 +31,10 @@ R_API RSearch *r_search_new(int mode) {
 	// TODO: review those mempool sizes. ensure never gets NULL
 	s->pool = r_mem_pool_new (sizeof (RSearchHit), 1024, 10);
 	s->kws = r_list_new ();
+	if (!s->kws) {
+		r_search_free (s);
+		return NULL;
+	}
 	s->kws->free = (RListFree) r_search_keyword_free;
 	return s;
 }
@@ -194,7 +198,7 @@ R_API int r_search_bmh (const RSearchKeyword *kw, const ut64 from, const ut8 *bu
 			if (ch1 != ch2)
 				break;
 			if (i == 0) {
-				if (out) 
+				if (out)
 					*out = pos;
 				return true;
 			}
@@ -408,7 +412,8 @@ R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len) {
 }
 
 static int listcb(RSearchKeyword *k, void *user, ut64 addr) {
-	RSearchHit *hit = R_NEW (RSearchHit);
+	RSearchHit *hit = R_NEW0 (RSearchHit);
+	if (!hit) return false;
 	hit->kw = k;
 	hit->addr = addr;
 	r_list_append (user, hit);
@@ -439,6 +444,7 @@ R_API void r_search_reset(RSearch *s, int mode) {
 	r_list_purge (s->hits);
 	s->nhits = 0;
 	s->hits = r_list_new ();
+	if (!s->hits) return;
 	s->hits->free = free;
 	r_search_kw_reset (s);
 	if (!r_search_set_mode (s, mode))

@@ -321,6 +321,7 @@ R_API RList *r_list_clone (RList *list) {
 
 	if (list) {
 		l = r_list_new ();
+		if (!l) return NULL;
 		l->free = NULL;
 		r_list_foreach (list, iter, data)
 			r_list_append (l, data);
@@ -349,7 +350,8 @@ R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp)
 	if (list && data && cmp) {
 		for (it = list->head; it && it->data && cmp (data, it->data)>0; it = it->n) ;
 		if (it) {
-			new = R_NEW (RListIter);
+			new = R_NEW0 (RListIter);
+			if (!new) return NULL;
 			new->n = it;
 			new->p = it->p;
 			new->data = data;

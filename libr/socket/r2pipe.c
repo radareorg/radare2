@@ -107,6 +107,7 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 
 R_API R2Pipe *r2p_open(const char *cmd) {
 	R2Pipe *r2p = R_NEW0 (R2Pipe);
+	if (!r2p) return NULL;
 	r2p->magic = R2P_MAGIC;
 	if (!cmd) {
 		r2p->child = -1;
@@ -201,6 +202,7 @@ R_API int r2p_write(R2Pipe *r2p, const char *str) {
 		return -1;
 	len = strlen (str) + 1; /* include \x00 */
 	cmd = malloc (len + 2);
+	if (!cmd) return 0;
 	memcpy (cmd, str, len);
 	cmd[len++] = '\n';
 	cmd[len] = 0;

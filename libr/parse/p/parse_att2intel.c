@@ -75,6 +75,7 @@ static int parse(RParse *p, const char *data, char *str) {
 
 	// malloc can be slow here :?
 	buf = strdup (data);
+	if (!buf) return R_FALSE;
 	r_str_trim_head (buf);
 
 	ptr = strchr (buf, '#');

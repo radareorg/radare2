@@ -110,6 +110,7 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 	char *o;
 	if (!name || !s) return NULL;
 	si = R_NEW0 (RSyscallItem);
+	if (!si) return NULL;
 	o = strdup (s);
 	r_str_split (o, ',');
 	si->name = strdup (name);
@@ -184,6 +185,7 @@ static int callback_list(void *u, const char *k, const char *v) {
 	RList *list = (RList*)u;
 	if (!strchr (k, '.')) {
 		RSyscallItem *si = r_syscall_item_new_from_string (k, v);
+		if (!si) return 0;
 		if (!strchr (si->name, '.'))
 			r_list_append (list, si);
 	}

@@ -64,16 +64,20 @@ int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 	va_copy (ap2, ap);
 	len = vsnprintf (cbuf, sizeof (cbuf), fmt, ap2);
 	va_end (ap2);
-	if (len < 0)
-		goto out;
+	if (len < 0) goto out;
 	cbuf[len] = 0;
 	buf = strdup (cbuf);
+	if (!buf) return -1;
 
 	buflen = len;
 	if (ms->o.buf != NULL) {
 		int obuflen = strlen (ms->o.buf);
-		len = obuflen+buflen+1;
+		len = obuflen + buflen+1;
 		newstr = malloc (len+1);
+		if (!newstr) {
+			free (buf);
+			return -1;
+		}
 		memset (newstr, 0, len+1); // XXX: unnecessary?
 		newstr[len] = 0;
 		memcpy (newstr, ms->o.buf, obuflen);

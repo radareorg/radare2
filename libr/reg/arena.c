@@ -51,9 +51,14 @@ R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len) {
 		if (reg->regset[i].arena) {
 			arena = reg->regset[i].arena;
 		} else {
-			arena = reg->regset[i].arena = R_NEW (RRegArena);
+			arena = reg->regset[i].arena = R_NEW0 (RRegArena);
+			if (arena) return false;
 			arena->size = len;
 			arena->bytes = malloc (len);
+			if (!arena->bytes) {
+				r_reg_arena_free (arena);
+				return false;
+			}
 		}
 		if (!arena->bytes) {
 			arena->size = 0;

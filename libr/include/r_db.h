@@ -102,6 +102,9 @@ R_API void *r_db_iter_prev(RDatabaseIter *iter);
 R_API RDatabaseIter *r_db_iter_new(RDatabase *db, int key);
 R_API RDatabaseIter *r_db_iter_free(RDatabaseIter *iter);
 R_API int r_db_free(RDatabase *db);
+R_API void *r_db_table_free(struct r_db_table_t *table);
+
+
 //R_API int r_db_push(RDatabase *db, const ut8 *b);
 //R_API ut8 *r_db_pop(RDatabase *db);
 #endif

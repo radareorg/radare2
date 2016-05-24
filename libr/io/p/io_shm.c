@@ -93,7 +93,8 @@ static inline int getshmfd (RIOShm *shm) {
 
 static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "shm://", 6)) {
-		RIOShm *shm = R_NEW (RIOShm);
+		RIOShm *shm = R_NEW0 (RIOShm);
+		if (!shm) return NULL;
 		const char *ptr = pathname+6;
 		shm->id = getshmid (ptr);
 		shm->buf = shmat (shm->id, 0, 0);

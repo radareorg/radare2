@@ -85,6 +85,7 @@ static char *is_string_at (RCore *core, ut64 addr, int *olen) {
 		return NULL;
 	}
 	str = calloc (1024, 1);
+	if (!str) return NULL;
 	r_io_read_at (core->io, addr, str, 1024);
 	str[1023] = 0;
 	// check if current section have no exec bit
@@ -292,7 +293,9 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 }
 
 static ut64 *next_append (ut64 *next, int *nexti, ut64 v) {
-	next = realloc (next, sizeof (ut64) * (1 + *nexti));
+	ut64 *tmp_next = realloc (next, sizeof (ut64) * (1 + *nexti));
+	if (!tmp_next) return NULL;
+	next = tmp_next;
 	next[*nexti] = v;
 	(*nexti)++;
 
@@ -1463,7 +1466,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 						max = bbi->addr + bbi->size;
 					}
 					if (min > bbi->addr) {
-						min = bbi->addr; 
+						min = bbi->addr;
 					}
 				}
 				char *msg;
@@ -1487,7 +1490,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 						}
 					}
 					r_cons_printf ("%s0x%08"PFMT64x" %4d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %4d %4d %5d %s%s\n",
-							color, fcn->addr, 
+							color, fcn->addr,
 							r_anal_fcn_cc (fcn),
 							r_anal_fcn_realsize (fcn), r_list_length (fcn->bbs), min, r_anal_fcn_size (fcn), max, noofCallRef,
 							r_anal_var_count (core->anal, fcn, 'v'),
@@ -2332,6 +2335,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 	RAnalCycleFrame *prev = NULL, *cf = r_anal_cycle_frame_new ();
 	RAnalCycleHook *ch;
 	RList *hooks = r_list_new ();
+	if (!hooks) return NULL;
 	while (cf && !core->cons->breaked) {
 		if ((op = r_core_anal_op (core, addr)) && (op->cycles) && (ccl > 0)) {
 			r_cons_clear_line (1);
@@ -2452,6 +2456,10 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 			}
 		} else {
 			ch = R_NEW0 (RAnalCycleHook);
+			if (!ch) {
+				r_list_free (hooks);
+				return NULL;
+			}
 			ch->addr = addr;
 			ch->cycles = ccl;
 			r_list_append (hooks, ch);

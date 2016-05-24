@@ -62,6 +62,7 @@ R_API void r_run_reset(RRunProfile *p) {
 
 R_API int r_run_parse(RRunProfile *pf, const char *profile) {
 	char *p, *o, *str = strdup (profile);
+	if (!p) return 0;
 	for (o = p = str; (o = strchr (p, '\n')); p = o) {
 		*o++ = 0;
 		r_run_parseline (pf, p);
@@ -140,25 +141,27 @@ static char *getstr(const char *src) {
 				len = strlen (pat);
 				if (rep>0) {
 					char *buf = malloc (rep);
-					for(i=0; i < rep;i++) {
-						buf[i] = pat[i%len];
+					if (buf) {
+						for (i = 0; i < rep; i++) {
+							buf[i] = pat[i%len];
+						}
 					}
 					return buf;
 				}
 			}
 			// slurp file
-			return r_file_slurp (src+1, NULL);
+			return r_file_slurp (src + 1, NULL);
 		}
 	case '!':
-		return r_str_trim_tail (r_sys_cmd_str (src+1, NULL, NULL));
+		return r_str_trim_tail (r_sys_cmd_str (src + 1, NULL, NULL));
 	case ':':
 		if (src[1]=='!') {
-			ret = r_str_trim_tail (r_sys_cmd_str (src+1, NULL, NULL));
+			ret = r_str_trim_tail (r_sys_cmd_str (src + 1, NULL, NULL));
 		} else {
 			ret = strdup (src);
 		}
 		len = r_hex_str2bin (src+1, (ut8*)ret);
-		if (len>0) {
+		if (len > 0) {
 			ret[len] = 0;
 			return ret;
 		} else {
