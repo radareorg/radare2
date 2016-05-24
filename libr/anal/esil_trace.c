@@ -51,7 +51,7 @@ static int trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 val) {
 }
 
 static int trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
-	char *hexbuf = malloc ((1+len)*3);
+	char *hexbuf = calloc ((1 + len), 4);
 	int ret = 0;
 	if (esil->cb.mem_read) {
 		ret = esil->cb.mem_read (esil, addr, buf, len);

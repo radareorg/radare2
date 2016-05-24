@@ -994,8 +994,9 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 	/* for core files */
 	if (bin->nsects <1 && bin->nsegs > 0) {
 		struct MACH0_(segment_command) *seg;
-		if (!(sections = malloc ((bin->nsegs + 1) * sizeof (struct section_t))))
+		if (!(sections = calloc ((bin->nsegs + 1), sizeof (struct section_t)))) {
 			return NULL;
+		}
 		for (i = 0; i < bin->nsegs; i++) {
 			seg = &bin->segs[i];
 			sections[i].addr = seg->vmaddr;

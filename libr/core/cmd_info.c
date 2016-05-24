@@ -50,9 +50,9 @@ static int demangle(RCore *core, const char *s) {
 		return 1;
 	}
 	p = strdup (s);
-	q = p + (ss-s);
+	q = p + (ss - s);
 	*q = 0;
-	demangle_internal (core, p, q+1);
+	demangle_internal (core, p, q + 1);
 	free (p);
 	return 1;
 }

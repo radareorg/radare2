@@ -490,15 +490,15 @@ static int cmd_write(void *data, const char *input) {
 				break;
 			case 'e':
 				{
-				ut8 *bin_buf = malloc(str_len);
-				const int bin_len = r_hex_str2bin(str, bin_buf);
+				ut8 *bin_buf = malloc (str_len);
+				const int bin_len = r_hex_str2bin (str, bin_buf);
 				if (bin_len <= 0) {
 					fail = 1;
 				} else {
-					buf = malloc(str_len * 4 + 1);
-					len = r_base64_encode((char *)buf, bin_buf, bin_len);
+					buf = calloc (str_len + 1, 4);
+					len = r_base64_encode ((char *)buf, bin_buf, bin_len);
 					if(len == 0) {
-						free(buf);
+						free (buf);
 						fail = 1;
 					}
 				}
@@ -510,11 +510,11 @@ static int cmd_write(void *data, const char *input) {
 				break;
 			}
 		}
-		if(!fail) {
+		if (!fail) {
 			r_core_write_at (core, core->offset, buf, len);
 			WSEEK (core, len);
 			r_core_block_read (core, 0);
-			free(buf);
+			free (buf);
 		} else {
 			eprintf ("Usage: w6[de] base64/hex\n");
 		}
@@ -542,103 +542,103 @@ static int cmd_write(void *data, const char *input) {
 		char *input_shadow = NULL, *p = NULL;
 
 		switch (input[1]) {
-			case 'n':
-				if (input[2] == ' ') {
-					len = *input ? r_num_math (core->num, input+3) : 0;
-					if (len > 0){
-						const ut64 cur_off = core->offset;
-						cmd_suc = r_core_extend_at (core, core->offset, len);
-						core->offset = cur_off;
-						r_core_block_read (core, 0);
-					}
+		case 'n':
+			if (input[2] == ' ') {
+				len = *input ? r_num_math (core->num, input+3) : 0;
+				if (len > 0) {
+					const ut64 cur_off = core->offset;
+					cmd_suc = r_core_extend_at (core, core->offset, len);
+					core->offset = cur_off;
+					r_core_block_read (core, 0);
 				}
-				break;
-			case 'N':
-				if (input[2] == ' ') {
-					input += 3;
-					while (*input && *input == ' ') input++;
-					addr = r_num_math (core->num, input);
-					while (*input && *input != ' ') input++;
-					input++;
-					len = *input ? r_num_math (core->num, input) : 0;
-					if (len > 0){
-						ut64 cur_off = core->offset;
-						cmd_suc = r_core_extend_at (core, addr, len);
-						cmd_suc = r_core_seek (core, cur_off, 1);
-						core->offset = addr;
-						r_core_block_read (core, 0);
-					}
-				}
-				break;
-			case 'x':
-				if (input[2] == ' ') {
-					input+=2;
-					len = *input ? strlen (input) : 0;
-					bytes = len > 1? malloc (len+1) : NULL;
-					len = bytes ? r_hex_str2bin (input, bytes) : 0;
-					if (len > 0) {
-						ut64 cur_off = core->offset;
-						cmd_suc = r_core_extend_at (core, cur_off, len);
-						if (cmd_suc) {
-							r_core_write_at (core, cur_off, bytes, len);
-						}
-						core->offset = cur_off;
-						r_core_block_read (core, 0);
-					}
-					free (bytes);
-				}
-				break;
-			case 'X':
-				if (input[2] == ' ') {
-					addr = r_num_math (core->num, input+3);
-					input += 3;
-					while (*input && *input != ' ') input++;
-					input++;
-					len = *input ? strlen (input) : 0;
-					bytes = len > 1? malloc (len+1) : NULL;
-					len = bytes ? r_hex_str2bin (input, bytes) : 0;
-					if (len > 0) {
-						//ut64 cur_off = core->offset;
-						cmd_suc = r_core_extend_at (core, addr, len);
-						if (cmd_suc) {
-							r_core_write_at (core, addr, bytes, len);
-						}
-						core->offset = addr;
-						r_core_block_read (core, 0);
-					}
-					free (bytes);
-				}
-				break;
-			case 's':
-				input +=  3;
+			}
+			break;
+		case 'N':
+			if (input[2] == ' ') {
+				input += 3;
 				while (*input && *input == ' ') input++;
-				len = strlen (input);
-				input_shadow = len > 0? malloc (len+1): 0;
-
-				// since the distance can be negative,
-				// the r_num_math will perform an unwanted operation
-				// the solution is to tokenize the string :/
-				if (input_shadow) {
-					strncpy (input_shadow, input, len+1);
-					p = strtok (input_shadow, " ");
-					addr = p && *p ? r_num_math (core->num, p) : 0;
-
-					p = strtok (NULL, " ");
-					dist = p && *p ? r_num_math (core->num, p) : 0;
-
-					p = strtok (NULL, " ");
-					b_size = p && *p ? r_num_math (core->num, p) : 0;
-					if (dist != 0){
-						r_core_shift_block (core, addr, b_size, dist);
-						r_core_seek (core, addr, 1);
-						cmd_suc = true;
-					}
+				addr = r_num_math (core->num, input);
+				while (*input && *input != ' ') input++;
+				input++;
+				len = *input ? r_num_math (core->num, input) : 0;
+				if (len > 0){
+					ut64 cur_off = core->offset;
+					cmd_suc = r_core_extend_at (core, addr, len);
+					cmd_suc = r_core_seek (core, cur_off, 1);
+					core->offset = addr;
+					r_core_block_read (core, 0);
 				}
-				free (input_shadow);
-				break;
-			case '?':
-			default:
-				cmd_suc = false;
+			}
+			break;
+		case 'x':
+			if (input[2] == ' ') {
+				input += 2;
+				len = *input ? strlen (input) : 0;
+				bytes = len > 1? malloc (len+1) : NULL;
+				len = bytes ? r_hex_str2bin (input, bytes) : 0;
+				if (len > 0) {
+					ut64 cur_off = core->offset;
+					cmd_suc = r_core_extend_at (core, cur_off, len);
+					if (cmd_suc) {
+						r_core_write_at (core, cur_off, bytes, len);
+					}
+					core->offset = cur_off;
+					r_core_block_read (core, 0);
+				}
+				free (bytes);
+			}
+			break;
+		case 'X':
+			if (input[2] == ' ') {
+				addr = r_num_math (core->num, input+3);
+				input += 3;
+				while (*input && *input != ' ') input++;
+				input++;
+				len = *input ? strlen (input) : 0;
+				bytes = len > 1? malloc (len+1) : NULL;
+				len = bytes ? r_hex_str2bin (input, bytes) : 0;
+				if (len > 0) {
+					//ut64 cur_off = core->offset;
+					cmd_suc = r_core_extend_at (core, addr, len);
+					if (cmd_suc) {
+						r_core_write_at (core, addr, bytes, len);
+					}
+					core->offset = addr;
+					r_core_block_read (core, 0);
+				}
+				free (bytes);
+			}
+			break;
+		case 's':
+			input +=  3;
+			while (*input && *input == ' ') input++;
+			len = strlen (input);
+			input_shadow = len > 0? malloc (len+1): 0;
+
+			// since the distance can be negative,
+			// the r_num_math will perform an unwanted operation
+			// the solution is to tokenize the string :/
+			if (input_shadow) {
+				strncpy (input_shadow, input, len+1);
+				p = strtok (input_shadow, " ");
+				addr = p && *p ? r_num_math (core->num, p) : 0;
+
+				p = strtok (NULL, " ");
+				dist = p && *p ? r_num_math (core->num, p) : 0;
+
+				p = strtok (NULL, " ");
+				b_size = p && *p ? r_num_math (core->num, p) : 0;
+				if (dist != 0){
+					r_core_shift_block (core, addr, b_size, dist);
+					r_core_seek (core, addr, 1);
+					cmd_suc = true;
+				}
+			}
+			free (input_shadow);
+			break;
+		case '?':
+		default:
+			cmd_suc = false;
 		}
 
 
