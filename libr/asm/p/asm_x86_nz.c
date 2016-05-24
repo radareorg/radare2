@@ -131,6 +131,30 @@ static ut8 getsib(const ut8 sib) {
 	}
 }
 
+// Returns the size of the register in bits.
+static ut8 regsize(const char *str) {
+	int i;
+	const char *regs[] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL};
+	const char *regs16[] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL};
+	const char *regs64[] = {"rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL};
+	const char *regs64_2[] = {"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL};
+	if (!str)
+		return 0xff;
+	for (i = 0; regs[i]; i++)
+		if (!strncmp (regs[i], str, strlen (regs[i])))
+			return 32;
+	for (i = 0; regs64[i]; i++)
+		if (!strncmp (regs64[i], str, strlen (regs64[i])))
+			return 64;
+	for (i = 0; regs64_2[i]; i++)
+		if (!strcmp (regs64_2[i], str))
+			return 64;
+	for (i = 0; regs16[i]; i++)
+		if (!strncmp (regs16[i], str, strlen (regs16[i])))
+			return 16;
+	return 0xff;
+}
+
 static int isnum(RAsm *a, const char *str) {
 	if (r_num_get (a->num, str) != 0)
 		return 1;
@@ -387,6 +411,10 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					int reg2 = getreg (arg2);
 					if (reg1 == reg2) {
 						data[l++] = 0x90;
+					} else if (regsize(arg) == 64){
+						// 64 bit reg has a different encoding.
+						data[l++] = 0x48;
+						data[l++] = 0x90 | reg2 | reg1 << 3;
 					} else {
 						data[l++] = 0x87;
 						data[l++] = 0xc0 | reg1 | reg2 << 3;
