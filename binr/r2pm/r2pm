@@ -177,7 +177,11 @@ r2pm_uninstall() {
 			ACTION=Uninstall
 			. "${FILE}"
 			R2PM_UNINSTALL
-			R2PM_UNREGISTER
+			if [ $? = 0 ]; then
+				R2PM_UNREGISTER
+			else
+				echo Oops
+			fi
 		else
 			echo "Unable to find package template for $2." > /dev/stderr
 			echo "Use -uu to remove it from the database." > /dev/stderr
