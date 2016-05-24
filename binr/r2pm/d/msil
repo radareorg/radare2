@@ -9,7 +9,8 @@ R2PM_INSTALL() {
 	cd libr/asm || exit 1
 	${MAKE} clean
 	${MAKE} msil || exit 1
-	${MAKE} msil-install HOMEDEST="${R2PM_PLUGDIR}" || exit 1
+	cp -f p/asm_msil.${LIBEXT} "${R2PM_PLUGDIR}" || exit 1
+	echo "cp -f p/asm_msil.${LIBEXT} ${R2PM_PLUGDIR}"
 }
 
 R2PM_UNINSTALL() {
