@@ -58,12 +58,12 @@ const paths = [
   'libr/util',
   'libr/bp',
   'libr/egg',
-/*
-  'libr/flags',
-  'libr/diff',
-  'libr/search',
-  'shlr/sdb',
-*/
+  /*
+   'libr/flags',
+   'libr/diff',
+   'libr/search',
+   'shlr/sdb',
+   */
   'shlr/tcc',
   'shlr/bochs',
   'man',
@@ -91,16 +91,16 @@ function getDifflines(upto, path, cb) {
       add: 0,
       del: 0
     };
-    for (let line of log.split(/\n/g)) {
-      if (line.match(/^\+/)) {
-        o.add ++;
-      } else if (line.match(/^-/)) {
-        o.del ++;
-      }
+  for (let line of log.split(/\n/g)) {
+    if (line.match(/^\+/)) {
+      o.add ++;
+    } else if (line.match(/^-/)) {
+      o.del ++;
     }
-    o.diff = o.add - o.del;
-    cb (o);
-  });
+  }
+  o.diff = o.add - o.del;
+  cb (o);
+});
 }
 
 function getChangelog(upto, path, cb) {
@@ -118,39 +118,48 @@ function getChangelog(upto, path, cb) {
       upto: upto,
       path: path,
       authors: {},
-      commits: []
+      commits: [],
+      fixes: []
     };
-    const lines = log.split('\n');
-    let date = null;
-    let commit = null;
-    let message = '';
-    for (let line of lines) {
-      if (line.match('^Author')) {
-        const realname = line.substring(8);
-        const author = renderAuthor(realname);
-        if (o.authors[author] === undefined) {
-          o.authors[author] = 1;
-        } else o.authors[author]++;
-      } else if (line.match('^Date:')) {
-        date = line.substring(8);
-      } else if (line.match('^commit')) {
-        if (commit !== null) {
-          const doh = {
-            hash: commit,
-            date: date,
-            msg: message.trim()
-          };
-          o.commits.push(doh);
-          message = '';
-          date = '';
+  const lines = log.split('\n');
+  let date = null;
+  let commit = null;
+  let message = '';
+  let numberFix = null;
+  for (let line of lines) {
+    if (line.match('^Author')) {
+      const realname = line.substring(8);
+      const author = renderAuthor(realname);
+      if (o.authors[author] === undefined) {
+        o.authors[author] = 1;
+      } else o.authors[author]++;
+    } else if (line.match('^Date:')) {
+      date = line.substring(8);
+    } else if (line.match('^commit')) {
+      if (commit !== null) {
+        const doh = {
+          hash: commit,
+          date: date,
+          msg: message.trim()
+        };
+        if (doh.msg.match('fix')) {
+          numberFix = doh.msg.match(/#(\d+)/);
+          if (numberFix != null)
+            o.fixes.push(numberFix[1]);
         }
-        commit = line.substring(7);
-      } else if (line[0] == ' ') {
-        message += line.trim() + '\n';
+
+        o.commits.push(doh);
+        message = '';
+        date = '';
       }
+
+      commit = line.substring(7);
+    } else if (line[0] == ' ') {
+      message += line.trim() + '\n';
     }
-    cb (o);
-  });
+  }
+  cb (o);
+});
 }
 
 function countWord(x,y) {
@@ -192,7 +201,7 @@ function computeRanking(o) {
   let r = [];
   for (let a in o.authors) {
     r.push(o.authors[a]+ '  '+a);
-  // console.log(a);
+    // console.log(a);
   }
   r = r.sort(function(a, b) {
     a = +((a.split(' ')[0]));
@@ -205,6 +214,17 @@ function computeRanking(o) {
   return {
     count: Object.keys(o.authors).length,
     authors: r
+  };
+}
+
+function computeRepairs(o) {
+  let r = [];
+  o.fixes.forEach(function(elem) {
+    r.push("[#" + elem + "](https://github.com/radare/radare2/issues/" + elem + "]");
+  });
+  return {
+    count: Object.keys(o.fixes).length,
+    fixes: r
   };
 }
 
@@ -290,9 +310,9 @@ function printFinalReportTable(obj) {
   const table = new AsciiTable('Release ' + curVersion)
   paths.forEach((path) => {
     table.addRow(getFinalReportFor(path));
-  });
+});
   table.setHeading(columns);
- 
+
   console.log('```');
   console.log(table.toString())
   console.log('```');
@@ -310,7 +330,7 @@ function main() {
   let count = 0;
   let doner = [];
   let ready = false;
-  
+
   console.log('Release ' + curVersion);
   console.log('==============');
   console.log();
@@ -320,7 +340,7 @@ function main() {
   console.log('Website: http://radare.org');
   console.log('Tarball: https://github.com/radare/radare2/releases');
   console.log();
-  
+
   for (let onePath of paths) {
     count ++;
     getChangelog(lastTag, onePath, function(o) {
@@ -328,6 +348,7 @@ function main() {
         let r = computeStats (o);
         r.path = onePath;
         r.ranking = computeRanking (o);
+        r.repairs = computeRepairs (o);
         r.diff = d;
         r.priv = {
           commits: o.commits
@@ -344,20 +365,28 @@ function main() {
           for (let oneDoner of doner) {
             if (oneDoner.path == '') {
               console.log('radare2 '+curVersion+' comes with '+oneDoner.diff.diff+'new lines of new features,'+
-                ' bug fixes and enhancements. Here some of the most important highlights:');
+                  ' bug fixes and enhancements. Here some of the most important highlights:');
               console.log();
               console.log('Numbers:');
               console.log('--------');
               let r = oneDoner.ranking;
+              let f = oneDoner.repairs;
               oneDoner.ranking = {};
+              oneDoner.repairs = {};
               printMdList(oneDoner, 0);
               oneDoner.ranking = r;
+              oneDoner.repairs = f;
               printFinalReportTable(doner);
               console.log();
               console.log('Contributors:');
               console.log('-------------');
               console.log();
               printMdList(oneDoner.ranking.authors, 0);
+              console.log();
+              console.log('Fixes:');
+              console.log('--------');
+              console.log();
+              printMdList(oneDoner.repairs.fixes, 0);
               console.log();
               console.log('Changes:');
               console.log('--------');
