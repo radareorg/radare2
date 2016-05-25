@@ -1435,7 +1435,7 @@ static int esil_poke(RAnalEsil *esil) {
 static int esil_poke_some(RAnalEsil *esil) {
 	int i, ret = 0;
 	int regsize;
-	ut64 ptr, regs=0, tmp;
+	ut64 ptr, regs = 0, tmp;
 	char *count, *dst = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_get_parm_size (esil, dst, &tmp, &regsize)) {
 		ut8 bytes = regsize / 8;
