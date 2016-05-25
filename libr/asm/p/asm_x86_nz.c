@@ -495,18 +495,26 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 		} else if (!strcmp (op, "sub")) {
 			int parg0 = 0;
 			int pfx;
+			int N = 1;
 			if (*arg == '[') {
 				char *delta = strchr (arg + 1, '+');
-				if (!delta) delta = strchr (arg + 1, '-');
+				if (!delta){
+					delta = strchr (arg + 1, '-');
+					N = -1;
+				}
 				arg++;
 				parg0 = 1;
 				pfx = 0;
 				if (delta) {
 					int n = getnum (a, arg2);
-					int d = getnum (a, delta + 1);
+					int d = getnum (a, delta + 1) * N;
 					int r = getreg (arg);
-					if (d < ST8_MAX && d > ST8_MIN) {
+					if ((ST8_MIN > n) || (n > ST8_MAX)) {
+						data[l++] = 0x81;
+					} else {
 						data[l++] = 0x83;
+					}
+					if (d < ST8_MAX && d > ST8_MIN) {
 						if (r != 4)
 							data[l++] = 0x68 | r; // XXX: hardcoded
 						else {
@@ -514,10 +522,8 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 							data[l++] = 0x20 | r;
 						}
 						data[l++] = d;
-						data[l++] = n;
 					} else {
 						ut8 *ptr = (ut8 *)&d;
-						data[l++] = 0x81;
 						if (r != 4)
 							data[l++] = 0xA8 | r;
 						else {
@@ -529,12 +535,12 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 						data[l++] = ptr[1];
 						data[l++] = ptr[2];
 						data[l++] = ptr[3];
-
-						ptr = (ut8 *)&n;
-						data[l++] = ptr[0];
-						data[l++] = ptr[1];
-						data[l++] = ptr[2];
-						data[l++] = ptr[3];
+					}
+					data[l++] = n;
+					if ((ST8_MIN > n) || (n > ST8_MAX)) {
+						data[l++] = n >> 8;
+						data[l++] = n >> 16;
+						data[l++] = n >> 24;
 					}
 					return l;
 				}
