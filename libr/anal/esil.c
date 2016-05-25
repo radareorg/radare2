@@ -1407,7 +1407,7 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 				esil->lastsz = bits;
 				num = num & bitmask;
 			}
-			r_write_ble64 (b, num, esil->anal->big_endian);
+			r_write_ble(b, num, esil->anal->big_endian, bits);
 			ret = r_anal_esil_mem_write (esil, addr, b, bytes);
 		}
 	}
