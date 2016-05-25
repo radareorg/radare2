@@ -221,4 +221,23 @@ static inline void r_write_ble64(void *dest, ut64 val, bool big_endian) {
 	big_endian? r_write_be64 (dest, val): r_write_le64 (dest, val);
 }
 
+static inline void r_write_ble(void *dst, ut64 val, bool big_endian, int size) {
+	switch (size) {
+	case 8:
+		((ut8*)dst)[0] = (ut8) val;
+		break;
+	case 16:
+		r_write_ble16 (dst, (ut16) val, big_endian);
+		break;
+	case 32:
+		r_write_ble32 (dst, (ut32) val, big_endian);
+		break;
+	case 64:
+		r_write_ble64 (dst, val, big_endian);
+		break;
+	default:
+		break;
+	}
+}
+
 #endif
