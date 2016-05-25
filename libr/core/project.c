@@ -273,8 +273,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 }
 
 R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
-	char *filename;
-	const char *ohl;
+	char *filename, *ohl;
 	int fd, fdold, tmp;
 
 	if (file == NULL || *file == '\0')
