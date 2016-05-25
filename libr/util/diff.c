@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake, nikolai */
 
 #include <r_diff.h>
 
 //R_LIB_VERSION (r_diff);
 
-R_API RDiff *r_diff_new(ut64 off_a, ut64 off_b) {
-	RDiff *d = R_NEW (RDiff);
+R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b) {
+	RDiff *d = R_NEW0 (RDiff);
 	if (d) {
 		d->delta = 1;
 		d->user = NULL;
@@ -13,6 +13,10 @@ R_API RDiff *r_diff_new(ut64 off_a, ut64 off_b) {
 		d->off_b = off_b;
 	}
 	return d;
+}
+
+R_API RDiff *r_diff_new() {
+	return r_diff_new_from (0, 0);
 }
 
 R_API RDiff *r_diff_free(RDiff *d) {
@@ -165,7 +169,7 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 		}
 		oop = op;
 	}
-	if (hit>0) {
+	if (hit > 0) {
 		struct r_diff_op_t o = {
 			.a_off = ooa, .a_buf = at, .a_len = atl,
 			.b_off = oob, .b_buf = bt, .b_len = btl
@@ -185,70 +189,70 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 }
 
 R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb) {
-	if (d->delta)
+	if (d->delta) {
 		return r_diff_buffers_delta (d, a, la, b, lb);
+	}
 	return r_diff_buffers_static (d, a, la, b, lb);
 }
 
 /* TODO: Move into r_util maybe? */
-R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb,
-		ut32 *distance, double *similarity) {
-	int i, j, tmin, **m;
-	ut64 totalsz = 0;
-
-	if (!a || !b || la < 1 || lb < 1)
+R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+	const bool verbose = d? d->verbose: false;
+	/* 
+	More memory efficient version on Levenshtein Distance from:
+	https://en.wikipedia.org/wiki/Levenshtein_distance
+	http://www.codeproject.com/Articles/13525/Fast-memory-efficient-Levenshtein-algorithm
+	ObM..
+	*/
+	int i, j;
+	/* TODO: ensure those pointers are allocated */
+	int *v0 = (int*) calloc ((lb + 1), sizeof (int));
+	int *v1 = (int*) calloc ((lb + 1), sizeof (int));	
+	
+	if (!a || !b || la < 1 || lb < 1) {
 		return false;
+	}
 
 	if (la == lb && !memcmp (a, b, la)) {
-		if (distance != NULL)
+		if (distance) {
 			*distance = 0;
-		if (similarity != NULL)
+		}
+		if (similarity) {
 			*similarity = 1.0;
+		}
 		return true;
 	}
-	totalsz = sizeof(int*) * (lb+1);
-	for(i = 0; i <= la; i++) {
-		totalsz += ((lb+1) * sizeof(int));
+
+	for (i = 0; i < lb + 1 ; i++) {
+		v0[i] = i;
 	}
-	if (totalsz >= 1024 * 1024 * 1024) { // 1 GB of ram
-		char *szstr = r_num_units (NULL, totalsz);
-		eprintf ("Too much memory required (%s) to run distance diff, Use -c.\n", szstr);
-		free (szstr);
-		return false;
+
+	for (i = 0; i < la; i++) {
+		v1[0] = i + 1;
+
+		for (j = 0; j < lb; j++) {
+			int cost = (a[i] == b[j]) ? 0 : 1;
+			int smallest = R_MIN ((v1[j] + 1), (v0[j + 1] + 1));
+			smallest = R_MIN (smallest, (v0[j] + cost));
+			v1[j + 1] = smallest;
+		}
+
+		for (j = 0; j < lb + 1; j++) {
+			v0[j] = v1[j];
+		}
+		if (verbose && (i % 10000 == 0))
+			eprintf ("Processing %d of %d\r", i, la - 1);
 	}
-	if ((m = malloc ((la+1) * sizeof(int*))) == NULL)
-		return false;
-	for(i = 0; i <= la; i++) {
-		if ((m[i] = malloc ((lb+1) * sizeof(int))) == NULL) {
-			eprintf ("Allocation failed\n");
-			while (i--)
-				free (m[i]);
-			free (m);
-			return false;
+	if (verbose) {
+		eprintf ("\rProcessing %d of %d\n", i, la - 1);
+	}
+	
+	if (distance) {
+		*distance = v1[lb];
+		if (similarity) {
+			double diff = (double) (*distance) / (double) (R_MAX (la, lb));
+			*similarity = (double)1 - diff;
 		}
 	}
-
-	for (i = 0; i <= la; i++)
-		m[i][0] = i;
-	for (j = 0; j <= lb; j++)
-		m[0][j] = j;
-
-	for (i = 1; i <= la; i++) {
-		for (j = 1; j <= lb; j++) {
-			int cost = (a[i-1] != b[j-1])? 1: 0;
-			tmin = R_MIN (m[i-1][j] + 1, m[i][j-1] + 1);
-			m[i][j] = R_MIN (tmin, m[i-1][j-1] + cost);
-		}
-	}
-
-	if (distance != NULL)
-		*distance = m[la][lb];
-	if (similarity != NULL)
-		*similarity = (double)1 - (double)(m[la][lb])/(double)(R_MAX(la, lb));
-
-	for(i = 0; i <= la; i++)
-		free (m[i]);
-	free (m);
-
 	return true;
 }

@@ -1149,14 +1149,18 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 	int i, j, *cps;
 	char *tmp;
 
-	if (len < 1) len = strlen (str);
+	if (len < 1) {
+		len = strlen (str);
+	}
 	tmp = malloc (len + 1);
-	if (!tmp) return -1;
+	if (!tmp) {
+		return -1;
+	}
 	memcpy (tmp, str, len + 1);
-	cps = malloc(len * sizeof(int));
+	cps = calloc (len, sizeof (int));
 	if (!cps) {
 		free (tmp);
-		return NULL;
+		return -1;
 	}
 
 	for (i = j = 0; i < len; i++) {
