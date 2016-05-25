@@ -273,7 +273,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 }
 
 R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
-	char *filename, *ohl;
+	char *filename, *hl, *ohl = NULL;
 	int fd, fdold, tmp;
 
 	if (file == NULL || *file == '\0')
@@ -286,8 +286,12 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 		return false;
 	}
 
-	ohl = strdup (r_config_get (core->config, "scr.highlight"));
-	r_config_set (core->config, "scr.highlight", "");
+	hl = r_cons_singleton ()->highlight;
+	if (hl) {
+		ohl = strdup (hl);
+		r_cons_highlight (NULL);
+	}
+
 	fdold = r_cons_singleton ()->fdout;
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->is_interactive = false;
@@ -351,11 +355,14 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 
 	r_cons_singleton ()->fdout = fdold;
 	r_cons_singleton ()->is_interactive = true;
-	r_config_set (core->config, "scr.highlight", ohl);
+
+	if (ohl) {
+		r_cons_highlight (ohl);
+		free (ohl);
+	}
 
 	close (fd);
 	free (filename);
-	free (ohl);
 
 	return true;
 }
