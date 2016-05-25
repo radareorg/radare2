@@ -309,8 +309,6 @@ lodsw=Load string word
 loop=decrement count; jump short if ecx!=0
 loope=decrement count; jump short if ecx!=0 and zf=1
 loopne=decrement count; jump short if ecx!=0 and zf=0
-loopne=decrement count; jump short if ecx!=0 and zf=0
-loopnz=decrement count; jump short if ecx!=0 and zf=0
 loopnz=decrement count; jump short if ecx!=0 and zf=0
 loopz=decrement count; jump short if ecx!=0 and zf=1
 lsl=load segment limit
