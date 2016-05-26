@@ -1101,6 +1101,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			int pfx, arg0;
 			char *delta = NULL;
 			char *sib = NULL;
+			ut8 rm_byte = 0x40;
 			int argk = (*arg == '[');
 			dst = r_num_math (NULL, arg2);
 			ptr = (ut8 *)&dst;
@@ -1141,26 +1142,48 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			if (argk) {
 				arg++;
 				delta = strchr (arg, '+');
-				//if (!delta) delta = strchr (arg, '-'); // XXX: TODO: handle negative off
 				if (delta) {
 					*delta++ = 0;
 				} else {
 					delta = strchr (arg, '-');
 					if (delta) {
-						ut32 n = -getnum (a, delta + 1);
-						ut8 *N = (ut8 *)&n;
+						int r = getreg (arg);
+						int r2;
+						bool r2_is_num = false;
+						if (isnum (a, arg2)) {
+							r2 = getnum (a, arg2);
+							r2_is_num = true;
+						} else {
+							r2 = getreg (arg2);
+						}
+						ut32 d = -getnum (a, delta + 1);
+						if ((ST8_MIN > d) && (d > ST8_MAX)) rm_byte = 0x80;
 						*delta++ = 0;
-						data[l++] = 0xc7;
-						data[l++] = 0x80 | getreg (arg);
-						data[l++] = N[0];
-						data[l++] = N[1];
-						data[l++] = N[2];
-						data[l++] = N[3];
-						n = getnum (a, arg2);
-						data[l++] = N[0];
-						data[l++] = N[1];
-						data[l++] = N[2];
-						data[l++] = N[3];
+						if (r2_is_num) {
+							data[l++] = 0xc7;
+							data[l++] = rm_byte | r;
+							if (r == 4) data[l++] = 0x24;
+							data[l++] = d;
+							if (rm_byte == 0x80) {
+								data[l++] = d >> 8;
+								data[l++] = d >> 16;
+								data[l++] = d >> 24;
+							}
+							data[l++] = r2;
+							data[l++] = r2 >> 8;
+							data[l++] = r2 >> 16;
+							data[l++] = r2 >> 24;
+						} else {
+							data[l++] = 0x89;
+							data[l++] = rm_byte | r2 << 3 | r;
+							if (r == 4) data[l++] = 0x24;
+							data[l++] = d;
+							if (rm_byte == 0x80) {
+								data[l++] = d >> 8;;
+								data[l++] = d >> 16;
+								data[l++] = d >> 24;
+							}
+						}
 						return l;
 					}
 				}
@@ -1202,20 +1225,12 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					data[l++] = d >> 16;
 					data[l++] = d >> 14;
 				} else if (delta) {
-					ut8 mask = 0x40;
 					ut32 d = r_num_math (NULL, delta) * N;
-					// Check if delta is short or dword
-					if ((ST8_MIN > d) && (d > ST8_MAX)) {
-						mask = 0x80;
-					}
 					int r = getreg (arg2);
-					if (r == 4) { //ESP
-						data[l++] = getreg (arg) << 3 | r | mask;
-						data[l++] = 0x24;
-					} else if (r == 5) { // EBP
-						data[l++] = getreg (arg) << 3 | r | mask;
-					} else data[l++] = getreg (arg) << 3 | r | mask;
-
+					// Check if delta is short or dword
+					if ((ST8_MIN > d) && (d > ST8_MAX)) rm_byte = 0x80;
+					data[l++] = getreg (arg) << 3 | r | rm_byte;
+					if (r == 4) data[l++] = 0x24; // ESP
 					data[l++] = d;
 					if ((ST8_MIN > d) && (d > ST8_MAX)) {
 						data[l++] = d >> 8;
@@ -1232,14 +1247,12 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 						data[l++] = 0;
 					} else {
 						if (r == 0xff) {
-							ut32 n;
-							ut8 *N = (ut8 *)&n;
+							ut32 d = getnum (a , arg2);
 							data[l++] = getreg (arg) << 3 | 5;
-							n = getnum (a, arg2);
-							data[l++] = N[0];
-							data[l++] = N[1];
-							data[l++] = N[2];
-							data[l++] = N[3];
+							data[l++] = d;
+							data[l++] = d >> 8;
+							data[l++] = d >> 16;
+							data[l++] = d >> 24;
 						} else data[l++] = getreg (arg) << 3 | r;
 					}
 				}
@@ -1254,13 +1267,12 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					return 0;
 				} else {
 					// mov [num], reg
-					ut8 *ptr = (ut8 *)&num;
 					data[l++] = 0x89;
 					data[l++] = (r0 << 3) | 5;
-					data[l++] = ptr[0];
-					data[l++] = ptr[1];
-					data[l++] = ptr[2];
-					data[l++] = ptr[3];
+					data[l++] = num;
+					data[l++] = num >> 8;
+					data[l++] = num >> 16;
+					data[l++] = num >> 24;
 					return l;
 				}
 			}
@@ -1283,24 +1295,20 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 
 			if (isnum (a, arg2)) {
 				if (delta) {
-					int n = getnum (a, delta);
+					int d = getnum (a, delta);
+					int reg = getreg (arg);
 					if (*arg != 'r' && a->bits == 64)
 						data[l++] = 0x67;
 					data[l++] = 0xc7;
-					if (1 || n > 127 || n < -127) { // XXX
-						int reg = getreg (arg);
-						ut8 *ptr = (ut8 *)&n;
-						data[l++] = 0x80 | reg;
-						if (reg == 4) // reg=ESP
-							data[l++] = ptr[0] | 0x20;
-						data[l++] = ptr[0];
-						data[l++] = ptr[1];
-						data[l++] = ptr[2];
-						data[l++] = ptr[3];
-					} else {
-						data[l++] = 0x40 | getreg (arg);
-						data[l++] = getnum (a, delta); //getreg (arg2);
-					}
+					if ((ST8_MIN > d) || (d > ST8_MAX)) rm_byte = 0x80;
+						data[l++] = rm_byte | reg;
+						if (reg == 4) data[l++] = 0x24; //ESP
+						data[l++] = d;
+						if (rm_byte == 0x80) {
+							data[l++] = d >> 8;
+							data[l++] = d >> 16;
+							data[l++] = d >> 24;
+						}
 				} else {
 					if (argk) {
 						int r = getreg (arg);
@@ -1354,8 +1362,16 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				data[l++] = 0x89;
 				if (delta) {
 					if (isnum (a, delta)) {
-						data[l++] = 0x40 | r0 | r1 << 3;
-						data[l++] = getnum (a, delta);
+						int n = getnum (a, delta);
+						if ((ST8_MIN > n) || (n > ST8_MAX)) rm_byte = 0x80;
+						data[l++] = rm_byte | r0 | r1 << 3;
+						if (r0 == 4) data[l++] = 0x24; //ESP
+						data[l++] = n;
+						if (rm_byte == 0x80) {
+							data[l++] = n >> 8;
+							data[l++] = n >> 16;
+							data[l++] = n >> 24;
+						}
 					} else {
 						data[l++] = r1 << 3 | 0x4;
 						data[l++] = (getreg (delta) << 3) | r0;
@@ -1372,14 +1388,13 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					char *plus = strchr (arg + 1, '+');
 					if (!plus) plus = strchr (arg + 1, '-');
 					if (plus) { // "jmp [reg+off]"
-						int delta = getnum (a, plus + 1);
-						ut8 *ptr = (ut8 *)&delta;
+						int d = getnum (a, plus + 1);
 						data[l++] = 0xff;
 						data[l++] = 0xa0 | reg;
-						data[l++] = ptr[0];
-						data[l++] = ptr[1];
-						data[l++] = ptr[2];
-						data[l++] = ptr[3];
+						data[l++] = d;
+						data[l++] = d >> 8;
+						data[l++] = d >> 16;
+						data[l++] = d >> 24;
 					} else { // "jmp [reg]"
 						data[l++] = 0xff;
 						data[l++] = 0x20 | reg;
