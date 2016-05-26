@@ -677,7 +677,7 @@ typedef struct {
 	RBinDwarfAttrSpec *specs;
 } RBinDwarfAbbrevDecl;
 
-#define DEBUG_ABBREV_CAP	16
+#define DEBUG_ABBREV_CAP	32
 
 typedef struct {
 	size_t length;
