@@ -192,50 +192,56 @@ R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb)
 
 /* TODO: Move into r_util maybe? */
 R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb,
-		ut32 *distance, double *similarity) {
+		ut32 *distance, double *similarity, bool verbose) {
 	/* 
 	More memory efficient version on Levenshtein Distance from:
 	https://en.wikipedia.org/wiki/Levenshtein_distance
 	http://www.codeproject.com/Articles/13525/Fast-memory-efficient-Levenshtein-algorithm
 	ObM..
 	*/
-	
+	if (verbose) 
+		fprintf(stderr,"Starting...\n");	
 	int i, j;
-	int v0[lb+1];
-	int v1[lb+1];
+
+	int *v0 = (int*) malloc( (lb + 1) * sizeof(int) );
+	int *v1 = (int*) malloc( (lb + 1) * sizeof(int) );	
 	
 	if (!a || !b || la < 1 || lb < 1)
 		return false;
 
 	if (la == lb && !memcmp (a, b, la)) {
-		if (distance != NULL)
+		if (!distance)
 			*distance = 0;
-		if (similarity != NULL)
+		if (!similarity)
 			*similarity = 1.0;
 		return true;
 	}
 
-	for (i = 0; i < lb+1 ; i++) v0[i]=i;
-	
+
+	for (i = 0; i < lb+1 ; i++)
+		v0[i] = i;
+
 	for (i = 0; i < la; i++) {
-		v1[0]=i + 1;
+		v1[0] = i + 1;
 
 		for (j = 0; j < lb; j++) {
-			int cost = (a[i]==b[j]) ? 0 : 1;
-			int smallest=((v1[j]+1) < (v0[j+1]+1)) ? v1[j]+1 : v0[j+1]+1;
-			smallest=(smallest < (v0[j]+cost)) ? smallest : v0[j]+cost;
-			v1[j+1]=smallest;
+			int cost = (a[i] == b[j]) ? 0 : 1;
+			int smallest = ((v1[j] + 1) < (v0[j + 1] + 1)) ? v1[j] + 1 : v0[j + 1] + 1;
+			smallest = (smallest < (v0[j] + cost)) ? smallest : v0[j] + cost;
+			v1[j + 1] = smallest;
 		}
 
-		for (j = 0; j < lb+1; j++) v0[j]=v1[j];
+		for (j = 0; j < lb + 1; j++) v0[j] = v1[j];
+		if ( (verbose) && ( i % 10000 == 0 ) )
+			fprintf(stderr,"Processing %i of %i\r",i,la-1);
 	}
-
-		
-	if (distance != NULL)
+	if (verbose)
+		fprintf(stderr,"\rProcessing %i of %i\n",i,la-1);
+	
+	if (distance) {
 		*distance = v1[lb];
-	if (similarity != NULL)
-		*similarity = (double)1 - (double)(*distance)/(double)(R_MAX(la, lb));
-
-
+		if (similarity)
+			*similarity = (double)1 - (double) (*distance) / (double) (R_MAX(la, lb) );
+	}
 	return true;
 }

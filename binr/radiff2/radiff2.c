@@ -29,6 +29,7 @@ static RCore *core = NULL;
 static const char *arch = NULL;
 static int bits = 0;
 static int anal_all = 0;
+static bool verbose = false;
 
 static RCore* opencore(const char *f) {
 	const ut64 baddr = UT64_MAX;
@@ -147,7 +148,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 }
 
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-abcCdjrspOxv] [-g sym] [-t %%] [file] [file]\n");
+	printf ("Usage: radiff2 [-abcCdjrspOxvV] [-g sym] [-t %%] [file] [file]\n");
 	if (v) printf (
 		"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
 		"  -A [-A]    run aaa or aaaa after loading each binary (see -C)\n"
@@ -165,7 +166,8 @@ static int show_help(int v) {
 		"  -s         compute text distance\n"
 		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 		"  -x         show two column hexdump diffing\n"
-		"  -v         show version information\n");
+		"  -v         show version information\n"
+		"  -V         be verbose (current only for -s)\n");
 	return 1;
 }
 
@@ -263,7 +265,7 @@ int main(int argc, char **argv) {
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Aa:b:CDnpg:Ojrhcdsvxt:")) != -1) {
+	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OjrhcdsVvxt:")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -317,6 +319,9 @@ int main(int argc, char **argv) {
 		case 'v':
 			printf ("radiff2 v"R2_VERSION"\n");
 			return 0;
+		case 'V':
+			verbose = true;
+			break;
 		case 'j':
 			diffmode = 'j';
 			break;
@@ -432,8 +437,8 @@ int main(int argc, char **argv) {
 		r_diff_free (d);
 		break;
 	case MODE_DIST:
-		r_diff_buffers_distance (NULL, bufa, sza, bufb, szb, &count, &sim);
-		printf ("similarity: %.2f\n", sim);
+		r_diff_buffers_distance (NULL, bufa, sza, bufb, szb, &count, &sim,verbose);
+		printf ("similarity: %.3f\n", sim);
 		printf ("distance: %d\n", count);
 		break;
 	}
