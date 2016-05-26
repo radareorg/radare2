@@ -366,16 +366,16 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_FMULP:
 		break;
 	case X86_INS_CLI:
-		esilprintf (op, "0,if,=");
+		esilprintf (op, "$0,if,=");
 		break;
 	case X86_INS_STI:
-		esilprintf (op, "1,if,=");
+		esilprintf (op, "$1,if,=");
 		break;
 	case X86_INS_CLC:
-		esilprintf (op, "0,cf,=");
+		esilprintf (op, "$0,cf,=");
 		break;
 	case X86_INS_STC:
-		esilprintf (op, "1,cf,=");
+		esilprintf (op, "$1,cf,=");
 		break;
 	case X86_INS_CLAC:
 	case X86_INS_CLGI:
@@ -740,7 +740,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		if (insn->id == X86_INS_TEST) {
 			char *src = getarg (&gop, 1, 0, NULL);
 			char *dst = getarg (&gop, 0, 0, NULL);
-			esilprintf (op, "0,%s,%s,&,==,$z,zf,=,$p,pf,=,$s,sf,=,0,cf,=,0,of,=",
+			esilprintf (op, "0,%s,%s,&,==,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
 				src, dst);
 			free (src);
 			free (dst);
@@ -1045,7 +1045,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
 			char *dst = getarg (&gop, 0, 1, "^");
-			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,0,cf,=,0,of,=",
+			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
 				src, dst);
 			free (src);
 			free (dst);
@@ -1063,7 +1063,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
 			char *dst = getarg (&gop, 0, 0, NULL);
-			esilprintf (op, "%s,%s,|=,$s,sf,=,$z,zf,=,$p,pf,=,0,of,=,0,cf,=", src, dst);
+			esilprintf (op, "%s,%s,|=,$s,sf,=,$z,zf,=,$p,pf,=,$0,of,=,$0,cf,=", src, dst);
 			free (src);
 			free (dst);
 		}
@@ -1106,11 +1106,12 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
 			char *dst = getarg (&gop, 0, 1, "-");
+			ut64 size = INSOP(0).size;
 			// Set OF, SF, ZF, AF, PF, and CF flags.
 			// We use $b rather than $c here as the carry flag really
 			// represents a "borrow"
-			esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$b,cf,=",
-				src, dst);
+			esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$b%d,cf,=",
+				src, dst, size);
 			free (src);
 			free (dst);
 		}
@@ -1120,7 +1121,8 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
 			char *dst = getarg (&gop, 0, 0, NULL);
-			esilprintf (op, "cf,%s,+,%s,-=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$b,cf,=", src, dst);
+			ut64 size = INSOP(0).size;
+			esilprintf (op, "cf,%s,+,%s,-=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$b%d,cf,=", src, dst, size);
 			free (src);
 			free (dst);
 		}
@@ -1160,7 +1162,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
 			char *dst = getarg (&gop, 0, 1, "&");
-			esilprintf (op, "%s,%s,0,of,=,0,cf,=,$z,zf,=,$s,sf,=,$o,pf,=", src, dst);
+			esilprintf (op, "%s,%s,$0,of,=,$0,cf,=,$z,zf,=,$s,sf,=,$o,pf,=", src, dst);
 			free (src);
 			free (dst);
 		}

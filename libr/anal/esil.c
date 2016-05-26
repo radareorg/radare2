@@ -367,11 +367,11 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 		}
 		break;
 	case 'b': //borrow
-		bit = (ut8)r_num_get (NULL, &str[2]);
+		bit = (ut8) r_num_get (NULL, &str[2]);
 		*num = esil_internal_borrow_check (esil, bit);
 		break;
 	case 'c': //carry
-		bit = (ut8)r_num_get (NULL, &str[2]);
+		bit = (ut8) r_num_get (NULL, &str[2]);
 		*num = esil_internal_carry_check (esil, bit);
 		break;
 	case 'o': //overflow
@@ -408,7 +408,19 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 		}
 		break;
 	default:
-		return false;
+		{ // Handle the case of "internal set", i.e. set a register without
+		  // having side effects. The value to be set must be in decimal and
+		  // prefixed by "$". Example:
+		  //  - Set of to 0. ("$0,of,=")
+		  //  - Set rax to 100 without side-effects. ("$100,rax,=")
+		  char *endptr = NULL;
+		  ut64 imm = strtoull (str + 1, &endptr, 10);
+		  if (*endptr == NULL) {
+			  *num = imm;
+			  return true;
+		  }
+		  return false;
+		}
 	}
 	return true;
 }
@@ -752,11 +764,11 @@ static int esil_cmp(RAnalEsil *esil) {
 				// default size is set to 64 as internally operands are ut64
 				esil->lastsz = 64;
 			}
+			r_anal_esil_pushnum (esil, num - num2);
 		}
 	}
 	free (dst);
 	free (src);
-	//r_anal_esil_pushnum (esil, ret);
 	return ret;
 }
 
