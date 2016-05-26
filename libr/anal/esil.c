@@ -367,11 +367,11 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 		}
 		break;
 	case 'b': //borrow
-		bit = (ut8)r_num_get (NULL, &str[2]);
+		bit = (ut8) r_num_get (NULL, &str[2]);
 		*num = esil_internal_borrow_check (esil, bit);
 		break;
 	case 'c': //carry
-		bit = (ut8)r_num_get (NULL, &str[2]);
+		bit = (ut8) r_num_get (NULL, &str[2]);
 		*num = esil_internal_carry_check (esil, bit);
 		break;
 	case 'o': //overflow
@@ -406,6 +406,12 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 		default:
 			return false;
 		}
+		break;
+	case '0': // unset flag without affecting esil vars cur, old and lastsz
+		*num = 0;
+		break;
+	case '1': // set flag without affecting esil vars cur, old and lastsz
+		*num = 1;
 		break;
 	default:
 		return false;
