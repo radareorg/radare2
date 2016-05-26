@@ -20,7 +20,7 @@ static void err(RAnalEsil *esil, const char *msg) {
 }
 #define ERR(x) err(esil,x)
 
-/* Returns the number that has bits+1 least significant bits set. */
+/* Returns the number that has bits + 1 least significant bits set. */
 static inline ut64 genmask(int bits) {
 	ut64 m = (ut64)(((ut64)(2) << bits) - 1);
 	if (!m) m = UT64_MAX;
@@ -279,7 +279,8 @@ static int esil_internal_borrow_check(RAnalEsil *esil, ut8 bit) {
 }
 
 static int esil_internal_carry_check(RAnalEsil *esil, ut8 bit) {
-	return esil->cur > (((ut64) 1 << ((ut64) bit + 1)) - 1);
+	ut64 mask = genmask (bit);
+	return (esil->cur & mask) < (esil->old & mask);
 }
 
 static int esil_internal_parity_check(RAnalEsil *esil) {
@@ -294,11 +295,9 @@ static int esil_internal_parity_check(RAnalEsil *esil) {
 }
 
 static bool esil_internal_sign_check(RAnalEsil *esil) {
-	// XXX we must rethink of how we set esil->lastsz (check the src)
-	// (a,a,^=,%%z,z,= esil->lastsz will be 1 here not sizeof(a))
 	if (!esil || !esil->lastsz)
 		return false;
-	return !!((esil->cur & (1 << (esil->lastsz - 1))) >> (esil->lastsz - 1));
+	return ((esil->cur >> (esil->lastsz - 1)) & 1);
 }
 
 static bool esil_internal_overflow_check(RAnalEsil *esil) {
@@ -746,6 +745,8 @@ static int esil_interrupt(RAnalEsil *esil) {
 	return false;
 }
 
+// Pushes result onto stack. Pushes op1 == op2 onto stack, not the difference.
+// This function also sets internal vars which is used in flag calculations.
 static int esil_cmp(RAnalEsil *esil) {
 	ut64 num, num2;
 	int ret = 0;
@@ -764,7 +765,7 @@ static int esil_cmp(RAnalEsil *esil) {
 				// default size is set to 64 as internally operands are ut64
 				esil->lastsz = 64;
 			}
-			r_anal_esil_pushnum (esil, num - num2);
+			r_anal_esil_pushnum (esil, num == num2);
 		}
 	}
 	free (dst);
@@ -2048,7 +2049,7 @@ static int esil_dup(RAnalEsil *esil) {
 	return r_anal_esil_push (esil, esil->stack[esil->stackptr-1]);
 }
 
-static int esil_swap (RAnalEsil *esil) {
+static int esil_swap(RAnalEsil *esil) {
 	char *tmp;
 	if (!esil || !esil->stack || esil->stackptr < 2)
 		return false;
@@ -2060,63 +2061,113 @@ static int esil_swap (RAnalEsil *esil) {
 	return true;
 }
 
-/* in case of fail, we must set some var */
-static int esil_smaller(RAnalEsil *esil) { // 'src < dst' => 'src,dst,<'
-	ut64 s, d;
-	if (!popRN (esil, &d)) {
-		ERR ("esil_smaller: src is broken");
-		return false;
+// NOTE on following comparison functions:
+// The push to top of the stack is based on a
+// signed compare (as this causes least surprise to the users).
+// If an unsigned comparison is necessary, one must not use the
+// result pushed onto the top of the stack, but rather test the flags which
+// are set as a result of the compare.
+static int esil_smaller(RAnalEsil *esil) { // 'dst < src' => 'src,dst,<'
+	ut64 num, num2;
+	int ret = 0;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
+		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+			esil->old = num;
+			esil->cur = num - num2;
+			ret = 1;
+			if (r_reg_get (esil->anal->reg, dst, -1)) {
+				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
+			} else if (r_reg_get (esil->anal->reg, src, -1)) {
+				esil->lastsz = esil_internal_sizeof_reg (esil, src);
+			} else {
+				// default size is set to 64 as internally operands are ut64
+				esil->lastsz = 64;
+			}
+			r_anal_esil_pushnum (esil, (st64) num < (st64) num2);
+		}
 	}
-	if (!popRN (esil, &s)) {
-		ERR ("esil_smaller: dst is broken");
-		return false;
-	}
-	r_anal_esil_pushnum (esil, (d < s));
+	free (dst);
+	free (src);
 	return true;
 }
 
-// TODO:
-// sign is not handled
-// ESIL flags not updated?
-static int esil_bigger(RAnalEsil *esil) { // 'src > dst' => 'src,dst,>'
-	ut64 s, d;
-	if (!popRN (esil, &d)) {
-		ERR ("esil_bigger: src is broken");
-		return false;
+static int esil_bigger(RAnalEsil *esil) { // 'dst > src' => 'src,dst,>'
+	ut64 num, num2;
+	int ret = 0;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
+		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+			esil->old = num;
+			esil->cur = num - num2;
+			ret = 1;
+			if (r_reg_get (esil->anal->reg, dst, -1)) {
+				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
+			} else if (r_reg_get (esil->anal->reg, src, -1)) {
+				esil->lastsz = esil_internal_sizeof_reg (esil, src);
+			} else {
+				// default size is set to 64 as internally operands are ut64
+				esil->lastsz = 64;
+			}
+			r_anal_esil_pushnum (esil, (st64) num > (st64) num2);
+		}
 	}
-	if (!popRN (esil, &s)) {
-		ERR ("esil_bigger: dst is broken");
-		return false;
-	}
-	r_anal_esil_pushnum (esil, (d > s));
+	free (dst);
+	free (src);
 	return true;
 }
 
-static int esil_smaller_equal(RAnalEsil *esil) { // 'src <= dst' => 'src,dst,<='
-	ut64 s, d;
-	if (!popRN (esil, &d)) {
-		ERR ("esil_smaller_equal: src is broken");
-		return false;
+static int esil_smaller_equal(RAnalEsil *esil) { // 'dst <= src' => 'src,dst,<='
+	ut64 num, num2;
+	int ret = 0;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
+		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+			esil->old = num;
+			esil->cur = num - num2;
+			ret = 1;
+			if (r_reg_get (esil->anal->reg, dst, -1)) {
+				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
+			} else if (r_reg_get (esil->anal->reg, src, -1)) {
+				esil->lastsz = esil_internal_sizeof_reg (esil, src);
+			} else {
+				// default size is set to 64 as internally operands are ut64
+				esil->lastsz = 64;
+			}
+			r_anal_esil_pushnum (esil, (st64) num <= (st64) num2);
+		}
 	}
-	if (!popRN (esil, &s)) {
-		ERR ("esil_smaller_equal: dst is broken");
-		return false;
-	}
-	r_anal_esil_pushnum (esil, (d <= s));
+	free (dst);
+	free (src);
 	return true;
 }
 
-static int esil_bigger_equal(RAnalEsil *esil) { // 'src >= dst' => 'src,dst,>='
-	ut64 s, d;
-	if (!popRN (esil, &d)) {
-		ERR ("esil_bigger_equal: src is broken");
-		return false;
+static int esil_bigger_equal(RAnalEsil *esil) { // 'dst >= src' => 'src,dst,>='
+	ut64 num, num2;
+	int ret = 0;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
+		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+			esil->old = num;
+			esil->cur = num - num2;
+			ret = 1;
+			if (r_reg_get (esil->anal->reg, dst, -1)) {
+				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
+			} else if (r_reg_get (esil->anal->reg, src, -1)) {
+				esil->lastsz = esil_internal_sizeof_reg (esil, src);
+			} else {
+				// default size is set to 64 as internally operands are ut64
+				esil->lastsz = 64;
+			}
+			r_anal_esil_pushnum (esil, (st64) num >= (st64) num2);
+		}
 	}
-	if (!popRN (esil, &s)) {
-		ERR ("esil_bigger_equal: dst is broken");
-		return false;
-	}
-	r_anal_esil_pushnum (esil, (d >= s));
+	free (dst);
+	free (src);
 	return true;
 }
 
