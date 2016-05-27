@@ -2067,6 +2067,25 @@ static int esil_swap(RAnalEsil *esil) {
 // If an unsigned comparison is necessary, one must not use the
 // result pushed onto the top of the stack, but rather test the flags which
 // are set as a result of the compare.
+
+static int signed_compare_gt(ut64 a, ut64 b, ut64 size) {
+	int result;
+	switch (size) {
+	case 1:  result = (a & 1) > (b & 1);
+		break;
+	case 8:  result = (st8) a > (st8) b;
+		break;
+	case 16: result = (st16) a > (st16) b;
+		break;
+	case 32: result = (st32) a > (st32) b;
+		break;
+	case 64:
+	default: result = (st64) a > (st64) b;
+		break;
+	}
+	return result;
+}
+
 static int esil_smaller(RAnalEsil *esil) { // 'dst < src' => 'src,dst,<'
 	ut64 num, num2;
 	int ret = 0;
@@ -2085,7 +2104,8 @@ static int esil_smaller(RAnalEsil *esil) { // 'dst < src' => 'src,dst,<'
 				// default size is set to 64 as internally operands are ut64
 				esil->lastsz = 64;
 			}
-			r_anal_esil_pushnum (esil, (st64) num < (st64) num2);
+			r_anal_esil_pushnum (esil, (num != num2) &
+			                           !signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
 	free (dst);
@@ -2111,7 +2131,7 @@ static int esil_bigger(RAnalEsil *esil) { // 'dst > src' => 'src,dst,>'
 				// default size is set to 64 as internally operands are ut64
 				esil->lastsz = 64;
 			}
-			r_anal_esil_pushnum (esil, (st64) num > (st64) num2);
+			r_anal_esil_pushnum (esil, signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
 	free (dst);
@@ -2137,7 +2157,7 @@ static int esil_smaller_equal(RAnalEsil *esil) { // 'dst <= src' => 'src,dst,<='
 				// default size is set to 64 as internally operands are ut64
 				esil->lastsz = 64;
 			}
-			r_anal_esil_pushnum (esil, (st64) num <= (st64) num2);
+			r_anal_esil_pushnum (esil, !signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
 	free (dst);
@@ -2163,7 +2183,8 @@ static int esil_bigger_equal(RAnalEsil *esil) { // 'dst >= src' => 'src,dst,>='
 				// default size is set to 64 as internally operands are ut64
 				esil->lastsz = 64;
 			}
-			r_anal_esil_pushnum (esil, (st64) num >= (st64) num2);
+			r_anal_esil_pushnum (esil, (num == num2) |
+			                           signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
 	free (dst);
