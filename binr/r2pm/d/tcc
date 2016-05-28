@@ -8,15 +8,15 @@ R2PM_DESC "[syspkg] TinyCC compiler aka TCC"
 p="${R2PM_PREFIX}"
 
 R2PM_INSTALL() {
-	make clean
+	${MAKE} clean
 	./configure --prefix=$p --sysroot=$p/lib --libdir=$p/lib \
-		--tccdir=$p/lib/tcc --docdir=$p/share/doc/tcc
-	make PREFIX="${R2PM_PREFIX}" CONFIG_SYSROOT="$p/lib"
-	${SUDO} make install PREFIX="$p"
+		--tccdir=$p/lib/tcc --docdir=$p/share/doc/tcc || exit 1
+	${MAKE} PREFIX="${R2PM_PREFIX}" CONFIG_SYSROOT="$p/lib" || exit 1
+	${SUDO} ${MAKE} install PREFIX="$p" || exit 1
 }
 
 R2PM_UNINSTALL() {
-	${SUDO} make uninstall PREFIX="$p"
+	${SUDO} ${MAKE} uninstall PREFIX="$p"
 }
 
 R2PM_END

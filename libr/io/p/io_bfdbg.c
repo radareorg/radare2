@@ -150,9 +150,14 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOBind iob;
 		RIOBfdbg *mal = R_NEW0 (RIOBfdbg);
+		if (!mal) return NULL;
 		r_io_bind (io, &iob);
 		mal->fd = getmalfd (mal);
 		mal->bfvm = bfvm_new (&iob);
+		if (!mal->bfvm) {
+			free (mal);
+			return NULL;
+		}
 		out = r_file_slurp (pathname+8, &rlen);
 		if (!out || rlen < 1) {
 			free (mal);

@@ -52,7 +52,7 @@ static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int le
 	if (!s->data) {
 		free (s);
 		return NULL;
-	} 
+	}
 	memcpy (s->data, data, len);
 	if (r_list_append (l, s) == NULL) return NULL;
 	return s;
@@ -71,7 +71,7 @@ static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
 				// must realloc
 				ut8 *ndata = realloc (s->data, len + newlen);
 				if (ndata) {
-					s->data = ndata;	
+					s->data = ndata;
 				} else {
 					eprintf ("sparse write fail\n");
 					return -1;
@@ -92,7 +92,7 @@ static bool sparse_limits(RList *l, ut64 *min, ut64 *max) {
 	RListIter *iter;
 
 	if (min) *min = UT64_MAX;
-	
+
 	r_list_foreach (l, iter, s) {
 		if (set) {
 			set = true;
@@ -126,6 +126,7 @@ R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len) {
 
 R_API RBuffer *r_buf_new_with_bytes (const ut8 *bytes, ut64 len) {
 	RBuffer *b = r_buf_new ();
+	if (!b) return NULL;
 	if (bytes && (len > 0 && len != UT64_MAX))
 		r_buf_set_bytes (b, bytes, len);
 	return b;
@@ -137,12 +138,14 @@ R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
 
 R_API RBuffer *r_buf_new_sparse() {
 	RBuffer *b = r_buf_new ();
+	if (!b) return NULL;
 	b->sparse = r_list_newf ((RListFree)free);
 	return b;
 }
 
 R_API RBuffer *r_buf_new() {
 	RBuffer *b = R_NEW0 (RBuffer);
+	if (!b) return NULL;
 	b->fd = -1;
 	return b;
 }
@@ -275,6 +278,7 @@ R_API char *r_buf_to_string(RBuffer *b) {
 	char *s;
 	if (!b) return strdup ("");
 	s = malloc (b->length+1);
+	if (!s) return NULL;
 	memmove (s, b->buf, b->length);
 	s[b->length] = 0;
 	return s;

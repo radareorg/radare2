@@ -68,6 +68,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	RAsmOp *op;
 	if (b == NULL) {
 		b = r_buf_new ();
+		if (!b) return NULL;
 		if (!r_core_read_at (core, addr, buf, sizeof (buf)))
 			return NULL;
 		b->base = addr;
@@ -650,7 +651,11 @@ static int cmd_kuery(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1] == ' ') {
-			char *fn = strdup (input+2);
+			char *fn = strdup (input + 2);
+			if (!fn) {
+				eprintf("Unable to allocate memory\n");
+				return 0;
+			}
 			char *ns = strchr (fn, ' ');
 			if (ns) {
 				Sdb *db;
@@ -1590,7 +1595,7 @@ next2:
 	core->tmpseek = ptr? true: false;
 	if (ptr) {
 		ut64 tmpoff, tmpbsz, addr;
-		const char *tmpasm = NULL;
+		char *tmpasm = NULL;
 		const char *tmpbits = NULL;
 		char *tmpeval = NULL;
 		const char *offstr = NULL;
@@ -1733,7 +1738,7 @@ next_arroba:
 		if (ptr[1]=='@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
 			if (ptr[2] == '@') {
-				char *rule = ptr+3;
+				char *rule = ptr + 3;
 				while (*rule && *rule==' ') rule++;
 				ret = r_core_cmd_foreach3 (core, cmd, rule);
 			} else {
@@ -1741,18 +1746,70 @@ next_arroba:
 			}
 			//ret = -1; /* do not run out-of-foreach cmd */
 		} else {
+			bool tmpseek = false;
+			const char *fromvars[] = { "anal.from", "diff.from", "graph.from",
+				"io.buffer.from", "lines.from", "search.from", "zoom.from", NULL };
+			const char *tovars[] = { "anal.to", "diff.to", "graph.to",
+				"io.buffer.to", "lines.to", "search.to", "zoom.to", NULL };
+			ut64 curfrom[R_ARRAY_SIZE (fromvars) - 1], curto[R_ARRAY_SIZE (tovars) - 1];
+
+			// @..
+			if (ptr[1] == '.' && ptr[2] == '.') {
+				char *range = ptr + 3;
+				char *p = strchr (range, ' ');
+				if (!p) {
+					eprintf ("Usage: / ABCD @..0x1000 0x3000\n");
+					free (tmpeval);
+					free (tmpasm);
+					return false;
+				}
+				*p = '\x00';
+				ut64 from = r_num_math (core->num, range);
+				ut64 to = r_num_math (core->num, p + 1);
+
+				// save current ranges
+				for (i = 0; fromvars[i]; i++) {
+					curfrom[i] = r_config_get_i (core->config, fromvars[i]);
+				}
+				for (i = 0; tovars[i]; i++) {
+					curto[i] = r_config_get_i (core->config, tovars[i]);
+				}
+
+				// set new ranges
+				for (i = 0; fromvars[i]; i++) {
+					r_config_set_i (core->config, fromvars[i], from);
+				}
+				for (i = 0; tovars[i]; i++) {
+					r_config_set_i (core->config, tovars[i], to);
+				}
+
+				tmpseek = true;
+			}
+
 			if (usemyblock) {
 				if (addr != UT64_MAX) {
 					core->offset = addr;
 				}
 				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 			} else {
-if (addr != UT64_MAX) {
-				if (!ptr[1] || r_core_seek (core, addr, 1)) {
-					r_core_block_read (core, 0);
-					ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
-				} else ret = 0;
-}
+				if (addr != UT64_MAX) {
+					if (!ptr[1] || r_core_seek (core, addr, 1)) {
+						r_core_block_read (core, 0);
+						ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
+					} else {
+						ret = 0;
+					}
+				}
+			}
+
+			if (tmpseek) {
+				// restore ranges
+				for (i = 0; fromvars[i]; i++) {
+					r_config_set_i (core->config, fromvars[i], curfrom[i]);
+				}
+				for (i = 0; tovars[i]; i++) {
+					r_config_set_i (core->config, tovars[i], curto[i]);
+				}
 			}
 		}
 		if (ptr2) {
@@ -1769,7 +1826,7 @@ if (addr != UT64_MAX) {
 		}
 		if (tmpeval) {
 			r_core_cmd0 (core, tmpeval);
-			free (tmpeval);
+			R_FREE (tmpeval);
 		}
 		r_core_seek (core, tmpoff, 1);
 		*ptr = '@';
@@ -2206,6 +2263,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 
 	if (!lines || !*lines) return true;
 	data = odata = strdup (lines);
+	if (!odata) return false;
 	nl = strchr (odata, '\n');
 	if (nl) {
 		r_cons_break (NULL, NULL);
@@ -2293,6 +2351,7 @@ R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b) {
 
 R_API int r_core_cmd_buffer(void *user, const char *buf) {
 	char *ptr, *optr, *str = strdup (buf);
+	if (!str) return false;
 	optr = str;
 	ptr = strchr (str, '\n');
 	while (ptr) {

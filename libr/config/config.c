@@ -19,6 +19,7 @@ R_API RConfigNode *r_config_node_new(const char *name, const char *value) {
 
 R_API RConfigNode *r_config_node_clone(RConfigNode *n) {
 	RConfigNode *cn = R_NEW0 (RConfigNode);
+	if (!cn) return NULL;
 	cn->name = strdup (n->name);
 	cn->desc = n->desc? strdup (n->desc): NULL;
 	cn->hash = n->hash;
@@ -411,10 +412,14 @@ R_API int r_config_readonly(RConfig *cfg, const char *key) {
 }
 
 R_API RConfig *r_config_new(void *user) {
-	RConfig *cfg = R_NEW (RConfig);
+	RConfig *cfg = R_NEW0 (RConfig);
 	if (!cfg) return NULL;
 	cfg->ht = r_hashtable_new ();
 	cfg->nodes = r_list_new ();
+	if (!cfg->nodes) {
+		R_FREE (cfg);
+		return NULL;
+	}
 	cfg->nodes->free = r_config_node_free;
 	cfg->user = user;
 	cfg->num = NULL;
@@ -428,6 +433,7 @@ R_API RConfig *r_config_clone(RConfig *cfg) {
 	RListIter *iter;
 	RConfigNode *node;
 	RConfig *c = r_config_new (cfg->user);
+	if (!c) return NULL;
 	r_list_foreach (cfg->nodes, iter, node) {
 		RConfigNode *nn = r_config_node_clone (node);
 		r_hashtable_insert (c->ht, node->hash, nn);

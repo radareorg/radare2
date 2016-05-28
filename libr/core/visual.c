@@ -110,6 +110,7 @@ static void visual_repeat(RCore *core) {
 #endif
 	} else {
 		RThread *th = r_th_new (visual_repeat_thread, core, 0);
+		if (!th) return;
 		r_th_start (th, 1);
 		r_cons_break (NULL, NULL);
 		r_cons_any_key (NULL);

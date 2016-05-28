@@ -466,7 +466,13 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	RBinFile *binfile = NULL;
 	RIODesc *desc = cf ? cf->desc : NULL;
 	RBinPlugin *plugin = NULL;
-	int is_io_load = desc && desc->plugin;
+	int is_io_load;
+	// NULL deref guard
+	if (!desc) {
+		is_io_load = false;
+	} else {
+		is_io_load = desc && desc->plugin;
+	}
 
 	if (cf) {
 		if ((filenameuri == NULL || !*filenameuri)) {
@@ -563,6 +569,7 @@ R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, u
 	const char *loadmethod = r_config_get (core->config, "file.loadmethod");
 	const char *suppress_warning = r_config_get (core->config, "file.nowarn");
 	ut64 load_align = r_config_get_i (core->config, "file.loadalign");
+	if (!loadmethod || !suppress_warning) return NULL;
 	RIOMap *map = NULL;
 	if (!strcmp (loadmethod, "overwrite"))
 		map = r_io_map_new (core->io, fh->desc->fd, mode, 0, loadaddr, r_io_desc_size (core->io, fh->desc));
@@ -572,29 +579,29 @@ R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, u
 		map = r_io_map_add_next_available (core->io, fh->desc->fd, mode, 0, loadaddr, r_io_desc_size (core->io, fh->desc), load_align);
 	}
 	if (!strcmp (suppress_warning, "false")) {
-		if (!map)
+		if (!map) {
 			eprintf ("r_core_file_get_next_map: Unable to load specified file to 0x%08"PFMT64x"\n", loadaddr);
-		else {
+		} else {
 			if (map->from != loadaddr)
 				eprintf ("r_core_file_get_next_map: Unable to load specified file to 0x%08"PFMT64x",\n"
 					 "but loaded to 0x%08"PFMT64x"\n", loadaddr, map->from);
 		}
 	}
-	r_io_sort_maps (core->io);				//necessary ???
+	r_io_sort_maps (core->io); //necessary ???
 	return map;
 }
 
 
 R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr) {
-	RIODesc *fd;
+	int openmany = r_config_get_i (r->config, "file.openmany"), opened_count = 0;
+	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
+	ut64 current_loadaddr = loadaddr;
+	RCoreFile *fh, *top_file = NULL;
+	RListIter *fd_iter, *iter2;
+	char *loadmethod = NULL;
 	RList *list_fds = NULL;
 	const char *cp = NULL;
-	char *loadmethod = NULL;
-	RListIter *fd_iter, *iter2;
-	RCoreFile *fh, *top_file = NULL;
-	ut64 current_loadaddr = loadaddr;
-	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
-	int openmany = r_config_get_i (r->config, "file.openmany"), opened_count = 0;
+	RIODesc *fd;
 
 	list_fds = r_io_open_many (r->io, file, flags, 0644);
 
@@ -632,8 +639,9 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 
 		if (!fh->map) {
 			r_core_file_free (fh);
-			if (!strcmp (suppress_warning, "false"))
-				eprintf("Unable to load file due to failed mapping.\n");
+			if (!strcmp (suppress_warning, "false")) {
+				eprintf ("Unable to load file due to failed mapping.\n");
+			}
 			continue;
 		}
 
@@ -652,7 +660,9 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 		return top_file;
 	}
 	cp = r_config_get (r->config, "cmd.open");
-	if (cp && *cp) r_core_cmd (r, cp, 0);
+	if (cp && *cp) {
+		r_core_cmd (r, cp, 0);
+	}
 
 	r_config_set (r->config, "file.path", r_file_abspath (top_file->desc->name));
 	r_config_set_i (r->config, "zoom.to", top_file->map->from + r_io_desc_size (r->io, top_file->desc));
@@ -662,7 +672,8 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 	return top_file;
 }
 
-R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 loadaddr) {
+/* loadaddr is r2 -m (mapaddr */
+R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr) {
 	ut64 prev = r_sys_now();
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	const int openmany = r_config_get_i (r->config, "file.openmany");
@@ -675,7 +686,7 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 	}
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
-		flags = 4|2;
+		flags = 4 | 2;
 	}
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
 	fd = r_io_open_nomap (r->io, file, flags, 0644);
@@ -711,8 +722,9 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 	fh->desc = fd;
 
 	cp = r_config_get (r->config, "cmd.open");
-	if (cp && *cp)
+	if (cp && *cp) {
 		r_core_cmd (r, cp, 0);
+	}
 	{
 		char *absfile = r_file_abspath (file);
 		r_config_set (r->config, "file.path", absfile);
@@ -722,8 +734,9 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 	if (!fh->map) {
 		r_core_file_free (fh);
 		fh = NULL;
-		if (!strcmp (suppress_warning, "false"))
-			eprintf("Unable to load file due to failed mapping.\n");
+		if (!strcmp (suppress_warning, "false")) {
+			eprintf ("Unable to load file due to failed mapping.\n");
+		}
 		goto beach;
 	}
 	// check load addr to make sure its still valid
@@ -734,8 +747,9 @@ R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 l
 
 	if (r_config_get_i (r->config, "cfg.debug")) {
 		bool swstep = true;
-		if (r->dbg->h && r->dbg->h->canstep)
+		if (r->dbg->h && r->dbg->h->canstep) {
 			swstep = false;
+		}
 		r_config_set_i (r->config, "dbg.swstep", swstep);
 	}
 beach:

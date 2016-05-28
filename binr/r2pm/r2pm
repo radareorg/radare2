@@ -10,54 +10,60 @@ if [ $? != 0 ]; then
 fi
 
 # Exported Vars
+MAKE=make
+gmake --help >/dev/null 2>&1
+[ $? = 0 ] && MAKE=gmake
+export MAKE
 export GLOBAL=0
 export R2VERSION="`r2 -qv`"
 PREFIX="`r2 -hh | grep PREFIX | awk '{print $2}' 2> /dev/null`"
-BINDIR="${PREFIX}/bin"
-LIBDIR="${PREFIX}/lib"
+BINDIR="${PREFIX}/bin/"
+LIBDIR="${PREFIX}/lib/"
 WRKDIR="$PWD"
 export LIBEXT="`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`"
 export R2HOMEDIR="`r2 -hh | grep '^ RHOMEDIR' | awk '{print $2}' 2> /dev/null`"
 #[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2HOMEDIR}"
-R2PM_PLUGDIR="${R2HOMEDIR}/plugins"
+R2PM_PLUGDIR="${R2HOMEDIR}/plugins/"
 # bindir
-export R2PM_HOMEBINDIR="${R2PM_PLUGDIR}/bin"
+export R2PM_HOMEBINDIR="${R2PM_PLUGDIR}/bin/"
 export R2PM_SYSBINDIR="${BINDIR}"
 export R2PM_BINDIR=${R2PM_HOMEBINDIR}
 # prefix
 export R2PM_SYSPREFIX="${PREFIX}"
-export R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix"
+export R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix/"
 export R2PM_PREFIX="${R2PM_HOMEPREFIX}"
 # www
-export R2PM_SYSWWWROOT="`r2 -cq -qe http.root --`"
-export R2PM_HOMEWWWROOT="${R2HOMEDIR}/www"
+export R2PM_SYSWWWROOT="`r2 -qc 'e http.root' --`"
+export R2PM_HOMEWWWROOT="${R2HOMEDIR}/www/"
 export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
 # pkgconfig
 export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+export CFLAGS="-I${R2PM_HOMEPREFIX}/include/"
+export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib/"
 
 # Global Vars
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
 IS_SYSPKG=0
-R2PM_USRDIR="${HOME}/.config/radare2/r2pm"
+R2PM_USRDIR="${HOME}/.config/radare2/r2pm/"
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_PREFIX}/lib/radare2/last"
 
 if [ -z "${R2PM_DBDIR}" ]; then
 	if [ -d "${PREFIX}/share/radare2/last/r2pm" ]; then
-		R2PM_DBDIR="${PREFIX}/share/radare2/last/r2pm"
+		R2PM_DBDIR="${PREFIX}/share/radare2/last/r2pm/"
 	fi
 fi
 if [ -f "d/baleful" ]; then
-	R2PM_DBDIR="$(pwd)/d"
+	R2PM_DBDIR="$(pwd)/d/"
 fi
 if [ ! -d "${R2PM_DBDIR}" ]; then
 	R2PM_DBDIR=""
 	echo "\$R2PM_DBDIR: No such file or directory."
 fi
 
-mkdir -p "${R2PM_USRDIR}/pkg"
-mkdir -p "${R2PM_USRDIR}/git"
+mkdir -p "${R2PM_USRDIR}/pkg/"
+mkdir -p "${R2PM_USRDIR}/git/"
 mkdir -p "${R2PM_PLUGDIR}"
 
 R2PM_SYSPKG() {
@@ -161,6 +167,28 @@ r2pm_install() {
 	fi
 }
 
+r2pm_uninstall() {
+	if [ -z "$2" ]; then
+		R2PM_Info
+	else
+		FILE="${R2PM_DBDIR}/$2"
+		if [ -f "${FILE}" ]; then
+			NAME="$2"
+			ACTION=Uninstall
+			. "${FILE}"
+			R2PM_UNINSTALL
+			if [ $? = 0 ]; then
+				R2PM_UNREGISTER
+			else
+				echo Oops
+			fi
+		else
+			echo "Unable to find package template for $2." > /dev/stderr
+			echo "Use -uu to remove it from the database." > /dev/stderr
+		fi
+	fi
+}
+
 case "$1" in
 -i|install)
 	r2pm_install $@
@@ -171,17 +199,7 @@ case "$1" in
 	rm -f "${FILE}"
 	;;
 -u|uninstall)
-	FILE="${R2PM_DBDIR}/$2"
-	if [ -f "${FILE}" ]; then
-		NAME="$2"
-		ACTION=Uninstall
-		. "${FILE}"
-		R2PM_UNINSTALL
-		R2PM_UNREGISTER
-	else
-		echo "Unable to find package template for $2." > /dev/stderr
-		echo "Use -uu to remove it from the database." > /dev/stderr
-	fi
+	r2pm_uninstall $@
 	;;
 -t|test)
 	[ -n "$2" ] && TRAVIS_TYPE="$2"
@@ -214,9 +232,21 @@ case "$1" in
 -gi|global-install)
 	GLOBAL=1
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
-	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2_VERSION}/plugins"
+	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/plugins/"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
+	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
+	if [ ! -d "${R2PM_PLUGDIR}" ]; then
+		mkdir -p "${R2PM_PLUGDIR}"
+	fi
 	r2pm_install $@
+	;;
+-gu|global-uninstall)
+	GLOBAL=1
+	R2PM_PREFIX="${R2PM_SYSPREFIX}"
+	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/plugins/"
+	R2PM_BINDIR="${R2PM_SYSBINDIR}"
+	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
+	r2pm_uninstall $@
 	;;
 -c|clean)
 	R2PM_List radare2 | grep radare2

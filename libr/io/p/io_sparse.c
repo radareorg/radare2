@@ -70,9 +70,14 @@ static int __plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname,0)) {
 		RIOSparse *mal = R_NEW0 (RIOSparse);
+		if (!mal) return NULL;
 		mal->fd = -2; /* causes r_io_desc_new() to set the correct fd */
 		int size = (int)r_num_math (NULL, pathname+9);
 		mal->buf = r_buf_new_sparse ();
+		if (!mal->buf) {
+			free (mal);
+			return NULL;
+		}
 		if (size>0) {
 			ut8 *data = malloc (size);
 			if (!data) {

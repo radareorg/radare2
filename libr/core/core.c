@@ -317,8 +317,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	case '$':
 		if (ok) *ok = 1;
 		// TODO: group analop-dependant vars after a char, so i can filter
-		r_anal_op (core->anal, &op, core->offset,
-			core->block, core->blocksize);
+		r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize);
 		r_anal_op_fini (&op); // we dont need strings or pointers, just values, which are not nullified in fini
 		switch (str[1]) {
 		case '.': // can use pc, sp, a0, a1, ...
@@ -366,9 +365,10 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'e': return r_anal_op_is_eob (&op);
 		case 'j': return op.jump;
 		case 'p': return r_sys_getpid ();
-		case 'P': return (core->dbg->pid>0)? core->dbg->pid: 0;
+		case 'P': return (core->dbg->pid > 0)? core->dbg->pid: 0;
 		case 'f': return op.fail;
 		case 'm': return op.ptr; // memref
+		case 'B':
 		case 'M': {
 				ut64 lower = UT64_MAX;
 				RListIter *iter;
@@ -376,6 +376,12 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				r_list_foreach (core->io->sections, iter, s) {
 					if (!s->vaddr && s->offset) continue;
 					if (s->vaddr < lower) lower = s->vaddr;
+				}
+				if (str[1] == 'B') {
+					/* clear lower bits of the lowest map address to define the base address */
+					const int clear_bits = 16;
+					lower >>= clear_bits;
+					lower <<= clear_bits;
 				}
 				return (lower == UT64_MAX)? 0LL: lower;
 			}
@@ -388,15 +394,16 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				return r_io_desc_size (core->io, core->file->desc);
 			}
 			return 0LL;
-		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
+		case 'w':
+			return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
 			if ((s = r_io_section_vget (core->io, core->offset))) {
-				return (str[2]=='S'? s->size: s->vaddr);
+				return (str[2] == 'S'? s->size: s->vaddr);
 			}
 			return 0LL;
 		case 'D':
 			if (IS_NUMBER (str[2])) {
-				return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_DATA);
+				return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_DATA);
 			} else {
 				RDebugMap *map;
 				RListIter *iter;
@@ -410,18 +417,21 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '?': return core->num->value;
 		case '$': return core->offset;
 		case 'o': return r_io_section_vaddr_to_maddr_try (core->io, core->offset);
-		case 'C': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_CALL);
-		case 'J': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_CODE);
-		case 'X': return getref (core, atoi (str+2), 'x', R_ANAL_REF_TYPE_CALL);
-		case 'B':
+		case 'C': return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
+		case 'J': return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CODE);
+		case 'X': return getref (core, atoi (str + 2), 'x', R_ANAL_REF_TYPE_CALL);
+		case 'F': // "$F"
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			return fcn? fcn->addr: 0;
-		case 'I':
-			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			return fcn? fcn->ninstr: 0;
-		case 'F':
-			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			return r_anal_fcn_size (fcn);
+			if (fcn) {
+				switch (str[2]) {
+				case 'B': return fcn->addr; // begin
+				case 'E': return fcn->addr + fcn->_size; // end
+				case 'S': return r_anal_fcn_size (fcn);
+				case 'I': return fcn->ninstr;
+				}
+				return fcn->addr;
+			}
+			return 0;
 		}
 		break;
 	default:
@@ -453,6 +463,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 
 R_API RCore *r_core_new() {
 	RCore *c = R_NEW0 (RCore);
+	if (!c) return NULL;
 	r_core_init (c);
 	return c;
 }

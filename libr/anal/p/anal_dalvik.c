@@ -266,8 +266,10 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			break;
 		case 0xec: // breakpoint
 		case 0x1d: // monitor-enter
+			op->type = R_ANAL_OP_TYPE_UPUSH;
+			break;
 		case 0x1e: // monitor-exit /// wrong type?
-			op->type = R_ANAL_OP_TYPE_TRAP;
+			op->type = R_ANAL_OP_TYPE_POP;
 			break;
 		case 0x6f: // invoke-super
 		case 0xfa: // invoke-super-quick

@@ -315,7 +315,7 @@ static void load_token(RNum *num, RNumCalc *nc, const char *s) {
 	nc->calc_err = NULL;
 }
 
-R_API ut64 r_num_calc (RNum *num, const char *str, const char **err) {
+R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	RNumCalcValue n;
 	RNumCalc *nc, nc_local;
 	if (!str || !*str)

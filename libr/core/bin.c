@@ -10,6 +10,7 @@
 
 #define IS_MODE_SET(mode) (mode & R_CORE_BIN_SET)
 #define IS_MODE_SIMPLE(mode) (mode & R_CORE_BIN_SIMPLE)
+#define IS_MODE_SIMPLEST(mode) (mode & R_CORE_BIN_SIMPLEST)
 #define IS_MODE_JSON(mode) (mode & R_CORE_BIN_JSON)
 #define IS_MODE_RAD(mode) (mode & R_CORE_BIN_RADARE)
 #define IS_MODE_NORMAL(mode) (!mode)
@@ -343,6 +344,8 @@ static int bin_strings(RCore *r, int mode, int va) {
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", addr,
 				string->size, string->length, string->string);
+		} else if (IS_MODE_SIMPLEST (mode)) {
+			r_cons_printf ("%s\n", string->string);
 		} else if (IS_MODE_JSON (mode)) {
 			q = r_base64_encode_dyn (string->string, -1);
 			r_cons_printf ("%s{\"vaddr\":%"PFMT64d
@@ -1212,6 +1215,7 @@ static bool isAnExport(RBinSymbol *s) {
 
 static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly) {
 	RBinInfo *info = r_bin_get_info (r->bin);
+	if (!info) return 0;
 	int is_arm = info && info->arch && !strncmp (info->arch, "arm", 3);
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	RBinSymbol *symbol;

@@ -150,7 +150,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			case 'd':
 			case 2:
 				{
-					int len, highlight = use_color && pr->cur_enabled && itmidx == pr->cur;
+					int len, highlight = use_color && pr && pr->cur_enabled && itmidx == pr->cur;
 					char *str, whites[32], content[128];
 					const char *a = "", *b = "";
 					if (highlight) {

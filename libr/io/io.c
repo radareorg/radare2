@@ -639,6 +639,7 @@ R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len) {
 	if (len > 0) {
 		io->write_mask_fd = io->desc->fd;
 		io->write_mask_buf = (ut8 *)malloc (len);
+		if (!io->write_mask_buf) return ret;
 		memcpy (io->write_mask_buf, buf, len);
 		io->write_mask_len = len;
 		ret = true;
@@ -784,7 +785,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 		if (io->plugin && io->plugin->lseek)
 			ret = io->plugin->lseek (io, io->desc, offset, whence);
 		// XXX can be problematic on w32..so no 64 bit offset?
-		else 	
+		else
 			ret = (ut64)lseek (io->desc->fd, offset, posix_whence);
 		if (ret != UT64_MAX) {
 			if (whence == R_IO_SEEK_SET)

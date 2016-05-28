@@ -457,33 +457,9 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_SLT:
 	case MIPS_INS_SLTI:
 		if (OPCOUNT () < 3) {
-			r_strbuf_appendf (&op->esil,
-				ES_IS_NEGATIVE ("%s")","
-				ES_IS_NEGATIVE ("%s")","
-				"==,$z,?{,"
-					"%s,%s,<,t,=,"
-				"}{,"
-					"%s,%s,>=,t,=,"
-				"}",
-
-				ARG (1),
-				ARG (0),
-				ARG (1), ARG (0),
-				ARG (1), ARG (0));
+			r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", ARG(1), ARG(0));
 		} else {
-			r_strbuf_appendf (&op->esil,
-				ES_IS_NEGATIVE ("%s")","
-				ES_IS_NEGATIVE ("%s")","
-				"==,$z,?{,"
-					"%s,%s,<,%s,=,"
-				"}{,"
-					"%s,%s,>=,%s,=,"
-				"}",
-
-				ARG (2),
-				ARG (1),
-				ARG (2), ARG (1), ARG (0),
-				ARG (2), ARG (1), ARG (0));
+			r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", ARG(2), ARG(1), ARG(0));
 		}
 		break;
 	case MIPS_INS_SLTU:

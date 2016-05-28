@@ -7,6 +7,7 @@
 static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
 	FILE *fd;
 	RFSFile *file = r_fs_file_new (root, path);
+	if (!file) return NULL;
 	file->ptr = NULL;
 	file->p = root->p;
 	fd = r_sandbox_fopen (path, "r");
@@ -39,8 +40,13 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 	DIR *dir = opendir (path);
 	if (!dir) return NULL;
 	list = r_list_new ();
+	if (!list) return NULL;
 	while ((de = readdir (dir))) {
 		RFSFile *fsf = r_fs_file_new (NULL, de->d_name);
+		if (!fsf) {
+			r_list_free (list);
+			return NULL;
+		}
 		fsf->type = 'f';
 		snprintf (fullpath, sizeof (fullpath)-1, "%s/%s", path, de->d_name);
 		if (!stat (fullpath, &st)) {

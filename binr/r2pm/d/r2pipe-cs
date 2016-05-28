@@ -9,7 +9,7 @@ R2PM_INSTALL() {
 		echo "Cannot install global dll yet"
 		exit 1
 	else
-		make -j2 || exit 1
+		${MAKE} -j2 || exit 1
 		cp r2pipe.dll "${WRKDIR}" || exit 1
 		echo "${WRKDIR}/r2pipe.dll"
 	fi

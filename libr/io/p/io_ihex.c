@@ -105,7 +105,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			return -1;
 		}
 	}	//list_foreach
-	
+
 	fprintf (out, ":00000001FF\n");
 	fclose (out);
 	out = NULL;
@@ -120,10 +120,10 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 	ut16 last_addr;
 	int j;
 	ut32 i;	//has to be bigger than size !
-	
+
 	if (size <1 || !fd || !b)
 		return -1;
-		
+
 	for (i=0; (i+0x10) < size; i+=0x10) {
 		cks = 0x10;
 		cks += (i+start_addr)>>8;
@@ -153,7 +153,7 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 		sprintf(linebuf+(2*j), "%02X", b[j]);
 	}
 	cks -= j;
-	
+
 	if (fprintf(fd, ":%02X%04X00%.*s%02X\n", j, last_addr, 2*j, linebuf,cks) < 0)
 		return -1;
 	return 0;
@@ -226,7 +226,7 @@ static int ihex_parsparse(RBuffer *rbuf, char *str){
 		bc &= 0xff;
 		addr_tmp &= 0xffff;
 		type &= 0xff;
-		
+
 		switch (type) {
 		case 0: // DATA
 			eol = strchr (str+1, ':');
@@ -300,7 +300,7 @@ static int ihex_parsparse(RBuffer *rbuf, char *str){
 				}
 			}
 			sec_size=0;
-			
+
 			eol = strchr (str+1, ':');
 			if (eol) *eol = 0;
 			cksum = bc;
@@ -311,7 +311,7 @@ static int ihex_parsparse(RBuffer *rbuf, char *str){
 				eprintf("invalid type 02/04 record!\n");
 				return -1;
 			}
-			
+
 			if ((sscanf(str+9+ 0, "%02x", &extH) !=1) ||
 				(sscanf(str+9+ 2, "%02x", &extL) !=1)) {
 				eprintf("unparsable data !\n");
@@ -320,18 +320,18 @@ static int ihex_parsparse(RBuffer *rbuf, char *str){
 			extH &= 0xff;
 			extL &= 0xff;
 			cksum += extH + extL;
-			
+
 			segreg = extH <<8 | extL;
-			
-			//segment rec(02) gives bits 4..19; linear rec(04) is bits 16..31 
+
+			//segment rec(02) gives bits 4..19; linear rec(04) is bits 16..31
 			segreg = segreg << ((type==02)? 4:16);
 			next_addr = 0;
 			sec_start = segreg;
-		
+
 			if (eol) {
 				// checksum
 				byte=0;	//break checksum if sscanf failed
-				if (sscanf (str+9+ 4, "%02x", &byte) !=1) cksum=1;	
+				if (sscanf (str+9+ 4, "%02x", &byte) !=1) cksum=1;
 				cksum += byte;
 				if (cksum != 0) {
 					ut8 fixedcksum = 0-(cksum-byte);
@@ -342,7 +342,7 @@ static int ihex_parsparse(RBuffer *rbuf, char *str){
 				*eol = ':';
 			}
 			str = eol;
-			break;			
+			break;
 		case 3:	//undefined rec. Just skip.
 		case 5:	//non-standard, sometimes "start linear adddress"
 			str = strchr(str + 1, ':');
@@ -357,7 +357,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	int ret;
 	Rihex *mal = NULL;
 	char *str = NULL;
-	
+
 	if (__plugin_open (io, pathname, 0)) {
 		str = r_file_slurp (pathname+7, NULL);
 		if (!str) return NULL;

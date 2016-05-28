@@ -44,11 +44,14 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	out = r_socket_http_get (url, &code, &rlen);
 	if (out && rlen>0) {
 		ut8 *tmp = malloc (rlen+1);
+		if (!tmp) goto beach;
 		ret = r_hex_str2bin (out, tmp);
 		memcpy (buf, tmp, R_MIN (count, rlen));
 		free (tmp);
 		if (ret<0) ret = -ret;
 	}
+
+beach:
 	free (out);
 	free (url);
 	return ret;
@@ -90,6 +93,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	int rlen, code;
 	if (__plugin_open (io, pathname, 0)) {
 		RIOR2Web *mal = R_NEW0 (RIOR2Web);
+		if (!mal) return NULL;
 		char *url = r_str_newf ("http://%s/?V", pathname+8);
 		//eprintf  ("URL:(%s)\n", url);
 		out = r_socket_http_get (url, &code, &rlen);
@@ -99,6 +103,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			mal->fd = getmalfd (mal);
 			mal->url = r_str_newf ("http://%s", pathname+8);
 			free (out);
+			free (url);
 			return r_io_desc_new (&r_io_plugin_r2web,
 				mal->fd, pathname, rw, mode, mal);
 		}

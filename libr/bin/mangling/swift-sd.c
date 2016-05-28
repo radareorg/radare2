@@ -484,7 +484,11 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 					}
 					q += len;
 				} else {
-					q++;
+					if (q) {
+						q++;
+					} else {
+						break;
+					}
 					char *n = strstr (q, "__");
 					if (n) {
 						q = n + 1;

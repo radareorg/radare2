@@ -417,7 +417,6 @@ R_API char *r_file_root(const char *root, const char *path) {
 }
 
 R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append) {
-	int ret;
 	FILE *fd;
 	if (!file || !*file || !buf || len < 0) {
 		eprintf ("r_file_dump file: %s buf: %p\n", file, buf);

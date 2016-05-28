@@ -23,16 +23,18 @@ static int useva = true;
 static int delta = 0;
 static int showbare = false;
 static int json_started = 0;
-static int diffmode = 0; 
+static int diffmode = 0;
 static bool disasm = false;
 static RCore *core = NULL;
 static const char *arch = NULL;
 static int bits = 0;
 static int anal_all = 0;
+static bool verbose = false;
 
 static RCore* opencore(const char *f) {
 	const ut64 baddr = UT64_MAX;
 	RCore *c = r_core_new ();
+	if (!c) return NULL;
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
 	r_config_set_i (c->config, "io.va", useva);
 	r_config_set_i (c->config, "anal.split", true);
@@ -146,7 +148,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 }
 
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-abcCdjrspOxv] [-g sym] [-t %%] [file] [file]\n");
+	printf ("Usage: radiff2 [-abcCdjrspOxvV] [-g sym] [-t %%] [file] [file]\n");
 	if (v) printf (
 		"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
 		"  -A [-A]    run aaa or aaaa after loading each binary (see -C)\n"
@@ -164,7 +166,8 @@ static int show_help(int v) {
 		"  -s         compute text distance\n"
 		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 		"  -x         show two column hexdump diffing\n"
-		"  -v         show version information\n");
+		"  -v         show version information\n"
+		"  -V         be verbose (current only for -s)\n");
 	return 1;
 }
 
@@ -241,7 +244,13 @@ static void handle_sha256 (const ut8 *block, int len) {
 	int i = 0;
 	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
 	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
-	for (i = 0; i < R_HASH_SIZE_SHA256; i++) printf ("%02x", c[i]);
+	if (!c) {
+		r_hash_free (ctx);
+		return;
+	}
+	for (i = 0; i < R_HASH_SIZE_SHA256; i++) {
+		printf ("%02x", c[i]);
+	}
 	r_hash_free (ctx);
 }
 
@@ -256,7 +265,7 @@ int main(int argc, char **argv) {
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Aa:b:CDnpg:Ojrhcdsvxt:")) != -1) {
+	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OjrhcdsVvxt:")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -310,6 +319,9 @@ int main(int argc, char **argv) {
 		case 'v':
 			printf ("radiff2 v"R2_VERSION"\n");
 			return 0;
+		case 'V':
+			verbose = true;
+			break;
 		case 'j':
 			diffmode = 'j';
 			break;
@@ -317,7 +329,7 @@ int main(int argc, char **argv) {
 			return show_help (0);
 		}
 	}
-	
+
 	if (argc < 3 || optind + 2 > argc)
 		return show_help (0);
 
@@ -326,7 +338,7 @@ int main(int argc, char **argv) {
 	} else {
 		file = NULL;
 	}
-	
+
 	if (optind + 1 < argc) {
 		file2 = argv[optind + 1];
 	} else {
@@ -411,7 +423,7 @@ int main(int argc, char **argv) {
 		d = r_diff_new (0LL, 0LL);
 		r_diff_set_delta (d, delta);
 		if (diffmode == 'j') {
-			printf("{\"files\":[{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file, sza); 
+			printf("{\"files\":[{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file, sza);
 			handle_sha256 (bufa, sza);
 			printf("\"},\n{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file2, szb);
 			handle_sha256 (bufb, szb);
@@ -420,13 +432,19 @@ int main(int argc, char **argv) {
 		}
 		r_diff_set_callback (d, &cb, 0);//(void *)(size_t)diffmode);
 		r_diff_buffers (d, bufa, sza, bufb, szb);
-		if (diffmode == 'j')
-			printf("]\n");
+		if (diffmode == 'j') {
+			printf ("]\n");
+		}
 		r_diff_free (d);
 		break;
 	case MODE_DIST:
-		r_diff_buffers_distance (NULL, bufa, sza, bufb, szb, &count, &sim);
-		printf ("similarity: %.2f\n", sim);
+		{
+			RDiff *d = r_diff_new ();
+			d->verbose = true;
+			r_diff_buffers_distance (d, bufa, sza, bufb, szb, &count, &sim);
+			r_diff_free (d);
+		}
+		printf ("similarity: %.3f\n", sim);
 		printf ("distance: %d\n", count);
 		break;
 	}

@@ -226,6 +226,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	RListIter *variter, *argiter, *spiter;
 	char oldstr[64], newstr[64];
 	char *tstr = strdup (data);
+	if (!tstr) return false;
 	RList *vars, *args, *spargs;
 
 	if (p->relsub) {

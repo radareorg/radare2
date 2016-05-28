@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2015 - pancake */
+/* radare - LGPL - Copyright 2014-2016 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
@@ -62,6 +62,7 @@ R_API void r_run_reset(RRunProfile *p) {
 
 R_API int r_run_parse(RRunProfile *pf, const char *profile) {
 	char *p, *o, *str = strdup (profile);
+	if (!str) return 0;
 	for (o = p = str; (o = strchr (p, '\n')); p = o) {
 		*o++ = 0;
 		r_run_parseline (pf, p);
@@ -140,25 +141,27 @@ static char *getstr(const char *src) {
 				len = strlen (pat);
 				if (rep>0) {
 					char *buf = malloc (rep);
-					for(i=0; i < rep;i++) {
-						buf[i] = pat[i%len];
+					if (buf) {
+						for (i = 0; i < rep; i++) {
+							buf[i] = pat[i%len];
+						}
 					}
 					return buf;
 				}
 			}
 			// slurp file
-			return r_file_slurp (src+1, NULL);
+			return r_file_slurp (src + 1, NULL);
 		}
 	case '!':
-		return r_str_trim_tail (r_sys_cmd_str (src+1, NULL, NULL));
+		return r_str_trim_tail (r_sys_cmd_str (src + 1, NULL, NULL));
 	case ':':
 		if (src[1]=='!') {
-			ret = r_str_trim_tail (r_sys_cmd_str (src+1, NULL, NULL));
+			ret = r_str_trim_tail (r_sys_cmd_str (src + 1, NULL, NULL));
 		} else {
 			ret = strdup (src);
 		}
 		len = r_hex_str2bin (src+1, (ut8*)ret);
-		if (len>0) {
+		if (len > 0) {
 			ret[len] = 0;
 			return ret;
 		} else {
@@ -506,6 +509,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 	}
 	if (p->_listen) {
 		RSocket *child, *fd = r_socket_new (0);
+		bool is_child = false;
 		if (!r_socket_listen (fd, p->_listen, NULL)) {
 			eprintf ("rarun2: cannot listen\n");
 			r_socket_free (fd);
@@ -514,7 +518,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 		while (true) {
 			child = r_socket_accept (fd);
 			if (child) {
-				int is_child = true;
+				is_child = true;
 
 				if (p->_dofork && !p->_dodebug) {
 					pid_t child_pid = r_sys_fork ();
@@ -544,21 +548,48 @@ R_API int r_run_config_env(RRunProfile *p) {
 				}
 			}
 		}
-		r_socket_free (child);
+		if(!is_child) r_socket_free (child);
 		r_socket_free (fd);
 	}
 	if (p->_r2sleep != 0) {
 		r_sys_sleep (p->_r2sleep);
 	}
+#if __UNIX__
+	if (p->_chroot) {
+		if (chdir (p->_chroot) == -1) {
+			eprintf ("Cannot chdir to chroot in %s\n", p->_chroot);
+			return 1;
+		} else {
+			if (chroot (".") == -1) {
+				eprintf ("Cannot chroot to %s\n", p->_chroot);
+				return 1;
+			} else {
+				if (p->_chgdir) {
+					if (chdir (p->_chgdir) == -1) {
+						eprintf ("Cannot chdir after chroot to %s\n", p->_chgdir);
+						return 1;
+					}
+				}
+			}
+		}
+	} else if (p->_chgdir) {
+		if (chdir (p->_chgdir) == -1) {
+			eprintf ("Cannot chdir after chroot to %s\n", p->_chgdir);
+			return 1;
+		}
+	}
+#endif
 	if (p->_chgdir) {
 		ret = chdir (p->_chgdir);
-		if (ret < 0)
+		if (ret < 0) {
 			return 1;
+		}
 	}
 	if (p->_chroot) {
 		ret = chdir (p->_chroot);
-		if (ret < 0)
+		if (ret < 0) {
 			return 1;
+		}
 	}
 #if __UNIX__
 	if (p->_chroot) {
@@ -566,12 +597,12 @@ R_API int r_run_config_env(RRunProfile *p) {
 			chdir ("/");
 		} else {
 			eprintf ("rarun2: cannot chroot\n");
-			perror ("chroot");
+			r_sys_perror ("chroot");
 			return 1;
 		}
 	}
 	if (p->_setuid) {
-		ret = setgroups(0, NULL);
+		ret = setgroups (0, NULL);
 		if (ret < 0)
 			return 1;
 		ret = setuid (atoi (p->_setuid));

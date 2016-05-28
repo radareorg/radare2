@@ -733,11 +733,17 @@ static bool fcnNeedsPrefix(const char *name) {
 	return (!strchr (name, '.'));
 }
 
+/* TODO: move into r_anal_fcn_rename(); */
 static bool setFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
 	char *oname, *nname = NULL;
 	RAnalFunction *fcn;
-	if (!core || !name)
+	if (!core || !name) {
 		return false;
+	}
+	if (r_reg_get (core->anal->reg, name, -1)) {
+		name = r_str_newf ("fcn.%s", name);
+	}
+
 	fcn = r_anal_get_fcn_in (core->anal, off,
 				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
 	if (!fcn) return false;
@@ -747,7 +753,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *name, bool prefix
 		nname = strdup (name);
 	}
 	oname = fcn->name;
-r_flag_rename (core->flags, r_flag_get (core->flags, fcn->name), nname);
+	r_flag_rename (core->flags, r_flag_get (core->flags, fcn->name), nname);
 	fcn->name = strdup (nname);
 	if (core->anal->cb.on_fcn_rename) {
 		core->anal->cb.on_fcn_rename (core->anal,
@@ -1059,8 +1065,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				off = r_num_math (core->num, p);
 			}
 			if (*name) {
-				if (!setFunctionName (core, off, name, false))
+				if (!setFunctionName (core, off, name, false)) {
 					eprintf ("Cannot find function '%s' at 0x%08" PFMT64x "\n", name, off);
+				}
 				free (name);
 			} else {
 				eprintf ("Usage: afn newname [off]   # set new name to given function\n");

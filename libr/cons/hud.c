@@ -20,6 +20,7 @@ R_API char *r_cons_hud_file(const char *f, const bool usecolor) {
 // the lines starting with # )
 R_API char *r_cons_hud_string(const char *s, const bool usecolor) {
 	char *os, *track, *ret, *o = strdup (s);
+	if (!o) return NULL;
 	RList *fl = r_list_new ();
 	int i;
 	if (!fl) {

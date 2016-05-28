@@ -1606,6 +1606,11 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			param->to = map->to;
 			searchhits = 0;
 
+			if (param->to < param->from) {
+				eprintf ("invalid from/to values\n");
+				break;
+			}
+
 			r_io_raise (core->io, map->fd);
 			fd = core->io->raised;
 			if (fd == -1 && core->io->desc) {
@@ -1622,20 +1627,28 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					break;
 				}
 			}
+
 			if (param->bckwrds) {
-				if (param->to < param->from + bufsz) {
+				if ((param->to - bufsz) <= param->from) {
 					at = param->from;
 					param->do_bckwrd_srch = false;
 				} else at = param->to - bufsz;
 			} else at = param->from;
+
 			/* bckwrds = false -> normal search -> must be at < to
 			   bckwrds search -> check later */
-			for (; ( !param->bckwrds && at < param->to ) ||  param->bckwrds ;) {
+			for (; (!param->bckwrds && at < param->to) || param->bckwrds;) {
 				print_search_progress (at, param->to, searchhits);
 				if (r_cons_singleton ()->breaked) {
 					eprintf ("\n\n");
 					break;
 				}
+
+				// avoid searching beyond limits
+				if ((at + bufsz) > param->to) {
+					bufsz = param->to - at;
+				}
+
 				//ret = r_core_read_at (core, at, buf, bufsz);
 				//	ret = r_io_read_at (core->io, at, buf, bufsz);
 				if (param->use_mread) {
@@ -1670,15 +1683,17 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					//eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}
+
 				if (param->bckwrds) {
 					if (!param->do_bckwrd_srch) {
 						break;
 					}
-					if (at > param->from + bufsz) {
-						at -= bufsz;
-					} else {
+					if ((at - bufsz) < param->from) {
 						param->do_bckwrd_srch = false;
+						bufsz = at - param->from;
 						at = param->from;
+					} else {
+						at -= bufsz;
 					}
 				} else {
 					at += bufsz;
@@ -1754,7 +1769,7 @@ static int cmd_search(void *data, const char *input) {
 
 	core->in_search = true;
 	r_flag_space_push (core->flags, "searches");
-	param.from = param.to = 0;
+	param.from = param.to = UT64_MAX;
 	param.inverse = false;
 	param.crypto_search = false;
 	param.bckwrds = false;
@@ -1806,9 +1821,9 @@ static int cmd_search(void *data, const char *input) {
 	searchprefix = r_config_get (core->config, "search.prefix");
 	core->search->overlap = r_config_get_i (core->config, "search.overlap");
 	// TODO: get ranges from current IO section
-	/* XXX: Think how to get the section ranges here */
-	if (param.from == 0LL) param.from = core->offset;
-	if (param.to == 0LL) param.to = UT32_MAX; // XXX?
+	// XXX: Think how to get the section ranges here
+
+	if (param.from == UT64_MAX) param.from = core->offset;
 
 	/* we don't really care what's bigger bc there's a flag for backward search
 	   from now on 'from' and 'to' represent only the search boundaries, not

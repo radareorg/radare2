@@ -163,6 +163,7 @@ R_API RRegex *r_regex_new (const char *pattern, const char *flags) {
 	if (r_regex_comp (&rx, pattern, r_regex_flags (flags)))
 		return NULL;
 	r = malloc (sizeof (RRegex));
+	if (!r) return NULL;
 	memcpy (r, &rx, sizeof (RRegex));
 	return r;
 }
@@ -220,31 +221,32 @@ R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
 #	define	GOODFLAGS(f)	((f)&~R_REGEX_DUMP)
 #endif
 
-	cflags = GOODFLAGS(cflags);
-	if ((cflags&R_REGEX_EXTENDED) && (cflags&R_REGEX_NOSPEC))
+	cflags = GOODFLAGS (cflags);
+	if ((cflags & R_REGEX_EXTENDED) && (cflags & R_REGEX_NOSPEC))
 		return R_REGEX_INVARG;
 
-	if (cflags&R_REGEX_PEND) {
+	if (cflags & R_REGEX_PEND) {
 		if (preg->re_endp < pattern)
 			return(R_REGEX_INVARG);
 		len = preg->re_endp - pattern;
-	} else len = strlen((char *)pattern);
+	} else len = strlen ((char *)pattern);
 
 	/* do the mallocs early so failure handling is easy */
-	g = (struct re_guts *)calloc(sizeof(struct re_guts) + (NC-1),sizeof(cat_t));
-	if (g == NULL)
+	g = (struct re_guts *)calloc (sizeof (struct re_guts) + (NC - 1), sizeof (cat_t));
+	if (!g) {
 		return R_REGEX_ESPACE;
+	}
 	preg->re_flags = cflags;
-	p->ssize = len/(size_t)2*(size_t)3 + (size_t)1;	/* ugh */
-	p->strip = (sop *)calloc(p->ssize, sizeof(sop));
+	p->ssize = len / (size_t)2 * (size_t)3 + (size_t)1;	/* ugh */
+	p->strip = (sop *)calloc (p->ssize, sizeof(sop));
 	if (!p->strip) {
-		free((char *)g);
+		free ((char *)g);
 		return R_REGEX_ESPACE;
 	}
 	p->slen = 0;
-	if (p->strip == NULL) {
-		free((char *)g);
-		return(R_REGEX_ESPACE);
+	if (!p->strip) {
+		free ((char *)g);
+		return R_REGEX_ESPACE;
 	}
 
 	/* set things up */

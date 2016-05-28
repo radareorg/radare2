@@ -152,6 +152,7 @@ R_API char *r_cons_pal_parse (const char *str) {
 	ut8 r, g, b;
 	char out[128];
 	char *s = strdup (str);
+	if (!s) return NULL;
 	char *p = strchr (s + 1, ' ');
 	out[0] = 0;
 	if (p) *p++ = 0;
@@ -216,6 +217,7 @@ static struct {
 	{ "comment", r_offsetof (RConsPalette, comment) },
 	{ "args", r_offsetof (RConsPalette, args) },
 	{ "fname", r_offsetof (RConsPalette, fname) },
+	{ "floc", r_offsetof (RConsPalette, floc) },
 	{ "fline", r_offsetof (RConsPalette, fline) },
 	{ "flag", r_offsetof (RConsPalette, flag) },
 	{ "label", r_offsetof (RConsPalette, label) },

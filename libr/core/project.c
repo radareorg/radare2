@@ -273,7 +273,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 }
 
 R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
-	char *filename;
+	char *filename, *hl, *ohl = NULL;
 	int fd, fdold, tmp;
 
 	if (file == NULL || *file == '\0')
@@ -284,6 +284,12 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 	if (fd == -1) {
 		free (filename);
 		return false;
+	}
+
+	hl = r_cons_singleton ()->highlight;
+	if (hl) {
+		ohl = strdup (hl);
+		r_cons_highlight (NULL);
 	}
 
 	fdold = r_cons_singleton ()->fdout;
@@ -349,6 +355,11 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 
 	r_cons_singleton ()->fdout = fdold;
 	r_cons_singleton ()->is_interactive = true;
+
+	if (ohl) {
+		r_cons_highlight (ohl);
+		free (ohl);
+	}
 
 	close (fd);
 	free (filename);

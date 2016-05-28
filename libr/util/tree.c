@@ -8,6 +8,7 @@ static void tree_dfs_node (RTreeNode *r, RTreeVisitor *vis) {
 	RTreeNode *n;
 
 	s = r_stack_new (16);
+	if (!s) return;
 	r_stack_push (s, r);
 	while (!r_stack_is_empty (s)) {
 		RTreeNode *el = (RTreeNode *)r_stack_pop (s);
@@ -121,9 +122,14 @@ R_API void r_tree_bfs (RTree *t, RTreeVisitor *vis) {
 		return;
 
 	q = r_queue_new (16);
+	if (!q) return;
 	r_queue_enqueue (q, t->root);
 	while (!r_queue_is_empty (q)) {
 		 RTreeNode *el = (RTreeNode *)r_queue_dequeue (q);
+		 if (!el) {
+			 r_queue_free (q);
+			 return;
+		 }
 		 RTreeNode *n;
 		 RListIter *it;
 

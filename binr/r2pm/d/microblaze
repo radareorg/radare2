@@ -1,19 +1,19 @@
 R2PM_BEGIN
 
 R2PM_GIT "https://github.com/radare/radare2-extras"
-R2PM_DESC "[r2-asm-anal] Support for the microblaze microprocessor assembly"
+R2PM_DESC "[r2-arch] Support for the microblaze microprocessor assembly"
 
 R2PM_INSTALL() {
-	./configure --prefix="${R2PM_PREFIX}"
-	cd microblaze
-	make clean
-	make
-	make install
+	./configure --prefix="${R2PM_PREFIX}" || exit 1
+	cd microblaze || exit 1
+	${MAKE} clean
+	${MAKE} || exit 1
+	${MAKE} install R2_PLUGIN_PATH="${R2PM_PLUGDIR}" || exit 1
 }
 
 R2PM_UNINSTALL() {
-	cd microblaze
-	make uninstall
+	cd microblaze || exit 1
+	${MAKE} uninstall "${R2PM_PLUGDIR}" || exit 1
 }
 
 R2PM_END

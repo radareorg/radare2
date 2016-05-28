@@ -4,7 +4,12 @@ R2PM_GIT "https://github.com/radare/radare2"
 R2PM_DESC "[syspkg] Vala compiler from git"
 
 R2PM_INSTALL() {
-	sys/vala.sh "${R2PM_PREFIX}"
+	if [ $GLOBAL = 1 ]; then
+		sys/vala.sh "${R2PM_PREFIX}"
+	else
+		echo "Sorry. This package cannot be installed at home"
+		exit 1
+	fi
 }
 
 R2PM_UNINSTALL() {

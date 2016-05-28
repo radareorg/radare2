@@ -1,5 +1,5 @@
 /*
-   mreplace.c - Experimental PERL alike "search & replace" 
+   mreplace.c - Experimental PERL alike "search & replace"
    functions by Mandingo, Copyleft, 2009-02-20
    - adapted to use r_regex by pancake 2015
  */
@@ -30,6 +30,7 @@
 int matchs(const char *string, char *pattern) {
 	int status = 0;
 	RRegex *re = r_regex_new (pattern, "");
+	if (!re) return status;
 	if (r_regex_comp (re, pattern, R_REGEX_EXTENDED|R_REGEX_NOSUB) == 0) {
 		status = r_regex_exec (re, string, (size_t) 0, NULL, 0)? 1: 0;
 	}
@@ -39,24 +40,24 @@ int matchs(const char *string, char *pattern) {
 
 void sreplace(char *s,char *orig,char *rep,char multi,long dsize){
 	char *p;
-	memChunk *buffer,*string,*result; 
+	memChunk *buffer,*string,*result;
 
-	if(!(p=strstr(s, orig))) return;
+	if(!(p = strstr (s, orig))) return;
 
-	buffer=memReserve(dsize);
-	string=memString(s);
+	buffer = memReserve (dsize);
+	string = memString (s);
 
-	memCopy(buffer, string);
+	memCopy (buffer, string);
 
-	snprintf(buffer->address+(p-s), buffer->size-(p-s),"%s%s", rep, p+strlen(orig));
+	snprintf (buffer->address + (p - s), buffer->size - (p - s), "%s%s", rep, p + strlen (orig));
 
-	result=memString(buffer->address);
+	result = memString (buffer->address);
 
-	strcpy(s,result->address);	//unsafe	
+	strcpy (s,result->address);	//unsafe
 
-	memFree(string);
-	memFree(result);
-	memFree(buffer);
+	memFree (string);
+	memFree (result);
+	memFree (buffer);
 }
 
 char *mreplace(char *string, char *se,char *rep) {
@@ -69,14 +70,14 @@ char *mreplace(char *string, char *se,char *rep) {
 	int status, i;
 	RRegex *re;
 
-	if(!string)        	return "";
-	if(!strlen(se)) 	return string;
-	if(!strcmp(se,rep)) 	return string;
+	if (!string) return "";
+	if (!strlen (se)) return string;
+	if (!strcmp (se,rep)) return string;
 
-	temp   = memStringReserve(string,INPUTLINE_BUFFER_REPLACE_SIZE);
-	search = memStringReserve(se,INPUTLINE_BUFFER_REPLACE_SIZE);
+	temp = memStringReserve (string,INPUTLINE_BUFFER_REPLACE_SIZE);
+	search = memStringReserve (se,INPUTLINE_BUFFER_REPLACE_SIZE);
 
-	sreplace(search->address,"\\d","[0-9]",1,INPUTLINE_BUFFER_REPLACE_SIZE);
+	sreplace (search->address, "\\d", "[0-9]", 1, INPUTLINE_BUFFER_REPLACE_SIZE);
 
 #if MDEBUG2
 	sData=strdup(string);
@@ -86,62 +87,62 @@ char *mreplace(char *string, char *se,char *rep) {
 #endif
 	re = r_regex_new ("", 0);
 
-	if (r_regex_comp(re, search->address, R_REGEX_EXTENDED) != 0) 
-		if(r_regex_comp(re, search->address, R_REGEX_EXTENDED<<1))
-			noMatch=1;
-	if ((status = r_regex_exec(re, string, nmatch, pm, 0)))
-		noMatch=1;
+	if (r_regex_comp (re, search->address, R_REGEX_EXTENDED) != 0)
+		if(r_regex_comp (re, search->address, R_REGEX_EXTENDED<<1))
+			noMatch = 1;
+	if ((status = r_regex_exec (re, string, nmatch, pm, 0)))
+		noMatch = 1;
 	if (noMatch) {
 		memFree (temp);
 		memFree (search);
 		r_regex_free (re);
-		return (char*)string; 
+		return (char*)string;
 	}
 
 	found  = memReserve (INPUTLINE_BUFFER_REPLACE_SIZE);
 	ffound = memReserve (INPUTLINE_BUFFER_REPLACE_SIZE);
 	while (!status) {
-		offset=strlen(temp->address)-strlen(string);
-		snprintf(found->address, INPUTLINE_BUFFER_REPLACE_SIZE, "%.*s",
+		offset = strlen (temp->address) - strlen (string);
+		snprintf (found->address, INPUTLINE_BUFFER_REPLACE_SIZE, "%.*s",
 				(int)(size_t)(pm[0].rm_eo - pm[0].rm_so), &string[pm[0].rm_so]);//,&string[pm[0].rm_so]);
 #if MDEBUG3
 		printf("------->> found \"%s\" length => %d offset[%d]\n",
-				found->address, strlen(temp->address),offset);
+				found->address, strlen(temp->address), offset);
 #endif
-		sreplace(temp->address+offset,found->address,rep,0,INPUTLINE_BUFFER_REPLACE_SIZE-offset);
-		for(i=1;i<nmatch;i++){
-			snprintf(ffound->address,INPUTLINE_BUFFER_REPLACE_SIZE, "%.*s",
+		sreplace (temp->address + offset,found->address, rep, 0, INPUTLINE_BUFFER_REPLACE_SIZE - offset);
+		for(i = 1; i < nmatch; i++){
+			snprintf (ffound->address,INPUTLINE_BUFFER_REPLACE_SIZE, "%.*s",
 					(int)(size_t)(pm[i].rm_eo - pm[i].rm_so), &string[pm[i].rm_so]);//,&string[pm[i].rm_so]);
-			snprintf(field,sizeof(field),"\\%d",i);
-			if(strlen(ffound->address)) {
-				sreplace(temp->address,field,ffound->address,1,INPUTLINE_BUFFER_REPLACE_SIZE);
+			snprintf (field, sizeof(field), "\\%d", i);
+			if(strlen (ffound->address)) {
+				sreplace (temp->address, field, ffound->address, 1, INPUTLINE_BUFFER_REPLACE_SIZE);
 			}else{
-				sreplace(temp->address,field,"",1,INPUTLINE_BUFFER_REPLACE_SIZE);
+				sreplace (temp->address, field, "", 1, INPUTLINE_BUFFER_REPLACE_SIZE);
 				continue;
 			}
 #if MDEBUG3
-			printf(">> subfound %2d  '%s' => '%s' length %d\n",
+			printf (">> subfound %2d  '%s' => '%s' length %d\n",
 					i,
 					ffound->address,
 					temp->address,offset);
 #endif
 		}
 		// it is unsigned!	if(offset<0) offset=-offset;
-		if(*string && strlen(string+pm[0].rm_eo)) {
-			string+=pm[0].rm_eo;
+		if (*string && strlen (string + pm[0].rm_eo)) {
+			string += pm[0].rm_eo;
 			status = r_regex_exec (re, string, nmatch, pm, 0);
 		}else{
 			status=-1;
 		}
 	}
 #if MDEBUG2
-	DBG("mreplace(string,se,re)","result : %s",temp->address);
+	DBG ("mreplace(string,se,re)", "result : %s",t emp->address);
 #endif
-	res=strdup(temp->address);
-	memFree(temp);
-	memFree(search);
-	memFree(found);
-	memFree(ffound);
+	res=strdup (temp->address);
+	memFree (temp);
+	memFree (search);
+	memFree (found);
+	memFree (ffound);
 	r_regex_free (re);
 	return res;
 }
@@ -152,36 +153,36 @@ char *treplace(char *data,char *search,char *replace){
 	memChunk *result,*line;
 	//ulong resultAllocSize;
 
-	if(!strlen(search))  return data;
+	if (!strlen(search)) return data;
 
 #if MDEBUG2
-	DBG("treplace(string,se,re)","string  : %s",data);
-	DBG("treplace(string,se,re)","search  : %s",search);
-	DBG("treplace(string,se,re)","replace : %s",replace);
+	DBG ("treplace(string,se,re)","string  : %s",data);
+	DBG ("treplace(string,se,re)","search  : %s",search);
+	DBG ("treplace(string,se,re)","replace : %s",replace);
 #endif
 
-	result = memReserve(INPUTLINE_BUFFER_REPLACE_SIZE);
-	line   = memReserve(INPUTLINE_BUFFER_REPLACE_SIZE);
+	result = memReserve (INPUTLINE_BUFFER_REPLACE_SIZE);
+	line = memReserve (INPUTLINE_BUFFER_REPLACE_SIZE);
 
 	p=data;
-	while (sscanf(p,"%[^\n]",line->address)==1){
-		if(p-data>strlen(data)) break;
-		newline=mreplace(line->address,search,replace);
+	while (sscanf (p, "%[^\n]", line->address) == 1){
+		if (p - data > strlen (data)) break;
+		newline = mreplace (line->address, search, replace);
 
-		memStrCat(result,newline);
-		if (line->address && *(p+strlen(line->address))) memStrCat(result,"\n");
+		memStrCat (result, newline);
+		if (line->address && *(p + strlen (line->address))) memStrCat (result, "\n");
 		else break;
 
-		p+=strlen(line->address)+1;
+		p += strlen (line->address) + 1;
 	}
-	p=strdup(result->address);
-	memFree(result);
-	memFree(line);
+	p = strdup (result->address);
+	memFree (result);
+	memFree (line);
 	return p;
 }
 
 //#if ! LIB
-#if 0 
+#if 0
 
 void doChecks(){
 	char *checkBuffer,*checkresult,*sIn;
@@ -242,21 +243,21 @@ void doChecks(){
 	fprintf(stdout,"[ m ] Memory allocated final: %d bytes\n",memAllocated());
 }
 
-/* 
+/*
    builds a binary for command line "search & replace" tests
  */
 int main(char argc,char **argv){
 	if(argc==4 && strlen(argv[2])){
 #if MDEBUG2
 		printf("Input string: %s, length %d, search %s, replace %s\n",argv[1],strlen(argv[1]),argv[2],argv[3]);
-#endif		
+#endif
 		fprintf(stdout,"%s\n",treplace(argv[1],argv[2],argv[3]));
 	}else{
 		fprintf(stdout,	"Perl alike \"search & replace\" v1.01 by Mandingo, Copyleft, 2009\n");
 		doChecks();
 		fprintf(stdout,	"Usage: %s \"<text>\" \"<search>\" \"<replace>\"\n",argv[0]);
 
-	}	
+	}
 
 	return 1;
 }

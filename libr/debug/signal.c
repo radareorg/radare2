@@ -132,6 +132,7 @@ R_API int r_debug_signal_resolve(RDebug *dbg, const char *signame) {
 	if (strchr (signame, '.'))
 		return 0;
 	name = strdup (signame);
+	if (!name) return 0;
 	r_str_case (name, true);
 	if (strncmp (name, "SIG", 3))
 		name = r_str_prefix (name, "SIG");

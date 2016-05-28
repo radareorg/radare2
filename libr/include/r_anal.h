@@ -399,10 +399,12 @@ typedef enum {
 	R_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix?
 	//TODO: MOVE TO PREFIX .. it is used by anal_ex.. must be updated
 	R_ANAL_OP_TYPE_REP   = 0x40000000, /* repeats next instruction N times */
+	R_ANAL_OP_TYPE_MEM   = 0x20000000, // TODO must be moved to prefix?
 	R_ANAL_OP_TYPE_NULL  = 0,
 	R_ANAL_OP_TYPE_JMP   = 1,  /* mandatory jump */
 	R_ANAL_OP_TYPE_UJMP  = 2,  /* unknown jump (register or so) */
 	R_ANAL_OP_TYPE_CJMP  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_JMP,  /* conditional jump */
+	R_ANAL_OP_TYPE_MJMP  = R_ANAL_OP_TYPE_MEM | R_ANAL_OP_TYPE_JMP,  /* conditional jump */
 	R_ANAL_OP_TYPE_UCJMP = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_UJMP, /* conditional unknown jump */
 	R_ANAL_OP_TYPE_CALL  = 3,  /* call to subroutine (branch+link) */
 	R_ANAL_OP_TYPE_UCALL = 4, /* unknown call (register or so) */
@@ -882,7 +884,6 @@ enum {
 	R_ANAL_ESIL_PARM_INTERNAL,
 	R_ANAL_ESIL_PARM_REG,
 	R_ANAL_ESIL_PARM_NUM,
-	R_ANAL_ESIL_PARM_FLOAT,
 };
 
 /* Constructs to convert from ESIL to REIL */
@@ -1001,7 +1002,6 @@ typedef struct r_anal_esil_t {
 	ut64 old;	//used for carry-flagging and borrow-flagging
 	ut64 cur;	//used for carry-flagging and borrow-flagging
 	ut8 lastsz;	//in bits //used for signature-flag
-	int curtype;	//used for detecting type of flags (double / ut64)
 	/* native ops and custom ops */
 	Sdb *ops;
 	Sdb *interrupts;
@@ -1201,7 +1201,7 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 addr);
 R_API const char *r_anal_stackop_tostring (int s);
 R_API RAnalOp *r_anal_op_new(void);
 R_API void r_anal_op_free(void *op);
-R_API void r_anal_op_fini(RAnalOp *op);
+R_API bool r_anal_op_fini(RAnalOp *op);
 R_API bool r_anal_op_is_eob (RAnalOp *op);
 R_API RList *r_anal_op_list_new(void);
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr,

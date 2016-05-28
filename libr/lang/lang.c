@@ -23,21 +23,30 @@ R_API void r_lang_plugin_free (RLangPlugin *p) {
 
 R_API RLang *r_lang_new() {
 	RLang *lang = R_NEW0 (RLang);
-	if (lang) {
-		lang->user = NULL;
-		lang->langs = r_list_new ();
-		lang->langs->free = (RListFree)r_lang_plugin_free;
-		lang->defs = r_list_new ();
-		lang->defs->free = (RListFree)r_lang_def_free;
-		lang->cb_printf = (PrintfCallback)printf;
-		r_lang_add (lang, &r_lang_plugin_c);
-#if __UNIX__
-		r_lang_add (lang, &r_lang_plugin_cpipe);
-#endif
-		r_lang_add (lang, &r_lang_plugin_vala);
-		r_lang_add (lang, &r_lang_plugin_rust);
-		r_lang_add (lang, &r_lang_plugin_pipe);
+	if (!lang) return NULL;
+	
+	lang->user = NULL;
+	lang->langs = r_list_new ();
+	if (!lang->langs) {
+		r_lang_free (lang);
+		return NULL;
 	}
+	lang->langs->free = (RListFree)r_lang_plugin_free;
+	lang->defs = r_list_new ();
+	if (!lang->defs) {
+		r_lang_free (lang);
+		return NULL;
+	}
+	lang->defs->free = (RListFree)r_lang_def_free;
+	lang->cb_printf = (PrintfCallback)printf;
+	r_lang_add (lang, &r_lang_plugin_c);
+#if __UNIX__
+	r_lang_add (lang, &r_lang_plugin_cpipe);
+#endif
+	r_lang_add (lang, &r_lang_plugin_vala);
+	r_lang_add (lang, &r_lang_plugin_rust);
+	r_lang_add (lang, &r_lang_plugin_pipe);
+
 	return lang;
 }
 

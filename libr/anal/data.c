@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake */
+/* radare - LGPL - Copyright 2012-2016 - pancake */
 
 #include <r_anal.h>
 
@@ -94,6 +94,10 @@ R_API char *r_anal_data_to_string(RAnalData *d) {
 	if (!d) return NULL;
 
 	line = malloc (mallocsz);
+	if (!line) {
+		eprintf ("Cannot allocate %d bytes\n", mallocsz);
+		return NULL;
+	}
 	snprintf (line, mallocsz, "0x%08" PFMT64x "  ", d->addr);
 	n32 = (ut32)d->ptr;
 	len = R_MIN (d->len, 8);
@@ -173,12 +177,17 @@ R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int t
 	} else {
 		ad->str = malloc (len + 1);
 		if (!ad->str) {
-			free (ad);
+			r_anal_data_free (ad);
 			return NULL;
 		}
 		memcpy (ad->str, p, len);
 		ad->str[len] = 0;
 		ad->buf = malloc (len + 1);
+		if (!ad->buf) {
+			r_anal_data_free (ad);
+			eprintf ("Cannot allocate %d bytes\n", len + 1);
+			return NULL;
+		}
 		memcpy (ad->buf, ad->str, len + 1);
 		ad->len = len + 1; // string length + \x00
 	}

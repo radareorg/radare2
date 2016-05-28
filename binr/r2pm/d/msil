@@ -5,11 +5,12 @@ R2PM_DESC "[r2-asm] MSIL disassembler (wip)"
 
 R2PM_INSTALL() {
 	#export PKG_CONFIG_PATH=/usr/lib/pkgconfig
-	./configure --prefix="${R2PM_PREFIX}"
-	cd libr/asm
-	make clean
-	make msil
-	make msil-install HOMEDEST="${R2PM_PLUGDIR}"
+	./configure --prefix="${R2PM_PREFIX}" || exit 1
+	cd libr/asm || exit 1
+	${MAKE} clean
+	${MAKE} msil || exit 1
+	cp -f p/asm_msil.${LIBEXT} "${R2PM_PLUGDIR}" || exit 1
+	echo "cp -f p/asm_msil.${LIBEXT} ${R2PM_PLUGDIR}"
 }
 
 R2PM_UNINSTALL() {

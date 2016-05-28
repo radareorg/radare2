@@ -258,6 +258,7 @@ static void addPanelFrame (const char *title, const char *cmd, ut64 addr) {
 	int i = n_panels;
 	if (!panels) {
 		panels = calloc (sizeof (Panel), LIMIT);
+		if (!panels) return;
 		panels[0].text = strdup ("");
 		panels[0].addr = addr;
 		panels[0].type = PANEL_TYPE_FLOAT;
@@ -406,6 +407,7 @@ R_API int r_core_visual_panels(RCore *core) {
 	OS_INIT();
 	w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w, h);
+	if (!can) return false;
 	can->linemode = 1;
 	can->color = r_config_get_i (core->config, "scr.color");
 	if (!can) {
@@ -615,7 +617,7 @@ repeat:
 				r_core_visual_prompt_input (core);
 				core->vmode = true;
 			} else if (!strcmp (action, "2048")) {
-				r_cons_2048 ();
+				r_cons_2048 (can->color);
 			} else if (strstr (action, "License")) {
 				r_cons_message ("Copyright 2006-2015 - pancake - LGPL");
 			} else if (strstr (action, "Fortune")) {

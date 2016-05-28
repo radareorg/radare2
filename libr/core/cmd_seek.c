@@ -402,7 +402,7 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case 'l': // "sl"
 			{
-			int sl_arg = r_num_math (core->num, input+2);
+			int sl_arg = r_num_math (core->num, input+1);
 			const char *help_msg[] = {
 				"Usage:", "sl+ or sl- or slc", "",
 				"sl", " [line]", "Seek to absolute line",
@@ -423,13 +423,8 @@ static int cmd_seek(void *data, const char *input) {
 				}
 				__seek_line_absolute (core, sl_arg);
 				break;
-			case '-':
-				if (!core->print->lines_cache) {
-					__init_seek_line (core);
-				}
-				__seek_line_relative (core, -sl_arg);
-				break;
 			case '+':
+			case '-':
 				if (!core->print->lines_cache) {
 					__init_seek_line (core);
 				}

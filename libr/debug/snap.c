@@ -85,6 +85,7 @@ static int r_debug_snap_map (RDebug *dbg, RDebugMap *map) {
 		return 0;
 	}
 	snap = R_NEW0 (RDebugSnap);
+	if (!snap) return 0;
 	snap->timestamp = sdb_now ();
 	snap->addr = map->addr;
 	snap->addr_end = map->addr_end;

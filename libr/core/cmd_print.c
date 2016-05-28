@@ -1626,7 +1626,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	if (osize) {
 		r_core_block_size (core, osize);
 	}
-	return true;
+	return handled_cmd;
 }
 
 static void cmd_print_pv(RCore *core, const char *input) {
@@ -1679,11 +1679,19 @@ static void cmd_print_pv(RCore *core, const char *input) {
 		break;
 	case 'j':
 		{
-		char *str = r_core_cmd_str (core, "ps @ [$$]");
+		char *str = r_str_chop (r_core_cmd_str (core, "ps @ [$$]"));
+		char *p = str;
+		if (p) {
+			while (*p) {
+				if (*p == '\\' && p[1] == 'x') {
+					memmove (p, p + 4, strlen (p + 4) + 1);
+				}
+			}
+		}
 		r_cons_printf ("{\"value\":%"PFMT64d",\"string\":\"%s\"}\n",
 				r_num_get (core->num, "[$$]"),
 				str
-			      );
+			);
 		free (str);
 		}
 		break;
