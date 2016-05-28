@@ -399,10 +399,12 @@ typedef enum {
 	R_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix?
 	//TODO: MOVE TO PREFIX .. it is used by anal_ex.. must be updated
 	R_ANAL_OP_TYPE_REP   = 0x40000000, /* repeats next instruction N times */
+	R_ANAL_OP_TYPE_MEM   = 0x20000000, // TODO must be moved to prefix?
 	R_ANAL_OP_TYPE_NULL  = 0,
 	R_ANAL_OP_TYPE_JMP   = 1,  /* mandatory jump */
 	R_ANAL_OP_TYPE_UJMP  = 2,  /* unknown jump (register or so) */
 	R_ANAL_OP_TYPE_CJMP  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_JMP,  /* conditional jump */
+	R_ANAL_OP_TYPE_MJMP  = R_ANAL_OP_TYPE_MEM | R_ANAL_OP_TYPE_JMP,  /* conditional jump */
 	R_ANAL_OP_TYPE_UCJMP = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_UJMP, /* conditional unknown jump */
 	R_ANAL_OP_TYPE_CALL  = 3,  /* call to subroutine (branch+link) */
 	R_ANAL_OP_TYPE_UCALL = 4, /* unknown call (register or so) */
