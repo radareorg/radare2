@@ -15,12 +15,33 @@ typedef  struct _PPA {
 	unsigned char buffer;
 } PA, * PPA;
 
+typedef struct _RTL_PROCESS_MODULE_INFORMATION
+{
+	HANDLE Section;
+	PVOID MappedBase;
+	PVOID ImageBase;
+	ULONG ImageSize;
+	ULONG Flags;
+	USHORT LoadOrderIndex;
+	USHORT InitOrderIndex;
+	USHORT LoadCount;
+	USHORT OffsetToFileName;
+	UCHAR  FullPathName[256];
+} RTL_PROCESS_MODULE_INFORMATION, *PRTL_PROCESS_MODULE_INFORMATION;
+
+typedef struct _RTL_PROCESS_MODULES
+{
+	ULONG NumberOfModules;
+	RTL_PROCESS_MODULE_INFORMATION Modules[1];
+} RTL_PROCESS_MODULES, *PRTL_PROCESS_MODULES;
+
 #define strDeviceName     "\\\\.\\r2k\\"
 #define		CLOSE_DRIVER	    	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 #define		IOCTL_READ_PHYS_MEM	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x807, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 #define		IOCTL_READ_KERNEL_MEM	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x804, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 #define		IOCTL_GET_PHYSADDR	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x809, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 #define		IOCTL_WRITE_PHYS_MEM	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x808, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+#define		IOCTL_GET_SYSTEM_MODULES	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x80a, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 
 static HANDLE gHandleDriver = NULL;
 
@@ -98,6 +119,26 @@ BOOL InitDriver(VOID)
 	if (gHandleDriver != INVALID_HANDLE_VALUE)
 		Ret = TRUE;
 	return(Ret);
+}
+
+static int GetSystemModules() {
+	DWORD ret = -1, bRead = 0;
+	int i;
+	LPVOID	lpBufMods = NULL;
+	int bufmodsize = 1024 * 1024;
+	if (!(lpBufMods = malloc(bufmodsize))) {
+		eprintf("[r2k] GetSystemModules: Error cant allocate %i bytes of memory.\n", bufmodsize);
+		return -1;
+	}
+	if (DeviceIoControl(gHandleDriver, IOCTL_GET_SYSTEM_MODULES, lpBufMods, bufmodsize, lpBufMods, bufmodsize, &bRead, NULL)) {
+		PRTL_PROCESS_MODULES pm = (PRTL_PROCESS_MODULES)lpBufMods;
+		PRTL_PROCESS_MODULE_INFORMATION pMod = pm->Modules;
+		for (i = 0; i < pm->NumberOfModules; i++)
+		{
+			eprintf("%p - %x = %-50s \n", pMod[i].ImageBase, pMod[i].ImageSize, pMod[i].FullPathName);
+		}
+	}
+	return 1;
 }
 static int ReadKernelMemory(ut64 address, ut8 *buf, int len) {
 	DWORD ret = -1, bRead = 0;
@@ -181,7 +222,8 @@ static int r2k__plugin_open(RIO *io, const char *pathname, ut8 many) {
 	return (!strncmp (pathname, "r2k://", 6));
 }
 static int r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
-	if (!strncmp(cmd, "pid", 3)) {
+	if (!strncmp(cmd, "mod", 3)) {
+		GetSystemModules();
 		if (cmd[3] == ' ') {
 			//int pid = atoi(cmd + 3);
 		}
