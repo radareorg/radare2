@@ -43,7 +43,9 @@ static int lookup_rgb (int r, int g, int b) {
 	int i;
 
 	int color = (r << 16) + (g << 8) + b;
-	for (i = 0; i < 256; ++i)
+	// we lookup only extended colors, since non-extended can
+	// be change by users.
+	for (i = 16; i < 256; ++i)
 		if (color_table[i] == color) return i;
 
 	return -1;
