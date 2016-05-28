@@ -56,9 +56,9 @@ static int approximate_rgb (int r, int g, int b) {
 	if (grey > 0) {
 		return 232 + (double)r / (255 / 24.1);
 	} else {
-		r = R_DIM (r / k, 0, 6);
-		g = R_DIM (g / k, 0, 6);
-		b = R_DIM (b / k, 0, 6);
+		r = R_DIM (r / k, 0, 5);
+		g = R_DIM (g / k, 0, 5);
+		b = R_DIM (b / k, 0, 5);
 		return 16 + (r * 36) + (g * 6) + b;
 	}
 }
