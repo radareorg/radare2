@@ -24,6 +24,44 @@ typedef  struct _PPA {
 
 static HANDLE gHandleDriver = NULL;
 
+BOOL InstallService(char * rutaDriver, LPCSTR  lpServiceName, LPCSTR  lpDisplayName, BOOL bStop) {
+	HANDLE hSCManager;
+	HANDLE hService;
+	SERVICE_STATUS ss;
+	BOOL ret = FALSE;
+
+	hSCManager = OpenSCManagerA(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
+	if (hSCManager)	{
+		hService = CreateServiceA(hSCManager, lpServiceName, lpDisplayName, SERVICE_START | DELETE | SERVICE_STOP, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_IGNORE, rutaDriver, NULL, NULL, NULL, NULL, NULL);
+		if (!hService) {
+			hService = OpenServiceA(hSCManager, "test", SERVICE_START | DELETE | SERVICE_STOP);
+		}
+		if (hService) {
+			if (!bStop) {
+				if (StartServiceA(hService, 0, NULL)) {
+					eprintf("Service installed [OK]\n");
+					ret = TRUE;
+				}
+				else {
+					eprintf("Service installed [FAIL]\n");
+				}
+			}
+			else {
+				if (ControlService(hService, SERVICE_CONTROL_STOP, &ss)) {
+					printf("Service Stopped [OK]\n");
+					ret = TRUE;
+				}
+				else {
+					printf("Service Stopped [FAIL]\n");
+				}
+			}
+			CloseServiceHandle(hService);
+			DeleteService(hService);
+		}
+		CloseServiceHandle(hSCManager);
+	}
+	return ret;
+}
 BOOL InitDriver(VOID)
 {
 	BOOL	Ret = FALSE;
@@ -101,9 +139,9 @@ static int w32__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	LPVOID	lpBuffer = NULL;
 	int bufsize;
 	PPA p;
-	
+
 	memset(buf,'\xff',count);
-	
+
 	bufsize=sizeof(PA) + count;
 	if (!(lpBuffer = malloc(bufsize))) {
 		eprintf("io_w32r0: read: Error cant allocate memory.\n");
@@ -138,14 +176,19 @@ static int w32__plugin_open(RIO *io, const char *pathname, ut8 many) {
 static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "w32r0://", 8)) {
 		RIOW32 *w32 = R_NEW0 (RIOW32);
-		if (InitDriver()) {
-			eprintf("Driver iniciado correctamente.\n");
+		eprintf("Iniciando driver: %s\n", &pathname[8]);
+		InstallService(&pathname[8], "test", "test", TRUE);
+		if (InstallService(&pathname[8], "test", "test", FALSE)) {
+			if (InitDriver()) {
+				eprintf("Driver present [OK]\n");
+			}
+			else {
+				eprintf("Driver preset [FAIL]\n");
+			}
 		}
 		else {
-			eprintf("Fallo iniciando driver.\n");
+			eprintf("Error cant init: %s\n", &pathname[8]);
 		}
-		//w32->hnd = CreateFile (filename, GENERIC_READ | rw?GENERIC_WRITE:0, FILE_SHARE_READ | rw? FILE_SHARE_WRITE:0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-		//if (w32->hnd != INVALID_HANDLE_VALUE)
 		return r_io_desc_new (&r_io_plugin_w32r0, -1, pathname, rw, mode, w32);
 		free (w32);
 	}
