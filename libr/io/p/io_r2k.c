@@ -120,8 +120,21 @@ BOOL InitDriver(VOID)
 		Ret = TRUE;
 	return(Ret);
 }
-
-static int GetSystemModules() {
+char *GetFileName(const char *path)
+{
+	char *pfile;
+	pfile = path + strlen(path);
+	for (; pfile > path; pfile--)
+	{
+		if ((*pfile == '\\') || (*pfile == '/'))
+		{
+			pfile++;
+			break;
+		}
+	}
+	return pfile;
+}
+static int GetSystemModules(RIO *io) {
 	DWORD ret = -1, bRead = 0;
 	int i;
 	LPVOID	lpBufMods = NULL;
@@ -135,7 +148,8 @@ static int GetSystemModules() {
 		PRTL_PROCESS_MODULE_INFORMATION pMod = pm->Modules;
 		for (i = 0; i < pm->NumberOfModules; i++)
 		{
-			eprintf("%p - %x = %-50s \n", pMod[i].ImageBase, pMod[i].ImageSize, pMod[i].FullPathName);
+			//eprintf("%p %x = %-50s \n", pMod[i].ImageBase, pMod[i].ImageBase, GetFileName(pMod[i].FullPathName));
+			io->cb_printf("f nt.%s 0x%x @ 0x%p\n", GetFileName(pMod[i].FullPathName), pMod[i].ImageSize, pMod[i].ImageBase);
 		}
 	}
 	return 1;
@@ -223,7 +237,7 @@ static int r2k__plugin_open(RIO *io, const char *pathname, ut8 many) {
 }
 static int r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strncmp(cmd, "mod", 3)) {
-		GetSystemModules();
+		GetSystemModules(io);
 		if (cmd[3] == ' ') {
 			//int pid = atoi(cmd + 3);
 		}
