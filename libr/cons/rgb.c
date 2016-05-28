@@ -70,7 +70,6 @@ static int rgb (int r, int g, int b) {
 }
 
 static void unrgb (int color, int *r, int *g, int *b) {
-	if (color_table[255] == 0) init_color_table ();
 	int rgb = color_table[color];
 	*r = (rgb >> 16) & 0xff;
 	*g = (rgb >> 8) & 0xff;
@@ -88,6 +87,7 @@ static inline void rgbinit (int r, int g, int b) {
 }
 
 R_API void r_cons_rgb_init (void) {
+	if (color_table[255] == 0) init_color_table ();
 	int r, g, b;
 	for (r = 0; r < 6; r++)
 		for (g = 0; g < 6; g++)
