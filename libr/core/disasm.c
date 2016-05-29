@@ -220,7 +220,7 @@ static void handle_print_op_size(RCore *core, RDisasmState *ds);
 static void handle_print_trace(RCore *core, RDisasmState *ds);
 static void handle_adistrick_comments(RCore *core, RDisasmState *ds);
 static int handle_print_meta_infos(RCore * core, RDisasmState *ds, ut8* buf, int len, int idx );
-static void handle_print_opstr(RCore *core, RDisasmState *ds);
+static void ds_print_opstr(RDisasmState *ds);
 static void ds_print_color_reset(RDisasmState *ds);
 static int ds_print_middle(RDisasmState *ds, int ret);
 static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
@@ -1850,8 +1850,8 @@ static void handle_print_indent(RCore *core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_opstr(RCore *core, RDisasmState *ds) {
-	handle_print_indent (core, ds);
+static void ds_print_opstr(RDisasmState *ds) {
+	handle_print_indent (ds->core, ds);
 	r_cons_strcat (ds->opstr);
 }
 
@@ -2895,7 +2895,7 @@ toro:
 			handle_print_show_bytes (core, ds);
 			handle_print_lines_right (core, ds);
 			handle_build_op_str (core, ds);
-			handle_print_opstr (core, ds);
+			ds_print_opstr (ds);
 
 			ds_print_fcn_name (ds);
 			ds_print_color_reset (ds);
@@ -3538,7 +3538,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_show_bytes (core, ds);
 			handle_print_lines_right (core, ds);
 			handle_build_op_str (core, ds);
-			handle_print_opstr (core, ds);
+			ds_print_opstr (ds);
 			ds_print_fcn_name (ds);
 			ds_print_import_name (ds);
 			ds_print_color_reset (ds);
