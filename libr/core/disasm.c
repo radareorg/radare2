@@ -2436,7 +2436,8 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 static ut64 opc = UT64_MAX;
 static ut8 *regstate = NULL;
 
-static void handle_print_esil_anal_init(RCore *core, RDisasmState *ds) {
+static void ds_print_esil_anal_init(RDisasmState *ds) {
+	RCore *core = ds->core;
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	opc = r_reg_getv (core->anal->reg, pc);
 	if (!opc || opc==UT64_MAX) opc = core->offset;
@@ -2760,7 +2761,7 @@ toro:
 		if (item) ds->dest = item->offset;
 	}
 
-	handle_print_esil_anal_init (core, ds);
+	ds_print_esil_anal_init (ds);
 	r_cons_break (NULL, NULL);
 	inc = 0;
 	if (ds->l == 0) {
@@ -3487,7 +3488,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	i = 0;
 	idx = 0;
 	r_cons_break (NULL, NULL);
-	handle_print_esil_anal_init (core, ds);
+	ds_print_esil_anal_init (ds);
 
 	if (core->io && core->io->debug)
 		r_debug_map_sync (core->dbg);
