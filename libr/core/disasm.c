@@ -210,7 +210,7 @@ static void ds_show_flags(RDisasmState *ds);
 static void handle_update_ref_lines(RCore *core, RDisasmState *ds);
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len);
 static void handle_control_flow_comments(RCore * core, RDisasmState *ds);
-static void handle_print_lines_right(RCore *core, RDisasmState *ds);
+static void ds_print_lines_right(RDisasmState *ds);
 static void ds_print_lines_left(RDisasmState *ds);
 static void ds_print_cycles(RDisasmState *ds);
 static void ds_print_family(RDisasmState *ds);
@@ -1351,7 +1351,7 @@ static void handle_control_flow_comments(RCore * core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_lines_right(RCore *core, RDisasmState *ds){
+static void ds_print_lines_right(RDisasmState *ds){
 	if (ds->linesright && ds->show_lines && ds->line) {
 		r_cons_printf ("%s%s%s", COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
 	}
@@ -2898,7 +2898,7 @@ toro:
 			/* show cursor */
 			handle_print_show_cursor (core, ds);
 			handle_print_show_bytes (core, ds);
-			handle_print_lines_right (core, ds);
+			ds_print_lines_right (ds);
 			handle_build_op_str (core, ds);
 			ds_print_opstr (ds);
 
@@ -3541,7 +3541,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			/* show cursor */
 			handle_print_show_cursor (core, ds);
 			handle_print_show_bytes (core, ds);
-			handle_print_lines_right (core, ds);
+			ds_print_lines_right (ds);
 			handle_build_op_str (core, ds);
 			ds_print_opstr (ds);
 			ds_print_fcn_name (ds);
