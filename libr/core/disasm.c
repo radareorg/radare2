@@ -211,7 +211,7 @@ static void handle_update_ref_lines(RCore *core, RDisasmState *ds);
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len);
 static void handle_control_flow_comments(RCore * core, RDisasmState *ds);
 static void handle_print_lines_right(RCore *core, RDisasmState *ds);
-static void handle_print_lines_left(RCore *core, RDisasmState *ds);
+static void ds_print_lines_left(RDisasmState *ds);
 static void ds_print_cycles(RDisasmState *ds);
 static void ds_print_family(RDisasmState *ds);
 static void ds_print_stackptr(RDisasmState *ds);
@@ -299,7 +299,7 @@ static void ds_print_spacy(RDisasmState *ds, int pre) {
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (!f) {
 			r_cons_printf ("  ");
-			handle_print_lines_left (core, ds);
+			ds_print_lines_left (ds);
 		}
 	}
 	if (f) beginline (core, ds, f, true);
@@ -701,7 +701,7 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nop
 	}
 	char *tmp = ds->line;
 	ds->line = ds->refline2;
-	handle_print_lines_left (core, ds);
+	ds_print_lines_left (ds);
 	ds->line = tmp;
 }
 
@@ -716,7 +716,7 @@ static void handle_pre_xrefs(RCore *core, RDisasmState *ds) {
 	handle_print_pre (core, ds);
 	char *tmp = ds->line;
 	ds->line = ds->refline2;
-	handle_print_lines_left (core, ds);
+	ds_print_lines_left (ds);
 	ds->line = tmp;
 }
 
@@ -931,7 +931,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			if (ds->show_fcnlines) {
 				r_cons_printf (" ");
 			}
-			handle_print_lines_left (core, ds);
+			ds_print_lines_left (ds);
 			ds_print_offset (ds);
 			r_cons_printf ("%s%s%s(%s) %s%s%s %d\n",
 					space, COLOR_RESET (ds), COLOR (ds, color_fname),
@@ -986,7 +986,7 @@ static void ds_show_functions(RDisasmState *ds) {
 
 			tmp = ds->line;
 			ds->line = ds->refline2;
-			handle_print_lines_left (core, ds);
+			ds_print_lines_left (ds);
 			ds->line = tmp;
 
 			if (ds->show_flgoff) {
@@ -1210,14 +1210,14 @@ static void ds_show_flags(RDisasmState *ds) {
 			if (f) {
 				beginline (core, ds, f, false);
 			} else {
-				handle_print_lines_left (core, ds);
+				ds_print_lines_left (ds);
 				r_cons_printf ("  ");
 			}
 			ds_print_offset (ds);
 			r_cons_printf (" ");
 		} else {
 			r_cons_printf ((f && ds->at > f->addr)?"| ": "  ");
-			handle_print_lines_left (core, ds);
+			ds_print_lines_left (ds);
 			r_cons_printf (";-- ");
 		}
 		if (ds->show_color)
@@ -1388,7 +1388,9 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 	free (out);
 }
 
-static void handle_print_lines_left(RCore *core, RDisasmState *ds) {
+static void ds_print_lines_left(RDisasmState *ds) {
+	RCore *core = ds->core;
+
 	if (ds->show_section) {
 		char *sect = strdup (get_section_name (core, ds->at));
 		printCol (ds, sect, ds->show_section_col, ds->color_reg);
@@ -2773,7 +2775,7 @@ toro:
 					COLOR (ds, color_fline), core->cons->vline[RUP_CORNER],
 					COLOR (ds, color_fname), f->name, cmt, COLOR_RESET (ds));
 				handle_setup_print_pre (core, ds, true, false);
-				handle_print_lines_left (core, ds);
+				ds_print_lines_left (ds);
 				ds_print_offset (ds);
 				r_cons_printf ("(%d byte folded function)\n", r_anal_fcn_size (f));
 				//r_cons_printf ("%s%s%s\n", COLOR (ds, color_fline), core->cons->vline[RDWN_CORNER], COLOR_RESET (ds));
@@ -2867,14 +2869,14 @@ toro:
 		ds_show_functions (ds);
 		ds_show_xrefs (ds);
 		handle_setup_print_pre (core, ds, false, false);
-		handle_print_lines_left (core, ds);
+		ds_print_lines_left (ds);
 
 		if (ds->show_comments && !ds->show_comment_right) {
 			if (ds->show_emu) {
 				handle_print_esil_anal (core, ds);
 				r_cons_newline ();
 				handle_setup_print_pre (core, ds, false, false);
-				handle_print_lines_left (core, ds);
+				ds_print_lines_left (ds);
 			}
 		}
 
@@ -2883,7 +2885,7 @@ toro:
 			ds_show_functions (ds);
 			ds_show_xrefs (ds);
 			handle_setup_print_pre (core, ds, false, false);
-			handle_print_lines_left (core, ds);
+			ds_print_lines_left (ds);
 		}
 		ds_print_offset (ds);
 		ds_print_op_size (ds);
@@ -3524,7 +3526,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ds_show_xrefs (ds);
 			ds_show_flags (ds);
 			handle_setup_print_pre (core, ds, false, false);
-			handle_print_lines_left (core, ds);
+			ds_print_lines_left (ds);
 			ds_print_offset (ds);
 			ds_print_op_size (ds);
 			ds_print_trace (ds);
