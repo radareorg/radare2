@@ -72,7 +72,7 @@ cmovnz=conditional move - not zero/not equal (zf=0)
 cmovo=conditional move - overflow (of=1)
 cmovp=conditional move - parity/parity even (pf=1)
 cmovpe=conditional move - parity even/parity (pf=1)
-cmovpo=conditoinal move - parity odd/not parity (pf=0)
+cmovpo=conditional move - parity odd/not parity (pf=0)
 cmovs=conditional move - sign (sf=1)
 cmovz=conditional move - zero/equal (zf=1)
 cmp=compare two operands
