@@ -207,7 +207,7 @@ static void handle_atabs_option(RCore *core, RDisasmState *ds);
 static void ds_show_functions(RDisasmState *ds);
 static void ds_show_comments_right(RDisasmState *ds);
 static void ds_show_flags(RDisasmState *ds);
-static void handle_update_ref_lines(RCore *core, RDisasmState *ds);
+static void ds_update_ref_lines(RDisasmState *ds);
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len);
 static void ds_control_flow_comments(RDisasmState *ds);
 static void ds_print_lines_right(RDisasmState *ds);
@@ -1240,13 +1240,13 @@ static void ds_show_flags(RDisasmState *ds) {
 	}
 }
 
-static void handle_update_ref_lines(RCore *core, RDisasmState *ds) {
+static void ds_update_ref_lines(RDisasmState *ds) {
 	if (ds->show_lines) {
-		ds->line = r_anal_reflines_str (core, ds->at, ds->linesopts);
+		ds->line = r_anal_reflines_str (ds->core, ds->at, ds->linesopts);
 		free (ds->refline);
 		ds->refline = ds->line? strdup (ds->line): NULL;
 		free (ds->refline2);
-		ds->refline2 = r_anal_reflines_str (core, ds->at,
+		ds->refline2 = r_anal_reflines_str (ds->core, ds->at,
 			ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE);
 		if (ds->line) {
 			if (strchr (ds->line, '<'))
@@ -2461,7 +2461,7 @@ static void handle_print_bbline(RCore *core, RDisasmState *ds) {
 	bb = r_anal_fcn_bbget (ds->fcn, ds->at);
 	if (bb) {
 		handle_setup_print_pre (core, ds, false, false);
-		handle_update_ref_lines (core, ds);
+		ds_update_ref_lines (ds);
 		if (!ds->linesright && ds->show_lines && ds->line) {
 			r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
 				ds->refline2, COLOR_RESET (ds));
@@ -2759,7 +2759,7 @@ toro:
 		r_core_seek_archbits (core, ds->at); // slow but safe
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
 		r_asm_set_pc (core->assembler, ds->at);
-		handle_update_ref_lines (core, ds);
+		ds_update_ref_lines (ds);
 		/* show type links */
 		r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
 
@@ -3493,7 +3493,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			if (ds->lines >= ds->l) break;
 			if (r_cons_singleton ()->breaked) break;
 
-			handle_update_ref_lines (core, ds);
+			ds_update_ref_lines (ds);
 			/* show type links */
 			r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
 
