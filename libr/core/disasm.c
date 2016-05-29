@@ -221,7 +221,7 @@ static void handle_print_trace(RCore *core, RDisasmState *ds);
 static void handle_adistrick_comments(RCore *core, RDisasmState *ds);
 static int handle_print_meta_infos(RCore * core, RDisasmState *ds, ut8* buf, int len, int idx );
 static void handle_print_opstr(RCore *core, RDisasmState *ds);
-static void handle_print_color_reset(RCore *core, RDisasmState *ds);
+static void ds_print_color_reset(RDisasmState *ds);
 static int ds_print_middle(RDisasmState *ds, int ret);
 static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
 static void ds_print_import_name(RDisasmState *ds);
@@ -1167,7 +1167,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 			r_cons_strcat (ds->comment);
 		}
 #endif
-		if (ds->show_color) handle_print_color_reset (core, ds);
+		if (ds->show_color) ds_print_color_reset (ds);
 		r_cons_newline ();
 		free (ds->comment);
 		ds->comment = NULL;
@@ -1179,7 +1179,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 			r_cons_strcat ("  ;  ");
 			r_cons_strcat_justify (item->comment, mycols, ';');
 			r_cons_newline ();
-			if (ds->show_color) handle_print_color_reset (core, ds);
+			if (ds->show_color) ds_print_color_reset (ds);
 		}
 	}
 	ds->show_comment_right = scr;
@@ -1344,7 +1344,7 @@ static void handle_control_flow_comments(RCore * core, RDisasmState *ds) {
 				if (ds->show_color) r_cons_strcat (ds->pal_comment);
 				handle_comment_align (core, ds);
 				r_cons_printf ("  ; ref to %s: %s\n", item->name, item->comment);
-				handle_print_color_reset (core, ds);
+				ds_print_color_reset (ds);
 			}
 			break;
 		}
@@ -1855,7 +1855,7 @@ static void handle_print_opstr(RCore *core, RDisasmState *ds) {
 	r_cons_strcat (ds->opstr);
 }
 
-static void handle_print_color_reset(RCore *core, RDisasmState *ds) {
+static void ds_print_color_reset(RDisasmState *ds) {
 	if (ds->show_color) r_cons_strcat (Color_RESET);
 }
 
@@ -1881,7 +1881,7 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 	if (ds->show_color) {
 		r_cons_strcat (ds->color_label);
 		r_cons_printf (" .%s:\n", label);
-		handle_print_color_reset (core, ds);
+		ds_print_color_reset (ds);
 	} else {
 		r_cons_printf (" .%s:\n", label);
 	}
@@ -1907,7 +1907,7 @@ static void ds_print_import_name(RDisasmState *ds) {
 						// TODO: handle somehow ordinals import
 						handle_comment_align (core, ds);
 						r_cons_printf ("  ; (imp.%s)", rel->import->name);
-						handle_print_color_reset (core, ds);
+						ds_print_color_reset (ds);
 					}
 				}
 			}
@@ -1951,7 +1951,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 					}
 				}
 			}
-			handle_print_color_reset (core, ds);
+			ds_print_color_reset (ds);
 		}
 		break;
 	}
@@ -2597,7 +2597,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 			//r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
 			r_cons_strcat (ds->comment);
 			if (ds->show_color) {
-				handle_print_color_reset (core, ds);
+				ds_print_color_reset (ds);
 			}
 			free (ds->comment);
 			ds->comment = NULL;
@@ -2898,7 +2898,7 @@ toro:
 			handle_print_opstr (core, ds);
 
 			ds_print_fcn_name (ds);
-			handle_print_color_reset (core, ds);
+			ds_print_color_reset (ds);
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
 
@@ -3541,7 +3541,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_opstr (core, ds);
 			ds_print_fcn_name (ds);
 			ds_print_import_name (ds);
-			handle_print_color_reset (core, ds);
+			ds_print_color_reset (ds);
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
 			ds_print_asmop_payload (ds);
