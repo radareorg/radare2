@@ -215,7 +215,7 @@ static void handle_print_lines_left(RCore *core, RDisasmState *ds);
 static void handle_print_cycles(RCore *core, RDisasmState *ds);
 static void handle_print_family(RCore *core, RDisasmState *ds);
 static void handle_print_stackptr(RCore *core, RDisasmState *ds);
-static void handle_print_offset(RCore *core, RDisasmState *ds);
+static void ds_print_offset(RDisasmState *ds);
 static void ds_print_op_size(RDisasmState *ds);
 static void ds_print_trace(RDisasmState *ds);
 static void ds_adistrick_comments(RDisasmState *ds);
@@ -303,7 +303,7 @@ static void ds_print_spacy(RDisasmState *ds, int pre) {
 		}
 	}
 	if (f) beginline (core, ds, f, true);
-	handle_print_offset (core, ds);
+	ds_print_offset (ds);
 	if (!pre) r_cons_newline ();
 }
 
@@ -932,7 +932,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				r_cons_printf (" ");
 			}
 			handle_print_lines_left (core, ds);
-			handle_print_offset (core, ds);
+			ds_print_offset (ds);
 			r_cons_printf ("%s%s%s(%s) %s%s%s %d\n",
 					space, COLOR_RESET (ds), COLOR (ds, color_fname),
 					fcntype, fcn_name, cmt, COLOR_RESET (ds), r_anal_fcn_size (f));
@@ -990,7 +990,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds->line = tmp;
 
 			if (ds->show_flgoff) {
-				handle_print_offset (core, ds);
+				ds_print_offset (ds);
 				r_cons_printf ("     ");
 			}
 			r_cons_printf ("%s; ", COLOR (ds, color_other));
@@ -1213,7 +1213,7 @@ static void ds_show_flags(RDisasmState *ds) {
 				handle_print_lines_left (core, ds);
 				r_cons_printf ("  ");
 			}
-			handle_print_offset (core, ds);
+			ds_print_offset (ds);
 			r_cons_printf (" ");
 		} else {
 			r_cons_printf ((f && ds->at > f->addr)?"| ": "  ");
@@ -1467,7 +1467,9 @@ static void handle_print_stackptr(RCore *core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_offset(RCore *core, RDisasmState *ds) {
+static void ds_print_offset(RDisasmState *ds) {
+	RCore *core = ds->core;
+
 	r_print_set_screenbounds (core->print, ds->at);
 	if (ds->show_offset) {
 		static RFlagItem sfi = {0};
@@ -2772,7 +2774,7 @@ toro:
 					COLOR (ds, color_fname), f->name, cmt, COLOR_RESET (ds));
 				handle_setup_print_pre (core, ds, true, false);
 				handle_print_lines_left (core, ds);
-				handle_print_offset (core, ds);
+				ds_print_offset (ds);
 				r_cons_printf ("(%d byte folded function)\n", r_anal_fcn_size (f));
 				//r_cons_printf ("%s%s%s\n", COLOR (ds, color_fline), core->cons->vline[RDWN_CORNER], COLOR_RESET (ds));
 				if (delta<0) delta = -delta;
@@ -2883,7 +2885,7 @@ toro:
 			handle_setup_print_pre (core, ds, false, false);
 			handle_print_lines_left (core, ds);
 		}
-		handle_print_offset (core, ds);
+		ds_print_offset (ds);
 		ds_print_op_size (ds);
 		ds_print_trace (ds);
 		handle_print_cycles (core, ds);
@@ -3523,7 +3525,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ds_show_flags (ds);
 			handle_setup_print_pre (core, ds, false, false);
 			handle_print_lines_left (core, ds);
-			handle_print_offset (core, ds);
+			ds_print_offset (ds);
 			ds_print_op_size (ds);
 			ds_print_trace (ds);
 			handle_print_cycles (core, ds);
