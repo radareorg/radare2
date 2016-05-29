@@ -494,7 +494,8 @@ static void ds_reflines_init(RDisasmState *ds) {
 	}
 }
 
-static void handle_reflines_fcn_init(RCore *core, RDisasmState *ds,  RAnalFunction *fcn, const ut8* buf) {
+static void ds_reflines_fcn_init(RDisasmState *ds,  RAnalFunction *fcn, const ut8* buf) {
+	RCore *core = ds->core;
 	RAnal *anal = core->anal;
 	if (ds->show_lines) {
 		// TODO: make anal->reflines implicit
@@ -3482,7 +3483,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 		idx += bb->size;
 	}
 
-	handle_reflines_fcn_init (core, ds, fcn, buf);
+	ds_reflines_fcn_init (ds, fcn, buf);
 	core->inc = 0;
 
 	core->cons->vline = r_config_get_i (core->config, "scr.utf8")?
