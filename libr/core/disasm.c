@@ -202,7 +202,7 @@ static RDisasmState * ds_init(RCore * core);
 static void handle_set_pre(RDisasmState *ds, const char * str);
 static void handle_build_op_str(RCore *core, RDisasmState *ds);
 static void handle_pre_xrefs(RCore *core, RDisasmState *ds);
-static void handle_show_xrefs(RCore *core, RDisasmState *ds);
+static void ds_show_xrefs(RDisasmState *ds);
 static void handle_atabs_option(RCore *core, RDisasmState *ds);
 static void handle_show_functions(RCore *core, RDisasmState *ds);
 static void handle_show_comments_right(RCore *core, RDisasmState *ds);
@@ -720,10 +720,11 @@ static void handle_pre_xrefs(RCore *core, RDisasmState *ds) {
 	ds->line = tmp;
 }
 
-static void handle_show_xrefs(RCore *core, RDisasmState *ds) {
+static void ds_show_xrefs(RDisasmState *ds) {
 	RList *xrefs;
 	RAnalRef *refi;
 	RListIter *iter;
+	RCore *core = ds->core;
 	bool demangle = r_config_get_i (core->config, "bin.demangle");
 	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	char *name, *tmp;
@@ -2849,7 +2850,7 @@ toro:
 		handle_adistrick_comments (core, ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		handle_show_functions (core, ds);
-		handle_show_xrefs (core, ds);
+		ds_show_xrefs (ds);
 		handle_setup_print_pre (core, ds, false, false);
 		handle_print_lines_left (core, ds);
 
@@ -2865,7 +2866,7 @@ toro:
 		f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
 		if (handle_print_labels (core, ds, f)) {
 			handle_show_functions (core, ds);
-			handle_show_xrefs (core, ds);
+			ds_show_xrefs (ds);
 			handle_setup_print_pre (core, ds, false, false);
 			handle_print_lines_left (core, ds);
 		}
@@ -3505,7 +3506,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			if (handle_print_labels (core, ds, fcn)) {
 				handle_show_functions (core, ds);
 			}
-			handle_show_xrefs (core, ds);
+			ds_show_xrefs (ds);
 			ds_show_flags (ds);
 			handle_setup_print_pre (core, ds, false, false);
 			handle_print_lines_left (core, ds);
