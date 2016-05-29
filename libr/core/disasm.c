@@ -194,7 +194,7 @@ typedef struct r_disam_options_t {
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
 static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle);
 static void ds_print_pre(RDisasmState *ds);
-static void beginline(RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre);
+static void ds_beginline(RDisasmState *ds, RAnalFunction *f, bool nopre);
 static void ds_print_esil_anal(RDisasmState *ds);
 static void ds_reflines_init(RDisasmState *ds);
 static void ds_align_comment(RDisasmState *ds);
@@ -302,7 +302,7 @@ static void ds_print_spacy(RDisasmState *ds, int pre) {
 			ds_print_lines_left (ds);
 		}
 	}
-	if (f) beginline (core, ds, f, true);
+	if (f) ds_beginline (ds, f, true);
 	ds_print_offset (ds);
 	if (!pre) r_cons_newline ();
 }
@@ -691,7 +691,7 @@ R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
 	return hint;
 }
 
-static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre) {
+static void ds_beginline(RDisasmState *ds, RAnalFunction *f, bool nopre) {
 	const char *pre;
 	ds_setup_pre(ds, false, false);
 	pre = ds->pre;
@@ -701,7 +701,7 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nop
 	}
 	if (ds->show_functions && ds->show_fcnlines) {
 		if (*pre == '\\') {
-			ds_set_pre (ds, core->cons->vline[LINE_VERT]);
+			ds_set_pre (ds, ds->core->cons->vline[LINE_VERT]);
 		}
 		ds_print_pre (ds);
 	}
@@ -1220,7 +1220,7 @@ static void ds_show_flags(RDisasmState *ds) {
 		}
 		if (ds->show_flgoff) {
 			if (f) {
-				beginline (core, ds, f, false);
+				ds_beginline (ds, f, false);
 			} else {
 				ds_print_lines_left (ds);
 				r_cons_printf ("  ");
