@@ -848,11 +848,12 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 	return 0;
 }
 
-static void handle_print_show_cursor(RCore *core, RDisasmState *ds) {
+static void ds_print_show_cursor(RDisasmState *ds) {
+	RCore *core = ds->core;
 	char res[] = "     ";
 	void *p;
 	int q, t;
-	if (!core || !ds || !ds->show_marks)
+	if (!ds->show_marks)
 		return;
 	q = core->print->cur_enabled &&
 		ds->cursor >= ds->index &&
@@ -2917,7 +2918,7 @@ toro:
 		ret = ds_print_meta_infos (ds, buf, len, idx);
 		if (!ds->mi_found) {
 			/* show cursor */
-			handle_print_show_cursor (core, ds);
+			ds_print_show_cursor (ds);
 			ds_print_show_bytes (ds);
 			ds_print_lines_right (ds);
 			ds_build_op_str (ds);
@@ -3560,7 +3561,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 				continue;
 			}
 			/* show cursor */
-			handle_print_show_cursor (core, ds);
+			ds_print_show_cursor (ds);
 			ds_print_show_bytes (ds);
 			ds_print_lines_right (ds);
 			ds_build_op_str (ds);
