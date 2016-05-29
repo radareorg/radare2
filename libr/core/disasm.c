@@ -193,7 +193,7 @@ typedef struct r_disam_options_t {
 // TODO: put RCore inside RDisasmState and rename all functions to be ds_XXX
 static void handle_setup_print_pre(RCore *core, RDisasmState *ds, bool tail, bool middle);
 static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle);
-static void handle_print_pre(RCore *core, RDisasmState *ds);
+static void ds_print_pre(RDisasmState *ds);
 static void beginline(RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre);
 static void ds_print_esil_anal(RDisasmState *ds);
 static void ds_reflines_init(RDisasmState *ds);
@@ -703,7 +703,7 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nop
 		if (*pre == '\\') {
 			ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 		}
-		handle_print_pre (core, ds);
+		ds_print_pre (ds);
 	}
 	char *tmp = ds->line;
 	ds->line = ds->refline2;
@@ -721,7 +721,7 @@ static void ds_pre_xrefs(RDisasmState *ds) {
 			ds->pre = r_str_concat (ds->pre, " ");
 		}
 	}
-	handle_print_pre (core, ds);
+	ds_print_pre (ds);
 	char *tmp = ds->line;
 	ds->line = ds->refline2;
 	ds_print_lines_left (ds);
@@ -1051,7 +1051,7 @@ static void ds_show_functions(RDisasmState *ds) {
 
 static void handle_setup_print_pre(RCore *core, RDisasmState *ds, bool tail, bool middle) {
 	ds_setup_pre (ds, tail, middle);
-	handle_print_pre (core, ds);
+	ds_print_pre (ds);
 }
 
 static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
@@ -1083,8 +1083,10 @@ static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 	}
 }
 
-static void handle_print_pre(RCore *core, RDisasmState *ds) {
+static void ds_print_pre(RDisasmState *ds) {
+	RCore *core = ds->core;
 	RAnalFunction *f;
+
 	if (!ds->show_functions) {
 		return;
 	}
