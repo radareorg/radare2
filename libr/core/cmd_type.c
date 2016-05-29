@@ -92,7 +92,7 @@ static int linklist(void *p, const char *k, const char *v) {
 	return 1;
 }
 static int typelist(void *p, const char *k, const char *v) {
-	r_cons_printf ("tk %s = %s \n", k, v);
+	r_cons_printf ("tk %s = %s\n", k, v);
 #if 0
 	if (!strcmp (v, "func")) {
 		const char *rv = sdb_const_get (DB,
@@ -257,6 +257,7 @@ static int cmd_type(void *data, const char *input) {
 		} else {
 			char *fmt = r_anal_type_format (core->anal, input + 1);
 			if (fmt) {
+				r_str_chop (fmt);
 				r_cons_printf ("pf %s\n", fmt);
 				free (fmt);
 			} else eprintf ("Cannot find '%s' type\n", input + 1);
