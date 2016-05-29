@@ -1565,7 +1565,7 @@ static void ds_adistrick_comments(RDisasmState *ds) {
 }
 
 
-static bool handle_print_data_type (RCore *core, const ut8 *buf, int ib, int size) {
+static bool ds_print_data_type(RCore *core, const ut8 *buf, int ib, int size) {
 	const char *type = NULL;
 	char msg[64];
 	const int isSigned = (ib == 1 || ib == 8 || ib == 10)? 1: 0;
@@ -1694,7 +1694,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				ds->oplen = mi->size;
 				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 
-				if (!handle_print_data_type (core, buf + idx,
+				if (!ds_print_data_type (core, buf + idx,
 					ds->hint? ds->hint->immbase: 0, mi->size)) {
 					r_cons_printf ("hex length=%lld delta=%d\n", mi->size , delta);
 					r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1);
