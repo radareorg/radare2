@@ -216,7 +216,7 @@ static void handle_print_cycles(RCore *core, RDisasmState *ds);
 static void handle_print_family(RCore *core, RDisasmState *ds);
 static void handle_print_stackptr(RCore *core, RDisasmState *ds);
 static void handle_print_offset(RCore *core, RDisasmState *ds);
-static void handle_print_op_size(RCore *core, RDisasmState *ds);
+static void ds_print_op_size(RDisasmState *ds);
 static void ds_print_trace(RDisasmState *ds);
 static void ds_adistrick_comments(RDisasmState *ds);
 static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx );
@@ -1515,7 +1515,7 @@ static void handle_print_offset(RCore *core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_op_size(RCore *core, RDisasmState *ds) {
+static void ds_print_op_size(RDisasmState *ds) {
 	if (ds->show_size)
 		r_cons_printf ("%d ", ds->analop.size);
 }
@@ -2884,7 +2884,7 @@ toro:
 			handle_print_lines_left (core, ds);
 		}
 		handle_print_offset (core, ds);
-		handle_print_op_size (core, ds);
+		ds_print_op_size (ds);
 		ds_print_trace (ds);
 		handle_print_cycles (core, ds);
 		handle_print_family (core, ds);
@@ -3524,7 +3524,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_setup_print_pre (core, ds, false, false);
 			handle_print_lines_left (core, ds);
 			handle_print_offset (core, ds);
-			handle_print_op_size (core, ds);
+			ds_print_op_size (ds);
 			ds_print_trace (ds);
 			handle_print_cycles (core, ds);
 			handle_print_family (core, ds);
