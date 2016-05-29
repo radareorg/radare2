@@ -195,7 +195,7 @@ static void handle_setup_print_pre(RCore *core, RDisasmState *ds, bool tail, boo
 static void handle_setup_pre(RCore *core, RDisasmState *ds, bool tail, bool middle);
 static void handle_print_pre(RCore *core, RDisasmState *ds);
 static void beginline(RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre);
-static void handle_print_esil_anal(RCore *core, RDisasmState *ds);
+static void ds_print_esil_anal(RDisasmState *ds);
 static void ds_reflines_init(RDisasmState *ds);
 static void ds_align_comment(RDisasmState *ds);
 static RDisasmState * ds_init(RCore * core);
@@ -2479,7 +2479,8 @@ static void handle_print_bbline(RCore *core, RDisasmState *ds) {
 }
 
 // modifies anal register state
-static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
+static void ds_print_esil_anal(RDisasmState *ds) {
+	RCore *core = ds->core;
 	RAnalEsil *esil = core->anal->esil;
 	const char *pc;
 	int i, ioc, nargs;
@@ -2881,7 +2882,7 @@ toro:
 
 		if (ds->show_comments && !ds->show_comment_right) {
 			if (ds->show_emu) {
-				handle_print_esil_anal (core, ds);
+				ds_print_esil_anal (ds);
 				r_cons_newline ();
 				handle_setup_print_pre (core, ds, false, false);
 				ds_print_lines_left (ds);
@@ -2932,7 +2933,7 @@ toro:
 		ds_print_ptr (ds, len + 256, idx);
 		ds_print_comments_right (ds);
 		if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
-			handle_print_esil_anal (core, ds);
+			ds_print_esil_anal (ds);
 			r_cons_newline ();
 		}
 		if (ds->line) {
@@ -3577,7 +3578,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			}*/
 			ds_print_ptr (ds, len, idx);
 			ds_print_comments_right (ds);
-			handle_print_esil_anal (core, ds);
+			ds_print_esil_anal (ds);
 			if ( !(ds->show_comments && ds->show_comment_right && ds->comment)) {
 				r_cons_newline ();
 			}
