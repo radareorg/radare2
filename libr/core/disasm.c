@@ -217,7 +217,7 @@ static void handle_print_family(RCore *core, RDisasmState *ds);
 static void handle_print_stackptr(RCore *core, RDisasmState *ds);
 static void handle_print_offset(RCore *core, RDisasmState *ds);
 static void handle_print_op_size(RCore *core, RDisasmState *ds);
-static void handle_print_trace(RCore *core, RDisasmState *ds);
+static void ds_print_trace(RDisasmState *ds);
 static void ds_adistrick_comments(RDisasmState *ds);
 static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx );
 static void ds_print_opstr(RDisasmState *ds);
@@ -1520,17 +1520,17 @@ static void handle_print_op_size(RCore *core, RDisasmState *ds) {
 		r_cons_printf ("%d ", ds->analop.size);
 }
 
-static void handle_print_trace(RCore *core, RDisasmState *ds) {
+static void ds_print_trace(RDisasmState *ds) {
 	RDebugTracepoint *tp = NULL;
 	if (ds->show_trace) {
-		tp = r_debug_trace_get (core->dbg, ds->at);
+		tp = r_debug_trace_get (ds->core->dbg, ds->at);
 		r_cons_printf ("%02x:%04x ", tp?tp->times:0, tp?tp->count:0);
 	}
 	if (ds->tracespace) {
 		char spaces [32];
 		int times;
 		if (!tp)
-			tp = r_debug_trace_get (core->dbg, ds->at);
+			tp = r_debug_trace_get (ds->core->dbg, ds->at);
 		if (tp) {
 			times = R_MIN (tp->times, 30); // limit to 30
 			memset (spaces, ' ', sizeof (spaces));
@@ -2885,7 +2885,7 @@ toro:
 		}
 		handle_print_offset (core, ds);
 		handle_print_op_size (core, ds);
-		handle_print_trace (core, ds);
+		ds_print_trace (ds);
 		handle_print_cycles (core, ds);
 		handle_print_family (core, ds);
 		handle_print_stackptr (core, ds);
@@ -3525,7 +3525,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_lines_left (core, ds);
 			handle_print_offset (core, ds);
 			handle_print_op_size (core, ds);
-			handle_print_trace (core, ds);
+			ds_print_trace (ds);
 			handle_print_cycles (core, ds);
 			handle_print_family (core, ds);
 			handle_print_stackptr (core, ds);
