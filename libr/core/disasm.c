@@ -201,7 +201,7 @@ static void handle_comment_align(RCore *core, RDisasmState *ds);
 static RDisasmState * ds_init(RCore * core);
 static void handle_set_pre(RDisasmState *ds, const char * str);
 static void handle_build_op_str(RCore *core, RDisasmState *ds);
-static void handle_pre_xrefs(RCore *core, RDisasmState *ds);
+static void ds_pre_xrefs(RDisasmState *ds);
 static void ds_show_xrefs(RDisasmState *ds);
 static void ds_atabs_option(RDisasmState *ds);
 static void ds_show_functions(RDisasmState *ds);
@@ -705,7 +705,9 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nop
 	ds->line = tmp;
 }
 
-static void handle_pre_xrefs(RCore *core, RDisasmState *ds) {
+static void ds_pre_xrefs(RDisasmState *ds) {
+	RCore *core = ds->core;
+
 	if (ds->show_fcnlines) {
 		handle_setup_pre (core, ds, false, false);
 		if (*ds->pre != ' '){
@@ -740,7 +742,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		int cols = r_cons_get_size (NULL);
 		cols -= 15;
 		cols /= 23;
-		handle_pre_xrefs (core, ds);
+		ds_pre_xrefs (ds);
 		r_cons_printf ("%s; XREFS: ", ds->show_color?
 				ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
@@ -749,7 +751,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			if (count == cols) {
 				if (iter->n) {
 					r_cons_newline ();
-					handle_pre_xrefs (core, ds);
+					ds_pre_xrefs (ds);
 					r_cons_printf ("%s; XREFS: ",
 						ds->show_color? ds->pal_comment: "");
 				}
@@ -773,7 +775,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					name = tmp;
 				}
 			}
-			handle_pre_xrefs (core, ds);
+			ds_pre_xrefs (ds);
 			r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)%s\n",
 				COLOR (ds, pal_comment),
 				r_anal_xrefs_type_tostring (refi->type),
