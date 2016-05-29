@@ -3001,8 +3001,6 @@ toro:
 	}
 	r_print_set_rowoff (core->print, ds->lines, ds->at - addr);
 	r_print_set_rowoff (core->print, ds->lines + 1, UT32_MAX);
-	// TODO: this should be called from deinit_ds()
-	r_anal_op_fini (&ds->analop);
 	// TODO: this too (must review)
 	ds_print_esil_anal_fini (ds);
 	ds_reflines_fini (ds);
@@ -3623,7 +3621,6 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 		r_config_set_i (core->config, "asm.bits", ds->oldbits);
 		ds->oldbits = 0;
 	}
-	r_anal_op_fini (&ds->analop);
 	ds_free (ds);
 	r_list_free (bb_list);
 	return idx;
