@@ -231,7 +231,7 @@ static void handle_print_core_vmode(RCore *core, RDisasmState *ds);
 static void handle_print_cc_update(RCore *core, RDisasmState *ds);
 static void handle_print_dwarf(RCore *core, RDisasmState *ds);
 static void handle_print_asmop_payload(RCore *core, RDisasmState *ds);
-static void handle_print_op_push_info(RCore *core, RDisasmState *ds);
+static void ds_print_op_push_info(RDisasmState *ds);
 //static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 *word4);
 static void ds_print_comments_right(RDisasmState *ds);
 //static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 word8 );
@@ -2127,11 +2127,11 @@ static void handle_print_asmop_payload(RCore *core, RDisasmState *ds) {
 		r_cons_printf ("\n; .. payload of %d bytes", ds->asmop.payload);
 }
 
-static void handle_print_op_push_info(RCore *core, RDisasmState *ds){
+static void ds_print_op_push_info(RDisasmState *ds){
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_PUSH:
 		if (ds->analop.val) {
-			RFlagItem *flag = r_flag_get_i (core->flags, ds->analop.val);
+			RFlagItem *flag = r_flag_get_i (ds->core->flags, ds->analop.val);
 			if (flag) r_cons_printf (" ; %s", flag->name);
 		}
 		break;
@@ -2908,7 +2908,7 @@ toro:
 		} else {
 			ds->mi_found = 0;
 		}
-		handle_print_op_push_info (core, ds);
+		ds_print_op_push_info (ds);
 		ds_print_ptr (ds, len + 256, idx);
 		ds_print_comments_right (ds);
 		if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
@@ -3549,7 +3549,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			}
 			handle_print_core_vmode (core, ds);
 			handle_print_cc_update (core, ds);
-			handle_print_op_push_info (core, ds);
+			ds_print_op_push_info (ds);
 			/*if (ds->analop.refptr) {
 				handle_print_refptr (core, ds);
 			} else {
