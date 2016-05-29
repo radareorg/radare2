@@ -747,6 +747,7 @@ static void handle_show_xrefs(RCore *core, RDisasmState *ds) {
 				r_anal_xrefs_type_tostring (refi->type), refi->addr);
 			if (count == cols) {
 				if (iter->n) {
+					handle_print_color_reset (core, ds);
 					r_cons_newline ();
 					handle_pre_xrefs (core, ds);
 					r_cons_printf ("%s; XREFS: ",
@@ -755,6 +756,7 @@ static void handle_show_xrefs(RCore *core, RDisasmState *ds) {
 				count = 0;
 			} else count++;
 		}
+		handle_print_color_reset (core, ds);
 		r_cons_newline ();
 		r_list_free (xrefs);
 		return;
