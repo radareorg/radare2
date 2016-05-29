@@ -45,9 +45,9 @@ clflush=flush cache line
 cli=clear interrupt flag
 clts=clear task-switched flag in cr0
 cmc=complement carry flag
-cmova=conditional move - above/not below or equal (cf=0 and zf=0)
+cmova=conditional move - above/not below nor equal (cf=0 and zf=0)
 cmovae=conditional move - above or equal/not below/not carry (cf=0)
-cmovb=conditional move - below/not above or equal/carry (cf=1)
+cmovb=conditional move - below/not above nor equal/carry (cf=1)
 cmovbe=conditional move - below or equal/not above (cf=1 or zf=1)
 cmovc=conditional move - carry/below/not above or equal (cf=1)
 cmove=conditional move - equal/zero (zf=1)
