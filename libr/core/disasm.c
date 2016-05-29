@@ -2460,8 +2460,10 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 	regstate = r_reg_arena_peek (core->anal->reg);
 }
 
-static void handle_print_esil_anal_fini(RCore *core, RDisasmState *ds) {
+static void ds_print_esil_anal_fini(RDisasmState *ds) {
 	if (ds->show_emu && regstate) {
+		RCore* core = ds->core;
+
 		const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 		r_reg_arena_poke (core->anal->reg, regstate);
 		r_reg_setv (core->anal->reg, pc, opc);
@@ -3000,7 +3002,7 @@ toro:
 	// TODO: this should be called from deinit_ds()
 	r_anal_op_fini (&ds->analop);
 	// TODO: this too (must review)
-	handle_print_esil_anal_fini (core, ds);
+	ds_print_esil_anal_fini (ds);
 	ds_reflines_fini (ds);
 	ds_free (ds);
 	if (true || ds->show_emu) {
@@ -3613,7 +3615,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	}
 	free (buf);
 	r_cons_break_end ();
-	handle_print_esil_anal_fini (core, ds);
+	ds_print_esil_anal_fini (ds);
 
 	if (ds->oldbits) {
 		r_config_set_i (core->config, "asm.bits", ds->oldbits);
