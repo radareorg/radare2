@@ -155,7 +155,7 @@ typedef struct r_disam_options_t {
 
 	RFlagItem *lastflag;
 	RAnalHint *hint;
-	RPrint *p;
+	RPrint *print;
 
 	int l;
 	int middle;
@@ -1826,9 +1826,9 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 					p[1] = '\0';
 				}
 			}
-			ds->p->cur_enabled = (ds->cursor != -1);
-			nstr = r_print_hexpair (ds->p, str, ds->index);
-			if (ds->p->bytespace) {
+			ds->print->cur_enabled = (ds->cursor != -1);
+			nstr = r_print_hexpair (ds->print, str, ds->index);
+			if (ds->print->bytespace) {
 				k = (ds->nb + (ds->nb / 2)) - r_str_ansi_len (nstr) + 2;
 			} else {
 				k = ds->nb - r_str_ansi_len (nstr)+1;
@@ -2712,7 +2712,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// TODO: All those ds must be print flags
 	ds = ds_init (core);
 	ds->cbytes = cbytes;
-	ds->p = p;
+	ds->print = p;
 	ds->l = l;
 	ds->buf = buf;
 	ds->len = len;
@@ -3465,7 +3465,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	// TODO: All those ds must be print flags
 	ds = ds_init (core);
 	ds->cbytes = cbytes;
-	ds->p = p;
+	ds->print = p;
 	ds->l = l;
 	ds->buf = buf;
 	ds->len = r_anal_fcn_size (fcn);
