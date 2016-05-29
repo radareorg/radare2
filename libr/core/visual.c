@@ -1848,8 +1848,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case '*':
 		if (core->print->cur_enabled) {
 			r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->offset + core->print->cur);
-		}
-		else if (!autoblocksize) {
+		} else if (!autoblocksize) {
 			r_core_block_size (core, core->blocksize+cols);
 		}
 		break;

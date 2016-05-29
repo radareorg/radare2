@@ -130,9 +130,9 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	struct sockaddr_in sa;
 	struct hostent *he;
 	WSADATA wsadata;
-	TIMEVAL Timeout;//sku
-	Timeout.tv_sec = timeout;//sku
-	Timeout.tv_usec = 0;//sku
+	TIMEVAL Timeout;
+	Timeout.tv_sec = timeout;
+	Timeout.tv_usec = 0;
 
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
 		eprintf ("Error creating socket.");
@@ -142,11 +142,11 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	if (s->fd == -1)
 		return false;
 
-	unsigned long iMode = 1;//sku
-	int iResult = ioctlsocket (s->fd, FIONBIO, &iMode);//sku
-	if (iResult != NO_ERROR) {//sku
-		eprintf ("ioctlsocket error: %d\n", iResult); //sku
-	}//sku
+	unsigned long iMode = 1;
+	int iResult = ioctlsocket (s->fd, FIONBIO, &iMode);
+	if (iResult != NO_ERROR) {
+		eprintf ("ioctlsocket error: %d\n", iResult);
+	}
 	memset (&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
 	he = (struct hostent *)gethostbyname (host);
@@ -157,25 +157,24 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	sa.sin_addr = *((struct in_addr *)he->h_addr);
 	s->port = r_socket_port_by_name (port);
 	sa.sin_port = htons (s->port);
-//#warning TODO: implement connect timeout on w32
-	if (connect (s->fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr))==false) {
+	if (!connect (s->fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
 		close (s->fd);
 		return false;
 	}
-	iMode = 0;//sku
-	iResult = ioctlsocket (s->fd, FIONBIO, &iMode);//sku
-	if (iResult != NO_ERROR) {//sku
-		eprintf ("ioctlsocket error: %d\n", iResult); //sku
-	}//sku
-	fd_set Write, Err;//sku
-	FD_ZERO (&Write);//sku
-	FD_ZERO (&Err);//sku
-	FD_SET (s->fd, &Write);//sku
-	FD_SET (s->fd, &Err);//sku
-	select (0, NULL, &Write, &Err, &Timeout);//sku
-	if(FD_ISSET (s->fd, &Write)) {//sku
-		return true;//sku
-	}//sku
+	iMode = 0;
+	iResult = ioctlsocket (s->fd, FIONBIO, &iMode);
+	if (iResult != NO_ERROR) {
+		eprintf ("ioctlsocket error: %d\n", iResult);
+	}
+	fd_set Write, Err;
+	FD_ZERO (&Write);
+	FD_ZERO (&Err);
+	FD_SET (s->fd, &Write);
+	FD_SET (s->fd, &Err);
+	select (0, NULL, &Write, &Err, &Timeout);
+	if(FD_ISSET (s->fd, &Write)) {
+		return true;
+	}
 	return false;
 #elif __UNIX__ || defined(__CYGWIN__)
 	int gai, ret;
