@@ -218,7 +218,7 @@ static void handle_print_stackptr(RCore *core, RDisasmState *ds);
 static void handle_print_offset(RCore *core, RDisasmState *ds);
 static void handle_print_op_size(RCore *core, RDisasmState *ds);
 static void handle_print_trace(RCore *core, RDisasmState *ds);
-static void handle_adistrick_comments(RCore *core, RDisasmState *ds);
+static void ds_adistrick_comments(RDisasmState *ds);
 static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx );
 static void ds_print_opstr(RDisasmState *ds);
 static void ds_print_color_reset(RDisasmState *ds);
@@ -1540,10 +1540,10 @@ static void handle_print_trace(RCore *core, RDisasmState *ds) {
 	}
 }
 
-static void handle_adistrick_comments(RCore *core, RDisasmState *ds) {
+static void ds_adistrick_comments(RDisasmState *ds) {
 	if (ds->adistrick) {
-		ds->middle = r_anal_reflines_middle (core->anal,
-			core->anal->reflines, ds->at, ds->analop.size);
+		ds->middle = r_anal_reflines_middle (ds->core->anal,
+			ds->core->anal->reflines, ds->at, ds->analop.size);
 	}
 }
 
@@ -2860,7 +2860,7 @@ toro:
 			ds->at -= skip_bytes;
 		handle_instruction_mov_lea (core, ds, idx);
 		handle_control_flow_comments (core, ds);
-		handle_adistrick_comments (core, ds);
+		ds_adistrick_comments (ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		ds_show_functions (ds);
 		ds_show_xrefs (ds);
@@ -3513,7 +3513,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 
 			handle_instruction_mov_lea (core, ds, idx);
 			handle_control_flow_comments (core, ds);
-			handle_adistrick_comments (core, ds);
+			ds_adistrick_comments (ds);
 			/* XXX: This is really cpu consuming.. need to be fixed */
 			ds_show_functions (ds);
 			if (ds_print_labels (ds, fcn)) {
