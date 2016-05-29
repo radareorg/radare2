@@ -2361,8 +2361,10 @@ addr       addr+size
 	return NULL;
 }
 
-static void handle_print_relocs(RCore *core, RDisasmState *ds) {
+static void ds_print_relocs(RDisasmState *ds) {
+	RCore *core = ds->core;
 	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
+
 	if (rel) {
 		if (rel->import)
 			r_cons_printf ("  ; RELOC %d %s", rel->type, rel->import->name);
@@ -2587,7 +2589,7 @@ beach:
 static void ds_print_comments_right(RDisasmState *ds) {
 	char *desc = NULL;
 	RCore *core = ds->core;
-	handle_print_relocs (core, ds);
+	ds_print_relocs (ds);
 	if (ds->asm_describe) {
 		char *locase = strdup (ds->asmop.buf_asm);
 		if (!locase) return;
