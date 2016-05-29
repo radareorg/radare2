@@ -262,7 +262,7 @@ static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_s
 	}
 }
 
-static const char *getSectionName(RCore *core, ut64 addr) {
+static const char * get_section_name(RCore *core, ut64 addr) {
 	static char section[128] = "";
 	static ut64 oaddr = UT64_MAX;
 	RIOSection *s;
@@ -1386,7 +1386,7 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 
 static void handle_print_lines_left(RCore *core, RDisasmState *ds) {
 	if (ds->show_section) {
-		char *sect = strdup (getSectionName (core, ds->at));
+		char *sect = strdup (get_section_name (core, ds->at));
 		printCol (ds, sect, ds->show_section_col, ds->color_reg);
 		free (sect);
 	}
@@ -2009,7 +2009,7 @@ static void handle_print_cc_update(RCore *core, RDisasmState *ds) {
 				}
 
 				if (ds->show_calls) {
-					const char *sn = ds->show_section? getSectionName (core, ds->at): "";
+					const char *sn = ds->show_section? get_section_name (core, ds->at): "";
 					int cmtright = ds->show_comment_right;
 					if (core->cons->columns < 120) {
 						cmtright = 0;
@@ -2138,7 +2138,7 @@ static void comment_newline(RCore *core, RDisasmState *ds) {
 	const char *sn;
 
 	if (ds->show_comment_right) return;
-	sn = ds->show_section ? getSectionName (core, ds->at) : "";
+	sn = ds->show_section ? get_section_name (core, ds->at) : "";
 	handle_comment_align (core, ds);
 	r_cons_printf ("\n%s%s%s%s%s  ^- %s", COLOR (ds, color_fline),
 		ds->pre, sn, ds->refline, COLOR_RESET (ds),
