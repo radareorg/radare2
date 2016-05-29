@@ -2164,11 +2164,11 @@ static void ds_print_op_push_info(RDisasmState *ds){
 	}
 }
 
-static void comment_newline(RCore *core, RDisasmState *ds) {
+static void ds_comment_newline(RDisasmState *ds) {
 	const char *sn;
 
 	if (ds->show_comment_right) return;
-	sn = ds->show_section ? get_section_name (core, ds->at) : "";
+	sn = ds->show_section ? get_section_name (ds->core, ds->at) : "";
 	ds_align_comment (ds);
 	r_cons_printf ("\n%s%s%s%s%s  ^- %s", COLOR (ds, color_fline),
 		ds->pre, sn, ds->refline, COLOR_RESET (ds),
@@ -2211,7 +2211,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				r_cons_printf (ds->pal_comment);
 			}
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
-				comment_newline (core, ds);
+				ds_comment_newline (ds);
 				const char *flag = "";
 				f = r_flag_get_i (core->flags, p);
 				if (f) flag = f->name;
@@ -2262,7 +2262,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
 			r_str_filter (msg, 0);
-			comment_newline (core, ds);
+			ds_comment_newline (ds);
 			if (ds->show_color) {
 				DOALIGN();
 				r_cons_printf ("%s", ds->pal_comment);
