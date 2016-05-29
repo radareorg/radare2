@@ -196,7 +196,7 @@ static void handle_setup_pre(RCore *core, RDisasmState *ds, bool tail, bool midd
 static void handle_print_pre(RCore *core, RDisasmState *ds);
 static void beginline(RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre);
 static void handle_print_esil_anal(RCore *core, RDisasmState *ds);
-static void handle_reflines_init(RAnal *anal, RDisasmState *ds);
+static void ds_reflines_init(RDisasmState *ds);
 static void ds_align_comment(RDisasmState *ds);
 static RDisasmState * ds_init(RCore * core);
 static void ds_set_pre(RDisasmState *ds, const char * str);
@@ -473,8 +473,11 @@ static void handle_reflines_fini(RAnal *anal, RDisasmState *ds) {
 	R_FREE (ds->refline2);
 }
 
-static void handle_reflines_init(RAnal *anal, RDisasmState *ds) {
+static void ds_reflines_init(RDisasmState *ds) {
+	RAnal *anal = ds->core->anal;
+
 	lastaddr = UT64_MAX;
+
 	if (ds->show_lines) {
 		handle_reflines_fini (anal, ds);
 		anal->reflines = r_anal_reflines_get (anal,
@@ -2712,7 +2715,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		core->anal->cur->reset_counter (core->anal, addr);
 	}
 
-	handle_reflines_init (core->anal, ds);
+	ds_reflines_init (ds);
 	core->inc = 0;
 	/* reset jmp table if not asked to keep it */
 	if (!core->keep_asmqjmps) { // hack
