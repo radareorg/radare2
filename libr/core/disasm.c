@@ -2149,7 +2149,12 @@ static void comment_newline(RCore *core, RDisasmState *ds) {
 static void handle_print_ptr(RCore *core, RDisasmState *ds, int len, int idx) {
 	ut64 p = ds->analop.ptr;
 	int aligned = 0;
-#define DOALIGN() if (!aligned) { handle_comment_align (core, ds); aligned = 1; }
+#define DOALIGN() \
+	if (!aligned) { \
+		handle_comment_align (core, ds); \
+		if (ds->show_color) r_cons_printf (ds->pal_comment); \
+		aligned = 1; \
+	}
 	if (!ds->show_comments)
 		return;
 	if (!ds->show_slow) {
@@ -2175,10 +2180,8 @@ static void handle_print_ptr(RCore *core, RDisasmState *ds, int len, int idx) {
 			}
 			st64 n = (st64)num;
 			st32 n32 = (st32)(n & UT32_MAX);
-			handle_comment_align (core, ds);
-			if (ds->show_color) {
-				r_cons_printf (ds->pal_comment);
-			}
+			DOALIGN();
+
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 				comment_newline (core, ds);
 				const char *flag = "";
@@ -2221,7 +2224,6 @@ static void handle_print_ptr(RCore *core, RDisasmState *ds, int len, int idx) {
 					r_cons_printf (" LEA %s", f2->name);
 				}
 			}
-			if (ds->show_color) r_cons_printf (Color_RESET);
 		}
 #if 1
 		if (!IS_PRINTABLE (*msg))
@@ -2232,17 +2234,13 @@ static void handle_print_ptr(RCore *core, RDisasmState *ds, int len, int idx) {
 		if (f) {
 			r_str_filter (msg, 0);
 			comment_newline (core, ds);
-			if (ds->show_color) {
-				DOALIGN();
-				r_cons_printf ("%s", ds->pal_comment);
-			}
+
 			DOALIGN();
 			if (*msg) {
 				r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
 			} else {
 				r_cons_printf (" ; %s", f->name);
 			}
-			if (ds->show_color) r_cons_printf (Color_RESET);
 		} else {
 			if (p==UT64_MAX || p==UT32_MAX) {
 				DOALIGN();
@@ -2278,26 +2276,14 @@ static void handle_print_ptr(RCore *core, RDisasmState *ds, int len, int idx) {
 				if (!strcmp (kind, "text")) {
 					r_str_filter (msg, 0);
 					if (*msg) {
-						if (ds->show_color) {
-							r_cons_printf (ds->pal_comment);
-						}
 						DOALIGN();
 						r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
-						if (ds->show_color) {
-							r_cons_printf (Color_RESET);
-						}
 					}
 				} else if (!strcmp (kind, "invalid")){
 					int *n = (int*)&p;
 					if (*n>-0xfff && *n < 0xfff) {
-						if (ds->show_color) {
-							r_cons_printf (ds->pal_comment);
-						}
 						DOALIGN();
 						r_cons_printf (" ; %d", *n);
-						if (ds->show_color) {
-							r_cons_printf (Color_RESET);
-						}
 					}
 				} else {
 					//r_cons_printf (" ; %s", kind);
@@ -2307,6 +2293,7 @@ static void handle_print_ptr(RCore *core, RDisasmState *ds, int len, int idx) {
 		}
 		free (msg);
 	} else handle_print_as_string (core, ds);
+	if (aligned && ds->show_color) r_cons_printf (Color_RESET);
 }
 
 // TODO: Use sdb in rbin to accelerate this
