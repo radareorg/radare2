@@ -226,7 +226,7 @@ static int handle_print_middle(RCore *core, RDisasmState *ds, int ret);
 static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
 static void handle_print_import_name(RCore *core, RDisasmState *ds);
 static void handle_print_fcn_name(RCore * core, RDisasmState *ds);
-static void handle_print_as_string(RCore *core, RDisasmState *ds);
+static void ds_print_as_string(RDisasmState *ds);
 static void ds_print_core_vmode(RDisasmState *ds);
 static void ds_print_cc_update(RDisasmState *ds);
 static void ds_print_dwarf(RDisasmState *ds);
@@ -2315,7 +2315,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 		}
 		free (msg);
-	} else handle_print_as_string (core, ds);
+	} else ds_print_as_string(ds);
 }
 
 // TODO: Use sdb in rbin to accelerate this
@@ -2637,10 +2637,10 @@ static void handle_print_refptr_meta_infos(RCore *core, RDisasmState *ds, ut64 w
 }
 #endif
 
-static void handle_print_as_string(RCore *core, RDisasmState *ds) {
+static void ds_print_as_string(RDisasmState *ds) {
 	char *str = r_num_as_string (NULL, ds->analop.ptr);
 	if (str) {
-		handle_comment_align (core, ds);
+		handle_comment_align (ds->core, ds);
 		r_cons_printf (" %s; \"%s\"%s", COLOR (ds, pal_comment),
 			str, COLOR_RESET (ds));
 	}
