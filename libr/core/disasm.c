@@ -204,7 +204,7 @@ static void handle_build_op_str(RCore *core, RDisasmState *ds);
 static void handle_pre_xrefs(RCore *core, RDisasmState *ds);
 static void ds_show_xrefs(RDisasmState *ds);
 static void handle_atabs_option(RCore *core, RDisasmState *ds);
-static void handle_show_functions(RCore *core, RDisasmState *ds);
+static void ds_show_functions(RDisasmState *ds);
 static void handle_show_comments_right(RCore *core, RDisasmState *ds);
 static void ds_show_flags(RDisasmState *ds);
 static void handle_update_ref_lines(RCore *core, RDisasmState *ds);
@@ -870,14 +870,15 @@ static int var_comparator(const RAnalVar *a, const RAnalVar *b){
 	return false;
 }
 
-static void handle_show_functions(RCore *core, RDisasmState *ds) {
+static void ds_show_functions(RDisasmState *ds) {
 	RAnalFunction *f;
+	RCore *core = ds->core;
 	bool demangle, call;
 	const char *lang;
 	char *fcn_name;
 	char *sign;
 
-	if (!core || !ds || !ds->show_functions) {
+	if (!ds->show_functions) {
 		return;
 	}
 	demangle = r_config_get_i (core->config, "bin.demangle");
@@ -2849,7 +2850,7 @@ toro:
 		handle_control_flow_comments (core, ds);
 		handle_adistrick_comments (core, ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
-		handle_show_functions (core, ds);
+		ds_show_functions (ds);
 		ds_show_xrefs (ds);
 		handle_setup_print_pre (core, ds, false, false);
 		handle_print_lines_left (core, ds);
@@ -2865,7 +2866,7 @@ toro:
 
 		f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
 		if (handle_print_labels (core, ds, f)) {
-			handle_show_functions (core, ds);
+			ds_show_functions (ds);
 			ds_show_xrefs (ds);
 			handle_setup_print_pre (core, ds, false, false);
 			handle_print_lines_left (core, ds);
@@ -3502,9 +3503,9 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_control_flow_comments (core, ds);
 			handle_adistrick_comments (core, ds);
 			/* XXX: This is really cpu consuming.. need to be fixed */
-			handle_show_functions (core, ds);
+			ds_show_functions (ds);
 			if (handle_print_labels (core, ds, fcn)) {
-				handle_show_functions (core, ds);
+				ds_show_functions (ds);
 			}
 			ds_show_xrefs (ds);
 			ds_show_flags (ds);
