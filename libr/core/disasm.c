@@ -214,7 +214,7 @@ static void handle_print_lines_right(RCore *core, RDisasmState *ds);
 static void handle_print_lines_left(RCore *core, RDisasmState *ds);
 static void handle_print_cycles(RCore *core, RDisasmState *ds);
 static void handle_print_family(RCore *core, RDisasmState *ds);
-static void handle_print_stackptr(RCore *core, RDisasmState *ds);
+static void ds_print_stackptr(RDisasmState *ds);
 static void ds_print_offset(RDisasmState *ds);
 static void ds_print_op_size(RDisasmState *ds);
 static void ds_print_trace(RDisasmState *ds);
@@ -1447,7 +1447,7 @@ static void handle_print_cycles(RCore *core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_stackptr(RCore *core, RDisasmState *ds) {
+static void ds_print_stackptr(RDisasmState *ds) {
 	if (ds->show_stackptr) {
 		r_cons_printf ("%5d%s", ds->stackptr,
 			ds->analop.type == R_ANAL_OP_TYPE_CALL?">":
@@ -2890,7 +2890,7 @@ toro:
 		ds_print_trace (ds);
 		handle_print_cycles (core, ds);
 		handle_print_family (core, ds);
-		handle_print_stackptr (core, ds);
+		ds_print_stackptr (ds);
 		ret = ds_print_meta_infos (ds, buf, len, idx);
 		if (!ds->mi_found) {
 			/* show cursor */
@@ -3530,7 +3530,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ds_print_trace (ds);
 			handle_print_cycles (core, ds);
 			handle_print_family (core, ds);
-			handle_print_stackptr (core, ds);
+			ds_print_stackptr (ds);
 			ret = ds_print_meta_infos (ds, buf, len, idx);
 			if (ds->mi_found) {
 				ds->mi_found = 0;
