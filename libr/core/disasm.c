@@ -229,7 +229,7 @@ static void handle_print_fcn_name(RCore * core, RDisasmState *ds);
 static void handle_print_as_string(RCore *core, RDisasmState *ds);
 static void ds_print_core_vmode(RDisasmState *ds);
 static void handle_print_cc_update(RCore *core, RDisasmState *ds);
-static void handle_print_dwarf(RCore *core, RDisasmState *ds);
+static void ds_print_dwarf(RDisasmState *ds);
 static void ds_print_asmop_payload(RDisasmState *ds);
 static void ds_print_op_push_info(RDisasmState *ds);
 //static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 *word4);
@@ -2075,9 +2075,9 @@ static void handle_comment_align(RCore *core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_dwarf(RCore *core, RDisasmState *ds) {
+static void ds_print_dwarf(RDisasmState *ds) {
 	if (ds->show_dwarf) {
-		ds->sl = r_bin_addr2text (core->bin, ds->at);
+		ds->sl = r_bin_addr2text (ds->core->bin, ds->at);
 		int len = strlen (ds->opstr);
 		if (len<30) len = 30 - len;
 		if (ds->sl) {
@@ -2088,7 +2088,7 @@ static void handle_print_dwarf(RCore *core, RDisasmState *ds) {
 				r_str_replace_char (line, '\r', ' ');
 				r_str_replace_char (line, '\n', '\x00');
 				// handle_set_pre (ds, "  ");
-				handle_comment_align (core, ds);
+				handle_comment_align (ds->core, ds);
 				if (ds->show_color) {
 					r_cons_printf ("%s ; %s"Color_RESET, ds->pal_comment, line);
 				} else {
@@ -2894,7 +2894,7 @@ toro:
 
 			handle_print_fcn_name (core, ds);
 			handle_print_color_reset (core, ds);
-			handle_print_dwarf (core, ds);
+			ds_print_dwarf (ds);
 			ret = handle_print_middle (core, ds, ret);
 
 			ds_print_asmop_payload (ds);
@@ -3537,7 +3537,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_fcn_name (core, ds);
 			handle_print_import_name (core, ds);
 			handle_print_color_reset (core, ds);
-			handle_print_dwarf (core, ds);
+			ds_print_dwarf (ds);
 			ret = handle_print_middle (core, ds, ret);
 			ds_print_asmop_payload (ds);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
