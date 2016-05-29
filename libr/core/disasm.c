@@ -1784,7 +1784,8 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 	}
 }
 
-static void handle_print_show_bytes(RCore * core, RDisasmState *ds) {
+static void ds_print_show_bytes(RDisasmState *ds) {
+	RCore* core = ds->core;
 	char *nstr, *str = NULL, pad[64];
 	char *flagstr = NULL;
 	char extra[64];
@@ -2911,7 +2912,7 @@ toro:
 		if (!ds->mi_found) {
 			/* show cursor */
 			handle_print_show_cursor (core, ds);
-			handle_print_show_bytes (core, ds);
+			ds_print_show_bytes (ds);
 			ds_print_lines_right (ds);
 			ds_build_op_str (ds);
 			ds_print_opstr (ds);
@@ -3554,7 +3555,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			}
 			/* show cursor */
 			handle_print_show_cursor (core, ds);
-			handle_print_show_bytes (core, ds);
+			ds_print_show_bytes (ds);
 			ds_print_lines_right (ds);
 			ds_build_op_str (ds);
 			ds_print_opstr (ds);
