@@ -205,7 +205,7 @@ static void handle_pre_xrefs(RCore *core, RDisasmState *ds);
 static void ds_show_xrefs(RDisasmState *ds);
 static void handle_atabs_option(RCore *core, RDisasmState *ds);
 static void ds_show_functions(RDisasmState *ds);
-static void handle_show_comments_right(RCore *core, RDisasmState *ds);
+static void ds_show_comments_right(RDisasmState *ds);
 static void ds_show_flags(RDisasmState *ds);
 static void handle_update_ref_lines(RCore *core, RDisasmState *ds);
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len);
@@ -1091,8 +1091,9 @@ static void handle_print_pre(RCore *core, RDisasmState *ds) {
 	}
 }
 
-static void handle_show_comments_right(RCore *core, RDisasmState *ds) {
+static void ds_show_comments_right(RDisasmState *ds) {
 	int linelen, maxclen ;
+	RCore *core = ds->core;
 	RAnalFunction *f;
 	RFlagItem *item;
 	/* show comment at right? */
@@ -2759,7 +2760,7 @@ toro:
 			if (of != f) {
 				char cmt[32];
 				get_bits_comment(core, f, cmt, sizeof (cmt));
-				handle_show_comments_right (core, ds);
+				ds_show_comments_right (ds);
 				r_cons_printf ("%s%s%s (fcn) %s%s%s\n",
 					COLOR (ds, color_fline), core->cons->vline[RUP_CORNER],
 					COLOR (ds, color_fname), f->name, cmt, COLOR_RESET (ds));
@@ -2810,7 +2811,7 @@ toro:
 				}
 			}
 		}
-		handle_show_comments_right (core, ds);
+		ds_show_comments_right (ds);
 		ret = ds_disassemble (ds, buf+idx, len-idx);
 		if (ret == -31337) {
 			inc = ds->oplen;
@@ -3486,7 +3487,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			/* show type links */
 			r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
 
-			handle_show_comments_right (core, ds);
+			ds_show_comments_right (ds);
 			ret = ds_disassemble (ds, buf+idx, len - bb_size_consumed);
 			handle_atabs_option (core, ds);
 			// TODO: store previous oplen in core->dec
