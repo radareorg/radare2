@@ -1728,8 +1728,10 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	return ret;
 }
 
-static void handle_instruction_mov_lea(RCore *core, RDisasmState *ds, int idx) {
+static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
+	RCore *core = ds->core;
 	RAnalValue *src;
+
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_LENGTH:
 	case R_ANAL_OP_TYPE_CAST:
@@ -2874,7 +2876,7 @@ toro:
 		ds_show_flags (ds);
 		if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW)
 			ds->at -= skip_bytes;
-		handle_instruction_mov_lea (core, ds, idx);
+		ds_instruction_mov_lea (ds, idx);
 		ds_control_flow_comments (ds);
 		ds_adistrick_comments (ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
@@ -3527,7 +3529,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 				ds->analop.type = R_ANAL_OP_TYPE_ILL;
 			}
 
-			handle_instruction_mov_lea (core, ds, idx);
+			ds_instruction_mov_lea (ds, idx);
 			ds_control_flow_comments (ds);
 			ds_adistrick_comments (ds);
 			/* XXX: This is really cpu consuming.. need to be fixed */
