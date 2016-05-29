@@ -582,9 +582,15 @@ static int autocomplete(RLine *line) {
 			tmp_argv[j] = NULL;
 			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
-		} else if ((!strncmp (line->buffer.data, "afvn ", 5))) {
+		} else if ((!strncmp (line->buffer.data, "afvn ", 5))
+		|| (!strncmp (line->buffer.data, "afan ", 5))) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			RList *vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_VAR);
+			RList *vars;
+			if (!strncmp (line->buffer.data, "afvn ", 5)) {
+				vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_VAR);
+			} else {
+				vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_ARG);
+			}
 			const char *f_ptr, *l_ptr;
 			RAnalVar *var;
 			int j = 0, len = strlen (line->buffer.data);
@@ -592,13 +598,13 @@ static int autocomplete(RLine *line) {
 			f_ptr = r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, ' ');
 			f_ptr = f_ptr != NULL ? f_ptr + 1 : line->buffer.data;
 			l_ptr = r_sub_str_rchr (line->buffer.data, line->buffer.index, len, ' ');
-			if (l_ptr == NULL) {
-				l_ptr = line->buffer.data + strlen (line->buffer.data);
+			if (!l_ptr) {
+				l_ptr = line->buffer.data + len;
 			}
 
 			r_list_foreach (vars, iter, var) {
 				if (!strncmp (f_ptr, var->name, l_ptr - f_ptr)) {
-					tmp_argv[j++] = strdup(var->name);
+					tmp_argv[j++] = strdup (var->name);
 				}
 			}
 			tmp_argv[j] = NULL;
