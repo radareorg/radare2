@@ -230,7 +230,7 @@ static void handle_print_as_string(RCore *core, RDisasmState *ds);
 static void handle_print_core_vmode(RCore *core, RDisasmState *ds);
 static void handle_print_cc_update(RCore *core, RDisasmState *ds);
 static void handle_print_dwarf(RCore *core, RDisasmState *ds);
-static void handle_print_asmop_payload(RCore *core, RDisasmState *ds);
+static void ds_print_asmop_payload(RDisasmState *ds);
 static void ds_print_op_push_info(RDisasmState *ds);
 //static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 *word4);
 static void ds_print_comments_right(RDisasmState *ds);
@@ -2101,7 +2101,7 @@ static void handle_print_dwarf(RCore *core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_asmop_payload(RCore *core, RDisasmState *ds) {
+static void ds_print_asmop_payload(RDisasmState *ds) {
 	if (ds->varxs) {
 		// XXX asume analop is filled
 		//r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
@@ -2895,7 +2895,7 @@ toro:
 			handle_print_dwarf (core, ds);
 			ret = handle_print_middle (core, ds, ret);
 
-			handle_print_asmop_payload (core, ds);
+			ds_print_asmop_payload (ds);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
@@ -3537,7 +3537,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_color_reset (core, ds);
 			handle_print_dwarf (core, ds);
 			ret = handle_print_middle (core, ds, ret);
-			handle_print_asmop_payload (core, ds);
+			ds_print_asmop_payload (ds);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
