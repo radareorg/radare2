@@ -507,9 +507,9 @@ static void handle_reflines_fcn_init(RCore *core, RDisasmState *ds,  RAnalFuncti
 	}
 }
 
-// TODO. rename to ds_free
-static void handle_deinit_ds(RCore *core, RDisasmState *ds) {
+static void ds_free(RDisasmState *ds) {
 	if (!ds) return;
+	RCore *core = ds->core;
 	if (core && ds->oldbits) {
 		r_config_set_i (core->config, "asm.bits", ds->oldbits);
 		ds->oldbits = 0;
@@ -2966,7 +2966,7 @@ toro:
 	// TODO: this too (must review)
 	handle_print_esil_anal_fini (core, ds);
 	handle_reflines_fini (core->anal, ds);
-	handle_deinit_ds (core, ds);
+	ds_free (ds);
 	if (true || ds->show_emu) {
 		r_reg_arena_pop (core->anal->reg);
 	}
@@ -3151,7 +3151,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 		r_config_set_i (core->config, "asm.bits", ds->oldbits);
 		ds->oldbits = 0;
 	}
-	handle_deinit_ds (core, ds);
+	ds_free (ds);
 	core->offset = old_offset;
 r_reg_arena_pop (core->anal->reg);
 	return err;
@@ -3584,7 +3584,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 		ds->oldbits = 0;
 	}
 	r_anal_op_fini (&ds->analop);
-	handle_deinit_ds (core, ds);
+	ds_free (ds);
 	r_list_free (bb_list);
 	return idx;
 }
