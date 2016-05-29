@@ -1182,8 +1182,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 #endif
 		if (ds->show_color) ds_print_color_reset (ds);
 		r_cons_newline ();
-		free (ds->comment);
-		ds->comment = NULL;
+		R_FREE (ds->comment);
 
 		/* flag one */
 		if (item && item->comment && ds->ocomment != item->comment) {
@@ -1270,12 +1269,11 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 			ds->indent_level = 0;
 		}
 	} else {
-		free (ds->line);
+		R_FREE (ds->line);
 		free (ds->refline);
 		free (ds->refline2);
 		ds->refline = strdup ("");
 		ds->refline2 = strdup ("");
-		ds->line = NULL;
 	}
 }
 
@@ -1672,10 +1670,9 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				ds->oplen = mi->size-delta;
 				ds->asmop.size = (int)mi->size;
 				//i += mi->size-1; // wtf?
-				free (ds->line);
-				free (ds->refline);
-				free (ds->refline2);
-				ds->line = ds->refline = ds->refline2 = NULL;
+				R_FREE (ds->line);
+				R_FREE (ds->refline);
+				R_FREE (ds->refline2);
 				ds->mi_found = 1;
 				break;
 			}
@@ -1703,10 +1700,9 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				core->inc = 16;
 				core->print->flags |= R_PRINT_FLAGS_HEADER;
 				ds->asmop.size = ret = (int)mi->size; //-delta;
-				free (ds->line);
-				free (ds->refline);
-				free (ds->refline2);
-				ds->line = ds->refline = ds->refline2 = NULL;
+				R_FREE (ds->line);
+				R_FREE (ds->refline);
+				R_FREE (ds->refline2);
 				ds->mi_found = 1;
 				break;
 			case R_META_TYPE_FORMAT:
@@ -1714,10 +1710,9 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				r_print_format (core->print, ds->at, buf+idx, len-idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
 				r_cons_printf ("} %d", mi->size);
 				ds->oplen = ds->asmop.size = ret = (int)mi->size;
-				free (ds->line);
-				free (ds->refline);
-				free (ds->refline2);
-				ds->line = ds->refline = ds->refline2 = NULL;
+				R_FREE (ds->line);
+				R_FREE (ds->refline);
+				R_FREE (ds->refline2);
 				ds->mi_found = 1;
 				break;
 			}
@@ -2626,8 +2621,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 			if (ds->show_color) {
 				ds_print_color_reset (ds);
 			}
-			free (ds->comment);
-			ds->comment = NULL;
+			R_FREE (ds->comment);
 		}
 	}
 	free (desc);
@@ -3176,8 +3170,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			} else {
 				r_cons_printf ("%s\n", ds->opstr);
 			}
-			free (ds->opstr);
-			ds->opstr = NULL;
+			R_FREE (ds->opstr);
 		}
 		if (ds->hint) {
 			r_anal_hint_free (ds->hint);
@@ -3594,10 +3587,9 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 				r_cons_newline ();
 			}
 			if (ds->line) {
-				free (ds->line);
-				free (ds->refline);
-				free (ds->refline2);
-				ds->line = ds->refline = ds->refline2 = NULL;
+				R_FREE (ds->line);
+				R_FREE (ds->refline);
+				R_FREE (ds->refline2);
 			}
 			ds_print_bbline (ds);
 
@@ -3608,8 +3600,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ds->addr += ds->oplen;
 			ds->lines++;
 
-			free (ds->opstr);
-			ds->opstr = NULL;
+			R_FREE (ds->opstr);
 		} while (bb_size_consumed < len);
 		i++;
 	}
