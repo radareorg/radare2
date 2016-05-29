@@ -165,7 +165,7 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 			strncpy (buf, buf_, sizeof (buf));
 		} else {
 			// Remove the trailing ',' from esil statement.
-			buf[strlen(buf) - 1] = '\0';
+			if (strlen(buf)) buf[strlen(buf) - 1] = '\0';
 		}
 
 		// set = 2 is reserved for lea, where the operand is a memory address,
