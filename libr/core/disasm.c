@@ -233,7 +233,7 @@ static void handle_print_dwarf(RCore *core, RDisasmState *ds);
 static void handle_print_asmop_payload(RCore *core, RDisasmState *ds);
 static void handle_print_op_push_info(RCore *core, RDisasmState *ds);
 //static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 *word4);
-static void handle_print_comments_right(RCore *core, RDisasmState *ds);
+static void ds_print_comments_right(RDisasmState *ds);
 //static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 word8 );
 //static void handle_print_refptr (RCore *core, RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
@@ -2557,8 +2557,9 @@ beach:
 	}
 }
 
-static void handle_print_comments_right(RCore *core, RDisasmState *ds) {
+static void ds_print_comments_right(RDisasmState *ds) {
 	char *desc = NULL;
+	RCore *core = ds->core;
 	handle_print_relocs (core, ds);
 	if (ds->asm_describe) {
 		char *locase = strdup (ds->asmop.buf_asm);
@@ -2909,7 +2910,7 @@ toro:
 		}
 		handle_print_op_push_info (core, ds);
 		ds_print_ptr (ds, len + 256, idx);
-		handle_print_comments_right (core, ds);
+		ds_print_comments_right (ds);
 		if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
 			handle_print_esil_anal (core, ds);
 			r_cons_newline ();
@@ -3555,7 +3556,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 				handle_print_ptr (core, ds, len, idx);
 			}*/
 			ds_print_ptr (ds, len, idx);
-			handle_print_comments_right (core, ds);
+			ds_print_comments_right (ds);
 			handle_print_esil_anal (core, ds);
 			if ( !(ds->show_comments && ds->show_comment_right && ds->comment)) {
 				r_cons_newline ();
