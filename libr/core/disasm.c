@@ -2472,7 +2472,7 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 	}
 }
 
-static void handle_print_bbline(RCore *core, RDisasmState *ds) {
+static void ds_print_bbline(RDisasmState *ds) {
 	RAnalBlock *bb;
 
 	if (!ds->show_bbline || !ds->fcn) return;
@@ -2870,7 +2870,7 @@ toro:
 			if (ds->hint->size) ds->analop.size = ds->hint->size;
 			if (ds->hint->ptr) ds->analop.ptr = ds->hint->ptr;
 		}
-		handle_print_bbline (core, ds);
+		ds_print_bbline (ds);
 		if (ds->at >= addr) {
 			r_print_set_rowoff (core->print, ds->lines, ds->at - addr);
 		}
@@ -3599,7 +3599,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 				free (ds->refline2);
 				ds->line = ds->refline = ds->refline2 = NULL;
 			}
-			handle_print_bbline (core, ds);
+			ds_print_bbline (ds);
 
 			bb_size_consumed += ds->oplen;
 			ds->index += ds->oplen;
