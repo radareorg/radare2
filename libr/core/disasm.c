@@ -1849,6 +1849,7 @@ static void handle_print_indent(RCore *core, RDisasmState *ds) {
 static void handle_print_opstr(RCore *core, RDisasmState *ds) {
 	handle_print_indent (core, ds);
 	r_cons_strcat (ds->opstr);
+	handle_print_color_reset (core, ds);
 }
 
 static void handle_print_color_reset(RCore *core, RDisasmState *ds) {
