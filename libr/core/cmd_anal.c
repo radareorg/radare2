@@ -417,6 +417,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					printline ("type2", "%s\n", t2);
 				}
 			}
+			if (op.reg)
+				printline ("reg", "%s\n", op.reg);
 			if (*R_STRBUF_SAFEGET (&op.esil))
 				printline ("esil", "%s\n", R_STRBUF_SAFEGET (&op.esil));
 			if (hint && hint->jump != UT64_MAX)

@@ -724,6 +724,7 @@ repeat:
 			gotoBeach (R_ANAL_RET_NEW);
 #endif
 			break;
+		case R_ANAL_OP_TYPE_MJMP:
 		case R_ANAL_OP_TYPE_UJMP:
 			// switch statement
 			if (anal->opt.jmptbl) {
