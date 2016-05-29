@@ -199,7 +199,7 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds);
 static void handle_reflines_init(RAnal *anal, RDisasmState *ds);
 static void handle_comment_align(RCore *core, RDisasmState *ds);
 static RDisasmState * ds_init(RCore * core);
-static void handle_set_pre(RDisasmState *ds, const char * str);
+static void ds_set_pre(RDisasmState *ds, const char * str);
 static void ds_build_op_str(RDisasmState *ds);
 static void ds_pre_xrefs(RDisasmState *ds);
 static void ds_show_xrefs(RDisasmState *ds);
@@ -528,7 +528,7 @@ static void ds_free(RDisasmState *ds) {
 	free (ds);
 }
 
-static void handle_set_pre(RDisasmState *ds, const char * str) {
+static void ds_set_pre(RDisasmState *ds, const char * str) {
 	if (!ds->show_fcnlines) {
 		if (ds->pre && !*ds->pre) {
 			return;
@@ -696,7 +696,7 @@ static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nop
 	}
 	if (ds->show_functions && ds->show_fcnlines) {
 		if (*pre == '\\') {
-			handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+			ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 		}
 		handle_print_pre (core, ds);
 	}
@@ -712,7 +712,7 @@ static void ds_pre_xrefs(RDisasmState *ds) {
 	if (ds->show_fcnlines) {
 		handle_setup_pre (core, ds, false, false);
 		if (*ds->pre != ' '){
-			handle_set_pre(ds, core->cons->vline[LINE_VERT]);
+			ds_set_pre(ds, core->cons->vline[LINE_VERT]);
 			ds->pre = r_str_concat (ds->pre, " ");
 		}
 	}
@@ -928,7 +928,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			corner = 0;
 		}
 #endif
-		handle_set_pre (ds, core->cons->vline[RUP_CORNER]);
+		ds_set_pre (ds, core->cons->vline[RUP_CORNER]);
 		if (ds->show_flgoff) {
 			r_cons_printf ("%s%s", COLOR (ds, color_fline), ds->pre);
 			if (ds->show_fcnlines) {
@@ -949,7 +949,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	if (sign)
 		r_cons_printf ("// %s\n", sign);
 	R_FREE (sign);
-	handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+	ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 	if (ds->show_fcnlines) {
 		ds->pre = r_str_concat (ds->pre, " ");
 	}
@@ -1056,14 +1056,14 @@ static void handle_setup_pre(RCore *core, RDisasmState *ds, bool tail, bool midd
 	if (f) {
 		if (f->addr == ds->at) {
 			if (ds->analop.size == r_anal_fcn_size (f) && !middle) {
-				handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
+				ds_set_pre (ds, core->cons->vline[RDWN_CORNER]);
 			} else {
-				handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+				ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 			}
 		} else if (f->addr + r_anal_fcn_size (f) - ds->analop.size == ds->at) {
-			handle_set_pre (ds, core->cons->vline[RDWN_CORNER]);
+			ds_set_pre (ds, core->cons->vline[RDWN_CORNER]);
 		} else if (r_anal_fcn_is_in_offset (f, ds->at)) {
-			handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+			ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 		}
 
 		if (ds->show_fcnlines) {
@@ -2047,10 +2047,10 @@ static void ds_print_cc_update(RDisasmState *ds) {
 				}
 				free (ccstr);
 				if (f) {
-					handle_set_pre (ds, core->cons->vline[LINE_VERT]);
+					ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 					ds->pre = r_str_concat (ds->pre, " ");
 				} else {
-					handle_set_pre (ds, "  ");
+					ds_set_pre (ds, "  ");
 				}
 			}
 		}
