@@ -200,7 +200,7 @@ static void handle_reflines_init(RAnal *anal, RDisasmState *ds);
 static void handle_comment_align(RCore *core, RDisasmState *ds);
 static RDisasmState * ds_init(RCore * core);
 static void handle_set_pre(RDisasmState *ds, const char * str);
-static void handle_build_op_str(RCore *core, RDisasmState *ds);
+static void ds_build_op_str(RDisasmState *ds);
 static void ds_pre_xrefs(RDisasmState *ds);
 static void ds_show_xrefs(RDisasmState *ds);
 static void ds_atabs_option(RDisasmState *ds);
@@ -572,7 +572,8 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 	return r_print_colorize_opcode (source, ds->color_reg, ds->color_num);
 }
 
-static void handle_build_op_str(RCore *core, RDisasmState *ds) {
+static void ds_build_op_str(RDisasmState *ds) {
+	RCore *core = ds->core;
 	char *asm_str;
 	if (!ds->opstr) {
 		ds->opstr = strdup (ds->asmop.buf_asm);
@@ -2901,7 +2902,7 @@ toro:
 			handle_print_show_cursor (core, ds);
 			handle_print_show_bytes (core, ds);
 			ds_print_lines_right (ds);
-			handle_build_op_str (core, ds);
+			ds_build_op_str (ds);
 			ds_print_opstr (ds);
 
 			ds_print_fcn_name (ds);
@@ -3544,7 +3545,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_show_cursor (core, ds);
 			handle_print_show_bytes (core, ds);
 			ds_print_lines_right (ds);
-			handle_build_op_str (core, ds);
+			ds_build_op_str (ds);
 			ds_print_opstr (ds);
 			ds_print_fcn_name (ds);
 			ds_print_import_name (ds);
