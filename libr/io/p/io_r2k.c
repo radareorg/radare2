@@ -39,6 +39,7 @@ typedef struct _RTL_PROCESS_MODULES
 #define		CLOSE_DRIVER	    	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 #define		IOCTL_READ_PHYS_MEM	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x807, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 #define		IOCTL_READ_KERNEL_MEM	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x804, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+#define		IOCTL_WRITE_KERNEL_MEM	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x80a, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 #define		IOCTL_GET_PHYSADDR	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x809, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 #define		IOCTL_WRITE_PHYS_MEM	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x808, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 #define		IOCTL_GET_SYSTEM_MODULES	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x80a, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
@@ -181,6 +182,32 @@ static int ReadKernelMemory(ut64 address, ut8 *buf, int len) {
 	free(lpBuffer);
 	return ret;
 }
+
+static int WriteKernelMemory(ut64 address, ut8 *buf, int len) {
+	DWORD ret = -1, bRead = 0;
+	LPVOID	lpBuffer = NULL;
+	int bufsize;
+	PPA p;
+	bufsize = sizeof(PA) + len;
+	if (!(lpBuffer = malloc(bufsize))) {
+		eprintf("[r2k] WriteKernelMemory: Error cant allocate %i bytes of memory.\n", bufsize);
+		return -1;
+	}
+	p = (PPA)lpBuffer;
+	p->address.QuadPart = address;
+	p->len = len;
+	memcpy(&p->buffer, buf, len);
+	if (DeviceIoControl(gHandleDriver, IOCTL_WRITE_KERNEL_MEM, lpBuffer, bufsize, lpBuffer, bufsize, &bRead, NULL)) {
+		ret = len;
+	}
+	else {
+		ret = -1;
+		eprintf("[r2k] WriteKernelMemory: Error IOCTL_WRITE_KERNEL_MEM.\n");
+	}
+	free(lpBuffer);
+	return ret;
+}
+
 static int Init(const char * driverPath) {
 	BOOL ret = FALSE;
 	if (!InitDriver()) {
@@ -208,6 +235,7 @@ static int Init(const char * driverPath) {
 #endif
 
 int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+	eprintf("writing to: 0x%"PFMT64x" len: %x\n",io->off, count);
 	return -1;
 }
 
