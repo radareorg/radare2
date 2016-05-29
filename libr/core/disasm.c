@@ -1856,7 +1856,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 	free (str);
 }
 
-static void handle_print_indent(RCore *core, RDisasmState *ds) {
+static void ds_print_indent(RDisasmState *ds) {
 	if (ds->show_indent) {
 		char indent[128];
 		int num = ds->indent_level * ds->indent_space;
@@ -1870,7 +1870,7 @@ static void handle_print_indent(RCore *core, RDisasmState *ds) {
 }
 
 static void ds_print_opstr(RDisasmState *ds) {
-	handle_print_indent (ds->core, ds);
+	ds_print_indent (ds);
 	r_cons_strcat (ds->opstr);
 }
 
