@@ -228,7 +228,7 @@ static void handle_print_import_name(RCore *core, RDisasmState *ds);
 static void handle_print_fcn_name(RCore * core, RDisasmState *ds);
 static void handle_print_as_string(RCore *core, RDisasmState *ds);
 static void ds_print_core_vmode(RDisasmState *ds);
-static void handle_print_cc_update(RCore *core, RDisasmState *ds);
+static void ds_print_cc_update(RDisasmState *ds);
 static void ds_print_dwarf(RDisasmState *ds);
 static void ds_print_asmop_payload(RDisasmState *ds);
 static void ds_print_op_push_info(RDisasmState *ds);
@@ -1981,10 +1981,12 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 }
 
 // modifies anal register state
-static void handle_print_cc_update(RCore *core, RDisasmState *ds) {
+static void ds_print_cc_update(RDisasmState *ds) {
 	// declare static since this variable is reused locally, and needs to maintain
 	// state
 	static RAnalCC cc = {0};
+	RCore *core = ds->core;
+
 	if (!ds->show_comments || !ds->show_fcncalls)
 		return;
 	if (!r_anal_cc_update (core->anal, &cc, &ds->analop)) {
@@ -2906,7 +2908,7 @@ toro:
 				r_asm_set_syntax (core->assembler, os);
 			}
 			ds_print_core_vmode (ds);
-			handle_print_cc_update (core, ds);
+			ds_print_cc_update (ds);
 		} else {
 			ds->mi_found = 0;
 		}
@@ -3550,7 +3552,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 				r_asm_set_syntax (core->assembler, os);
 			}
 			ds_print_core_vmode (ds);
-			handle_print_cc_update (core, ds);
+			ds_print_cc_update (ds);
 			ds_print_op_push_info (ds);
 			/*if (ds->analop.refptr) {
 				handle_print_refptr (core, ds);
