@@ -227,7 +227,7 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
 static void handle_print_import_name(RCore *core, RDisasmState *ds);
 static void handle_print_fcn_name(RCore * core, RDisasmState *ds);
 static void handle_print_as_string(RCore *core, RDisasmState *ds);
-static void handle_print_core_vmode(RCore *core, RDisasmState *ds);
+static void ds_print_core_vmode(RDisasmState *ds);
 static void handle_print_cc_update(RCore *core, RDisasmState *ds);
 static void handle_print_dwarf(RCore *core, RDisasmState *ds);
 static void ds_print_asmop_payload(RDisasmState *ds);
@@ -1953,8 +1953,9 @@ static void handle_print_fcn_name(RCore * core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_core_vmode(RCore *core, RDisasmState *ds) {
+static void ds_print_core_vmode(RDisasmState *ds) {
 	char *shortcut = NULL;
+	RCore *core = ds->core;
 
 	if (!ds->show_jmphints) return;
 	if (core->vmode) {
@@ -2903,7 +2904,7 @@ toro:
 				r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx+5);
 				r_asm_set_syntax (core->assembler, os);
 			}
-			handle_print_core_vmode (core, ds);
+			ds_print_core_vmode (ds);
 			handle_print_cc_update (core, ds);
 		} else {
 			ds->mi_found = 0;
@@ -3547,7 +3548,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 					buf+idx, len-bb_size_consumed);
 				r_asm_set_syntax (core->assembler, os);
 			}
-			handle_print_core_vmode (core, ds);
+			ds_print_core_vmode (ds);
 			handle_print_cc_update (core, ds);
 			ds_print_op_push_info (ds);
 			/*if (ds->analop.refptr) {
