@@ -209,7 +209,7 @@ static void ds_show_comments_right(RDisasmState *ds);
 static void ds_show_flags(RDisasmState *ds);
 static void handle_update_ref_lines(RCore *core, RDisasmState *ds);
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len);
-static void handle_control_flow_comments(RCore * core, RDisasmState *ds);
+static void ds_control_flow_comments(RDisasmState *ds);
 static void ds_print_lines_right(RDisasmState *ds);
 static void ds_print_lines_left(RDisasmState *ds);
 static void ds_print_cycles(RDisasmState *ds);
@@ -1332,17 +1332,17 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	return ret;
 }
 
-static void handle_control_flow_comments(RCore * core, RDisasmState *ds) {
+static void ds_control_flow_comments(RDisasmState *ds) {
 	if (ds->show_comments && ds->show_cmtflgrefs) {
 		RFlagItem *item;
 		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
-			item = r_flag_get_i (core->flags, ds->analop.jump);
+			item = r_flag_get_i (ds->core->flags, ds->analop.jump);
 			if (item && item->comment) {
 				if (ds->show_color) r_cons_strcat (ds->pal_comment);
-				handle_comment_align (core, ds);
+				handle_comment_align (ds->core, ds);
 				r_cons_printf ("  ; ref to %s: %s\n", item->name, item->comment);
 				ds_print_color_reset (ds);
 			}
@@ -2863,7 +2863,7 @@ toro:
 		if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW)
 			ds->at -= skip_bytes;
 		handle_instruction_mov_lea (core, ds, idx);
-		handle_control_flow_comments (core, ds);
+		ds_control_flow_comments (ds);
 		ds_adistrick_comments (ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		ds_show_functions (ds);
@@ -3516,7 +3516,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			}
 
 			handle_instruction_mov_lea (core, ds, idx);
-			handle_control_flow_comments (core, ds);
+			ds_control_flow_comments (ds);
 			ds_adistrick_comments (ds);
 			/* XXX: This is really cpu consuming.. need to be fixed */
 			ds_show_functions (ds);
