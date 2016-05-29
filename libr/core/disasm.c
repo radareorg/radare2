@@ -224,7 +224,7 @@ static void handle_print_opstr(RCore *core, RDisasmState *ds);
 static void handle_print_color_reset(RCore *core, RDisasmState *ds);
 static int handle_print_middle(RCore *core, RDisasmState *ds, int ret);
 static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
-static void handle_print_import_name(RCore *core, RDisasmState *ds);
+static void ds_print_import_name(RDisasmState *ds);
 static void ds_print_fcn_name(RDisasmState *ds);
 static void ds_print_as_string(RDisasmState *ds);
 static void ds_print_core_vmode(RDisasmState *ds);
@@ -1888,9 +1888,11 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 	return true;
 }
 
-static void handle_print_import_name(RCore * core, RDisasmState *ds) {
+static void ds_print_import_name(RDisasmState *ds) {
 	RListIter *iter = NULL;
 	RBinReloc *rel = NULL;
+	RCore * core = ds->core;
+
 	switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
@@ -3538,7 +3540,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_build_op_str (core, ds);
 			handle_print_opstr (core, ds);
 			ds_print_fcn_name (ds);
-			handle_print_import_name (core, ds);
+			ds_print_import_name (ds);
 			handle_print_color_reset (core, ds);
 			ds_print_dwarf (ds);
 			ret = handle_print_middle (core, ds, ret);
