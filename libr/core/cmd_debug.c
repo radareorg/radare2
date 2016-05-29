@@ -1886,19 +1886,29 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		else r_bp_del (core->dbg->bp, r_num_math (core->num, input + 2));
 		break;
 	case 'c': // "dbc"
-		addr = r_num_math (core->num, input + 2);
-		bpi = r_bp_get_at (core->dbg->bp, addr);
-		if (bpi) {
-			char *arg = strchr (input + 2, ' ');
-			if (arg) arg = strchr (arg + 1, ' ');
-			if (arg) {
-				free (bpi->data);
-				bpi->data = strdup (arg + 1);
+		if (input[2] == ' ') {
+			char *inp = strdup (input + 3);
+			if (inp) {
+				char *arg = strchr (inp, ' ');
+				if (arg) {
+					*arg++ = 0;
+					addr = r_num_math (core->num, inp);
+					bpi = r_bp_get_at (core->dbg->bp, addr);
+					if (bpi) {
+						free (bpi->data);
+						bpi->data = strdup (arg);
+					} else {
+						eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
+					}
+				} else {
+					eprintf ("Missing argument\n");
+				}
 			} else {
-				free (bpi->data);
-				bpi->data = NULL;
+				eprintf ("Cannot strdup. Your heap is fucked up\n");
 			}
-		} else eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
+		} else {
+			eprintf ("Use: dbc [addr] [command]\n");
+		}
 		break;
 	case 's': // "dbs"
 		addr = r_num_math (core->num, input + 2);

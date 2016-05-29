@@ -43,7 +43,9 @@ static int lookup_rgb (int r, int g, int b) {
 	int i;
 
 	int color = (r << 16) + (g << 8) + b;
-	for (i = 0; i < 256; ++i)
+	// we lookup only extended colors, since non-extended can
+	// be change by users.
+	for (i = 16; i < 256; ++i)
 		if (color_table[i] == color) return i;
 
 	return -1;
@@ -56,9 +58,9 @@ static int approximate_rgb (int r, int g, int b) {
 	if (grey > 0) {
 		return 232 + (double)r / (255 / 24.1);
 	} else {
-		r = R_DIM (r / k, 0, 6);
-		g = R_DIM (g / k, 0, 6);
-		b = R_DIM (b / k, 0, 6);
+		r = R_DIM (r / k, 0, 5);
+		g = R_DIM (g / k, 0, 5);
+		b = R_DIM (b / k, 0, 5);
 		return 16 + (r * 36) + (g * 6) + b;
 	}
 }
@@ -70,7 +72,6 @@ static int rgb (int r, int g, int b) {
 }
 
 static void unrgb (int color, int *r, int *g, int *b) {
-	if (color_table[255] == 0) init_color_table ();
 	int rgb = color_table[color];
 	*r = (rgb >> 16) & 0xff;
 	*g = (rgb >> 8) & 0xff;
@@ -88,6 +89,7 @@ static inline void rgbinit (int r, int g, int b) {
 }
 
 R_API void r_cons_rgb_init (void) {
+	if (color_table[255] == 0) init_color_table ();
 	int r, g, b;
 	for (r = 0; r < 6; r++)
 		for (g = 0; g < 6; g++)

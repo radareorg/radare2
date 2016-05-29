@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2016 - Oscar Salvador */
 
+#if __x86_64__
 #include <r_debug.h>
 #include <sys/uio.h>
 #include <sys/ptrace.h>
@@ -1242,3 +1243,4 @@ cleanup:
 	free (shdr_pxnum);
 	return !error;
 }
+#endif
