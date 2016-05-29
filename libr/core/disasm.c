@@ -197,7 +197,7 @@ static void handle_print_pre(RCore *core, RDisasmState *ds);
 static void beginline(RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre);
 static void handle_print_esil_anal(RCore *core, RDisasmState *ds);
 static void handle_reflines_init(RAnal *anal, RDisasmState *ds);
-static void handle_comment_align(RCore *core, RDisasmState *ds);
+static void ds_align_comment(RDisasmState *ds);
 static RDisasmState * ds_init(RCore * core);
 static void ds_set_pre(RDisasmState *ds, const char * str);
 static void ds_build_op_str(RDisasmState *ds);
@@ -1345,7 +1345,7 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 			item = r_flag_get_i (ds->core->flags, ds->analop.jump);
 			if (item && item->comment) {
 				if (ds->show_color) r_cons_strcat (ds->pal_comment);
-				handle_comment_align (ds->core, ds);
+				ds_align_comment (ds);
 				r_cons_printf ("  ; ref to %s: %s\n", item->name, item->comment);
 				ds_print_color_reset (ds);
 			}
@@ -1870,7 +1870,7 @@ static void ds_print_color_reset(RDisasmState *ds) {
 static int ds_print_middle(RDisasmState *ds, int ret) {
 	if (ds->middle != 0) {
 		ret -= ds->middle;
-		handle_comment_align (ds->core, ds);
+		ds_align_comment (ds);
 		if (ds->show_color) r_cons_strcat (ds->pal_comment);
 		r_cons_printf (" ; *middle* %d", ret);
 		if (ds->show_color) r_cons_strcat (Color_RESET);
@@ -1913,7 +1913,7 @@ static void ds_print_import_name(RDisasmState *ds) {
 							r_cons_strcat (ds->color_fname);
 						}
 						// TODO: handle somehow ordinals import
-						handle_comment_align (core, ds);
+						ds_align_comment (ds);
 						r_cons_printf ("  ; (imp.%s)", rel->import->name);
 						ds_print_color_reset (ds);
 					}
@@ -1944,12 +1944,12 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 			delta = ds->analop.jump - f->addr;
 			label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
 			if (label) {
-				handle_comment_align (core, ds);
+				ds_align_comment (ds);
 				r_cons_printf ("  ; %s.%s", f->name, label);
 			} else {
 				RAnalFunction *f2 = r_anal_get_fcn_in (core->anal, ds->at, 0);
 				if (f != f2) {
-					handle_comment_align (core, ds);
+					ds_align_comment (ds);
 					if (delta>0) {
 						r_cons_printf ("  ; %s+0x%x", f->name, delta);
 					} else if (delta<0) {
@@ -1976,7 +1976,7 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
-			handle_comment_align (core, ds);
+			ds_align_comment (ds);
 			if (ds->show_color) r_cons_strcat (ds->pal_comment);
 			shortcut = r_core_add_asmqjmp (core, ds->analop.jump);
 			if (shortcut) {
@@ -2035,7 +2035,7 @@ static void ds_print_cc_update(RDisasmState *ds) {
 					}
 					// if doesnt fits in screen newline
 					if (cmtright) {
-						handle_comment_align (core, ds);
+						ds_align_comment (ds);
 						r_cons_printf (" %s%s; %s%s%s", COLOR_RESET (ds),
 							COLOR (ds, pal_comment), ccstr, tmp, COLOR_RESET (ds));
 					} else {
@@ -2059,7 +2059,7 @@ static void ds_print_cc_update(RDisasmState *ds) {
 }
 
 // align for comment
-static void handle_comment_align(RCore *core, RDisasmState *ds) {
+static void ds_align_comment(RDisasmState *ds) {
 	const int cmtcol = ds->cmtcol;
 	if (ds->show_comment_right_default) {
 		char *ll = r_cons_lastline ();
@@ -2070,7 +2070,7 @@ static void handle_comment_align(RCore *core, RDisasmState *ds) {
 
 			int cells = utf8len - (cstrlen-ansilen);
 
-			cols = ds->interactive ? core->cons->columns : 1024;
+			cols = ds->interactive ? ds->core->cons->columns : 1024;
 			//cols = r_cons_get_size (NULL);
 			if (cmtcol+16>=cols) {
 #if 0
@@ -2101,7 +2101,7 @@ static void ds_print_dwarf(RDisasmState *ds) {
 				r_str_replace_char (line, '\r', ' ');
 				r_str_replace_char (line, '\n', '\x00');
 				// handle_set_pre (ds, "  ");
-				handle_comment_align (ds->core, ds);
+				ds_align_comment (ds);
 				if (ds->show_color) {
 					r_cons_printf ("%s ; %s"Color_RESET, ds->pal_comment, line);
 				} else {
@@ -2158,7 +2158,7 @@ static void comment_newline(RCore *core, RDisasmState *ds) {
 
 	if (ds->show_comment_right) return;
 	sn = ds->show_section ? get_section_name (core, ds->at) : "";
-	handle_comment_align (core, ds);
+	ds_align_comment (ds);
 	r_cons_printf ("\n%s%s%s%s%s  ^- %s", COLOR (ds, color_fline),
 		ds->pre, sn, ds->refline, COLOR_RESET (ds),
 		COLOR (ds, pal_comment));
@@ -2169,7 +2169,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	RCore *core = ds->core;
 	ut64 p = ds->analop.ptr;
 	int aligned = 0;
-#define DOALIGN() if (!aligned) { handle_comment_align (core, ds); aligned = 1; }
+#define DOALIGN() if (!aligned) { ds_align_comment (ds); aligned = 1; }
 	if (!ds->show_comments)
 		return;
 	if (!ds->show_slow) {
@@ -2195,7 +2195,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 			st64 n = (st64)num;
 			st32 n32 = (st32)(n & UT32_MAX);
-			handle_comment_align (core, ds);
+			ds_align_comment (ds);
 			if (ds->show_color) {
 				r_cons_printf (ds->pal_comment);
 			}
@@ -2487,7 +2487,7 @@ static void handle_print_esil_anal(RCore *core, RDisasmState *ds) {
 	}
 	ioc = r_config_get_i (core->config, "io.cache");
 	r_config_set (core->config, "io.cache", "true");
-	handle_comment_align (core, ds);
+	ds_align_comment (ds);
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pc, ds->at + ds->analop.size);
@@ -2587,7 +2587,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	}
 	if (ds->show_comments) {
 		if (desc) {
-			handle_comment_align (core, ds);
+			ds_align_comment (ds);
 			if (ds->show_color) {
 				r_cons_strcat (ds->color_comment);
 			}
@@ -2596,7 +2596,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		}
 		if (ds->show_comment_right && ds->comment) {
 			if (!desc) {
-				handle_comment_align (core, ds);
+				ds_align_comment (ds);
 				if (ds->show_color) {
 					r_cons_strcat (ds->color_comment);
 				}
@@ -2651,7 +2651,7 @@ static void handle_print_refptr_meta_infos(RCore *core, RDisasmState *ds, ut64 w
 static void ds_print_as_string(RDisasmState *ds) {
 	char *str = r_num_as_string (NULL, ds->analop.ptr);
 	if (str) {
-		handle_comment_align (ds->core, ds);
+		ds_align_comment (ds);
 		r_cons_printf (" %s; \"%s\"%s", COLOR (ds, pal_comment),
 			str, COLOR_RESET (ds));
 	}
