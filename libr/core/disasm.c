@@ -190,7 +190,6 @@ typedef struct r_disam_options_t {
 	int _tabsoff;
 } RDisasmState;
 
-// TODO: put RCore inside RDisasmState and rename all functions to be ds_XXX
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
 static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle);
 static void ds_print_pre(RDisasmState *ds);
