@@ -206,7 +206,7 @@ static void handle_show_xrefs(RCore *core, RDisasmState *ds);
 static void handle_atabs_option(RCore *core, RDisasmState *ds);
 static void handle_show_functions(RCore *core, RDisasmState *ds);
 static void handle_show_comments_right(RCore *core, RDisasmState *ds);
-static void handle_show_flags_option(RCore *core, RDisasmState *ds);
+static void ds_show_flags(RDisasmState *ds);
 static void handle_update_ref_lines(RCore *core, RDisasmState *ds);
 static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len);
 static void handle_control_flow_comments(RCore * core, RDisasmState *ds);
@@ -1182,8 +1182,7 @@ static void handle_show_comments_right(RCore *core, RDisasmState *ds) {
 	ds->show_comment_right = scr;
 }
 
-// TODO: rename to ds_show_flags
-static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
+static void ds_show_flags(RDisasmState *ds) {
 	//const char *beginch;
 	RFlagItem *flag;
 	RListIter *iter;
@@ -1195,6 +1194,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *ds) {
 		return;
 	}
 
+	RCore *core = ds->core;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	flaglist = r_flag_get_list (core->flags, ds->at);
 
@@ -2841,7 +2841,7 @@ toro:
 			if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW)
 				ds->at += skip_bytes;
 		}
-		handle_show_flags_option (core, ds);
+		ds_show_flags (ds);
 		if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW)
 			ds->at -= skip_bytes;
 		handle_instruction_mov_lea (core, ds, idx);
@@ -3506,7 +3506,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 				handle_show_functions (core, ds);
 			}
 			handle_show_xrefs (core, ds);
-			handle_show_flags_option (core, ds);
+			ds_show_flags (ds);
 			handle_setup_print_pre (core, ds, false, false);
 			handle_print_lines_left (core, ds);
 			handle_print_offset (core, ds);
