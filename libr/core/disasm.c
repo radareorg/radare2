@@ -225,7 +225,7 @@ static void handle_print_color_reset(RCore *core, RDisasmState *ds);
 static int handle_print_middle(RCore *core, RDisasmState *ds, int ret);
 static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
 static void handle_print_import_name(RCore *core, RDisasmState *ds);
-static void handle_print_fcn_name(RCore * core, RDisasmState *ds);
+static void ds_print_fcn_name(RDisasmState *ds);
 static void ds_print_as_string(RDisasmState *ds);
 static void ds_print_core_vmode(RDisasmState *ds);
 static void ds_print_cc_update(RDisasmState *ds);
@@ -1912,10 +1912,11 @@ static void handle_print_import_name(RCore * core, RDisasmState *ds) {
 	}
 }
 
-static void handle_print_fcn_name(RCore * core, RDisasmState *ds) {
+static void ds_print_fcn_name(RDisasmState *ds) {
 	int delta;
 	const char *label;
 	RAnalFunction *f;
+	RCore *core = ds->core;
 	if (!ds->show_comments)
 		return;
 	switch (ds->analop.type) {
@@ -2894,7 +2895,7 @@ toro:
 			handle_build_op_str (core, ds);
 			handle_print_opstr (core, ds);
 
-			handle_print_fcn_name (core, ds);
+			ds_print_fcn_name (ds);
 			handle_print_color_reset (core, ds);
 			ds_print_dwarf (ds);
 			ret = handle_print_middle (core, ds, ret);
@@ -3536,7 +3537,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_lines_right (core, ds);
 			handle_build_op_str (core, ds);
 			handle_print_opstr (core, ds);
-			handle_print_fcn_name (core, ds);
+			ds_print_fcn_name (ds);
 			handle_print_import_name (core, ds);
 			handle_print_color_reset (core, ds);
 			ds_print_dwarf (ds);
