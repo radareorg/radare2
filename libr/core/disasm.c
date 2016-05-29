@@ -219,7 +219,7 @@ static void handle_print_offset(RCore *core, RDisasmState *ds);
 static void handle_print_op_size(RCore *core, RDisasmState *ds);
 static void handle_print_trace(RCore *core, RDisasmState *ds);
 static void handle_adistrick_comments(RCore *core, RDisasmState *ds);
-static int handle_print_meta_infos(RCore * core, RDisasmState *ds, ut8* buf, int len, int idx );
+static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx );
 static void ds_print_opstr(RDisasmState *ds);
 static void ds_print_color_reset(RDisasmState *ds);
 static int ds_print_middle(RDisasmState *ds, int ret);
@@ -1598,11 +1598,12 @@ static bool handle_print_data_type (RCore *core, const ut8 *buf, int ib, int siz
 	return true;
 }
 
-static int handle_print_meta_infos(RCore * core, RDisasmState *ds, ut8* buf, int len, int idx) {
+static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	int ret = 0;
 	const char *infos, *metas;
 	char key[100];
 	RAnalMetaItem MI, *mi = &MI;
+	RCore * core = ds->core;
 	Sdb *s = core->anal->sdb_meta;
 
 	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, ds->at);
@@ -2888,7 +2889,7 @@ toro:
 		handle_print_cycles (core, ds);
 		handle_print_family (core, ds);
 		handle_print_stackptr (core, ds);
-		ret = handle_print_meta_infos (core, ds, buf, len, idx);
+		ret = ds_print_meta_infos (ds, buf, len, idx);
 		if (!ds->mi_found) {
 			/* show cursor */
 			handle_print_show_cursor (core, ds);
@@ -3528,7 +3529,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_cycles (core, ds);
 			handle_print_family (core, ds);
 			handle_print_stackptr (core, ds);
-			ret = handle_print_meta_infos (core, ds, buf, len, idx);
+			ret = ds_print_meta_infos (ds, buf, len, idx);
 			if (ds->mi_found) {
 				ds->mi_found = 0;
 				continue;
