@@ -191,7 +191,7 @@ typedef struct r_disam_options_t {
 } RDisasmState;
 
 // TODO: put RCore inside RDisasmState and rename all functions to be ds_XXX
-static void handle_setup_print_pre(RCore *core, RDisasmState *ds, bool tail, bool middle);
+static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
 static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle);
 static void ds_print_pre(RDisasmState *ds);
 static void beginline(RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre);
@@ -990,7 +990,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			idx = 12 - strlen (var->name);
 			if (idx < 0) idx = 0;
 			spaces[idx] = 0;
-			handle_setup_print_pre (core, ds, false, true);
+			ds_setup_print_pre (ds, false, true);
 
 			tmp = ds->line;
 			ds->line = ds->refline2;
@@ -1049,7 +1049,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		free (fcn_name);
 }
 
-static void handle_setup_print_pre(RCore *core, RDisasmState *ds, bool tail, bool middle) {
+static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle) {
 	ds_setup_pre (ds, tail, middle);
 	ds_print_pre (ds);
 }
@@ -2472,7 +2472,7 @@ static void handle_print_bbline(RCore *core, RDisasmState *ds) {
 
 	bb = r_anal_fcn_bbget (ds->fcn, ds->at);
 	if (bb) {
-		handle_setup_print_pre (core, ds, false, false);
+		ds_setup_print_pre (ds, false, false);
 		ds_update_ref_lines (ds);
 		if (!ds->linesright && ds->show_lines && ds->line) {
 			r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
@@ -2787,7 +2787,7 @@ toro:
 				r_cons_printf ("%s%s%s (fcn) %s%s%s\n",
 					COLOR (ds, color_fline), core->cons->vline[RUP_CORNER],
 					COLOR (ds, color_fname), f->name, cmt, COLOR_RESET (ds));
-				handle_setup_print_pre (core, ds, true, false);
+				ds_setup_print_pre (ds, true, false);
 				ds_print_lines_left (ds);
 				ds_print_offset (ds);
 				r_cons_printf ("(%d byte folded function)\n", r_anal_fcn_size (f));
@@ -2881,14 +2881,14 @@ toro:
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		ds_show_functions (ds);
 		ds_show_xrefs (ds);
-		handle_setup_print_pre (core, ds, false, false);
+		ds_setup_print_pre (ds, false, false);
 		ds_print_lines_left (ds);
 
 		if (ds->show_comments && !ds->show_comment_right) {
 			if (ds->show_emu) {
 				ds_print_esil_anal (ds);
 				r_cons_newline ();
-				handle_setup_print_pre (core, ds, false, false);
+				ds_setup_print_pre (ds, false, false);
 				ds_print_lines_left (ds);
 			}
 		}
@@ -2897,7 +2897,7 @@ toro:
 		if (ds_print_labels (ds, f)) {
 			ds_show_functions (ds);
 			ds_show_xrefs (ds);
-			handle_setup_print_pre (core, ds, false, false);
+			ds_setup_print_pre (ds, false, false);
 			ds_print_lines_left (ds);
 		}
 		ds_print_offset (ds);
@@ -3538,7 +3538,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			}
 			ds_show_xrefs (ds);
 			ds_show_flags (ds);
-			handle_setup_print_pre (core, ds, false, false);
+			ds_setup_print_pre (ds, false, false);
 			ds_print_lines_left (ds);
 			ds_print_offset (ds);
 			ds_print_op_size (ds);
