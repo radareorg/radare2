@@ -223,7 +223,7 @@ static int handle_print_meta_infos(RCore * core, RDisasmState *ds, ut8* buf, int
 static void handle_print_opstr(RCore *core, RDisasmState *ds);
 static void handle_print_color_reset(RCore *core, RDisasmState *ds);
 static int handle_print_middle(RCore *core, RDisasmState *ds, int ret);
-static bool handle_print_labels(RCore *core, RDisasmState *ds, RAnalFunction *f);
+static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
 static void handle_print_import_name(RCore *core, RDisasmState *ds);
 static void handle_print_fcn_name(RCore * core, RDisasmState *ds);
 static void handle_print_as_string(RCore *core, RDisasmState *ds);
@@ -1868,9 +1868,10 @@ static int handle_print_middle(RCore *core, RDisasmState *ds, int ret) {
 	return ret;
 }
 
-static bool handle_print_labels(RCore *core, RDisasmState *ds, RAnalFunction *f) {
+static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
+	RCore *core = ds->core;
 	const char *label;
-	if (!core || !ds) return false;
+
 	if (!f) f = r_anal_get_fcn_in (core->anal, ds->at, 0);
 	label = r_anal_fcn_label_at (core->anal, f, ds->at);
 	if (!label)
@@ -2865,7 +2866,7 @@ toro:
 		}
 
 		f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
-		if (handle_print_labels (core, ds, f)) {
+		if (ds_print_labels (ds, f)) {
 			ds_show_functions (ds);
 			ds_show_xrefs (ds);
 			handle_setup_print_pre (core, ds, false, false);
@@ -3504,7 +3505,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_adistrick_comments (core, ds);
 			/* XXX: This is really cpu consuming.. need to be fixed */
 			ds_show_functions (ds);
-			if (handle_print_labels (core, ds, fcn)) {
+			if (ds_print_labels (ds, fcn)) {
 				ds_show_functions (ds);
 			}
 			ds_show_xrefs (ds);
