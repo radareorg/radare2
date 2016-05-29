@@ -203,7 +203,7 @@ static void handle_set_pre(RDisasmState *ds, const char * str);
 static void handle_build_op_str(RCore *core, RDisasmState *ds);
 static void handle_pre_xrefs(RCore *core, RDisasmState *ds);
 static void ds_show_xrefs(RDisasmState *ds);
-static void handle_atabs_option(RCore *core, RDisasmState *ds);
+static void ds_atabs_option(RDisasmState *ds);
 static void ds_show_functions(RDisasmState *ds);
 static void ds_show_comments_right(RDisasmState *ds);
 static void ds_show_flags(RDisasmState *ds);
@@ -786,7 +786,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	r_list_free (xrefs);
 }
 
-static void handle_atabs_option(RCore *core, RDisasmState *ds) {
+static void ds_atabs_option(RDisasmState *ds) {
 	int n, i = 0, comma = 0, word = 0;
 	int size, brackets = 0;
 	char *t, *b;
@@ -2831,7 +2831,7 @@ toro:
 			ds->retry = 0;
 			goto retry;
 		}
-		handle_atabs_option (core, ds);
+		ds_atabs_option (ds);
 		// TODO: store previous oplen in core->dec
 		if (core->inc == 0) {
 			core->inc = ds->oplen;
@@ -3499,7 +3499,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 
 			ds_show_comments_right (ds);
 			ret = ds_disassemble (ds, buf+idx, len - bb_size_consumed);
-			handle_atabs_option (core, ds);
+			ds_atabs_option (ds);
 			// TODO: store previous oplen in core->dec
 			if (core->inc == 0) core->inc = ds->oplen;
 
