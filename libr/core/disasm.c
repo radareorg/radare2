@@ -236,7 +236,7 @@ static void handle_print_op_push_info(RCore *core, RDisasmState *ds);
 static void handle_print_comments_right(RCore *core, RDisasmState *ds);
 //static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 word8 );
 //static void handle_print_refptr (RCore *core, RDisasmState *ds);
-static void handle_print_ptr(RCore *core, RDisasmState *ds, int len, int idx);
+static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 
 static int cmpaddr(const void *_a, const void *_b) {
 	const RAnalBlock *a = _a, *b = _b;
@@ -2150,7 +2150,8 @@ static void comment_newline(RCore *core, RDisasmState *ds) {
 }
 
 /* convert numeric value in opcode to ascii char or number */
-static void handle_print_ptr(RCore *core, RDisasmState *ds, int len, int idx) {
+static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
+	RCore *core = ds->core;
 	ut64 p = ds->analop.ptr;
 	int aligned = 0;
 #define DOALIGN() if (!aligned) { handle_comment_align (core, ds); aligned = 1; }
@@ -2907,7 +2908,7 @@ toro:
 			ds->mi_found = 0;
 		}
 		handle_print_op_push_info (core, ds);
-		handle_print_ptr (core, ds, len + 256, idx);
+		ds_print_ptr (ds, len + 256, idx);
 		handle_print_comments_right (core, ds);
 		if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
 			handle_print_esil_anal (core, ds);
@@ -3553,7 +3554,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			} else {
 				handle_print_ptr (core, ds, len, idx);
 			}*/
-			handle_print_ptr (core, ds, len, idx);
+			ds_print_ptr (ds, len, idx);
 			handle_print_comments_right (core, ds);
 			handle_print_esil_anal (core, ds);
 			if ( !(ds->show_comments && ds->show_comment_right && ds->comment)) {
