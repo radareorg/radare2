@@ -198,7 +198,7 @@ static void beginline(RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopr
 static void handle_print_esil_anal(RCore *core, RDisasmState *ds);
 static void handle_reflines_init(RAnal *anal, RDisasmState *ds);
 static void handle_comment_align(RCore *core, RDisasmState *ds);
-static RDisasmState * handle_init_ds(RCore * core);
+static RDisasmState * ds_init(RCore * core);
 static void handle_set_pre(RDisasmState *ds, const char * str);
 static void handle_build_op_str(RCore *core, RDisasmState *ds);
 static void handle_pre_xrefs(RCore *core, RDisasmState *ds);
@@ -307,7 +307,7 @@ static void ds_print_spacy(RDisasmState *ds, int pre) {
 	if (!pre) r_cons_newline ();
 }
 
-static RDisasmState * handle_init_ds(RCore * core) {
+static RDisasmState * ds_init(RCore *core) {
 	RDisasmState *ds = R_NEW0 (RDisasmState);
 	if (!ds) return NULL;
 	ds->core = core;
@@ -2670,7 +2670,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	RDisasmState *ds;
 
 	// TODO: All those ds must be print flags
-	ds = handle_init_ds (core);
+	ds = ds_init (core);
 	ds->cbytes = cbytes;
 	ds->p = p;
 	ds->l = l;
@@ -3008,7 +3008,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 	if (core->anal->cur && core->anal->cur->reset_counter)
 		core->anal->cur->reset_counter (core->anal, core->offset);
 
-	ds = handle_init_ds (core);
+	ds = ds_init (core);
 	ds->len = nb_bytes;
 	ds->l = nb_opcodes;
 	ds->len = nb_opcodes * 8;
@@ -3269,7 +3269,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			continue;
 		}
 		r_anal_op (core->anal, &analop, at, buf + i, nb_bytes - i);
-		ds = handle_init_ds (core);
+		ds = ds_init (core);
 		if (ds->pseudo) r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
 		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (ds->varsub && f) {
@@ -3423,7 +3423,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	}
 
 	// TODO: All those ds must be print flags
-	ds = handle_init_ds (core);
+	ds = ds_init (core);
 	ds->cbytes = cbytes;
 	ds->p = p;
 	ds->l = l;
