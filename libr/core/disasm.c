@@ -208,7 +208,7 @@ static void ds_show_functions(RDisasmState *ds);
 static void handle_show_comments_right(RCore *core, RDisasmState *ds);
 static void ds_show_flags(RDisasmState *ds);
 static void handle_update_ref_lines(RCore *core, RDisasmState *ds);
-static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len);
+static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len);
 static void handle_control_flow_comments(RCore * core, RDisasmState *ds);
 static void handle_print_lines_right(RCore *core, RDisasmState *ds);
 static void handle_print_lines_left(RCore *core, RDisasmState *ds);
@@ -1265,7 +1265,8 @@ static void handle_update_ref_lines(RCore *core, RDisasmState *ds) {
 	}
 }
 
-static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len) {
+static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
+	RCore *core = ds->core;
 	int ret;
 
 	if (ds->hint && ds->hint->opcode) {
@@ -2807,7 +2808,7 @@ toro:
 			}
 		}
 		handle_show_comments_right (core, ds);
-		ret = perform_disassembly (core, ds, buf+idx, len-idx);
+		ret = ds_disassemble (ds, buf+idx, len-idx);
 		if (ret == -31337) {
 			inc = ds->oplen;
 			continue;
@@ -3483,7 +3484,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
 
 			handle_show_comments_right (core, ds);
-			ret = perform_disassembly (core, ds, buf+idx, len - bb_size_consumed);
+			ret = ds_disassemble (ds, buf+idx, len - bb_size_consumed);
 			handle_atabs_option (core, ds);
 			// TODO: store previous oplen in core->dec
 			if (core->inc == 0) core->inc = ds->oplen;
