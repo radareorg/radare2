@@ -222,7 +222,7 @@ static void handle_adistrick_comments(RCore *core, RDisasmState *ds);
 static int handle_print_meta_infos(RCore * core, RDisasmState *ds, ut8* buf, int len, int idx );
 static void handle_print_opstr(RCore *core, RDisasmState *ds);
 static void handle_print_color_reset(RCore *core, RDisasmState *ds);
-static int handle_print_middle(RCore *core, RDisasmState *ds, int ret);
+static int ds_print_middle(RDisasmState *ds, int ret);
 static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
 static void ds_print_import_name(RDisasmState *ds);
 static void ds_print_fcn_name(RDisasmState *ds);
@@ -1859,10 +1859,10 @@ static void handle_print_color_reset(RCore *core, RDisasmState *ds) {
 	if (ds->show_color) r_cons_strcat (Color_RESET);
 }
 
-static int handle_print_middle(RCore *core, RDisasmState *ds, int ret) {
+static int ds_print_middle(RDisasmState *ds, int ret) {
 	if (ds->middle != 0) {
 		ret -= ds->middle;
-		handle_comment_align (core, ds);
+		handle_comment_align (ds->core, ds);
 		if (ds->show_color) r_cons_strcat (ds->pal_comment);
 		r_cons_printf (" ; *middle* %d", ret);
 		if (ds->show_color) r_cons_strcat (Color_RESET);
@@ -2900,7 +2900,7 @@ toro:
 			ds_print_fcn_name (ds);
 			handle_print_color_reset (core, ds);
 			ds_print_dwarf (ds);
-			ret = handle_print_middle (core, ds, ret);
+			ret = ds_print_middle (ds, ret);
 
 			ds_print_asmop_payload (ds);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
@@ -3543,7 +3543,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ds_print_import_name (ds);
 			handle_print_color_reset (core, ds);
 			ds_print_dwarf (ds);
-			ret = handle_print_middle (core, ds, ret);
+			ret = ds_print_middle (ds, ret);
 			ds_print_asmop_payload (ds);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
