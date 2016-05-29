@@ -192,7 +192,7 @@ typedef struct r_disam_options_t {
 
 // TODO: put RCore inside RDisasmState and rename all functions to be ds_XXX
 static void handle_setup_print_pre(RCore *core, RDisasmState *ds, bool tail, bool middle);
-static void handle_setup_pre(RCore *core, RDisasmState *ds, bool tail, bool middle);
+static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle);
 static void handle_print_pre(RCore *core, RDisasmState *ds);
 static void beginline(RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre);
 static void ds_print_esil_anal(RDisasmState *ds);
@@ -693,7 +693,7 @@ R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
 
 static void beginline (RCore *core, RDisasmState *ds, RAnalFunction *f, bool nopre) {
 	const char *pre;
-	handle_setup_pre(core, ds, false, false);
+	ds_setup_pre(ds, false, false);
 	pre = ds->pre;
 	if (nopre) {
 		if (*pre == '/' || *pre == '\\')
@@ -715,7 +715,7 @@ static void ds_pre_xrefs(RDisasmState *ds) {
 	RCore *core = ds->core;
 
 	if (ds->show_fcnlines) {
-		handle_setup_pre (core, ds, false, false);
+		ds_setup_pre (ds, false, false);
 		if (*ds->pre != ' '){
 			ds_set_pre(ds, core->cons->vline[LINE_VERT]);
 			ds->pre = r_str_concat (ds->pre, " ");
@@ -1050,12 +1050,14 @@ static void ds_show_functions(RDisasmState *ds) {
 }
 
 static void handle_setup_print_pre(RCore *core, RDisasmState *ds, bool tail, bool middle) {
-	handle_setup_pre (core, ds, tail, middle);
+	ds_setup_pre (ds, tail, middle);
 	handle_print_pre (core, ds);
 }
 
-static void handle_setup_pre(RCore *core, RDisasmState *ds, bool tail, bool middle) {
+static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
+	RCore *core = ds->core;
 	RAnalFunction *f;
+
 	if (!ds->show_functions) return;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (f) {
