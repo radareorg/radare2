@@ -130,6 +130,10 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	struct sockaddr_in sa;
 	struct hostent *he;
 	WSADATA wsadata;
+	TIMEVAL Timeout;//sku
+	Timeout.tv_sec = timeout;//sku
+	Timeout.tv_usec = 0;//sku
+
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
 		eprintf ("Error creating socket.");
 		return false;
@@ -138,6 +142,11 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	if (s->fd == -1)
 		return false;
 
+	unsigned long iMode = 1;//sku
+	int iResult = ioctlsocket (s->fd, FIONBIO, &iMode);//sku
+	if (iResult != NO_ERROR) {//sku
+		eprintf ("ioctlsocket error: %d\n", iResult); //sku
+	}//sku
 	memset (&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
 	he = (struct hostent *)gethostbyname (host);
@@ -145,17 +154,29 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 		close (s->fd);
 		return false;
 	}
-
 	sa.sin_addr = *((struct in_addr *)he->h_addr);
-
 	s->port = r_socket_port_by_name (port);
 	sa.sin_port = htons (s->port);
-#warning TODO: implement connect timeout on w32
-	if (connect (s->fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
+//#warning TODO: implement connect timeout on w32
+	if (connect (s->fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr))==false) {
 		close (s->fd);
 		return false;
 	}
-	return true;
+	iMode = 0;//sku
+	iResult = ioctlsocket (s->fd, FIONBIO, &iMode);//sku
+	if (iResult != NO_ERROR) {//sku
+		eprintf ("ioctlsocket error: %d\n", iResult); //sku
+	}//sku
+	fd_set Write, Err;//sku
+	FD_ZERO (&Write);//sku
+	FD_ZERO (&Err);//sku
+	FD_SET (s->fd, &Write);//sku
+	FD_SET (s->fd, &Err);//sku
+	select (0, NULL, &Write, &Err, &Timeout);//sku
+	if(FD_ISSET (s->fd, &Write)) {//sku
+		return true;//sku
+	}//sku
+	return false;
 #elif __UNIX__ || defined(__CYGWIN__)
 	int gai, ret;
 	struct addrinfo hints, *res, *rp;
