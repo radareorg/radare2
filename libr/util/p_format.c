@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2015 - pancake & Skia */
+/* radare - LGPL - Copyright 2007-2016 - pancake & Skia */
 
 #include "r_cons.h"
 #include "r_util.h"
@@ -105,9 +105,9 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 			if (!SEEVALUE) p->cb_printf (" ]");
 		}
 	} else if (MUSTSEEJSON) {
-		if (size==-1)
+		if (size==-1) {
 			p->cb_printf ("%"PFMT64d, addr64);
-		else {
+		} else {
 			p->cb_printf ("[ ");
 			while (size--) {
 				updateAddr (buf, i, endian, NULL, &addr64);
@@ -115,10 +115,11 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 					p->cb_printf ("%"PFMT64d, addr64);
 					if (elem == 0) elem = -2;
 				}
-				if (size != 0 && elem == -1)
+				if (size != 0 && elem == -1) {
 					p->cb_printf (", ");
+				}
 				if (elem > -1) elem--;
-				i+=8;
+				i += 8;
 			}
 			p->cb_printf (" ]");
 		}
@@ -927,26 +928,26 @@ static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
 static void r_print_format_register (const RPrint* p, int mode,
 		const char *name, const char* setval) {
 	RRegItem *ri = p->get_register (p->reg, name, R_REG_TYPE_ALL);
-	if (ri == NULL) {
+	if (ri) {
+		if (MUSTSET) {
+			p->cb_printf ("dr %s=%s\n", name, setval);
+		} else if (MUSTSEE) {
+			if (!SEEVALUE) p->cb_printf("%s : 0x%08"PFMT64x"\n", ri->name, p->get_register_value (p->reg, ri));
+			else p->cb_printf("0x%08"PFMT64x"\n", p->get_register_value (p->reg, ri));
+		} else if (MUSTSEEJSON) {
+			p->cb_printf ("%d}", p->get_register_value (p->reg, ri));
+		}
+	} else {
 		p->cb_printf ("Register %s does not exists\n", name);
-		return;
-	}
-	if (MUSTSET) {
-		p->cb_printf ("dr %s=%s\n", name, setval);
-	} else if (MUSTSEE) {
-		if (!SEEVALUE) p->cb_printf("%s : 0x%08"PFMT64x"\n", ri->name, p->get_register_value (p->reg, ri));
-		else p->cb_printf("0x%08"PFMT64x"\n", p->get_register_value (p->reg, ri));
-	} else if (MUSTSEEJSON) {
-		p->cb_printf ("%d}", p->get_register_value (p->reg, ri));
 	}
 }
 
 // XXX: this is very incomplete. must be updated to handle all format chars
 int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 	char *o, *end, *args, *fmt;
-	int size = 0, tabsize=0, i, idx=0, biggest = 0;
+	int size = 0, tabsize = 0, i, idx = 0, biggest = 0;
 	if (!f) return -1;
-	o = strdup(f);
+	o = strdup (f);
 	if (!o) return -1;
 	end = strchr (o, ' ');
 	fmt = o;
@@ -956,7 +957,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 	}
 	if (*end) {
 		*end = 0;
-		args = strdup (end+1);
+		args = strdup (end + 1);
 	} else {
 		args = strdup ("");
 	}
@@ -1028,16 +1029,16 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 				{
 				const char *format = NULL;
 				char *endname = NULL, *structname = NULL;
-				structname = strdup(r_str_word_get0 (args, idx));
+				structname = strdup (r_str_word_get0 (args, idx));
 				if (*structname == '(') {
 					endname = strchr (structname, ')');
 				} else {
 					eprintf ("Struct name missing (%s)\n", structname);
-					free(structname);
+					free (structname);
 					break;
 				}
 				if (endname) *endname = '\0';
-				format = r_strht_get (p->formats, structname+1);
+				format = r_strht_get (p->formats, structname + 1);
 				free (structname);
 				size += tabsize * r_print_format_struct_size (format, p, mode);
 				}
@@ -1061,7 +1062,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 		char *name, int slide, int mode, const char *setval, char *field) {
 	const char *fmt;
 	char namefmt[8];
-	if ((slide%STRUCTPTR) > NESTDEPTH || (slide%STRUCTFLAG)/STRUCTPTR > NESTDEPTH) {
+	if ((slide % STRUCTPTR) > NESTDEPTH || (slide%STRUCTFLAG)/STRUCTPTR > NESTDEPTH) {
 		eprintf ("Too much nested struct, recursion too deep...\n");
 		return 0;
 	}
