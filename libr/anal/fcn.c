@@ -233,7 +233,8 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 		switch (sz) {
 		case 1: jmpptr = r_read_le8 (jmptbl + offs); break;
 		case 2: jmpptr = r_read_le16 (jmptbl + offs); break;
-		case 4: jmpptr = r_read_le32 (jmptbl + offs); break;
+		case 4: jmpptr = ptr + (st32) r_read_le32 (jmptbl + offs); break;
+		case 8: jmpptr = ptr + (st32) r_read_le32 (jmptbl + offs); break; // XXX
 		default: jmpptr = r_read_le64 (jmptbl + offs); break;
 		}
 		if (anal->limit) {
@@ -241,9 +242,10 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 				break;
 			}
 		}
-		if (jmpptr < ip - MAX_JMPTBL_JMP || jmpptr > ip + MAX_JMPTBL_JMP) {
+		if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
 			break;
 		}
+		// if (jmpptr < ip - MAX_JMPTBL_JMP || jmpptr > ip + MAX_JMPTBL_JMP) { break; }
 		recurseAt (jmpptr);
 	}
 	free (jmptbl);
@@ -325,6 +327,21 @@ static bool isInvalidMemory (const ut8 *buf) {
 	// can be wrong
 	return !memcmp (buf, "\xff\xff\xff\xff", 4);
 	// return buf[0]==buf[1] && buf[0]==0xff && buf[2]==0xff && buf[3] == 0xff;
+}
+
+static bool is_delta_pointer_table (RAnal *anal, ut64 ptr) {
+	int i;
+	ut64 dst;
+	st32 jmptbl[32] = {0};
+	anal->iob.read_at (anal->iob.io, ptr, (ut8*)&jmptbl, 32);
+	// XXX this is not endian safe
+	for (i = 0; i < 4; i++) {
+		dst = ptr + jmptbl[0];
+		if (!anal->iob.is_valid_offset (anal->iob.io, dst, 0)) {
+			return false;
+		}
+	}
+	return true;
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
@@ -517,6 +534,16 @@ repeat:
 		}
 
 		switch (op.type) {
+		case R_ANAL_OP_TYPE_LEA:
+			if (anal->opt.jmptbl) {
+				if (is_delta_pointer_table (anal, op.ptr)) {
+					anal->cb_printf ("pxt. 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", op.addr, op.ptr);
+					//jmptbl_addr = op.ptr;
+					//jmptbl_size = -1;
+			//		ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, 4);
+				}
+			}
+			break;
 		case R_ANAL_OP_TYPE_ILL:
 			if (anal->opt.nopskip && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
 				if ((addr + delay.un_idx-oplen) == fcn->addr) {
@@ -739,11 +766,11 @@ repeat:
 				} else {	// indirect jump: table pointer is unknown
 					if (op.src[0] && op.src[0]->reg) {
 						ut64 ptr = search_reg_val (anal, buf, idx, addr, op.src[0]->reg->name);
-						if (ptr && ptr != UT64_MAX)
+						if (ptr && ptr != UT64_MAX) {
 							ret = try_walkthrough_jmptbl (anal, fcn, depth, addr + idx, ptr, ret);
+						}
 					}
 				}
-
 			}
 			if (anal->cpu) { /* if UJMP is in .plt section just skip it */
 				RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);

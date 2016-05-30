@@ -1235,6 +1235,7 @@ R_API const char * r_print_color_op_type ( RPrint *p, ut64 anal_type) {
 		return p->cons->pal.swi;
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_MJMP:
 		return p->cons->pal.jmp;
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_UCJMP:

@@ -1907,6 +1907,56 @@ static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
 	return a->addr - b->addr;
 }
 
+/* TODO: integrate this into r_anal */
+static void _pointer_table (RCore *core, ut64 origin, ut64 offset, const ut8 *buf, int len, int step, int mode) {
+	int i;
+	ut64 addr;
+	st32 *delta; // only for step == 4
+	if (step <1) {
+		step = 4;
+	}
+	if (origin != offset) {
+		switch (mode) {
+		case '*':
+			r_cons_printf ("CC-@ 0x%08"PFMT64x"\n", origin);
+			r_cons_printf ("CC switch table @ 0x%08"PFMT64x"\n", origin);
+			r_cons_printf ("axd 0x%"PFMT64x" 0x%08"PFMT64x"\n", origin, offset);
+			break;
+		case '.':
+			r_core_cmdf (core, "CC-@ 0x%08"PFMT64x"\n", origin);
+			r_core_cmdf (core, "CC switch table @ 0x%08"PFMT64x"\n", origin);
+			r_core_cmdf (core, "axd 0x%"PFMT64x" 0x%08"PFMT64x"\n", origin, offset);
+			break;
+		}
+	} else if (mode == '.') {
+		r_core_cmdf (core, "CC-@ 0x%08"PFMT64x"\n", origin);
+		r_core_cmdf (core, "CC switch table @ 0x%08"PFMT64x"\n", offset);
+	}
+	for (i = 0; i < len; i += step) {
+		delta = (st32*)(buf + i);
+		addr = offset + *delta;
+		if (!r_io_is_valid_offset (core->io, addr, 0)) {
+			break;
+		}
+		if (mode == '*') {
+			r_cons_printf ("af case.%d.0x%"PFMT64x" 0x%08"PFMT64x"\n", i, offset, addr);
+			r_cons_printf ("ax 0x%"PFMT64x" 0x%08"PFMT64x"\n", offset, addr);
+			r_cons_printf ("ax 0x%"PFMT64x" 0x%08"PFMT64x"\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
+			r_cons_printf ("aho case 0x%"PFMT64x" 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
+			r_cons_printf ("ahs %d @ 0x%08"PFMT64x"\n", step, offset + i);
+		} else if (mode == '.') {
+			r_core_cmdf (core, "af case.%d.0x%"PFMT64x" @ 0x%08"PFMT64x"\n", i, offset, addr);
+			r_core_cmdf (core, "ax 0x%"PFMT64x" 0x%08"PFMT64x"\n", offset, addr);
+			r_core_cmdf (core, "ax 0x%"PFMT64x" 0x%08"PFMT64x"\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
+			r_core_cmdf (core, "CC+ case %d: 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", i / step, addr, origin);
+			r_core_cmdf (core, "aho case %d 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
+			r_core_cmdf (core, "ahs %d @ 0x%08"PFMT64x"\n", step, offset + i);
+		} else {
+			r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x"\n", offset + i, addr);
+		}
+	}
+}
+
 static int cmd_print(void *data, const char *input) {
 	int mode, w, p, i, l, len, total[10];
 	ut64 off, from, to, at, ate, piece;
@@ -3118,6 +3168,7 @@ static int cmd_print(void *data, const char *input) {
 				"pxQ", "", "same as above, but one per line",
 				"pxr", "[j]", "show words with references to flags and code",
 				"pxs", "", "show hexadecimal in sparse mode",
+				"pxt", "[*.] [origin]", "show delta pointer table in r2 commands",
 				"pxw", "", "show hexadecimal words dump (32bit)",
 				"pxW", "", "same as above, but one per line",
 				NULL};
@@ -3189,6 +3240,18 @@ static int cmd_print(void *data, const char *input) {
 			if (l != 0) {
 				r_print_hexdump (core->print, core->offset,
 					core->block, len, 8, 1);
+			}
+			break;
+		case 't': // "pxt"
+			if (input[2] == '?') {
+				r_cons_printf ("Usage: pxt[.*] - print delta pointer table\n");
+			} else {
+				ut64 origin = core->offset;
+				const char *arg = strchr (input, ' ');
+				if (arg) {
+					origin = r_num_math (core->num, arg + 1);
+				}
+				_pointer_table (core, origin, core->offset, core->block, len, 4, input[2]);
 			}
 			break;
 		case 'd': // "pxd"
@@ -3696,7 +3759,7 @@ static int cmd_print(void *data, const char *input) {
 			 "p","[b|B|xb] [len] ([skip])", "bindump N bits skipping M",
 			 "p","[bB] [len]","bitstream of N bytes",
 			 "pc","[p] [len]","output C (or python) format",
-			 "p","[dD][ajbrfils] [sz] [a] [b]","disassemble N opcodes/bytes for Arch/Bits (see pd?)",
+			 "p","[dD][?] [sz] [a] [b]","disassemble N opcodes/bytes for Arch/Bits (see pd?)",
 			 "pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>)",
 			 "ph","[?=|hash] ([len])","calculate hash for a block",
 			 "p","[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",

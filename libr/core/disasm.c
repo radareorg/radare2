@@ -423,10 +423,10 @@ static RDisasmState * handle_init_ds(RCore * core) {
 	ds->oldbits = 0;
 	ds->ocols = 0;
 	ds->lcols = 0;
+
 	if (ds->show_flag_in_bytes) {
 		ds->show_flags = 0;
 	}
-
 	if (r_config_get_i (core->config, "asm.lineswide")) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	}
@@ -446,8 +446,9 @@ static RDisasmState * handle_init_ds(RCore * core) {
 	ds->tries = 3;
 
 	if (core->print->cur_enabled) {
-		if (core->print->cur<0)
+		if (core->print->cur < 0) {
 			core->print->cur = 0;
+		}
 		ds->cursor = core->print->cur;
 	} else ds->cursor = -1;
 
@@ -1266,6 +1267,9 @@ static void handle_update_ref_lines(RCore *core, RDisasmState *ds) {
 static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len) {
 	int ret;
 
+	if (ds->hint && ds->hint->size) {
+		ds->oplen = ds->hint->size;
+	}
 	if (ds->hint && ds->hint->opcode) {
 		free (ds->opstr);
 		ds->opstr = strdup (ds->hint->opcode);
@@ -1310,6 +1314,7 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 		ds->lastfail = 1;
 		ds->asmop.size = (ds->hint && ds->hint->size) ?
 			ds->hint->size : 1;
+		ds->oplen = ds->asmop.size;
 	} else {
 		ds->lastfail = 0;
 		ds->asmop.size = (ds->hint && ds->hint->size) ?
@@ -1512,8 +1517,10 @@ static void handle_print_offset(RCore *core, RDisasmState *ds) {
 }
 
 static void handle_print_op_size(RCore *core, RDisasmState *ds) {
-	if (ds->show_size)
-		r_cons_printf ("%d ", ds->analop.size);
+	if (ds->show_size) {
+		int size = ds->oplen;
+		r_cons_printf ("%d ", size); //ds->analop.size);
+	}
 }
 
 static void handle_print_trace(RCore *core, RDisasmState *ds) {
@@ -3084,8 +3091,12 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			hasanal = true;
 		}
 		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
-		if (ds->hint && ds->hint->size)
+		if (ds->hint && ds->hint->size) {
 			ret = ds->hint->size;
+			ds->oplen = ret;
+			ds->analop.size = ret;
+			ds->asmop.size = ret;
+		}
 		if (ds->hint && ds->hint->opcode) {
 			free (ds->opstr);
 			ds->opstr = strdup (ds->hint->opcode);
@@ -3496,7 +3507,9 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ret = perform_disassembly (core, ds, buf+idx, len - bb_size_consumed);
 			handle_atabs_option (core, ds);
 			// TODO: store previous oplen in core->dec
-			if (core->inc == 0) core->inc = ds->oplen;
+			if (core->inc == 0) {
+				core->inc = ds->oplen;
+			}
 
 			r_anal_op_fini (&ds->analop);
 
@@ -3505,7 +3518,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 					ds->at+bb_size_consumed, buf+idx,
 					len-bb_size_consumed);
 
-			if (ret<1) {
+			if (ret < 1) {
 				r_strbuf_init (&ds->analop.esil);
 				ds->analop.type = R_ANAL_OP_TYPE_ILL;
 			}

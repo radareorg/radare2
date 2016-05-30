@@ -321,15 +321,18 @@ R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str) {
 }
 
 R_API char *r_anal_esil_pop(RAnalEsil *esil) {
-	if (!esil || esil->stackptr < 1)
+	if (!esil || esil->stackptr < 1) {
 		return NULL;
+	}
 	return esil->stack[--esil->stackptr];
 }
 
 R_API int r_anal_esil_get_parm_type(RAnalEsil *esil, const char *str) {
 	int len, i;
-	if (!str || !(len = strlen (str)))
+
+	if (!str || !(len = strlen (str))) {
 		return R_ANAL_ESIL_PARM_INVALID;
+	}
 	if (str[0] == ESIL_INTERNAL_PREFIX && str[1]) {
 		return R_ANAL_ESIL_PARM_INTERNAL;
 	}
@@ -349,8 +352,9 @@ not_a_number:
 
 static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 	ut8 bit;
-	if (!str || !*str)
+	if (!str || !*str) {
 		return false;
+	}
 	if (esil->cb.hook_flag_read) {
 		int ret = esil->cb.hook_flag_read (esil, str + 1, num);
 		if (ret) return true;
@@ -361,7 +365,7 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 		break;
 	case 'z': //zero-flag
 		{
-			ut64 m = genmask(esil->lastsz - 1);
+			ut64 m = genmask (esil->lastsz - 1);
 			*num = (((ut64) esil->cur & m) == 0);
 		}
 		break;
@@ -407,18 +411,19 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 		}
 		break;
 	default:
-		{ // Handle the case of "internal set", i.e. set a register without
-		  // having side effects. The value to be set must be in decimal and
-		  // prefixed by "$". Example:
-		  //  - Set of to 0. ("$0,of,=")
-		  //  - Set rax to 100 without side-effects. ("$100,rax,=")
-		  char *endptr = NULL;
-		  ut64 imm = strtoull (str + 1, &endptr, 10);
-		  if (*endptr == NULL) {
-			  *num = imm;
-			  return true;
-		  }
-		  return false;
+		{
+			// Handle the case of "internal set", i.e. set a register without
+			// having side effects. The value to be set must be in decimal and
+			// prefixed by "$". Example:
+			//  - Set of to 0. ("$0,of,=")
+			//  - Set rax to 100 without side-effects. ("$100,rax,=")
+			char *endptr = NULL;
+			ut64 imm = strtoull (str + 1, &endptr, 10);
+			if (*endptr == NULL) {
+				*num = imm;
+				return true;
+			}
+			return false;
 		}
 	}
 	return true;
