@@ -371,6 +371,57 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	r_print_cursor (p, idx, 0);
 }
 
+static void print_c_code(RPrint *p, ut64 addr, ut8 *buf, int len, int ws, int w) {
+	len /= ws;
+
+	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
+
+	switch (ws) {
+	case 2:
+		p->cb_printf ("uint16_t buffer[%d] = {", len);
+		break;
+	case 4:
+		p->cb_printf ("uint32_t buffer[%d] = {", len);
+		break;
+	case 8:
+		p->cb_printf ("uint64_t buffer[%d] = {", len);
+		break;
+	default:
+		p->cb_printf ("unsigned char buffer[%d] = {", len);
+		break;
+	}
+
+	p->interrupt = 0;
+
+	for (int i = 0; !p->interrupt && i < len; i++) {
+		if (!(i % w)) p->cb_printf ("\n  ");
+
+		r_print_cursor (p, i, 1);
+
+		switch (ws) {
+		case 2:
+			p->cb_printf ("0x%04x,", r_read_ble16 (buf, p->big_endian));
+			break;
+		case 4:
+			p->cb_printf ("0x%08xU,", r_read_ble32 (buf, p->big_endian));
+			break;
+		case 8:
+			p->cb_printf ("0x%016"PFMT64x"ULL,", r_read_ble64 (buf, p->big_endian));
+			break;
+		default:
+			p->cb_printf ("0x%02x,", *buf);
+			break;
+		}
+
+		if ((i + 1) < len && (i + 1) % w) p->cb_printf (" ");
+
+		r_print_cursor (p, i, 0);
+
+		buf += ws;
+	}
+	p->cb_printf ("\n};\n");
+}
+
 R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	int ws, i, w = p->cols*0.7;
 	switch (lang) {
@@ -378,6 +429,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		eprintf ("Valid print code formats are: JSON, C, Python, Cstring (pcj, pc, pcp, pcs) \n"
 		"  pc     C\n"
 		"  pc*    print 'wx' r2 commands\n"
+		"  pch    C half-words (2 byte)\n"
 		"  pcw    C words (4 byte)\n"
 		"  pcd    C dwords (8 byte)\n"
 		"  pca    Assembly\n"
@@ -458,54 +510,18 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		}
 		p->cb_printf ("\n");
 		break;
+	case 'h':
+		print_c_code (p, addr, buf, len, 2, 9);
+		break;
 	case 'w':
-		{
-		ut32 *pbuf = (ut32*)buf;
-		w = 5;
-		ws = 4;
-		len /= ws;
-		p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-		p->cb_printf ("unsigned int buffer[%d] = {", len);
-		p->interrupt = 0;
-		for (i=0; !p->interrupt && i<len; i++) {
-			if (!(i%w)) p->cb_printf ("\n  ");
-			r_print_cursor (p, i, 1);
-			p->cb_printf ("0x%08x, ", pbuf[i]);
-			r_print_cursor (p, i, 0);
-		}
-		p->cb_printf ("};\n");
-		}
+		print_c_code (p, addr, buf, len, 4, 6);
 		break;
 	case 'd':
-		{
-		ut64 *pbuf = (ut64*)buf;
-		w = 3;
-		ws = 8;
-		len /= ws;
-		p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-		p->cb_printf ("unsigned long long buffer[%d] = {", len);
-		p->interrupt = 0;
-		for (i=0; !p->interrupt && i<len; i++) {
-			if (!(i%w)) p->cb_printf ("\n  ");
-			r_print_cursor (p, i, 1);
-			p->cb_printf ("0x%016"PFMT64x", ", pbuf[i]);
-			r_print_cursor (p, i, 0);
-		}
-		p->cb_printf ("};\n");
-		}
+		print_c_code (p, addr, buf, len, 8, 3);
 		break;
 	default:
-		p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-		p->cb_printf ("unsigned char buffer[%d] = {", len);
-		p->interrupt = 0;
-		for (i=0; !p->interrupt && i<len; i++) {
-			if (!(i%w))
-				p->cb_printf ("\n");
-			r_print_cursor (p, i, 1);
-			p->cb_printf (" 0x%02x%s", buf[i], (i+1<len)?",":"\n");
-			r_print_cursor (p, i, 0);
-		}
-		p->cb_printf ("};\n");
+		print_c_code (p, addr, buf, len, 1, 12);
+		break;
 	}
 }
 
