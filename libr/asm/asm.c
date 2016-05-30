@@ -227,14 +227,30 @@ R_API int r_asm_is_valid(RAsm *a, const char *name) {
 	return false;
 }
 
+R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
+	RAsmPlugin *h;
+	RListIter *iter;
+	if (a && name && *name) {
+		r_list_foreach (a->plugins, iter, h) {
+			if (h->assemble && !strcmp (h->name, name)) {
+				a->acur = h;
+				return true;
+			}
+		}
+	}
+	a->acur = NULL;
+	return false;
+}
+
 // TODO: this can be optimized using r_str_hash()
 R_API int r_asm_use(RAsm *a, const char *name) {
 	char file[1024];
 	RAsmPlugin *h;
 	RListIter *iter;
-	if (!a || !name)
+	if (!a || !name) {
 		return false;
-	r_list_foreach (a->plugins, iter, h)
+	}
+	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name)) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
 				//const char *dop = r_config_get (core->config, "dir.opcodes");
@@ -246,6 +262,7 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 			a->cur = h;
 			return true;
 		}
+	}
 	sdb_free (a->pair);
 	a->pair = NULL;
 	return false;
@@ -334,8 +351,9 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			return -1;
 		}
 	}
-	if (a->cur && a->cur->disassemble)
+	if (a->cur && a->cur->disassemble) {
 		ret = a->cur->disassemble (a, op, buf, len);
+	}
 	if (ret<0) ret = 0;
 	// WAT
 	oplen = r_asm_op_get_size (op);
@@ -373,6 +391,9 @@ static Ase findAssembler(RAsm *a, const char *kw) {
 	Ase ase = NULL;
 	RAsmPlugin *h;
 	RListIter *iter;
+	if (a->acur && a->acur->assemble) {
+		return a->acur->assemble;
+	}
 	r_list_foreach (a->plugins, iter, h) {
 		if (h->arch && h->assemble
 				&& has_bits (h, a->bits)
@@ -390,11 +411,13 @@ static Ase findAssembler(RAsm *a, const char *kw) {
 	}
 	return ase;
 }
+
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int ret = 0;
 	char *b = strdup (buf);
-	if (a->ifilter)
+	if (a->ifilter) {
 		r_parse_parse (a->ifilter, buf, b);
+	}
 	r_str_case (b, 0); // to-lower
 	memset (op, 0, sizeof (RAsmOp));
 	if (a->cur) {
