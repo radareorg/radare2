@@ -1955,6 +1955,18 @@ static void handle_print_core_vmode(RCore *core, RDisasmState *ds) {
 	if (!ds->show_jmphints) return;
 	if (core->vmode) {
 		switch (ds->analop.type) {
+		case R_ANAL_OP_TYPE_LEA:
+			handle_comment_align (core, ds);
+			if (ds->show_color) r_cons_strcat (ds->pal_comment);
+			shortcut = r_core_add_asmqjmp (core, ds->analop.ptr);
+			if (shortcut) {
+				r_cons_printf (" ;[%s]", shortcut);
+				free (shortcut);
+			} else {
+				r_cons_strcat (" ;[?]");
+			}
+			if (ds->show_color) r_cons_strcat (Color_RESET);
+			break;
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
