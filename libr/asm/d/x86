@@ -259,42 +259,42 @@ invvpid=invalidate translations based on vpid
 iretd=interrupt return
 iretq=interrupt return (64 bit)
 iret=return from interrupt
-jae=jump short if above or equal (cf=0)
 ja=jump short if above (cf=0 and zf=0)
+jae=jump short if above or equal (cf=0)
+jb=jump short if below/not above nor equal/carry (cf=1)
 jbe=jump short if below or equal/not above (cf=1 and zf=1)
-jb=jump short if below/not above or equal/carry (cf=1)
 jc=jump short if carry (cf=1)
 jcxz=jump short if ecx register is 0
-jecxz=jump short if ecx is 0
 je=jump short if equal (zf=1)
-jge=jump short if greater or equal (sf=of)
+jecxz=jump short if ecx is 0
 jg=jump short if greater (zf=0 and sf=of)
-jle=jump short if less or equal/not greater ((zf=1) or (sf!=of))
+jge=jump short if greater or equal (sf=of)
 jl=jump short if less/not greater (sf!=of)
+jle=jump short if less or equal/not greater (zf=1 or sf!=of)
+jmp=jump
 jmpe=jump to ia-64 instruction set
 jmpf=jump
-jmp=jump
-jnae=jump short if not above or equal/below (cf=1)
 jna=jump short if not above/equal (cf=1 and zf=1)
-jnbe=jump short if not below or equal/above (cf=0 and zf=0)
+jnae=jump short if not above nor equal/below (cf=1)
 jnb=jump short if not below/above or equal/not carry (cf=0)
+jnbe=jump short if not below or equal/above (cf=0 and zf=0)
 jnc=jump short if not carry (cf=0)
 jne=jump short if not equal (zf=0)
+jng=jump short if not greater/less or equal (zf=1 or sf!=of)
 jnge=jump short if not greater/less (sf!=of)
-jng=jump short if not greater/less or equal ((zf=1) or (sf!=of))
-jnle=jump short if not less nor equal/greater ((zf=0) and (sf=of))
 jnl=jump short if not less/greater or equal (sf=of)
+jnle=jump short if not less nor equal/greater (zf=0 and sf=of)
 jno=jump short if not overflow (of=0)
-jnp=jump short if not parity/parity odd
+jnp=jump short if not parity/parity odd (pf=0)
 jns=jump short if not sign (sf=0)
-jnz=jump short if not zero/not equal (zf=1)
+jnz=jump short if not zero/not equal (zf=0)
 jo=jump short if overflow (of=1)
-jpe=jump short if parity even/parity (pf=1)
 jp=jump short if parity/parity even (pf=1)
-jpo=jump short if parity odd/not parity
+jpe=jump short if parity even/parity (pf=1)
+jpo=jump short if parity odd/not parity (pf=0)
 jrcxz=jump short if rcx register is 0
 js=jump short if sign (sf=1)
-jz=jump short if zero/equal (zf=0)
+jz=jump short if zero/equal (zf=1)
 lahf=load status flags into ah register
 lar=load acces right byte
 lddqu=load unaligned integer 128 bits
