@@ -500,9 +500,9 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		p->interrupt = 0;
 		for (i=0; !p->interrupt && i<len; i++) {
 			if (!(i%w))
-				p->cb_printf ("\n  ");
+				p->cb_printf ("\n");
 			r_print_cursor (p, i, 1);
-			p->cb_printf ("0x%02x, ", buf[i]);
+			p->cb_printf (" 0x%02x%s", buf[i], (i+1<len)?",":"\n");
 			r_print_cursor (p, i, 0);
 		}
 		p->cb_printf ("};\n");
