@@ -1858,6 +1858,7 @@ static void handle_print_indent(RCore *core, RDisasmState *ds) {
 static void handle_print_opstr(RCore *core, RDisasmState *ds) {
 	handle_print_indent (core, ds);
 	r_cons_strcat (ds->opstr);
+	handle_print_color_reset (core, ds);
 }
 
 static void handle_print_color_reset(RCore *core, RDisasmState *ds) {
@@ -1938,17 +1939,17 @@ static void handle_print_fcn_name(RCore * core, RDisasmState *ds) {
 			label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
 			if (label) {
 				handle_comment_align (core, ds);
-				r_cons_printf ("  ; %s.%s", f->name, label);
+				r_cons_printf (" ; %s.%s", f->name, label);
 			} else {
 				RAnalFunction *f2 = r_anal_get_fcn_in (core->anal, ds->at, 0);
 				if (f != f2) {
 					handle_comment_align (core, ds);
 					if (delta>0) {
-						r_cons_printf ("  ; %s+0x%x", f->name, delta);
+						r_cons_printf (" ; %s+0x%x", f->name, delta);
 					} else if (delta<0) {
-						r_cons_printf ("  ; %s-0x%x", f->name, -delta);
+						r_cons_printf (" ; %s-0x%x", f->name, -delta);
 					} else {
-						r_cons_printf ("  ; %s", f->name);
+						r_cons_printf (" ; %s", f->name);
 					}
 				}
 			}
