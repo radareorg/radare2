@@ -1386,22 +1386,21 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 	ut8 *buf;
 	RAnalOp aop;
 	int chk_family = 0;
-	int i, ret, bsize = core->blocksize;
+	int i, ret, bsize = R_MIN (64, core->blocksize);
 	int kwidx = core->search->n_kws; //(int)r_config_get_i (core->config, "search.kwidx")-1;
 	int maxhits, match, count = 0;
-	if (bsize<64)
-		bsize=64;
 	if (!strncmp (param->mode, "dbg.", 4) || !strncmp(param->mode, "io.sections", 11))
 		param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
 	else param->boundaries = NULL;
 
+	input = r_str_chop_ro (input);
 	if (*input=='f') {
 		chk_family = 1;
 		input++;
 	}
 	if (*input=='?') {
 		r_cons_printf ("Usage: /A%s [type]\n", chk_family?"f":"");
-		for (i=0; i<64; i++) {
+		for (i=0; i < 64; i++) {
 			const char *str;
 			if (chk_family) str = r_anal_op_family_to_string (i);
 			else str = r_anal_optype_to_string (i);
@@ -1423,7 +1422,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 		if (i>=(bsize-32)) {
 			i = 0;
 		}
-		if (i==0) {
+		if (i == 0) {
 			r_core_read_at (core, at, buf, bsize);
 		}
 		ret = r_anal_op (core->anal, &aop, at, buf+i, bsize-i);
@@ -1431,17 +1430,19 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 			match = 0;
 			if (chk_family) {
 				const char *fam = r_anal_op_family_to_string (aop.family);
-				if (fam)
-				if (!*input || strstr (input, fam)) {
-					match = 1;
-					r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, fam);
+				if (fam) {
+					if (!*input || !strcmp (input, fam)) {
+						match = 1;
+						r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, fam);
+					}
 				}
 			} else {
 				const char *type = r_anal_optype_to_string (aop.type);
-				if (type)
-				if (!*input || strstr (input, type)) {
-					match = 1;
-					r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, type);
+				if (type) {
+					if (!*input || !strcmp (input, type)) {
+						match = 1;
+						r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, type);
+					}
 				}
 			}
 			if (match) {
@@ -1452,8 +1453,9 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 					r_flag_set (core->flags, flag, at, ret);
 				}
 				count++;
-				if (maxhits && count >= maxhits)
+				if (maxhits && count >= maxhits) {
 					break;
+				}
 			}
 			if (core->search->align>0) {
 				i += core->search->align -1;
@@ -1911,7 +1913,7 @@ reread:
 		case 'f':
 		case '?':
 		case ' ':
-			do_anal_search (core, &param, input+1);
+			do_anal_search (core, &param, input + 1);
 			break;
 		default:
 			do_anal_search (core, &param, "?");

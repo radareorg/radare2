@@ -742,6 +742,7 @@ typedef struct r_anal_op_t {
 	RAnalValue *dst;
 	struct r_anal_op_t *next; // XXX deprecate
 	RStrBuf esil;
+	char *reg; /* destination register */
 	RAnalSwitchOp *switch_op;
 } RAnalOp;
 

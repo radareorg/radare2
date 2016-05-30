@@ -123,98 +123,62 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 		return r_str_newf ("%"PFMT64d, (ut64)op.imm);
 	case X86_OP_MEM:
 		{
+		// address = (base + (index * scale) + offset)
+		char buf_[64];
+		int component_count = 0;
 		const char *base = cs_reg_name (handle, op.mem.base);
 		const char *index = cs_reg_name (handle, op.mem.index);
 		int scale = op.mem.scale;
 		st64 disp = op.mem.disp;
-		if (scale>1) {
-			if (set>1) {
-				if (base) {
-					if (disp) {
-						snprintf (buf, sizeof (buf), "%s,0x%x,+,%d,*", base, (int)disp, scale);
-					} else {
-						snprintf (buf, sizeof (buf), "%s,%d,*", base, scale);
-					}
-				} else {
-					if (disp) {
-						snprintf (buf, sizeof (buf), "%d,0x%x,*,[%d]", scale, (int)disp, op.size);
-					} else {
-						snprintf (buf, sizeof (buf), "%d,[%d]", scale, op.size);
-					}
-				}
-			} else {
-				if (base) {
-					if (disp) {
-						snprintf (buf, sizeof (buf), "0x%x,%s,+,%d,*,[%d]", (int)disp, base, scale, op.size);
-					} else {
-						snprintf (buf, sizeof (buf), "%s,%d,*,[%d]", base, scale, op.size);
-					}
-				} else {
-					if (disp) {
-						snprintf (buf, sizeof (buf), "0x%x,%d,*,[%d]", (int)disp, scale, op.size);
-					} else {
-						snprintf (buf, sizeof (buf), "%d,[%d]", scale, op.size);
-					}
-				}
-			}
-		} else {
-			if (set>1) {
-				if (base) {
-					if (disp) {
-						int v = (int)disp;
-						if (v<0) {
-							snprintf (buf, sizeof (buf), "0x%x,%s,-", -v, base);
-						} else {
-							snprintf (buf, sizeof (buf), "0x%x,%s,+", v, base);
-						}
-					} else {
-						snprintf (buf, sizeof (buf), "%s", base);
-					}
-				} else {
-					if (disp) {
-						snprintf (buf, sizeof (buf), "%d", (int)disp);
-					}
-				}
-			} else {
-				int opsize = op.size;
-				if (opsize > 8) opsize = 8;
-				if (base) {
-					if (disp) {
-						int v = (int)disp;
-						if (v<0) {
-							snprintf (buf, sizeof (buf), "0x%x,%s,-,%s%s[%d]",
-								-(int)disp, base, setarg, set?"=":"", opsize);
-						} else {
-							snprintf (buf, sizeof (buf), "0x%x,%s,+,%s%s[%d]",
-								(int)disp, base, setarg, set?"=":"", opsize);
-						}
-					} else {
-						if (index)
-							if (set)
-								snprintf (buf, sizeof (buf), "%s,%s,+,%s=[%d]",
-									base, index, setarg, opsize);
-							else
-								snprintf (buf, sizeof (buf), "%s,%s,+,[%d]",
-									base, index, opsize);
-						else
-							snprintf (buf, sizeof (buf), "%s,%s%s[%d]",
-								base, setarg, set?"=":"", opsize);
-					}
-				} else {
-					if (disp) {
-						snprintf (buf, sizeof (buf), "0x%x,%s%s[%d]",
-							(int)disp, setarg, set?"=":"", opsize);
-					} else {
-						snprintf (buf, sizeof (buf), "%s%s,[%d]",
-							setarg, set?"=":"", opsize);
-					}
-				}
-			}
+
+		if (disp != 0) {
+			snprintf (buf, sizeof (buf), "0x%"PFMT64x",", (disp < 0) ? -disp : disp);
+			component_count++;
 		}
+
+		if (index) {
+			if (scale > 1) {
+				snprintf (buf_, sizeof (buf), "%s%s,%d,*,", buf, index, scale);
+			} else {
+				snprintf (buf_, sizeof (buf), "%s%s,", buf, index, scale);
+			}
+			strncpy (buf, buf_, sizeof (buf));
+			component_count++;
+		}
+
+		if (base) {
+			snprintf (buf_, sizeof (buf), "%s%s,", buf, base);
+			strncpy (buf, buf_, sizeof (buf));
+			component_count++;
+		}
+
+		if (component_count > 1) {
+			if (component_count > 2) {
+				snprintf (buf_, sizeof (buf), "%s+", buf);
+				strncpy (buf, buf_, sizeof (buf));
+			}
+			if (disp < 0) {
+				snprintf (buf_, sizeof (buf), "%s-", buf);
+			} else {
+				snprintf (buf_, sizeof (buf), "%s+", buf);
+			}
+			strncpy (buf, buf_, sizeof (buf));
+		} else {
+			// Remove the trailing ',' from esil statement.
+			if (strlen(buf)) buf[strlen(buf) - 1] = '\0';
+		}
+
+		// set = 2 is reserved for lea, where the operand is a memory address,
+		// but the corresponding memory is not loaded.
+		if (set == 1) {
+			snprintf (buf_, sizeof (buf), "%s,%s=[%d]", buf, setarg, op.size);
+		} else if (set == 0) {
+			snprintf (buf_, sizeof (buf), "%s,[%d]", buf, op.size);
+		}
+
+		strncpy (buf, buf_, sizeof (buf));
 		}
 		return strdup (buf);
-	//case X86_OP_FP:
-	//	break;
 	}
 	return strdup ("PoP");
 }
@@ -755,9 +719,9 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case X86_INS_LEA:
 		{
-			char *src = getarg (&gop, 0, 0, NULL);
-			char *dst = getarg (&gop, 1, 2, NULL);
-			esilprintf (op, "%s,%s,=", dst, src);
+			char *src = getarg (&gop, 1, 2, NULL);
+			char *dst = getarg (&gop, 0, 1, NULL);
+			esilprintf (op, "%s,%s", src, dst);
 			free (src);
 			free (dst);
 		}
@@ -1876,7 +1840,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_LOOPNE:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = INSOP(0).imm;
-		op->fail = addr+op->size;
+		op->fail = addr + op->size;
 		break;
 	case X86_INS_CALL:
 	case X86_INS_LCALL:
@@ -1914,7 +1878,8 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			op->type = R_ANAL_OP_TYPE_JMP;
 			break;
 		case X86_OP_MEM:
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			// op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = R_ANAL_OP_TYPE_MJMP;
 			op->ptr = INSOP(0).mem.disp;
 			if (INSOP(0).mem.base == X86_REG_RIP) {
 				op->ptr += addr + insn->size;
@@ -1925,12 +1890,13 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			break;
 		case X86_OP_REG:
 			{
-			char *src = getarg (&gop, 0, 0, NULL);
+			op->reg = getarg (&gop, 0, 0, NULL);
 			op->src[0] = r_anal_value_new ();
-			op->src[0]->reg = r_reg_get (a->reg, src, R_REG_TYPE_GPR);
-			free (src);
-			//XXX fallthrough
+			op->src[0]->reg = r_reg_get (a->reg, op->reg, R_REG_TYPE_GPR);
+			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->ptr = UT64_MAX;
 			}
+			break;
 		//case X86_OP_FP:
 		default: // other?
 			op->type = R_ANAL_OP_TYPE_UJMP;
