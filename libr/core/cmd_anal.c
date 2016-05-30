@@ -3176,6 +3176,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		"ah?", "", "show this help",
 		"ah?", " offset", "show hint of given offset",
 		"ah", "", "list hints in human-readable format",
+		"ah.", "", "list hints in human-readable format from current offset",
 		"ah-", "", "remove all hints",
 		"ah-", " offset [size]", "remove hints at given offset",
 		"ah*", " offset", "list hints in radare commands format",
@@ -3192,9 +3193,12 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '?':
 		if (input[1]) {
-			//ut64 addr = r_num_math (core->num, input+1);
-			eprintf ("TODO: show hint\n");
+			ut64 addr = r_num_math (core->num, input+1);
+			r_core_anal_hint_print(core->anal, addr);
 		} else r_core_cmd_help (core, help_msg);
+		break;
+	case '.': // ah.
+		r_core_anal_hint_print(core->anal, core->offset);
 		break;
 	case 'a': // set arch
 		if (input[1]) {
