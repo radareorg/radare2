@@ -203,6 +203,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 static struct r_lang_plugin_t r_lang_plugin_pipe = {
 	.name = "pipe",
 	.ext = "pipe",
+	.license = "LGPL",
 	.desc = "Use #!pipe node script.js",
 	.run = lang_pipe_run,
 	.run_file = (void*)lang_pipe_file,
