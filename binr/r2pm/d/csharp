@@ -1,0 +1,16 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://github.com/radare/radare2-bindings"
+R2PM_DESC "[r2-lang] C# r2pipe/RLang bin/csharp-cs"
+
+R2PM_INSTALL() {
+	./configure --prefix="${R2PM_PREFIX}" || exit 1
+	${MAKE} -C libr/lang csharp || exit 1
+	${MAKE} -C libr/lang csharp-install || exit 1
+}
+
+R2PM_UNINSTALL() {
+	${MAKE} -C libr/lang uninstall
+}
+
+R2PM_END
