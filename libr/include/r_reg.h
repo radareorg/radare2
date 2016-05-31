@@ -77,6 +77,7 @@ typedef struct r_reg_item_t {
 	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
 	bool is_float;
 	char *flags;
+	int index;
 } RRegItem;
 
 typedef struct r_reg_arena_t {
