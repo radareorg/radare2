@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2014 pancake */
+/* radare - LGPL - Copyright 2011-2016 pancake */
 /* vala extension for libr (radare2) */
 // TODO: add cache directory (~/.r2/cache)
 
@@ -94,11 +94,8 @@ static int lang_vala_run(RLang *lang, const char *code, int len) {
 static struct r_lang_plugin_t r_lang_plugin_vala = {
 	.name = "vala",
 	.ext = "vala",
-	.desc = "VALA language extension",
-	.help = NULL,
+	.desc = "Vala language extension",
 	.run = lang_vala_run,
 	.init = (void*)lang_vala_init,
-	.fini = NULL,
 	.run_file = (void*)lang_vala_file,
-	.set_argv = NULL,
 };
