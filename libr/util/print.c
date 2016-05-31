@@ -371,25 +371,29 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	r_print_cursor (p, idx, 0);
 }
 
+static const char* bits_to_c_code_fmtstr(int bits) {
+	switch (bits) {
+	case 16:
+		return "0x%04x";
+	case 32:
+		return "0x%08xU";
+	case 64:
+		return "0x%016"PFMT64x"ULL";
+	default:
+		return "0x%02x";
+	}
+}
+
 static void print_c_code(RPrint *p, ut64 addr, ut8 *buf, int len, int ws, int w) {
+	ws = R_MAX(1, R_MIN(ws, 8));
+
+	int bits = ws * 8;
+	const char* fmtstr = bits_to_c_code_fmtstr(bits);
+
 	len /= ws;
 
 	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-
-	switch (ws) {
-	case 2:
-		p->cb_printf ("uint16_t buffer[%d] = {", len);
-		break;
-	case 4:
-		p->cb_printf ("uint32_t buffer[%d] = {", len);
-		break;
-	case 8:
-		p->cb_printf ("uint64_t buffer[%d] = {", len);
-		break;
-	default:
-		p->cb_printf ("unsigned char buffer[%d] = {", len);
-		break;
-	}
+	p->cb_printf ("const uint%d_t buffer[%d] = {", bits, len);
 
 	p->interrupt = 0;
 
@@ -398,22 +402,13 @@ static void print_c_code(RPrint *p, ut64 addr, ut8 *buf, int len, int ws, int w)
 
 		r_print_cursor (p, i, 1);
 
-		switch (ws) {
-		case 2:
-			p->cb_printf ("0x%04x,", r_read_ble16 (buf, p->big_endian));
-			break;
-		case 4:
-			p->cb_printf ("0x%08xU,", r_read_ble32 (buf, p->big_endian));
-			break;
-		case 8:
-			p->cb_printf ("0x%016"PFMT64x"ULL,", r_read_ble64 (buf, p->big_endian));
-			break;
-		default:
-			p->cb_printf ("0x%02x,", *buf);
-			break;
-		}
+		p->cb_printf (fmtstr, r_read_ble (buf, p->big_endian, bits));
 
-		if ((i + 1) < len && (i + 1) % w) p->cb_printf (" ");
+		if ((i + 1) < len) {
+			p->cb_printf (",");
+
+			if ((i + 1) % w) p->cb_printf (" ");
+		}
 
 		r_print_cursor (p, i, 0);
 
