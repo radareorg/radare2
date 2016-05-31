@@ -97,6 +97,7 @@ typedef struct r_reg_t {
 	char *reg_profile_str;
 	char *name[R_REG_NAME_LAST];
 	RRegSet regset[R_REG_TYPE_LAST];
+	RList *allregs;
 	int iters;
 	int arch;
 	int bits;
@@ -132,6 +133,9 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type);
 R_API RList *r_reg_get_list(RReg *reg, int type);
 R_API RRegItem *r_reg_get_at(RReg *reg, int type, int regsize, int delta);
 R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8 *buf, int buflen, RRegItem *prev_ri, int regsize);
+
+R_API void r_reg_reindex(RReg *reg);
+R_API RRegItem *r_reg_index_get(RReg *reg, int idx);
 
 /* Item */
 R_API void r_reg_item_free(RRegItem *item);

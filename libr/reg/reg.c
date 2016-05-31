@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -114,6 +114,48 @@ R_API void r_reg_free_internal(RReg *reg, bool init) {
 		}
 	}
 	reg->size = 0;
+}
+
+static int regcmp(RRegItem *a, RRegItem *b) {
+	int offa = (a->offset * 16) + a->size;
+	int offb = (b->offset * 16) + b->size;
+	return offa > offb;
+}
+
+R_API void r_reg_reindex(RReg *reg) {
+	int i, index;
+	RListIter *iter;
+	RRegItem *r;
+	RList *all = r_list_newf (NULL);
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		r_list_foreach (reg->regset[i].regs, iter, r) {
+			r_list_append (all, r);
+		}
+	}
+	r_list_sort (all, (RListComparator)regcmp);
+	index = 0;
+	r_list_foreach (all, iter, r) {
+		r->index = index++;
+	}
+	r_list_free (reg->allregs);
+	reg->allregs = all;
+}
+
+R_API RRegItem *r_reg_index_get(RReg *reg, int idx) {
+	RRegItem *r;
+	RListIter *iter;
+	if (idx < 0) {
+		return NULL;
+	}
+	if (!reg->allregs) {
+		r_reg_reindex (reg);
+	}
+	r_list_foreach (reg->allregs, iter, r) {
+		if (r->index == idx) {
+			return r;
+		}
+	}
+	return NULL;
 }
 
 R_API void r_reg_free(RReg *reg) {
