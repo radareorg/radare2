@@ -67,7 +67,7 @@ typedef struct r_disam_options_t {
 	int cyclespace;
 	int cmtfold;
 	int show_indent;
-	int show_dwarf;
+	bool show_dwarf;
 	int show_size;
 	int show_trace;
 	int show_family;
@@ -2124,7 +2124,7 @@ static void ds_print_dwarf(RDisasmState *ds) {
 		if (len < 30) {
 			len = 30 - len;
 		}
-		ds->sl = r_bin_addr2text (ds->core->bin, ds->at);
+		ds->sl = r_bin_addr2text (ds->core->bin, ds->at, true);
 		if (ds->sl) {
 			if ((!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
 				char *chopstr, *line = strdup (ds->sl);
@@ -2623,7 +2623,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		free (locase);
 	}
 	if (ds->show_comments) {
-		if (desc) {
+		if (desc && *desc) {
 			ds_align_comment (ds);
 			if (ds->show_color) {
 				r_cons_strcat (ds->color_comment);
@@ -2632,15 +2632,17 @@ static void ds_print_comments_right(RDisasmState *ds) {
 			r_cons_strcat (desc);
 		}
 		if (ds->show_comment_right && ds->comment) {
-			if (!desc) {
-				ds_align_comment (ds);
+			char *comment = r_str_chop (ds->comment);
+			if (*comment) {
+				if (!desc) {
+					ds_align_comment (ds);
+				}
 				if (ds->show_color) {
 					r_cons_strcat (ds->color_comment);
 				}
-				r_cons_strcat (" ; ");
+				r_cons_printf (" ; %s", comment);
 			}
-			//r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
-			r_cons_strcat (ds->comment);
+			// r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
 			if (ds->show_color) {
 				ds_print_color_reset (ds);
 			}
