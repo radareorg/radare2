@@ -134,7 +134,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] && input[2]) {
 			if (core->io->debug) {
 				off = r_debug_reg_get (core->dbg, input + 2);
-				r_io_sundo_push (core->io, core->offset, core->print->cur);
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 				r_core_seek (core, off, 1);
 			} else {
 				RReg *orig = core->dbg->reg;
@@ -224,7 +224,7 @@ static int cmd_seek(void *data, const char *input) {
 					break;
 				case 1:
 					off = cb.addr;
-					r_io_sundo_push (core->io, core->offset, core->print->cur);
+					r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 					r_core_seek (core, off, 1);
 					r_core_block_read (core, 0);
 					break;
@@ -238,7 +238,7 @@ static int cmd_seek(void *data, const char *input) {
 				"sC const   seek to comment matching 'const'\n");
 			break;
 		case ' ':
-			r_io_sundo_push (core->io, core->offset, core->print->cur);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			r_core_seek (core, off * sign, 1);
 			r_core_block_read (core, 0);
 			break;
@@ -295,7 +295,7 @@ static int cmd_seek(void *data, const char *input) {
 		case '+':
 			if (input[1]!='\0') {
 				int delta = (input[1]=='+')? core->blocksize: off;
-				r_io_sundo_push (core->io, core->offset, core->print->cur);
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 				r_core_seek_delta (core, delta);
 			} else {
 				RUndos *undo = r_io_sundo_redo (core->io);
@@ -306,22 +306,22 @@ static int cmd_seek(void *data, const char *input) {
 		case '-':
 			if (input[1]!='\0') {
 				int delta = (input[1]=='-') ? -core->blocksize: -off;
-				r_io_sundo_push (core->io, core->offset, core->print->cur);
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 				r_core_seek_delta (core, delta);
 			} else {
 				RUndos *undo = r_io_sundo (core->io, core->offset);
-				if (undo != NULL) {
+				if (undo) {
 					r_core_seek (core, undo->off, 0);
 				}
 			}
 			r_core_block_read (core, 1);
 			break;
 		case 'n':
-			r_io_sundo_push (core->io, core->offset, core->print->cur);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
 			break;
 		case 'p':
-			r_io_sundo_push (core->io, core->offset, core->print->cur);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 			break;
 		case 'a':
@@ -338,13 +338,13 @@ static int cmd_seek(void *data, const char *input) {
 				r_cmd_call (core->rcmd, cmd);
 				free (cmd);
 			}
-			r_io_sundo_push (core->io, core->offset, core->print->cur);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			r_core_seek_align (core, off, 0);
 			break;
 		case 'b':
 			if (off == 0)
 				off = core->offset;
-			r_io_sundo_push (core->io, core->offset, core->print->cur);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			r_core_anal_bb_seek (core, off);
 			break;
 		case 'f': // "sf"

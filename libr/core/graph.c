@@ -2775,7 +2775,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		{
 			if (!fcn) break;
 			RUndos *undo = r_io_sundo (core->io, core->offset);
-			if (undo != NULL) {
+			if (undo) {
 				r_core_seek (core, undo->off, 0);
 			}
 			else eprintf ("Can not undo\n");
