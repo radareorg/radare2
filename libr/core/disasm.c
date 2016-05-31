@@ -2120,22 +2120,32 @@ static void ds_align_comment(RDisasmState *ds) {
 
 static void ds_print_dwarf(RDisasmState *ds) {
 	if (ds->show_dwarf) {
-		ds->sl = r_bin_addr2text (ds->core->bin, ds->at);
 		int len = strlen (ds->opstr);
-		if (len<30) len = 30 - len;
+		if (len < 30) {
+			len = 30 - len;
+		}
+		ds->sl = r_bin_addr2text (ds->core->bin, ds->at);
 		if (ds->sl) {
 			if ((!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
-				char *line = strdup (ds->sl);
+				char *chopstr, *line = strdup (ds->sl);
+				if (!line) {
+					return;
+				}
 				r_str_replace_char (line, '\t', ' ');
 				r_str_replace_char (line, '\x1b', ' ');
 				r_str_replace_char (line, '\r', ' ');
 				r_str_replace_char (line, '\n', '\x00');
+				chopstr = r_str_chop (line);
+				if (!*chopstr) {
+					free (line);
+					return;
+				}
 				// handle_set_pre (ds, "  ");
 				ds_align_comment (ds);
 				if (ds->show_color) {
-					r_cons_printf ("%s ; %s"Color_RESET, ds->pal_comment, line);
+					r_cons_printf ("%s ; %s"Color_RESET, ds->pal_comment, chopstr);
 				} else {
-					r_cons_printf (" ; %s", line);
+					r_cons_printf (" ; %s", chopstr);
 				}
 				free (ds->osl);
 				ds->osl = ds->sl;
