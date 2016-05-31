@@ -2,6 +2,7 @@
 
 #include "r_types.h"
 #include "r_util.h"
+#include "r_cons.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -1193,11 +1194,21 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y,
 		unsigned int x2, unsigned int y2) {
 	char *r, *ret;
+	const char *s;
+	size_t str_len = 0, nr_of_lines = 0;
 	unsigned int ch = 0, cw = 0;
 	if (x2 < 1 || y2 < 1 || !str)
 		return strdup ("");
 
-	r = ret = strdup (str);
+	s = str;
+	while (*s) {
+		str_len++;
+		if (*s == '\n')
+			nr_of_lines++;
+		s++;
+	}
+
+	r = ret = malloc (str_len + nr_of_lines * strlen (Color_RESET) + 1);
 	while (*str) {
 		/* crop height */
 		if (ch >= y2) {
@@ -1206,8 +1217,10 @@ R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y,
 		}
 
 		if (*str == '\n') {
-			if (ch >= y && ch < y2)
-				*r++ = *str;
+			if (ch >= y && ch < y2) {
+				strcpy (r, Color_RESET "\n");
+				r += strlen (Color_RESET "\n");
+			}
 			str++;
 			ch++;
 			cw = 0;
