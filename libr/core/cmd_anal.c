@@ -334,19 +334,41 @@ static void cmd_syscall_do(RCore *core, int n) {
 }
 
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
+	int stacksize = r_config_get_i (core->config, "esil.stacksize");
+	bool iotrap = r_config_get_i (core->config, "esil.iotrap");
+	bool romem = r_config_get_i (core->config, "esil.romem");
+	bool stats = r_config_get_i (core->config, "esil.stats");
+	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	int ret, i, j, idx, size;
+	const char *color = "";
+	const char *esilstr;
+	RAnalHint *hint;
+	RAnalEsil *esil;
 	RAsmOp asmop;
 	RAnalOp op;
 	ut64 addr;
-	RAnalHint *hint;
-	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	const char *color = "";
-	if (use_color)
+
+	// Variables required for setting up ESIL to REIL conversion
+	if (use_color) {
 		color = core->cons->pal.label;
-	if (fmt == 'j')
+	}
+	switch (fmt) {
+	case 'j':
 		r_cons_printf ("[");
+		break;
+	case 'r':
+		// Setup for ESIL to REIL conversion
+		esil = r_anal_esil_new (stacksize, iotrap);
+		if (!esil) {
+			return;
+		}
+		r_anal_esil_to_reil_setup (esil, core->anal, romem, stats);
+		r_anal_esil_set_pc (esil, core->offset);
+		break;
+	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
+		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		// TODO: use more anal hints
 		hint = r_anal_hint_get (core->anal, addr);
 		r_asm_set_pc (core->assembler, addr);
@@ -370,6 +392,25 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (d);
 			} else r_cons_printf ("Unknown opcode\n");
 			free (opname);
+		} else if (fmt == 'e') {
+			if (*esilstr) {
+				if (use_color) {
+					r_cons_printf ("%s0x%" PFMT64x Color_RESET " %s\n", color, core->offset + idx, esilstr);
+				} else {
+					r_cons_printf ("0x%" PFMT64x " %s\n", core->offset + idx, esilstr);
+				}
+			}
+		} else if (fmt == 'r') {
+			if (*esilstr) {
+				if (use_color) {
+					r_cons_printf ("%s0x%" PFMT64x Color_RESET "\n", color, core->offset + idx);
+				} else {
+					r_cons_printf ("0x%" PFMT64x "\n", core->offset + idx);
+				}
+				r_anal_esil_parse (esil, esilstr);
+				r_anal_esil_dumpstack (esil);
+				r_anal_esil_stack_free (esil);
+			}
 		} else if (fmt == 'j') {
 			r_cons_printf ("{\"opcode\": \"%s\",", asmop.buf_asm);
 			if (hint && hint->opcode)
@@ -390,9 +431,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.reg) {
 				r_cons_printf ("\"reg\": \"%s\",", op.reg);
 			}
-			if (*R_STRBUF_SAFEGET (&op.esil)) {
+			if (*esilstr) {
 				r_cons_printf ("\"esil\": \"%s\",",
-					R_STRBUF_SAFEGET (&op.esil));
+					esilstr);
 			}
 			if (hint && hint->jump != UT64_MAX)
 				op.jump = hint->jump;
@@ -459,8 +500,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			if (op.reg)
 				printline ("reg", "%s\n", op.reg);
-			if (*R_STRBUF_SAFEGET (&op.esil))
-				printline ("esil", "%s\n", R_STRBUF_SAFEGET (&op.esil));
+			if (*esilstr)
+				printline ("esil", "%s\n", esilstr);
 			if (hint && hint->jump != UT64_MAX)
 				op.jump = hint->jump;
 			if (op.jump != UT64_MAX)
@@ -485,13 +526,15 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
 		//free (hint);
 		r_anal_hint_free (hint);
-		if (((idx + ret) < len) && (!nops || (i + 1) < nops))
+		if (((idx + ret) < len) && (!nops || (i + 1) < nops) && fmt != 'e' && fmt != 'r')
 			r_cons_printf (",");
 	}
 
 	if (fmt == 'j') {
 		r_cons_printf ("]");
 		r_cons_newline ();
+	} else if (fmt == 'r') {
+		r_anal_esil_free (esil);
 	}
 }
 
@@ -657,9 +700,9 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 static void r_core_anal_nofunclist  (RCore *core, const char *input) {
 	int minlen = (int)(input[0]==' ') ? r_num_math (core->num, input + 1): 16;
 	ut64 code_size = r_num_get (core->num, "$SS");
-	ut64 base_addr = r_num_get (core->num, "$S"); 
+	ut64 base_addr = r_num_get (core->num, "$S");
 	ut64 chunk_size, chunk_offset, i;
-	RListIter *iter, *iter2;                     
+	RListIter *iter, *iter2;
 	RAnalFunction *fcn;
 	RAnalBlock *b;
 	char* bitmap;
@@ -673,13 +716,13 @@ static void r_core_anal_nofunclist  (RCore *core, const char *input) {
 	// for each function
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		// for each basic block in the function
-		r_list_foreach (fcn->bbs, iter2, b) { 
+		r_list_foreach (fcn->bbs, iter2, b) {
 			// if it is not withing range, continue
 			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size))
 				continue;
 			// otherwise mark each byte in the BB in the bitmap
 			for (counter = 0; counter < b->size; counter++) {
-				bitmap[b->addr+counter-base_addr] = '='; 
+				bitmap[b->addr+counter-base_addr] = '=';
 			}
 			// finally, add a special marker to show the beginning of a
 			// function
@@ -695,10 +738,11 @@ static void r_core_anal_nofunclist  (RCore *core, const char *input) {
 			// We only print a region is its size is bigger than 15 bytes
 			if (chunk_size >= minlen){
 				fcn = r_anal_get_fcn_in (core->anal, base_addr+chunk_offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-				if (fcn)
+				if (fcn) {
 					r_cons_printf ("0x%08"PFMT64x"  %6d   %s\n", base_addr+chunk_offset, chunk_size, fcn->name);
-				else 
+				} else {
 					r_cons_printf ("0x%08"PFMT64x"  %6d\n", base_addr+chunk_offset, chunk_size);
+				}
 			}
 			chunk_size = 0;
 			chunk_offset = i+1;
@@ -728,7 +772,7 @@ static void r_core_anal_fmap  (RCore *core, const char *input) {
 	char* bitmap;
 	int assigned;
 	ut64 i;
-	
+
 	if (code_size < 1) return;
 	bitmap = calloc (1, code_size+64);
 	if (!bitmap) return;
@@ -736,14 +780,14 @@ static void r_core_anal_fmap  (RCore *core, const char *input) {
 	// for each function
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		// for each basic block in the function
-		r_list_foreach (fcn->bbs, iter2, b) { 
+		r_list_foreach (fcn->bbs, iter2, b) {
 			// if it is not within range, continue
 			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size))
 				continue;
 			// otherwise mark each byte in the BB in the bitmap
 			int counter = 1;
 			for (counter = 0; counter < b->size; counter++) {
-				bitmap[b->addr+counter-base_addr] = '='; 
+				bitmap[b->addr+counter-base_addr] = '=';
 			}
 			bitmap[fcn->addr-base_addr] = 'F';
 		}
@@ -2696,16 +2740,18 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	case '?': {
 		const char *help_msg[] = {
 			"Usage:", "ao[e?] [len]", "Analyze Opcodes",
-			"aoj", "", "display opcode analysis information in JSON",
-			"aoe", "", "emulate opcode at current offset",
+			"aoj", " N", "display opcode analysis information in JSON for N opcodes",
+			"aoe", " N", "display esil form for N opcodes",
+			"aor", " N", "display reil form for N opcodes",
 			"aos", " [esil]", "show sdb representation of esil expression (TODO)",
-			"aoe", " 4", "emulate 4 opcodes starting at current offset",
 			"ao", " 5", "display opcode analysis of 5 opcodes",
 			"ao*", "", "display opcode in r commands",
 			NULL };
 		r_core_cmd_help (core, help_msg);
 	} break;
-	case 'j': {
+	case 'j':
+	case 'e':
+	case 'r': {
 		int count = 1;
 		if (input[1] && input[2]) {
 			l = (int)r_num_get (core->num, input + 1);
@@ -2718,11 +2764,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			len = l = core->blocksize;
 			count = 1;
 		}
-		core_anal_bytes (core, core->block, len, count, 'j');
+		core_anal_bytes (core, core->block, len, count, input[0]);
 	} break;
-	case 'e':
-		eprintf ("TODO: See 'ae' command\n");
-		break;
 	case '*':
 		r_core_anal_hint_list (core->anal, input[0]);
 		break;
@@ -3970,7 +4013,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 
 	if (is_debug) {
-		// 
+		//
 		r_list_free (r_core_get_boundaries_prot (core, 0, "dbg.map", &from, &to));
 	} else {
 		s = r_io_section_vget (core->io, core->offset);
