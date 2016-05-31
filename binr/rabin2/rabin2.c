@@ -394,7 +394,7 @@ error:
 
 static int rabin_show_srcline(ut64 at) {
 	char *srcline;
-	if ((srcline = r_bin_addr2text (bin, at))) {
+	if ((srcline = r_bin_addr2text (bin, at, true))) {
 		printf ("%s\n", srcline);
 		free (srcline);
 		return true;
