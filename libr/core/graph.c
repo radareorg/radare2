@@ -2521,7 +2521,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 			r_agraph_set_curnode (g, addr_node);
 			agraph_update_seek (g, addr_node, true);
 		} else {
-			r_io_sundo_push (core->io, core->offset);
+			r_io_sundo_push (core->io, core->offset, 0);
 			r_core_seek (core, addr, 0);
 		}
 	}
@@ -2774,16 +2774,18 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case 'u':
 		{
 			if (!fcn) break;
-			ut64 off = r_io_sundo (core->io, core->offset);
-			if (off != UT64_MAX) r_core_seek (core, off, 0);
+			RUndos *undo = r_io_sundo (core->io, core->offset);
+			if (undo != NULL) {
+				r_core_seek (core, undo->off, 0);
+			}
 			else eprintf ("Can not undo\n");
 			break;
 		}
 		case 'U':
 		{
 			if (!fcn) break;
-			ut64 off = r_io_sundo_redo (core->io);
-			if (off != UT64_MAX) r_core_seek (core, off, 0);
+			RUndos *undo = r_io_sundo_redo (core->io);
+			if (undo != NULL) r_core_seek (core, undo->off, 0);
 			else eprintf ("Cannot redo\n");
 			break;
 		}
