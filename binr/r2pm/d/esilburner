@@ -1,14 +1,12 @@
 R2PM_BEGIN
 
 R2PM_GIT "https://github.com/mrmacete/r2scripts"
-R2PM_DESC "[r2-r2pipe-python] Burn asm.emu results in real comments for all detected functions (MIPS oriented)"
-
-R2_RCD="${R2PM_PLUGDIR}/../radare2rc.d"
+R2PM_DESC "[r2-r2pipe-python] Burn asm.emu results in real comments (MIPS oriented)"
 
 R2PM_INSTALL() {
-	mkdir -p "${R2_RCD}"
-	cd esilburner
-	echo '$esilburner=#!pipe python '"'`pwd`'"'/esilburner.py' > "${R2_RCD}/esilburner"
+	mkdir -p "${R2_RCD}" || exit 1
+	cd esilburner || exit 1
+	echo '$esilburner=#!pipe python '"'`pwd`'"'/esilburner.py' > "${R2_RCD}/esilburner" || exit 1
 }
 
 R2PM_UNINSTALL() {
