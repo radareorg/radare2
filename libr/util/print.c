@@ -389,8 +389,8 @@ static void print_c_code(RPrint *p, ut64 addr, ut8 *buf, int len, int ws, int w)
 	int i, bits;
 
 	ws = R_MAX (1, R_MIN (ws, 8));
-	fmtstr = bits_to_c_code_fmtstr (bits);
 	bits = ws * 8;
+	fmtstr = bits_to_c_code_fmtstr (bits);
 	len /= ws;
 
 	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
