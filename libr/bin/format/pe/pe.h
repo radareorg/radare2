@@ -67,6 +67,8 @@ struct PE_(r_bin_pe_obj_t) {
 	// these pointers contain a copy of the headers and sections!
 	PE_(image_dos_header)             *dos_header;
 	PE_(image_nt_headers)		  *nt_headers;
+	PE_(image_optional_header)        *optional_header; //not free this just pointer into nt_headers
+	PE_(image_data_directory)         *data_directory;  //not free this just pointer into nt_headers
 	PE_(image_section_header)         *section_header;
 	PE_(image_export_directory)       *export_directory;
 	PE_(image_import_directory)       *import_directory;
