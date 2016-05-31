@@ -303,12 +303,27 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	RAnalOp op;
 	ut64 addr;
 	RAnalHint *hint;
+	// Variables required for setting up ESIL to REIL conversion
+	RAnalEsil *esil;
+	int	romem = r_config_get_i (core->config, "esil.romem");
+	int	stats = r_config_get_i (core->config, "esil.stats");
+	int	iotrap = r_config_get_i (core->config, "esil.iotrap");
+	int	stacksize = r_config_get_i (core->config, "esil.stacksize");
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	const char *color = "";
 	if (use_color)
 		color = core->cons->pal.label;
-	if (fmt == 'j')
+	if (fmt == 'j') {
 		r_cons_printf ("[");
+	} else if (fmt == 'r') {
+		// Setup for ESIL to REIL conversion
+		esil = r_anal_esil_new (stacksize, iotrap);
+		if (!esil)
+			return;
+
+		r_anal_esil_to_reil_setup (esil, core->anal, romem, stats);
+		r_anal_esil_set_pc (esil, core->offset);
+	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
 		// TODO: use more anal hints
@@ -339,7 +354,12 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_cons_printf ("%s\n", R_STRBUF_SAFEGET (&op.esil));
 			}
 		} else if (fmt == 'r') {
-			// TODO
+			if (*R_STRBUF_SAFEGET (&op.esil)) {
+				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
+				r_anal_esil_dumpstack (esil);
+				r_anal_esil_stack_free (esil);
+				r_cons_newline ();
+			}
 		} else if (fmt == 'j') {
 			r_cons_printf ("{\"opcode\": \"%s\",", asmop.buf_asm);
 			if (hint && hint->opcode)
@@ -455,13 +475,15 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
 		//free (hint);
 		r_anal_hint_free (hint);
-		if (((idx + ret) < len) && (!nops || (i + 1) < nops) && fmt != 'e')
+		if (((idx + ret) < len) && (!nops || (i + 1) < nops) && fmt != 'e' && fmt != 'r')
 			r_cons_printf (",");
 	}
 
 	if (fmt == 'j') {
 		r_cons_printf ("]");
 		r_cons_newline ();
+	} else if (fmt == 'r') {
+		r_anal_esil_free (esil);
 	}
 }
 
@@ -2669,6 +2691,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			"Usage:", "ao[e?] [len]", "Analyze Opcodes",
 			"aoj", " N", "display opcode analysis information in JSON for N opcodes",
 			"aoe", " N", "display esil form for N opcodes",
+			"aor", " N", "display reil form for N opcodes",
 			"aos", " [esil]", "show sdb representation of esil expression (TODO)",
 			"ao", " 5", "display opcode analysis of 5 opcodes",
 			"ao*", "", "display opcode in r commands",
