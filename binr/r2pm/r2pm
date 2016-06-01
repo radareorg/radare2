@@ -23,7 +23,7 @@ WRKDIR="$PWD"
 export LIBEXT="`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`"
 export R2HOMEDIR="`r2 -hh | grep '^ RHOMEDIR' | awk '{print $2}' 2> /dev/null`"
 #[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2HOMEDIR}"
-R2PM_PLUGDIR="${R2HOMEDIR}/plugins/"
+export R2PM_PLUGDIR="${R2HOMEDIR}/plugins/"
 # bindir
 export R2PM_HOMEBINDIR="${R2PM_PLUGDIR}/bin/"
 export R2PM_SYSBINDIR="${BINDIR}"
@@ -233,7 +233,7 @@ case "$1" in
 -gi|global-install)
 	GLOBAL=1
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
-	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/plugins/"
+	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
 	#TODO set R2PM_ETCD= to a "global" radare2rc.d
@@ -245,7 +245,7 @@ case "$1" in
 -gu|global-uninstall)
 	GLOBAL=1
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
-	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/plugins/"
+	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
 	#TODO set R2PM_ETCD= to a "global" radare2rc.d
