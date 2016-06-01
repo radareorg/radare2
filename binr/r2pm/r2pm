@@ -46,6 +46,7 @@ TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
 IS_SYSPKG=0
 R2PM_USRDIR="${HOME}/.config/radare2/r2pm/"
+R2PM_ETCD="${R2HOMEDIR}/radare2/radare2rc.d"
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_PREFIX}/lib/radare2/last"
 
@@ -235,6 +236,7 @@ case "$1" in
 	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/plugins/"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
+	#TODO set R2PM_ETCD= to a "global" radare2rc.d
 	if [ ! -d "${R2PM_PLUGDIR}" ]; then
 		mkdir -p "${R2PM_PLUGDIR}"
 	fi
@@ -246,6 +248,7 @@ case "$1" in
 	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/plugins/"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
+	#TODO set R2PM_ETCD= to a "global" radare2rc.d
 	r2pm_uninstall $@
 	;;
 -c|clean)
