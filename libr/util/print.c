@@ -1494,3 +1494,7 @@ R_API int r_print_row_at_off (RPrint *p, ut32 offset) {
 	}
 	return tt != UT32_MAX ? i - 1 : -1;
 }
+
+R_API int r_print_get_cursor(RPrint *p) {
+	return p->cur_enabled?p->cur:0;
+}

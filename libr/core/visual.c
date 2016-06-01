@@ -1067,7 +1067,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		off = r_core_get_asmqjmps (core, chbuf);
 		if (off != UT64_MAX) {
 			int delta = R_ABS ((st64)off-(st64)offset);
-			r_io_sundo_push (core->io, offset);
+			r_io_sundo_push (core->io, offset, r_print_get_cursor (core->print));
 			if (core->print->cur_enabled && delta<100) {
 				core->print->cur = delta;
 			} else {
@@ -1102,14 +1102,15 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 						if (core->print->cur_enabled) {
 							int delta = R_ABS ((st64)op->jump-(st64)offset);
 							if ( op->jump < core->offset || op->jump >= core->print->screen_bounds) {
-								r_io_sundo_push (core->io, offset);
+								r_io_sundo_push (core->io, offset, r_print_get_cursor (core->print));
 								r_core_visual_seek_animation (core, op->jump);
 								core->print->cur = 0;
 							} else {
+								r_io_sundo_push (core->io, offset, r_print_get_cursor (core->print));
 								core->print->cur = delta;
 							}
 						} else {
-							r_io_sundo_push (core->io, offset);
+							r_io_sundo_push (core->io, offset, 0);
 							r_core_visual_seek_animation (core, op->jump);
 						}
 					}
@@ -1407,7 +1408,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				offset = 0;
 			r_core_seek (core, offset, 1);
 		} else r_core_seek (core, 0, 1);
-		r_io_sundo_push (core->io, core->offset);
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		break;
 	case 'G':
 		ret = 0;
@@ -1435,7 +1436,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			ret = -1;
 		}
 		if (ret != -1)
-			r_io_sundo_push (core->io, core->offset);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		break;
 	case 'h':
 		if (core->print->cur_enabled) {
@@ -1706,15 +1707,15 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '>':
 		r_core_seek_align (core, core->blocksize, 1);
-		r_io_sundo_push (core->io, core->offset);
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		break;
 	case '<':
 		r_core_seek_align (core, core->blocksize, -1);
 		r_core_seek_align (core, core->blocksize, -1);
-		r_io_sundo_push (core->io, core->offset);
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		break;
 	case '.':
-		r_io_sundo_push (core->io, core->offset);
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		if (core->print->cur_enabled) {
 			r_core_seek (core, core->offset+core->print->cur, 1);
 			core->print->cur = 0;
@@ -1810,10 +1811,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'u':
 		{
-		ut64 off = r_io_sundo (core->io, core->offset);
-		if (off != UT64_MAX) {
-			r_core_visual_seek_animation (core, off);
-			reset_print_cur (core->print);
+		RUndos *undo = r_io_sundo (core->io, core->offset);
+		if (undo) {
+			r_core_visual_seek_animation (core, undo->off);
+			core->print->cur = undo->cursor;
 		} else {
 			eprintf ("Cannot undo\n");
 		}
@@ -1821,9 +1822,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'U':
 		{
-		ut64 off = r_io_sundo_redo (core->io);
-		if (off != UT64_MAX) {
-			r_core_visual_seek_animation (core, off);
+		RUndos *undo = r_io_sundo_redo (core->io);
+		if (undo) {
+			r_core_visual_seek_animation (core, undo->off);
 			reset_print_cur (core->print);
 		}
 		}

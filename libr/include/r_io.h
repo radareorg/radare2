@@ -84,6 +84,11 @@ typedef struct {
 #define R_IO_DESC_TYPE_OPENED 1
 #define R_IO_DESC_TYPE_CLOSED 0
 
+typedef struct r_undo_t {
+	ut64 off;
+	int cursor;
+} RUndos;
+
 /* stores write and seek changes */
 #define R_IO_UNDOS 64
 typedef struct r_io_undo_t {
@@ -96,7 +101,7 @@ typedef struct r_io_undo_t {
 	int idx;
 	int undos; /* available undos */
 	int redos; /* available redos */
-	ut64 seek[R_IO_UNDOS];
+	RUndos seek[R_IO_UNDOS];
 	/*int fd[R_IO_UNDOS]; // XXX: Must be RIODesc* */
 } RIOUndo;
 
@@ -423,9 +428,9 @@ R_API RIOSection * r_io_section_get_first_in_paddr_range(RIO *io, ut64 addr, ut6
 R_API int r_io_undo_init(RIO *io);
 R_API void r_io_undo_enable(RIO *io, int seek, int write);
 /* seek undo */
-R_API ut64 r_io_sundo(RIO *io, ut64 offset);
-R_API ut64 r_io_sundo_redo(RIO *io);
-R_API void r_io_sundo_push(RIO *io, ut64 off);
+R_API RUndos *r_io_sundo(RIO *io, ut64 offset);
+R_API RUndos *r_io_sundo_redo(RIO *io);
+R_API void r_io_sundo_push(RIO *io, ut64 off, int cursor);
 R_API void r_io_sundo_reset(RIO *io);
 R_API void r_io_sundo_list(RIO *io, int mode);
 /* write undo */
