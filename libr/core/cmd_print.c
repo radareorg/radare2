@@ -2770,7 +2770,7 @@ static int cmd_print(void *data, const char *input) {
 						const int bs = core->blocksize;
 						int instr_len;
 						r_core_asm_bwdis_len (core, &instr_len, &addr, l);
-						ut32 prevaddr = core->offset;
+						ut64 prevaddr = core->offset;
 						r_core_seek(core, prevaddr - instr_len, true);
 						block = realloc (block, R_MAX(instr_len, bs));
 						memcpy (block, core->block, bs);
