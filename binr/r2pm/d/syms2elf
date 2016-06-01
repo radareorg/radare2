@@ -4,12 +4,12 @@ R2PM_GIT "https://github.com/danigargu/ida-syms2elf"
 R2PM_DESC "[r2-r2pipe-python] Export recognized symbols to the ELF symbol table"
 
 R2PM_INSTALL() {
-	mkdir -p "${R2_RCD}"
-	echo '$syms2elf=#!pipe python '"'`pwd`'"'/syms2elf.py' > "${R2_RCD}/syms2elf"
+	mkdir -p "${R2PM_ETCD}"
+	echo '$syms2elf=#!pipe python '"'`pwd`'"'/syms2elf.py' > "${R2PM_ETCD}/syms2elf"
 }
 
 R2PM_UNINSTALL() {
-	rm -f "${R2_RCD}"/syms2elf
+	rm -f "${R2PM_ETCD}"/syms2elf
 }
 
 R2PM_END
