@@ -140,7 +140,7 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 			if (scale > 1) {
 				snprintf (buf_, sizeof (buf), "%s%s,%d,*,", buf, index, scale);
 			} else {
-				snprintf (buf_, sizeof (buf), "%s%s,", buf, index, scale);
+				snprintf (buf_, sizeof (buf), "%s%s,", buf, index);
 			}
 			strncpy (buf, buf_, sizeof (buf));
 			component_count++;
@@ -1859,8 +1859,6 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			if (INSOP(0).mem.base == X86_REG_RIP) {
 				op->ptr += addr + insn->size;
 				op->refptr = 8;
-			} else {
-				cs_x86_op in = INSOP(0);
 			}
 			break;
 		default:
@@ -1884,8 +1882,6 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			if (INSOP(0).mem.base == X86_REG_RIP) {
 				op->ptr += addr + insn->size;
 				op->refptr = 8;
-			} else {
-				cs_x86_op in = INSOP(0);
 			}
 			break;
 		case X86_OP_REG:

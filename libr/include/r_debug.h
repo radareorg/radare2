@@ -409,7 +409,7 @@ R_API RDebugTracepoint *r_debug_trace_get(RDebug *dbg, ut64 addr);
 R_API void r_debug_trace_list(RDebug *dbg, int mode);
 R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size);
 R_API RDebugTrace *r_debug_trace_new(void);
-R_API void r_debug_trace_free(RDebug *dbg);
+R_API void r_debug_trace_free(RDebugTrace *dbg);
 R_API int r_debug_trace_tag(RDebug *dbg, int tag);
 R_API int r_debug_child_fork(RDebug *dbg);
 R_API int r_debug_child_clone(RDebug *dbg);

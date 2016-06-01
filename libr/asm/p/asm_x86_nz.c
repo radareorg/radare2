@@ -1098,7 +1098,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 		} else if (!strcmp (op, "mov")) {
 			ut64 dst;
 			ut8 *ptr;
-			int pfx, arg0;
+			int pfx;
 			int N;
 			char *delta = NULL;
 			char *sib = NULL;
