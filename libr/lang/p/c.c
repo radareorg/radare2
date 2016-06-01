@@ -76,10 +76,8 @@ static RLangPlugin r_lang_plugin_c = {
 	.name = "c",
 	.ext = "c",
 	.desc = "C language extension",
-	.help = NULL,
+	.license = "LGPL",
 	.run = lang_c_run,
 	.init = (void*)lang_c_init,
-	.fini = NULL,
 	.run_file = (void*)lang_c_file,
-	.set_argv = NULL,
 };

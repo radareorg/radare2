@@ -285,7 +285,7 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 	for (entries = 0; (ut8*)dyn < ((ut8*)tmp + dyn_size); dyn++) {
 	    	entries++;
 		if (dyn->d_tag == DT_NULL) break;
-		if ((ut8*)(dyn+1) > ((ut8*)bin->b->buf + bin->size))
+		if ((ut8*)(dyn+2) > ((ut8*)bin->b->buf + bin->size))
 		    	return false;
 	}
 	if (entries < 1) return false;

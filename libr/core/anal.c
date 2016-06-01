@@ -621,6 +621,18 @@ err_op:
 	return NULL;
 }
 
+static void print_hint_h_format(RAnalHint* hint) {
+	r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", hint->addr, hint->addr+hint->size);
+	HINTCMD (hint, arch, " arch='%s'", false);
+	HINTCMD (hint, bits, " bits=%d", false);
+	HINTCMD (hint, size, " size=%d", false);
+	HINTCMD (hint, opcode, " opcode='%s'", false);
+	HINTCMD (hint, syntax, " syntax='%s'", false);
+	HINTCMD (hint, immbase, " immbase=%d", false);
+	HINTCMD (hint, esil, " esil='%s'", false);
+	r_cons_newline ();
+}
+
 static int cb(void *p, const char *k, const char *v) {
 	RAnalHint *hint;
 	HintListState *hls = p;
@@ -653,19 +665,20 @@ static int cb(void *p, const char *k, const char *v) {
 		r_cons_printf ("}");
 		break;
 	default:
-		r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", hint->addr, hint->addr+hint->size);
-		HINTCMD (hint, arch, " arch='%s'", false);
-		HINTCMD (hint, bits, " bits=%d", false);
-		HINTCMD (hint, size, " size=%d", false);
-		HINTCMD (hint, opcode, " opcode='%s'", false);
-		HINTCMD (hint, syntax, " syntax='%s'", false);
-		HINTCMD (hint, immbase, " immbase=%d", false);
-		HINTCMD (hint, esil, " esil='%s'", false);
-		r_cons_newline ();
+		print_hint_h_format(hint);
+		break;
 	}
 	hls->count++;
 	free (hint);
 	return 1;
+}
+
+R_API void r_core_anal_hint_print (RAnal* a, ut64 addr) {
+	RAnalHint *hint = r_anal_hint_get(a, addr);
+
+	if (!hint) return;
+	print_hint_h_format(hint);
+	free(hint);
 }
 
 R_API void r_core_anal_hint_list (RAnal *a, int mode) {

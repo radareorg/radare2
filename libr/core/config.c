@@ -171,6 +171,13 @@ static int cb_analrecont(void *user, void *data) {
 	return true;
 }
 
+static int cb_asmassembler(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	r_asm_use_assembler (core->assembler, node->value);
+	return true;
+}
+
 static int cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RCore *core = (RCore *) user;
@@ -1540,6 +1547,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.family", "false", "Show family name in disasm");
 	SETPREF("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
 	SETI("asm.symbol.col", 40, "Columns width to show asm.section");
+	SETCB("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
 	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be used by asm");
 	SETCB("asm.features", "", &cb_asmfeatures, "Specify supported features by the target CPU (=? for help)");
 	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");

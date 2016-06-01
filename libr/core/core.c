@@ -1293,6 +1293,7 @@ R_API int r_core_init(RCore *core) {
 	core->cons->num = core->num;
 	core->lang = r_lang_new ();
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
+	core->lang->cmdf = (int (*)(void *, const char *, ...))r_core_cmdf;
 	core->cons->editor = (RConsEditorCallback)r_core_editor;
 	core->cons->user = (void*)core;
 	core->lang->cb_printf = r_cons_printf;

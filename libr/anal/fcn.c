@@ -233,17 +233,20 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 		switch (sz) {
 		case 1: jmpptr = r_read_le8 (jmptbl + offs); break;
 		case 2: jmpptr = r_read_le16 (jmptbl + offs); break;
-		case 4: jmpptr = ptr + (st32) r_read_le32 (jmptbl + offs); break;
-		case 8: jmpptr = ptr + (st32) r_read_le32 (jmptbl + offs); break; // XXX
+		case 4: jmpptr = r_read_le32 (jmptbl + offs); break;
+		case 8: jmpptr = r_read_le32 (jmptbl + offs); break; // XXX
 		default: jmpptr = r_read_le64 (jmptbl + offs); break;
+		}
+		if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
+			jmpptr = ptr + (st32)jmpptr;
+			if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
+				break;
+			}
 		}
 		if (anal->limit) {
 			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to) {
 				break;
 			}
-		}
-		if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
-			break;
 		}
 		// if (jmpptr < ip - MAX_JMPTBL_JMP || jmpptr > ip + MAX_JMPTBL_JMP) { break; }
 		recurseAt (jmpptr);

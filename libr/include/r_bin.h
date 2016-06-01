@@ -555,7 +555,7 @@ R_API void r_bin_force_plugin (RBin *bin, const char *pname);
 
 /* dbginfo.c */
 R_API int r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line);
-R_API char *r_bin_addr2text(RBin *bin, ut64 addr);
+R_API char *r_bin_addr2text(RBin *bin, ut64 addr, bool origin);
 R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr);
 /* bin_write.c */
 R_API bool r_bin_wr_addlib(RBin *bin, const char *lib);
