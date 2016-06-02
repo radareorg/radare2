@@ -303,12 +303,13 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	RAnalOp op;
 	ut64 addr;
 	RAnalHint *hint;
+	const char *esilstr;
 	// Variables required for setting up ESIL to REIL conversion
 	RAnalEsil *esil;
-	int	romem = r_config_get_i (core->config, "esil.romem");
-	int	stats = r_config_get_i (core->config, "esil.stats");
-	int	iotrap = r_config_get_i (core->config, "esil.iotrap");
-	int	stacksize = r_config_get_i (core->config, "esil.stacksize");
+	int romem = r_config_get_i (core->config, "esil.romem");
+	int stats = r_config_get_i (core->config, "esil.stats");
+	int iotrap = r_config_get_i (core->config, "esil.iotrap");
+	int stacksize = r_config_get_i (core->config, "esil.stacksize");
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	const char *color = "";
 	if (use_color)
@@ -326,6 +327,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
+		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		// TODO: use more anal hints
 		hint = r_anal_hint_get (core->anal, addr);
 		r_asm_set_pc (core->assembler, addr);
@@ -350,15 +352,23 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			} else r_cons_printf ("Unknown opcode\n");
 			free (opname);
 		} else if (fmt == 'e') {
-			if (*R_STRBUF_SAFEGET (&op.esil)) {
-				r_cons_printf ("%s\n", R_STRBUF_SAFEGET (&op.esil));
+			if (*esilstr) {
+				if (use_color) {
+					r_cons_printf ("%s0x%" PFMT64x Color_RESET " %s\n", color, core->offset + idx, esilstr);
+				} else {
+					r_cons_printf ("0x%" PFMT64x " %s\n", core->offset + idx, esilstr);
+				}
 			}
 		} else if (fmt == 'r') {
-			if (*R_STRBUF_SAFEGET (&op.esil)) {
-				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
+			if (*esilstr) {
+				if (use_color) {
+					r_cons_printf ("%s0x%" PFMT64x Color_RESET "\n", color, core->offset + idx);
+				} else {
+					r_cons_printf ("0x%" PFMT64x "\n", core->offset + idx);
+				}
+				r_anal_esil_parse (esil, esilstr);
 				r_anal_esil_dumpstack (esil);
 				r_anal_esil_stack_free (esil);
-				r_cons_newline ();
 			}
 		} else if (fmt == 'j') {
 			r_cons_printf ("{\"opcode\": \"%s\",", asmop.buf_asm);
@@ -380,9 +390,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.reg) {
 				r_cons_printf ("\"reg\": \"%s\",", op.reg);
 			}
-			if (*R_STRBUF_SAFEGET (&op.esil)) {
+			if (*esilstr) {
 				r_cons_printf ("\"esil\": \"%s\",",
-					R_STRBUF_SAFEGET (&op.esil));
+					esilstr);
 			}
 			if (hint && hint->jump != UT64_MAX)
 				op.jump = hint->jump;
@@ -449,8 +459,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			if (op.reg)
 				printline ("reg", "%s\n", op.reg);
-			if (*R_STRBUF_SAFEGET (&op.esil))
-				printline ("esil", "%s\n", R_STRBUF_SAFEGET (&op.esil));
+			if (*esilstr)
+				printline ("esil", "%s\n", esilstr);
 			if (hint && hint->jump != UT64_MAX)
 				op.jump = hint->jump;
 			if (op.jump != UT64_MAX)
@@ -687,10 +697,11 @@ static void r_core_anal_nofunclist  (RCore *core, const char *input) {
 			// We only print a region is its size is bigger than 15 bytes
 			if (chunk_size >= minlen){
 				fcn = r_anal_get_fcn_in (core->anal, base_addr+chunk_offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-				if (fcn)
+				if (fcn) {
 					r_cons_printf ("0x%08"PFMT64x"  %6d   %s\n", base_addr+chunk_offset, chunk_size, fcn->name);
-				else
+				} else {
 					r_cons_printf ("0x%08"PFMT64x"  %6d\n", base_addr+chunk_offset, chunk_size);
+				}
 			}
 			chunk_size = 0;
 			chunk_offset = i+1;
