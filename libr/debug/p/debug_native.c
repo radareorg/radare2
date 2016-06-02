@@ -63,7 +63,9 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 
 #elif __linux__
 #include "native/linux/linux_debug.h"
+#if __x86_64__
 #include "native/linux/linux_coredump.h"
+#endif
 #else // OS
 
 #warning Unsupported debugging platform
