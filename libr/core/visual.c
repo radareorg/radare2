@@ -1814,7 +1814,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'u':
 		{
-		RUndos *undo = r_io_sundo (core->io, core->offset);
+		RIOUndos *undo = r_io_sundo (core->io, core->offset);
 		if (undo) {
 			r_core_visual_seek_animation (core, undo->off);
 			core->print->cur = undo->cursor;
@@ -1825,7 +1825,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'U':
 		{
-		RUndos *undo = r_io_sundo_redo (core->io);
+		RIOUndos *undo = r_io_sundo_redo (core->io);
 		if (undo) {
 			r_core_visual_seek_animation (core, undo->off);
 			reset_print_cur (core->print);

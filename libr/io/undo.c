@@ -29,8 +29,8 @@ R_API void r_io_undo_enable(RIO *io, int s, int w) {
 
 /* undo seekz */
 
-R_API RUndos *r_io_sundo(RIO *io, ut64 offset) {
-	RUndos *undo;
+R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset) {
+	RIOUndos *undo;
 
 	if (!io->undo.s_enable || !io->undo.undos)
 		return NULL;
@@ -51,8 +51,8 @@ R_API RUndos *r_io_sundo(RIO *io, ut64 offset) {
 	return undo;
 }
 
-R_API RUndos *r_io_sundo_redo(RIO *io) {
-	RUndos *undo;
+R_API RIOUndos *r_io_sundo_redo(RIO *io) {
+	RIOUndos *undo;
 
 	if (!io->undo.s_enable || !io->undo.redos)
 		return NULL;
@@ -68,7 +68,7 @@ R_API RUndos *r_io_sundo_redo(RIO *io) {
 
 R_API void r_io_sundo_push(RIO *io, ut64 off, int cursor) {
 	if (!io->undo.s_enable) return;
-	RUndos *undo;
+	RIOUndos *undo;
 	//the first insert
 	if (io->undo.idx > 0) {
 		undo = &io->undo.seek[io->undo.idx - 1];
@@ -121,7 +121,7 @@ R_API void r_io_sundo_list(RIO *io, int mode) {
 	}
 	for (i = start; i < end || j == 0; i = (i + 1) % R_IO_UNDOS) {
 		int idx = (j< undos)? undos - j - 1: j - undos - 1;
-		RUndos *undo = &io->undo.seek[i];
+		RIOUndos *undo = &io->undo.seek[i];
 		ut64 addr = undo->off;
 		ut64 notLast = j+1<undos && (i != end - 1);
 		switch (mode) {

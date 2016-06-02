@@ -298,7 +298,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 				r_core_seek_delta (core, delta);
 			} else {
-				RUndos *undo = r_io_sundo_redo (core->io);
+				RIOUndos *undo = r_io_sundo_redo (core->io);
 				if (undo != NULL)
 					r_core_seek (core, undo->off, 0);
 			}
@@ -309,7 +309,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 				r_core_seek_delta (core, delta);
 			} else {
-				RUndos *undo = r_io_sundo (core->io, core->offset);
+				RIOUndos *undo = r_io_sundo (core->io, core->offset);
 				if (undo) {
 					r_core_seek (core, undo->off, 0);
 				}
