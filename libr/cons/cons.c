@@ -726,14 +726,24 @@ R_API int r_cons_get_cursor(int *rows) {
 R_API bool r_cons_isatty() {
 #if __UNIX__ || __CYGWIN__
 	struct winsize win = { 0 };
-        if (isatty (1) && !ioctl (0, TIOCGWINSZ, &win)) {
-                if ((win.ws_col == 0) || (win.ws_row == 0)) {
-                        const char *tty = ttyname (1);
-			return r_file_exists (tty);
-                }
-        }
+	const char *tty;
+	struct stat sb;
+
+	if (!isatty (1))
+		return false;
+	if (ioctl (1, TIOCGWINSZ, &win))
+		return false;
+	if ((win.ws_col == 0) || (win.ws_row == 0))
+		return false;
+	tty = ttyname (1);
+	if (!tty)
+		return false;
+	if (stat(tty, &sb) || !S_ISCHR(sb.st_mode))
+		return false;
+	return true;
 #endif
-        return false;
+	/* non-UNIX do not have ttys */
+	return false;
 }
 
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
