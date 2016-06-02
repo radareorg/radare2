@@ -892,7 +892,11 @@ int main(int argc, char **argv, char **envp) {
 		}
 		r_cons_flush ();
 	}
-
+#if __UNIX__
+	if (!r_cons_isatty ()) {
+		r_config_set_i (r.config, "scr.color", 0);
+	}
+#endif
 	ret = run_commands (cmds, files, quiet);
 	r_list_free (cmds);
 	r_list_free (files);
@@ -914,11 +918,6 @@ int main(int argc, char **argv, char **envp) {
 		r_config_set (r.config, "scr.interactive", "false");
 		r_config_set (r.config, "scr.prompt", "false");
 	}
-#if __UNIX__
-	if (!r_cons_isatty ()) {
-		r_config_set_i (r.config, "scr.color", 0);
-	}
-#endif
 	r.num->value = 0;
 	if (patchfile) {
 		char *data = r_file_slurp (patchfile, NULL);
