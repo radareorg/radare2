@@ -874,7 +874,11 @@ int main(int argc, char **argv, char **envp) {
 		r_config_set (r.config, "scr.interactive", "false");
 		r_config_set (r.config, "scr.prompt", "false");
 	}
-
+#if __UNIX__
+	if (!r_cons_isatty ()) {
+		r_config_set_i (r.config, "scr.color", 0);
+	}
+#endif
 	r.num->value = 0;
 	if (patchfile) {
 		char *data = r_file_slurp (patchfile, NULL);
@@ -942,13 +946,15 @@ int main(int argc, char **argv, char **envp) {
 		}
 	}
 #if __UNIX__
-	if (isatty (0)) {
+	if (r_cons_isatty ()) {
 #endif
 		 if (r_config_get_i (r.config, "scr.histsave") &&
 				r_config_get_i (r.config, "scr.interactive") &&
 				!r_sandbox_enable (0))
 			r_line_hist_save (R2_HOMEDIR"/history");
 #if __UNIX__
+	} else {
+		r_config_set_i (r.config, "scr.color", 0);
 	}
 #endif
 	// TODO: kill thread

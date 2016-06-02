@@ -697,6 +697,19 @@ R_API int r_cons_get_cursor(int *rows) {
 	return col;
 }
 
+R_API bool r_cons_isatty() {
+#if __UNIX__ || __CYGWIN__
+	struct winsize win = { 0 };
+        if (isatty (1) && !ioctl (0, TIOCGWINSZ, &win)) {
+                if ((win.ws_col == 0) || (win.ws_row == 0)) {
+                        const char *tty = ttyname (1);
+			return r_file_exists (tty);
+                }
+        }
+#endif
+        return false;
+}
+
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
 R_API int r_cons_get_size(int *rows) {
 #if __WINDOWS__ && !__CYGWIN__
@@ -712,8 +725,8 @@ R_API int r_cons_get_size(int *rows) {
 	struct winsize win = { 0 };
 	if (isatty (0) && ioctl (0, TIOCGWINSZ, &win) == 0) {
 		if ((win.ws_col == 0) || (win.ws_row == 0)) {
-			// TODO: use ttyname() ?
-			int fd = open ("/dev/tty", O_RDONLY);
+			const char *tty = ttyname (1);
+			int fd = open (tty, O_RDONLY);
 			if (fd != -1) {
 				int ret = ioctl (fd, TIOCGWINSZ, &win);
 				if ((ret != 0) || (win.ws_col == 0) || (win.ws_row == 0)) {
@@ -749,10 +762,12 @@ R_API int r_cons_get_size(int *rows) {
 	I.rows = -1;
 	I.columns = -1;
 #endif
-	if (I.rows<0)
+	if (I.rows < 0) {
 		I.rows = 0;
-	if (I.columns<0)
+	}
+	if (I.columns < 0) {
 		I.columns = 0;
+	}
 	if (I.force_columns) I.columns = I.force_columns;
 	if (I.force_rows) I.rows = I.force_rows;
 	if (I.fix_columns) I.columns += I.fix_columns;
