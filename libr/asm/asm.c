@@ -230,15 +230,17 @@ R_API int r_asm_is_valid(RAsm *a, const char *name) {
 R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
-	if (a && name && *name) {
-		r_list_foreach (a->plugins, iter, h) {
-			if (h->assemble && !strcmp (h->name, name)) {
-				a->acur = h;
-				return true;
+	if (a) {
+		if (name && *name) {
+			r_list_foreach (a->plugins, iter, h) {
+				if (h->assemble && !strcmp (h->name, name)) {
+					a->acur = h;
+					return true;
+				}
 			}
 		}
+		a->acur = NULL;
 	}
-	a->acur = NULL;
 	return false;
 }
 

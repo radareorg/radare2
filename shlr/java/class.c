@@ -4829,6 +4829,7 @@ R_API ut8 * r_bin_java_cp_get_fref_bytes (RBinJavaObj *bin, ut32 *out_sz, ut8 ta
 		if (fnt_bytes) {
 			ut8 *tbuf = malloc (fnt_len + *out_sz);
 			if (!tbuf) {
+				free (bytes);
 				free (fnt_bytes);
 				return NULL;
 			}

@@ -124,7 +124,7 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 	case X86_OP_MEM:
 		{
 		// address = (base + (index * scale) + offset)
-		char buf_[64];
+		char buf_[64] = {0};
 		int component_count = 0;
 		const char *base = cs_reg_name (handle, op.mem.base);
 		const char *index = cs_reg_name (handle, op.mem.index);

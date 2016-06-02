@@ -169,12 +169,15 @@ R_API bool r_fs_umount(RFS *fs, const char *path) {
 }
 
 R_API RList *r_fs_root(RFS *fs, const char *p) {
-	RList *roots = r_list_new ();
+	RList *roots;
 	RFSRoot *root;
 	RListIter *iter;
 	int len, olen;
 	char *path = strdup (p);
-	if (!path) return NULL;
+	if (!path) {
+		return NULL;
+	}
+	roots = r_list_new ();
 	r_str_chop_path (path);
 	r_list_foreach (fs->roots, iter, root) {
 		len = strlen (root->path);

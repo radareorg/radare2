@@ -210,6 +210,8 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 	int *v1 = (int*) calloc ((lb + 1), sizeof (int));	
 	
 	if (!a || !b || la < 1 || lb < 1) {
+		free (v0);
+		free (v1);
 		return false;
 	}
 
@@ -220,6 +222,8 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 		if (similarity) {
 			*similarity = 1.0;
 		}
+		free (v0);
+		free (v1);
 		return true;
 	}
 
@@ -254,5 +258,7 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 			*similarity = (double)1 - diff;
 		}
 	}
+	free (v0);
+	free (v1);
 	return true;
 }

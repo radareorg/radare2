@@ -166,7 +166,9 @@ int r_io_zip_slurp_file(RIOZipFileObj *zfo) {
 	struct zip_file *zFile = NULL;
 	struct zip * zipArch ;
 
-	if (!zfo) return res;
+	if (!zfo) {
+		return res;
+	}
 	zipArch = r_io_zip_open_archive (
 		zfo->archivename, zfo->flags,
 		zfo->mode, zfo->rw);
@@ -202,9 +204,11 @@ RList * r_io_zip_get_files(char *archivename, ut32 flags, int mode, int rw) {
 	char *name;
 	//eprintf("Slurping file");
 	if (zipArch) {
-		files = r_list_new ();
-		if (!files) return NULL;
-		files->free = free;
+		files = r_list_newf (free);
+		if (!files) {
+			zip_close (zipArch);
+			return NULL;
+		}
 		num_entries = zip_get_num_files (zipArch);
 
 		for (i=0; i < num_entries; i++) {
@@ -249,8 +253,9 @@ int r_io_zip_flush_file(RIOZipFileObj *zfo) {
 
 void r_io_zip_free_zipfileobj(RIOZipFileObj *zfo) {
 	if (!zfo) return;
-	if (zfo->modified)
+	if (zfo->modified) {
 		r_io_zip_flush_file (zfo);
+	}
 	free (zfo->name);
 	free (zfo->password);
 	r_buf_free (zfo->b);
