@@ -1,9 +1,9 @@
 #!/bin/sh
 fileslist=(
 ./autogen.sh
-./binr/old.rarc2/rarc2-tool
 ./binr/ragg2/ragg2-cc
 ./binr/rax2/test-rax2.sh
+./binr/r2pm/r2pm
 ./configure
 ./configure.hook
 ./configure-plugins
@@ -101,6 +101,7 @@ fileslist=(
 ./sys/python-r2pipe.sh
 ./sys/python.sh
 ./sys/rebuild.sh
+./sys/shellcheck.sh
 ./sys/static.sh
 ./sys/swig.sh
 ./sys/sync.sh
