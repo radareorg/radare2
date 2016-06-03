@@ -419,11 +419,10 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 			//  - Set rax to 100 without side-effects. ("$100,rax,=")
 			char *endptr = NULL;
 			ut64 imm = strtoull (str + 1, &endptr, 10);
-			if (endptr == NULL) {
-				*num = imm;
-				return true;
+			if (endptr == str + 1) {
+				return false;
 			}
-			return false;
+			*num = imm;
 		}
 	}
 	return true;
