@@ -34,26 +34,57 @@ static void flag_every_function(RCore *core) {
 }
 
 static void var_help(RCore *core, char ch) {
-	const char *help_msg[] = {
-		"Usage:", "af[aAv]", " [idx] [type] [name]",
-		"af[aeAv]", "", "list stack based/fastcall function arguments, variables",
-		"af[aeAv]*", "", "same as af[aAv] but in r2 commands",
-		"af[aeAv]", " [idx] [name] ([type])", "define argument/variable with name and type and offset id",
-		"af[aeAv]n", " [old_name] [new_name]", "rename function argument / variable",
-		"af[aeAv]t", " [name] [new_type]", "change type for given argument / variable",
-		"af[aeAv]j", "", "return list of function arguments /variables in JSON format",
-		"af[aeAv]-", " [idx]", "delete argument/ variables at the given index",
+	const char *help_sp[] = {
+		"Usage:", "afe", " [idx] [type] [name]",
+		"afe", "", "list stack based arguments and variables",
+		"afe*", "", "same as afe but in r2 commands",
+		"afe", " [idx] [name] [type]", "define stack based arguments,variables",
+		"afen", " [old_name] [new_name]", "rename stack based argument or variable",
+		"afet", " [name] [new_type]", "change type for given argument or variable",
+		"afej", "", "return list of stack based arguments and variables in JSON format",
+		"afe-", " [name]", "delete stack based argument or variables with the given name",
+		"afeg", " [idx] [addr]", "define var get reference",
+		"afes", " [idx] [addr]", "define var set reference",
+		NULL
+	};
+	const char *help_bp[] = {
+		"Usage:", "afa", " [idx] [type] [name]",
+		"afa", "", "list stack based arguments, variables",
+		"afa*", "", "same as afa but in r2 commands",
+		"afa", " [idx] [name] ([type])", "define stack based argument, variable",
+		"afan", " [old_name] [new_name]", "rename stack based argument or variable",
+		"afat", " [name] [new_type]", "change type for given stack based argument or variable",
+		"afaj", "", "return list of stack based arguments, variables in JSON format",
+		"afa-", " [name]", "delete argument/ variables at the given name",
 		"afag", " [idx] [addr]", "define var get reference",
 		"afas", " [idx] [addr]", "define var set reference",
-		"afvg", " [idx] [addr]", "define var get reference",
-		"afvs", " [idx] [addr]", "define var set reference",
-		"afx", "[-] [from] [to]", "manipulate function xrefs",
-		"afM", "", "print byte map of functions coverage",
-		NULL };
-	if (ch == 'a' || ch == 'A' || ch == 'v') {
-		r_core_cmd_help (core, help_msg);
-	} else {
-		eprintf ("See afv? and afa?\n");
+		NULL
+	};
+	const char *help_reg[] = {
+		"Usage:", "afv", " [reg] [type] [name]",
+		"afv", "", "list register based arguments",
+		"afv*", "", "same as afv but in r2 commands",
+		"afv", " [reg] [name] ([type])", "define register arguments",
+		"afvn", " [old_name] [new_name]", "rename argument",
+		"afvt", " [name] [new_type]", "change type for given argument",
+		"afvj", "", "return list of register arguments in JSON format",
+		"afv-", " [name]", "delete register arguments at the given index",
+		"afvg", " [reg] [addr]", "define var get reference",
+		"afvs", " [reg] [addr]", "define var set reference",
+		NULL
+	};
+	switch (ch) {
+	case 'a':
+		r_core_cmd_help (core, help_bp);
+		break;
+	case 'e':
+		r_core_cmd_help (core, help_sp);
+		break;
+	case 'v':
+		r_core_cmd_help (core, help_reg);
+		break;
+	default:
+		eprintf ("See afv?, afe? and afa?\n");
 	}
 }
 
@@ -66,19 +97,12 @@ static int var_cmd(RCore *core, const char *str) {
 	str = (const char *)ostr;
 
 	switch (type) {
-	case 'V': // show vars in human readable format
-		r_anal_var_list_show (core->anal, fcn, 'v', 0);
-		r_anal_var_list_show (core->anal, fcn, 'a', 0);
-		r_anal_var_list_show (core->anal, fcn, 'A', 0);
-		r_anal_var_list_show (core->anal, fcn, 'e', 0);
-		break;
 	case '?':
 		var_help (core, 0);
 		break;
-	case 'v': // frame variable
-	case 'a': // stack arg
-	case 'A': // fastcall arg
-	case 'e': // off the stack variables
+	case 'v': // registers
+	case 'a': // base pointer vars/args
+	case 'e': // stack pointer vars/args
 		// XXX nested dup
 		if (str[1] == '?') {
 			var_help (core, *str);
@@ -107,11 +131,13 @@ static int var_cmd(RCore *core, const char *str) {
 					r_anal_var_delete (core->anal, fcn->addr,
 							type, 1, (int)r_num_math (core->num, str + 1));
 				} else {
-					r_anal_var_delete_byname (core->anal, fcn, type, str + 2);
+					char *name = r_str_chop ( strdup (str + 2));
+					r_anal_var_delete_byname (core->anal, fcn, type, name);
 				}
 			}
 			break;
 		case 'n': {
+			//XXX 2 things with the same name ...
 			str++;
 			for (str++; *str == ' ';) str++;
 			char *new_name = strchr (str, ' ');
@@ -128,6 +154,7 @@ static int var_cmd(RCore *core, const char *str) {
 			free (old_name);
 		} break;
 		case 't': {
+			//should we read types from t
 			const char *name = str + 1;
 			for (name++; *name == ' ';) name++;
 			char *new_type = strchr (name, ' ');
@@ -173,7 +200,16 @@ static int var_cmd(RCore *core, const char *str) {
 				break;
 			}
 			*p++ = 0;
-			delta = r_num_math (core->num, str);
+			if (type == 'v') { //registers
+				RRegItem *i = r_reg_get (core->anal->reg, str, -1);
+				if (!i) {
+					eprintf ("Register not found");
+					break;
+				}
+				delta = i->index;
+			} else {
+				delta = r_num_math (core->num, str);
+			}
 			name = p;
 			vartype = strchr (name, ' ');
 			if (vartype) {
@@ -939,7 +975,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		r_core_anal_fmap (core, input + 1);
 		break;
 	case 'a': // "afa"
-	case 'A': // "afA"
 	case 'v': // "afv"
 	case 'e': // "afe"
 		var_cmd (core, input + 1);
@@ -1219,7 +1254,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"af+", " addr size name [type] [diff]", "hand craft a function (requires afb+)",
 			"af-", " [addr]", "clean all function analysis data (or function at addr)",
 			"afa", "[?] [idx] [name] ([type])", "add function argument",
-			"af[aAv?]", "[arg]", "manipulate args, fastargs and variables in function",
+			"af[aev]", "?", "manipulate args, registers and variables in function",
 			"afb+", " fa a sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 			"afb", " [addr]", "List basic blocks of given function",
 			"afB", " 16", "set current function as thumb (change asm.bits)",

@@ -967,14 +967,14 @@ static void ds_show_functions(RDisasmState *ds) {
 		char spaces[32];
 		RAnalVar *var;
 		RListIter *iter;
-		RList *args = r_anal_var_list (core->anal, f,
-			(f->call == R_ANAL_CC_TYPE_FASTCALL) ? 'A' : 'a');
-		RList *vars = r_anal_var_list (core->anal, f, 'v');
+		RList *args = r_anal_var_list (core->anal, f, 'a');
+		RList *regs = r_anal_var_list (core->anal, f, 'v');
 		RList *sp_vars = r_anal_var_list (core->anal, f, 'e');
 		r_list_sort (args, (RListComparator)var_comparator);
-		r_list_sort (vars, (RListComparator)var_comparator);
+		r_list_sort (regs, (RListComparator)var_comparator);
 		r_list_sort (sp_vars, (RListComparator)var_comparator);
 		if (call) {
+			//XXX probably broken
 			r_cons_printf ("%s%s%s %s %s%s (",
 				COLOR (ds, color_fline), ds->pre,
 				COLOR_RESET (ds), COLOR (ds, color_fname),
@@ -984,12 +984,12 @@ static void ds_show_functions(RDisasmState *ds) {
 			}
 			r_cons_printf (");\n");
 		}
-		r_list_join (args, vars);
-		r_list_join (args,sp_vars);
+		r_list_join (args, sp_vars);
+		r_list_join (args, regs);
 		r_list_foreach (args, iter, var) {
 			char *tmp;
 			int idx;
-
+			RAnal *anal = ds->core->anal;
 			memset (spaces, ' ', sizeof(spaces));
 			idx = 12 - strlen (var->name);
 			if (idx < 0) idx = 0;
@@ -1008,46 +1008,48 @@ static void ds_show_functions(RDisasmState *ds) {
 			r_cons_printf ("%s; ", COLOR (ds, color_other));
 			switch (var->kind) {
 			case 'a':
-				r_cons_printf ("arg %s %s @ %s+0x%x",
-					var->type, var->name,
-					core->anal->reg->name[R_REG_NAME_BP],
-					var->delta);
-				break;
-			case 'v':
-				r_cons_printf ("var %s %s @ %s-0x%x",
-					var->type, var->name,
-					core->anal->reg->name[R_REG_NAME_BP],
-					var->delta);
-				break;
-			case 'A':
-				switch (var->delta){
-				case 0:
-					r_cons_printf ("arg %s %s @ ecx",
-						var->type, var->name);
-					break;
-				case 1:
-					r_cons_printf ("arg %s %s @ edx",
-						var->type, var->name);
-					break;
-				default:
+				if (var->delta > 0) {
 					r_cons_printf ("arg %s %s @ %s+0x%x",
 						var->type, var->name,
-						core->anal->reg->name[R_REG_NAME_BP],
+						anal->reg->name[R_REG_NAME_BP],
 						var->delta);
+				} else {
+					r_cons_printf ("var %s %s @ %s-0x%x",
+						var->type, var->name,
+						anal->reg->name[R_REG_NAME_BP],
+						-var->delta);
+				}
+				break;
+			case 'v': {
+				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
+				if (!i) {
+					eprintf("Register not found");
+					break;
+				}
+				r_cons_printf ("reg %s %s @ %s",
+					var->type, var->name, i->name);
 				}
 				break;
 			case 'e':
-				r_cons_printf ("var %s %s @ %s+0x%x",
-					var->type, var->name,
-					core->anal->reg->name[R_REG_NAME_SP],
-					var->delta);
+				if ( var->delta < f->stack) {
+					r_cons_printf ("var %s %s @ %s+0x%x",
+						var->type, var->name,
+						anal->reg->name[R_REG_NAME_SP],
+						var->delta);
+				} else {
+					r_cons_printf ("arg %s %s @ %s+0x%x",
+						var->type, var->name,
+						anal->reg->name[R_REG_NAME_SP],
+						var->delta);
+				}
 				break;
-		}
+			}
 			r_cons_printf ("%s\n", COLOR_RESET (ds));
 		}
-		r_list_free (vars);
+		r_list_free (regs);
 		// it's already empty, but rlist instance is still there
 		r_list_free (args);
+		r_list_free (sp_vars);
 	}
 	if (demangle)
 		free (fcn_name);
