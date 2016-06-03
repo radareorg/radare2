@@ -1700,7 +1700,9 @@ repeat_arroba:
 			goto next_arroba; //ignore; //return ret;
 		}
 ignore:
-		for (ptr++; *ptr== ' '; ptr++); ptr--;
+		ptr = r_str_trim_head (ptr + 1);
+		ptr--;
+
 		cmd = r_str_clean (cmd);
 		if (ptr2) {
 			if (strlen (ptr+1)==13 && strlen (ptr2+1)==6 && \

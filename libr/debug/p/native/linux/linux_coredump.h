@@ -23,7 +23,7 @@ NT_FILE layout:
 
 #define	DEFAULT_NOTE	6
 
-static int n_notes = DEFAULT_NOTE;
+static const int n_notes = DEFAULT_NOTE;
 
 #define	X_MEM	0x1
 #define	W_MEM	0x2

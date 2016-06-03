@@ -222,7 +222,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 			NOTE("dissecting");
 			dp = dissect(m, m->coldp, endp, gf, gl);
 		} else {
-			if (g->nplus > 0 && m->lastpos == NULL)
+			if (g->nplus > 0 && m->lastpos == NULL) {
 				if ((g->nplus + 1) * sizeof(char *) < g->nplus) {
 					free (m->pmatch);
 					STATETEARDOWN(m);
@@ -230,6 +230,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 				}
 				m->lastpos = (char **)malloc((g->nplus+1) *
 							sizeof(char *));
+			}
 			if (g->nplus > 0 && m->lastpos == NULL) {
 				free(m->pmatch);
 				STATETEARDOWN(m);

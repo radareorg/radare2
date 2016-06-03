@@ -1066,14 +1066,17 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 				eprintf ("mach0: Invalid symbol table size\n");
 			}
 			for (j = 0; j < nsyms; j++) {
-				if (bin->sects)
+				if (bin->sects) {
 					if (bin->sects[i].reserved1 + j >= bin->nindirectsyms)
 						continue;
-				if (bin->indirectsyms)
+				}
+				if (bin->indirectsyms) {
 					if (idx != bin->indirectsyms[bin->sects[i].reserved1 + j])
 						continue;
-					if (idx > bin->nsymtab)
-						continue;
+				}
+				if (idx > bin->nsymtab) {
+					continue;
+				}
 				symbol->type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
 				symbol->offset = bin->sects[i].offset + j * bin->sects[i].reserved2;
 				symbol->addr = bin->sects[i].addr + j * bin->sects[i].reserved2;
@@ -1343,32 +1346,27 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 		else symstr = "";
 		if (!*symstr)
 			continue;
-			{
-				int i = 0;
-				int len = 0;
-				len = bin->symstrlen - stridx;
-				if (len>0) {
-					for (i = 0; i<len; i++) {
-						if ((unsigned char)symstr[i] == 0xff || !symstr[i]) {
-							len = i;
-							break;
-						}
+		{
+			int i = 0;
+			int len = 0;
+			char *symstr_dup = NULL;
+			len = bin->symstrlen - stridx;
+			imports[j].name[0] = 0;
+			if (len > 0) {
+				for (i = 0; i < len; i++) {
+					if ((unsigned char)symstr[i] == 0xff || !symstr[i]) {
+						len = i;
+						break;
 					}
-					char *symstr_dup = r_str_ndup (symstr, len);
-					if (!symstr_dup) {
-						imports[j].name[0] = 0;
-					} else {
-						strncpy (imports[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH-1);
-						imports[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
-					}
-					free (symstr_dup);
-				} else {
-					imports[j].name[0] = 0;
 				}
-				imports[j].last = 0;
+				symstr_dup = r_str_ndup (symstr, len);
+				if (symstr_dup) {
+					strncpy (imports[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH - 1);
+					imports[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
+					free (symstr_dup);
+				}
 			}
-		//strncpy (imports[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
-		//imports[j].name[R_BIN_MACH0_STRING_LENGTH-1] = 0;
+		}
 		imports[j].ord = i;
 		imports[j++].last = 0;
 	}

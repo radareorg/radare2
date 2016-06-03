@@ -2115,7 +2115,7 @@ static int esil_smaller(RAnalEsil *esil) { // 'dst < src' => 'src,dst,<'
 	}
 	free (dst);
 	free (src);
-	return true;
+	return ret;
 }
 
 static int esil_bigger(RAnalEsil *esil) { // 'dst > src' => 'src,dst,>'
@@ -2141,7 +2141,7 @@ static int esil_bigger(RAnalEsil *esil) { // 'dst > src' => 'src,dst,>'
 	}
 	free (dst);
 	free (src);
-	return true;
+	return ret;
 }
 
 static int esil_smaller_equal(RAnalEsil *esil) { // 'dst <= src' => 'src,dst,<='
@@ -2167,7 +2167,7 @@ static int esil_smaller_equal(RAnalEsil *esil) { // 'dst <= src' => 'src,dst,<='
 	}
 	free (dst);
 	free (src);
-	return true;
+	return ret;
 }
 
 static int esil_bigger_equal(RAnalEsil *esil) { // 'dst >= src' => 'src,dst,>='
@@ -2194,7 +2194,7 @@ static int esil_bigger_equal(RAnalEsil *esil) { // 'dst >= src' => 'src,dst,>='
 	}
 	free (dst);
 	free (src);
-	return true;
+	return ret;
 }
 
 static int iscommand(RAnalEsil *esil, const char *word, RAnalEsilOp *op) {
