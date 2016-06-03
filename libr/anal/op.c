@@ -68,7 +68,7 @@ R_API void r_anal_op_free(void *_op) {
 
 static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	char *inst_key = sdb_fmt (0, "inst.0x%"PFMT64x".vars", op->addr);
-	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
 	struct VarUsedType vut;
 	RAnalVar *res;
 
