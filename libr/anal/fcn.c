@@ -281,6 +281,7 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 	if(!sig) return;
 	op_esil = r_strbuf_get (&op->esil);
 	if (!op_esil) {
+		free (sig);
 		return;
 	}
 	esil_buf = strdup (op_esil);
@@ -317,6 +318,8 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 		r_anal_var_access (anal, fcn->addr, 'v', 1, ptr, 1, op->addr);
 
 	}
+	free (varname);
+	free (sig);
 	free (esil_buf);
 }
 
