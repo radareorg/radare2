@@ -544,7 +544,7 @@ int main(int argc, char **argv) {
 		hashstr = hashstr + from;
 		hashstr_len = to - from;
 		hashstr[hashstr_len] = '\0';
-		if (!bytes_read) {
+		if (!bytes_read && !hashstr_hex) {
 			hashstr_len = r_str_unescape (hashstr);
 		}
 		if (encrypt) {
