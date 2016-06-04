@@ -384,17 +384,19 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 			p = strchr (buf, '=');
 			if (p) {
 				*p = 0;
-				r_sys_setenv (buf, p+1);
+				r_sys_setenv (buf, p + 1);
 			}
 		}
 		fclose (fd);
 	} else if (!strcmp (b, "unsetenv")) {
 		r_sys_setenv (e, NULL);
 	} else if (!strcmp (b, "setenv")) {
-		char *v = strchr (e, '=');
+		char *V, *v = strchr (e, '=');
 		if (v) {
 			*v++ = 0;
-			r_sys_setenv (e, v);
+			V = getstr (v);
+			r_sys_setenv (e, V);
+			free (V);
 		}
 	} else if (!strcmp(b, "clearenv")) {
 		r_sys_clearenv ();
