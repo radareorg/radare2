@@ -243,9 +243,9 @@ static int cmpaddr(const void *_a, const void *_b) {
 }
 
 static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_size) {
-	const char *asm_arch = r_config_get (core->config, "asm.arch");
-	if (core && f && cmt && cmt_size>0 && f->bits && asm_arch && *asm_arch) {
-		if (strstr (asm_arch, "arm")) {
+	if (core && f && cmt && cmt_size > 0 && f->bits) {
+		const char *asm_arch = r_config_get (core->config, "asm.arch");
+		if (asm_arch && *asm_arch && strstr (asm_arch, "arm")) {
 			switch (f->bits) {
 			case 16: strcpy (cmt, " (thumb)"); break;
 			case 32: strcpy (cmt, " (arm)"); break;
@@ -2264,8 +2264,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						flag = f->name;
 					} else {
 						msg2 = calloc (sizeof (char), len);
-						r_io_read_at (core->io, n, (ut8*)msg2, len-1);
-						kind = r_anal_data_kind (core->anal, p, (const ut8*)msg2, len-1);
+						r_io_read_at (core->io, n, (ut8*)msg2, len - 1);
+						msg2[len-1] = 0;
+						kind = r_anal_data_kind (core->anal, p, (const ut8*)msg2, len - 1);
 						if (kind && !strcmp (kind, "text")) {
 							r_str_filter (msg2, 0);
 							if (*msg2) {

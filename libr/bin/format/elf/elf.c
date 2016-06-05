@@ -23,13 +23,14 @@ static RBinElfSection *g_sections = NULL;
 
 static inline int __strnlen(const char *str, int len) {
 	int l = 0;
-	while (IS_PRINTABLE(*str) && --len) {
-		if (((ut8)*str)==0xff)
+	while (IS_PRINTABLE (*str) && --len) {
+		if (((ut8)*str) == 0xff) {
 			break;
+		}
 		str++;
 		l++;
 	}
-	return l+1;
+	return l + 1;
 }
 
 static int handle_e_ident(struct Elf_(r_bin_elf_obj_t) *bin) {
@@ -159,10 +160,12 @@ static int init_shdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int len;
 
 	if (!bin || bin->shdr) return true;
-	if (!UT32_MUL(&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr))))
+	if (!UT32_MUL(&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
 		return false;
-	if (shdr_size < 1)
+	}
+	if (shdr_size < 1) {
 		return false;
+	}
 	if (shdr_size > bin->size)
 		return false;
 	if (bin->ehdr.e_shoff > bin->size)
@@ -1587,6 +1590,34 @@ char* Elf_(r_bin_elf_get_osabi_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (noodle (bin, "BEOS:APP_VERSION")) return strdup ("beos");
 	if (needle (bin, "GNU")) return strdup ("linux");
 	return strdup ("linux");
+}
+
+ut8 *Elf_(r_bin_elf_grab_regstate)(struct Elf_(r_bin_elf_obj_t) *bin, int *len) {
+	RListIter *iter;
+	if (bin->phdr) {
+		int i;
+		int num = bin->ehdr.e_phnum;
+		for (i = 0; i < num; i++) {
+			if (bin->phdr[i].p_type != PT_NOTE) {
+				continue;
+			}
+			int bits = Elf_(r_bin_elf_get_bits)(bin);
+			int regdelta = (bits == 64)? 0x84: 0x40; // x64 vs x32
+			int regsize = 160; // for x86-64
+			ut8 *buf = malloc (regsize);
+			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset + regdelta, buf, regsize) != regsize) {
+				free (buf);
+				eprintf ("Cannot read register state from CORE file\n");
+				return NULL;
+			}
+			if (len) {
+				*len = regsize;
+			}
+			return buf;
+		}
+	}
+	eprintf ("Cannot find NOTE section\n");
+	return NULL;
 }
 
 int Elf_(r_bin_elf_is_big_endian)(struct Elf_(r_bin_elf_obj_t) *bin) {

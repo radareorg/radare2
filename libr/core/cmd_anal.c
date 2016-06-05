@@ -3194,7 +3194,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case '?':
 		if (input[1]) {
 			ut64 addr = r_num_math (core->num, input+1);
-			r_core_anal_hint_print(core->anal, addr);
+			r_core_anal_hint_print (core->anal, addr);
 		} else r_core_cmd_help (core, help_msg);
 		break;
 	case '.': // ah.
@@ -3753,7 +3753,7 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 		}
 		break;
 	case '-':
-		r_debug_trace_free (core->dbg);
+		r_debug_trace_free (core->dbg->trace);
 		core->dbg->trace = r_debug_trace_new ();
 		break;
 	case ' ':

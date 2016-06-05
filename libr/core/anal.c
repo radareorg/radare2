@@ -2347,10 +2347,13 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 	ut64 addr = core->offset;
 	int depth = 0;
 	RAnalOp *op = NULL;
-	RAnalCycleFrame *prev = NULL, *cf = r_anal_cycle_frame_new ();
+	RAnalCycleFrame *prev = NULL, *cf = NULL;
 	RAnalCycleHook *ch;
 	RList *hooks = r_list_new ();
-	if (!hooks) return NULL;
+	if (!hooks) {
+		return NULL;
+	}
+	cf = r_anal_cycle_frame_new ();
 	while (cf && !core->cons->breaked) {
 		if ((op = r_core_anal_op (core, addr)) && (op->cycles) && (ccl > 0)) {
 			r_cons_clear_line (1);
@@ -2473,6 +2476,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 		} else {
 			ch = R_NEW0 (RAnalCycleHook);
 			if (!ch) {
+				r_anal_cycle_frame_free (cf);
 				r_list_free (hooks);
 				return NULL;
 			}

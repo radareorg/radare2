@@ -26,7 +26,7 @@ ec bin rgb:ff5f5f
 ec ret rgb:ff005f
 ec push rgb:af87ff
 ec pop rgb:af87ff
-ec swi rgb:0087ff
+ec swi rgb:8787ff
 ec crypto rgb:000000 rgb:ff5f5f
 ec trap rgb:000000 rgb:ff005f
 ec invalid rgb:000000 rgb:ff005f

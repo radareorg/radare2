@@ -230,15 +230,17 @@ R_API int r_asm_is_valid(RAsm *a, const char *name) {
 R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
-	if (a && name && *name) {
-		r_list_foreach (a->plugins, iter, h) {
-			if (h->assemble && !strcmp (h->name, name)) {
-				a->acur = h;
-				return true;
+	if (a) {
+		if (name && *name) {
+			r_list_foreach (a->plugins, iter, h) {
+				if (h->assemble && !strcmp (h->name, name)) {
+					a->acur = h;
+					return true;
+				}
 			}
 		}
+		a->acur = NULL;
 	}
-	a->acur = NULL;
 	return false;
 }
 
@@ -251,7 +253,7 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 		return false;
 	}
 	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->name, name)) {
+		if (!strcmp (h->name, name) && h->arch) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
 				//const char *dop = r_config_get (core->config, "dir.opcodes");
 				// TODO: allow configurable path for sdb files

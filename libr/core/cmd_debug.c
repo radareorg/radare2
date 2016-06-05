@@ -1903,6 +1903,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				} else {
 					eprintf ("Missing argument\n");
 				}
+				free (inp);
 			} else {
 				eprintf ("Cannot strdup. Your heap is fucked up\n");
 			}
@@ -2864,7 +2865,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case '-':
 			r_tree_reset (core->dbg->tree);
-			r_debug_trace_free (core->dbg);
+			r_debug_trace_free (core->dbg->trace);
 			r_debug_tracenodes_reset (core->dbg);
 			core->dbg->trace = r_debug_trace_new ();
 			break;
@@ -3214,12 +3215,15 @@ static int cmd_debug(void *data, const char *input) {
 			eprintf ("Writing to file '%s'\n", corefile);
 			r_file_rm (corefile);
 			RBuffer *dst = r_buf_new ();
-			if (!dst) perror ("r_buf_new_file");
-			if (!core->dbg->h->gcore (core->dbg, dst)) {
-				eprintf ("dg: coredump failed\n");
+			if (dst) {
+				if (!core->dbg->h->gcore (core->dbg, dst)) {
+					eprintf ("dg: coredump failed\n");
+				}
+				r_file_dump (corefile, dst->buf, dst->length, 1);
+				r_buf_free (dst);
+			} else {
+				perror ("r_buf_new_file");
 			}
-			r_file_dump (corefile, dst->buf, dst->length, 1);
-			r_buf_free (dst);
 			free (corefile);
 		}
 		break;

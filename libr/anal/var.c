@@ -173,7 +173,7 @@ R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int kind, con
 		if (varlist && *varlist) {
 			do {
 				char *word = sdb_anext (ptr, &next);
-				char *vardef = sdb_get (DB, sdb_fmt (1,
+				const char *vardef = sdb_const_get (DB, sdb_fmt (1,
 					"var.0x%"PFMT64x".%c.%s",
 					fcn->addr, kind, word), 0);
 				int delta = strlen (word) < 3 ? -1 : atoi (word + 2);
@@ -213,7 +213,7 @@ R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int d
 		kind = 'v';
 		delta = -delta;
 	}
-	char *vardef = sdb_get (DB,
+	const char *vardef = sdb_const_get (DB,
 		sdb_fmt (0, "var.0x%"PFMT64x".%c.%d.%d",
 			fcn->addr, kind, scope, delta), 0);
 	if (!vardef) {
@@ -222,7 +222,10 @@ R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int d
 	sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
 
 	av = R_NEW0 (RAnalVar);
-	if (!av) return NULL;
+	if (!av) {
+		sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
+		return NULL;
+	}
 	av->addr = addr;
 	av->scope = scope;
 	av->delta = delta;
@@ -355,7 +358,7 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind) {
 		if (varlist && *varlist) {
 			do {
 				char *word = sdb_anext (ptr, &next);
-				char *vardef = sdb_get (DB, sdb_fmt (1,
+				const char *vardef = sdb_const_get (DB, sdb_fmt (1,
 					"var.0x%"PFMT64x".%c.%s",
 					fcn->addr, kind, word), 0);
 				if (vardef) {
@@ -387,7 +390,7 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 			do {
 				struct VarType vt;
 				char *word = sdb_anext (ptr, &next);
-				char *vardef = sdb_get (DB, sdb_fmt (1,
+				const char *vardef = sdb_const_get (DB, sdb_fmt (1,
 					"var.0x%"PFMT64x".%c.%s",
 					fcn->addr, kind, word), 0);
 				int delta = atoi (word+2);
@@ -408,7 +411,6 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 					av->type = strdup (vt.type);
 					r_list_append (list, av);
 					sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
-					free (vardef);
 				} else {
 					// eprintf ("Cannot find var definition for '%s'\n", word);
 				}

@@ -26,6 +26,7 @@
 #include "libhppa.h"
 #include "opcode/hppa.h"
 #include <string.h>
+#include <r_types.h>
 
 /* Integer register names, indexed by the numbers which appear in the
    opcodes.  */
@@ -1103,7 +1104,7 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 		    int disp;
 
 		    if (sign)
-		      disp = (-1 << 10) | imm10;
+		      disp = (UT64_MAX << 10) | imm10;
 		    else
 		      disp = imm10;
 
@@ -1119,7 +1120,7 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 		    int disp;
 
 		    if (sign)
-		      disp = (-1 << 11) | imm11;
+		      disp = (UT64_MAX << 11) | imm11;
 		    else
 		      disp = imm11;
 
