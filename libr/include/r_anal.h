@@ -292,7 +292,7 @@ typedef struct r_anal_type_function_t {
 	short call; // calling convention
 	char* attr; // __attribute__(()) list
 	ut64 addr;
-	int stack;
+	int stack; //stack frame size
 	int maxstack;
 	int ninstr;
 	int nargs; // Function arguments counter

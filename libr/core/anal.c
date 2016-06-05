@@ -1727,10 +1727,6 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
 		}
 	}
 
-	if (fcn->call == R_ANAL_CC_TYPE_FASTCALL) {
-		r_anal_var_add (core->anal, fcn->addr, 1, 0,'A', "int", 4,"arg_ecx");
-		r_anal_var_add (core->anal, fcn->addr, 1, 1,'A', "int", 4,"arg_edx");
-	}
 	free (buf);
 	return;
 }
