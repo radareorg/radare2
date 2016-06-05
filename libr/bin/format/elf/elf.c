@@ -1593,7 +1593,6 @@ char* Elf_(r_bin_elf_get_osabi_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 ut8 *Elf_(r_bin_elf_grab_regstate)(struct Elf_(r_bin_elf_obj_t) *bin, int *len) {
-	RListIter *iter;
 	if (bin->phdr) {
 		int i;
 		int num = bin->ehdr.e_phnum;
