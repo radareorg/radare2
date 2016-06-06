@@ -13,8 +13,8 @@
 #endif
 
 #define DO_THE_DBG 0
-#define IFDBG  if(DO_THE_DBG)
-#define IFINT  if(0)
+#define IFDBG if (DO_THE_DBG)
+#define IFINT if (0)
 
 #define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000LL
 #define ELF_PAGE_SIZE 12
@@ -929,6 +929,22 @@ static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 			int of = REL_OFFSET;
 			of = of - got_addr + got_offset;
 			switch (bin->ehdr.e_machine) {
+			case EM_PPC:
+			case EM_PPC64:
+				{
+					RBinElfSection *s = get_section_by_name (bin, ".plt");
+					if (s) {
+						ut8 buf[32];
+						ut64 base;
+						len = r_buf_read_at (bin->b, s->offset, buf, sizeof (buf));
+						base = r_read_ble32 (buf, 1);
+						base -= (nrel * 16);
+						base += (k * 16);
+						plt_addr = base;
+						free (REL);
+						return plt_addr;
+					}
+				}
 			case EM_SPARC:
 			case EM_SPARCV9:
 			case EM_SPARC32PLUS:

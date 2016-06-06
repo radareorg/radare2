@@ -3279,7 +3279,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			}
 			break;
-		case 'w': // "pxw
+		case 'w': // "pxw"
 			if (l != 0) {
 				r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
 			}

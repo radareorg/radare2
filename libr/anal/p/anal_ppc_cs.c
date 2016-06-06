@@ -288,10 +288,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = (ut64)insn->detail->ppc.operands[0].imm;
 			switch (insn->detail->ppc.bc) {
+#if 0
 			case PPC_BC_INVALID:
 				// non-conditional
 				op->type = R_ANAL_OP_TYPE_ILL;
 				break;
+#endif
 			case PPC_BC_LT:
 			case PPC_BC_LE:
 			case PPC_BC_EQ:
@@ -313,7 +315,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				break;
 			case PPC_OP_REG:
-				op->type = R_ANAL_OP_TYPE_UJMP;
+				if (op->type == R_ANAL_OP_TYPE_CJMP) {
+					op->type = R_ANAL_OP_TYPE_UCJMP;
+				} else {
+					op->type = R_ANAL_OP_TYPE_CJMP;
+				}
 				op->jump = (ut64)insn->detail->ppc.operands[1].imm;
 				op->fail = addr+4;
 				//op->type = R_ANAL_OP_TYPE_UJMP;
