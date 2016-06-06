@@ -139,7 +139,8 @@ R_API char *r_file_abspath(const char *file) {
 	if (!ret) ret = strdup (file);
 #if __UNIX__
 	{
-		char *abspath = realpath (ret, NULL);
+		char *resolved_path = calloc(4096, 1); // TODO: use MAXPATH
+		char *abspath = realpath (ret, resolved_path);
 		if (abspath) {
 			free (ret);
 			ret = abspath;

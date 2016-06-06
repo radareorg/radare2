@@ -983,8 +983,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case '=':
 		r_debug_map_sync (core->dbg);
 		r_debug_map_list_visual (core->dbg, core->offset,
-					r_config_get_i (core->config,
-							"scr.color"));
+			r_config_get_i (core->config, "scr.color"),
+			r_cons_get_size (NULL));
 		break;
 	}
 	return true;

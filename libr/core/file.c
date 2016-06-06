@@ -551,7 +551,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 	if (r_config_get_i (r->config, "bin.libs")) {
 		ut64 libaddr = (r->assembler->bits == 64)
-			? 0x00007fff00000000
+			? 0x00007fff00000000LL
 			: 0x7f000000;
 		const char *lib;
 		RListIter *iter;
