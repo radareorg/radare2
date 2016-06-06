@@ -17,7 +17,7 @@ LD=$(CC)
 LDFLAGS+=-L${LIBR}/socket -lr_socket
 LDFLAGS+=-L${LIBR}/util -lr_util
 
-ifeq (${OSTYPE},Darwin)
+ifeq (${OSTYPE},darwin)
 LDFLAGS_SHARED=-dynamiclib
 else
 LDFLAGS_SHARED=-shared
@@ -53,7 +53,6 @@ default: make
 prepare:
 	mkdir -p $(LIB)
 
-#$(LD) -shared -Wl,-soname,$(LIBNAME).so -o $(LIB)/$(LIBNAME).so $(SRC_O)
 $(LIB):
 	mkdir -p $(LIB)
 
