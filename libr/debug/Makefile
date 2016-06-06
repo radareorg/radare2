@@ -1,8 +1,12 @@
 include ../config.mk
 
 NAME=r_debug
-DEPS=r_reg r_anal r_bp r_util r_io r_parse r_cons r_db r_syscall r_hash r_socket r_flags
+DEPS=r_reg r_db r_anal r_bp r_io r_parse r_cons r_syscall r_hash r_socket r_flags r_util 
 CFLAGS+=-DCORELIB
+
+#SDBPATH=../../shlr/sdb/src/
+#SDBLIB=${SDBPATH}/libsdb.a
+#LINK+=${SDBLIB}
 
 foo:
 	@${MAKE} libs
