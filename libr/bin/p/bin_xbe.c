@@ -193,6 +193,7 @@ static RList* libs(RBinFile *arch) {
 	r = r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
 	if (r < 1)
 		goto out_error;
+	lib.name[7] = 0;
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 	if (s)
 		r_list_append (ret, s);
@@ -205,6 +206,8 @@ static RList* libs(RBinFile *arch) {
 	r = r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
 	if (r < 1)
 		goto out_error;
+
+	lib.name[7] = 0;
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 	if (s)
 		r_list_append (ret, s);
