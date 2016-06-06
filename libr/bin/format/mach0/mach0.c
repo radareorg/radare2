@@ -1679,7 +1679,9 @@ int MACH0_(get_bits)(struct MACH0_(obj_t)* bin) {
 }
 
 int MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin) {
-	return bin && bin->big_endian;
+	bool is_ppc = bin && bin->hdr.cputype == CPU_TYPE_POWERPC64;
+	if (!is_ppc) is_ppc = bin && bin->hdr.cputype == CPU_TYPE_POWERPC;
+	return is_ppc;
 }
 
 const char* MACH0_(get_intrp)(struct MACH0_(obj_t)* bin) {

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2015 - pancake */
+/* radare2 - LGPL - Copyright 2013-2016 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -16,12 +16,14 @@ struct Getarg {
 #define INSOP(n) insn->detail->ppc.operands[n]
 
 static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
-	csh handle = gop->handle;
 	cs_insn *insn = gop->insn;
-	cs_ppc_op op;
+	csh handle = gop->handle;
 	static char words[3][64];
-	if (n<0 || n>=3)
+	cs_ppc_op op;
+
+	if (n < 0 || n >= 3) {
 		return NULL;
+	}
 	op = INSOP (n);
 	switch (op.type) {
 	case PPC_OP_INVALID:
@@ -47,6 +49,7 @@ static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
 	}
 	return words[n];
 }
+
 #define ARG(n) getarg2(&gop, n, "")
 #define ARG2(n,m) getarg2(&gop, n, m)
 
@@ -137,7 +140,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	
 	// capstone-next
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
-	if (n<1) {
+	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
 		struct Getarg gop = {
@@ -338,8 +341,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_BLA:
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = (ut64)insn->detail->ppc.operands[0].imm;
-			op->fail = addr+4;
+			op->fail = addr + 4;
 			esilprintf (op, "pc,lr,=,%s,pc,=", ARG(0));
+			break;
+		case PPC_INS_TRAP:
+			op->type = R_ANAL_OP_TYPE_TRAP;
 			break;
 		case PPC_INS_BLR:
 		case PPC_INS_BLRL:
