@@ -3038,7 +3038,7 @@ toro:
  * Set to 0 the parameter you don't use */
 R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_opcodes) {
 	RDisasmState *ds = NULL;
-	int i, j, ret, err = 0;
+	int i, j, ret, len = 0;
 	RAnalFunction *f;
 	char *tmpopstr;
 	const ut64 old_offset = core->offset;
@@ -3069,7 +3069,6 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 		core->anal->cur->reset_counter (core->anal, core->offset);
 
 	ds = ds_init (core);
-	ds->len = nb_bytes;
 	ds->l = nb_opcodes;
 	ds->len = nb_opcodes * 8;
 
@@ -3137,6 +3136,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			ds->analop.size = ret;
 			ds->asmop.size = ret;
 		}
+		len += R_MAX (0, ret);
 		if (ds->hint && ds->hint->opcode) {
 			free (ds->opstr);
 			ds->opstr = strdup (ds->hint->opcode);
@@ -3190,10 +3190,6 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 				ds->opstr = (tmpopstr)? tmpopstr: strdup (ds->asmop.buf_asm);
 			}
 		}
-		if (ret < 1) {
-			err = 1;
-			ret = 1;
-		}
 		{
 			const char *opcolor = NULL;
 			if (ds->show_color) {
@@ -3216,8 +3212,9 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 	}
 	ds_free (ds);
 	core->offset = old_offset;
-r_reg_arena_pop (core->anal->reg);
-	return err;
+	r_reg_arena_pop (core->anal->reg);
+
+	return len;
 }
 
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes) {

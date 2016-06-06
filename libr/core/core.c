@@ -941,14 +941,18 @@ static const char *r_core_print_offname(void *p, ut64 addr) {
 	return NULL;
 }
 
+/**
+ * Disassemble one instruction at specified address.
+ */
 static int __disasm(void *_core, ut64 addr) {
 	RCore *core = _core;
-	ut8 buf[32], *oblock;
+	ut64 prevaddr = core->offset;
 	int len;
-	oblock = core->block;
-	r_io_read_at (core->io, addr, (ut8*)buf, sizeof (buf));
-	len = r_core_print_disasm_instructions (core, sizeof (buf), 1);
-	core->block = oblock;
+
+	r_core_seek (core, addr, true);
+	len = r_core_print_disasm_instructions (core, 0, 1);
+	r_core_seek (core, prevaddr, true);
+
 	return len;
 }
 
