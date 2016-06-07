@@ -1096,8 +1096,8 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			data[l++] = 0xc0 + (b | (a << 3));
 			return 3;
 		} else if (!strcmp (op, "mov")) {
-			ut64 dst;
-			ut8 *ptr;
+			st64 dst;
+			st8 *ptr;
 			int pfx;
 			int N;
 			char *delta = NULL;
@@ -1105,8 +1105,8 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			ut8 rm_byte = 0x40;
 			int argk = (*arg == '[');
 			dst = r_num_math (NULL, arg2);
-			ptr = (ut8 *)&dst;
-			if (dst > UT32_MAX) {
+			ptr = (st8 *)&dst;
+			if (dst > ST32_MAX && dst < ST32_MIN) {
 				if (a->bits == 64) {
 					if (*arg == 'r') {
 						data[l++] = 0x48;
