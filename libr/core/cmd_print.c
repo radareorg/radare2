@@ -3197,6 +3197,7 @@ static int cmd_print(void *data, const char *input) {
 				" _J    jump\n"
 				" cJ    conditional jump\n"
 				" _C    call\n"
+				" _R    ret\n"
 				" ==    cmp/test\n"
 				" XX    invalid\n");
 			} else if (l != 0) {
