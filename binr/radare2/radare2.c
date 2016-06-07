@@ -695,10 +695,12 @@ int main(int argc, char **argv, char **envp) {
 				const char *prj = r_config_get (r.config, "file.project");
 				if (prj && *prj) {
 					pfile = r_core_project_info (&r, prj);
-					if (pfile)
+					if (pfile) {
 						fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					else
+						r_core_project_open (&r, prj);
+					} else {
 						eprintf ("Cannot find project file\n");
+					}
 				}
 			}
 		}
