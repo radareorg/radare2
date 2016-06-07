@@ -1108,8 +1108,12 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			ptr = (ut8 *)&dst;
 			if (dst > UT32_MAX) {
 				if (a->bits == 64) {
-					if (*arg == 'r')
+					if (*arg == 'r') {
 						data[l++] = 0x48;
+					} else {
+						eprintf ("Error: destination register is not 64 bit\n");
+						return -1;
+					}
 					data[1] = 0xb8 | getreg (arg);
 					data[2] = ptr[0];
 					data[3] = ptr[1];
