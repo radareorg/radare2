@@ -79,7 +79,7 @@ init|update)
 	rm -f "${R2PM_DBDIR}/*"
 	rmdir "${R2PM_DBDIR}"
 	rm -f "${R2PM_DBDIR}"
-	ln -fs "${R2PM_USRDIR}"/git/radare2-pm/d "${R2PM_DBDIR}" || exit 1
+	ln -fs "${R2PM_USRDIR}"/git/radare2-pm/db "${R2PM_DBDIR}" || exit 1
 	echo "r2pm database initialized. Use 'r2pm update' to update"
 	exit 0
 	;;
