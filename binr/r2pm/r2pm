@@ -51,6 +51,11 @@ R2PM_ETCD="${R2HOMEDIR}/radare2/radare2rc.d"
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_PREFIX}/lib/radare2/last"
 
 if [ -z "${R2PM_DBDIR}" ]; then
+	if [ -d "${HOME}/.config/radare2/r2pm/db" ]; then
+		R2PM_DBDIR="${HOME}/.config/radare2/r2pm/db"
+	fi
+fi
+if [ -z "${R2PM_DBDIR}" ]; then
 	if [ -d "${PREFIX}/share/radare2/last/r2pm" ]; then
 		R2PM_DBDIR="${PREFIX}/share/radare2/last/r2pm/"
 	fi
@@ -58,9 +63,32 @@ fi
 if [ -f "d/baleful" ]; then
 	R2PM_DBDIR="$(pwd)/d/"
 fi
+case "$1" in
+init|update)
+	R2PM_DBDIR="${HOME}/.config/radare2/r2pm/db"
+	mkdir -p "${R2PM_USRDIR}"/git
+	cd "${R2PM_USRDIR}"/git
+	if [ -d radare2-pm ]; then
+		cd radare2-pm
+		git pull || exit 1
+	else
+		git clone https://github.com/radare/radare2-pm || exit 1
+		cd radare2-pm
+	fi
+	rm -f "${R2PM_DBDIR}"
+	rm -f "${R2PM_DBDIR}/*"
+	rmdir "${R2PM_DBDIR}"
+	rm -f "${R2PM_DBDIR}"
+	ln -fs "${R2PM_USRDIR}"/git/radare2-pm/d "${R2PM_DBDIR}" || exit 1
+	echo "r2pm database initialized. Use 'r2pm update' to update"
+	exit 0
+	;;
+esac
 if [ ! -d "${R2PM_DBDIR}" ]; then
 	R2PM_DBDIR=""
 	echo "\$R2PM_DBDIR: No such file or directory."
+	echo "Run 'r2pm init' to initialize the package repository"
+	exit 1
 fi
 
 mkdir -p "${R2PM_USRDIR}/pkg/"
@@ -263,7 +291,7 @@ case "$1" in
 	fi
 	;;
 *|help|-h)
-	echo "Usage: r2pm [cmd] [...]"
+	echo "Usage: r2pm [init|update|cmd] [...]"
 	echo "Commands:"
 	echo " -i,info                     pkgs info"
 	echo " -i,install <pkgname>        baleful"
