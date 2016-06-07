@@ -133,6 +133,7 @@ static int var_cmd(RCore *core, const char *str) {
 				} else {
 					char *name = r_str_chop ( strdup (str + 2));
 					r_anal_var_delete_byname (core->anal, fcn, type, name);
+					free (name);
 				}
 			}
 			break;

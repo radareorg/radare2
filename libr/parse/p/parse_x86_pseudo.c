@@ -329,14 +329,14 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 		if (isupper (*str)) {
 			r_str_case (bp, true);
 		}
-		bp[sizeof(bp) - 1] = 0;
+		bp[sizeof (bp) - 1] = 0;
 	} else {
 		bp[0] = 0;
 	}
 
 	r_list_foreach (regs, regiter, reg) {
 		RRegItem *r = r_reg_index_get (p->anal->reg, reg->delta);
-		if (strstr (tstr, r->name)){
+		if (r && r->name && strstr (tstr, r->name)){
 			tstr = r_str_replace (tstr, r->name, reg->name, 1);
 		}
 	}

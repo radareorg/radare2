@@ -71,15 +71,19 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 
 	file = r_core_file_open (core, path, perm, laddr);
 	if (file) {
-		int had_rbin_info = 0;
+		bool had_rbin_info = false;
 
 		ofile->map->from = ofrom;
-		if (r_bin_file_delete (core->bin, ofile->desc->fd)) {
-			had_rbin_info = 1;
+		if (ofile->desc) {
+			if (r_bin_file_delete (core->bin, ofile->desc->fd)) {
+				had_rbin_info = true;
+			}
 		}
 		r_core_file_close (core, ofile);
 		r_core_file_set_by_file (core, file);
-		r_core_file_set_by_fd (core, file->desc->fd);
+		if (file->desc) {
+			r_core_file_set_by_fd (core, file->desc->fd);
+		}
 		ofile = NULL;
 		odesc = NULL;
 	//	core->file = file;
@@ -111,8 +115,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	}
 	if (isdebug) {
 		// XXX - select the right backend
-		if (core->file && core->file->desc)
+		if (core->file && core->file->desc) {
 			newpid = core->file->desc->fd;
+		}
 		//reopen and attach
 		r_core_setup_debugger (core, "native", true);
 		r_debug_select (core->dbg, newpid, newpid);
