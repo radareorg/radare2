@@ -103,6 +103,14 @@ R_API bool r_file_exists(const char *str) {
 	return (S_ISREG (buf.st_mode))? R_TRUE: R_FALSE;
 }
 
+R_API long r_file_proc_size(FILE *fd) {
+	long size = 0;
+	while (fgetc (fd) != EOF) {
+		size++;
+	}
+	return size;
+}
+
 R_API ut64 r_file_size(const char *str) {
 	struct stat buf = {0};
 	if (stat (str, &buf)==-1)
@@ -226,8 +234,16 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 		return NULL;
 	fseek (fd, 0, SEEK_END);
 	sz = ftell (fd);
-	if (sz==0)
-		sz = 65536;
+	if (sz==0) {
+		if (r_file_is_regular (str)) {
+			/* proc file */
+			fseek (fd, 0, SEEK_SET);
+			sz = r_file_proc_size (fd);
+			if (!sz) sz = -1;
+		} else {
+			sz = 65536;
+		}
+	}
 	if (sz <0) {
 		fclose (fd);
 		return NULL;
