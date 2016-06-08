@@ -226,6 +226,24 @@ R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int kind, con
 	return false;
 }
 
+R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, char kind, const char* name) {
+	RList *var_list;
+	RListIter *iter;
+	RAnalVar *var = NULL;
+	if (!fcn || !anal || !name) {
+		return 0;
+	}
+	var_list = r_anal_var_list (anal, fcn, kind);
+	r_list_foreach (var_list, iter, var) {
+		if (!strcmp (name, var->name)) {
+			break;
+		}
+	}
+	if (!var || strcmp (name, var->name)) {
+		return 0;
+	}
+	return  var;
+}
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int delta) {
 	RAnalVar *av;
 	struct VarType vt;

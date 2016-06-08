@@ -49,12 +49,12 @@ static void var_help(RCore *core, char ch) {
 	};
 	const char *help_bp[] = {
 		"Usage:", "afa", " [idx] [type] [name]",
-		"afa", "", "list stack based arguments, variables",
+		"afa", "", "list base pointer based arguments, variables",
 		"afa*", "", "same as afa but in r2 commands",
-		"afa", " [idx] [name] ([type])", "define stack based argument, variable",
-		"afan", " [old_name] [new_name]", "rename stack based argument or variable",
-		"afat", " [name] [new_type]", "change type for given stack based argument or variable",
-		"afaj", "", "return list of stack based arguments, variables in JSON format",
+		"afa", " [idx] [name] ([type])", "define base pointer based argument, variable",
+		"afan", " [old_name] [new_name]", "rename base pointer based argument or variable",
+		"afat", " [name] [new_type]", "change type for given base pointer based argument or variable",
+		"afaj", "", "return list of base pointer based arguments, variables in JSON format",
 		"afa-", " [name]", "delete argument/ variables at the given name",
 		"afag", " [idx] [addr]", "define var get reference",
 		"afas", " [idx] [addr]", "define var set reference",
@@ -138,7 +138,7 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			break;
 		case 'n': {
-			//XXX 2 things with the same name ...
+			RAnalVar *v1;
 			str++;
 			for (str++; *str == ' ';) str++;
 			char *new_name = strchr (str, ' ');
@@ -149,6 +149,18 @@ static int var_cmd(RCore *core, const char *str) {
 			*new_name++ = 0;
 			char *old_name = strdup (str);
 			r_str_split (old_name, ' ');
+			v1 = r_anal_var_get_byname (core->anal, fcn, 'a', new_name);
+			if (!v1) {
+				v1 = r_anal_var_get_byname (core->anal, fcn, 'e', new_name);
+			}
+			if (!v1) {
+				v1 = r_anal_var_get_byname (core->anal, fcn, 'v', new_name);
+			}
+			if(v1) {
+				free (v1);
+				eprintf("variable or arg with name `%s` already exist\n", new_name);
+				break;
+			}
 			r_anal_var_rename (core->anal, fcn->addr,
 					R_ANAL_VAR_SCOPE_LOCAL, (char)type,
 					old_name, new_name);
@@ -1064,10 +1076,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			eprintf ("TODO\n") ;
 			} break;
 		case 'a': {
-			r_anal_var_delete_all (core->anal, fcn->addr, 'A');
+			r_anal_var_delete_all (core->anal, fcn->addr, 'e');
 			r_anal_var_delete_all (core->anal, fcn->addr, 'a');
 			r_anal_var_delete_all (core->anal, fcn->addr, 'v');
-			fcn_callconv(core, fcn);
+			fcn_callconv (core, fcn);
 			} break;
 		case ' ': {
 			int type = r_anal_cc_str2type (input + 3);
