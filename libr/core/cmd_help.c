@@ -244,7 +244,7 @@ static int cmd_help(void *data, const char *input) {
 				free (asnum);
 			}
 			/* binary and floating point */
-			r_str_bits64(out, n);
+			r_str_bits64 (out, n);
 			r_cons_printf ("%s %.01lf %ff %lf\n",
 				out, core->num->fvalue, f, d);
 		}

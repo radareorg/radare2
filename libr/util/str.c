@@ -13,7 +13,7 @@ static const char *nullstr = "";
 static const char *nullstr_c = "(null)";
 
 // TODO: simplify this horrible loop
-R_API void r_str_chop_path (char *s) {
+R_API void r_str_chop_path(char *s) {
 	char *src, *dst, *p;
 	int i = 0;
 	if (!s || !*s)
@@ -54,7 +54,7 @@ R_API void r_str_chop_path (char *s) {
 	else *dst = 0;
 }
 
-R_API int r_str_replace_char_once (char *s, int a, int b) {
+R_API int r_str_replace_char_once(char *s, int a, int b) {
 	int ret = 0;
 	char *o = s;
 	if (a==b)
@@ -75,7 +75,7 @@ R_API int r_str_replace_char_once (char *s, int a, int b) {
 }
 
 // Spagetti.. must unify and support 'g', 'i' ...
-R_API int r_str_replace_char (char *s, int a, int b) {
+R_API int r_str_replace_char(char *s, int a, int b) {
 	int ret = 0;
 	char *o = s;
 	if (a==b)
@@ -97,7 +97,7 @@ R_API int r_str_replace_char (char *s, int a, int b) {
 
 // TODO: do not use toupper.. must support modes to also append lowercase chars like in r1
 // TODO: this functions needs some stabilization
-R_API int r_str_bits (char *strout, const ut8 *buf, int len, const char *bitz) {
+R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 	int i, j;
 	if (bitz) {
 		for (i=j=0; i<len && (!bitz||bitz[i]); i++) {
@@ -119,7 +119,7 @@ R_API int r_str_bits (char *strout, const ut8 *buf, int len, const char *bitz) {
 
 // Set 'strout' to the binary representation of the input value.
 // strout must be a char array of 65 or greater.
-R_API int r_str_bits64 (char* strout, ut64 in) {
+R_API int r_str_bits64(char* strout, ut64 in) {
 	int i, bit, count = 0;
 	count = 0;
 	for (i = sizeof (in) * 8; i >= 0; --i) {
@@ -156,7 +156,7 @@ R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
 }
 
 /* int c; ret = hex2int(&c, 'c'); */
-static int hex2int (ut8 *val, ut8 c) {
+static int hex2int(ut8 *val, ut8 c) {
 	if ('0' <= c && c <= '9') *val = (ut8)(*val) * 16 + ( c - '0');
 	else if (c >= 'A' && c <= 'F') *val = (ut8)(*val) * 16 + ( c - 'A' + 10);
 	else if (c >= 'a' && c <= 'f') *val = (ut8)(*val) * 16 + ( c - 'a' + 10);
@@ -2017,7 +2017,7 @@ R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
 	return ret;
 }
 
-R_API const char * r_str_tok (const char *str1, const char b, size_t len) {
+R_API const char * r_str_tok(const char *str1, const char b, size_t len) {
 	const char *p = str1;
 	size_t i = 0;
 	if (!p || !*p) return p;
@@ -2027,7 +2027,7 @@ R_API const char * r_str_tok (const char *str1, const char b, size_t len) {
 	return p;
 }
 
-R_API int r_str_do_until_token (str_operation op, char *str, const char tok) {
+R_API int r_str_do_until_token(str_operation op, char *str, const char tok) {
 	int ret;
 	if (!str) return -1;
 	if (!op) {
