@@ -104,7 +104,7 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 			if (i>0 && (i%8)==0)
 				buf++;
 	                if (*buf&(1<<(i%8)))
-				strout[j++] = toupper ((const unsigned char)bitz[i]);
+				strout[j++] = toupper ((const ut8)bitz[i]);
 		}
 	} else {
 		for (i=j=0; i<len; i++) {
@@ -115,6 +115,20 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 	}
 	strout[j] = 0;
 	return j;
+}
+
+static void trimbits(char *b) {
+	int len = strlen (b);
+	char *one = strchr (b, '1');
+	if (one) {
+		int z, pos = (int)(size_t)(one - b);
+		z = len - pos;
+		int bytes = 8 + ((z / 8) * 8);
+		z = len - bytes;
+		memmove (b, b + len - bytes, z + 1);
+	} else {
+		b[R_MIN (len, 8)] = 0;
+	}
 }
 
 // Set 'strout' to the binary representation of the input value.
@@ -132,6 +146,8 @@ R_API int r_str_bits64(char* strout, ut64 in) {
 		++count;
 	}
 	strout[count] = '\0';
+	/* trim by 8 bits */
+	trimbits (strout);
 	return count;
 }
 
