@@ -783,7 +783,7 @@ static int r_core_rtr_http_thread (RThread *th) {
 	HttpThread *ht = th->user;
 	if (!ht || !ht->core) return false;
 	ret = r_core_rtr_http_run (ht->core, ht->launch, ht->path);
-	free (ht->path);
+	free ((void *)ht->path);
 	return ret;
 }
 
@@ -814,7 +814,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 			eprintf ("TODO: Use different eval environ for scr. for the web\n");
 			eprintf ("TODO: Visual mode should be enabled on local\n");
 		} else {
-			char *tpath = path + 1;
+			char *tpath = (char *) path + 1;
 			while (*tpath && isspace(*tpath))
 				tpath++;
 			HttpThread ht = { core, launch, strdup(tpath) };
