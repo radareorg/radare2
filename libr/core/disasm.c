@@ -157,6 +157,10 @@ typedef struct r_disam_options_t {
 	RAnalHint *hint;
 	RPrint *print;
 
+	ut64 esil_old_pc;
+	ut8* esil_regstate;
+	int esil_likely;
+
 	int l;
 	int middle;
 	int indent_level;
@@ -422,6 +426,10 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->oldbits = 0;
 	ds->ocols = 0;
 	ds->lcols = 0;
+
+	ds->esil_old_pc = UT64_MAX;
+	ds->esil_regstate = NULL;
+	ds->esil_likely = 0;
 
 	if (ds->show_flag_in_bytes) {
 		ds->show_flags = 0;
@@ -2396,10 +2404,6 @@ static void ds_print_relocs(RDisasmState *ds) {
 	}
 }
 
-static int likely = 0;
-static int show_slow = 0;
-static int show_emu_str = 0;
-
 static int mymemwrite0(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return 0;
 }
@@ -2411,9 +2415,11 @@ static int mymemwrite1(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
-	likely = 1;
+	RDisasmState *ds = esil->user;
 
-	if (!show_slow) {
+	ds->esil_likely = 1;
+
+	if (!ds->show_slow) {
 		return 0;
 	}
 
@@ -2436,7 +2442,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 				} else if (*n32 == UT32_MAX) {
 					/* nothing */
 				} else {
-					if (!show_emu_str) {
+					if (!ds->show_emu_str) {
 						msg = r_str_newf ("-> 0x%x", *n32);
 					}
 				}
@@ -2445,7 +2451,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 			msg = r_str_newf ("%s", str);
 		}
 	}
-	if (show_emu_str) {
+	if (ds->show_emu_str) {
 		if (msg && *msg) r_cons_printf ("; %s", msg);
 	} else {
 		r_cons_printf ("; %s=0x%"PFMT64x" %s", name, val, msg? msg: "");
@@ -2454,15 +2460,11 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 	return 0;
 }
 
-// TODO: Move into ds-> after cleanup
-static ut64 opc = UT64_MAX;
-static ut8 *regstate = NULL;
-
 static void ds_print_esil_anal_init(RDisasmState *ds) {
 	RCore *core = ds->core;
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	opc = r_reg_getv (core->anal->reg, pc);
-	if (!opc || opc==UT64_MAX) opc = core->offset;
+	ds->esil_old_pc = r_reg_getv (core->anal->reg, pc);
+	if (!ds->esil_old_pc || ds->esil_old_pc == UT64_MAX) ds->esil_old_pc = core->offset;
 	if (!ds->show_emu) {
 		return;
 	}
@@ -2470,27 +2472,27 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		int stacksize = r_config_get_i (core->config, "esil.stacksize");
 		if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
-			R_FREE (regstate);
+			R_FREE (ds->esil_regstate);
 			return;
 		}
 		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0);
+		core->anal->esil->user = ds;
 	}
-	free (regstate);
+	free (ds->esil_regstate);
 	if (core->anal->gp) {
 		r_reg_setv (core->anal->reg, "gp", core->anal->gp);
 	}
-	regstate = r_reg_arena_peek (core->anal->reg);
+	ds->esil_regstate = r_reg_arena_peek (core->anal->reg);
 }
 
 static void ds_print_esil_anal_fini(RDisasmState *ds) {
-	if (ds->show_emu && regstate) {
+	if (ds->show_emu && ds->esil_regstate) {
 		RCore* core = ds->core;
 
 		const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-		r_reg_arena_poke (core->anal->reg, regstate);
-		r_reg_setv (core->anal->reg, pc, opc);
-		free (regstate);
-		regstate = NULL;
+		r_reg_arena_poke (core->anal->reg, ds->esil_regstate);
+		r_reg_setv (core->anal->reg, pc, ds->esil_old_pc);
+		R_FREE (ds->esil_regstate);
 	}
 }
 
@@ -2530,15 +2532,13 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pc, ds->at + ds->analop.size);
-	show_slow = ds->show_slow; // hacky global
-	show_emu_str = ds->show_emu_str; // hacky global
 	esil->cb.hook_reg_write = myregwrite;
 	if (ds->show_emu_write) {
 		esil->cb.hook_mem_write = mymemwrite0;
 	} else {
 		esil->cb.hook_mem_write = mymemwrite1;
 	}
-	likely = 0;
+	ds->esil_likely = 0;
 	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
 	r_anal_esil_stack_free (esil);
 	switch (ds->analop.type) {
@@ -2550,7 +2550,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		}
 		} break;
 	case R_ANAL_OP_TYPE_CJMP:
-		if (likely) {
+		if (ds->esil_likely) {
 			r_cons_printf ("; likely");
 		} else {
 			r_cons_printf ("; unlikely");
