@@ -1044,6 +1044,10 @@ static void ds_show_functions(RDisasmState *ds) {
 				}
 				break;
 			}
+			char *comment = r_meta_get_string (anal, var->kind, var->delta);
+			if (comment) {
+				r_cons_printf ("\t%s;%s", COLOR(ds,color_comment),comment);
+			}
 			r_cons_printf ("%s\n", COLOR_RESET (ds));
 		}
 		r_list_free (regs);
