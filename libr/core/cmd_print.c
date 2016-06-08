@@ -3133,6 +3133,7 @@ static int cmd_print(void *data, const char *input) {
 			free (res);
 		}
 		break;
+	case 'X': // "pX"
 	case 'x': // "px"
 		{
 		int show_offset = r_config_get_i (core->config, "asm.offset");
