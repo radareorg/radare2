@@ -3772,7 +3772,7 @@ static int cmd_print(void *data, const char *input) {
 			 "pu","[w] [len]","print N url encoded bytes (w=wide)",
 			 "pv","[jh] [mode]","show variable/pointer/value in memory",
 			 "p-","[jh] [mode]","bar|json|histogram blocks (mode: e?search.in)",
-			 "p","[xX][owq] [len]","hexdump of N bytes (o=octal, w=32bit, q=64bit)",
+			 "px","[owq] [len]","hexdump of N bytes (o=octal, w=32bit, q=64bit)",
 			 "pz"," [len]","print zoom view (see pz? for help)",
 			 "pwd","","display current working directory",
 			 NULL
