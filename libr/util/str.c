@@ -461,14 +461,6 @@ R_API const char *r_str_rchr(const char *base, const char *p, int ch) {
 	return p;
 }
 
-R_API int r_str_nchr(const char *str, char chr) {
-	int n;
-	for (n = 0; *str; str++)
-		if (*str==chr)
-			n++;
-	return n;
-}
-
 R_API int r_str_nstr(char *from, char *to, int size) {
 	int i;
 	for (i=0; i<size; i++)
