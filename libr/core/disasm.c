@@ -159,7 +159,7 @@ typedef struct r_disam_options_t {
 
 	ut64 esil_old_pc;
 	ut8* esil_regstate;
-	int esil_likely;
+	bool esil_likely;
 
 	int l;
 	int middle;
@@ -429,7 +429,7 @@ static RDisasmState * ds_init(RCore *core) {
 
 	ds->esil_old_pc = UT64_MAX;
 	ds->esil_regstate = NULL;
-	ds->esil_likely = 0;
+	ds->esil_likely = false;
 
 	if (ds->show_flag_in_bytes) {
 		ds->show_flags = 0;
@@ -2417,11 +2417,13 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 	ut32 *n32 = (ut32*)str;
 	RDisasmState *ds = esil->user;
 
-	ds->esil_likely = 1;
-
-	if (!ds->show_slow) {
-		return 0;
+	if (ds) {
+		ds->esil_likely = true;
+		if (!ds->show_slow) {
+			return 0;
+		}
 	}
+
 
 	memset (str, 0, sizeof (str));
 	if (val != 0LL) {
@@ -2442,7 +2444,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 				} else if (*n32 == UT32_MAX) {
 					/* nothing */
 				} else {
-					if (!ds->show_emu_str) {
+					if (ds && !ds->show_emu_str) {
 						msg = r_str_newf ("-> 0x%x", *n32);
 					}
 				}
@@ -2451,7 +2453,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 			msg = r_str_newf ("%s", str);
 		}
 	}
-	if (ds->show_emu_str) {
+	if (ds && ds->show_emu_str) {
 		if (msg && *msg) r_cons_printf ("; %s", msg);
 	} else {
 		r_cons_printf ("; %s=0x%"PFMT64x" %s", name, val, msg? msg: "");
