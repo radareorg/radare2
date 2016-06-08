@@ -188,7 +188,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		hThread = CreateThread (NULL, 0, ThreadFunction, lang, 0,0);
 		WaitForSingleObject (hproc, INFINITE);
 		bStopThread = TRUE;
-		DeleteFile (buf);
+		DeleteFile (r2pipe_paz);
 		WaitForSingleObject (hThread, INFINITE);
 		CloseHandle (hPipeInOut);
 	}
