@@ -182,8 +182,7 @@ static int hex2int(ut8 *val, ut8 c) {
 	if ('0' <= c && c <= '9') *val = (ut8)(*val) * 16 + ( c - '0');
 	else if (c >= 'A' && c <= 'F') *val = (ut8)(*val) * 16 + ( c - 'A' + 10);
 	else if (c >= 'a' && c <= 'f') *val = (ut8)(*val) * 16 + ( c - 'a' + 10);
-	else return 1;
-	return 0;
+	else return -1;
 }
 
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
@@ -266,6 +265,8 @@ R_API const char *r_str_bool(int b) {
 	return b? "true": "false";
 }
 
+// If up is true, upcase all characters in the string, otherwise downcase all
+// characters in the string.
 R_API void r_str_case(char *str, bool up) {
 	if (up) {
 		char oc = 0;
@@ -298,6 +299,7 @@ fail:
 	return dst;
 }
 
+// Compute a 64 bit DJB hash of a string.
 R_API ut64 r_str_hash64(const char *s) {
         ut64 len, h = 5381;
 	if (!s)
@@ -307,6 +309,7 @@ R_API ut64 r_str_hash64(const char *s) {
         return h;
 }
 
+// Compute a 32bit DJB hash of a string.
 R_API ut32 r_str_hash (const char *s) {
 	return (ut32) r_str_hash64 (s);
 }
@@ -317,6 +320,10 @@ R_API int r_str_delta(char *p, char a, char b) {
 	return (!_a||!_b)?0:(_a-_b);
 }
 
+// In-place split string using ch as a delimeter. Replaces all instances of ch
+// with a null byte. Returns the number of times that the string was split.
+// For example r_str_split("hello world", ' ') will replace the space with '\0'
+// and return 1.
 R_API int r_str_split(char *str, char ch) {
 	int i;
 	char *p;
@@ -414,6 +421,7 @@ R_API const char *r_str_word_get0(const char *str, int idx) {
 	return ptr;
 }
 
+// Return the number of times that the character ch appears in the string.
 R_API int r_str_char_count(const char *string, char ch) {
 	int i, count = 0;
 	for (i=0; string[i]; i++)
@@ -422,6 +430,8 @@ R_API int r_str_char_count(const char *string, char ch) {
 	return count;
 }
 
+// Counts the number of words (separted by separator charactors: newlines, tabs,
+// return, space). See r_util.h for more details of the isseparator macro.
 R_API int r_str_word_count(const char *string) {
 	const char *text, *tmp;
 	int word;
@@ -434,12 +444,15 @@ R_API int r_str_word_count(const char *string) {
 	return word;
 }
 
+// Returns a pointer to the first instance of a character that isn't chr in a
+// string.
 R_API char *r_str_ichr(char *str, char chr) {
 	while (*str==chr) str++;
 	return str;
 }
 
-// find last char
+// Returns a pointer to the last instance of the character chr in the input
+// string.
 R_API const char *r_str_lchr(const char *str, char chr) {
 	if (str) {
 		int len = strlen (str);
