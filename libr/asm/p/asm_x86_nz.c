@@ -1106,7 +1106,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			int argk = (*arg == '[');
 			dst = r_num_math (NULL, arg2);
 			ptr = (st8 *)&dst;
-			if (dst > ST32_MAX && dst < ST32_MIN) {
+			if (dst > ST32_MAX || dst < ST32_MIN) {
 				if (a->bits == 64) {
 					if (*arg == 'r') {
 						data[l++] = 0x48;
