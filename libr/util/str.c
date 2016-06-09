@@ -182,7 +182,8 @@ static int hex2int(ut8 *val, ut8 c) {
 	if ('0' <= c && c <= '9') *val = (ut8)(*val) * 16 + ( c - '0');
 	else if (c >= 'A' && c <= 'F') *val = (ut8)(*val) * 16 + ( c - 'A' + 10);
 	else if (c >= 'a' && c <= 'f') *val = (ut8)(*val) * 16 + ( c - 'a' + 10);
-	else return -1;
+	else return 1;
+	return 0;
 }
 
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
