@@ -31,7 +31,7 @@ typedef struct {
 typedef struct {
 	RCore *core;
 	int launch;
-	const char *path;
+	char *path;
 } HttpThread;
 
 static char *rtrcmd (TextLog T, const char *str) {
@@ -777,10 +777,14 @@ the_end:
 }
 
 static int r_core_rtr_http_thread (RThread *th) {
+	int ret;
+
 	if (!th) return false;
 	HttpThread *ht = th->user;
 	if (!ht || !ht->core) return false;
-	return r_core_rtr_http_run (ht->core, ht->launch, ht->path);
+	ret = r_core_rtr_http_run (ht->core, ht->launch, ht->path);
+	free (ht->path);
+	return ret;
 }
 
 R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
@@ -810,7 +814,8 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 			eprintf ("TODO: Use different eval environ for scr. for the web\n");
 			eprintf ("TODO: Visual mode should be enabled on local\n");
 		} else {
-			HttpThread ht = { core, launch, path };
+			const char *tpath = r_str_trim_const (path + 1);
+			HttpThread ht = { core, launch, strdup (tpath) };
 			httpthread = r_th_new (r_core_rtr_http_thread, &ht, 0);
 			r_th_start (httpthread, 1);
 			eprintf ("Background http server started.\n");
