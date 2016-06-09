@@ -397,6 +397,8 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function
 		fcn->bits = 16;
+	} else {
+		fcn->bits = core->anal->bits;
 	}
 	fcn->addr = at;
 	r_anal_fcn_set_size (fcn, 0);
@@ -1529,6 +1531,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 						count>1? ",":"", fcn->addr, name, r_anal_fcn_size (fcn));
 				r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
 				r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
+				r_cons_printf (",\"bits\":%d", fcn->bits);
 				r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
 				r_cons_printf (",\"calltype\":\"%s\"", r_anal_cc_type2str (fcn->call));
 				r_cons_printf (",\"type\":\"%s\"",
@@ -1614,9 +1617,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				r_cons_printf ("\n stackframe: %d", fcn->maxstack);
 				r_cons_printf ("\n call-convention: %s", r_anal_cc_type2str (fcn->call));
 				r_cons_printf ("\n cyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
+				r_cons_printf ("\n bits: %d", fcn->bits);
 				r_cons_printf ("\n type: %s",
-						fcn->type==R_ANAL_FCN_TYPE_SYM?"sym":
-						fcn->type==R_ANAL_FCN_TYPE_IMP?"imp":"fcn");
+						fcn->type == R_ANAL_FCN_TYPE_SYM?"sym":
+						fcn->type == R_ANAL_FCN_TYPE_IMP?"imp": "fcn");
 				if (fcn->type==R_ANAL_FCN_TYPE_FCN || fcn->type==R_ANAL_FCN_TYPE_SYM)
 					r_cons_printf (" [%s]",
 							fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":

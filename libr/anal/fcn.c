@@ -1011,6 +1011,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 		append = 1;
 	}
 	fcn->addr = addr;
+	fcn->bits = a->bits;
 	r_anal_fcn_set_size (fcn, size);
 	free (fcn->name);
 	if (!name) {
