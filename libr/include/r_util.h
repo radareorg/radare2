@@ -543,7 +543,6 @@ R_API const char *r_str_word_get0(const char *str, int idx);
 R_API char *r_str_word_get_first(const char *string);
 R_API char *r_str_chop(char *str);
 R_API const char *r_str_chop_ro(const char *str);
-R_API char *r_str_trim(char *str);
 R_API char *r_str_trim_head(char *str);
 R_API const char *r_str_trim_const(const char *str);
 R_API char *r_str_trim_tail(char *str);
