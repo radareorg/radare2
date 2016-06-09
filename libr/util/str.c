@@ -339,6 +339,9 @@ R_API int r_str_split(char *str, char ch) {
 	return i;
 }
 
+// Convert a string into an array of string separated by \0
+// And the last by \0\0
+// Separates by words and skip spaces.
 R_API int r_str_word_set0(char *str) {
 	int i, quote = 0;
 	char *p;
@@ -412,10 +415,13 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 	return out;
 }
 
+// Get the idx'th entry of a tokenized string.
+// XXX: Warning! this function is UNSAFE, check that the string has idx or fewer
+// tokens.
 R_API const char *r_str_word_get0(const char *str, int idx) {
 	int i;
 	const char *ptr = str;
-	if (ptr == NULL)
+	if (ptr == NULL || idx < 0 /* prevent crashes with negative index */)
 		return (char *)nullstr;
 	for (i=0; *ptr && i != idx; i++)
 		ptr += strlen (ptr) + 1;
@@ -501,11 +507,14 @@ R_API const char *r_str_chop_ro(const char *str) {
 	return str;
 }
 
+// Returns a new heap-allocated copy of str.
 R_API char *r_str_new(const char *str) {
 	if (!str) return NULL;
 	return strdup (str);
 }
 
+// Returns a new heap-allocated copy of str, sets str[len] to '\0'.
+// If the input str is longer than len, it will be truncated.
 R_API char *r_str_newlen(const char *str, int len) {
 	char *buf;
 	if (len < 1)
@@ -517,6 +526,8 @@ R_API char *r_str_newlen(const char *str, int len) {
 	return buf;
 }
 
+// Returns a new heap-allocated string that matches the format-string
+// specification.
 R_API char *r_str_newf(const char *fmt, ...) {
 	int ret, ret2;
 	char *p, string[1024];
@@ -571,6 +582,7 @@ R_API char *r_str_chop(char *str) {
 	return str;
 }
 
+// Returns a pointer to the first non-whitespace character of str.
 R_API const char *r_str_trim_const(const char *str) {
 	if (str)
 		for (; *str && iswhitechar (*str); str++);
@@ -594,6 +606,8 @@ R_API char *r_str_trim_head(char *str) {
 	return str;
 }
 
+// Remove whitespace chars from the tail of the string, replacing them with
+// null bytes. The string is changed in-place.
 R_API char *r_str_trim_tail(char *str) {
 	int length;
 
@@ -614,21 +628,14 @@ R_API char *r_str_trim_tail(char *str) {
 	return str;
 }
 
+// Removes spaces from the head of the string, and zeros out whitespaces from
+// the tail of the string. The string is changed in place.
 R_API char *r_str_trim_head_tail(char *str) {
 	return r_str_trim_tail (r_str_trim_head (str));
 }
 
-R_API char *r_str_trim(char *str) {
-	int i;
-	char *ptr;
-	if (!str) return NULL;
-	for (ptr = str, i=0; str[i]; i++)
-		if (!iswhitechar (str[i]))
-			*ptr++ = str[i];
-	*ptr = '\0';
-	return str;
-}
-
+// Copy all printable characters from src to dst, copy all printable characters
+// as '.'. 
 R_API void r_str_ncpy(char *dst, const char *src, int n) {
 	int i;
 	for (i=0; src[i] && n>0; i++, n--)
@@ -637,6 +644,7 @@ R_API void r_str_ncpy(char *dst, const char *src, int n) {
 }
 
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
+// Returns 1 if src and dst are equal up until the first instance of ch in src.
 R_API int r_str_ccmp(const char *dst, const char *src, int ch) {
 	int i;
 	for (i=0;src[i] && src[i] != ch; i++)
@@ -645,6 +653,8 @@ R_API int r_str_ccmp(const char *dst, const char *src, int ch) {
 	return 0;
 }
 
+// Compare two strings for the first len bytes. Returns true if they are equal.
+// NOTE: this is not useful as a comparitor, as it returns true or false.
 R_API int r_str_cmp(const char *a, const char *b, int len) {
 	if (a==b)
 		return R_TRUE;
@@ -656,6 +666,7 @@ R_API int r_str_cmp(const char *a, const char *b, int len) {
 	return R_FALSE;
 }
 
+// Copies all characters from src to dst up until the character 'ch'.
 R_API int r_str_ccpy(char *dst, char *src, int ch) {
 	int i;
 	for (i=0; src[i] && src[i] != ch; i++)
