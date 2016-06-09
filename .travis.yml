@@ -41,7 +41,7 @@ script:
   - export NOREPORT=1
   - cd radare2-regressions
   - VERBOSE=1 make -k all
-  - echo "unit tests disabled" # make unit_tests
+  - make unit_tests
 
 notifications:
   irc: "chat.freenode.net#radare"
