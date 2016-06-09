@@ -63,8 +63,7 @@ R_API int r_str_replace_char_once(char *s, int a, int b) {
 		if (*o==a) {
 			if (b) {
 				*s = b;
-				ret++;
-				continue;
+				return ++ret;
 			}
 			o++;
 		}
