@@ -848,7 +848,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		map_start = r_num_get (NULL, region);
 		map_end = r_num_get (NULL, region2);
 		if (map_start == map_end || map_end == 0) {
-			eprintf ("%s: ignoring invalid map size: %s - %s\n", __func__, region, region2)
+			eprintf ("%s: ignoring invalid map size: %s - %s\n", __func__, region, region2);
 			continue;
 		}
 
