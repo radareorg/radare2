@@ -1818,15 +1818,17 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 		str = flagstr;
 		if (ds->nb > 0) {
 			k = ds->nb-strlen (flagstr)-1;
-			if (k<0) k = 0;
-			for (j=0; j<k; j++)
+			if (k < 0 || k > sizeof(pad)) k = 0;
+			for (j = 0; j < k; j++)
 				pad[j] = ' ';
 			pad[j] = '\0';
-		} else pad[0] = 0;
+		} else { 
+		    	pad[0] = 0;
+		}
 	} else {
 		if (ds->show_flag_in_bytes) {
-			k = ds->nb-1;
-			if (k<0) k = 0;
+			k = ds->nb - 1;
+			if (k < 0 || k > sizeof(pad)) k = 0;
 			for (j=0; j<k; j++)
 				pad[j] = ' ';
 			pad[j] = '\0';
@@ -1848,6 +1850,8 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 				k = ds->nb - r_str_ansi_len (nstr)+1;
 			}
 			if (k > 0) {
+			    	//setting to sizeof screw up the disasm
+			    	if (k > sizeof(pad)) k = 18;
 				for (j = 0; j < k; j++) {
 					pad[j] = ' ';
 				}
