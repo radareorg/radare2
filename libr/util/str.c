@@ -54,6 +54,7 @@ R_API void r_str_chop_path(char *s) {
 	else *dst = 0;
 }
 
+// In-place replace the first instance of the character a, with the character b.
 R_API int r_str_replace_char_once(char *s, int a, int b) {
 	int ret = 0;
 	char *o = s;
@@ -74,6 +75,7 @@ R_API int r_str_replace_char_once(char *s, int a, int b) {
 }
 
 // Spagetti.. must unify and support 'g', 'i' ...
+// In-place replace all instances of character a with character b.
 R_API int r_str_replace_char(char *s, int a, int b) {
 	int ret = 0;
 	char *o = s;
@@ -116,6 +118,9 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 	return j;
 }
 
+// In-place trims a bitstring to groups of 8 bits.
+// For example, the bitstring 1000000000000000 will not be modified, but the
+// bitstring 0000000001000000 will be changed to 01000000.
 static void trimbits(char *b) {
 	int len = strlen (b);
 	char *one = strchr (b, '1');
@@ -132,6 +137,7 @@ static void trimbits(char *b) {
 
 // Set 'strout' to the binary representation of the input value.
 // strout must be a char array of 65 or greater.
+// The string is then trimmed using the "trimbits" function above.
 R_API int r_str_bits64(char* strout, ut64 in) {
 	int i, bit, count = 0;
 	count = 0;
@@ -171,6 +177,7 @@ R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
 }
 
 /* int c; ret = hex2int(&c, 'c'); */
+// Converts a SINGLE hexchar to it's integer value.
 static int hex2int(ut8 *val, ut8 c) {
 	if ('0' <= c && c <= '9') *val = (ut8)(*val) * 16 + ( c - '0');
 	else if (c >= 'A' && c <= 'F') *val = (ut8)(*val) * 16 + ( c - 'A' + 10);
@@ -205,6 +212,8 @@ R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
 	return n;
 }
 
+// Returns the permissions as in integer given an input in the form of rwx, rx,
+// etc.
 R_API int r_str_rwx(const char *str) {
 	int ret = atoi (str);
 	if (!ret) {
@@ -216,6 +225,7 @@ R_API int r_str_rwx(const char *str) {
 	return ret;
 }
 
+// Returns the string representation of the permission of the inputted integer.
 R_API const char *r_str_rwx_i(int rwx) {
 	static const char *rwxstr[24] = {
 		[0] = "----",
@@ -249,6 +259,9 @@ R_API const char *r_str_rwx_i(int rwx) {
 	return rwxstr[rwx % 24]; // 15 for srwx
 }
 
+// Returns "true" or "false" as a string given an input integer. The returned
+// value is consistant with C's definition of 0 is false, and all other values
+// are true.
 R_API const char *r_str_bool(int b) {
 	return b? "true": "false";
 }
