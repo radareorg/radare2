@@ -31,7 +31,7 @@ typedef struct {
 typedef struct {
 	RCore *core;
 	int launch;
-	const char *path;
+	char *path;
 } HttpThread;
 
 static char *rtrcmd (TextLog T, const char *str) {
@@ -783,7 +783,7 @@ static int r_core_rtr_http_thread (RThread *th) {
 	HttpThread *ht = th->user;
 	if (!ht || !ht->core) return false;
 	ret = r_core_rtr_http_run (ht->core, ht->launch, ht->path);
-	free ((char *)ht->path);
+	free (ht->path);
 	return ret;
 }
 
