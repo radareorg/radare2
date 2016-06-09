@@ -4022,11 +4022,10 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	ut64 o_align = geti ("search.align");
 	ut64 from, to, ptr;
 	ut64 vmin, vmax;
-	bool asterisk = false;
+	bool asterisk = strchr (input, '*');;
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 
 	if (is_debug) {
-		//
 		r_list_free (r_core_get_boundaries_prot (core, 0, "dbg.map", &from, &to));
 	} else {
 		s = r_io_section_vget (core->io, core->offset);
