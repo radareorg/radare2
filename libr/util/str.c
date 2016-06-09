@@ -342,6 +342,7 @@ R_API int r_str_split(char *str, char ch) {
 // Convert a string into an array of string separated by \0
 // And the last by \0\0
 // Separates by words and skip spaces.
+// Returns the number of tokens that the string is tokenized into.
 R_API int r_str_word_set0(char *str) {
 	int i, quote = 0;
 	char *p;
