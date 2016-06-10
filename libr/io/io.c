@@ -879,7 +879,7 @@ R_API int r_io_close(RIO *io, RIODesc *d) {
 			r_io_map_del (io, nfd);
 			r_io_section_rm_all (io, nfd);
 			r_io_plugin_close (io, io->desc);
-			r_io_desc_del (io, desc->fd);
+			//r_io_desc_del (io, desc->fd);
 		}
 	}
 	io->desc = cur;
