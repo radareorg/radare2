@@ -147,12 +147,11 @@ static proc_per_thread_t *get_proc_thread_content (int pid, int tid) {
         {
                 char no_str[128];
                 long unsigned int no_lui;
-                long int no_li;
                 int no_num;
                 char no_char;
                 ut32 no_ui;
                 sscanf (buff,  "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu"
-				"%lu %lu %ld %ld",
+				"%llu %llu %ld %lu",
                         &no_num, no_str, &no_char, &no_num, &no_num, &no_num,
                         &no_num, &no_num, &no_ui, &no_lui, &no_lui, &no_lui,
                         &no_lui, &t->utime, &t->stime, &t->cutime, &t->cstime);
@@ -485,7 +484,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 	linux_map_entry_t *me_head = NULL, *me_tail = NULL;
 	RListIter *iter;
 	RDebugMap *map;
-	bool is_anonymous, is_deleted, is_kernel_mapping, ret;
+	bool is_anonymous, is_deleted, ret;
 	char *file = NULL, *buff_maps= NULL, *buff_smaps = NULL;
 	unsigned long offset;
 	int size_file = 0;
@@ -961,6 +960,9 @@ void write_note_hdr (note_type_t type, ut8 **note_data) {
 	case NT_X86_XSTATE_T:
 		note_type = NT_X86_XSTATE;
 		nhdr.n_descsz = note_info[type].size;
+		break;
+	case NT_LENGHT_T:
+		/* TODO: not yet implemented */
 		break;
 	}
 

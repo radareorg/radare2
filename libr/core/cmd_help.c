@@ -217,7 +217,7 @@ static int cmd_help(void *data, const char *input) {
 	case ' ':
 		{
 			char *asnum, unit[32];
-			ut32 n32, s, a;
+			ut32 s, a;
 			double d;
 			float f;
 
@@ -225,7 +225,6 @@ static int cmd_help(void *data, const char *input) {
 			if (core->num->dbz) {
 				eprintf ("RNum ERROR: Division by Zero\n");
 			}
-			n32 = (ut32)(n & UT32_MAX);
 			asnum  = r_num_as_string (NULL, n);
 
 			/* decimal, hexa, octal */
