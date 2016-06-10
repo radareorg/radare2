@@ -758,12 +758,12 @@ static Sdb *store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (!(sdb_versioninfo = sdb_new0 ()))
 		return NULL;
 
-	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
+	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		Sdb *sdb = NULL;
 		char key[32] = {0};
 		int size = bin->shdr[i].sh_size;
 
-		if (size < 0 || size > 0xFFFF) {
+		if (size < 0 || size > bin->size) {
 			eprintf ("Warning: Too big version info field %d (%d)\n", i, size);
 			continue;
 		}
@@ -2271,8 +2271,7 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 		}
 	}
 	// maybe it had some section header but not the symtab
-	if (!ret) return get_symbols_from_phdr (bin, type);
-	return ret;
+	return ret? ret: get_symbols_from_phdr (bin, type);
 beach:
 	free (ret);
 	free (sym);
@@ -2358,10 +2357,12 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(RBuffer *buf) {
 	bin->kv = sdb_new0 ();
 	bin->b = r_buf_new ();
 	bin->size = buf->length;
-	if (!r_buf_set_bytes (bin->b, buf->buf, buf->length))
+	if (!r_buf_set_bytes (bin->b, buf->buf, buf->length)) {
 		return Elf_(r_bin_elf_free) (bin);
-	if (!elf_init (bin))
+	}
+	if (!elf_init (bin)) {
 		return Elf_(r_bin_elf_free) (bin);
+	}
 	return bin;
 }
 
