@@ -2482,8 +2482,8 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 			return;
 		}
 		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0);
-		core->anal->esil->user = ds;
 	}
+	core->anal->esil->user = ds;
 	free (ds->esil_regstate);
 	if (core->anal->gp) {
 		r_reg_setv (core->anal->reg, "gp", core->anal->gp);
@@ -2752,7 +2752,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// TODO: per-function register state trace
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
-	if (true || ds->show_emu) {
+	{ /* used by asm.emu */
 		r_reg_arena_push (core->anal->reg);
 	}
 	if (core->anal->cur && core->anal->cur->reset_counter) {
@@ -3019,8 +3019,9 @@ toro:
 			}
 			goto toro;
 		}
-		if (continueoninvbreak)
+		if (continueoninvbreak) {
 			goto toro;
+		}
 	}
 #endif
 	if (ds->oldbits) {
@@ -3033,7 +3034,7 @@ toro:
 	ds_print_esil_anal_fini (ds);
 	ds_reflines_fini (ds);
 	ds_free (ds);
-	if (true || ds->show_emu) {
+	{ /* used by asm.emu */
 		r_reg_arena_pop (core->anal->reg);
 	}
 	return idx; //-ds->lastfail;
