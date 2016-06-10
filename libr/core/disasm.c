@@ -247,7 +247,7 @@ static int cmpaddr(const void *_a, const void *_b) {
 }
 
 static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_size) {
-	if (core && f && cmt && cmt_size > 0 && f->bits) {
+	if (core && f && cmt && cmt_size > 0 && f->bits && f->bits != core->assembler->bits) {
 		const char *asm_arch = r_config_get (core->config, "asm.arch");
 		if (asm_arch && *asm_arch && strstr (asm_arch, "arm")) {
 			switch (f->bits) {
